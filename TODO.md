@@ -8,7 +8,9 @@
 - [x] Improve UX: file upload/save for .dat, unit-scaled outputs, map/ellipse view, exclusion toggles (re-run)
 - [x] Editable observation tables (inline edits to values/weights) and true computational unit conversion
 - [x] Performance hardening: add conditioning guard and residual spike warnings; consider Web Worker offload (future)
+- [x] Sync README/agents docs with current parser/engine/UI state
 - [ ] Star*Net format compatibility (Section 5.6):
+  - [x] Elevation-only parsing (`E` records) with std errors/fixity and unit conversion
   - Implement global inline options: `.UNITS`, `.COORD 2D/3D`, `.ORDER NE/EN`, `.2D`/`.3D`, `.DELTA ON/OFF`, `.MAPMODE`, `.LWEIGHT`, `.NORMALIZE`, `.END`
   - Coordinate/position/elevation records: `C` (2D/3D with per-component std errs and `!/*` fixity, NE/EN order), `P` geodetic positions (lat/long [+H], std errs mapped to NE, longitude sign), `E` elevation-only, ellipsoid variants `CH/PH/EH`
   - Single obs: `A` angles (At-From-To or From-At-To), `D` distances (2D HD; 3D slope/HD per mode with HI/HT), `V` vertical (zenith or ΔH per mode with HI/HT), `B` bearings/azimuths

@@ -2,23 +2,23 @@
 
 ## Project Context
 - Goal: browser-based clone of MicroSurvey Star*Net performing mixed-observation least-squares adjustment (TS distances/angles, GNSS baselines, leveling dH) with control points, error ellipses, residuals, and basic outlier cues.
-- Current behavior (TypeScript): parses Star*Net-like text blocks (instrument library, control, D/A/G/L observations), runs iterative XYH adjustment with custom matrix math, reports SEUW/DOF, adjusted coordinates, error ellipses, residual tables sorted by |StdRes|, and a processing log. UI has a resizable input pane and report pane with dark Tailwind styling and a seeded 10-point demo dataset.
+- Current behavior (TypeScript): parses Star*Net-style text blocks (instrument library, control, D/A/G/L observations + inline options .UNITS/.COORD/.ORDER/.2D/.3D/.DELTA/.END, C/E records with fixity/std errs), normalizes to meters/radians, runs iterative XYH adjustment with custom matrix math, applies overrides/exclusions, reports SEUW/DOF/conditioning warnings, adjusted coordinates, error ellipses, residual tables sorted by |StdRes|, and a processing log. UI adds editable observation tables, re-run with exclusions, map/ellipse view, and seeded demo dataset.
 
 ## Tech Stack
 - Runtime: Node 18+ (ESM). Bundler: Vite 7.
 - UI: React 19.2 (hooks), TailwindCSS 3.4 (classes in TSX, base in src/index.css), Lucide icons.
 - Language: TypeScript 5 (strict), TSX entrypoints.
-- Tooling: ESLint 9 (flat config), PostCSS + Autoprefixer, no Prettier yet, no tests yet.
-- Dependencies: "react", "react-dom", "lucide-react".
-- Dev deps: Vite/React plugin, ESLint + react-hooks/refresh plugins, Tailwind/PostCSS, TypeScript.
-- Optional improvements: add Vitest for matrix/parser/engine coverage; consider a small linear algebra lib (e.g., ml-matrix) or a Web Worker/WASM path if networks grow; keep Vite or move to Next.js only if routing/server needs appear (currently unnecessary).
+- Tooling: ESLint 9 (flat config), Prettier 3 + lint-staged + Husky, Vitest 4, PostCSS + Autoprefixer.
+- Dependencies: react, react-dom, lucide-react.
+- Dev deps: Vite + @vitejs/plugin-react, ESLint plugins (react, react-hooks, react-refresh), Tailwind/PostCSS, Vitest, TypeScript.
+- Optional improvements: Web Worker/WASM path for large networks; keep Vite unless routing/server needs appear.
 
 ## Code Style
-- TypeScript/React with functional components and hooks; prefer pure helpers and small components (UI still mostly single file).
+- TypeScript/React with functional components and hooks; prefer pure helpers and small components.
 - Naming: camelCase for vars/functions; UPPER_SNAKE for constants; React components PascalCase.
-- Formatting: 2-space indent, semicolons present; Tailwind utility classes for styling (avoid inline styles).
-- Lint: ESLint recommended + react-hooks + react-refresh; `no-unused-vars` ignores leading-cap vars. Keep TS strict; avoid `any`—prefer typed helpers and shared types.
-- Data/units: calculations assume meters/radians internally; UI unit toggle is display-only. Keep angle conversions via `dmsToRad`/`radToDmsStr`; keep observations and station keys as strings.
+- Formatting: Prettier defaults (2-space, semicolons); Tailwind utility classes for styling (avoid inline styles).
+- Lint: ESLint flat config + react-hooks/refresh; `no-unused-vars` allows leading `_` for intentionally unused args. Keep TS strict; avoid `any`—prefer shared types/helpers.
+- Data/units: calculations normalize to meters/radians internally; unit conversions (ft <-> m) happen at parse/override/display boundaries. Angle conversions via `dmsToRad`/`radToDmsStr`; keep station/obs ids as strings.
 
 ## Commands
 ```bash
@@ -39,11 +39,11 @@ npm run format:check # Prettier check
 - Styles: src/index.css Tailwind directives + Vite defaults; src/App.css is legacy template (not imported).
 - Assets: public/vite.svg, src/assets/react.svg (template).
 - Core (TypeScript):
-  - Types: src/types.ts for stations, observations, instruments, results.
+  - Types: src/types.ts for stations, observations, instruments, results, parse options, overrides.
 - Math helpers: src/engine/matrix.ts (zeros/transpose/multiply/inv), src/engine/angles.ts (RAD/DEG/SEC, dms helpers).
-- Parser: src/engine/parse.ts ingests Star*Net-like text into typed stations/observations/instruments.
-- Engine: src/engine/adjust.ts (LSAEngine) builds A/L/P, normals N=(A^T P A), iterates corrections, computes SEUW/DOF, residuals, ellipses, sH, logs.
-- UI: src/App.tsx (shell) manages input/settings/layout; presentational components in src/components (InputPane, ReportView, MapView).
+- Parser: src/engine/parse.ts ingests Star*Net-style text with inline options (.UNITS/.COORD/.ORDER/.2D/.3D/.DELTA/.END), C/E records (fixity/std errs, NE/EN order, ft<->m), D/A/G/L observations with instrument lib lookups, and returns stations/unknowns/obs/logs.
+- Engine: src/engine/adjust.ts (LSAEngine) builds A/L/P, normals N=(A^T P A), iterates corrections, applies overrides/exclusions and unit normalization, computes SEUW/DOF, residuals, ellipses, sH, conditioning/residual warnings, logs.
+- UI: src/App.tsx (shell) manages input/settings/layout; components in src/components (InputPane for edits/upload; ReportView for tables/overrides/exclusions/logs; MapView for plan/ellipse view).
 - Tests: Vitest specs in /tests (angles, matrix, parser, engine) with fixtures in /tests/fixtures.
 - CI: GitHub Actions workflow (.github/workflows/ci.yml) runs lint, vitest (--runInBand), and build on pushes/PRs to main.
 - Data flow: user edits textarea -> handleRun instantiates LSAEngine with settings -> solve() mutates stations/observations -> result stored in state -> ReportView renders tables.

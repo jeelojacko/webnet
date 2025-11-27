@@ -115,6 +115,18 @@ export const parseInput = (
           if (sy) (stations[id] as any).sy = sy * toMeters
           if (is3D && sh) (stations[id] as any).sh = sh * toMeters
         }
+      } else if (code === 'E') {
+        // Elevation only: E Station Elev [StdErr] [fixity]
+        const id = parts[1]
+        const elev = parseFloat(parts[2])
+        const stdErr = parseFloat(parts[3] || '0')
+        const fixed = parts.includes('!') || parts.includes('*')
+        const toMeters = state.units === 'ft' ? 1 / FT_PER_M : 1
+        const st = stations[id] || { x: 0, y: 0, h: 0, fixed: false }
+        st.h = elev * toMeters
+        st.fixed = fixed || st.fixed
+        if (!fixed && stdErr) (st as any).sh = stdErr * toMeters
+        stations[id] = st
       } else if (code === 'D') {
         const hasInst = parts.length > 5 && /[A-Za-z]/.test(parts[1]) && /[A-Za-z]/.test(parts[2])
         const instCode = hasInst ? parts[1] : ''
