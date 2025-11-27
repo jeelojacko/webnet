@@ -7,4 +7,4 @@
 - [x] Add Prettier + lint-staged for consistent formatting; remove unused src/App.css
 - [x] Improve UX: file upload/save for .dat, unit-scaled outputs, map/ellipse view, exclusion toggles (re-run)
 - [ ] Editable observation tables (inline edits to values/weights) and true computational unit conversion
-- [ ] Performance hardening: singular-matrix guards, convergence diagnostics, consider Web Worker offload for larger networks
+- [x] Performance hardening: add conditioning guard and residual spike warnings; consider Web Worker offload (future)

@@ -51,7 +51,7 @@ npm run format:check # Prettier check
 ## Suggested Next Steps
 - Editable obs tables: inline edits to values/weights and re-run pipeline.
 - True computational unit conversion (ft/m) across engine inputs/outputs (currently display-only scaling).
-- Performance: guard matrix inversion against singularity, add convergence diagnostics, consider a worker for large networks.
+- Performance: guards added for poor conditioning and residual spikes; consider a Web Worker offload for large networks.
 
 ## Todo
 - See TODO.md for the current checklist (completed and planned items).

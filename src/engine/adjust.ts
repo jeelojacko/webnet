@@ -40,6 +40,8 @@ export class LSAEngine {
   private excludeIds?: Set<number>;
   private inputUnit: 'm' | 'ft';
   private overrides?: Record<number, ObservationOverride>;
+  private maxCondition = 1e12;
+  private maxStdRes = 10;
 
   constructor({
     input,
@@ -290,6 +292,12 @@ export class LSAEngine {
         const AT = transpose(A);
         const ATP = multiply(AT, P);
         const N = multiply(ATP, A);
+        const detGuard = this.estimateCondition(N);
+        if (detGuard > this.maxCondition || Number.isNaN(detGuard)) {
+          this.log(`Matrix conditioning too high: ${detGuard.toExponential(3)} (abort)`);
+          this.calculateStatistics(paramMap, false);
+          return this.buildResult();
+        }
         const U = multiply(ATP, L);
         const N_inv = inv(N);
         const X = multiply(N_inv, U);
@@ -322,6 +330,25 @@ export class LSAEngine {
     if (!this.converged) this.log('Warning: Max iterations reached.');
     this.calculateStatistics(paramMap, !!this.Qxx);
     return this.buildResult();
+  }
+
+  private estimateCondition(N: number[][]): number {
+    // crude condition estimate via row/col norm product to avoid expensive SVD
+    const n = N.length;
+    if (!n) return 0;
+    let rowMax = 0;
+    let colMax = 0;
+    for (let i = 0; i < n; i++) {
+      let rsum = 0;
+      let csum = 0;
+      for (let j = 0; j < n; j++) {
+        rsum += Math.abs(N[i][j]);
+        csum += Math.abs(N[j][i]);
+      }
+      rowMax = Math.max(rowMax, rsum);
+      colMax = Math.max(colMax, csum);
+    }
+    return rowMax * colMax;
   }
 
   private calculateStatistics(paramMap: Record<StationId, number>, hasQxx: boolean) {
@@ -377,6 +404,14 @@ export class LSAEngine {
     });
 
     this.seuw = this.dof > 0 ? Math.sqrt(vtpv / this.dof) : 0;
+
+    // Flag very large standardized residuals
+    const flagged = this.observations.filter((o) => Math.abs(o.stdRes || 0) > this.maxStdRes);
+    if (flagged.length) {
+      this.log(
+        `Warning: ${flagged.length} obs exceed ${this.maxStdRes} sigma (consider excluding/reweighting).`,
+      );
+    }
 
     if (hasQxx && this.Qxx) {
       const s0_sq = this.seuw * this.seuw;
