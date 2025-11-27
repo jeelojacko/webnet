@@ -40,17 +40,17 @@ npm run format:check # Prettier check
 - Assets: public/vite.svg, src/assets/react.svg (template).
 - Core (TypeScript):
   - Types: src/types.ts for stations, observations, instruments, results.
-  - Math helpers: src/engine/matrix.ts (zeros/transpose/multiply/inv), src/engine/angles.ts (RAD/DEG/SEC, dms helpers).
-  - Parser: src/engine/parse.ts ingests Star*Net-like text into typed stations/observations/instruments.
-  - Engine: src/engine/adjust.ts (LSAEngine) builds A/L/P, normals N=(A^T P A), iterates corrections, computes SEUW/DOF, residuals, ellipses, sH, logs.
-  - UI: src/App.tsx (shell) manages input/settings/layout; presentational components in src/components (InputPane, ReportView, MapView).
-  - Tests: Vitest specs in /tests (angles, matrix, parser, engine) with fixtures in /tests/fixtures.
+- Math helpers: src/engine/matrix.ts (zeros/transpose/multiply/inv), src/engine/angles.ts (RAD/DEG/SEC, dms helpers).
+- Parser: src/engine/parse.ts ingests Star*Net-like text into typed stations/observations/instruments.
+- Engine: src/engine/adjust.ts (LSAEngine) builds A/L/P, normals N=(A^T P A), iterates corrections, computes SEUW/DOF, residuals, ellipses, sH, logs.
+- UI: src/App.tsx (shell) manages input/settings/layout; presentational components in src/components (InputPane, ReportView, MapView).
+- Tests: Vitest specs in /tests (angles, matrix, parser, engine) with fixtures in /tests/fixtures.
 - CI: GitHub Actions workflow (.github/workflows/ci.yml) runs lint, vitest (--runInBand), and build on pushes/PRs to main.
 - Data flow: user edits textarea -> handleRun instantiates LSAEngine with settings -> solve() mutates stations/observations -> result stored in state -> ReportView renders tables.
 
 ## Suggested Next Steps
-- Editable obs tables: inline edits to values/weights and re-run pipeline.
-- True computational unit conversion (ft/m) across engine inputs/outputs (currently display-only scaling).
+- Editable obs tables: implemented (values/weights with overrides and re-run).
+- True computational unit conversion (ft/m): implemented; engine normalizes feet inputs before solving.
 - Performance: guards added for poor conditioning and residual spikes; consider a Web Worker offload for large networks.
 
 ## Todo

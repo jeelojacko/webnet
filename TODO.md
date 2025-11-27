@@ -6,5 +6,20 @@
 - [x] Add CI + coverage for Vitest suite (matrix/angles/parser/engine fixtures added; GitHub Actions workflow + coverage script)
 - [x] Add Prettier + lint-staged for consistent formatting; remove unused src/App.css
 - [x] Improve UX: file upload/save for .dat, unit-scaled outputs, map/ellipse view, exclusion toggles (re-run)
-- [ ] Editable observation tables (inline edits to values/weights) and true computational unit conversion
+- [x] Editable observation tables (inline edits to values/weights) and true computational unit conversion
 - [x] Performance hardening: add conditioning guard and residual spike warnings; consider Web Worker offload (future)
+- [ ] Star*Net format compatibility (Section 5.6):
+  - Implement global inline options: `.UNITS`, `.COORD 2D/3D`, `.ORDER NE/EN`, `.2D`/`.3D`, `.DELTA ON/OFF`, `.MAPMODE`, `.LWEIGHT`, `.NORMALIZE`, `.END`
+  - Coordinate/position/elevation records: `C` (2D/3D with per-component std errs and `!/*` fixity, NE/EN order), `P` geodetic positions (lat/long [+H], std errs mapped to NE, longitude sign), `E` elevation-only, ellipsoid variants `CH/PH/EH`
+  - Single obs: `A` angles (At-From-To or From-At-To), `D` distances (2D HD; 3D slope/HD per mode with HI/HT), `V` vertical (zenith or ΔH per mode with HI/HT), `B` bearings/azimuths
+  - Multiple obs: `M` (angle+dist+vertical with std err rules, `?` missing), `BM` (bearing/az+dist+vertical), `DV` (dist+vertical) with std errs and HI/HT
+  - Traverse: `TB` (backsight station or bearing/az; dummy backsight handling), `T` legs (angle+dist+vertical with std err rules, HI/HT), `TE` closing angle to station or bearing/az with optional std err
+  - Direction sets: `DB` begin, `DN` directions, `DM` directions+measurements, `DE` end; face-1/face-2 handling, reject mixed-face when `.NORMALIZE OFF`
+  - Sideshots: `SS` diverted from adjustment, compute post-adjust, disallow occupy/backsight, optional name checking
+  - Leveling: `L` ΔH with distance or turns, std err or per-unit via `.LWEIGHT`, allow fixity/free
+  - Fixity/weights: support `!` fixed, `*` free, `&` defaults, numeric std errs per obs/component
+  - Units/normalization: honor `.UNITS` for ft/m parsing/HI/HT, convert angles/bearings; normalize engine to meters/radians
+  - Validation/logging: strict line validation, mode/order scope, HI/HT parsing, counts per type, logs for defaults/skips/flags
+  - Engine: map codes to internal types, apply HI/HT/ΔH/slope→HD, include bearings/azimuths, leveling weights, preserve obs IDs
+  - Fixtures/tests: add Star*Net-style fixtures for 2D/3D, TS+GPS+Leveling, traverses, direction sets, sideshots; Vitest cases for parsing/mode toggles and solves
+  - Docs/UI: list supported Star*Net codes/options, UI hints, surface parser errors with line numbers

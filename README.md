@@ -21,5 +21,5 @@ npm run dev
 ## Status
 - Core adjustment engine is in TypeScript modules under `src/engine` with React UI composed from `src/App.tsx` + `src/components`.
 - Lint/build/test pass in CI; formatting via Prettier/lint-staged.
-- UX: .dat upload/download, exclusion toggles with re-run, unit-scaled reporting, map/ellipse view.
-- Remaining: editable obs tables and deeper perf/worker hardening (see TODO.md).
+- UX: .dat upload/download, exclusion toggles with re-run, editable obs values/weights, true unit conversion (ft/m), map/ellipse view.
+- Performance guards added (conditioning/residual warnings); see TODO.md for any future worker offload ideas.
