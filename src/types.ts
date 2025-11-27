@@ -102,6 +102,18 @@ export interface ParseResult {
   logs: string[];
 }
 
+export type UnitsMode = 'm' | 'ft';
+export type CoordMode = '2D' | '3D';
+export type OrderMode = 'NE' | 'EN';
+export type DeltaMode = 'slope' | 'horiz'; // slope+zenith vs horiz+deltaH
+
+export interface ParseOptions {
+  units: UnitsMode;
+  coordMode: CoordMode;
+  order: OrderMode;
+  deltaMode: DeltaMode;
+}
+
 export interface AdjustmentResult {
   success: boolean;
   converged: boolean;

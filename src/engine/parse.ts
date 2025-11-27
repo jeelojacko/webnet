@@ -1,4 +1,4 @@
-import { dmsToRad, SEC_TO_RAD } from './angles';
+import { dmsToRad, SEC_TO_RAD } from './angles'
 import type {
   AngleObservation,
   DistanceObservation,
@@ -8,41 +8,81 @@ import type {
   LevelObservation,
   Observation,
   ParseResult,
-  Station,
   StationMap,
-} from '../types';
+  ParseOptions,
+} from '../types'
+
+const defaultParseOptions: ParseOptions = {
+  units: 'm',
+  coordMode: '3D',
+  order: 'EN',
+  deltaMode: 'slope',
+}
+
+const FT_PER_M = 3.280839895
 
 export const parseInput = (
   input: string,
   existingInstruments: InstrumentLibrary = {},
+  opts: Partial<ParseOptions> = {},
 ): ParseResult => {
-  const stations: StationMap = {};
-  const observations: Observation[] = [];
-  const instrumentLibrary: InstrumentLibrary = { ...existingInstruments };
-  const logs: string[] = [];
+  const stations: StationMap = {}
+  const observations: Observation[] = []
+  const instrumentLibrary: InstrumentLibrary = { ...existingInstruments }
+  const logs: string[] = []
+  const state: ParseOptions = { ...defaultParseOptions, ...opts }
 
-  const lines = input.split('\n');
-  let lineNum = 0;
-  let obsId = 0;
+  const lines = input.split('\n')
+  let lineNum = 0
+  let obsId = 0
 
   for (const raw of lines) {
-    lineNum += 1;
-    const line = raw.trim();
-    if (!line || line.startsWith('#')) continue;
+    lineNum += 1
+    const line = raw.trim()
+    if (!line || line.startsWith('#')) continue
 
-    const parts = line.split(/\s+/);
-    const code = parts[0]?.toUpperCase();
+    // Inline options
+    if (line.startsWith('.')) {
+      const parts = line.split(/\s+/)
+      const op = parts[0].toUpperCase()
+      if (op === '.UNITS' && parts[1]) {
+        state.units = parts[1].toLowerCase() === 'us' || parts[1].toLowerCase() === 'ft' ? 'ft' : 'm'
+        logs.push(`Units set to ${state.units}`)
+      } else if (op === '.COORD' && parts[1]) {
+        state.coordMode = parts[1].toUpperCase() === '2D' ? '2D' : '3D'
+        logs.push(`Coord mode set to ${state.coordMode}`)
+      } else if (op === '.ORDER' && parts[1]) {
+        const o = parts[1].toUpperCase()
+        if (o === 'NE' || o === 'EN') state.order = o as 'NE' | 'EN'
+        logs.push(`Order set to ${state.order}`)
+      } else if (op === '.2D') {
+        state.coordMode = '2D'
+        logs.push('Coord mode forced to 2D')
+      } else if (op === '.3D') {
+        state.coordMode = '3D'
+        logs.push('Coord mode forced to 3D')
+      } else if (op === '.DELTA' && parts[1]) {
+        state.deltaMode = parts[1].toUpperCase() === 'ON' ? 'horiz' : 'slope'
+        logs.push(`Delta mode set to ${state.deltaMode}`)
+      } else if (op === '.END') {
+        logs.push('END encountered; stopping parse')
+        break
+      }
+      continue
+    }
+
+    const parts = line.split(/\s+/)
+    const code = parts[0]?.toUpperCase()
 
     try {
       if (code === 'I') {
-        // I <CODE> <Desc-with-dashes> <dist_a_ppm> <dist_b_const> <angle_std(")> <gps_xy_std(m)> <lev_std(mm/km)>
-        const instCode = parts[1];
-        const desc = parts[2]?.replace(/-/g, ' ') ?? '';
-        const distA = parseFloat(parts[3]);
-        const distB = parseFloat(parts[4]);
-        const angStd = parseFloat(parts[5]);
-        const gpsStd = parseFloat(parts[6]);
-        const levStd = parseFloat(parts[7]);
+        const instCode = parts[1]
+        const desc = parts[2]?.replace(/-/g, ' ') ?? ''
+        const distA = parseFloat(parts[3])
+        const distB = parseFloat(parts[4])
+        const angStd = parseFloat(parts[5])
+        const gpsStd = parseFloat(parts[6])
+        const levStd = parseFloat(parts[7])
         const inst: Instrument = {
           code: instCode,
           desc,
@@ -51,31 +91,45 @@ export const parseInput = (
           angleStd_sec: angStd,
           gpsStd_xy: gpsStd,
           levStd_mmPerKm: levStd,
-        };
-        instrumentLibrary[instCode] = inst;
+        }
+        instrumentLibrary[instCode] = inst
       } else if (code === 'C') {
-        // C <ID> <E> <N> <H> [*]
-        const id = parts[1];
-        const east = parseFloat(parts[2]);
-        const north = parseFloat(parts[3]);
-        const h = parseFloat(parts[4]);
-        const isFixed = parts[5] === '*';
-        stations[id] = { x: east, y: north, h, fixed: isFixed };
+        const id = parts[1]
+        const numeric = parts.slice(2).map((p) => parseFloat(p)).filter((v) => !Number.isNaN(v))
+        const is3D = state.coordMode === '3D' || numeric.length >= 3
+        const nIdx = state.order === 'NE' ? 0 : 1
+        const eIdx = state.order === 'NE' ? 1 : 0
+        const hIdx = is3D ? 2 : -1
+        const north = numeric[nIdx] ?? 0
+        const east = numeric[eIdx] ?? 0
+        const h = hIdx >= 0 ? numeric[hIdx] : 0
+        const seStart = is3D ? 3 : 2
+        const sx = numeric[seStart]
+        const sy = numeric[seStart + 1]
+        const sh = numeric[seStart + 2]
+        const fixed = parts.includes('!') || parts.includes('*')
+        const toMeters = state.units === 'ft' ? 1 / FT_PER_M : 1
+        stations[id] = { x: east * toMeters, y: north * toMeters, h: h * toMeters, fixed }
+        if (!fixed) {
+          if (sx) (stations[id] as any).sx = sx * toMeters
+          if (sy) (stations[id] as any).sy = sy * toMeters
+          if (is3D && sh) (stations[id] as any).sh = sh * toMeters
+        }
       } else if (code === 'D') {
-        // D <InstCode> <SetID> <From> <To> <Dist> <Std_raw>
-        const instCode = parts[1];
-        const setId = parts[2];
-        const from = parts[3];
-        const to = parts[4];
-        const dist = parseFloat(parts[5]);
-        const stdRaw = parseFloat(parts[6]);
+        const hasInst = parts.length > 5 && /[A-Za-z]/.test(parts[1]) && /[A-Za-z]/.test(parts[2])
+        const instCode = hasInst ? parts[1] : ''
+        const setId = hasInst ? parts[2] : ''
+        const from = hasInst ? parts[3] : parts[1]
+        const to = hasInst ? parts[4] : parts[2]
+        const dist = parseFloat(hasInst ? parts[5] : parts[3])
+        const stdRaw = parseFloat(hasInst ? parts[6] : parts[4] || '0')
 
-        const inst = instrumentLibrary[instCode];
-        let sigma = stdRaw;
+        const inst = instCode ? instrumentLibrary[instCode] : undefined
+        let sigma = stdRaw
         if (inst) {
-          const a = inst.distA_ppm * 1e-6 * dist;
-          const b = inst.distB_const;
-          sigma = Math.sqrt(a * a + b * b + stdRaw * stdRaw);
+          const a = inst.distA_ppm * 1e-6 * dist
+          const b = inst.distB_const
+          sigma = Math.sqrt(a * a + b * b + stdRaw * stdRaw)
         }
 
         const obs: DistanceObservation = {
@@ -86,26 +140,26 @@ export const parseInput = (
           setId,
           from,
           to,
-          obs: dist,
-          stdDev: sigma,
-        };
-        observations.push(obs);
+          obs: state.units === 'ft' ? dist / FT_PER_M : dist,
+          stdDev: state.units === 'ft' ? sigma / FT_PER_M : sigma,
+        }
+        observations.push(obs)
       } else if (code === 'A') {
-        // A <InstCode> <SetID> <At> <From> <To> <Angle(dms)> <Std(")>
-        const instCode = parts[1];
-        const setId = parts[2];
-        const at = parts[3];
-        const from = parts[4];
-        const to = parts[5];
-        const angleRad = dmsToRad(parts[6]);
-        const stdRawArcsec = parseFloat(parts[7]);
+        const tokens = parts[1].includes('-') ? parts[1].split('-') : []
+        const hasInst = tokens.length === 0
+        const instCode = hasInst ? parts[1] : ''
+        const setId = hasInst ? parts[2] : ''
+        const at = hasInst ? parts[3] : tokens[0]
+        const from = hasInst ? parts[4] : tokens[1]
+        const to = hasInst ? parts[5] : tokens[2]
+        const angToken = hasInst ? parts[6] : parts[2]
+        const angleRad = dmsToRad(angToken)
+        const stdRawArcsec = parseFloat(hasInst ? parts[7] : parts[3] || '0')
 
-        const inst = instrumentLibrary[instCode];
-        let sigmaSec = stdRawArcsec;
+        const inst = instCode ? instrumentLibrary[instCode] : undefined
+        let sigmaSec = stdRawArcsec
         if (inst && inst.angleStd_sec > 0) {
-          sigmaSec = Math.sqrt(
-            stdRawArcsec * stdRawArcsec + inst.angleStd_sec * inst.angleStd_sec,
-          );
+          sigmaSec = Math.sqrt(stdRawArcsec * stdRawArcsec + inst.angleStd_sec * inst.angleStd_sec)
         }
 
         const obs: AngleObservation = {
@@ -118,21 +172,20 @@ export const parseInput = (
           to,
           obs: angleRad,
           stdDev: sigmaSec * SEC_TO_RAD,
-        };
-        observations.push(obs);
+        }
+        observations.push(obs)
       } else if (code === 'G') {
-        // G <InstCode> <From> <To> <dE> <dN> <Std_XY>
-        const instCode = parts[1];
-        const from = parts[2];
-        const to = parts[3];
-        const dE = parseFloat(parts[4]);
-        const dN = parseFloat(parts[5]);
-        const stdXY = parseFloat(parts[6]);
+        const instCode = parts[1]
+        const from = parts[2]
+        const to = parts[3]
+        const dE = parseFloat(parts[4])
+        const dN = parseFloat(parts[5])
+        const stdXY = parseFloat(parts[6])
 
-        const inst = instrumentLibrary[instCode];
-        let sigma = stdXY;
+        const inst = instrumentLibrary[instCode]
+        let sigma = stdXY
         if (inst && inst.gpsStd_xy > 0) {
-          sigma = Math.sqrt(stdXY * stdXY + inst.gpsStd_xy * inst.gpsStd_xy);
+          sigma = Math.sqrt(stdXY * stdXY + inst.gpsStd_xy * inst.gpsStd_xy)
         }
 
         const obs: GpsObservation = {
@@ -141,24 +194,26 @@ export const parseInput = (
           instCode,
           from,
           to,
-          obs: { dE, dN },
-          stdDev: sigma,
-        };
-        observations.push(obs);
+          obs: {
+            dE: state.units === 'ft' ? dE / FT_PER_M : dE,
+            dN: state.units === 'ft' ? dN / FT_PER_M : dN,
+          },
+          stdDev: state.units === 'ft' ? sigma / FT_PER_M : sigma,
+        }
+        observations.push(obs)
       } else if (code === 'L') {
-        // L <InstCode> <From> <To> <dH> <Len(km)> <Std(mm/km-raw)>
-        const instCode = parts[1];
-        const from = parts[2];
-        const to = parts[3];
-        const dH = parseFloat(parts[4]);
-        const lenKm = parseFloat(parts[5]);
-        const stdMmPerKmRaw = parseFloat(parts[6]);
+        const instCode = parts[1]
+        const from = parts[2]
+        const to = parts[3]
+        const dH = parseFloat(parts[4])
+        const lenKm = parseFloat(parts[5])
+        const stdMmPerKmRaw = parseFloat(parts[6])
 
-        const inst = instrumentLibrary[instCode];
-        let sigma = (stdMmPerKmRaw * lenKm) / 1000.0;
+        const inst = instrumentLibrary[instCode]
+        let sigma = (stdMmPerKmRaw * lenKm) / 1000.0
         if (inst && inst.levStd_mmPerKm > 0) {
-          const lib = (inst.levStd_mmPerKm * lenKm) / 1000.0;
-          sigma = Math.sqrt(sigma * sigma + lib * lib);
+          const lib = (inst.levStd_mmPerKm * lenKm) / 1000.0
+          sigma = Math.sqrt(sigma * sigma + lib * lib)
         }
 
         const obs: LevelObservation = {
@@ -167,22 +222,22 @@ export const parseInput = (
           instCode,
           from,
           to,
-          obs: dH,
+          obs: state.units === 'ft' ? dH / FT_PER_M : dH,
           lenKm,
-          stdDev: sigma,
-        };
-        observations.push(obs);
+          stdDev: state.units === 'ft' ? sigma / FT_PER_M : sigma,
+        }
+        observations.push(obs)
       }
     } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
-      logs.push(`Error on line ${lineNum}: ${msg}`);
+      const msg = e instanceof Error ? e.message : String(e)
+      logs.push(`Error on line ${lineNum}: ${msg}`)
     }
   }
 
-  const unknowns = Object.keys(stations).filter((id) => !stations[id]?.fixed);
+  const unknowns = Object.keys(stations).filter((id) => !stations[id]?.fixed)
   logs.push(
     `Stations: ${Object.keys(stations).length} (unknown: ${unknowns.length}). Obs: ${observations.length}`,
-  );
+  )
 
-  return { stations, observations, instrumentLibrary, unknowns, logs };
-};
+  return { stations, observations, instrumentLibrary, unknowns, logs }
+}
