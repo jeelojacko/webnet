@@ -251,6 +251,7 @@ const App: React.FC = () => {
       maxIterations: settings.maxIterations,
       instrumentLibrary,
       excludeIds: excludedIds,
+      inputUnit: settings.units,
     })
 
     const solved = engine.solve()

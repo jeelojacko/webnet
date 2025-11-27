@@ -16,7 +16,10 @@ interface EngineOptions {
   instrumentLibrary?: InstrumentLibrary;
   convergenceThreshold?: number;
   excludeIds?: Set<number>;
+  inputUnit?: 'm' | 'ft';
 }
+
+const FT_PER_M = 3.280839895;
 
 export class LSAEngine {
   input: string;
@@ -33,6 +36,7 @@ export class LSAEngine {
   instrumentLibrary: InstrumentLibrary;
   private Qxx: number[][] | null = null;
   private excludeIds?: Set<number>;
+  private inputUnit: 'm' | 'ft';
 
   constructor({
     input,
@@ -40,12 +44,14 @@ export class LSAEngine {
     instrumentLibrary = {},
     convergenceThreshold = 0.0001,
     excludeIds,
+    inputUnit = 'm',
   }: EngineOptions) {
     this.input = input;
     this.maxIterations = maxIterations;
     this.instrumentLibrary = { ...instrumentLibrary };
     this.convergenceThreshold = convergenceThreshold;
     this.excludeIds = excludeIds;
+    this.inputUnit = inputUnit;
   }
 
   private log(msg: string) {
@@ -72,6 +78,29 @@ export class LSAEngine {
     this.unknowns = parsed.unknowns;
     this.instrumentLibrary = parsed.instrumentLibrary;
     this.logs = [...parsed.logs];
+
+    if (this.inputUnit === 'ft') {
+      // Normalize all geometry/obs to meters for computation
+      Object.values(this.stations).forEach((s) => {
+        s.x /= FT_PER_M;
+        s.y /= FT_PER_M;
+        s.h /= FT_PER_M;
+      });
+
+      this.observations.forEach((obs) => {
+        if (obs.type === 'dist') {
+          obs.obs /= FT_PER_M;
+          obs.stdDev /= FT_PER_M;
+        } else if (obs.type === 'gps') {
+          obs.obs.dE /= FT_PER_M;
+          obs.obs.dN /= FT_PER_M;
+          obs.stdDev /= FT_PER_M;
+        } else if (obs.type === 'lev') {
+          obs.obs /= FT_PER_M;
+          obs.stdDev /= FT_PER_M;
+        }
+      });
+    }
 
     if (this.unknowns.length === 0) {
       this.log('No unknown stations to solve.');
