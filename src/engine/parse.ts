@@ -23,6 +23,7 @@ export const parseInput = (
 
   const lines = input.split('\n');
   let lineNum = 0;
+  let obsId = 0;
 
   for (const raw of lines) {
     lineNum += 1;
@@ -78,6 +79,7 @@ export const parseInput = (
         }
 
         const obs: DistanceObservation = {
+          id: obsId++,
           type: 'dist',
           subtype: 'ts',
           instCode,
@@ -107,6 +109,7 @@ export const parseInput = (
         }
 
         const obs: AngleObservation = {
+          id: obsId++,
           type: 'angle',
           instCode,
           setId,
@@ -133,6 +136,7 @@ export const parseInput = (
         }
 
         const obs: GpsObservation = {
+          id: obsId++,
           type: 'gps',
           instCode,
           from,
@@ -158,6 +162,7 @@ export const parseInput = (
         }
 
         const obs: LevelObservation = {
+          id: obsId++,
           type: 'lev',
           instCode,
           from,

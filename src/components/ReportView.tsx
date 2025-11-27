@@ -1,26 +1,33 @@
-import React, { useMemo } from 'react'
-import { AlertTriangle, CheckCircle, FileText } from 'lucide-react'
-import { RAD_TO_DEG, radToDmsStr } from '../engine/angles'
+import React from 'react'
 import type { AdjustmentResult, Observation } from '../types'
+import { RAD_TO_DEG, radToDmsStr } from '../engine/angles'
 
-type Units = 'm' | 'ft'
+const FT_PER_M = 3.280839895
 
 interface ReportViewProps {
   result: AdjustmentResult
-  units: Units
+  units: 'm' | 'ft'
+  excludedIds: Set<number>
+  onToggleExclude: (id: number) => void
+  onReRun: () => void
+  onClearExclusions: () => void
 }
 
-const ReportView: React.FC<ReportViewProps> = ({ result, units }) => {
+const ReportView: React.FC<ReportViewProps> = ({
+  result,
+  units,
+  excludedIds,
+  onToggleExclude,
+  onReRun,
+  onClearExclusions,
+}) => {
+  const unitScale = units === 'ft' ? FT_PER_M : 1
   const ellipseUnit = units === 'm' ? 'cm' : 'in'
   const ellipseScale = units === 'm' ? 100 : 12
 
-  const sortedObs = useMemo(
-    () =>
-      [...result.observations]
-        .map((obs, index) => ({ ...obs, originalIndex: index }))
-        .sort((a, b) => Math.abs((b as Observation).stdRes || 0) - Math.abs((a as Observation).stdRes || 0)),
-    [result.observations],
-  )
+  const sortedObs = [...result.observations]
+    .map((obs, index) => ({ ...obs, originalIndex: index }))
+    .sort((a, b) => Math.abs((b as Observation).stdRes || 0) - Math.abs((a as Observation).stdRes || 0))
 
   const byType = (type: Observation['type']) => sortedObs.filter((o) => o.type === type)
 
@@ -32,11 +39,13 @@ const ReportView: React.FC<ReportViewProps> = ({ result, units }) => {
       <div className="mb-6 bg-slate-900/30 border border-slate-800/50 rounded overflow-hidden">
         <div className="bg-slate-800/50 px-4 py-2 border-b border-slate-700 flex items-center justify-between">
           <span className="text-blue-400 font-bold uppercase tracking-wider text-xs">{title}</span>
+          <span className="text-[10px] text-slate-500">Toggle exclusions below and click Re-run</span>
         </div>
         <table className="w-full text-left text-xs">
           <thead>
             <tr className="text-slate-500 border-b border-slate-800/50">
-              <th className="py-2 px-4">Type</th>
+              <th className="py-2 px-4">Use</th>
+              <th className="py-2">Type</th>
               <th className="py-2">Stations</th>
               <th className="py-2 text-right">Obs</th>
               <th className="py-2 text-right">Calc</th>
@@ -48,6 +57,7 @@ const ReportView: React.FC<ReportViewProps> = ({ result, units }) => {
             {obsList.map((obs, i) => {
               const isFail = Math.abs(obs.stdRes || 0) > 3
               const isWarn = Math.abs(obs.stdRes || 0) > 1 && !isFail
+              const excluded = excludedIds.has(obs.id)
 
               let stationsLabel = ''
               let obsStr = ''
@@ -64,34 +74,42 @@ const ReportView: React.FC<ReportViewProps> = ({ result, units }) => {
                     : '-'
               } else if (obs.type === 'dist') {
                 stationsLabel = `${obs.from}-${obs.to}`
-                obsStr = obs.obs.toFixed(4)
-                calcStr = obs.calc != null ? (obs.calc as number).toFixed(4) : '-'
-                resStr = obs.residual != null ? (obs.residual as number).toFixed(4) : '-'
+                obsStr = (obs.obs * unitScale).toFixed(4)
+                calcStr = obs.calc != null ? ((obs.calc as number) * unitScale).toFixed(4) : '-'
+                resStr = obs.residual != null ? ((obs.residual as number) * unitScale).toFixed(4) : '-'
               } else if (obs.type === 'gps') {
                 stationsLabel = `${obs.from}-${obs.to}`
-                obsStr = `dE=${obs.obs.dE.toFixed(3)}, dN=${obs.obs.dN.toFixed(3)}`
+                obsStr = `dE=${(obs.obs.dE * unitScale).toFixed(3)}, dN=${(obs.obs.dN * unitScale).toFixed(3)}`
                 calcStr =
                   obs.calc != null
-                    ? `dE=${(obs.calc as { dE: number }).dE.toFixed(3)}, dN=${(
+                    ? `dE=${((obs.calc as { dE: number }).dE * unitScale).toFixed(3)}, dN=${(
                         obs.calc as { dN: number; dE: number }
                       ).dN.toFixed(3)}`
                     : '-'
                 resStr =
                   obs.residual != null
-                    ? `vE=${(obs.residual as { vE: number }).vE.toFixed(3)}, vN=${(
+                    ? `vE=${((obs.residual as { vE: number }).vE * unitScale).toFixed(3)}, vN=${(
                         obs.residual as { vN: number; vE: number }
                       ).vN.toFixed(3)}`
                     : '-'
               } else if (obs.type === 'lev') {
                 stationsLabel = `${obs.from}-${obs.to}`
-                obsStr = obs.obs.toFixed(4)
-                calcStr = obs.calc != null ? (obs.calc as number).toFixed(4) : '-'
-                resStr = obs.residual != null ? (obs.residual as number).toFixed(4) : '-'
+                obsStr = (obs.obs * unitScale).toFixed(4)
+                calcStr = obs.calc != null ? ((obs.calc as number) * unitScale).toFixed(4) : '-'
+                resStr = obs.residual != null ? ((obs.residual as number) * unitScale).toFixed(4) : '-'
               }
 
               return (
-                <tr key={i} className="border-b border-slate-800/30">
-                  <td className="py-1 px-4 uppercase text-slate-500">{obs.type}</td>
+                <tr key={i} className={`border-b border-slate-800/30 ${excluded ? 'opacity-50' : ''}`}>
+                  <td className="py-1 px-4">
+                    <input
+                      type="checkbox"
+                      checked={!excluded}
+                      onChange={() => onToggleExclude(obs.id)}
+                      className="accent-blue-500"
+                    />
+                  </td>
+                  <td className="py-1 uppercase text-slate-500">{obs.type}</td>
                   <td className="py-1">{stationsLabel}</td>
                   <td className="py-1 text-right font-mono text-slate-400">{obsStr}</td>
                   <td className="py-1 text-right font-mono text-slate-500">{calcStr}</td>
@@ -116,13 +134,30 @@ const ReportView: React.FC<ReportViewProps> = ({ result, units }) => {
 
   return (
     <div className="p-6 font-mono text-sm w-full">
+      <div className="flex items-center justify-between mb-4 text-xs text-slate-400">
+        <div className="space-x-3">
+          <button
+            onClick={onReRun}
+            className="px-3 py-1 bg-green-700 hover:bg-green-600 text-white rounded"
+          >
+            Re-run with exclusions
+          </button>
+          <button onClick={onClearExclusions} className="px-3 py-1 bg-slate-700 rounded">
+            Reset exclusions
+          </button>
+        </div>
+        <div className="space-x-2 text-slate-500">
+          <span>Unit scale: {unitScale.toFixed(4)} ({units})</span>
+        </div>
+      </div>
+
       {analysis.length > 0 && (
         <div className="mb-8">
           <h2 className="text-xl font-bold text-white mb-4">Outlier Analysis (&gt; 2 sigma)</h2>
           <div className="bg-red-900/10 border border-red-800/50 rounded p-3 flex items-start space-x-2 mb-4">
             <AlertTriangle className="text-red-400 mt-0.5" size={18} />
             <div className="text-xs text-red-100">
-              Residuals above 2.0 sigma are highlighted. Consider re-weighting or removing gross errors.
+              Residuals above 2.0 sigma are highlighted. Toggle them off and re-run to test re-weighting.
             </div>
           </div>
         </div>
@@ -176,9 +211,9 @@ const ReportView: React.FC<ReportViewProps> = ({ result, units }) => {
               {Object.entries(result.stations).map(([id, stn]) => (
                 <tr key={id} className="border-b border-slate-800/50 hover:bg-slate-900/50 transition-colors">
                   <td className="py-1 font-medium text-white">{id}</td>
-                  <td className="py-1 text-right text-yellow-100/90">{stn.y.toFixed(4)}</td>
-                  <td className="py-1 text-right text-yellow-100/90">{stn.x.toFixed(4)}</td>
-                  <td className="py-1 text-right text-yellow-100/90">{stn.h.toFixed(4)}</td>
+                  <td className="py-1 text-right text-yellow-100/90">{(stn.y * unitScale).toFixed(4)}</td>
+                  <td className="py-1 text-right text-yellow-100/90">{(stn.x * unitScale).toFixed(4)}</td>
+                  <td className="py-1 text-right text-yellow-100/90">{(stn.h * unitScale).toFixed(4)}</td>
                   <td className="py-1 text-center">
                     {stn.fixed ? (
                       <span className="text-xs bg-slate-700 text-slate-300 px-1.5 py-0.5 rounded">FIXED</span>
@@ -188,10 +223,12 @@ const ReportView: React.FC<ReportViewProps> = ({ result, units }) => {
                   </td>
                   <td className="py-1 text-right text-xs text-slate-400">
                     {stn.errorEllipse
-                      ? `${(stn.errorEllipse.semiMajor * ellipseScale).toFixed(1)} / ${(stn.errorEllipse.semiMinor * ellipseScale).toFixed(1)}`
+                      ? `${(stn.errorEllipse.semiMajor * ellipseScale * (units === 'ft' ? 0.0328084 : 1)).toFixed(1)} / ${(
+                          stn.errorEllipse.semiMinor * ellipseScale * (units === 'ft' ? 0.0328084 : 1)
+                        ).toFixed(1)}`
                       : '-'}
                   </td>
-                  <td className="py-1 text-right text-xs text-slate-400">{stn.sH != null ? stn.sH.toFixed(3) : '-'}</td>
+                  <td className="py-1 text-right text-xs text-slate-400">{stn.sH != null ? (stn.sH * unitScale).toFixed(3) : '-'}</td>
                 </tr>
               ))}
             </tbody>
@@ -203,6 +240,7 @@ const ReportView: React.FC<ReportViewProps> = ({ result, units }) => {
         <h3 className="text-blue-400 font-bold mb-3 text-base uppercase tracking-wider">Observations & Residuals</h3>
         <div className="bg-slate-800/50 rounded p-2 mb-2 text-xs text-slate-400 flex items-center justify-between">
           <span>Sorted by |StdRes|</span>
+          <span>Toggle rows to exclude and press Re-run</span>
         </div>
         {renderTable(byType('angle'), 'Angles (TS)')}
         {renderTable(byType('dist'), 'Distances (TS)')}

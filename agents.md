@@ -43,16 +43,14 @@ npm run format:check # Prettier check
   - Math helpers: src/engine/matrix.ts (zeros/transpose/multiply/inv), src/engine/angles.ts (RAD/DEG/SEC, dms helpers).
   - Parser: src/engine/parse.ts ingests Star*Net-like text into typed stations/observations/instruments.
   - Engine: src/engine/adjust.ts (LSAEngine) builds A/L/P, normals N=(A^T P A), iterates corrections, computes SEUW/DOF, residuals, ellipses, sH, logs.
-  - UI: src/App.tsx (shell) manages input/settings/layout; presentational components in src/components (InputPane, ReportView).
+  - UI: src/App.tsx (shell) manages input/settings/layout; presentational components in src/components (InputPane, ReportView, MapView).
   - Tests: Vitest specs in /tests (angles, matrix, parser, engine) with fixtures in /tests/fixtures.
 - CI: GitHub Actions workflow (.github/workflows/ci.yml) runs lint, vitest (--runInBand), and build on pushes/PRs to main.
 - Data flow: user edits textarea -> handleRun instantiates LSAEngine with settings -> solve() mutates stations/observations -> result stored in state -> ReportView renders tables.
 
 ## Suggested Next Steps
-- Split UI into modules (components/Layout, components/Report, components/InputPane) to improve readability and testability.
-- Add CI + coverage reporting for Vitest unit tests (matrix, angles, parser, engine fixtures already present).
-- Add Prettier + lint-staged for consistent formatting; remove unused src/App.css if not needed.
-- Improve UX: file upload/save for .dat, editable tables, unit conversion that affects computation, map/graph view (Leaflet/D3) to visualize network and ellipses, re-weighting/outlier suppression controls.
+- Editable obs tables: inline edits to values/weights and re-run pipeline.
+- True computational unit conversion (ft/m) across engine inputs/outputs (currently display-only scaling).
 - Performance: guard matrix inversion against singularity, add convergence diagnostics, consider a worker for large networks.
 
 ## Todo

@@ -20,5 +20,6 @@ npm run dev
 
 ## Status
 - Core adjustment engine is in TypeScript modules under `src/engine` with React UI composed from `src/App.tsx` + `src/components`.
-- Lint and build are passing with TS-aware ESLint.
-- Next: add Vitest coverage, formatting tooling, and UX/performance improvements (see TODO.md).
+- Lint/build/test pass in CI; formatting via Prettier/lint-staged.
+- UX: .dat upload/download, exclusion toggles with re-run, unit-scaled reporting, map/ellipse view.
+- Remaining: editable obs tables and deeper perf/worker hardening (see TODO.md).

@@ -6,6 +6,7 @@ import {
   AlertTriangle,
   CheckCircle,
   FileText,
+  Map as MapIcon,
   Minimize2,
   PanelLeftClose,
   PanelLeftOpen,
@@ -15,6 +16,7 @@ import {
 } from 'lucide-react'
 import InputPane from './components/InputPane'
 import ReportView from './components/ReportView'
+import MapView from './components/MapView'
 import { LSAEngine } from './engine/adjust'
 import type { AdjustmentResult, InstrumentLibrary } from './types'
 
@@ -124,17 +126,20 @@ type SettingsState = {
   units: Units
 }
 
+type TabKey = 'report' | 'map'
+
 /****************************
  * UI COMPONENTS
  ****************************/
 const App: React.FC = () => {
   const [input, setInput] = useState<string>(DEFAULT_INPUT)
   const [result, setResult] = useState<AdjustmentResult | null>(null)
-  const [activeTab, setActiveTab] = useState<'report'>('report')
+  const [activeTab, setActiveTab] = useState<TabKey>('report')
   const [settings, setSettings] = useState<SettingsState>({ maxIterations: 10, units: 'm' })
   const [selectedInstrument, setSelectedInstrument] = useState('')
   const [splitPercent, setSplitPercent] = useState(35) // left pane width (%)
   const [isSidebarOpen, setIsSidebarOpen] = useState(true)
+  const [excludedIds, setExcludedIds] = useState<Set<number>>(new Set())
   const fileInputRef = useRef<HTMLInputElement | null>(null)
   const layoutRef = useRef<HTMLDivElement | null>(null)
   const isResizingRef = useRef(false)
@@ -245,6 +250,7 @@ const App: React.FC = () => {
       input,
       maxIterations: settings.maxIterations,
       instrumentLibrary,
+      excludeIds: excludedIds,
     })
 
     const solved = engine.solve()
@@ -260,6 +266,17 @@ const App: React.FC = () => {
     const val = parseInt(e.target.value, 10) || 1
     setSettings({ ...settings, maxIterations: val })
   }
+
+  const toggleExclude = (id: number) => {
+    setExcludedIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  const clearExclusions = () => setExcludedIds(new Set())
 
   return (
     <div className="fixed inset-0 flex flex-col bg-slate-900 text-slate-100 font-sans overflow-hidden">
@@ -400,6 +417,16 @@ const App: React.FC = () => {
               >
                 <FileText size={16} /> <span>Adjustment Report</span>
               </button>
+              <button
+                onClick={() => setActiveTab('map')}
+                className={`px-6 py-3 text-sm font-medium flex items-center space-x-2 border-b-2 transition-colors ${
+                  activeTab === 'map'
+                    ? 'border-blue-500 text-white bg-slate-800'
+                    : 'border-transparent text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                <MapIcon size={16} /> <span>Map & Ellipses</span>
+              </button>
             </div>
             {!isSidebarOpen && (
               <button
@@ -418,7 +445,19 @@ const App: React.FC = () => {
                 <p>Paste/edit data, then press "Adjust" to solve.</p>
               </div>
             ) : (
-              <ReportView result={result} units={settings.units} />
+              <>
+                {activeTab === 'report' && (
+                  <ReportView
+                    result={result}
+                    units={settings.units}
+                    excludedIds={excludedIds}
+                    onToggleExclude={toggleExclude}
+                    onReRun={handleRun}
+                    onClearExclusions={clearExclusions}
+                  />
+                )}
+                {activeTab === 'map' && <MapView result={result} units={settings.units} />}
+              </>
             )}
           </div>
         </div>

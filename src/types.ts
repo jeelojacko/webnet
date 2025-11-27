@@ -30,6 +30,7 @@ export interface Station {
 export type StationMap = Record<StationId, Station>;
 
 interface ObservationBase {
+  id: number;
   type: 'dist' | 'angle' | 'gps' | 'lev';
   instCode: string;
   stdDev: number;

@@ -15,6 +15,7 @@ interface EngineOptions {
   maxIterations?: number;
   instrumentLibrary?: InstrumentLibrary;
   convergenceThreshold?: number;
+  excludeIds?: Set<number>;
 }
 
 export class LSAEngine {
@@ -31,12 +32,20 @@ export class LSAEngine {
   converged = false;
   instrumentLibrary: InstrumentLibrary;
   private Qxx: number[][] | null = null;
+  private excludeIds?: Set<number>;
 
-  constructor({ input, maxIterations = 10, instrumentLibrary = {}, convergenceThreshold = 0.0001 }: EngineOptions) {
+  constructor({
+    input,
+    maxIterations = 10,
+    instrumentLibrary = {},
+    convergenceThreshold = 0.0001,
+    excludeIds,
+  }: EngineOptions) {
     this.input = input;
     this.maxIterations = maxIterations;
     this.instrumentLibrary = { ...instrumentLibrary };
     this.convergenceThreshold = convergenceThreshold;
+    this.excludeIds = excludeIds;
   }
 
   private log(msg: string) {
@@ -57,7 +66,9 @@ export class LSAEngine {
   solve(): AdjustmentResult {
     const parsed = parseInput(this.input, this.instrumentLibrary);
     this.stations = parsed.stations;
-    this.observations = parsed.observations;
+    this.observations = this.excludeIds
+      ? parsed.observations.filter((o) => !this.excludeIds?.has(o.id))
+      : parsed.observations;
     this.unknowns = parsed.unknowns;
     this.instrumentLibrary = parsed.instrumentLibrary;
     this.logs = [...parsed.logs];
