@@ -1,4 +1,5 @@
 import React from 'react'
+import { AlertTriangle, CheckCircle } from 'lucide-react'
 import type { AdjustmentResult, Observation } from '../types'
 import { RAD_TO_DEG, radToDmsStr } from '../engine/angles'
 
@@ -8,7 +9,7 @@ interface ReportViewProps {
   result: AdjustmentResult
   units: 'm' | 'ft'
   excludedIds: Set<number>
-  onToggleExclude: (id: number) => void
+  onToggleExclude: (_id: number) => void
   onReRun: () => void
   onClearExclusions: () => void
 }
@@ -250,7 +251,7 @@ const ReportView: React.FC<ReportViewProps> = ({
 
       <div className="mt-8 bg-slate-900 p-4 rounded border border-slate-800 font-mono text-xs text-slate-400">
         <div className="font-bold text-slate-300 mb-2 uppercase">Processing Log</div>
-        {result.logs.map((l, i) => (
+          {result.logs.map((l, i) => (
           <div key={i}>{l}</div>
         ))}
       </div>
