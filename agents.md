@@ -25,8 +25,12 @@
 npm install      # install deps
 npm run dev      # start Vite dev server
 npm run lint     # ESLint over repo
+npm run test     # Vitest (watch)
+npm run test:run # Vitest (CI/one-shot)
 npm run build    # production build
 npm run preview  # preview built assets
+npm run format   # Prettier write
+npm run format:check # Prettier check
 ```
 
 ## Architecture
@@ -39,12 +43,20 @@ npm run preview  # preview built assets
   - Math helpers: src/engine/matrix.ts (zeros/transpose/multiply/inv), src/engine/angles.ts (RAD/DEG/SEC, dms helpers).
   - Parser: src/engine/parse.ts ingests Star*Net-like text into typed stations/observations/instruments.
   - Engine: src/engine/adjust.ts (LSAEngine) builds A/L/P, normals N=(A^T P A), iterates corrections, computes SEUW/DOF, residuals, ellipses, sH, logs.
-  - UI: src/App.tsx (still monolithic) manages input/settings, runs LSAEngine, renders report (tables, summary, outlier banner, logs).
+  - UI: src/App.tsx (shell) manages input/settings/layout; presentational components in src/components (InputPane, ReportView).
+  - Tests: Vitest specs in /tests (angles, matrix, parser, engine) with fixtures in /tests/fixtures.
+- CI: GitHub Actions workflow (.github/workflows/ci.yml) runs lint, vitest (--runInBand), and build on pushes/PRs to main.
 - Data flow: user edits textarea -> handleRun instantiates LSAEngine with settings -> solve() mutates stations/observations -> result stored in state -> ReportView renders tables.
 
 ## Suggested Next Steps
 - Split UI into modules (components/Layout, components/Report, components/InputPane) to improve readability and testability.
-- Add Vitest unit tests for matrix inversion, parsing, angle handling, and a golden network fixture; add CI lint/test.
+- Add CI + coverage reporting for Vitest unit tests (matrix, angles, parser, engine fixtures already present).
 - Add Prettier + lint-staged for consistent formatting; remove unused src/App.css if not needed.
 - Improve UX: file upload/save for .dat, editable tables, unit conversion that affects computation, map/graph view (Leaflet/D3) to visualize network and ellipses, re-weighting/outlier suppression controls.
 - Performance: guard matrix inversion against singularity, add convergence diagnostics, consider a worker for large networks.
+
+## Todo
+- See TODO.md for the current checklist (completed and planned items).
+
+## Process Note
+- Update TODO.md, README.md, and agents.md after every batch of updates.
