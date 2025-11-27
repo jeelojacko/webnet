@@ -90,6 +90,10 @@ export type Observation =
   | GpsObservation
   | LevelObservation;
 
+export type ObservationOverride =
+  | { obs?: number; stdDev?: number }
+  | { obs?: { dE: number; dN: number }; stdDev?: number };
+
 export interface ParseResult {
   stations: StationMap;
   observations: Observation[];

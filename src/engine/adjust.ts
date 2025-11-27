@@ -1,4 +1,4 @@
-import { RAD_TO_DEG } from './angles';
+import { RAD_TO_DEG, DEG_TO_RAD } from './angles';
 import { inv, multiply, transpose, zeros } from './matrix';
 import { parseInput } from './parse';
 import type {
@@ -8,6 +8,7 @@ import type {
   StationId,
   StationMap,
   InstrumentLibrary,
+  ObservationOverride,
 } from '../types';
 
 interface EngineOptions {
@@ -17,6 +18,7 @@ interface EngineOptions {
   convergenceThreshold?: number;
   excludeIds?: Set<number>;
   inputUnit?: 'm' | 'ft';
+  overrides?: Record<number, ObservationOverride>;
 }
 
 const FT_PER_M = 3.280839895;
@@ -37,6 +39,7 @@ export class LSAEngine {
   private Qxx: number[][] | null = null;
   private excludeIds?: Set<number>;
   private inputUnit: 'm' | 'ft';
+  private overrides?: Record<number, ObservationOverride>;
 
   constructor({
     input,
@@ -45,6 +48,7 @@ export class LSAEngine {
     convergenceThreshold = 0.0001,
     excludeIds,
     inputUnit = 'm',
+    overrides,
   }: EngineOptions) {
     this.input = input;
     this.maxIterations = maxIterations;
@@ -52,6 +56,7 @@ export class LSAEngine {
     this.convergenceThreshold = convergenceThreshold;
     this.excludeIds = excludeIds;
     this.inputUnit = inputUnit;
+    this.overrides = overrides;
   }
 
   private log(msg: string) {
@@ -78,6 +83,27 @@ export class LSAEngine {
     this.unknowns = parsed.unknowns;
     this.instrumentLibrary = parsed.instrumentLibrary;
     this.logs = [...parsed.logs];
+
+    // Apply overrides before any unit normalization
+    if (this.overrides) {
+      this.observations.forEach((obs) => {
+        const over = this.overrides?.[obs.id];
+        if (!over) return;
+        if (over.stdDev != null) {
+          obs.stdDev = over.stdDev;
+        }
+        if (over.obs != null) {
+          if (obs.type === 'angle' && typeof over.obs === 'number') {
+            obs.obs = (over.obs as number) * DEG_TO_RAD;
+          } else if ((obs.type === 'dist' || obs.type === 'lev') && typeof over.obs === 'number') {
+            obs.obs = over.obs as number;
+          } else if (obs.type === 'gps' && typeof over.obs === 'object') {
+            const val = over.obs as { dE: number; dN: number };
+            obs.obs = { dE: val.dE, dN: val.dN };
+          }
+        }
+      });
+    }
 
     if (this.inputUnit === 'ft') {
       // Normalize all geometry/obs to meters for computation

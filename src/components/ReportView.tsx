@@ -12,6 +12,9 @@ interface ReportViewProps {
   onToggleExclude: (_id: number) => void
   onReRun: () => void
   onClearExclusions: () => void
+  overrides: Record<number, { obs?: number | { dE: number; dN: number }; stdDev?: number }>
+  onOverride: (_id: number, _payload: { obs?: number | { dE: number; dN: number }; stdDev?: number }) => void
+  onResetOverrides: () => void
 }
 
 const ReportView: React.FC<ReportViewProps> = ({
@@ -21,6 +24,9 @@ const ReportView: React.FC<ReportViewProps> = ({
   onToggleExclude,
   onReRun,
   onClearExclusions,
+  overrides,
+  onOverride,
+  onResetOverrides,
 }) => {
   const unitScale = units === 'ft' ? FT_PER_M : 1
   const ellipseUnit = units === 'm' ? 'cm' : 'in'
@@ -59,28 +65,27 @@ const ReportView: React.FC<ReportViewProps> = ({
               const isFail = Math.abs(obs.stdRes || 0) > 3
               const isWarn = Math.abs(obs.stdRes || 0) > 1 && !isFail
               const excluded = excludedIds.has(obs.id)
+              const override = overrides[obs.id]
 
               let stationsLabel = ''
-              let obsStr = ''
               let calcStr = ''
               let resStr = ''
+              let stdDevVal = obs.stdDev * unitScale
 
               if (obs.type === 'angle') {
                 stationsLabel = `${obs.at}-${obs.from}-${obs.to}`
-                obsStr = radToDmsStr(obs.obs)
                 calcStr = obs.calc != null ? radToDmsStr(obs.calc as number) : '-'
                 resStr =
                   obs.residual != null
                     ? `${((obs.residual as number) * RAD_TO_DEG * 3600).toFixed(2)}"`
                     : '-'
+                stdDevVal = obs.stdDev * RAD_TO_DEG * 3600 // arcseconds
               } else if (obs.type === 'dist') {
                 stationsLabel = `${obs.from}-${obs.to}`
-                obsStr = (obs.obs * unitScale).toFixed(4)
                 calcStr = obs.calc != null ? ((obs.calc as number) * unitScale).toFixed(4) : '-'
                 resStr = obs.residual != null ? ((obs.residual as number) * unitScale).toFixed(4) : '-'
               } else if (obs.type === 'gps') {
                 stationsLabel = `${obs.from}-${obs.to}`
-                obsStr = `dE=${(obs.obs.dE * unitScale).toFixed(3)}, dN=${(obs.obs.dN * unitScale).toFixed(3)}`
                 calcStr =
                   obs.calc != null
                     ? `dE=${((obs.calc as { dE: number }).dE * unitScale).toFixed(3)}, dN=${(
@@ -95,7 +100,6 @@ const ReportView: React.FC<ReportViewProps> = ({
                     : '-'
               } else if (obs.type === 'lev') {
                 stationsLabel = `${obs.from}-${obs.to}`
-                obsStr = (obs.obs * unitScale).toFixed(4)
                 calcStr = obs.calc != null ? ((obs.calc as number) * unitScale).toFixed(4) : '-'
                 resStr = obs.residual != null ? ((obs.residual as number) * unitScale).toFixed(4) : '-'
               }
@@ -112,7 +116,56 @@ const ReportView: React.FC<ReportViewProps> = ({
                   </td>
                   <td className="py-1 uppercase text-slate-500">{obs.type}</td>
                   <td className="py-1">{stationsLabel}</td>
-                  <td className="py-1 text-right font-mono text-slate-400">{obsStr}</td>
+                  <td className="py-1 text-right font-mono text-slate-400">
+                    {obs.type === 'gps' ? (
+                      <div className="flex items-center space-x-1 justify-end">
+                        <input
+                          type="number"
+                          className="bg-slate-800 border border-slate-700 rounded px-1 w-20 text-right text-xs"
+                          defaultValue={(obs.obs.dE * unitScale).toFixed(3)}
+                          onBlur={(e) =>
+                            onOverride(obs.id, {
+                              obs: {
+                                dE: parseFloat(e.target.value) / unitScale,
+                                dN: (override?.obs as any)?.dN ?? obs.obs.dN,
+                              },
+                            })
+                          }
+                        />
+                        <input
+                          type="number"
+                          className="bg-slate-800 border border-slate-700 rounded px-1 w-20 text-right text-xs"
+                          defaultValue={(obs.obs.dN * unitScale).toFixed(3)}
+                          onBlur={(e) =>
+                            onOverride(obs.id, {
+                              obs: {
+                                dE: (override?.obs as any)?.dE ?? obs.obs.dE,
+                                dN: parseFloat(e.target.value) / unitScale,
+                              },
+                            })
+                          }
+                        />
+                      </div>
+                    ) : (
+                      <input
+                        type="number"
+                        className="bg-slate-800 border border-slate-700 rounded px-1 w-24 text-right text-xs"
+                        defaultValue={
+                          obs.type === 'angle'
+                            ? (obs.obs * RAD_TO_DEG).toFixed(6)
+                            : (obs.obs * unitScale).toFixed(4)
+                        }
+                        onBlur={(e) =>
+                          onOverride(obs.id, {
+                            obs:
+                              obs.type === 'angle'
+                                ? parseFloat(e.target.value)
+                                : parseFloat(e.target.value) / unitScale,
+                          })
+                        }
+                      />
+                    )}
+                  </td>
                   <td className="py-1 text-right font-mono text-slate-500">{calcStr}</td>
                   <td
                     className={`py-1 text-right font-bold font-mono ${
@@ -122,7 +175,19 @@ const ReportView: React.FC<ReportViewProps> = ({
                     {resStr}
                   </td>
                   <td className="py-1 px-4 text-right font-mono text-slate-400">
-                    {obs.stdRes != null ? obs.stdRes.toFixed(2) : '-'}
+                    <input
+                      type="number"
+                      className="bg-slate-800 border border-slate-700 rounded px-1 w-20 text-right text-xs"
+                      defaultValue={stdDevVal.toFixed(4)}
+                      onBlur={(e) =>
+                        onOverride(obs.id, {
+                          stdDev:
+                            obs.type === 'angle'
+                              ? parseFloat(e.target.value) / (RAD_TO_DEG * 3600)
+                              : parseFloat(e.target.value) / unitScale,
+                        })
+                      }
+                    />
                   </td>
                 </tr>
               )
@@ -145,6 +210,9 @@ const ReportView: React.FC<ReportViewProps> = ({
           </button>
           <button onClick={onClearExclusions} className="px-3 py-1 bg-slate-700 rounded">
             Reset exclusions
+          </button>
+          <button onClick={onResetOverrides} className="px-3 py-1 bg-slate-700 rounded">
+            Reset overrides
           </button>
         </div>
         <div className="space-x-2 text-slate-500">
@@ -251,7 +319,7 @@ const ReportView: React.FC<ReportViewProps> = ({
 
       <div className="mt-8 bg-slate-900 p-4 rounded border border-slate-800 font-mono text-xs text-slate-400">
         <div className="font-bold text-slate-300 mb-2 uppercase">Processing Log</div>
-          {result.logs.map((l, i) => (
+        {result.logs.map((l, i) => (
           <div key={i}>{l}</div>
         ))}
       </div>

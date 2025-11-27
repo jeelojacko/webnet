@@ -18,7 +18,7 @@ import InputPane from './components/InputPane'
 import ReportView from './components/ReportView'
 import MapView from './components/MapView'
 import { LSAEngine } from './engine/adjust'
-import type { AdjustmentResult, InstrumentLibrary } from './types'
+import type { AdjustmentResult, InstrumentLibrary, ObservationOverride } from './types'
 
 /****************************
  * CONSTANTS & DEFAULT INPUT
@@ -140,6 +140,7 @@ const App: React.FC = () => {
   const [splitPercent, setSplitPercent] = useState(35) // left pane width (%)
   const [isSidebarOpen, setIsSidebarOpen] = useState(true)
   const [excludedIds, setExcludedIds] = useState<Set<number>>(new Set())
+  const [overrides, setOverrides] = useState<Record<number, ObservationOverride>>({})
   const fileInputRef = useRef<HTMLInputElement | null>(null)
   const layoutRef = useRef<HTMLDivElement | null>(null)
   const isResizingRef = useRef(false)
@@ -252,6 +253,7 @@ const App: React.FC = () => {
       instrumentLibrary,
       excludeIds: excludedIds,
       inputUnit: settings.units,
+      overrides,
     })
 
     const solved = engine.solve()
@@ -278,6 +280,12 @@ const App: React.FC = () => {
   }
 
   const clearExclusions = () => setExcludedIds(new Set())
+
+  const handleOverride = (id: number, payload: ObservationOverride) => {
+    setOverrides((prev) => ({ ...prev, [id]: { ...prev[id], ...payload } }))
+  }
+
+  const resetOverrides = () => setOverrides({})
 
   return (
     <div className="fixed inset-0 flex flex-col bg-slate-900 text-slate-100 font-sans overflow-hidden">
@@ -455,6 +463,9 @@ const App: React.FC = () => {
                     onToggleExclude={toggleExclude}
                     onReRun={handleRun}
                     onClearExclusions={clearExclusions}
+                    overrides={overrides}
+                    onOverride={handleOverride}
+                    onResetOverrides={resetOverrides}
                   />
                 )}
                 {activeTab === 'map' && <MapView result={result} units={settings.units} />}
