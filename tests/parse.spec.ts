@@ -67,4 +67,27 @@ describe('parseInput', () => {
     expect(types.dist).toBeGreaterThan(0)
     expect(parsed.logs.some((l) => l.includes('Traverse start'))).toBe(true)
   })
+
+  it('logs traverse closure', () => {
+    const parsed = parseInput(readFileSync('tests/fixtures/traverse_closure.dat', 'utf-8'))
+    expect(parsed.logs.some((l) => l.includes('Traverse end'))).toBe(true)
+  })
+
+  it('rejects mixed-face directions when normalize off', () => {
+    const parsed = parseInput(readFileSync('tests/fixtures/direction_face_mixed.dat', 'utf-8'), {}, { normalize: false })
+    expect(parsed.logs.some((l) => l.includes('Mixed face direction rejected'))).toBe(true)
+  })
+
+  it('accepts paired face directions when normalized', () => {
+    const parsed = parseInput(readFileSync('tests/fixtures/direction_faceset.dat', 'utf-8'))
+    const angCount = parsed.observations.filter((o) => o.type === 'angle').length
+    expect(angCount).toBe(2)
+    expect(parsed.logs.some((l) => l.includes('Mixed face'))).toBe(false)
+  })
+
+  it('rejects invalid sideshot occupy/backsight', () => {
+    const parsed = parseInput(readFileSync('tests/fixtures/sideshot_invalid.dat', 'utf-8'))
+    expect(parsed.observations.some((o) => o.setId === 'SS')).toBe(false)
+    expect(parsed.logs.some((l) => l.includes('Invalid sideshot occupy/backsight'))).toBe(true)
+  })
 })

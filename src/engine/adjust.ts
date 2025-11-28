@@ -151,6 +151,10 @@ export class LSAEngine {
       let row = 0;
 
       this.observations.forEach((obs) => {
+        // skip sideshots (flagged via calc.sideshot)
+        if (obs.type === 'dist' && typeof obs.calc === 'object' && (obs.calc as any)?.sideshot) {
+          return;
+        }
         if (obs.type === 'dist') {
           const { from, to } = obs;
           const s1 = this.stations[from];
@@ -404,8 +408,13 @@ export class LSAEngine {
 
   private calculateStatistics(paramMap: Record<StationId, number>, hasQxx: boolean) {
     let vtpv = 0;
+    const closureResiduals: string[] = [];
 
     this.observations.forEach((obs) => {
+      // skip sideshots for statistics too
+      if (obs.type === 'dist' && typeof obs.calc === 'object' && (obs.calc as any)?.sideshot) {
+        return;
+      }
       if (obs.type === 'dist') {
         const s1 = this.stations[obs.from];
         const s2 = this.stations[obs.to];
@@ -470,6 +479,18 @@ export class LSAEngine {
         obs.stdRes = Math.abs(v) / obs.stdDev;
         vtpv += (v * v) / (obs.stdDev * obs.stdDev);
       }
+
+      if (obs.setId === 'TE' && typeof obs.residual === 'number') {
+        if (obs.type === 'dist') {
+          closureResiduals.push(
+            `Traverse closure residual ${obs.from}-${obs.to}: ${obs.residual.toFixed(4)} m`,
+          );
+        } else if (obs.type === 'angle') {
+          closureResiduals.push(
+            `Traverse closure residual (angle) ${obs.from}-${obs.to}: ${(obs.residual * RAD_TO_DEG * 3600).toFixed(2)}"`,
+          );
+        }
+      }
     });
 
     this.seuw = this.dof > 0 ? Math.sqrt(vtpv / this.dof) : 0;
@@ -510,6 +531,10 @@ export class LSAEngine {
         const qhh = this.Qxx[base + 2][base + 2] * s0_sq;
         this.stations[id].sH = Math.sqrt(Math.abs(qhh));
       });
+    }
+
+    if (closureResiduals.length) {
+      this.logs.push(...closureResiduals);
     }
   }
 

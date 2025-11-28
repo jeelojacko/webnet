@@ -33,4 +33,11 @@ describe('LSAEngine', () => {
     expect(result.observations.some((o) => o.type === 'bearing')).toBe(true)
     expect(result.observations.some((o) => o.type === 'zenith')).toBe(true)
   })
+
+  it('logs traverse closure residuals', () => {
+    const input = readFileSync('tests/fixtures/traverse_closure.dat', 'utf-8')
+    const engine = new LSAEngine({ input, maxIterations: 5 })
+    const result = engine.solve()
+    expect(result.logs.some((l) => l.includes('Traverse closure residual'))).toBe(true)
+  })
 })

@@ -59,6 +59,7 @@ export const parseInput = (
   const logs: string[] = []
   const state: ParseOptions = { ...defaultParseOptions, ...opts }
   const traverseCtx: { occupy?: string; backsight?: string } = {}
+  let faceMode: 'unknown' | 'face1' | 'face2' = 'unknown'
 
   const lines = input.split('\n')
   let lineNum = 0
@@ -530,11 +531,19 @@ export const parseInput = (
         // Traverse begin: set occupy + backsight context
         traverseCtx.occupy = parts[1]
         traverseCtx.backsight = parts[2]
+        faceMode = 'unknown'
         logs.push(`Traverse start at ${traverseCtx.occupy} backsight ${traverseCtx.backsight}`)
       } else if (code === 'T' || code === 'TE') {
         // Traverse legs: angle + dist + vertical relative to current occupy/backsight
         if (!traverseCtx.occupy || !traverseCtx.backsight) {
           logs.push(`Traverse context missing at line ${lineNum}, skipping ${code}`)
+          continue
+        }
+        if (
+          code !== 'TE' &&
+          (traverseCtx.occupy === parts[1] || traverseCtx.backsight === parts[1])
+        ) {
+          logs.push(`Traverse leg cannot occupy/backsight same as foresight at line ${lineNum}`)
           continue
         }
         const to = parts[1]
@@ -544,17 +553,38 @@ export const parseInput = (
         const stdAng = parts[5] ? parseFloat(parts[5]) : 0
         const stdDist = parts[6] ? parseFloat(parts[6]) : 0
         const toMeters = state.units === 'ft' ? 1 / FT_PER_M : 1
-        observations.push({
-          id: obsId++,
-          type: 'angle',
-          instCode: '',
-          setId: code,
-          at: traverseCtx.occupy,
-          from: traverseCtx.backsight,
-          to,
-          obs: dmsToRad(ang),
-          stdDev: (stdAng || 5) * SEC_TO_RAD,
-        })
+        const angRad = dmsToRad(ang)
+        if (state.normalize === false) {
+          const thisFace = angRad >= Math.PI ? 'face2' : 'face1'
+          if (faceMode === 'unknown') faceMode = thisFace
+          if (faceMode !== thisFace) {
+            logs.push(`Mixed face traverse angle rejected at line ${lineNum}`)
+          } else {
+            observations.push({
+              id: obsId++,
+              type: 'angle',
+              instCode: '',
+              setId: code,
+              at: traverseCtx.occupy,
+              from: traverseCtx.backsight,
+              to,
+              obs: angRad,
+              stdDev: (stdAng || 5) * SEC_TO_RAD,
+            })
+          }
+        } else {
+          observations.push({
+            id: obsId++,
+            type: 'angle',
+            instCode: '',
+            setId: code,
+            at: traverseCtx.occupy,
+            from: traverseCtx.backsight,
+            to,
+            obs: angRad,
+            stdDev: (stdAng || 5) * SEC_TO_RAD,
+          })
+        }
         if (dist > 0) {
           observations.push({
             id: obsId++,
@@ -598,9 +628,10 @@ export const parseInput = (
           }
         }
         if (code === 'TE') {
-          logs.push(`Traverse end/closure to ${to}`)
+          logs.push(`Traverse end to ${to}`)
           traverseCtx.occupy = undefined
           traverseCtx.backsight = undefined
+          faceMode = 'unknown'
         } else {
           traverseCtx.backsight = to
         }
@@ -620,17 +651,38 @@ export const parseInput = (
         const stdAng = code === 'DM' ? parseFloat(parts[5] || '0') : parseFloat(parts[3] || '0')
         const stdDist = code === 'DM' ? parseFloat(parts[6] || '0') : 0
         const toMeters = state.units === 'ft' ? 1 / FT_PER_M : 1
-        observations.push({
-          id: obsId++,
-          type: 'angle',
-          instCode: '',
-          setId: code,
-          at: traverseCtx.occupy,
-          from: traverseCtx.backsight,
-          to,
-          obs: dmsToRad(ang),
-          stdDev: (stdAng || 5) * SEC_TO_RAD,
-        })
+        const angRad = dmsToRad(ang)
+        if (state.normalize === false) {
+          const thisFace = angRad >= Math.PI ? 'face2' : 'face1'
+          if (faceMode === 'unknown') faceMode = thisFace
+          if (faceMode !== thisFace) {
+            logs.push(`Mixed face direction rejected at line ${lineNum}`)
+          } else {
+            observations.push({
+              id: obsId++,
+              type: 'angle',
+              instCode: '',
+              setId: code,
+              at: traverseCtx.occupy,
+              from: traverseCtx.backsight,
+              to,
+              obs: angRad,
+              stdDev: (stdAng || 5) * SEC_TO_RAD,
+            })
+          }
+        } else {
+          observations.push({
+            id: obsId++,
+            type: 'angle',
+            instCode: '',
+            setId: code,
+            at: traverseCtx.occupy,
+            from: traverseCtx.backsight,
+            to,
+            obs: angRad,
+            stdDev: (stdAng || 5) * SEC_TO_RAD,
+          })
+        }
         if (code === 'DM' && dist > 0) {
           observations.push({
             id: obsId++,
@@ -676,11 +728,20 @@ export const parseInput = (
       } else if (code === 'DE') {
         traverseCtx.occupy = undefined
         traverseCtx.backsight = undefined
+        faceMode = 'unknown'
         logs.push('Direction set end')
       } else if (code === 'SS') {
         // Sideshot: dist + optional vertical
         const from = parts[1]
         const to = parts[2]
+        if (from === to || from === traverseCtx.backsight || to === traverseCtx.occupy) {
+          logs.push(`Invalid sideshot occupy/backsight at line ${lineNum}, skipping`)
+          continue
+        }
+        if (traverseCtx.occupy && from !== traverseCtx.occupy) {
+          logs.push(`Sideshot must originate from current occupy (${traverseCtx.occupy}) at line ${lineNum}`)
+          continue
+        }
         const dist = parseFloat(parts[3] || '0')
         const vert = parts[4]
         const stdDist = parts[5] ? parseFloat(parts[5]) : 0
@@ -696,6 +757,8 @@ export const parseInput = (
           obs: dist * toMeters,
           stdDev: (stdDist || 0.01) * toMeters,
           mode: state.deltaMode,
+          // mark sideshots to allow downstream exclusion if desired
+          calc: { sideshot: true },
         })
         if (vert) {
           if (state.deltaMode === 'horiz') {
