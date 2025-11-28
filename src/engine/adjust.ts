@@ -75,13 +75,13 @@ export class LSAEngine {
     return { az, dist: Math.sqrt(dx * dx + dy * dy) };
   }
 
-  private getZenith(fromID: StationId, toID: StationId): { z: number; dist: number; horiz: number; dh: number } {
+  private getZenith(fromID: StationId, toID: StationId, hi = 0, ht = 0): { z: number; dist: number; horiz: number; dh: number } {
     const s1 = this.stations[fromID];
     const s2 = this.stations[toID];
     if (!s1 || !s2) return { z: 0, dist: 0, horiz: 0, dh: 0 };
     const dx = s2.x - s1.x;
     const dy = s2.y - s1.y;
-    const dh = s2.h - s1.h;
+    const dh = (s2.h + ht) - (s1.h + hi);
     const horiz = Math.sqrt(dx * dx + dy * dy);
     const dist = Math.sqrt(horiz * horiz + dh * dh);
     const z = dist === 0 ? 0 : Math.acos(dh / dist);
@@ -162,22 +162,26 @@ export class LSAEngine {
           if (!s1 || !s2) return;
           const dx = s2.x - s1.x;
           const dy = s2.y - s1.y;
-          const calcDist = Math.sqrt(dx * dx + dy * dy);
+          const dz = (s2.h + (obs.ht ?? 0)) - (s1.h + (obs.hi ?? 0));
+          const calcDist = obs.mode === 'slope' ? Math.sqrt(dx * dx + dy * dy + dz * dz) : Math.sqrt(dx * dx + dy * dy);
           const v = obs.obs - calcDist;
 
           L[row][0] = v;
           const dD_dE2 = dx / calcDist;
           const dD_dN2 = dy / calcDist;
+          const dD_dH2 = obs.mode === 'slope' ? dz / calcDist : 0;
 
           if (!s1.fixed) {
             const idx = paramMap[from];
             A[row][idx] = -dD_dE2;
             A[row][idx + 1] = -dD_dN2;
+            A[row][idx + 2] = -dD_dH2;
           }
           if (!s2.fixed) {
             const idx = paramMap[to];
             A[row][idx] = dD_dE2;
             A[row][idx + 1] = dD_dN2;
+            A[row][idx + 2] = dD_dH2;
           }
 
           const w = 1.0 / (obs.stdDev * obs.stdDev);
@@ -421,16 +425,20 @@ export class LSAEngine {
       if (obs.type === 'dist' && typeof obs.calc === 'object' && (obs.calc as any)?.sideshot) {
         return;
       }
-      if (obs.type === 'dist') {
-        const s1 = this.stations[obs.from];
-        const s2 = this.stations[obs.to];
-        if (!s1 || !s2) return;
-        const calc = Math.sqrt((s2.x - s1.x) ** 2 + (s2.y - s1.y) ** 2);
-        const v = obs.obs - calc;
-        obs.calc = calc;
-        obs.residual = v;
-        obs.stdRes = Math.abs(v) / obs.stdDev;
-        vtpv += (v * v) / (obs.stdDev * obs.stdDev);
+        if (obs.type === 'dist') {
+          const s1 = this.stations[obs.from];
+          const s2 = this.stations[obs.to];
+          if (!s1 || !s2) return;
+          const dx = s2.x - s1.x;
+          const dy = s2.y - s1.y;
+          const dz = (s2.h + (obs.ht ?? 0)) - (s1.h + (obs.hi ?? 0));
+          const calc =
+            obs.mode === 'slope' ? Math.sqrt(dx * dx + dy * dy + dz * dz) : Math.sqrt(dx * dx + dy * dy);
+          const v = obs.obs - calc;
+          obs.calc = calc;
+          obs.residual = v;
+          obs.stdRes = Math.abs(v) / obs.stdDev;
+          vtpv += (v * v) / (obs.stdDev * obs.stdDev);
       } else if (obs.type === 'angle') {
         const azTo = this.getAzimuth(obs.at, obs.to).az;
         const azFrom = this.getAzimuth(obs.at, obs.from).az;
@@ -476,7 +484,7 @@ export class LSAEngine {
         obs.stdRes = Math.abs(v) / obs.stdDev;
         vtpv += (v * v) / (obs.stdDev * obs.stdDev);
       } else if (obs.type === 'zenith') {
-        const zv = this.getZenith(obs.from, obs.to).z;
+          const zv = this.getZenith(obs.from, obs.to, obs.hi ?? 0, obs.ht ?? 0).z;
         let v = obs.obs - zv;
         if (v > Math.PI) v -= 2 * Math.PI;
         if (v < -Math.PI) v += 2 * Math.PI;

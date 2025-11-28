@@ -59,7 +59,6 @@ export const parseInput = (
   const instrumentLibrary: InstrumentLibrary = { ...existingInstruments }
   const logs: string[] = []
   const state: ParseOptions = { ...defaultParseOptions, ...opts }
-  const typeCounts: Record<string, number> = {}
   const traverseCtx: { occupy?: string; backsight?: string } = {}
   let faceMode: 'unknown' | 'face1' | 'face2' = 'unknown'
 
