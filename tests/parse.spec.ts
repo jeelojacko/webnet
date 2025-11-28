@@ -56,4 +56,15 @@ describe('parseInput', () => {
     expect(types.zenith).toBe(1)
     expect(types.dist).toBeGreaterThan(0)
   })
+
+  it('parses traverse legs and direction sets', () => {
+    const parsed = parseInput(readFileSync('tests/fixtures/traverse.dat', 'utf-8'))
+    const types = parsed.observations.reduce<Record<string, number>>((acc, o) => {
+      acc[o.type] = (acc[o.type] ?? 0) + 1
+      return acc
+    }, {})
+    expect(types.angle).toBeGreaterThan(0)
+    expect(types.dist).toBeGreaterThan(0)
+    expect(parsed.logs.some((l) => l.includes('Traverse start'))).toBe(true)
+  })
 })

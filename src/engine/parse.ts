@@ -58,6 +58,7 @@ export const parseInput = (
   const instrumentLibrary: InstrumentLibrary = { ...existingInstruments }
   const logs: string[] = []
   const state: ParseOptions = { ...defaultParseOptions, ...opts }
+  const traverseCtx: { occupy?: string; backsight?: string } = {}
 
   const lines = input.split('\n')
   let lineNum = 0
@@ -525,6 +526,205 @@ export const parseInput = (
           obs: bearingRad,
           stdDev: (stdArc || 5) * SEC_TO_RAD,
         })
+      } else if (code === 'TB') {
+        // Traverse begin: set occupy + backsight context
+        traverseCtx.occupy = parts[1]
+        traverseCtx.backsight = parts[2]
+        logs.push(`Traverse start at ${traverseCtx.occupy} backsight ${traverseCtx.backsight}`)
+      } else if (code === 'T' || code === 'TE') {
+        // Traverse legs: angle + dist + vertical relative to current occupy/backsight
+        if (!traverseCtx.occupy || !traverseCtx.backsight) {
+          logs.push(`Traverse context missing at line ${lineNum}, skipping ${code}`)
+          continue
+        }
+        const to = parts[1]
+        const ang = parts[2]
+        const dist = parseFloat(parts[3] || '0')
+        const vert = parts[4]
+        const stdAng = parts[5] ? parseFloat(parts[5]) : 0
+        const stdDist = parts[6] ? parseFloat(parts[6]) : 0
+        const toMeters = state.units === 'ft' ? 1 / FT_PER_M : 1
+        observations.push({
+          id: obsId++,
+          type: 'angle',
+          instCode: '',
+          setId: code,
+          at: traverseCtx.occupy,
+          from: traverseCtx.backsight,
+          to,
+          obs: dmsToRad(ang),
+          stdDev: (stdAng || 5) * SEC_TO_RAD,
+        })
+        if (dist > 0) {
+          observations.push({
+            id: obsId++,
+            type: 'dist',
+            subtype: 'ts',
+            instCode: '',
+            setId: code,
+            from: traverseCtx.occupy,
+            to,
+            obs: dist * toMeters,
+            stdDev: (stdDist || 0.005) * toMeters,
+            mode: state.deltaMode,
+          })
+        }
+        if (vert) {
+          if (state.deltaMode === 'horiz') {
+            const dh = parseFloat(vert) * toMeters
+            observations.push({
+              id: obsId++,
+              type: 'lev',
+              instCode: '',
+              from: traverseCtx.occupy,
+              to,
+              obs: dh,
+              lenKm: 0,
+              stdDev: 0.001,
+            })
+          } else {
+            const zenRad = vert.includes('-')
+              ? dmsToRad(vert)
+              : (parseFloat(vert) * Math.PI) / 180
+            observations.push({
+              id: obsId++,
+              type: 'zenith',
+              instCode: '',
+              from: traverseCtx.occupy,
+              to,
+              obs: zenRad,
+              stdDev: (stdAng || 5) * SEC_TO_RAD,
+            })
+          }
+        }
+        if (code === 'TE') {
+          logs.push(`Traverse end/closure to ${to}`)
+          traverseCtx.occupy = undefined
+          traverseCtx.backsight = undefined
+        } else {
+          traverseCtx.backsight = to
+        }
+      } else if (code === 'DB') {
+        traverseCtx.occupy = parts[1]
+        traverseCtx.backsight = parts[2]
+        logs.push(`Direction set start at ${traverseCtx.occupy} backsight ${traverseCtx.backsight}`)
+      } else if (code === 'DN' || code === 'DM') {
+        if (!traverseCtx.occupy || !traverseCtx.backsight) {
+          logs.push(`Direction context missing at line ${lineNum}, skipping ${code}`)
+          continue
+        }
+        const to = parts[1]
+        const ang = parts[2]
+        const dist = code === 'DM' ? parseFloat(parts[3] || '0') : 0
+        const vert = code === 'DM' ? parts[4] : undefined
+        const stdAng = code === 'DM' ? parseFloat(parts[5] || '0') : parseFloat(parts[3] || '0')
+        const stdDist = code === 'DM' ? parseFloat(parts[6] || '0') : 0
+        const toMeters = state.units === 'ft' ? 1 / FT_PER_M : 1
+        observations.push({
+          id: obsId++,
+          type: 'angle',
+          instCode: '',
+          setId: code,
+          at: traverseCtx.occupy,
+          from: traverseCtx.backsight,
+          to,
+          obs: dmsToRad(ang),
+          stdDev: (stdAng || 5) * SEC_TO_RAD,
+        })
+        if (code === 'DM' && dist > 0) {
+          observations.push({
+            id: obsId++,
+            type: 'dist',
+            subtype: 'ts',
+            instCode: '',
+            setId: code,
+            from: traverseCtx.occupy,
+            to,
+            obs: dist * toMeters,
+            stdDev: (stdDist || 0.005) * toMeters,
+            mode: state.deltaMode,
+          })
+          if (vert) {
+            if (state.deltaMode === 'horiz') {
+              const dh = parseFloat(vert) * toMeters
+              observations.push({
+                id: obsId++,
+                type: 'lev',
+                instCode: '',
+                from: traverseCtx.occupy,
+                to,
+                obs: dh,
+                lenKm: 0,
+                stdDev: 0.001,
+              })
+            } else {
+              const zenRad = vert.includes('-')
+                ? dmsToRad(vert)
+                : (parseFloat(vert) * Math.PI) / 180
+              observations.push({
+                id: obsId++,
+                type: 'zenith',
+                instCode: '',
+                from: traverseCtx.occupy,
+                to,
+                obs: zenRad,
+                stdDev: (stdAng || 5) * SEC_TO_RAD,
+              })
+            }
+          }
+        }
+      } else if (code === 'DE') {
+        traverseCtx.occupy = undefined
+        traverseCtx.backsight = undefined
+        logs.push('Direction set end')
+      } else if (code === 'SS') {
+        // Sideshot: dist + optional vertical
+        const from = parts[1]
+        const to = parts[2]
+        const dist = parseFloat(parts[3] || '0')
+        const vert = parts[4]
+        const stdDist = parts[5] ? parseFloat(parts[5]) : 0
+        const toMeters = state.units === 'ft' ? 1 / FT_PER_M : 1
+        observations.push({
+          id: obsId++,
+          type: 'dist',
+          subtype: 'ts',
+          instCode: '',
+          setId: 'SS',
+          from,
+          to,
+          obs: dist * toMeters,
+          stdDev: (stdDist || 0.01) * toMeters,
+          mode: state.deltaMode,
+        })
+        if (vert) {
+          if (state.deltaMode === 'horiz') {
+            const dh = parseFloat(vert) * toMeters
+            observations.push({
+              id: obsId++,
+              type: 'lev',
+              instCode: '',
+              from,
+              to,
+              obs: dh,
+              lenKm: 0,
+              stdDev: 0.001,
+            })
+          } else {
+            const zenRad = vert.includes('-')
+              ? dmsToRad(vert)
+              : (parseFloat(vert) * Math.PI) / 180
+            observations.push({
+              id: obsId++,
+              type: 'zenith',
+              instCode: '',
+              from,
+              to,
+              obs: zenRad,
+              stdDev: 5 * SEC_TO_RAD,
+            })
+          }
+        }
       } else if (code === 'G') {
         const instCode = parts[1]
         const from = parts[2]

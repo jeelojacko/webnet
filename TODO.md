@@ -15,9 +15,9 @@
   - [~] Coordinate/position/elevation records: C (2D/3D with per-component std errs and !/* fixity, NE/EN order), P geodetic positions (lat/long [+H], std errs mapped to NE, longitude sign), E elevation-only, ellipsoid variants CH/PH/EH (parsed; P/PH projected to local EN via first P origin; ellipsoid height flagged)
   - Single obs: A angles (At-From-To or From-At-To), D distances (2D HD; 3D slope/HD per mode with HI/HT), V vertical (zenith or dH per mode with HI/HT), B bearings/azimuths (solved)
   - Multiple obs: M (angle+dist+vertical with std err rules, ? missing), BM (bearing/az+dist+vertical), DV (dist+vertical) with std errs and HI/HT
-  - Traverse: TB (backsight station or bearing/az; dummy backsight handling), T legs (angle+dist+vertical with std err rules, HI/HT), TE closing angle to station or bearing/az with optional std err
-  - Direction sets: DB begin, DN directions, DM directions+measurements, DE end; face-1/face-2 handling, reject mixed-face when .NORMALIZE OFF
-  - Sideshots: SS diverted from adjustment, compute post-adjust, disallow occupy/backsight, optional name checking
+  - Traverse: TB (backsight station or bearing/az; dummy backsight handling), T legs (angle+dist+vertical with std err rules, HI/HT), TE closing angle to station or bearing/az with optional std err (basic conversion to angle/dist/vert added)
+  - Direction sets: DB begin, DN directions, DM directions+measurements, DE end; face-1/face-2 handling, reject mixed-face when .NORMALIZE OFF (basic conversion to angle/dist/vert added)
+  - Sideshots: SS diverted from adjustment, compute post-adjust, disallow occupy/backsight, optional name checking (basic parse to dist + vert/zenith)
   - Leveling: L dH with distance or turns, std err or per-unit via .LWEIGHT (fallback applied; ft lengths converted to km), allow fixity/free
   - Fixity/weights: support ! fixed, * free, & defaults, numeric std errs per obs/component
   - Units/normalization: honor .UNITS for ft/m parsing/HI/HT, convert angles/bearings; normalize engine to meters/radians
