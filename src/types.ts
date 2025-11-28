@@ -106,12 +106,16 @@ export type UnitsMode = 'm' | 'ft';
 export type CoordMode = '2D' | '3D';
 export type OrderMode = 'NE' | 'EN';
 export type DeltaMode = 'slope' | 'horiz'; // slope+zenith vs horiz+deltaH
+export type MapMode = 'off' | 'on' | 'anglecalc';
 
 export interface ParseOptions {
   units: UnitsMode;
   coordMode: CoordMode;
   order: OrderMode;
   deltaMode: DeltaMode;
+  mapMode: MapMode;
+  normalize: boolean;
+  levelWeight?: number;
 }
 
 export interface AdjustmentResult {

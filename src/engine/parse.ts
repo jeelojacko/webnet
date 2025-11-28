@@ -10,6 +10,7 @@ import type {
   ParseResult,
   StationMap,
   ParseOptions,
+  MapMode,
 } from '../types'
 
 const defaultParseOptions: ParseOptions = {
@@ -17,6 +18,8 @@ const defaultParseOptions: ParseOptions = {
   coordMode: '3D',
   order: 'EN',
   deltaMode: 'slope',
+  mapMode: 'off',
+  normalize: true,
 }
 
 const FT_PER_M = 3.280839895
@@ -64,6 +67,22 @@ export const parseInput = (
       } else if (op === '.DELTA' && parts[1]) {
         state.deltaMode = parts[1].toUpperCase() === 'ON' ? 'horiz' : 'slope'
         logs.push(`Delta mode set to ${state.deltaMode}`)
+      } else if (op === '.MAPMODE') {
+        const mode = (parts[1] || '').toUpperCase()
+        const mapMode: MapMode =
+          mode === 'ANGLECALC' ? 'anglecalc' : mode === 'ON' ? 'on' : 'off'
+        state.mapMode = mapMode
+        logs.push(`Map mode set to ${mapMode}`)
+      } else if (op === '.LWEIGHT' && parts[1]) {
+        const val = parseFloat(parts[1])
+        if (!Number.isNaN(val)) {
+          state.levelWeight = val
+          logs.push(`Level weight set to ${val}`)
+        }
+      } else if (op === '.NORMALIZE') {
+        const mode = (parts[1] || '').toUpperCase()
+        state.normalize = mode !== 'OFF'
+        logs.push(`Normalize set to ${state.normalize}`)
       } else if (op === '.END') {
         logs.push('END encountered; stopping parse')
         break
