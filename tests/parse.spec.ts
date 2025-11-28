@@ -90,4 +90,18 @@ describe('parseInput', () => {
     expect(parsed.observations.some((o) => o.setId === 'SS')).toBe(false)
     expect(parsed.logs.some((l) => l.includes('Invalid sideshot occupy/backsight'))).toBe(true)
   })
+
+  it('parses DV slope mode into dist + zenith', () => {
+    const parsed = parseInput(readFileSync('tests/fixtures/dv_slope.dat', 'utf-8'), {}, { deltaMode: 'slope' })
+    const zen = parsed.observations.find((o) => o.type === 'zenith')
+    const dist = parsed.observations.find((o) => o.type === 'dist')
+    expect(zen).toBeDefined()
+    expect(dist).toBeDefined()
+  })
+
+  it('parses BM with zenith in slope mode', () => {
+    const parsed = parseInput(readFileSync('tests/fixtures/bm_slope.dat', 'utf-8'), {}, { deltaMode: 'slope' })
+    const zen = parsed.observations.find((o) => o.type === 'zenith')
+    expect(zen).toBeDefined()
+  })
 })

@@ -350,7 +350,7 @@ export const parseInput = (
           })
         }
       } else if (code === 'DV') {
-        // Distance + vertical: in delta mode, HD + deltaH; in slope mode not yet supported
+        // Distance + vertical: in delta mode, HD + deltaH; in slope mode slope distance + zenith
         if (state.deltaMode === 'horiz') {
           const from = parts[1]
           const to = parts[2]
@@ -392,7 +392,39 @@ export const parseInput = (
             stdDev: stdDh * toMeters,
           })
         } else {
-          logs.push(`DV slope/zenith not yet supported at line ${lineNum}, skipping`)
+          const from = parts[1]
+          const to = parts[2]
+          const dist = parseFloat(parts[3])
+          const zen = parts[4]
+          const stdDist = parts[5] ? parseFloat(parts[5]) : 0.005
+          const stdZen = parts[6] ? parseFloat(parts[6]) : 5
+          if (!zen) {
+            logs.push(`DV slope missing zenith at line ${lineNum}, skipping`)
+            continue
+          }
+          const zenRad = zen.includes('-') ? dmsToRad(zen) : (parseFloat(zen) * Math.PI) / 180
+          const toMeters = state.units === 'ft' ? 1 / FT_PER_M : 1
+          observations.push({
+            id: obsId++,
+            type: 'dist',
+            subtype: 'ts',
+            instCode: '',
+            setId: '',
+            from,
+            to,
+            obs: dist * toMeters,
+            stdDev: stdDist * toMeters,
+            mode: 'slope',
+          })
+          observations.push({
+            id: obsId++,
+            type: 'zenith',
+            instCode: '',
+            from,
+            to,
+            obs: zenRad,
+            stdDev: (stdZen || 5) * SEC_TO_RAD,
+          })
         }
       } else if (code === 'BM') {
         // Bearing + measurements. Bearing stored/logged; dist parsed; zenith or deltaH captured based on mode
@@ -401,7 +433,7 @@ export const parseInput = (
         const bearing = parts[3]
         const dist = parseFloat(parts[4])
         const vert = parts[5]
-        const stdDist = parts[6] ? parseFloat(parts[6]) : 0
+        const stdDist = parts[6] ? parseFloat(parts[6]) : 0.005
         const toMeters = state.units === 'ft' ? 1 / FT_PER_M : 1
         observations.push({
           id: obsId++,
@@ -456,23 +488,24 @@ export const parseInput = (
           logs.push(`M record malformed at line ${lineNum}`)
         } else {
           const [at, from, to] = stations
-          const ang = parts[2]
-          const dist = parseFloat(parts[3])
-          const vert = parts[4]
-          const stdAng = parts[5] ? parseFloat(parts[5]) : 0
-          const stdDist = parts[6] ? parseFloat(parts[6]) : 0
-          const toMeters = state.units === 'ft' ? 1 / FT_PER_M : 1
-          observations.push({
-            id: obsId++,
-            type: 'angle',
-            instCode: '',
-            setId: '',
-            at,
-            from,
-            to,
-            obs: dmsToRad(ang),
-            stdDev: stdAng * SEC_TO_RAD,
-          })
+        const ang = parts[2]
+        const dist = parseFloat(parts[3])
+        const vert = parts[4]
+        const stdAng = parts[5] ? parseFloat(parts[5]) : 5
+        const stdDist = parts[6] ? parseFloat(parts[6]) : 0.005
+        const toMeters = state.units === 'ft' ? 1 / FT_PER_M : 1
+        const faceWeight = ang.includes('-') ? stdAng * 0.8 : stdAng
+        observations.push({
+          id: obsId++,
+          type: 'angle',
+          instCode: '',
+          setId: '',
+          at,
+          from,
+          to,
+          obs: dmsToRad(ang),
+          stdDev: faceWeight * SEC_TO_RAD,
+        })
           observations.push({
             id: obsId++,
             type: 'dist',
