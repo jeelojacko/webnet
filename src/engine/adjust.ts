@@ -414,6 +414,7 @@ export class LSAEngine {
     const hasClosureObs = this.observations.some(
       (o) => (o as any).setId && String((o as any).setId).toUpperCase() === 'TE',
     );
+    const coordClosureVectors: { from: StationId; to: StationId; dE: number; dN: number }[] = [];
 
     this.observations.forEach((obs) => {
       // skip sideshots for statistics too
@@ -498,6 +499,16 @@ export class LSAEngine {
           closureResiduals.push(
             `Traverse closure residual ${obs.from}-${obs.to}: ${obs.residual.toFixed(4)} m`,
           );
+          const s1 = this.stations[obs.from];
+          const s2 = this.stations[obs.to];
+          if (s1 && s2) {
+            coordClosureVectors.push({
+              from: obs.from,
+              to: obs.to,
+              dE: s2.x - s1.x,
+              dN: s2.y - s1.y,
+            });
+          }
         } else if (obs.type === 'angle') {
           closureResiduals.push(
             `Traverse closure residual (angle) ${obs.from}-${obs.to}: ${(obs.residual * RAD_TO_DEG * 3600).toFixed(2)}"`,
@@ -560,6 +571,14 @@ export class LSAEngine {
         const mag = Math.hypot(v.dE, v.dN);
         this.logs.push(`Closure loop ${k}: dE=${v.dE.toFixed(4)} m, dN=${v.dN.toFixed(4)} m, Mag=${mag.toFixed(4)} m`);
       });
+      if (coordClosureVectors.length) {
+        coordClosureVectors.forEach((v) => {
+          const mag = Math.hypot(v.dE, v.dN);
+          this.logs.push(
+            `Closure geometry ${v.from}-${v.to}: dE=${v.dE.toFixed(4)} m, dN=${v.dN.toFixed(4)} m, Mag=${mag.toFixed(4)} m`,
+          );
+        });
+      }
     } else if (hasClosureObs) {
       this.logs.push('Traverse closure residual not computed (insufficient closure geometry).');
     }

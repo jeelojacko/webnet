@@ -25,6 +25,7 @@ const defaultParseOptions: ParseOptions = {
 
 const FT_PER_M = 3.280839895
 const EARTH_RADIUS_M = 6378137
+const FACE2_WEIGHT = 0.707 // face-2 weighting factor per common spec
 const toDegrees = (token: string): number => {
   if (!token) return Number.NaN
   if (token.includes('-')) return dmsToRad(token) * RAD_TO_DEG
@@ -298,10 +299,11 @@ export const parseInput = (
         const stdRawArcsec = parseFloat(hasInst ? parts[7] : parts[3] || '0')
 
         const inst = instCode ? instrumentLibrary[instCode] : undefined
-        let sigmaSec = stdRawArcsec
+        let sigmaSec = stdRawArcsec || (inst?.angleStd_sec ?? 1)
         if (inst && inst.angleStd_sec > 0) {
           sigmaSec = Math.sqrt(stdRawArcsec * stdRawArcsec + inst.angleStd_sec * inst.angleStd_sec)
         }
+        if (angleRad >= Math.PI) sigmaSec *= FACE2_WEIGHT
 
         const obs: AngleObservation = {
           id: obsId++,
@@ -356,7 +358,7 @@ export const parseInput = (
           const to = parts[2]
           const dist = parseFloat(parts[3])
           const dh = parseFloat(parts[4])
-          const stdDist = parts[5] ? parseFloat(parts[5]) : 0
+          const stdDist = parts[5] ? parseFloat(parts[5]) : 0.005
           const stdDh = parts[6] ? parseFloat(parts[6]) : 0
           const hiHt = parts.find((p) => p.includes('/'))
           let hi: number | undefined
@@ -494,7 +496,7 @@ export const parseInput = (
         const stdAng = parts[5] ? parseFloat(parts[5]) : 5
         const stdDist = parts[6] ? parseFloat(parts[6]) : 0.005
         const toMeters = state.units === 'ft' ? 1 / FT_PER_M : 1
-        const faceWeight = ang.includes('-') ? stdAng * 0.8 : stdAng
+        const faceWeight = ang.includes('-') ? stdAng * FACE2_WEIGHT : stdAng
         observations.push({
           id: obsId++,
           type: 'angle',
@@ -583,8 +585,8 @@ export const parseInput = (
         const ang = parts[2]
         const dist = parseFloat(parts[3] || '0')
         const vert = parts[4]
-        const stdAng = parts[5] ? parseFloat(parts[5]) : 0
-        const stdDist = parts[6] ? parseFloat(parts[6]) : 0
+        const stdAng = parts[5] ? parseFloat(parts[5]) : 5
+        const stdDist = parts[6] ? parseFloat(parts[6]) : 0.005
         const toMeters = state.units === 'ft' ? 1 / FT_PER_M : 1
         const angRad = dmsToRad(ang)
         const isFace2 = angRad >= Math.PI
@@ -607,6 +609,7 @@ export const parseInput = (
             })
           }
         } else {
+          const angStd = (stdAng || 5) * (isFace2 ? FACE2_WEIGHT : 1)
           observations.push({
             id: obsId++,
             type: 'angle',
@@ -616,7 +619,7 @@ export const parseInput = (
             from: traverseCtx.backsight,
             to,
             obs: angRad,
-            stdDev: (stdAng || 5) * SEC_TO_RAD,
+            stdDev: angStd * SEC_TO_RAD,
           })
         }
         if (dist > 0) {
