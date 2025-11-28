@@ -49,6 +49,9 @@ export interface DistanceObservation extends ObservationBase {
   from: StationId;
   to: StationId;
   obs: number;
+  hi?: number;
+  ht?: number;
+  mode?: 'slope' | 'horiz';
   calc?: number;
   residual?: number;
   stdRes?: number;
@@ -110,6 +113,7 @@ export type CoordMode = '2D' | '3D';
 export type OrderMode = 'NE' | 'EN';
 export type DeltaMode = 'slope' | 'horiz'; // slope+zenith vs horiz+deltaH
 export type MapMode = 'off' | 'on' | 'anglecalc';
+export type LonSign = 'west-positive' | 'west-negative';
 
 export interface ParseOptions {
   units: UnitsMode;
@@ -121,6 +125,7 @@ export interface ParseOptions {
   levelWeight?: number;
   originLatDeg?: number;
   originLonDeg?: number;
+  lonSign?: LonSign;
 }
 
 export interface AdjustmentResult {

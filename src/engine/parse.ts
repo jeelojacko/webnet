@@ -20,6 +20,7 @@ const defaultParseOptions: ParseOptions = {
   deltaMode: 'slope',
   mapMode: 'off',
   normalize: true,
+  lonSign: 'west-negative',
 }
 
 const FT_PER_M = 3.280839895
@@ -106,6 +107,10 @@ export const parseInput = (
         const mode = (parts[1] || '').toUpperCase()
         state.normalize = mode !== 'OFF'
         logs.push(`Normalize set to ${state.normalize}`)
+      } else if (op === '.LONSIGN') {
+        const mode = (parts[1] || '').toUpperCase()
+        state.lonSign = mode === 'WESTPOS' || mode === 'POSW' ? 'west-positive' : 'west-negative'
+        logs.push(`Longitude sign set to ${state.lonSign}`)
       } else if (op === '.END') {
         logs.push('END encountered; stopping parse')
         break
@@ -161,7 +166,10 @@ export const parseInput = (
         // Geodetic position (lat/long [+H]) projected to local EN using first P as origin (equirectangular)
         const id = parts[1]
         const latDeg = toDegrees(parts[2])
-        const lonDeg = toDegrees(parts[3])
+        let lonDeg = toDegrees(parts[3])
+        if (state.lonSign === 'west-positive') {
+          lonDeg = -lonDeg
+        }
         const elev = parts[4] ? parseFloat(parts[4]) : 0
         const seN = parts[5] ? parseFloat(parts[5]) : 0
         const seE = parts[6] ? parseFloat(parts[6]) : 0
@@ -240,7 +248,17 @@ export const parseInput = (
         const from = hasInst ? parts[3] : parts[1]
         const to = hasInst ? parts[4] : parts[2]
         const dist = parseFloat(hasInst ? parts[5] : parts[3])
-        const stdRaw = parseFloat(hasInst ? parts[6] : parts[4] || '0')
+        const sigmaToken = hasInst ? parts[6] : parts[4]
+        let hi: number | undefined
+        let ht: number | undefined
+        let stdRaw = 0
+        if (sigmaToken && sigmaToken.includes('/')) {
+          const [hiStr, htStr] = sigmaToken.split('/')
+          hi = parseFloat(hiStr)
+          ht = parseFloat(htStr)
+        } else {
+          stdRaw = parseFloat(sigmaToken || '0')
+        }
 
         const inst = instCode ? instrumentLibrary[instCode] : undefined
         let sigma = stdRaw
@@ -260,6 +278,9 @@ export const parseInput = (
           to,
           obs: state.units === 'ft' ? dist / FT_PER_M : dist,
           stdDev: state.units === 'ft' ? sigma / FT_PER_M : sigma,
+          hi,
+          ht,
+          mode: state.deltaMode,
         }
         observations.push(obs)
       } else if (code === 'A') {
@@ -292,6 +313,165 @@ export const parseInput = (
           stdDev: sigmaSec * SEC_TO_RAD,
         }
         observations.push(obs)
+      } else if (code === 'V') {
+        // Vertical observation: zenith (slope mode) or deltaH (delta mode)
+        const from = parts[1]
+        const to = parts[2]
+        const valToken = parts[3]
+        const stdToken = parts[4]
+        const toMeters = state.units === 'ft' ? 1 / FT_PER_M : 1
+        if (state.deltaMode === 'horiz') {
+          const dh = parseFloat(valToken) * toMeters
+          const std = parseFloat(stdToken || '0') * toMeters
+          const obs: LevelObservation = {
+            id: obsId++,
+            type: 'lev',
+            instCode: '',
+            from,
+            to,
+            obs: dh,
+            lenKm: 0,
+            stdDev: std,
+          }
+          observations.push(obs)
+        } else {
+          logs.push(`V zenith not yet supported at line ${lineNum}, skipping`)
+        }
+      } else if (code === 'DV') {
+        // Distance + vertical: in delta mode, HD + deltaH; in slope mode not yet supported
+        if (state.deltaMode === 'horiz') {
+          const from = parts[1]
+          const to = parts[2]
+          const dist = parseFloat(parts[3])
+          const dh = parseFloat(parts[4])
+          const stdDist = parts[5] ? parseFloat(parts[5]) : 0
+          const stdDh = parts[6] ? parseFloat(parts[6]) : 0
+          const hiHt = parts.find((p) => p.includes('/'))
+          let hi: number | undefined
+          let ht: number | undefined
+          if (hiHt) {
+            const [hiStr, htStr] = hiHt.split('/')
+            hi = parseFloat(hiStr)
+            ht = parseFloat(htStr)
+          }
+          const toMeters = state.units === 'ft' ? 1 / FT_PER_M : 1
+          observations.push({
+            id: obsId++,
+            type: 'dist',
+            subtype: 'ts',
+            instCode: '',
+            setId: '',
+            from,
+            to,
+            obs: dist * toMeters,
+            stdDev: stdDist * toMeters,
+            hi,
+            ht,
+            mode: 'horiz',
+          })
+          observations.push({
+            id: obsId++,
+            type: 'lev',
+            instCode: '',
+            from,
+            to,
+            obs: dh * toMeters,
+            lenKm: 0,
+            stdDev: stdDh * toMeters,
+          })
+        } else {
+          logs.push(`DV slope/zenith not yet supported at line ${lineNum}, skipping`)
+        }
+      } else if (code === 'BM') {
+        // Bearing + measurements. Bearing stored in log; dist parsed; deltaH if available in delta mode
+        const from = parts[1]
+        const to = parts[2]
+        const bearing = parts[3]
+        const dist = parseFloat(parts[4])
+        const vert = parts[5]
+        const stdDist = parts[6] ? parseFloat(parts[6]) : 0
+        const toMeters = state.units === 'ft' ? 1 / FT_PER_M : 1
+        observations.push({
+          id: obsId++,
+          type: 'dist',
+          subtype: 'ts',
+          instCode: '',
+          setId: '',
+          from,
+          to,
+          obs: dist * toMeters,
+          stdDev: stdDist * toMeters,
+          mode: state.deltaMode,
+        })
+        if (state.deltaMode === 'horiz' && vert) {
+          const dh = parseFloat(vert) * toMeters
+          observations.push({
+            id: obsId++,
+            type: 'lev',
+            instCode: '',
+            from,
+            to,
+            obs: dh,
+            lenKm: 0,
+            stdDev: 0,
+          })
+        } else if (vert) {
+          logs.push(`BM bearing ${bearing} recorded; zenith handling pending at line ${lineNum}`)
+        }
+      } else if (code === 'M') {
+        // Measure: angle + dist + vertical
+        const stations = parts[1].split('-')
+        if (stations.length !== 3) {
+          logs.push(`M record malformed at line ${lineNum}`)
+        } else {
+          const [at, from, to] = stations
+          const ang = parts[2]
+          const dist = parseFloat(parts[3])
+          const vert = parts[4]
+          const stdAng = parts[5] ? parseFloat(parts[5]) : 0
+          const stdDist = parts[6] ? parseFloat(parts[6]) : 0
+          const toMeters = state.units === 'ft' ? 1 / FT_PER_M : 1
+          observations.push({
+            id: obsId++,
+            type: 'angle',
+            instCode: '',
+            setId: '',
+            at,
+            from,
+            to,
+            obs: dmsToRad(ang),
+            stdDev: stdAng * SEC_TO_RAD,
+          })
+          observations.push({
+            id: obsId++,
+            type: 'dist',
+            subtype: 'ts',
+            instCode: '',
+            setId: '',
+            from: at,
+            to,
+            obs: dist * toMeters,
+            stdDev: stdDist * toMeters,
+            mode: state.deltaMode,
+          })
+          if (state.deltaMode === 'horiz' && vert) {
+            const dh = parseFloat(vert) * toMeters
+            observations.push({
+              id: obsId++,
+              type: 'lev',
+              instCode: '',
+              from: at,
+              to,
+              obs: dh,
+              lenKm: 0,
+              stdDev: 0,
+            })
+          } else if (vert) {
+            logs.push(`M zenith not yet supported at line ${lineNum}`)
+          }
+        }
+      } else if (code === 'B') {
+        logs.push(`Bearing/azimuth code at line ${lineNum} not yet solved; storing hint only`)
       } else if (code === 'G') {
         const instCode = parts[1]
         const from = parts[2]

@@ -22,6 +22,7 @@
   - Fixity/weights: support `!` fixed, `*` free, `&` defaults, numeric std errs per obs/component
   - Units/normalization: honor `.UNITS` for ft/m parsing/HI/HT, convert angles/bearings; normalize engine to meters/radians
   - Validation/logging: strict line validation, mode/order scope, HI/HT parsing, counts per type, logs for defaults/skips/flags
+  - Inline modes & obs metadata: track delta mode/map mode/lon sign; capture HI/HT on distances; projection currently equirectangular (improve later)
   - Engine: map codes to internal types, apply HI/HT/ΔH/slope→HD, include bearings/azimuths, leveling weights, preserve obs IDs
   - Fixtures/tests: add Star*Net-style fixtures for 2D/3D, TS+GPS+Leveling, traverses, direction sets, sideshots; Vitest cases for parsing/mode toggles and solves
   - Docs/UI: list supported Star*Net codes/options, UI hints, surface parser errors with line numbers
