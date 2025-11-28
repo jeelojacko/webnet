@@ -18,7 +18,15 @@ import InputPane from './components/InputPane'
 import ReportView from './components/ReportView'
 import MapView from './components/MapView'
 import { LSAEngine } from './engine/adjust'
-import type { AdjustmentResult, InstrumentLibrary, ObservationOverride } from './types'
+import type {
+  AdjustmentResult,
+  InstrumentLibrary,
+  ObservationOverride,
+  CoordMode,
+  OrderMode,
+  DeltaMode,
+  MapMode,
+} from './types'
 
 /****************************
  * CONSTANTS & DEFAULT INPUT
@@ -126,6 +134,15 @@ type SettingsState = {
   units: Units
 }
 
+type ParseSettings = {
+  coordMode: CoordMode
+  order: OrderMode
+  deltaMode: DeltaMode
+  mapMode: MapMode
+  normalize: boolean
+  levelWeight?: number
+}
+
 type TabKey = 'report' | 'map'
 
 /****************************
@@ -136,6 +153,14 @@ const App: React.FC = () => {
   const [result, setResult] = useState<AdjustmentResult | null>(null)
   const [activeTab, setActiveTab] = useState<TabKey>('report')
   const [settings, setSettings] = useState<SettingsState>({ maxIterations: 10, units: 'm' })
+  const [parseSettings, setParseSettings] = useState<ParseSettings>({
+    coordMode: '3D',
+    order: 'EN',
+    deltaMode: 'slope',
+    mapMode: 'off',
+    normalize: true,
+    levelWeight: undefined,
+  })
   const [selectedInstrument, setSelectedInstrument] = useState('')
   const [splitPercent, setSplitPercent] = useState(35) // left pane width (%)
   const [isSidebarOpen, setIsSidebarOpen] = useState(true)
@@ -252,8 +277,16 @@ const App: React.FC = () => {
       maxIterations: settings.maxIterations,
       instrumentLibrary,
       excludeIds: excludedIds,
-      inputUnit: settings.units,
       overrides,
+      parseOptions: {
+        units: settings.units,
+        coordMode: parseSettings.coordMode,
+        order: parseSettings.order,
+        deltaMode: parseSettings.deltaMode,
+        mapMode: parseSettings.mapMode,
+        normalize: parseSettings.normalize,
+        levelWeight: parseSettings.levelWeight,
+      },
     })
 
     const solved = engine.solve()
@@ -268,6 +301,10 @@ const App: React.FC = () => {
   const handleIterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = parseInt(e.target.value, 10) || 1
     setSettings({ ...settings, maxIterations: val })
+  }
+
+  const handleParseSetting = <K extends keyof ParseSettings>(key: K, value: ParseSettings[K]) => {
+    setParseSettings((prev) => ({ ...prev, [key]: value }))
   }
 
   const toggleExclude = (id: number) => {
@@ -334,6 +371,62 @@ const App: React.FC = () => {
               onChange={handleIterChange}
               className="w-20 bg-slate-800 text-xs border border-slate-600 text-white rounded px-2 py-1 outline-none focus:border-blue-500 text-center"
             />
+          </div>
+
+          <div className="w-px h-4 bg-slate-700 mx-2" />
+
+          <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-2">
+              <label className="text-xs text-slate-400 font-medium uppercase">Delta Mode</label>
+              <select
+                value={parseSettings.deltaMode}
+                onChange={(e) => handleParseSetting('deltaMode', e.target.value as DeltaMode)}
+                className="bg-slate-800 text-xs border border-slate-600 text-white rounded px-2 py-1 outline-none focus:border-blue-500"
+              >
+                <option value="slope">Slope + Zenith (.DELTA OFF)</option>
+                <option value="horiz">Horizontal + dH (.DELTA ON)</option>
+              </select>
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <label className="text-xs text-slate-400 font-medium uppercase">Map Mode</label>
+              <select
+                value={parseSettings.mapMode}
+                onChange={(e) => handleParseSetting('mapMode', e.target.value as MapMode)}
+                className="bg-slate-800 text-xs border border-slate-600 text-white rounded px-2 py-1 outline-none focus:border-blue-500"
+              >
+                <option value="off">Off</option>
+                <option value="on">On</option>
+                <option value="anglecalc">AngleCalc</option>
+              </select>
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <label className="text-xs text-slate-400 font-medium uppercase">Normalize</label>
+              <input
+                type="checkbox"
+                className="accent-blue-500"
+                checked={parseSettings.normalize}
+                onChange={(e) => handleParseSetting('normalize', e.target.checked)}
+              />
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <label className="text-xs text-slate-400 font-medium uppercase">.LWEIGHT (mm/km)</label>
+              <input
+                type="number"
+                min={0}
+                step={0.1}
+                value={parseSettings.levelWeight ?? ''}
+                onChange={(e) =>
+                  handleParseSetting(
+                    'levelWeight',
+                    e.target.value === '' ? undefined : parseFloat(e.target.value),
+                  )
+                }
+                className="w-20 bg-slate-800 text-xs border border-slate-600 text-white rounded px-2 py-1 outline-none focus:border-blue-500 text-center"
+              />
+            </div>
           </div>
 
           <div className="w-px h-4 bg-slate-700 mx-2" />

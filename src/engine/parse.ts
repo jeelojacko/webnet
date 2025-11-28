@@ -503,12 +503,26 @@ export const parseInput = (
         const instCode = parts[1]
         const from = parts[2]
         const to = parts[3]
-        const dH = parseFloat(parts[4])
-        const lenKm = parseFloat(parts[5])
-        const stdMmPerKmRaw = parseFloat(parts[6])
+        const dH = parseFloat(parts[4] || '0')
+        const lenRaw = parseFloat(parts[5] || '0')
+        const lenKm =
+          Number.isFinite(lenRaw) && lenRaw > 0
+            ? state.units === 'ft'
+              ? lenRaw / FT_PER_M / 1000
+              : lenRaw
+            : 0
+        const stdMmPerKmRaw = parseFloat(parts[6] || '')
+        const baseStd = Number.isNaN(stdMmPerKmRaw)
+          ? state.levelWeight ?? 0
+          : stdMmPerKmRaw
+        if (Number.isNaN(stdMmPerKmRaw) && state.levelWeight != null) {
+          logs.push(
+            `.LWEIGHT applied for leveling at line ${lineNum}: ${state.levelWeight} mm/km`,
+          )
+        }
 
         const inst = instrumentLibrary[instCode]
-        let sigma = (stdMmPerKmRaw * lenKm) / 1000.0
+        let sigma = (baseStd * lenKm) / 1000.0
         if (inst && inst.levStd_mmPerKm > 0) {
           const lib = (inst.levStd_mmPerKm * lenKm) / 1000.0
           sigma = Math.sqrt(sigma * sigma + lib * lib)
@@ -522,7 +536,7 @@ export const parseInput = (
           to,
           obs: state.units === 'ft' ? dH / FT_PER_M : dH,
           lenKm,
-          stdDev: state.units === 'ft' ? sigma / FT_PER_M : sigma,
+          stdDev: sigma,
         }
         observations.push(obs)
       }

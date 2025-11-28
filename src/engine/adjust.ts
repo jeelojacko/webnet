@@ -9,6 +9,7 @@ import type {
   StationMap,
   InstrumentLibrary,
   ObservationOverride,
+  ParseOptions,
 } from '../types';
 
 interface EngineOptions {
@@ -17,11 +18,9 @@ interface EngineOptions {
   instrumentLibrary?: InstrumentLibrary;
   convergenceThreshold?: number;
   excludeIds?: Set<number>;
-  inputUnit?: 'm' | 'ft';
   overrides?: Record<number, ObservationOverride>;
+  parseOptions?: Partial<ParseOptions>;
 }
-
-const FT_PER_M = 3.280839895;
 
 export class LSAEngine {
   input: string;
@@ -38,10 +37,10 @@ export class LSAEngine {
   instrumentLibrary: InstrumentLibrary;
   private Qxx: number[][] | null = null;
   private excludeIds?: Set<number>;
-  private inputUnit: 'm' | 'ft';
   private overrides?: Record<number, ObservationOverride>;
   private maxCondition = 1e12;
   private maxStdRes = 10;
+  private parseOptions?: Partial<ParseOptions>;
 
   constructor({
     input,
@@ -49,16 +48,16 @@ export class LSAEngine {
     instrumentLibrary = {},
     convergenceThreshold = 0.0001,
     excludeIds,
-    inputUnit = 'm',
     overrides,
+    parseOptions,
   }: EngineOptions) {
     this.input = input;
     this.maxIterations = maxIterations;
     this.instrumentLibrary = { ...instrumentLibrary };
     this.convergenceThreshold = convergenceThreshold;
     this.excludeIds = excludeIds;
-    this.inputUnit = inputUnit;
     this.overrides = overrides;
+    this.parseOptions = parseOptions;
   }
 
   private log(msg: string) {
@@ -77,7 +76,7 @@ export class LSAEngine {
   }
 
   solve(): AdjustmentResult {
-    const parsed = parseInput(this.input, this.instrumentLibrary);
+    const parsed = parseInput(this.input, this.instrumentLibrary, this.parseOptions);
     this.stations = parsed.stations;
     this.observations = this.excludeIds
       ? parsed.observations.filter((o) => !this.excludeIds?.has(o.id))
@@ -103,29 +102,6 @@ export class LSAEngine {
             const val = over.obs as { dE: number; dN: number };
             obs.obs = { dE: val.dE, dN: val.dN };
           }
-        }
-      });
-    }
-
-    if (this.inputUnit === 'ft') {
-      // Normalize all geometry/obs to meters for computation
-      Object.values(this.stations).forEach((s) => {
-        s.x /= FT_PER_M;
-        s.y /= FT_PER_M;
-        s.h /= FT_PER_M;
-      });
-
-      this.observations.forEach((obs) => {
-        if (obs.type === 'dist') {
-          obs.obs /= FT_PER_M;
-          obs.stdDev /= FT_PER_M;
-        } else if (obs.type === 'gps') {
-          obs.obs.dE /= FT_PER_M;
-          obs.obs.dN /= FT_PER_M;
-          obs.stdDev /= FT_PER_M;
-        } else if (obs.type === 'lev') {
-          obs.obs /= FT_PER_M;
-          obs.stdDev /= FT_PER_M;
         }
       });
     }

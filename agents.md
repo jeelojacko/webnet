@@ -2,7 +2,7 @@
 
 ## Project Context
 - Goal: browser-based clone of MicroSurvey Star*Net performing mixed-observation least-squares adjustment (TS distances/angles, GNSS baselines, leveling dH) with control points, error ellipses, residuals, and basic outlier cues.
-- Current behavior (TypeScript): parses Star*Net-style text blocks (instrument library, control, D/A/G/L observations + inline options .UNITS/.COORD/.ORDER/.2D/.3D/.DELTA/.MAPMODE/.LWEIGHT/.NORMALIZE/.END/.LONSIGN, C/E/CH/PH/EH records with fixity/std errs; P/PH lat/long projected to local EN via first P origin; distances capture HI/HT and delta mode), normalizes to meters/radians, runs iterative XYH adjustment with custom matrix math, applies overrides/exclusions, reports SEUW/DOF/conditioning warnings, adjusted coordinates, error ellipses, residual tables sorted by |StdRes|, and a processing log. UI adds editable observation tables, re-run with exclusions, map/ellipse view, and seeded demo dataset.
+- Current behavior (TypeScript): parses Star*Net-style text blocks (instrument library, control, D/A/G/L observations + inline options .UNITS/.COORD/.ORDER/.2D/.3D/.DELTA/.MAPMODE/.LWEIGHT/.NORMALIZE/.END/.LONSIGN, C/E/CH/PH/EH records with fixity/std errs; P/PH lat/long projected to local EN via first P origin; D/M/BM/DV capture HI/HT and delta mode, DV/M in delta-mode emit distance+dH; .LWEIGHT applied for leveling weights with ft lengths converted to km; B bearing parsed as placeholder), normalizes to meters/radians, runs iterative XYH adjustment with custom matrix math, applies overrides/exclusions, reports SEUW/DOF/conditioning warnings, adjusted coordinates, error ellipses, residual tables sorted by |StdRes|, and a processing log. UI adds editable observation tables, parse-mode toggles (.DELTA/.MAPMODE/.NORMALIZE/.LWEIGHT), re-run with exclusions, map/ellipse view, and seeded demo dataset.
 
 ## Tech Stack
 - Runtime: Node 18+ (ESM). Bundler: Vite 7.
@@ -17,7 +17,7 @@
 - TypeScript/React with functional components and hooks; prefer pure helpers and small components.
 - Naming: camelCase for vars/functions; UPPER_SNAKE for constants; React components PascalCase.
 - Formatting: Prettier defaults (2-space, semicolons); Tailwind utility classes for styling (avoid inline styles).
-- Lint: ESLint flat config + react-hooks/refresh; `no-unused-vars` allows leading `_` for intentionally unused args. Keep TS strict; avoid `any`—prefer shared types/helpers.
+- Lint: ESLint flat config + react-hooks/refresh; `no-unused-vars` allows leading `_` for intentionally unused args. Keep TS strict; avoid `any` - prefer shared types/helpers.
 - Data/units: calculations normalize to meters/radians internally; unit conversions (ft <-> m) happen at parse/override/display boundaries. Angle conversions via `dmsToRad`/`radToDmsStr`; keep station/obs ids as strings.
 
 ## Commands
