@@ -23,6 +23,7 @@ export interface Station {
   y: number;
   h: number;
   fixed: boolean;
+  heightType?: 'orthometric' | 'ellipsoid';
   errorEllipse?: StationErrorEllipse;
   sH?: number;
 }

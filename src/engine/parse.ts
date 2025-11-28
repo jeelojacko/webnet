@@ -1,4 +1,4 @@
-import { dmsToRad, SEC_TO_RAD } from './angles'
+import { dmsToRad, RAD_TO_DEG, SEC_TO_RAD } from './angles'
 import type {
   AngleObservation,
   DistanceObservation,
@@ -23,6 +23,11 @@ const defaultParseOptions: ParseOptions = {
 }
 
 const FT_PER_M = 3.280839895
+const toDegrees = (token: string): number => {
+  if (!token) return Number.NaN
+  if (token.includes('-')) return dmsToRad(token) * RAD_TO_DEG
+  return parseFloat(token)
+}
 
 export const parseInput = (
   input: string,
@@ -129,6 +134,62 @@ export const parseInput = (
         const fixed = parts.includes('!') || parts.includes('*')
         const toMeters = state.units === 'ft' ? 1 / FT_PER_M : 1
         stations[id] = { x: east * toMeters, y: north * toMeters, h: h * toMeters, fixed }
+        if (!fixed) {
+          if (sx) (stations[id] as any).sx = sx * toMeters
+          if (sy) (stations[id] as any).sy = sy * toMeters
+          if (is3D && sh) (stations[id] as any).sh = sh * toMeters
+        }
+      } else if (code === 'P' || code === 'PH') {
+        // Geodetic position (lat/long [+H])
+        const id = parts[1]
+        const latDeg = toDegrees(parts[2])
+        const lonDeg = toDegrees(parts[3])
+        const elev = parts[4] ? parseFloat(parts[4]) : 0
+        const seN = parts[5] ? parseFloat(parts[5]) : 0
+        const seE = parts[6] ? parseFloat(parts[6]) : 0
+        const fixed = parts.includes('!') || parts.includes('*')
+        const toMeters = state.units === 'ft' ? 1 / FT_PER_M : 1
+        const st: any = stations[id] || {
+          x: lonDeg,
+          y: latDeg,
+          h: elev * toMeters,
+          fixed: false,
+        }
+        st.x = lonDeg
+        st.y = latDeg
+        st.h = elev * toMeters
+        st.fixed = fixed || st.fixed
+        st.heightType = code === 'PH' ? 'ellipsoid' : 'orthometric'
+        if (!st.fixed) {
+          if (seN) st.sy = seN * toMeters
+          if (seE) st.sx = seE * toMeters
+        }
+        stations[id] = st
+        logs.push(`P record stored as lat/long degrees (no projection) for ${id}`)
+      } else if (code === 'CH' || code === 'EH') {
+        // Coordinate or elevation with ellipsoid height
+        const id = parts[1]
+        const numeric = parts.slice(2).map((p) => parseFloat(p)).filter((v) => !Number.isNaN(v))
+        const is3D = state.coordMode === '3D' || numeric.length >= 3
+        const nIdx = state.order === 'NE' ? 0 : 1
+        const eIdx = state.order === 'NE' ? 1 : 0
+        const hIdx = is3D ? 2 : -1
+        const north = numeric[nIdx] ?? 0
+        const east = numeric[eIdx] ?? 0
+        const h = hIdx >= 0 ? numeric[hIdx] : numeric[0] ?? 0
+        const seStart = is3D ? 3 : 2
+        const sx = numeric[seStart]
+        const sy = numeric[seStart + 1]
+        const sh = numeric[seStart + 2]
+        const fixed = parts.includes('!') || parts.includes('*')
+        const toMeters = state.units === 'ft' ? 1 / FT_PER_M : 1
+        stations[id] = {
+          x: east * toMeters,
+          y: north * toMeters,
+          h: h * toMeters,
+          fixed,
+          heightType: 'ellipsoid',
+        }
         if (!fixed) {
           if (sx) (stations[id] as any).sx = sx * toMeters
           if (sy) (stations[id] as any).sy = sy * toMeters

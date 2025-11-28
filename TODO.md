@@ -12,7 +12,7 @@
 - [ ] Star*Net format compatibility (Section 5.6):
   - [x] Elevation-only parsing (`E` records) with std errors/fixity and unit conversion
   - [~] Implement global inline options: `.UNITS`, `.COORD 2D/3D`, `.ORDER NE/EN`, `.2D`/`.3D`, `.DELTA ON/OFF`, `.MAPMODE`, `.LWEIGHT`, `.NORMALIZE`, `.END` (parses/logs complete; downstream wiring pending per code type)
-  - Coordinate/position/elevation records: `C` (2D/3D with per-component std errs and `!/*` fixity, NE/EN order), `P` geodetic positions (lat/long [+H], std errs mapped to NE, longitude sign), `E` elevation-only, ellipsoid variants `CH/PH/EH`
+  - [~] Coordinate/position/elevation records: `C` (2D/3D with per-component std errs and `!/*` fixity, NE/EN order), `P` geodetic positions (lat/long [+H], std errs mapped to NE, longitude sign), `E` elevation-only, ellipsoid variants `CH/PH/EH` (parsed; P stores lat/long degrees without projection; ellipsoid height flagged)
   - Single obs: `A` angles (At-From-To or From-At-To), `D` distances (2D HD; 3D slope/HD per mode with HI/HT), `V` vertical (zenith or ΔH per mode with HI/HT), `B` bearings/azimuths
   - Multiple obs: `M` (angle+dist+vertical with std err rules, `?` missing), `BM` (bearing/az+dist+vertical), `DV` (dist+vertical) with std errs and HI/HT
   - Traverse: `TB` (backsight station or bearing/az; dummy backsight handling), `T` legs (angle+dist+vertical with std err rules, HI/HT), `TE` closing angle to station or bearing/az with optional std err

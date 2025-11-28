@@ -2,7 +2,7 @@
 
 ## Project Context
 - Goal: browser-based clone of MicroSurvey Star*Net performing mixed-observation least-squares adjustment (TS distances/angles, GNSS baselines, leveling dH) with control points, error ellipses, residuals, and basic outlier cues.
-- Current behavior (TypeScript): parses Star*Net-style text blocks (instrument library, control, D/A/G/L observations + inline options .UNITS/.COORD/.ORDER/.2D/.3D/.DELTA/.MAPMODE/.LWEIGHT/.NORMALIZE/.END, C/E records with fixity/std errs), normalizes to meters/radians, runs iterative XYH adjustment with custom matrix math, applies overrides/exclusions, reports SEUW/DOF/conditioning warnings, adjusted coordinates, error ellipses, residual tables sorted by |StdRes|, and a processing log. UI adds editable observation tables, re-run with exclusions, map/ellipse view, and seeded demo dataset.
+- Current behavior (TypeScript): parses Star*Net-style text blocks (instrument library, control, D/A/G/L observations + inline options .UNITS/.COORD/.ORDER/.2D/.3D/.DELTA/.MAPMODE/.LWEIGHT/.NORMALIZE/.END, C/E/CH/PH/EH records with fixity/std errs; P lat/long stored as degrees without projection), normalizes to meters/radians, runs iterative XYH adjustment with custom matrix math, applies overrides/exclusions, reports SEUW/DOF/conditioning warnings, adjusted coordinates, error ellipses, residual tables sorted by |StdRes|, and a processing log. UI adds editable observation tables, re-run with exclusions, map/ellipse view, and seeded demo dataset.
 
 ## Tech Stack
 - Runtime: Node 18+ (ESM). Bundler: Vite 7.
