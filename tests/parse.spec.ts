@@ -79,7 +79,7 @@ describe('parseInput', () => {
   })
 
   it('accepts paired face directions when normalized', () => {
-    const parsed = parseInput(readFileSync('tests/fixtures/direction_faceset.dat', 'utf-8'))
+    const parsed = parseInput(readFileSync('tests/fixtures/direction_face_balanced.dat', 'utf-8'))
     const angCount = parsed.observations.filter((o) => o.type === 'angle').length
     expect(angCount).toBe(2)
     expect(parsed.logs.some((l) => l.includes('Mixed face'))).toBe(false)

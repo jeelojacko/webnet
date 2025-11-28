@@ -409,6 +409,11 @@ export class LSAEngine {
   private calculateStatistics(paramMap: Record<StationId, number>, hasQxx: boolean) {
     let vtpv = 0;
     const closureResiduals: string[] = [];
+    const closureVectors: { from: StationId; to: StationId; dE: number; dN: number }[] = [];
+    const loopVectors: Record<string, { dE: number; dN: number }> = {};
+    const hasClosureObs = this.observations.some(
+      (o) => (o as any).setId && String((o as any).setId).toUpperCase() === 'TE',
+    );
 
     this.observations.forEach((obs) => {
       // skip sideshots for statistics too
@@ -482,6 +487,14 @@ export class LSAEngine {
 
       if (obs.setId === 'TE' && typeof obs.residual === 'number') {
         if (obs.type === 'dist') {
+          const az = this.getAzimuth(obs.from, obs.to).az;
+          const dE = obs.residual * Math.sin(az);
+          const dN = obs.residual * Math.cos(az);
+          closureVectors.push({ from: obs.from, to: obs.to, dE, dN });
+          const key = `${obs.from}->${obs.to}`;
+          loopVectors[key] = loopVectors[key] || { dE: 0, dN: 0 };
+          loopVectors[key].dE += dE;
+          loopVectors[key].dN += dN;
           closureResiduals.push(
             `Traverse closure residual ${obs.from}-${obs.to}: ${obs.residual.toFixed(4)} m`,
           );
@@ -535,6 +548,20 @@ export class LSAEngine {
 
     if (closureResiduals.length) {
       this.logs.push(...closureResiduals);
+      const netE = closureVectors.reduce((acc, v) => acc + v.dE, 0);
+      const netN = closureVectors.reduce((acc, v) => acc + v.dN, 0);
+      if (closureVectors.length) {
+        const mag = Math.hypot(netE, netN);
+        this.logs.push(
+          `Traverse misclosure vector: dE=${netE.toFixed(4)} m, dN=${netN.toFixed(4)} m, Mag=${mag.toFixed(4)} m`,
+        );
+      }
+      Object.entries(loopVectors).forEach(([k, v]) => {
+        const mag = Math.hypot(v.dE, v.dN);
+        this.logs.push(`Closure loop ${k}: dE=${v.dE.toFixed(4)} m, dN=${v.dN.toFixed(4)} m, Mag=${mag.toFixed(4)} m`);
+      });
+    } else if (hasClosureObs) {
+      this.logs.push('Traverse closure residual not computed (insufficient closure geometry).');
     }
   }
 

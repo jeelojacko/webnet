@@ -554,8 +554,9 @@ export const parseInput = (
         const stdDist = parts[6] ? parseFloat(parts[6]) : 0
         const toMeters = state.units === 'ft' ? 1 / FT_PER_M : 1
         const angRad = dmsToRad(ang)
+        const isFace2 = angRad >= Math.PI
         if (state.normalize === false) {
-          const thisFace = angRad >= Math.PI ? 'face2' : 'face1'
+          const thisFace = isFace2 ? 'face2' : 'face1'
           if (faceMode === 'unknown') faceMode = thisFace
           if (faceMode !== thisFace) {
             logs.push(`Mixed face traverse angle rejected at line ${lineNum}`)
@@ -652,8 +653,9 @@ export const parseInput = (
         const stdDist = code === 'DM' ? parseFloat(parts[6] || '0') : 0
         const toMeters = state.units === 'ft' ? 1 / FT_PER_M : 1
         const angRad = dmsToRad(ang)
+        const isFace2 = angRad >= Math.PI
         if (state.normalize === false) {
-          const thisFace = angRad >= Math.PI ? 'face2' : 'face1'
+          const thisFace = isFace2 ? 'face2' : 'face1'
           if (faceMode === 'unknown') faceMode = thisFace
           if (faceMode !== thisFace) {
             logs.push(`Mixed face direction rejected at line ${lineNum}`)
@@ -671,6 +673,7 @@ export const parseInput = (
             })
           }
         } else {
+          const weight = isFace2 && stdAng ? stdAng * 0.8 : stdAng || 5
           observations.push({
             id: obsId++,
             type: 'angle',
@@ -680,7 +683,7 @@ export const parseInput = (
             from: traverseCtx.backsight,
             to,
             obs: angRad,
-            stdDev: (stdAng || 5) * SEC_TO_RAD,
+            stdDev: weight * SEC_TO_RAD,
           })
         }
         if (code === 'DM' && dist > 0) {
@@ -740,6 +743,10 @@ export const parseInput = (
         }
         if (traverseCtx.occupy && from !== traverseCtx.occupy) {
           logs.push(`Sideshot must originate from current occupy (${traverseCtx.occupy}) at line ${lineNum}`)
+          continue
+        }
+        if (stations[to]?.fixed) {
+          logs.push(`Sideshot cannot target fixed/control station (${to}) at line ${lineNum}`)
           continue
         }
         const dist = parseFloat(parts[3] || '0')

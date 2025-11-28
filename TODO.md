@@ -16,8 +16,8 @@
   - Single obs: A angles (At-From-To or From-At-To), D distances (2D HD; 3D slope/HD per mode with HI/HT), V vertical (zenith or dH per mode with HI/HT), B bearings/azimuths (solved)
   - Multiple obs: M (angle+dist+vertical with std err rules, ? missing), BM (bearing/az+dist+vertical), DV (dist+vertical) with std errs and HI/HT
   - Traverse: TB (backsight station or bearing/az; dummy backsight handling), T legs (angle+dist+vertical with std err rules, HI/HT), TE closing angle to station or bearing/az with optional std err (basic conversion to angle/dist/vert added; mixed-face rejection when .NORMALIZE OFF; closure logged)
-  - Direction sets: DB begin, DN directions, DM directions+measurements, DE end; face-1/face-2 handling, reject mixed-face when .NORMALIZE OFF (basic conversion to angle/dist/vert added; face-1/face-2 fixture added)
-  - Sideshots: SS diverted from adjustment, compute post-adjust, disallow occupy/backsight, optional name checking (basic parse to dist + vert/zenith; excluded from adjustment; occupy/backsight validation added)
+  - Direction sets: DB begin, DN directions, DM directions+measurements, DE end; face-1/face-2 handling, reject mixed-face when .NORMALIZE OFF (basic conversion to angle/dist/vert added; face-1/face-2 fixture added; face-2 weighting tweak)
+  - Sideshots: SS diverted from adjustment, compute post-adjust, disallow occupy/backsight, optional name checking (basic parse to dist + vert/zenith; excluded from adjustment; occupy/backsight validation added; cannot target fixed control)
   - Leveling: L dH with distance or turns, std err or per-unit via .LWEIGHT (fallback applied; ft lengths converted to km), allow fixity/free
   - Fixity/weights: support ! fixed, * free, & defaults, numeric std errs per obs/component
   - Units/normalization: honor .UNITS for ft/m parsing/HI/HT, convert angles/bearings; normalize engine to meters/radians
