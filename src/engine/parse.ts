@@ -23,10 +23,28 @@ const defaultParseOptions: ParseOptions = {
 }
 
 const FT_PER_M = 3.280839895
+const EARTH_RADIUS_M = 6378137
 const toDegrees = (token: string): number => {
   if (!token) return Number.NaN
   if (token.includes('-')) return dmsToRad(token) * RAD_TO_DEG
   return parseFloat(token)
+}
+
+const projectLatLonToEN = (
+  latDeg: number,
+  lonDeg: number,
+  originLatDeg: number,
+  originLonDeg: number,
+) => {
+  const lat = (latDeg * Math.PI) / 180
+  const lon = (lonDeg * Math.PI) / 180
+  const lat0 = (originLatDeg * Math.PI) / 180
+  const lon0 = (originLonDeg * Math.PI) / 180
+  const dLat = lat - lat0
+  const dLon = lon - lon0
+  const north = EARTH_RADIUS_M * dLat
+  const east = EARTH_RADIUS_M * Math.cos(lat0) * dLon
+  return { east, north }
 }
 
 export const parseInput = (
@@ -140,7 +158,7 @@ export const parseInput = (
           if (is3D && sh) (stations[id] as any).sh = sh * toMeters
         }
       } else if (code === 'P' || code === 'PH') {
-        // Geodetic position (lat/long [+H])
+        // Geodetic position (lat/long [+H]) projected to local EN using first P as origin (equirectangular)
         const id = parts[1]
         const latDeg = toDegrees(parts[2])
         const lonDeg = toDegrees(parts[3])
@@ -148,16 +166,24 @@ export const parseInput = (
         const seN = parts[5] ? parseFloat(parts[5]) : 0
         const seE = parts[6] ? parseFloat(parts[6]) : 0
         const fixed = parts.includes('!') || parts.includes('*')
-        const toMeters = state.units === 'ft' ? 1 / FT_PER_M : 1
-        const st: any = stations[id] || {
-          x: lonDeg,
-          y: latDeg,
-          h: elev * toMeters,
-          fixed: false,
+        if (state.originLatDeg == null || state.originLonDeg == null) {
+          state.originLatDeg = latDeg
+          state.originLonDeg = lonDeg
+          logs.push(`P origin set to ${latDeg.toFixed(6)}, ${lonDeg.toFixed(6)}`)
         }
-        st.x = lonDeg
-        st.y = latDeg
+        const { east, north } = projectLatLonToEN(
+          latDeg,
+          lonDeg,
+          state.originLatDeg ?? latDeg,
+          state.originLonDeg ?? lonDeg,
+        )
+        const toMeters = state.units === 'ft' ? 1 / FT_PER_M : 1
+        const st: any = stations[id] || { x: 0, y: 0, h: 0, fixed: false }
+        st.x = east
+        st.y = north
         st.h = elev * toMeters
+        st.latDeg = latDeg
+        st.lonDeg = lonDeg
         st.fixed = fixed || st.fixed
         st.heightType = code === 'PH' ? 'ellipsoid' : 'orthometric'
         if (!st.fixed) {
@@ -165,7 +191,7 @@ export const parseInput = (
           if (seE) st.sx = seE * toMeters
         }
         stations[id] = st
-        logs.push(`P record stored as lat/long degrees (no projection) for ${id}`)
+        logs.push(`P record projected to local EN (meters) for ${id}`)
       } else if (code === 'CH' || code === 'EH') {
         // Coordinate or elevation with ellipsoid height
         const id = parts[1]

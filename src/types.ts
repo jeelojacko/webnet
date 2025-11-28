@@ -24,6 +24,8 @@ export interface Station {
   h: number;
   fixed: boolean;
   heightType?: 'orthometric' | 'ellipsoid';
+  latDeg?: number;
+  lonDeg?: number;
   errorEllipse?: StationErrorEllipse;
   sH?: number;
 }
@@ -117,6 +119,8 @@ export interface ParseOptions {
   mapMode: MapMode;
   normalize: boolean;
   levelWeight?: number;
+  originLatDeg?: number;
+  originLonDeg?: number;
 }
 
 export interface AdjustmentResult {
