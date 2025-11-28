@@ -62,6 +62,5 @@ npm run format:check # Prettier check
   - `npm install`
   - `npm run lint`
   - `npm run test`
-  - `npm run build`
-  - Then `git add .`, `git commit -m "<short description>"`, `git push -u origin main`.
+  - `npm run build`.
 - If any command errors, fix the issues and rerun the full sequence until all commands succeed before pushing.

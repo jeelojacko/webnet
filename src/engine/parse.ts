@@ -59,6 +59,7 @@ export const parseInput = (
   const instrumentLibrary: InstrumentLibrary = { ...existingInstruments }
   const logs: string[] = []
   const state: ParseOptions = { ...defaultParseOptions, ...opts }
+  const typeCounts: Record<string, number> = {}
   const traverseCtx: { occupy?: string; backsight?: string } = {}
   let faceMode: 'unknown' | 'face1' | 'face2' = 'unknown'
 
@@ -250,7 +251,8 @@ export const parseInput = (
         const setId = hasInst ? parts[2] : ''
         const from = hasInst ? parts[3] : parts[1]
         const to = hasInst ? parts[4] : parts[2]
-        const dist = parseFloat(hasInst ? parts[5] : parts[3])
+        const distToken = hasInst ? parts[5] : parts[3]
+        const dist = parseFloat(distToken)
         const sigmaToken = hasInst ? parts[6] : parts[4]
         let hi: number | undefined
         let ht: number | undefined
@@ -898,6 +900,8 @@ export const parseInput = (
           stdDev: sigma,
         }
         observations.push(obs)
+      } else {
+        logs.push(`Unrecognized code "${code}" at line ${lineNum}, skipping`)
       }
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e)
@@ -906,6 +910,15 @@ export const parseInput = (
   }
 
   const unknowns = Object.keys(stations).filter((id) => !stations[id]?.fixed)
+  const typeSummary = observations.reduce<Record<string, number>>((acc, o) => {
+    acc[o.type] = (acc[o.type] ?? 0) + 1
+    return acc
+  }, {})
+  logs.push(
+    `Counts: ${Object.entries(typeSummary)
+      .map(([k, v]) => `${k}=${v}`)
+      .join(', ')}`,
+  )
   logs.push(
     `Stations: ${Object.keys(stations).length} (unknown: ${unknowns.length}). Obs: ${observations.length}`,
   )
