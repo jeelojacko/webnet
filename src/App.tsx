@@ -141,6 +141,7 @@ type ParseSettings = {
   mapMode: MapMode
   normalize: boolean
   levelWeight?: number
+  lonSign: 'west-positive' | 'west-negative'
 }
 
 type TabKey = 'report' | 'map'
@@ -160,6 +161,7 @@ const App: React.FC = () => {
     mapMode: 'off',
     normalize: true,
     levelWeight: undefined,
+    lonSign: 'west-negative',
   })
   const [selectedInstrument, setSelectedInstrument] = useState('')
   const [splitPercent, setSplitPercent] = useState(35) // left pane width (%)
@@ -286,6 +288,7 @@ const App: React.FC = () => {
         mapMode: parseSettings.mapMode,
         normalize: parseSettings.normalize,
         levelWeight: parseSettings.levelWeight,
+        lonSign: parseSettings.lonSign,
       },
     })
 
@@ -377,6 +380,30 @@ const App: React.FC = () => {
 
           <div className="flex items-center space-x-3">
             <div className="flex items-center space-x-2">
+              <label className="text-xs text-slate-400 font-medium uppercase">Coord</label>
+              <select
+                value={parseSettings.coordMode}
+                onChange={(e) => handleParseSetting('coordMode', e.target.value as CoordMode)}
+                className="bg-slate-800 text-xs border border-slate-600 text-white rounded px-2 py-1 outline-none focus:border-blue-500"
+              >
+                <option value="2D">2D (.2D)</option>
+                <option value="3D">3D (.3D)</option>
+              </select>
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <label className="text-xs text-slate-400 font-medium uppercase">Order</label>
+              <select
+                value={parseSettings.order}
+                onChange={(e) => handleParseSetting('order', e.target.value as OrderMode)}
+                className="bg-slate-800 text-xs border border-slate-600 text-white rounded px-2 py-1 outline-none focus:border-blue-500"
+              >
+                <option value="EN">EN (.ORDER EN)</option>
+                <option value="NE">NE (.ORDER NE)</option>
+              </select>
+            </div>
+
+            <div className="flex items-center space-x-2">
               <label className="text-xs text-slate-400 font-medium uppercase">Delta Mode</label>
               <select
                 value={parseSettings.deltaMode}
@@ -426,6 +453,18 @@ const App: React.FC = () => {
                 }
                 className="w-20 bg-slate-800 text-xs border border-slate-600 text-white rounded px-2 py-1 outline-none focus:border-blue-500 text-center"
               />
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <label className="text-xs text-slate-400 font-medium uppercase">Lon Sign</label>
+              <select
+                value={parseSettings.lonSign}
+                onChange={(e) => handleParseSetting('lonSign', e.target.value as ParseSettings['lonSign'])}
+                className="bg-slate-800 text-xs border border-slate-600 text-white rounded px-2 py-1 outline-none focus:border-blue-500"
+              >
+                <option value="west-negative">West Negative (.LONSIGN W-)</option>
+                <option value="west-positive">West Positive (.LONSIGN W+)</option>
+              </select>
             </div>
           </div>
 

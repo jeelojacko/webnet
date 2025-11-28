@@ -21,4 +21,16 @@ describe('LSAEngine', () => {
     expect(Number.isFinite(stn.h)).toBe(true)
     expect(stn.fixed).toBe(false)
   })
+
+  it('handles bearing and zenith observations', () => {
+    const custom = readFileSync('tests/fixtures/bearing_vertical.dat', 'utf-8')
+    const engine = new LSAEngine({ input: custom, maxIterations: 10 })
+    const result = engine.solve()
+    expect(result.dof).toBeGreaterThan(0)
+    const stn = result.stations['X']
+    expect(Number.isFinite(stn.x)).toBe(true)
+    expect(Number.isFinite(stn.y)).toBe(true)
+    expect(result.observations.some((o) => o.type === 'bearing')).toBe(true)
+    expect(result.observations.some((o) => o.type === 'zenith')).toBe(true)
+  })
 })

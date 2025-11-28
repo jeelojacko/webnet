@@ -102,6 +102,22 @@ const ReportView: React.FC<ReportViewProps> = ({
                 stationsLabel = `${obs.from}-${obs.to}`
                 calcStr = obs.calc != null ? ((obs.calc as number) * unitScale).toFixed(4) : '-'
                 resStr = obs.residual != null ? ((obs.residual as number) * unitScale).toFixed(4) : '-'
+              } else if (obs.type === 'bearing') {
+                stationsLabel = `${obs.from}-${obs.to}`
+                calcStr = obs.calc != null ? radToDmsStr(obs.calc as number) : '-'
+                resStr =
+                  obs.residual != null
+                    ? `${((obs.residual as number) * RAD_TO_DEG * 3600).toFixed(2)}"`
+                    : '-'
+                stdDevVal = obs.stdDev * RAD_TO_DEG * 3600
+              } else if (obs.type === 'zenith') {
+                stationsLabel = `${obs.from}-${obs.to}`
+                calcStr = obs.calc != null ? radToDmsStr(obs.calc as number) : '-'
+                resStr =
+                  obs.residual != null
+                    ? `${((obs.residual as number) * RAD_TO_DEG * 3600).toFixed(2)}"`
+                    : '-'
+                stdDevVal = obs.stdDev * RAD_TO_DEG * 3600
               }
 
               return (
@@ -153,12 +169,16 @@ const ReportView: React.FC<ReportViewProps> = ({
                         defaultValue={
                           obs.type === 'angle'
                             ? (obs.obs * RAD_TO_DEG).toFixed(6)
+                            : obs.type === 'bearing' || obs.type === 'zenith'
+                            ? (obs.obs * RAD_TO_DEG).toFixed(6)
                             : (obs.obs * unitScale).toFixed(4)
                         }
                         onBlur={(e) =>
                           onOverride(obs.id, {
                             obs:
                               obs.type === 'angle'
+                                ? parseFloat(e.target.value)
+                                : obs.type === 'bearing' || obs.type === 'zenith'
                                 ? parseFloat(e.target.value)
                                 : parseFloat(e.target.value) / unitScale,
                           })
@@ -182,7 +202,7 @@ const ReportView: React.FC<ReportViewProps> = ({
                       onBlur={(e) =>
                         onOverride(obs.id, {
                           stdDev:
-                            obs.type === 'angle'
+                            obs.type === 'angle' || obs.type === 'bearing' || obs.type === 'zenith'
                               ? parseFloat(e.target.value) / (RAD_TO_DEG * 3600)
                               : parseFloat(e.target.value) / unitScale,
                         })
@@ -256,6 +276,8 @@ const ReportView: React.FC<ReportViewProps> = ({
               <div>Angles: {byType('angle').length}</div>
               <div>GPS: {byType('gps').length}</div>
               <div>Leveling: {byType('lev').length}</div>
+              <div>Bearings: {byType('bearing').length}</div>
+              <div>Zenith: {byType('zenith').length}</div>
             </div>
           </div>
         </div>
@@ -313,6 +335,8 @@ const ReportView: React.FC<ReportViewProps> = ({
         </div>
         {renderTable(byType('angle'), 'Angles (TS)')}
         {renderTable(byType('dist'), 'Distances (TS)')}
+        {renderTable(byType('bearing'), 'Bearings/Azimuths')}
+        {renderTable(byType('zenith'), 'Zenith/Vertical Angles')}
         {renderTable(byType('gps'), 'GPS Vectors')}
         {renderTable(byType('lev'), 'Leveling dH')}
       </div>

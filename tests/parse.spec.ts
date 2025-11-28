@@ -44,4 +44,16 @@ describe('parseInput', () => {
     expect(lev.stdDev).toBeCloseTo(0.00007, 6) // 0.7 mm/km * 0.1 km
     expect(levelOnly.logs.some((l) => l.includes('.LWEIGHT applied'))).toBe(true)
   })
+
+  it('parses bearings and zeniths', () => {
+    const bearingFixture = readFileSync('tests/fixtures/bearing_vertical.dat', 'utf-8')
+    const parsed = parseInput(bearingFixture)
+    const types = parsed.observations.reduce<Record<string, number>>((acc, o) => {
+      acc[o.type] = (acc[o.type] ?? 0) + 1
+      return acc
+    }, {})
+    expect(types.bearing).toBe(1)
+    expect(types.zenith).toBe(1)
+    expect(types.dist).toBeGreaterThan(0)
+  })
 })

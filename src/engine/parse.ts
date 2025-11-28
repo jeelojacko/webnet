@@ -331,11 +331,21 @@ export const parseInput = (
             to,
             obs: dh,
             lenKm: 0,
-            stdDev: std,
+            stdDev: std || 0.001,
           }
           observations.push(obs)
         } else {
-          logs.push(`V zenith not yet supported at line ${lineNum}, skipping`)
+          const zenRad = valToken.includes('-') ? dmsToRad(valToken) : (parseFloat(valToken) * Math.PI) / 180
+          const stdArc = parseFloat(stdToken || '5') // arcseconds
+          observations.push({
+            id: obsId++,
+            type: 'zenith',
+            instCode: '',
+            from,
+            to,
+            obs: zenRad,
+            stdDev: (stdArc || 5) * SEC_TO_RAD,
+          })
         }
       } else if (code === 'DV') {
         // Distance + vertical: in delta mode, HD + deltaH; in slope mode not yet supported
@@ -383,7 +393,7 @@ export const parseInput = (
           logs.push(`DV slope/zenith not yet supported at line ${lineNum}, skipping`)
         }
       } else if (code === 'BM') {
-        // Bearing + measurements. Bearing stored in log; dist parsed; deltaH if available in delta mode
+        // Bearing + measurements. Bearing stored/logged; dist parsed; zenith or deltaH captured based on mode
         const from = parts[1]
         const to = parts[2]
         const bearing = parts[3]
@@ -413,11 +423,30 @@ export const parseInput = (
             to,
             obs: dh,
             lenKm: 0,
-            stdDev: 0,
+            stdDev: 0.001,
           })
         } else if (vert) {
-          logs.push(`BM bearing ${bearing} recorded; zenith handling pending at line ${lineNum}`)
+          const zenRad = vert.includes('-') ? dmsToRad(vert) : (parseFloat(vert) * Math.PI) / 180
+          observations.push({
+            id: obsId++,
+            type: 'zenith',
+            instCode: '',
+            from,
+            to,
+            obs: zenRad,
+            stdDev: (stdDist || 5) * SEC_TO_RAD,
+          })
         }
+        const bearingRad = bearing.includes('-') ? dmsToRad(bearing) : (parseFloat(bearing) * Math.PI) / 180
+        observations.push({
+          id: obsId++,
+          type: 'bearing',
+          instCode: '',
+          from,
+          to,
+          obs: bearingRad,
+          stdDev: (stdDist || 5) * SEC_TO_RAD,
+        })
       } else if (code === 'M') {
         // Measure: angle + dist + vertical
         const stations = parts[1].split('-')
@@ -464,14 +493,38 @@ export const parseInput = (
               to,
               obs: dh,
               lenKm: 0,
-              stdDev: 0,
+              stdDev: 0.001,
             })
           } else if (vert) {
-            logs.push(`M zenith not yet supported at line ${lineNum}`)
+            const zenRad = vert.includes('-') ? dmsToRad(vert) : (parseFloat(vert) * Math.PI) / 180
+            observations.push({
+              id: obsId++,
+              type: 'zenith',
+              instCode: '',
+              from: at,
+              to,
+              obs: zenRad,
+              stdDev: (stdAng || 5) * SEC_TO_RAD,
+            })
           }
         }
       } else if (code === 'B') {
-        logs.push(`Bearing/azimuth code at line ${lineNum} not yet solved; storing hint only`)
+        const from = parts[1]
+        const to = parts[2]
+        const bearingToken = parts[3]
+        const stdArc = parseFloat(parts[4] || '5')
+        const bearingRad = bearingToken.includes('-')
+          ? dmsToRad(bearingToken)
+          : (parseFloat(bearingToken) * Math.PI) / 180
+        observations.push({
+          id: obsId++,
+          type: 'bearing',
+          instCode: '',
+          from,
+          to,
+          obs: bearingRad,
+          stdDev: (stdArc || 5) * SEC_TO_RAD,
+        })
       } else if (code === 'G') {
         const instCode = parts[1]
         const from = parts[2]

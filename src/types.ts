@@ -34,7 +34,7 @@ export type StationMap = Record<StationId, Station>;
 
 interface ObservationBase {
   id: number;
-  type: 'dist' | 'angle' | 'gps' | 'lev';
+  type: 'dist' | 'angle' | 'gps' | 'lev' | 'bearing' | 'zenith';
   instCode: string;
   stdDev: number;
   calc?: unknown;
@@ -94,7 +94,29 @@ export type Observation =
   | DistanceObservation
   | AngleObservation
   | GpsObservation
-  | LevelObservation;
+  | LevelObservation
+  | BearingObservation
+  | ZenithObservation;
+
+export interface BearingObservation extends ObservationBase {
+  type: 'bearing';
+  from: StationId;
+  to: StationId;
+  obs: number; // radians
+  calc?: number;
+  residual?: number;
+  stdRes?: number;
+}
+
+export interface ZenithObservation extends ObservationBase {
+  type: 'zenith';
+  from: StationId;
+  to: StationId;
+  obs: number; // radians
+  calc?: number;
+  residual?: number;
+  stdRes?: number;
+}
 
 export type ObservationOverride =
   | { obs?: number; stdDev?: number }

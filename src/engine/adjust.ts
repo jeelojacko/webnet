@@ -75,6 +75,19 @@ export class LSAEngine {
     return { az, dist: Math.sqrt(dx * dx + dy * dy) };
   }
 
+  private getZenith(fromID: StationId, toID: StationId): { z: number; dist: number; horiz: number; dh: number } {
+    const s1 = this.stations[fromID];
+    const s2 = this.stations[toID];
+    if (!s1 || !s2) return { z: 0, dist: 0, horiz: 0, dh: 0 };
+    const dx = s2.x - s1.x;
+    const dy = s2.y - s1.y;
+    const dh = s2.h - s1.h;
+    const horiz = Math.sqrt(dx * dx + dy * dy);
+    const dist = Math.sqrt(horiz * horiz + dh * dh);
+    const z = dist === 0 ? 0 : Math.acos(dh / dist);
+    return { z, dist, horiz, dh };
+  }
+
   solve(): AdjustmentResult {
     const parsed = parseInput(this.input, this.instrumentLibrary, this.parseOptions);
     this.stations = parsed.stations;
@@ -112,7 +125,10 @@ export class LSAEngine {
     }
 
     const numParams = this.unknowns.length * 3; // X, Y, H per station
-    const numObsEquations = this.observations.reduce((acc, o) => acc + (o.type === 'gps' ? 2 : 1), 0);
+    const numObsEquations = this.observations.reduce(
+      (acc, o) => acc + (o.type === 'gps' ? 2 : 1),
+      0,
+    );
 
     this.dof = numObsEquations - numParams;
     if (this.dof < 0) {
@@ -261,6 +277,65 @@ export class LSAEngine {
           P[row][row] = w;
 
           row += 1;
+        } else if (obs.type === 'bearing') {
+          const { from, to } = obs;
+          const az = this.getAzimuth(from, to);
+          const calc = az.az;
+          let v = obs.obs - calc;
+          if (v > Math.PI) v -= 2 * Math.PI;
+          if (v < -Math.PI) v += 2 * Math.PI;
+          L[row][0] = v;
+
+          const dAz_dE_To = Math.cos(calc) / (az.dist || 1);
+          const dAz_dN_To = -Math.sin(calc) / (az.dist || 1);
+
+          if (!this.stations[to].fixed) {
+            const idx = paramMap[to];
+            A[row][idx] = dAz_dE_To;
+            A[row][idx + 1] = dAz_dN_To;
+          }
+          if (!this.stations[from].fixed) {
+            const idx = paramMap[from];
+            A[row][idx] = -dAz_dE_To;
+            A[row][idx + 1] = -dAz_dN_To;
+          }
+
+          const w = 1.0 / (obs.stdDev * obs.stdDev);
+          P[row][row] = w;
+
+          row += 1;
+        } else if (obs.type === 'zenith') {
+          const { from, to } = obs;
+          const zv = this.getZenith(from, to);
+          const calc = zv.z;
+          let v = obs.obs - calc;
+          if (v > Math.PI) v -= 2 * Math.PI;
+          if (v < -Math.PI) v += 2 * Math.PI;
+          L[row][0] = v;
+
+          const denom = Math.sqrt(Math.max(1 - (zv.dist === 0 ? 0 : (zv.dh / zv.dist) ** 2), 1e-12));
+          const common = zv.dist === 0 ? 0 : 1 / (zv.dist * zv.dist * zv.dist * denom);
+          const dZ_dE = zv.dh * (this.stations[to].x - this.stations[from].x) * common;
+          const dZ_dN = zv.dh * (this.stations[to].y - this.stations[from].y) * common;
+          const dZ_dH = (zv.horiz * zv.horiz) * common;
+
+          if (!this.stations[to].fixed) {
+            const idx = paramMap[to];
+            A[row][idx] = dZ_dE;
+            A[row][idx + 1] = dZ_dN;
+            A[row][idx + 2] = dZ_dH;
+          }
+          if (!this.stations[from].fixed) {
+            const idx = paramMap[from];
+            A[row][idx] = -dZ_dE;
+            A[row][idx + 1] = -dZ_dN;
+            A[row][idx + 2] = -dZ_dH;
+          }
+
+          const w = 1.0 / (obs.stdDev * obs.stdDev);
+          P[row][row] = w;
+
+          row += 1;
         }
       });
 
@@ -373,6 +448,24 @@ export class LSAEngine {
         const calc_dH = s2.h - s1.h;
         const v = obs.obs - calc_dH;
         obs.calc = calc_dH;
+        obs.residual = v;
+        obs.stdRes = Math.abs(v) / obs.stdDev;
+        vtpv += (v * v) / (obs.stdDev * obs.stdDev);
+      } else if (obs.type === 'bearing') {
+        const calcAz = this.getAzimuth(obs.from, obs.to).az;
+        let v = obs.obs - calcAz;
+        if (v > Math.PI) v -= 2 * Math.PI;
+        if (v < -Math.PI) v += 2 * Math.PI;
+        obs.calc = calcAz;
+        obs.residual = v;
+        obs.stdRes = Math.abs(v) / obs.stdDev;
+        vtpv += (v * v) / (obs.stdDev * obs.stdDev);
+      } else if (obs.type === 'zenith') {
+        const zv = this.getZenith(obs.from, obs.to).z;
+        let v = obs.obs - zv;
+        if (v > Math.PI) v -= 2 * Math.PI;
+        if (v < -Math.PI) v += 2 * Math.PI;
+        obs.calc = zv;
         obs.residual = v;
         obs.stdRes = Math.abs(v) / obs.stdDev;
         vtpv += (v * v) / (obs.stdDev * obs.stdDev);
