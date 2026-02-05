@@ -24,6 +24,7 @@ const defaultParseOptions: ParseOptions = {
   lonSign: 'west-negative',
   currentInstrument: undefined,
   edmMode: 'additive',
+  applyCentering: true,
   addCenteringToExplicit: false,
   debug: false,
 }
@@ -274,6 +275,10 @@ export const parseInput = (
         const mode = (parts[1] || '').toUpperCase()
         state.edmMode = mode === 'PROPAGATED' || mode === 'RSS' ? 'propagated' : 'additive'
         logs.push(`EDM mode set to ${state.edmMode}`)
+      } else if (op === '.CENTERING') {
+        const mode = (parts[1] || '').toUpperCase()
+        state.applyCentering = mode !== 'OFF'
+        logs.push(`Centering inflation set to ${state.applyCentering}`)
       } else if (op === '.ADDC') {
         const mode = (parts[1] || '').toUpperCase()
         state.addCenteringToExplicit = mode === 'ON'

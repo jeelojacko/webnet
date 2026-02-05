@@ -47,6 +47,7 @@ export class LSAEngine {
   private directionOrientations: Record<string, number> = {};
   private paramIndex: Record<StationId, { x?: number; y?: number; h?: number }> = {};
   private addCenteringToExplicit = false;
+  private applyCentering = true;
   private debug = false;
 
   private getInstrument(obs: Observation): Instrument | undefined {
@@ -61,6 +62,7 @@ export class LSAEngine {
 
     const source = obs.sigmaSource ?? 'explicit';
     if (source === 'fixed' || source === 'float') return sigma || 1;
+    if (!this.applyCentering) return sigma || 1;
     if (source === 'explicit' && !this.addCenteringToExplicit) return sigma || 1;
 
     const center = Math.hypot(inst.instCentr_m || 0, inst.tgtCentr_m || 0);
@@ -314,6 +316,7 @@ export class LSAEngine {
     this.logs = [...parsed.logs];
     this.coordMode = parsed.parseState?.coordMode ?? this.parseOptions?.coordMode ?? '3D';
     this.addCenteringToExplicit = parsed.parseState?.addCenteringToExplicit ?? false;
+    this.applyCentering = parsed.parseState?.applyCentering ?? true;
     this.debug = parsed.parseState?.debug ?? false;
     this.is2D = this.coordMode === '2D';
 
@@ -434,12 +437,14 @@ export class LSAEngine {
           L[row][0] = v;
           if (this.debug) {
             const sigmaUsed = this.effectiveStdDev(obs);
+            const wRad = v;
+            const norm = sigmaUsed ? wRad / sigmaUsed : 0;
             this.logObsDebug(
               iter + 1,
               `DIST#${obs.id}`,
               `from=${from} to=${to} obs=${obs.obs.toFixed(4)}m calc=${calcDist.toFixed(
                 4,
-              )}m w=${v.toFixed(6)}m sigma=${sigmaUsed.toFixed(6)}m mode=${obs.mode}`,
+              )}m w=${wRad.toFixed(6)}m norm=${norm.toFixed(3)} sigma=${sigmaUsed.toFixed(6)}m mode=${obs.mode}`,
             );
           }
           const denom = calcDist || 1;
@@ -485,6 +490,9 @@ export class LSAEngine {
           L[row][0] = diff;
           if (this.debug) {
             const sigmaUsed = this.effectiveStdDev(obs);
+            const wRad = diff;
+            const wDeg = wRad * RAD_TO_DEG;
+            const norm = sigmaUsed ? wRad / sigmaUsed : 0;
             this.logObsDebug(
               iter + 1,
               `ANGLE#${obs.id}`,
@@ -494,9 +502,9 @@ export class LSAEngine {
                 6,
               )}° azFrom=${(azFrom.az * RAD_TO_DEG).toFixed(
                 6,
-              )}° calc=${(calcAngle * RAD_TO_DEG).toFixed(6)}° w=${(
-                diff * RAD_TO_DEG
-              ).toFixed(6)}° sigma=${sigmaUsed.toFixed(8)}rad`,
+              )}° calc=${(calcAngle * RAD_TO_DEG).toFixed(6)}° w=${wDeg.toFixed(
+                6,
+              )}°/${wRad.toFixed(8)}rad norm=${norm.toFixed(3)} sigma=${sigmaUsed.toFixed(8)}rad`,
             );
           }
 
@@ -645,6 +653,9 @@ export class LSAEngine {
           L[row][0] = v;
           if (this.debug) {
             const sigmaUsed = this.effectiveStdDev(obs);
+            const wRad = v;
+            const wDeg = wRad * RAD_TO_DEG;
+            const norm = sigmaUsed ? wRad / sigmaUsed : 0;
             this.logObsDebug(
               iter + 1,
               `DIR#${obs.id}`,
@@ -654,9 +665,9 @@ export class LSAEngine {
                 6,
               )}° orient=${(orientation * RAD_TO_DEG).toFixed(6)}° calc=${(
                 calc * RAD_TO_DEG
-              ).toFixed(6)}° w=${(v * RAD_TO_DEG).toFixed(6)}° sigma=${sigmaUsed.toFixed(
+              ).toFixed(6)}° w=${wDeg.toFixed(6)}°/${wRad.toFixed(
                 8,
-              )}rad`,
+              )}rad norm=${norm.toFixed(3)} sigma=${sigmaUsed.toFixed(8)}rad`,
             );
           }
 
@@ -698,14 +709,17 @@ export class LSAEngine {
           L[row][0] = v;
           if (this.debug) {
             const sigmaUsed = this.effectiveStdDev(obs);
+            const wRad = v;
+            const wDeg = wRad * RAD_TO_DEG;
+            const norm = sigmaUsed ? wRad / sigmaUsed : 0;
             this.logObsDebug(
               iter + 1,
               `ZEN#${obs.id}`,
               `from=${from} to=${to} obs=${(obs.obs * RAD_TO_DEG).toFixed(6)}°/${obs.obs.toFixed(
                 6,
-              )}rad calc=${(calc * RAD_TO_DEG).toFixed(6)}° w=${(
-                v * RAD_TO_DEG
-              ).toFixed(6)}° sigma=${sigmaUsed.toFixed(8)}rad`,
+              )}rad calc=${(calc * RAD_TO_DEG).toFixed(6)}° w=${wDeg.toFixed(
+                6,
+              )}°/${wRad.toFixed(8)}rad norm=${norm.toFixed(3)} sigma=${sigmaUsed.toFixed(8)}rad`,
             );
           }
 

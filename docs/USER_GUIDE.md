@@ -27,6 +27,7 @@ Directives that control parsing behavior:
 -   `.LONSIGN [WESTNEG|WESTPOS]`: Longitude sign convention (default: WESTNEG).
 -   `.I [InstCode]`: Sets the current instrument for subsequent TS observations (optional).
 -   `.EDM [ADDITIVE|PROPAGATED]`: Distance sigma mode (default: ADDITIVE).
+-   `.CENTERING [ON|OFF]`: Apply centering inflation from the instrument (default: ON).
 -   `.ADDC [ON|OFF]`: Add centering to explicit sigmas (default: OFF).
 -   `.DEBUG [ON|OFF]`: Enable per-observation debug logging (default: OFF).
 

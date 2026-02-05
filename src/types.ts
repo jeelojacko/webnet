@@ -172,6 +172,7 @@ export interface ParseOptions {
   lonSign?: LonSign;
   currentInstrument?: string;
   edmMode?: 'additive' | 'propagated';
+  applyCentering?: boolean;
   addCenteringToExplicit?: boolean;
   debug?: boolean;
 }
