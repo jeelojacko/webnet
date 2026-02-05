@@ -727,7 +727,7 @@ export class LSAEngine {
           const common = zv.dist === 0 ? 0 : 1 / (zv.dist * zv.dist * zv.dist * denom);
           const dZ_dE = zv.dh * (this.stations[to].x - this.stations[from].x) * common;
           const dZ_dN = zv.dh * (this.stations[to].y - this.stations[from].y) * common;
-          const dZ_dH = (zv.horiz * zv.horiz) * common;
+          const dZ_dH = -(zv.horiz * zv.horiz) * common;
 
           const toIdx = this.paramIndex[to];
           if (toIdx?.x != null) {
