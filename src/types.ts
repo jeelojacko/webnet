@@ -23,6 +23,9 @@ export interface Station {
   y: number;
   h: number;
   fixed: boolean;
+  fixedX?: boolean;
+  fixedY?: boolean;
+  fixedH?: boolean;
   heightType?: 'orthometric' | 'ellipsoid';
   latDeg?: number;
   lonDeg?: number;
@@ -34,7 +37,7 @@ export type StationMap = Record<StationId, Station>;
 
 interface ObservationBase {
   id: number;
-  type: 'dist' | 'angle' | 'gps' | 'lev' | 'bearing' | 'zenith';
+  type: 'dist' | 'angle' | 'direction' | 'gps' | 'lev' | 'bearing' | 'zenith';
   instCode: string;
   stdDev: number;
   calc?: unknown;
@@ -52,7 +55,7 @@ export interface DistanceObservation extends ObservationBase {
   hi?: number;
   ht?: number;
   mode?: 'slope' | 'horiz';
-  calc?: number;
+  calc?: number | { sideshot: boolean };
   residual?: number;
   stdRes?: number;
 }
@@ -62,6 +65,17 @@ export interface AngleObservation extends ObservationBase {
   setId?: string;
   at: StationId;
   from: StationId;
+  to: StationId;
+  obs: number; // radians
+  calc?: number | { sideshot: boolean };
+  residual?: number;
+  stdRes?: number;
+}
+
+export interface DirectionObservation extends ObservationBase {
+  type: 'direction';
+  setId: string;
+  at: StationId;
   to: StationId;
   obs: number; // radians
   calc?: number;
@@ -85,7 +99,7 @@ export interface LevelObservation extends ObservationBase {
   to: StationId;
   obs: number;
   lenKm: number;
-  calc?: number;
+  calc?: number | { sideshot: boolean };
   residual?: number;
   stdRes?: number;
 }
@@ -93,6 +107,7 @@ export interface LevelObservation extends ObservationBase {
 export type Observation =
   | DistanceObservation
   | AngleObservation
+  | DirectionObservation
   | GpsObservation
   | LevelObservation
   | BearingObservation
@@ -103,7 +118,7 @@ export interface BearingObservation extends ObservationBase {
   from: StationId;
   to: StationId;
   obs: number; // radians
-  calc?: number;
+  calc?: number | { sideshot: boolean };
   residual?: number;
   stdRes?: number;
 }
@@ -113,7 +128,9 @@ export interface ZenithObservation extends ObservationBase {
   from: StationId;
   to: StationId;
   obs: number; // radians
-  calc?: number;
+  hi?: number;
+  ht?: number;
+  calc?: number | { sideshot: boolean };
   residual?: number;
   stdRes?: number;
 }
@@ -127,6 +144,7 @@ export interface ParseResult {
   observations: Observation[];
   instrumentLibrary: InstrumentLibrary;
   unknowns: StationId[];
+  parseState: ParseOptions;
   logs: string[];
 }
 

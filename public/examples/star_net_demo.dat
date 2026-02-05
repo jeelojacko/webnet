@@ -1,0 +1,45 @@
+# WebNet - Comprehensive Example Network (Square Loop)
+# Demonstrates various Star*Net-style features with consistent geometry.
+
+# --- Global Settings ---
+.UNITS m           # Meters
+.COORD 3D          # 3D Adjustment
+.ORDER EN          # East, North order
+.DELTA OFF         # Slope Distance + Zenith
+.LONSIGN WESTNEG   # West negative
+
+# --- Control Points ---
+# A 100x100m square loop
+# MASTER (SW corner) -> REF (SE corner) -> NE -> NW -> MASTER
+C MASTER 5000.000 5000.000 100.000 !
+C REF1   5100.000 5000.000 102.000 !
+
+# Approximate coords for unknowns
+C P_NE   5100.000 5100.000 105.000
+C P_NW   5000.000 5100.000 103.000
+
+# --- Instrument ---
+# Instrument 30s 2cm
+I S1 "Total Station" 1.0 0.0 30.0 0.020 0.010
+
+A MASTER-REF1-P_NW 270.0000 30.0
+D S1 MASTER P_NW 100.045 0.020
+V MASTER-P_NW 88.1652 60.0
+
+TB P_NW MASTER
+T P_NE 270.0000 100.020 88.5115 30.0 0.020
+T REF1 270.0000 100.045 91.4308 30.0 0.020
+TE REF1
+M MASTER-REF1-P_NE 315.0000 141.510 87.5830 30.0 0.020 60.0
+
+# --- Sideshot ---
+# From P_NW to SidePt (West 10m)
+# SS P_NW SidePt 10.000 90.0000
+SS P_NW SidePt 10.000 90.0000
+
+# --- Leveling (Closed Loop) ---
+# MASTER(100) -> BM1(101) -> REF1(102) -> MASTER(100)
+L MASTER BM1 1.000 50
+L BM1 REF1 1.000 50
+# dH REF1->MASTER = -2.000
+L REF1 MASTER -2.000 100

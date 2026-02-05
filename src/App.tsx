@@ -47,7 +47,7 @@ I GPS1  GNSS-Base-Rover-Fix       0.5   0.002   2.0    0.010   4.0
 I LEV1  Digital-Level-0.7mm       0.0   0.000   0.0    0.000   0.7
 
 # --- CONTROL / STATIONS ---
-# C <ID> <E> <N> <H> [* for fixed]
+# C <ID> <E> <N> <H> [! ! ! to fix components; legacy * fixed]
 C 1000  5000.000 5000.000  100.000  *
 C 1001  5300.000 5000.000  102.000  *
 C 1002  5150.000 5300.000  101.500  *
@@ -166,11 +166,13 @@ const App: React.FC = () => {
   const [selectedInstrument, setSelectedInstrument] = useState('')
   const [splitPercent, setSplitPercent] = useState(35) // left pane width (%)
   const [isSidebarOpen, setIsSidebarOpen] = useState(true)
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [excludedIds, setExcludedIds] = useState<Set<number>>(new Set())
   const [overrides, setOverrides] = useState<Record<number, ObservationOverride>>({})
   const fileInputRef = useRef<HTMLInputElement | null>(null)
   const layoutRef = useRef<HTMLDivElement | null>(null)
   const isResizingRef = useRef(false)
+  const settingsRef = useRef<HTMLDivElement | null>(null)
 
   const instrumentLibrary: InstrumentLibrary = useMemo(() => {
     const lines = input.split('\n')
@@ -211,6 +213,25 @@ const App: React.FC = () => {
       setSelectedInstrument(codes[0] || '')
     }
   }, [instrumentLibrary, selectedInstrument])
+
+  useEffect(() => {
+    if (!isSettingsOpen) return
+    const handleClick = (event: MouseEvent) => {
+      if (!settingsRef.current) return
+      if (!settingsRef.current.contains(event.target as Node)) {
+        setIsSettingsOpen(false)
+      }
+    }
+    const handleKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setIsSettingsOpen(false)
+    }
+    document.addEventListener('mousedown', handleClick)
+    document.addEventListener('keydown', handleKey)
+    return () => {
+      document.removeEventListener('mousedown', handleClick)
+      document.removeEventListener('keydown', handleKey)
+    }
+  }, [isSettingsOpen])
 
   // handle dragging of vertical divider
   useEffect(() => {
@@ -329,8 +350,8 @@ const App: React.FC = () => {
 
   return (
     <div className="fixed inset-0 flex flex-col bg-slate-900 text-slate-100 font-sans overflow-hidden">
-      <header className="h-16 bg-slate-800 border-b border-slate-700 flex items-center justify-between px-4 shrink-0 w-full">
-        <div className="flex items-center space-x-4">
+      <header className="h-16 bg-slate-800 border-b border-slate-700 flex items-center px-3 md:px-4 shrink-0 w-full gap-3">
+        <div className="flex items-center gap-3 min-w-0 flex-1">
           <button
             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
             className="p-1.5 hover:bg-slate-700 rounded text-slate-400 hover:text-white transition-colors"
@@ -338,166 +359,181 @@ const App: React.FC = () => {
           >
             {isSidebarOpen ? <PanelLeftClose size={20} /> : <PanelLeftOpen size={20} />}
           </button>
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-2 min-w-0">
             <Activity className="text-blue-400" size={24} />
-            <div className="flex flex-col">
-              <h1 className="text-lg font-bold tracking-wide text-white leading-none">
+            <div className="flex flex-col min-w-0">
+              <h1 className="text-lg font-bold tracking-wide text-white leading-none truncate">
                 WebNet <span className="text-blue-400 font-light">Adjustment</span>
               </h1>
-              <span className="text-xs text-slate-500">Survey LSA - TS + GPS + Leveling</span>
+              <span className="text-xs text-slate-500 truncate">Survey LSA - TS + GPS + Leveling</span>
             </div>
           </div>
-        </div>
-
-        <div className="flex items-center space-x-4 bg-slate-900/50 px-4 py-1.5 rounded border border-slate-700">
-          <div className="flex items-center space-x-2">
-            <label className="text-xs text-slate-400 font-medium uppercase">Units</label>
-            <select
-              value={settings.units}
-              onChange={handleUnitChange}
-              className="bg-slate-800 text-xs border border-slate-600 text-white rounded px-2 py-1 outline-none focus:border-blue-500"
+          <div className="relative" ref={settingsRef}>
+            <button
+              onClick={() => setIsSettingsOpen((prev) => !prev)}
+              className={`flex items-center space-x-2 px-3 py-1.5 rounded border text-xs uppercase tracking-wide ${
+                isSettingsOpen
+                  ? 'bg-slate-700 border-slate-500 text-white'
+                  : 'bg-slate-900/60 border-slate-700 text-slate-300 hover:bg-slate-700'
+              }`}
+              aria-expanded={isSettingsOpen}
+              aria-haspopup="true"
             >
-              <option value="m">Meters (m)</option>
-              <option value="ft">Feet (ft)</option>
-            </select>
-          </div>
+              <Settings size={14} />
+              <span>Settings</span>
+            </button>
 
-          <div className="w-px h-4 bg-slate-700 mx-2" />
+            {isSettingsOpen && (
+              <div className="absolute left-0 mt-2 w-[620px] max-w-[calc(100vw-1.5rem)] bg-slate-900 border border-slate-700 rounded-lg shadow-xl p-4 z-50">
+                <div className="text-xs text-slate-400 uppercase tracking-wider mb-3">
+                  Adjustment Settings
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <label className="text-xs text-slate-400 font-medium uppercase">Units</label>
+                      <select
+                        value={settings.units}
+                        onChange={handleUnitChange}
+                        className="bg-slate-800 text-xs border border-slate-600 text-white rounded px-2 py-1 outline-none focus:border-blue-500"
+                      >
+                        <option value="m">Meters (m)</option>
+                        <option value="ft">Feet (ft)</option>
+                      </select>
+                    </div>
+                    <div className="flex items-center justify-between gap-3">
+                      <label className="text-xs text-slate-400 font-medium uppercase">Max Iter</label>
+                      <input
+                        type="number"
+                        min={1}
+                        max={100}
+                        value={settings.maxIterations}
+                        onChange={handleIterChange}
+                        className="w-20 bg-slate-800 text-xs border border-slate-600 text-white rounded px-2 py-1 outline-none focus:border-blue-500 text-center"
+                      />
+                    </div>
+                    <div className="flex items-center justify-between gap-3">
+                      <label className="text-xs text-slate-400 font-medium uppercase">Coord</label>
+                      <select
+                        value={parseSettings.coordMode}
+                        onChange={(e) => handleParseSetting('coordMode', e.target.value as CoordMode)}
+                        className="bg-slate-800 text-xs border border-slate-600 text-white rounded px-2 py-1 outline-none focus:border-blue-500"
+                      >
+                        <option value="2D">2D (.2D)</option>
+                        <option value="3D">3D (.3D)</option>
+                      </select>
+                    </div>
+                    <div className="flex items-center justify-between gap-3">
+                      <label className="text-xs text-slate-400 font-medium uppercase">Order</label>
+                      <select
+                        value={parseSettings.order}
+                        onChange={(e) => handleParseSetting('order', e.target.value as OrderMode)}
+                        className="bg-slate-800 text-xs border border-slate-600 text-white rounded px-2 py-1 outline-none focus:border-blue-500"
+                      >
+                        <option value="EN">EN (.ORDER EN)</option>
+                        <option value="NE">NE (.ORDER NE)</option>
+                      </select>
+                    </div>
+                  </div>
 
-          <div className="flex items-center space-x-2">
-            <label className="text-xs text-slate-400 font-medium uppercase">Max Iter</label>
-            <input
-              type="number"
-              min={1}
-              max={100}
-              value={settings.maxIterations}
-              onChange={handleIterChange}
-              className="w-20 bg-slate-800 text-xs border border-slate-600 text-white rounded px-2 py-1 outline-none focus:border-blue-500 text-center"
-            />
-          </div>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <label className="text-xs text-slate-400 font-medium uppercase">Delta Mode</label>
+                      <select
+                        value={parseSettings.deltaMode}
+                        onChange={(e) => handleParseSetting('deltaMode', e.target.value as DeltaMode)}
+                        className="bg-slate-800 text-xs border border-slate-600 text-white rounded px-2 py-1 outline-none focus:border-blue-500"
+                      >
+                        <option value="slope">Slope + Zenith (.DELTA OFF)</option>
+                        <option value="horiz">Horizontal + dH (.DELTA ON)</option>
+                      </select>
+                    </div>
+                    <div className="flex items-center justify-between gap-3">
+                      <label className="text-xs text-slate-400 font-medium uppercase">Map Mode</label>
+                      <select
+                        value={parseSettings.mapMode}
+                        onChange={(e) => handleParseSetting('mapMode', e.target.value as MapMode)}
+                        className="bg-slate-800 text-xs border border-slate-600 text-white rounded px-2 py-1 outline-none focus:border-blue-500"
+                      >
+                        <option value="off">Off</option>
+                        <option value="on">On</option>
+                        <option value="anglecalc">AngleCalc</option>
+                      </select>
+                    </div>
+                    <div className="flex items-center justify-between gap-3">
+                      <label className="text-xs text-slate-400 font-medium uppercase">Normalize</label>
+                      <input
+                        type="checkbox"
+                        className="accent-blue-500"
+                        checked={parseSettings.normalize}
+                        onChange={(e) => handleParseSetting('normalize', e.target.checked)}
+                      />
+                    </div>
+                    <div className="flex items-center justify-between gap-3">
+                      <label className="text-xs text-slate-400 font-medium uppercase">.LWEIGHT (mm/km)</label>
+                      <input
+                        type="number"
+                        min={0}
+                        step={0.1}
+                        value={parseSettings.levelWeight ?? ''}
+                        onChange={(e) =>
+                          handleParseSetting(
+                            'levelWeight',
+                            e.target.value === '' ? undefined : parseFloat(e.target.value),
+                          )
+                        }
+                        className="w-20 bg-slate-800 text-xs border border-slate-600 text-white rounded px-2 py-1 outline-none focus:border-blue-500 text-center"
+                      />
+                    </div>
+                    <div className="flex items-center justify-between gap-3">
+                      <label className="text-xs text-slate-400 font-medium uppercase">Lon Sign</label>
+                      <select
+                        value={parseSettings.lonSign}
+                        onChange={(e) =>
+                          handleParseSetting('lonSign', e.target.value as ParseSettings['lonSign'])
+                        }
+                        className="bg-slate-800 text-xs border border-slate-600 text-white rounded px-2 py-1 outline-none focus:border-blue-500"
+                      >
+                        <option value="west-negative">West Negative (.LONSIGN W-)</option>
+                        <option value="west-positive">West Positive (.LONSIGN W+)</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
 
-          <div className="w-px h-4 bg-slate-700 mx-2" />
-
-          <div className="flex items-center space-x-3">
-            <div className="flex items-center space-x-2">
-              <label className="text-xs text-slate-400 font-medium uppercase">Coord</label>
-              <select
-                value={parseSettings.coordMode}
-                onChange={(e) => handleParseSetting('coordMode', e.target.value as CoordMode)}
-                className="bg-slate-800 text-xs border border-slate-600 text-white rounded px-2 py-1 outline-none focus:border-blue-500"
-              >
-                <option value="2D">2D (.2D)</option>
-                <option value="3D">3D (.3D)</option>
-              </select>
-            </div>
-
-            <div className="flex items-center space-x-2">
-              <label className="text-xs text-slate-400 font-medium uppercase">Order</label>
-              <select
-                value={parseSettings.order}
-                onChange={(e) => handleParseSetting('order', e.target.value as OrderMode)}
-                className="bg-slate-800 text-xs border border-slate-600 text-white rounded px-2 py-1 outline-none focus:border-blue-500"
-              >
-                <option value="EN">EN (.ORDER EN)</option>
-                <option value="NE">NE (.ORDER NE)</option>
-              </select>
-            </div>
-
-            <div className="flex items-center space-x-2">
-              <label className="text-xs text-slate-400 font-medium uppercase">Delta Mode</label>
-              <select
-                value={parseSettings.deltaMode}
-                onChange={(e) => handleParseSetting('deltaMode', e.target.value as DeltaMode)}
-                className="bg-slate-800 text-xs border border-slate-600 text-white rounded px-2 py-1 outline-none focus:border-blue-500"
-              >
-                <option value="slope">Slope + Zenith (.DELTA OFF)</option>
-                <option value="horiz">Horizontal + dH (.DELTA ON)</option>
-              </select>
-            </div>
-
-            <div className="flex items-center space-x-2">
-              <label className="text-xs text-slate-400 font-medium uppercase">Map Mode</label>
-              <select
-                value={parseSettings.mapMode}
-                onChange={(e) => handleParseSetting('mapMode', e.target.value as MapMode)}
-                className="bg-slate-800 text-xs border border-slate-600 text-white rounded px-2 py-1 outline-none focus:border-blue-500"
-              >
-                <option value="off">Off</option>
-                <option value="on">On</option>
-                <option value="anglecalc">AngleCalc</option>
-              </select>
-            </div>
-
-            <div className="flex items-center space-x-2">
-              <label className="text-xs text-slate-400 font-medium uppercase">Normalize</label>
-              <input
-                type="checkbox"
-                className="accent-blue-500"
-                checked={parseSettings.normalize}
-                onChange={(e) => handleParseSetting('normalize', e.target.checked)}
-              />
-            </div>
-
-            <div className="flex items-center space-x-2">
-              <label className="text-xs text-slate-400 font-medium uppercase">.LWEIGHT (mm/km)</label>
-              <input
-                type="number"
-                min={0}
-                step={0.1}
-                value={parseSettings.levelWeight ?? ''}
-                onChange={(e) =>
-                  handleParseSetting(
-                    'levelWeight',
-                    e.target.value === '' ? undefined : parseFloat(e.target.value),
-                  )
-                }
-                className="w-20 bg-slate-800 text-xs border border-slate-600 text-white rounded px-2 py-1 outline-none focus:border-blue-500 text-center"
-              />
-            </div>
-
-            <div className="flex items-center space-x-2">
-              <label className="text-xs text-slate-400 font-medium uppercase">Lon Sign</label>
-              <select
-                value={parseSettings.lonSign}
-                onChange={(e) => handleParseSetting('lonSign', e.target.value as ParseSettings['lonSign'])}
-                className="bg-slate-800 text-xs border border-slate-600 text-white rounded px-2 py-1 outline-none focus:border-blue-500"
-              >
-                <option value="west-negative">West Negative (.LONSIGN W-)</option>
-                <option value="west-positive">West Positive (.LONSIGN W+)</option>
-              </select>
-            </div>
-          </div>
-
-          <div className="w-px h-4 bg-slate-700 mx-2" />
-
-          <div className="flex flex-col">
-            <div className="flex items-center space-x-2">
-              <Settings size={14} className="text-slate-400" />
-              <label className="text-xs text-slate-400 font-medium uppercase">Instrument</label>
-              <select
-                value={selectedInstrument}
-                onChange={(e) => setSelectedInstrument(e.target.value)}
-                className="bg-slate-800 text-xs border border-slate-600 text-white rounded px-2 py-1 outline-none focus:border-blue-500"
-              >
-                {Object.keys(instrumentLibrary).length === 0 && <option value="">(none)</option>}
-                {Object.values(instrumentLibrary).map((inst) => (
-                  <option key={inst.code} value={inst.code}>
-                    {inst.code}
-                  </option>
-                ))}
-              </select>
-            </div>
-            {selectedInstrument && instrumentLibrary[selectedInstrument] && (
-              <div className="mt-1 text-[10px] text-slate-500">
-                {instrumentLibrary[selectedInstrument].desc} - dist: {instrumentLibrary[selectedInstrument].distA_ppm}
-                ppm + {instrumentLibrary[selectedInstrument].distB_const}m - angle: {instrumentLibrary[selectedInstrument].angleStd_sec}"
-                - GPS: {instrumentLibrary[selectedInstrument].gpsStd_xy}m - lev: {instrumentLibrary[selectedInstrument].levStd_mmPerKm}mm/km
+                <div className="mt-4 pt-3 border-t border-slate-800">
+                  <div className="flex items-center justify-between gap-3">
+                    <label className="text-xs text-slate-400 font-medium uppercase">Instrument</label>
+                    <select
+                      value={selectedInstrument}
+                      onChange={(e) => setSelectedInstrument(e.target.value)}
+                      className="bg-slate-800 text-xs border border-slate-600 text-white rounded px-2 py-1 outline-none focus:border-blue-500"
+                    >
+                      {Object.keys(instrumentLibrary).length === 0 && <option value="">(none)</option>}
+                      {Object.values(instrumentLibrary).map((inst) => (
+                        <option key={inst.code} value={inst.code}>
+                          {inst.code}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  {selectedInstrument && instrumentLibrary[selectedInstrument] && (
+                    <div className="mt-2 text-[10px] text-slate-500">
+                      {instrumentLibrary[selectedInstrument].desc} - dist:{' '}
+                      {instrumentLibrary[selectedInstrument].distA_ppm}ppm +{' '}
+                      {instrumentLibrary[selectedInstrument].distB_const}m - angle:{' '}
+                      {instrumentLibrary[selectedInstrument].angleStd_sec}" - GPS:{' '}
+                      {instrumentLibrary[selectedInstrument].gpsStd_xy}m - lev:{' '}
+                      {instrumentLibrary[selectedInstrument].levStd_mmPerKm}mm/km
+                    </div>
+                  )}
+                </div>
               </div>
             )}
           </div>
         </div>
 
-        <div className="flex space-x-2">
+        <div className="flex items-center gap-2 ml-auto shrink-0">
           <input
             ref={fileInputRef}
             type="file"

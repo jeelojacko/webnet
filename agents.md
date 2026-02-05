@@ -2,7 +2,7 @@
 
 ## Project Context
 - Goal: browser-based clone of MicroSurvey Star*Net performing mixed-observation least-squares adjustment (TS distances/angles, GNSS baselines, leveling dH) with control points, error ellipses, residuals, and basic outlier cues.
-- Current behavior (TypeScript): parses Star*Net-style text blocks (instrument library, control, D/A/G/L/B/V/M/BM/TB/T/TE/DB/DN/DM/DE/SS observations + inline options .UNITS/.COORD/.ORDER/.2D/.3D/.DELTA/.MAPMODE/.LWEIGHT/.NORMALIZE/.END/.LONSIGN, C/E/CH/PH/EH records with fixity/std errs; P/PH lat/long projected to local EN via first P origin; D/M/BM/DV capture HI/HT and delta mode, DV/M in delta-mode emit distance+dH; DV/BM/M slope emit zeniths with face-2 weighting and derived stds; .LWEIGHT applied for leveling weights with ft lengths converted to km; bearings/zeniths solved; sideshots parsed but excluded from adjustment with occupy/backsight validation; mixed-face traverse/direction shots rejected when .NORMALIZE OFF; TE closure legs log residuals/misclosure vectors/geometry when available), normalizes to meters/radians, runs iterative XYH adjustment with custom matrix math, applies overrides/exclusions, reports SEUW/DOF/conditioning warnings, adjusted coordinates, error ellipses, residual tables sorted by |StdRes|, and a processing log. UI adds editable observation tables, parse-mode toggles (.DELTA/.MAPMODE/.NORMALIZE/.LWEIGHT/.COORD/.ORDER/.LONSIGN), re-run with exclusions, map/ellipse view, and seeded demo dataset.
+- Current behavior (TypeScript): parses Star*Net-style text blocks (instrument library, control, D/A/G/L/B/V/M/BM/TB/T/TE/DB/DN/DM/DE/SS observations + inline options .UNITS/.COORD/.ORDER/.2D/.3D/.DELTA/.MAPMODE/.LWEIGHT/.NORMALIZE/.END/.LONSIGN, C/E/CH/PH/EH records with per-component `!` fixity (legacy `*`) and std errs; inline `#` comments / `'Description` trimmed; P/PH lat/long projected to local EN via first P origin; D/M/BM/DV capture HI/HT and delta mode, DV/M in delta-mode emit distance+dH; DV/BM/M slope emit zeniths with face-2 weighting and derived stds; .LWEIGHT applied for leveling weights with ft lengths converted to km; bearings/zeniths solved; DB/DN direction sets treated as raw circle readings with per-set orientation parameters; sideshots parsed but excluded from adjustment with occupy/backsight validation; mixed-face traverse/direction shots rejected when .NORMALIZE OFF; TE closure legs log residuals/misclosure vectors/geometry when available), warns when `.ORDER` is missing (defaults to EN), normalizes to meters/radians, runs iterative adjustment (2D mode drops height parameters and skips vertical obs), logs basic network diagnostics for under-observed stations plus per-direction-set prefit/residual summaries, applies overrides/exclusions, reports SEUW/DOF/conditioning warnings, adjusted coordinates, error ellipses, residual tables sorted by |StdRes|, and a processing log. UI adds editable observation tables, parse-mode toggles (.DELTA/.MAPMODE/.NORMALIZE/.LWEIGHT/.COORD/.ORDER/.LONSIGN) housed in a settings dropdown, re-run with exclusions, map/ellipse view, and seeded demo dataset.
 
 ## Tech Stack
 - Runtime: Node 18+ (ESM). Bundler: Vite 7.
@@ -41,7 +41,7 @@ npm run format:check # Prettier check
 - Core (TypeScript):
   - Types: src/types.ts for stations, observations, instruments, results, parse options, overrides.
 - Math helpers: src/engine/matrix.ts (zeros/transpose/multiply/inv), src/engine/angles.ts (RAD/DEG/SEC, dms helpers).
-- Parser: src/engine/parse.ts ingests Star*Net-style text with inline options (.UNITS/.COORD/.ORDER/.2D/.3D/.DELTA/.END), C/E records (fixity/std errs, NE/EN order, ft<->m), D/A/G/L observations with instrument lib lookups, and returns stations/unknowns/obs/logs.
+- Parser: src/engine/parse.ts ingests Star*Net-style text with inline options (.UNITS/.COORD/.ORDER/.2D/.3D/.DELTA/.END), per-component fixity via `!` (legacy `*`), inline `#` comments / `'Description` trimming, C/E records (fixity/std errs, NE/EN order, ft<->m), D/A/G/L observations with instrument lib lookups, and returns stations/unknowns/obs/logs.
 - Engine: src/engine/adjust.ts (LSAEngine) builds A/L/P, normals N=(A^T P A), iterates corrections, applies overrides/exclusions and unit normalization, computes SEUW/DOF, residuals, ellipses, sH, conditioning/residual warnings, logs.
 - UI: src/App.tsx (shell) manages input/settings/layout; components in src/components (InputPane for edits/upload; ReportView for tables/overrides/exclusions/logs; MapView for plan/ellipse view).
 - Tests: Vitest specs in /tests (angles, matrix, parser, engine) with fixtures in /tests/fixtures.
@@ -49,12 +49,12 @@ npm run format:check # Prettier check
 - Data flow: user edits textarea -> handleRun instantiates LSAEngine with settings -> solve() mutates stations/observations -> result stored in state -> ReportView renders tables.
 
 ## Suggested Next Steps
-- Editable obs tables: implemented (values/weights with overrides and re-run).
-- True computational unit conversion (ft/m): implemented; engine normalizes feet inputs before solving.
 - Performance: guards added for poor conditioning and residual spikes; consider a Web Worker offload for large networks.
+- Expand test coverage for complex GNSS and leveling networks.
 
 ## Todo
-- See TODO.md for the current checklist (completed and planned items).
+- See TODO.md for the current checklist.
+- Documentation and Examples have been added (User Guide, Demo Data).
 
 ## Process Note
 - Update TODO.md, README.md, and agents.md after every batch of updates.

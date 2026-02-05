@@ -8,21 +8,27 @@
 - [x] Improve UX: file upload/save for .dat, unit-scaled outputs, map/ellipse view, exclusion toggles (re-run)
 - [x] Editable observation tables (inline edits to values/weights) and true computational unit conversion
 - [x] Performance hardening: add conditioning guard and residual spike warnings; consider Web Worker offload (future)
+- [x] Consolidate toolbar settings into a dropdown menu
 - [x] Sync README/agents docs with current parser/engine/UI state
 - [ ] Star*Net format compatibility (Section 5.6):
   - [x] Elevation-only parsing (E records) with std errors/fixity and unit conversion
   - [~] Implement global inline options: .UNITS, .COORD 2D/3D, .ORDER NE/EN, .2D/.3D, .DELTA ON/OFF, .MAPMODE, .LWEIGHT, .NORMALIZE, .END (parses/logs complete; .LWEIGHT applied to leveling weights; header exposes coord/order/delta/map/normalize/.LWEIGHT/lon-sign defaults; remaining wiring pending per code type)
-  - [~] Coordinate/position/elevation records: C (2D/3D with per-component std errs and !/* fixity, NE/EN order), P geodetic positions (lat/long [+H], std errs mapped to NE, longitude sign), E elevation-only, ellipsoid variants CH/PH/EH (parsed; P/PH projected to local EN via first P origin; ellipsoid height flagged)
+  - [x] Coordinate/position/elevation records: C (2D/3D with per-component std errs and !/* fixity, NE/EN order), P geodetic positions (lat/long [+H], std errs mapped to NE, longitude sign), E elevation-only, ellipsoid variants CH/PH/EH (parsed; P/PH projected to local EN via first P origin; ellipsoid height flagged)
   - [x] Single obs: A angles (At-From-To or From-At-To), D distances (2D HD; 3D slope/HD per mode with HI/HT), V vertical (zenith or dH per mode with HI/HT), B bearings/azimuths (solved)
-  - [~] Multiple obs: M (angle+dist+vertical with std err rules, ? missing), BM (bearing/az+dist+vertical), DV (dist+vertical) with std errs and HI/HT (delta-mode emits dH; slope-mode emits zenith; face-2 weighting applied; defaults for stds/HI/HT captured)
+  - [x] Multiple obs: M (angle+dist+vertical with std err rules, HI/HT), BM (bearing/az+dist+vertical), DV (dist+vertical) with std errs and HI/HT (delta-mode emits dH; slope-mode emits zenith; face-2 weighting applied; defaults for stds/HI/HT captured)
   - [x] Traverse: TB (backsight station or bearing/az; dummy backsight handling), T legs (angle+dist+vertical with std err rules, HI/HT), TE closing angle to station or bearing/az with optional std err (basic conversion to angle/dist/vert added; mixed-face rejection when .NORMALIZE OFF; closure residuals/misclosure vectors logged)
   - [x] Direction sets: DB begin, DN directions, DM directions+measurements, DE end; face-1/face-2 handling, reject mixed-face when .NORMALIZE OFF (basic conversion to angle/dist/vert added; face-1/face-2 fixture added; face-2 weighting tweak)
+  - [x] Direction sets: solve raw circle readings with per-set orientation parameters (for unreduced circle readings)
   - [x] Sideshots: SS diverted from adjustment, compute post-adjust, disallow occupy/backsight, optional name checking (basic parse to dist + vert/zenith; excluded from adjustment; occupy/backsight validation added; cannot target fixed control)
   - Leveling: L dH with distance or turns, std err or per-unit via .LWEIGHT (fallback applied; ft lengths converted to km), allow fixity/free
-  - Fixity/weights: support ! fixed, * free, & defaults, numeric std errs per obs/component
+  - [~] Fixity/weights: support ! fixed per component, legacy * fixed, numeric std errs per obs/component (free markers not implemented)
   - Units/normalization: honor .UNITS for ft/m parsing/HI/HT, convert angles/bearings; normalize engine to meters/radians
   - Validation/logging: strict line validation, mode/order scope, HI/HT parsing, counts per type, logs for defaults/skips/flags
+  - [x] Validation/logging: basic network diagnostics for under-observed stations
+  - [x] Validation/logging: per-direction-set residual summaries in processing log
+  - [x] Validation/logging: per-direction-set prefit summaries (using initial coords)
   - Inline modes & obs metadata: track delta mode/map mode/lon sign; capture HI/HT on distances; projection currently equirectangular (improve later)
   - Engine: map codes to internal types, apply HI/HT/dH/slope-HD, include bearings/azimuths, leveling weights, preserve obs IDs
+  - [x] Engine: honor 2D solve mode (drop height parameters; skip lev/zenith in 2D)
   - Fixtures/tests: add Star*Net-style fixtures for 2D/3D, TS+GPS+Leveling, traverses, direction sets, sideshots; Vitest cases for parsing/mode toggles and solves (bearing/zenith added)
-  - Docs/UI: list supported Star*Net codes/options, UI hints, surface parser errors with line numbers
+  - Docs/UI: [x] Created `docs/USER_GUIDE.md` and `public/examples/star_net_demo.dat`; list supported Star*Net codes/options, UI hints, surface parser errors with line numbers

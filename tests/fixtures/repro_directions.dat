@@ -1,0 +1,13 @@
+# Reproduction data for DB without backsight
+.2D
+
+# Stations
+C S1 1000.000 1000.000
+C T1 1100.000 1000.000
+C T2 1000.000 1100.000
+
+# Direction Set without explicit BS (implied T1)
+DB S1
+DN T1 000-00-00.00
+DN T2 090-00-00.00
+DE

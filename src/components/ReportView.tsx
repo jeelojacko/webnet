@@ -1,7 +1,7 @@
 import React from 'react'
 import { AlertTriangle, CheckCircle } from 'lucide-react'
 import type { AdjustmentResult, Observation } from '../types'
-import { RAD_TO_DEG, radToDmsStr } from '../engine/angles'
+import { RAD_TO_DEG, radToDmsStr, dmsToRad } from '../engine/angles'
 
 const FT_PER_M = 3.280839895
 
@@ -57,7 +57,7 @@ const ReportView: React.FC<ReportViewProps> = ({
               <th className="py-2 text-right">Obs</th>
               <th className="py-2 text-right">Calc</th>
               <th className="py-2 text-right">Residual</th>
-              <th className="py-2 text-right px-4">StdRes</th>
+              <th className="py-2 text-right px-4">StdDev</th>
             </tr>
           </thead>
           <tbody className="text-slate-300">
@@ -80,6 +80,14 @@ const ReportView: React.FC<ReportViewProps> = ({
                     ? `${((obs.residual as number) * RAD_TO_DEG * 3600).toFixed(2)}"`
                     : '-'
                 stdDevVal = obs.stdDev * RAD_TO_DEG * 3600 // arcseconds
+              } else if (obs.type === 'direction') {
+                stationsLabel = `${obs.at}-${obs.to} (${obs.setId})`
+                calcStr = obs.calc != null ? radToDmsStr(obs.calc as number) : '-'
+                resStr =
+                  obs.residual != null
+                    ? `${((obs.residual as number) * RAD_TO_DEG * 3600).toFixed(2)}"`
+                    : '-'
+                stdDevVal = obs.stdDev * RAD_TO_DEG * 3600 // arcseconds
               } else if (obs.type === 'dist') {
                 stationsLabel = `${obs.from}-${obs.to}`
                 calcStr = obs.calc != null ? ((obs.calc as number) * unitScale).toFixed(4) : '-'
@@ -89,14 +97,14 @@ const ReportView: React.FC<ReportViewProps> = ({
                 calcStr =
                   obs.calc != null
                     ? `dE=${((obs.calc as { dE: number }).dE * unitScale).toFixed(3)}, dN=${(
-                        obs.calc as { dN: number; dE: number }
-                      ).dN.toFixed(3)}`
+                      obs.calc as { dN: number; dE: number }
+                    ).dN.toFixed(3)}`
                     : '-'
                 resStr =
                   obs.residual != null
                     ? `vE=${((obs.residual as { vE: number }).vE * unitScale).toFixed(3)}, vN=${(
-                        obs.residual as { vN: number; vE: number }
-                      ).vN.toFixed(3)}`
+                      obs.residual as { vN: number; vE: number }
+                    ).vN.toFixed(3)}`
                     : '-'
               } else if (obs.type === 'lev') {
                 stationsLabel = `${obs.from}-${obs.to}`
@@ -164,22 +172,24 @@ const ReportView: React.FC<ReportViewProps> = ({
                       </div>
                     ) : (
                       <input
-                        type="number"
+                        type="text"
                         className="bg-slate-800 border border-slate-700 rounded px-1 w-24 text-right text-xs"
                         defaultValue={
-                          obs.type === 'angle'
-                            ? (obs.obs * RAD_TO_DEG).toFixed(6)
-                            : obs.type === 'bearing' || obs.type === 'zenith'
-                            ? (obs.obs * RAD_TO_DEG).toFixed(6)
+                          obs.type === 'angle' ||
+                          obs.type === 'direction' ||
+                          obs.type === 'bearing' ||
+                          obs.type === 'zenith'
+                            ? radToDmsStr(obs.obs)
                             : (obs.obs * unitScale).toFixed(4)
                         }
                         onBlur={(e) =>
                           onOverride(obs.id, {
                             obs:
-                              obs.type === 'angle'
-                                ? parseFloat(e.target.value)
-                                : obs.type === 'bearing' || obs.type === 'zenith'
-                                ? parseFloat(e.target.value)
+                              obs.type === 'angle' ||
+                              obs.type === 'direction' ||
+                              obs.type === 'bearing' ||
+                              obs.type === 'zenith'
+                                ? dmsToRad(e.target.value)
                                 : parseFloat(e.target.value) / unitScale,
                           })
                         }
@@ -188,9 +198,8 @@ const ReportView: React.FC<ReportViewProps> = ({
                   </td>
                   <td className="py-1 text-right font-mono text-slate-500">{calcStr}</td>
                   <td
-                    className={`py-1 text-right font-bold font-mono ${
-                      isFail ? 'text-red-500' : isWarn ? 'text-yellow-500' : 'text-green-500'
-                    }`}
+                    className={`py-1 text-right font-bold font-mono ${isFail ? 'text-red-500' : isWarn ? 'text-yellow-500' : 'text-green-500'
+                      }`}
                   >
                     {resStr}
                   </td>
@@ -202,7 +211,10 @@ const ReportView: React.FC<ReportViewProps> = ({
                       onBlur={(e) =>
                         onOverride(obs.id, {
                           stdDev:
-                            obs.type === 'angle' || obs.type === 'bearing' || obs.type === 'zenith'
+                            obs.type === 'angle' ||
+                            obs.type === 'direction' ||
+                            obs.type === 'bearing' ||
+                            obs.type === 'zenith'
                               ? parseFloat(e.target.value) / (RAD_TO_DEG * 3600)
                               : parseFloat(e.target.value) / unitScale,
                         })
@@ -274,6 +286,7 @@ const ReportView: React.FC<ReportViewProps> = ({
             <div className="text-xs text-slate-300 space-y-0.5">
               <div>Distances: {byType('dist').length}</div>
               <div>Angles: {byType('angle').length}</div>
+              <div>Directions: {byType('direction').length}</div>
               <div>GPS: {byType('gps').length}</div>
               <div>Leveling: {byType('lev').length}</div>
               <div>Bearings: {byType('bearing').length}</div>
@@ -315,8 +328,8 @@ const ReportView: React.FC<ReportViewProps> = ({
                   <td className="py-1 text-right text-xs text-slate-400">
                     {stn.errorEllipse
                       ? `${(stn.errorEllipse.semiMajor * ellipseScale * (units === 'ft' ? 0.0328084 : 1)).toFixed(1)} / ${(
-                          stn.errorEllipse.semiMinor * ellipseScale * (units === 'ft' ? 0.0328084 : 1)
-                        ).toFixed(1)}`
+                        stn.errorEllipse.semiMinor * ellipseScale * (units === 'ft' ? 0.0328084 : 1)
+                      ).toFixed(1)}`
                       : '-'}
                   </td>
                   <td className="py-1 text-right text-xs text-slate-400">{stn.sH != null ? (stn.sH * unitScale).toFixed(3) : '-'}</td>
@@ -334,6 +347,7 @@ const ReportView: React.FC<ReportViewProps> = ({
           <span>Toggle rows to exclude and press Re-run</span>
         </div>
         {renderTable(byType('angle'), 'Angles (TS)')}
+        {renderTable(byType('direction'), 'Directions (DB/DN)')}
         {renderTable(byType('dist'), 'Distances (TS)')}
         {renderTable(byType('bearing'), 'Bearings/Azimuths')}
         {renderTable(byType('zenith'), 'Zenith/Vertical Angles')}

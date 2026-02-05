@@ -3,16 +3,43 @@ export const DEG_TO_RAD = Math.PI / 180;
 export const SEC_TO_RAD = Math.PI / (180 * 3600);
 
 export const dmsToRad = (dmsStr: string): number => {
-  const val = parseFloat(dmsStr);
-  if (Number.isNaN(val)) return 0;
-  const sign = val < 0 ? -1 : 1;
-  const absVal = Math.abs(val);
-  const d = Math.floor(absVal);
-  const m = Math.floor((absVal - d) * 100);
-  const s = ((absVal - d) * 100 - m) * 100;
-  const decimalDegrees = d + m / 60 + s / 3600;
-  return decimalDegrees * DEG_TO_RAD * sign;
-};
+  if (!dmsStr) return 0
+
+  // Handle hyphenated format: DDD-MM-SS.ss
+  const trimmed = dmsStr.trim()
+  if (trimmed.includes('-')) {
+    let sign = 1
+    let workingStr = trimmed
+
+    // Check for negative sign at start
+    if (workingStr.startsWith('-')) {
+      sign = -1
+      workingStr = workingStr.substring(1)
+    }
+
+    const parts = workingStr.split('-')
+    const d = parseFloat(parts[0])
+    const m = parts[1] ? parseFloat(parts[1]) : 0
+    const s = parts[2] ? parseFloat(parts[2]) : 0
+
+    // Total degrees
+    const totalDeg = d + m / 60 + s / 3600
+    return totalDeg * DEG_TO_RAD * sign
+  }
+
+  // Handle standard decimal format: DDD.MMSS
+  const val = parseFloat(dmsStr)
+  if (Number.isNaN(val)) return 0
+
+  const sign = val < 0 ? -1 : 1
+  const absVal = Math.abs(val)
+  const d = Math.floor(absVal)
+  const m = Math.floor((absVal - d) * 100)
+  const s = ((absVal - d) * 100 - m) * 100
+
+  const decimalDegrees = d + m / 60 + s / 3600
+  return decimalDegrees * DEG_TO_RAD * sign
+}
 
 export const radToDmsStr = (rad?: number | null): string => {
   if (rad === undefined || rad === null || Number.isNaN(rad)) return '000-00-00.0';

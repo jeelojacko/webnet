@@ -41,6 +41,154 @@ export class LSAEngine {
   private maxCondition = 1e12;
   private maxStdRes = 10;
   private parseOptions?: Partial<ParseOptions>;
+  private coordMode: ParseOptions['coordMode'] = '3D';
+  private is2D = false;
+  private directionOrientations: Record<string, number> = {};
+  private paramIndex: Record<StationId, { x?: number; y?: number; h?: number }> = {};
+
+  private computeDirectionSetPrefit(
+    activeObservations: Observation[],
+    directionSetIds: string[],
+  ): void {
+    const groups = new Map<
+      string,
+      { count: number; sumSin: number; sumCos: number; occupy: StationId }
+    >();
+    const diffsBySet = new Map<string, number[]>();
+
+    activeObservations.forEach((obs) => {
+      if (obs.type !== 'direction') return;
+      const dir = obs as any;
+      if (!this.stations[dir.at] || !this.stations[dir.to]) return;
+      const az = this.getAzimuth(dir.at, dir.to).az;
+      const diff = ((dir.obs - az + Math.PI) % (2 * Math.PI)) - Math.PI;
+      const entry = groups.get(dir.setId) ?? {
+        count: 0,
+        sumSin: 0,
+        sumCos: 0,
+        occupy: dir.at,
+      };
+      entry.count += 1;
+      entry.sumSin += Math.sin(diff);
+      entry.sumCos += Math.cos(diff);
+      entry.occupy = dir.at ?? entry.occupy;
+      groups.set(dir.setId, entry);
+      const arr = diffsBySet.get(dir.setId) ?? [];
+      arr.push(diff);
+      diffsBySet.set(dir.setId, arr);
+    });
+
+    if (!groups.size) return;
+
+    this.logs.push('Direction set prefit (initial coords, arcsec residuals):');
+    const sorted = [...groups.entries()].sort((a, b) => a[0].localeCompare(b[0]));
+    sorted.forEach(([setId, entry]) => {
+      const orient = Math.atan2(entry.sumSin, entry.sumCos);
+      this.directionOrientations[setId] = orient;
+      const diffs = diffsBySet.get(setId) ?? [];
+      let sum = 0;
+      let sumSq = 0;
+      let maxAbs = 0;
+      diffs.forEach((d) => {
+        const v = ((d - orient + Math.PI) % (2 * Math.PI)) - Math.PI;
+        const arcsec = v * RAD_TO_DEG * 3600;
+        sum += arcsec;
+        sumSq += arcsec * arcsec;
+        maxAbs = Math.max(maxAbs, Math.abs(arcsec));
+      });
+      const mean = diffs.length ? sum / diffs.length : 0;
+      const rms = diffs.length ? Math.sqrt(sumSq / diffs.length) : 0;
+      const orientDeg = (orient * RAD_TO_DEG + 360) % 360;
+      this.logs.push(
+        `  ${setId} @ ${entry.occupy}: n=${diffs.length}, mean=${mean.toFixed(
+          2,
+        )}", rms=${rms.toFixed(2)}", max=${maxAbs.toFixed(2)}", orient=${orientDeg.toFixed(4)}°`,
+      );
+    });
+
+    // Ensure all direction sets have an initialization
+    directionSetIds.forEach((id) => {
+      if (this.directionOrientations[id] == null) this.directionOrientations[id] = 0;
+    });
+  }
+
+  private logNetworkDiagnostics(activeObservations: Observation[]) {
+    const stationObsCount = new Map<StationId, number>();
+    const otherObsCount = new Map<StationId, number>();
+    const directionAt = new Set<StationId>();
+    const directionTargets = new Map<StationId, Set<StationId>>();
+    const directionSetCounts = new Map<string, number>();
+
+    const mark = (id: StationId) => {
+      stationObsCount.set(id, (stationObsCount.get(id) ?? 0) + 1);
+    };
+    const markOther = (id: StationId) => {
+      otherObsCount.set(id, (otherObsCount.get(id) ?? 0) + 1);
+    };
+
+    activeObservations.forEach((obs) => {
+      if (obs.type === 'direction') {
+        const dir = obs as any;
+        mark(dir.at);
+        mark(dir.to);
+        directionAt.add(dir.at);
+        const set = directionTargets.get(dir.to) ?? new Set<StationId>();
+        set.add(dir.at);
+        directionTargets.set(dir.to, set);
+        directionSetCounts.set(dir.setId, (directionSetCounts.get(dir.setId) ?? 0) + 1);
+        return;
+      }
+
+      if (obs.type === 'angle') {
+        mark(obs.at);
+        mark(obs.from);
+        mark(obs.to);
+        markOther(obs.at);
+        markOther(obs.from);
+        markOther(obs.to);
+        return;
+      }
+      if (obs.type === 'dist' || obs.type === 'bearing' || obs.type === 'lev' || obs.type === 'zenith') {
+        mark(obs.from);
+        mark(obs.to);
+        markOther(obs.from);
+        markOther(obs.to);
+        return;
+      }
+      if (obs.type === 'gps') {
+        mark(obs.from);
+        mark(obs.to);
+        markOther(obs.from);
+        markOther(obs.to);
+      }
+    });
+
+    this.unknowns.forEach((id) => {
+      if (!stationObsCount.has(id)) {
+        this.log(`Warning: unknown station ${id} has no observations and will cause a singular network.`);
+        return;
+      }
+
+      const hasOther = (otherObsCount.get(id) ?? 0) > 0;
+      if (!directionAt.has(id) && !hasOther) {
+        const atCount = directionTargets.get(id)?.size ?? 0;
+        if (atCount < 2) {
+          this.log(
+            `Warning: station ${id} is only targeted by directions from ${atCount} station(s). ` +
+              `At least two occupies or distance/GNSS observations are required to solve it.`,
+          );
+        }
+      }
+    });
+
+    directionSetCounts.forEach((count, setId) => {
+      if (count < 2) {
+        this.log(
+          `Warning: direction set ${setId} has only ${count} observation(s); orientation may be weak.`,
+        );
+      }
+    });
+  }
 
   constructor({
     input,
@@ -88,6 +236,12 @@ export class LSAEngine {
     return { z, dist, horiz, dh };
   }
 
+  private isObservationActive(obs: Observation): boolean {
+    if (typeof obs.calc === 'object' && (obs.calc as any)?.sideshot) return false;
+    if (this.is2D && (obs.type === 'lev' || obs.type === 'zenith')) return false;
+    return true;
+  }
+
   solve(): AdjustmentResult {
     const parsed = parseInput(this.input, this.instrumentLibrary, this.parseOptions);
     this.stations = parsed.stations;
@@ -97,6 +251,8 @@ export class LSAEngine {
     this.unknowns = parsed.unknowns;
     this.instrumentLibrary = parsed.instrumentLibrary;
     this.logs = [...parsed.logs];
+    this.coordMode = parsed.parseState?.coordMode ?? this.parseOptions?.coordMode ?? '3D';
+    this.is2D = this.coordMode === '2D';
 
     // Apply overrides before any unit normalization
     if (this.overrides) {
@@ -107,7 +263,7 @@ export class LSAEngine {
           obs.stdDev = over.stdDev;
         }
         if (over.obs != null) {
-          if (obs.type === 'angle' && typeof over.obs === 'number') {
+          if ((obs.type === 'angle' || obs.type === 'direction') && typeof over.obs === 'number') {
             obs.obs = (over.obs as number) * DEG_TO_RAD;
           } else if ((obs.type === 'dist' || obs.type === 'lev') && typeof over.obs === 'number') {
             obs.obs = over.obs as number;
@@ -124,8 +280,53 @@ export class LSAEngine {
       return this.buildResult();
     }
 
-    const numParams = this.unknowns.length * 3; // X, Y, H per station
-    const numObsEquations = this.observations.reduce(
+    const activeObservations = this.observations.filter((obs) => this.isObservationActive(obs));
+    if (this.is2D) {
+      const skippedVertical = this.observations.filter(
+        (o) =>
+          (o.type === 'lev' || o.type === 'zenith') &&
+          !(typeof o.calc === 'object' && (o.calc as any)?.sideshot),
+      ).length;
+      if (skippedVertical > 0) {
+        this.log(`2D mode: skipped ${skippedVertical} vertical observations (lev/zenith).`);
+      }
+    }
+    this.logNetworkDiagnostics(activeObservations);
+
+    const directionSetIds = Array.from(
+      new Set(
+        activeObservations
+          .filter((o) => o.type === 'direction')
+          .map((o) => (o as any).setId as string),
+      ),
+    );
+    this.directionOrientations = {};
+    this.computeDirectionSetPrefit(activeObservations, directionSetIds);
+
+    this.paramIndex = {};
+    let stationParamCount = 0;
+    this.unknowns.forEach((id) => {
+      const st = this.stations[id];
+      if (!st) return;
+      const idx: { x?: number; y?: number; h?: number } = {};
+      if (!st.fixedX) {
+        idx.x = stationParamCount;
+        stationParamCount += 1;
+      }
+      if (!st.fixedY) {
+        idx.y = stationParamCount;
+        stationParamCount += 1;
+      }
+      if (!this.is2D && !st.fixedH) {
+        idx.h = stationParamCount;
+        stationParamCount += 1;
+      }
+      if (idx.x != null || idx.y != null || idx.h != null) {
+        this.paramIndex[id] = idx;
+      }
+    });
+    const numParams = stationParamCount + directionSetIds.length; // X, Y (+H) + dir orientations
+    const numObsEquations = activeObservations.reduce(
       (acc, o) => acc + (o.type === 'gps' ? 2 : 1),
       0,
     );
@@ -136,9 +337,9 @@ export class LSAEngine {
       return this.buildResult();
     }
 
-    const paramMap: Record<StationId, number> = {};
-    this.unknowns.forEach((id, idx) => {
-      paramMap[id] = idx * 3;
+    const dirParamMap: Record<string, number> = {};
+    directionSetIds.forEach((id, idx) => {
+      dirParamMap[id] = stationParamCount + idx;
     });
 
     for (let iter = 0; iter < this.maxIterations; iter++) {
@@ -150,11 +351,7 @@ export class LSAEngine {
 
       let row = 0;
 
-      this.observations.forEach((obs) => {
-        // skip sideshots (flagged via calc.sideshot)
-        if (obs.type === 'dist' && typeof obs.calc === 'object' && (obs.calc as any)?.sideshot) {
-          return;
-        }
+      activeObservations.forEach((obs) => {
         if (obs.type === 'dist') {
           const { from, to } = obs;
           const s1 = this.stations[from];
@@ -163,25 +360,39 @@ export class LSAEngine {
           const dx = s2.x - s1.x;
           const dy = s2.y - s1.y;
           const dz = (s2.h + (obs.ht ?? 0)) - (s1.h + (obs.hi ?? 0));
-          const calcDist = obs.mode === 'slope' ? Math.sqrt(dx * dx + dy * dy + dz * dz) : Math.sqrt(dx * dx + dy * dy);
+          const horiz = Math.sqrt(dx * dx + dy * dy);
+          const calcDist = this.is2D
+            ? horiz
+            : obs.mode === 'slope'
+              ? Math.sqrt(horiz * horiz + dz * dz)
+              : horiz;
           const v = obs.obs - calcDist;
 
           L[row][0] = v;
-          const dD_dE2 = dx / calcDist;
-          const dD_dN2 = dy / calcDist;
-          const dD_dH2 = obs.mode === 'slope' ? dz / calcDist : 0;
+          const denom = calcDist || 1;
+          const dD_dE2 = dx / denom;
+          const dD_dN2 = dy / denom;
+          const dD_dH2 = !this.is2D && obs.mode === 'slope' ? dz / denom : 0;
 
-          if (!s1.fixed) {
-            const idx = paramMap[from];
-            A[row][idx] = -dD_dE2;
-            A[row][idx + 1] = -dD_dN2;
-            A[row][idx + 2] = -dD_dH2;
+          const fromIdx = this.paramIndex[from];
+          if (fromIdx?.x != null) {
+            A[row][fromIdx.x] = -dD_dE2;
           }
-          if (!s2.fixed) {
-            const idx = paramMap[to];
-            A[row][idx] = dD_dE2;
-            A[row][idx + 1] = dD_dN2;
-            A[row][idx + 2] = dD_dH2;
+          if (fromIdx?.y != null) {
+            A[row][fromIdx.y] = -dD_dN2;
+          }
+          if (!this.is2D && fromIdx?.h != null) {
+            A[row][fromIdx.h] = -dD_dH2;
+          }
+          const toIdx = this.paramIndex[to];
+          if (toIdx?.x != null) {
+            A[row][toIdx.x] = dD_dE2;
+          }
+          if (toIdx?.y != null) {
+            A[row][toIdx.y] = dD_dN2;
+          }
+          if (!this.is2D && toIdx?.h != null) {
+            A[row][toIdx.h] = dD_dH2;
           }
 
           const w = 1.0 / (obs.stdDev * obs.stdDev);
@@ -190,6 +401,7 @@ export class LSAEngine {
           row += 1;
         } else if (obs.type === 'angle') {
           const { at, from, to } = obs;
+          if (!this.stations[at] || !this.stations[from] || !this.stations[to]) return;
           const azTo = this.getAzimuth(at, to);
           const azFrom = this.getAzimuth(at, from);
           let calcAngle = azTo.az - azFrom.az;
@@ -204,24 +416,32 @@ export class LSAEngine {
           const dAzFrom_dE_From = Math.cos(azFrom.az) / (azFrom.dist || 1);
           const dAzFrom_dN_From = -Math.sin(azFrom.az) / (azFrom.dist || 1);
 
-          if (!this.stations[to].fixed) {
-            const idx = paramMap[to];
-            A[row][idx] = dAzTo_dE_To;
-            A[row][idx + 1] = dAzTo_dN_To;
+          const toIdx = this.paramIndex[to];
+          if (toIdx?.x != null) {
+            A[row][toIdx.x] = dAzTo_dE_To;
           }
-          if (!this.stations[from].fixed) {
-            const idx = paramMap[from];
-            A[row][idx] = -dAzFrom_dE_From;
-            A[row][idx + 1] = -dAzFrom_dN_From;
+          if (toIdx?.y != null) {
+            A[row][toIdx.y] = dAzTo_dN_To;
           }
-          if (!this.stations[at].fixed) {
-            const idx = paramMap[at];
+          const fromIdx = this.paramIndex[from];
+          if (fromIdx?.x != null) {
+            A[row][fromIdx.x] = -dAzFrom_dE_From;
+          }
+          if (fromIdx?.y != null) {
+            A[row][fromIdx.y] = -dAzFrom_dN_From;
+          }
+          const atIdx = this.paramIndex[at];
+          if (atIdx?.x != null || atIdx?.y != null) {
             const dAzTo_dE_At = -dAzTo_dE_To;
             const dAzTo_dN_At = -dAzTo_dN_To;
             const dAzFrom_dE_At = -dAzFrom_dE_From;
             const dAzFrom_dN_At = -dAzFrom_dN_From;
-            A[row][idx] = dAzTo_dE_At - dAzFrom_dE_At;
-            A[row][idx + 1] = dAzTo_dN_At - dAzFrom_dN_At;
+            if (atIdx?.x != null) {
+              A[row][atIdx.x] = dAzTo_dE_At - dAzFrom_dE_At;
+            }
+            if (atIdx?.y != null) {
+              A[row][atIdx.y] = dAzTo_dN_At - dAzFrom_dN_At;
+            }
           }
 
           const w = 1.0 / (obs.stdDev * obs.stdDev);
@@ -240,24 +460,22 @@ export class LSAEngine {
           const vN = obs.obs.dN - calc_dN;
 
           L[row][0] = vE;
-          if (!s1.fixed) {
-            const idx = paramMap[from];
-            A[row][idx] = -1.0;
+          const fromIdx = this.paramIndex[from];
+          if (fromIdx?.x != null) {
+            A[row][fromIdx.x] = -1.0;
           }
-          if (!s2.fixed) {
-            const idx = paramMap[to];
-            A[row][idx] = 1.0;
+          const toIdx = this.paramIndex[to];
+          if (toIdx?.x != null) {
+            A[row][toIdx.x] = 1.0;
           }
           P[row][row] = 1.0 / (obs.stdDev * obs.stdDev);
 
           L[row + 1][0] = vN;
-          if (!s1.fixed) {
-            const idx = paramMap[from];
-            A[row + 1][idx + 1] = -1.0;
+          if (fromIdx?.y != null) {
+            A[row + 1][fromIdx.y] = -1.0;
           }
-          if (!s2.fixed) {
-            const idx = paramMap[to];
-            A[row + 1][idx + 1] = 1.0;
+          if (toIdx?.y != null) {
+            A[row + 1][toIdx.y] = 1.0;
           }
           P[row + 1][row + 1] = 1.0 / (obs.stdDev * obs.stdDev);
 
@@ -272,13 +490,13 @@ export class LSAEngine {
           const v = obs.obs - calc_dH;
           L[row][0] = v;
 
-          if (!s1.fixed) {
-            const idx = paramMap[from];
-            A[row][idx + 2] = -1.0;
+          const fromIdx = this.paramIndex[from];
+          if (fromIdx?.h != null) {
+            A[row][fromIdx.h] = -1.0;
           }
-          if (!s2.fixed) {
-            const idx = paramMap[to];
-            A[row][idx + 2] = 1.0;
+          const toIdx = this.paramIndex[to];
+          if (toIdx?.h != null) {
+            A[row][toIdx.h] = 1.0;
           }
 
           const w = 1.0 / (obs.stdDev * obs.stdDev);
@@ -297,15 +515,59 @@ export class LSAEngine {
           const dAz_dE_To = Math.cos(calc) / (az.dist || 1);
           const dAz_dN_To = -Math.sin(calc) / (az.dist || 1);
 
-          if (!this.stations[to].fixed) {
-            const idx = paramMap[to];
-            A[row][idx] = dAz_dE_To;
-            A[row][idx + 1] = dAz_dN_To;
+          const toIdx = this.paramIndex[to];
+          if (toIdx?.x != null) {
+            A[row][toIdx.x] = dAz_dE_To;
           }
-          if (!this.stations[from].fixed) {
-            const idx = paramMap[from];
-            A[row][idx] = -dAz_dE_To;
-            A[row][idx + 1] = -dAz_dN_To;
+          if (toIdx?.y != null) {
+            A[row][toIdx.y] = dAz_dN_To;
+          }
+          const fromIdx = this.paramIndex[from];
+          if (fromIdx?.x != null) {
+            A[row][fromIdx.x] = -dAz_dE_To;
+          }
+          if (fromIdx?.y != null) {
+            A[row][fromIdx.y] = -dAz_dN_To;
+          }
+
+          const w = 1.0 / (obs.stdDev * obs.stdDev);
+          P[row][row] = w;
+
+          row += 1;
+        } else if (obs.type === 'direction') {
+          const { at, to, setId } = obs as any;
+          if (!this.stations[at] || !this.stations[to]) return;
+          const az = this.getAzimuth(at, to);
+          const orientation = this.directionOrientations[setId] ?? 0;
+          let calc = orientation + az.az;
+          calc %= 2 * Math.PI;
+          if (calc < 0) calc += 2 * Math.PI;
+          let v = obs.obs - calc;
+          if (v > Math.PI) v -= 2 * Math.PI;
+          if (v < -Math.PI) v += 2 * Math.PI;
+          L[row][0] = v;
+
+          const dAz_dE_To = Math.cos(az.az) / (az.dist || 1);
+          const dAz_dN_To = -Math.sin(az.az) / (az.dist || 1);
+
+          const toIdx = this.paramIndex[to];
+          if (toIdx?.x != null) {
+            A[row][toIdx.x] = dAz_dE_To;
+          }
+          if (toIdx?.y != null) {
+            A[row][toIdx.y] = dAz_dN_To;
+          }
+          const atIdx = this.paramIndex[at];
+          if (atIdx?.x != null) {
+            A[row][atIdx.x] = -dAz_dE_To;
+          }
+          if (atIdx?.y != null) {
+            A[row][atIdx.y] = -dAz_dN_To;
+          }
+
+          const dirIdx = dirParamMap[setId];
+          if (dirIdx != null) {
+            A[row][dirIdx] = 1;
           }
 
           const w = 1.0 / (obs.stdDev * obs.stdDev);
@@ -314,7 +576,8 @@ export class LSAEngine {
           row += 1;
         } else if (obs.type === 'zenith') {
           const { from, to } = obs;
-          const zv = this.getZenith(from, to);
+          if (!this.stations[from] || !this.stations[to]) return;
+          const zv = this.getZenith(from, to, obs.hi ?? 0, obs.ht ?? 0);
           const calc = zv.z;
           let v = obs.obs - calc;
           if (v > Math.PI) v -= 2 * Math.PI;
@@ -327,17 +590,25 @@ export class LSAEngine {
           const dZ_dN = zv.dh * (this.stations[to].y - this.stations[from].y) * common;
           const dZ_dH = (zv.horiz * zv.horiz) * common;
 
-          if (!this.stations[to].fixed) {
-            const idx = paramMap[to];
-            A[row][idx] = dZ_dE;
-            A[row][idx + 1] = dZ_dN;
-            A[row][idx + 2] = dZ_dH;
+          const toIdx = this.paramIndex[to];
+          if (toIdx?.x != null) {
+            A[row][toIdx.x] = dZ_dE;
           }
-          if (!this.stations[from].fixed) {
-            const idx = paramMap[from];
-            A[row][idx] = -dZ_dE;
-            A[row][idx + 1] = -dZ_dN;
-            A[row][idx + 2] = -dZ_dH;
+          if (toIdx?.y != null) {
+            A[row][toIdx.y] = dZ_dN;
+          }
+          if (toIdx?.h != null) {
+            A[row][toIdx.h] = dZ_dH;
+          }
+          const fromIdx = this.paramIndex[from];
+          if (fromIdx?.x != null) {
+            A[row][fromIdx.x] = -dZ_dE;
+          }
+          if (fromIdx?.y != null) {
+            A[row][fromIdx.y] = -dZ_dN;
+          }
+          if (fromIdx?.h != null) {
+            A[row][fromIdx.h] = -dZ_dH;
           }
 
           const w = 1.0 / (obs.stdDev * obs.stdDev);
@@ -351,27 +622,41 @@ export class LSAEngine {
         const AT = transpose(A);
         const ATP = multiply(AT, P);
         const N = multiply(ATP, A);
-        const detGuard = this.estimateCondition(N);
-        if (detGuard > this.maxCondition || Number.isNaN(detGuard)) {
-          this.log(`Matrix conditioning too high: ${detGuard.toExponential(3)} (abort)`);
-          this.calculateStatistics(paramMap, false);
-          return this.buildResult();
-        }
         const U = multiply(ATP, L);
         const N_inv = inv(N);
         const X = multiply(N_inv, U);
         this.Qxx = N_inv;
 
         let maxCorrection = 0;
-        this.unknowns.forEach((id) => {
-          const idx = paramMap[id];
-          const dE = X[idx][0];
-          const dN = X[idx + 1][0];
-          const dH = X[idx + 2][0];
-          this.stations[id].x += dE;
-          this.stations[id].y += dN;
-          this.stations[id].h += dH;
-          maxCorrection = Math.max(maxCorrection, Math.abs(dE), Math.abs(dN), Math.abs(dH));
+        Object.entries(this.paramIndex).forEach(([id, idx]) => {
+          const st = this.stations[id];
+          if (!st) return;
+          if (idx.x != null) {
+            const dE = X[idx.x][0];
+            st.x += dE;
+            maxCorrection = Math.max(maxCorrection, Math.abs(dE));
+          }
+          if (idx.y != null) {
+            const dN = X[idx.y][0];
+            st.y += dN;
+            maxCorrection = Math.max(maxCorrection, Math.abs(dN));
+          }
+          if (!this.is2D && idx.h != null) {
+            const dH = X[idx.h][0];
+            st.h += dH;
+            maxCorrection = Math.max(maxCorrection, Math.abs(dH));
+          }
+        });
+
+        directionSetIds.forEach((id) => {
+          const idx = dirParamMap[id];
+          if (idx == null) return;
+          const dOri = X[idx][0];
+          const next = (this.directionOrientations[id] ?? 0) + dOri;
+          let wrapped = next % (2 * Math.PI);
+          if (wrapped < 0) wrapped += 2 * Math.PI;
+          this.directionOrientations[id] = wrapped;
+          maxCorrection = Math.max(maxCorrection, Math.abs(dOri));
         });
 
         this.log(`Iter ${iter + 1}: Max Corr = ${maxCorrection.toFixed(4)}`);
@@ -381,13 +666,13 @@ export class LSAEngine {
         }
       } catch {
         this.log('Matrix Inversion Failed (Singular).');
-        this.calculateStatistics(paramMap, false);
+        this.calculateStatistics(this.paramIndex, false);
         return this.buildResult();
       }
     }
 
     if (!this.converged) this.log('Warning: Max iterations reached.');
-    this.calculateStatistics(paramMap, !!this.Qxx);
+    this.calculateStatistics(this.paramIndex, !!this.Qxx);
     return this.buildResult();
   }
 
@@ -410,7 +695,10 @@ export class LSAEngine {
     return rowMax * colMax;
   }
 
-  private calculateStatistics(paramMap: Record<StationId, number>, hasQxx: boolean) {
+  private calculateStatistics(
+    paramIndex: Record<StationId, { x?: number; y?: number; h?: number }>,
+    hasQxx: boolean,
+  ) {
     let vtpv = 0;
     const closureResiduals: string[] = [];
     const closureVectors: { from: StationId; to: StationId; dE: number; dN: number }[] = [];
@@ -419,26 +707,31 @@ export class LSAEngine {
       (o) => (o as any).setId && String((o as any).setId).toUpperCase() === 'TE',
     );
     const coordClosureVectors: { from: StationId; to: StationId; dE: number; dN: number }[] = [];
+    const directionStats = new Map<
+      string,
+      { count: number; sum: number; sumSq: number; maxAbs: number; occupy: StationId; orientation: number }
+    >();
 
     this.observations.forEach((obs) => {
-      // skip sideshots for statistics too
-      if (obs.type === 'dist' && typeof obs.calc === 'object' && (obs.calc as any)?.sideshot) {
-        return;
-      }
-        if (obs.type === 'dist') {
-          const s1 = this.stations[obs.from];
-          const s2 = this.stations[obs.to];
-          if (!s1 || !s2) return;
-          const dx = s2.x - s1.x;
-          const dy = s2.y - s1.y;
-          const dz = (s2.h + (obs.ht ?? 0)) - (s1.h + (obs.hi ?? 0));
-          const calc =
-            obs.mode === 'slope' ? Math.sqrt(dx * dx + dy * dy + dz * dz) : Math.sqrt(dx * dx + dy * dy);
-          const v = obs.obs - calc;
-          obs.calc = calc;
-          obs.residual = v;
-          obs.stdRes = Math.abs(v) / obs.stdDev;
-          vtpv += (v * v) / (obs.stdDev * obs.stdDev);
+      if (!this.isObservationActive(obs)) return;
+      if (obs.type === 'dist') {
+        const s1 = this.stations[obs.from];
+        const s2 = this.stations[obs.to];
+        if (!s1 || !s2) return;
+        const dx = s2.x - s1.x;
+        const dy = s2.y - s1.y;
+        const dz = (s2.h + (obs.ht ?? 0)) - (s1.h + (obs.hi ?? 0));
+        const horiz = Math.sqrt(dx * dx + dy * dy);
+        const calc = this.is2D
+          ? horiz
+          : obs.mode === 'slope'
+            ? Math.sqrt(horiz * horiz + dz * dz)
+            : horiz;
+        const v = obs.obs - calc;
+        obs.calc = calc;
+        obs.residual = v;
+        obs.stdRes = Math.abs(v) / obs.stdDev;
+        vtpv += (v * v) / (obs.stdDev * obs.stdDev);
       } else if (obs.type === 'angle') {
         const azTo = this.getAzimuth(obs.at, obs.to).az;
         const azFrom = this.getAzimuth(obs.at, obs.from).az;
@@ -483,8 +776,40 @@ export class LSAEngine {
         obs.residual = v;
         obs.stdRes = Math.abs(v) / obs.stdDev;
         vtpv += (v * v) / (obs.stdDev * obs.stdDev);
+      } else if (obs.type === 'direction') {
+        const dir = obs as any;
+        const az = this.getAzimuth(dir.at, dir.to).az;
+        const orientation = this.directionOrientations[dir.setId] ?? 0;
+        let calc = orientation + az;
+        calc %= 2 * Math.PI;
+        if (calc < 0) calc += 2 * Math.PI;
+        let v = dir.obs - calc;
+        if (v > Math.PI) v -= 2 * Math.PI;
+        if (v < -Math.PI) v += 2 * Math.PI;
+        dir.calc = calc;
+        dir.residual = v;
+        dir.stdRes = Math.abs(v) / dir.stdDev;
+        vtpv += (v * v) / (dir.stdDev * dir.stdDev);
+
+        const setId = String(dir.setId ?? 'unknown');
+        const stat = directionStats.get(setId) ?? {
+          count: 0,
+          sum: 0,
+          sumSq: 0,
+          maxAbs: 0,
+          occupy: dir.at,
+          orientation,
+        };
+        const arcsec = v * RAD_TO_DEG * 3600;
+        stat.count += 1;
+        stat.sum += arcsec;
+        stat.sumSq += arcsec * arcsec;
+        stat.maxAbs = Math.max(stat.maxAbs, Math.abs(arcsec));
+        stat.occupy = dir.at ?? stat.occupy;
+        stat.orientation = orientation;
+        directionStats.set(setId, stat);
       } else if (obs.type === 'zenith') {
-          const zv = this.getZenith(obs.from, obs.to, obs.hi ?? 0, obs.ht ?? 0).z;
+        const zv = this.getZenith(obs.from, obs.to, obs.hi ?? 0, obs.ht ?? 0).z;
         let v = obs.obs - zv;
         if (v > Math.PI) v -= 2 * Math.PI;
         if (v < -Math.PI) v += 2 * Math.PI;
@@ -538,11 +863,13 @@ export class LSAEngine {
     if (hasQxx && this.Qxx) {
       const s0_sq = this.seuw * this.seuw;
       this.unknowns.forEach((id) => {
-        const base = paramMap[id];
-        if (base === undefined || !this.Qxx?.[base]) return;
-        const qxx = this.Qxx[base][base];
-        const qyy = this.Qxx[base + 1][base + 1];
-        const qxy = this.Qxx[base][base + 1];
+        const idx = paramIndex[id];
+        if (!idx) return;
+        if (idx.x == null || idx.y == null) return;
+        if (!this.Qxx?.[idx.x] || !this.Qxx?.[idx.y]) return;
+        const qxx = this.Qxx[idx.x][idx.x];
+        const qyy = this.Qxx[idx.y][idx.y];
+        const qxy = this.Qxx[idx.x][idx.y];
 
         const sx2 = qxx * s0_sq;
         const sy2 = qyy * s0_sq;
@@ -560,8 +887,24 @@ export class LSAEngine {
           theta: theta * RAD_TO_DEG,
         };
 
-        const qhh = this.Qxx[base + 2][base + 2] * s0_sq;
-        this.stations[id].sH = Math.sqrt(Math.abs(qhh));
+        if (!this.is2D && idx.h != null) {
+          const qhh = this.Qxx[idx.h][idx.h] * s0_sq;
+          this.stations[id].sH = Math.sqrt(Math.abs(qhh));
+        }
+      });
+    }
+
+    if (directionStats.size > 0) {
+      const summaries = Array.from(directionStats.entries()).sort((a, b) => a[0].localeCompare(b[0]));
+      this.logs.push('Direction set summary (arcsec residuals):');
+      summaries.forEach(([setId, stat]) => {
+        const mean = stat.sum / stat.count;
+        const rms = Math.sqrt(stat.sumSq / stat.count);
+        const orientDeg = (stat.orientation * RAD_TO_DEG) % 360;
+        const orientStr = orientDeg < 0 ? orientDeg + 360 : orientDeg;
+        this.logs.push(
+          `  ${setId} @ ${stat.occupy}: n=${stat.count}, mean=${mean.toFixed(2)}", rms=${rms.toFixed(2)}", max=${stat.maxAbs.toFixed(2)}", orient=${orientStr.toFixed(4)}°`,
+        );
       });
     }
 
