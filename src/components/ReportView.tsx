@@ -1,7 +1,7 @@
 import React from 'react'
 import { AlertTriangle, CheckCircle } from 'lucide-react'
 import type { AdjustmentResult, Observation } from '../types'
-import { RAD_TO_DEG, radToDmsStr, dmsToRad } from '../engine/angles'
+import { RAD_TO_DEG, radToDmsStr } from '../engine/angles'
 
 const FT_PER_M = 3.280839895
 
@@ -24,7 +24,7 @@ const ReportView: React.FC<ReportViewProps> = ({
   onToggleExclude,
   onReRun,
   onClearExclusions,
-  overrides,
+  overrides: _overrides,
   onOverride,
   onResetOverrides,
 }) => {
@@ -65,9 +65,8 @@ const ReportView: React.FC<ReportViewProps> = ({
               const isFail = Math.abs(obs.stdRes || 0) > 3
               const isWarn = Math.abs(obs.stdRes || 0) > 1 && !isFail
               const excluded = excludedIds.has(obs.id)
-              const override = overrides[obs.id]
-
               let stationsLabel = ''
+              let obsStr = ''
               let calcStr = ''
               let resStr = ''
               let stdDevVal = obs.stdDev * unitScale
@@ -83,6 +82,7 @@ const ReportView: React.FC<ReportViewProps> = ({
 
               if (obs.type === 'angle') {
                 stationsLabel = `${obs.at}-${obs.from}-${obs.to}`
+                obsStr = radToDmsStr(obs.obs)
                 calcStr = obs.calc != null ? radToDmsStr(obs.calc as number) : '-'
                 resStr =
                   obs.residual != null
@@ -91,6 +91,7 @@ const ReportView: React.FC<ReportViewProps> = ({
                 stdDevVal = obs.stdDev * RAD_TO_DEG * 3600 // arcseconds
               } else if (obs.type === 'direction') {
                 stationsLabel = `${obs.at}-${obs.to} (${obs.setId})`
+                obsStr = radToDmsStr(obs.obs)
                 calcStr = obs.calc != null ? radToDmsStr(obs.calc as number) : '-'
                 resStr =
                   obs.residual != null
@@ -99,10 +100,14 @@ const ReportView: React.FC<ReportViewProps> = ({
                 stdDevVal = obs.stdDev * RAD_TO_DEG * 3600 // arcseconds
               } else if (obs.type === 'dist') {
                 stationsLabel = `${obs.from}-${obs.to}`
+                obsStr = (obs.obs * unitScale).toFixed(4)
                 calcStr = obs.calc != null ? ((obs.calc as number) * unitScale).toFixed(4) : '-'
                 resStr = obs.residual != null ? ((obs.residual as number) * unitScale).toFixed(4) : '-'
               } else if (obs.type === 'gps') {
                 stationsLabel = `${obs.from}-${obs.to}`
+                obsStr = `dE=${(obs.obs.dE * unitScale).toFixed(3)}, dN=${(
+                  obs.obs.dN * unitScale
+                ).toFixed(3)}`
                 calcStr =
                   obs.calc != null
                     ? `dE=${((obs.calc as { dE: number }).dE * unitScale).toFixed(3)}, dN=${(
@@ -117,10 +122,12 @@ const ReportView: React.FC<ReportViewProps> = ({
                     : '-'
               } else if (obs.type === 'lev') {
                 stationsLabel = `${obs.from}-${obs.to}`
+                obsStr = (obs.obs * unitScale).toFixed(4)
                 calcStr = obs.calc != null ? ((obs.calc as number) * unitScale).toFixed(4) : '-'
                 resStr = obs.residual != null ? ((obs.residual as number) * unitScale).toFixed(4) : '-'
               } else if (obs.type === 'bearing') {
                 stationsLabel = `${obs.from}-${obs.to}`
+                obsStr = radToDmsStr(obs.obs)
                 calcStr = obs.calc != null ? radToDmsStr(obs.calc as number) : '-'
                 resStr =
                   obs.residual != null
@@ -129,6 +136,7 @@ const ReportView: React.FC<ReportViewProps> = ({
                 stdDevVal = obs.stdDev * RAD_TO_DEG * 3600
               } else if (obs.type === 'zenith') {
                 stationsLabel = `${obs.from}-${obs.to}`
+                obsStr = radToDmsStr(obs.obs)
                 calcStr = obs.calc != null ? radToDmsStr(obs.calc as number) : '-'
                 resStr =
                   obs.residual != null
@@ -154,62 +162,7 @@ const ReportView: React.FC<ReportViewProps> = ({
                   </td>
                   <td className="py-1 uppercase text-slate-500">{obs.type}</td>
                   <td className="py-1">{stationsLabel}</td>
-                  <td className="py-1 text-right font-mono text-slate-400">
-                    {obs.type === 'gps' ? (
-                      <div className="flex items-center space-x-1 justify-end">
-                        <input
-                          type="number"
-                          className="bg-slate-800 border border-slate-700 rounded px-1 w-20 text-right text-xs"
-                          defaultValue={(obs.obs.dE * unitScale).toFixed(3)}
-                          onBlur={(e) =>
-                            onOverride(obs.id, {
-                              obs: {
-                                dE: parseFloat(e.target.value) / unitScale,
-                                dN: (override?.obs as any)?.dN ?? obs.obs.dN,
-                              },
-                            })
-                          }
-                        />
-                        <input
-                          type="number"
-                          className="bg-slate-800 border border-slate-700 rounded px-1 w-20 text-right text-xs"
-                          defaultValue={(obs.obs.dN * unitScale).toFixed(3)}
-                          onBlur={(e) =>
-                            onOverride(obs.id, {
-                              obs: {
-                                dE: (override?.obs as any)?.dE ?? obs.obs.dE,
-                                dN: parseFloat(e.target.value) / unitScale,
-                              },
-                            })
-                          }
-                        />
-                      </div>
-                    ) : (
-                      <input
-                        type="text"
-                        className="bg-slate-800 border border-slate-700 rounded px-1 w-24 text-right text-xs"
-                        defaultValue={
-                          obs.type === 'angle' ||
-                          obs.type === 'direction' ||
-                          obs.type === 'bearing' ||
-                          obs.type === 'zenith'
-                            ? radToDmsStr(obs.obs)
-                            : (obs.obs * unitScale).toFixed(4)
-                        }
-                        onBlur={(e) =>
-                          onOverride(obs.id, {
-                            obs:
-                              obs.type === 'angle' ||
-                              obs.type === 'direction' ||
-                              obs.type === 'bearing' ||
-                              obs.type === 'zenith'
-                                ? dmsToRad(e.target.value)
-                                : parseFloat(e.target.value) / unitScale,
-                          })
-                        }
-                      />
-                    )}
-                  </td>
+                  <td className="py-1 text-right font-mono text-slate-400">{obsStr || '-'}</td>
                   <td className="py-1 text-right font-mono text-slate-500">{calcStr}</td>
                   <td
                     className={`py-1 text-right font-bold font-mono ${isFail ? 'text-red-500' : isWarn ? 'text-yellow-500' : 'text-green-500'

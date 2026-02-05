@@ -173,6 +173,7 @@ export interface ParseOptions {
   currentInstrument?: string;
   edmMode?: 'additive' | 'propagated';
   addCenteringToExplicit?: boolean;
+  debug?: boolean;
 }
 
 export interface AdjustmentResult {

@@ -25,6 +25,7 @@ const defaultParseOptions: ParseOptions = {
   currentInstrument: undefined,
   edmMode: 'additive',
   addCenteringToExplicit: false,
+  debug: false,
 }
 
 const FT_PER_M = 3.280839895
@@ -277,6 +278,10 @@ export const parseInput = (
         const mode = (parts[1] || '').toUpperCase()
         state.addCenteringToExplicit = mode === 'ON'
         logs.push(`Add centering to explicit std dev set to ${state.addCenteringToExplicit}`)
+      } else if (op === '.DEBUG') {
+        const mode = (parts[1] || '').toUpperCase()
+        state.debug = mode !== 'OFF'
+        logs.push(`Debug logging set to ${state.debug}`)
       } else if (op === '.I' && parts[1]) {
         state.currentInstrument = parts[1]
         logs.push(`Current instrument set to ${state.currentInstrument}`)

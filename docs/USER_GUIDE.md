@@ -28,6 +28,7 @@ Directives that control parsing behavior:
 -   `.I [InstCode]`: Sets the current instrument for subsequent TS observations (optional).
 -   `.EDM [ADDITIVE|PROPAGATED]`: Distance sigma mode (default: ADDITIVE).
 -   `.ADDC [ON|OFF]`: Add centering to explicit sigmas (default: OFF).
+-   `.DEBUG [ON|OFF]`: Enable per-observation debug logging (default: OFF).
 
 ### Stations
 -   **Structure**: `C StationID [North] [East] [Elev] [! ! !]` (Order depends on `.ORDER`)

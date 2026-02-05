@@ -24,6 +24,7 @@
   - [~] Fixity/weights: support ! fixed per component, legacy * fixed, numeric std errs per obs/component (free markers not implemented)
   - [x] Instrument library: EDM const/ppm, HZ/VA precision, instrument/target centering; .I to set current instrument
   - [x] Std error tokens (&/!/*/numeric) for observations; .EDM additive/propagated; .ADDC add-centering mode
+  - [x] Debug logging toggle (.DEBUG) to dump per-observation calc/residual/sigma by iteration
   - Units/normalization: honor .UNITS for ft/m parsing/HI/HT, convert angles/bearings; normalize engine to meters/radians
   - Validation/logging: strict line validation, mode/order scope, HI/HT parsing, counts per type, logs for defaults/skips/flags
   - [x] Validation/logging: basic network diagnostics for under-observed stations

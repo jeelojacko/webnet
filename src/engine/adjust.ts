@@ -47,6 +47,7 @@ export class LSAEngine {
   private directionOrientations: Record<string, number> = {};
   private paramIndex: Record<StationId, { x?: number; y?: number; h?: number }> = {};
   private addCenteringToExplicit = false;
+  private debug = false;
 
   private getInstrument(obs: Observation): Instrument | undefined {
     if (!obs.instCode) return undefined;
@@ -272,6 +273,18 @@ export class LSAEngine {
     return { az, dist: Math.sqrt(dx * dx + dy * dy) };
   }
 
+  private wrapToPi(val: number): number {
+    let v = val;
+    if (v > Math.PI) v -= 2 * Math.PI;
+    if (v < -Math.PI) v += 2 * Math.PI;
+    return v;
+  }
+
+  private logObsDebug(iteration: number, label: string, details: string) {
+    if (!this.debug) return;
+    this.logs.push(`Iter ${iteration} ${label}: ${details}`);
+  }
+
   private getZenith(fromID: StationId, toID: StationId, hi = 0, ht = 0): { z: number; dist: number; horiz: number; dh: number } {
     const s1 = this.stations[fromID];
     const s2 = this.stations[toID];
@@ -286,6 +299,7 @@ export class LSAEngine {
   }
 
   private isObservationActive(obs: Observation): boolean {
+    if (this.excludeIds?.has(obs.id)) return false;
     if (typeof obs.calc === 'object' && (obs.calc as any)?.sideshot) return false;
     if (this.is2D && (obs.type === 'lev' || obs.type === 'zenith')) return false;
     return true;
@@ -294,14 +308,13 @@ export class LSAEngine {
   solve(): AdjustmentResult {
     const parsed = parseInput(this.input, this.instrumentLibrary, this.parseOptions);
     this.stations = parsed.stations;
-    this.observations = this.excludeIds
-      ? parsed.observations.filter((o) => !this.excludeIds?.has(o.id))
-      : parsed.observations;
+    this.observations = parsed.observations;
     this.unknowns = parsed.unknowns;
     this.instrumentLibrary = parsed.instrumentLibrary;
     this.logs = [...parsed.logs];
     this.coordMode = parsed.parseState?.coordMode ?? this.parseOptions?.coordMode ?? '3D';
     this.addCenteringToExplicit = parsed.parseState?.addCenteringToExplicit ?? false;
+    this.debug = parsed.parseState?.debug ?? false;
     this.is2D = this.coordMode === '2D';
 
     // Apply overrides before any unit normalization
@@ -419,6 +432,16 @@ export class LSAEngine {
           const v = obs.obs - calcDist;
 
           L[row][0] = v;
+          if (this.debug) {
+            const sigmaUsed = this.effectiveStdDev(obs);
+            this.logObsDebug(
+              iter + 1,
+              `DIST#${obs.id}`,
+              `from=${from} to=${to} obs=${obs.obs.toFixed(4)}m calc=${calcDist.toFixed(
+                4,
+              )}m w=${v.toFixed(6)}m sigma=${sigmaUsed.toFixed(6)}m mode=${obs.mode}`,
+            );
+          }
           const denom = calcDist || 1;
           const dD_dE2 = dx / denom;
           const dD_dN2 = dy / denom;
@@ -458,9 +481,24 @@ export class LSAEngine {
           let calcAngle = azTo.az - azFrom.az;
           if (calcAngle < 0) calcAngle += 2 * Math.PI;
           let diff = obs.obs - calcAngle;
-          if (diff > Math.PI) diff -= 2 * Math.PI;
-          if (diff < -Math.PI) diff += 2 * Math.PI;
+          diff = this.wrapToPi(diff);
           L[row][0] = diff;
+          if (this.debug) {
+            const sigmaUsed = this.effectiveStdDev(obs);
+            this.logObsDebug(
+              iter + 1,
+              `ANGLE#${obs.id}`,
+              `at=${at} from=${from} to=${to} obs=${(obs.obs * RAD_TO_DEG).toFixed(
+                6,
+              )}°/${obs.obs.toFixed(6)}rad azTo=${(azTo.az * RAD_TO_DEG).toFixed(
+                6,
+              )}° azFrom=${(azFrom.az * RAD_TO_DEG).toFixed(
+                6,
+              )}° calc=${(calcAngle * RAD_TO_DEG).toFixed(6)}° w=${(
+                diff * RAD_TO_DEG
+              ).toFixed(6)}° sigma=${sigmaUsed.toFixed(8)}rad`,
+            );
+          }
 
           const dAzTo_dE_To = Math.cos(azTo.az) / (azTo.dist || 1);
           const dAzTo_dN_To = -Math.sin(azTo.az) / (azTo.dist || 1);
@@ -603,9 +641,24 @@ export class LSAEngine {
           calc %= 2 * Math.PI;
           if (calc < 0) calc += 2 * Math.PI;
           let v = obs.obs - calc;
-          if (v > Math.PI) v -= 2 * Math.PI;
-          if (v < -Math.PI) v += 2 * Math.PI;
+          v = this.wrapToPi(v);
           L[row][0] = v;
+          if (this.debug) {
+            const sigmaUsed = this.effectiveStdDev(obs);
+            this.logObsDebug(
+              iter + 1,
+              `DIR#${obs.id}`,
+              `at=${at} to=${to} set=${setId} obs=${(obs.obs * RAD_TO_DEG).toFixed(
+                6,
+              )}°/${obs.obs.toFixed(6)}rad az=${(az.az * RAD_TO_DEG).toFixed(
+                6,
+              )}° orient=${(orientation * RAD_TO_DEG).toFixed(6)}° calc=${(
+                calc * RAD_TO_DEG
+              ).toFixed(6)}° w=${(v * RAD_TO_DEG).toFixed(6)}° sigma=${sigmaUsed.toFixed(
+                8,
+              )}rad`,
+            );
+          }
 
           const dAz_dE_To = Math.cos(az.az) / (az.dist || 1);
           const dAz_dN_To = -Math.sin(az.az) / (az.dist || 1);
@@ -641,9 +694,20 @@ export class LSAEngine {
           const zv = this.getZenith(from, to, obs.hi ?? 0, obs.ht ?? 0);
           const calc = zv.z;
           let v = obs.obs - calc;
-          if (v > Math.PI) v -= 2 * Math.PI;
-          if (v < -Math.PI) v += 2 * Math.PI;
+          v = this.wrapToPi(v);
           L[row][0] = v;
+          if (this.debug) {
+            const sigmaUsed = this.effectiveStdDev(obs);
+            this.logObsDebug(
+              iter + 1,
+              `ZEN#${obs.id}`,
+              `from=${from} to=${to} obs=${(obs.obs * RAD_TO_DEG).toFixed(6)}°/${obs.obs.toFixed(
+                6,
+              )}rad calc=${(calc * RAD_TO_DEG).toFixed(6)}° w=${(
+                v * RAD_TO_DEG
+              ).toFixed(6)}° sigma=${sigmaUsed.toFixed(8)}rad`,
+            );
+          }
 
           const denom = Math.sqrt(Math.max(1 - (zv.dist === 0 ? 0 : (zv.dh / zv.dist) ** 2), 1e-12));
           const common = zv.dist === 0 ? 0 : 1 / (zv.dist * zv.dist * zv.dist * denom);
