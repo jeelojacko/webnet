@@ -19,12 +19,14 @@
   - [x] Traverse: TB (backsight station or bearing/az; dummy backsight handling), T legs (angle+dist+vertical with std err rules, HI/HT), TE closing angle to station or bearing/az with optional std err (basic conversion to angle/dist/vert added; mixed-face rejection when .NORMALIZE OFF; closure residuals/misclosure vectors logged)
   - [x] Direction sets: DB begin, DN directions, DM directions+measurements, DE end; face-1/face-2 handling, reject mixed-face when .NORMALIZE OFF (basic conversion to angle/dist/vert added; face-1/face-2 fixture added; face-2 weighting tweak)
   - [x] Direction sets: solve raw circle readings with per-set orientation parameters (for unreduced circle readings)
+  - [x] A records auto-classify as DIR (azimuth) vs turned angle using initial coords; DIR uses closest residual with optional 180° flip
   - [x] Sideshots: SS diverted from adjustment, compute post-adjust, disallow occupy/backsight, optional name checking (basic parse to dist + vert/zenith; excluded from adjustment; occupy/backsight validation added; cannot target fixed control)
   - Leveling: L dH with distance or turns, std err or per-unit via .LWEIGHT (fallback applied; ft lengths converted to km), allow fixity/free
   - [~] Fixity/weights: support ! fixed per component, legacy * fixed, numeric std errs per obs/component (free markers not implemented)
   - [x] Instrument library: EDM const/ppm, HZ/VA precision, instrument/target centering; .I to set current instrument
   - [x] Std error tokens (&/!/*/numeric) for observations; .EDM additive/propagated; .CENTERING on/off; .ADDC add-centering mode
   - [x] Debug logging toggle (.DEBUG) to dump per-observation calc/residual/sigma by iteration
+  - [x] Auto-drop height unknowns for stations with no vertical-sensitive observations (prevents 3D singularity)
   - Units/normalization: honor .UNITS for ft/m parsing/HI/HT, convert angles/bearings; normalize engine to meters/radians
   - Validation/logging: strict line validation, mode/order scope, HI/HT parsing, counts per type, logs for defaults/skips/flags
   - [x] Validation/logging: basic network diagnostics for under-observed stations

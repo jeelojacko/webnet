@@ -134,6 +134,15 @@ const ReportView: React.FC<ReportViewProps> = ({
                     ? `${((obs.residual as number) * RAD_TO_DEG * 3600).toFixed(2)}"`
                     : '-'
                 stdDevVal = obs.stdDev * RAD_TO_DEG * 3600
+              } else if (obs.type === 'dir') {
+                stationsLabel = `${obs.from}-${obs.to}`
+                obsStr = radToDmsStr(obs.obs)
+                calcStr = obs.calc != null ? radToDmsStr(obs.calc as number) : '-'
+                resStr =
+                  obs.residual != null
+                    ? `${((obs.residual as number) * RAD_TO_DEG * 3600).toFixed(2)}"`
+                    : '-'
+                stdDevVal = obs.stdDev * RAD_TO_DEG * 3600
               } else if (obs.type === 'zenith') {
                 stationsLabel = `${obs.from}-${obs.to}`
                 obsStr = radToDmsStr(obs.obs)
@@ -160,7 +169,9 @@ const ReportView: React.FC<ReportViewProps> = ({
                       className="accent-blue-500"
                     />
                   </td>
-                  <td className="py-1 uppercase text-slate-500">{obs.type}</td>
+                  <td className="py-1 uppercase text-slate-500">
+                    {obs.type === 'dir' ? 'dir' : obs.type}
+                  </td>
                   <td className="py-1">{stationsLabel}</td>
                   <td className="py-1 text-right font-mono text-slate-400">{obsStr || '-'}</td>
                   <td className="py-1 text-right font-mono text-slate-500">{calcStr}</td>
@@ -184,6 +195,7 @@ const ReportView: React.FC<ReportViewProps> = ({
                               : obs.type === 'angle' ||
                                   obs.type === 'direction' ||
                                   obs.type === 'bearing' ||
+                                  obs.type === 'dir' ||
                                   obs.type === 'zenith'
                                 ? parseFloat(e.target.value) / (RAD_TO_DEG * 3600)
                                 : parseFloat(e.target.value) / unitScale,
@@ -260,6 +272,7 @@ const ReportView: React.FC<ReportViewProps> = ({
               <div>GPS: {byType('gps').length}</div>
               <div>Leveling: {byType('lev').length}</div>
               <div>Bearings: {byType('bearing').length}</div>
+              <div>Dirs: {byType('dir').length}</div>
               <div>Zenith: {byType('zenith').length}</div>
             </div>
           </div>
@@ -320,6 +333,7 @@ const ReportView: React.FC<ReportViewProps> = ({
         {renderTable(byType('direction'), 'Directions (DB/DN)')}
         {renderTable(byType('dist'), 'Distances (TS)')}
         {renderTable(byType('bearing'), 'Bearings/Azimuths')}
+        {renderTable(byType('dir'), 'Directions (Azimuth)')}
         {renderTable(byType('zenith'), 'Zenith/Vertical Angles')}
         {renderTable(byType('gps'), 'GPS Vectors')}
         {renderTable(byType('lev'), 'Leveling dH')}

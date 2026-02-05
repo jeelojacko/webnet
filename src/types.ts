@@ -87,6 +87,17 @@ export interface DirectionObservation extends ObservationBase {
   stdRes?: number;
 }
 
+export interface DirObservation extends ObservationBase {
+  type: 'dir';
+  from: StationId;
+  to: StationId;
+  obs: number; // radians
+  flip180?: boolean;
+  calc?: number;
+  residual?: number;
+  stdRes?: number;
+}
+
 export interface GpsObservation extends ObservationBase {
   type: 'gps';
   from: StationId;
@@ -112,6 +123,7 @@ export type Observation =
   | DistanceObservation
   | AngleObservation
   | DirectionObservation
+  | DirObservation
   | GpsObservation
   | LevelObservation
   | BearingObservation

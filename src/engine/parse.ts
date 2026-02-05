@@ -3,6 +3,7 @@ import type {
   AngleObservation,
   DirectionObservation,
   DistanceObservation,
+  DirObservation,
   GpsObservation,
   Instrument,
   InstrumentLibrary,
@@ -10,6 +11,7 @@ import type {
   Observation,
   ParseResult,
   StationMap,
+  StationId,
   ParseOptions,
   MapMode,
 } from '../types'
@@ -89,6 +91,28 @@ type SigmaToken =
 
 const FIXED_SIGMA = 1e-9
 const FLOAT_SIGMA = 1e9
+
+const wrapToPi = (val: number): number => {
+  let v = val
+  if (v > Math.PI) v -= 2 * Math.PI
+  if (v < -Math.PI) v += 2 * Math.PI
+  return v
+}
+
+const azimuthFromTo = (
+  stations: StationMap,
+  from: StationId,
+  to: StationId,
+): { az: number; dist: number } | null => {
+  const s1 = stations[from]
+  const s2 = stations[to]
+  if (!s1 || !s2) return null
+  const dx = s2.x - s1.x
+  const dy = s2.y - s1.y
+  let az = Math.atan2(dx, dy)
+  if (az < 0) az += 2 * Math.PI
+  return { az, dist: Math.sqrt(dx * dx + dy * dy) }
+}
 
 const parseSigmaToken = (token?: string): SigmaToken | null => {
   if (!token) return null
@@ -521,19 +545,52 @@ export const parseInput = (
         let sigmaSec = resolved.sigma
         if (angleRad >= Math.PI) sigmaSec *= FACE2_WEIGHT
 
-        const obs: AngleObservation = {
-          id: obsId++,
-          type: 'angle',
-          instCode,
-          setId,
-          at,
-          from,
-          to,
-          obs: angleRad,
-          stdDev: sigmaSec * SEC_TO_RAD,
-          sigmaSource: resolved.source,
+        const azTo = azimuthFromTo(stations, at, to)
+        const azFrom = azimuthFromTo(stations, at, from)
+        let useDir = false
+        if (azTo && azFrom) {
+          let predAngle = azTo.az - azFrom.az
+          if (predAngle < 0) predAngle += 2 * Math.PI
+          const rAngle = Math.abs(wrapToPi(angleRad - predAngle))
+
+          const predDir = azTo.az
+          const r0 = wrapToPi(angleRad - predDir)
+          const r1 = wrapToPi(angleRad + Math.PI - predDir)
+          const rDir = Math.abs(r0) <= Math.abs(r1) ? Math.abs(r0) : Math.abs(r1)
+
+          useDir = rDir < rAngle
         }
-        observations.push(obs)
+
+        if (useDir) {
+          const obs: DirObservation = {
+            id: obsId++,
+            type: 'dir',
+            instCode,
+            setId,
+            from: at,
+            to,
+            obs: angleRad,
+            stdDev: sigmaSec * SEC_TO_RAD,
+            sigmaSource: resolved.source,
+            flip180: true,
+          }
+          observations.push(obs)
+          logs.push(`A record classified as DIR at line ${lineNum} (${at}-${to})`)
+        } else {
+          const obs: AngleObservation = {
+            id: obsId++,
+            type: 'angle',
+            instCode,
+            setId,
+            at,
+            from,
+            to,
+            obs: angleRad,
+            stdDev: sigmaSec * SEC_TO_RAD,
+            sigmaSource: resolved.source,
+          }
+          observations.push(obs)
+        }
       } else if (code === 'V') {
         // Vertical observation: zenith (slope mode) or deltaH (delta mode)
         const { from, to, nextIndex } = parseFromTo(parts, 1)

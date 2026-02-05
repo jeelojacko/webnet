@@ -24,7 +24,7 @@ describe('parseInput', () => {
       acc[o.type] = (acc[o.type] ?? 0) + 1
       return acc
     }, {})
-    expect(types).toMatchObject({ dist: 3, angle: 3, gps: 2, lev: 2 })
+    expect(types).toMatchObject({ dist: 3, angle: 2, dir: 1, gps: 2, lev: 2 })
   })
 
   it('applies .LWEIGHT fallback and converts ft leveling lengths', () => {

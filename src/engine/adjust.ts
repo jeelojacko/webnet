@@ -81,6 +81,11 @@ export class LSAEngine {
       const term = az.dist > 0 ? center / az.dist : 0;
       return Math.sqrt(sigma * sigma + term * term);
     }
+    if (obs.type === 'dir') {
+      const az = this.getAzimuth(obs.from, obs.to);
+      const term = az.dist > 0 ? center / az.dist : 0;
+      return Math.sqrt(sigma * sigma + term * term);
+    }
     if (obs.type === 'angle') {
       const azTo = this.getAzimuth(obs.at, obs.to);
       const azFrom = this.getAzimuth(obs.at, obs.from);
@@ -201,6 +206,13 @@ export class LSAEngine {
         return;
       }
       if (obs.type === 'dist' || obs.type === 'bearing' || obs.type === 'lev' || obs.type === 'zenith') {
+        mark(obs.from);
+        mark(obs.to);
+        markOther(obs.from);
+        markOther(obs.to);
+        return;
+      }
+      if (obs.type === 'dir') {
         mark(obs.from);
         mark(obs.to);
         markOther(obs.from);
@@ -329,7 +341,14 @@ export class LSAEngine {
           obs.stdDev = over.stdDev;
         }
         if (over.obs != null) {
-          if ((obs.type === 'angle' || obs.type === 'direction') && typeof over.obs === 'number') {
+          if (
+            (obs.type === 'angle' ||
+              obs.type === 'direction' ||
+              obs.type === 'bearing' ||
+              obs.type === 'dir' ||
+              obs.type === 'zenith') &&
+            typeof over.obs === 'number'
+          ) {
             obs.obs = (over.obs as number) * DEG_TO_RAD;
           } else if ((obs.type === 'dist' || obs.type === 'lev') && typeof over.obs === 'number') {
             obs.obs = over.obs as number;
@@ -347,6 +366,44 @@ export class LSAEngine {
     }
 
     const activeObservations = this.observations.filter((obs) => this.isObservationActive(obs));
+    const hasVertical: Record<StationId, boolean> = {};
+    if (!this.is2D) {
+      const markVertical = (id?: StationId) => {
+        if (!id) return;
+        hasVertical[id] = true;
+      };
+      activeObservations.forEach((obs) => {
+        if (obs.type === 'lev' || obs.type === 'zenith') {
+          markVertical(obs.from);
+          markVertical(obs.to);
+          return;
+        }
+        if (obs.type === 'dist' && obs.mode === 'slope') {
+          markVertical(obs.from);
+          markVertical(obs.to);
+        }
+      });
+    }
+
+    if (!this.is2D) {
+      const autoDropped: StationId[] = [];
+      this.unknowns.forEach((id) => {
+        const st = this.stations[id];
+        if (!st) return;
+        if (st.fixedH) return;
+        if (hasVertical[id]) return;
+        st.fixedH = true;
+        const fx = st.fixedX ?? false;
+        const fy = st.fixedY ?? false;
+        st.fixed = fx && fy && st.fixedH;
+        autoDropped.push(id);
+      });
+      if (autoDropped.length) {
+        this.log(
+          `Auto-drop H for stations with no vertical observations: ${autoDropped.join(', ')}`,
+        );
+      }
+    }
     if (this.is2D) {
       const skippedVertical = this.observations.filter(
         (o) =>
@@ -616,6 +673,62 @@ export class LSAEngine {
           if (v > Math.PI) v -= 2 * Math.PI;
           if (v < -Math.PI) v += 2 * Math.PI;
           L[row][0] = v;
+
+          const dAz_dE_To = Math.cos(calc) / (az.dist || 1);
+          const dAz_dN_To = -Math.sin(calc) / (az.dist || 1);
+
+          const toIdx = this.paramIndex[to];
+          if (toIdx?.x != null) {
+            A[row][toIdx.x] = dAz_dE_To;
+          }
+          if (toIdx?.y != null) {
+            A[row][toIdx.y] = dAz_dN_To;
+          }
+          const fromIdx = this.paramIndex[from];
+          if (fromIdx?.x != null) {
+            A[row][fromIdx.x] = -dAz_dE_To;
+          }
+          if (fromIdx?.y != null) {
+            A[row][fromIdx.y] = -dAz_dN_To;
+          }
+
+          const sigma = this.effectiveStdDev(obs);
+          const w = 1.0 / (sigma * sigma);
+          P[row][row] = w;
+
+          row += 1;
+        } else if (obs.type === 'dir') {
+          const { from, to } = obs;
+          const az = this.getAzimuth(from, to);
+          const calc = az.az;
+          let v0 = obs.obs - calc;
+          if (v0 > Math.PI) v0 -= 2 * Math.PI;
+          if (v0 < -Math.PI) v0 += 2 * Math.PI;
+          let v = v0;
+          if (obs.flip180) {
+            let v1 = obs.obs + Math.PI - calc;
+            if (v1 > Math.PI) v1 -= 2 * Math.PI;
+            if (v1 < -Math.PI) v1 += 2 * Math.PI;
+            if (Math.abs(v1) < Math.abs(v0)) v = v1;
+          }
+          L[row][0] = v;
+          if (this.debug) {
+            const sigmaUsed = this.effectiveStdDev(obs);
+            const wRad = v;
+            const wDeg = wRad * RAD_TO_DEG;
+            const norm = sigmaUsed ? wRad / sigmaUsed : 0;
+            this.logObsDebug(
+              iter + 1,
+              `DIRAZ#${obs.id}`,
+              `from=${from} to=${to} obs=${(obs.obs * RAD_TO_DEG).toFixed(6)}°/${obs.obs.toFixed(
+                6,
+              )}rad calc=${(calc * RAD_TO_DEG).toFixed(6)}° w=${wDeg.toFixed(
+                6,
+              )}°/${wRad.toFixed(8)}rad norm=${norm.toFixed(3)} sigma=${sigmaUsed.toFixed(
+                8,
+              )}rad`,
+            );
+          }
 
           const dAz_dE_To = Math.cos(calc) / (az.dist || 1);
           const dAz_dN_To = -Math.sin(calc) / (az.dist || 1);
@@ -948,6 +1061,23 @@ export class LSAEngine {
         let v = obs.obs - calcAz;
         if (v > Math.PI) v -= 2 * Math.PI;
         if (v < -Math.PI) v += 2 * Math.PI;
+        obs.calc = calcAz;
+        obs.residual = v;
+        const sigma = this.effectiveStdDev(obs);
+        obs.stdRes = Math.abs(v) / sigma;
+        vtpv += (v * v) / (sigma * sigma);
+      } else if (obs.type === 'dir') {
+        const calcAz = this.getAzimuth(obs.from, obs.to).az;
+        let v0 = obs.obs - calcAz;
+        if (v0 > Math.PI) v0 -= 2 * Math.PI;
+        if (v0 < -Math.PI) v0 += 2 * Math.PI;
+        let v = v0;
+        if (obs.flip180) {
+          let v1 = obs.obs + Math.PI - calcAz;
+          if (v1 > Math.PI) v1 -= 2 * Math.PI;
+          if (v1 < -Math.PI) v1 += 2 * Math.PI;
+          if (Math.abs(v1) < Math.abs(v0)) v = v1;
+        }
         obs.calc = calcAz;
         obs.residual = v;
         const sigma = this.effectiveStdDev(obs);

@@ -36,6 +36,7 @@ Directives that control parsing behavior:
     -   `!`: Fixes the component (use `! !` for 2D, `! ! !` for 3D; legacy `*` still fixes all).
     -   `*`: Free station (Float).
 -   **Example**: `C MASTER 5000.000 5000.000 100.000 !`
+-   **Auto H Hold**: In 3D mode, if a station has no vertical-sensitive observations (no zenith, leveling, or slope distances), its height is held fixed automatically to avoid singular matrices.
 
 ### Observations
 
@@ -47,11 +48,13 @@ Directives that control parsing behavior:
 
 #### Total Station
 -   **Angle (A)**: `A [At]-[From]-[To] Angle [StdErr]` or `A [At] [From] [To] Angle [StdErr]`
+    -   WebNet may auto-classify `A` records as **DIR** (azimuth) if the initial coordinates indicate the observation is a direction rather than a turned angle. DIR residuals use the closest of `obs` or `obs+180°`.
 -   **Distance (D)**: `D [At]-[To] Dist [StdErr]` (Effect depends on `.DELTA`)
 -   **Vertical (V)**: `V [At]-[To] Zenith/dH [StdErr]` (Effect depends on `.DELTA`)
 -   **Measure (M)**: `M [At]-[From]-[To] Angle Dist Zenith [StdAng] [StdDist] [StdZen]`
     -   Combined Angle, Distance, and Vertical.
 -   **Bearing/Measurement (BM)**: `BM [At]-[To] Bearing Dist Vertical`
+    -   **DIR (azimuth)**: internally treated as a bearing observation without a backsight term; appears in the report as “Directions (Azimuth)”.
 
 #### Leveling
 -   **Level (L)**: `L [From]-[To] dH [Dist/Turns]`
