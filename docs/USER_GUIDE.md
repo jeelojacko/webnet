@@ -29,7 +29,7 @@ Directives that control parsing behavior:
 -   `.EDM [ADDITIVE|PROPAGATED]`: Distance sigma mode (default: ADDITIVE).
 -   `.CENTERING [ON|OFF]`: Apply centering inflation from the instrument (default: ON).
 -   `.ADDC [ON|OFF]`: Add centering to explicit sigmas (default: OFF).
--   `.DEBUG [ON|OFF]`: Enable per-observation debug logging (default: OFF).
+-   `.DEBUG [ON|OFF]`: Enable per-observation debug logging (default: OFF). Logs both w in degrees/radians, normalized residuals, and a per-iteration step check (`wnew ≈ w − A·dx`).
 
 ### Stations
 -   **Structure**: `C StationID [North] [East] [Elev] [! ! !]` (Order depends on `.ORDER`)

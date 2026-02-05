@@ -767,6 +767,38 @@ export class LSAEngine {
         const X = multiply(N_inv, U);
         this.Qxx = N_inv;
 
+        if (this.debug) {
+          const AX = multiply(A, X);
+          let sumBefore = 0;
+          let sumAfter = 0;
+          let maxBefore = 0;
+          let maxAfter = 0;
+          for (let i = 0; i < numObsEquations; i += 1) {
+            const w = P[i][i] || 0;
+            const v0 = L[i][0];
+            const v1 = v0 - AX[i][0];
+            sumBefore += w * v0 * v0;
+            sumAfter += w * v1 * v1;
+            maxBefore = Math.max(maxBefore, Math.abs(v0));
+            maxAfter = Math.max(maxAfter, Math.abs(v1));
+          }
+          const ratio = sumBefore > 0 ? sumAfter / sumBefore : 0;
+          const msg =
+            `Iter ${iter + 1} step check: ` +
+            `weightedV0=${sumBefore.toExponential(3)} ` +
+            `weightedV1=${sumAfter.toExponential(3)} ` +
+            `ratio=${ratio.toFixed(3)} ` +
+            `max|w|=${maxBefore.toExponential(3)} ` +
+            `max|wnew|=${maxAfter.toExponential(3)}`;
+          this.logs.push(msg);
+          if (ratio > 1.05) {
+            this.logs.push(
+              `Warning: Iter ${iter + 1} predicted residuals increased. ` +
+                `Check sign convention and angle/zenith units (radians vs degrees).`,
+            );
+          }
+        }
+
         let maxCorrection = 0;
         Object.entries(this.paramIndex).forEach(([id, idx]) => {
           const st = this.stations[id];
