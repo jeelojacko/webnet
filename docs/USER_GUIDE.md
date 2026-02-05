@@ -22,9 +22,12 @@ Directives that control parsing behavior:
 -   `.ORDER [NE|EN]`: Set coordinate order (default: EN).
 -   `.DELTA [ON|OFF]`: Toggles `ON` (Horizontal Dist + dH) or `OFF` (Slope Dist + Zenith). Default: OFF (Slope).
 -   `.MAPMODE [ON|OFF]`: Toggles map mode checks (default: OFF).
--   `.LWEIGHT [val]`: Sets default leveling weight (ppm).
+-   `.LWEIGHT [val]`: Sets default leveling weight (mm/km).
 -   `.NORMALIZE [ON|OFF]`: Enforce face-order checks on traverses/directions (default: ON).
 -   `.LONSIGN [WESTNEG|WESTPOS]`: Longitude sign convention (default: WESTNEG).
+-   `.I [InstCode]`: Sets the current instrument for subsequent TS observations (optional).
+-   `.EDM [ADDITIVE|PROPAGATED]`: Distance sigma mode (default: ADDITIVE).
+-   `.ADDC [ON|OFF]`: Add centering to explicit sigmas (default: OFF).
 
 ### Stations
 -   **Structure**: `C StationID [North] [East] [Elev] [! ! !]` (Order depends on `.ORDER`)
@@ -33,6 +36,12 @@ Directives that control parsing behavior:
 -   **Example**: `C MASTER 5000.000 5000.000 100.000 !`
 
 ### Observations
+
+#### Instrument Library
+-   **Instrument (I)**: `I Code Desc-with-dashes edm_const(m) edm_ppm hz_precision(") va_precision(") inst_centr(m) tgt_centr(m) [gps_xy_std(m)] [lev_std(mm/km)]`
+    -   Example: `I TS1 Trimble-S9 0.001 1 1 1 0.003 0.003`
+    -   If `.I TS1` is set, subsequent `D/A/V/DV/M/BM/DB` records use TS1 uncertainties unless explicitly overridden.
+    -   Standard error tokens after observations can be `&` (default), `!` (fixed), `*` (float/zero weight), or numeric.
 
 #### Total Station
 -   **Angle (A)**: `A [At]-[From]-[To] Angle [StdErr]` or `A [At] [From] [To] Angle [StdErr]`

@@ -40,11 +40,11 @@ const DEFAULT_INPUT = `# WebNet Example - 10 Point Mixed Network
 # - Instrument library and usage
 
 # --- INSTRUMENT LIBRARY ---
-# I <CODE> <Desc-with-dashes> <dist_a_ppm> <dist_b_const> <angle_std(")> <gps_xy_std(m)> <lev_std(mm/km)>
-I TS1   TS-Geodetic-1mm+1ppm      1.0   0.001   1.0    0.020   1.5
-I TS2   TS-Construction-3mm+2ppm  2.0   0.003   3.0    0.050   2.0
-I GPS1  GNSS-Base-Rover-Fix       0.5   0.002   2.0    0.010   4.0
-I LEV1  Digital-Level-0.7mm       0.0   0.000   0.0    0.000   0.7
+# I <CODE> <Desc-with-dashes> <edm_const(m)> <edm_ppm> <hz_precision(")> <va_precision(")> <inst_centr(m)> <tgt_centr(m)> [gps_xy_std(m)] [lev_std(mm/km)]
+I TS1   TS-Geodetic-1mm+1ppm      0.001   1.0   1.0   1.0   0.003   0.003   0.020   1.5
+I TS2   TS-Construction-3mm+2ppm  0.003   2.0   3.0   3.0   0.003   0.003   0.050   2.0
+I GPS1  GNSS-Base-Rover-Fix       0.0   0.0   0.0   0.0   0.0   0.0   0.010   4.0
+I LEV1  Digital-Level-0.7mm       0.0   0.0   0.0   0.0   0.0   0.0   0.000   0.7
 
 # --- CONTROL / STATIONS ---
 # C <ID> <E> <N> <H> [! ! ! to fix components; legacy * fixed]
@@ -183,20 +183,31 @@ const App: React.FC = () => {
       if (!line || line.startsWith('#')) continue
 
       const parts = line.split(/\s+/)
-      if (parts[0]?.toUpperCase() === 'I' && parts.length >= 8) {
+      if (parts[0]?.toUpperCase() === 'I' && parts.length >= 4) {
         const instCode = parts[1]
         const desc = parts[2]?.replace(/-/g, ' ') ?? ''
-        const distA = parseFloat(parts[3])
-        const distB = parseFloat(parts[4])
-        const angStd = parseFloat(parts[5])
-        const gpsStd = parseFloat(parts[6])
-        const levStd = parseFloat(parts[7])
+        const numeric = parts
+          .slice(3)
+          .map((p) => parseFloat(p))
+          .filter((v) => !Number.isNaN(v))
+        const legacy = numeric.length > 0 && numeric.length < 6
+        const edmConst = legacy ? (numeric[1] ?? 0) : (numeric[0] ?? 0)
+        const edmPpm = legacy ? (numeric[0] ?? 0) : (numeric[1] ?? 0)
+        const hzPrec = legacy ? (numeric[2] ?? 0) : (numeric[2] ?? 0)
+        const vaPrec = legacy ? (numeric[2] ?? 0) : (numeric[3] ?? 0)
+        const instCentr = legacy ? 0 : (numeric[4] ?? 0)
+        const tgtCentr = legacy ? 0 : (numeric[5] ?? 0)
+        const gpsStd = legacy ? (numeric[3] ?? 0) : (numeric[6] ?? 0)
+        const levStd = legacy ? (numeric[4] ?? 0) : (numeric[7] ?? 0)
         lib[instCode] = {
           code: instCode,
           desc,
-          distA_ppm: distA,
-          distB_const: distB,
-          angleStd_sec: angStd,
+          edm_const: edmConst,
+          edm_ppm: edmPpm,
+          hzPrecision_sec: hzPrec,
+          vaPrecision_sec: vaPrec,
+          instCentr_m: instCentr,
+          tgtCentr_m: tgtCentr,
           gpsStd_xy: gpsStd,
           levStd_mmPerKm: levStd,
         }
@@ -519,10 +530,13 @@ const App: React.FC = () => {
                   </div>
                   {selectedInstrument && instrumentLibrary[selectedInstrument] && (
                     <div className="mt-2 text-[10px] text-slate-500">
-                      {instrumentLibrary[selectedInstrument].desc} - dist:{' '}
-                      {instrumentLibrary[selectedInstrument].distA_ppm}ppm +{' '}
-                      {instrumentLibrary[selectedInstrument].distB_const}m - angle:{' '}
-                      {instrumentLibrary[selectedInstrument].angleStd_sec}" - GPS:{' '}
+                      {instrumentLibrary[selectedInstrument].desc} - edm:{' '}
+                      {instrumentLibrary[selectedInstrument].edm_const}m +{' '}
+                      {instrumentLibrary[selectedInstrument].edm_ppm}ppm - HZ:{' '}
+                      {instrumentLibrary[selectedInstrument].hzPrecision_sec}" - VA:{' '}
+                      {instrumentLibrary[selectedInstrument].vaPrecision_sec}" - cent:{' '}
+                      {instrumentLibrary[selectedInstrument].instCentr_m}/
+                      {instrumentLibrary[selectedInstrument].tgtCentr_m}m - GPS:{' '}
                       {instrumentLibrary[selectedInstrument].gpsStd_xy}m - lev:{' '}
                       {instrumentLibrary[selectedInstrument].levStd_mmPerKm}mm/km
                     </div>

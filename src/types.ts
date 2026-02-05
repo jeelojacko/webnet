@@ -3,9 +3,12 @@ export type StationId = string;
 export interface Instrument {
   code: string;
   desc: string;
-  distA_ppm: number;
-  distB_const: number;
-  angleStd_sec: number;
+  edm_const: number;
+  edm_ppm: number;
+  hzPrecision_sec: number;
+  vaPrecision_sec: number;
+  instCentr_m: number;
+  tgtCentr_m: number;
   gpsStd_xy: number;
   levStd_mmPerKm: number;
 }
@@ -40,6 +43,7 @@ interface ObservationBase {
   type: 'dist' | 'angle' | 'direction' | 'gps' | 'lev' | 'bearing' | 'zenith';
   instCode: string;
   stdDev: number;
+  sigmaSource?: 'default' | 'explicit' | 'fixed' | 'float';
   calc?: unknown;
   residual?: unknown;
   stdRes?: number;
@@ -166,6 +170,9 @@ export interface ParseOptions {
   originLatDeg?: number;
   originLonDeg?: number;
   lonSign?: LonSign;
+  currentInstrument?: string;
+  edmMode?: 'additive' | 'propagated';
+  addCenteringToExplicit?: boolean;
 }
 
 export interface AdjustmentResult {

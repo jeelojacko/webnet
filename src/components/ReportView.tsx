@@ -57,7 +57,7 @@ const ReportView: React.FC<ReportViewProps> = ({
               <th className="py-2 text-right">Obs</th>
               <th className="py-2 text-right">Calc</th>
               <th className="py-2 text-right">Residual</th>
-              <th className="py-2 text-right px-4">StdDev</th>
+              <th className="py-2 text-right px-4">StdDev (override)</th>
             </tr>
           </thead>
           <tbody className="text-slate-300">
@@ -71,6 +71,15 @@ const ReportView: React.FC<ReportViewProps> = ({
               let calcStr = ''
               let resStr = ''
               let stdDevVal = obs.stdDev * unitScale
+              const sigmaSource = obs.sigmaSource || 'explicit'
+              const sigmaPlaceholder =
+                sigmaSource === 'default'
+                  ? 'auto'
+                  : sigmaSource === 'fixed'
+                    ? 'fixed'
+                    : sigmaSource === 'float'
+                      ? 'float'
+                      : ''
 
               if (obs.type === 'angle') {
                 stationsLabel = `${obs.at}-${obs.from}-${obs.to}`
@@ -127,6 +136,11 @@ const ReportView: React.FC<ReportViewProps> = ({
                     : '-'
                 stdDevVal = obs.stdDev * RAD_TO_DEG * 3600
               }
+
+              const stdDevDisplay =
+                sigmaSource === 'default' || sigmaSource === 'fixed' || sigmaSource === 'float'
+                  ? ''
+                  : stdDevVal.toFixed(4)
 
               return (
                 <tr key={i} className={`border-b border-slate-800/30 ${excluded ? 'opacity-50' : ''}`}>
@@ -207,16 +221,19 @@ const ReportView: React.FC<ReportViewProps> = ({
                     <input
                       type="number"
                       className="bg-slate-800 border border-slate-700 rounded px-1 w-20 text-right text-xs"
-                      defaultValue={stdDevVal.toFixed(4)}
+                      defaultValue={stdDevDisplay}
+                      placeholder={sigmaPlaceholder}
                       onBlur={(e) =>
                         onOverride(obs.id, {
                           stdDev:
-                            obs.type === 'angle' ||
-                            obs.type === 'direction' ||
-                            obs.type === 'bearing' ||
-                            obs.type === 'zenith'
-                              ? parseFloat(e.target.value) / (RAD_TO_DEG * 3600)
-                              : parseFloat(e.target.value) / unitScale,
+                            e.target.value.trim() === ''
+                              ? undefined
+                              : obs.type === 'angle' ||
+                                  obs.type === 'direction' ||
+                                  obs.type === 'bearing' ||
+                                  obs.type === 'zenith'
+                                ? parseFloat(e.target.value) / (RAD_TO_DEG * 3600)
+                                : parseFloat(e.target.value) / unitScale,
                         })
                       }
                     />

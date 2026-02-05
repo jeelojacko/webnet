@@ -8,6 +8,7 @@ import type {
   StationId,
   StationMap,
   InstrumentLibrary,
+  Instrument,
   ObservationOverride,
   ParseOptions,
 } from '../types';
@@ -45,6 +46,54 @@ export class LSAEngine {
   private is2D = false;
   private directionOrientations: Record<string, number> = {};
   private paramIndex: Record<StationId, { x?: number; y?: number; h?: number }> = {};
+  private addCenteringToExplicit = false;
+
+  private getInstrument(obs: Observation): Instrument | undefined {
+    if (!obs.instCode) return undefined;
+    return this.instrumentLibrary[obs.instCode];
+  }
+
+  private effectiveStdDev(obs: Observation): number {
+    const inst = this.getInstrument(obs);
+    let sigma = obs.stdDev || 0;
+    if (!inst) return sigma || 1;
+
+    const source = obs.sigmaSource ?? 'explicit';
+    if (source === 'fixed' || source === 'float') return sigma || 1;
+    if (source === 'explicit' && !this.addCenteringToExplicit) return sigma || 1;
+
+    const center = Math.hypot(inst.instCentr_m || 0, inst.tgtCentr_m || 0);
+    if (center <= 0) return sigma || 1;
+
+    if (obs.type === 'dist') {
+      return Math.sqrt(sigma * sigma + center * center);
+    }
+    if (obs.type === 'direction') {
+      const az = this.getAzimuth(obs.at, obs.to);
+      const term = az.dist > 0 ? center / az.dist : 0;
+      return Math.sqrt(sigma * sigma + term * term);
+    }
+    if (obs.type === 'bearing') {
+      const az = this.getAzimuth(obs.from, obs.to);
+      const term = az.dist > 0 ? center / az.dist : 0;
+      return Math.sqrt(sigma * sigma + term * term);
+    }
+    if (obs.type === 'angle') {
+      const azTo = this.getAzimuth(obs.at, obs.to);
+      const azFrom = this.getAzimuth(obs.at, obs.from);
+      const termTo = azTo.dist > 0 ? center / azTo.dist : 0;
+      const termFrom = azFrom.dist > 0 ? center / azFrom.dist : 0;
+      const term = Math.sqrt(termTo * termTo + termFrom * termFrom);
+      return Math.sqrt(sigma * sigma + term * term);
+    }
+    if (obs.type === 'zenith') {
+      const z = this.getZenith(obs.from, obs.to, obs.hi ?? 0, obs.ht ?? 0);
+      const term = z.dist > 0 ? center / z.dist : 0;
+      return Math.sqrt(sigma * sigma + term * term);
+    }
+
+    return sigma || 1;
+  }
 
   private computeDirectionSetPrefit(
     activeObservations: Observation[],
@@ -252,6 +301,7 @@ export class LSAEngine {
     this.instrumentLibrary = parsed.instrumentLibrary;
     this.logs = [...parsed.logs];
     this.coordMode = parsed.parseState?.coordMode ?? this.parseOptions?.coordMode ?? '3D';
+    this.addCenteringToExplicit = parsed.parseState?.addCenteringToExplicit ?? false;
     this.is2D = this.coordMode === '2D';
 
     // Apply overrides before any unit normalization
@@ -395,7 +445,8 @@ export class LSAEngine {
             A[row][toIdx.h] = dD_dH2;
           }
 
-          const w = 1.0 / (obs.stdDev * obs.stdDev);
+          const sigma = this.effectiveStdDev(obs);
+          const w = 1.0 / (sigma * sigma);
           P[row][row] = w;
 
           row += 1;
@@ -444,7 +495,8 @@ export class LSAEngine {
             }
           }
 
-          const w = 1.0 / (obs.stdDev * obs.stdDev);
+          const sigma = this.effectiveStdDev(obs);
+          const w = 1.0 / (sigma * sigma);
           P[row][row] = w;
 
           row += 1;
@@ -468,7 +520,10 @@ export class LSAEngine {
           if (toIdx?.x != null) {
             A[row][toIdx.x] = 1.0;
           }
-          P[row][row] = 1.0 / (obs.stdDev * obs.stdDev);
+          {
+            const sigma = this.effectiveStdDev(obs);
+            P[row][row] = 1.0 / (sigma * sigma);
+          }
 
           L[row + 1][0] = vN;
           if (fromIdx?.y != null) {
@@ -477,7 +532,10 @@ export class LSAEngine {
           if (toIdx?.y != null) {
             A[row + 1][toIdx.y] = 1.0;
           }
-          P[row + 1][row + 1] = 1.0 / (obs.stdDev * obs.stdDev);
+          {
+            const sigma = this.effectiveStdDev(obs);
+            P[row + 1][row + 1] = 1.0 / (sigma * sigma);
+          }
 
           row += 2;
         } else if (obs.type === 'lev') {
@@ -499,7 +557,8 @@ export class LSAEngine {
             A[row][toIdx.h] = 1.0;
           }
 
-          const w = 1.0 / (obs.stdDev * obs.stdDev);
+          const sigma = this.effectiveStdDev(obs);
+          const w = 1.0 / (sigma * sigma);
           P[row][row] = w;
 
           row += 1;
@@ -530,7 +589,8 @@ export class LSAEngine {
             A[row][fromIdx.y] = -dAz_dN_To;
           }
 
-          const w = 1.0 / (obs.stdDev * obs.stdDev);
+          const sigma = this.effectiveStdDev(obs);
+          const w = 1.0 / (sigma * sigma);
           P[row][row] = w;
 
           row += 1;
@@ -570,7 +630,8 @@ export class LSAEngine {
             A[row][dirIdx] = 1;
           }
 
-          const w = 1.0 / (obs.stdDev * obs.stdDev);
+          const sigma = this.effectiveStdDev(obs);
+          const w = 1.0 / (sigma * sigma);
           P[row][row] = w;
 
           row += 1;
@@ -611,7 +672,8 @@ export class LSAEngine {
             A[row][fromIdx.h] = -dZ_dH;
           }
 
-          const w = 1.0 / (obs.stdDev * obs.stdDev);
+          const sigma = this.effectiveStdDev(obs);
+          const w = 1.0 / (sigma * sigma);
           P[row][row] = w;
 
           row += 1;
@@ -730,8 +792,9 @@ export class LSAEngine {
         const v = obs.obs - calc;
         obs.calc = calc;
         obs.residual = v;
-        obs.stdRes = Math.abs(v) / obs.stdDev;
-        vtpv += (v * v) / (obs.stdDev * obs.stdDev);
+        const sigma = this.effectiveStdDev(obs);
+        obs.stdRes = Math.abs(v) / sigma;
+        vtpv += (v * v) / (sigma * sigma);
       } else if (obs.type === 'angle') {
         const azTo = this.getAzimuth(obs.at, obs.to).az;
         const azFrom = this.getAzimuth(obs.at, obs.from).az;
@@ -742,8 +805,9 @@ export class LSAEngine {
         if (v < -Math.PI) v += 2 * Math.PI;
         obs.calc = calcAngle;
         obs.residual = v;
-        obs.stdRes = Math.abs(v) / obs.stdDev;
-        vtpv += (v * v) / (obs.stdDev * obs.stdDev);
+        const sigma = this.effectiveStdDev(obs);
+        obs.stdRes = Math.abs(v) / sigma;
+        vtpv += (v * v) / (sigma * sigma);
       } else if (obs.type === 'gps') {
         const s1 = this.stations[obs.from];
         const s2 = this.stations[obs.to];
@@ -755,8 +819,9 @@ export class LSAEngine {
         obs.calc = { dE: calc_dE, dN: calc_dN };
         obs.residual = { vE, vN };
         const vMag = Math.sqrt(vE * vE + vN * vN);
-        obs.stdRes = vMag / obs.stdDev;
-        vtpv += (vE * vE + vN * vN) / (obs.stdDev * obs.stdDev);
+        const sigma = this.effectiveStdDev(obs);
+        obs.stdRes = vMag / sigma;
+        vtpv += (vE * vE + vN * vN) / (sigma * sigma);
       } else if (obs.type === 'lev') {
         const s1 = this.stations[obs.from];
         const s2 = this.stations[obs.to];
@@ -765,8 +830,9 @@ export class LSAEngine {
         const v = obs.obs - calc_dH;
         obs.calc = calc_dH;
         obs.residual = v;
-        obs.stdRes = Math.abs(v) / obs.stdDev;
-        vtpv += (v * v) / (obs.stdDev * obs.stdDev);
+        const sigma = this.effectiveStdDev(obs);
+        obs.stdRes = Math.abs(v) / sigma;
+        vtpv += (v * v) / (sigma * sigma);
       } else if (obs.type === 'bearing') {
         const calcAz = this.getAzimuth(obs.from, obs.to).az;
         let v = obs.obs - calcAz;
@@ -774,8 +840,9 @@ export class LSAEngine {
         if (v < -Math.PI) v += 2 * Math.PI;
         obs.calc = calcAz;
         obs.residual = v;
-        obs.stdRes = Math.abs(v) / obs.stdDev;
-        vtpv += (v * v) / (obs.stdDev * obs.stdDev);
+        const sigma = this.effectiveStdDev(obs);
+        obs.stdRes = Math.abs(v) / sigma;
+        vtpv += (v * v) / (sigma * sigma);
       } else if (obs.type === 'direction') {
         const dir = obs as any;
         const az = this.getAzimuth(dir.at, dir.to).az;
@@ -788,8 +855,9 @@ export class LSAEngine {
         if (v < -Math.PI) v += 2 * Math.PI;
         dir.calc = calc;
         dir.residual = v;
-        dir.stdRes = Math.abs(v) / dir.stdDev;
-        vtpv += (v * v) / (dir.stdDev * dir.stdDev);
+        const sigma = this.effectiveStdDev(dir);
+        dir.stdRes = Math.abs(v) / sigma;
+        vtpv += (v * v) / (sigma * sigma);
 
         const setId = String(dir.setId ?? 'unknown');
         const stat = directionStats.get(setId) ?? {
@@ -815,8 +883,9 @@ export class LSAEngine {
         if (v < -Math.PI) v += 2 * Math.PI;
         obs.calc = zv;
         obs.residual = v;
-        obs.stdRes = Math.abs(v) / obs.stdDev;
-        vtpv += (v * v) / (obs.stdDev * obs.stdDev);
+        const sigma = this.effectiveStdDev(obs);
+        obs.stdRes = Math.abs(v) / sigma;
+        vtpv += (v * v) / (sigma * sigma);
       }
 
       if (obs.setId === 'TE' && typeof obs.residual === 'number') {

@@ -22,6 +22,9 @@ const defaultParseOptions: ParseOptions = {
   mapMode: 'off',
   normalize: true,
   lonSign: 'west-negative',
+  currentInstrument: undefined,
+  edmMode: 'additive',
+  addCenteringToExplicit: false,
 }
 
 const FT_PER_M = 3.280839895
@@ -74,6 +77,65 @@ const applyFixities = (
   const fy = station.fixedY ?? false
   const fh = station.fixedH ?? false
   station.fixed = coordMode === '2D' ? fx && fy : fx && fy && fh
+}
+
+type SigmaToken =
+  | { kind: 'default' }
+  | { kind: 'numeric'; value: number }
+  | { kind: 'fixed' }
+  | { kind: 'float' }
+
+const FIXED_SIGMA = 1e-9
+const FLOAT_SIGMA = 1e9
+
+const parseSigmaToken = (token?: string): SigmaToken | null => {
+  if (!token) return null
+  if (token === '&' || token === '?') return { kind: 'default' }
+  if (token === '!') return { kind: 'fixed' }
+  if (token === '*') return { kind: 'float' }
+  const value = parseFloat(token)
+  if (!Number.isNaN(value)) return { kind: 'numeric', value }
+  return null
+}
+
+const extractSigmaTokens = (
+  tokens: string[],
+  count: number,
+): { sigmas: SigmaToken[]; rest: string[] } => {
+  const sigmas: SigmaToken[] = []
+  let idx = 0
+  for (; idx < tokens.length && sigmas.length < count; idx += 1) {
+    const token = tokens[idx]
+    if (token.includes('/')) break
+    const parsed = parseSigmaToken(token)
+    if (!parsed) break
+    sigmas.push(parsed)
+  }
+  return { sigmas, rest: tokens.slice(idx) }
+}
+
+const resolveSigma = (
+  token: SigmaToken | undefined,
+  defaultSigma: number,
+): { sigma: number; source: 'default' | 'explicit' | 'fixed' | 'float' } => {
+  if (!token || token.kind === 'default') return { sigma: defaultSigma, source: 'default' }
+  if (token.kind === 'numeric') return { sigma: token.value, source: 'explicit' }
+  if (token.kind === 'fixed') return { sigma: FIXED_SIGMA, source: 'fixed' }
+  return { sigma: FLOAT_SIGMA, source: 'float' }
+}
+
+const defaultDistanceSigma = (
+  inst: Instrument | undefined,
+  dist: number,
+  edmMode: ParseOptions['edmMode'],
+  fallback = 0.005,
+): number => {
+  if (!inst) return fallback
+  const ppmTerm = inst.edm_ppm * 1e-6 * dist
+  if (edmMode === 'propagated') {
+    return Math.sqrt(inst.edm_const * inst.edm_const + ppmTerm * ppmTerm)
+  }
+  return Math.abs(inst.edm_const) + Math.abs(ppmTerm)
 }
 
 const parseFromTo = (
@@ -207,6 +269,20 @@ export const parseInput = (
         const mode = (parts[1] || '').toUpperCase()
         state.lonSign = mode === 'WESTPOS' || mode === 'POSW' ? 'west-positive' : 'west-negative'
         logs.push(`Longitude sign set to ${state.lonSign}`)
+      } else if (op === '.EDM') {
+        const mode = (parts[1] || '').toUpperCase()
+        state.edmMode = mode === 'PROPAGATED' || mode === 'RSS' ? 'propagated' : 'additive'
+        logs.push(`EDM mode set to ${state.edmMode}`)
+      } else if (op === '.ADDC') {
+        const mode = (parts[1] || '').toUpperCase()
+        state.addCenteringToExplicit = mode === 'ON'
+        logs.push(`Add centering to explicit std dev set to ${state.addCenteringToExplicit}`)
+      } else if (op === '.I' && parts[1]) {
+        state.currentInstrument = parts[1]
+        logs.push(`Current instrument set to ${state.currentInstrument}`)
+      } else if (op === '.TS' && parts[1]) {
+        state.currentInstrument = parts[1]
+        logs.push(`Current instrument set to ${state.currentInstrument}`)
       } else if (op === '.END') {
         logs.push('END encountered; stopping parse')
         break
@@ -221,17 +297,28 @@ export const parseInput = (
       if (code === 'I') {
         const instCode = parts[1]
         const desc = parts[2]?.replace(/-/g, ' ') ?? ''
-        const distA = parseFloat(parts[3] ?? '0')
-        const distB = parseFloat(parts[4] ?? '0')
-        const angStd = parseFloat(parts[5] ?? '0')
-        const gpsStd = parseFloat(parts[6] ?? '0')
-        const levStd = parseFloat(parts[7] ?? '0')
+        const numeric = parts
+          .slice(3)
+          .map((p) => parseFloat(p))
+          .filter((v) => !Number.isNaN(v))
+        const legacy = numeric.length > 0 && numeric.length < 6
+        const edmConst = legacy ? (numeric[1] ?? 0) : (numeric[0] ?? 0)
+        const edmPpm = legacy ? (numeric[0] ?? 0) : (numeric[1] ?? 0)
+        const hzPrec = legacy ? (numeric[2] ?? 0) : (numeric[2] ?? 0)
+        const vaPrec = legacy ? (numeric[2] ?? 0) : (numeric[3] ?? 0)
+        const instCentr = legacy ? 0 : (numeric[4] ?? 0)
+        const tgtCentr = legacy ? 0 : (numeric[5] ?? 0)
+        const gpsStd = legacy ? (numeric[3] ?? 0) : (numeric[6] ?? 0)
+        const levStd = legacy ? (numeric[4] ?? 0) : (numeric[7] ?? 0)
         const inst: Instrument = {
           code: instCode,
           desc,
-          distA_ppm: distA,
-          distB_const: distB,
-          angleStd_sec: angStd,
+          edm_const: edmConst,
+          edm_ppm: edmPpm,
+          hzPrecision_sec: hzPrec,
+          vaPrecision_sec: vaPrec,
+          instCentr_m: instCentr,
+          tgtCentr_m: tgtCentr,
           gpsStd_xy: gpsStd,
           levStd_mmPerKm: levStd,
         }
@@ -372,24 +459,20 @@ export const parseInput = (
         const hasInst =
           (!!parts[1] && !!instrumentLibrary[parts[1]]) ||
           (parts.length > 5 && /[A-Za-z]/.test(parts[1]) && /[A-Za-z]/.test(parts[2]))
-        const instCode = hasInst ? parts[1] : ''
+        const explicitInst = hasInst ? parts[1] : ''
+        const instCode = explicitInst || state.currentInstrument || ''
         const setId = hasInst ? parts[2] : ''
         const startIdx = hasInst ? 3 : 1
         const { from, to, nextIndex } = parseFromTo(parts, startIdx)
         const distToken = parts[nextIndex]
         const dist = parseFloat(distToken)
         const restTokens = parts.slice(nextIndex + 1)
-        const { hi, ht, rest } = extractHiHt(restTokens)
-        const numeric = rest.filter(isNumericToken).map((p) => parseFloat(p))
-        const stdRaw = numeric[0] ?? 0
+        const { sigmas, rest } = extractSigmaTokens(restTokens, 1)
+        const { hi, ht } = extractHiHt(rest)
 
         const inst = instCode ? instrumentLibrary[instCode] : undefined
-        let sigma = stdRaw
-        if (inst) {
-          const a = inst.distA_ppm * 1e-6 * dist
-          const b = inst.distB_const
-          sigma = Math.sqrt(a * a + b * b + stdRaw * stdRaw)
-        }
+        const defaultSigma = defaultDistanceSigma(inst, dist, state.edmMode, 0.005)
+        const { sigma, source } = resolveSigma(sigmas[0], defaultSigma)
 
         const toMeters = state.units === 'ft' ? 1 / FT_PER_M : 1
         const obs: DistanceObservation = {
@@ -402,6 +485,7 @@ export const parseInput = (
           to,
           obs: dist * toMeters,
           stdDev: sigma * toMeters,
+          sigmaSource: source,
           hi: hi != null ? hi * toMeters : undefined,
           ht: ht != null ? ht * toMeters : undefined,
           mode: state.deltaMode,
@@ -410,20 +494,21 @@ export const parseInput = (
       } else if (code === 'A') {
         const tokens = parts[1].includes('-') ? parts[1].split('-') : []
         const hasInst = tokens.length === 0
-        const instCode = hasInst ? parts[1] : ''
+        const explicitInst = hasInst ? parts[1] : ''
+        const instCode = explicitInst || state.currentInstrument || ''
         const setId = hasInst ? parts[2] : ''
         const at = hasInst ? parts[3] : tokens[0]
         const from = hasInst ? parts[4] : tokens[1]
         const to = hasInst ? parts[5] : tokens[2]
         const angToken = hasInst ? parts[6] : parts[2]
         const angleRad = dmsToRad(angToken)
-        const stdRawArcsec = parseFloat(hasInst ? parts[7] : parts[3] || '0')
+        const stdTokenIndex = hasInst ? 7 : 3
+        const { sigmas } = extractSigmaTokens(parts.slice(stdTokenIndex), 1)
 
         const inst = instCode ? instrumentLibrary[instCode] : undefined
-        let sigmaSec = stdRawArcsec || (inst?.angleStd_sec ?? 1)
-        if (inst && inst.angleStd_sec > 0) {
-          sigmaSec = Math.sqrt(stdRawArcsec * stdRawArcsec + inst.angleStd_sec * inst.angleStd_sec)
-        }
+        const defaultSigma = inst?.hzPrecision_sec ?? 5
+        const resolved = resolveSigma(sigmas[0], defaultSigma)
+        let sigmaSec = resolved.sigma
         if (angleRad >= Math.PI) sigmaSec *= FACE2_WEIGHT
 
         const obs: AngleObservation = {
@@ -436,63 +521,75 @@ export const parseInput = (
           to,
           obs: angleRad,
           stdDev: sigmaSec * SEC_TO_RAD,
+          sigmaSource: resolved.source,
         }
         observations.push(obs)
       } else if (code === 'V') {
         // Vertical observation: zenith (slope mode) or deltaH (delta mode)
         const { from, to, nextIndex } = parseFromTo(parts, 1)
         const valToken = parts[nextIndex]
-        const stdToken = parts[nextIndex + 1]
+        const stdTokens = parts.slice(nextIndex + 1)
+        const { sigmas } = extractSigmaTokens(stdTokens, 1)
         const toMeters = state.units === 'ft' ? 1 / FT_PER_M : 1
         if (state.deltaMode === 'horiz') {
           const dh = parseFloat(valToken) * toMeters
-          const std = parseFloat(stdToken || '0') * toMeters
+          const resolved = resolveSigma(sigmas[0], 0.001)
+          const std = resolved.sigma * toMeters
           const obs: LevelObservation = {
             id: obsId++,
             type: 'lev',
-            instCode: '',
+            instCode: state.currentInstrument ?? '',
             from,
             to,
             obs: dh,
             lenKm: 0,
             stdDev: std || 0.001,
+            sigmaSource: resolved.source,
           }
           observations.push(obs)
         } else {
           const zenRad = valToken.includes('-') ? dmsToRad(valToken) : (parseFloat(valToken) * Math.PI) / 180
-          const stdArc = parseFloat(stdToken || '5') // arcseconds
+          const inst = state.currentInstrument ? instrumentLibrary[state.currentInstrument] : undefined
+          const base = inst?.vaPrecision_sec ?? 5
+          const resolved = resolveSigma(sigmas[0], base)
+          const stdArc = resolved.sigma || base
           observations.push({
             id: obsId++,
             type: 'zenith',
-            instCode: '',
+            instCode: state.currentInstrument ?? '',
             from,
             to,
             obs: zenRad,
             stdDev: (stdArc || 5) * SEC_TO_RAD,
+            sigmaSource: resolved.source,
           })
         }
       } else if (code === 'DV') {
         // Distance + vertical: in delta mode, HD + deltaH; in slope mode slope distance + zenith
         const { from, to, nextIndex } = parseFromTo(parts, 1)
         const toMeters = state.units === 'ft' ? 1 / FT_PER_M : 1
+        const instCode = state.currentInstrument ?? ''
+        const inst = instCode ? instrumentLibrary[instCode] : undefined
         if (state.deltaMode === 'horiz') {
           const dist = parseFloat(parts[nextIndex])
           const dh = parseFloat(parts[nextIndex + 1])
           const restTokens = parts.slice(nextIndex + 2)
-          const { hi, ht, rest } = extractHiHt(restTokens)
-          const numeric = rest.filter(isNumericToken).map((p) => parseFloat(p))
-          const stdDist = numeric[0] ?? 0.005
-          const stdDh = numeric[1] ?? 0
+          const { sigmas, rest } = extractSigmaTokens(restTokens, 2)
+          const { hi, ht } = extractHiHt(rest)
+          const defaultDist = defaultDistanceSigma(inst, dist, state.edmMode, 0.005)
+          const distResolved = resolveSigma(sigmas[0], defaultDist)
+          const dhResolved = resolveSigma(sigmas[1], 0.001)
           observations.push({
             id: obsId++,
             type: 'dist',
             subtype: 'ts',
-            instCode: '',
+            instCode,
             setId: '',
             from,
             to,
             obs: dist * toMeters,
-            stdDev: stdDist * toMeters,
+            stdDev: distResolved.sigma * toMeters,
+            sigmaSource: distResolved.source,
             hi: hi != null ? hi * toMeters : undefined,
             ht: ht != null ? ht * toMeters : undefined,
             mode: 'horiz',
@@ -500,21 +597,24 @@ export const parseInput = (
           observations.push({
             id: obsId++,
             type: 'lev',
-            instCode: '',
+            instCode,
             from,
             to,
             obs: dh * toMeters,
             lenKm: 0,
-            stdDev: stdDh * toMeters,
+            stdDev: dhResolved.sigma * toMeters,
+            sigmaSource: dhResolved.source,
           })
         } else {
           const dist = parseFloat(parts[nextIndex])
           const zen = parts[nextIndex + 1]
           const restTokens = parts.slice(nextIndex + 2)
-          const { hi, ht, rest } = extractHiHt(restTokens)
-          const numeric = rest.filter(isNumericToken).map((p) => parseFloat(p))
-          const stdDist = numeric[0] ?? 0.005
-          const stdZen = numeric[1] ?? 5
+          const { sigmas, rest } = extractSigmaTokens(restTokens, 2)
+          const { hi, ht } = extractHiHt(rest)
+          const defaultDist = defaultDistanceSigma(inst, dist, state.edmMode, 0.005)
+          const distResolved = resolveSigma(sigmas[0], defaultDist)
+          const defaultZen = inst?.vaPrecision_sec ?? 5
+          const zenResolved = resolveSigma(sigmas[1], defaultZen)
           if (!zen) {
             logs.push(`DV slope missing zenith at line ${lineNum}, skipping`)
             continue
@@ -524,12 +624,13 @@ export const parseInput = (
             id: obsId++,
             type: 'dist',
             subtype: 'ts',
-            instCode: '',
+            instCode,
             setId: '',
             from,
             to,
             obs: dist * toMeters,
-            stdDev: stdDist * toMeters,
+            stdDev: distResolved.sigma * toMeters,
+            sigmaSource: distResolved.source,
             hi: hi != null ? hi * toMeters : undefined,
             ht: ht != null ? ht * toMeters : undefined,
             mode: 'slope',
@@ -537,11 +638,12 @@ export const parseInput = (
           observations.push({
             id: obsId++,
             type: 'zenith',
-            instCode: '',
+            instCode,
             from,
             to,
             obs: zenRad,
-            stdDev: (stdZen || 5) * SEC_TO_RAD,
+            stdDev: (zenResolved.sigma || 5) * SEC_TO_RAD,
+            sigmaSource: zenResolved.source,
             hi: hi != null ? hi * toMeters : undefined,
             ht: ht != null ? ht * toMeters : undefined,
           })
@@ -553,53 +655,75 @@ export const parseInput = (
         const bearing = parts[3]
         const dist = parseFloat(parts[4])
         const vert = parts[5]
-        const stdDist = parts[6] ? parseFloat(parts[6]) : 0.005
+        const instCode = state.currentInstrument ?? ''
+        const inst = instCode ? instrumentLibrary[instCode] : undefined
+        const { sigmas } = extractSigmaTokens(parts.slice(6), 3)
+        let sigBear: SigmaToken | undefined
+        let sigDist: SigmaToken | undefined
+        let sigVert: SigmaToken | undefined
+        if (sigmas.length === 1) {
+          sigDist = sigmas[0]
+        } else {
+          sigBear = sigmas[0]
+          sigDist = sigmas[1]
+          sigVert = sigmas[2]
+        }
+        const distDefault = defaultDistanceSigma(inst, dist, state.edmMode, 0.005)
+        const distResolved = resolveSigma(sigDist, distDefault)
         const toMeters = state.units === 'ft' ? 1 / FT_PER_M : 1
         observations.push({
           id: obsId++,
           type: 'dist',
           subtype: 'ts',
-          instCode: '',
+          instCode,
           setId: '',
           from,
           to,
           obs: dist * toMeters,
-          stdDev: stdDist * toMeters,
+          stdDev: distResolved.sigma * toMeters,
+          sigmaSource: distResolved.source,
           mode: state.deltaMode,
         })
         if (state.deltaMode === 'horiz' && vert) {
           const dh = parseFloat(vert) * toMeters
+          const dhResolved = resolveSigma(sigVert, 0.001)
           observations.push({
             id: obsId++,
             type: 'lev',
-            instCode: '',
+            instCode,
             from,
             to,
             obs: dh,
             lenKm: 0,
-            stdDev: 0.001,
+            stdDev: dhResolved.sigma * toMeters,
+            sigmaSource: dhResolved.source,
           })
         } else if (vert) {
           const zenRad = vert.includes('-') ? dmsToRad(vert) : (parseFloat(vert) * Math.PI) / 180
+          const baseZen = inst?.vaPrecision_sec ?? 5
+          const zenResolved = resolveSigma(sigVert, baseZen)
           observations.push({
             id: obsId++,
             type: 'zenith',
-            instCode: '',
+            instCode,
             from,
             to,
             obs: zenRad,
-            stdDev: (stdDist || 5) * SEC_TO_RAD,
+            stdDev: (zenResolved.sigma || 5) * SEC_TO_RAD,
+            sigmaSource: zenResolved.source,
           })
         }
         const bearingRad = bearing.includes('-') ? dmsToRad(bearing) : (parseFloat(bearing) * Math.PI) / 180
+        const bearResolved = resolveSigma(sigBear, inst?.hzPrecision_sec ?? 5)
         observations.push({
           id: obsId++,
           type: 'bearing',
-          instCode: '',
+          instCode,
           from,
           to,
           obs: bearingRad,
-          stdDev: (stdDist || 5) * SEC_TO_RAD,
+          stdDev: (bearResolved.sigma || 5) * SEC_TO_RAD,
+          sigmaSource: bearResolved.source,
         })
       } else if (code === 'M') {
         // Measure: angle + dist + vertical
@@ -612,35 +736,43 @@ export const parseInput = (
           const dist = parseFloat(parts[3])
           const vert = parts[4]
           const restTokens = parts.slice(5)
-          const { hi, ht, rest } = extractHiHt(restTokens)
-          const numeric = rest.filter(isNumericToken).map((p) => parseFloat(p))
-          const stdAng = numeric[0] ?? 5
-          const stdDist = numeric[1] ?? 0.005
-          const stdVert = numeric[2]
+          const { sigmas, rest } = extractSigmaTokens(restTokens, 3)
+          const { hi, ht } = extractHiHt(rest)
+          const instCode = state.currentInstrument ?? ''
+          const inst = instCode ? instrumentLibrary[instCode] : undefined
+          const angResolved = resolveSigma(sigmas[0], inst?.hzPrecision_sec ?? 5)
+          const distResolved = resolveSigma(
+            sigmas[1],
+            defaultDistanceSigma(inst, dist, state.edmMode, 0.005),
+          )
+          const vertResolved = resolveSigma(sigmas[2], inst?.vaPrecision_sec ?? 5)
           const toMeters = state.units === 'ft' ? 1 / FT_PER_M : 1
           const angRad = dmsToRad(ang)
-          const faceWeight = angRad >= Math.PI ? stdAng * FACE2_WEIGHT : stdAng
+          const faceWeight =
+            angRad >= Math.PI ? angResolved.sigma * FACE2_WEIGHT : angResolved.sigma
           observations.push({
             id: obsId++,
             type: 'angle',
-            instCode: '',
+            instCode,
             setId: '',
             at,
             from,
             to,
             obs: angRad,
             stdDev: faceWeight * SEC_TO_RAD,
+            sigmaSource: angResolved.source,
           })
           observations.push({
             id: obsId++,
             type: 'dist',
             subtype: 'ts',
-            instCode: '',
+            instCode,
             setId: '',
             from: at,
             to,
             obs: dist * toMeters,
-            stdDev: stdDist * toMeters,
+            stdDev: distResolved.sigma * toMeters,
+            sigmaSource: distResolved.source,
             hi: hi != null ? hi * toMeters : undefined,
             ht: ht != null ? ht * toMeters : undefined,
             mode: state.deltaMode,
@@ -650,23 +782,25 @@ export const parseInput = (
             observations.push({
               id: obsId++,
               type: 'lev',
-              instCode: '',
+              instCode,
               from: at,
               to,
               obs: dh,
               lenKm: 0,
-              stdDev: (stdVert ?? 0.001) * toMeters,
+              stdDev: (vertResolved.sigma ?? 0.001) * toMeters,
+              sigmaSource: vertResolved.source,
             })
           } else if (vert) {
             const zenRad = vert.includes('-') ? dmsToRad(vert) : (parseFloat(vert) * Math.PI) / 180
             observations.push({
               id: obsId++,
               type: 'zenith',
-              instCode: '',
+              instCode,
               from: at,
               to,
               obs: zenRad,
-              stdDev: ((stdVert ?? 5) || 5) * SEC_TO_RAD,
+              stdDev: ((vertResolved.sigma ?? 5) || 5) * SEC_TO_RAD,
+              sigmaSource: vertResolved.source,
               hi: hi != null ? hi * toMeters : undefined,
               ht: ht != null ? ht * toMeters : undefined,
             })
@@ -675,18 +809,23 @@ export const parseInput = (
       } else if (code === 'B') {
         const { from, to, nextIndex } = parseFromTo(parts, 1)
         const bearingToken = parts[nextIndex]
-        const stdArc = parseFloat(parts[nextIndex + 1] || '5')
+        const instCode = state.currentInstrument ?? ''
+        const inst = instCode ? instrumentLibrary[instCode] : undefined
+        const { sigmas } = extractSigmaTokens(parts.slice(nextIndex + 1), 1)
+        const resolved = resolveSigma(sigmas[0], inst?.hzPrecision_sec ?? 5)
+        const stdArc = resolved.sigma || 5
         const bearingRad = bearingToken.includes('-')
           ? dmsToRad(bearingToken)
           : (parseFloat(bearingToken) * Math.PI) / 180
         observations.push({
           id: obsId++,
           type: 'bearing',
-          instCode: '',
+          instCode,
           from,
           to,
           obs: bearingRad,
           stdDev: (stdArc || 5) * SEC_TO_RAD,
+          sigmaSource: resolved.source,
         })
       } else if (code === 'TB') {
         // Traverse begin: set occupy + backsight context
@@ -711,8 +850,15 @@ export const parseInput = (
         const ang = parts[2]
         const dist = parseFloat(parts[3] || '0')
         const vert = parts[4]
-        const stdAng = parts[5] ? parseFloat(parts[5]) : 5
-        const stdDist = parts[6] ? parseFloat(parts[6]) : 0.005
+        const { sigmas } = extractSigmaTokens(parts.slice(5), 3)
+        const instCode = state.currentInstrument ?? ''
+        const inst = instCode ? instrumentLibrary[instCode] : undefined
+        const angResolved = resolveSigma(sigmas[0], inst?.hzPrecision_sec ?? 5)
+        const distResolved = resolveSigma(
+          sigmas[1],
+          defaultDistanceSigma(inst, dist, state.edmMode, 0.005),
+        )
+        const vertResolved = resolveSigma(sigmas[2], inst?.vaPrecision_sec ?? 5)
         const toMeters = state.units === 'ft' ? 1 / FT_PER_M : 1
         const angRad = dmsToRad(ang)
         const isFace2 = angRad >= Math.PI
@@ -725,27 +871,29 @@ export const parseInput = (
             observations.push({
               id: obsId++,
               type: 'angle',
-              instCode: '',
+              instCode,
               setId: code,
               at: traverseCtx.occupy,
               from: traverseCtx.backsight,
               to,
               obs: angRad,
-              stdDev: (stdAng || 5) * SEC_TO_RAD,
+              stdDev: (angResolved.sigma || 5) * SEC_TO_RAD,
+              sigmaSource: angResolved.source,
             })
           }
         } else {
-          const angStd = (stdAng || 5) * (isFace2 ? FACE2_WEIGHT : 1)
+          const angStd = (angResolved.sigma || 5) * (isFace2 ? FACE2_WEIGHT : 1)
           observations.push({
             id: obsId++,
             type: 'angle',
-            instCode: '',
+            instCode,
             setId: code,
             at: traverseCtx.occupy,
             from: traverseCtx.backsight,
             to,
             obs: angRad,
             stdDev: angStd * SEC_TO_RAD,
+            sigmaSource: angResolved.source,
           })
         }
         if (dist > 0) {
@@ -753,12 +901,13 @@ export const parseInput = (
             id: obsId++,
             type: 'dist',
             subtype: 'ts',
-            instCode: '',
+            instCode,
             setId: code,
             from: traverseCtx.occupy,
             to,
             obs: dist * toMeters,
-            stdDev: (stdDist || 0.005) * toMeters,
+            stdDev: (distResolved.sigma || 0.005) * toMeters,
+            sigmaSource: distResolved.source,
             mode: state.deltaMode,
           })
         }
@@ -768,12 +917,13 @@ export const parseInput = (
             observations.push({
               id: obsId++,
               type: 'lev',
-              instCode: '',
+              instCode,
               from: traverseCtx.occupy,
               to,
               obs: dh,
               lenKm: 0,
-              stdDev: 0.001,
+              stdDev: (vertResolved.sigma || 0.001) * toMeters,
+              sigmaSource: vertResolved.source,
             })
           } else {
             const zenRad = vert.includes('-')
@@ -782,11 +932,12 @@ export const parseInput = (
             observations.push({
               id: obsId++,
               type: 'zenith',
-              instCode: '',
+              instCode,
               from: traverseCtx.occupy,
               to,
               obs: zenRad,
-              stdDev: (stdAng || 5) * SEC_TO_RAD,
+              stdDev: (vertResolved.sigma || 5) * SEC_TO_RAD,
+              sigmaSource: vertResolved.source,
             })
           }
         }
@@ -802,7 +953,7 @@ export const parseInput = (
         }
       } else if (code === 'DB') {
         const hasInst = parts[1] && instrumentLibrary[parts[1]]
-        const instCode = hasInst ? parts[1] : ''
+        const instCode = hasInst ? parts[1] : state.currentInstrument ?? ''
         const occupy = hasInst ? parts[2] : parts[1]
         const backsight = hasInst ? parts[3] : parts[2]
 
@@ -834,16 +985,14 @@ export const parseInput = (
 
         const dist = code === 'DM' ? parseFloat(parts[3] || '0') : 0
         const vert = code === 'DM' ? parts[4] : undefined
-        const stdAngRaw = code === 'DM' ? parseFloat(parts[5] || '') : parseFloat(parts[3] || '')
-        const stdDist = code === 'DM' ? parseFloat(parts[6] || '0') : 0
+        const sigmaStart = code === 'DM' ? 5 : 3
+        const sigmaCount = code === 'DM' ? 3 : 1
+        const { sigmas } = extractSigmaTokens(parts.slice(sigmaStart), sigmaCount)
         const toMeters = state.units === 'ft' ? 1 / FT_PER_M : 1
 
-        let stdAng = Number.isNaN(stdAngRaw) ? 0 : stdAngRaw
         const inst = traverseCtx.dirInstCode ? instrumentLibrary[traverseCtx.dirInstCode] : undefined
-        if (inst && inst.angleStd_sec > 0) {
-          stdAng = stdAng > 0 ? Math.sqrt(stdAng * stdAng + inst.angleStd_sec * inst.angleStd_sec) : inst.angleStd_sec
-        }
-        if (!stdAng) stdAng = 5
+        const dirResolved = resolveSigma(sigmas[0], inst?.hzPrecision_sec ?? 5)
+        let stdAng = dirResolved.sigma || 5
 
         if (state.normalize === false) {
           const thisFace = angRad >= Math.PI ? 'face2' : 'face1'
@@ -863,10 +1012,15 @@ export const parseInput = (
           to,
           obs: angRad,
           stdDev: stdAng * SEC_TO_RAD,
+          sigmaSource: dirResolved.source,
         }
         observations.push(dirObs)
 
         if (code === 'DM' && dist > 0) {
+          const distResolved = resolveSigma(
+            sigmas[1],
+            defaultDistanceSigma(inst, dist, state.edmMode, 0.005),
+          )
           observations.push({
             id: obsId++,
             type: 'dist',
@@ -876,34 +1030,39 @@ export const parseInput = (
             from: traverseCtx.occupy,
             to,
             obs: dist * toMeters,
-            stdDev: (stdDist || 0.005) * toMeters,
+            stdDev: distResolved.sigma * toMeters,
+            sigmaSource: distResolved.source,
             mode: state.deltaMode,
           })
           if (vert) {
             if (state.deltaMode === 'horiz') {
               const dh = parseFloat(vert) * toMeters
+              const dhResolved = resolveSigma(sigmas[2], 0.001)
               observations.push({
                 id: obsId++,
                 type: 'lev',
-                instCode: '',
+                instCode: traverseCtx.dirInstCode ?? '',
                 from: traverseCtx.occupy,
                 to,
                 obs: dh,
                 lenKm: 0,
-                stdDev: 0.001,
+                stdDev: dhResolved.sigma * toMeters,
+                sigmaSource: dhResolved.source,
               })
             } else {
               const zenRad = vert.includes('-')
                 ? dmsToRad(vert)
                 : (parseFloat(vert) * Math.PI) / 180
+              const zenResolved = resolveSigma(sigmas[2], inst?.vaPrecision_sec ?? 5)
               observations.push({
                 id: obsId++,
                 type: 'zenith',
-                instCode: '',
+                instCode: traverseCtx.dirInstCode ?? '',
                 from: traverseCtx.occupy,
                 to,
                 obs: zenRad,
-                stdDev: (stdAng || 5) * SEC_TO_RAD,
+                stdDev: (zenResolved.sigma || 5) * SEC_TO_RAD,
+                sigmaSource: zenResolved.source,
               })
             }
           }
