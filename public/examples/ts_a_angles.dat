@@ -1,0 +1,19 @@
+# WebNet TS Example - Angles (A)
+# 2D resection-like angle-only solve. .AMODE ANGLE avoids DIR auto classification.
+
+.2D
+.ORDER EN
+.AMODE ANGLE
+
+I TS1 Trimble-S9 0.001 1.0 1.0 1.0 0.002 0.002
+.I TS1
+
+C C1 5000.000 5000.000 ! !
+C C2 5200.000 5015.000 ! !
+C C3 5105.000 5195.000 ! !
+C U1 5110.900 5092.600
+
+A U1-C1-C2 260-46-30.0 2.0
+A U1-C2-C3 225-48-56.1 2.0
+A U1-C3-C1 233-24-33.9 2.0
+A U1-C1-C3 126-35-24.1 2.0

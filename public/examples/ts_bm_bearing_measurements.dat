@@ -1,0 +1,18 @@
+# WebNet TS Example - Bearing + Measurement (BM)
+# Combined azimuth/bearing, distance, and zenith observations.
+
+.3D
+.ORDER EN
+.DELTA OFF
+
+I TS1 Trimble-S9 0.001 1.0 1.0 1.0 0.002 0.002
+.I TS1
+
+C C1 5000.000 5000.000 100.000 ! ! !
+C C2 5200.000 5015.000 100.500 ! ! !
+C C3 5105.000 5195.000 99.700 ! ! !
+C U2 5162.000 5139.000 100.700
+
+BM C1 U2 049-30-13.1 213.426 089-45-31.4 2.0 0.005 6.0
+BM C2 U2 343-02-15.0 129.219 089-49-20.9 2.0 0.004 6.0
+BM C3 U2 134-32-46.9 80.412 089-08-43.0 2.0 0.004 6.0

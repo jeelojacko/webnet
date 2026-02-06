@@ -1,0 +1,21 @@
+# WebNet TS Example - Traverse (TB/T/TE)
+# Start from known setup, traverse through unknowns, and close to control.
+
+.3D
+.ORDER EN
+.AMODE ANGLE
+.DELTA OFF
+
+I TS1 Trimble-S9 0.001 1.0 1.0 1.0 0.002 0.002
+.I TS1
+
+C C1 5000.000 5000.000 100.000 ! ! !
+C C2 5200.000 5015.000 100.500 ! ! !
+C U1 5110.800 5092.400 100.200 ! ! !
+C U2 5162.000 5139.000 100.800
+C U3 5068.000 5136.000 100.000
+
+TB U1 C1
+T U2 177-55-53.0 69.192 089-25-12.0 2.0 0.004 6.0
+T U3 040-25-46.1 93.832 090-36-37.2 2.0 0.005 6.0
+TE C2 044-07-54.6 178.838 089-48-29.0 2.0 0.006 7.0

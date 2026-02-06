@@ -1,0 +1,18 @@
+# WebNet TS Example - Bearings (B)
+# 2D bearing intersection with slight angular scatter.
+
+.2D
+.ORDER EN
+
+I TS1 Trimble-S9 0.001 1.0 1.0 1.0 0.002 0.002
+.I TS1
+
+C C1 5000.000 5000.000 ! !
+C C2 5200.000 5015.000 ! !
+C C3 5105.000 5195.000 ! !
+C U1 5111.200 5092.200
+
+B C1-U1 050-10-25.9 3.0
+B C2-U1 310-56-53.8 3.0
+B C3-U1 176-45-54.0 3.0
+B C1-U1 050-10-28.8 3.0

@@ -1,0 +1,18 @@
+# WebNet TS Example - Distances (D)
+# 2D trilateration with realistic millimeter-level noise.
+
+.2D
+.ORDER EN
+
+I TS1 Trimble-S9 0.001 1.0 1.0 1.0 0.002 0.002
+.I TS1
+
+C C1 5000.000 5000.000 ! !
+C C2 5200.000 5015.000 ! !
+C C3 5105.000 5195.000 ! !
+C U1 5111.000 5092.000
+
+D C1-U1 144.274 0.004
+D C2-U1 118.097 0.004
+D C3-U1 102.767 0.004
+D C1-U1 144.269 0.004

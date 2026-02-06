@@ -1,7 +1,6 @@
 import { dmsToRad, RAD_TO_DEG, SEC_TO_RAD } from './angles'
 import type {
   AngleObservation,
-  DirectionObservation,
   DistanceObservation,
   DirObservation,
   GpsObservation,
@@ -14,6 +13,7 @@ import type {
   StationId,
   ParseOptions,
   MapMode,
+  AngleMode,
 } from '../types'
 
 const defaultParseOptions: ParseOptions = {
@@ -23,17 +23,25 @@ const defaultParseOptions: ParseOptions = {
   deltaMode: 'slope',
   mapMode: 'off',
   normalize: true,
+  mapScaleFactor: 1,
+  applyCurvatureRefraction: false,
+  refractionCoefficient: 0.13,
+  verticalReduction: 'none',
   lonSign: 'west-negative',
   currentInstrument: undefined,
   edmMode: 'additive',
   applyCentering: true,
   addCenteringToExplicit: false,
   debug: false,
+  angleMode: 'auto',
 }
 
 const FT_PER_M = 3.280839895
 const EARTH_RADIUS_M = 6378137
 const FACE2_WEIGHT = 0.707 // face-2 weighting factor per common spec
+const DEG_TO_RAD = Math.PI / 180
+const AMODE_AUTO_MAX_DIR_RAD = 3 * DEG_TO_RAD
+const AMODE_AUTO_MARGIN_RAD = 0.5 * DEG_TO_RAD
 const stripInlineComment = (line: string): string => {
   const hash = line.indexOf('#')
   const quote = line.indexOf("'")
@@ -52,21 +60,30 @@ const isNumericToken = (token: string): boolean => {
 const parseFixityTokens = (
   tokens: string[],
   componentCount: number,
-): { fixities: boolean[]; hasTokens: boolean } => {
+): { fixities: boolean[]; hasTokens: boolean; legacyStarFixed: boolean } => {
   const raw = tokens.filter((t) => t === '!' || t === '*')
   if (!raw.length) {
-    return { fixities: new Array(componentCount).fill(false), hasTokens: false }
+    return { fixities: new Array(componentCount).fill(false), hasTokens: false, legacyStarFixed: false }
   }
-  const hasBang = raw.includes('!')
-  const flags = hasBang ? raw.map((t) => t === '!') : raw.map(() => true)
-  if (flags.length === 1 && flags[0]) {
-    return { fixities: new Array(componentCount).fill(true), hasTokens: true }
+  if (raw.length === 1 && raw[0] === '!') {
+    return {
+      fixities: new Array(componentCount).fill(true),
+      hasTokens: true,
+      legacyStarFixed: false,
+    }
+  }
+  if (raw.length === 1 && raw[0] === '*') {
+    return {
+      fixities: new Array(componentCount).fill(true),
+      hasTokens: true,
+      legacyStarFixed: true,
+    }
   }
   const fixities = new Array(componentCount).fill(false)
-  for (let i = 0; i < componentCount && i < flags.length; i += 1) {
-    fixities[i] = flags[i]
+  for (let i = 0; i < componentCount && i < raw.length; i += 1) {
+    fixities[i] = raw[i] === '!'
   }
-  return { fixities, hasTokens: true }
+  return { fixities, hasTokens: true, legacyStarFixed: false }
 }
 
 const applyFixities = (
@@ -89,6 +106,8 @@ type SigmaToken =
   | { kind: 'fixed' }
   | { kind: 'float' }
 
+type SigmaSource = 'default' | 'explicit' | 'fixed' | 'float'
+
 const FIXED_SIGMA = 1e-9
 const FLOAT_SIGMA = 1e9
 
@@ -96,6 +115,12 @@ const wrapToPi = (val: number): number => {
   let v = val
   if (v > Math.PI) v -= 2 * Math.PI
   if (v < -Math.PI) v += 2 * Math.PI
+  return v
+}
+
+const wrapTo2Pi = (val: number): number => {
+  let v = val % (2 * Math.PI)
+  if (v < 0) v += 2 * Math.PI
   return v
 }
 
@@ -143,7 +168,7 @@ const extractSigmaTokens = (
 const resolveSigma = (
   token: SigmaToken | undefined,
   defaultSigma: number,
-): { sigma: number; source: 'default' | 'explicit' | 'fixed' | 'float' } => {
+): { sigma: number; source: SigmaSource } => {
   if (!token || token.kind === 'default') return { sigma: defaultSigma, source: 'default' }
   if (token.kind === 'numeric') return { sigma: token.value, source: 'explicit' }
   if (token.kind === 'fixed') return { sigma: FIXED_SIGMA, source: 'fixed' }
@@ -224,6 +249,16 @@ export const parseInput = (
   existingInstruments: InstrumentLibrary = {},
   opts: Partial<ParseOptions> = {},
 ): ParseResult => {
+  type DirectionFace = 'face1' | 'face2'
+  interface RawDirectionShot {
+    to: StationId
+    obs: number
+    stdDev: number
+    sigmaSource: SigmaSource
+    sourceLine: number
+    face: DirectionFace
+  }
+
   const stations: StationMap = {}
   const observations: Observation[] = []
   const instrumentLibrary: InstrumentLibrary = { ...existingInstruments }
@@ -236,6 +271,7 @@ export const parseInput = (
     backsightRefAngle?: number
     dirSetId?: string
     dirInstCode?: string
+    dirRawShots?: RawDirectionShot[]
   } = {}
   let faceMode: 'unknown' | 'face1' | 'face2' = 'unknown'
   let directionSetCount = 0
@@ -243,6 +279,127 @@ export const parseInput = (
   const lines = input.split('\n')
   let lineNum = 0
   let obsId = 0
+  const pushObservation = <T extends Observation>(obs: T): void => {
+    if (obs.sourceLine == null) obs.sourceLine = lineNum
+    observations.push(obs)
+  }
+  const combineSigmaSources = (shots: RawDirectionShot[]): SigmaSource => {
+    if (!shots.length) return 'default'
+    if (shots.some((s) => s.sigmaSource === 'fixed')) return 'fixed'
+    if (shots.every((s) => s.sigmaSource === 'float')) return 'float'
+    if (shots.every((s) => s.sigmaSource === 'default')) return 'default'
+    return 'explicit'
+  }
+  const reduceDirectionShots = (
+    setId: string,
+    occupy: StationId,
+    instCode: string,
+    shots: RawDirectionShot[],
+  ): void => {
+    if (!shots.length) return
+
+    if (!state.normalize) {
+      shots.forEach((shot) => {
+        pushObservation({
+          id: obsId++,
+          type: 'direction',
+          instCode,
+          setId,
+          at: occupy,
+          to: shot.to,
+          obs: shot.obs,
+          stdDev: shot.stdDev,
+          sigmaSource: shot.sigmaSource,
+          sourceLine: shot.sourceLine,
+        })
+      })
+      logs.push(`Direction set ${setId} @ ${occupy}: kept ${shots.length} raw direction(s)`)
+      return
+    }
+
+    const byTarget = new Map<StationId, RawDirectionShot[]>()
+    shots.forEach((shot) => {
+      const list = byTarget.get(shot.to) ?? []
+      list.push(shot)
+      byTarget.set(shot.to, list)
+    })
+
+    let reducedCount = 0
+    let pairedTargets = 0
+    let face1Total = 0
+    let face2Total = 0
+
+    const targets = [...byTarget.keys()].sort((a, b) => a.localeCompare(b))
+    targets.forEach((to) => {
+      const targetShots = byTarget.get(to) ?? []
+      if (!targetShots.length) return
+      const face1Count = targetShots.filter((s) => s.face === 'face1').length
+      const face2Count = targetShots.length - face1Count
+      face1Total += face1Count
+      face2Total += face2Count
+      if (face1Count > 0 && face2Count > 0) pairedTargets += 1
+
+      const normalized = targetShots.map((shot) => {
+        const obs = shot.face === 'face2' ? wrapTo2Pi(shot.obs - Math.PI) : wrapTo2Pi(shot.obs)
+        const weight = 1 / Math.max(shot.stdDev * shot.stdDev, 1e-24)
+        return { ...shot, normalizedObs: obs, weight }
+      })
+      let sumSin = 0
+      let sumCos = 0
+      let sumW = 0
+      normalized.forEach((shot) => {
+        sumSin += shot.weight * Math.sin(shot.normalizedObs)
+        sumCos += shot.weight * Math.cos(shot.normalizedObs)
+        sumW += shot.weight
+      })
+      let reducedObs = Math.atan2(sumSin, sumCos)
+      if (reducedObs < 0) reducedObs += 2 * Math.PI
+      const reducedSigma = sumW > 0 ? Math.sqrt(1 / sumW) : normalized[0].stdDev
+      const residuals = normalized.map((shot) => wrapToPi(shot.normalizedObs - reducedObs))
+      const spread = residuals.length
+        ? Math.sqrt(residuals.reduce((acc, r) => acc + r * r, 0) / residuals.length)
+        : 0
+
+      pushObservation({
+        id: obsId++,
+        type: 'direction',
+        instCode,
+        setId,
+        at: occupy,
+        to,
+        obs: reducedObs,
+        stdDev: reducedSigma,
+        sigmaSource: combineSigmaSources(targetShots),
+        sourceLine: Math.min(...targetShots.map((s) => s.sourceLine)),
+        rawCount: targetShots.length,
+        rawFace1Count: face1Count,
+        rawFace2Count: face2Count,
+        rawSpread: spread,
+        reducedSigma,
+      })
+      reducedCount += 1
+    })
+
+    logs.push(
+      `Direction set reduction ${setId} @ ${occupy}: raw ${shots.length} -> reduced ${reducedCount} (paired targets=${pairedTargets}, F1=${face1Total}, F2=${face2Total})`,
+    )
+  }
+  const flushDirectionSet = (reason: string): void => {
+    if (!traverseCtx.dirSetId || !traverseCtx.occupy) return
+    const shots = traverseCtx.dirRawShots ?? []
+    const instCode = traverseCtx.dirInstCode ?? ''
+    if (!shots.length) {
+      logs.push(`Direction set ${traverseCtx.dirSetId} @ ${traverseCtx.occupy}: no directions (${reason})`)
+    } else {
+      reduceDirectionShots(traverseCtx.dirSetId, traverseCtx.occupy, instCode, shots)
+    }
+    traverseCtx.occupy = undefined
+    traverseCtx.backsight = undefined
+    traverseCtx.dirSetId = undefined
+    traverseCtx.dirInstCode = undefined
+    traverseCtx.dirRawShots = undefined
+    faceMode = 'unknown'
+  }
 
   for (const raw of lines) {
     lineNum += 1
@@ -278,9 +435,15 @@ export const parseInput = (
       } else if (op === '.MAPMODE') {
         const mode = (parts[1] || '').toUpperCase()
         const mapMode: MapMode =
-          mode === 'ANGLECALC' ? 'anglecalc' : mode === 'ON' ? 'on' : 'off'
+          mode === 'ANGLECALC' ? 'anglecalc' : mode === 'ON' || mode === 'GRID' ? 'on' : 'off'
         state.mapMode = mapMode
         logs.push(`Map mode set to ${mapMode}`)
+      } else if (op === '.MAPSCALE' && parts[1]) {
+        const factor = parseFloat(parts[1])
+        if (Number.isFinite(factor) && factor > 0) {
+          state.mapScaleFactor = factor
+          logs.push(`Map scale factor set to ${factor}`)
+        }
       } else if (op === '.LWEIGHT' && parts[1]) {
         const val = parseFloat(parts[1])
         if (!Number.isNaN(val)) {
@@ -311,6 +474,36 @@ export const parseInput = (
         const mode = (parts[1] || '').toUpperCase()
         state.debug = mode !== 'OFF'
         logs.push(`Debug logging set to ${state.debug}`)
+      } else if (op === '.CURVREF') {
+        const mode = (parts[1] || '').toUpperCase()
+        if (mode === 'ON' || mode === 'OFF') {
+          state.applyCurvatureRefraction = mode === 'ON'
+          logs.push(`Curvature/refraction set to ${state.applyCurvatureRefraction}`)
+        } else if (parts[1] && Number.isFinite(parseFloat(parts[1]))) {
+          state.refractionCoefficient = parseFloat(parts[1])
+          state.applyCurvatureRefraction = true
+          logs.push(
+            `Curvature/refraction enabled with k=${state.refractionCoefficient.toFixed(3)}`,
+          )
+        }
+      } else if (op === '.REFRACTION' && parts[1]) {
+        const k = parseFloat(parts[1])
+        if (Number.isFinite(k)) {
+          state.refractionCoefficient = k
+          logs.push(`Refraction coefficient set to ${k}`)
+        }
+      } else if (op === '.VRED') {
+        const mode = (parts[1] || '').toUpperCase()
+        state.verticalReduction =
+          mode === 'CR' || mode === 'CURVREF' || mode === 'CURVATURE' ? 'curvref' : 'none'
+        logs.push(`Vertical reduction set to ${state.verticalReduction}`)
+      } else if (op === '.AMODE') {
+        const mode = (parts[1] || '').toUpperCase()
+        let angleMode: AngleMode = 'auto'
+        if (mode === 'ANGLE') angleMode = 'angle'
+        if (mode === 'DIR' || mode === 'AZ' || mode === 'AZIMUTH') angleMode = 'dir'
+        state.angleMode = angleMode
+        logs.push(`A-record mode set to ${angleMode}`)
       } else if (op === '.I' && parts[1]) {
         state.currentInstrument = parts[1]
         logs.push(`Current instrument set to ${state.currentInstrument}`)
@@ -318,6 +511,7 @@ export const parseInput = (
         state.currentInstrument = parts[1]
         logs.push(`Current instrument set to ${state.currentInstrument}`)
       } else if (op === '.END') {
+        if (traverseCtx.dirSetId) flushDirectionSet('.END')
         logs.push('END encountered; stopping parse')
         break
       }
@@ -368,7 +562,12 @@ export const parseInput = (
         const north = state.order === 'NE' ? coords[0] ?? 0 : coords[1] ?? 0
         const east = state.order === 'NE' ? coords[1] ?? 0 : coords[0] ?? 0
         const h = is3D ? coords[2] ?? 0 : 0
-        const { fixities } = parseFixityTokens(tokens, coordCount)
+        const { fixities, legacyStarFixed } = parseFixityTokens(tokens, coordCount)
+        if (legacyStarFixed) {
+          logs.push(
+            `Warning: legacy lone "*" fixity at line ${lineNum} treated as fixed. Prefer "!" for fixed components.`,
+          )
+        }
         const fixN = state.order === 'NE' ? fixities[0] : fixities[1]
         const fixE = state.order === 'NE' ? fixities[1] : fixities[0]
         const fixH = is3D ? fixities[2] : false
@@ -384,9 +583,18 @@ export const parseInput = (
         const seN = state.order === 'NE' ? stds[0] : stds[1]
         const seE = state.order === 'NE' ? stds[1] : stds[0]
         const seH = is3D ? stds[2] : undefined
-        if (!st.fixedX && seE) (st as any).sx = seE * toMeters
-        if (!st.fixedY && seN) (st as any).sy = seN * toMeters
-        if (is3D && !st.fixedH && seH) (st as any).sh = seH * toMeters
+        if (!st.fixedX && seE) {
+          st.sx = seE * toMeters
+          st.constraintX = st.x
+        }
+        if (!st.fixedY && seN) {
+          st.sy = seN * toMeters
+          st.constraintY = st.y
+        }
+        if (is3D && !st.fixedH && seH) {
+          st.sh = seH * toMeters
+          st.constraintH = st.h
+        }
 
         stations[id] = st
       } else if (code === 'P' || code === 'PH') {
@@ -404,7 +612,12 @@ export const parseInput = (
         const seN = state.coordMode === '3D' ? restNumeric[1] ?? 0 : restNumeric[0] ?? 0
         const seE = state.coordMode === '3D' ? restNumeric[2] ?? 0 : restNumeric[1] ?? 0
         const seH = state.coordMode === '3D' ? restNumeric[3] ?? 0 : 0
-        const { fixities } = parseFixityTokens(tokens, coordCount)
+        const { fixities, legacyStarFixed } = parseFixityTokens(tokens, coordCount)
+        if (legacyStarFixed) {
+          logs.push(
+            `Warning: legacy lone "*" fixity at line ${lineNum} treated as fixed. Prefer "!" for fixed components.`,
+          )
+        }
 
         if (state.originLatDeg == null || state.originLonDeg == null) {
           state.originLatDeg = latDeg
@@ -432,9 +645,18 @@ export const parseInput = (
           { x: fixities[1] ?? false, y: fixities[0] ?? false, h: coordCount === 3 ? fixities[2] : undefined },
           state.coordMode,
         )
-        if (!st.fixedY && seN) st.sy = seN * toMeters
-        if (!st.fixedX && seE) st.sx = seE * toMeters
-        if (state.coordMode === '3D' && !st.fixedH && seH) st.sh = seH * toMeters
+        if (!st.fixedY && seN) {
+          st.sy = seN * toMeters
+          st.constraintY = st.y
+        }
+        if (!st.fixedX && seE) {
+          st.sx = seE * toMeters
+          st.constraintX = st.x
+        }
+        if (state.coordMode === '3D' && !st.fixedH && seH) {
+          st.sh = seH * toMeters
+          st.constraintH = st.h
+        }
         stations[id] = st
         logs.push(`P record projected to local EN (meters) for ${id}`)
       } else if (code === 'CH' || code === 'EH') {
@@ -449,7 +671,12 @@ export const parseInput = (
         const north = state.order === 'NE' ? coords[0] ?? 0 : coords[1] ?? 0
         const east = state.order === 'NE' ? coords[1] ?? 0 : coords[0] ?? 0
         const h = is3D ? coords[2] ?? 0 : coords[0] ?? 0
-        const { fixities } = parseFixityTokens(tokens, coordCount)
+        const { fixities, legacyStarFixed } = parseFixityTokens(tokens, coordCount)
+        if (legacyStarFixed) {
+          logs.push(
+            `Warning: legacy lone "*" fixity at line ${lineNum} treated as fixed. Prefer "!" for fixed components.`,
+          )
+        }
         const toMeters = state.units === 'ft' ? 1 / FT_PER_M : 1
         const st: any =
           stations[id] ??
@@ -467,9 +694,18 @@ export const parseInput = (
         const seN = state.order === 'NE' ? stds[0] : stds[1]
         const seE = state.order === 'NE' ? stds[1] : stds[0]
         const seH = is3D ? stds[2] : undefined
-        if (!st.fixedX && seE) st.sx = seE * toMeters
-        if (!st.fixedY && seN) st.sy = seN * toMeters
-        if (is3D && !st.fixedH && seH) st.sh = seH * toMeters
+        if (!st.fixedX && seE) {
+          st.sx = seE * toMeters
+          st.constraintX = st.x
+        }
+        if (!st.fixedY && seN) {
+          st.sy = seN * toMeters
+          st.constraintY = st.y
+        }
+        if (is3D && !st.fixedH && seH) {
+          st.sh = seH * toMeters
+          st.constraintH = st.h
+        }
 
         stations[id] = st
       } else if (code === 'E') {
@@ -479,7 +715,12 @@ export const parseInput = (
         const numeric = tokens.filter(isNumericToken).map((p) => parseFloat(p))
         const elev = numeric[0] ?? 0
         const stdErr = numeric[1] ?? 0
-        const { fixities } = parseFixityTokens(tokens, 1)
+        const { fixities, legacyStarFixed } = parseFixityTokens(tokens, 1)
+        if (legacyStarFixed) {
+          logs.push(
+            `Warning: legacy lone "*" fixity at line ${lineNum} treated as fixed. Prefer "!" for fixed components.`,
+          )
+        }
         const fixH = fixities[0] ?? false
         const toMeters = state.units === 'ft' ? 1 / FT_PER_M : 1
         const st: any =
@@ -487,7 +728,10 @@ export const parseInput = (
           ({ x: 0, y: 0, h: 0, fixed: false, fixedX: false, fixedY: false, fixedH: false } as any)
         st.h = elev * toMeters
         applyFixities(st, { h: fixH }, state.coordMode)
-        if (!st.fixedH && stdErr) st.sh = stdErr * toMeters
+        if (!st.fixedH && stdErr) {
+          st.sh = stdErr * toMeters
+          st.constraintH = st.h
+        }
         stations[id] = st
       } else if (code === 'D') {
         const hasInst =
@@ -524,7 +768,7 @@ export const parseInput = (
           ht: ht != null ? ht * toMeters : undefined,
           mode: state.deltaMode,
         }
-        observations.push(obs)
+        pushObservation(obs)
       } else if (code === 'A') {
         const tokens = parts[1].includes('-') ? parts[1].split('-') : []
         const hasInst = tokens.length === 0
@@ -545,20 +789,33 @@ export const parseInput = (
         let sigmaSec = resolved.sigma
         if (angleRad >= Math.PI) sigmaSec *= FACE2_WEIGHT
 
-        const azTo = azimuthFromTo(stations, at, to)
-        const azFrom = azimuthFromTo(stations, at, from)
-        let useDir = false
-        if (azTo && azFrom) {
-          let predAngle = azTo.az - azFrom.az
-          if (predAngle < 0) predAngle += 2 * Math.PI
-          const rAngle = Math.abs(wrapToPi(angleRad - predAngle))
+        let useDir = state.angleMode === 'dir'
+        if (state.angleMode === 'auto') {
+          const azTo = azimuthFromTo(stations, at, to)
+          const azFrom = azimuthFromTo(stations, at, from)
+          if (azTo && azFrom) {
+            let predAngle = azTo.az - azFrom.az
+            if (predAngle < 0) predAngle += 2 * Math.PI
+            const rAngle = Math.abs(wrapToPi(angleRad - predAngle))
 
-          const predDir = azTo.az
-          const r0 = wrapToPi(angleRad - predDir)
-          const r1 = wrapToPi(angleRad + Math.PI - predDir)
-          const rDir = Math.abs(r0) <= Math.abs(r1) ? Math.abs(r0) : Math.abs(r1)
+            const predDir = azTo.az
+            const r0 = wrapToPi(angleRad - predDir)
+            const r1 = wrapToPi(angleRad + Math.PI - predDir)
+            const rDir = Math.abs(r0) <= Math.abs(r1) ? Math.abs(r0) : Math.abs(r1)
 
-          useDir = rDir < rAngle
+            const clearlyDir =
+              rDir <= AMODE_AUTO_MAX_DIR_RAD && rAngle - rDir >= AMODE_AUTO_MARGIN_RAD
+            useDir = clearlyDir
+            if (!useDir && rDir < rAngle && rDir <= AMODE_AUTO_MAX_DIR_RAD) {
+              logs.push(
+                `A record ambiguous at line ${lineNum}; kept ANGLE (rDir=${(
+                  (rDir * RAD_TO_DEG) * 3600
+                ).toFixed(1)}", rAng=${((rAngle * RAD_TO_DEG) * 3600).toFixed(
+                  1,
+                )}"). Use ".AMODE DIR" for azimuth mode.`,
+              )
+            }
+          }
         }
 
         if (useDir) {
@@ -574,7 +831,7 @@ export const parseInput = (
             sigmaSource: resolved.source,
             flip180: true,
           }
-          observations.push(obs)
+          pushObservation(obs)
           logs.push(`A record classified as DIR at line ${lineNum} (${at}-${to})`)
         } else {
           const obs: AngleObservation = {
@@ -589,7 +846,7 @@ export const parseInput = (
             stdDev: sigmaSec * SEC_TO_RAD,
             sigmaSource: resolved.source,
           }
-          observations.push(obs)
+          pushObservation(obs)
         }
       } else if (code === 'V') {
         // Vertical observation: zenith (slope mode) or deltaH (delta mode)
@@ -613,14 +870,14 @@ export const parseInput = (
             stdDev: std || 0.001,
             sigmaSource: resolved.source,
           }
-          observations.push(obs)
+          pushObservation(obs)
         } else {
           const zenRad = valToken.includes('-') ? dmsToRad(valToken) : (parseFloat(valToken) * Math.PI) / 180
           const inst = state.currentInstrument ? instrumentLibrary[state.currentInstrument] : undefined
           const base = inst?.vaPrecision_sec ?? 5
           const resolved = resolveSigma(sigmas[0], base)
           const stdArc = resolved.sigma || base
-          observations.push({
+          pushObservation({
             id: obsId++,
             type: 'zenith',
             instCode: state.currentInstrument ?? '',
@@ -646,7 +903,7 @@ export const parseInput = (
           const defaultDist = defaultDistanceSigma(inst, dist, state.edmMode, 0.005)
           const distResolved = resolveSigma(sigmas[0], defaultDist)
           const dhResolved = resolveSigma(sigmas[1], 0.001)
-          observations.push({
+          pushObservation({
             id: obsId++,
             type: 'dist',
             subtype: 'ts',
@@ -661,7 +918,7 @@ export const parseInput = (
             ht: ht != null ? ht * toMeters : undefined,
             mode: 'horiz',
           })
-          observations.push({
+          pushObservation({
             id: obsId++,
             type: 'lev',
             instCode,
@@ -687,7 +944,7 @@ export const parseInput = (
             continue
           }
           const zenRad = zen.includes('-') ? dmsToRad(zen) : (parseFloat(zen) * Math.PI) / 180
-          observations.push({
+          pushObservation({
             id: obsId++,
             type: 'dist',
             subtype: 'ts',
@@ -702,7 +959,7 @@ export const parseInput = (
             ht: ht != null ? ht * toMeters : undefined,
             mode: 'slope',
           })
-          observations.push({
+          pushObservation({
             id: obsId++,
             type: 'zenith',
             instCode,
@@ -738,7 +995,7 @@ export const parseInput = (
         const distDefault = defaultDistanceSigma(inst, dist, state.edmMode, 0.005)
         const distResolved = resolveSigma(sigDist, distDefault)
         const toMeters = state.units === 'ft' ? 1 / FT_PER_M : 1
-        observations.push({
+        pushObservation({
           id: obsId++,
           type: 'dist',
           subtype: 'ts',
@@ -754,7 +1011,7 @@ export const parseInput = (
         if (state.deltaMode === 'horiz' && vert) {
           const dh = parseFloat(vert) * toMeters
           const dhResolved = resolveSigma(sigVert, 0.001)
-          observations.push({
+          pushObservation({
             id: obsId++,
             type: 'lev',
             instCode,
@@ -769,7 +1026,7 @@ export const parseInput = (
           const zenRad = vert.includes('-') ? dmsToRad(vert) : (parseFloat(vert) * Math.PI) / 180
           const baseZen = inst?.vaPrecision_sec ?? 5
           const zenResolved = resolveSigma(sigVert, baseZen)
-          observations.push({
+          pushObservation({
             id: obsId++,
             type: 'zenith',
             instCode,
@@ -782,7 +1039,7 @@ export const parseInput = (
         }
         const bearingRad = bearing.includes('-') ? dmsToRad(bearing) : (parseFloat(bearing) * Math.PI) / 180
         const bearResolved = resolveSigma(sigBear, inst?.hzPrecision_sec ?? 5)
-        observations.push({
+        pushObservation({
           id: obsId++,
           type: 'bearing',
           instCode,
@@ -817,7 +1074,7 @@ export const parseInput = (
           const angRad = dmsToRad(ang)
           const faceWeight =
             angRad >= Math.PI ? angResolved.sigma * FACE2_WEIGHT : angResolved.sigma
-          observations.push({
+          pushObservation({
             id: obsId++,
             type: 'angle',
             instCode,
@@ -829,7 +1086,7 @@ export const parseInput = (
             stdDev: faceWeight * SEC_TO_RAD,
             sigmaSource: angResolved.source,
           })
-          observations.push({
+          pushObservation({
             id: obsId++,
             type: 'dist',
             subtype: 'ts',
@@ -846,7 +1103,7 @@ export const parseInput = (
           })
           if (state.deltaMode === 'horiz' && vert) {
             const dh = parseFloat(vert) * toMeters
-            observations.push({
+            pushObservation({
               id: obsId++,
               type: 'lev',
               instCode,
@@ -859,7 +1116,7 @@ export const parseInput = (
             })
           } else if (vert) {
             const zenRad = vert.includes('-') ? dmsToRad(vert) : (parseFloat(vert) * Math.PI) / 180
-            observations.push({
+            pushObservation({
               id: obsId++,
               type: 'zenith',
               instCode,
@@ -884,7 +1141,7 @@ export const parseInput = (
         const bearingRad = bearingToken.includes('-')
           ? dmsToRad(bearingToken)
           : (parseFloat(bearingToken) * Math.PI) / 180
-        observations.push({
+        pushObservation({
           id: obsId++,
           type: 'bearing',
           instCode,
@@ -935,7 +1192,7 @@ export const parseInput = (
           if (faceMode !== thisFace) {
             logs.push(`Mixed face traverse angle rejected at line ${lineNum}`)
           } else {
-            observations.push({
+            pushObservation({
               id: obsId++,
               type: 'angle',
               instCode,
@@ -950,7 +1207,7 @@ export const parseInput = (
           }
         } else {
           const angStd = (angResolved.sigma || 5) * (isFace2 ? FACE2_WEIGHT : 1)
-          observations.push({
+          pushObservation({
             id: obsId++,
             type: 'angle',
             instCode,
@@ -964,7 +1221,7 @@ export const parseInput = (
           })
         }
         if (dist > 0) {
-          observations.push({
+          pushObservation({
             id: obsId++,
             type: 'dist',
             subtype: 'ts',
@@ -981,7 +1238,7 @@ export const parseInput = (
         if (vert) {
           if (state.deltaMode === 'horiz') {
             const dh = parseFloat(vert) * toMeters
-            observations.push({
+            pushObservation({
               id: obsId++,
               type: 'lev',
               instCode,
@@ -996,7 +1253,7 @@ export const parseInput = (
             const zenRad = vert.includes('-')
               ? dmsToRad(vert)
               : (parseFloat(vert) * Math.PI) / 180
-            observations.push({
+            pushObservation({
               id: obsId++,
               type: 'zenith',
               instCode,
@@ -1019,6 +1276,9 @@ export const parseInput = (
           traverseCtx.backsight = prevOccupy
         }
       } else if (code === 'DB') {
+        if (traverseCtx.dirSetId) {
+          flushDirectionSet('new DB')
+        }
         const hasInst = parts[1] && instrumentLibrary[parts[1]]
         const instCode = hasInst ? parts[1] : state.currentInstrument ?? ''
         const occupy = hasInst ? parts[2] : parts[1]
@@ -1027,6 +1287,7 @@ export const parseInput = (
         traverseCtx.occupy = occupy
         traverseCtx.backsight = backsight
         traverseCtx.dirInstCode = instCode
+        traverseCtx.dirRawShots = []
         directionSetCount += 1
         traverseCtx.dirSetId = `${occupy || 'SET'}#${directionSetCount}`
         faceMode = 'unknown'
@@ -1070,25 +1331,25 @@ export const parseInput = (
           }
         }
 
-        const dirObs: DirectionObservation = {
-          id: obsId++,
-          type: 'direction',
-          instCode: traverseCtx.dirInstCode ?? '',
-          setId: traverseCtx.dirSetId,
-          at: traverseCtx.occupy,
+        const thisFace: DirectionFace = angRad >= Math.PI ? 'face2' : 'face1'
+        const raw: RawDirectionShot = {
           to,
           obs: angRad,
           stdDev: stdAng * SEC_TO_RAD,
           sigmaSource: dirResolved.source,
+          sourceLine: lineNum,
+          face: thisFace,
         }
-        observations.push(dirObs)
+        const existing = traverseCtx.dirRawShots ?? []
+        existing.push(raw)
+        traverseCtx.dirRawShots = existing
 
         if (code === 'DM' && dist > 0) {
           const distResolved = resolveSigma(
             sigmas[1],
             defaultDistanceSigma(inst, dist, state.edmMode, 0.005),
           )
-          observations.push({
+          pushObservation({
             id: obsId++,
             type: 'dist',
             subtype: 'ts',
@@ -1105,7 +1366,7 @@ export const parseInput = (
             if (state.deltaMode === 'horiz') {
               const dh = parseFloat(vert) * toMeters
               const dhResolved = resolveSigma(sigmas[2], 0.001)
-              observations.push({
+              pushObservation({
                 id: obsId++,
                 type: 'lev',
                 instCode: traverseCtx.dirInstCode ?? '',
@@ -1121,7 +1382,7 @@ export const parseInput = (
                 ? dmsToRad(vert)
                 : (parseFloat(vert) * Math.PI) / 180
               const zenResolved = resolveSigma(sigmas[2], inst?.vaPrecision_sec ?? 5)
-              observations.push({
+              pushObservation({
                 id: obsId++,
                 type: 'zenith',
                 instCode: traverseCtx.dirInstCode ?? '',
@@ -1135,11 +1396,7 @@ export const parseInput = (
           }
         }
       } else if (code === 'DE') {
-        traverseCtx.occupy = undefined
-        traverseCtx.backsight = undefined
-        traverseCtx.dirSetId = undefined
-        traverseCtx.dirInstCode = undefined
-        faceMode = 'unknown'
+        if (traverseCtx.dirSetId) flushDirectionSet('DE')
         logs.push('Direction set end')
       } else if (code === 'SS') {
         // Sideshot: dist + optional vertical
@@ -1157,50 +1414,146 @@ export const parseInput = (
           logs.push(`Sideshot cannot target fixed/control station (${to}) at line ${lineNum}`)
           continue
         }
-        const dist = parseFloat(parts[3] || '0')
-        const vert = parts[4]
-        const stdDist = parts[5] ? parseFloat(parts[5]) : 0
+        const instCode = state.currentInstrument ?? ''
+        const inst = instCode ? instrumentLibrary[instCode] : undefined
+        const firstTokenRaw = parts[3] || ''
+        const isAzPrefix = /^AZ=/i.test(firstTokenRaw) || firstTokenRaw.startsWith('@')
+        const isHzPrefix = /^(HZ|HA|ANG)=/i.test(firstTokenRaw)
+        const isDmsAngle = firstTokenRaw.includes('-')
+        const isSetupAngleByPattern =
+          !isAzPrefix &&
+          !isHzPrefix &&
+          isDmsAngle &&
+          Number.isFinite(parseFloat(parts[4] || '')) &&
+          !!traverseCtx.backsight
+        const angleMode: 'none' | 'az' | 'hz' = isAzPrefix
+          ? 'az'
+          : isHzPrefix || isSetupAngleByPattern
+            ? 'hz'
+            : 'none'
+        let azimuthObs: number | undefined
+        let azimuthStdDev: number | undefined
+        let hzObs: number | undefined
+        let hzStdDev: number | undefined
+        let distIndex = 3
+        let vertIndex = 4
+        let sigmaIndex = 5
+        if (angleMode !== 'none') {
+          const cleanAngle = firstTokenRaw
+            .replace(/^(AZ|HZ|HA|ANG)=/i, '')
+            .replace(/^@/, '')
+          const angleDeg = toDegrees(cleanAngle)
+          if (!Number.isFinite(angleDeg)) {
+            logs.push(`Invalid sideshot horizontal angle/azimuth at line ${lineNum}, skipping`)
+            continue
+          }
+          const angleRad = (angleDeg * Math.PI) / 180
+          if (angleMode === 'az') {
+            azimuthObs = angleRad
+          } else {
+            hzObs = angleRad
+          }
+          distIndex = 4
+          vertIndex = 5
+          sigmaIndex = 6
+        }
+        const dist = parseFloat(parts[distIndex] || '0')
+        const vert = parts[vertIndex]
+        if (!Number.isFinite(dist) || dist <= 0) {
+          logs.push(`Invalid sideshot distance at line ${lineNum}, skipping`)
+          continue
+        }
+        const { sigmas } = extractSigmaTokens(parts.slice(sigmaIndex), 3)
+        let sigmaAzToken: SigmaToken | undefined
+        let sigmaDistToken: SigmaToken | undefined
+        let sigmaVertToken: SigmaToken | undefined
+        if (angleMode !== 'none') {
+          if (vert) {
+            if (sigmas.length >= 3) {
+              sigmaAzToken = sigmas[0]
+              sigmaDistToken = sigmas[1]
+              sigmaVertToken = sigmas[2]
+            } else if (sigmas.length === 2) {
+              sigmaDistToken = sigmas[0]
+              sigmaVertToken = sigmas[1]
+            } else if (sigmas.length === 1) {
+              sigmaDistToken = sigmas[0]
+            }
+          } else if (sigmas.length >= 2) {
+            sigmaAzToken = sigmas[0]
+            sigmaDistToken = sigmas[1]
+          } else if (sigmas.length === 1) {
+            sigmaDistToken = sigmas[0]
+          }
+          const hzResolved = resolveSigma(sigmaAzToken, inst?.hzPrecision_sec ?? 10)
+          if (angleMode === 'az') {
+            azimuthStdDev = hzResolved.sigma * SEC_TO_RAD
+          } else {
+            hzStdDev = hzResolved.sigma * SEC_TO_RAD
+          }
+        } else {
+          sigmaDistToken = sigmas[0]
+          sigmaVertToken = sigmas[1]
+        }
+        const distResolved = resolveSigma(
+          sigmaDistToken,
+          defaultDistanceSigma(inst, dist, state.edmMode, 0.01),
+        )
         const toMeters = state.units === 'ft' ? 1 / FT_PER_M : 1
-        observations.push({
+        pushObservation({
           id: obsId++,
           type: 'dist',
           subtype: 'ts',
-          instCode: '',
+          instCode,
           setId: 'SS',
           from,
           to,
           obs: dist * toMeters,
-          stdDev: (stdDist || 0.01) * toMeters,
+          stdDev: distResolved.sigma * toMeters,
+          sigmaSource: distResolved.source,
           mode: state.deltaMode,
           // mark sideshots to allow downstream exclusion if desired
-          calc: { sideshot: true },
+          calc: {
+            sideshot: true,
+            azimuthObs,
+            azimuthStdDev,
+            hzObs,
+            hzStdDev,
+            backsightId: hzObs != null ? traverseCtx.backsight : undefined,
+            azimuthSource:
+              azimuthObs != null ? 'explicit' : hzObs != null ? 'setup' : 'target',
+          },
         })
         if (vert) {
           if (state.deltaMode === 'horiz') {
             const dh = parseFloat(vert) * toMeters
-            observations.push({
+            const dhResolved = resolveSigma(sigmaVertToken, 0.001)
+            pushObservation({
               id: obsId++,
               type: 'lev',
-              instCode: '',
+              instCode,
               from,
               to,
               obs: dh,
               lenKm: 0,
-              stdDev: 0.001,
+              stdDev: dhResolved.sigma * toMeters,
+              sigmaSource: dhResolved.source,
               calc: { sideshot: true },
             })
           } else {
             const zenRad = vert.includes('-')
               ? dmsToRad(vert)
               : (parseFloat(vert) * Math.PI) / 180
-            observations.push({
+            const zenResolved = resolveSigma(sigmaVertToken, inst?.vaPrecision_sec ?? 5)
+            pushObservation({
               id: obsId++,
               type: 'zenith',
-              instCode: '',
+              instCode,
               from,
               to,
               obs: zenRad,
-              stdDev: 5 * SEC_TO_RAD,
+              stdDev: zenResolved.sigma * SEC_TO_RAD,
+              sigmaSource: zenResolved.source,
               calc: { sideshot: true },
             })
           }
@@ -1211,13 +1564,21 @@ export const parseInput = (
         const to = parts[3]
         const dE = parseFloat(parts[4])
         const dN = parseFloat(parts[5])
-        const stdXY = parseFloat(parts[6])
+        const stdEraw = parseFloat(parts[6] || '')
+        const stdNraw = parseFloat(parts[7] || '')
+        const corrRaw = parseFloat(parts[8] || '')
 
         const inst = instrumentLibrary[instCode]
-        let sigma = stdXY
+        const defaultStd = inst?.gpsStd_xy && inst.gpsStd_xy > 0 ? inst.gpsStd_xy : 0.01
+        let sigmaE = Number.isNaN(stdEraw) ? defaultStd : stdEraw
+        let sigmaN = Number.isNaN(stdNraw) ? sigmaE : stdNraw
+        const corr = Number.isNaN(corrRaw) ? 0 : Math.max(-0.999, Math.min(0.999, corrRaw))
+
         if (inst && inst.gpsStd_xy > 0) {
-          sigma = Math.sqrt(stdXY * stdXY + inst.gpsStd_xy * inst.gpsStd_xy)
+          sigmaE = Math.sqrt(sigmaE * sigmaE + inst.gpsStd_xy * inst.gpsStd_xy)
+          sigmaN = Math.sqrt(sigmaN * sigmaN + inst.gpsStd_xy * inst.gpsStd_xy)
         }
+        const sigmaMean = Math.sqrt((sigmaE * sigmaE + sigmaN * sigmaN) / 2)
 
         const obs: GpsObservation = {
           id: obsId++,
@@ -1229,9 +1590,12 @@ export const parseInput = (
             dE: state.units === 'ft' ? dE / FT_PER_M : dE,
             dN: state.units === 'ft' ? dN / FT_PER_M : dN,
           },
-          stdDev: state.units === 'ft' ? sigma / FT_PER_M : sigma,
+          stdDev: state.units === 'ft' ? sigmaMean / FT_PER_M : sigmaMean,
+          stdDevE: state.units === 'ft' ? sigmaE / FT_PER_M : sigmaE,
+          stdDevN: state.units === 'ft' ? sigmaN / FT_PER_M : sigmaN,
+          corrEN: corr,
         }
-        observations.push(obs)
+        pushObservation(obs)
       } else if (code === 'L') {
         const instCode = parts[1]
         const from = parts[2]
@@ -1271,7 +1635,7 @@ export const parseInput = (
           lenKm,
           stdDev: sigma,
         }
-        observations.push(obs)
+        pushObservation(obs)
       } else {
         logs.push(`Unrecognized code "${code}" at line ${lineNum}, skipping`)
       }
@@ -1279,6 +1643,10 @@ export const parseInput = (
       const msg = e instanceof Error ? e.message : String(e)
       logs.push(`Error on line ${lineNum}: ${msg}`)
     }
+  }
+
+  if (traverseCtx.dirSetId) {
+    flushDirectionSet('EOF')
   }
 
   const unknowns = Object.keys(stations).filter((id) => {
@@ -1309,3 +1677,4 @@ export const parseInput = (
 
   return { stations, observations, instrumentLibrary, unknowns, parseState: { ...state }, logs }
 }
+

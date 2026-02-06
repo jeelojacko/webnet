@@ -1,0 +1,19 @@
+# WebNet TS Example - Verticals (V, .DELTA ON)
+# Height-only adjustment using dH observations. XY held fixed at UH.
+
+.3D
+.ORDER EN
+.DELTA ON
+
+I TS1 Trimble-S9 0.001 1.0 1.0 1.0 0.002 0.002
+.I TS1
+
+C C1 5000.000 5000.000 100.000 ! ! !
+C C2 5200.000 5015.000 100.500 ! ! !
+C C3 5105.000 5195.000 99.700 ! ! !
+C UH 5110.800 5092.400 100.050 ! ! *
+
+V C1-UH 0.198 0.003
+V C2-UH -0.307 0.003
+V C3-UH 0.506 0.003
+V C1-UH 0.204 0.003

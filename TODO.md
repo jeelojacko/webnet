@@ -13,6 +13,15 @@
 - [x] Standardized residuals (Qvv), redundancy numbers, chi-square test, per-type residual summaries
 - [x] Point precision (σN/σE/σH, ellipse azimuth, 95% toggle) + relative precision between unknown points
 - [x] Sync README/agents docs with current parser/engine/UI state
+- [ ] Adjustment report parity roadmap (Star*Net alignment):
+  - [x] Implement weighted control constraints from coordinate/elevation std errors (not only fixed/free) so control uncertainty participates in the solve
+  - [x] Wire and report normal-matrix conditioning diagnostics (condition estimate + warnings for weak geometry)
+  - [x] Upgrade outlier handling from fixed sigma thresholds to formal local tests with decision limits and MDB
+  - [x] Expand global model test output to include chi-square critical bounds and variance-factor acceptance interval
+  - [x] Add source line traceability (`sourceLine`) from parser through residual/report/export tables
+  - [x] Improve exported `.txt` report to be unit-correct, sorted by blunder likelihood, and include suspect ranking
+  - [x] Extend GNSS weighting from simplified isotropic XY to richer component/covariance models
+  - [x] Resolve fixity/free-marker semantics mismatch (`*` meaning) between docs/parser/TODO and standard Star*Net expectations
 - [ ] Star*Net format compatibility (Section 5.6):
   - [x] Elevation-only parsing (E records) with std errors/fixity and unit conversion
   - [~] Implement global inline options: .UNITS, .COORD 2D/3D, .ORDER NE/EN, .2D/.3D, .DELTA ON/OFF, .MAPMODE, .LWEIGHT, .NORMALIZE, .END (parses/logs complete; .LWEIGHT applied to leveling weights; header exposes coord/order/delta/map/normalize/.LWEIGHT/lon-sign defaults; remaining wiring pending per code type)
@@ -40,3 +49,16 @@
   - [x] Engine: honor 2D solve mode (drop height parameters; skip lev/zenith in 2D)
   - Fixtures/tests: add Star*Net-style fixtures for 2D/3D, TS+GPS+Leveling, traverses, direction sets, sideshots; Vitest cases for parsing/mode toggles and solves (bearing/zenith added)
   - Docs/UI: [x] Created `docs/USER_GUIDE.md` and `public/examples/star_net_demo.dat`; list supported Star*Net codes/options, UI hints, surface parser errors with line numbers
+
+- [ ] Total Station parity roadmap:
+  - [x] Phase 1: add TS parity harness baseline fixture + tests for stable TS-only outputs
+  - [x] Phase 1: add safer A-record interpretation with explicit `.AMODE` controls (AUTO/ANGLE/DIR)
+  - [x] Phase 2: full face-set reduction workflow (face1/face2 set means, reduced set sigmas, raw-vs-reduced diagnostics)
+  - [x] Phase 2: strengthen traverse/setup diagnostics (closure ratios, per-setup orientation quality, setup summaries)
+  - [x] Phase 3: expand TS reduction options (.MAPMODE detail, curvature/refraction controls, vertical reduction options)
+  - [x] Phase 3: post-adjusted sideshot coordinate/precision reporting section
+  - [x] Phase 4: sideshot explicit azimuth support (`SS ... AZ=...`) so post-adjust SS coordinates can be computed without target approximations
+  - [x] Phase 5: setup-based sideshot orientation (`SS ... HZ=/HA=/ANG=`) tied to current backsight, with propagated azimuth uncertainty
+  - [x] Phase 6: add TS example pack (one realistic `.dat` per TS observation family + one all-in-one combined file in `public/examples`)
+  - [x] Phase 7: add setup-level suspect diagnostics (`RMS|t|`, `Max|t|`, local-test fail counts, worst obs + source line) with ranked setup suspect tables in report/export
+  - [x] Phase 8: add direction-target repeatability diagnostics (per-target raw spread, face balance, local-test/MDB, ranked suspect score) with report/export tables

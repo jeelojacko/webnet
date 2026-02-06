@@ -24,7 +24,8 @@ describe('parseInput', () => {
       acc[o.type] = (acc[o.type] ?? 0) + 1
       return acc
     }, {})
-    expect(types).toMatchObject({ dist: 3, angle: 2, dir: 1, gps: 2, lev: 2 })
+    expect(types).toMatchObject({ dist: 3, angle: 3, gps: 2, lev: 2 })
+    expect(types.dir ?? 0).toBe(0)
   })
 
   it('applies .LWEIGHT fallback and converts ft leveling lengths', () => {
@@ -81,8 +82,20 @@ describe('parseInput', () => {
   it('accepts paired face directions when normalized', () => {
     const parsed = parseInput(readFileSync('tests/fixtures/direction_face_balanced.dat', 'utf-8'))
     const dirCount = parsed.observations.filter((o) => o.type === 'direction').length
-    expect(dirCount).toBe(2)
+    expect(dirCount).toBe(1)
+    const dir = parsed.observations.find((o) => o.type === 'direction')
+    expect(dir?.rawCount).toBe(2)
+    expect(dir?.rawFace1Count).toBe(1)
+    expect(dir?.rawFace2Count).toBe(1)
+    expect(parsed.logs.some((l) => l.includes('Direction set reduction'))).toBe(true)
     expect(parsed.logs.some((l) => l.includes('Mixed face'))).toBe(false)
+  })
+
+  it('reduces direction sets by target (unpaired targets remain separate)', () => {
+    const parsed = parseInput(readFileSync('tests/fixtures/direction_faceset.dat', 'utf-8'))
+    const dirs = parsed.observations.filter((o) => o.type === 'direction')
+    expect(dirs).toHaveLength(2)
+    expect(parsed.logs.some((l) => l.includes('paired targets=0'))).toBe(true)
   })
 
   it('rejects invalid sideshot occupy/backsight', () => {
@@ -103,5 +116,72 @@ describe('parseInput', () => {
     const parsed = parseInput(readFileSync('tests/fixtures/bm_slope.dat', 'utf-8'), {}, { deltaMode: 'slope' })
     const zen = parsed.observations.find((o) => o.type === 'zenith')
     expect(zen).toBeDefined()
+  })
+
+  it('parses GNSS component sigmas and correlation', () => {
+    const parsed = parseInput(
+      [
+        'I GPS1 GNSS 0 0 0 0 0 0 0.002',
+        'C A 0 0 0 !',
+        'C B 100 0 0',
+        'G GPS1 A B 100 0 0.010 0.020 0.3',
+      ].join('\n'),
+    )
+    const g = parsed.observations.find((o) => o.type === 'gps')
+    expect(g).toBeDefined()
+    expect(g?.stdDevE).toBeCloseTo(Math.sqrt(0.01 * 0.01 + 0.002 * 0.002), 8)
+    expect(g?.stdDevN).toBeCloseTo(Math.sqrt(0.02 * 0.02 + 0.002 * 0.002), 8)
+    expect(g?.corrEN).toBeCloseTo(0.3, 8)
+  })
+
+  it('parses phase-3 reduction directives', () => {
+    const parsed = parseInput(
+      [
+        '.MAPMODE ANGLECALC',
+        '.MAPSCALE 0.9996',
+        '.CURVREF ON',
+        '.REFRACTION 0.14',
+        '.VRED CURVREF',
+        'C A 0 0 0 !',
+        'C B 100 0 0',
+        'D A-B 100 0.01',
+      ].join('\n'),
+    )
+    expect(parsed.parseState.mapMode).toBe('anglecalc')
+    expect(parsed.parseState.mapScaleFactor).toBeCloseTo(0.9996, 8)
+    expect(parsed.parseState.applyCurvatureRefraction).toBe(true)
+    expect(parsed.parseState.refractionCoefficient).toBeCloseTo(0.14, 8)
+    expect(parsed.parseState.verticalReduction).toBe('curvref')
+  })
+
+  it('parses sideshot with explicit azimuth token', () => {
+    const parsed = parseInput(
+      [
+        'C OCC 0 0 0 !',
+        'C BS 0 100 0 !',
+        'TB OCC BS',
+        'SS OCC SH AZ=090-00-00.0 10.0 90.0 5.0 0.002',
+      ].join('\n'),
+    )
+    const ssDist = parsed.observations.find((o) => o.type === 'dist' && o.setId === 'SS')
+    expect(ssDist).toBeDefined()
+    expect(typeof ssDist?.calc).toBe('object')
+    expect((ssDist?.calc as { azimuthObs?: number })?.azimuthObs).toBeDefined()
+  })
+
+  it('parses sideshot with setup horizontal angle token', () => {
+    const parsed = parseInput(
+      [
+        'C OCC 0 0 0 !',
+        'C BS 0 100 0 !',
+        'TB OCC BS',
+        'SS OCC SH HZ=090-00-00.0 10.0 90.0 5.0 0.002',
+      ].join('\n'),
+    )
+    const ssDist = parsed.observations.find((o) => o.type === 'dist' && o.setId === 'SS')
+    expect(ssDist).toBeDefined()
+    expect(typeof ssDist?.calc).toBe('object')
+    expect((ssDist?.calc as { hzObs?: number })?.hzObs).toBeDefined()
+    expect((ssDist?.calc as { backsightId?: string })?.backsightId).toBe('BS')
   })
 })

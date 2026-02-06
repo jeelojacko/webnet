@@ -1,0 +1,34 @@
+# WebNet TS Example - Sideshots (SS)
+# Includes legacy SS, explicit AZ sideshot, and setup-angle HZ sideshot.
+
+.3D
+.ORDER EN
+.DELTA OFF
+.AMODE ANGLE
+
+I TS1 Trimble-S9 0.001 1.0 1.0 1.0 0.002 0.002
+.I TS1
+
+C C1 5000.000 5000.000 100.000 ! ! !
+C C2 5200.000 5015.000 100.500 ! ! !
+C U2 5162.000 5139.000 100.800
+C SS_A 5185.000 5164.000 101.300
+C SS_B 5185.200 5165.100 101.200
+C SS_C 5118.300 5162.700 100.400
+
+# Light network to adjust U2
+D C1-U2 213.430 0.004
+D C2-U2 129.221 0.004
+B C1-U2 049-30-12.5 3.0
+
+# Establish setup + backsight context for HZ/HA/ANG SS mode
+TB U2 C2
+
+# Legacy target-based azimuth (requires approximate target)
+SS U2 SS_A 34.820 089-20-31.2 0.010 8.0
+
+# Explicit absolute azimuth
+SS U2 SS_B AZ=040-41-26.4 34.816 089-20-29.8 2.0 0.010 8.0
+
+# Setup-relative horizontal angle from current backsight
+SS U2 SS_C HZ=237-39-10.5 52.104 089-41-12.0 2.0 0.012 10.0

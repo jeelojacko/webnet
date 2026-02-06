@@ -25,6 +25,12 @@ export interface Station {
   x: number;
   y: number;
   h: number;
+  sx?: number;
+  sy?: number;
+  sh?: number;
+  constraintX?: number;
+  constraintY?: number;
+  constraintH?: number;
   fixed: boolean;
   fixedX?: boolean;
   fixedY?: boolean;
@@ -42,6 +48,7 @@ export type StationMap = Record<StationId, Station>;
 
 interface ObservationBase {
   id: number;
+  sourceLine?: number;
   type: 'dist' | 'angle' | 'direction' | 'dir' | 'gps' | 'lev' | 'bearing' | 'zenith';
   instCode: string;
   stdDev: number;
@@ -51,6 +58,20 @@ interface ObservationBase {
   stdRes?: number;
   stdResComponents?: { tE: number; tN: number };
   redundancy?: number | { rE: number; rN: number };
+  localTest?: { critical: number; pass: boolean };
+  localTestComponents?: { passE: boolean; passN: boolean };
+  mdb?: number;
+  mdbComponents?: { mE: number; mN: number };
+}
+
+export interface SideshotCalcMeta {
+  sideshot: boolean;
+  azimuthObs?: number;
+  azimuthStdDev?: number;
+  hzObs?: number;
+  hzStdDev?: number;
+  backsightId?: StationId;
+  azimuthSource?: 'explicit' | 'setup' | 'target';
 }
 
 export interface DistanceObservation extends ObservationBase {
@@ -63,7 +84,7 @@ export interface DistanceObservation extends ObservationBase {
   hi?: number;
   ht?: number;
   mode?: 'slope' | 'horiz';
-  calc?: number | { sideshot: boolean };
+  calc?: number | SideshotCalcMeta;
   residual?: number;
   stdRes?: number;
 }
@@ -75,7 +96,7 @@ export interface AngleObservation extends ObservationBase {
   from: StationId;
   to: StationId;
   obs: number; // radians
-  calc?: number | { sideshot: boolean };
+  calc?: number | SideshotCalcMeta;
   residual?: number;
   stdRes?: number;
 }
@@ -86,6 +107,11 @@ export interface DirectionObservation extends ObservationBase {
   at: StationId;
   to: StationId;
   obs: number; // radians
+  rawCount?: number;
+  rawFace1Count?: number;
+  rawFace2Count?: number;
+  rawSpread?: number; // radians, around reduced mean
+  reducedSigma?: number; // radians
   calc?: number;
   residual?: number;
   stdRes?: number;
@@ -107,6 +133,9 @@ export interface GpsObservation extends ObservationBase {
   from: StationId;
   to: StationId;
   obs: { dE: number; dN: number };
+  stdDevE?: number;
+  stdDevN?: number;
+  corrEN?: number;
   calc?: { dE: number; dN: number };
   residual?: { vE: number; vN: number };
   stdRes?: number;
@@ -138,7 +167,7 @@ export interface BearingObservation extends ObservationBase {
   from: StationId;
   to: StationId;
   obs: number; // radians
-  calc?: number | { sideshot: boolean };
+  calc?: number | SideshotCalcMeta;
   residual?: number;
   stdRes?: number;
 }
@@ -150,7 +179,7 @@ export interface ZenithObservation extends ObservationBase {
   obs: number; // radians
   hi?: number;
   ht?: number;
-  calc?: number | { sideshot: boolean };
+  calc?: number | SideshotCalcMeta;
   residual?: number;
   stdRes?: number;
 }
@@ -174,6 +203,8 @@ export type OrderMode = 'NE' | 'EN';
 export type DeltaMode = 'slope' | 'horiz'; // slope+zenith vs horiz+deltaH
 export type MapMode = 'off' | 'on' | 'anglecalc';
 export type LonSign = 'west-positive' | 'west-negative';
+export type AngleMode = 'auto' | 'angle' | 'dir';
+export type VerticalReductionMode = 'none' | 'curvref';
 
 export interface ParseOptions {
   units: UnitsMode;
@@ -181,7 +212,11 @@ export interface ParseOptions {
   order: OrderMode;
   deltaMode: DeltaMode;
   mapMode: MapMode;
+  mapScaleFactor?: number;
   normalize: boolean;
+  applyCurvatureRefraction?: boolean;
+  refractionCoefficient?: number;
+  verticalReduction?: VerticalReductionMode;
   levelWeight?: number;
   originLatDeg?: number;
   originLonDeg?: number;
@@ -191,6 +226,7 @@ export interface ParseOptions {
   applyCentering?: boolean;
   addCenteringToExplicit?: boolean;
   debug?: boolean;
+  angleMode?: AngleMode;
 }
 
 export interface AdjustmentResult {
@@ -202,7 +238,20 @@ export interface AdjustmentResult {
   logs: string[];
   seuw: number;
   dof: number;
-  chiSquare?: { T: number; dof: number; p: number; pass95: boolean };
+  condition?: { estimate: number; threshold: number; flagged: boolean };
+  controlConstraints?: { count: number; x: number; y: number; h: number };
+  chiSquare?: {
+    T: number;
+    dof: number;
+    p: number;
+    pass95: boolean;
+    alpha: number;
+    lower: number;
+    upper: number;
+    varianceFactor: number;
+    varianceFactorLower: number;
+    varianceFactorUpper: number;
+  };
   typeSummary?: Record<
     string,
     {
@@ -223,5 +272,86 @@ export interface AdjustmentResult {
     sigmaDist?: number;
     sigmaAz?: number;
     ellipse?: StationErrorEllipse;
+  }[];
+  directionSetDiagnostics?: {
+    setId: string;
+    occupy: StationId;
+    rawCount: number;
+    reducedCount: number;
+    face1Count: number;
+    face2Count: number;
+    pairedTargets: number;
+    orientationDeg?: number;
+    residualMeanArcSec?: number;
+    residualRmsArcSec?: number;
+    residualMaxArcSec?: number;
+    orientationSeArcSec?: number;
+  }[];
+  directionTargetDiagnostics?: {
+    setId: string;
+    occupy: StationId;
+    target: StationId;
+    sourceLine?: number;
+    rawCount: number;
+    face1Count: number;
+    face2Count: number;
+    faceBalanced: boolean;
+    rawSpreadArcSec?: number;
+    reducedSigmaArcSec?: number;
+    residualArcSec?: number;
+    stdRes?: number;
+    localPass?: boolean;
+    mdbArcSec?: number;
+    suspectScore: number;
+  }[];
+  setupDiagnostics?: {
+    station: StationId;
+    directionSetCount: number;
+    directionObsCount: number;
+    angleObsCount: number;
+    distanceObsCount: number;
+    bearingObsCount: number;
+    zenithObsCount: number;
+    levelingObsCount: number;
+    gpsObsCount: number;
+    traverseDistance: number;
+    orientationRmsArcSec?: number;
+    orientationSeArcSec?: number;
+    stdResCount: number;
+    rmsStdRes?: number;
+    maxStdRes?: number;
+    localFailCount: number;
+    worstObsType?: string;
+    worstObsStations?: string;
+    worstObsLine?: number;
+  }[];
+  traverseDiagnostics?: {
+    closureCount: number;
+    misclosureE: number;
+    misclosureN: number;
+    misclosureMag: number;
+    totalTraverseDistance: number;
+    closureRatio?: number;
+  };
+  sideshots?: {
+    id: string;
+    sourceLine?: number;
+    from: StationId;
+    to: StationId;
+    mode: 'slope' | 'horiz';
+    hasAzimuth: boolean;
+  azimuth?: number;
+  azimuthSource?: 'explicit' | 'setup' | 'target';
+  sigmaAz?: number;
+    distance: number;
+    horizDistance: number;
+    deltaH?: number;
+    easting?: number;
+    northing?: number;
+    height?: number;
+    sigmaE?: number;
+    sigmaN?: number;
+    sigmaH?: number;
+    note?: string;
   }[];
 }
