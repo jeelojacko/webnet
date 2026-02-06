@@ -308,12 +308,61 @@ const App: React.FC = () => {
     lines.push('')
     if (res.typeSummary && Object.keys(res.typeSummary).length > 0) {
       lines.push('--- Per-Type Summary ---')
-      lines.push('Type\tCount\tRMS\tMaxAbs\tMaxStdRes\t>3σ\t>4σ\tUnit')
-      Object.entries(res.typeSummary).forEach(([type, s]) => {
+      const summaryRows = Object.entries(res.typeSummary).map(([type, s]) => ({
+        type,
+        count: s.count.toString(),
+        rms: s.rms.toFixed(4),
+        maxAbs: s.maxAbs.toFixed(4),
+        maxStdRes: s.maxStdRes.toFixed(3),
+        over3: s.over3.toString(),
+        over4: s.over4.toString(),
+        unit: s.unit,
+      }))
+      const header = {
+        type: 'Type',
+        count: 'Count',
+        rms: 'RMS',
+        maxAbs: 'MaxAbs',
+        maxStdRes: 'MaxStdRes',
+        over3: '>3σ',
+        over4: '>4σ',
+        unit: 'Unit',
+      }
+      const widths = {
+        type: Math.max(header.type.length, ...summaryRows.map((r) => r.type.length)),
+        count: Math.max(header.count.length, ...summaryRows.map((r) => r.count.length)),
+        rms: Math.max(header.rms.length, ...summaryRows.map((r) => r.rms.length)),
+        maxAbs: Math.max(header.maxAbs.length, ...summaryRows.map((r) => r.maxAbs.length)),
+        maxStdRes: Math.max(header.maxStdRes.length, ...summaryRows.map((r) => r.maxStdRes.length)),
+        over3: Math.max(header.over3.length, ...summaryRows.map((r) => r.over3.length)),
+        over4: Math.max(header.over4.length, ...summaryRows.map((r) => r.over4.length)),
+        unit: Math.max(header.unit.length, ...summaryRows.map((r) => r.unit.length)),
+      }
+      const pad = (value: string, size: number) => value.padEnd(size, ' ')
+      lines.push(
+        [
+          pad(header.type, widths.type),
+          pad(header.count, widths.count),
+          pad(header.rms, widths.rms),
+          pad(header.maxAbs, widths.maxAbs),
+          pad(header.maxStdRes, widths.maxStdRes),
+          pad(header.over3, widths.over3),
+          pad(header.over4, widths.over4),
+          pad(header.unit, widths.unit),
+        ].join('  '),
+      )
+      summaryRows.forEach((row) => {
         lines.push(
-          `${type}\t${s.count}\t${s.rms.toFixed(4)}\t${s.maxAbs.toFixed(4)}\t${s.maxStdRes.toFixed(
-            3,
-          )}\t${s.over3}\t${s.over4}\t${s.unit}`,
+          [
+            pad(row.type, widths.type),
+            pad(row.count, widths.count),
+            pad(row.rms, widths.rms),
+            pad(row.maxAbs, widths.maxAbs),
+            pad(row.maxStdRes, widths.maxStdRes),
+            pad(row.over3, widths.over3),
+            pad(row.over4, widths.over4),
+            pad(row.unit, widths.unit),
+          ].join('  '),
         )
       })
       lines.push('')
