@@ -13,11 +13,13 @@ import {
   Play,
   RefreshCw,
   Settings,
+  Download,
 } from 'lucide-react'
 import InputPane from './components/InputPane'
 import ReportView from './components/ReportView'
 import MapView from './components/MapView'
 import { LSAEngine } from './engine/adjust'
+import { RAD_TO_DEG, radToDmsStr } from './engine/angles'
 import type {
   AdjustmentResult,
   InstrumentLibrary,
@@ -152,6 +154,7 @@ type TabKey = 'report' | 'map'
 const App: React.FC = () => {
   const [input, setInput] = useState<string>(DEFAULT_INPUT)
   const [result, setResult] = useState<AdjustmentResult | null>(null)
+  const [lastRunInput, setLastRunInput] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<TabKey>('report')
   const [settings, setSettings] = useState<SettingsState>({ maxIterations: 10, units: 'm' })
   const [parseSettings, setParseSettings] = useState<ParseSettings>({
@@ -279,12 +282,137 @@ const App: React.FC = () => {
     isResizingRef.current = true
   }
 
-  const handleDownload = () => {
-    const blob = new Blob([input], { type: 'text/plain' })
+  const buildResultsText = (res: AdjustmentResult): string => {
+    const lines: string[] = []
+    const now = new Date()
+    lines.push(`# WebNet Adjustment Results`)
+    lines.push(`# Generated: ${now.toLocaleString()}`)
+    lines.push('')
+    lines.push(`Status: ${res.converged ? 'CONVERGED' : 'NOT CONVERGED'}`)
+    lines.push(`Iterations: ${res.iterations}`)
+    lines.push(`SEUW: ${res.seuw.toFixed(4)} (DOF: ${res.dof})`)
+    lines.push('')
+    lines.push('--- Adjusted Coordinates ---')
+    lines.push('ID\tNorthing\tEasting\tHeight\tType')
+    Object.entries(res.stations).forEach(([id, st]) => {
+      const type = st.fixed ? 'FIXED' : 'ADJ'
+      lines.push(`${id}\t${st.y.toFixed(4)}\t${st.x.toFixed(4)}\t${st.h.toFixed(4)}\t${type}`)
+    })
+    lines.push('')
+    lines.push('--- Observations & Residuals ---')
+    lines.push('Type\tStations\tObs\tCalc\tResidual\tStdRes')
+    res.observations.forEach((obs) => {
+      let stations = ''
+      let obsStr = ''
+      let calcStr = ''
+      let resStr = ''
+      if (obs.type === 'angle') {
+        stations = `${obs.at}-${obs.from}-${obs.to}`
+        obsStr = radToDmsStr(obs.obs)
+        calcStr = obs.calc != null ? radToDmsStr(obs.calc as number) : '-'
+        resStr =
+          obs.residual != null
+            ? `${((obs.residual as number) * RAD_TO_DEG * 3600).toFixed(2)}"`
+            : '-'
+      } else if (obs.type === 'direction') {
+        stations = `${obs.at}-${obs.to} (${obs.setId})`
+        obsStr = radToDmsStr(obs.obs)
+        calcStr = obs.calc != null ? radToDmsStr(obs.calc as number) : '-'
+        resStr =
+          obs.residual != null
+            ? `${((obs.residual as number) * RAD_TO_DEG * 3600).toFixed(2)}"`
+            : '-'
+      } else if (obs.type === 'dir') {
+        stations = `${obs.from}-${obs.to}`
+        obsStr = radToDmsStr(obs.obs)
+        calcStr = obs.calc != null ? radToDmsStr(obs.calc as number) : '-'
+        resStr =
+          obs.residual != null
+            ? `${((obs.residual as number) * RAD_TO_DEG * 3600).toFixed(2)}"`
+            : '-'
+      } else if (obs.type === 'dist') {
+        stations = `${obs.from}-${obs.to}`
+        obsStr = obs.obs.toFixed(4)
+        calcStr = obs.calc != null ? (obs.calc as number).toFixed(4) : '-'
+        resStr = obs.residual != null ? (obs.residual as number).toFixed(4) : '-'
+      } else if (obs.type === 'bearing') {
+        stations = `${obs.from}-${obs.to}`
+        obsStr = radToDmsStr(obs.obs)
+        calcStr = obs.calc != null ? radToDmsStr(obs.calc as number) : '-'
+        resStr =
+          obs.residual != null
+            ? `${((obs.residual as number) * RAD_TO_DEG * 3600).toFixed(2)}"`
+            : '-'
+      } else if (obs.type === 'zenith') {
+        stations = `${obs.from}-${obs.to}`
+        obsStr = radToDmsStr(obs.obs)
+        calcStr = obs.calc != null ? radToDmsStr(obs.calc as number) : '-'
+        resStr =
+          obs.residual != null
+            ? `${((obs.residual as number) * RAD_TO_DEG * 3600).toFixed(2)}"`
+            : '-'
+      } else if (obs.type === 'gps') {
+        stations = `${obs.from}-${obs.to}`
+        obsStr = `dE=${obs.obs.dE.toFixed(3)}, dN=${obs.obs.dN.toFixed(3)}`
+        calcStr =
+          obs.calc != null
+            ? `dE=${(obs.calc as { dE: number }).dE.toFixed(3)}, dN=${(
+              obs.calc as { dN: number; dE: number }
+            ).dN.toFixed(3)}`
+            : '-'
+        resStr =
+          obs.residual != null
+            ? `vE=${(obs.residual as { vE: number }).vE.toFixed(3)}, vN=${(
+              obs.residual as { vN: number; vE: number }
+            ).vN.toFixed(3)}`
+            : '-'
+      } else if (obs.type === 'lev') {
+        stations = `${obs.from}-${obs.to}`
+        obsStr = obs.obs.toFixed(4)
+        calcStr = obs.calc != null ? (obs.calc as number).toFixed(4) : '-'
+        resStr = obs.residual != null ? (obs.residual as number).toFixed(4) : '-'
+      }
+
+      const stdRes = obs.stdRes != null ? obs.stdRes.toFixed(3) : '-'
+      lines.push(`${obs.type}\t${stations}\t${obsStr}\t${calcStr}\t${resStr}\t${stdRes}`)
+    })
+    lines.push('')
+    lines.push('--- Processing Log ---')
+    res.logs.forEach((l) => lines.push(l))
+
+    return lines.join('\n')
+  }
+
+  const handleExportResults = async () => {
+    if (!result) return
+    const text = buildResultsText(result)
+    const suggestedName = `webnet-results-${new Date().toISOString().slice(0, 10)}.txt`
+    const picker = (window as any).showSaveFilePicker
+    if (picker) {
+      try {
+        const handle = await picker({
+          suggestedName,
+          types: [
+            {
+              description: 'Text Files',
+              accept: { 'text/plain': ['.txt'] },
+            },
+          ],
+        })
+        const writable = await handle.createWritable()
+        await writable.write(text)
+        await writable.close()
+        return
+      } catch (err) {
+        if ((err as Error)?.name === 'AbortError') return
+      }
+    }
+
+    const blob = new Blob([text], { type: 'text/plain' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = 'webnet.dat'
+    a.download = suggestedName
     a.click()
     URL.revokeObjectURL(url)
   }
@@ -306,6 +434,7 @@ const App: React.FC = () => {
   }
 
   const handleRun = () => {
+    setLastRunInput(input)
     const engine = new LSAEngine({
       input,
       maxIterations: settings.maxIterations,
@@ -358,6 +487,13 @@ const App: React.FC = () => {
   }
 
   const resetOverrides = () => setOverrides({})
+
+  const handleResetToLastRun = () => {
+    if (lastRunInput != null) setInput(lastRunInput)
+    setResult(null)
+    setExcludedIds(new Set())
+    setOverrides({})
+  }
 
   return (
     <div className="fixed inset-0 flex flex-col bg-slate-900 text-slate-100 font-sans overflow-hidden">
@@ -562,10 +698,14 @@ const App: React.FC = () => {
             <FileText size={18} />
           </button>
           <button
-            onClick={handleDownload}
-            className="p-2 bg-slate-700 hover:bg-slate-600 rounded text-slate-300 transition-colors"
+            onClick={handleExportResults}
+            disabled={!result}
+            title={result ? 'Export Results' : 'Run adjustment to export results'}
+            className={`p-2 rounded text-slate-300 transition-colors ${
+              result ? 'bg-slate-700 hover:bg-slate-600' : 'bg-slate-800 opacity-50 cursor-not-allowed'
+            }`}
           >
-            <RefreshCw size={18} className="rotate-90" />
+            <Download size={18} />
           </button>
           <button
             onClick={handleRun}
@@ -574,7 +714,7 @@ const App: React.FC = () => {
             <Play size={16} /> <span>Adjust</span>
           </button>
           <button
-            onClick={() => setInput(DEFAULT_INPUT)}
+            onClick={handleResetToLastRun}
             className="p-2 bg-slate-700 hover:bg-slate-600 rounded text-slate-300 transition-colors"
           >
             <RefreshCw size={18} />

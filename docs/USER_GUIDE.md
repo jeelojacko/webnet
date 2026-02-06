@@ -7,6 +7,8 @@ WebNet is a browser-based least-squares adjustment network similar to Star*Net. 
 1.  **Launch the App**: Open the WebNet application in your browser.
 2.  **Input Data**: You can either paste your data directly into the editor on the left or use the "Open" button to load a `.dat` file.
 3.  **Run Adjustment**: Click the "Run Adjustment" button (play icon) to process the network.
+4.  **Export Results**: Use the export button (download icon) to save a text report of the results.
+5.  **Reset**: The refresh button restores the input to its last run state and clears exclusions/overrides.
 4.  **View Results**:
     -   **Report Tab**: detailed adjustment report, coordinates, and residuals.
     -   **Map Tab**: Visual representation of the network with error ellipses.

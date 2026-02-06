@@ -31,5 +31,5 @@ npm run dev
 - Engine: reports per-direction-set residual summary (mean/RMS/max in arcseconds) in the processing log.
 - Engine: reports per-direction-set prefit summary (mean/RMS/max in arcseconds) based on initial coordinates.
 - Defaults: coord=3D, order=EN, lon sign=west-negative, delta mode slope (zenith), map mode off, normalize on.
-- UX: .dat upload/download, exclusion toggles with re-run, editable obs values/weights, true unit conversion (ft/m), settings dropdown, map/ellipse view.
+- UX: .dat upload, export results as text, refresh to last-run input, exclusion toggles with re-run, editable obs values/weights, true unit conversion (ft/m), settings dropdown, map/ellipse view.
 - Performance guards added (conditioning/residual warnings); see TODO.md for any future worker offload ideas.

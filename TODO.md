@@ -9,6 +9,7 @@
 - [x] Editable observation tables (inline edits to values/weights) and true computational unit conversion
 - [x] Performance hardening: add conditioning guard and residual spike warnings; consider Web Worker offload (future)
 - [x] Consolidate toolbar settings into a dropdown menu
+- [x] Export adjustment results as text + refresh-to-last-run input
 - [x] Sync README/agents docs with current parser/engine/UI state
 - [ ] Star*Net format compatibility (Section 5.6):
   - [x] Elevation-only parsing (E records) with std errors/fixity and unit conversion
