@@ -304,6 +304,24 @@ export interface AdjustmentResult {
     mdbArcSec?: number;
     suspectScore: number;
   }[];
+  directionRepeatabilityDiagnostics?: {
+    occupy: StationId;
+    target: StationId;
+    setCount: number;
+    localFailCount: number;
+    faceUnbalancedSets: number;
+    residualMeanArcSec?: number;
+    residualRmsArcSec?: number;
+    residualRangeArcSec?: number;
+    residualMaxArcSec?: number;
+    stdResRms?: number;
+    maxStdRes?: number;
+    meanRawSpreadArcSec?: number;
+    maxRawSpreadArcSec?: number;
+    worstSetId?: string;
+    worstLine?: number;
+    suspectScore: number;
+  }[];
   setupDiagnostics?: {
     station: StationId;
     directionSetCount: number;

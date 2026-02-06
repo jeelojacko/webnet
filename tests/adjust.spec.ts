@@ -118,6 +118,46 @@ describe('LSAEngine', () => {
     expect((pRow?.suspectScore ?? 0) >= (qRow?.suspectScore ?? 0)).toBe(true)
   })
 
+  it('aggregates multi-set direction repeatability trends by occupy-target', () => {
+    const input = [
+      '.2D',
+      'C O 0 0 0 !',
+      'C BS 0 100 0 !',
+      'C P 100 0 0',
+      'C Q 120 40 0',
+      'D O-P 100.000 0.003',
+      'D O-Q 126.491 0.003',
+      'D BS-P 141.421 0.003',
+      'D BS-Q 134.164 0.003',
+      'DB O BS',
+      'DN P 090-00-00.0 1.0',
+      'DN P 270-00-01.0 1.0',
+      'DN Q 108-26-06.0 1.0',
+      'DN Q 288-26-06.5 1.0',
+      'DE',
+      'DB O BS',
+      'DN P 090-00-12.0 1.0',
+      'DN P 270-00-18.0 1.0',
+      'DN Q 108-26-06.1 1.0',
+      'DN Q 288-26-06.3 1.0',
+      'DE',
+    ].join('\n')
+
+    const engine = new LSAEngine({ input, maxIterations: 12 })
+    const result = engine.solve()
+    const rows = result.directionRepeatabilityDiagnostics ?? []
+    expect(rows.length).toBeGreaterThanOrEqual(2)
+
+    const pTrend = rows.find((r) => r.occupy === 'O' && r.target === 'P')
+    const qTrend = rows.find((r) => r.occupy === 'O' && r.target === 'Q')
+    expect(pTrend).toBeDefined()
+    expect(qTrend).toBeDefined()
+    expect(pTrend?.setCount).toBe(2)
+    expect(qTrend?.setCount).toBe(2)
+    expect((pTrend?.maxRawSpreadArcSec ?? 0) >= (qTrend?.maxRawSpreadArcSec ?? 0)).toBe(true)
+    expect((pTrend?.suspectScore ?? 0) >= (qTrend?.suspectScore ?? 0)).toBe(true)
+  })
+
   it('includes setup-level residual quality diagnostics for blunder screening', () => {
     const input = [
       '.AMODE ANGLE',

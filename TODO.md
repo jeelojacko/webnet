@@ -62,3 +62,4 @@
   - [x] Phase 6: add TS example pack (one realistic `.dat` per TS observation family + one all-in-one combined file in `public/examples`)
   - [x] Phase 7: add setup-level suspect diagnostics (`RMS|t|`, `Max|t|`, local-test fail counts, worst obs + source line) with ranked setup suspect tables in report/export
   - [x] Phase 8: add direction-target repeatability diagnostics (per-target raw spread, face balance, local-test/MDB, ranked suspect score) with report/export tables
+  - [x] Phase 9: add multi-set direction repeatability trends by occupy-target (cross-set range/RMS, face-balance counts, suspect ranking) in report/export

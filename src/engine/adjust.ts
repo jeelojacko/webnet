@@ -179,6 +179,7 @@ export class LSAEngine {
   private relativePrecision?: AdjustmentResult['relativePrecision'];
   private directionSetDiagnostics?: AdjustmentResult['directionSetDiagnostics'];
   private directionTargetDiagnostics?: AdjustmentResult['directionTargetDiagnostics'];
+  private directionRepeatabilityDiagnostics?: AdjustmentResult['directionRepeatabilityDiagnostics'];
   private setupDiagnostics?: AdjustmentResult['setupDiagnostics'];
   private traverseDiagnostics?: AdjustmentResult['traverseDiagnostics'];
   private sideshots?: AdjustmentResult['sideshots'];
@@ -1736,6 +1737,7 @@ export class LSAEngine {
     this.typeSummary = undefined;
     this.directionSetDiagnostics = undefined;
     this.directionTargetDiagnostics = undefined;
+    this.directionRepeatabilityDiagnostics = undefined;
     this.setupDiagnostics = undefined;
     this.traverseDiagnostics = undefined;
 
@@ -2420,6 +2422,156 @@ export class LSAEngine {
             `  ${d.setId} ${d.occupy}->${d.target}: raw=${d.rawCount}, F1=${d.face1Count}, F2=${d.face2Count}, spread=${d.rawSpreadArcSec != null ? `${d.rawSpreadArcSec.toFixed(2)}"` : '-'}, stdRes=${d.stdRes != null ? d.stdRes.toFixed(2) : '-'}, local=${d.localPass == null ? '-' : d.localPass ? 'PASS' : 'FAIL'}, score=${d.suspectScore.toFixed(1)}`,
           );
         });
+
+        const repeatMap = new Map<
+          string,
+          {
+            occupy: StationId;
+            target: StationId;
+            setCount: number;
+            localFailCount: number;
+            faceUnbalancedSets: number;
+            resCount: number;
+            resSum: number;
+            resSumSq: number;
+            resMin: number;
+            resMax: number;
+            resMaxAbs: number;
+            stdCount: number;
+            stdSumSq: number;
+            maxStdRes: number;
+            spreadCount: number;
+            spreadSum: number;
+            maxSpread: number;
+            worstSetId?: string;
+            worstLine?: number;
+            worstMetric: number;
+          }
+        >();
+        directionTargets.forEach((d) => {
+          const key = `${d.occupy}>>${d.target}`;
+          const existing = repeatMap.get(key);
+          const entry =
+            existing ??
+            {
+              occupy: d.occupy,
+              target: d.target,
+              setCount: 0,
+              localFailCount: 0,
+              faceUnbalancedSets: 0,
+              resCount: 0,
+              resSum: 0,
+              resSumSq: 0,
+              resMin: Number.POSITIVE_INFINITY,
+              resMax: Number.NEGATIVE_INFINITY,
+              resMaxAbs: 0,
+              stdCount: 0,
+              stdSumSq: 0,
+              maxStdRes: 0,
+              spreadCount: 0,
+              spreadSum: 0,
+              maxSpread: 0,
+              worstSetId: undefined,
+              worstLine: undefined,
+              worstMetric: Number.NEGATIVE_INFINITY,
+            };
+          entry.setCount += 1;
+          if (d.localPass === false) entry.localFailCount += 1;
+          if (!d.faceBalanced) entry.faceUnbalancedSets += 1;
+          if (d.residualArcSec != null && Number.isFinite(d.residualArcSec)) {
+            const absRes = Math.abs(d.residualArcSec);
+            entry.resCount += 1;
+            entry.resSum += d.residualArcSec;
+            entry.resSumSq += d.residualArcSec * d.residualArcSec;
+            entry.resMin = Math.min(entry.resMin, d.residualArcSec);
+            entry.resMax = Math.max(entry.resMax, d.residualArcSec);
+            entry.resMaxAbs = Math.max(entry.resMaxAbs, absRes);
+          }
+          if (d.stdRes != null && Number.isFinite(d.stdRes)) {
+            entry.stdCount += 1;
+            entry.stdSumSq += d.stdRes * d.stdRes;
+            entry.maxStdRes = Math.max(entry.maxStdRes, d.stdRes);
+          }
+          if (d.rawSpreadArcSec != null && Number.isFinite(d.rawSpreadArcSec)) {
+            entry.spreadCount += 1;
+            entry.spreadSum += d.rawSpreadArcSec;
+            entry.maxSpread = Math.max(entry.maxSpread, d.rawSpreadArcSec);
+          }
+          const worstMetric = (d.stdRes ?? 0) * 100 + (d.rawSpreadArcSec ?? 0);
+          if (worstMetric > entry.worstMetric) {
+            entry.worstMetric = worstMetric;
+            entry.worstSetId = d.setId;
+            entry.worstLine = d.sourceLine;
+          }
+          repeatMap.set(key, entry);
+        });
+
+        const repeatRows = Array.from(repeatMap.values())
+          .map((entry) => {
+            const residualMeanArcSec = entry.resCount > 0 ? entry.resSum / entry.resCount : undefined;
+            const residualRmsArcSec =
+              entry.resCount > 0 ? Math.sqrt(entry.resSumSq / entry.resCount) : undefined;
+            const residualRangeArcSec =
+              entry.resCount > 0 ? Math.abs(entry.resMax - entry.resMin) : undefined;
+            const stdResRms = entry.stdCount > 0 ? Math.sqrt(entry.stdSumSq / entry.stdCount) : undefined;
+            const meanRawSpreadArcSec =
+              entry.spreadCount > 0 ? entry.spreadSum / entry.spreadCount : undefined;
+            const maxRawSpreadArcSec = entry.spreadCount > 0 ? entry.maxSpread : undefined;
+
+            let suspectScore = 0;
+            suspectScore += entry.localFailCount * 80;
+            suspectScore += entry.maxStdRes * 12;
+            suspectScore += Math.min((maxRawSpreadArcSec ?? 0) / 2, 45);
+            suspectScore += entry.faceUnbalancedSets * 8;
+            if (entry.setCount > 1 && residualRangeArcSec != null) {
+              suspectScore += Math.min(residualRangeArcSec / 2, 35);
+            }
+            if (entry.setCount <= 1) suspectScore -= 5;
+
+            return {
+              occupy: entry.occupy,
+              target: entry.target,
+              setCount: entry.setCount,
+              localFailCount: entry.localFailCount,
+              faceUnbalancedSets: entry.faceUnbalancedSets,
+              residualMeanArcSec,
+              residualRmsArcSec,
+              residualRangeArcSec,
+              residualMaxArcSec: entry.resCount > 0 ? entry.resMaxAbs : undefined,
+              stdResRms,
+              maxStdRes: entry.stdCount > 0 ? entry.maxStdRes : undefined,
+              meanRawSpreadArcSec,
+              maxRawSpreadArcSec,
+              worstSetId: entry.worstSetId,
+              worstLine: entry.worstLine,
+              suspectScore,
+            };
+          })
+          .sort((a, b) => {
+            if (b.suspectScore !== a.suspectScore) return b.suspectScore - a.suspectScore;
+            const bLocal = b.localFailCount;
+            const aLocal = a.localFailCount;
+            if (bLocal !== aLocal) return bLocal - aLocal;
+            const bStd = b.maxStdRes ?? 0;
+            const aStd = a.maxStdRes ?? 0;
+            if (bStd !== aStd) return bStd - aStd;
+            const bSpread = b.maxRawSpreadArcSec ?? 0;
+            const aSpread = a.maxRawSpreadArcSec ?? 0;
+            if (bSpread !== aSpread) return bSpread - aSpread;
+            const stnCmp = a.occupy.localeCompare(b.occupy);
+            if (stnCmp !== 0) return stnCmp;
+            return a.target.localeCompare(b.target);
+          });
+
+        if (repeatRows.length > 0) {
+          this.directionRepeatabilityDiagnostics = repeatRows;
+          this.logs.push('Direction repeatability by occupy-target (top suspects):');
+          repeatRows.slice(0, 8).forEach((d) => {
+            this.logs.push(
+              `  ${d.occupy}->${d.target}: sets=${d.setCount}, range=${d.residualRangeArcSec != null ? `${d.residualRangeArcSec.toFixed(2)}"` : '-'}, max|t|=${d.maxStdRes != null ? d.maxStdRes.toFixed(2) : '-'}, spreadMax=${d.maxRawSpreadArcSec != null ? `${d.maxRawSpreadArcSec.toFixed(2)}"` : '-'}, localFail=${d.localFailCount}, score=${d.suspectScore.toFixed(1)}`,
+            );
+          });
+        }
       }
     }
 
@@ -2667,6 +2819,7 @@ export class LSAEngine {
       relativePrecision: this.relativePrecision,
       directionSetDiagnostics: this.directionSetDiagnostics,
       directionTargetDiagnostics: this.directionTargetDiagnostics,
+      directionRepeatabilityDiagnostics: this.directionRepeatabilityDiagnostics,
       setupDiagnostics: this.setupDiagnostics,
       traverseDiagnostics: this.traverseDiagnostics,
       sideshots: this.sideshots,
