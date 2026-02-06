@@ -300,7 +300,8 @@ const App: React.FC = () => {
     })
     lines.push('')
     lines.push('--- Observations & Residuals ---')
-    lines.push('Type\tStations\tObs\tCalc\tResidual\tStdRes')
+    const rows: { type: string; stations: string; obs: string; calc: string; residual: string; stdRes: string }[] =
+      []
     res.observations.forEach((obs) => {
       let stations = ''
       let obsStr = ''
@@ -357,14 +358,14 @@ const App: React.FC = () => {
         calcStr =
           obs.calc != null
             ? `dE=${(obs.calc as { dE: number }).dE.toFixed(3)}, dN=${(
-              obs.calc as { dN: number; dE: number }
-            ).dN.toFixed(3)}`
+                obs.calc as { dN: number; dE: number }
+              ).dN.toFixed(3)}`
             : '-'
         resStr =
           obs.residual != null
             ? `vE=${(obs.residual as { vE: number }).vE.toFixed(3)}, vN=${(
-              obs.residual as { vN: number; vE: number }
-            ).vN.toFixed(3)}`
+                obs.residual as { vN: number; vE: number }
+              ).vN.toFixed(3)}`
             : '-'
       } else if (obs.type === 'lev') {
         stations = `${obs.from}-${obs.to}`
@@ -373,8 +374,54 @@ const App: React.FC = () => {
         resStr = obs.residual != null ? (obs.residual as number).toFixed(4) : '-'
       }
 
-      const stdRes = obs.stdRes != null ? obs.stdRes.toFixed(3) : '-'
-      lines.push(`${obs.type}\t${stations}\t${obsStr}\t${calcStr}\t${resStr}\t${stdRes}`)
+      rows.push({
+        type: obs.type,
+        stations,
+        obs: obsStr || '-',
+        calc: calcStr || '-',
+        residual: resStr || '-',
+        stdRes: obs.stdRes != null ? obs.stdRes.toFixed(3) : '-',
+      })
+    })
+
+    const headers = {
+      type: 'Type',
+      stations: 'Stations',
+      obs: 'Obs',
+      calc: 'Calc',
+      residual: 'Residual',
+      stdRes: 'StdRes',
+    }
+    const widths = {
+      type: Math.max(headers.type.length, ...rows.map((r) => r.type.length)),
+      stations: Math.max(headers.stations.length, ...rows.map((r) => r.stations.length)),
+      obs: Math.max(headers.obs.length, ...rows.map((r) => r.obs.length)),
+      calc: Math.max(headers.calc.length, ...rows.map((r) => r.calc.length)),
+      residual: Math.max(headers.residual.length, ...rows.map((r) => r.residual.length)),
+      stdRes: Math.max(headers.stdRes.length, ...rows.map((r) => r.stdRes.length)),
+    }
+    const pad = (value: string, size: number) => value.padEnd(size, ' ')
+    lines.push(
+      [
+        pad(headers.type, widths.type),
+        pad(headers.stations, widths.stations),
+        pad(headers.obs, widths.obs),
+        pad(headers.calc, widths.calc),
+        pad(headers.residual, widths.residual),
+        pad(headers.stdRes, widths.stdRes),
+      ].join('  '),
+    )
+    rows.forEach((r) => {
+      lines.push(
+        [
+          pad(r.type, widths.type),
+          pad(r.stations, widths.stations),
+          pad(r.obs, widths.obs),
+          pad(r.calc, widths.calc),
+          pad(r.residual, widths.residual),
+          pad(r.stdRes, widths.stdRes),
+        ].join('  '),
+      )
     })
     lines.push('')
     lines.push('--- Processing Log ---')
