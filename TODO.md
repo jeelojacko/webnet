@@ -63,3 +63,4 @@
   - [x] Phase 7: add setup-level suspect diagnostics (`RMS|t|`, `Max|t|`, local-test fail counts, worst obs + source line) with ranked setup suspect tables in report/export
   - [x] Phase 8: add direction-target repeatability diagnostics (per-target raw spread, face balance, local-test/MDB, ranked suspect score) with report/export tables
   - [x] Phase 9: add multi-set direction repeatability trends by occupy-target (cross-set range/RMS, face-balance counts, suspect ranking) in report/export
+  - [x] Phase 10: add automated suspect impact analysis (what-if exclusion: dSEUW, dMax|t|, chi-square change, max unknown shift, score) with one-click exclude+rerun

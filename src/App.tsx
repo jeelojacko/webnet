@@ -23,6 +23,7 @@ import { RAD_TO_DEG, radToDmsStr } from './engine/angles'
 import type {
   AdjustmentResult,
   InstrumentLibrary,
+  Observation,
   ObservationOverride,
   CoordMode,
   OrderMode,
@@ -294,6 +295,42 @@ const App: React.FC = () => {
   const handleDividerMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
     e.preventDefault()
     isResizingRef.current = true
+  }
+
+  const IMPACT_MAX_CANDIDATES = 8
+
+  const observationStationsLabel = (obs: Observation): string => {
+    if ('at' in obs && 'from' in obs && 'to' in obs) return `${obs.at}-${obs.from}-${obs.to}`
+    if ('at' in obs && 'to' in obs) return `${obs.at}-${obs.to}`
+    if ('from' in obs && 'to' in obs) return `${obs.from}-${obs.to}`
+    return '-'
+  }
+
+  const hasLocalFailure = (obs: Observation): boolean => {
+    if (obs.localTestComponents) return !obs.localTestComponents.passE || !obs.localTestComponents.passN
+    if (obs.localTest) return !obs.localTest.pass
+    return false
+  }
+
+  const maxAbsStdRes = (res: AdjustmentResult): number =>
+    res.observations.reduce((maxVal, obs) => {
+      if (!Number.isFinite(obs.stdRes)) return maxVal
+      return Math.max(maxVal, Math.abs(obs.stdRes ?? 0))
+    }, 0)
+
+  const maxUnknownCoordinateShift = (base: AdjustmentResult, alt: AdjustmentResult): number => {
+    let maxShift = 0
+    Object.entries(base.stations).forEach(([id, st]) => {
+      if (st.fixed) return
+      const altSt = alt.stations[id]
+      if (!altSt) return
+      const dx = altSt.x - st.x
+      const dy = altSt.y - st.y
+      const dh = altSt.h - st.h
+      const shift = Math.sqrt(dx * dx + dy * dy + dh * dh)
+      if (shift > maxShift) maxShift = shift
+    })
+    return maxShift
   }
 
   const buildResultsText = (res: AdjustmentResult): string => {
@@ -1395,6 +1432,83 @@ const App: React.FC = () => {
       lines.push('')
     }
 
+    if (res.suspectImpactDiagnostics && res.suspectImpactDiagnostics.length > 0) {
+      lines.push('--- Suspect Impact Analysis (what-if exclusion) ---')
+      const impactRows = res.suspectImpactDiagnostics.map((d, idx) => ({
+        rank: String(idx + 1),
+        type: d.type,
+        stations: d.stations,
+        line: d.sourceLine != null ? String(d.sourceLine) : '-',
+        baseStdRes: d.baseStdRes != null ? d.baseStdRes.toFixed(2) : '-',
+        dSeuw: d.deltaSeuw != null ? d.deltaSeuw.toFixed(4) : '-',
+        dMaxStd: d.deltaMaxStdRes != null ? d.deltaMaxStdRes.toFixed(2) : '-',
+        chi: d.chiDelta,
+        shift: d.maxCoordShift != null ? (d.maxCoordShift * unitScale).toFixed(4) : '-',
+        score: d.score != null ? d.score.toFixed(1) : '-',
+        status: d.status.toUpperCase(),
+      }))
+      const impactHeader = {
+        rank: '#',
+        type: 'Type',
+        stations: 'Stations',
+        line: 'Line',
+        baseStdRes: 'Base|t|',
+        dSeuw: 'dSEUW',
+        dMaxStd: 'dMax|t|',
+        chi: 'ChiDelta',
+        shift: `MaxShift(${linearUnit})`,
+        score: 'Score',
+        status: 'Status',
+      }
+      const impactWidths = {
+        rank: Math.max(impactHeader.rank.length, ...impactRows.map((r) => r.rank.length)),
+        type: Math.max(impactHeader.type.length, ...impactRows.map((r) => r.type.length)),
+        stations: Math.max(impactHeader.stations.length, ...impactRows.map((r) => r.stations.length)),
+        line: Math.max(impactHeader.line.length, ...impactRows.map((r) => r.line.length)),
+        baseStdRes: Math.max(impactHeader.baseStdRes.length, ...impactRows.map((r) => r.baseStdRes.length)),
+        dSeuw: Math.max(impactHeader.dSeuw.length, ...impactRows.map((r) => r.dSeuw.length)),
+        dMaxStd: Math.max(impactHeader.dMaxStd.length, ...impactRows.map((r) => r.dMaxStd.length)),
+        chi: Math.max(impactHeader.chi.length, ...impactRows.map((r) => r.chi.length)),
+        shift: Math.max(impactHeader.shift.length, ...impactRows.map((r) => r.shift.length)),
+        score: Math.max(impactHeader.score.length, ...impactRows.map((r) => r.score.length)),
+        status: Math.max(impactHeader.status.length, ...impactRows.map((r) => r.status.length)),
+      }
+      const pad = (value: string, size: number) => value.padEnd(size, ' ')
+      lines.push(
+        [
+          pad(impactHeader.rank, impactWidths.rank),
+          pad(impactHeader.type, impactWidths.type),
+          pad(impactHeader.stations, impactWidths.stations),
+          pad(impactHeader.line, impactWidths.line),
+          pad(impactHeader.baseStdRes, impactWidths.baseStdRes),
+          pad(impactHeader.dSeuw, impactWidths.dSeuw),
+          pad(impactHeader.dMaxStd, impactWidths.dMaxStd),
+          pad(impactHeader.chi, impactWidths.chi),
+          pad(impactHeader.shift, impactWidths.shift),
+          pad(impactHeader.score, impactWidths.score),
+          pad(impactHeader.status, impactWidths.status),
+        ].join('  '),
+      )
+      impactRows.forEach((r) => {
+        lines.push(
+          [
+            pad(r.rank, impactWidths.rank),
+            pad(r.type, impactWidths.type),
+            pad(r.stations, impactWidths.stations),
+            pad(r.line, impactWidths.line),
+            pad(r.baseStdRes, impactWidths.baseStdRes),
+            pad(r.dSeuw, impactWidths.dSeuw),
+            pad(r.dMaxStd, impactWidths.dMaxStd),
+            pad(r.chi, impactWidths.chi),
+            pad(r.shift, impactWidths.shift),
+            pad(r.score, impactWidths.score),
+            pad(r.status, impactWidths.status),
+          ].join('  '),
+        )
+      })
+      lines.push('')
+    }
+
     const headers = {
       type: 'Type',
       stations: 'Stations',
@@ -1507,13 +1621,12 @@ const App: React.FC = () => {
     fileInputRef.current?.click()
   }
 
-  const handleRun = () => {
-    setLastRunInput(input)
+  const solveCore = (excludeSet: Set<number>): AdjustmentResult => {
     const engine = new LSAEngine({
       input,
       maxIterations: settings.maxIterations,
       instrumentLibrary,
-      excludeIds: excludedIds,
+      excludeIds: excludeSet,
       overrides,
       parseOptions: {
         units: settings.units,
@@ -1531,10 +1644,113 @@ const App: React.FC = () => {
         lonSign: parseSettings.lonSign,
       },
     })
+    return engine.solve()
+  }
 
-    const solved = engine.solve()
+  const buildSuspectImpactDiagnostics = (
+    base: AdjustmentResult,
+    baseExclusions: Set<number>,
+  ): NonNullable<AdjustmentResult['suspectImpactDiagnostics']> => {
+    const baseChiPass = base.chiSquare?.pass95
+    const baseMaxStd = maxAbsStdRes(base)
+    const candidates = [...base.observations]
+      .filter((obs) => Number.isFinite(obs.stdRes))
+      .filter((obs) => hasLocalFailure(obs) || Math.abs(obs.stdRes ?? 0) >= 2)
+      .sort((a, b) => {
+        const aFail = hasLocalFailure(a) ? 1 : 0
+        const bFail = hasLocalFailure(b) ? 1 : 0
+        if (bFail !== aFail) return bFail - aFail
+        return Math.abs(b.stdRes ?? 0) - Math.abs(a.stdRes ?? 0)
+      })
+      .slice(0, IMPACT_MAX_CANDIDATES)
+
+    const rows = candidates.map((obs) => {
+      const baseLocalFail = hasLocalFailure(obs)
+      const obsEntry: NonNullable<AdjustmentResult['suspectImpactDiagnostics']>[number] = {
+        obsId: obs.id,
+        type: obs.type,
+        stations: observationStationsLabel(obs),
+        sourceLine: obs.sourceLine,
+        baseStdRes: obs.stdRes != null ? Math.abs(obs.stdRes) : undefined,
+        baseLocalFail,
+        chiDelta: '-',
+        status: 'failed',
+      }
+
+      try {
+        const nextExclusions = new Set(baseExclusions)
+        nextExclusions.add(obs.id)
+        const alt = solveCore(nextExclusions)
+        const altMaxStd = maxAbsStdRes(alt)
+        const altChiPass = alt.chiSquare?.pass95
+        let chiDelta: NonNullable<AdjustmentResult['suspectImpactDiagnostics']>[number]['chiDelta'] =
+          '-'
+        if (baseChiPass != null && altChiPass != null) {
+          if (!baseChiPass && altChiPass) chiDelta = 'improved'
+          else if (baseChiPass && !altChiPass) chiDelta = 'degraded'
+          else chiDelta = 'unchanged'
+        }
+
+        const deltaSeuw = alt.seuw - base.seuw
+        const deltaMaxStdRes = altMaxStd - baseMaxStd
+        const maxCoordShift = maxUnknownCoordinateShift(base, alt)
+
+        let score = 0
+        score += -deltaSeuw * 40
+        score += -deltaMaxStdRes * 20
+        if (chiDelta === 'improved') score += 20
+        if (chiDelta === 'degraded') score -= 20
+        score -= maxCoordShift * 15
+
+        return {
+          ...obsEntry,
+          deltaSeuw,
+          deltaMaxStdRes,
+          baseChiPass,
+          altChiPass,
+          chiDelta,
+          maxCoordShift,
+          score: Number.isFinite(score) ? score : undefined,
+          status: 'ok' as const,
+        }
+      } catch {
+        return obsEntry
+      }
+    })
+    rows.sort((a, b) => {
+      if (a.status !== b.status) return a.status === 'ok' ? -1 : 1
+      const bScore = b.score ?? Number.NEGATIVE_INFINITY
+      const aScore = a.score ?? Number.NEGATIVE_INFINITY
+      if (bScore !== aScore) return bScore - aScore
+      const bStd = b.baseStdRes ?? 0
+      const aStd = a.baseStdRes ?? 0
+      return bStd - aStd
+    })
+    return rows
+  }
+
+  const solveWithImpacts = (excludeSet: Set<number>): AdjustmentResult => {
+    const solved = solveCore(excludeSet)
+    solved.suspectImpactDiagnostics = buildSuspectImpactDiagnostics(solved, excludeSet)
+    return solved
+  }
+
+  const runWithExclusions = (excludeSet: Set<number>) => {
+    setLastRunInput(input)
+    const solved = solveWithImpacts(excludeSet)
     setResult(solved)
     setActiveTab('report')
+  }
+
+  const handleRun = () => {
+    runWithExclusions(new Set(excludedIds))
+  }
+
+  const applyImpactExclusion = (id: number) => {
+    const next = new Set(excludedIds)
+    next.add(id)
+    setExcludedIds(next)
+    runWithExclusions(next)
   }
 
   const handleUnitChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -1932,6 +2148,7 @@ const App: React.FC = () => {
                     units={settings.units}
                     excludedIds={excludedIds}
                     onToggleExclude={toggleExclude}
+                    onApplyImpactExclude={applyImpactExclusion}
                     onReRun={handleRun}
                     onClearExclusions={clearExclusions}
                     overrides={overrides}

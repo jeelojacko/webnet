@@ -322,6 +322,22 @@ export interface AdjustmentResult {
     worstLine?: number;
     suspectScore: number;
   }[];
+  suspectImpactDiagnostics?: {
+    obsId: number;
+    type: string;
+    stations: string;
+    sourceLine?: number;
+    baseStdRes?: number;
+    baseLocalFail: boolean;
+    deltaSeuw?: number;
+    deltaMaxStdRes?: number;
+    baseChiPass?: boolean;
+    altChiPass?: boolean;
+    chiDelta: 'improved' | 'degraded' | 'unchanged' | '-';
+    maxCoordShift?: number;
+    score?: number;
+    status: 'ok' | 'failed';
+  }[];
   setupDiagnostics?: {
     station: StationId;
     directionSetCount: number;

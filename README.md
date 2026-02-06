@@ -45,6 +45,7 @@ npm run dev
 - Engine: reports direction-set diagnostics (raw/reduced counts, face balance, orientation quality), setup summaries by occupy station, setup-level suspect metrics (RMS/Max standardized residuals, local-test fail counts, worst observation trace), and traverse diagnostics including closure ratio when geometry permits.
 - Engine: reports direction-target repeatability diagnostics (raw spread, face balance, local-test/MDB cues, ranked suspect score) to help isolate weak sets/targets inside direction workflows.
 - Engine: reports multi-set direction repeatability trends by occupy-target (cross-set residual range/RMS, spread trends, face-balance counts, ranked suspects) to highlight unstable targets across repeated setups.
+- UI/Report: includes automated suspect impact analysis that runs what-if exclusion trials for top suspects and ranks expected impact (dSEUW, dMax|t|, chi-square change, max coordinate shift), with one-click exclude + re-run.
 - Engine: applies map-scale reduction to horizontal distances when map mode is active, and supports optional zenith curvature/refraction corrections (`.CURVREF`/`.REFRACTION` + `.VRED CURVREF`).
 - Engine: computes post-adjusted sideshot coordinate/precision rows from excluded SS observations; azimuth source is tracked (`explicit`, `setup`, or `target`) and when azimuth cannot be derived, the limitation is reported explicitly.
 - Defaults: coord=3D, order=EN, lon sign=west-negative, delta mode slope (zenith), map mode off, normalize on.
