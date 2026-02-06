@@ -11,6 +11,7 @@
 - [x] Consolidate toolbar settings into a dropdown menu
 - [x] Export adjustment results as text + refresh-to-last-run input
 - [x] Standardized residuals (Qvv), redundancy numbers, chi-square test, per-type residual summaries
+- [x] Point precision (σN/σE/σH, ellipse azimuth, 95% toggle) + relative precision between unknown points
 - [x] Sync README/agents docs with current parser/engine/UI state
 - [ ] Star*Net format compatibility (Section 5.6):
   - [x] Elevation-only parsing (E records) with std errors/fixity and unit conversion

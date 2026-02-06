@@ -1,4 +1,5 @@
 import React from 'react'
+import { useState } from 'react'
 import { AlertTriangle, CheckCircle } from 'lucide-react'
 import type { AdjustmentResult, Observation } from '../types'
 import { RAD_TO_DEG, radToDmsStr } from '../engine/angles'
@@ -31,6 +32,8 @@ const ReportView: React.FC<ReportViewProps> = ({
   const unitScale = units === 'ft' ? FT_PER_M : 1
   const ellipseUnit = units === 'm' ? 'cm' : 'in'
   const ellipseScale = units === 'm' ? 100 : 12
+  const [ellipseMode, setEllipseMode] = useState<'1sigma' | '95'>('1sigma')
+  const ellipseConfidenceScale = ellipseMode === '95' ? 2.4477 : 1
 
   const sortedObs = [...result.observations]
     .map((obs, index) => ({ ...obs, originalIndex: index }))
@@ -315,7 +318,26 @@ const ReportView: React.FC<ReportViewProps> = ({
       </div>
 
       <div className="mb-8">
-        <h3 className="text-blue-400 font-bold mb-3 text-base uppercase tracking-wider">Adjusted Coordinates ({units})</h3>
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-blue-400 font-bold text-base uppercase tracking-wider">Adjusted Coordinates ({units})</h3>
+          <div className="flex items-center gap-2 text-xs text-slate-400">
+            <span>Ellipse</span>
+            <div className="flex rounded border border-slate-700 overflow-hidden">
+              <button
+                onClick={() => setEllipseMode('1sigma')}
+                className={`px-2 py-0.5 ${ellipseMode === '1sigma' ? 'bg-slate-700 text-white' : 'bg-slate-900/60 text-slate-400'}`}
+              >
+                1σ
+              </button>
+              <button
+                onClick={() => setEllipseMode('95')}
+                className={`px-2 py-0.5 ${ellipseMode === '95' ? 'bg-slate-700 text-white' : 'bg-slate-900/60 text-slate-400'}`}
+              >
+                95%
+              </button>
+            </div>
+          </div>
+        </div>
         <div className="overflow-x-auto w-full">
           <table className="w-full text-left border-collapse">
             <thead>
@@ -324,9 +346,12 @@ const ReportView: React.FC<ReportViewProps> = ({
                 <th className="py-2 font-semibold text-right">Northing</th>
                 <th className="py-2 font-semibold text-right">Easting</th>
                 <th className="py-2 font-semibold text-right">Height</th>
+                <th className="py-2 font-semibold text-right">σN</th>
+                <th className="py-2 font-semibold text-right">σE</th>
+                <th className="py-2 font-semibold text-right">σH</th>
                 <th className="py-2 font-semibold text-center">Type</th>
                 <th className="py-2 font-semibold text-right w-32">Ellipse ({ellipseUnit})</th>
-                <th className="py-2 font-semibold text-right w-24">sH ({units})</th>
+                <th className="py-2 font-semibold text-right w-20">Az (deg)</th>
               </tr>
             </thead>
             <tbody className="text-slate-300">
@@ -336,6 +361,15 @@ const ReportView: React.FC<ReportViewProps> = ({
                   <td className="py-1 text-right text-yellow-100/90">{(stn.y * unitScale).toFixed(4)}</td>
                   <td className="py-1 text-right text-yellow-100/90">{(stn.x * unitScale).toFixed(4)}</td>
                   <td className="py-1 text-right text-yellow-100/90">{(stn.h * unitScale).toFixed(4)}</td>
+                  <td className="py-1 text-right text-xs text-slate-400">
+                    {stn.sN != null ? (stn.sN * unitScale).toFixed(4) : '-'}
+                  </td>
+                  <td className="py-1 text-right text-xs text-slate-400">
+                    {stn.sE != null ? (stn.sE * unitScale).toFixed(4) : '-'}
+                  </td>
+                  <td className="py-1 text-right text-xs text-slate-400">
+                    {stn.sH != null ? (stn.sH * unitScale).toFixed(4) : '-'}
+                  </td>
                   <td className="py-1 text-center">
                     {stn.fixed ? (
                       <span className="text-xs bg-slate-700 text-slate-300 px-1.5 py-0.5 rounded">FIXED</span>
@@ -345,12 +379,22 @@ const ReportView: React.FC<ReportViewProps> = ({
                   </td>
                   <td className="py-1 text-right text-xs text-slate-400">
                     {stn.errorEllipse
-                      ? `${(stn.errorEllipse.semiMajor * ellipseScale * (units === 'ft' ? 0.0328084 : 1)).toFixed(1)} / ${(
-                        stn.errorEllipse.semiMinor * ellipseScale * (units === 'ft' ? 0.0328084 : 1)
-                      ).toFixed(1)}`
+                      ? `${(
+                          stn.errorEllipse.semiMajor *
+                          ellipseConfidenceScale *
+                          ellipseScale *
+                          (units === 'ft' ? 0.0328084 : 1)
+                        ).toFixed(1)} / ${(
+                          stn.errorEllipse.semiMinor *
+                          ellipseConfidenceScale *
+                          ellipseScale *
+                          (units === 'ft' ? 0.0328084 : 1)
+                        ).toFixed(1)}`
                       : '-'}
                   </td>
-                  <td className="py-1 text-right text-xs text-slate-400">{stn.sH != null ? (stn.sH * unitScale).toFixed(3) : '-'}</td>
+                  <td className="py-1 text-right text-xs text-slate-400">
+                    {stn.errorEllipse ? stn.errorEllipse.theta.toFixed(2) : '-'}
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -394,6 +438,63 @@ const ReportView: React.FC<ReportViewProps> = ({
                       <td className="py-1 px-3 text-right">{summary.over3}</td>
                       <td className="py-1 px-3 text-right">{summary.over4}</td>
                       <td className="py-1 px-3 text-right">{summary.unit}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+        {result.relativePrecision && result.relativePrecision.length > 0 && (
+          <div className="mb-4 border border-slate-800 rounded">
+            <div className="px-3 py-2 text-xs text-slate-400 uppercase tracking-wider border-b border-slate-800">
+              Relative Precision (Unknowns)
+            </div>
+            <div className="overflow-x-auto w-full">
+              <table className="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr className="text-slate-500 border-b border-slate-800">
+                    <th className="py-2 px-3 font-semibold">From</th>
+                    <th className="py-2 px-3 font-semibold">To</th>
+                    <th className="py-2 px-3 font-semibold text-right">σN</th>
+                    <th className="py-2 px-3 font-semibold text-right">σE</th>
+                    <th className="py-2 px-3 font-semibold text-right">σDist</th>
+                    <th className="py-2 px-3 font-semibold text-right">σAz (")</th>
+                    <th className="py-2 px-3 font-semibold text-right">Ellipse ({ellipseUnit})</th>
+                    <th className="py-2 px-3 font-semibold text-right">Az (deg)</th>
+                  </tr>
+                </thead>
+                <tbody className="text-slate-300">
+                  {result.relativePrecision.map((rel, idx) => (
+                    <tr key={`${rel.from}-${rel.to}-${idx}`} className="border-b border-slate-800/50">
+                      <td className="py-1 px-3">{rel.from}</td>
+                      <td className="py-1 px-3">{rel.to}</td>
+                      <td className="py-1 px-3 text-right">{(rel.sigmaN * unitScale).toFixed(4)}</td>
+                      <td className="py-1 px-3 text-right">{(rel.sigmaE * unitScale).toFixed(4)}</td>
+                      <td className="py-1 px-3 text-right">
+                        {rel.sigmaDist != null ? (rel.sigmaDist * unitScale).toFixed(4) : '-'}
+                      </td>
+                      <td className="py-1 px-3 text-right">
+                        {rel.sigmaAz != null ? (rel.sigmaAz * RAD_TO_DEG * 3600).toFixed(2) : '-'}
+                      </td>
+                      <td className="py-1 px-3 text-right">
+                        {rel.ellipse
+                          ? `${(
+                              rel.ellipse.semiMajor *
+                              ellipseConfidenceScale *
+                              ellipseScale *
+                              (units === 'ft' ? 0.0328084 : 1)
+                            ).toFixed(1)} / ${(
+                              rel.ellipse.semiMinor *
+                              ellipseConfidenceScale *
+                              ellipseScale *
+                              (units === 'ft' ? 0.0328084 : 1)
+                            ).toFixed(1)}`
+                          : '-'}
+                      </td>
+                      <td className="py-1 px-3 text-right">
+                        {rel.ellipse ? rel.ellipse.theta.toFixed(2) : '-'}
+                      </td>
                     </tr>
                   ))}
                 </tbody>

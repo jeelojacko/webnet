@@ -33,6 +33,8 @@ export interface Station {
   latDeg?: number;
   lonDeg?: number;
   errorEllipse?: StationErrorEllipse;
+  sN?: number;
+  sE?: number;
   sH?: number;
 }
 
@@ -213,4 +215,13 @@ export interface AdjustmentResult {
       unit: string;
     }
   >;
+  relativePrecision?: {
+    from: StationId;
+    to: StationId;
+    sigmaN: number;
+    sigmaE: number;
+    sigmaDist?: number;
+    sigmaAz?: number;
+    ellipse?: StationErrorEllipse;
+  }[];
 }

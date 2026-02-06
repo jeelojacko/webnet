@@ -285,6 +285,7 @@ const App: React.FC = () => {
   const buildResultsText = (res: AdjustmentResult): string => {
     const lines: string[] = []
     const now = new Date()
+    const ellipse95Scale = 2.4477
     lines.push(`# WebNet Adjustment Results`)
     lines.push(`# Generated: ${now.toLocaleString()}`)
     lines.push('')
@@ -300,10 +301,26 @@ const App: React.FC = () => {
     }
     lines.push('')
     lines.push('--- Adjusted Coordinates ---')
-    lines.push('ID\tNorthing\tEasting\tHeight\tType')
+    lines.push(
+      'ID\tNorthing\tEasting\tHeight\tType\tσN\tσE\tσH\tEllMaj\tEllMin\tEllAz\tEllMaj95\tEllMin95',
+    )
     Object.entries(res.stations).forEach(([id, st]) => {
       const type = st.fixed ? 'FIXED' : 'ADJ'
-      lines.push(`${id}\t${st.y.toFixed(4)}\t${st.x.toFixed(4)}\t${st.h.toFixed(4)}\t${type}`)
+      const sN = st.sN != null ? st.sN.toFixed(4) : '-'
+      const sE = st.sE != null ? st.sE.toFixed(4) : '-'
+      const sH = st.sH != null ? st.sH.toFixed(4) : '-'
+      const ellMaj = st.errorEllipse ? st.errorEllipse.semiMajor.toFixed(4) : '-'
+      const ellMin = st.errorEllipse ? st.errorEllipse.semiMinor.toFixed(4) : '-'
+      const ellAz = st.errorEllipse ? st.errorEllipse.theta.toFixed(2) : '-'
+      const ellMaj95 = st.errorEllipse
+        ? (st.errorEllipse.semiMajor * ellipse95Scale).toFixed(4)
+        : '-'
+      const ellMin95 = st.errorEllipse
+        ? (st.errorEllipse.semiMinor * ellipse95Scale).toFixed(4)
+        : '-'
+      lines.push(
+        `${id}\t${st.y.toFixed(4)}\t${st.x.toFixed(4)}\t${st.h.toFixed(4)}\t${type}\t${sN}\t${sE}\t${sH}\t${ellMaj}\t${ellMin}\t${ellAz}\t${ellMaj95}\t${ellMin95}`,
+      )
     })
     lines.push('')
     if (res.typeSummary && Object.keys(res.typeSummary).length > 0) {
@@ -362,6 +379,72 @@ const App: React.FC = () => {
             pad(row.over3, widths.over3),
             pad(row.over4, widths.over4),
             pad(row.unit, widths.unit),
+          ].join('  '),
+        )
+      })
+      lines.push('')
+    }
+    if (res.relativePrecision && res.relativePrecision.length > 0) {
+      lines.push('--- Relative Precision (Unknowns) ---')
+      const relRows = res.relativePrecision.map((r) => ({
+        from: r.from,
+        to: r.to,
+        sigmaN: r.sigmaN.toFixed(4),
+        sigmaE: r.sigmaE.toFixed(4),
+        sigmaDist: r.sigmaDist != null ? r.sigmaDist.toFixed(4) : '-',
+        sigmaAz: r.sigmaAz != null ? (r.sigmaAz * RAD_TO_DEG * 3600).toFixed(2) : '-',
+        ellMaj: r.ellipse ? r.ellipse.semiMajor.toFixed(4) : '-',
+        ellMin: r.ellipse ? r.ellipse.semiMinor.toFixed(4) : '-',
+        ellAz: r.ellipse ? r.ellipse.theta.toFixed(2) : '-',
+      }))
+      const header = {
+        from: 'From',
+        to: 'To',
+        sigmaN: 'σN',
+        sigmaE: 'σE',
+        sigmaDist: 'σDist',
+        sigmaAz: 'σAz(")',
+        ellMaj: 'EllMaj',
+        ellMin: 'EllMin',
+        ellAz: 'EllAz',
+      }
+      const widths = {
+        from: Math.max(header.from.length, ...relRows.map((r) => r.from.length)),
+        to: Math.max(header.to.length, ...relRows.map((r) => r.to.length)),
+        sigmaN: Math.max(header.sigmaN.length, ...relRows.map((r) => r.sigmaN.length)),
+        sigmaE: Math.max(header.sigmaE.length, ...relRows.map((r) => r.sigmaE.length)),
+        sigmaDist: Math.max(header.sigmaDist.length, ...relRows.map((r) => r.sigmaDist.length)),
+        sigmaAz: Math.max(header.sigmaAz.length, ...relRows.map((r) => r.sigmaAz.length)),
+        ellMaj: Math.max(header.ellMaj.length, ...relRows.map((r) => r.ellMaj.length)),
+        ellMin: Math.max(header.ellMin.length, ...relRows.map((r) => r.ellMin.length)),
+        ellAz: Math.max(header.ellAz.length, ...relRows.map((r) => r.ellAz.length)),
+      }
+      const pad = (value: string, size: number) => value.padEnd(size, ' ')
+      lines.push(
+        [
+          pad(header.from, widths.from),
+          pad(header.to, widths.to),
+          pad(header.sigmaN, widths.sigmaN),
+          pad(header.sigmaE, widths.sigmaE),
+          pad(header.sigmaDist, widths.sigmaDist),
+          pad(header.sigmaAz, widths.sigmaAz),
+          pad(header.ellMaj, widths.ellMaj),
+          pad(header.ellMin, widths.ellMin),
+          pad(header.ellAz, widths.ellAz),
+        ].join('  '),
+      )
+      relRows.forEach((r) => {
+        lines.push(
+          [
+            pad(r.from, widths.from),
+            pad(r.to, widths.to),
+            pad(r.sigmaN, widths.sigmaN),
+            pad(r.sigmaE, widths.sigmaE),
+            pad(r.sigmaDist, widths.sigmaDist),
+            pad(r.sigmaAz, widths.sigmaAz),
+            pad(r.ellMaj, widths.ellMaj),
+            pad(r.ellMin, widths.ellMin),
+            pad(r.ellAz, widths.ellAz),
           ].join('  '),
         )
       })

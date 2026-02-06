@@ -135,6 +135,7 @@ export class LSAEngine {
       unit: string;
     }
   >;
+  private relativePrecision?: AdjustmentResult['relativePrecision'];
 
   private getInstrument(obs: Observation): Instrument | undefined {
     if (!obs.instCode) return undefined;
@@ -1664,12 +1665,78 @@ export class LSAEngine {
           semiMinor,
           theta: theta * RAD_TO_DEG,
         };
+        this.stations[id].sE = Math.sqrt(Math.abs(sx2));
+        this.stations[id].sN = Math.sqrt(Math.abs(sy2));
 
         if (!this.is2D && idx.h != null) {
           const qhh = this.Qxx[idx.h][idx.h] * s0_sq;
           this.stations[id].sH = Math.sqrt(Math.abs(qhh));
         }
       });
+
+      const cov = (a?: number, b?: number): number => {
+        if (a == null || b == null) return 0;
+        if (!this.Qxx?.[a] || this.Qxx?.[a][b] == null) return 0;
+        return this.Qxx[a][b] * s0_sq;
+      };
+
+      const relative: NonNullable<AdjustmentResult['relativePrecision']> = [];
+      for (let i = 0; i < this.unknowns.length; i += 1) {
+        for (let j = i + 1; j < this.unknowns.length; j += 1) {
+          const from = this.unknowns[i];
+          const to = this.unknowns[j];
+          const idxFrom = paramIndex[from];
+          const idxTo = paramIndex[to];
+          if (!idxFrom && !idxTo) continue;
+
+          const dE = this.stations[to].x - this.stations[from].x;
+          const dN = this.stations[to].y - this.stations[from].y;
+          const dist = Math.hypot(dE, dN);
+
+          const varE =
+            cov(idxTo?.x, idxTo?.x) +
+            cov(idxFrom?.x, idxFrom?.x) -
+            2 * cov(idxFrom?.x, idxTo?.x);
+          const varN =
+            cov(idxTo?.y, idxTo?.y) +
+            cov(idxFrom?.y, idxFrom?.y) -
+            2 * cov(idxFrom?.y, idxTo?.y);
+          const covNE =
+            cov(idxTo?.y, idxTo?.x) +
+            cov(idxFrom?.y, idxFrom?.x) -
+            cov(idxFrom?.y, idxTo?.x) -
+            cov(idxTo?.y, idxFrom?.x);
+
+          const term1 = (varE + varN) / 2;
+          const term2 = Math.sqrt(((varE - varN) / 2) ** 2 + covNE * covNE);
+          const semiMajor = Math.sqrt(Math.abs(term1 + term2));
+          const semiMinor = Math.sqrt(Math.abs(term1 - term2));
+          const theta = 0.5 * Math.atan2(2 * covNE, varE - varN);
+
+          let sigmaDist: number | undefined;
+          let sigmaAz: number | undefined;
+          if (dist > 0) {
+            const inv = 1 / (dist * dist);
+            const varDist =
+              inv * (dE * dE * varE + dN * dN * varN + 2 * dE * dN * covNE);
+            sigmaDist = Math.sqrt(Math.abs(varDist));
+            const varAz =
+              (dN * dN * varE + dE * dE * varN - 2 * dE * dN * covNE) * inv * inv;
+            sigmaAz = Math.sqrt(Math.abs(varAz));
+          }
+
+          relative.push({
+            from,
+            to,
+            sigmaN: Math.sqrt(Math.abs(varN)),
+            sigmaE: Math.sqrt(Math.abs(varE)),
+            sigmaDist,
+            sigmaAz,
+            ellipse: { semiMajor, semiMinor, theta: theta * RAD_TO_DEG },
+          });
+        }
+      }
+      this.relativePrecision = relative;
     }
 
     if (directionStats.size > 0) {
@@ -1725,6 +1792,7 @@ export class LSAEngine {
       dof: this.dof,
       chiSquare: this.chiSquare,
       typeSummary: this.typeSummary,
+      relativePrecision: this.relativePrecision,
     };
   }
 }
