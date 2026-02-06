@@ -57,6 +57,8 @@ const ReportView: React.FC<ReportViewProps> = ({
               <th className="py-2 text-right">Obs</th>
               <th className="py-2 text-right">Calc</th>
               <th className="py-2 text-right">Residual</th>
+              <th className="py-2 text-right">StdRes</th>
+              <th className="py-2 text-right">Redund</th>
               <th className="py-2 text-right px-4">StdDev (override)</th>
             </tr>
           </thead>
@@ -69,6 +71,8 @@ const ReportView: React.FC<ReportViewProps> = ({
               let obsStr = ''
               let calcStr = ''
               let resStr = ''
+              let stdResStr = '-'
+              let redundancyStr = '-'
               let stdDevVal = obs.stdDev * unitScale
               const sigmaSource = obs.sigmaSource || 'explicit'
               const sigmaPlaceholder =
@@ -159,6 +163,18 @@ const ReportView: React.FC<ReportViewProps> = ({
                   ? ''
                   : stdDevVal.toFixed(4)
 
+              if (obs.stdResComponents) {
+                stdResStr = `${obs.stdResComponents.tE.toFixed(2)}/${obs.stdResComponents.tN.toFixed(2)}`
+              } else if (obs.stdRes != null) {
+                stdResStr = obs.stdRes.toFixed(2)
+              }
+
+              if (typeof obs.redundancy === 'object' && obs.redundancy) {
+                redundancyStr = `${obs.redundancy.rE.toFixed(2)}/${obs.redundancy.rN.toFixed(2)}`
+              } else if (typeof obs.redundancy === 'number') {
+                redundancyStr = obs.redundancy.toFixed(2)
+              }
+
               return (
                 <tr key={i} className={`border-b border-slate-800/30 ${excluded ? 'opacity-50' : ''}`}>
                   <td className="py-1 px-4">
@@ -181,6 +197,8 @@ const ReportView: React.FC<ReportViewProps> = ({
                   >
                     {resStr}
                   </td>
+                  <td className="py-1 text-right font-mono text-slate-400">{stdResStr}</td>
+                  <td className="py-1 text-right font-mono text-slate-500">{redundancyStr}</td>
                   <td className="py-1 px-4 text-right font-mono text-slate-400">
                     <input
                       type="number"
@@ -248,7 +266,7 @@ const ReportView: React.FC<ReportViewProps> = ({
 
       <div className="mb-8 border-b border-slate-800 pb-6">
         <h2 className="text-xl font-bold text-white mb-4">Adjustment Summary</h2>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="bg-slate-900 p-4 rounded border border-slate-800">
             <span className="block text-slate-500 text-xs mb-1">STATUS</span>
             <div className={`flex items-center space-x-2 ${result.success ? 'text-green-400' : 'text-yellow-500'}`}>
@@ -262,6 +280,23 @@ const ReportView: React.FC<ReportViewProps> = ({
               {result.seuw.toFixed(4)}
             </span>
             <span className="text-slate-600 text-xs ml-2">(DOF: {result.dof})</span>
+          </div>
+          <div className="bg-slate-900 p-4 rounded border border-slate-800 hidden md:block">
+            <span className="block text-slate-500 text-xs mb-1">CHI-SQUARE (95%)</span>
+            {result.chiSquare ? (
+              <>
+                <div
+                  className={`font-bold text-lg ${result.chiSquare.pass95 ? 'text-green-400' : 'text-red-400'}`}
+                >
+                  {result.chiSquare.pass95 ? 'PASS' : 'FAIL'}
+                </div>
+                <div className="text-xs text-slate-500">
+                  T={result.chiSquare.T.toFixed(2)} p={result.chiSquare.p.toFixed(3)}
+                </div>
+              </>
+            ) : (
+              <div className="text-xs text-slate-500">-</div>
+            )}
           </div>
           <div className="bg-slate-900 p-4 rounded border border-slate-800 hidden md:block">
             <span className="block text-slate-500 text-xs mb-1">OBSERVATION BREAKDOWN</span>
@@ -329,6 +364,43 @@ const ReportView: React.FC<ReportViewProps> = ({
           <span>Sorted by |StdRes|</span>
           <span>Toggle rows to exclude and press Re-run</span>
         </div>
+        {result.typeSummary && Object.keys(result.typeSummary).length > 0 && (
+          <div className="mb-4 border border-slate-800 rounded">
+            <div className="px-3 py-2 text-xs text-slate-400 uppercase tracking-wider border-b border-slate-800">
+              Per-Type Summary
+            </div>
+            <div className="overflow-x-auto w-full">
+              <table className="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr className="text-slate-500 border-b border-slate-800">
+                    <th className="py-2 px-3 font-semibold">Type</th>
+                    <th className="py-2 px-3 font-semibold text-right">Count</th>
+                    <th className="py-2 px-3 font-semibold text-right">RMS</th>
+                    <th className="py-2 px-3 font-semibold text-right">Max |Res|</th>
+                    <th className="py-2 px-3 font-semibold text-right">Max |StdRes|</th>
+                    <th className="py-2 px-3 font-semibold text-right">&gt;3σ</th>
+                    <th className="py-2 px-3 font-semibold text-right">&gt;4σ</th>
+                    <th className="py-2 px-3 font-semibold text-right">Unit</th>
+                  </tr>
+                </thead>
+                <tbody className="text-slate-300">
+                  {Object.entries(result.typeSummary).map(([type, summary]) => (
+                    <tr key={type} className="border-b border-slate-800/50">
+                      <td className="py-1 px-3 uppercase text-slate-400">{type}</td>
+                      <td className="py-1 px-3 text-right">{summary.count}</td>
+                      <td className="py-1 px-3 text-right">{summary.rms.toFixed(4)}</td>
+                      <td className="py-1 px-3 text-right">{summary.maxAbs.toFixed(4)}</td>
+                      <td className="py-1 px-3 text-right">{summary.maxStdRes.toFixed(3)}</td>
+                      <td className="py-1 px-3 text-right">{summary.over3}</td>
+                      <td className="py-1 px-3 text-right">{summary.over4}</td>
+                      <td className="py-1 px-3 text-right">{summary.unit}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
         {renderTable(byType('angle'), 'Angles (TS)')}
         {renderTable(byType('direction'), 'Directions (DB/DN)')}
         {renderTable(byType('dist'), 'Distances (TS)')}
