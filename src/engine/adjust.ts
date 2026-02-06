@@ -13,6 +13,79 @@ import type {
   ParseOptions,
 } from '../types';
 
+const EPS = 1e-10;
+
+const gammln = (xx: number): number => {
+  const cof = [
+    76.180091729471,
+    -86.505320329417,
+    24.014098240831,
+    -1.23173957245,
+    1.208650973866e-3,
+    -5.395239384953e-6,
+  ];
+  let x = xx;
+  let y = xx;
+  let tmp = x + 5.5;
+  tmp -= (x + 0.5) * Math.log(tmp);
+  let ser = 1.000000000190015;
+  for (let j = 0; j < cof.length; j += 1) {
+    y += 1;
+    ser += cof[j] / y;
+  }
+  return -tmp + Math.log(2.506628274631 * ser / x);
+};
+
+const gser = (a: number, x: number): number => {
+  if (x <= 0) return 0;
+  let sum = 1 / a;
+  let del = sum;
+  let ap = a;
+  for (let n = 1; n <= 100; n += 1) {
+    ap += 1;
+    del *= x / ap;
+    sum += del;
+    if (Math.abs(del) < Math.abs(sum) * EPS) break;
+  }
+  return sum * Math.exp(-x + a * Math.log(x) - gammln(a));
+};
+
+const gcf = (a: number, x: number): number => {
+  let b = x + 1 - a;
+  let c = 1 / 1e-30;
+  let d = 1 / b;
+  let h = d;
+  for (let i = 1; i <= 100; i += 1) {
+    const an = -i * (i - a);
+    b += 2;
+    d = an * d + b;
+    if (Math.abs(d) < 1e-30) d = 1e-30;
+    c = b + an / c;
+    if (Math.abs(c) < 1e-30) c = 1e-30;
+    d = 1 / d;
+    const del = d * c;
+    h *= del;
+    if (Math.abs(del - 1) < EPS) break;
+  }
+  return Math.exp(-x + a * Math.log(x) - gammln(a)) * h;
+};
+
+const gammp = (a: number, x: number): number => {
+  if (x < 0 || a <= 0) return 0;
+  if (x < a + 1) {
+    return gser(a, x);
+  }
+  return 1 - gcf(a, x);
+};
+
+const chiSquarePValue = (T: number, dof: number): number => {
+  if (dof <= 0 || T < 0) return 0;
+  const a = dof / 2;
+  const x = T / 2;
+  const cdf = gammp(a, x);
+  return Math.max(0, Math.min(1, 1 - cdf));
+};
+
 interface EngineOptions {
   input: string;
   maxIterations?: number;
@@ -49,6 +122,19 @@ export class LSAEngine {
   private addCenteringToExplicit = false;
   private applyCentering = true;
   private debug = false;
+  private chiSquare?: { T: number; dof: number; p: number; pass95: boolean };
+  private typeSummary?: Record<
+    string,
+    {
+      count: number;
+      rms: number;
+      maxAbs: number;
+      maxStdRes: number;
+      over3: number;
+      over4: number;
+      unit: string;
+    }
+  >;
 
   private getInstrument(obs: Observation): Instrument | undefined {
     if (!obs.instCode) return undefined;
@@ -996,6 +1082,7 @@ export class LSAEngine {
       string,
       { count: number; sum: number; sumSq: number; maxAbs: number; occupy: StationId; orientation: number }
     >();
+    const activeObservations = this.observations.filter((obs) => this.isObservationActive(obs));
 
     this.observations.forEach((obs) => {
       if (!this.isObservationActive(obs)) return;
@@ -1161,6 +1248,329 @@ export class LSAEngine {
 
     this.seuw = this.dof > 0 ? Math.sqrt(vtpv / this.dof) : 0;
 
+    this.chiSquare = undefined;
+    this.typeSummary = undefined;
+
+    if (this.dof > 0) {
+      const pUpper = chiSquarePValue(vtpv, this.dof);
+      const pLower = 1 - pUpper;
+      const pTwo = Math.max(0, Math.min(1, 2 * Math.min(pUpper, pLower)));
+      this.chiSquare = { T: vtpv, dof: this.dof, p: pTwo, pass95: pTwo >= 0.05 };
+    }
+
+    if (hasQxx) {
+      const stationParamCount = Object.values(paramIndex).reduce((max, idx) => {
+        const vals = [idx.x ?? -1, idx.y ?? -1, idx.h ?? -1];
+        return Math.max(max, ...vals);
+      }, -1) + 1;
+      const directionSetIds = Array.from(
+        new Set(
+          activeObservations
+            .filter((o) => o.type === 'direction')
+            .map((o) => (o as any).setId as string),
+        ),
+      );
+      const dirParamMap: Record<string, number> = {};
+      directionSetIds.forEach((id, idx) => {
+        dirParamMap[id] = stationParamCount + idx;
+      });
+      const numParams = stationParamCount + directionSetIds.length;
+      const numObsEquations = activeObservations.reduce(
+        (acc, o) => acc + (o.type === 'gps' ? 2 : 1),
+        0,
+      );
+
+      if (numParams > 0 && numObsEquations > 0) {
+        const A = zeros(numObsEquations, numParams);
+        const P = zeros(numObsEquations, numObsEquations);
+        const L = zeros(numObsEquations, 1);
+        const rowInfo: { obs: Observation; component?: 'E' | 'N' }[] = [];
+        let row = 0;
+
+        activeObservations.forEach((obs) => {
+          if (obs.type === 'dist') {
+            const s1 = this.stations[obs.from];
+            const s2 = this.stations[obs.to];
+            if (!s1 || !s2) return;
+            const dx = s2.x - s1.x;
+            const dy = s2.y - s1.y;
+            const dz = (s2.h + (obs.ht ?? 0)) - (s1.h + (obs.hi ?? 0));
+            const horiz = Math.sqrt(dx * dx + dy * dy);
+            const calcDist = this.is2D
+              ? horiz
+              : obs.mode === 'slope'
+                ? Math.sqrt(horiz * horiz + dz * dz)
+                : horiz;
+            const v = obs.obs - calcDist;
+            L[row][0] = v;
+            rowInfo.push({ obs });
+
+            const denom = calcDist || 1;
+            const dD_dE2 = dx / denom;
+            const dD_dN2 = dy / denom;
+            const dD_dH2 = !this.is2D && obs.mode === 'slope' ? dz / denom : 0;
+
+            const fromIdx = this.paramIndex[obs.from];
+            if (fromIdx?.x != null) A[row][fromIdx.x] = -dD_dE2;
+            if (fromIdx?.y != null) A[row][fromIdx.y] = -dD_dN2;
+            if (!this.is2D && fromIdx?.h != null) A[row][fromIdx.h] = -dD_dH2;
+            const toIdx = this.paramIndex[obs.to];
+            if (toIdx?.x != null) A[row][toIdx.x] = dD_dE2;
+            if (toIdx?.y != null) A[row][toIdx.y] = dD_dN2;
+            if (!this.is2D && toIdx?.h != null) A[row][toIdx.h] = dD_dH2;
+
+            const sigma = this.effectiveStdDev(obs);
+            P[row][row] = 1.0 / (sigma * sigma);
+            row += 1;
+            return;
+          }
+
+          if (obs.type === 'angle') {
+            const azTo = this.getAzimuth(obs.at, obs.to);
+            const azFrom = this.getAzimuth(obs.at, obs.from);
+            let calcAngle = azTo.az - azFrom.az;
+            if (calcAngle < 0) calcAngle += 2 * Math.PI;
+            let diff = obs.obs - calcAngle;
+            diff = this.wrapToPi(diff);
+            L[row][0] = diff;
+            rowInfo.push({ obs });
+
+            const dAzTo_dE_To = Math.cos(azTo.az) / (azTo.dist || 1);
+            const dAzTo_dN_To = -Math.sin(azTo.az) / (azTo.dist || 1);
+            const dAzFrom_dE_From = Math.cos(azFrom.az) / (azFrom.dist || 1);
+            const dAzFrom_dN_From = -Math.sin(azFrom.az) / (azFrom.dist || 1);
+
+            const toIdx = this.paramIndex[obs.to];
+            if (toIdx?.x != null) A[row][toIdx.x] = dAzTo_dE_To;
+            if (toIdx?.y != null) A[row][toIdx.y] = dAzTo_dN_To;
+            const fromIdx = this.paramIndex[obs.from];
+            if (fromIdx?.x != null) A[row][fromIdx.x] = -dAzFrom_dE_From;
+            if (fromIdx?.y != null) A[row][fromIdx.y] = -dAzFrom_dN_From;
+            const atIdx = this.paramIndex[obs.at];
+            if (atIdx?.x != null || atIdx?.y != null) {
+              const dAzTo_dE_At = -dAzTo_dE_To;
+              const dAzTo_dN_At = -dAzTo_dN_To;
+              const dAzFrom_dE_At = -dAzFrom_dE_From;
+              const dAzFrom_dN_At = -dAzFrom_dN_From;
+              if (atIdx?.x != null) A[row][atIdx.x] = dAzTo_dE_At - dAzFrom_dE_At;
+              if (atIdx?.y != null) A[row][atIdx.y] = dAzTo_dN_At - dAzFrom_dN_At;
+            }
+
+            const sigma = this.effectiveStdDev(obs);
+            P[row][row] = 1.0 / (sigma * sigma);
+            row += 1;
+            return;
+          }
+
+          if (obs.type === 'gps') {
+            const s1 = this.stations[obs.from];
+            const s2 = this.stations[obs.to];
+            if (!s1 || !s2) return;
+            const calc_dE = s2.x - s1.x;
+            const calc_dN = s2.y - s1.y;
+            const vE = obs.obs.dE - calc_dE;
+            const vN = obs.obs.dN - calc_dN;
+            L[row][0] = vE;
+            rowInfo.push({ obs, component: 'E' });
+            const fromIdx = this.paramIndex[obs.from];
+            const toIdx = this.paramIndex[obs.to];
+            if (fromIdx?.x != null) A[row][fromIdx.x] = -1.0;
+            if (toIdx?.x != null) A[row][toIdx.x] = 1.0;
+            const sigma = this.effectiveStdDev(obs);
+            P[row][row] = 1.0 / (sigma * sigma);
+
+            L[row + 1][0] = vN;
+            rowInfo.push({ obs, component: 'N' });
+            if (fromIdx?.y != null) A[row + 1][fromIdx.y] = -1.0;
+            if (toIdx?.y != null) A[row + 1][toIdx.y] = 1.0;
+            P[row + 1][row + 1] = 1.0 / (sigma * sigma);
+
+            row += 2;
+            return;
+          }
+
+          if (obs.type === 'lev') {
+            const s1 = this.stations[obs.from];
+            const s2 = this.stations[obs.to];
+            if (!s1 || !s2) return;
+            const calc_dH = s2.h - s1.h;
+            const v = obs.obs - calc_dH;
+            L[row][0] = v;
+            rowInfo.push({ obs });
+            const fromIdx = this.paramIndex[obs.from];
+            const toIdx = this.paramIndex[obs.to];
+            if (fromIdx?.h != null) A[row][fromIdx.h] = -1.0;
+            if (toIdx?.h != null) A[row][toIdx.h] = 1.0;
+            const sigma = this.effectiveStdDev(obs);
+            P[row][row] = 1.0 / (sigma * sigma);
+            row += 1;
+            return;
+          }
+
+          if (obs.type === 'bearing') {
+            const az = this.getAzimuth(obs.from, obs.to);
+            const calc = az.az;
+            let v = obs.obs - calc;
+            if (v > Math.PI) v -= 2 * Math.PI;
+            if (v < -Math.PI) v += 2 * Math.PI;
+            L[row][0] = v;
+            rowInfo.push({ obs });
+
+            const dAz_dE_To = Math.cos(calc) / (az.dist || 1);
+            const dAz_dN_To = -Math.sin(calc) / (az.dist || 1);
+            const toIdx = this.paramIndex[obs.to];
+            const fromIdx = this.paramIndex[obs.from];
+            if (toIdx?.x != null) A[row][toIdx.x] = dAz_dE_To;
+            if (toIdx?.y != null) A[row][toIdx.y] = dAz_dN_To;
+            if (fromIdx?.x != null) A[row][fromIdx.x] = -dAz_dE_To;
+            if (fromIdx?.y != null) A[row][fromIdx.y] = -dAz_dN_To;
+
+            const sigma = this.effectiveStdDev(obs);
+            P[row][row] = 1.0 / (sigma * sigma);
+            row += 1;
+            return;
+          }
+
+          if (obs.type === 'dir') {
+            const az = this.getAzimuth(obs.from, obs.to);
+            const calc = az.az;
+            let v0 = obs.obs - calc;
+            if (v0 > Math.PI) v0 -= 2 * Math.PI;
+            if (v0 < -Math.PI) v0 += 2 * Math.PI;
+            let v = v0;
+            if (obs.flip180) {
+              let v1 = obs.obs + Math.PI - calc;
+              if (v1 > Math.PI) v1 -= 2 * Math.PI;
+              if (v1 < -Math.PI) v1 += 2 * Math.PI;
+              if (Math.abs(v1) < Math.abs(v0)) v = v1;
+            }
+            L[row][0] = v;
+            rowInfo.push({ obs });
+
+            const dAz_dE_To = Math.cos(calc) / (az.dist || 1);
+            const dAz_dN_To = -Math.sin(calc) / (az.dist || 1);
+            const toIdx = this.paramIndex[obs.to];
+            const fromIdx = this.paramIndex[obs.from];
+            if (toIdx?.x != null) A[row][toIdx.x] = dAz_dE_To;
+            if (toIdx?.y != null) A[row][toIdx.y] = dAz_dN_To;
+            if (fromIdx?.x != null) A[row][fromIdx.x] = -dAz_dE_To;
+            if (fromIdx?.y != null) A[row][fromIdx.y] = -dAz_dN_To;
+
+            const sigma = this.effectiveStdDev(obs);
+            P[row][row] = 1.0 / (sigma * sigma);
+            row += 1;
+            return;
+          }
+
+          if (obs.type === 'direction') {
+            const dir = obs as any;
+            const az = this.getAzimuth(dir.at, dir.to);
+            const orientation = this.directionOrientations[dir.setId] ?? 0;
+            let calc = orientation + az.az;
+            calc %= 2 * Math.PI;
+            if (calc < 0) calc += 2 * Math.PI;
+            let v = dir.obs - calc;
+            if (v > Math.PI) v -= 2 * Math.PI;
+            if (v < -Math.PI) v += 2 * Math.PI;
+            L[row][0] = v;
+            rowInfo.push({ obs });
+
+            const dAz_dE_To = Math.cos(az.az) / (az.dist || 1);
+            const dAz_dN_To = -Math.sin(az.az) / (az.dist || 1);
+            const toIdx = this.paramIndex[dir.to];
+            const atIdx = this.paramIndex[dir.at];
+            if (toIdx?.x != null) A[row][toIdx.x] = dAz_dE_To;
+            if (toIdx?.y != null) A[row][toIdx.y] = dAz_dN_To;
+            if (atIdx?.x != null) A[row][atIdx.x] = -dAz_dE_To;
+            if (atIdx?.y != null) A[row][atIdx.y] = -dAz_dN_To;
+
+            const dirIdx = dirParamMap[dir.setId];
+            if (dirIdx != null) A[row][dirIdx] = 1;
+
+            const sigma = this.effectiveStdDev(dir);
+            P[row][row] = 1.0 / (sigma * sigma);
+            row += 1;
+            return;
+          }
+
+          if (obs.type === 'zenith') {
+            const zv = this.getZenith(obs.from, obs.to, obs.hi ?? 0, obs.ht ?? 0);
+            const calc = zv.z;
+            let v = obs.obs - calc;
+            if (v > Math.PI) v -= 2 * Math.PI;
+            if (v < -Math.PI) v += 2 * Math.PI;
+            L[row][0] = v;
+            rowInfo.push({ obs });
+
+            const denom = Math.sqrt(Math.max(1 - (zv.dist === 0 ? 0 : (zv.dh / zv.dist) ** 2), 1e-12));
+            const common = zv.dist === 0 ? 0 : 1 / (zv.dist * zv.dist * zv.dist * denom);
+            const dZ_dE = zv.dh * (this.stations[obs.to].x - this.stations[obs.from].x) * common;
+            const dZ_dN = zv.dh * (this.stations[obs.to].y - this.stations[obs.from].y) * common;
+            const dZ_dH = -(zv.horiz * zv.horiz) * common;
+
+            const toIdx = this.paramIndex[obs.to];
+            const fromIdx = this.paramIndex[obs.from];
+            if (toIdx?.x != null) A[row][toIdx.x] = dZ_dE;
+            if (toIdx?.y != null) A[row][toIdx.y] = dZ_dN;
+            if (toIdx?.h != null) A[row][toIdx.h] = dZ_dH;
+            if (fromIdx?.x != null) A[row][fromIdx.x] = -dZ_dE;
+            if (fromIdx?.y != null) A[row][fromIdx.y] = -dZ_dN;
+            if (fromIdx?.h != null) A[row][fromIdx.h] = -dZ_dH;
+
+            const sigma = this.effectiveStdDev(obs);
+            P[row][row] = 1.0 / (sigma * sigma);
+            row += 1;
+          }
+        });
+
+        try {
+          const AT = transpose(A);
+          const N = multiply(multiply(AT, P), A);
+          const QxxStats = inv(N);
+          const B = multiply(A, QxxStats);
+          const rowStats = new Map<number, { t: number[]; r: number[]; comps: ('E' | 'N' | undefined)[] }>();
+          const s0 = this.seuw || 1;
+          for (let i = 0; i < numObsEquations; i += 1) {
+            const qll = P[i][i] > 0 ? 1 / P[i][i] : 0;
+            let diag = 0;
+            for (let j = 0; j < numParams; j += 1) {
+              diag += B[i][j] * A[i][j];
+            }
+            const qvv = Math.max(qll - diag, 1e-20);
+            const t = L[i][0] / (s0 * Math.sqrt(qvv));
+            const r = P[i][i] * qvv;
+            const info = rowInfo[i];
+            const entry = rowStats.get(info.obs.id) ?? { t: [], r: [], comps: [] };
+            entry.t.push(t);
+            entry.r.push(r);
+            entry.comps.push(info.component);
+            rowStats.set(info.obs.id, entry);
+          }
+
+          activeObservations.forEach((obs) => {
+            const entry = rowStats.get(obs.id);
+            if (!entry) return;
+            if (entry.t.length === 2 && entry.comps.includes('E') && entry.comps.includes('N')) {
+              const idxE = entry.comps.indexOf('E');
+              const idxN = entry.comps.indexOf('N');
+              const tE = entry.t[idxE];
+              const tN = entry.t[idxN];
+              const rE = entry.r[idxE];
+              const rN = entry.r[idxN];
+              obs.stdResComponents = { tE, tN };
+              obs.stdRes = Math.max(Math.abs(tE), Math.abs(tN));
+              obs.redundancy = { rE, rN };
+            } else {
+              obs.stdRes = Math.abs(entry.t[0]);
+              obs.redundancy = entry.r[0];
+            }
+          });
+        } catch {
+          this.log('Warning: Standardized residuals not computed (Qvv inversion failed).');
+        }
+      }
+    }
+
     // Flag very large standardized residuals
     const flagged = this.observations.filter((o) => Math.abs(o.stdRes || 0) > this.maxStdRes);
     if (flagged.length) {
@@ -1168,6 +1578,65 @@ export class LSAEngine {
         `Warning: ${flagged.length} obs exceed ${this.maxStdRes} sigma (consider excluding/reweighting).`,
       );
     }
+
+    const summary: Record<
+      string,
+      {
+        count: number;
+        sumSq: number;
+        maxAbs: number;
+        maxStdRes: number;
+        over3: number;
+        over4: number;
+        unit: string;
+      }
+    > = {};
+    const addSummary = (type: string, value: number, stdRes: number, unit: string) => {
+      const entry =
+        summary[type] ??
+        ({ count: 0, sumSq: 0, maxAbs: 0, maxStdRes: 0, over3: 0, over4: 0, unit } as const);
+      entry.count += 1;
+      entry.sumSq += value * value;
+      entry.maxAbs = Math.max(entry.maxAbs, Math.abs(value));
+      entry.maxStdRes = Math.max(entry.maxStdRes, Math.abs(stdRes));
+      if (Math.abs(stdRes) > 3) entry.over3 += 1;
+      if (Math.abs(stdRes) > 4) entry.over4 += 1;
+      summary[type] = entry as any;
+    };
+    activeObservations.forEach((obs) => {
+      if (obs.residual == null) return;
+      const stdRes = obs.stdRes ?? 0;
+      if (
+        obs.type === 'angle' ||
+        obs.type === 'direction' ||
+        obs.type === 'dir' ||
+        obs.type === 'bearing' ||
+        obs.type === 'zenith'
+      ) {
+        const arcsec = (obs.residual as number) * RAD_TO_DEG * 3600;
+        addSummary(obs.type, arcsec, stdRes, 'arcsec');
+      } else if (obs.type === 'dist' || obs.type === 'lev') {
+        addSummary(obs.type, obs.residual as number, stdRes, 'm');
+      } else if (obs.type === 'gps') {
+        const v = obs.residual as { vE: number; vN: number };
+        const mag = Math.hypot(v.vE, v.vN);
+        addSummary(obs.type, mag, stdRes, 'm');
+      }
+    });
+    const typeSummary: AdjustmentResult['typeSummary'] = {};
+    Object.entries(summary).forEach(([type, entry]) => {
+      const rms = entry.count ? Math.sqrt(entry.sumSq / entry.count) : 0;
+      typeSummary[type] = {
+        count: entry.count,
+        rms,
+        maxAbs: entry.maxAbs,
+        maxStdRes: entry.maxStdRes,
+        over3: entry.over3,
+        over4: entry.over4,
+        unit: entry.unit,
+      };
+    });
+    this.typeSummary = typeSummary;
 
     if (hasQxx && this.Qxx) {
       const s0_sq = this.seuw * this.seuw;
@@ -1254,6 +1723,8 @@ export class LSAEngine {
       logs: this.logs,
       seuw: this.seuw,
       dof: this.dof,
+      chiSquare: this.chiSquare,
+      typeSummary: this.typeSummary,
     };
   }
 }

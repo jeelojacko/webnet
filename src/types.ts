@@ -40,13 +40,15 @@ export type StationMap = Record<StationId, Station>;
 
 interface ObservationBase {
   id: number;
-  type: 'dist' | 'angle' | 'direction' | 'gps' | 'lev' | 'bearing' | 'zenith';
+  type: 'dist' | 'angle' | 'direction' | 'dir' | 'gps' | 'lev' | 'bearing' | 'zenith';
   instCode: string;
   stdDev: number;
   sigmaSource?: 'default' | 'explicit' | 'fixed' | 'float';
   calc?: unknown;
   residual?: unknown;
   stdRes?: number;
+  stdResComponents?: { tE: number; tN: number };
+  redundancy?: number | { rE: number; rN: number };
 }
 
 export interface DistanceObservation extends ObservationBase {
@@ -198,4 +200,17 @@ export interface AdjustmentResult {
   logs: string[];
   seuw: number;
   dof: number;
+  chiSquare?: { T: number; dof: number; p: number; pass95: boolean };
+  typeSummary?: Record<
+    string,
+    {
+      count: number;
+      rms: number;
+      maxAbs: number;
+      maxStdRes: number;
+      over3: number;
+      over4: number;
+      unit: string;
+    }
+  >;
 }

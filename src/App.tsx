@@ -291,6 +291,13 @@ const App: React.FC = () => {
     lines.push(`Status: ${res.converged ? 'CONVERGED' : 'NOT CONVERGED'}`)
     lines.push(`Iterations: ${res.iterations}`)
     lines.push(`SEUW: ${res.seuw.toFixed(4)} (DOF: ${res.dof})`)
+    if (res.chiSquare) {
+      lines.push(
+        `Chi-square: T=${res.chiSquare.T.toFixed(4)} dof=${res.chiSquare.dof} p=${res.chiSquare.p.toFixed(
+          4,
+        )} (${res.chiSquare.pass95 ? 'PASS' : 'FAIL'} @95%)`,
+      )
+    }
     lines.push('')
     lines.push('--- Adjusted Coordinates ---')
     lines.push('ID\tNorthing\tEasting\tHeight\tType')
@@ -299,9 +306,28 @@ const App: React.FC = () => {
       lines.push(`${id}\t${st.y.toFixed(4)}\t${st.x.toFixed(4)}\t${st.h.toFixed(4)}\t${type}`)
     })
     lines.push('')
+    if (res.typeSummary && Object.keys(res.typeSummary).length > 0) {
+      lines.push('--- Per-Type Summary ---')
+      lines.push('Type\tCount\tRMS\tMaxAbs\tMaxStdRes\t>3σ\t>4σ\tUnit')
+      Object.entries(res.typeSummary).forEach(([type, s]) => {
+        lines.push(
+          `${type}\t${s.count}\t${s.rms.toFixed(4)}\t${s.maxAbs.toFixed(4)}\t${s.maxStdRes.toFixed(
+            3,
+          )}\t${s.over3}\t${s.over4}\t${s.unit}`,
+        )
+      })
+      lines.push('')
+    }
     lines.push('--- Observations & Residuals ---')
-    const rows: { type: string; stations: string; obs: string; calc: string; residual: string; stdRes: string }[] =
-      []
+    const rows: {
+      type: string
+      stations: string
+      obs: string
+      calc: string
+      residual: string
+      stdRes: string
+      redundancy: string
+    }[] = []
     res.observations.forEach((obs) => {
       let stations = ''
       let obsStr = ''
@@ -380,7 +406,18 @@ const App: React.FC = () => {
         obs: obsStr || '-',
         calc: calcStr || '-',
         residual: resStr || '-',
-        stdRes: obs.stdRes != null ? obs.stdRes.toFixed(3) : '-',
+        stdRes:
+          obs.stdResComponents != null
+            ? `${obs.stdResComponents.tE.toFixed(3)}/${obs.stdResComponents.tN.toFixed(3)}`
+            : obs.stdRes != null
+              ? obs.stdRes.toFixed(3)
+              : '-',
+        redundancy:
+          typeof obs.redundancy === 'object'
+            ? `${obs.redundancy.rE.toFixed(3)}/${obs.redundancy.rN.toFixed(3)}`
+            : obs.redundancy != null
+              ? obs.redundancy.toFixed(3)
+              : '-',
       })
     })
 
@@ -391,6 +428,7 @@ const App: React.FC = () => {
       calc: 'Calc',
       residual: 'Residual',
       stdRes: 'StdRes',
+      redundancy: 'Redund',
     }
     const widths = {
       type: Math.max(headers.type.length, ...rows.map((r) => r.type.length)),
@@ -399,6 +437,7 @@ const App: React.FC = () => {
       calc: Math.max(headers.calc.length, ...rows.map((r) => r.calc.length)),
       residual: Math.max(headers.residual.length, ...rows.map((r) => r.residual.length)),
       stdRes: Math.max(headers.stdRes.length, ...rows.map((r) => r.stdRes.length)),
+      redundancy: Math.max(headers.redundancy.length, ...rows.map((r) => r.redundancy.length)),
     }
     const pad = (value: string, size: number) => value.padEnd(size, ' ')
     lines.push(
@@ -409,6 +448,7 @@ const App: React.FC = () => {
         pad(headers.calc, widths.calc),
         pad(headers.residual, widths.residual),
         pad(headers.stdRes, widths.stdRes),
+        pad(headers.redundancy, widths.redundancy),
       ].join('  '),
     )
     rows.forEach((r) => {
@@ -420,6 +460,7 @@ const App: React.FC = () => {
           pad(r.calc, widths.calc),
           pad(r.residual, widths.residual),
           pad(r.stdRes, widths.stdRes),
+          pad(r.redundancy, widths.redundancy),
         ].join('  '),
       )
     })

@@ -91,5 +91,9 @@ Structured data collection methods:
 -   **Statistical Tests**: Chi-Square test on the variance factor (Standard Error of Unit Weight).
 -   **Residuals**: Difference between observed and calculated values. Large residuals may indicate blunders.
 -   **Error Ellipses**: Confidence regions for station positions.
+-   **Standardized Residuals**: Reported using full residual covariance (Qvv) so values are comparable across types.
+-   **Redundancy Numbers**: Per-observation checkability (0 = weak, 1 = strong).
+-   **Global Chi-Square Test**: Flags when input sigmas are inconsistent (p-value at 95%).
+-   **Per-Type Summary**: RMS, max residual, max standardized residual, and counts >3σ/>4σ by observation type.
 -   **Processing Log**: Includes per-direction-set residual summaries (mean/RMS/max in arcseconds) to help spot bad sets.
 -   **Prefit Summary**: Initial direction-set residual summaries (before adjustment) can reveal inconsistent sets early.
