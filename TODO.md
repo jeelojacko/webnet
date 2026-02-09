@@ -66,3 +66,4 @@
   - [x] Phase 10: add automated suspect impact analysis (what-if exclusion: dSEUW, dMax|t|, chi-square change, max unknown shift, score) with one-click exclude+rerun
   - [x] Phase 11: add hover-tooltips for report column headers, key summary statistics (SEUW, chi-square), and all settings controls to improve interpretation
   - [x] Phase 12: add TS angular correlated stochastic model (`.TSCORR` on/off, scope, rho), apply correlated weights in solve/Qvv, and report/export correlation diagnostics
+  - [x] Phase 13: add robust adjustment mode (`.ROBUST HUBER k`) with iterative downweight diagnostics and robust-vs-classical top-suspect comparison in report/export

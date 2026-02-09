@@ -168,6 +168,8 @@ export class LSAEngine {
   private tsCorrelationEnabled = false;
   private tsCorrelationRho = 0.25;
   private tsCorrelationScope: ParseOptions['tsCorrelationScope'] = 'set';
+  private robustMode: ParseOptions['robustMode'] = 'none';
+  private robustK = 1.5;
   private chiSquare?: AdjustmentResult['chiSquare'];
   private typeSummary?: Record<
     string,
@@ -187,6 +189,7 @@ export class LSAEngine {
   private directionRepeatabilityDiagnostics?: AdjustmentResult['directionRepeatabilityDiagnostics'];
   private setupDiagnostics?: AdjustmentResult['setupDiagnostics'];
   private tsCorrelationDiagnostics?: AdjustmentResult['tsCorrelationDiagnostics'];
+  private robustDiagnostics?: AdjustmentResult['robustDiagnostics'];
   private traverseDiagnostics?: AdjustmentResult['traverseDiagnostics'];
   private sideshots?: AdjustmentResult['sideshots'];
   private condition?: AdjustmentResult['condition'];
@@ -438,6 +441,113 @@ export class LSAEngine {
       }
     }
     return sum;
+  }
+
+  private observationStations(obs: Observation): string {
+    if (obs.type === 'angle') return `${obs.at}-${obs.from}-${obs.to}`;
+    if (obs.type === 'direction') return `${obs.at}-${obs.to}`;
+    if (
+      obs.type === 'dist' ||
+      obs.type === 'bearing' ||
+      obs.type === 'zenith' ||
+      obs.type === 'lev' ||
+      obs.type === 'gps' ||
+      obs.type === 'dir'
+    ) {
+      return `${obs.from}-${obs.to}`;
+    }
+    return '-';
+  }
+
+  private rowSigma(info: NonNullable<EquationRowInfo>): number {
+    if (info.obs.type === 'gps') {
+      const cov = this.gpsCovariance(info.obs);
+      const variance = info.component === 'N' ? cov.cNN : cov.cEE;
+      return Math.sqrt(Math.max(variance, 1e-24));
+    }
+    return Math.max(this.effectiveStdDev(info.obs), 1e-12);
+  }
+
+  private applyRobustReweighting(
+    P: number[][],
+    L: number[][],
+    rowInfo: EquationRowInfo[],
+    iteration?: number,
+    recordDiagnostics = false,
+  ): void {
+    if (this.robustMode !== 'huber') return;
+    const k = Math.max(0.5, Math.min(10, this.robustK || 1.5));
+    const factors = new Array(P.length).fill(1);
+    const norms = new Array(P.length).fill(0);
+
+    let downweightedRows = 0;
+    let minWeight = 1;
+    let maxNorm = 0;
+    let meanWeightSum = 0;
+    let meanWeightCount = 0;
+    const candidates: NonNullable<AdjustmentResult['robustDiagnostics']>['topDownweightedRows'] = [];
+
+    for (let i = 0; i < rowInfo.length; i += 1) {
+      const info = rowInfo[i];
+      if (!info) continue;
+      const sigma = this.rowSigma(info);
+      const norm = Math.abs(L[i][0]) / Math.max(sigma, 1e-24);
+      norms[i] = norm;
+      maxNorm = Math.max(maxNorm, norm);
+      let w = 1;
+      if (norm > k) w = k / norm;
+      w = Math.max(0.001, Math.min(1, w));
+      factors[i] = w;
+      meanWeightSum += w;
+      meanWeightCount += 1;
+      if (w < 0.999999) {
+        downweightedRows += 1;
+        minWeight = Math.min(minWeight, w);
+        if (recordDiagnostics) {
+          candidates.push({
+            obsId: info.obs.id,
+            type: info.obs.type,
+            stations: this.observationStations(info.obs),
+            sourceLine: info.obs.sourceLine,
+            weight: w,
+            norm,
+          });
+        }
+      }
+    }
+
+    const sqrtFactors = factors.map((w) => Math.sqrt(w));
+    for (let i = 0; i < P.length; i += 1) {
+      for (let j = 0; j < P.length; j += 1) {
+        const scale = sqrtFactors[i] * sqrtFactors[j];
+        if (scale === 1) continue;
+        P[i][j] *= scale;
+      }
+    }
+
+    if (recordDiagnostics && this.robustDiagnostics && iteration != null) {
+      const topRows = candidates
+        .sort((a, b) => {
+          if (a.weight !== b.weight) return a.weight - b.weight;
+          return b.norm - a.norm;
+        })
+        .slice(0, 15);
+      this.robustDiagnostics.iterations.push({
+        iteration,
+        downweightedRows,
+        meanWeight: meanWeightCount > 0 ? meanWeightSum / meanWeightCount : 1,
+        minWeight: downweightedRows > 0 ? minWeight : 1,
+        maxNorm,
+      });
+      this.robustDiagnostics.topDownweightedRows = topRows;
+      this.log(
+        `Iter ${iteration} robust(${this.robustMode}): downweighted=${downweightedRows}, minW=${(
+          downweightedRows > 0 ? minWeight : 1
+        ).toFixed(3)}, meanW=${(meanWeightCount > 0 ? meanWeightSum / meanWeightCount : 1).toFixed(
+          3,
+        )}, max|v/sigma|=${maxNorm.toFixed(2)}`,
+      );
+    }
   }
 
   private computeDirectionSetPrefit(
@@ -950,11 +1060,14 @@ export class LSAEngine {
     this.tsCorrelationRho = parsed.parseState?.tsCorrelationRho ?? this.parseOptions?.tsCorrelationRho ?? 0.25;
     this.tsCorrelationScope =
       parsed.parseState?.tsCorrelationScope ?? this.parseOptions?.tsCorrelationScope ?? 'set';
+    this.robustMode = parsed.parseState?.robustMode ?? this.parseOptions?.robustMode ?? 'none';
+    this.robustK = parsed.parseState?.robustK ?? this.parseOptions?.robustK ?? 1.5;
     this.is2D = this.coordMode === '2D';
     this.condition = undefined;
     this.controlConstraints = undefined;
     this.sideshots = undefined;
     this.tsCorrelationDiagnostics = undefined;
+    this.robustDiagnostics = undefined;
     this.conditionWarned = false;
 
     if (this.mapMode !== 'off') {
@@ -973,6 +1086,16 @@ export class LSAEngine {
       this.log(
         `TS angular correlation active: scope=${this.tsCorrelationScope}, rho=${this.tsCorrelationRho.toFixed(3)}`,
       );
+    }
+    if (this.robustMode === 'huber') {
+      this.robustDiagnostics = {
+        enabled: true,
+        mode: 'huber',
+        k: Math.max(0.5, Math.min(10, this.robustK || 1.5)),
+        iterations: [],
+        topDownweightedRows: [],
+      };
+      this.log(`Robust reweighting active: mode=${this.robustMode}, k=${this.robustDiagnostics.k.toFixed(2)}`);
     }
 
     // Apply overrides before any unit normalization
@@ -1567,6 +1690,7 @@ export class LSAEngine {
       });
 
       this.applyTsCorrelationToWeightMatrix(P, rowInfo);
+      this.applyRobustReweighting(P, L, rowInfo, iter + 1, true);
 
       try {
         const AT = transpose(A);
@@ -2352,6 +2476,7 @@ export class LSAEngine {
         });
 
         this.applyTsCorrelationToWeightMatrix(P, rowInfo, true);
+        this.applyRobustReweighting(P, L, rowInfo, undefined, false);
 
         try {
           const AT = transpose(A);
@@ -3122,6 +3247,7 @@ export class LSAEngine {
       directionRepeatabilityDiagnostics: this.directionRepeatabilityDiagnostics,
       setupDiagnostics: this.setupDiagnostics,
       tsCorrelationDiagnostics: this.tsCorrelationDiagnostics,
+      robustDiagnostics: this.robustDiagnostics,
       traverseDiagnostics: this.traverseDiagnostics,
       sideshots: this.sideshots,
     };

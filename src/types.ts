@@ -206,6 +206,7 @@ export type LonSign = 'west-positive' | 'west-negative';
 export type AngleMode = 'auto' | 'angle' | 'dir';
 export type VerticalReductionMode = 'none' | 'curvref';
 export type TsCorrelationScope = 'setup' | 'set';
+export type RobustMode = 'none' | 'huber';
 
 export interface ParseOptions {
   units: UnitsMode;
@@ -231,6 +232,8 @@ export interface ParseOptions {
   tsCorrelationEnabled?: boolean;
   tsCorrelationRho?: number;
   tsCorrelationScope?: TsCorrelationScope;
+  robustMode?: RobustMode;
+  robustK?: number;
 }
 
 export interface AdjustmentResult {
@@ -380,6 +383,48 @@ export interface AdjustmentResult {
       pairCount: number;
       meanAbsOffDiagWeight?: number;
     }[];
+  };
+  robustDiagnostics?: {
+    enabled: boolean;
+    mode: RobustMode;
+    k: number;
+    iterations: {
+      iteration: number;
+      downweightedRows: number;
+      meanWeight: number;
+      minWeight: number;
+      maxNorm: number;
+    }[];
+    topDownweightedRows: {
+      obsId: number;
+      type: Observation['type'];
+      stations: string;
+      sourceLine?: number;
+      weight: number;
+      norm: number;
+    }[];
+  };
+  robustComparison?: {
+    enabled: boolean;
+    classicalTop: {
+      rank: number;
+      obsId: number;
+      type: Observation['type'];
+      stations: string;
+      sourceLine?: number;
+      stdRes?: number;
+      localFail: boolean;
+    }[];
+    robustTop: {
+      rank: number;
+      obsId: number;
+      type: Observation['type'];
+      stations: string;
+      sourceLine?: number;
+      stdRes?: number;
+      localFail: boolean;
+    }[];
+    overlapCount: number;
   };
   traverseDiagnostics?: {
     closureCount: number;

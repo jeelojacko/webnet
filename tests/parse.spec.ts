@@ -178,6 +178,29 @@ describe('parseInput', () => {
     expect(off.parseState.tsCorrelationEnabled).toBe(false)
   })
 
+  it('parses robust directives', () => {
+    const parsed = parseInput(
+      [
+        '.ROBUST HUBER 1.8',
+        'C A 0 0 0 !',
+        'C B 100 0 0',
+        'D A-B 100 0.01',
+      ].join('\n'),
+    )
+    expect(parsed.parseState.robustMode).toBe('huber')
+    expect(parsed.parseState.robustK).toBeCloseTo(1.8, 8)
+
+    const off = parseInput(
+      [
+        '.ROBUST OFF',
+        'C A 0 0 0 !',
+        'C B 100 0 0',
+        'D A-B 100 0.01',
+      ].join('\n'),
+    )
+    expect(off.parseState.robustMode).toBe('none')
+  })
+
   it('parses sideshot with explicit azimuth token', () => {
     const parsed = parseInput(
       [

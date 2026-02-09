@@ -32,6 +32,7 @@ import type {
   AngleMode,
   VerticalReductionMode,
   TsCorrelationScope,
+  RobustMode,
 } from './types'
 
 const FT_PER_M = 3.280839895
@@ -158,6 +159,8 @@ type ParseSettings = {
   tsCorrelationEnabled: boolean
   tsCorrelationRho: number
   tsCorrelationScope: TsCorrelationScope
+  robustMode: RobustMode
+  robustK: number
 }
 
 type TabKey = 'report' | 'map'
@@ -190,6 +193,9 @@ const SETTINGS_TOOLTIPS = {
     'Correlation coefficient rho applied between angular equations in each TS correlation group (0 to 0.95).',
   tsCorrelationScope:
     'Grouping scope for TS angular correlation: SET correlates per setup+set/type; SETUP correlates by occupy setup.',
+  robustMode:
+    'Optional robust adjustment mode. HUBER downweights large normalized residuals during iterations.',
+  robustK: 'Huber tuning constant k (typical 1.5). Lower values downweight outliers more aggressively.',
   instrument: 'Select an instrument code to view parsed EDM/angle/centering and other precision parameters.',
 } as const
 
@@ -218,6 +224,8 @@ const App: React.FC = () => {
     tsCorrelationEnabled: false,
     tsCorrelationRho: 0.25,
     tsCorrelationScope: 'set',
+    robustMode: 'none',
+    robustK: 1.5,
   })
   const [selectedInstrument, setSelectedInstrument] = useState('')
   const [splitPercent, setSplitPercent] = useState(35) // left pane width (%)
@@ -356,6 +364,31 @@ const App: React.FC = () => {
       return Math.max(maxVal, Math.abs(obs.stdRes ?? 0))
     }, 0)
 
+  const rankedSuspects = (
+    res: AdjustmentResult,
+    limit = 10,
+  ): NonNullable<AdjustmentResult['robustComparison']>['robustTop'] => {
+    const rows = [...res.observations]
+      .filter((obs) => Number.isFinite(obs.stdRes))
+      .map((obs) => ({
+        obsId: obs.id,
+        type: obs.type,
+        stations: observationStationsLabel(obs),
+        sourceLine: obs.sourceLine,
+        stdRes: obs.stdRes != null ? Math.abs(obs.stdRes) : undefined,
+        localFail: hasLocalFailure(obs),
+      }))
+      .sort((a, b) => {
+        const af = a.localFail ? 1 : 0
+        const bf = b.localFail ? 1 : 0
+        if (bf !== af) return bf - af
+        return (b.stdRes ?? 0) - (a.stdRes ?? 0)
+      })
+      .slice(0, limit)
+      .map((r, idx) => ({ ...r, rank: idx + 1 }))
+    return rows
+  }
+
   const maxUnknownCoordinateShift = (base: AdjustmentResult, alt: AdjustmentResult): number => {
     let maxShift = 0
     Object.entries(base.stations).forEach(([id, st]) => {
@@ -381,7 +414,7 @@ const App: React.FC = () => {
     lines.push(`# Generated: ${now.toLocaleString()}`)
     lines.push(`# Linear units: ${linearUnit}`)
     lines.push(
-      `# Reduction: mapMode=${parseSettings.mapMode}, mapScale=${(parseSettings.mapScaleFactor ?? 1).toFixed(8)}, curvRef=${parseSettings.applyCurvatureRefraction ? 'ON' : 'OFF'}, k=${parseSettings.refractionCoefficient.toFixed(3)}, vRed=${parseSettings.verticalReduction}, tsCorr=${parseSettings.tsCorrelationEnabled ? 'ON' : 'OFF'}(${parseSettings.tsCorrelationScope},rho=${parseSettings.tsCorrelationRho.toFixed(3)})`,
+      `# Reduction: mapMode=${parseSettings.mapMode}, mapScale=${(parseSettings.mapScaleFactor ?? 1).toFixed(8)}, curvRef=${parseSettings.applyCurvatureRefraction ? 'ON' : 'OFF'}, k=${parseSettings.refractionCoefficient.toFixed(3)}, vRed=${parseSettings.verticalReduction}, tsCorr=${parseSettings.tsCorrelationEnabled ? 'ON' : 'OFF'}(${parseSettings.tsCorrelationScope},rho=${parseSettings.tsCorrelationRho.toFixed(3)}), robust=${parseSettings.robustMode.toUpperCase()}(k=${parseSettings.robustK.toFixed(2)})`,
     )
     lines.push('')
     lines.push(`Status: ${res.converged ? 'CONVERGED' : 'NOT CONVERGED'}`)
@@ -437,6 +470,33 @@ const App: React.FC = () => {
           })
         }
       }
+    }
+    if (res.robustDiagnostics) {
+      const rd = res.robustDiagnostics
+      lines.push(`Robust mode: ${rd.enabled ? rd.mode.toUpperCase() : 'OFF'} (k=${rd.k.toFixed(2)})`)
+      if (rd.enabled) {
+        rd.iterations.forEach((it) => {
+          lines.push(
+            `  Iter ${it.iteration}: downweighted=${it.downweightedRows}, meanW=${it.meanWeight.toFixed(3)}, minW=${it.minWeight.toFixed(3)}, max|v/sigma|=${it.maxNorm.toFixed(2)}`,
+          )
+        })
+        if (rd.topDownweightedRows.length > 0) {
+          lines.push('  Top downweighted rows:')
+          rd.topDownweightedRows.slice(0, 20).forEach((r, idx) => {
+            lines.push(
+              `    ${idx + 1}. #${r.obsId} ${r.type.toUpperCase()} ${r.stations} line=${r.sourceLine ?? '-'} w=${r.weight.toFixed(3)} |v/sigma|=${r.norm.toFixed(2)}`,
+            )
+          })
+        }
+      }
+    }
+    if (res.robustComparison?.enabled) {
+      lines.push(
+        `Robust/classical suspect overlap: ${res.robustComparison.overlapCount}/${Math.min(
+          res.robustComparison.classicalTop.length,
+          res.robustComparison.robustTop.length,
+        )}`,
+      )
     }
     lines.push('')
     lines.push('--- Adjusted Coordinates ---')
@@ -1679,7 +1739,11 @@ const App: React.FC = () => {
     fileInputRef.current?.click()
   }
 
-  const solveCore = (excludeSet: Set<number>): AdjustmentResult => {
+  const solveCore = (
+    excludeSet: Set<number>,
+    parseOverride?: Partial<ParseSettings>,
+  ): AdjustmentResult => {
+    const effectiveParse = { ...parseSettings, ...parseOverride }
     const engine = new LSAEngine({
       input,
       maxIterations: settings.maxIterations,
@@ -1688,21 +1752,23 @@ const App: React.FC = () => {
       overrides,
       parseOptions: {
         units: settings.units,
-        coordMode: parseSettings.coordMode,
-        order: parseSettings.order,
-        angleMode: parseSettings.angleMode,
-        deltaMode: parseSettings.deltaMode,
-        mapMode: parseSettings.mapMode,
-        mapScaleFactor: parseSettings.mapScaleFactor,
-        normalize: parseSettings.normalize,
-        applyCurvatureRefraction: parseSettings.applyCurvatureRefraction,
-        refractionCoefficient: parseSettings.refractionCoefficient,
-        verticalReduction: parseSettings.verticalReduction,
-        levelWeight: parseSettings.levelWeight,
-        lonSign: parseSettings.lonSign,
-        tsCorrelationEnabled: parseSettings.tsCorrelationEnabled,
-        tsCorrelationRho: parseSettings.tsCorrelationRho,
-        tsCorrelationScope: parseSettings.tsCorrelationScope,
+        coordMode: effectiveParse.coordMode,
+        order: effectiveParse.order,
+        angleMode: effectiveParse.angleMode,
+        deltaMode: effectiveParse.deltaMode,
+        mapMode: effectiveParse.mapMode,
+        mapScaleFactor: effectiveParse.mapScaleFactor,
+        normalize: effectiveParse.normalize,
+        applyCurvatureRefraction: effectiveParse.applyCurvatureRefraction,
+        refractionCoefficient: effectiveParse.refractionCoefficient,
+        verticalReduction: effectiveParse.verticalReduction,
+        levelWeight: effectiveParse.levelWeight,
+        lonSign: effectiveParse.lonSign,
+        tsCorrelationEnabled: effectiveParse.tsCorrelationEnabled,
+        tsCorrelationRho: effectiveParse.tsCorrelationRho,
+        tsCorrelationScope: effectiveParse.tsCorrelationScope,
+        robustMode: effectiveParse.robustMode,
+        robustK: effectiveParse.robustK,
       },
     })
     return engine.solve()
@@ -1793,6 +1859,26 @@ const App: React.FC = () => {
   const solveWithImpacts = (excludeSet: Set<number>): AdjustmentResult => {
     const solved = solveCore(excludeSet)
     solved.suspectImpactDiagnostics = buildSuspectImpactDiagnostics(solved, excludeSet)
+    if (parseSettings.robustMode !== 'none') {
+      const classical = solveCore(excludeSet, { robustMode: 'none' })
+      const classicalTop = rankedSuspects(classical, 10)
+      const robustTop = rankedSuspects(solved, 10)
+      const robustIds = new Set(robustTop.map((r) => r.obsId))
+      const overlapCount = classicalTop.reduce((acc, r) => acc + (robustIds.has(r.obsId) ? 1 : 0), 0)
+      solved.robustComparison = {
+        enabled: true,
+        classicalTop,
+        robustTop,
+        overlapCount,
+      }
+    } else {
+      solved.robustComparison = {
+        enabled: false,
+        classicalTop: [],
+        robustTop: [],
+        overlapCount: 0,
+      }
+    }
     return solved
   }
 
@@ -2169,6 +2255,48 @@ const App: React.FC = () => {
                             Number.isFinite(parseFloat(e.target.value))
                               ? Math.max(0, Math.min(0.95, parseFloat(e.target.value)))
                               : 0.25,
+                          )
+                        }
+                        className="w-20 bg-slate-800 text-xs border border-slate-600 text-white rounded px-2 py-1 outline-none focus:border-blue-500 text-center"
+                      />
+                    </div>
+                    <div className="flex items-center justify-between gap-3">
+                      <label
+                        title={SETTINGS_TOOLTIPS.robustMode}
+                        className="text-xs text-slate-400 font-medium uppercase"
+                      >
+                        Robust
+                      </label>
+                      <select
+                        title={SETTINGS_TOOLTIPS.robustMode}
+                        value={parseSettings.robustMode}
+                        onChange={(e) => handleParseSetting('robustMode', e.target.value as RobustMode)}
+                        className="bg-slate-800 text-xs border border-slate-600 text-white rounded px-2 py-1 outline-none focus:border-blue-500"
+                      >
+                        <option value="none">OFF (.ROBUST OFF)</option>
+                        <option value="huber">Huber (.ROBUST HUBER)</option>
+                      </select>
+                    </div>
+                    <div className="flex items-center justify-between gap-3">
+                      <label
+                        title={SETTINGS_TOOLTIPS.robustK}
+                        className="text-xs text-slate-400 font-medium uppercase"
+                      >
+                        Robust k
+                      </label>
+                      <input
+                        title={SETTINGS_TOOLTIPS.robustK}
+                        type="number"
+                        min={0.5}
+                        max={10}
+                        step={0.1}
+                        value={parseSettings.robustK}
+                        onChange={(e) =>
+                          handleParseSetting(
+                            'robustK',
+                            Number.isFinite(parseFloat(e.target.value))
+                              ? Math.max(0.5, Math.min(10, parseFloat(e.target.value)))
+                              : 1.5,
                           )
                         }
                         className="w-20 bg-slate-800 text-xs border border-slate-600 text-white rounded px-2 py-1 outline-none focus:border-blue-500 text-center"

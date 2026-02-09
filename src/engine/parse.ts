@@ -37,6 +37,8 @@ const defaultParseOptions: ParseOptions = {
   tsCorrelationEnabled: false,
   tsCorrelationRho: 0.25,
   tsCorrelationScope: 'set',
+  robustMode: 'none',
+  robustK: 1.5,
 }
 
 const FT_PER_M = 3.280839895
@@ -507,6 +509,19 @@ export const parseInput = (
         if (mode === 'DIR' || mode === 'AZ' || mode === 'AZIMUTH') angleMode = 'dir'
         state.angleMode = angleMode
         logs.push(`A-record mode set to ${angleMode}`)
+      } else if (op === '.ROBUST') {
+        const mode = (parts[1] || '').toUpperCase()
+        const maybeK = parseFloat(parts[2] || parts[1] || '')
+        if (!mode || mode === 'OFF' || mode === 'NONE' || mode === '0') {
+          state.robustMode = 'none'
+          logs.push('Robust mode set to none')
+        } else {
+          state.robustMode = 'huber'
+          if (Number.isFinite(maybeK)) {
+            state.robustK = Math.max(0.5, Math.min(10, maybeK))
+          }
+          logs.push(`Robust mode set to huber (k=${(state.robustK ?? 1.5).toFixed(2)})`)
+        }
       } else if (op === '.TSCORR') {
         const parseScope = (token?: string): ParseOptions['tsCorrelationScope'] | undefined => {
           const mode = (token || '').toUpperCase()

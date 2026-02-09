@@ -265,6 +265,30 @@ describe('LSAEngine', () => {
     expect(on.seuw).not.toBe(off.seuw)
   })
 
+  it('applies robust huber reweighting and reports iteration diagnostics', () => {
+    const input = [
+      '.AMODE ANGLE',
+      '.ROBUST HUBER 1.5',
+      'C C1 0 0 0 !',
+      'C C2 200 0 0 !',
+      'C C3 100 200 0 !',
+      'C U 100 80 0',
+      'D C1-U 128.06 0.003',
+      'D C2-U 128.06 0.003',
+      'D C3-U 120.00 0.003',
+      'A U-C1-C2 102-40-00.0 1.0',
+      'A U-C2-C3 116-33-55.0 1.0',
+      'A U-C3-C1 140-46-10.0 1.0',
+      'A U-C1-C2 102-42-30.0 1.0',
+    ].join('\n')
+    const result = new LSAEngine({ input, maxIterations: 12 }).solve()
+    expect(result.robustDiagnostics).toBeDefined()
+    expect(result.robustDiagnostics?.enabled).toBe(true)
+    expect(result.robustDiagnostics?.mode).toBe('huber')
+    expect((result.robustDiagnostics?.iterations.length ?? 0) > 0).toBe(true)
+    expect(result.logs.some((l) => l.includes('robust(huber)'))).toBe(true)
+  })
+
   it('computes post-adjusted sideshot coordinates/precision when azimuth reference exists', () => {
     const input = readFileSync('tests/fixtures/sideshot_postadjust_known.dat', 'utf-8')
     const engine = new LSAEngine({ input, maxIterations: 10 })

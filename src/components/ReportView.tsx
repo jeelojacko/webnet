@@ -114,7 +114,11 @@ const ReportView: React.FC<ReportViewProps> = ({
       EQUATIONS: 'Number of angular equations participating in TS correlation groups.',
       KEY: 'Internal TS correlation group key (setup and optionally set/type).',
       ROWS: 'Number of equations inside this TS correlation group.',
+      ITER: 'Adjustment iteration number.',
+      DOWNWEIGHTED: 'Number of rows that received robust downweighting (weight < 1).',
       OCCUPY: 'Instrument setup station where observations were made.',
+      WEIGHT: 'Robust weight applied to this equation row (1=no downweighting).',
+      NORM: 'Normalized residual magnitude |v/sigma| used for robust weighting.',
       TARGET: 'Observed foresight/target station.',
       SCORE: 'Ranking score used to prioritize likely suspect rows.',
       SETS: 'Number of repeated sets contributing to trend diagnostics.',
@@ -143,6 +147,9 @@ const ReportView: React.FC<ReportViewProps> = ({
     if (upper.startsWith('PAIR COUNT')) return 'Number of off-diagonal correlated equation pairs in this group.'
     if (upper.startsWith('MEAN|OFFDIAGW|')) return 'Mean absolute off-diagonal weight magnitude across TS correlation pairs.'
     if (upper.startsWith('MEAN|W')) return 'Mean absolute off-diagonal correlation weight inside this group.'
+    if (upper.startsWith('MEAN WEIGHT')) return 'Average robust weight for the iteration.'
+    if (upper.startsWith('MIN WEIGHT')) return 'Minimum robust weight in the iteration (smaller indicates stronger downweighting).'
+    if (upper.startsWith('MAX |V/SIGMA|')) return 'Maximum normalized residual magnitude used by robust weighting.'
     if (upper.startsWith('DMAX|T|')) return 'Change in maximum absolute standardized residual after exclusion.'
     if (upper.startsWith('CHI')) return 'Chi-square model test change after what-if exclusion.'
     if (upper.startsWith('MAX SHIFT')) return 'Maximum coordinate shift among unknown points under what-if exclusion.'
@@ -663,6 +670,166 @@ const ReportView: React.FC<ReportViewProps> = ({
           </div>
         </div>
       </div>
+
+      {result.robustDiagnostics && (
+        <div className="mb-6 border border-slate-800 rounded overflow-hidden">
+          <div className="px-3 py-2 text-xs text-slate-400 uppercase tracking-wider border-b border-slate-800 bg-slate-900/40">
+            Robust Diagnostics
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-3 text-xs text-slate-300">
+            <div>
+              <div className="text-slate-500">Mode</div>
+              <div>{result.robustDiagnostics.enabled ? result.robustDiagnostics.mode.toUpperCase() : 'OFF'}</div>
+            </div>
+            <div>
+              <div className="text-slate-500">k</div>
+              <div>{result.robustDiagnostics.k.toFixed(2)}</div>
+            </div>
+            <div>
+              <div className="text-slate-500">Iterations</div>
+              <div>{result.robustDiagnostics.iterations.length}</div>
+            </div>
+            <div>
+              <div className="text-slate-500">Final Downweighted</div>
+              <div>
+                {result.robustDiagnostics.iterations.length > 0
+                  ? result.robustDiagnostics.iterations[result.robustDiagnostics.iterations.length - 1]
+                      .downweightedRows
+                  : 0}
+              </div>
+            </div>
+          </div>
+          {result.robustDiagnostics.enabled && result.robustDiagnostics.iterations.length > 0 && (
+            <div className="overflow-x-auto w-full border-t border-slate-800">
+              <table className="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr className="text-slate-500 border-b border-slate-800">
+                    <th className="py-2 px-3 font-semibold">Iter</th>
+                    <th className="py-2 px-3 font-semibold text-right">Downweighted</th>
+                    <th className="py-2 px-3 font-semibold text-right">Mean Weight</th>
+                    <th className="py-2 px-3 font-semibold text-right">Min Weight</th>
+                    <th className="py-2 px-3 font-semibold text-right">Max |v/sigma|</th>
+                  </tr>
+                </thead>
+                <tbody className="text-slate-300">
+                  {result.robustDiagnostics.iterations.map((it) => (
+                    <tr key={`rob-it-${it.iteration}`} className="border-b border-slate-800/50">
+                      <td className="py-1 px-3">{it.iteration}</td>
+                      <td className="py-1 px-3 text-right">{it.downweightedRows}</td>
+                      <td className="py-1 px-3 text-right">{it.meanWeight.toFixed(3)}</td>
+                      <td className="py-1 px-3 text-right">{it.minWeight.toFixed(3)}</td>
+                      <td className="py-1 px-3 text-right">{it.maxNorm.toFixed(2)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+          {result.robustDiagnostics.enabled && result.robustDiagnostics.topDownweightedRows.length > 0 && (
+            <div className="overflow-x-auto w-full border-t border-slate-800">
+              <table className="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr className="text-slate-500 border-b border-slate-800">
+                    <th className="py-2 px-3 font-semibold">#</th>
+                    <th className="py-2 px-3 font-semibold">Type</th>
+                    <th className="py-2 px-3 font-semibold">Stations</th>
+                    <th className="py-2 px-3 font-semibold text-right">Line</th>
+                    <th className="py-2 px-3 font-semibold text-right">Weight</th>
+                    <th className="py-2 px-3 font-semibold text-right">Norm</th>
+                  </tr>
+                </thead>
+                <tbody className="text-slate-300">
+                  {result.robustDiagnostics.topDownweightedRows.map((r, idx) => (
+                    <tr key={`rob-row-${r.obsId}-${idx}`} className="border-b border-slate-800/50">
+                      <td className="py-1 px-3 text-slate-500">{idx + 1}</td>
+                      <td className="py-1 px-3 uppercase text-slate-400">{r.type}</td>
+                      <td className="py-1 px-3">{r.stations}</td>
+                      <td className="py-1 px-3 text-right text-slate-500">{r.sourceLine ?? '-'}</td>
+                      <td className="py-1 px-3 text-right">{r.weight.toFixed(3)}</td>
+                      <td className="py-1 px-3 text-right">{r.norm.toFixed(2)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+
+      {result.robustComparison?.enabled && (
+        <div className="mb-6 border border-slate-800 rounded overflow-hidden">
+          <div className="px-3 py-2 text-xs text-slate-400 uppercase tracking-wider border-b border-slate-800 bg-slate-900/40">
+            Robust vs Classical Suspects (Top 10)
+          </div>
+          <div className="px-3 py-2 text-xs text-slate-400 border-b border-slate-800">
+            Overlap: {result.robustComparison.overlapCount}/
+            {Math.min(
+              result.robustComparison.classicalTop.length,
+              result.robustComparison.robustTop.length,
+            )}
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-0">
+            <div className="border-r border-slate-800">
+              <div className="px-3 py-2 text-[11px] text-slate-500 uppercase tracking-wider border-b border-slate-800">
+                Classical
+              </div>
+              <table className="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr className="text-slate-500 border-b border-slate-800">
+                    <th className="py-2 px-3 font-semibold">#</th>
+                    <th className="py-2 px-3 font-semibold">Type</th>
+                    <th className="py-2 px-3 font-semibold">Stations</th>
+                    <th className="py-2 px-3 font-semibold text-right">Line</th>
+                    <th className="py-2 px-3 font-semibold text-right">StdRes</th>
+                  </tr>
+                </thead>
+                <tbody className="text-slate-300">
+                  {result.robustComparison.classicalTop.map((r) => (
+                    <tr key={`c-${r.obsId}-${r.rank}`} className="border-b border-slate-800/40">
+                      <td className="py-1 px-3 text-slate-500">{r.rank}</td>
+                      <td className="py-1 px-3 uppercase text-slate-400">{r.type}</td>
+                      <td className="py-1 px-3">{r.stations}</td>
+                      <td className="py-1 px-3 text-right text-slate-500">{r.sourceLine ?? '-'}</td>
+                      <td className={`py-1 px-3 text-right ${r.localFail ? 'text-red-400' : ''}`}>
+                        {r.stdRes != null ? r.stdRes.toFixed(2) : '-'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div>
+              <div className="px-3 py-2 text-[11px] text-slate-500 uppercase tracking-wider border-b border-slate-800">
+                Robust
+              </div>
+              <table className="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr className="text-slate-500 border-b border-slate-800">
+                    <th className="py-2 px-3 font-semibold">#</th>
+                    <th className="py-2 px-3 font-semibold">Type</th>
+                    <th className="py-2 px-3 font-semibold">Stations</th>
+                    <th className="py-2 px-3 font-semibold text-right">Line</th>
+                    <th className="py-2 px-3 font-semibold text-right">StdRes</th>
+                  </tr>
+                </thead>
+                <tbody className="text-slate-300">
+                  {result.robustComparison.robustTop.map((r) => (
+                    <tr key={`r-${r.obsId}-${r.rank}`} className="border-b border-slate-800/40">
+                      <td className="py-1 px-3 text-slate-500">{r.rank}</td>
+                      <td className="py-1 px-3 uppercase text-slate-400">{r.type}</td>
+                      <td className="py-1 px-3">{r.stations}</td>
+                      <td className="py-1 px-3 text-right text-slate-500">{r.sourceLine ?? '-'}</td>
+                      <td className={`py-1 px-3 text-right ${r.localFail ? 'text-red-400' : ''}`}>
+                        {r.stdRes != null ? r.stdRes.toFixed(2) : '-'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
 
       {result.tsCorrelationDiagnostics && (
         <div className="mb-6 border border-slate-800 rounded overflow-hidden">
