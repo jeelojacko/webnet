@@ -143,6 +143,7 @@ export interface GpsObservation extends ObservationBase {
 
 export interface LevelObservation extends ObservationBase {
   type: 'lev';
+  setId?: string;
   from: StationId;
   to: StationId;
   obs: number;
@@ -174,6 +175,7 @@ export interface BearingObservation extends ObservationBase {
 
 export interface ZenithObservation extends ObservationBase {
   type: 'zenith';
+  setId?: string;
   from: StationId;
   to: StationId;
   obs: number; // radians
@@ -433,6 +435,37 @@ export interface AdjustmentResult {
     misclosureMag: number;
     totalTraverseDistance: number;
     closureRatio?: number;
+    linearPpm?: number;
+    angularMisclosureArcSec?: number;
+    verticalMisclosure?: number;
+    thresholds?: {
+      minClosureRatio: number;
+      maxLinearPpm: number;
+      maxAngularArcSec: number;
+      maxVerticalMisclosure: number;
+    };
+    passes?: {
+      ratio: boolean;
+      linearPpm: boolean;
+      angular: boolean;
+      vertical: boolean;
+      overall: boolean;
+    };
+    loops?: {
+      key: string;
+      from: StationId;
+      to: StationId;
+      misclosureE: number;
+      misclosureN: number;
+      misclosureMag: number;
+      traverseDistance: number;
+      closureRatio?: number;
+      linearPpm?: number;
+      angularMisclosureArcSec?: number;
+      verticalMisclosure?: number;
+      severity: number;
+      pass: boolean;
+    }[];
   };
   sideshots?: {
     id: string;

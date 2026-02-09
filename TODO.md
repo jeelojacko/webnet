@@ -67,3 +67,4 @@
   - [x] Phase 11: add hover-tooltips for report column headers, key summary statistics (SEUW, chi-square), and all settings controls to improve interpretation
   - [x] Phase 12: add TS angular correlated stochastic model (`.TSCORR` on/off, scope, rho), apply correlated weights in solve/Qvv, and report/export correlation diagnostics
   - [x] Phase 13: add robust adjustment mode (`.ROBUST HUBER k`) with iterative downweight diagnostics and robust-vs-classical top-suspect comparison in report/export
+  - [x] Phase 14: expand traverse closure diagnostics with linear ppm + angular/vertical misclosure checks, threshold pass/warn flags, per-loop severity ranking, and traverse suspect tables in report/export

@@ -69,6 +69,10 @@ const ReportView: React.FC<ReportViewProps> = ({
       return a.station.localeCompare(b.station)
     })
     .slice(0, 20)
+  const traverseLoops = result.traverseDiagnostics?.loops ?? []
+  const traverseLoopSuspects = traverseLoops
+    .filter((l) => !l.pass || (l.linearPpm ?? 0) > ((result.traverseDiagnostics?.thresholds?.maxLinearPpm ?? 0) * 0.8))
+    .slice(0, 20)
   const isAngularType = (type: Observation['type']) =>
     type === 'angle' ||
     type === 'direction' ||
@@ -93,6 +97,7 @@ const ReportView: React.FC<ReportViewProps> = ({
       USE: 'Toggle observation inclusion in the next adjustment run.',
       TYPE: 'Observation or diagnostic record type.',
       STATIONS: 'Station IDs used by this observation or diagnostic row.',
+      LOOP: 'Traverse closure loop identifier (from->to closure leg).',
       LINE: 'Original source line number from the input data file.',
       OBS: 'Observed value from input data (converted to display units).',
       CALC: 'Computed value from adjusted coordinates and model.',
@@ -121,6 +126,8 @@ const ReportView: React.FC<ReportViewProps> = ({
       NORM: 'Normalized residual magnitude |v/sigma| used for robust weighting.',
       TARGET: 'Observed foresight/target station.',
       SCORE: 'Ranking score used to prioritize likely suspect rows.',
+      STATUS: 'Pass/warn classification against configured closure thresholds.',
+      SEVERITY: 'Relative closure-risk score used to rank suspect loops.',
       SETS: 'Number of repeated sets contributing to trend diagnostics.',
       SETUP: 'Instrument setup station summary row.',
       ANGLES: 'Count of turned-angle observations from this setup.',
@@ -147,6 +154,9 @@ const ReportView: React.FC<ReportViewProps> = ({
     if (upper.startsWith('PAIR COUNT')) return 'Number of off-diagonal correlated equation pairs in this group.'
     if (upper.startsWith('MEAN|OFFDIAGW|')) return 'Mean absolute off-diagonal weight magnitude across TS correlation pairs.'
     if (upper.startsWith('MEAN|W')) return 'Mean absolute off-diagonal correlation weight inside this group.'
+    if (upper.startsWith('LINEAR')) return 'Linear closure misclosure expressed in parts per million.'
+    if (upper.startsWith('ANG MISCL')) return 'Angular closure misclosure in arcseconds.'
+    if (upper.startsWith('VERT MISCL')) return 'Vertical closure misclosure in linear units.'
     if (upper.startsWith('MEAN WEIGHT')) return 'Average robust weight for the iteration.'
     if (upper.startsWith('MIN WEIGHT')) return 'Minimum robust weight in the iteration (smaller indicates stronger downweighting).'
     if (upper.startsWith('MAX |V/SIGMA|')) return 'Maximum normalized residual magnitude used by robust weighting.'
@@ -915,10 +925,16 @@ const ReportView: React.FC<ReportViewProps> = ({
           <div className="px-3 py-2 text-xs text-slate-400 uppercase tracking-wider border-b border-slate-800 bg-slate-900/40">
             Traverse Diagnostics
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-6 gap-3 p-3 text-xs text-slate-300">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3 p-3 text-xs text-slate-300">
             <div>
               <div className="text-slate-500">Closure Count</div>
               <div>{result.traverseDiagnostics.closureCount}</div>
+            </div>
+            <div>
+              <div className="text-slate-500">Status</div>
+              <div className={result.traverseDiagnostics.passes?.overall ? 'text-green-400' : 'text-yellow-400'}>
+                {result.traverseDiagnostics.passes?.overall ? 'PASS' : 'WARN'}
+              </div>
             </div>
             <div>
               <div className="text-slate-500">Misclosure dE ({units})</div>
@@ -944,7 +960,134 @@ const ReportView: React.FC<ReportViewProps> = ({
                   : '-'}
               </div>
             </div>
+            <div>
+              <div className="text-slate-500">Linear (ppm)</div>
+              <div>{result.traverseDiagnostics.linearPpm != null ? result.traverseDiagnostics.linearPpm.toFixed(1) : '-'}</div>
+            </div>
+            <div>
+              <div className="text-slate-500">Angular Miscl (")</div>
+              <div>
+                {result.traverseDiagnostics.angularMisclosureArcSec != null
+                  ? result.traverseDiagnostics.angularMisclosureArcSec.toFixed(2)
+                  : '-'}
+              </div>
+            </div>
+            <div>
+              <div className="text-slate-500">Vertical Miscl ({units})</div>
+              <div>
+                {result.traverseDiagnostics.verticalMisclosure != null
+                  ? (result.traverseDiagnostics.verticalMisclosure * unitScale).toFixed(4)
+                  : '-'}
+              </div>
+            </div>
+            <div>
+              <div className="text-slate-500">Thresholds</div>
+              <div className="text-[10px] text-slate-500 leading-tight">
+                ratio {result.traverseDiagnostics.thresholds?.minClosureRatio != null
+                  ? `1:${result.traverseDiagnostics.thresholds.minClosureRatio}`
+                  : '-'}
+                , ppm {result.traverseDiagnostics.thresholds?.maxLinearPpm ?? '-'}
+              </div>
+              <div className="text-[10px] text-slate-500 leading-tight">
+                ang {result.traverseDiagnostics.thresholds?.maxAngularArcSec ?? '-'}", dH{' '}
+                {result.traverseDiagnostics.thresholds?.maxVerticalMisclosure != null
+                  ? (result.traverseDiagnostics.thresholds.maxVerticalMisclosure * unitScale).toFixed(4)
+                  : '-'}
+              </div>
+            </div>
           </div>
+          {traverseLoops.length > 0 && (
+            <div className="overflow-x-auto w-full border-t border-slate-800">
+              <table className="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr className="text-slate-500 border-b border-slate-800">
+                    <th className="py-2 px-3 font-semibold">#</th>
+                    <th className="py-2 px-3 font-semibold">Loop</th>
+                    <th className="py-2 px-3 font-semibold text-right">Mag ({units})</th>
+                    <th className="py-2 px-3 font-semibold text-right">Dist ({units})</th>
+                    <th className="py-2 px-3 font-semibold text-right">Ratio</th>
+                    <th className="py-2 px-3 font-semibold text-right">Linear (ppm)</th>
+                    <th className="py-2 px-3 font-semibold text-right">Ang Miscl (")</th>
+                    <th className="py-2 px-3 font-semibold text-right">Vert Miscl ({units})</th>
+                    <th className="py-2 px-3 font-semibold text-right">Severity</th>
+                    <th className="py-2 px-3 font-semibold text-right">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="text-slate-300">
+                  {traverseLoops.map((l, idx) => (
+                    <tr key={`trav-loop-${l.key}-${idx}`} className="border-b border-slate-800/50">
+                      <td className="py-1 px-3 text-slate-500">{idx + 1}</td>
+                      <td className="py-1 px-3">{l.key}</td>
+                      <td className="py-1 px-3 text-right">{(l.misclosureMag * unitScale).toFixed(4)}</td>
+                      <td className="py-1 px-3 text-right">{(l.traverseDistance * unitScale).toFixed(4)}</td>
+                      <td className="py-1 px-3 text-right">
+                        {l.closureRatio != null ? `1:${l.closureRatio.toFixed(0)}` : '-'}
+                      </td>
+                      <td className="py-1 px-3 text-right">
+                        {l.linearPpm != null ? l.linearPpm.toFixed(1) : '-'}
+                      </td>
+                      <td className="py-1 px-3 text-right">
+                        {l.angularMisclosureArcSec != null ? l.angularMisclosureArcSec.toFixed(2) : '-'}
+                      </td>
+                      <td className="py-1 px-3 text-right">
+                        {l.verticalMisclosure != null ? (l.verticalMisclosure * unitScale).toFixed(4) : '-'}
+                      </td>
+                      <td className="py-1 px-3 text-right font-mono">{l.severity.toFixed(1)}</td>
+                      <td className={`py-1 px-3 text-right ${l.pass ? 'text-green-400' : 'text-yellow-400'}`}>
+                        {l.pass ? 'PASS' : 'WARN'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+
+      {traverseLoopSuspects.length > 0 && (
+        <div className="mb-6 border border-slate-800 rounded overflow-hidden">
+          <div className="px-4 py-2 border-b border-slate-800 bg-slate-900/60 text-xs uppercase tracking-wider text-slate-400">
+            Traverse Closure Suspects
+          </div>
+          <table className="w-full text-left text-xs">
+            <thead>
+              <tr className="text-slate-500 border-b border-slate-800/60">
+                <th className="py-2 px-3">#</th>
+                <th className="py-2">Loop</th>
+                <th className="py-2 text-right">Ratio</th>
+                <th className="py-2 text-right">Linear (ppm)</th>
+                <th className="py-2 text-right">Ang Miscl (")</th>
+                <th className="py-2 text-right">Vert Miscl ({units})</th>
+                <th className="py-2 text-right">Severity</th>
+                <th className="py-2 text-right px-3">Status</th>
+              </tr>
+            </thead>
+            <tbody className="text-slate-300">
+              {traverseLoopSuspects.map((l, idx) => (
+                <tr key={`trav-suspect-${l.key}-${idx}`} className="border-b border-slate-800/30">
+                  <td className="py-1 px-3 text-slate-500">{idx + 1}</td>
+                  <td className="py-1">{l.key}</td>
+                  <td className="py-1 text-right font-mono">
+                    {l.closureRatio != null ? `1:${l.closureRatio.toFixed(0)}` : '-'}
+                  </td>
+                  <td className="py-1 text-right font-mono">
+                    {l.linearPpm != null ? l.linearPpm.toFixed(1) : '-'}
+                  </td>
+                  <td className="py-1 text-right font-mono">
+                    {l.angularMisclosureArcSec != null ? l.angularMisclosureArcSec.toFixed(2) : '-'}
+                  </td>
+                  <td className="py-1 text-right font-mono">
+                    {l.verticalMisclosure != null ? (l.verticalMisclosure * unitScale).toFixed(4) : '-'}
+                  </td>
+                  <td className="py-1 text-right font-mono">{l.severity.toFixed(1)}</td>
+                  <td className={`py-1 px-3 text-right font-mono ${l.pass ? 'text-green-400' : 'text-yellow-400'}`}>
+                    {l.pass ? 'PASS' : 'WARN'}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
 

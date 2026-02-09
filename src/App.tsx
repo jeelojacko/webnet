@@ -671,6 +671,112 @@ const App: React.FC = () => {
             : '-'
         }`,
       )
+      lines.push(
+        `Linear misclosure: ${
+          res.traverseDiagnostics.linearPpm != null ? `${res.traverseDiagnostics.linearPpm.toFixed(1)} ppm` : '-'
+        }`,
+      )
+      lines.push(
+        `Angular misclosure: ${
+          res.traverseDiagnostics.angularMisclosureArcSec != null
+            ? `${res.traverseDiagnostics.angularMisclosureArcSec.toFixed(2)}"`
+            : '-'
+        }`,
+      )
+      lines.push(
+        `Vertical misclosure: ${
+          res.traverseDiagnostics.verticalMisclosure != null
+            ? `${(res.traverseDiagnostics.verticalMisclosure * unitScale).toFixed(4)} ${linearUnit}`
+            : '-'
+        }`,
+      )
+      if (res.traverseDiagnostics.thresholds) {
+        const t = res.traverseDiagnostics.thresholds
+        lines.push(
+          `Thresholds: ratio>=1:${t.minClosureRatio}, linear<=${t.maxLinearPpm.toFixed(
+            1,
+          )}ppm, angular<=${t.maxAngularArcSec.toFixed(1)}", vertical<=${(
+            t.maxVerticalMisclosure * unitScale
+          ).toFixed(4)} ${linearUnit}`,
+        )
+      }
+      if (res.traverseDiagnostics.passes) {
+        const p = res.traverseDiagnostics.passes
+        lines.push(
+          `Checks: ratio=${p.ratio ? 'PASS' : 'WARN'}, linear=${p.linearPpm ? 'PASS' : 'WARN'}, angular=${p.angular ? 'PASS' : 'WARN'}, vertical=${p.vertical ? 'PASS' : 'WARN'}, overall=${p.overall ? 'PASS' : 'WARN'}`,
+        )
+      }
+      if (res.traverseDiagnostics.loops && res.traverseDiagnostics.loops.length > 0) {
+        lines.push('')
+        lines.push('Traverse closure loops (ranked by severity):')
+        const rows = res.traverseDiagnostics.loops.map((l, idx) => ({
+          rank: String(idx + 1),
+          loop: l.key,
+          mag: (l.misclosureMag * unitScale).toFixed(4),
+          dist: (l.traverseDistance * unitScale).toFixed(4),
+          ratio: l.closureRatio != null ? `1:${l.closureRatio.toFixed(0)}` : '-',
+          ppm: l.linearPpm != null ? l.linearPpm.toFixed(1) : '-',
+          ang: l.angularMisclosureArcSec != null ? l.angularMisclosureArcSec.toFixed(2) : '-',
+          vert: l.verticalMisclosure != null ? (l.verticalMisclosure * unitScale).toFixed(4) : '-',
+          severity: l.severity.toFixed(1),
+          status: l.pass ? 'PASS' : 'WARN',
+        }))
+        const header = {
+          rank: '#',
+          loop: 'Loop',
+          mag: `Mag(${linearUnit})`,
+          dist: `Dist(${linearUnit})`,
+          ratio: 'Ratio',
+          ppm: 'Linear(ppm)',
+          ang: 'Ang(")',
+          vert: `dH(${linearUnit})`,
+          severity: 'Severity',
+          status: 'Status',
+        }
+        const widths = {
+          rank: Math.max(header.rank.length, ...rows.map((r) => r.rank.length)),
+          loop: Math.max(header.loop.length, ...rows.map((r) => r.loop.length)),
+          mag: Math.max(header.mag.length, ...rows.map((r) => r.mag.length)),
+          dist: Math.max(header.dist.length, ...rows.map((r) => r.dist.length)),
+          ratio: Math.max(header.ratio.length, ...rows.map((r) => r.ratio.length)),
+          ppm: Math.max(header.ppm.length, ...rows.map((r) => r.ppm.length)),
+          ang: Math.max(header.ang.length, ...rows.map((r) => r.ang.length)),
+          vert: Math.max(header.vert.length, ...rows.map((r) => r.vert.length)),
+          severity: Math.max(header.severity.length, ...rows.map((r) => r.severity.length)),
+          status: Math.max(header.status.length, ...rows.map((r) => r.status.length)),
+        }
+        const pad = (value: string, size: number) => value.padEnd(size, ' ')
+        lines.push(
+          [
+            pad(header.rank, widths.rank),
+            pad(header.loop, widths.loop),
+            pad(header.mag, widths.mag),
+            pad(header.dist, widths.dist),
+            pad(header.ratio, widths.ratio),
+            pad(header.ppm, widths.ppm),
+            pad(header.ang, widths.ang),
+            pad(header.vert, widths.vert),
+            pad(header.severity, widths.severity),
+            pad(header.status, widths.status),
+          ].join('  '),
+        )
+        rows.forEach((r) => {
+          lines.push(
+            [
+              pad(r.rank, widths.rank),
+              pad(r.loop, widths.loop),
+              pad(r.mag, widths.mag),
+              pad(r.dist, widths.dist),
+              pad(r.ratio, widths.ratio),
+              pad(r.ppm, widths.ppm),
+              pad(r.ang, widths.ang),
+              pad(r.vert, widths.vert),
+              pad(r.severity, widths.severity),
+              pad(r.status, widths.status),
+            ].join('  '),
+          )
+        })
+      }
       lines.push('')
     }
     if (res.directionSetDiagnostics && res.directionSetDiagnostics.length > 0) {

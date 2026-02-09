@@ -47,8 +47,10 @@ npm run dev
 - Engine: reports multi-set direction repeatability trends by occupy-target (cross-set residual range/RMS, spread trends, face-balance counts, ranked suspects) to highlight unstable targets across repeated setups.
 - Engine: supports TS angular correlated weighting blocks (`.TSCORR`) by setup/set scope and includes correlation diagnostics (groups, equation/pair counts, mean off-diagonal weight) in report/export/logs.
 - Engine: supports robust Huber reweighting (`.ROBUST`) with per-iteration downweight diagnostics and top downweighted rows in logs/report/export.
+- Engine: traverse diagnostics now include linear ppm, angular/vertical closure checks, configurable threshold pass/warn flags, and ranked per-loop closure severity for faster traverse QA.
 - UI/Report: includes automated suspect impact analysis that runs what-if exclusion trials for top suspects and ranks expected impact (dSEUW, dMax|t|, chi-square change, max coordinate shift), with one-click exclude + re-run.
 - UI/Report: when robust mode is enabled, includes side-by-side robust vs classical top-suspect ranking comparison.
+- UI/Report: traverse section now includes ranked closure loops and a dedicated “Traverse Closure Suspects” table.
 - UI/Report: column headers now include hover tooltips for technical metrics, adjustment summary cards include SEUW/chi-square tooltip explanations, and all settings controls in the settings dropdown include hover definitions for quicker interpretation.
 - Engine: applies map-scale reduction to horizontal distances when map mode is active, and supports optional zenith curvature/refraction corrections (`.CURVREF`/`.REFRACTION` + `.VRED CURVREF`).
 - Engine: computes post-adjusted sideshot coordinate/precision rows from excluded SS observations; azimuth source is tracked (`explicit`, `setup`, or `target`) and when azimuth cannot be derived, the limitation is reported explicitly.

@@ -196,6 +196,9 @@ describe('LSAEngine', () => {
     expect(result.traverseDiagnostics).toBeDefined()
     expect(result.traverseDiagnostics?.closureCount).toBeGreaterThan(0)
     expect(result.traverseDiagnostics?.totalTraverseDistance).toBeGreaterThan(0)
+    expect(result.traverseDiagnostics?.linearPpm).toBeDefined()
+    expect(result.traverseDiagnostics?.thresholds).toBeDefined()
+    expect(result.traverseDiagnostics?.loops?.length).toBeGreaterThan(0)
   })
 
   it('applies map scale reduction to horizontal distances when map mode is on', () => {

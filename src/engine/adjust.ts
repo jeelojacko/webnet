@@ -152,6 +152,12 @@ export class LSAEngine {
   private maxCondition = 1e12;
   private maxStdRes = 10;
   private localTestCritical = 3.29;
+  private traverseThresholds = {
+    minClosureRatio: 5000,
+    maxLinearPpm: 200,
+    maxAngularArcSec: 30,
+    maxVerticalMisclosure: 0.03,
+  };
   private parseOptions?: Partial<ParseOptions>;
   private coordMode: ParseOptions['coordMode'] = '3D';
   private is2D = false;
@@ -1822,6 +1828,8 @@ export class LSAEngine {
     const closureResiduals: string[] = [];
     const closureVectors: { from: StationId; to: StationId; dE: number; dN: number }[] = [];
     const loopVectors: Record<string, { dE: number; dN: number }> = {};
+    const loopAngleArcSec = new Map<string, number>();
+    const loopVerticalMisclosure = new Map<string, number>();
     const hasClosureObs = this.observations.some(
       (o) => (o as any).setId && String((o as any).setId).toUpperCase() === 'TE',
     );
@@ -2022,12 +2030,12 @@ export class LSAEngine {
       }
 
       if (obs.setId === 'TE' && typeof obs.residual === 'number') {
+        const key = `${obs.from}->${obs.to}`;
         if (obs.type === 'dist') {
           const az = this.getAzimuth(obs.from, obs.to).az;
           const dE = obs.residual * Math.sin(az);
           const dN = obs.residual * Math.cos(az);
           closureVectors.push({ from: obs.from, to: obs.to, dE, dN });
-          const key = `${obs.from}->${obs.to}`;
           loopVectors[key] = loopVectors[key] || { dE: 0, dN: 0 };
           loopVectors[key].dE += dE;
           loopVectors[key].dN += dN;
@@ -2045,8 +2053,15 @@ export class LSAEngine {
             });
           }
         } else if (obs.type === 'angle') {
+          const angleArcSec = obs.residual * RAD_TO_DEG * 3600;
+          loopAngleArcSec.set(key, (loopAngleArcSec.get(key) ?? 0) + angleArcSec);
           closureResiduals.push(
             `Traverse closure residual (angle) ${obs.from}-${obs.to}: ${(obs.residual * RAD_TO_DEG * 3600).toFixed(2)}"`,
+          );
+        } else if (obs.type === 'lev') {
+          loopVerticalMisclosure.set(key, (loopVerticalMisclosure.get(key) ?? 0) + obs.residual);
+          closureResiduals.push(
+            `Traverse closure residual (dH) ${obs.from}-${obs.to}: ${obs.residual.toFixed(4)} m`,
           );
         }
       }
@@ -3176,15 +3191,110 @@ export class LSAEngine {
       this.logs.push(...closureResiduals);
       const netE = closureVectors.reduce((acc, v) => acc + v.dE, 0);
       const netN = closureVectors.reduce((acc, v) => acc + v.dN, 0);
+      const thresholds = { ...this.traverseThresholds };
+      const netAngularMisclosureArcSec = Array.from(loopAngleArcSec.values()).reduce((acc, v) => acc + v, 0);
+      const netVerticalMisclosure = Array.from(loopVerticalMisclosure.values()).reduce(
+        (acc, v) => acc + v,
+        0,
+      );
       if (closureVectors.length) {
         const mag = Math.hypot(netE, netN);
+        const closureRatio = mag > 1e-12 ? totalTraverseDistance / mag : undefined;
+        const linearPpm =
+          totalTraverseDistance > 1e-12 ? (mag / totalTraverseDistance) * 1_000_000 : undefined;
+        const ratioPass =
+          closureRatio != null ? closureRatio >= thresholds.minClosureRatio : false;
+        const ppmPass = linearPpm != null ? linearPpm <= thresholds.maxLinearPpm : false;
+        const angularPass =
+          loopAngleArcSec.size === 0 ||
+          Math.abs(netAngularMisclosureArcSec) <= thresholds.maxAngularArcSec;
+        const verticalPass =
+          loopVerticalMisclosure.size === 0 ||
+          Math.abs(netVerticalMisclosure) <= thresholds.maxVerticalMisclosure;
+
+        const setupTraverseDistance = new Map<string, number>();
+        ;(this.setupDiagnostics ?? []).forEach((s) => {
+          setupTraverseDistance.set(s.station, s.traverseDistance);
+        });
+        const loopKeys = new Set<string>([
+          ...Object.keys(loopVectors),
+          ...Array.from(loopAngleArcSec.keys()),
+          ...Array.from(loopVerticalMisclosure.keys()),
+        ]);
+        const defaultLoopDist = loopKeys.size > 0 ? totalTraverseDistance / loopKeys.size : 0;
+        const loops = Array.from(loopKeys)
+          .map((key) => {
+            const [from = '', to = ''] = key.split('->');
+            const vec = loopVectors[key] ?? { dE: 0, dN: 0 };
+            const loopMag = Math.hypot(vec.dE, vec.dN);
+            const traverseDistance = setupTraverseDistance.get(from) ?? defaultLoopDist;
+            const loopRatio = loopMag > 1e-12 ? traverseDistance / loopMag : undefined;
+            const loopPpm =
+              traverseDistance > 1e-12 ? (loopMag / traverseDistance) * 1_000_000 : undefined;
+            const loopAng = loopAngleArcSec.get(key);
+            const loopVert = loopVerticalMisclosure.get(key);
+            const ratioOk = loopRatio != null ? loopRatio >= thresholds.minClosureRatio : false;
+            const ppmOk = loopPpm != null ? loopPpm <= thresholds.maxLinearPpm : false;
+            const angOk = loopAng == null || Math.abs(loopAng) <= thresholds.maxAngularArcSec;
+            const vertOk = loopVert == null || Math.abs(loopVert) <= thresholds.maxVerticalMisclosure;
+            let severity = 0;
+            if (!ratioOk && loopRatio != null) {
+              severity += (thresholds.minClosureRatio / Math.max(loopRatio, 1) - 1) * 70;
+            }
+            if (!ppmOk && loopPpm != null) {
+              severity += (loopPpm / thresholds.maxLinearPpm - 1) * 70;
+            }
+            if (!angOk && loopAng != null) {
+              severity += (Math.abs(loopAng) / thresholds.maxAngularArcSec - 1) * 35;
+            }
+            if (!vertOk && loopVert != null) {
+              severity +=
+                (Math.abs(loopVert) / thresholds.maxVerticalMisclosure - 1) * 35;
+            }
+            severity += Math.min(loopMag * 10, 25);
+            const pass = ratioOk && ppmOk && angOk && vertOk;
+            return {
+              key,
+              from,
+              to,
+              misclosureE: vec.dE,
+              misclosureN: vec.dN,
+              misclosureMag: loopMag,
+              traverseDistance,
+              closureRatio: loopRatio,
+              linearPpm: loopPpm,
+              angularMisclosureArcSec: loopAng,
+              verticalMisclosure: loopVert,
+              severity,
+              pass,
+            };
+          })
+          .sort((a, b) => {
+            if (b.severity !== a.severity) return b.severity - a.severity;
+            return b.misclosureMag - a.misclosureMag;
+          });
+
         this.traverseDiagnostics = {
           closureCount: closureVectors.length,
           misclosureE: netE,
           misclosureN: netN,
           misclosureMag: mag,
           totalTraverseDistance,
-          closureRatio: mag > 1e-12 ? totalTraverseDistance / mag : undefined,
+          closureRatio,
+          linearPpm,
+          angularMisclosureArcSec:
+            loopAngleArcSec.size > 0 ? netAngularMisclosureArcSec : undefined,
+          verticalMisclosure:
+            loopVerticalMisclosure.size > 0 ? netVerticalMisclosure : undefined,
+          thresholds,
+          passes: {
+            ratio: ratioPass,
+            linearPpm: ppmPass,
+            angular: angularPass,
+            vertical: verticalPass,
+            overall: ratioPass && ppmPass && angularPass && verticalPass,
+          },
+          loops,
         };
         this.logs.push(
           `Traverse misclosure vector: dE=${netE.toFixed(4)} m, dN=${netN.toFixed(4)} m, Mag=${mag.toFixed(4)} m`,
@@ -3192,8 +3302,25 @@ export class LSAEngine {
         if (totalTraverseDistance > 0) {
           this.logs.push(`Traverse distance sum: ${totalTraverseDistance.toFixed(4)} m`);
         }
-        if (this.traverseDiagnostics.closureRatio != null) {
-          this.logs.push(`Traverse closure ratio: 1:${this.traverseDiagnostics.closureRatio.toFixed(0)}`);
+        if (closureRatio != null) {
+          this.logs.push(`Traverse closure ratio: 1:${closureRatio.toFixed(0)}`);
+        }
+        if (linearPpm != null) {
+          this.logs.push(`Traverse linear misclosure: ${linearPpm.toFixed(1)} ppm`);
+        }
+        if (loopAngleArcSec.size > 0) {
+          this.logs.push(`Traverse angular misclosure: ${netAngularMisclosureArcSec.toFixed(2)}"`);
+        }
+        if (loopVerticalMisclosure.size > 0) {
+          this.logs.push(`Traverse vertical misclosure: ${netVerticalMisclosure.toFixed(4)} m`);
+        }
+        if (loops.length > 0) {
+          this.logs.push('Traverse closure loop ranking (worst first):');
+          loops.slice(0, 8).forEach((l) => {
+            this.logs.push(
+              `  ${l.key}: ratio=${l.closureRatio != null ? `1:${l.closureRatio.toFixed(0)}` : '-'}, ppm=${l.linearPpm != null ? l.linearPpm.toFixed(1) : '-'}, ang=${l.angularMisclosureArcSec != null ? `${l.angularMisclosureArcSec.toFixed(2)}"` : '-'}, dH=${l.verticalMisclosure != null ? `${l.verticalMisclosure.toFixed(4)}m` : '-'}, sev=${l.severity.toFixed(1)} ${l.pass ? 'PASS' : 'WARN'}`,
+            );
+          });
         }
       }
       Object.entries(loopVectors).forEach(([k, v]) => {
@@ -3209,6 +3336,7 @@ export class LSAEngine {
         });
       }
     } else if (hasClosureObs) {
+      const thresholds = { ...this.traverseThresholds };
       this.traverseDiagnostics = {
         closureCount: 0,
         misclosureE: 0,
@@ -3216,6 +3344,32 @@ export class LSAEngine {
         misclosureMag: 0,
         totalTraverseDistance,
         closureRatio: undefined,
+        linearPpm: undefined,
+        angularMisclosureArcSec:
+          loopAngleArcSec.size > 0
+            ? Array.from(loopAngleArcSec.values()).reduce((acc, v) => acc + v, 0)
+            : undefined,
+        verticalMisclosure:
+          loopVerticalMisclosure.size > 0
+            ? Array.from(loopVerticalMisclosure.values()).reduce((acc, v) => acc + v, 0)
+            : undefined,
+        thresholds,
+        passes: {
+          ratio: false,
+          linearPpm: false,
+          angular:
+            loopAngleArcSec.size === 0 ||
+            Math.abs(
+              Array.from(loopAngleArcSec.values()).reduce((acc, v) => acc + v, 0),
+            ) <= thresholds.maxAngularArcSec,
+          vertical:
+            loopVerticalMisclosure.size === 0 ||
+            Math.abs(
+              Array.from(loopVerticalMisclosure.values()).reduce((acc, v) => acc + v, 0),
+            ) <= thresholds.maxVerticalMisclosure,
+          overall: false,
+        },
+        loops: [],
       };
       this.logs.push('Traverse closure residual not computed (insufficient closure geometry).');
       if (totalTraverseDistance > 0) {

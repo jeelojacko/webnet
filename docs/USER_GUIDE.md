@@ -148,5 +148,7 @@ Structured data collection methods:
 -   **Setup Diagnostics**: Per-setup observation mix/orientation metrics plus setup-level residual quality (`RMS |t|`, `Max |t|`, local-test fail count, worst observation + line) are reported for TS troubleshooting and blunder isolation.
 -   **Setup Suspects**: A ranked setup table highlights the most suspect occupy stations first (failed local tests, then highest standardized residual behavior).
 -   **Traverse Diagnostics**: Misclosure vector, traverse distance sum, and closure ratio are reported when closure geometry is available.
+-   **Traverse QA Metrics**: Traverse diagnostics now include linear ppm, angular misclosure, vertical misclosure, threshold checks, and overall pass/warn status.
+-   **Traverse Loop Ranking**: Per-loop closure rows are ranked by severity and listed with ratio/ppm/angular/vertical cues to quickly isolate weak closure legs.
 -   **Map/Vertical Reduction**: When map mode is active, horizontal distances apply the configured map scale; with `.VRED CURVREF` and `.CURVREF ON`, zenith calculations include curvature/refraction correction.
 -   **Post-Adjusted Sideshots**: SS observations are excluded from adjustment but reported in a dedicated section with computed HD/dH, coordinate outputs, and propagated σ values. Azimuth source is labeled (`target`, `explicit`, or `setup`). If azimuth cannot be derived, the note column explains why.
