@@ -52,6 +52,7 @@ Directives that control parsing behavior:
 -   `.ADDC [ON|OFF]`: Add centering to explicit sigmas (default: OFF).
 -   `.DEBUG [ON|OFF]`: Enable per-observation debug logging (default: OFF). Logs both w in degrees/radians, normalized residuals, and a per-iteration step check (`wnew ≈ w − A·dx`).
 -   `.AMODE [AUTO|ANGLE|DIR]`: Controls interpretation of `A` records. `AUTO` uses strict heuristics; `ANGLE` forces turned-angle interpretation; `DIR` forces azimuth/direction interpretation.
+-   `.TSCORR [ON|OFF|SET|SETUP|rho]`: Enables TS angular correlation blocks with optional scope (`SET` or `SETUP`) and correlation coefficient `rho` (0..0.95).
 
 ### Stations
 -   **Structure**: `C StationID [North] [East] [Elev] [! ! !]` (Order depends on `.ORDER`)
@@ -140,6 +141,7 @@ Structured data collection methods:
 -   **Suspect Impact Analysis**: WebNet runs what-if exclusion trials for top suspect observations and reports expected impact (`dSEUW`, `dMax|t|`, chi-square status change, max unknown-point coordinate shift, and score). You can apply an exclusion directly from this table and re-run.
 -   **Header Tooltips**: Hover over report column headers (and key summary labels like SEUW/Chi-Square) to see concise definitions of statistical fields.
 -   **Settings Tooltips**: Hover any item in the Settings dropdown to see what each mode/option changes before rerunning.
+-   **TS Correlation Diagnostics**: When `.TSCORR` is enabled, the report/export/log include group counts, correlated equation pairs, and per-group off-diagonal weight diagnostics so you can audit the stochastic model.
 -   **Setup Diagnostics**: Per-setup observation mix/orientation metrics plus setup-level residual quality (`RMS |t|`, `Max |t|`, local-test fail count, worst observation + line) are reported for TS troubleshooting and blunder isolation.
 -   **Setup Suspects**: A ranked setup table highlights the most suspect occupy stations first (failed local tests, then highest standardized residual behavior).
 -   **Traverse Diagnostics**: Misclosure vector, traverse distance sum, and closure ratio are reported when closure geometry is available.

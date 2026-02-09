@@ -34,6 +34,9 @@ const defaultParseOptions: ParseOptions = {
   addCenteringToExplicit: false,
   debug: false,
   angleMode: 'auto',
+  tsCorrelationEnabled: false,
+  tsCorrelationRho: 0.25,
+  tsCorrelationScope: 'set',
 }
 
 const FT_PER_M = 3.280839895
@@ -504,6 +507,56 @@ export const parseInput = (
         if (mode === 'DIR' || mode === 'AZ' || mode === 'AZIMUTH') angleMode = 'dir'
         state.angleMode = angleMode
         logs.push(`A-record mode set to ${angleMode}`)
+      } else if (op === '.TSCORR') {
+        const parseScope = (token?: string): ParseOptions['tsCorrelationScope'] | undefined => {
+          const mode = (token || '').toUpperCase()
+          if (mode === 'SETUP') return 'setup'
+          if (mode === 'SET') return 'set'
+          return undefined
+        }
+        const parseRho = (token?: string): number | undefined => {
+          const val = parseFloat(token || '')
+          if (!Number.isFinite(val)) return undefined
+          return Math.min(0.95, Math.max(0, val))
+        }
+        const t1 = (parts[1] || '').toUpperCase()
+        const t2 = (parts[2] || '').toUpperCase()
+        let enabled = state.tsCorrelationEnabled ?? false
+        let rho = state.tsCorrelationRho ?? 0.25
+        let scope: ParseOptions['tsCorrelationScope'] = state.tsCorrelationScope ?? 'set'
+
+        if (!t1 || t1 === 'ON' || t1 === 'TRUE') {
+          enabled = true
+          const maybeScope = parseScope(t2)
+          const maybeRho = parseRho(parts[2])
+          if (maybeScope) scope = maybeScope
+          else if (maybeRho != null) rho = maybeRho
+        } else if (t1 === 'OFF' || t1 === 'FALSE' || t1 === '0') {
+          enabled = false
+        } else {
+          const scope1 = parseScope(t1)
+          const rho1 = parseRho(parts[1])
+          if (scope1) {
+            enabled = true
+            scope = scope1
+            const rho2 = parseRho(parts[2])
+            if (rho2 != null) rho = rho2
+          } else if (rho1 != null) {
+            enabled = true
+            rho = rho1
+            const scope2 = parseScope(t2)
+            if (scope2) scope = scope2
+          } else {
+            logs.push(`Warning: unrecognized .TSCORR option at line ${lineNum}; expected ON/OFF/SET/SETUP/rho`)
+          }
+        }
+
+        state.tsCorrelationEnabled = enabled
+        state.tsCorrelationRho = rho
+        state.tsCorrelationScope = scope
+        logs.push(
+          `TS correlation set to ${enabled ? 'ON' : 'OFF'} (scope=${scope}, rho=${rho.toFixed(3)})`,
+        )
       } else if (op === '.I' && parts[1]) {
         state.currentInstrument = parts[1]
         logs.push(`Current instrument set to ${state.currentInstrument}`)

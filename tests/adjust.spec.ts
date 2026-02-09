@@ -239,6 +239,32 @@ describe('LSAEngine', () => {
     expect(withCurv.logs.some((l) => l.includes('Vertical reduction active'))).toBe(true)
   })
 
+  it('applies TS angular correlation model and reports diagnostics', () => {
+    const base = [
+      '.AMODE ANGLE',
+      'C C1 0 0 0 !',
+      'C C2 200 0 0 !',
+      'C C3 100 200 0 !',
+      'C U 100 80 0',
+      'D C1-U 128.06 0.003',
+      'D C2-U 128.06 0.003',
+      'D C3-U 120.00 0.003',
+      'A U-C1-C2 102-40-00.0 1.2',
+      'A U-C2-C3 116-33-55.0 1.2',
+      'A U-C3-C1 140-46-10.0 1.2',
+      'A U-C1-C2 102-40-06.0 1.2',
+    ].join('\n')
+    const off = new LSAEngine({ input: base, maxIterations: 12 }).solve()
+    const on = new LSAEngine({ input: `.TSCORR SETUP 0.35\n${base}`, maxIterations: 12 }).solve()
+
+    expect(on.tsCorrelationDiagnostics).toBeDefined()
+    expect(on.tsCorrelationDiagnostics?.enabled).toBe(true)
+    expect(on.tsCorrelationDiagnostics?.scope).toBe('setup')
+    expect(on.tsCorrelationDiagnostics?.pairCount).toBeGreaterThan(0)
+    expect(on.logs.some((l) => l.includes('TS correlation diagnostics'))).toBe(true)
+    expect(on.seuw).not.toBe(off.seuw)
+  })
+
   it('computes post-adjusted sideshot coordinates/precision when azimuth reference exists', () => {
     const input = readFileSync('tests/fixtures/sideshot_postadjust_known.dat', 'utf-8')
     const engine = new LSAEngine({ input, maxIterations: 10 })

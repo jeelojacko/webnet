@@ -65,3 +65,4 @@
   - [x] Phase 9: add multi-set direction repeatability trends by occupy-target (cross-set range/RMS, face-balance counts, suspect ranking) in report/export
   - [x] Phase 10: add automated suspect impact analysis (what-if exclusion: dSEUW, dMax|t|, chi-square change, max unknown shift, score) with one-click exclude+rerun
   - [x] Phase 11: add hover-tooltips for report column headers, key summary statistics (SEUW, chi-square), and all settings controls to improve interpretation
+  - [x] Phase 12: add TS angular correlated stochastic model (`.TSCORR` on/off, scope, rho), apply correlated weights in solve/Qvv, and report/export correlation diagnostics

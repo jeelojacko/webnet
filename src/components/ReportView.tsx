@@ -108,6 +108,12 @@ const ReportView: React.FC<ReportViewProps> = ({
       F1: 'Count of face-1 observations.',
       F2: 'Count of face-2 observations.',
       SET: 'Direction/traverse set identifier.',
+      SCOPE: 'Correlation grouping scope used for TS angular covariance blocks.',
+      RHO: 'Common correlation coefficient used in TS angular correlation groups.',
+      GROUPS: 'Number of TS correlation groups formed from angular equations.',
+      EQUATIONS: 'Number of angular equations participating in TS correlation groups.',
+      KEY: 'Internal TS correlation group key (setup and optionally set/type).',
+      ROWS: 'Number of equations inside this TS correlation group.',
       OCCUPY: 'Instrument setup station where observations were made.',
       TARGET: 'Observed foresight/target station.',
       SCORE: 'Ranking score used to prioritize likely suspect rows.',
@@ -133,6 +139,10 @@ const ReportView: React.FC<ReportViewProps> = ({
     if (upper.startsWith('STDDEV')) return 'Editable standard deviation (weight) override for this observation.'
     if (upper.startsWith('BASE |T|')) return 'Original standardized residual before what-if exclusion.'
     if (upper.startsWith('DSEUW')) return 'Change in SEUW when this suspect is excluded (negative is generally better).'
+    if (upper.startsWith('MAX GROUP')) return 'Largest TS correlation group size (equation count).'
+    if (upper.startsWith('PAIR COUNT')) return 'Number of off-diagonal correlated equation pairs in this group.'
+    if (upper.startsWith('MEAN|OFFDIAGW|')) return 'Mean absolute off-diagonal weight magnitude across TS correlation pairs.'
+    if (upper.startsWith('MEAN|W')) return 'Mean absolute off-diagonal correlation weight inside this group.'
     if (upper.startsWith('DMAX|T|')) return 'Change in maximum absolute standardized residual after exclusion.'
     if (upper.startsWith('CHI')) return 'Chi-square model test change after what-if exclusion.'
     if (upper.startsWith('MAX SHIFT')) return 'Maximum coordinate shift among unknown points under what-if exclusion.'
@@ -653,6 +663,85 @@ const ReportView: React.FC<ReportViewProps> = ({
           </div>
         </div>
       </div>
+
+      {result.tsCorrelationDiagnostics && (
+        <div className="mb-6 border border-slate-800 rounded overflow-hidden">
+          <div className="px-3 py-2 text-xs text-slate-400 uppercase tracking-wider border-b border-slate-800 bg-slate-900/40">
+            TS Correlation Diagnostics
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-3 text-xs text-slate-300">
+            <div>
+              <div className="text-slate-500">Enabled</div>
+              <div>{result.tsCorrelationDiagnostics.enabled ? 'ON' : 'OFF'}</div>
+            </div>
+            <div>
+              <div className="text-slate-500">Scope</div>
+              <div>{result.tsCorrelationDiagnostics.scope.toUpperCase()}</div>
+            </div>
+            <div>
+              <div className="text-slate-500">Rho</div>
+              <div>{result.tsCorrelationDiagnostics.rho.toFixed(3)}</div>
+            </div>
+            <div>
+              <div className="text-slate-500">Groups</div>
+              <div>{result.tsCorrelationDiagnostics.groupCount}</div>
+            </div>
+            <div>
+              <div className="text-slate-500">Equations</div>
+              <div>{result.tsCorrelationDiagnostics.equationCount}</div>
+            </div>
+            <div>
+              <div className="text-slate-500">Pairs</div>
+              <div>{result.tsCorrelationDiagnostics.pairCount}</div>
+            </div>
+            <div>
+              <div className="text-slate-500">Max Group</div>
+              <div>{result.tsCorrelationDiagnostics.maxGroupSize}</div>
+            </div>
+            <div>
+              <div className="text-slate-500">Mean|OffDiagW|</div>
+              <div>
+                {result.tsCorrelationDiagnostics.meanAbsOffDiagWeight != null
+                  ? result.tsCorrelationDiagnostics.meanAbsOffDiagWeight.toExponential(3)
+                  : '-'}
+              </div>
+            </div>
+          </div>
+          {result.tsCorrelationDiagnostics.enabled &&
+            result.tsCorrelationDiagnostics.groups.length > 0 && (
+              <div className="overflow-x-auto w-full border-t border-slate-800">
+                <table className="w-full text-left border-collapse text-xs">
+                  <thead>
+                    <tr className="text-slate-500 border-b border-slate-800">
+                      <th className="py-2 px-3 font-semibold">#</th>
+                      <th className="py-2 px-3 font-semibold">Key</th>
+                      <th className="py-2 px-3 font-semibold">Setup</th>
+                      <th className="py-2 px-3 font-semibold">Set</th>
+                      <th className="py-2 px-3 font-semibold text-right">Rows</th>
+                      <th className="py-2 px-3 font-semibold text-right">Pair Count</th>
+                      <th className="py-2 px-3 font-semibold text-right">Mean|W|</th>
+                    </tr>
+                  </thead>
+                  <tbody className="text-slate-300">
+                    {result.tsCorrelationDiagnostics.groups.slice(0, 20).map((g, idx) => (
+                      <tr key={`${g.key}-${idx}`} className="border-b border-slate-800/50">
+                        <td className="py-1 px-3 text-slate-500">{idx + 1}</td>
+                        <td className="py-1 px-3 font-mono text-[11px]">{g.key}</td>
+                        <td className="py-1 px-3">{g.station}</td>
+                        <td className="py-1 px-3">{g.setId ?? '-'}</td>
+                        <td className="py-1 px-3 text-right">{g.rows}</td>
+                        <td className="py-1 px-3 text-right">{g.pairCount}</td>
+                        <td className="py-1 px-3 text-right">
+                          {g.meanAbsOffDiagWeight != null ? g.meanAbsOffDiagWeight.toExponential(3) : '-'}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+        </div>
+      )}
 
       {result.traverseDiagnostics && (
         <div className="mb-6 border border-slate-800 rounded overflow-hidden">

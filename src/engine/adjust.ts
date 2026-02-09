@@ -131,6 +131,8 @@ interface CoordinateConstraintEquation {
   sigma: number;
 }
 
+type EquationRowInfo = { obs: Observation; component?: 'E' | 'N' } | null;
+
 export class LSAEngine {
   input: string;
   stations: StationMap = {};
@@ -163,6 +165,9 @@ export class LSAEngine {
   private applyCurvatureRefraction = false;
   private refractionCoefficient = 0.13;
   private verticalReduction: ParseOptions['verticalReduction'] = 'none';
+  private tsCorrelationEnabled = false;
+  private tsCorrelationRho = 0.25;
+  private tsCorrelationScope: ParseOptions['tsCorrelationScope'] = 'set';
   private chiSquare?: AdjustmentResult['chiSquare'];
   private typeSummary?: Record<
     string,
@@ -181,6 +186,7 @@ export class LSAEngine {
   private directionTargetDiagnostics?: AdjustmentResult['directionTargetDiagnostics'];
   private directionRepeatabilityDiagnostics?: AdjustmentResult['directionRepeatabilityDiagnostics'];
   private setupDiagnostics?: AdjustmentResult['setupDiagnostics'];
+  private tsCorrelationDiagnostics?: AdjustmentResult['tsCorrelationDiagnostics'];
   private traverseDiagnostics?: AdjustmentResult['traverseDiagnostics'];
   private sideshots?: AdjustmentResult['sideshots'];
   private condition?: AdjustmentResult['condition'];
@@ -271,6 +277,167 @@ export class LSAEngine {
       wNN: cov.cEE / det,
       wEN: -cov.cEN / det,
     };
+  }
+
+  private isTsCorrelationObservation(obs: Observation): boolean {
+    return obs.type === 'angle' || obs.type === 'direction' || obs.type === 'bearing' || obs.type === 'dir';
+  }
+
+  private tsCorrelationGroup(
+    obs: Observation,
+  ): { key: string; station: StationId; setId?: string } | null {
+    if (!this.tsCorrelationEnabled || !this.isTsCorrelationObservation(obs)) return null;
+    const station = obs.type === 'angle' || obs.type === 'direction' ? obs.at : obs.from;
+    const setId = (obs as any).setId != null ? String((obs as any).setId) : undefined;
+    const key = this.tsCorrelationScope === 'setup' ? station : `${station}|${setId ?? obs.type}`;
+    return { key, station, setId };
+  }
+
+  private applyTsCorrelationToWeightMatrix(
+    P: number[][],
+    rowInfo: EquationRowInfo[],
+    captureDiagnostics = false,
+  ): void {
+    if (!this.tsCorrelationEnabled) {
+      if (captureDiagnostics) {
+        this.tsCorrelationDiagnostics = {
+          enabled: false,
+          rho: 0,
+          scope: this.tsCorrelationScope ?? 'set',
+          groupCount: 0,
+          equationCount: 0,
+          pairCount: 0,
+          maxGroupSize: 0,
+          groups: [],
+        };
+      }
+      return;
+    }
+
+    const rhoBase = Math.min(0.95, Math.max(0, this.tsCorrelationRho || 0));
+    if (rhoBase <= 0) {
+      if (captureDiagnostics) {
+        this.tsCorrelationDiagnostics = {
+          enabled: true,
+          rho: rhoBase,
+          scope: this.tsCorrelationScope ?? 'set',
+          groupCount: 0,
+          equationCount: 0,
+          pairCount: 0,
+          maxGroupSize: 0,
+          groups: [],
+        };
+      }
+      return;
+    }
+
+    const groups = new Map<
+      string,
+      { station: StationId; setId?: string; rows: Array<{ index: number; sigma: number }> }
+    >();
+    rowInfo.forEach((info, index) => {
+      if (!info || info.component) return;
+      const group = this.tsCorrelationGroup(info.obs);
+      if (!group) return;
+      const sigma = this.effectiveStdDev(info.obs);
+      if (!Number.isFinite(sigma) || sigma <= 0) return;
+      const entry = groups.get(group.key) ?? { station: group.station, setId: group.setId, rows: [] };
+      entry.rows.push({ index, sigma });
+      groups.set(group.key, entry);
+    });
+
+    let equationCount = 0;
+    let pairCountTotal = 0;
+    let maxGroupSize = 0;
+    let offDiagAbsSumTotal = 0;
+    const diagRows: NonNullable<AdjustmentResult['tsCorrelationDiagnostics']>['groups'] = [];
+
+    groups.forEach((entry, key) => {
+      const n = entry.rows.length;
+      equationCount += n;
+      maxGroupSize = Math.max(maxGroupSize, n);
+      if (n < 2) {
+        if (captureDiagnostics) {
+          diagRows.push({
+            key,
+            station: entry.station,
+            setId: entry.setId,
+            rows: n,
+            pairCount: 0,
+          });
+        }
+        return;
+      }
+
+      const rho = Math.min(0.999999, Math.max(0, rhoBase));
+      const denom = (1 - rho) * (1 - rho + n * rho);
+      if (!Number.isFinite(denom) || denom <= 1e-24) return;
+      const a = 1 / (1 - rho);
+      const b = rho / denom;
+      let pairCount = 0;
+      let offDiagAbsSum = 0;
+
+      entry.rows.forEach((row) => {
+        P[row.index][row.index] = (a - b) / (row.sigma * row.sigma);
+      });
+      for (let i = 0; i < n; i += 1) {
+        const ri = entry.rows[i];
+        for (let j = i + 1; j < n; j += 1) {
+          const rj = entry.rows[j];
+          const w = -b / (ri.sigma * rj.sigma);
+          P[ri.index][rj.index] = w;
+          P[rj.index][ri.index] = w;
+          pairCount += 1;
+          offDiagAbsSum += Math.abs(w);
+        }
+      }
+
+      pairCountTotal += pairCount;
+      offDiagAbsSumTotal += offDiagAbsSum;
+      if (captureDiagnostics) {
+        diagRows.push({
+          key,
+          station: entry.station,
+          setId: entry.setId,
+          rows: n,
+          pairCount,
+          meanAbsOffDiagWeight: pairCount > 0 ? offDiagAbsSum / pairCount : undefined,
+        });
+      }
+    });
+
+    if (captureDiagnostics) {
+      this.tsCorrelationDiagnostics = {
+        enabled: true,
+        rho: rhoBase,
+        scope: this.tsCorrelationScope ?? 'set',
+        groupCount: groups.size,
+        equationCount,
+        pairCount: pairCountTotal,
+        maxGroupSize,
+        meanAbsOffDiagWeight:
+          pairCountTotal > 0 ? offDiagAbsSumTotal / pairCountTotal : undefined,
+        groups: diagRows.sort((a, b) => {
+          if (b.rows !== a.rows) return b.rows - a.rows;
+          if (b.pairCount !== a.pairCount) return b.pairCount - a.pairCount;
+          return a.key.localeCompare(b.key);
+        }),
+      };
+    }
+  }
+
+  private weightedQuadratic(P: number[][], v: number[][]): number {
+    let sum = 0;
+    for (let i = 0; i < v.length; i += 1) {
+      const vi = v[i][0];
+      if (vi === 0) continue;
+      for (let j = 0; j < v.length; j += 1) {
+        const pj = P[i][j];
+        if (pj === 0) continue;
+        sum += vi * pj * v[j][0];
+      }
+    }
+    return sum;
   }
 
   private computeDirectionSetPrefit(
@@ -778,10 +945,16 @@ export class LSAEngine {
       parsed.parseState?.refractionCoefficient ?? this.parseOptions?.refractionCoefficient ?? 0.13;
     this.verticalReduction =
       parsed.parseState?.verticalReduction ?? this.parseOptions?.verticalReduction ?? 'none';
+    this.tsCorrelationEnabled =
+      parsed.parseState?.tsCorrelationEnabled ?? this.parseOptions?.tsCorrelationEnabled ?? false;
+    this.tsCorrelationRho = parsed.parseState?.tsCorrelationRho ?? this.parseOptions?.tsCorrelationRho ?? 0.25;
+    this.tsCorrelationScope =
+      parsed.parseState?.tsCorrelationScope ?? this.parseOptions?.tsCorrelationScope ?? 'set';
     this.is2D = this.coordMode === '2D';
     this.condition = undefined;
     this.controlConstraints = undefined;
     this.sideshots = undefined;
+    this.tsCorrelationDiagnostics = undefined;
     this.conditionWarned = false;
 
     if (this.mapMode !== 'off') {
@@ -794,6 +967,11 @@ export class LSAEngine {
         `Vertical reduction active: curvature/refraction (k=${this.refractionCoefficient.toFixed(
           3,
         )})`,
+      );
+    }
+    if (this.tsCorrelationEnabled && this.tsCorrelationRho > 0) {
+      this.log(
+        `TS angular correlation active: scope=${this.tsCorrelationScope}, rho=${this.tsCorrelationRho.toFixed(3)}`,
       );
     }
 
@@ -951,6 +1129,7 @@ export class LSAEngine {
       const A = zeros(numObsEquations, numParams);
       const L = zeros(numObsEquations, 1);
       const P = zeros(numObsEquations, numObsEquations);
+      const rowInfo: EquationRowInfo[] = [];
 
       let row = 0;
 
@@ -974,6 +1153,7 @@ export class LSAEngine {
           const v = obs.obs - calcDist;
 
           L[row][0] = v;
+          rowInfo.push({ obs });
           if (this.debug) {
             const sigmaUsed = this.effectiveStdDev(obs);
             const wRad = v;
@@ -1027,6 +1207,7 @@ export class LSAEngine {
           let diff = obs.obs - calcAngle;
           diff = this.wrapToPi(diff);
           L[row][0] = diff;
+          rowInfo.push({ obs });
           if (this.debug) {
             const sigmaUsed = this.effectiveStdDev(obs);
             const wRad = diff;
@@ -1097,6 +1278,7 @@ export class LSAEngine {
           const vN = obs.obs.dN - calc_dN;
 
           L[row][0] = vE;
+          rowInfo.push({ obs, component: 'E' });
           const fromIdx = this.paramIndex[from];
           if (fromIdx?.x != null) {
             A[row][fromIdx.x] = -1.0;
@@ -1114,6 +1296,7 @@ export class LSAEngine {
           }
 
           L[row + 1][0] = vN;
+          rowInfo.push({ obs, component: 'N' });
           if (fromIdx?.y != null) {
             A[row + 1][fromIdx.y] = -1.0;
           }
@@ -1131,6 +1314,7 @@ export class LSAEngine {
           const calc_dH = s2.h - s1.h;
           const v = obs.obs - calc_dH;
           L[row][0] = v;
+          rowInfo.push({ obs });
 
           const fromIdx = this.paramIndex[from];
           if (fromIdx?.h != null) {
@@ -1154,6 +1338,7 @@ export class LSAEngine {
           if (v > Math.PI) v -= 2 * Math.PI;
           if (v < -Math.PI) v += 2 * Math.PI;
           L[row][0] = v;
+          rowInfo.push({ obs });
 
           const dAz_dE_To = Math.cos(calc) / (az.dist || 1);
           const dAz_dN_To = -Math.sin(calc) / (az.dist || 1);
@@ -1193,6 +1378,7 @@ export class LSAEngine {
             if (Math.abs(v1) < Math.abs(v0)) v = v1;
           }
           L[row][0] = v;
+          rowInfo.push({ obs });
           if (this.debug) {
             const sigmaUsed = this.effectiveStdDev(obs);
             const wRad = v;
@@ -1245,6 +1431,7 @@ export class LSAEngine {
           let v = obs.obs - calc;
           v = this.wrapToPi(v);
           L[row][0] = v;
+          rowInfo.push({ obs });
           if (this.debug) {
             const sigmaUsed = this.effectiveStdDev(obs);
             const wRad = v;
@@ -1301,6 +1488,7 @@ export class LSAEngine {
           let v = obs.obs - calc;
           v = this.wrapToPi(v);
           L[row][0] = v;
+          rowInfo.push({ obs });
           if (this.debug) {
             const sigmaUsed = this.effectiveStdDev(obs);
             const wRad = v;
@@ -1374,8 +1562,11 @@ export class LSAEngine {
         L[row][0] = v;
         A[row][constraint.index] = 1;
         P[row][row] = 1 / (constraint.sigma * constraint.sigma);
+        rowInfo.push(null);
         row += 1;
       });
+
+      this.applyTsCorrelationToWeightMatrix(P, rowInfo);
 
       try {
         const AT = transpose(A);
@@ -1402,19 +1593,18 @@ export class LSAEngine {
 
         if (this.debug) {
           const AX = multiply(A, X);
-          let sumBefore = 0;
-          let sumAfter = 0;
+          const Vnew = zeros(numObsEquations, 1);
           let maxBefore = 0;
           let maxAfter = 0;
           for (let i = 0; i < numObsEquations; i += 1) {
-            const w = P[i][i] || 0;
             const v0 = L[i][0];
             const v1 = v0 - AX[i][0];
-            sumBefore += w * v0 * v0;
-            sumAfter += w * v1 * v1;
+            Vnew[i][0] = v1;
             maxBefore = Math.max(maxBefore, Math.abs(v0));
             maxAfter = Math.max(maxAfter, Math.abs(v1));
           }
+          const sumBefore = this.weightedQuadratic(P, L);
+          const sumAfter = this.weightedQuadratic(P, Vnew);
           const ratio = sumBefore > 0 ? sumAfter / sumBefore : 0;
           const msg =
             `Iter ${iter + 1} step check: ` +
@@ -1531,6 +1721,22 @@ export class LSAEngine {
     >();
     const activeObservations = this.observations.filter((obs) => this.isObservationActive(obs));
     const constraints = this.buildCoordinateConstraints(paramIndex);
+    const tsCorrelationRows = new Map<
+      string,
+      { station: StationId; setId?: string; rows: Array<{ v: number; sigma: number }> }
+    >();
+    const collectTsCorrelationRow = (obs: Observation, v: number, sigma: number) => {
+      const group = this.tsCorrelationGroup(obs);
+      if (!group) return;
+      if (!Number.isFinite(v) || !Number.isFinite(sigma) || sigma <= 0) return;
+      const entry = tsCorrelationRows.get(group.key) ?? {
+        station: group.station,
+        setId: group.setId,
+        rows: [],
+      };
+      entry.rows.push({ v, sigma });
+      tsCorrelationRows.set(group.key, entry);
+    };
 
     this.observations.forEach((obs) => {
       if (!this.isObservationActive(obs)) return;
@@ -1571,6 +1777,7 @@ export class LSAEngine {
         const sigma = this.effectiveStdDev(obs);
         obs.stdRes = Math.abs(v) / sigma;
         vtpv += (v * v) / (sigma * sigma);
+        collectTsCorrelationRow(obs, v, sigma);
       } else if (obs.type === 'gps') {
         const s1 = this.stations[obs.from];
         const s2 = this.stations[obs.to];
@@ -1606,6 +1813,7 @@ export class LSAEngine {
         const sigma = this.effectiveStdDev(obs);
         obs.stdRes = Math.abs(v) / sigma;
         vtpv += (v * v) / (sigma * sigma);
+        collectTsCorrelationRow(obs, v, sigma);
       } else if (obs.type === 'dir') {
         const calcAz = this.getAzimuth(obs.from, obs.to).az;
         let v0 = obs.obs - calcAz;
@@ -1623,6 +1831,7 @@ export class LSAEngine {
         const sigma = this.effectiveStdDev(obs);
         obs.stdRes = Math.abs(v) / sigma;
         vtpv += (v * v) / (sigma * sigma);
+        collectTsCorrelationRow(obs, v, sigma);
       } else if (obs.type === 'direction') {
         const dir = obs as any;
         const az = this.getAzimuth(dir.at, dir.to).az;
@@ -1638,6 +1847,7 @@ export class LSAEngine {
         const sigma = this.effectiveStdDev(dir);
         dir.stdRes = Math.abs(v) / sigma;
         vtpv += (v * v) / (sigma * sigma);
+        collectTsCorrelationRow(dir, v, sigma);
 
         const setId = String(dir.setId ?? 'unknown');
         const stat = directionStats.get(setId) ?? {
@@ -1731,6 +1941,93 @@ export class LSAEngine {
       vtpv += (v * v) / (constraint.sigma * constraint.sigma);
     });
 
+    if (this.tsCorrelationEnabled && this.tsCorrelationRho > 0) {
+      const rho = Math.min(0.95, Math.max(0, this.tsCorrelationRho));
+      let equationCount = 0;
+      let pairCountTotal = 0;
+      let maxGroupSize = 0;
+      let offDiagAbsSumTotal = 0;
+      const groups: NonNullable<AdjustmentResult['tsCorrelationDiagnostics']>['groups'] = [];
+      tsCorrelationRows.forEach((entry, key) => {
+        const n = entry.rows.length;
+        equationCount += n;
+        maxGroupSize = Math.max(maxGroupSize, n);
+        if (n < 2) {
+          groups.push({
+            key,
+            station: entry.station,
+            setId: entry.setId,
+            rows: n,
+            pairCount: 0,
+          });
+          return;
+        }
+        const denom = (1 - rho) * (1 - rho + n * rho);
+        if (!Number.isFinite(denom) || denom <= 1e-24) return;
+        const a = 1 / (1 - rho);
+        const b = rho / denom;
+        let pairCount = 0;
+        let offDiagAbsSum = 0;
+
+        entry.rows.forEach((row) => {
+          const baseDiag = 1 / (row.sigma * row.sigma);
+          const corrDiag = (a - b) / (row.sigma * row.sigma);
+          vtpv += (corrDiag - baseDiag) * row.v * row.v;
+        });
+        for (let i = 0; i < n; i += 1) {
+          const ri = entry.rows[i];
+          for (let j = i + 1; j < n; j += 1) {
+            const rj = entry.rows[j];
+            const w = -b / (ri.sigma * rj.sigma);
+            vtpv += 2 * w * ri.v * rj.v;
+            pairCount += 1;
+            offDiagAbsSum += Math.abs(w);
+          }
+        }
+
+        pairCountTotal += pairCount;
+        offDiagAbsSumTotal += offDiagAbsSum;
+        groups.push({
+          key,
+          station: entry.station,
+          setId: entry.setId,
+          rows: n,
+          pairCount,
+          meanAbsOffDiagWeight: pairCount > 0 ? offDiagAbsSum / pairCount : undefined,
+        });
+      });
+      this.tsCorrelationDiagnostics = {
+        enabled: true,
+        rho,
+        scope: this.tsCorrelationScope ?? 'set',
+        groupCount: tsCorrelationRows.size,
+        equationCount,
+        pairCount: pairCountTotal,
+        maxGroupSize,
+        meanAbsOffDiagWeight:
+          pairCountTotal > 0 ? offDiagAbsSumTotal / pairCountTotal : undefined,
+        groups: groups.sort((a, b) => {
+          if (b.rows !== a.rows) return b.rows - a.rows;
+          if (b.pairCount !== a.pairCount) return b.pairCount - a.pairCount;
+          return a.key.localeCompare(b.key);
+        }),
+      };
+      this.log(
+        `TS correlation diagnostics: groups=${this.tsCorrelationDiagnostics.groupCount}, eq=${this.tsCorrelationDiagnostics.equationCount}, pairs=${this.tsCorrelationDiagnostics.pairCount}, maxGroup=${this.tsCorrelationDiagnostics.maxGroupSize}, mean|offdiagW|=${this.tsCorrelationDiagnostics.meanAbsOffDiagWeight != null ? this.tsCorrelationDiagnostics.meanAbsOffDiagWeight.toExponential(3) : '-'}`,
+      );
+    } else {
+      this.tsCorrelationDiagnostics = {
+        enabled: false,
+        rho: 0,
+        scope: this.tsCorrelationScope ?? 'set',
+        groupCount: 0,
+        equationCount: 0,
+        pairCount: 0,
+        maxGroupSize: 0,
+        groups: [],
+      };
+    }
+
     this.seuw = this.dof > 0 ? Math.sqrt(vtpv / this.dof) : 0;
 
     this.chiSquare = undefined;
@@ -1788,7 +2085,7 @@ export class LSAEngine {
         const A = zeros(numObsEquations, numParams);
         const P = zeros(numObsEquations, numObsEquations);
         const L = zeros(numObsEquations, 1);
-        const rowInfo: Array<{ obs: Observation; component?: 'E' | 'N' } | null> = [];
+        const rowInfo: EquationRowInfo[] = [];
         let row = 0;
 
         activeObservations.forEach((obs) => {
@@ -2054,6 +2351,8 @@ export class LSAEngine {
           row += 1;
         });
 
+        this.applyTsCorrelationToWeightMatrix(P, rowInfo, true);
+
         try {
           const AT = transpose(A);
           const N = multiply(multiply(AT, P), A);
@@ -2067,7 +2366,8 @@ export class LSAEngine {
           for (let i = 0; i < numObsEquations; i += 1) {
             const info = rowInfo[i];
             if (!info) continue;
-            let qll = P[i][i] > 0 ? 1 / P[i][i] : 0;
+            const sigma = this.effectiveStdDev(info.obs);
+            let qll = sigma > 0 ? sigma * sigma : 0;
             if (info.obs.type === 'gps') {
               const cov = this.gpsCovariance(info.obs);
               qll = info.component === 'N' ? cov.cNN : cov.cEE;
@@ -2080,10 +2380,10 @@ export class LSAEngine {
             const t = L[i][0] / (s0 * Math.sqrt(qvv));
             const r = qll > 0 ? qvv / qll : 0;
             const pass = Math.abs(t) <= this.localTestCritical;
-            const sigma = Math.sqrt(Math.max(qll, 0));
+            const sigmaQll = Math.sqrt(Math.max(qll, 0));
             const mdb =
               r > 1e-12
-                ? (this.localTestCritical * s0 * sigma) / Math.sqrt(r)
+                ? (this.localTestCritical * s0 * sigmaQll) / Math.sqrt(r)
                 : Number.POSITIVE_INFINITY;
             const entry = rowStats.get(info.obs.id) ?? {
               t: [],
@@ -2821,6 +3121,7 @@ export class LSAEngine {
       directionTargetDiagnostics: this.directionTargetDiagnostics,
       directionRepeatabilityDiagnostics: this.directionRepeatabilityDiagnostics,
       setupDiagnostics: this.setupDiagnostics,
+      tsCorrelationDiagnostics: this.tsCorrelationDiagnostics,
       traverseDiagnostics: this.traverseDiagnostics,
       sideshots: this.sideshots,
     };

@@ -31,6 +31,7 @@ import type {
   MapMode,
   AngleMode,
   VerticalReductionMode,
+  TsCorrelationScope,
 } from './types'
 
 const FT_PER_M = 3.280839895
@@ -154,6 +155,9 @@ type ParseSettings = {
   verticalReduction: VerticalReductionMode
   levelWeight?: number
   lonSign: 'west-positive' | 'west-negative'
+  tsCorrelationEnabled: boolean
+  tsCorrelationRho: number
+  tsCorrelationScope: TsCorrelationScope
 }
 
 type TabKey = 'report' | 'map'
@@ -180,6 +184,12 @@ const SETTINGS_TOOLTIPS = {
   levelWeight:
     'Optional .LWEIGHT value (mm/km) used as the leveling weight constant when computing leveling standard deviations.',
   lonSign: 'Longitude sign convention for geographic parsing (.LONSIGN W- or W+).',
+  tsCorrelation:
+    'Enable correlated angular stochastic modeling for TS setups/sets using a common correlation coefficient rho.',
+  tsCorrelationRho:
+    'Correlation coefficient rho applied between angular equations in each TS correlation group (0 to 0.95).',
+  tsCorrelationScope:
+    'Grouping scope for TS angular correlation: SET correlates per setup+set/type; SETUP correlates by occupy setup.',
   instrument: 'Select an instrument code to view parsed EDM/angle/centering and other precision parameters.',
 } as const
 
@@ -205,6 +215,9 @@ const App: React.FC = () => {
     verticalReduction: 'none',
     levelWeight: undefined,
     lonSign: 'west-negative',
+    tsCorrelationEnabled: false,
+    tsCorrelationRho: 0.25,
+    tsCorrelationScope: 'set',
   })
   const [selectedInstrument, setSelectedInstrument] = useState('')
   const [splitPercent, setSplitPercent] = useState(35) // left pane width (%)
@@ -368,7 +381,7 @@ const App: React.FC = () => {
     lines.push(`# Generated: ${now.toLocaleString()}`)
     lines.push(`# Linear units: ${linearUnit}`)
     lines.push(
-      `# Reduction: mapMode=${parseSettings.mapMode}, mapScale=${(parseSettings.mapScaleFactor ?? 1).toFixed(8)}, curvRef=${parseSettings.applyCurvatureRefraction ? 'ON' : 'OFF'}, k=${parseSettings.refractionCoefficient.toFixed(3)}, vRed=${parseSettings.verticalReduction}`,
+      `# Reduction: mapMode=${parseSettings.mapMode}, mapScale=${(parseSettings.mapScaleFactor ?? 1).toFixed(8)}, curvRef=${parseSettings.applyCurvatureRefraction ? 'ON' : 'OFF'}, k=${parseSettings.refractionCoefficient.toFixed(3)}, vRed=${parseSettings.verticalReduction}, tsCorr=${parseSettings.tsCorrelationEnabled ? 'ON' : 'OFF'}(${parseSettings.tsCorrelationScope},rho=${parseSettings.tsCorrelationRho.toFixed(3)})`,
     )
     lines.push('')
     lines.push(`Status: ${res.converged ? 'CONVERGED' : 'NOT CONVERGED'}`)
@@ -404,6 +417,26 @@ const App: React.FC = () => {
           4,
         )} .. ${res.chiSquare.varianceFactorUpper.toFixed(4)})`,
       )
+    }
+    if (res.tsCorrelationDiagnostics) {
+      const d = res.tsCorrelationDiagnostics
+      lines.push(
+        `TS correlation: ${d.enabled ? 'ON' : 'OFF'} (scope=${d.scope}, rho=${d.rho.toFixed(3)})`,
+      )
+      if (d.enabled) {
+        lines.push(
+          `TS correlation diagnostics: groups=${d.groupCount}, equations=${d.equationCount}, pairs=${d.pairCount}, maxGroup=${d.maxGroupSize}, mean|offdiagW|=${d.meanAbsOffDiagWeight != null ? d.meanAbsOffDiagWeight.toExponential(4) : '-'}`,
+        )
+        const topGroups = d.groups.slice(0, 20)
+        if (topGroups.length > 0) {
+          lines.push('TS correlation groups (top):')
+          topGroups.forEach((g) => {
+            lines.push(
+              `  ${g.key}: rows=${g.rows}, pairs=${g.pairCount}, mean|offdiagW|=${g.meanAbsOffDiagWeight != null ? g.meanAbsOffDiagWeight.toExponential(4) : '-'}`,
+            )
+          })
+        }
+      }
     }
     lines.push('')
     lines.push('--- Adjusted Coordinates ---')
@@ -1667,6 +1700,9 @@ const App: React.FC = () => {
         verticalReduction: parseSettings.verticalReduction,
         levelWeight: parseSettings.levelWeight,
         lonSign: parseSettings.lonSign,
+        tsCorrelationEnabled: parseSettings.tsCorrelationEnabled,
+        tsCorrelationRho: parseSettings.tsCorrelationRho,
+        tsCorrelationScope: parseSettings.tsCorrelationScope,
       },
     })
     return engine.solve()
@@ -2077,6 +2113,65 @@ const App: React.FC = () => {
                         className="accent-blue-500"
                         checked={parseSettings.normalize}
                         onChange={(e) => handleParseSetting('normalize', e.target.checked)}
+                      />
+                    </div>
+                    <div className="flex items-center justify-between gap-3">
+                      <label
+                        title={SETTINGS_TOOLTIPS.tsCorrelation}
+                        className="text-xs text-slate-400 font-medium uppercase"
+                      >
+                        TS Corr
+                      </label>
+                      <input
+                        title={SETTINGS_TOOLTIPS.tsCorrelation}
+                        type="checkbox"
+                        className="accent-blue-500"
+                        checked={parseSettings.tsCorrelationEnabled}
+                        onChange={(e) => handleParseSetting('tsCorrelationEnabled', e.target.checked)}
+                      />
+                    </div>
+                    <div className="flex items-center justify-between gap-3">
+                      <label
+                        title={SETTINGS_TOOLTIPS.tsCorrelationScope}
+                        className="text-xs text-slate-400 font-medium uppercase"
+                      >
+                        TS Corr Scope
+                      </label>
+                      <select
+                        title={SETTINGS_TOOLTIPS.tsCorrelationScope}
+                        value={parseSettings.tsCorrelationScope}
+                        onChange={(e) =>
+                          handleParseSetting('tsCorrelationScope', e.target.value as TsCorrelationScope)
+                        }
+                        className="bg-slate-800 text-xs border border-slate-600 text-white rounded px-2 py-1 outline-none focus:border-blue-500"
+                      >
+                        <option value="set">SET (.TSCORR SET)</option>
+                        <option value="setup">SETUP (.TSCORR SETUP)</option>
+                      </select>
+                    </div>
+                    <div className="flex items-center justify-between gap-3">
+                      <label
+                        title={SETTINGS_TOOLTIPS.tsCorrelationRho}
+                        className="text-xs text-slate-400 font-medium uppercase"
+                      >
+                        TS Corr ρ
+                      </label>
+                      <input
+                        title={SETTINGS_TOOLTIPS.tsCorrelationRho}
+                        type="number"
+                        min={0}
+                        max={0.95}
+                        step={0.01}
+                        value={parseSettings.tsCorrelationRho}
+                        onChange={(e) =>
+                          handleParseSetting(
+                            'tsCorrelationRho',
+                            Number.isFinite(parseFloat(e.target.value))
+                              ? Math.max(0, Math.min(0.95, parseFloat(e.target.value)))
+                              : 0.25,
+                          )
+                        }
+                        className="w-20 bg-slate-800 text-xs border border-slate-600 text-white rounded px-2 py-1 outline-none focus:border-blue-500 text-center"
                       />
                     </div>
                     <div className="flex items-center justify-between gap-3">

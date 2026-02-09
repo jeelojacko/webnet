@@ -154,6 +154,30 @@ describe('parseInput', () => {
     expect(parsed.parseState.verticalReduction).toBe('curvref')
   })
 
+  it('parses TS correlation directives', () => {
+    const parsed = parseInput(
+      [
+        '.TSCORR SETUP 0.35',
+        'C A 0 0 0 !',
+        'C B 100 0 0',
+        'D A-B 100 0.01',
+      ].join('\n'),
+    )
+    expect(parsed.parseState.tsCorrelationEnabled).toBe(true)
+    expect(parsed.parseState.tsCorrelationScope).toBe('setup')
+    expect(parsed.parseState.tsCorrelationRho).toBeCloseTo(0.35, 8)
+
+    const off = parseInput(
+      [
+        '.TSCORR OFF',
+        'C A 0 0 0 !',
+        'C B 100 0 0',
+        'D A-B 100 0.01',
+      ].join('\n'),
+    )
+    expect(off.parseState.tsCorrelationEnabled).toBe(false)
+  })
+
   it('parses sideshot with explicit azimuth token', () => {
     const parsed = parseInput(
       [

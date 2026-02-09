@@ -205,6 +205,7 @@ export type MapMode = 'off' | 'on' | 'anglecalc';
 export type LonSign = 'west-positive' | 'west-negative';
 export type AngleMode = 'auto' | 'angle' | 'dir';
 export type VerticalReductionMode = 'none' | 'curvref';
+export type TsCorrelationScope = 'setup' | 'set';
 
 export interface ParseOptions {
   units: UnitsMode;
@@ -227,6 +228,9 @@ export interface ParseOptions {
   addCenteringToExplicit?: boolean;
   debug?: boolean;
   angleMode?: AngleMode;
+  tsCorrelationEnabled?: boolean;
+  tsCorrelationRho?: number;
+  tsCorrelationScope?: TsCorrelationScope;
 }
 
 export interface AdjustmentResult {
@@ -359,6 +363,24 @@ export interface AdjustmentResult {
     worstObsStations?: string;
     worstObsLine?: number;
   }[];
+  tsCorrelationDiagnostics?: {
+    enabled: boolean;
+    rho: number;
+    scope: TsCorrelationScope;
+    groupCount: number;
+    equationCount: number;
+    pairCount: number;
+    maxGroupSize: number;
+    meanAbsOffDiagWeight?: number;
+    groups: {
+      key: string;
+      station: StationId;
+      setId?: string;
+      rows: number;
+      pairCount: number;
+      meanAbsOffDiagWeight?: number;
+    }[];
+  };
   traverseDiagnostics?: {
     closureCount: number;
     misclosureE: number;
