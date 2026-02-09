@@ -315,7 +315,70 @@ export const parseInput = (
   const lines = input.split('\n')
   let lineNum = 0
   let obsId = 0
+  const autoCreatedStations = new Set<StationId>()
+  const rejectedAutoCreateTokens = new Set<string>()
+  const looksLikeNumericMeasurement = (token: string): boolean =>
+    /^[+-]?\d+\.\d+(?:[eE][+-]?\d+)?$/.test(token)
+  const ensureStation = (id: StationId, context: string): void => {
+    if (!id) return
+    if (stations[id]) return
+    if (looksLikeNumericMeasurement(id)) {
+      if (!rejectedAutoCreateTokens.has(id)) {
+        rejectedAutoCreateTokens.add(id)
+        logs.push(
+          `Warning: skipped auto-create for token "${id}" from ${context}; looks like a numeric value, not a station id.`,
+        )
+      }
+      return
+    }
+    stations[id] = {
+      x: 0,
+      y: 0,
+      h: 0,
+      fixed: false,
+      fixedX: false,
+      fixedY: false,
+      fixedH: false,
+    }
+    if (!autoCreatedStations.has(id)) {
+      autoCreatedStations.add(id)
+      logs.push(
+        `Auto-created station ${id} from ${context} with default approximate coordinates (0,0,0).`,
+      )
+    }
+  }
+  const ensureObservationStations = (obs: Observation): void => {
+    const isSideshot =
+      typeof obs.calc === 'object' &&
+      obs.calc != null &&
+      'sideshot' in obs.calc &&
+      Boolean((obs.calc as { sideshot?: boolean }).sideshot)
+    if (isSideshot) return
+    if (obs.type === 'angle') {
+      ensureStation(obs.at, `${obs.type} observation`)
+      ensureStation(obs.from, `${obs.type} observation`)
+      ensureStation(obs.to, `${obs.type} observation`)
+      return
+    }
+    if (obs.type === 'direction') {
+      ensureStation(obs.at, `${obs.type} observation`)
+      ensureStation(obs.to, `${obs.type} observation`)
+      return
+    }
+    if (
+      obs.type === 'dist' ||
+      obs.type === 'bearing' ||
+      obs.type === 'dir' ||
+      obs.type === 'gps' ||
+      obs.type === 'lev' ||
+      obs.type === 'zenith'
+    ) {
+      ensureStation(obs.from, `${obs.type} observation`)
+      ensureStation(obs.to, `${obs.type} observation`)
+    }
+  }
   const pushObservation = <T extends Observation>(obs: T): void => {
+    ensureObservationStations(obs)
     if (obs.sourceLine == null) obs.sourceLine = lineNum
     observations.push(obs)
   }
@@ -1187,9 +1250,11 @@ export const parseInput = (
           const [at, from, to] = stations
           const ang = parts[2]
           const dist = parseFloat(parts[3])
-          const vert = parts[4]
-          const restTokens = parts.slice(5)
-          const { sigmas, rest } = extractSigmaTokens(restTokens, 3)
+          const hasVertical = state.coordMode !== '2D'
+          const vert = hasVertical ? parts[4] : undefined
+          const sigmaStart = hasVertical ? 5 : 4
+          const restTokens = parts.slice(sigmaStart)
+          const { sigmas, rest } = extractSigmaTokens(restTokens, hasVertical ? 3 : 2)
           const { hi, ht } = extractHiHt(rest)
           const instCode = state.currentInstrument ?? ''
           const inst = instCode ? instrumentLibrary[instCode] : undefined

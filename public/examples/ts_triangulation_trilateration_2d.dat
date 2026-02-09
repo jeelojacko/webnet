@@ -1,0 +1,31 @@
+.2D
+# Combined Triangulation-Trilateration 2D Network (Star*Net Example 2 style)
+# Notes for WebNet:
+# - .2D is required so M records parse as angle+distance in this dataset style.
+# - Stations 4/5/6 are intentionally omitted from C records to demonstrate auto-create.
+
+C 1 5102.502 5793.197 ! !
+C 3 7294.498 6940.221 ! !
+C 2 5642 7017
+
+# Angle and Distance Observations at Perimeter
+M 2-1-3 111-08-11 1653.87
+M 2-1-6 77-24-52 1124.25
+M 3-2-4 87-07-04 1364.40
+M 3-2-6 40-58-15 951.92 4.0 .03
+M 4-3-5 120-26-52 1382.49
+M 4-3-6 44-14-21 983.86
+M 5-4-1 110-34-04 1130.75
+M 5-4-6 39-46-29 1493.54
+M 1-5-2 110-43-40 1337.89
+M 1-5-6 65-36-54 1548.61
+
+# Angles at Center Point
+A 6-5-4 64-01-01
+A 6-4-3 89-36-55
+A 6-3-2 105-18-27
+A 6-2-1 57-28-12
+
+# Distance Cross-ties
+D 1-4 2070.76
+D 2-5 2034.47

@@ -249,6 +249,21 @@ describe('LSAEngine', () => {
     expect(result.residualDiagnostics?.criticalT).toBeGreaterThan(0)
   })
 
+  it('solves the 2D triangulation-trilateration example with auto-created stations', () => {
+    const input = readFileSync('tests/fixtures/triangulation_trilateration_2d.dat', 'utf-8')
+    const result = new LSAEngine({ input, maxIterations: 20 }).solve()
+    expect(result.stations['4']).toBeDefined()
+    expect(result.stations['5']).toBeDefined()
+    expect(result.stations['6']).toBeDefined()
+    expect(Number.isFinite(result.stations['4'].x)).toBe(true)
+    expect(Number.isFinite(result.stations['4'].y)).toBe(true)
+    expect(Number.isFinite(result.stations['5'].x)).toBe(true)
+    expect(Number.isFinite(result.stations['5'].y)).toBe(true)
+    expect(Number.isFinite(result.stations['6'].x)).toBe(true)
+    expect(Number.isFinite(result.stations['6'].y)).toBe(true)
+    expect(result.logs.some((l) => l.includes('Auto-created station 4'))).toBe(true)
+  })
+
   it('applies map scale reduction to horizontal distances when map mode is on', () => {
     const baseInput = [
       '.2D',

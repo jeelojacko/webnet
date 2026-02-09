@@ -70,3 +70,4 @@
   - [x] Phase 14: expand traverse closure diagnostics with linear ppm + angular/vertical misclosure checks, threshold pass/warn flags, per-loop severity ranking, and traverse suspect tables in report/export
   - [x] Phase 15: expand direction reduction diagnostics (raw max residual, face-pair delta, per-face spreads), and add structured direction reject diagnostics (line/set/record/expected-vs-actual face) in report/export
   - [x] Phase 16: add residual-quality diagnostics summary (|t| bins, local-test fail totals, redundancy weakness counts, worst-observation trace, and by-type screening table) in report/export
+  - [x] Phase 17: improve 2D triangulation/trilateration compatibility by parsing 2D `M` lines with angle/dist sigma tokens (no forced vertical token) and auto-creating missing non-sideshot stations referenced in observations

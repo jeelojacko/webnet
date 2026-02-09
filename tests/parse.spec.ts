@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { parseInput } from '../src/engine/parse'
-import type { LevelObservation } from '../src/types'
+import type { AngleObservation, LevelObservation } from '../src/types'
 
 const fixture = readFileSync('tests/fixtures/simple.dat', 'utf-8')
 
@@ -67,6 +67,34 @@ describe('parseInput', () => {
     expect(types.angle).toBeGreaterThan(0)
     expect(types.dist).toBeGreaterThan(0)
     expect(parsed.logs.some((l) => l.includes('Traverse start'))).toBe(true)
+  })
+
+  it('auto-creates missing stations referenced by active observations', () => {
+    const parsed = parseInput(readFileSync('tests/fixtures/triangulation_trilateration_2d.dat', 'utf-8'))
+    expect(parsed.stations['4']).toBeDefined()
+    expect(parsed.stations['5']).toBeDefined()
+    expect(parsed.stations['6']).toBeDefined()
+    expect(parsed.logs.some((l) => l.includes('Auto-created station 4'))).toBe(true)
+    expect(parsed.logs.some((l) => l.includes('Auto-created station 5'))).toBe(true)
+    expect(parsed.logs.some((l) => l.includes('Auto-created station 6'))).toBe(true)
+  })
+
+  it('parses 2D M records with angle/dist sigmas and no vertical observation', () => {
+    const parsed = parseInput(readFileSync('tests/fixtures/triangulation_trilateration_2d.dat', 'utf-8'))
+    const zenCount = parsed.observations.filter((o) => o.type === 'zenith').length
+    const levCount = parsed.observations.filter((o) => o.type === 'lev').length
+    expect(zenCount).toBe(0)
+    expect(levCount).toBe(0)
+
+    const mLine = parsed.observations.find(
+      (o) =>
+        o.type === 'angle' &&
+        (o as AngleObservation).at === '3' &&
+        (o as AngleObservation).from === '2' &&
+        (o as AngleObservation).to === '6',
+    )
+    expect(mLine).toBeDefined()
+    expect(mLine?.stdDev).toBeCloseTo(4.0 * (Math.PI / 180) / 3600, 12)
   })
 
   it('logs traverse closure', () => {

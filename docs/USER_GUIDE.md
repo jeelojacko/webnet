@@ -26,6 +26,7 @@ WebNet includes ready-to-run TS examples in `public/examples/`:
 - `ts_traverse_tb_t_te.dat` (traverse `TB/T/TE`)
 - `ts_direction_sets_db_dn_dm_de.dat` (direction sets `DB/DN/DM/DE`)
 - `ts_sideshots_ss.dat` (sideshots `SS` with legacy, `AZ=`, and setup-angle `HZ=` usage)
+- `ts_triangulation_trilateration_2d.dat` (Star*Net-style combined triangulation/trilateration 2D sample)
 - `ts_all_combined.dat` (all TS-related record families together)
 
 ## Data Format
@@ -79,6 +80,7 @@ Directives that control parsing behavior:
 -   **Vertical (V)**: `V [At]-[To] Zenith/dH [StdErr]` (Effect depends on `.DELTA`)
 -   **Measure (M)**: `M [At]-[From]-[To] Angle Dist Zenith [StdAng] [StdDist] [StdZen]`
     -   Combined Angle, Distance, and Vertical.
+    -   In `.2D`, `M` can be entered as angle+distance with sigma tokens after distance (no required zenith token).
 -   **Bearing/Measurement (BM)**: `BM [At]-[To] Bearing Dist Vertical`
     -   **DIR (azimuth)**: internally treated as a bearing observation without a backsight term; appears in the report as “Directions (Azimuth)”.
 
@@ -134,6 +136,7 @@ Structured data collection methods:
 -   **Local Test + MDB**: Each observation includes local-test pass/fail and Minimal Detectable Bias (MDB) for blunder screening.
 -   **Relative Precision**: σΔN/σΔE, σdistance, σbearing, and relative ellipses between unknown points.
 -   **Source-Line Traceability**: Residual rows include source line numbers from the input file.
+-   **Missing Station Auto-Create**: If a non-sideshot observation references a station without prior `C/P/E` record, WebNet auto-creates it with default approximate coordinates `(0,0,0)` and logs the event. Explicit `C` approximations are still recommended for robust convergence.
 -   **Processing Log**: Includes per-direction-set residual summaries (mean/RMS/max in arcseconds) to help spot bad sets.
 -   **Prefit Summary**: Initial direction-set residual summaries (before adjustment) can reveal inconsistent sets early.
 -   **Direction Set Diagnostics**: Report table includes raw vs reduced counts, F1/F2 balance, per-set orientation, residual RMS/max, plus reduction-quality cues (face-pair delta and raw-max residual statistics).
