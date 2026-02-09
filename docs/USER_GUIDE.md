@@ -138,6 +138,8 @@ Structured data collection methods:
 -   **Direction Target Repeatability**: Ranked per-target direction diagnostics show raw spread, face balance, residual/std-residual behavior, local-test/MDB cues, and suspect score for blunder screening.
 -   **Direction Repeatability Trends**: Multi-set occupy-target summaries show cross-set residual range/RMS, spread trends, face-balance counts, and ranked suspects to detect unstable repeated observations.
 -   **Suspect Impact Analysis**: WebNet runs what-if exclusion trials for top suspect observations and reports expected impact (`dSEUW`, `dMax|t|`, chi-square status change, max unknown-point coordinate shift, and score). You can apply an exclusion directly from this table and re-run.
+-   **Header Tooltips**: Hover over report column headers (and key summary labels like SEUW/Chi-Square) to see concise definitions of statistical fields.
+-   **Settings Tooltips**: Hover any item in the Settings dropdown to see what each mode/option changes before rerunning.
 -   **Setup Diagnostics**: Per-setup observation mix/orientation metrics plus setup-level residual quality (`RMS |t|`, `Max |t|`, local-test fail count, worst observation + line) are reported for TS troubleshooting and blunder isolation.
 -   **Setup Suspects**: A ranked setup table highlights the most suspect occupy stations first (failed local tests, then highest standardized residual behavior).
 -   **Traverse Diagnostics**: Misclosure vector, traverse distance sum, and closure ratio are reported when closure geometry is available.

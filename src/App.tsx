@@ -158,6 +158,31 @@ type ParseSettings = {
 
 type TabKey = 'report' | 'map'
 
+const SETTINGS_TOOLTIPS = {
+  units:
+    'Display units for coordinates and report values. The solver still works internally in meters/radians.',
+  maxIterations: 'Maximum least-squares iterations before the run stops if convergence is slow.',
+  coordMode: '2D adjusts horizontal coordinates only. 3D also adjusts heights and uses vertical observations.',
+  order: 'Coordinate field order expected in control records and shown in report tables.',
+  angleMode:
+    'Interpretation mode for A records: AUTO detects type, ANGLE forces turned angles, DIR forces directions.',
+  deltaMode:
+    'How distance/vertical records are interpreted: slope+zenith (.DELTA OFF) or horizontal distance + dH (.DELTA ON).',
+  mapMode:
+    'Map-ground handling mode. OFF leaves values unchanged; ON/ANGLECALC apply map-scale behavior during reductions.',
+  mapScale: 'Scale factor used by map mode. 1.000000 means no map scaling.',
+  curvatureRefraction:
+    'Apply curvature/refraction correction in vertical reductions for applicable total station observations.',
+  refractionK: 'Refraction coefficient k used with curvature/refraction correction. Typical survey default is 0.13.',
+  verticalReduction: 'Vertical reduction model applied to slope/zenith observations before adjustment.',
+  normalize:
+    'When ON, normalizes mixed-face direction/traverse observations to a consistent orientation convention.',
+  levelWeight:
+    'Optional .LWEIGHT value (mm/km) used as the leveling weight constant when computing leveling standard deviations.',
+  lonSign: 'Longitude sign convention for geographic parsing (.LONSIGN W- or W+).',
+  instrument: 'Select an instrument code to view parsed EDM/angle/centering and other precision parameters.',
+} as const
+
 /****************************
  * UI COMPONENTS
  ****************************/
@@ -1813,6 +1838,7 @@ const App: React.FC = () => {
           <div className="relative" ref={settingsRef}>
             <button
               onClick={() => setIsSettingsOpen((prev) => !prev)}
+              title="Open adjustment settings and parsing options"
               className={`flex items-center space-x-2 px-3 py-1.5 rounded border text-xs uppercase tracking-wide ${
                 isSettingsOpen
                   ? 'bg-slate-700 border-slate-500 text-white'
@@ -1833,8 +1859,14 @@ const App: React.FC = () => {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-3">
                     <div className="flex items-center justify-between gap-3">
-                      <label className="text-xs text-slate-400 font-medium uppercase">Units</label>
+                      <label
+                        title={SETTINGS_TOOLTIPS.units}
+                        className="text-xs text-slate-400 font-medium uppercase"
+                      >
+                        Units
+                      </label>
                       <select
+                        title={SETTINGS_TOOLTIPS.units}
                         value={settings.units}
                         onChange={handleUnitChange}
                         className="bg-slate-800 text-xs border border-slate-600 text-white rounded px-2 py-1 outline-none focus:border-blue-500"
@@ -1844,8 +1876,14 @@ const App: React.FC = () => {
                       </select>
                     </div>
                     <div className="flex items-center justify-between gap-3">
-                      <label className="text-xs text-slate-400 font-medium uppercase">Max Iter</label>
+                      <label
+                        title={SETTINGS_TOOLTIPS.maxIterations}
+                        className="text-xs text-slate-400 font-medium uppercase"
+                      >
+                        Max Iter
+                      </label>
                       <input
+                        title={SETTINGS_TOOLTIPS.maxIterations}
                         type="number"
                         min={1}
                         max={100}
@@ -1855,8 +1893,14 @@ const App: React.FC = () => {
                       />
                     </div>
                     <div className="flex items-center justify-between gap-3">
-                      <label className="text-xs text-slate-400 font-medium uppercase">Coord</label>
+                      <label
+                        title={SETTINGS_TOOLTIPS.coordMode}
+                        className="text-xs text-slate-400 font-medium uppercase"
+                      >
+                        Coord
+                      </label>
                       <select
+                        title={SETTINGS_TOOLTIPS.coordMode}
                         value={parseSettings.coordMode}
                         onChange={(e) => handleParseSetting('coordMode', e.target.value as CoordMode)}
                         className="bg-slate-800 text-xs border border-slate-600 text-white rounded px-2 py-1 outline-none focus:border-blue-500"
@@ -1866,8 +1910,14 @@ const App: React.FC = () => {
                       </select>
                     </div>
                     <div className="flex items-center justify-between gap-3">
-                      <label className="text-xs text-slate-400 font-medium uppercase">Order</label>
+                      <label
+                        title={SETTINGS_TOOLTIPS.order}
+                        className="text-xs text-slate-400 font-medium uppercase"
+                      >
+                        Order
+                      </label>
                       <select
+                        title={SETTINGS_TOOLTIPS.order}
                         value={parseSettings.order}
                         onChange={(e) => handleParseSetting('order', e.target.value as OrderMode)}
                         className="bg-slate-800 text-xs border border-slate-600 text-white rounded px-2 py-1 outline-none focus:border-blue-500"
@@ -1877,8 +1927,14 @@ const App: React.FC = () => {
                       </select>
                     </div>
                     <div className="flex items-center justify-between gap-3">
-                      <label className="text-xs text-slate-400 font-medium uppercase">A Mode</label>
+                      <label
+                        title={SETTINGS_TOOLTIPS.angleMode}
+                        className="text-xs text-slate-400 font-medium uppercase"
+                      >
+                        A Mode
+                      </label>
                       <select
+                        title={SETTINGS_TOOLTIPS.angleMode}
                         value={parseSettings.angleMode}
                         onChange={(e) => handleParseSetting('angleMode', e.target.value as AngleMode)}
                         className="bg-slate-800 text-xs border border-slate-600 text-white rounded px-2 py-1 outline-none focus:border-blue-500"
@@ -1892,8 +1948,14 @@ const App: React.FC = () => {
 
                   <div className="space-y-3">
                     <div className="flex items-center justify-between gap-3">
-                      <label className="text-xs text-slate-400 font-medium uppercase">Delta Mode</label>
+                      <label
+                        title={SETTINGS_TOOLTIPS.deltaMode}
+                        className="text-xs text-slate-400 font-medium uppercase"
+                      >
+                        Delta Mode
+                      </label>
                       <select
+                        title={SETTINGS_TOOLTIPS.deltaMode}
                         value={parseSettings.deltaMode}
                         onChange={(e) => handleParseSetting('deltaMode', e.target.value as DeltaMode)}
                         className="bg-slate-800 text-xs border border-slate-600 text-white rounded px-2 py-1 outline-none focus:border-blue-500"
@@ -1903,8 +1965,14 @@ const App: React.FC = () => {
                       </select>
                     </div>
                     <div className="flex items-center justify-between gap-3">
-                      <label className="text-xs text-slate-400 font-medium uppercase">Map Mode</label>
+                      <label
+                        title={SETTINGS_TOOLTIPS.mapMode}
+                        className="text-xs text-slate-400 font-medium uppercase"
+                      >
+                        Map Mode
+                      </label>
                       <select
+                        title={SETTINGS_TOOLTIPS.mapMode}
                         value={parseSettings.mapMode}
                         onChange={(e) => handleParseSetting('mapMode', e.target.value as MapMode)}
                         className="bg-slate-800 text-xs border border-slate-600 text-white rounded px-2 py-1 outline-none focus:border-blue-500"
@@ -1915,8 +1983,14 @@ const App: React.FC = () => {
                       </select>
                     </div>
                     <div className="flex items-center justify-between gap-3">
-                      <label className="text-xs text-slate-400 font-medium uppercase">Map Scale</label>
+                      <label
+                        title={SETTINGS_TOOLTIPS.mapScale}
+                        className="text-xs text-slate-400 font-medium uppercase"
+                      >
+                        Map Scale
+                      </label>
                       <input
+                        title={SETTINGS_TOOLTIPS.mapScale}
                         type="number"
                         min={0.5}
                         max={1.5}
@@ -1932,8 +2006,14 @@ const App: React.FC = () => {
                       />
                     </div>
                     <div className="flex items-center justify-between gap-3">
-                      <label className="text-xs text-slate-400 font-medium uppercase">Curv/Ref</label>
+                      <label
+                        title={SETTINGS_TOOLTIPS.curvatureRefraction}
+                        className="text-xs text-slate-400 font-medium uppercase"
+                      >
+                        Curv/Ref
+                      </label>
                       <input
+                        title={SETTINGS_TOOLTIPS.curvatureRefraction}
                         type="checkbox"
                         className="accent-blue-500"
                         checked={parseSettings.applyCurvatureRefraction}
@@ -1941,8 +2021,14 @@ const App: React.FC = () => {
                       />
                     </div>
                     <div className="flex items-center justify-between gap-3">
-                      <label className="text-xs text-slate-400 font-medium uppercase">Refraction K</label>
+                      <label
+                        title={SETTINGS_TOOLTIPS.refractionK}
+                        className="text-xs text-slate-400 font-medium uppercase"
+                      >
+                        Refraction K
+                      </label>
                       <input
+                        title={SETTINGS_TOOLTIPS.refractionK}
                         type="number"
                         min={-1}
                         max={1}
@@ -1960,8 +2046,14 @@ const App: React.FC = () => {
                       />
                     </div>
                     <div className="flex items-center justify-between gap-3">
-                      <label className="text-xs text-slate-400 font-medium uppercase">V Red</label>
+                      <label
+                        title={SETTINGS_TOOLTIPS.verticalReduction}
+                        className="text-xs text-slate-400 font-medium uppercase"
+                      >
+                        V Red
+                      </label>
                       <select
+                        title={SETTINGS_TOOLTIPS.verticalReduction}
                         value={parseSettings.verticalReduction}
                         onChange={(e) =>
                           handleParseSetting('verticalReduction', e.target.value as VerticalReductionMode)
@@ -1973,8 +2065,14 @@ const App: React.FC = () => {
                       </select>
                     </div>
                     <div className="flex items-center justify-between gap-3">
-                      <label className="text-xs text-slate-400 font-medium uppercase">Normalize</label>
+                      <label
+                        title={SETTINGS_TOOLTIPS.normalize}
+                        className="text-xs text-slate-400 font-medium uppercase"
+                      >
+                        Normalize
+                      </label>
                       <input
+                        title={SETTINGS_TOOLTIPS.normalize}
                         type="checkbox"
                         className="accent-blue-500"
                         checked={parseSettings.normalize}
@@ -1982,8 +2080,14 @@ const App: React.FC = () => {
                       />
                     </div>
                     <div className="flex items-center justify-between gap-3">
-                      <label className="text-xs text-slate-400 font-medium uppercase">.LWEIGHT (mm/km)</label>
+                      <label
+                        title={SETTINGS_TOOLTIPS.levelWeight}
+                        className="text-xs text-slate-400 font-medium uppercase"
+                      >
+                        .LWEIGHT (mm/km)
+                      </label>
                       <input
+                        title={SETTINGS_TOOLTIPS.levelWeight}
                         type="number"
                         min={0}
                         step={0.1}
@@ -1998,8 +2102,14 @@ const App: React.FC = () => {
                       />
                     </div>
                     <div className="flex items-center justify-between gap-3">
-                      <label className="text-xs text-slate-400 font-medium uppercase">Lon Sign</label>
+                      <label
+                        title={SETTINGS_TOOLTIPS.lonSign}
+                        className="text-xs text-slate-400 font-medium uppercase"
+                      >
+                        Lon Sign
+                      </label>
                       <select
+                        title={SETTINGS_TOOLTIPS.lonSign}
                         value={parseSettings.lonSign}
                         onChange={(e) =>
                           handleParseSetting('lonSign', e.target.value as ParseSettings['lonSign'])
@@ -2015,8 +2125,14 @@ const App: React.FC = () => {
 
                 <div className="mt-4 pt-3 border-t border-slate-800">
                   <div className="flex items-center justify-between gap-3">
-                    <label className="text-xs text-slate-400 font-medium uppercase">Instrument</label>
+                    <label
+                      title={SETTINGS_TOOLTIPS.instrument}
+                      className="text-xs text-slate-400 font-medium uppercase"
+                    >
+                      Instrument
+                    </label>
                     <select
+                      title={SETTINGS_TOOLTIPS.instrument}
                       value={selectedInstrument}
                       onChange={(e) => setSelectedInstrument(e.target.value)}
                       className="bg-slate-800 text-xs border border-slate-600 text-white rounded px-2 py-1 outline-none focus:border-blue-500"

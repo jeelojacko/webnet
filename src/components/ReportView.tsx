@@ -1,5 +1,4 @@
-import React from 'react'
-import { useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { AlertTriangle, CheckCircle } from 'lucide-react'
 import type { AdjustmentResult, Observation } from '../types'
 import { RAD_TO_DEG, radToDmsStr } from '../engine/angles'
@@ -31,6 +30,7 @@ const ReportView: React.FC<ReportViewProps> = ({
   onOverride,
   onResetOverrides,
 }) => {
+  const reportRootRef = useRef<HTMLDivElement | null>(null)
   const unitScale = units === 'ft' ? FT_PER_M : 1
   const ellipseUnit = units === 'm' ? 'cm' : 'in'
   const ellipseScale = units === 'm' ? 100 : 12
@@ -81,6 +81,106 @@ const ReportView: React.FC<ReportViewProps> = ({
       ? `${(value * RAD_TO_DEG * 3600).toFixed(2)}"`
       : (value * unitScale).toFixed(4)
   }
+
+  const headerTooltip = (rawLabel: string): string | undefined => {
+    const label = rawLabel.replace(/\s+/g, ' ').trim()
+    const clean = label.replace(/\([^)]*\)/g, '').trim()
+    const upper = clean.toUpperCase()
+    if (!clean) return undefined
+
+    const tips: Record<string, string> = {
+      '#': 'Ranking index within this table.',
+      USE: 'Toggle observation inclusion in the next adjustment run.',
+      TYPE: 'Observation or diagnostic record type.',
+      STATIONS: 'Station IDs used by this observation or diagnostic row.',
+      LINE: 'Original source line number from the input data file.',
+      OBS: 'Observed value from input data (converted to display units).',
+      CALC: 'Computed value from adjusted coordinates and model.',
+      RESIDUAL: 'Observed minus computed value (v).',
+      STDRES: 'Standardized residual: residual scaled by its uncertainty.',
+      REDUND: 'Redundancy number (checkability); higher generally means better blunder detectability.',
+      LOCAL: 'Local statistical test result for blunder detection (PASS/FAIL).',
+      MDB: 'Minimal Detectable Bias for this observation at the configured local-test level.',
+      ACTION: 'Quick action available for this row.',
+      RAW: 'Number of raw shots contributing to a reduced direction/target estimate.',
+      REDUCED: 'Number of reduced observations after face/set reduction.',
+      PAIRS: 'Count of targets observed in both face 1 and face 2.',
+      F1: 'Count of face-1 observations.',
+      F2: 'Count of face-2 observations.',
+      SET: 'Direction/traverse set identifier.',
+      OCCUPY: 'Instrument setup station where observations were made.',
+      TARGET: 'Observed foresight/target station.',
+      SCORE: 'Ranking score used to prioritize likely suspect rows.',
+      SETS: 'Number of repeated sets contributing to trend diagnostics.',
+      SETUP: 'Instrument setup station summary row.',
+      ANGLES: 'Count of turned-angle observations from this setup.',
+      DIST: 'Count of distance observations from this setup.',
+      ZEN: 'Count of zenith/vertical-angle observations from this setup.',
+      LEV: 'Count of leveling observations from this setup.',
+      GPS: 'Count of GNSS vector observations from this setup.',
+      FROM: 'Start station for the row.',
+      TO: 'End station for the row.',
+      MODE: 'Observation reduction/interpretation mode used for this row.',
+      AZ: 'Azimuth/bearing direction value.',
+      STN: 'Station identifier.',
+      NORTHING: 'Adjusted northing coordinate.',
+      EASTING: 'Adjusted easting coordinate.',
+      HEIGHT: 'Adjusted elevation/height coordinate.',
+      UNIT: 'Display unit used for the corresponding metric.',
+    }
+
+    if (tips[upper]) return tips[upper]
+    if (upper.startsWith('STDDEV')) return 'Editable standard deviation (weight) override for this observation.'
+    if (upper.startsWith('BASE |T|')) return 'Original standardized residual before what-if exclusion.'
+    if (upper.startsWith('DSEUW')) return 'Change in SEUW when this suspect is excluded (negative is generally better).'
+    if (upper.startsWith('DMAX|T|')) return 'Change in maximum absolute standardized residual after exclusion.'
+    if (upper.startsWith('CHI')) return 'Chi-square model test change after what-if exclusion.'
+    if (upper.startsWith('MAX SHIFT')) return 'Maximum coordinate shift among unknown points under what-if exclusion.'
+    if (upper.startsWith('ORIENT')) return 'Direction-set orientation parameter quality/statistic.'
+    if (upper.startsWith('RMS')) return 'Root-mean-square statistic for the listed metric.'
+    if (upper.startsWith('MAX |T|')) return 'Maximum absolute standardized residual in this summary row.'
+    if (upper.startsWith('MAX')) return 'Maximum absolute value for the listed metric.'
+    if (upper.startsWith('SPREAD')) return 'Within-target shot spread (repeatability) expressed in arcseconds.'
+    if (upper.startsWith('RES MEAN')) return 'Mean residual across repeated sets for this occupy-target pair.'
+    if (upper.startsWith('RES RMS')) return 'RMS residual across repeated sets for this occupy-target pair.'
+    if (upper.startsWith('RES RANGE')) return 'Range (max-min) of residuals across repeated sets.'
+    if (upper.startsWith('RES MAX')) return 'Maximum absolute residual across repeated sets.'
+    if (upper.startsWith('FACE UNBAL')) return 'Number of sets with face-count imbalance (F1 vs F2).'
+    if (upper.startsWith('LOCAL FAIL')) return 'Count of failed local statistical tests in this summary row.'
+    if (upper.startsWith('WORST SET')) return 'Set ID containing the worst contributing metric in this trend row.'
+    if (upper.startsWith('WORST OBS')) return 'Observation type/stations with worst standardized residual for this setup.'
+    if (upper.startsWith('DIR SETS')) return 'Number of direction sets associated with this setup.'
+    if (upper.startsWith('DIR OBS')) return 'Number of reduced direction observations from this setup.'
+    if (upper.startsWith('TRAV DIST')) return 'Total traverse distance observed from this setup.'
+    if (upper.startsWith('AZ SRC')) return 'Source used to derive sideshot azimuth (target, explicit, or setup-based).'
+    if (upper.startsWith('HD')) return 'Horizontal distance component.'
+    if (upper.startsWith('DH')) return 'Height difference component.'
+    if (upper.startsWith('ΣN')) return 'Estimated standard deviation in northing.'
+    if (upper.startsWith('ΣE')) return 'Estimated standard deviation in easting.'
+    if (upper.startsWith('ΣH')) return 'Estimated standard deviation in height.'
+    if (upper.startsWith('ELLIPSE')) return 'Error ellipse axes in display units (major, minor).'
+    if (upper.startsWith('AZ ')) return 'Azimuth of the listed ellipse or bearing statistic in degrees.'
+    if (upper.startsWith('COUNT')) return 'Number of observations included in this type summary row.'
+    if (upper.startsWith('MAX |RES|')) return 'Maximum absolute residual for this observation type.'
+    if (upper.startsWith('MAX |STDRES|')) return 'Maximum absolute standardized residual for this observation type.'
+    if (upper.startsWith('>3Σ')) return 'Count of rows with |StdRes| > 3.'
+    if (upper.startsWith('>4Σ')) return 'Count of rows with |StdRes| > 4.'
+    if (upper.startsWith('ΣDIST')) return 'Estimated standard deviation of inter-point distance.'
+    if (upper.startsWith('ΣAZ')) return 'Estimated standard deviation of inter-point azimuth.'
+    if (upper.startsWith('NOTE')) return 'Additional notes, warnings, or limitations for this row.'
+    return undefined
+  }
+
+  useEffect(() => {
+    const root = reportRootRef.current
+    if (!root) return
+    const headers = root.querySelectorAll('th')
+    headers.forEach((th) => {
+      const label = th.textContent ?? ''
+      const tip = headerTooltip(label)
+      if (tip) th.setAttribute('title', tip)
+    })
+  })
 
   const renderTable = (obsList: Observation[], title: string) => {
     if (!obsList.length) return null
@@ -309,7 +409,7 @@ const ReportView: React.FC<ReportViewProps> = ({
   }
 
   return (
-    <div className="p-6 font-mono text-sm w-full">
+    <div ref={reportRootRef} className="p-6 font-mono text-sm w-full">
       <div className="flex items-center justify-between mb-4 text-xs text-slate-400">
         <div className="space-x-3">
           <button
@@ -485,7 +585,12 @@ const ReportView: React.FC<ReportViewProps> = ({
             </div>
           </div>
           <div className="bg-slate-900 p-4 rounded border border-slate-800">
-            <span className="block text-slate-500 text-xs mb-1">STD ERROR UNIT WEIGHT (SEUW)</span>
+            <span
+              className="block text-slate-500 text-xs mb-1"
+              title="SEUW = sqrt(vTPv / DOF). Values near 1 usually indicate realistic stochastic modeling."
+            >
+              STD ERROR UNIT WEIGHT (SEUW)
+            </span>
             <span className={`font-bold text-lg ${result.seuw > 1.5 ? 'text-yellow-400' : 'text-blue-400'}`}>
               {result.seuw.toFixed(4)}
             </span>
@@ -498,7 +603,12 @@ const ReportView: React.FC<ReportViewProps> = ({
             )}
           </div>
           <div className="bg-slate-900 p-4 rounded border border-slate-800 hidden md:block">
-            <span className="block text-slate-500 text-xs mb-1">CHI-SQUARE (95%)</span>
+            <span
+              className="block text-slate-500 text-xs mb-1"
+              title="Global model test against expected variance at 95% confidence. PASS means SEUW is statistically consistent with stated precisions."
+            >
+              CHI-SQUARE (95%)
+            </span>
             {result.chiSquare ? (
               <>
                 <div
