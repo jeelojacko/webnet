@@ -73,6 +73,14 @@ const ReportView: React.FC<ReportViewProps> = ({
   const traverseLoopSuspects = traverseLoops
     .filter((l) => !l.pass || (l.linearPpm ?? 0) > ((result.traverseDiagnostics?.thresholds?.maxLinearPpm ?? 0) * 0.8))
     .slice(0, 20)
+  const directionRejects = [...(result.directionRejectDiagnostics ?? [])].sort((a, b) => {
+    const la = a.sourceLine ?? Number.MAX_SAFE_INTEGER
+    const lb = b.sourceLine ?? Number.MAX_SAFE_INTEGER
+    if (la !== lb) return la - lb
+    const sa = a.setId ?? ''
+    const sb = b.setId ?? ''
+    return sa.localeCompare(sb)
+  })
   const isAngularType = (type: Observation['type']) =>
     type === 'angle' ||
     type === 'direction' ||
@@ -108,6 +116,10 @@ const ReportView: React.FC<ReportViewProps> = ({
       MDB: 'Minimal Detectable Bias for this observation at the configured local-test level.',
       ACTION: 'Quick action available for this row.',
       RAW: 'Number of raw shots contributing to a reduced direction/target estimate.',
+      REC: 'Record code that triggered this diagnostic/rejection (for example DN/DM).',
+      EXPECTED: 'Expected face/order based on prior accepted shots in the set.',
+      ACTUAL: 'Observed face/order for the rejected shot.',
+      REASON: 'Structured reason why this row was rejected or flagged.',
       REDUCED: 'Number of reduced observations after face/set reduction.',
       PAIRS: 'Count of targets observed in both face 1 and face 2.',
       F1: 'Count of face-1 observations.',
@@ -130,6 +142,7 @@ const ReportView: React.FC<ReportViewProps> = ({
       SEVERITY: 'Relative closure-risk score used to rank suspect loops.',
       SETS: 'Number of repeated sets contributing to trend diagnostics.',
       SETUP: 'Instrument setup station summary row.',
+      WITH: 'Count of rows where the listed statistic is available/computed.',
       ANGLES: 'Count of turned-angle observations from this setup.',
       DIST: 'Count of distance observations from this setup.',
       ZEN: 'Count of zenith/vertical-angle observations from this setup.',
@@ -164,6 +177,10 @@ const ReportView: React.FC<ReportViewProps> = ({
     if (upper.startsWith('CHI')) return 'Chi-square model test change after what-if exclusion.'
     if (upper.startsWith('MAX SHIFT')) return 'Maximum coordinate shift among unknown points under what-if exclusion.'
     if (upper.startsWith('ORIENT')) return 'Direction-set orientation parameter quality/statistic.'
+    if (upper.includes('RAWMAX')) return 'Maximum absolute raw-shot residual from the reduced target mean.'
+    if (upper.includes('PAIRDELTA')) return 'Absolute difference between face-1 and face-2 reduced means.'
+    if (upper.startsWith('F1SPREAD')) return 'Within-face repeatability spread for face-1 shots.'
+    if (upper.startsWith('F2SPREAD')) return 'Within-face repeatability spread for face-2 shots.'
     if (upper.startsWith('RMS')) return 'Root-mean-square statistic for the listed metric.'
     if (upper.startsWith('MAX |T|')) return 'Maximum absolute standardized residual in this summary row.'
     if (upper.startsWith('MAX')) return 'Maximum absolute value for the listed metric.'
@@ -174,6 +191,9 @@ const ReportView: React.FC<ReportViewProps> = ({
     if (upper.startsWith('RES MAX')) return 'Maximum absolute residual across repeated sets.'
     if (upper.startsWith('FACE UNBAL')) return 'Number of sets with face-count imbalance (F1 vs F2).'
     if (upper.startsWith('LOCAL FAIL')) return 'Count of failed local statistical tests in this summary row.'
+    if (upper.startsWith('MEAN REDUND')) return 'Mean redundancy number (lower means weaker detectability).'
+    if (upper.startsWith('MIN REDUND')) return 'Minimum redundancy number in this summary row.'
+    if (upper.startsWith('WITH STDRES')) return 'Count of observations with computed standardized residuals.'
     if (upper.startsWith('WORST SET')) return 'Set ID containing the worst contributing metric in this trend row.'
     if (upper.startsWith('WORST OBS')) return 'Observation type/stations with worst standardized residual for this setup.'
     if (upper.startsWith('DIR SETS')) return 'Number of direction sets associated with this setup.'
@@ -681,6 +701,115 @@ const ReportView: React.FC<ReportViewProps> = ({
         </div>
       </div>
 
+      {result.residualDiagnostics && (
+        <div className="mb-6 border border-slate-800 rounded overflow-hidden">
+          <div className="px-3 py-2 text-xs text-slate-400 uppercase tracking-wider border-b border-slate-800 bg-slate-900/40">
+            Residual Diagnostics
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3 p-3 text-xs text-slate-300">
+            <div>
+              <div className="text-slate-500">Obs</div>
+              <div>{result.residualDiagnostics.observationCount}</div>
+            </div>
+            <div>
+              <div className="text-slate-500">With StdRes</div>
+              <div>{result.residualDiagnostics.withStdResCount}</div>
+            </div>
+            <div>
+              <div className="text-slate-500">|t| &gt; 2 / &gt;3 / &gt;4</div>
+              <div>
+                {result.residualDiagnostics.over2SigmaCount} / {result.residualDiagnostics.over3SigmaCount} /{' '}
+                {result.residualDiagnostics.over4SigmaCount}
+              </div>
+            </div>
+            <div>
+              <div className="text-slate-500">Local Fail</div>
+              <div className={result.residualDiagnostics.localFailCount > 0 ? 'text-red-400' : ''}>
+                {result.residualDiagnostics.localFailCount}
+              </div>
+            </div>
+            <div>
+              <div className="text-slate-500">Redundancy (&lt;0.2 / &lt;0.1)</div>
+              <div>
+                {result.residualDiagnostics.lowRedundancyCount} / {result.residualDiagnostics.veryLowRedundancyCount}
+              </div>
+            </div>
+            <div>
+              <div className="text-slate-500">Mean Redund</div>
+              <div>
+                {result.residualDiagnostics.meanRedundancy != null
+                  ? result.residualDiagnostics.meanRedundancy.toFixed(3)
+                  : '-'}
+              </div>
+            </div>
+            <div>
+              <div className="text-slate-500">Min Redund</div>
+              <div>
+                {result.residualDiagnostics.minRedundancy != null
+                  ? result.residualDiagnostics.minRedundancy.toFixed(3)
+                  : '-'}
+              </div>
+            </div>
+            <div>
+              <div className="text-slate-500">Max |t|</div>
+              <div>
+                {result.residualDiagnostics.maxStdRes != null
+                  ? result.residualDiagnostics.maxStdRes.toFixed(2)
+                  : '-'}
+              </div>
+            </div>
+            <div className="col-span-2">
+              <div className="text-slate-500">Worst Observation</div>
+              <div className="truncate">
+                {result.residualDiagnostics.worst
+                  ? `#${result.residualDiagnostics.worst.obsId} ${result.residualDiagnostics.worst.type.toUpperCase()} ${result.residualDiagnostics.worst.stations} line=${result.residualDiagnostics.worst.sourceLine ?? '-'} |t|=${result.residualDiagnostics.worst.stdRes?.toFixed(2) ?? '-'}`
+                  : '-'}
+              </div>
+            </div>
+          </div>
+          {result.residualDiagnostics.byType.length > 0 && (
+            <div className="overflow-x-auto w-full border-t border-slate-800">
+              <table className="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr className="text-slate-500 border-b border-slate-800">
+                    <th className="py-2 px-3 font-semibold">Type</th>
+                    <th className="py-2 px-3 font-semibold text-right">Count</th>
+                    <th className="py-2 px-3 font-semibold text-right">With StdRes</th>
+                    <th className="py-2 px-3 font-semibold text-right">Local Fail</th>
+                    <th className="py-2 px-3 font-semibold text-right">&gt;3σ</th>
+                    <th className="py-2 px-3 font-semibold text-right">Max |t|</th>
+                    <th className="py-2 px-3 font-semibold text-right">Mean Redund</th>
+                    <th className="py-2 px-3 font-semibold text-right">Min Redund</th>
+                  </tr>
+                </thead>
+                <tbody className="text-slate-300">
+                  {result.residualDiagnostics.byType.map((r) => (
+                    <tr key={`resdiag-${r.type}`} className="border-b border-slate-800/50">
+                      <td className="py-1 px-3 uppercase">{r.type}</td>
+                      <td className="py-1 px-3 text-right">{r.count}</td>
+                      <td className="py-1 px-3 text-right">{r.withStdResCount}</td>
+                      <td className={`py-1 px-3 text-right ${r.localFailCount > 0 ? 'text-red-400' : ''}`}>
+                        {r.localFailCount}
+                      </td>
+                      <td className={`py-1 px-3 text-right ${r.over3SigmaCount > 0 ? 'text-yellow-300' : ''}`}>
+                        {r.over3SigmaCount}
+                      </td>
+                      <td className="py-1 px-3 text-right">{r.maxStdRes != null ? r.maxStdRes.toFixed(2) : '-'}</td>
+                      <td className="py-1 px-3 text-right">
+                        {r.meanRedundancy != null ? r.meanRedundancy.toFixed(3) : '-'}
+                      </td>
+                      <td className="py-1 px-3 text-right">
+                        {r.minRedundancy != null ? r.minRedundancy.toFixed(3) : '-'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+
       {result.robustDiagnostics && (
         <div className="mb-6 border border-slate-800 rounded overflow-hidden">
           <div className="px-3 py-2 text-xs text-slate-400 uppercase tracking-wider border-b border-slate-800 bg-slate-900/40">
@@ -1110,6 +1239,10 @@ const ReportView: React.FC<ReportViewProps> = ({
                   <th className="py-2 px-3 font-semibold text-right">Orient (deg)</th>
                   <th className="py-2 px-3 font-semibold text-right">RMS (")</th>
                   <th className="py-2 px-3 font-semibold text-right">Max (")</th>
+                  <th className="py-2 px-3 font-semibold text-right">Mean PairDelta (")</th>
+                  <th className="py-2 px-3 font-semibold text-right">Max PairDelta (")</th>
+                  <th className="py-2 px-3 font-semibold text-right">Mean RawMax (")</th>
+                  <th className="py-2 px-3 font-semibold text-right">Max RawMax (")</th>
                   <th className="py-2 px-3 font-semibold text-right">Orient SE (")</th>
                 </tr>
               </thead>
@@ -1131,6 +1264,18 @@ const ReportView: React.FC<ReportViewProps> = ({
                     </td>
                     <td className="py-1 px-3 text-right">
                       {d.residualMaxArcSec != null ? d.residualMaxArcSec.toFixed(2) : '-'}
+                    </td>
+                    <td className="py-1 px-3 text-right">
+                      {d.meanFacePairDeltaArcSec != null ? d.meanFacePairDeltaArcSec.toFixed(2) : '-'}
+                    </td>
+                    <td className="py-1 px-3 text-right">
+                      {d.maxFacePairDeltaArcSec != null ? d.maxFacePairDeltaArcSec.toFixed(2) : '-'}
+                    </td>
+                    <td className="py-1 px-3 text-right">
+                      {d.meanRawMaxResidualArcSec != null ? d.meanRawMaxResidualArcSec.toFixed(2) : '-'}
+                    </td>
+                    <td className="py-1 px-3 text-right">
+                      {d.maxRawMaxResidualArcSec != null ? d.maxRawMaxResidualArcSec.toFixed(2) : '-'}
                     </td>
                     <td className="py-1 px-3 text-right">
                       {d.orientationSeArcSec != null ? d.orientationSeArcSec.toFixed(2) : '-'}
@@ -1161,6 +1306,10 @@ const ReportView: React.FC<ReportViewProps> = ({
                   <th className="py-2 px-3 font-semibold text-right">F1</th>
                   <th className="py-2 px-3 font-semibold text-right">F2</th>
                   <th className="py-2 px-3 font-semibold text-right">Spread (")</th>
+                  <th className="py-2 px-3 font-semibold text-right">RawMax (")</th>
+                  <th className="py-2 px-3 font-semibold text-right">PairDelta (")</th>
+                  <th className="py-2 px-3 font-semibold text-right">F1Spread (")</th>
+                  <th className="py-2 px-3 font-semibold text-right">F2Spread (")</th>
                   <th className="py-2 px-3 font-semibold text-right">Red Sigma (")</th>
                   <th className="py-2 px-3 font-semibold text-right">Residual (")</th>
                   <th className="py-2 px-3 font-semibold text-right">StdRes</th>
@@ -1181,6 +1330,18 @@ const ReportView: React.FC<ReportViewProps> = ({
                     <td className="py-1 px-3 text-right">{d.face1Count}</td>
                     <td className="py-1 px-3 text-right">{d.face2Count}</td>
                     <td className="py-1 px-3 text-right">{d.rawSpreadArcSec != null ? d.rawSpreadArcSec.toFixed(2) : '-'}</td>
+                    <td className="py-1 px-3 text-right">
+                      {d.rawMaxResidualArcSec != null ? d.rawMaxResidualArcSec.toFixed(2) : '-'}
+                    </td>
+                    <td className="py-1 px-3 text-right">
+                      {d.facePairDeltaArcSec != null ? d.facePairDeltaArcSec.toFixed(2) : '-'}
+                    </td>
+                    <td className="py-1 px-3 text-right">
+                      {d.face1SpreadArcSec != null ? d.face1SpreadArcSec.toFixed(2) : '-'}
+                    </td>
+                    <td className="py-1 px-3 text-right">
+                      {d.face2SpreadArcSec != null ? d.face2SpreadArcSec.toFixed(2) : '-'}
+                    </td>
                     <td className="py-1 px-3 text-right">{d.reducedSigmaArcSec != null ? d.reducedSigmaArcSec.toFixed(2) : '-'}</td>
                     <td className="py-1 px-3 text-right">{d.residualArcSec != null ? d.residualArcSec.toFixed(2) : '-'}</td>
                     <td className="py-1 px-3 text-right">{d.stdRes != null ? d.stdRes.toFixed(2) : '-'}</td>
@@ -1189,6 +1350,46 @@ const ReportView: React.FC<ReportViewProps> = ({
                     </td>
                     <td className="py-1 px-3 text-right">{d.mdbArcSec != null ? d.mdbArcSec.toFixed(2) : '-'}</td>
                     <td className="py-1 px-3 text-right font-mono">{d.suspectScore.toFixed(1)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {directionRejects.length > 0 && (
+        <div className="mb-6 border border-slate-800 rounded overflow-hidden">
+          <div className="px-3 py-2 text-xs text-slate-400 uppercase tracking-wider border-b border-slate-800 bg-slate-900/40">
+            Direction Reject Diagnostics
+          </div>
+          <div className="overflow-x-auto w-full">
+            <table className="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr className="text-slate-500 border-b border-slate-800">
+                  <th className="py-2 px-3 font-semibold">#</th>
+                  <th className="py-2 px-3 font-semibold">Set</th>
+                  <th className="py-2 px-3 font-semibold">Occupy</th>
+                  <th className="py-2 px-3 font-semibold">Target</th>
+                  <th className="py-2 px-3 font-semibold text-right">Line</th>
+                  <th className="py-2 px-3 font-semibold">Rec</th>
+                  <th className="py-2 px-3 font-semibold">Expected</th>
+                  <th className="py-2 px-3 font-semibold">Actual</th>
+                  <th className="py-2 px-3 font-semibold">Reason</th>
+                </tr>
+              </thead>
+              <tbody className="text-slate-300">
+                {directionRejects.map((r, idx) => (
+                  <tr key={`d-rej-${r.setId}-${r.target ?? 'set'}-${r.sourceLine ?? idx}-${idx}`} className="border-b border-slate-800/50">
+                    <td className="py-1 px-3 text-slate-500">{idx + 1}</td>
+                    <td className="py-1 px-3">{r.setId}</td>
+                    <td className="py-1 px-3">{r.occupy}</td>
+                    <td className="py-1 px-3">{r.target ?? '-'}</td>
+                    <td className="py-1 px-3 text-right text-slate-500">{r.sourceLine ?? '-'}</td>
+                    <td className="py-1 px-3">{r.recordType ?? '-'}</td>
+                    <td className="py-1 px-3">{r.expectedFace ?? '-'}</td>
+                    <td className="py-1 px-3">{r.actualFace ?? '-'}</td>
+                    <td className="py-1 px-3 text-yellow-300">{r.detail}</td>
                   </tr>
                 ))}
               </tbody>

@@ -585,6 +585,82 @@ const App: React.FC = () => {
       })
       lines.push('')
     }
+    if (res.residualDiagnostics) {
+      const rd = res.residualDiagnostics
+      lines.push('--- Residual Diagnostics ---')
+      lines.push(
+        `Obs=${rd.observationCount}, WithStdRes=${rd.withStdResCount}, LocalFail=${rd.localFailCount}, |t|>2=${rd.over2SigmaCount}, |t|>3=${rd.over3SigmaCount}, |t|>4=${rd.over4SigmaCount}`,
+      )
+      lines.push(
+        `Redundancy: mean=${rd.meanRedundancy != null ? rd.meanRedundancy.toFixed(4) : '-'}, min=${rd.minRedundancy != null ? rd.minRedundancy.toFixed(4) : '-'}, <0.2=${rd.lowRedundancyCount}, <0.1=${rd.veryLowRedundancyCount}`,
+      )
+      lines.push(`Critical |t| threshold: ${rd.criticalT.toFixed(2)}`)
+      if (rd.worst) {
+        lines.push(
+          `Worst: #${rd.worst.obsId} ${rd.worst.type.toUpperCase()} ${rd.worst.stations} line=${rd.worst.sourceLine ?? '-'} |t|=${rd.worst.stdRes != null ? rd.worst.stdRes.toFixed(2) : '-'} r=${rd.worst.redundancy != null ? rd.worst.redundancy.toFixed(3) : '-'} local=${rd.worst.localPass == null ? '-' : rd.worst.localPass ? 'PASS' : 'FAIL'}`,
+        )
+      }
+      if (rd.byType.length > 0) {
+        const rows = rd.byType.map((b) => ({
+          type: String(b.type).toUpperCase(),
+          count: String(b.count),
+          withStd: String(b.withStdResCount),
+          localFail: String(b.localFailCount),
+          over3: String(b.over3SigmaCount),
+          maxStd: b.maxStdRes != null ? b.maxStdRes.toFixed(2) : '-',
+          meanR: b.meanRedundancy != null ? b.meanRedundancy.toFixed(3) : '-',
+          minR: b.minRedundancy != null ? b.minRedundancy.toFixed(3) : '-',
+        }))
+        const header = {
+          type: 'Type',
+          count: 'Count',
+          withStd: 'WithStdRes',
+          localFail: 'LocalFail',
+          over3: '>3σ',
+          maxStd: 'Max|t|',
+          meanR: 'MeanRedund',
+          minR: 'MinRedund',
+        }
+        const widths = {
+          type: Math.max(header.type.length, ...rows.map((r) => r.type.length)),
+          count: Math.max(header.count.length, ...rows.map((r) => r.count.length)),
+          withStd: Math.max(header.withStd.length, ...rows.map((r) => r.withStd.length)),
+          localFail: Math.max(header.localFail.length, ...rows.map((r) => r.localFail.length)),
+          over3: Math.max(header.over3.length, ...rows.map((r) => r.over3.length)),
+          maxStd: Math.max(header.maxStd.length, ...rows.map((r) => r.maxStd.length)),
+          meanR: Math.max(header.meanR.length, ...rows.map((r) => r.meanR.length)),
+          minR: Math.max(header.minR.length, ...rows.map((r) => r.minR.length)),
+        }
+        const pad = (value: string, size: number) => value.padEnd(size, ' ')
+        lines.push(
+          [
+            pad(header.type, widths.type),
+            pad(header.count, widths.count),
+            pad(header.withStd, widths.withStd),
+            pad(header.localFail, widths.localFail),
+            pad(header.over3, widths.over3),
+            pad(header.maxStd, widths.maxStd),
+            pad(header.meanR, widths.meanR),
+            pad(header.minR, widths.minR),
+          ].join('  '),
+        )
+        rows.forEach((r) => {
+          lines.push(
+            [
+              pad(r.type, widths.type),
+              pad(r.count, widths.count),
+              pad(r.withStd, widths.withStd),
+              pad(r.localFail, widths.localFail),
+              pad(r.over3, widths.over3),
+              pad(r.maxStd, widths.maxStd),
+              pad(r.meanR, widths.meanR),
+              pad(r.minR, widths.minR),
+            ].join('  '),
+          )
+        })
+      }
+      lines.push('')
+    }
     if (res.relativePrecision && res.relativePrecision.length > 0) {
       lines.push('--- Relative Precision (Unknowns) ---')
       const relRows = res.relativePrecision.map((r) => ({
@@ -792,6 +868,10 @@ const App: React.FC = () => {
         orient: d.orientationDeg != null ? d.orientationDeg.toFixed(4) : '-',
         rms: d.residualRmsArcSec != null ? d.residualRmsArcSec.toFixed(2) : '-',
         max: d.residualMaxArcSec != null ? d.residualMaxArcSec.toFixed(2) : '-',
+        pairDeltaMean: d.meanFacePairDeltaArcSec != null ? d.meanFacePairDeltaArcSec.toFixed(2) : '-',
+        pairDeltaMax: d.maxFacePairDeltaArcSec != null ? d.maxFacePairDeltaArcSec.toFixed(2) : '-',
+        rawMaxMean: d.meanRawMaxResidualArcSec != null ? d.meanRawMaxResidualArcSec.toFixed(2) : '-',
+        rawMax: d.maxRawMaxResidualArcSec != null ? d.maxRawMaxResidualArcSec.toFixed(2) : '-',
         orientSe: d.orientationSeArcSec != null ? d.orientationSeArcSec.toFixed(2) : '-',
       }))
       const header = {
@@ -805,6 +885,10 @@ const App: React.FC = () => {
         orient: 'Orient(deg)',
         rms: 'RMS(")',
         max: 'Max(")',
+        pairDeltaMean: 'PairDeltaMean(")',
+        pairDeltaMax: 'PairDeltaMax(")',
+        rawMaxMean: 'RawMaxMean(")',
+        rawMax: 'RawMax(")',
         orientSe: 'OrientSE(")',
       }
       const widths = {
@@ -818,6 +902,10 @@ const App: React.FC = () => {
         orient: Math.max(header.orient.length, ...rows.map((r) => r.orient.length)),
         rms: Math.max(header.rms.length, ...rows.map((r) => r.rms.length)),
         max: Math.max(header.max.length, ...rows.map((r) => r.max.length)),
+        pairDeltaMean: Math.max(header.pairDeltaMean.length, ...rows.map((r) => r.pairDeltaMean.length)),
+        pairDeltaMax: Math.max(header.pairDeltaMax.length, ...rows.map((r) => r.pairDeltaMax.length)),
+        rawMaxMean: Math.max(header.rawMaxMean.length, ...rows.map((r) => r.rawMaxMean.length)),
+        rawMax: Math.max(header.rawMax.length, ...rows.map((r) => r.rawMax.length)),
         orientSe: Math.max(header.orientSe.length, ...rows.map((r) => r.orientSe.length)),
       }
       const pad = (value: string, size: number) => value.padEnd(size, ' ')
@@ -833,6 +921,10 @@ const App: React.FC = () => {
           pad(header.orient, widths.orient),
           pad(header.rms, widths.rms),
           pad(header.max, widths.max),
+          pad(header.pairDeltaMean, widths.pairDeltaMean),
+          pad(header.pairDeltaMax, widths.pairDeltaMax),
+          pad(header.rawMaxMean, widths.rawMaxMean),
+          pad(header.rawMax, widths.rawMax),
           pad(header.orientSe, widths.orientSe),
         ].join('  '),
       )
@@ -849,6 +941,10 @@ const App: React.FC = () => {
             pad(r.orient, widths.orient),
             pad(r.rms, widths.rms),
             pad(r.max, widths.max),
+            pad(r.pairDeltaMean, widths.pairDeltaMean),
+            pad(r.pairDeltaMax, widths.pairDeltaMax),
+            pad(r.rawMaxMean, widths.rawMaxMean),
+            pad(r.rawMax, widths.rawMax),
             pad(r.orientSe, widths.orientSe),
           ].join('  '),
         )
@@ -867,6 +963,10 @@ const App: React.FC = () => {
         face1: String(d.face1Count),
         face2: String(d.face2Count),
         spread: d.rawSpreadArcSec != null ? d.rawSpreadArcSec.toFixed(2) : '-',
+        rawMax: d.rawMaxResidualArcSec != null ? d.rawMaxResidualArcSec.toFixed(2) : '-',
+        pairDelta: d.facePairDeltaArcSec != null ? d.facePairDeltaArcSec.toFixed(2) : '-',
+        f1Spread: d.face1SpreadArcSec != null ? d.face1SpreadArcSec.toFixed(2) : '-',
+        f2Spread: d.face2SpreadArcSec != null ? d.face2SpreadArcSec.toFixed(2) : '-',
         redSigma: d.reducedSigmaArcSec != null ? d.reducedSigmaArcSec.toFixed(2) : '-',
         residual: d.residualArcSec != null ? d.residualArcSec.toFixed(2) : '-',
         stdRes: d.stdRes != null ? d.stdRes.toFixed(2) : '-',
@@ -884,6 +984,10 @@ const App: React.FC = () => {
         face1: 'F1',
         face2: 'F2',
         spread: 'Spread(")',
+        rawMax: 'RawMax(")',
+        pairDelta: 'PairDelta(")',
+        f1Spread: 'F1Spread(")',
+        f2Spread: 'F2Spread(")',
         redSigma: 'RedSigma(")',
         residual: 'Residual(")',
         stdRes: 'StdRes',
@@ -901,6 +1005,10 @@ const App: React.FC = () => {
         face1: Math.max(header.face1.length, ...rows.map((r) => r.face1.length)),
         face2: Math.max(header.face2.length, ...rows.map((r) => r.face2.length)),
         spread: Math.max(header.spread.length, ...rows.map((r) => r.spread.length)),
+        rawMax: Math.max(header.rawMax.length, ...rows.map((r) => r.rawMax.length)),
+        pairDelta: Math.max(header.pairDelta.length, ...rows.map((r) => r.pairDelta.length)),
+        f1Spread: Math.max(header.f1Spread.length, ...rows.map((r) => r.f1Spread.length)),
+        f2Spread: Math.max(header.f2Spread.length, ...rows.map((r) => r.f2Spread.length)),
         redSigma: Math.max(header.redSigma.length, ...rows.map((r) => r.redSigma.length)),
         residual: Math.max(header.residual.length, ...rows.map((r) => r.residual.length)),
         stdRes: Math.max(header.stdRes.length, ...rows.map((r) => r.stdRes.length)),
@@ -920,6 +1028,10 @@ const App: React.FC = () => {
           pad(header.face1, widths.face1),
           pad(header.face2, widths.face2),
           pad(header.spread, widths.spread),
+          pad(header.rawMax, widths.rawMax),
+          pad(header.pairDelta, widths.pairDelta),
+          pad(header.f1Spread, widths.f1Spread),
+          pad(header.f2Spread, widths.f2Spread),
           pad(header.redSigma, widths.redSigma),
           pad(header.residual, widths.residual),
           pad(header.stdRes, widths.stdRes),
@@ -940,6 +1052,10 @@ const App: React.FC = () => {
             pad(r.face1, widths.face1),
             pad(r.face2, widths.face2),
             pad(r.spread, widths.spread),
+            pad(r.rawMax, widths.rawMax),
+            pad(r.pairDelta, widths.pairDelta),
+            pad(r.f1Spread, widths.f1Spread),
+            pad(r.f2Spread, widths.f2Spread),
             pad(r.redSigma, widths.redSigma),
             pad(r.residual, widths.residual),
             pad(r.stdRes, widths.stdRes),
@@ -1009,6 +1125,79 @@ const App: React.FC = () => {
         })
         lines.push('')
       }
+    }
+    if (res.directionRejectDiagnostics && res.directionRejectDiagnostics.length > 0) {
+      lines.push('--- Direction Reject Diagnostics ---')
+      const rows = res.directionRejectDiagnostics
+        .map((d, idx) => ({
+          rank: String(idx + 1),
+          setId: d.setId,
+          occupy: d.occupy,
+          target: d.target ?? '-',
+          line: d.sourceLine != null ? String(d.sourceLine) : '-',
+          rec: d.recordType ?? '-',
+          expected: d.expectedFace ?? '-',
+          actual: d.actualFace ?? '-',
+          reason: d.detail,
+        }))
+        .sort((a, b) => {
+          const la = a.line === '-' ? Number.MAX_SAFE_INTEGER : Number(a.line)
+          const lb = b.line === '-' ? Number.MAX_SAFE_INTEGER : Number(b.line)
+          if (la !== lb) return la - lb
+          return a.setId.localeCompare(b.setId)
+        })
+      const header = {
+        rank: '#',
+        setId: 'Set',
+        occupy: 'Occupy',
+        target: 'Target',
+        line: 'Line',
+        rec: 'Rec',
+        expected: 'Expected',
+        actual: 'Actual',
+        reason: 'Reason',
+      }
+      const widths = {
+        rank: Math.max(header.rank.length, ...rows.map((r) => r.rank.length)),
+        setId: Math.max(header.setId.length, ...rows.map((r) => r.setId.length)),
+        occupy: Math.max(header.occupy.length, ...rows.map((r) => r.occupy.length)),
+        target: Math.max(header.target.length, ...rows.map((r) => r.target.length)),
+        line: Math.max(header.line.length, ...rows.map((r) => r.line.length)),
+        rec: Math.max(header.rec.length, ...rows.map((r) => r.rec.length)),
+        expected: Math.max(header.expected.length, ...rows.map((r) => r.expected.length)),
+        actual: Math.max(header.actual.length, ...rows.map((r) => r.actual.length)),
+        reason: Math.max(header.reason.length, ...rows.map((r) => r.reason.length)),
+      }
+      const pad = (value: string, size: number) => value.padEnd(size, ' ')
+      lines.push(
+        [
+          pad(header.rank, widths.rank),
+          pad(header.setId, widths.setId),
+          pad(header.occupy, widths.occupy),
+          pad(header.target, widths.target),
+          pad(header.line, widths.line),
+          pad(header.rec, widths.rec),
+          pad(header.expected, widths.expected),
+          pad(header.actual, widths.actual),
+          pad(header.reason, widths.reason),
+        ].join('  '),
+      )
+      rows.forEach((r) => {
+        lines.push(
+          [
+            pad(r.rank, widths.rank),
+            pad(r.setId, widths.setId),
+            pad(r.occupy, widths.occupy),
+            pad(r.target, widths.target),
+            pad(r.line, widths.line),
+            pad(r.rec, widths.rec),
+            pad(r.expected, widths.expected),
+            pad(r.actual, widths.actual),
+            pad(r.reason, widths.reason),
+          ].join('  '),
+        )
+      })
+      lines.push('')
     }
     if (res.directionRepeatabilityDiagnostics && res.directionRepeatabilityDiagnostics.length > 0) {
       lines.push('--- Direction Repeatability By Occupy-Target (multi-set) ---')

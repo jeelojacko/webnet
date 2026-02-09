@@ -68,3 +68,5 @@
   - [x] Phase 12: add TS angular correlated stochastic model (`.TSCORR` on/off, scope, rho), apply correlated weights in solve/Qvv, and report/export correlation diagnostics
   - [x] Phase 13: add robust adjustment mode (`.ROBUST HUBER k`) with iterative downweight diagnostics and robust-vs-classical top-suspect comparison in report/export
   - [x] Phase 14: expand traverse closure diagnostics with linear ppm + angular/vertical misclosure checks, threshold pass/warn flags, per-loop severity ranking, and traverse suspect tables in report/export
+  - [x] Phase 15: expand direction reduction diagnostics (raw max residual, face-pair delta, per-face spreads), and add structured direction reject diagnostics (line/set/record/expected-vs-actual face) in report/export
+  - [x] Phase 16: add residual-quality diagnostics summary (|t| bins, local-test fail totals, redundancy weakness counts, worst-observation trace, and by-type screening table) in report/export

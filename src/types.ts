@@ -111,6 +111,10 @@ export interface DirectionObservation extends ObservationBase {
   rawFace1Count?: number;
   rawFace2Count?: number;
   rawSpread?: number; // radians, around reduced mean
+  rawMaxResidual?: number; // radians, max |raw-reduced|
+  facePairDelta?: number; // radians, |face1 mean - face2 mean| after normalization
+  face1Spread?: number; // radians, spread within face 1
+  face2Spread?: number; // radians, spread within face 2
   reducedSigma?: number; // radians
   calc?: number;
   residual?: number;
@@ -186,6 +190,18 @@ export interface ZenithObservation extends ObservationBase {
   stdRes?: number;
 }
 
+export interface DirectionRejectDiagnostic {
+  setId: string;
+  occupy: StationId;
+  target?: StationId;
+  sourceLine?: number;
+  recordType?: 'DN' | 'DM' | 'DB' | 'DE' | 'UNKNOWN';
+  reason: 'mixed-face' | 'no-shots' | 'missing-context';
+  expectedFace?: 'face1' | 'face2';
+  actualFace?: 'face1' | 'face2';
+  detail: string;
+}
+
 export type ObservationOverride =
   | { obs?: number; stdDev?: number }
   | { obs?: { dE: number; dN: number }; stdDev?: number };
@@ -197,6 +213,7 @@ export interface ParseResult {
   unknowns: StationId[];
   parseState: ParseOptions;
   logs: string[];
+  directionRejectDiagnostics?: DirectionRejectDiagnostic[];
 }
 
 export type UnitsMode = 'm' | 'ft';
@@ -295,6 +312,10 @@ export interface AdjustmentResult {
     residualRmsArcSec?: number;
     residualMaxArcSec?: number;
     orientationSeArcSec?: number;
+    meanFacePairDeltaArcSec?: number;
+    maxFacePairDeltaArcSec?: number;
+    meanRawMaxResidualArcSec?: number;
+    maxRawMaxResidualArcSec?: number;
   }[];
   directionTargetDiagnostics?: {
     setId: string;
@@ -306,6 +327,10 @@ export interface AdjustmentResult {
     face2Count: number;
     faceBalanced: boolean;
     rawSpreadArcSec?: number;
+    rawMaxResidualArcSec?: number;
+    facePairDeltaArcSec?: number;
+    face1SpreadArcSec?: number;
+    face2SpreadArcSec?: number;
     reducedSigmaArcSec?: number;
     residualArcSec?: number;
     stdRes?: number;
@@ -428,6 +453,39 @@ export interface AdjustmentResult {
     }[];
     overlapCount: number;
   };
+  residualDiagnostics?: {
+    criticalT: number;
+    observationCount: number;
+    withStdResCount: number;
+    over2SigmaCount: number;
+    over3SigmaCount: number;
+    over4SigmaCount: number;
+    localFailCount: number;
+    lowRedundancyCount: number;
+    veryLowRedundancyCount: number;
+    meanRedundancy?: number;
+    minRedundancy?: number;
+    maxStdRes?: number;
+    worst?: {
+      obsId: number;
+      type: Observation['type'];
+      stations: string;
+      sourceLine?: number;
+      stdRes?: number;
+      redundancy?: number;
+      localPass?: boolean;
+    };
+    byType: {
+      type: Observation['type'];
+      count: number;
+      withStdResCount: number;
+      localFailCount: number;
+      over3SigmaCount: number;
+      maxStdRes?: number;
+      meanRedundancy?: number;
+      minRedundancy?: number;
+    }[];
+  };
   traverseDiagnostics?: {
     closureCount: number;
     misclosureE: number;
@@ -488,4 +546,5 @@ export interface AdjustmentResult {
     sigmaH?: number;
     note?: string;
   }[];
+  directionRejectDiagnostics?: DirectionRejectDiagnostic[];
 }

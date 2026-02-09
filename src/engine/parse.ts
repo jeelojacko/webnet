@@ -2,6 +2,7 @@ import { dmsToRad, RAD_TO_DEG, SEC_TO_RAD } from './angles'
 import type {
   AngleObservation,
   DistanceObservation,
+  DirectionRejectDiagnostic,
   DirObservation,
   GpsObservation,
   Instrument,
@@ -127,6 +128,35 @@ const wrapTo2Pi = (val: number): number => {
   let v = val % (2 * Math.PI)
   if (v < 0) v += 2 * Math.PI
   return v
+}
+
+const weightedCircularMean = (values: number[], weights?: number[]): number => {
+  if (!values.length) return 0
+  let sumSin = 0
+  let sumCos = 0
+  for (let i = 0; i < values.length; i += 1) {
+    const w = Math.max(weights?.[i] ?? 1, 0)
+    sumSin += w * Math.sin(values[i])
+    sumCos += w * Math.cos(values[i])
+  }
+  if (Math.abs(sumSin) < 1e-18 && Math.abs(sumCos) < 1e-18) {
+    return wrapTo2Pi(values[0] ?? 0)
+  }
+  return wrapTo2Pi(Math.atan2(sumSin, sumCos))
+}
+
+const weightedCircularSpread = (values: number[], mean: number, weights?: number[]): number => {
+  if (!values.length) return 0
+  let sumW = 0
+  let sumSq = 0
+  for (let i = 0; i < values.length; i += 1) {
+    const w = Math.max(weights?.[i] ?? 1, 0)
+    const r = wrapToPi(values[i] - mean)
+    sumW += w
+    sumSq += w * r * r
+  }
+  if (sumW <= 0) return 0
+  return Math.sqrt(sumSq / sumW)
 }
 
 const azimuthFromTo = (
@@ -268,6 +298,7 @@ export const parseInput = (
   const observations: Observation[] = []
   const instrumentLibrary: InstrumentLibrary = { ...existingInstruments }
   const logs: string[] = []
+  const directionRejectDiagnostics: DirectionRejectDiagnostic[] = []
   const state: ParseOptions = { ...defaultParseOptions, ...opts }
   let orderExplicit = false
   const traverseCtx: {
@@ -316,6 +347,12 @@ export const parseInput = (
           stdDev: shot.stdDev,
           sigmaSource: shot.sigmaSource,
           sourceLine: shot.sourceLine,
+          rawCount: 1,
+          rawFace1Count: shot.face === 'face1' ? 1 : 0,
+          rawFace2Count: shot.face === 'face2' ? 1 : 0,
+          rawSpread: 0,
+          rawMaxResidual: 0,
+          reducedSigma: shot.stdDev,
         })
       })
       logs.push(`Direction set ${setId} @ ${occupy}: kept ${shots.length} raw direction(s)`)
@@ -349,21 +386,33 @@ export const parseInput = (
         const weight = 1 / Math.max(shot.stdDev * shot.stdDev, 1e-24)
         return { ...shot, normalizedObs: obs, weight }
       })
-      let sumSin = 0
-      let sumCos = 0
-      let sumW = 0
-      normalized.forEach((shot) => {
-        sumSin += shot.weight * Math.sin(shot.normalizedObs)
-        sumCos += shot.weight * Math.cos(shot.normalizedObs)
-        sumW += shot.weight
-      })
-      let reducedObs = Math.atan2(sumSin, sumCos)
-      if (reducedObs < 0) reducedObs += 2 * Math.PI
+      const obsValues = normalized.map((s) => s.normalizedObs)
+      const obsWeights = normalized.map((s) => s.weight)
+      const reducedObs = weightedCircularMean(obsValues, obsWeights)
+      const sumW = obsWeights.reduce((acc, w) => acc + w, 0)
       const reducedSigma = sumW > 0 ? Math.sqrt(1 / sumW) : normalized[0].stdDev
       const residuals = normalized.map((shot) => wrapToPi(shot.normalizedObs - reducedObs))
-      const spread = residuals.length
-        ? Math.sqrt(residuals.reduce((acc, r) => acc + r * r, 0) / residuals.length)
+      const spread = weightedCircularSpread(obsValues, reducedObs, obsWeights)
+      const rawMaxResidual = residuals.length
+        ? Math.max(...residuals.map((r) => Math.abs(r)))
         : 0
+
+      const faceStats = (face: DirectionFace): { mean?: number; spread?: number } => {
+        const faceShots = normalized.filter((s) => s.face === face)
+        if (!faceShots.length) return {}
+        const faceObs = faceShots.map((s) => s.normalizedObs)
+        const faceWeights = faceShots.map((s) => s.weight)
+        const mean = weightedCircularMean(faceObs, faceWeights)
+        const faceSpread = weightedCircularSpread(faceObs, mean, faceWeights)
+        return { mean, spread: faceSpread }
+      }
+
+      const face1Stats = faceStats('face1')
+      const face2Stats = faceStats('face2')
+      const facePairDelta =
+        face1Stats.mean != null && face2Stats.mean != null
+          ? Math.abs(wrapToPi(face1Stats.mean - face2Stats.mean))
+          : undefined
 
       pushObservation({
         id: obsId++,
@@ -380,6 +429,10 @@ export const parseInput = (
         rawFace1Count: face1Count,
         rawFace2Count: face2Count,
         rawSpread: spread,
+        rawMaxResidual,
+        facePairDelta,
+        face1Spread: face1Stats.spread,
+        face2Spread: face2Stats.spread,
         reducedSigma,
       })
       reducedCount += 1
@@ -395,6 +448,14 @@ export const parseInput = (
     const instCode = traverseCtx.dirInstCode ?? ''
     if (!shots.length) {
       logs.push(`Direction set ${traverseCtx.dirSetId} @ ${traverseCtx.occupy}: no directions (${reason})`)
+      directionRejectDiagnostics.push({
+        setId: traverseCtx.dirSetId,
+        occupy: traverseCtx.occupy,
+        sourceLine: lineNum,
+        recordType: reason === 'DE' ? 'DE' : reason === 'new DB' ? 'DB' : 'UNKNOWN',
+        reason: 'no-shots',
+        detail: `No valid direction observations kept (${reason})`,
+      })
     } else {
       reduceDirectionShots(traverseCtx.dirSetId, traverseCtx.occupy, instCode, shots)
     }
@@ -1374,6 +1435,14 @@ export const parseInput = (
       } else if (code === 'DN' || code === 'DM') {
         if (!traverseCtx.occupy || !traverseCtx.dirSetId) {
           logs.push(`Direction context missing at line ${lineNum}, skipping ${code}`)
+          directionRejectDiagnostics.push({
+            setId: 'UNKNOWN',
+            occupy: 'UNKNOWN',
+            sourceLine: lineNum,
+            recordType: code,
+            reason: 'missing-context',
+            detail: `Direction context missing at line ${lineNum}`,
+          })
           continue
         }
 
@@ -1397,6 +1466,17 @@ export const parseInput = (
           if (faceMode === 'unknown') faceMode = thisFace
           if (faceMode !== thisFace) {
             logs.push(`Mixed face direction rejected at line ${lineNum}`)
+            directionRejectDiagnostics.push({
+              setId: traverseCtx.dirSetId,
+              occupy: traverseCtx.occupy,
+              target: to,
+              sourceLine: lineNum,
+              recordType: code,
+              reason: 'mixed-face',
+              expectedFace: faceMode,
+              actualFace: thisFace,
+              detail: `Mixed face direction rejected at line ${lineNum}`,
+            })
             continue
           }
         }
@@ -1736,6 +1816,9 @@ export const parseInput = (
       `Warning: .ORDER not specified; using ${state.order}. If your coordinates are North East, add ".ORDER NE".`,
     )
   }
+  if (directionRejectDiagnostics.length > 0) {
+    logs.push(`Direction rejects: ${directionRejectDiagnostics.length}`)
+  }
   logs.push(
     `Counts: ${Object.entries(typeSummary)
       .map(([k, v]) => `${k}=${v}`)
@@ -1745,6 +1828,14 @@ export const parseInput = (
     `Stations: ${Object.keys(stations).length} (unknown: ${unknowns.length}). Obs: ${observations.length}`,
   )
 
-  return { stations, observations, instrumentLibrary, unknowns, parseState: { ...state }, logs }
+  return {
+    stations,
+    observations,
+    instrumentLibrary,
+    unknowns,
+    parseState: { ...state },
+    logs,
+    directionRejectDiagnostics,
+  }
 }
 

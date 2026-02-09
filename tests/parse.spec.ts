@@ -77,6 +77,7 @@ describe('parseInput', () => {
   it('rejects mixed-face directions when normalize off', () => {
     const parsed = parseInput(readFileSync('tests/fixtures/direction_face_mixed.dat', 'utf-8'), {}, { normalize: false })
     expect(parsed.logs.some((l) => l.includes('Mixed face direction rejected'))).toBe(true)
+    expect(parsed.directionRejectDiagnostics?.some((d) => d.reason === 'mixed-face')).toBe(true)
   })
 
   it('accepts paired face directions when normalized', () => {
@@ -87,6 +88,12 @@ describe('parseInput', () => {
     expect(dir?.rawCount).toBe(2)
     expect(dir?.rawFace1Count).toBe(1)
     expect(dir?.rawFace2Count).toBe(1)
+    if (dir?.type === 'direction') {
+      expect(dir.rawMaxResidual).toBeDefined()
+      expect(dir.facePairDelta).toBeDefined()
+      expect(dir.face1Spread).toBeDefined()
+      expect(dir.face2Spread).toBeDefined()
+    }
     expect(parsed.logs.some((l) => l.includes('Direction set reduction'))).toBe(true)
     expect(parsed.logs.some((l) => l.includes('Mixed face'))).toBe(false)
   })

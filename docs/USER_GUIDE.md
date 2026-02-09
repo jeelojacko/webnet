@@ -136,8 +136,11 @@ Structured data collection methods:
 -   **Source-Line Traceability**: Residual rows include source line numbers from the input file.
 -   **Processing Log**: Includes per-direction-set residual summaries (mean/RMS/max in arcseconds) to help spot bad sets.
 -   **Prefit Summary**: Initial direction-set residual summaries (before adjustment) can reveal inconsistent sets early.
--   **Direction Set Diagnostics**: Report table includes raw vs reduced counts, F1/F2 balance, per-set orientation, residual RMS/max, and orientation standard-error cues.
--   **Direction Target Repeatability**: Ranked per-target direction diagnostics show raw spread, face balance, residual/std-residual behavior, local-test/MDB cues, and suspect score for blunder screening.
+-   **Direction Set Diagnostics**: Report table includes raw vs reduced counts, F1/F2 balance, per-set orientation, residual RMS/max, plus reduction-quality cues (face-pair delta and raw-max residual statistics).
+-   **Direction Target Repeatability**: Ranked per-target direction diagnostics show raw spread, raw-max residual, face-pair delta, per-face spread, residual/std-residual behavior, local-test/MDB cues, and suspect score for blunder screening.
+-   **Direction Reject Diagnostics**: Rejected direction shots (for example mixed-face rejects with `.NORMALIZE OFF`) are listed with source line, set, record type, expected/actual face, and reason to speed up data cleanup.
+-   **Residual Diagnostics**: A global screening summary reports `|t|` bins (`>2σ`, `>3σ`, `>4σ`), local-test fail totals, weak redundancy counts (`r<0.2` / `r<0.1`), and worst-observation traceability.
+-   **Residual Diagnostics (By Type)**: Per-type rows show count, computed StdRes count, local-test fails, `>3σ` count, max `|t|`, and mean/min redundancy for fast blunder triage by observation family.
 -   **Direction Repeatability Trends**: Multi-set occupy-target summaries show cross-set residual range/RMS, spread trends, face-balance counts, and ranked suspects to detect unstable repeated observations.
 -   **Suspect Impact Analysis**: WebNet runs what-if exclusion trials for top suspect observations and reports expected impact (`dSEUW`, `dMax|t|`, chi-square status change, max unknown-point coordinate shift, and score). You can apply an exclusion directly from this table and re-run.
 -   **Header Tooltips**: Hover over report column headers (and key summary labels like SEUW/Chi-Square) to see concise definitions of statistical fields.

@@ -78,6 +78,8 @@ describe('LSAEngine', () => {
     expect(first?.rawCount).toBe(2)
     expect(first?.reducedCount).toBe(1)
     expect(first?.pairedTargets).toBe(1)
+    expect(first?.meanFacePairDeltaArcSec).toBeDefined()
+    expect(first?.maxRawMaxResidualArcSec).toBeDefined()
     expect(result.setupDiagnostics?.some((s) => s.station === 'O')).toBe(true)
   })
 
@@ -115,7 +117,32 @@ describe('LSAEngine', () => {
     expect(pRow?.face1Count).toBe(2)
     expect(pRow?.face2Count).toBe(2)
     expect((pRow?.rawSpreadArcSec ?? 0) > (qRow?.rawSpreadArcSec ?? 0)).toBe(true)
+    expect(pRow?.rawMaxResidualArcSec).toBeDefined()
+    expect(pRow?.facePairDeltaArcSec).toBeDefined()
+    expect(pRow?.face1SpreadArcSec).toBeDefined()
+    expect(pRow?.face2SpreadArcSec).toBeDefined()
     expect((pRow?.suspectScore ?? 0) >= (qRow?.suspectScore ?? 0)).toBe(true)
+  })
+
+  it('propagates structured direction reject diagnostics from parser to result', () => {
+    const input = [
+      '.2D',
+      '.NORMALIZE OFF',
+      'C O 0 0 0 !',
+      'C B 0 100 0 !',
+      'C P 100 0 0',
+      'D O-P 100.000 0.003',
+      'D B-P 141.421 0.003',
+      'DB O B',
+      'DN P 090-00-00.0 1.0',
+      'DM P 270-00-00.0 100.0 0.0 1.0 0.003',
+      'DE',
+    ].join('\n')
+
+    const engine = new LSAEngine({ input, maxIterations: 10 })
+    const result = engine.solve()
+    expect((result.directionRejectDiagnostics?.length ?? 0) > 0).toBe(true)
+    expect(result.directionRejectDiagnostics?.some((d) => d.reason === 'mixed-face')).toBe(true)
   })
 
   it('aggregates multi-set direction repeatability trends by occupy-target', () => {
@@ -199,6 +226,27 @@ describe('LSAEngine', () => {
     expect(result.traverseDiagnostics?.linearPpm).toBeDefined()
     expect(result.traverseDiagnostics?.thresholds).toBeDefined()
     expect(result.traverseDiagnostics?.loops?.length).toBeGreaterThan(0)
+  })
+
+  it('reports residual diagnostics summary for blunder screening', () => {
+    const input = [
+      '.AMODE ANGLE',
+      'C C1 0 0 0 !',
+      'C C2 200 0 0 !',
+      'C U 100 80 0',
+      'D C1-U 128.060 0.002',
+      'D C2-U 128.065 0.002',
+      'A U-C1-C2 102-40-00.0 1.5',
+      'A U-C2-C1 257-20-00.0 1.5',
+      'A U-C1-C2 102-41-20.0 1.5',
+    ].join('\n')
+    const engine = new LSAEngine({ input, maxIterations: 12 })
+    const result = engine.solve()
+    expect(result.residualDiagnostics).toBeDefined()
+    expect((result.residualDiagnostics?.observationCount ?? 0) > 0).toBe(true)
+    expect((result.residualDiagnostics?.withStdResCount ?? 0) > 0).toBe(true)
+    expect(result.residualDiagnostics?.byType.length).toBeGreaterThan(0)
+    expect(result.residualDiagnostics?.criticalT).toBeGreaterThan(0)
   })
 
   it('applies map scale reduction to horizontal distances when map mode is on', () => {
