@@ -1,6 +1,6 @@
 // WebNet Adjustment (TypeScript)
 
-import React, { useEffect, useMemo, useRef, useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Activity,
   AlertTriangle,
@@ -14,12 +14,12 @@ import {
   RefreshCw,
   Settings,
   Download,
-} from 'lucide-react'
-import InputPane from './components/InputPane'
-import ReportView from './components/ReportView'
-import MapView from './components/MapView'
-import { LSAEngine } from './engine/adjust'
-import { RAD_TO_DEG, radToDmsStr } from './engine/angles'
+} from 'lucide-react';
+import InputPane from './components/InputPane';
+import ReportView from './components/ReportView';
+import MapView from './components/MapView';
+import { LSAEngine } from './engine/adjust';
+import { RAD_TO_DEG, radToDmsStr } from './engine/angles';
 import type {
   AdjustmentResult,
   InstrumentLibrary,
@@ -33,9 +33,9 @@ import type {
   VerticalReductionMode,
   TsCorrelationScope,
   RobustMode,
-} from './types'
+} from './types';
 
-const FT_PER_M = 3.280839895
+const FT_PER_M = 3.280839895;
 
 /****************************
  * CONSTANTS & DEFAULT INPUT
@@ -134,42 +134,43 @@ L LEV1 2004 1000  -0.5998   0.30   0.7
 L LEV1 1001 2002  -0.7998   0.22   0.7
 L LEV1 1001 2005  -0.5998   0.30   0.7
 L LEV1 1002 2006  -0.5007   0.10   0.7
-`
+`;
 
-type Units = 'm' | 'ft'
+type Units = 'm' | 'ft';
 
 type SettingsState = {
-  maxIterations: number
-  units: Units
-}
+  maxIterations: number;
+  units: Units;
+};
 
 type ParseSettings = {
-  coordMode: CoordMode
-  order: OrderMode
-  angleMode: AngleMode
-  deltaMode: DeltaMode
-  mapMode: MapMode
-  mapScaleFactor?: number
-  normalize: boolean
-  applyCurvatureRefraction: boolean
-  refractionCoefficient: number
-  verticalReduction: VerticalReductionMode
-  levelWeight?: number
-  lonSign: 'west-positive' | 'west-negative'
-  tsCorrelationEnabled: boolean
-  tsCorrelationRho: number
-  tsCorrelationScope: TsCorrelationScope
-  robustMode: RobustMode
-  robustK: number
-}
+  coordMode: CoordMode;
+  order: OrderMode;
+  angleMode: AngleMode;
+  deltaMode: DeltaMode;
+  mapMode: MapMode;
+  mapScaleFactor?: number;
+  normalize: boolean;
+  applyCurvatureRefraction: boolean;
+  refractionCoefficient: number;
+  verticalReduction: VerticalReductionMode;
+  levelWeight?: number;
+  lonSign: 'west-positive' | 'west-negative';
+  tsCorrelationEnabled: boolean;
+  tsCorrelationRho: number;
+  tsCorrelationScope: TsCorrelationScope;
+  robustMode: RobustMode;
+  robustK: number;
+};
 
-type TabKey = 'report' | 'map'
+type TabKey = 'report' | 'map';
 
 const SETTINGS_TOOLTIPS = {
   units:
     'Display units for coordinates and report values. The solver still works internally in meters/radians.',
   maxIterations: 'Maximum least-squares iterations before the run stops if convergence is slow.',
-  coordMode: '2D adjusts horizontal coordinates only. 3D also adjusts heights and uses vertical observations.',
+  coordMode:
+    '2D adjusts horizontal coordinates only. 3D also adjusts heights and uses vertical observations.',
   order: 'Coordinate field order expected in control records and shown in report tables.',
   angleMode:
     'Interpretation mode for A records: AUTO detects type, ANGLE forces turned angles, DIR forces directions.',
@@ -180,8 +181,10 @@ const SETTINGS_TOOLTIPS = {
   mapScale: 'Scale factor used by map mode. 1.000000 means no map scaling.',
   curvatureRefraction:
     'Apply curvature/refraction correction in vertical reductions for applicable total station observations.',
-  refractionK: 'Refraction coefficient k used with curvature/refraction correction. Typical survey default is 0.13.',
-  verticalReduction: 'Vertical reduction model applied to slope/zenith observations before adjustment.',
+  refractionK:
+    'Refraction coefficient k used with curvature/refraction correction. Typical survey default is 0.13.',
+  verticalReduction:
+    'Vertical reduction model applied to slope/zenith observations before adjustment.',
   normalize:
     'When ON, normalizes mixed-face direction/traverse observations to a consistent orientation convention.',
   levelWeight:
@@ -195,19 +198,21 @@ const SETTINGS_TOOLTIPS = {
     'Grouping scope for TS angular correlation: SET correlates per setup+set/type; SETUP correlates by occupy setup.',
   robustMode:
     'Optional robust adjustment mode. HUBER downweights large normalized residuals during iterations.',
-  robustK: 'Huber tuning constant k (typical 1.5). Lower values downweight outliers more aggressively.',
-  instrument: 'Select an instrument code to view parsed EDM/angle/centering and other precision parameters.',
-} as const
+  robustK:
+    'Huber tuning constant k (typical 1.5). Lower values downweight outliers more aggressively.',
+  instrument:
+    'Select an instrument code to view parsed EDM/angle/centering and other precision parameters.',
+} as const;
 
 /****************************
  * UI COMPONENTS
  ****************************/
 const App: React.FC = () => {
-  const [input, setInput] = useState<string>(DEFAULT_INPUT)
-  const [result, setResult] = useState<AdjustmentResult | null>(null)
-  const [lastRunInput, setLastRunInput] = useState<string | null>(null)
-  const [activeTab, setActiveTab] = useState<TabKey>('report')
-  const [settings, setSettings] = useState<SettingsState>({ maxIterations: 10, units: 'm' })
+  const [input, setInput] = useState<string>(DEFAULT_INPUT);
+  const [result, setResult] = useState<AdjustmentResult | null>(null);
+  const [lastRunInput, setLastRunInput] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<TabKey>('report');
+  const [settings, setSettings] = useState<SettingsState>({ maxIterations: 10, units: 'm' });
   const [parseSettings, setParseSettings] = useState<ParseSettings>({
     coordMode: '3D',
     order: 'EN',
@@ -226,43 +231,43 @@ const App: React.FC = () => {
     tsCorrelationScope: 'set',
     robustMode: 'none',
     robustK: 1.5,
-  })
-  const [selectedInstrument, setSelectedInstrument] = useState('')
-  const [splitPercent, setSplitPercent] = useState(35) // left pane width (%)
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true)
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false)
-  const [excludedIds, setExcludedIds] = useState<Set<number>>(new Set())
-  const [overrides, setOverrides] = useState<Record<number, ObservationOverride>>({})
-  const fileInputRef = useRef<HTMLInputElement | null>(null)
-  const layoutRef = useRef<HTMLDivElement | null>(null)
-  const isResizingRef = useRef(false)
-  const settingsRef = useRef<HTMLDivElement | null>(null)
+  });
+  const [selectedInstrument, setSelectedInstrument] = useState('');
+  const [splitPercent, setSplitPercent] = useState(35); // left pane width (%)
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [excludedIds, setExcludedIds] = useState<Set<number>>(new Set());
+  const [overrides, setOverrides] = useState<Record<number, ObservationOverride>>({});
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const layoutRef = useRef<HTMLDivElement | null>(null);
+  const isResizingRef = useRef(false);
+  const settingsRef = useRef<HTMLDivElement | null>(null);
 
   const instrumentLibrary: InstrumentLibrary = useMemo(() => {
-    const lines = input.split('\n')
-    const lib: InstrumentLibrary = {}
+    const lines = input.split('\n');
+    const lib: InstrumentLibrary = {};
 
     for (const raw of lines) {
-      const line = raw.trim()
-      if (!line || line.startsWith('#')) continue
+      const line = raw.trim();
+      if (!line || line.startsWith('#')) continue;
 
-      const parts = line.split(/\s+/)
+      const parts = line.split(/\s+/);
       if (parts[0]?.toUpperCase() === 'I' && parts.length >= 4) {
-        const instCode = parts[1]
-        const desc = parts[2]?.replace(/-/g, ' ') ?? ''
+        const instCode = parts[1];
+        const desc = parts[2]?.replace(/-/g, ' ') ?? '';
         const numeric = parts
           .slice(3)
           .map((p) => parseFloat(p))
-          .filter((v) => !Number.isNaN(v))
-        const legacy = numeric.length > 0 && numeric.length < 6
-        const edmConst = legacy ? (numeric[1] ?? 0) : (numeric[0] ?? 0)
-        const edmPpm = legacy ? (numeric[0] ?? 0) : (numeric[1] ?? 0)
-        const hzPrec = legacy ? (numeric[2] ?? 0) : (numeric[2] ?? 0)
-        const vaPrec = legacy ? (numeric[2] ?? 0) : (numeric[3] ?? 0)
-        const instCentr = legacy ? 0 : (numeric[4] ?? 0)
-        const tgtCentr = legacy ? 0 : (numeric[5] ?? 0)
-        const gpsStd = legacy ? (numeric[3] ?? 0) : (numeric[6] ?? 0)
-        const levStd = legacy ? (numeric[4] ?? 0) : (numeric[7] ?? 0)
+          .filter((v) => !Number.isNaN(v));
+        const legacy = numeric.length > 0 && numeric.length < 6;
+        const edmConst = legacy ? (numeric[1] ?? 0) : (numeric[0] ?? 0);
+        const edmPpm = legacy ? (numeric[0] ?? 0) : (numeric[1] ?? 0);
+        const hzPrec = legacy ? (numeric[2] ?? 0) : (numeric[2] ?? 0);
+        const vaPrec = legacy ? (numeric[2] ?? 0) : (numeric[3] ?? 0);
+        const instCentr = legacy ? 0 : (numeric[4] ?? 0);
+        const tgtCentr = legacy ? 0 : (numeric[5] ?? 0);
+        const gpsStd = legacy ? (numeric[3] ?? 0) : (numeric[6] ?? 0);
+        const levStd = legacy ? (numeric[4] ?? 0) : (numeric[7] ?? 0);
         lib[instCode] = {
           code: instCode,
           desc,
@@ -274,95 +279,96 @@ const App: React.FC = () => {
           tgtCentr_m: tgtCentr,
           gpsStd_xy: gpsStd,
           levStd_mmPerKm: levStd,
-        }
+        };
       }
     }
-    return lib
-  }, [input])
+    return lib;
+  }, [input]);
 
   useEffect(() => {
-    const codes = Object.keys(instrumentLibrary)
+    const codes = Object.keys(instrumentLibrary);
     if (!selectedInstrument && codes.length > 0) {
-      setSelectedInstrument(codes[0])
+      setSelectedInstrument(codes[0]);
     } else if (selectedInstrument && !instrumentLibrary[selectedInstrument]) {
-      setSelectedInstrument(codes[0] || '')
+      setSelectedInstrument(codes[0] || '');
     }
-  }, [instrumentLibrary, selectedInstrument])
+  }, [instrumentLibrary, selectedInstrument]);
 
   useEffect(() => {
-    if (!isSettingsOpen) return
+    if (!isSettingsOpen) return;
     const handleClick = (event: MouseEvent) => {
-      if (!settingsRef.current) return
+      if (!settingsRef.current) return;
       if (!settingsRef.current.contains(event.target as Node)) {
-        setIsSettingsOpen(false)
+        setIsSettingsOpen(false);
       }
-    }
+    };
     const handleKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setIsSettingsOpen(false)
-    }
-    document.addEventListener('mousedown', handleClick)
-    document.addEventListener('keydown', handleKey)
+      if (event.key === 'Escape') setIsSettingsOpen(false);
+    };
+    document.addEventListener('mousedown', handleClick);
+    document.addEventListener('keydown', handleKey);
     return () => {
-      document.removeEventListener('mousedown', handleClick)
-      document.removeEventListener('keydown', handleKey)
-    }
-  }, [isSettingsOpen])
+      document.removeEventListener('mousedown', handleClick);
+      document.removeEventListener('keydown', handleKey);
+    };
+  }, [isSettingsOpen]);
 
   // handle dragging of vertical divider
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
-      if (!isResizingRef.current || !layoutRef.current || !isSidebarOpen) return
+      if (!isResizingRef.current || !layoutRef.current || !isSidebarOpen) return;
 
-      const bounds = layoutRef.current.getBoundingClientRect()
-      const offsetX = e.clientX - bounds.left
-      let pct = (offsetX / bounds.width) * 100
+      const bounds = layoutRef.current.getBoundingClientRect();
+      const offsetX = e.clientX - bounds.left;
+      let pct = (offsetX / bounds.width) * 100;
 
-      const min = 20
-      const max = 80
-      if (pct < min) pct = min
-      if (pct > max) pct = max
+      const min = 20;
+      const max = 80;
+      if (pct < min) pct = min;
+      if (pct > max) pct = max;
 
-      setSplitPercent(pct)
-    }
+      setSplitPercent(pct);
+    };
 
     const handleMouseUp = () => {
-      isResizingRef.current = false
-    }
+      isResizingRef.current = false;
+    };
 
-    window.addEventListener('mousemove', handleMouseMove)
-    window.addEventListener('mouseup', handleMouseUp)
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
 
     return () => {
-      window.removeEventListener('mousemove', handleMouseMove)
-      window.removeEventListener('mouseup', handleMouseUp)
-    }
-  }, [isSidebarOpen])
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isSidebarOpen]);
 
   const handleDividerMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
-    e.preventDefault()
-    isResizingRef.current = true
-  }
+    e.preventDefault();
+    isResizingRef.current = true;
+  };
 
-  const IMPACT_MAX_CANDIDATES = 8
+  const IMPACT_MAX_CANDIDATES = 8;
 
   const observationStationsLabel = (obs: Observation): string => {
-    if ('at' in obs && 'from' in obs && 'to' in obs) return `${obs.at}-${obs.from}-${obs.to}`
-    if ('at' in obs && 'to' in obs) return `${obs.at}-${obs.to}`
-    if ('from' in obs && 'to' in obs) return `${obs.from}-${obs.to}`
-    return '-'
-  }
+    if ('at' in obs && 'from' in obs && 'to' in obs) return `${obs.at}-${obs.from}-${obs.to}`;
+    if ('at' in obs && 'to' in obs) return `${obs.at}-${obs.to}`;
+    if ('from' in obs && 'to' in obs) return `${obs.from}-${obs.to}`;
+    return '-';
+  };
 
   const hasLocalFailure = (obs: Observation): boolean => {
-    if (obs.localTestComponents) return !obs.localTestComponents.passE || !obs.localTestComponents.passN
-    if (obs.localTest) return !obs.localTest.pass
-    return false
-  }
+    if (obs.localTestComponents)
+      return !obs.localTestComponents.passE || !obs.localTestComponents.passN;
+    if (obs.localTest) return !obs.localTest.pass;
+    return false;
+  };
 
   const maxAbsStdRes = (res: AdjustmentResult): number =>
     res.observations.reduce((maxVal, obs) => {
-      if (!Number.isFinite(obs.stdRes)) return maxVal
-      return Math.max(maxVal, Math.abs(obs.stdRes ?? 0))
-    }, 0)
+      if (!Number.isFinite(obs.stdRes)) return maxVal;
+      return Math.max(maxVal, Math.abs(obs.stdRes ?? 0));
+    }, 0);
 
   const rankedSuspects = (
     res: AdjustmentResult,
@@ -379,114 +385,116 @@ const App: React.FC = () => {
         localFail: hasLocalFailure(obs),
       }))
       .sort((a, b) => {
-        const af = a.localFail ? 1 : 0
-        const bf = b.localFail ? 1 : 0
-        if (bf !== af) return bf - af
-        return (b.stdRes ?? 0) - (a.stdRes ?? 0)
+        const af = a.localFail ? 1 : 0;
+        const bf = b.localFail ? 1 : 0;
+        if (bf !== af) return bf - af;
+        return (b.stdRes ?? 0) - (a.stdRes ?? 0);
       })
       .slice(0, limit)
-      .map((r, idx) => ({ ...r, rank: idx + 1 }))
-    return rows
-  }
+      .map((r, idx) => ({ ...r, rank: idx + 1 }));
+    return rows;
+  };
 
   const maxUnknownCoordinateShift = (base: AdjustmentResult, alt: AdjustmentResult): number => {
-    let maxShift = 0
+    let maxShift = 0;
     Object.entries(base.stations).forEach(([id, st]) => {
-      if (st.fixed) return
-      const altSt = alt.stations[id]
-      if (!altSt) return
-      const dx = altSt.x - st.x
-      const dy = altSt.y - st.y
-      const dh = altSt.h - st.h
-      const shift = Math.sqrt(dx * dx + dy * dy + dh * dh)
-      if (shift > maxShift) maxShift = shift
-    })
-    return maxShift
-  }
+      if (st.fixed) return;
+      const altSt = alt.stations[id];
+      if (!altSt) return;
+      const dx = altSt.x - st.x;
+      const dy = altSt.y - st.y;
+      const dh = altSt.h - st.h;
+      const shift = Math.sqrt(dx * dx + dy * dy + dh * dh);
+      if (shift > maxShift) maxShift = shift;
+    });
+    return maxShift;
+  };
 
   const buildResultsText = (res: AdjustmentResult): string => {
-    const lines: string[] = []
-    const now = new Date()
-    const ellipse95Scale = 2.4477
-    const linearUnit = settings.units === 'ft' ? 'ft' : 'm'
-    const unitScale = settings.units === 'ft' ? FT_PER_M : 1
-    lines.push(`# WebNet Adjustment Results`)
-    lines.push(`# Generated: ${now.toLocaleString()}`)
-    lines.push(`# Linear units: ${linearUnit}`)
+    const lines: string[] = [];
+    const now = new Date();
+    const ellipse95Scale = 2.4477;
+    const linearUnit = settings.units === 'ft' ? 'ft' : 'm';
+    const unitScale = settings.units === 'ft' ? FT_PER_M : 1;
+    lines.push(`# WebNet Adjustment Results`);
+    lines.push(`# Generated: ${now.toLocaleString()}`);
+    lines.push(`# Linear units: ${linearUnit}`);
     lines.push(
       `# Reduction: mapMode=${parseSettings.mapMode}, mapScale=${(parseSettings.mapScaleFactor ?? 1).toFixed(8)}, curvRef=${parseSettings.applyCurvatureRefraction ? 'ON' : 'OFF'}, k=${parseSettings.refractionCoefficient.toFixed(3)}, vRed=${parseSettings.verticalReduction}, tsCorr=${parseSettings.tsCorrelationEnabled ? 'ON' : 'OFF'}(${parseSettings.tsCorrelationScope},rho=${parseSettings.tsCorrelationRho.toFixed(3)}), robust=${parseSettings.robustMode.toUpperCase()}(k=${parseSettings.robustK.toFixed(2)})`,
-    )
-    lines.push('')
-    lines.push(`Status: ${res.converged ? 'CONVERGED' : 'NOT CONVERGED'}`)
-    lines.push(`Iterations: ${res.iterations}`)
-    lines.push(`SEUW: ${res.seuw.toFixed(4)} (DOF: ${res.dof})`)
+    );
+    lines.push('');
+    lines.push(`Status: ${res.converged ? 'CONVERGED' : 'NOT CONVERGED'}`);
+    lines.push(`Iterations: ${res.iterations}`);
+    lines.push(`SEUW: ${res.seuw.toFixed(4)} (DOF: ${res.dof})`);
     if (res.condition) {
       lines.push(
         `Normal matrix condition estimate: ${res.condition.estimate.toExponential(4)} (threshold ${res.condition.threshold.toExponential(
           2,
         )}) ${res.condition.flagged ? 'WARNING' : 'OK'}`,
-      )
+      );
     }
     if (res.controlConstraints) {
       lines.push(
         `Weighted control constraints: ${res.controlConstraints.count} (E=${res.controlConstraints.x}, N=${res.controlConstraints.y}, H=${res.controlConstraints.h})`,
-      )
+      );
     }
     if (res.chiSquare) {
       lines.push(
         `Chi-square: T=${res.chiSquare.T.toFixed(4)} dof=${res.chiSquare.dof} p=${res.chiSquare.p.toFixed(
           4,
         )} (${res.chiSquare.pass95 ? 'PASS' : 'FAIL'} @95%)`,
-      )
+      );
       lines.push(
         `Chi-square 95% interval: [${res.chiSquare.lower.toFixed(4)}, ${res.chiSquare.upper.toFixed(
           4,
         )}]`,
-      )
+      );
       lines.push(
         `Variance factor: ${res.chiSquare.varianceFactor.toFixed(
           4,
         )} (accepted: ${res.chiSquare.varianceFactorLower.toFixed(
           4,
         )} .. ${res.chiSquare.varianceFactorUpper.toFixed(4)})`,
-      )
+      );
     }
     if (res.tsCorrelationDiagnostics) {
-      const d = res.tsCorrelationDiagnostics
+      const d = res.tsCorrelationDiagnostics;
       lines.push(
         `TS correlation: ${d.enabled ? 'ON' : 'OFF'} (scope=${d.scope}, rho=${d.rho.toFixed(3)})`,
-      )
+      );
       if (d.enabled) {
         lines.push(
           `TS correlation diagnostics: groups=${d.groupCount}, equations=${d.equationCount}, pairs=${d.pairCount}, maxGroup=${d.maxGroupSize}, mean|offdiagW|=${d.meanAbsOffDiagWeight != null ? d.meanAbsOffDiagWeight.toExponential(4) : '-'}`,
-        )
-        const topGroups = d.groups.slice(0, 20)
+        );
+        const topGroups = d.groups.slice(0, 20);
         if (topGroups.length > 0) {
-          lines.push('TS correlation groups (top):')
+          lines.push('TS correlation groups (top):');
           topGroups.forEach((g) => {
             lines.push(
               `  ${g.key}: rows=${g.rows}, pairs=${g.pairCount}, mean|offdiagW|=${g.meanAbsOffDiagWeight != null ? g.meanAbsOffDiagWeight.toExponential(4) : '-'}`,
-            )
-          })
+            );
+          });
         }
       }
     }
     if (res.robustDiagnostics) {
-      const rd = res.robustDiagnostics
-      lines.push(`Robust mode: ${rd.enabled ? rd.mode.toUpperCase() : 'OFF'} (k=${rd.k.toFixed(2)})`)
+      const rd = res.robustDiagnostics;
+      lines.push(
+        `Robust mode: ${rd.enabled ? rd.mode.toUpperCase() : 'OFF'} (k=${rd.k.toFixed(2)})`,
+      );
       if (rd.enabled) {
         rd.iterations.forEach((it) => {
           lines.push(
             `  Iter ${it.iteration}: downweighted=${it.downweightedRows}, meanW=${it.meanWeight.toFixed(3)}, minW=${it.minWeight.toFixed(3)}, max|v/sigma|=${it.maxNorm.toFixed(2)}`,
-          )
-        })
+          );
+        });
         if (rd.topDownweightedRows.length > 0) {
-          lines.push('  Top downweighted rows:')
+          lines.push('  Top downweighted rows:');
           rd.topDownweightedRows.slice(0, 20).forEach((r, idx) => {
             lines.push(
               `    ${idx + 1}. #${r.obsId} ${r.type.toUpperCase()} ${r.stations} line=${r.sourceLine ?? '-'} w=${r.weight.toFixed(3)} |v/sigma|=${r.norm.toFixed(2)}`,
-            )
-          })
+            );
+          });
         }
       }
     }
@@ -496,36 +504,38 @@ const App: React.FC = () => {
           res.robustComparison.classicalTop.length,
           res.robustComparison.robustTop.length,
         )}`,
-      )
+      );
     }
-    lines.push('')
-    lines.push('--- Adjusted Coordinates ---')
+    lines.push('');
+    lines.push('--- Adjusted Coordinates ---');
     lines.push(
       'ID\tNorthing\tEasting\tHeight\tType\tσN\tσE\tσH\tEllMaj\tEllMin\tEllAz\tEllMaj95\tEllMin95',
-    )
+    );
     Object.entries(res.stations).forEach(([id, st]) => {
-      const type = st.fixed ? 'FIXED' : 'ADJ'
-      const sN = st.sN != null ? (st.sN * unitScale).toFixed(4) : '-'
-      const sE = st.sE != null ? (st.sE * unitScale).toFixed(4) : '-'
-      const sH = st.sH != null ? (st.sH * unitScale).toFixed(4) : '-'
-      const ellMaj = st.errorEllipse ? (st.errorEllipse.semiMajor * unitScale).toFixed(4) : '-'
-      const ellMin = st.errorEllipse ? (st.errorEllipse.semiMinor * unitScale).toFixed(4) : '-'
-      const ellAz = st.errorEllipse ? st.errorEllipse.theta.toFixed(2) : '-'
+      const type = st.fixed ? 'FIXED' : 'ADJ';
+      const sN = st.sN != null ? (st.sN * unitScale).toFixed(4) : '-';
+      const sE = st.sE != null ? (st.sE * unitScale).toFixed(4) : '-';
+      const sH = st.sH != null ? (st.sH * unitScale).toFixed(4) : '-';
+      const ellMaj = st.errorEllipse ? (st.errorEllipse.semiMajor * unitScale).toFixed(4) : '-';
+      const ellMin = st.errorEllipse ? (st.errorEllipse.semiMinor * unitScale).toFixed(4) : '-';
+      const ellAz = st.errorEllipse ? st.errorEllipse.theta.toFixed(2) : '-';
       const ellMaj95 = st.errorEllipse
         ? (st.errorEllipse.semiMajor * ellipse95Scale * unitScale).toFixed(4)
-        : '-'
+        : '-';
       const ellMin95 = st.errorEllipse
         ? (st.errorEllipse.semiMinor * ellipse95Scale * unitScale).toFixed(4)
-        : '-'
+        : '-';
       lines.push(
         `${id}\t${(st.y * unitScale).toFixed(4)}\t${(st.x * unitScale).toFixed(4)}\t${(
           st.h * unitScale
-        ).toFixed(4)}\t${type}\t${sN}\t${sE}\t${sH}\t${ellMaj}\t${ellMin}\t${ellAz}\t${ellMaj95}\t${ellMin95}`,
-      )
-    })
-    lines.push('')
+        ).toFixed(
+          4,
+        )}\t${type}\t${sN}\t${sE}\t${sH}\t${ellMaj}\t${ellMin}\t${ellAz}\t${ellMaj95}\t${ellMin95}`,
+      );
+    });
+    lines.push('');
     if (res.typeSummary && Object.keys(res.typeSummary).length > 0) {
-      lines.push('--- Per-Type Summary ---')
+      lines.push('--- Per-Type Summary ---');
       const summaryRows = Object.entries(res.typeSummary).map(([type, s]) => ({
         type,
         count: s.count.toString(),
@@ -535,7 +545,7 @@ const App: React.FC = () => {
         over3: s.over3.toString(),
         over4: s.over4.toString(),
         unit: s.unit === 'm' ? linearUnit : s.unit,
-      }))
+      }));
       const header = {
         type: 'Type',
         count: 'Count',
@@ -545,7 +555,7 @@ const App: React.FC = () => {
         over3: '>3σ',
         over4: '>4σ',
         unit: 'Unit',
-      }
+      };
       const widths = {
         type: Math.max(header.type.length, ...summaryRows.map((r) => r.type.length)),
         count: Math.max(header.count.length, ...summaryRows.map((r) => r.count.length)),
@@ -555,8 +565,8 @@ const App: React.FC = () => {
         over3: Math.max(header.over3.length, ...summaryRows.map((r) => r.over3.length)),
         over4: Math.max(header.over4.length, ...summaryRows.map((r) => r.over4.length)),
         unit: Math.max(header.unit.length, ...summaryRows.map((r) => r.unit.length)),
-      }
-      const pad = (value: string, size: number) => value.padEnd(size, ' ')
+      };
+      const pad = (value: string, size: number) => value.padEnd(size, ' ');
       lines.push(
         [
           pad(header.type, widths.type),
@@ -568,7 +578,7 @@ const App: React.FC = () => {
           pad(header.over4, widths.over4),
           pad(header.unit, widths.unit),
         ].join('  '),
-      )
+      );
       summaryRows.forEach((row) => {
         lines.push(
           [
@@ -581,24 +591,24 @@ const App: React.FC = () => {
             pad(row.over4, widths.over4),
             pad(row.unit, widths.unit),
           ].join('  '),
-        )
-      })
-      lines.push('')
+        );
+      });
+      lines.push('');
     }
     if (res.residualDiagnostics) {
-      const rd = res.residualDiagnostics
-      lines.push('--- Residual Diagnostics ---')
+      const rd = res.residualDiagnostics;
+      lines.push('--- Residual Diagnostics ---');
       lines.push(
         `Obs=${rd.observationCount}, WithStdRes=${rd.withStdResCount}, LocalFail=${rd.localFailCount}, |t|>2=${rd.over2SigmaCount}, |t|>3=${rd.over3SigmaCount}, |t|>4=${rd.over4SigmaCount}`,
-      )
+      );
       lines.push(
         `Redundancy: mean=${rd.meanRedundancy != null ? rd.meanRedundancy.toFixed(4) : '-'}, min=${rd.minRedundancy != null ? rd.minRedundancy.toFixed(4) : '-'}, <0.2=${rd.lowRedundancyCount}, <0.1=${rd.veryLowRedundancyCount}`,
-      )
-      lines.push(`Critical |t| threshold: ${rd.criticalT.toFixed(2)}`)
+      );
+      lines.push(`Critical |t| threshold: ${rd.criticalT.toFixed(2)}`);
       if (rd.worst) {
         lines.push(
           `Worst: #${rd.worst.obsId} ${rd.worst.type.toUpperCase()} ${rd.worst.stations} line=${rd.worst.sourceLine ?? '-'} |t|=${rd.worst.stdRes != null ? rd.worst.stdRes.toFixed(2) : '-'} r=${rd.worst.redundancy != null ? rd.worst.redundancy.toFixed(3) : '-'} local=${rd.worst.localPass == null ? '-' : rd.worst.localPass ? 'PASS' : 'FAIL'}`,
-        )
+        );
       }
       if (rd.byType.length > 0) {
         const rows = rd.byType.map((b) => ({
@@ -610,7 +620,7 @@ const App: React.FC = () => {
           maxStd: b.maxStdRes != null ? b.maxStdRes.toFixed(2) : '-',
           meanR: b.meanRedundancy != null ? b.meanRedundancy.toFixed(3) : '-',
           minR: b.minRedundancy != null ? b.minRedundancy.toFixed(3) : '-',
-        }))
+        }));
         const header = {
           type: 'Type',
           count: 'Count',
@@ -620,7 +630,7 @@ const App: React.FC = () => {
           maxStd: 'Max|t|',
           meanR: 'MeanRedund',
           minR: 'MinRedund',
-        }
+        };
         const widths = {
           type: Math.max(header.type.length, ...rows.map((r) => r.type.length)),
           count: Math.max(header.count.length, ...rows.map((r) => r.count.length)),
@@ -630,8 +640,8 @@ const App: React.FC = () => {
           maxStd: Math.max(header.maxStd.length, ...rows.map((r) => r.maxStd.length)),
           meanR: Math.max(header.meanR.length, ...rows.map((r) => r.meanR.length)),
           minR: Math.max(header.minR.length, ...rows.map((r) => r.minR.length)),
-        }
-        const pad = (value: string, size: number) => value.padEnd(size, ' ')
+        };
+        const pad = (value: string, size: number) => value.padEnd(size, ' ');
         lines.push(
           [
             pad(header.type, widths.type),
@@ -643,7 +653,7 @@ const App: React.FC = () => {
             pad(header.meanR, widths.meanR),
             pad(header.minR, widths.minR),
           ].join('  '),
-        )
+        );
         rows.forEach((r) => {
           lines.push(
             [
@@ -656,13 +666,13 @@ const App: React.FC = () => {
               pad(r.meanR, widths.meanR),
               pad(r.minR, widths.minR),
             ].join('  '),
-          )
-        })
+          );
+        });
       }
-      lines.push('')
+      lines.push('');
     }
     if (res.relativePrecision && res.relativePrecision.length > 0) {
-      lines.push('--- Relative Precision (Unknowns) ---')
+      lines.push('--- Relative Precision (Unknowns) ---');
       const relRows = res.relativePrecision.map((r) => ({
         from: r.from,
         to: r.to,
@@ -673,7 +683,7 @@ const App: React.FC = () => {
         ellMaj: r.ellipse ? (r.ellipse.semiMajor * unitScale).toFixed(4) : '-',
         ellMin: r.ellipse ? (r.ellipse.semiMinor * unitScale).toFixed(4) : '-',
         ellAz: r.ellipse ? r.ellipse.theta.toFixed(2) : '-',
-      }))
+      }));
       const header = {
         from: 'From',
         to: 'To',
@@ -684,7 +694,7 @@ const App: React.FC = () => {
         ellMaj: 'EllMaj',
         ellMin: 'EllMin',
         ellAz: 'EllAz',
-      }
+      };
       const widths = {
         from: Math.max(header.from.length, ...relRows.map((r) => r.from.length)),
         to: Math.max(header.to.length, ...relRows.map((r) => r.to.length)),
@@ -695,8 +705,8 @@ const App: React.FC = () => {
         ellMaj: Math.max(header.ellMaj.length, ...relRows.map((r) => r.ellMaj.length)),
         ellMin: Math.max(header.ellMin.length, ...relRows.map((r) => r.ellMin.length)),
         ellAz: Math.max(header.ellAz.length, ...relRows.map((r) => r.ellAz.length)),
-      }
-      const pad = (value: string, size: number) => value.padEnd(size, ' ')
+      };
+      const pad = (value: string, size: number) => value.padEnd(size, ' ');
       lines.push(
         [
           pad(header.from, widths.from),
@@ -709,7 +719,7 @@ const App: React.FC = () => {
           pad(header.ellMin, widths.ellMin),
           pad(header.ellAz, widths.ellAz),
         ].join('  '),
-      )
+      );
       relRows.forEach((r) => {
         lines.push(
           [
@@ -723,68 +733,72 @@ const App: React.FC = () => {
             pad(r.ellMin, widths.ellMin),
             pad(r.ellAz, widths.ellAz),
           ].join('  '),
-        )
-      })
-      lines.push('')
+        );
+      });
+      lines.push('');
     }
     if (res.traverseDiagnostics) {
-      lines.push('--- Traverse Diagnostics ---')
-      lines.push(`Closure count: ${res.traverseDiagnostics.closureCount}`)
+      lines.push('--- Traverse Diagnostics ---');
+      lines.push(`Closure count: ${res.traverseDiagnostics.closureCount}`);
       lines.push(
         `Misclosure: dE=${(res.traverseDiagnostics.misclosureE * unitScale).toFixed(4)} ${linearUnit}, dN=${(
           res.traverseDiagnostics.misclosureN * unitScale
-        ).toFixed(4)} ${linearUnit}, Mag=${(res.traverseDiagnostics.misclosureMag * unitScale).toFixed(4)} ${linearUnit}`,
-      )
+        ).toFixed(
+          4,
+        )} ${linearUnit}, Mag=${(res.traverseDiagnostics.misclosureMag * unitScale).toFixed(4)} ${linearUnit}`,
+      );
       lines.push(
         `Traverse distance: ${(res.traverseDiagnostics.totalTraverseDistance * unitScale).toFixed(
           4,
         )} ${linearUnit}`,
-      )
+      );
       lines.push(
         `Closure ratio: ${
           res.traverseDiagnostics.closureRatio != null
             ? `1:${res.traverseDiagnostics.closureRatio.toFixed(0)}`
             : '-'
         }`,
-      )
+      );
       lines.push(
         `Linear misclosure: ${
-          res.traverseDiagnostics.linearPpm != null ? `${res.traverseDiagnostics.linearPpm.toFixed(1)} ppm` : '-'
+          res.traverseDiagnostics.linearPpm != null
+            ? `${res.traverseDiagnostics.linearPpm.toFixed(1)} ppm`
+            : '-'
         }`,
-      )
+      );
       lines.push(
         `Angular misclosure: ${
           res.traverseDiagnostics.angularMisclosureArcSec != null
             ? `${res.traverseDiagnostics.angularMisclosureArcSec.toFixed(2)}"`
             : '-'
         }`,
-      )
+      );
       lines.push(
         `Vertical misclosure: ${
           res.traverseDiagnostics.verticalMisclosure != null
             ? `${(res.traverseDiagnostics.verticalMisclosure * unitScale).toFixed(4)} ${linearUnit}`
             : '-'
         }`,
-      )
+      );
       if (res.traverseDiagnostics.thresholds) {
-        const t = res.traverseDiagnostics.thresholds
+        const t = res.traverseDiagnostics.thresholds;
         lines.push(
           `Thresholds: ratio>=1:${t.minClosureRatio}, linear<=${t.maxLinearPpm.toFixed(
             1,
           )}ppm, angular<=${t.maxAngularArcSec.toFixed(1)}", vertical<=${(
             t.maxVerticalMisclosure * unitScale
           ).toFixed(4)} ${linearUnit}`,
-        )
+        );
       }
       if (res.traverseDiagnostics.passes) {
-        const p = res.traverseDiagnostics.passes
+        const p = res.traverseDiagnostics.passes;
         lines.push(
           `Checks: ratio=${p.ratio ? 'PASS' : 'WARN'}, linear=${p.linearPpm ? 'PASS' : 'WARN'}, angular=${p.angular ? 'PASS' : 'WARN'}, vertical=${p.vertical ? 'PASS' : 'WARN'}, overall=${p.overall ? 'PASS' : 'WARN'}`,
-        )
+        );
       }
       if (res.traverseDiagnostics.loops && res.traverseDiagnostics.loops.length > 0) {
-        lines.push('')
-        lines.push('Traverse closure loops (ranked by severity):')
+        lines.push('');
+        lines.push('Traverse closure loops (ranked by severity):');
         const rows = res.traverseDiagnostics.loops.map((l, idx) => ({
           rank: String(idx + 1),
           loop: l.key,
@@ -796,7 +810,7 @@ const App: React.FC = () => {
           vert: l.verticalMisclosure != null ? (l.verticalMisclosure * unitScale).toFixed(4) : '-',
           severity: l.severity.toFixed(1),
           status: l.pass ? 'PASS' : 'WARN',
-        }))
+        }));
         const header = {
           rank: '#',
           loop: 'Loop',
@@ -808,7 +822,7 @@ const App: React.FC = () => {
           vert: `dH(${linearUnit})`,
           severity: 'Severity',
           status: 'Status',
-        }
+        };
         const widths = {
           rank: Math.max(header.rank.length, ...rows.map((r) => r.rank.length)),
           loop: Math.max(header.loop.length, ...rows.map((r) => r.loop.length)),
@@ -820,8 +834,8 @@ const App: React.FC = () => {
           vert: Math.max(header.vert.length, ...rows.map((r) => r.vert.length)),
           severity: Math.max(header.severity.length, ...rows.map((r) => r.severity.length)),
           status: Math.max(header.status.length, ...rows.map((r) => r.status.length)),
-        }
-        const pad = (value: string, size: number) => value.padEnd(size, ' ')
+        };
+        const pad = (value: string, size: number) => value.padEnd(size, ' ');
         lines.push(
           [
             pad(header.rank, widths.rank),
@@ -835,7 +849,7 @@ const App: React.FC = () => {
             pad(header.severity, widths.severity),
             pad(header.status, widths.status),
           ].join('  '),
-        )
+        );
         rows.forEach((r) => {
           lines.push(
             [
@@ -850,13 +864,13 @@ const App: React.FC = () => {
               pad(r.severity, widths.severity),
               pad(r.status, widths.status),
             ].join('  '),
-          )
-        })
+          );
+        });
       }
-      lines.push('')
+      lines.push('');
     }
     if (res.directionSetDiagnostics && res.directionSetDiagnostics.length > 0) {
-      lines.push('--- Direction Set Diagnostics ---')
+      lines.push('--- Direction Set Diagnostics ---');
       const rows = res.directionSetDiagnostics.map((d) => ({
         setId: d.setId,
         occupy: d.occupy,
@@ -868,12 +882,14 @@ const App: React.FC = () => {
         orient: d.orientationDeg != null ? d.orientationDeg.toFixed(4) : '-',
         rms: d.residualRmsArcSec != null ? d.residualRmsArcSec.toFixed(2) : '-',
         max: d.residualMaxArcSec != null ? d.residualMaxArcSec.toFixed(2) : '-',
-        pairDeltaMean: d.meanFacePairDeltaArcSec != null ? d.meanFacePairDeltaArcSec.toFixed(2) : '-',
+        pairDeltaMean:
+          d.meanFacePairDeltaArcSec != null ? d.meanFacePairDeltaArcSec.toFixed(2) : '-',
         pairDeltaMax: d.maxFacePairDeltaArcSec != null ? d.maxFacePairDeltaArcSec.toFixed(2) : '-',
-        rawMaxMean: d.meanRawMaxResidualArcSec != null ? d.meanRawMaxResidualArcSec.toFixed(2) : '-',
+        rawMaxMean:
+          d.meanRawMaxResidualArcSec != null ? d.meanRawMaxResidualArcSec.toFixed(2) : '-',
         rawMax: d.maxRawMaxResidualArcSec != null ? d.maxRawMaxResidualArcSec.toFixed(2) : '-',
         orientSe: d.orientationSeArcSec != null ? d.orientationSeArcSec.toFixed(2) : '-',
-      }))
+      }));
       const header = {
         setId: 'Set',
         occupy: 'Occupy',
@@ -890,7 +906,7 @@ const App: React.FC = () => {
         rawMaxMean: 'RawMaxMean(")',
         rawMax: 'RawMax(")',
         orientSe: 'OrientSE(")',
-      }
+      };
       const widths = {
         setId: Math.max(header.setId.length, ...rows.map((r) => r.setId.length)),
         occupy: Math.max(header.occupy.length, ...rows.map((r) => r.occupy.length)),
@@ -902,13 +918,19 @@ const App: React.FC = () => {
         orient: Math.max(header.orient.length, ...rows.map((r) => r.orient.length)),
         rms: Math.max(header.rms.length, ...rows.map((r) => r.rms.length)),
         max: Math.max(header.max.length, ...rows.map((r) => r.max.length)),
-        pairDeltaMean: Math.max(header.pairDeltaMean.length, ...rows.map((r) => r.pairDeltaMean.length)),
-        pairDeltaMax: Math.max(header.pairDeltaMax.length, ...rows.map((r) => r.pairDeltaMax.length)),
+        pairDeltaMean: Math.max(
+          header.pairDeltaMean.length,
+          ...rows.map((r) => r.pairDeltaMean.length),
+        ),
+        pairDeltaMax: Math.max(
+          header.pairDeltaMax.length,
+          ...rows.map((r) => r.pairDeltaMax.length),
+        ),
         rawMaxMean: Math.max(header.rawMaxMean.length, ...rows.map((r) => r.rawMaxMean.length)),
         rawMax: Math.max(header.rawMax.length, ...rows.map((r) => r.rawMax.length)),
         orientSe: Math.max(header.orientSe.length, ...rows.map((r) => r.orientSe.length)),
-      }
-      const pad = (value: string, size: number) => value.padEnd(size, ' ')
+      };
+      const pad = (value: string, size: number) => value.padEnd(size, ' ');
       lines.push(
         [
           pad(header.setId, widths.setId),
@@ -927,7 +949,7 @@ const App: React.FC = () => {
           pad(header.rawMax, widths.rawMax),
           pad(header.orientSe, widths.orientSe),
         ].join('  '),
-      )
+      );
       rows.forEach((r) => {
         lines.push(
           [
@@ -947,12 +969,12 @@ const App: React.FC = () => {
             pad(r.rawMax, widths.rawMax),
             pad(r.orientSe, widths.orientSe),
           ].join('  '),
-        )
-      })
-      lines.push('')
+        );
+      });
+      lines.push('');
     }
     if (res.directionTargetDiagnostics && res.directionTargetDiagnostics.length > 0) {
-      lines.push('--- Direction Target Repeatability (ranked) ---')
+      lines.push('--- Direction Target Repeatability (ranked) ---');
       const rows = res.directionTargetDiagnostics.map((d, idx) => ({
         rank: String(idx + 1),
         setId: d.setId,
@@ -973,7 +995,7 @@ const App: React.FC = () => {
         local: d.localPass == null ? '-' : d.localPass ? 'PASS' : 'FAIL',
         mdb: d.mdbArcSec != null ? d.mdbArcSec.toFixed(2) : '-',
         score: d.suspectScore.toFixed(1),
-      }))
+      }));
       const header = {
         rank: '#',
         setId: 'Set',
@@ -994,7 +1016,7 @@ const App: React.FC = () => {
         local: 'Local',
         mdb: 'MDB(")',
         score: 'Score',
-      }
+      };
       const widths = {
         rank: Math.max(header.rank.length, ...rows.map((r) => r.rank.length)),
         setId: Math.max(header.setId.length, ...rows.map((r) => r.setId.length)),
@@ -1015,8 +1037,8 @@ const App: React.FC = () => {
         local: Math.max(header.local.length, ...rows.map((r) => r.local.length)),
         mdb: Math.max(header.mdb.length, ...rows.map((r) => r.mdb.length)),
         score: Math.max(header.score.length, ...rows.map((r) => r.score.length)),
-      }
-      const pad = (value: string, size: number) => value.padEnd(size, ' ')
+      };
+      const pad = (value: string, size: number) => value.padEnd(size, ' ');
       lines.push(
         [
           pad(header.rank, widths.rank),
@@ -1039,7 +1061,7 @@ const App: React.FC = () => {
           pad(header.mdb, widths.mdb),
           pad(header.score, widths.score),
         ].join('  '),
-      )
+      );
       rows.forEach((r) => {
         lines.push(
           [
@@ -1063,15 +1085,17 @@ const App: React.FC = () => {
             pad(r.mdb, widths.mdb),
             pad(r.score, widths.score),
           ].join('  '),
-        )
-      })
-      lines.push('')
+        );
+      });
+      lines.push('');
 
       const suspects = res.directionTargetDiagnostics
-        .filter((d) => d.localPass === false || (d.stdRes ?? 0) >= 2 || (d.rawSpreadArcSec ?? 0) >= 5)
-        .slice(0, 20)
+        .filter(
+          (d) => d.localPass === false || (d.stdRes ?? 0) >= 2 || (d.rawSpreadArcSec ?? 0) >= 5,
+        )
+        .slice(0, 20);
       if (suspects.length > 0) {
-        lines.push('--- Direction Target Suspects ---')
+        lines.push('--- Direction Target Suspects ---');
         const suspectRows = suspects.map((d, idx) => ({
           rank: String(idx + 1),
           setId: d.setId,
@@ -1080,7 +1104,7 @@ const App: React.FC = () => {
           stdRes: d.stdRes != null ? d.stdRes.toFixed(2) : '-',
           local: d.localPass == null ? '-' : d.localPass ? 'PASS' : 'FAIL',
           score: d.suspectScore.toFixed(1),
-        }))
+        }));
         const suspectHeader = {
           rank: '#',
           setId: 'Set',
@@ -1089,16 +1113,19 @@ const App: React.FC = () => {
           stdRes: 'StdRes',
           local: 'Local',
           score: 'Score',
-        }
+        };
         const suspectWidths = {
           rank: Math.max(suspectHeader.rank.length, ...suspectRows.map((r) => r.rank.length)),
           setId: Math.max(suspectHeader.setId.length, ...suspectRows.map((r) => r.setId.length)),
-          stations: Math.max(suspectHeader.stations.length, ...suspectRows.map((r) => r.stations.length)),
+          stations: Math.max(
+            suspectHeader.stations.length,
+            ...suspectRows.map((r) => r.stations.length),
+          ),
           spread: Math.max(suspectHeader.spread.length, ...suspectRows.map((r) => r.spread.length)),
           stdRes: Math.max(suspectHeader.stdRes.length, ...suspectRows.map((r) => r.stdRes.length)),
           local: Math.max(suspectHeader.local.length, ...suspectRows.map((r) => r.local.length)),
           score: Math.max(suspectHeader.score.length, ...suspectRows.map((r) => r.score.length)),
-        }
+        };
         lines.push(
           [
             pad(suspectHeader.rank, suspectWidths.rank),
@@ -1109,7 +1136,7 @@ const App: React.FC = () => {
             pad(suspectHeader.local, suspectWidths.local),
             pad(suspectHeader.score, suspectWidths.score),
           ].join('  '),
-        )
+        );
         suspectRows.forEach((r) => {
           lines.push(
             [
@@ -1121,13 +1148,13 @@ const App: React.FC = () => {
               pad(r.local, suspectWidths.local),
               pad(r.score, suspectWidths.score),
             ].join('  '),
-          )
-        })
-        lines.push('')
+          );
+        });
+        lines.push('');
       }
     }
     if (res.directionRejectDiagnostics && res.directionRejectDiagnostics.length > 0) {
-      lines.push('--- Direction Reject Diagnostics ---')
+      lines.push('--- Direction Reject Diagnostics ---');
       const rows = res.directionRejectDiagnostics
         .map((d, idx) => ({
           rank: String(idx + 1),
@@ -1141,11 +1168,11 @@ const App: React.FC = () => {
           reason: d.detail,
         }))
         .sort((a, b) => {
-          const la = a.line === '-' ? Number.MAX_SAFE_INTEGER : Number(a.line)
-          const lb = b.line === '-' ? Number.MAX_SAFE_INTEGER : Number(b.line)
-          if (la !== lb) return la - lb
-          return a.setId.localeCompare(b.setId)
-        })
+          const la = a.line === '-' ? Number.MAX_SAFE_INTEGER : Number(a.line);
+          const lb = b.line === '-' ? Number.MAX_SAFE_INTEGER : Number(b.line);
+          if (la !== lb) return la - lb;
+          return a.setId.localeCompare(b.setId);
+        });
       const header = {
         rank: '#',
         setId: 'Set',
@@ -1156,7 +1183,7 @@ const App: React.FC = () => {
         expected: 'Expected',
         actual: 'Actual',
         reason: 'Reason',
-      }
+      };
       const widths = {
         rank: Math.max(header.rank.length, ...rows.map((r) => r.rank.length)),
         setId: Math.max(header.setId.length, ...rows.map((r) => r.setId.length)),
@@ -1167,8 +1194,8 @@ const App: React.FC = () => {
         expected: Math.max(header.expected.length, ...rows.map((r) => r.expected.length)),
         actual: Math.max(header.actual.length, ...rows.map((r) => r.actual.length)),
         reason: Math.max(header.reason.length, ...rows.map((r) => r.reason.length)),
-      }
-      const pad = (value: string, size: number) => value.padEnd(size, ' ')
+      };
+      const pad = (value: string, size: number) => value.padEnd(size, ' ');
       lines.push(
         [
           pad(header.rank, widths.rank),
@@ -1181,7 +1208,7 @@ const App: React.FC = () => {
           pad(header.actual, widths.actual),
           pad(header.reason, widths.reason),
         ].join('  '),
-      )
+      );
       rows.forEach((r) => {
         lines.push(
           [
@@ -1195,12 +1222,12 @@ const App: React.FC = () => {
             pad(r.actual, widths.actual),
             pad(r.reason, widths.reason),
           ].join('  '),
-        )
-      })
-      lines.push('')
+        );
+      });
+      lines.push('');
     }
     if (res.directionRepeatabilityDiagnostics && res.directionRepeatabilityDiagnostics.length > 0) {
-      lines.push('--- Direction Repeatability By Occupy-Target (multi-set) ---')
+      lines.push('--- Direction Repeatability By Occupy-Target (multi-set) ---');
       const rows = res.directionRepeatabilityDiagnostics.map((d, idx) => ({
         rank: String(idx + 1),
         occupy: d.occupy,
@@ -1219,7 +1246,7 @@ const App: React.FC = () => {
         worstSet: d.worstSetId ?? '-',
         line: d.worstLine != null ? String(d.worstLine) : '-',
         score: d.suspectScore.toFixed(1),
-      }))
+      }));
       const header = {
         rank: '#',
         occupy: 'Occupy',
@@ -1238,7 +1265,7 @@ const App: React.FC = () => {
         worstSet: 'WorstSet',
         line: 'Line',
         score: 'Score',
-      }
+      };
       const widths = {
         rank: Math.max(header.rank.length, ...rows.map((r) => r.rank.length)),
         occupy: Math.max(header.occupy.length, ...rows.map((r) => r.occupy.length)),
@@ -1257,8 +1284,8 @@ const App: React.FC = () => {
         worstSet: Math.max(header.worstSet.length, ...rows.map((r) => r.worstSet.length)),
         line: Math.max(header.line.length, ...rows.map((r) => r.line.length)),
         score: Math.max(header.score.length, ...rows.map((r) => r.score.length)),
-      }
-      const pad = (value: string, size: number) => value.padEnd(size, ' ')
+      };
+      const pad = (value: string, size: number) => value.padEnd(size, ' ');
       lines.push(
         [
           pad(header.rank, widths.rank),
@@ -1279,7 +1306,7 @@ const App: React.FC = () => {
           pad(header.line, widths.line),
           pad(header.score, widths.score),
         ].join('  '),
-      )
+      );
       rows.forEach((r) => {
         lines.push(
           [
@@ -1301,15 +1328,18 @@ const App: React.FC = () => {
             pad(r.line, widths.line),
             pad(r.score, widths.score),
           ].join('  '),
-        )
-      })
-      lines.push('')
+        );
+      });
+      lines.push('');
 
       const suspects = res.directionRepeatabilityDiagnostics
-        .filter((d) => d.localFailCount > 0 || (d.maxStdRes ?? 0) >= 2 || (d.maxRawSpreadArcSec ?? 0) >= 5)
-        .slice(0, 20)
+        .filter(
+          (d) =>
+            d.localFailCount > 0 || (d.maxStdRes ?? 0) >= 2 || (d.maxRawSpreadArcSec ?? 0) >= 5,
+        )
+        .slice(0, 20);
       if (suspects.length > 0) {
-        lines.push('--- Direction Repeatability Suspects ---')
+        lines.push('--- Direction Repeatability Suspects ---');
         const suspectRows = suspects.map((d, idx) => ({
           rank: String(idx + 1),
           stations: `${d.occupy}-${d.target}`,
@@ -1319,7 +1349,7 @@ const App: React.FC = () => {
           spreadMax: d.maxRawSpreadArcSec != null ? d.maxRawSpreadArcSec.toFixed(2) : '-',
           localFail: String(d.localFailCount),
           score: d.suspectScore.toFixed(1),
-        }))
+        }));
         const suspectHeader = {
           rank: '#',
           stations: 'Stations',
@@ -1329,17 +1359,29 @@ const App: React.FC = () => {
           spreadMax: 'SpreadMax(")',
           localFail: 'LocalFail',
           score: 'Score',
-        }
+        };
         const suspectWidths = {
           rank: Math.max(suspectHeader.rank.length, ...suspectRows.map((r) => r.rank.length)),
-          stations: Math.max(suspectHeader.stations.length, ...suspectRows.map((r) => r.stations.length)),
+          stations: Math.max(
+            suspectHeader.stations.length,
+            ...suspectRows.map((r) => r.stations.length),
+          ),
           sets: Math.max(suspectHeader.sets.length, ...suspectRows.map((r) => r.sets.length)),
-          resRange: Math.max(suspectHeader.resRange.length, ...suspectRows.map((r) => r.resRange.length)),
+          resRange: Math.max(
+            suspectHeader.resRange.length,
+            ...suspectRows.map((r) => r.resRange.length),
+          ),
           maxStd: Math.max(suspectHeader.maxStd.length, ...suspectRows.map((r) => r.maxStd.length)),
-          spreadMax: Math.max(suspectHeader.spreadMax.length, ...suspectRows.map((r) => r.spreadMax.length)),
-          localFail: Math.max(suspectHeader.localFail.length, ...suspectRows.map((r) => r.localFail.length)),
+          spreadMax: Math.max(
+            suspectHeader.spreadMax.length,
+            ...suspectRows.map((r) => r.spreadMax.length),
+          ),
+          localFail: Math.max(
+            suspectHeader.localFail.length,
+            ...suspectRows.map((r) => r.localFail.length),
+          ),
           score: Math.max(suspectHeader.score.length, ...suspectRows.map((r) => r.score.length)),
-        }
+        };
         lines.push(
           [
             pad(suspectHeader.rank, suspectWidths.rank),
@@ -1351,7 +1393,7 @@ const App: React.FC = () => {
             pad(suspectHeader.localFail, suspectWidths.localFail),
             pad(suspectHeader.score, suspectWidths.score),
           ].join('  '),
-        )
+        );
         suspectRows.forEach((r) => {
           lines.push(
             [
@@ -1364,13 +1406,13 @@ const App: React.FC = () => {
               pad(r.localFail, suspectWidths.localFail),
               pad(r.score, suspectWidths.score),
             ].join('  '),
-          )
-        })
-        lines.push('')
+          );
+        });
+        lines.push('');
       }
     }
     if (res.setupDiagnostics && res.setupDiagnostics.length > 0) {
-      lines.push('--- Setup Diagnostics ---')
+      lines.push('--- Setup Diagnostics ---');
       const rows = res.setupDiagnostics.map((s) => ({
         station: s.station,
         dirSets: String(s.directionSetCount),
@@ -1387,9 +1429,11 @@ const App: React.FC = () => {
         maxStd: s.maxStdRes != null ? s.maxStdRes.toFixed(2) : '-',
         localFail: String(s.localFailCount),
         worstObs:
-          s.worstObsType != null ? `${s.worstObsType.toUpperCase()} ${s.worstObsStations ?? ''}`.trim() : '-',
+          s.worstObsType != null
+            ? `${s.worstObsType.toUpperCase()} ${s.worstObsStations ?? ''}`.trim()
+            : '-',
         worstLine: s.worstObsLine != null ? String(s.worstObsLine) : '-',
-      }))
+      }));
       const header = {
         station: 'Setup',
         dirSets: 'DirSets',
@@ -1407,7 +1451,7 @@ const App: React.FC = () => {
         localFail: 'LocalFail',
         worstObs: 'WorstObs',
         worstLine: 'Line',
-      }
+      };
       const widths = {
         station: Math.max(header.station.length, ...rows.map((r) => r.station.length)),
         dirSets: Math.max(header.dirSets.length, ...rows.map((r) => r.dirSets.length)),
@@ -1425,8 +1469,8 @@ const App: React.FC = () => {
         localFail: Math.max(header.localFail.length, ...rows.map((r) => r.localFail.length)),
         worstObs: Math.max(header.worstObs.length, ...rows.map((r) => r.worstObs.length)),
         worstLine: Math.max(header.worstLine.length, ...rows.map((r) => r.worstLine.length)),
-      }
-      const pad = (value: string, size: number) => value.padEnd(size, ' ')
+      };
+      const pad = (value: string, size: number) => value.padEnd(size, ' ');
       lines.push(
         [
           pad(header.station, widths.station),
@@ -1446,7 +1490,7 @@ const App: React.FC = () => {
           pad(header.worstObs, widths.worstObs),
           pad(header.worstLine, widths.worstLine),
         ].join('  '),
-      )
+      );
       rows.forEach((r) => {
         lines.push(
           [
@@ -1467,25 +1511,25 @@ const App: React.FC = () => {
             pad(r.worstObs, widths.worstObs),
             pad(r.worstLine, widths.worstLine),
           ].join('  '),
-        )
-      })
-      lines.push('')
+        );
+      });
+      lines.push('');
 
       const setupSuspects = [...res.setupDiagnostics]
         .filter((s) => s.localFailCount > 0 || (s.maxStdRes ?? 0) >= 2)
         .sort((a, b) => {
-          if (b.localFailCount !== a.localFailCount) return b.localFailCount - a.localFailCount
-          const bMax = b.maxStdRes ?? 0
-          const aMax = a.maxStdRes ?? 0
-          if (bMax !== aMax) return bMax - aMax
-          const bRms = b.rmsStdRes ?? 0
-          const aRms = a.rmsStdRes ?? 0
-          if (bRms !== aRms) return bRms - aRms
-          return a.station.localeCompare(b.station)
+          if (b.localFailCount !== a.localFailCount) return b.localFailCount - a.localFailCount;
+          const bMax = b.maxStdRes ?? 0;
+          const aMax = a.maxStdRes ?? 0;
+          if (bMax !== aMax) return bMax - aMax;
+          const bRms = b.rmsStdRes ?? 0;
+          const aRms = a.rmsStdRes ?? 0;
+          if (bRms !== aRms) return bRms - aRms;
+          return a.station.localeCompare(b.station);
         })
-        .slice(0, 20)
+        .slice(0, 20);
       if (setupSuspects.length > 0) {
-        lines.push('--- Setup Suspects ---')
+        lines.push('--- Setup Suspects ---');
         const suspectRows = setupSuspects.map((s, idx) => ({
           rank: String(idx + 1),
           station: s.station,
@@ -1493,9 +1537,11 @@ const App: React.FC = () => {
           maxStd: s.maxStdRes != null ? s.maxStdRes.toFixed(2) : '-',
           rmsStd: s.rmsStdRes != null ? s.rmsStdRes.toFixed(2) : '-',
           worstObs:
-            s.worstObsType != null ? `${s.worstObsType.toUpperCase()} ${s.worstObsStations ?? ''}`.trim() : '-',
+            s.worstObsType != null
+              ? `${s.worstObsType.toUpperCase()} ${s.worstObsStations ?? ''}`.trim()
+              : '-',
           line: s.worstObsLine != null ? String(s.worstObsLine) : '-',
-        }))
+        }));
         const suspectHeader = {
           rank: '#',
           station: 'Setup',
@@ -1504,16 +1550,25 @@ const App: React.FC = () => {
           rmsStd: 'RMS|t|',
           worstObs: 'WorstObs',
           line: 'Line',
-        }
+        };
         const suspectWidths = {
           rank: Math.max(suspectHeader.rank.length, ...suspectRows.map((r) => r.rank.length)),
-          station: Math.max(suspectHeader.station.length, ...suspectRows.map((r) => r.station.length)),
-          localFail: Math.max(suspectHeader.localFail.length, ...suspectRows.map((r) => r.localFail.length)),
+          station: Math.max(
+            suspectHeader.station.length,
+            ...suspectRows.map((r) => r.station.length),
+          ),
+          localFail: Math.max(
+            suspectHeader.localFail.length,
+            ...suspectRows.map((r) => r.localFail.length),
+          ),
           maxStd: Math.max(suspectHeader.maxStd.length, ...suspectRows.map((r) => r.maxStd.length)),
           rmsStd: Math.max(suspectHeader.rmsStd.length, ...suspectRows.map((r) => r.rmsStd.length)),
-          worstObs: Math.max(suspectHeader.worstObs.length, ...suspectRows.map((r) => r.worstObs.length)),
+          worstObs: Math.max(
+            suspectHeader.worstObs.length,
+            ...suspectRows.map((r) => r.worstObs.length),
+          ),
           line: Math.max(suspectHeader.line.length, ...suspectRows.map((r) => r.line.length)),
-        }
+        };
         lines.push(
           [
             pad(suspectHeader.rank, suspectWidths.rank),
@@ -1524,7 +1579,7 @@ const App: React.FC = () => {
             pad(suspectHeader.worstObs, suspectWidths.worstObs),
             pad(suspectHeader.line, suspectWidths.line),
           ].join('  '),
-        )
+        );
         suspectRows.forEach((r) => {
           lines.push(
             [
@@ -1536,13 +1591,13 @@ const App: React.FC = () => {
               pad(r.worstObs, suspectWidths.worstObs),
               pad(r.line, suspectWidths.line),
             ].join('  '),
-          )
-        })
-        lines.push('')
+          );
+        });
+        lines.push('');
       }
     }
     if (res.sideshots && res.sideshots.length > 0) {
-      lines.push('--- Post-Adjusted Sideshots ---')
+      lines.push('--- Post-Adjusted Sideshots ---');
       const rows = res.sideshots.map((s) => ({
         from: s.from,
         to: s.to,
@@ -1559,7 +1614,7 @@ const App: React.FC = () => {
         sigmaE: s.sigmaE != null ? (s.sigmaE * unitScale).toFixed(4) : '-',
         sigmaH: s.sigmaH != null ? (s.sigmaH * unitScale).toFixed(4) : '-',
         note: s.note ?? '-',
-      }))
+      }));
       const header = {
         from: 'From',
         to: 'To',
@@ -1576,7 +1631,7 @@ const App: React.FC = () => {
         sigmaE: `σE(${linearUnit})`,
         sigmaH: `σH(${linearUnit})`,
         note: 'Note',
-      }
+      };
       const widths = {
         from: Math.max(header.from.length, ...rows.map((r) => r.from.length)),
         to: Math.max(header.to.length, ...rows.map((r) => r.to.length)),
@@ -1593,8 +1648,8 @@ const App: React.FC = () => {
         sigmaE: Math.max(header.sigmaE.length, ...rows.map((r) => r.sigmaE.length)),
         sigmaH: Math.max(header.sigmaH.length, ...rows.map((r) => r.sigmaH.length)),
         note: Math.max(header.note.length, ...rows.map((r) => r.note.length)),
-      }
-      const pad = (value: string, size: number) => value.padEnd(size, ' ')
+      };
+      const pad = (value: string, size: number) => value.padEnd(size, ' ');
       lines.push(
         [
           pad(header.from, widths.from),
@@ -1613,7 +1668,7 @@ const App: React.FC = () => {
           pad(header.sigmaH, widths.sigmaH),
           pad(header.note, widths.note),
         ].join('  '),
-      )
+      );
       rows.forEach((r) => {
         lines.push(
           [
@@ -1633,108 +1688,112 @@ const App: React.FC = () => {
             pad(r.sigmaH, widths.sigmaH),
             pad(r.note, widths.note),
           ].join('  '),
-        )
-      })
-      lines.push('')
+        );
+      });
+      lines.push('');
     }
-    lines.push('--- Observations & Residuals ---')
-    lines.push(`MDB units: arcsec for angular types; ${linearUnit} for linear types`)
+    lines.push('--- Observations & Residuals ---');
+    lines.push(`MDB units: arcsec for angular types; ${linearUnit} for linear types`);
     const rows: {
-      type: string
-      stations: string
-      sourceLine: string
-      obs: string
-      calc: string
-      residual: string
-      stdRes: string
-      redundancy: string
-      localTest: string
-      mdb: string
-      stdResAbs: number
-    }[] = []
+      type: string;
+      stations: string;
+      sourceLine: string;
+      obs: string;
+      calc: string;
+      residual: string;
+      stdRes: string;
+      redundancy: string;
+      localTest: string;
+      mdb: string;
+      stdResAbs: number;
+    }[] = [];
     const isAngularType = (type: string) =>
-      type === 'angle' || type === 'direction' || type === 'bearing' || type === 'dir' || type === 'zenith'
+      type === 'angle' ||
+      type === 'direction' ||
+      type === 'bearing' ||
+      type === 'dir' ||
+      type === 'zenith';
     const formatMdb = (value: number, angular: boolean): string => {
-      if (!Number.isFinite(value)) return 'inf'
+      if (!Number.isFinite(value)) return 'inf';
       return angular
         ? `${(value * RAD_TO_DEG * 3600).toFixed(2)}"`
-        : (value * unitScale).toFixed(4)
-    }
+        : (value * unitScale).toFixed(4);
+    };
     res.observations.forEach((obs) => {
-      let stations = ''
-      let obsStr = ''
-      let calcStr = ''
-      let resStr = ''
-      const angular = isAngularType(obs.type)
+      let stations = '';
+      let obsStr = '';
+      let calcStr = '';
+      let resStr = '';
+      const angular = isAngularType(obs.type);
       if (obs.type === 'angle') {
-        stations = `${obs.at}-${obs.from}-${obs.to}`
-        obsStr = radToDmsStr(obs.obs)
-        calcStr = obs.calc != null ? radToDmsStr(obs.calc as number) : '-'
+        stations = `${obs.at}-${obs.from}-${obs.to}`;
+        obsStr = radToDmsStr(obs.obs);
+        calcStr = obs.calc != null ? radToDmsStr(obs.calc as number) : '-';
         resStr =
           obs.residual != null
             ? `${((obs.residual as number) * RAD_TO_DEG * 3600).toFixed(2)}"`
-            : '-'
+            : '-';
       } else if (obs.type === 'direction') {
         const reductionLabel =
           obs.rawCount != null
             ? ` [raw ${obs.rawCount}->1, F1:${obs.rawFace1Count ?? '-'} F2:${obs.rawFace2Count ?? '-'}]`
-            : ''
-        stations = `${obs.at}-${obs.to} (${obs.setId})${reductionLabel}`
-        obsStr = radToDmsStr(obs.obs)
-        calcStr = obs.calc != null ? radToDmsStr(obs.calc as number) : '-'
+            : '';
+        stations = `${obs.at}-${obs.to} (${obs.setId})${reductionLabel}`;
+        obsStr = radToDmsStr(obs.obs);
+        calcStr = obs.calc != null ? radToDmsStr(obs.calc as number) : '-';
         resStr =
           obs.residual != null
             ? `${((obs.residual as number) * RAD_TO_DEG * 3600).toFixed(2)}"`
-            : '-'
+            : '-';
       } else if (obs.type === 'dir') {
-        stations = `${obs.from}-${obs.to}`
-        obsStr = radToDmsStr(obs.obs)
-        calcStr = obs.calc != null ? radToDmsStr(obs.calc as number) : '-'
+        stations = `${obs.from}-${obs.to}`;
+        obsStr = radToDmsStr(obs.obs);
+        calcStr = obs.calc != null ? radToDmsStr(obs.calc as number) : '-';
         resStr =
           obs.residual != null
             ? `${((obs.residual as number) * RAD_TO_DEG * 3600).toFixed(2)}"`
-            : '-'
+            : '-';
       } else if (obs.type === 'dist') {
-        stations = `${obs.from}-${obs.to}`
-        obsStr = (obs.obs * unitScale).toFixed(4)
-        calcStr = obs.calc != null ? ((obs.calc as number) * unitScale).toFixed(4) : '-'
-        resStr = obs.residual != null ? ((obs.residual as number) * unitScale).toFixed(4) : '-'
+        stations = `${obs.from}-${obs.to}`;
+        obsStr = (obs.obs * unitScale).toFixed(4);
+        calcStr = obs.calc != null ? ((obs.calc as number) * unitScale).toFixed(4) : '-';
+        resStr = obs.residual != null ? ((obs.residual as number) * unitScale).toFixed(4) : '-';
       } else if (obs.type === 'bearing') {
-        stations = `${obs.from}-${obs.to}`
-        obsStr = radToDmsStr(obs.obs)
-        calcStr = obs.calc != null ? radToDmsStr(obs.calc as number) : '-'
+        stations = `${obs.from}-${obs.to}`;
+        obsStr = radToDmsStr(obs.obs);
+        calcStr = obs.calc != null ? radToDmsStr(obs.calc as number) : '-';
         resStr =
           obs.residual != null
             ? `${((obs.residual as number) * RAD_TO_DEG * 3600).toFixed(2)}"`
-            : '-'
+            : '-';
       } else if (obs.type === 'zenith') {
-        stations = `${obs.from}-${obs.to}`
-        obsStr = radToDmsStr(obs.obs)
-        calcStr = obs.calc != null ? radToDmsStr(obs.calc as number) : '-'
+        stations = `${obs.from}-${obs.to}`;
+        obsStr = radToDmsStr(obs.obs);
+        calcStr = obs.calc != null ? radToDmsStr(obs.calc as number) : '-';
         resStr =
           obs.residual != null
             ? `${((obs.residual as number) * RAD_TO_DEG * 3600).toFixed(2)}"`
-            : '-'
+            : '-';
       } else if (obs.type === 'gps') {
-        stations = `${obs.from}-${obs.to}`
-        obsStr = `dE=${(obs.obs.dE * unitScale).toFixed(3)}, dN=${(obs.obs.dN * unitScale).toFixed(3)}`
+        stations = `${obs.from}-${obs.to}`;
+        obsStr = `dE=${(obs.obs.dE * unitScale).toFixed(3)}, dN=${(obs.obs.dN * unitScale).toFixed(3)}`;
         calcStr =
           obs.calc != null
             ? `dE=${((obs.calc as { dE: number }).dE * unitScale).toFixed(3)}, dN=${(
                 (obs.calc as { dN: number; dE: number }).dN * unitScale
               ).toFixed(3)}`
-            : '-'
+            : '-';
         resStr =
           obs.residual != null
             ? `vE=${((obs.residual as { vE: number }).vE * unitScale).toFixed(3)}, vN=${(
                 (obs.residual as { vN: number; vE: number }).vN * unitScale
               ).toFixed(3)}`
-            : '-'
+            : '-';
       } else if (obs.type === 'lev') {
-        stations = `${obs.from}-${obs.to}`
-        obsStr = (obs.obs * unitScale).toFixed(4)
-        calcStr = obs.calc != null ? ((obs.calc as number) * unitScale).toFixed(4) : '-'
-        resStr = obs.residual != null ? ((obs.residual as number) * unitScale).toFixed(4) : '-'
+        stations = `${obs.from}-${obs.to}`;
+        obsStr = (obs.obs * unitScale).toFixed(4);
+        calcStr = obs.calc != null ? ((obs.calc as number) * unitScale).toFixed(4) : '-';
+        resStr = obs.residual != null ? ((obs.residual as number) * unitScale).toFixed(4) : '-';
       }
 
       const localTest =
@@ -1746,14 +1805,14 @@ const App: React.FC = () => {
             ? obs.localTest.pass
               ? 'PASS'
               : 'FAIL'
-            : '-'
+            : '-';
       const mdb =
         obs.mdbComponents != null
           ? `E=${formatMdb(obs.mdbComponents.mE, angular)}, N=${formatMdb(obs.mdbComponents.mN, angular)}`
           : obs.mdb != null
             ? formatMdb(obs.mdb, angular)
-            : '-'
-      const stdResAbs = Math.abs(obs.stdRes ?? 0)
+            : '-';
+      const stdResAbs = Math.abs(obs.stdRes ?? 0);
 
       rows.push({
         type: obs.type,
@@ -1777,16 +1836,16 @@ const App: React.FC = () => {
         localTest,
         mdb,
         stdResAbs,
-      })
-    })
+      });
+    });
 
-    rows.sort((a, b) => b.stdResAbs - a.stdResAbs)
+    rows.sort((a, b) => b.stdResAbs - a.stdResAbs);
     const suspects = rows
       .filter((r) => r.localTest.includes('FAIL') || r.stdResAbs >= 2)
-      .slice(0, 20)
+      .slice(0, 20);
 
     if (suspects.length > 0) {
-      lines.push('--- Top Suspects ---')
+      lines.push('--- Top Suspects ---');
       const suspectHeader = {
         rank: '#',
         type: 'Type',
@@ -1795,7 +1854,7 @@ const App: React.FC = () => {
         stdRes: 'StdRes',
         local: 'Local',
         mdb: 'MDB',
-      }
+      };
       const suspectRows = suspects.map((r, idx) => ({
         rank: String(idx + 1),
         type: r.type,
@@ -1804,7 +1863,7 @@ const App: React.FC = () => {
         stdRes: r.stdRes,
         local: r.localTest,
         mdb: r.mdb,
-      }))
+      }));
       const suspectWidths = {
         rank: Math.max(suspectHeader.rank.length, ...suspectRows.map((r) => r.rank.length)),
         type: Math.max(suspectHeader.type.length, ...suspectRows.map((r) => r.type.length)),
@@ -1816,8 +1875,8 @@ const App: React.FC = () => {
         stdRes: Math.max(suspectHeader.stdRes.length, ...suspectRows.map((r) => r.stdRes.length)),
         local: Math.max(suspectHeader.local.length, ...suspectRows.map((r) => r.local.length)),
         mdb: Math.max(suspectHeader.mdb.length, ...suspectRows.map((r) => r.mdb.length)),
-      }
-      const pad = (value: string, size: number) => value.padEnd(size, ' ')
+      };
+      const pad = (value: string, size: number) => value.padEnd(size, ' ');
       lines.push(
         [
           pad(suspectHeader.rank, suspectWidths.rank),
@@ -1828,7 +1887,7 @@ const App: React.FC = () => {
           pad(suspectHeader.local, suspectWidths.local),
           pad(suspectHeader.mdb, suspectWidths.mdb),
         ].join('  '),
-      )
+      );
       suspectRows.forEach((r) => {
         lines.push(
           [
@@ -1840,13 +1899,13 @@ const App: React.FC = () => {
             pad(r.local, suspectWidths.local),
             pad(r.mdb, suspectWidths.mdb),
           ].join('  '),
-        )
-      })
-      lines.push('')
+        );
+      });
+      lines.push('');
     }
 
     if (res.suspectImpactDiagnostics && res.suspectImpactDiagnostics.length > 0) {
-      lines.push('--- Suspect Impact Analysis (what-if exclusion) ---')
+      lines.push('--- Suspect Impact Analysis (what-if exclusion) ---');
       const impactRows = res.suspectImpactDiagnostics.map((d, idx) => ({
         rank: String(idx + 1),
         type: d.type,
@@ -1859,7 +1918,7 @@ const App: React.FC = () => {
         shift: d.maxCoordShift != null ? (d.maxCoordShift * unitScale).toFixed(4) : '-',
         score: d.score != null ? d.score.toFixed(1) : '-',
         status: d.status.toUpperCase(),
-      }))
+      }));
       const impactHeader = {
         rank: '#',
         type: 'Type',
@@ -1872,21 +1931,27 @@ const App: React.FC = () => {
         shift: `MaxShift(${linearUnit})`,
         score: 'Score',
         status: 'Status',
-      }
+      };
       const impactWidths = {
         rank: Math.max(impactHeader.rank.length, ...impactRows.map((r) => r.rank.length)),
         type: Math.max(impactHeader.type.length, ...impactRows.map((r) => r.type.length)),
-        stations: Math.max(impactHeader.stations.length, ...impactRows.map((r) => r.stations.length)),
+        stations: Math.max(
+          impactHeader.stations.length,
+          ...impactRows.map((r) => r.stations.length),
+        ),
         line: Math.max(impactHeader.line.length, ...impactRows.map((r) => r.line.length)),
-        baseStdRes: Math.max(impactHeader.baseStdRes.length, ...impactRows.map((r) => r.baseStdRes.length)),
+        baseStdRes: Math.max(
+          impactHeader.baseStdRes.length,
+          ...impactRows.map((r) => r.baseStdRes.length),
+        ),
         dSeuw: Math.max(impactHeader.dSeuw.length, ...impactRows.map((r) => r.dSeuw.length)),
         dMaxStd: Math.max(impactHeader.dMaxStd.length, ...impactRows.map((r) => r.dMaxStd.length)),
         chi: Math.max(impactHeader.chi.length, ...impactRows.map((r) => r.chi.length)),
         shift: Math.max(impactHeader.shift.length, ...impactRows.map((r) => r.shift.length)),
         score: Math.max(impactHeader.score.length, ...impactRows.map((r) => r.score.length)),
         status: Math.max(impactHeader.status.length, ...impactRows.map((r) => r.status.length)),
-      }
-      const pad = (value: string, size: number) => value.padEnd(size, ' ')
+      };
+      const pad = (value: string, size: number) => value.padEnd(size, ' ');
       lines.push(
         [
           pad(impactHeader.rank, impactWidths.rank),
@@ -1901,7 +1966,7 @@ const App: React.FC = () => {
           pad(impactHeader.score, impactWidths.score),
           pad(impactHeader.status, impactWidths.status),
         ].join('  '),
-      )
+      );
       impactRows.forEach((r) => {
         lines.push(
           [
@@ -1917,9 +1982,9 @@ const App: React.FC = () => {
             pad(r.score, impactWidths.score),
             pad(r.status, impactWidths.status),
           ].join('  '),
-        )
-      })
-      lines.push('')
+        );
+      });
+      lines.push('');
     }
 
     const headers = {
@@ -1933,7 +1998,7 @@ const App: React.FC = () => {
       redundancy: 'Redund',
       localTest: 'Local',
       mdb: 'MDB',
-    }
+    };
     const widths = {
       type: Math.max(headers.type.length, ...rows.map((r) => r.type.length)),
       stations: Math.max(headers.stations.length, ...rows.map((r) => r.stations.length)),
@@ -1945,8 +2010,8 @@ const App: React.FC = () => {
       redundancy: Math.max(headers.redundancy.length, ...rows.map((r) => r.redundancy.length)),
       localTest: Math.max(headers.localTest.length, ...rows.map((r) => r.localTest.length)),
       mdb: Math.max(headers.mdb.length, ...rows.map((r) => r.mdb.length)),
-    }
-    const pad = (value: string, size: number) => value.padEnd(size, ' ')
+    };
+    const pad = (value: string, size: number) => value.padEnd(size, ' ');
     lines.push(
       [
         pad(headers.type, widths.type),
@@ -1960,7 +2025,7 @@ const App: React.FC = () => {
         pad(headers.localTest, widths.localTest),
         pad(headers.mdb, widths.mdb),
       ].join('  '),
-    )
+    );
     rows.forEach((r) => {
       lines.push(
         [
@@ -1975,20 +2040,20 @@ const App: React.FC = () => {
           pad(r.localTest, widths.localTest),
           pad(r.mdb, widths.mdb),
         ].join('  '),
-      )
-    })
-    lines.push('')
-    lines.push('--- Processing Log ---')
-    res.logs.forEach((l) => lines.push(l))
+      );
+    });
+    lines.push('');
+    lines.push('--- Processing Log ---');
+    res.logs.forEach((l) => lines.push(l));
 
-    return lines.join('\n')
-  }
+    return lines.join('\n');
+  };
 
   const handleExportResults = async () => {
-    if (!result) return
-    const text = buildResultsText(result)
-    const suggestedName = `webnet-results-${new Date().toISOString().slice(0, 10)}.txt`
-    const picker = (window as any).showSaveFilePicker
+    if (!result) return;
+    const text = buildResultsText(result);
+    const suggestedName = `webnet-results-${new Date().toISOString().slice(0, 10)}.txt`;
+    const picker = (window as any).showSaveFilePicker;
     if (picker) {
       try {
         const handle = await picker({
@@ -1999,46 +2064,46 @@ const App: React.FC = () => {
               accept: { 'text/plain': ['.txt'] },
             },
           ],
-        })
-        const writable = await handle.createWritable()
-        await writable.write(text)
-        await writable.close()
-        return
+        });
+        const writable = await handle.createWritable();
+        await writable.write(text);
+        await writable.close();
+        return;
       } catch (err) {
-        if ((err as Error)?.name === 'AbortError') return
+        if ((err as Error)?.name === 'AbortError') return;
       }
     }
 
-    const blob = new Blob([text], { type: 'text/plain' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = suggestedName
-    a.click()
-    URL.revokeObjectURL(url)
-  }
+    const blob = new Blob([text], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = suggestedName;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-    const reader = new FileReader()
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
     reader.onload = () => {
-      const text = typeof reader.result === 'string' ? reader.result : ''
-      setInput(text)
-    }
-    reader.readAsText(file)
-    e.target.value = ''
-  }
+      const text = typeof reader.result === 'string' ? reader.result : '';
+      setInput(text);
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  };
 
   const triggerFileSelect = () => {
-    fileInputRef.current?.click()
-  }
+    fileInputRef.current?.click();
+  };
 
   const solveCore = (
     excludeSet: Set<number>,
     parseOverride?: Partial<ParseSettings>,
   ): AdjustmentResult => {
-    const effectiveParse = { ...parseSettings, ...parseOverride }
+    const effectiveParse = { ...parseSettings, ...parseOverride };
     const engine = new LSAEngine({
       input,
       maxIterations: settings.maxIterations,
@@ -2065,29 +2130,29 @@ const App: React.FC = () => {
         robustMode: effectiveParse.robustMode,
         robustK: effectiveParse.robustK,
       },
-    })
-    return engine.solve()
-  }
+    });
+    return engine.solve();
+  };
 
   const buildSuspectImpactDiagnostics = (
     base: AdjustmentResult,
     baseExclusions: Set<number>,
   ): NonNullable<AdjustmentResult['suspectImpactDiagnostics']> => {
-    const baseChiPass = base.chiSquare?.pass95
-    const baseMaxStd = maxAbsStdRes(base)
+    const baseChiPass = base.chiSquare?.pass95;
+    const baseMaxStd = maxAbsStdRes(base);
     const candidates = [...base.observations]
       .filter((obs) => Number.isFinite(obs.stdRes))
       .filter((obs) => hasLocalFailure(obs) || Math.abs(obs.stdRes ?? 0) >= 2)
       .sort((a, b) => {
-        const aFail = hasLocalFailure(a) ? 1 : 0
-        const bFail = hasLocalFailure(b) ? 1 : 0
-        if (bFail !== aFail) return bFail - aFail
-        return Math.abs(b.stdRes ?? 0) - Math.abs(a.stdRes ?? 0)
+        const aFail = hasLocalFailure(a) ? 1 : 0;
+        const bFail = hasLocalFailure(b) ? 1 : 0;
+        if (bFail !== aFail) return bFail - aFail;
+        return Math.abs(b.stdRes ?? 0) - Math.abs(a.stdRes ?? 0);
       })
-      .slice(0, IMPACT_MAX_CANDIDATES)
+      .slice(0, IMPACT_MAX_CANDIDATES);
 
     const rows = candidates.map((obs) => {
-      const baseLocalFail = hasLocalFailure(obs)
+      const baseLocalFail = hasLocalFailure(obs);
       const obsEntry: NonNullable<AdjustmentResult['suspectImpactDiagnostics']>[number] = {
         obsId: obs.id,
         type: obs.type,
@@ -2097,32 +2162,33 @@ const App: React.FC = () => {
         baseLocalFail,
         chiDelta: '-',
         status: 'failed',
-      }
+      };
 
       try {
-        const nextExclusions = new Set(baseExclusions)
-        nextExclusions.add(obs.id)
-        const alt = solveCore(nextExclusions)
-        const altMaxStd = maxAbsStdRes(alt)
-        const altChiPass = alt.chiSquare?.pass95
-        let chiDelta: NonNullable<AdjustmentResult['suspectImpactDiagnostics']>[number]['chiDelta'] =
-          '-'
+        const nextExclusions = new Set(baseExclusions);
+        nextExclusions.add(obs.id);
+        const alt = solveCore(nextExclusions);
+        const altMaxStd = maxAbsStdRes(alt);
+        const altChiPass = alt.chiSquare?.pass95;
+        let chiDelta: NonNullable<
+          AdjustmentResult['suspectImpactDiagnostics']
+        >[number]['chiDelta'] = '-';
         if (baseChiPass != null && altChiPass != null) {
-          if (!baseChiPass && altChiPass) chiDelta = 'improved'
-          else if (baseChiPass && !altChiPass) chiDelta = 'degraded'
-          else chiDelta = 'unchanged'
+          if (!baseChiPass && altChiPass) chiDelta = 'improved';
+          else if (baseChiPass && !altChiPass) chiDelta = 'degraded';
+          else chiDelta = 'unchanged';
         }
 
-        const deltaSeuw = alt.seuw - base.seuw
-        const deltaMaxStdRes = altMaxStd - baseMaxStd
-        const maxCoordShift = maxUnknownCoordinateShift(base, alt)
+        const deltaSeuw = alt.seuw - base.seuw;
+        const deltaMaxStdRes = altMaxStd - baseMaxStd;
+        const maxCoordShift = maxUnknownCoordinateShift(base, alt);
 
-        let score = 0
-        score += -deltaSeuw * 40
-        score += -deltaMaxStdRes * 20
-        if (chiDelta === 'improved') score += 20
-        if (chiDelta === 'degraded') score -= 20
-        score -= maxCoordShift * 15
+        let score = 0;
+        score += -deltaSeuw * 40;
+        score += -deltaMaxStdRes * 20;
+        if (chiDelta === 'improved') score += 20;
+        if (chiDelta === 'degraded') score -= 20;
+        score -= maxCoordShift * 15;
 
         return {
           ...obsEntry,
@@ -2134,103 +2200,106 @@ const App: React.FC = () => {
           maxCoordShift,
           score: Number.isFinite(score) ? score : undefined,
           status: 'ok' as const,
-        }
+        };
       } catch {
-        return obsEntry
+        return obsEntry;
       }
-    })
+    });
     rows.sort((a, b) => {
-      if (a.status !== b.status) return a.status === 'ok' ? -1 : 1
-      const bScore = b.score ?? Number.NEGATIVE_INFINITY
-      const aScore = a.score ?? Number.NEGATIVE_INFINITY
-      if (bScore !== aScore) return bScore - aScore
-      const bStd = b.baseStdRes ?? 0
-      const aStd = a.baseStdRes ?? 0
-      return bStd - aStd
-    })
-    return rows
-  }
+      if (a.status !== b.status) return a.status === 'ok' ? -1 : 1;
+      const bScore = b.score ?? Number.NEGATIVE_INFINITY;
+      const aScore = a.score ?? Number.NEGATIVE_INFINITY;
+      if (bScore !== aScore) return bScore - aScore;
+      const bStd = b.baseStdRes ?? 0;
+      const aStd = a.baseStdRes ?? 0;
+      return bStd - aStd;
+    });
+    return rows;
+  };
 
   const solveWithImpacts = (excludeSet: Set<number>): AdjustmentResult => {
-    const solved = solveCore(excludeSet)
-    solved.suspectImpactDiagnostics = buildSuspectImpactDiagnostics(solved, excludeSet)
+    const solved = solveCore(excludeSet);
+    solved.suspectImpactDiagnostics = buildSuspectImpactDiagnostics(solved, excludeSet);
     if (parseSettings.robustMode !== 'none') {
-      const classical = solveCore(excludeSet, { robustMode: 'none' })
-      const classicalTop = rankedSuspects(classical, 10)
-      const robustTop = rankedSuspects(solved, 10)
-      const robustIds = new Set(robustTop.map((r) => r.obsId))
-      const overlapCount = classicalTop.reduce((acc, r) => acc + (robustIds.has(r.obsId) ? 1 : 0), 0)
+      const classical = solveCore(excludeSet, { robustMode: 'none' });
+      const classicalTop = rankedSuspects(classical, 10);
+      const robustTop = rankedSuspects(solved, 10);
+      const robustIds = new Set(robustTop.map((r) => r.obsId));
+      const overlapCount = classicalTop.reduce(
+        (acc, r) => acc + (robustIds.has(r.obsId) ? 1 : 0),
+        0,
+      );
       solved.robustComparison = {
         enabled: true,
         classicalTop,
         robustTop,
         overlapCount,
-      }
+      };
     } else {
       solved.robustComparison = {
         enabled: false,
         classicalTop: [],
         robustTop: [],
         overlapCount: 0,
-      }
+      };
     }
-    return solved
-  }
+    return solved;
+  };
 
   const runWithExclusions = (excludeSet: Set<number>) => {
-    setLastRunInput(input)
-    const solved = solveWithImpacts(excludeSet)
-    setResult(solved)
-    setActiveTab('report')
-  }
+    setLastRunInput(input);
+    const solved = solveWithImpacts(excludeSet);
+    setResult(solved);
+    setActiveTab('report');
+  };
 
   const handleRun = () => {
-    runWithExclusions(new Set(excludedIds))
-  }
+    runWithExclusions(new Set(excludedIds));
+  };
 
   const applyImpactExclusion = (id: number) => {
-    const next = new Set(excludedIds)
-    next.add(id)
-    setExcludedIds(next)
-    runWithExclusions(next)
-  }
+    const next = new Set(excludedIds);
+    next.add(id);
+    setExcludedIds(next);
+    runWithExclusions(next);
+  };
 
   const handleUnitChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setSettings({ ...settings, units: e.target.value as Units })
-  }
+    setSettings({ ...settings, units: e.target.value as Units });
+  };
 
   const handleIterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = parseInt(e.target.value, 10) || 1
-    setSettings({ ...settings, maxIterations: val })
-  }
+    const val = parseInt(e.target.value, 10) || 1;
+    setSettings({ ...settings, maxIterations: val });
+  };
 
   const handleParseSetting = <K extends keyof ParseSettings>(key: K, value: ParseSettings[K]) => {
-    setParseSettings((prev) => ({ ...prev, [key]: value }))
-  }
+    setParseSettings((prev) => ({ ...prev, [key]: value }));
+  };
 
   const toggleExclude = (id: number) => {
     setExcludedIds((prev) => {
-      const next = new Set(prev)
-      if (next.has(id)) next.delete(id)
-      else next.add(id)
-      return next
-    })
-  }
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
 
-  const clearExclusions = () => setExcludedIds(new Set())
+  const clearExclusions = () => setExcludedIds(new Set());
 
   const handleOverride = (id: number, payload: ObservationOverride) => {
-    setOverrides((prev) => ({ ...prev, [id]: { ...prev[id], ...payload } }))
-  }
+    setOverrides((prev) => ({ ...prev, [id]: { ...prev[id], ...payload } }));
+  };
 
-  const resetOverrides = () => setOverrides({})
+  const resetOverrides = () => setOverrides({});
 
   const handleResetToLastRun = () => {
-    if (lastRunInput != null) setInput(lastRunInput)
-    setResult(null)
-    setExcludedIds(new Set())
-    setOverrides({})
-  }
+    if (lastRunInput != null) setInput(lastRunInput);
+    setResult(null);
+    setExcludedIds(new Set());
+    setOverrides({});
+  };
 
   return (
     <div className="fixed inset-0 flex flex-col bg-slate-900 text-slate-100 font-sans overflow-hidden">
@@ -2249,7 +2318,9 @@ const App: React.FC = () => {
               <h1 className="text-lg font-bold tracking-wide text-white leading-none truncate">
                 WebNet <span className="text-blue-400 font-light">Adjustment</span>
               </h1>
-              <span className="text-xs text-slate-500 truncate">Survey LSA - TS + GPS + Leveling</span>
+              <span className="text-xs text-slate-500 truncate">
+                Survey LSA - TS + GPS + Leveling
+              </span>
             </div>
           </div>
           <div className="relative" ref={settingsRef}>
@@ -2319,7 +2390,9 @@ const App: React.FC = () => {
                       <select
                         title={SETTINGS_TOOLTIPS.coordMode}
                         value={parseSettings.coordMode}
-                        onChange={(e) => handleParseSetting('coordMode', e.target.value as CoordMode)}
+                        onChange={(e) =>
+                          handleParseSetting('coordMode', e.target.value as CoordMode)
+                        }
                         className="bg-slate-800 text-xs border border-slate-600 text-white rounded px-2 py-1 outline-none focus:border-blue-500"
                       >
                         <option value="2D">2D (.2D)</option>
@@ -2353,7 +2426,9 @@ const App: React.FC = () => {
                       <select
                         title={SETTINGS_TOOLTIPS.angleMode}
                         value={parseSettings.angleMode}
-                        onChange={(e) => handleParseSetting('angleMode', e.target.value as AngleMode)}
+                        onChange={(e) =>
+                          handleParseSetting('angleMode', e.target.value as AngleMode)
+                        }
                         className="bg-slate-800 text-xs border border-slate-600 text-white rounded px-2 py-1 outline-none focus:border-blue-500"
                       >
                         <option value="auto">AUTO (.AMODE AUTO)</option>
@@ -2374,7 +2449,9 @@ const App: React.FC = () => {
                       <select
                         title={SETTINGS_TOOLTIPS.deltaMode}
                         value={parseSettings.deltaMode}
-                        onChange={(e) => handleParseSetting('deltaMode', e.target.value as DeltaMode)}
+                        onChange={(e) =>
+                          handleParseSetting('deltaMode', e.target.value as DeltaMode)
+                        }
                         className="bg-slate-800 text-xs border border-slate-600 text-white rounded px-2 py-1 outline-none focus:border-blue-500"
                       >
                         <option value="slope">Slope + Zenith (.DELTA OFF)</option>
@@ -2434,7 +2511,9 @@ const App: React.FC = () => {
                         type="checkbox"
                         className="accent-blue-500"
                         checked={parseSettings.applyCurvatureRefraction}
-                        onChange={(e) => handleParseSetting('applyCurvatureRefraction', e.target.checked)}
+                        onChange={(e) =>
+                          handleParseSetting('applyCurvatureRefraction', e.target.checked)
+                        }
                       />
                     </div>
                     <div className="flex items-center justify-between gap-3">
@@ -2473,7 +2552,10 @@ const App: React.FC = () => {
                         title={SETTINGS_TOOLTIPS.verticalReduction}
                         value={parseSettings.verticalReduction}
                         onChange={(e) =>
-                          handleParseSetting('verticalReduction', e.target.value as VerticalReductionMode)
+                          handleParseSetting(
+                            'verticalReduction',
+                            e.target.value as VerticalReductionMode,
+                          )
                         }
                         className="bg-slate-800 text-xs border border-slate-600 text-white rounded px-2 py-1 outline-none focus:border-blue-500"
                       >
@@ -2508,7 +2590,9 @@ const App: React.FC = () => {
                         type="checkbox"
                         className="accent-blue-500"
                         checked={parseSettings.tsCorrelationEnabled}
-                        onChange={(e) => handleParseSetting('tsCorrelationEnabled', e.target.checked)}
+                        onChange={(e) =>
+                          handleParseSetting('tsCorrelationEnabled', e.target.checked)
+                        }
                       />
                     </div>
                     <div className="flex items-center justify-between gap-3">
@@ -2522,7 +2606,10 @@ const App: React.FC = () => {
                         title={SETTINGS_TOOLTIPS.tsCorrelationScope}
                         value={parseSettings.tsCorrelationScope}
                         onChange={(e) =>
-                          handleParseSetting('tsCorrelationScope', e.target.value as TsCorrelationScope)
+                          handleParseSetting(
+                            'tsCorrelationScope',
+                            e.target.value as TsCorrelationScope,
+                          )
                         }
                         className="bg-slate-800 text-xs border border-slate-600 text-white rounded px-2 py-1 outline-none focus:border-blue-500"
                       >
@@ -2565,7 +2652,9 @@ const App: React.FC = () => {
                       <select
                         title={SETTINGS_TOOLTIPS.robustMode}
                         value={parseSettings.robustMode}
-                        onChange={(e) => handleParseSetting('robustMode', e.target.value as RobustMode)}
+                        onChange={(e) =>
+                          handleParseSetting('robustMode', e.target.value as RobustMode)
+                        }
                         className="bg-slate-800 text-xs border border-slate-600 text-white rounded px-2 py-1 outline-none focus:border-blue-500"
                       >
                         <option value="none">OFF (.ROBUST OFF)</option>
@@ -2655,7 +2744,9 @@ const App: React.FC = () => {
                       onChange={(e) => setSelectedInstrument(e.target.value)}
                       className="bg-slate-800 text-xs border border-slate-600 text-white rounded px-2 py-1 outline-none focus:border-blue-500"
                     >
-                      {Object.keys(instrumentLibrary).length === 0 && <option value="">(none)</option>}
+                      {Object.keys(instrumentLibrary).length === 0 && (
+                        <option value="">(none)</option>
+                      )}
                       {Object.values(instrumentLibrary).map((inst) => (
                         <option key={inst.code} value={inst.code}>
                           {inst.code}
@@ -2701,7 +2792,9 @@ const App: React.FC = () => {
             disabled={!result}
             title={result ? 'Export Results' : 'Run adjustment to export results'}
             className={`p-2 rounded text-slate-300 transition-colors ${
-              result ? 'bg-slate-700 hover:bg-slate-600' : 'bg-slate-800 opacity-50 cursor-not-allowed'
+              result
+                ? 'bg-slate-700 hover:bg-slate-600'
+                : 'bg-slate-800 opacity-50 cursor-not-allowed'
             }`}
           >
             <Download size={18} />
@@ -2768,7 +2861,9 @@ const App: React.FC = () => {
             )}
           </div>
 
-          <div className="flex-1 overflow-auto w-full">
+          <div
+            className={`flex-1 w-full ${activeTab === 'map' ? 'overflow-hidden' : 'overflow-auto'}`}
+          >
             {!result ? (
               <div className="flex flex-col items-center justify-center h-full text-slate-500 space-y-4">
                 <Activity size={48} className="opacity-20" />
@@ -2797,7 +2892,7 @@ const App: React.FC = () => {
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default App
+export default App;

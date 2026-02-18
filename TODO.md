@@ -12,8 +12,10 @@
 - [x] Export adjustment results as text + refresh-to-last-run input
 - [x] Standardized residuals (Qvv), redundancy numbers, chi-square test, per-type residual summaries
 - [x] Point precision (σN/σE/σH, ellipse azimuth, 95% toggle) + relative precision between unknown points
+- [x] Map/ellipse viewer interaction upgrades: wheel zoom, middle-button pan, middle-double-click reset-to-extents, zoom-aware symbol scaling
+- [x] Map/ellipse viewer usability refinement: full-height viewport fill in map tab and larger zoom-adaptive station labels
 - [x] Sync README/agents docs with current parser/engine/UI state
-- [ ] Adjustment report parity roadmap (Star*Net alignment):
+- [ ] Adjustment report parity roadmap (Star\*Net alignment):
   - [x] Implement weighted control constraints from coordinate/elevation std errors (not only fixed/free) so control uncertainty participates in the solve
   - [x] Wire and report normal-matrix conditioning diagnostics (condition estimate + warnings for weak geometry)
   - [x] Upgrade outlier handling from fixed sigma thresholds to formal local tests with decision limits and MDB
@@ -21,11 +23,11 @@
   - [x] Add source line traceability (`sourceLine`) from parser through residual/report/export tables
   - [x] Improve exported `.txt` report to be unit-correct, sorted by blunder likelihood, and include suspect ranking
   - [x] Extend GNSS weighting from simplified isotropic XY to richer component/covariance models
-  - [x] Resolve fixity/free-marker semantics mismatch (`*` meaning) between docs/parser/TODO and standard Star*Net expectations
-- [ ] Star*Net format compatibility (Section 5.6):
+  - [x] Resolve fixity/free-marker semantics mismatch (`*` meaning) between docs/parser/TODO and standard Star\*Net expectations
+- [ ] Star\*Net format compatibility (Section 5.6):
   - [x] Elevation-only parsing (E records) with std errors/fixity and unit conversion
   - [~] Implement global inline options: .UNITS, .COORD 2D/3D, .ORDER NE/EN, .2D/.3D, .DELTA ON/OFF, .MAPMODE, .LWEIGHT, .NORMALIZE, .END (parses/logs complete; .LWEIGHT applied to leveling weights; header exposes coord/order/delta/map/normalize/.LWEIGHT/lon-sign defaults; remaining wiring pending per code type)
-  - [x] Coordinate/position/elevation records: C (2D/3D with per-component std errs and !/* fixity, NE/EN order), P geodetic positions (lat/long [+H], std errs mapped to NE, longitude sign), E elevation-only, ellipsoid variants CH/PH/EH (parsed; P/PH projected to local EN via first P origin; ellipsoid height flagged)
+  - [x] Coordinate/position/elevation records: C (2D/3D with per-component std errs and !/\* fixity, NE/EN order), P geodetic positions (lat/long [+H], std errs mapped to NE, longitude sign), E elevation-only, ellipsoid variants CH/PH/EH (parsed; P/PH projected to local EN via first P origin; ellipsoid height flagged)
   - [x] Single obs: A angles (At-From-To or From-At-To), D distances (2D HD; 3D slope/HD per mode with HI/HT), V vertical (zenith or dH per mode with HI/HT), B bearings/azimuths (solved)
   - [x] Multiple obs: M (angle+dist+vertical with std err rules, HI/HT), BM (bearing/az+dist+vertical), DV (dist+vertical) with std errs and HI/HT (delta-mode emits dH; slope-mode emits zenith; face-2 weighting applied; defaults for stds/HI/HT captured)
   - [x] Traverse: TB (backsight station or bearing/az; dummy backsight handling), T legs (angle+dist+vertical with std err rules, HI/HT), TE closing angle to station or bearing/az with optional std err (basic conversion to angle/dist/vert added; mixed-face rejection when .NORMALIZE OFF; closure residuals/misclosure vectors logged)
@@ -34,9 +36,9 @@
   - [x] A records auto-classify as DIR (azimuth) vs turned angle using initial coords; DIR uses closest residual with optional 180° flip
   - [x] Sideshots: SS diverted from adjustment, compute post-adjust, disallow occupy/backsight, optional name checking (basic parse to dist + vert/zenith; excluded from adjustment; occupy/backsight validation added; cannot target fixed control)
   - Leveling: L dH with distance or turns, std err or per-unit via .LWEIGHT (fallback applied; ft lengths converted to km), allow fixity/free
-  - [~] Fixity/weights: support ! fixed per component, legacy * fixed, numeric std errs per obs/component (free markers not implemented)
+  - [~] Fixity/weights: support ! fixed per component, legacy \* fixed, numeric std errs per obs/component (free markers not implemented)
   - [x] Instrument library: EDM const/ppm, HZ/VA precision, instrument/target centering; .I to set current instrument
-  - [x] Std error tokens (&/!/*/numeric) for observations; .EDM additive/propagated; .CENTERING on/off; .ADDC add-centering mode
+  - [x] Std error tokens (&/!/\*/numeric) for observations; .EDM additive/propagated; .CENTERING on/off; .ADDC add-centering mode
   - [x] Debug logging toggle (.DEBUG) to dump per-observation calc/residual/sigma by iteration
   - [x] Auto-drop height unknowns for stations with no vertical-sensitive observations (prevents 3D singularity)
   - Units/normalization: honor .UNITS for ft/m parsing/HI/HT, convert angles/bearings; normalize engine to meters/radians
@@ -47,8 +49,8 @@
   - Inline modes & obs metadata: track delta mode/map mode/lon sign; capture HI/HT on distances; projection currently equirectangular (improve later)
   - Engine: map codes to internal types, apply HI/HT/dH/slope-HD, include bearings/azimuths, leveling weights, preserve obs IDs
   - [x] Engine: honor 2D solve mode (drop height parameters; skip lev/zenith in 2D)
-  - Fixtures/tests: add Star*Net-style fixtures for 2D/3D, TS+GPS+Leveling, traverses, direction sets, sideshots; Vitest cases for parsing/mode toggles and solves (bearing/zenith added)
-  - Docs/UI: [x] Created `docs/USER_GUIDE.md` and `public/examples/star_net_demo.dat`; list supported Star*Net codes/options, UI hints, surface parser errors with line numbers
+  - Fixtures/tests: add Star\*Net-style fixtures for 2D/3D, TS+GPS+Leveling, traverses, direction sets, sideshots; Vitest cases for parsing/mode toggles and solves (bearing/zenith added)
+  - Docs/UI: [x] Created `docs/USER_GUIDE.md` and `public/examples/star_net_demo.dat`; list supported Star\*Net codes/options, UI hints, surface parser errors with line numbers
 
 - [ ] Total Station parity roadmap:
   - [x] Phase 1: add TS parity harness baseline fixture + tests for stable TS-only outputs

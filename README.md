@@ -1,6 +1,6 @@
-# WebNet (Star*Net-style LSA)
+# WebNet (Star\*Net-style LSA)
 
-Browser-based least-squares adjustment for mixed survey observations (TS distances/angles, GNSS baselines, leveling dH) inspired by MicroSurvey Star*Net.
+Browser-based least-squares adjustment for mixed survey observations (TS distances/angles, GNSS baselines, leveling dH) inspired by MicroSurvey Star\*Net.
 
 ## Quick Start
 
@@ -15,11 +15,13 @@ npm run dev
 ```
 
 ## Project Docs
+
 - **User Guide**: [docs/USER_GUIDE.md](docs/USER_GUIDE.md) - **Start Here!**
 - Agent guide: agents.md (context, stack, commands, architecture, next steps)
 - Todo list: TODO.md (current roadmap and completed items)
 
 ## Examples
+
 - A comprehensive example file is available at [public/examples/star_net_demo.dat](public/examples/star_net_demo.dat). You can load this file into WebNet to explore supported features.
 - Total-station focused examples are available in `public/examples/`:
   - `ts_d_distances.dat` (D)
@@ -32,13 +34,14 @@ npm run dev
   - `ts_traverse_tb_t_te.dat` (TB/T/TE traverse)
   - `ts_direction_sets_db_dn_dm_de.dat` (DB/DN/DM/DE direction set)
   - `ts_sideshots_ss.dat` (SS: legacy, `AZ=`, and `HZ=` modes)
-  - `ts_triangulation_trilateration_2d.dat` (Star*Net-style combined triangulation/trilateration 2D network)
+  - `ts_triangulation_trilateration_2d.dat` (Star\*Net-style combined triangulation/trilateration 2D network)
   - `ts_all_combined.dat` (all TS observation families in one adjustment)
 
 ## Status
+
 - Core adjustment engine is in TypeScript modules under `src/engine` with React UI composed from `src/App.tsx` + `src/components`.
 - Lint/build/test pass in CI; formatting via Prettier/lint-staged.
-- Parser: Star*Net-style inline options (.UNITS/.COORD/.ORDER/.2D/.3D/.DELTA/.MAPMODE/.MAPSCALE/.CURVREF/.REFRACTION/.VRED/.LWEIGHT/.NORMALIZE/.END/.LONSIGN/.I/.EDM/.CENTERING/.ADDC/.DEBUG/.AMODE/.TSCORR/.ROBUST) plus C/E/CH/PH/EH and D/A/G/L/B/V/M/BM/TB/T/TE/DB/DN/DM/DE/SS records with per-component `!/*` fixity (`*` remains legacy-fixed when used alone, with warning), std errs (numeric/&/!/*), HI/HT capture, bearings/zeniths, inline `#` comments and `'Description` trimming, and ft<->m normalization (P/PH lat/long projected to local EN using first P as origin; .LWEIGHT applied as fallback for leveling with ft lengths converted to km; DV/M delta-mode emit distance+dH; DV/BM/M slope mode emit zeniths with face-2 weighting and derived stds; 2D `M` records now accept angle/dist sigma tokens without forcing a vertical token; distances use additive/propagated EDM modes; GNSS supports per-component sigmas with optional EN correlation; centering inflation can be disabled via `.CENTERING OFF` and explicit sigmas only inflate when `.ADDC ON`; debug logging includes per-obs w in rad/deg plus a `wnew ≈ w − A·dx` step check; `A` interpretation can be forced via `.AMODE` and AUTO mode now uses stricter classification tolerance; `.TSCORR` configures TS angular correlation blocks by setup/set scope with rho coefficient; `.ROBUST HUBER k` enables iterative robust downweighting; 3D runs automatically hold heights for stations that have no vertical-sensitive observations; non-sideshot observation references now auto-create missing stations with default approximate coordinates when no `C/P/E` record exists; sideshots support optional explicit azimuth tokens (`AZ=`/`@`) plus setup-based horizontal angle tokens (`HZ=`/`HA=`/`ANG=`) tied to current backsight, are excluded from adjustment with occupy/backsight validation, then reported post-adjust as computed coordinate/precision; mixed-face traverse/direction shots rejected when .NORMALIZE OFF; TE legs log closure residuals/misclosure vectors/geometry when available). Direction sets (DB/DN/DM) now keep raw circle readings internally, reduce face pairs by target into set means with reduced sigmas, track pair-delta/per-face spread/raw-max residual metrics, and emit structured reject diagnostics (line/set/record/expected-vs-actual face) while still solving per-set orientation parameters. Header toggles expose coord/order/delta/map/normalize/.LWEIGHT/lon-sign defaults; see TODO.md for remaining codes to support. Parser now warns when `.ORDER` is missing (defaults to EN).
+- Parser: Star*Net-style inline options (.UNITS/.COORD/.ORDER/.2D/.3D/.DELTA/.MAPMODE/.MAPSCALE/.CURVREF/.REFRACTION/.VRED/.LWEIGHT/.NORMALIZE/.END/.LONSIGN/.I/.EDM/.CENTERING/.ADDC/.DEBUG/.AMODE/.TSCORR/.ROBUST) plus C/E/CH/PH/EH and D/A/G/L/B/V/M/BM/TB/T/TE/DB/DN/DM/DE/SS records with per-component `!/*` fixity (`_` remains legacy-fixed when used alone, with warning), std errs (numeric/&/!/_), HI/HT capture, bearings/zeniths, inline `#` comments and `'Description` trimming, and ft<->m normalization (P/PH lat/long projected to local EN using first P as origin; .LWEIGHT applied as fallback for leveling with ft lengths converted to km; DV/M delta-mode emit distance+dH; DV/BM/M slope mode emit zeniths with face-2 weighting and derived stds; 2D `M` records now accept angle/dist sigma tokens without forcing a vertical token; distances use additive/propagated EDM modes; GNSS supports per-component sigmas with optional EN correlation; centering inflation can be disabled via `.CENTERING OFF` and explicit sigmas only inflate when `.ADDC ON`; debug logging includes per-obs w in rad/deg plus a `wnew ≈ w − A·dx` step check; `A` interpretation can be forced via `.AMODE` and AUTO mode now uses stricter classification tolerance; `.TSCORR` configures TS angular correlation blocks by setup/set scope with rho coefficient; `.ROBUST HUBER k` enables iterative robust downweighting; 3D runs automatically hold heights for stations that have no vertical-sensitive observations; non-sideshot observation references now auto-create missing stations with default approximate coordinates when no `C/P/E` record exists; sideshots support optional explicit azimuth tokens (`AZ=`/`@`) plus setup-based horizontal angle tokens (`HZ=`/`HA=`/`ANG=`) tied to current backsight, are excluded from adjustment with occupy/backsight validation, then reported post-adjust as computed coordinate/precision; mixed-face traverse/direction shots rejected when .NORMALIZE OFF; TE legs log closure residuals/misclosure vectors/geometry when available). Direction sets (DB/DN/DM) now keep raw circle readings internally, reduce face pairs by target into set means with reduced sigmas, track pair-delta/per-face spread/raw-max residual metrics, and emit structured reject diagnostics (line/set/record/expected-vs-actual face) while still solving per-set orientation parameters. Header toggles expose coord/order/delta/map/normalize/.LWEIGHT/lon-sign defaults; see TODO.md for remaining codes to support. Parser now warns when `.ORDER` is missing (defaults to EN).
 - Engine: honors 2D mode by solving only XY, skipping vertical observations (lev/zenith) with a log note.
 - Engine: logs basic network diagnostics (e.g., unknown stations with no observations or direction-only targets observed from a single occupy).
 - Engine: reports standardized residuals (Qvv-based), redundancy numbers, chi-square test with 95% critical bounds + variance-factor interval, per-type residual summaries, local-test outcomes + MDB values, weighted control-coordinate constraints (from coordinate std errors), normal-matrix condition diagnostics, point precision (σN/σE/σH + ellipse azimuth), and relative precision between unknown points.
@@ -59,5 +62,5 @@ npm run dev
 - Engine: applies map-scale reduction to horizontal distances when map mode is active, and supports optional zenith curvature/refraction corrections (`.CURVREF`/`.REFRACTION` + `.VRED CURVREF`).
 - Engine: computes post-adjusted sideshot coordinate/precision rows from excluded SS observations; azimuth source is tracked (`explicit`, `setup`, or `target`) and when azimuth cannot be derived, the limitation is reported explicitly.
 - Defaults: coord=3D, order=EN, lon sign=west-negative, delta mode slope (zenith), map mode off, normalize on.
-- UX: .dat upload, export results as text (unit-correct, source-line traceable, sorted by |StdRes| with top suspects), refresh to last-run input, exclusion toggles with re-run, editable obs values/weights, true unit conversion (ft/m), settings dropdown (includes TS reduction controls like map scale and curvature/refraction), map/ellipse view.
+- UX: .dat upload, export results as text (unit-correct, source-line traceable, sorted by |StdRes| with top suspects), refresh to last-run input, exclusion toggles with re-run, editable obs values/weights, true unit conversion (ft/m), settings dropdown (includes TS reduction controls like map scale and curvature/refraction), interactive map/ellipse view with wheel zoom, middle-button pan, middle-double-click reset-to-extents, zoom-aware symbol scaling, full-height map viewport usage, and zoom-adaptive label readability.
 - Performance guards added (conditioning/residual warnings); see TODO.md for any future worker offload ideas.
