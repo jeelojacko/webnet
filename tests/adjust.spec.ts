@@ -1,45 +1,45 @@
-import { describe, expect, it } from 'vitest'
-import { readFileSync } from 'node:fs'
-import { LSAEngine } from '../src/engine/adjust'
+import { describe, expect, it } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { LSAEngine } from '../src/engine/adjust';
 
-const fixture = readFileSync('tests/fixtures/simple.dat', 'utf-8')
+const fixture = readFileSync('tests/fixtures/simple.dat', 'utf-8');
 
 describe('LSAEngine', () => {
   it('solves the simple fixture network', () => {
-    const engine = new LSAEngine({ input: fixture, maxIterations: 10 })
-    const result = engine.solve()
+    const engine = new LSAEngine({ input: fixture, maxIterations: 10 });
+    const result = engine.solve();
 
     // Convergence can vary with small networks; assert healthy output instead of strict success flag.
-    expect(result.dof).toBeGreaterThan(0)
-    expect(Object.keys(result.stations)).toHaveLength(3)
-    expect(result.observations.length).toBeGreaterThan(0)
+    expect(result.dof).toBeGreaterThan(0);
+    expect(Object.keys(result.stations)).toHaveLength(3);
+    expect(result.observations.length).toBeGreaterThan(0);
 
     // Check adjusted unknown station is finite (no NaN/inf)
-    const stn = result.stations['2000']
-    expect(Number.isFinite(stn.x)).toBe(true)
-    expect(Number.isFinite(stn.y)).toBe(true)
-    expect(Number.isFinite(stn.h)).toBe(true)
-    expect(stn.fixed).toBe(false)
-  })
+    const stn = result.stations['2000'];
+    expect(Number.isFinite(stn.x)).toBe(true);
+    expect(Number.isFinite(stn.y)).toBe(true);
+    expect(Number.isFinite(stn.h)).toBe(true);
+    expect(stn.fixed).toBe(false);
+  });
 
   it('handles bearing and zenith observations', () => {
-    const custom = readFileSync('tests/fixtures/bearing_vertical.dat', 'utf-8')
-    const engine = new LSAEngine({ input: custom, maxIterations: 10 })
-    const result = engine.solve()
-    expect(result.dof).toBeGreaterThan(0)
-    const stn = result.stations['X']
-    expect(Number.isFinite(stn.x)).toBe(true)
-    expect(Number.isFinite(stn.y)).toBe(true)
-    expect(result.observations.some((o) => o.type === 'bearing')).toBe(true)
-    expect(result.observations.some((o) => o.type === 'zenith')).toBe(true)
-  })
+    const custom = readFileSync('tests/fixtures/bearing_vertical.dat', 'utf-8');
+    const engine = new LSAEngine({ input: custom, maxIterations: 10 });
+    const result = engine.solve();
+    expect(result.dof).toBeGreaterThan(0);
+    const stn = result.stations['X'];
+    expect(Number.isFinite(stn.x)).toBe(true);
+    expect(Number.isFinite(stn.y)).toBe(true);
+    expect(result.observations.some((o) => o.type === 'bearing')).toBe(true);
+    expect(result.observations.some((o) => o.type === 'zenith')).toBe(true);
+  });
 
   it('logs traverse closure residuals', () => {
-    const input = readFileSync('tests/fixtures/traverse_closure.dat', 'utf-8')
-    const engine = new LSAEngine({ input, maxIterations: 5 })
-    const result = engine.solve()
-    expect(result.logs.some((l) => l.includes('Traverse closure residual'))).toBe(true)
-  })
+    const input = readFileSync('tests/fixtures/traverse_closure.dat', 'utf-8');
+    const engine = new LSAEngine({ input, maxIterations: 5 });
+    const result = engine.solve();
+    expect(result.logs.some((l) => l.includes('Traverse closure residual'))).toBe(true);
+  });
 
   it('supports anisotropic correlated GNSS weighting', () => {
     const input = [
@@ -47,17 +47,76 @@ describe('LSAEngine', () => {
       'C B 100 0 0',
       'G GPS1 A B 100.01 -0.02 0.01 0.03 0.25',
       'D A-B 100.0 0.02',
-    ].join('\n')
-    const engine = new LSAEngine({ input, maxIterations: 10 })
-    const result = engine.solve()
-    expect(result.observations.some((o) => o.type === 'gps')).toBe(true)
-    const gps = result.observations.find((o) => o.type === 'gps')
-    expect(gps?.stdDevE).toBeDefined()
-    expect(gps?.stdDevN).toBeDefined()
-    expect(gps?.corrEN).toBeCloseTo(0.25, 8)
-    expect(gps?.stdRes).toBeDefined()
-    expect(result.dof).toBeGreaterThanOrEqual(0)
-  })
+    ].join('\n');
+    const engine = new LSAEngine({ input, maxIterations: 10 });
+    const result = engine.solve();
+    expect(result.observations.some((o) => o.type === 'gps')).toBe(true);
+    const gps = result.observations.find((o) => o.type === 'gps');
+    expect(gps?.stdDevE).toBeDefined();
+    expect(gps?.stdDevN).toBeDefined();
+    expect(gps?.corrEN).toBeCloseTo(0.25, 8);
+    expect(gps?.stdRes).toBeDefined();
+    expect(result.dof).toBeGreaterThanOrEqual(0);
+  });
+
+  it('keeps non-zero point precision when DOF is zero (a-priori scaling)', () => {
+    const input = [
+      '.2D',
+      '.ORDER EN ATFROMTO',
+      'C 1 1000.000 1000.000 ! !',
+      'C 2 1003.281021 1000.000 ! !',
+      'M 1-2-7 234-32-32 6.629437053',
+    ].join('\n');
+    const result = new LSAEngine({ input, maxIterations: 10 }).solve();
+    expect(result.dof).toBe(0);
+    expect(result.stations['7']).toBeDefined();
+    expect((result.stations['7'].sE ?? 0) > 0).toBe(true);
+    expect((result.stations['7'].sN ?? 0) > 0).toBe(true);
+    expect(
+      result.logs.some((l) => l.includes('DOF <= 0: using a-priori variance factor 1.0')),
+    ).toBe(true);
+  });
+
+  it('solves M ATFROMTO turned-angle + horizontal-distance shots at measured ranges', () => {
+    const input = [
+      '.UNITS Meters DMS',
+      '.ORDER NE ATFROMTO',
+      '.2D',
+      'C 1 1000.000 1000.000 ! !',
+      'C 2 1003.281021 1000.000000 ! !',
+      'C 22 1007.032000 1000.000000 ! !',
+      'M 1-2-7 234-32-32 6.629437053',
+      'M 1-2-8 236-36-56 6.495431347',
+      'M 2-22-19 285-01-45 6.71548833',
+      'M 2-22-20 286-35-04 6.504976068',
+      'M 2-22-807 336-43-55 2.701451332',
+      'M 2-22-808 336-42-20 2.70045941',
+    ].join('\n');
+
+    const result = new LSAEngine({ input, maxIterations: 20 }).solve();
+    const p1 = result.stations['1'];
+    const p2 = result.stations['2'];
+
+    const distTo = (from: { x: number; y: number }, toId: string): number => {
+      const to = result.stations[toId];
+      return Math.hypot(to.x - from.x, to.y - from.y);
+    };
+
+    expect(distTo(p1, '7')).toBeCloseTo(6.629437053, 6);
+    expect(distTo(p1, '8')).toBeCloseTo(6.495431347, 6);
+    expect(distTo(p2, '19')).toBeCloseTo(6.71548833, 6);
+    expect(distTo(p2, '20')).toBeCloseTo(6.504976068, 6);
+    expect(distTo(p2, '807')).toBeCloseTo(2.701451332, 6);
+    expect(distTo(p2, '808')).toBeCloseTo(2.70045941, 6);
+
+    const maxDistResidual = result.observations
+      .filter((o) => o.type === 'dist')
+      .reduce((max, o) => {
+        const residual = typeof o.residual === 'number' ? Math.abs(o.residual) : 0;
+        return Math.max(max, residual);
+      }, 0);
+    expect(maxDistResidual).toBeLessThan(1e-6);
+  });
 
   it('reports direction reduction diagnostics for face-paired sets', () => {
     const input = [
@@ -70,18 +129,18 @@ describe('LSAEngine', () => {
       'DN P 090.0000 1.0',
       'DM P 270.0000 100.0 0.0000 1.0 0.002',
       'DE',
-    ].join('\n')
-    const engine = new LSAEngine({ input, maxIterations: 10 })
-    const result = engine.solve()
-    expect(result.directionSetDiagnostics?.length).toBeGreaterThan(0)
-    const first = result.directionSetDiagnostics?.[0]
-    expect(first?.rawCount).toBe(2)
-    expect(first?.reducedCount).toBe(1)
-    expect(first?.pairedTargets).toBe(1)
-    expect(first?.meanFacePairDeltaArcSec).toBeDefined()
-    expect(first?.maxRawMaxResidualArcSec).toBeDefined()
-    expect(result.setupDiagnostics?.some((s) => s.station === 'O')).toBe(true)
-  })
+    ].join('\n');
+    const engine = new LSAEngine({ input, maxIterations: 10 });
+    const result = engine.solve();
+    expect(result.directionSetDiagnostics?.length).toBeGreaterThan(0);
+    const first = result.directionSetDiagnostics?.[0];
+    expect(first?.rawCount).toBe(2);
+    expect(first?.reducedCount).toBe(1);
+    expect(first?.pairedTargets).toBe(1);
+    expect(first?.meanFacePairDeltaArcSec).toBeDefined();
+    expect(first?.maxRawMaxResidualArcSec).toBeDefined();
+    expect(result.setupDiagnostics?.some((s) => s.station === 'O')).toBe(true);
+  });
 
   it('reports direction-target repeatability diagnostics and suspect ranking', () => {
     const input = [
@@ -102,27 +161,27 @@ describe('LSAEngine', () => {
       'DN Q 108-26-06.0 1.0',
       'DN Q 288-26-09.0 1.0',
       'DE',
-    ].join('\n')
+    ].join('\n');
 
-    const engine = new LSAEngine({ input, maxIterations: 12 })
-    const result = engine.solve()
-    const rows = result.directionTargetDiagnostics ?? []
-    expect(rows.length).toBeGreaterThanOrEqual(2)
+    const engine = new LSAEngine({ input, maxIterations: 12 });
+    const result = engine.solve();
+    const rows = result.directionTargetDiagnostics ?? [];
+    expect(rows.length).toBeGreaterThanOrEqual(2);
 
-    const pRow = rows.find((r) => r.target === 'P')
-    const qRow = rows.find((r) => r.target === 'Q')
-    expect(pRow).toBeDefined()
-    expect(qRow).toBeDefined()
-    expect(pRow?.rawCount).toBe(4)
-    expect(pRow?.face1Count).toBe(2)
-    expect(pRow?.face2Count).toBe(2)
-    expect((pRow?.rawSpreadArcSec ?? 0) > (qRow?.rawSpreadArcSec ?? 0)).toBe(true)
-    expect(pRow?.rawMaxResidualArcSec).toBeDefined()
-    expect(pRow?.facePairDeltaArcSec).toBeDefined()
-    expect(pRow?.face1SpreadArcSec).toBeDefined()
-    expect(pRow?.face2SpreadArcSec).toBeDefined()
-    expect((pRow?.suspectScore ?? 0) >= (qRow?.suspectScore ?? 0)).toBe(true)
-  })
+    const pRow = rows.find((r) => r.target === 'P');
+    const qRow = rows.find((r) => r.target === 'Q');
+    expect(pRow).toBeDefined();
+    expect(qRow).toBeDefined();
+    expect(pRow?.rawCount).toBe(4);
+    expect(pRow?.face1Count).toBe(2);
+    expect(pRow?.face2Count).toBe(2);
+    expect((pRow?.rawSpreadArcSec ?? 0) > (qRow?.rawSpreadArcSec ?? 0)).toBe(true);
+    expect(pRow?.rawMaxResidualArcSec).toBeDefined();
+    expect(pRow?.facePairDeltaArcSec).toBeDefined();
+    expect(pRow?.face1SpreadArcSec).toBeDefined();
+    expect(pRow?.face2SpreadArcSec).toBeDefined();
+    expect((pRow?.suspectScore ?? 0) >= (qRow?.suspectScore ?? 0)).toBe(true);
+  });
 
   it('propagates structured direction reject diagnostics from parser to result', () => {
     const input = [
@@ -137,13 +196,13 @@ describe('LSAEngine', () => {
       'DN P 090-00-00.0 1.0',
       'DM P 270-00-00.0 100.0 0.0 1.0 0.003',
       'DE',
-    ].join('\n')
+    ].join('\n');
 
-    const engine = new LSAEngine({ input, maxIterations: 10 })
-    const result = engine.solve()
-    expect((result.directionRejectDiagnostics?.length ?? 0) > 0).toBe(true)
-    expect(result.directionRejectDiagnostics?.some((d) => d.reason === 'mixed-face')).toBe(true)
-  })
+    const engine = new LSAEngine({ input, maxIterations: 10 });
+    const result = engine.solve();
+    expect((result.directionRejectDiagnostics?.length ?? 0) > 0).toBe(true);
+    expect(result.directionRejectDiagnostics?.some((d) => d.reason === 'mixed-face')).toBe(true);
+  });
 
   it('aggregates multi-set direction repeatability trends by occupy-target', () => {
     const input = [
@@ -168,22 +227,22 @@ describe('LSAEngine', () => {
       'DN Q 108-26-06.1 1.0',
       'DN Q 288-26-06.3 1.0',
       'DE',
-    ].join('\n')
+    ].join('\n');
 
-    const engine = new LSAEngine({ input, maxIterations: 12 })
-    const result = engine.solve()
-    const rows = result.directionRepeatabilityDiagnostics ?? []
-    expect(rows.length).toBeGreaterThanOrEqual(2)
+    const engine = new LSAEngine({ input, maxIterations: 12 });
+    const result = engine.solve();
+    const rows = result.directionRepeatabilityDiagnostics ?? [];
+    expect(rows.length).toBeGreaterThanOrEqual(2);
 
-    const pTrend = rows.find((r) => r.occupy === 'O' && r.target === 'P')
-    const qTrend = rows.find((r) => r.occupy === 'O' && r.target === 'Q')
-    expect(pTrend).toBeDefined()
-    expect(qTrend).toBeDefined()
-    expect(pTrend?.setCount).toBe(2)
-    expect(qTrend?.setCount).toBe(2)
-    expect((pTrend?.maxRawSpreadArcSec ?? 0) >= (qTrend?.maxRawSpreadArcSec ?? 0)).toBe(true)
-    expect((pTrend?.suspectScore ?? 0) >= (qTrend?.suspectScore ?? 0)).toBe(true)
-  })
+    const pTrend = rows.find((r) => r.occupy === 'O' && r.target === 'P');
+    const qTrend = rows.find((r) => r.occupy === 'O' && r.target === 'Q');
+    expect(pTrend).toBeDefined();
+    expect(qTrend).toBeDefined();
+    expect(pTrend?.setCount).toBe(2);
+    expect(qTrend?.setCount).toBe(2);
+    expect((pTrend?.maxRawSpreadArcSec ?? 0) >= (qTrend?.maxRawSpreadArcSec ?? 0)).toBe(true);
+    expect((pTrend?.suspectScore ?? 0) >= (qTrend?.suspectScore ?? 0)).toBe(true);
+  });
 
   it('includes setup-level residual quality diagnostics for blunder screening', () => {
     const input = [
@@ -196,18 +255,18 @@ describe('LSAEngine', () => {
       'A U-C1-C2 102-40-00.0 1.5',
       'A U-C2-C1 257-20-00.0 1.5',
       'A U-C1-C2 102-41-20.0 1.5',
-    ].join('\n')
-    const engine = new LSAEngine({ input, maxIterations: 12 })
-    const result = engine.solve()
-    const setup = result.setupDiagnostics?.find((s) => s.station === 'U')
-    expect(setup).toBeDefined()
-    expect((setup?.stdResCount ?? 0) > 0).toBe(true)
-    expect(setup?.rmsStdRes).toBeDefined()
-    expect(setup?.maxStdRes).toBeDefined()
-    expect(setup?.localFailCount).toBeGreaterThanOrEqual(0)
-    expect(setup?.worstObsType).toBeDefined()
-    expect(setup?.worstObsStations).toContain('U-')
-  })
+    ].join('\n');
+    const engine = new LSAEngine({ input, maxIterations: 12 });
+    const result = engine.solve();
+    const setup = result.setupDiagnostics?.find((s) => s.station === 'U');
+    expect(setup).toBeDefined();
+    expect((setup?.stdResCount ?? 0) > 0).toBe(true);
+    expect(setup?.rmsStdRes).toBeDefined();
+    expect(setup?.maxStdRes).toBeDefined();
+    expect(setup?.localFailCount).toBeGreaterThanOrEqual(0);
+    expect(setup?.worstObsType).toBeDefined();
+    expect(setup?.worstObsStations).toContain('U-');
+  });
 
   it('reports traverse closure ratio diagnostics', () => {
     const input = [
@@ -217,16 +276,16 @@ describe('LSAEngine', () => {
       'TB OCC BS',
       'T P 090.0000 100.0 0.0 1.0 0.005 5.0',
       'TE OCC 180.0000 100.0 0.0 1.0 0.005 5.0',
-    ].join('\n')
-    const engine = new LSAEngine({ input, maxIterations: 8 })
-    const result = engine.solve()
-    expect(result.traverseDiagnostics).toBeDefined()
-    expect(result.traverseDiagnostics?.closureCount).toBeGreaterThan(0)
-    expect(result.traverseDiagnostics?.totalTraverseDistance).toBeGreaterThan(0)
-    expect(result.traverseDiagnostics?.linearPpm).toBeDefined()
-    expect(result.traverseDiagnostics?.thresholds).toBeDefined()
-    expect(result.traverseDiagnostics?.loops?.length).toBeGreaterThan(0)
-  })
+    ].join('\n');
+    const engine = new LSAEngine({ input, maxIterations: 8 });
+    const result = engine.solve();
+    expect(result.traverseDiagnostics).toBeDefined();
+    expect(result.traverseDiagnostics?.closureCount).toBeGreaterThan(0);
+    expect(result.traverseDiagnostics?.totalTraverseDistance).toBeGreaterThan(0);
+    expect(result.traverseDiagnostics?.linearPpm).toBeDefined();
+    expect(result.traverseDiagnostics?.thresholds).toBeDefined();
+    expect(result.traverseDiagnostics?.loops?.length).toBeGreaterThan(0);
+  });
 
   it('reports residual diagnostics summary for blunder screening', () => {
     const input = [
@@ -239,30 +298,30 @@ describe('LSAEngine', () => {
       'A U-C1-C2 102-40-00.0 1.5',
       'A U-C2-C1 257-20-00.0 1.5',
       'A U-C1-C2 102-41-20.0 1.5',
-    ].join('\n')
-    const engine = new LSAEngine({ input, maxIterations: 12 })
-    const result = engine.solve()
-    expect(result.residualDiagnostics).toBeDefined()
-    expect((result.residualDiagnostics?.observationCount ?? 0) > 0).toBe(true)
-    expect((result.residualDiagnostics?.withStdResCount ?? 0) > 0).toBe(true)
-    expect(result.residualDiagnostics?.byType.length).toBeGreaterThan(0)
-    expect(result.residualDiagnostics?.criticalT).toBeGreaterThan(0)
-  })
+    ].join('\n');
+    const engine = new LSAEngine({ input, maxIterations: 12 });
+    const result = engine.solve();
+    expect(result.residualDiagnostics).toBeDefined();
+    expect((result.residualDiagnostics?.observationCount ?? 0) > 0).toBe(true);
+    expect((result.residualDiagnostics?.withStdResCount ?? 0) > 0).toBe(true);
+    expect(result.residualDiagnostics?.byType.length).toBeGreaterThan(0);
+    expect(result.residualDiagnostics?.criticalT).toBeGreaterThan(0);
+  });
 
   it('solves the 2D triangulation-trilateration example with auto-created stations', () => {
-    const input = readFileSync('tests/fixtures/triangulation_trilateration_2d.dat', 'utf-8')
-    const result = new LSAEngine({ input, maxIterations: 20 }).solve()
-    expect(result.stations['4']).toBeDefined()
-    expect(result.stations['5']).toBeDefined()
-    expect(result.stations['6']).toBeDefined()
-    expect(Number.isFinite(result.stations['4'].x)).toBe(true)
-    expect(Number.isFinite(result.stations['4'].y)).toBe(true)
-    expect(Number.isFinite(result.stations['5'].x)).toBe(true)
-    expect(Number.isFinite(result.stations['5'].y)).toBe(true)
-    expect(Number.isFinite(result.stations['6'].x)).toBe(true)
-    expect(Number.isFinite(result.stations['6'].y)).toBe(true)
-    expect(result.logs.some((l) => l.includes('Auto-created station 4'))).toBe(true)
-  })
+    const input = readFileSync('tests/fixtures/triangulation_trilateration_2d.dat', 'utf-8');
+    const result = new LSAEngine({ input, maxIterations: 20 }).solve();
+    expect(result.stations['4']).toBeDefined();
+    expect(result.stations['5']).toBeDefined();
+    expect(result.stations['6']).toBeDefined();
+    expect(Number.isFinite(result.stations['4'].x)).toBe(true);
+    expect(Number.isFinite(result.stations['4'].y)).toBe(true);
+    expect(Number.isFinite(result.stations['5'].x)).toBe(true);
+    expect(Number.isFinite(result.stations['5'].y)).toBe(true);
+    expect(Number.isFinite(result.stations['6'].x)).toBe(true);
+    expect(Number.isFinite(result.stations['6'].y)).toBe(true);
+    expect(result.logs.some((l) => l.includes('Auto-created station 4'))).toBe(true);
+  });
 
   it('applies map scale reduction to horizontal distances when map mode is on', () => {
     const baseInput = [
@@ -271,13 +330,13 @@ describe('LSAEngine', () => {
       'C B 100 0 0',
       'B A-B 090.0000 1.0',
       'D A-B 100.0000 0.001',
-    ].join('\n')
-    const scaledInput = ['.MAPMODE ON', '.MAPSCALE 0.9996', baseInput].join('\n')
-    const noScale = new LSAEngine({ input: baseInput, maxIterations: 10 }).solve()
-    const withScale = new LSAEngine({ input: scaledInput, maxIterations: 10 }).solve()
-    expect(withScale.stations.B.x).toBeGreaterThan(noScale.stations.B.x + 0.03)
-    expect(withScale.logs.some((l) => l.includes('Map reduction active'))).toBe(true)
-  })
+    ].join('\n');
+    const scaledInput = ['.MAPMODE ON', '.MAPSCALE 0.9996', baseInput].join('\n');
+    const noScale = new LSAEngine({ input: baseInput, maxIterations: 10 }).solve();
+    const withScale = new LSAEngine({ input: scaledInput, maxIterations: 10 }).solve();
+    expect(withScale.stations.B.x).toBeGreaterThan(noScale.stations.B.x + 0.03);
+    expect(withScale.logs.some((l) => l.includes('Map reduction active'))).toBe(true);
+  });
 
   it('applies curvature/refraction correction to zenith calculations when enabled', () => {
     const baseInput = [
@@ -286,24 +345,21 @@ describe('LSAEngine', () => {
       'B A-B 090.0000 1.0',
       'D A-B 10000.0000 0.001',
       'V A-B 090.0000 1.0',
-    ].join('\n')
-    const withCurvRefInput = [
-      '.CURVREF ON',
-      '.REFRACTION 0.13',
-      '.VRED CURVREF',
-      baseInput,
-    ].join('\n')
+    ].join('\n');
+    const withCurvRefInput = ['.CURVREF ON', '.REFRACTION 0.13', '.VRED CURVREF', baseInput].join(
+      '\n',
+    );
 
-    const noCurv = new LSAEngine({ input: baseInput, maxIterations: 10 }).solve()
-    const withCurv = new LSAEngine({ input: withCurvRefInput, maxIterations: 10 }).solve()
+    const noCurv = new LSAEngine({ input: baseInput, maxIterations: 10 }).solve();
+    const withCurv = new LSAEngine({ input: withCurvRefInput, maxIterations: 10 }).solve();
 
-    const zNoCurv = noCurv.observations.find((o) => o.type === 'zenith')
-    const zWithCurv = withCurv.observations.find((o) => o.type === 'zenith')
-    expect(zNoCurv?.calc).toBeDefined()
-    expect(zWithCurv?.calc).toBeDefined()
-    expect(Math.abs(withCurv.stations.B.h - noCurv.stations.B.h)).toBeGreaterThan(1)
-    expect(withCurv.logs.some((l) => l.includes('Vertical reduction active'))).toBe(true)
-  })
+    const zNoCurv = noCurv.observations.find((o) => o.type === 'zenith');
+    const zWithCurv = withCurv.observations.find((o) => o.type === 'zenith');
+    expect(zNoCurv?.calc).toBeDefined();
+    expect(zWithCurv?.calc).toBeDefined();
+    expect(Math.abs(withCurv.stations.B.h - noCurv.stations.B.h)).toBeGreaterThan(1);
+    expect(withCurv.logs.some((l) => l.includes('Vertical reduction active'))).toBe(true);
+  });
 
   it('applies TS angular correlation model and reports diagnostics', () => {
     const base = [
@@ -319,17 +375,17 @@ describe('LSAEngine', () => {
       'A U-C2-C3 116-33-55.0 1.2',
       'A U-C3-C1 140-46-10.0 1.2',
       'A U-C1-C2 102-40-06.0 1.2',
-    ].join('\n')
-    const off = new LSAEngine({ input: base, maxIterations: 12 }).solve()
-    const on = new LSAEngine({ input: `.TSCORR SETUP 0.35\n${base}`, maxIterations: 12 }).solve()
+    ].join('\n');
+    const off = new LSAEngine({ input: base, maxIterations: 12 }).solve();
+    const on = new LSAEngine({ input: `.TSCORR SETUP 0.35\n${base}`, maxIterations: 12 }).solve();
 
-    expect(on.tsCorrelationDiagnostics).toBeDefined()
-    expect(on.tsCorrelationDiagnostics?.enabled).toBe(true)
-    expect(on.tsCorrelationDiagnostics?.scope).toBe('setup')
-    expect(on.tsCorrelationDiagnostics?.pairCount).toBeGreaterThan(0)
-    expect(on.logs.some((l) => l.includes('TS correlation diagnostics'))).toBe(true)
-    expect(on.seuw).not.toBe(off.seuw)
-  })
+    expect(on.tsCorrelationDiagnostics).toBeDefined();
+    expect(on.tsCorrelationDiagnostics?.enabled).toBe(true);
+    expect(on.tsCorrelationDiagnostics?.scope).toBe('setup');
+    expect(on.tsCorrelationDiagnostics?.pairCount).toBeGreaterThan(0);
+    expect(on.logs.some((l) => l.includes('TS correlation diagnostics'))).toBe(true);
+    expect(on.seuw).not.toBe(off.seuw);
+  });
 
   it('applies robust huber reweighting and reports iteration diagnostics', () => {
     const input = [
@@ -346,62 +402,62 @@ describe('LSAEngine', () => {
       'A U-C2-C3 116-33-55.0 1.0',
       'A U-C3-C1 140-46-10.0 1.0',
       'A U-C1-C2 102-42-30.0 1.0',
-    ].join('\n')
-    const result = new LSAEngine({ input, maxIterations: 12 }).solve()
-    expect(result.robustDiagnostics).toBeDefined()
-    expect(result.robustDiagnostics?.enabled).toBe(true)
-    expect(result.robustDiagnostics?.mode).toBe('huber')
-    expect((result.robustDiagnostics?.iterations.length ?? 0) > 0).toBe(true)
-    expect(result.logs.some((l) => l.includes('robust(huber)'))).toBe(true)
-  })
+    ].join('\n');
+    const result = new LSAEngine({ input, maxIterations: 12 }).solve();
+    expect(result.robustDiagnostics).toBeDefined();
+    expect(result.robustDiagnostics?.enabled).toBe(true);
+    expect(result.robustDiagnostics?.mode).toBe('huber');
+    expect((result.robustDiagnostics?.iterations.length ?? 0) > 0).toBe(true);
+    expect(result.logs.some((l) => l.includes('robust(huber)'))).toBe(true);
+  });
 
   it('computes post-adjusted sideshot coordinates/precision when azimuth reference exists', () => {
-    const input = readFileSync('tests/fixtures/sideshot_postadjust_known.dat', 'utf-8')
-    const engine = new LSAEngine({ input, maxIterations: 10 })
-    const result = engine.solve()
-    expect(result.sideshots?.length).toBeGreaterThan(0)
-    const side = result.sideshots?.find((s) => s.to === 'SH')
-    expect(side).toBeDefined()
-    expect(side?.hasAzimuth).toBe(true)
-    expect(side?.easting).toBeDefined()
-    expect(side?.northing).toBeDefined()
-    expect(side?.sigmaE).toBeDefined()
-    expect(side?.sigmaN).toBeDefined()
-  })
+    const input = readFileSync('tests/fixtures/sideshot_postadjust_known.dat', 'utf-8');
+    const engine = new LSAEngine({ input, maxIterations: 10 });
+    const result = engine.solve();
+    expect(result.sideshots?.length).toBeGreaterThan(0);
+    const side = result.sideshots?.find((s) => s.to === 'SH');
+    expect(side).toBeDefined();
+    expect(side?.hasAzimuth).toBe(true);
+    expect(side?.easting).toBeDefined();
+    expect(side?.northing).toBeDefined();
+    expect(side?.sigmaE).toBeDefined();
+    expect(side?.sigmaN).toBeDefined();
+  });
 
   it('reports sideshot limitation when target azimuth reference is unavailable', () => {
-    const input = readFileSync('tests/fixtures/sideshot_postadjust_missing_az.dat', 'utf-8')
-    const engine = new LSAEngine({ input, maxIterations: 10 })
-    const result = engine.solve()
-    const side = result.sideshots?.find((s) => s.to === 'SHMISS')
-    expect(side).toBeDefined()
-    expect(side?.hasAzimuth).toBe(false)
-    expect(side?.note?.includes('azimuth unavailable')).toBe(true)
-  })
+    const input = readFileSync('tests/fixtures/sideshot_postadjust_missing_az.dat', 'utf-8');
+    const engine = new LSAEngine({ input, maxIterations: 10 });
+    const result = engine.solve();
+    const side = result.sideshots?.find((s) => s.to === 'SHMISS');
+    expect(side).toBeDefined();
+    expect(side?.hasAzimuth).toBe(false);
+    expect(side?.note?.includes('azimuth unavailable')).toBe(true);
+  });
 
   it('uses explicit SS azimuth to compute coordinates without target approximation', () => {
-    const input = readFileSync('tests/fixtures/sideshot_postadjust_explicit_az.dat', 'utf-8')
-    const engine = new LSAEngine({ input, maxIterations: 10 })
-    const result = engine.solve()
-    const side = result.sideshots?.find((s) => s.to === 'SHAZ')
-    expect(side).toBeDefined()
-    expect(side?.hasAzimuth).toBe(true)
-    expect(side?.azimuthSource).toBe('explicit')
-    expect(side?.easting).toBeDefined()
-    expect(side?.northing).toBeDefined()
-  })
+    const input = readFileSync('tests/fixtures/sideshot_postadjust_explicit_az.dat', 'utf-8');
+    const engine = new LSAEngine({ input, maxIterations: 10 });
+    const result = engine.solve();
+    const side = result.sideshots?.find((s) => s.to === 'SHAZ');
+    expect(side).toBeDefined();
+    expect(side?.hasAzimuth).toBe(true);
+    expect(side?.azimuthSource).toBe('explicit');
+    expect(side?.easting).toBeDefined();
+    expect(side?.northing).toBeDefined();
+  });
 
   it('uses setup-based SS horizontal angle with backsight orientation', () => {
-    const input = readFileSync('tests/fixtures/sideshot_postadjust_setup_hz.dat', 'utf-8')
-    const engine = new LSAEngine({ input, maxIterations: 10 })
-    const result = engine.solve()
-    const side = result.sideshots?.find((s) => s.to === 'SHSET')
-    expect(side).toBeDefined()
-    expect(side?.azimuthSource).toBe('setup')
-    expect(side?.hasAzimuth).toBe(true)
-    expect(side?.easting).toBeDefined()
-    expect(side?.northing).toBeDefined()
-    expect(Math.abs((side?.easting ?? 0) - 10)).toBeLessThan(0.25)
-    expect(Math.abs(side?.northing ?? 0)).toBeLessThan(0.25)
-  })
-})
+    const input = readFileSync('tests/fixtures/sideshot_postadjust_setup_hz.dat', 'utf-8');
+    const engine = new LSAEngine({ input, maxIterations: 10 });
+    const result = engine.solve();
+    const side = result.sideshots?.find((s) => s.to === 'SHSET');
+    expect(side).toBeDefined();
+    expect(side?.azimuthSource).toBe('setup');
+    expect(side?.hasAzimuth).toBe(true);
+    expect(side?.easting).toBeDefined();
+    expect(side?.northing).toBeDefined();
+    expect(Math.abs((side?.easting ?? 0) - 10)).toBeLessThan(0.25);
+    expect(Math.abs(side?.northing ?? 0)).toBeLessThan(0.25);
+  });
+});

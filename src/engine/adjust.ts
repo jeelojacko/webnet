@@ -20,11 +20,7 @@ const EARTH_RADIUS_M = 6378137;
 
 const gammln = (xx: number): number => {
   const cof = [
-    76.180091729471,
-    -86.505320329417,
-    24.014098240831,
-    -1.23173957245,
-    1.208650973866e-3,
+    76.180091729471, -86.505320329417, 24.014098240831, -1.23173957245, 1.208650973866e-3,
     -5.395239384953e-6,
   ];
   let x = xx;
@@ -36,7 +32,7 @@ const gammln = (xx: number): number => {
     y += 1;
     ser += cof[j] / y;
   }
-  return -tmp + Math.log(2.506628274631 * ser / x);
+  return -tmp + Math.log((2.506628274631 * ser) / x);
 };
 
 const gser = (a: number, x: number): number => {
@@ -292,7 +288,12 @@ export class LSAEngine {
   }
 
   private isTsCorrelationObservation(obs: Observation): boolean {
-    return obs.type === 'angle' || obs.type === 'direction' || obs.type === 'bearing' || obs.type === 'dir';
+    return (
+      obs.type === 'angle' ||
+      obs.type === 'direction' ||
+      obs.type === 'bearing' ||
+      obs.type === 'dir'
+    );
   }
 
   private tsCorrelationGroup(
@@ -353,7 +354,11 @@ export class LSAEngine {
       if (!group) return;
       const sigma = this.effectiveStdDev(info.obs);
       if (!Number.isFinite(sigma) || sigma <= 0) return;
-      const entry = groups.get(group.key) ?? { station: group.station, setId: group.setId, rows: [] };
+      const entry = groups.get(group.key) ?? {
+        station: group.station,
+        setId: group.setId,
+        rows: [],
+      };
       entry.rows.push({ index, sigma });
       groups.set(group.key, entry);
     });
@@ -427,8 +432,7 @@ export class LSAEngine {
         equationCount,
         pairCount: pairCountTotal,
         maxGroupSize,
-        meanAbsOffDiagWeight:
-          pairCountTotal > 0 ? offDiagAbsSumTotal / pairCountTotal : undefined,
+        meanAbsOffDiagWeight: pairCountTotal > 0 ? offDiagAbsSumTotal / pairCountTotal : undefined,
         groups: diagRows.sort((a, b) => {
           if (b.rows !== a.rows) return b.rows - a.rows;
           if (b.pairCount !== a.pairCount) return b.pairCount - a.pairCount;
@@ -494,7 +498,8 @@ export class LSAEngine {
     let maxNorm = 0;
     let meanWeightSum = 0;
     let meanWeightCount = 0;
-    const candidates: NonNullable<AdjustmentResult['robustDiagnostics']>['topDownweightedRows'] = [];
+    const candidates: NonNullable<AdjustmentResult['robustDiagnostics']>['topDownweightedRows'] =
+      [];
 
     for (let i = 0; i < rowInfo.length; i += 1) {
       const info = rowInfo[i];
@@ -550,8 +555,10 @@ export class LSAEngine {
       });
       this.robustDiagnostics.topDownweightedRows = topRows;
       this.log(
-        `Iter ${iteration} robust(${this.robustMode}): downweighted=${downweightedRows}, minW=${(
-          downweightedRows > 0 ? minWeight : 1
+        `Iter ${iteration} robust(${this.robustMode}): downweighted=${downweightedRows}, minW=${(downweightedRows >
+        0
+          ? minWeight
+          : 1
         ).toFixed(3)}, meanW=${(meanWeightCount > 0 ? meanWeightSum / meanWeightCount : 1).toFixed(
           3,
         )}, max|v/sigma|=${maxNorm.toFixed(2)}`,
@@ -661,7 +668,12 @@ export class LSAEngine {
         markOther(obs.to);
         return;
       }
-      if (obs.type === 'dist' || obs.type === 'bearing' || obs.type === 'lev' || obs.type === 'zenith') {
+      if (
+        obs.type === 'dist' ||
+        obs.type === 'bearing' ||
+        obs.type === 'lev' ||
+        obs.type === 'zenith'
+      ) {
         mark(obs.from);
         mark(obs.to);
         markOther(obs.from);
@@ -685,7 +697,9 @@ export class LSAEngine {
 
     this.unknowns.forEach((id) => {
       if (!stationObsCount.has(id)) {
-        this.log(`Warning: unknown station ${id} has no observations and will cause a singular network.`);
+        this.log(
+          `Warning: unknown station ${id} has no observations and will cause a singular network.`,
+        );
         return;
       }
 
@@ -780,7 +794,7 @@ export class LSAEngine {
     if (!s1 || !s2) return { z: 0, dist: 0, horiz: 0, dh: 0, crCorr: 0 };
     const dx = s2.x - s1.x;
     const dy = s2.y - s1.y;
-    const dh = (s2.h + ht) - (s1.h + hi);
+    const dh = s2.h + ht - (s1.h + hi);
     const horiz = Math.sqrt(dx * dx + dy * dy);
     const dist = Math.sqrt(horiz * horiz + dh * dh);
     const zGeom = dist === 0 ? 0 : Math.acos(dh / dist);
@@ -803,7 +817,13 @@ export class LSAEngine {
     Object.entries(paramIndex).forEach(([stationId, idx]) => {
       const st = this.stations[stationId];
       if (!st) return;
-      if (idx.x != null && st.sx != null && st.constraintX != null && Number.isFinite(st.sx) && st.sx > 0) {
+      if (
+        idx.x != null &&
+        st.sx != null &&
+        st.constraintX != null &&
+        Number.isFinite(st.sx) &&
+        st.sx > 0
+      ) {
         constraints.push({
           stationId,
           component: 'x',
@@ -812,7 +832,13 @@ export class LSAEngine {
           sigma: st.sx,
         });
       }
-      if (idx.y != null && st.sy != null && st.constraintY != null && Number.isFinite(st.sy) && st.sy > 0) {
+      if (
+        idx.y != null &&
+        st.sy != null &&
+        st.constraintY != null &&
+        Number.isFinite(st.sy) &&
+        st.sy > 0
+      ) {
         constraints.push({
           stationId,
           component: 'y',
@@ -854,7 +880,8 @@ export class LSAEngine {
     const verticalByKey = new Map<string, Observation>();
     this.observations.forEach((obs) => {
       if (!isSideshot(obs)) return;
-      if ((obs.type !== 'lev' && obs.type !== 'zenith') || !('from' in obs) || !('to' in obs)) return;
+      if ((obs.type !== 'lev' && obs.type !== 'zenith') || !('from' in obs) || !('to' in obs))
+        return;
       const key = `${obs.from}|${obs.to}|${obs.sourceLine ?? -1}`;
       verticalByKey.set(key, obs);
     });
@@ -929,9 +956,9 @@ export class LSAEngine {
         ? (explicitAz as number)
         : setupAzimuth != null
           ? setupAzimuth
-        : hasTargetAz
-          ? this.getAzimuth(from, to).az
-          : undefined;
+          : hasTargetAz
+            ? this.getAzimuth(from, to).az
+            : undefined;
       let sigmaAz = hasExplicitAz ? (explicitSigmaAz ?? 0) : 0;
       if (!hasExplicitAz && setupAzimuth != null && backsightId && backsightSt) {
         const azBs = this.getAzimuth(from, backsightId);
@@ -999,9 +1026,10 @@ export class LSAEngine {
 
       const notes: string[] = [];
       if (hasSetupHz && !backsightSt) {
-        notes.push('setup horizontal angle provided but backsight is unavailable')
+        notes.push('setup horizontal angle provided but backsight is unavailable');
       }
-      if (!hasAzimuth) notes.push('target station has no approximate coordinates; azimuth unavailable');
+      if (!hasAzimuth)
+        notes.push('target station has no approximate coordinates; azimuth unavailable');
       if (mode === 'slope' && (!vertical || vertical.type !== 'zenith')) {
         notes.push('no zenith with slope distance; used slope as horizontal proxy');
       }
@@ -1056,7 +1084,8 @@ export class LSAEngine {
     this.applyCentering = parsed.parseState?.applyCentering ?? true;
     this.debug = parsed.parseState?.debug ?? false;
     this.mapMode = parsed.parseState?.mapMode ?? this.parseOptions?.mapMode ?? 'off';
-    this.mapScaleFactor = parsed.parseState?.mapScaleFactor ?? this.parseOptions?.mapScaleFactor ?? 1;
+    this.mapScaleFactor =
+      parsed.parseState?.mapScaleFactor ?? this.parseOptions?.mapScaleFactor ?? 1;
     this.applyCurvatureRefraction =
       parsed.parseState?.applyCurvatureRefraction ??
       this.parseOptions?.applyCurvatureRefraction ??
@@ -1067,7 +1096,8 @@ export class LSAEngine {
       parsed.parseState?.verticalReduction ?? this.parseOptions?.verticalReduction ?? 'none';
     this.tsCorrelationEnabled =
       parsed.parseState?.tsCorrelationEnabled ?? this.parseOptions?.tsCorrelationEnabled ?? false;
-    this.tsCorrelationRho = parsed.parseState?.tsCorrelationRho ?? this.parseOptions?.tsCorrelationRho ?? 0.25;
+    this.tsCorrelationRho =
+      parsed.parseState?.tsCorrelationRho ?? this.parseOptions?.tsCorrelationRho ?? 0.25;
     this.tsCorrelationScope =
       parsed.parseState?.tsCorrelationScope ?? this.parseOptions?.tsCorrelationScope ?? 'set';
     this.robustMode = parsed.parseState?.robustMode ?? this.parseOptions?.robustMode ?? 'none';
@@ -1110,7 +1140,9 @@ export class LSAEngine {
         iterations: [],
         topDownweightedRows: [],
       };
-      this.log(`Robust reweighting active: mode=${this.robustMode}, k=${this.robustDiagnostics.k.toFixed(2)}`);
+      this.log(
+        `Robust reweighting active: mode=${this.robustMode}, k=${this.robustDiagnostics.k.toFixed(2)}`,
+      );
     }
 
     // Apply overrides before any unit normalization
@@ -1279,7 +1311,7 @@ export class LSAEngine {
           if (!s1 || !s2) return;
           const dx = s2.x - s1.x;
           const dy = s2.y - s1.y;
-          const dz = (s2.h + (obs.ht ?? 0)) - (s1.h + (obs.hi ?? 0));
+          const dz = s2.h + (obs.ht ?? 0) - (s1.h + (obs.hi ?? 0));
           const horiz = Math.sqrt(dx * dx + dy * dy);
           const calcDistRaw = this.is2D
             ? horiz
@@ -1356,11 +1388,9 @@ export class LSAEngine {
               `ANGLE#${obs.id}`,
               `at=${at} from=${from} to=${to} obs=${(obs.obs * RAD_TO_DEG).toFixed(
                 6,
-              )}°/${obs.obs.toFixed(6)}rad azTo=${(azTo.az * RAD_TO_DEG).toFixed(
-                6,
-              )}° azFrom=${(azFrom.az * RAD_TO_DEG).toFixed(
-                6,
-              )}° calc=${(calcAngle * RAD_TO_DEG).toFixed(6)}° w=${wDeg.toFixed(
+              )}°/${obs.obs.toFixed(6)}rad azTo=${(azTo.az * RAD_TO_DEG).toFixed(6)}° azFrom=${(
+                azFrom.az * RAD_TO_DEG
+              ).toFixed(6)}° calc=${(calcAngle * RAD_TO_DEG).toFixed(6)}° w=${wDeg.toFixed(
                 6,
               )}°/${wRad.toFixed(8)}rad norm=${norm.toFixed(3)} sigma=${sigmaUsed.toFixed(8)}rad`,
             );
@@ -1529,9 +1559,7 @@ export class LSAEngine {
                 6,
               )}rad calc=${(calc * RAD_TO_DEG).toFixed(6)}° w=${wDeg.toFixed(
                 6,
-              )}°/${wRad.toFixed(8)}rad norm=${norm.toFixed(3)} sigma=${sigmaUsed.toFixed(
-                8,
-              )}rad`,
+              )}°/${wRad.toFixed(8)}rad norm=${norm.toFixed(3)} sigma=${sigmaUsed.toFixed(8)}rad`,
             );
           }
 
@@ -1640,12 +1668,16 @@ export class LSAEngine {
               )}rad calc=${(calc * RAD_TO_DEG).toFixed(6)}° w=${wDeg.toFixed(
                 6,
               )}°/${wRad.toFixed(8)}rad norm=${norm.toFixed(3)} sigma=${sigmaUsed.toFixed(8)}rad cr=${(
-                zv.crCorr * RAD_TO_DEG * 3600
+                zv.crCorr *
+                RAD_TO_DEG *
+                3600
               ).toFixed(2)}"`,
             );
           }
 
-          const denom = Math.sqrt(Math.max(1 - (zv.dist === 0 ? 0 : (zv.dh / zv.dist) ** 2), 1e-12));
+          const denom = Math.sqrt(
+            Math.max(1 - (zv.dist === 0 ? 0 : (zv.dh / zv.dist) ** 2), 1e-12),
+          );
           const common = zv.dist === 0 ? 0 : 1 / (zv.dist * zv.dist * zv.dist * denom);
           const dx = this.stations[to].x - this.stations[from].x;
           const dy = this.stations[to].y - this.stations[from].y;
@@ -1691,11 +1723,7 @@ export class LSAEngine {
         const st = this.stations[constraint.stationId];
         if (!st) return;
         const current =
-          constraint.component === 'x'
-            ? st.x
-            : constraint.component === 'y'
-              ? st.y
-              : st.h;
+          constraint.component === 'x' ? st.x : constraint.component === 'y' ? st.y : st.h;
         const v = constraint.target - current;
         L[row][0] = v;
         A[row][constraint.index] = 1;
@@ -1893,7 +1921,7 @@ export class LSAEngine {
         if (!s1 || !s2) return;
         const dx = s2.x - s1.x;
         const dy = s2.y - s1.y;
-        const dz = (s2.h + (obs.ht ?? 0)) - (s1.h + (obs.hi ?? 0));
+        const dz = s2.h + (obs.ht ?? 0) - (s1.h + (obs.hi ?? 0));
         const horiz = Math.sqrt(dx * dx + dy * dy);
         const calcRaw = this.is2D
           ? horiz
@@ -2025,7 +2053,9 @@ export class LSAEngine {
               ? 0
               : rawCount;
         const face2Count =
-          typeof dir.rawFace2Count === 'number' ? dir.rawFace2Count : Math.max(0, rawCount - face1Count);
+          typeof dir.rawFace2Count === 'number'
+            ? dir.rawFace2Count
+            : Math.max(0, rawCount - face1Count);
         stat.count += 1;
         stat.rawCount += rawCount;
         stat.reducedCount += 1;
@@ -2110,11 +2140,7 @@ export class LSAEngine {
       const st = this.stations[constraint.stationId];
       if (!st) return;
       const current =
-        constraint.component === 'x'
-          ? st.x
-          : constraint.component === 'y'
-            ? st.y
-            : st.h;
+        constraint.component === 'x' ? st.x : constraint.component === 'y' ? st.y : st.h;
       const v = constraint.target - current;
       vtpv += (v * v) / (constraint.sigma * constraint.sigma);
     });
@@ -2182,8 +2208,7 @@ export class LSAEngine {
         equationCount,
         pairCount: pairCountTotal,
         maxGroupSize,
-        meanAbsOffDiagWeight:
-          pairCountTotal > 0 ? offDiagAbsSumTotal / pairCountTotal : undefined,
+        meanAbsOffDiagWeight: pairCountTotal > 0 ? offDiagAbsSumTotal / pairCountTotal : undefined,
         groups: groups.sort((a, b) => {
           if (b.rows !== a.rows) return b.rows - a.rows;
           if (b.pairCount !== a.pairCount) return b.pairCount - a.pairCount;
@@ -2240,10 +2265,11 @@ export class LSAEngine {
     }
 
     if (hasQxx) {
-      const stationParamCount = Object.values(paramIndex).reduce((max, idx) => {
-        const vals = [idx.x ?? -1, idx.y ?? -1, idx.h ?? -1];
-        return Math.max(max, ...vals);
-      }, -1) + 1;
+      const stationParamCount =
+        Object.values(paramIndex).reduce((max, idx) => {
+          const vals = [idx.x ?? -1, idx.y ?? -1, idx.h ?? -1];
+          return Math.max(max, ...vals);
+        }, -1) + 1;
       const directionSetIds = Array.from(
         new Set(
           activeObservations
@@ -2274,7 +2300,7 @@ export class LSAEngine {
             if (!s1 || !s2) return;
             const dx = s2.x - s1.x;
             const dy = s2.y - s1.y;
-            const dz = (s2.h + (obs.ht ?? 0)) - (s1.h + (obs.hi ?? 0));
+            const dz = s2.h + (obs.ht ?? 0) - (s1.h + (obs.hi ?? 0));
             const horiz = Math.sqrt(dx * dx + dy * dy);
             const calcDistRaw = this.is2D
               ? horiz
@@ -2486,7 +2512,9 @@ export class LSAEngine {
             L[row][0] = v;
             rowInfo.push({ obs });
 
-            const denom = Math.sqrt(Math.max(1 - (zv.dist === 0 ? 0 : (zv.dh / zv.dist) ** 2), 1e-12));
+            const denom = Math.sqrt(
+              Math.max(1 - (zv.dist === 0 ? 0 : (zv.dh / zv.dist) ** 2), 1e-12),
+            );
             const common = zv.dist === 0 ? 0 : 1 / (zv.dist * zv.dist * zv.dist * denom);
             const dx = this.stations[obs.to].x - this.stations[obs.from].x;
             const dy = this.stations[obs.to].y - this.stations[obs.from].y;
@@ -2518,11 +2546,7 @@ export class LSAEngine {
           const st = this.stations[constraint.stationId];
           if (!st) return;
           const current =
-            constraint.component === 'x'
-              ? st.x
-              : constraint.component === 'y'
-                ? st.y
-                : st.h;
+            constraint.component === 'x' ? st.x : constraint.component === 'y' ? st.y : st.h;
           L[row][0] = constraint.target - current;
           A[row][constraint.index] = 1;
           P[row][row] = 1.0 / (constraint.sigma * constraint.sigma);
@@ -2540,7 +2564,13 @@ export class LSAEngine {
           const B = multiply(A, QxxStats);
           const rowStats = new Map<
             number,
-            { t: number[]; r: number[]; mdb: number[]; pass: boolean[]; comps: ('E' | 'N' | undefined)[] }
+            {
+              t: number[];
+              r: number[];
+              mdb: number[];
+              pass: boolean[];
+              comps: ('E' | 'N' | undefined)[];
+            }
           >();
           const s0 = this.seuw || 1;
           for (let i = 0; i < numObsEquations; i += 1) {
@@ -2660,13 +2690,17 @@ export class LSAEngine {
       const over2 = withStd.filter((o) => Math.abs(o.stdRes ?? 0) > 2).length;
       const over3 = withStd.filter((o) => Math.abs(o.stdRes ?? 0) > 3).length;
       const over4 = withStd.filter((o) => Math.abs(o.stdRes ?? 0) > 4).length;
-      const localFailCount = activeObservations.filter((o) => o.localTest != null && !o.localTest.pass).length;
+      const localFailCount = activeObservations.filter(
+        (o) => o.localTest != null && !o.localTest.pass,
+      ).length;
 
       const redundancies = activeObservations
         .map((o) => redundancyValue(o))
         .filter((v): v is number => v != null && Number.isFinite(v));
       const meanRedundancy =
-        redundancies.length > 0 ? redundancies.reduce((acc, v) => acc + v, 0) / redundancies.length : undefined;
+        redundancies.length > 0
+          ? redundancies.reduce((acc, v) => acc + v, 0) / redundancies.length
+          : undefined;
       const minRedundancy = redundancies.length > 0 ? Math.min(...redundancies) : undefined;
       const lowRedundancyCount = redundancies.filter((v) => v < 0.2).length;
       const veryLowRedundancyCount = redundancies.filter((v) => v < 0.1).length;
@@ -2702,17 +2736,15 @@ export class LSAEngine {
         }
       >();
       activeObservations.forEach((obs) => {
-        const row =
-          byTypeMap.get(obs.type) ??
-          {
-            type: obs.type,
-            count: 0,
-            withStdResCount: 0,
-            localFailCount: 0,
-            over3SigmaCount: 0,
-            maxStdRes: undefined,
-            redundancies: [],
-          };
+        const row = byTypeMap.get(obs.type) ?? {
+          type: obs.type,
+          count: 0,
+          withStdResCount: 0,
+          localFailCount: 0,
+          over3SigmaCount: 0,
+          maxStdRes: undefined,
+          redundancies: [],
+        };
         row.count += 1;
         if (Number.isFinite(obs.stdRes)) {
           row.withStdResCount += 1;
@@ -2758,7 +2790,8 @@ export class LSAEngine {
         veryLowRedundancyCount,
         meanRedundancy,
         minRedundancy,
-        maxStdRes: withStd.length > 0 ? Math.max(...withStd.map((o) => Math.abs(o.stdRes ?? 0))) : undefined,
+        maxStdRes:
+          withStd.length > 0 ? Math.max(...withStd.map((o) => Math.abs(o.stdRes ?? 0))) : undefined,
         worst: worstObs
           ? {
               obsId: worstObs.obs.id,
@@ -2837,7 +2870,11 @@ export class LSAEngine {
     this.typeSummary = typeSummary;
 
     if (hasQxx && this.Qxx) {
-      const s0_sq = this.seuw * this.seuw;
+      const precisionScaleSq =
+        this.dof > 0 && Number.isFinite(this.seuw) && this.seuw > 0 ? this.seuw * this.seuw : 1;
+      if (this.dof <= 0) {
+        this.log('DOF <= 0: using a-priori variance factor 1.0 for point precision scaling.');
+      }
       this.unknowns.forEach((id) => {
         const idx = paramIndex[id];
         if (!idx) return;
@@ -2847,9 +2884,9 @@ export class LSAEngine {
         const qyy = this.Qxx[idx.y][idx.y];
         const qxy = this.Qxx[idx.x][idx.y];
 
-        const sx2 = qxx * s0_sq;
-        const sy2 = qyy * s0_sq;
-        const sxy = qxy * s0_sq;
+        const sx2 = qxx * precisionScaleSq;
+        const sy2 = qyy * precisionScaleSq;
+        const sxy = qxy * precisionScaleSq;
 
         const term1 = (sx2 + sy2) / 2;
         const term2 = Math.sqrt(((sx2 - sy2) / 2) ** 2 + sxy * sxy);
@@ -2866,7 +2903,7 @@ export class LSAEngine {
         this.stations[id].sN = Math.sqrt(Math.abs(sy2));
 
         if (!this.is2D && idx.h != null) {
-          const qhh = this.Qxx[idx.h][idx.h] * s0_sq;
+          const qhh = this.Qxx[idx.h][idx.h] * precisionScaleSq;
           this.stations[id].sH = Math.sqrt(Math.abs(qhh));
         }
       });
@@ -2874,7 +2911,7 @@ export class LSAEngine {
       const cov = (a?: number, b?: number): number => {
         if (a == null || b == null) return 0;
         if (!this.Qxx?.[a] || this.Qxx?.[a][b] == null) return 0;
-        return this.Qxx[a][b] * s0_sq;
+        return this.Qxx[a][b] * precisionScaleSq;
       };
 
       const relative: NonNullable<AdjustmentResult['relativePrecision']> = [];
@@ -2891,13 +2928,9 @@ export class LSAEngine {
           const dist = Math.hypot(dE, dN);
 
           const varE =
-            cov(idxTo?.x, idxTo?.x) +
-            cov(idxFrom?.x, idxFrom?.x) -
-            2 * cov(idxFrom?.x, idxTo?.x);
+            cov(idxTo?.x, idxTo?.x) + cov(idxFrom?.x, idxFrom?.x) - 2 * cov(idxFrom?.x, idxTo?.x);
           const varN =
-            cov(idxTo?.y, idxTo?.y) +
-            cov(idxFrom?.y, idxFrom?.y) -
-            2 * cov(idxFrom?.y, idxTo?.y);
+            cov(idxTo?.y, idxTo?.y) + cov(idxFrom?.y, idxFrom?.y) - 2 * cov(idxFrom?.y, idxTo?.y);
           const covNE =
             cov(idxTo?.y, idxTo?.x) +
             cov(idxFrom?.y, idxFrom?.x) -
@@ -2914,11 +2947,9 @@ export class LSAEngine {
           let sigmaAz: number | undefined;
           if (dist > 0) {
             const inv = 1 / (dist * dist);
-            const varDist =
-              inv * (dE * dE * varE + dN * dN * varN + 2 * dE * dN * covNE);
+            const varDist = inv * (dE * dE * varE + dN * dN * varN + 2 * dE * dN * covNE);
             sigmaDist = Math.sqrt(Math.abs(varDist));
-            const varAz =
-              (dN * dN * varE + dE * dE * varN - 2 * dE * dN * covNE) * inv * inv;
+            const varAz = (dN * dN * varE + dE * dE * varN - 2 * dE * dN * covNE) * inv * inv;
             sigmaAz = Math.sqrt(Math.abs(varAz));
           }
 
@@ -2942,11 +2973,13 @@ export class LSAEngine {
     }
 
     if (directionStats.size > 0) {
-      const summaries = Array.from(directionStats.entries()).sort((a, b) => a[0].localeCompare(b[0]));
+      const summaries = Array.from(directionStats.entries()).sort((a, b) =>
+        a[0].localeCompare(b[0]),
+      );
       this.directionSetDiagnostics = summaries.map(([setId, stat]) => {
         const mean = stat.sum / Math.max(stat.count, 1);
         const rms = Math.sqrt(stat.sumSq / Math.max(stat.count, 1));
-        const orientDeg = ((stat.orientation * RAD_TO_DEG) % 360 + 360) % 360;
+        const orientDeg = (((stat.orientation * RAD_TO_DEG) % 360) + 360) % 360;
         const orientationSeArcSec = stat.count > 0 ? rms / Math.sqrt(stat.count) : undefined;
         return {
           setId,
@@ -2965,7 +2998,9 @@ export class LSAEngine {
             stat.pairDeltaCount > 0 ? stat.pairDeltaSum / stat.pairDeltaCount : undefined,
           maxFacePairDeltaArcSec: stat.pairDeltaCount > 0 ? stat.pairDeltaMax : undefined,
           meanRawMaxResidualArcSec:
-            stat.rawMaxResidualCount > 0 ? stat.rawMaxResidualSum / stat.rawMaxResidualCount : undefined,
+            stat.rawMaxResidualCount > 0
+              ? stat.rawMaxResidualSum / stat.rawMaxResidualCount
+              : undefined,
           maxRawMaxResidualArcSec:
             stat.rawMaxResidualCount > 0 ? stat.rawMaxResidualMax : undefined,
         };
@@ -3031,7 +3066,10 @@ export class LSAEngine {
           suspectScore += Math.min((rawSpreadArcSec ?? 0) / 2, 50);
           suspectScore += Math.min((rawMaxResidualArcSec ?? 0) / 2, 50);
           suspectScore += Math.min((facePairDeltaArcSec ?? 0) / 2, 40);
-          suspectScore += Math.min(Math.max(face1SpreadArcSec ?? 0, face2SpreadArcSec ?? 0) / 2, 35);
+          suspectScore += Math.min(
+            Math.max(face1SpreadArcSec ?? 0, face2SpreadArcSec ?? 0) / 2,
+            35,
+          );
           if (!faceBalanced) suspectScore += 8;
           if (rawCount < 2) suspectScore += 4;
 
@@ -3110,30 +3148,28 @@ export class LSAEngine {
         directionTargets.forEach((d) => {
           const key = `${d.occupy}>>${d.target}`;
           const existing = repeatMap.get(key);
-          const entry =
-            existing ??
-            {
-              occupy: d.occupy,
-              target: d.target,
-              setCount: 0,
-              localFailCount: 0,
-              faceUnbalancedSets: 0,
-              resCount: 0,
-              resSum: 0,
-              resSumSq: 0,
-              resMin: Number.POSITIVE_INFINITY,
-              resMax: Number.NEGATIVE_INFINITY,
-              resMaxAbs: 0,
-              stdCount: 0,
-              stdSumSq: 0,
-              maxStdRes: 0,
-              spreadCount: 0,
-              spreadSum: 0,
-              maxSpread: 0,
-              worstSetId: undefined,
-              worstLine: undefined,
-              worstMetric: Number.NEGATIVE_INFINITY,
-            };
+          const entry = existing ?? {
+            occupy: d.occupy,
+            target: d.target,
+            setCount: 0,
+            localFailCount: 0,
+            faceUnbalancedSets: 0,
+            resCount: 0,
+            resSum: 0,
+            resSumSq: 0,
+            resMin: Number.POSITIVE_INFINITY,
+            resMax: Number.NEGATIVE_INFINITY,
+            resMaxAbs: 0,
+            stdCount: 0,
+            stdSumSq: 0,
+            maxStdRes: 0,
+            spreadCount: 0,
+            spreadSum: 0,
+            maxSpread: 0,
+            worstSetId: undefined,
+            worstLine: undefined,
+            worstMetric: Number.NEGATIVE_INFINITY,
+          };
           entry.setCount += 1;
           if (d.localPass === false) entry.localFailCount += 1;
           if (!d.faceBalanced) entry.faceUnbalancedSets += 1;
@@ -3167,12 +3203,14 @@ export class LSAEngine {
 
         const repeatRows = Array.from(repeatMap.values())
           .map((entry) => {
-            const residualMeanArcSec = entry.resCount > 0 ? entry.resSum / entry.resCount : undefined;
+            const residualMeanArcSec =
+              entry.resCount > 0 ? entry.resSum / entry.resCount : undefined;
             const residualRmsArcSec =
               entry.resCount > 0 ? Math.sqrt(entry.resSumSq / entry.resCount) : undefined;
             const residualRangeArcSec =
               entry.resCount > 0 ? Math.abs(entry.resMax - entry.resMin) : undefined;
-            const stdResRms = entry.stdCount > 0 ? Math.sqrt(entry.stdSumSq / entry.stdCount) : undefined;
+            const stdResRms =
+              entry.stdCount > 0 ? Math.sqrt(entry.stdSumSq / entry.stdCount) : undefined;
             const meanRawSpreadArcSec =
               entry.spreadCount > 0 ? entry.spreadSum / entry.spreadCount : undefined;
             const maxRawSpreadArcSec = entry.spreadCount > 0 ? entry.maxSpread : undefined;
@@ -3411,7 +3449,10 @@ export class LSAEngine {
       const netE = closureVectors.reduce((acc, v) => acc + v.dE, 0);
       const netN = closureVectors.reduce((acc, v) => acc + v.dN, 0);
       const thresholds = { ...this.traverseThresholds };
-      const netAngularMisclosureArcSec = Array.from(loopAngleArcSec.values()).reduce((acc, v) => acc + v, 0);
+      const netAngularMisclosureArcSec = Array.from(loopAngleArcSec.values()).reduce(
+        (acc, v) => acc + v,
+        0,
+      );
       const netVerticalMisclosure = Array.from(loopVerticalMisclosure.values()).reduce(
         (acc, v) => acc + v,
         0,
@@ -3421,8 +3462,7 @@ export class LSAEngine {
         const closureRatio = mag > 1e-12 ? totalTraverseDistance / mag : undefined;
         const linearPpm =
           totalTraverseDistance > 1e-12 ? (mag / totalTraverseDistance) * 1_000_000 : undefined;
-        const ratioPass =
-          closureRatio != null ? closureRatio >= thresholds.minClosureRatio : false;
+        const ratioPass = closureRatio != null ? closureRatio >= thresholds.minClosureRatio : false;
         const ppmPass = linearPpm != null ? linearPpm <= thresholds.maxLinearPpm : false;
         const angularPass =
           loopAngleArcSec.size === 0 ||
@@ -3432,7 +3472,7 @@ export class LSAEngine {
           Math.abs(netVerticalMisclosure) <= thresholds.maxVerticalMisclosure;
 
         const setupTraverseDistance = new Map<string, number>();
-        ;(this.setupDiagnostics ?? []).forEach((s) => {
+        (this.setupDiagnostics ?? []).forEach((s) => {
           setupTraverseDistance.set(s.station, s.traverseDistance);
         });
         const loopKeys = new Set<string>([
@@ -3455,7 +3495,8 @@ export class LSAEngine {
             const ratioOk = loopRatio != null ? loopRatio >= thresholds.minClosureRatio : false;
             const ppmOk = loopPpm != null ? loopPpm <= thresholds.maxLinearPpm : false;
             const angOk = loopAng == null || Math.abs(loopAng) <= thresholds.maxAngularArcSec;
-            const vertOk = loopVert == null || Math.abs(loopVert) <= thresholds.maxVerticalMisclosure;
+            const vertOk =
+              loopVert == null || Math.abs(loopVert) <= thresholds.maxVerticalMisclosure;
             let severity = 0;
             if (!ratioOk && loopRatio != null) {
               severity += (thresholds.minClosureRatio / Math.max(loopRatio, 1) - 1) * 70;
@@ -3467,8 +3508,7 @@ export class LSAEngine {
               severity += (Math.abs(loopAng) / thresholds.maxAngularArcSec - 1) * 35;
             }
             if (!vertOk && loopVert != null) {
-              severity +=
-                (Math.abs(loopVert) / thresholds.maxVerticalMisclosure - 1) * 35;
+              severity += (Math.abs(loopVert) / thresholds.maxVerticalMisclosure - 1) * 35;
             }
             severity += Math.min(loopMag * 10, 25);
             const pass = ratioOk && ppmOk && angOk && vertOk;
@@ -3503,8 +3543,7 @@ export class LSAEngine {
           linearPpm,
           angularMisclosureArcSec:
             loopAngleArcSec.size > 0 ? netAngularMisclosureArcSec : undefined,
-          verticalMisclosure:
-            loopVerticalMisclosure.size > 0 ? netVerticalMisclosure : undefined,
+          verticalMisclosure: loopVerticalMisclosure.size > 0 ? netVerticalMisclosure : undefined,
           thresholds,
           passes: {
             ratio: ratioPass,
@@ -3544,7 +3583,9 @@ export class LSAEngine {
       }
       Object.entries(loopVectors).forEach(([k, v]) => {
         const mag = Math.hypot(v.dE, v.dN);
-        this.logs.push(`Closure loop ${k}: dE=${v.dE.toFixed(4)} m, dN=${v.dN.toFixed(4)} m, Mag=${mag.toFixed(4)} m`);
+        this.logs.push(
+          `Closure loop ${k}: dE=${v.dE.toFixed(4)} m, dN=${v.dN.toFixed(4)} m, Mag=${mag.toFixed(4)} m`,
+        );
       });
       if (coordClosureVectors.length) {
         coordClosureVectors.forEach((v) => {
@@ -3578,14 +3619,12 @@ export class LSAEngine {
           linearPpm: false,
           angular:
             loopAngleArcSec.size === 0 ||
-            Math.abs(
-              Array.from(loopAngleArcSec.values()).reduce((acc, v) => acc + v, 0),
-            ) <= thresholds.maxAngularArcSec,
+            Math.abs(Array.from(loopAngleArcSec.values()).reduce((acc, v) => acc + v, 0)) <=
+              thresholds.maxAngularArcSec,
           vertical:
             loopVerticalMisclosure.size === 0 ||
-            Math.abs(
-              Array.from(loopVerticalMisclosure.values()).reduce((acc, v) => acc + v, 0),
-            ) <= thresholds.maxVerticalMisclosure,
+            Math.abs(Array.from(loopVerticalMisclosure.values()).reduce((acc, v) => acc + v, 0)) <=
+              thresholds.maxVerticalMisclosure,
           overall: false,
         },
         loops: [],

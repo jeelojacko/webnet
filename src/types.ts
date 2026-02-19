@@ -219,6 +219,8 @@ export interface ParseResult {
 export type UnitsMode = 'm' | 'ft';
 export type CoordMode = '2D' | '3D';
 export type OrderMode = 'NE' | 'EN';
+export type AngleUnitsMode = 'dms' | 'dd';
+export type AngleStationOrder = 'atfromto' | 'fromatto';
 export type DeltaMode = 'slope' | 'horiz'; // slope+zenith vs horiz+deltaH
 export type MapMode = 'off' | 'on' | 'anglecalc';
 export type LonSign = 'west-positive' | 'west-negative';
@@ -231,6 +233,8 @@ export interface ParseOptions {
   units: UnitsMode;
   coordMode: CoordMode;
   order: OrderMode;
+  angleUnits?: AngleUnitsMode;
+  angleStationOrder?: AngleStationOrder;
   deltaMode: DeltaMode;
   mapMode: MapMode;
   mapScaleFactor?: number;
@@ -532,9 +536,9 @@ export interface AdjustmentResult {
     to: StationId;
     mode: 'slope' | 'horiz';
     hasAzimuth: boolean;
-  azimuth?: number;
-  azimuthSource?: 'explicit' | 'setup' | 'target';
-  sigmaAz?: number;
+    azimuth?: number;
+    azimuthSource?: 'explicit' | 'setup' | 'target';
+    sigmaAz?: number;
     distance: number;
     horizDistance: number;
     deltaH?: number;

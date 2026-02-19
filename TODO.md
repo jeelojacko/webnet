@@ -13,7 +13,7 @@
 - [x] Standardized residuals (Qvv), redundancy numbers, chi-square test, per-type residual summaries
 - [x] Point precision (σN/σE/σH, ellipse azimuth, 95% toggle) + relative precision between unknown points
 - [x] Map/ellipse viewer interaction upgrades: wheel zoom, middle-button pan, middle-double-click reset-to-extents, zoom-aware symbol scaling
-- [x] Map/ellipse viewer usability refinement: full-height viewport fill in map tab and larger zoom-adaptive station labels
+- [x] Prevent stale exclusion/override carryover between changed inputs (auto-clear on changed run context + file load)
 - [x] Sync README/agents docs with current parser/engine/UI state
 - [ ] Adjustment report parity roadmap (Star\*Net alignment):
   - [x] Implement weighted control constraints from coordinate/elevation std errors (not only fixed/free) so control uncertainty participates in the solve

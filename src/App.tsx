@@ -2090,6 +2090,8 @@ const App: React.FC = () => {
     reader.onload = () => {
       const text = typeof reader.result === 'string' ? reader.result : '';
       setInput(text);
+      setExcludedIds(new Set());
+      setOverrides({});
     };
     reader.readAsText(file);
     e.target.value = '';
@@ -2102,6 +2104,7 @@ const App: React.FC = () => {
   const solveCore = (
     excludeSet: Set<number>,
     parseOverride?: Partial<ParseSettings>,
+    overrideValues: Record<number, ObservationOverride> = overrides,
   ): AdjustmentResult => {
     const effectiveParse = { ...parseSettings, ...parseOverride };
     const engine = new LSAEngine({
@@ -2109,7 +2112,7 @@ const App: React.FC = () => {
       maxIterations: settings.maxIterations,
       instrumentLibrary,
       excludeIds: excludeSet,
-      overrides,
+      overrides: overrideValues,
       parseOptions: {
         units: settings.units,
         coordMode: effectiveParse.coordMode,
@@ -2137,6 +2140,7 @@ const App: React.FC = () => {
   const buildSuspectImpactDiagnostics = (
     base: AdjustmentResult,
     baseExclusions: Set<number>,
+    overrideValues: Record<number, ObservationOverride>,
   ): NonNullable<AdjustmentResult['suspectImpactDiagnostics']> => {
     const baseChiPass = base.chiSquare?.pass95;
     const baseMaxStd = maxAbsStdRes(base);
@@ -2167,7 +2171,7 @@ const App: React.FC = () => {
       try {
         const nextExclusions = new Set(baseExclusions);
         nextExclusions.add(obs.id);
-        const alt = solveCore(nextExclusions);
+        const alt = solveCore(nextExclusions, undefined, overrideValues);
         const altMaxStd = maxAbsStdRes(alt);
         const altChiPass = alt.chiSquare?.pass95;
         let chiDelta: NonNullable<
@@ -2217,11 +2221,18 @@ const App: React.FC = () => {
     return rows;
   };
 
-  const solveWithImpacts = (excludeSet: Set<number>): AdjustmentResult => {
-    const solved = solveCore(excludeSet);
-    solved.suspectImpactDiagnostics = buildSuspectImpactDiagnostics(solved, excludeSet);
+  const solveWithImpacts = (
+    excludeSet: Set<number>,
+    overrideValues: Record<number, ObservationOverride> = overrides,
+  ): AdjustmentResult => {
+    const solved = solveCore(excludeSet, undefined, overrideValues);
+    solved.suspectImpactDiagnostics = buildSuspectImpactDiagnostics(
+      solved,
+      excludeSet,
+      overrideValues,
+    );
     if (parseSettings.robustMode !== 'none') {
-      const classical = solveCore(excludeSet, { robustMode: 'none' });
+      const classical = solveCore(excludeSet, { robustMode: 'none' }, overrideValues);
       const classicalTop = rankedSuspects(classical, 10);
       const robustTop = rankedSuspects(solved, 10);
       const robustIds = new Set(robustTop.map((r) => r.obsId));
@@ -2247,8 +2258,26 @@ const App: React.FC = () => {
   };
 
   const runWithExclusions = (excludeSet: Set<number>) => {
+    let effectiveExclusions = excludeSet;
+    let effectiveOverrides = overrides;
+    const inputChangedSinceLastRun = lastRunInput != null && input !== lastRunInput;
+    const droppedExclusions = inputChangedSinceLastRun ? excludeSet.size : 0;
+    const droppedOverrides = inputChangedSinceLastRun ? Object.keys(overrides).length : 0;
+
+    if (inputChangedSinceLastRun && (droppedExclusions > 0 || droppedOverrides > 0)) {
+      effectiveExclusions = new Set();
+      effectiveOverrides = {};
+      setExcludedIds(new Set());
+      setOverrides({});
+    }
+
+    const solved = solveWithImpacts(effectiveExclusions, effectiveOverrides);
+    if (inputChangedSinceLastRun && (droppedExclusions > 0 || droppedOverrides > 0)) {
+      solved.logs.unshift(
+        `Input changed since previous run: cleared ${droppedExclusions} exclusion(s) and ${droppedOverrides} override(s).`,
+      );
+    }
     setLastRunInput(input);
-    const solved = solveWithImpacts(excludeSet);
     setResult(solved);
     setActiveTab('report');
   };
