@@ -22,6 +22,11 @@ import ProcessingSummaryView from './components/ProcessingSummaryView';
 import IndustryOutputView from './components/IndustryOutputView';
 import { LSAEngine } from './engine/adjust';
 import { RAD_TO_DEG, radToDmsStr } from './engine/angles';
+import {
+  formatAutoAdjustLogLines,
+  runAutoAdjustCycles,
+  type AutoAdjustConfig,
+} from './engine/autoAdjust';
 import { buildIndustryStyleListingText } from './engine/industryListing';
 import type {
   AdjustmentResult,
@@ -262,6 +267,10 @@ type ProjectOptionsTab =
 type RunDiagnostics = {
   solveProfile: SolveProfile;
   parity: boolean;
+  autoAdjustEnabled: boolean;
+  autoAdjustMaxCycles: number;
+  autoAdjustMaxRemovalsPerCycle: number;
+  autoAdjustStdResThreshold: number;
   directionSetMode: DirectionSetMode;
   mapMode: MapMode;
   mapScaleFactor: number;
@@ -286,6 +295,10 @@ type ParseSettings = {
   solveProfile: SolveProfile;
   coordMode: CoordMode;
   clusterDetectionEnabled: boolean;
+  autoAdjustEnabled: boolean;
+  autoAdjustMaxCycles: number;
+  autoAdjustMaxRemovalsPerCycle: number;
+  autoAdjustStdResThreshold: number;
   order: OrderMode;
   angleUnits: 'dms' | 'dd';
   angleStationOrder: 'atfromto' | 'fromatto';
@@ -331,6 +344,14 @@ const SETTINGS_TOOLTIPS = {
     '2D adjusts horizontal coordinates only. 3D also adjusts heights and uses vertical observations.',
   clusterDetection:
     'Enable or disable post-adjust cluster detection diagnostics/workflow. When OFF, cluster candidates and review/merge workflow are hidden.',
+  autoAdjust:
+    'Enable iterative auto-adjust cycles that automatically exclude top outlier candidates and re-solve until limits are reached.',
+  autoAdjustMaxCycles:
+    'Maximum number of auto-adjust cycles. Each cycle can remove one or more observations and rerun the solve.',
+  autoAdjustMaxRemovalsPerCycle:
+    'Maximum observations auto-excluded per cycle after candidate ranking and safeguards.',
+  autoAdjustThreshold:
+    'Absolute standardized residual threshold |t| used for non-local-test auto-adjust candidate selection.',
   order: 'Coordinate field order expected in control records and shown in report tables.',
   angleUnits: 'Angular input units for survey records. DMS uses D-M-S tokens; DD uses decimal degrees.',
   angleStationOrder:
@@ -419,6 +440,10 @@ const App: React.FC = () => {
     solveProfile: 'industry-parity',
     coordMode: '3D',
     clusterDetectionEnabled: false,
+    autoAdjustEnabled: false,
+    autoAdjustMaxCycles: 3,
+    autoAdjustMaxRemovalsPerCycle: 1,
+    autoAdjustStdResThreshold: 4,
     order: 'EN',
     angleUnits: 'dms',
     angleStationOrder: 'atfromto',
@@ -565,6 +590,7 @@ const App: React.FC = () => {
   };
 
   const IMPACT_MAX_CANDIDATES = 8;
+  const AUTO_ADJUST_MIN_REDUNDANCY = 0.05;
 
   const observationStationsLabel = (obs: Observation): string => {
     if ('at' in obs && 'from' in obs && 'to' in obs) return `${obs.at}-${obs.from}-${obs.to}`;
@@ -786,6 +812,10 @@ const App: React.FC = () => {
     return {
       solveProfile: base.solveProfile,
       parity: profileCtx.parity,
+      autoAdjustEnabled: base.autoAdjustEnabled,
+      autoAdjustMaxCycles: base.autoAdjustMaxCycles,
+      autoAdjustMaxRemovalsPerCycle: base.autoAdjustMaxRemovalsPerCycle,
+      autoAdjustStdResThreshold: base.autoAdjustStdResThreshold,
       directionSetMode: profileCtx.directionSetMode,
       mapMode: parse.mapMode,
       mapScaleFactor: parse.mapScaleFactor ?? 1,
@@ -832,7 +862,7 @@ const App: React.FC = () => {
     lines.push(`# Generated: ${now.toLocaleString()}`);
     lines.push(`# Linear units: ${linearUnit}`);
     lines.push(
-      `# Reduction: profile=${runDiag.solveProfile}, dirSets=${runDiag.directionSetMode}, mapMode=${runDiag.mapMode}, mapScale=${runDiag.mapScaleFactor.toFixed(8)}, curvRef=${runDiag.applyCurvatureRefraction ? 'ON' : 'OFF'}, k=${runDiag.refractionCoefficient.toFixed(3)}, vRed=${runDiag.verticalReduction}, tsCorr=${runDiag.tsCorrelationEnabled ? 'ON' : 'OFF'}(${runDiag.tsCorrelationScope},rho=${runDiag.tsCorrelationRho.toFixed(3)}), robust=${runDiag.robustMode.toUpperCase()}(k=${runDiag.robustK.toFixed(2)})`,
+      `# Reduction: profile=${runDiag.solveProfile}, autoAdjust=${runDiag.autoAdjustEnabled ? 'ON' : 'OFF'}(|t|>=${runDiag.autoAdjustStdResThreshold.toFixed(2)},cycles=${runDiag.autoAdjustMaxCycles},maxRm=${runDiag.autoAdjustMaxRemovalsPerCycle}), dirSets=${runDiag.directionSetMode}, mapMode=${runDiag.mapMode}, mapScale=${runDiag.mapScaleFactor.toFixed(8)}, curvRef=${runDiag.applyCurvatureRefraction ? 'ON' : 'OFF'}, k=${runDiag.refractionCoefficient.toFixed(3)}, vRed=${runDiag.verticalReduction}, tsCorr=${runDiag.tsCorrelationEnabled ? 'ON' : 'OFF'}(${runDiag.tsCorrelationScope},rho=${runDiag.tsCorrelationRho.toFixed(3)}), robust=${runDiag.robustMode.toUpperCase()}(k=${runDiag.robustK.toFixed(2)})`,
     );
     lines.push(
       `# Parity: profileFallback=${runDiag.profileDefaultInstrumentFallback ? 'ON' : 'OFF'}, angleCentering=${runDiag.angleCenteringModel}, normalize=${runDiag.normalize ? 'ON' : 'OFF'}, angleMode=${runDiag.angleMode.toUpperCase()}`,
@@ -841,6 +871,9 @@ const App: React.FC = () => {
     lines.push('--- Solve Profile Diagnostics ---');
     lines.push(`Profile: ${runDiag.solveProfile.toUpperCase()}`);
     lines.push(`Direction-set mode: ${runDiag.directionSetMode}`);
+    lines.push(
+      `Auto-adjust: ${runDiag.autoAdjustEnabled ? `ON (|t|>=${runDiag.autoAdjustStdResThreshold.toFixed(2)}, maxCycles=${runDiag.autoAdjustMaxCycles}, maxRemovalsPerCycle=${runDiag.autoAdjustMaxRemovalsPerCycle})` : 'OFF'}`,
+    );
     lines.push(
       `industry default instrument fallback: ${runDiag.profileDefaultInstrumentFallback ? 'ON' : 'OFF'}`,
     );
@@ -2844,6 +2877,7 @@ const App: React.FC = () => {
     let effectiveExclusions = excludeSet;
     let effectiveOverrides = overrides;
     let effectiveClusterMerges = normalizeClusterApprovedMerges(approvedClusterMerges);
+    let autoAdjustSummary: ReturnType<typeof runAutoAdjustCycles> | null = null;
     if (!parseSettings.clusterDetectionEnabled) {
       effectiveClusterMerges = [];
     }
@@ -2865,7 +2899,30 @@ const App: React.FC = () => {
       setActiveClusterApprovedMerges([]);
     }
 
+    const autoAdjustConfig: AutoAdjustConfig = {
+      enabled: parseSettings.autoAdjustEnabled,
+      maxCycles: parseSettings.autoAdjustMaxCycles,
+      maxRemovalsPerCycle: parseSettings.autoAdjustMaxRemovalsPerCycle,
+      stdResThreshold: parseSettings.autoAdjustStdResThreshold,
+      minRedundancy: AUTO_ADJUST_MIN_REDUNDANCY,
+    };
+    if (autoAdjustConfig.enabled) {
+      autoAdjustSummary = runAutoAdjustCycles(
+        effectiveExclusions,
+        autoAdjustConfig,
+        (trialExclusions) =>
+          solveCore(trialExclusions, undefined, effectiveOverrides, effectiveClusterMerges),
+      );
+      effectiveExclusions = autoAdjustSummary.finalExcludedIds;
+    }
+
     const solved = solveWithImpacts(effectiveExclusions, effectiveOverrides, effectiveClusterMerges);
+    if (autoAdjustSummary?.enabled) {
+      const autoLines = formatAutoAdjustLogLines(autoAdjustSummary);
+      for (let i = autoLines.length - 1; i >= 0; i -= 1) {
+        solved.logs.unshift(autoLines[i]);
+      }
+    }
     if (solved.clusterDiagnostics?.enabled) {
       const contextCandidates =
         reviewContext?.candidates ?? (result?.clusterDiagnostics?.candidates ?? []);
@@ -2891,6 +2948,7 @@ const App: React.FC = () => {
       );
     }
     setLastRunInput(input);
+    setExcludedIds(new Set(effectiveExclusions));
     setActiveClusterApprovedMerges(effectiveClusterMerges);
     setRunDiagnostics(runProfile);
     setRunElapsedMs(Date.now() - runStartMs);
@@ -3283,21 +3341,105 @@ const App: React.FC = () => {
                         <option value="3D">3D</option>
                       </select>
                     </label>
-                    <label className={optionLabelClass}>
-                      Cluster Detection
-                      <div className="mt-1 flex items-center gap-2 text-xs">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <label className={optionLabelClass}>
+                        Cluster Detection
+                        <div className="mt-1 flex items-center gap-2 text-xs">
+                          <input
+                            title={SETTINGS_TOOLTIPS.clusterDetection}
+                            type="checkbox"
+                            className="accent-blue-400"
+                            checked={parseSettingsDraft.clusterDetectionEnabled}
+                            onChange={(e) =>
+                              handleDraftParseSetting('clusterDetectionEnabled', e.target.checked)
+                            }
+                          />
+                          <span>
+                            {parseSettingsDraft.clusterDetectionEnabled ? 'Enabled' : 'Disabled'}
+                          </span>
+                        </div>
+                      </label>
+                      <label className={optionLabelClass}>
+                        Auto-Adjust
+                        <div className="mt-1 flex items-center gap-2 text-xs">
+                          <input
+                            title={SETTINGS_TOOLTIPS.autoAdjust}
+                            type="checkbox"
+                            className="accent-blue-400"
+                            checked={parseSettingsDraft.autoAdjustEnabled}
+                            onChange={(e) =>
+                              handleDraftParseSetting('autoAdjustEnabled', e.target.checked)
+                            }
+                          />
+                          <span>{parseSettingsDraft.autoAdjustEnabled ? 'Enabled' : 'Disabled'}</span>
+                        </div>
+                      </label>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <label className={optionLabelClass}>
+                        Auto-Adjust |t| Threshold
                         <input
-                          title={SETTINGS_TOOLTIPS.clusterDetection}
-                          type="checkbox"
-                          className="accent-blue-400"
-                          checked={parseSettingsDraft.clusterDetectionEnabled}
+                          title={SETTINGS_TOOLTIPS.autoAdjustThreshold}
+                          type="number"
+                          min={1}
+                          max={20}
+                          step={0.1}
+                          value={parseSettingsDraft.autoAdjustStdResThreshold}
+                          disabled={!parseSettingsDraft.autoAdjustEnabled}
                           onChange={(e) =>
-                            handleDraftParseSetting('clusterDetectionEnabled', e.target.checked)
+                            handleDraftParseSetting(
+                              'autoAdjustStdResThreshold',
+                              Number.isFinite(parseFloat(e.target.value))
+                                ? Math.max(1, Math.min(20, parseFloat(e.target.value)))
+                                : 4,
+                            )
                           }
+                          className={`${optionInputClass} mt-1 disabled:opacity-50 disabled:cursor-not-allowed`}
                         />
-                        <span>{parseSettingsDraft.clusterDetectionEnabled ? 'Enabled' : 'Disabled'}</span>
-                      </div>
-                    </label>
+                      </label>
+                      <label className={optionLabelClass}>
+                        Auto-Adjust Max Cycles
+                        <input
+                          title={SETTINGS_TOOLTIPS.autoAdjustMaxCycles}
+                          type="number"
+                          min={1}
+                          max={20}
+                          step={1}
+                          value={parseSettingsDraft.autoAdjustMaxCycles}
+                          disabled={!parseSettingsDraft.autoAdjustEnabled}
+                          onChange={(e) =>
+                            handleDraftParseSetting(
+                              'autoAdjustMaxCycles',
+                              Number.isFinite(parseInt(e.target.value, 10))
+                                ? Math.max(1, Math.min(20, parseInt(e.target.value, 10)))
+                                : 3,
+                            )
+                          }
+                          className={`${optionInputClass} mt-1 disabled:opacity-50 disabled:cursor-not-allowed`}
+                        />
+                      </label>
+                      <label className={optionLabelClass}>
+                        Auto-Adjust Max Removals/Cycle
+                        <input
+                          title={SETTINGS_TOOLTIPS.autoAdjustMaxRemovalsPerCycle}
+                          type="number"
+                          min={1}
+                          max={10}
+                          step={1}
+                          value={parseSettingsDraft.autoAdjustMaxRemovalsPerCycle}
+                          disabled={!parseSettingsDraft.autoAdjustEnabled}
+                          onChange={(e) =>
+                            handleDraftParseSetting(
+                              'autoAdjustMaxRemovalsPerCycle',
+                              Number.isFinite(parseInt(e.target.value, 10))
+                                ? Math.max(1, Math.min(10, parseInt(e.target.value, 10)))
+                                : 1,
+                            )
+                          }
+                          className={`${optionInputClass} mt-1 disabled:opacity-50 disabled:cursor-not-allowed`}
+                        />
+                      </label>
+                    </div>
                     <div className="grid grid-cols-2 gap-3">
                       <label className={optionLabelClass}>
                         Linear Units
@@ -4222,6 +4364,3 @@ const App: React.FC = () => {
 };
 
 export default App;
-
-
-

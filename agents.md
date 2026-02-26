@@ -11,6 +11,7 @@
 - Current behavior also includes cluster-detection Phases 1-4 diagnostics/workflow: post-adjust cluster candidate detection with deterministic keys (`CL-<n>-<rep>`), linkage mode (`single` or `complete`), and coord-mode-aware tolerances (2D/3D), plus dual-pass solving when approved merges are supplied (`clusterApprovedMerges`: pass-1 detect, pass-2 apply merges) surfaced in report/processing summary/export outputs and run logs, a report-side review/override table where users can approve/reject candidate clusters and choose retained canonical points before rerun, cluster-outcome reporting for applied merges (with per-merge coordinate deltas from retained points) and rejected proposals, a Project Options -> Adjustment cluster-detection ON/OFF toggle, and a top-level report action to revert applied cluster merges.
 - Current behavior also includes a full Project Options instrument editor workflow: users can create/select instruments in UI, edit EDM/angle/direction/azimuth/zenith/centering/elevation-difference parameters with unit-aware labels and 2D/3D field gating, and run solves with UI instruments taking precedence over inline `I` rows for matching codes. Precision defaults are now zero when no instrument/obs sigma is provided (no hardcoded 5"/0.005m/0.01m fallbacks).
 - Current behavior startup defaults now set run profile to Industry Standard parity, cluster detection to OFF (user-toggle in Project Options -> Adjustment), and seed the project instrument library with `S9` (`Trimble S9 0.5"`) as the default-selected instrument baseline.
+- Current behavior also includes Auto-Adjust Phase 1 workflow controls in Project Options -> Adjustment (default OFF, adjacent to cluster detection toggle): configurable `|t|` threshold, max cycles, and max removals per cycle, with iterative cycle/removal diagnostics logged during runs when enabled.
 - Current behavior also includes industry-style weighted statistical summaries computed from per-observation `vTPv` contributions by family (Angles/Directions/Distances/etc.) with industry-style group error-factor normalization (group RMS scaled by `sqrt(totalCount/dof)`), with chi-square bounds surfaced in both error-factor and variance-factor forms in Processing Summary and listing/export views.
 
 ## Tech Stack
@@ -76,10 +77,10 @@ npm run format:check # Prettier check
 ## Process Note
 
 - Update TODO.md, README.md, and agents.md after every batch of updates.
+- Commit and push to GitHub after every completed batch of improvements.
 - After each batch of updates, run:
   - `npm install`
   - `npm run lint`
   - `npm run test`
   - `npm run build`.
 - If any command errors, fix the issues and rerun the full sequence until all commands succeed before pushing.
-

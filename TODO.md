@@ -115,8 +115,8 @@
       - [x] Phase 2: dual-pass solve pipeline (pass-1 detect, pass-2 apply approved merges, retain reproducible run profile)
       - [x] Phase 3: UI review/override table (approve/reject cluster merges, choose retained key point)
       - [x] Phase 4: reporting section for cluster outcomes (merged points, deltas from retained point, rejected proposals)
-    - [ ] Add Auto-Adjust workflow (iterative solve + automatic outlier exclusion thresholds + removed-observation listing section)
-      - [ ] Phase 1: solver loop controller for repeated adjust cycles (max |t| threshold, max removals/cycle, max cycles)
+    - [~] Add Auto-Adjust workflow (iterative solve + automatic outlier exclusion thresholds + removed-observation listing section)
+      - [x] Phase 1: solver loop controller for repeated adjust cycles (max |t| threshold, max removals/cycle, max cycles)
       - [ ] Phase 2: robust outlier candidate selection policy (local-test aware, redundancy guards, tie-break consistency)
       - [ ] Phase 3: run log/report output for each cycle and final "removed observations" listing with line traceability
       - [ ] Phase 4: UI controls + CLI hook parity (`/autoadjust`-style options) and regression tests against fixed fixtures
