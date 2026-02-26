@@ -42,6 +42,8 @@ const defaultParseOptions: ParseOptions = {
   tsCorrelationScope: 'set',
   robustMode: 'none',
   robustK: 1.5,
+  qFixLinearSigmaM: 1e-9,
+  qFixAngularSigmaSec: 1e-9,
   prismEnabled: false,
   prismOffset: 0,
   prismScope: 'global',
@@ -229,11 +231,13 @@ const extractSigmaTokens = (
 const resolveSigma = (
   token: SigmaToken | undefined,
   defaultSigma: number,
+  fixedSigma = FIXED_SIGMA,
+  floatSigma = FLOAT_SIGMA,
 ): { sigma: number; source: SigmaSource } => {
   if (!token || token.kind === 'default') return { sigma: defaultSigma, source: 'default' };
   if (token.kind === 'numeric') return { sigma: token.value, source: 'explicit' };
-  if (token.kind === 'fixed') return { sigma: FIXED_SIGMA, source: 'fixed' };
-  return { sigma: FLOAT_SIGMA, source: 'float' };
+  if (token.kind === 'fixed') return { sigma: fixedSigma, source: 'fixed' };
+  return { sigma: floatSigma, source: 'float' };
 };
 
 const defaultDistanceSigma = (
@@ -408,6 +412,21 @@ export const parseInput = (
   const aliasTraceEntries: NonNullable<ParseOptions['aliasTrace']> = [];
   const aliasTraceSeen = new Set<string>();
   const lostStationIds = new Set<StationId>((state.lostStationIds ?? []).map((id) => `${id}`));
+  const resolveLinearSigma = (
+    token: SigmaToken | undefined,
+    defaultSigma: number,
+  ): { sigma: number; source: SigmaSource } => {
+    const fixedM = Math.max(1e-12, state.qFixLinearSigmaM ?? FIXED_SIGMA);
+    const fixedInputUnits = state.units === 'ft' ? fixedM * FT_PER_M : fixedM;
+    return resolveSigma(token, defaultSigma, fixedInputUnits, FLOAT_SIGMA);
+  };
+  const resolveAngularSigma = (
+    token: SigmaToken | undefined,
+    defaultSigma: number,
+  ): { sigma: number; source: SigmaSource } => {
+    const fixedSec = Math.max(1e-12, state.qFixAngularSigmaSec ?? FIXED_SIGMA);
+    return resolveSigma(token, defaultSigma, fixedSec, FLOAT_SIGMA);
+  };
 
   const preloadedClusterMerges = (state.clusterApprovedMerges ?? [])
     .map((merge) => ({
@@ -895,6 +914,105 @@ export const parseInput = (
           state.levelWeight = val;
           logs.push(`Level weight set to ${val}`);
         }
+      } else if (op === '.QFIX') {
+        const args = parts.slice(1);
+        const toMeters = state.units === 'ft' ? 1 / FT_PER_M : 1;
+        const unitLabel = state.units === 'ft' ? 'ft' : 'm';
+        const formatSigma = (value: number) => value.toExponential(6);
+        if (args.length === 0) {
+          const linear = state.qFixLinearSigmaM ?? FIXED_SIGMA;
+          const angular = state.qFixAngularSigmaSec ?? FIXED_SIGMA;
+          const linearDisplay = state.units === 'ft' ? linear * FT_PER_M : linear;
+          logs.push(
+            `QFIX unchanged: linear=${formatSigma(linearDisplay)} ${unitLabel}, angular=${formatSigma(angular)}"`,
+          );
+          continue;
+        }
+        const mode = args[0].toUpperCase();
+        if (mode === 'OFF' || mode === 'NONE' || mode === 'DEFAULT' || mode === 'RESET') {
+          state.qFixLinearSigmaM = FIXED_SIGMA;
+          state.qFixAngularSigmaSec = FIXED_SIGMA;
+          const linearDisplay = state.units === 'ft' ? FIXED_SIGMA * FT_PER_M : FIXED_SIGMA;
+          logs.push(
+            `QFIX reset to defaults: linear=${formatSigma(linearDisplay)} ${unitLabel}, angular=${formatSigma(FIXED_SIGMA)}"`,
+          );
+          continue;
+        }
+        const parsePositive = (token?: string): number | undefined => {
+          const parsed = parseFloat(token || '');
+          if (!Number.isFinite(parsed) || parsed <= 0) return undefined;
+          return parsed;
+        };
+
+        let linearM = state.qFixLinearSigmaM ?? FIXED_SIGMA;
+        let angularSec = state.qFixAngularSigmaSec ?? FIXED_SIGMA;
+        let updatedLinear = false;
+        let updatedAngular = false;
+
+        if (args.length >= 2) {
+          const first = parsePositive(args[0]);
+          const second = parsePositive(args[1]);
+          if (first != null && second != null) {
+            linearM = first * toMeters;
+            angularSec = second;
+            updatedLinear = true;
+            updatedAngular = true;
+          }
+        }
+
+        for (let i = 0; i < args.length; i += 1) {
+          const label = args[i].toUpperCase();
+          if (label === 'LINEAR' || label === 'LIN' || label === 'DIST' || label === 'L') {
+            const val = parsePositive(args[i + 1]);
+            if (val == null) {
+              logs.push(
+                `Warning: .QFIX missing/invalid linear value at line ${lineNum}; expected positive number.`,
+              );
+              continue;
+            }
+            linearM = val * toMeters;
+            updatedLinear = true;
+            i += 1;
+            continue;
+          }
+          if (label === 'ANGULAR' || label === 'ANG' || label === 'ANGLE' || label === 'A') {
+            const val = parsePositive(args[i + 1]);
+            if (val == null) {
+              logs.push(
+                `Warning: .QFIX missing/invalid angular value at line ${lineNum}; expected positive number.`,
+              );
+              continue;
+            }
+            angularSec = val;
+            updatedAngular = true;
+            i += 1;
+          }
+        }
+
+        if (!updatedLinear && !updatedAngular && args.length === 1) {
+          const both = parsePositive(args[0]);
+          if (both != null) {
+            linearM = both * toMeters;
+            angularSec = both;
+            updatedLinear = true;
+            updatedAngular = true;
+          }
+        }
+        if (!updatedLinear && !updatedAngular) {
+          logs.push(
+            `Warning: unrecognized .QFIX option at line ${lineNum}; expected ".QFIX <linear> <angular>" or labeled LINEAR/ANGULAR tokens.`,
+          );
+          continue;
+        }
+        state.qFixLinearSigmaM = Math.max(1e-12, linearM);
+        state.qFixAngularSigmaSec = Math.max(1e-12, angularSec);
+        const linearDisplay =
+          state.units === 'ft' ? state.qFixLinearSigmaM * FT_PER_M : state.qFixLinearSigmaM;
+        logs.push(
+          `QFIX set: linear=${formatSigma(linearDisplay)} ${unitLabel}, angular=${formatSigma(
+            state.qFixAngularSigmaSec,
+          )}"`,
+        );
       } else if (op === '.NORMALIZE') {
         const mode = (parts[1] || '').toUpperCase();
         state.normalize = mode !== 'OFF';
@@ -1474,7 +1592,7 @@ export const parseInput = (
 
         const inst = instCode ? instrumentLibrary[instCode] : undefined;
         const defaultSigma = defaultDistanceSigma(inst, dist, state.edmMode, 0);
-        const { sigma, source } = resolveSigma(sigmas[0], defaultSigma);
+        const { sigma, source } = resolveLinearSigma(sigmas[0], defaultSigma);
 
         const toMeters = state.units === 'ft' ? 1 / FT_PER_M : 1;
         const obs: DistanceObservation = {
@@ -1513,7 +1631,7 @@ export const parseInput = (
 
         const inst = instCode ? instrumentLibrary[instCode] : undefined;
         const defaultSigma = defaultHorizontalAngleSigmaSec(inst);
-        const resolved = resolveSigma(sigmas[0], defaultSigma);
+        const resolved = resolveAngularSigma(sigmas[0], defaultSigma);
         let sigmaSec = resolved.sigma;
         if (angleRad >= Math.PI) sigmaSec *= FACE2_WEIGHT;
 
@@ -1589,7 +1707,7 @@ export const parseInput = (
         const inst = state.currentInstrument ? instrumentLibrary[state.currentInstrument] : undefined;
         if (state.deltaMode === 'horiz') {
           const dh = parseFloat(valToken) * toMeters;
-          const resolved = resolveSigma(sigmas[0], defaultElevDiffSigma(inst, 0));
+          const resolved = resolveLinearSigma(sigmas[0], defaultElevDiffSigma(inst, 0));
           const std = resolved.sigma * toMeters;
           const obs: LevelObservation = {
             id: obsId++,
@@ -1606,7 +1724,7 @@ export const parseInput = (
         } else {
           const zenRad = parseAngleTokenRad(valToken, state, 'dd');
           const base = defaultZenithSigmaSec(inst);
-          const resolved = resolveSigma(sigmas[0], base);
+          const resolved = resolveAngularSigma(sigmas[0], base);
           pushObservation({
             id: obsId++,
             type: 'zenith',
@@ -1631,8 +1749,11 @@ export const parseInput = (
           const { sigmas, rest } = extractSigmaTokens(restTokens, 2);
           const { hi, ht } = extractHiHt(rest);
           const defaultDist = defaultDistanceSigma(inst, dist, state.edmMode, 0);
-          const distResolved = resolveSigma(sigmas[0], defaultDist);
-          const dhResolved = resolveSigma(sigmas[1], defaultElevDiffSigma(inst, dist * toMeters));
+          const distResolved = resolveLinearSigma(sigmas[0], defaultDist);
+          const dhResolved = resolveLinearSigma(
+            sigmas[1],
+            defaultElevDiffSigma(inst, dist * toMeters),
+          );
           pushObservation({
             id: obsId++,
             type: 'dist',
@@ -1666,9 +1787,9 @@ export const parseInput = (
           const { sigmas, rest } = extractSigmaTokens(restTokens, 2);
           const { hi, ht } = extractHiHt(rest);
           const defaultDist = defaultDistanceSigma(inst, dist, state.edmMode, 0);
-          const distResolved = resolveSigma(sigmas[0], defaultDist);
+          const distResolved = resolveLinearSigma(sigmas[0], defaultDist);
           const defaultZen = defaultZenithSigmaSec(inst);
-          const zenResolved = resolveSigma(sigmas[1], defaultZen);
+          const zenResolved = resolveAngularSigma(sigmas[1], defaultZen);
           if (!zen) {
             logs.push(`DV slope missing zenith at line ${lineNum}, skipping`);
             continue;
@@ -1723,7 +1844,7 @@ export const parseInput = (
           sigVert = sigmas[2];
         }
         const distDefault = defaultDistanceSigma(inst, dist, state.edmMode, 0);
-        const distResolved = resolveSigma(sigDist, distDefault);
+        const distResolved = resolveLinearSigma(sigDist, distDefault);
         const toMeters = state.units === 'ft' ? 1 / FT_PER_M : 1;
         pushObservation({
           id: obsId++,
@@ -1740,7 +1861,10 @@ export const parseInput = (
         });
         if (state.deltaMode === 'horiz' && vert) {
           const dh = parseFloat(vert) * toMeters;
-          const dhResolved = resolveSigma(sigVert, defaultElevDiffSigma(inst, dist * toMeters));
+          const dhResolved = resolveLinearSigma(
+            sigVert,
+            defaultElevDiffSigma(inst, dist * toMeters),
+          );
           pushObservation({
             id: obsId++,
             type: 'lev',
@@ -1755,7 +1879,7 @@ export const parseInput = (
         } else if (vert) {
           const zenRad = parseAngleTokenRad(vert, state, 'dd');
           const baseZen = defaultZenithSigmaSec(inst);
-          const zenResolved = resolveSigma(sigVert, baseZen);
+          const zenResolved = resolveAngularSigma(sigVert, baseZen);
           pushObservation({
             id: obsId++,
             type: 'zenith',
@@ -1768,7 +1892,7 @@ export const parseInput = (
           });
         }
         const bearingRad = applyPlanRotation(parseAngleTokenRad(bearing, state, 'dd'), state);
-        const bearResolved = resolveSigma(sigBear, defaultAzimuthSigmaSec(inst));
+        const bearResolved = resolveAngularSigma(sigBear, defaultAzimuthSigmaSec(inst));
         pushObservation({
           id: obsId++,
           type: 'bearing',
@@ -1803,8 +1927,8 @@ export const parseInput = (
           const instCode = state.currentInstrument ?? '';
           const inst = instCode ? instrumentLibrary[instCode] : undefined;
           const toMeters = state.units === 'ft' ? 1 / FT_PER_M : 1;
-          const angResolved = resolveSigma(sigmas[0], defaultHorizontalAngleSigmaSec(inst));
-          const distResolved = resolveSigma(
+          const angResolved = resolveAngularSigma(sigmas[0], defaultHorizontalAngleSigmaSec(inst));
+          const distResolved = resolveLinearSigma(
             sigmas[1],
             defaultDistanceSigma(inst, dist, state.edmMode, 0),
           );
@@ -1812,7 +1936,10 @@ export const parseInput = (
             state.deltaMode === 'horiz'
               ? defaultElevDiffSigma(inst, dist * toMeters)
               : defaultZenithSigmaSec(inst);
-          const vertResolved = resolveSigma(sigmas[2], defaultVertSigma);
+          const vertResolved =
+            state.deltaMode === 'horiz'
+              ? resolveLinearSigma(sigmas[2], defaultVertSigma)
+              : resolveAngularSigma(sigmas[2], defaultVertSigma);
           const angRad = parseAngleTokenRad(ang, state, 'dms');
           const faceWeight =
             angRad >= Math.PI ? angResolved.sigma * FACE2_WEIGHT : angResolved.sigma;
@@ -1878,7 +2005,7 @@ export const parseInput = (
         const instCode = state.currentInstrument ?? '';
         const inst = instCode ? instrumentLibrary[instCode] : undefined;
         const { sigmas } = extractSigmaTokens(parts.slice(nextIndex + 1), 1);
-        const resolved = resolveSigma(sigmas[0], defaultAzimuthSigmaSec(inst));
+        const resolved = resolveAngularSigma(sigmas[0], defaultAzimuthSigmaSec(inst));
         const bearingRad = applyPlanRotation(parseAngleTokenRad(bearingToken, state, 'dd'), state);
         pushObservation({
           id: obsId++,
@@ -1917,8 +2044,8 @@ export const parseInput = (
         const instCode = state.currentInstrument ?? '';
         const inst = instCode ? instrumentLibrary[instCode] : undefined;
         const toMeters = state.units === 'ft' ? 1 / FT_PER_M : 1;
-        const angResolved = resolveSigma(sigmas[0], defaultHorizontalAngleSigmaSec(inst));
-        const distResolved = resolveSigma(
+        const angResolved = resolveAngularSigma(sigmas[0], defaultHorizontalAngleSigmaSec(inst));
+        const distResolved = resolveLinearSigma(
           sigmas[1],
           defaultDistanceSigma(inst, dist, state.edmMode, 0),
         );
@@ -1926,7 +2053,10 @@ export const parseInput = (
           state.deltaMode === 'horiz'
             ? defaultElevDiffSigma(inst, dist * toMeters)
             : defaultZenithSigmaSec(inst);
-        const vertResolved = resolveSigma(sigmas[2], defaultVertSigma);
+        const vertResolved =
+          state.deltaMode === 'horiz'
+            ? resolveLinearSigma(sigmas[2], defaultVertSigma)
+            : resolveAngularSigma(sigmas[2], defaultVertSigma);
         const angRad = parseAngleTokenRad(ang, state, 'dms');
         const isFace2 = angRad >= Math.PI;
         if (state.normalize === false) {
@@ -2072,7 +2202,7 @@ export const parseInput = (
         const inst = traverseCtx.dirInstCode
           ? instrumentLibrary[traverseCtx.dirInstCode]
           : undefined;
-        const dirResolved = resolveSigma(sigmas[0], defaultDirectionSigmaSec(inst));
+        const dirResolved = resolveAngularSigma(sigmas[0], defaultDirectionSigmaSec(inst));
         const stdAng = dirResolved.sigma;
 
         if (state.normalize === false) {
@@ -2109,7 +2239,7 @@ export const parseInput = (
         traverseCtx.dirRawShots = existing;
 
         if (code === 'DM' && dist > 0) {
-          const distResolved = resolveSigma(
+          const distResolved = resolveLinearSigma(
             sigmas[1],
             defaultDistanceSigma(inst, dist, state.edmMode, 0),
           );
@@ -2129,7 +2259,7 @@ export const parseInput = (
           if (vert) {
             if (state.deltaMode === 'horiz') {
               const dh = parseFloat(vert) * toMeters;
-              const dhResolved = resolveSigma(
+              const dhResolved = resolveLinearSigma(
                 sigmas[2],
                 defaultElevDiffSigma(inst, dist * toMeters),
               );
@@ -2147,7 +2277,7 @@ export const parseInput = (
               });
             } else {
               const zenRad = parseAngleTokenRad(vert, state, 'dd');
-              const zenResolved = resolveSigma(sigmas[2], defaultZenithSigmaSec(inst));
+              const zenResolved = resolveAngularSigma(sigmas[2], defaultZenithSigmaSec(inst));
               pushObservation({
                 id: obsId++,
                 type: 'zenith',
@@ -2251,7 +2381,7 @@ export const parseInput = (
           } else if (sigmas.length === 1) {
             sigmaDistToken = sigmas[0];
           }
-          const hzResolved = resolveSigma(sigmaAzToken, defaultDirectionSigmaSec(inst));
+          const hzResolved = resolveAngularSigma(sigmaAzToken, defaultDirectionSigmaSec(inst));
           if (angleMode === 'az') {
             azimuthStdDev = hzResolved.sigma * SEC_TO_RAD;
           } else {
@@ -2261,7 +2391,7 @@ export const parseInput = (
           sigmaDistToken = sigmas[0];
           sigmaVertToken = sigmas[1];
         }
-        const distResolved = resolveSigma(
+        const distResolved = resolveLinearSigma(
           sigmaDistToken,
           defaultDistanceSigma(inst, dist, state.edmMode, 0),
         );
@@ -2292,7 +2422,7 @@ export const parseInput = (
         if (vert) {
           if (state.deltaMode === 'horiz') {
             const dh = parseFloat(vert) * toMeters;
-            const dhResolved = resolveSigma(
+            const dhResolved = resolveLinearSigma(
               sigmaVertToken,
               defaultElevDiffSigma(inst, dist * toMeters),
             );
@@ -2310,7 +2440,7 @@ export const parseInput = (
             });
           } else {
             const zenRad = parseAngleTokenRad(vert, state, 'dd');
-            const zenResolved = resolveSigma(sigmaVertToken, defaultZenithSigmaSec(inst));
+            const zenResolved = resolveAngularSigma(sigmaVertToken, defaultZenithSigmaSec(inst));
             pushObservation({
               id: obsId++,
               type: 'zenith',

@@ -371,6 +371,8 @@ export interface ParseOptions {
   tsCorrelationScope?: TsCorrelationScope;
   robustMode?: RobustMode;
   robustK?: number;
+  qFixLinearSigmaM?: number;
+  qFixAngularSigmaSec?: number;
   prismEnabled?: boolean;
   prismOffset?: number;
   prismScope?: 'global' | 'set';

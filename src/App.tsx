@@ -320,6 +320,8 @@ type ParseSettings = {
   refractionCoefficient: number;
   verticalReduction: VerticalReductionMode;
   levelWeight?: number;
+  qFixLinearSigmaM: number;
+  qFixAngularSigmaSec: number;
   lonSign: 'west-positive' | 'west-negative';
   tsCorrelationEnabled: boolean;
   tsCorrelationRho: number;
@@ -384,6 +386,10 @@ const SETTINGS_TOOLTIPS = {
     'When ON, normalizes mixed-face direction/traverse observations to a consistent orientation convention.',
   levelWeight:
     'Optional .LWEIGHT value (mm/km) used as the leveling weight constant when computing leveling standard deviations.',
+  qFixLinearSigma:
+    'Fixed linear sigma constant used when observation sigma token is "!" (.QFIX LINEAR). Value uses current linear units.',
+  qFixAngularSigma:
+    'Fixed angular sigma constant in arcseconds used when angular observation sigma token is "!" (.QFIX ANGULAR).',
   lonSign: 'Longitude sign convention for geographic parsing (.LONSIGN W- or W+).',
   tsCorrelation:
     'Enable correlated angular stochastic modeling for TS setups/sets using a common correlation coefficient rho.',
@@ -474,6 +480,8 @@ const App: React.FC = () => {
     refractionCoefficient: 0.13,
     verticalReduction: 'none',
     levelWeight: undefined,
+    qFixLinearSigmaM: 1e-9,
+    qFixAngularSigmaSec: 1e-9,
     lonSign: 'west-negative',
     tsCorrelationEnabled: false,
     tsCorrelationRho: 0.25,
@@ -2868,6 +2876,8 @@ const App: React.FC = () => {
         refractionCoefficient: effectiveParse.refractionCoefficient,
         verticalReduction: effectiveParse.verticalReduction,
         levelWeight: effectiveParse.levelWeight,
+        qFixLinearSigmaM: effectiveParse.qFixLinearSigmaM,
+        qFixAngularSigmaSec: effectiveParse.qFixAngularSigmaSec,
         lonSign: effectiveParse.lonSign,
         tsCorrelationEnabled: effectiveParse.tsCorrelationEnabled,
         tsCorrelationRho: effectiveParse.tsCorrelationRho,
@@ -3638,6 +3648,54 @@ const App: React.FC = () => {
                             )
                           }
                           className={`${optionInputClass} mt-1 disabled:opacity-50 disabled:cursor-not-allowed`}
+                        />
+                      </label>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <label className={optionLabelClass}>
+                        QFIX Linear Sigma ({settingsDraft.units})
+                        <input
+                          title={SETTINGS_TOOLTIPS.qFixLinearSigma}
+                          type="number"
+                          min={0}
+                          step="any"
+                          value={
+                            settingsDraft.units === 'ft'
+                              ? parseSettingsDraft.qFixLinearSigmaM * FT_PER_M
+                              : parseSettingsDraft.qFixLinearSigmaM
+                          }
+                          onChange={(e) =>
+                            handleDraftParseSetting(
+                              'qFixLinearSigmaM',
+                              Number.isFinite(parseFloat(e.target.value)) &&
+                                parseFloat(e.target.value) > 0
+                                ? settingsDraft.units === 'ft'
+                                  ? parseFloat(e.target.value) * M_PER_FT
+                                  : parseFloat(e.target.value)
+                                : 1e-9,
+                            )
+                          }
+                          className={`${optionInputClass} mt-1`}
+                        />
+                      </label>
+                      <label className={optionLabelClass}>
+                        QFIX Angular Sigma (")
+                        <input
+                          title={SETTINGS_TOOLTIPS.qFixAngularSigma}
+                          type="number"
+                          min={0}
+                          step="any"
+                          value={parseSettingsDraft.qFixAngularSigmaSec}
+                          onChange={(e) =>
+                            handleDraftParseSetting(
+                              'qFixAngularSigmaSec',
+                              Number.isFinite(parseFloat(e.target.value)) &&
+                                parseFloat(e.target.value) > 0
+                                ? parseFloat(e.target.value)
+                                : 1e-9,
+                            )
+                          }
+                          className={`${optionInputClass} mt-1`}
                         />
                       </label>
                     </div>

@@ -186,6 +186,30 @@ describe('parseInput', () => {
     expect(parsed.logs.some((l) => l.includes('Auto-sideshot detection set to ON'))).toBe(true);
   });
 
+  it('supports .QFIX and /QFIX overrides for fixed angular/linear sigma constants', () => {
+    const secToRad = (Math.PI / 180) / 3600;
+    const parsed = parseInput(
+      [
+        '.UNITS FEET DMS',
+        '.QFIX LINEAR 0.005 ANGULAR 2.5',
+        '/QFIX 0.01 3.0',
+        'C A 0 0 0 ! !',
+        'C B 100 0 0 ! !',
+        'D A-B 100 !',
+        'B A-B 090-00-00.0 !',
+      ].join('\n'),
+    );
+    const dist = parsed.observations.find((o) => o.type === 'dist') as DistanceObservation | undefined;
+    const bearing = parsed.observations.find((o) => o.type === 'bearing');
+    expect(dist).toBeDefined();
+    expect(bearing).toBeDefined();
+    expect(parsed.parseState.qFixLinearSigmaM ?? 0).toBeCloseTo(0.01 / 3.280839895, 12);
+    expect(parsed.parseState.qFixAngularSigmaSec ?? 0).toBeCloseTo(3.0, 12);
+    expect(dist?.stdDev ?? 0).toBeCloseTo(0.01 / 3.280839895, 12);
+    expect(bearing?.stdDev ?? 0).toBeCloseTo(3.0 * secToRad, 12);
+    expect(parsed.logs.some((l) => l.includes('QFIX set'))).toBe(true);
+  });
+
   it('parses .LOSTSTATIONS and persists lost-station metadata flags', () => {
     const parsed = parseInput(
       [
