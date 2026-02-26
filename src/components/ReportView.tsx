@@ -24,6 +24,7 @@ interface ReportViewProps {
     tsCorrelationRho: number
     robustMode: 'none' | 'huber'
     robustK: number
+    rotationAngleRad: number
     profileDefaultInstrumentFallback: boolean
     angleCenteringModel: 'geometry-aware-correlated-rays'
     defaultSigmaCount: number
@@ -873,6 +874,10 @@ const ReportView: React.FC<ReportViewProps> = ({
             <div>
               <div className="text-slate-500">A-Mode</div>
               <div>{runDiagnostics.angleMode.toUpperCase()}</div>
+            </div>
+            <div>
+              <div className="text-slate-500">Plan Rotation</div>
+              <div>{`${(runDiagnostics.rotationAngleRad * RAD_TO_DEG).toFixed(6)}°`}</div>
             </div>
             <div className="col-span-2">
               <div className="text-slate-500">Default Sigmas</div>

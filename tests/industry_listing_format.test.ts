@@ -71,6 +71,7 @@ describe('industry listing phase 5 formatting locks', () => {
         defaultSigmaCount: 0,
         defaultSigmaByType: '',
         stochasticDefaultsSummary: 'inst=S9',
+        rotationAngleRad: 0,
       },
     );
 
@@ -158,6 +159,7 @@ describe('industry listing phase 5 formatting locks', () => {
         defaultSigmaCount: 0,
         defaultSigmaByType: '',
         stochasticDefaultsSummary: 'inst=S9',
+        rotationAngleRad: 0,
       },
     );
 
@@ -230,6 +232,7 @@ describe('industry listing phase 5 formatting locks', () => {
         defaultSigmaCount: 0,
         defaultSigmaByType: '',
         stochasticDefaultsSummary: 'inst=S9',
+        rotationAngleRad: 0,
       },
     );
 
@@ -279,9 +282,69 @@ describe('industry listing phase 5 formatting locks', () => {
         defaultSigmaCount: 0,
         defaultSigmaByType: '',
         stochasticDefaultsSummary: 'inst=S9',
+        rotationAngleRad: 0,
       },
     );
 
     expect(listing).toMatch(/\[prism global \+0\.2500(?:m|Meters)\]/);
+  });
+
+  it('reports plan rotation in project options and changes rotated output coordinates', () => {
+    const baseInput = ['.2D', 'C A 0 0 0 ! !', 'C B 100 0 0', 'B A-B 090.0000 1.0', 'D A-B 100.0000 0.001'].join(
+      '\n',
+    );
+    const rotatedInput = ['.ROTATION 10', baseInput].join('\n');
+    const baseResult = new LSAEngine({ input: baseInput, maxIterations: 10 }).solve();
+    const rotatedResult = new LSAEngine({ input: rotatedInput, maxIterations: 10 }).solve();
+
+    const buildListing = (result: ReturnType<LSAEngine['solve']>, rotationAngleRad: number) =>
+      buildIndustryStyleListingText(
+        result,
+        {
+          maxIterations: 10,
+          units: 'm',
+          listingShowCoordinates: true,
+          listingShowObservationsResiduals: true,
+          listingShowErrorPropagation: true,
+          listingShowProcessingNotes: false,
+          listingShowAzimuthsBearings: true,
+          listingSortCoordinatesBy: 'name',
+          listingSortObservationsBy: 'name',
+          listingObservationLimit: 500,
+        },
+        {
+          coordMode: '2D',
+          order: 'EN',
+          angleUnits: 'dms',
+          angleStationOrder: 'atfromto',
+          deltaMode: 'horiz',
+          refractionCoefficient: 0.13,
+        },
+        {
+          solveProfile: 'industry-parity',
+          angleCenteringModel: 'geometry-aware-correlated-rays',
+          defaultSigmaCount: 0,
+          defaultSigmaByType: '',
+          stochasticDefaultsSummary: 'inst=S9',
+          rotationAngleRad,
+        },
+      );
+
+    const baseListing = buildListing(baseResult, baseResult.parseState?.rotationAngleRad ?? 0);
+    const rotatedListing = buildListing(rotatedResult, rotatedResult.parseState?.rotationAngleRad ?? 0);
+
+    expect(baseListing).toContain('Plan Rotation                      : OFF');
+    expect(rotatedListing).toContain('Plan Rotation                      : ON (10.000000 deg)');
+
+    const coordRow = (listing: string, stationId: string): [number, number] => {
+      const match = listing.match(new RegExp(`^\\s*${stationId}\\s+(-?\\d+\\.\\d{4})\\s+(-?\\d+\\.\\d{4})\\s*$`, 'm'));
+      expect(match).toBeTruthy();
+      return [Number.parseFloat(match?.[1] ?? '0'), Number.parseFloat(match?.[2] ?? '0')];
+    };
+
+    const [baseN, baseE] = coordRow(baseListing, 'B');
+    const [rotN, rotE] = coordRow(rotatedListing, 'B');
+    expect(Math.abs(rotN - baseN)).toBeGreaterThan(1);
+    expect(Math.abs(rotE - baseE)).toBeGreaterThan(0.5);
   });
 });

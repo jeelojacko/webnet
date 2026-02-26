@@ -8,6 +8,7 @@ interface ProcessingSummaryViewProps {
     solveProfile: 'webnet' | 'industry-parity';
     directionSetMode: 'reduced' | 'raw';
     profileDefaultInstrumentFallback: boolean;
+    rotationAngleRad: number;
   } | null;
 }
 
@@ -126,6 +127,7 @@ const ProcessingSummaryView: React.FC<ProcessingSummaryViewProps> = ({
       lines.push(
         `Run Profile: ${runDiagnostics.solveProfile.toUpperCase()} (dirSets=${runDiagnostics.directionSetMode}, profileFallback=${runDiagnostics.profileDefaultInstrumentFallback ? 'ON' : 'OFF'})`,
       );
+      lines.push(`Plan Rotation: ${(runDiagnostics.rotationAngleRad * 180 / Math.PI).toFixed(6)} deg`);
     }
     const autoSideshotEnabled = result.parseState?.autoSideshotEnabled ?? true;
     lines.push(`Auto-Sideshot: ${autoSideshotEnabled ? 'ON' : 'OFF'}`);

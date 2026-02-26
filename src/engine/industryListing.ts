@@ -34,6 +34,7 @@ export interface IndustryListingRunDiagnostics {
   defaultSigmaCount: number;
   defaultSigmaByType: string;
   stochasticDefaultsSummary: string;
+  rotationAngleRad: number;
 }
 
 export const buildIndustryStyleListingText = (
@@ -63,6 +64,7 @@ export const buildIndustryStyleListingText = (
     const prismEnabled = parseState?.prismEnabled ?? false;
     const prismOffset = parseState?.prismOffset ?? 0;
     const prismScope = parseState?.prismScope ?? 'global';
+    const rotationAngleRad = parseState?.rotationAngleRad ?? runDiag.rotationAngleRad ?? 0;
     const aliasTrace = parseState?.aliasTrace ?? [];
     const aliasObsRefsByLine = new Map<number, string[]>();
     aliasTrace.forEach((entry) => {
@@ -110,6 +112,9 @@ export const buildIndustryStyleListingText = (
     );
     lines.push(
       `      Prism Correction                    : ${prismEnabled ? `ON (${prismOffset.toFixed(4)} m, scope=${prismScope})` : 'OFF'}`,
+    );
+    lines.push(
+      `      Plan Rotation                      : ${Math.abs(rotationAngleRad) > 1e-12 ? `ON (${(rotationAngleRad * RAD_TO_DEG).toFixed(6)} deg)` : 'OFF'}`,
     );
     if (res.clusterDiagnostics?.enabled) {
       lines.push(

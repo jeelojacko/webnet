@@ -289,6 +289,7 @@ type RunDiagnostics = {
   prismEnabled: boolean;
   prismOffset: number;
   prismScope: 'global' | 'set';
+  rotationAngleRad: number;
   profileDefaultInstrumentFallback: boolean;
   angleCenteringModel: 'geometry-aware-correlated-rays';
   defaultSigmaCount: number;
@@ -790,6 +791,7 @@ const App: React.FC = () => {
       prismEnabled: parseState.prismEnabled ?? profileCtx.effectiveParse.prismEnabled ?? false,
       prismOffset: parseState.prismOffset ?? profileCtx.effectiveParse.prismOffset ?? 0,
       prismScope: parseState.prismScope ?? profileCtx.effectiveParse.prismScope ?? 'global',
+      rotationAngleRad: parseState.rotationAngleRad ?? 0,
       edmMode: parseState.edmMode ?? 'additive',
       applyCentering: parseState.applyCentering ?? true,
       addCenteringToExplicit: parseState.addCenteringToExplicit ?? false,
@@ -847,6 +849,7 @@ const App: React.FC = () => {
       prismEnabled: parse.prismEnabled,
       prismOffset: parse.prismOffset,
       prismScope: parse.prismScope,
+      rotationAngleRad: parse.rotationAngleRad,
       profileDefaultInstrumentFallback: profileCtx.parity,
       angleCenteringModel: 'geometry-aware-correlated-rays',
       defaultSigmaCount: defaultObs.length,
@@ -880,7 +883,7 @@ const App: React.FC = () => {
     lines.push(`# Generated: ${now.toLocaleString()}`);
     lines.push(`# Linear units: ${linearUnit}`);
     lines.push(
-      `# Reduction: profile=${runDiag.solveProfile}, autoSideshot=${runDiag.autoSideshotEnabled ? 'ON' : 'OFF'}, autoAdjust=${runDiag.autoAdjustEnabled ? 'ON' : 'OFF'}(|t|>=${runDiag.autoAdjustStdResThreshold.toFixed(2)},cycles=${runDiag.autoAdjustMaxCycles},maxRm=${runDiag.autoAdjustMaxRemovalsPerCycle}), dirSets=${runDiag.directionSetMode}, mapMode=${runDiag.mapMode}, mapScale=${runDiag.mapScaleFactor.toFixed(8)}, curvRef=${runDiag.applyCurvatureRefraction ? 'ON' : 'OFF'}, k=${runDiag.refractionCoefficient.toFixed(3)}, vRed=${runDiag.verticalReduction}, prism=${runDiag.prismEnabled ? `ON(${runDiag.prismOffset.toFixed(4)}m,${runDiag.prismScope})` : 'OFF'}, tsCorr=${runDiag.tsCorrelationEnabled ? 'ON' : 'OFF'}(${runDiag.tsCorrelationScope},rho=${runDiag.tsCorrelationRho.toFixed(3)}), robust=${runDiag.robustMode.toUpperCase()}(k=${runDiag.robustK.toFixed(2)})`,
+      `# Reduction: profile=${runDiag.solveProfile}, autoSideshot=${runDiag.autoSideshotEnabled ? 'ON' : 'OFF'}, autoAdjust=${runDiag.autoAdjustEnabled ? 'ON' : 'OFF'}(|t|>=${runDiag.autoAdjustStdResThreshold.toFixed(2)},cycles=${runDiag.autoAdjustMaxCycles},maxRm=${runDiag.autoAdjustMaxRemovalsPerCycle}), dirSets=${runDiag.directionSetMode}, mapMode=${runDiag.mapMode}, mapScale=${runDiag.mapScaleFactor.toFixed(8)}, curvRef=${runDiag.applyCurvatureRefraction ? 'ON' : 'OFF'}, k=${runDiag.refractionCoefficient.toFixed(3)}, vRed=${runDiag.verticalReduction}, prism=${runDiag.prismEnabled ? `ON(${runDiag.prismOffset.toFixed(4)}m,${runDiag.prismScope})` : 'OFF'}, rotation=${(runDiag.rotationAngleRad * RAD_TO_DEG).toFixed(6)}deg, tsCorr=${runDiag.tsCorrelationEnabled ? 'ON' : 'OFF'}(${runDiag.tsCorrelationScope},rho=${runDiag.tsCorrelationRho.toFixed(3)}), robust=${runDiag.robustMode.toUpperCase()}(k=${runDiag.robustK.toFixed(2)})`,
     );
     lines.push(
       `# Parity: profileFallback=${runDiag.profileDefaultInstrumentFallback ? 'ON' : 'OFF'}, angleCentering=${runDiag.angleCenteringModel}, normalize=${runDiag.normalize ? 'ON' : 'OFF'}, angleMode=${runDiag.angleMode.toUpperCase()}`,
@@ -902,6 +905,9 @@ const App: React.FC = () => {
     );
     lines.push(
       `Prism correction: ${runDiag.prismEnabled ? `ON (${runDiag.prismOffset.toFixed(4)} m, scope=${runDiag.prismScope})` : 'OFF'}`,
+    );
+    lines.push(
+      `Plan rotation: ${Math.abs(runDiag.rotationAngleRad) > 1e-12 ? `ON (${(runDiag.rotationAngleRad * RAD_TO_DEG).toFixed(6)} deg)` : 'OFF'}`,
     );
     lines.push(`Robust mode: ${runDiag.robustMode.toUpperCase()} (k=${runDiag.robustK.toFixed(2)})`);
     lines.push(
@@ -2727,6 +2733,7 @@ const App: React.FC = () => {
         defaultSigmaCount: runDiag.defaultSigmaCount,
         defaultSigmaByType: runDiag.defaultSigmaByType,
         stochasticDefaultsSummary: runDiag.stochasticDefaultsSummary,
+        rotationAngleRad: runDiag.rotationAngleRad,
       },
     );
   };
@@ -4486,6 +4493,7 @@ const App: React.FC = () => {
                             directionSetMode: runDiagnostics.directionSetMode,
                             profileDefaultInstrumentFallback:
                               runDiagnostics.profileDefaultInstrumentFallback,
+                            rotationAngleRad: runDiagnostics.rotationAngleRad,
                           }
                         : null
                     }
