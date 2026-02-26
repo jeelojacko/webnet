@@ -186,6 +186,24 @@ describe('parseInput', () => {
     expect(parsed.logs.some((l) => l.includes('Auto-sideshot detection set to ON'))).toBe(true);
   });
 
+  it('parses .LOSTSTATIONS and persists lost-station metadata flags', () => {
+    const parsed = parseInput(
+      [
+        '.LOSTSTATIONS P1 P2',
+        'C P1 0 0 0 ! !',
+        'C P2 100 0 0',
+        'C P3 50 50 0',
+        '.LOSTSTATIONS -P2 P4',
+        'D P1-P3 70.7107 0.01',
+      ].join('\n'),
+    );
+    expect(parsed.stations.P1?.lost).toBe(true);
+    expect(parsed.stations.P2?.lost ?? false).toBe(false);
+    expect(parsed.stations.P3?.lost ?? false).toBe(false);
+    expect(parsed.parseState.lostStationIds).toEqual(['P1', 'P4']);
+    expect(parsed.logs.some((l) => l.includes('Lost stations updated'))).toBe(true);
+  });
+
   it('parses .PRISM state with scope and unit-safe conversion', () => {
     const parsed = parseInput(
       [

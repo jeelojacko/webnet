@@ -508,6 +508,22 @@ describe('LSAEngine', () => {
     expect((rotated.parseState?.rotationAngleRad ?? 0) * (180 / Math.PI)).toBeCloseTo(10, 10);
   });
 
+  it('persists .LOSTSTATIONS metadata flags through solve results', () => {
+    const input = [
+      '.2D',
+      '.LOSTSTATIONS B',
+      'C A 0 0 0 ! !',
+      'C B 100 0 0',
+      'B A-B 090.0000 1.0',
+      'D A-B 100.0000 0.001',
+    ].join('\n');
+    const result = new LSAEngine({ input, maxIterations: 10 }).solve();
+    expect(result.parseState?.lostStationIds).toEqual(['B']);
+    expect(result.stations.B).toBeDefined();
+    expect(result.stations.B.lost).toBe(true);
+    expect(result.stations.A.lost ?? false).toBe(false);
+  });
+
   it('applies global prism correction to modeled distance residuals', () => {
     const baseInput = [
       '.2D',

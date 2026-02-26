@@ -30,6 +30,7 @@ export interface Station {
   x: number;
   y: number;
   h: number;
+  lost?: boolean;
   sx?: number;
   sy?: number;
   sh?: number;
@@ -374,6 +375,7 @@ export interface ParseOptions {
   prismOffset?: number;
   prismScope?: 'global' | 'set';
   rotationAngleRad?: number;
+  lostStationIds?: StationId[];
   autoAdjustEnabled?: boolean;
   autoAdjustMaxCycles?: number;
   autoAdjustMaxRemovalsPerCycle?: number;

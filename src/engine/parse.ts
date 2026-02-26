@@ -46,6 +46,7 @@ const defaultParseOptions: ParseOptions = {
   prismOffset: 0,
   prismScope: 'global',
   rotationAngleRad: 0,
+  lostStationIds: [],
   autoAdjustEnabled: false,
   autoAdjustMaxCycles: 3,
   autoAdjustMaxRemovalsPerCycle: 1,
@@ -406,6 +407,7 @@ export const parseInput = (
   const aliasCycleWarnings = new Set<string>();
   const aliasTraceEntries: NonNullable<ParseOptions['aliasTrace']> = [];
   const aliasTraceSeen = new Set<string>();
+  const lostStationIds = new Set<StationId>((state.lostStationIds ?? []).map((id) => `${id}`));
 
   const preloadedClusterMerges = (state.clusterApprovedMerges ?? [])
     .map((merge) => ({
@@ -448,6 +450,7 @@ export const parseInput = (
       x: 0,
       y: 0,
       h: 0,
+      lost: lostStationIds.has(id),
       fixed: false,
       fixedX: false,
       fixedY: false,
@@ -1050,6 +1053,47 @@ export const parseInput = (
         state.rotationAngleRad = next;
         logs.push(
           `Plan rotation updated at line ${lineNum}: +${(delta * RAD_TO_DEG).toFixed(6)}° => ${(next * RAD_TO_DEG).toFixed(6)}°`,
+        );
+      } else if (op === '.LOSTSTATIONS') {
+        const tokens = parts
+          .slice(1)
+          .flatMap((token) => token.split(','))
+          .map((token) => token.trim())
+          .filter((token) => token.length > 0);
+        if (tokens.length === 0) {
+          logs.push(
+            `Warning: .LOSTSTATIONS missing station IDs at line ${lineNum}; expected .LOSTSTATIONS <id...> or .LOSTSTATIONS CLEAR.`,
+          );
+          continue;
+        }
+        const clearMode = ['OFF', 'NONE', 'CLEAR', 'RESET'].includes(tokens[0].toUpperCase());
+        if (clearMode) {
+          lostStationIds.clear();
+          Object.values(stations).forEach((st) => {
+            if (st.lost) delete st.lost;
+          });
+          logs.push(`Lost stations cleared at line ${lineNum}.`);
+          continue;
+        }
+        let added = 0;
+        let removed = 0;
+        tokens.forEach((rawToken) => {
+          const removing = rawToken.startsWith('-');
+          const token = removing ? rawToken.slice(1).trim() : rawToken.replace(/^\+/, '').trim();
+          if (!token) return;
+          if (removing) {
+            if (lostStationIds.delete(token)) removed += 1;
+            const station = stations[token];
+            if (station?.lost) delete station.lost;
+            return;
+          }
+          if (!lostStationIds.has(token)) added += 1;
+          lostStationIds.add(token);
+          const station = stations[token];
+          if (station) station.lost = true;
+        });
+        logs.push(
+          `Lost stations updated at line ${lineNum}: total=${lostStationIds.size}, added=${added}, removed=${removed}.`,
         );
       } else if (op === '.AUTOSIDESHOT') {
         const mode = (parts[1] || '').toUpperCase();
@@ -2550,6 +2594,28 @@ export const parseInput = (
     logs.push(
       `Alias canonicalization applied (explicit=${explicitAliases.size}, rules=${aliasRules.length}, station remaps=${renamedStationCount}).`,
     );
+  }
+  if (lostStationIds.size > 0) {
+    const canonicalLost = new Set<StationId>();
+    lostStationIds.forEach((id) => {
+      const resolved = resolveAlias(id);
+      if (resolved.canonicalId) canonicalLost.add(resolved.canonicalId);
+    });
+    lostStationIds.clear();
+    canonicalLost.forEach((id) => lostStationIds.add(id));
+  }
+  Object.entries(stations).forEach(([id, station]) => {
+    if (lostStationIds.has(id)) {
+      station.lost = true;
+    } else if (station.lost) {
+      delete station.lost;
+    }
+  });
+  state.lostStationIds = [...lostStationIds].sort((a, b) =>
+    a.localeCompare(b, undefined, { numeric: true }),
+  );
+  if (state.lostStationIds.length > 0) {
+    logs.push(`Lost stations flagged: ${state.lostStationIds.join(', ')}`);
   }
   state.aliasTrace = aliasTraceEntries
     .slice()
