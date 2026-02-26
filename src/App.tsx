@@ -142,10 +142,20 @@ L LEV1 1002 2006  -0.5007   0.10   0.7
 `;
 
 type Units = 'm' | 'ft';
+type ListingSortCoordinatesBy = 'input' | 'name';
+type ListingSortObservationsBy = 'input' | 'name' | 'residual';
 
 type SettingsState = {
   maxIterations: number;
   units: Units;
+  listingShowCoordinates: boolean;
+  listingShowObservationsResiduals: boolean;
+  listingShowErrorPropagation: boolean;
+  listingShowProcessingNotes: boolean;
+  listingShowAzimuthsBearings: boolean;
+  listingSortCoordinatesBy: ListingSortCoordinatesBy;
+  listingSortObservationsBy: ListingSortObservationsBy;
+  listingObservationLimit: number;
 };
 
 type SolveProfile = 'webnet' | 'starnet-parity';
@@ -264,6 +274,20 @@ const SETTINGS_TOOLTIPS = {
     'Huber tuning constant k (typical 1.5). Lower values downweight outliers more aggressively.',
   instrument:
     'Select an instrument code to view parsed EDM/angle/centering and other precision parameters.',
+  listingShowCoordinates: 'Include adjusted coordinate table in STAR-style listing output.',
+  listingShowObservationsResiduals:
+    'Include adjusted observations/residuals table in STAR-style listing output.',
+  listingShowErrorPropagation:
+    'Include error propagation (station standard deviations) section in STAR-style listing output.',
+  listingShowProcessingNotes: 'Include processing log notes section in STAR-style listing output.',
+  listingShowAzimuthsBearings:
+    'When disabled, azimuth/bearing style observations are omitted from adjusted-observation listing rows.',
+  listingSortCoordinatesBy:
+    'Sort coordinate/error-propagation station tables by original input station order or by station name.',
+  listingSortObservationsBy:
+    'Sort adjusted-observation listing rows by input line order, station name, or residual size.',
+  listingObservationLimit:
+    'Maximum number of adjusted-observation rows written in STAR-style output (1-500).',
 } as const;
 
 const PROJECT_OPTION_TABS: Array<{ id: ProjectOptionsTab; label: string }> = [
@@ -288,7 +312,18 @@ const App: React.FC = () => {
   const [exportFormat, setExportFormat] = useState<ExportFormat>('webnet');
   const [lastRunInput, setLastRunInput] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<TabKey>('report');
-  const [settings, setSettings] = useState<SettingsState>({ maxIterations: 10, units: 'm' });
+  const [settings, setSettings] = useState<SettingsState>({
+    maxIterations: 10,
+    units: 'm',
+    listingShowCoordinates: true,
+    listingShowObservationsResiduals: true,
+    listingShowErrorPropagation: true,
+    listingShowProcessingNotes: true,
+    listingShowAzimuthsBearings: true,
+    listingSortCoordinatesBy: 'name',
+    listingSortObservationsBy: 'residual',
+    listingObservationLimit: 60,
+  });
   const [parseSettings, setParseSettings] = useState<ParseSettings>({
     solveProfile: 'webnet',
     coordMode: '3D',
@@ -2255,9 +2290,15 @@ const App: React.FC = () => {
     const linearUnit = settings.units === 'ft' ? 'FeetUS' : 'Meters';
     const unitScale = settings.units === 'ft' ? FT_PER_M : 1;
     const runDiag = runDiagnostics ?? buildRunDiagnostics(parseSettings, res);
-    const stationEntries = Object.entries(res.stations);
-    const fixedStations = stationEntries.filter(([, st]) => st.fixed).length;
-    const freeStations = stationEntries.length - fixedStations;
+    const stationEntriesInputOrder = Object.entries(res.stations);
+    const stationEntriesForListing =
+      settings.listingSortCoordinatesBy === 'name'
+        ? [...stationEntriesInputOrder].sort((a, b) =>
+            a[0].localeCompare(b[0], undefined, { numeric: true }),
+          )
+        : stationEntriesInputOrder;
+    const fixedStations = stationEntriesInputOrder.filter(([, st]) => st.fixed).length;
+    const freeStations = stationEntriesInputOrder.length - fixedStations;
     const observationCount = res.observations.length;
     const unknownCount = Math.max(0, observationCount - res.dof);
     const parseState = res.parseState;
@@ -2307,7 +2348,7 @@ const App: React.FC = () => {
     lines.push('                    ========================================');
     lines.push('');
     lines.push(
-      `                    Number of Entered Stations (${linearUnit}) = ${stationEntries.length}`,
+      `                    Number of Entered Stations (${linearUnit}) = ${stationEntriesInputOrder.length}`,
     );
     lines.push(`                    Fixed Stations = ${fixedStations}; Free Stations = ${freeStations}`);
 
@@ -2329,7 +2370,7 @@ const App: React.FC = () => {
     lines.push('');
     lines.push(`                        Iterations              = ${res.iterations}`);
     lines.push('');
-    lines.push(`                        Number of Stations      = ${stationEntries.length}`);
+    lines.push(`                        Number of Stations      = ${stationEntriesInputOrder.length}`);
     lines.push('');
     lines.push(`                        Number of Observations  = ${observationCount}`);
     lines.push(`                        Number of Unknowns      = ${unknownCount}`);
@@ -2372,29 +2413,55 @@ const App: React.FC = () => {
       );
       lines.push('');
     }
-    lines.push(`                         Adjusted Coordinates (${linearUnit})`);
-    lines.push('                         =============================');
-    lines.push('');
-    lines.push(`Station${' '.repeat(20)}N${' '.repeat(14)}E`);
-    stationEntries
-      .sort((a, b) => a[0].localeCompare(b[0], undefined, { numeric: true }))
-      .forEach(([id, st]) => {
+    if (settings.listingShowCoordinates) {
+      lines.push(`                         Adjusted Coordinates (${linearUnit})`);
+      lines.push('                         =============================');
+      lines.push('');
+      lines.push(`Station${' '.repeat(20)}N${' '.repeat(14)}E`);
+      stationEntriesForListing.forEach(([id, st]) => {
         lines.push(
           `${id.padEnd(24)}${(st.y * unitScale).toFixed(4).padStart(12)}${(st.x * unitScale).toFixed(14)}`,
         );
       });
+    }
 
-    const byStdRes = [...res.observations]
+    const compareObsByInput = (a: Observation, b: Observation) => {
+      const aLine = a.sourceLine ?? Number.MAX_SAFE_INTEGER;
+      const bLine = b.sourceLine ?? Number.MAX_SAFE_INTEGER;
+      if (aLine !== bLine) return aLine - bLine;
+      return (a.id ?? 0) - (b.id ?? 0);
+    };
+    const compareObsByStations = (a: Observation, b: Observation) => {
+      const stationKey = (obs: Observation) =>
+        obs.type === 'angle'
+          ? `${obs.at}-${obs.from}-${obs.to}`
+          : obs.type === 'direction'
+            ? `${obs.at}-${obs.to}`
+            : `${obs.from}-${obs.to}`;
+      const cmp = stationKey(a).localeCompare(stationKey(b), undefined, { numeric: true });
+      if (cmp !== 0) return cmp;
+      return compareObsByInput(a, b);
+    };
+    const listingObservations = [...res.observations]
       .filter((o) => Number.isFinite(o.stdRes))
-      .sort((a, b) => Math.abs(b.stdRes ?? 0) - Math.abs(a.stdRes ?? 0))
-      .slice(0, 60);
-    if (byStdRes.length > 0) {
+      .filter((o) =>
+        settings.listingShowAzimuthsBearings
+          ? true
+          : !(o.type === 'direction' || o.type === 'dir' || o.type === 'bearing'),
+      )
+      .sort((a, b) => {
+        if (settings.listingSortObservationsBy === 'input') return compareObsByInput(a, b);
+        if (settings.listingSortObservationsBy === 'name') return compareObsByStations(a, b);
+        return Math.abs(b.stdRes ?? 0) - Math.abs(a.stdRes ?? 0);
+      })
+      .slice(0, Math.min(500, Math.max(1, settings.listingObservationLimit)));
+    if (settings.listingShowObservationsResiduals && listingObservations.length > 0) {
       lines.push('');
       lines.push('                      Adjusted Observations and Residuals');
       lines.push('                      ===================================');
       lines.push('');
       lines.push('Type      Stations               Obs             Residual        StdErr      StdRes   File:Line');
-      byStdRes.forEach((obs) => {
+      listingObservations.forEach((obs) => {
         let stations = '-';
         let obsText = '-';
         let residualText = '-';
@@ -2443,24 +2510,26 @@ const App: React.FC = () => {
         );
       });
     }
-    lines.push('');
-    lines.push('                               Error Propagation');
-    lines.push('                               =================');
-    lines.push('');
-    lines.push(`                Station Coordinate Standard Deviations (${linearUnit})`);
-    lines.push('');
-    lines.push(`Station${' '.repeat(20)}N${' '.repeat(12)}E`);
-    stationEntries
-      .sort((a, b) => a[0].localeCompare(b[0], undefined, { numeric: true }))
-      .forEach(([id, st]) => {
+    if (settings.listingShowErrorPropagation) {
+      lines.push('');
+      lines.push('                               Error Propagation');
+      lines.push('                               =================');
+      lines.push('');
+      lines.push(`                Station Coordinate Standard Deviations (${linearUnit})`);
+      lines.push('');
+      lines.push(`Station${' '.repeat(20)}N${' '.repeat(12)}E`);
+      stationEntriesForListing.forEach(([id, st]) => {
         lines.push(
           `${id.padEnd(24)}${(st.sN != null ? st.sN * unitScale : 0).toFixed(6).padStart(12)}${(st.sE != null ? st.sE * unitScale : 0).toFixed(14)}`,
         );
       });
-    lines.push('');
-    lines.push('                               Processing Notes');
-    lines.push('                               ================');
-    res.logs.slice(0, 60).forEach((line) => lines.push(line));
+    }
+    if (settings.listingShowProcessingNotes) {
+      lines.push('');
+      lines.push('                               Processing Notes');
+      lines.push('                               ================');
+      res.logs.slice(0, 60).forEach((line) => lines.push(line));
+    }
 
     return lines.join('\n');
   };
@@ -2757,6 +2826,10 @@ const App: React.FC = () => {
     value: ParseSettings[K],
   ) => {
     setParseSettingsDraft((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const handleDraftSetting = <K extends keyof SettingsState>(key: K, value: SettingsState[K]) => {
+    setSettingsDraft((prev) => ({ ...prev, [key]: value }));
   };
 
   const parityProfileActive = parseSettingsDraft.solveProfile === 'starnet-parity';
@@ -3274,11 +3347,134 @@ const App: React.FC = () => {
                 </div>
               )}
 
-              {activeOptionsTab === 'listing-file' &&
-                renderPlaceholderPanel(
-                  'Listing File Controls',
-                  'STAR-style listing granularity controls will be wired in a later phase.',
-                )}
+              {activeOptionsTab === 'listing-file' && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="border border-slate-400 p-3 space-y-3">
+                    <div className="text-xs uppercase tracking-wider text-slate-200">
+                      STAR-Style Listing Contents
+                    </div>
+                    <label className="flex items-center gap-2 text-xs text-slate-100">
+                      <input
+                        title={SETTINGS_TOOLTIPS.listingShowCoordinates}
+                        type="checkbox"
+                        className="accent-blue-400"
+                        checked={settingsDraft.listingShowCoordinates}
+                        onChange={(e) =>
+                          handleDraftSetting('listingShowCoordinates', e.target.checked)
+                        }
+                      />
+                      <span>Adjusted Coordinates</span>
+                    </label>
+                    <label className="flex items-center gap-2 text-xs text-slate-100">
+                      <input
+                        title={SETTINGS_TOOLTIPS.listingShowObservationsResiduals}
+                        type="checkbox"
+                        className="accent-blue-400"
+                        checked={settingsDraft.listingShowObservationsResiduals}
+                        onChange={(e) =>
+                          handleDraftSetting('listingShowObservationsResiduals', e.target.checked)
+                        }
+                      />
+                      <span>Adjusted Observations and Residuals</span>
+                    </label>
+                    <label className="flex items-center gap-2 text-xs text-slate-100">
+                      <input
+                        title={SETTINGS_TOOLTIPS.listingShowErrorPropagation}
+                        type="checkbox"
+                        className="accent-blue-400"
+                        checked={settingsDraft.listingShowErrorPropagation}
+                        onChange={(e) =>
+                          handleDraftSetting('listingShowErrorPropagation', e.target.checked)
+                        }
+                      />
+                      <span>Error Propagation</span>
+                    </label>
+                    <label className="flex items-center gap-2 text-xs text-slate-100">
+                      <input
+                        title={SETTINGS_TOOLTIPS.listingShowProcessingNotes}
+                        type="checkbox"
+                        className="accent-blue-400"
+                        checked={settingsDraft.listingShowProcessingNotes}
+                        onChange={(e) =>
+                          handleDraftSetting('listingShowProcessingNotes', e.target.checked)
+                        }
+                      />
+                      <span>Processing Notes</span>
+                    </label>
+                    <label className="flex items-center gap-2 text-xs text-slate-100">
+                      <input
+                        title={SETTINGS_TOOLTIPS.listingShowAzimuthsBearings}
+                        type="checkbox"
+                        className="accent-blue-400"
+                        checked={settingsDraft.listingShowAzimuthsBearings}
+                        onChange={(e) =>
+                          handleDraftSetting('listingShowAzimuthsBearings', e.target.checked)
+                        }
+                      />
+                      <span>Show Azimuths & Bearings</span>
+                    </label>
+                  </div>
+                  <div className="border border-slate-400 p-3 space-y-3">
+                    <div className="text-xs uppercase tracking-wider text-slate-200">
+                      STAR-Style Listing Sort/Scope
+                    </div>
+                    <label className={optionLabelClass}>
+                      Sort Coordinates By
+                      <select
+                        title={SETTINGS_TOOLTIPS.listingSortCoordinatesBy}
+                        value={settingsDraft.listingSortCoordinatesBy}
+                        onChange={(e) =>
+                          handleDraftSetting(
+                            'listingSortCoordinatesBy',
+                            e.target.value as ListingSortCoordinatesBy,
+                          )
+                        }
+                        className={`${optionInputClass} mt-1`}
+                      >
+                        <option value="input">Input Order</option>
+                        <option value="name">Name</option>
+                      </select>
+                    </label>
+                    <label className={optionLabelClass}>
+                      Sort Adjusted Obs/Residuals By
+                      <select
+                        title={SETTINGS_TOOLTIPS.listingSortObservationsBy}
+                        value={settingsDraft.listingSortObservationsBy}
+                        onChange={(e) =>
+                          handleDraftSetting(
+                            'listingSortObservationsBy',
+                            e.target.value as ListingSortObservationsBy,
+                          )
+                        }
+                        className={`${optionInputClass} mt-1`}
+                      >
+                        <option value="input">Input Order</option>
+                        <option value="name">Name</option>
+                        <option value="residual">Residual Size</option>
+                      </select>
+                    </label>
+                    <label className={optionLabelClass}>
+                      Adjusted Obs Row Limit
+                      <input
+                        title={SETTINGS_TOOLTIPS.listingObservationLimit}
+                        type="number"
+                        min={1}
+                        max={500}
+                        step={1}
+                        value={settingsDraft.listingObservationLimit}
+                        onChange={(e) => {
+                          const parsed = Number.parseInt(e.target.value || '1', 10);
+                          const clamped = Number.isFinite(parsed)
+                            ? Math.max(1, Math.min(500, parsed))
+                            : 1;
+                          handleDraftSetting('listingObservationLimit', clamped);
+                        }}
+                        className={`${optionInputClass} mt-1`}
+                      />
+                    </label>
+                  </div>
+                </div>
+              )}
 
               {activeOptionsTab === 'other-files' &&
                 renderPlaceholderPanel(
