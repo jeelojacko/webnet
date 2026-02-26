@@ -26,6 +26,9 @@ interface ReportViewProps {
     robustK: number
     starDefaultInstrumentFallback: boolean
     angleCenteringModel: 'geometry-aware-correlated-rays'
+    defaultSigmaCount: number
+    defaultSigmaByType: string
+    stochasticDefaultsSummary: string
   } | null
   excludedIds: Set<number>
   onToggleExclude: (_id: number) => void
@@ -781,6 +784,19 @@ const ReportView: React.FC<ReportViewProps> = ({
             <div>
               <div className="text-slate-500">A-Mode</div>
               <div>{runDiagnostics.angleMode.toUpperCase()}</div>
+            </div>
+            <div className="col-span-2">
+              <div className="text-slate-500">Default Sigmas</div>
+              <div>
+                {runDiagnostics.defaultSigmaCount}
+                {runDiagnostics.defaultSigmaByType
+                  ? ` (${runDiagnostics.defaultSigmaByType})`
+                  : ''}
+              </div>
+            </div>
+            <div className="col-span-2">
+              <div className="text-slate-500">Stochastic Defaults</div>
+              <div className="break-words">{runDiagnostics.stochasticDefaultsSummary}</div>
             </div>
           </div>
         </div>

@@ -3,6 +3,44 @@ import { readFileSync } from 'node:fs'
 import { LSAEngine } from '../src/engine/adjust'
 import { parseInput } from '../src/engine/parse'
 
+const solveStarParity = (input: string) =>
+  new LSAEngine({
+    input,
+    maxIterations: 10,
+    instrumentLibrary: {
+      __STAR_DEFAULT__: {
+        code: '__STAR_DEFAULT__',
+        desc: 'STAR*NET default instrument',
+        edm_const: 0.001,
+        edm_ppm: 1,
+        hzPrecision_sec: 0.5,
+        vaPrecision_sec: 0.5,
+        instCentr_m: 0.00075,
+        tgtCentr_m: 0,
+        gpsStd_xy: 0,
+        levStd_mmPerKm: 0,
+      },
+    },
+    parseOptions: {
+      currentInstrument: '__STAR_DEFAULT__',
+      directionSetMode: 'raw',
+      robustMode: 'none',
+      tsCorrelationEnabled: false,
+    },
+  }).solve()
+
+const stationLabel = (obs: {
+  type: string
+  at?: string
+  from?: string
+  to?: string
+}): string => {
+  if (obs.type === 'angle' && obs.at && obs.from && obs.to) return `${obs.at}-${obs.from}-${obs.to}`
+  if (obs.at && obs.to) return `${obs.at}-${obs.to}`
+  if (obs.from && obs.to) return `${obs.from}-${obs.to}`
+  return '-'
+}
+
 describe('TS parity harness (phase 1)', () => {
   it('keeps baseline TS-only network outputs stable', () => {
     const input = readFileSync('tests/fixtures/ts_phase1_baseline.dat', 'utf-8')
@@ -38,30 +76,7 @@ describe('TS parity harness (phase 1)', () => {
 
   it('matches STAR-style parity metrics with raw directions and default instrument fallback', () => {
     const input = readFileSync('tests/fixtures/starnet_parity_phase2.dat', 'utf-8')
-    const result = new LSAEngine({
-      input,
-      maxIterations: 10,
-      instrumentLibrary: {
-        __STAR_DEFAULT__: {
-          code: '__STAR_DEFAULT__',
-          desc: 'STAR*NET default instrument',
-          edm_const: 0.001,
-          edm_ppm: 1,
-          hzPrecision_sec: 0.5,
-          vaPrecision_sec: 0.5,
-          instCentr_m: 0.00075,
-          tgtCentr_m: 0,
-          gpsStd_xy: 0,
-          levStd_mmPerKm: 0,
-        },
-      },
-      parseOptions: {
-        currentInstrument: '__STAR_DEFAULT__',
-        directionSetMode: 'raw',
-        robustMode: 'none',
-        tsCorrelationEnabled: false,
-      },
-    }).solve()
+    const result = solveStarParity(input)
 
     expect(result.converged).toBe(true)
     expect(result.iterations).toBe(4)
@@ -78,5 +93,64 @@ describe('TS parity harness (phase 1)', () => {
     expect(p1.y).toBeCloseTo(-2.4644, 4)
     expect(p9.x).toBeCloseTo(101.4485, 4)
     expect(p9.y).toBeCloseTo(-1.4039, 4)
+  })
+
+  it('tracks STAR benchmark signatures for coords, SEUW, and top residual behavior', () => {
+    const input = readFileSync('tests/fixtures/starnet_parity_phase2.dat', 'utf-8')
+    const expected = JSON.parse(
+      readFileSync('tests/fixtures/starnet_parity_phase2_expected.json', 'utf-8'),
+    ) as {
+      summary: {
+        iterations: number
+        dof: number
+        seuw: number
+        seuwTolerance: number
+        chiPass95: boolean
+      }
+      coordinates: Record<string, { northing: number; easting: number; tol: number }>
+      residualSignatures: {
+        maxAngle: { stations: string; stdRes: number; tol: number }
+        maxDirection: { stations: string; stdRes: number; tol: number }
+      }
+    }
+
+    const result = solveStarParity(input)
+
+    expect(result.iterations).toBe(expected.summary.iterations)
+    expect(result.dof).toBe(expected.summary.dof)
+    expect(result.seuw).toBeCloseTo(expected.summary.seuw, 2)
+    expect(Math.abs(result.seuw - expected.summary.seuw)).toBeLessThanOrEqual(
+      expected.summary.seuwTolerance,
+    )
+    expect(result.chiSquare?.pass95).toBe(expected.summary.chiPass95)
+
+    Object.entries(expected.coordinates).forEach(([id, coord]) => {
+      const st = result.stations[id]
+      expect(st).toBeDefined()
+      expect(st.y).toBeCloseTo(coord.northing, 3)
+      expect(st.x).toBeCloseTo(coord.easting, 3)
+      expect(Math.abs(st.y - coord.northing)).toBeLessThanOrEqual(coord.tol)
+      expect(Math.abs(st.x - coord.easting)).toBeLessThanOrEqual(coord.tol)
+    })
+
+    const maxAngle = [...result.observations]
+      .filter((o) => o.type === 'angle' && Number.isFinite(o.stdRes))
+      .sort((a, b) => Math.abs(b.stdRes ?? 0) - Math.abs(a.stdRes ?? 0))[0]
+    expect(maxAngle).toBeDefined()
+    expect(stationLabel(maxAngle)).toBe(expected.residualSignatures.maxAngle.stations)
+    expect(Math.abs(Math.abs(maxAngle.stdRes ?? 0) - expected.residualSignatures.maxAngle.stdRes)).toBeLessThanOrEqual(
+      expected.residualSignatures.maxAngle.tol,
+    )
+
+    const maxDirection = [...result.observations]
+      .filter((o) => o.type === 'direction' && Number.isFinite(o.stdRes))
+      .sort((a, b) => Math.abs(b.stdRes ?? 0) - Math.abs(a.stdRes ?? 0))[0]
+    expect(maxDirection).toBeDefined()
+    expect(stationLabel(maxDirection)).toBe(expected.residualSignatures.maxDirection.stations)
+    expect(
+      Math.abs(
+        Math.abs(maxDirection.stdRes ?? 0) - expected.residualSignatures.maxDirection.stdRes,
+      ),
+    ).toBeLessThanOrEqual(expected.residualSignatures.maxDirection.tol)
   })
 })

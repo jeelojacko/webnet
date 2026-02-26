@@ -28,6 +28,7 @@ import type {
   ObservationOverride,
   CoordMode,
   DirectionSetMode,
+  ParseOptions,
   OrderMode,
   DeltaMode,
   MapMode,
@@ -165,6 +166,9 @@ type RunDiagnostics = {
   robustK: number;
   starDefaultInstrumentFallback: boolean;
   angleCenteringModel: 'geometry-aware-correlated-rays';
+  defaultSigmaCount: number;
+  defaultSigmaByType: string;
+  stochasticDefaultsSummary: string;
 };
 
 type ParseSettings = {
@@ -477,9 +481,61 @@ const App: React.FC = () => {
     };
   };
 
-  const buildRunDiagnostics = (base: ParseSettings): RunDiagnostics => {
+  const buildRunDiagnostics = (
+    base: ParseSettings,
+    solved?: AdjustmentResult,
+  ): RunDiagnostics => {
     const profileCtx = resolveProfileContext(base);
-    const parse = profileCtx.effectiveParse;
+    const parseState = (solved?.parseState ?? profileCtx.effectiveParse) as ParseOptions;
+    const parse = {
+      mapMode: parseState.mapMode ?? profileCtx.effectiveParse.mapMode,
+      mapScaleFactor: parseState.mapScaleFactor ?? profileCtx.effectiveParse.mapScaleFactor ?? 1,
+      normalize: parseState.normalize ?? profileCtx.effectiveParse.normalize,
+      angleMode: parseState.angleMode ?? profileCtx.effectiveParse.angleMode,
+      verticalReduction:
+        parseState.verticalReduction ?? profileCtx.effectiveParse.verticalReduction,
+      applyCurvatureRefraction:
+        parseState.applyCurvatureRefraction ?? profileCtx.effectiveParse.applyCurvatureRefraction,
+      refractionCoefficient:
+        parseState.refractionCoefficient ?? profileCtx.effectiveParse.refractionCoefficient,
+      tsCorrelationEnabled:
+        parseState.tsCorrelationEnabled ?? profileCtx.effectiveParse.tsCorrelationEnabled,
+      tsCorrelationScope:
+        parseState.tsCorrelationScope ?? profileCtx.effectiveParse.tsCorrelationScope,
+      tsCorrelationRho: parseState.tsCorrelationRho ?? profileCtx.effectiveParse.tsCorrelationRho,
+      robustMode: parseState.robustMode ?? profileCtx.effectiveParse.robustMode,
+      robustK: parseState.robustK ?? profileCtx.effectiveParse.robustK,
+      edmMode: parseState.edmMode ?? 'additive',
+      applyCentering: parseState.applyCentering ?? true,
+      addCenteringToExplicit: parseState.addCenteringToExplicit ?? false,
+      currentInstrument: parseState.currentInstrument ?? profileCtx.currentInstrument ?? '',
+    };
+    const defaultObs = (solved?.observations ?? []).filter((o) => o.sigmaSource === 'default');
+    const byType = new Map<Observation['type'], number>();
+    defaultObs.forEach((obs) => {
+      byType.set(obs.type, (byType.get(obs.type) ?? 0) + 1);
+    });
+    const typeOrder: Observation['type'][] = [
+      'dist',
+      'angle',
+      'direction',
+      'dir',
+      'bearing',
+      'zenith',
+      'lev',
+      'gps',
+    ];
+    const defaultSigmaByType = typeOrder
+      .filter((type) => (byType.get(type) ?? 0) > 0)
+      .map((type) => `${type}=${byType.get(type)}`)
+      .join(', ');
+    const activeDefaultInst =
+      parse.currentInstrument && profileCtx.effectiveInstrumentLibrary[parse.currentInstrument]
+        ? profileCtx.effectiveInstrumentLibrary[parse.currentInstrument]
+        : undefined;
+    const stochasticDefaultsSummary = activeDefaultInst
+      ? `inst=${activeDefaultInst.code} dist=${activeDefaultInst.edm_const.toFixed(4)}m+${activeDefaultInst.edm_ppm.toFixed(3)}ppm hz=${activeDefaultInst.hzPrecision_sec.toFixed(3)}" va=${activeDefaultInst.vaPrecision_sec.toFixed(3)}" centering=${activeDefaultInst.instCentr_m.toFixed(5)}/${activeDefaultInst.tgtCentr_m.toFixed(5)}m edm=${parse.edmMode} centerInflation=${parse.applyCentering ? `ON(explicit=${parse.addCenteringToExplicit ? 'ON' : 'OFF'})` : 'OFF'}`
+      : `inst=fallback-none distFloor=0.005m angle=5" zenith=5" gps=0.01m edm=${parse.edmMode} centerInflation=${parse.applyCentering ? `ON(explicit=${parse.addCenteringToExplicit ? 'ON' : 'OFF'})` : 'OFF'}`;
     return {
       solveProfile: base.solveProfile,
       parity: profileCtx.parity,
@@ -498,6 +554,9 @@ const App: React.FC = () => {
       robustK: parse.robustK,
       starDefaultInstrumentFallback: profileCtx.parity,
       angleCenteringModel: 'geometry-aware-correlated-rays',
+      defaultSigmaCount: defaultObs.length,
+      defaultSigmaByType,
+      stochasticDefaultsSummary,
     };
   };
 
@@ -507,7 +566,7 @@ const App: React.FC = () => {
     const ellipse95Scale = 2.4477;
     const linearUnit = settings.units === 'ft' ? 'ft' : 'm';
     const unitScale = settings.units === 'ft' ? FT_PER_M : 1;
-    const runDiag = runDiagnostics ?? buildRunDiagnostics(parseSettings);
+    const runDiag = runDiagnostics ?? buildRunDiagnostics(parseSettings, res);
     lines.push(`# WebNet Adjustment Results`);
     lines.push(`# Generated: ${now.toLocaleString()}`);
     lines.push(`# Linear units: ${linearUnit}`);
@@ -532,6 +591,10 @@ const App: React.FC = () => {
     lines.push(
       `Reductions: map=${runDiag.mapMode} (scale=${runDiag.mapScaleFactor.toFixed(8)}), vRed=${runDiag.verticalReduction}, curvRef=${runDiag.applyCurvatureRefraction ? 'ON' : 'OFF'} (k=${runDiag.refractionCoefficient.toFixed(3)}), normalize=${runDiag.normalize ? 'ON' : 'OFF'}`,
     );
+    lines.push(
+      `Default sigmas used: ${runDiag.defaultSigmaCount}${runDiag.defaultSigmaByType ? ` (${runDiag.defaultSigmaByType})` : ''}`,
+    );
+    lines.push(`Stochastic defaults: ${runDiag.stochasticDefaultsSummary}`);
     lines.push('');
     lines.push(`Status: ${res.converged ? 'CONVERGED' : 'NOT CONVERGED'}`);
     lines.push(`Iterations: ${res.iterations}`);
@@ -2387,7 +2450,7 @@ const App: React.FC = () => {
     }
 
     const solved = solveWithImpacts(effectiveExclusions, effectiveOverrides);
-    const runProfile = buildRunDiagnostics(parseSettings);
+    const runProfile = buildRunDiagnostics(parseSettings, solved);
     if (runProfile.parity) {
       solved.logs.unshift(
         'Solve profile: STAR*NET parity (raw directions, classical weighting, STAR default instrument fallback).',

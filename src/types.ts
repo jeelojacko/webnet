@@ -270,6 +270,7 @@ export interface AdjustmentResult {
   logs: string[];
   seuw: number;
   dof: number;
+  parseState?: ParseOptions;
   condition?: { estimate: number; threshold: number; flagged: boolean };
   controlConstraints?: { count: number; x: number; y: number; h: number };
   chiSquare?: {

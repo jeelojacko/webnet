@@ -199,6 +199,7 @@ export class LSAEngine {
   private sideshots?: AdjustmentResult['sideshots'];
   private condition?: AdjustmentResult['condition'];
   private controlConstraints?: AdjustmentResult['controlConstraints'];
+  private parseState?: ParseOptions;
   private conditionWarned = false;
 
   private getInstrument(obs: Observation): Instrument | undefined {
@@ -1108,6 +1109,7 @@ export class LSAEngine {
       parsed.parseState?.tsCorrelationScope ?? this.parseOptions?.tsCorrelationScope ?? 'set';
     this.robustMode = parsed.parseState?.robustMode ?? this.parseOptions?.robustMode ?? 'none';
     this.robustK = parsed.parseState?.robustK ?? this.parseOptions?.robustK ?? 1.5;
+    this.parseState = parsed.parseState;
     this.is2D = this.coordMode === '2D';
     this.condition = undefined;
     this.controlConstraints = undefined;
@@ -3655,6 +3657,7 @@ export class LSAEngine {
       logs: this.logs,
       seuw: this.seuw,
       dof: this.dof,
+      parseState: this.parseState,
       condition: this.condition,
       controlConstraints: this.controlConstraints,
       chiSquare: this.chiSquare,
