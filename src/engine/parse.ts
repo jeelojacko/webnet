@@ -41,6 +41,7 @@ const defaultParseOptions: ParseOptions = {
   tsCorrelationScope: 'set',
   robustMode: 'none',
   robustK: 1.5,
+  directionSetMode: 'reduced',
 };
 
 const FT_PER_M = 3.280839895;
@@ -319,6 +320,9 @@ export const parseInput = (
   const logs: string[] = [];
   const directionRejectDiagnostics: DirectionRejectDiagnostic[] = [];
   const state: ParseOptions = { ...defaultParseOptions, ...opts };
+  if (state.directionSetMode === 'raw') {
+    logs.push('Direction set processing mode forced to raw (no target reduction).');
+  }
   let orderExplicit = false;
   const traverseCtx: {
     occupy?: string;
@@ -416,7 +420,7 @@ export const parseInput = (
   ): void => {
     if (!shots.length) return;
 
-    if (!state.normalize) {
+    if (!state.normalize || state.directionSetMode === 'raw') {
       shots.forEach((shot) => {
         pushObservation({
           id: obsId++,
@@ -437,7 +441,10 @@ export const parseInput = (
           reducedSigma: shot.stdDev,
         });
       });
-      logs.push(`Direction set ${setId} @ ${occupy}: kept ${shots.length} raw direction(s)`);
+      const reason = !state.normalize ? 'normalize OFF' : 'raw mode';
+      logs.push(
+        `Direction set ${setId} @ ${occupy}: kept ${shots.length} raw direction(s) (${reason})`,
+      );
       return;
     }
 

@@ -228,6 +228,7 @@ export type AngleMode = 'auto' | 'angle' | 'dir';
 export type VerticalReductionMode = 'none' | 'curvref';
 export type TsCorrelationScope = 'setup' | 'set';
 export type RobustMode = 'none' | 'huber';
+export type DirectionSetMode = 'reduced' | 'raw';
 
 export interface ParseOptions {
   units: UnitsMode;
@@ -257,6 +258,7 @@ export interface ParseOptions {
   tsCorrelationScope?: TsCorrelationScope;
   robustMode?: RobustMode;
   robustK?: number;
+  directionSetMode?: DirectionSetMode;
 }
 
 export interface AdjustmentResult {

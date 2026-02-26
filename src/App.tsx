@@ -22,6 +22,7 @@ import { LSAEngine } from './engine/adjust';
 import { RAD_TO_DEG, radToDmsStr } from './engine/angles';
 import type {
   AdjustmentResult,
+  Instrument,
   InstrumentLibrary,
   Observation,
   ObservationOverride,
@@ -143,7 +144,10 @@ type SettingsState = {
   units: Units;
 };
 
+type SolveProfile = 'webnet' | 'starnet-parity';
+
 type ParseSettings = {
+  solveProfile: SolveProfile;
   coordMode: CoordMode;
   order: OrderMode;
   angleMode: AngleMode;
@@ -163,9 +167,25 @@ type ParseSettings = {
   robustK: number;
 };
 
+const STAR_DEFAULT_INSTRUMENT_CODE = '__STAR_DEFAULT__';
+const STAR_DEFAULT_INSTRUMENT: Instrument = {
+  code: STAR_DEFAULT_INSTRUMENT_CODE,
+  desc: 'STAR*NET default instrument',
+  edm_const: 0.001,
+  edm_ppm: 1,
+  hzPrecision_sec: 0.5,
+  vaPrecision_sec: 0.5,
+  instCentr_m: 0.00075,
+  tgtCentr_m: 0,
+  gpsStd_xy: 0,
+  levStd_mmPerKm: 0,
+};
+
 type TabKey = 'report' | 'map';
 
 const SETTINGS_TOOLTIPS = {
+  solveProfile:
+    'Run profile. WEBNET uses current app defaults/features. STAR*NET parity forces classical solve and raw direction-set adjustment with STAR-like default instrument precision.',
   units:
     'Display units for coordinates and report values. The solver still works internally in meters/radians.',
   maxIterations: 'Maximum least-squares iterations before the run stops if convergence is slow.',
@@ -214,6 +234,7 @@ const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabKey>('report');
   const [settings, setSettings] = useState<SettingsState>({ maxIterations: 10, units: 'm' });
   const [parseSettings, setParseSettings] = useState<ParseSettings>({
+    solveProfile: 'webnet',
     coordMode: '3D',
     order: 'EN',
     angleMode: 'auto',
@@ -410,17 +431,43 @@ const App: React.FC = () => {
     return maxShift;
   };
 
+  const resolveProfileContext = (base: ParseSettings) => {
+    const parity = base.solveProfile === 'starnet-parity';
+    const effectiveParse = parity
+      ? {
+          ...base,
+          robustMode: 'none' as RobustMode,
+          tsCorrelationEnabled: false,
+          tsCorrelationRho: 0,
+        }
+      : base;
+    const directionSetMode = parity ? 'raw' : 'reduced';
+    const effectiveInstrumentLibrary = parity
+      ? { ...instrumentLibrary, [STAR_DEFAULT_INSTRUMENT_CODE]: STAR_DEFAULT_INSTRUMENT }
+      : instrumentLibrary;
+    const currentInstrument = parity ? STAR_DEFAULT_INSTRUMENT_CODE : undefined;
+    return {
+      parity,
+      effectiveParse,
+      directionSetMode,
+      effectiveInstrumentLibrary,
+      currentInstrument,
+    };
+  };
+
   const buildResultsText = (res: AdjustmentResult): string => {
     const lines: string[] = [];
     const now = new Date();
     const ellipse95Scale = 2.4477;
     const linearUnit = settings.units === 'ft' ? 'ft' : 'm';
     const unitScale = settings.units === 'ft' ? FT_PER_M : 1;
+    const profileCtx = resolveProfileContext(parseSettings);
+    const reductionParse = profileCtx.effectiveParse;
     lines.push(`# WebNet Adjustment Results`);
     lines.push(`# Generated: ${now.toLocaleString()}`);
     lines.push(`# Linear units: ${linearUnit}`);
     lines.push(
-      `# Reduction: mapMode=${parseSettings.mapMode}, mapScale=${(parseSettings.mapScaleFactor ?? 1).toFixed(8)}, curvRef=${parseSettings.applyCurvatureRefraction ? 'ON' : 'OFF'}, k=${parseSettings.refractionCoefficient.toFixed(3)}, vRed=${parseSettings.verticalReduction}, tsCorr=${parseSettings.tsCorrelationEnabled ? 'ON' : 'OFF'}(${parseSettings.tsCorrelationScope},rho=${parseSettings.tsCorrelationRho.toFixed(3)}), robust=${parseSettings.robustMode.toUpperCase()}(k=${parseSettings.robustK.toFixed(2)})`,
+      `# Reduction: profile=${parseSettings.solveProfile}, dirSets=${profileCtx.directionSetMode}, mapMode=${reductionParse.mapMode}, mapScale=${(reductionParse.mapScaleFactor ?? 1).toFixed(8)}, curvRef=${reductionParse.applyCurvatureRefraction ? 'ON' : 'OFF'}, k=${reductionParse.refractionCoefficient.toFixed(3)}, vRed=${reductionParse.verticalReduction}, tsCorr=${reductionParse.tsCorrelationEnabled ? 'ON' : 'OFF'}(${reductionParse.tsCorrelationScope},rho=${reductionParse.tsCorrelationRho.toFixed(3)}), robust=${reductionParse.robustMode.toUpperCase()}(k=${reductionParse.robustK.toFixed(2)})`,
     );
     lines.push('');
     lines.push(`Status: ${res.converged ? 'CONVERGED' : 'NOT CONVERGED'}`);
@@ -2106,11 +2153,13 @@ const App: React.FC = () => {
     parseOverride?: Partial<ParseSettings>,
     overrideValues: Record<number, ObservationOverride> = overrides,
   ): AdjustmentResult => {
-    const effectiveParse = { ...parseSettings, ...parseOverride };
+    const mergedParse = { ...parseSettings, ...parseOverride };
+    const profileCtx = resolveProfileContext(mergedParse);
+    const effectiveParse = profileCtx.effectiveParse;
     const engine = new LSAEngine({
       input,
       maxIterations: settings.maxIterations,
-      instrumentLibrary,
+      instrumentLibrary: profileCtx.effectiveInstrumentLibrary,
       excludeIds: excludeSet,
       overrides: overrideValues,
       parseOptions: {
@@ -2132,6 +2181,8 @@ const App: React.FC = () => {
         tsCorrelationScope: effectiveParse.tsCorrelationScope,
         robustMode: effectiveParse.robustMode,
         robustK: effectiveParse.robustK,
+        directionSetMode: profileCtx.directionSetMode,
+        currentInstrument: profileCtx.currentInstrument,
       },
     });
     return engine.solve();
@@ -2231,7 +2282,8 @@ const App: React.FC = () => {
       excludeSet,
       overrideValues,
     );
-    if (parseSettings.robustMode !== 'none') {
+    const profileCtx = resolveProfileContext(parseSettings);
+    if (profileCtx.effectiveParse.robustMode !== 'none') {
       const classical = solveCore(excludeSet, { robustMode: 'none' }, overrideValues);
       const classicalTop = rankedSuspects(classical, 10);
       const robustTop = rankedSuspects(solved, 10);
@@ -2272,6 +2324,12 @@ const App: React.FC = () => {
     }
 
     const solved = solveWithImpacts(effectiveExclusions, effectiveOverrides);
+    const runProfile = resolveProfileContext(parseSettings);
+    if (runProfile.parity) {
+      solved.logs.unshift(
+        'Solve profile: STAR*NET parity (raw directions, classical weighting, STAR default instrument fallback).',
+      );
+    }
     if (inputChangedSinceLastRun && (droppedExclusions > 0 || droppedOverrides > 0)) {
       solved.logs.unshift(
         `Input changed since previous run: cleared ${droppedExclusions} exclusion(s) and ${droppedOverrides} override(s).`,
@@ -2305,6 +2363,8 @@ const App: React.FC = () => {
   const handleParseSetting = <K extends keyof ParseSettings>(key: K, value: ParseSettings[K]) => {
     setParseSettings((prev) => ({ ...prev, [key]: value }));
   };
+
+  const parityProfileActive = parseSettings.solveProfile === 'starnet-parity';
 
   const toggleExclude = (id: number) => {
     setExcludedIds((prev) => {
@@ -2408,6 +2468,25 @@ const App: React.FC = () => {
                         onChange={handleIterChange}
                         className="w-20 bg-slate-800 text-xs border border-slate-600 text-white rounded px-2 py-1 outline-none focus:border-blue-500 text-center"
                       />
+                    </div>
+                    <div className="flex items-center justify-between gap-3">
+                      <label
+                        title={SETTINGS_TOOLTIPS.solveProfile}
+                        className="text-xs text-slate-400 font-medium uppercase"
+                      >
+                        Profile
+                      </label>
+                      <select
+                        title={SETTINGS_TOOLTIPS.solveProfile}
+                        value={parseSettings.solveProfile}
+                        onChange={(e) =>
+                          handleParseSetting('solveProfile', e.target.value as SolveProfile)
+                        }
+                        className="bg-slate-800 text-xs border border-slate-600 text-white rounded px-2 py-1 outline-none focus:border-blue-500"
+                      >
+                        <option value="webnet">WebNet</option>
+                        <option value="starnet-parity">STAR*NET Parity</option>
+                      </select>
                     </div>
                     <div className="flex items-center justify-between gap-3">
                       <label
@@ -2619,6 +2698,7 @@ const App: React.FC = () => {
                         type="checkbox"
                         className="accent-blue-500"
                         checked={parseSettings.tsCorrelationEnabled}
+                        disabled={parityProfileActive}
                         onChange={(e) =>
                           handleParseSetting('tsCorrelationEnabled', e.target.checked)
                         }
@@ -2634,13 +2714,14 @@ const App: React.FC = () => {
                       <select
                         title={SETTINGS_TOOLTIPS.tsCorrelationScope}
                         value={parseSettings.tsCorrelationScope}
+                        disabled={parityProfileActive}
                         onChange={(e) =>
                           handleParseSetting(
                             'tsCorrelationScope',
                             e.target.value as TsCorrelationScope,
                           )
                         }
-                        className="bg-slate-800 text-xs border border-slate-600 text-white rounded px-2 py-1 outline-none focus:border-blue-500"
+                        className="bg-slate-800 text-xs border border-slate-600 text-white rounded px-2 py-1 outline-none focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         <option value="set">SET (.TSCORR SET)</option>
                         <option value="setup">SETUP (.TSCORR SETUP)</option>
@@ -2660,6 +2741,7 @@ const App: React.FC = () => {
                         max={0.95}
                         step={0.01}
                         value={parseSettings.tsCorrelationRho}
+                        disabled={parityProfileActive}
                         onChange={(e) =>
                           handleParseSetting(
                             'tsCorrelationRho',
@@ -2668,7 +2750,7 @@ const App: React.FC = () => {
                               : 0.25,
                           )
                         }
-                        className="w-20 bg-slate-800 text-xs border border-slate-600 text-white rounded px-2 py-1 outline-none focus:border-blue-500 text-center"
+                        className="w-20 bg-slate-800 text-xs border border-slate-600 text-white rounded px-2 py-1 outline-none focus:border-blue-500 text-center disabled:opacity-50 disabled:cursor-not-allowed"
                       />
                     </div>
                     <div className="flex items-center justify-between gap-3">
@@ -2684,7 +2766,8 @@ const App: React.FC = () => {
                         onChange={(e) =>
                           handleParseSetting('robustMode', e.target.value as RobustMode)
                         }
-                        className="bg-slate-800 text-xs border border-slate-600 text-white rounded px-2 py-1 outline-none focus:border-blue-500"
+                        disabled={parityProfileActive}
+                        className="bg-slate-800 text-xs border border-slate-600 text-white rounded px-2 py-1 outline-none focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         <option value="none">OFF (.ROBUST OFF)</option>
                         <option value="huber">Huber (.ROBUST HUBER)</option>
@@ -2712,9 +2795,16 @@ const App: React.FC = () => {
                               : 1.5,
                           )
                         }
-                        className="w-20 bg-slate-800 text-xs border border-slate-600 text-white rounded px-2 py-1 outline-none focus:border-blue-500 text-center"
+                        disabled={parityProfileActive}
+                        className="w-20 bg-slate-800 text-xs border border-slate-600 text-white rounded px-2 py-1 outline-none focus:border-blue-500 text-center disabled:opacity-50 disabled:cursor-not-allowed"
                       />
                     </div>
+                    {parityProfileActive && (
+                      <div className="text-[10px] text-amber-300">
+                        STAR*NET parity profile forces classical solve and raw direction-set
+                        adjustment, with STAR-like default instrument precision.
+                      </div>
+                    )}
                     <div className="flex items-center justify-between gap-3">
                       <label
                         title={SETTINGS_TOOLTIPS.levelWeight}

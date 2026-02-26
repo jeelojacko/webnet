@@ -59,6 +59,35 @@ describe('LSAEngine', () => {
     expect(result.dof).toBeGreaterThanOrEqual(0);
   });
 
+  it('uses provided default instrument precision for records without explicit instrument codes', () => {
+    const input = ['.2D', 'C A 0 0 0 ! !', 'C B 10 0 0', 'D A-B 10.0'].join('\n');
+    const fallbackRun = new LSAEngine({ input, maxIterations: 6 }).solve();
+    const fallbackDist = fallbackRun.observations.find((o) => o.type === 'dist');
+    expect(fallbackDist?.stdDev).toBeCloseTo(0.005, 8);
+
+    const starDefaultRun = new LSAEngine({
+      input,
+      maxIterations: 6,
+      instrumentLibrary: {
+        __STAR_DEFAULT__: {
+          code: '__STAR_DEFAULT__',
+          desc: 'STAR*NET default instrument',
+          edm_const: 0.001,
+          edm_ppm: 1,
+          hzPrecision_sec: 0.5,
+          vaPrecision_sec: 0.5,
+          instCentr_m: 0.00075,
+          tgtCentr_m: 0,
+          gpsStd_xy: 0,
+          levStd_mmPerKm: 0,
+        },
+      },
+      parseOptions: { currentInstrument: '__STAR_DEFAULT__' },
+    }).solve();
+    const starDist = starDefaultRun.observations.find((o) => o.type === 'dist');
+    expect(starDist?.stdDev).toBeCloseTo(0.00101, 8);
+  });
+
   it('keeps non-zero point precision when DOF is zero (a-priori scaling)', () => {
     const input = [
       '.2D',
@@ -140,6 +169,21 @@ describe('LSAEngine', () => {
     expect(first?.meanFacePairDeltaArcSec).toBeDefined();
     expect(first?.maxRawMaxResidualArcSec).toBeDefined();
     expect(result.setupDiagnostics?.some((s) => s.station === 'O')).toBe(true);
+  });
+
+  it('supports raw direction-set solving mode without target reduction', () => {
+    const input = readFileSync('tests/fixtures/direction_face_balanced.dat', 'utf-8');
+    const reduced = new LSAEngine({ input, maxIterations: 10 }).solve();
+    const raw = new LSAEngine({
+      input,
+      maxIterations: 10,
+      parseOptions: { directionSetMode: 'raw' },
+    }).solve();
+    const reducedDir = reduced.observations.filter((o) => o.type === 'direction').length;
+    const rawDir = raw.observations.filter((o) => o.type === 'direction').length;
+    expect(reducedDir).toBe(1);
+    expect(rawDir).toBe(2);
+    expect(raw.logs.some((l) => l.includes('raw mode'))).toBe(true);
   });
 
   it('reports direction-target repeatability diagnostics and suspect ranking', () => {

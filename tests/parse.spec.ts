@@ -186,6 +186,18 @@ describe('parseInput', () => {
     expect(parsed.logs.some((l) => l.includes('Mixed face'))).toBe(false);
   });
 
+  it('keeps raw direction observations when directionSetMode is raw', () => {
+    const parsed = parseInput(
+      readFileSync('tests/fixtures/direction_face_balanced.dat', 'utf-8'),
+      {},
+      { normalize: true, directionSetMode: 'raw' },
+    );
+    const dirs = parsed.observations.filter((o) => o.type === 'direction');
+    expect(dirs).toHaveLength(2);
+    expect(parsed.logs.some((l) => l.includes('raw mode'))).toBe(true);
+    expect(parsed.logs.some((l) => l.includes('Direction set reduction'))).toBe(false);
+  });
+
   it('reduces direction sets by target (unpaired targets remain separate)', () => {
     const parsed = parseInput(readFileSync('tests/fixtures/direction_faceset.dat', 'utf-8'));
     const dirs = parsed.observations.filter((o) => o.type === 'direction');

@@ -240,9 +240,15 @@ export class LSAEngine {
     if (obs.type === 'angle') {
       const azTo = this.getAzimuth(obs.at, obs.to);
       const azFrom = this.getAzimuth(obs.at, obs.from);
-      const termTo = azTo.dist > 0 ? center / azTo.dist : 0;
-      const termFrom = azFrom.dist > 0 ? center / azFrom.dist : 0;
-      const term = Math.sqrt(termTo * termTo + termFrom * termFrom);
+      const dTo = Math.max(azTo.dist, 1e-12);
+      const dFrom = Math.max(azFrom.dist, 1e-12);
+      const angle = Number.isFinite(obs.obs) ? obs.obs : this.wrapToPi(azTo.az - azFrom.az);
+      const cross = Math.cos(angle);
+      const termSq =
+        (center * center) / (dTo * dTo) +
+        (center * center) / (dFrom * dFrom) -
+        (2 * center * center * cross) / (dTo * dFrom);
+      const term = Math.sqrt(Math.max(termSq, 0));
       return Math.sqrt(sigma * sigma + term * term);
     }
     if (obs.type === 'zenith') {
