@@ -27,6 +27,7 @@ import type {
   Observation,
   ObservationOverride,
   CoordMode,
+  DirectionSetMode,
   OrderMode,
   DeltaMode,
   MapMode,
@@ -146,6 +147,26 @@ type SettingsState = {
 
 type SolveProfile = 'webnet' | 'starnet-parity';
 
+type RunDiagnostics = {
+  solveProfile: SolveProfile;
+  parity: boolean;
+  directionSetMode: DirectionSetMode;
+  mapMode: MapMode;
+  mapScaleFactor: number;
+  normalize: boolean;
+  angleMode: AngleMode;
+  verticalReduction: VerticalReductionMode;
+  applyCurvatureRefraction: boolean;
+  refractionCoefficient: number;
+  tsCorrelationEnabled: boolean;
+  tsCorrelationScope: TsCorrelationScope;
+  tsCorrelationRho: number;
+  robustMode: RobustMode;
+  robustK: number;
+  starDefaultInstrumentFallback: boolean;
+  angleCenteringModel: 'geometry-aware-correlated-rays';
+};
+
 type ParseSettings = {
   solveProfile: SolveProfile;
   coordMode: CoordMode;
@@ -230,6 +251,7 @@ const SETTINGS_TOOLTIPS = {
 const App: React.FC = () => {
   const [input, setInput] = useState<string>(DEFAULT_INPUT);
   const [result, setResult] = useState<AdjustmentResult | null>(null);
+  const [runDiagnostics, setRunDiagnostics] = useState<RunDiagnostics | null>(null);
   const [lastRunInput, setLastRunInput] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<TabKey>('report');
   const [settings, setSettings] = useState<SettingsState>({ maxIterations: 10, units: 'm' });
@@ -455,19 +477,60 @@ const App: React.FC = () => {
     };
   };
 
+  const buildRunDiagnostics = (base: ParseSettings): RunDiagnostics => {
+    const profileCtx = resolveProfileContext(base);
+    const parse = profileCtx.effectiveParse;
+    return {
+      solveProfile: base.solveProfile,
+      parity: profileCtx.parity,
+      directionSetMode: profileCtx.directionSetMode,
+      mapMode: parse.mapMode,
+      mapScaleFactor: parse.mapScaleFactor ?? 1,
+      normalize: parse.normalize,
+      angleMode: parse.angleMode,
+      verticalReduction: parse.verticalReduction,
+      applyCurvatureRefraction: parse.applyCurvatureRefraction,
+      refractionCoefficient: parse.refractionCoefficient,
+      tsCorrelationEnabled: parse.tsCorrelationEnabled,
+      tsCorrelationScope: parse.tsCorrelationScope,
+      tsCorrelationRho: parse.tsCorrelationRho,
+      robustMode: parse.robustMode,
+      robustK: parse.robustK,
+      starDefaultInstrumentFallback: profileCtx.parity,
+      angleCenteringModel: 'geometry-aware-correlated-rays',
+    };
+  };
+
   const buildResultsText = (res: AdjustmentResult): string => {
     const lines: string[] = [];
     const now = new Date();
     const ellipse95Scale = 2.4477;
     const linearUnit = settings.units === 'ft' ? 'ft' : 'm';
     const unitScale = settings.units === 'ft' ? FT_PER_M : 1;
-    const profileCtx = resolveProfileContext(parseSettings);
-    const reductionParse = profileCtx.effectiveParse;
+    const runDiag = runDiagnostics ?? buildRunDiagnostics(parseSettings);
     lines.push(`# WebNet Adjustment Results`);
     lines.push(`# Generated: ${now.toLocaleString()}`);
     lines.push(`# Linear units: ${linearUnit}`);
     lines.push(
-      `# Reduction: profile=${parseSettings.solveProfile}, dirSets=${profileCtx.directionSetMode}, mapMode=${reductionParse.mapMode}, mapScale=${(reductionParse.mapScaleFactor ?? 1).toFixed(8)}, curvRef=${reductionParse.applyCurvatureRefraction ? 'ON' : 'OFF'}, k=${reductionParse.refractionCoefficient.toFixed(3)}, vRed=${reductionParse.verticalReduction}, tsCorr=${reductionParse.tsCorrelationEnabled ? 'ON' : 'OFF'}(${reductionParse.tsCorrelationScope},rho=${reductionParse.tsCorrelationRho.toFixed(3)}), robust=${reductionParse.robustMode.toUpperCase()}(k=${reductionParse.robustK.toFixed(2)})`,
+      `# Reduction: profile=${runDiag.solveProfile}, dirSets=${runDiag.directionSetMode}, mapMode=${runDiag.mapMode}, mapScale=${runDiag.mapScaleFactor.toFixed(8)}, curvRef=${runDiag.applyCurvatureRefraction ? 'ON' : 'OFF'}, k=${runDiag.refractionCoefficient.toFixed(3)}, vRed=${runDiag.verticalReduction}, tsCorr=${runDiag.tsCorrelationEnabled ? 'ON' : 'OFF'}(${runDiag.tsCorrelationScope},rho=${runDiag.tsCorrelationRho.toFixed(3)}), robust=${runDiag.robustMode.toUpperCase()}(k=${runDiag.robustK.toFixed(2)})`,
+    );
+    lines.push(
+      `# Parity: starFallback=${runDiag.starDefaultInstrumentFallback ? 'ON' : 'OFF'}, angleCentering=${runDiag.angleCenteringModel}, normalize=${runDiag.normalize ? 'ON' : 'OFF'}, angleMode=${runDiag.angleMode.toUpperCase()}`,
+    );
+    lines.push('');
+    lines.push('--- Solve Profile Diagnostics ---');
+    lines.push(`Profile: ${runDiag.solveProfile.toUpperCase()}`);
+    lines.push(`Direction-set mode: ${runDiag.directionSetMode}`);
+    lines.push(
+      `STAR default instrument fallback: ${runDiag.starDefaultInstrumentFallback ? 'ON' : 'OFF'}`,
+    );
+    lines.push(`Angle centering model: ${runDiag.angleCenteringModel}`);
+    lines.push(
+      `TS correlation: ${runDiag.tsCorrelationEnabled ? `ON (${runDiag.tsCorrelationScope}, rho=${runDiag.tsCorrelationRho.toFixed(3)})` : 'OFF'}`,
+    );
+    lines.push(`Robust mode: ${runDiag.robustMode.toUpperCase()} (k=${runDiag.robustK.toFixed(2)})`);
+    lines.push(
+      `Reductions: map=${runDiag.mapMode} (scale=${runDiag.mapScaleFactor.toFixed(8)}), vRed=${runDiag.verticalReduction}, curvRef=${runDiag.applyCurvatureRefraction ? 'ON' : 'OFF'} (k=${runDiag.refractionCoefficient.toFixed(3)}), normalize=${runDiag.normalize ? 'ON' : 'OFF'}`,
     );
     lines.push('');
     lines.push(`Status: ${res.converged ? 'CONVERGED' : 'NOT CONVERGED'}`);
@@ -2324,7 +2387,7 @@ const App: React.FC = () => {
     }
 
     const solved = solveWithImpacts(effectiveExclusions, effectiveOverrides);
-    const runProfile = resolveProfileContext(parseSettings);
+    const runProfile = buildRunDiagnostics(parseSettings);
     if (runProfile.parity) {
       solved.logs.unshift(
         'Solve profile: STAR*NET parity (raw directions, classical weighting, STAR default instrument fallback).',
@@ -2336,6 +2399,7 @@ const App: React.FC = () => {
       );
     }
     setLastRunInput(input);
+    setRunDiagnostics(runProfile);
     setResult(solved);
     setActiveTab('report');
   };
@@ -2386,6 +2450,7 @@ const App: React.FC = () => {
   const handleResetToLastRun = () => {
     if (lastRunInput != null) setInput(lastRunInput);
     setResult(null);
+    setRunDiagnostics(null);
     setExcludedIds(new Set());
     setOverrides({});
   };
@@ -2994,6 +3059,7 @@ const App: React.FC = () => {
                   <ReportView
                     result={result}
                     units={settings.units}
+                    runDiagnostics={runDiagnostics}
                     excludedIds={excludedIds}
                     onToggleExclude={toggleExclude}
                     onApplyImpactExclude={applyImpactExclusion}

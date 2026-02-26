@@ -16,6 +16,7 @@
 - [x] Prevent stale exclusion/override carryover between changed inputs (auto-clear on changed run context + file load)
 - [x] Add STAR*NET parity profile (classical weighting + raw direction-set solving + STAR-like default instrument fallback for missing instrument assignments)
 - [x] Phase 2 parity: geometry-aware angle centering inflation model (ray-correlation term) + STAR benchmark regression fixture/test
+- [x] Phase 3 parity: add run-pinned solve-profile diagnostics section in report/export (profile, direction-set mode, fallback/defaults, stochastic/reduction switches)
 - [x] Sync README/agents docs with current parser/engine/UI state
 - [ ] Adjustment report parity roadmap (Star\*Net alignment):
   - [x] Implement weighted control constraints from coordinate/elevation std errors (not only fixed/free) so control uncertainty participates in the solve

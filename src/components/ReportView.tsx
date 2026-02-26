@@ -8,6 +8,25 @@ const FT_PER_M = 3.280839895
 interface ReportViewProps {
   result: AdjustmentResult
   units: 'm' | 'ft'
+  runDiagnostics: {
+    solveProfile: 'webnet' | 'starnet-parity'
+    parity: boolean
+    directionSetMode: 'reduced' | 'raw'
+    mapMode: 'off' | 'on' | 'anglecalc'
+    mapScaleFactor: number
+    normalize: boolean
+    angleMode: 'auto' | 'angle' | 'dir'
+    verticalReduction: 'none' | 'curvref'
+    applyCurvatureRefraction: boolean
+    refractionCoefficient: number
+    tsCorrelationEnabled: boolean
+    tsCorrelationScope: 'setup' | 'set'
+    tsCorrelationRho: number
+    robustMode: 'none' | 'huber'
+    robustK: number
+    starDefaultInstrumentFallback: boolean
+    angleCenteringModel: 'geometry-aware-correlated-rays'
+  } | null
   excludedIds: Set<number>
   onToggleExclude: (_id: number) => void
   onApplyImpactExclude: (_id: number) => void
@@ -21,6 +40,7 @@ interface ReportViewProps {
 const ReportView: React.FC<ReportViewProps> = ({
   result,
   units,
+  runDiagnostics,
   excludedIds,
   onToggleExclude,
   onApplyImpactExclude,
@@ -700,6 +720,71 @@ const ReportView: React.FC<ReportViewProps> = ({
           </div>
         </div>
       </div>
+
+      {runDiagnostics && (
+        <div className="mb-6 border border-slate-800 rounded overflow-hidden">
+          <div className="px-3 py-2 text-xs text-slate-400 uppercase tracking-wider border-b border-slate-800 bg-slate-900/40">
+            Solve Profile Diagnostics
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-3 text-xs text-slate-300">
+            <div>
+              <div className="text-slate-500">Profile</div>
+              <div className={runDiagnostics.parity ? 'text-blue-300' : ''}>
+                {runDiagnostics.solveProfile.toUpperCase()}
+              </div>
+            </div>
+            <div>
+              <div className="text-slate-500">Direction Sets</div>
+              <div>{runDiagnostics.directionSetMode.toUpperCase()}</div>
+            </div>
+            <div>
+              <div className="text-slate-500">STAR Fallback</div>
+              <div>{runDiagnostics.starDefaultInstrumentFallback ? 'ON' : 'OFF'}</div>
+            </div>
+            <div>
+              <div className="text-slate-500">Angle Centering</div>
+              <div>{runDiagnostics.angleCenteringModel}</div>
+            </div>
+            <div>
+              <div className="text-slate-500">TS Correlation</div>
+              <div>
+                {runDiagnostics.tsCorrelationEnabled
+                  ? `ON (${runDiagnostics.tsCorrelationScope}, rho=${runDiagnostics.tsCorrelationRho.toFixed(3)})`
+                  : 'OFF'}
+              </div>
+            </div>
+            <div>
+              <div className="text-slate-500">Robust</div>
+              <div>
+                {runDiagnostics.robustMode.toUpperCase()} (k={runDiagnostics.robustK.toFixed(2)})
+              </div>
+            </div>
+            <div>
+              <div className="text-slate-500">Map / Scale</div>
+              <div>
+                {runDiagnostics.mapMode.toUpperCase()} / {runDiagnostics.mapScaleFactor.toFixed(8)}
+              </div>
+            </div>
+            <div>
+              <div className="text-slate-500">Vertical / CurvRef</div>
+              <div>
+                {runDiagnostics.verticalReduction.toUpperCase()} /{' '}
+                {runDiagnostics.applyCurvatureRefraction
+                  ? `ON (k=${runDiagnostics.refractionCoefficient.toFixed(3)})`
+                  : 'OFF'}
+              </div>
+            </div>
+            <div>
+              <div className="text-slate-500">Normalize</div>
+              <div>{runDiagnostics.normalize ? 'ON' : 'OFF'}</div>
+            </div>
+            <div>
+              <div className="text-slate-500">A-Mode</div>
+              <div>{runDiagnostics.angleMode.toUpperCase()}</div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {result.residualDiagnostics && (
         <div className="mb-6 border border-slate-800 rounded overflow-hidden">

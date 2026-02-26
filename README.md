@@ -69,5 +69,6 @@ npm run dev
 - Defaults: coord=3D, order=EN, lon sign=west-negative, delta mode slope (zenith), map mode off, normalize on.
 - UX: .dat upload, export results as text (unit-correct, source-line traceable, sorted by |StdRes| with top suspects), refresh to last-run input, exclusion toggles with re-run, editable obs values/weights, true unit conversion (ft/m), settings dropdown (includes TS reduction controls like map scale and curvature/refraction), interactive map/ellipse view with wheel zoom, middle-button pan, middle-double-click reset-to-extents, zoom-aware symbol scaling, full-height map viewport usage, and zoom-adaptive label readability.
 - UX: settings now include a STAR*NET parity profile that forces classical solving, raw direction-set adjustment, and STAR-like default instrument precision fallback when files omit explicit instrument assignments.
+- UI/Report: includes a dedicated solve-profile diagnostics section (run-pinned parity/reduction/stochastic settings) and mirrors the same checklist in exported `.txt` reports.
 - Performance guards added (conditioning/residual warnings); see TODO.md for any future worker offload ideas.
 - Parity: `tests/fixtures/starnet_parity_phase2.dat` + `tests/ts_parity.test.ts` now pin a STAR-style benchmark (raw directions + classical weighting + STAR default instrument fallback) to prevent regression.
