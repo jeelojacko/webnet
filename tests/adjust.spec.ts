@@ -63,7 +63,7 @@ describe('LSAEngine', () => {
     const input = ['.2D', 'C A 0 0 0 ! !', 'C B 10 0 0', 'D A-B 10.0'].join('\n');
     const fallbackRun = new LSAEngine({ input, maxIterations: 6 }).solve();
     const fallbackDist = fallbackRun.observations.find((o) => o.type === 'dist');
-    expect(fallbackDist?.stdDev).toBeCloseTo(0.005, 8);
+    expect(fallbackDist?.stdDev).toBeCloseTo(0, 8);
 
     const starDefaultRun = new LSAEngine({
       input,
@@ -75,9 +75,14 @@ describe('LSAEngine', () => {
           edm_const: 0.001,
           edm_ppm: 1,
           hzPrecision_sec: 0.5,
+          dirPrecision_sec: 0.5,
+          azBearingPrecision_sec: 0.5,
           vaPrecision_sec: 0.5,
           instCentr_m: 0.00075,
           tgtCentr_m: 0,
+          vertCentr_m: 0,
+          elevDiff_const_m: 0,
+          elevDiff_ppm: 0,
           gpsStd_xy: 0,
           levStd_mmPerKm: 0,
         },

@@ -41,6 +41,82 @@ import type {
 } from './types';
 
 const FT_PER_M = 3.280839895;
+const M_PER_FT = 1 / FT_PER_M;
+
+const createInstrument = (code: string, desc = ''): Instrument => ({
+  code,
+  desc,
+  edm_const: 0,
+  edm_ppm: 0,
+  hzPrecision_sec: 0,
+  dirPrecision_sec: 0,
+  azBearingPrecision_sec: 0,
+  vaPrecision_sec: 0,
+  instCentr_m: 0,
+  tgtCentr_m: 0,
+  vertCentr_m: 0,
+  elevDiff_const_m: 0,
+  elevDiff_ppm: 0,
+  gpsStd_xy: 0,
+  levStd_mmPerKm: 0,
+});
+
+const cloneInstrumentLibrary = (library: InstrumentLibrary): InstrumentLibrary => {
+  const clone: InstrumentLibrary = {};
+  Object.entries(library).forEach(([code, inst]) => {
+    clone[code] = { ...inst };
+  });
+  return clone;
+};
+
+const parseInstrumentLibraryFromInput = (rawInput: string): InstrumentLibrary => {
+  const lines = rawInput.split('\n');
+  const lib: InstrumentLibrary = {};
+  lines.forEach((raw) => {
+    const line = raw.trim();
+    if (!line || line.startsWith('#')) return;
+    const parts = line.split(/\s+/);
+    if (parts[0]?.toUpperCase() !== 'I' || parts.length < 4) return;
+
+    const instCode = parts[1];
+    const desc = parts[2]?.replace(/-/g, ' ') ?? '';
+    const numeric = parts
+      .slice(3)
+      .map((p) => Number.parseFloat(p))
+      .filter((v) => !Number.isNaN(v));
+    const legacy = numeric.length > 0 && numeric.length < 6;
+    const edmConst = legacy ? (numeric[1] ?? 0) : (numeric[0] ?? 0);
+    const edmPpm = legacy ? (numeric[0] ?? 0) : (numeric[1] ?? 0);
+    const hzPrec = legacy ? (numeric[2] ?? 0) : (numeric[2] ?? 0);
+    const vaPrec = legacy ? (numeric[2] ?? 0) : (numeric[3] ?? 0);
+    const instCentr = legacy ? 0 : (numeric[4] ?? 0);
+    const tgtCentr = legacy ? 0 : (numeric[5] ?? 0);
+    const gpsStd = legacy ? (numeric[3] ?? 0) : (numeric[6] ?? 0);
+    const levStd = legacy ? (numeric[4] ?? 0) : (numeric[7] ?? 0);
+    const dirPrec = numeric[8] ?? hzPrec;
+    const azPrec = numeric[9] ?? dirPrec;
+    const vertCentr = numeric[10] ?? 0;
+    const elevDiffConst = numeric[11] ?? 0;
+    const elevDiffPpm = numeric[12] ?? 0;
+    lib[instCode] = {
+      ...createInstrument(instCode, desc),
+      edm_const: edmConst,
+      edm_ppm: edmPpm,
+      hzPrecision_sec: hzPrec,
+      dirPrecision_sec: dirPrec,
+      azBearingPrecision_sec: azPrec,
+      vaPrecision_sec: vaPrec,
+      instCentr_m: instCentr,
+      tgtCentr_m: tgtCentr,
+      vertCentr_m: vertCentr,
+      elevDiff_const_m: elevDiffConst,
+      elevDiff_ppm: elevDiffPpm,
+      gpsStd_xy: gpsStd,
+      levStd_mmPerKm: levStd,
+    };
+  });
+  return lib;
+};
 
 /****************************
  * CONSTANTS & DEFAULT INPUT
@@ -222,9 +298,14 @@ const STAR_DEFAULT_INSTRUMENT: Instrument = {
   edm_const: 0.001,
   edm_ppm: 1,
   hzPrecision_sec: 0.5,
+  dirPrecision_sec: 0.5,
+  azBearingPrecision_sec: 0.5,
   vaPrecision_sec: 0.5,
   instCentr_m: 0.00075,
   tgtCentr_m: 0,
+  vertCentr_m: 0,
+  elevDiff_const_m: 0,
+  elevDiff_ppm: 0,
   gpsStd_xy: 0,
   levStd_mmPerKm: 0,
 };
@@ -346,6 +427,9 @@ const App: React.FC = () => {
     robustMode: 'none',
     robustK: 1.5,
   });
+  const [projectInstruments, setProjectInstruments] = useState<InstrumentLibrary>(() =>
+    parseInstrumentLibraryFromInput(DEFAULT_INPUT),
+  );
   const [selectedInstrument, setSelectedInstrument] = useState('');
   const [splitPercent, setSplitPercent] = useState(35); // left pane width (%)
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -353,6 +437,8 @@ const App: React.FC = () => {
   const [activeOptionsTab, setActiveOptionsTab] = useState<ProjectOptionsTab>('adjustment');
   const [settingsDraft, setSettingsDraft] = useState<SettingsState>(settings);
   const [parseSettingsDraft, setParseSettingsDraft] = useState<ParseSettings>(parseSettings);
+  const [projectInstrumentsDraft, setProjectInstrumentsDraft] =
+    useState<InstrumentLibrary>(projectInstruments);
   const [selectedInstrumentDraft, setSelectedInstrumentDraft] = useState(selectedInstrument);
   const [excludedIds, setExcludedIds] = useState<Set<number>>(new Set());
   const [overrides, setOverrides] = useState<Record<number, ObservationOverride>>({});
@@ -360,56 +446,40 @@ const App: React.FC = () => {
   const layoutRef = useRef<HTMLDivElement | null>(null);
   const isResizingRef = useRef(false);
 
-  const instrumentLibrary: InstrumentLibrary = useMemo(() => {
-    const lines = input.split('\n');
-    const lib: InstrumentLibrary = {};
-
-    for (const raw of lines) {
-      const line = raw.trim();
-      if (!line || line.startsWith('#')) continue;
-
-      const parts = line.split(/\s+/);
-      if (parts[0]?.toUpperCase() === 'I' && parts.length >= 4) {
-        const instCode = parts[1];
-        const desc = parts[2]?.replace(/-/g, ' ') ?? '';
-        const numeric = parts
-          .slice(3)
-          .map((p) => parseFloat(p))
-          .filter((v) => !Number.isNaN(v));
-        const legacy = numeric.length > 0 && numeric.length < 6;
-        const edmConst = legacy ? (numeric[1] ?? 0) : (numeric[0] ?? 0);
-        const edmPpm = legacy ? (numeric[0] ?? 0) : (numeric[1] ?? 0);
-        const hzPrec = legacy ? (numeric[2] ?? 0) : (numeric[2] ?? 0);
-        const vaPrec = legacy ? (numeric[2] ?? 0) : (numeric[3] ?? 0);
-        const instCentr = legacy ? 0 : (numeric[4] ?? 0);
-        const tgtCentr = legacy ? 0 : (numeric[5] ?? 0);
-        const gpsStd = legacy ? (numeric[3] ?? 0) : (numeric[6] ?? 0);
-        const levStd = legacy ? (numeric[4] ?? 0) : (numeric[7] ?? 0);
-        lib[instCode] = {
-          code: instCode,
-          desc,
-          edm_const: edmConst,
-          edm_ppm: edmPpm,
-          hzPrecision_sec: hzPrec,
-          vaPrecision_sec: vaPrec,
-          instCentr_m: instCentr,
-          tgtCentr_m: tgtCentr,
-          gpsStd_xy: gpsStd,
-          levStd_mmPerKm: levStd,
-        };
-      }
-    }
-    return lib;
-  }, [input]);
+  const parsedInputInstruments = useMemo(() => parseInstrumentLibraryFromInput(input), [input]);
 
   useEffect(() => {
-    const codes = Object.keys(instrumentLibrary);
+    setProjectInstruments((prev) => {
+      const next = { ...prev };
+      let changed = false;
+      Object.entries(parsedInputInstruments).forEach(([code, inst]) => {
+        if (!next[code]) {
+          next[code] = inst;
+          changed = true;
+        }
+      });
+      return changed ? next : prev;
+    });
+  }, [parsedInputInstruments]);
+
+  useEffect(() => {
+    const codes = Object.keys(projectInstruments);
     if (!selectedInstrument && codes.length > 0) {
       setSelectedInstrument(codes[0]);
-    } else if (selectedInstrument && !instrumentLibrary[selectedInstrument]) {
+    } else if (selectedInstrument && !projectInstruments[selectedInstrument]) {
       setSelectedInstrument(codes[0] || '');
     }
-  }, [instrumentLibrary, selectedInstrument]);
+  }, [projectInstruments, selectedInstrument]);
+
+  useEffect(() => {
+    if (!isSettingsModalOpen) return;
+    const codes = Object.keys(projectInstrumentsDraft);
+    if (!selectedInstrumentDraft && codes.length > 0) {
+      setSelectedInstrumentDraft(codes[0]);
+    } else if (selectedInstrumentDraft && !projectInstrumentsDraft[selectedInstrumentDraft]) {
+      setSelectedInstrumentDraft(codes[0] || '');
+    }
+  }, [isSettingsModalOpen, projectInstrumentsDraft, selectedInstrumentDraft]);
 
   useEffect(() => {
     if (!isSettingsModalOpen) return;
@@ -531,9 +601,9 @@ const App: React.FC = () => {
       : base;
     const directionSetMode = parity ? 'raw' : 'reduced';
     const effectiveInstrumentLibrary = parity
-      ? { ...instrumentLibrary, [STAR_DEFAULT_INSTRUMENT_CODE]: STAR_DEFAULT_INSTRUMENT }
-      : instrumentLibrary;
-    const currentInstrument = parity ? STAR_DEFAULT_INSTRUMENT_CODE : undefined;
+      ? { ...projectInstruments, [STAR_DEFAULT_INSTRUMENT_CODE]: STAR_DEFAULT_INSTRUMENT }
+      : projectInstruments;
+    const currentInstrument = parity ? STAR_DEFAULT_INSTRUMENT_CODE : selectedInstrument || undefined;
     return {
       parity,
       effectiveParse,
@@ -597,7 +667,7 @@ const App: React.FC = () => {
         : undefined;
     const stochasticDefaultsSummary = activeDefaultInst
       ? `inst=${activeDefaultInst.code} dist=${activeDefaultInst.edm_const.toFixed(4)}m+${activeDefaultInst.edm_ppm.toFixed(3)}ppm hz=${activeDefaultInst.hzPrecision_sec.toFixed(3)}" va=${activeDefaultInst.vaPrecision_sec.toFixed(3)}" centering=${activeDefaultInst.instCentr_m.toFixed(5)}/${activeDefaultInst.tgtCentr_m.toFixed(5)}m edm=${parse.edmMode} centerInflation=${parse.applyCentering ? `ON(explicit=${parse.addCenteringToExplicit ? 'ON' : 'OFF'})` : 'OFF'}`
-      : `inst=fallback-none distFloor=0.005m angle=5" zenith=5" gps=0.01m edm=${parse.edmMode} centerInflation=${parse.applyCentering ? `ON(explicit=${parse.addCenteringToExplicit ? 'ON' : 'OFF'})` : 'OFF'}`;
+      : `inst=none dist=0+0ppm hz=0" va=0" centering=0/0m edm=${parse.edmMode} centerInflation=${parse.applyCentering ? `ON(explicit=${parse.addCenteringToExplicit ? 'ON' : 'OFF'})` : 'OFF'}`;
     return {
       solveProfile: base.solveProfile,
       parity: profileCtx.parity,
@@ -2626,6 +2696,7 @@ const App: React.FC = () => {
         robustK: effectiveParse.robustK,
         directionSetMode: profileCtx.directionSetMode,
         currentInstrument: profileCtx.currentInstrument,
+        preferExternalInstruments: true,
       },
     });
     return engine.solve();
@@ -2800,6 +2871,7 @@ const App: React.FC = () => {
   const openProjectOptions = () => {
     setSettingsDraft(settings);
     setParseSettingsDraft(parseSettings);
+    setProjectInstrumentsDraft(cloneInstrumentLibrary(projectInstruments));
     setSelectedInstrumentDraft(selectedInstrument);
     setActiveOptionsTab('adjustment');
     setIsSettingsModalOpen(true);
@@ -2808,6 +2880,7 @@ const App: React.FC = () => {
   const applyProjectOptions = () => {
     setSettings(settingsDraft);
     setParseSettings(parseSettingsDraft);
+    setProjectInstruments(cloneInstrumentLibrary(projectInstrumentsDraft));
     setSelectedInstrument(selectedInstrumentDraft);
     setIsSettingsModalOpen(false);
   };
@@ -2830,6 +2903,52 @@ const App: React.FC = () => {
 
   const handleDraftSetting = <K extends keyof SettingsState>(key: K, value: SettingsState[K]) => {
     setSettingsDraft((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const handleInstrumentFieldChange = (
+    code: string,
+    key: keyof Instrument,
+    value: number | string,
+  ) => {
+    setProjectInstrumentsDraft((prev) => {
+      const current = prev[code] ?? createInstrument(code, code);
+      return {
+        ...prev,
+        [code]: {
+          ...current,
+          [key]: value,
+        },
+      };
+    });
+  };
+
+  const handleInstrumentLinearFieldChange = (
+    code: string,
+    key: keyof Instrument,
+    value: string,
+    units: Units,
+  ) => {
+    const parsed = Number.parseFloat(value);
+    const displayValue = Number.isFinite(parsed) ? parsed : 0;
+    const metricValue = units === 'ft' ? displayValue * M_PER_FT : displayValue;
+    handleInstrumentFieldChange(code, key, metricValue);
+  };
+
+  const handleInstrumentNumericFieldChange = (code: string, key: keyof Instrument, value: string) => {
+    const parsed = Number.parseFloat(value);
+    handleInstrumentFieldChange(code, key, Number.isFinite(parsed) ? parsed : 0);
+  };
+
+  const addNewInstrument = () => {
+    const name = window.prompt('Instrument name');
+    if (!name) return;
+    const code = name.trim();
+    if (!code) return;
+    setProjectInstrumentsDraft((prev) => {
+      if (prev[code]) return prev;
+      return { ...prev, [code]: createInstrument(code, code) };
+    });
+    setSelectedInstrumentDraft(code);
   };
 
   const parityProfileActive = parseSettingsDraft.solveProfile === 'starnet-parity';
@@ -2861,8 +2980,11 @@ const App: React.FC = () => {
   };
 
   const selectedInstrumentMeta = selectedInstrumentDraft
-    ? instrumentLibrary[selectedInstrumentDraft]
+    ? projectInstrumentsDraft[selectedInstrumentDraft]
     : undefined;
+  const instrumentLinearUnit = settingsDraft.units === 'ft' ? 'FeetUS' : 'Meters';
+  const displayLinear = (meters: number): number =>
+    settingsDraft.units === 'ft' ? meters * FT_PER_M : meters;
   const optionInputClass =
     'w-full bg-slate-700 text-xs border border-slate-500 text-white rounded px-2 py-1 outline-none focus:border-blue-400';
   const optionLabelClass = 'text-[11px] text-slate-300 uppercase tracking-wide';
@@ -3281,47 +3403,246 @@ const App: React.FC = () => {
               {activeOptionsTab === 'instrument' && (
                 <div className="space-y-4">
                   <div className="border border-slate-400 p-3 space-y-3">
-                    <div className="text-xs uppercase tracking-wider text-slate-200">
-                      Active Instrument
-                    </div>
-                    <label className={optionLabelClass}>
-                      Instrument Code
-                      <select
-                        title={SETTINGS_TOOLTIPS.instrument}
-                        value={selectedInstrumentDraft}
-                        onChange={(e) => setSelectedInstrumentDraft(e.target.value)}
-                        className={`${optionInputClass} mt-1 max-w-xs`}
+                    <div className="flex items-end gap-3">
+                      <label className={`${optionLabelClass} flex-1 max-w-xs`}>
+                        Instrument
+                        <select
+                          title={SETTINGS_TOOLTIPS.instrument}
+                          value={selectedInstrumentDraft}
+                          onChange={(e) => setSelectedInstrumentDraft(e.target.value)}
+                          className={`${optionInputClass} mt-1`}
+                        >
+                          {Object.keys(projectInstrumentsDraft).length === 0 && (
+                            <option value="">(none)</option>
+                          )}
+                          {Object.values(projectInstrumentsDraft).map((inst) => (
+                            <option key={inst.code} value={inst.code}>
+                              {inst.code}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                      <button
+                        type="button"
+                        onClick={addNewInstrument}
+                        className="h-[30px] px-3 text-xs border border-slate-300 bg-slate-500 hover:bg-slate-400"
                       >
-                        {Object.keys(instrumentLibrary).length === 0 && (
-                          <option value="">(none)</option>
-                        )}
-                        {Object.values(instrumentLibrary).map((inst) => (
-                          <option key={inst.code} value={inst.code}>
-                            {inst.code}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                    {selectedInstrumentMeta ? (
-                      <div className="text-xs text-slate-200 leading-relaxed">
-                        <div>{selectedInstrumentMeta.desc}</div>
-                        <div>
-                          Dist Const: {selectedInstrumentMeta.edm_const} m | Dist PPM:{' '}
-                          {selectedInstrumentMeta.edm_ppm}
-                        </div>
-                        <div>
-                          Angle: {selectedInstrumentMeta.hzPrecision_sec}" | Zenith:{' '}
-                          {selectedInstrumentMeta.vaPrecision_sec}"
-                        </div>
-                        <div>
-                          Centering I/T: {selectedInstrumentMeta.instCentr_m}/
-                          {selectedInstrumentMeta.tgtCentr_m} m
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="text-xs text-slate-200">No instrument selected.</div>
+                        New Instrument
+                      </button>
+                    </div>
+                    {selectedInstrumentMeta && (
+                      <label className={optionLabelClass}>
+                        Instrument Description
+                        <input
+                          type="text"
+                          value={selectedInstrumentMeta.desc}
+                          onChange={(e) =>
+                            handleInstrumentFieldChange(
+                              selectedInstrumentMeta.code,
+                              'desc',
+                              e.target.value,
+                            )
+                          }
+                          className={`${optionInputClass} mt-1`}
+                        />
+                      </label>
                     )}
                   </div>
+                  {selectedInstrumentMeta ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="border border-slate-400 p-3 space-y-3">
+                        <label className={optionLabelClass}>
+                          Distance Constant ({instrumentLinearUnit})
+                          <input
+                            type="number"
+                            step={0.00001}
+                            value={displayLinear(selectedInstrumentMeta.edm_const)}
+                            onChange={(e) =>
+                              handleInstrumentLinearFieldChange(
+                                selectedInstrumentMeta.code,
+                                'edm_const',
+                                e.target.value,
+                                settingsDraft.units,
+                              )
+                            }
+                            className={`${optionInputClass} mt-1`}
+                          />
+                        </label>
+                        <label className={optionLabelClass}>
+                          Distance PPM
+                          <input
+                            type="number"
+                            step={0.001}
+                            value={selectedInstrumentMeta.edm_ppm}
+                            onChange={(e) =>
+                              handleInstrumentNumericFieldChange(
+                                selectedInstrumentMeta.code,
+                                'edm_ppm',
+                                e.target.value,
+                              )
+                            }
+                            className={`${optionInputClass} mt-1`}
+                          />
+                        </label>
+                        <label className={optionLabelClass}>
+                          Angle (Seconds)
+                          <input
+                            type="number"
+                            step={0.0001}
+                            value={selectedInstrumentMeta.hzPrecision_sec}
+                            onChange={(e) =>
+                              handleInstrumentNumericFieldChange(
+                                selectedInstrumentMeta.code,
+                                'hzPrecision_sec',
+                                e.target.value,
+                              )
+                            }
+                            className={`${optionInputClass} mt-1`}
+                          />
+                        </label>
+                        <label className={optionLabelClass}>
+                          Direction (Seconds)
+                          <input
+                            type="number"
+                            step={0.0001}
+                            value={selectedInstrumentMeta.dirPrecision_sec}
+                            onChange={(e) =>
+                              handleInstrumentNumericFieldChange(
+                                selectedInstrumentMeta.code,
+                                'dirPrecision_sec',
+                                e.target.value,
+                              )
+                            }
+                            className={`${optionInputClass} mt-1`}
+                          />
+                        </label>
+                        <label className={optionLabelClass}>
+                          Azimuth / Bearing (Seconds)
+                          <input
+                            type="number"
+                            step={0.0001}
+                            value={selectedInstrumentMeta.azBearingPrecision_sec}
+                            onChange={(e) =>
+                              handleInstrumentNumericFieldChange(
+                                selectedInstrumentMeta.code,
+                                'azBearingPrecision_sec',
+                                e.target.value,
+                              )
+                            }
+                            className={`${optionInputClass} mt-1`}
+                          />
+                        </label>
+                        <label className={optionLabelClass}>
+                          Centering Horiz. Instrument ({instrumentLinearUnit})
+                          <input
+                            type="number"
+                            step={0.00001}
+                            value={displayLinear(selectedInstrumentMeta.instCentr_m)}
+                            onChange={(e) =>
+                              handleInstrumentLinearFieldChange(
+                                selectedInstrumentMeta.code,
+                                'instCentr_m',
+                                e.target.value,
+                                settingsDraft.units,
+                              )
+                            }
+                            className={`${optionInputClass} mt-1`}
+                          />
+                        </label>
+                        <label className={optionLabelClass}>
+                          Centering Horiz. Target ({instrumentLinearUnit})
+                          <input
+                            type="number"
+                            step={0.00001}
+                            value={displayLinear(selectedInstrumentMeta.tgtCentr_m)}
+                            onChange={(e) =>
+                              handleInstrumentLinearFieldChange(
+                                selectedInstrumentMeta.code,
+                                'tgtCentr_m',
+                                e.target.value,
+                                settingsDraft.units,
+                              )
+                            }
+                            className={`${optionInputClass} mt-1`}
+                          />
+                        </label>
+                      </div>
+                      <div className="border border-slate-400 p-3 space-y-3">
+                        <label className={optionLabelClass}>
+                          Zenith (Seconds)
+                          <input
+                            type="number"
+                            step={0.0001}
+                            disabled={parseSettingsDraft.coordMode === '2D'}
+                            value={selectedInstrumentMeta.vaPrecision_sec}
+                            onChange={(e) =>
+                              handleInstrumentNumericFieldChange(
+                                selectedInstrumentMeta.code,
+                                'vaPrecision_sec',
+                                e.target.value,
+                              )
+                            }
+                            className={`${optionInputClass} mt-1 disabled:opacity-50 disabled:cursor-not-allowed`}
+                          />
+                        </label>
+                        <label className={optionLabelClass}>
+                          Elev Diff Constant ({instrumentLinearUnit})
+                          <input
+                            type="number"
+                            step={0.00001}
+                            disabled={parseSettingsDraft.coordMode === '2D'}
+                            value={displayLinear(selectedInstrumentMeta.elevDiff_const_m)}
+                            onChange={(e) =>
+                              handleInstrumentLinearFieldChange(
+                                selectedInstrumentMeta.code,
+                                'elevDiff_const_m',
+                                e.target.value,
+                                settingsDraft.units,
+                              )
+                            }
+                            className={`${optionInputClass} mt-1 disabled:opacity-50 disabled:cursor-not-allowed`}
+                          />
+                        </label>
+                        <label className={optionLabelClass}>
+                          Elev Diff PPM
+                          <input
+                            type="number"
+                            step={0.001}
+                            disabled={parseSettingsDraft.coordMode === '2D'}
+                            value={selectedInstrumentMeta.elevDiff_ppm}
+                            onChange={(e) =>
+                              handleInstrumentNumericFieldChange(
+                                selectedInstrumentMeta.code,
+                                'elevDiff_ppm',
+                                e.target.value,
+                              )
+                            }
+                            className={`${optionInputClass} mt-1 disabled:opacity-50 disabled:cursor-not-allowed`}
+                          />
+                        </label>
+                        <label className={optionLabelClass}>
+                          Centering Vertical ({instrumentLinearUnit})
+                          <input
+                            type="number"
+                            step={0.00001}
+                            disabled={parseSettingsDraft.coordMode === '2D'}
+                            value={displayLinear(selectedInstrumentMeta.vertCentr_m)}
+                            onChange={(e) =>
+                              handleInstrumentLinearFieldChange(
+                                selectedInstrumentMeta.code,
+                                'vertCentr_m',
+                                e.target.value,
+                                settingsDraft.units,
+                              )
+                            }
+                            className={`${optionInputClass} mt-1 disabled:opacity-50 disabled:cursor-not-allowed`}
+                          />
+                        </label>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-xs text-slate-200">No instrument selected.</div>
+                  )}
                   <div className="border border-slate-400 p-3 space-y-2">
                     <div className="text-xs uppercase tracking-wider text-slate-200">
                       Weighting Helpers

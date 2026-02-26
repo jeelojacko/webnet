@@ -209,36 +209,41 @@ export class LSAEngine {
 
   private effectiveStdDev(obs: Observation): number {
     const inst = this.getInstrument(obs);
-    let sigma = obs.stdDev || 0;
-    if (!inst) return sigma || 1;
+    let sigma = Number.isFinite(obs.stdDev) ? obs.stdDev : 0;
+    if (!inst) return Math.max(sigma, 1e-12);
 
     const source = obs.sigmaSource ?? 'explicit';
-    if (source === 'fixed' || source === 'float') return sigma || 1;
-    if (!this.applyCentering) return sigma || 1;
-    if (source === 'explicit' && !this.addCenteringToExplicit) return sigma || 1;
+    if (source === 'fixed' || source === 'float') return Math.max(sigma, 1e-12);
+    if (!this.applyCentering) return Math.max(sigma, 1e-12);
+    if (source === 'explicit' && !this.addCenteringToExplicit) return Math.max(sigma, 1e-12);
 
-    const center = Math.hypot(inst.instCentr_m || 0, inst.tgtCentr_m || 0);
-    if (center <= 0) return sigma || 1;
+    const centerHoriz = Math.hypot(inst.instCentr_m || 0, inst.tgtCentr_m || 0);
+    const centerVert = Math.abs(inst.vertCentr_m || 0);
 
     if (obs.type === 'dist') {
-      return Math.sqrt(sigma * sigma + center * center);
+      if (centerHoriz <= 0) return Math.max(sigma, 1e-12);
+      return Math.max(Math.sqrt(sigma * sigma + centerHoriz * centerHoriz), 1e-12);
     }
     if (obs.type === 'direction') {
+      if (centerHoriz <= 0) return Math.max(sigma, 1e-12);
       const az = this.getAzimuth(obs.at, obs.to);
-      const term = az.dist > 0 ? center / az.dist : 0;
-      return Math.sqrt(sigma * sigma + term * term);
+      const term = az.dist > 0 ? centerHoriz / az.dist : 0;
+      return Math.max(Math.sqrt(sigma * sigma + term * term), 1e-12);
     }
     if (obs.type === 'bearing') {
+      if (centerHoriz <= 0) return Math.max(sigma, 1e-12);
       const az = this.getAzimuth(obs.from, obs.to);
-      const term = az.dist > 0 ? center / az.dist : 0;
-      return Math.sqrt(sigma * sigma + term * term);
+      const term = az.dist > 0 ? centerHoriz / az.dist : 0;
+      return Math.max(Math.sqrt(sigma * sigma + term * term), 1e-12);
     }
     if (obs.type === 'dir') {
+      if (centerHoriz <= 0) return Math.max(sigma, 1e-12);
       const az = this.getAzimuth(obs.from, obs.to);
-      const term = az.dist > 0 ? center / az.dist : 0;
-      return Math.sqrt(sigma * sigma + term * term);
+      const term = az.dist > 0 ? centerHoriz / az.dist : 0;
+      return Math.max(Math.sqrt(sigma * sigma + term * term), 1e-12);
     }
     if (obs.type === 'angle') {
+      if (centerHoriz <= 0) return Math.max(sigma, 1e-12);
       const azTo = this.getAzimuth(obs.at, obs.to);
       const azFrom = this.getAzimuth(obs.at, obs.from);
       const dTo = Math.max(azTo.dist, 1e-12);
@@ -246,29 +251,34 @@ export class LSAEngine {
       const angle = Number.isFinite(obs.obs) ? obs.obs : this.wrapToPi(azTo.az - azFrom.az);
       const cross = Math.cos(angle);
       const termSq =
-        (center * center) / (dTo * dTo) +
-        (center * center) / (dFrom * dFrom) -
-        (2 * center * center * cross) / (dTo * dFrom);
+        (centerHoriz * centerHoriz) / (dTo * dTo) +
+        (centerHoriz * centerHoriz) / (dFrom * dFrom) -
+        (2 * centerHoriz * centerHoriz * cross) / (dTo * dFrom);
       const term = Math.sqrt(Math.max(termSq, 0));
-      return Math.sqrt(sigma * sigma + term * term);
+      return Math.max(Math.sqrt(sigma * sigma + term * term), 1e-12);
     }
     if (obs.type === 'zenith') {
+      if (centerVert <= 0) return Math.max(sigma, 1e-12);
       const z = this.getZenith(obs.from, obs.to, obs.hi ?? 0, obs.ht ?? 0);
-      const term = z.dist > 0 ? center / z.dist : 0;
-      return Math.sqrt(sigma * sigma + term * term);
+      const term = z.dist > 0 ? centerVert / z.dist : 0;
+      return Math.max(Math.sqrt(sigma * sigma + term * term), 1e-12);
+    }
+    if (obs.type === 'lev') {
+      if (centerVert <= 0) return Math.max(sigma, 1e-12);
+      return Math.max(Math.sqrt(sigma * sigma + centerVert * centerVert), 1e-12);
     }
 
-    return sigma || 1;
+    return Math.max(sigma, 1e-12);
   }
 
   private gpsCovariance(obs: Observation): { cEE: number; cNN: number; cEN: number } {
     if (obs.type !== 'gps') {
-      const s = obs.stdDev || 1;
+      const s = Math.max(obs.stdDev || 0, 1e-12);
       return { cEE: s * s, cNN: s * s, cEN: 0 };
     }
     const gps = obs;
-    const sE = Math.max(gps.stdDevE ?? gps.stdDev ?? 0.01, 1e-12);
-    const sN = Math.max(gps.stdDevN ?? gps.stdDev ?? 0.01, 1e-12);
+    const sE = Math.max(gps.stdDevE ?? gps.stdDev ?? 0, 1e-12);
+    const sN = Math.max(gps.stdDevN ?? gps.stdDev ?? 0, 1e-12);
     const corr = Math.max(-0.999, Math.min(0.999, gps.corrEN ?? 0));
     return {
       cEE: sE * sE,

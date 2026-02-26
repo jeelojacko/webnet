@@ -6,9 +6,14 @@ export interface Instrument {
   edm_const: number;
   edm_ppm: number;
   hzPrecision_sec: number;
+  dirPrecision_sec: number;
+  azBearingPrecision_sec: number;
   vaPrecision_sec: number;
   instCentr_m: number;
   tgtCentr_m: number;
+  vertCentr_m: number;
+  elevDiff_const_m: number;
+  elevDiff_ppm: number;
   gpsStd_xy: number;
   levStd_mmPerKm: number;
 }
@@ -259,6 +264,7 @@ export interface ParseOptions {
   robustMode?: RobustMode;
   robustK?: number;
   directionSetMode?: DirectionSetMode;
+  preferExternalInstruments?: boolean;
 }
 
 export interface AdjustmentResult {

@@ -42,6 +42,7 @@ const defaultParseOptions: ParseOptions = {
   robustMode: 'none',
   robustK: 1.5,
   directionSetMode: 'reduced',
+  preferExternalInstruments: false,
 };
 
 const FT_PER_M = 3.280839895;
@@ -220,7 +221,7 @@ const defaultDistanceSigma = (
   inst: Instrument | undefined,
   dist: number,
   edmMode: ParseOptions['edmMode'],
-  fallback = 0.005,
+  fallback = 0,
 ): number => {
   if (!inst) return fallback;
   const ppmTerm = inst.edm_ppm * 1e-6 * dist;
@@ -228,6 +229,24 @@ const defaultDistanceSigma = (
     return Math.sqrt(inst.edm_const * inst.edm_const + ppmTerm * ppmTerm);
   }
   return Math.abs(inst.edm_const) + Math.abs(ppmTerm);
+};
+
+const defaultHorizontalAngleSigmaSec = (inst: Instrument | undefined): number =>
+  inst?.hzPrecision_sec ?? 0;
+
+const defaultDirectionSigmaSec = (inst: Instrument | undefined): number =>
+  inst?.dirPrecision_sec ?? defaultHorizontalAngleSigmaSec(inst);
+
+const defaultAzimuthSigmaSec = (inst: Instrument | undefined): number =>
+  inst?.azBearingPrecision_sec ?? defaultDirectionSigmaSec(inst);
+
+const defaultZenithSigmaSec = (inst: Instrument | undefined): number =>
+  inst?.vaPrecision_sec ?? 0;
+
+const defaultElevDiffSigma = (inst: Instrument | undefined, spanMeters: number): number => {
+  if (!inst) return 0;
+  const ppmTerm = (inst.elevDiff_ppm ?? 0) * 1e-6 * Math.abs(spanMeters);
+  return Math.sqrt((inst.elevDiff_const_m ?? 0) ** 2 + ppmTerm ** 2);
 };
 
 const parseFromTo = (
@@ -801,6 +820,9 @@ export const parseInput = (
     try {
       if (code === 'I') {
         const instCode = parts[1];
+        if (state.preferExternalInstruments && instCode && existingInstruments[instCode]) {
+          continue;
+        }
         const desc = parts[2]?.replace(/-/g, ' ') ?? '';
         const numeric = parts
           .slice(3)
@@ -815,15 +837,25 @@ export const parseInput = (
         const tgtCentr = legacy ? 0 : (numeric[5] ?? 0);
         const gpsStd = legacy ? (numeric[3] ?? 0) : (numeric[6] ?? 0);
         const levStd = legacy ? (numeric[4] ?? 0) : (numeric[7] ?? 0);
+        const dirPrec = numeric[8] ?? hzPrec;
+        const azPrec = numeric[9] ?? dirPrec;
+        const vertCentr = numeric[10] ?? 0;
+        const elevDiffConst = numeric[11] ?? 0;
+        const elevDiffPpm = numeric[12] ?? 0;
         const inst: Instrument = {
           code: instCode,
           desc,
           edm_const: edmConst,
           edm_ppm: edmPpm,
           hzPrecision_sec: hzPrec,
+          dirPrecision_sec: dirPrec,
+          azBearingPrecision_sec: azPrec,
           vaPrecision_sec: vaPrec,
           instCentr_m: instCentr,
           tgtCentr_m: tgtCentr,
+          vertCentr_m: vertCentr,
+          elevDiff_const_m: elevDiffConst,
+          elevDiff_ppm: elevDiffPpm,
           gpsStd_xy: gpsStd,
           levStd_mmPerKm: levStd,
         };
@@ -1034,7 +1066,7 @@ export const parseInput = (
         const { hi, ht } = extractHiHt(rest);
 
         const inst = instCode ? instrumentLibrary[instCode] : undefined;
-        const defaultSigma = defaultDistanceSigma(inst, dist, state.edmMode, 0.005);
+        const defaultSigma = defaultDistanceSigma(inst, dist, state.edmMode, 0);
         const { sigma, source } = resolveSigma(sigmas[0], defaultSigma);
 
         const toMeters = state.units === 'ft' ? 1 / FT_PER_M : 1;
@@ -1073,7 +1105,7 @@ export const parseInput = (
         const { sigmas } = extractSigmaTokens(parts.slice(stdTokenIndex), 1);
 
         const inst = instCode ? instrumentLibrary[instCode] : undefined;
-        const defaultSigma = inst?.hzPrecision_sec ?? 5;
+        const defaultSigma = defaultHorizontalAngleSigmaSec(inst);
         const resolved = resolveSigma(sigmas[0], defaultSigma);
         let sigmaSec = resolved.sigma;
         if (angleRad >= Math.PI) sigmaSec *= FACE2_WEIGHT;
@@ -1146,9 +1178,10 @@ export const parseInput = (
         const stdTokens = parts.slice(nextIndex + 1);
         const { sigmas } = extractSigmaTokens(stdTokens, 1);
         const toMeters = state.units === 'ft' ? 1 / FT_PER_M : 1;
+        const inst = state.currentInstrument ? instrumentLibrary[state.currentInstrument] : undefined;
         if (state.deltaMode === 'horiz') {
           const dh = parseFloat(valToken) * toMeters;
-          const resolved = resolveSigma(sigmas[0], 0.001);
+          const resolved = resolveSigma(sigmas[0], defaultElevDiffSigma(inst, 0));
           const std = resolved.sigma * toMeters;
           const obs: LevelObservation = {
             id: obsId++,
@@ -1158,18 +1191,14 @@ export const parseInput = (
             to,
             obs: dh,
             lenKm: 0,
-            stdDev: std || 0.001,
+            stdDev: std,
             sigmaSource: resolved.source,
           };
           pushObservation(obs);
         } else {
           const zenRad = parseAngleTokenRad(valToken, state, 'dd');
-          const inst = state.currentInstrument
-            ? instrumentLibrary[state.currentInstrument]
-            : undefined;
-          const base = inst?.vaPrecision_sec ?? 5;
+          const base = defaultZenithSigmaSec(inst);
           const resolved = resolveSigma(sigmas[0], base);
-          const stdArc = resolved.sigma || base;
           pushObservation({
             id: obsId++,
             type: 'zenith',
@@ -1177,7 +1206,7 @@ export const parseInput = (
             from,
             to,
             obs: zenRad,
-            stdDev: (stdArc || 5) * SEC_TO_RAD,
+            stdDev: resolved.sigma * SEC_TO_RAD,
             sigmaSource: resolved.source,
           });
         }
@@ -1193,9 +1222,9 @@ export const parseInput = (
           const restTokens = parts.slice(nextIndex + 2);
           const { sigmas, rest } = extractSigmaTokens(restTokens, 2);
           const { hi, ht } = extractHiHt(rest);
-          const defaultDist = defaultDistanceSigma(inst, dist, state.edmMode, 0.005);
+          const defaultDist = defaultDistanceSigma(inst, dist, state.edmMode, 0);
           const distResolved = resolveSigma(sigmas[0], defaultDist);
-          const dhResolved = resolveSigma(sigmas[1], 0.001);
+          const dhResolved = resolveSigma(sigmas[1], defaultElevDiffSigma(inst, dist * toMeters));
           pushObservation({
             id: obsId++,
             type: 'dist',
@@ -1228,9 +1257,9 @@ export const parseInput = (
           const restTokens = parts.slice(nextIndex + 2);
           const { sigmas, rest } = extractSigmaTokens(restTokens, 2);
           const { hi, ht } = extractHiHt(rest);
-          const defaultDist = defaultDistanceSigma(inst, dist, state.edmMode, 0.005);
+          const defaultDist = defaultDistanceSigma(inst, dist, state.edmMode, 0);
           const distResolved = resolveSigma(sigmas[0], defaultDist);
-          const defaultZen = inst?.vaPrecision_sec ?? 5;
+          const defaultZen = defaultZenithSigmaSec(inst);
           const zenResolved = resolveSigma(sigmas[1], defaultZen);
           if (!zen) {
             logs.push(`DV slope missing zenith at line ${lineNum}, skipping`);
@@ -1259,7 +1288,7 @@ export const parseInput = (
             from,
             to,
             obs: zenRad,
-            stdDev: (zenResolved.sigma || 5) * SEC_TO_RAD,
+            stdDev: zenResolved.sigma * SEC_TO_RAD,
             sigmaSource: zenResolved.source,
             hi: hi != null ? hi * toMeters : undefined,
             ht: ht != null ? ht * toMeters : undefined,
@@ -1285,7 +1314,7 @@ export const parseInput = (
           sigDist = sigmas[1];
           sigVert = sigmas[2];
         }
-        const distDefault = defaultDistanceSigma(inst, dist, state.edmMode, 0.005);
+        const distDefault = defaultDistanceSigma(inst, dist, state.edmMode, 0);
         const distResolved = resolveSigma(sigDist, distDefault);
         const toMeters = state.units === 'ft' ? 1 / FT_PER_M : 1;
         pushObservation({
@@ -1303,7 +1332,7 @@ export const parseInput = (
         });
         if (state.deltaMode === 'horiz' && vert) {
           const dh = parseFloat(vert) * toMeters;
-          const dhResolved = resolveSigma(sigVert, 0.001);
+          const dhResolved = resolveSigma(sigVert, defaultElevDiffSigma(inst, dist * toMeters));
           pushObservation({
             id: obsId++,
             type: 'lev',
@@ -1317,7 +1346,7 @@ export const parseInput = (
           });
         } else if (vert) {
           const zenRad = parseAngleTokenRad(vert, state, 'dd');
-          const baseZen = inst?.vaPrecision_sec ?? 5;
+          const baseZen = defaultZenithSigmaSec(inst);
           const zenResolved = resolveSigma(sigVert, baseZen);
           pushObservation({
             id: obsId++,
@@ -1326,12 +1355,12 @@ export const parseInput = (
             from,
             to,
             obs: zenRad,
-            stdDev: (zenResolved.sigma || 5) * SEC_TO_RAD,
+            stdDev: zenResolved.sigma * SEC_TO_RAD,
             sigmaSource: zenResolved.source,
           });
         }
         const bearingRad = parseAngleTokenRad(bearing, state, 'dd');
-        const bearResolved = resolveSigma(sigBear, inst?.hzPrecision_sec ?? 5);
+        const bearResolved = resolveSigma(sigBear, defaultAzimuthSigmaSec(inst));
         pushObservation({
           id: obsId++,
           type: 'bearing',
@@ -1339,7 +1368,7 @@ export const parseInput = (
           from,
           to,
           obs: bearingRad,
-          stdDev: (bearResolved.sigma || 5) * SEC_TO_RAD,
+          stdDev: bearResolved.sigma * SEC_TO_RAD,
           sigmaSource: bearResolved.source,
         });
       } else if (code === 'M') {
@@ -1365,13 +1394,17 @@ export const parseInput = (
           const { hi, ht } = extractHiHt(rest);
           const instCode = state.currentInstrument ?? '';
           const inst = instCode ? instrumentLibrary[instCode] : undefined;
-          const angResolved = resolveSigma(sigmas[0], inst?.hzPrecision_sec ?? 5);
+          const toMeters = state.units === 'ft' ? 1 / FT_PER_M : 1;
+          const angResolved = resolveSigma(sigmas[0], defaultHorizontalAngleSigmaSec(inst));
           const distResolved = resolveSigma(
             sigmas[1],
-            defaultDistanceSigma(inst, dist, state.edmMode, 0.005),
+            defaultDistanceSigma(inst, dist, state.edmMode, 0),
           );
-          const vertResolved = resolveSigma(sigmas[2], inst?.vaPrecision_sec ?? 5);
-          const toMeters = state.units === 'ft' ? 1 / FT_PER_M : 1;
+          const defaultVertSigma =
+            state.deltaMode === 'horiz'
+              ? defaultElevDiffSigma(inst, dist * toMeters)
+              : defaultZenithSigmaSec(inst);
+          const vertResolved = resolveSigma(sigmas[2], defaultVertSigma);
           const angRad = parseAngleTokenRad(ang, state, 'dms');
           const faceWeight =
             angRad >= Math.PI ? angResolved.sigma * FACE2_WEIGHT : angResolved.sigma;
@@ -1412,7 +1445,7 @@ export const parseInput = (
               to,
               obs: dh,
               lenKm: 0,
-              stdDev: (vertResolved.sigma ?? 0.001) * toMeters,
+              stdDev: vertResolved.sigma * toMeters,
               sigmaSource: vertResolved.source,
             });
           } else if (vert) {
@@ -1424,7 +1457,7 @@ export const parseInput = (
               from: at,
               to,
               obs: zenRad,
-              stdDev: ((vertResolved.sigma ?? 5) || 5) * SEC_TO_RAD,
+              stdDev: vertResolved.sigma * SEC_TO_RAD,
               sigmaSource: vertResolved.source,
               hi: hi != null ? hi * toMeters : undefined,
               ht: ht != null ? ht * toMeters : undefined,
@@ -1437,8 +1470,7 @@ export const parseInput = (
         const instCode = state.currentInstrument ?? '';
         const inst = instCode ? instrumentLibrary[instCode] : undefined;
         const { sigmas } = extractSigmaTokens(parts.slice(nextIndex + 1), 1);
-        const resolved = resolveSigma(sigmas[0], inst?.hzPrecision_sec ?? 5);
-        const stdArc = resolved.sigma || 5;
+        const resolved = resolveSigma(sigmas[0], defaultAzimuthSigmaSec(inst));
         const bearingRad = parseAngleTokenRad(bearingToken, state, 'dd');
         pushObservation({
           id: obsId++,
@@ -1447,7 +1479,7 @@ export const parseInput = (
           from,
           to,
           obs: bearingRad,
-          stdDev: (stdArc || 5) * SEC_TO_RAD,
+          stdDev: resolved.sigma * SEC_TO_RAD,
           sigmaSource: resolved.source,
         });
       } else if (code === 'TB') {
@@ -1476,13 +1508,17 @@ export const parseInput = (
         const { sigmas } = extractSigmaTokens(parts.slice(5), 3);
         const instCode = state.currentInstrument ?? '';
         const inst = instCode ? instrumentLibrary[instCode] : undefined;
-        const angResolved = resolveSigma(sigmas[0], inst?.hzPrecision_sec ?? 5);
+        const toMeters = state.units === 'ft' ? 1 / FT_PER_M : 1;
+        const angResolved = resolveSigma(sigmas[0], defaultHorizontalAngleSigmaSec(inst));
         const distResolved = resolveSigma(
           sigmas[1],
-          defaultDistanceSigma(inst, dist, state.edmMode, 0.005),
+          defaultDistanceSigma(inst, dist, state.edmMode, 0),
         );
-        const vertResolved = resolveSigma(sigmas[2], inst?.vaPrecision_sec ?? 5);
-        const toMeters = state.units === 'ft' ? 1 / FT_PER_M : 1;
+        const defaultVertSigma =
+          state.deltaMode === 'horiz'
+            ? defaultElevDiffSigma(inst, dist * toMeters)
+            : defaultZenithSigmaSec(inst);
+        const vertResolved = resolveSigma(sigmas[2], defaultVertSigma);
         const angRad = parseAngleTokenRad(ang, state, 'dms');
         const isFace2 = angRad >= Math.PI;
         if (state.normalize === false) {
@@ -1500,12 +1536,12 @@ export const parseInput = (
               from: traverseCtx.backsight,
               to,
               obs: angRad,
-              stdDev: (angResolved.sigma || 5) * SEC_TO_RAD,
+              stdDev: angResolved.sigma * SEC_TO_RAD,
               sigmaSource: angResolved.source,
             });
           }
         } else {
-          const angStd = (angResolved.sigma || 5) * (isFace2 ? FACE2_WEIGHT : 1);
+          const angStd = angResolved.sigma * (isFace2 ? FACE2_WEIGHT : 1);
           pushObservation({
             id: obsId++,
             type: 'angle',
@@ -1529,7 +1565,7 @@ export const parseInput = (
             from: traverseCtx.occupy,
             to,
             obs: dist * toMeters,
-            stdDev: (distResolved.sigma || 0.005) * toMeters,
+            stdDev: distResolved.sigma * toMeters,
             sigmaSource: distResolved.source,
             mode: state.deltaMode,
           });
@@ -1546,7 +1582,7 @@ export const parseInput = (
               to,
               obs: dh,
               lenKm: 0,
-              stdDev: (vertResolved.sigma || 0.001) * toMeters,
+              stdDev: vertResolved.sigma * toMeters,
               sigmaSource: vertResolved.source,
             });
           } else {
@@ -1559,7 +1595,7 @@ export const parseInput = (
               from: traverseCtx.occupy,
               to,
               obs: zenRad,
-              stdDev: (vertResolved.sigma || 5) * SEC_TO_RAD,
+              stdDev: vertResolved.sigma * SEC_TO_RAD,
               sigmaSource: vertResolved.source,
             });
           }
@@ -1628,8 +1664,8 @@ export const parseInput = (
         const inst = traverseCtx.dirInstCode
           ? instrumentLibrary[traverseCtx.dirInstCode]
           : undefined;
-        const dirResolved = resolveSigma(sigmas[0], inst?.hzPrecision_sec ?? 5);
-        let stdAng = dirResolved.sigma || 5;
+        const dirResolved = resolveSigma(sigmas[0], defaultDirectionSigmaSec(inst));
+        const stdAng = dirResolved.sigma;
 
         if (state.normalize === false) {
           const thisFace = angRad >= Math.PI ? 'face2' : 'face1';
@@ -1667,7 +1703,7 @@ export const parseInput = (
         if (code === 'DM' && dist > 0) {
           const distResolved = resolveSigma(
             sigmas[1],
-            defaultDistanceSigma(inst, dist, state.edmMode, 0.005),
+            defaultDistanceSigma(inst, dist, state.edmMode, 0),
           );
           pushObservation({
             id: obsId++,
@@ -1685,7 +1721,10 @@ export const parseInput = (
           if (vert) {
             if (state.deltaMode === 'horiz') {
               const dh = parseFloat(vert) * toMeters;
-              const dhResolved = resolveSigma(sigmas[2], 0.001);
+              const dhResolved = resolveSigma(
+                sigmas[2],
+                defaultElevDiffSigma(inst, dist * toMeters),
+              );
               pushObservation({
                 id: obsId++,
                 type: 'lev',
@@ -1699,7 +1738,7 @@ export const parseInput = (
               });
             } else {
               const zenRad = parseAngleTokenRad(vert, state, 'dd');
-              const zenResolved = resolveSigma(sigmas[2], inst?.vaPrecision_sec ?? 5);
+              const zenResolved = resolveSigma(sigmas[2], defaultZenithSigmaSec(inst));
               pushObservation({
                 id: obsId++,
                 type: 'zenith',
@@ -1707,7 +1746,7 @@ export const parseInput = (
                 from: traverseCtx.occupy,
                 to,
                 obs: zenRad,
-                stdDev: (zenResolved.sigma || 5) * SEC_TO_RAD,
+                stdDev: zenResolved.sigma * SEC_TO_RAD,
                 sigmaSource: zenResolved.source,
               });
             }
@@ -1802,7 +1841,7 @@ export const parseInput = (
           } else if (sigmas.length === 1) {
             sigmaDistToken = sigmas[0];
           }
-          const hzResolved = resolveSigma(sigmaAzToken, inst?.hzPrecision_sec ?? 10);
+          const hzResolved = resolveSigma(sigmaAzToken, defaultDirectionSigmaSec(inst));
           if (angleMode === 'az') {
             azimuthStdDev = hzResolved.sigma * SEC_TO_RAD;
           } else {
@@ -1814,7 +1853,7 @@ export const parseInput = (
         }
         const distResolved = resolveSigma(
           sigmaDistToken,
-          defaultDistanceSigma(inst, dist, state.edmMode, 0.01),
+          defaultDistanceSigma(inst, dist, state.edmMode, 0),
         );
         const toMeters = state.units === 'ft' ? 1 / FT_PER_M : 1;
         pushObservation({
@@ -1843,7 +1882,10 @@ export const parseInput = (
         if (vert) {
           if (state.deltaMode === 'horiz') {
             const dh = parseFloat(vert) * toMeters;
-            const dhResolved = resolveSigma(sigmaVertToken, 0.001);
+            const dhResolved = resolveSigma(
+              sigmaVertToken,
+              defaultElevDiffSigma(inst, dist * toMeters),
+            );
             pushObservation({
               id: obsId++,
               type: 'lev',
@@ -1858,7 +1900,7 @@ export const parseInput = (
             });
           } else {
             const zenRad = parseAngleTokenRad(vert, state, 'dd');
-            const zenResolved = resolveSigma(sigmaVertToken, inst?.vaPrecision_sec ?? 5);
+            const zenResolved = resolveSigma(sigmaVertToken, defaultZenithSigmaSec(inst));
             pushObservation({
               id: obsId++,
               type: 'zenith',
@@ -1883,7 +1925,7 @@ export const parseInput = (
         const corrRaw = parseFloat(parts[8] || '');
 
         const inst = instrumentLibrary[instCode];
-        const defaultStd = inst?.gpsStd_xy && inst.gpsStd_xy > 0 ? inst.gpsStd_xy : 0.01;
+        const defaultStd = inst?.gpsStd_xy ?? 0;
         let sigmaE = Number.isNaN(stdEraw) ? defaultStd : stdEraw;
         let sigmaN = Number.isNaN(stdNraw) ? sigmaE : stdNraw;
         const corr = Number.isNaN(corrRaw) ? 0 : Math.max(-0.999, Math.min(0.999, corrRaw));
@@ -1933,6 +1975,10 @@ export const parseInput = (
         if (inst && inst.levStd_mmPerKm > 0) {
           const lib = (inst.levStd_mmPerKm * lenKm) / 1000.0;
           sigma = Math.sqrt(sigma * sigma + lib * lib);
+        }
+        if (inst) {
+          const elevModel = defaultElevDiffSigma(inst, lenKm * 1000);
+          sigma = Math.sqrt(sigma * sigma + elevModel * elevModel);
         }
 
         const obs: LevelObservation = {
