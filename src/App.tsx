@@ -761,6 +761,11 @@ const App: React.FC = () => {
           4,
         )} .. ${res.chiSquare.varianceFactorUpper.toFixed(4)})`,
       );
+      lines.push(
+        `Error-factor bounds: ${Math.sqrt(res.chiSquare.varianceFactorLower).toFixed(4)} .. ${Math.sqrt(
+          res.chiSquare.varianceFactorUpper,
+        ).toFixed(4)}`,
+      );
     }
     if (res.tsCorrelationDiagnostics) {
       const d = res.tsCorrelationDiagnostics;
@@ -2449,37 +2454,61 @@ const App: React.FC = () => {
     lines.push('            Observation   Count   Sum Squares         Error');
     lines.push('                                    of StdRes        Factor');
 
-    const groups: Array<{
-      label: string;
-      filter: (_obs: Observation) => boolean;
-    }> = [
-      { label: 'Angles', filter: (o) => o.type === 'angle' },
-      { label: 'Directions', filter: (o) => o.type === 'direction' || o.type === 'dir' || o.type === 'bearing' },
-      { label: 'Distances', filter: (o) => o.type === 'dist' },
-      { label: 'GPS', filter: (o) => o.type === 'gps' },
-      { label: 'Leveling', filter: (o) => o.type === 'lev' },
-    ];
-    let totalSumSquares = 0;
-    groups.forEach((group) => {
-      const obs = res.observations.filter(group.filter).filter((o) => Number.isFinite(o.stdRes));
-      if (!obs.length) return;
-      const sumSquares = obs.reduce((sum, o) => sum + (o.stdRes ?? 0) * (o.stdRes ?? 0), 0);
-      totalSumSquares += sumSquares;
-      const factor = Math.sqrt(sumSquares / obs.length);
+    const statRows =
+      res.statisticalSummary?.byGroup?.length
+        ? res.statisticalSummary.byGroup
+        : (() => {
+            const groups: Array<{
+              label: string;
+              filter: (_obs: Observation) => boolean;
+            }> = [
+              { label: 'Angles', filter: (o) => o.type === 'angle' },
+              {
+                label: 'Directions',
+                filter: (o) => o.type === 'direction' || o.type === 'dir' || o.type === 'bearing',
+              },
+              { label: 'Distances', filter: (o) => o.type === 'dist' },
+              { label: 'GPS', filter: (o) => o.type === 'gps' },
+              { label: 'Leveling', filter: (o) => o.type === 'lev' },
+            ];
+            return groups
+              .map((group) => {
+                const obs = res.observations
+                  .filter(group.filter)
+                  .filter((o) => Number.isFinite(o.stdRes));
+                if (!obs.length) return null;
+                const sumSquares = obs.reduce((sum, o) => sum + (o.stdRes ?? 0) * (o.stdRes ?? 0), 0);
+                const factor = Math.sqrt(sumSquares / obs.length);
+                return { label: group.label, count: obs.length, sumSquares, errorFactor: factor };
+              })
+              .filter(
+                (row): row is { label: string; count: number; sumSquares: number; errorFactor: number } =>
+                  row != null,
+              );
+          })();
+    const totalCount = res.statisticalSummary?.totalCount ?? statRows.reduce((sum, r) => sum + r.count, 0);
+    const totalSumSquares =
+      res.statisticalSummary?.totalSumSquares ?? statRows.reduce((sum, r) => sum + r.sumSquares, 0);
+    statRows.forEach((row) => {
       lines.push(
-        `                 ${group.label.padEnd(12)}${obs.length.toString().padStart(6)}${sumSquares.toFixed(3).padStart(14)}${factor.toFixed(3).padStart(14)}`,
+        `                 ${row.label.padEnd(12)}${row.count.toString().padStart(6)}${row.sumSquares.toFixed(3).padStart(14)}${row.errorFactor.toFixed(3).padStart(14)}`,
       );
     });
     lines.push(
-      `                  Total${observationCount.toString().padStart(12)}${totalSumSquares.toFixed(3).padStart(14)}${res.seuw.toFixed(3).padStart(14)}`,
+      `                  Total${totalCount.toString().padStart(12)}${totalSumSquares.toFixed(3).padStart(14)}${res.seuw.toFixed(3).padStart(14)}`,
     );
     lines.push('');
     if (res.chiSquare) {
+      const errorLower = Math.sqrt(res.chiSquare.varianceFactorLower);
+      const errorUpper = Math.sqrt(res.chiSquare.varianceFactorUpper);
       lines.push(
         `                  The Chi-Square Test at 5.00% Level ${res.chiSquare.pass95 ? 'Passed' : 'Failed'}`,
       );
       lines.push(
-        `                       Lower/Upper Bounds (${res.chiSquare.varianceFactorLower.toFixed(3)}/${res.chiSquare.varianceFactorUpper.toFixed(3)})`,
+        `                       Lower/Upper Bounds (${errorLower.toFixed(3)}/${errorUpper.toFixed(3)})`,
+      );
+      lines.push(
+        `                       Variance Factor Bounds (${res.chiSquare.varianceFactorLower.toFixed(3)}/${res.chiSquare.varianceFactorUpper.toFixed(3)})`,
       );
       lines.push('');
     }

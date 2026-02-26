@@ -47,28 +47,37 @@ const ProcessingSummaryView: React.FC<ProcessingSummaryViewProps> = ({
   runDiagnostics,
 }) => {
   const text = useMemo(() => {
-    const rowsMap = new Map<string, { count: number; sumSquares: number }>();
+    let summaryRows: SummaryRow[] = [];
     let totalCount = 0;
-
-    result.observations.forEach((obs) => {
-      if (!Number.isFinite(obs.stdRes)) return;
-      const key = classifyRow(obs);
-      const sumSq = (obs.stdRes ?? 0) * (obs.stdRes ?? 0);
-      const row = rowsMap.get(key) ?? { count: 0, sumSquares: 0 };
-      row.count += 1;
-      row.sumSquares += sumSq;
-      rowsMap.set(key, row);
-      totalCount += 1;
-    });
-
-    const summaryRows: SummaryRow[] = [...rowsMap.entries()]
-      .map(([label, row]) => ({
-        label,
+    if (result.statisticalSummary?.byGroup?.length) {
+      summaryRows = result.statisticalSummary.byGroup.map((row) => ({
+        label: row.label,
         count: row.count,
         sumSquares: row.sumSquares,
-        errorFactor: row.count > 0 ? Math.sqrt(row.sumSquares / row.count) : 0,
-      }))
-      .sort((a, b) => a.label.localeCompare(b.label));
+        errorFactor: row.errorFactor,
+      }));
+      totalCount = result.statisticalSummary.totalCount;
+    } else {
+      const rowsMap = new Map<string, { count: number; sumSquares: number }>();
+      result.observations.forEach((obs) => {
+        if (!Number.isFinite(obs.stdRes)) return;
+        const key = classifyRow(obs);
+        const sumSq = (obs.stdRes ?? 0) * (obs.stdRes ?? 0);
+        const row = rowsMap.get(key) ?? { count: 0, sumSquares: 0 };
+        row.count += 1;
+        row.sumSquares += sumSq;
+        rowsMap.set(key, row);
+        totalCount += 1;
+      });
+      summaryRows = [...rowsMap.entries()]
+        .map(([label, row]) => ({
+          label,
+          count: row.count,
+          sumSquares: row.sumSquares,
+          errorFactor: row.count > 0 ? Math.sqrt(row.sumSquares / row.count) : 0,
+        }))
+        .sort((a, b) => a.label.localeCompare(b.label));
+    }
 
     const lines: string[] = [];
     lines.push('Loading Network Data ...');
@@ -108,6 +117,9 @@ const ProcessingSummaryView: React.FC<ProcessingSummaryViewProps> = ({
       );
       lines.push(
         `Variance Factor Bounds (${result.chiSquare.varianceFactorLower.toFixed(3)}/${result.chiSquare.varianceFactorUpper.toFixed(3)})`,
+      );
+      lines.push(
+        `Error Factor Bounds (${Math.sqrt(result.chiSquare.varianceFactorLower).toFixed(3)}/${Math.sqrt(result.chiSquare.varianceFactorUpper).toFixed(3)})`,
       );
     }
     if (runDiagnostics) {

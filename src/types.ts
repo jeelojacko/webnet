@@ -291,6 +291,18 @@ export interface AdjustmentResult {
     varianceFactorLower: number;
     varianceFactorUpper: number;
   };
+  statisticalSummary?: {
+    byGroup: {
+      label: string;
+      count: number;
+      sumSquares: number;
+      errorFactor: number;
+    }[];
+    totalCount: number;
+    totalSumSquares: number;
+    totalErrorFactorByCount: number;
+    totalErrorFactorByDof: number;
+  };
   typeSummary?: Record<
     string,
     {

@@ -697,6 +697,11 @@ const ReportView: React.FC<ReportViewProps> = ({
                   {result.chiSquare.varianceFactorLower.toFixed(3)}..
                   {result.chiSquare.varianceFactorUpper.toFixed(3)})
                 </div>
+                <div className="text-[10px] text-slate-500">
+                  ef=(
+                  {Math.sqrt(result.chiSquare.varianceFactorLower).toFixed(3)}..
+                  {Math.sqrt(result.chiSquare.varianceFactorUpper).toFixed(3)})
+                </div>
                 {result.condition && (
                   <div className={`text-[10px] ${result.condition.flagged ? 'text-red-400' : 'text-slate-500'}`}>
                     cond={result.condition.estimate.toExponential(2)} /{' '}

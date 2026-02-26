@@ -174,6 +174,7 @@ export class LSAEngine {
   private robustMode: ParseOptions['robustMode'] = 'none';
   private robustK = 1.5;
   private chiSquare?: AdjustmentResult['chiSquare'];
+  private statisticalSummary?: AdjustmentResult['statisticalSummary'];
   private typeSummary?: Record<
     string,
     {
@@ -1916,8 +1917,41 @@ export class LSAEngine {
     const constraints = this.buildCoordinateConstraints(paramIndex);
     const tsCorrelationRows = new Map<
       string,
-      { station: StationId; setId?: string; rows: Array<{ v: number; sigma: number }> }
+      {
+        station: StationId;
+        setId?: string;
+        rows: Array<{ v: number; sigma: number; groupLabel: string }>;
+      }
     >();
+    const groupOrder = ['Angles', 'Directions', 'Distances', 'GPS', 'Leveling', 'Zenith'];
+    const summarizeGroup = (obs: Observation): string => {
+      if (obs.type === 'angle') return 'Angles';
+      if (obs.type === 'direction' || obs.type === 'dir' || obs.type === 'bearing')
+        return 'Directions';
+      if (obs.type === 'dist') return 'Distances';
+      if (obs.type === 'gps') return 'GPS';
+      if (obs.type === 'lev') return 'Leveling';
+      if (obs.type === 'zenith') return 'Zenith';
+      return obs.type.toUpperCase();
+    };
+    const weightedByGroup = new Map<string, { count: number; sumSquares: number }>();
+    const ensureGroup = (label: string): { count: number; sumSquares: number } => {
+      const existing = weightedByGroup.get(label);
+      if (existing) return existing;
+      const init = { count: 0, sumSquares: 0 };
+      weightedByGroup.set(label, init);
+      return init;
+    };
+    const addObservationContribution = (obs: Observation, contribution: number) => {
+      const label = summarizeGroup(obs);
+      const row = ensureGroup(label);
+      row.count += 1;
+      row.sumSquares += contribution;
+    };
+    const addGroupContribution = (label: string, contribution: number) => {
+      const row = ensureGroup(label);
+      row.sumSquares += contribution;
+    };
     const collectTsCorrelationRow = (obs: Observation, v: number, sigma: number) => {
       const group = this.tsCorrelationGroup(obs);
       if (!group) return;
@@ -1927,7 +1961,7 @@ export class LSAEngine {
         setId: group.setId,
         rows: [],
       };
-      entry.rows.push({ v, sigma });
+      entry.rows.push({ v, sigma, groupLabel: summarizeGroup(obs) });
       tsCorrelationRows.set(group.key, entry);
     };
 
@@ -1952,7 +1986,9 @@ export class LSAEngine {
         obs.residual = v;
         const sigma = this.effectiveStdDev(obs);
         obs.stdRes = Math.abs(v) / sigma;
-        vtpv += (v * v) / (sigma * sigma);
+        const q = (v * v) / (sigma * sigma);
+        vtpv += q;
+        addObservationContribution(obs, q);
         const setTag = String((obs as any).setId ?? '').toUpperCase();
         if (setTag === 'T' || setTag === 'TE') {
           totalTraverseDistance += Math.abs(obs.obs);
@@ -1969,7 +2005,9 @@ export class LSAEngine {
         obs.residual = v;
         const sigma = this.effectiveStdDev(obs);
         obs.stdRes = Math.abs(v) / sigma;
-        vtpv += (v * v) / (sigma * sigma);
+        const q = (v * v) / (sigma * sigma);
+        vtpv += q;
+        addObservationContribution(obs, q);
         collectTsCorrelationRow(obs, v, sigma);
       } else if (obs.type === 'gps') {
         const s1 = this.stations[obs.from];
@@ -1985,6 +2023,7 @@ export class LSAEngine {
         const quad = w.wEE * vE * vE + 2 * w.wEN * vE * vN + w.wNN * vN * vN;
         obs.stdRes = Math.sqrt(Math.max(quad, 0));
         vtpv += quad;
+        addObservationContribution(obs, quad);
       } else if (obs.type === 'lev') {
         const s1 = this.stations[obs.from];
         const s2 = this.stations[obs.to];
@@ -1995,7 +2034,9 @@ export class LSAEngine {
         obs.residual = v;
         const sigma = this.effectiveStdDev(obs);
         obs.stdRes = Math.abs(v) / sigma;
-        vtpv += (v * v) / (sigma * sigma);
+        const q = (v * v) / (sigma * sigma);
+        vtpv += q;
+        addObservationContribution(obs, q);
       } else if (obs.type === 'bearing') {
         const calcAz = this.getAzimuth(obs.from, obs.to).az;
         let v = obs.obs - calcAz;
@@ -2005,7 +2046,9 @@ export class LSAEngine {
         obs.residual = v;
         const sigma = this.effectiveStdDev(obs);
         obs.stdRes = Math.abs(v) / sigma;
-        vtpv += (v * v) / (sigma * sigma);
+        const q = (v * v) / (sigma * sigma);
+        vtpv += q;
+        addObservationContribution(obs, q);
         collectTsCorrelationRow(obs, v, sigma);
       } else if (obs.type === 'dir') {
         const calcAz = this.getAzimuth(obs.from, obs.to).az;
@@ -2023,7 +2066,9 @@ export class LSAEngine {
         obs.residual = v;
         const sigma = this.effectiveStdDev(obs);
         obs.stdRes = Math.abs(v) / sigma;
-        vtpv += (v * v) / (sigma * sigma);
+        const q = (v * v) / (sigma * sigma);
+        vtpv += q;
+        addObservationContribution(obs, q);
         collectTsCorrelationRow(obs, v, sigma);
       } else if (obs.type === 'direction') {
         const dir = obs as any;
@@ -2039,7 +2084,9 @@ export class LSAEngine {
         dir.residual = v;
         const sigma = this.effectiveStdDev(dir);
         dir.stdRes = Math.abs(v) / sigma;
-        vtpv += (v * v) / (sigma * sigma);
+        const q = (v * v) / (sigma * sigma);
+        vtpv += q;
+        addObservationContribution(dir, q);
         collectTsCorrelationRow(dir, v, sigma);
 
         const setId = String(dir.setId ?? 'unknown');
@@ -2113,7 +2160,9 @@ export class LSAEngine {
         obs.residual = v;
         const sigma = this.effectiveStdDev(obs);
         obs.stdRes = Math.abs(v) / sigma;
-        vtpv += (v * v) / (sigma * sigma);
+        const q = (v * v) / (sigma * sigma);
+        vtpv += q;
+        addObservationContribution(obs, q);
       }
 
       if (obs.setId === 'TE' && typeof obs.residual === 'number') {
@@ -2194,14 +2243,23 @@ export class LSAEngine {
         entry.rows.forEach((row) => {
           const baseDiag = 1 / (row.sigma * row.sigma);
           const corrDiag = (a - b) / (row.sigma * row.sigma);
-          vtpv += (corrDiag - baseDiag) * row.v * row.v;
+          const delta = (corrDiag - baseDiag) * row.v * row.v;
+          vtpv += delta;
+          addGroupContribution(row.groupLabel, delta);
         });
         for (let i = 0; i < n; i += 1) {
           const ri = entry.rows[i];
           for (let j = i + 1; j < n; j += 1) {
             const rj = entry.rows[j];
             const w = -b / (ri.sigma * rj.sigma);
-            vtpv += 2 * w * ri.v * rj.v;
+            const contribution = 2 * w * ri.v * rj.v;
+            vtpv += contribution;
+            if (ri.groupLabel === rj.groupLabel) {
+              addGroupContribution(ri.groupLabel, contribution);
+            } else {
+              addGroupContribution(ri.groupLabel, contribution * 0.5);
+              addGroupContribution(rj.groupLabel, contribution * 0.5);
+            }
             pairCount += 1;
             offDiagAbsSum += Math.abs(w);
           }
@@ -2252,6 +2310,7 @@ export class LSAEngine {
     this.seuw = this.dof > 0 ? Math.sqrt(vtpv / this.dof) : 0;
 
     this.chiSquare = undefined;
+    this.statisticalSummary = undefined;
     this.typeSummary = undefined;
     this.directionSetDiagnostics = undefined;
     this.directionTargetDiagnostics = undefined;
@@ -2279,6 +2338,35 @@ export class LSAEngine {
         varianceFactor,
         varianceFactorLower: lower / this.dof,
         varianceFactorUpper: upper / this.dof,
+      };
+    }
+
+    {
+      const rows = Array.from(weightedByGroup.entries())
+        .map(([label, row]) => ({
+          label,
+          count: row.count,
+          sumSquares: row.sumSquares,
+          errorFactor: row.count > 0 ? Math.sqrt(Math.max(row.sumSquares, 0) / row.count) : 0,
+        }))
+        .sort((a, b) => {
+          const ai = groupOrder.indexOf(a.label);
+          const bi = groupOrder.indexOf(b.label);
+          const ao = ai >= 0 ? ai : Number.MAX_SAFE_INTEGER;
+          const bo = bi >= 0 ? bi : Number.MAX_SAFE_INTEGER;
+          if (ao !== bo) return ao - bo;
+          return a.label.localeCompare(b.label);
+        });
+      const totalCount = rows.reduce((sum, r) => sum + r.count, 0);
+      const totalSumSquares = rows.reduce((sum, r) => sum + r.sumSquares, 0);
+      this.statisticalSummary = {
+        byGroup: rows,
+        totalCount,
+        totalSumSquares,
+        totalErrorFactorByCount:
+          totalCount > 0 ? Math.sqrt(Math.max(totalSumSquares, 0) / totalCount) : 0,
+        totalErrorFactorByDof:
+          this.dof > 0 ? Math.sqrt(Math.max(totalSumSquares, 0) / this.dof) : 0,
       };
     }
 
@@ -3671,6 +3759,7 @@ export class LSAEngine {
       condition: this.condition,
       controlConstraints: this.controlConstraints,
       chiSquare: this.chiSquare,
+      statisticalSummary: this.statisticalSummary,
       typeSummary: this.typeSummary,
       relativePrecision: this.relativePrecision,
       directionSetDiagnostics: this.directionSetDiagnostics,

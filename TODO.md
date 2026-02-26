@@ -25,6 +25,7 @@
 - [x] Dev workflow: update Husky pre-commit hook to run one-shot tests (`npm run test:run`) instead of watch mode
 - [x] Sync README/agents docs with current parser/engine/UI state
 - [x] Instrument settings overhaul: editable Project Options instrument library (with New Instrument flow, unit-aware fields, and 2D/3D gating), solver wiring to UI-selected defaults, external-instrument precedence over inline `I` records, and zeroed fallback precision defaults unless explicitly provided
+- [x] STAR-style summary parity: compute per-type statistical summary from weighted residual contributions (`vTPv` by observation family) and display both error-factor and variance-factor chi-square bounds in summaries/listings
 - [ ] Adjustment report parity roadmap (Star\*Net alignment):
   - [x] Implement weighted control constraints from coordinate/elevation std errors (not only fixed/free) so control uncertainty participates in the solve
   - [x] Wire and report normal-matrix conditioning diagnostics (condition estimate + warnings for weak geometry)
