@@ -88,11 +88,11 @@
 
 - [ ] Industry Standard v6-v14 parity gaps (prioritized from release notes; missing in WebNet today):
   - [ ] Conventional surveying improvements (highest impact -> lowest):
-    - [ ] Implement `.ALIAS` point aliasing (explicit and pattern-based alias rules) with full solve/report traceability
-      - [ ] Phase 1: parser/state support for `.ALIAS` (explicit map, prefix/suffix/additive patterns, validation diagnostics)
-      - [ ] Phase 2: station/observation identity resolution so aliases collapse to canonical point IDs before unknown-building
-      - [ ] Phase 3: reporting/export traceability (canonical ID + source alias references in listing/errors/find)
-      - [ ] Phase 4: parity tests for mixed alias scenarios (conventional/GNSS/leveling references across files)
+    - [x] Implement `.ALIAS` point aliasing (explicit and pattern-based alias rules) with full solve/report traceability
+      - [x] Phase 1: parser/state support for `.ALIAS` (explicit map, prefix/suffix/additive patterns, validation diagnostics)
+      - [x] Phase 2: station/observation identity resolution so aliases collapse to canonical point IDs before unknown-building
+      - [x] Phase 3: reporting/export traceability (canonical ID + source alias references in listing/errors/find)
+      - [x] Phase 4: parity tests for mixed alias scenarios (conventional/GNSS/leveling references across files)
     - [ ] Add cluster-detection adjustment mode (dual-pass solve with user approval/override of point-cluster aliasing)
       - [ ] Phase 1: implement post-pass cluster candidate detection (2D/3D tolerance, linkage mode, deterministic cluster keys)
       - [ ] Phase 2: dual-pass solve pipeline (pass-1 detect, pass-2 apply approved merges, retain reproducible run profile)
@@ -191,5 +191,3 @@
       - [ ] Phase 1: compute and persist per-segment and total loop lengths for leveling loops
       - [ ] Phase 2: add detailed report tables and industry-style listing rows for leveling loop details
       - [ ] Phase 3: add export formatting and regression tests for report structure/content parity
-
-

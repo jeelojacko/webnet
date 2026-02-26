@@ -127,6 +127,21 @@ const ProcessingSummaryView: React.FC<ProcessingSummaryViewProps> = ({
         `Run Profile: ${runDiagnostics.solveProfile.toUpperCase()} (dirSets=${runDiagnostics.directionSetMode}, profileFallback=${runDiagnostics.profileDefaultInstrumentFallback ? 'ON' : 'OFF'})`,
       );
     }
+    const aliasTrace = result.parseState?.aliasTrace ?? [];
+    if ((result.parseState?.aliasExplicitCount ?? 0) > 0 || (result.parseState?.aliasRuleCount ?? 0) > 0) {
+      lines.push(
+        `Alias Canonicalization: explicit=${result.parseState?.aliasExplicitCount ?? 0}, rules=${result.parseState?.aliasRuleCount ?? 0}, remaps=${aliasTrace.length}`,
+      );
+      const sample = aliasTrace.slice(0, 15);
+      sample.forEach((entry) => {
+        lines.push(
+          `  ${entry.context} line=${entry.sourceLine ?? '-'} ${entry.detail ?? '-'}: ${entry.sourceId} -> ${entry.canonicalId}`,
+        );
+      });
+      if (aliasTrace.length > sample.length) {
+        lines.push(`  ... ${aliasTrace.length - sample.length} more alias references`);
+      }
+    }
     lines.push('');
     lines.push('Performing Error Propagation ...');
     lines.push('Writing Output Files ...');

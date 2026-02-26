@@ -699,6 +699,20 @@ const App: React.FC = () => {
     const linearUnit = settings.units === 'ft' ? 'ft' : 'm';
     const unitScale = settings.units === 'ft' ? FT_PER_M : 1;
     const runDiag = runDiagnostics ?? buildRunDiagnostics(parseSettings, res);
+    const aliasTrace = res.parseState?.aliasTrace ?? [];
+    const aliasObsRefsByLine = new Map<number, string[]>();
+    aliasTrace.forEach((entry) => {
+      if (entry.context !== 'observation') return;
+      if (entry.sourceLine == null) return;
+      const ref = `${entry.sourceId}->${entry.canonicalId}`;
+      const list = aliasObsRefsByLine.get(entry.sourceLine) ?? [];
+      if (!list.includes(ref)) list.push(ref);
+      aliasObsRefsByLine.set(entry.sourceLine, list);
+    });
+    const aliasRefsForLine = (line?: number): string =>
+      line != null && aliasObsRefsByLine.has(line)
+        ? ` [alias ${aliasObsRefsByLine.get(line)?.join(', ')}]`
+        : '';
     lines.push(`# WebNet Adjustment Results`);
     lines.push(`# Generated: ${now.toLocaleString()}`);
     lines.push(`# Linear units: ${linearUnit}`);
@@ -727,6 +741,15 @@ const App: React.FC = () => {
       `Default sigmas used: ${runDiag.defaultSigmaCount}${runDiag.defaultSigmaByType ? ` (${runDiag.defaultSigmaByType})` : ''}`,
     );
     lines.push(`Stochastic defaults: ${runDiag.stochasticDefaultsSummary}`);
+    if ((res.parseState?.aliasExplicitCount ?? 0) > 0 || (res.parseState?.aliasRuleCount ?? 0) > 0) {
+      lines.push(
+        `Alias canonicalization: explicit=${res.parseState?.aliasExplicitCount ?? 0}, rules=${res.parseState?.aliasRuleCount ?? 0}, references=${aliasTrace.length}`,
+      );
+      const aliasRules = res.parseState?.aliasRuleSummaries ?? [];
+      if (aliasRules.length > 0) {
+        lines.push(`Alias rules: ${aliasRules.map((r) => `${r.rule}@${r.sourceLine}`).join('; ')}`);
+      }
+    }
     lines.push('');
     lines.push(`Status: ${res.converged ? 'CONVERGED' : 'NOT CONVERGED'}`);
     lines.push(`Iterations: ${res.iterations}`);
@@ -2105,6 +2128,7 @@ const App: React.FC = () => {
         calcStr = obs.calc != null ? ((obs.calc as number) * unitScale).toFixed(4) : '-';
         resStr = obs.residual != null ? ((obs.residual as number) * unitScale).toFixed(4) : '-';
       }
+      stations = `${stations}${aliasRefsForLine(obs.sourceLine)}`;
 
       const localTest =
         obs.localTestComponents != null
@@ -2353,6 +2377,16 @@ const App: React.FC = () => {
       );
     });
     lines.push('');
+    if (aliasTrace.length > 0) {
+      lines.push('--- Alias Reference Trace ---');
+      lines.push('Context  Detail            Line  SourceAlias          CanonicalID          Reference');
+      aliasTrace.forEach((entry) => {
+        lines.push(
+          `${entry.context.padEnd(8)}  ${(entry.detail ?? '-').padEnd(16)}  ${String(entry.sourceLine ?? '-').padStart(4)}  ${entry.sourceId.padEnd(19)}  ${entry.canonicalId.padEnd(19)}  ${entry.reference ?? '-'}`,
+        );
+      });
+      lines.push('');
+    }
     lines.push('--- Processing Log ---');
     res.logs.forEach((l) => lines.push(l));
 
@@ -2377,6 +2411,20 @@ const App: React.FC = () => {
     const observationCount = res.observations.length;
     const unknownCount = Math.max(0, observationCount - res.dof);
     const parseState = res.parseState;
+    const aliasTrace = parseState?.aliasTrace ?? [];
+    const aliasObsRefsByLine = new Map<number, string[]>();
+    aliasTrace.forEach((entry) => {
+      if (entry.context !== 'observation') return;
+      if (entry.sourceLine == null) return;
+      const ref = `${entry.sourceId}->${entry.canonicalId}`;
+      const list = aliasObsRefsByLine.get(entry.sourceLine) ?? [];
+      if (!list.includes(ref)) list.push(ref);
+      aliasObsRefsByLine.set(entry.sourceLine, list);
+    });
+    const aliasRefsForLine = (line?: number): string =>
+      line != null && aliasObsRefsByLine.has(line)
+        ? ` [alias ${aliasObsRefsByLine.get(line)?.join(', ')}]`
+        : '';
 
     lines.push('                INDUSTRY-STANDARD-STYLE Listing (WebNet Emulation)');
     lines.push(`                       Run Date: ${now.toLocaleString()}`);
@@ -2408,6 +2456,11 @@ const App: React.FC = () => {
     lines.push(
       `      Default Coefficient of Refraction   : ${(parseState?.refractionCoefficient ?? parseSettings.refractionCoefficient).toFixed(6)}`,
     );
+    if ((parseState?.aliasExplicitCount ?? 0) > 0 || (parseState?.aliasRuleCount ?? 0) > 0) {
+      lines.push(
+        `      Alias Canonicalization              : explicit=${parseState?.aliasExplicitCount ?? 0}, rules=${parseState?.aliasRuleCount ?? 0}, references=${aliasTrace.length}`,
+      );
+    }
     lines.push('');
     lines.push('                       Instrument Standard Error Settings');
     lines.push('');
@@ -2418,6 +2471,20 @@ const App: React.FC = () => {
     lines.push(
       `        Centering / Inflation             : ${runDiag.angleCenteringModel}; ${runDiag.defaultSigmaCount} default-sigma obs${runDiag.defaultSigmaByType ? ` (${runDiag.defaultSigmaByType})` : ''}`,
     );
+    if ((parseState?.aliasExplicitMappings?.length ?? 0) > 0) {
+      lines.push('      Explicit Alias Mappings');
+      parseState?.aliasExplicitMappings?.forEach((m) => {
+        lines.push(
+          `        ${m.sourceId} -> ${m.canonicalId}${m.sourceLine != null ? ` (line ${m.sourceLine})` : ''}`,
+        );
+      });
+    }
+    if ((parseState?.aliasRuleSummaries?.length ?? 0) > 0) {
+      lines.push('      Alias Rules');
+      parseState?.aliasRuleSummaries?.forEach((r) => {
+        lines.push(`        ${r.rule} (line ${r.sourceLine})`);
+      });
+    }
     lines.push('');
     lines.push('                    Summary of Unadjusted Input Observations');
     lines.push('                    ========================================');
@@ -2604,6 +2671,7 @@ const App: React.FC = () => {
               : '-';
           stdErrText = (obs.stdDev * unitScale).toFixed(4);
         }
+        stations = `${stations}${aliasRefsForLine(obs.sourceLine)}`;
         lines.push(
           `${obs.type.toUpperCase().padEnd(9)}${stations.padEnd(22)}${obsText.padEnd(16)}${residualText.padEnd(16)}${stdErrText.padEnd(12)}${(obs.stdRes ?? 0).toFixed(2).padStart(8)}   ${obs.sourceLine != null ? `1:${obs.sourceLine}` : '-'}`,
         );
@@ -2620,6 +2688,18 @@ const App: React.FC = () => {
       stationEntriesForListing.forEach(([id, st]) => {
         lines.push(
           `${id.padEnd(24)}${(st.sN != null ? st.sN * unitScale : 0).toFixed(6).padStart(12)}${(st.sE != null ? st.sE * unitScale : 0).toFixed(14)}`,
+        );
+      });
+    }
+    if (aliasTrace.length > 0) {
+      lines.push('');
+      lines.push('                          Alias Canonicalization Trace');
+      lines.push('                          ============================');
+      lines.push('');
+      lines.push('Context    Detail              Line  Source Alias         Canonical ID         Reference');
+      aliasTrace.forEach((entry) => {
+        lines.push(
+          `${entry.context.padEnd(10)}${(entry.detail ?? '-').padEnd(20)}${String(entry.sourceLine ?? '-').padStart(6)}  ${entry.sourceId.padEnd(20)}${entry.canonicalId.padEnd(20)}${entry.reference ?? '-'}`,
         );
       });
     }

@@ -326,4 +326,119 @@ describe('parseInput', () => {
     expect((ssDist?.calc as { hzObs?: number })?.hzObs).toBeDefined();
     expect((ssDist?.calc as { backsightId?: string })?.backsightId).toBe('BS');
   });
+
+  it('applies explicit .ALIAS mappings to station and observation IDs', () => {
+    const parsed = parseInput(
+      ['.2D', '.ALIAS P1=A1 Q1=B1', 'C A1 0 0 0 !', 'C B1 100 0 0 !', 'D P1-Q1 100 0.01'].join(
+        '\n',
+      ),
+    );
+    const dist = parsed.observations.find((o) => o.type === 'dist');
+    expect(dist).toBeDefined();
+    expect(dist?.type).toBe('dist');
+    if (dist?.type === 'dist') {
+      expect(dist.from).toBe('A1');
+      expect(dist.to).toBe('B1');
+    }
+    expect(parsed.stations.P1).toBeUndefined();
+    expect(parsed.stations.Q1).toBeUndefined();
+    expect(parsed.stations.A1).toBeDefined();
+    expect(parsed.stations.B1).toBeDefined();
+    expect(parsed.parseState.aliasExplicitCount).toBe(2);
+    expect(parsed.parseState.aliasRuleCount).toBe(0);
+    expect(parsed.parseState.aliasExplicitMappings?.map((m) => `${m.sourceId}->${m.canonicalId}`)).toEqual([
+      'P1->A1',
+      'Q1->B1',
+    ]);
+    expect(parsed.parseState.aliasTrace?.some((t) => t.context === 'observation' && t.sourceLine === 5)).toBe(
+      true,
+    );
+    expect(parsed.logs.some((l) => l.includes('Alias canonicalization applied'))).toBe(true);
+  });
+
+  it('applies .ALIAS prefix/suffix/additive rules to canonical IDs', () => {
+    const parsed = parseInput(
+      [
+        '.2D',
+        '.ALIAS PREFIX RAW_ SURV_',
+        '.ALIAS SUFFIX _OLD _NEW',
+        '.ALIAS ADDITIVE 100',
+        'C SURV_1_NEW 0 0 0 !',
+        'C 105 100 0 0 !',
+        'D RAW_1_OLD-5 100 0.01',
+      ].join('\n'),
+    );
+    const dist = parsed.observations.find((o) => o.type === 'dist');
+    expect(dist).toBeDefined();
+    expect(dist?.type).toBe('dist');
+    if (dist?.type === 'dist') {
+      expect(dist.from).toBe('SURV_1_NEW');
+      expect(dist.to).toBe('105');
+    }
+    expect(parsed.stations.RAW_1_OLD).toBeUndefined();
+    expect(parsed.stations['5']).toBeUndefined();
+    expect(parsed.stations.SURV_1_NEW).toBeDefined();
+    expect(parsed.stations['105']).toBeDefined();
+    expect(parsed.parseState.aliasExplicitCount).toBe(0);
+    expect(parsed.parseState.aliasRuleCount).toBe(3);
+    expect(parsed.parseState.aliasRuleSummaries?.map((r) => r.rule)).toEqual([
+      'PREFIX RAW_ SURV_',
+      'SUFFIX _OLD _NEW',
+      'ADDITIVE 100',
+    ]);
+    expect(
+      parsed.parseState.aliasTrace?.some(
+        (t) => t.sourceLine === 7 && t.sourceId === 'RAW_1_OLD' && t.canonicalId === 'SURV_1_NEW',
+      ),
+    ).toBe(true);
+    expect(
+      parsed.parseState.aliasTrace?.some(
+        (t) => t.sourceLine === 7 && t.sourceId === '5' && t.canonicalId === '105',
+      ),
+    ).toBe(true);
+  });
+
+  it('tracks mixed conventional/GNSS/leveling alias traceability across input sections', () => {
+    const parsed = parseInput(readFileSync('tests/fixtures/alias_phase4_mixed.dat', 'utf-8'));
+    expect(parsed.parseState.aliasExplicitCount).toBe(2);
+    expect(parsed.parseState.aliasRuleCount).toBe(1);
+    expect(parsed.parseState.aliasExplicitMappings?.map((m) => `${m.sourceId}->${m.canonicalId}`)).toEqual([
+      'ROVER1->PT_100',
+      'STA01->STA_1',
+    ]);
+    expect(parsed.parseState.aliasRuleSummaries?.map((r) => r.rule)).toEqual(['PREFIX TMP_ PT_']);
+
+    expect(parsed.stations.PT_100).toBeDefined();
+    expect(parsed.stations.TMP_100).toBeUndefined();
+    expect(parsed.stations.ROVER1).toBeUndefined();
+    expect(parsed.stations.STA01).toBeUndefined();
+
+    const dist = parsed.observations.find((o) => o.type === 'dist');
+    const angle = parsed.observations.find((o) => o.type === 'angle') as AngleObservation | undefined;
+    const gps = parsed.observations.find((o) => o.type === 'gps');
+    const lev = parsed.observations.find((o) => o.type === 'lev');
+    expect(dist?.type).toBe('dist');
+    if (dist?.type === 'dist') {
+      expect(dist.from).toBe('CTRL_B');
+      expect(dist.to).toBe('PT_100');
+    }
+    expect(angle?.to).toBe('PT_100');
+    expect(gps?.type).toBe('gps');
+    if (gps?.type === 'gps') {
+      expect(gps.from).toBe('CTRL_A');
+      expect(gps.to).toBe('PT_100');
+    }
+    expect(lev?.type).toBe('lev');
+    if (lev?.type === 'lev') {
+      expect(lev.from).toBe('STA_1');
+      expect(lev.to).toBe('PT_100');
+    }
+
+    const trace = parsed.parseState.aliasTrace ?? [];
+    expect(trace.some((t) => t.context === 'observation' && t.sourceLine === 10)).toBe(true);
+    expect(trace.some((t) => t.context === 'observation' && t.sourceLine === 11)).toBe(true);
+    expect(trace.some((t) => t.context === 'observation' && t.sourceLine === 12)).toBe(true);
+    expect(trace.some((t) => t.context === 'observation' && t.sourceLine === 13)).toBe(true);
+    expect(trace.some((t) => t.context === 'station' && t.sourceId === 'TMP_100')).toBe(true);
+  });
 });

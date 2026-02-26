@@ -235,6 +235,26 @@ export type TsCorrelationScope = 'setup' | 'set';
 export type RobustMode = 'none' | 'huber';
 export type DirectionSetMode = 'reduced' | 'raw';
 
+export interface AliasExplicitMapping {
+  sourceId: StationId;
+  canonicalId: StationId;
+  sourceLine?: number;
+}
+
+export interface AliasRuleSummary {
+  rule: string;
+  sourceLine: number;
+}
+
+export interface AliasTraceEntry {
+  sourceId: StationId;
+  canonicalId: StationId;
+  sourceLine?: number;
+  context: 'station' | 'observation' | 'sideshot-backsight' | 'direction-reject';
+  detail?: string;
+  reference?: string;
+}
+
 export interface ParseOptions {
   units: UnitsMode;
   coordMode: CoordMode;
@@ -265,6 +285,11 @@ export interface ParseOptions {
   robustK?: number;
   directionSetMode?: DirectionSetMode;
   preferExternalInstruments?: boolean;
+  aliasExplicitCount?: number;
+  aliasRuleCount?: number;
+  aliasExplicitMappings?: AliasExplicitMapping[];
+  aliasRuleSummaries?: AliasRuleSummary[];
+  aliasTrace?: AliasTraceEntry[];
 }
 
 export interface AdjustmentResult {

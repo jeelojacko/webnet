@@ -323,6 +323,28 @@ export const parseInput = (
   existingInstruments: InstrumentLibrary = {},
   opts: Partial<ParseOptions> = {},
 ): ParseResult => {
+  interface AliasRuleBase {
+    sourceLine: number;
+  }
+  interface PrefixAliasRule extends AliasRuleBase {
+    kind: 'prefix';
+    from: string;
+    to: string;
+  }
+  interface SuffixAliasRule extends AliasRuleBase {
+    kind: 'suffix';
+    from: string;
+    to: string;
+  }
+  interface AdditiveAliasRule extends AliasRuleBase {
+    kind: 'additive';
+    offset: number;
+  }
+  type AliasRule = PrefixAliasRule | SuffixAliasRule | AdditiveAliasRule;
+  interface AliasResolutionResult {
+    canonicalId: StationId;
+    reference: string;
+  }
   type DirectionFace = 'face1' | 'face2';
   interface RawDirectionShot {
     to: StationId;
@@ -353,6 +375,12 @@ export const parseInput = (
   } = {};
   let faceMode: 'unknown' | 'face1' | 'face2' = 'unknown';
   let directionSetCount = 0;
+  const explicitAliases = new Map<StationId, StationId>();
+  const explicitAliasLines = new Map<StationId, number>();
+  const aliasRules: AliasRule[] = [];
+  const aliasCycleWarnings = new Set<string>();
+  const aliasTraceEntries: NonNullable<ParseOptions['aliasTrace']> = [];
+  const aliasTraceSeen = new Set<string>();
 
   const lines = input.split('\n');
   let lineNum = 0;
@@ -423,6 +451,134 @@ export const parseInput = (
     ensureObservationStations(obs);
     if (obs.sourceLine == null) obs.sourceLine = lineNum;
     observations.push(obs);
+  };
+  const addExplicitAlias = (rawAlias: string, rawCanonical: string): boolean => {
+    const alias = rawAlias.trim();
+    const canonical = rawCanonical.trim();
+    if (!alias || !canonical) return false;
+    if (alias === canonical) {
+      logs.push(`Warning: .ALIAS ${alias}=${canonical} ignored at line ${lineNum}; mapping is identity.`);
+      return false;
+    }
+    explicitAliases.set(alias, canonical);
+    explicitAliasLines.set(alias, lineNum);
+    return true;
+  };
+  const applyAliasRulesOnce = (
+    id: StationId,
+  ): { mappedId: StationId; steps: string[] } => {
+    let mapped = id;
+    const steps: string[] = [];
+    for (const rule of aliasRules) {
+      if (rule.kind === 'prefix') {
+        if (rule.from && mapped.startsWith(rule.from)) {
+          const prior = mapped;
+          mapped = `${rule.to}${mapped.slice(rule.from.length)}`;
+          steps.push(`PREFIX ${prior}->${mapped} (line ${rule.sourceLine})`);
+        }
+      } else if (rule.kind === 'suffix') {
+        if (rule.from && mapped.endsWith(rule.from)) {
+          const prior = mapped;
+          mapped = `${mapped.slice(0, mapped.length - rule.from.length)}${rule.to}`;
+          steps.push(`SUFFIX ${prior}->${mapped} (line ${rule.sourceLine})`);
+        }
+      } else if (/^[+-]?\d+$/.test(mapped)) {
+        const prior = mapped;
+        mapped = String(parseInt(mapped, 10) + rule.offset);
+        steps.push(`ADD ${prior}->${mapped} (line ${rule.sourceLine})`);
+      }
+    }
+    return { mappedId: mapped, steps };
+  };
+  const resolveAlias = (rawId: StationId): AliasResolutionResult => {
+    const base = rawId?.trim() ?? '';
+    if (!base) return { canonicalId: base, reference: 'direct' };
+    const resolveExplicitChain = (start: StationId): { id: StationId; steps: string[] } => {
+      let current = start;
+      const seen = new Set<string>();
+      const steps: string[] = [];
+      while (true) {
+        if (seen.has(current)) {
+          const cycleKey = [...seen, current].join('->');
+          if (!aliasCycleWarnings.has(cycleKey)) {
+            aliasCycleWarnings.add(cycleKey);
+            logs.push(
+              `Warning: .ALIAS explicit cycle encountered for "${base}" at line ${lineNum}; last stable id "${current}" retained.`,
+            );
+          }
+          return { id: current, steps };
+        }
+        seen.add(current);
+        const next = explicitAliases.get(current);
+        if (!next || next === current) return { id: current, steps };
+        const explicitLine = explicitAliasLines.get(current);
+        steps.push(`EXPLICIT ${current}->${next}${explicitLine != null ? ` (line ${explicitLine})` : ''}`);
+        current = next;
+      }
+    };
+    const steps: string[] = [];
+    const firstExplicit = resolveExplicitChain(base);
+    steps.push(...firstExplicit.steps);
+    const firstRules = applyAliasRulesOnce(firstExplicit.id);
+    steps.push(...firstRules.steps);
+    const secondExplicit = resolveExplicitChain(firstRules.mappedId);
+    steps.push(...secondExplicit.steps);
+    if (secondExplicit.id !== firstRules.mappedId) {
+      const secondRules = applyAliasRulesOnce(secondExplicit.id);
+      steps.push(...secondRules.steps);
+      return {
+        canonicalId: secondRules.mappedId,
+        reference: steps.length ? steps.join(' | ') : 'direct',
+      };
+    }
+    return {
+      canonicalId: secondExplicit.id,
+      reference: steps.length ? steps.join(' | ') : 'direct',
+    };
+  };
+  const addAliasTrace = (
+    sourceId: StationId,
+    canonicalId: StationId,
+    context: NonNullable<ParseOptions['aliasTrace']>[number]['context'],
+    sourceLine?: number,
+    detail?: string,
+    reference?: string,
+  ): void => {
+    if (!sourceId || !canonicalId || sourceId === canonicalId) return;
+    const key = `${context}|${detail ?? ''}|${sourceLine ?? -1}|${sourceId}|${canonicalId}`;
+    if (aliasTraceSeen.has(key)) return;
+    aliasTraceSeen.add(key);
+    aliasTraceEntries.push({ sourceId, canonicalId, sourceLine, context, detail, reference });
+  };
+  const parseAliasPairs = (tokens: string[]): number => {
+    const flattened = tokens.flatMap((token) => token.split(',')).filter(Boolean);
+    let added = 0;
+    for (let i = 0; i < flattened.length; ) {
+      const token = flattened[i];
+      if (!token) {
+        i += 1;
+        continue;
+      }
+      if (token.includes('=')) {
+        const [lhs, rhs] = token.split('=');
+        if (lhs && rhs && addExplicitAlias(lhs, rhs)) added += 1;
+        i += 1;
+        continue;
+      }
+      if (token.includes('->')) {
+        const [lhs, rhs] = token.split('->');
+        if (lhs && rhs && addExplicitAlias(lhs, rhs)) added += 1;
+        i += 1;
+        continue;
+      }
+      if (i + 1 >= flattened.length) {
+        logs.push(`Warning: dangling .ALIAS token "${token}" at line ${lineNum}; expected alias pair.`);
+        break;
+      }
+      if (addExplicitAlias(token, flattened[i + 1])) added += 1;
+      i += 2;
+    }
+    return added;
   };
   const combineSigmaSources = (shots: RawDirectionShot[]): SigmaSource => {
     if (!shots.length) return 'default';
@@ -800,6 +956,53 @@ export const parseInput = (
         logs.push(
           `TS correlation set to ${enabled ? 'ON' : 'OFF'} (scope=${scope}, rho=${rho.toFixed(3)})`,
         );
+      } else if (op === '.ALIAS') {
+        const aliasArgs = parts.slice(1);
+        if (!aliasArgs.length) {
+          logs.push(`Warning: .ALIAS missing arguments at line ${lineNum}`);
+          continue;
+        }
+        const mode = aliasArgs[0].toUpperCase();
+        if (mode === 'CLEAR' || mode === 'RESET' || mode === 'OFF') {
+          explicitAliases.clear();
+          aliasRules.length = 0;
+          logs.push('.ALIAS map cleared');
+        } else if (mode === 'PREFIX' || mode === 'PRE') {
+          const from = aliasArgs[1] ?? '';
+          const to = aliasArgs[2] ?? '';
+          if (!from || !to) {
+            logs.push(`Warning: invalid .ALIAS PREFIX at line ${lineNum}; expected ".ALIAS PREFIX from to"`);
+          } else {
+            aliasRules.push({ kind: 'prefix', from, to, sourceLine: lineNum });
+            logs.push(`Alias prefix rule added: ${from} -> ${to}`);
+          }
+        } else if (mode === 'SUFFIX' || mode === 'SUF') {
+          const from = aliasArgs[1] ?? '';
+          const to = aliasArgs[2] ?? '';
+          if (!from || !to) {
+            logs.push(`Warning: invalid .ALIAS SUFFIX at line ${lineNum}; expected ".ALIAS SUFFIX from to"`);
+          } else {
+            aliasRules.push({ kind: 'suffix', from, to, sourceLine: lineNum });
+            logs.push(`Alias suffix rule added: ${from} -> ${to}`);
+          }
+        } else if (mode === 'ADDITIVE' || mode === 'ADD') {
+          const offset = parseInt(aliasArgs[1] ?? '', 10);
+          if (!Number.isFinite(offset)) {
+            logs.push(
+              `Warning: invalid .ALIAS ADDITIVE at line ${lineNum}; expected integer offset value.`,
+            );
+          } else {
+            aliasRules.push({ kind: 'additive', offset, sourceLine: lineNum });
+            logs.push(`Alias additive rule added: +${offset}`);
+          }
+        } else {
+          const added = parseAliasPairs(aliasArgs);
+          if (added > 0) {
+            logs.push(`Alias explicit mappings added: ${added}`);
+          } else {
+            logs.push(`Warning: unrecognized .ALIAS syntax at line ${lineNum}`);
+          }
+        }
       } else if (op === '.I' && parts[1]) {
         state.currentInstrument = parts[1];
         logs.push(`Current instrument set to ${state.currentInstrument}`);
@@ -2004,6 +2207,195 @@ export const parseInput = (
   if (traverseCtx.dirSetId) {
     flushDirectionSet('EOF');
   }
+
+  state.aliasExplicitCount = explicitAliases.size;
+  state.aliasRuleCount = aliasRules.length;
+  state.aliasExplicitMappings = [...explicitAliases.entries()].map(([sourceId, canonicalId]) => ({
+    sourceId,
+    canonicalId,
+    sourceLine: explicitAliasLines.get(sourceId),
+  }));
+  state.aliasRuleSummaries = aliasRules.map((rule) => {
+    if (rule.kind === 'prefix') {
+      return { rule: `PREFIX ${rule.from} ${rule.to}`, sourceLine: rule.sourceLine };
+    }
+    if (rule.kind === 'suffix') {
+      return { rule: `SUFFIX ${rule.from} ${rule.to}`, sourceLine: rule.sourceLine };
+    }
+    return { rule: `ADDITIVE ${rule.offset}`, sourceLine: rule.sourceLine };
+  });
+  if (explicitAliases.size > 0 || aliasRules.length > 0) {
+    const remapObservation = (obs: Observation): void => {
+      if (obs.type === 'angle') {
+        const at = resolveAlias(obs.at);
+        addAliasTrace(obs.at, at.canonicalId, 'observation', obs.sourceLine, `${obs.type}.at`, at.reference);
+        obs.at = at.canonicalId;
+        const from = resolveAlias(obs.from);
+        addAliasTrace(
+          obs.from,
+          from.canonicalId,
+          'observation',
+          obs.sourceLine,
+          `${obs.type}.from`,
+          from.reference,
+        );
+        obs.from = from.canonicalId;
+        const to = resolveAlias(obs.to);
+        addAliasTrace(obs.to, to.canonicalId, 'observation', obs.sourceLine, `${obs.type}.to`, to.reference);
+        obs.to = to.canonicalId;
+      } else if (obs.type === 'direction') {
+        const at = resolveAlias(obs.at);
+        addAliasTrace(obs.at, at.canonicalId, 'observation', obs.sourceLine, `${obs.type}.at`, at.reference);
+        obs.at = at.canonicalId;
+        const to = resolveAlias(obs.to);
+        addAliasTrace(obs.to, to.canonicalId, 'observation', obs.sourceLine, `${obs.type}.to`, to.reference);
+        obs.to = to.canonicalId;
+      } else if (
+        obs.type === 'dist' ||
+        obs.type === 'bearing' ||
+        obs.type === 'dir' ||
+        obs.type === 'gps' ||
+        obs.type === 'lev' ||
+        obs.type === 'zenith'
+      ) {
+        const from = resolveAlias(obs.from);
+        addAliasTrace(
+          obs.from,
+          from.canonicalId,
+          'observation',
+          obs.sourceLine,
+          `${obs.type}.from`,
+          from.reference,
+        );
+        obs.from = from.canonicalId;
+        const to = resolveAlias(obs.to);
+        addAliasTrace(obs.to, to.canonicalId, 'observation', obs.sourceLine, `${obs.type}.to`, to.reference);
+        obs.to = to.canonicalId;
+      }
+      if (obs.calc != null && typeof obs.calc === 'object') {
+        const calcMeta = obs.calc as { backsightId?: StationId };
+        if (calcMeta.backsightId) {
+          const bs = resolveAlias(calcMeta.backsightId);
+          addAliasTrace(
+            calcMeta.backsightId,
+            bs.canonicalId,
+            'sideshot-backsight',
+            obs.sourceLine,
+            `${obs.type}.backsight`,
+            bs.reference,
+          );
+          calcMeta.backsightId = bs.canonicalId;
+        }
+      }
+    };
+    observations.forEach(remapObservation);
+    directionRejectDiagnostics.forEach((diag) => {
+      const occupy = resolveAlias(diag.occupy);
+      addAliasTrace(
+        diag.occupy,
+        occupy.canonicalId,
+        'direction-reject',
+        diag.sourceLine,
+        `${diag.recordType ?? 'UNKNOWN'}.occupy`,
+        occupy.reference,
+      );
+      diag.occupy = occupy.canonicalId;
+      if (diag.target) {
+        const target = resolveAlias(diag.target);
+        addAliasTrace(
+          diag.target,
+          target.canonicalId,
+          'direction-reject',
+          diag.sourceLine,
+          `${diag.recordType ?? 'UNKNOWN'}.target`,
+          target.reference,
+        );
+        diag.target = target.canonicalId;
+      }
+    });
+
+    const isPlaceholderStation = (st: StationMap[string]): boolean =>
+      Math.abs(st.x) <= 1e-12 &&
+      Math.abs(st.y) <= 1e-12 &&
+      Math.abs(st.h) <= 1e-12 &&
+      (st.sx == null || Math.abs(st.sx) <= 1e-12) &&
+      (st.sy == null || Math.abs(st.sy) <= 1e-12) &&
+      (st.sh == null || Math.abs(st.sh) <= 1e-12) &&
+      st.constraintX == null &&
+      st.constraintY == null &&
+      st.constraintH == null &&
+      !(st.fixedX ?? false) &&
+      !(st.fixedY ?? false) &&
+      !(st.fixedH ?? false);
+
+    const mergeStation = (
+      target: StationMap[string],
+      incoming: StationMap[string],
+      incomingId: StationId,
+      canonicalId: StationId,
+    ): void => {
+      const targetPlaceholder = isPlaceholderStation(target);
+      const incomingPlaceholder = isPlaceholderStation(incoming);
+      if (targetPlaceholder && !incomingPlaceholder) {
+        Object.assign(target, incoming);
+      } else {
+        const hasConflict =
+          !incomingPlaceholder &&
+          (Math.abs(target.x - incoming.x) > 1e-6 ||
+            Math.abs(target.y - incoming.y) > 1e-6 ||
+            (state.coordMode === '3D' && Math.abs(target.h - incoming.h) > 1e-6));
+        if (hasConflict) {
+          logs.push(
+            `Warning: alias merge ${incomingId} -> ${canonicalId} has conflicting coordinates; keeping first station definition.`,
+          );
+        }
+      }
+      const fixedX = (target.fixedX ?? false) || (incoming.fixedX ?? false);
+      const fixedY = (target.fixedY ?? false) || (incoming.fixedY ?? false);
+      const fixedH = (target.fixedH ?? false) || (incoming.fixedH ?? false);
+      applyFixities(target, { x: fixedX, y: fixedY, h: fixedH }, state.coordMode);
+      if (target.sx == null && incoming.sx != null) target.sx = incoming.sx;
+      else if (target.sx != null && incoming.sx != null) target.sx = Math.min(target.sx, incoming.sx);
+      if (target.sy == null && incoming.sy != null) target.sy = incoming.sy;
+      else if (target.sy != null && incoming.sy != null) target.sy = Math.min(target.sy, incoming.sy);
+      if (target.sh == null && incoming.sh != null) target.sh = incoming.sh;
+      else if (target.sh != null && incoming.sh != null) target.sh = Math.min(target.sh, incoming.sh);
+      if (target.constraintX == null && incoming.constraintX != null) target.constraintX = incoming.constraintX;
+      if (target.constraintY == null && incoming.constraintY != null) target.constraintY = incoming.constraintY;
+      if (target.constraintH == null && incoming.constraintH != null) target.constraintH = incoming.constraintH;
+      if (target.heightType == null && incoming.heightType != null) target.heightType = incoming.heightType;
+      if (target.latDeg == null && incoming.latDeg != null) target.latDeg = incoming.latDeg;
+      if (target.lonDeg == null && incoming.lonDeg != null) target.lonDeg = incoming.lonDeg;
+    };
+
+    const remappedStations: StationMap = {};
+    let renamedStationCount = 0;
+    Object.entries(stations).forEach(([id, station]) => {
+      const stationAlias = resolveAlias(id);
+      const canonicalId = stationAlias.canonicalId;
+      if (canonicalId !== id) renamedStationCount += 1;
+      addAliasTrace(id, canonicalId, 'station', undefined, 'station.id', stationAlias.reference);
+      const existing = remappedStations[canonicalId];
+      if (!existing) {
+        remappedStations[canonicalId] = { ...station };
+      } else {
+        mergeStation(existing, station, id, canonicalId);
+      }
+    });
+    Object.keys(stations).forEach((id) => delete stations[id]);
+    Object.assign(stations, remappedStations);
+    logs.push(
+      `Alias canonicalization applied (explicit=${explicitAliases.size}, rules=${aliasRules.length}, station remaps=${renamedStationCount}).`,
+    );
+  }
+  state.aliasTrace = aliasTraceEntries
+    .slice()
+    .sort(
+      (a, b) =>
+        (a.sourceLine ?? Number.MAX_SAFE_INTEGER) - (b.sourceLine ?? Number.MAX_SAFE_INTEGER) ||
+        a.context.localeCompare(b.context) ||
+        a.sourceId.localeCompare(b.sourceId),
+    );
 
   const unknowns = Object.keys(stations).filter((id) => {
     const st = stations[id];

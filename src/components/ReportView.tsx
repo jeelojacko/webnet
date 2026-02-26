@@ -104,6 +104,15 @@ const ReportView: React.FC<ReportViewProps> = ({
     const sb = b.setId ?? ''
     return sa.localeCompare(sb)
   })
+  const aliasTrace = [...(result.parseState?.aliasTrace ?? [])].sort((a, b) => {
+    const la = a.sourceLine ?? Number.MAX_SAFE_INTEGER
+    const lb = b.sourceLine ?? Number.MAX_SAFE_INTEGER
+    if (la !== lb) return la - lb
+    const ca = a.context ?? ''
+    const cb = b.context ?? ''
+    if (ca !== cb) return ca.localeCompare(cb)
+    return a.sourceId.localeCompare(b.sourceId)
+  })
   const isAngularType = (type: Observation['type']) =>
     type === 'angle' ||
     type === 'direction' ||
@@ -804,6 +813,70 @@ const ReportView: React.FC<ReportViewProps> = ({
               <div className="break-words">{runDiagnostics.stochasticDefaultsSummary}</div>
             </div>
           </div>
+        </div>
+      )}
+
+      {aliasTrace.length > 0 && (
+        <div className="mb-6 border border-slate-800 rounded overflow-hidden">
+          <div className="px-3 py-2 text-xs text-slate-400 uppercase tracking-wider border-b border-slate-800 bg-slate-900/40">
+            Alias Traceability
+          </div>
+          <div className="grid grid-cols-3 md:grid-cols-5 gap-3 p-3 text-xs text-slate-300 border-b border-slate-800/60">
+            <div>
+              <div className="text-slate-500">Explicit Maps</div>
+              <div>{result.parseState?.aliasExplicitCount ?? 0}</div>
+            </div>
+            <div>
+              <div className="text-slate-500">Pattern Rules</div>
+              <div>{result.parseState?.aliasRuleCount ?? 0}</div>
+            </div>
+            <div>
+              <div className="text-slate-500">Remap References</div>
+              <div>{aliasTrace.length}</div>
+            </div>
+            <div className="col-span-2">
+              <div className="text-slate-500">Rule Summary</div>
+              <div className="truncate">
+                {(result.parseState?.aliasRuleSummaries ?? [])
+                  .map((r) => `${r.rule} @${r.sourceLine}`)
+                  .join('; ') || '-'}
+              </div>
+            </div>
+          </div>
+          <div className="overflow-x-auto w-full">
+            <table className="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr className="text-slate-500 border-b border-slate-800">
+                  <th className="py-2 px-3 font-semibold">Context</th>
+                  <th className="py-2 px-3 font-semibold">Detail</th>
+                  <th className="py-2 px-3 font-semibold text-right">Line</th>
+                  <th className="py-2 px-3 font-semibold">Source Alias</th>
+                  <th className="py-2 px-3 font-semibold">Canonical ID</th>
+                  <th className="py-2 px-3 font-semibold">Reference</th>
+                </tr>
+              </thead>
+              <tbody className="text-slate-300">
+                {aliasTrace.slice(0, 200).map((entry, idx) => (
+                  <tr
+                    key={`alias-trace-${entry.context}-${entry.sourceLine ?? 'na'}-${entry.sourceId}-${entry.canonicalId}-${idx}`}
+                    className="border-b border-slate-800/50"
+                  >
+                    <td className="py-1 px-3 uppercase">{entry.context}</td>
+                    <td className="py-1 px-3">{entry.detail ?? '-'}</td>
+                    <td className="py-1 px-3 text-right text-slate-500">{entry.sourceLine ?? '-'}</td>
+                    <td className="py-1 px-3 font-mono">{entry.sourceId}</td>
+                    <td className="py-1 px-3 font-mono">{entry.canonicalId}</td>
+                    <td className="py-1 px-3">{entry.reference ?? '-'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          {aliasTrace.length > 200 && (
+            <div className="px-3 py-2 text-[11px] text-slate-500 border-t border-slate-800">
+              Showing first 200 rows of {aliasTrace.length}. Full trace available in export output.
+            </div>
+          )}
         </div>
       )}
 

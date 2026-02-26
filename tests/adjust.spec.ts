@@ -34,6 +34,31 @@ describe('LSAEngine', () => {
     expect(result.observations.some((o) => o.type === 'zenith')).toBe(true);
   });
 
+  it('solves mixed conventional/GNSS/leveling alias scenarios with canonical IDs', () => {
+    const input = readFileSync('tests/fixtures/alias_phase4_mixed.dat', 'utf-8');
+    const engine = new LSAEngine({ input, maxIterations: 15 });
+    const result = engine.solve();
+
+    expect(result.success).toBe(true);
+    expect(result.stations.PT_100).toBeDefined();
+    expect(result.stations.TMP_100).toBeUndefined();
+    expect(result.stations.ROVER1).toBeUndefined();
+    expect(result.stations.STA01).toBeUndefined();
+    expect(result.observations.some((o) => o.type === 'dist')).toBe(true);
+    expect(result.observations.some((o) => o.type === 'angle')).toBe(true);
+    expect(result.observations.some((o) => o.type === 'gps')).toBe(true);
+    expect(result.observations.some((o) => o.type === 'lev')).toBe(true);
+    expect(
+      result.observations.some(
+        (o) =>
+          (o.type === 'angle' && (o.at === 'ROVER1' || o.from === 'ROVER1' || o.to === 'ROVER1')) ||
+          ('from' in o && (o.from === 'ROVER1' || o.to === 'ROVER1' || o.from === 'TMP_100' || o.to === 'TMP_100')),
+      ),
+    ).toBe(false);
+    expect((result.parseState?.aliasTrace?.length ?? 0) > 0).toBe(true);
+    expect(result.logs.some((l) => l.includes('Alias canonicalization applied'))).toBe(true);
+  });
+
   it('logs traverse closure residuals', () => {
     const input = readFileSync('tests/fixtures/traverse_closure.dat', 'utf-8');
     const engine = new LSAEngine({ input, maxIterations: 5 });
