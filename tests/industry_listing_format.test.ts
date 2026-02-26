@@ -91,8 +91,8 @@ describe('industry listing phase 5 formatting locks', () => {
     expect(listing).toContain('From       To               Axis          Axis     Major Axis');
 
     // Lock coordinate/std-dev spacing to prevent merged numeric columns.
-    expect(listing).toMatch(/^\s*1\s+-?\d+\.\d{4}\s+-?\d+\.\d{4}\s*$/m);
-    expect(listing).toMatch(/^\s*1\s+\d+\.\d{6}\s+\d+\.\d{6}\s*$/m);
+    expect(listing).toMatch(/^\s*1\s+-\s+-?\d+\.\d{4}\s+-?\d+\.\d{4}\s*$/m);
+    expect(listing).toMatch(/^\s*1\s+-\s+\d+\.\d{6}\s+\d+\.\d{6}\s*$/m);
 
     // Lock key relative-ellipse formatting and fixed-to-adjusted relationship rows.
     expect(listing).toMatch(/^\s*1\s+2\s+\d+\.\d{6}\s+\d+\.\d{6}\s+\d{1,3}-\d{2}\s*$/m);
@@ -337,7 +337,9 @@ describe('industry listing phase 5 formatting locks', () => {
     expect(rotatedListing).toContain('Plan Rotation                      : ON (10.000000 deg)');
 
     const coordRow = (listing: string, stationId: string): [number, number] => {
-      const match = listing.match(new RegExp(`^\\s*${stationId}\\s+(-?\\d+\\.\\d{4})\\s+(-?\\d+\\.\\d{4})\\s*$`, 'm'));
+      const match = listing.match(
+        new RegExp(`^\\s*${stationId}\\s+\\S+\\s+(-?\\d+\\.\\d{4})\\s+(-?\\d+\\.\\d{4})\\s*$`, 'm'),
+      );
       expect(match).toBeTruthy();
       return [Number.parseFloat(match?.[1] ?? '0'), Number.parseFloat(match?.[2] ?? '0')];
     };
@@ -427,10 +429,57 @@ describe('industry listing phase 5 formatting locks', () => {
     expect(listingShown).toContain('1 (B)');
     expect(listingShown).toContain('Show Lost Stations in Output      : ON');
     expect(listingHidden).toContain('Show Lost Stations in Output      : OFF');
-    expect(listingShown).toMatch(/^\s*B\s+-?\d+\.\d{4}\s+-?\d+\.\d{4}\s*$/m);
-    expect(listingHidden).not.toMatch(/^\s*B\s+-?\d+\.\d{4}\s+-?\d+\.\d{4}\s*$/m);
+    expect(listingShown).toMatch(/^\s*B\s+-\s+-?\d+\.\d{4}\s+-?\d+\.\d{4}\s*$/m);
+    expect(listingHidden).not.toMatch(/^\s*B\s+-\s+-?\d+\.\d{4}\s+-?\d+\.\d{4}\s*$/m);
     expect(listingShown).toContain('A-B');
     expect(listingHidden).not.toContain('A-B');
+  });
+
+  it('applies append-style description reconciliation in listing output rows', () => {
+    const input = [
+      '.2D',
+      '.DESC APPEND /',
+      "C A 0 0 0 ! ! 'Alpha",
+      "E A 10.0 0.01 ! 'Beta",
+      "C B 100 0 0 ! ! 'Beta Point",
+      'D A-B 100.0000 0.001',
+    ].join('\n');
+    const result = new LSAEngine({ input, maxIterations: 10 }).solve();
+    const listing = buildIndustryStyleListingText(
+      result,
+      {
+        maxIterations: 10,
+        units: 'm',
+        listingShowLostStations: true,
+        listingShowCoordinates: true,
+        listingShowObservationsResiduals: true,
+        listingShowErrorPropagation: true,
+        listingShowProcessingNotes: false,
+        listingShowAzimuthsBearings: true,
+        listingSortCoordinatesBy: 'name',
+        listingSortObservationsBy: 'name',
+        listingObservationLimit: 500,
+      },
+      {
+        coordMode: '2D',
+        order: 'EN',
+        angleUnits: 'dms',
+        angleStationOrder: 'atfromto',
+        deltaMode: 'horiz',
+        refractionCoefficient: 0.13,
+      },
+      {
+        solveProfile: 'industry-parity',
+        angleCenteringModel: 'geometry-aware-correlated-rays',
+        defaultSigmaCount: 0,
+        defaultSigmaByType: '',
+        stochasticDefaultsSummary: 'inst=S9',
+        rotationAngleRad: 0,
+      },
+    );
+    expect(listing).toContain('Description Reconciliation');
+    expect(listing).toContain('APPEND (delimiter="/")');
+    expect(listing).toMatch(/^\s*A\s+Alpha\/Beta\s+-?\d+\.\d{4}\s+-?\d+\.\d{4}\s*$/m);
   });
 
   it('reports active QFIX constants in project option settings', () => {

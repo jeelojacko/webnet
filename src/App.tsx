@@ -324,6 +324,8 @@ type ParseSettings = {
   levelWeight?: number;
   qFixLinearSigmaM: number;
   qFixAngularSigmaSec: number;
+  descriptionReconcileMode: 'first' | 'append';
+  descriptionAppendDelimiter: string;
   lonSign: 'west-positive' | 'west-negative';
   tsCorrelationEnabled: boolean;
   tsCorrelationRho: number;
@@ -392,6 +394,10 @@ const SETTINGS_TOOLTIPS = {
     'Fixed linear sigma constant used when observation sigma token is "!" (.QFIX LINEAR). Value uses current linear units.',
   qFixAngularSigma:
     'Fixed angular sigma constant in arcseconds used when angular observation sigma token is "!" (.QFIX ANGULAR).',
+  descriptionReconcileMode:
+    'Policy for repeated station descriptions: FIRST keeps first description; APPEND concatenates unique descriptions.',
+  descriptionAppendDelimiter:
+    'Delimiter used when description reconciliation mode is APPEND.',
   lonSign: 'Longitude sign convention for geographic parsing (.LONSIGN W- or W+).',
   tsCorrelation:
     'Enable correlated angular stochastic modeling for TS setups/sets using a common correlation coefficient rho.',
@@ -484,6 +490,8 @@ const App: React.FC = () => {
     levelWeight: undefined,
     qFixLinearSigmaM: 1e-9,
     qFixAngularSigmaSec: 1e-9,
+    descriptionReconcileMode: 'first',
+    descriptionAppendDelimiter: ' | ',
     lonSign: 'west-negative',
     tsCorrelationEnabled: false,
     tsCorrelationRho: 0.25,
@@ -889,6 +897,12 @@ const App: React.FC = () => {
     const unitScale = settings.units === 'ft' ? FT_PER_M : 1;
     const runDiag = runDiagnostics ?? buildRunDiagnostics(parseSettings, res);
     const aliasTrace = res.parseState?.aliasTrace ?? [];
+    const descriptionReconcileMode =
+      res.parseState?.descriptionReconcileMode ?? parseSettings.descriptionReconcileMode;
+    const descriptionAppendDelimiter =
+      res.parseState?.descriptionAppendDelimiter ?? parseSettings.descriptionAppendDelimiter;
+    const reconciledDescriptions = res.parseState?.reconciledDescriptions ?? {};
+    const stationDescription = (stationId: string): string => reconciledDescriptions[stationId] ?? '';
     const aliasObsRefsByLine = new Map<number, string[]>();
     aliasTrace.forEach((entry) => {
       if (entry.context !== 'observation') return;
@@ -964,6 +978,9 @@ const App: React.FC = () => {
     );
     lines.push(
       `QFIX constants: linear=${(runDiag.qFixLinearSigmaM * unitScale).toExponential(6)} ${linearUnit}, angular=${runDiag.qFixAngularSigmaSec.toExponential(6)}"`,
+    );
+    lines.push(
+      `Description reconciliation: ${descriptionReconcileMode.toUpperCase()}${descriptionReconcileMode === 'append' ? ` (delimiter="${descriptionAppendDelimiter}")` : ''}`,
     );
     lines.push(`Show lost stations in export: ${showLostStationsInOutputs ? 'ON' : 'OFF'}`);
     lines.push(`Robust mode: ${runDiag.robustMode.toUpperCase()} (k=${runDiag.robustK.toFixed(2)})`);
@@ -1095,7 +1112,7 @@ const App: React.FC = () => {
     lines.push('');
     lines.push('--- Adjusted Coordinates ---');
     lines.push(
-      'ID\tNorthing\tEasting\tHeight\tType\tσN\tσE\tσH\tEllMaj\tEllMin\tEllAz\tEllMaj95\tEllMin95',
+      'ID\tDescription\tNorthing\tEasting\tHeight\tType\tσN\tσE\tσH\tEllMaj\tEllMin\tEllAz\tEllMaj95\tEllMin95',
     );
     outputStationEntries.forEach(([id, st]) => {
       const type = st.fixed ? 'FIXED' : 'ADJ';
@@ -1112,7 +1129,7 @@ const App: React.FC = () => {
         ? (st.errorEllipse.semiMinor * ellipse95Scale * unitScale).toFixed(4)
         : '-';
       lines.push(
-        `${id}\t${(st.y * unitScale).toFixed(4)}\t${(st.x * unitScale).toFixed(4)}\t${(
+        `${id}\t${stationDescription(id) || '-'}\t${(st.y * unitScale).toFixed(4)}\t${(st.x * unitScale).toFixed(4)}\t${(
           st.h * unitScale
         ).toFixed(
           4,
@@ -2784,6 +2801,8 @@ const App: React.FC = () => {
         angleStationOrder: parseSettings.angleStationOrder,
         deltaMode: parseSettings.deltaMode,
         refractionCoefficient: parseSettings.refractionCoefficient,
+        descriptionReconcileMode: parseSettings.descriptionReconcileMode,
+        descriptionAppendDelimiter: parseSettings.descriptionAppendDelimiter,
       },
       {
         solveProfile: runDiag.solveProfile,
@@ -2890,6 +2909,8 @@ const App: React.FC = () => {
         levelWeight: effectiveParse.levelWeight,
         qFixLinearSigmaM: effectiveParse.qFixLinearSigmaM,
         qFixAngularSigmaSec: effectiveParse.qFixAngularSigmaSec,
+        descriptionReconcileMode: effectiveParse.descriptionReconcileMode,
+        descriptionAppendDelimiter: effectiveParse.descriptionAppendDelimiter,
         lonSign: effectiveParse.lonSign,
         tsCorrelationEnabled: effectiveParse.tsCorrelationEnabled,
         tsCorrelationRho: effectiveParse.tsCorrelationRho,
@@ -4375,6 +4396,39 @@ const App: React.FC = () => {
                         <option value="angle">ANGLE</option>
                         <option value="dir">DIR</option>
                       </select>
+                    </label>
+                    <label className={optionLabelClass}>
+                      Description Reconcile Mode
+                      <select
+                        title={SETTINGS_TOOLTIPS.descriptionReconcileMode}
+                        value={parseSettingsDraft.descriptionReconcileMode}
+                        onChange={(e) =>
+                          handleDraftParseSetting(
+                            'descriptionReconcileMode',
+                            e.target.value as ParseSettings['descriptionReconcileMode'],
+                          )
+                        }
+                        className={`${optionInputClass} mt-1`}
+                      >
+                        <option value="first">FIRST</option>
+                        <option value="append">APPEND</option>
+                      </select>
+                    </label>
+                    <label className={optionLabelClass}>
+                      Description Append Delimiter
+                      <input
+                        title={SETTINGS_TOOLTIPS.descriptionAppendDelimiter}
+                        type="text"
+                        value={parseSettingsDraft.descriptionAppendDelimiter}
+                        disabled={parseSettingsDraft.descriptionReconcileMode !== 'append'}
+                        onChange={(e) =>
+                          handleDraftParseSetting(
+                            'descriptionAppendDelimiter',
+                            e.target.value.length > 0 ? e.target.value : ' | ',
+                          )
+                        }
+                        className={`${optionInputClass} mt-1 disabled:opacity-50 disabled:cursor-not-allowed`}
+                      />
                     </label>
                   </div>
                   <div className="border border-slate-400 p-3 text-xs text-slate-200 leading-relaxed">

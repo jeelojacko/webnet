@@ -27,6 +27,8 @@ export interface IndustryListingParseSettings {
   angleStationOrder: 'atfromto' | 'fromatto';
   deltaMode: 'slope' | 'horiz';
   refractionCoefficient: number;
+  descriptionReconcileMode?: 'first' | 'append';
+  descriptionAppendDelimiter?: string;
 }
 
 export interface IndustryListingRunDiagnostics {
@@ -74,6 +76,12 @@ export const buildIndustryStyleListingText = (
     const qFixLinearSigmaM = parseState?.qFixLinearSigmaM ?? runDiag.qFixLinearSigmaM ?? 1e-9;
     const qFixAngularSigmaSec =
       parseState?.qFixAngularSigmaSec ?? runDiag.qFixAngularSigmaSec ?? 1e-9;
+    const descriptionReconcileMode =
+      parseState?.descriptionReconcileMode ?? parseSettings.descriptionReconcileMode ?? 'first';
+    const descriptionAppendDelimiter =
+      parseState?.descriptionAppendDelimiter ?? parseSettings.descriptionAppendDelimiter ?? ' | ';
+    const reconciledDescriptions = parseState?.reconciledDescriptions ?? {};
+    const stationDescription = (stationId: string): string => reconciledDescriptions[stationId] ?? '';
     const lostStationIds = [...(parseState?.lostStationIds ?? [])].sort((a, b) =>
       a.localeCompare(b, undefined, { numeric: true }),
     );
@@ -149,6 +157,14 @@ export const buildIndustryStyleListingText = (
     lines.push(
       `      QFIX (Linear/Angular)            : ${(qFixLinearSigmaM * unitScale).toExponential(6)} ${linearUnit}; ${qFixAngularSigmaSec.toExponential(6)}"`,
     );
+    lines.push(
+      `      Description Reconciliation       : ${descriptionReconcileMode.toUpperCase()}${descriptionReconcileMode === 'append' ? ` (delimiter="${descriptionAppendDelimiter}")` : ''}`,
+    );
+    if ((parseState?.descriptionScanSummary?.length ?? 0) > 0) {
+      lines.push(
+        `      Description Scan                  : repeated=${parseState?.descriptionRepeatedStationCount ?? 0}, conflicts=${parseState?.descriptionConflictCount ?? 0}, stations=${parseState?.descriptionScanSummary?.length ?? 0}`,
+      );
+    }
     lines.push(
       `      Show Lost Stations in Output      : ${showLostStations ? 'ON' : 'OFF'}`,
     );
@@ -334,10 +350,11 @@ export const buildIndustryStyleListingText = (
       lines.push('');
       const coordRows = stationEntriesForListing.map(([id, st]) => [
         id,
+        stationDescription(id) || '-',
         (st.y * unitScale).toFixed(4),
         (st.x * unitScale).toFixed(4),
       ]);
-      renderTextTable(['Station', 'N', 'E'], coordRows, [1, 2]);
+      renderTextTable(['Station', 'Description', 'N', 'E'], coordRows, [2, 3]);
     }
 
     const compareObsByInput = (a: Observation, b: Observation) => {
@@ -660,10 +677,11 @@ export const buildIndustryStyleListingText = (
       lines.push('');
       const stdRows = stationEntriesForListing.map(([id, st]) => [
         id,
+        stationDescription(id) || '-',
         ((st.sN ?? 0) * unitScale).toFixed(6),
         ((st.sE ?? 0) * unitScale).toFixed(6),
       ]);
-      renderTextTable(['Station', 'N', 'E'], stdRows, [1, 2]);
+      renderTextTable(['Station', 'Description', 'N', 'E'], stdRows, [2, 3]);
 
       lines.push('');
       lines.push(`Station Coordinate Error Ellipses (${linearUnit})`);

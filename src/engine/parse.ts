@@ -42,6 +42,8 @@ const defaultParseOptions: ParseOptions = {
   tsCorrelationScope: 'set',
   robustMode: 'none',
   robustK: 1.5,
+  descriptionReconcileMode: 'first',
+  descriptionAppendDelimiter: ' | ',
   qFixLinearSigmaM: 1e-9,
   qFixAngularSigmaSec: 1e-9,
   prismEnabled: false,
@@ -1234,6 +1236,30 @@ export const parseInput = (
         } else {
           logs.push(
             `Warning: unrecognized .AUTOSIDESHOT option at line ${lineNum}; expected ON/OFF`,
+          );
+        }
+      } else if (op === '.DESC' || op === '.DESCRIPTION') {
+        const mode = (parts[1] || '').toUpperCase();
+        if (mode === 'FIRST' || mode === 'DEFAULT') {
+          state.descriptionReconcileMode = 'first';
+          state.descriptionAppendDelimiter = ' | ';
+          logs.push('Description reconciliation set to FIRST');
+        } else if (mode === 'APPEND' || mode === 'MERGE') {
+          state.descriptionReconcileMode = 'append';
+          const delimiter = parts.slice(2).join(' ').trim();
+          if (delimiter) {
+            state.descriptionAppendDelimiter = delimiter;
+          }
+          logs.push(
+            `Description reconciliation set to APPEND (delimiter="${state.descriptionAppendDelimiter ?? ' | '}")`,
+          );
+        } else if (mode === 'RESET') {
+          state.descriptionReconcileMode = defaultParseOptions.descriptionReconcileMode;
+          state.descriptionAppendDelimiter = defaultParseOptions.descriptionAppendDelimiter;
+          logs.push('Description reconciliation reset to defaults (FIRST)');
+        } else {
+          logs.push(
+            `Warning: unrecognized .DESC option at line ${lineNum}; expected FIRST or APPEND [delimiter]`,
           );
         }
       } else if (op === '.TSCORR') {
@@ -2823,9 +2849,25 @@ export const parseInput = (
     (row) => row.recordCount > 1,
   ).length;
   state.descriptionConflictCount = state.descriptionScanSummary.filter((row) => row.conflict).length;
+  const descriptionReconcileMode =
+    state.descriptionReconcileMode ?? defaultParseOptions.descriptionReconcileMode;
+  const descriptionDelimiter =
+    state.descriptionAppendDelimiter ?? defaultParseOptions.descriptionAppendDelimiter ?? ' | ';
+  state.descriptionReconcileMode = descriptionReconcileMode;
+  state.descriptionAppendDelimiter = descriptionDelimiter;
+  const reconciledDescriptions: Record<StationId, string> = {};
+  state.descriptionScanSummary.forEach((row) => {
+    if (row.descriptions.length === 0) return;
+    reconciledDescriptions[row.stationId] =
+      descriptionReconcileMode === 'append' ? row.descriptions.join(descriptionDelimiter) : row.descriptions[0];
+  });
+  state.reconciledDescriptions = reconciledDescriptions;
   if (state.descriptionTrace.length > 0) {
     logs.push(
       `Description scan: records=${state.descriptionTrace.length}, stations=${state.descriptionScanSummary.length}, repeated=${state.descriptionRepeatedStationCount}, conflicts=${state.descriptionConflictCount}.`,
+    );
+    logs.push(
+      `Description reconciliation: mode=${descriptionReconcileMode.toUpperCase()} delimiter="${descriptionDelimiter}"`,
     );
     state.descriptionScanSummary
       .filter((row) => row.conflict)

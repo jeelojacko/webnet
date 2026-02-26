@@ -241,6 +241,7 @@ export type RobustMode = 'none' | 'huber';
 export type DirectionSetMode = 'reduced' | 'raw';
 export type ClusterLinkageMode = 'single' | 'complete';
 export type ClusterPassLabel = 'single' | 'pass1' | 'pass2';
+export type DescriptionReconcileMode = 'first' | 'append';
 
 export interface ClusterApprovedMerge {
   aliasId: StationId;
@@ -418,6 +419,9 @@ export interface ParseOptions {
   descriptionScanSummary?: DescriptionScanSummary[];
   descriptionRepeatedStationCount?: number;
   descriptionConflictCount?: number;
+  descriptionReconcileMode?: DescriptionReconcileMode;
+  descriptionAppendDelimiter?: string;
+  reconciledDescriptions?: Record<StationId, string>;
 }
 
 export interface AdjustmentResult {

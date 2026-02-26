@@ -146,6 +146,10 @@ const ReportView: React.FC<ReportViewProps> = ({
   const lostStationIds = [...(result.parseState?.lostStationIds ?? [])].sort((a, b) =>
     a.localeCompare(b, undefined, { numeric: true }),
   )
+  const descriptionReconcileMode = result.parseState?.descriptionReconcileMode ?? 'first'
+  const descriptionAppendDelimiter = result.parseState?.descriptionAppendDelimiter ?? ' | '
+  const reconciledDescriptions = result.parseState?.reconciledDescriptions ?? {}
+  const stationDescription = (stationId: string): string => reconciledDescriptions[stationId] ?? '-'
   const clusterReviewStats = clusterCandidates.reduce(
     (acc, candidate) => {
       const decision = clusterReviewDecisions[candidate.key]
@@ -897,6 +901,15 @@ const ReportView: React.FC<ReportViewProps> = ({
                 {lostStationIds.length > 0
                   ? `${lostStationIds.length} (${lostStationIds.join(', ')})`
                   : 'none'}
+              </div>
+            </div>
+            <div className="col-span-2">
+              <div className="text-slate-500">Description Reconciliation</div>
+              <div className="break-words">
+                {descriptionReconcileMode.toUpperCase()}
+                {descriptionReconcileMode === 'append'
+                  ? ` (delimiter="${descriptionAppendDelimiter}")`
+                  : ''}
               </div>
             </div>
             <div className="col-span-2">
@@ -2472,6 +2485,7 @@ const ReportView: React.FC<ReportViewProps> = ({
             <thead>
               <tr className="text-slate-500 border-b border-slate-800 text-xs">
                 <th className="py-2 font-semibold w-20">Stn</th>
+                <th className="py-2 font-semibold">Description</th>
                 <th className="py-2 font-semibold text-right">Northing</th>
                 <th className="py-2 font-semibold text-right">Easting</th>
                 <th className="py-2 font-semibold text-right">Height</th>
@@ -2487,6 +2501,7 @@ const ReportView: React.FC<ReportViewProps> = ({
               {Object.entries(result.stations).map(([id, stn]) => (
                 <tr key={id} className="border-b border-slate-800/50 hover:bg-slate-900/50 transition-colors">
                   <td className="py-1 font-medium text-white">{id}</td>
+                  <td className="py-1 text-xs text-slate-400">{stationDescription(id)}</td>
                   <td className="py-1 text-right text-yellow-100/90">{(stn.y * unitScale).toFixed(4)}</td>
                   <td className="py-1 text-right text-yellow-100/90">{(stn.x * unitScale).toFixed(4)}</td>
                   <td className="py-1 text-right text-yellow-100/90">{(stn.h * unitScale).toFixed(4)}</td>

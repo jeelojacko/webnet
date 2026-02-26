@@ -133,6 +133,13 @@ const ProcessingSummaryView: React.FC<ProcessingSummaryViewProps> = ({
     lines.push(
       `Lost Stations: ${lostStations.length > 0 ? `${lostStations.length} (${lostStations.join(', ')})` : 'none'}`,
     );
+    const descriptionReconcileMode = result.parseState?.descriptionReconcileMode ?? 'first';
+    const descriptionAppendDelimiter = result.parseState?.descriptionAppendDelimiter ?? ' | ';
+    const descriptionRepeated = result.parseState?.descriptionRepeatedStationCount ?? 0;
+    const descriptionConflicts = result.parseState?.descriptionConflictCount ?? 0;
+    lines.push(
+      `Description Reconcile: ${descriptionReconcileMode.toUpperCase()}${descriptionReconcileMode === 'append' ? ` (delimiter="${descriptionAppendDelimiter}")` : ''}; repeated=${descriptionRepeated}; conflicts=${descriptionConflicts}`,
+    );
     const autoSideshotEnabled = result.parseState?.autoSideshotEnabled ?? true;
     lines.push(`Auto-Sideshot: ${autoSideshotEnabled ? 'ON' : 'OFF'}`);
     if (result.autoAdjustDiagnostics?.enabled) {
