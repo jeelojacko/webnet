@@ -14,6 +14,7 @@ export interface IndustryListingSettings {
   listingShowErrorPropagation: boolean;
   listingShowProcessingNotes: boolean;
   listingShowAzimuthsBearings: boolean;
+  listingShowLostStations?: boolean;
   listingSortCoordinatesBy: IndustryListingSortCoordinatesBy;
   listingSortObservationsBy: IndustryListingSortObservationsBy;
   listingObservationLimit: number;
@@ -48,7 +49,10 @@ export const buildIndustryStyleListingText = (
     const linearUnit = settings.units === 'ft' ? 'FeetUS' : 'Meters';
     const unitScale = settings.units === 'ft' ? FT_PER_M : 1;
     const runDiag = runDiagnostics;
-    const stationEntriesInputOrder = Object.entries(res.stations);
+    const showLostStations = settings.listingShowLostStations ?? true;
+    const stationEntriesInputOrder = Object.entries(res.stations).filter(
+      ([, st]) => showLostStations || !st.lost,
+    );
     const stationEntriesForListing =
       settings.listingSortCoordinatesBy === 'name'
         ? [...stationEntriesInputOrder].sort((a, b) =>
@@ -67,6 +71,21 @@ export const buildIndustryStyleListingText = (
     const rotationAngleRad = parseState?.rotationAngleRad ?? runDiag.rotationAngleRad ?? 0;
     const lostStationIds = [...(parseState?.lostStationIds ?? [])].sort((a, b) =>
       a.localeCompare(b, undefined, { numeric: true }),
+    );
+    const observationStationIds = (obs: Observation): string[] => {
+      if (obs.type === 'angle') return [obs.at, obs.from, obs.to];
+      if (obs.type === 'direction') return [obs.at, obs.to];
+      if ('from' in obs && 'to' in obs) return [obs.from, obs.to];
+      return [];
+    };
+    const observationReferencesHiddenLostStation = (obs: Observation): boolean =>
+      !showLostStations &&
+      observationStationIds(obs).some((stationId) => {
+        const station = res.stations[stationId];
+        return station?.lost === true;
+      });
+    const observationsForListing = res.observations.filter(
+      (obs) => !observationReferencesHiddenLostStation(obs),
     );
     const aliasTrace = parseState?.aliasTrace ?? [];
     const aliasObsRefsByLine = new Map<number, string[]>();
@@ -121,6 +140,9 @@ export const buildIndustryStyleListingText = (
     );
     lines.push(
       `      Lost Stations                     : ${lostStationIds.length > 0 ? `${lostStationIds.length} (${lostStationIds.join(', ')})` : 'none'}`,
+    );
+    lines.push(
+      `      Show Lost Stations in Output      : ${showLostStations ? 'ON' : 'OFF'}`,
     );
     if (res.clusterDiagnostics?.enabled) {
       lines.push(
@@ -178,7 +200,7 @@ export const buildIndustryStyleListingText = (
     lines.push(`                    Fixed Stations = ${fixedStations}; Free Stations = ${freeStations}`);
 
     const countByType = (type: Observation['type']) =>
-      res.observations.filter((o) => o.type === type).length;
+      observationsForListing.filter((o) => o.type === type).length;
     lines.push('');
     lines.push(
       `                    Number of Angle Observations (${(parseState?.angleUnits ?? parseSettings.angleUnits).toUpperCase()}) = ${countByType('angle')}`,
@@ -328,7 +350,7 @@ export const buildIndustryStyleListingText = (
       if (cmp !== 0) return cmp;
       return compareObsByInput(a, b);
     };
-    const listingObservations = [...res.observations]
+    const listingObservations = [...observationsForListing]
       .filter((o) => Number.isFinite(o.stdRes))
       .filter((o) =>
         settings.listingShowAzimuthsBearings
@@ -366,7 +388,7 @@ export const buildIndustryStyleListingText = (
         relationshipPairMap.set(key, { key, from, to });
       }
     };
-    [...res.observations]
+    [...observationsForListing]
       .sort(compareObsByInput)
       .forEach((obs) => {
         switch (obs.type) {

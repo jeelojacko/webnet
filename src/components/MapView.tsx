@@ -11,11 +11,12 @@ const MIDDLE_DBLCLICK_MS = 320;
 interface MapViewProps {
   result: AdjustmentResult;
   units: 'm' | 'ft';
+  showLostStations?: boolean;
 }
 
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
 
-const MapView: React.FC<MapViewProps> = ({ result, units }) => {
+const MapView: React.FC<MapViewProps> = ({ result, units, showLostStations = true }) => {
   const unitScale = units === 'ft' ? FT_PER_M : 1;
   const { stations, observations } = result;
   const svgRef = useRef<SVGSVGElement | null>(null);
@@ -25,7 +26,7 @@ const MapView: React.FC<MapViewProps> = ({ result, units }) => {
   const [isPanning, setIsPanning] = useState(false);
 
   const { points, bbox } = useMemo(() => {
-    const entries = Object.entries(stations);
+    const entries = Object.entries(stations).filter(([, st]) => showLostStations || !st.lost);
     if (entries.length === 0) {
       return {
         points: [],
@@ -50,7 +51,7 @@ const MapView: React.FC<MapViewProps> = ({ result, units }) => {
       ellipse: s.errorEllipse,
     }));
     return { points: pts, bbox: { minX: minX - pad, minY: minY - pad, width, height } };
-  }, [stations]);
+  }, [showLostStations, stations]);
 
   const resetView = useCallback(() => {
     setView({ zoom: 1, panX: 0, panY: 0 });
@@ -214,6 +215,7 @@ const MapView: React.FC<MapViewProps> = ({ result, units }) => {
               const from = stations[obs.from];
               const to = stations[obs.to];
               if (!from || !to) return null;
+              if (!showLostStations && (from.lost || to.lost)) return null;
               const p1 = project(from.x, from.y);
               const p2 = project(to.x, to.y);
               return (

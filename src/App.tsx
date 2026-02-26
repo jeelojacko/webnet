@@ -244,6 +244,8 @@ type ListingSortObservationsBy = 'input' | 'name' | 'residual';
 type SettingsState = {
   maxIterations: number;
   units: Units;
+  mapShowLostStations: boolean;
+  listingShowLostStations: boolean;
   listingShowCoordinates: boolean;
   listingShowObservationsResiduals: boolean;
   listingShowErrorPropagation: boolean;
@@ -395,6 +397,10 @@ const SETTINGS_TOOLTIPS = {
     'Huber tuning constant k (typical 1.5). Lower values downweight outliers more aggressively.',
   instrument:
     'Select an instrument code to view parsed EDM/angle/centering and other precision parameters.',
+  mapShowLostStations:
+    'Show or hide stations flagged by .LOSTSTATIONS in the Map & Ellipses tab. Hidden lost stations are still included in the adjustment.',
+  listingShowLostStations:
+    'Show or hide .LOSTSTATIONS points and related rows in listing/export output. Hidden lost stations are still included in the adjustment.',
   listingShowCoordinates: 'Include adjusted coordinate table in industry-style listing output.',
   listingShowObservationsResiduals:
     'Include adjusted observations/residuals table in industry-style listing output.',
@@ -436,6 +442,8 @@ const App: React.FC = () => {
   const [settings, setSettings] = useState<SettingsState>({
     maxIterations: 10,
     units: 'm',
+    mapShowLostStations: true,
+    listingShowLostStations: true,
     listingShowCoordinates: true,
     listingShowObservationsResiduals: true,
     listingShowErrorPropagation: true,
@@ -879,6 +887,30 @@ const App: React.FC = () => {
       line != null && aliasObsRefsByLine.has(line)
         ? ` [alias ${aliasObsRefsByLine.get(line)?.join(', ')}]`
         : '';
+    const showLostStationsInOutputs = settings.listingShowLostStations;
+    const isVisibleStation = (stationId: string): boolean => {
+      const station = res.stations[stationId];
+      if (!station) return true;
+      return showLostStationsInOutputs || !station.lost;
+    };
+    const outputStationEntries = Object.entries(res.stations).filter(([stationId]) =>
+      isVisibleStation(stationId),
+    );
+    const observationStationIds = (obs: Observation): string[] => {
+      if ('at' in obs && 'from' in obs && 'to' in obs) return [obs.at, obs.from, obs.to];
+      if ('at' in obs && 'to' in obs) return [obs.at, obs.to];
+      if ('from' in obs && 'to' in obs) return [obs.from, obs.to];
+      return [];
+    };
+    const outputObservations = res.observations.filter((obs) =>
+      observationStationIds(obs).every((stationId) => isVisibleStation(stationId)),
+    );
+    const outputRelativePrecision = (res.relativePrecision ?? []).filter(
+      (rel) => isVisibleStation(rel.from) && isVisibleStation(rel.to),
+    );
+    const outputSideshots = (res.sideshots ?? []).filter(
+      (ss) => isVisibleStation(ss.from) && isVisibleStation(ss.to),
+    );
     lines.push(`# WebNet Adjustment Results`);
     lines.push(`# Generated: ${now.toLocaleString()}`);
     lines.push(`# Linear units: ${linearUnit}`);
@@ -915,6 +947,7 @@ const App: React.FC = () => {
     lines.push(
       `Lost stations: ${lostStationIds.length > 0 ? `${lostStationIds.length} (${lostStationIds.join(', ')})` : 'none'}`,
     );
+    lines.push(`Show lost stations in export: ${showLostStationsInOutputs ? 'ON' : 'OFF'}`);
     lines.push(`Robust mode: ${runDiag.robustMode.toUpperCase()} (k=${runDiag.robustK.toFixed(2)})`);
     lines.push(
       `Reductions: map=${runDiag.mapMode} (scale=${runDiag.mapScaleFactor.toFixed(8)}), vRed=${runDiag.verticalReduction}, curvRef=${runDiag.applyCurvatureRefraction ? 'ON' : 'OFF'} (k=${runDiag.refractionCoefficient.toFixed(3)}), normalize=${runDiag.normalize ? 'ON' : 'OFF'}`,
@@ -1046,7 +1079,7 @@ const App: React.FC = () => {
     lines.push(
       'ID\tNorthing\tEasting\tHeight\tType\tσN\tσE\tσH\tEllMaj\tEllMin\tEllAz\tEllMaj95\tEllMin95',
     );
-    Object.entries(res.stations).forEach(([id, st]) => {
+    outputStationEntries.forEach(([id, st]) => {
       const type = st.fixed ? 'FIXED' : 'ADJ';
       const sN = st.sN != null ? (st.sN * unitScale).toFixed(4) : '-';
       const sE = st.sE != null ? (st.sE * unitScale).toFixed(4) : '-';
@@ -1206,9 +1239,9 @@ const App: React.FC = () => {
       }
       lines.push('');
     }
-    if (res.relativePrecision && res.relativePrecision.length > 0) {
+    if (outputRelativePrecision.length > 0) {
       lines.push('--- Relative Precision (Unknowns) ---');
-      const relRows = res.relativePrecision.map((r) => ({
+      const relRows = outputRelativePrecision.map((r) => ({
         from: r.from,
         to: r.to,
         sigmaN: (r.sigmaN * unitScale).toFixed(4),
@@ -2222,9 +2255,9 @@ const App: React.FC = () => {
         lines.push('');
       }
     }
-    if (res.sideshots && res.sideshots.length > 0) {
+    if (outputSideshots.length > 0) {
       lines.push('--- Post-Adjusted Sideshots ---');
-      const rows = res.sideshots.map((s) => ({
+      const rows = outputSideshots.map((s) => ({
         from: s.from,
         to: s.to,
         line: s.sourceLine != null ? String(s.sourceLine) : '-',
@@ -2358,7 +2391,7 @@ const App: React.FC = () => {
       const sign = correction >= 0 ? '+' : '';
       return `${scope}:${sign}${(correction * unitScale).toFixed(4)}${linearUnit}`;
     };
-    res.observations.forEach((obs) => {
+    outputObservations.forEach((obs) => {
       let stations = '';
       let obsStr = '';
       let calcStr = '';
@@ -2716,6 +2749,7 @@ const App: React.FC = () => {
       {
         maxIterations: settings.maxIterations,
         units: settings.units,
+        listingShowLostStations: settings.listingShowLostStations,
         listingShowCoordinates: settings.listingShowCoordinates,
         listingShowObservationsResiduals: settings.listingShowObservationsResiduals,
         listingShowErrorPropagation: settings.listingShowErrorPropagation,
@@ -3478,7 +3512,7 @@ const App: React.FC = () => {
                         <option value="3D">3D</option>
                       </select>
                     </label>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
                       <label className={optionLabelClass}>
                         Cluster Detection
                         <div className="mt-1 flex items-center gap-2 text-xs">
@@ -3494,6 +3528,21 @@ const App: React.FC = () => {
                           <span>
                             {parseSettingsDraft.clusterDetectionEnabled ? 'Enabled' : 'Disabled'}
                           </span>
+                        </div>
+                      </label>
+                      <label className={optionLabelClass}>
+                        Map Show Lost
+                        <div className="mt-1 flex items-center gap-2 text-xs">
+                          <input
+                            title={SETTINGS_TOOLTIPS.mapShowLostStations}
+                            type="checkbox"
+                            className="accent-blue-400"
+                            checked={settingsDraft.mapShowLostStations}
+                            onChange={(e) =>
+                              handleDraftSetting('mapShowLostStations', e.target.checked)
+                            }
+                          />
+                          <span>{settingsDraft.mapShowLostStations ? 'Enabled' : 'Disabled'}</span>
                         </div>
                       </label>
                       <label className={optionLabelClass}>
@@ -4145,6 +4194,18 @@ const App: React.FC = () => {
                     </label>
                     <label className="flex items-center gap-2 text-xs text-slate-100">
                       <input
+                        title={SETTINGS_TOOLTIPS.listingShowLostStations}
+                        type="checkbox"
+                        className="accent-blue-400"
+                        checked={settingsDraft.listingShowLostStations}
+                        onChange={(e) =>
+                          handleDraftSetting('listingShowLostStations', e.target.checked)
+                        }
+                      />
+                      <span>Show Lost Stations in Listing/Export</span>
+                    </label>
+                    <label className="flex items-center gap-2 text-xs text-slate-100">
+                      <input
                         title={SETTINGS_TOOLTIPS.listingShowAzimuthsBearings}
                         type="checkbox"
                         className="accent-blue-400"
@@ -4506,7 +4567,13 @@ const App: React.FC = () => {
                   />
                 )}
                 {activeTab === 'industry-output' && <IndustryOutputView text={buildIndustryListingText(result)} />}
-                {activeTab === 'map' && <MapView result={result} units={settings.units} />}
+                {activeTab === 'map' && (
+                  <MapView
+                    result={result}
+                    units={settings.units}
+                    showLostStations={settings.mapShowLostStations}
+                  />
+                )}
               </>
             )}
           </div>

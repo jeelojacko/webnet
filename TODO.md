@@ -133,10 +133,10 @@
       - [x] Phase 1: parse and track cumulative `.ROTATION` state with DMS/DD compatibility and wrap-safe normalization
       - [x] Phase 2: apply plan rotation to affected azimuth-bearing observations in parser/engine consistently
       - [x] Phase 3: add listing/profile diagnostics and parity tests for rotated vs unrotated network outputs
-    - [~] Implement `.LOSTSTATIONS` handling (include in solve, optional omit/filter in plot/listing outputs)
+    - [x] Implement `.LOSTSTATIONS` handling (include in solve, optional omit/filter in plot/listing outputs)
       - [x] Phase 1: parse `.LOSTSTATIONS` and persist station metadata flags through solve results
       - [x] Phase 2: ensure lost stations remain valid network points in adjustment while tagged in diagnostics
-      - [ ] Phase 3: add plot/listing/export filter options to hide/show lost stations and verify with UI tests
+      - [x] Phase 3: add plot/listing/export filter options to hide/show lost stations and verify with UI tests
     - [ ] Add configurable fixed standard-error constants (`.QFIX`-style) instead of hard-coded fixed sigmas
       - [ ] Phase 1: add project options and inline override parsing for fixed angular/linear sigma constants
       - [ ] Phase 2: replace hard-coded fixed defaults in weighting logic with configured constants and profile reporting
