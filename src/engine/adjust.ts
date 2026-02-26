@@ -1934,6 +1934,16 @@ export class LSAEngine {
       if (obs.type === 'zenith') return 'Zenith';
       return obs.type.toUpperCase();
     };
+    const diagnosticRedundancyValue = (obs: Observation): number | undefined => {
+      if (typeof obs.redundancy === 'number') {
+        return Number.isFinite(obs.redundancy) ? obs.redundancy : undefined;
+      }
+      if (obs.redundancy && typeof obs.redundancy === 'object') {
+        const vals = [obs.redundancy.rE, obs.redundancy.rN].filter((v) => Number.isFinite(v));
+        if (vals.length > 0) return Math.min(...vals);
+      }
+      return undefined;
+    };
     const weightedByGroup = new Map<string, { count: number; sumSquares: number }>();
     const ensureGroup = (label: string): { count: number; sumSquares: number } => {
       const existing = weightedByGroup.get(label);
@@ -2341,35 +2351,6 @@ export class LSAEngine {
       };
     }
 
-    {
-      const rows = Array.from(weightedByGroup.entries())
-        .map(([label, row]) => ({
-          label,
-          count: row.count,
-          sumSquares: row.sumSquares,
-          errorFactor: row.count > 0 ? Math.sqrt(Math.max(row.sumSquares, 0) / row.count) : 0,
-        }))
-        .sort((a, b) => {
-          const ai = groupOrder.indexOf(a.label);
-          const bi = groupOrder.indexOf(b.label);
-          const ao = ai >= 0 ? ai : Number.MAX_SAFE_INTEGER;
-          const bo = bi >= 0 ? bi : Number.MAX_SAFE_INTEGER;
-          if (ao !== bo) return ao - bo;
-          return a.label.localeCompare(b.label);
-        });
-      const totalCount = rows.reduce((sum, r) => sum + r.count, 0);
-      const totalSumSquares = rows.reduce((sum, r) => sum + r.sumSquares, 0);
-      this.statisticalSummary = {
-        byGroup: rows,
-        totalCount,
-        totalSumSquares,
-        totalErrorFactorByCount:
-          totalCount > 0 ? Math.sqrt(Math.max(totalSumSquares, 0) / totalCount) : 0,
-        totalErrorFactorByDof:
-          this.dof > 0 ? Math.sqrt(Math.max(totalSumSquares, 0) / this.dof) : 0,
-      };
-    }
-
     if (hasQxx) {
       const stationParamCount =
         Object.values(paramIndex).reduce((max, idx) => {
@@ -2749,6 +2730,41 @@ export class LSAEngine {
       }
     }
 
+    {
+      const rows = Array.from(weightedByGroup.entries())
+        .map(([label, row]) => ({
+          label,
+          count: row.count,
+          sumSquares: row.sumSquares,
+          errorFactor: row.count > 0 ? Math.sqrt(Math.max(row.sumSquares, 0) / row.count) : 0,
+        }))
+        .sort((a, b) => {
+          const ai = groupOrder.indexOf(a.label);
+          const bi = groupOrder.indexOf(b.label);
+          const ao = ai >= 0 ? ai : Number.MAX_SAFE_INTEGER;
+          const bo = bi >= 0 ? bi : Number.MAX_SAFE_INTEGER;
+          if (ao !== bo) return ao - bo;
+          return a.label.localeCompare(b.label);
+        });
+      const totalCount = rows.reduce((sum, r) => sum + r.count, 0);
+      const totalSumSquares = rows.reduce((sum, r) => sum + r.sumSquares, 0);
+      const scaleToGlobalDof =
+        this.dof > 0 && totalCount > 0 ? Math.sqrt(totalCount / this.dof) : 1;
+      const byGroup = rows.map((row) => ({
+        ...row,
+        errorFactor: row.errorFactor * scaleToGlobalDof,
+      }));
+      this.statisticalSummary = {
+        byGroup,
+        totalCount,
+        totalSumSquares,
+        totalErrorFactorByCount:
+          totalCount > 0 ? Math.sqrt(Math.max(totalSumSquares, 0) / totalCount) : 0,
+        totalErrorFactorByDof:
+          this.dof > 0 ? Math.sqrt(Math.max(totalSumSquares, 0) / this.dof) : 0,
+      };
+    }
+
     // Flag very large standardized residuals
     const flagged = this.observations.filter((o) => Math.abs(o.stdRes || 0) > this.maxStdRes);
     if (flagged.length) {
@@ -2768,14 +2784,6 @@ export class LSAEngine {
     }
 
     {
-      const redundancyValue = (obs: Observation): number | undefined => {
-        if (typeof obs.redundancy === 'number') return obs.redundancy;
-        if (obs.redundancy && typeof obs.redundancy === 'object') {
-          const vals = [obs.redundancy.rE, obs.redundancy.rN].filter((v) => Number.isFinite(v));
-          if (vals.length > 0) return Math.min(...vals);
-        }
-        return undefined;
-      };
       const stationLabel = (obs: Observation): string => {
         if (obs.type === 'angle') return `${obs.at}-${obs.from}-${obs.to}`;
         if (obs.type === 'direction') return `${obs.at}-${obs.to}`;
@@ -2801,7 +2809,7 @@ export class LSAEngine {
       ).length;
 
       const redundancies = activeObservations
-        .map((o) => redundancyValue(o))
+        .map((o) => diagnosticRedundancyValue(o))
         .filter((v): v is number => v != null && Number.isFinite(v));
       const meanRedundancy =
         redundancies.length > 0
@@ -2815,7 +2823,7 @@ export class LSAEngine {
         .map((obs) => ({
           obs,
           stdRes: Math.abs(obs.stdRes ?? 0),
-          redundancy: redundancyValue(obs),
+          redundancy: diagnosticRedundancyValue(obs),
           localPass: obs.localTest?.pass,
         }))
         .sort((a, b) => {
@@ -2858,7 +2866,7 @@ export class LSAEngine {
           if (Math.abs(obs.stdRes ?? 0) > 3) row.over3SigmaCount += 1;
         }
         if (obs.localTest != null && !obs.localTest.pass) row.localFailCount += 1;
-        const r = redundancyValue(obs);
+        const r = diagnosticRedundancyValue(obs);
         if (r != null && Number.isFinite(r)) row.redundancies.push(r);
         byTypeMap.set(obs.type, row);
       });

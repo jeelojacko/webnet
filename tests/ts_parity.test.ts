@@ -88,6 +88,16 @@ describe('TS parity harness (phase 1)', () => {
     expect(result.dof).toBe(165)
     expect(result.typeSummary?.direction?.count ?? 0).toBe(18)
     expect(result.seuw).toBeCloseTo(0.9728, 3)
+    expect(result.statisticalSummary?.totalCount ?? 0).toBe(196)
+    expect(result.statisticalSummary?.totalErrorFactorByDof ?? 0).toBeCloseTo(0.9728, 3)
+
+    const byGroup = new Map((result.statisticalSummary?.byGroup ?? []).map((row) => [row.label, row]))
+    expect(byGroup.get('Angles')?.count ?? 0).toBe(72)
+    expect(byGroup.get('Directions')?.count ?? 0).toBe(18)
+    expect(byGroup.get('Distances')?.count ?? 0).toBe(106)
+    expect(byGroup.get('Angles')?.errorFactor ?? 0).toBeCloseTo(1.128, 2)
+    expect(byGroup.get('Directions')?.errorFactor ?? 0).toBeCloseTo(0.992, 3)
+    expect(byGroup.get('Distances')?.errorFactor ?? 0).toBeCloseTo(0.846, 3)
 
     const p1000 = result.stations['1000']
     const p1 = result.stations['1']
