@@ -46,6 +46,10 @@ const defaultParseOptions: ParseOptions = {
   clusterLinkageMode: 'single',
   clusterTolerance2D: 0.03,
   clusterTolerance3D: 0.05,
+  clusterApprovedMerges: [],
+  clusterPassLabel: 'single',
+  clusterDualPassRan: false,
+  clusterApprovedMergeCount: 0,
   preferExternalInstruments: false,
 };
 
@@ -385,6 +389,24 @@ export const parseInput = (
   const aliasCycleWarnings = new Set<string>();
   const aliasTraceEntries: NonNullable<ParseOptions['aliasTrace']> = [];
   const aliasTraceSeen = new Set<string>();
+
+  const preloadedClusterMerges = (state.clusterApprovedMerges ?? [])
+    .map((merge) => ({
+      aliasId: String(merge.aliasId ?? '').trim(),
+      canonicalId: String(merge.canonicalId ?? '').trim(),
+    }))
+    .filter(
+      (merge) =>
+        merge.aliasId.length > 0 &&
+        merge.canonicalId.length > 0 &&
+        merge.aliasId !== merge.canonicalId,
+    );
+  if (preloadedClusterMerges.length > 0) {
+    preloadedClusterMerges.forEach((merge) => {
+      explicitAliases.set(merge.aliasId, merge.canonicalId);
+    });
+    logs.push(`Cluster-approved alias merges preloaded: ${preloadedClusterMerges.length}`);
+  }
 
   const lines = input.split('\n');
   let lineNum = 0;

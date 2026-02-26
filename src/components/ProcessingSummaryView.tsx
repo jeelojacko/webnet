@@ -144,7 +144,7 @@ const ProcessingSummaryView: React.FC<ProcessingSummaryViewProps> = ({
     }
     if (result.clusterDiagnostics?.enabled) {
       lines.push(
-        `Cluster Detection: mode=${result.clusterDiagnostics.linkageMode.toUpperCase()}, dim=${result.clusterDiagnostics.dimension}, tol=${result.clusterDiagnostics.tolerance.toFixed(4)}m, pairHits=${result.clusterDiagnostics.pairCount}, candidates=${result.clusterDiagnostics.candidateCount}`,
+        `Cluster Detection: pass=${result.clusterDiagnostics.passMode.toUpperCase()}, mode=${result.clusterDiagnostics.linkageMode.toUpperCase()}, dim=${result.clusterDiagnostics.dimension}, tol=${result.clusterDiagnostics.tolerance.toFixed(4)}m, pairHits=${result.clusterDiagnostics.pairCount}, candidates=${result.clusterDiagnostics.candidateCount}, approvedMerges=${result.clusterDiagnostics.approvedMergeCount ?? 0}`,
       );
       result.clusterDiagnostics.candidates.slice(0, 10).forEach((c) => {
         lines.push(
@@ -155,6 +155,30 @@ const ProcessingSummaryView: React.FC<ProcessingSummaryViewProps> = ({
         lines.push(
           `  ... ${result.clusterDiagnostics.candidates.length - 10} more cluster candidates`,
         );
+      }
+      const outcomes = result.clusterDiagnostics.mergeOutcomes ?? [];
+      if (outcomes.length > 0) {
+        lines.push(`Cluster Merge Outcomes: ${outcomes.length}`);
+        outcomes.slice(0, 15).forEach((row) => {
+          lines.push(
+            `  ${row.aliasId}->${row.canonicalId}: dE=${row.deltaE != null ? row.deltaE.toFixed(4) : '-'}m dN=${row.deltaN != null ? row.deltaN.toFixed(4) : '-'}m dH=${row.deltaH != null ? `${row.deltaH.toFixed(4)}m` : '-'} d2D=${row.horizontalDelta != null ? `${row.horizontalDelta.toFixed(4)}m` : '-'} d3D=${row.spatialDelta != null ? `${row.spatialDelta.toFixed(4)}m` : '-'}${row.missing ? ' (missing pass1 data)' : ''}`,
+          );
+        });
+        if (outcomes.length > 15) {
+          lines.push(`  ... ${outcomes.length - 15} more merge outcomes`);
+        }
+      }
+      const rejected = result.clusterDiagnostics.rejectedProposals ?? [];
+      if (rejected.length > 0) {
+        lines.push(`Rejected Cluster Proposals: ${rejected.length}`);
+        rejected.slice(0, 15).forEach((row) => {
+          lines.push(
+            `  ${row.key}: rep=${row.representativeId}, members=${row.stationIds.join(',')}, retained=${row.retainedId ?? '-'}, reason=${row.reason}`,
+          );
+        });
+        if (rejected.length > 15) {
+          lines.push(`  ... ${rejected.length - 15} more rejected proposals`);
+        }
       }
     }
     lines.push('');

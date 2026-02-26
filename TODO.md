@@ -27,6 +27,22 @@
 - [x] Instrument settings overhaul: editable Project Options instrument library (with New Instrument flow, unit-aware fields, and 2D/3D gating), solver wiring to UI-selected defaults, external-instrument precedence over inline `I` records, and zeroed fallback precision defaults unless explicitly provided
 - [x] industry-style summary parity: compute per-type statistical summary from weighted residual contributions (`vTPv` by observation family) and display both error-factor and variance-factor chi-square bounds in summaries/listings
 - [x] industry-style summary parity Phase 2: normalize per-type error factors using industry-style global DOF scaling (`sqrt(totalCount/dof)`) so group factors align with industry listings
+- [x] Cluster UX controls: add Project Options -> Adjustment toggle for cluster detection ON/OFF and top-level report button to revert applied cluster merges
+- [x] Set default adjustment startup profile to Industry Standard parity, default cluster detection OFF, and default project instrument to `S9` (`Trimble S9 0.5"`) with parity baseline stochastic values
+- [~] Industry-style listing readability/parity plan (format + section structure):
+  - [x] Phase 1: fix spacing/alignment defects in listing text columns so Northing/Easting and similar adjacent numeric fields are always separated by explicit padding (coordinates, station std devs, and adjusted obs rows such as direction/azimuth families)
+  - [x] Phase 2: remove "Processing Notes" block from industry-style output and replace with observation-family blocks that match industry style headings/order
+  - [x] Phase 3: split adjusted observation listing into dedicated family sections:
+    - [x] `Adjusted Angle Observations (DMS)`
+    - [x] `Adjusted Distance Observations (Meters)`
+    - [x] `Adjusted Direction Observations (DMS)`
+    - [x] `Adjusted Azimuths (DMS) and Horizontal Distances (Meters)` with relative azimuth confidence text
+  - [x] Phase 4: expand error-propagation listing with parity sections:
+    - [x] `Station Coordinate Standard Deviations (Meters)`
+    - [x] `Station Coordinate Error Ellipses (Meters)` with `Confidence Region = 95%`
+    - [x] `Relative Error Ellipses (Meters)` with `Confidence Region = 95%`
+    - [x] Drive azimuth confidence + relative ellipse rows from observed station relationships (including fixed-to-adjusted pairs), instead of listing all unknown-pair combinations
+  - [x] Phase 5: add fixtures/tests to lock spacing, headings, section ordering, and key row formats for industry-style listing output (`tests/industry_listing_format.test.ts` + `tests/fixtures/industry_listing_phase5_expected_headings.json`)
 - [ ] Adjustment report parity roadmap (industry-standard alignment):
   - [x] Implement weighted control constraints from coordinate/elevation std errors (not only fixed/free) so control uncertainty participates in the solve
   - [x] Wire and report normal-matrix conditioning diagnostics (condition estimate + warnings for weak geometry)
@@ -95,9 +111,9 @@
       - [x] Phase 4: parity tests for mixed alias scenarios (conventional/GNSS/leveling references across files)
     - [~] Add cluster-detection adjustment mode (dual-pass solve with user approval/override of point-cluster aliasing)
       - [x] Phase 1: implement post-pass cluster candidate detection (2D/3D tolerance, linkage mode, deterministic cluster keys)
-      - [ ] Phase 2: dual-pass solve pipeline (pass-1 detect, pass-2 apply approved merges, retain reproducible run profile)
-      - [ ] Phase 3: UI review/override table (approve/reject cluster merges, choose retained key point)
-      - [ ] Phase 4: reporting section for cluster outcomes (merged points, deltas from retained point, rejected proposals)
+      - [x] Phase 2: dual-pass solve pipeline (pass-1 detect, pass-2 apply approved merges, retain reproducible run profile)
+      - [x] Phase 3: UI review/override table (approve/reject cluster merges, choose retained key point)
+      - [x] Phase 4: reporting section for cluster outcomes (merged points, deltas from retained point, rejected proposals)
     - [ ] Add Auto-Adjust workflow (iterative solve + automatic outlier exclusion thresholds + removed-observation listing section)
       - [ ] Phase 1: solver loop controller for repeated adjust cycles (max |t| threshold, max removals/cycle, max cycles)
       - [ ] Phase 2: robust outlier candidate selection policy (local-test aware, redundancy guards, tie-break consistency)

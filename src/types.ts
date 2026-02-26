@@ -235,6 +235,38 @@ export type TsCorrelationScope = 'setup' | 'set';
 export type RobustMode = 'none' | 'huber';
 export type DirectionSetMode = 'reduced' | 'raw';
 export type ClusterLinkageMode = 'single' | 'complete';
+export type ClusterPassLabel = 'single' | 'pass1' | 'pass2';
+
+export interface ClusterApprovedMerge {
+  aliasId: StationId;
+  canonicalId: StationId;
+}
+
+export interface ClusterMergeOutcome {
+  aliasId: StationId;
+  canonicalId: StationId;
+  aliasE?: number;
+  aliasN?: number;
+  aliasH?: number;
+  canonicalE?: number;
+  canonicalN?: number;
+  canonicalH?: number;
+  deltaE?: number;
+  deltaN?: number;
+  deltaH?: number;
+  horizontalDelta?: number;
+  spatialDelta?: number;
+  missing?: boolean;
+}
+
+export interface ClusterRejectedProposal {
+  key: string;
+  representativeId: StationId;
+  stationIds: StationId[];
+  memberCount: number;
+  retainedId?: StationId;
+  reason: string;
+}
 
 export interface AliasExplicitMapping {
   sourceId: StationId;
@@ -289,6 +321,10 @@ export interface ParseOptions {
   clusterLinkageMode?: ClusterLinkageMode;
   clusterTolerance2D?: number;
   clusterTolerance3D?: number;
+  clusterApprovedMerges?: ClusterApprovedMerge[];
+  clusterPassLabel?: ClusterPassLabel;
+  clusterDualPassRan?: boolean;
+  clusterApprovedMergeCount?: number;
   preferExternalInstruments?: boolean;
   aliasExplicitCount?: number;
   aliasRuleCount?: number;
@@ -603,11 +639,17 @@ export interface AdjustmentResult {
   }[];
   clusterDiagnostics?: {
     enabled: boolean;
+    passMode: 'single-pass' | 'dual-pass';
     linkageMode: ClusterLinkageMode;
     dimension: '2D' | '3D';
     tolerance: number;
     pairCount: number;
     candidateCount: number;
+    pass1CandidateCount?: number;
+    approvedMergeCount?: number;
+    appliedMerges?: ClusterApprovedMerge[];
+    mergeOutcomes?: ClusterMergeOutcome[];
+    rejectedProposals?: ClusterRejectedProposal[];
     candidates: {
       key: string;
       representativeId: StationId;

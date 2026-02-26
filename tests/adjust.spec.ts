@@ -80,6 +80,38 @@ describe('LSAEngine', () => {
     expect(clusters?.candidates[0].maxSeparation).toBeCloseTo(0.03, 6);
   });
 
+  it('runs dual-pass cluster workflow when approved merges are provided', () => {
+    const input = [
+      '.2D',
+      'C CTRL 0 0 0 ! !',
+      'C P1 100.000 100.000 0',
+      'C P1_DUP 100.008 100.006 0',
+      'D CTRL-P1 141.4214 0.01',
+      'D CTRL-P1_DUP 141.4314 0.01',
+    ].join('\n');
+    const result = new LSAEngine({
+      input,
+      maxIterations: 8,
+      parseOptions: {
+        clusterApprovedMerges: [{ aliasId: 'P1_DUP', canonicalId: 'P1' }],
+      },
+    }).solve();
+
+    expect(result.clusterDiagnostics?.passMode).toBe('dual-pass');
+    expect(result.clusterDiagnostics?.approvedMergeCount).toBe(1);
+    expect(result.clusterDiagnostics?.pass1CandidateCount).toBeGreaterThanOrEqual(1);
+    expect(result.clusterDiagnostics?.mergeOutcomes?.length).toBe(1);
+    expect(result.clusterDiagnostics?.mergeOutcomes?.[0].aliasId).toBe('P1_DUP');
+    expect(result.clusterDiagnostics?.mergeOutcomes?.[0].canonicalId).toBe('P1');
+    expect(result.clusterDiagnostics?.mergeOutcomes?.[0].horizontalDelta).toBeGreaterThan(0);
+    expect(result.parseState?.clusterDualPassRan).toBe(true);
+    expect(result.parseState?.clusterApprovedMergeCount).toBe(1);
+    expect(result.stations.P1).toBeDefined();
+    expect(result.stations.P1_DUP).toBeUndefined();
+    expect(result.observations.some((o) => o.sourceLine === 5)).toBe(true);
+    expect(result.logs.some((l) => l.includes('Cluster dual-pass'))).toBe(true);
+  });
+
   it('solves mixed conventional/GNSS/leveling alias scenarios with canonical IDs', () => {
     const input = readFileSync('tests/fixtures/alias_phase4_mixed.dat', 'utf-8');
     const engine = new LSAEngine({ input, maxIterations: 15 });

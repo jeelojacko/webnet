@@ -22,8 +22,11 @@ import ProcessingSummaryView from './components/ProcessingSummaryView';
 import IndustryOutputView from './components/IndustryOutputView';
 import { LSAEngine } from './engine/adjust';
 import { RAD_TO_DEG, radToDmsStr } from './engine/angles';
+import { buildIndustryStyleListingText } from './engine/industryListing';
 import type {
   AdjustmentResult,
+  ClusterApprovedMerge,
+  ClusterRejectedProposal,
   Instrument,
   InstrumentLibrary,
   Observation,
@@ -59,6 +62,17 @@ const createInstrument = (code: string, desc = ''): Instrument => ({
   elevDiff_ppm: 0,
   gpsStd_xy: 0,
   levStd_mmPerKm: 0,
+});
+
+const createDefaultS9Instrument = (): Instrument => ({
+  ...createInstrument('S9', 'Trimble S9 0.5"'),
+  edm_const: 0.001,
+  edm_ppm: 1,
+  hzPrecision_sec: 0.5,
+  dirPrecision_sec: 0.5,
+  azBearingPrecision_sec: 0.5,
+  instCentr_m: 0.00075,
+  tgtCentr_m: 0,
 });
 
 const cloneInstrumentLibrary = (library: InstrumentLibrary): InstrumentLibrary => {
@@ -271,6 +285,7 @@ type RunDiagnostics = {
 type ParseSettings = {
   solveProfile: SolveProfile;
   coordMode: CoordMode;
+  clusterDetectionEnabled: boolean;
   order: OrderMode;
   angleUnits: 'dms' | 'dd';
   angleStationOrder: 'atfromto' | 'fromatto';
@@ -291,24 +306,17 @@ type ParseSettings = {
   robustK: number;
 };
 
-const INDUSTRY_DEFAULT_INSTRUMENT_CODE = '__INDUSTRY_DEFAULT__';
-const INDUSTRY_DEFAULT_INSTRUMENT: Instrument = {
-  code: INDUSTRY_DEFAULT_INSTRUMENT_CODE,
-  desc: 'Industry Standard default instrument',
-  edm_const: 0.001,
-  edm_ppm: 1,
-  hzPrecision_sec: 0.5,
-  dirPrecision_sec: 0.5,
-  azBearingPrecision_sec: 0.5,
-  vaPrecision_sec: 0.5,
-  instCentr_m: 0.00075,
-  tgtCentr_m: 0,
-  vertCentr_m: 0,
-  elevDiff_const_m: 0,
-  elevDiff_ppm: 0,
-  gpsStd_xy: 0,
-  levStd_mmPerKm: 0,
+type ClusterReviewStatus = 'pending' | 'approve' | 'reject';
+
+type ClusterReviewDecision = {
+  status: ClusterReviewStatus;
+  canonicalId: string;
 };
+
+type ClusterCandidate = NonNullable<AdjustmentResult['clusterDiagnostics']>['candidates'][number];
+
+const INDUSTRY_DEFAULT_INSTRUMENT_CODE = 'S9';
+const INDUSTRY_DEFAULT_INSTRUMENT: Instrument = createDefaultS9Instrument();
 
 type TabKey = 'report' | 'processing-summary' | 'industry-output' | 'map';
 type ExportFormat = 'webnet' | 'industry-style';
@@ -321,6 +329,8 @@ const SETTINGS_TOOLTIPS = {
   maxIterations: 'Maximum least-squares iterations before the run stops if convergence is slow.',
   coordMode:
     '2D adjusts horizontal coordinates only. 3D also adjusts heights and uses vertical observations.',
+  clusterDetection:
+    'Enable or disable post-adjust cluster detection diagnostics/workflow. When OFF, cluster candidates and review/merge workflow are hidden.',
   order: 'Coordinate field order expected in control records and shown in report tables.',
   angleUnits: 'Angular input units for survey records. DMS uses D-M-S tokens; DD uses decimal degrees.',
   angleStationOrder:
@@ -406,8 +416,9 @@ const App: React.FC = () => {
     listingObservationLimit: 60,
   });
   const [parseSettings, setParseSettings] = useState<ParseSettings>({
-    solveProfile: 'webnet',
+    solveProfile: 'industry-parity',
     coordMode: '3D',
+    clusterDetectionEnabled: false,
     order: 'EN',
     angleUnits: 'dms',
     angleStationOrder: 'atfromto',
@@ -427,10 +438,11 @@ const App: React.FC = () => {
     robustMode: 'none',
     robustK: 1.5,
   });
-  const [projectInstruments, setProjectInstruments] = useState<InstrumentLibrary>(() =>
-    parseInstrumentLibraryFromInput(DEFAULT_INPUT),
-  );
-  const [selectedInstrument, setSelectedInstrument] = useState('');
+  const [projectInstruments, setProjectInstruments] = useState<InstrumentLibrary>(() => ({
+    S9: createDefaultS9Instrument(),
+    ...parseInstrumentLibraryFromInput(DEFAULT_INPUT),
+  }));
+  const [selectedInstrument, setSelectedInstrument] = useState('S9');
   const [splitPercent, setSplitPercent] = useState(35); // left pane width (%)
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
@@ -442,6 +454,12 @@ const App: React.FC = () => {
   const [selectedInstrumentDraft, setSelectedInstrumentDraft] = useState(selectedInstrument);
   const [excludedIds, setExcludedIds] = useState<Set<number>>(new Set());
   const [overrides, setOverrides] = useState<Record<number, ObservationOverride>>({});
+  const [clusterReviewDecisions, setClusterReviewDecisions] = useState<
+    Record<string, ClusterReviewDecision>
+  >({});
+  const [activeClusterApprovedMerges, setActiveClusterApprovedMerges] = useState<
+    ClusterApprovedMerge[]
+  >([]);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const layoutRef = useRef<HTMLDivElement | null>(null);
   const isResizingRef = useRef(false);
@@ -491,6 +509,25 @@ const App: React.FC = () => {
       document.removeEventListener('keydown', handleKey);
     };
   }, [isSettingsModalOpen]);
+
+  useEffect(() => {
+    const candidates = result?.clusterDiagnostics?.candidates ?? [];
+    setClusterReviewDecisions((prev) => {
+      const next: Record<string, ClusterReviewDecision> = {};
+      candidates.forEach((candidate) => {
+        const prior = prev[candidate.key];
+        const canonicalId =
+          prior && candidate.stationIds.includes(prior.canonicalId)
+            ? prior.canonicalId
+            : candidate.representativeId;
+        next[candidate.key] = {
+          status: prior?.status ?? 'pending',
+          canonicalId,
+        };
+      });
+      return next;
+    });
+  }, [result?.clusterDiagnostics]);
 
   // handle dragging of vertical divider
   useEffect(() => {
@@ -588,6 +625,84 @@ const App: React.FC = () => {
     });
     return maxShift;
   };
+
+  const normalizeClusterApprovedMerges = (
+    merges: ClusterApprovedMerge[],
+  ): ClusterApprovedMerge[] => {
+    const byAlias = new Map<string, string>();
+    merges
+      .map((merge) => ({
+        aliasId: String(merge.aliasId ?? '').trim(),
+        canonicalId: String(merge.canonicalId ?? '').trim(),
+      }))
+      .filter((merge) => merge.aliasId && merge.canonicalId && merge.aliasId !== merge.canonicalId)
+      .sort(
+        (a, b) =>
+          a.aliasId.localeCompare(b.aliasId, undefined, { numeric: true }) ||
+          a.canonicalId.localeCompare(b.canonicalId, undefined, { numeric: true }),
+      )
+      .forEach((merge) => {
+        const prior = byAlias.get(merge.aliasId);
+        if (!prior) {
+          byAlias.set(merge.aliasId, merge.canonicalId);
+          return;
+        }
+        if (merge.canonicalId.localeCompare(prior, undefined, { numeric: true }) < 0) {
+          byAlias.set(merge.aliasId, merge.canonicalId);
+        }
+      });
+    return [...byAlias.entries()]
+      .map(([aliasId, canonicalId]) => ({ aliasId, canonicalId }))
+      .sort(
+        (a, b) =>
+          a.canonicalId.localeCompare(b.canonicalId, undefined, { numeric: true }) ||
+          a.aliasId.localeCompare(b.aliasId, undefined, { numeric: true }),
+      );
+  };
+
+  const buildApprovedClusterMerges = (
+    res: AdjustmentResult | null,
+    decisions: Record<string, ClusterReviewDecision>,
+  ): ClusterApprovedMerge[] => {
+    const candidates = res?.clusterDiagnostics?.candidates ?? [];
+    const merges: ClusterApprovedMerge[] = [];
+    candidates.forEach((candidate) => {
+      const decision = decisions[candidate.key];
+      if (!decision || decision.status !== 'approve') return;
+      const canonicalId = candidate.stationIds.includes(decision.canonicalId)
+        ? decision.canonicalId
+        : candidate.representativeId;
+      candidate.stationIds.forEach((stationId) => {
+        if (stationId === canonicalId) return;
+        merges.push({ aliasId: stationId, canonicalId });
+      });
+    });
+    return normalizeClusterApprovedMerges(merges);
+  };
+
+  const buildRejectedClusterProposals = (
+    candidates: ClusterCandidate[],
+    decisions: Record<string, ClusterReviewDecision>,
+  ): ClusterRejectedProposal[] =>
+    candidates
+      .map((candidate) => {
+        const decision = decisions[candidate.key];
+        if (!decision || decision.status !== 'reject') return null;
+        const retainedId =
+          decision.canonicalId && candidate.stationIds.includes(decision.canonicalId)
+            ? decision.canonicalId
+            : undefined;
+        return {
+          key: candidate.key,
+          representativeId: candidate.representativeId,
+          stationIds: [...candidate.stationIds],
+          memberCount: candidate.memberCount,
+          retainedId,
+          reason: 'Rejected by user review',
+        } satisfies ClusterRejectedProposal;
+      })
+      .filter((row): row is ClusterRejectedProposal => row != null)
+      .sort((a, b) => a.key.localeCompare(b.key, undefined, { numeric: true }));
 
   const resolveProfileContext = (base: ParseSettings) => {
     const parity = base.solveProfile === 'industry-parity';
@@ -842,9 +957,9 @@ const App: React.FC = () => {
     if (res.clusterDiagnostics?.enabled) {
       const cd = res.clusterDiagnostics;
       lines.push(
-        `Cluster detection: mode=${cd.linkageMode}, dim=${cd.dimension}, tol=${(
+        `Cluster detection: pass=${cd.passMode}, mode=${cd.linkageMode}, dim=${cd.dimension}, tol=${(
           cd.tolerance * unitScale
-        ).toFixed(4)} ${linearUnit}, pairHits=${cd.pairCount}, candidates=${cd.candidateCount}`,
+        ).toFixed(4)} ${linearUnit}, pairHits=${cd.pairCount}, candidates=${cd.candidateCount}, approvedMerges=${cd.approvedMergeCount ?? 0}, mergeOutcomes=${cd.mergeOutcomes?.length ?? 0}, rejected=${cd.rejectedProposals?.length ?? 0}`,
       );
     }
     lines.push('');
@@ -1080,11 +1195,13 @@ const App: React.FC = () => {
     }
     if (res.clusterDiagnostics?.enabled) {
       const cd = res.clusterDiagnostics;
+      const outcomes = cd.mergeOutcomes ?? [];
+      const rejected = cd.rejectedProposals ?? [];
       lines.push('--- Cluster Detection Candidates ---');
       lines.push(
-        `Mode=${cd.linkageMode.toUpperCase()} Dim=${cd.dimension} Tolerance=${(
+        `Pass=${cd.passMode.toUpperCase()} Mode=${cd.linkageMode.toUpperCase()} Dim=${cd.dimension} Tolerance=${(
           cd.tolerance * unitScale
-        ).toFixed(4)} ${linearUnit} PairHits=${cd.pairCount} Candidates=${cd.candidateCount}`,
+        ).toFixed(4)} ${linearUnit} PairHits=${cd.pairCount} Candidates=${cd.candidateCount} ApprovedMerges=${cd.approvedMergeCount ?? 0} MergeOutcomes=${outcomes.length} Rejected=${rejected.length}`,
       );
       if (cd.candidates.length > 0) {
         lines.push(
@@ -1098,6 +1215,26 @@ const App: React.FC = () => {
             ).toFixed(4).padStart(12)} ${(
               c.meanSeparation * unitScale
             ).toFixed(4).padStart(12)}  ${flags.padEnd(15)} ${c.stationIds.join(', ')}`,
+          );
+        });
+      }
+      if (outcomes.length > 0) {
+        lines.push('');
+        lines.push('--- Cluster Merge Outcomes (Delta From Retained Point) ---');
+        lines.push('Alias              Canonical          dE           dN           dH           d2D          d3D          Status');
+        outcomes.forEach((row) => {
+          lines.push(
+            `${row.aliasId.padEnd(18)} ${row.canonicalId.padEnd(18)} ${(row.deltaE != null ? (row.deltaE * unitScale).toFixed(4) : '-').padStart(12)} ${(row.deltaN != null ? (row.deltaN * unitScale).toFixed(4) : '-').padStart(12)} ${(row.deltaH != null ? (row.deltaH * unitScale).toFixed(4) : '-').padStart(12)} ${(row.horizontalDelta != null ? (row.horizontalDelta * unitScale).toFixed(4) : '-').padStart(12)} ${(row.spatialDelta != null ? (row.spatialDelta * unitScale).toFixed(4) : '-').padStart(12)}  ${row.missing ? 'MISSING PASS1 DATA' : 'OK'}`,
+          );
+        });
+      }
+      if (rejected.length > 0) {
+        lines.push('');
+        lines.push('--- Rejected Cluster Proposals ---');
+        lines.push('Key                Rep          Members  Retained      Station IDs                        Reason');
+        rejected.forEach((row) => {
+          lines.push(
+            `${row.key.padEnd(18)} ${row.representativeId.padEnd(12)} ${String(row.memberCount).padStart(7)}  ${(row.retainedId ?? '-').padEnd(12)} ${row.stationIds.join(', ').padEnd(32)} ${row.reason}`,
           );
         });
       }
@@ -2427,350 +2564,37 @@ const App: React.FC = () => {
   };
 
   const buildIndustryListingText = (res: AdjustmentResult): string => {
-    const lines: string[] = [];
-    const now = new Date();
-    const linearUnit = settings.units === 'ft' ? 'FeetUS' : 'Meters';
-    const unitScale = settings.units === 'ft' ? FT_PER_M : 1;
     const runDiag = runDiagnostics ?? buildRunDiagnostics(parseSettings, res);
-    const stationEntriesInputOrder = Object.entries(res.stations);
-    const stationEntriesForListing =
-      settings.listingSortCoordinatesBy === 'name'
-        ? [...stationEntriesInputOrder].sort((a, b) =>
-            a[0].localeCompare(b[0], undefined, { numeric: true }),
-          )
-        : stationEntriesInputOrder;
-    const fixedStations = stationEntriesInputOrder.filter(([, st]) => st.fixed).length;
-    const freeStations = stationEntriesInputOrder.length - fixedStations;
-    const observationCount = res.observations.length;
-    const unknownCount = Math.max(0, observationCount - res.dof);
-    const parseState = res.parseState;
-    const aliasTrace = parseState?.aliasTrace ?? [];
-    const aliasObsRefsByLine = new Map<number, string[]>();
-    aliasTrace.forEach((entry) => {
-      if (entry.context !== 'observation') return;
-      if (entry.sourceLine == null) return;
-      const ref = `${entry.sourceId}->${entry.canonicalId}`;
-      const list = aliasObsRefsByLine.get(entry.sourceLine) ?? [];
-      if (!list.includes(ref)) list.push(ref);
-      aliasObsRefsByLine.set(entry.sourceLine, list);
-    });
-    const aliasRefsForLine = (line?: number): string =>
-      line != null && aliasObsRefsByLine.has(line)
-        ? ` [alias ${aliasObsRefsByLine.get(line)?.join(', ')}]`
-        : '';
-
-    lines.push('                INDUSTRY-STANDARD-STYLE Listing (WebNet Emulation)');
-    lines.push(`                       Run Date: ${now.toLocaleString()}`);
-    lines.push('');
-    lines.push('                   Summary of Files Used and Option Settings');
-    lines.push('                   =========================================');
-    lines.push('');
-    lines.push('                            Project Option Settings');
-    lines.push('');
-    lines.push(
-      `      Industry Standard Run Mode                   : ${runDiag.solveProfile === 'industry-parity' ? 'Parity Profile (Classical)' : 'WebNet Default Profile'}`,
+    return buildIndustryStyleListingText(
+      res,
+      {
+        maxIterations: settings.maxIterations,
+        units: settings.units,
+        listingShowCoordinates: settings.listingShowCoordinates,
+        listingShowObservationsResiduals: settings.listingShowObservationsResiduals,
+        listingShowErrorPropagation: settings.listingShowErrorPropagation,
+        listingShowProcessingNotes: settings.listingShowProcessingNotes,
+        listingShowAzimuthsBearings: settings.listingShowAzimuthsBearings,
+        listingSortCoordinatesBy: settings.listingSortCoordinatesBy,
+        listingSortObservationsBy: settings.listingSortObservationsBy,
+        listingObservationLimit: settings.listingObservationLimit,
+      },
+      {
+        coordMode: parseSettings.coordMode,
+        order: parseSettings.order,
+        angleUnits: parseSettings.angleUnits,
+        angleStationOrder: parseSettings.angleStationOrder,
+        deltaMode: parseSettings.deltaMode,
+        refractionCoefficient: parseSettings.refractionCoefficient,
+      },
+      {
+        solveProfile: runDiag.solveProfile,
+        angleCenteringModel: runDiag.angleCenteringModel,
+        defaultSigmaCount: runDiag.defaultSigmaCount,
+        defaultSigmaByType: runDiag.defaultSigmaByType,
+        stochasticDefaultsSummary: runDiag.stochasticDefaultsSummary,
+      },
     );
-    lines.push(
-      `      Type of Adjustment                  : ${parseState?.coordMode ?? parseSettings.coordMode}`,
-    );
-    lines.push(
-      `      Project Units                       : ${linearUnit}; ${(parseState?.angleUnits ?? parseSettings.angleUnits).toUpperCase()}`,
-    );
-    lines.push(
-      `      Input/Output Coordinate Order       : ${(parseState?.order ?? parseSettings.order) === 'NE' ? 'North-East' : 'East-North'}`,
-    );
-    lines.push(
-      `      Angle Data Station Order            : ${(parseState?.angleStationOrder ?? parseSettings.angleStationOrder) === 'atfromto' ? 'At-From-To' : 'From-At-To'}`,
-    );
-    lines.push(
-      `      Distance/Vertical Data Type         : ${(parseState?.deltaMode ?? parseSettings.deltaMode) === 'horiz' ? 'Hor Dist/DE' : 'Slope Dist/Zenith'}`,
-    );
-    lines.push(`      Convergence Limit; Max Iterations   : 0.001000; ${settings.maxIterations}`);
-    lines.push(
-      `      Default Coefficient of Refraction   : ${(parseState?.refractionCoefficient ?? parseSettings.refractionCoefficient).toFixed(6)}`,
-    );
-    if (res.clusterDiagnostics?.enabled) {
-      lines.push(
-        `      Cluster Detection Mode             : ${res.clusterDiagnostics.linkageMode.toUpperCase()} (${res.clusterDiagnostics.dimension}, tol=${(res.clusterDiagnostics.tolerance * unitScale).toFixed(4)} ${linearUnit})`,
-      );
-    }
-    if ((parseState?.aliasExplicitCount ?? 0) > 0 || (parseState?.aliasRuleCount ?? 0) > 0) {
-      lines.push(
-        `      Alias Canonicalization              : explicit=${parseState?.aliasExplicitCount ?? 0}, rules=${parseState?.aliasRuleCount ?? 0}, references=${aliasTrace.length}`,
-      );
-    }
-    lines.push('');
-    lines.push('                       Instrument Standard Error Settings');
-    lines.push('');
-    lines.push('      Active Project Instrument Defaults');
-    lines.push(
-      `        Distances (Constant)              : ${runDiag.stochasticDefaultsSummary.includes('inst=') ? runDiag.stochasticDefaultsSummary : '-'}`,
-    );
-    lines.push(
-      `        Centering / Inflation             : ${runDiag.angleCenteringModel}; ${runDiag.defaultSigmaCount} default-sigma obs${runDiag.defaultSigmaByType ? ` (${runDiag.defaultSigmaByType})` : ''}`,
-    );
-    if ((parseState?.aliasExplicitMappings?.length ?? 0) > 0) {
-      lines.push('      Explicit Alias Mappings');
-      parseState?.aliasExplicitMappings?.forEach((m) => {
-        lines.push(
-          `        ${m.sourceId} -> ${m.canonicalId}${m.sourceLine != null ? ` (line ${m.sourceLine})` : ''}`,
-        );
-      });
-    }
-    if ((parseState?.aliasRuleSummaries?.length ?? 0) > 0) {
-      lines.push('      Alias Rules');
-      parseState?.aliasRuleSummaries?.forEach((r) => {
-        lines.push(`        ${r.rule} (line ${r.sourceLine})`);
-      });
-    }
-    lines.push('');
-    lines.push('                    Summary of Unadjusted Input Observations');
-    lines.push('                    ========================================');
-    lines.push('');
-    lines.push(
-      `                    Number of Entered Stations (${linearUnit}) = ${stationEntriesInputOrder.length}`,
-    );
-    lines.push(`                    Fixed Stations = ${fixedStations}; Free Stations = ${freeStations}`);
-
-    const countByType = (type: Observation['type']) =>
-      res.observations.filter((o) => o.type === type).length;
-    lines.push('');
-    lines.push(
-      `                    Number of Angle Observations (${(parseState?.angleUnits ?? parseSettings.angleUnits).toUpperCase()}) = ${countByType('angle')}`,
-    );
-    lines.push(
-      `                 Number of Distance Observations (${linearUnit}) = ${countByType('dist')}`,
-    );
-    lines.push(
-      `                Number of Direction Observations (${(parseState?.angleUnits ?? parseSettings.angleUnits).toUpperCase()}) = ${countByType('direction') + countByType('dir') + countByType('bearing')}`,
-    );
-    lines.push('');
-    lines.push('                         Adjustment Statistical Summary');
-    lines.push('                         ==============================');
-    lines.push('');
-    lines.push(`                        Iterations              = ${res.iterations}`);
-    lines.push('');
-    lines.push(`                        Number of Stations      = ${stationEntriesInputOrder.length}`);
-    lines.push('');
-    lines.push(`                        Number of Observations  = ${observationCount}`);
-    lines.push(`                        Number of Unknowns      = ${unknownCount}`);
-    lines.push(`                        Number of Redundant Obs = ${res.dof}`);
-    lines.push('');
-    lines.push('            Observation   Count   Sum Squares         Error');
-    lines.push('                                    of StdRes        Factor');
-
-    const statRows =
-      res.statisticalSummary?.byGroup?.length
-        ? res.statisticalSummary.byGroup
-        : (() => {
-            const groups: Array<{
-              label: string;
-              filter: (_obs: Observation) => boolean;
-            }> = [
-              { label: 'Angles', filter: (o) => o.type === 'angle' },
-              {
-                label: 'Directions',
-                filter: (o) => o.type === 'direction' || o.type === 'dir' || o.type === 'bearing',
-              },
-              { label: 'Distances', filter: (o) => o.type === 'dist' },
-              { label: 'GPS', filter: (o) => o.type === 'gps' },
-              { label: 'Leveling', filter: (o) => o.type === 'lev' },
-            ];
-            return groups
-              .map((group) => {
-                const obs = res.observations
-                  .filter(group.filter)
-                  .filter((o) => Number.isFinite(o.stdRes));
-                if (!obs.length) return null;
-                const sumSquares = obs.reduce((sum, o) => sum + (o.stdRes ?? 0) * (o.stdRes ?? 0), 0);
-                const factor = Math.sqrt(sumSquares / obs.length);
-                return { label: group.label, count: obs.length, sumSquares, errorFactor: factor };
-              })
-              .filter(
-                (row): row is { label: string; count: number; sumSquares: number; errorFactor: number } =>
-                  row != null,
-              );
-          })();
-    const totalCount = res.statisticalSummary?.totalCount ?? statRows.reduce((sum, r) => sum + r.count, 0);
-    const totalSumSquares =
-      res.statisticalSummary?.totalSumSquares ?? statRows.reduce((sum, r) => sum + r.sumSquares, 0);
-    statRows.forEach((row) => {
-      lines.push(
-        `                 ${row.label.padEnd(12)}${row.count.toString().padStart(6)}${row.sumSquares.toFixed(3).padStart(14)}${row.errorFactor.toFixed(3).padStart(14)}`,
-      );
-    });
-    lines.push(
-      `                  Total${totalCount.toString().padStart(12)}${totalSumSquares.toFixed(3).padStart(14)}${res.seuw.toFixed(3).padStart(14)}`,
-    );
-    lines.push('');
-    if (res.chiSquare) {
-      const errorLower = Math.sqrt(res.chiSquare.varianceFactorLower);
-      const errorUpper = Math.sqrt(res.chiSquare.varianceFactorUpper);
-      lines.push(
-        `                  The Chi-Square Test at 5.00% Level ${res.chiSquare.pass95 ? 'Passed' : 'Failed'}`,
-      );
-      lines.push(
-        `                       Lower/Upper Bounds (${errorLower.toFixed(3)}/${errorUpper.toFixed(3)})`,
-      );
-      lines.push(
-        `                       Variance Factor Bounds (${res.chiSquare.varianceFactorLower.toFixed(3)}/${res.chiSquare.varianceFactorUpper.toFixed(3)})`,
-      );
-      lines.push('');
-    }
-    if (settings.listingShowCoordinates) {
-      lines.push(`                         Adjusted Coordinates (${linearUnit})`);
-      lines.push('                         =============================');
-      lines.push('');
-      lines.push(`Station${' '.repeat(20)}N${' '.repeat(14)}E`);
-      stationEntriesForListing.forEach(([id, st]) => {
-        lines.push(
-          `${id.padEnd(24)}${(st.y * unitScale).toFixed(4).padStart(12)}${(st.x * unitScale).toFixed(14)}`,
-        );
-      });
-    }
-
-    const compareObsByInput = (a: Observation, b: Observation) => {
-      const aLine = a.sourceLine ?? Number.MAX_SAFE_INTEGER;
-      const bLine = b.sourceLine ?? Number.MAX_SAFE_INTEGER;
-      if (aLine !== bLine) return aLine - bLine;
-      return (a.id ?? 0) - (b.id ?? 0);
-    };
-    const compareObsByStations = (a: Observation, b: Observation) => {
-      const stationKey = (obs: Observation) =>
-        obs.type === 'angle'
-          ? `${obs.at}-${obs.from}-${obs.to}`
-          : obs.type === 'direction'
-            ? `${obs.at}-${obs.to}`
-            : `${obs.from}-${obs.to}`;
-      const cmp = stationKey(a).localeCompare(stationKey(b), undefined, { numeric: true });
-      if (cmp !== 0) return cmp;
-      return compareObsByInput(a, b);
-    };
-    const listingObservations = [...res.observations]
-      .filter((o) => Number.isFinite(o.stdRes))
-      .filter((o) =>
-        settings.listingShowAzimuthsBearings
-          ? true
-          : !(o.type === 'direction' || o.type === 'dir' || o.type === 'bearing'),
-      )
-      .sort((a, b) => {
-        if (settings.listingSortObservationsBy === 'input') return compareObsByInput(a, b);
-        if (settings.listingSortObservationsBy === 'name') return compareObsByStations(a, b);
-        return Math.abs(b.stdRes ?? 0) - Math.abs(a.stdRes ?? 0);
-      })
-      .slice(0, Math.min(500, Math.max(1, settings.listingObservationLimit)));
-    if (settings.listingShowObservationsResiduals && listingObservations.length > 0) {
-      lines.push('');
-      lines.push('                      Adjusted Observations and Residuals');
-      lines.push('                      ===================================');
-      lines.push('');
-      lines.push('Type      Stations               Obs             Residual        StdErr      StdRes   File:Line');
-      listingObservations.forEach((obs) => {
-        let stations = '-';
-        let obsText = '-';
-        let residualText = '-';
-        let stdErrText = '-';
-        if (obs.type === 'angle') {
-          stations = `${obs.at}-${obs.from}-${obs.to}`;
-          obsText = radToDmsStr(obs.obs);
-          residualText =
-            obs.residual != null
-              ? `${((obs.residual as number) * RAD_TO_DEG * 3600).toFixed(2)}"`
-              : '-';
-          stdErrText = `${(obs.stdDev * RAD_TO_DEG * 3600).toFixed(2)}"`;
-        } else if (obs.type === 'direction') {
-          stations = `${obs.at}-${obs.to}`;
-          obsText = radToDmsStr(obs.obs);
-          residualText =
-            obs.residual != null
-              ? `${((obs.residual as number) * RAD_TO_DEG * 3600).toFixed(2)}"`
-              : '-';
-          stdErrText = `${(obs.stdDev * RAD_TO_DEG * 3600).toFixed(2)}"`;
-        } else if (obs.type === 'dir' || obs.type === 'bearing' || obs.type === 'zenith') {
-          stations = `${obs.from}-${obs.to}`;
-          obsText = radToDmsStr(obs.obs);
-          residualText =
-            obs.residual != null
-              ? `${((obs.residual as number) * RAD_TO_DEG * 3600).toFixed(2)}"`
-              : '-';
-          stdErrText = `${(obs.stdDev * RAD_TO_DEG * 3600).toFixed(2)}"`;
-        } else if (obs.type === 'dist' || obs.type === 'lev') {
-          stations = `${obs.from}-${obs.to}`;
-          obsText = (obs.obs * unitScale).toFixed(4);
-          residualText =
-            obs.residual != null ? ((obs.residual as number) * unitScale).toFixed(4) : '-';
-          stdErrText = (obs.stdDev * unitScale).toFixed(4);
-        } else if (obs.type === 'gps') {
-          stations = `${obs.from}-${obs.to}`;
-          obsText = `dE=${(obs.obs.dE * unitScale).toFixed(3)},dN=${(obs.obs.dN * unitScale).toFixed(3)}`;
-          residualText =
-            obs.residual != null
-              ? `vE=${(obs.residual.vE * unitScale).toFixed(3)},vN=${(obs.residual.vN * unitScale).toFixed(3)}`
-              : '-';
-          stdErrText = (obs.stdDev * unitScale).toFixed(4);
-        }
-        stations = `${stations}${aliasRefsForLine(obs.sourceLine)}`;
-        lines.push(
-          `${obs.type.toUpperCase().padEnd(9)}${stations.padEnd(22)}${obsText.padEnd(16)}${residualText.padEnd(16)}${stdErrText.padEnd(12)}${(obs.stdRes ?? 0).toFixed(2).padStart(8)}   ${obs.sourceLine != null ? `1:${obs.sourceLine}` : '-'}`,
-        );
-      });
-    }
-    if (settings.listingShowErrorPropagation) {
-      lines.push('');
-      lines.push('                               Error Propagation');
-      lines.push('                               =================');
-      lines.push('');
-      lines.push(`                Station Coordinate Standard Deviations (${linearUnit})`);
-      lines.push('');
-      lines.push(`Station${' '.repeat(20)}N${' '.repeat(12)}E`);
-      stationEntriesForListing.forEach(([id, st]) => {
-        lines.push(
-          `${id.padEnd(24)}${(st.sN != null ? st.sN * unitScale : 0).toFixed(6).padStart(12)}${(st.sE != null ? st.sE * unitScale : 0).toFixed(14)}`,
-        );
-      });
-    }
-    if (res.clusterDiagnostics?.enabled) {
-      lines.push('');
-      lines.push('                          Cluster Detection Candidates');
-      lines.push('                          ============================');
-      lines.push('');
-      lines.push(
-        `Mode: ${res.clusterDiagnostics.linkageMode.toUpperCase()}   Dim: ${res.clusterDiagnostics.dimension}   Tol: ${(res.clusterDiagnostics.tolerance * unitScale).toFixed(4)} ${linearUnit}   PairHits: ${res.clusterDiagnostics.pairCount}   Candidates: ${res.clusterDiagnostics.candidateCount}`,
-      );
-      if (res.clusterDiagnostics.candidates.length > 0) {
-        lines.push('Key               Rep          Members   MaxSep        MeanSep       Flags           Station IDs');
-        res.clusterDiagnostics.candidates.forEach((c) => {
-          const flags = `${c.hasFixed ? 'fixed' : 'free'}${c.hasUnknown ? '+unknown' : ''}`;
-          lines.push(
-            `${c.key.padEnd(17)} ${c.representativeId.padEnd(12)} ${String(c.memberCount).padStart(7)} ${(
-              c.maxSeparation * unitScale
-            ).toFixed(4).padStart(12)} ${(
-              c.meanSeparation * unitScale
-            ).toFixed(4).padStart(12)} ${flags.padEnd(15)} ${c.stationIds.join(', ')}`,
-          );
-        });
-      }
-    }
-    if (aliasTrace.length > 0) {
-      lines.push('');
-      lines.push('                          Alias Canonicalization Trace');
-      lines.push('                          ============================');
-      lines.push('');
-      lines.push('Context    Detail              Line  Source Alias         Canonical ID         Reference');
-      aliasTrace.forEach((entry) => {
-        lines.push(
-          `${entry.context.padEnd(10)}${(entry.detail ?? '-').padEnd(20)}${String(entry.sourceLine ?? '-').padStart(6)}  ${entry.sourceId.padEnd(20)}${entry.canonicalId.padEnd(20)}${entry.reference ?? '-'}`,
-        );
-      });
-    }
-    if (settings.listingShowProcessingNotes) {
-      lines.push('');
-      lines.push('                               Processing Notes');
-      lines.push('                               ================');
-      res.logs.slice(0, 60).forEach((line) => lines.push(line));
-    }
-
-    return lines.join('\n');
   };
 
   const handleExportResults = async () => {
@@ -2819,6 +2643,8 @@ const App: React.FC = () => {
       setInput(text);
       setExcludedIds(new Set());
       setOverrides({});
+      setClusterReviewDecisions({});
+      setActiveClusterApprovedMerges([]);
     };
     reader.readAsText(file);
     e.target.value = '';
@@ -2832,10 +2658,14 @@ const App: React.FC = () => {
     excludeSet: Set<number>,
     parseOverride?: Partial<ParseSettings>,
     overrideValues: Record<number, ObservationOverride> = overrides,
+    approvedClusterMerges: ClusterApprovedMerge[] = activeClusterApprovedMerges,
   ): AdjustmentResult => {
     const mergedParse = { ...parseSettings, ...parseOverride };
     const profileCtx = resolveProfileContext(mergedParse);
     const effectiveParse = profileCtx.effectiveParse;
+    const normalizedClusterMerges = effectiveParse.clusterDetectionEnabled
+      ? normalizeClusterApprovedMerges(approvedClusterMerges)
+      : [];
     const engine = new LSAEngine({
       input,
       maxIterations: settings.maxIterations,
@@ -2864,6 +2694,8 @@ const App: React.FC = () => {
         robustMode: effectiveParse.robustMode,
         robustK: effectiveParse.robustK,
         directionSetMode: profileCtx.directionSetMode,
+        clusterDetectionEnabled: effectiveParse.clusterDetectionEnabled,
+        clusterApprovedMerges: normalizedClusterMerges,
         currentInstrument: profileCtx.currentInstrument,
         preferExternalInstruments: true,
       },
@@ -2875,6 +2707,7 @@ const App: React.FC = () => {
     base: AdjustmentResult,
     baseExclusions: Set<number>,
     overrideValues: Record<number, ObservationOverride>,
+    approvedClusterMerges: ClusterApprovedMerge[],
   ): NonNullable<AdjustmentResult['suspectImpactDiagnostics']> => {
     const baseChiPass = base.chiSquare?.pass95;
     const baseMaxStd = maxAbsStdRes(base);
@@ -2905,7 +2738,7 @@ const App: React.FC = () => {
       try {
         const nextExclusions = new Set(baseExclusions);
         nextExclusions.add(obs.id);
-        const alt = solveCore(nextExclusions, undefined, overrideValues);
+        const alt = solveCore(nextExclusions, undefined, overrideValues, approvedClusterMerges);
         const altMaxStd = maxAbsStdRes(alt);
         const altChiPass = alt.chiSquare?.pass95;
         let chiDelta: NonNullable<
@@ -2958,16 +2791,23 @@ const App: React.FC = () => {
   const solveWithImpacts = (
     excludeSet: Set<number>,
     overrideValues: Record<number, ObservationOverride> = overrides,
+    approvedClusterMerges: ClusterApprovedMerge[] = activeClusterApprovedMerges,
   ): AdjustmentResult => {
-    const solved = solveCore(excludeSet, undefined, overrideValues);
+    const solved = solveCore(excludeSet, undefined, overrideValues, approvedClusterMerges);
     solved.suspectImpactDiagnostics = buildSuspectImpactDiagnostics(
       solved,
       excludeSet,
       overrideValues,
+      approvedClusterMerges,
     );
     const profileCtx = resolveProfileContext(parseSettings);
     if (profileCtx.effectiveParse.robustMode !== 'none') {
-      const classical = solveCore(excludeSet, { robustMode: 'none' }, overrideValues);
+      const classical = solveCore(
+        excludeSet,
+        { robustMode: 'none' },
+        overrideValues,
+        approvedClusterMerges,
+      );
       const classicalTop = rankedSuspects(classical, 10);
       const robustTop = rankedSuspects(solved, 10);
       const robustIds = new Set(robustTop.map((r) => r.obsId));
@@ -2992,34 +2832,66 @@ const App: React.FC = () => {
     return solved;
   };
 
-  const runWithExclusions = (excludeSet: Set<number>) => {
+  const runWithExclusions = (
+    excludeSet: Set<number>,
+    approvedClusterMerges: ClusterApprovedMerge[] = activeClusterApprovedMerges,
+    reviewContext?: {
+      candidates: ClusterCandidate[];
+      decisions: Record<string, ClusterReviewDecision>;
+    },
+  ) => {
     const runStartMs = Date.now();
     let effectiveExclusions = excludeSet;
     let effectiveOverrides = overrides;
+    let effectiveClusterMerges = normalizeClusterApprovedMerges(approvedClusterMerges);
+    if (!parseSettings.clusterDetectionEnabled) {
+      effectiveClusterMerges = [];
+    }
     const inputChangedSinceLastRun = lastRunInput != null && input !== lastRunInput;
     const droppedExclusions = inputChangedSinceLastRun ? excludeSet.size : 0;
     const droppedOverrides = inputChangedSinceLastRun ? Object.keys(overrides).length : 0;
+    const droppedClusterMerges = inputChangedSinceLastRun ? effectiveClusterMerges.length : 0;
 
-    if (inputChangedSinceLastRun && (droppedExclusions > 0 || droppedOverrides > 0)) {
+    if (
+      inputChangedSinceLastRun &&
+      (droppedExclusions > 0 || droppedOverrides > 0 || droppedClusterMerges > 0)
+    ) {
       effectiveExclusions = new Set();
       effectiveOverrides = {};
+      effectiveClusterMerges = [];
       setExcludedIds(new Set());
       setOverrides({});
+      setClusterReviewDecisions({});
+      setActiveClusterApprovedMerges([]);
     }
 
-    const solved = solveWithImpacts(effectiveExclusions, effectiveOverrides);
+    const solved = solveWithImpacts(effectiveExclusions, effectiveOverrides, effectiveClusterMerges);
+    if (solved.clusterDiagnostics?.enabled) {
+      const contextCandidates =
+        reviewContext?.candidates ?? (result?.clusterDiagnostics?.candidates ?? []);
+      const contextDecisions = reviewContext?.decisions ?? clusterReviewDecisions;
+      const rejected = buildRejectedClusterProposals(contextCandidates, contextDecisions);
+      solved.clusterDiagnostics.rejectedProposals = rejected;
+      if (rejected.length > 0) {
+        solved.logs.unshift(`Cluster review: rejected proposals=${rejected.length}`);
+      }
+    }
     const runProfile = buildRunDiagnostics(parseSettings, solved);
     if (runProfile.parity) {
       solved.logs.unshift(
         'Solve profile: Industry Standard parity (raw directions, classical weighting, industry default instrument fallback).',
       );
     }
-    if (inputChangedSinceLastRun && (droppedExclusions > 0 || droppedOverrides > 0)) {
+    if (
+      inputChangedSinceLastRun &&
+      (droppedExclusions > 0 || droppedOverrides > 0 || droppedClusterMerges > 0)
+    ) {
       solved.logs.unshift(
-        `Input changed since previous run: cleared ${droppedExclusions} exclusion(s) and ${droppedOverrides} override(s).`,
+        `Input changed since previous run: cleared ${droppedExclusions} exclusion(s), ${droppedOverrides} override(s), and ${droppedClusterMerges} approved cluster merge(s).`,
       );
     }
     setLastRunInput(input);
+    setActiveClusterApprovedMerges(effectiveClusterMerges);
     setRunDiagnostics(runProfile);
     setRunElapsedMs(Date.now() - runStartMs);
     setResult(solved);
@@ -3027,14 +2899,20 @@ const App: React.FC = () => {
   };
 
   const handleRun = () => {
-    runWithExclusions(new Set(excludedIds));
+    runWithExclusions(new Set(excludedIds), activeClusterApprovedMerges, {
+      candidates: result?.clusterDiagnostics?.candidates ?? [],
+      decisions: clusterReviewDecisions,
+    });
   };
 
   const applyImpactExclusion = (id: number) => {
     const next = new Set(excludedIds);
     next.add(id);
     setExcludedIds(next);
-    runWithExclusions(next);
+    runWithExclusions(next, activeClusterApprovedMerges, {
+      candidates: result?.clusterDiagnostics?.candidates ?? [],
+      decisions: clusterReviewDecisions,
+    });
   };
 
   const openProjectOptions = () => {
@@ -3138,6 +3016,71 @@ const App: React.FC = () => {
   };
 
   const resetOverrides = () => setOverrides({});
+
+  const handleClusterDecisionStatus = (clusterKey: string, status: ClusterReviewStatus) => {
+    const candidate = result?.clusterDiagnostics?.candidates.find((c) => c.key === clusterKey);
+    if (!candidate) return;
+    setClusterReviewDecisions((prev) => {
+      const prior = prev[clusterKey];
+      const canonicalId =
+        prior && candidate.stationIds.includes(prior.canonicalId)
+          ? prior.canonicalId
+          : candidate.representativeId;
+      return {
+        ...prev,
+        [clusterKey]: {
+          status,
+          canonicalId,
+        },
+      };
+    });
+  };
+
+  const handleClusterCanonicalSelection = (clusterKey: string, canonicalId: string) => {
+    const candidate = result?.clusterDiagnostics?.candidates.find((c) => c.key === clusterKey);
+    if (!candidate) return;
+    if (!candidate.stationIds.includes(canonicalId)) return;
+    setClusterReviewDecisions((prev) => {
+      const prior = prev[clusterKey];
+      return {
+        ...prev,
+        [clusterKey]: {
+          status: prior?.status ?? 'pending',
+          canonicalId,
+        },
+      };
+    });
+  };
+
+  const applyClusterReviewMerges = () => {
+    const candidates = result?.clusterDiagnostics?.candidates ?? [];
+    const approved = buildApprovedClusterMerges(result, clusterReviewDecisions);
+    setActiveClusterApprovedMerges(approved);
+    runWithExclusions(new Set(excludedIds), approved, {
+      candidates,
+      decisions: clusterReviewDecisions,
+    });
+  };
+
+  const resetClusterReview = () => {
+    const candidates = result?.clusterDiagnostics?.candidates ?? [];
+    const next: Record<string, ClusterReviewDecision> = {};
+    candidates.forEach((candidate) => {
+      next[candidate.key] = {
+        status: 'pending',
+        canonicalId: candidate.representativeId,
+      };
+    });
+    setClusterReviewDecisions(next);
+  };
+
+  const clearClusterApprovedMerges = () => {
+    setActiveClusterApprovedMerges([]);
+    runWithExclusions(new Set(excludedIds), [], {
+      candidates: result?.clusterDiagnostics?.candidates ?? [],
+      decisions: clusterReviewDecisions,
+    });
+  };
 
   const handleResetToLastRun = () => {
     if (lastRunInput != null) setInput(lastRunInput);
@@ -3339,6 +3282,21 @@ const App: React.FC = () => {
                         <option value="2D">2D</option>
                         <option value="3D">3D</option>
                       </select>
+                    </label>
+                    <label className={optionLabelClass}>
+                      Cluster Detection
+                      <div className="mt-1 flex items-center gap-2 text-xs">
+                        <input
+                          title={SETTINGS_TOOLTIPS.clusterDetection}
+                          type="checkbox"
+                          className="accent-blue-400"
+                          checked={parseSettingsDraft.clusterDetectionEnabled}
+                          onChange={(e) =>
+                            handleDraftParseSetting('clusterDetectionEnabled', e.target.checked)
+                          }
+                        />
+                        <span>{parseSettingsDraft.clusterDetectionEnabled ? 'Enabled' : 'Disabled'}</span>
+                      </div>
                     </label>
                     <div className="grid grid-cols-2 gap-3">
                       <label className={optionLabelClass}>
@@ -4227,6 +4185,13 @@ const App: React.FC = () => {
                     overrides={overrides}
                     onOverride={handleOverride}
                     onResetOverrides={resetOverrides}
+                    clusterReviewDecisions={clusterReviewDecisions}
+                    activeClusterApprovedMerges={activeClusterApprovedMerges}
+                    onClusterDecisionStatus={handleClusterDecisionStatus}
+                    onClusterCanonicalSelection={handleClusterCanonicalSelection}
+                    onApplyClusterMerges={applyClusterReviewMerges}
+                    onResetClusterReview={resetClusterReview}
+                    onClearClusterMerges={clearClusterApprovedMerges}
                   />
                 )}
                 {activeTab === 'processing-summary' && (
@@ -4257,5 +4222,6 @@ const App: React.FC = () => {
 };
 
 export default App;
+
 
 
