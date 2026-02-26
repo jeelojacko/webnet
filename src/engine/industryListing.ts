@@ -101,6 +101,22 @@ export const buildIndustryStyleListingText = (
       (obs) => !observationReferencesHiddenLostStation(obs),
     );
     const aliasTrace = parseState?.aliasTrace ?? [];
+    const descriptionTrace = parseState?.descriptionTrace ?? [];
+    const descriptionScanSummary = parseState?.descriptionScanSummary ?? [];
+    const descriptionRefsByStation = descriptionTrace.reduce<
+      Map<string, { key: string; description: string; lines: number[] }[]>
+    >((acc, entry) => {
+      const rows = acc.get(entry.stationId) ?? [];
+      const key = entry.description.replace(/\s+/g, ' ').trim().toUpperCase();
+      const existing = rows.find((row) => row.key === key);
+      if (existing) {
+        if (!existing.lines.includes(entry.sourceLine)) existing.lines.push(entry.sourceLine);
+      } else {
+        rows.push({ key, description: entry.description, lines: [entry.sourceLine] });
+      }
+      acc.set(entry.stationId, rows);
+      return acc;
+    }, new Map());
     const aliasObsRefsByLine = new Map<number, string[]>();
     aliasTrace.forEach((entry) => {
       if (entry.context !== 'observation') return;
@@ -827,6 +843,30 @@ export const buildIndustryStyleListingText = (
           );
         });
       }
+    }
+    if (descriptionScanSummary.length > 0) {
+      lines.push('');
+      lines.push('                     Description Reconciliation Summary');
+      lines.push('                     ==================================');
+      lines.push('');
+      lines.push(
+        `Mode: ${descriptionReconcileMode.toUpperCase()}${descriptionReconcileMode === 'append' ? ` (delimiter="${descriptionAppendDelimiter}")` : ''}   Stations: ${descriptionScanSummary.length}   Repeated: ${parseState?.descriptionRepeatedStationCount ?? 0}   Conflicts: ${parseState?.descriptionConflictCount ?? 0}`,
+      );
+      lines.push('Station      Records  Unique  Conflict  Description@Lines');
+      descriptionScanSummary
+        .slice()
+        .sort((a, b) => a.stationId.localeCompare(b.stationId, undefined, { numeric: true }))
+        .forEach((row) => {
+          const details = (descriptionRefsByStation.get(row.stationId) ?? [])
+            .map((detail) => {
+              const linesRef = detail.lines.slice().sort((a, b) => a - b).join(',');
+              return `${detail.description}[${linesRef}]`;
+            })
+            .join('; ');
+          lines.push(
+            `${row.stationId.padEnd(11)}${String(row.recordCount).padStart(8)}${String(row.uniqueCount).padStart(8)}  ${(row.conflict ? 'YES' : 'no ').padEnd(8)}  ${details || '-'}`,
+          );
+        });
     }
     if (aliasTrace.length > 0) {
       lines.push('');

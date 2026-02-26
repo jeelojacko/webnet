@@ -1000,6 +1000,23 @@ const App: React.FC = () => {
         lines.push(`Alias rules: ${aliasRules.map((r) => `${r.rule}@${r.sourceLine}`).join('; ')}`);
       }
     }
+    const descriptionScanSummary = res.parseState?.descriptionScanSummary ?? [];
+    const descriptionTrace = res.parseState?.descriptionTrace ?? [];
+    if (descriptionScanSummary.length > 0) {
+      lines.push(
+        `Description scan: stations=${descriptionScanSummary.length}, repeated=${res.parseState?.descriptionRepeatedStationCount ?? 0}, conflicts=${res.parseState?.descriptionConflictCount ?? 0}`,
+      );
+      descriptionScanSummary
+        .filter((row) => row.conflict)
+        .slice(0, 20)
+        .forEach((row) => {
+          const details = descriptionTrace
+            .filter((entry) => entry.stationId === row.stationId)
+            .map((entry) => `${entry.description}[${entry.sourceLine}]`)
+            .join('; ');
+          lines.push(`  ${row.stationId}: ${details}`);
+        });
+    }
     lines.push('');
     lines.push(`Status: ${res.converged ? 'CONVERGED' : 'NOT CONVERGED'}`);
     lines.push(`Iterations: ${res.iterations}`);

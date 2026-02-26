@@ -141,10 +141,10 @@
       - [x] Phase 1: add project options and inline override parsing for fixed angular/linear sigma constants
       - [x] Phase 2: replace hard-coded fixed defaults in weighting logic with configured constants and profile reporting
       - [x] Phase 3: add parity tests confirming expected SEUW/residual effects under alternate fixed sigma settings
-    - [~] Add inconsistent-description reconciliation (append/first behavior) plus listing summary for repeated point IDs
+    - [x] Add inconsistent-description reconciliation (append/first behavior) plus listing summary for repeated point IDs
       - [x] Phase 1: build description consistency scanner across loaded files/records grouped by station ID
       - [x] Phase 2: implement reconciliation policies (first vs append with custom delimiter) applied to rendered outputs
-      - [ ] Phase 3: add listing/report summary section with file-line references for conflicts and update tests
+      - [x] Phase 3: add listing/report summary section with file-line references for conflicts and update tests
     - [ ] Add industry-style "effective distance" reporting alongside angular residuals in adjusted observation tables
       - [ ] Phase 1: compute effective distance metrics for angular observation families during statistics pass
       - [ ] Phase 2: add columns/formatting in report, processing summary, and industry-style export outputs

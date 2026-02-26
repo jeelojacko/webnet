@@ -130,6 +130,29 @@ const ReportView: React.FC<ReportViewProps> = ({
     if (ca !== cb) return ca.localeCompare(cb)
     return a.sourceId.localeCompare(b.sourceId)
   })
+  const descriptionTrace = [...(result.parseState?.descriptionTrace ?? [])].sort((a, b) => {
+    if (a.sourceLine !== b.sourceLine) return a.sourceLine - b.sourceLine
+    return a.stationId.localeCompare(b.stationId, undefined, { numeric: true })
+  })
+  const descriptionScanSummary = [...(result.parseState?.descriptionScanSummary ?? [])].sort((a, b) =>
+    a.stationId.localeCompare(b.stationId, undefined, { numeric: true }),
+  )
+  const descriptionConflicts = descriptionScanSummary.filter((row) => row.conflict)
+  const descriptionRefsByStation = descriptionTrace.reduce<
+    Map<string, { key: string; description: string; lines: number[] }[]>
+  >((acc, entry) => {
+    const key = entry.stationId
+    const rows = acc.get(key) ?? []
+    const normalized = entry.description.replace(/\s+/g, ' ').trim().toUpperCase()
+    const existing = rows.find((row) => row.key === normalized)
+    if (existing) {
+      if (!existing.lines.includes(entry.sourceLine)) existing.lines.push(entry.sourceLine)
+    } else {
+      rows.push({ key: normalized, description: entry.description, lines: [entry.sourceLine] })
+    }
+    acc.set(key, rows)
+    return acc
+  }, new Map())
   const clusterDiagnostics = result.clusterDiagnostics
   const clusterCandidates = clusterDiagnostics?.candidates ?? []
   const clusterAppliedMerges =
@@ -990,6 +1013,75 @@ const ReportView: React.FC<ReportViewProps> = ({
               Showing first 200 rows of {aliasTrace.length}. Full trace available in export output.
             </div>
           )}
+        </div>
+      )}
+
+      {descriptionScanSummary.length > 0 && (
+        <div className="mb-6 border border-slate-800 rounded overflow-hidden">
+          <div className="px-3 py-2 text-xs text-slate-400 uppercase tracking-wider border-b border-slate-800 bg-slate-900/40">
+            Description Reconciliation Summary
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-3 text-xs text-slate-300 border-b border-slate-800/60">
+            <div>
+              <div className="text-slate-500">Mode</div>
+              <div>
+                {descriptionReconcileMode.toUpperCase()}
+                {descriptionReconcileMode === 'append' ? ` ("${descriptionAppendDelimiter}")` : ''}
+              </div>
+            </div>
+            <div>
+              <div className="text-slate-500">Stations</div>
+              <div>{descriptionScanSummary.length}</div>
+            </div>
+            <div>
+              <div className="text-slate-500">Repeated IDs</div>
+              <div>{result.parseState?.descriptionRepeatedStationCount ?? 0}</div>
+            </div>
+            <div>
+              <div className="text-slate-500">Conflicts</div>
+              <div className={descriptionConflicts.length > 0 ? 'text-amber-300' : ''}>
+                {descriptionConflicts.length}
+              </div>
+            </div>
+          </div>
+          <div className="overflow-x-auto w-full">
+            <table className="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr className="text-slate-500 border-b border-slate-800">
+                  <th className="py-2 px-3 font-semibold">Station</th>
+                  <th className="py-2 px-3 font-semibold text-right">Records</th>
+                  <th className="py-2 px-3 font-semibold text-right">Unique</th>
+                  <th className="py-2 px-3 font-semibold text-center">Conflict</th>
+                  <th className="py-2 px-3 font-semibold">Descriptions (line refs)</th>
+                </tr>
+              </thead>
+              <tbody className="text-slate-300">
+                {descriptionScanSummary.map((row) => {
+                  const details = (descriptionRefsByStation.get(row.stationId) ?? [])
+                    .map((detail) => {
+                      const lines = detail.lines.slice().sort((a, b) => a - b).join(', ');
+                      return `${detail.description} [${lines}]`;
+                    })
+                    .join(' ; ');
+                  return (
+                    <tr key={`desc-summary-${row.stationId}`} className="border-b border-slate-800/50">
+                      <td className="py-1 px-3 font-mono">{row.stationId}</td>
+                      <td className="py-1 px-3 text-right">{row.recordCount}</td>
+                      <td className="py-1 px-3 text-right">{row.uniqueCount}</td>
+                      <td className="py-1 px-3 text-center">
+                        {row.conflict ? (
+                          <span className="text-amber-300 font-semibold">YES</span>
+                        ) : (
+                          <span className="text-slate-500">no</span>
+                        )}
+                      </td>
+                      <td className="py-1 px-3 text-slate-400">{details || '-'}</td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 

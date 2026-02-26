@@ -479,7 +479,9 @@ describe('industry listing phase 5 formatting locks', () => {
     );
     expect(listing).toContain('Description Reconciliation');
     expect(listing).toContain('APPEND (delimiter="/")');
+    expect(listing).toContain('Description Reconciliation Summary');
     expect(listing).toMatch(/^\s*A\s+Alpha\/Beta\s+-?\d+\.\d{4}\s+-?\d+\.\d{4}\s*$/m);
+    expect(listing).toMatch(/^\s*A\s+2\s+2\s+YES\s+Alpha\[3\]; Beta\[4\]\s*$/m);
   });
 
   it('reports active QFIX constants in project option settings', () => {
