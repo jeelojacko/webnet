@@ -1004,6 +1004,12 @@ const App: React.FC = () => {
         `Auto-adjust: ON (|t|>=${ad.threshold.toFixed(2)}, maxCycles=${ad.maxCycles}, maxRemovalsPerCycle=${ad.maxRemovalsPerCycle}, minRedund=${ad.minRedundancy.toFixed(2)}, stop=${ad.stopReason}, removed=${ad.removed.length})`,
       );
     }
+    if (res.autoSideshotDiagnostics?.enabled) {
+      const sd = res.autoSideshotDiagnostics;
+      lines.push(
+        `Auto sideshot (M-lines): evaluated=${sd.evaluatedCount}, candidates=${sd.candidateCount}, excludedControl=${sd.excludedControlCount}, threshold=${sd.threshold.toFixed(2)}`,
+      );
+    }
     lines.push('');
     lines.push('--- Adjusted Coordinates ---');
     lines.push(
@@ -1256,6 +1262,24 @@ const App: React.FC = () => {
         ad.removed.forEach((row) => {
           lines.push(
             `${String(row.obsId).padStart(5)}   ${row.type.toUpperCase().padEnd(10)}  ${row.stations.padEnd(22)}  ${String(row.sourceLine ?? '-').padStart(4)}  ${row.stdRes.toFixed(2).padStart(6)}  ${(row.redundancy != null ? row.redundancy.toFixed(3) : '-').padStart(7)}  ${row.reason}`,
+          );
+        });
+      }
+      lines.push('');
+    }
+    if (res.autoSideshotDiagnostics?.enabled) {
+      const sd = res.autoSideshotDiagnostics;
+      lines.push('--- Auto Sideshot Candidates (M Records) ---');
+      lines.push(
+        `Evaluated=${sd.evaluatedCount} Candidates=${sd.candidateCount} ExcludedControl=${sd.excludedControlCount} Threshold=${sd.threshold.toFixed(2)}`,
+      );
+      if (sd.candidates.length > 0) {
+        lines.push(
+          'Line   Occupy   Backsight   Target   AngleObs   DistObs   AngleRed   DistRed   MinRed   Max|t|',
+        );
+        sd.candidates.forEach((row) => {
+          lines.push(
+            `${String(row.sourceLine ?? '-').padStart(4)}   ${row.occupy.padEnd(6)}   ${row.backsight.padEnd(9)}   ${row.target.padEnd(6)}   ${String(row.angleObsId).padStart(8)}   ${String(row.distObsId).padStart(7)}   ${row.angleRedundancy.toFixed(3).padStart(8)}   ${row.distRedundancy.toFixed(3).padStart(7)}   ${row.minRedundancy.toFixed(3).padStart(6)}   ${row.maxAbsStdRes.toFixed(2).padStart(6)}`,
           );
         });
       }

@@ -612,6 +612,28 @@ describe('LSAEngine', () => {
     expect(Math.abs((side?.easting ?? 0) - 10)).toBeLessThan(0.25);
     expect(Math.abs(side?.northing ?? 0)).toBeLessThan(0.25);
   });
-});
 
+  it('detects non-redundant M-record auto-sideshot candidates and excludes control targets', () => {
+    const input = [
+      '.2D',
+      '.ORDER EN ATFROMTO',
+      'C O 0 0 0 ! !',
+      'C BS 100 0 0 ! !',
+      'C CTRL 40 80 0 ! !',
+      'M O-BS-U1 063-26-06.0 89.4427',
+      'M O-BS-CTRL 063-26-06.0 89.4427',
+    ].join('\n');
+
+    const result = new LSAEngine({ input, maxIterations: 10 }).solve();
+    const diag = result.autoSideshotDiagnostics;
+    expect(diag?.enabled).toBe(true);
+    expect(diag?.evaluatedCount).toBe(2);
+    expect(diag?.excludedControlCount).toBe(1);
+    expect(diag?.candidateCount).toBe(1);
+    expect(diag?.candidates[0].occupy).toBe('O');
+    expect(diag?.candidates[0].backsight).toBe('BS');
+    expect(diag?.candidates[0].target).toBe('U1');
+    expect(result.logs.some((l) => l.includes('Auto-sideshot detection (M-lines)'))).toBe(true);
+  });
+});
 

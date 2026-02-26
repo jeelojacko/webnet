@@ -136,6 +136,7 @@ const ReportView: React.FC<ReportViewProps> = ({
   const clusterMergeOutcomes = clusterDiagnostics?.mergeOutcomes ?? []
   const clusterRejectedProposals = clusterDiagnostics?.rejectedProposals ?? []
   const autoAdjustDiagnostics = result.autoAdjustDiagnostics
+  const autoSideshotDiagnostics = result.autoSideshotDiagnostics
   const clusterReviewStats = clusterCandidates.reduce(
     (acc, candidate) => {
       const decision = clusterReviewDecisions[candidate.key]
@@ -1309,6 +1310,75 @@ const ReportView: React.FC<ReportViewProps> = ({
                   ))}
                 </tbody>
               </table>
+            </div>
+          )}
+        </div>
+      )}
+
+      {autoSideshotDiagnostics?.enabled && (
+        <div className="mb-6 border border-slate-800 rounded overflow-hidden">
+          <div className="px-3 py-2 text-xs text-slate-400 uppercase tracking-wider border-b border-slate-800 bg-slate-900/40">
+            Auto Sideshot Candidates (M Records)
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-3 text-xs text-slate-300 border-b border-slate-800/60">
+            <div>
+              <div className="text-slate-500">Evaluated M Pairs</div>
+              <div>{autoSideshotDiagnostics.evaluatedCount}</div>
+            </div>
+            <div>
+              <div className="text-slate-500">Candidates</div>
+              <div>{autoSideshotDiagnostics.candidateCount}</div>
+            </div>
+            <div>
+              <div className="text-slate-500">Excluded Control Targets</div>
+              <div>{autoSideshotDiagnostics.excludedControlCount}</div>
+            </div>
+            <div>
+              <div className="text-slate-500">Min Redundancy Threshold</div>
+              <div>{autoSideshotDiagnostics.threshold.toFixed(2)}</div>
+            </div>
+          </div>
+          {autoSideshotDiagnostics.candidates.length > 0 ? (
+            <div className="overflow-x-auto w-full">
+              <table className="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr className="text-slate-500 border-b border-slate-800">
+                    <th className="py-2 px-3 font-semibold text-right">Line</th>
+                    <th className="py-2 px-3 font-semibold">Occupy</th>
+                    <th className="py-2 px-3 font-semibold">Backsight</th>
+                    <th className="py-2 px-3 font-semibold">Target</th>
+                    <th className="py-2 px-3 font-semibold text-right">Angle Obs</th>
+                    <th className="py-2 px-3 font-semibold text-right">Dist Obs</th>
+                    <th className="py-2 px-3 font-semibold text-right">Angle Red</th>
+                    <th className="py-2 px-3 font-semibold text-right">Dist Red</th>
+                    <th className="py-2 px-3 font-semibold text-right">Min Red</th>
+                    <th className="py-2 px-3 font-semibold text-right">Max |t|</th>
+                  </tr>
+                </thead>
+                <tbody className="text-slate-300">
+                  {autoSideshotDiagnostics.candidates.map((row, idx) => (
+                    <tr
+                      key={`auto-sideshot-${row.sourceLine ?? 'na'}-${row.target}-${idx}`}
+                      className="border-b border-slate-800/50"
+                    >
+                      <td className="py-1 px-3 text-right font-mono">{row.sourceLine ?? '-'}</td>
+                      <td className="py-1 px-3 font-mono">{row.occupy}</td>
+                      <td className="py-1 px-3 font-mono">{row.backsight}</td>
+                      <td className="py-1 px-3 font-mono">{row.target}</td>
+                      <td className="py-1 px-3 text-right font-mono">{row.angleObsId}</td>
+                      <td className="py-1 px-3 text-right font-mono">{row.distObsId}</td>
+                      <td className="py-1 px-3 text-right font-mono">{row.angleRedundancy.toFixed(3)}</td>
+                      <td className="py-1 px-3 text-right font-mono">{row.distRedundancy.toFixed(3)}</td>
+                      <td className="py-1 px-3 text-right font-mono">{row.minRedundancy.toFixed(3)}</td>
+                      <td className="py-1 px-3 text-right font-mono">{row.maxAbsStdRes.toFixed(2)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="px-3 py-2 text-xs text-slate-500">
+              No non-redundant M-record sideshot candidates met the current threshold.
             </div>
           )}
         </div>
@@ -2537,4 +2607,3 @@ const ReportView: React.FC<ReportViewProps> = ({
 }
 
 export default ReportView
-

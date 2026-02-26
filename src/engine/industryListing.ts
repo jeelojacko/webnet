@@ -114,6 +114,11 @@ export const buildIndustryStyleListingText = (
         `      Auto-Adjust                        : ON (|t|>=${res.autoAdjustDiagnostics.threshold.toFixed(2)}, cycles=${res.autoAdjustDiagnostics.maxCycles}, maxRm/cycle=${res.autoAdjustDiagnostics.maxRemovalsPerCycle}, minRedund=${res.autoAdjustDiagnostics.minRedundancy.toFixed(2)}, stop=${res.autoAdjustDiagnostics.stopReason}, removed=${res.autoAdjustDiagnostics.removed.length})`,
       );
     }
+    if (res.autoSideshotDiagnostics?.enabled) {
+      lines.push(
+        `      Auto Sideshot (M-lines)            : ON (evaluated=${res.autoSideshotDiagnostics.evaluatedCount}, candidates=${res.autoSideshotDiagnostics.candidateCount}, excluded-control=${res.autoSideshotDiagnostics.excludedControlCount}, minRedund<${res.autoSideshotDiagnostics.threshold.toFixed(2)})`,
+      );
+    }
     if ((parseState?.aliasExplicitCount ?? 0) > 0 || (parseState?.aliasRuleCount ?? 0) > 0) {
       lines.push(
         `      Alias Canonicalization              : explicit=${parseState?.aliasExplicitCount ?? 0}, rules=${parseState?.aliasRuleCount ?? 0}, references=${aliasTrace.length}`,
@@ -670,6 +675,28 @@ export const buildIndustryStyleListingText = (
             `${String(row.obsId).padStart(5)}    ${row.type.toUpperCase().padEnd(10)}  ${row.stations.padEnd(22)}  ${String(row.sourceLine ?? '-').padStart(4)}  ${row.stdRes.toFixed(2).padStart(6)}  ${(row.redundancy != null ? row.redundancy.toFixed(3) : '-').padStart(7)}  ${row.reason}`,
           );
         });
+      }
+    }
+    if (res.autoSideshotDiagnostics?.enabled) {
+      const sd = res.autoSideshotDiagnostics;
+      lines.push('');
+      lines.push('                         Auto Sideshot Candidates (M Records)');
+      lines.push('                         =====================================');
+      lines.push('');
+      lines.push(
+        `Evaluated: ${sd.evaluatedCount}   Candidates: ${sd.candidateCount}   Excluded Control Targets: ${sd.excludedControlCount}   Threshold: minRedund < ${sd.threshold.toFixed(2)}`,
+      );
+      if (sd.candidates.length > 0) {
+        lines.push(
+          'Line    Occupy       Backsight    Target      AngleObs  DistObs  AngleRed  DistRed   MinRed   Max|t|',
+        );
+        sd.candidates.forEach((row) => {
+          lines.push(
+            `${String(row.sourceLine ?? '-').padStart(4)}    ${row.occupy.padEnd(10)} ${row.backsight.padEnd(12)} ${row.target.padEnd(10)} ${String(row.angleObsId).padStart(8)} ${String(row.distObsId).padStart(8)} ${row.angleRedundancy.toFixed(3).padStart(8)} ${row.distRedundancy.toFixed(3).padStart(8)} ${row.minRedundancy.toFixed(6)} ${row.maxAbsStdRes.toFixed(2).padStart(8)}`,
+          );
+        });
+      } else {
+        lines.push('(none)');
       }
     }
     if (res.clusterDiagnostics?.enabled) {

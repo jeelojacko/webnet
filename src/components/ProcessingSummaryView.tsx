@@ -146,6 +146,20 @@ const ProcessingSummaryView: React.FC<ProcessingSummaryViewProps> = ({
         lines.push(`  ... ${ad.removed.length - 30} more removed observations`);
       }
     }
+    if (result.autoSideshotDiagnostics?.enabled) {
+      const sd = result.autoSideshotDiagnostics;
+      lines.push(
+        `Auto Sideshot (M-lines): evaluated=${sd.evaluatedCount}, candidates=${sd.candidateCount}, excludedControl=${sd.excludedControlCount}, threshold=${sd.threshold.toFixed(2)}`,
+      );
+      sd.candidates.slice(0, 20).forEach((row) => {
+        lines.push(
+          `  line=${row.sourceLine ?? '-'} ${row.occupy}->${row.target} (bs=${row.backsight}) minRed=${row.minRedundancy.toFixed(3)} max|t|=${row.maxAbsStdRes.toFixed(2)}`,
+        );
+      });
+      if (sd.candidates.length > 20) {
+        lines.push(`  ... ${sd.candidates.length - 20} more auto-sideshot candidates`);
+      }
+    }
     const aliasTrace = result.parseState?.aliasTrace ?? [];
     if ((result.parseState?.aliasExplicitCount ?? 0) > 0 || (result.parseState?.aliasRuleCount ?? 0) > 0) {
       lines.push(
@@ -222,4 +236,3 @@ const ProcessingSummaryView: React.FC<ProcessingSummaryViewProps> = ({
 };
 
 export default ProcessingSummaryView;
-

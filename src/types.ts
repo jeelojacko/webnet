@@ -296,6 +296,28 @@ export interface AutoAdjustDiagnostics {
   removed: AutoAdjustRemoval[];
 }
 
+export interface AutoSideshotCandidate {
+  sourceLine?: number;
+  occupy: StationId;
+  backsight: StationId;
+  target: StationId;
+  angleObsId: number;
+  distObsId: number;
+  angleRedundancy: number;
+  distRedundancy: number;
+  minRedundancy: number;
+  maxAbsStdRes: number;
+}
+
+export interface AutoSideshotDiagnostics {
+  enabled: boolean;
+  threshold: number;
+  evaluatedCount: number;
+  excludedControlCount: number;
+  candidateCount: number;
+  candidates: AutoSideshotCandidate[];
+}
+
 export interface AliasExplicitMapping {
   sourceId: StationId;
   canonicalId: StationId;
@@ -702,5 +724,6 @@ export interface AdjustmentResult {
     }[];
   };
   autoAdjustDiagnostics?: AutoAdjustDiagnostics;
+  autoSideshotDiagnostics?: AutoSideshotDiagnostics;
   directionRejectDiagnostics?: DirectionRejectDiagnostic[];
 }

@@ -204,6 +204,7 @@ export class LSAEngine {
   private residualDiagnostics?: AdjustmentResult['residualDiagnostics'];
   private traverseDiagnostics?: AdjustmentResult['traverseDiagnostics'];
   private sideshots?: AdjustmentResult['sideshots'];
+  private autoSideshotDiagnostics?: AdjustmentResult['autoSideshotDiagnostics'];
   private clusterDiagnostics?: AdjustmentResult['clusterDiagnostics'];
   private condition?: AdjustmentResult['condition'];
   private controlConstraints?: AdjustmentResult['controlConstraints'];
@@ -1096,6 +1097,97 @@ export class LSAEngine {
     });
   }
 
+  private redundancyScalar(obs: Observation): number | undefined {
+    if (typeof obs.redundancy === 'number') {
+      return Number.isFinite(obs.redundancy) ? obs.redundancy : undefined;
+    }
+    if (obs.redundancy && typeof obs.redundancy === 'object') {
+      const rE = obs.redundancy.rE;
+      const rN = obs.redundancy.rN;
+      if (Number.isFinite(rE) && Number.isFinite(rN)) return Math.min(rE, rN);
+    }
+    return undefined;
+  }
+
+  private computeAutoSideshotDiagnostics(): NonNullable<AdjustmentResult['autoSideshotDiagnostics']> {
+    const threshold = 0.1;
+    type MPair = { angle?: Observation; dist?: Observation };
+    const byLine = new Map<number, MPair>();
+
+    this.observations.forEach((obs) => {
+      const sourceLine = obs.sourceLine;
+      if (sourceLine == null) return;
+      if (obs.type === 'angle' && String((obs as any).setId ?? '') === '') {
+        const row = byLine.get(sourceLine) ?? {};
+        row.angle = obs;
+        byLine.set(sourceLine, row);
+      } else if (
+        obs.type === 'dist' &&
+        obs.subtype === 'ts' &&
+        String((obs as any).setId ?? '') === ''
+      ) {
+        const row = byLine.get(sourceLine) ?? {};
+        row.dist = obs;
+        byLine.set(sourceLine, row);
+      }
+    });
+
+    const candidates: NonNullable<AdjustmentResult['autoSideshotDiagnostics']>['candidates'] = [];
+    let evaluatedCount = 0;
+    let excludedControlCount = 0;
+
+    [...byLine.entries()]
+      .sort((a, b) => a[0] - b[0])
+      .forEach(([sourceLine, pair]) => {
+        const angle = pair.angle;
+        const dist = pair.dist;
+        if (!angle || !dist || angle.type !== 'angle' || dist.type !== 'dist') return;
+        if (angle.at !== dist.from || angle.to !== dist.to) return;
+        evaluatedCount += 1;
+
+        const targetStation = this.stations[dist.to];
+        if (targetStation?.fixed) {
+          excludedControlCount += 1;
+          return;
+        }
+
+        const angleRedundancy = this.redundancyScalar(angle) ?? 0;
+        const distRedundancy = this.redundancyScalar(dist) ?? 0;
+        const minRedundancy = Math.min(angleRedundancy, distRedundancy);
+        if (minRedundancy >= threshold) return;
+
+        candidates.push({
+          sourceLine,
+          occupy: angle.at,
+          backsight: angle.from,
+          target: angle.to,
+          angleObsId: angle.id,
+          distObsId: dist.id,
+          angleRedundancy,
+          distRedundancy,
+          minRedundancy,
+          maxAbsStdRes: Math.max(Math.abs(angle.stdRes ?? 0), Math.abs(dist.stdRes ?? 0)),
+        });
+      });
+
+    candidates.sort((a, b) => {
+      if (a.minRedundancy !== b.minRedundancy) return a.minRedundancy - b.minRedundancy;
+      if (b.maxAbsStdRes !== a.maxAbsStdRes) return b.maxAbsStdRes - a.maxAbsStdRes;
+      const la = a.sourceLine ?? Number.MAX_SAFE_INTEGER;
+      const lb = b.sourceLine ?? Number.MAX_SAFE_INTEGER;
+      return la - lb;
+    });
+
+    return {
+      enabled: true,
+      threshold,
+      evaluatedCount,
+      excludedControlCount,
+      candidateCount: candidates.length,
+      candidates,
+    };
+  }
+
   private normalizeApprovedClusterMerges(
     merges?: ClusterApprovedMerge[],
   ): ClusterApprovedMerge[] {
@@ -1282,6 +1374,7 @@ export class LSAEngine {
     this.condition = undefined;
     this.controlConstraints = undefined;
     this.sideshots = undefined;
+    this.autoSideshotDiagnostics = undefined;
     this.tsCorrelationDiagnostics = undefined;
     this.robustDiagnostics = undefined;
     this.residualDiagnostics = undefined;
@@ -2486,6 +2579,7 @@ export class LSAEngine {
     this.setupDiagnostics = undefined;
     this.residualDiagnostics = undefined;
     this.traverseDiagnostics = undefined;
+    this.autoSideshotDiagnostics = undefined;
 
     if (this.dof > 0) {
       const alpha = 0.05;
@@ -4111,6 +4205,17 @@ export class LSAEngine {
     if (!this.sideshots) {
       this.sideshots = this.computeSideshotResults();
     }
+    if (!this.autoSideshotDiagnostics) {
+      this.autoSideshotDiagnostics = this.computeAutoSideshotDiagnostics();
+      this.logs.push(
+        `Auto-sideshot detection (M-lines): evaluated=${this.autoSideshotDiagnostics.evaluatedCount}, candidates=${this.autoSideshotDiagnostics.candidateCount}, excluded-control=${this.autoSideshotDiagnostics.excludedControlCount}, threshold=${this.autoSideshotDiagnostics.threshold.toFixed(2)}`,
+      );
+      this.autoSideshotDiagnostics.candidates.slice(0, 10).forEach((c) => {
+        this.logs.push(
+          `  line ${c.sourceLine ?? '-'} ${c.occupy}->${c.target} (bs=${c.backsight}) minRed=${c.minRedundancy.toFixed(3)} max|t|=${c.maxAbsStdRes.toFixed(2)}`,
+        );
+      });
+    }
     if (!this.clusterDiagnostics) {
       this.clusterDiagnostics = this.computeClusterDiagnostics();
       if (this.clusterDiagnostics.enabled) {
@@ -4154,6 +4259,7 @@ export class LSAEngine {
       residualDiagnostics: this.residualDiagnostics,
       traverseDiagnostics: this.traverseDiagnostics,
       sideshots: this.sideshots,
+      autoSideshotDiagnostics: this.autoSideshotDiagnostics,
       clusterDiagnostics: this.clusterDiagnostics,
       directionRejectDiagnostics: this.directionRejectDiagnostics,
     };
