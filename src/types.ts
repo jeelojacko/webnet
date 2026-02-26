@@ -89,6 +89,8 @@ export interface DistanceObservation extends ObservationBase {
   hi?: number;
   ht?: number;
   mode?: 'slope' | 'horiz';
+  prismCorrectionM?: number;
+  prismScope?: 'global' | 'set';
   calc?: number | SideshotCalcMeta;
   residual?: number;
   stdRes?: number;
@@ -190,6 +192,8 @@ export interface ZenithObservation extends ObservationBase {
   obs: number; // radians
   hi?: number;
   ht?: number;
+  prismCorrectionM?: number;
+  prismScope?: 'global' | 'set';
   calc?: number | SideshotCalcMeta;
   residual?: number;
   stdRes?: number;

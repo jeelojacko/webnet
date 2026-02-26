@@ -485,6 +485,17 @@ export const parseInput = (
   const pushObservation = <T extends Observation>(obs: T): void => {
     ensureObservationStations(obs);
     if (obs.sourceLine == null) obs.sourceLine = lineNum;
+    if (obs.type === 'dist' || obs.type === 'zenith') {
+      const prismEnabled = state.prismEnabled ?? false;
+      const prismOffset = Number.isFinite(state.prismOffset ?? NaN) ? (state.prismOffset ?? 0) : 0;
+      const prismScope: ParseOptions['prismScope'] = state.prismScope ?? 'global';
+      const setScopedSetId = typeof obs.setId === 'string' ? obs.setId.trim() : '';
+      const scopedBlocked = prismScope === 'set' && setScopedSetId.length === 0;
+      if (prismEnabled && Math.abs(prismOffset) > 0 && !scopedBlocked) {
+        obs.prismCorrectionM = prismOffset;
+        obs.prismScope = prismScope;
+      }
+    }
     observations.push(obs);
   };
   const addExplicitAlias = (rawAlias: string, rawCanonical: string): boolean => {
@@ -2054,6 +2065,7 @@ export const parseInput = (
                 id: obsId++,
                 type: 'lev',
                 instCode: traverseCtx.dirInstCode ?? '',
+                setId: code,
                 from: traverseCtx.occupy,
                 to,
                 obs: dh,
@@ -2068,6 +2080,7 @@ export const parseInput = (
                 id: obsId++,
                 type: 'zenith',
                 instCode: traverseCtx.dirInstCode ?? '',
+                setId: code,
                 from: traverseCtx.occupy,
                 to,
                 obs: zenRad,

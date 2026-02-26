@@ -175,6 +175,9 @@ export class LSAEngine {
   private tsCorrelationScope: ParseOptions['tsCorrelationScope'] = 'set';
   private robustMode: ParseOptions['robustMode'] = 'none';
   private robustK = 1.5;
+  private prismEnabled = false;
+  private prismOffset = 0;
+  private prismScope: ParseOptions['prismScope'] = 'global';
   private clusterDetectionEnabled = true;
   private clusterLinkageMode: ParseOptions['clusterLinkageMode'] = 'single';
   private clusterTolerance2D = 0.03;
@@ -269,7 +272,9 @@ export class LSAEngine {
     if (obs.type === 'zenith') {
       if (centerVert <= 0) return Math.max(sigma, 1e-12);
       const z = this.getZenith(obs.from, obs.to, obs.hi ?? 0, obs.ht ?? 0);
-      const term = z.dist > 0 ? centerVert / z.dist : 0;
+      const prismCorrection = this.prismCorrectionForObservation(obs);
+      const prismAdjustedDist = Math.max(z.dist + prismCorrection, 1e-12);
+      const term = prismAdjustedDist > 0 ? centerVert / prismAdjustedDist : 0;
       return Math.max(Math.sqrt(sigma * sigma + term * term), 1e-12);
     }
     if (obs.type === 'lev') {
@@ -800,6 +805,41 @@ export class LSAEngine {
     if (this.mapMode === 'off') return 1;
     if (this.is2D) return this.mapScaleFactor;
     return obs.mode === 'horiz' ? this.mapScaleFactor : 1;
+  }
+
+  private prismCorrectionForObservation(obs: Observation): number {
+    if (obs.type !== 'dist' && obs.type !== 'zenith') return 0;
+
+    const obsOffset = Number.isFinite(obs.prismCorrectionM ?? NaN) ? (obs.prismCorrectionM ?? 0) : undefined;
+    if (obsOffset != null) {
+      if (obs.prismScope === 'set') {
+        const setId = typeof obs.setId === 'string' ? obs.setId.trim() : '';
+        if (!setId) return 0;
+      }
+      return obsOffset;
+    }
+
+    if (!this.prismEnabled || !Number.isFinite(this.prismOffset) || Math.abs(this.prismOffset) <= 0) {
+      return 0;
+    }
+    if ((this.prismScope ?? 'global') === 'set') {
+      const setId = typeof obs.setId === 'string' ? obs.setId.trim() : '';
+      if (!setId) return 0;
+    }
+    return this.prismOffset;
+  }
+
+  private correctedDistanceModel(
+    obs: Observation & { type: 'dist' },
+    calcDistRaw: number,
+  ): { calcDistance: number; mapScale: number; prismCorrection: number } {
+    const mapScale = this.distanceScaleForObservation(obs);
+    const prismCorrection = this.prismCorrectionForObservation(obs);
+    return {
+      calcDistance: (calcDistRaw + prismCorrection) * mapScale,
+      mapScale,
+      prismCorrection,
+    };
   }
 
   private curvatureRefractionAngle(horiz: number): number {
@@ -1359,6 +1399,9 @@ export class LSAEngine {
       parsed.parseState?.tsCorrelationScope ?? this.parseOptions?.tsCorrelationScope ?? 'set';
     this.robustMode = parsed.parseState?.robustMode ?? this.parseOptions?.robustMode ?? 'none';
     this.robustK = parsed.parseState?.robustK ?? this.parseOptions?.robustK ?? 1.5;
+    this.prismEnabled = parsed.parseState?.prismEnabled ?? this.parseOptions?.prismEnabled ?? false;
+    this.prismOffset = parsed.parseState?.prismOffset ?? this.parseOptions?.prismOffset ?? 0;
+    this.prismScope = parsed.parseState?.prismScope ?? this.parseOptions?.prismScope ?? 'global';
     this.clusterDetectionEnabled =
       parsed.parseState?.clusterDetectionEnabled ??
       this.parseOptions?.clusterDetectionEnabled ??
@@ -1412,6 +1455,19 @@ export class LSAEngine {
       };
       this.log(
         `Robust reweighting active: mode=${this.robustMode}, k=${this.robustDiagnostics.k.toFixed(2)}`,
+      );
+    }
+    if (this.prismEnabled && Number.isFinite(this.prismOffset) && Math.abs(this.prismOffset) > 0) {
+      let distCount = 0;
+      let zenithCount = 0;
+      this.observations.forEach((obs) => {
+        const correction = this.prismCorrectionForObservation(obs);
+        if (Math.abs(correction) <= 0) return;
+        if (obs.type === 'dist') distCount += 1;
+        if (obs.type === 'zenith') zenithCount += 1;
+      });
+      this.log(
+        `Prism correction active: offset=${this.prismOffset.toFixed(4)}m, scope=${this.prismScope}, distRows=${distCount}, zenithRows=${zenithCount}`,
       );
     }
 
@@ -1588,8 +1644,8 @@ export class LSAEngine {
             : obs.mode === 'slope'
               ? Math.sqrt(horiz * horiz + dz * dz)
               : horiz;
-          const mapScale = this.distanceScaleForObservation(obs);
-          const calcDist = calcDistRaw * mapScale;
+          const corrected = this.correctedDistanceModel(obs, calcDistRaw);
+          const calcDist = corrected.calcDistance;
           const v = obs.obs - calcDist;
 
           L[row][0] = v;
@@ -1603,13 +1659,14 @@ export class LSAEngine {
               `DIST#${obs.id}`,
               `from=${from} to=${to} obs=${obs.obs.toFixed(4)}m calc=${calcDist.toFixed(
                 4,
-              )}m w=${wRad.toFixed(6)}m norm=${norm.toFixed(3)} sigma=${sigmaUsed.toFixed(6)}m mode=${obs.mode}`,
+              )}m w=${wRad.toFixed(6)}m norm=${norm.toFixed(3)} sigma=${sigmaUsed.toFixed(6)}m mode=${obs.mode} prism=${corrected.prismCorrection.toFixed(4)}m`,
             );
           }
           const denom = calcDistRaw || 1;
-          const dD_dE2 = (dx / denom) * mapScale;
-          const dD_dN2 = (dy / denom) * mapScale;
-          const dD_dH2 = !this.is2D && obs.mode === 'slope' ? (dz / denom) * mapScale : 0;
+          const dD_dE2 = (dx / denom) * corrected.mapScale;
+          const dD_dN2 = (dy / denom) * corrected.mapScale;
+          const dD_dH2 =
+            !this.is2D && obs.mode === 'slope' ? (dz / denom) * corrected.mapScale : 0;
 
           const fromIdx = this.paramIndex[from];
           if (fromIdx?.x != null) {
@@ -2241,7 +2298,7 @@ export class LSAEngine {
           : obs.mode === 'slope'
             ? Math.sqrt(horiz * horiz + dz * dz)
             : horiz;
-        const calc = calcRaw * this.distanceScaleForObservation(obs);
+        const calc = this.correctedDistanceModel(obs, calcRaw).calcDistance;
         const v = obs.obs - calc;
         obs.calc = calc;
         obs.residual = v;
@@ -2646,16 +2703,17 @@ export class LSAEngine {
               : obs.mode === 'slope'
                 ? Math.sqrt(horiz * horiz + dz * dz)
                 : horiz;
-            const mapScale = this.distanceScaleForObservation(obs);
-            const calcDist = calcDistRaw * mapScale;
+            const corrected = this.correctedDistanceModel(obs, calcDistRaw);
+            const calcDist = corrected.calcDistance;
             const v = obs.obs - calcDist;
             L[row][0] = v;
             rowInfo.push({ obs });
 
             const denom = calcDistRaw || 1;
-            const dD_dE2 = (dx / denom) * mapScale;
-            const dD_dN2 = (dy / denom) * mapScale;
-            const dD_dH2 = !this.is2D && obs.mode === 'slope' ? (dz / denom) * mapScale : 0;
+            const dD_dE2 = (dx / denom) * corrected.mapScale;
+            const dD_dN2 = (dy / denom) * corrected.mapScale;
+            const dD_dH2 =
+              !this.is2D && obs.mode === 'slope' ? (dz / denom) * corrected.mapScale : 0;
 
             const fromIdx = this.paramIndex[obs.from];
             if (fromIdx?.x != null) A[row][fromIdx.x] = -dD_dE2;

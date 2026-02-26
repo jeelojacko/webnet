@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { parseInput } from '../src/engine/parse';
-import type { AngleObservation, LevelObservation } from '../src/types';
+import type { AngleObservation, DistanceObservation, LevelObservation } from '../src/types';
 
 const fixture = readFileSync('tests/fixtures/simple.dat', 'utf-8');
 
@@ -202,6 +202,9 @@ describe('parseInput', () => {
     expect(parsed.parseState.prismEnabled).toBe(true);
     expect(parsed.parseState.prismScope).toBe('global');
     expect(parsed.parseState.prismOffset ?? 0).toBeCloseTo(2 / 3.280839895, 10);
+    const dist = parsed.observations.find((o) => o.type === 'dist') as DistanceObservation;
+    expect(dist.prismCorrectionM ?? 0).toBeCloseTo(2 / 3.280839895, 10);
+    expect(dist.prismScope).toBe('global');
     expect(parsed.logs.some((l) => l.includes('Prism correction set to ON'))).toBe(true);
     expect(parsed.logs.some((l) => l.includes('Prism correction set to OFF'))).toBe(true);
   });

@@ -490,6 +490,92 @@ describe('LSAEngine', () => {
     expect(withScale.logs.some((l) => l.includes('Map reduction active'))).toBe(true);
   });
 
+  it('applies global prism correction to modeled distance residuals', () => {
+    const baseInput = [
+      '.2D',
+      'C A 0 0 0 ! !',
+      'C B 100 0 0',
+      'B A-B 090.0000 1.0',
+      'D A-B 100.0000 0.001',
+    ].join('\n');
+    const off = new LSAEngine({ input: baseInput, maxIterations: 10 }).solve();
+    const on = new LSAEngine({
+      input: ['.PRISM ON 0.25', baseInput].join('\n'),
+      maxIterations: 10,
+    }).solve();
+    expect(off.stations.B.x - on.stations.B.x).toBeGreaterThan(0.2);
+    expect(on.logs.some((l) => l.includes('Prism correction active'))).toBe(true);
+  });
+
+  it('limits prism set-scope corrections to set-tagged distance rows', () => {
+    const base = [
+      '.2D',
+      'I TS TestInst 0 0 1 1',
+      'C A 0 0 0 ! !',
+      'C B 100 0 0',
+      'B A-B 090.0000 1.0',
+    ].join('\n');
+    const noSet = new LSAEngine({
+      input: ['.PRISM SET 0.50', base, 'D A-B 100.0000 0.001'].join('\n'),
+      maxIterations: 10,
+    }).solve();
+    const setTagged = new LSAEngine({
+      input: ['.PRISM SET 0.50', base, 'D TS SET1 A B 100.0000 0.001'].join('\n'),
+      maxIterations: 10,
+    }).solve();
+    expect(noSet.stations.B.x).toBeCloseTo(100, 2);
+    expect(setTagged.stations.B.x).toBeLessThan(noSet.stations.B.x - 0.3);
+    const taggedDist = setTagged.observations.find(
+      (o) => o.type === 'dist' && (o.setId ?? '') === 'SET1',
+    );
+    expect(taggedDist).toBeDefined();
+    expect(taggedDist?.prismCorrectionM).toBeCloseTo(0.5, 10);
+  });
+
+  it('applies prism correction in zenith weighting when centering inflation is active', () => {
+    const input = [
+      '.I TS',
+      'C A 0 0 0 ! ! !',
+      'C B 100 0 0',
+      'B A-B 090.0000 1.0',
+      'D A-B 100.0000 0.001',
+      'V A-B 90.0000 1.0',
+      'V A-B 89.9000 1.0',
+    ].join('\n');
+    const instrumentLibrary = {
+      TS: {
+        code: 'TS',
+        desc: 'TS',
+        edm_const: 0,
+        edm_ppm: 0,
+        hzPrecision_sec: 1,
+        dirPrecision_sec: 1,
+        azBearingPrecision_sec: 1,
+        vaPrecision_sec: 1,
+        instCentr_m: 0,
+        tgtCentr_m: 0,
+        vertCentr_m: 1.0,
+        elevDiff_const_m: 0,
+        elevDiff_ppm: 0,
+        gpsStd_xy: 0,
+        levStd_mmPerKm: 0,
+      },
+    };
+    const off = new LSAEngine({ input, maxIterations: 8, instrumentLibrary }).solve();
+    const on = new LSAEngine({
+      input: `.PRISM ON 50\n${input}`,
+      maxIterations: 8,
+      instrumentLibrary,
+    }).solve();
+    const zenOff = off.observations.filter((o) => o.type === 'zenith');
+    const zenOn = on.observations.filter((o) => o.type === 'zenith');
+    expect(zenOff.length).toBe(2);
+    expect(zenOn.length).toBe(2);
+    expect(zenOff.every((obs) => Math.abs(obs.prismCorrectionM ?? 0) === 0)).toBe(true);
+    expect(zenOn.every((obs) => Math.abs(obs.prismCorrectionM ?? 0) > 0)).toBe(true);
+    expect(on.logs.some((l) => l.includes('zenithRows=2'))).toBe(true);
+  });
+
   it('applies curvature/refraction correction to zenith calculations when enabled', () => {
     const baseInput = [
       'C A 0 0 0 !',

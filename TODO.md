@@ -127,7 +127,7 @@
       - [x] Phase 4: add parity fixtures to verify observation-count, chi-square, and sideshot coordinate outputs
     - [~] Implement `.PRISM` prism offset correction support in parser/weighting/residual reporting
       - [x] Phase 1: parse `.PRISM` option state (global and scoped behavior) with unit-safe validation diagnostics
-      - [ ] Phase 2: apply prism-offset correction in distance/vertical observation modeling before residual and weight computation
+      - [x] Phase 2: apply prism-offset correction in distance/vertical observation modeling before residual and weight computation
       - [ ] Phase 3: show correction source/magnitude in report/export rows and add regression fixtures for offset cases
     - [ ] Implement `.ROTATION <angle>` plan-rotation for bearing/azimuth observations (`B/BM` and related records)
       - [ ] Phase 1: parse and track cumulative `.ROTATION` state with DMS/DD compatibility and wrap-safe normalization
