@@ -42,6 +42,9 @@ const defaultParseOptions: ParseOptions = {
   tsCorrelationScope: 'set',
   robustMode: 'none',
   robustK: 1.5,
+  prismEnabled: false,
+  prismOffset: 0,
+  prismScope: 'global',
   autoAdjustEnabled: false,
   autoAdjustMaxCycles: 3,
   autoAdjustMaxRemovalsPerCycle: 1,
@@ -954,6 +957,60 @@ export const parseInput = (
             `Auto-adjust set to ${state.autoAdjustEnabled ? 'ON' : 'OFF'} (|t|>=${(
               state.autoAdjustStdResThreshold ?? 4
             ).toFixed(2)}, cycles=${state.autoAdjustMaxCycles ?? 3}, maxRemovals=${state.autoAdjustMaxRemovalsPerCycle ?? 1})`,
+          );
+        }
+      } else if (op === '.PRISM') {
+        const a1 = (parts[1] || '').toUpperCase();
+        const toMeters = state.units === 'ft' ? 1 / FT_PER_M : 1;
+        let scope: ParseOptions['prismScope'] = state.prismScope ?? 'global';
+        let valueToken = parts[1];
+
+        if (a1 === 'GLOBAL') {
+          scope = 'global';
+          valueToken = parts[2];
+        } else if (a1 === 'SET' || a1 === 'LOCAL') {
+          scope = 'set';
+          valueToken = parts[2];
+        }
+
+        if (a1 === 'OFF' || a1 === 'NONE' || a1 === '0') {
+          state.prismEnabled = false;
+          state.prismOffset = 0;
+          state.prismScope = scope;
+          logs.push(`Prism correction set to OFF (scope=${scope})`);
+          continue;
+        }
+
+        if (a1 === 'ON') {
+          valueToken = parts[2];
+          if (!valueToken) {
+            state.prismEnabled = true;
+            state.prismScope = scope;
+            logs.push(
+              `Prism correction set to ON (offset=${(state.prismOffset ?? 0).toFixed(4)} m, scope=${scope})`,
+            );
+            continue;
+          }
+        }
+
+        const rawOffset = parseFloat(valueToken || '');
+        if (!Number.isFinite(rawOffset)) {
+          logs.push(
+            `Warning: unrecognized .PRISM option at line ${lineNum}; expected ON/OFF or numeric offset value.`,
+          );
+          continue;
+        }
+
+        const offsetM = rawOffset * toMeters;
+        state.prismEnabled = true;
+        state.prismOffset = offsetM;
+        state.prismScope = scope;
+        logs.push(
+          `Prism correction set to ON (offset=${offsetM.toFixed(4)} m, scope=${scope})`,
+        );
+        if (Math.abs(offsetM) > 2) {
+          logs.push(
+            `Warning: large prism offset at line ${lineNum} (${offsetM.toFixed(4)} m)`,
           );
         }
       } else if (op === '.AUTOSIDESHOT') {

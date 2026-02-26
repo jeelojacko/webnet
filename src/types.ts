@@ -366,6 +366,9 @@ export interface ParseOptions {
   tsCorrelationScope?: TsCorrelationScope;
   robustMode?: RobustMode;
   robustK?: number;
+  prismEnabled?: boolean;
+  prismOffset?: number;
+  prismScope?: 'global' | 'set';
   autoAdjustEnabled?: boolean;
   autoAdjustMaxCycles?: number;
   autoAdjustMaxRemovalsPerCycle?: number;

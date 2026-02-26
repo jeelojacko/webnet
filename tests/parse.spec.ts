@@ -186,6 +186,26 @@ describe('parseInput', () => {
     expect(parsed.logs.some((l) => l.includes('Auto-sideshot detection set to ON'))).toBe(true);
   });
 
+  it('parses .PRISM state with scope and unit-safe conversion', () => {
+    const parsed = parseInput(
+      [
+        '.UNITS FEET DMS',
+        '.PRISM GLOBAL 0.5',
+        '.PRISM SET ON 1.0',
+        '.PRISM OFF',
+        '.PRISM ON 2.0',
+        'C A 0 0 0 !',
+        'C B 100 0 0 !',
+        'D A-B 100 0.01',
+      ].join('\n'),
+    );
+    expect(parsed.parseState.prismEnabled).toBe(true);
+    expect(parsed.parseState.prismScope).toBe('global');
+    expect(parsed.parseState.prismOffset ?? 0).toBeCloseTo(2 / 3.280839895, 10);
+    expect(parsed.logs.some((l) => l.includes('Prism correction set to ON'))).toBe(true);
+    expect(parsed.logs.some((l) => l.includes('Prism correction set to OFF'))).toBe(true);
+  });
+
   it('logs traverse closure', () => {
     const parsed = parseInput(readFileSync('tests/fixtures/traverse_closure.dat', 'utf-8'));
     expect(parsed.logs.some((l) => l.includes('Traverse end'))).toBe(true);

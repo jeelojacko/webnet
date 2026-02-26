@@ -286,6 +286,9 @@ type RunDiagnostics = {
   tsCorrelationRho: number;
   robustMode: RobustMode;
   robustK: number;
+  prismEnabled: boolean;
+  prismOffset: number;
+  prismScope: 'global' | 'set';
   profileDefaultInstrumentFallback: boolean;
   angleCenteringModel: 'geometry-aware-correlated-rays';
   defaultSigmaCount: number;
@@ -784,6 +787,9 @@ const App: React.FC = () => {
       tsCorrelationRho: parseState.tsCorrelationRho ?? profileCtx.effectiveParse.tsCorrelationRho,
       robustMode: parseState.robustMode ?? profileCtx.effectiveParse.robustMode,
       robustK: parseState.robustK ?? profileCtx.effectiveParse.robustK,
+      prismEnabled: parseState.prismEnabled ?? profileCtx.effectiveParse.prismEnabled ?? false,
+      prismOffset: parseState.prismOffset ?? profileCtx.effectiveParse.prismOffset ?? 0,
+      prismScope: parseState.prismScope ?? profileCtx.effectiveParse.prismScope ?? 'global',
       edmMode: parseState.edmMode ?? 'additive',
       applyCentering: parseState.applyCentering ?? true,
       addCenteringToExplicit: parseState.addCenteringToExplicit ?? false,
@@ -838,6 +844,9 @@ const App: React.FC = () => {
       tsCorrelationRho: parse.tsCorrelationRho,
       robustMode: parse.robustMode,
       robustK: parse.robustK,
+      prismEnabled: parse.prismEnabled,
+      prismOffset: parse.prismOffset,
+      prismScope: parse.prismScope,
       profileDefaultInstrumentFallback: profileCtx.parity,
       angleCenteringModel: 'geometry-aware-correlated-rays',
       defaultSigmaCount: defaultObs.length,
@@ -871,7 +880,7 @@ const App: React.FC = () => {
     lines.push(`# Generated: ${now.toLocaleString()}`);
     lines.push(`# Linear units: ${linearUnit}`);
     lines.push(
-      `# Reduction: profile=${runDiag.solveProfile}, autoSideshot=${runDiag.autoSideshotEnabled ? 'ON' : 'OFF'}, autoAdjust=${runDiag.autoAdjustEnabled ? 'ON' : 'OFF'}(|t|>=${runDiag.autoAdjustStdResThreshold.toFixed(2)},cycles=${runDiag.autoAdjustMaxCycles},maxRm=${runDiag.autoAdjustMaxRemovalsPerCycle}), dirSets=${runDiag.directionSetMode}, mapMode=${runDiag.mapMode}, mapScale=${runDiag.mapScaleFactor.toFixed(8)}, curvRef=${runDiag.applyCurvatureRefraction ? 'ON' : 'OFF'}, k=${runDiag.refractionCoefficient.toFixed(3)}, vRed=${runDiag.verticalReduction}, tsCorr=${runDiag.tsCorrelationEnabled ? 'ON' : 'OFF'}(${runDiag.tsCorrelationScope},rho=${runDiag.tsCorrelationRho.toFixed(3)}), robust=${runDiag.robustMode.toUpperCase()}(k=${runDiag.robustK.toFixed(2)})`,
+      `# Reduction: profile=${runDiag.solveProfile}, autoSideshot=${runDiag.autoSideshotEnabled ? 'ON' : 'OFF'}, autoAdjust=${runDiag.autoAdjustEnabled ? 'ON' : 'OFF'}(|t|>=${runDiag.autoAdjustStdResThreshold.toFixed(2)},cycles=${runDiag.autoAdjustMaxCycles},maxRm=${runDiag.autoAdjustMaxRemovalsPerCycle}), dirSets=${runDiag.directionSetMode}, mapMode=${runDiag.mapMode}, mapScale=${runDiag.mapScaleFactor.toFixed(8)}, curvRef=${runDiag.applyCurvatureRefraction ? 'ON' : 'OFF'}, k=${runDiag.refractionCoefficient.toFixed(3)}, vRed=${runDiag.verticalReduction}, prism=${runDiag.prismEnabled ? `ON(${runDiag.prismOffset.toFixed(4)}m,${runDiag.prismScope})` : 'OFF'}, tsCorr=${runDiag.tsCorrelationEnabled ? 'ON' : 'OFF'}(${runDiag.tsCorrelationScope},rho=${runDiag.tsCorrelationRho.toFixed(3)}), robust=${runDiag.robustMode.toUpperCase()}(k=${runDiag.robustK.toFixed(2)})`,
     );
     lines.push(
       `# Parity: profileFallback=${runDiag.profileDefaultInstrumentFallback ? 'ON' : 'OFF'}, angleCentering=${runDiag.angleCenteringModel}, normalize=${runDiag.normalize ? 'ON' : 'OFF'}, angleMode=${runDiag.angleMode.toUpperCase()}`,
@@ -890,6 +899,9 @@ const App: React.FC = () => {
     lines.push(`Angle centering model: ${runDiag.angleCenteringModel}`);
     lines.push(
       `TS correlation: ${runDiag.tsCorrelationEnabled ? `ON (${runDiag.tsCorrelationScope}, rho=${runDiag.tsCorrelationRho.toFixed(3)})` : 'OFF'}`,
+    );
+    lines.push(
+      `Prism correction: ${runDiag.prismEnabled ? `ON (${runDiag.prismOffset.toFixed(4)} m, scope=${runDiag.prismScope})` : 'OFF'}`,
     );
     lines.push(`Robust mode: ${runDiag.robustMode.toUpperCase()} (k=${runDiag.robustK.toFixed(2)})`);
     lines.push(

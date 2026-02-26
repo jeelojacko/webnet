@@ -125,8 +125,8 @@
       - [x] Phase 2: add project/profile toggle and parser/engine plumbing to switch between legacy and auto-detect behavior
       - [x] Phase 3: expose detected/reclassified records in processing logs, report tables, and export annotations
       - [x] Phase 4: add parity fixtures to verify observation-count, chi-square, and sideshot coordinate outputs
-    - [ ] Implement `.PRISM` prism offset correction support in parser/weighting/residual reporting
-      - [ ] Phase 1: parse `.PRISM` option state (global and scoped behavior) with unit-safe validation diagnostics
+    - [~] Implement `.PRISM` prism offset correction support in parser/weighting/residual reporting
+      - [x] Phase 1: parse `.PRISM` option state (global and scoped behavior) with unit-safe validation diagnostics
       - [ ] Phase 2: apply prism-offset correction in distance/vertical observation modeling before residual and weight computation
       - [ ] Phase 3: show correction source/magnitude in report/export rows and add regression fixtures for offset cases
     - [ ] Implement `.ROTATION <angle>` plan-rotation for bearing/azimuth observations (`B/BM` and related records)

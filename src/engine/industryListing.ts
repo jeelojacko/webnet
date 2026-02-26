@@ -60,6 +60,9 @@ export const buildIndustryStyleListingText = (
     const unknownCount = Math.max(0, observationCount - res.dof);
     const parseState = res.parseState;
     const autoSideshotEnabled = parseState?.autoSideshotEnabled ?? true;
+    const prismEnabled = parseState?.prismEnabled ?? false;
+    const prismOffset = parseState?.prismOffset ?? 0;
+    const prismScope = parseState?.prismScope ?? 'global';
     const aliasTrace = parseState?.aliasTrace ?? [];
     const aliasObsRefsByLine = new Map<number, string[]>();
     aliasTrace.forEach((entry) => {
@@ -104,6 +107,9 @@ export const buildIndustryStyleListingText = (
     lines.push(`      Convergence Limit; Max Iterations   : 0.001000; ${settings.maxIterations}`);
     lines.push(
       `      Default Coefficient of Refraction   : ${(parseState?.refractionCoefficient ?? parseSettings.refractionCoefficient).toFixed(6)}`,
+    );
+    lines.push(
+      `      Prism Correction                    : ${prismEnabled ? `ON (${prismOffset.toFixed(4)} m, scope=${prismScope})` : 'OFF'}`,
     );
     if (res.clusterDiagnostics?.enabled) {
       lines.push(
