@@ -109,6 +109,11 @@ export const buildIndustryStyleListingText = (
         `      Cluster Detection Mode             : ${res.clusterDiagnostics.passMode.toUpperCase()} / ${res.clusterDiagnostics.linkageMode.toUpperCase()} (${res.clusterDiagnostics.dimension}, tol=${(res.clusterDiagnostics.tolerance * unitScale).toFixed(4)} ${linearUnit}, merges=${res.clusterDiagnostics.approvedMergeCount ?? 0}, outcomes=${res.clusterDiagnostics.mergeOutcomes?.length ?? 0}, rejected=${res.clusterDiagnostics.rejectedProposals?.length ?? 0})`,
       );
     }
+    if (res.autoAdjustDiagnostics?.enabled) {
+      lines.push(
+        `      Auto-Adjust                        : ON (|t|>=${res.autoAdjustDiagnostics.threshold.toFixed(2)}, cycles=${res.autoAdjustDiagnostics.maxCycles}, maxRm/cycle=${res.autoAdjustDiagnostics.maxRemovalsPerCycle}, minRedund=${res.autoAdjustDiagnostics.minRedundancy.toFixed(2)}, stop=${res.autoAdjustDiagnostics.stopReason}, removed=${res.autoAdjustDiagnostics.removed.length})`,
+      );
+    }
     if ((parseState?.aliasExplicitCount ?? 0) > 0 || (parseState?.aliasRuleCount ?? 0) > 0) {
       lines.push(
         `      Alias Canonicalization              : explicit=${parseState?.aliasExplicitCount ?? 0}, rules=${parseState?.aliasRuleCount ?? 0}, references=${aliasTrace.length}`,
@@ -641,6 +646,32 @@ export const buildIndustryStyleListingText = (
         lines.push('(none)');
       }
     }
+    if (res.autoAdjustDiagnostics?.enabled) {
+      const ad = res.autoAdjustDiagnostics;
+      lines.push('');
+      lines.push('                             Auto-Adjust Diagnostics');
+      lines.push('                             =======================');
+      lines.push('');
+      lines.push(
+        `Threshold: |t|>=${ad.threshold.toFixed(2)}   MaxCycles: ${ad.maxCycles}   MaxRemovals/Cycle: ${ad.maxRemovalsPerCycle}   MinRedund: ${ad.minRedundancy.toFixed(2)}   Stop: ${ad.stopReason}   Removed: ${ad.removed.length}`,
+      );
+      lines.push('Cycle      SEUW      Max|t|   Removals');
+      ad.cycles.forEach((cycle) => {
+        lines.push(
+          `${String(cycle.cycle).padStart(5)} ${cycle.seuw.toFixed(4).padStart(10)} ${cycle.maxAbsStdRes.toFixed(2).padStart(9)} ${String(cycle.removals.length).padStart(10)}`,
+        );
+      });
+      if (ad.removed.length > 0) {
+        lines.push('');
+        lines.push('Removed Observations');
+        lines.push('ObsID    Type        Stations                 Line    |t|     Redund   Reason');
+        ad.removed.forEach((row) => {
+          lines.push(
+            `${String(row.obsId).padStart(5)}    ${row.type.toUpperCase().padEnd(10)}  ${row.stations.padEnd(22)}  ${String(row.sourceLine ?? '-').padStart(4)}  ${row.stdRes.toFixed(2).padStart(6)}  ${(row.redundancy != null ? row.redundancy.toFixed(3) : '-').padStart(7)}  ${row.reason}`,
+          );
+        });
+      }
+    }
     if (res.clusterDiagnostics?.enabled) {
       const outcomes = res.clusterDiagnostics.mergeOutcomes ?? [];
       const rejected = res.clusterDiagnostics.rejectedProposals ?? [];
@@ -703,4 +734,3 @@ export const buildIndustryStyleListingText = (
     }
     return lines.join('\n');
 };
-

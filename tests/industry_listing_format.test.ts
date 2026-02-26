@@ -97,4 +97,73 @@ describe('industry listing phase 5 formatting locks', () => {
     expect(listing).toMatch(/^\s*1\s+2\s+\d+\.\d{6}\s+\d+\.\d{6}\s+\d{1,3}-\d{2}\s*$/m);
     expect(listing).toMatch(/^\s*1000\s+77\s+\d+\.\d{6}\s+\d+\.\d{6}\s+\d{1,3}-\d{2}\s*$/m);
   });
+
+  it('renders auto-adjust diagnostics section when present', () => {
+    const input = readFileSync('public/examples/industry-input.txt', 'utf-8');
+    const engine = new LSAEngine({
+      input,
+      maxIterations: 25,
+      options: parseOptions,
+    });
+    const result = engine.solve();
+    result.autoAdjustDiagnostics = {
+      enabled: true,
+      threshold: 4,
+      maxCycles: 3,
+      maxRemovalsPerCycle: 1,
+      minRedundancy: 0.05,
+      stopReason: 'no-candidates',
+      cycles: [
+        { cycle: 1, seuw: result.seuw, maxAbsStdRes: 4.2, removals: [] },
+        { cycle: 2, seuw: result.seuw, maxAbsStdRes: 2.1, removals: [] },
+      ],
+      removed: [
+        {
+          obsId: 101,
+          type: 'dist',
+          stations: '1-2',
+          sourceLine: 88,
+          stdRes: 4.2,
+          redundancy: 0.45,
+          reason: 'std-res',
+        },
+      ],
+    };
+
+    const listing = buildIndustryStyleListingText(
+      result,
+      {
+        maxIterations: 25,
+        units: 'm',
+        listingShowCoordinates: true,
+        listingShowObservationsResiduals: true,
+        listingShowErrorPropagation: true,
+        listingShowProcessingNotes: false,
+        listingShowAzimuthsBearings: true,
+        listingSortCoordinatesBy: 'name',
+        listingSortObservationsBy: 'residual',
+        listingObservationLimit: 500,
+      },
+      {
+        coordMode: '2D',
+        order: 'NE',
+        angleUnits: 'dms',
+        angleStationOrder: 'atfromto',
+        deltaMode: 'horiz',
+        refractionCoefficient: 0.13,
+      },
+      {
+        solveProfile: 'industry-parity',
+        angleCenteringModel: 'geometry-aware-correlated-rays',
+        defaultSigmaCount: 0,
+        defaultSigmaByType: '',
+        stochasticDefaultsSummary: 'inst=S9',
+      },
+    );
+
+    expect(listing).toContain('Auto-Adjust Diagnostics');
+    expect(listing).toContain('Removed Observations');
+    expect(listing).toContain('101');
+    expect(listing).toContain('Line');
+  });
 });

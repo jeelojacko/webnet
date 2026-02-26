@@ -135,6 +135,7 @@ const ReportView: React.FC<ReportViewProps> = ({
       : activeClusterApprovedMerges
   const clusterMergeOutcomes = clusterDiagnostics?.mergeOutcomes ?? []
   const clusterRejectedProposals = clusterDiagnostics?.rejectedProposals ?? []
+  const autoAdjustDiagnostics = result.autoAdjustDiagnostics
   const clusterReviewStats = clusterCandidates.reduce(
     (acc, candidate) => {
       const decision = clusterReviewDecisions[candidate.key]
@@ -1217,6 +1218,97 @@ const ReportView: React.FC<ReportViewProps> = ({
                   </tbody>
                 </table>
               </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {autoAdjustDiagnostics?.enabled && (
+        <div className="mb-6 border border-slate-800 rounded overflow-hidden">
+          <div className="px-3 py-2 text-xs text-slate-400 uppercase tracking-wider border-b border-slate-800 bg-slate-900/40">
+            Auto-Adjust Diagnostics
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-6 gap-3 p-3 text-xs text-slate-300 border-b border-slate-800/60">
+            <div>
+              <div className="text-slate-500">Threshold</div>
+              <div>|t| &gt;= {autoAdjustDiagnostics.threshold.toFixed(2)}</div>
+            </div>
+            <div>
+              <div className="text-slate-500">Max Cycles</div>
+              <div>{autoAdjustDiagnostics.maxCycles}</div>
+            </div>
+            <div>
+              <div className="text-slate-500">Max Removals/Cycle</div>
+              <div>{autoAdjustDiagnostics.maxRemovalsPerCycle}</div>
+            </div>
+            <div>
+              <div className="text-slate-500">Min Redundancy</div>
+              <div>{autoAdjustDiagnostics.minRedundancy.toFixed(2)}</div>
+            </div>
+            <div>
+              <div className="text-slate-500">Stop Reason</div>
+              <div>{autoAdjustDiagnostics.stopReason}</div>
+            </div>
+            <div>
+              <div className="text-slate-500">Total Removed</div>
+              <div>{autoAdjustDiagnostics.removed.length}</div>
+            </div>
+          </div>
+          <div className="overflow-x-auto w-full border-b border-slate-800">
+            <table className="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr className="text-slate-500 border-b border-slate-800">
+                  <th className="py-2 px-3 font-semibold text-right">Cycle</th>
+                  <th className="py-2 px-3 font-semibold text-right">SEUW</th>
+                  <th className="py-2 px-3 font-semibold text-right">Max |t|</th>
+                  <th className="py-2 px-3 font-semibold text-right">Removals</th>
+                </tr>
+              </thead>
+              <tbody className="text-slate-300">
+                {autoAdjustDiagnostics.cycles.map((cycle) => (
+                  <tr key={`auto-cycle-${cycle.cycle}`} className="border-b border-slate-800/50">
+                    <td className="py-1 px-3 text-right">{cycle.cycle}</td>
+                    <td className="py-1 px-3 text-right font-mono">{cycle.seuw.toFixed(4)}</td>
+                    <td className="py-1 px-3 text-right font-mono">{cycle.maxAbsStdRes.toFixed(2)}</td>
+                    <td className="py-1 px-3 text-right">{cycle.removals.length}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          {autoAdjustDiagnostics.removed.length > 0 && (
+            <div className="overflow-x-auto w-full">
+              <table className="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr className="text-slate-500 border-b border-slate-800">
+                    <th className="py-2 px-3 font-semibold text-right">Obs ID</th>
+                    <th className="py-2 px-3 font-semibold">Type</th>
+                    <th className="py-2 px-3 font-semibold">Stations</th>
+                    <th className="py-2 px-3 font-semibold text-right">Line</th>
+                    <th className="py-2 px-3 font-semibold text-right">|t|</th>
+                    <th className="py-2 px-3 font-semibold text-right">Redund</th>
+                    <th className="py-2 px-3 font-semibold">Reason</th>
+                  </tr>
+                </thead>
+                <tbody className="text-slate-300">
+                  {autoAdjustDiagnostics.removed.map((row, idx) => (
+                    <tr
+                      key={`auto-removed-${row.obsId}-${row.sourceLine ?? 'na'}-${idx}`}
+                      className="border-b border-slate-800/50"
+                    >
+                      <td className="py-1 px-3 text-right font-mono">{row.obsId}</td>
+                      <td className="py-1 px-3 uppercase">{row.type}</td>
+                      <td className="py-1 px-3 font-mono">{row.stations}</td>
+                      <td className="py-1 px-3 text-right">{row.sourceLine ?? '-'}</td>
+                      <td className="py-1 px-3 text-right font-mono">{row.stdRes.toFixed(2)}</td>
+                      <td className="py-1 px-3 text-right font-mono">
+                        {row.redundancy != null ? row.redundancy.toFixed(3) : '-'}
+                      </td>
+                      <td className="py-1 px-3">{row.reason}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           )}
         </div>
@@ -2445,5 +2537,4 @@ const ReportView: React.FC<ReportViewProps> = ({
 }
 
 export default ReportView
-
 

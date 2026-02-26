@@ -127,6 +127,25 @@ const ProcessingSummaryView: React.FC<ProcessingSummaryViewProps> = ({
         `Run Profile: ${runDiagnostics.solveProfile.toUpperCase()} (dirSets=${runDiagnostics.directionSetMode}, profileFallback=${runDiagnostics.profileDefaultInstrumentFallback ? 'ON' : 'OFF'})`,
       );
     }
+    if (result.autoAdjustDiagnostics?.enabled) {
+      const ad = result.autoAdjustDiagnostics;
+      lines.push(
+        `Auto-Adjust: ON (|t|>=${ad.threshold.toFixed(2)}, maxCycles=${ad.maxCycles}, maxRemovalsPerCycle=${ad.maxRemovalsPerCycle}, minRedund=${ad.minRedundancy.toFixed(2)}, stop=${ad.stopReason}, removed=${ad.removed.length})`,
+      );
+      ad.cycles.forEach((cycle) => {
+        lines.push(
+          `  Cycle ${cycle.cycle}: seuw=${cycle.seuw.toFixed(4)}, max|t|=${cycle.maxAbsStdRes.toFixed(2)}, removals=${cycle.removals.length}`,
+        );
+      });
+      ad.removed.slice(0, 30).forEach((row) => {
+        lines.push(
+          `  Removed obs#${row.obsId} ${row.type.toUpperCase()} ${row.stations} line=${row.sourceLine ?? '-'} |t|=${row.stdRes.toFixed(2)} reason=${row.reason}${row.redundancy != null ? ` redund=${row.redundancy.toFixed(3)}` : ''}`,
+        );
+      });
+      if (ad.removed.length > 30) {
+        lines.push(`  ... ${ad.removed.length - 30} more removed observations`);
+      }
+    }
     const aliasTrace = result.parseState?.aliasTrace ?? [];
     if ((result.parseState?.aliasExplicitCount ?? 0) > 0 || (result.parseState?.aliasRuleCount ?? 0) > 0) {
       lines.push(
@@ -203,5 +222,4 @@ const ProcessingSummaryView: React.FC<ProcessingSummaryViewProps> = ({
 };
 
 export default ProcessingSummaryView;
-
 

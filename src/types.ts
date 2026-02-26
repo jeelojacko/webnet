@@ -268,6 +268,34 @@ export interface ClusterRejectedProposal {
   reason: string;
 }
 
+export interface AutoAdjustRemoval {
+  obsId: number;
+  type: Observation['type'];
+  stations: string;
+  sourceLine?: number;
+  stdRes: number;
+  redundancy?: number;
+  reason: 'local-test' | 'std-res';
+}
+
+export interface AutoAdjustCycleDiagnostics {
+  cycle: number;
+  seuw: number;
+  maxAbsStdRes: number;
+  removals: AutoAdjustRemoval[];
+}
+
+export interface AutoAdjustDiagnostics {
+  enabled: boolean;
+  threshold: number;
+  maxCycles: number;
+  maxRemovalsPerCycle: number;
+  minRedundancy: number;
+  stopReason: 'disabled' | 'no-candidates' | 'max-cycles';
+  cycles: AutoAdjustCycleDiagnostics[];
+  removed: AutoAdjustRemoval[];
+}
+
 export interface AliasExplicitMapping {
   sourceId: StationId;
   canonicalId: StationId;
@@ -669,5 +697,6 @@ export interface AdjustmentResult {
       }[];
     }[];
   };
+  autoAdjustDiagnostics?: AutoAdjustDiagnostics;
   directionRejectDiagnostics?: DirectionRejectDiagnostic[];
 }

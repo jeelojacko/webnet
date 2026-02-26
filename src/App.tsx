@@ -995,6 +995,12 @@ const App: React.FC = () => {
         ).toFixed(4)} ${linearUnit}, pairHits=${cd.pairCount}, candidates=${cd.candidateCount}, approvedMerges=${cd.approvedMergeCount ?? 0}, mergeOutcomes=${cd.mergeOutcomes?.length ?? 0}, rejected=${cd.rejectedProposals?.length ?? 0}`,
       );
     }
+    if (res.autoAdjustDiagnostics?.enabled) {
+      const ad = res.autoAdjustDiagnostics;
+      lines.push(
+        `Auto-adjust: ON (|t|>=${ad.threshold.toFixed(2)}, maxCycles=${ad.maxCycles}, maxRemovalsPerCycle=${ad.maxRemovalsPerCycle}, minRedund=${ad.minRedundancy.toFixed(2)}, stop=${ad.stopReason}, removed=${ad.removed.length})`,
+      );
+    }
     lines.push('');
     lines.push('--- Adjusted Coordinates ---');
     lines.push(
@@ -1224,6 +1230,32 @@ const App: React.FC = () => {
           ].join('  '),
         );
       });
+      lines.push('');
+    }
+    if (res.autoAdjustDiagnostics?.enabled) {
+      const ad = res.autoAdjustDiagnostics;
+      lines.push('--- Auto-Adjust Diagnostics ---');
+      lines.push(
+        `Threshold=|t|>=${ad.threshold.toFixed(2)} MaxCycles=${ad.maxCycles} MaxRemovalsPerCycle=${ad.maxRemovalsPerCycle} MinRedund=${ad.minRedundancy.toFixed(2)} Stop=${ad.stopReason} Removed=${ad.removed.length}`,
+      );
+      lines.push('Cycle  SEUW      Max|t|   Removals');
+      ad.cycles.forEach((cycle) => {
+        lines.push(
+          `${String(cycle.cycle).padStart(5)}  ${cycle.seuw.toFixed(4).padStart(8)}  ${cycle.maxAbsStdRes.toFixed(2).padStart(6)}  ${String(cycle.removals.length).padStart(8)}`,
+        );
+      });
+      if (ad.removed.length > 0) {
+        lines.push('');
+        lines.push('Removed observations:');
+        lines.push(
+          'ObsID   Type        Stations                 Line    |t|     Redund   Reason',
+        );
+        ad.removed.forEach((row) => {
+          lines.push(
+            `${String(row.obsId).padStart(5)}   ${row.type.toUpperCase().padEnd(10)}  ${row.stations.padEnd(22)}  ${String(row.sourceLine ?? '-').padStart(4)}  ${row.stdRes.toFixed(2).padStart(6)}  ${(row.redundancy != null ? row.redundancy.toFixed(3) : '-').padStart(7)}  ${row.reason}`,
+          );
+        });
+      }
       lines.push('');
     }
     if (res.clusterDiagnostics?.enabled) {
@@ -2918,6 +2950,21 @@ const App: React.FC = () => {
 
     const solved = solveWithImpacts(effectiveExclusions, effectiveOverrides, effectiveClusterMerges);
     if (autoAdjustSummary?.enabled) {
+      solved.autoAdjustDiagnostics = {
+        enabled: true,
+        threshold: autoAdjustSummary.config.stdResThreshold,
+        maxCycles: autoAdjustSummary.config.maxCycles,
+        maxRemovalsPerCycle: autoAdjustSummary.config.maxRemovalsPerCycle,
+        minRedundancy: autoAdjustSummary.config.minRedundancy ?? AUTO_ADJUST_MIN_REDUNDANCY,
+        stopReason: autoAdjustSummary.stopReason,
+        cycles: autoAdjustSummary.cycles.map((cycle) => ({
+          cycle: cycle.cycle,
+          seuw: cycle.seuw,
+          maxAbsStdRes: cycle.maxAbsStdRes,
+          removals: [...cycle.removals],
+        })),
+        removed: autoAdjustSummary.cycles.flatMap((cycle) => cycle.removals),
+      };
       const autoLines = formatAutoAdjustLogLines(autoAdjustSummary);
       for (let i = autoLines.length - 1; i >= 0; i -= 1) {
         solved.logs.unshift(autoLines[i]);

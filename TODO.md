@@ -117,8 +117,8 @@
       - [x] Phase 4: reporting section for cluster outcomes (merged points, deltas from retained point, rejected proposals)
     - [~] Add Auto-Adjust workflow (iterative solve + automatic outlier exclusion thresholds + removed-observation listing section)
       - [x] Phase 1: solver loop controller for repeated adjust cycles (max |t| threshold, max removals/cycle, max cycles)
-      - [ ] Phase 2: robust outlier candidate selection policy (local-test aware, redundancy guards, tie-break consistency)
-      - [ ] Phase 3: run log/report output for each cycle and final "removed observations" listing with line traceability
+      - [x] Phase 2: robust outlier candidate selection policy (local-test aware, redundancy guards, tie-break consistency)
+      - [x] Phase 3: run log/report output for each cycle and final "removed observations" listing with line traceability
       - [ ] Phase 4: UI controls + CLI hook parity (`/autoadjust`-style options) and regression tests against fixed fixtures
     - [ ] Add automatic sideshot detection for non-redundant `M` records (project option, default-on profile toggle)
       - [ ] Phase 1: compute redundancy-aware sideshot candidates from solved `M` records (with safety exclusions for control/closure legs)
