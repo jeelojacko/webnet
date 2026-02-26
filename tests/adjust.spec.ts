@@ -490,6 +490,24 @@ describe('LSAEngine', () => {
     expect(withScale.logs.some((l) => l.includes('Map reduction active'))).toBe(true);
   });
 
+  it('applies .ROTATION to bearing/azimuth observations in solve geometry', () => {
+    const baseInput = [
+      '.2D',
+      'C A 0 0 0 ! !',
+      'C B 100 0 0',
+      'B A-B 090.0000 1.0',
+      'D A-B 100.0000 0.001',
+    ].join('\n');
+    const rotatedInput = ['.ROTATION 10', baseInput].join('\n');
+
+    const base = new LSAEngine({ input: baseInput, maxIterations: 10 }).solve();
+    const rotated = new LSAEngine({ input: rotatedInput, maxIterations: 10 }).solve();
+
+    expect(rotated.stations.B.x).toBeLessThan(base.stations.B.x - 1);
+    expect(rotated.stations.B.y).toBeLessThan(base.stations.B.y - 10);
+    expect((rotated.parseState?.rotationAngleRad ?? 0) * (180 / Math.PI)).toBeCloseTo(10, 10);
+  });
+
   it('applies global prism correction to modeled distance residuals', () => {
     const baseInput = [
       '.2D',

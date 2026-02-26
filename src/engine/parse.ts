@@ -319,6 +319,13 @@ const parseAngleTokenRad = (
   return dmsToRad(trimmed);
 };
 
+const applyPlanRotation = (angleRad: number, state: ParseOptions): number => {
+  if (!Number.isFinite(angleRad)) return angleRad;
+  const rotation = state.rotationAngleRad ?? 0;
+  if (!Number.isFinite(rotation) || Math.abs(rotation) <= 0) return wrapTo2Pi(angleRad);
+  return wrapTo2Pi(angleRad + rotation);
+};
+
 const projectLatLonToEN = (
   latDeg: number,
   lonDeg: number,
@@ -1498,6 +1505,7 @@ export const parseInput = (
         }
 
         if (useDir) {
+          const rotatedDir = applyPlanRotation(angleRad, state);
           const obs: DirObservation = {
             id: obsId++,
             type: 'dir',
@@ -1505,7 +1513,7 @@ export const parseInput = (
             setId,
             from: at,
             to,
-            obs: angleRad,
+            obs: rotatedDir,
             stdDev: sigmaSec * SEC_TO_RAD,
             sigmaSource: resolved.source,
             flip180: true,
@@ -1715,7 +1723,7 @@ export const parseInput = (
             sigmaSource: zenResolved.source,
           });
         }
-        const bearingRad = parseAngleTokenRad(bearing, state, 'dd');
+        const bearingRad = applyPlanRotation(parseAngleTokenRad(bearing, state, 'dd'), state);
         const bearResolved = resolveSigma(sigBear, defaultAzimuthSigmaSec(inst));
         pushObservation({
           id: obsId++,
@@ -1827,7 +1835,7 @@ export const parseInput = (
         const inst = instCode ? instrumentLibrary[instCode] : undefined;
         const { sigmas } = extractSigmaTokens(parts.slice(nextIndex + 1), 1);
         const resolved = resolveSigma(sigmas[0], defaultAzimuthSigmaSec(inst));
-        const bearingRad = parseAngleTokenRad(bearingToken, state, 'dd');
+        const bearingRad = applyPlanRotation(parseAngleTokenRad(bearingToken, state, 'dd'), state);
         pushObservation({
           id: obsId++,
           type: 'bearing',
@@ -2163,7 +2171,7 @@ export const parseInput = (
             continue;
           }
           if (angleMode === 'az') {
-            azimuthObs = angleRad;
+            azimuthObs = applyPlanRotation(angleRad, state);
           } else {
             hzObs = angleRad;
           }

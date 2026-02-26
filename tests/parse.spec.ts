@@ -225,6 +225,41 @@ describe('parseInput', () => {
     expect(parsed.logs.some((l) => l.includes('Plan rotation updated'))).toBe(true);
   });
 
+  it('applies .ROTATION to azimuth-bearing style observations (B/BM/DIR/SS AZ)', () => {
+    const parsed = parseInput(
+      [
+        '.2D',
+        '.AMODE DIR',
+        '.ROTATION 10',
+        'C A 0 0 0 ! !',
+        'C B 100 0 0 ! !',
+        'C C 100 100 0 ! !',
+        'A A-B-C 090-00-00.0 1.0',
+        'B A-B 090-00-00.0 1.0',
+        'BM A B 090-00-00.0 100.0 0.0 1.0 0.003 5.0',
+        'SS A SH AZ=090-00-00.0 10.0',
+      ].join('\n'),
+    );
+    const expectRotDeg = 100;
+    const toDeg = (rad: number) => (rad * 180) / Math.PI;
+
+    const dir = parsed.observations.find((o) => o.type === 'dir');
+    expect(dir).toBeDefined();
+    expect(toDeg((dir as { obs: number }).obs)).toBeCloseTo(expectRotDeg, 8);
+
+    const bearings = parsed.observations.filter((o) => o.type === 'bearing');
+    expect(bearings.length).toBeGreaterThanOrEqual(2);
+    bearings.forEach((obs) => {
+      expect(toDeg((obs as { obs: number }).obs)).toBeCloseTo(expectRotDeg, 8);
+    });
+
+    const ssDist = parsed.observations.find((o) => o.type === 'dist' && o.setId === 'SS');
+    expect(ssDist).toBeDefined();
+    const ssCalc = ssDist?.calc as { azimuthObs?: number } | undefined;
+    expect(ssCalc?.azimuthObs).toBeDefined();
+    expect(toDeg(ssCalc?.azimuthObs ?? 0)).toBeCloseTo(expectRotDeg, 8);
+  });
+
   it('logs traverse closure', () => {
     const parsed = parseInput(readFileSync('tests/fixtures/traverse_closure.dat', 'utf-8'));
     expect(parsed.logs.some((l) => l.includes('Traverse end'))).toBe(true);
