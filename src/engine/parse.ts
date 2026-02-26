@@ -46,6 +46,7 @@ const defaultParseOptions: ParseOptions = {
   autoAdjustMaxCycles: 3,
   autoAdjustMaxRemovalsPerCycle: 1,
   autoAdjustStdResThreshold: 4,
+  autoSideshotEnabled: true,
   directionSetMode: 'reduced',
   clusterDetectionEnabled: true,
   clusterLinkageMode: 'single',
@@ -953,6 +954,19 @@ export const parseInput = (
             `Auto-adjust set to ${state.autoAdjustEnabled ? 'ON' : 'OFF'} (|t|>=${(
               state.autoAdjustStdResThreshold ?? 4
             ).toFixed(2)}, cycles=${state.autoAdjustMaxCycles ?? 3}, maxRemovals=${state.autoAdjustMaxRemovalsPerCycle ?? 1})`,
+          );
+        }
+      } else if (op === '.AUTOSIDESHOT') {
+        const mode = (parts[1] || '').toUpperCase();
+        if (mode === 'ON' || mode === 'TRUE' || mode === '1') {
+          state.autoSideshotEnabled = true;
+          logs.push('Auto-sideshot detection set to ON');
+        } else if (mode === 'OFF' || mode === 'FALSE' || mode === '0') {
+          state.autoSideshotEnabled = false;
+          logs.push('Auto-sideshot detection set to OFF');
+        } else {
+          logs.push(
+            `Warning: unrecognized .AUTOSIDESHOT option at line ${lineNum}; expected ON/OFF`,
           );
         }
       } else if (op === '.TSCORR') {

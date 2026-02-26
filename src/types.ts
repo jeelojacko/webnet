@@ -370,6 +370,7 @@ export interface ParseOptions {
   autoAdjustMaxCycles?: number;
   autoAdjustMaxRemovalsPerCycle?: number;
   autoAdjustStdResThreshold?: number;
+  autoSideshotEnabled?: boolean;
   directionSetMode?: DirectionSetMode;
   clusterDetectionEnabled?: boolean;
   clusterLinkageMode?: ClusterLinkageMode;

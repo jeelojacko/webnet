@@ -635,5 +635,22 @@ describe('LSAEngine', () => {
     expect(diag?.candidates[0].target).toBe('U1');
     expect(result.logs.some((l) => l.includes('Auto-sideshot detection (M-lines)'))).toBe(true);
   });
-});
 
+  it('supports disabling auto-sideshot detection via parse options', () => {
+    const input = [
+      '.2D',
+      'C O 0 0 0 ! !',
+      'C BS 100 0 0 ! !',
+      'M O-BS-U1 090-00-00.0 100.000',
+    ].join('\n');
+    const result = new LSAEngine({
+      input,
+      maxIterations: 10,
+      parseOptions: { autoSideshotEnabled: false },
+    }).solve();
+    expect(result.autoSideshotDiagnostics).toBeUndefined();
+    expect(result.logs.some((l) => l.includes('Auto-sideshot detection (M-lines): disabled'))).toBe(
+      true,
+    );
+  });
+});

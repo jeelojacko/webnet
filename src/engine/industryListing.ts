@@ -59,6 +59,7 @@ export const buildIndustryStyleListingText = (
     const observationCount = res.observations.length;
     const unknownCount = Math.max(0, observationCount - res.dof);
     const parseState = res.parseState;
+    const autoSideshotEnabled = parseState?.autoSideshotEnabled ?? true;
     const aliasTrace = parseState?.aliasTrace ?? [];
     const aliasObsRefsByLine = new Map<number, string[]>();
     aliasTrace.forEach((entry) => {
@@ -114,10 +115,12 @@ export const buildIndustryStyleListingText = (
         `      Auto-Adjust                        : ON (|t|>=${res.autoAdjustDiagnostics.threshold.toFixed(2)}, cycles=${res.autoAdjustDiagnostics.maxCycles}, maxRm/cycle=${res.autoAdjustDiagnostics.maxRemovalsPerCycle}, minRedund=${res.autoAdjustDiagnostics.minRedundancy.toFixed(2)}, stop=${res.autoAdjustDiagnostics.stopReason}, removed=${res.autoAdjustDiagnostics.removed.length})`,
       );
     }
-    if (res.autoSideshotDiagnostics?.enabled) {
+    if (autoSideshotEnabled && res.autoSideshotDiagnostics?.enabled) {
       lines.push(
         `      Auto Sideshot (M-lines)            : ON (evaluated=${res.autoSideshotDiagnostics.evaluatedCount}, candidates=${res.autoSideshotDiagnostics.candidateCount}, excluded-control=${res.autoSideshotDiagnostics.excludedControlCount}, minRedund<${res.autoSideshotDiagnostics.threshold.toFixed(2)})`,
       );
+    } else {
+      lines.push('      Auto Sideshot (M-lines)            : OFF');
     }
     if ((parseState?.aliasExplicitCount ?? 0) > 0 || (parseState?.aliasRuleCount ?? 0) > 0) {
       lines.push(

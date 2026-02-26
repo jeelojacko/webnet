@@ -171,6 +171,21 @@ describe('parseInput', () => {
     expect(parsed.logs.some((l) => l.includes('Auto-adjust set to ON'))).toBe(true);
   });
 
+  it('supports .AUTOSIDESHOT and /AUTOSIDESHOT toggles', () => {
+    const parsed = parseInput(
+      [
+        '.AUTOSIDESHOT OFF',
+        '/AUTOSIDESHOT ON',
+        'C A 0 0 0 !',
+        'C B 100 0 0 !',
+        'M A-B-P 090-00-00.0 100.000',
+      ].join('\n'),
+    );
+    expect(parsed.parseState.autoSideshotEnabled).toBe(true);
+    expect(parsed.logs.some((l) => l.includes('Auto-sideshot detection set to OFF'))).toBe(true);
+    expect(parsed.logs.some((l) => l.includes('Auto-sideshot detection set to ON'))).toBe(true);
+  });
+
   it('logs traverse closure', () => {
     const parsed = parseInput(readFileSync('tests/fixtures/traverse_closure.dat', 'utf-8'));
     expect(parsed.logs.some((l) => l.includes('Traverse end'))).toBe(true);

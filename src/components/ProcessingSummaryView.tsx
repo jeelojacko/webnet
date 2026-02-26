@@ -127,6 +127,8 @@ const ProcessingSummaryView: React.FC<ProcessingSummaryViewProps> = ({
         `Run Profile: ${runDiagnostics.solveProfile.toUpperCase()} (dirSets=${runDiagnostics.directionSetMode}, profileFallback=${runDiagnostics.profileDefaultInstrumentFallback ? 'ON' : 'OFF'})`,
       );
     }
+    const autoSideshotEnabled = result.parseState?.autoSideshotEnabled ?? true;
+    lines.push(`Auto-Sideshot: ${autoSideshotEnabled ? 'ON' : 'OFF'}`);
     if (result.autoAdjustDiagnostics?.enabled) {
       const ad = result.autoAdjustDiagnostics;
       lines.push(

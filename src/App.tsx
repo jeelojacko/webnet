@@ -268,6 +268,7 @@ type ProjectOptionsTab =
 type RunDiagnostics = {
   solveProfile: SolveProfile;
   parity: boolean;
+  autoSideshotEnabled: boolean;
   autoAdjustEnabled: boolean;
   autoAdjustMaxCycles: number;
   autoAdjustMaxRemovalsPerCycle: number;
@@ -296,6 +297,7 @@ type ParseSettings = {
   solveProfile: SolveProfile;
   coordMode: CoordMode;
   clusterDetectionEnabled: boolean;
+  autoSideshotEnabled: boolean;
   autoAdjustEnabled: boolean;
   autoAdjustMaxCycles: number;
   autoAdjustMaxRemovalsPerCycle: number;
@@ -345,6 +347,8 @@ const SETTINGS_TOOLTIPS = {
     '2D adjusts horizontal coordinates only. 3D also adjusts heights and uses vertical observations.',
   clusterDetection:
     'Enable or disable post-adjust cluster detection diagnostics/workflow. When OFF, cluster candidates and review/merge workflow are hidden.',
+  autoSideshot:
+    'Enable automatic candidate detection for non-redundant M-record sideshot-style observations. When OFF, legacy behavior is used and M-line auto-sideshot diagnostics are hidden.',
   autoAdjust:
     'Enable iterative auto-adjust cycles that automatically exclude top outlier candidates and re-solve until limits are reached. Inline .AUTOADJUST or /AUTOADJUST commands override this.',
   autoAdjustMaxCycles:
@@ -441,6 +445,7 @@ const App: React.FC = () => {
     solveProfile: 'industry-parity',
     coordMode: '3D',
     clusterDetectionEnabled: false,
+    autoSideshotEnabled: true,
     autoAdjustEnabled: false,
     autoAdjustMaxCycles: 3,
     autoAdjustMaxRemovalsPerCycle: 1,
@@ -813,6 +818,7 @@ const App: React.FC = () => {
     return {
       solveProfile: base.solveProfile,
       parity: profileCtx.parity,
+      autoSideshotEnabled: parseState.autoSideshotEnabled ?? base.autoSideshotEnabled,
       autoAdjustEnabled: parseState.autoAdjustEnabled ?? base.autoAdjustEnabled,
       autoAdjustMaxCycles: parseState.autoAdjustMaxCycles ?? base.autoAdjustMaxCycles,
       autoAdjustMaxRemovalsPerCycle:
@@ -865,7 +871,7 @@ const App: React.FC = () => {
     lines.push(`# Generated: ${now.toLocaleString()}`);
     lines.push(`# Linear units: ${linearUnit}`);
     lines.push(
-      `# Reduction: profile=${runDiag.solveProfile}, autoAdjust=${runDiag.autoAdjustEnabled ? 'ON' : 'OFF'}(|t|>=${runDiag.autoAdjustStdResThreshold.toFixed(2)},cycles=${runDiag.autoAdjustMaxCycles},maxRm=${runDiag.autoAdjustMaxRemovalsPerCycle}), dirSets=${runDiag.directionSetMode}, mapMode=${runDiag.mapMode}, mapScale=${runDiag.mapScaleFactor.toFixed(8)}, curvRef=${runDiag.applyCurvatureRefraction ? 'ON' : 'OFF'}, k=${runDiag.refractionCoefficient.toFixed(3)}, vRed=${runDiag.verticalReduction}, tsCorr=${runDiag.tsCorrelationEnabled ? 'ON' : 'OFF'}(${runDiag.tsCorrelationScope},rho=${runDiag.tsCorrelationRho.toFixed(3)}), robust=${runDiag.robustMode.toUpperCase()}(k=${runDiag.robustK.toFixed(2)})`,
+      `# Reduction: profile=${runDiag.solveProfile}, autoSideshot=${runDiag.autoSideshotEnabled ? 'ON' : 'OFF'}, autoAdjust=${runDiag.autoAdjustEnabled ? 'ON' : 'OFF'}(|t|>=${runDiag.autoAdjustStdResThreshold.toFixed(2)},cycles=${runDiag.autoAdjustMaxCycles},maxRm=${runDiag.autoAdjustMaxRemovalsPerCycle}), dirSets=${runDiag.directionSetMode}, mapMode=${runDiag.mapMode}, mapScale=${runDiag.mapScaleFactor.toFixed(8)}, curvRef=${runDiag.applyCurvatureRefraction ? 'ON' : 'OFF'}, k=${runDiag.refractionCoefficient.toFixed(3)}, vRed=${runDiag.verticalReduction}, tsCorr=${runDiag.tsCorrelationEnabled ? 'ON' : 'OFF'}(${runDiag.tsCorrelationScope},rho=${runDiag.tsCorrelationRho.toFixed(3)}), robust=${runDiag.robustMode.toUpperCase()}(k=${runDiag.robustK.toFixed(2)})`,
     );
     lines.push(
       `# Parity: profileFallback=${runDiag.profileDefaultInstrumentFallback ? 'ON' : 'OFF'}, angleCentering=${runDiag.angleCenteringModel}, normalize=${runDiag.normalize ? 'ON' : 'OFF'}, angleMode=${runDiag.angleMode.toUpperCase()}`,
@@ -874,6 +880,7 @@ const App: React.FC = () => {
     lines.push('--- Solve Profile Diagnostics ---');
     lines.push(`Profile: ${runDiag.solveProfile.toUpperCase()}`);
     lines.push(`Direction-set mode: ${runDiag.directionSetMode}`);
+    lines.push(`Auto-sideshot detection: ${runDiag.autoSideshotEnabled ? 'ON' : 'OFF'}`);
     lines.push(
       `Auto-adjust: ${runDiag.autoAdjustEnabled ? `ON (|t|>=${runDiag.autoAdjustStdResThreshold.toFixed(2)}, maxCycles=${runDiag.autoAdjustMaxCycles}, maxRemovalsPerCycle=${runDiag.autoAdjustMaxRemovalsPerCycle})` : 'OFF'}`,
     );
@@ -2789,6 +2796,7 @@ const App: React.FC = () => {
         autoAdjustMaxCycles: effectiveParse.autoAdjustMaxCycles,
         autoAdjustMaxRemovalsPerCycle: effectiveParse.autoAdjustMaxRemovalsPerCycle,
         autoAdjustStdResThreshold: effectiveParse.autoAdjustStdResThreshold,
+        autoSideshotEnabled: effectiveParse.autoSideshotEnabled,
         directionSetMode: profileCtx.directionSetMode,
         clusterDetectionEnabled: effectiveParse.clusterDetectionEnabled,
         clusterApprovedMerges: normalizedClusterMerges,
@@ -3422,7 +3430,7 @@ const App: React.FC = () => {
                         <option value="3D">3D</option>
                       </select>
                     </label>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       <label className={optionLabelClass}>
                         Cluster Detection
                         <div className="mt-1 flex items-center gap-2 text-xs">
@@ -3438,6 +3446,21 @@ const App: React.FC = () => {
                           <span>
                             {parseSettingsDraft.clusterDetectionEnabled ? 'Enabled' : 'Disabled'}
                           </span>
+                        </div>
+                      </label>
+                      <label className={optionLabelClass}>
+                        Auto-Sideshot
+                        <div className="mt-1 flex items-center gap-2 text-xs">
+                          <input
+                            title={SETTINGS_TOOLTIPS.autoSideshot}
+                            type="checkbox"
+                            className="accent-blue-400"
+                            checked={parseSettingsDraft.autoSideshotEnabled}
+                            onChange={(e) =>
+                              handleDraftParseSetting('autoSideshotEnabled', e.target.checked)
+                            }
+                          />
+                          <span>{parseSettingsDraft.autoSideshotEnabled ? 'Enabled' : 'Disabled'}</span>
                         </div>
                       </label>
                       <label className={optionLabelClass}>

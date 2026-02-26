@@ -4205,16 +4205,23 @@ export class LSAEngine {
     if (!this.sideshots) {
       this.sideshots = this.computeSideshotResults();
     }
-    if (!this.autoSideshotDiagnostics) {
-      this.autoSideshotDiagnostics = this.computeAutoSideshotDiagnostics();
-      this.logs.push(
-        `Auto-sideshot detection (M-lines): evaluated=${this.autoSideshotDiagnostics.evaluatedCount}, candidates=${this.autoSideshotDiagnostics.candidateCount}, excluded-control=${this.autoSideshotDiagnostics.excludedControlCount}, threshold=${this.autoSideshotDiagnostics.threshold.toFixed(2)}`,
-      );
-      this.autoSideshotDiagnostics.candidates.slice(0, 10).forEach((c) => {
+    const autoSideshotEnabled =
+      this.parseState?.autoSideshotEnabled ?? this.parseOptions?.autoSideshotEnabled ?? true;
+    if (autoSideshotEnabled) {
+      if (!this.autoSideshotDiagnostics) {
+        this.autoSideshotDiagnostics = this.computeAutoSideshotDiagnostics();
         this.logs.push(
-          `  line ${c.sourceLine ?? '-'} ${c.occupy}->${c.target} (bs=${c.backsight}) minRed=${c.minRedundancy.toFixed(3)} max|t|=${c.maxAbsStdRes.toFixed(2)}`,
+          `Auto-sideshot detection (M-lines): evaluated=${this.autoSideshotDiagnostics.evaluatedCount}, candidates=${this.autoSideshotDiagnostics.candidateCount}, excluded-control=${this.autoSideshotDiagnostics.excludedControlCount}, threshold=${this.autoSideshotDiagnostics.threshold.toFixed(2)}`,
         );
-      });
+        this.autoSideshotDiagnostics.candidates.slice(0, 10).forEach((c) => {
+          this.logs.push(
+            `  line ${c.sourceLine ?? '-'} ${c.occupy}->${c.target} (bs=${c.backsight}) minRed=${c.minRedundancy.toFixed(3)} max|t|=${c.maxAbsStdRes.toFixed(2)}`,
+          );
+        });
+      }
+    } else {
+      this.autoSideshotDiagnostics = undefined;
+      this.logs.push('Auto-sideshot detection (M-lines): disabled');
     }
     if (!this.clusterDiagnostics) {
       this.clusterDiagnostics = this.computeClusterDiagnostics();
