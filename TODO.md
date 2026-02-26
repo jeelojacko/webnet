@@ -120,11 +120,11 @@
       - [x] Phase 2: robust outlier candidate selection policy (local-test aware, redundancy guards, tie-break consistency)
       - [x] Phase 3: run log/report output for each cycle and final "removed observations" listing with line traceability
       - [x] Phase 4: UI controls + CLI hook parity (`/autoadjust`-style options) and regression tests against fixed fixtures
-    - [~] Add automatic sideshot detection for non-redundant `M` records (project option, default-on profile toggle)
+    - [x] Add automatic sideshot detection for non-redundant `M` records (project option, default-on profile toggle)
       - [x] Phase 1: compute redundancy-aware sideshot candidates from solved `M` records (with safety exclusions for control/closure legs)
       - [x] Phase 2: add project/profile toggle and parser/engine plumbing to switch between legacy and auto-detect behavior
       - [x] Phase 3: expose detected/reclassified records in processing logs, report tables, and export annotations
-      - [ ] Phase 4: add parity fixtures to verify observation-count, chi-square, and sideshot coordinate outputs
+      - [x] Phase 4: add parity fixtures to verify observation-count, chi-square, and sideshot coordinate outputs
     - [ ] Implement `.PRISM` prism offset correction support in parser/weighting/residual reporting
       - [ ] Phase 1: parse `.PRISM` option state (global and scoped behavior) with unit-safe validation diagnostics
       - [ ] Phase 2: apply prism-offset correction in distance/vertical observation modeling before residual and weight computation

@@ -653,4 +653,37 @@ describe('LSAEngine', () => {
       true,
     );
   });
+
+  it('keeps observation count, chi-square, and sideshot coordinates stable across auto-sideshot toggle', () => {
+    const input = readFileSync('tests/fixtures/auto_sideshot_phase4.dat', 'utf-8');
+    const on = new LSAEngine({
+      input,
+      maxIterations: 20,
+      parseOptions: { autoSideshotEnabled: true },
+    }).solve();
+    const off = new LSAEngine({
+      input,
+      maxIterations: 20,
+      parseOptions: { autoSideshotEnabled: false },
+    }).solve();
+
+    expect(on.observations.length).toBe(off.observations.length);
+    expect(on.dof).toBe(off.dof);
+    expect(on.chiSquare).toBeDefined();
+    expect(off.chiSquare).toBeDefined();
+    expect(on.chiSquare?.T ?? 0).toBeCloseTo(off.chiSquare?.T ?? 0, 8);
+    expect(on.chiSquare?.varianceFactor ?? 0).toBeCloseTo(off.chiSquare?.varianceFactor ?? 0, 8);
+
+    const shOn = on.sideshots?.find((s) => s.to === 'SH');
+    const shOff = off.sideshots?.find((s) => s.to === 'SH');
+    expect(shOn).toBeDefined();
+    expect(shOff).toBeDefined();
+    expect(shOn?.easting ?? 0).toBeCloseTo(shOff?.easting ?? 0, 8);
+    expect(shOn?.northing ?? 0).toBeCloseTo(shOff?.northing ?? 0, 8);
+    expect(shOn?.sigmaE ?? 0).toBeCloseTo(shOff?.sigmaE ?? 0, 8);
+    expect(shOn?.sigmaN ?? 0).toBeCloseTo(shOff?.sigmaN ?? 0, 8);
+
+    expect(on.autoSideshotDiagnostics?.candidateCount ?? 0).toBeGreaterThan(0);
+    expect(off.autoSideshotDiagnostics).toBeUndefined();
+  });
 });
