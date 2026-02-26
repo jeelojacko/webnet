@@ -34,6 +34,52 @@ describe('LSAEngine', () => {
     expect(result.observations.some((o) => o.type === 'zenith')).toBe(true);
   });
 
+  it('detects deterministic single-linkage station clusters in 2D mode', () => {
+    const input = [
+      '.2D',
+      'C CTRL 0 0 0 ! !',
+      'C P1 100.000 100.000 0',
+      'C P2 100.010 100.005 0',
+      'C P3 100.018 100.012 0',
+      'C FAR 300.000 300.000 0',
+    ].join('\n');
+    const result = new LSAEngine({ input, maxIterations: 5 }).solve();
+    const clusters = result.clusterDiagnostics;
+    expect(clusters?.enabled).toBe(true);
+    expect(clusters?.dimension).toBe('2D');
+    expect(clusters?.linkageMode).toBe('single');
+    expect(clusters?.candidateCount).toBe(1);
+    expect(clusters?.pairCount).toBe(3);
+    expect(clusters?.candidates[0].key).toBe('CL-1-P1');
+    expect(clusters?.candidates[0].stationIds).toEqual(['P1', 'P2', 'P3']);
+    expect(clusters?.candidates[0].representativeId).toBe('P1');
+  });
+
+  it('supports complete-linkage cluster mode in 3D with tolerance gating', () => {
+    const input = [
+      '.3D',
+      'C CTRL 10 10 10 ! ! !',
+      'C P1 0.000 0.000 0.000',
+      'C P2 0.030 0.000 0.000',
+      'C P3 0.060 0.000 0.000',
+    ].join('\n');
+    const result = new LSAEngine({
+      input,
+      maxIterations: 5,
+      parseOptions: {
+        clusterLinkageMode: 'complete',
+        clusterTolerance3D: 0.05,
+      },
+    }).solve();
+    const clusters = result.clusterDiagnostics;
+    expect(clusters?.enabled).toBe(true);
+    expect(clusters?.dimension).toBe('3D');
+    expect(clusters?.linkageMode).toBe('complete');
+    expect(clusters?.candidateCount).toBe(1);
+    expect(clusters?.candidates[0].stationIds).toEqual(['P1', 'P2']);
+    expect(clusters?.candidates[0].maxSeparation).toBeCloseTo(0.03, 6);
+  });
+
   it('solves mixed conventional/GNSS/leveling alias scenarios with canonical IDs', () => {
     const input = readFileSync('tests/fixtures/alias_phase4_mixed.dat', 'utf-8');
     const engine = new LSAEngine({ input, maxIterations: 15 });

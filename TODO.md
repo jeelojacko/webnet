@@ -93,8 +93,8 @@
       - [x] Phase 2: station/observation identity resolution so aliases collapse to canonical point IDs before unknown-building
       - [x] Phase 3: reporting/export traceability (canonical ID + source alias references in listing/errors/find)
       - [x] Phase 4: parity tests for mixed alias scenarios (conventional/GNSS/leveling references across files)
-    - [ ] Add cluster-detection adjustment mode (dual-pass solve with user approval/override of point-cluster aliasing)
-      - [ ] Phase 1: implement post-pass cluster candidate detection (2D/3D tolerance, linkage mode, deterministic cluster keys)
+    - [~] Add cluster-detection adjustment mode (dual-pass solve with user approval/override of point-cluster aliasing)
+      - [x] Phase 1: implement post-pass cluster candidate detection (2D/3D tolerance, linkage mode, deterministic cluster keys)
       - [ ] Phase 2: dual-pass solve pipeline (pass-1 detect, pass-2 apply approved merges, retain reproducible run profile)
       - [ ] Phase 3: UI review/override table (approve/reject cluster merges, choose retained key point)
       - [ ] Phase 4: reporting section for cluster outcomes (merged points, deltas from retained point, rejected proposals)

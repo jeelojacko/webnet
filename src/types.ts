@@ -234,6 +234,7 @@ export type VerticalReductionMode = 'none' | 'curvref';
 export type TsCorrelationScope = 'setup' | 'set';
 export type RobustMode = 'none' | 'huber';
 export type DirectionSetMode = 'reduced' | 'raw';
+export type ClusterLinkageMode = 'single' | 'complete';
 
 export interface AliasExplicitMapping {
   sourceId: StationId;
@@ -284,6 +285,10 @@ export interface ParseOptions {
   robustMode?: RobustMode;
   robustK?: number;
   directionSetMode?: DirectionSetMode;
+  clusterDetectionEnabled?: boolean;
+  clusterLinkageMode?: ClusterLinkageMode;
+  clusterTolerance2D?: number;
+  clusterTolerance3D?: number;
   preferExternalInstruments?: boolean;
   aliasExplicitCount?: number;
   aliasRuleCount?: number;
@@ -596,5 +601,31 @@ export interface AdjustmentResult {
     sigmaH?: number;
     note?: string;
   }[];
+  clusterDiagnostics?: {
+    enabled: boolean;
+    linkageMode: ClusterLinkageMode;
+    dimension: '2D' | '3D';
+    tolerance: number;
+    pairCount: number;
+    candidateCount: number;
+    candidates: {
+      key: string;
+      representativeId: StationId;
+      stationIds: StationId[];
+      memberCount: number;
+      hasFixed: boolean;
+      hasUnknown: boolean;
+      centroidE: number;
+      centroidN: number;
+      centroidH?: number;
+      maxSeparation: number;
+      meanSeparation: number;
+      pairs: {
+        from: StationId;
+        to: StationId;
+        separation: number;
+      }[];
+    }[];
+  };
   directionRejectDiagnostics?: DirectionRejectDiagnostic[];
 }

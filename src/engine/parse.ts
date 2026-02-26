@@ -42,6 +42,10 @@ const defaultParseOptions: ParseOptions = {
   robustMode: 'none',
   robustK: 1.5,
   directionSetMode: 'reduced',
+  clusterDetectionEnabled: true,
+  clusterLinkageMode: 'single',
+  clusterTolerance2D: 0.03,
+  clusterTolerance3D: 0.05,
   preferExternalInstruments: false,
 };
 

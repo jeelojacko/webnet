@@ -173,6 +173,10 @@ export class LSAEngine {
   private tsCorrelationScope: ParseOptions['tsCorrelationScope'] = 'set';
   private robustMode: ParseOptions['robustMode'] = 'none';
   private robustK = 1.5;
+  private clusterDetectionEnabled = true;
+  private clusterLinkageMode: ParseOptions['clusterLinkageMode'] = 'single';
+  private clusterTolerance2D = 0.03;
+  private clusterTolerance3D = 0.05;
   private chiSquare?: AdjustmentResult['chiSquare'];
   private statisticalSummary?: AdjustmentResult['statisticalSummary'];
   private typeSummary?: Record<
@@ -198,6 +202,7 @@ export class LSAEngine {
   private residualDiagnostics?: AdjustmentResult['residualDiagnostics'];
   private traverseDiagnostics?: AdjustmentResult['traverseDiagnostics'];
   private sideshots?: AdjustmentResult['sideshots'];
+  private clusterDiagnostics?: AdjustmentResult['clusterDiagnostics'];
   private condition?: AdjustmentResult['condition'];
   private controlConstraints?: AdjustmentResult['controlConstraints'];
   private parseState?: ParseOptions;
@@ -1120,6 +1125,16 @@ export class LSAEngine {
       parsed.parseState?.tsCorrelationScope ?? this.parseOptions?.tsCorrelationScope ?? 'set';
     this.robustMode = parsed.parseState?.robustMode ?? this.parseOptions?.robustMode ?? 'none';
     this.robustK = parsed.parseState?.robustK ?? this.parseOptions?.robustK ?? 1.5;
+    this.clusterDetectionEnabled =
+      parsed.parseState?.clusterDetectionEnabled ??
+      this.parseOptions?.clusterDetectionEnabled ??
+      true;
+    this.clusterLinkageMode =
+      parsed.parseState?.clusterLinkageMode ?? this.parseOptions?.clusterLinkageMode ?? 'single';
+    this.clusterTolerance2D =
+      parsed.parseState?.clusterTolerance2D ?? this.parseOptions?.clusterTolerance2D ?? 0.03;
+    this.clusterTolerance3D =
+      parsed.parseState?.clusterTolerance3D ?? this.parseOptions?.clusterTolerance3D ?? 0.05;
     this.parseState = parsed.parseState;
     this.is2D = this.coordMode === '2D';
     this.condition = undefined;
@@ -1128,6 +1143,7 @@ export class LSAEngine {
     this.tsCorrelationDiagnostics = undefined;
     this.robustDiagnostics = undefined;
     this.residualDiagnostics = undefined;
+    this.clusterDiagnostics = undefined;
     this.conditionWarned = false;
 
     if ((this.directionRejectDiagnostics?.length ?? 0) > 0) {
@@ -3750,9 +3766,214 @@ export class LSAEngine {
     }
   }
 
+  private stationSeparation(a: Station, b: Station, dimension: '2D' | '3D'): number {
+    const dE = b.x - a.x;
+    const dN = b.y - a.y;
+    if (dimension === '2D') {
+      return Math.hypot(dE, dN);
+    }
+    const dH = b.h - a.h;
+    return Math.sqrt(dE * dE + dN * dN + dH * dH);
+  }
+
+  private computeClusterDiagnostics(): NonNullable<AdjustmentResult['clusterDiagnostics']> {
+    const dimension: '2D' | '3D' = this.is2D ? '2D' : '3D';
+    const tolerance = Math.max(
+      1e-9,
+      dimension === '2D' ? this.clusterTolerance2D : this.clusterTolerance3D,
+    );
+    const linkageMode = this.clusterLinkageMode ?? 'single';
+
+    if (!this.clusterDetectionEnabled) {
+      return {
+        enabled: false,
+        linkageMode,
+        dimension,
+        tolerance,
+        pairCount: 0,
+        candidateCount: 0,
+        candidates: [],
+      };
+    }
+
+    const stationIds = Object.keys(this.stations)
+      .filter((id) => {
+        const s = this.stations[id];
+        if (!s) return false;
+        if (!Number.isFinite(s.x) || !Number.isFinite(s.y)) return false;
+        if (dimension === '3D' && !Number.isFinite(s.h)) return false;
+        return true;
+      })
+      .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+
+    if (stationIds.length < 2) {
+      return {
+        enabled: true,
+        linkageMode,
+        dimension,
+        tolerance,
+        pairCount: 0,
+        candidateCount: 0,
+        candidates: [],
+      };
+    }
+
+    const pairDist = new Map<string, number>();
+    const pairKey = (a: StationId, b: StationId): string => (a < b ? `${a}|${b}` : `${b}|${a}`);
+    const getDist = (a: StationId, b: StationId): number => {
+      const key = pairKey(a, b);
+      const cached = pairDist.get(key);
+      if (cached != null) return cached;
+      const sa = this.stations[a];
+      const sb = this.stations[b];
+      if (!sa || !sb) return Number.POSITIVE_INFINITY;
+      const dist = this.stationSeparation(sa, sb, dimension);
+      pairDist.set(key, dist);
+      return dist;
+    };
+
+    type Edge = { from: StationId; to: StationId; separation: number };
+    const withinTolEdges: Edge[] = [];
+    for (let i = 0; i < stationIds.length; i += 1) {
+      for (let j = i + 1; j < stationIds.length; j += 1) {
+        const from = stationIds[i];
+        const to = stationIds[j];
+        const separation = getDist(from, to);
+        if (separation <= tolerance) {
+          withinTolEdges.push({ from, to, separation });
+        }
+      }
+    }
+
+    let rawClusters: StationId[][] = [];
+    if (linkageMode === 'single') {
+      const parent = new Map<StationId, StationId>();
+      const find = (id: StationId): StationId => {
+        const p = parent.get(id) ?? id;
+        if (p === id) return p;
+        const root = find(p);
+        parent.set(id, root);
+        return root;
+      };
+      const union = (a: StationId, b: StationId): void => {
+        const ra = find(a);
+        const rb = find(b);
+        if (ra === rb) return;
+        const keep = ra.localeCompare(rb, undefined, { numeric: true }) <= 0 ? ra : rb;
+        const drop = keep === ra ? rb : ra;
+        parent.set(drop, keep);
+      };
+      stationIds.forEach((id) => parent.set(id, id));
+      withinTolEdges.forEach((e) => union(e.from, e.to));
+      const groups = new Map<StationId, StationId[]>();
+      stationIds.forEach((id) => {
+        const root = find(id);
+        const list = groups.get(root) ?? [];
+        list.push(id);
+        groups.set(root, list);
+      });
+      rawClusters = Array.from(groups.values()).filter((group) => group.length > 1);
+    } else {
+      const clusters: StationId[][] = [];
+      stationIds.forEach((id) => {
+        let placed = false;
+        for (const group of clusters) {
+          const fits = group.every((member) => getDist(id, member) <= tolerance);
+          if (fits) {
+            group.push(id);
+            placed = true;
+            break;
+          }
+        }
+        if (!placed) clusters.push([id]);
+      });
+      rawClusters = clusters.filter((group) => group.length > 1);
+    }
+
+    const unknownSet = new Set(this.unknowns);
+    const candidates = rawClusters
+      .map((group) =>
+        group.slice().sort((a, b) => a.localeCompare(b, undefined, { numeric: true })),
+      )
+      .sort((a, b) => a[0].localeCompare(b[0], undefined, { numeric: true }))
+      .map((stationIdsInCluster, idx) => {
+        let sumE = 0;
+        let sumN = 0;
+        let sumH = 0;
+        let hasFixed = false;
+        let hasUnknown = false;
+        stationIdsInCluster.forEach((id) => {
+          const st = this.stations[id];
+          if (!st) return;
+          sumE += st.x;
+          sumN += st.y;
+          sumH += st.h;
+          hasFixed = hasFixed || st.fixed;
+          hasUnknown = hasUnknown || unknownSet.has(id);
+        });
+        const pairRows: Edge[] = [];
+        let maxSeparation = 0;
+        let sumSeparation = 0;
+        let pairCount = 0;
+        for (let i = 0; i < stationIdsInCluster.length; i += 1) {
+          for (let j = i + 1; j < stationIdsInCluster.length; j += 1) {
+            const from = stationIdsInCluster[i];
+            const to = stationIdsInCluster[j];
+            const separation = getDist(from, to);
+            pairRows.push({ from, to, separation });
+            maxSeparation = Math.max(maxSeparation, separation);
+            sumSeparation += separation;
+            pairCount += 1;
+          }
+        }
+        pairRows.sort(
+          (a, b) =>
+            a.from.localeCompare(b.from, undefined, { numeric: true }) ||
+            a.to.localeCompare(b.to, undefined, { numeric: true }),
+        );
+        return {
+          key: `CL-${idx + 1}-${stationIdsInCluster[0]}`,
+          representativeId: stationIdsInCluster[0],
+          stationIds: stationIdsInCluster,
+          memberCount: stationIdsInCluster.length,
+          hasFixed,
+          hasUnknown,
+          centroidE: sumE / stationIdsInCluster.length,
+          centroidN: sumN / stationIdsInCluster.length,
+          centroidH: dimension === '3D' ? sumH / stationIdsInCluster.length : undefined,
+          maxSeparation,
+          meanSeparation: pairCount > 0 ? sumSeparation / pairCount : 0,
+          pairs: pairRows,
+        };
+      });
+
+    return {
+      enabled: true,
+      linkageMode,
+      dimension,
+      tolerance,
+      pairCount: withinTolEdges.length,
+      candidateCount: candidates.length,
+      candidates,
+    };
+  }
+
   private buildResult(): AdjustmentResult {
     if (!this.sideshots) {
       this.sideshots = this.computeSideshotResults();
+    }
+    if (!this.clusterDiagnostics) {
+      this.clusterDiagnostics = this.computeClusterDiagnostics();
+      if (this.clusterDiagnostics.enabled) {
+        this.logs.push(
+          `Cluster detection: mode=${this.clusterDiagnostics.linkageMode}, dim=${this.clusterDiagnostics.dimension}, tol=${this.clusterDiagnostics.tolerance.toFixed(4)}m, pairHits=${this.clusterDiagnostics.pairCount}, candidates=${this.clusterDiagnostics.candidateCount}`,
+        );
+        this.clusterDiagnostics.candidates.slice(0, 10).forEach((c) => {
+          this.logs.push(
+            `  ${c.key}: rep=${c.representativeId}, members=${c.stationIds.join(',')}, maxSep=${c.maxSeparation.toFixed(4)}m, meanSep=${c.meanSeparation.toFixed(4)}m`,
+          );
+        });
+      }
     }
     return {
       success: this.converged,
@@ -3779,6 +4000,7 @@ export class LSAEngine {
       residualDiagnostics: this.residualDiagnostics,
       traverseDiagnostics: this.traverseDiagnostics,
       sideshots: this.sideshots,
+      clusterDiagnostics: this.clusterDiagnostics,
       directionRejectDiagnostics: this.directionRejectDiagnostics,
     };
   }

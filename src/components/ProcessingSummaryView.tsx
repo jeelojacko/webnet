@@ -142,6 +142,21 @@ const ProcessingSummaryView: React.FC<ProcessingSummaryViewProps> = ({
         lines.push(`  ... ${aliasTrace.length - sample.length} more alias references`);
       }
     }
+    if (result.clusterDiagnostics?.enabled) {
+      lines.push(
+        `Cluster Detection: mode=${result.clusterDiagnostics.linkageMode.toUpperCase()}, dim=${result.clusterDiagnostics.dimension}, tol=${result.clusterDiagnostics.tolerance.toFixed(4)}m, pairHits=${result.clusterDiagnostics.pairCount}, candidates=${result.clusterDiagnostics.candidateCount}`,
+      );
+      result.clusterDiagnostics.candidates.slice(0, 10).forEach((c) => {
+        lines.push(
+          `  ${c.key}: rep=${c.representativeId}, members=${c.stationIds.join(',')}, maxSep=${c.maxSeparation.toFixed(4)}m`,
+        );
+      });
+      if (result.clusterDiagnostics.candidates.length > 10) {
+        lines.push(
+          `  ... ${result.clusterDiagnostics.candidates.length - 10} more cluster candidates`,
+        );
+      }
+    }
     lines.push('');
     lines.push('Performing Error Propagation ...');
     lines.push('Writing Output Files ...');

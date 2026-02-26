@@ -839,6 +839,14 @@ const App: React.FC = () => {
         )}`,
       );
     }
+    if (res.clusterDiagnostics?.enabled) {
+      const cd = res.clusterDiagnostics;
+      lines.push(
+        `Cluster detection: mode=${cd.linkageMode}, dim=${cd.dimension}, tol=${(
+          cd.tolerance * unitScale
+        ).toFixed(4)} ${linearUnit}, pairHits=${cd.pairCount}, candidates=${cd.candidateCount}`,
+      );
+    }
     lines.push('');
     lines.push('--- Adjusted Coordinates ---');
     lines.push(
@@ -1068,6 +1076,31 @@ const App: React.FC = () => {
           ].join('  '),
         );
       });
+      lines.push('');
+    }
+    if (res.clusterDiagnostics?.enabled) {
+      const cd = res.clusterDiagnostics;
+      lines.push('--- Cluster Detection Candidates ---');
+      lines.push(
+        `Mode=${cd.linkageMode.toUpperCase()} Dim=${cd.dimension} Tolerance=${(
+          cd.tolerance * unitScale
+        ).toFixed(4)} ${linearUnit} PairHits=${cd.pairCount} Candidates=${cd.candidateCount}`,
+      );
+      if (cd.candidates.length > 0) {
+        lines.push(
+          'Key                Rep          Members  MaxSep         MeanSep        Flags            Station IDs',
+        );
+        cd.candidates.forEach((c) => {
+          const flags = `${c.hasFixed ? 'fixed' : 'free'}${c.hasUnknown ? '+unknown' : ''}`;
+          lines.push(
+            `${c.key.padEnd(18)} ${c.representativeId.padEnd(12)} ${String(c.memberCount).padStart(7)}  ${(
+              c.maxSeparation * unitScale
+            ).toFixed(4).padStart(12)} ${(
+              c.meanSeparation * unitScale
+            ).toFixed(4).padStart(12)}  ${flags.padEnd(15)} ${c.stationIds.join(', ')}`,
+          );
+        });
+      }
       lines.push('');
     }
     if (res.traverseDiagnostics) {
@@ -2456,6 +2489,11 @@ const App: React.FC = () => {
     lines.push(
       `      Default Coefficient of Refraction   : ${(parseState?.refractionCoefficient ?? parseSettings.refractionCoefficient).toFixed(6)}`,
     );
+    if (res.clusterDiagnostics?.enabled) {
+      lines.push(
+        `      Cluster Detection Mode             : ${res.clusterDiagnostics.linkageMode.toUpperCase()} (${res.clusterDiagnostics.dimension}, tol=${(res.clusterDiagnostics.tolerance * unitScale).toFixed(4)} ${linearUnit})`,
+      );
+    }
     if ((parseState?.aliasExplicitCount ?? 0) > 0 || (parseState?.aliasRuleCount ?? 0) > 0) {
       lines.push(
         `      Alias Canonicalization              : explicit=${parseState?.aliasExplicitCount ?? 0}, rules=${parseState?.aliasRuleCount ?? 0}, references=${aliasTrace.length}`,
@@ -2690,6 +2728,28 @@ const App: React.FC = () => {
           `${id.padEnd(24)}${(st.sN != null ? st.sN * unitScale : 0).toFixed(6).padStart(12)}${(st.sE != null ? st.sE * unitScale : 0).toFixed(14)}`,
         );
       });
+    }
+    if (res.clusterDiagnostics?.enabled) {
+      lines.push('');
+      lines.push('                          Cluster Detection Candidates');
+      lines.push('                          ============================');
+      lines.push('');
+      lines.push(
+        `Mode: ${res.clusterDiagnostics.linkageMode.toUpperCase()}   Dim: ${res.clusterDiagnostics.dimension}   Tol: ${(res.clusterDiagnostics.tolerance * unitScale).toFixed(4)} ${linearUnit}   PairHits: ${res.clusterDiagnostics.pairCount}   Candidates: ${res.clusterDiagnostics.candidateCount}`,
+      );
+      if (res.clusterDiagnostics.candidates.length > 0) {
+        lines.push('Key               Rep          Members   MaxSep        MeanSep       Flags           Station IDs');
+        res.clusterDiagnostics.candidates.forEach((c) => {
+          const flags = `${c.hasFixed ? 'fixed' : 'free'}${c.hasUnknown ? '+unknown' : ''}`;
+          lines.push(
+            `${c.key.padEnd(17)} ${c.representativeId.padEnd(12)} ${String(c.memberCount).padStart(7)} ${(
+              c.maxSeparation * unitScale
+            ).toFixed(4).padStart(12)} ${(
+              c.meanSeparation * unitScale
+            ).toFixed(4).padStart(12)} ${flags.padEnd(15)} ${c.stationIds.join(', ')}`,
+          );
+        });
+      }
     }
     if (aliasTrace.length > 0) {
       lines.push('');

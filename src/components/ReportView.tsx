@@ -113,6 +113,8 @@ const ReportView: React.FC<ReportViewProps> = ({
     if (ca !== cb) return ca.localeCompare(cb)
     return a.sourceId.localeCompare(b.sourceId)
   })
+  const clusterDiagnostics = result.clusterDiagnostics
+  const clusterCandidates = clusterDiagnostics?.candidates ?? []
   const isAngularType = (type: Observation['type']) =>
     type === 'angle' ||
     type === 'direction' ||
@@ -876,6 +878,75 @@ const ReportView: React.FC<ReportViewProps> = ({
             <div className="px-3 py-2 text-[11px] text-slate-500 border-t border-slate-800">
               Showing first 200 rows of {aliasTrace.length}. Full trace available in export output.
             </div>
+          )}
+        </div>
+      )}
+
+      {clusterDiagnostics?.enabled && (
+        <div className="mb-6 border border-slate-800 rounded overflow-hidden">
+          <div className="px-3 py-2 text-xs text-slate-400 uppercase tracking-wider border-b border-slate-800 bg-slate-900/40">
+            Cluster Detection Candidates
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-6 gap-3 p-3 text-xs text-slate-300 border-b border-slate-800/60">
+            <div>
+              <div className="text-slate-500">Mode</div>
+              <div>{clusterDiagnostics.linkageMode.toUpperCase()}</div>
+            </div>
+            <div>
+              <div className="text-slate-500">Dimension</div>
+              <div>{clusterDiagnostics.dimension}</div>
+            </div>
+            <div>
+              <div className="text-slate-500">Tolerance</div>
+              <div>{(clusterDiagnostics.tolerance * unitScale).toFixed(4)} {units}</div>
+            </div>
+            <div>
+              <div className="text-slate-500">Pair Hits</div>
+              <div>{clusterDiagnostics.pairCount}</div>
+            </div>
+            <div>
+              <div className="text-slate-500">Candidates</div>
+              <div>{clusterDiagnostics.candidateCount}</div>
+            </div>
+            <div>
+              <div className="text-slate-500">Coverage</div>
+              <div>{clusterCandidates.length > 0 ? 'Needs Review' : 'No Clusters'}</div>
+            </div>
+          </div>
+          {clusterCandidates.length > 0 ? (
+            <div className="overflow-x-auto w-full">
+              <table className="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr className="text-slate-500 border-b border-slate-800">
+                    <th className="py-2 px-3 font-semibold">Key</th>
+                    <th className="py-2 px-3 font-semibold">Representative</th>
+                    <th className="py-2 px-3 font-semibold text-right">Members</th>
+                    <th className="py-2 px-3 font-semibold text-right">Max Sep ({units})</th>
+                    <th className="py-2 px-3 font-semibold text-right">Mean Sep ({units})</th>
+                    <th className="py-2 px-3 font-semibold">Flags</th>
+                    <th className="py-2 px-3 font-semibold">Station IDs</th>
+                  </tr>
+                </thead>
+                <tbody className="text-slate-300">
+                  {clusterCandidates.map((c) => (
+                    <tr key={c.key} className="border-b border-slate-800/50">
+                      <td className="py-1 px-3 font-mono">{c.key}</td>
+                      <td className="py-1 px-3 font-mono">{c.representativeId}</td>
+                      <td className="py-1 px-3 text-right">{c.memberCount}</td>
+                      <td className="py-1 px-3 text-right">{(c.maxSeparation * unitScale).toFixed(4)}</td>
+                      <td className="py-1 px-3 text-right">{(c.meanSeparation * unitScale).toFixed(4)}</td>
+                      <td className="py-1 px-3">
+                        {c.hasFixed ? 'fixed' : 'free'}
+                        {c.hasUnknown ? ' + unknown' : ''}
+                      </td>
+                      <td className="py-1 px-3 font-mono">{c.stationIds.join(', ')}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="p-3 text-xs text-slate-500">No stations fell inside the current cluster tolerance.</div>
           )}
         </div>
       )}
