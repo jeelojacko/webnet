@@ -166,6 +166,14 @@ const ReportView: React.FC<ReportViewProps> = ({
     type === 'bearing' ||
     type === 'dir' ||
     type === 'zenith'
+  const prismAnnotation = (obs: Observation): string => {
+    if (obs.type !== 'dist' && obs.type !== 'zenith') return ''
+    const correction = obs.prismCorrectionM ?? 0
+    if (!Number.isFinite(correction) || Math.abs(correction) <= 0) return ''
+    const sign = correction >= 0 ? '+' : ''
+    const scope = obs.prismScope ?? 'global'
+    return ` [PRISM ${scope} ${sign}${(correction * unitScale).toFixed(4)}${units}]`
+  }
   const formatMdb = (value: number, angular: boolean): string => {
     if (!Number.isFinite(value)) return 'inf'
     return angular
@@ -294,7 +302,8 @@ const ReportView: React.FC<ReportViewProps> = ({
     if (upper.startsWith('ΣDIST')) return 'Estimated standard deviation of inter-point distance.'
     if (upper.startsWith('ΣAZ')) return 'Estimated standard deviation of inter-point azimuth.'
     if (upper.startsWith('NOTE')) return 'Additional notes, warnings, or limitations for this row.'
-    if (upper.startsWith('TAG')) return 'Annotation tag for derived diagnostics, such as AUTO-SS markers.'
+    if (upper.startsWith('TAG'))
+      return 'Annotation tag for derived diagnostics, such as AUTO-SS and prism-correction markers.'
     return undefined
   }
 
@@ -470,6 +479,10 @@ const ReportView: React.FC<ReportViewProps> = ({
               }
               if (autoSideshotObsIds.has(obs.id)) {
                 stationsLabel = `${stationsLabel} [AUTO-SS]`
+              }
+              const prismTag = prismAnnotation(obs)
+              if (prismTag) {
+                stationsLabel = `${stationsLabel}${prismTag}`
               }
 
               return (

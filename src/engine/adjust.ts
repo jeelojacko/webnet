@@ -1457,17 +1457,25 @@ export class LSAEngine {
         `Robust reweighting active: mode=${this.robustMode}, k=${this.robustDiagnostics.k.toFixed(2)}`,
       );
     }
-    if (this.prismEnabled && Number.isFinite(this.prismOffset) && Math.abs(this.prismOffset) > 0) {
-      let distCount = 0;
-      let zenithCount = 0;
-      this.observations.forEach((obs) => {
-        const correction = this.prismCorrectionForObservation(obs);
-        if (Math.abs(correction) <= 0) return;
-        if (obs.type === 'dist') distCount += 1;
-        if (obs.type === 'zenith') zenithCount += 1;
-      });
+    let distCount = 0;
+    let zenithCount = 0;
+    this.observations.forEach((obs) => {
+      const correction = this.prismCorrectionForObservation(obs);
+      if (Math.abs(correction) <= 0) return;
+      if (obs.type === 'dist') distCount += 1;
+      if (obs.type === 'zenith') zenithCount += 1;
+    });
+    if (distCount > 0 || zenithCount > 0) {
       this.log(
-        `Prism correction active: offset=${this.prismOffset.toFixed(4)}m, scope=${this.prismScope}, distRows=${distCount}, zenithRows=${zenithCount}`,
+        `Prism correction active: distRows=${distCount}, zenithRows=${zenithCount}, currentState=${this.prismEnabled ? `ON(${this.prismOffset.toFixed(4)}m,${this.prismScope})` : 'OFF'}`,
+      );
+    } else if (
+      this.prismEnabled &&
+      Number.isFinite(this.prismOffset) &&
+      Math.abs(this.prismOffset) > 0
+    ) {
+      this.log(
+        `Prism correction configured but no eligible rows: offset=${this.prismOffset.toFixed(4)}m, scope=${this.prismScope}`,
       );
     }
 

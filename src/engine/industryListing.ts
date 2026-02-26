@@ -335,6 +335,14 @@ export const buildIndustryStyleListingText = (
     );
     const autoSideshotSuffix = (obs: Observation): string =>
       autoSideshotObsIds.has(obs.id) ? ' [auto-ss]' : '';
+    const prismSuffix = (obs: Observation): string => {
+      if (obs.type !== 'dist' && obs.type !== 'zenith') return '';
+      const correction = obs.prismCorrectionM ?? 0;
+      if (!Number.isFinite(correction) || Math.abs(correction) <= 0) return '';
+      const scope = obs.prismScope ?? 'global';
+      const sign = correction >= 0 ? '+' : '';
+      return ` [prism ${scope} ${sign}${(correction * unitScale).toFixed(4)}${linearUnit}]`;
+    };
 
     type RelationshipPair = { key: string; from: string; to: string };
     const pairKey = (a: string, b: string) =>
@@ -554,7 +562,7 @@ export const buildIndustryStyleListingText = (
       const distanceRows = listingObservations
         .filter((obs) => obs.type === 'dist')
         .map((obs) => [
-          `${obs.from}-${obs.to}${aliasRefsForLine(obs.sourceLine)}${autoSideshotSuffix(obs)}`,
+          `${obs.from}-${obs.to}${aliasRefsForLine(obs.sourceLine)}${autoSideshotSuffix(obs)}${prismSuffix(obs)}`,
           formatLinear(obs.obs),
           formatLinear(obs.residual as number | undefined),
           formatLinear(obs.stdDev),

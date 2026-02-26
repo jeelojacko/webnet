@@ -2322,6 +2322,7 @@ const App: React.FC = () => {
       redundancy: string;
       localTest: string;
       mdb: string;
+      prism: string;
       tag: string;
       stdResAbs: number;
     }[] = [];
@@ -2336,6 +2337,14 @@ const App: React.FC = () => {
       return angular
         ? `${(value * RAD_TO_DEG * 3600).toFixed(2)}"`
         : (value * unitScale).toFixed(4);
+    };
+    const prismTagForObservation = (obs: Observation): string => {
+      if (obs.type !== 'dist' && obs.type !== 'zenith') return '-';
+      const correction = obs.prismCorrectionM ?? 0;
+      if (!Number.isFinite(correction) || Math.abs(correction) <= 0) return '-';
+      const scope = obs.prismScope ?? 'global';
+      const sign = correction >= 0 ? '+' : '';
+      return `${scope}:${sign}${(correction * unitScale).toFixed(4)}${linearUnit}`;
     };
     res.observations.forEach((obs) => {
       let stations = '';
@@ -2454,6 +2463,7 @@ const App: React.FC = () => {
               : '-',
         localTest,
         mdb,
+        prism: prismTagForObservation(obs),
         tag: autoSideshotObsIds.has(obs.id) ? 'AUTO-SS' : '-',
         stdResAbs,
       });
@@ -2618,6 +2628,7 @@ const App: React.FC = () => {
       redundancy: 'Redund',
       localTest: 'Local',
       mdb: 'MDB',
+      prism: 'Prism',
       tag: 'Tag',
     };
     const widths = {
@@ -2631,6 +2642,7 @@ const App: React.FC = () => {
       redundancy: Math.max(headers.redundancy.length, ...rows.map((r) => r.redundancy.length)),
       localTest: Math.max(headers.localTest.length, ...rows.map((r) => r.localTest.length)),
       mdb: Math.max(headers.mdb.length, ...rows.map((r) => r.mdb.length)),
+      prism: Math.max(headers.prism.length, ...rows.map((r) => r.prism.length)),
       tag: Math.max(headers.tag.length, ...rows.map((r) => r.tag.length)),
     };
     const pad = (value: string, size: number) => value.padEnd(size, ' ');
@@ -2646,6 +2658,7 @@ const App: React.FC = () => {
         pad(headers.redundancy, widths.redundancy),
         pad(headers.localTest, widths.localTest),
         pad(headers.mdb, widths.mdb),
+        pad(headers.prism, widths.prism),
         pad(headers.tag, widths.tag),
       ].join('  '),
     );
@@ -2662,6 +2675,7 @@ const App: React.FC = () => {
           pad(r.redundancy, widths.redundancy),
           pad(r.localTest, widths.localTest),
           pad(r.mdb, widths.mdb),
+          pad(r.prism, widths.prism),
           pad(r.tag, widths.tag),
         ].join('  '),
       );

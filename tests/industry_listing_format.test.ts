@@ -235,4 +235,53 @@ describe('industry listing phase 5 formatting locks', () => {
 
     expect(listing).toContain('[auto-ss]');
   });
+
+  it('annotates adjusted distance rows with prism correction source and magnitude', () => {
+    const input = readFileSync('public/examples/industry-input.txt', 'utf-8');
+    const engine = new LSAEngine({
+      input,
+      maxIterations: 25,
+      options: parseOptions,
+    });
+    const result = engine.solve();
+    const distObs = result.observations.find((o) => o.type === 'dist');
+    expect(distObs).toBeDefined();
+    if (distObs?.type === 'dist') {
+      distObs.prismCorrectionM = 0.25;
+      distObs.prismScope = 'global';
+    }
+
+    const listing = buildIndustryStyleListingText(
+      result,
+      {
+        maxIterations: 25,
+        units: 'm',
+        listingShowCoordinates: true,
+        listingShowObservationsResiduals: true,
+        listingShowErrorPropagation: true,
+        listingShowProcessingNotes: false,
+        listingShowAzimuthsBearings: true,
+        listingSortCoordinatesBy: 'name',
+        listingSortObservationsBy: 'residual',
+        listingObservationLimit: 500,
+      },
+      {
+        coordMode: '2D',
+        order: 'NE',
+        angleUnits: 'dms',
+        angleStationOrder: 'atfromto',
+        deltaMode: 'horiz',
+        refractionCoefficient: 0.13,
+      },
+      {
+        solveProfile: 'industry-parity',
+        angleCenteringModel: 'geometry-aware-correlated-rays',
+        defaultSigmaCount: 0,
+        defaultSigmaByType: '',
+        stochasticDefaultsSummary: 'inst=S9',
+      },
+    );
+
+    expect(listing).toMatch(/\[prism global \+0\.2500(?:m|Meters)\]/);
+  });
 });

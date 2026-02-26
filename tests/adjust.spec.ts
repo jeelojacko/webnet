@@ -576,6 +576,31 @@ describe('LSAEngine', () => {
     expect(on.logs.some((l) => l.includes('zenithRows=2'))).toBe(true);
   });
 
+  it('captures prism correction source and magnitude metadata from fixture offsets', () => {
+    const input = readFileSync('tests/fixtures/prism_phase3_offsets.dat', 'utf-8');
+    const result = new LSAEngine({ input, maxIterations: 12 }).solve();
+    const prismRows = result.observations.filter(
+      (obs) =>
+        (obs.type === 'dist' || obs.type === 'zenith') && Math.abs(obs.prismCorrectionM ?? 0) > 0,
+    );
+    expect(prismRows.length).toBeGreaterThanOrEqual(3);
+    expect(prismRows.some((obs) => obs.prismScope === 'global')).toBe(true);
+    expect(prismRows.some((obs) => obs.prismScope === 'set')).toBe(true);
+
+    const setDist = result.observations.find(
+      (obs) => obs.type === 'dist' && (obs.setId ?? '') === 'SET1',
+    );
+    expect(setDist).toBeDefined();
+    expect(setDist?.prismCorrectionM).toBeCloseTo(0.5, 10);
+
+    const offDist = result.observations.find(
+      (obs) => obs.type === 'dist' && (obs.sourceLine ?? 0) === 13,
+    );
+    expect(offDist).toBeDefined();
+    expect(Math.abs(offDist?.prismCorrectionM ?? 0)).toBe(0);
+    expect(result.logs.some((l) => l.includes('Prism correction active'))).toBe(true);
+  });
+
   it('applies curvature/refraction correction to zenith calculations when enabled', () => {
     const baseInput = [
       'C A 0 0 0 !',
