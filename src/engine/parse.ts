@@ -1,4 +1,5 @@
 import { dmsToRad, RAD_TO_DEG, SEC_TO_RAD } from './angles';
+import { parseAutoAdjustDirectiveTokens } from './autoAdjust';
 import type {
   AngleObservation,
   DistanceObservation,
@@ -41,6 +42,10 @@ const defaultParseOptions: ParseOptions = {
   tsCorrelationScope: 'set',
   robustMode: 'none',
   robustK: 1.5,
+  autoAdjustEnabled: false,
+  autoAdjustMaxCycles: 3,
+  autoAdjustMaxRemovalsPerCycle: 1,
+  autoAdjustStdResThreshold: 4,
   directionSetMode: 'reduced',
   clusterDetectionEnabled: true,
   clusterLinkageMode: 'single',
@@ -765,9 +770,10 @@ export const parseInput = (
     if (!line || line.startsWith('#')) continue;
 
     // Inline options
-    if (line.startsWith('.')) {
+    if (line.startsWith('.') || line.startsWith('/')) {
       const parts = line.split(/\s+/);
-      const op = parts[0].toUpperCase();
+      const rawOp = parts[0].toUpperCase();
+      const op = rawOp.startsWith('/') ? `.${rawOp.slice(1)}` : rawOp;
       if (op === '.UNITS' && parts[1]) {
         let linearChanged = false;
         let angleChanged = false;
@@ -929,6 +935,25 @@ export const parseInput = (
             state.robustK = Math.max(0.5, Math.min(10, maybeK));
           }
           logs.push(`Robust mode set to huber (k=${(state.robustK ?? 1.5).toFixed(2)})`);
+        }
+      } else if (op === '.AUTOADJUST') {
+        const directive = parseAutoAdjustDirectiveTokens(parts);
+        if (!directive) {
+          logs.push(
+            `Warning: unrecognized .AUTOADJUST option at line ${lineNum}; expected ON/OFF and optional threshold/cycles/removals`,
+          );
+        } else {
+          if (directive.enabled != null) state.autoAdjustEnabled = directive.enabled;
+          if (directive.stdResThreshold != null)
+            state.autoAdjustStdResThreshold = directive.stdResThreshold;
+          if (directive.maxCycles != null) state.autoAdjustMaxCycles = directive.maxCycles;
+          if (directive.maxRemovalsPerCycle != null)
+            state.autoAdjustMaxRemovalsPerCycle = directive.maxRemovalsPerCycle;
+          logs.push(
+            `Auto-adjust set to ${state.autoAdjustEnabled ? 'ON' : 'OFF'} (|t|>=${(
+              state.autoAdjustStdResThreshold ?? 4
+            ).toFixed(2)}, cycles=${state.autoAdjustMaxCycles ?? 3}, maxRemovals=${state.autoAdjustMaxRemovalsPerCycle ?? 1})`,
+          );
         }
       } else if (op === '.TSCORR') {
         const parseScope = (token?: string): ParseOptions['tsCorrelationScope'] | undefined => {

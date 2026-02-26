@@ -1,0 +1,7 @@
+{
+  "enabled": true,
+  "stdResThreshold": 4.25,
+  "maxCycles": 5,
+  "maxRemovalsPerCycle": 1,
+  "sourceLine": 4
+}

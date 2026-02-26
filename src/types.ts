@@ -344,6 +344,10 @@ export interface ParseOptions {
   tsCorrelationScope?: TsCorrelationScope;
   robustMode?: RobustMode;
   robustK?: number;
+  autoAdjustEnabled?: boolean;
+  autoAdjustMaxCycles?: number;
+  autoAdjustMaxRemovalsPerCycle?: number;
+  autoAdjustStdResThreshold?: number;
   directionSetMode?: DirectionSetMode;
   clusterDetectionEnabled?: boolean;
   clusterLinkageMode?: ClusterLinkageMode;

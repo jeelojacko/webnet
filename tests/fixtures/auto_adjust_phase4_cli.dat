@@ -1,0 +1,8 @@
+# Auto-adjust command-style parity fixture
+/AUTOADJUST OFF
+.AUTOADJUST ON 3.5 6 2
+/AUTOADJUST ON THRESHOLD 4.25 CYCLES 5 MAXREMOVE 1
+
+C A 0 0 0 !
+C B 100 0 0
+D A B 100 0.01

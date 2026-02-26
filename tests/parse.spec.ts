@@ -153,6 +153,24 @@ describe('parseInput', () => {
     expect(dms.parseState.angleUnits).toBe('dms');
   });
 
+  it('supports .AUTOADJUST and /AUTOADJUST command-style options', () => {
+    const parsed = parseInput(
+      [
+        '.AUTOADJUST OFF',
+        '/AUTOADJUST ON 3.5 6 2',
+        '/AUTOADJUST ON THRESHOLD 4.25 CYCLES 5 MAXREMOVE 1',
+        'C A 0 0 0 !',
+        'C B 100 0 0',
+        'D A B 100 0.01',
+      ].join('\n'),
+    );
+    expect(parsed.parseState.autoAdjustEnabled).toBe(true);
+    expect(parsed.parseState.autoAdjustStdResThreshold).toBeCloseTo(4.25, 10);
+    expect(parsed.parseState.autoAdjustMaxCycles).toBe(5);
+    expect(parsed.parseState.autoAdjustMaxRemovalsPerCycle).toBe(1);
+    expect(parsed.logs.some((l) => l.includes('Auto-adjust set to ON'))).toBe(true);
+  });
+
   it('logs traverse closure', () => {
     const parsed = parseInput(readFileSync('tests/fixtures/traverse_closure.dat', 'utf-8'));
     expect(parsed.logs.some((l) => l.includes('Traverse end'))).toBe(true);

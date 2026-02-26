@@ -23,6 +23,7 @@ import IndustryOutputView from './components/IndustryOutputView';
 import { LSAEngine } from './engine/adjust';
 import { RAD_TO_DEG, radToDmsStr } from './engine/angles';
 import {
+  extractAutoAdjustDirectiveFromInput,
   formatAutoAdjustLogLines,
   runAutoAdjustCycles,
   type AutoAdjustConfig,
@@ -345,7 +346,7 @@ const SETTINGS_TOOLTIPS = {
   clusterDetection:
     'Enable or disable post-adjust cluster detection diagnostics/workflow. When OFF, cluster candidates and review/merge workflow are hidden.',
   autoAdjust:
-    'Enable iterative auto-adjust cycles that automatically exclude top outlier candidates and re-solve until limits are reached.',
+    'Enable iterative auto-adjust cycles that automatically exclude top outlier candidates and re-solve until limits are reached. Inline .AUTOADJUST or /AUTOADJUST commands override this.',
   autoAdjustMaxCycles:
     'Maximum number of auto-adjust cycles. Each cycle can remove one or more observations and rerun the solve.',
   autoAdjustMaxRemovalsPerCycle:
@@ -812,10 +813,12 @@ const App: React.FC = () => {
     return {
       solveProfile: base.solveProfile,
       parity: profileCtx.parity,
-      autoAdjustEnabled: base.autoAdjustEnabled,
-      autoAdjustMaxCycles: base.autoAdjustMaxCycles,
-      autoAdjustMaxRemovalsPerCycle: base.autoAdjustMaxRemovalsPerCycle,
-      autoAdjustStdResThreshold: base.autoAdjustStdResThreshold,
+      autoAdjustEnabled: parseState.autoAdjustEnabled ?? base.autoAdjustEnabled,
+      autoAdjustMaxCycles: parseState.autoAdjustMaxCycles ?? base.autoAdjustMaxCycles,
+      autoAdjustMaxRemovalsPerCycle:
+        parseState.autoAdjustMaxRemovalsPerCycle ?? base.autoAdjustMaxRemovalsPerCycle,
+      autoAdjustStdResThreshold:
+        parseState.autoAdjustStdResThreshold ?? base.autoAdjustStdResThreshold,
       directionSetMode: profileCtx.directionSetMode,
       mapMode: parse.mapMode,
       mapScaleFactor: parse.mapScaleFactor ?? 1,
@@ -2758,6 +2761,10 @@ const App: React.FC = () => {
         tsCorrelationScope: effectiveParse.tsCorrelationScope,
         robustMode: effectiveParse.robustMode,
         robustK: effectiveParse.robustK,
+        autoAdjustEnabled: effectiveParse.autoAdjustEnabled,
+        autoAdjustMaxCycles: effectiveParse.autoAdjustMaxCycles,
+        autoAdjustMaxRemovalsPerCycle: effectiveParse.autoAdjustMaxRemovalsPerCycle,
+        autoAdjustStdResThreshold: effectiveParse.autoAdjustStdResThreshold,
         directionSetMode: profileCtx.directionSetMode,
         clusterDetectionEnabled: effectiveParse.clusterDetectionEnabled,
         clusterApprovedMerges: normalizedClusterMerges,
@@ -2931,11 +2938,14 @@ const App: React.FC = () => {
       setActiveClusterApprovedMerges([]);
     }
 
+    const inlineAutoAdjust = extractAutoAdjustDirectiveFromInput(input);
     const autoAdjustConfig: AutoAdjustConfig = {
-      enabled: parseSettings.autoAdjustEnabled,
-      maxCycles: parseSettings.autoAdjustMaxCycles,
-      maxRemovalsPerCycle: parseSettings.autoAdjustMaxRemovalsPerCycle,
-      stdResThreshold: parseSettings.autoAdjustStdResThreshold,
+      enabled: inlineAutoAdjust?.enabled ?? parseSettings.autoAdjustEnabled,
+      maxCycles: inlineAutoAdjust?.maxCycles ?? parseSettings.autoAdjustMaxCycles,
+      maxRemovalsPerCycle:
+        inlineAutoAdjust?.maxRemovalsPerCycle ?? parseSettings.autoAdjustMaxRemovalsPerCycle,
+      stdResThreshold:
+        inlineAutoAdjust?.stdResThreshold ?? parseSettings.autoAdjustStdResThreshold,
       minRedundancy: AUTO_ADJUST_MIN_REDUNDANCY,
     };
     if (autoAdjustConfig.enabled) {
