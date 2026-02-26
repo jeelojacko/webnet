@@ -525,6 +525,38 @@ describe('LSAEngine', () => {
     expect(result.logs.some((l) => l.includes('Lost stations flagged'))).toBe(true);
   });
 
+  it('applies QFIX constants to fixed-sigma weighting and changes SEUW sensitivity', () => {
+    const input = [
+      '.2D',
+      'C A 0 0 0 ! !',
+      'C B 100 0 0 ! !',
+      'C P 60 30 0',
+      'D A-P 67.0820 !',
+      'D B-P 50.2000 !',
+      'B A-P 063-26-06.0 !',
+    ].join('\n');
+    const tight = new LSAEngine({
+      input,
+      maxIterations: 10,
+      parseOptions: { qFixLinearSigmaM: 1e-9, qFixAngularSigmaSec: 1e-9 },
+    }).solve();
+    const relaxed = new LSAEngine({
+      input,
+      maxIterations: 10,
+      parseOptions: { qFixLinearSigmaM: 0.01, qFixAngularSigmaSec: 30 },
+    }).solve();
+
+    expect(tight.seuw).toBeGreaterThan(relaxed.seuw);
+    const tightDist = tight.observations.find(
+      (o) => o.type === 'dist' && o.sigmaSource === 'fixed',
+    );
+    const relaxedDist = relaxed.observations.find(
+      (o) => o.type === 'dist' && o.sigmaSource === 'fixed',
+    );
+    expect(tightDist?.stdDev ?? 0).toBeCloseTo(1e-9, 12);
+    expect(relaxedDist?.stdDev ?? 0).toBeCloseTo(0.01, 10);
+  });
+
   it('applies global prism correction to modeled distance residuals', () => {
     const baseInput = [
       '.2D',

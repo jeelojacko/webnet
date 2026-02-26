@@ -288,6 +288,8 @@ type RunDiagnostics = {
   tsCorrelationRho: number;
   robustMode: RobustMode;
   robustK: number;
+  qFixLinearSigmaM: number;
+  qFixAngularSigmaSec: number;
   prismEnabled: boolean;
   prismOffset: number;
   prismScope: 'global' | 'set';
@@ -804,6 +806,9 @@ const App: React.FC = () => {
       tsCorrelationRho: parseState.tsCorrelationRho ?? profileCtx.effectiveParse.tsCorrelationRho,
       robustMode: parseState.robustMode ?? profileCtx.effectiveParse.robustMode,
       robustK: parseState.robustK ?? profileCtx.effectiveParse.robustK,
+      qFixLinearSigmaM: parseState.qFixLinearSigmaM ?? profileCtx.effectiveParse.qFixLinearSigmaM,
+      qFixAngularSigmaSec:
+        parseState.qFixAngularSigmaSec ?? profileCtx.effectiveParse.qFixAngularSigmaSec,
       prismEnabled: parseState.prismEnabled ?? profileCtx.effectiveParse.prismEnabled ?? false,
       prismOffset: parseState.prismOffset ?? profileCtx.effectiveParse.prismOffset ?? 0,
       prismScope: parseState.prismScope ?? profileCtx.effectiveParse.prismScope ?? 'global',
@@ -862,6 +867,8 @@ const App: React.FC = () => {
       tsCorrelationRho: parse.tsCorrelationRho,
       robustMode: parse.robustMode,
       robustK: parse.robustK,
+      qFixLinearSigmaM: parse.qFixLinearSigmaM ?? 1e-9,
+      qFixAngularSigmaSec: parse.qFixAngularSigmaSec ?? 1e-9,
       prismEnabled: parse.prismEnabled,
       prismOffset: parse.prismOffset,
       prismScope: parse.prismScope,
@@ -923,7 +930,7 @@ const App: React.FC = () => {
     lines.push(`# Generated: ${now.toLocaleString()}`);
     lines.push(`# Linear units: ${linearUnit}`);
     lines.push(
-      `# Reduction: profile=${runDiag.solveProfile}, autoSideshot=${runDiag.autoSideshotEnabled ? 'ON' : 'OFF'}, autoAdjust=${runDiag.autoAdjustEnabled ? 'ON' : 'OFF'}(|t|>=${runDiag.autoAdjustStdResThreshold.toFixed(2)},cycles=${runDiag.autoAdjustMaxCycles},maxRm=${runDiag.autoAdjustMaxRemovalsPerCycle}), dirSets=${runDiag.directionSetMode}, mapMode=${runDiag.mapMode}, mapScale=${runDiag.mapScaleFactor.toFixed(8)}, curvRef=${runDiag.applyCurvatureRefraction ? 'ON' : 'OFF'}, k=${runDiag.refractionCoefficient.toFixed(3)}, vRed=${runDiag.verticalReduction}, prism=${runDiag.prismEnabled ? `ON(${runDiag.prismOffset.toFixed(4)}m,${runDiag.prismScope})` : 'OFF'}, rotation=${(runDiag.rotationAngleRad * RAD_TO_DEG).toFixed(6)}deg, tsCorr=${runDiag.tsCorrelationEnabled ? 'ON' : 'OFF'}(${runDiag.tsCorrelationScope},rho=${runDiag.tsCorrelationRho.toFixed(3)}), robust=${runDiag.robustMode.toUpperCase()}(k=${runDiag.robustK.toFixed(2)})`,
+      `# Reduction: profile=${runDiag.solveProfile}, autoSideshot=${runDiag.autoSideshotEnabled ? 'ON' : 'OFF'}, autoAdjust=${runDiag.autoAdjustEnabled ? 'ON' : 'OFF'}(|t|>=${runDiag.autoAdjustStdResThreshold.toFixed(2)},cycles=${runDiag.autoAdjustMaxCycles},maxRm=${runDiag.autoAdjustMaxRemovalsPerCycle}), dirSets=${runDiag.directionSetMode}, mapMode=${runDiag.mapMode}, mapScale=${runDiag.mapScaleFactor.toFixed(8)}, curvRef=${runDiag.applyCurvatureRefraction ? 'ON' : 'OFF'}, k=${runDiag.refractionCoefficient.toFixed(3)}, vRed=${runDiag.verticalReduction}, qfixLin=${(runDiag.qFixLinearSigmaM * unitScale).toExponential(6)}${linearUnit}, qfixAng=${runDiag.qFixAngularSigmaSec.toExponential(6)}sec, prism=${runDiag.prismEnabled ? `ON(${runDiag.prismOffset.toFixed(4)}m,${runDiag.prismScope})` : 'OFF'}, rotation=${(runDiag.rotationAngleRad * RAD_TO_DEG).toFixed(6)}deg, tsCorr=${runDiag.tsCorrelationEnabled ? 'ON' : 'OFF'}(${runDiag.tsCorrelationScope},rho=${runDiag.tsCorrelationRho.toFixed(3)}), robust=${runDiag.robustMode.toUpperCase()}(k=${runDiag.robustK.toFixed(2)})`,
     );
     lines.push(
       `# Parity: profileFallback=${runDiag.profileDefaultInstrumentFallback ? 'ON' : 'OFF'}, angleCentering=${runDiag.angleCenteringModel}, normalize=${runDiag.normalize ? 'ON' : 'OFF'}, angleMode=${runDiag.angleMode.toUpperCase()}`,
@@ -954,6 +961,9 @@ const App: React.FC = () => {
     );
     lines.push(
       `Lost stations: ${lostStationIds.length > 0 ? `${lostStationIds.length} (${lostStationIds.join(', ')})` : 'none'}`,
+    );
+    lines.push(
+      `QFIX constants: linear=${(runDiag.qFixLinearSigmaM * unitScale).toExponential(6)} ${linearUnit}, angular=${runDiag.qFixAngularSigmaSec.toExponential(6)}"`,
     );
     lines.push(`Show lost stations in export: ${showLostStationsInOutputs ? 'ON' : 'OFF'}`);
     lines.push(`Robust mode: ${runDiag.robustMode.toUpperCase()} (k=${runDiag.robustK.toFixed(2)})`);
@@ -2782,6 +2792,8 @@ const App: React.FC = () => {
         defaultSigmaByType: runDiag.defaultSigmaByType,
         stochasticDefaultsSummary: runDiag.stochasticDefaultsSummary,
         rotationAngleRad: runDiag.rotationAngleRad,
+        qFixLinearSigmaM: runDiag.qFixLinearSigmaM,
+        qFixAngularSigmaSec: runDiag.qFixAngularSigmaSec,
       },
     );
   };

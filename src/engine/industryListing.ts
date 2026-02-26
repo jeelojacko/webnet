@@ -36,6 +36,8 @@ export interface IndustryListingRunDiagnostics {
   defaultSigmaByType: string;
   stochasticDefaultsSummary: string;
   rotationAngleRad: number;
+  qFixLinearSigmaM?: number;
+  qFixAngularSigmaSec?: number;
 }
 
 export const buildIndustryStyleListingText = (
@@ -69,6 +71,9 @@ export const buildIndustryStyleListingText = (
     const prismOffset = parseState?.prismOffset ?? 0;
     const prismScope = parseState?.prismScope ?? 'global';
     const rotationAngleRad = parseState?.rotationAngleRad ?? runDiag.rotationAngleRad ?? 0;
+    const qFixLinearSigmaM = parseState?.qFixLinearSigmaM ?? runDiag.qFixLinearSigmaM ?? 1e-9;
+    const qFixAngularSigmaSec =
+      parseState?.qFixAngularSigmaSec ?? runDiag.qFixAngularSigmaSec ?? 1e-9;
     const lostStationIds = [...(parseState?.lostStationIds ?? [])].sort((a, b) =>
       a.localeCompare(b, undefined, { numeric: true }),
     );
@@ -140,6 +145,9 @@ export const buildIndustryStyleListingText = (
     );
     lines.push(
       `      Lost Stations                     : ${lostStationIds.length > 0 ? `${lostStationIds.length} (${lostStationIds.join(', ')})` : 'none'}`,
+    );
+    lines.push(
+      `      QFIX (Linear/Angular)            : ${(qFixLinearSigmaM * unitScale).toExponential(6)} ${linearUnit}; ${qFixAngularSigmaSec.toExponential(6)}"`,
     );
     lines.push(
       `      Show Lost Stations in Output      : ${showLostStations ? 'ON' : 'OFF'}`,

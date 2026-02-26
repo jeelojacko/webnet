@@ -25,6 +25,8 @@ interface ReportViewProps {
     robustMode: 'none' | 'huber'
     robustK: number
     rotationAngleRad: number
+    qFixLinearSigmaM: number
+    qFixAngularSigmaSec: number
     profileDefaultInstrumentFallback: boolean
     angleCenteringModel: 'geometry-aware-correlated-rays'
     defaultSigmaCount: number
@@ -881,6 +883,13 @@ const ReportView: React.FC<ReportViewProps> = ({
             <div>
               <div className="text-slate-500">Plan Rotation</div>
               <div>{`${(runDiagnostics.rotationAngleRad * RAD_TO_DEG).toFixed(6)}°`}</div>
+            </div>
+            <div>
+              <div className="text-slate-500">QFIX (Linear/Angular)</div>
+              <div>
+                {(runDiagnostics.qFixLinearSigmaM * unitScale).toExponential(6)} {units} /{' '}
+                {runDiagnostics.qFixAngularSigmaSec.toExponential(6)}"
+              </div>
             </div>
             <div className="col-span-2">
               <div className="text-slate-500">Lost Stations</div>

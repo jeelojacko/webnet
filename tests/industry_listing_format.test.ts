@@ -432,4 +432,51 @@ describe('industry listing phase 5 formatting locks', () => {
     expect(listingShown).toContain('A-B');
     expect(listingHidden).not.toContain('A-B');
   });
+
+  it('reports active QFIX constants in project option settings', () => {
+    const input = [
+      '.2D',
+      '.QFIX 0.01 3.0',
+      'C A 0 0 0 ! !',
+      'C B 100 0 0',
+      'B A-B 090.0000 !',
+      'D A-B 100.0000 !',
+    ].join('\n');
+    const result = new LSAEngine({ input, maxIterations: 10 }).solve();
+    const listing = buildIndustryStyleListingText(
+      result,
+      {
+        maxIterations: 10,
+        units: 'm',
+        listingShowLostStations: true,
+        listingShowCoordinates: true,
+        listingShowObservationsResiduals: true,
+        listingShowErrorPropagation: true,
+        listingShowProcessingNotes: false,
+        listingShowAzimuthsBearings: true,
+        listingSortCoordinatesBy: 'name',
+        listingSortObservationsBy: 'name',
+        listingObservationLimit: 500,
+      },
+      {
+        coordMode: '2D',
+        order: 'EN',
+        angleUnits: 'dms',
+        angleStationOrder: 'atfromto',
+        deltaMode: 'horiz',
+        refractionCoefficient: 0.13,
+      },
+      {
+        solveProfile: 'industry-parity',
+        angleCenteringModel: 'geometry-aware-correlated-rays',
+        defaultSigmaCount: 0,
+        defaultSigmaByType: '',
+        stochasticDefaultsSummary: 'inst=S9',
+        rotationAngleRad: 0,
+      },
+    );
+    expect(listing).toContain('QFIX (Linear/Angular)');
+    expect(listing).toMatch(/1\.000000e-2\s+Meters/);
+    expect(listing).toMatch(/3\.000000e\+0"/);
+  });
 });
