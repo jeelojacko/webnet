@@ -137,6 +137,9 @@ const ReportView: React.FC<ReportViewProps> = ({
   const clusterRejectedProposals = clusterDiagnostics?.rejectedProposals ?? []
   const autoAdjustDiagnostics = result.autoAdjustDiagnostics
   const autoSideshotDiagnostics = result.autoSideshotDiagnostics
+  const autoSideshotObsIds = new Set(
+    autoSideshotDiagnostics?.candidates.flatMap((c) => [c.angleObsId, c.distObsId]) ?? [],
+  )
   const clusterReviewStats = clusterCandidates.reduce(
     (acc, candidate) => {
       const decision = clusterReviewDecisions[candidate.key]
@@ -291,6 +294,7 @@ const ReportView: React.FC<ReportViewProps> = ({
     if (upper.startsWith('ΣDIST')) return 'Estimated standard deviation of inter-point distance.'
     if (upper.startsWith('ΣAZ')) return 'Estimated standard deviation of inter-point azimuth.'
     if (upper.startsWith('NOTE')) return 'Additional notes, warnings, or limitations for this row.'
+    if (upper.startsWith('TAG')) return 'Annotation tag for derived diagnostics, such as AUTO-SS markers.'
     return undefined
   }
 
@@ -463,6 +467,9 @@ const ReportView: React.FC<ReportViewProps> = ({
                 )}`
               } else if (obs.mdb != null) {
                 mdbStr = formatMdb(obs.mdb, angular)
+              }
+              if (autoSideshotObsIds.has(obs.id)) {
+                stationsLabel = `${stationsLabel} [AUTO-SS]`
               }
 
               return (

@@ -2296,6 +2296,9 @@ const App: React.FC = () => {
     }
     lines.push('--- Observations & Residuals ---');
     lines.push(`MDB units: arcsec for angular types; ${linearUnit} for linear types`);
+    const autoSideshotObsIds = new Set(
+      res.autoSideshotDiagnostics?.candidates.flatMap((c) => [c.angleObsId, c.distObsId]) ?? [],
+    );
     const rows: {
       type: string;
       stations: string;
@@ -2307,6 +2310,7 @@ const App: React.FC = () => {
       redundancy: string;
       localTest: string;
       mdb: string;
+      tag: string;
       stdResAbs: number;
     }[] = [];
     const isAngularType = (type: string) =>
@@ -2438,6 +2442,7 @@ const App: React.FC = () => {
               : '-',
         localTest,
         mdb,
+        tag: autoSideshotObsIds.has(obs.id) ? 'AUTO-SS' : '-',
         stdResAbs,
       });
     });
@@ -2601,6 +2606,7 @@ const App: React.FC = () => {
       redundancy: 'Redund',
       localTest: 'Local',
       mdb: 'MDB',
+      tag: 'Tag',
     };
     const widths = {
       type: Math.max(headers.type.length, ...rows.map((r) => r.type.length)),
@@ -2613,6 +2619,7 @@ const App: React.FC = () => {
       redundancy: Math.max(headers.redundancy.length, ...rows.map((r) => r.redundancy.length)),
       localTest: Math.max(headers.localTest.length, ...rows.map((r) => r.localTest.length)),
       mdb: Math.max(headers.mdb.length, ...rows.map((r) => r.mdb.length)),
+      tag: Math.max(headers.tag.length, ...rows.map((r) => r.tag.length)),
     };
     const pad = (value: string, size: number) => value.padEnd(size, ' ');
     lines.push(
@@ -2627,6 +2634,7 @@ const App: React.FC = () => {
         pad(headers.redundancy, widths.redundancy),
         pad(headers.localTest, widths.localTest),
         pad(headers.mdb, widths.mdb),
+        pad(headers.tag, widths.tag),
       ].join('  '),
     );
     rows.forEach((r) => {
@@ -2642,6 +2650,7 @@ const App: React.FC = () => {
           pad(r.redundancy, widths.redundancy),
           pad(r.localTest, widths.localTest),
           pad(r.mdb, widths.mdb),
+          pad(r.tag, widths.tag),
         ].join('  '),
       );
     });

@@ -123,7 +123,7 @@
     - [~] Add automatic sideshot detection for non-redundant `M` records (project option, default-on profile toggle)
       - [x] Phase 1: compute redundancy-aware sideshot candidates from solved `M` records (with safety exclusions for control/closure legs)
       - [x] Phase 2: add project/profile toggle and parser/engine plumbing to switch between legacy and auto-detect behavior
-      - [ ] Phase 3: expose detected/reclassified records in processing logs, report tables, and export annotations
+      - [x] Phase 3: expose detected/reclassified records in processing logs, report tables, and export annotations
       - [ ] Phase 4: add parity fixtures to verify observation-count, chi-square, and sideshot coordinate outputs
     - [ ] Implement `.PRISM` prism offset correction support in parser/weighting/residual reporting
       - [ ] Phase 1: parse `.PRISM` option state (global and scoped behavior) with unit-safe validation diagnostics

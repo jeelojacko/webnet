@@ -324,6 +324,11 @@ export const buildIndustryStyleListingText = (
         return Math.abs(b.stdRes ?? 0) - Math.abs(a.stdRes ?? 0);
       })
       .slice(0, Math.min(500, Math.max(1, settings.listingObservationLimit)));
+    const autoSideshotObsIds = new Set(
+      res.autoSideshotDiagnostics?.candidates.flatMap((c) => [c.angleObsId, c.distObsId]) ?? [],
+    );
+    const autoSideshotSuffix = (obs: Observation): string =>
+      autoSideshotObsIds.has(obs.id) ? ' [auto-ss]' : '';
 
     type RelationshipPair = { key: string; from: string; to: string };
     const pairKey = (a: string, b: string) =>
@@ -526,7 +531,7 @@ export const buildIndustryStyleListingText = (
       const angleRows = listingObservations
         .filter((obs) => obs.type === 'angle')
         .map((obs) => [
-          `${obs.at}-${obs.from}-${obs.to}${aliasRefsForLine(obs.sourceLine)}`,
+          `${obs.at}-${obs.from}-${obs.to}${aliasRefsForLine(obs.sourceLine)}${autoSideshotSuffix(obs)}`,
           radToDmsStr(obs.obs),
           formatAngularResidualArcSec(obs.residual as number | undefined),
           formatAngularStdErrArcSec(obs.stdDev),
@@ -543,7 +548,7 @@ export const buildIndustryStyleListingText = (
       const distanceRows = listingObservations
         .filter((obs) => obs.type === 'dist')
         .map((obs) => [
-          `${obs.from}-${obs.to}${aliasRefsForLine(obs.sourceLine)}`,
+          `${obs.from}-${obs.to}${aliasRefsForLine(obs.sourceLine)}${autoSideshotSuffix(obs)}`,
           formatLinear(obs.obs),
           formatLinear(obs.residual as number | undefined),
           formatLinear(obs.stdDev),
@@ -560,7 +565,7 @@ export const buildIndustryStyleListingText = (
       const directionRows = listingObservations
         .filter((obs) => obs.type === 'direction')
         .map((obs) => [
-          `${obs.at}-${obs.to}${aliasRefsForLine(obs.sourceLine)}`,
+          `${obs.at}-${obs.to}${aliasRefsForLine(obs.sourceLine)}${autoSideshotSuffix(obs)}`,
           radToDmsStr(obs.obs),
           formatAngularResidualArcSec(obs.residual as number | undefined),
           formatAngularStdErrArcSec(obs.stdDev),

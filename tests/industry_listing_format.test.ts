@@ -166,4 +166,73 @@ describe('industry listing phase 5 formatting locks', () => {
     expect(listing).toContain('101');
     expect(listing).toContain('Line');
   });
+
+  it('annotates adjusted-observation rows for auto-sideshot candidate observations', () => {
+    const input = readFileSync('public/examples/industry-input.txt', 'utf-8');
+    const engine = new LSAEngine({
+      input,
+      maxIterations: 25,
+      options: parseOptions,
+    });
+    const result = engine.solve();
+    const angleObs = result.observations.find((o) => o.type === 'angle');
+    const distObs = result.observations.find((o) => o.type === 'dist');
+    expect(angleObs).toBeDefined();
+    expect(distObs).toBeDefined();
+
+    result.autoSideshotDiagnostics = {
+      enabled: true,
+      threshold: 0.1,
+      evaluatedCount: 1,
+      excludedControlCount: 0,
+      candidateCount: 1,
+      candidates: [
+        {
+          sourceLine: angleObs?.sourceLine,
+          occupy: angleObs?.type === 'angle' ? angleObs.at : 'UNKNOWN',
+          backsight: angleObs?.type === 'angle' ? angleObs.from : 'UNKNOWN',
+          target: angleObs?.type === 'angle' ? angleObs.to : 'UNKNOWN',
+          angleObsId: angleObs?.id ?? -1,
+          distObsId: distObs?.id ?? -1,
+          angleRedundancy: 0.01,
+          distRedundancy: 0.01,
+          minRedundancy: 0.01,
+          maxAbsStdRes: 0.5,
+        },
+      ],
+    };
+
+    const listing = buildIndustryStyleListingText(
+      result,
+      {
+        maxIterations: 25,
+        units: 'm',
+        listingShowCoordinates: true,
+        listingShowObservationsResiduals: true,
+        listingShowErrorPropagation: true,
+        listingShowProcessingNotes: false,
+        listingShowAzimuthsBearings: true,
+        listingSortCoordinatesBy: 'name',
+        listingSortObservationsBy: 'residual',
+        listingObservationLimit: 500,
+      },
+      {
+        coordMode: '2D',
+        order: 'NE',
+        angleUnits: 'dms',
+        angleStationOrder: 'atfromto',
+        deltaMode: 'horiz',
+        refractionCoefficient: 0.13,
+      },
+      {
+        solveProfile: 'industry-parity',
+        angleCenteringModel: 'geometry-aware-correlated-rays',
+        defaultSigmaCount: 0,
+        defaultSigmaByType: '',
+        stochasticDefaultsSummary: 'inst=S9',
+      },
+    );
+
+    expect(listing).toContain('[auto-ss]');
+  });
 });
