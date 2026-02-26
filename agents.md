@@ -60,6 +60,8 @@ npm run format:check # Prettier check
 
 - Performance: guards added for poor conditioning and residual spikes; consider a Web Worker offload for large networks.
 - Expand test coverage for complex GNSS and leveling networks.
+- Follow the STAR*NET v6-v14 parity-gap backlog in `TODO.md` (ordered Conventional -> GPS -> Leveling) for upcoming feature work.
+- All parity-gap entries now include phased plans; execute in backlog order, starting with the top conventional items (`.ALIAS`, cluster-detection adjustment mode, Auto-Adjust workflow).
 
 ## Todo
 

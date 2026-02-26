@@ -79,3 +79,5 @@ npm run dev
 - UI/Report/Export: solve-profile diagnostics now include active default stochastic model details (instrument EDM/angle/centering defaults, EDM mode, centering-inflation mode) plus default-sigma usage counts by observation type.
 - Performance guards added (conditioning/residual warnings); see TODO.md for any future worker offload ideas.
 - Parity: `tests/fixtures/starnet_parity_phase2.dat` + `tests/fixtures/starnet_parity_phase2_expected.json` + `tests/ts_parity.test.ts` pin STAR-style benchmark behavior (raw directions + classical weighting + STAR default instrument fallback) for summary metrics, selected coordinates, and residual signatures.
+- Parity planning: TODO now includes a STAR*NET v6-v14 gap list prioritized by workflow impact (Conventional first, then GPS, then Leveling).
+- Parity planning: every item in the STAR*NET v6-v14 gap list now includes phased implementation steps for execution sequencing and milestone tracking.

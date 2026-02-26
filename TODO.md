@@ -85,3 +85,109 @@
   - [x] Phase 15: expand direction reduction diagnostics (raw max residual, face-pair delta, per-face spreads), and add structured direction reject diagnostics (line/set/record/expected-vs-actual face) in report/export
   - [x] Phase 16: add residual-quality diagnostics summary (|t| bins, local-test fail totals, redundancy weakness counts, worst-observation trace, and by-type screening table) in report/export
   - [x] Phase 17: improve 2D triangulation/trilateration compatibility by parsing 2D `M` lines with angle/dist sigma tokens (no forced vertical token) and auto-creating missing non-sideshot stations referenced in observations
+
+- [ ] STAR*NET v6-v14 parity gaps (prioritized from release notes; missing in WebNet today):
+  - [ ] Conventional surveying improvements (highest impact -> lowest):
+    - [ ] Implement `.ALIAS` point aliasing (explicit and pattern-based alias rules) with full solve/report traceability
+      - [ ] Phase 1: parser/state support for `.ALIAS` (explicit map, prefix/suffix/additive patterns, validation diagnostics)
+      - [ ] Phase 2: station/observation identity resolution so aliases collapse to canonical point IDs before unknown-building
+      - [ ] Phase 3: reporting/export traceability (canonical ID + source alias references in listing/errors/find)
+      - [ ] Phase 4: parity tests for mixed alias scenarios (conventional/GNSS/leveling references across files)
+    - [ ] Add cluster-detection adjustment mode (dual-pass solve with user approval/override of point-cluster aliasing)
+      - [ ] Phase 1: implement post-pass cluster candidate detection (2D/3D tolerance, linkage mode, deterministic cluster keys)
+      - [ ] Phase 2: dual-pass solve pipeline (pass-1 detect, pass-2 apply approved merges, retain reproducible run profile)
+      - [ ] Phase 3: UI review/override table (approve/reject cluster merges, choose retained key point)
+      - [ ] Phase 4: reporting section for cluster outcomes (merged points, deltas from retained point, rejected proposals)
+    - [ ] Add Auto-Adjust workflow (iterative solve + automatic outlier exclusion thresholds + removed-observation listing section)
+      - [ ] Phase 1: solver loop controller for repeated adjust cycles (max |t| threshold, max removals/cycle, max cycles)
+      - [ ] Phase 2: robust outlier candidate selection policy (local-test aware, redundancy guards, tie-break consistency)
+      - [ ] Phase 3: run log/report output for each cycle and final "removed observations" listing with line traceability
+      - [ ] Phase 4: UI controls + CLI hook parity (`/autoadjust`-style options) and regression tests against fixed fixtures
+    - [ ] Add automatic sideshot detection for non-redundant `M` records (project option, default-on profile toggle)
+      - [ ] Phase 1: compute redundancy-aware sideshot candidates from solved `M` records (with safety exclusions for control/closure legs)
+      - [ ] Phase 2: add project/profile toggle and parser/engine plumbing to switch between legacy and auto-detect behavior
+      - [ ] Phase 3: expose detected/reclassified records in processing logs, report tables, and export annotations
+      - [ ] Phase 4: add parity fixtures to verify observation-count, chi-square, and sideshot coordinate outputs
+    - [ ] Implement `.PRISM` prism offset correction support in parser/weighting/residual reporting
+      - [ ] Phase 1: parse `.PRISM` option state (global and scoped behavior) with unit-safe validation diagnostics
+      - [ ] Phase 2: apply prism-offset correction in distance/vertical observation modeling before residual and weight computation
+      - [ ] Phase 3: show correction source/magnitude in report/export rows and add regression fixtures for offset cases
+    - [ ] Implement `.ROTATION <angle>` plan-rotation for bearing/azimuth observations (`B/BM` and related records)
+      - [ ] Phase 1: parse and track cumulative `.ROTATION` state with DMS/DD compatibility and wrap-safe normalization
+      - [ ] Phase 2: apply plan rotation to affected azimuth-bearing observations in parser/engine consistently
+      - [ ] Phase 3: add listing/profile diagnostics and parity tests for rotated vs unrotated network outputs
+    - [ ] Implement `.LOSTSTATIONS` handling (include in solve, optional omit/filter in plot/listing outputs)
+      - [ ] Phase 1: parse `.LOSTSTATIONS` and persist station metadata flags through solve results
+      - [ ] Phase 2: ensure lost stations remain valid network points in adjustment while tagged in diagnostics
+      - [ ] Phase 3: add plot/listing/export filter options to hide/show lost stations and verify with UI tests
+    - [ ] Add configurable fixed standard-error constants (`.QFIX`-style) instead of hard-coded fixed sigmas
+      - [ ] Phase 1: add project options and inline override parsing for fixed angular/linear sigma constants
+      - [ ] Phase 2: replace hard-coded fixed defaults in weighting logic with configured constants and profile reporting
+      - [ ] Phase 3: add parity tests confirming expected SEUW/residual effects under alternate fixed sigma settings
+    - [ ] Add inconsistent-description reconciliation (append/first behavior) plus listing summary for repeated point IDs
+      - [ ] Phase 1: build description consistency scanner across loaded files/records grouped by station ID
+      - [ ] Phase 2: implement reconciliation policies (first vs append with custom delimiter) applied to rendered outputs
+      - [ ] Phase 3: add listing/report summary section with file-line references for conflicts and update tests
+    - [ ] Add STAR-style "effective distance" reporting alongside angular residuals in adjusted observation tables
+      - [ ] Phase 1: compute effective distance metrics for angular observation families during statistics pass
+      - [ ] Phase 2: add columns/formatting in report, processing summary, and STAR-style export outputs
+      - [ ] Phase 3: add fixture assertions for value correctness across angle/direction/bearing scenarios
+    - [ ] Add optional 3D network plot mode (3D ellipsoids/orbit/view-cube style controls) for deeper parity with STAR*NET 10-14 visualization
+      - [ ] Phase 1: introduce 3D plot architecture (camera, scene graph, station/connection primitives) behind feature flag
+      - [ ] Phase 2: render 3D confidence ellipsoids and implement orbit/pan/zoom/view-cube interactions
+      - [ ] Phase 3: add mode toggle, performance fallbacks, and visual regression checks for desktop/mobile layouts
+    - [ ] Add CLI/batch run entrypoint for scripted adjustments (including auto-adjust flags) for automation parity
+      - [ ] Phase 1: add Node CLI wrapper to run parser/engine headlessly with input/profile/options arguments
+      - [ ] Phase 2: expose machine-readable and listing-style outputs (text/json) with deterministic exit codes
+      - [ ] Phase 3: add auto-adjust CLI flags, docs, and CI smoke tests for batch execution workflows
+  - [ ] GPS improvements (highest impact -> lowest):
+    - [ ] Add full coordinate-system/geodetic engine integration (project CRS selection, grid-ground factors, convergence reporting)
+      - [ ] Phase 1: add CRS selection/state model and projection abstraction for input/output transformations
+      - [ ] Phase 2: integrate grid-ground scale/convergence calculations into observation modeling and inverse tools
+      - [ ] Phase 3: surface CRS/scale/convergence diagnostics in reports/exports with parity fixtures
+    - [ ] Add direct geoid/grid model support (NGS/NRC/BYN-style models) plus input/output ellipsoid selection controls
+      - [ ] Phase 1: add geoid/grid file ingestion pipeline (metadata, interpolation, caching, validation)
+      - [ ] Phase 2: wire ellipsoid/geoid model choice into height conversions for parse/solve/export paths
+      - [ ] Phase 3: add project options UI + diagnostics for active model and tests against known checkpoints
+    - [ ] Implement `.GPS NETWORK` / `.GPS SIDESHOT` modes for vector records with post-adjust sideshot handling
+      - [ ] Phase 1: parse `.GPS NETWORK`/`.GPS SIDESHOT` mode state and tag incoming GNSS vectors accordingly
+      - [ ] Phase 2: exclude GPS sideshot vectors from adjustment while computing post-adjust coordinate/precision outputs
+      - [ ] Phase 3: add report/export sections and parity tests for mixed network+sideshot GPS datasets
+    - [ ] Implement `.GPS AddHiHt [HI] [HT]` antenna-height correction option in preprocessing
+      - [ ] Phase 1: parse `.GPS AddHiHt` option with scoped defaults and validation warnings
+      - [ ] Phase 2: apply antenna-height corrections during GNSS observation preprocessing consistently for base/rover
+      - [ ] Phase 3: add diagnostics and regression fixtures covering positive/negative and missing-height cases
+    - [ ] Add GPS vector loop-closure diagnostics/check command with loop summaries in report/export
+      - [ ] Phase 1: detect GNSS loop candidates and compute closure vectors/magnitudes independent of adjustment residuals
+      - [ ] Phase 2: add tolerance checks/ranking and expose loop diagnostics in processing and report views
+      - [ ] Phase 3: add export block and tests for known loop-pass/fail datasets
+    - [ ] Add OPUS/OPUS-RS import path with full covariance ingestion to GPS observation records
+      - [ ] Phase 1: implement OPUS/OPUS-RS parser for station coordinates, covariance, and metadata extraction
+      - [ ] Phase 2: map imported covariance into GNSS observation/control constraints with unit/axis normalization
+      - [ ] Phase 3: add importer UX/docs and parity tests using representative OPUS samples
+    - [ ] Add GPS offset observation support (G4-style rover-offset handling) in parse/adjust/report pipelines
+      - [ ] Phase 1: extend parser/types for rover-offset observation records and associated orientation metadata
+      - [ ] Phase 2: apply offset transformation into effective GNSS vectors in adjustment equations
+      - [ ] Phase 3: add report/export transparency for applied offsets and validate via dedicated fixtures
+    - [ ] Add LandXML export for adjusted coordinates/connections
+      - [ ] Phase 1: define LandXML export schema mapping for stations, observations, ellipses, and metadata
+      - [ ] Phase 2: build deterministic serializer with unit/profile annotations and file-write UX
+      - [ ] Phase 3: add round-trip/interoperability checks against common LandXML consumers
+    - [ ] Add native field-data importer pipeline parity for major STAR*NET sources (JobXML/DBX/FieldGenius/Carlson/TDS) instead of `.dat`-only workflows
+      - [ ] Phase 1: design importer plugin interface and normalized intermediate observation model
+      - [ ] Phase 2: implement first-party JobXML + FieldGenius importers with error-log traceability
+      - [ ] Phase 3: implement DBX/Carlson/TDS importers with converter-option parity where practical
+      - [ ] Phase 4: integrate import UI workflow (auto-add output dataset) and add fixture-based conformance tests
+  - [ ] Leveling improvements (highest impact -> lowest):
+    - [ ] Add dedicated differential leveling loop-closure check workflow (independent of traverse diagnostics)
+      - [ ] Phase 1: detect and enumerate leveling loops from `L`/level-sensitive records with station-path traceability
+      - [ ] Phase 2: compute closure and misclosure statistics per loop independent of TS traverse metrics
+      - [ ] Phase 3: add dedicated leveling loop section in processing/report/export with ranked suspect loops
+    - [ ] Add level-loop tolerance checks (length-based configurable criteria with pass/warn flags)
+      - [ ] Phase 1: add configurable tolerance model (e.g., k*sqrt(Km), fixed constants) in project options
+      - [ ] Phase 2: evaluate each loop against configured tolerances and produce pass/warn/fail flags
+      - [ ] Phase 3: include tolerance outcomes in listing/export and pin behavior with tolerance fixture tests
+    - [ ] Add detailed level-loop report blocks (total loop length, per-segment lengths, closure/tolerance outcomes)
+      - [ ] Phase 1: compute and persist per-segment and total loop lengths for leveling loops
+      - [ ] Phase 2: add detailed report tables and STAR-style listing rows for leveling loop details
+      - [ ] Phase 3: add export formatting and regression tests for report structure/content parity
