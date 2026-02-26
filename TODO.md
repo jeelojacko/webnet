@@ -24,6 +24,7 @@
 - [x] UI parity Phase D: wire Listing File tab controls to industry-style output content/sorting options (sections, sort order, row limit, azimuth/bearing visibility)
 - [x] Dev workflow: update Husky pre-commit hook to run one-shot tests (`npm run test:run`) instead of watch mode
 - [x] Sync README/agents docs with current parser/engine/UI state
+- [x] Audit remediation upgrade: force-updated dev tooling to Vite 6 / Vitest 4 / esbuild 0.25 and revalidated lint + test:run + build on `chore/audit-force-upgrade-test`
 - [x] Instrument settings overhaul: editable Project Options instrument library (with New Instrument flow, unit-aware fields, and 2D/3D gating), solver wiring to UI-selected defaults, external-instrument precedence over inline `I` records, and zeroed fallback precision defaults unless explicitly provided
 - [x] industry-style summary parity: compute per-type statistical summary from weighted residual contributions (`vTPv` by observation family) and display both error-factor and variance-factor chi-square bounds in summaries/listings
 - [x] industry-style summary parity Phase 2: normalize per-type error factors using industry-style global DOF scaling (`sqrt(totalCount/dof)`) so group factors align with industry listings

@@ -15,7 +15,7 @@
 
 ## Tech Stack
 
-- Runtime: Node 18+ (ESM). Bundler: Vite 7.
+- Runtime: Node 18+ (ESM). Bundler: Vite 6.
 - UI: React 19.2 (hooks), TailwindCSS 3.4 (classes in TSX, base in src/index.css), Lucide icons.
 - Language: TypeScript 5 (strict), TSX entrypoints.
 - Tooling: ESLint 9 (flat config), Prettier 3 + lint-staged + Husky, Vitest 4, PostCSS + Autoprefixer.
@@ -82,5 +82,4 @@ npm run format:check # Prettier check
   - `npm run test`
   - `npm run build`.
 - If any command errors, fix the issues and rerun the full sequence until all commands succeed before pushing.
-
 
