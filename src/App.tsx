@@ -18,6 +18,7 @@ import {
 import InputPane from './components/InputPane';
 import ReportView from './components/ReportView';
 import MapView from './components/MapView';
+import ProcessingSummaryView from './components/ProcessingSummaryView';
 import { LSAEngine } from './engine/adjust';
 import { RAD_TO_DEG, radToDmsStr } from './engine/angles';
 import type {
@@ -217,7 +218,7 @@ const STAR_DEFAULT_INSTRUMENT: Instrument = {
   levStd_mmPerKm: 0,
 };
 
-type TabKey = 'report' | 'map';
+type TabKey = 'report' | 'processing-summary' | 'map';
 
 const SETTINGS_TOOLTIPS = {
   solveProfile:
@@ -281,6 +282,7 @@ const App: React.FC = () => {
   const [input, setInput] = useState<string>(DEFAULT_INPUT);
   const [result, setResult] = useState<AdjustmentResult | null>(null);
   const [runDiagnostics, setRunDiagnostics] = useState<RunDiagnostics | null>(null);
+  const [runElapsedMs, setRunElapsedMs] = useState<number | null>(null);
   const [lastRunInput, setLastRunInput] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<TabKey>('report');
   const [settings, setSettings] = useState<SettingsState>({ maxIterations: 10, units: 'm' });
@@ -2460,6 +2462,7 @@ const App: React.FC = () => {
   };
 
   const runWithExclusions = (excludeSet: Set<number>) => {
+    const runStartMs = Date.now();
     let effectiveExclusions = excludeSet;
     let effectiveOverrides = overrides;
     const inputChangedSinceLastRun = lastRunInput != null && input !== lastRunInput;
@@ -2487,6 +2490,7 @@ const App: React.FC = () => {
     }
     setLastRunInput(input);
     setRunDiagnostics(runProfile);
+    setRunElapsedMs(Date.now() - runStartMs);
     setResult(solved);
     setActiveTab('report');
   };
@@ -2556,6 +2560,7 @@ const App: React.FC = () => {
     if (lastRunInput != null) setInput(lastRunInput);
     setResult(null);
     setRunDiagnostics(null);
+    setRunElapsedMs(null);
     setExcludedIds(new Set());
     setOverrides({});
   };
@@ -3242,6 +3247,16 @@ const App: React.FC = () => {
                 <FileText size={16} /> <span>Adjustment Report</span>
               </button>
               <button
+                onClick={() => setActiveTab('processing-summary')}
+                className={`px-6 py-3 text-sm font-medium flex items-center space-x-2 border-b-2 transition-colors ${
+                  activeTab === 'processing-summary'
+                    ? 'border-blue-500 text-white bg-slate-800'
+                    : 'border-transparent text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                <Activity size={16} /> <span>Processing Summary</span>
+              </button>
+              <button
                 onClick={() => setActiveTab('map')}
                 className={`px-6 py-3 text-sm font-medium flex items-center space-x-2 border-b-2 transition-colors ${
                   activeTab === 'map'
@@ -3263,7 +3278,7 @@ const App: React.FC = () => {
           </div>
 
           <div
-            className={`flex-1 w-full ${activeTab === 'map' ? 'overflow-hidden' : 'overflow-auto'}`}
+            className={`flex-1 w-full ${activeTab === 'report' ? 'overflow-auto' : 'overflow-hidden'}`}
           >
             {!result ? (
               <div className="flex flex-col items-center justify-center h-full text-slate-500 space-y-4">
@@ -3285,6 +3300,22 @@ const App: React.FC = () => {
                     overrides={overrides}
                     onOverride={handleOverride}
                     onResetOverrides={resetOverrides}
+                  />
+                )}
+                {activeTab === 'processing-summary' && (
+                  <ProcessingSummaryView
+                    result={result}
+                    runElapsedMs={runElapsedMs}
+                    runDiagnostics={
+                      runDiagnostics
+                        ? {
+                            solveProfile: runDiagnostics.solveProfile,
+                            directionSetMode: runDiagnostics.directionSetMode,
+                            starDefaultInstrumentFallback:
+                              runDiagnostics.starDefaultInstrumentFallback,
+                          }
+                        : null
+                    }
                   />
                 )}
                 {activeTab === 'map' && <MapView result={result} units={settings.units} />}
