@@ -147,6 +147,15 @@ type SettingsState = {
 };
 
 type SolveProfile = 'webnet' | 'starnet-parity';
+type ProjectOptionsTab =
+  | 'adjustment'
+  | 'general'
+  | 'instrument'
+  | 'listing-file'
+  | 'other-files'
+  | 'special'
+  | 'gps'
+  | 'modeling';
 
 type RunDiagnostics = {
   solveProfile: SolveProfile;
@@ -175,6 +184,8 @@ type ParseSettings = {
   solveProfile: SolveProfile;
   coordMode: CoordMode;
   order: OrderMode;
+  angleUnits: 'dms' | 'dd';
+  angleStationOrder: 'atfromto' | 'fromatto';
   angleMode: AngleMode;
   deltaMode: DeltaMode;
   mapMode: MapMode;
@@ -217,6 +228,9 @@ const SETTINGS_TOOLTIPS = {
   coordMode:
     '2D adjusts horizontal coordinates only. 3D also adjusts heights and uses vertical observations.',
   order: 'Coordinate field order expected in control records and shown in report tables.',
+  angleUnits: 'Angular input units for survey records. DMS uses D-M-S tokens; DD uses decimal degrees.',
+  angleStationOrder:
+    'Angle station triplet order for A/M/T style records: AT-FROM-TO or FROM-AT-TO.',
   angleMode:
     'Interpretation mode for A records: AUTO detects type, ANGLE forces turned angles, DIR forces directions.',
   deltaMode:
@@ -249,6 +263,17 @@ const SETTINGS_TOOLTIPS = {
     'Select an instrument code to view parsed EDM/angle/centering and other precision parameters.',
 } as const;
 
+const PROJECT_OPTION_TABS: Array<{ id: ProjectOptionsTab; label: string }> = [
+  { id: 'adjustment', label: 'Adjustment' },
+  { id: 'general', label: 'General' },
+  { id: 'instrument', label: 'Instrument' },
+  { id: 'listing-file', label: 'Listing File' },
+  { id: 'other-files', label: 'Other Files' },
+  { id: 'special', label: 'Special' },
+  { id: 'gps', label: 'GPS' },
+  { id: 'modeling', label: 'Modeling' },
+];
+
 /****************************
  * UI COMPONENTS
  ****************************/
@@ -263,6 +288,8 @@ const App: React.FC = () => {
     solveProfile: 'webnet',
     coordMode: '3D',
     order: 'EN',
+    angleUnits: 'dms',
+    angleStationOrder: 'atfromto',
     angleMode: 'auto',
     deltaMode: 'slope',
     mapMode: 'off',
@@ -282,13 +309,16 @@ const App: React.FC = () => {
   const [selectedInstrument, setSelectedInstrument] = useState('');
   const [splitPercent, setSplitPercent] = useState(35); // left pane width (%)
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+  const [activeOptionsTab, setActiveOptionsTab] = useState<ProjectOptionsTab>('adjustment');
+  const [settingsDraft, setSettingsDraft] = useState<SettingsState>(settings);
+  const [parseSettingsDraft, setParseSettingsDraft] = useState<ParseSettings>(parseSettings);
+  const [selectedInstrumentDraft, setSelectedInstrumentDraft] = useState(selectedInstrument);
   const [excludedIds, setExcludedIds] = useState<Set<number>>(new Set());
   const [overrides, setOverrides] = useState<Record<number, ObservationOverride>>({});
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const layoutRef = useRef<HTMLDivElement | null>(null);
   const isResizingRef = useRef(false);
-  const settingsRef = useRef<HTMLDivElement | null>(null);
 
   const instrumentLibrary: InstrumentLibrary = useMemo(() => {
     const lines = input.split('\n');
@@ -342,23 +372,15 @@ const App: React.FC = () => {
   }, [instrumentLibrary, selectedInstrument]);
 
   useEffect(() => {
-    if (!isSettingsOpen) return;
-    const handleClick = (event: MouseEvent) => {
-      if (!settingsRef.current) return;
-      if (!settingsRef.current.contains(event.target as Node)) {
-        setIsSettingsOpen(false);
-      }
-    };
+    if (!isSettingsModalOpen) return;
     const handleKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setIsSettingsOpen(false);
+      if (event.key === 'Escape') setIsSettingsModalOpen(false);
     };
-    document.addEventListener('mousedown', handleClick);
     document.addEventListener('keydown', handleKey);
     return () => {
-      document.removeEventListener('mousedown', handleClick);
       document.removeEventListener('keydown', handleKey);
     };
-  }, [isSettingsOpen]);
+  }, [isSettingsModalOpen]);
 
   // handle dragging of vertical divider
   useEffect(() => {
@@ -2292,6 +2314,8 @@ const App: React.FC = () => {
         units: settings.units,
         coordMode: effectiveParse.coordMode,
         order: effectiveParse.order,
+        angleUnits: effectiveParse.angleUnits,
+        angleStationOrder: effectiveParse.angleStationOrder,
         angleMode: effectiveParse.angleMode,
         deltaMode: effectiveParse.deltaMode,
         mapMode: effectiveParse.mapMode,
@@ -2478,20 +2502,38 @@ const App: React.FC = () => {
     runWithExclusions(next);
   };
 
-  const handleUnitChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setSettings({ ...settings, units: e.target.value as Units });
+  const openProjectOptions = () => {
+    setSettingsDraft(settings);
+    setParseSettingsDraft(parseSettings);
+    setSelectedInstrumentDraft(selectedInstrument);
+    setActiveOptionsTab('adjustment');
+    setIsSettingsModalOpen(true);
   };
 
-  const handleIterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const applyProjectOptions = () => {
+    setSettings(settingsDraft);
+    setParseSettings(parseSettingsDraft);
+    setSelectedInstrument(selectedInstrumentDraft);
+    setIsSettingsModalOpen(false);
+  };
+
+  const handleDraftUnitChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setSettingsDraft((prev) => ({ ...prev, units: e.target.value as Units }));
+  };
+
+  const handleDraftIterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = parseInt(e.target.value, 10) || 1;
-    setSettings({ ...settings, maxIterations: val });
+    setSettingsDraft((prev) => ({ ...prev, maxIterations: val }));
   };
 
-  const handleParseSetting = <K extends keyof ParseSettings>(key: K, value: ParseSettings[K]) => {
-    setParseSettings((prev) => ({ ...prev, [key]: value }));
+  const handleDraftParseSetting = <K extends keyof ParseSettings>(
+    key: K,
+    value: ParseSettings[K],
+  ) => {
+    setParseSettingsDraft((prev) => ({ ...prev, [key]: value }));
   };
 
-  const parityProfileActive = parseSettings.solveProfile === 'starnet-parity';
+  const parityProfileActive = parseSettingsDraft.solveProfile === 'starnet-parity';
 
   const toggleExclude = (id: number) => {
     setExcludedIds((prev) => {
@@ -2518,6 +2560,42 @@ const App: React.FC = () => {
     setOverrides({});
   };
 
+  const selectedInstrumentMeta = selectedInstrumentDraft
+    ? instrumentLibrary[selectedInstrumentDraft]
+    : undefined;
+  const optionInputClass =
+    'w-full bg-slate-700 text-xs border border-slate-500 text-white rounded px-2 py-1 outline-none focus:border-blue-400';
+  const optionLabelClass = 'text-[11px] text-slate-300 uppercase tracking-wide';
+
+  const renderPlaceholderPanel = (title: string, note: string) => (
+    <div className="space-y-3">
+      <div className="text-xs uppercase tracking-wider text-slate-300">{title}</div>
+      <div className="bg-slate-700/60 border border-slate-500 rounded p-3 text-xs text-slate-300">
+        {note}
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <label className={optionLabelClass}>
+          Future Option A
+          <input
+            disabled
+            value="Not implemented"
+            readOnly
+            className={`${optionInputClass} mt-1 opacity-50 cursor-not-allowed`}
+          />
+        </label>
+        <label className={optionLabelClass}>
+          Future Option B
+          <input
+            disabled
+            value="Not implemented"
+            readOnly
+            className={`${optionInputClass} mt-1 opacity-50 cursor-not-allowed`}
+          />
+        </label>
+      </div>
+    </div>
+  );
+
   return (
     <div className="fixed inset-0 flex flex-col bg-slate-900 text-slate-100 font-sans overflow-hidden">
       <header className="h-16 bg-slate-800 border-b border-slate-700 flex items-center px-3 md:px-4 shrink-0 w-full gap-3">
@@ -2540,484 +2618,14 @@ const App: React.FC = () => {
               </span>
             </div>
           </div>
-          <div className="relative" ref={settingsRef}>
-            <button
-              onClick={() => setIsSettingsOpen((prev) => !prev)}
-              title="Open adjustment settings and parsing options"
-              className={`flex items-center space-x-2 px-3 py-1.5 rounded border text-xs uppercase tracking-wide ${
-                isSettingsOpen
-                  ? 'bg-slate-700 border-slate-500 text-white'
-                  : 'bg-slate-900/60 border-slate-700 text-slate-300 hover:bg-slate-700'
-              }`}
-              aria-expanded={isSettingsOpen}
-              aria-haspopup="true"
-            >
-              <Settings size={14} />
-              <span>Settings</span>
-            </button>
-
-            {isSettingsOpen && (
-              <div className="absolute left-0 mt-2 w-[620px] max-w-[calc(100vw-1.5rem)] bg-slate-900 border border-slate-700 rounded-lg shadow-xl p-4 z-50">
-                <div className="text-xs text-slate-400 uppercase tracking-wider mb-3">
-                  Adjustment Settings
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between gap-3">
-                      <label
-                        title={SETTINGS_TOOLTIPS.units}
-                        className="text-xs text-slate-400 font-medium uppercase"
-                      >
-                        Units
-                      </label>
-                      <select
-                        title={SETTINGS_TOOLTIPS.units}
-                        value={settings.units}
-                        onChange={handleUnitChange}
-                        className="bg-slate-800 text-xs border border-slate-600 text-white rounded px-2 py-1 outline-none focus:border-blue-500"
-                      >
-                        <option value="m">Meters (m)</option>
-                        <option value="ft">Feet (ft)</option>
-                      </select>
-                    </div>
-                    <div className="flex items-center justify-between gap-3">
-                      <label
-                        title={SETTINGS_TOOLTIPS.maxIterations}
-                        className="text-xs text-slate-400 font-medium uppercase"
-                      >
-                        Max Iter
-                      </label>
-                      <input
-                        title={SETTINGS_TOOLTIPS.maxIterations}
-                        type="number"
-                        min={1}
-                        max={100}
-                        value={settings.maxIterations}
-                        onChange={handleIterChange}
-                        className="w-20 bg-slate-800 text-xs border border-slate-600 text-white rounded px-2 py-1 outline-none focus:border-blue-500 text-center"
-                      />
-                    </div>
-                    <div className="flex items-center justify-between gap-3">
-                      <label
-                        title={SETTINGS_TOOLTIPS.solveProfile}
-                        className="text-xs text-slate-400 font-medium uppercase"
-                      >
-                        Profile
-                      </label>
-                      <select
-                        title={SETTINGS_TOOLTIPS.solveProfile}
-                        value={parseSettings.solveProfile}
-                        onChange={(e) =>
-                          handleParseSetting('solveProfile', e.target.value as SolveProfile)
-                        }
-                        className="bg-slate-800 text-xs border border-slate-600 text-white rounded px-2 py-1 outline-none focus:border-blue-500"
-                      >
-                        <option value="webnet">WebNet</option>
-                        <option value="starnet-parity">STAR*NET Parity</option>
-                      </select>
-                    </div>
-                    <div className="flex items-center justify-between gap-3">
-                      <label
-                        title={SETTINGS_TOOLTIPS.coordMode}
-                        className="text-xs text-slate-400 font-medium uppercase"
-                      >
-                        Coord
-                      </label>
-                      <select
-                        title={SETTINGS_TOOLTIPS.coordMode}
-                        value={parseSettings.coordMode}
-                        onChange={(e) =>
-                          handleParseSetting('coordMode', e.target.value as CoordMode)
-                        }
-                        className="bg-slate-800 text-xs border border-slate-600 text-white rounded px-2 py-1 outline-none focus:border-blue-500"
-                      >
-                        <option value="2D">2D (.2D)</option>
-                        <option value="3D">3D (.3D)</option>
-                      </select>
-                    </div>
-                    <div className="flex items-center justify-between gap-3">
-                      <label
-                        title={SETTINGS_TOOLTIPS.order}
-                        className="text-xs text-slate-400 font-medium uppercase"
-                      >
-                        Order
-                      </label>
-                      <select
-                        title={SETTINGS_TOOLTIPS.order}
-                        value={parseSettings.order}
-                        onChange={(e) => handleParseSetting('order', e.target.value as OrderMode)}
-                        className="bg-slate-800 text-xs border border-slate-600 text-white rounded px-2 py-1 outline-none focus:border-blue-500"
-                      >
-                        <option value="EN">EN (.ORDER EN)</option>
-                        <option value="NE">NE (.ORDER NE)</option>
-                      </select>
-                    </div>
-                    <div className="flex items-center justify-between gap-3">
-                      <label
-                        title={SETTINGS_TOOLTIPS.angleMode}
-                        className="text-xs text-slate-400 font-medium uppercase"
-                      >
-                        A Mode
-                      </label>
-                      <select
-                        title={SETTINGS_TOOLTIPS.angleMode}
-                        value={parseSettings.angleMode}
-                        onChange={(e) =>
-                          handleParseSetting('angleMode', e.target.value as AngleMode)
-                        }
-                        className="bg-slate-800 text-xs border border-slate-600 text-white rounded px-2 py-1 outline-none focus:border-blue-500"
-                      >
-                        <option value="auto">AUTO (.AMODE AUTO)</option>
-                        <option value="angle">ANGLE (.AMODE ANGLE)</option>
-                        <option value="dir">DIR (.AMODE DIR)</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between gap-3">
-                      <label
-                        title={SETTINGS_TOOLTIPS.deltaMode}
-                        className="text-xs text-slate-400 font-medium uppercase"
-                      >
-                        Delta Mode
-                      </label>
-                      <select
-                        title={SETTINGS_TOOLTIPS.deltaMode}
-                        value={parseSettings.deltaMode}
-                        onChange={(e) =>
-                          handleParseSetting('deltaMode', e.target.value as DeltaMode)
-                        }
-                        className="bg-slate-800 text-xs border border-slate-600 text-white rounded px-2 py-1 outline-none focus:border-blue-500"
-                      >
-                        <option value="slope">Slope + Zenith (.DELTA OFF)</option>
-                        <option value="horiz">Horizontal + dH (.DELTA ON)</option>
-                      </select>
-                    </div>
-                    <div className="flex items-center justify-between gap-3">
-                      <label
-                        title={SETTINGS_TOOLTIPS.mapMode}
-                        className="text-xs text-slate-400 font-medium uppercase"
-                      >
-                        Map Mode
-                      </label>
-                      <select
-                        title={SETTINGS_TOOLTIPS.mapMode}
-                        value={parseSettings.mapMode}
-                        onChange={(e) => handleParseSetting('mapMode', e.target.value as MapMode)}
-                        className="bg-slate-800 text-xs border border-slate-600 text-white rounded px-2 py-1 outline-none focus:border-blue-500"
-                      >
-                        <option value="off">Off</option>
-                        <option value="on">On</option>
-                        <option value="anglecalc">AngleCalc</option>
-                      </select>
-                    </div>
-                    <div className="flex items-center justify-between gap-3">
-                      <label
-                        title={SETTINGS_TOOLTIPS.mapScale}
-                        className="text-xs text-slate-400 font-medium uppercase"
-                      >
-                        Map Scale
-                      </label>
-                      <input
-                        title={SETTINGS_TOOLTIPS.mapScale}
-                        type="number"
-                        min={0.5}
-                        max={1.5}
-                        step={0.000001}
-                        value={parseSettings.mapScaleFactor ?? ''}
-                        onChange={(e) =>
-                          handleParseSetting(
-                            'mapScaleFactor',
-                            e.target.value === '' ? undefined : parseFloat(e.target.value),
-                          )
-                        }
-                        className="w-24 bg-slate-800 text-xs border border-slate-600 text-white rounded px-2 py-1 outline-none focus:border-blue-500 text-center"
-                      />
-                    </div>
-                    <div className="flex items-center justify-between gap-3">
-                      <label
-                        title={SETTINGS_TOOLTIPS.curvatureRefraction}
-                        className="text-xs text-slate-400 font-medium uppercase"
-                      >
-                        Curv/Ref
-                      </label>
-                      <input
-                        title={SETTINGS_TOOLTIPS.curvatureRefraction}
-                        type="checkbox"
-                        className="accent-blue-500"
-                        checked={parseSettings.applyCurvatureRefraction}
-                        onChange={(e) =>
-                          handleParseSetting('applyCurvatureRefraction', e.target.checked)
-                        }
-                      />
-                    </div>
-                    <div className="flex items-center justify-between gap-3">
-                      <label
-                        title={SETTINGS_TOOLTIPS.refractionK}
-                        className="text-xs text-slate-400 font-medium uppercase"
-                      >
-                        Refraction K
-                      </label>
-                      <input
-                        title={SETTINGS_TOOLTIPS.refractionK}
-                        type="number"
-                        min={-1}
-                        max={1}
-                        step={0.01}
-                        value={parseSettings.refractionCoefficient}
-                        onChange={(e) =>
-                          handleParseSetting(
-                            'refractionCoefficient',
-                            Number.isFinite(parseFloat(e.target.value))
-                              ? parseFloat(e.target.value)
-                              : 0.13,
-                          )
-                        }
-                        className="w-20 bg-slate-800 text-xs border border-slate-600 text-white rounded px-2 py-1 outline-none focus:border-blue-500 text-center"
-                      />
-                    </div>
-                    <div className="flex items-center justify-between gap-3">
-                      <label
-                        title={SETTINGS_TOOLTIPS.verticalReduction}
-                        className="text-xs text-slate-400 font-medium uppercase"
-                      >
-                        V Red
-                      </label>
-                      <select
-                        title={SETTINGS_TOOLTIPS.verticalReduction}
-                        value={parseSettings.verticalReduction}
-                        onChange={(e) =>
-                          handleParseSetting(
-                            'verticalReduction',
-                            e.target.value as VerticalReductionMode,
-                          )
-                        }
-                        className="bg-slate-800 text-xs border border-slate-600 text-white rounded px-2 py-1 outline-none focus:border-blue-500"
-                      >
-                        <option value="none">None (.VRED NONE)</option>
-                        <option value="curvref">CurvRef (.VRED CURVREF)</option>
-                      </select>
-                    </div>
-                    <div className="flex items-center justify-between gap-3">
-                      <label
-                        title={SETTINGS_TOOLTIPS.normalize}
-                        className="text-xs text-slate-400 font-medium uppercase"
-                      >
-                        Normalize
-                      </label>
-                      <input
-                        title={SETTINGS_TOOLTIPS.normalize}
-                        type="checkbox"
-                        className="accent-blue-500"
-                        checked={parseSettings.normalize}
-                        onChange={(e) => handleParseSetting('normalize', e.target.checked)}
-                      />
-                    </div>
-                    <div className="flex items-center justify-between gap-3">
-                      <label
-                        title={SETTINGS_TOOLTIPS.tsCorrelation}
-                        className="text-xs text-slate-400 font-medium uppercase"
-                      >
-                        TS Corr
-                      </label>
-                      <input
-                        title={SETTINGS_TOOLTIPS.tsCorrelation}
-                        type="checkbox"
-                        className="accent-blue-500"
-                        checked={parseSettings.tsCorrelationEnabled}
-                        disabled={parityProfileActive}
-                        onChange={(e) =>
-                          handleParseSetting('tsCorrelationEnabled', e.target.checked)
-                        }
-                      />
-                    </div>
-                    <div className="flex items-center justify-between gap-3">
-                      <label
-                        title={SETTINGS_TOOLTIPS.tsCorrelationScope}
-                        className="text-xs text-slate-400 font-medium uppercase"
-                      >
-                        TS Corr Scope
-                      </label>
-                      <select
-                        title={SETTINGS_TOOLTIPS.tsCorrelationScope}
-                        value={parseSettings.tsCorrelationScope}
-                        disabled={parityProfileActive}
-                        onChange={(e) =>
-                          handleParseSetting(
-                            'tsCorrelationScope',
-                            e.target.value as TsCorrelationScope,
-                          )
-                        }
-                        className="bg-slate-800 text-xs border border-slate-600 text-white rounded px-2 py-1 outline-none focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        <option value="set">SET (.TSCORR SET)</option>
-                        <option value="setup">SETUP (.TSCORR SETUP)</option>
-                      </select>
-                    </div>
-                    <div className="flex items-center justify-between gap-3">
-                      <label
-                        title={SETTINGS_TOOLTIPS.tsCorrelationRho}
-                        className="text-xs text-slate-400 font-medium uppercase"
-                      >
-                        TS Corr ρ
-                      </label>
-                      <input
-                        title={SETTINGS_TOOLTIPS.tsCorrelationRho}
-                        type="number"
-                        min={0}
-                        max={0.95}
-                        step={0.01}
-                        value={parseSettings.tsCorrelationRho}
-                        disabled={parityProfileActive}
-                        onChange={(e) =>
-                          handleParseSetting(
-                            'tsCorrelationRho',
-                            Number.isFinite(parseFloat(e.target.value))
-                              ? Math.max(0, Math.min(0.95, parseFloat(e.target.value)))
-                              : 0.25,
-                          )
-                        }
-                        className="w-20 bg-slate-800 text-xs border border-slate-600 text-white rounded px-2 py-1 outline-none focus:border-blue-500 text-center disabled:opacity-50 disabled:cursor-not-allowed"
-                      />
-                    </div>
-                    <div className="flex items-center justify-between gap-3">
-                      <label
-                        title={SETTINGS_TOOLTIPS.robustMode}
-                        className="text-xs text-slate-400 font-medium uppercase"
-                      >
-                        Robust
-                      </label>
-                      <select
-                        title={SETTINGS_TOOLTIPS.robustMode}
-                        value={parseSettings.robustMode}
-                        onChange={(e) =>
-                          handleParseSetting('robustMode', e.target.value as RobustMode)
-                        }
-                        disabled={parityProfileActive}
-                        className="bg-slate-800 text-xs border border-slate-600 text-white rounded px-2 py-1 outline-none focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        <option value="none">OFF (.ROBUST OFF)</option>
-                        <option value="huber">Huber (.ROBUST HUBER)</option>
-                      </select>
-                    </div>
-                    <div className="flex items-center justify-between gap-3">
-                      <label
-                        title={SETTINGS_TOOLTIPS.robustK}
-                        className="text-xs text-slate-400 font-medium uppercase"
-                      >
-                        Robust k
-                      </label>
-                      <input
-                        title={SETTINGS_TOOLTIPS.robustK}
-                        type="number"
-                        min={0.5}
-                        max={10}
-                        step={0.1}
-                        value={parseSettings.robustK}
-                        onChange={(e) =>
-                          handleParseSetting(
-                            'robustK',
-                            Number.isFinite(parseFloat(e.target.value))
-                              ? Math.max(0.5, Math.min(10, parseFloat(e.target.value)))
-                              : 1.5,
-                          )
-                        }
-                        disabled={parityProfileActive}
-                        className="w-20 bg-slate-800 text-xs border border-slate-600 text-white rounded px-2 py-1 outline-none focus:border-blue-500 text-center disabled:opacity-50 disabled:cursor-not-allowed"
-                      />
-                    </div>
-                    {parityProfileActive && (
-                      <div className="text-[10px] text-amber-300">
-                        STAR*NET parity profile forces classical solve and raw direction-set
-                        adjustment, with STAR-like default instrument precision.
-                      </div>
-                    )}
-                    <div className="flex items-center justify-between gap-3">
-                      <label
-                        title={SETTINGS_TOOLTIPS.levelWeight}
-                        className="text-xs text-slate-400 font-medium uppercase"
-                      >
-                        .LWEIGHT (mm/km)
-                      </label>
-                      <input
-                        title={SETTINGS_TOOLTIPS.levelWeight}
-                        type="number"
-                        min={0}
-                        step={0.1}
-                        value={parseSettings.levelWeight ?? ''}
-                        onChange={(e) =>
-                          handleParseSetting(
-                            'levelWeight',
-                            e.target.value === '' ? undefined : parseFloat(e.target.value),
-                          )
-                        }
-                        className="w-20 bg-slate-800 text-xs border border-slate-600 text-white rounded px-2 py-1 outline-none focus:border-blue-500 text-center"
-                      />
-                    </div>
-                    <div className="flex items-center justify-between gap-3">
-                      <label
-                        title={SETTINGS_TOOLTIPS.lonSign}
-                        className="text-xs text-slate-400 font-medium uppercase"
-                      >
-                        Lon Sign
-                      </label>
-                      <select
-                        title={SETTINGS_TOOLTIPS.lonSign}
-                        value={parseSettings.lonSign}
-                        onChange={(e) =>
-                          handleParseSetting('lonSign', e.target.value as ParseSettings['lonSign'])
-                        }
-                        className="bg-slate-800 text-xs border border-slate-600 text-white rounded px-2 py-1 outline-none focus:border-blue-500"
-                      >
-                        <option value="west-negative">West Negative (.LONSIGN W-)</option>
-                        <option value="west-positive">West Positive (.LONSIGN W+)</option>
-                      </select>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="mt-4 pt-3 border-t border-slate-800">
-                  <div className="flex items-center justify-between gap-3">
-                    <label
-                      title={SETTINGS_TOOLTIPS.instrument}
-                      className="text-xs text-slate-400 font-medium uppercase"
-                    >
-                      Instrument
-                    </label>
-                    <select
-                      title={SETTINGS_TOOLTIPS.instrument}
-                      value={selectedInstrument}
-                      onChange={(e) => setSelectedInstrument(e.target.value)}
-                      className="bg-slate-800 text-xs border border-slate-600 text-white rounded px-2 py-1 outline-none focus:border-blue-500"
-                    >
-                      {Object.keys(instrumentLibrary).length === 0 && (
-                        <option value="">(none)</option>
-                      )}
-                      {Object.values(instrumentLibrary).map((inst) => (
-                        <option key={inst.code} value={inst.code}>
-                          {inst.code}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  {selectedInstrument && instrumentLibrary[selectedInstrument] && (
-                    <div className="mt-2 text-[10px] text-slate-500">
-                      {instrumentLibrary[selectedInstrument].desc} - edm:{' '}
-                      {instrumentLibrary[selectedInstrument].edm_const}m +{' '}
-                      {instrumentLibrary[selectedInstrument].edm_ppm}ppm - HZ:{' '}
-                      {instrumentLibrary[selectedInstrument].hzPrecision_sec}" - VA:{' '}
-                      {instrumentLibrary[selectedInstrument].vaPrecision_sec}" - cent:{' '}
-                      {instrumentLibrary[selectedInstrument].instCentr_m}/
-                      {instrumentLibrary[selectedInstrument].tgtCentr_m}m - GPS:{' '}
-                      {instrumentLibrary[selectedInstrument].gpsStd_xy}m - lev:{' '}
-                      {instrumentLibrary[selectedInstrument].levStd_mmPerKm}mm/km
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
+          <button
+            onClick={openProjectOptions}
+            title="Open STAR-style project options"
+            className="flex items-center space-x-2 px-3 py-1.5 rounded border text-xs uppercase tracking-wide bg-slate-900/60 border-slate-700 text-slate-300 hover:bg-slate-700"
+          >
+            <Settings size={14} />
+            <span>Project Options</span>
+          </button>
         </div>
 
         <div className="flex items-center gap-2 ml-auto shrink-0">
@@ -3060,6 +2668,552 @@ const App: React.FC = () => {
           </button>
         </div>
       </header>
+
+      {isSettingsModalOpen && (
+        <div
+          className="fixed inset-0 z-50 bg-slate-950/70 flex items-start justify-center p-4 md:p-10"
+          onClick={() => setIsSettingsModalOpen(false)}
+        >
+          <div
+            className="w-full max-w-5xl bg-slate-600 border border-slate-400 shadow-2xl text-slate-100"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-slate-400 bg-slate-700 px-4 py-2">
+              <div className="text-sm font-semibold tracking-wide">Project Options</div>
+              <button
+                type="button"
+                onClick={() => setIsSettingsModalOpen(false)}
+                className="text-xs px-2 py-1 border border-slate-300 bg-slate-500 hover:bg-slate-400"
+              >
+                X
+              </button>
+            </div>
+            <div className="flex flex-wrap gap-1 border-b border-slate-400 bg-slate-500 px-2 pt-2">
+              {PROJECT_OPTION_TABS.map((tab) => (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => setActiveOptionsTab(tab.id)}
+                  className={`px-3 py-1 text-xs border border-slate-300 ${
+                    activeOptionsTab === tab.id
+                      ? 'bg-slate-700 text-white'
+                      : 'bg-slate-400 text-slate-900 hover:bg-slate-300'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+
+            <div className="bg-slate-500 p-4 max-h-[70vh] overflow-auto">
+              {activeOptionsTab === 'adjustment' && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="border border-slate-400 p-3 space-y-3">
+                    <div className="text-xs uppercase tracking-wider text-slate-200">
+                      Adjustment Solution
+                    </div>
+                    <label className={optionLabelClass}>
+                      Run Profile
+                      <select
+                        title={SETTINGS_TOOLTIPS.solveProfile}
+                        value={parseSettingsDraft.solveProfile}
+                        onChange={(e) =>
+                          handleDraftParseSetting('solveProfile', e.target.value as SolveProfile)
+                        }
+                        className={`${optionInputClass} mt-1`}
+                      >
+                        <option value="webnet">WebNet</option>
+                        <option value="starnet-parity">STAR*NET Parity</option>
+                      </select>
+                    </label>
+                    <label className={optionLabelClass}>
+                      Coordinate Mode
+                      <select
+                        title={SETTINGS_TOOLTIPS.coordMode}
+                        value={parseSettingsDraft.coordMode}
+                        onChange={(e) =>
+                          handleDraftParseSetting('coordMode', e.target.value as CoordMode)
+                        }
+                        className={`${optionInputClass} mt-1`}
+                      >
+                        <option value="2D">2D</option>
+                        <option value="3D">3D</option>
+                      </select>
+                    </label>
+                    <div className="grid grid-cols-2 gap-3">
+                      <label className={optionLabelClass}>
+                        Linear Units
+                        <select
+                          title={SETTINGS_TOOLTIPS.units}
+                          value={settingsDraft.units}
+                          onChange={handleDraftUnitChange}
+                          className={`${optionInputClass} mt-1`}
+                        >
+                          <option value="m">Meters</option>
+                          <option value="ft">Feet</option>
+                        </select>
+                      </label>
+                      <label className={optionLabelClass}>
+                        Max Iterations
+                        <input
+                          title={SETTINGS_TOOLTIPS.maxIterations}
+                          type="number"
+                          min={1}
+                          max={100}
+                          value={settingsDraft.maxIterations}
+                          onChange={handleDraftIterChange}
+                          className={`${optionInputClass} mt-1`}
+                        />
+                      </label>
+                    </div>
+                    <label className={optionLabelClass}>
+                      Distance / Vertical Data Type
+                      <select
+                        title={SETTINGS_TOOLTIPS.deltaMode}
+                        value={parseSettingsDraft.deltaMode}
+                        onChange={(e) =>
+                          handleDraftParseSetting('deltaMode', e.target.value as DeltaMode)
+                        }
+                        className={`${optionInputClass} mt-1`}
+                      >
+                        <option value="slope">Slope Dist / Zenith</option>
+                        <option value="horiz">Horiz Dist / Elev Diff</option>
+                      </select>
+                    </label>
+                  </div>
+
+                  <div className="border border-slate-400 p-3 space-y-3">
+                    <div className="text-xs uppercase tracking-wider text-slate-200">
+                      Station and Angle Order
+                    </div>
+                    <label className={optionLabelClass}>
+                      Coordinate Order
+                      <select
+                        title={SETTINGS_TOOLTIPS.order}
+                        value={parseSettingsDraft.order}
+                        onChange={(e) =>
+                          handleDraftParseSetting('order', e.target.value as OrderMode)
+                        }
+                        className={`${optionInputClass} mt-1`}
+                      >
+                        <option value="NE">North-East</option>
+                        <option value="EN">East-North</option>
+                      </select>
+                    </label>
+                    <label className={optionLabelClass}>
+                      Angular Units
+                      <select
+                        title={SETTINGS_TOOLTIPS.angleUnits}
+                        value={parseSettingsDraft.angleUnits}
+                        onChange={(e) =>
+                          handleDraftParseSetting('angleUnits', e.target.value as 'dms' | 'dd')
+                        }
+                        className={`${optionInputClass} mt-1`}
+                      >
+                        <option value="dms">DMS</option>
+                        <option value="dd">Decimal Degrees</option>
+                      </select>
+                    </label>
+                    <label className={optionLabelClass}>
+                      Angle Data Station Order
+                      <select
+                        title={SETTINGS_TOOLTIPS.angleStationOrder}
+                        value={parseSettingsDraft.angleStationOrder}
+                        onChange={(e) =>
+                          handleDraftParseSetting(
+                            'angleStationOrder',
+                            e.target.value as 'atfromto' | 'fromatto',
+                          )
+                        }
+                        className={`${optionInputClass} mt-1`}
+                      >
+                        <option value="atfromto">At-From-To</option>
+                        <option value="fromatto">From-At-To</option>
+                      </select>
+                    </label>
+                    <label className={optionLabelClass}>
+                      Longitude Sign Convention
+                      <select
+                        title={SETTINGS_TOOLTIPS.lonSign}
+                        value={parseSettingsDraft.lonSign}
+                        onChange={(e) =>
+                          handleDraftParseSetting(
+                            'lonSign',
+                            e.target.value as ParseSettings['lonSign'],
+                          )
+                        }
+                        className={`${optionInputClass} mt-1`}
+                      >
+                        <option value="west-negative">Negative West / Positive East</option>
+                        <option value="west-positive">Positive West / Negative East</option>
+                      </select>
+                    </label>
+                  </div>
+                </div>
+              )}
+
+              {activeOptionsTab === 'general' && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="border border-slate-400 p-3 space-y-3">
+                    <div className="text-xs uppercase tracking-wider text-slate-200">
+                      Local/Grid Reduction
+                    </div>
+                    <label className={optionLabelClass}>
+                      Map Mode
+                      <select
+                        title={SETTINGS_TOOLTIPS.mapMode}
+                        value={parseSettingsDraft.mapMode}
+                        onChange={(e) =>
+                          handleDraftParseSetting('mapMode', e.target.value as MapMode)
+                        }
+                        className={`${optionInputClass} mt-1`}
+                      >
+                        <option value="off">Off</option>
+                        <option value="on">On</option>
+                        <option value="anglecalc">AngleCalc</option>
+                      </select>
+                    </label>
+                    <label className={optionLabelClass}>
+                      Map Scale Factor
+                      <input
+                        title={SETTINGS_TOOLTIPS.mapScale}
+                        type="number"
+                        min={0.5}
+                        max={1.5}
+                        step={0.000001}
+                        value={parseSettingsDraft.mapScaleFactor ?? ''}
+                        onChange={(e) =>
+                          handleDraftParseSetting(
+                            'mapScaleFactor',
+                            e.target.value === '' ? undefined : parseFloat(e.target.value),
+                          )
+                        }
+                        className={`${optionInputClass} mt-1`}
+                      />
+                    </label>
+                    <label className={optionLabelClass}>
+                      Normalize Mixed Face Data
+                      <div className="mt-1 flex items-center gap-2 text-xs">
+                        <input
+                          title={SETTINGS_TOOLTIPS.normalize}
+                          type="checkbox"
+                          className="accent-blue-400"
+                          checked={parseSettingsDraft.normalize}
+                          onChange={(e) =>
+                            handleDraftParseSetting('normalize', e.target.checked)
+                          }
+                        />
+                        <span>{parseSettingsDraft.normalize ? 'Enabled' : 'Disabled'}</span>
+                      </div>
+                    </label>
+                  </div>
+                  <div className="border border-slate-400 p-3 space-y-3">
+                    <div className="text-xs uppercase tracking-wider text-slate-200">
+                      Vertical Reduction
+                    </div>
+                    <label className={optionLabelClass}>
+                      Curvature / Refraction
+                      <div className="mt-1 flex items-center gap-2 text-xs">
+                        <input
+                          title={SETTINGS_TOOLTIPS.curvatureRefraction}
+                          type="checkbox"
+                          className="accent-blue-400"
+                          checked={parseSettingsDraft.applyCurvatureRefraction}
+                          onChange={(e) =>
+                            handleDraftParseSetting('applyCurvatureRefraction', e.target.checked)
+                          }
+                        />
+                        <span>
+                          {parseSettingsDraft.applyCurvatureRefraction ? 'Enabled' : 'Disabled'}
+                        </span>
+                      </div>
+                    </label>
+                    <label className={optionLabelClass}>
+                      Refraction Coefficient
+                      <input
+                        title={SETTINGS_TOOLTIPS.refractionK}
+                        type="number"
+                        min={-1}
+                        max={1}
+                        step={0.01}
+                        value={parseSettingsDraft.refractionCoefficient}
+                        onChange={(e) =>
+                          handleDraftParseSetting(
+                            'refractionCoefficient',
+                            Number.isFinite(parseFloat(e.target.value))
+                              ? parseFloat(e.target.value)
+                              : 0.13,
+                          )
+                        }
+                        className={`${optionInputClass} mt-1`}
+                      />
+                    </label>
+                    <label className={optionLabelClass}>
+                      Vertical Reduction Mode
+                      <select
+                        title={SETTINGS_TOOLTIPS.verticalReduction}
+                        value={parseSettingsDraft.verticalReduction}
+                        onChange={(e) =>
+                          handleDraftParseSetting(
+                            'verticalReduction',
+                            e.target.value as VerticalReductionMode,
+                          )
+                        }
+                        className={`${optionInputClass} mt-1`}
+                      >
+                        <option value="none">None</option>
+                        <option value="curvref">CurvRef</option>
+                      </select>
+                    </label>
+                  </div>
+                </div>
+              )}
+
+              {activeOptionsTab === 'instrument' && (
+                <div className="space-y-4">
+                  <div className="border border-slate-400 p-3 space-y-3">
+                    <div className="text-xs uppercase tracking-wider text-slate-200">
+                      Active Instrument
+                    </div>
+                    <label className={optionLabelClass}>
+                      Instrument Code
+                      <select
+                        title={SETTINGS_TOOLTIPS.instrument}
+                        value={selectedInstrumentDraft}
+                        onChange={(e) => setSelectedInstrumentDraft(e.target.value)}
+                        className={`${optionInputClass} mt-1 max-w-xs`}
+                      >
+                        {Object.keys(instrumentLibrary).length === 0 && (
+                          <option value="">(none)</option>
+                        )}
+                        {Object.values(instrumentLibrary).map((inst) => (
+                          <option key={inst.code} value={inst.code}>
+                            {inst.code}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    {selectedInstrumentMeta ? (
+                      <div className="text-xs text-slate-200 leading-relaxed">
+                        <div>{selectedInstrumentMeta.desc}</div>
+                        <div>
+                          Dist Const: {selectedInstrumentMeta.edm_const} m | Dist PPM:{' '}
+                          {selectedInstrumentMeta.edm_ppm}
+                        </div>
+                        <div>
+                          Angle: {selectedInstrumentMeta.hzPrecision_sec}" | Zenith:{' '}
+                          {selectedInstrumentMeta.vaPrecision_sec}"
+                        </div>
+                        <div>
+                          Centering I/T: {selectedInstrumentMeta.instCentr_m}/
+                          {selectedInstrumentMeta.tgtCentr_m} m
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-xs text-slate-200">No instrument selected.</div>
+                    )}
+                  </div>
+                  <div className="border border-slate-400 p-3 space-y-2">
+                    <div className="text-xs uppercase tracking-wider text-slate-200">
+                      Weighting Helpers
+                    </div>
+                    <label className={optionLabelClass}>
+                      .LWEIGHT (mm/km)
+                      <input
+                        title={SETTINGS_TOOLTIPS.levelWeight}
+                        type="number"
+                        min={0}
+                        step={0.1}
+                        value={parseSettingsDraft.levelWeight ?? ''}
+                        onChange={(e) =>
+                          handleDraftParseSetting(
+                            'levelWeight',
+                            e.target.value === '' ? undefined : parseFloat(e.target.value),
+                          )
+                        }
+                        className={`${optionInputClass} mt-1 max-w-xs`}
+                      />
+                    </label>
+                  </div>
+                </div>
+              )}
+
+              {activeOptionsTab === 'listing-file' &&
+                renderPlaceholderPanel(
+                  'Listing File Controls',
+                  'STAR-style listing granularity controls will be wired in a later phase.',
+                )}
+
+              {activeOptionsTab === 'other-files' &&
+                renderPlaceholderPanel(
+                  'Other File Outputs',
+                  'Coordinate and auxiliary output file switches are reserved for the STAR-style output phase.',
+                )}
+
+              {activeOptionsTab === 'special' && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="border border-slate-400 p-3 space-y-3">
+                    <div className="text-xs uppercase tracking-wider text-slate-200">
+                      Observation Interpretation
+                    </div>
+                    <label className={optionLabelClass}>
+                      A-Record Mode
+                      <select
+                        title={SETTINGS_TOOLTIPS.angleMode}
+                        value={parseSettingsDraft.angleMode}
+                        onChange={(e) =>
+                          handleDraftParseSetting('angleMode', e.target.value as AngleMode)
+                        }
+                        className={`${optionInputClass} mt-1`}
+                      >
+                        <option value="auto">AUTO</option>
+                        <option value="angle">ANGLE</option>
+                        <option value="dir">DIR</option>
+                      </select>
+                    </label>
+                  </div>
+                  <div className="border border-slate-400 p-3 text-xs text-slate-200 leading-relaxed">
+                    STAR*NET parity profile forces classical solving and raw direction-set
+                    processing with STAR default instrument fallback.
+                  </div>
+                </div>
+              )}
+
+              {activeOptionsTab === 'gps' &&
+                renderPlaceholderPanel(
+                  'GPS Options',
+                  'Dedicated GNSS project options will be added when STAR-style GPS tab controls are wired.',
+                )}
+
+              {activeOptionsTab === 'modeling' && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="border border-slate-400 p-3 space-y-3">
+                    <div className="text-xs uppercase tracking-wider text-slate-200">
+                      TS Correlation
+                    </div>
+                    <label className={optionLabelClass}>
+                      Enable Correlation
+                      <div className="mt-1 flex items-center gap-2 text-xs">
+                        <input
+                          title={SETTINGS_TOOLTIPS.tsCorrelation}
+                          type="checkbox"
+                          className="accent-blue-400"
+                          checked={parseSettingsDraft.tsCorrelationEnabled}
+                          disabled={parityProfileActive}
+                          onChange={(e) =>
+                            handleDraftParseSetting('tsCorrelationEnabled', e.target.checked)
+                          }
+                        />
+                        <span>
+                          {parseSettingsDraft.tsCorrelationEnabled ? 'Enabled' : 'Disabled'}
+                        </span>
+                      </div>
+                    </label>
+                    <label className={optionLabelClass}>
+                      Correlation Scope
+                      <select
+                        title={SETTINGS_TOOLTIPS.tsCorrelationScope}
+                        value={parseSettingsDraft.tsCorrelationScope}
+                        disabled={parityProfileActive}
+                        onChange={(e) =>
+                          handleDraftParseSetting(
+                            'tsCorrelationScope',
+                            e.target.value as TsCorrelationScope,
+                          )
+                        }
+                        className={`${optionInputClass} mt-1 disabled:opacity-50 disabled:cursor-not-allowed`}
+                      >
+                        <option value="set">SET</option>
+                        <option value="setup">SETUP</option>
+                      </select>
+                    </label>
+                    <label className={optionLabelClass}>
+                      Correlation ρ
+                      <input
+                        title={SETTINGS_TOOLTIPS.tsCorrelationRho}
+                        type="number"
+                        min={0}
+                        max={0.95}
+                        step={0.01}
+                        value={parseSettingsDraft.tsCorrelationRho}
+                        disabled={parityProfileActive}
+                        onChange={(e) =>
+                          handleDraftParseSetting(
+                            'tsCorrelationRho',
+                            Number.isFinite(parseFloat(e.target.value))
+                              ? Math.max(0, Math.min(0.95, parseFloat(e.target.value)))
+                              : 0.25,
+                          )
+                        }
+                        className={`${optionInputClass} mt-1 disabled:opacity-50 disabled:cursor-not-allowed`}
+                      />
+                    </label>
+                  </div>
+
+                  <div className="border border-slate-400 p-3 space-y-3">
+                    <div className="text-xs uppercase tracking-wider text-slate-200">
+                      Robust Model
+                    </div>
+                    <label className={optionLabelClass}>
+                      Robust Mode
+                      <select
+                        title={SETTINGS_TOOLTIPS.robustMode}
+                        value={parseSettingsDraft.robustMode}
+                        onChange={(e) =>
+                          handleDraftParseSetting('robustMode', e.target.value as RobustMode)
+                        }
+                        disabled={parityProfileActive}
+                        className={`${optionInputClass} mt-1 disabled:opacity-50 disabled:cursor-not-allowed`}
+                      >
+                        <option value="none">OFF</option>
+                        <option value="huber">Huber</option>
+                      </select>
+                    </label>
+                    <label className={optionLabelClass}>
+                      Robust k
+                      <input
+                        title={SETTINGS_TOOLTIPS.robustK}
+                        type="number"
+                        min={0.5}
+                        max={10}
+                        step={0.1}
+                        value={parseSettingsDraft.robustK}
+                        onChange={(e) =>
+                          handleDraftParseSetting(
+                            'robustK',
+                            Number.isFinite(parseFloat(e.target.value))
+                              ? Math.max(0.5, Math.min(10, parseFloat(e.target.value)))
+                              : 1.5,
+                          )
+                        }
+                        disabled={parityProfileActive}
+                        className={`${optionInputClass} mt-1 disabled:opacity-50 disabled:cursor-not-allowed`}
+                      />
+                    </label>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-center justify-end gap-2 border-t border-slate-400 bg-slate-600 px-4 py-3">
+              <button
+                type="button"
+                onClick={() => setIsSettingsModalOpen(false)}
+                className="px-4 py-1 text-xs border border-slate-300 bg-slate-500 hover:bg-slate-400"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={applyProjectOptions}
+                className="px-4 py-1 text-xs border border-slate-100 bg-slate-700 hover:bg-slate-800"
+              >
+                Apply
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div ref={layoutRef} className="flex-1 flex overflow-hidden w-full">
         {isSidebarOpen && (

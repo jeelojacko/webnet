@@ -18,6 +18,7 @@
 - [x] Phase 2 parity: geometry-aware angle centering inflation model (ray-correlation term) + STAR benchmark regression fixture/test
 - [x] Phase 3 parity: add run-pinned solve-profile diagnostics section in report/export (profile, direction-set mode, fallback/defaults, stochastic/reduction switches)
 - [x] Phase 4 parity: expand STAR benchmark fixture coverage (coords/SEUW/residual signatures) + expose active default stochastic model and default-sigma usage counts in report/export
+- [x] UI parity Phase A: replace settings dropdown with STAR-style Project Options modal (tab shell + Apply/Cancel draft state + mapped existing solver controls + placeholder tabs for upcoming STAR options)
 - [x] Sync README/agents docs with current parser/engine/UI state
 - [ ] Adjustment report parity roadmap (Star\*Net alignment):
   - [x] Implement weighted control constraints from coordinate/elevation std errors (not only fixed/free) so control uncertainty participates in the solve
