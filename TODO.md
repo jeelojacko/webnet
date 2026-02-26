@@ -14,20 +14,20 @@
 - [x] Point precision (σN/σE/σH, ellipse azimuth, 95% toggle) + relative precision between unknown points
 - [x] Map/ellipse viewer interaction upgrades: wheel zoom, middle-button pan, middle-double-click reset-to-extents, zoom-aware symbol scaling
 - [x] Prevent stale exclusion/override carryover between changed inputs (auto-clear on changed run context + file load)
-- [x] Add STAR*NET parity profile (classical weighting + raw direction-set solving + STAR-like default instrument fallback for missing instrument assignments)
-- [x] Phase 2 parity: geometry-aware angle centering inflation model (ray-correlation term) + STAR benchmark regression fixture/test
+- [x] Add Industry Standard parity profile (classical weighting + raw direction-set solving + industry-like default instrument fallback for missing instrument assignments)
+- [x] Phase 2 parity: geometry-aware angle centering inflation model (ray-correlation term) + industry benchmark regression fixture/test
 - [x] Phase 3 parity: add run-pinned solve-profile diagnostics section in report/export (profile, direction-set mode, fallback/defaults, stochastic/reduction switches)
-- [x] Phase 4 parity: expand STAR benchmark fixture coverage (coords/SEUW/residual signatures) + expose active default stochastic model and default-sigma usage counts in report/export
-- [x] UI parity Phase A: replace settings dropdown with STAR-style Project Options modal (tab shell + Apply/Cancel draft state + mapped existing solver controls + placeholder tabs for upcoming STAR options)
-- [x] UI parity Phase B: add Processing Summary tab with STAR-style monospaced run summary (iteration flow, per-type error factors, chi-square pass/fail, run profile flags, elapsed time, processing notes)
-- [x] UI parity Phase C: add STAR-style output tab + export format selector (WebNet report or STAR-style listing output file)
-- [x] UI parity Phase D: wire Listing File tab controls to STAR-style output content/sorting options (sections, sort order, row limit, azimuth/bearing visibility)
+- [x] Phase 4 parity: expand industry benchmark fixture coverage (coords/SEUW/residual signatures) + expose active default stochastic model and default-sigma usage counts in report/export
+- [x] UI parity Phase A: replace settings dropdown with industry-style Project Options modal (tab shell + Apply/Cancel draft state + mapped existing solver controls + placeholder tabs for upcoming industry options)
+- [x] UI parity Phase B: add Processing Summary tab with industry-style monospaced run summary (iteration flow, per-type error factors, chi-square pass/fail, run profile flags, elapsed time, processing notes)
+- [x] UI parity Phase C: add industry-style output tab + export format selector (WebNet report or industry-style listing output file)
+- [x] UI parity Phase D: wire Listing File tab controls to industry-style output content/sorting options (sections, sort order, row limit, azimuth/bearing visibility)
 - [x] Dev workflow: update Husky pre-commit hook to run one-shot tests (`npm run test:run`) instead of watch mode
 - [x] Sync README/agents docs with current parser/engine/UI state
 - [x] Instrument settings overhaul: editable Project Options instrument library (with New Instrument flow, unit-aware fields, and 2D/3D gating), solver wiring to UI-selected defaults, external-instrument precedence over inline `I` records, and zeroed fallback precision defaults unless explicitly provided
-- [x] STAR-style summary parity: compute per-type statistical summary from weighted residual contributions (`vTPv` by observation family) and display both error-factor and variance-factor chi-square bounds in summaries/listings
-- [x] STAR-style summary parity Phase 2: normalize per-type error factors using STAR-style global DOF scaling (`sqrt(totalCount/dof)`) so group factors align with STAR listings
-- [ ] Adjustment report parity roadmap (Star\*Net alignment):
+- [x] industry-style summary parity: compute per-type statistical summary from weighted residual contributions (`vTPv` by observation family) and display both error-factor and variance-factor chi-square bounds in summaries/listings
+- [x] industry-style summary parity Phase 2: normalize per-type error factors using industry-style global DOF scaling (`sqrt(totalCount/dof)`) so group factors align with industry listings
+- [ ] Adjustment report parity roadmap (industry-standard alignment):
   - [x] Implement weighted control constraints from coordinate/elevation std errors (not only fixed/free) so control uncertainty participates in the solve
   - [x] Wire and report normal-matrix conditioning diagnostics (condition estimate + warnings for weak geometry)
   - [x] Upgrade outlier handling from fixed sigma thresholds to formal local tests with decision limits and MDB
@@ -35,8 +35,8 @@
   - [x] Add source line traceability (`sourceLine`) from parser through residual/report/export tables
   - [x] Improve exported `.txt` report to be unit-correct, sorted by blunder likelihood, and include suspect ranking
   - [x] Extend GNSS weighting from simplified isotropic XY to richer component/covariance models
-  - [x] Resolve fixity/free-marker semantics mismatch (`*` meaning) between docs/parser/TODO and standard Star\*Net expectations
-- [ ] Star\*Net format compatibility (Section 5.6):
+  - [x] Resolve fixity/free-marker semantics mismatch (`*` meaning) between docs/parser/TODO and standard industry-standard expectations
+- [ ] industry-standard format compatibility (Section 5.6):
   - [x] Elevation-only parsing (E records) with std errors/fixity and unit conversion
   - [~] Implement global inline options: .UNITS, .COORD 2D/3D, .ORDER NE/EN, .2D/.3D, .DELTA ON/OFF, .MAPMODE, .LWEIGHT, .NORMALIZE, .END (parses/logs complete; .LWEIGHT applied to leveling weights; header exposes coord/order/delta/map/normalize/.LWEIGHT/lon-sign defaults; remaining wiring pending per code type)
   - [x] Coordinate/position/elevation records: C (2D/3D with per-component std errs and !/\* fixity, NE/EN order), P geodetic positions (lat/long [+H], std errs mapped to NE, longitude sign), E elevation-only, ellipsoid variants CH/PH/EH (parsed; P/PH projected to local EN via first P origin; ellipsoid height flagged)
@@ -61,8 +61,8 @@
   - Inline modes & obs metadata: track delta mode/map mode/lon sign; capture HI/HT on distances; projection currently equirectangular (improve later)
   - Engine: map codes to internal types, apply HI/HT/dH/slope-HD, include bearings/azimuths, leveling weights, preserve obs IDs
   - [x] Engine: honor 2D solve mode (drop height parameters; skip lev/zenith in 2D)
-  - Fixtures/tests: add Star\*Net-style fixtures for 2D/3D, TS+GPS+Leveling, traverses, direction sets, sideshots; Vitest cases for parsing/mode toggles and solves (bearing/zenith added)
-  - Docs/UI: [x] Created `docs/USER_GUIDE.md` and `public/examples/star_net_demo.dat`; list supported Star\*Net codes/options, UI hints, surface parser errors with line numbers
+  - Fixtures/tests: add industry-standard-style fixtures for 2D/3D, TS+GPS+Leveling, traverses, direction sets, sideshots; Vitest cases for parsing/mode toggles and solves (bearing/zenith added)
+  - Docs/UI: [x] Created `docs/USER_GUIDE.md` and `public/examples/industry_demo.dat`; list supported industry-standard codes/options, UI hints, surface parser errors with line numbers
 
 - [ ] Total Station parity roadmap:
   - [x] Phase 1: add TS parity harness baseline fixture + tests for stable TS-only outputs
@@ -86,7 +86,7 @@
   - [x] Phase 16: add residual-quality diagnostics summary (|t| bins, local-test fail totals, redundancy weakness counts, worst-observation trace, and by-type screening table) in report/export
   - [x] Phase 17: improve 2D triangulation/trilateration compatibility by parsing 2D `M` lines with angle/dist sigma tokens (no forced vertical token) and auto-creating missing non-sideshot stations referenced in observations
 
-- [ ] STAR*NET v6-v14 parity gaps (prioritized from release notes; missing in WebNet today):
+- [ ] Industry Standard v6-v14 parity gaps (prioritized from release notes; missing in WebNet today):
   - [ ] Conventional surveying improvements (highest impact -> lowest):
     - [ ] Implement `.ALIAS` point aliasing (explicit and pattern-based alias rules) with full solve/report traceability
       - [ ] Phase 1: parser/state support for `.ALIAS` (explicit map, prefix/suffix/additive patterns, validation diagnostics)
@@ -128,11 +128,11 @@
       - [ ] Phase 1: build description consistency scanner across loaded files/records grouped by station ID
       - [ ] Phase 2: implement reconciliation policies (first vs append with custom delimiter) applied to rendered outputs
       - [ ] Phase 3: add listing/report summary section with file-line references for conflicts and update tests
-    - [ ] Add STAR-style "effective distance" reporting alongside angular residuals in adjusted observation tables
+    - [ ] Add industry-style "effective distance" reporting alongside angular residuals in adjusted observation tables
       - [ ] Phase 1: compute effective distance metrics for angular observation families during statistics pass
-      - [ ] Phase 2: add columns/formatting in report, processing summary, and STAR-style export outputs
+      - [ ] Phase 2: add columns/formatting in report, processing summary, and industry-style export outputs
       - [ ] Phase 3: add fixture assertions for value correctness across angle/direction/bearing scenarios
-    - [ ] Add optional 3D network plot mode (3D ellipsoids/orbit/view-cube style controls) for deeper parity with STAR*NET 10-14 visualization
+    - [ ] Add optional 3D network plot mode (3D ellipsoids/orbit/view-cube style controls) for deeper parity with Industry Standard 10-14 visualization
       - [ ] Phase 1: introduce 3D plot architecture (camera, scene graph, station/connection primitives) behind feature flag
       - [ ] Phase 2: render 3D confidence ellipsoids and implement orbit/pan/zoom/view-cube interactions
       - [ ] Phase 3: add mode toggle, performance fallbacks, and visual regression checks for desktop/mobile layouts
@@ -173,7 +173,7 @@
       - [ ] Phase 1: define LandXML export schema mapping for stations, observations, ellipses, and metadata
       - [ ] Phase 2: build deterministic serializer with unit/profile annotations and file-write UX
       - [ ] Phase 3: add round-trip/interoperability checks against common LandXML consumers
-    - [ ] Add native field-data importer pipeline parity for major STAR*NET sources (JobXML/DBX/FieldGenius/Carlson/TDS) instead of `.dat`-only workflows
+    - [ ] Add native field-data importer pipeline parity for major Industry Standard sources (JobXML/DBX/FieldGenius/Carlson/TDS) instead of `.dat`-only workflows
       - [ ] Phase 1: design importer plugin interface and normalized intermediate observation model
       - [ ] Phase 2: implement first-party JobXML + FieldGenius importers with error-log traceability
       - [ ] Phase 3: implement DBX/Carlson/TDS importers with converter-option parity where practical
@@ -189,5 +189,7 @@
       - [ ] Phase 3: include tolerance outcomes in listing/export and pin behavior with tolerance fixture tests
     - [ ] Add detailed level-loop report blocks (total loop length, per-segment lengths, closure/tolerance outcomes)
       - [ ] Phase 1: compute and persist per-segment and total loop lengths for leveling loops
-      - [ ] Phase 2: add detailed report tables and STAR-style listing rows for leveling loop details
+      - [ ] Phase 2: add detailed report tables and industry-style listing rows for leveling loop details
       - [ ] Phase 3: add export formatting and regression tests for report structure/content parity
+
+

@@ -69,9 +69,9 @@ describe('LSAEngine', () => {
       input,
       maxIterations: 6,
       instrumentLibrary: {
-        __STAR_DEFAULT__: {
-          code: '__STAR_DEFAULT__',
-          desc: 'STAR*NET default instrument',
+        __INDUSTRY_DEFAULT__: {
+          code: '__INDUSTRY_DEFAULT__',
+          desc: 'Industry Standard default instrument',
           edm_const: 0.001,
           edm_ppm: 1,
           hzPrecision_sec: 0.5,
@@ -87,7 +87,7 @@ describe('LSAEngine', () => {
           levStd_mmPerKm: 0,
         },
       },
-      parseOptions: { currentInstrument: '__STAR_DEFAULT__' },
+      parseOptions: { currentInstrument: '__INDUSTRY_DEFAULT__' },
     }).solve();
     const starDist = starDefaultRun.observations.find((o) => o.type === 'dist');
     expect(starDist?.stdDev).toBeCloseTo(0.00101, 8);
@@ -510,3 +510,5 @@ describe('LSAEngine', () => {
     expect(Math.abs(side?.northing ?? 0)).toBeLessThan(0.25);
   });
 });
+
+

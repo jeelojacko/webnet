@@ -1,5 +1,5 @@
 .2D
-# Combined Triangulation-Trilateration 2D Network (Star*Net Example 2 style)
+# Combined Triangulation-Trilateration 2D Network (industry-standard Example 2 style)
 # Notes for WebNet:
 # - .2D is required so M records parse as angle+distance in this dataset style.
 # - Stations 4/5/6 are intentionally omitted from C records to demonstrate auto-create.
@@ -29,3 +29,4 @@ A 6-2-1 57-28-12
 # Distance Cross-ties
 D 1-4 2070.76
 D 2-5 2034.47
+

@@ -8,9 +8,9 @@ const solveStarParity = (input: string) =>
     input,
     maxIterations: 10,
     instrumentLibrary: {
-      __STAR_DEFAULT__: {
-        code: '__STAR_DEFAULT__',
-        desc: 'STAR*NET default instrument',
+      __INDUSTRY_DEFAULT__: {
+        code: '__INDUSTRY_DEFAULT__',
+        desc: 'Industry Standard default instrument',
         edm_const: 0.001,
         edm_ppm: 1,
         hzPrecision_sec: 0.5,
@@ -27,7 +27,7 @@ const solveStarParity = (input: string) =>
       },
     },
     parseOptions: {
-      currentInstrument: '__STAR_DEFAULT__',
+      currentInstrument: '__INDUSTRY_DEFAULT__',
       directionSetMode: 'raw',
       robustMode: 'none',
       tsCorrelationEnabled: false,
@@ -79,8 +79,8 @@ describe('TS parity harness (phase 1)', () => {
     expect(dirParsed.observations.some((o) => o.type === 'angle')).toBe(false)
   })
 
-  it('matches STAR-style parity metrics with raw directions and default instrument fallback', () => {
-    const input = readFileSync('tests/fixtures/starnet_parity_phase2.dat', 'utf-8')
+  it('matches industry-style parity metrics with raw directions and default instrument fallback', () => {
+    const input = readFileSync('tests/fixtures/industry_parity_phase2.dat', 'utf-8')
     const result = solveStarParity(input)
 
     expect(result.converged).toBe(true)
@@ -110,10 +110,10 @@ describe('TS parity harness (phase 1)', () => {
     expect(p9.y).toBeCloseTo(-1.4039, 4)
   })
 
-  it('tracks STAR benchmark signatures for coords, SEUW, and top residual behavior', () => {
-    const input = readFileSync('tests/fixtures/starnet_parity_phase2.dat', 'utf-8')
+  it('tracks industry benchmark signatures for coords, SEUW, and top residual behavior', () => {
+    const input = readFileSync('tests/fixtures/industry_parity_phase2.dat', 'utf-8')
     const expected = JSON.parse(
-      readFileSync('tests/fixtures/starnet_parity_phase2_expected.json', 'utf-8'),
+      readFileSync('tests/fixtures/industry_parity_phase2_expected.json', 'utf-8'),
     ) as {
       summary: {
         iterations: number
@@ -169,3 +169,5 @@ describe('TS parity harness (phase 1)', () => {
     ).toBeLessThanOrEqual(expected.residualSignatures.maxDirection.tol)
   })
 })
+
+

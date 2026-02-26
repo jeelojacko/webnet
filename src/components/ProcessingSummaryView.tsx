@@ -5,9 +5,9 @@ interface ProcessingSummaryViewProps {
   result: AdjustmentResult;
   runElapsedMs: number | null;
   runDiagnostics: {
-    solveProfile: 'webnet' | 'starnet-parity';
+    solveProfile: 'webnet' | 'industry-parity';
     directionSetMode: 'reduced' | 'raw';
-    starDefaultInstrumentFallback: boolean;
+    profileDefaultInstrumentFallback: boolean;
   } | null;
 }
 
@@ -124,7 +124,7 @@ const ProcessingSummaryView: React.FC<ProcessingSummaryViewProps> = ({
     }
     if (runDiagnostics) {
       lines.push(
-        `Run Profile: ${runDiagnostics.solveProfile.toUpperCase()} (dirSets=${runDiagnostics.directionSetMode}, starFallback=${runDiagnostics.starDefaultInstrumentFallback ? 'ON' : 'OFF'})`,
+        `Run Profile: ${runDiagnostics.solveProfile.toUpperCase()} (dirSets=${runDiagnostics.directionSetMode}, profileFallback=${runDiagnostics.profileDefaultInstrumentFallback ? 'ON' : 'OFF'})`,
       );
     }
     lines.push('');
@@ -149,3 +149,5 @@ const ProcessingSummaryView: React.FC<ProcessingSummaryViewProps> = ({
 };
 
 export default ProcessingSummaryView;
+
+

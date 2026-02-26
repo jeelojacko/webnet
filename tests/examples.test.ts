@@ -4,8 +4,8 @@ import path from 'path'
 import { LSAEngine } from '../src/engine/adjust'
 
 describe('Example Datasets', () => {
-    it('parses and solves star_net_demo.dat without errors', () => {
-        const filePath = path.join(process.cwd(), 'public/examples/star_net_demo.dat')
+    it('parses and solves industry_demo.dat without errors', () => {
+        const filePath = path.join(process.cwd(), 'public/examples/industry_demo.dat')
         const input = fs.readFileSync(filePath, 'utf-8')
 
         const engine = new LSAEngine({
@@ -53,3 +53,4 @@ describe('Example Datasets', () => {
         // console.log(`Solved ${Object.keys(result.stations).length} stations with ${result.observations.length} observations. SEUW: ${result.seuw}`)
     })
 })
+

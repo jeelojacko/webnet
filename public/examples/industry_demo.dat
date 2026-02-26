@@ -1,5 +1,5 @@
 # WebNet - Comprehensive Example Network (Square Loop)
-# Demonstrates various Star*Net-style features with consistent geometry.
+# Demonstrates various industry-standard-style features with consistent geometry.
 
 # --- Global Settings ---
 .UNITS m           # Meters
@@ -43,3 +43,4 @@ L MASTER BM1 1.000 50
 L BM1 REF1 1.000 50
 # dH REF1->MASTER = -2.000
 L REF1 MASTER -2.000 100
+

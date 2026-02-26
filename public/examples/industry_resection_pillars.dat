@@ -1,4 +1,4 @@
-# STAR*NET test data: resection + pillars (directions-only)
+# Industry Standard test data: resection + pillars (directions-only)
 # Exported from TriangulationDMS_GoogleSheets_with_Resection_v2.xlsx
 # 2D network. Coordinates are entered as: C Point  North(Y)  East(X)  [! ! to fix].
 .2D
@@ -28,7 +28,7 @@ C B 0.901251 10.171530
 C C 0.888198 5.895932
 C D 4.397538 10.161390
 
-# Truth (for comparison only; not used by STAR*NET):
+# Truth (for comparison only; not used by Industry Standard):
 #   A: X(E)=18.688280  Y(N)=0.898893  Z=1.336
 #   B: X(E)=10.171530  Y(N)=0.901251  Z=1.346
 #   C: X(E)=5.895932  Y(N)=0.888198  Z=1.351
@@ -236,3 +236,4 @@ DN B 326-07-24.00
 DN C 59-04-06.00
 DN D 215-49-06.00
 DE
+

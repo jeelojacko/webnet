@@ -9,7 +9,7 @@ interface ReportViewProps {
   result: AdjustmentResult
   units: 'm' | 'ft'
   runDiagnostics: {
-    solveProfile: 'webnet' | 'starnet-parity'
+    solveProfile: 'webnet' | 'industry-parity'
     parity: boolean
     directionSetMode: 'reduced' | 'raw'
     mapMode: 'off' | 'on' | 'anglecalc'
@@ -24,7 +24,7 @@ interface ReportViewProps {
     tsCorrelationRho: number
     robustMode: 'none' | 'huber'
     robustK: number
-    starDefaultInstrumentFallback: boolean
+    profileDefaultInstrumentFallback: boolean
     angleCenteringModel: 'geometry-aware-correlated-rays'
     defaultSigmaCount: number
     defaultSigmaByType: string
@@ -746,8 +746,8 @@ const ReportView: React.FC<ReportViewProps> = ({
               <div>{runDiagnostics.directionSetMode.toUpperCase()}</div>
             </div>
             <div>
-              <div className="text-slate-500">STAR Fallback</div>
-              <div>{runDiagnostics.starDefaultInstrumentFallback ? 'ON' : 'OFF'}</div>
+              <div className="text-slate-500">Profile Fallback</div>
+              <div>{runDiagnostics.profileDefaultInstrumentFallback ? 'ON' : 'OFF'}</div>
             </div>
             <div>
               <div className="text-slate-500">Angle Centering</div>
@@ -2030,3 +2030,5 @@ const ReportView: React.FC<ReportViewProps> = ({
 }
 
 export default ReportView
+
+

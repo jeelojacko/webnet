@@ -19,7 +19,7 @@ import InputPane from './components/InputPane';
 import ReportView from './components/ReportView';
 import MapView from './components/MapView';
 import ProcessingSummaryView from './components/ProcessingSummaryView';
-import StarOutputView from './components/StarOutputView';
+import IndustryOutputView from './components/IndustryOutputView';
 import { LSAEngine } from './engine/adjust';
 import { RAD_TO_DEG, radToDmsStr } from './engine/angles';
 import type {
@@ -234,7 +234,7 @@ type SettingsState = {
   listingObservationLimit: number;
 };
 
-type SolveProfile = 'webnet' | 'starnet-parity';
+type SolveProfile = 'webnet' | 'industry-parity';
 type ProjectOptionsTab =
   | 'adjustment'
   | 'general'
@@ -261,7 +261,7 @@ type RunDiagnostics = {
   tsCorrelationRho: number;
   robustMode: RobustMode;
   robustK: number;
-  starDefaultInstrumentFallback: boolean;
+  profileDefaultInstrumentFallback: boolean;
   angleCenteringModel: 'geometry-aware-correlated-rays';
   defaultSigmaCount: number;
   defaultSigmaByType: string;
@@ -291,10 +291,10 @@ type ParseSettings = {
   robustK: number;
 };
 
-const STAR_DEFAULT_INSTRUMENT_CODE = '__STAR_DEFAULT__';
-const STAR_DEFAULT_INSTRUMENT: Instrument = {
-  code: STAR_DEFAULT_INSTRUMENT_CODE,
-  desc: 'STAR*NET default instrument',
+const INDUSTRY_DEFAULT_INSTRUMENT_CODE = '__INDUSTRY_DEFAULT__';
+const INDUSTRY_DEFAULT_INSTRUMENT: Instrument = {
+  code: INDUSTRY_DEFAULT_INSTRUMENT_CODE,
+  desc: 'Industry Standard default instrument',
   edm_const: 0.001,
   edm_ppm: 1,
   hzPrecision_sec: 0.5,
@@ -310,12 +310,12 @@ const STAR_DEFAULT_INSTRUMENT: Instrument = {
   levStd_mmPerKm: 0,
 };
 
-type TabKey = 'report' | 'processing-summary' | 'star-output' | 'map';
-type ExportFormat = 'webnet' | 'starnet-style';
+type TabKey = 'report' | 'processing-summary' | 'industry-output' | 'map';
+type ExportFormat = 'webnet' | 'industry-style';
 
 const SETTINGS_TOOLTIPS = {
   solveProfile:
-    'Run profile. WEBNET uses current app defaults/features. STAR*NET parity forces classical solve and raw direction-set adjustment with STAR-like default instrument precision.',
+    'Run profile. WEBNET uses current app defaults/features. Industry Standard parity forces classical solve and raw direction-set adjustment with industry-like default instrument precision.',
   units:
     'Display units for coordinates and report values. The solver still works internally in meters/radians.',
   maxIterations: 'Maximum least-squares iterations before the run stops if convergence is slow.',
@@ -355,12 +355,12 @@ const SETTINGS_TOOLTIPS = {
     'Huber tuning constant k (typical 1.5). Lower values downweight outliers more aggressively.',
   instrument:
     'Select an instrument code to view parsed EDM/angle/centering and other precision parameters.',
-  listingShowCoordinates: 'Include adjusted coordinate table in STAR-style listing output.',
+  listingShowCoordinates: 'Include adjusted coordinate table in industry-style listing output.',
   listingShowObservationsResiduals:
-    'Include adjusted observations/residuals table in STAR-style listing output.',
+    'Include adjusted observations/residuals table in industry-style listing output.',
   listingShowErrorPropagation:
-    'Include error propagation (station standard deviations) section in STAR-style listing output.',
-  listingShowProcessingNotes: 'Include processing log notes section in STAR-style listing output.',
+    'Include error propagation (station standard deviations) section in industry-style listing output.',
+  listingShowProcessingNotes: 'Include processing log notes section in industry-style listing output.',
   listingShowAzimuthsBearings:
     'When disabled, azimuth/bearing style observations are omitted from adjusted-observation listing rows.',
   listingSortCoordinatesBy:
@@ -368,7 +368,7 @@ const SETTINGS_TOOLTIPS = {
   listingSortObservationsBy:
     'Sort adjusted-observation listing rows by input line order, station name, or residual size.',
   listingObservationLimit:
-    'Maximum number of adjusted-observation rows written in STAR-style output (1-500).',
+    'Maximum number of adjusted-observation rows written in industry-style output (1-500).',
 } as const;
 
 const PROJECT_OPTION_TABS: Array<{ id: ProjectOptionsTab; label: string }> = [
@@ -590,7 +590,7 @@ const App: React.FC = () => {
   };
 
   const resolveProfileContext = (base: ParseSettings) => {
-    const parity = base.solveProfile === 'starnet-parity';
+    const parity = base.solveProfile === 'industry-parity';
     const effectiveParse = parity
       ? {
           ...base,
@@ -601,9 +601,9 @@ const App: React.FC = () => {
       : base;
     const directionSetMode = parity ? 'raw' : 'reduced';
     const effectiveInstrumentLibrary = parity
-      ? { ...projectInstruments, [STAR_DEFAULT_INSTRUMENT_CODE]: STAR_DEFAULT_INSTRUMENT }
+      ? { ...projectInstruments, [INDUSTRY_DEFAULT_INSTRUMENT_CODE]: INDUSTRY_DEFAULT_INSTRUMENT }
       : projectInstruments;
-    const currentInstrument = parity ? STAR_DEFAULT_INSTRUMENT_CODE : selectedInstrument || undefined;
+    const currentInstrument = parity ? INDUSTRY_DEFAULT_INSTRUMENT_CODE : selectedInstrument || undefined;
     return {
       parity,
       effectiveParse,
@@ -684,7 +684,7 @@ const App: React.FC = () => {
       tsCorrelationRho: parse.tsCorrelationRho,
       robustMode: parse.robustMode,
       robustK: parse.robustK,
-      starDefaultInstrumentFallback: profileCtx.parity,
+      profileDefaultInstrumentFallback: profileCtx.parity,
       angleCenteringModel: 'geometry-aware-correlated-rays',
       defaultSigmaCount: defaultObs.length,
       defaultSigmaByType,
@@ -706,14 +706,14 @@ const App: React.FC = () => {
       `# Reduction: profile=${runDiag.solveProfile}, dirSets=${runDiag.directionSetMode}, mapMode=${runDiag.mapMode}, mapScale=${runDiag.mapScaleFactor.toFixed(8)}, curvRef=${runDiag.applyCurvatureRefraction ? 'ON' : 'OFF'}, k=${runDiag.refractionCoefficient.toFixed(3)}, vRed=${runDiag.verticalReduction}, tsCorr=${runDiag.tsCorrelationEnabled ? 'ON' : 'OFF'}(${runDiag.tsCorrelationScope},rho=${runDiag.tsCorrelationRho.toFixed(3)}), robust=${runDiag.robustMode.toUpperCase()}(k=${runDiag.robustK.toFixed(2)})`,
     );
     lines.push(
-      `# Parity: starFallback=${runDiag.starDefaultInstrumentFallback ? 'ON' : 'OFF'}, angleCentering=${runDiag.angleCenteringModel}, normalize=${runDiag.normalize ? 'ON' : 'OFF'}, angleMode=${runDiag.angleMode.toUpperCase()}`,
+      `# Parity: profileFallback=${runDiag.profileDefaultInstrumentFallback ? 'ON' : 'OFF'}, angleCentering=${runDiag.angleCenteringModel}, normalize=${runDiag.normalize ? 'ON' : 'OFF'}, angleMode=${runDiag.angleMode.toUpperCase()}`,
     );
     lines.push('');
     lines.push('--- Solve Profile Diagnostics ---');
     lines.push(`Profile: ${runDiag.solveProfile.toUpperCase()}`);
     lines.push(`Direction-set mode: ${runDiag.directionSetMode}`);
     lines.push(
-      `STAR default instrument fallback: ${runDiag.starDefaultInstrumentFallback ? 'ON' : 'OFF'}`,
+      `industry default instrument fallback: ${runDiag.profileDefaultInstrumentFallback ? 'ON' : 'OFF'}`,
     );
     lines.push(`Angle centering model: ${runDiag.angleCenteringModel}`);
     lines.push(
@@ -2359,7 +2359,7 @@ const App: React.FC = () => {
     return lines.join('\n');
   };
 
-  const buildStarListingText = (res: AdjustmentResult): string => {
+  const buildIndustryListingText = (res: AdjustmentResult): string => {
     const lines: string[] = [];
     const now = new Date();
     const linearUnit = settings.units === 'ft' ? 'FeetUS' : 'Meters';
@@ -2378,7 +2378,7 @@ const App: React.FC = () => {
     const unknownCount = Math.max(0, observationCount - res.dof);
     const parseState = res.parseState;
 
-    lines.push('                MicroSurvey STAR*NET-STYLE Listing (WebNet Emulation)');
+    lines.push('                INDUSTRY-STANDARD-STYLE Listing (WebNet Emulation)');
     lines.push(`                       Run Date: ${now.toLocaleString()}`);
     lines.push('');
     lines.push('                   Summary of Files Used and Option Settings');
@@ -2387,7 +2387,7 @@ const App: React.FC = () => {
     lines.push('                            Project Option Settings');
     lines.push('');
     lines.push(
-      `      STAR*NET Run Mode                   : ${runDiag.solveProfile === 'starnet-parity' ? 'Parity Profile (Classical)' : 'WebNet Default Profile'}`,
+      `      Industry Standard Run Mode                   : ${runDiag.solveProfile === 'industry-parity' ? 'Parity Profile (Classical)' : 'WebNet Default Profile'}`,
     );
     lines.push(
       `      Type of Adjustment                  : ${parseState?.coordMode ?? parseSettings.coordMode}`,
@@ -2636,9 +2636,9 @@ const App: React.FC = () => {
   const handleExportResults = async () => {
     if (!result) return;
     const text =
-      exportFormat === 'starnet-style' ? buildStarListingText(result) : buildResultsText(result);
+      exportFormat === 'industry-style' ? buildIndustryListingText(result) : buildResultsText(result);
     const suggestedName = `${
-      exportFormat === 'starnet-style' ? 'starnet-style-listing' : 'webnet-results'
+      exportFormat === 'industry-style' ? 'industry-style-listing' : 'webnet-results'
     }-${new Date().toISOString().slice(0, 10)}.txt`;
     const picker = (window as any).showSaveFilePicker;
     if (picker) {
@@ -2871,7 +2871,7 @@ const App: React.FC = () => {
     const runProfile = buildRunDiagnostics(parseSettings, solved);
     if (runProfile.parity) {
       solved.logs.unshift(
-        'Solve profile: STAR*NET parity (raw directions, classical weighting, STAR default instrument fallback).',
+        'Solve profile: Industry Standard parity (raw directions, classical weighting, industry default instrument fallback).',
       );
     }
     if (inputChangedSinceLastRun && (droppedExclusions > 0 || droppedOverrides > 0)) {
@@ -2980,7 +2980,7 @@ const App: React.FC = () => {
     setSelectedInstrumentDraft(code);
   };
 
-  const parityProfileActive = parseSettingsDraft.solveProfile === 'starnet-parity';
+  const parityProfileActive = parseSettingsDraft.solveProfile === 'industry-parity';
 
   const toggleExclude = (id: number) => {
     setExcludedIds((prev) => {
@@ -3071,7 +3071,7 @@ const App: React.FC = () => {
           </div>
           <button
             onClick={openProjectOptions}
-            title="Open STAR-style project options"
+            title="Open industry-style project options"
             className="flex items-center space-x-2 px-3 py-1.5 rounded border text-xs uppercase tracking-wide bg-slate-900/60 border-slate-700 text-slate-300 hover:bg-slate-700"
           >
             <Settings size={14} />
@@ -3100,7 +3100,7 @@ const App: React.FC = () => {
             className="h-9 bg-slate-700 border border-slate-600 text-slate-100 text-xs rounded px-2"
           >
             <option value="webnet">Export: WebNet</option>
-            <option value="starnet-style">Export: STAR-style</option>
+            <option value="industry-style">Export: industry-style</option>
           </select>
           <button
             onClick={handleExportResults}
@@ -3183,7 +3183,7 @@ const App: React.FC = () => {
                         className={`${optionInputClass} mt-1`}
                       >
                         <option value="webnet">WebNet</option>
-                        <option value="starnet-parity">STAR*NET Parity</option>
+                        <option value="industry-parity">Industry Standard Parity</option>
                       </select>
                     </label>
                     <label className={optionLabelClass}>
@@ -3701,7 +3701,7 @@ const App: React.FC = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="border border-slate-400 p-3 space-y-3">
                     <div className="text-xs uppercase tracking-wider text-slate-200">
-                      STAR-Style Listing Contents
+                      Industry-Style Listing Contents
                     </div>
                     <label className="flex items-center gap-2 text-xs text-slate-100">
                       <input
@@ -3766,7 +3766,7 @@ const App: React.FC = () => {
                   </div>
                   <div className="border border-slate-400 p-3 space-y-3">
                     <div className="text-xs uppercase tracking-wider text-slate-200">
-                      STAR-Style Listing Sort/Scope
+                      Industry-Style Listing Sort/Scope
                     </div>
                     <label className={optionLabelClass}>
                       Sort Coordinates By
@@ -3829,7 +3829,7 @@ const App: React.FC = () => {
               {activeOptionsTab === 'other-files' &&
                 renderPlaceholderPanel(
                   'Other File Outputs',
-                  'Coordinate and auxiliary output file switches are reserved for the STAR-style output phase.',
+                  'Coordinate and auxiliary output file switches are reserved for the industry-style output phase.',
                 )}
 
               {activeOptionsTab === 'special' && (
@@ -3855,8 +3855,8 @@ const App: React.FC = () => {
                     </label>
                   </div>
                   <div className="border border-slate-400 p-3 text-xs text-slate-200 leading-relaxed">
-                    STAR*NET parity profile forces classical solving and raw direction-set
-                    processing with STAR default instrument fallback.
+                    Industry Standard parity profile forces classical solving and raw direction-set
+                    processing with industry default instrument fallback.
                   </div>
                 </div>
               )}
@@ -3864,7 +3864,7 @@ const App: React.FC = () => {
               {activeOptionsTab === 'gps' &&
                 renderPlaceholderPanel(
                   'GPS Options',
-                  'Dedicated GNSS project options will be added when STAR-style GPS tab controls are wired.',
+                  'Dedicated GNSS project options will be added when industry-style GPS tab controls are wired.',
                 )}
 
               {activeOptionsTab === 'modeling' && (
@@ -4034,14 +4034,14 @@ const App: React.FC = () => {
                 <Activity size={16} /> <span>Processing Summary</span>
               </button>
               <button
-                onClick={() => setActiveTab('star-output')}
+                onClick={() => setActiveTab('industry-output')}
                 className={`px-6 py-3 text-sm font-medium flex items-center space-x-2 border-b-2 transition-colors ${
-                  activeTab === 'star-output'
+                  activeTab === 'industry-output'
                     ? 'border-blue-500 text-white bg-slate-800'
                     : 'border-transparent text-slate-400 hover:text-slate-200'
                 }`}
               >
-                <FileText size={16} /> <span>STAR*NET Output</span>
+                <FileText size={16} /> <span>Industry Standard Output</span>
               </button>
               <button
                 onClick={() => setActiveTab('map')}
@@ -4098,14 +4098,14 @@ const App: React.FC = () => {
                         ? {
                             solveProfile: runDiagnostics.solveProfile,
                             directionSetMode: runDiagnostics.directionSetMode,
-                            starDefaultInstrumentFallback:
-                              runDiagnostics.starDefaultInstrumentFallback,
+                            profileDefaultInstrumentFallback:
+                              runDiagnostics.profileDefaultInstrumentFallback,
                           }
                         : null
                     }
                   />
                 )}
-                {activeTab === 'star-output' && <StarOutputView text={buildStarListingText(result)} />}
+                {activeTab === 'industry-output' && <IndustryOutputView text={buildIndustryListingText(result)} />}
                 {activeTab === 'map' && <MapView result={result} units={settings.units} />}
               </>
             )}
@@ -4117,3 +4117,5 @@ const App: React.FC = () => {
 };
 
 export default App;
+
+

@@ -1,6 +1,6 @@
 # WebNet User Guide
 
-WebNet is a browser-based least-squares adjustment network similar to Star*Net. It supports mixed 2D/3D observations including total station data (angles, distances), leveling data, and GNSS baselines.
+WebNet is a browser-based least-squares adjustment network similar to industry-standard. It supports mixed 2D/3D observations including total station data (angles, distances), leveling data, and GNSS baselines.
 
 ## Getting Started
 
@@ -26,12 +26,12 @@ WebNet includes ready-to-run TS examples in `public/examples/`:
 - `ts_traverse_tb_t_te.dat` (traverse `TB/T/TE`)
 - `ts_direction_sets_db_dn_dm_de.dat` (direction sets `DB/DN/DM/DE`)
 - `ts_sideshots_ss.dat` (sideshots `SS` with legacy, `AZ=`, and setup-angle `HZ=` usage)
-- `ts_triangulation_trilateration_2d.dat` (Star*Net-style combined triangulation/trilateration 2D sample)
+- `ts_triangulation_trilateration_2d.dat` (industry-standard-style combined triangulation/trilateration 2D sample)
 - `ts_all_combined.dat` (all TS-related record families together)
 
 ## Data Format
 
-WebNet parses a format compatible with MicroSurvey Star*Net. Lines starting with `#` are comments.
+WebNet parses a format compatible with industry-standard adjustment software. Lines starting with `#` are comments.
 
 ### Global Options
 Directives that control parsing behavior:
@@ -158,3 +158,4 @@ Structured data collection methods:
 -   **Traverse Loop Ranking**: Per-loop closure rows are ranked by severity and listed with ratio/ppm/angular/vertical cues to quickly isolate weak closure legs.
 -   **Map/Vertical Reduction**: When map mode is active, horizontal distances apply the configured map scale; with `.VRED CURVREF` and `.CURVREF ON`, zenith calculations include curvature/refraction correction.
 -   **Post-Adjusted Sideshots**: SS observations are excluded from adjustment but reported in a dedicated section with computed HD/dH, coordinate outputs, and propagated σ values. Azimuth source is labeled (`target`, `explicit`, or `setup`). If azimuth cannot be derived, the note column explains why.
+
