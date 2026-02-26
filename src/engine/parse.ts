@@ -45,6 +45,7 @@ const defaultParseOptions: ParseOptions = {
   prismEnabled: false,
   prismOffset: 0,
   prismScope: 'global',
+  rotationAngleRad: 0,
   autoAdjustEnabled: false,
   autoAdjustMaxCycles: 3,
   autoAdjustMaxRemovalsPerCycle: 1,
@@ -1024,6 +1025,25 @@ export const parseInput = (
             `Warning: large prism offset at line ${lineNum} (${offsetM.toFixed(4)} m)`,
           );
         }
+      } else if (op === '.ROTATION') {
+        const token = parts[1];
+        if (!token) {
+          logs.push(`Warning: .ROTATION missing angle at line ${lineNum}; expected .ROTATION <angle>.`);
+          continue;
+        }
+        const delta = parseAngleTokenRad(token, state, 'dd');
+        if (!Number.isFinite(delta)) {
+          logs.push(
+            `Warning: invalid .ROTATION angle at line ${lineNum}; expected DD or DMS token.`,
+          );
+          continue;
+        }
+        const prior = state.rotationAngleRad ?? 0;
+        const next = wrapTo2Pi(prior + delta);
+        state.rotationAngleRad = next;
+        logs.push(
+          `Plan rotation updated at line ${lineNum}: +${(delta * RAD_TO_DEG).toFixed(6)}° => ${(next * RAD_TO_DEG).toFixed(6)}°`,
+        );
       } else if (op === '.AUTOSIDESHOT') {
         const mode = (parts[1] || '').toUpperCase();
         if (mode === 'ON' || mode === 'TRUE' || mode === '1') {

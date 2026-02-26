@@ -373,6 +373,7 @@ export interface ParseOptions {
   prismEnabled?: boolean;
   prismOffset?: number;
   prismScope?: 'global' | 'set';
+  rotationAngleRad?: number;
   autoAdjustEnabled?: boolean;
   autoAdjustMaxCycles?: number;
   autoAdjustMaxRemovalsPerCycle?: number;

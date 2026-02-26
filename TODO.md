@@ -129,8 +129,8 @@
       - [x] Phase 1: parse `.PRISM` option state (global and scoped behavior) with unit-safe validation diagnostics
       - [x] Phase 2: apply prism-offset correction in distance/vertical observation modeling before residual and weight computation
       - [x] Phase 3: show correction source/magnitude in report/export rows and add regression fixtures for offset cases
-    - [ ] Implement `.ROTATION <angle>` plan-rotation for bearing/azimuth observations (`B/BM` and related records)
-      - [ ] Phase 1: parse and track cumulative `.ROTATION` state with DMS/DD compatibility and wrap-safe normalization
+    - [~] Implement `.ROTATION <angle>` plan-rotation for bearing/azimuth observations (`B/BM` and related records)
+      - [x] Phase 1: parse and track cumulative `.ROTATION` state with DMS/DD compatibility and wrap-safe normalization
       - [ ] Phase 2: apply plan rotation to affected azimuth-bearing observations in parser/engine consistently
       - [ ] Phase 3: add listing/profile diagnostics and parity tests for rotated vs unrotated network outputs
     - [ ] Implement `.LOSTSTATIONS` handling (include in solve, optional omit/filter in plot/listing outputs)

@@ -209,6 +209,22 @@ describe('parseInput', () => {
     expect(parsed.logs.some((l) => l.includes('Prism correction set to OFF'))).toBe(true);
   });
 
+  it('parses cumulative .ROTATION state with DD/DMS compatibility and wrap normalization', () => {
+    const parsed = parseInput(
+      [
+        '.UNITS METERS DD',
+        '.ROTATION 10',
+        '.ROTATION 370',
+        '.ROTATION -45',
+        '.UNITS METERS DMS',
+        '.ROTATION 0-30-00',
+      ].join('\n'),
+    );
+    const expectedDeg = 335.5;
+    expect((parsed.parseState.rotationAngleRad ?? 0) * (180 / Math.PI)).toBeCloseTo(expectedDeg, 10);
+    expect(parsed.logs.some((l) => l.includes('Plan rotation updated'))).toBe(true);
+  });
+
   it('logs traverse closure', () => {
     const parsed = parseInput(readFileSync('tests/fixtures/traverse_closure.dat', 'utf-8'));
     expect(parsed.logs.some((l) => l.includes('Traverse end'))).toBe(true);
