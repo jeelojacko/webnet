@@ -522,6 +522,7 @@ describe('LSAEngine', () => {
     expect(result.stations.B).toBeDefined();
     expect(result.stations.B.lost).toBe(true);
     expect(result.stations.A.lost ?? false).toBe(false);
+    expect(result.logs.some((l) => l.includes('Lost stations flagged'))).toBe(true);
   });
 
   it('applies global prism correction to modeled distance residuals', () => {

@@ -347,4 +347,49 @@ describe('industry listing phase 5 formatting locks', () => {
     expect(Math.abs(rotN - baseN)).toBeGreaterThan(1);
     expect(Math.abs(rotE - baseE)).toBeGreaterThan(0.5);
   });
+
+  it('shows lost-station diagnostics in project option settings', () => {
+    const input = [
+      '.2D',
+      '.LOSTSTATIONS B',
+      'C A 0 0 0 ! !',
+      'C B 100 0 0',
+      'B A-B 090.0000 1.0',
+      'D A-B 100.0000 0.001',
+    ].join('\n');
+    const result = new LSAEngine({ input, maxIterations: 10 }).solve();
+    const listing = buildIndustryStyleListingText(
+      result,
+      {
+        maxIterations: 10,
+        units: 'm',
+        listingShowCoordinates: true,
+        listingShowObservationsResiduals: true,
+        listingShowErrorPropagation: true,
+        listingShowProcessingNotes: false,
+        listingShowAzimuthsBearings: true,
+        listingSortCoordinatesBy: 'name',
+        listingSortObservationsBy: 'name',
+        listingObservationLimit: 500,
+      },
+      {
+        coordMode: '2D',
+        order: 'EN',
+        angleUnits: 'dms',
+        angleStationOrder: 'atfromto',
+        deltaMode: 'horiz',
+        refractionCoefficient: 0.13,
+      },
+      {
+        solveProfile: 'industry-parity',
+        angleCenteringModel: 'geometry-aware-correlated-rays',
+        defaultSigmaCount: 0,
+        defaultSigmaByType: '',
+        stochasticDefaultsSummary: 'inst=S9',
+        rotationAngleRad: 0,
+      },
+    );
+    expect(listing).toContain('Lost Stations');
+    expect(listing).toContain('1 (B)');
+  });
 });

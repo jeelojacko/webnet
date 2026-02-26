@@ -141,6 +141,9 @@ const ReportView: React.FC<ReportViewProps> = ({
   const autoSideshotObsIds = new Set(
     autoSideshotDiagnostics?.candidates.flatMap((c) => [c.angleObsId, c.distObsId]) ?? [],
   )
+  const lostStationIds = [...(result.parseState?.lostStationIds ?? [])].sort((a, b) =>
+    a.localeCompare(b, undefined, { numeric: true }),
+  )
   const clusterReviewStats = clusterCandidates.reduce(
     (acc, candidate) => {
       const decision = clusterReviewDecisions[candidate.key]
@@ -878,6 +881,14 @@ const ReportView: React.FC<ReportViewProps> = ({
             <div>
               <div className="text-slate-500">Plan Rotation</div>
               <div>{`${(runDiagnostics.rotationAngleRad * RAD_TO_DEG).toFixed(6)}°`}</div>
+            </div>
+            <div className="col-span-2">
+              <div className="text-slate-500">Lost Stations</div>
+              <div className="break-words">
+                {lostStationIds.length > 0
+                  ? `${lostStationIds.length} (${lostStationIds.join(', ')})`
+                  : 'none'}
+              </div>
             </div>
             <div className="col-span-2">
               <div className="text-slate-500">Default Sigmas</div>

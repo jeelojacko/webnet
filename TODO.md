@@ -135,7 +135,7 @@
       - [x] Phase 3: add listing/profile diagnostics and parity tests for rotated vs unrotated network outputs
     - [~] Implement `.LOSTSTATIONS` handling (include in solve, optional omit/filter in plot/listing outputs)
       - [x] Phase 1: parse `.LOSTSTATIONS` and persist station metadata flags through solve results
-      - [ ] Phase 2: ensure lost stations remain valid network points in adjustment while tagged in diagnostics
+      - [x] Phase 2: ensure lost stations remain valid network points in adjustment while tagged in diagnostics
       - [ ] Phase 3: add plot/listing/export filter options to hide/show lost stations and verify with UI tests
     - [ ] Add configurable fixed standard-error constants (`.QFIX`-style) instead of hard-coded fixed sigmas
       - [ ] Phase 1: add project options and inline override parsing for fixed angular/linear sigma constants

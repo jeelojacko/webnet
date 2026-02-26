@@ -65,6 +65,9 @@ export const buildIndustryStyleListingText = (
     const prismOffset = parseState?.prismOffset ?? 0;
     const prismScope = parseState?.prismScope ?? 'global';
     const rotationAngleRad = parseState?.rotationAngleRad ?? runDiag.rotationAngleRad ?? 0;
+    const lostStationIds = [...(parseState?.lostStationIds ?? [])].sort((a, b) =>
+      a.localeCompare(b, undefined, { numeric: true }),
+    );
     const aliasTrace = parseState?.aliasTrace ?? [];
     const aliasObsRefsByLine = new Map<number, string[]>();
     aliasTrace.forEach((entry) => {
@@ -115,6 +118,9 @@ export const buildIndustryStyleListingText = (
     );
     lines.push(
       `      Plan Rotation                      : ${Math.abs(rotationAngleRad) > 1e-12 ? `ON (${(rotationAngleRad * RAD_TO_DEG).toFixed(6)} deg)` : 'OFF'}`,
+    );
+    lines.push(
+      `      Lost Stations                     : ${lostStationIds.length > 0 ? `${lostStationIds.length} (${lostStationIds.join(', ')})` : 'none'}`,
     );
     if (res.clusterDiagnostics?.enabled) {
       lines.push(

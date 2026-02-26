@@ -129,6 +129,10 @@ const ProcessingSummaryView: React.FC<ProcessingSummaryViewProps> = ({
       );
       lines.push(`Plan Rotation: ${(runDiagnostics.rotationAngleRad * 180 / Math.PI).toFixed(6)} deg`);
     }
+    const lostStations = result.parseState?.lostStationIds ?? [];
+    lines.push(
+      `Lost Stations: ${lostStations.length > 0 ? `${lostStations.length} (${lostStations.join(', ')})` : 'none'}`,
+    );
     const autoSideshotEnabled = result.parseState?.autoSideshotEnabled ?? true;
     lines.push(`Auto-Sideshot: ${autoSideshotEnabled ? 'ON' : 'OFF'}`);
     if (result.autoAdjustDiagnostics?.enabled) {
