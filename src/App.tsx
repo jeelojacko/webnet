@@ -19,6 +19,7 @@ import InputPane from './components/InputPane';
 import ReportView from './components/ReportView';
 import MapView from './components/MapView';
 import ProcessingSummaryView from './components/ProcessingSummaryView';
+import StarOutputView from './components/StarOutputView';
 import { LSAEngine } from './engine/adjust';
 import { RAD_TO_DEG, radToDmsStr } from './engine/angles';
 import type {
@@ -218,7 +219,8 @@ const STAR_DEFAULT_INSTRUMENT: Instrument = {
   levStd_mmPerKm: 0,
 };
 
-type TabKey = 'report' | 'processing-summary' | 'map';
+type TabKey = 'report' | 'processing-summary' | 'star-output' | 'map';
+type ExportFormat = 'webnet' | 'starnet-style';
 
 const SETTINGS_TOOLTIPS = {
   solveProfile:
@@ -283,6 +285,7 @@ const App: React.FC = () => {
   const [result, setResult] = useState<AdjustmentResult | null>(null);
   const [runDiagnostics, setRunDiagnostics] = useState<RunDiagnostics | null>(null);
   const [runElapsedMs, setRunElapsedMs] = useState<number | null>(null);
+  const [exportFormat, setExportFormat] = useState<ExportFormat>('webnet');
   const [lastRunInput, setLastRunInput] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<TabKey>('report');
   const [settings, setSettings] = useState<SettingsState>({ maxIterations: 10, units: 'm' });
@@ -2246,10 +2249,229 @@ const App: React.FC = () => {
     return lines.join('\n');
   };
 
+  const buildStarListingText = (res: AdjustmentResult): string => {
+    const lines: string[] = [];
+    const now = new Date();
+    const linearUnit = settings.units === 'ft' ? 'FeetUS' : 'Meters';
+    const unitScale = settings.units === 'ft' ? FT_PER_M : 1;
+    const runDiag = runDiagnostics ?? buildRunDiagnostics(parseSettings, res);
+    const stationEntries = Object.entries(res.stations);
+    const fixedStations = stationEntries.filter(([, st]) => st.fixed).length;
+    const freeStations = stationEntries.length - fixedStations;
+    const observationCount = res.observations.length;
+    const unknownCount = Math.max(0, observationCount - res.dof);
+    const parseState = res.parseState;
+
+    lines.push('                MicroSurvey STAR*NET-STYLE Listing (WebNet Emulation)');
+    lines.push(`                       Run Date: ${now.toLocaleString()}`);
+    lines.push('');
+    lines.push('                   Summary of Files Used and Option Settings');
+    lines.push('                   =========================================');
+    lines.push('');
+    lines.push('                            Project Option Settings');
+    lines.push('');
+    lines.push(
+      `      STAR*NET Run Mode                   : ${runDiag.solveProfile === 'starnet-parity' ? 'Parity Profile (Classical)' : 'WebNet Default Profile'}`,
+    );
+    lines.push(
+      `      Type of Adjustment                  : ${parseState?.coordMode ?? parseSettings.coordMode}`,
+    );
+    lines.push(
+      `      Project Units                       : ${linearUnit}; ${(parseState?.angleUnits ?? parseSettings.angleUnits).toUpperCase()}`,
+    );
+    lines.push(
+      `      Input/Output Coordinate Order       : ${(parseState?.order ?? parseSettings.order) === 'NE' ? 'North-East' : 'East-North'}`,
+    );
+    lines.push(
+      `      Angle Data Station Order            : ${(parseState?.angleStationOrder ?? parseSettings.angleStationOrder) === 'atfromto' ? 'At-From-To' : 'From-At-To'}`,
+    );
+    lines.push(
+      `      Distance/Vertical Data Type         : ${(parseState?.deltaMode ?? parseSettings.deltaMode) === 'horiz' ? 'Hor Dist/DE' : 'Slope Dist/Zenith'}`,
+    );
+    lines.push(`      Convergence Limit; Max Iterations   : 0.001000; ${settings.maxIterations}`);
+    lines.push(
+      `      Default Coefficient of Refraction   : ${(parseState?.refractionCoefficient ?? parseSettings.refractionCoefficient).toFixed(6)}`,
+    );
+    lines.push('');
+    lines.push('                       Instrument Standard Error Settings');
+    lines.push('');
+    lines.push('      Active Project Instrument Defaults');
+    lines.push(
+      `        Distances (Constant)              : ${runDiag.stochasticDefaultsSummary.includes('inst=') ? runDiag.stochasticDefaultsSummary : '-'}`,
+    );
+    lines.push(
+      `        Centering / Inflation             : ${runDiag.angleCenteringModel}; ${runDiag.defaultSigmaCount} default-sigma obs${runDiag.defaultSigmaByType ? ` (${runDiag.defaultSigmaByType})` : ''}`,
+    );
+    lines.push('');
+    lines.push('                    Summary of Unadjusted Input Observations');
+    lines.push('                    ========================================');
+    lines.push('');
+    lines.push(
+      `                    Number of Entered Stations (${linearUnit}) = ${stationEntries.length}`,
+    );
+    lines.push(`                    Fixed Stations = ${fixedStations}; Free Stations = ${freeStations}`);
+
+    const countByType = (type: Observation['type']) =>
+      res.observations.filter((o) => o.type === type).length;
+    lines.push('');
+    lines.push(
+      `                    Number of Angle Observations (${(parseState?.angleUnits ?? parseSettings.angleUnits).toUpperCase()}) = ${countByType('angle')}`,
+    );
+    lines.push(
+      `                 Number of Distance Observations (${linearUnit}) = ${countByType('dist')}`,
+    );
+    lines.push(
+      `                Number of Direction Observations (${(parseState?.angleUnits ?? parseSettings.angleUnits).toUpperCase()}) = ${countByType('direction') + countByType('dir') + countByType('bearing')}`,
+    );
+    lines.push('');
+    lines.push('                         Adjustment Statistical Summary');
+    lines.push('                         ==============================');
+    lines.push('');
+    lines.push(`                        Iterations              = ${res.iterations}`);
+    lines.push('');
+    lines.push(`                        Number of Stations      = ${stationEntries.length}`);
+    lines.push('');
+    lines.push(`                        Number of Observations  = ${observationCount}`);
+    lines.push(`                        Number of Unknowns      = ${unknownCount}`);
+    lines.push(`                        Number of Redundant Obs = ${res.dof}`);
+    lines.push('');
+    lines.push('            Observation   Count   Sum Squares         Error');
+    lines.push('                                    of StdRes        Factor');
+
+    const groups: Array<{
+      label: string;
+      filter: (_obs: Observation) => boolean;
+    }> = [
+      { label: 'Angles', filter: (o) => o.type === 'angle' },
+      { label: 'Directions', filter: (o) => o.type === 'direction' || o.type === 'dir' || o.type === 'bearing' },
+      { label: 'Distances', filter: (o) => o.type === 'dist' },
+      { label: 'GPS', filter: (o) => o.type === 'gps' },
+      { label: 'Leveling', filter: (o) => o.type === 'lev' },
+    ];
+    let totalSumSquares = 0;
+    groups.forEach((group) => {
+      const obs = res.observations.filter(group.filter).filter((o) => Number.isFinite(o.stdRes));
+      if (!obs.length) return;
+      const sumSquares = obs.reduce((sum, o) => sum + (o.stdRes ?? 0) * (o.stdRes ?? 0), 0);
+      totalSumSquares += sumSquares;
+      const factor = Math.sqrt(sumSquares / obs.length);
+      lines.push(
+        `                 ${group.label.padEnd(12)}${obs.length.toString().padStart(6)}${sumSquares.toFixed(3).padStart(14)}${factor.toFixed(3).padStart(14)}`,
+      );
+    });
+    lines.push(
+      `                  Total${observationCount.toString().padStart(12)}${totalSumSquares.toFixed(3).padStart(14)}${res.seuw.toFixed(3).padStart(14)}`,
+    );
+    lines.push('');
+    if (res.chiSquare) {
+      lines.push(
+        `                  The Chi-Square Test at 5.00% Level ${res.chiSquare.pass95 ? 'Passed' : 'Failed'}`,
+      );
+      lines.push(
+        `                       Lower/Upper Bounds (${res.chiSquare.varianceFactorLower.toFixed(3)}/${res.chiSquare.varianceFactorUpper.toFixed(3)})`,
+      );
+      lines.push('');
+    }
+    lines.push(`                         Adjusted Coordinates (${linearUnit})`);
+    lines.push('                         =============================');
+    lines.push('');
+    lines.push(`Station${' '.repeat(20)}N${' '.repeat(14)}E`);
+    stationEntries
+      .sort((a, b) => a[0].localeCompare(b[0], undefined, { numeric: true }))
+      .forEach(([id, st]) => {
+        lines.push(
+          `${id.padEnd(24)}${(st.y * unitScale).toFixed(4).padStart(12)}${(st.x * unitScale).toFixed(14)}`,
+        );
+      });
+
+    const byStdRes = [...res.observations]
+      .filter((o) => Number.isFinite(o.stdRes))
+      .sort((a, b) => Math.abs(b.stdRes ?? 0) - Math.abs(a.stdRes ?? 0))
+      .slice(0, 60);
+    if (byStdRes.length > 0) {
+      lines.push('');
+      lines.push('                      Adjusted Observations and Residuals');
+      lines.push('                      ===================================');
+      lines.push('');
+      lines.push('Type      Stations               Obs             Residual        StdErr      StdRes   File:Line');
+      byStdRes.forEach((obs) => {
+        let stations = '-';
+        let obsText = '-';
+        let residualText = '-';
+        let stdErrText = '-';
+        if (obs.type === 'angle') {
+          stations = `${obs.at}-${obs.from}-${obs.to}`;
+          obsText = radToDmsStr(obs.obs);
+          residualText =
+            obs.residual != null
+              ? `${((obs.residual as number) * RAD_TO_DEG * 3600).toFixed(2)}"`
+              : '-';
+          stdErrText = `${(obs.stdDev * RAD_TO_DEG * 3600).toFixed(2)}"`;
+        } else if (obs.type === 'direction') {
+          stations = `${obs.at}-${obs.to}`;
+          obsText = radToDmsStr(obs.obs);
+          residualText =
+            obs.residual != null
+              ? `${((obs.residual as number) * RAD_TO_DEG * 3600).toFixed(2)}"`
+              : '-';
+          stdErrText = `${(obs.stdDev * RAD_TO_DEG * 3600).toFixed(2)}"`;
+        } else if (obs.type === 'dir' || obs.type === 'bearing' || obs.type === 'zenith') {
+          stations = `${obs.from}-${obs.to}`;
+          obsText = radToDmsStr(obs.obs);
+          residualText =
+            obs.residual != null
+              ? `${((obs.residual as number) * RAD_TO_DEG * 3600).toFixed(2)}"`
+              : '-';
+          stdErrText = `${(obs.stdDev * RAD_TO_DEG * 3600).toFixed(2)}"`;
+        } else if (obs.type === 'dist' || obs.type === 'lev') {
+          stations = `${obs.from}-${obs.to}`;
+          obsText = (obs.obs * unitScale).toFixed(4);
+          residualText =
+            obs.residual != null ? ((obs.residual as number) * unitScale).toFixed(4) : '-';
+          stdErrText = (obs.stdDev * unitScale).toFixed(4);
+        } else if (obs.type === 'gps') {
+          stations = `${obs.from}-${obs.to}`;
+          obsText = `dE=${(obs.obs.dE * unitScale).toFixed(3)},dN=${(obs.obs.dN * unitScale).toFixed(3)}`;
+          residualText =
+            obs.residual != null
+              ? `vE=${(obs.residual.vE * unitScale).toFixed(3)},vN=${(obs.residual.vN * unitScale).toFixed(3)}`
+              : '-';
+          stdErrText = (obs.stdDev * unitScale).toFixed(4);
+        }
+        lines.push(
+          `${obs.type.toUpperCase().padEnd(9)}${stations.padEnd(22)}${obsText.padEnd(16)}${residualText.padEnd(16)}${stdErrText.padEnd(12)}${(obs.stdRes ?? 0).toFixed(2).padStart(8)}   ${obs.sourceLine != null ? `1:${obs.sourceLine}` : '-'}`,
+        );
+      });
+    }
+    lines.push('');
+    lines.push('                               Error Propagation');
+    lines.push('                               =================');
+    lines.push('');
+    lines.push(`                Station Coordinate Standard Deviations (${linearUnit})`);
+    lines.push('');
+    lines.push(`Station${' '.repeat(20)}N${' '.repeat(12)}E`);
+    stationEntries
+      .sort((a, b) => a[0].localeCompare(b[0], undefined, { numeric: true }))
+      .forEach(([id, st]) => {
+        lines.push(
+          `${id.padEnd(24)}${(st.sN != null ? st.sN * unitScale : 0).toFixed(6).padStart(12)}${(st.sE != null ? st.sE * unitScale : 0).toFixed(14)}`,
+        );
+      });
+    lines.push('');
+    lines.push('                               Processing Notes');
+    lines.push('                               ================');
+    res.logs.slice(0, 60).forEach((line) => lines.push(line));
+
+    return lines.join('\n');
+  };
+
   const handleExportResults = async () => {
     if (!result) return;
-    const text = buildResultsText(result);
-    const suggestedName = `webnet-results-${new Date().toISOString().slice(0, 10)}.txt`;
+    const text =
+      exportFormat === 'starnet-style' ? buildStarListingText(result) : buildResultsText(result);
+    const suggestedName = `${
+      exportFormat === 'starnet-style' ? 'starnet-style-listing' : 'webnet-results'
+    }-${new Date().toISOString().slice(0, 10)}.txt`;
     const picker = (window as any).showSaveFilePicker;
     if (picker) {
       try {
@@ -2647,6 +2869,15 @@ const App: React.FC = () => {
           >
             <FileText size={18} />
           </button>
+          <select
+            value={exportFormat}
+            onChange={(e) => setExportFormat(e.target.value as ExportFormat)}
+            title="Export format"
+            className="h-9 bg-slate-700 border border-slate-600 text-slate-100 text-xs rounded px-2"
+          >
+            <option value="webnet">Export: WebNet</option>
+            <option value="starnet-style">Export: STAR-style</option>
+          </select>
           <button
             onClick={handleExportResults}
             disabled={!result}
@@ -3257,6 +3488,16 @@ const App: React.FC = () => {
                 <Activity size={16} /> <span>Processing Summary</span>
               </button>
               <button
+                onClick={() => setActiveTab('star-output')}
+                className={`px-6 py-3 text-sm font-medium flex items-center space-x-2 border-b-2 transition-colors ${
+                  activeTab === 'star-output'
+                    ? 'border-blue-500 text-white bg-slate-800'
+                    : 'border-transparent text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                <FileText size={16} /> <span>STAR*NET Output</span>
+              </button>
+              <button
                 onClick={() => setActiveTab('map')}
                 className={`px-6 py-3 text-sm font-medium flex items-center space-x-2 border-b-2 transition-colors ${
                   activeTab === 'map'
@@ -3318,6 +3559,7 @@ const App: React.FC = () => {
                     }
                   />
                 )}
+                {activeTab === 'star-output' && <StarOutputView text={buildStarListingText(result)} />}
                 {activeTab === 'map' && <MapView result={result} units={settings.units} />}
               </>
             )}

@@ -20,6 +20,7 @@
 - [x] Phase 4 parity: expand STAR benchmark fixture coverage (coords/SEUW/residual signatures) + expose active default stochastic model and default-sigma usage counts in report/export
 - [x] UI parity Phase A: replace settings dropdown with STAR-style Project Options modal (tab shell + Apply/Cancel draft state + mapped existing solver controls + placeholder tabs for upcoming STAR options)
 - [x] UI parity Phase B: add Processing Summary tab with STAR-style monospaced run summary (iteration flow, per-type error factors, chi-square pass/fail, run profile flags, elapsed time, processing notes)
+- [x] UI parity Phase C: add STAR-style output tab + export format selector (WebNet report or STAR-style listing output file)
 - [x] Sync README/agents docs with current parser/engine/UI state
 - [ ] Adjustment report parity roadmap (Star\*Net alignment):
   - [x] Implement weighted control constraints from coordinate/elevation std errors (not only fixed/free) so control uncertainty participates in the solve
