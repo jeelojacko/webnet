@@ -590,4 +590,54 @@ describe('parseInput', () => {
     expect(trace.some((t) => t.context === 'observation' && t.sourceLine === 13)).toBe(true);
     expect(trace.some((t) => t.context === 'station' && t.sourceId === 'TMP_100')).toBe(true);
   });
+
+  it('scans repeated station descriptions and reports consistent repeats', () => {
+    const parsed = parseInput(
+      [
+        "C A 0 0 0 ! ! ! 'CONTROL POINT A",
+        "E A 100.0 0.01 ! 'CONTROL POINT A",
+        'D A-B 100.0 0.01',
+      ].join('\n'),
+    );
+    const summary = parsed.parseState.descriptionScanSummary ?? [];
+    expect(parsed.parseState.descriptionTrace).toHaveLength(2);
+    expect(parsed.parseState.descriptionRepeatedStationCount).toBe(1);
+    expect(parsed.parseState.descriptionConflictCount).toBe(0);
+    expect(summary).toHaveLength(1);
+    expect(summary[0]).toMatchObject({
+      stationId: 'A',
+      recordCount: 2,
+      uniqueCount: 1,
+      conflict: false,
+      descriptions: ['CONTROL POINT A'],
+    });
+    expect(parsed.logs.some((line) => line.includes('Description scan:'))).toBe(true);
+  });
+
+  it('groups description scan rows by canonical station id and flags conflicts', () => {
+    const parsed = parseInput(
+      [
+        '.ALIAS LEGACY_A=A',
+        "C A 0 0 0 ! ! ! 'Alpha",
+        "E A 100.0 0.01 ! 'ALPHA",
+        "C LEGACY_A 0 0 0 ! ! ! 'Legacy Alpha",
+        "E A 100.0 0.01 ! 'Beta",
+      ].join('\n'),
+    );
+    const trace = parsed.parseState.descriptionTrace ?? [];
+    const summary = parsed.parseState.descriptionScanSummary ?? [];
+    expect(trace).toHaveLength(4);
+    expect(trace.every((row) => row.stationId === 'A')).toBe(true);
+    expect(parsed.parseState.descriptionRepeatedStationCount).toBe(1);
+    expect(parsed.parseState.descriptionConflictCount).toBe(1);
+    expect(summary).toHaveLength(1);
+    expect(summary[0]).toMatchObject({
+      stationId: 'A',
+      recordCount: 4,
+      uniqueCount: 3,
+      conflict: true,
+      descriptions: ['Alpha', 'Legacy Alpha', 'Beta'],
+    });
+    expect(parsed.logs.some((line) => line.includes('Description conflict A'))).toBe(true);
+  });
 });

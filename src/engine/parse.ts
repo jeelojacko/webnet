@@ -72,13 +72,21 @@ const FACE2_WEIGHT = 0.707; // face-2 weighting factor per common spec
 const DEG_TO_RAD = Math.PI / 180;
 const AMODE_AUTO_MAX_DIR_RAD = 3 * DEG_TO_RAD;
 const AMODE_AUTO_MARGIN_RAD = 0.5 * DEG_TO_RAD;
-const stripInlineComment = (line: string): string => {
+const DESCRIPTION_RECORD_TYPES = new Set(['C', 'P', 'PH', 'CH', 'EH', 'E']);
+const normalizeDescriptionText = (value: string): string => value.replace(/\s+/g, ' ').trim();
+const normalizeDescriptionKey = (value: string): string => normalizeDescriptionText(value).toUpperCase();
+const splitInlineCommentAndDescription = (
+  line: string,
+): { line: string; description?: string } => {
   const hash = line.indexOf('#');
   const quote = line.indexOf("'");
   let cut = -1;
   if (hash >= 0) cut = hash;
   if (quote >= 0) cut = cut >= 0 ? Math.min(cut, quote) : quote;
-  return cut >= 0 ? line.slice(0, cut).trim() : line;
+  const parsedLine = cut >= 0 ? line.slice(0, cut).trim() : line.trim();
+  const description =
+    quote >= 0 && (hash < 0 || quote < hash) ? normalizeDescriptionText(line.slice(quote + 1)) : '';
+  return description ? { line: parsedLine, description } : { line: parsedLine };
 };
 
 const isNumericToken = (token: string): boolean => {
@@ -410,6 +418,7 @@ export const parseInput = (
   const aliasRules: AliasRule[] = [];
   const aliasCycleWarnings = new Set<string>();
   const aliasTraceEntries: NonNullable<ParseOptions['aliasTrace']> = [];
+  const descriptionTraceEntries: NonNullable<ParseOptions['descriptionTrace']> = [];
   const aliasTraceSeen = new Set<string>();
   const lostStationIds = new Set<StationId>((state.lostStationIds ?? []).map((id) => `${id}`));
   const resolveLinearSigma = (
@@ -811,7 +820,8 @@ export const parseInput = (
     lineNum += 1;
     const trimmed = raw.trim();
     if (!trimmed) continue;
-    const line = stripInlineComment(trimmed);
+    const parsedInline = splitInlineCommentAndDescription(trimmed);
+    const line = parsedInline.line;
     if (!line || line.startsWith('#')) continue;
 
     // Inline options
@@ -1341,6 +1351,18 @@ export const parseInput = (
 
     const parts = line.split(/\s+/);
     const code = parts[0]?.toUpperCase();
+    if (code && DESCRIPTION_RECORD_TYPES.has(code)) {
+      const stationId = (parts[1] ?? '').trim();
+      const description = parsedInline.description;
+      if (stationId && description) {
+        descriptionTraceEntries.push({
+          stationId,
+          sourceLine: lineNum,
+          recordType: code as 'C' | 'P' | 'PH' | 'CH' | 'EH' | 'E',
+          description,
+        });
+      }
+    }
 
     try {
       if (code === 'I') {
@@ -2755,6 +2777,68 @@ export const parseInput = (
         a.context.localeCompare(b.context) ||
         a.sourceId.localeCompare(b.sourceId),
     );
+  state.descriptionTrace = descriptionTraceEntries
+    .map((entry) => ({
+      ...entry,
+      stationId: resolveAlias(entry.stationId).canonicalId || entry.stationId,
+    }))
+    .sort((a, b) => a.sourceLine - b.sourceLine || a.stationId.localeCompare(b.stationId));
+
+  const descriptionSummaryMap = new Map<
+    StationId,
+    {
+      recordCount: number;
+      sourceLines: number[];
+      uniqueDescriptions: Map<string, string>;
+    }
+  >();
+  state.descriptionTrace.forEach((entry) => {
+    const row = descriptionSummaryMap.get(entry.stationId) ?? {
+      recordCount: 0,
+      sourceLines: [],
+      uniqueDescriptions: new Map<string, string>(),
+    };
+    row.recordCount += 1;
+    row.sourceLines.push(entry.sourceLine);
+    const key = normalizeDescriptionKey(entry.description);
+    if (key && !row.uniqueDescriptions.has(key)) {
+      row.uniqueDescriptions.set(key, entry.description);
+    }
+    descriptionSummaryMap.set(entry.stationId, row);
+  });
+  state.descriptionScanSummary = [...descriptionSummaryMap.entries()]
+    .map(([stationId, row]) => {
+      const uniqueCount = row.uniqueDescriptions.size;
+      return {
+        stationId,
+        recordCount: row.recordCount,
+        uniqueCount,
+        conflict: uniqueCount > 1,
+        descriptions: [...row.uniqueDescriptions.values()],
+        sourceLines: row.sourceLines.slice().sort((a, b) => a - b),
+      };
+    })
+    .sort((a, b) => a.stationId.localeCompare(b.stationId, undefined, { numeric: true }));
+  state.descriptionRepeatedStationCount = state.descriptionScanSummary.filter(
+    (row) => row.recordCount > 1,
+  ).length;
+  state.descriptionConflictCount = state.descriptionScanSummary.filter((row) => row.conflict).length;
+  if (state.descriptionTrace.length > 0) {
+    logs.push(
+      `Description scan: records=${state.descriptionTrace.length}, stations=${state.descriptionScanSummary.length}, repeated=${state.descriptionRepeatedStationCount}, conflicts=${state.descriptionConflictCount}.`,
+    );
+    state.descriptionScanSummary
+      .filter((row) => row.conflict)
+      .slice(0, 10)
+      .forEach((row) => {
+        logs.push(
+          `Description conflict ${row.stationId} at lines ${row.sourceLines.join(', ')}: ${row.descriptions.join(' | ')}`,
+        );
+      });
+    if ((state.descriptionConflictCount ?? 0) > 10) {
+      logs.push(`Description conflicts not shown: ${(state.descriptionConflictCount ?? 0) - 10}`);
+    }
+  }
 
   const unknowns = Object.keys(stations).filter((id) => {
     const st = stations[id];

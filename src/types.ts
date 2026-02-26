@@ -343,6 +343,22 @@ export interface AliasTraceEntry {
   reference?: string;
 }
 
+export interface DescriptionTraceEntry {
+  stationId: StationId;
+  sourceLine: number;
+  recordType: 'C' | 'P' | 'PH' | 'CH' | 'EH' | 'E';
+  description: string;
+}
+
+export interface DescriptionScanSummary {
+  stationId: StationId;
+  recordCount: number;
+  uniqueCount: number;
+  conflict: boolean;
+  descriptions: string[];
+  sourceLines: number[];
+}
+
 export interface ParseOptions {
   units: UnitsMode;
   coordMode: CoordMode;
@@ -398,6 +414,10 @@ export interface ParseOptions {
   aliasExplicitMappings?: AliasExplicitMapping[];
   aliasRuleSummaries?: AliasRuleSummary[];
   aliasTrace?: AliasTraceEntry[];
+  descriptionTrace?: DescriptionTraceEntry[];
+  descriptionScanSummary?: DescriptionScanSummary[];
+  descriptionRepeatedStationCount?: number;
+  descriptionConflictCount?: number;
 }
 
 export interface AdjustmentResult {
