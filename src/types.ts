@@ -771,7 +771,14 @@ export interface AdjustmentResult {
     enabled: boolean;
     vectorCount: number;
     loopCount: number;
+    passCount: number;
+    warnCount: number;
+    thresholds: {
+      baseToleranceM: number;
+      ppmTolerance: number;
+    };
     loops: {
+      rank: number;
       key: string;
       stationPath: StationId[];
       edgeCount: number;
@@ -779,6 +786,12 @@ export interface AdjustmentResult {
       closureE: number;
       closureN: number;
       closureMag: number;
+      loopDistance: number;
+      closureRatio?: number;
+      linearPpm?: number;
+      toleranceM: number;
+      severity: number;
+      pass: boolean;
     }[];
   };
   clusterDiagnostics?: {

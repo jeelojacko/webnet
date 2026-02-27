@@ -441,11 +441,44 @@ describe('LSAEngine', () => {
     expect(loopDiag?.enabled ?? false).toBe(true);
     expect(loopDiag?.vectorCount ?? 0).toBe(3);
     expect(loopDiag?.loopCount ?? 0).toBe(1);
+    expect(loopDiag?.passCount ?? 0).toBe(1);
+    expect(loopDiag?.warnCount ?? 0).toBe(0);
+    expect(loopDiag?.thresholds.baseToleranceM ?? 0).toBeCloseTo(0.02, 8);
+    expect(loopDiag?.thresholds.ppmTolerance ?? 0).toBe(50);
     expect(loopDiag?.loops[0].stationPath.join('->') ?? '').toContain('A');
     expect(loopDiag?.loops[0].stationPath.join('->') ?? '').toContain('C');
+    expect(loopDiag?.loops[0].rank ?? 0).toBe(1);
+    expect(loopDiag?.loops[0].pass ?? false).toBe(true);
+    expect(loopDiag?.loops[0].severity ?? 0).toBeLessThan(1);
     expect(loopDiag?.loops[0].closureMag ?? 0).toBeGreaterThan(0.02);
     expect(loopDiag?.loops[0].closureMag ?? 0).toBeLessThan(0.03);
+    expect(loopDiag?.loops[0].toleranceM ?? 0).toBeGreaterThan(loopDiag?.loops[0].closureMag ?? 0);
     expect(result.logs.some((line) => line.includes('GPS loop check: vectors=3, loops=1'))).toBe(true);
+  });
+
+  it('applies GPS loop tolerances and severity ranking for mixed pass/warn loops', () => {
+    const input = readFileSync('tests/fixtures/gps_loop_phase2.dat', 'utf-8');
+    const result = new LSAEngine({ input, maxIterations: 10 }).solve();
+    const loopDiag = result.gpsLoopDiagnostics;
+
+    expect(loopDiag?.enabled ?? false).toBe(true);
+    expect(loopDiag?.vectorCount ?? 0).toBe(5);
+    expect(loopDiag?.loopCount ?? 0).toBe(2);
+    expect(loopDiag?.passCount ?? 0).toBe(1);
+    expect(loopDiag?.warnCount ?? 0).toBe(1);
+    expect(loopDiag?.loops[0].rank ?? 0).toBe(1);
+    expect(loopDiag?.loops[1].rank ?? 0).toBe(2);
+    expect(loopDiag?.loops[0].pass ?? true).toBe(false);
+    expect(loopDiag?.loops[1].pass ?? false).toBe(true);
+    expect(loopDiag?.loops[0].severity ?? 0).toBeGreaterThan(loopDiag?.loops[1].severity ?? 0);
+    expect(loopDiag?.loops[0].toleranceM ?? 0).toBeGreaterThan(0);
+    expect(loopDiag?.loops[0].linearPpm ?? 0).toBeGreaterThan(loopDiag?.thresholds.ppmTolerance ?? 0);
+    expect(loopDiag?.loops[1].linearPpm ?? 0).toBeLessThan(loopDiag?.loops[0].linearPpm ?? 0);
+    expect(loopDiag?.loops[0].closureMag ?? 0).toBeGreaterThan(loopDiag?.loops[0].toleranceM ?? 0);
+    expect(loopDiag?.loops[1].closureMag ?? 0).toBeLessThan(loopDiag?.loops[1].toleranceM ?? 0);
+    expect(result.logs.some((line) => line.includes('GPS loop check: vectors=5, loops=2, pass=1, warn=1'))).toBe(
+      true,
+    );
   });
 
   it('keeps GPS loop diagnostics disabled by default when not requested', () => {

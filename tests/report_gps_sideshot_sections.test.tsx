@@ -39,4 +39,40 @@ describe('ReportView GPS sideshot sections', () => {
     expect(html).toContain('vector');
     expect(html).not.toContain('Post-Adjusted Sideshots (TS)');
   });
+
+  it('renders GPS loop diagnostics section with ranked pass/warn rows', () => {
+    const input = readFileSync('tests/fixtures/gps_loop_phase2.dat', 'utf-8');
+    const result = new LSAEngine({ input, maxIterations: 10 }).solve();
+
+    const html = renderToStaticMarkup(
+      <ReportView
+        result={result}
+        units="m"
+        runDiagnostics={null}
+        excludedIds={new Set<number>()}
+        onToggleExclude={() => {}}
+        onApplyImpactExclude={() => {}}
+        onReRun={() => {}}
+        onClearExclusions={() => {}}
+        overrides={{}}
+        onOverride={() => {}}
+        onResetOverrides={() => {}}
+        clusterReviewDecisions={{}}
+        activeClusterApprovedMerges={[]}
+        onClusterDecisionStatus={() => {}}
+        onClusterCanonicalSelection={() => {}}
+        onApplyClusterMerges={() => {}}
+        onResetClusterReview={() => {}}
+        onClearClusterMerges={() => {}}
+      />,
+    );
+
+    expect(html).toContain('GPS Loop Diagnostics');
+    expect(html).toContain('GPS Loop Suspects (ranked)');
+    expect(html).toContain('GL-1');
+    expect(html).toContain('GL-2');
+    expect(html).toContain('WARN');
+    expect(html).toContain('PASS');
+    expect(html).toContain('50ppm*dist');
+  });
 });

@@ -182,7 +182,7 @@
       - [x] Phase 3: add diagnostics and regression fixtures covering positive/negative and missing-height cases
     - [~] Add GPS vector loop-closure diagnostics/check command with loop summaries in report/export
       - [x] Phase 1: detect GNSS loop candidates and compute closure vectors/magnitudes independent of adjustment residuals
-      - [ ] Phase 2: add tolerance checks/ranking and expose loop diagnostics in processing and report views
+      - [x] Phase 2: add tolerance checks/ranking and expose loop diagnostics in processing and report views
       - [ ] Phase 3: add export block and tests for known loop-pass/fail datasets
     - [ ] Add OPUS/OPUS-RS import path with full covariance ingestion to GPS observation records
       - [ ] Phase 1: implement OPUS/OPUS-RS parser for station coordinates, covariance, and metadata extraction

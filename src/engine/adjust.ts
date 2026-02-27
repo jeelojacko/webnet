@@ -27,6 +27,8 @@ import type {
 const EPS = 1e-10;
 const EARTH_RADIUS_M = 6378137;
 const GPS_ADDHIHT_SCALE_TOL = 1e-9;
+const GPS_LOOP_BASE_TOLERANCE_M = 0.02;
+const GPS_LOOP_TOLERANCE_PPM = 50;
 
 const gammln = (xx: number): number => {
   const cof = [
@@ -442,6 +444,7 @@ export class LSAEngine {
       to: StationId;
       dE: number;
       dN: number;
+      distance: number;
       sourceLine?: number;
     };
     type ParentInfo = {
@@ -466,6 +469,7 @@ export class LSAEngine {
         to: obs.to,
         dE: vec.dE,
         dN: vec.dN,
+        distance: Math.hypot(vec.dE, vec.dN),
         sourceLine: obs.sourceLine,
       };
     });
@@ -609,24 +613,58 @@ export class LSAEngine {
         });
         const closureE = sumE - edge.dE;
         const closureN = sumN - edge.dN;
+        const closureMag = Math.hypot(closureE, closureN);
+        const loopDistance =
+          treePath.segments.reduce((acc, seg) => {
+            const segEdge = edges[seg.edgeIdx];
+            if (!segEdge) return acc;
+            return acc + segEdge.distance;
+          }, 0) + edge.distance;
+        const closureRatio = closureMag > EPS ? loopDistance / closureMag : undefined;
+        const linearPpm = loopDistance > EPS ? (closureMag / loopDistance) * 1e6 : undefined;
+        const toleranceM = GPS_LOOP_BASE_TOLERANCE_M + GPS_LOOP_TOLERANCE_PPM * 1e-6 * loopDistance;
+        const pass = closureMag <= toleranceM + EPS;
+        const severity = toleranceM > EPS ? closureMag / toleranceM : closureMag > EPS ? Infinity : 0;
         if (edge.sourceLine != null) lineSet.add(edge.sourceLine);
         return {
+          rank: 0,
           key: `GL-${idx + 1}-${edge.from}`,
           stationPath: [...treePath.stations, edge.from],
           edgeCount: treePath.segments.length + 1,
           sourceLines: [...lineSet].sort((a, b) => a - b),
           closureE,
           closureN,
-          closureMag: Math.hypot(closureE, closureN),
+          closureMag,
+          loopDistance,
+          closureRatio,
+          linearPpm,
+          toleranceM,
+          severity,
+          pass,
         };
       })
       .filter((loop): loop is NonNullable<typeof loop> => loop != null);
+    const rankedLoops = loops
+      .sort((a, b) => {
+        if (b.severity !== a.severity) return b.severity - a.severity;
+        if (b.closureMag !== a.closureMag) return b.closureMag - a.closureMag;
+        return a.key.localeCompare(b.key, undefined, { numeric: true });
+      })
+      .map((loop, idx) => ({ ...loop, rank: idx + 1 }));
+    const passCount = rankedLoops.filter((loop) => loop.pass).length;
+    const warnCount = rankedLoops.length - passCount;
 
     return {
       enabled: true,
       vectorCount: edges.length,
-      loopCount: loops.length,
-      loops,
+      loopCount: rankedLoops.length,
+      passCount,
+      warnCount,
+      thresholds: {
+        baseToleranceM: GPS_LOOP_BASE_TOLERANCE_M,
+        ppmTolerance: GPS_LOOP_TOLERANCE_PPM,
+      },
+      loops: rankedLoops,
     };
   }
 
@@ -2117,11 +2155,11 @@ export class LSAEngine {
       );
       this.gpsLoopDiagnostics = this.computeGpsLoopDiagnostics(gpsNetworkRows);
       this.log(
-        `GPS loop check: vectors=${this.gpsLoopDiagnostics.vectorCount}, loops=${this.gpsLoopDiagnostics.loopCount}`,
+        `GPS loop check: vectors=${this.gpsLoopDiagnostics.vectorCount}, loops=${this.gpsLoopDiagnostics.loopCount}, pass=${this.gpsLoopDiagnostics.passCount}, warn=${this.gpsLoopDiagnostics.warnCount}, tolerance=${this.gpsLoopDiagnostics.thresholds.baseToleranceM.toFixed(3)}m+${this.gpsLoopDiagnostics.thresholds.ppmTolerance}ppm*dist`,
       );
       this.gpsLoopDiagnostics.loops.slice(0, 10).forEach((loop) => {
         this.log(
-          `  ${loop.key}: path=${loop.stationPath.join('->')} closure(dE=${loop.closureE.toFixed(4)}m,dN=${loop.closureN.toFixed(4)}m,|d|=${loop.closureMag.toFixed(4)}m) lines=${loop.sourceLines.length > 0 ? loop.sourceLines.join(',') : '-'}`,
+          `  #${loop.rank} ${loop.key}: path=${loop.stationPath.join('->')} closure(dE=${loop.closureE.toFixed(4)}m,dN=${loop.closureN.toFixed(4)}m,|d|=${loop.closureMag.toFixed(4)}m) tol=${loop.toleranceM.toFixed(4)}m ppm=${loop.linearPpm != null ? loop.linearPpm.toFixed(1) : '-'} sev=${loop.severity.toFixed(2)} status=${loop.pass ? 'PASS' : 'WARN'} lines=${loop.sourceLines.length > 0 ? loop.sourceLines.join(',') : '-'}`,
         );
       });
     }

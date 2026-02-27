@@ -242,6 +242,20 @@ const ProcessingSummaryView: React.FC<ProcessingSummaryViewProps> = ({
         );
       }
     }
+    const gpsLoopDiagnostics = result.gpsLoopDiagnostics;
+    if (gpsLoopDiagnostics?.enabled) {
+      lines.push(
+        `GPS Loop Check: vectors=${gpsLoopDiagnostics.vectorCount}, loops=${gpsLoopDiagnostics.loopCount}, pass=${gpsLoopDiagnostics.passCount}, warn=${gpsLoopDiagnostics.warnCount}, tolerance=${(gpsLoopDiagnostics.thresholds.baseToleranceM * unitScale).toFixed(4)}${linearUnit}+${gpsLoopDiagnostics.thresholds.ppmTolerance}ppm*dist`,
+      );
+      gpsLoopDiagnostics.loops.slice(0, 15).forEach((loop) => {
+        lines.push(
+          `  #${loop.rank} ${loop.key} ${loop.pass ? 'PASS' : 'WARN'} |d|=${(loop.closureMag * unitScale).toFixed(4)}${linearUnit} tol=${(loop.toleranceM * unitScale).toFixed(4)}${linearUnit} ppm=${loop.linearPpm != null ? loop.linearPpm.toFixed(1) : '-'} ratio=${loop.closureRatio != null ? `1:${loop.closureRatio.toFixed(0)}` : '-'} path=${loop.stationPath.join('->')}`,
+        );
+      });
+      if (gpsLoopDiagnostics.loops.length > 15) {
+        lines.push(`  ... ${gpsLoopDiagnostics.loops.length - 15} more GPS loop diagnostics`);
+      }
+    }
     const lostStations = result.parseState?.lostStationIds ?? [];
     lines.push(
       `Lost Stations: ${lostStations.length > 0 ? `${lostStations.length} (${lostStations.join(', ')})` : 'none'}`,
