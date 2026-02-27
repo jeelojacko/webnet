@@ -34,6 +34,35 @@ describe('LSAEngine', () => {
     expect(result.observations.some((o) => o.type === 'zenith')).toBe(true);
   });
 
+  it('computes effective distance for angular observation families', () => {
+    const input = [
+      '.2D',
+      '.ORDER EN ATFROMTO',
+      'C O 0 0 0 ! !',
+      'C BS 0 100 0 ! !',
+      'C P 100 0 0',
+      'D O-P 100.0000 0.002',
+      'D BS-P 141.4214 0.002',
+      'B O-P 090-00-00.0 1.0',
+      'A O-BS-P 090-00-00.0 1.0',
+      'DB O BS',
+      'DN P 090-00-00.0 1.0',
+      'DE',
+    ].join('\n');
+    const result = new LSAEngine({ input, maxIterations: 10 }).solve();
+
+    const angle = result.observations.find((o) => o.type === 'angle');
+    const bearing = result.observations.find((o) => o.type === 'bearing');
+    const direction = result.observations.find((o) => o.type === 'direction');
+
+    expect(angle?.effectiveDistance).toBeDefined();
+    expect(bearing?.effectiveDistance).toBeDefined();
+    expect(direction?.effectiveDistance).toBeDefined();
+    expect(angle?.effectiveDistance ?? 0).toBeCloseTo(100, 3);
+    expect(bearing?.effectiveDistance ?? 0).toBeCloseTo(100, 3);
+    expect(direction?.effectiveDistance ?? 0).toBeCloseTo(100, 3);
+  });
+
   it('detects deterministic single-linkage station clusters in 2D mode', () => {
     const input = [
       '.2D',

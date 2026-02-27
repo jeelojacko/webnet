@@ -869,6 +869,32 @@ export class LSAEngine {
     return { z, dist, horiz, dh, crCorr };
   }
 
+  private effectiveDistanceForAngularObservation(obs: Observation): number | undefined {
+    if (obs.type === 'angle') {
+      const rayFrom = this.getAzimuth(obs.at, obs.from).dist;
+      const rayTo = this.getAzimuth(obs.at, obs.to).dist;
+      if (!Number.isFinite(rayFrom) || !Number.isFinite(rayTo) || rayFrom <= 0 || rayTo <= 0) {
+        return undefined;
+      }
+      // Harmonic-mean baseline gives a stable single-length proxy for turned-angle sensitivity.
+      const denom = 1 / rayFrom + 1 / rayTo;
+      return denom > 0 ? 2 / denom : undefined;
+    }
+    if (obs.type === 'direction') {
+      const dist = this.getAzimuth(obs.at, obs.to).dist;
+      return Number.isFinite(dist) && dist > 0 ? dist : undefined;
+    }
+    if (obs.type === 'bearing' || obs.type === 'dir') {
+      const dist = this.getAzimuth(obs.from, obs.to).dist;
+      return Number.isFinite(dist) && dist > 0 ? dist : undefined;
+    }
+    if (obs.type === 'zenith') {
+      const geom = this.getZenith(obs.from, obs.to, obs.hi ?? 0, obs.ht ?? 0).dist;
+      return Number.isFinite(geom) && geom > 0 ? geom : undefined;
+    }
+    return undefined;
+  }
+
   private isObservationActive(obs: Observation): boolean {
     if (this.excludeIds?.has(obs.id)) return false;
     if (typeof obs.calc === 'object' && (obs.calc as any)?.sideshot) return false;
@@ -2293,6 +2319,7 @@ export class LSAEngine {
 
     this.observations.forEach((obs) => {
       if (!this.isObservationActive(obs)) return;
+      obs.effectiveDistance = undefined;
       if (obs.type === 'dist') {
         const s1 = this.stations[obs.from];
         const s2 = this.stations[obs.to];
@@ -2320,6 +2347,7 @@ export class LSAEngine {
           totalTraverseDistance += Math.abs(obs.obs);
         }
       } else if (obs.type === 'angle') {
+        obs.effectiveDistance = this.effectiveDistanceForAngularObservation(obs);
         const azTo = this.getAzimuth(obs.at, obs.to).az;
         const azFrom = this.getAzimuth(obs.at, obs.from).az;
         let calcAngle = azTo - azFrom;
@@ -2364,6 +2392,7 @@ export class LSAEngine {
         vtpv += q;
         addObservationContribution(obs, q);
       } else if (obs.type === 'bearing') {
+        obs.effectiveDistance = this.effectiveDistanceForAngularObservation(obs);
         const calcAz = this.getAzimuth(obs.from, obs.to).az;
         let v = obs.obs - calcAz;
         if (v > Math.PI) v -= 2 * Math.PI;
@@ -2377,6 +2406,7 @@ export class LSAEngine {
         addObservationContribution(obs, q);
         collectTsCorrelationRow(obs, v, sigma);
       } else if (obs.type === 'dir') {
+        obs.effectiveDistance = this.effectiveDistanceForAngularObservation(obs);
         const calcAz = this.getAzimuth(obs.from, obs.to).az;
         let v0 = obs.obs - calcAz;
         if (v0 > Math.PI) v0 -= 2 * Math.PI;
@@ -2397,6 +2427,7 @@ export class LSAEngine {
         addObservationContribution(obs, q);
         collectTsCorrelationRow(obs, v, sigma);
       } else if (obs.type === 'direction') {
+        obs.effectiveDistance = this.effectiveDistanceForAngularObservation(obs);
         const dir = obs as any;
         const az = this.getAzimuth(dir.at, dir.to).az;
         const orientation = this.directionOrientations[dir.setId] ?? 0;
@@ -2478,6 +2509,7 @@ export class LSAEngine {
         stat.orientation = orientation;
         directionStats.set(setId, stat);
       } else if (obs.type === 'zenith') {
+        obs.effectiveDistance = this.effectiveDistanceForAngularObservation(obs);
         const zv = this.getZenith(obs.from, obs.to, obs.hi ?? 0, obs.ht ?? 0).z;
         let v = obs.obs - zv;
         if (v > Math.PI) v -= 2 * Math.PI;

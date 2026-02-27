@@ -63,6 +63,7 @@ interface ObservationBase {
   residual?: unknown;
   stdRes?: number;
   stdResComponents?: { tE: number; tN: number };
+  effectiveDistance?: number;
   redundancy?: number | { rE: number; rN: number };
   localTest?: { critical: number; pass: boolean };
   localTestComponents?: { passE: boolean; passN: boolean };
