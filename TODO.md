@@ -145,10 +145,10 @@
       - [x] Phase 1: build description consistency scanner across loaded files/records grouped by station ID
       - [x] Phase 2: implement reconciliation policies (first vs append with custom delimiter) applied to rendered outputs
       - [x] Phase 3: add listing/report summary section with file-line references for conflicts and update tests
-    - [~] Add industry-style "effective distance" reporting alongside angular residuals in adjusted observation tables
+    - [x] Add industry-style "effective distance" reporting alongside angular residuals in adjusted observation tables
       - [x] Phase 1: compute effective distance metrics for angular observation families during statistics pass
       - [x] Phase 2: add columns/formatting in report, processing summary, and industry-style export outputs
-      - [ ] Phase 3: add fixture assertions for value correctness across angle/direction/bearing scenarios
+      - [x] Phase 3: add fixture assertions for value correctness across angle/direction/bearing scenarios
     - [ ] Add optional 3D network plot mode (3D ellipsoids/orbit/view-cube style controls) for deeper parity with Industry Standard 10-14 visualization
       - [ ] Phase 1: introduce 3D plot architecture (camera, scene graph, station/connection primitives) behind feature flag
       - [ ] Phase 2: render 3D confidence ellipsoids and implement orbit/pan/zoom/view-cube interactions
