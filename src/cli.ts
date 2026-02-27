@@ -37,6 +37,10 @@ Options:
   --out <path>                  Write output payload to file instead of stdout
   --units <m|ft>
   --coord-mode <2D|3D>
+  --autoadjust <on|off>
+  --autoadjust-threshold <n>
+  --autoadjust-cycles <n>
+  --autoadjust-max-removals <n>
   --help, -h
 `;
 
@@ -106,6 +110,42 @@ const parseArgs = (argv: string[]): CliConfig => {
         throw new Error(`Invalid --units value "${value}"`);
       }
       config.parseOptions.units = value as UnitsMode;
+      i += 1;
+      continue;
+    }
+    if (arg === '--autoadjust') {
+      const value = nextValue(i, arg).toLowerCase();
+      if (value !== 'on' && value !== 'off') {
+        throw new Error(`Invalid --autoadjust value "${argv[i + 1]}"`);
+      }
+      config.parseOptions.autoAdjustEnabled = value === 'on';
+      i += 1;
+      continue;
+    }
+    if (arg === '--autoadjust-threshold') {
+      const value = Number.parseFloat(nextValue(i, arg));
+      if (!Number.isFinite(value) || value < 1 || value > 20) {
+        throw new Error(`Invalid --autoadjust-threshold value "${argv[i + 1]}"`);
+      }
+      config.parseOptions.autoAdjustStdResThreshold = value;
+      i += 1;
+      continue;
+    }
+    if (arg === '--autoadjust-cycles') {
+      const value = Number.parseInt(nextValue(i, arg), 10);
+      if (!Number.isFinite(value) || value < 1 || value > 20) {
+        throw new Error(`Invalid --autoadjust-cycles value "${argv[i + 1]}"`);
+      }
+      config.parseOptions.autoAdjustMaxCycles = value;
+      i += 1;
+      continue;
+    }
+    if (arg === '--autoadjust-max-removals') {
+      const value = Number.parseInt(nextValue(i, arg), 10);
+      if (!Number.isFinite(value) || value < 1 || value > 20) {
+        throw new Error(`Invalid --autoadjust-max-removals value "${argv[i + 1]}"`);
+      }
+      config.parseOptions.autoAdjustMaxRemovalsPerCycle = value;
       i += 1;
       continue;
     }

@@ -25,3 +25,7 @@ jobs:
         run: npm run test:run
       - name: Build
         run: npm run build
+      - name: CLI Smoke JSON
+        run: node node_modules/tsx/dist/cli.mjs src/cli.ts --input tests/fixtures/cli_smoke.dat --output json --out cli-smoke.json --autoadjust off
+      - name: CLI Smoke Listing
+        run: node node_modules/tsx/dist/cli.mjs src/cli.ts --input tests/fixtures/cli_smoke.dat --profile industry-parity --output listing --out cli-smoke.txt --autoadjust on --autoadjust-threshold 4 --autoadjust-cycles 2 --autoadjust-max-removals 1
