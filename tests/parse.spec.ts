@@ -242,6 +242,37 @@ describe('parseInput', () => {
     expect(disabled.parseState.crsConvergenceEnabled).toBe(false);
   });
 
+  it('keeps geoid model pipeline disabled by default and parses .GEOID directives', () => {
+    const base = parseInput(['.UNITS METERS DD', 'C A 0 0 0 ! !', 'C B 100 0 0'].join('\n'));
+    expect(base.parseState.geoidModelEnabled).toBe(false);
+
+    const enabled = parseInput(
+      [
+        '.UNITS METERS DD',
+        '.GEOID ON NGS-DEMO',
+        '.GEOID INTERP NEAREST',
+        'C A 0 0 0 ! !',
+        'C B 100 0 0',
+      ].join('\n'),
+    );
+    expect(enabled.parseState.geoidModelEnabled).toBe(true);
+    expect(enabled.parseState.geoidModelId).toBe('NGS-DEMO');
+    expect(enabled.parseState.geoidInterpolation).toBe('nearest');
+    expect(enabled.logs.some((l) => l.includes('Geoid/grid model set to ON'))).toBe(true);
+
+    const off = parseInput(
+      [
+        '.UNITS METERS DD',
+        '.GEOID ON NRC-DEMO',
+        '.GEOID INTERP BILINEAR',
+        '.GEOID OFF',
+        'C A 0 0 0 ! !',
+        'C B 100 0 0',
+      ].join('\n'),
+    );
+    expect(off.parseState.geoidModelEnabled).toBe(false);
+  });
+
   it('supports .AUTOSIDESHOT and /AUTOSIDESHOT toggles', () => {
     const parsed = parseInput(
       [

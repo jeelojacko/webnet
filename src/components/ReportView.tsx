@@ -32,6 +32,12 @@ interface ReportViewProps {
     crsGridScaleFactor: number
     crsConvergenceEnabled: boolean
     crsConvergenceAngleRad: number
+    geoidModelEnabled: boolean
+    geoidModelId: string
+    geoidInterpolation: 'bilinear' | 'nearest'
+    geoidModelLoaded: boolean
+    geoidModelMetadata: string
+    geoidSampleUndulationM?: number
     qFixLinearSigmaM: number
     qFixAngularSigmaSec: number
     profileDefaultInstrumentFallback: boolean
@@ -954,12 +960,31 @@ const ReportView: React.FC<ReportViewProps> = ({
               </div>
             </div>
             <div>
+              <div className="text-slate-500">Geoid/Grid Model</div>
+              <div>
+                {runDiagnostics.geoidModelEnabled
+                  ? `ON (${runDiagnostics.geoidModelId}, ${runDiagnostics.geoidInterpolation.toUpperCase()}, loaded=${runDiagnostics.geoidModelLoaded ? 'YES' : 'NO'})`
+                  : 'OFF'}
+              </div>
+            </div>
+            <div>
               <div className="text-slate-500">QFIX (Linear/Angular)</div>
               <div>
                 {(runDiagnostics.qFixLinearSigmaM * unitScale).toExponential(6)} {units} /{' '}
                 {runDiagnostics.qFixAngularSigmaSec.toExponential(6)}"
               </div>
             </div>
+            {runDiagnostics.geoidModelEnabled && (
+              <div className="col-span-2">
+                <div className="text-slate-500">Geoid Metadata</div>
+                <div className="break-words">
+                  {runDiagnostics.geoidModelMetadata || 'unavailable'}
+                  {runDiagnostics.geoidSampleUndulationM != null
+                    ? `; sampleN=${runDiagnostics.geoidSampleUndulationM.toFixed(4)}m`
+                    : ''}
+                </div>
+              </div>
+            )}
             <div className="col-span-2">
               <div className="text-slate-500">Lost Stations</div>
               <div className="break-words">

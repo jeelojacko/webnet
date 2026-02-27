@@ -244,6 +244,7 @@ export type ClusterLinkageMode = 'single' | 'complete';
 export type ClusterPassLabel = 'single' | 'pass1' | 'pass2';
 export type DescriptionReconcileMode = 'first' | 'append';
 export type CrsProjectionModel = 'legacy-equirectangular' | 'local-enu';
+export type GeoidInterpolationMethod = 'bilinear' | 'nearest';
 
 export interface ClusterApprovedMerge {
   aliasId: StationId;
@@ -385,6 +386,12 @@ export interface ParseOptions {
   crsGridScaleFactor?: number;
   crsConvergenceEnabled?: boolean;
   crsConvergenceAngleRad?: number;
+  geoidModelEnabled?: boolean;
+  geoidModelId?: string;
+  geoidInterpolation?: GeoidInterpolationMethod;
+  geoidModelLoaded?: boolean;
+  geoidModelMetadata?: string;
+  geoidSampleUndulationM?: number;
   lonSign?: LonSign;
   currentInstrument?: string;
   edmMode?: 'additive' | 'propagated';

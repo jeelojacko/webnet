@@ -14,6 +14,7 @@
 - [x] GPS Phase 1 foundation: CRS state model + projection abstraction (`LEGACY`/`ENU`) with default-off transform controls in Project Options -> GPS
 - [x] GPS Phase 2 modeling: optional CRS grid-ground scale + convergence corrections in solver/inverse workflows with default-off GPS controls
 - [x] GPS Phase 3 diagnostics: surface CRS projection/scale/convergence state in report/processing-summary/industry-listing outputs with regression coverage
+- [x] GPS Geoid/Grid Phase 1: default-off model ingestion pipeline with cached loading, interpolation selection, validation, and metadata diagnostics
 - [x] Standardized residuals (Qvv), redundancy numbers, chi-square test, per-type residual summaries
 - [x] Point precision (σN/σE/σH, ellipse azimuth, 95% toggle) + relative precision between unknown points
 - [x] Map/ellipse viewer interaction upgrades: wheel zoom, middle-button pan, middle-double-click reset-to-extents, zoom-aware symbol scaling
@@ -166,8 +167,8 @@
       - [x] Phase 1: add CRS selection/state model and projection abstraction for input/output transformations
       - [x] Phase 2: integrate grid-ground scale/convergence calculations into observation modeling and inverse tools
       - [x] Phase 3: surface CRS/scale/convergence diagnostics in reports/exports with parity fixtures
-    - [ ] Add direct geoid/grid model support (NGS/NRC/BYN-style models) plus input/output ellipsoid selection controls
-      - [ ] Phase 1: add geoid/grid file ingestion pipeline (metadata, interpolation, caching, validation)
+    - [~] Add direct geoid/grid model support (NGS/NRC/BYN-style models) plus input/output ellipsoid selection controls
+      - [x] Phase 1: add geoid/grid file ingestion pipeline (metadata, interpolation, caching, validation)
       - [ ] Phase 2: wire ellipsoid/geoid model choice into height conversions for parse/solve/export paths
       - [ ] Phase 3: add project options UI + diagnostics for active model and tests against known checkpoints
     - [ ] Implement `.GPS NETWORK` / `.GPS SIDESHOT` modes for vector records with post-adjust sideshot handling

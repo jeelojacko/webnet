@@ -47,6 +47,12 @@ export interface IndustryListingRunDiagnostics {
   crsGridScaleFactor?: number;
   crsConvergenceEnabled?: boolean;
   crsConvergenceAngleRad?: number;
+  geoidModelEnabled?: boolean;
+  geoidModelId?: string;
+  geoidInterpolation?: 'bilinear' | 'nearest';
+  geoidModelLoaded?: boolean;
+  geoidModelMetadata?: string;
+  geoidSampleUndulationM?: number;
 }
 
 export const buildIndustryStyleListingText = (
@@ -96,6 +102,17 @@ export const buildIndustryStyleListingText = (
       parseState?.crsConvergenceEnabled ?? runDiag.crsConvergenceEnabled ?? false;
     const crsConvergenceAngleRad =
       parseState?.crsConvergenceAngleRad ?? runDiag.crsConvergenceAngleRad ?? 0;
+    const geoidModelEnabled =
+      parseState?.geoidModelEnabled ?? runDiag.geoidModelEnabled ?? false;
+    const geoidModelId = parseState?.geoidModelId ?? runDiag.geoidModelId ?? 'NGS-DEMO';
+    const geoidInterpolation =
+      parseState?.geoidInterpolation ?? runDiag.geoidInterpolation ?? 'bilinear';
+    const geoidModelLoaded =
+      parseState?.geoidModelLoaded ?? runDiag.geoidModelLoaded ?? false;
+    const geoidModelMetadata =
+      parseState?.geoidModelMetadata ?? runDiag.geoidModelMetadata ?? '';
+    const geoidSampleUndulationM =
+      parseState?.geoidSampleUndulationM ?? runDiag.geoidSampleUndulationM;
     const descriptionReconcileMode =
       parseState?.descriptionReconcileMode ?? parseSettings.descriptionReconcileMode ?? 'first';
     const descriptionAppendDelimiter =
@@ -196,6 +213,14 @@ export const buildIndustryStyleListingText = (
     lines.push(
       `      CRS Convergence                   : ${crsConvergenceEnabled ? `ON (${(crsConvergenceAngleRad * RAD_TO_DEG).toFixed(6)} deg)` : 'OFF'}`,
     );
+    lines.push(
+      `      Geoid/Grid Model                 : ${geoidModelEnabled ? `ON (${geoidModelId}, ${geoidInterpolation.toUpperCase()}, loaded=${geoidModelLoaded ? 'YES' : 'NO'})` : 'OFF'}`,
+    );
+    if (geoidModelEnabled) {
+      lines.push(
+        `      Geoid Metadata                  : ${geoidModelMetadata || 'unavailable'}${geoidSampleUndulationM != null ? `; sampleN=${geoidSampleUndulationM.toFixed(4)} m` : ''}`,
+      );
+    }
     lines.push(
       `      Lost Stations                     : ${lostStationIds.length > 0 ? `${lostStationIds.length} (${lostStationIds.join(', ')})` : 'none'}`,
     );

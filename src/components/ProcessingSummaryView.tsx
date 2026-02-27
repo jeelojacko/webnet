@@ -17,6 +17,12 @@ interface ProcessingSummaryViewProps {
     crsGridScaleFactor?: number;
     crsConvergenceEnabled?: boolean;
     crsConvergenceAngleRad?: number;
+    geoidModelEnabled?: boolean;
+    geoidModelId?: string;
+    geoidInterpolation?: 'bilinear' | 'nearest';
+    geoidModelLoaded?: boolean;
+    geoidModelMetadata?: string;
+    geoidSampleUndulationM?: number;
   } | null;
 }
 
@@ -200,6 +206,14 @@ const ProcessingSummaryView: React.FC<ProcessingSummaryViewProps> = ({
       lines.push(
         `CRS Convergence: ${runDiagnostics.crsConvergenceEnabled ? `ON (${(((runDiagnostics.crsConvergenceAngleRad ?? 0) * 180) / Math.PI).toFixed(6)} deg)` : 'OFF'}`,
       );
+      lines.push(
+        `Geoid/Grid Model: ${runDiagnostics.geoidModelEnabled ? `ON (${runDiagnostics.geoidModelId ?? 'NGS-DEMO'}, ${String(runDiagnostics.geoidInterpolation ?? 'bilinear').toUpperCase()}, loaded=${runDiagnostics.geoidModelLoaded ? 'YES' : 'NO'})` : 'OFF'}`,
+      );
+      if (runDiagnostics.geoidModelEnabled) {
+        lines.push(
+          `Geoid Metadata: ${runDiagnostics.geoidModelMetadata || 'unavailable'}${runDiagnostics.geoidSampleUndulationM != null ? `; sampleN=${runDiagnostics.geoidSampleUndulationM.toFixed(4)}m` : ''}`,
+        );
+      }
     }
     const lostStations = result.parseState?.lostStationIds ?? [];
     lines.push(

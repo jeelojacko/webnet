@@ -1,5 +1,6 @@
 import { dmsToRad, RAD_TO_DEG, SEC_TO_RAD } from './angles';
 import { parseAutoAdjustDirectiveTokens } from './autoAdjust';
+import { normalizeGeoidModelId, parseGeoidInterpolationToken } from './geoid';
 import { parseCrsProjectionModelToken, projectGeodeticToEN } from './geodesy';
 import type {
   AngleObservation,
@@ -39,6 +40,12 @@ const defaultParseOptions: ParseOptions = {
   crsGridScaleFactor: 1,
   crsConvergenceEnabled: false,
   crsConvergenceAngleRad: 0,
+  geoidModelEnabled: false,
+  geoidModelId: 'NGS-DEMO',
+  geoidInterpolation: 'bilinear',
+  geoidModelLoaded: false,
+  geoidModelMetadata: '',
+  geoidSampleUndulationM: undefined,
   lonSign: 'west-negative',
   currentInstrument: undefined,
   edmMode: 'additive',
@@ -1060,6 +1067,58 @@ export const parseInput = (
 
         logs.push(
           `Warning: unrecognized .CRS option at line ${lineNum}; expected OFF, ON [LEGACY|ENU], SCALE, CONVERGENCE, LABEL, or model token.`,
+        );
+      } else if (op === '.GEOID') {
+        const modeToken = (parts[1] || '').toUpperCase();
+        if (!modeToken) {
+          logs.push(
+            `Warning: .GEOID missing mode at line ${lineNum}; expected OFF, ON [model], MODEL, or INTERP.`,
+          );
+          continue;
+        }
+        if (modeToken === 'OFF' || modeToken === 'NONE') {
+          state.geoidModelEnabled = false;
+          logs.push('Geoid/grid model set to OFF');
+          continue;
+        }
+        if (modeToken === 'ON') {
+          state.geoidModelEnabled = true;
+          if (parts[2]) {
+            state.geoidModelId = normalizeGeoidModelId(parts[2]);
+          } else {
+            state.geoidModelId = normalizeGeoidModelId(state.geoidModelId);
+          }
+          logs.push(`Geoid/grid model set to ON (model=${state.geoidModelId})`);
+          continue;
+        }
+        if (modeToken === 'MODEL') {
+          if (!parts[2]) {
+            logs.push(`Warning: .GEOID MODEL missing id at line ${lineNum}; keeping current model.`);
+            continue;
+          }
+          state.geoidModelId = normalizeGeoidModelId(parts[2]);
+          state.geoidModelEnabled = true;
+          logs.push(`Geoid/grid model set to ON (model=${state.geoidModelId})`);
+          continue;
+        }
+        if (
+          modeToken === 'INTERP' ||
+          modeToken === 'INTERPOLATION' ||
+          modeToken === 'METHOD'
+        ) {
+          const method = parseGeoidInterpolationToken(parts[2]);
+          if (!method) {
+            logs.push(
+              `Warning: invalid .GEOID INTERP option at line ${lineNum}; expected BILINEAR or NEAREST.`,
+            );
+            continue;
+          }
+          state.geoidInterpolation = method;
+          logs.push(`Geoid interpolation set to ${method.toUpperCase()}`);
+          continue;
+        }
+        logs.push(
+          `Warning: unrecognized .GEOID option at line ${lineNum}; expected OFF, ON [model], MODEL, or INTERP.`,
         );
       } else if (op === '.LWEIGHT' && parts[1]) {
         const val = parseFloat(parts[1]);

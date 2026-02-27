@@ -390,6 +390,56 @@ describe('industry listing phase 5 formatting locks', () => {
     expect(Math.abs(rotE - baseE)).toBeGreaterThan(0.5);
   });
 
+  it('reports geoid/grid diagnostics in project options when enabled', () => {
+    const input = [
+      '.2D',
+      '.UNITS METERS DD',
+      '.GEOID ON NGS-DEMO',
+      '.GEOID INTERP BILINEAR',
+      'P ORG 40.000000 -105.000000 0 ! !',
+      'P TGT 40.001000 -104.999000 0',
+      'B ORG-TGT 045.000000 1.0',
+      'D ORG-TGT 120.0000 0.005',
+    ].join('\n');
+    const result = new LSAEngine({ input, maxIterations: 10 }).solve();
+    const listing = buildIndustryStyleListingText(
+      result,
+      {
+        maxIterations: 10,
+        units: 'm',
+        listingShowLostStations: true,
+        listingShowCoordinates: true,
+        listingShowObservationsResiduals: true,
+        listingShowErrorPropagation: true,
+        listingShowProcessingNotes: false,
+        listingShowAzimuthsBearings: true,
+        listingSortCoordinatesBy: 'name',
+        listingSortObservationsBy: 'name',
+        listingObservationLimit: 500,
+      },
+      {
+        coordMode: '2D',
+        order: 'EN',
+        angleUnits: 'dd',
+        angleStationOrder: 'atfromto',
+        deltaMode: 'horiz',
+        refractionCoefficient: 0.13,
+      },
+      {
+        solveProfile: 'webnet',
+        angleCenteringModel: 'geometry-aware-correlated-rays',
+        defaultSigmaCount: 0,
+        defaultSigmaByType: '',
+        stochasticDefaultsSummary: 'inst=S9',
+        rotationAngleRad: 0,
+      },
+    );
+
+    expect(listing).toContain('Geoid/Grid Model');
+    expect(listing).toContain('ON (NGS-DEMO, BILINEAR, loaded=YES)');
+    expect(listing).toContain('Geoid Metadata');
+  });
+
   it('shows lost-station diagnostics and supports listing visibility filter', () => {
     const input = [
       '.2D',

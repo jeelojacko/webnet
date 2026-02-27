@@ -48,6 +48,7 @@ import type {
   TsCorrelationScope,
   RobustMode,
   CrsProjectionModel,
+  GeoidInterpolationMethod,
 } from './types';
 
 const FT_PER_M = 3.280839895;
@@ -299,6 +300,12 @@ type RunDiagnostics = {
   crsGridScaleFactor: number;
   crsConvergenceEnabled: boolean;
   crsConvergenceAngleRad: number;
+  geoidModelEnabled: boolean;
+  geoidModelId: string;
+  geoidInterpolation: GeoidInterpolationMethod;
+  geoidModelLoaded: boolean;
+  geoidModelMetadata: string;
+  geoidSampleUndulationM?: number;
   prismEnabled: boolean;
   prismOffset: number;
   prismScope: 'global' | 'set';
@@ -338,6 +345,9 @@ type ParseSettings = {
   crsGridScaleFactor: number;
   crsConvergenceEnabled: boolean;
   crsConvergenceAngleRad: number;
+  geoidModelEnabled: boolean;
+  geoidModelId: string;
+  geoidInterpolation: GeoidInterpolationMethod;
   qFixLinearSigmaM: number;
   qFixAngularSigmaSec: number;
   descriptionReconcileMode: 'first' | 'append';
@@ -416,6 +426,12 @@ const SETTINGS_TOOLTIPS = {
     'Optional CRS convergence correction for azimuth-bearing modeling and inverse tools. Default OFF.',
   crsConvergenceAngle:
     'Convergence correction angle in decimal degrees. Positive rotates modeled azimuths clockwise from grid north.',
+  geoidModelEnabled:
+    'Enable optional geoid/grid model pipeline (Phase 1 ingestion/metadata only). Default OFF keeps existing height behavior unchanged.',
+  geoidModelId:
+    'Geoid/grid model identifier. Built-in demo IDs: NGS-DEMO, NRC-DEMO.',
+  geoidInterpolation:
+    'Interpolation method used for geoid/grid lookup diagnostics when model loading is enabled.',
   normalize:
     'When ON, normalizes mixed-face direction/traverse observations to a consistent orientation convention.',
   levelWeight:
@@ -528,6 +544,9 @@ const App: React.FC = () => {
     crsGridScaleFactor: 1,
     crsConvergenceEnabled: false,
     crsConvergenceAngleRad: 0,
+    geoidModelEnabled: false,
+    geoidModelId: 'NGS-DEMO',
+    geoidInterpolation: 'bilinear',
     qFixLinearSigmaM: 1e-9,
     qFixAngularSigmaSec: 1e-9,
     descriptionReconcileMode: 'first',
@@ -880,6 +899,14 @@ const App: React.FC = () => {
         parseState.crsConvergenceAngleRad ??
         profileCtx.effectiveParse.crsConvergenceAngleRad ??
         0,
+      geoidModelEnabled:
+        parseState.geoidModelEnabled ?? profileCtx.effectiveParse.geoidModelEnabled ?? false,
+      geoidModelId: parseState.geoidModelId ?? profileCtx.effectiveParse.geoidModelId ?? 'NGS-DEMO',
+      geoidInterpolation:
+        parseState.geoidInterpolation ?? profileCtx.effectiveParse.geoidInterpolation ?? 'bilinear',
+      geoidModelLoaded: parseState.geoidModelLoaded ?? false,
+      geoidModelMetadata: parseState.geoidModelMetadata ?? '',
+      geoidSampleUndulationM: parseState.geoidSampleUndulationM,
       edmMode: parseState.edmMode ?? 'additive',
       applyCentering: parseState.applyCentering ?? true,
       addCenteringToExplicit: parseState.addCenteringToExplicit ?? false,
@@ -943,6 +970,12 @@ const App: React.FC = () => {
       crsGridScaleFactor: parse.crsGridScaleFactor,
       crsConvergenceEnabled: parse.crsConvergenceEnabled,
       crsConvergenceAngleRad: parse.crsConvergenceAngleRad,
+      geoidModelEnabled: parse.geoidModelEnabled,
+      geoidModelId: parse.geoidModelId,
+      geoidInterpolation: parse.geoidInterpolation,
+      geoidModelLoaded: parse.geoidModelLoaded,
+      geoidModelMetadata: parse.geoidModelMetadata,
+      geoidSampleUndulationM: parse.geoidSampleUndulationM,
       prismEnabled: parse.prismEnabled,
       prismOffset: parse.prismOffset,
       prismScope: parse.prismScope,
@@ -1010,7 +1043,7 @@ const App: React.FC = () => {
     lines.push(`# Generated: ${now.toLocaleString()}`);
     lines.push(`# Linear units: ${linearUnit}`);
     lines.push(
-      `# Reduction: profile=${runDiag.solveProfile}, autoSideshot=${runDiag.autoSideshotEnabled ? 'ON' : 'OFF'}, autoAdjust=${runDiag.autoAdjustEnabled ? 'ON' : 'OFF'}(|t|>=${runDiag.autoAdjustStdResThreshold.toFixed(2)},cycles=${runDiag.autoAdjustMaxCycles},maxRm=${runDiag.autoAdjustMaxRemovalsPerCycle}), dirSets=${runDiag.directionSetMode}, mapMode=${runDiag.mapMode}, mapScale=${runDiag.mapScaleFactor.toFixed(8)}, crsScale=${runDiag.crsGridScaleEnabled ? `ON(${runDiag.crsGridScaleFactor.toFixed(8)})` : 'OFF'}, crsConv=${runDiag.crsConvergenceEnabled ? `ON(${(runDiag.crsConvergenceAngleRad * RAD_TO_DEG).toFixed(6)}deg)` : 'OFF'}, curvRef=${runDiag.applyCurvatureRefraction ? 'ON' : 'OFF'}, k=${runDiag.refractionCoefficient.toFixed(3)}, vRed=${runDiag.verticalReduction}, qfixLin=${(runDiag.qFixLinearSigmaM * unitScale).toExponential(6)}${linearUnit}, qfixAng=${runDiag.qFixAngularSigmaSec.toExponential(6)}sec, prism=${runDiag.prismEnabled ? `ON(${runDiag.prismOffset.toFixed(4)}m,${runDiag.prismScope})` : 'OFF'}, rotation=${(runDiag.rotationAngleRad * RAD_TO_DEG).toFixed(6)}deg, tsCorr=${runDiag.tsCorrelationEnabled ? 'ON' : 'OFF'}(${runDiag.tsCorrelationScope},rho=${runDiag.tsCorrelationRho.toFixed(3)}), robust=${runDiag.robustMode.toUpperCase()}(k=${runDiag.robustK.toFixed(2)})`,
+      `# Reduction: profile=${runDiag.solveProfile}, autoSideshot=${runDiag.autoSideshotEnabled ? 'ON' : 'OFF'}, autoAdjust=${runDiag.autoAdjustEnabled ? 'ON' : 'OFF'}(|t|>=${runDiag.autoAdjustStdResThreshold.toFixed(2)},cycles=${runDiag.autoAdjustMaxCycles},maxRm=${runDiag.autoAdjustMaxRemovalsPerCycle}), dirSets=${runDiag.directionSetMode}, mapMode=${runDiag.mapMode}, mapScale=${runDiag.mapScaleFactor.toFixed(8)}, crsScale=${runDiag.crsGridScaleEnabled ? `ON(${runDiag.crsGridScaleFactor.toFixed(8)})` : 'OFF'}, crsConv=${runDiag.crsConvergenceEnabled ? `ON(${(runDiag.crsConvergenceAngleRad * RAD_TO_DEG).toFixed(6)}deg)` : 'OFF'}, geoid=${runDiag.geoidModelEnabled ? `ON(${runDiag.geoidModelId},${runDiag.geoidInterpolation.toUpperCase()})` : 'OFF'}, curvRef=${runDiag.applyCurvatureRefraction ? 'ON' : 'OFF'}, k=${runDiag.refractionCoefficient.toFixed(3)}, vRed=${runDiag.verticalReduction}, qfixLin=${(runDiag.qFixLinearSigmaM * unitScale).toExponential(6)}${linearUnit}, qfixAng=${runDiag.qFixAngularSigmaSec.toExponential(6)}sec, prism=${runDiag.prismEnabled ? `ON(${runDiag.prismOffset.toFixed(4)}m,${runDiag.prismScope})` : 'OFF'}, rotation=${(runDiag.rotationAngleRad * RAD_TO_DEG).toFixed(6)}deg, tsCorr=${runDiag.tsCorrelationEnabled ? 'ON' : 'OFF'}(${runDiag.tsCorrelationScope},rho=${runDiag.tsCorrelationRho.toFixed(3)}), robust=${runDiag.robustMode.toUpperCase()}(k=${runDiag.robustK.toFixed(2)})`,
     );
     lines.push(
       `# Parity: profileFallback=${runDiag.profileDefaultInstrumentFallback ? 'ON' : 'OFF'}, angleCentering=${runDiag.angleCenteringModel}, normalize=${runDiag.normalize ? 'ON' : 'OFF'}, angleMode=${runDiag.angleMode.toUpperCase()}`,
@@ -1045,6 +1078,14 @@ const App: React.FC = () => {
     lines.push(
       `CRS convergence: ${runDiag.crsConvergenceEnabled ? `ON (${(runDiag.crsConvergenceAngleRad * RAD_TO_DEG).toFixed(6)} deg)` : 'OFF'}`,
     );
+    lines.push(
+      `Geoid/Grid model: ${runDiag.geoidModelEnabled ? `ON (${runDiag.geoidModelId}, interp=${runDiag.geoidInterpolation.toUpperCase()}, loaded=${runDiag.geoidModelLoaded ? 'YES' : 'NO'})` : 'OFF'}`,
+    );
+    if (runDiag.geoidModelEnabled) {
+      lines.push(
+        `Geoid metadata: ${runDiag.geoidModelMetadata || 'unavailable'}${runDiag.geoidSampleUndulationM != null ? `; sampleN=${runDiag.geoidSampleUndulationM.toFixed(4)}m` : ''}`,
+      );
+    }
     const lostStationIds = [...(res.parseState?.lostStationIds ?? [])].sort((a, b) =>
       a.localeCompare(b, undefined, { numeric: true }),
     );
@@ -1060,7 +1101,7 @@ const App: React.FC = () => {
     lines.push(`Show lost stations in export: ${showLostStationsInOutputs ? 'ON' : 'OFF'}`);
     lines.push(`Robust mode: ${runDiag.robustMode.toUpperCase()} (k=${runDiag.robustK.toFixed(2)})`);
     lines.push(
-      `Reductions: map=${runDiag.mapMode} (scale=${runDiag.mapScaleFactor.toFixed(8)}), crsScale=${runDiag.crsGridScaleEnabled ? `ON(${runDiag.crsGridScaleFactor.toFixed(8)})` : 'OFF'}, crsConv=${runDiag.crsConvergenceEnabled ? `ON(${(runDiag.crsConvergenceAngleRad * RAD_TO_DEG).toFixed(6)} deg)` : 'OFF'}, vRed=${runDiag.verticalReduction}, curvRef=${runDiag.applyCurvatureRefraction ? 'ON' : 'OFF'} (k=${runDiag.refractionCoefficient.toFixed(3)}), normalize=${runDiag.normalize ? 'ON' : 'OFF'}`,
+      `Reductions: map=${runDiag.mapMode} (scale=${runDiag.mapScaleFactor.toFixed(8)}), crsScale=${runDiag.crsGridScaleEnabled ? `ON(${runDiag.crsGridScaleFactor.toFixed(8)})` : 'OFF'}, crsConv=${runDiag.crsConvergenceEnabled ? `ON(${(runDiag.crsConvergenceAngleRad * RAD_TO_DEG).toFixed(6)} deg)` : 'OFF'}, geoid=${runDiag.geoidModelEnabled ? `ON(${runDiag.geoidModelId},${runDiag.geoidInterpolation.toUpperCase()},loaded=${runDiag.geoidModelLoaded ? 'YES' : 'NO'})` : 'OFF'}, vRed=${runDiag.verticalReduction}, curvRef=${runDiag.applyCurvatureRefraction ? 'ON' : 'OFF'} (k=${runDiag.refractionCoefficient.toFixed(3)}), normalize=${runDiag.normalize ? 'ON' : 'OFF'}`,
     );
     lines.push(
       `Default sigmas used: ${runDiag.defaultSigmaCount}${runDiag.defaultSigmaByType ? ` (${runDiag.defaultSigmaByType})` : ''}`,
@@ -2912,6 +2953,12 @@ const App: React.FC = () => {
         crsGridScaleFactor: runDiag.crsGridScaleFactor,
         crsConvergenceEnabled: runDiag.crsConvergenceEnabled,
         crsConvergenceAngleRad: runDiag.crsConvergenceAngleRad,
+        geoidModelEnabled: runDiag.geoidModelEnabled,
+        geoidModelId: runDiag.geoidModelId,
+        geoidInterpolation: runDiag.geoidInterpolation,
+        geoidModelLoaded: runDiag.geoidModelLoaded,
+        geoidModelMetadata: runDiag.geoidModelMetadata,
+        geoidSampleUndulationM: runDiag.geoidSampleUndulationM,
       },
     );
   };
@@ -3013,6 +3060,9 @@ const App: React.FC = () => {
         crsGridScaleFactor: effectiveParse.crsGridScaleFactor,
         crsConvergenceEnabled: effectiveParse.crsConvergenceEnabled,
         crsConvergenceAngleRad: effectiveParse.crsConvergenceAngleRad,
+        geoidModelEnabled: effectiveParse.geoidModelEnabled,
+        geoidModelId: effectiveParse.geoidModelId,
+        geoidInterpolation: effectiveParse.geoidInterpolation,
         qFixLinearSigmaM: effectiveParse.qFixLinearSigmaM,
         qFixAngularSigmaSec: effectiveParse.qFixAngularSigmaSec,
         descriptionReconcileMode: effectiveParse.descriptionReconcileMode,
@@ -4679,6 +4729,60 @@ const App: React.FC = () => {
                         className={`${optionInputClass} mt-1 disabled:opacity-50 disabled:cursor-not-allowed`}
                       />
                     </label>
+                    <div className="pt-2 border-t border-slate-700/70">
+                      <div className="text-xs uppercase tracking-wider text-slate-300">
+                        Geoid/Grid Model (Phase 1)
+                      </div>
+                    </div>
+                    <label className={optionLabelClass}>
+                      Enable Geoid/Grid Model
+                      <div className="mt-1 flex items-center gap-2 text-xs">
+                        <input
+                          title={SETTINGS_TOOLTIPS.geoidModelEnabled}
+                          type="checkbox"
+                          className="accent-blue-400"
+                          checked={parseSettingsDraft.geoidModelEnabled}
+                          onChange={(e) =>
+                            handleDraftParseSetting('geoidModelEnabled', e.target.checked)
+                          }
+                        />
+                        <span>{parseSettingsDraft.geoidModelEnabled ? 'Enabled' : 'Disabled'}</span>
+                      </div>
+                    </label>
+                    <label className={optionLabelClass}>
+                      Geoid/Grid Model ID
+                      <input
+                        title={SETTINGS_TOOLTIPS.geoidModelId}
+                        type="text"
+                        value={parseSettingsDraft.geoidModelId}
+                        disabled={!parseSettingsDraft.geoidModelEnabled}
+                        onChange={(e) =>
+                          handleDraftParseSetting(
+                            'geoidModelId',
+                            (e.target.value || 'NGS-DEMO').toUpperCase(),
+                          )
+                        }
+                        className={`${optionInputClass} mt-1 disabled:opacity-50 disabled:cursor-not-allowed`}
+                      />
+                    </label>
+                    <label className={optionLabelClass}>
+                      Geoid Interpolation
+                      <select
+                        title={SETTINGS_TOOLTIPS.geoidInterpolation}
+                        value={parseSettingsDraft.geoidInterpolation}
+                        disabled={!parseSettingsDraft.geoidModelEnabled}
+                        onChange={(e) =>
+                          handleDraftParseSetting(
+                            'geoidInterpolation',
+                            e.target.value as GeoidInterpolationMethod,
+                          )
+                        }
+                        className={`${optionInputClass} mt-1 disabled:opacity-50 disabled:cursor-not-allowed`}
+                      >
+                        <option value="bilinear">BILINEAR</option>
+                        <option value="nearest">NEAREST</option>
+                      </select>
+                    </label>
                   </div>
                   <div className="border border-slate-400 p-3 text-xs text-slate-200 leading-relaxed space-y-2">
                     <div>
@@ -4691,6 +4795,11 @@ const App: React.FC = () => {
                     <div>
                       Grid-ground scale and convergence are optional and remain <strong>OFF</strong>{' '}
                       unless explicitly enabled here or via `.CRS` directives.
+                    </div>
+                    <div>
+                      Geoid/grid model support is also <strong>OFF</strong> by default and currently
+                      limited to ingestion/metadata diagnostics only (no automatic height conversion
+                      is applied in this phase).
                     </div>
                   </div>
                 </div>
@@ -4945,6 +5054,12 @@ const App: React.FC = () => {
                             crsGridScaleFactor: runDiagnostics.crsGridScaleFactor,
                             crsConvergenceEnabled: runDiagnostics.crsConvergenceEnabled,
                             crsConvergenceAngleRad: runDiagnostics.crsConvergenceAngleRad,
+                            geoidModelEnabled: runDiagnostics.geoidModelEnabled,
+                            geoidModelId: runDiagnostics.geoidModelId,
+                            geoidInterpolation: runDiagnostics.geoidInterpolation,
+                            geoidModelLoaded: runDiagnostics.geoidModelLoaded,
+                            geoidModelMetadata: runDiagnostics.geoidModelMetadata,
+                            geoidSampleUndulationM: runDiagnostics.geoidSampleUndulationM,
                           }
                         : null
                     }

@@ -43,6 +43,7 @@ Directives that control parsing behavior:
 -   `.MAPMODE [ON|OFF|ANGLECALC]`: Controls map-reduction mode (default: OFF).
 -   `.MAPSCALE [factor]`: Grid scale factor used when map mode is active (default: 1.0).
 -   `.CRS [OFF|ON [LEGACY|ENU]|LEGACY|ENU|LABEL <text>|SCALE <factor|ON [factor]|OFF>|CONVERGENCE <angle|ON [angle]|OFF>]`: CRS/geodetic transform state for `P/PH` projection workflows plus optional grid-ground scale and azimuth-convergence corrections. Defaults are OFF (legacy behavior retained unless explicitly enabled).
+-   `.GEOID [OFF|ON [model]|MODEL <id>|INTERP <BILINEAR|NEAREST>]`: Optional geoid/grid model pipeline controls (default OFF). Phase 1 adds model loading/validation/interpolation diagnostics only; no automatic height conversion is applied yet.
 -   `.CURVREF [ON|OFF|k]`: Enables/disables curvature-refraction corrections for vertical reduction; numeric value sets `k` and enables it.
 -   `.REFRACTION [k]`: Sets refraction coefficient `k` (default: 0.13).
 -   `.VRED [NONE|CURVREF]`: Vertical reduction mode for zenith handling (default: NONE).

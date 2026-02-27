@@ -70,6 +70,35 @@ describe('LSAEngine', () => {
     expect(Math.abs(withConvergence.stations.B.y ?? 0)).toBeGreaterThan(1);
   });
 
+  it('loads optional geoid/grid model pipeline only when explicitly enabled', () => {
+    const input = [
+      '.2D',
+      '.UNITS METERS DD',
+      'P ORG 40.000000 -105.000000 0 ! !',
+      'P TGT 40.001000 -104.999000 0',
+      'B ORG-TGT 045.000000 1.0',
+      'D ORG-TGT 120.0000 0.005',
+    ].join('\n');
+
+    const base = new LSAEngine({ input, maxIterations: 10 }).solve();
+    const withGeoid = new LSAEngine({
+      input,
+      maxIterations: 10,
+      parseOptions: {
+        geoidModelEnabled: true,
+        geoidModelId: 'NGS-DEMO',
+        geoidInterpolation: 'bilinear',
+      },
+    }).solve();
+
+    expect(base.parseState?.geoidModelEnabled ?? false).toBe(false);
+    expect(base.parseState?.geoidModelLoaded ?? false).toBe(false);
+    expect(withGeoid.parseState?.geoidModelEnabled ?? false).toBe(true);
+    expect(withGeoid.parseState?.geoidModelLoaded ?? false).toBe(true);
+    expect((withGeoid.parseState?.geoidModelMetadata ?? '').includes('NGS-DEMO')).toBe(true);
+    expect(withGeoid.logs.some((l) => l.includes('Geoid/grid model loaded'))).toBe(true);
+  });
+
   it('computes fixture-locked effective distance values for angle/direction/bearing rows', () => {
     const input = readFileSync('tests/fixtures/effective_distance_phase3.dat', 'utf-8');
     const result = new LSAEngine({ input, maxIterations: 10 }).solve();

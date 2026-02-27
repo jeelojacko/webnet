@@ -1,4 +1,9 @@
 import { RAD_TO_DEG, DEG_TO_RAD } from './angles';
+import {
+  geoidGridMetadataSummary,
+  interpolateGeoidUndulation,
+  loadBuiltinGeoidGridModel,
+} from './geoid';
 import { inv, multiply, transpose, zeros } from './matrix';
 import { parseInput } from './parse';
 import type {
@@ -171,6 +176,9 @@ export class LSAEngine {
   private crsGridScaleFactor = 1;
   private crsConvergenceEnabled = false;
   private crsConvergenceAngleRad = 0;
+  private geoidModelEnabled = false;
+  private geoidModelId = 'NGS-DEMO';
+  private geoidInterpolation: ParseOptions['geoidInterpolation'] = 'bilinear';
   private applyCurvatureRefraction = false;
   private refractionCoefficient = 0.13;
   private verticalReduction: ParseOptions['verticalReduction'] = 'none';
@@ -1459,6 +1467,15 @@ export class LSAEngine {
     if (!Number.isFinite(this.crsConvergenceAngleRad)) {
       this.crsConvergenceAngleRad = 0;
     }
+    this.geoidModelEnabled =
+      parsed.parseState?.geoidModelEnabled ?? this.parseOptions?.geoidModelEnabled ?? false;
+    this.geoidModelId = (parsed.parseState?.geoidModelId ??
+      this.parseOptions?.geoidModelId ??
+      'NGS-DEMO') as string;
+    this.geoidInterpolation =
+      parsed.parseState?.geoidInterpolation ??
+      this.parseOptions?.geoidInterpolation ??
+      'bilinear';
     this.applyCurvatureRefraction =
       parsed.parseState?.applyCurvatureRefraction ??
       this.parseOptions?.applyCurvatureRefraction ??
@@ -1489,6 +1506,11 @@ export class LSAEngine {
     this.clusterTolerance3D =
       parsed.parseState?.clusterTolerance3D ?? this.parseOptions?.clusterTolerance3D ?? 0.05;
     this.parseState = parsed.parseState;
+    if (this.parseState) {
+      this.parseState.geoidModelLoaded = false;
+      this.parseState.geoidModelMetadata = '';
+      this.parseState.geoidSampleUndulationM = undefined;
+    }
     this.is2D = this.coordMode === '2D';
     this.condition = undefined;
     this.controlConstraints = undefined;
@@ -1516,6 +1538,51 @@ export class LSAEngine {
       this.log(
         `CRS convergence active: angle=${(this.crsConvergenceAngleRad * RAD_TO_DEG).toFixed(6)} deg`,
       );
+    }
+    if (this.geoidModelEnabled) {
+      const loaded = loadBuiltinGeoidGridModel(this.geoidModelId);
+      if (loaded.model) {
+        const metadata = geoidGridMetadataSummary(loaded.model);
+        if (this.parseState) {
+          this.parseState.geoidModelLoaded = true;
+          this.parseState.geoidModelMetadata = metadata;
+          this.parseState.geoidModelId = loaded.model.id;
+          this.parseState.geoidInterpolation = this.geoidInterpolation ?? 'bilinear';
+        }
+        this.log(
+          `Geoid/grid model loaded: ${metadata} (interp=${(this.geoidInterpolation ?? 'bilinear').toUpperCase()}, cache=${loaded.fromCache ? 'HIT' : 'MISS'})`,
+        );
+        const originLat = this.parseState?.originLatDeg;
+        const originLon = this.parseState?.originLonDeg;
+        if (originLat != null && originLon != null) {
+          const undulation = interpolateGeoidUndulation(
+            loaded.model,
+            originLat,
+            originLon,
+            this.geoidInterpolation ?? 'bilinear',
+          );
+          if (undulation != null && Number.isFinite(undulation)) {
+            if (this.parseState) this.parseState.geoidSampleUndulationM = undulation;
+            this.log(
+              `Geoid sample at geodetic origin: N=${undulation.toFixed(4)} m (lat=${originLat.toFixed(
+                6,
+              )}, lon=${originLon.toFixed(6)})`,
+            );
+          } else {
+            this.log(
+              `Geoid sample unavailable: origin (${originLat.toFixed(6)}, ${originLon.toFixed(
+                6,
+              )}) is outside model coverage.`,
+            );
+          }
+        }
+      } else {
+        if (this.parseState) {
+          this.parseState.geoidModelLoaded = false;
+          this.parseState.geoidModelMetadata = loaded.warning ?? '';
+        }
+        this.log(`Warning: ${loaded.warning ?? 'failed to load geoid/grid model.'}`);
+      }
     }
     if (this.applyCurvatureRefraction && this.verticalReduction === 'curvref') {
       this.log(
