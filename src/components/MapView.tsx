@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { AdjustmentResult } from '../types';
+import { buildMap3DScene } from '../engine/map3d';
 
 const FT_PER_M = 3.280839895;
 const VIEW_W = 1000;
@@ -12,11 +13,12 @@ interface MapViewProps {
   result: AdjustmentResult;
   units: 'm' | 'ft';
   showLostStations?: boolean;
+  mode?: '2d' | '3d';
 }
 
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
 
-const MapView: React.FC<MapViewProps> = ({ result, units, showLostStations = true }) => {
+const MapView: React.FC<MapViewProps> = ({ result, units, showLostStations = true, mode = '2d' }) => {
   const unitScale = units === 'ft' ? FT_PER_M : 1;
   const { stations, observations } = result;
   const svgRef = useRef<SVGSVGElement | null>(null);
@@ -25,16 +27,17 @@ const MapView: React.FC<MapViewProps> = ({ result, units, showLostStations = tru
   const [view, setView] = useState({ zoom: 1, panX: 0, panY: 0 });
   const [isPanning, setIsPanning] = useState(false);
 
+  const scene3d = useMemo(() => buildMap3DScene(result, showLostStations), [result, showLostStations]);
+
   const { points, bbox } = useMemo(() => {
-    const entries = Object.entries(stations).filter(([, st]) => showLostStations || !st.lost);
-    if (entries.length === 0) {
+    if (scene3d.stations.length === 0) {
       return {
         points: [],
         bbox: { minX: 0, minY: 0, width: 1, height: 1 },
       };
     }
-    const xs = entries.map(([, s]) => s.x);
-    const ys = entries.map(([, s]) => s.y);
+    const xs = scene3d.stations.map((s) => s.position.x);
+    const ys = scene3d.stations.map((s) => s.position.y);
     const minX = Math.min(...xs);
     const maxX = Math.max(...xs);
     const minY = Math.min(...ys);
@@ -42,16 +45,22 @@ const MapView: React.FC<MapViewProps> = ({ result, units, showLostStations = tru
     const pad = Math.max((maxX - minX) * 0.1, (maxY - minY) * 0.1, 1);
     const width = maxX - minX + pad * 2;
     const height = maxY - minY + pad * 2;
-    const pts = entries.map(([id, s]) => ({
-      id,
-      x: s.x,
-      y: s.y,
-      h: s.h,
+    const pts = scene3d.stations.map((s) => ({
+      id: s.id,
+      x: s.position.x,
+      y: s.position.y,
+      h: s.position.z,
       fixed: s.fixed,
-      ellipse: s.errorEllipse,
+      ellipse: s.ellipsoid
+        ? {
+            semiMajor: s.ellipsoid.semiMajor,
+            semiMinor: s.ellipsoid.semiMinor,
+            theta: s.ellipsoid.thetaDeg,
+          }
+        : undefined,
     }));
     return { points: pts, bbox: { minX: minX - pad, minY: minY - pad, width, height } };
-  }, [showLostStations, stations]);
+  }, [scene3d]);
 
   const resetView = useCallback(() => {
     setView({ zoom: 1, panX: 0, panY: 0 });
@@ -176,12 +185,17 @@ const MapView: React.FC<MapViewProps> = ({ result, units, showLostStations = tru
     <div className="h-full p-4 flex flex-col min-h-0">
       <div className="flex items-center justify-between mb-3 text-xs text-slate-400 shrink-0">
         <span>
-          Map view (scaled) — coords & ellipses in {units} ({unitScale.toFixed(4)} factor)
+          Map view ({mode.toUpperCase()} scaled) — coords & ellipses in {units} ({unitScale.toFixed(4)} factor)
         </span>
         <span className="text-slate-500">
           Wheel=zoom, middle-drag=pan, middle-double-click=reset extents
         </span>
       </div>
+      {mode === '3d' && (
+        <div className="mb-2 rounded border border-cyan-900/40 bg-cyan-950/20 px-3 py-2 text-[11px] text-cyan-200/90">
+          3D plot architecture preview enabled: scene graph + camera scaffold active (full orbit/ellipsoid rendering in next phase).
+        </div>
+      )}
       <div className="bg-slate-900 border border-slate-800 rounded overflow-hidden flex-1 min-h-0">
         <svg
           ref={svgRef}

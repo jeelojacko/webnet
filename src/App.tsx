@@ -245,6 +245,7 @@ type SettingsState = {
   maxIterations: number;
   units: Units;
   mapShowLostStations: boolean;
+  map3dEnabled: boolean;
   listingShowLostStations: boolean;
   listingShowCoordinates: boolean;
   listingShowObservationsResiduals: boolean;
@@ -457,6 +458,7 @@ const App: React.FC = () => {
     maxIterations: 10,
     units: 'm',
     mapShowLostStations: true,
+    map3dEnabled: false,
     listingShowLostStations: true,
     listingShowCoordinates: true,
     listingShowObservationsResiduals: true,
@@ -4714,6 +4716,7 @@ const App: React.FC = () => {
                     result={result}
                     units={settings.units}
                     showLostStations={settings.mapShowLostStations}
+                    mode={settings.map3dEnabled ? '3d' : '2d'}
                   />
                 )}
               </>
