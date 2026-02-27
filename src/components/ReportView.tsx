@@ -35,9 +35,13 @@ interface ReportViewProps {
     geoidModelEnabled: boolean
     geoidModelId: string
     geoidInterpolation: 'bilinear' | 'nearest'
+    geoidHeightConversionEnabled: boolean
+    geoidOutputHeightDatum: 'orthometric' | 'ellipsoid'
     geoidModelLoaded: boolean
     geoidModelMetadata: string
     geoidSampleUndulationM?: number
+    geoidConvertedStationCount: number
+    geoidSkippedStationCount: number
     qFixLinearSigmaM: number
     qFixAngularSigmaSec: number
     profileDefaultInstrumentFallback: boolean
@@ -964,6 +968,14 @@ const ReportView: React.FC<ReportViewProps> = ({
               <div>
                 {runDiagnostics.geoidModelEnabled
                   ? `ON (${runDiagnostics.geoidModelId}, ${runDiagnostics.geoidInterpolation.toUpperCase()}, loaded=${runDiagnostics.geoidModelLoaded ? 'YES' : 'NO'})`
+                  : 'OFF'}
+              </div>
+            </div>
+            <div>
+              <div className="text-slate-500">Geoid Height Conversion</div>
+              <div>
+                {runDiagnostics.geoidHeightConversionEnabled
+                  ? `ON (${runDiagnostics.geoidOutputHeightDatum.toUpperCase()}, converted=${runDiagnostics.geoidConvertedStationCount}, skipped=${runDiagnostics.geoidSkippedStationCount})`
                   : 'OFF'}
               </div>
             </div>

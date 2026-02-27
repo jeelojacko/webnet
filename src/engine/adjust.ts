@@ -4,6 +4,7 @@ import {
   interpolateGeoidUndulation,
   loadBuiltinGeoidGridModel,
 } from './geoid';
+import type { GeoidGridModel } from './geoid';
 import { inv, multiply, transpose, zeros } from './matrix';
 import { parseInput } from './parse';
 import type {
@@ -179,6 +180,8 @@ export class LSAEngine {
   private geoidModelEnabled = false;
   private geoidModelId = 'NGS-DEMO';
   private geoidInterpolation: ParseOptions['geoidInterpolation'] = 'bilinear';
+  private geoidHeightConversionEnabled = false;
+  private geoidOutputHeightDatum: ParseOptions['geoidOutputHeightDatum'] = 'orthometric';
   private applyCurvatureRefraction = false;
   private refractionCoefficient = 0.13;
   private verticalReduction: ParseOptions['verticalReduction'] = 'none';
@@ -798,6 +801,70 @@ export class LSAEngine {
     let az = Math.atan2(dx, dy);
     if (az < 0) az += 2 * Math.PI;
     return { az, dist: Math.sqrt(dx * dx + dy * dy) };
+  }
+
+  private applyGeoidHeightConversions(model: GeoidGridModel): void {
+    const interpolation = this.geoidInterpolation ?? 'bilinear';
+    const targetDatum = this.geoidOutputHeightDatum === 'ellipsoid' ? 'ellipsoid' : 'orthometric';
+    let convertedCount = 0;
+    let skippedCount = 0;
+    let alreadyTargetCount = 0;
+    let missingGeodeticCount = 0;
+    let outsideCoverageCount = 0;
+
+    Object.values(this.stations).forEach((station) => {
+      if (!Number.isFinite(station.h)) return;
+      const sourceDatum = station.heightType ?? 'orthometric';
+      if (sourceDatum === targetDatum) {
+        alreadyTargetCount += 1;
+        return;
+      }
+      if (!Number.isFinite(station.latDeg ?? Number.NaN) || !Number.isFinite(station.lonDeg ?? Number.NaN)) {
+        skippedCount += 1;
+        missingGeodeticCount += 1;
+        return;
+      }
+
+      const undulation = interpolateGeoidUndulation(
+        model,
+        station.latDeg as number,
+        station.lonDeg as number,
+        interpolation,
+      );
+      if (undulation == null || !Number.isFinite(undulation)) {
+        skippedCount += 1;
+        outsideCoverageCount += 1;
+        return;
+      }
+
+      const delta = targetDatum === 'orthometric' ? -undulation : undulation;
+      station.h += delta;
+      if (Number.isFinite(station.constraintH ?? Number.NaN)) {
+        station.constraintH = (station.constraintH ?? 0) + delta;
+      }
+      station.heightType = targetDatum;
+      convertedCount += 1;
+    });
+
+    if (this.parseState) {
+      this.parseState.geoidHeightConversionEnabled = true;
+      this.parseState.geoidOutputHeightDatum = targetDatum;
+      this.parseState.geoidConvertedStationCount = convertedCount;
+      this.parseState.geoidSkippedStationCount = skippedCount;
+    }
+    this.log(
+      `Geoid height conversion: ON (target=${targetDatum.toUpperCase()}, converted=${convertedCount}, skipped=${skippedCount}, already=${alreadyTargetCount})`,
+    );
+    if (missingGeodeticCount > 0) {
+      this.log(
+        `Geoid height conversion skipped ${missingGeodeticCount} station(s): missing geodetic lat/lon.`,
+      );
+    }
+    if (outsideCoverageCount > 0) {
+      this.log(
+        `Geoid height conversion skipped ${outsideCoverageCount} station(s): outside geoid/grid coverage.`,
+      );
+    }
   }
 
   private modeledAzimuth(rawAz: number): number {
@@ -1476,6 +1543,17 @@ export class LSAEngine {
       parsed.parseState?.geoidInterpolation ??
       this.parseOptions?.geoidInterpolation ??
       'bilinear';
+    this.geoidHeightConversionEnabled =
+      parsed.parseState?.geoidHeightConversionEnabled ??
+      this.parseOptions?.geoidHeightConversionEnabled ??
+      false;
+    this.geoidOutputHeightDatum =
+      parsed.parseState?.geoidOutputHeightDatum ??
+      this.parseOptions?.geoidOutputHeightDatum ??
+      'orthometric';
+    if (this.geoidOutputHeightDatum !== 'ellipsoid') {
+      this.geoidOutputHeightDatum = 'orthometric';
+    }
     this.applyCurvatureRefraction =
       parsed.parseState?.applyCurvatureRefraction ??
       this.parseOptions?.applyCurvatureRefraction ??
@@ -1507,9 +1585,13 @@ export class LSAEngine {
       parsed.parseState?.clusterTolerance3D ?? this.parseOptions?.clusterTolerance3D ?? 0.05;
     this.parseState = parsed.parseState;
     if (this.parseState) {
+      this.parseState.geoidHeightConversionEnabled = this.geoidHeightConversionEnabled;
+      this.parseState.geoidOutputHeightDatum = this.geoidOutputHeightDatum;
       this.parseState.geoidModelLoaded = false;
       this.parseState.geoidModelMetadata = '';
       this.parseState.geoidSampleUndulationM = undefined;
+      this.parseState.geoidConvertedStationCount = 0;
+      this.parseState.geoidSkippedStationCount = 0;
     }
     this.is2D = this.coordMode === '2D';
     this.condition = undefined;
@@ -1539,9 +1621,11 @@ export class LSAEngine {
         `CRS convergence active: angle=${(this.crsConvergenceAngleRad * RAD_TO_DEG).toFixed(6)} deg`,
       );
     }
+    let geoidModel: GeoidGridModel | null = null;
     if (this.geoidModelEnabled) {
       const loaded = loadBuiltinGeoidGridModel(this.geoidModelId);
       if (loaded.model) {
+        geoidModel = loaded.model;
         const metadata = geoidGridMetadataSummary(loaded.model);
         if (this.parseState) {
           this.parseState.geoidModelLoaded = true;
@@ -1582,6 +1666,19 @@ export class LSAEngine {
           this.parseState.geoidModelMetadata = loaded.warning ?? '';
         }
         this.log(`Warning: ${loaded.warning ?? 'failed to load geoid/grid model.'}`);
+      }
+    }
+    if (this.geoidHeightConversionEnabled) {
+      if (!this.geoidModelEnabled) {
+        this.log(
+          'Warning: geoid height conversion requested but geoid/grid model is OFF; conversion skipped.',
+        );
+      } else if (!geoidModel) {
+        this.log(
+          'Warning: geoid height conversion requested but geoid/grid model did not load; conversion skipped.',
+        );
+      } else {
+        this.applyGeoidHeightConversions(geoidModel);
       }
     }
     if (this.applyCurvatureRefraction && this.verticalReduction === 'curvref') {

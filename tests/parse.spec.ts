@@ -242,15 +242,18 @@ describe('parseInput', () => {
     expect(disabled.parseState.crsConvergenceEnabled).toBe(false);
   });
 
-  it('keeps geoid model pipeline disabled by default and parses .GEOID directives', () => {
+  it('keeps geoid model/height conversion disabled by default and parses .GEOID directives', () => {
     const base = parseInput(['.UNITS METERS DD', 'C A 0 0 0 ! !', 'C B 100 0 0'].join('\n'));
     expect(base.parseState.geoidModelEnabled).toBe(false);
+    expect(base.parseState.geoidHeightConversionEnabled).toBe(false);
+    expect(base.parseState.geoidOutputHeightDatum).toBe('orthometric');
 
     const enabled = parseInput(
       [
         '.UNITS METERS DD',
         '.GEOID ON NGS-DEMO',
         '.GEOID INTERP NEAREST',
+        '.GEOID HEIGHT ON ELLIPSOID',
         'C A 0 0 0 ! !',
         'C B 100 0 0',
       ].join('\n'),
@@ -258,19 +261,26 @@ describe('parseInput', () => {
     expect(enabled.parseState.geoidModelEnabled).toBe(true);
     expect(enabled.parseState.geoidModelId).toBe('NGS-DEMO');
     expect(enabled.parseState.geoidInterpolation).toBe('nearest');
+    expect(enabled.parseState.geoidHeightConversionEnabled).toBe(true);
+    expect(enabled.parseState.geoidOutputHeightDatum).toBe('ellipsoid');
     expect(enabled.logs.some((l) => l.includes('Geoid/grid model set to ON'))).toBe(true);
+    expect(enabled.logs.some((l) => l.includes('Geoid height conversion set to ON'))).toBe(true);
 
     const off = parseInput(
       [
         '.UNITS METERS DD',
         '.GEOID ON NRC-DEMO',
         '.GEOID INTERP BILINEAR',
+        '.GEOID HEIGHT ORTHOMETRIC',
+        '.GEOID HEIGHT OFF',
         '.GEOID OFF',
         'C A 0 0 0 ! !',
         'C B 100 0 0',
       ].join('\n'),
     );
     expect(off.parseState.geoidModelEnabled).toBe(false);
+    expect(off.parseState.geoidHeightConversionEnabled).toBe(false);
+    expect(off.parseState.geoidOutputHeightDatum).toBe('orthometric');
   });
 
   it('supports .AUTOSIDESHOT and /AUTOSIDESHOT toggles', () => {

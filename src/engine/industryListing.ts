@@ -50,9 +50,13 @@ export interface IndustryListingRunDiagnostics {
   geoidModelEnabled?: boolean;
   geoidModelId?: string;
   geoidInterpolation?: 'bilinear' | 'nearest';
+  geoidHeightConversionEnabled?: boolean;
+  geoidOutputHeightDatum?: 'orthometric' | 'ellipsoid';
   geoidModelLoaded?: boolean;
   geoidModelMetadata?: string;
   geoidSampleUndulationM?: number;
+  geoidConvertedStationCount?: number;
+  geoidSkippedStationCount?: number;
 }
 
 export const buildIndustryStyleListingText = (
@@ -107,12 +111,20 @@ export const buildIndustryStyleListingText = (
     const geoidModelId = parseState?.geoidModelId ?? runDiag.geoidModelId ?? 'NGS-DEMO';
     const geoidInterpolation =
       parseState?.geoidInterpolation ?? runDiag.geoidInterpolation ?? 'bilinear';
+    const geoidHeightConversionEnabled =
+      parseState?.geoidHeightConversionEnabled ?? runDiag.geoidHeightConversionEnabled ?? false;
+    const geoidOutputHeightDatum =
+      parseState?.geoidOutputHeightDatum ?? runDiag.geoidOutputHeightDatum ?? 'orthometric';
     const geoidModelLoaded =
       parseState?.geoidModelLoaded ?? runDiag.geoidModelLoaded ?? false;
     const geoidModelMetadata =
       parseState?.geoidModelMetadata ?? runDiag.geoidModelMetadata ?? '';
     const geoidSampleUndulationM =
       parseState?.geoidSampleUndulationM ?? runDiag.geoidSampleUndulationM;
+    const geoidConvertedStationCount =
+      parseState?.geoidConvertedStationCount ?? runDiag.geoidConvertedStationCount ?? 0;
+    const geoidSkippedStationCount =
+      parseState?.geoidSkippedStationCount ?? runDiag.geoidSkippedStationCount ?? 0;
     const descriptionReconcileMode =
       parseState?.descriptionReconcileMode ?? parseSettings.descriptionReconcileMode ?? 'first';
     const descriptionAppendDelimiter =
@@ -221,6 +233,9 @@ export const buildIndustryStyleListingText = (
         `      Geoid Metadata                  : ${geoidModelMetadata || 'unavailable'}${geoidSampleUndulationM != null ? `; sampleN=${geoidSampleUndulationM.toFixed(4)} m` : ''}`,
       );
     }
+    lines.push(
+      `      Geoid Height Conversion        : ${geoidHeightConversionEnabled ? `ON (${geoidOutputHeightDatum.toUpperCase()}, converted=${geoidConvertedStationCount}, skipped=${geoidSkippedStationCount})` : 'OFF'}`,
+    );
     lines.push(
       `      Lost Stations                     : ${lostStationIds.length > 0 ? `${lostStationIds.length} (${lostStationIds.join(', ')})` : 'none'}`,
     );

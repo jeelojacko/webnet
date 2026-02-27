@@ -20,9 +20,13 @@ interface ProcessingSummaryViewProps {
     geoidModelEnabled?: boolean;
     geoidModelId?: string;
     geoidInterpolation?: 'bilinear' | 'nearest';
+    geoidHeightConversionEnabled?: boolean;
+    geoidOutputHeightDatum?: 'orthometric' | 'ellipsoid';
     geoidModelLoaded?: boolean;
     geoidModelMetadata?: string;
     geoidSampleUndulationM?: number;
+    geoidConvertedStationCount?: number;
+    geoidSkippedStationCount?: number;
   } | null;
 }
 
@@ -214,6 +218,9 @@ const ProcessingSummaryView: React.FC<ProcessingSummaryViewProps> = ({
           `Geoid Metadata: ${runDiagnostics.geoidModelMetadata || 'unavailable'}${runDiagnostics.geoidSampleUndulationM != null ? `; sampleN=${runDiagnostics.geoidSampleUndulationM.toFixed(4)}m` : ''}`,
         );
       }
+      lines.push(
+        `Geoid Height Conversion: ${runDiagnostics.geoidHeightConversionEnabled ? `ON (${String(runDiagnostics.geoidOutputHeightDatum ?? 'orthometric').toUpperCase()}, converted=${runDiagnostics.geoidConvertedStationCount ?? 0}, skipped=${runDiagnostics.geoidSkippedStationCount ?? 0})` : 'OFF'}`,
+      );
     }
     const lostStations = result.parseState?.lostStationIds ?? [];
     lines.push(

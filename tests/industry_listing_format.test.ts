@@ -396,8 +396,9 @@ describe('industry listing phase 5 formatting locks', () => {
       '.UNITS METERS DD',
       '.GEOID ON NGS-DEMO',
       '.GEOID INTERP BILINEAR',
+      '.GEOID HEIGHT ON ORTHOMETRIC',
       'P ORG 40.000000 -105.000000 0 ! !',
-      'P TGT 40.001000 -104.999000 0',
+      'PH TGT 40.001000 -104.999000 120.000',
       'B ORG-TGT 045.000000 1.0',
       'D ORG-TGT 120.0000 0.005',
     ].join('\n');
@@ -438,6 +439,8 @@ describe('industry listing phase 5 formatting locks', () => {
     expect(listing).toContain('Geoid/Grid Model');
     expect(listing).toContain('ON (NGS-DEMO, BILINEAR, loaded=YES)');
     expect(listing).toContain('Geoid Metadata');
+    expect(listing).toContain('Geoid Height Conversion');
+    expect(listing).toContain('ON (ORTHOMETRIC');
   });
 
   it('shows lost-station diagnostics and supports listing visibility filter', () => {

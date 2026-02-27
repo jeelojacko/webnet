@@ -169,7 +169,7 @@
       - [x] Phase 3: surface CRS/scale/convergence diagnostics in reports/exports with parity fixtures
     - [~] Add direct geoid/grid model support (NGS/NRC/BYN-style models) plus input/output ellipsoid selection controls
       - [x] Phase 1: add geoid/grid file ingestion pipeline (metadata, interpolation, caching, validation)
-      - [ ] Phase 2: wire ellipsoid/geoid model choice into height conversions for parse/solve/export paths
+      - [x] Phase 2: wire ellipsoid/geoid model choice into height conversions for parse/solve/export paths
       - [ ] Phase 3: add project options UI + diagnostics for active model and tests against known checkpoints
     - [ ] Implement `.GPS NETWORK` / `.GPS SIDESHOT` modes for vector records with post-adjust sideshot handling
       - [ ] Phase 1: parse `.GPS NETWORK`/`.GPS SIDESHOT` mode state and tag incoming GNSS vectors accordingly

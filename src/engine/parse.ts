@@ -19,6 +19,7 @@ import type {
   ParseOptions,
   MapMode,
   AngleMode,
+  GeoidHeightDatum,
 } from '../types';
 
 const defaultParseOptions: ParseOptions = {
@@ -43,9 +44,13 @@ const defaultParseOptions: ParseOptions = {
   geoidModelEnabled: false,
   geoidModelId: 'NGS-DEMO',
   geoidInterpolation: 'bilinear',
+  geoidHeightConversionEnabled: false,
+  geoidOutputHeightDatum: 'orthometric',
   geoidModelLoaded: false,
   geoidModelMetadata: '',
   geoidSampleUndulationM: undefined,
+  geoidConvertedStationCount: 0,
+  geoidSkippedStationCount: 0,
   lonSign: 'west-negative',
   currentInstrument: undefined,
   edmMode: 'additive',
@@ -360,6 +365,15 @@ const activeCrsProjectionModel = (state: ParseOptions): CrsProjectionModel =>
   state.crsTransformEnabled
     ? (state.crsProjectionModel ?? 'legacy-equirectangular')
     : 'legacy-equirectangular';
+
+const parseGeoidHeightDatumToken = (token?: string): GeoidHeightDatum | null => {
+  if (!token) return null;
+  const upper = token.trim().toUpperCase();
+  if (!upper) return null;
+  if (upper === 'ORTHOMETRIC' || upper === 'ORTHO') return 'orthometric';
+  if (upper === 'ELLIPSOID' || upper === 'ELLIPSOIDAL' || upper === 'ELLIP') return 'ellipsoid';
+  return null;
+};
 
 export const parseInput = (
   input: string,
@@ -1072,7 +1086,7 @@ export const parseInput = (
         const modeToken = (parts[1] || '').toUpperCase();
         if (!modeToken) {
           logs.push(
-            `Warning: .GEOID missing mode at line ${lineNum}; expected OFF, ON [model], MODEL, or INTERP.`,
+            `Warning: .GEOID missing mode at line ${lineNum}; expected OFF, ON [model], MODEL, INTERP, or HEIGHT.`,
           );
           continue;
         }
@@ -1117,8 +1131,47 @@ export const parseInput = (
           logs.push(`Geoid interpolation set to ${method.toUpperCase()}`);
           continue;
         }
+        if (modeToken === 'HEIGHT' || modeToken === 'DATUM') {
+          const argToken = (parts[2] || '').toUpperCase();
+          if (!argToken) {
+            logs.push(
+              `Warning: .GEOID HEIGHT missing option at line ${lineNum}; expected OFF, ON [ORTHOMETRIC|ELLIPSOID], or datum token.`,
+            );
+            continue;
+          }
+          if (argToken === 'OFF' || argToken === 'NONE') {
+            state.geoidHeightConversionEnabled = false;
+            logs.push('Geoid height conversion set to OFF');
+            continue;
+          }
+          if (argToken === 'ON') {
+            const datum = parseGeoidHeightDatumToken(parts[3]);
+            if (parts[3] && !datum) {
+              logs.push(
+                `Warning: invalid .GEOID HEIGHT datum at line ${lineNum}; expected ORTHOMETRIC or ELLIPSOID.`,
+              );
+            }
+            state.geoidHeightConversionEnabled = true;
+            if (datum) state.geoidOutputHeightDatum = datum;
+            logs.push(
+              `Geoid height conversion set to ON (target=${(state.geoidOutputHeightDatum ?? 'orthometric').toUpperCase()})`,
+            );
+            continue;
+          }
+          const directDatum = parseGeoidHeightDatumToken(parts[2]);
+          if (!directDatum) {
+            logs.push(
+              `Warning: invalid .GEOID HEIGHT option at line ${lineNum}; expected OFF, ON [ORTHOMETRIC|ELLIPSOID], or datum token.`,
+            );
+            continue;
+          }
+          state.geoidHeightConversionEnabled = true;
+          state.geoidOutputHeightDatum = directDatum;
+          logs.push(`Geoid height conversion set to ON (target=${directDatum.toUpperCase()})`);
+          continue;
+        }
         logs.push(
-          `Warning: unrecognized .GEOID option at line ${lineNum}; expected OFF, ON [model], MODEL, or INTERP.`,
+          `Warning: unrecognized .GEOID option at line ${lineNum}; expected OFF, ON [model], MODEL, INTERP, or HEIGHT.`,
         );
       } else if (op === '.LWEIGHT' && parts[1]) {
         const val = parseFloat(parts[1]);
