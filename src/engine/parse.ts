@@ -53,6 +53,9 @@ const defaultParseOptions: ParseOptions = {
   geoidConvertedStationCount: 0,
   geoidSkippedStationCount: 0,
   gpsVectorMode: 'network',
+  gpsAddHiHtEnabled: false,
+  gpsAddHiHtHiM: 0,
+  gpsAddHiHtHtM: 0,
   lonSign: 'west-negative',
   currentInstrument: undefined,
   edmMode: 'additive',
@@ -384,6 +387,13 @@ const parseGpsVectorModeToken = (token?: string): GpsVectorMode | null => {
   if (upper === 'NETWORK' || upper === 'NET') return 'network';
   if (upper === 'SIDESHOT' || upper === 'SS') return 'sideshot';
   return null;
+};
+
+const parseLinearMetersToken = (token: string | undefined, units: ParseOptions['units']): number | null => {
+  if (!token) return null;
+  const parsed = parseFloat(token);
+  if (!Number.isFinite(parsed)) return null;
+  return units === 'ft' ? parsed / FT_PER_M : parsed;
 };
 
 export const parseInput = (
@@ -1186,10 +1196,89 @@ export const parseInput = (
           `Warning: unrecognized .GEOID option at line ${lineNum}; expected OFF, ON [model], MODEL, INTERP, or HEIGHT.`,
         );
       } else if (op === '.GPS') {
+        const modeToken = (parts[1] || '').toUpperCase();
+        if (modeToken === 'ADDHIHT' || modeToken === 'ADDHI' || modeToken === 'HIHT') {
+          const arg1 = (parts[2] || '').trim();
+          const arg1Upper = arg1.toUpperCase();
+          const unitLabel = state.units === 'ft' ? 'ft' : 'm';
+          const toDisplayUnits = (meters: number) => (state.units === 'ft' ? meters * FT_PER_M : meters);
+          const formatLinear = (meters: number) => `${toDisplayUnits(meters).toFixed(4)} ${unitLabel}`;
+
+          if (!arg1 || arg1Upper === 'ON') {
+            state.gpsAddHiHtEnabled = true;
+            if (parts[3]) {
+              const parsedHi = parseLinearMetersToken(parts[3], state.units);
+              if (parsedHi == null) {
+                logs.push(
+                  `Warning: invalid .GPS AddHiHt HI value at line ${lineNum}; expected numeric value in current units.`,
+                );
+              } else {
+                state.gpsAddHiHtHiM = parsedHi;
+              }
+            }
+            if (parts[4]) {
+              const parsedHt = parseLinearMetersToken(parts[4], state.units);
+              if (parsedHt == null) {
+                logs.push(
+                  `Warning: invalid .GPS AddHiHt HT value at line ${lineNum}; expected numeric value in current units.`,
+                );
+              } else {
+                state.gpsAddHiHtHtM = parsedHt;
+              }
+            }
+            if (parts.length > 5) {
+              logs.push(
+                `Warning: extra .GPS AddHiHt tokens ignored at line ${lineNum}; expected at most HI and HT values.`,
+              );
+            }
+            logs.push(
+              `GPS AddHiHt set to ON (HI=${formatLinear(state.gpsAddHiHtHiM ?? 0)}, HT=${formatLinear(state.gpsAddHiHtHtM ?? 0)})`,
+            );
+            continue;
+          }
+
+          if (arg1Upper === 'OFF' || arg1Upper === 'NONE') {
+            state.gpsAddHiHtEnabled = false;
+            logs.push('GPS AddHiHt set to OFF');
+            continue;
+          }
+
+          const parsedHi = parseLinearMetersToken(parts[2], state.units);
+          if (parsedHi == null) {
+            logs.push(
+              `Warning: invalid .GPS AddHiHt option at line ${lineNum}; expected OFF, ON [HI] [HT], or numeric HI [HT].`,
+            );
+            continue;
+          }
+          let parsedHt = state.gpsAddHiHtHtM ?? 0;
+          if (parts[3]) {
+            const htToken = parseLinearMetersToken(parts[3], state.units);
+            if (htToken == null) {
+              logs.push(
+                `Warning: invalid .GPS AddHiHt HT value at line ${lineNum}; expected numeric value in current units.`,
+              );
+              continue;
+            }
+            parsedHt = htToken;
+          }
+          if (parts.length > 4) {
+            logs.push(
+              `Warning: extra .GPS AddHiHt tokens ignored at line ${lineNum}; expected HI and optional HT only.`,
+            );
+          }
+          state.gpsAddHiHtEnabled = true;
+          state.gpsAddHiHtHiM = parsedHi;
+          state.gpsAddHiHtHtM = parsedHt;
+          logs.push(
+            `GPS AddHiHt set to ON (HI=${formatLinear(parsedHi)}, HT=${formatLinear(parsedHt)})`,
+          );
+          continue;
+        }
+
         const mode = parseGpsVectorModeToken(parts[1]);
         if (!mode) {
           logs.push(
-            `Warning: unrecognized .GPS option at line ${lineNum}; expected NETWORK or SIDESHOT.`,
+            `Warning: unrecognized .GPS option at line ${lineNum}; expected NETWORK, SIDESHOT, or AddHiHt.`,
           );
           continue;
         }
@@ -2811,6 +2900,8 @@ export const parseInput = (
           id: obsId++,
           type: 'gps',
           gpsMode: state.gpsVectorMode ?? 'network',
+          gpsAntennaHiM: state.gpsAddHiHtEnabled ? state.gpsAddHiHtHiM ?? 0 : undefined,
+          gpsAntennaHtM: state.gpsAddHiHtEnabled ? state.gpsAddHiHtHtM ?? 0 : undefined,
           instCode,
           from,
           to,

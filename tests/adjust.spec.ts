@@ -355,6 +355,33 @@ describe('LSAEngine', () => {
     expect(row?.sigmaN).toBeGreaterThan(0);
   });
 
+  it('parses GPS AddHiHt defaults without changing adjustment results in phase 1', () => {
+    const baseInput = [
+      '.2D',
+      'C A 0 0 0 ! !',
+      'C B 100 0 0',
+      'D A-B 100.000 0.005',
+      'G GPS1 A B 100.000 0.000 0.010 0.010',
+    ].join('\n');
+    const addHiHtInput = ['.GPS AddHiHt ON 1.5000 2.0000', baseInput].join('\n');
+
+    const base = new LSAEngine({ input: baseInput, maxIterations: 10 }).solve();
+    const withAddHiHt = new LSAEngine({ input: addHiHtInput, maxIterations: 10 }).solve();
+
+    expect(withAddHiHt.parseState?.gpsAddHiHtEnabled ?? false).toBe(true);
+    expect(withAddHiHt.parseState?.gpsAddHiHtHiM ?? 0).toBeCloseTo(1.5, 10);
+    expect(withAddHiHt.parseState?.gpsAddHiHtHtM ?? 0).toBeCloseTo(2.0, 10);
+    const gpsObs = withAddHiHt.observations.find((o) => o.type === 'gps');
+    expect(gpsObs?.type).toBe('gps');
+    if (gpsObs?.type === 'gps') {
+      expect(gpsObs.gpsAntennaHiM ?? 0).toBeCloseTo(1.5, 10);
+      expect(gpsObs.gpsAntennaHtM ?? 0).toBeCloseTo(2.0, 10);
+    }
+
+    expect(withAddHiHt.stations.B?.x ?? 0).toBeCloseTo(base.stations.B?.x ?? 0, 10);
+    expect(withAddHiHt.stations.B?.y ?? 0).toBeCloseTo(base.stations.B?.y ?? 0, 10);
+  });
+
   it('handles mixed GPS NETWORK + GPS SIDESHOT vectors with dedicated post-adjust sideshot output', () => {
     const input = readFileSync('tests/fixtures/gps_network_sideshot_phase3.dat', 'utf-8');
     const result = new LSAEngine({ input, maxIterations: 10 }).solve();

@@ -144,6 +144,8 @@ export interface DirObservation extends ObservationBase {
 export interface GpsObservation extends ObservationBase {
   type: 'gps';
   gpsMode?: GpsVectorMode;
+  gpsAntennaHiM?: number;
+  gpsAntennaHtM?: number;
   from: StationId;
   to: StationId;
   obs: { dE: number; dN: number };
@@ -400,6 +402,9 @@ export interface ParseOptions {
   geoidConvertedStationCount?: number;
   geoidSkippedStationCount?: number;
   gpsVectorMode?: GpsVectorMode;
+  gpsAddHiHtEnabled?: boolean;
+  gpsAddHiHtHiM?: number;
+  gpsAddHiHtHtM?: number;
   lonSign?: LonSign;
   currentInstrument?: string;
   edmMode?: 'additive' | 'propagated';

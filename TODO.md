@@ -176,8 +176,8 @@
       - [x] Phase 1: parse `.GPS NETWORK`/`.GPS SIDESHOT` mode state and tag incoming GNSS vectors accordingly
       - [x] Phase 2: exclude GPS sideshot vectors from adjustment while computing post-adjust coordinate/precision outputs
       - [x] Phase 3: add report/export sections and parity tests for mixed network+sideshot GPS datasets
-    - [ ] Implement `.GPS AddHiHt [HI] [HT]` antenna-height correction option in preprocessing
-      - [ ] Phase 1: parse `.GPS AddHiHt` option with scoped defaults and validation warnings
+    - [~] Implement `.GPS AddHiHt [HI] [HT]` antenna-height correction option in preprocessing
+      - [x] Phase 1: parse `.GPS AddHiHt` option with scoped defaults and validation warnings
       - [ ] Phase 2: apply antenna-height corrections during GNSS observation preprocessing consistently for base/rover
       - [ ] Phase 3: add diagnostics and regression fixtures covering positive/negative and missing-height cases
     - [ ] Add GPS vector loop-closure diagnostics/check command with loop summaries in report/export

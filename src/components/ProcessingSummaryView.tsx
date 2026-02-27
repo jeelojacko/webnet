@@ -27,6 +27,9 @@ interface ProcessingSummaryViewProps {
     geoidSampleUndulationM?: number;
     geoidConvertedStationCount?: number;
     geoidSkippedStationCount?: number;
+    gpsAddHiHtEnabled?: boolean;
+    gpsAddHiHtHiM?: number;
+    gpsAddHiHtHtM?: number;
   } | null;
 }
 
@@ -220,6 +223,9 @@ const ProcessingSummaryView: React.FC<ProcessingSummaryViewProps> = ({
       }
       lines.push(
         `Geoid Height Conversion: ${runDiagnostics.geoidHeightConversionEnabled ? `ON (${String(runDiagnostics.geoidOutputHeightDatum ?? 'orthometric').toUpperCase()}, converted=${runDiagnostics.geoidConvertedStationCount ?? 0}, skipped=${runDiagnostics.geoidSkippedStationCount ?? 0})` : 'OFF'}`,
+      );
+      lines.push(
+        `GPS AddHiHt Defaults: ${runDiagnostics.gpsAddHiHtEnabled ? `ON (HI=${(((runDiagnostics.gpsAddHiHtHiM ?? 0) * unitScale)).toFixed(4)}${linearUnit}, HT=${(((runDiagnostics.gpsAddHiHtHtM ?? 0) * unitScale)).toFixed(4)}${linearUnit})` : 'OFF'}`,
       );
     }
     const lostStations = result.parseState?.lostStationIds ?? [];

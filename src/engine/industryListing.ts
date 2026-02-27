@@ -57,6 +57,9 @@ export interface IndustryListingRunDiagnostics {
   geoidSampleUndulationM?: number;
   geoidConvertedStationCount?: number;
   geoidSkippedStationCount?: number;
+  gpsAddHiHtEnabled?: boolean;
+  gpsAddHiHtHiM?: number;
+  gpsAddHiHtHtM?: number;
 }
 
 export const buildIndustryStyleListingText = (
@@ -125,6 +128,10 @@ export const buildIndustryStyleListingText = (
       parseState?.geoidConvertedStationCount ?? runDiag.geoidConvertedStationCount ?? 0;
     const geoidSkippedStationCount =
       parseState?.geoidSkippedStationCount ?? runDiag.geoidSkippedStationCount ?? 0;
+    const gpsAddHiHtEnabled =
+      parseState?.gpsAddHiHtEnabled ?? runDiag.gpsAddHiHtEnabled ?? false;
+    const gpsAddHiHtHiM = parseState?.gpsAddHiHtHiM ?? runDiag.gpsAddHiHtHiM ?? 0;
+    const gpsAddHiHtHtM = parseState?.gpsAddHiHtHtM ?? runDiag.gpsAddHiHtHtM ?? 0;
     const descriptionReconcileMode =
       parseState?.descriptionReconcileMode ?? parseSettings.descriptionReconcileMode ?? 'first';
     const descriptionAppendDelimiter =
@@ -241,6 +248,9 @@ export const buildIndustryStyleListingText = (
     }
     lines.push(
       `      Geoid Height Conversion        : ${geoidHeightConversionEnabled ? `ON (${geoidOutputHeightDatum.toUpperCase()}, converted=${geoidConvertedStationCount}, skipped=${geoidSkippedStationCount})` : 'OFF'}`,
+    );
+    lines.push(
+      `      GPS AddHiHt Defaults            : ${gpsAddHiHtEnabled ? `ON (HI=${(gpsAddHiHtHiM * unitScale).toFixed(4)} ${linearUnit}, HT=${(gpsAddHiHtHtM * unitScale).toFixed(4)} ${linearUnit})` : 'OFF'}`,
     );
     lines.push(
       `      Lost Stations                     : ${lostStationIds.length > 0 ? `${lostStationIds.length} (${lostStationIds.join(', ')})` : 'none'}`,

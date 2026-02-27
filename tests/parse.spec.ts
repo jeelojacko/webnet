@@ -540,6 +540,62 @@ describe('parseInput', () => {
     expect(parsed.logs.some((l) => l.includes('GPS vector mode set to NETWORK'))).toBe(true);
   });
 
+  it('parses .GPS AddHiHt state with defaults and tags G observations', () => {
+    const base = parseInput(['C A 0 0 0 !', 'C B 100 0 0', 'G GPS1 A B 100 0 0.01'].join('\n'));
+    const baseGps = base.observations.find((o) => o.type === 'gps');
+    expect(base.parseState.gpsAddHiHtEnabled ?? false).toBe(false);
+    if (baseGps?.type === 'gps') {
+      expect(baseGps.gpsAntennaHiM).toBeUndefined();
+      expect(baseGps.gpsAntennaHtM).toBeUndefined();
+    }
+
+    const parsed = parseInput(
+      [
+        '.UNITS FT',
+        '.GPS AddHiHt 5.25 6.75',
+        '/GPS AddHiHt ON 7.00 8.00',
+        'C A 0 0 0 !',
+        'C B 100 0 0',
+        'G GPS1 A B 100 0 0.01',
+      ].join('\n'),
+    );
+    const gps = parsed.observations.find((o) => o.type === 'gps');
+    expect(parsed.parseState.gpsAddHiHtEnabled ?? false).toBe(true);
+    expect(parsed.parseState.gpsAddHiHtHiM ?? 0).toBeCloseTo(7 / 3.280839895, 10);
+    expect(parsed.parseState.gpsAddHiHtHtM ?? 0).toBeCloseTo(8 / 3.280839895, 10);
+    expect(gps?.type).toBe('gps');
+    if (gps?.type === 'gps') {
+      expect(gps.gpsAntennaHiM ?? 0).toBeCloseTo(7 / 3.280839895, 10);
+      expect(gps.gpsAntennaHtM ?? 0).toBeCloseTo(8 / 3.280839895, 10);
+    }
+    expect(parsed.logs.some((l) => l.includes('GPS AddHiHt set to ON'))).toBe(true);
+  });
+
+  it('validates .GPS AddHiHt tokens and supports OFF toggle', () => {
+    const parsed = parseInput(
+      [
+        '.GPS AddHiHt OFF',
+        '.GPS AddHiHt nope',
+        '.GPS AddHiHt ON 1.0 bad',
+        '.GPS AddHiHt 2.0 3.0',
+        '.GPS AddHiHt OFF',
+        'C A 0 0 0 !',
+        'C B 100 0 0',
+        'G GPS1 A B 100 0 0.01',
+      ].join('\n'),
+    );
+    const gps = parsed.observations.find((o) => o.type === 'gps');
+    expect(parsed.parseState.gpsAddHiHtEnabled ?? false).toBe(false);
+    expect(gps?.type).toBe('gps');
+    if (gps?.type === 'gps') {
+      expect(gps.gpsAntennaHiM).toBeUndefined();
+      expect(gps.gpsAntennaHtM).toBeUndefined();
+    }
+    expect(parsed.logs.some((l) => l.includes('invalid .GPS AddHiHt option'))).toBe(true);
+    expect(parsed.logs.some((l) => l.includes('invalid .GPS AddHiHt HT value'))).toBe(true);
+    expect(parsed.logs.some((l) => l.includes('GPS AddHiHt set to OFF'))).toBe(true);
+  });
+
   it('does not auto-create GPS SIDESHOT target stations while NETWORK mode still does', () => {
     const network = parseInput(
       ['.GPS NETWORK', 'C OCC 0 0 0 !', 'G GPS1 OCC TARGET 10 20 0.01 0.02'].join('\n'),
