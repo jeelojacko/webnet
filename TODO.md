@@ -153,8 +153,8 @@
       - [x] Phase 1: introduce 3D plot architecture (camera, scene graph, station/connection primitives) behind feature flag
       - [x] Phase 2: render 3D confidence ellipsoids and implement orbit/pan/zoom/view-cube interactions
       - [x] Phase 3: add mode toggle, performance fallbacks, and visual regression checks for desktop/mobile layouts
-    - [ ] Add CLI/batch run entrypoint for scripted adjustments (including auto-adjust flags) for automation parity
-      - [ ] Phase 1: add Node CLI wrapper to run parser/engine headlessly with input/profile/options arguments
+    - [~] Add CLI/batch run entrypoint for scripted adjustments (including auto-adjust flags) for automation parity
+      - [x] Phase 1: add Node CLI wrapper to run parser/engine headlessly with input/profile/options arguments
       - [ ] Phase 2: expose machine-readable and listing-style outputs (text/json) with deterministic exit codes
       - [ ] Phase 3: add auto-adjust CLI flags, docs, and CI smoke tests for batch execution workflows
   - [ ] GPS improvements (highest impact -> lowest):

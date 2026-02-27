@@ -11,6 +11,7 @@
     "test": "vitest",
     "test:run": "vitest run",
     "test:cov": "vitest run --coverage",
+    "adjust:cli": "tsx src/cli.ts",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "prepare": "husky"
@@ -37,6 +38,7 @@
     "postcss": "^8.5.6",
     "prettier": "^3.3.3",
     "tailwindcss": "^3.4.18",
+    "tsx": "^4.21.0",
     "typescript": "^5.6.3",
     "vite": "^6.4.1",
     "vitest": "^4.0.18"
