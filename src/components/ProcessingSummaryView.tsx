@@ -10,6 +10,13 @@ interface ProcessingSummaryViewProps {
     directionSetMode: 'reduced' | 'raw';
     profileDefaultInstrumentFallback: boolean;
     rotationAngleRad: number;
+    crsTransformEnabled?: boolean;
+    crsProjectionModel?: 'legacy-equirectangular' | 'local-enu';
+    crsLabel?: string;
+    crsGridScaleEnabled?: boolean;
+    crsGridScaleFactor?: number;
+    crsConvergenceEnabled?: boolean;
+    crsConvergenceAngleRad?: number;
   } | null;
 }
 
@@ -184,6 +191,15 @@ const ProcessingSummaryView: React.FC<ProcessingSummaryViewProps> = ({
         `Run Profile: ${runDiagnostics.solveProfile.toUpperCase()} (dirSets=${runDiagnostics.directionSetMode}, profileFallback=${runDiagnostics.profileDefaultInstrumentFallback ? 'ON' : 'OFF'})`,
       );
       lines.push(`Plan Rotation: ${(runDiagnostics.rotationAngleRad * 180 / Math.PI).toFixed(6)} deg`);
+      lines.push(
+        `CRS / Projection: ${runDiagnostics.crsTransformEnabled ? `ON (${runDiagnostics.crsProjectionModel ?? 'legacy-equirectangular'}, label="${runDiagnostics.crsLabel || 'unnamed'}")` : 'OFF'}`,
+      );
+      lines.push(
+        `CRS Grid-Ground Scale: ${runDiagnostics.crsGridScaleEnabled ? `ON (${(runDiagnostics.crsGridScaleFactor ?? 1).toFixed(8)})` : 'OFF'}`,
+      );
+      lines.push(
+        `CRS Convergence: ${runDiagnostics.crsConvergenceEnabled ? `ON (${(((runDiagnostics.crsConvergenceAngleRad ?? 0) * 180) / Math.PI).toFixed(6)} deg)` : 'OFF'}`,
+      );
     }
     const lostStations = result.parseState?.lostStationIds ?? [];
     lines.push(

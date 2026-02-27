@@ -475,6 +475,60 @@ describe('industry listing phase 5 formatting locks', () => {
     expect(listingHidden).not.toContain('A-B');
   });
 
+  it('reports CRS projection/scale/convergence diagnostics in listing project options', () => {
+    const input = [
+      '.2D',
+      '.UNITS METERS DD',
+      '.CRS ON ENU SiteGrid',
+      '.CRS SCALE 0.99960000',
+      '.CRS CONVERGENCE 0.250000',
+      'C A 0 0 0 ! !',
+      'C B 100 0 0',
+      'B A-B 090.0000 1.0',
+      'D A-B 100.0000 0.001',
+    ].join('\n');
+    const result = new LSAEngine({ input, maxIterations: 10 }).solve();
+    const listing = buildIndustryStyleListingText(
+      result,
+      {
+        maxIterations: 10,
+        units: 'm',
+        listingShowLostStations: true,
+        listingShowCoordinates: true,
+        listingShowObservationsResiduals: true,
+        listingShowErrorPropagation: true,
+        listingShowProcessingNotes: false,
+        listingShowAzimuthsBearings: true,
+        listingSortCoordinatesBy: 'name',
+        listingSortObservationsBy: 'name',
+        listingObservationLimit: 500,
+      },
+      {
+        coordMode: '2D',
+        order: 'EN',
+        angleUnits: 'dd',
+        angleStationOrder: 'atfromto',
+        deltaMode: 'horiz',
+        refractionCoefficient: 0.13,
+      },
+      {
+        solveProfile: 'webnet',
+        angleCenteringModel: 'geometry-aware-correlated-rays',
+        defaultSigmaCount: 0,
+        defaultSigmaByType: '',
+        stochasticDefaultsSummary: 'inst=S9',
+        rotationAngleRad: 0,
+      },
+    );
+
+    expect(listing).toContain('CRS / Projection');
+    expect(listing).toContain('ON (local-enu, label="SiteGrid")');
+    expect(listing).toContain('CRS Grid-Ground Scale');
+    expect(listing).toContain('ON (0.99960000)');
+    expect(listing).toContain('CRS Convergence');
+    expect(listing).toContain('ON (0.250000 deg)');
+  });
+
   it('applies append-style description reconciliation in listing output rows', () => {
     const input = [
       '.2D',

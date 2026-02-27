@@ -171,6 +171,77 @@ describe('parseInput', () => {
     expect(parsed.logs.some((l) => l.includes('Auto-adjust set to ON'))).toBe(true);
   });
 
+  it('keeps CRS transforms disabled by default and parses .CRS state directives', () => {
+    const base = parseInput(['.UNITS METERS DD', 'P ORG 40 105 0 ! !', 'P TGT 41 106 0'].join('\n'));
+    expect(base.parseState.crsTransformEnabled).toBe(false);
+    expect(base.parseState.crsProjectionModel).toBe('legacy-equirectangular');
+
+    const enabled = parseInput(
+      ['.UNITS METERS DD', '.CRS ON ENU Site-Grid', 'P ORG 40 105 0 ! !', 'P TGT 41 106 0'].join(
+        '\n',
+      ),
+    );
+    expect(enabled.parseState.crsTransformEnabled).toBe(true);
+    expect(enabled.parseState.crsProjectionModel).toBe('local-enu');
+    expect(enabled.parseState.crsLabel).toBe('Site-Grid');
+    expect(enabled.logs.some((l) => l.includes('CRS transforms set to ON'))).toBe(true);
+
+    const off = parseInput(
+      ['.UNITS METERS DD', '.CRS ON ENU', '.CRS OFF', 'P ORG 40 105 0 ! !', 'P TGT 41 106 0'].join(
+        '\n',
+      ),
+    );
+    expect(off.parseState.crsTransformEnabled).toBe(false);
+    expect(off.logs.some((l) => l.includes('CRS transforms set to OFF'))).toBe(true);
+  });
+
+  it('applies ENU projection only when CRS transforms are explicitly enabled', () => {
+    const source = ['.UNITS METERS DD', 'P ORG 40 105 0 ! !', 'P TGT 41 106 0'].join('\n');
+    const legacy = parseInput(source);
+    const explicitLegacy = parseInput(['.CRS ON LEGACY', source].join('\n'));
+    const enu = parseInput(['.CRS ON ENU', source].join('\n'));
+
+    expect(explicitLegacy.stations.TGT.x).toBeCloseTo(legacy.stations.TGT.x, 8);
+    expect(explicitLegacy.stations.TGT.y).toBeCloseTo(legacy.stations.TGT.y, 8);
+
+    const deltaE = Math.abs((enu.stations.TGT.x ?? 0) - (legacy.stations.TGT.x ?? 0));
+    const deltaN = Math.abs((enu.stations.TGT.y ?? 0) - (legacy.stations.TGT.y ?? 0));
+    expect(deltaE).toBeGreaterThan(10);
+    expect(deltaN).toBeGreaterThan(10);
+  });
+
+  it('parses optional CRS scale/convergence directives with explicit OFF support', () => {
+    const enabled = parseInput(
+      [
+        '.UNITS METERS DD',
+        '.CRS SCALE 0.99960000',
+        '.CRS CONVERGENCE 0.750000',
+        'C A 0 0 0 ! !',
+        'C B 100 0 0',
+      ].join('\n'),
+    );
+    expect(enabled.parseState.crsGridScaleEnabled).toBe(true);
+    expect(enabled.parseState.crsGridScaleFactor).toBeCloseTo(0.9996, 10);
+    expect(enabled.parseState.crsConvergenceEnabled).toBe(true);
+    expect(enabled.parseState.crsConvergenceAngleRad ?? 0).toBeCloseTo((0.75 * Math.PI) / 180, 10);
+    expect(enabled.logs.some((l) => l.includes('CRS grid-ground scale set to ON'))).toBe(true);
+    expect(enabled.logs.some((l) => l.includes('CRS convergence set to ON'))).toBe(true);
+
+    const disabled = parseInput(
+      [
+        '.UNITS METERS DD',
+        '.CRS SCALE ON 0.99960000',
+        '.CRS CONVERGENCE ON 0.750000',
+        '.CRS SCALE OFF',
+        '.CRS CONVERGENCE OFF',
+        'C A 0 0 0 ! !',
+        'C B 100 0 0',
+      ].join('\n'),
+    );
+    expect(disabled.parseState.crsGridScaleEnabled).toBe(false);
+    expect(disabled.parseState.crsConvergenceEnabled).toBe(false);
+  });
+
   it('supports .AUTOSIDESHOT and /AUTOSIDESHOT toggles', () => {
     const parsed = parseInput(
       [

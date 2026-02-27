@@ -1,7 +1,9 @@
 import { dmsToRad, RAD_TO_DEG, SEC_TO_RAD } from './angles';
 import { parseAutoAdjustDirectiveTokens } from './autoAdjust';
+import { parseCrsProjectionModelToken, projectGeodeticToEN } from './geodesy';
 import type {
   AngleObservation,
+  CrsProjectionModel,
   DistanceObservation,
   DirectionRejectDiagnostic,
   DirObservation,
@@ -30,6 +32,13 @@ const defaultParseOptions: ParseOptions = {
   applyCurvatureRefraction: false,
   refractionCoefficient: 0.13,
   verticalReduction: 'none',
+  crsTransformEnabled: false,
+  crsProjectionModel: 'legacy-equirectangular',
+  crsLabel: '',
+  crsGridScaleEnabled: false,
+  crsGridScaleFactor: 1,
+  crsConvergenceEnabled: false,
+  crsConvergenceAngleRad: 0,
   lonSign: 'west-negative',
   currentInstrument: undefined,
   edmMode: 'additive',
@@ -69,7 +78,6 @@ const defaultParseOptions: ParseOptions = {
 };
 
 const FT_PER_M = 3.280839895;
-const EARTH_RADIUS_M = 6378137;
 const FACE2_WEIGHT = 0.707; // face-2 weighting factor per common spec
 const DEG_TO_RAD = Math.PI / 180;
 const AMODE_AUTO_MAX_DIR_RAD = 3 * DEG_TO_RAD;
@@ -341,22 +349,10 @@ const applyPlanRotation = (angleRad: number, state: ParseOptions): number => {
   return wrapTo2Pi(angleRad + rotation);
 };
 
-const projectLatLonToEN = (
-  latDeg: number,
-  lonDeg: number,
-  originLatDeg: number,
-  originLonDeg: number,
-) => {
-  const lat = (latDeg * Math.PI) / 180;
-  const lon = (lonDeg * Math.PI) / 180;
-  const lat0 = (originLatDeg * Math.PI) / 180;
-  const lon0 = (originLonDeg * Math.PI) / 180;
-  const dLat = lat - lat0;
-  const dLon = lon - lon0;
-  const north = EARTH_RADIUS_M * dLat;
-  const east = EARTH_RADIUS_M * Math.cos(lat0) * dLon;
-  return { east, north };
-};
+const activeCrsProjectionModel = (state: ParseOptions): CrsProjectionModel =>
+  state.crsTransformEnabled
+    ? (state.crsProjectionModel ?? 'legacy-equirectangular')
+    : 'legacy-equirectangular';
 
 export const parseInput = (
   input: string,
@@ -920,6 +916,151 @@ export const parseInput = (
           state.mapScaleFactor = factor;
           logs.push(`Map scale factor set to ${factor}`);
         }
+      } else if (op === '.CRS') {
+        const modeToken = (parts[1] || '').toUpperCase();
+        if (!modeToken) {
+          logs.push(
+            `Warning: .CRS missing mode at line ${lineNum}; expected OFF, ON [model], SCALE, CONVERGENCE, LABEL, or model token.`,
+          );
+          continue;
+        }
+
+        if (modeToken === 'OFF' || modeToken === 'NONE') {
+          state.crsTransformEnabled = false;
+          logs.push('CRS transforms set to OFF (legacy projection behavior retained).');
+          continue;
+        }
+
+        if (modeToken === 'LABEL') {
+          const label = parts.slice(2).join(' ').trim();
+          state.crsLabel = label;
+          logs.push(`CRS label set to "${label || 'unnamed'}"`);
+          continue;
+        }
+
+        if (
+          modeToken === 'SCALE' ||
+          modeToken === 'GSCALE' ||
+          modeToken === 'GRID' ||
+          modeToken === 'GRIDGROUND' ||
+          modeToken === 'GRID-GROUND'
+        ) {
+          const arg = (parts[2] || '').trim();
+          const argUpper = arg.toUpperCase();
+          if (!arg || argUpper === 'ON') {
+            state.crsGridScaleEnabled = true;
+            const factorToken = parts[3];
+            if (factorToken) {
+              const factor = parseFloat(factorToken);
+              if (Number.isFinite(factor) && factor > 0) {
+                state.crsGridScaleFactor = factor;
+              } else {
+                logs.push(
+                  `Warning: invalid .CRS SCALE factor at line ${lineNum}; expected positive number.`,
+                );
+              }
+            }
+            logs.push(
+              `CRS grid-ground scale set to ON (factor=${(state.crsGridScaleFactor ?? 1).toFixed(
+                8,
+              )})`,
+            );
+            continue;
+          }
+          if (argUpper === 'OFF' || argUpper === 'NONE') {
+            state.crsGridScaleEnabled = false;
+            logs.push('CRS grid-ground scale set to OFF');
+            continue;
+          }
+          const factor = parseFloat(arg);
+          if (Number.isFinite(factor) && factor > 0) {
+            state.crsGridScaleEnabled = true;
+            state.crsGridScaleFactor = factor;
+            logs.push(`CRS grid-ground scale set to ON (factor=${factor.toFixed(8)})`);
+          } else {
+            logs.push(
+              `Warning: invalid .CRS SCALE option at line ${lineNum}; expected OFF, ON [factor], or positive factor.`,
+            );
+          }
+          continue;
+        }
+
+        if (
+          modeToken === 'CONVERGENCE' ||
+          modeToken === 'CONV' ||
+          modeToken === 'GAMMA' ||
+          modeToken === 'MERIDIAN'
+        ) {
+          const arg = (parts[2] || '').trim();
+          const argUpper = arg.toUpperCase();
+          if (!arg || argUpper === 'ON') {
+            state.crsConvergenceEnabled = true;
+            const angleToken = parts[3];
+            if (angleToken) {
+              const parsedAngle = parseAngleTokenRad(angleToken, state, 'dd');
+              if (Number.isFinite(parsedAngle)) {
+                state.crsConvergenceAngleRad = parsedAngle;
+              } else {
+                logs.push(
+                  `Warning: invalid .CRS CONVERGENCE angle at line ${lineNum}; expected DD or DMS token.`,
+                );
+              }
+            }
+            logs.push(
+              `CRS convergence set to ON (angle=${((state.crsConvergenceAngleRad ?? 0) * RAD_TO_DEG).toFixed(6)} deg)`,
+            );
+            continue;
+          }
+          if (argUpper === 'OFF' || argUpper === 'NONE') {
+            state.crsConvergenceEnabled = false;
+            logs.push('CRS convergence set to OFF');
+            continue;
+          }
+          const parsedAngle = parseAngleTokenRad(arg, state, 'dd');
+          if (Number.isFinite(parsedAngle)) {
+            state.crsConvergenceEnabled = true;
+            state.crsConvergenceAngleRad = parsedAngle;
+            logs.push(
+              `CRS convergence set to ON (angle=${(parsedAngle * RAD_TO_DEG).toFixed(6)} deg)`,
+            );
+          } else {
+            logs.push(
+              `Warning: invalid .CRS CONVERGENCE option at line ${lineNum}; expected OFF, ON [angle], or DD/DMS angle token.`,
+            );
+          }
+          continue;
+        }
+
+        if (modeToken === 'ON') {
+          state.crsTransformEnabled = true;
+          const model = parseCrsProjectionModelToken(parts[2]);
+          if (model) {
+            state.crsProjectionModel = model;
+          }
+          const labelStart = model ? 3 : 2;
+          const label = parts.slice(labelStart).join(' ').trim();
+          if (label) state.crsLabel = label;
+          logs.push(
+            `CRS transforms set to ON (model=${state.crsProjectionModel}, label="${state.crsLabel || 'unnamed'}")`,
+          );
+          continue;
+        }
+
+        const directModel = parseCrsProjectionModelToken(parts[1]);
+        if (directModel) {
+          state.crsTransformEnabled = true;
+          state.crsProjectionModel = directModel;
+          const label = parts.slice(2).join(' ').trim();
+          if (label) state.crsLabel = label;
+          logs.push(
+            `CRS transforms set to ON (model=${state.crsProjectionModel}, label="${state.crsLabel || 'unnamed'}")`,
+          );
+          continue;
+        }
+
+        logs.push(
+          `Warning: unrecognized .CRS option at line ${lineNum}; expected OFF, ON [LEGACY|ENU], SCALE, CONVERGENCE, LABEL, or model token.`,
+        );
       } else if (op === '.LWEIGHT' && parts[1]) {
         const val = parseFloat(parts[1]);
         if (!Number.isNaN(val)) {
@@ -1510,12 +1651,14 @@ export const parseInput = (
           state.originLonDeg = lonDeg;
           logs.push(`P origin set to ${latDeg.toFixed(6)}, ${lonDeg.toFixed(6)}`);
         }
-        const { east, north } = projectLatLonToEN(
+        const projectionModel = activeCrsProjectionModel(state);
+        const { east, north, model } = projectGeodeticToEN({
           latDeg,
           lonDeg,
-          state.originLatDeg ?? latDeg,
-          state.originLonDeg ?? lonDeg,
-        );
+          originLatDeg: state.originLatDeg ?? latDeg,
+          originLonDeg: state.originLonDeg ?? lonDeg,
+          model: projectionModel,
+        });
         const toMeters = state.units === 'ft' ? 1 / FT_PER_M : 1;
         const st: any =
           stations[id] ??
@@ -1548,7 +1691,13 @@ export const parseInput = (
           st.constraintH = st.h;
         }
         stations[id] = st;
-        logs.push(`P record projected to local EN (meters) for ${id}`);
+        if (state.crsTransformEnabled) {
+          logs.push(
+            `P record projected to local EN (meters) for ${id} using ${model} (CRS="${state.crsLabel || 'unnamed'}")`,
+          );
+        } else {
+          logs.push(`P record projected to local EN (meters) for ${id}`);
+        }
       } else if (code === 'CH' || code === 'EH') {
         // Coordinate or elevation with ellipsoid height
         const id = parts[1];

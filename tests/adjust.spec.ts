@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { LSAEngine } from '../src/engine/adjust';
+import { DEG_TO_RAD } from '../src/engine/angles';
 
 const fixture = readFileSync('tests/fixtures/simple.dat', 'utf-8');
 
@@ -32,6 +33,41 @@ describe('LSAEngine', () => {
     expect(Number.isFinite(stn.y)).toBe(true);
     expect(result.observations.some((o) => o.type === 'bearing')).toBe(true);
     expect(result.observations.some((o) => o.type === 'zenith')).toBe(true);
+  });
+
+  it('keeps CRS phase-2 modeling neutral by default and applies optional scale/convergence when enabled', () => {
+    const input = [
+      '.2D',
+      '.UNITS METERS DD',
+      'C A 0 0 0 ! !',
+      'C B 100 0 0',
+      'D A-B 100.000 0.001',
+      'B A-B 090.000000 1.0',
+    ].join('\n');
+
+    const base = new LSAEngine({ input, maxIterations: 10 }).solve();
+    const withScale = new LSAEngine({
+      input,
+      maxIterations: 10,
+      parseOptions: {
+        crsGridScaleEnabled: true,
+        crsGridScaleFactor: 0.9996,
+      },
+    }).solve();
+    const withConvergence = new LSAEngine({
+      input,
+      maxIterations: 10,
+      parseOptions: {
+        crsConvergenceEnabled: true,
+        crsConvergenceAngleRad: 1 * DEG_TO_RAD,
+      },
+    }).solve();
+
+    expect(base.parseState?.crsGridScaleEnabled ?? false).toBe(false);
+    expect(base.parseState?.crsConvergenceEnabled ?? false).toBe(false);
+    expect(withScale.stations.B.x).toBeGreaterThan((base.stations.B.x ?? 0) + 0.03);
+    expect(withConvergence.stations.B.x).toBeLessThan(base.stations.B.x ?? 0);
+    expect(Math.abs(withConvergence.stations.B.y ?? 0)).toBeGreaterThan(1);
   });
 
   it('computes fixture-locked effective distance values for angle/direction/bearing rows', () => {

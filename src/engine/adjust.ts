@@ -167,6 +167,10 @@ export class LSAEngine {
   private debug = false;
   private mapMode: ParseOptions['mapMode'] = 'off';
   private mapScaleFactor = 1;
+  private crsGridScaleEnabled = false;
+  private crsGridScaleFactor = 1;
+  private crsConvergenceEnabled = false;
+  private crsConvergenceAngleRad = 0;
   private applyCurvatureRefraction = false;
   private refractionCoefficient = 0.13;
   private verticalReduction: ParseOptions['verticalReduction'] = 'none';
@@ -611,7 +615,7 @@ export class LSAEngine {
       if (obs.type !== 'direction') return;
       const dir = obs as any;
       if (!this.stations[dir.at] || !this.stations[dir.to]) return;
-      const az = this.getAzimuth(dir.at, dir.to).az;
+      const az = this.modeledAzimuth(this.getAzimuth(dir.at, dir.to).az);
       const diff = ((dir.obs - az + Math.PI) % (2 * Math.PI)) - Math.PI;
       const entry = groups.get(dir.setId) ?? {
         count: 0,
@@ -788,6 +792,20 @@ export class LSAEngine {
     return { az, dist: Math.sqrt(dx * dx + dy * dy) };
   }
 
+  private modeledAzimuth(rawAz: number): number {
+    let az = rawAz;
+    if (
+      this.crsConvergenceEnabled &&
+      Number.isFinite(this.crsConvergenceAngleRad) &&
+      Math.abs(this.crsConvergenceAngleRad) > 0
+    ) {
+      az += this.crsConvergenceAngleRad;
+    }
+    az %= 2 * Math.PI;
+    if (az < 0) az += 2 * Math.PI;
+    return az;
+  }
+
   private wrapToPi(val: number): number {
     let v = val;
     if (v > Math.PI) v -= 2 * Math.PI;
@@ -800,11 +818,23 @@ export class LSAEngine {
     this.logs.push(`Iter ${iteration} ${label}: ${details}`);
   }
 
-  private distanceScaleForObservation(obs: Observation): number {
+  private mapDistanceScaleForObservation(obs: Observation): number {
     if (obs.type !== 'dist') return 1;
     if (this.mapMode === 'off') return 1;
     if (this.is2D) return this.mapScaleFactor;
     return obs.mode === 'horiz' ? this.mapScaleFactor : 1;
+  }
+
+  private crsDistanceScaleForObservation(obs: Observation): number {
+    if (!this.crsGridScaleEnabled) return 1;
+    if (obs.type !== 'dist') return 1;
+    if (!Number.isFinite(this.crsGridScaleFactor) || this.crsGridScaleFactor <= 0) return 1;
+    if (this.is2D) return this.crsGridScaleFactor;
+    return obs.mode === 'horiz' ? this.crsGridScaleFactor : 1;
+  }
+
+  private distanceScaleForObservation(obs: Observation): number {
+    return this.mapDistanceScaleForObservation(obs) * this.crsDistanceScaleForObservation(obs);
   }
 
   private prismCorrectionForObservation(obs: Observation): number {
@@ -1023,9 +1053,16 @@ export class LSAEngine {
         }
       }
 
+      let horizScale = 1;
       if (this.mapMode !== 'off') {
-        horizDistance *= this.mapScaleFactor;
-        sigmaHoriz *= this.mapScaleFactor;
+        horizScale *= this.mapScaleFactor;
+      }
+      if (this.crsGridScaleEnabled) {
+        horizScale *= this.crsGridScaleFactor;
+      }
+      if (horizScale !== 1) {
+        horizDistance *= horizScale;
+        sigmaHoriz *= Math.abs(horizScale);
       }
 
       const explicitAz = calcMeta?.azimuthObs;
@@ -1040,8 +1077,7 @@ export class LSAEngine {
       let setupAzimuth: number | undefined;
       if (hasSetupHz && backsightId && backsightSt) {
         const bs = this.getAzimuth(from, backsightId).az;
-        setupAzimuth = (bs + (setupHz as number)) % (2 * Math.PI);
-        if (setupAzimuth < 0) setupAzimuth += 2 * Math.PI;
+        setupAzimuth = this.modeledAzimuth(bs + (setupHz as number));
       }
       const hasAzimuth = hasExplicitAz || setupAzimuth != null || hasTargetAz;
       const azimuth = hasExplicitAz
@@ -1049,7 +1085,7 @@ export class LSAEngine {
         : setupAzimuth != null
           ? setupAzimuth
           : hasTargetAz
-            ? this.getAzimuth(from, to).az
+            ? this.modeledAzimuth(this.getAzimuth(from, to).az)
             : undefined;
       let sigmaAz = hasExplicitAz ? (explicitSigmaAz ?? 0) : 0;
       if (!hasExplicitAz && setupAzimuth != null && backsightId && backsightSt) {
@@ -1409,6 +1445,20 @@ export class LSAEngine {
     this.mapMode = parsed.parseState?.mapMode ?? this.parseOptions?.mapMode ?? 'off';
     this.mapScaleFactor =
       parsed.parseState?.mapScaleFactor ?? this.parseOptions?.mapScaleFactor ?? 1;
+    this.crsGridScaleEnabled =
+      parsed.parseState?.crsGridScaleEnabled ?? this.parseOptions?.crsGridScaleEnabled ?? false;
+    this.crsGridScaleFactor =
+      parsed.parseState?.crsGridScaleFactor ?? this.parseOptions?.crsGridScaleFactor ?? 1;
+    if (!Number.isFinite(this.crsGridScaleFactor) || this.crsGridScaleFactor <= 0) {
+      this.crsGridScaleFactor = 1;
+    }
+    this.crsConvergenceEnabled =
+      parsed.parseState?.crsConvergenceEnabled ?? this.parseOptions?.crsConvergenceEnabled ?? false;
+    this.crsConvergenceAngleRad =
+      parsed.parseState?.crsConvergenceAngleRad ?? this.parseOptions?.crsConvergenceAngleRad ?? 0;
+    if (!Number.isFinite(this.crsConvergenceAngleRad)) {
+      this.crsConvergenceAngleRad = 0;
+    }
     this.applyCurvatureRefraction =
       parsed.parseState?.applyCurvatureRefraction ??
       this.parseOptions?.applyCurvatureRefraction ??
@@ -1457,6 +1507,14 @@ export class LSAEngine {
     if (this.mapMode !== 'off') {
       this.log(
         `Map reduction active: mode=${this.mapMode}, scale=${this.mapScaleFactor.toFixed(8)}`,
+      );
+    }
+    if (this.crsGridScaleEnabled) {
+      this.log(`CRS grid-ground scale active: factor=${this.crsGridScaleFactor.toFixed(8)}`);
+    }
+    if (this.crsConvergenceEnabled) {
+      this.log(
+        `CRS convergence active: angle=${(this.crsConvergenceAngleRad * RAD_TO_DEG).toFixed(6)} deg`,
       );
     }
     if (this.applyCurvatureRefraction && this.verticalReduction === 'curvref') {
@@ -1862,15 +1920,15 @@ export class LSAEngine {
         } else if (obs.type === 'bearing') {
           const { from, to } = obs;
           const az = this.getAzimuth(from, to);
-          const calc = az.az;
+          const calc = this.modeledAzimuth(az.az);
           let v = obs.obs - calc;
           if (v > Math.PI) v -= 2 * Math.PI;
           if (v < -Math.PI) v += 2 * Math.PI;
           L[row][0] = v;
           rowInfo.push({ obs });
 
-          const dAz_dE_To = Math.cos(calc) / (az.dist || 1);
-          const dAz_dN_To = -Math.sin(calc) / (az.dist || 1);
+          const dAz_dE_To = Math.cos(az.az) / (az.dist || 1);
+          const dAz_dN_To = -Math.sin(az.az) / (az.dist || 1);
 
           const toIdx = this.paramIndex[to];
           if (toIdx?.x != null) {
@@ -1895,7 +1953,7 @@ export class LSAEngine {
         } else if (obs.type === 'dir') {
           const { from, to } = obs;
           const az = this.getAzimuth(from, to);
-          const calc = az.az;
+          const calc = this.modeledAzimuth(az.az);
           let v0 = obs.obs - calc;
           if (v0 > Math.PI) v0 -= 2 * Math.PI;
           if (v0 < -Math.PI) v0 += 2 * Math.PI;
@@ -1924,8 +1982,8 @@ export class LSAEngine {
             );
           }
 
-          const dAz_dE_To = Math.cos(calc) / (az.dist || 1);
-          const dAz_dN_To = -Math.sin(calc) / (az.dist || 1);
+          const dAz_dE_To = Math.cos(az.az) / (az.dist || 1);
+          const dAz_dN_To = -Math.sin(az.az) / (az.dist || 1);
 
           const toIdx = this.paramIndex[to];
           if (toIdx?.x != null) {
@@ -1952,7 +2010,7 @@ export class LSAEngine {
           if (!this.stations[at] || !this.stations[to]) return;
           const az = this.getAzimuth(at, to);
           const orientation = this.directionOrientations[setId] ?? 0;
-          let calc = orientation + az.az;
+          let calc = orientation + this.modeledAzimuth(az.az);
           calc %= 2 * Math.PI;
           if (calc < 0) calc += 2 * Math.PI;
           let v = obs.obs - calc;
@@ -2393,7 +2451,7 @@ export class LSAEngine {
         addObservationContribution(obs, q);
       } else if (obs.type === 'bearing') {
         obs.effectiveDistance = this.effectiveDistanceForAngularObservation(obs);
-        const calcAz = this.getAzimuth(obs.from, obs.to).az;
+        const calcAz = this.modeledAzimuth(this.getAzimuth(obs.from, obs.to).az);
         let v = obs.obs - calcAz;
         if (v > Math.PI) v -= 2 * Math.PI;
         if (v < -Math.PI) v += 2 * Math.PI;
@@ -2407,7 +2465,7 @@ export class LSAEngine {
         collectTsCorrelationRow(obs, v, sigma);
       } else if (obs.type === 'dir') {
         obs.effectiveDistance = this.effectiveDistanceForAngularObservation(obs);
-        const calcAz = this.getAzimuth(obs.from, obs.to).az;
+        const calcAz = this.modeledAzimuth(this.getAzimuth(obs.from, obs.to).az);
         let v0 = obs.obs - calcAz;
         if (v0 > Math.PI) v0 -= 2 * Math.PI;
         if (v0 < -Math.PI) v0 += 2 * Math.PI;
@@ -2429,7 +2487,7 @@ export class LSAEngine {
       } else if (obs.type === 'direction') {
         obs.effectiveDistance = this.effectiveDistanceForAngularObservation(obs);
         const dir = obs as any;
-        const az = this.getAzimuth(dir.at, dir.to).az;
+        const az = this.modeledAzimuth(this.getAzimuth(dir.at, dir.to).az);
         const orientation = this.directionOrientations[dir.setId] ?? 0;
         let calc = orientation + az;
         calc %= 2 * Math.PI;
@@ -2856,15 +2914,15 @@ export class LSAEngine {
 
           if (obs.type === 'bearing') {
             const az = this.getAzimuth(obs.from, obs.to);
-            const calc = az.az;
+            const calc = this.modeledAzimuth(az.az);
             let v = obs.obs - calc;
             if (v > Math.PI) v -= 2 * Math.PI;
             if (v < -Math.PI) v += 2 * Math.PI;
             L[row][0] = v;
             rowInfo.push({ obs });
 
-            const dAz_dE_To = Math.cos(calc) / (az.dist || 1);
-            const dAz_dN_To = -Math.sin(calc) / (az.dist || 1);
+            const dAz_dE_To = Math.cos(az.az) / (az.dist || 1);
+            const dAz_dN_To = -Math.sin(az.az) / (az.dist || 1);
             const toIdx = this.paramIndex[obs.to];
             const fromIdx = this.paramIndex[obs.from];
             if (toIdx?.x != null) A[row][toIdx.x] = dAz_dE_To;
@@ -2880,7 +2938,7 @@ export class LSAEngine {
 
           if (obs.type === 'dir') {
             const az = this.getAzimuth(obs.from, obs.to);
-            const calc = az.az;
+            const calc = this.modeledAzimuth(az.az);
             let v0 = obs.obs - calc;
             if (v0 > Math.PI) v0 -= 2 * Math.PI;
             if (v0 < -Math.PI) v0 += 2 * Math.PI;
@@ -2894,8 +2952,8 @@ export class LSAEngine {
             L[row][0] = v;
             rowInfo.push({ obs });
 
-            const dAz_dE_To = Math.cos(calc) / (az.dist || 1);
-            const dAz_dN_To = -Math.sin(calc) / (az.dist || 1);
+            const dAz_dE_To = Math.cos(az.az) / (az.dist || 1);
+            const dAz_dN_To = -Math.sin(az.az) / (az.dist || 1);
             const toIdx = this.paramIndex[obs.to];
             const fromIdx = this.paramIndex[obs.from];
             if (toIdx?.x != null) A[row][toIdx.x] = dAz_dE_To;
@@ -2913,7 +2971,7 @@ export class LSAEngine {
             const dir = obs as any;
             const az = this.getAzimuth(dir.at, dir.to);
             const orientation = this.directionOrientations[dir.setId] ?? 0;
-            let calc = orientation + az.az;
+            let calc = orientation + this.modeledAzimuth(az.az);
             calc %= 2 * Math.PI;
             if (calc < 0) calc += 2 * Math.PI;
             let v = dir.obs - calc;

@@ -243,6 +243,7 @@ export type DirectionSetMode = 'reduced' | 'raw';
 export type ClusterLinkageMode = 'single' | 'complete';
 export type ClusterPassLabel = 'single' | 'pass1' | 'pass2';
 export type DescriptionReconcileMode = 'first' | 'append';
+export type CrsProjectionModel = 'legacy-equirectangular' | 'local-enu';
 
 export interface ClusterApprovedMerge {
   aliasId: StationId;
@@ -377,6 +378,13 @@ export interface ParseOptions {
   levelWeight?: number;
   originLatDeg?: number;
   originLonDeg?: number;
+  crsTransformEnabled?: boolean;
+  crsProjectionModel?: CrsProjectionModel;
+  crsLabel?: string;
+  crsGridScaleEnabled?: boolean;
+  crsGridScaleFactor?: number;
+  crsConvergenceEnabled?: boolean;
+  crsConvergenceAngleRad?: number;
   lonSign?: LonSign;
   currentInstrument?: string;
   edmMode?: 'additive' | 'propagated';

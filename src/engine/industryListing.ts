@@ -40,6 +40,13 @@ export interface IndustryListingRunDiagnostics {
   rotationAngleRad: number;
   qFixLinearSigmaM?: number;
   qFixAngularSigmaSec?: number;
+  crsTransformEnabled?: boolean;
+  crsProjectionModel?: 'legacy-equirectangular' | 'local-enu';
+  crsLabel?: string;
+  crsGridScaleEnabled?: boolean;
+  crsGridScaleFactor?: number;
+  crsConvergenceEnabled?: boolean;
+  crsConvergenceAngleRad?: number;
 }
 
 export const buildIndustryStyleListingText = (
@@ -76,6 +83,19 @@ export const buildIndustryStyleListingText = (
     const qFixLinearSigmaM = parseState?.qFixLinearSigmaM ?? runDiag.qFixLinearSigmaM ?? 1e-9;
     const qFixAngularSigmaSec =
       parseState?.qFixAngularSigmaSec ?? runDiag.qFixAngularSigmaSec ?? 1e-9;
+    const crsTransformEnabled =
+      parseState?.crsTransformEnabled ?? runDiag.crsTransformEnabled ?? false;
+    const crsProjectionModel =
+      parseState?.crsProjectionModel ?? runDiag.crsProjectionModel ?? 'legacy-equirectangular';
+    const crsLabel = parseState?.crsLabel ?? runDiag.crsLabel ?? '';
+    const crsGridScaleEnabled =
+      parseState?.crsGridScaleEnabled ?? runDiag.crsGridScaleEnabled ?? false;
+    const crsGridScaleFactor =
+      parseState?.crsGridScaleFactor ?? runDiag.crsGridScaleFactor ?? 1;
+    const crsConvergenceEnabled =
+      parseState?.crsConvergenceEnabled ?? runDiag.crsConvergenceEnabled ?? false;
+    const crsConvergenceAngleRad =
+      parseState?.crsConvergenceAngleRad ?? runDiag.crsConvergenceAngleRad ?? 0;
     const descriptionReconcileMode =
       parseState?.descriptionReconcileMode ?? parseSettings.descriptionReconcileMode ?? 'first';
     const descriptionAppendDelimiter =
@@ -166,6 +186,15 @@ export const buildIndustryStyleListingText = (
     );
     lines.push(
       `      Plan Rotation                      : ${Math.abs(rotationAngleRad) > 1e-12 ? `ON (${(rotationAngleRad * RAD_TO_DEG).toFixed(6)} deg)` : 'OFF'}`,
+    );
+    lines.push(
+      `      CRS / Projection                   : ${crsTransformEnabled ? `ON (${crsProjectionModel}, label="${crsLabel || 'unnamed'}")` : 'OFF'}`,
+    );
+    lines.push(
+      `      CRS Grid-Ground Scale             : ${crsGridScaleEnabled ? `ON (${crsGridScaleFactor.toFixed(8)})` : 'OFF'}`,
+    );
+    lines.push(
+      `      CRS Convergence                   : ${crsConvergenceEnabled ? `ON (${(crsConvergenceAngleRad * RAD_TO_DEG).toFixed(6)} deg)` : 'OFF'}`,
     );
     lines.push(
       `      Lost Stations                     : ${lostStationIds.length > 0 ? `${lostStationIds.length} (${lostStationIds.join(', ')})` : 'none'}`,

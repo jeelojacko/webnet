@@ -19,6 +19,7 @@ WebNet includes ready-to-run TS examples in `public/examples/`:
 - `ts_d_distances.dat` (distance-only, `D`)
 - `ts_a_angles.dat` (angle-only, `A`)
 - `ts_b_bearings.dat` (bearing-only, `B`)
+- `ts_rotation_plan.dat` (plan rotation `.ROTATION` on azimuth-bearing style observations)
 - `ts_v_verticals_delta.dat` (`V` with `.DELTA ON`, dH workflow)
 - `ts_dv_distance_vertical.dat` (`DV`)
 - `ts_m_measurements.dat` (`M`)
@@ -41,6 +42,7 @@ Directives that control parsing behavior:
 -   `.DELTA [ON|OFF]`: Toggles `ON` (Horizontal Dist + dH) or `OFF` (Slope Dist + Zenith). Default: OFF (Slope).
 -   `.MAPMODE [ON|OFF|ANGLECALC]`: Controls map-reduction mode (default: OFF).
 -   `.MAPSCALE [factor]`: Grid scale factor used when map mode is active (default: 1.0).
+-   `.CRS [OFF|ON [LEGACY|ENU]|LEGACY|ENU|LABEL <text>|SCALE <factor|ON [factor]|OFF>|CONVERGENCE <angle|ON [angle]|OFF>]`: CRS/geodetic transform state for `P/PH` projection workflows plus optional grid-ground scale and azimuth-convergence corrections. Defaults are OFF (legacy behavior retained unless explicitly enabled).
 -   `.CURVREF [ON|OFF|k]`: Enables/disables curvature-refraction corrections for vertical reduction; numeric value sets `k` and enables it.
 -   `.REFRACTION [k]`: Sets refraction coefficient `k` (default: 0.13).
 -   `.VRED [NONE|CURVREF]`: Vertical reduction mode for zenith handling (default: NONE).

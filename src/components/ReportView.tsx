@@ -25,6 +25,13 @@ interface ReportViewProps {
     robustMode: 'none' | 'huber'
     robustK: number
     rotationAngleRad: number
+    crsTransformEnabled: boolean
+    crsProjectionModel: 'legacy-equirectangular' | 'local-enu'
+    crsLabel: string
+    crsGridScaleEnabled: boolean
+    crsGridScaleFactor: number
+    crsConvergenceEnabled: boolean
+    crsConvergenceAngleRad: number
     qFixLinearSigmaM: number
     qFixAngularSigmaSec: number
     profileDefaultInstrumentFallback: boolean
@@ -921,6 +928,30 @@ const ReportView: React.FC<ReportViewProps> = ({
             <div>
               <div className="text-slate-500">Plan Rotation</div>
               <div>{`${(runDiagnostics.rotationAngleRad * RAD_TO_DEG).toFixed(6)}°`}</div>
+            </div>
+            <div>
+              <div className="text-slate-500">CRS / Projection</div>
+              <div>
+                {runDiagnostics.crsTransformEnabled
+                  ? `ON (${runDiagnostics.crsProjectionModel}, label="${runDiagnostics.crsLabel || 'unnamed'}")`
+                  : 'OFF'}
+              </div>
+            </div>
+            <div>
+              <div className="text-slate-500">CRS Grid Scale</div>
+              <div>
+                {runDiagnostics.crsGridScaleEnabled
+                  ? `ON (${runDiagnostics.crsGridScaleFactor.toFixed(8)})`
+                  : 'OFF'}
+              </div>
+            </div>
+            <div>
+              <div className="text-slate-500">CRS Convergence</div>
+              <div>
+                {runDiagnostics.crsConvergenceEnabled
+                  ? `ON (${(runDiagnostics.crsConvergenceAngleRad * RAD_TO_DEG).toFixed(6)}°)`
+                  : 'OFF'}
+              </div>
             </div>
             <div>
               <div className="text-slate-500">QFIX (Linear/Angular)</div>

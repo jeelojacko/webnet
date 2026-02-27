@@ -47,6 +47,7 @@ import type {
   VerticalReductionMode,
   TsCorrelationScope,
   RobustMode,
+  CrsProjectionModel,
 } from './types';
 
 const FT_PER_M = 3.280839895;
@@ -291,6 +292,13 @@ type RunDiagnostics = {
   robustK: number;
   qFixLinearSigmaM: number;
   qFixAngularSigmaSec: number;
+  crsTransformEnabled: boolean;
+  crsProjectionModel: CrsProjectionModel;
+  crsLabel: string;
+  crsGridScaleEnabled: boolean;
+  crsGridScaleFactor: number;
+  crsConvergenceEnabled: boolean;
+  crsConvergenceAngleRad: number;
   prismEnabled: boolean;
   prismOffset: number;
   prismScope: 'global' | 'set';
@@ -323,6 +331,13 @@ type ParseSettings = {
   refractionCoefficient: number;
   verticalReduction: VerticalReductionMode;
   levelWeight?: number;
+  crsTransformEnabled: boolean;
+  crsProjectionModel: CrsProjectionModel;
+  crsLabel: string;
+  crsGridScaleEnabled: boolean;
+  crsGridScaleFactor: number;
+  crsConvergenceEnabled: boolean;
+  crsConvergenceAngleRad: number;
   qFixLinearSigmaM: number;
   qFixAngularSigmaSec: number;
   descriptionReconcileMode: 'first' | 'append';
@@ -387,6 +402,20 @@ const SETTINGS_TOOLTIPS = {
     'Refraction coefficient k used with curvature/refraction correction. Typical survey default is 0.13.',
   verticalReduction:
     'Vertical reduction model applied to slope/zenith observations before adjustment.',
+  crsTransformEnabled:
+    'Enable CRS/geodetic projection transforms for geodetic position records. Default OFF preserves legacy behavior.',
+  crsProjectionModel:
+    'Projection model used when CRS transforms are enabled: LEGACY (existing local equirectangular) or ENU (local tangent plane).',
+  crsLabel:
+    'Optional CRS label shown in diagnostics/logs. No transforms are applied unless CRS transforms are enabled.',
+  crsGridScaleEnabled:
+    'Optional CRS grid-ground scale correction for horizontal distance modeling and inverse tools. Default OFF.',
+  crsGridScaleFactor:
+    'Grid-ground scale factor used when CRS grid-ground scaling is enabled. 1.00000000 leaves distances unchanged.',
+  crsConvergenceEnabled:
+    'Optional CRS convergence correction for azimuth-bearing modeling and inverse tools. Default OFF.',
+  crsConvergenceAngle:
+    'Convergence correction angle in decimal degrees. Positive rotates modeled azimuths clockwise from grid north.',
   normalize:
     'When ON, normalizes mixed-face direction/traverse observations to a consistent orientation convention.',
   levelWeight:
@@ -492,6 +521,13 @@ const App: React.FC = () => {
     refractionCoefficient: 0.13,
     verticalReduction: 'none',
     levelWeight: undefined,
+    crsTransformEnabled: false,
+    crsProjectionModel: 'legacy-equirectangular',
+    crsLabel: '',
+    crsGridScaleEnabled: false,
+    crsGridScaleFactor: 1,
+    crsConvergenceEnabled: false,
+    crsConvergenceAngleRad: 0,
     qFixLinearSigmaM: 1e-9,
     qFixAngularSigmaSec: 1e-9,
     descriptionReconcileMode: 'first',
@@ -825,6 +861,25 @@ const App: React.FC = () => {
       prismOffset: parseState.prismOffset ?? profileCtx.effectiveParse.prismOffset ?? 0,
       prismScope: parseState.prismScope ?? profileCtx.effectiveParse.prismScope ?? 'global',
       rotationAngleRad: parseState.rotationAngleRad ?? 0,
+      crsTransformEnabled:
+        parseState.crsTransformEnabled ?? profileCtx.effectiveParse.crsTransformEnabled ?? false,
+      crsProjectionModel:
+        parseState.crsProjectionModel ??
+        profileCtx.effectiveParse.crsProjectionModel ??
+        'legacy-equirectangular',
+      crsLabel: parseState.crsLabel ?? profileCtx.effectiveParse.crsLabel ?? '',
+      crsGridScaleEnabled:
+        parseState.crsGridScaleEnabled ?? profileCtx.effectiveParse.crsGridScaleEnabled ?? false,
+      crsGridScaleFactor:
+        parseState.crsGridScaleFactor ?? profileCtx.effectiveParse.crsGridScaleFactor ?? 1,
+      crsConvergenceEnabled:
+        parseState.crsConvergenceEnabled ??
+        profileCtx.effectiveParse.crsConvergenceEnabled ??
+        false,
+      crsConvergenceAngleRad:
+        parseState.crsConvergenceAngleRad ??
+        profileCtx.effectiveParse.crsConvergenceAngleRad ??
+        0,
       edmMode: parseState.edmMode ?? 'additive',
       applyCentering: parseState.applyCentering ?? true,
       addCenteringToExplicit: parseState.addCenteringToExplicit ?? false,
@@ -881,6 +936,13 @@ const App: React.FC = () => {
       robustK: parse.robustK,
       qFixLinearSigmaM: parse.qFixLinearSigmaM ?? 1e-9,
       qFixAngularSigmaSec: parse.qFixAngularSigmaSec ?? 1e-9,
+      crsTransformEnabled: parse.crsTransformEnabled,
+      crsProjectionModel: parse.crsProjectionModel,
+      crsLabel: parse.crsLabel,
+      crsGridScaleEnabled: parse.crsGridScaleEnabled,
+      crsGridScaleFactor: parse.crsGridScaleFactor,
+      crsConvergenceEnabled: parse.crsConvergenceEnabled,
+      crsConvergenceAngleRad: parse.crsConvergenceAngleRad,
       prismEnabled: parse.prismEnabled,
       prismOffset: parse.prismOffset,
       prismScope: parse.prismScope,
@@ -948,7 +1010,7 @@ const App: React.FC = () => {
     lines.push(`# Generated: ${now.toLocaleString()}`);
     lines.push(`# Linear units: ${linearUnit}`);
     lines.push(
-      `# Reduction: profile=${runDiag.solveProfile}, autoSideshot=${runDiag.autoSideshotEnabled ? 'ON' : 'OFF'}, autoAdjust=${runDiag.autoAdjustEnabled ? 'ON' : 'OFF'}(|t|>=${runDiag.autoAdjustStdResThreshold.toFixed(2)},cycles=${runDiag.autoAdjustMaxCycles},maxRm=${runDiag.autoAdjustMaxRemovalsPerCycle}), dirSets=${runDiag.directionSetMode}, mapMode=${runDiag.mapMode}, mapScale=${runDiag.mapScaleFactor.toFixed(8)}, curvRef=${runDiag.applyCurvatureRefraction ? 'ON' : 'OFF'}, k=${runDiag.refractionCoefficient.toFixed(3)}, vRed=${runDiag.verticalReduction}, qfixLin=${(runDiag.qFixLinearSigmaM * unitScale).toExponential(6)}${linearUnit}, qfixAng=${runDiag.qFixAngularSigmaSec.toExponential(6)}sec, prism=${runDiag.prismEnabled ? `ON(${runDiag.prismOffset.toFixed(4)}m,${runDiag.prismScope})` : 'OFF'}, rotation=${(runDiag.rotationAngleRad * RAD_TO_DEG).toFixed(6)}deg, tsCorr=${runDiag.tsCorrelationEnabled ? 'ON' : 'OFF'}(${runDiag.tsCorrelationScope},rho=${runDiag.tsCorrelationRho.toFixed(3)}), robust=${runDiag.robustMode.toUpperCase()}(k=${runDiag.robustK.toFixed(2)})`,
+      `# Reduction: profile=${runDiag.solveProfile}, autoSideshot=${runDiag.autoSideshotEnabled ? 'ON' : 'OFF'}, autoAdjust=${runDiag.autoAdjustEnabled ? 'ON' : 'OFF'}(|t|>=${runDiag.autoAdjustStdResThreshold.toFixed(2)},cycles=${runDiag.autoAdjustMaxCycles},maxRm=${runDiag.autoAdjustMaxRemovalsPerCycle}), dirSets=${runDiag.directionSetMode}, mapMode=${runDiag.mapMode}, mapScale=${runDiag.mapScaleFactor.toFixed(8)}, crsScale=${runDiag.crsGridScaleEnabled ? `ON(${runDiag.crsGridScaleFactor.toFixed(8)})` : 'OFF'}, crsConv=${runDiag.crsConvergenceEnabled ? `ON(${(runDiag.crsConvergenceAngleRad * RAD_TO_DEG).toFixed(6)}deg)` : 'OFF'}, curvRef=${runDiag.applyCurvatureRefraction ? 'ON' : 'OFF'}, k=${runDiag.refractionCoefficient.toFixed(3)}, vRed=${runDiag.verticalReduction}, qfixLin=${(runDiag.qFixLinearSigmaM * unitScale).toExponential(6)}${linearUnit}, qfixAng=${runDiag.qFixAngularSigmaSec.toExponential(6)}sec, prism=${runDiag.prismEnabled ? `ON(${runDiag.prismOffset.toFixed(4)}m,${runDiag.prismScope})` : 'OFF'}, rotation=${(runDiag.rotationAngleRad * RAD_TO_DEG).toFixed(6)}deg, tsCorr=${runDiag.tsCorrelationEnabled ? 'ON' : 'OFF'}(${runDiag.tsCorrelationScope},rho=${runDiag.tsCorrelationRho.toFixed(3)}), robust=${runDiag.robustMode.toUpperCase()}(k=${runDiag.robustK.toFixed(2)})`,
     );
     lines.push(
       `# Parity: profileFallback=${runDiag.profileDefaultInstrumentFallback ? 'ON' : 'OFF'}, angleCentering=${runDiag.angleCenteringModel}, normalize=${runDiag.normalize ? 'ON' : 'OFF'}, angleMode=${runDiag.angleMode.toUpperCase()}`,
@@ -974,6 +1036,15 @@ const App: React.FC = () => {
     lines.push(
       `Plan rotation: ${Math.abs(runDiag.rotationAngleRad) > 1e-12 ? `ON (${(runDiag.rotationAngleRad * RAD_TO_DEG).toFixed(6)} deg)` : 'OFF'}`,
     );
+    lines.push(
+      `CRS transforms: ${runDiag.crsTransformEnabled ? `ON (${runDiag.crsProjectionModel}, label="${runDiag.crsLabel || 'unnamed'}")` : 'OFF'}`,
+    );
+    lines.push(
+      `CRS grid-ground scale: ${runDiag.crsGridScaleEnabled ? `ON (factor=${runDiag.crsGridScaleFactor.toFixed(8)})` : 'OFF'}`,
+    );
+    lines.push(
+      `CRS convergence: ${runDiag.crsConvergenceEnabled ? `ON (${(runDiag.crsConvergenceAngleRad * RAD_TO_DEG).toFixed(6)} deg)` : 'OFF'}`,
+    );
     const lostStationIds = [...(res.parseState?.lostStationIds ?? [])].sort((a, b) =>
       a.localeCompare(b, undefined, { numeric: true }),
     );
@@ -989,7 +1060,7 @@ const App: React.FC = () => {
     lines.push(`Show lost stations in export: ${showLostStationsInOutputs ? 'ON' : 'OFF'}`);
     lines.push(`Robust mode: ${runDiag.robustMode.toUpperCase()} (k=${runDiag.robustK.toFixed(2)})`);
     lines.push(
-      `Reductions: map=${runDiag.mapMode} (scale=${runDiag.mapScaleFactor.toFixed(8)}), vRed=${runDiag.verticalReduction}, curvRef=${runDiag.applyCurvatureRefraction ? 'ON' : 'OFF'} (k=${runDiag.refractionCoefficient.toFixed(3)}), normalize=${runDiag.normalize ? 'ON' : 'OFF'}`,
+      `Reductions: map=${runDiag.mapMode} (scale=${runDiag.mapScaleFactor.toFixed(8)}), crsScale=${runDiag.crsGridScaleEnabled ? `ON(${runDiag.crsGridScaleFactor.toFixed(8)})` : 'OFF'}, crsConv=${runDiag.crsConvergenceEnabled ? `ON(${(runDiag.crsConvergenceAngleRad * RAD_TO_DEG).toFixed(6)} deg)` : 'OFF'}, vRed=${runDiag.verticalReduction}, curvRef=${runDiag.applyCurvatureRefraction ? 'ON' : 'OFF'} (k=${runDiag.refractionCoefficient.toFixed(3)}), normalize=${runDiag.normalize ? 'ON' : 'OFF'}`,
     );
     lines.push(
       `Default sigmas used: ${runDiag.defaultSigmaCount}${runDiag.defaultSigmaByType ? ` (${runDiag.defaultSigmaByType})` : ''}`,
@@ -2834,6 +2905,13 @@ const App: React.FC = () => {
         rotationAngleRad: runDiag.rotationAngleRad,
         qFixLinearSigmaM: runDiag.qFixLinearSigmaM,
         qFixAngularSigmaSec: runDiag.qFixAngularSigmaSec,
+        crsTransformEnabled: runDiag.crsTransformEnabled,
+        crsProjectionModel: runDiag.crsProjectionModel,
+        crsLabel: runDiag.crsLabel,
+        crsGridScaleEnabled: runDiag.crsGridScaleEnabled,
+        crsGridScaleFactor: runDiag.crsGridScaleFactor,
+        crsConvergenceEnabled: runDiag.crsConvergenceEnabled,
+        crsConvergenceAngleRad: runDiag.crsConvergenceAngleRad,
       },
     );
   };
@@ -2928,6 +3006,13 @@ const App: React.FC = () => {
         refractionCoefficient: effectiveParse.refractionCoefficient,
         verticalReduction: effectiveParse.verticalReduction,
         levelWeight: effectiveParse.levelWeight,
+        crsTransformEnabled: effectiveParse.crsTransformEnabled,
+        crsProjectionModel: effectiveParse.crsProjectionModel,
+        crsLabel: effectiveParse.crsLabel,
+        crsGridScaleEnabled: effectiveParse.crsGridScaleEnabled,
+        crsGridScaleFactor: effectiveParse.crsGridScaleFactor,
+        crsConvergenceEnabled: effectiveParse.crsConvergenceEnabled,
+        crsConvergenceAngleRad: effectiveParse.crsConvergenceAngleRad,
         qFixLinearSigmaM: effectiveParse.qFixLinearSigmaM,
         qFixAngularSigmaSec: effectiveParse.qFixAngularSigmaSec,
         descriptionReconcileMode: effectiveParse.descriptionReconcileMode,
@@ -4474,11 +4559,142 @@ const App: React.FC = () => {
                 </div>
               )}
 
-              {activeOptionsTab === 'gps' &&
-                renderPlaceholderPanel(
-                  'GPS Options',
-                  'Dedicated GNSS project options will be added when industry-style GPS tab controls are wired.',
-                )}
+              {activeOptionsTab === 'gps' && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="border border-slate-400 p-3 space-y-3">
+                    <div className="text-xs uppercase tracking-wider text-slate-200">
+                      CRS / Geodetic Setup
+                    </div>
+                    <label className={optionLabelClass}>
+                      Enable CRS Transforms
+                      <div className="mt-1 flex items-center gap-2 text-xs">
+                        <input
+                          title={SETTINGS_TOOLTIPS.crsTransformEnabled}
+                          type="checkbox"
+                          className="accent-blue-400"
+                          checked={parseSettingsDraft.crsTransformEnabled}
+                          onChange={(e) =>
+                            handleDraftParseSetting('crsTransformEnabled', e.target.checked)
+                          }
+                        />
+                        <span>{parseSettingsDraft.crsTransformEnabled ? 'Enabled' : 'Disabled'}</span>
+                      </div>
+                    </label>
+                    <label className={optionLabelClass}>
+                      Projection Model
+                      <select
+                        title={SETTINGS_TOOLTIPS.crsProjectionModel}
+                        value={parseSettingsDraft.crsProjectionModel}
+                        disabled={!parseSettingsDraft.crsTransformEnabled}
+                        onChange={(e) =>
+                          handleDraftParseSetting(
+                            'crsProjectionModel',
+                            e.target.value as CrsProjectionModel,
+                          )
+                        }
+                        className={`${optionInputClass} mt-1 disabled:opacity-50 disabled:cursor-not-allowed`}
+                      >
+                        <option value="legacy-equirectangular">LEGACY Local (Equirectangular)</option>
+                        <option value="local-enu">Local ENU (Tangent Plane)</option>
+                      </select>
+                    </label>
+                    <label className={optionLabelClass}>
+                      CRS Label
+                      <input
+                        title={SETTINGS_TOOLTIPS.crsLabel}
+                        type="text"
+                        value={parseSettingsDraft.crsLabel}
+                        onChange={(e) => handleDraftParseSetting('crsLabel', e.target.value)}
+                        className={`${optionInputClass} mt-1`}
+                      />
+                    </label>
+                    <label className={optionLabelClass}>
+                      Enable Grid-Ground Scale
+                      <div className="mt-1 flex items-center gap-2 text-xs">
+                        <input
+                          title={SETTINGS_TOOLTIPS.crsGridScaleEnabled}
+                          type="checkbox"
+                          className="accent-blue-400"
+                          checked={parseSettingsDraft.crsGridScaleEnabled}
+                          onChange={(e) =>
+                            handleDraftParseSetting('crsGridScaleEnabled', e.target.checked)
+                          }
+                        />
+                        <span>
+                          {parseSettingsDraft.crsGridScaleEnabled ? 'Enabled' : 'Disabled'}
+                        </span>
+                      </div>
+                    </label>
+                    <label className={optionLabelClass}>
+                      Grid Scale Factor
+                      <input
+                        title={SETTINGS_TOOLTIPS.crsGridScaleFactor}
+                        type="number"
+                        min={0.000001}
+                        step={0.00000001}
+                        value={parseSettingsDraft.crsGridScaleFactor}
+                        disabled={!parseSettingsDraft.crsGridScaleEnabled}
+                        onChange={(e) => {
+                          const parsed = Number.parseFloat(e.target.value);
+                          handleDraftParseSetting(
+                            'crsGridScaleFactor',
+                            Number.isFinite(parsed) && parsed > 0 ? parsed : 1,
+                          );
+                        }}
+                        className={`${optionInputClass} mt-1 disabled:opacity-50 disabled:cursor-not-allowed`}
+                      />
+                    </label>
+                    <label className={optionLabelClass}>
+                      Enable Convergence Correction
+                      <div className="mt-1 flex items-center gap-2 text-xs">
+                        <input
+                          title={SETTINGS_TOOLTIPS.crsConvergenceEnabled}
+                          type="checkbox"
+                          className="accent-blue-400"
+                          checked={parseSettingsDraft.crsConvergenceEnabled}
+                          onChange={(e) =>
+                            handleDraftParseSetting('crsConvergenceEnabled', e.target.checked)
+                          }
+                        />
+                        <span>
+                          {parseSettingsDraft.crsConvergenceEnabled ? 'Enabled' : 'Disabled'}
+                        </span>
+                      </div>
+                    </label>
+                    <label className={optionLabelClass}>
+                      Convergence Angle (deg)
+                      <input
+                        title={SETTINGS_TOOLTIPS.crsConvergenceAngle}
+                        type="number"
+                        step={0.000001}
+                        value={(parseSettingsDraft.crsConvergenceAngleRad * RAD_TO_DEG).toFixed(6)}
+                        disabled={!parseSettingsDraft.crsConvergenceEnabled}
+                        onChange={(e) => {
+                          const parsed = Number.parseFloat(e.target.value);
+                          handleDraftParseSetting(
+                            'crsConvergenceAngleRad',
+                            Number.isFinite(parsed) ? parsed / RAD_TO_DEG : 0,
+                          );
+                        }}
+                        className={`${optionInputClass} mt-1 disabled:opacity-50 disabled:cursor-not-allowed`}
+                      />
+                    </label>
+                  </div>
+                  <div className="border border-slate-400 p-3 text-xs text-slate-200 leading-relaxed space-y-2">
+                    <div>
+                      Defaults are safe: CRS transforms are <strong>OFF</strong> unless explicitly
+                      enabled here or via `.CRS` input directives.
+                    </div>
+                    <div>
+                      With transforms OFF, existing `P/PH` local projection behavior is preserved.
+                    </div>
+                    <div>
+                      Grid-ground scale and convergence are optional and remain <strong>OFF</strong>{' '}
+                      unless explicitly enabled here or via `.CRS` directives.
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {activeOptionsTab === 'modeling' && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -4722,6 +4938,13 @@ const App: React.FC = () => {
                             profileDefaultInstrumentFallback:
                               runDiagnostics.profileDefaultInstrumentFallback,
                             rotationAngleRad: runDiagnostics.rotationAngleRad,
+                            crsTransformEnabled: runDiagnostics.crsTransformEnabled,
+                            crsProjectionModel: runDiagnostics.crsProjectionModel,
+                            crsLabel: runDiagnostics.crsLabel,
+                            crsGridScaleEnabled: runDiagnostics.crsGridScaleEnabled,
+                            crsGridScaleFactor: runDiagnostics.crsGridScaleFactor,
+                            crsConvergenceEnabled: runDiagnostics.crsConvergenceEnabled,
+                            crsConvergenceAngleRad: runDiagnostics.crsConvergenceAngleRad,
                           }
                         : null
                     }

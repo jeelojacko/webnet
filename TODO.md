@@ -10,6 +10,10 @@
 - [x] Performance hardening: add conditioning guard and residual spike warnings; consider Web Worker offload (future)
 - [x] Consolidate toolbar settings into a dropdown menu
 - [x] Export adjustment results as text + refresh-to-last-run input
+- [x] Input editor comment workflow: line-wise block toggle via `Shift+3` (`#`) on multiline selections plus right-click `Toggle # Comment` action
+- [x] GPS Phase 1 foundation: CRS state model + projection abstraction (`LEGACY`/`ENU`) with default-off transform controls in Project Options -> GPS
+- [x] GPS Phase 2 modeling: optional CRS grid-ground scale + convergence corrections in solver/inverse workflows with default-off GPS controls
+- [x] GPS Phase 3 diagnostics: surface CRS projection/scale/convergence state in report/processing-summary/industry-listing outputs with regression coverage
 - [x] Standardized residuals (Qvv), redundancy numbers, chi-square test, per-type residual summaries
 - [x] Point precision (σN/σE/σH, ellipse azimuth, 95% toggle) + relative precision between unknown points
 - [x] Map/ellipse viewer interaction upgrades: wheel zoom, middle-button pan, middle-double-click reset-to-extents, zoom-aware symbol scaling
@@ -158,10 +162,10 @@
       - [x] Phase 2: expose machine-readable and listing-style outputs (text/json) with deterministic exit codes
       - [x] Phase 3: add auto-adjust CLI flags, docs, and CI smoke tests for batch execution workflows
   - [ ] GPS improvements (highest impact -> lowest):
-    - [ ] Add full coordinate-system/geodetic engine integration (project CRS selection, grid-ground factors, convergence reporting)
-      - [ ] Phase 1: add CRS selection/state model and projection abstraction for input/output transformations
-      - [ ] Phase 2: integrate grid-ground scale/convergence calculations into observation modeling and inverse tools
-      - [ ] Phase 3: surface CRS/scale/convergence diagnostics in reports/exports with parity fixtures
+  - [~] Add full coordinate-system/geodetic engine integration (project CRS selection, grid-ground factors, convergence reporting)
+      - [x] Phase 1: add CRS selection/state model and projection abstraction for input/output transformations
+      - [x] Phase 2: integrate grid-ground scale/convergence calculations into observation modeling and inverse tools
+      - [x] Phase 3: surface CRS/scale/convergence diagnostics in reports/exports with parity fixtures
     - [ ] Add direct geoid/grid model support (NGS/NRC/BYN-style models) plus input/output ellipsoid selection controls
       - [ ] Phase 1: add geoid/grid file ingestion pipeline (metadata, interpolation, caching, validation)
       - [ ] Phase 2: wire ellipsoid/geoid model choice into height conversions for parse/solve/export paths

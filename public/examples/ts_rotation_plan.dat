@@ -1,0 +1,30 @@
+# WebNet TS Example - Plan Rotation (.ROTATION)
+# .ROTATION adds to azimuth/bearing-style observations:
+#   B, BM, A records in .AMODE DIR, and SS with AZ=
+#
+# Try this:
+# 1) Run as-is (.ROTATION 10 active)
+# 2) Comment out ".ROTATION 10" and run again
+# 3) Compare adjusted B and sideshot SH outputs
+
+.2D
+.ORDER EN
+.UNITS METERS DMS
+.AMODE DIR
+
+I TS1 Trimble-S9 0.001 1.0 1.0 1.0 0.002 0.002
+.I TS1
+
+C A 5000.000 5000.000 0 ! !
+C C 5000.000 5100.000 0 ! !
+C B 5100.000 5000.000 0
+
+.ROTATION 10
+
+# 090-00-00.0 is rotated to 100-00-00.0 internally
+B A-B 090-00-00.0 1.5
+A A-C-B 090-00-00.0 1.5
+BM A B 090-00-00.0 100.000 0.0 1.5 0.003 5.0
+
+# Explicit sideshot azimuth is rotated too
+SS A SH AZ=090-00-00.0 40.000
