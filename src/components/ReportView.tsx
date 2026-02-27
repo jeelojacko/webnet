@@ -183,6 +183,8 @@ const ReportView: React.FC<ReportViewProps> = ({
   const autoSideshotObsIds = new Set(
     autoSideshotDiagnostics?.candidates.flatMap((c) => [c.angleObsId, c.distObsId]) ?? [],
   )
+  const tsSideshots = (result.sideshots ?? []).filter((s) => s.mode !== 'gps')
+  const gpsSideshots = (result.sideshots ?? []).filter((s) => s.mode === 'gps')
   const lostStationIds = [...(result.parseState?.lostStationIds ?? [])].sort((a, b) =>
     a.localeCompare(b, undefined, { numeric: true }),
   )
@@ -233,6 +235,79 @@ const ReportView: React.FC<ReportViewProps> = ({
   const formatEffectiveDistance = (value?: number): string => {
     if (value == null || !Number.isFinite(value) || value <= 0) return '-'
     return (value * unitScale).toFixed(4)
+  }
+  const renderSideshotSection = (
+    title: string,
+    rows: NonNullable<AdjustmentResult['sideshots']>,
+  ) => {
+    if (rows.length === 0) return null
+    return (
+      <div className="mb-8 border border-slate-800 rounded overflow-hidden">
+        <div className="px-3 py-2 text-xs text-slate-400 uppercase tracking-wider border-b border-slate-800 bg-slate-900/40">
+          {title}
+        </div>
+        <div className="overflow-x-auto w-full">
+          <table className="w-full text-left border-collapse text-xs">
+            <thead>
+              <tr className="text-slate-500 border-b border-slate-800">
+                <th className="py-2 px-3 font-semibold">From</th>
+                <th className="py-2 px-3 font-semibold">To</th>
+                <th className="py-2 px-3 font-semibold text-right">Line</th>
+                <th className="py-2 px-3 font-semibold text-right">Mode</th>
+                <th className="py-2 px-3 font-semibold text-right">Az</th>
+                <th className="py-2 px-3 font-semibold text-right">Az Src</th>
+                <th className="py-2 px-3 font-semibold text-right">HD ({units})</th>
+                <th className="py-2 px-3 font-semibold text-right">dH ({units})</th>
+                <th className="py-2 px-3 font-semibold text-right">Northing ({units})</th>
+                <th className="py-2 px-3 font-semibold text-right">Easting ({units})</th>
+                <th className="py-2 px-3 font-semibold text-right">Height ({units})</th>
+                <th className="py-2 px-3 font-semibold text-right">σN ({units})</th>
+                <th className="py-2 px-3 font-semibold text-right">σE ({units})</th>
+                <th className="py-2 px-3 font-semibold text-right">σH ({units})</th>
+                <th className="py-2 px-3 font-semibold">Note</th>
+              </tr>
+            </thead>
+            <tbody className="text-slate-300">
+              {rows.map((s) => (
+                <tr key={s.id} className="border-b border-slate-800/50">
+                  <td className="py-1 px-3">{s.from}</td>
+                  <td className="py-1 px-3">{s.to}</td>
+                  <td className="py-1 px-3 text-right">{s.sourceLine ?? '-'}</td>
+                  <td className="py-1 px-3 text-right">{s.mode}</td>
+                  <td className="py-1 px-3 text-right">
+                    {s.azimuth != null ? radToDmsStr(s.azimuth) : '-'}
+                  </td>
+                  <td className="py-1 px-3 text-right">{s.azimuthSource ?? '-'}</td>
+                  <td className="py-1 px-3 text-right">{(s.horizDistance * unitScale).toFixed(4)}</td>
+                  <td className="py-1 px-3 text-right">
+                    {s.deltaH != null ? (s.deltaH * unitScale).toFixed(4) : '-'}
+                  </td>
+                  <td className="py-1 px-3 text-right">
+                    {s.northing != null ? (s.northing * unitScale).toFixed(4) : '-'}
+                  </td>
+                  <td className="py-1 px-3 text-right">
+                    {s.easting != null ? (s.easting * unitScale).toFixed(4) : '-'}
+                  </td>
+                  <td className="py-1 px-3 text-right">
+                    {s.height != null ? (s.height * unitScale).toFixed(4) : '-'}
+                  </td>
+                  <td className="py-1 px-3 text-right">
+                    {s.sigmaN != null ? (s.sigmaN * unitScale).toFixed(4) : '-'}
+                  </td>
+                  <td className="py-1 px-3 text-right">
+                    {s.sigmaE != null ? (s.sigmaE * unitScale).toFixed(4) : '-'}
+                  </td>
+                  <td className="py-1 px-3 text-right">
+                    {s.sigmaH != null ? (s.sigmaH * unitScale).toFixed(4) : '-'}
+                  </td>
+                  <td className="py-1 px-3 text-slate-500">{s.note ?? '-'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    )
   }
 
   const headerTooltip = (rawLabel: string): string | undefined => {
@@ -2562,72 +2637,11 @@ const ReportView: React.FC<ReportViewProps> = ({
         </div>
       )}
 
-      {result.sideshots && result.sideshots.length > 0 && (
-        <div className="mb-8 border border-slate-800 rounded overflow-hidden">
-          <div className="px-3 py-2 text-xs text-slate-400 uppercase tracking-wider border-b border-slate-800 bg-slate-900/40">
-            Post-Adjusted Sideshots
-          </div>
-          <div className="overflow-x-auto w-full">
-            <table className="w-full text-left border-collapse text-xs">
-              <thead>
-                <tr className="text-slate-500 border-b border-slate-800">
-                  <th className="py-2 px-3 font-semibold">From</th>
-                  <th className="py-2 px-3 font-semibold">To</th>
-                  <th className="py-2 px-3 font-semibold text-right">Line</th>
-                  <th className="py-2 px-3 font-semibold text-right">Mode</th>
-                  <th className="py-2 px-3 font-semibold text-right">Az</th>
-                  <th className="py-2 px-3 font-semibold text-right">Az Src</th>
-                  <th className="py-2 px-3 font-semibold text-right">HD ({units})</th>
-                  <th className="py-2 px-3 font-semibold text-right">dH ({units})</th>
-                  <th className="py-2 px-3 font-semibold text-right">Northing ({units})</th>
-                  <th className="py-2 px-3 font-semibold text-right">Easting ({units})</th>
-                  <th className="py-2 px-3 font-semibold text-right">Height ({units})</th>
-                  <th className="py-2 px-3 font-semibold text-right">σN ({units})</th>
-                  <th className="py-2 px-3 font-semibold text-right">σE ({units})</th>
-                  <th className="py-2 px-3 font-semibold text-right">σH ({units})</th>
-                  <th className="py-2 px-3 font-semibold">Note</th>
-                </tr>
-              </thead>
-              <tbody className="text-slate-300">
-                {result.sideshots.map((s) => (
-                  <tr key={s.id} className="border-b border-slate-800/50">
-                    <td className="py-1 px-3">{s.from}</td>
-                    <td className="py-1 px-3">{s.to}</td>
-                    <td className="py-1 px-3 text-right">{s.sourceLine ?? '-'}</td>
-                    <td className="py-1 px-3 text-right">{s.mode}</td>
-                    <td className="py-1 px-3 text-right">
-                      {s.azimuth != null ? radToDmsStr(s.azimuth) : '-'}
-                    </td>
-                    <td className="py-1 px-3 text-right">{s.azimuthSource ?? '-'}</td>
-                    <td className="py-1 px-3 text-right">{(s.horizDistance * unitScale).toFixed(4)}</td>
-                    <td className="py-1 px-3 text-right">
-                      {s.deltaH != null ? (s.deltaH * unitScale).toFixed(4) : '-'}
-                    </td>
-                    <td className="py-1 px-3 text-right">
-                      {s.northing != null ? (s.northing * unitScale).toFixed(4) : '-'}
-                    </td>
-                    <td className="py-1 px-3 text-right">
-                      {s.easting != null ? (s.easting * unitScale).toFixed(4) : '-'}
-                    </td>
-                    <td className="py-1 px-3 text-right">
-                      {s.height != null ? (s.height * unitScale).toFixed(4) : '-'}
-                    </td>
-                    <td className="py-1 px-3 text-right">
-                      {s.sigmaN != null ? (s.sigmaN * unitScale).toFixed(4) : '-'}
-                    </td>
-                    <td className="py-1 px-3 text-right">
-                      {s.sigmaE != null ? (s.sigmaE * unitScale).toFixed(4) : '-'}
-                    </td>
-                    <td className="py-1 px-3 text-right">
-                      {s.sigmaH != null ? (s.sigmaH * unitScale).toFixed(4) : '-'}
-                    </td>
-                    <td className="py-1 px-3 text-slate-500">{s.note ?? '-'}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
+      {(tsSideshots.length > 0 || gpsSideshots.length > 0) && (
+        <>
+          {renderSideshotSection('Post-Adjusted Sideshots (TS)', tsSideshots)}
+          {renderSideshotSection('Post-Adjusted GPS Sideshot Vectors', gpsSideshots)}
+        </>
       )}
 
       <div className="mb-8">

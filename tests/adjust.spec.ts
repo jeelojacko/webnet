@@ -355,6 +355,32 @@ describe('LSAEngine', () => {
     expect(row?.sigmaN).toBeGreaterThan(0);
   });
 
+  it('handles mixed GPS NETWORK + GPS SIDESHOT vectors with dedicated post-adjust sideshot output', () => {
+    const input = readFileSync('tests/fixtures/gps_network_sideshot_phase3.dat', 'utf-8');
+    const result = new LSAEngine({ input, maxIterations: 10 }).solve();
+
+    const gpsNetworkObs = result.observations.find(
+      (o) => o.type === 'gps' && o.gpsMode === 'network',
+    );
+    const gpsSideshotObs = result.observations.find(
+      (o) => o.type === 'gps' && o.gpsMode === 'sideshot',
+    );
+    const gpsSideshotRow = result.sideshots?.find(
+      (row) => row.mode === 'gps' && row.to === 'RTK1',
+    );
+
+    expect(result.success).toBe(true);
+    expect(gpsNetworkObs).toBeDefined();
+    expect(gpsSideshotObs).toBeDefined();
+    expect(result.logs.some((l) => l.includes('GPS sideshot vectors excluded from adjustment equations: 1'))).toBe(true);
+    expect(gpsSideshotRow).toBeDefined();
+    expect(gpsSideshotRow?.azimuthSource).toBe('vector');
+    expect(gpsSideshotRow?.easting ?? 0).toBeCloseTo(1004.25, 8);
+    expect(gpsSideshotRow?.northing ?? 0).toBeCloseTo(1996.25, 8);
+    expect(gpsSideshotRow?.sigmaE).toBeGreaterThan(0);
+    expect(gpsSideshotRow?.sigmaN).toBeGreaterThan(0);
+  });
+
   it('uses provided default instrument precision for records without explicit instrument codes', () => {
     const input = ['.2D', 'C A 0 0 0 ! !', 'C B 10 0 0', 'D A-B 10.0'].join('\n');
     const fallbackRun = new LSAEngine({ input, maxIterations: 6 }).solve();

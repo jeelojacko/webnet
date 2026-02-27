@@ -1066,6 +1066,8 @@ const App: React.FC = () => {
     const outputSideshots = (res.sideshots ?? []).filter(
       (ss) => isVisibleStation(ss.from) && isVisibleStation(ss.to),
     );
+    const outputTsSideshots = outputSideshots.filter((ss) => ss.mode !== 'gps');
+    const outputGpsSideshots = outputSideshots.filter((ss) => ss.mode === 'gps');
     lines.push(`# WebNet Adjustment Results`);
     lines.push(`# Generated: ${now.toLocaleString()}`);
     lines.push(`# Linear units: ${linearUnit}`);
@@ -2453,9 +2455,13 @@ const App: React.FC = () => {
         lines.push('');
       }
     }
-    if (outputSideshots.length > 0) {
-      lines.push('--- Post-Adjusted Sideshots ---');
-      const rows = outputSideshots.map((s) => ({
+    const appendSideshotSection = (
+      title: string,
+      sideshots: typeof outputSideshots,
+    ): void => {
+      if (sideshots.length === 0) return;
+      lines.push(`--- ${title} ---`);
+      const rows = sideshots.map((s) => ({
         from: s.from,
         to: s.to,
         line: s.sourceLine != null ? String(s.sourceLine) : '-',
@@ -2548,7 +2554,9 @@ const App: React.FC = () => {
         );
       });
       lines.push('');
-    }
+    };
+    appendSideshotSection('Post-Adjusted Sideshots (TS)', outputTsSideshots);
+    appendSideshotSection('Post-Adjusted GPS Sideshot Vectors', outputGpsSideshots);
     lines.push('--- Observations & Residuals ---');
     lines.push(`MDB units: arcsec for angular types; ${linearUnit} for linear types`);
     const autoSideshotObsIds = new Set(

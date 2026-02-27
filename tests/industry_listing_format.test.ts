@@ -139,6 +139,48 @@ describe('industry listing phase 5 formatting locks', () => {
     expect(listing).toMatch(/^\s*O-P\s+.+\s+.+\s+100\.0000\s+.+\s+.+\s+1:11\s*$/m);
   });
 
+  it('renders dedicated GPS sideshot listing section for mixed GPS network datasets', () => {
+    const input = readFileSync('tests/fixtures/gps_network_sideshot_phase3.dat', 'utf-8');
+    const result = new LSAEngine({ input, maxIterations: 10 }).solve();
+    const listing = buildIndustryStyleListingText(
+      result,
+      {
+        maxIterations: 10,
+        units: 'm',
+        listingShowCoordinates: true,
+        listingShowObservationsResiduals: true,
+        listingShowErrorPropagation: true,
+        listingShowProcessingNotes: false,
+        listingShowAzimuthsBearings: true,
+        listingSortCoordinatesBy: 'name',
+        listingSortObservationsBy: 'input',
+        listingObservationLimit: 500,
+      },
+      {
+        coordMode: '2D',
+        order: 'EN',
+        angleUnits: 'dms',
+        angleStationOrder: 'atfromto',
+        deltaMode: 'horiz',
+        refractionCoefficient: 0.13,
+      },
+      {
+        solveProfile: 'webnet',
+        angleCenteringModel: 'geometry-aware-correlated-rays',
+        defaultSigmaCount: 0,
+        defaultSigmaByType: '',
+        stochasticDefaultsSummary: 'inst=S9',
+        rotationAngleRad: 0,
+      },
+    );
+
+    expect(listing).toContain('Post-Adjusted GPS Sideshot Vectors');
+    expect(listing).toContain('OCC');
+    expect(listing).toContain('RTK1');
+    expect(listing).toContain('vector');
+    expect(listing).not.toContain('Post-Adjusted Sideshots (TS)');
+  });
+
   it('renders auto-adjust diagnostics section when present', () => {
     const input = readFileSync('public/examples/industry-input.txt', 'utf-8');
     const engine = new LSAEngine({

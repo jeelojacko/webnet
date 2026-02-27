@@ -140,15 +140,21 @@ export const buildIndustryStyleListingText = (
       if ('from' in obs && 'to' in obs) return [obs.from, obs.to];
       return [];
     };
+    const isHiddenLostStation = (stationId: string): boolean => {
+      if (showLostStations) return false;
+      const station = res.stations[stationId];
+      return station?.lost === true;
+    };
     const observationReferencesHiddenLostStation = (obs: Observation): boolean =>
-      !showLostStations &&
-      observationStationIds(obs).some((stationId) => {
-        const station = res.stations[stationId];
-        return station?.lost === true;
-      });
+      observationStationIds(obs).some((stationId) => isHiddenLostStation(stationId));
     const observationsForListing = res.observations.filter(
       (obs) => !observationReferencesHiddenLostStation(obs),
     );
+    const sideshotsForListing = (res.sideshots ?? []).filter(
+      (row) => !isHiddenLostStation(row.from) && !isHiddenLostStation(row.to),
+    );
+    const tsSideshotsForListing = sideshotsForListing.filter((row) => row.mode !== 'gps');
+    const gpsSideshotsForListing = sideshotsForListing.filter((row) => row.mode === 'gps');
     const aliasTrace = parseState?.aliasTrace ?? [];
     const descriptionTrace = parseState?.descriptionTrace ?? [];
     const descriptionScanSummary = parseState?.descriptionScanSummary ?? [];
@@ -755,6 +761,58 @@ export const buildIndustryStyleListingText = (
         });
       }
     }
+    const renderSideshotListingSection = (
+      title: string,
+      rows: typeof sideshotsForListing,
+    ) => {
+      if (rows.length === 0) return;
+      lines.push('');
+      addCenteredHeading(title);
+      lines.push('');
+      const tableRows = rows.map((row) => [
+        row.from,
+        row.to,
+        row.sourceLine != null ? `1:${row.sourceLine}` : '-',
+        row.mode,
+        row.azimuth != null ? radToDmsStr(row.azimuth) : '-',
+        row.azimuthSource ?? '-',
+        (row.horizDistance * unitScale).toFixed(4),
+        row.deltaH != null ? (row.deltaH * unitScale).toFixed(4) : '-',
+        row.northing != null ? (row.northing * unitScale).toFixed(4) : '-',
+        row.easting != null ? (row.easting * unitScale).toFixed(4) : '-',
+        row.height != null ? (row.height * unitScale).toFixed(4) : '-',
+        row.sigmaN != null ? (row.sigmaN * unitScale).toFixed(4) : '-',
+        row.sigmaE != null ? (row.sigmaE * unitScale).toFixed(4) : '-',
+        row.sigmaH != null ? (row.sigmaH * unitScale).toFixed(4) : '-',
+        row.note ?? '-',
+      ]);
+      renderTextTable(
+        [
+          'From',
+          'To',
+          'File:Line',
+          'Mode',
+          'Az',
+          'AzSrc',
+          `HD (${linearUnit})`,
+          `dH (${linearUnit})`,
+          `Northing (${linearUnit})`,
+          `Easting (${linearUnit})`,
+          `Height (${linearUnit})`,
+          `σN (${linearUnit})`,
+          `σE (${linearUnit})`,
+          `σH (${linearUnit})`,
+          'Note',
+        ],
+        tableRows,
+        [6, 7, 8, 9, 10, 11, 12, 13],
+      );
+    };
+    renderSideshotListingSection('Post-Adjusted Sideshots (TS)', tsSideshotsForListing);
+    renderSideshotListingSection(
+      'Post-Adjusted GPS Sideshot Vectors',
+      gpsSideshotsForListing,
+    );
 
     if (settings.listingShowErrorPropagation) {
       const ellipse95Scale = 2.4477;

@@ -171,10 +171,10 @@
       - [x] Phase 1: add geoid/grid file ingestion pipeline (metadata, interpolation, caching, validation)
       - [x] Phase 2: wire ellipsoid/geoid model choice into height conversions for parse/solve/export paths
       - [x] Phase 3: add project options UI + diagnostics for active model and tests against known checkpoints
-    - [~] Implement `.GPS NETWORK` / `.GPS SIDESHOT` modes for vector records with post-adjust sideshot handling
+    - [x] Implement `.GPS NETWORK` / `.GPS SIDESHOT` modes for vector records with post-adjust sideshot handling
       - [x] Phase 1: parse `.GPS NETWORK`/`.GPS SIDESHOT` mode state and tag incoming GNSS vectors accordingly
       - [x] Phase 2: exclude GPS sideshot vectors from adjustment while computing post-adjust coordinate/precision outputs
-      - [ ] Phase 3: add report/export sections and parity tests for mixed network+sideshot GPS datasets
+      - [x] Phase 3: add report/export sections and parity tests for mixed network+sideshot GPS datasets
     - [ ] Implement `.GPS AddHiHt [HI] [HT]` antenna-height correction option in preprocessing
       - [ ] Phase 1: parse `.GPS AddHiHt` option with scoped defaults and validation warnings
       - [ ] Phase 2: apply antenna-height corrections during GNSS observation preprocessing consistently for base/rover

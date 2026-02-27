@@ -268,6 +268,23 @@ const ProcessingSummaryView: React.FC<ProcessingSummaryViewProps> = ({
         lines.push(`  ... ${sd.candidates.length - 20} more auto-sideshot candidates`);
       }
     }
+    const tsSideshots = (result.sideshots ?? []).filter((s) => s.mode !== 'gps');
+    const gpsSideshots = (result.sideshots ?? []).filter((s) => s.mode === 'gps');
+    if (tsSideshots.length > 0 || gpsSideshots.length > 0) {
+      lines.push(
+        `Post-Adjust Sideshots: TS=${tsSideshots.length}, GPS vectors=${gpsSideshots.length}`,
+      );
+      gpsSideshots.slice(0, 15).forEach((row) => {
+        lines.push(
+          `  GPS sideshot line=${row.sourceLine ?? '-'} ${row.from}->${row.to} HD=${(
+            row.horizDistance * unitScale
+          ).toFixed(4)}${linearUnit} az=${row.azimuth != null ? `${((row.azimuth * 180) / Math.PI).toFixed(6)}deg` : '-'}${row.note ? ` note=${row.note}` : ''}`,
+        );
+      });
+      if (gpsSideshots.length > 15) {
+        lines.push(`  ... ${gpsSideshots.length - 15} more GPS sideshot vectors`);
+      }
+    }
     const aliasTrace = result.parseState?.aliasTrace ?? [];
     if ((result.parseState?.aliasExplicitCount ?? 0) > 0 || (result.parseState?.aliasRuleCount ?? 0) > 0) {
       lines.push(
