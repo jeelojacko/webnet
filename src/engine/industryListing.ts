@@ -159,6 +159,8 @@ export const buildIndustryStyleListingText = (
       parseState?.gpsAddHiHtScaleMin ?? runDiag.gpsAddHiHtScaleMin ?? 1;
     const gpsAddHiHtScaleMax =
       parseState?.gpsAddHiHtScaleMax ?? runDiag.gpsAddHiHtScaleMax ?? 1;
+    const gpsLoopCheckEnabled = parseState?.gpsLoopCheckEnabled ?? false;
+    const gpsLoopDiagnostics = res.gpsLoopDiagnostics;
     const descriptionReconcileMode =
       parseState?.descriptionReconcileMode ?? parseSettings.descriptionReconcileMode ?? 'first';
     const descriptionAppendDelimiter =
@@ -284,6 +286,9 @@ export const buildIndustryStyleListingText = (
         `      GPS AddHiHt Preprocess          : vectors=${gpsAddHiHtVectorCount}, adjusted=${gpsAddHiHtAppliedCount} (+${gpsAddHiHtPositiveCount}/-${gpsAddHiHtNegativeCount}/neutral=${gpsAddHiHtNeutralCount}), defaultZero=${gpsAddHiHtDefaultZeroCount}, missingHeight=${gpsAddHiHtMissingHeightCount}, scale=[${gpsAddHiHtScaleMin.toFixed(8)}, ${gpsAddHiHtScaleMax.toFixed(8)}]`,
       );
     }
+    lines.push(
+      `      GPS Loop Check                  : ${gpsLoopCheckEnabled ? 'ON' : 'OFF'}${gpsLoopDiagnostics?.enabled ? ` (vectors=${gpsLoopDiagnostics.vectorCount}, loops=${gpsLoopDiagnostics.loopCount}, pass=${gpsLoopDiagnostics.passCount}, warn=${gpsLoopDiagnostics.warnCount})` : ''}`,
+    );
     lines.push(
       `      Lost Stations                     : ${lostStationIds.length > 0 ? `${lostStationIds.length} (${lostStationIds.join(', ')})` : 'none'}`,
     );
@@ -855,6 +860,43 @@ export const buildIndustryStyleListingText = (
       'Post-Adjusted GPS Sideshot Vectors',
       gpsSideshotsForListing,
     );
+    if (gpsLoopDiagnostics?.enabled) {
+      lines.push('');
+      addCenteredHeading('GPS Loop Diagnostics');
+      lines.push('');
+      lines.push(
+        `vectors=${gpsLoopDiagnostics.vectorCount}, loops=${gpsLoopDiagnostics.loopCount}, pass=${gpsLoopDiagnostics.passCount}, warn=${gpsLoopDiagnostics.warnCount}, tolerance=${(gpsLoopDiagnostics.thresholds.baseToleranceM * unitScale).toFixed(4)}${linearUnit}+${gpsLoopDiagnostics.thresholds.ppmTolerance}ppm*dist`,
+      );
+      lines.push('');
+      const gpsLoopRows = gpsLoopDiagnostics.loops.map((loop) => [
+        String(loop.rank),
+        loop.key,
+        loop.pass ? 'PASS' : 'WARN',
+        (loop.closureMag * unitScale).toFixed(4),
+        (loop.toleranceM * unitScale).toFixed(4),
+        loop.linearPpm != null ? loop.linearPpm.toFixed(1) : '-',
+        loop.closureRatio != null ? `1:${loop.closureRatio.toFixed(0)}` : '-',
+        loop.severity.toFixed(2),
+        loop.sourceLines.length > 0 ? loop.sourceLines.join(',') : '-',
+        loop.stationPath.join('->'),
+      ]);
+      renderTextTable(
+        [
+          '#',
+          'Loop',
+          'Status',
+          `Closure (${linearUnit})`,
+          `Tol (${linearUnit})`,
+          'Linear (ppm)',
+          'Ratio',
+          'Severity',
+          'Lines',
+          'Path',
+        ],
+        gpsLoopRows,
+        [3, 4, 5, 7],
+      );
+    }
 
     if (settings.listingShowErrorPropagation) {
       const ellipse95Scale = 2.4477;

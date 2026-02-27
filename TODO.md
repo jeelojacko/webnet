@@ -180,10 +180,10 @@
       - [x] Phase 1: parse `.GPS AddHiHt` option with scoped defaults and validation warnings
       - [x] Phase 2: apply antenna-height corrections during GNSS observation preprocessing consistently for base/rover
       - [x] Phase 3: add diagnostics and regression fixtures covering positive/negative and missing-height cases
-    - [~] Add GPS vector loop-closure diagnostics/check command with loop summaries in report/export
+    - [x] Add GPS vector loop-closure diagnostics/check command with loop summaries in report/export
       - [x] Phase 1: detect GNSS loop candidates and compute closure vectors/magnitudes independent of adjustment residuals
       - [x] Phase 2: add tolerance checks/ranking and expose loop diagnostics in processing and report views
-      - [ ] Phase 3: add export block and tests for known loop-pass/fail datasets
+      - [x] Phase 3: add export block and tests for known loop-pass/fail datasets
     - [ ] Add OPUS/OPUS-RS import path with full covariance ingestion to GPS observation records
       - [ ] Phase 1: implement OPUS/OPUS-RS parser for station coordinates, covariance, and metadata extraction
       - [ ] Phase 2: map imported covariance into GNSS observation/control constraints with unit/axis normalization

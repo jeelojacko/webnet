@@ -1124,6 +1124,7 @@ const App: React.FC = () => {
     );
     const outputTsSideshots = outputSideshots.filter((ss) => ss.mode !== 'gps');
     const outputGpsSideshots = outputSideshots.filter((ss) => ss.mode === 'gps');
+    const gpsLoopDiagnostics = res.gpsLoopDiagnostics;
     lines.push(`# WebNet Adjustment Results`);
     lines.push(`# Generated: ${now.toLocaleString()}`);
     lines.push(`# Linear units: ${linearUnit}`);
@@ -1181,6 +1182,11 @@ const App: React.FC = () => {
     if (runDiag.gpsAddHiHtEnabled) {
       lines.push(
         `GPS AddHiHt preprocessing: vectors=${runDiag.gpsAddHiHtVectorCount}, adjusted=${runDiag.gpsAddHiHtAppliedCount} (+${runDiag.gpsAddHiHtPositiveCount}/-${runDiag.gpsAddHiHtNegativeCount}/neutral=${runDiag.gpsAddHiHtNeutralCount}), defaultZero=${runDiag.gpsAddHiHtDefaultZeroCount}, missingHeight=${runDiag.gpsAddHiHtMissingHeightCount}, scale[min=${runDiag.gpsAddHiHtScaleMin.toFixed(8)}, max=${runDiag.gpsAddHiHtScaleMax.toFixed(8)}]`,
+      );
+    }
+    if (gpsLoopDiagnostics?.enabled) {
+      lines.push(
+        `GPS loop diagnostics: vectors=${gpsLoopDiagnostics.vectorCount}, loops=${gpsLoopDiagnostics.loopCount}, pass=${gpsLoopDiagnostics.passCount}, warn=${gpsLoopDiagnostics.warnCount}, tolerance=${(gpsLoopDiagnostics.thresholds.baseToleranceM * unitScale).toFixed(4)}${linearUnit}+${gpsLoopDiagnostics.thresholds.ppmTolerance}ppm*dist`,
       );
     }
     const lostStationIds = [...(res.parseState?.lostStationIds ?? [])].sort((a, b) =>
@@ -2622,6 +2628,82 @@ const App: React.FC = () => {
     };
     appendSideshotSection('Post-Adjusted Sideshots (TS)', outputTsSideshots);
     appendSideshotSection('Post-Adjusted GPS Sideshot Vectors', outputGpsSideshots);
+    const appendGpsLoopSection = (): void => {
+      if (!gpsLoopDiagnostics?.enabled) return;
+      lines.push('--- GPS Loop Diagnostics ---');
+      lines.push(
+        `vectors=${gpsLoopDiagnostics.vectorCount}, loops=${gpsLoopDiagnostics.loopCount}, pass=${gpsLoopDiagnostics.passCount}, warn=${gpsLoopDiagnostics.warnCount}, tolerance=${(gpsLoopDiagnostics.thresholds.baseToleranceM * unitScale).toFixed(4)}${linearUnit}+${gpsLoopDiagnostics.thresholds.ppmTolerance}ppm*dist`,
+      );
+      const rows = gpsLoopDiagnostics.loops.map((loop) => ({
+        rank: String(loop.rank),
+        key: loop.key,
+        status: loop.pass ? 'PASS' : 'WARN',
+        closure: (loop.closureMag * unitScale).toFixed(4),
+        tolerance: (loop.toleranceM * unitScale).toFixed(4),
+        ppm: loop.linearPpm != null ? loop.linearPpm.toFixed(1) : '-',
+        ratio: loop.closureRatio != null ? `1:${loop.closureRatio.toFixed(0)}` : '-',
+        severity: loop.severity.toFixed(2),
+        lines: loop.sourceLines.length > 0 ? loop.sourceLines.join(',') : '-',
+        path: loop.stationPath.join('->'),
+      }));
+      const header = {
+        rank: '#',
+        key: 'Loop',
+        status: 'Status',
+        closure: `Closure(${linearUnit})`,
+        tolerance: `Tol(${linearUnit})`,
+        ppm: 'Linear(ppm)',
+        ratio: 'Ratio',
+        severity: 'Severity',
+        lines: 'Lines',
+        path: 'Path',
+      };
+      const widths = {
+        rank: Math.max(header.rank.length, ...rows.map((r) => r.rank.length)),
+        key: Math.max(header.key.length, ...rows.map((r) => r.key.length)),
+        status: Math.max(header.status.length, ...rows.map((r) => r.status.length)),
+        closure: Math.max(header.closure.length, ...rows.map((r) => r.closure.length)),
+        tolerance: Math.max(header.tolerance.length, ...rows.map((r) => r.tolerance.length)),
+        ppm: Math.max(header.ppm.length, ...rows.map((r) => r.ppm.length)),
+        ratio: Math.max(header.ratio.length, ...rows.map((r) => r.ratio.length)),
+        severity: Math.max(header.severity.length, ...rows.map((r) => r.severity.length)),
+        lines: Math.max(header.lines.length, ...rows.map((r) => r.lines.length)),
+        path: Math.max(header.path.length, ...rows.map((r) => r.path.length)),
+      };
+      const pad = (value: string, size: number) => value.padEnd(size, ' ');
+      lines.push(
+        [
+          pad(header.rank, widths.rank),
+          pad(header.key, widths.key),
+          pad(header.status, widths.status),
+          pad(header.closure, widths.closure),
+          pad(header.tolerance, widths.tolerance),
+          pad(header.ppm, widths.ppm),
+          pad(header.ratio, widths.ratio),
+          pad(header.severity, widths.severity),
+          pad(header.lines, widths.lines),
+          pad(header.path, widths.path),
+        ].join('  '),
+      );
+      rows.forEach((row) => {
+        lines.push(
+          [
+            pad(row.rank, widths.rank),
+            pad(row.key, widths.key),
+            pad(row.status, widths.status),
+            pad(row.closure, widths.closure),
+            pad(row.tolerance, widths.tolerance),
+            pad(row.ppm, widths.ppm),
+            pad(row.ratio, widths.ratio),
+            pad(row.severity, widths.severity),
+            pad(row.lines, widths.lines),
+            pad(row.path, widths.path),
+          ].join('  '),
+        );
+      });
+      lines.push('');
+    };
+    appendGpsLoopSection();
     lines.push('--- Observations & Residuals ---');
     lines.push(`MDB units: arcsec for angular types; ${linearUnit} for linear types`);
     const autoSideshotObsIds = new Set(

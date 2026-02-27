@@ -492,6 +492,32 @@ describe('LSAEngine', () => {
     expect(result.logs.some((line) => line.includes('GPS loop check:'))).toBe(false);
   });
 
+  it('classifies known pass loop datasets as PASS within tolerance', () => {
+    const input = readFileSync('tests/fixtures/gps_loop_phase3_pass.dat', 'utf-8');
+    const result = new LSAEngine({ input, maxIterations: 10 }).solve();
+    const loopDiag = result.gpsLoopDiagnostics;
+
+    expect(loopDiag?.enabled ?? false).toBe(true);
+    expect(loopDiag?.loopCount ?? 0).toBe(1);
+    expect(loopDiag?.passCount ?? 0).toBe(1);
+    expect(loopDiag?.warnCount ?? 0).toBe(0);
+    expect(loopDiag?.loops[0].pass ?? false).toBe(true);
+    expect(loopDiag?.loops[0].closureMag ?? 0).toBeLessThan(loopDiag?.loops[0].toleranceM ?? 0);
+  });
+
+  it('classifies known fail loop datasets as WARN when closure exceeds tolerance', () => {
+    const input = readFileSync('tests/fixtures/gps_loop_phase3_fail.dat', 'utf-8');
+    const result = new LSAEngine({ input, maxIterations: 10 }).solve();
+    const loopDiag = result.gpsLoopDiagnostics;
+
+    expect(loopDiag?.enabled ?? false).toBe(true);
+    expect(loopDiag?.loopCount ?? 0).toBe(1);
+    expect(loopDiag?.passCount ?? 0).toBe(0);
+    expect(loopDiag?.warnCount ?? 0).toBe(1);
+    expect(loopDiag?.loops[0].pass ?? true).toBe(false);
+    expect(loopDiag?.loops[0].closureMag ?? 0).toBeGreaterThan(loopDiag?.loops[0].toleranceM ?? 0);
+  });
+
   it('handles mixed GPS NETWORK + GPS SIDESHOT vectors with dedicated post-adjust sideshot output', () => {
     const input = readFileSync('tests/fixtures/gps_network_sideshot_phase3.dat', 'utf-8');
     const result = new LSAEngine({ input, maxIterations: 10 }).solve();
