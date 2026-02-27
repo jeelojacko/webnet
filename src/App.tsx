@@ -414,6 +414,8 @@ const SETTINGS_TOOLTIPS = {
     'Select an instrument code to view parsed EDM/angle/centering and other precision parameters.',
   mapShowLostStations:
     'Show or hide stations flagged by .LOSTSTATIONS in the Map & Ellipses tab. Hidden lost stations are still included in the adjustment.',
+  map3dEnabled:
+    'Enable optional 3D map mode in the Map & Ellipses tab. Off by default; large/mobile networks may auto-fallback to 2D for performance.',
   listingShowLostStations:
     'Show or hide .LOSTSTATIONS points and related rows in listing/export output. Hidden lost stations are still included in the adjustment.',
   listingShowCoordinates: 'Include adjusted coordinate table in industry-style listing output.',
@@ -3574,7 +3576,7 @@ const App: React.FC = () => {
                         <option value="3D">3D</option>
                       </select>
                     </label>
-                    <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-5 gap-3">
                       <label className={optionLabelClass}>
                         Cluster Detection
                         <div className="mt-1 flex items-center gap-2 text-xs">
@@ -3605,6 +3607,21 @@ const App: React.FC = () => {
                             }
                           />
                           <span>{settingsDraft.mapShowLostStations ? 'Enabled' : 'Disabled'}</span>
+                        </div>
+                      </label>
+                      <label className={optionLabelClass}>
+                        Map 3D
+                        <div className="mt-1 flex items-center gap-2 text-xs">
+                          <input
+                            title={SETTINGS_TOOLTIPS.map3dEnabled}
+                            type="checkbox"
+                            className="accent-blue-400"
+                            checked={settingsDraft.map3dEnabled}
+                            onChange={(e) =>
+                              handleDraftSetting('map3dEnabled', e.target.checked)
+                            }
+                          />
+                          <span>{settingsDraft.map3dEnabled ? 'Enabled' : 'Disabled'}</span>
                         </div>
                       </label>
                       <label className={optionLabelClass}>

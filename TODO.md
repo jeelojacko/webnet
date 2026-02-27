@@ -149,10 +149,10 @@
       - [x] Phase 1: compute effective distance metrics for angular observation families during statistics pass
       - [x] Phase 2: add columns/formatting in report, processing summary, and industry-style export outputs
       - [x] Phase 3: add fixture assertions for value correctness across angle/direction/bearing scenarios
-    - [~] Add optional 3D network plot mode (3D ellipsoids/orbit/view-cube style controls) for deeper parity with Industry Standard 10-14 visualization
+    - [x] Add optional 3D network plot mode (3D ellipsoids/orbit/view-cube style controls) for deeper parity with Industry Standard 10-14 visualization
       - [x] Phase 1: introduce 3D plot architecture (camera, scene graph, station/connection primitives) behind feature flag
       - [x] Phase 2: render 3D confidence ellipsoids and implement orbit/pan/zoom/view-cube interactions
-      - [ ] Phase 3: add mode toggle, performance fallbacks, and visual regression checks for desktop/mobile layouts
+      - [x] Phase 3: add mode toggle, performance fallbacks, and visual regression checks for desktop/mobile layouts
     - [ ] Add CLI/batch run entrypoint for scripted adjustments (including auto-adjust flags) for automation parity
       - [ ] Phase 1: add Node CLI wrapper to run parser/engine headlessly with input/profile/options arguments
       - [ ] Phase 2: expose machine-readable and listing-style outputs (text/json) with deterministic exit codes

@@ -16,13 +16,20 @@ interface MapViewProps {
   units: 'm' | 'ft';
   showLostStations?: boolean;
   mode?: '2d' | '3d';
+  viewportWidthOverride?: number;
 }
 
 type DragMode = 'none' | 'pan2d' | 'orbit3d' | 'pan3d';
 
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
 
-const MapView: React.FC<MapViewProps> = ({ result, units, showLostStations = true, mode = '2d' }) => {
+const MapView: React.FC<MapViewProps> = ({
+  result,
+  units,
+  showLostStations = true,
+  mode = '2d',
+  viewportWidthOverride,
+}) => {
   const unitScale = units === 'ft' ? FT_PER_M : 1;
   const { stations, observations } = result;
   const svgRef = useRef<SVGSVGElement | null>(null);
@@ -36,6 +43,9 @@ const MapView: React.FC<MapViewProps> = ({ result, units, showLostStations = tru
   const [view2d, setView2d] = useState({ zoom: 1, panX: 0, panY: 0 });
   const [camera3d, setCamera3d] = useState<Map3DCamera | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [viewportWidth, setViewportWidth] = useState<number>(
+    typeof window !== 'undefined' ? window.innerWidth : 1280,
+  );
 
   const scene3d = useMemo(() => buildMap3DScene(result, showLostStations), [result, showLostStations]);
 
@@ -66,6 +76,27 @@ const MapView: React.FC<MapViewProps> = ({ result, units, showLostStations = tru
     return { points: pts, bbox: { minX: minX - pad, minY: minY - pad, width, height } };
   }, [scene3d]);
 
+  useEffect(() => {
+    if (typeof window === 'undefined' || viewportWidthOverride != null) return;
+    const onResize = () => setViewportWidth(window.innerWidth);
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, [viewportWidthOverride]);
+
+  const effectiveViewportWidth = viewportWidthOverride ?? viewportWidth;
+
+  const fallbackReason = useMemo(() => {
+    if (mode !== '3d') return null;
+    if (scene3d.stations.length > 500 || scene3d.edges.length > 1000) {
+      return `network too large (${scene3d.stations.length} stations, ${scene3d.edges.length} edges)`;
+    }
+    if (effectiveViewportWidth < 768 && (scene3d.stations.length > 140 || scene3d.edges.length > 260)) {
+      return `mobile viewport (${effectiveViewportWidth}px) with dense geometry`;
+    }
+    return null;
+  }, [mode, scene3d.edges.length, scene3d.stations.length, effectiveViewportWidth]);
+  const effectiveMode: '2d' | '3d' = mode === '3d' && !fallbackReason ? '3d' : '2d';
+
   const reset2dView = useCallback(() => {
     setView2d({ zoom: 1, panX: 0, panY: 0 });
   }, []);
@@ -75,12 +106,12 @@ const MapView: React.FC<MapViewProps> = ({ result, units, showLostStations = tru
   }, [scene3d]);
 
   useEffect(() => {
-    if (mode === '3d') {
+    if (effectiveMode === '3d') {
       reset3dView();
       return;
     }
     reset2dView();
-  }, [mode, reset2dView, reset3dView, bbox.minX, bbox.minY, bbox.width, bbox.height]);
+  }, [effectiveMode, reset2dView, reset3dView, bbox.minX, bbox.minY, bbox.width, bbox.height]);
 
   const project2d = useCallback(
     (x: number, y: number) => {
@@ -121,7 +152,7 @@ const MapView: React.FC<MapViewProps> = ({ result, units, showLostStations = tru
         setView2d((prev) => ({ ...prev, panX: prev.panX + dx, panY: prev.panY + dy }));
         return;
       }
-      if (mode !== '3d') return;
+      if (effectiveMode !== '3d') return;
       if (dragRef.current.mode === 'orbit3d') {
         setCamera3d((prev) => {
           if (!prev) return prev;
@@ -145,7 +176,7 @@ const MapView: React.FC<MapViewProps> = ({ result, units, showLostStations = tru
         });
       }
     },
-    [toSvgCoords, mode, camera3d?.distance],
+    [toSvgCoords, effectiveMode, camera3d?.distance],
   );
 
   useEffect(() => {
@@ -166,7 +197,7 @@ const MapView: React.FC<MapViewProps> = ({ result, units, showLostStations = tru
 
   const handleWheel = (event: React.WheelEvent<SVGSVGElement>) => {
     event.preventDefault();
-    if (mode === '3d') {
+    if (effectiveMode === '3d') {
       setCamera3d((prev) => {
         if (!prev) return prev;
         const factor = Math.exp(event.deltaY * 0.0015);
@@ -198,7 +229,7 @@ const MapView: React.FC<MapViewProps> = ({ result, units, showLostStations = tru
   };
 
   const handleMouseDown = (event: React.MouseEvent<SVGSVGElement>) => {
-    if (mode === '3d') {
+    if (effectiveMode === '3d') {
       if (event.button === 0) {
         event.preventDefault();
         beginDrag('orbit3d', event.clientX, event.clientY);
@@ -285,12 +316,12 @@ const MapView: React.FC<MapViewProps> = ({ result, units, showLostStations = tru
   );
 
   const projected3d = useMemo(() => {
-    if (mode !== '3d' || !camera3d) return [];
+    if (effectiveMode !== '3d' || !camera3d) return [];
     return scene3d.stations
       .map((node) => ({ node, p: project3d(node.position) }))
       .filter((row) => row.p.visible)
       .sort((a, b) => b.p.depth - a.p.depth);
-  }, [camera3d, mode, project3d, scene3d]);
+  }, [camera3d, effectiveMode, project3d, scene3d]);
 
   const projected3dById = useMemo(() => {
     const map = new Map<string, { x: number; y: number; depth: number }>();
@@ -360,16 +391,21 @@ const MapView: React.FC<MapViewProps> = ({ result, units, showLostStations = tru
     <div className="h-full p-4 flex flex-col min-h-0">
       <div className="flex items-center justify-between mb-3 text-xs text-slate-400 shrink-0">
         <span>
-          Map view ({mode.toUpperCase()} scaled) — coords & ellipses in {units} ({unitScale.toFixed(4)} factor)
+          Map view ({effectiveMode.toUpperCase()} scaled) — coords & ellipses in {units} ({unitScale.toFixed(4)} factor)
         </span>
         <span className="text-slate-500">
-          {mode === '3d'
+          {effectiveMode === '3d'
             ? 'Left-drag=orbit, middle-drag=pan, wheel=zoom, middle-double-click=reset'
             : 'Wheel=zoom, middle-drag=pan, middle-double-click=reset extents'}
         </span>
       </div>
+      {mode === '3d' && fallbackReason && (
+        <div className="mb-2 rounded border border-amber-800/60 bg-amber-950/30 px-3 py-2 text-[11px] text-amber-200">
+          3D rendering fallback: {fallbackReason}. Showing 2D map for stable performance.
+        </div>
+      )}
       <div className="bg-slate-900 border border-slate-800 rounded overflow-hidden flex-1 min-h-0 relative">
-        {mode === '3d' && (
+        {effectiveMode === '3d' && (
           <div className="absolute right-2 top-2 z-10 rounded border border-slate-700/80 bg-slate-900/85 p-1">
             <div className="grid grid-cols-2 gap-1 text-[10px]">
               <button
@@ -406,13 +442,13 @@ const MapView: React.FC<MapViewProps> = ({ result, units, showLostStations = tru
         <svg
           ref={svgRef}
           viewBox={`0 0 ${VIEW_W} ${VIEW_H}`}
-          className={`w-full h-full select-none ${isDragging ? 'cursor-grabbing' : mode === '3d' ? 'cursor-grab' : 'cursor-default'}`}
+          className={`w-full h-full select-none ${isDragging ? 'cursor-grabbing' : effectiveMode === '3d' ? 'cursor-grab' : 'cursor-default'}`}
           onWheel={handleWheel}
           onMouseDown={handleMouseDown}
           onMouseUp={handleMouseUp}
           onMouseLeave={stopDrag}
         >
-          {mode === '2d' && (
+          {effectiveMode === '2d' && (
             <>
               <defs>
                 <marker
@@ -490,7 +526,7 @@ const MapView: React.FC<MapViewProps> = ({ result, units, showLostStations = tru
             </>
           )}
 
-          {mode === '3d' && camera3d && (
+          {effectiveMode === '3d' && camera3d && (
             <>
               <rect x={0} y={0} width={VIEW_W} height={VIEW_H} fill="#020617" />
               {scene3d.edges.map((edge, idx) => {
