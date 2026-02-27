@@ -458,6 +458,8 @@ export const buildIndustryStyleListingText = (
       `${(value * RAD_TO_DEG * 3600).toFixed(2)}"`;
     const formatLinear = (value: number | undefined): string =>
       value != null ? (value * unitScale).toFixed(4) : '-';
+    const formatEffectiveDistance = (value: number | undefined): string =>
+      value != null && Number.isFinite(value) && value > 0 ? (value * unitScale).toFixed(4) : '-';
     const formatEllipseAzDm = (thetaDeg?: number): string => {
       if (thetaDeg == null || !Number.isFinite(thetaDeg)) return '-';
       let az = ((thetaDeg % 180) + 180) % 180;
@@ -622,6 +624,7 @@ export const buildIndustryStyleListingText = (
           `${obs.at}-${obs.from}-${obs.to}${aliasRefsForLine(obs.sourceLine)}${autoSideshotSuffix(obs)}`,
           radToDmsStr(obs.obs),
           formatAngularResidualArcSec(obs.residual as number | undefined),
+          formatEffectiveDistance(obs.effectiveDistance),
           formatAngularStdErrArcSec(obs.stdDev),
           (obs.stdRes ?? 0).toFixed(2),
           obs.sourceLine != null ? `1:${obs.sourceLine}` : '-',
@@ -629,8 +632,8 @@ export const buildIndustryStyleListingText = (
       renderAdjustedSection(
         `Adjusted Angle Observations (${(parseState?.angleUnits ?? parseSettings.angleUnits).toUpperCase()})`,
         angleRows,
-        ['Stations', 'Observed', 'Residual', 'StdErr', 'StdRes', 'File:Line'],
-        [4],
+        ['Stations', 'Observed', 'Residual', `EffDist (${linearUnit})`, 'StdErr', 'StdRes', 'File:Line'],
+        [5],
       );
 
       const distanceRows = listingObservations
@@ -656,6 +659,7 @@ export const buildIndustryStyleListingText = (
           `${obs.at}-${obs.to}${aliasRefsForLine(obs.sourceLine)}${autoSideshotSuffix(obs)}`,
           radToDmsStr(obs.obs),
           formatAngularResidualArcSec(obs.residual as number | undefined),
+          formatEffectiveDistance(obs.effectiveDistance),
           formatAngularStdErrArcSec(obs.stdDev),
           (obs.stdRes ?? 0).toFixed(2),
           obs.sourceLine != null ? `1:${obs.sourceLine}` : '-',
@@ -663,8 +667,8 @@ export const buildIndustryStyleListingText = (
       renderAdjustedSection(
         `Adjusted Direction Observations (${(parseState?.angleUnits ?? parseSettings.angleUnits).toUpperCase()})`,
         directionRows,
-        ['Stations', 'Observed', 'Residual', 'StdErr', 'StdRes', 'File:Line'],
-        [4],
+        ['Stations', 'Observed', 'Residual', `EffDist (${linearUnit})`, 'StdErr', 'StdRes', 'File:Line'],
+        [5],
       );
 
       if (relationshipRows.length > 0) {

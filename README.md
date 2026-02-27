@@ -64,7 +64,7 @@ npm run dev
 - Engine: reports residual-quality diagnostics for blunder screening (|t| distribution bins, local-test fail totals, redundancy weakness counts, worst-observation traceability, and by-type screening stats).
 - Engine: supports TS angular correlated weighting blocks (`.TSCORR`) by setup/set scope and includes correlation diagnostics (groups, equation/pair counts, mean off-diagonal weight) in report/export/logs.
 - Engine: supports robust Huber reweighting (`.ROBUST`) with per-iteration downweight diagnostics and top downweighted rows in logs/report/export.
-- Engine: computes effective-distance metrics for angular families (`angle`, `bearing`/`dir`, `direction`, `zenith`) during statistics pass so report/listing views can display industry-style angular distance context.
+- Engine/UI: computes effective-distance metrics for angular families (`angle`, `bearing`/`dir`, `direction`, `zenith`) during statistics pass and now surfaces `EffDist` columns in adjusted-observation report/listing tables plus a processing-summary effective-distance block.
 - Engine: traverse diagnostics now include linear ppm, angular/vertical closure checks, configurable threshold pass/warn flags, and ranked per-loop closure severity for faster traverse QA.
 - UI/Report: includes automated suspect impact analysis that runs what-if exclusion trials for top suspects and ranks expected impact (dSEUW, dMax|t|, chi-square change, max coordinate shift), with one-click exclude + re-run.
 - UI/Report: when robust mode is enabled, includes side-by-side robust vs classical top-suspect ranking comparison.

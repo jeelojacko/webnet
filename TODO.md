@@ -147,7 +147,7 @@
       - [x] Phase 3: add listing/report summary section with file-line references for conflicts and update tests
     - [~] Add industry-style "effective distance" reporting alongside angular residuals in adjusted observation tables
       - [x] Phase 1: compute effective distance metrics for angular observation families during statistics pass
-      - [ ] Phase 2: add columns/formatting in report, processing summary, and industry-style export outputs
+      - [x] Phase 2: add columns/formatting in report, processing summary, and industry-style export outputs
       - [ ] Phase 3: add fixture assertions for value correctness across angle/direction/bearing scenarios
     - [ ] Add optional 3D network plot mode (3D ellipsoids/orbit/view-cube style controls) for deeper parity with Industry Standard 10-14 visualization
       - [ ] Phase 1: introduce 3D plot architecture (camera, scene graph, station/connection primitives) behind feature flag

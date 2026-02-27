@@ -4693,6 +4693,7 @@ const App: React.FC = () => {
                 {activeTab === 'processing-summary' && (
                   <ProcessingSummaryView
                     result={result}
+                    units={settings.units}
                     runElapsedMs={runElapsedMs}
                     runDiagnostics={
                       runDiagnostics

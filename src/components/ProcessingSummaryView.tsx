@@ -3,6 +3,7 @@ import type { AdjustmentResult, Observation } from '../types';
 
 interface ProcessingSummaryViewProps {
   result: AdjustmentResult;
+  units: 'm' | 'ft';
   runElapsedMs: number | null;
   runDiagnostics: {
     solveProfile: 'webnet' | 'industry-parity';
@@ -18,6 +19,7 @@ type SummaryRow = {
   sumSquares: number;
   errorFactor: number;
 };
+const FT_PER_M = 3.280839895;
 
 const classifyRow = (obs: Observation): string => {
   if (obs.type === 'angle') return 'Angles';
@@ -44,10 +46,13 @@ const padLeft = (value: string, width: number) => value.padStart(width, ' ');
 
 const ProcessingSummaryView: React.FC<ProcessingSummaryViewProps> = ({
   result,
+  units,
   runElapsedMs,
   runDiagnostics,
 }) => {
   const text = useMemo(() => {
+    const unitScale = units === 'ft' ? FT_PER_M : 1;
+    const linearUnit = units === 'ft' ? 'ft' : 'm';
     let summaryRows: SummaryRow[] = [];
     let totalCount = 0;
     if (result.statisticalSummary?.byGroup?.length) {
@@ -108,6 +113,57 @@ const ProcessingSummaryView: React.FC<ProcessingSummaryViewProps> = ({
       lines.push(
         `${padRight('Total', 18)}${padLeft(totalCount.toString(), 7)}${padLeft(result.seuw.toFixed(3), 14)}`,
       );
+    }
+    const effectiveByFamily = new Map<string, { count: number; sum: number; min: number; max: number }>();
+    result.observations.forEach((obs) => {
+      if (!Number.isFinite(obs.effectiveDistance)) return;
+      const effectiveDistance = obs.effectiveDistance as number;
+      if (!(effectiveDistance > 0)) return;
+      const family =
+        obs.type === 'angle'
+          ? 'Angles'
+          : obs.type === 'direction'
+            ? 'Directions'
+            : obs.type === 'bearing' || obs.type === 'dir'
+              ? 'Az/Bearings'
+              : obs.type === 'zenith'
+                ? 'Zenith'
+                : null;
+      if (family == null) return;
+      const row = effectiveByFamily.get(family) ?? {
+        count: 0,
+        sum: 0,
+        min: Number.POSITIVE_INFINITY,
+        max: 0,
+      };
+      row.count += 1;
+      row.sum += effectiveDistance;
+      row.min = Math.min(row.min, effectiveDistance);
+      row.max = Math.max(row.max, effectiveDistance);
+      effectiveByFamily.set(family, row);
+    });
+    if (effectiveByFamily.size > 0) {
+      lines.push('');
+      lines.push(`Effective Distance Summary (${linearUnit})`);
+      lines.push(
+        `${padRight('Observation', 18)}${padLeft('Count', 7)}${padLeft('Mean', 12)}${padLeft(
+          'Min',
+          12,
+        )}${padLeft('Max', 12)}`,
+      );
+      [...effectiveByFamily.entries()]
+        .sort((a, b) => a[0].localeCompare(b[0]))
+        .forEach(([label, row]) => {
+          lines.push(
+            `${padRight(label, 18)}${padLeft(row.count.toString(), 7)}${padLeft(
+              (row.sum / row.count * unitScale).toFixed(4),
+              12,
+            )}${padLeft((row.min * unitScale).toFixed(4), 12)}${padLeft(
+              (row.max * unitScale).toFixed(4),
+              12,
+            )}`,
+          );
+        });
     }
     lines.push('');
     if (result.chiSquare) {
@@ -239,7 +295,7 @@ const ProcessingSummaryView: React.FC<ProcessingSummaryViewProps> = ({
     lines.push('Processing Notes:');
     result.logs.slice(0, 30).forEach((line) => lines.push(`  ${line}`));
     return lines.join('\n');
-  }, [result, runElapsedMs, runDiagnostics]);
+  }, [result, units, runElapsedMs, runDiagnostics]);
 
   return (
     <div className="h-full p-4 bg-slate-950 text-slate-100">

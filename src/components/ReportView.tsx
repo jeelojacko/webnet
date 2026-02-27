@@ -213,6 +213,10 @@ const ReportView: React.FC<ReportViewProps> = ({
       ? `${(value * RAD_TO_DEG * 3600).toFixed(2)}"`
       : (value * unitScale).toFixed(4)
   }
+  const formatEffectiveDistance = (value?: number): string => {
+    if (value == null || !Number.isFinite(value) || value <= 0) return '-'
+    return (value * unitScale).toFixed(4)
+  }
 
   const headerTooltip = (rawLabel: string): string | undefined => {
     const label = rawLabel.replace(/\s+/g, ' ').trim()
@@ -230,6 +234,7 @@ const ReportView: React.FC<ReportViewProps> = ({
       OBS: 'Observed value from input data (converted to display units).',
       CALC: 'Computed value from adjusted coordinates and model.',
       RESIDUAL: 'Observed minus computed value (v).',
+      EFFDIST: 'Effective distance used as angular geometry context for this residual row.',
       STDRES: 'Standardized residual: residual scaled by its uncertainty.',
       REDUND: 'Redundancy number (checkability); higher generally means better blunder detectability.',
       LOCAL: 'Local statistical test result for blunder detection (PASS/FAIL).',
@@ -369,6 +374,7 @@ const ReportView: React.FC<ReportViewProps> = ({
               <th className="py-2 text-right">Obs</th>
               <th className="py-2 text-right">Calc</th>
               <th className="py-2 text-right">Residual</th>
+              <th className="py-2 text-right">EffDist ({units})</th>
               <th className="py-2 text-right">StdRes</th>
               <th className="py-2 text-right">Redund</th>
               <th className="py-2 text-right">Local</th>
@@ -389,6 +395,7 @@ const ReportView: React.FC<ReportViewProps> = ({
               let redundancyStr = '-'
               let localStr = '-'
               let mdbStr = '-'
+              let effectiveDistanceStr = '-'
               let stdDevVal = obs.stdDev * unitScale
               const sigmaSource = obs.sigmaSource || 'explicit'
               const sigmaPlaceholder =
@@ -510,6 +517,9 @@ const ReportView: React.FC<ReportViewProps> = ({
               } else if (obs.mdb != null) {
                 mdbStr = formatMdb(obs.mdb, angular)
               }
+              if (angular) {
+                effectiveDistanceStr = formatEffectiveDistance(obs.effectiveDistance)
+              }
               if (autoSideshotObsIds.has(obs.id)) {
                 stationsLabel = `${stationsLabel} [AUTO-SS]`
               }
@@ -543,6 +553,7 @@ const ReportView: React.FC<ReportViewProps> = ({
                   >
                     {resStr}
                   </td>
+                  <td className="py-1 text-right font-mono text-slate-400">{effectiveDistanceStr}</td>
                   <td className="py-1 text-right font-mono text-slate-400">{stdResStr}</td>
                   <td className="py-1 text-right font-mono text-slate-500">{redundancyStr}</td>
                   <td
