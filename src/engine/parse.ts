@@ -527,7 +527,8 @@ export const parseInput = (
       obs.calc != null &&
       'sideshot' in obs.calc &&
       Boolean((obs.calc as { sideshot?: boolean }).sideshot);
-    if (isSideshot) return;
+    const isGpsSideshot = obs.type === 'gps' && obs.gpsMode === 'sideshot';
+    if (isSideshot || isGpsSideshot) return;
     if (obs.type === 'angle') {
       ensureStation(obs.at, `${obs.type} observation`);
       ensureStation(obs.from, `${obs.type} observation`);

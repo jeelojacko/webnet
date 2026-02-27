@@ -736,10 +736,10 @@ export interface AdjustmentResult {
     sourceLine?: number;
     from: StationId;
     to: StationId;
-    mode: 'slope' | 'horiz';
+    mode: 'slope' | 'horiz' | 'gps';
     hasAzimuth: boolean;
     azimuth?: number;
-    azimuthSource?: 'explicit' | 'setup' | 'target';
+    azimuthSource?: 'explicit' | 'setup' | 'target' | 'vector';
     sigmaAz?: number;
     distance: number;
     horizDistance: number;

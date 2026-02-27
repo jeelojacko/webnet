@@ -540,6 +540,19 @@ describe('parseInput', () => {
     expect(parsed.logs.some((l) => l.includes('GPS vector mode set to NETWORK'))).toBe(true);
   });
 
+  it('does not auto-create GPS SIDESHOT target stations while NETWORK mode still does', () => {
+    const network = parseInput(
+      ['.GPS NETWORK', 'C OCC 0 0 0 !', 'G GPS1 OCC TARGET 10 20 0.01 0.02'].join('\n'),
+    );
+    const sideshot = parseInput(
+      ['.GPS SIDESHOT', 'C OCC 0 0 0 !', 'G GPS1 OCC TARGET 10 20 0.01 0.02'].join('\n'),
+    );
+    expect(network.stations.TARGET).toBeDefined();
+    expect(sideshot.stations.TARGET).toBeUndefined();
+    expect(network.logs.some((l) => l.includes('Auto-created station TARGET'))).toBe(true);
+    expect(sideshot.logs.some((l) => l.includes('Auto-created station TARGET'))).toBe(false);
+  });
+
   it('parses phase-3 reduction directives', () => {
     const parsed = parseInput(
       [

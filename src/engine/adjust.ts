@@ -1002,6 +1002,7 @@ export class LSAEngine {
 
   private isObservationActive(obs: Observation): boolean {
     if (this.excludeIds?.has(obs.id)) return false;
+    if (obs.type === 'gps' && obs.gpsMode === 'sideshot') return false;
     if (typeof obs.calc === 'object' && (obs.calc as any)?.sideshot) return false;
     if (this.is2D && (obs.type === 'lev' || obs.type === 'zenith')) return false;
     return true;
@@ -1074,6 +1075,8 @@ export class LSAEngine {
   private computeSideshotResults(): AdjustmentResult['sideshots'] {
     const isSideshot = (obs: Observation): boolean =>
       typeof obs.calc === 'object' && (obs.calc as any)?.sideshot === true;
+    const isGpsSideshot = (obs: Observation): obs is Observation & { type: 'gps' } =>
+      obs.type === 'gps' && obs.gpsMode === 'sideshot';
     const verticalByKey = new Map<string, Observation>();
     this.observations.forEach((obs) => {
       if (!isSideshot(obs)) return;
@@ -1262,6 +1265,50 @@ export class LSAEngine {
         sigmaE,
         sigmaN,
         sigmaH,
+        note: notes.length ? notes.join('; ') : undefined,
+      });
+    });
+
+    this.observations.forEach((obs) => {
+      if (!isGpsSideshot(obs)) return;
+      const from = obs.from;
+      const to = obs.to;
+      const sourceLine = obs.sourceLine;
+      const fromSt = this.stations[from];
+      const dE = obs.obs.dE;
+      const dN = obs.obs.dN;
+      const horizDistance = Math.sqrt(dE * dE + dN * dN);
+      const hasAzimuth = horizDistance > 0;
+      let azimuth: number | undefined;
+      if (hasAzimuth) {
+        azimuth = Math.atan2(dE, dN);
+        if (azimuth < 0) azimuth += 2 * Math.PI;
+      }
+      const easting = fromSt ? fromSt.x + dE : undefined;
+      const northing = fromSt ? fromSt.y + dN : undefined;
+      const cov = this.gpsCovariance(obs);
+      const sigmaE =
+        fromSt && Number.isFinite(cov.cEE) ? Math.sqrt((fromSt.sE ?? 0) ** 2 + cov.cEE) : undefined;
+      const sigmaN =
+        fromSt && Number.isFinite(cov.cNN) ? Math.sqrt((fromSt.sN ?? 0) ** 2 + cov.cNN) : undefined;
+      const notes: string[] = [];
+      if (!fromSt) notes.push('occupy station not solved; sideshot coordinate unavailable');
+
+      rows.push({
+        id: `${from}->${to}@${sourceLine ?? rows.length + 1}:GPS`,
+        sourceLine,
+        from,
+        to,
+        mode: 'gps',
+        hasAzimuth,
+        azimuth,
+        azimuthSource: hasAzimuth ? 'vector' : undefined,
+        distance: horizDistance,
+        horizDistance,
+        easting,
+        northing,
+        sigmaE,
+        sigmaN,
         note: notes.length ? notes.join('; ') : undefined,
       });
     });
@@ -1770,6 +1817,14 @@ export class LSAEngine {
     }
 
     const activeObservations = this.observations.filter((obs) => this.isObservationActive(obs));
+    const gpsSideshotCount = this.observations.filter(
+      (obs) => obs.type === 'gps' && obs.gpsMode === 'sideshot',
+    ).length;
+    if (gpsSideshotCount > 0) {
+      this.log(
+        `GPS sideshot vectors excluded from adjustment equations: ${gpsSideshotCount} (post-adjust output only).`,
+      );
+    }
     const hasVertical: Record<StationId, boolean> = {};
     if (!this.is2D) {
       const markVertical = (id?: StationId) => {

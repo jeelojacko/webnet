@@ -341,7 +341,7 @@ const ReportView: React.FC<ReportViewProps> = ({
     if (upper.startsWith('DIR SETS')) return 'Number of direction sets associated with this setup.'
     if (upper.startsWith('DIR OBS')) return 'Number of reduced direction observations from this setup.'
     if (upper.startsWith('TRAV DIST')) return 'Total traverse distance observed from this setup.'
-    if (upper.startsWith('AZ SRC')) return 'Source used to derive sideshot azimuth (target, explicit, or setup-based).'
+    if (upper.startsWith('AZ SRC')) return 'Source used to derive sideshot azimuth (target, explicit, setup-based, or GPS vector).'
     if (upper.startsWith('HD')) return 'Horizontal distance component.'
     if (upper.startsWith('DH')) return 'Height difference component.'
     if (upper.startsWith('ΣN')) return 'Estimated standard deviation in northing.'

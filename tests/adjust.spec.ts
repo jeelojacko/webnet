@@ -315,6 +315,46 @@ describe('LSAEngine', () => {
     if (gps?.type === 'gps') expect(gps.gpsMode).toBe('sideshot');
   });
 
+  it('excludes GPS SIDESHOT vectors from adjustment while NETWORK vectors remain active', () => {
+    const base = [
+      '.2D',
+      'C A 0 0 0 ! !',
+      'C B 80 20 0',
+      'B A-B 090.0000 0.5',
+      'D A-B 100.0000 0.005',
+      'G GPS1 A B 120.0000 0.0000 0.001 0.001',
+    ].join('\n');
+    const network = new LSAEngine({ input: ['.GPS NETWORK', base].join('\n'), maxIterations: 10 }).solve();
+    const sideshot = new LSAEngine({
+      input: ['.GPS SIDESHOT', base].join('\n'),
+      maxIterations: 10,
+    }).solve();
+
+    expect(network.parseState?.gpsVectorMode).toBe('network');
+    expect(sideshot.parseState?.gpsVectorMode).toBe('sideshot');
+    expect(sideshot.logs.some((l) => l.includes('excluded from adjustment equations'))).toBe(true);
+    expect(Math.abs((network.stations.B?.x ?? 0) - (sideshot.stations.B?.x ?? 0))).toBeGreaterThan(5);
+  });
+
+  it('computes post-adjust GPS sideshot coordinate/precision rows', () => {
+    const input = [
+      '.GPS SIDESHOT',
+      '.2D',
+      'C OCC 1000 2000 0 ! !',
+      'G GPS1 OCC RTK1 12.3456 -4.3210 0.020 0.030',
+    ].join('\n');
+    const result = new LSAEngine({ input, maxIterations: 5 }).solve();
+    const row = result.sideshots?.find((s) => s.mode === 'gps' && s.to === 'RTK1');
+
+    expect(row).toBeDefined();
+    expect(row?.horizDistance ?? 0).toBeCloseTo(Math.hypot(12.3456, -4.321), 8);
+    expect(row?.easting ?? 0).toBeCloseTo(1012.3456, 8);
+    expect(row?.northing ?? 0).toBeCloseTo(1995.679, 8);
+    expect(row?.azimuthSource).toBe('vector');
+    expect(row?.sigmaE).toBeGreaterThan(0);
+    expect(row?.sigmaN).toBeGreaterThan(0);
+  });
+
   it('uses provided default instrument precision for records without explicit instrument codes', () => {
     const input = ['.2D', 'C A 0 0 0 ! !', 'C B 10 0 0', 'D A-B 10.0'].join('\n');
     const fallbackRun = new LSAEngine({ input, maxIterations: 6 }).solve();
