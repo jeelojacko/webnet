@@ -1,13 +1,15 @@
-import { readFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
 
 import { LSAEngine } from './engine/adjust';
 import type { ParseOptions } from './types';
+import { buildIndustryStyleListingText } from './engine/industryListing';
 
 type SolveProfile = 'webnet' | 'industry-parity';
 type UnitsMode = 'm' | 'ft';
 type CoordMode = '2D' | '3D';
+type OutputFormat = 'summary' | 'json' | 'listing';
 
 const EXIT_OK = 0;
 const EXIT_SOLVE_FAILED = 1;
@@ -17,6 +19,8 @@ interface CliConfig {
   inputPath: string;
   profile: SolveProfile;
   maxIterations: number;
+  outputFormat: OutputFormat;
+  outputPath?: string;
   parseOptions: Partial<ParseOptions>;
 }
 
@@ -29,6 +33,8 @@ Options:
   --input, -i <path>            Input adjustment file (required)
   --profile <webnet|industry-parity>
   --max-iterations <n>
+  --output <summary|json|listing>
+  --out <path>                  Write output payload to file instead of stdout
   --units <m|ft>
   --coord-mode <2D|3D>
   --help, -h
@@ -39,6 +45,7 @@ const parseArgs = (argv: string[]): CliConfig => {
     inputPath: '',
     profile: 'webnet',
     maxIterations: 10,
+    outputFormat: 'summary',
     parseOptions: {},
   };
 
@@ -76,6 +83,20 @@ const parseArgs = (argv: string[]): CliConfig => {
         throw new Error(`Invalid --max-iterations value "${argv[i + 1]}"`);
       }
       config.maxIterations = value;
+      i += 1;
+      continue;
+    }
+    if (arg === '--output') {
+      const value = nextValue(i, arg);
+      if (value !== 'summary' && value !== 'json' && value !== 'listing') {
+        throw new Error(`Invalid --output value "${value}"`);
+      }
+      config.outputFormat = value as OutputFormat;
+      i += 1;
+      continue;
+    }
+    if (arg === '--out') {
+      config.outputPath = nextValue(i, arg);
       i += 1;
       continue;
     }
@@ -140,20 +161,111 @@ const run = (): number => {
     parseOptions: cfg.parseOptions,
   });
   const result = engine.solve();
-  const convergedLabel = result.converged ? 'YES' : 'NO';
-  process.stdout.write(
-    [
-      `WebNet CLI solve summary`,
-      `Input: ${inputPath}`,
-      `Profile: ${cfg.profile}`,
-      `Converged: ${convergedLabel}`,
-      `Iterations: ${result.iterations}`,
-      `DOF: ${result.dof}`,
-      `SEUW: ${result.seuw.toFixed(6)}`,
-      `Stations: ${Object.keys(result.stations).length}`,
-      `Observations: ${result.observations.length}`,
-    ].join('\n') + '\n',
-  );
+  const parseState = result.parseState ?? {};
+  const profileParseOptions = {
+    ...(cfg.parseOptions ?? {}),
+    ...(cfg.profile === 'industry-parity'
+      ? {
+          directionSetMode: 'raw' as const,
+          robustMode: 'none' as const,
+          tsCorrelationEnabled: false,
+          tsCorrelationRho: 0,
+        }
+      : {}),
+  };
+  const payload =
+    cfg.outputFormat === 'json'
+      ? JSON.stringify(
+          {
+            inputPath,
+            profile: cfg.profile,
+            success: result.success,
+            converged: result.converged,
+            iterations: result.iterations,
+            dof: result.dof,
+            seuw: result.seuw,
+            stationCount: Object.keys(result.stations).length,
+            observationCount: result.observations.length,
+            chiSquare: result.chiSquare,
+            parseState: result.parseState,
+          },
+          null,
+          2,
+        )
+      : cfg.outputFormat === 'listing'
+        ? buildIndustryStyleListingText(
+            result,
+            {
+              maxIterations: cfg.maxIterations,
+              units: (parseState.units ?? profileParseOptions.units ?? 'm') as UnitsMode,
+              listingShowCoordinates: true,
+              listingShowObservationsResiduals: true,
+              listingShowErrorPropagation: true,
+              listingShowProcessingNotes: false,
+              listingShowAzimuthsBearings: true,
+              listingShowLostStations: true,
+              listingSortCoordinatesBy: 'name',
+              listingSortObservationsBy: 'residual',
+              listingObservationLimit: 500,
+            },
+            {
+              coordMode: parseState.coordMode ?? profileParseOptions.coordMode ?? '3D',
+              order: parseState.order ?? profileParseOptions.order ?? 'EN',
+              angleUnits: parseState.angleUnits ?? profileParseOptions.angleUnits ?? 'dms',
+              angleStationOrder:
+                parseState.angleStationOrder ?? profileParseOptions.angleStationOrder ?? 'atfromto',
+              deltaMode: parseState.deltaMode ?? profileParseOptions.deltaMode ?? 'slope',
+              refractionCoefficient:
+                parseState.refractionCoefficient ??
+                profileParseOptions.refractionCoefficient ??
+                0.13,
+              descriptionReconcileMode:
+                parseState.descriptionReconcileMode ??
+                profileParseOptions.descriptionReconcileMode ??
+                'first',
+              descriptionAppendDelimiter:
+                parseState.descriptionAppendDelimiter ??
+                profileParseOptions.descriptionAppendDelimiter ??
+                ' | ',
+            },
+            {
+              solveProfile: cfg.profile,
+              angleCenteringModel: 'geometry-aware-correlated-rays',
+              defaultSigmaCount: 0,
+              defaultSigmaByType: '',
+              stochasticDefaultsSummary: 'cli',
+              rotationAngleRad: parseState.rotationAngleRad ?? 0,
+              qFixLinearSigmaM: parseState.qFixLinearSigmaM ?? profileParseOptions.qFixLinearSigmaM,
+              qFixAngularSigmaSec:
+                parseState.qFixAngularSigmaSec ?? profileParseOptions.qFixAngularSigmaSec,
+            },
+          )
+        : [
+            `WebNet CLI solve summary`,
+            `Input: ${inputPath}`,
+            `Profile: ${cfg.profile}`,
+            `Converged: ${result.converged ? 'YES' : 'NO'}`,
+            `Iterations: ${result.iterations}`,
+            `DOF: ${result.dof}`,
+            `SEUW: ${result.seuw.toFixed(6)}`,
+            `Stations: ${Object.keys(result.stations).length}`,
+            `Observations: ${result.observations.length}`,
+          ].join('\n');
+
+  try {
+    if (cfg.outputPath) {
+      const outPath = path.resolve(process.cwd(), cfg.outputPath);
+      writeFileSync(outPath, `${payload}\n`, 'utf-8');
+      process.stdout.write(`Output written: ${outPath}\n`);
+    } else {
+      process.stdout.write(`${payload}\n`);
+    }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    process.stderr.write(`Failed to write output: ${message}\n`);
+    return EXIT_USAGE_ERROR;
+  }
+
   return result.success ? EXIT_OK : EXIT_SOLVE_FAILED;
 };
 
