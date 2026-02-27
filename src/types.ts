@@ -405,6 +405,7 @@ export interface ParseOptions {
   gpsAddHiHtEnabled?: boolean;
   gpsAddHiHtHiM?: number;
   gpsAddHiHtHtM?: number;
+  gpsLoopCheckEnabled?: boolean;
   gpsAddHiHtVectorCount?: number;
   gpsAddHiHtAppliedCount?: number;
   gpsAddHiHtPositiveCount?: number;
@@ -766,6 +767,20 @@ export interface AdjustmentResult {
     sigmaH?: number;
     note?: string;
   }[];
+  gpsLoopDiagnostics?: {
+    enabled: boolean;
+    vectorCount: number;
+    loopCount: number;
+    loops: {
+      key: string;
+      stationPath: StationId[];
+      edgeCount: number;
+      sourceLines: number[];
+      closureE: number;
+      closureN: number;
+      closureMag: number;
+    }[];
+  };
   clusterDiagnostics?: {
     enabled: boolean;
     passMode: 'single-pass' | 'dual-pass';

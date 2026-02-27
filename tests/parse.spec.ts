@@ -596,6 +596,27 @@ describe('parseInput', () => {
     expect(parsed.logs.some((l) => l.includes('GPS AddHiHt set to OFF'))).toBe(true);
   });
 
+  it('parses .GPS CHECK toggle state with OFF-by-default behavior', () => {
+    const base = parseInput(['C A 0 0 0 !', 'C B 100 0 0', 'G GPS1 A B 100 0 0.01'].join('\n'));
+    expect(base.parseState.gpsLoopCheckEnabled ?? false).toBe(false);
+
+    const parsed = parseInput(
+      [
+        '.GPS CHECK',
+        '/GPS CHECK OFF',
+        '.GPS CHECK ON',
+        '.GPS CHECK nope',
+        'C A 0 0 0 !',
+        'C B 100 0 0',
+        'G GPS1 A B 100 0 0.01',
+      ].join('\n'),
+    );
+    expect(parsed.parseState.gpsLoopCheckEnabled ?? false).toBe(true);
+    expect(parsed.logs.some((l) => l.includes('GPS loop check set to ON'))).toBe(true);
+    expect(parsed.logs.some((l) => l.includes('GPS loop check set to OFF'))).toBe(true);
+    expect(parsed.logs.some((l) => l.includes('invalid .GPS CHECK option'))).toBe(true);
+  });
+
   it('does not auto-create GPS SIDESHOT target stations while NETWORK mode still does', () => {
     const network = parseInput(
       ['.GPS NETWORK', 'C OCC 0 0 0 !', 'G GPS1 OCC TARGET 10 20 0.01 0.02'].join('\n'),

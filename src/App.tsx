@@ -306,6 +306,7 @@ type RunDiagnostics = {
   geoidInterpolation: GeoidInterpolationMethod;
   geoidHeightConversionEnabled: boolean;
   geoidOutputHeightDatum: GeoidHeightDatum;
+  gpsLoopCheckEnabled: boolean;
   gpsAddHiHtEnabled: boolean;
   gpsAddHiHtHiM: number;
   gpsAddHiHtHtM: number;
@@ -458,6 +459,8 @@ const SETTINGS_TOOLTIPS = {
     'Enable geoid-based station height conversion to the selected output datum. Default OFF preserves existing input heights.',
   geoidOutputHeightDatum:
     'Target output height datum used when geoid height conversion is enabled.',
+  gpsLoopCheckEnabled:
+    'Enable GPS loop-candidate diagnostics. Default OFF keeps processing/output unchanged unless explicitly enabled.',
   gpsAddHiHtEnabled:
     'Enable parser-side GPS AddHiHt defaults for GNSS vectors. Default OFF keeps current GNSS preprocessing unchanged.',
   gpsAddHiHtHi:
@@ -581,6 +584,7 @@ const App: React.FC = () => {
     geoidInterpolation: 'bilinear',
     geoidHeightConversionEnabled: false,
     geoidOutputHeightDatum: 'orthometric',
+    gpsLoopCheckEnabled: false,
     gpsAddHiHtEnabled: false,
     gpsAddHiHtHiM: 0,
     gpsAddHiHtHtM: 0,
@@ -949,6 +953,8 @@ const App: React.FC = () => {
         parseState.geoidOutputHeightDatum ??
         profileCtx.effectiveParse.geoidOutputHeightDatum ??
         'orthometric',
+      gpsLoopCheckEnabled:
+        parseState.gpsLoopCheckEnabled ?? profileCtx.effectiveParse.gpsLoopCheckEnabled ?? false,
       gpsAddHiHtEnabled:
         parseState.gpsAddHiHtEnabled ?? profileCtx.effectiveParse.gpsAddHiHtEnabled ?? false,
       gpsAddHiHtHiM: parseState.gpsAddHiHtHiM ?? profileCtx.effectiveParse.gpsAddHiHtHiM ?? 0,
@@ -1035,6 +1041,7 @@ const App: React.FC = () => {
       geoidInterpolation: parse.geoidInterpolation,
       geoidHeightConversionEnabled: parse.geoidHeightConversionEnabled,
       geoidOutputHeightDatum: parse.geoidOutputHeightDatum,
+      gpsLoopCheckEnabled: parse.gpsLoopCheckEnabled,
       gpsAddHiHtEnabled: parse.gpsAddHiHtEnabled,
       gpsAddHiHtHiM: parse.gpsAddHiHtHiM,
       gpsAddHiHtHtM: parse.gpsAddHiHtHtM,
@@ -1121,7 +1128,7 @@ const App: React.FC = () => {
     lines.push(`# Generated: ${now.toLocaleString()}`);
     lines.push(`# Linear units: ${linearUnit}`);
     lines.push(
-      `# Reduction: profile=${runDiag.solveProfile}, autoSideshot=${runDiag.autoSideshotEnabled ? 'ON' : 'OFF'}, autoAdjust=${runDiag.autoAdjustEnabled ? 'ON' : 'OFF'}(|t|>=${runDiag.autoAdjustStdResThreshold.toFixed(2)},cycles=${runDiag.autoAdjustMaxCycles},maxRm=${runDiag.autoAdjustMaxRemovalsPerCycle}), dirSets=${runDiag.directionSetMode}, mapMode=${runDiag.mapMode}, mapScale=${runDiag.mapScaleFactor.toFixed(8)}, crsScale=${runDiag.crsGridScaleEnabled ? `ON(${runDiag.crsGridScaleFactor.toFixed(8)})` : 'OFF'}, crsConv=${runDiag.crsConvergenceEnabled ? `ON(${(runDiag.crsConvergenceAngleRad * RAD_TO_DEG).toFixed(6)}deg)` : 'OFF'}, geoid=${runDiag.geoidModelEnabled ? `ON(${runDiag.geoidModelId},${runDiag.geoidInterpolation.toUpperCase()})` : 'OFF'}, geoidH=${runDiag.geoidHeightConversionEnabled ? `ON(${runDiag.geoidOutputHeightDatum.toUpperCase()},conv=${runDiag.geoidConvertedStationCount},skip=${runDiag.geoidSkippedStationCount})` : 'OFF'}, gpsAddHiHt=${runDiag.gpsAddHiHtEnabled ? `ON(HI=${(runDiag.gpsAddHiHtHiM * unitScale).toFixed(4)}${linearUnit},HT=${(runDiag.gpsAddHiHtHtM * unitScale).toFixed(4)}${linearUnit})` : 'OFF'}, curvRef=${runDiag.applyCurvatureRefraction ? 'ON' : 'OFF'}, k=${runDiag.refractionCoefficient.toFixed(3)}, vRed=${runDiag.verticalReduction}, qfixLin=${(runDiag.qFixLinearSigmaM * unitScale).toExponential(6)}${linearUnit}, qfixAng=${runDiag.qFixAngularSigmaSec.toExponential(6)}sec, prism=${runDiag.prismEnabled ? `ON(${runDiag.prismOffset.toFixed(4)}m,${runDiag.prismScope})` : 'OFF'}, rotation=${(runDiag.rotationAngleRad * RAD_TO_DEG).toFixed(6)}deg, tsCorr=${runDiag.tsCorrelationEnabled ? 'ON' : 'OFF'}(${runDiag.tsCorrelationScope},rho=${runDiag.tsCorrelationRho.toFixed(3)}), robust=${runDiag.robustMode.toUpperCase()}(k=${runDiag.robustK.toFixed(2)})`,
+      `# Reduction: profile=${runDiag.solveProfile}, autoSideshot=${runDiag.autoSideshotEnabled ? 'ON' : 'OFF'}, autoAdjust=${runDiag.autoAdjustEnabled ? 'ON' : 'OFF'}(|t|>=${runDiag.autoAdjustStdResThreshold.toFixed(2)},cycles=${runDiag.autoAdjustMaxCycles},maxRm=${runDiag.autoAdjustMaxRemovalsPerCycle}), dirSets=${runDiag.directionSetMode}, mapMode=${runDiag.mapMode}, mapScale=${runDiag.mapScaleFactor.toFixed(8)}, crsScale=${runDiag.crsGridScaleEnabled ? `ON(${runDiag.crsGridScaleFactor.toFixed(8)})` : 'OFF'}, crsConv=${runDiag.crsConvergenceEnabled ? `ON(${(runDiag.crsConvergenceAngleRad * RAD_TO_DEG).toFixed(6)}deg)` : 'OFF'}, geoid=${runDiag.geoidModelEnabled ? `ON(${runDiag.geoidModelId},${runDiag.geoidInterpolation.toUpperCase()})` : 'OFF'}, geoidH=${runDiag.geoidHeightConversionEnabled ? `ON(${runDiag.geoidOutputHeightDatum.toUpperCase()},conv=${runDiag.geoidConvertedStationCount},skip=${runDiag.geoidSkippedStationCount})` : 'OFF'}, gpsLoop=${runDiag.gpsLoopCheckEnabled ? 'ON' : 'OFF'}, gpsAddHiHt=${runDiag.gpsAddHiHtEnabled ? `ON(HI=${(runDiag.gpsAddHiHtHiM * unitScale).toFixed(4)}${linearUnit},HT=${(runDiag.gpsAddHiHtHtM * unitScale).toFixed(4)}${linearUnit})` : 'OFF'}, curvRef=${runDiag.applyCurvatureRefraction ? 'ON' : 'OFF'}, k=${runDiag.refractionCoefficient.toFixed(3)}, vRed=${runDiag.verticalReduction}, qfixLin=${(runDiag.qFixLinearSigmaM * unitScale).toExponential(6)}${linearUnit}, qfixAng=${runDiag.qFixAngularSigmaSec.toExponential(6)}sec, prism=${runDiag.prismEnabled ? `ON(${runDiag.prismOffset.toFixed(4)}m,${runDiag.prismScope})` : 'OFF'}, rotation=${(runDiag.rotationAngleRad * RAD_TO_DEG).toFixed(6)}deg, tsCorr=${runDiag.tsCorrelationEnabled ? 'ON' : 'OFF'}(${runDiag.tsCorrelationScope},rho=${runDiag.tsCorrelationRho.toFixed(3)}), robust=${runDiag.robustMode.toUpperCase()}(k=${runDiag.robustK.toFixed(2)})`,
     );
     lines.push(
       `# Parity: profileFallback=${runDiag.profileDefaultInstrumentFallback ? 'ON' : 'OFF'}, angleCentering=${runDiag.angleCenteringModel}, normalize=${runDiag.normalize ? 'ON' : 'OFF'}, angleMode=${runDiag.angleMode.toUpperCase()}`,
@@ -1167,6 +1174,7 @@ const App: React.FC = () => {
     lines.push(
       `Geoid height conversion: ${runDiag.geoidHeightConversionEnabled ? `ON (target=${runDiag.geoidOutputHeightDatum.toUpperCase()}, converted=${runDiag.geoidConvertedStationCount}, skipped=${runDiag.geoidSkippedStationCount})` : 'OFF'}`,
     );
+    lines.push(`GPS loop check: ${runDiag.gpsLoopCheckEnabled ? 'ON' : 'OFF'}`);
     lines.push(
       `GPS AddHiHt defaults: ${runDiag.gpsAddHiHtEnabled ? `ON (HI=${(runDiag.gpsAddHiHtHiM * unitScale).toFixed(4)} ${linearUnit}, HT=${(runDiag.gpsAddHiHtHtM * unitScale).toFixed(4)} ${linearUnit})` : 'OFF'}`,
     );
@@ -3176,6 +3184,7 @@ const App: React.FC = () => {
         geoidInterpolation: effectiveParse.geoidInterpolation,
         geoidHeightConversionEnabled: effectiveParse.geoidHeightConversionEnabled,
         geoidOutputHeightDatum: effectiveParse.geoidOutputHeightDatum,
+        gpsLoopCheckEnabled: effectiveParse.gpsLoopCheckEnabled,
         gpsAddHiHtEnabled: effectiveParse.gpsAddHiHtEnabled,
         gpsAddHiHtHiM: effectiveParse.gpsAddHiHtHiM,
         gpsAddHiHtHtM: effectiveParse.gpsAddHiHtHtM,
@@ -4847,6 +4856,26 @@ const App: React.FC = () => {
                     </label>
                     <div className="pt-2 border-t border-slate-700/70">
                       <div className="text-xs uppercase tracking-wider text-slate-300">
+                        GPS Loop Check
+                      </div>
+                    </div>
+                    <label className={optionLabelClass}>
+                      Enable GPS Loop Check
+                      <div className="mt-1 flex items-center gap-2 text-xs">
+                        <input
+                          title={SETTINGS_TOOLTIPS.gpsLoopCheckEnabled}
+                          type="checkbox"
+                          className="accent-blue-400"
+                          checked={parseSettingsDraft.gpsLoopCheckEnabled}
+                          onChange={(e) =>
+                            handleDraftParseSetting('gpsLoopCheckEnabled', e.target.checked)
+                          }
+                        />
+                        <span>{parseSettingsDraft.gpsLoopCheckEnabled ? 'Enabled' : 'Disabled'}</span>
+                      </div>
+                    </label>
+                    <div className="pt-2 border-t border-slate-700/70">
+                      <div className="text-xs uppercase tracking-wider text-slate-300">
                         GPS AddHiHt Defaults
                       </div>
                     </div>
@@ -5018,6 +5047,10 @@ const App: React.FC = () => {
                     <div>
                       Grid-ground scale and convergence are optional and remain <strong>OFF</strong>{' '}
                       unless explicitly enabled here or via `.CRS` directives.
+                    </div>
+                    <div>
+                      GPS loop-check diagnostics are <strong>OFF</strong> by default and only run
+                      when explicitly enabled here or via `.GPS CHECK`.
                     </div>
                     <div>
                       Geoid/grid model support and geoid height conversion are both{' '}

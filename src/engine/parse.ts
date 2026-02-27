@@ -56,6 +56,7 @@ const defaultParseOptions: ParseOptions = {
   gpsAddHiHtEnabled: false,
   gpsAddHiHtHiM: 0,
   gpsAddHiHtHtM: 0,
+  gpsLoopCheckEnabled: false,
   lonSign: 'west-negative',
   currentInstrument: undefined,
   edmMode: 'additive',
@@ -1197,6 +1198,26 @@ export const parseInput = (
         );
       } else if (op === '.GPS') {
         const modeToken = (parts[1] || '').toUpperCase();
+        if (modeToken === 'CHECK' || modeToken === 'LOOPCHECK' || modeToken === 'LOOPS') {
+          const arg1 = (parts[2] || '').trim().toUpperCase();
+          if (!arg1 || arg1 === 'ON' || arg1 === 'TRUE') {
+            state.gpsLoopCheckEnabled = true;
+            logs.push('GPS loop check set to ON');
+          } else if (arg1 === 'OFF' || arg1 === 'FALSE' || arg1 === 'NONE') {
+            state.gpsLoopCheckEnabled = false;
+            logs.push('GPS loop check set to OFF');
+          } else {
+            logs.push(
+              `Warning: invalid .GPS CHECK option at line ${lineNum}; expected OFF or ON.`,
+            );
+          }
+          if (parts.length > 3) {
+            logs.push(
+              `Warning: extra .GPS CHECK tokens ignored at line ${lineNum}; expected OFF or ON only.`,
+            );
+          }
+          continue;
+        }
         if (modeToken === 'ADDHIHT' || modeToken === 'ADDHI' || modeToken === 'HIHT') {
           const arg1 = (parts[2] || '').trim();
           const arg1Upper = arg1.toUpperCase();
@@ -1278,7 +1299,7 @@ export const parseInput = (
         const mode = parseGpsVectorModeToken(parts[1]);
         if (!mode) {
           logs.push(
-            `Warning: unrecognized .GPS option at line ${lineNum}; expected NETWORK, SIDESHOT, or AddHiHt.`,
+            `Warning: unrecognized .GPS option at line ${lineNum}; expected NETWORK, SIDESHOT, AddHiHt, or CHECK.`,
           );
           continue;
         }

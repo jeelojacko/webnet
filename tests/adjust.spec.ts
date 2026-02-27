@@ -432,6 +432,33 @@ describe('LSAEngine', () => {
     expect(result.logs.some((line) => line.includes('GPS AddHiHt preprocessing: vectors=3'))).toBe(true);
   });
 
+  it('computes GPS loop-candidate closure diagnostics when GPS loop check is enabled', () => {
+    const input = readFileSync('tests/fixtures/gps_loop_phase1.dat', 'utf-8');
+    const result = new LSAEngine({ input, maxIterations: 10 }).solve();
+    const loopDiag = result.gpsLoopDiagnostics;
+
+    expect(result.parseState?.gpsLoopCheckEnabled ?? false).toBe(true);
+    expect(loopDiag?.enabled ?? false).toBe(true);
+    expect(loopDiag?.vectorCount ?? 0).toBe(3);
+    expect(loopDiag?.loopCount ?? 0).toBe(1);
+    expect(loopDiag?.loops[0].stationPath.join('->') ?? '').toContain('A');
+    expect(loopDiag?.loops[0].stationPath.join('->') ?? '').toContain('C');
+    expect(loopDiag?.loops[0].closureMag ?? 0).toBeGreaterThan(0.02);
+    expect(loopDiag?.loops[0].closureMag ?? 0).toBeLessThan(0.03);
+    expect(result.logs.some((line) => line.includes('GPS loop check: vectors=3, loops=1'))).toBe(true);
+  });
+
+  it('keeps GPS loop diagnostics disabled by default when not requested', () => {
+    const input = readFileSync('tests/fixtures/gps_loop_phase1.dat', 'utf-8').replace(
+      '.GPS CHECK ON\n',
+      '',
+    );
+    const result = new LSAEngine({ input, maxIterations: 10 }).solve();
+    expect(result.parseState?.gpsLoopCheckEnabled ?? false).toBe(false);
+    expect(result.gpsLoopDiagnostics).toBeUndefined();
+    expect(result.logs.some((line) => line.includes('GPS loop check:'))).toBe(false);
+  });
+
   it('handles mixed GPS NETWORK + GPS SIDESHOT vectors with dedicated post-adjust sideshot output', () => {
     const input = readFileSync('tests/fixtures/gps_network_sideshot_phase3.dat', 'utf-8');
     const result = new LSAEngine({ input, maxIterations: 10 }).solve();
