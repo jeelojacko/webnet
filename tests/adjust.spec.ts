@@ -355,18 +355,44 @@ describe('LSAEngine', () => {
     expect(row?.sigmaN).toBeGreaterThan(0);
   });
 
-  it('parses GPS AddHiHt defaults without changing adjustment results in phase 1', () => {
+  it('applies GPS AddHiHt correction to GPS sideshot vectors only when enabled', () => {
+    const baseInput = [
+      '.GPS SIDESHOT',
+      '.2D',
+      'C OCC 1000 2000 0 ! !',
+      'G GPS1 OCC RTK1 10.0000 0.0000 0.020 0.030',
+    ].join('\n');
+    const addHiHtInput = ['.GPS AddHiHt ON 1.0 2.0', baseInput].join('\n');
+
+    const base = new LSAEngine({ input: baseInput, maxIterations: 5 }).solve();
+    const withAddHiHt = new LSAEngine({ input: addHiHtInput, maxIterations: 5 }).solve();
+    const baseRow = base.sideshots?.find((s) => s.mode === 'gps' && s.to === 'RTK1');
+    const correctedRow = withAddHiHt.sideshots?.find((s) => s.mode === 'gps' && s.to === 'RTK1');
+    const expectedDistance = Math.hypot(10, 1);
+
+    expect(baseRow?.horizDistance ?? 0).toBeCloseTo(10, 10);
+    expect(correctedRow?.horizDistance ?? 0).toBeCloseTo(expectedDistance, 8);
+    expect(correctedRow?.easting ?? 0).toBeCloseTo(1000 + expectedDistance, 8);
+    expect((correctedRow?.horizDistance ?? 0) - (baseRow?.horizDistance ?? 0)).toBeGreaterThan(0.04);
+  });
+
+  it('applies GPS AddHiHt antenna preprocessing in phase 2 while keeping OFF/default behavior unchanged', () => {
     const baseInput = [
       '.2D',
-      'C A 0 0 0 ! !',
-      'C B 100 0 0',
-      'D A-B 100.000 0.005',
+      'C A 0 0 10 ! !',
+      'C B 100 0 12',
       'G GPS1 A B 100.000 0.000 0.010 0.010',
     ].join('\n');
+    const addHiHtDefaultInput = ['.GPS AddHiHt ON', baseInput].join('\n');
     const addHiHtInput = ['.GPS AddHiHt ON 1.5000 2.0000', baseInput].join('\n');
 
     const base = new LSAEngine({ input: baseInput, maxIterations: 10 }).solve();
+    const withAddHiHtDefault = new LSAEngine({ input: addHiHtDefaultInput, maxIterations: 10 }).solve();
     const withAddHiHt = new LSAEngine({ input: addHiHtInput, maxIterations: 10 }).solve();
+
+    expect(withAddHiHtDefault.parseState?.gpsAddHiHtEnabled ?? false).toBe(true);
+    expect(withAddHiHtDefault.stations.B?.x ?? 0).toBeCloseTo(base.stations.B?.x ?? 0, 10);
+    expect(withAddHiHtDefault.stations.B?.y ?? 0).toBeCloseTo(base.stations.B?.y ?? 0, 10);
 
     expect(withAddHiHt.parseState?.gpsAddHiHtEnabled ?? false).toBe(true);
     expect(withAddHiHt.parseState?.gpsAddHiHtHiM ?? 0).toBeCloseTo(1.5, 10);
@@ -378,7 +404,13 @@ describe('LSAEngine', () => {
       expect(gpsObs.gpsAntennaHtM ?? 0).toBeCloseTo(2.0, 10);
     }
 
-    expect(withAddHiHt.stations.B?.x ?? 0).toBeCloseTo(base.stations.B?.x ?? 0, 10);
+    const deltaGround = (base.stations.B?.h ?? 0) - (base.stations.A?.h ?? 0);
+    const deltaAntenna = deltaGround + (2.0 - 1.5);
+    const expectedScaledEast = Math.hypot(100, deltaAntenna) ** 2 - deltaGround ** 2;
+    const expectedEast = Math.sqrt(expectedScaledEast);
+
+    expect(withAddHiHt.stations.B?.x ?? 0).toBeCloseTo(expectedEast, 8);
+    expect((withAddHiHt.stations.B?.x ?? 0) - (base.stations.B?.x ?? 0)).toBeGreaterThan(0.001);
     expect(withAddHiHt.stations.B?.y ?? 0).toBeCloseTo(base.stations.B?.y ?? 0, 10);
   });
 

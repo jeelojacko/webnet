@@ -13,6 +13,7 @@ import type {
   ClusterMergeOutcome,
   DirectionRejectDiagnostic,
   DirectionObservation,
+  GpsObservation,
   Observation,
   Station,
   StationId,
@@ -306,13 +307,15 @@ export class LSAEngine {
       return { cEE: s * s, cNN: s * s, cEN: 0 };
     }
     const gps = obs;
+    const vector = this.gpsObservedVector(gps);
+    const varianceScale = Math.max(vector.scale * vector.scale, 1e-12);
     const sE = Math.max(gps.stdDevE ?? gps.stdDev ?? 0, 1e-12);
     const sN = Math.max(gps.stdDevN ?? gps.stdDev ?? 0, 1e-12);
     const corr = Math.max(-0.999, Math.min(0.999, gps.corrEN ?? 0));
     return {
-      cEE: sE * sE,
-      cNN: sN * sN,
-      cEN: corr * sE * sN,
+      cEE: sE * sE * varianceScale,
+      cNN: sN * sN * varianceScale,
+      cEN: corr * sE * sN * varianceScale,
     };
   }
 
@@ -331,6 +334,40 @@ export class LSAEngine {
       wNN: cov.cEE / det,
       wEN: -cov.cEN / det,
     };
+  }
+
+  private gpsObservedVector(obs: GpsObservation): { dE: number; dN: number; scale: number } {
+    const rawE = Number.isFinite(obs.obs.dE) ? obs.obs.dE : 0;
+    const rawN = Number.isFinite(obs.obs.dN) ? obs.obs.dN : 0;
+    const horizRaw = Math.hypot(rawE, rawN);
+    if (horizRaw <= 1e-12) return { dE: rawE, dN: rawN, scale: 1 };
+
+    const hasAntennaMeta = obs.gpsAntennaHiM != null || obs.gpsAntennaHtM != null;
+    if (!hasAntennaMeta) return { dE: rawE, dN: rawN, scale: 1 };
+
+    const hi = Number.isFinite(obs.gpsAntennaHiM ?? Number.NaN) ? (obs.gpsAntennaHiM as number) : 0;
+    const ht = Number.isFinite(obs.gpsAntennaHtM ?? Number.NaN) ? (obs.gpsAntennaHtM as number) : 0;
+    const fromH = Number.isFinite(this.stations[obs.from]?.h ?? Number.NaN)
+      ? (this.stations[obs.from]?.h as number)
+      : 0;
+    const toH = Number.isFinite(this.stations[obs.to]?.h ?? Number.NaN)
+      ? (this.stations[obs.to]?.h as number)
+      : 0;
+
+    const deltaGround = toH - fromH;
+    const deltaAntenna = deltaGround + (ht - hi);
+    const slope = Math.hypot(horizRaw, deltaAntenna);
+    const horizCorrectedSq = slope * slope - deltaGround * deltaGround;
+    if (!Number.isFinite(horizCorrectedSq) || horizCorrectedSq <= 0) {
+      return { dE: rawE, dN: rawN, scale: 1 };
+    }
+    const horizCorrected = Math.sqrt(horizCorrectedSq);
+    if (!Number.isFinite(horizCorrected) || horizCorrected <= 1e-12) {
+      return { dE: rawE, dN: rawN, scale: 1 };
+    }
+    const scale = horizCorrected / horizRaw;
+    if (!Number.isFinite(scale) || scale <= 0) return { dE: rawE, dN: rawN, scale: 1 };
+    return { dE: rawE * scale, dN: rawN * scale, scale };
   }
 
   private isTsCorrelationObservation(obs: Observation): boolean {
@@ -1275,8 +1312,9 @@ export class LSAEngine {
       const to = obs.to;
       const sourceLine = obs.sourceLine;
       const fromSt = this.stations[from];
-      const dE = obs.obs.dE;
-      const dN = obs.obs.dN;
+      const corrected = this.gpsObservedVector(obs);
+      const dE = corrected.dE;
+      const dN = corrected.dN;
       const horizDistance = Math.sqrt(dE * dE + dN * dN);
       const hasAzimuth = horizDistance > 0;
       let azimuth: number | undefined;
@@ -2078,10 +2116,11 @@ export class LSAEngine {
           const s2 = this.stations[to];
           if (!s1 || !s2) return;
 
+          const corrected = this.gpsObservedVector(obs);
           const calc_dE = s2.x - s1.x;
           const calc_dN = s2.y - s1.y;
-          const vE = obs.obs.dE - calc_dE;
-          const vN = obs.obs.dN - calc_dN;
+          const vE = corrected.dE - calc_dE;
+          const vN = corrected.dN - calc_dN;
 
           L[row][0] = vE;
           rowInfo.push({ obs, component: 'E' });
@@ -2644,10 +2683,11 @@ export class LSAEngine {
         const s1 = this.stations[obs.from];
         const s2 = this.stations[obs.to];
         if (!s1 || !s2) return;
+        const corrected = this.gpsObservedVector(obs);
         const calc_dE = s2.x - s1.x;
         const calc_dN = s2.y - s1.y;
-        const vE = obs.obs.dE - calc_dE;
-        const vN = obs.obs.dN - calc_dN;
+        const vE = corrected.dE - calc_dE;
+        const vN = corrected.dN - calc_dN;
         obs.calc = { dE: calc_dE, dN: calc_dN };
         obs.residual = { vE, vN };
         const w = this.gpsWeight(obs);
@@ -3088,10 +3128,11 @@ export class LSAEngine {
             const s1 = this.stations[obs.from];
             const s2 = this.stations[obs.to];
             if (!s1 || !s2) return;
+            const corrected = this.gpsObservedVector(obs);
             const calc_dE = s2.x - s1.x;
             const calc_dN = s2.y - s1.y;
-            const vE = obs.obs.dE - calc_dE;
-            const vN = obs.obs.dN - calc_dN;
+            const vE = corrected.dE - calc_dE;
+            const vN = corrected.dN - calc_dN;
             L[row][0] = vE;
             rowInfo.push({ obs, component: 'E' });
             const fromIdx = this.paramIndex[obs.from];
