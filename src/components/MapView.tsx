@@ -1,6 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { AdjustmentResult } from '../types';
 import { buildMap3DScene, createDefaultMap3DCamera, type Map3DCamera, type Vec3 } from '../engine/map3d';
+import { RAD_TO_DEG, radToDmsStr } from '../engine/angles';
+import { computeInverse2D, computePivotAngles } from '../engine/mapTools';
 
 const FT_PER_M = 3.280839895;
 const VIEW_W = 1000;
@@ -10,6 +12,8 @@ const MAX_ZOOM = 200;
 const MIDDLE_DBLCLICK_MS = 320;
 const DEG_TO_RAD = Math.PI / 180;
 const MAX_ELLIPSOID_SAMPLES = 28;
+
+type ToolPanel = 'none' | 'points' | 'inverse' | 'angles';
 
 interface MapViewProps {
   result: AdjustmentResult;
@@ -32,7 +36,9 @@ const MapView: React.FC<MapViewProps> = ({
 }) => {
   const unitScale = units === 'ft' ? FT_PER_M : 1;
   const { stations, observations } = result;
+  const containerRef = useRef<HTMLDivElement | null>(null);
   const svgRef = useRef<SVGSVGElement | null>(null);
+  const contextMenuRef = useRef<HTMLDivElement | null>(null);
   const dragRef = useRef<{ active: boolean; mode: DragMode; lastX: number; lastY: number }>({
     active: false,
     mode: 'none',
@@ -43,6 +49,17 @@ const MapView: React.FC<MapViewProps> = ({
   const [view2d, setView2d] = useState({ zoom: 1, panX: 0, panY: 0 });
   const [camera3d, setCamera3d] = useState<Map3DCamera | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [contextMenu, setContextMenu] = useState<{ open: boolean; x: number; y: number }>({
+    open: false,
+    x: 0,
+    y: 0,
+  });
+  const [activeTool, setActiveTool] = useState<ToolPanel>('none');
+  const [inverseFromInput, setInverseFromInput] = useState('');
+  const [inverseToInput, setInverseToInput] = useState('');
+  const [anglePivotInput, setAnglePivotInput] = useState('');
+  const [angleFromInput, setAngleFromInput] = useState('');
+  const [angleToInput, setAngleToInput] = useState('');
   const [viewportWidth, setViewportWidth] = useState<number>(
     typeof window !== 'undefined' ? window.innerWidth : 1280,
   );
@@ -76,12 +93,85 @@ const MapView: React.FC<MapViewProps> = ({
     return { points: pts, bbox: { minX: minX - pad, minY: minY - pad, width, height } };
   }, [scene3d]);
 
+  const visibleStationIds = useMemo(
+    () =>
+      Object.entries(stations)
+        .filter(([, station]) => showLostStations || !station.lost)
+        .map(([stationId]) => stationId)
+        .sort((a, b) => a.localeCompare(b, undefined, { numeric: true })),
+    [showLostStations, stations],
+  );
+
+  const stationIdLookup = useMemo(() => {
+    const lookup = new Map<string, string>();
+    visibleStationIds.forEach((stationId) => {
+      lookup.set(stationId.toUpperCase(), stationId);
+    });
+    return lookup;
+  }, [visibleStationIds]);
+
+  const resolveStationId = useCallback(
+    (value: string): string | null => {
+      const token = value.trim();
+      if (!token) return null;
+      return stationIdLookup.get(token.toUpperCase()) ?? null;
+    },
+    [stationIdLookup],
+  );
+
   useEffect(() => {
     if (typeof window === 'undefined' || viewportWidthOverride != null) return;
     const onResize = () => setViewportWidth(window.innerWidth);
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
   }, [viewportWidthOverride]);
+
+  useEffect(() => {
+    if (visibleStationIds.length === 0) {
+      setInverseFromInput('');
+      setInverseToInput('');
+      setAnglePivotInput('');
+      setAngleFromInput('');
+      setAngleToInput('');
+      return;
+    }
+    if (!resolveStationId(inverseFromInput)) setInverseFromInput(visibleStationIds[0]);
+    if (!resolveStationId(inverseToInput))
+      setInverseToInput(visibleStationIds[Math.min(1, visibleStationIds.length - 1)]);
+    if (!resolveStationId(anglePivotInput)) setAnglePivotInput(visibleStationIds[0]);
+    if (!resolveStationId(angleFromInput))
+      setAngleFromInput(visibleStationIds[Math.min(1, visibleStationIds.length - 1)]);
+    if (!resolveStationId(angleToInput))
+      setAngleToInput(visibleStationIds[Math.min(2, visibleStationIds.length - 1)]);
+  }, [
+    angleFromInput,
+    anglePivotInput,
+    angleToInput,
+    inverseFromInput,
+    inverseToInput,
+    resolveStationId,
+    visibleStationIds,
+  ]);
+
+  useEffect(() => {
+    if (!contextMenu.open) return;
+    const onMouseDown = (event: MouseEvent) => {
+      const target = event.target as Node | null;
+      if (target && contextMenuRef.current?.contains(target)) return;
+      setContextMenu((prev) => ({ ...prev, open: false }));
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setContextMenu((prev) => ({ ...prev, open: false }));
+      }
+    };
+    window.addEventListener('mousedown', onMouseDown);
+    window.addEventListener('keydown', onKeyDown);
+    return () => {
+      window.removeEventListener('mousedown', onMouseDown);
+      window.removeEventListener('keydown', onKeyDown);
+    };
+  }, [contextMenu.open]);
 
   const effectiveViewportWidth = viewportWidthOverride ?? viewportWidth;
 
@@ -387,6 +477,57 @@ const MapView: React.FC<MapViewProps> = ({
     });
   };
 
+  const inverseFromId = resolveStationId(inverseFromInput);
+  const inverseToId = resolveStationId(inverseToInput);
+  const anglePivotId = resolveStationId(anglePivotInput);
+  const angleFromId = resolveStationId(angleFromInput);
+  const angleToId = resolveStationId(angleToInput);
+
+  const inverse = useMemo(() => {
+    if (!inverseFromId || !inverseToId) return null;
+    const from = stations[inverseFromId];
+    const to = stations[inverseToId];
+    if (!from || !to) return null;
+    return computeInverse2D({ x: from.x, y: from.y }, { x: to.x, y: to.y });
+  }, [inverseFromId, inverseToId, stations]);
+
+  const angleBetween = useMemo(() => {
+    if (!anglePivotId || !angleFromId || !angleToId) return null;
+    const pivot = stations[anglePivotId];
+    const from = stations[angleFromId];
+    const to = stations[angleToId];
+    if (!pivot || !from || !to) return null;
+    return computePivotAngles(
+      { x: pivot.x, y: pivot.y },
+      { x: from.x, y: from.y },
+      { x: to.x, y: to.y },
+    );
+  }, [angleFromId, anglePivotId, angleToId, stations]);
+
+  const openContextMenu = (event: React.MouseEvent<SVGSVGElement>) => {
+    event.preventDefault();
+    const rect = containerRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const menuWidth = 210;
+    const menuHeight = 126;
+    const localX = event.clientX - rect.left;
+    const localY = event.clientY - rect.top;
+    const x = clamp(localX, 8, Math.max(8, rect.width - menuWidth - 8));
+    const y = clamp(localY, 8, Math.max(8, rect.height - menuHeight - 8));
+    setContextMenu({
+      open: true,
+      x,
+      y,
+    });
+  };
+
+  const openTool = (tool: ToolPanel) => {
+    setActiveTool(tool);
+    setContextMenu((prev) => ({ ...prev, open: false }));
+  };
+
+  const closeTool = () => setActiveTool('none');
+
   return (
     <div className="h-full p-4 flex flex-col min-h-0">
       <div className="flex items-center justify-between mb-3 text-xs text-slate-400 shrink-0">
@@ -397,6 +538,7 @@ const MapView: React.FC<MapViewProps> = ({
           {effectiveMode === '3d'
             ? 'Left-drag=orbit, middle-drag=pan, wheel=zoom, middle-double-click=reset'
             : 'Wheel=zoom, middle-drag=pan, middle-double-click=reset extents'}
+          {'; right-click=tools'}
         </span>
       </div>
       {mode === '3d' && fallbackReason && (
@@ -404,7 +546,10 @@ const MapView: React.FC<MapViewProps> = ({
           3D rendering fallback: {fallbackReason}. Showing 2D map for stable performance.
         </div>
       )}
-      <div className="bg-slate-900 border border-slate-800 rounded overflow-hidden flex-1 min-h-0 relative">
+      <div
+        ref={containerRef}
+        className="bg-slate-900 border border-slate-800 rounded overflow-hidden flex-1 min-h-0 relative"
+      >
         {effectiveMode === '3d' && (
           <div className="absolute right-2 top-2 z-10 rounded border border-slate-700/80 bg-slate-900/85 p-1">
             <div className="grid grid-cols-2 gap-1 text-[10px]">
@@ -439,6 +584,290 @@ const MapView: React.FC<MapViewProps> = ({
             </div>
           </div>
         )}
+        {contextMenu.open && (
+          <div
+            ref={contextMenuRef}
+            className="absolute z-20 min-w-[210px] rounded border border-slate-700 bg-slate-900/95 p-1 text-xs shadow-lg shadow-black/50"
+            style={{ left: contextMenu.x, top: contextMenu.y }}
+          >
+            <button
+              type="button"
+              onClick={() => openTool('points')}
+              className="block w-full rounded px-2 py-1.5 text-left text-slate-200 hover:bg-slate-800"
+            >
+              Points
+            </button>
+            <button
+              type="button"
+              onClick={() => openTool('inverse')}
+              className="block w-full rounded px-2 py-1.5 text-left text-slate-200 hover:bg-slate-800"
+            >
+              Inverse
+            </button>
+            <button
+              type="button"
+              onClick={() => openTool('angles')}
+              className="block w-full rounded px-2 py-1.5 text-left text-slate-200 hover:bg-slate-800"
+            >
+              Angles Between
+            </button>
+          </div>
+        )}
+        {activeTool !== 'none' && (
+          <div className="absolute left-2 top-2 z-20 w-[min(560px,calc(100%-16px))] rounded border border-slate-700 bg-slate-900/95 p-3 text-xs shadow-lg shadow-black/45">
+            <div className="mb-2 flex items-center justify-between border-b border-slate-700 pb-2">
+              <div className="uppercase tracking-wider text-slate-300">
+                {activeTool === 'points'
+                  ? 'Points'
+                  : activeTool === 'inverse'
+                    ? 'Inverse'
+                    : 'Angles Between'}
+              </div>
+              <button
+                type="button"
+                onClick={closeTool}
+                className="rounded border border-slate-600 px-2 py-0.5 text-slate-300 hover:bg-slate-800"
+              >
+                Close
+              </button>
+            </div>
+
+            {activeTool === 'points' && (
+              <div className="max-h-[300px] overflow-auto">
+                <table className="w-full border-collapse text-left">
+                  <thead>
+                    <tr className="border-b border-slate-700 text-slate-400">
+                      <th className="px-2 py-1">Point</th>
+                      <th className="px-2 py-1 text-right">Northing ({units})</th>
+                      <th className="px-2 py-1 text-right">Easting ({units})</th>
+                      <th className="px-2 py-1 text-right">Height ({units})</th>
+                      <th className="px-2 py-1 text-right">σN ({units})</th>
+                      <th className="px-2 py-1 text-right">σE ({units})</th>
+                      <th className="px-2 py-1 text-right">σH ({units})</th>
+                    </tr>
+                  </thead>
+                  <tbody className="text-slate-200">
+                    {visibleStationIds.map((stationId) => {
+                      const station = stations[stationId];
+                      if (!station) return null;
+                      const formatStd = (value?: number) =>
+                        value != null && Number.isFinite(value)
+                          ? (value * unitScale).toFixed(4)
+                          : '-';
+                      return (
+                        <tr key={`point-tool-${stationId}`} className="border-b border-slate-800/60">
+                          <td className="px-2 py-1">{stationId}</td>
+                          <td className="px-2 py-1 text-right">{(station.y * unitScale).toFixed(4)}</td>
+                          <td className="px-2 py-1 text-right">{(station.x * unitScale).toFixed(4)}</td>
+                          <td className="px-2 py-1 text-right">{(station.h * unitScale).toFixed(4)}</td>
+                          <td className="px-2 py-1 text-right">{formatStd(station.sN)}</td>
+                          <td className="px-2 py-1 text-right">{formatStd(station.sE)}</td>
+                          <td className="px-2 py-1 text-right">{formatStd(station.sH)}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {activeTool === 'inverse' && (
+              <div className="space-y-2">
+                <datalist id="map-point-id-list">
+                  {visibleStationIds.map((stationId) => (
+                    <option key={`inv-id-${stationId}`} value={stationId} />
+                  ))}
+                </datalist>
+                <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
+                  <label className="space-y-1 text-slate-300">
+                    From Point
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={inverseFromInput}
+                        onChange={(event) => setInverseFromInput(event.target.value)}
+                        list="map-point-id-list"
+                        className="w-full rounded border border-slate-600 bg-slate-950 px-2 py-1 text-slate-100"
+                      />
+                      <select
+                        value={inverseFromId ?? ''}
+                        onChange={(event) => setInverseFromInput(event.target.value)}
+                        className="rounded border border-slate-600 bg-slate-950 px-2 py-1 text-slate-100"
+                      >
+                        <option value="">Select</option>
+                        {visibleStationIds.map((stationId) => (
+                          <option key={`inv-from-${stationId}`} value={stationId}>
+                            {stationId}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </label>
+                  <label className="space-y-1 text-slate-300">
+                    To Point
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={inverseToInput}
+                        onChange={(event) => setInverseToInput(event.target.value)}
+                        list="map-point-id-list"
+                        className="w-full rounded border border-slate-600 bg-slate-950 px-2 py-1 text-slate-100"
+                      />
+                      <select
+                        value={inverseToId ?? ''}
+                        onChange={(event) => setInverseToInput(event.target.value)}
+                        className="rounded border border-slate-600 bg-slate-950 px-2 py-1 text-slate-100"
+                      >
+                        <option value="">Select</option>
+                        {visibleStationIds.map((stationId) => (
+                          <option key={`inv-to-${stationId}`} value={stationId}>
+                            {stationId}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </label>
+                </div>
+                <div className="rounded border border-slate-700 bg-slate-950 px-3 py-2 text-slate-200">
+                  {!inverseFromId || !inverseToId ? (
+                    <div>Enter or select both point IDs.</div>
+                  ) : inverseFromId === inverseToId ? (
+                    <div>From and To points must be different.</div>
+                  ) : !inverse ? (
+                    <div>Inverse unavailable for the selected points.</div>
+                  ) : (
+                    <div className="space-y-1">
+                      <div>
+                        Az {inverseFromId} → {inverseToId}:{' '}
+                        <span className="font-mono">{radToDmsStr(inverse.azimuthFromToRad)}</span>{' '}
+                        ({(inverse.azimuthFromToRad * RAD_TO_DEG).toFixed(6)} deg)
+                      </div>
+                      <div>
+                        Az {inverseToId} → {inverseFromId}:{' '}
+                        <span className="font-mono">{radToDmsStr(inverse.azimuthToFromRad)}</span>{' '}
+                        ({(inverse.azimuthToFromRad * RAD_TO_DEG).toFixed(6)} deg)
+                      </div>
+                      <div>
+                        Horizontal distance:{' '}
+                        <span className="font-mono">
+                          {(inverse.distance2d * unitScale).toFixed(4)} {units}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {activeTool === 'angles' && (
+              <div className="space-y-2">
+                <datalist id="map-angle-point-id-list">
+                  {visibleStationIds.map((stationId) => (
+                    <option key={`ang-id-${stationId}`} value={stationId} />
+                  ))}
+                </datalist>
+                <div className="grid grid-cols-1 gap-2 md:grid-cols-3">
+                  <label className="space-y-1 text-slate-300">
+                    Pivot
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={anglePivotInput}
+                        onChange={(event) => setAnglePivotInput(event.target.value)}
+                        list="map-angle-point-id-list"
+                        className="w-full rounded border border-slate-600 bg-slate-950 px-2 py-1 text-slate-100"
+                      />
+                      <select
+                        value={anglePivotId ?? ''}
+                        onChange={(event) => setAnglePivotInput(event.target.value)}
+                        className="rounded border border-slate-600 bg-slate-950 px-2 py-1 text-slate-100"
+                      >
+                        <option value="">Select</option>
+                        {visibleStationIds.map((stationId) => (
+                          <option key={`ang-piv-${stationId}`} value={stationId}>
+                            {stationId}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </label>
+                  <label className="space-y-1 text-slate-300">
+                    Leg A
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={angleFromInput}
+                        onChange={(event) => setAngleFromInput(event.target.value)}
+                        list="map-angle-point-id-list"
+                        className="w-full rounded border border-slate-600 bg-slate-950 px-2 py-1 text-slate-100"
+                      />
+                      <select
+                        value={angleFromId ?? ''}
+                        onChange={(event) => setAngleFromInput(event.target.value)}
+                        className="rounded border border-slate-600 bg-slate-950 px-2 py-1 text-slate-100"
+                      >
+                        <option value="">Select</option>
+                        {visibleStationIds.map((stationId) => (
+                          <option key={`ang-from-${stationId}`} value={stationId}>
+                            {stationId}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </label>
+                  <label className="space-y-1 text-slate-300">
+                    Leg B
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={angleToInput}
+                        onChange={(event) => setAngleToInput(event.target.value)}
+                        list="map-angle-point-id-list"
+                        className="w-full rounded border border-slate-600 bg-slate-950 px-2 py-1 text-slate-100"
+                      />
+                      <select
+                        value={angleToId ?? ''}
+                        onChange={(event) => setAngleToInput(event.target.value)}
+                        className="rounded border border-slate-600 bg-slate-950 px-2 py-1 text-slate-100"
+                      >
+                        <option value="">Select</option>
+                        {visibleStationIds.map((stationId) => (
+                          <option key={`ang-to-${stationId}`} value={stationId}>
+                            {stationId}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </label>
+                </div>
+                <div className="rounded border border-slate-700 bg-slate-950 px-3 py-2 text-slate-200">
+                  {!anglePivotId || !angleFromId || !angleToId ? (
+                    <div>Enter or select all three point IDs.</div>
+                  ) : anglePivotId === angleFromId ||
+                    anglePivotId === angleToId ||
+                    angleFromId === angleToId ? (
+                    <div>Pivot, Leg A, and Leg B must be three different points.</div>
+                  ) : !angleBetween ? (
+                    <div>Angle unavailable for the selected points.</div>
+                  ) : (
+                    <div className="space-y-1">
+                      <div>
+                        Inside angle at {anglePivotId}:{' '}
+                        <span className="font-mono">{radToDmsStr(angleBetween.insideAngleRad)}</span>{' '}
+                        ({(angleBetween.insideAngleRad * RAD_TO_DEG).toFixed(6)} deg)
+                      </div>
+                      <div>
+                        Outside angle at {anglePivotId}:{' '}
+                        <span className="font-mono">{radToDmsStr(angleBetween.outsideAngleRad)}</span>{' '}
+                        ({(angleBetween.outsideAngleRad * RAD_TO_DEG).toFixed(6)} deg)
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
         <svg
           ref={svgRef}
           viewBox={`0 0 ${VIEW_W} ${VIEW_H}`}
@@ -447,6 +876,7 @@ const MapView: React.FC<MapViewProps> = ({
           onMouseDown={handleMouseDown}
           onMouseUp={handleMouseUp}
           onMouseLeave={stopDrag}
+          onContextMenu={openContextMenu}
         >
           {effectiveMode === '2d' && (
             <>

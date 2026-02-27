@@ -18,6 +18,7 @@
 - [x] Standardized residuals (Qvv), redundancy numbers, chi-square test, per-type residual summaries
 - [x] Point precision (σN/σE/σH, ellipse azimuth, 95% toggle) + relative precision between unknown points
 - [x] Map/ellipse viewer interaction upgrades: wheel zoom, middle-button pan, middle-double-click reset-to-extents, zoom-aware symbol scaling
+- [x] Map/ellipse viewer context tools: right-click menu with Points list, Inverse calculator (azimuth both directions + distance), and Angles Between calculator (inside/outside at pivot)
 - [x] Prevent stale exclusion/override carryover between changed inputs (auto-clear on changed run context + file load)
 - [x] Add Industry Standard parity profile (classical weighting + raw direction-set solving + industry-like default instrument fallback for missing instrument assignments)
 - [x] Phase 2 parity: geometry-aware angle centering inflation model (ray-correlation term) + industry benchmark regression fixture/test
