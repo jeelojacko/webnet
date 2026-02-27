@@ -405,6 +405,15 @@ export interface ParseOptions {
   gpsAddHiHtEnabled?: boolean;
   gpsAddHiHtHiM?: number;
   gpsAddHiHtHtM?: number;
+  gpsAddHiHtVectorCount?: number;
+  gpsAddHiHtAppliedCount?: number;
+  gpsAddHiHtPositiveCount?: number;
+  gpsAddHiHtNegativeCount?: number;
+  gpsAddHiHtNeutralCount?: number;
+  gpsAddHiHtDefaultZeroCount?: number;
+  gpsAddHiHtMissingHeightCount?: number;
+  gpsAddHiHtScaleMin?: number;
+  gpsAddHiHtScaleMax?: number;
   lonSign?: LonSign;
   currentInstrument?: string;
   edmMode?: 'additive' | 'propagated';

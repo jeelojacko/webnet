@@ -60,6 +60,15 @@ export interface IndustryListingRunDiagnostics {
   gpsAddHiHtEnabled?: boolean;
   gpsAddHiHtHiM?: number;
   gpsAddHiHtHtM?: number;
+  gpsAddHiHtVectorCount?: number;
+  gpsAddHiHtAppliedCount?: number;
+  gpsAddHiHtPositiveCount?: number;
+  gpsAddHiHtNegativeCount?: number;
+  gpsAddHiHtNeutralCount?: number;
+  gpsAddHiHtDefaultZeroCount?: number;
+  gpsAddHiHtMissingHeightCount?: number;
+  gpsAddHiHtScaleMin?: number;
+  gpsAddHiHtScaleMax?: number;
 }
 
 export const buildIndustryStyleListingText = (
@@ -132,6 +141,24 @@ export const buildIndustryStyleListingText = (
       parseState?.gpsAddHiHtEnabled ?? runDiag.gpsAddHiHtEnabled ?? false;
     const gpsAddHiHtHiM = parseState?.gpsAddHiHtHiM ?? runDiag.gpsAddHiHtHiM ?? 0;
     const gpsAddHiHtHtM = parseState?.gpsAddHiHtHtM ?? runDiag.gpsAddHiHtHtM ?? 0;
+    const gpsAddHiHtVectorCount =
+      parseState?.gpsAddHiHtVectorCount ?? runDiag.gpsAddHiHtVectorCount ?? 0;
+    const gpsAddHiHtAppliedCount =
+      parseState?.gpsAddHiHtAppliedCount ?? runDiag.gpsAddHiHtAppliedCount ?? 0;
+    const gpsAddHiHtPositiveCount =
+      parseState?.gpsAddHiHtPositiveCount ?? runDiag.gpsAddHiHtPositiveCount ?? 0;
+    const gpsAddHiHtNegativeCount =
+      parseState?.gpsAddHiHtNegativeCount ?? runDiag.gpsAddHiHtNegativeCount ?? 0;
+    const gpsAddHiHtNeutralCount =
+      parseState?.gpsAddHiHtNeutralCount ?? runDiag.gpsAddHiHtNeutralCount ?? 0;
+    const gpsAddHiHtDefaultZeroCount =
+      parseState?.gpsAddHiHtDefaultZeroCount ?? runDiag.gpsAddHiHtDefaultZeroCount ?? 0;
+    const gpsAddHiHtMissingHeightCount =
+      parseState?.gpsAddHiHtMissingHeightCount ?? runDiag.gpsAddHiHtMissingHeightCount ?? 0;
+    const gpsAddHiHtScaleMin =
+      parseState?.gpsAddHiHtScaleMin ?? runDiag.gpsAddHiHtScaleMin ?? 1;
+    const gpsAddHiHtScaleMax =
+      parseState?.gpsAddHiHtScaleMax ?? runDiag.gpsAddHiHtScaleMax ?? 1;
     const descriptionReconcileMode =
       parseState?.descriptionReconcileMode ?? parseSettings.descriptionReconcileMode ?? 'first';
     const descriptionAppendDelimiter =
@@ -252,6 +279,11 @@ export const buildIndustryStyleListingText = (
     lines.push(
       `      GPS AddHiHt Defaults            : ${gpsAddHiHtEnabled ? `ON (HI=${(gpsAddHiHtHiM * unitScale).toFixed(4)} ${linearUnit}, HT=${(gpsAddHiHtHtM * unitScale).toFixed(4)} ${linearUnit})` : 'OFF'}`,
     );
+    if (gpsAddHiHtEnabled) {
+      lines.push(
+        `      GPS AddHiHt Preprocess          : vectors=${gpsAddHiHtVectorCount}, adjusted=${gpsAddHiHtAppliedCount} (+${gpsAddHiHtPositiveCount}/-${gpsAddHiHtNegativeCount}/neutral=${gpsAddHiHtNeutralCount}), defaultZero=${gpsAddHiHtDefaultZeroCount}, missingHeight=${gpsAddHiHtMissingHeightCount}, scale=[${gpsAddHiHtScaleMin.toFixed(8)}, ${gpsAddHiHtScaleMax.toFixed(8)}]`,
+      );
+    }
     lines.push(
       `      Lost Stations                     : ${lostStationIds.length > 0 ? `${lostStationIds.length} (${lostStationIds.join(', ')})` : 'none'}`,
     );

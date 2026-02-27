@@ -768,4 +768,49 @@ describe('industry listing phase 5 formatting locks', () => {
     expect(listing).toMatch(/1\.000000e-2\s+Meters/);
     expect(listing).toMatch(/3\.000000e\+0"/);
   });
+
+  it('surfaces GPS AddHiHt preprocessing diagnostics for positive/negative/default-height vectors', () => {
+    const input = readFileSync('tests/fixtures/gps_addhight_phase3.dat', 'utf-8');
+    const result = new LSAEngine({ input, maxIterations: 10 }).solve();
+    const listing = buildIndustryStyleListingText(
+      result,
+      {
+        maxIterations: 10,
+        units: 'm',
+        listingShowLostStations: true,
+        listingShowCoordinates: true,
+        listingShowObservationsResiduals: true,
+        listingShowErrorPropagation: true,
+        listingShowProcessingNotes: false,
+        listingShowAzimuthsBearings: true,
+        listingSortCoordinatesBy: 'name',
+        listingSortObservationsBy: 'name',
+        listingObservationLimit: 500,
+      },
+      {
+        coordMode: '3D',
+        order: 'EN',
+        angleUnits: 'dms',
+        angleStationOrder: 'atfromto',
+        deltaMode: 'slope',
+        refractionCoefficient: 0.13,
+      },
+      {
+        solveProfile: 'industry-parity',
+        angleCenteringModel: 'geometry-aware-correlated-rays',
+        defaultSigmaCount: 0,
+        defaultSigmaByType: '',
+        stochasticDefaultsSummary: 'inst=S9',
+        rotationAngleRad: 0,
+      },
+    );
+
+    expect(listing).toContain('GPS AddHiHt Defaults');
+    expect(listing).toContain('GPS AddHiHt Preprocess');
+    expect(listing).toContain('vectors=3');
+    expect(listing).toContain('adjusted=2');
+    expect(listing).toContain('+1/-1/neutral=1');
+    expect(listing).toContain('defaultZero=1');
+    expect(listing).toContain('missingHeight=0');
+  });
 });

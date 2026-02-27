@@ -309,6 +309,15 @@ type RunDiagnostics = {
   gpsAddHiHtEnabled: boolean;
   gpsAddHiHtHiM: number;
   gpsAddHiHtHtM: number;
+  gpsAddHiHtVectorCount: number;
+  gpsAddHiHtAppliedCount: number;
+  gpsAddHiHtPositiveCount: number;
+  gpsAddHiHtNegativeCount: number;
+  gpsAddHiHtNeutralCount: number;
+  gpsAddHiHtDefaultZeroCount: number;
+  gpsAddHiHtMissingHeightCount: number;
+  gpsAddHiHtScaleMin: number;
+  gpsAddHiHtScaleMax: number;
   geoidModelLoaded: boolean;
   geoidModelMetadata: string;
   geoidSampleUndulationM?: number;
@@ -944,6 +953,15 @@ const App: React.FC = () => {
         parseState.gpsAddHiHtEnabled ?? profileCtx.effectiveParse.gpsAddHiHtEnabled ?? false,
       gpsAddHiHtHiM: parseState.gpsAddHiHtHiM ?? profileCtx.effectiveParse.gpsAddHiHtHiM ?? 0,
       gpsAddHiHtHtM: parseState.gpsAddHiHtHtM ?? profileCtx.effectiveParse.gpsAddHiHtHtM ?? 0,
+      gpsAddHiHtVectorCount: parseState.gpsAddHiHtVectorCount ?? 0,
+      gpsAddHiHtAppliedCount: parseState.gpsAddHiHtAppliedCount ?? 0,
+      gpsAddHiHtPositiveCount: parseState.gpsAddHiHtPositiveCount ?? 0,
+      gpsAddHiHtNegativeCount: parseState.gpsAddHiHtNegativeCount ?? 0,
+      gpsAddHiHtNeutralCount: parseState.gpsAddHiHtNeutralCount ?? 0,
+      gpsAddHiHtDefaultZeroCount: parseState.gpsAddHiHtDefaultZeroCount ?? 0,
+      gpsAddHiHtMissingHeightCount: parseState.gpsAddHiHtMissingHeightCount ?? 0,
+      gpsAddHiHtScaleMin: parseState.gpsAddHiHtScaleMin ?? 1,
+      gpsAddHiHtScaleMax: parseState.gpsAddHiHtScaleMax ?? 1,
       geoidModelLoaded: parseState.geoidModelLoaded ?? false,
       geoidModelMetadata: parseState.geoidModelMetadata ?? '',
       geoidSampleUndulationM: parseState.geoidSampleUndulationM,
@@ -1020,6 +1038,15 @@ const App: React.FC = () => {
       gpsAddHiHtEnabled: parse.gpsAddHiHtEnabled,
       gpsAddHiHtHiM: parse.gpsAddHiHtHiM,
       gpsAddHiHtHtM: parse.gpsAddHiHtHtM,
+      gpsAddHiHtVectorCount: parse.gpsAddHiHtVectorCount,
+      gpsAddHiHtAppliedCount: parse.gpsAddHiHtAppliedCount,
+      gpsAddHiHtPositiveCount: parse.gpsAddHiHtPositiveCount,
+      gpsAddHiHtNegativeCount: parse.gpsAddHiHtNegativeCount,
+      gpsAddHiHtNeutralCount: parse.gpsAddHiHtNeutralCount,
+      gpsAddHiHtDefaultZeroCount: parse.gpsAddHiHtDefaultZeroCount,
+      gpsAddHiHtMissingHeightCount: parse.gpsAddHiHtMissingHeightCount,
+      gpsAddHiHtScaleMin: parse.gpsAddHiHtScaleMin,
+      gpsAddHiHtScaleMax: parse.gpsAddHiHtScaleMax,
       geoidModelLoaded: parse.geoidModelLoaded,
       geoidModelMetadata: parse.geoidModelMetadata,
       geoidSampleUndulationM: parse.geoidSampleUndulationM,
@@ -1143,6 +1170,11 @@ const App: React.FC = () => {
     lines.push(
       `GPS AddHiHt defaults: ${runDiag.gpsAddHiHtEnabled ? `ON (HI=${(runDiag.gpsAddHiHtHiM * unitScale).toFixed(4)} ${linearUnit}, HT=${(runDiag.gpsAddHiHtHtM * unitScale).toFixed(4)} ${linearUnit})` : 'OFF'}`,
     );
+    if (runDiag.gpsAddHiHtEnabled) {
+      lines.push(
+        `GPS AddHiHt preprocessing: vectors=${runDiag.gpsAddHiHtVectorCount}, adjusted=${runDiag.gpsAddHiHtAppliedCount} (+${runDiag.gpsAddHiHtPositiveCount}/-${runDiag.gpsAddHiHtNegativeCount}/neutral=${runDiag.gpsAddHiHtNeutralCount}), defaultZero=${runDiag.gpsAddHiHtDefaultZeroCount}, missingHeight=${runDiag.gpsAddHiHtMissingHeightCount}, scale[min=${runDiag.gpsAddHiHtScaleMin.toFixed(8)}, max=${runDiag.gpsAddHiHtScaleMax.toFixed(8)}]`,
+      );
+    }
     const lostStationIds = [...(res.parseState?.lostStationIds ?? [])].sort((a, b) =>
       a.localeCompare(b, undefined, { numeric: true }),
     );
@@ -3029,6 +3061,15 @@ const App: React.FC = () => {
         gpsAddHiHtEnabled: runDiag.gpsAddHiHtEnabled,
         gpsAddHiHtHiM: runDiag.gpsAddHiHtHiM,
         gpsAddHiHtHtM: runDiag.gpsAddHiHtHtM,
+        gpsAddHiHtVectorCount: runDiag.gpsAddHiHtVectorCount,
+        gpsAddHiHtAppliedCount: runDiag.gpsAddHiHtAppliedCount,
+        gpsAddHiHtPositiveCount: runDiag.gpsAddHiHtPositiveCount,
+        gpsAddHiHtNegativeCount: runDiag.gpsAddHiHtNegativeCount,
+        gpsAddHiHtNeutralCount: runDiag.gpsAddHiHtNeutralCount,
+        gpsAddHiHtDefaultZeroCount: runDiag.gpsAddHiHtDefaultZeroCount,
+        gpsAddHiHtMissingHeightCount: runDiag.gpsAddHiHtMissingHeightCount,
+        gpsAddHiHtScaleMin: runDiag.gpsAddHiHtScaleMin,
+        gpsAddHiHtScaleMax: runDiag.gpsAddHiHtScaleMax,
       },
     );
   };
@@ -5254,6 +5295,16 @@ const App: React.FC = () => {
                             gpsAddHiHtEnabled: runDiagnostics.gpsAddHiHtEnabled,
                             gpsAddHiHtHiM: runDiagnostics.gpsAddHiHtHiM,
                             gpsAddHiHtHtM: runDiagnostics.gpsAddHiHtHtM,
+                            gpsAddHiHtVectorCount: runDiagnostics.gpsAddHiHtVectorCount,
+                            gpsAddHiHtAppliedCount: runDiagnostics.gpsAddHiHtAppliedCount,
+                            gpsAddHiHtPositiveCount: runDiagnostics.gpsAddHiHtPositiveCount,
+                            gpsAddHiHtNegativeCount: runDiagnostics.gpsAddHiHtNegativeCount,
+                            gpsAddHiHtNeutralCount: runDiagnostics.gpsAddHiHtNeutralCount,
+                            gpsAddHiHtDefaultZeroCount: runDiagnostics.gpsAddHiHtDefaultZeroCount,
+                            gpsAddHiHtMissingHeightCount:
+                              runDiagnostics.gpsAddHiHtMissingHeightCount,
+                            gpsAddHiHtScaleMin: runDiagnostics.gpsAddHiHtScaleMin,
+                            gpsAddHiHtScaleMax: runDiagnostics.gpsAddHiHtScaleMax,
                           }
                         : null
                     }

@@ -414,6 +414,24 @@ describe('LSAEngine', () => {
     expect(withAddHiHt.stations.B?.y ?? 0).toBeCloseTo(base.stations.B?.y ?? 0, 10);
   });
 
+  it('reports GPS AddHiHt preprocessing diagnostics for positive/negative/default-height fixture cases', () => {
+    const input = readFileSync('tests/fixtures/gps_addhight_phase3.dat', 'utf-8');
+    const result = new LSAEngine({ input, maxIterations: 10 }).solve();
+    const parse = result.parseState;
+
+    expect(parse?.gpsAddHiHtEnabled ?? false).toBe(true);
+    expect(parse?.gpsAddHiHtVectorCount ?? 0).toBe(3);
+    expect(parse?.gpsAddHiHtAppliedCount ?? 0).toBe(2);
+    expect(parse?.gpsAddHiHtPositiveCount ?? 0).toBe(1);
+    expect(parse?.gpsAddHiHtNegativeCount ?? 0).toBe(1);
+    expect(parse?.gpsAddHiHtNeutralCount ?? 0).toBe(1);
+    expect(parse?.gpsAddHiHtDefaultZeroCount ?? 0).toBe(1);
+    expect(parse?.gpsAddHiHtMissingHeightCount ?? 0).toBe(0);
+    expect(parse?.gpsAddHiHtScaleMin ?? 1).toBeLessThan(1);
+    expect(parse?.gpsAddHiHtScaleMax ?? 1).toBeGreaterThan(1);
+    expect(result.logs.some((line) => line.includes('GPS AddHiHt preprocessing: vectors=3'))).toBe(true);
+  });
+
   it('handles mixed GPS NETWORK + GPS SIDESHOT vectors with dedicated post-adjust sideshot output', () => {
     const input = readFileSync('tests/fixtures/gps_network_sideshot_phase3.dat', 'utf-8');
     const result = new LSAEngine({ input, maxIterations: 10 }).solve();

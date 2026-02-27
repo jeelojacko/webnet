@@ -26,6 +26,7 @@ import type {
 
 const EPS = 1e-10;
 const EARTH_RADIUS_M = 6378137;
+const GPS_ADDHIHT_SCALE_TOL = 1e-9;
 
 const gammln = (xx: number): number => {
   const cof = [
@@ -368,6 +369,66 @@ export class LSAEngine {
     const scale = horizCorrected / horizRaw;
     if (!Number.isFinite(scale) || scale <= 0) return { dE: rawE, dN: rawN, scale: 1 };
     return { dE: rawE * scale, dN: rawN * scale, scale };
+  }
+
+  private updateGpsAddHiHtDiagnostics(): void {
+    if (!this.parseState) return;
+
+    const enabled = this.parseState.gpsAddHiHtEnabled ?? false;
+    let vectorCount = 0;
+    let appliedCount = 0;
+    let positiveCount = 0;
+    let negativeCount = 0;
+    let neutralCount = 0;
+    let defaultZeroCount = 0;
+    let missingHeightCount = 0;
+    let scaleMin = Number.POSITIVE_INFINITY;
+    let scaleMax = 0;
+
+    this.observations.forEach((obs) => {
+      if (obs.type !== 'gps') return;
+      vectorCount += 1;
+      const hasHi = Number.isFinite(obs.gpsAntennaHiM ?? Number.NaN);
+      const hasHt = Number.isFinite(obs.gpsAntennaHtM ?? Number.NaN);
+      if (!hasHi || !hasHt) {
+        missingHeightCount += 1;
+      }
+      const hi = hasHi ? (obs.gpsAntennaHiM as number) : 0;
+      const ht = hasHt ? (obs.gpsAntennaHtM as number) : 0;
+      if (Math.abs(hi) <= 1e-12 && Math.abs(ht) <= 1e-12) {
+        defaultZeroCount += 1;
+      }
+      const scale = this.gpsObservedVector(obs).scale;
+      scaleMin = Math.min(scaleMin, scale);
+      scaleMax = Math.max(scaleMax, scale);
+      const delta = scale - 1;
+      if (Math.abs(delta) <= GPS_ADDHIHT_SCALE_TOL) {
+        neutralCount += 1;
+      } else {
+        appliedCount += 1;
+        if (delta > 0) {
+          positiveCount += 1;
+        } else {
+          negativeCount += 1;
+        }
+      }
+    });
+
+    this.parseState.gpsAddHiHtVectorCount = vectorCount;
+    this.parseState.gpsAddHiHtAppliedCount = appliedCount;
+    this.parseState.gpsAddHiHtPositiveCount = positiveCount;
+    this.parseState.gpsAddHiHtNegativeCount = negativeCount;
+    this.parseState.gpsAddHiHtNeutralCount = neutralCount;
+    this.parseState.gpsAddHiHtDefaultZeroCount = defaultZeroCount;
+    this.parseState.gpsAddHiHtMissingHeightCount = missingHeightCount;
+    this.parseState.gpsAddHiHtScaleMin = vectorCount > 0 ? scaleMin : 1;
+    this.parseState.gpsAddHiHtScaleMax = vectorCount > 0 ? scaleMax : 1;
+
+    if (enabled) {
+      this.log(
+        `GPS AddHiHt preprocessing: vectors=${vectorCount}, adjusted=${appliedCount} (+${positiveCount}/-${negativeCount}/neutral=${neutralCount}), defaultZero=${defaultZeroCount}, missingHeight=${missingHeightCount}, scale[min=${(this.parseState.gpsAddHiHtScaleMin ?? 1).toFixed(8)}, max=${(this.parseState.gpsAddHiHtScaleMax ?? 1).toFixed(8)}]`,
+      );
+    }
   }
 
   private isTsCorrelationObservation(obs: Observation): boolean {
@@ -1844,6 +1905,8 @@ export class LSAEngine {
         }
       });
     }
+
+    this.updateGpsAddHiHtDiagnostics();
 
     if (this.unknowns.length === 0) {
       this.log('No unknown stations to solve.');

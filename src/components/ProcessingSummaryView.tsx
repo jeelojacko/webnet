@@ -30,6 +30,15 @@ interface ProcessingSummaryViewProps {
     gpsAddHiHtEnabled?: boolean;
     gpsAddHiHtHiM?: number;
     gpsAddHiHtHtM?: number;
+    gpsAddHiHtVectorCount?: number;
+    gpsAddHiHtAppliedCount?: number;
+    gpsAddHiHtPositiveCount?: number;
+    gpsAddHiHtNegativeCount?: number;
+    gpsAddHiHtNeutralCount?: number;
+    gpsAddHiHtDefaultZeroCount?: number;
+    gpsAddHiHtMissingHeightCount?: number;
+    gpsAddHiHtScaleMin?: number;
+    gpsAddHiHtScaleMax?: number;
   } | null;
 }
 
@@ -227,6 +236,11 @@ const ProcessingSummaryView: React.FC<ProcessingSummaryViewProps> = ({
       lines.push(
         `GPS AddHiHt Defaults: ${runDiagnostics.gpsAddHiHtEnabled ? `ON (HI=${(((runDiagnostics.gpsAddHiHtHiM ?? 0) * unitScale)).toFixed(4)}${linearUnit}, HT=${(((runDiagnostics.gpsAddHiHtHtM ?? 0) * unitScale)).toFixed(4)}${linearUnit})` : 'OFF'}`,
       );
+      if (runDiagnostics.gpsAddHiHtEnabled) {
+        lines.push(
+          `GPS AddHiHt Preprocess: vectors=${runDiagnostics.gpsAddHiHtVectorCount ?? 0}, adjusted=${runDiagnostics.gpsAddHiHtAppliedCount ?? 0} (+${runDiagnostics.gpsAddHiHtPositiveCount ?? 0}/-${runDiagnostics.gpsAddHiHtNegativeCount ?? 0}/neutral=${runDiagnostics.gpsAddHiHtNeutralCount ?? 0}), defaultZero=${runDiagnostics.gpsAddHiHtDefaultZeroCount ?? 0}, missingHeight=${runDiagnostics.gpsAddHiHtMissingHeightCount ?? 0}, scale=[${(runDiagnostics.gpsAddHiHtScaleMin ?? 1).toFixed(8)}, ${(runDiagnostics.gpsAddHiHtScaleMax ?? 1).toFixed(8)}]`,
+        );
+      }
     }
     const lostStations = result.parseState?.lostStationIds ?? [];
     lines.push(
