@@ -300,6 +300,21 @@ describe('LSAEngine', () => {
     expect(result.dof).toBeGreaterThanOrEqual(0);
   });
 
+  it('preserves parsed GPS vector mode tags on solved observations', () => {
+    const input = [
+      '.GPS SIDESHOT',
+      'C A 0 0 0 !',
+      'C B 100 0 0',
+      'G GPS1 A B 100.01 -0.02 0.01 0.03 0.25',
+      'D A-B 100.0 0.02',
+    ].join('\n');
+    const result = new LSAEngine({ input, maxIterations: 10 }).solve();
+    expect(result.parseState?.gpsVectorMode).toBe('sideshot');
+    const gps = result.observations.find((o) => o.type === 'gps');
+    expect(gps?.type).toBe('gps');
+    if (gps?.type === 'gps') expect(gps.gpsMode).toBe('sideshot');
+  });
+
   it('uses provided default instrument precision for records without explicit instrument codes', () => {
     const input = ['.2D', 'C A 0 0 0 ! !', 'C B 10 0 0', 'D A-B 10.0'].join('\n');
     const fallbackRun = new LSAEngine({ input, maxIterations: 6 }).solve();

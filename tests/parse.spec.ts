@@ -510,6 +510,36 @@ describe('parseInput', () => {
     expect(g?.corrEN).toBeCloseTo(0.3, 8);
   });
 
+  it('parses .GPS NETWORK/.GPS SIDESHOT mode state and tags G observations', () => {
+    const base = parseInput(
+      ['I GPS1 GNSS 0 0 0 0 0 0 0.002', 'C A 0 0 0 !', 'C B 100 0 0', 'G GPS1 A B 100 0 0.01'].join(
+        '\n',
+      ),
+    );
+    const baseGps = base.observations.find((o) => o.type === 'gps');
+    expect(base.parseState.gpsVectorMode).toBe('network');
+    expect(baseGps?.type).toBe('gps');
+    if (baseGps?.type === 'gps') expect(baseGps.gpsMode).toBe('network');
+
+    const parsed = parseInput(
+      [
+        '.GPS SIDESHOT',
+        '/GPS NETWORK',
+        '.GPS SS',
+        'I GPS1 GNSS 0 0 0 0 0 0 0.002',
+        'C A 0 0 0 !',
+        'C B 100 0 0',
+        'G GPS1 A B 100 0 0.01',
+      ].join('\n'),
+    );
+    const gps = parsed.observations.find((o) => o.type === 'gps');
+    expect(parsed.parseState.gpsVectorMode).toBe('sideshot');
+    expect(gps?.type).toBe('gps');
+    if (gps?.type === 'gps') expect(gps.gpsMode).toBe('sideshot');
+    expect(parsed.logs.some((l) => l.includes('GPS vector mode set to SIDESHOT'))).toBe(true);
+    expect(parsed.logs.some((l) => l.includes('GPS vector mode set to NETWORK'))).toBe(true);
+  });
+
   it('parses phase-3 reduction directives', () => {
     const parsed = parseInput(
       [

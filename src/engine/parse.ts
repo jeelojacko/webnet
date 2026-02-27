@@ -20,6 +20,7 @@ import type {
   MapMode,
   AngleMode,
   GeoidHeightDatum,
+  GpsVectorMode,
 } from '../types';
 
 const defaultParseOptions: ParseOptions = {
@@ -51,6 +52,7 @@ const defaultParseOptions: ParseOptions = {
   geoidSampleUndulationM: undefined,
   geoidConvertedStationCount: 0,
   geoidSkippedStationCount: 0,
+  gpsVectorMode: 'network',
   lonSign: 'west-negative',
   currentInstrument: undefined,
   edmMode: 'additive',
@@ -372,6 +374,15 @@ const parseGeoidHeightDatumToken = (token?: string): GeoidHeightDatum | null => 
   if (!upper) return null;
   if (upper === 'ORTHOMETRIC' || upper === 'ORTHO') return 'orthometric';
   if (upper === 'ELLIPSOID' || upper === 'ELLIPSOIDAL' || upper === 'ELLIP') return 'ellipsoid';
+  return null;
+};
+
+const parseGpsVectorModeToken = (token?: string): GpsVectorMode | null => {
+  if (!token) return null;
+  const upper = token.trim().toUpperCase();
+  if (!upper) return null;
+  if (upper === 'NETWORK' || upper === 'NET') return 'network';
+  if (upper === 'SIDESHOT' || upper === 'SS') return 'sideshot';
   return null;
 };
 
@@ -1173,6 +1184,16 @@ export const parseInput = (
         logs.push(
           `Warning: unrecognized .GEOID option at line ${lineNum}; expected OFF, ON [model], MODEL, INTERP, or HEIGHT.`,
         );
+      } else if (op === '.GPS') {
+        const mode = parseGpsVectorModeToken(parts[1]);
+        if (!mode) {
+          logs.push(
+            `Warning: unrecognized .GPS option at line ${lineNum}; expected NETWORK or SIDESHOT.`,
+          );
+          continue;
+        }
+        state.gpsVectorMode = mode;
+        logs.push(`GPS vector mode set to ${mode.toUpperCase()}`);
       } else if (op === '.LWEIGHT' && parts[1]) {
         const val = parseFloat(parts[1]);
         if (!Number.isNaN(val)) {
@@ -2788,6 +2809,7 @@ export const parseInput = (
         const obs: GpsObservation = {
           id: obsId++,
           type: 'gps',
+          gpsMode: state.gpsVectorMode ?? 'network',
           instCode,
           from,
           to,

@@ -143,6 +143,7 @@ export interface DirObservation extends ObservationBase {
 
 export interface GpsObservation extends ObservationBase {
   type: 'gps';
+  gpsMode?: GpsVectorMode;
   from: StationId;
   to: StationId;
   obs: { dE: number; dN: number };
@@ -246,6 +247,7 @@ export type DescriptionReconcileMode = 'first' | 'append';
 export type CrsProjectionModel = 'legacy-equirectangular' | 'local-enu';
 export type GeoidInterpolationMethod = 'bilinear' | 'nearest';
 export type GeoidHeightDatum = 'orthometric' | 'ellipsoid';
+export type GpsVectorMode = 'network' | 'sideshot';
 
 export interface ClusterApprovedMerge {
   aliasId: StationId;
@@ -397,6 +399,7 @@ export interface ParseOptions {
   geoidSampleUndulationM?: number;
   geoidConvertedStationCount?: number;
   geoidSkippedStationCount?: number;
+  gpsVectorMode?: GpsVectorMode;
   lonSign?: LonSign;
   currentInstrument?: string;
   edmMode?: 'additive' | 'propagated';
