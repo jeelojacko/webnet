@@ -99,15 +99,8 @@ describe('LSAEngine', () => {
     expect(withGeoid.logs.some((l) => l.includes('Geoid/grid model loaded'))).toBe(true);
   });
 
-  it('applies geoid height conversion only when explicitly enabled', () => {
-    const input = [
-      '.3D',
-      '.UNITS METERS DD',
-      '.GEOID ON NGS-DEMO',
-      'P ORTH 40.000000 -105.000000 100.000 ! ! !',
-      'PH ELL 40.001000 -104.999000 120.000 ! ! !',
-      'D ORTH-ELL 120.0000 0.005',
-    ].join('\n');
+  it('applies geoid height conversion against known checkpoint values only when enabled', () => {
+    const input = readFileSync('tests/fixtures/geoid_phase3_checkpoints.dat', 'utf-8');
 
     const base = new LSAEngine({ input, maxIterations: 10 }).solve();
     const toOrthometric = new LSAEngine({
@@ -136,27 +129,30 @@ describe('LSAEngine', () => {
     }).solve();
 
     expect(base.parseState?.geoidHeightConversionEnabled ?? false).toBe(false);
-    expect(base.stations.ELL.h).toBeCloseTo(120, 8);
-    expect(base.stations.ORTH.h).toBeCloseTo(100, 8);
+    expect(base.stations.ELL.h).toBeCloseTo(120, 10);
+    expect(base.stations.ORTH.h).toBeCloseTo(100, 10);
+    expect(base.stations.OUT.h).toBeCloseTo(50, 10);
 
     expect(toOrthometric.parseState?.geoidHeightConversionEnabled ?? false).toBe(true);
     expect(toOrthometric.parseState?.geoidOutputHeightDatum).toBe('orthometric');
     expect(toOrthometric.parseState?.geoidConvertedStationCount ?? 0).toBe(1);
-    expect(toOrthometric.parseState?.geoidSkippedStationCount ?? 0).toBe(0);
-    expect(toOrthometric.stations.ELL.h).toBeGreaterThan((base.stations.ELL.h ?? 0) + 20);
-    expect(toOrthometric.stations.ORTH.h).toBeCloseTo(base.stations.ORTH.h, 8);
+    expect(toOrthometric.parseState?.geoidSkippedStationCount ?? 0).toBe(1);
+    expect(toOrthometric.stations.ELL.h).toBeCloseTo(149.65, 8); // 120 - (-29.65)
+    expect(toOrthometric.stations.ORTH.h).toBeCloseTo(100, 10); // already orthometric
+    expect(toOrthometric.stations.OUT.h).toBeCloseTo(50, 10); // outside coverage -> skipped
     expect(toOrthometric.logs.some((l) => l.includes('Geoid height conversion: ON'))).toBe(true);
 
     expect(toEllipsoid.parseState?.geoidHeightConversionEnabled ?? false).toBe(true);
     expect(toEllipsoid.parseState?.geoidOutputHeightDatum).toBe('ellipsoid');
     expect(toEllipsoid.parseState?.geoidConvertedStationCount ?? 0).toBe(1);
     expect(toEllipsoid.parseState?.geoidSkippedStationCount ?? 0).toBe(0);
-    expect(toEllipsoid.stations.ORTH.h).toBeLessThan((base.stations.ORTH.h ?? 0) - 20);
-    expect(toEllipsoid.stations.ELL.h).toBeCloseTo(base.stations.ELL.h, 8);
+    expect(toEllipsoid.stations.ORTH.h).toBeCloseTo(70.6, 8); // 100 + (-29.4)
+    expect(toEllipsoid.stations.ELL.h).toBeCloseTo(120, 10); // already ellipsoid
+    expect(toEllipsoid.stations.OUT.h).toBeCloseTo(50, 10); // already ellipsoid
 
     expect(conversionWithoutModel.parseState?.geoidModelEnabled ?? false).toBe(false);
     expect(conversionWithoutModel.parseState?.geoidConvertedStationCount ?? 0).toBe(0);
-    expect(conversionWithoutModel.stations.ORTH.h).toBeCloseTo(base.stations.ORTH.h, 8);
+    expect(conversionWithoutModel.stations.ORTH.h).toBeCloseTo(base.stations.ORTH.h, 10);
     expect(conversionWithoutModel.logs.some((l) => l.includes('conversion requested'))).toBe(true);
   });
 

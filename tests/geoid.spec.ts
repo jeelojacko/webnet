@@ -31,6 +31,24 @@ describe('geoid grid pipeline', () => {
     expect((nearest ?? 0) < -29.5).toBe(true);
   });
 
+  it('matches known undulation checkpoints for NGS-DEMO grid nodes and midpoint', () => {
+    const loaded = loadBuiltinGeoidGridModel('NGS-DEMO');
+    expect(loaded.model).toBeDefined();
+    const model = loaded.model!;
+
+    const node1 = interpolateGeoidUndulation(model, 40.0, -105.0, 'bilinear');
+    const node2 = interpolateGeoidUndulation(model, 41.0, -104.0, 'bilinear');
+    const midpoint = interpolateGeoidUndulation(model, 40.5, -104.5, 'bilinear');
+    const nearestLow = interpolateGeoidUndulation(model, 40.49, -104.51, 'nearest');
+    const nearestHigh = interpolateGeoidUndulation(model, 40.51, -104.49, 'nearest');
+
+    expect(node1).toBeCloseTo(-29.65, 10);
+    expect(node2).toBeCloseTo(-29.4, 10);
+    expect(midpoint).toBeCloseTo(-29.525, 10);
+    expect(nearestLow).toBeCloseTo(-29.65, 10);
+    expect(nearestHigh).toBeCloseTo(-29.4, 10);
+  });
+
   it('returns null outside model bounds and parses interpolation tokens', () => {
     const loaded = loadBuiltinGeoidGridModel('NRC-DEMO');
     expect(loaded.model).toBeDefined();

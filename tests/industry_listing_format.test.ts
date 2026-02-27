@@ -443,6 +443,55 @@ describe('industry listing phase 5 formatting locks', () => {
     expect(listing).toContain('ON (ORTHOMETRIC');
   });
 
+  it('reports geoid checkpoint conversion diagnostics with converted/skipped counts', () => {
+    const input = readFileSync('tests/fixtures/geoid_phase3_checkpoints.dat', 'utf-8');
+    const result = new LSAEngine({
+      input,
+      maxIterations: 10,
+      parseOptions: {
+        geoidHeightConversionEnabled: true,
+        geoidOutputHeightDatum: 'orthometric',
+      },
+    }).solve();
+    const listing = buildIndustryStyleListingText(
+      result,
+      {
+        maxIterations: 10,
+        units: 'm',
+        listingShowLostStations: true,
+        listingShowCoordinates: true,
+        listingShowObservationsResiduals: true,
+        listingShowErrorPropagation: true,
+        listingShowProcessingNotes: false,
+        listingShowAzimuthsBearings: true,
+        listingSortCoordinatesBy: 'name',
+        listingSortObservationsBy: 'name',
+        listingObservationLimit: 500,
+      },
+      {
+        coordMode: '3D',
+        order: 'EN',
+        angleUnits: 'dd',
+        angleStationOrder: 'atfromto',
+        deltaMode: 'slope',
+        refractionCoefficient: 0.13,
+      },
+      {
+        solveProfile: 'webnet',
+        angleCenteringModel: 'geometry-aware-correlated-rays',
+        defaultSigmaCount: 0,
+        defaultSigmaByType: '',
+        stochasticDefaultsSummary: 'inst=S9',
+        rotationAngleRad: 0,
+      },
+    );
+
+    expect(listing).toContain('Geoid/Grid Model');
+    expect(listing).toContain('ON (NGS-DEMO, BILINEAR, loaded=YES)');
+    expect(listing).toContain('Geoid Height Conversion');
+    expect(listing).toContain('ON (ORTHOMETRIC, converted=1, skipped=1)');
+  });
+
   it('shows lost-station diagnostics and supports listing visibility filter', () => {
     const input = [
       '.2D',
