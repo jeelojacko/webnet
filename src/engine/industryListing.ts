@@ -161,6 +161,7 @@ export const buildIndustryStyleListingText = (
       parseState?.gpsAddHiHtScaleMax ?? runDiag.gpsAddHiHtScaleMax ?? 1;
     const gpsLoopCheckEnabled = parseState?.gpsLoopCheckEnabled ?? false;
     const gpsLoopDiagnostics = res.gpsLoopDiagnostics;
+    const isPreanalysis = res.preanalysisMode === true;
     const descriptionReconcileMode =
       parseState?.descriptionReconcileMode ?? parseSettings.descriptionReconcileMode ?? 'first';
     const descriptionAppendDelimiter =
@@ -232,6 +233,9 @@ export const buildIndustryStyleListingText = (
     lines.push('');
     lines.push(
       `      Industry Standard Run Mode                   : ${runDiag.solveProfile === 'industry-parity' ? 'Parity Profile (Classical)' : 'WebNet Default Profile'}`,
+    );
+    lines.push(
+      `      Run Purpose                         : ${isPreanalysis ? 'Preanalysis / Predicted Precision' : 'Adjustment / Postfit QA'}`,
     );
     lines.push(
       `      Type of Adjustment                  : ${parseState?.coordMode ?? parseSettings.coordMode}`,
@@ -739,7 +743,7 @@ export const buildIndustryStyleListingText = (
       renderTextTable(headers, rows, rightAligned);
     };
 
-    if (settings.listingShowObservationsResiduals && listingObservations.length > 0) {
+    if (!isPreanalysis && settings.listingShowObservationsResiduals && listingObservations.length > 0) {
       const angleRows = listingObservations
         .filter((obs) => obs.type === 'angle')
         .map((obs) => [
@@ -904,7 +908,9 @@ export const buildIndustryStyleListingText = (
       addCenteredHeading('Error Propagation');
 
       lines.push('');
-      lines.push(`Station Coordinate Standard Deviations (${linearUnit})`);
+      lines.push(
+        `${isPreanalysis ? 'Predicted Station Coordinate Standard Deviations' : 'Station Coordinate Standard Deviations'} (${linearUnit})`,
+      );
       lines.push('');
       const stdRows = stationEntriesForListing.map(([id, st]) => [
         id,
@@ -915,7 +921,9 @@ export const buildIndustryStyleListingText = (
       renderTextTable(['Station', 'Description', 'N', 'E'], stdRows, [2, 3]);
 
       lines.push('');
-      lines.push(`Station Coordinate Error Ellipses (${linearUnit})`);
+      lines.push(
+        `${isPreanalysis ? 'Predicted Station Coordinate Error Ellipses' : 'Station Coordinate Error Ellipses'} (${linearUnit})`,
+      );
       lines.push('                            Confidence Region = 95%');
       lines.push('');
       const stationEllipseRows = stationEntriesForListing
@@ -939,7 +947,7 @@ export const buildIndustryStyleListingText = (
       }
 
       lines.push('');
-      lines.push(`Relative Error Ellipses (${linearUnit})`);
+      lines.push(`${isPreanalysis ? 'Predicted Relative Error Ellipses' : 'Relative Error Ellipses'} (${linearUnit})`);
       lines.push('                            Confidence Region = 95%');
       lines.push('');
       const relativeEllipseRows = relationshipRows
@@ -961,6 +969,47 @@ export const buildIndustryStyleListingText = (
         });
       } else {
         lines.push('(none)');
+      }
+
+      if (isPreanalysis && res.weakGeometryDiagnostics) {
+        const flaggedStations = res.weakGeometryDiagnostics.stationCues.filter(
+          (cue) => cue.severity !== 'ok',
+        );
+        const flaggedPairs = res.weakGeometryDiagnostics.relativeCues.filter(
+          (cue) => cue.severity !== 'ok',
+        );
+        lines.push('');
+        lines.push('Weak Geometry Cues');
+        lines.push('');
+        lines.push(
+          `stationMedian=${(res.weakGeometryDiagnostics.stationMedianHorizontal * unitScale).toFixed(6)} ${linearUnit}; pairMedian=${
+            res.weakGeometryDiagnostics.relativeMedianDistance != null
+              ? `${(res.weakGeometryDiagnostics.relativeMedianDistance * unitScale).toFixed(6)} ${linearUnit}`
+              : '-'
+          }`,
+        );
+        if (flaggedStations.length === 0 && flaggedPairs.length === 0) {
+          lines.push('(none)');
+        } else {
+          flaggedStations.forEach((cue) => {
+            lines.push(
+              `  Station ${cue.stationId}: ${cue.severity.toUpperCase()} metric=${(
+                cue.horizontalMetric * unitScale
+              ).toFixed(6)} ${linearUnit} ratio=${
+                cue.relativeToMedian != null ? `${cue.relativeToMedian.toFixed(2)}x` : '-'
+              } shape=${cue.ellipseRatio != null ? `${cue.ellipseRatio.toFixed(2)}x` : '-'} ${cue.note}`,
+            );
+          });
+          flaggedPairs.forEach((cue) => {
+            lines.push(
+              `  Pair ${cue.from}-${cue.to}: ${cue.severity.toUpperCase()} metric=${
+                cue.distanceMetric != null ? `${(cue.distanceMetric * unitScale).toFixed(6)} ${linearUnit}` : '-'
+              } ratio=${cue.relativeToMedian != null ? `${cue.relativeToMedian.toFixed(2)}x` : '-'} shape=${
+                cue.ellipseRatio != null ? `${cue.ellipseRatio.toFixed(2)}x` : '-'
+              } ${cue.note}`,
+            );
+          });
+        }
       }
     }
     if (res.autoAdjustDiagnostics?.enabled) {

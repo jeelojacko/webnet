@@ -26,6 +26,69 @@ export interface StationErrorEllipse {
   theta: number; // degrees
 }
 
+export interface StationCovarianceBlock {
+  stationId: StationId;
+  cEE: number;
+  cEN: number;
+  cEH?: number;
+  cNN: number;
+  cNH?: number;
+  cHH?: number;
+  sigmaE: number;
+  sigmaN: number;
+  sigmaH?: number;
+  ellipse?: StationErrorEllipse;
+}
+
+export interface RelativeCovarianceBlock {
+  from: StationId;
+  to: StationId;
+  connected: boolean;
+  connectionTypes: string[];
+  cEE: number;
+  cEN: number;
+  cEH?: number;
+  cNN: number;
+  cNH?: number;
+  cHH?: number;
+  sigmaE: number;
+  sigmaN: number;
+  sigmaH?: number;
+  sigmaDist?: number;
+  sigmaAz?: number;
+  ellipse?: StationErrorEllipse;
+}
+
+export type WeakGeometrySeverity = 'ok' | 'watch' | 'weak';
+
+export interface WeakGeometryStationCue {
+  stationId: StationId;
+  severity: WeakGeometrySeverity;
+  horizontalMetric: number;
+  verticalMetric?: number;
+  relativeToMedian?: number;
+  ellipseRatio?: number;
+  note: string;
+}
+
+export interface WeakGeometryRelativeCue {
+  from: StationId;
+  to: StationId;
+  severity: WeakGeometrySeverity;
+  distanceMetric?: number;
+  relativeToMedian?: number;
+  ellipseRatio?: number;
+  note: string;
+}
+
+export interface WeakGeometryDiagnostics {
+  enabled: boolean;
+  stationMedianHorizontal: number;
+  relativeMedianDistance?: number;
+  stationCues: WeakGeometryStationCue[];
+  relativeCues: WeakGeometryRelativeCue[];
+}
+
 export interface Station {
   x: number;
   y: number;
@@ -479,6 +542,9 @@ export interface AdjustmentResult {
   parseState?: ParseOptions;
   condition?: { estimate: number; threshold: number; flagged: boolean };
   controlConstraints?: { count: number; x: number; y: number; h: number };
+  stationCovariances?: StationCovarianceBlock[];
+  relativeCovariances?: RelativeCovarianceBlock[];
+  weakGeometryDiagnostics?: WeakGeometryDiagnostics;
   chiSquare?: {
     T: number;
     dof: number;

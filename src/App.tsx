@@ -1135,12 +1135,19 @@ const App: React.FC = () => {
     const outputRelativePrecision = (res.relativePrecision ?? []).filter(
       (rel) => isVisibleStation(rel.from) && isVisibleStation(rel.to),
     );
+    const outputStationCovariances = (res.stationCovariances ?? []).filter((row) =>
+      isVisibleStation(row.stationId),
+    );
+    const outputRelativeCovariances = (res.relativeCovariances ?? []).filter(
+      (row) => isVisibleStation(row.from) && isVisibleStation(row.to),
+    );
     const outputSideshots = (res.sideshots ?? []).filter(
       (ss) => isVisibleStation(ss.from) && isVisibleStation(ss.to),
     );
     const outputTsSideshots = outputSideshots.filter((ss) => ss.mode !== 'gps');
     const outputGpsSideshots = outputSideshots.filter((ss) => ss.mode === 'gps');
     const gpsLoopDiagnostics = res.gpsLoopDiagnostics;
+    const isPreanalysis = res.preanalysisMode === true;
     lines.push(`# WebNet Adjustment Results`);
     lines.push(`# Generated: ${now.toLocaleString()}`);
     lines.push(`# Linear units: ${linearUnit}`);
@@ -1258,7 +1265,11 @@ const App: React.FC = () => {
     lines.push('');
     lines.push(`Status: ${res.converged ? 'CONVERGED' : 'NOT CONVERGED'}`);
     lines.push(`Iterations: ${res.iterations}`);
-    lines.push(`SEUW: ${res.seuw.toFixed(4)} (DOF: ${res.dof})`);
+    lines.push(
+      isPreanalysis
+        ? `A-priori sigma0: ${res.seuw.toFixed(4)} (predicted precision mode)`
+        : `SEUW: ${res.seuw.toFixed(4)} (DOF: ${res.dof})`,
+    );
     if (res.condition) {
       lines.push(
         `Normal matrix condition estimate: ${res.condition.estimate.toExponential(4)} (threshold ${res.condition.threshold.toExponential(
@@ -1271,7 +1282,12 @@ const App: React.FC = () => {
         `Weighted control constraints: ${res.controlConstraints.count} (E=${res.controlConstraints.x}, N=${res.controlConstraints.y}, H=${res.controlConstraints.h})`,
       );
     }
-    if (res.chiSquare) {
+    if (isPreanalysis) {
+      lines.push(
+        `Preanalysis summary: plannedObs=${res.parseState?.plannedObservationCount ?? 0}, stationCovBlocks=${outputStationCovariances.length}, connectedPairBlocks=${outputRelativeCovariances.length}`,
+      );
+      lines.push('Residual-based QC: disabled (chi-square, suspect ranking, and exclusion workflows omitted).');
+    } else if (res.chiSquare) {
       lines.push(
         `Chi-square: T=${res.chiSquare.T.toFixed(4)} dof=${res.chiSquare.dof} p=${res.chiSquare.p.toFixed(
           4,
@@ -1336,7 +1352,7 @@ const App: React.FC = () => {
         }
       }
     }
-    if (res.robustComparison?.enabled) {
+    if (!isPreanalysis && res.robustComparison?.enabled) {
       lines.push(
         `Robust/classical suspect overlap: ${res.robustComparison.overlapCount}/${Math.min(
           res.robustComparison.classicalTop.length,
@@ -1352,20 +1368,20 @@ const App: React.FC = () => {
         ).toFixed(4)} ${linearUnit}, pairHits=${cd.pairCount}, candidates=${cd.candidateCount}, approvedMerges=${cd.approvedMergeCount ?? 0}, mergeOutcomes=${cd.mergeOutcomes?.length ?? 0}, rejected=${cd.rejectedProposals?.length ?? 0}`,
       );
     }
-    if (res.autoAdjustDiagnostics?.enabled) {
+    if (!isPreanalysis && res.autoAdjustDiagnostics?.enabled) {
       const ad = res.autoAdjustDiagnostics;
       lines.push(
         `Auto-adjust: ON (|t|>=${ad.threshold.toFixed(2)}, maxCycles=${ad.maxCycles}, maxRemovalsPerCycle=${ad.maxRemovalsPerCycle}, minRedund=${ad.minRedundancy.toFixed(2)}, stop=${ad.stopReason}, removed=${ad.removed.length})`,
       );
     }
-    if (res.autoSideshotDiagnostics?.enabled) {
+    if (!isPreanalysis && res.autoSideshotDiagnostics?.enabled) {
       const sd = res.autoSideshotDiagnostics;
       lines.push(
         `Auto sideshot (M-lines): evaluated=${sd.evaluatedCount}, candidates=${sd.candidateCount}, excludedControl=${sd.excludedControlCount}, threshold=${sd.threshold.toFixed(2)}`,
       );
     }
     lines.push('');
-    lines.push('--- Adjusted Coordinates ---');
+    lines.push(isPreanalysis ? '--- Predicted Coordinates and Precision ---' : '--- Adjusted Coordinates ---');
     lines.push(
       'ID\tDescription\tNorthing\tEasting\tHeight\tType\tσN\tσE\tσH\tEllMaj\tEllMin\tEllAz\tEllMaj95\tEllMin95',
     );
@@ -1392,7 +1408,86 @@ const App: React.FC = () => {
       );
     });
     lines.push('');
-    if (res.typeSummary && Object.keys(res.typeSummary).length > 0) {
+    if (isPreanalysis && outputStationCovariances.length > 0) {
+      lines.push(`--- Station Covariance Blocks (${linearUnit}^2) ---`);
+      lines.push('Station\tCEE\tCEN\tCNN\tCHH');
+      outputStationCovariances.forEach((row) => {
+        lines.push(
+          `${row.stationId}\t${(row.cEE * unitScale * unitScale).toExponential(4)}\t${(
+            row.cEN *
+            unitScale *
+            unitScale
+          ).toExponential(4)}\t${(row.cNN * unitScale * unitScale).toExponential(4)}\t${
+            row.cHH != null ? (row.cHH * unitScale * unitScale).toExponential(4) : '-'
+          }`,
+        );
+      });
+      lines.push('');
+    }
+    if (isPreanalysis && outputRelativeCovariances.length > 0) {
+      lines.push(`--- Predicted Relative Precision (Connected Pairs) ---`);
+      lines.push('From\tTo\tTypes\tσN\tσE\tσDist\tσAz(")\tCEE\tCEN\tCNN');
+      outputRelativeCovariances.forEach((row) => {
+        lines.push(
+          `${row.from}\t${row.to}\t${row.connectionTypes.join(',')}\t${(row.sigmaN * unitScale).toFixed(
+            4,
+          )}\t${(row.sigmaE * unitScale).toFixed(4)}\t${
+            row.sigmaDist != null ? (row.sigmaDist * unitScale).toFixed(4) : '-'
+          }\t${row.sigmaAz != null ? (row.sigmaAz * RAD_TO_DEG * 3600).toFixed(2) : '-'}\t${(
+            row.cEE *
+            unitScale *
+            unitScale
+          ).toExponential(4)}\t${(row.cEN * unitScale * unitScale).toExponential(4)}\t${(
+            row.cNN *
+            unitScale *
+            unitScale
+          ).toExponential(4)}`,
+        );
+      });
+      lines.push('');
+    }
+    if (isPreanalysis && res.weakGeometryDiagnostics) {
+      const flaggedStationCues = res.weakGeometryDiagnostics.stationCues.filter(
+        (cue) => cue.severity !== 'ok',
+      );
+      const flaggedRelativeCues = res.weakGeometryDiagnostics.relativeCues.filter(
+        (cue) => cue.severity !== 'ok',
+      );
+      lines.push('--- Weak Geometry Cues ---');
+      lines.push(
+        `Median station major=${(
+          res.weakGeometryDiagnostics.stationMedianHorizontal * unitScale
+        ).toFixed(4)} ${linearUnit}; median pair sigmaDist=${
+          res.weakGeometryDiagnostics.relativeMedianDistance != null
+            ? `${(res.weakGeometryDiagnostics.relativeMedianDistance * unitScale).toFixed(4)} ${linearUnit}`
+            : '-'
+        }`,
+      );
+      if (flaggedStationCues.length === 0 && flaggedRelativeCues.length === 0) {
+        lines.push('No weak-geometry cues flagged.');
+      } else {
+        flaggedStationCues.forEach((cue) => {
+          lines.push(
+            `Station ${cue.stationId}: ${cue.severity.toUpperCase()} metric=${(
+              cue.horizontalMetric * unitScale
+            ).toFixed(4)} ${linearUnit} ratio=${
+              cue.relativeToMedian != null ? `${cue.relativeToMedian.toFixed(2)}x` : '-'
+            } shape=${cue.ellipseRatio != null ? `${cue.ellipseRatio.toFixed(2)}x` : '-'} ${cue.note}`,
+          );
+        });
+        flaggedRelativeCues.forEach((cue) => {
+          lines.push(
+            `Pair ${cue.from}-${cue.to}: ${cue.severity.toUpperCase()} metric=${
+              cue.distanceMetric != null ? `${(cue.distanceMetric * unitScale).toFixed(4)} ${linearUnit}` : '-'
+            } ratio=${cue.relativeToMedian != null ? `${cue.relativeToMedian.toFixed(2)}x` : '-'} shape=${
+              cue.ellipseRatio != null ? `${cue.ellipseRatio.toFixed(2)}x` : '-'
+            } ${cue.note}`,
+          );
+        });
+      }
+      lines.push('');
+    }
+    if (!isPreanalysis && res.typeSummary && Object.keys(res.typeSummary).length > 0) {
       lines.push('--- Per-Type Summary ---');
       const summaryRows = Object.entries(res.typeSummary).map(([type, s]) => ({
         type,
@@ -1453,7 +1548,7 @@ const App: React.FC = () => {
       });
       lines.push('');
     }
-    if (res.residualDiagnostics) {
+    if (!isPreanalysis && res.residualDiagnostics) {
       const rd = res.residualDiagnostics;
       lines.push('--- Residual Diagnostics ---');
       lines.push(
@@ -1529,7 +1624,7 @@ const App: React.FC = () => {
       }
       lines.push('');
     }
-    if (outputRelativePrecision.length > 0) {
+    if (!isPreanalysis && outputRelativePrecision.length > 0) {
       lines.push('--- Relative Precision (Unknowns) ---');
       const relRows = outputRelativePrecision.map((r) => ({
         from: r.from,
@@ -2723,47 +2818,48 @@ const App: React.FC = () => {
       lines.push('');
     };
     appendGpsLoopSection();
-    lines.push('--- Observations & Residuals ---');
-    lines.push(`MDB units: arcsec for angular types; ${linearUnit} for linear types`);
-    const autoSideshotObsIds = new Set(
-      res.autoSideshotDiagnostics?.candidates.flatMap((c) => [c.angleObsId, c.distObsId]) ?? [],
-    );
-    const rows: {
-      type: string;
-      stations: string;
-      sourceLine: string;
-      obs: string;
-      calc: string;
-      residual: string;
-      stdRes: string;
-      redundancy: string;
-      localTest: string;
-      mdb: string;
-      prism: string;
-      tag: string;
-      stdResAbs: number;
-    }[] = [];
-    const isAngularType = (type: string) =>
-      type === 'angle' ||
-      type === 'direction' ||
-      type === 'bearing' ||
-      type === 'dir' ||
-      type === 'zenith';
-    const formatMdb = (value: number, angular: boolean): string => {
-      if (!Number.isFinite(value)) return 'inf';
-      return angular
-        ? `${(value * RAD_TO_DEG * 3600).toFixed(2)}"`
-        : (value * unitScale).toFixed(4);
-    };
-    const prismTagForObservation = (obs: Observation): string => {
-      if (obs.type !== 'dist' && obs.type !== 'zenith') return '-';
-      const correction = obs.prismCorrectionM ?? 0;
-      if (!Number.isFinite(correction) || Math.abs(correction) <= 0) return '-';
-      const scope = obs.prismScope ?? 'global';
-      const sign = correction >= 0 ? '+' : '';
-      return `${scope}:${sign}${(correction * unitScale).toFixed(4)}${linearUnit}`;
-    };
-    outputObservations.forEach((obs) => {
+    if (!isPreanalysis) {
+      lines.push('--- Observations & Residuals ---');
+      lines.push(`MDB units: arcsec for angular types; ${linearUnit} for linear types`);
+      const autoSideshotObsIds = new Set(
+        res.autoSideshotDiagnostics?.candidates.flatMap((c) => [c.angleObsId, c.distObsId]) ?? [],
+      );
+      const rows: {
+        type: string;
+        stations: string;
+        sourceLine: string;
+        obs: string;
+        calc: string;
+        residual: string;
+        stdRes: string;
+        redundancy: string;
+        localTest: string;
+        mdb: string;
+        prism: string;
+        tag: string;
+        stdResAbs: number;
+      }[] = [];
+      const isAngularType = (type: string) =>
+        type === 'angle' ||
+        type === 'direction' ||
+        type === 'bearing' ||
+        type === 'dir' ||
+        type === 'zenith';
+      const formatMdb = (value: number, angular: boolean): string => {
+        if (!Number.isFinite(value)) return 'inf';
+        return angular
+          ? `${(value * RAD_TO_DEG * 3600).toFixed(2)}"`
+          : (value * unitScale).toFixed(4);
+      };
+      const prismTagForObservation = (obs: Observation): string => {
+        if (obs.type !== 'dist' && obs.type !== 'zenith') return '-';
+        const correction = obs.prismCorrectionM ?? 0;
+        if (!Number.isFinite(correction) || Math.abs(correction) <= 0) return '-';
+        const scope = obs.prismScope ?? 'global';
+        const sign = correction >= 0 ? '+' : '';
+        return `${scope}:${sign}${(correction * unitScale).toFixed(4)}${linearUnit}`;
+      };
+      outputObservations.forEach((obs) => {
       let stations = '';
       let obsStr = '';
       let calcStr = '';
@@ -2886,12 +2982,12 @@ const App: React.FC = () => {
       });
     });
 
-    rows.sort((a, b) => b.stdResAbs - a.stdResAbs);
-    const suspects = rows
-      .filter((r) => r.localTest.includes('FAIL') || r.stdResAbs >= 2)
-      .slice(0, 20);
+      rows.sort((a, b) => b.stdResAbs - a.stdResAbs);
+      const suspects = rows
+        .filter((r) => r.localTest.includes('FAIL') || r.stdResAbs >= 2)
+        .slice(0, 20);
 
-    if (suspects.length > 0) {
+      if (suspects.length > 0) {
       lines.push('--- Top Suspects ---');
       const suspectHeader = {
         rank: '#',
@@ -2949,9 +3045,9 @@ const App: React.FC = () => {
         );
       });
       lines.push('');
-    }
+      }
 
-    if (res.suspectImpactDiagnostics && res.suspectImpactDiagnostics.length > 0) {
+      if (res.suspectImpactDiagnostics && res.suspectImpactDiagnostics.length > 0) {
       lines.push('--- Suspect Impact Analysis (what-if exclusion) ---');
       const impactRows = res.suspectImpactDiagnostics.map((d, idx) => ({
         rank: String(idx + 1),
@@ -3032,9 +3128,9 @@ const App: React.FC = () => {
         );
       });
       lines.push('');
-    }
+      }
 
-    const headers = {
+      const headers = {
       type: 'Type',
       stations: 'Stations',
       sourceLine: 'Line',
@@ -3048,7 +3144,7 @@ const App: React.FC = () => {
       prism: 'Prism',
       tag: 'Tag',
     };
-    const widths = {
+      const widths = {
       type: Math.max(headers.type.length, ...rows.map((r) => r.type.length)),
       stations: Math.max(headers.stations.length, ...rows.map((r) => r.stations.length)),
       sourceLine: Math.max(headers.sourceLine.length, ...rows.map((r) => r.sourceLine.length)),
@@ -3062,8 +3158,8 @@ const App: React.FC = () => {
       prism: Math.max(headers.prism.length, ...rows.map((r) => r.prism.length)),
       tag: Math.max(headers.tag.length, ...rows.map((r) => r.tag.length)),
     };
-    const pad = (value: string, size: number) => value.padEnd(size, ' ');
-    lines.push(
+      const pad = (value: string, size: number) => value.padEnd(size, ' ');
+      lines.push(
       [
         pad(headers.type, widths.type),
         pad(headers.stations, widths.stations),
@@ -3078,9 +3174,9 @@ const App: React.FC = () => {
         pad(headers.prism, widths.prism),
         pad(headers.tag, widths.tag),
       ].join('  '),
-    );
-    rows.forEach((r) => {
-      lines.push(
+      );
+      rows.forEach((r) => {
+        lines.push(
         [
           pad(r.type, widths.type),
           pad(r.stations, widths.stations),
@@ -3095,9 +3191,10 @@ const App: React.FC = () => {
           pad(r.prism, widths.prism),
           pad(r.tag, widths.tag),
         ].join('  '),
-      );
-    });
-    lines.push('');
+        );
+      });
+      lines.push('');
+    }
     if (aliasTrace.length > 0) {
       lines.push('--- Alias Reference Trace ---');
       lines.push('Context  Detail            Line  SourceAlias          CanonicalID          Reference');

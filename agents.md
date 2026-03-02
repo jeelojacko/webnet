@@ -30,6 +30,7 @@
 - Current behavior also includes GPS OPUS import Phase 1 support: file-load import now detects NGS OPUS/OPUS-RS text solution reports (`.txt`/`.sum`/`.rpt`), extracts station coordinates, diagonal covariance-style sigmas, and reference metadata, then converts them into editable WebNet `PH` input text with source comments and covariance notes for later weighting phases.
 - Current behavior also includes fixture-locked centering geometry regression coverage (`tests/fixtures/centering_geometry_reference.dat`) to keep slope-distance and zenith centering inflation stable under industry-standard geometry weighting.
 - Current behavior also includes robust Huber reweighting via a small inner IRLS loop per outer solve iteration, using postfit residuals (`v = A·dx - L`) for reweighting while keeping diagonal updates O(m) and limiting correlated reweight scaling to active correlation blocks.
+- Current behavior also includes preanalysis / network-planning Phases 1-4: Project Options -> Adjustment `Preanalysis` mode accepts planned `?` observation values, resolves them from approximate geometry using the existing row-building path (`L = 0`), fixes `sigma0^2 = 1` for predicted covariance, exposes station covariance blocks plus connected-pair relative covariance/precision rows, and renders weak-geometry cues while suppressing residual-based QC sections in report/map/output views.
 
 ## Tech Stack
 
@@ -85,7 +86,7 @@ npm run format:check # Prettier check
 - Expand test coverage for complex GNSS and leveling networks.
 - Follow the Industry Standard v6-v14 parity-gap backlog in `TODO.md` (ordered Conventional -> GPS -> Leveling) for upcoming feature work.
 - All parity-gap entries now include phased plans; execute in backlog order, starting with the top conventional items (`.ALIAS`, cluster-detection adjustment mode, Auto-Adjust workflow).
-- Preanalysis / network-planning Phase 1-2 is now implemented: use the Project Options preanalysis toggle plus `?` planned observation values, keep future batches focused on covariance/ellipse outputs, relative ellipses, and what-if UX while preserving the existing `L = 0` geometry-derived row-building path.
+- Preanalysis / network-planning Phases 1-4 are now implemented: use the Project Options preanalysis toggle plus `?` planned observation values to generate predicted covariance, station/connected-pair precision blocks, and weak-geometry cues with residual-based QC suppressed; keep future batches focused on what-if planning UX, CLI/docs/examples, and comparison workflows.
 
 ## Todo
 

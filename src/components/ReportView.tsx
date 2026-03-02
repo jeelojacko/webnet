@@ -91,6 +91,8 @@ const ReportView: React.FC<ReportViewProps> = ({
   const unitScale = units === 'ft' ? FT_PER_M : 1
   const ellipseUnit = units === 'm' ? 'cm' : 'in'
   const ellipseScale = units === 'm' ? 100 : 12
+  const covarianceScale = unitScale * unitScale
+  const isPreanalysis = result.preanalysisMode === true
   const [ellipseMode, setEllipseMode] = useState<'1sigma' | '95'>('1sigma')
   const ellipseConfidenceScale = ellipseMode === '95' ? 2.4477 : 1
 
@@ -194,6 +196,15 @@ const ReportView: React.FC<ReportViewProps> = ({
   const descriptionAppendDelimiter = result.parseState?.descriptionAppendDelimiter ?? ' | '
   const reconciledDescriptions = result.parseState?.reconciledDescriptions ?? {}
   const stationDescription = (stationId: string): string => reconciledDescriptions[stationId] ?? '-'
+  const stationCovariances = result.stationCovariances ?? []
+  const relativeCovariances = result.relativeCovariances ?? []
+  const weakGeometryDiagnostics = result.weakGeometryDiagnostics
+  const flaggedStationCues = (weakGeometryDiagnostics?.stationCues ?? []).filter(
+    (cue) => cue.severity !== 'ok',
+  )
+  const flaggedRelativeCues = (weakGeometryDiagnostics?.relativeCues ?? []).filter(
+    (cue) => cue.severity !== 'ok',
+  )
   const clusterReviewStats = clusterCandidates.reduce(
     (acc, candidate) => {
       const decision = clusterReviewDecisions[candidate.key]
@@ -733,7 +744,7 @@ const ReportView: React.FC<ReportViewProps> = ({
           </div>
         </div>
       )}
-      {topSuspects.length > 0 && (
+      {!isPreanalysis && topSuspects.length > 0 && (
         <div className="mb-8 border border-slate-800 rounded overflow-hidden">
           <div className="px-4 py-2 border-b border-slate-800 bg-slate-900/60 text-xs uppercase tracking-wider text-slate-400">
             Top Suspects (ranked)
@@ -805,7 +816,7 @@ const ReportView: React.FC<ReportViewProps> = ({
         </div>
       )}
 
-      {result.suspectImpactDiagnostics && result.suspectImpactDiagnostics.length > 0 && (
+      {!isPreanalysis && result.suspectImpactDiagnostics && result.suspectImpactDiagnostics.length > 0 && (
         <div className="mb-8 border border-slate-800 rounded overflow-hidden">
           <div className="px-4 py-2 border-b border-slate-800 bg-slate-900/60 text-xs uppercase tracking-wider text-slate-400">
             Suspect Impact Analysis (what-if exclusion)
@@ -879,14 +890,20 @@ const ReportView: React.FC<ReportViewProps> = ({
           <div className="bg-slate-900 p-4 rounded border border-slate-800">
             <span
               className="block text-slate-500 text-xs mb-1"
-              title="SEUW = sqrt(vTPv / DOF). Values near 1 usually indicate realistic stochastic modeling."
+              title={
+                isPreanalysis
+                  ? 'Preanalysis uses the a-priori variance factor sigma0^2 = 1.0 and reports predicted precision only.'
+                  : 'SEUW = sqrt(vTPv / DOF). Values near 1 usually indicate realistic stochastic modeling.'
+              }
             >
-              STD ERROR UNIT WEIGHT (SEUW)
+              {isPreanalysis ? 'A-PRIORI SIGMA0' : 'STD ERROR UNIT WEIGHT (SEUW)'}
             </span>
             <span className={`font-bold text-lg ${result.seuw > 1.5 ? 'text-yellow-400' : 'text-blue-400'}`}>
               {result.seuw.toFixed(4)}
             </span>
-            <span className="text-slate-600 text-xs ml-2">(DOF: {result.dof})</span>
+            <span className="text-slate-600 text-xs ml-2">
+              {isPreanalysis ? '(predicted precision)' : `(DOF: ${result.dof})`}
+            </span>
             {result.controlConstraints && (
               <div className="text-[10px] text-slate-500 mt-1">
                 constraints: {result.controlConstraints.count} (E:{result.controlConstraints.x} N:
@@ -897,11 +914,15 @@ const ReportView: React.FC<ReportViewProps> = ({
           <div className="bg-slate-900 p-4 rounded border border-slate-800 hidden md:block">
             <span
               className="block text-slate-500 text-xs mb-1"
-              title="Global model test against expected variance at 95% confidence. PASS means SEUW is statistically consistent with stated precisions."
+              title={
+                isPreanalysis
+                  ? 'Residual-based quality-control statistics are disabled in preanalysis mode.'
+                  : 'Global model test against expected variance at 95% confidence. PASS means SEUW is statistically consistent with stated precisions.'
+              }
             >
-              CHI-SQUARE (95%)
+              {isPreanalysis ? 'RESIDUAL QC' : 'CHI-SQUARE (95%)'}
             </span>
-            {result.chiSquare ? (
+            {!isPreanalysis && result.chiSquare ? (
               <>
                 <div
                   className={`font-bold text-lg ${result.chiSquare.pass95 ? 'text-green-400' : 'text-red-400'}`}
@@ -932,7 +953,9 @@ const ReportView: React.FC<ReportViewProps> = ({
                 )}
               </>
             ) : (
-              <div className="text-xs text-slate-500">-</div>
+              <div className="text-xs text-slate-500">
+                {isPreanalysis ? 'Disabled for planning runs' : '-'}
+              </div>
             )}
           </div>
           <div className="bg-slate-900 p-4 rounded border border-slate-800 hidden md:block">
@@ -946,6 +969,9 @@ const ReportView: React.FC<ReportViewProps> = ({
               <div>Bearings: {byType('bearing').length}</div>
               <div>Dirs: {byType('dir').length}</div>
               <div>Zenith: {byType('zenith').length}</div>
+              {isPreanalysis && (
+                <div>Planned: {result.parseState?.plannedObservationCount ?? 0}</div>
+              )}
             </div>
           </div>
         </div>
@@ -1104,6 +1130,40 @@ const ReportView: React.FC<ReportViewProps> = ({
               <div className="text-slate-500">Stochastic Defaults</div>
               <div className="break-words">{runDiagnostics.stochasticDefaultsSummary}</div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {isPreanalysis && (
+        <div className="mb-6 border border-cyan-900/70 rounded overflow-hidden">
+          <div className="px-3 py-2 text-xs text-cyan-200 uppercase tracking-wider border-b border-cyan-900/60 bg-cyan-950/30">
+            Preanalysis Planning Summary
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3 p-3 text-xs text-slate-300 border-b border-cyan-900/30">
+            <div>
+              <div className="text-slate-500">Planned Observations</div>
+              <div>{result.parseState?.plannedObservationCount ?? 0}</div>
+            </div>
+            <div>
+              <div className="text-slate-500">Station Covariance Blocks</div>
+              <div>{stationCovariances.length}</div>
+            </div>
+            <div>
+              <div className="text-slate-500">Connected Pair Blocks</div>
+              <div>{relativeCovariances.length}</div>
+            </div>
+            <div>
+              <div className="text-slate-500">Weak Stations</div>
+              <div>{flaggedStationCues.length}</div>
+            </div>
+            <div>
+              <div className="text-slate-500">Weak Pairs</div>
+              <div>{flaggedRelativeCues.length}</div>
+            </div>
+          </div>
+          <div className="px-3 py-2 text-xs text-cyan-100/90 bg-cyan-950/20">
+            Predicted covariance uses sigma0^2 = 1.0. Residual-based QC, chi-square, suspect ranking,
+            and exclusion workflows are disabled in this mode.
           </div>
         </div>
       )}
@@ -1690,7 +1750,7 @@ const ReportView: React.FC<ReportViewProps> = ({
         </div>
       )}
 
-      {result.residualDiagnostics && (
+      {!isPreanalysis && result.residualDiagnostics && (
         <div className="mb-6 border border-slate-800 rounded overflow-hidden">
           <div className="px-3 py-2 text-xs text-slate-400 uppercase tracking-wider border-b border-slate-800 bg-slate-900/40">
             Residual Diagnostics
@@ -1884,7 +1944,7 @@ const ReportView: React.FC<ReportViewProps> = ({
         </div>
       )}
 
-      {result.robustComparison?.enabled && (
+      {!isPreanalysis && result.robustComparison?.enabled && (
         <div className="mb-6 border border-slate-800 rounded overflow-hidden">
           <div className="px-3 py-2 text-xs text-slate-400 uppercase tracking-wider border-b border-slate-800 bg-slate-900/40">
             Robust vs Classical Suspects (Top 10)
@@ -2038,7 +2098,7 @@ const ReportView: React.FC<ReportViewProps> = ({
         </div>
       )}
 
-      {result.traverseDiagnostics && (
+      {!isPreanalysis && result.traverseDiagnostics && (
         <div className="mb-6 border border-slate-800 rounded overflow-hidden">
           <div className="px-3 py-2 text-xs text-slate-400 uppercase tracking-wider border-b border-slate-800 bg-slate-900/40">
             Traverse Diagnostics
@@ -2163,7 +2223,7 @@ const ReportView: React.FC<ReportViewProps> = ({
         </div>
       )}
 
-      {traverseLoopSuspects.length > 0 && (
+      {!isPreanalysis && traverseLoopSuspects.length > 0 && (
         <div className="mb-6 border border-slate-800 rounded overflow-hidden">
           <div className="px-4 py-2 border-b border-slate-800 bg-slate-900/60 text-xs uppercase tracking-wider text-slate-400">
             Traverse Closure Suspects
@@ -2334,7 +2394,7 @@ const ReportView: React.FC<ReportViewProps> = ({
         </div>
       )}
 
-      {result.directionSetDiagnostics && result.directionSetDiagnostics.length > 0 && (
+      {!isPreanalysis && result.directionSetDiagnostics && result.directionSetDiagnostics.length > 0 && (
         <div className="mb-6 border border-slate-800 rounded overflow-hidden">
           <div className="px-3 py-2 text-xs text-slate-400 uppercase tracking-wider border-b border-slate-800 bg-slate-900/40">
             Direction Set Diagnostics
@@ -2402,7 +2462,7 @@ const ReportView: React.FC<ReportViewProps> = ({
         </div>
       )}
 
-      {result.directionTargetDiagnostics && result.directionTargetDiagnostics.length > 0 && (
+      {!isPreanalysis && result.directionTargetDiagnostics && result.directionTargetDiagnostics.length > 0 && (
         <div className="mb-6 border border-slate-800 rounded overflow-hidden">
           <div className="px-3 py-2 text-xs text-slate-400 uppercase tracking-wider border-b border-slate-800 bg-slate-900/40">
             Direction Target Repeatability (ranked)
@@ -2512,7 +2572,7 @@ const ReportView: React.FC<ReportViewProps> = ({
         </div>
       )}
 
-      {topDirectionTargetSuspects.length > 0 && (
+      {!isPreanalysis && topDirectionTargetSuspects.length > 0 && (
         <div className="mb-8 border border-slate-800 rounded overflow-hidden">
           <div className="px-4 py-2 border-b border-slate-800 bg-slate-900/60 text-xs uppercase tracking-wider text-slate-400">
             Direction Target Suspects (top)
@@ -2550,7 +2610,7 @@ const ReportView: React.FC<ReportViewProps> = ({
         </div>
       )}
 
-      {result.directionRepeatabilityDiagnostics && result.directionRepeatabilityDiagnostics.length > 0 && (
+      {!isPreanalysis && result.directionRepeatabilityDiagnostics && result.directionRepeatabilityDiagnostics.length > 0 && (
         <div className="mb-6 border border-slate-800 rounded overflow-hidden">
           <div className="px-3 py-2 text-xs text-slate-400 uppercase tracking-wider border-b border-slate-800 bg-slate-900/40">
             Direction Repeatability By Occupy-Target (multi-set)
@@ -2620,7 +2680,7 @@ const ReportView: React.FC<ReportViewProps> = ({
         </div>
       )}
 
-      {topDirectionRepeatabilitySuspects.length > 0 && (
+      {!isPreanalysis && topDirectionRepeatabilitySuspects.length > 0 && (
         <div className="mb-8 border border-slate-800 rounded overflow-hidden">
           <div className="px-4 py-2 border-b border-slate-800 bg-slate-900/60 text-xs uppercase tracking-wider text-slate-400">
             Direction Repeatability Suspects (top)
@@ -2662,7 +2722,7 @@ const ReportView: React.FC<ReportViewProps> = ({
         </div>
       )}
 
-      {result.setupDiagnostics && result.setupDiagnostics.length > 0 && (
+      {!isPreanalysis && result.setupDiagnostics && result.setupDiagnostics.length > 0 && (
         <div className="mb-8 border border-slate-800 rounded overflow-hidden">
           <div className="px-3 py-2 text-xs text-slate-400 uppercase tracking-wider border-b border-slate-800 bg-slate-900/40">
             Setup Diagnostics
@@ -2724,7 +2784,7 @@ const ReportView: React.FC<ReportViewProps> = ({
         </div>
       )}
 
-      {setupSuspects.length > 0 && (
+      {!isPreanalysis && setupSuspects.length > 0 && (
         <div className="mb-8 border border-slate-800 rounded overflow-hidden">
           <div className="px-4 py-2 border-b border-slate-800 bg-slate-900/60 text-xs uppercase tracking-wider text-slate-400">
             Setup Suspects (ranked)
@@ -2773,7 +2833,9 @@ const ReportView: React.FC<ReportViewProps> = ({
 
       <div className="mb-8">
         <div className="flex items-center justify-between mb-3">
-          <h3 className="text-blue-400 font-bold text-base uppercase tracking-wider">Adjusted Coordinates ({units})</h3>
+          <h3 className="text-blue-400 font-bold text-base uppercase tracking-wider">
+            {isPreanalysis ? `Predicted Coordinates & Precision (${units})` : `Adjusted Coordinates (${units})`}
+          </h3>
           <div className="flex items-center gap-2 text-xs text-slate-400">
             <span>Ellipse</span>
             <div className="flex rounded border border-slate-700 overflow-hidden">
@@ -2858,6 +2920,169 @@ const ReportView: React.FC<ReportViewProps> = ({
         </div>
       </div>
 
+      {isPreanalysis && stationCovariances.length > 0 && (
+        <div className="mb-4 border border-slate-800 rounded">
+          <div className="px-3 py-2 text-xs text-slate-400 uppercase tracking-wider border-b border-slate-800">
+            Station Covariance Blocks ({units}^2)
+          </div>
+          <div className="overflow-x-auto w-full">
+            <table className="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr className="text-slate-500 border-b border-slate-800">
+                  <th className="py-2 px-3 font-semibold">Station</th>
+                  <th className="py-2 px-3 font-semibold text-right">CEE</th>
+                  <th className="py-2 px-3 font-semibold text-right">CEN</th>
+                  <th className="py-2 px-3 font-semibold text-right">CNN</th>
+                  {!result.parseState?.coordMode || result.parseState.coordMode === '3D' ? (
+                    <th className="py-2 px-3 font-semibold text-right">CHH</th>
+                  ) : null}
+                </tr>
+              </thead>
+              <tbody className="text-slate-300">
+                {stationCovariances.map((block) => (
+                  <tr key={`station-cov-${block.stationId}`} className="border-b border-slate-800/50">
+                    <td className="py-1 px-3">{block.stationId}</td>
+                    <td className="py-1 px-3 text-right">{(block.cEE * covarianceScale).toExponential(4)}</td>
+                    <td className="py-1 px-3 text-right">{(block.cEN * covarianceScale).toExponential(4)}</td>
+                    <td className="py-1 px-3 text-right">{(block.cNN * covarianceScale).toExponential(4)}</td>
+                    {!result.parseState?.coordMode || result.parseState.coordMode === '3D' ? (
+                      <td className="py-1 px-3 text-right">
+                        {block.cHH != null ? (block.cHH * covarianceScale).toExponential(4) : '-'}
+                      </td>
+                    ) : null}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {isPreanalysis && relativeCovariances.length > 0 && (
+        <div className="mb-4 border border-slate-800 rounded">
+          <div className="px-3 py-2 text-xs text-slate-400 uppercase tracking-wider border-b border-slate-800">
+            Predicted Relative Precision (Connected Pairs)
+          </div>
+          <div className="overflow-x-auto w-full">
+            <table className="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr className="text-slate-500 border-b border-slate-800">
+                  <th className="py-2 px-3 font-semibold">From</th>
+                  <th className="py-2 px-3 font-semibold">To</th>
+                  <th className="py-2 px-3 font-semibold">Types</th>
+                  <th className="py-2 px-3 font-semibold text-right">σN</th>
+                  <th className="py-2 px-3 font-semibold text-right">σE</th>
+                  <th className="py-2 px-3 font-semibold text-right">σDist</th>
+                  <th className="py-2 px-3 font-semibold text-right">σAz (")</th>
+                  <th className="py-2 px-3 font-semibold text-right">CEE</th>
+                  <th className="py-2 px-3 font-semibold text-right">CEN</th>
+                  <th className="py-2 px-3 font-semibold text-right">CNN</th>
+                </tr>
+              </thead>
+              <tbody className="text-slate-300">
+                {relativeCovariances.map((rel, idx) => (
+                  <tr key={`preanalysis-rel-${rel.from}-${rel.to}-${idx}`} className="border-b border-slate-800/50">
+                    <td className="py-1 px-3">{rel.from}</td>
+                    <td className="py-1 px-3">{rel.to}</td>
+                    <td className="py-1 px-3 text-slate-400">{rel.connectionTypes.join(', ')}</td>
+                    <td className="py-1 px-3 text-right">{(rel.sigmaN * unitScale).toFixed(4)}</td>
+                    <td className="py-1 px-3 text-right">{(rel.sigmaE * unitScale).toFixed(4)}</td>
+                    <td className="py-1 px-3 text-right">
+                      {rel.sigmaDist != null ? (rel.sigmaDist * unitScale).toFixed(4) : '-'}
+                    </td>
+                    <td className="py-1 px-3 text-right">
+                      {rel.sigmaAz != null ? (rel.sigmaAz * RAD_TO_DEG * 3600).toFixed(2) : '-'}
+                    </td>
+                    <td className="py-1 px-3 text-right">{(rel.cEE * covarianceScale).toExponential(4)}</td>
+                    <td className="py-1 px-3 text-right">{(rel.cEN * covarianceScale).toExponential(4)}</td>
+                    <td className="py-1 px-3 text-right">{(rel.cNN * covarianceScale).toExponential(4)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {isPreanalysis && weakGeometryDiagnostics && (
+        <div className="mb-8 border border-amber-900/60 rounded overflow-hidden">
+          <div className="px-3 py-2 text-xs text-amber-200 uppercase tracking-wider border-b border-amber-900/40 bg-amber-950/30">
+            Weak Geometry Cues
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-3 text-xs text-slate-300 border-b border-amber-900/30">
+            <div>
+              <div className="text-slate-500">Median Station Major</div>
+              <div>{(weakGeometryDiagnostics.stationMedianHorizontal * unitScale).toFixed(4)} {units}</div>
+            </div>
+            <div>
+              <div className="text-slate-500">Median Pair SigmaDist</div>
+              <div>
+                {weakGeometryDiagnostics.relativeMedianDistance != null
+                  ? `${(weakGeometryDiagnostics.relativeMedianDistance * unitScale).toFixed(4)} ${units}`
+                  : '-'}
+              </div>
+            </div>
+            <div>
+              <div className="text-slate-500">Station Flags</div>
+              <div>{flaggedStationCues.length}</div>
+            </div>
+            <div>
+              <div className="text-slate-500">Pair Flags</div>
+              <div>{flaggedRelativeCues.length}</div>
+            </div>
+          </div>
+          <div className="overflow-x-auto w-full">
+            <table className="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr className="text-slate-500 border-b border-slate-800">
+                  <th className="py-2 px-3 font-semibold">Scope</th>
+                  <th className="py-2 px-3 font-semibold">ID</th>
+                  <th className="py-2 px-3 font-semibold">Severity</th>
+                  <th className="py-2 px-3 font-semibold text-right">Metric</th>
+                  <th className="py-2 px-3 font-semibold text-right">Median Ratio</th>
+                  <th className="py-2 px-3 font-semibold text-right">Shape Ratio</th>
+                  <th className="py-2 px-3 font-semibold">Note</th>
+                </tr>
+              </thead>
+              <tbody className="text-slate-300">
+                {[...flaggedStationCues, ...flaggedRelativeCues].map((cue, idx) => {
+                  const isStationCue = 'stationId' in cue
+                  const severityClass =
+                    cue.severity === 'weak'
+                      ? 'text-red-300'
+                      : cue.severity === 'watch'
+                        ? 'text-amber-300'
+                        : 'text-slate-300'
+                  const metric =
+                    'horizontalMetric' in cue
+                      ? cue.horizontalMetric
+                      : cue.distanceMetric
+                  const id = isStationCue ? cue.stationId : `${cue.from}-${cue.to}`
+                  return (
+                    <tr key={`weak-geometry-${id}-${idx}`} className="border-b border-slate-800/50">
+                      <td className="py-1 px-3 uppercase text-slate-500">{isStationCue ? 'station' : 'pair'}</td>
+                      <td className="py-1 px-3">{id}</td>
+                      <td className={`py-1 px-3 uppercase font-semibold ${severityClass}`}>{cue.severity}</td>
+                      <td className="py-1 px-3 text-right">
+                        {metric != null ? `${(metric * unitScale).toFixed(4)} ${units}` : '-'}
+                      </td>
+                      <td className="py-1 px-3 text-right">
+                        {cue.relativeToMedian != null ? `${cue.relativeToMedian.toFixed(2)}x` : '-'}
+                      </td>
+                      <td className="py-1 px-3 text-right">
+                        {cue.ellipseRatio != null ? `${cue.ellipseRatio.toFixed(2)}x` : '-'}
+                      </td>
+                      <td className="py-1 px-3 text-slate-400">{cue.note}</td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {!isPreanalysis && (
       <div className="mb-8">
         <h3 className="text-blue-400 font-bold mb-3 text-base uppercase tracking-wider">Observations & Residuals</h3>
         <div className="bg-slate-800/50 rounded p-2 mb-2 text-xs text-slate-400 flex items-center justify-between">
@@ -2967,6 +3192,7 @@ const ReportView: React.FC<ReportViewProps> = ({
         {renderTable(byType('gps'), 'GPS Vectors')}
         {renderTable(byType('lev'), 'Leveling dH')}
       </div>
+      )}
 
       <div className="mt-8 bg-slate-900 p-4 rounded border border-slate-800 font-mono text-xs text-slate-400">
         <div className="font-bold text-slate-300 mb-2 uppercase">Processing Log</div>

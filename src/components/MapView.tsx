@@ -35,6 +35,7 @@ const MapView: React.FC<MapViewProps> = ({
   viewportWidthOverride,
 }) => {
   const unitScale = units === 'ft' ? FT_PER_M : 1;
+  const isPreanalysis = result.preanalysisMode === true;
   const { stations, observations } = result;
   const containerRef = useRef<HTMLDivElement | null>(null);
   const svgRef = useRef<SVGSVGElement | null>(null);
@@ -100,6 +101,42 @@ const MapView: React.FC<MapViewProps> = ({
         .map(([stationId]) => stationId)
         .sort((a, b) => a.localeCompare(b, undefined, { numeric: true })),
     [showLostStations, stations],
+  );
+
+  const weakStationSeverity = useMemo(() => {
+    const lookup = new Map<string, 'watch' | 'weak'>();
+    (result.weakGeometryDiagnostics?.stationCues ?? []).forEach((cue) => {
+      if (cue.severity === 'watch' || cue.severity === 'weak') {
+        lookup.set(cue.stationId, cue.severity);
+      }
+    });
+    return lookup;
+  }, [result.weakGeometryDiagnostics]);
+
+  const stationSeverity = useCallback(
+    (stationId: string): 'watch' | 'weak' | null => weakStationSeverity.get(stationId) ?? null,
+    [weakStationSeverity],
+  );
+
+  const stationFill = useCallback(
+    (stationId: string, fixed: boolean): string => {
+      if (fixed) return '#22c55e';
+      const severity = stationSeverity(stationId);
+      if (severity === 'weak') return '#ef4444';
+      if (severity === 'watch') return '#f59e0b';
+      return '#fbbf24';
+    },
+    [stationSeverity],
+  );
+
+  const ellipseStroke = useCallback(
+    (stationId: string): string => {
+      const severity = stationSeverity(stationId);
+      if (severity === 'weak') return '#fb7185';
+      if (severity === 'watch') return '#f59e0b';
+      return '#38bdf8';
+    },
+    [stationSeverity],
   );
 
   const stationIdLookup = useMemo(() => {
@@ -546,6 +583,12 @@ const MapView: React.FC<MapViewProps> = ({
           3D rendering fallback: {fallbackReason}. Showing 2D map for stable performance.
         </div>
       )}
+      {isPreanalysis && (
+        <div className="mb-2 rounded border border-cyan-900/60 bg-cyan-950/20 px-3 py-2 text-[11px] text-cyan-100">
+          Preanalysis map: predicted ellipses use sigma0^2 = 1.0. Weak-geometry cues are highlighted
+          in amber/red on non-fixed stations.
+        </div>
+      )}
       <div
         ref={containerRef}
         className="bg-slate-900 border border-slate-800 rounded overflow-hidden flex-1 min-h-0 relative"
@@ -638,6 +681,7 @@ const MapView: React.FC<MapViewProps> = ({
                   <thead>
                     <tr className="border-b border-slate-700 text-slate-400">
                       <th className="px-2 py-1">Point</th>
+                      {isPreanalysis ? <th className="px-2 py-1">Cue</th> : null}
                       <th className="px-2 py-1 text-right">Northing ({units})</th>
                       <th className="px-2 py-1 text-right">Easting ({units})</th>
                       <th className="px-2 py-1 text-right">Height ({units})</th>
@@ -657,6 +701,11 @@ const MapView: React.FC<MapViewProps> = ({
                       return (
                         <tr key={`point-tool-${stationId}`} className="border-b border-slate-800/60">
                           <td className="px-2 py-1">{stationId}</td>
+                          {isPreanalysis ? (
+                            <td className="px-2 py-1 uppercase">
+                              {stationSeverity(stationId) ?? '-'}
+                            </td>
+                          ) : null}
                           <td className="px-2 py-1 text-right">{(station.y * unitScale).toFixed(4)}</td>
                           <td className="px-2 py-1 text-right">{(station.x * unitScale).toFixed(4)}</td>
                           <td className="px-2 py-1 text-right">{(station.h * unitScale).toFixed(4)}</td>
@@ -932,12 +981,17 @@ const MapView: React.FC<MapViewProps> = ({
                           ry={(ellipsoid.semiMinor * 100 * ellScale * VIEW_H) / bbox.height}
                           transform={`rotate(${ellipsoid.thetaDeg}, ${proj.x}, ${proj.y})`}
                           fill="none"
-                          stroke="#38bdf8"
+                          stroke={ellipseStroke(p.id)}
                           strokeWidth={ellipseStroke2d}
                           opacity={0.6}
                         />
                       )}
-                      <circle cx={proj.x} cy={proj.y} r={pointRadius2d} fill={p.fixed ? '#22c55e' : '#fbbf24'} />
+                      <circle
+                        cx={proj.x}
+                        cy={proj.y}
+                        r={pointRadius2d}
+                        fill={stationFill(p.id, p.fixed)}
+                      />
                       <text
                         x={proj.x + labelOffset2d}
                         y={proj.y - labelOffset2d}
@@ -990,12 +1044,12 @@ const MapView: React.FC<MapViewProps> = ({
                         key={`${node.id}-ell-${polyIdx}`}
                         points={poly}
                         fill="none"
-                        stroke="#38bdf8"
+                        stroke={ellipseStroke(node.id)}
                         strokeWidth={0.9}
                         opacity={0.45}
                       />
                     ))}
-                    <circle cx={p.x} cy={p.y} r={pointRadius} fill={node.fixed ? '#22c55e' : '#fbbf24'} />
+                    <circle cx={p.x} cy={p.y} r={pointRadius} fill={stationFill(node.id, node.fixed)} />
                     <text
                       x={p.x + labelOffset}
                       y={p.y - labelOffset}

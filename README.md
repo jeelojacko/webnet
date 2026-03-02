@@ -19,7 +19,7 @@ npm run dev
 - **User Guide**: [docs/USER_GUIDE.md](docs/USER_GUIDE.md) - **Start Here!**
 - Agent guide: agents.md (context, stack, commands, architecture, next steps)
 - Todo list: TODO.md (current roadmap and completed items)
-- Preanalysis: Project Options -> Adjustment now includes a `Preanalysis` mode that accepts planned `?` observation values, resolves them from approximate geometry, and runs predicted-precision covariance without residual-based QC.
+- Preanalysis: Project Options -> Adjustment now includes a `Preanalysis` mode that accepts planned `?` observation values, resolves them from approximate geometry, exposes station/connected-pair covariance blocks plus weak-geometry cues, and runs predicted-precision covariance without residual-based QC.
 
 ## Examples
 
@@ -70,7 +70,7 @@ npm run dev
 - Engine: angular centering inflation now uses a geometry-aware model for turned angles (includes ray-distance correlation via included-angle cosine term), improving Industry Standard stochastic parity for classical TS networks.
 - Engine: centering inflation for total-station slope distances and zeniths now follows industry-standard geometry weighting, using horizontal/vertical centering with `d/s` and `e/s` factors; zenith centering is accumulated internally in radians from the equivalent linear projection.
 - Engine: robust Huber reweighting now runs a small inner IRLS loop per outer solve iteration and uses postfit residuals (`v = A·dx - L`) for reweighting, while keeping the common diagonal-weight path O(m) and limiting correlated reweight scaling to active correlation blocks.
-- Engine/UI: preanalysis mode now supports planned `?` placeholders on observation values, resolves dummy observations from approximate coordinates before solving, keeps the normal covariance/ellipse pipeline active, and disables residual-driven QC outputs such as chi-square, robust reweighting, and suspect-impact workflows.
+- Engine/UI: preanalysis mode now supports planned `?` placeholders on observation values, resolves dummy observations from approximate coordinates before solving, keeps the normal covariance/ellipse pipeline active, exposes station covariance blocks plus connected-pair relative covariance/precision rows, highlights weak-geometry cues in report/map/listing outputs, and disables residual-driven QC outputs such as chi-square, robust reweighting, suspect-impact workflows, and residual tables.
 - Regression coverage now includes a fixture-locked centering reference case in `tests/fixtures/centering_geometry_reference.dat` to keep slope-distance and zenith centering behavior stable.
 - Engine: reports per-direction-set prefit summary (mean/RMS/max in arcseconds) based on initial coordinates.
 - Engine: reports direction-set diagnostics (raw/reduced counts, face balance, orientation quality, face-pair deltas, raw-max residual quality), setup summaries by occupy station, setup-level suspect metrics (RMS/Max standardized residuals, local-test fail counts, worst observation trace), and traverse diagnostics including closure ratio when geometry permits.

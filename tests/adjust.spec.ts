@@ -1317,9 +1317,12 @@ describe('LSAEngine', () => {
       'C A 0 0 0 ! !',
       'C B 100 0 0 ! !',
       'C P 60 40 0',
+      'C Q 40 70 0',
       'D A-P ? 0.003',
       'D B-P ? 0.003',
       'A P-A-B ? 1.0',
+      'D A-Q ? 0.003',
+      'D B-Q ? 0.003',
     ].join('\n');
 
     const result = new LSAEngine({
@@ -1331,13 +1334,22 @@ describe('LSAEngine', () => {
     expect(result.success).toBe(true);
     expect(result.preanalysisMode).toBe(true);
     expect(result.parseState?.preanalysisMode).toBe(true);
-    expect(result.parseState?.plannedObservationCount).toBe(3);
+    expect(result.parseState?.plannedObservationCount).toBe(5);
     expect(result.seuw).toBeCloseTo(1, 12);
     expect(result.chiSquare).toBeUndefined();
     expect(result.residualDiagnostics).toBeUndefined();
     expect(result.robustDiagnostics).toBeUndefined();
     expect(result.autoSideshotDiagnostics).toBeUndefined();
+    expect((result.stationCovariances?.length ?? 0) >= 2).toBe(true);
+    expect(result.stationCovariances?.some((row) => row.stationId === 'P')).toBe(true);
+    expect(result.relativeCovariances?.some((row) => row.from === 'A' && row.to === 'P')).toBe(true);
+    expect(result.relativeCovariances?.some((row) => row.from === 'A' && row.to === 'Q')).toBe(true);
+    expect(result.relativeCovariances?.some((row) => row.from === 'P' && row.to === 'Q')).toBe(
+      false,
+    );
+    expect(result.weakGeometryDiagnostics?.enabled).toBe(true);
     expect(result.logs.some((l) => l.includes('Preanalysis mode'))).toBe(true);
+    expect(result.logs.some((l) => l.includes('Preanalysis covariance blocks'))).toBe(true);
     expect(result.logs.some((l) => l.includes('skipping residual-based diagnostics'))).toBe(true);
     expect(result.observations.every((obs) => Math.abs((obs.stdRes ?? 0)) < 1e-9)).toBe(true);
     expect((result.stations.P.sE ?? 0) > 0).toBe(true);
