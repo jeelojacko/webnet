@@ -175,7 +175,7 @@
       - [x] Phase 2: reuse the current adjustment row-building path to generate dummy observation values from approximate geometry (`L = 0`), keep needed nuisance/orientation unknowns, and build `A`/`P` without residual-driven iteration
       - [x] Phase 3: compute preanalysis covariance with a-priori unit variance (`sigma0^2 = 1`) and expose station covariance blocks plus relative covariance blocks for connected station pairs without relying on residual-based QC
       - [x] Phase 4: render predicted station standard deviations, station error ellipses, relative error ellipses, and weak-geometry cues in report/map/output views, with residual-based checks disabled in preanalysis mode
-      - [x] Phase 5: add what-if planning UX for adding/removing planned observations and comparing predicted precision changes, plus CLI/docs/examples/fixture coverage for preanalysis workflows
+      - [x] Phase 5: add what-if planning UX for adding/removing planned observations and comparing predicted precision changes, plus CLI/docs/examples/fixture coverage for preanalysis workflows (including omitted-value `D`/`A` planning rows)
   - [ ] GPS improvements (highest impact -> lowest):
   - [~] Add full coordinate-system/geodetic engine integration (project CRS selection, grid-ground factors, convergence reporting)
       - [x] Phase 1: add CRS selection/state model and projection abstraction for input/output transformations

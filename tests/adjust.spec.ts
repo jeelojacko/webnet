@@ -1384,6 +1384,44 @@ describe('LSAEngine', () => {
     expect((result.stations.P.sN ?? 0) > 0).toBe(true);
   });
 
+  it('uses missing D and A values as planned preanalysis observations instead of skipping them', () => {
+    const input = [
+      '.2D',
+      'C 1 51002 101009 ! !',
+      'C 2 51005 101343',
+      'C 3 51328 101291',
+      'C 4 51416 101073',
+      'D 1-2',
+      'D 2-3',
+      'D 3-4',
+      'D 4-1',
+      'D 1-3',
+      'A 2-1-3',
+      'A 3-2-4',
+      'A 4-3-1',
+      'A 1-4-2',
+      'A 1-4-3',
+      'B 1-2 ? !',
+    ].join('\n');
+
+    const result = new LSAEngine({
+      input,
+      maxIterations: 6,
+      parseOptions: { preanalysisMode: true, coordMode: '2D' },
+    }).solve();
+
+    expect(result.success).toBe(true);
+    expect(result.parseState?.plannedObservationCount).toBe(11);
+    expect(result.observations.filter((obs) => obs.type === 'dist')).toHaveLength(5);
+    expect(result.observations.filter((obs) => obs.type === 'angle')).toHaveLength(5);
+    expect(result.observations.filter((obs) => obs.type === 'bearing')).toHaveLength(1);
+    expect(result.logs.some((line) => line.includes('Invalid distance'))).toBe(false);
+    expect(result.logs.some((line) => line.includes('Invalid angle'))).toBe(false);
+    expect(result.stationCovariances?.some((row) => row.stationId === '2')).toBe(true);
+    expect(result.stationCovariances?.some((row) => row.stationId === '3')).toBe(true);
+    expect(result.relativeCovariances?.length ?? 0).toBeGreaterThan(0);
+  });
+
   it('computes post-adjusted sideshot coordinates/precision when azimuth reference exists', () => {
     const input = readFileSync('tests/fixtures/sideshot_postadjust_known.dat', 'utf-8');
     const engine = new LSAEngine({ input, maxIterations: 10 });

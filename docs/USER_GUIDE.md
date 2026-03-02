@@ -62,7 +62,7 @@ Directives that control parsing behavior:
 
 ### Preanalysis / Network Planning
 - Enable `Preanalysis` in Project Options -> Adjustment, or run the CLI with `npm run adjust:cli -- --input <file> --coord-mode 2D --preanalysis on`.
-- Planned observations use `?` in place of measured values. WebNet derives those values from the current approximate geometry and computes predicted covariance with `sigma0^2 = 1`.
+- Planned observations use `?` in place of measured values. For common `D` and `A` planning rows, the measured-value token may also be omitted entirely. WebNet derives those values from the current approximate geometry and computes predicted covariance with `sigma0^2 = 1`.
 - Residual-based QA is intentionally suppressed in this mode. Instead, the report focuses on predicted station precision, connected-pair relative precision, weak-geometry cues, and a what-if table for removing or re-adding planned observations before rerunning.
 
 ### Stations

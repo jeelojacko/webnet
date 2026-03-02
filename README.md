@@ -19,7 +19,7 @@ npm run dev
 - **User Guide**: [docs/USER_GUIDE.md](docs/USER_GUIDE.md) - **Start Here!**
 - Agent guide: agents.md (context, stack, commands, architecture, next steps)
 - Todo list: TODO.md (current roadmap and completed items)
-- Preanalysis: Project Options -> Adjustment now includes a `Preanalysis` mode that accepts planned `?` observation values, resolves them from approximate geometry, exposes station/connected-pair covariance blocks plus weak-geometry cues, runs predicted-precision covariance without residual-based QC, and adds a what-if table for removing or re-adding planned observations before rerun.
+- Preanalysis: Project Options -> Adjustment now includes a `Preanalysis` mode that accepts planned `?` observation values plus omitted `D`/`A` measurement tokens for geometry-derived planning, resolves them from approximate geometry, exposes station/connected-pair covariance blocks plus weak-geometry cues, runs predicted-precision covariance without residual-based QC, and adds a what-if table for removing or re-adding planned observations before rerun.
 
 ## Examples
 

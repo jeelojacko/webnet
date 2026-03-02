@@ -516,6 +516,9 @@ export const parseInput = (
     token: string | undefined,
     toMeters: number,
   ): { value: number; planned: boolean; valid: boolean } => {
+    if (preanalysisMode && (token == null || token.trim() === '')) {
+      return { value: 0, planned: true, valid: true };
+    }
     if (isPlannedToken(token)) return { value: 0, planned: true, valid: true };
     const parsed = parseFloat(token ?? '');
     if (!Number.isFinite(parsed)) return { value: 0, planned: false, valid: false };
@@ -525,6 +528,9 @@ export const parseInput = (
     token: string | undefined,
     fallbackMode: 'dms' | 'dd',
   ): { value: number; planned: boolean; valid: boolean } => {
+    if (preanalysisMode && (token == null || token.trim() === '')) {
+      return { value: 0, planned: true, valid: true };
+    }
     if (isPlannedToken(token)) return { value: 0, planned: true, valid: true };
     const parsed = parseAngleTokenRad(token, state, fallbackMode);
     if (!Number.isFinite(parsed)) return { value: 0, planned: false, valid: false };
@@ -2129,7 +2135,7 @@ export const parseInput = (
         if (angleRad >= Math.PI) sigmaSec *= FACE2_WEIGHT;
 
         let useDir = state.angleMode === 'dir';
-        if (state.angleMode === 'auto') {
+        if (state.angleMode === 'auto' && !angleParsed.planned) {
           const azTo = azimuthFromTo(stations, at, to);
           const azFrom = azimuthFromTo(stations, at, from);
           if (azTo && azFrom) {

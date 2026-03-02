@@ -198,6 +198,38 @@ describe('parseInput', () => {
     expect(angle?.obs ?? Number.NaN).toBe(0);
   });
 
+  it('treats missing D and A observation values as planned rows in preanalysis mode', () => {
+    const parsed = parseInput(
+      [
+        '.2D',
+        'C 1 51002 101009 ! !',
+        'C 2 51005 101343',
+        'C 3 51328 101291',
+        'C 4 51416 101073',
+        'D 1-2',
+        'D 2-3',
+        'D 3-4',
+        'D 4-1',
+        'D 1-3',
+        'A 2-1-3',
+        'A 3-2-4',
+        'A 4-3-1',
+        'A 1-4-2',
+        'A 1-4-3',
+        'B 1-2 ? !',
+      ].join('\n'),
+      {},
+      { preanalysisMode: true, coordMode: '2D' },
+    );
+
+    expect(parsed.parseState.preanalysisMode).toBe(true);
+    expect(parsed.parseState.plannedObservationCount).toBe(11);
+    expect(parsed.observations.filter((obs) => obs.type === 'dist')).toHaveLength(5);
+    expect(parsed.observations.filter((obs) => obs.type === 'angle')).toHaveLength(5);
+    expect(parsed.observations.filter((obs) => obs.type === 'bearing')).toHaveLength(1);
+    expect(parsed.observations.every((obs) => obs.planned === true)).toBe(true);
+  });
+
   it('keeps CRS transforms disabled by default and parses .CRS state directives', () => {
     const base = parseInput(['.UNITS METERS DD', 'P ORG 40 105 0 ! !', 'P TGT 41 106 0'].join('\n'));
     expect(base.parseState.crsTransformEnabled).toBe(false);
