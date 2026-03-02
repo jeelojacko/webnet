@@ -2,8 +2,54 @@ import React, { useEffect, useRef, useState } from 'react'
 import { AlertTriangle, CheckCircle } from 'lucide-react'
 import type { AdjustmentResult, ClusterApprovedMerge, Observation } from '../types'
 import { RAD_TO_DEG, radToDmsStr } from '../engine/angles'
+import { isLockedPreanalysisObservation } from '../engine/preanalysis'
 
 const FT_PER_M = 3.280839895
+
+const PREANALYSIS_LABEL_TOOLTIPS: Record<string, string> = {
+  'Preanalysis Planning Summary':
+    'Overview of predicted precision for the current planned network. Values are derived from approximate geometry with sigma0^2 fixed to 1.0.',
+  'Planned Observations':
+    'Total planned observations in this preanalysis run, including removable and locked planned rows.',
+  'Removable Planned':
+    'Planned observations that can participate in what-if remove/add-back trials.',
+  'Locked Planned':
+    'Planned observations held with fixed sigma weighting. They are shown for context only and are not removable from the what-if workflow.',
+  'Station Covariance Blocks':
+    'Count of station covariance matrices available in the predicted-precision output.',
+  'Connected Pair Blocks':
+    'Count of connected-pair relative covariance and precision blocks available in the predicted-precision output.',
+  'Weak Stations':
+    'Number of stations currently flagged by the weak-geometry heuristics.',
+  'Weak Pairs':
+    'Number of connected pairs currently flagged by the weak-geometry heuristics.',
+  'Locked Planned Observations':
+    'Planned observations using fixed sigma weighting. They are excluded from what-if removal actions.',
+  'Planned Observation What-If Analysis':
+    'Re-solved planning scenarios showing how predicted precision changes when each removable planned observation is removed or added back.',
+  'Active Removable':
+    'Removable planned observations currently active in the preanalysis design.',
+  'Excluded Removable':
+    'Removable planned observations currently excluded from the preanalysis design and available to add back.',
+  'Worst Station Major':
+    'Largest station error-ellipse semi-major axis in the current preanalysis result.',
+  'Worst Pair SigmaDist':
+    'Largest predicted inter-point distance standard deviation among connected pairs in the current preanalysis result.',
+  'Station Covariance Blocks Section':
+    'Predicted coordinate covariance matrix entries for each station reported by the preanalysis run.',
+  'Predicted Relative Precision (Connected Pairs)':
+    'Predicted relative precision and covariance values for connected station pairs only.',
+  'Weak Geometry Cues':
+    'Heuristic warnings for stations or connected pairs whose predicted precision is weak relative to the rest of the planned network.',
+  'Median Station Major':
+    'Median station error-ellipse semi-major axis used as the weak-geometry comparison baseline.',
+  'Median Pair SigmaDist':
+    'Median connected-pair distance standard deviation used as the weak-geometry comparison baseline.',
+  'Station Flags':
+    'Number of station-level weak-geometry cues with severity watch or weak.',
+  'Pair Flags':
+    'Number of pair-level weak-geometry cues with severity watch or weak.',
+}
 
 interface ReportViewProps {
   result: AdjustmentResult
@@ -202,6 +248,9 @@ const ReportView: React.FC<ReportViewProps> = ({
   const relativeCovariances = result.relativeCovariances ?? []
   const weakGeometryDiagnostics = result.weakGeometryDiagnostics
   const preanalysisImpactDiagnostics = result.preanalysisImpactDiagnostics
+  const lockedPreanalysisObservations = isPreanalysis
+    ? result.observations.filter(isLockedPreanalysisObservation)
+    : []
   const flaggedStationCues = (weakGeometryDiagnostics?.stationCues ?? []).filter(
     (cue) => cue.severity !== 'ok',
   )
@@ -251,6 +300,55 @@ const ReportView: React.FC<ReportViewProps> = ({
   const formatEffectiveDistance = (value?: number): string => {
     if (value == null || !Number.isFinite(value) || value <= 0) return '-'
     return (value * unitScale).toFixed(4)
+  }
+  const preanalysisLabelTooltip = (label: string): string | undefined => PREANALYSIS_LABEL_TOOLTIPS[label]
+  const observationStationsLabel = (obs: Observation): string => {
+    if (obs.type === 'angle') return `${obs.at}-${obs.from}-${obs.to}`
+    if (obs.type === 'direction') return `${obs.at}-${obs.to} (${obs.setId})`
+    if (
+      obs.type === 'dist' ||
+      obs.type === 'gps' ||
+      obs.type === 'lev' ||
+      obs.type === 'bearing' ||
+      obs.type === 'dir' ||
+      obs.type === 'zenith'
+    ) {
+      return `${obs.from}-${obs.to}`
+    }
+    return '-'
+  }
+  const observationValueLabel = (obs: Observation): string => {
+    if (
+      obs.type === 'angle' ||
+      obs.type === 'direction' ||
+      obs.type === 'bearing' ||
+      obs.type === 'dir' ||
+      obs.type === 'zenith'
+    ) {
+      return radToDmsStr(obs.obs)
+    }
+    if (obs.type === 'dist' || obs.type === 'lev') return (obs.obs * unitScale).toFixed(4)
+    if (obs.type === 'gps') {
+      return `dE=${(obs.obs.dE * unitScale).toFixed(4)}, dN=${(obs.obs.dN * unitScale).toFixed(4)}`
+    }
+    return '-'
+  }
+  const fixedSigmaLabel = (obs: Observation): string => {
+    if (
+      obs.type === 'angle' ||
+      obs.type === 'direction' ||
+      obs.type === 'bearing' ||
+      obs.type === 'dir' ||
+      obs.type === 'zenith'
+    ) {
+      return `${(obs.stdDev * RAD_TO_DEG * 3600).toExponential(3)}"`
+    }
+    if (obs.type === 'gps') {
+      const sigmaE = obs.stdDevE ?? obs.stdDev
+      const sigmaN = obs.stdDevN ?? obs.stdDev
+      return `E=${(sigmaE * unitScale).toExponential(3)}, N=${(sigmaN * unitScale).toExponential(3)}`
+    }
+    return `${(obs.stdDev * unitScale).toExponential(3)} ${units}`
   }
   const renderSideshotSection = (
     title: string,
@@ -348,6 +446,7 @@ const ReportView: React.FC<ReportViewProps> = ({
       LOCAL: 'Local statistical test result for blunder detection (PASS/FAIL).',
       MDB: 'Minimal Detectable Bias for this observation at the configured local-test level.',
       ACTION: 'Quick action available for this row.',
+      APPLY: 'Apply the listed remove/add-back scenario and re-run preanalysis.',
       RAW: 'Number of raw shots contributing to a reduced direction/target estimate.',
       REC: 'Record code that triggered this diagnostic/rejection (for example DN/DM).',
       EXPECTED: 'Expected face/order based on prior accepted shots in the set.',
@@ -441,6 +540,28 @@ const ReportView: React.FC<ReportViewProps> = ({
     if (upper.startsWith('ELLIPSE')) return 'Error ellipse axes in display units (major, minor).'
     if (upper.startsWith('AZ ')) return 'Azimuth of the listed ellipse or bearing statistic in degrees.'
     if (upper.startsWith('COUNT')) return 'Number of observations included in this type summary row.'
+    if (upper === 'CEE') return 'Covariance of the easting component with itself.'
+    if (upper === 'CEN') return 'Covariance between easting and northing components.'
+    if (upper === 'CNN') return 'Covariance of the northing component with itself.'
+    if (upper === 'CHH') return 'Covariance of the height component with itself.'
+    if (upper.startsWith('FIXED SIGMA'))
+      return 'Configured fixed standard deviation applied to this locked planned observation.'
+    if (upper.startsWith('DWORSTMAJ'))
+      return 'Change in the worst station semi-major axis under this what-if scenario.'
+    if (upper.startsWith('DMEDIANMAJ'))
+      return 'Change in the median station semi-major axis under this what-if scenario.'
+    if (upper.startsWith('DWORSTPAIR'))
+      return 'Change in the worst connected-pair distance standard deviation under this what-if scenario.'
+    if (upper.startsWith('DWEAKSTN'))
+      return 'Change in the number of weak station cues under this what-if scenario.'
+    if (upper.startsWith('DWEAKPAIR'))
+      return 'Change in the number of weak pair cues under this what-if scenario.'
+    if (upper.startsWith('METRIC'))
+      return 'Primary weak-geometry metric: station ellipse major axis or pair distance standard deviation.'
+    if (upper.startsWith('MEDIAN RATIO'))
+      return 'Ratio between the listed metric and the median metric for the same cue family.'
+    if (upper.startsWith('SHAPE RATIO'))
+      return 'Ellipse major/minor ratio when shape information is available.'
     if (upper.startsWith('MAX |RES|')) return 'Maximum absolute residual for this observation type.'
     if (upper.startsWith('MAX |STDRES|')) return 'Maximum absolute standardized residual for this observation type.'
     if (upper.startsWith('>3Σ')) return 'Count of rows with |StdRes| > 3.'
@@ -1140,29 +1261,48 @@ const ReportView: React.FC<ReportViewProps> = ({
 
       {isPreanalysis && (
         <div className="mb-6 border border-cyan-900/70 rounded overflow-hidden">
-          <div className="px-3 py-2 text-xs text-cyan-200 uppercase tracking-wider border-b border-cyan-900/60 bg-cyan-950/30">
+          <div
+            className="px-3 py-2 text-xs text-cyan-200 uppercase tracking-wider border-b border-cyan-900/60 bg-cyan-950/30"
+            title={preanalysisLabelTooltip('Preanalysis Planning Summary')}
+          >
             Preanalysis Planning Summary
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-3 p-3 text-xs text-slate-300 border-b border-cyan-900/30">
+          <div className="grid grid-cols-2 md:grid-cols-6 gap-3 p-3 text-xs text-slate-300 border-b border-cyan-900/30">
             <div>
-              <div className="text-slate-500">Planned Observations</div>
+              <div className="text-slate-500" title={preanalysisLabelTooltip('Planned Observations')}>
+                Planned Observations
+              </div>
               <div>{result.parseState?.plannedObservationCount ?? 0}</div>
             </div>
             <div>
-              <div className="text-slate-500">Station Covariance Blocks</div>
+              <div className="text-slate-500" title={preanalysisLabelTooltip('Station Covariance Blocks')}>
+                Station Covariance Blocks
+              </div>
               <div>{stationCovariances.length}</div>
             </div>
             <div>
-              <div className="text-slate-500">Connected Pair Blocks</div>
+              <div className="text-slate-500" title={preanalysisLabelTooltip('Connected Pair Blocks')}>
+                Connected Pair Blocks
+              </div>
               <div>{relativeCovariances.length}</div>
             </div>
             <div>
-              <div className="text-slate-500">Weak Stations</div>
+              <div className="text-slate-500" title={preanalysisLabelTooltip('Weak Stations')}>
+                Weak Stations
+              </div>
               <div>{flaggedStationCues.length}</div>
             </div>
             <div>
-              <div className="text-slate-500">Weak Pairs</div>
+              <div className="text-slate-500" title={preanalysisLabelTooltip('Weak Pairs')}>
+                Weak Pairs
+              </div>
               <div>{flaggedRelativeCues.length}</div>
+            </div>
+            <div>
+              <div className="text-slate-500" title={preanalysisLabelTooltip('Locked Planned')}>
+                Locked Planned
+              </div>
+              <div>{lockedPreanalysisObservations.length}</div>
             </div>
           </div>
           <div className="px-3 py-2 text-xs text-cyan-100/90 bg-cyan-950/20">
@@ -1172,22 +1312,74 @@ const ReportView: React.FC<ReportViewProps> = ({
         </div>
       )}
 
+      {isPreanalysis && lockedPreanalysisObservations.length > 0 && (
+        <div className="mb-6 border border-slate-800 rounded overflow-hidden opacity-75">
+          <div
+            className="px-3 py-2 text-xs text-slate-400 uppercase tracking-wider border-b border-slate-800 bg-slate-900/40"
+            title={preanalysisLabelTooltip('Locked Planned Observations')}
+          >
+            Locked Planned Observations
+          </div>
+          <div className="px-3 py-2 text-xs text-slate-500 bg-slate-950/30 border-b border-slate-800/60">
+            These planned rows use fixed sigma weighting, remain visible for context, and are not removable from what-if actions.
+          </div>
+          <table className="w-full text-left text-xs">
+            <thead>
+              <tr className="text-slate-500 border-b border-slate-800/60">
+                <th className="py-2 px-3">#</th>
+                <th className="py-2">Type</th>
+                <th className="py-2">Stations</th>
+                <th className="py-2 text-right">Line</th>
+                <th className="py-2 text-right">Obs</th>
+                <th className="py-2 text-right">Fixed Sigma</th>
+                <th className="py-2 px-3">Note</th>
+              </tr>
+            </thead>
+            <tbody className="text-slate-500">
+              {lockedPreanalysisObservations.map((obs, idx) => (
+                <tr
+                  key={`locked-preanalysis-${obs.id}-${idx}`}
+                  className="border-b border-slate-800/40 bg-slate-950/20"
+                >
+                  <td className="py-1 px-3">{idx + 1}</td>
+                  <td className="py-1 uppercase">{obs.type}</td>
+                  <td className="py-1">{observationStationsLabel(obs)}</td>
+                  <td className="py-1 text-right font-mono">{obs.sourceLine ?? '-'}</td>
+                  <td className="py-1 text-right font-mono">{observationValueLabel(obs)}</td>
+                  <td className="py-1 text-right font-mono">{fixedSigmaLabel(obs)}</td>
+                  <td className="py-1 px-3">Locked planned constraint; excluded from what-if actions.</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
       {isPreanalysis && preanalysisImpactDiagnostics && preanalysisImpactDiagnostics.rows.length > 0 && (
         <div className="mb-6 border border-slate-800 rounded overflow-hidden">
-          <div className="px-3 py-2 text-xs text-slate-400 uppercase tracking-wider border-b border-slate-800 bg-slate-900/40">
+          <div
+            className="px-3 py-2 text-xs text-slate-400 uppercase tracking-wider border-b border-slate-800 bg-slate-900/40"
+            title={preanalysisLabelTooltip('Planned Observation What-If Analysis')}
+          >
             Planned Observation What-If Analysis
           </div>
           <div className="grid grid-cols-2 md:grid-cols-6 gap-3 p-3 text-xs text-slate-300 border-b border-slate-800/60">
             <div>
-              <div className="text-slate-500">Active Planned</div>
+              <div className="text-slate-500" title={preanalysisLabelTooltip('Removable Planned')}>
+                Active Removable
+              </div>
               <div>{preanalysisImpactDiagnostics.activePlannedCount}</div>
             </div>
             <div>
-              <div className="text-slate-500">Excluded Planned</div>
+              <div className="text-slate-500" title={preanalysisLabelTooltip('Excluded Removable')}>
+                Excluded Removable
+              </div>
               <div>{preanalysisImpactDiagnostics.excludedPlannedCount}</div>
             </div>
             <div>
-              <div className="text-slate-500">Worst Station Major</div>
+              <div className="text-slate-500" title={preanalysisLabelTooltip('Worst Station Major')}>
+                Worst Station Major
+              </div>
               <div>
                 {preanalysisImpactDiagnostics.baseWorstStationMajor != null
                   ? `${(preanalysisImpactDiagnostics.baseWorstStationMajor * unitScale).toFixed(4)} ${units}`
@@ -1195,7 +1387,9 @@ const ReportView: React.FC<ReportViewProps> = ({
               </div>
             </div>
             <div>
-              <div className="text-slate-500">Worst Pair SigmaDist</div>
+              <div className="text-slate-500" title={preanalysisLabelTooltip('Worst Pair SigmaDist')}>
+                Worst Pair SigmaDist
+              </div>
               <div>
                 {preanalysisImpactDiagnostics.baseWorstPairSigmaDist != null
                   ? `${(preanalysisImpactDiagnostics.baseWorstPairSigmaDist * unitScale).toFixed(4)} ${units}`
@@ -1203,11 +1397,15 @@ const ReportView: React.FC<ReportViewProps> = ({
               </div>
             </div>
             <div>
-              <div className="text-slate-500">Weak Stations</div>
+              <div className="text-slate-500" title={preanalysisLabelTooltip('Weak Stations')}>
+                Weak Stations
+              </div>
               <div>{preanalysisImpactDiagnostics.baseWeakStationCount}</div>
             </div>
             <div>
-              <div className="text-slate-500">Weak Pairs</div>
+              <div className="text-slate-500" title={preanalysisLabelTooltip('Weak Pairs')}>
+                Weak Pairs
+              </div>
               <div>{preanalysisImpactDiagnostics.baseWeakPairCount}</div>
             </div>
           </div>
@@ -3039,7 +3237,10 @@ const ReportView: React.FC<ReportViewProps> = ({
 
       {isPreanalysis && stationCovariances.length > 0 && (
         <div className="mb-4 border border-slate-800 rounded">
-          <div className="px-3 py-2 text-xs text-slate-400 uppercase tracking-wider border-b border-slate-800">
+          <div
+            className="px-3 py-2 text-xs text-slate-400 uppercase tracking-wider border-b border-slate-800"
+            title={preanalysisLabelTooltip('Station Covariance Blocks Section')}
+          >
             Station Covariance Blocks ({units}^2)
           </div>
           <div className="overflow-x-auto w-full">
@@ -3077,7 +3278,10 @@ const ReportView: React.FC<ReportViewProps> = ({
 
       {isPreanalysis && relativeCovariances.length > 0 && (
         <div className="mb-4 border border-slate-800 rounded">
-          <div className="px-3 py-2 text-xs text-slate-400 uppercase tracking-wider border-b border-slate-800">
+          <div
+            className="px-3 py-2 text-xs text-slate-400 uppercase tracking-wider border-b border-slate-800"
+            title={preanalysisLabelTooltip('Predicted Relative Precision (Connected Pairs)')}
+          >
             Predicted Relative Precision (Connected Pairs)
           </div>
           <div className="overflow-x-auto w-full">
@@ -3123,16 +3327,23 @@ const ReportView: React.FC<ReportViewProps> = ({
 
       {isPreanalysis && weakGeometryDiagnostics && (
         <div className="mb-8 border border-amber-900/60 rounded overflow-hidden">
-          <div className="px-3 py-2 text-xs text-amber-200 uppercase tracking-wider border-b border-amber-900/40 bg-amber-950/30">
+          <div
+            className="px-3 py-2 text-xs text-amber-200 uppercase tracking-wider border-b border-amber-900/40 bg-amber-950/30"
+            title={preanalysisLabelTooltip('Weak Geometry Cues')}
+          >
             Weak Geometry Cues
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-3 text-xs text-slate-300 border-b border-amber-900/30">
             <div>
-              <div className="text-slate-500">Median Station Major</div>
+              <div className="text-slate-500" title={preanalysisLabelTooltip('Median Station Major')}>
+                Median Station Major
+              </div>
               <div>{(weakGeometryDiagnostics.stationMedianHorizontal * unitScale).toFixed(4)} {units}</div>
             </div>
             <div>
-              <div className="text-slate-500">Median Pair SigmaDist</div>
+              <div className="text-slate-500" title={preanalysisLabelTooltip('Median Pair SigmaDist')}>
+                Median Pair SigmaDist
+              </div>
               <div>
                 {weakGeometryDiagnostics.relativeMedianDistance != null
                   ? `${(weakGeometryDiagnostics.relativeMedianDistance * unitScale).toFixed(4)} ${units}`
@@ -3140,11 +3351,15 @@ const ReportView: React.FC<ReportViewProps> = ({
               </div>
             </div>
             <div>
-              <div className="text-slate-500">Station Flags</div>
+              <div className="text-slate-500" title={preanalysisLabelTooltip('Station Flags')}>
+                Station Flags
+              </div>
               <div>{flaggedStationCues.length}</div>
             </div>
             <div>
-              <div className="text-slate-500">Pair Flags</div>
+              <div className="text-slate-500" title={preanalysisLabelTooltip('Pair Flags')}>
+                Pair Flags
+              </div>
               <div>{flaggedRelativeCues.length}</div>
             </div>
           </div>

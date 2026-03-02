@@ -14,6 +14,7 @@ describe('ReportView preanalysis sections', () => {
       'D A-P ? 0.003',
       'D B-P ? 0.003',
       'A P-A-B ? 1.0',
+      'B A-P ? !',
     ].join('\n');
     const result = new LSAEngine({
       input,
@@ -77,6 +78,14 @@ describe('ReportView preanalysis sections', () => {
     expect(html).toContain('Predicted Relative Precision (Connected Pairs)');
     expect(html).toContain('Weak Geometry Cues');
     expect(html).toContain('Planned Observation What-If Analysis');
+    expect(html).toContain('Locked Planned Observations');
+    expect(html).toContain('Locked planned constraint; excluded from what-if actions.');
+    expect(html).toContain(
+      'title="Planned observations using fixed sigma weighting. They are excluded from what-if removal actions."',
+    );
+    expect(html).toContain(
+      'title="Re-solved planning scenarios showing how predicted precision changes when each removable planned observation is removed or added back."',
+    );
     expect(html).toContain('Remove + Re-run');
     expect(html).not.toContain('Observations &amp; Residuals');
     expect(html).not.toContain('Top Suspects');
