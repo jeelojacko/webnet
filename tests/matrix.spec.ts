@@ -151,4 +151,16 @@ describe('matrix helpers', () => {
     expect(invM[1][0]).toBeCloseTo(3 / 11)
     expect(invM[1][1]).toBeCloseTo(-2 / 11)
   })
+
+  it('handles a zero-diagonal symmetric matrix through a 2x2 pivot block', () => {
+    const invM = invertSymmetricLDLT([
+      [0, 1],
+      [1, 0],
+    ])
+
+    expect(invM[0][0]).toBeCloseTo(0)
+    expect(invM[0][1]).toBeCloseTo(1)
+    expect(invM[1][0]).toBeCloseTo(1)
+    expect(invM[1][1]).toBeCloseTo(0)
+  })
 })

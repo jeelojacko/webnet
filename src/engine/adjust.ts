@@ -305,7 +305,17 @@ export class LSAEngine {
       );
     }
     const scaledCorrection = solveSPDFromCholesky(factorization.factor, scaledU);
+    if (!this.matrixIsFinite(scaledCorrection)) {
+      throw new Error(
+        'Normal matrix remained singular after diagonal damping; scaled correction contains non-finite values.',
+      );
+    }
     const scaledQxx = invertSPDFromCholesky(factorization.factor);
+    if (!this.matrixIsFinite(scaledQxx)) {
+      throw new Error(
+        'Normal matrix remained singular after diagonal damping; damped covariance contains non-finite values.',
+      );
+    }
     const correction = this.unscaleNormalSolution(scaledCorrection, scaled.scale);
     const qxx =
       factorization.damping > 0
@@ -317,7 +327,9 @@ export class LSAEngine {
           )
         : this.unscaleNormalInverse(scaledQxx, scaled.scale);
     if (!this.matrixIsFinite(correction) || !this.matrixIsFinite(qxx)) {
-      throw new Error('Non-finite values encountered after normal-equation regularization.');
+      throw new Error(
+        'Normal matrix remained singular or numerically unstable after diagonal damping; correction or covariance contains non-finite values.',
+      );
     }
     return {
       correction,

@@ -67,6 +67,7 @@ describe('Example Datasets', () => {
         expect(result.converged).toBe(false)
         expect(result.logs.some((line) => line.includes('normal-equation factorization required diagonal damping'))).toBe(true)
         expect(result.logs.some((line) => line.includes('Normal equation solve failed'))).toBe(true)
+        expect(result.logs.some((line) => line.includes('remained singular'))).toBe(true)
         expect(result.sideshots?.length ?? 0).toBeGreaterThan(0)
     })
 })
