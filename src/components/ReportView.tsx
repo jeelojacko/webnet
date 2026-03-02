@@ -51,6 +51,61 @@ const PREANALYSIS_LABEL_TOOLTIPS: Record<string, string> = {
     'Number of pair-level weak-geometry cues with severity watch or weak.',
 }
 
+const REPORT_STATIC_TOOLTIPS: Record<string, string> = {
+  'Adjustment Summary':
+    'High-level run summary showing convergence status, global precision statistics, and observation-family counts.',
+  STATUS:
+    'Overall solve outcome for the current run. Converged means the iterative correction process satisfied the stopping criteria.',
+  'OBSERVATION BREAKDOWN':
+    'Count of observations by family included in the current result set.',
+  'Solve Profile Diagnostics':
+    'Pinned run-profile settings that affected weighting, reductions, CRS behavior, and stochastic modeling for this solve.',
+  Profile:
+    'Selected solve profile used for this run, such as WebNet defaults or industry-parity behavior.',
+  'Direction Sets':
+    'Direction-set processing mode used for the solve: reduced or raw.',
+  'Profile Fallback':
+    'Whether the industry-parity profile fallback behavior for default instruments was active.',
+  'Angle Centering':
+    'Angular centering model used when inflating angle precision from centering uncertainties.',
+  'TS Correlation':
+    'Whether TS angular correlation modeling was enabled, and if so which scope and rho were used.',
+  Robust:
+    'Robust adjustment mode active for the solve, if any.',
+  'Map / Scale':
+    'Map-mode setting and associated map-scale factor used for horizontal reductions.',
+  'Vertical / CurvRef':
+    'Vertical reduction mode and whether curvature/refraction corrections were enabled.',
+  Normalize:
+    'Whether mixed-face direction/traverse observations were normalized before solving.',
+  'A-Mode':
+    'Interpretation mode for A records during parsing and solve row construction.',
+  'Plan Rotation':
+    'Cumulative plan rotation applied to azimuth-bearing style observations.',
+  'CRS / Projection':
+    'CRS transform state and projection model used for geodetic positions.',
+  'CRS Grid Scale':
+    'Whether CRS grid-ground scale correction was enabled and the factor used.',
+  'CRS Convergence':
+    'Whether CRS convergence correction was enabled and the convergence angle used.',
+  'Geoid/Grid Model':
+    'Geoid/grid-model enablement state, selected model, and interpolation method.',
+  'Geoid Height Conversion':
+    'Whether geoid-based height conversion was enabled and how many stations were converted or skipped.',
+  'QFIX (Linear/Angular)':
+    'Configured fixed sigma constants used when observation sigma tokens are marked fixed.',
+  'Geoid Metadata':
+    'Metadata string reported by the active geoid/grid model, plus any sample undulation details.',
+  'Lost Stations':
+    'Stations tagged by .LOSTSTATIONS and whether they are present in the current run metadata.',
+  'Description Reconciliation':
+    'Policy used to handle repeated station descriptions across input records.',
+  'Default Sigmas':
+    'Count of observations that used default stochastic values rather than explicit or fixed sigmas.',
+  'Stochastic Defaults':
+    'Summary of the active default instrument and stochastic-model values used for weighting.',
+}
+
 interface ReportViewProps {
   result: AdjustmentResult
   units: 'm' | 'ft'
@@ -1002,10 +1057,12 @@ const ReportView: React.FC<ReportViewProps> = ({
       )}
 
       <div className="mb-8 border-b border-slate-800 pb-6">
-        <h2 className="text-xl font-bold text-white mb-4">Adjustment Summary</h2>
+        <h2 className="text-xl font-bold text-white mb-4" title={REPORT_STATIC_TOOLTIPS['Adjustment Summary']}>
+          Adjustment Summary
+        </h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="bg-slate-900 p-4 rounded border border-slate-800">
-            <span className="block text-slate-500 text-xs mb-1">STATUS</span>
+            <span className="block text-slate-500 text-xs mb-1" title={REPORT_STATIC_TOOLTIPS.STATUS}>STATUS</span>
             <div className={`flex items-center space-x-2 ${result.success ? 'text-green-400' : 'text-yellow-500'}`}>
               {result.success ? <CheckCircle size={18} /> : <AlertTriangle size={18} />}
               <span className="font-bold">{result.success ? 'CONVERGED' : 'NOT CONVERGED / WARNING'}</span>
@@ -1084,7 +1141,12 @@ const ReportView: React.FC<ReportViewProps> = ({
             )}
           </div>
           <div className="bg-slate-900 p-4 rounded border border-slate-800 hidden md:block">
-            <span className="block text-slate-500 text-xs mb-1">OBSERVATION BREAKDOWN</span>
+            <span
+              className="block text-slate-500 text-xs mb-1"
+              title={REPORT_STATIC_TOOLTIPS['OBSERVATION BREAKDOWN']}
+            >
+              OBSERVATION BREAKDOWN
+            </span>
             <div className="text-xs text-slate-300 space-y-0.5">
               <div>Distances: {byType('dist').length}</div>
               <div>Angles: {byType('angle').length}</div>
@@ -1104,30 +1166,37 @@ const ReportView: React.FC<ReportViewProps> = ({
 
       {runDiagnostics && (
         <div className="mb-6 border border-slate-800 rounded overflow-hidden">
-          <div className="px-3 py-2 text-xs text-slate-400 uppercase tracking-wider border-b border-slate-800 bg-slate-900/40">
+          <div
+            className="px-3 py-2 text-xs text-slate-400 uppercase tracking-wider border-b border-slate-800 bg-slate-900/40"
+            title={REPORT_STATIC_TOOLTIPS['Solve Profile Diagnostics']}
+          >
             Solve Profile Diagnostics
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-3 text-xs text-slate-300">
             <div>
-              <div className="text-slate-500">Profile</div>
+              <div className="text-slate-500" title={REPORT_STATIC_TOOLTIPS.Profile}>Profile</div>
               <div className={runDiagnostics.parity ? 'text-blue-300' : ''}>
                 {runDiagnostics.solveProfile.toUpperCase()}
               </div>
             </div>
             <div>
-              <div className="text-slate-500">Direction Sets</div>
+              <div className="text-slate-500" title={REPORT_STATIC_TOOLTIPS['Direction Sets']}>Direction Sets</div>
               <div>{runDiagnostics.directionSetMode.toUpperCase()}</div>
             </div>
             <div>
-              <div className="text-slate-500">Profile Fallback</div>
+              <div className="text-slate-500" title={REPORT_STATIC_TOOLTIPS['Profile Fallback']}>
+                Profile Fallback
+              </div>
               <div>{runDiagnostics.profileDefaultInstrumentFallback ? 'ON' : 'OFF'}</div>
             </div>
             <div>
-              <div className="text-slate-500">Angle Centering</div>
+              <div className="text-slate-500" title={REPORT_STATIC_TOOLTIPS['Angle Centering']}>
+                Angle Centering
+              </div>
               <div>{runDiagnostics.angleCenteringModel}</div>
             </div>
             <div>
-              <div className="text-slate-500">TS Correlation</div>
+              <div className="text-slate-500" title={REPORT_STATIC_TOOLTIPS['TS Correlation']}>TS Correlation</div>
               <div>
                 {runDiagnostics.tsCorrelationEnabled
                   ? `ON (${runDiagnostics.tsCorrelationScope}, rho=${runDiagnostics.tsCorrelationRho.toFixed(3)})`
@@ -1135,19 +1204,21 @@ const ReportView: React.FC<ReportViewProps> = ({
               </div>
             </div>
             <div>
-              <div className="text-slate-500">Robust</div>
+              <div className="text-slate-500" title={REPORT_STATIC_TOOLTIPS.Robust}>Robust</div>
               <div>
                 {runDiagnostics.robustMode.toUpperCase()} (k={runDiagnostics.robustK.toFixed(2)})
               </div>
             </div>
             <div>
-              <div className="text-slate-500">Map / Scale</div>
+              <div className="text-slate-500" title={REPORT_STATIC_TOOLTIPS['Map / Scale']}>Map / Scale</div>
               <div>
                 {runDiagnostics.mapMode.toUpperCase()} / {runDiagnostics.mapScaleFactor.toFixed(8)}
               </div>
             </div>
             <div>
-              <div className="text-slate-500">Vertical / CurvRef</div>
+              <div className="text-slate-500" title={REPORT_STATIC_TOOLTIPS['Vertical / CurvRef']}>
+                Vertical / CurvRef
+              </div>
               <div>
                 {runDiagnostics.verticalReduction.toUpperCase()} /{' '}
                 {runDiagnostics.applyCurvatureRefraction
@@ -1156,19 +1227,21 @@ const ReportView: React.FC<ReportViewProps> = ({
               </div>
             </div>
             <div>
-              <div className="text-slate-500">Normalize</div>
+              <div className="text-slate-500" title={REPORT_STATIC_TOOLTIPS.Normalize}>Normalize</div>
               <div>{runDiagnostics.normalize ? 'ON' : 'OFF'}</div>
             </div>
             <div>
-              <div className="text-slate-500">A-Mode</div>
+              <div className="text-slate-500" title={REPORT_STATIC_TOOLTIPS['A-Mode']}>A-Mode</div>
               <div>{runDiagnostics.angleMode.toUpperCase()}</div>
             </div>
             <div>
-              <div className="text-slate-500">Plan Rotation</div>
+              <div className="text-slate-500" title={REPORT_STATIC_TOOLTIPS['Plan Rotation']}>Plan Rotation</div>
               <div>{`${(runDiagnostics.rotationAngleRad * RAD_TO_DEG).toFixed(6)}°`}</div>
             </div>
             <div>
-              <div className="text-slate-500">CRS / Projection</div>
+              <div className="text-slate-500" title={REPORT_STATIC_TOOLTIPS['CRS / Projection']}>
+                CRS / Projection
+              </div>
               <div>
                 {runDiagnostics.crsTransformEnabled
                   ? `ON (${runDiagnostics.crsProjectionModel}, label="${runDiagnostics.crsLabel || 'unnamed'}")`
@@ -1176,7 +1249,9 @@ const ReportView: React.FC<ReportViewProps> = ({
               </div>
             </div>
             <div>
-              <div className="text-slate-500">CRS Grid Scale</div>
+              <div className="text-slate-500" title={REPORT_STATIC_TOOLTIPS['CRS Grid Scale']}>
+                CRS Grid Scale
+              </div>
               <div>
                 {runDiagnostics.crsGridScaleEnabled
                   ? `ON (${runDiagnostics.crsGridScaleFactor.toFixed(8)})`
@@ -1184,7 +1259,9 @@ const ReportView: React.FC<ReportViewProps> = ({
               </div>
             </div>
             <div>
-              <div className="text-slate-500">CRS Convergence</div>
+              <div className="text-slate-500" title={REPORT_STATIC_TOOLTIPS['CRS Convergence']}>
+                CRS Convergence
+              </div>
               <div>
                 {runDiagnostics.crsConvergenceEnabled
                   ? `ON (${(runDiagnostics.crsConvergenceAngleRad * RAD_TO_DEG).toFixed(6)}°)`
@@ -1192,7 +1269,9 @@ const ReportView: React.FC<ReportViewProps> = ({
               </div>
             </div>
             <div>
-              <div className="text-slate-500">Geoid/Grid Model</div>
+              <div className="text-slate-500" title={REPORT_STATIC_TOOLTIPS['Geoid/Grid Model']}>
+                Geoid/Grid Model
+              </div>
               <div>
                 {runDiagnostics.geoidModelEnabled
                   ? `ON (${runDiagnostics.geoidModelId}, ${runDiagnostics.geoidInterpolation.toUpperCase()}, loaded=${runDiagnostics.geoidModelLoaded ? 'YES' : 'NO'})`
@@ -1200,7 +1279,9 @@ const ReportView: React.FC<ReportViewProps> = ({
               </div>
             </div>
             <div>
-              <div className="text-slate-500">Geoid Height Conversion</div>
+              <div className="text-slate-500" title={REPORT_STATIC_TOOLTIPS['Geoid Height Conversion']}>
+                Geoid Height Conversion
+              </div>
               <div>
                 {runDiagnostics.geoidHeightConversionEnabled
                   ? `ON (${runDiagnostics.geoidOutputHeightDatum.toUpperCase()}, converted=${runDiagnostics.geoidConvertedStationCount}, skipped=${runDiagnostics.geoidSkippedStationCount})`
@@ -1208,7 +1289,9 @@ const ReportView: React.FC<ReportViewProps> = ({
               </div>
             </div>
             <div>
-              <div className="text-slate-500">QFIX (Linear/Angular)</div>
+              <div className="text-slate-500" title={REPORT_STATIC_TOOLTIPS['QFIX (Linear/Angular)']}>
+                QFIX (Linear/Angular)
+              </div>
               <div>
                 {(runDiagnostics.qFixLinearSigmaM * unitScale).toExponential(6)} {units} /{' '}
                 {runDiagnostics.qFixAngularSigmaSec.toExponential(6)}"
@@ -1216,7 +1299,9 @@ const ReportView: React.FC<ReportViewProps> = ({
             </div>
             {runDiagnostics.geoidModelEnabled && (
               <div className="col-span-2">
-                <div className="text-slate-500">Geoid Metadata</div>
+                <div className="text-slate-500" title={REPORT_STATIC_TOOLTIPS['Geoid Metadata']}>
+                  Geoid Metadata
+                </div>
                 <div className="break-words">
                   {runDiagnostics.geoidModelMetadata || 'unavailable'}
                   {runDiagnostics.geoidSampleUndulationM != null
@@ -1226,7 +1311,7 @@ const ReportView: React.FC<ReportViewProps> = ({
               </div>
             )}
             <div className="col-span-2">
-              <div className="text-slate-500">Lost Stations</div>
+              <div className="text-slate-500" title={REPORT_STATIC_TOOLTIPS['Lost Stations']}>Lost Stations</div>
               <div className="break-words">
                 {lostStationIds.length > 0
                   ? `${lostStationIds.length} (${lostStationIds.join(', ')})`
@@ -1234,7 +1319,12 @@ const ReportView: React.FC<ReportViewProps> = ({
               </div>
             </div>
             <div className="col-span-2">
-              <div className="text-slate-500">Description Reconciliation</div>
+              <div
+                className="text-slate-500"
+                title={REPORT_STATIC_TOOLTIPS['Description Reconciliation']}
+              >
+                Description Reconciliation
+              </div>
               <div className="break-words">
                 {descriptionReconcileMode.toUpperCase()}
                 {descriptionReconcileMode === 'append'
@@ -1243,7 +1333,7 @@ const ReportView: React.FC<ReportViewProps> = ({
               </div>
             </div>
             <div className="col-span-2">
-              <div className="text-slate-500">Default Sigmas</div>
+              <div className="text-slate-500" title={REPORT_STATIC_TOOLTIPS['Default Sigmas']}>Default Sigmas</div>
               <div>
                 {runDiagnostics.defaultSigmaCount}
                 {runDiagnostics.defaultSigmaByType
@@ -1252,7 +1342,9 @@ const ReportView: React.FC<ReportViewProps> = ({
               </div>
             </div>
             <div className="col-span-2">
-              <div className="text-slate-500">Stochastic Defaults</div>
+              <div className="text-slate-500" title={REPORT_STATIC_TOOLTIPS['Stochastic Defaults']}>
+                Stochastic Defaults
+              </div>
               <div className="break-words">{runDiagnostics.stochasticDefaultsSummary}</div>
             </div>
           </div>

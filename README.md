@@ -20,6 +20,7 @@ npm run dev
 - Agent guide: agents.md (context, stack, commands, architecture, next steps)
 - Todo list: TODO.md (current roadmap and completed items)
 - Preanalysis: Project Options -> Adjustment now includes a `Preanalysis` mode that accepts planned `?` observation values plus omitted `D`/`A` measurement tokens for geometry-derived planning, resolves them from approximate geometry, exposes station/connected-pair covariance blocks plus weak-geometry cues, runs predicted-precision covariance without residual-based QC, adds hover help across the preanalysis report sections, and adds a what-if table for removing or re-adding planned observations before rerun; fixed-sigma planned observations are surfaced in a separate locked section and excluded from removable what-if candidates.
+- UX help text: report summary cards and solve-profile labels now carry the same hover-help treatment as technical table headers, and Project Options now exposes hover help on tabs, section headings, field labels, and instrument-editor controls in addition to the existing control-level tooltips.
 
 ## Examples
 

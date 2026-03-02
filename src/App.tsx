@@ -499,6 +499,32 @@ const SETTINGS_TOOLTIPS = {
     'Huber tuning constant k (typical 1.5). Lower values downweight outliers more aggressively.',
   instrument:
     'Select an instrument code to view parsed EDM/angle/centering and other precision parameters.',
+  newInstrument:
+    'Create a new project instrument definition and add it to the project instrument library.',
+  instrumentDescription:
+    'Free-text description for the selected project instrument. Used for display and report context only.',
+  instrumentDistanceConstant:
+    'EDM constant term used in distance precision modeling for this instrument.',
+  instrumentDistancePpm:
+    'EDM parts-per-million term used in distance precision modeling for this instrument.',
+  instrumentAngleSeconds:
+    'Default horizontal angle precision for turned-angle observations, in arcseconds.',
+  instrumentDirectionSeconds:
+    'Default direction precision for direction-set observations, in arcseconds.',
+  instrumentAzBearingSeconds:
+    'Default azimuth/bearing precision for bearing-style observations, in arcseconds.',
+  instrumentCenteringHorizInst:
+    'Horizontal instrument centering error used by centering-inflation modeling.',
+  instrumentCenteringHorizTarget:
+    'Horizontal target centering error used by centering-inflation modeling.',
+  instrumentZenithSeconds:
+    'Default zenith or vertical-angle precision, in arcseconds. Disabled in 2D mode.',
+  instrumentElevDiffConstant:
+    'Elevation-difference constant term used for vertical precision modeling. Disabled in 2D mode.',
+  instrumentElevDiffPpm:
+    'Elevation-difference ppm term used for length-dependent vertical precision modeling. Disabled in 2D mode.',
+  instrumentCenteringVertical:
+    'Vertical centering error used in zenith and vertical centering-inflation modeling. Disabled in 2D mode.',
   mapShowLostStations:
     'Show or hide stations flagged by .LOSTSTATIONS in the Map & Ellipses tab. Hidden lost stations are still included in the adjustment.',
   map3dEnabled:
@@ -520,6 +546,58 @@ const SETTINGS_TOOLTIPS = {
   listingObservationLimit:
     'Maximum number of adjusted-observation rows written in industry-style output (1-500).',
 } as const;
+
+const PROJECT_OPTION_TAB_TOOLTIPS: Record<ProjectOptionsTab, string> = {
+  adjustment:
+    'Core adjustment controls: run profile, coordinate mode, preanalysis, auto-adjust, QFIX, and primary parser defaults.',
+  general:
+    'General reduction and modeling defaults such as map mode, normalization, and vertical reduction behavior.',
+  instrument:
+    'Project instrument library editor for EDM, angular, centering, and vertical precision parameters.',
+  'listing-file':
+    'Controls which sections appear in industry-style listing/export output and how listing rows are sorted.',
+  'other-files':
+    'Reserved area for additional output-file and auxiliary export controls.',
+  special:
+    'Special parsing and interpretation controls such as A-record mode and description reconciliation.',
+  gps:
+    'CRS/geodetic settings, GPS loop checks, geoid/grid options, and GPS AddHiHt defaults.',
+  modeling:
+    'Advanced stochastic-model controls such as TS angular correlation and robust adjustment settings.',
+};
+
+const PROJECT_OPTION_SECTION_TOOLTIPS: Record<string, string> = {
+  'Adjustment Solution':
+    'Primary adjustment and planning controls for run mode, automatic workflows, fixed sigmas, units, and iteration limits.',
+  'Station and Angle Order':
+    'Input parsing conventions for coordinate order, angular units, angle triplet order, and longitude sign handling.',
+  'Local/Grid Reduction':
+    'Horizontal reduction controls for map mode, map scale, and mixed-face normalization.',
+  'Vertical Reduction':
+    'Vertical modeling controls for curvature/refraction and slope-to-vertical reduction behavior.',
+  'Weighting Helpers':
+    'Auxiliary weighting constants that support observation precision defaults such as .LWEIGHT.',
+  'Industry-Style Listing Contents':
+    'Select which sections are included in the industry-style listing/export output.',
+  'Industry-Style Listing Sort/Scope':
+    'Control listing row ordering and output row limits for industry-style listing exports.',
+  'Observation Interpretation':
+    'Parser interpretation controls for A-record handling and repeated-description reconciliation.',
+  'CRS / Geodetic Setup':
+    'Coordinate reference system, projection, grid scale, and convergence options for geodetic workflows.',
+  'GPS Loop Check':
+    'Enable or disable GNSS loop-closure diagnostics and related reporting.',
+  'GPS AddHiHt Defaults':
+    'Default parser-side antenna-height settings used by GPS AddHiHt workflows.',
+  'Geoid/Grid Model':
+    'Optional geoid/grid-model lookup and height-conversion controls.',
+  'TS Correlation':
+    'Angular correlation settings for total station observations by setup or set.',
+  'Robust Model':
+    'Robust adjustment controls for downweighting large residuals during solving.',
+  'Other File Outputs':
+    'Placeholder area for future non-listing output-file switches and export controls.',
+};
 
 const PROJECT_OPTION_TABS: Array<{ id: ProjectOptionsTab; label: string }> = [
   { id: 'adjustment', label: 'Adjustment' },
@@ -635,6 +713,7 @@ const App: React.FC = () => {
   >([]);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const layoutRef = useRef<HTMLDivElement | null>(null);
+  const settingsModalContentRef = useRef<HTMLDivElement | null>(null);
   const isResizingRef = useRef(false);
 
   const parsedInputInstruments = useMemo(() => parseInstrumentLibraryFromInput(input), [input]);
@@ -682,6 +761,26 @@ const App: React.FC = () => {
       document.removeEventListener('keydown', handleKey);
     };
   }, [isSettingsModalOpen]);
+
+  useEffect(() => {
+    if (!isSettingsModalOpen) return;
+    const root = settingsModalContentRef.current;
+    if (!root) return;
+
+    root.querySelectorAll('label').forEach((label) => {
+      if (label.getAttribute('title')) return;
+      const control = label.querySelector<HTMLElement>('input[title], select[title], textarea[title], button[title]');
+      const tip = control?.getAttribute('title');
+      if (tip) label.setAttribute('title', tip);
+    });
+  }, [
+    isSettingsModalOpen,
+    activeOptionsTab,
+    settingsDraft,
+    parseSettingsDraft,
+    projectInstrumentsDraft,
+    selectedInstrumentDraft,
+  ]);
 
   useEffect(() => {
     const candidates = result?.clusterDiagnostics?.candidates ?? [];
@@ -4085,7 +4184,12 @@ const App: React.FC = () => {
 
   const renderPlaceholderPanel = (title: string, note: string) => (
     <div className="space-y-3">
-      <div className="text-xs uppercase tracking-wider text-slate-300">{title}</div>
+      <div
+        className="text-xs uppercase tracking-wider text-slate-300"
+        title={PROJECT_OPTION_SECTION_TOOLTIPS[title] ?? note}
+      >
+        {title}
+      </div>
       <div className="bg-slate-700/60 border border-slate-500 rounded p-3 text-xs text-slate-300">
         {note}
       </div>
@@ -4202,13 +4306,20 @@ const App: React.FC = () => {
           <div
             className="w-full max-w-5xl bg-slate-600 border border-slate-400 shadow-2xl text-slate-100"
             onClick={(e) => e.stopPropagation()}
+            ref={settingsModalContentRef}
           >
             <div className="flex items-center justify-between border-b border-slate-400 bg-slate-700 px-4 py-2">
-              <div className="text-sm font-semibold tracking-wide">Project Options</div>
+              <div
+                className="text-sm font-semibold tracking-wide"
+                title="Industry-style project options for solver defaults, parser behavior, output controls, GPS settings, and stochastic modeling."
+              >
+                Project Options
+              </div>
               <button
                 type="button"
                 onClick={() => setIsSettingsModalOpen(false)}
                 className="text-xs px-2 py-1 border border-slate-300 bg-slate-500 hover:bg-slate-400"
+                title="Close Project Options without applying draft changes."
               >
                 X
               </button>
@@ -4224,6 +4335,7 @@ const App: React.FC = () => {
                       ? 'bg-slate-700 text-white'
                       : 'bg-slate-400 text-slate-900 hover:bg-slate-300'
                   }`}
+                  title={PROJECT_OPTION_TAB_TOOLTIPS[tab.id]}
                 >
                   {tab.label}
                 </button>
@@ -4234,7 +4346,10 @@ const App: React.FC = () => {
               {activeOptionsTab === 'adjustment' && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="border border-slate-400 p-3 space-y-3">
-                    <div className="text-xs uppercase tracking-wider text-slate-200">
+                    <div
+                      className="text-xs uppercase tracking-wider text-slate-200"
+                      title={PROJECT_OPTION_SECTION_TOOLTIPS['Adjustment Solution']}
+                    >
                       Adjustment Solution
                     </div>
                     <label className={optionLabelClass}>
@@ -4522,7 +4637,10 @@ const App: React.FC = () => {
                   </div>
 
                   <div className="border border-slate-400 p-3 space-y-3">
-                    <div className="text-xs uppercase tracking-wider text-slate-200">
+                    <div
+                      className="text-xs uppercase tracking-wider text-slate-200"
+                      title={PROJECT_OPTION_SECTION_TOOLTIPS['Station and Angle Order']}
+                    >
                       Station and Angle Order
                     </div>
                     <label className={optionLabelClass}>
@@ -4594,7 +4712,10 @@ const App: React.FC = () => {
               {activeOptionsTab === 'general' && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="border border-slate-400 p-3 space-y-3">
-                    <div className="text-xs uppercase tracking-wider text-slate-200">
+                    <div
+                      className="text-xs uppercase tracking-wider text-slate-200"
+                      title={PROJECT_OPTION_SECTION_TOOLTIPS['Local/Grid Reduction']}
+                    >
                       Local/Grid Reduction
                     </div>
                     <label className={optionLabelClass}>
@@ -4647,7 +4768,10 @@ const App: React.FC = () => {
                     </label>
                   </div>
                   <div className="border border-slate-400 p-3 space-y-3">
-                    <div className="text-xs uppercase tracking-wider text-slate-200">
+                    <div
+                      className="text-xs uppercase tracking-wider text-slate-200"
+                      title={PROJECT_OPTION_SECTION_TOOLTIPS['Vertical Reduction']}
+                    >
                       Vertical Reduction
                     </div>
                     <label className={optionLabelClass}>
@@ -4734,6 +4858,7 @@ const App: React.FC = () => {
                         type="button"
                         onClick={addNewInstrument}
                         className="h-[30px] px-3 text-xs border border-slate-300 bg-slate-500 hover:bg-slate-400"
+                        title={SETTINGS_TOOLTIPS.newInstrument}
                       >
                         New Instrument
                       </button>
@@ -4742,6 +4867,7 @@ const App: React.FC = () => {
                       <label className={optionLabelClass}>
                         Instrument Description
                         <input
+                          title={SETTINGS_TOOLTIPS.instrumentDescription}
                           type="text"
                           value={selectedInstrumentMeta.desc}
                           onChange={(e) =>
@@ -4759,9 +4885,16 @@ const App: React.FC = () => {
                   {selectedInstrumentMeta ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="border border-slate-400 p-3 space-y-3">
+                        <div
+                          className="text-xs uppercase tracking-wider text-slate-200"
+                          title="Horizontal EDM, angular, azimuth, and horizontal centering parameters for the selected instrument."
+                        >
+                          Horizontal Precision
+                        </div>
                         <label className={optionLabelClass}>
                           Distance Constant ({instrumentLinearUnit})
                           <input
+                            title={SETTINGS_TOOLTIPS.instrumentDistanceConstant}
                             type="number"
                             step={0.00001}
                             value={displayLinear(selectedInstrumentMeta.edm_const)}
@@ -4779,6 +4912,7 @@ const App: React.FC = () => {
                         <label className={optionLabelClass}>
                           Distance PPM
                           <input
+                            title={SETTINGS_TOOLTIPS.instrumentDistancePpm}
                             type="number"
                             step={0.001}
                             value={selectedInstrumentMeta.edm_ppm}
@@ -4795,6 +4929,7 @@ const App: React.FC = () => {
                         <label className={optionLabelClass}>
                           Angle (Seconds)
                           <input
+                            title={SETTINGS_TOOLTIPS.instrumentAngleSeconds}
                             type="number"
                             step={0.0001}
                             value={selectedInstrumentMeta.hzPrecision_sec}
@@ -4811,6 +4946,7 @@ const App: React.FC = () => {
                         <label className={optionLabelClass}>
                           Direction (Seconds)
                           <input
+                            title={SETTINGS_TOOLTIPS.instrumentDirectionSeconds}
                             type="number"
                             step={0.0001}
                             value={selectedInstrumentMeta.dirPrecision_sec}
@@ -4827,6 +4963,7 @@ const App: React.FC = () => {
                         <label className={optionLabelClass}>
                           Azimuth / Bearing (Seconds)
                           <input
+                            title={SETTINGS_TOOLTIPS.instrumentAzBearingSeconds}
                             type="number"
                             step={0.0001}
                             value={selectedInstrumentMeta.azBearingPrecision_sec}
@@ -4843,6 +4980,7 @@ const App: React.FC = () => {
                         <label className={optionLabelClass}>
                           Centering Horiz. Instrument ({instrumentLinearUnit})
                           <input
+                            title={SETTINGS_TOOLTIPS.instrumentCenteringHorizInst}
                             type="number"
                             step={0.00001}
                             value={displayLinear(selectedInstrumentMeta.instCentr_m)}
@@ -4860,6 +4998,7 @@ const App: React.FC = () => {
                         <label className={optionLabelClass}>
                           Centering Horiz. Target ({instrumentLinearUnit})
                           <input
+                            title={SETTINGS_TOOLTIPS.instrumentCenteringHorizTarget}
                             type="number"
                             step={0.00001}
                             value={displayLinear(selectedInstrumentMeta.tgtCentr_m)}
@@ -4876,9 +5015,16 @@ const App: React.FC = () => {
                         </label>
                       </div>
                       <div className="border border-slate-400 p-3 space-y-3">
+                        <div
+                          className="text-xs uppercase tracking-wider text-slate-200"
+                          title="Vertical-angle, elevation-difference, and vertical centering parameters for the selected instrument."
+                        >
+                          Vertical Precision
+                        </div>
                         <label className={optionLabelClass}>
                           Zenith (Seconds)
                           <input
+                            title={SETTINGS_TOOLTIPS.instrumentZenithSeconds}
                             type="number"
                             step={0.0001}
                             disabled={parseSettingsDraft.coordMode === '2D'}
@@ -4896,6 +5042,7 @@ const App: React.FC = () => {
                         <label className={optionLabelClass}>
                           Elev Diff Constant ({instrumentLinearUnit})
                           <input
+                            title={SETTINGS_TOOLTIPS.instrumentElevDiffConstant}
                             type="number"
                             step={0.00001}
                             disabled={parseSettingsDraft.coordMode === '2D'}
@@ -4914,6 +5061,7 @@ const App: React.FC = () => {
                         <label className={optionLabelClass}>
                           Elev Diff PPM
                           <input
+                            title={SETTINGS_TOOLTIPS.instrumentElevDiffPpm}
                             type="number"
                             step={0.001}
                             disabled={parseSettingsDraft.coordMode === '2D'}
@@ -4931,6 +5079,7 @@ const App: React.FC = () => {
                         <label className={optionLabelClass}>
                           Centering Vertical ({instrumentLinearUnit})
                           <input
+                            title={SETTINGS_TOOLTIPS.instrumentCenteringVertical}
                             type="number"
                             step={0.00001}
                             disabled={parseSettingsDraft.coordMode === '2D'}
@@ -4952,7 +5101,10 @@ const App: React.FC = () => {
                     <div className="text-xs text-slate-200">No instrument selected.</div>
                   )}
                   <div className="border border-slate-400 p-3 space-y-2">
-                    <div className="text-xs uppercase tracking-wider text-slate-200">
+                    <div
+                      className="text-xs uppercase tracking-wider text-slate-200"
+                      title={PROJECT_OPTION_SECTION_TOOLTIPS['Weighting Helpers']}
+                    >
                       Weighting Helpers
                     </div>
                     <label className={optionLabelClass}>
@@ -4979,7 +5131,10 @@ const App: React.FC = () => {
               {activeOptionsTab === 'listing-file' && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="border border-slate-400 p-3 space-y-3">
-                    <div className="text-xs uppercase tracking-wider text-slate-200">
+                    <div
+                      className="text-xs uppercase tracking-wider text-slate-200"
+                      title={PROJECT_OPTION_SECTION_TOOLTIPS['Industry-Style Listing Contents']}
+                    >
                       Industry-Style Listing Contents
                     </div>
                     <label className="flex items-center gap-2 text-xs text-slate-100">
@@ -5056,7 +5211,10 @@ const App: React.FC = () => {
                     </label>
                   </div>
                   <div className="border border-slate-400 p-3 space-y-3">
-                    <div className="text-xs uppercase tracking-wider text-slate-200">
+                    <div
+                      className="text-xs uppercase tracking-wider text-slate-200"
+                      title={PROJECT_OPTION_SECTION_TOOLTIPS['Industry-Style Listing Sort/Scope']}
+                    >
                       Industry-Style Listing Sort/Scope
                     </div>
                     <label className={optionLabelClass}>
@@ -5126,7 +5284,10 @@ const App: React.FC = () => {
               {activeOptionsTab === 'special' && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="border border-slate-400 p-3 space-y-3">
-                    <div className="text-xs uppercase tracking-wider text-slate-200">
+                    <div
+                      className="text-xs uppercase tracking-wider text-slate-200"
+                      title={PROJECT_OPTION_SECTION_TOOLTIPS['Observation Interpretation']}
+                    >
                       Observation Interpretation
                     </div>
                     <label className={optionLabelClass}>
@@ -5188,7 +5349,10 @@ const App: React.FC = () => {
               {activeOptionsTab === 'gps' && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="border border-slate-400 p-3 space-y-3">
-                    <div className="text-xs uppercase tracking-wider text-slate-200">
+                    <div
+                      className="text-xs uppercase tracking-wider text-slate-200"
+                      title={PROJECT_OPTION_SECTION_TOOLTIPS['CRS / Geodetic Setup']}
+                    >
                       CRS / Geodetic Setup
                     </div>
                     <label className={optionLabelClass}>
@@ -5306,7 +5470,10 @@ const App: React.FC = () => {
                       />
                     </label>
                     <div className="pt-2 border-t border-slate-700/70">
-                      <div className="text-xs uppercase tracking-wider text-slate-300">
+                      <div
+                        className="text-xs uppercase tracking-wider text-slate-300"
+                        title={PROJECT_OPTION_SECTION_TOOLTIPS['GPS Loop Check']}
+                      >
                         GPS Loop Check
                       </div>
                     </div>
@@ -5326,7 +5493,10 @@ const App: React.FC = () => {
                       </div>
                     </label>
                     <div className="pt-2 border-t border-slate-700/70">
-                      <div className="text-xs uppercase tracking-wider text-slate-300">
+                      <div
+                        className="text-xs uppercase tracking-wider text-slate-300"
+                        title={PROJECT_OPTION_SECTION_TOOLTIPS['GPS AddHiHt Defaults']}
+                      >
                         GPS AddHiHt Defaults
                       </div>
                     </div>
@@ -5394,7 +5564,10 @@ const App: React.FC = () => {
                       />
                     </label>
                     <div className="pt-2 border-t border-slate-700/70">
-                      <div className="text-xs uppercase tracking-wider text-slate-300">
+                      <div
+                        className="text-xs uppercase tracking-wider text-slate-300"
+                        title={PROJECT_OPTION_SECTION_TOOLTIPS['Geoid/Grid Model']}
+                      >
                         Geoid/Grid Model
                       </div>
                     </div>
@@ -5518,7 +5691,10 @@ const App: React.FC = () => {
               {activeOptionsTab === 'modeling' && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="border border-slate-400 p-3 space-y-3">
-                    <div className="text-xs uppercase tracking-wider text-slate-200">
+                    <div
+                      className="text-xs uppercase tracking-wider text-slate-200"
+                      title={PROJECT_OPTION_SECTION_TOOLTIPS['TS Correlation']}
+                    >
                       TS Correlation
                     </div>
                     <label className={optionLabelClass}>
@@ -5581,7 +5757,10 @@ const App: React.FC = () => {
                   </div>
 
                   <div className="border border-slate-400 p-3 space-y-3">
-                    <div className="text-xs uppercase tracking-wider text-slate-200">
+                    <div
+                      className="text-xs uppercase tracking-wider text-slate-200"
+                      title={PROJECT_OPTION_SECTION_TOOLTIPS['Robust Model']}
+                    >
                       Robust Model
                     </div>
                     <label className={optionLabelClass}>
@@ -5630,6 +5809,7 @@ const App: React.FC = () => {
                 type="button"
                 onClick={() => setIsSettingsModalOpen(false)}
                 className="px-4 py-1 text-xs border border-slate-300 bg-slate-500 hover:bg-slate-400"
+                title="Close Project Options and discard any unsaved draft changes."
               >
                 Cancel
               </button>
@@ -5637,6 +5817,7 @@ const App: React.FC = () => {
                 type="button"
                 onClick={applyProjectOptions}
                 className="px-4 py-1 text-xs border border-slate-100 bg-slate-700 hover:bg-slate-800"
+                title="Apply the current Project Options draft to the active project."
               >
                 Apply
               </button>
