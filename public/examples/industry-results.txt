@@ -1,4 +1,4 @@
-                MicroSurvey STAR*NET-ULTIMATE Version 9,1,4,7868
+                Industry Standard Software Version 9,1,4,7868
                        Run Date: Thu Feb 26 2026 00:47:29
 
 
@@ -13,7 +13,7 @@
 
                             Project Option Settings
 
-      STAR*NET Run Mode                   : Adjust with Error Propagation
+      Industry Software Run Mode          : Adjust with Error Propagation
       Type of Adjustment                  : 2D
       Project Units                       : Meters; DMS
       Coordinate System                   : LOCAL

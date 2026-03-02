@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { LSAEngine } from '../src/engine/adjust';
-import { DEG_TO_RAD } from '../src/engine/angles';
+import { DEG_TO_RAD, SEC_TO_RAD } from '../src/engine/angles';
 
 const fixture = readFileSync('tests/fixtures/simple.dat', 'utf-8');
 
@@ -1023,6 +1023,175 @@ describe('LSAEngine', () => {
     expect(zenOff.every((obs) => Math.abs(obs.prismCorrectionM ?? 0) === 0)).toBe(true);
     expect(zenOn.every((obs) => Math.abs(obs.prismCorrectionM ?? 0) > 0)).toBe(true);
     expect(on.logs.some((l) => l.includes('zenithRows=2'))).toBe(true);
+  });
+
+  it('keeps horizontal-distance centering inflation unchanged', () => {
+    const input = [
+      '.2D',
+      '.I TS',
+      '.ADDC ON',
+      'C A 0 0 0 ! !',
+      'C B 100 0 0 ! !',
+      'D A-B 100.0000 0.002',
+    ].join('\n');
+    const instrumentLibrary = {
+      TS: {
+        code: 'TS',
+        desc: 'TS',
+        edm_const: 0,
+        edm_ppm: 0,
+        hzPrecision_sec: 1,
+        dirPrecision_sec: 1,
+        azBearingPrecision_sec: 1,
+        vaPrecision_sec: 1,
+        instCentr_m: 0.003,
+        tgtCentr_m: 0.004,
+        vertCentr_m: 0.02,
+        elevDiff_const_m: 0,
+        elevDiff_ppm: 0,
+        gpsStd_xy: 0,
+        levStd_mmPerKm: 0,
+      },
+    };
+    const engine = new LSAEngine({ input, maxIterations: 5, instrumentLibrary });
+    const result = engine.solve();
+    const dist = result.observations.find((obs) => obs.type === 'dist');
+    expect(dist).toBeDefined();
+    const sigma = (engine as any).effectiveStdDev(dist);
+    const expected = Math.sqrt(0.002 ** 2 + 0.003 ** 2 + 0.004 ** 2);
+    expect(sigma).toBeCloseTo(expected, 12);
+  });
+
+  it('applies industry-standard centering inflation to slope distances', () => {
+    const input = [
+      '.3D',
+      '.I TS',
+      '.ADDC ON',
+      'C A 0 0 0 ! ! !',
+      'C B 4 3 12 ! ! !',
+      'D A-B 13.0000 0.010',
+    ].join('\n');
+    const instrumentLibrary = {
+      TS: {
+        code: 'TS',
+        desc: 'TS',
+        edm_const: 0,
+        edm_ppm: 0,
+        hzPrecision_sec: 1,
+        dirPrecision_sec: 1,
+        azBearingPrecision_sec: 1,
+        vaPrecision_sec: 1,
+        instCentr_m: 0.03,
+        tgtCentr_m: 0.04,
+        vertCentr_m: 0.02,
+        elevDiff_const_m: 0,
+        elevDiff_ppm: 0,
+        gpsStd_xy: 0,
+        levStd_mmPerKm: 0,
+      },
+    };
+    const engine = new LSAEngine({ input, maxIterations: 5, instrumentLibrary });
+    const result = engine.solve();
+    const dist = result.observations.find((obs) => obs.type === 'dist');
+    expect(dist).toBeDefined();
+    const sigma = (engine as any).effectiveStdDev(dist);
+    const d = 5;
+    const s = 13;
+    const e = 12;
+    const expected = Math.sqrt(
+      0.01 ** 2 + (d / s) ** 2 * (0.03 ** 2 + 0.04 ** 2) + 2 * (e / s) ** 2 * 0.02 ** 2,
+    );
+    expect(sigma).toBeCloseTo(expected, 12);
+  });
+
+  it('applies industry-standard centering inflation to zeniths in radians', () => {
+    const input = [
+      '.3D',
+      '.I TS',
+      '.ADDC ON',
+      'C A 0 0 0 ! ! !',
+      'C B 4 3 12 ! ! !',
+      'V A-B 22.619865 1.0',
+    ].join('\n');
+    const instrumentLibrary = {
+      TS: {
+        code: 'TS',
+        desc: 'TS',
+        edm_const: 0,
+        edm_ppm: 0,
+        hzPrecision_sec: 1,
+        dirPrecision_sec: 1,
+        azBearingPrecision_sec: 1,
+        vaPrecision_sec: 1,
+        instCentr_m: 0.03,
+        tgtCentr_m: 0.04,
+        vertCentr_m: 0.02,
+        elevDiff_const_m: 0,
+        elevDiff_ppm: 0,
+        gpsStd_xy: 0,
+        levStd_mmPerKm: 0,
+      },
+    };
+    const engine = new LSAEngine({ input, maxIterations: 5, instrumentLibrary });
+    const result = engine.solve();
+    const zenith = result.observations.find((obs) => obs.type === 'zenith');
+    expect(zenith).toBeDefined();
+    const sigma = (engine as any).effectiveStdDev(zenith);
+    const d = 5;
+    const s = 13;
+    const e = 12;
+    const baseRad = 1 * SEC_TO_RAD;
+    const centeringRad =
+      Math.sqrt((e / s) ** 2 * (0.03 ** 2 + 0.04 ** 2) + 2 * (d / s) ** 2 * 0.02 ** 2) / s;
+    const expected = Math.sqrt(baseRad ** 2 + centeringRad ** 2);
+    expect(sigma).toBeCloseTo(expected, 12);
+  });
+
+  it('matches the fixture-locked centering geometry reference case', () => {
+    const input = readFileSync('tests/fixtures/centering_geometry_reference.dat', 'utf-8');
+    const instrumentLibrary = {
+      TS: {
+        code: 'TS',
+        desc: 'TS',
+        edm_const: 0,
+        edm_ppm: 0,
+        hzPrecision_sec: 1,
+        dirPrecision_sec: 1,
+        azBearingPrecision_sec: 1,
+        vaPrecision_sec: 1,
+        instCentr_m: 0.03,
+        tgtCentr_m: 0.04,
+        vertCentr_m: 0.02,
+        elevDiff_const_m: 0,
+        elevDiff_ppm: 0,
+        gpsStd_xy: 0,
+        levStd_mmPerKm: 0,
+      },
+    };
+    const engine = new LSAEngine({ input, maxIterations: 5, instrumentLibrary });
+    const result = engine.solve();
+    const dist = result.observations.find((obs) => obs.type === 'dist');
+    const zenith = result.observations.find((obs) => obs.type === 'zenith');
+
+    expect(dist).toBeDefined();
+    expect(zenith).toBeDefined();
+
+    const sigmaDist = (engine as any).effectiveStdDev(dist);
+    const sigmaZen = (engine as any).effectiveStdDev(zenith);
+    const d = 5;
+    const s = 13;
+    const e = 12;
+    const expectedDist = Math.sqrt(
+      0.01 ** 2 + (d / s) ** 2 * (0.03 ** 2 + 0.04 ** 2) + 2 * (e / s) ** 2 * 0.02 ** 2,
+    );
+    const expectedZen = Math.sqrt(
+      (1 * SEC_TO_RAD) ** 2 +
+        (Math.sqrt((e / s) ** 2 * (0.03 ** 2 + 0.04 ** 2) + 2 * (d / s) ** 2 * 0.02 ** 2) / s) **
+          2,
+    );
+
+    expect(sigmaDist).toBeCloseTo(expectedDist, 12);
+    expect(sigmaZen).toBeCloseTo(expectedZen, 12);
   });
 
   it('captures prism correction source and magnitude metadata from fixture offsets', () => {

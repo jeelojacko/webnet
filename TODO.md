@@ -11,6 +11,7 @@
 - [x] Consolidate toolbar settings into a dropdown menu
 - [x] Export adjustment results as text + refresh-to-last-run input
 - [x] Input editor comment workflow: line-wise block toggle via `Shift+3` (`#`) on multiline selections plus right-click `Toggle # Comment` action
+- [x] Match industry-standard centering inflation for slope distances and zeniths using horizontal/vertical centering geometry factors, with fixture-locked reference coverage
 - [x] GPS Phase 1 foundation: CRS state model + projection abstraction (`LEGACY`/`ENU`) with default-off transform controls in Project Options -> GPS
 - [x] GPS Phase 2 modeling: optional CRS grid-ground scale + convergence corrections in solver/inverse workflows with default-off GPS controls
 - [x] GPS Phase 3 diagnostics: surface CRS projection/scale/convergence state in report/processing-summary/industry-listing outputs with regression coverage
@@ -189,8 +190,8 @@
       - [x] Phase 1: detect GNSS loop candidates and compute closure vectors/magnitudes independent of adjustment residuals
       - [x] Phase 2: add tolerance checks/ranking and expose loop diagnostics in processing and report views
       - [x] Phase 3: add export block and tests for known loop-pass/fail datasets
-    - [ ] Add OPUS/OPUS-RS import path with full covariance ingestion to GPS observation records
-      - [ ] Phase 1: implement OPUS/OPUS-RS parser for station coordinates, covariance, and metadata extraction
+    - [~] Add OPUS/OPUS-RS import path with full covariance ingestion to GPS observation records
+      - [x] Phase 1: implement OPUS/OPUS-RS parser for station coordinates, covariance, and metadata extraction
       - [ ] Phase 2: map imported covariance into GNSS observation/control constraints with unit/axis normalization
       - [ ] Phase 3: add importer UX/docs and parity tests using representative OPUS samples
     - [ ] Add GPS offset observation support (G4-style rover-offset handling) in parse/adjust/report pipelines

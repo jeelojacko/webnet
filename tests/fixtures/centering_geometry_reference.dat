@@ -1,0 +1,8 @@
+.3D
+.UNITS METERS DD
+.ADDC ON
+.I TS
+C A 0 0 0 ! ! !
+C B 4 3 12 ! ! !
+D A-B 13.0000 0.010
+V A-B 22.619865 1.0

@@ -372,6 +372,20 @@ export class LSAEngine {
     return this.instrumentLibrary[obs.instCode];
   }
 
+  private centeringLineGeometry(
+    fromID: StationId,
+    toID: StationId,
+    hi = 0,
+    ht = 0,
+  ): { horiz: number; slope: number; elev: number } {
+    const geom = this.getZenith(fromID, toID, hi, ht);
+    return {
+      horiz: Math.max(geom.horiz, 0),
+      slope: Math.max(geom.dist, 0),
+      elev: geom.dh,
+    };
+  }
+
   private effectiveStdDev(obs: Observation): number {
     const inst = this.getInstrument(obs);
     let sigma = Number.isFinite(obs.stdDev) ? obs.stdDev : 0;
@@ -382,12 +396,26 @@ export class LSAEngine {
     if (!this.applyCentering) return Math.max(sigma, 1e-12);
     if (source === 'explicit' && !this.addCenteringToExplicit) return Math.max(sigma, 1e-12);
 
-    const centerHoriz = Math.hypot(inst.instCentr_m || 0, inst.tgtCentr_m || 0);
+    const instCenter = inst.instCentr_m || 0;
+    const tgtCenter = inst.tgtCentr_m || 0;
+    const centerHorizSq = instCenter * instCenter + tgtCenter * tgtCenter;
+    const centerHoriz = Math.sqrt(centerHorizSq);
     const centerVert = Math.abs(inst.vertCentr_m || 0);
+    const centerVertSq = centerVert * centerVert;
 
     if (obs.type === 'dist') {
-      if (centerHoriz <= 0) return Math.max(sigma, 1e-12);
-      return Math.max(Math.sqrt(sigma * sigma + centerHoriz * centerHoriz), 1e-12);
+      if (this.is2D || obs.mode !== 'slope') {
+        if (centerHoriz <= 0) return Math.max(sigma, 1e-12);
+        return Math.max(Math.sqrt(sigma * sigma + centerHorizSq), 1e-12);
+      }
+      if (centerHorizSq <= 0 && centerVertSq <= 0) return Math.max(sigma, 1e-12);
+      const geom = this.centeringLineGeometry(obs.from, obs.to, obs.hi ?? 0, obs.ht ?? 0);
+      const slope = Math.max(geom.slope, 1e-12);
+      const horizRatioSq = (geom.horiz / slope) ** 2;
+      const elevRatioSq = (geom.elev / slope) ** 2;
+      const centeringVariance =
+        horizRatioSq * centerHorizSq + 2 * elevRatioSq * centerVertSq;
+      return Math.max(Math.sqrt(sigma * sigma + centeringVariance), 1e-12);
     }
     if (obs.type === 'direction') {
       if (centerHoriz <= 0) return Math.max(sigma, 1e-12);
@@ -423,11 +451,15 @@ export class LSAEngine {
       return Math.max(Math.sqrt(sigma * sigma + term * term), 1e-12);
     }
     if (obs.type === 'zenith') {
-      if (centerVert <= 0) return Math.max(sigma, 1e-12);
-      const z = this.getZenith(obs.from, obs.to, obs.hi ?? 0, obs.ht ?? 0);
-      const prismCorrection = this.prismCorrectionForObservation(obs);
-      const prismAdjustedDist = Math.max(z.dist + prismCorrection, 1e-12);
-      const term = prismAdjustedDist > 0 ? centerVert / prismAdjustedDist : 0;
+      if (centerHorizSq <= 0 && centerVertSq <= 0) return Math.max(sigma, 1e-12);
+      const geom = this.centeringLineGeometry(obs.from, obs.to, obs.hi ?? 0, obs.ht ?? 0);
+      const slope = Math.max(geom.slope, 1e-12);
+      const horizRatioSq = (geom.horiz / slope) ** 2;
+      const elevRatioSq = (geom.elev / slope) ** 2;
+      // Convert the geometry-weighted linear centering projection into angular variance (radians^2).
+      const linearVariance =
+        elevRatioSq * centerHorizSq + 2 * horizRatioSq * centerVertSq;
+      const term = Math.sqrt(Math.max(linearVariance, 0)) / slope;
       return Math.max(Math.sqrt(sigma * sigma + term * term), 1e-12);
     }
     if (obs.type === 'lev') {
