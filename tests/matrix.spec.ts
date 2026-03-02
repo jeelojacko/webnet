@@ -3,9 +3,12 @@ import {
   choleskyDecompose,
   choleskyDecomposeWithDamping,
   inv,
+  invertSymmetricLDLT,
   invertSPDCholesky,
+  ldltDecomposeSymmetric,
   multiply,
   solveSPDCholesky,
+  solveSymmetricLDLT,
   solveSPDWithDamping,
   transpose,
   zeros,
@@ -121,5 +124,31 @@ describe('matrix helpers', () => {
     expect(result.damping).toBeGreaterThan(0)
     expect(Number.isFinite(result.solution[0][0])).toBe(true)
     expect(Number.isFinite(result.solution[1][0])).toBe(true)
+  })
+
+  it('solves a symmetric indefinite system with pivoted LDLT', () => {
+    const factorization = ldltDecomposeSymmetric([
+      [2, 3],
+      [3, -1],
+    ])
+    const x = solveSymmetricLDLT(factorization, [
+      [8],
+      [1],
+    ])
+
+    expect(x[0][0]).toBeCloseTo(1)
+    expect(x[1][0]).toBeCloseTo(2)
+  })
+
+  it('inverts a symmetric indefinite matrix with pivoted LDLT', () => {
+    const invM = invertSymmetricLDLT([
+      [2, 3],
+      [3, -1],
+    ])
+
+    expect(invM[0][0]).toBeCloseTo(1 / 11)
+    expect(invM[0][1]).toBeCloseTo(3 / 11)
+    expect(invM[1][0]).toBeCloseTo(3 / 11)
+    expect(invM[1][1]).toBeCloseTo(-2 / 11)
   })
 })

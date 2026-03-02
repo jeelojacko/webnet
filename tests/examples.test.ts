@@ -52,5 +52,22 @@ describe('Example Datasets', () => {
         // Output basic stats
         // console.log(`Solved ${Object.keys(result.stations).length} stations with ${result.observations.length} observations. SEUW: ${result.seuw}`)
     })
+
+    it('fails cleanly on the singular industry_demo.dat solve path', () => {
+        const filePath = path.join(process.cwd(), 'public/examples/industry_demo.dat')
+        const input = fs.readFileSync(filePath, 'utf-8')
+
+        const result = new LSAEngine({
+            input,
+            maxIterations: 10,
+            convergenceThreshold: 0.001
+        }).solve()
+
+        expect(result.success).toBe(false)
+        expect(result.converged).toBe(false)
+        expect(result.logs.some((line) => line.includes('normal-equation factorization required diagonal damping'))).toBe(true)
+        expect(result.logs.some((line) => line.includes('Normal equation solve failed'))).toBe(true)
+        expect(result.sideshots?.length ?? 0).toBeGreaterThan(0)
+    })
 })
 

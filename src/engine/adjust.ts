@@ -8,7 +8,7 @@ import type { GeoidGridModel } from './geoid';
 import {
   invertSPDFromCholesky,
   choleskyDecomposeWithDamping,
-  inv,
+  invertSymmetricLDLT,
   multiply,
   solveSPDFromCholesky,
   transpose,
@@ -276,9 +276,9 @@ export class LSAEngine {
     context: string,
   ): number[][] {
     try {
-      const exactScaledInverse = inv(scaledN);
+      const exactScaledInverse = invertSymmetricLDLT(scaledN);
       this.log(
-        `Warning: ${context} used dense inversion on the scaled undamped normal matrix to avoid damping bias in covariance output.`,
+        `Warning: ${context} used pivoted symmetric LDLT recovery on the scaled undamped normal matrix to avoid damping bias in covariance output.`,
       );
       return this.unscaleNormalInverse(exactScaledInverse, scale);
     } catch (error) {

@@ -4,6 +4,11 @@ export interface DampedCholeskyResult {
   damping: number;
   attempts: number;
 }
+export interface PivotedLDLTResult {
+  lower: Matrix;
+  diagonal: number[];
+  permutation: number[];
+}
 
 export const zeros = (rows: number, cols: number): Matrix =>
   Array.from({ length: rows }, () => Array.from({ length: cols }, () => 0));
@@ -199,6 +204,128 @@ export const invertSPDWithDamping = (
     damping: result.damping,
     attempts: result.attempts,
   };
+};
+
+const swapRowsAndColumns = (m: Matrix, a: number, b: number): void => {
+  if (a === b) return;
+  [m[a], m[b]] = [m[b], m[a]];
+  for (let i = 0; i < m.length; i += 1) {
+    [m[i][a], m[i][b]] = [m[i][b], m[i][a]];
+  }
+};
+
+export const ldltDecomposeSymmetric = (
+  m: Matrix,
+  tolerance = 1e-14,
+): PivotedLDLTResult => {
+  const n = m.length;
+  if (n === 0) {
+    return { lower: [], diagonal: [], permutation: [] };
+  }
+  if (m.some((row) => row.length !== n)) {
+    throw new Error('LDLT decomposition requires a square matrix.');
+  }
+
+  const work = m.map((row, i) => row.map((value, j) => 0.5 * (value + (m[j]?.[i] ?? value))));
+  const lower = zeros(n, n);
+  const diagonal = new Array(n).fill(0);
+  const permutation = Array.from({ length: n }, (_, i) => i);
+
+  for (let k = 0; k < n; k += 1) {
+    let pivotIndex = k;
+    let pivotAbs = Math.abs(work[k][k] ?? 0);
+    for (let i = k + 1; i < n; i += 1) {
+      const candidate = Math.abs(work[i][i] ?? 0);
+      if (candidate > pivotAbs) {
+        pivotAbs = candidate;
+        pivotIndex = i;
+      }
+    }
+    if (!Number.isFinite(pivotAbs) || pivotAbs <= tolerance) {
+      throw new Error(`Symmetric LDLT pivot too small at step ${k} (pivot=${work[pivotIndex][pivotIndex]}).`);
+    }
+    if (pivotIndex !== k) {
+      swapRowsAndColumns(work, k, pivotIndex);
+      [permutation[k], permutation[pivotIndex]] = [permutation[pivotIndex], permutation[k]];
+      for (let row = 0; row < k; row += 1) {
+        [lower[k][row], lower[pivotIndex][row]] = [lower[pivotIndex][row], lower[k][row]];
+      }
+    }
+
+    const pivot = work[k][k];
+    if (!Number.isFinite(pivot) || Math.abs(pivot) <= tolerance) {
+      throw new Error(`Symmetric LDLT pivot vanished at step ${k} (pivot=${pivot}).`);
+    }
+    diagonal[k] = pivot;
+    lower[k][k] = 1;
+
+    for (let i = k + 1; i < n; i += 1) {
+      lower[i][k] = work[i][k] / pivot;
+    }
+
+    for (let i = k + 1; i < n; i += 1) {
+      for (let j = i; j < n; j += 1) {
+        work[j][i] -= lower[i][k] * pivot * lower[j][k];
+        work[i][j] = work[j][i];
+      }
+    }
+  }
+
+  return { lower, diagonal, permutation };
+};
+
+export const solveSymmetricLDLT = (factorization: PivotedLDLTResult, b: Matrix): Matrix => {
+  const n = factorization.lower.length;
+  if (b.length !== n) {
+    throw new Error('Symmetric LDLT solve dimension mismatch.');
+  }
+  const cols = b[0]?.length ?? 0;
+  const x = zeros(n, cols);
+
+  for (let col = 0; col < cols; col += 1) {
+    const bp = new Array(n).fill(0);
+    for (let i = 0; i < n; i += 1) {
+      bp[i] = b[factorization.permutation[i]]?.[col] ?? 0;
+    }
+
+    const y = new Array(n).fill(0);
+    for (let i = 0; i < n; i += 1) {
+      let sum = bp[i];
+      for (let k = 0; k < i; k += 1) {
+        sum -= factorization.lower[i][k] * y[k];
+      }
+      y[i] = sum;
+    }
+
+    const z = new Array(n).fill(0);
+    for (let i = 0; i < n; i += 1) {
+      z[i] = y[i] / factorization.diagonal[i];
+    }
+
+    const xp = new Array(n).fill(0);
+    for (let i = n - 1; i >= 0; i -= 1) {
+      let sum = z[i];
+      for (let k = i + 1; k < n; k += 1) {
+        sum -= factorization.lower[k][i] * xp[k];
+      }
+      xp[i] = sum;
+    }
+
+    for (let i = 0; i < n; i += 1) {
+      x[factorization.permutation[i]][col] = xp[i];
+    }
+  }
+
+  return x;
+};
+
+export const invertSymmetricLDLT = (m: Matrix): Matrix => {
+  const factorization = ldltDecomposeSymmetric(m);
+  const identity = zeros(m.length, m.length);
+  for (let i = 0; i < m.length; i += 1) {
+    identity[i][i] = 1;
+  }
+  return solveSymmetricLDLT(factorization, identity);
 };
 
 export const inv = (m: Matrix): Matrix => {
