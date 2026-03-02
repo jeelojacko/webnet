@@ -29,6 +29,7 @@ import {
   type AutoAdjustConfig,
 } from './engine/autoAdjust';
 import { buildIndustryStyleListingText } from './engine/industryListing';
+import { importExternalInput } from './engine/opus';
 import type {
   AdjustmentResult,
   ClusterApprovedMerge,
@@ -3207,7 +3208,8 @@ const App: React.FC = () => {
     const reader = new FileReader();
     reader.onload = () => {
       const text = typeof reader.result === 'string' ? reader.result : '';
-      setInput(text);
+      const imported = importExternalInput(text, file.name);
+      setInput(imported.text);
       setExcludedIds(new Set());
       setOverrides({});
       setClusterReviewDecisions({});
@@ -3801,7 +3803,7 @@ const App: React.FC = () => {
           <input
             ref={fileInputRef}
             type="file"
-            accept=".dat,.txt"
+            accept=".dat,.txt,.sum,.rpt"
             className="hidden"
             onChange={handleFileChange}
           />

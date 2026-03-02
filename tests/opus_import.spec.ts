@@ -1,0 +1,46 @@
+import { readFileSync } from 'node:fs';
+import { describe, expect, it } from 'vitest';
+
+import { importExternalInput, parseOpusReport } from '../src/engine/opus';
+import { parseInput } from '../src/engine/parse';
+
+const fixture = readFileSync('tests/fixtures/opus_rs_sample.txt', 'utf-8');
+
+describe('OPUS import', () => {
+  it('parses OPUS-RS report coordinates, sigmas, and metadata', () => {
+    const parsed = parseOpusReport(fixture, 'opus_rs_sample.txt');
+    expect(parsed).not.toBeNull();
+    expect(parsed?.stationId).toBe('NOVA0010');
+    expect(parsed?.metadata.solutionType).toBe('opus-rs');
+    expect(parsed?.metadata.referenceFrame).toContain('NAD_83(2011)');
+    expect(parsed?.metadata.referenceEpoch).toBe('2024.1234');
+    expect(parsed?.metadata.geoidModel).toBe('GEOID18');
+    expect(parsed?.latitudeDeg).toBeCloseTo(44.6534293528, 9);
+    expect(parsed?.longitudeDeg).toBeCloseTo(-63.5824413917, 9);
+    expect(parsed?.ellipsoidHeightM).toBeCloseTo(123.456, 6);
+    expect(parsed?.orthometricHeightM).toBeCloseTo(98.765, 6);
+    expect(parsed?.sigmaNorthM).toBeCloseTo(0.008, 6);
+    expect(parsed?.sigmaEastM).toBeCloseTo(0.01, 6);
+    expect(parsed?.sigmaEllipsoidHeightM).toBeCloseTo(0.015, 6);
+    expect(parsed?.covariance.corrEN).toBe(0);
+    expect(parsed?.covariance.source).toBe('report-diagonal');
+  });
+
+  it('converts OPUS reports into a WebNet PH record that the parser accepts', () => {
+    const imported = importExternalInput(fixture, 'opus_rs_sample.txt');
+    expect(imported.detected).toBe(true);
+    expect(imported.format).toBe('opus-report');
+    expect(imported.text).toContain('# Imported from NGS OPUS-RS solution report');
+    expect(imported.text).toContain('PH NOVA0010 44.653429353 -63.582441392 123.4560 0.0080 0.0100 0.0150');
+
+    const parsed = parseInput(imported.text);
+    expect(parsed.stations.NOVA0010).toBeDefined();
+    expect(parsed.stations.NOVA0010.heightType).toBe('ellipsoid');
+    expect(parsed.stations.NOVA0010.latDeg).toBeCloseTo(44.653429353, 9);
+    expect(parsed.stations.NOVA0010.lonDeg).toBeCloseTo(-63.582441392, 9);
+    expect(parsed.stations.NOVA0010.h).toBeCloseTo(123.456, 6);
+    expect(parsed.stations.NOVA0010.sy).toBeCloseTo(0.008, 6);
+    expect(parsed.stations.NOVA0010.sx).toBeCloseTo(0.01, 6);
+    expect(parsed.stations.NOVA0010.sh).toBeCloseTo(0.015, 6);
+  });
+});
