@@ -58,6 +58,7 @@ interface ObservationBase {
   type: 'dist' | 'angle' | 'direction' | 'dir' | 'gps' | 'lev' | 'bearing' | 'zenith';
   instCode: string;
   stdDev: number;
+  planned?: boolean;
   sigmaSource?: 'default' | 'explicit' | 'fixed' | 'float';
   calc?: unknown;
   residual?: unknown;
@@ -371,6 +372,7 @@ export interface DescriptionScanSummary {
 export interface ParseOptions {
   units: UnitsMode;
   coordMode: CoordMode;
+  preanalysisMode?: boolean;
   order: OrderMode;
   angleUnits?: AngleUnitsMode;
   angleStationOrder?: AngleStationOrder;
@@ -461,6 +463,7 @@ export interface ParseOptions {
   descriptionReconcileMode?: DescriptionReconcileMode;
   descriptionAppendDelimiter?: string;
   reconciledDescriptions?: Record<StationId, string>;
+  plannedObservationCount?: number;
 }
 
 export interface AdjustmentResult {
@@ -472,6 +475,7 @@ export interface AdjustmentResult {
   logs: string[];
   seuw: number;
   dof: number;
+  preanalysisMode?: boolean;
   parseState?: ParseOptions;
   condition?: { estimate: number; threshold: number; flagged: boolean };
   controlConstraints?: { count: number; x: number; y: number; h: number };

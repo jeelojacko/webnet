@@ -85,6 +85,7 @@ npm run format:check # Prettier check
 - Expand test coverage for complex GNSS and leveling networks.
 - Follow the Industry Standard v6-v14 parity-gap backlog in `TODO.md` (ordered Conventional -> GPS -> Leveling) for upcoming feature work.
 - All parity-gap entries now include phased plans; execute in backlog order, starting with the top conventional items (`.ALIAS`, cluster-detection adjustment mode, Auto-Adjust workflow).
+- Preanalysis / network-planning Phase 1-2 is now implemented: use the Project Options preanalysis toggle plus `?` planned observation values, keep future batches focused on covariance/ellipse outputs, relative ellipses, and what-if UX while preserving the existing `L = 0` geometry-derived row-building path.
 
 ## Todo
 

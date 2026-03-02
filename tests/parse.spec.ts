@@ -171,6 +171,33 @@ describe('parseInput', () => {
     expect(parsed.logs.some((l) => l.includes('Auto-adjust set to ON'))).toBe(true);
   });
 
+  it('parses planned observation placeholders when preanalysis mode is enabled', () => {
+    const parsed = parseInput(
+      [
+        '.2D',
+        'C A 0 0 0 ! !',
+        'C B 100 0 0 ! !',
+        'C P 60 40 0',
+        'D A-P ? 0.01',
+        'A P-A-B ? 1.0',
+        'B A-P ? 2.0',
+        'L LV A P ? 0.10 2.0',
+      ].join('\n'),
+      {},
+      { preanalysisMode: true },
+    );
+
+    expect(parsed.parseState.preanalysisMode).toBe(true);
+    expect(parsed.parseState.plannedObservationCount).toBe(4);
+    expect(parsed.logs.some((l) => l.includes('Preanalysis parsing: mode=ON'))).toBe(true);
+    expect(parsed.observations.every((obs) => obs.planned === true)).toBe(true);
+
+    const dist = parsed.observations.find((obs) => obs.type === 'dist') as DistanceObservation | undefined;
+    const angle = parsed.observations.find((obs) => obs.type === 'angle') as AngleObservation | undefined;
+    expect(dist?.obs ?? Number.NaN).toBe(0);
+    expect(angle?.obs ?? Number.NaN).toBe(0);
+  });
+
   it('keeps CRS transforms disabled by default and parses .CRS state directives', () => {
     const base = parseInput(['.UNITS METERS DD', 'P ORG 40 105 0 ! !', 'P TGT 41 106 0'].join('\n'));
     expect(base.parseState.crsTransformEnabled).toBe(false);

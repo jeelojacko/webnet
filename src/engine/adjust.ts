@@ -214,6 +214,7 @@ export class LSAEngine {
   private tsCorrelationScope: ParseOptions['tsCorrelationScope'] = 'set';
   private robustMode: ParseOptions['robustMode'] = 'none';
   private robustK = 1.5;
+  private preanalysisMode = false;
   private prismEnabled = false;
   private prismOffset = 0;
   private prismScope: ParseOptions['prismScope'] = 'global';
@@ -382,6 +383,106 @@ export class LSAEngine {
   private getInstrument(obs: Observation): Instrument | undefined {
     if (!obs.instCode) return undefined;
     return this.instrumentLibrary[obs.instCode];
+  }
+
+  private defaultDistanceSigmaMeters(obs: Observation & { type: 'dist' }): number {
+    const inst = this.getInstrument(obs);
+    if (!inst) return 0;
+    const geom = this.centeringLineGeometry(obs.from, obs.to, obs.hi ?? 0, obs.ht ?? 0);
+    const modeledDistance = this.is2D
+      ? geom.horiz
+      : obs.mode === 'slope'
+        ? geom.slope
+        : geom.horiz;
+    const ppmTerm = inst.edm_ppm * 1e-6 * modeledDistance;
+    const edmMode = this.parseState?.edmMode ?? this.parseOptions?.edmMode ?? 'additive';
+    if (edmMode === 'propagated') {
+      return Math.sqrt(inst.edm_const * inst.edm_const + ppmTerm * ppmTerm);
+    }
+    return Math.abs(inst.edm_const) + Math.abs(ppmTerm);
+  }
+
+  private plannedGpsRawVector(obs: GpsObservation): { dE: number; dN: number } {
+    const from = this.stations[obs.from];
+    const to = this.stations[obs.to];
+    if (!from || !to) return { dE: 0, dN: 0 };
+    const dE = to.x - from.x;
+    const dN = to.y - from.y;
+    const horizGround = Math.hypot(dE, dN);
+    if (horizGround <= 1e-12) return { dE, dN };
+
+    const hi = Number.isFinite(obs.gpsAntennaHiM ?? Number.NaN) ? (obs.gpsAntennaHiM as number) : 0;
+    const ht = Number.isFinite(obs.gpsAntennaHtM ?? Number.NaN) ? (obs.gpsAntennaHtM as number) : 0;
+    const deltaGround = to.h - from.h;
+    const deltaAntenna = deltaGround + (ht - hi);
+    const rawHorizSq = horizGround * horizGround + deltaGround * deltaGround - deltaAntenna * deltaAntenna;
+    if (!Number.isFinite(rawHorizSq) || rawHorizSq <= 1e-12) {
+      return { dE, dN };
+    }
+    const rawHoriz = Math.sqrt(rawHorizSq);
+    const scale = rawHoriz / horizGround;
+    if (!Number.isFinite(scale) || scale <= 0) return { dE, dN };
+    return { dE: dE * scale, dN: dN * scale };
+  }
+
+  private populatePreanalysisObservations(): void {
+    let plannedCount = 0;
+    this.observations.forEach((obs) => {
+      if (!obs.planned) return;
+      plannedCount += 1;
+      if (obs.type === 'dist') {
+        const geom = this.centeringLineGeometry(obs.from, obs.to, obs.hi ?? 0, obs.ht ?? 0);
+        const rawDistance = this.is2D
+          ? geom.horiz
+          : obs.mode === 'slope'
+            ? geom.slope
+            : geom.horiz;
+        obs.obs = this.correctedDistanceModel(obs, rawDistance).calcDistance;
+        if (obs.sigmaSource === 'default') {
+          obs.stdDev = this.defaultDistanceSigmaMeters(obs);
+        }
+        return;
+      }
+      if (obs.type === 'angle') {
+        const azTo = this.getAzimuth(obs.at, obs.to).az;
+        const azFrom = this.getAzimuth(obs.at, obs.from).az;
+        let modeled = azTo - azFrom;
+        if (modeled < 0) modeled += 2 * Math.PI;
+        obs.obs = modeled;
+        return;
+      }
+      if (obs.type === 'direction') {
+        obs.obs = this.modeledAzimuth(this.getAzimuth(obs.at, obs.to).az);
+        return;
+      }
+      if (obs.type === 'bearing' || obs.type === 'dir') {
+        obs.obs = this.modeledAzimuth(this.getAzimuth(obs.from, obs.to).az);
+        return;
+      }
+      if (obs.type === 'zenith') {
+        obs.obs = this.getZenith(obs.from, obs.to, obs.hi ?? 0, obs.ht ?? 0).z;
+        return;
+      }
+      if (obs.type === 'lev') {
+        const from = this.stations[obs.from];
+        const to = this.stations[obs.to];
+        if (!from || !to) return;
+        obs.obs = to.h - from.h;
+        return;
+      }
+      if (obs.type === 'gps') {
+        obs.obs = this.plannedGpsRawVector(obs);
+      }
+    });
+    if (this.parseState) {
+      this.parseState.preanalysisMode = true;
+      this.parseState.plannedObservationCount = plannedCount;
+      this.parseState.robustMode = 'none';
+      this.parseState.autoAdjustEnabled = false;
+    }
+    this.log(
+      `Preanalysis mode: resolved ${plannedCount} planned observation(s) from approximate geometry; residual-based QC disabled.`,
+    );
   }
 
   private centeringLineGeometry(
@@ -2181,8 +2282,13 @@ export class LSAEngine {
       parsed.parseState?.tsCorrelationRho ?? this.parseOptions?.tsCorrelationRho ?? 0.25;
     this.tsCorrelationScope =
       parsed.parseState?.tsCorrelationScope ?? this.parseOptions?.tsCorrelationScope ?? 'set';
+    this.preanalysisMode =
+      parsed.parseState?.preanalysisMode ?? this.parseOptions?.preanalysisMode ?? false;
     this.robustMode = parsed.parseState?.robustMode ?? this.parseOptions?.robustMode ?? 'none';
     this.robustK = parsed.parseState?.robustK ?? this.parseOptions?.robustK ?? 1.5;
+    if (this.preanalysisMode) {
+      this.robustMode = 'none';
+    }
     this.prismEnabled = parsed.parseState?.prismEnabled ?? this.parseOptions?.prismEnabled ?? false;
     this.prismOffset = parsed.parseState?.prismOffset ?? this.parseOptions?.prismOffset ?? 0;
     this.prismScope = parsed.parseState?.prismScope ?? this.parseOptions?.prismScope ?? 'global';
@@ -2219,6 +2325,9 @@ export class LSAEngine {
     this.residualDiagnostics = undefined;
     this.clusterDiagnostics = undefined;
     this.gpsLoopDiagnostics = undefined;
+    this.chiSquare = undefined;
+    this.statisticalSummary = undefined;
+    this.typeSummary = undefined;
     this.conditionWarned = false;
 
     if ((this.directionRejectDiagnostics?.length ?? 0) > 0) {
@@ -2310,7 +2419,9 @@ export class LSAEngine {
         `TS angular correlation active: scope=${this.tsCorrelationScope}, rho=${this.tsCorrelationRho.toFixed(3)}`,
       );
     }
-    if (this.robustMode === 'huber') {
+    if (this.preanalysisMode) {
+      this.log('Preanalysis mode active: residual-based QC, chi-square, and robust reweighting are disabled.');
+    } else if (this.robustMode === 'huber') {
       this.robustDiagnostics = {
         enabled: true,
         mode: 'huber',
@@ -2375,6 +2486,10 @@ export class LSAEngine {
           }
         }
       });
+    }
+
+    if (this.preanalysisMode) {
+      this.populatePreanalysisObservations();
     }
 
     this.updateGpsAddHiHtDiagnostics();
@@ -3575,7 +3690,7 @@ export class LSAEngine {
       };
     }
 
-    this.seuw = this.dof > 0 ? Math.sqrt(vtpv / this.dof) : 0;
+    this.seuw = this.preanalysisMode ? 1 : this.dof > 0 ? Math.sqrt(vtpv / this.dof) : 0;
 
     this.chiSquare = undefined;
     this.statisticalSummary = undefined;
@@ -3588,7 +3703,7 @@ export class LSAEngine {
     this.traverseDiagnostics = undefined;
     this.autoSideshotDiagnostics = undefined;
 
-    if (this.dof > 0) {
+    if (!this.preanalysisMode && this.dof > 0) {
       const alpha = 0.05;
       const lower = chiSquareQuantile(alpha / 2, this.dof);
       const upper = chiSquareQuantile(1 - alpha / 2, this.dof);
@@ -3903,103 +4018,105 @@ export class LSAEngine {
         });
 
         this.applyTsCorrelationToWeightMatrix(P, rowInfo, true);
-        if (this.robustMode === 'huber') {
+        if (!this.preanalysisMode && this.robustMode === 'huber') {
           const baseWeights = this.captureRobustWeightBase(P, rowInfo);
           const residuals = L.map((row) => -row[0]);
           const summary = this.computeRobustWeightSummary(residuals, rowInfo);
           this.applyRobustWeightFactors(P, baseWeights, summary.factors);
         }
 
-        try {
-          const AT = transpose(A);
-          const N = multiply(multiply(AT, P), A);
-          const QxxStats = this.invertNormalMatrixForStats(N);
-          const B = multiply(A, QxxStats);
-          const rowStats = new Map<
-            number,
-            {
-              t: number[];
-              r: number[];
-              mdb: number[];
-              pass: boolean[];
-              comps: ('E' | 'N' | undefined)[];
+        if (!this.preanalysisMode) {
+          try {
+            const AT = transpose(A);
+            const N = multiply(multiply(AT, P), A);
+            const QxxStats = this.invertNormalMatrixForStats(N);
+            const B = multiply(A, QxxStats);
+            const rowStats = new Map<
+              number,
+              {
+                t: number[];
+                r: number[];
+                mdb: number[];
+                pass: boolean[];
+                comps: ('E' | 'N' | undefined)[];
+              }
+            >();
+            const s0 = this.seuw || 1;
+            for (let i = 0; i < numObsEquations; i += 1) {
+              const info = rowInfo[i];
+              if (!info) continue;
+              const sigma = this.effectiveStdDev(info.obs);
+              let qll = sigma > 0 ? sigma * sigma : 0;
+              if (info.obs.type === 'gps') {
+                const cov = this.gpsCovariance(info.obs);
+                qll = info.component === 'N' ? cov.cNN : cov.cEE;
+              }
+              let diag = 0;
+              for (let j = 0; j < numParams; j += 1) {
+                diag += B[i][j] * A[i][j];
+              }
+              const qvv = Math.max(qll - diag, 1e-20);
+              const t = L[i][0] / (s0 * Math.sqrt(qvv));
+              const r = qll > 0 ? qvv / qll : 0;
+              const pass = Math.abs(t) <= this.localTestCritical;
+              const sigmaQll = Math.sqrt(Math.max(qll, 0));
+              const mdb =
+                r > 1e-12
+                  ? (this.localTestCritical * s0 * sigmaQll) / Math.sqrt(r)
+                  : Number.POSITIVE_INFINITY;
+              const entry = rowStats.get(info.obs.id) ?? {
+                t: [],
+                r: [],
+                mdb: [],
+                pass: [],
+                comps: [],
+              };
+              entry.t.push(t);
+              entry.r.push(r);
+              entry.mdb.push(mdb);
+              entry.pass.push(pass);
+              entry.comps.push(info.component);
+              rowStats.set(info.obs.id, entry);
             }
-          >();
-          const s0 = this.seuw || 1;
-          for (let i = 0; i < numObsEquations; i += 1) {
-            const info = rowInfo[i];
-            if (!info) continue;
-            const sigma = this.effectiveStdDev(info.obs);
-            let qll = sigma > 0 ? sigma * sigma : 0;
-            if (info.obs.type === 'gps') {
-              const cov = this.gpsCovariance(info.obs);
-              qll = info.component === 'N' ? cov.cNN : cov.cEE;
-            }
-            let diag = 0;
-            for (let j = 0; j < numParams; j += 1) {
-              diag += B[i][j] * A[i][j];
-            }
-            const qvv = Math.max(qll - diag, 1e-20);
-            const t = L[i][0] / (s0 * Math.sqrt(qvv));
-            const r = qll > 0 ? qvv / qll : 0;
-            const pass = Math.abs(t) <= this.localTestCritical;
-            const sigmaQll = Math.sqrt(Math.max(qll, 0));
-            const mdb =
-              r > 1e-12
-                ? (this.localTestCritical * s0 * sigmaQll) / Math.sqrt(r)
-                : Number.POSITIVE_INFINITY;
-            const entry = rowStats.get(info.obs.id) ?? {
-              t: [],
-              r: [],
-              mdb: [],
-              pass: [],
-              comps: [],
-            };
-            entry.t.push(t);
-            entry.r.push(r);
-            entry.mdb.push(mdb);
-            entry.pass.push(pass);
-            entry.comps.push(info.component);
-            rowStats.set(info.obs.id, entry);
-          }
 
-          activeObservations.forEach((obs) => {
-            const entry = rowStats.get(obs.id);
-            if (!entry) return;
-            if (entry.t.length === 2 && entry.comps.includes('E') && entry.comps.includes('N')) {
-              const idxE = entry.comps.indexOf('E');
-              const idxN = entry.comps.indexOf('N');
-              const tE = entry.t[idxE];
-              const tN = entry.t[idxN];
-              const rE = entry.r[idxE];
-              const rN = entry.r[idxN];
-              const mE = entry.mdb[idxE];
-              const mN = entry.mdb[idxN];
-              const passE = entry.pass[idxE];
-              const passN = entry.pass[idxN];
-              obs.stdResComponents = { tE, tN };
-              obs.stdRes = Math.max(Math.abs(tE), Math.abs(tN));
-              obs.redundancy = { rE, rN };
-              obs.localTest = { critical: this.localTestCritical, pass: passE && passN };
-              obs.localTestComponents = { passE, passN };
-              obs.mdbComponents = { mE, mN };
-            } else {
-              obs.stdRes = Math.abs(entry.t[0]);
-              obs.redundancy = entry.r[0];
-              obs.localTest = { critical: this.localTestCritical, pass: entry.pass[0] };
-              obs.mdb = entry.mdb[0];
-            }
-          });
-        } catch (error) {
-          const detail = error instanceof Error ? ` ${error.message}` : '';
-          this.log(
-            `Warning: standardized residuals not computed (normal matrix factorization failed).${detail}`,
-          );
+            activeObservations.forEach((obs) => {
+              const entry = rowStats.get(obs.id);
+              if (!entry) return;
+              if (entry.t.length === 2 && entry.comps.includes('E') && entry.comps.includes('N')) {
+                const idxE = entry.comps.indexOf('E');
+                const idxN = entry.comps.indexOf('N');
+                const tE = entry.t[idxE];
+                const tN = entry.t[idxN];
+                const rE = entry.r[idxE];
+                const rN = entry.r[idxN];
+                const mE = entry.mdb[idxE];
+                const mN = entry.mdb[idxN];
+                const passE = entry.pass[idxE];
+                const passN = entry.pass[idxN];
+                obs.stdResComponents = { tE, tN };
+                obs.stdRes = Math.max(Math.abs(tE), Math.abs(tN));
+                obs.redundancy = { rE, rN };
+                obs.localTest = { critical: this.localTestCritical, pass: passE && passN };
+                obs.localTestComponents = { passE, passN };
+                obs.mdbComponents = { mE, mN };
+              } else {
+                obs.stdRes = Math.abs(entry.t[0]);
+                obs.redundancy = entry.r[0];
+                obs.localTest = { critical: this.localTestCritical, pass: entry.pass[0] };
+                obs.mdb = entry.mdb[0];
+              }
+            });
+          } catch (error) {
+            const detail = error instanceof Error ? ` ${error.message}` : '';
+            this.log(
+              `Warning: standardized residuals not computed (normal matrix factorization failed).${detail}`,
+            );
+          }
         }
       }
     }
 
-    {
+    if (!this.preanalysisMode) {
       const rows = Array.from(weightedByGroup.entries())
         .map(([label, row]) => ({
           label,
@@ -4034,25 +4151,27 @@ export class LSAEngine {
       };
     }
 
-    // Flag very large standardized residuals
-    const flagged = this.observations.filter((o) => Math.abs(o.stdRes || 0) > this.maxStdRes);
-    if (flagged.length) {
-      this.log(
-        `Warning: ${flagged.length} obs exceed ${this.maxStdRes} sigma (consider excluding/reweighting).`,
+    if (!this.preanalysisMode) {
+      // Flag very large standardized residuals
+      const flagged = this.observations.filter((o) => Math.abs(o.stdRes || 0) > this.maxStdRes);
+      if (flagged.length) {
+        this.log(
+          `Warning: ${flagged.length} obs exceed ${this.maxStdRes} sigma (consider excluding/reweighting).`,
+        );
+      }
+      const localFailed = this.observations.filter(
+        (o) => this.isObservationActive(o) && o.localTest != null && !o.localTest.pass,
       );
-    }
-    const localFailed = this.observations.filter(
-      (o) => this.isObservationActive(o) && o.localTest != null && !o.localTest.pass,
-    );
-    if (localFailed.length) {
-      this.log(
-        `Local test: ${localFailed.length} observation(s) exceed critical |t|>${this.localTestCritical.toFixed(
-          2,
-        )}.`,
-      );
+      if (localFailed.length) {
+        this.log(
+          `Local test: ${localFailed.length} observation(s) exceed critical |t|>${this.localTestCritical.toFixed(
+            2,
+          )}.`,
+        );
+      }
     }
 
-    {
+    if (!this.preanalysisMode) {
       const stationLabel = (obs: Observation): string => {
         if (obs.type === 'angle') return `${obs.at}-${obs.from}-${obs.to}`;
         if (obs.type === 'direction') return `${obs.at}-${obs.to}`;
@@ -4191,6 +4310,9 @@ export class LSAEngine {
       this.log(
         `Residual diagnostics: |t|>2=${over2}, |t|>3=${over3}, localFail=${localFailCount}, lowRedund(<0.2)=${lowRedundancyCount}.`,
       );
+    }
+    if (this.preanalysisMode) {
+      this.log('Preanalysis statistics: using a-priori variance factor 1.0 and skipping residual-based diagnostics.');
     }
 
     const summary: Record<
@@ -5224,7 +5346,10 @@ export class LSAEngine {
     }
     const autoSideshotEnabled =
       this.parseState?.autoSideshotEnabled ?? this.parseOptions?.autoSideshotEnabled ?? true;
-    if (autoSideshotEnabled) {
+    if (this.preanalysisMode) {
+      this.autoSideshotDiagnostics = undefined;
+      this.logs.push('Auto-sideshot detection (M-lines): disabled in preanalysis mode');
+    } else if (autoSideshotEnabled) {
       if (!this.autoSideshotDiagnostics) {
         this.autoSideshotDiagnostics = this.computeAutoSideshotDiagnostics();
         this.logs.push(
@@ -5267,6 +5392,7 @@ export class LSAEngine {
       logs: this.logs,
       seuw: this.seuw,
       dof: this.dof,
+      preanalysisMode: this.preanalysisMode,
       parseState: this.parseState,
       condition: this.condition,
       controlConstraints: this.controlConstraints,

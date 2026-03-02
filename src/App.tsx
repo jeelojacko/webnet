@@ -275,6 +275,8 @@ type ProjectOptionsTab =
 type RunDiagnostics = {
   solveProfile: SolveProfile;
   parity: boolean;
+  preanalysisMode: boolean;
+  plannedObservationCount: number;
   autoSideshotEnabled: boolean;
   autoAdjustEnabled: boolean;
   autoAdjustMaxCycles: number;
@@ -339,6 +341,7 @@ type RunDiagnostics = {
 type ParseSettings = {
   solveProfile: SolveProfile;
   coordMode: CoordMode;
+  preanalysisMode: boolean;
   clusterDetectionEnabled: boolean;
   autoSideshotEnabled: boolean;
   autoAdjustEnabled: boolean;
@@ -407,6 +410,8 @@ const SETTINGS_TOOLTIPS = {
   maxIterations: 'Maximum least-squares iterations before the run stops if convergence is slow.',
   coordMode:
     '2D adjusts horizontal coordinates only. 3D also adjusts heights and uses vertical observations.',
+  preanalysisMode:
+    'Preanalysis resolves planned observations from approximate geometry and reports predicted precision without residual-based QC.',
   clusterDetection:
     'Enable or disable post-adjust cluster detection diagnostics/workflow. When OFF, cluster candidates and review/merge workflow are hidden.',
   autoSideshot:
@@ -555,6 +560,7 @@ const App: React.FC = () => {
   const [parseSettings, setParseSettings] = useState<ParseSettings>({
     solveProfile: 'industry-parity',
     coordMode: '3D',
+    preanalysisMode: false,
     clusterDetectionEnabled: false,
     autoSideshotEnabled: true,
     autoAdjustEnabled: false,
@@ -869,7 +875,7 @@ const App: React.FC = () => {
 
   const resolveProfileContext = (base: ParseSettings) => {
     const parity = base.solveProfile === 'industry-parity';
-    const effectiveParse = parity
+    const parityParse = parity
       ? {
           ...base,
           robustMode: 'none' as RobustMode,
@@ -877,6 +883,13 @@ const App: React.FC = () => {
           tsCorrelationRho: 0,
         }
       : base;
+    const effectiveParse = base.preanalysisMode
+      ? {
+          ...parityParse,
+          robustMode: 'none' as RobustMode,
+          autoAdjustEnabled: false,
+        }
+      : parityParse;
     const directionSetMode = parity ? 'raw' : 'reduced';
     const effectiveInstrumentLibrary = parity
       ? { ...projectInstruments, [INDUSTRY_DEFAULT_INSTRUMENT_CODE]: INDUSTRY_DEFAULT_INSTRUMENT }
@@ -1008,6 +1021,8 @@ const App: React.FC = () => {
     return {
       solveProfile: base.solveProfile,
       parity: profileCtx.parity,
+      preanalysisMode: parseState.preanalysisMode ?? profileCtx.effectiveParse.preanalysisMode,
+      plannedObservationCount: parseState.plannedObservationCount ?? 0,
       autoSideshotEnabled: parseState.autoSideshotEnabled ?? base.autoSideshotEnabled,
       autoAdjustEnabled: parseState.autoAdjustEnabled ?? base.autoAdjustEnabled,
       autoAdjustMaxCycles: parseState.autoAdjustMaxCycles ?? base.autoAdjustMaxCycles,
@@ -1130,7 +1145,7 @@ const App: React.FC = () => {
     lines.push(`# Generated: ${now.toLocaleString()}`);
     lines.push(`# Linear units: ${linearUnit}`);
     lines.push(
-      `# Reduction: profile=${runDiag.solveProfile}, autoSideshot=${runDiag.autoSideshotEnabled ? 'ON' : 'OFF'}, autoAdjust=${runDiag.autoAdjustEnabled ? 'ON' : 'OFF'}(|t|>=${runDiag.autoAdjustStdResThreshold.toFixed(2)},cycles=${runDiag.autoAdjustMaxCycles},maxRm=${runDiag.autoAdjustMaxRemovalsPerCycle}), dirSets=${runDiag.directionSetMode}, mapMode=${runDiag.mapMode}, mapScale=${runDiag.mapScaleFactor.toFixed(8)}, crsScale=${runDiag.crsGridScaleEnabled ? `ON(${runDiag.crsGridScaleFactor.toFixed(8)})` : 'OFF'}, crsConv=${runDiag.crsConvergenceEnabled ? `ON(${(runDiag.crsConvergenceAngleRad * RAD_TO_DEG).toFixed(6)}deg)` : 'OFF'}, geoid=${runDiag.geoidModelEnabled ? `ON(${runDiag.geoidModelId},${runDiag.geoidInterpolation.toUpperCase()})` : 'OFF'}, geoidH=${runDiag.geoidHeightConversionEnabled ? `ON(${runDiag.geoidOutputHeightDatum.toUpperCase()},conv=${runDiag.geoidConvertedStationCount},skip=${runDiag.geoidSkippedStationCount})` : 'OFF'}, gpsLoop=${runDiag.gpsLoopCheckEnabled ? 'ON' : 'OFF'}, gpsAddHiHt=${runDiag.gpsAddHiHtEnabled ? `ON(HI=${(runDiag.gpsAddHiHtHiM * unitScale).toFixed(4)}${linearUnit},HT=${(runDiag.gpsAddHiHtHtM * unitScale).toFixed(4)}${linearUnit})` : 'OFF'}, curvRef=${runDiag.applyCurvatureRefraction ? 'ON' : 'OFF'}, k=${runDiag.refractionCoefficient.toFixed(3)}, vRed=${runDiag.verticalReduction}, qfixLin=${(runDiag.qFixLinearSigmaM * unitScale).toExponential(6)}${linearUnit}, qfixAng=${runDiag.qFixAngularSigmaSec.toExponential(6)}sec, prism=${runDiag.prismEnabled ? `ON(${runDiag.prismOffset.toFixed(4)}m,${runDiag.prismScope})` : 'OFF'}, rotation=${(runDiag.rotationAngleRad * RAD_TO_DEG).toFixed(6)}deg, tsCorr=${runDiag.tsCorrelationEnabled ? 'ON' : 'OFF'}(${runDiag.tsCorrelationScope},rho=${runDiag.tsCorrelationRho.toFixed(3)}), robust=${runDiag.robustMode.toUpperCase()}(k=${runDiag.robustK.toFixed(2)})`,
+      `# Reduction: profile=${runDiag.solveProfile}, runMode=${runDiag.preanalysisMode ? `PREANALYSIS(planned=${runDiag.plannedObservationCount})` : 'ADJUSTMENT'}, autoSideshot=${runDiag.autoSideshotEnabled ? 'ON' : 'OFF'}, autoAdjust=${runDiag.autoAdjustEnabled ? 'ON' : 'OFF'}(|t|>=${runDiag.autoAdjustStdResThreshold.toFixed(2)},cycles=${runDiag.autoAdjustMaxCycles},maxRm=${runDiag.autoAdjustMaxRemovalsPerCycle}), dirSets=${runDiag.directionSetMode}, mapMode=${runDiag.mapMode}, mapScale=${runDiag.mapScaleFactor.toFixed(8)}, crsScale=${runDiag.crsGridScaleEnabled ? `ON(${runDiag.crsGridScaleFactor.toFixed(8)})` : 'OFF'}, crsConv=${runDiag.crsConvergenceEnabled ? `ON(${(runDiag.crsConvergenceAngleRad * RAD_TO_DEG).toFixed(6)}deg)` : 'OFF'}, geoid=${runDiag.geoidModelEnabled ? `ON(${runDiag.geoidModelId},${runDiag.geoidInterpolation.toUpperCase()})` : 'OFF'}, geoidH=${runDiag.geoidHeightConversionEnabled ? `ON(${runDiag.geoidOutputHeightDatum.toUpperCase()},conv=${runDiag.geoidConvertedStationCount},skip=${runDiag.geoidSkippedStationCount})` : 'OFF'}, gpsLoop=${runDiag.gpsLoopCheckEnabled ? 'ON' : 'OFF'}, gpsAddHiHt=${runDiag.gpsAddHiHtEnabled ? `ON(HI=${(runDiag.gpsAddHiHtHiM * unitScale).toFixed(4)}${linearUnit},HT=${(runDiag.gpsAddHiHtHtM * unitScale).toFixed(4)}${linearUnit})` : 'OFF'}, curvRef=${runDiag.applyCurvatureRefraction ? 'ON' : 'OFF'}, k=${runDiag.refractionCoefficient.toFixed(3)}, vRed=${runDiag.verticalReduction}, qfixLin=${(runDiag.qFixLinearSigmaM * unitScale).toExponential(6)}${linearUnit}, qfixAng=${runDiag.qFixAngularSigmaSec.toExponential(6)}sec, prism=${runDiag.prismEnabled ? `ON(${runDiag.prismOffset.toFixed(4)}m,${runDiag.prismScope})` : 'OFF'}, rotation=${(runDiag.rotationAngleRad * RAD_TO_DEG).toFixed(6)}deg, tsCorr=${runDiag.tsCorrelationEnabled ? 'ON' : 'OFF'}(${runDiag.tsCorrelationScope},rho=${runDiag.tsCorrelationRho.toFixed(3)}), robust=${runDiag.robustMode.toUpperCase()}(k=${runDiag.robustK.toFixed(2)})`,
     );
     lines.push(
       `# Parity: profileFallback=${runDiag.profileDefaultInstrumentFallback ? 'ON' : 'OFF'}, angleCentering=${runDiag.angleCenteringModel}, normalize=${runDiag.normalize ? 'ON' : 'OFF'}, angleMode=${runDiag.angleMode.toUpperCase()}`,
@@ -1138,6 +1153,9 @@ const App: React.FC = () => {
     lines.push('');
     lines.push('--- Solve Profile Diagnostics ---');
     lines.push(`Profile: ${runDiag.solveProfile.toUpperCase()}`);
+    lines.push(
+      `Run mode: ${runDiag.preanalysisMode ? `PREANALYSIS (planned observations=${runDiag.plannedObservationCount})` : 'ADJUSTMENT'}`,
+    );
     lines.push(`Direction-set mode: ${runDiag.directionSetMode}`);
     lines.push(`Auto-sideshot detection: ${runDiag.autoSideshotEnabled ? 'ON' : 'OFF'}`);
     lines.push(
@@ -3244,6 +3262,7 @@ const App: React.FC = () => {
       parseOptions: {
         units: settings.units,
         coordMode: effectiveParse.coordMode,
+        preanalysisMode: effectiveParse.preanalysisMode,
         order: effectiveParse.order,
         angleUnits: effectiveParse.angleUnits,
         angleStationOrder: effectiveParse.angleStationOrder,
@@ -3388,13 +3407,23 @@ const App: React.FC = () => {
     approvedClusterMerges: ClusterApprovedMerge[] = activeClusterApprovedMerges,
   ): AdjustmentResult => {
     const solved = solveCore(excludeSet, undefined, overrideValues, approvedClusterMerges);
+    const profileCtx = resolveProfileContext(parseSettings);
+    if (profileCtx.effectiveParse.preanalysisMode) {
+      solved.suspectImpactDiagnostics = undefined;
+      solved.robustComparison = {
+        enabled: false,
+        classicalTop: [],
+        robustTop: [],
+        overlapCount: 0,
+      };
+      return solved;
+    }
     solved.suspectImpactDiagnostics = buildSuspectImpactDiagnostics(
       solved,
       excludeSet,
       overrideValues,
       approvedClusterMerges,
     );
-    const profileCtx = resolveProfileContext(parseSettings);
     if (profileCtx.effectiveParse.robustMode !== 'none') {
       const classical = solveCore(
         excludeSet,
@@ -3462,7 +3491,10 @@ const App: React.FC = () => {
 
     const inlineAutoAdjust = extractAutoAdjustDirectiveFromInput(input);
     const autoAdjustConfig: AutoAdjustConfig = {
-      enabled: inlineAutoAdjust?.enabled ?? parseSettings.autoAdjustEnabled,
+      enabled:
+        parseSettings.preanalysisMode === true
+          ? false
+          : inlineAutoAdjust?.enabled ?? parseSettings.autoAdjustEnabled,
       maxCycles: inlineAutoAdjust?.maxCycles ?? parseSettings.autoAdjustMaxCycles,
       maxRemovalsPerCycle:
         inlineAutoAdjust?.maxRemovalsPerCycle ?? parseSettings.autoAdjustMaxRemovalsPerCycle,
@@ -3516,6 +3548,11 @@ const App: React.FC = () => {
     if (runProfile.parity) {
       solved.logs.unshift(
         'Solve profile: Industry Standard parity (raw directions, classical weighting, industry default instrument fallback).',
+      );
+    }
+    if (runProfile.preanalysisMode) {
+      solved.logs.unshift(
+        `Run mode: preanalysis (planned observations=${runProfile.plannedObservationCount}, residual-based QC disabled).`,
       );
     }
     if (
@@ -3920,7 +3957,22 @@ const App: React.FC = () => {
                         <option value="3D">3D</option>
                       </select>
                     </label>
-                    <div className="grid grid-cols-1 sm:grid-cols-5 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-6 gap-3">
+                      <label className={optionLabelClass}>
+                        Preanalysis
+                        <div className="mt-1 flex items-center gap-2 text-xs">
+                          <input
+                            title={SETTINGS_TOOLTIPS.preanalysisMode}
+                            type="checkbox"
+                            className="accent-blue-400"
+                            checked={parseSettingsDraft.preanalysisMode}
+                            onChange={(e) =>
+                              handleDraftParseSetting('preanalysisMode', e.target.checked)
+                            }
+                          />
+                          <span>{parseSettingsDraft.preanalysisMode ? 'Enabled' : 'Disabled'}</span>
+                        </div>
+                      </label>
                       <label className={optionLabelClass}>
                         Cluster Detection
                         <div className="mt-1 flex items-center gap-2 text-xs">
@@ -3991,6 +4043,7 @@ const App: React.FC = () => {
                             type="checkbox"
                             className="accent-blue-400"
                             checked={parseSettingsDraft.autoAdjustEnabled}
+                            disabled={parseSettingsDraft.preanalysisMode}
                             onChange={(e) =>
                               handleDraftParseSetting('autoAdjustEnabled', e.target.checked)
                             }
@@ -4009,7 +4062,9 @@ const App: React.FC = () => {
                           max={20}
                           step={0.1}
                           value={parseSettingsDraft.autoAdjustStdResThreshold}
-                          disabled={!parseSettingsDraft.autoAdjustEnabled}
+                          disabled={
+                            parseSettingsDraft.preanalysisMode || !parseSettingsDraft.autoAdjustEnabled
+                          }
                           onChange={(e) =>
                             handleDraftParseSetting(
                               'autoAdjustStdResThreshold',
@@ -4030,7 +4085,9 @@ const App: React.FC = () => {
                           max={20}
                           step={1}
                           value={parseSettingsDraft.autoAdjustMaxCycles}
-                          disabled={!parseSettingsDraft.autoAdjustEnabled}
+                          disabled={
+                            parseSettingsDraft.preanalysisMode || !parseSettingsDraft.autoAdjustEnabled
+                          }
                           onChange={(e) =>
                             handleDraftParseSetting(
                               'autoAdjustMaxCycles',
@@ -4051,7 +4108,9 @@ const App: React.FC = () => {
                           max={10}
                           step={1}
                           value={parseSettingsDraft.autoAdjustMaxRemovalsPerCycle}
-                          disabled={!parseSettingsDraft.autoAdjustEnabled}
+                          disabled={
+                            parseSettingsDraft.preanalysisMode || !parseSettingsDraft.autoAdjustEnabled
+                          }
                           onChange={(e) =>
                             handleDraftParseSetting(
                               'autoAdjustMaxRemovalsPerCycle',
@@ -5177,7 +5236,7 @@ const App: React.FC = () => {
                       <select
                         title={SETTINGS_TOOLTIPS.tsCorrelationScope}
                         value={parseSettingsDraft.tsCorrelationScope}
-                        disabled={parityProfileActive}
+                        disabled={parityProfileActive || parseSettingsDraft.preanalysisMode}
                         onChange={(e) =>
                           handleDraftParseSetting(
                             'tsCorrelationScope',
@@ -5199,7 +5258,7 @@ const App: React.FC = () => {
                         max={0.95}
                         step={0.01}
                         value={parseSettingsDraft.tsCorrelationRho}
-                        disabled={parityProfileActive}
+                        disabled={parityProfileActive || parseSettingsDraft.preanalysisMode}
                         onChange={(e) =>
                           handleDraftParseSetting(
                             'tsCorrelationRho',

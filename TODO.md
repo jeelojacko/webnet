@@ -170,6 +170,12 @@
       - [x] Phase 1: add Node CLI wrapper to run parser/engine headlessly with input/profile/options arguments
       - [x] Phase 2: expose machine-readable and listing-style outputs (text/json) with deterministic exit codes
       - [x] Phase 3: add auto-adjust CLI flags, docs, and CI smoke tests for batch execution workflows
+    - [ ] Add preanalysis / network-planning mode for predicted precision and ellipse review
+      - [x] Phase 1: add a dedicated preanalysis run mode plus planned-observation parsing/state so observations can be declared without measured values and resolved from approximate coordinates
+      - [x] Phase 2: reuse the current adjustment row-building path to generate dummy observation values from approximate geometry (`L = 0`), keep needed nuisance/orientation unknowns, and build `A`/`P` without residual-driven iteration
+      - [ ] Phase 3: compute preanalysis covariance with a-priori unit variance (`sigma0^2 = 1`) and expose station covariance blocks plus relative covariance blocks for connected station pairs without relying on residual-based QC
+      - [ ] Phase 4: render predicted station standard deviations, station error ellipses, relative error ellipses, and weak-geometry cues in report/map/output views, with residual-based checks disabled in preanalysis mode
+      - [ ] Phase 5: add what-if planning UX for adding/removing planned observations and comparing predicted precision changes, plus CLI/docs/examples/fixture coverage for preanalysis workflows
   - [ ] GPS improvements (highest impact -> lowest):
   - [~] Add full coordinate-system/geodetic engine integration (project CRS selection, grid-ground factors, convergence reporting)
       - [x] Phase 1: add CRS selection/state model and projection abstraction for input/output transformations

@@ -1311,6 +1311,39 @@ describe('LSAEngine', () => {
     expect(result.stations.U.y).toBeCloseTo(80, 6);
   });
 
+  it('runs preanalysis from planned observations and skips residual-based QC outputs', () => {
+    const input = [
+      '.2D',
+      'C A 0 0 0 ! !',
+      'C B 100 0 0 ! !',
+      'C P 60 40 0',
+      'D A-P ? 0.003',
+      'D B-P ? 0.003',
+      'A P-A-B ? 1.0',
+    ].join('\n');
+
+    const result = new LSAEngine({
+      input,
+      maxIterations: 6,
+      parseOptions: { preanalysisMode: true, coordMode: '2D' },
+    }).solve();
+
+    expect(result.success).toBe(true);
+    expect(result.preanalysisMode).toBe(true);
+    expect(result.parseState?.preanalysisMode).toBe(true);
+    expect(result.parseState?.plannedObservationCount).toBe(3);
+    expect(result.seuw).toBeCloseTo(1, 12);
+    expect(result.chiSquare).toBeUndefined();
+    expect(result.residualDiagnostics).toBeUndefined();
+    expect(result.robustDiagnostics).toBeUndefined();
+    expect(result.autoSideshotDiagnostics).toBeUndefined();
+    expect(result.logs.some((l) => l.includes('Preanalysis mode'))).toBe(true);
+    expect(result.logs.some((l) => l.includes('skipping residual-based diagnostics'))).toBe(true);
+    expect(result.observations.every((obs) => Math.abs((obs.stdRes ?? 0)) < 1e-9)).toBe(true);
+    expect((result.stations.P.sE ?? 0) > 0).toBe(true);
+    expect((result.stations.P.sN ?? 0) > 0).toBe(true);
+  });
+
   it('computes post-adjusted sideshot coordinates/precision when azimuth reference exists', () => {
     const input = readFileSync('tests/fixtures/sideshot_postadjust_known.dat', 'utf-8');
     const engine = new LSAEngine({ input, maxIterations: 10 });
