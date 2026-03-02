@@ -5,7 +5,15 @@ import {
   loadBuiltinGeoidGridModel,
 } from './geoid';
 import type { GeoidGridModel } from './geoid';
-import { inv, multiply, transpose, zeros } from './matrix';
+import {
+  invertSPDFromCholesky,
+  choleskyDecomposeWithDamping,
+  inv,
+  multiply,
+  solveSPDFromCholesky,
+  transpose,
+  zeros,
+} from './matrix';
 import { parseInput } from './parse';
 import type {
   AdjustmentResult,
@@ -233,6 +241,115 @@ export class LSAEngine {
   private controlConstraints?: AdjustmentResult['controlConstraints'];
   private parseState?: ParseOptions;
   private conditionWarned = false;
+
+  private matrixIsFinite(m: number[][]): boolean {
+    return m.every((row) => row.every((value) => Number.isFinite(value)));
+  }
+
+  private scaleNormalMatrix(N: number[][]): { scaled: number[][]; scale: number[] } {
+    const scale = N.map((row, i) => {
+      const diag = Math.abs(row[i] ?? 0);
+      return diag > 1e-30 && Number.isFinite(diag) ? 1 / Math.sqrt(diag) : 1;
+    });
+    const scaled = N.map((row, i) =>
+      row.map((value, j) => value * scale[i] * scale[j]),
+    );
+    return { scaled, scale };
+  }
+
+  private scaleNormalRhs(U: number[][], scale: number[]): number[][] {
+    return U.map((row, i) => row.map((value) => value * scale[i]));
+  }
+
+  private unscaleNormalSolution(solution: number[][], scale: number[]): number[][] {
+    return solution.map((row, i) => row.map((value) => value * scale[i]));
+  }
+
+  private unscaleNormalInverse(inverse: number[][], scale: number[]): number[][] {
+    return inverse.map((row, i) => row.map((value, j) => value * scale[i] * scale[j]));
+  }
+
+  private recoverUndampedInverse(
+    scaledN: number[][],
+    scale: number[],
+    fallbackInverse: number[][],
+    context: string,
+  ): number[][] {
+    try {
+      const exactScaledInverse = inv(scaledN);
+      this.log(
+        `Warning: ${context} used dense inversion on the scaled undamped normal matrix to avoid damping bias in covariance output.`,
+      );
+      return this.unscaleNormalInverse(exactScaledInverse, scale);
+    } catch (error) {
+      const detail = error instanceof Error ? ` ${error.message}` : '';
+      this.log(
+        `Warning: ${context} could not recover the undamped covariance after regularization; using damped covariance instead.${detail}`,
+      );
+      return this.unscaleNormalInverse(fallbackInverse, scale);
+    }
+  }
+
+  private solveNormalEquations(
+    N: number[][],
+    U: number[][],
+  ): { correction: number[][]; qxx: number[][] } {
+    const scaled = this.scaleNormalMatrix(N);
+    const scaledU = this.scaleNormalRhs(U, scaled.scale);
+    const factorization = choleskyDecomposeWithDamping(scaled.scaled);
+    if (factorization.damping > 0) {
+      this.log(
+        `Warning: normal-equation factorization required diagonal damping (lambda=${factorization.damping.toExponential(
+          3,
+        )}, attempts=${factorization.attempts}).`,
+      );
+    }
+    const scaledCorrection = solveSPDFromCholesky(factorization.factor, scaledU);
+    const scaledQxx = invertSPDFromCholesky(factorization.factor);
+    const correction = this.unscaleNormalSolution(scaledCorrection, scaled.scale);
+    const qxx =
+      factorization.damping > 0
+        ? this.recoverUndampedInverse(
+            scaled.scaled,
+            scaled.scale,
+            scaledQxx,
+            'Normal-equation covariance recovery',
+          )
+        : this.unscaleNormalInverse(scaledQxx, scaled.scale);
+    if (!this.matrixIsFinite(correction) || !this.matrixIsFinite(qxx)) {
+      throw new Error('Non-finite values encountered after normal-equation regularization.');
+    }
+    return {
+      correction,
+      qxx,
+    };
+  }
+
+  private invertNormalMatrixForStats(N: number[][]): number[][] {
+    const scaled = this.scaleNormalMatrix(N);
+    const factorization = choleskyDecomposeWithDamping(scaled.scaled);
+    if (factorization.damping > 0) {
+      this.log(
+        `Warning: covariance factorization required diagonal damping (lambda=${factorization.damping.toExponential(
+          3,
+        )}, attempts=${factorization.attempts}).`,
+      );
+    }
+    const scaledQxx = invertSPDFromCholesky(factorization.factor);
+    const qxx =
+      factorization.damping > 0
+        ? this.recoverUndampedInverse(
+            scaled.scaled,
+            scaled.scale,
+            scaledQxx,
+            'Standardized-residual covariance recovery',
+          )
+        : this.unscaleNormalInverse(scaledQxx, scaled.scale);
+    if (!this.matrixIsFinite(qxx)) {
+      throw new Error('Non-finite covariance values encountered after regularization.');
+    }
+    return qxx;
+  }
 
   private getInstrument(obs: Observation): Instrument | undefined {
     if (!obs.instCode) return undefined;
@@ -1658,13 +1775,19 @@ export class LSAEngine {
   }
 
   private redundancyScalar(obs: Observation): number | undefined {
+    const normalize = (value: number | undefined): number | undefined => {
+      if (!Number.isFinite(value)) return undefined;
+      if (value! < -1e-9 || value! > 1 + 1e-9) return undefined;
+      return Math.max(0, Math.min(1, value!));
+    };
+
     if (typeof obs.redundancy === 'number') {
-      return Number.isFinite(obs.redundancy) ? obs.redundancy : undefined;
+      return normalize(obs.redundancy);
     }
     if (obs.redundancy && typeof obs.redundancy === 'object') {
-      const rE = obs.redundancy.rE;
-      const rN = obs.redundancy.rN;
-      if (Number.isFinite(rE) && Number.isFinite(rN)) return Math.min(rE, rN);
+      const rE = normalize(obs.redundancy.rE);
+      const rN = normalize(obs.redundancy.rN);
+      if (rE != null && rN != null) return Math.min(rE, rN);
     }
     return undefined;
   }
@@ -2750,9 +2873,9 @@ export class LSAEngine {
           this.conditionWarned = true;
         }
         const U = multiply(ATP, L);
-        const N_inv = inv(N);
-        const X = multiply(N_inv, U);
-        this.Qxx = N_inv;
+        const normalSolution = this.solveNormalEquations(N, U);
+        const X = normalSolution.correction;
+        this.Qxx = normalSolution.qxx;
 
         if (this.debug) {
           const AX = multiply(A, X);
@@ -2822,8 +2945,9 @@ export class LSAEngine {
           this.converged = true;
           break;
         }
-      } catch {
-        this.log('Matrix Inversion Failed (Singular).');
+      } catch (error) {
+        const detail = error instanceof Error ? ` ${error.message}` : '';
+        this.log(`Normal equation solve failed (singular or otherwise unstable).${detail}`);
         this.calculateStatistics(this.paramIndex, false);
         return this.buildResult();
       }
@@ -3634,7 +3758,7 @@ export class LSAEngine {
         try {
           const AT = transpose(A);
           const N = multiply(multiply(AT, P), A);
-          const QxxStats = inv(N);
+          const QxxStats = this.invertNormalMatrixForStats(N);
           const B = multiply(A, QxxStats);
           const rowStats = new Map<
             number,
@@ -3711,8 +3835,11 @@ export class LSAEngine {
               obs.mdb = entry.mdb[0];
             }
           });
-        } catch {
-          this.log('Warning: Standardized residuals not computed (Qvv inversion failed).');
+        } catch (error) {
+          const detail = error instanceof Error ? ` ${error.message}` : '';
+          this.log(
+            `Warning: standardized residuals not computed (normal matrix factorization failed).${detail}`,
+          );
         }
       }
     }

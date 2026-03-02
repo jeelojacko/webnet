@@ -1,5 +1,15 @@
 import { describe, expect, it } from 'vitest'
-import { inv, multiply, transpose, zeros } from '../src/engine/matrix'
+import {
+  choleskyDecompose,
+  choleskyDecomposeWithDamping,
+  inv,
+  invertSPDCholesky,
+  multiply,
+  solveSPDCholesky,
+  solveSPDWithDamping,
+  transpose,
+  zeros,
+} from '../src/engine/matrix'
 
 describe('matrix helpers', () => {
   it('creates zeros of given size', () => {
@@ -47,5 +57,69 @@ describe('matrix helpers', () => {
     expect(invM[0][1]).toBeCloseTo(-0.7)
     expect(invM[1][0]).toBeCloseTo(-0.2)
     expect(invM[1][1]).toBeCloseTo(0.4)
+  })
+
+  it('decomposes an SPD matrix with Cholesky', () => {
+    const l = choleskyDecompose([
+      [4, 2],
+      [2, 3],
+    ])
+    expect(l[0][0]).toBeCloseTo(2)
+    expect(l[1][0]).toBeCloseTo(1)
+    expect(l[1][1]).toBeCloseTo(Math.sqrt(2))
+  })
+
+  it('solves an SPD system without explicit inversion', () => {
+    const x = solveSPDCholesky(
+      [
+        [4, 2],
+        [2, 3],
+      ],
+      [
+        [6],
+        [7],
+      ],
+    )
+    expect(x[0][0]).toBeCloseTo(0.5)
+    expect(x[1][0]).toBeCloseTo(2)
+  })
+
+  it('inverts an SPD matrix through Cholesky solves', () => {
+    const invM = invertSPDCholesky([
+      [4, 2],
+      [2, 3],
+    ])
+    expect(invM[0][0]).toBeCloseTo(0.375)
+    expect(invM[0][1]).toBeCloseTo(-0.25)
+    expect(invM[1][0]).toBeCloseTo(-0.25)
+    expect(invM[1][1]).toBeCloseTo(0.5)
+  })
+
+  it('adds diagonal damping when Cholesky sees a non-SPD matrix', () => {
+    const result = choleskyDecomposeWithDamping([
+      [1, 2],
+      [2, 1],
+    ])
+
+    expect(result.damping).toBeGreaterThan(0)
+    expect(result.attempts).toBeGreaterThan(0)
+    expect(result.factor[0][0]).toBeGreaterThan(0)
+  })
+
+  it('solves a regularized system without explicit inversion', () => {
+    const result = solveSPDWithDamping(
+      [
+        [1, 2],
+        [2, 1],
+      ],
+      [
+        [1],
+        [0],
+      ],
+    )
+
+    expect(result.damping).toBeGreaterThan(0)
+    expect(Number.isFinite(result.solution[0][0])).toBe(true)
+    expect(Number.isFinite(result.solution[1][0])).toBe(true)
   })
 })
