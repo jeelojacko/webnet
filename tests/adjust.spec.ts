@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { LSAEngine } from '../src/engine/adjust';
 import { DEG_TO_RAD, SEC_TO_RAD } from '../src/engine/angles';
+import { isPreanalysisWhatIfCandidate } from '../src/engine/preanalysis';
 
 const fixture = readFileSync('tests/fixtures/simple.dat', 'utf-8');
 
@@ -1420,6 +1421,43 @@ describe('LSAEngine', () => {
     expect(result.stationCovariances?.some((row) => row.stationId === '2')).toBe(true);
     expect(result.stationCovariances?.some((row) => row.stationId === '3')).toBe(true);
     expect(result.relativeCovariances?.length ?? 0).toBeGreaterThan(0);
+  });
+
+  it('excludes fixed planned observations from preanalysis what-if candidates', () => {
+    const input = [
+      '.2D',
+      'C 1 51002 101009 ! !',
+      'C 2 51005 101343',
+      'C 3 51328 101291',
+      'C 4 51416 101073',
+      'D 1-2',
+      'D 2-3',
+      'D 3-4',
+      'D 4-1',
+      'D 1-3',
+      'A 2-1-3',
+      'A 3-2-4',
+      'A 4-3-1',
+      'A 1-4-2',
+      'A 1-4-3',
+      'B 1-2 ? !',
+    ].join('\n');
+
+    const result = new LSAEngine({
+      input,
+      maxIterations: 6,
+      parseOptions: { preanalysisMode: true, coordMode: '2D' },
+    }).solve();
+
+    const bearing = result.observations.find((obs) => obs.type === 'bearing');
+    expect(bearing).toBeDefined();
+    expect(bearing?.planned).toBe(true);
+    expect(bearing?.sigmaSource).toBe('fixed');
+    expect(isPreanalysisWhatIfCandidate(bearing!)).toBe(false);
+
+    const candidates = result.observations.filter(isPreanalysisWhatIfCandidate);
+    expect(candidates).toHaveLength(10);
+    expect(candidates.some((obs) => obs.id === bearing?.id)).toBe(false);
   });
 
   it('computes post-adjusted sideshot coordinates/precision when azimuth reference exists', () => {

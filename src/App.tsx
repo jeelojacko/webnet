@@ -30,6 +30,7 @@ import {
 } from './engine/autoAdjust';
 import { buildIndustryStyleListingText } from './engine/industryListing';
 import { importExternalInput } from './engine/opus';
+import { isPreanalysisWhatIfCandidate } from './engine/preanalysis';
 import type {
   AdjustmentResult,
   ClusterApprovedMerge,
@@ -3584,9 +3585,8 @@ const App: React.FC = () => {
     overrideValues: Record<number, ObservationOverride>,
     approvedClusterMerges: ClusterApprovedMerge[],
   ): NonNullable<AdjustmentResult['preanalysisImpactDiagnostics']> => {
-    const allPlannedRows = [...base.observations].filter((obs) => obs.planned === true);
+    const allPlannedRows = [...base.observations].filter(isPreanalysisWhatIfCandidate);
     const plannedRows = allPlannedRows
-      .filter((obs) => obs.planned === true)
       .sort((a, b) => {
         const aActive = baseExclusions.has(a.id) ? 0 : 1;
         const bActive = baseExclusions.has(b.id) ? 0 : 1;

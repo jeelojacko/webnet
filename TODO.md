@@ -11,6 +11,7 @@
 - [x] Consolidate toolbar settings into a dropdown menu
 - [x] Export adjustment results as text + refresh-to-last-run input
 - [x] Input editor comment workflow: line-wise block toggle via `Shift+3` (`#`) on multiline selections plus right-click `Toggle # Comment` action
+- [x] Exclude fixed planned observations from preanalysis what-if candidates so fixed bearing/control planning rows are not presented as removable
 - [x] Match industry-standard centering inflation for slope distances and zeniths using horizontal/vertical centering geometry factors, with fixture-locked reference coverage
 - [x] Fix robust reweighting to use postfit residual IRLS with cheap diagonal/block weight updates
 - [x] GPS Phase 1 foundation: CRS state model + projection abstraction (`LEGACY`/`ENU`) with default-off transform controls in Project Options -> GPS
