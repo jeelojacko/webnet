@@ -165,6 +165,13 @@ interface CoordinateConstraintEquation {
   index: number;
   target: number;
   sigma: number;
+  correlationKey?: string;
+  corrXY?: number;
+}
+
+interface CoordinateConstraintRowPlacement {
+  row: number;
+  constraint: CoordinateConstraintEquation;
 }
 
 type EquationRowInfo = { obs: Observation; component?: 'E' | 'N' } | null;
@@ -1697,6 +1704,21 @@ export class LSAEngine {
     Object.entries(paramIndex).forEach(([stationId, idx]) => {
       const st = this.stations[stationId];
       if (!st) return;
+      const hasCorrelatedXY =
+        idx.x != null &&
+        idx.y != null &&
+        st.sx != null &&
+        st.sy != null &&
+        st.constraintX != null &&
+        st.constraintY != null &&
+        Number.isFinite(st.sx) &&
+        Number.isFinite(st.sy) &&
+        st.sx > 0 &&
+        st.sy > 0 &&
+        Number.isFinite(st.constraintCorrXY ?? Number.NaN) &&
+        Math.abs(st.constraintCorrXY ?? 0) > 1e-12;
+      const correlationKey = hasCorrelatedXY ? `CTRLXY:${stationId}` : undefined;
+      const corrXY = hasCorrelatedXY ? Math.max(-0.999, Math.min(0.999, st.constraintCorrXY ?? 0)) : undefined;
       if (
         idx.x != null &&
         st.sx != null &&
@@ -1710,6 +1732,8 @@ export class LSAEngine {
           index: idx.x,
           target: st.constraintX,
           sigma: st.sx,
+          correlationKey,
+          corrXY,
         });
       }
       if (
@@ -1725,6 +1749,8 @@ export class LSAEngine {
           index: idx.y,
           target: st.constraintY,
           sigma: st.sy,
+          correlationKey,
+          corrXY,
         });
       }
       if (
@@ -1751,7 +1777,117 @@ export class LSAEngine {
     const x = constraints.filter((c) => c.component === 'x').length;
     const y = constraints.filter((c) => c.component === 'y').length;
     const h = constraints.filter((c) => c.component === 'h').length;
-    return { count: constraints.length, x, y, h };
+    const xyCorrelated = new Set(
+      constraints
+        .map((constraint) => constraint.correlationKey)
+        .filter((key): key is string => !!key),
+    ).size;
+    return { count: constraints.length, x, y, h, xyCorrelated };
+  }
+
+  private applyCoordinateConstraintCorrelationWeights(
+    P: number[][],
+    placements: CoordinateConstraintRowPlacement[],
+  ): void {
+    const groups = new Map<
+      string,
+      {
+        corrXY: number;
+        x?: CoordinateConstraintRowPlacement;
+        y?: CoordinateConstraintRowPlacement;
+      }
+    >();
+    placements.forEach((placement) => {
+      const key = placement.constraint.correlationKey;
+      if (!key) return;
+      const corrXY = placement.constraint.corrXY;
+      if (!Number.isFinite(corrXY ?? Number.NaN)) return;
+      const group = groups.get(key) ?? { corrXY: corrXY as number };
+      if (placement.constraint.component === 'x') group.x = placement;
+      if (placement.constraint.component === 'y') group.y = placement;
+      groups.set(key, group);
+    });
+
+    groups.forEach((group) => {
+      if (!group.x || !group.y) return;
+      const sigmaX = group.x.constraint.sigma;
+      const sigmaY = group.y.constraint.sigma;
+      const corr = Math.max(-0.999, Math.min(0.999, group.corrXY));
+      const denom = 1 - corr * corr;
+      if (!Number.isFinite(denom) || denom <= 1e-9) return;
+      const rowX = group.x.row;
+      const rowY = group.y.row;
+      const wXX = 1 / (sigmaX * sigmaX * denom);
+      const wYY = 1 / (sigmaY * sigmaY * denom);
+      const wXY = -corr / (sigmaX * sigmaY * denom);
+      P[rowX][rowX] = wXX;
+      P[rowY][rowY] = wYY;
+      P[rowX][rowY] = wXY;
+      P[rowY][rowX] = wXY;
+    });
+  }
+
+  private coordinateConstraintWeightedSum(constraints: CoordinateConstraintEquation[]): number {
+    let total = 0;
+    const grouped = new Map<
+      string,
+      {
+        corrXY: number;
+        x?: CoordinateConstraintEquation;
+        y?: CoordinateConstraintEquation;
+      }
+    >();
+
+    constraints.forEach((constraint) => {
+      const key = constraint.correlationKey;
+      if (!key) {
+        const st = this.stations[constraint.stationId];
+        if (!st) return;
+        const current =
+          constraint.component === 'x' ? st.x : constraint.component === 'y' ? st.y : st.h;
+        const v = constraint.target - current;
+        total += (v * v) / (constraint.sigma * constraint.sigma);
+        return;
+      }
+      const corrXY = constraint.corrXY;
+      if (!Number.isFinite(corrXY ?? Number.NaN)) return;
+      const group = grouped.get(key) ?? { corrXY: corrXY as number };
+      if (constraint.component === 'x') group.x = constraint;
+      if (constraint.component === 'y') group.y = constraint;
+      grouped.set(key, group);
+    });
+
+    grouped.forEach((group) => {
+      if (!group.x || !group.y) {
+        [group.x, group.y].forEach((constraint) => {
+          if (!constraint) return;
+          const st = this.stations[constraint.stationId];
+          if (!st) return;
+          const current = constraint.component === 'x' ? st.x : st.y;
+          const v = constraint.target - current;
+          total += (v * v) / (constraint.sigma * constraint.sigma);
+        });
+        return;
+      }
+      const st = this.stations[group.x.stationId];
+      if (!st) return;
+      const vX = group.x.target - st.x;
+      const vY = group.y.target - st.y;
+      const corr = Math.max(-0.999, Math.min(0.999, group.corrXY));
+      const denom = 1 - corr * corr;
+      if (!Number.isFinite(denom) || denom <= 1e-9) {
+        total += (vX * vX) / (group.x.sigma * group.x.sigma);
+        total += (vY * vY) / (group.y.sigma * group.y.sigma);
+        return;
+      }
+      total +=
+        ((vX * vX) / (group.x.sigma * group.x.sigma) -
+          (2 * corr * vX * vY) / (group.x.sigma * group.y.sigma) +
+          (vY * vY) / (group.y.sigma * group.y.sigma)) /
+        denom;
+    });
+
+    return total;
   }
 
   private computeSideshotResults(): AdjustmentResult['sideshots'] {
@@ -2638,7 +2774,7 @@ export class LSAEngine {
     this.controlConstraints = this.summarizeConstraints(constraints);
     if (constraints.length) {
       this.log(
-        `Weighted control constraints: ${constraints.length} (E=${this.controlConstraints.x}, N=${this.controlConstraints.y}, H=${this.controlConstraints.h})`,
+        `Weighted control constraints: ${constraints.length} (E=${this.controlConstraints.x}, N=${this.controlConstraints.y}, H=${this.controlConstraints.h}, corrXY=${this.controlConstraints.xyCorrelated ?? 0})`,
       );
     }
     const numParams = stationParamCount + directionSetIds.length; // X, Y (+H) + dir orientations
@@ -3085,6 +3221,7 @@ export class LSAEngine {
         }
       });
 
+      const constraintPlacements: CoordinateConstraintRowPlacement[] = [];
       constraints.forEach((constraint) => {
         const st = this.stations[constraint.stationId];
         if (!st) return;
@@ -3095,8 +3232,10 @@ export class LSAEngine {
         A[row][constraint.index] = 1;
         P[row][row] = 1 / (constraint.sigma * constraint.sigma);
         rowInfo.push(null);
+        constraintPlacements.push({ row, constraint });
         row += 1;
       });
+      this.applyCoordinateConstraintCorrelationWeights(P, constraintPlacements);
 
       this.applyTsCorrelationToWeightMatrix(P, rowInfo);
 
@@ -3611,14 +3750,7 @@ export class LSAEngine {
       }
     });
 
-    constraints.forEach((constraint) => {
-      const st = this.stations[constraint.stationId];
-      if (!st) return;
-      const current =
-        constraint.component === 'x' ? st.x : constraint.component === 'y' ? st.y : st.h;
-      const v = constraint.target - current;
-      vtpv += (v * v) / (constraint.sigma * constraint.sigma);
-    });
+    vtpv += this.coordinateConstraintWeightedSum(constraints);
 
     if (this.tsCorrelationEnabled && this.tsCorrelationRho > 0) {
       const rho = Math.min(0.95, Math.max(0, this.tsCorrelationRho));
@@ -4030,6 +4162,7 @@ export class LSAEngine {
           }
         });
 
+        const constraintPlacements: CoordinateConstraintRowPlacement[] = [];
         constraints.forEach((constraint) => {
           const st = this.stations[constraint.stationId];
           if (!st) return;
@@ -4039,8 +4172,10 @@ export class LSAEngine {
           A[row][constraint.index] = 1;
           P[row][row] = 1.0 / (constraint.sigma * constraint.sigma);
           rowInfo.push(null);
+          constraintPlacements.push({ row, constraint });
           row += 1;
         });
+        this.applyCoordinateConstraintCorrelationWeights(P, constraintPlacements);
 
         this.applyTsCorrelationToWeightMatrix(P, rowInfo, true);
         if (!this.preanalysisMode && this.robustMode === 'huber') {

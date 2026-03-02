@@ -5,6 +5,7 @@ import { importExternalInput, parseOpusReport } from '../src/engine/opus';
 import { parseInput } from '../src/engine/parse';
 
 const fixture = readFileSync('tests/fixtures/opus_rs_sample.txt', 'utf-8');
+const fixtureWithCorrelation = `${fixture}\nE/N CORRELATION: -0.2500\n`;
 
 describe('OPUS import', () => {
   it('parses OPUS-RS report coordinates, sigmas, and metadata', () => {
@@ -31,7 +32,9 @@ describe('OPUS import', () => {
     expect(imported.detected).toBe(true);
     expect(imported.format).toBe('opus-report');
     expect(imported.text).toContain('# Imported from NGS OPUS-RS solution report');
-    expect(imported.text).toContain('PH NOVA0010 44.653429353 -63.582441392 123.4560 0.0080 0.0100 0.0150');
+    expect(imported.text).toContain(
+      'PH NOVA0010 44.653429353 -63.582441392 123.4560 0.0080 0.0100 0.0150 0.0000',
+    );
 
     const parsed = parseInput(imported.text);
     expect(parsed.stations.NOVA0010).toBeDefined();
@@ -42,5 +45,20 @@ describe('OPUS import', () => {
     expect(parsed.stations.NOVA0010.sy).toBeCloseTo(0.008, 6);
     expect(parsed.stations.NOVA0010.sx).toBeCloseTo(0.01, 6);
     expect(parsed.stations.NOVA0010.sh).toBeCloseTo(0.015, 6);
+    expect(parsed.stations.NOVA0010.constraintCorrXY).toBeCloseTo(0, 8);
+  });
+
+  it('carries imported EN correlation into the generated control record', () => {
+    const parsedReport = parseOpusReport(fixtureWithCorrelation, 'opus_rs_corr_sample.txt');
+    expect(parsedReport?.covariance.corrEN).toBeCloseTo(-0.25, 8);
+    expect(parsedReport?.covariance.source).toBe('report-correlation');
+
+    const imported = importExternalInput(fixtureWithCorrelation, 'opus_rs_corr_sample.txt');
+    expect(imported.text).toContain(
+      'PH NOVA0010 44.653429353 -63.582441392 123.4560 0.0080 0.0100 0.0150 -0.2500',
+    );
+
+    const parsed = parseInput(imported.text);
+    expect(parsed.stations.NOVA0010.constraintCorrXY).toBeCloseTo(-0.25, 8);
   });
 });

@@ -125,6 +125,7 @@ export interface Station {
   sx?: number;
   sy?: number;
   sh?: number;
+  constraintCorrXY?: number;
   constraintX?: number;
   constraintY?: number;
   constraintH?: number;
@@ -569,7 +570,7 @@ export interface AdjustmentResult {
   preanalysisMode?: boolean;
   parseState?: ParseOptions;
   condition?: { estimate: number; threshold: number; flagged: boolean };
-  controlConstraints?: { count: number; x: number; y: number; h: number };
+  controlConstraints?: { count: number; x: number; y: number; h: number; xyCorrelated?: number };
   stationCovariances?: StationCovarianceBlock[];
   relativeCovariances?: RelativeCovarianceBlock[];
   weakGeometryDiagnostics?: WeakGeometryDiagnostics;

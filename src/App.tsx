@@ -1304,7 +1304,7 @@ const App: React.FC = () => {
     }
     if (res.controlConstraints) {
       lines.push(
-        `Weighted control constraints: ${res.controlConstraints.count} (E=${res.controlConstraints.x}, N=${res.controlConstraints.y}, H=${res.controlConstraints.h})`,
+        `Weighted control constraints: ${res.controlConstraints.count} (E=${res.controlConstraints.x}, N=${res.controlConstraints.y}, H=${res.controlConstraints.h}, corrXY=${res.controlConstraints.xyCorrelated ?? 0})`,
       );
     }
     if (isPreanalysis) {

@@ -3,7 +3,7 @@ export interface OpusCovarianceSummary {
   sigmaEastM?: number;
   sigmaHeightM?: number;
   corrEN?: number;
-  source: 'report-diagonal' | 'unavailable';
+  source: 'report-diagonal' | 'report-correlation' | 'unavailable';
 }
 
 export interface OpusImportMetadata {
@@ -90,6 +90,14 @@ const parseHeightLine = (line: string | undefined): { value: number; sigmaM?: nu
   };
 };
 
+const parseCorrelationLine = (line: string | undefined): number | undefined => {
+  if (!line) return undefined;
+  const numbers = [...line.matchAll(/[+-]?\d+(?:\.\d+)?/g)].map((match) => Number.parseFloat(match[0]));
+  const value = numbers.find((entry) => Number.isFinite(entry) && Math.abs(entry) <= 1);
+  if (!Number.isFinite(value as number)) return undefined;
+  return Math.max(-0.999, Math.min(0.999, value as number));
+};
+
 const sanitizeStationId = (value: string): string => {
   const sanitized = value
     .toUpperCase()
@@ -136,6 +144,13 @@ export const parseOpusReport = (
     input,
     (line) => /\bORTHO\s*HGT\s*:/i.test(line) || /\bORTHOMETRIC\s*HGT\s*:/i.test(line),
   );
+  const corrLine = extractFirstLine(
+    input,
+    (line) =>
+      /\bCORR(?:EL(?:ATION)?)?\b/i.test(line) &&
+      /\bE(?:AST)?\b/i.test(line) &&
+      /\bN(?:ORTH)?\b/i.test(line),
+  );
 
   const lat = parseLatitudeLine(latLine);
   const lon = parseLongitudeLine(lonLine);
@@ -150,6 +165,14 @@ export const parseOpusReport = (
   const solutionType = /OPUS-RS/i.test(input) ? 'opus-rs' : 'opus';
   const epochMatch = referenceFrame?.match(/EPOCH\s*:?\s*([0-9.]+)/i);
   const stationId = deriveStationId(sourceFile, reportFileName);
+  const parsedCorrEN = parseCorrelationLine(corrLine);
+  const corrEN = parsedCorrEN ?? 0;
+  const covarianceSource =
+    parsedCorrEN != null
+      ? 'report-correlation'
+      : lat.sigmaM != null || lon.sigmaM != null
+        ? 'report-diagonal'
+        : 'unavailable';
 
   return {
     stationId,
@@ -165,8 +188,8 @@ export const parseOpusReport = (
       sigmaNorthM: lat.sigmaM,
       sigmaEastM: lon.sigmaM,
       sigmaHeightM: ellipsoid?.sigmaM ?? orthometric?.sigmaM,
-      corrEN: 0,
-      source: lat.sigmaM != null || lon.sigmaM != null ? 'report-diagonal' : 'unavailable',
+      corrEN,
+      source: covarianceSource,
     },
     metadata: {
       sourceFile,
@@ -215,6 +238,7 @@ export const convertOpusReportToWebNetInput = (opus: OpusImportResult): string =
     formatNumber(opus.sigmaNorthM ?? 0, 4),
     formatNumber(opus.sigmaEastM ?? 0, 4),
     formatNumber(sigmaH, 4),
+    formatNumber(opus.covariance.corrEN ?? 0, 4),
   ].join(' ');
 
   return [...comments, stationLine, ''].join('\n');

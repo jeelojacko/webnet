@@ -67,10 +67,12 @@ Directives that control parsing behavior:
 
 ### Stations
 -   **Structure**: `C StationID [North] [East] [Elev] [! ! !]` (Order depends on `.ORDER`)
+    -   Optional trailing numeric token after coordinate standard errors can be used for XY/EN correlation on weighted control (`corrEN` / `corrXY`, range `-0.999 .. 0.999`).
     -   `!`: Fixes the component (use `! !` for 2D, `! ! !` for 3D).
     -   `*`: Free marker when used per-component (e.g. `! * !`).
     -   `*` (lone token): legacy compatibility mode treats it as fixed-all and logs a warning; prefer `!`.
 -   **Weighted Control**: If coordinate/elevation standard errors are provided on control records (and the component is not fixed), WebNet treats them as weighted coordinate constraints in the adjustment.
+-   **Correlated Control**: When both horizontal sigmas are present, an optional trailing correlation token applies correlated XY/EN control weighting.
 -   **Example**: `C MASTER 5000.000 5000.000 100.000 !`
 -   **Auto H Hold**: In 3D mode, if a station has no vertical-sensitive observations (no zenith, leveling, or slope distances), its height is held fixed automatically to avoid singular matrices.
 
@@ -100,6 +102,10 @@ Directives that control parsing behavior:
 -   **G Record**: `G [Inst] [From] [To] dE dN [Std] [StdN] [CorrEN]`
     -   If one sigma value is provided, it is used for both E and N.
     -   Optional `CorrEN` applies EN covariance in the adjustment (`-0.999 .. 0.999`).
+
+### OPUS Import
+- Loading an NGS OPUS/OPUS-RS text report converts it into a WebNet `PH` control record automatically.
+- Imported north/east/height sigmas are carried into weighted control constraints, and optional imported EN correlation is preserved when present in the report-derived covariance summary.
 
 ### Traverses and Directions
 Structured data collection methods:

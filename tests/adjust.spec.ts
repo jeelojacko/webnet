@@ -518,6 +518,34 @@ describe('LSAEngine', () => {
     expect(loopDiag?.loops[0].closureMag ?? 0).toBeGreaterThan(loopDiag?.loops[0].toleranceM ?? 0);
   });
 
+  it('applies correlated XY control constraints when control covariance includes EN correlation', () => {
+    const diagonalInput = [
+      '.2D',
+      'C A 0 0 0 ! !',
+      'C P 0 0 3.0 1.0 0.0',
+      'G GPS A P 10 4 1 2 0',
+    ].join('\n');
+    const correlatedInput = [
+      '.2D',
+      'C A 0 0 0 ! !',
+      'C P 0 0 3.0 1.0 -0.8',
+      'G GPS A P 10 4 1 2 0',
+    ].join('\n');
+
+    const diagonal = new LSAEngine({ input: diagonalInput, maxIterations: 6 }).solve();
+    const correlated = new LSAEngine({ input: correlatedInput, maxIterations: 6 }).solve();
+
+    expect(diagonal.success).toBe(true);
+    expect(correlated.success).toBe(true);
+    expect(diagonal.controlConstraints?.xyCorrelated ?? 0).toBe(0);
+    expect(correlated.controlConstraints?.xyCorrelated).toBe(1);
+    expect(correlated.logs.some((line) => line.includes('corrXY=1'))).toBe(true);
+    expect(correlated.stations.P.x).not.toBeCloseTo(diagonal.stations.P.x, 3);
+    expect(correlated.stations.P.y).not.toBeCloseTo(diagonal.stations.P.y, 3);
+    expect(correlated.stations.P.x).toBeCloseTo(8.6528, 2);
+    expect(correlated.stations.P.y).toBeCloseTo(-1.7880, 2);
+  });
+
   it('handles mixed GPS NETWORK + GPS SIDESHOT vectors with dedicated post-adjust sideshot output', () => {
     const input = readFileSync('tests/fixtures/gps_network_sideshot_phase3.dat', 'utf-8');
     const result = new LSAEngine({ input, maxIterations: 10 }).solve();

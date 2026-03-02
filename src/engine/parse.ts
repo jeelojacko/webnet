@@ -157,6 +157,11 @@ const parseFixityTokens = (
   return { fixities, hasTokens: true, legacyStarFixed: false };
 };
 
+const parseConstraintCorrToken = (value: number | undefined): number | undefined => {
+  if (!Number.isFinite(value as number)) return undefined;
+  return Math.max(-0.999, Math.min(0.999, value as number));
+};
+
 const applyFixities = (
   station: StationMap[string],
   fix: { x?: boolean; y?: boolean; h?: boolean },
@@ -1876,6 +1881,7 @@ export const parseInput = (
         const seN = state.order === 'NE' ? stds[0] : stds[1];
         const seE = state.order === 'NE' ? stds[1] : stds[0];
         const seH = is3D ? stds[2] : undefined;
+        const corrXY = parseConstraintCorrToken(stds[is3D ? 3 : 2]);
         if (!st.fixedX && seE) {
           st.sx = seE * toMeters;
           st.constraintX = st.x;
@@ -1883,6 +1889,9 @@ export const parseInput = (
         if (!st.fixedY && seN) {
           st.sy = seN * toMeters;
           st.constraintY = st.y;
+        }
+        if (!st.fixedX && !st.fixedY && st.sx != null && st.sy != null && corrXY != null) {
+          st.constraintCorrXY = corrXY;
         }
         if (is3D && !st.fixedH && seH) {
           st.sh = seH * toMeters;
@@ -1908,6 +1917,7 @@ export const parseInput = (
         const seN = state.coordMode === '3D' ? (restNumeric[1] ?? 0) : (restNumeric[0] ?? 0);
         const seE = state.coordMode === '3D' ? (restNumeric[2] ?? 0) : (restNumeric[1] ?? 0);
         const seH = state.coordMode === '3D' ? (restNumeric[3] ?? 0) : 0;
+        const corrXY = parseConstraintCorrToken(restNumeric[state.coordMode === '3D' ? 4 : 2]);
         const { fixities, legacyStarFixed } = parseFixityTokens(tokens, coordCount);
         if (legacyStarFixed) {
           logs.push(
@@ -1954,6 +1964,9 @@ export const parseInput = (
         if (!st.fixedX && seE) {
           st.sx = seE * toMeters;
           st.constraintX = st.x;
+        }
+        if (!st.fixedX && !st.fixedY && st.sx != null && st.sy != null && corrXY != null) {
+          st.constraintCorrXY = corrXY;
         }
         if (state.coordMode === '3D' && !st.fixedH && seH) {
           st.sh = seH * toMeters;
@@ -2002,6 +2015,7 @@ export const parseInput = (
         const seN = state.order === 'NE' ? stds[0] : stds[1];
         const seE = state.order === 'NE' ? stds[1] : stds[0];
         const seH = is3D ? stds[2] : undefined;
+        const corrXY = parseConstraintCorrToken(stds[is3D ? 3 : 2]);
         if (!st.fixedX && seE) {
           st.sx = seE * toMeters;
           st.constraintX = st.x;
@@ -2009,6 +2023,9 @@ export const parseInput = (
         if (!st.fixedY && seN) {
           st.sy = seN * toMeters;
           st.constraintY = st.y;
+        }
+        if (!st.fixedX && !st.fixedY && st.sx != null && st.sy != null && corrXY != null) {
+          st.constraintCorrXY = corrXY;
         }
         if (is3D && !st.fixedH && seH) {
           st.sh = seH * toMeters;
@@ -3275,6 +3292,7 @@ export const parseInput = (
       (st.sx == null || Math.abs(st.sx) <= 1e-12) &&
       (st.sy == null || Math.abs(st.sy) <= 1e-12) &&
       (st.sh == null || Math.abs(st.sh) <= 1e-12) &&
+      st.constraintCorrXY == null &&
       st.constraintX == null &&
       st.constraintY == null &&
       st.constraintH == null &&
@@ -3317,6 +3335,9 @@ export const parseInput = (
       if (target.constraintX == null && incoming.constraintX != null) target.constraintX = incoming.constraintX;
       if (target.constraintY == null && incoming.constraintY != null) target.constraintY = incoming.constraintY;
       if (target.constraintH == null && incoming.constraintH != null) target.constraintH = incoming.constraintH;
+      if (target.constraintCorrXY == null && incoming.constraintCorrXY != null) {
+        target.constraintCorrXY = incoming.constraintCorrXY;
+      }
       if (target.heightType == null && incoming.heightType != null) target.heightType = incoming.heightType;
       if (target.latDeg == null && incoming.latDeg != null) target.latDeg = incoming.latDeg;
       if (target.lonDeg == null && incoming.lonDeg != null) target.lonDeg = incoming.lonDeg;

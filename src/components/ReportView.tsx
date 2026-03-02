@@ -910,7 +910,8 @@ const ReportView: React.FC<ReportViewProps> = ({
             {result.controlConstraints && (
               <div className="text-[10px] text-slate-500 mt-1">
                 constraints: {result.controlConstraints.count} (E:{result.controlConstraints.x} N:
-                {result.controlConstraints.y} H:{result.controlConstraints.h})
+                {result.controlConstraints.y} H:{result.controlConstraints.h} corrXY:
+                {result.controlConstraints.xyCorrelated ?? 0})
               </div>
             )}
           </div>
