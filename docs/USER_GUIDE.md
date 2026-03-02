@@ -104,8 +104,9 @@ Directives that control parsing behavior:
     -   Optional `CorrEN` applies EN covariance in the adjustment (`-0.999 .. 0.999`).
 
 ### OPUS Import
-- Loading an NGS OPUS/OPUS-RS text report converts it into a WebNet `PH` control record automatically.
+- Loading an NGS OPUS/OPUS-RS text report converts it into a WebNet `P` or `PH` control record automatically, depending on whether ellipsoid height is available.
 - Imported north/east/height sigmas are carried into weighted control constraints, and optional imported EN correlation is preserved when present in the report-derived covariance summary.
+- After import, the input pane shows a short banner summarizing the imported report type, station ID, target WebNet control record (`P` or `PH`), reference frame, and whether covariance included EN correlation.
 
 ### Traverses and Directions
 Structured data collection methods:

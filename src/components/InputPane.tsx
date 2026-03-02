@@ -5,9 +5,19 @@ import { toggleHashCommentsInSelection } from './commentToggle';
 interface InputPaneProps {
   input: string;
   onChange: (_value: string) => void;
+  importNotice?: {
+    title: string;
+    detailLines: string[];
+  } | null;
+  onClearImportNotice?: () => void;
 }
 
-const InputPane: React.FC<InputPaneProps> = ({ input, onChange }) => {
+const InputPane: React.FC<InputPaneProps> = ({
+  input,
+  onChange,
+  importNotice = null,
+  onClearImportNotice,
+}) => {
   const lineCount = input.split('\n').length;
   const lines = Array.from({ length: lineCount }, (_, i) => i + 1);
   const textareaRef = React.useRef<HTMLTextAreaElement>(null);
@@ -90,6 +100,31 @@ const InputPane: React.FC<InputPaneProps> = ({ input, onChange }) => {
       <div className="bg-slate-800 px-4 py-2 text-xs font-semibold text-slate-400 flex justify-between items-center">
         <span>INPUT DATA (.dat / OPUS)</span> <FileText size={14} />
       </div>
+      {importNotice && (
+        <div className="border-b border-cyan-900/60 bg-cyan-950/30 px-4 py-3 text-[11px] text-cyan-100">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <div className="font-semibold uppercase tracking-wide text-cyan-200">
+                {importNotice.title}
+              </div>
+              {importNotice.detailLines.map((line) => (
+                <div key={line} className="mt-1 text-cyan-100/85">
+                  {line}
+                </div>
+              ))}
+            </div>
+            {onClearImportNotice && (
+              <button
+                type="button"
+                onClick={onClearImportNotice}
+                className="text-[10px] uppercase tracking-wide text-cyan-300 hover:text-white"
+              >
+                Dismiss
+              </button>
+            )}
+          </div>
+        </div>
+      )}
       <div ref={editorWrapRef} className="flex-1 flex overflow-hidden relative">
         <div
           ref={numbersRef}

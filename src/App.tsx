@@ -536,6 +536,10 @@ const PROJECT_OPTION_TABS: Array<{ id: ProjectOptionsTab; label: string }> = [
  ****************************/
 const App: React.FC = () => {
   const [input, setInput] = useState<string>(DEFAULT_INPUT);
+  const [importNotice, setImportNotice] = useState<{
+    title: string;
+    detailLines: string[];
+  } | null>(null);
   const [result, setResult] = useState<AdjustmentResult | null>(null);
   const [runDiagnostics, setRunDiagnostics] = useState<RunDiagnostics | null>(null);
   const [runElapsedMs, setRunElapsedMs] = useState<number | null>(null);
@@ -3379,6 +3383,23 @@ const App: React.FC = () => {
       const text = typeof reader.result === 'string' ? reader.result : '';
       const imported = importExternalInput(text, file.name);
       setInput(imported.text);
+      if (imported.detected && imported.opus) {
+        const opus = imported.opus;
+        const recordType = opus.ellipsoidHeightM != null ? 'PH' : 'P';
+        const covarianceLabel =
+          opus.covariance.source === 'report-correlation'
+            ? `corrEN=${(opus.covariance.corrEN ?? 0).toFixed(4)}`
+            : 'diagonal-only';
+        setImportNotice({
+          title: `Imported ${opus.metadata.solutionType.toUpperCase()} report`,
+          detailLines: [
+            `Station ${opus.stationId} converted to ${recordType} control input from ${file.name}.`,
+            `Reference frame: ${opus.metadata.referenceFrame ?? 'n/a'}. Covariance: ${covarianceLabel}.`,
+          ],
+        });
+      } else {
+        setImportNotice(null);
+      }
       setExcludedIds(new Set());
       setOverrides({});
       setClusterReviewDecisions({});
@@ -3390,6 +3411,11 @@ const App: React.FC = () => {
 
   const triggerFileSelect = () => {
     fileInputRef.current?.click();
+  };
+
+  const handleInputChange = (value: string) => {
+    setInput(value);
+    if (importNotice) setImportNotice(null);
   };
 
   const solveCore = (
@@ -5623,7 +5649,12 @@ const App: React.FC = () => {
         {isSidebarOpen && (
           <>
             <div style={{ width: `${splitPercent}%` }}>
-              <InputPane input={input} onChange={setInput} />
+              <InputPane
+                input={input}
+                onChange={handleInputChange}
+                importNotice={importNotice}
+                onClearImportNotice={() => setImportNotice(null)}
+              />
             </div>
             <div
               onMouseDown={handleDividerMouseDown}

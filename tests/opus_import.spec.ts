@@ -6,6 +6,7 @@ import { parseInput } from '../src/engine/parse';
 
 const fixture = readFileSync('tests/fixtures/opus_rs_sample.txt', 'utf-8');
 const fixtureWithCorrelation = `${fixture}\nE/N CORRELATION: -0.2500\n`;
+const opusFixture = readFileSync('tests/fixtures/opus_sample.txt', 'utf-8');
 
 describe('OPUS import', () => {
   it('parses OPUS-RS report coordinates, sigmas, and metadata', () => {
@@ -60,5 +61,29 @@ describe('OPUS import', () => {
 
     const parsed = parseInput(imported.text);
     expect(parsed.stations.NOVA0010.constraintCorrXY).toBeCloseTo(-0.25, 8);
+  });
+
+  it('supports representative non-RS OPUS reports and converts orthometric-only control into P records', () => {
+    const parsed = parseOpusReport(opusFixture, 'opus_sample.txt');
+    expect(parsed).not.toBeNull();
+    expect(parsed?.stationId).toBe('ALPHA123');
+    expect(parsed?.metadata.solutionType).toBe('opus');
+    expect(parsed?.metadata.referenceFrame).toContain('ITRF2020');
+    expect(parsed?.latitudeDeg).toBeCloseTo(35.2096021917, 9);
+    expect(parsed?.longitudeDeg).toBeCloseTo(-80.7534293528, 9);
+    expect(parsed?.ellipsoidHeightM).toBeUndefined();
+    expect(parsed?.orthometricHeightM).toBeCloseTo(250.123, 6);
+    expect(parsed?.sigmaOrthometricHeightM).toBeCloseTo(0.021, 6);
+    expect(parsed?.covariance.corrEN).toBeCloseTo(0.125, 8);
+
+    const imported = importExternalInput(opusFixture, 'opus_sample.txt');
+    expect(imported.summary).toContain('Imported OPUS report as ALPHA123');
+    expect(imported.text).toContain(
+      'P ALPHA123 35.209602192 -80.753429353 250.1230 0.0120 0.0140 0.0210 0.1250',
+    );
+
+    const parsedInput = parseInput(imported.text);
+    expect(parsedInput.stations.ALPHA123.heightType).toBe('orthometric');
+    expect(parsedInput.stations.ALPHA123.constraintCorrXY).toBeCloseTo(0.125, 8);
   });
 });

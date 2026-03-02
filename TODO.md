@@ -197,10 +197,10 @@
       - [x] Phase 1: detect GNSS loop candidates and compute closure vectors/magnitudes independent of adjustment residuals
       - [x] Phase 2: add tolerance checks/ranking and expose loop diagnostics in processing and report views
       - [x] Phase 3: add export block and tests for known loop-pass/fail datasets
-    - [~] Add OPUS/OPUS-RS import path with full covariance ingestion to GPS observation records
+    - [x] Add OPUS/OPUS-RS import path with full covariance ingestion to GPS observation records
       - [x] Phase 1: implement OPUS/OPUS-RS parser for station coordinates, covariance, and metadata extraction
       - [x] Phase 2: map imported covariance into GNSS observation/control constraints with unit/axis normalization
-      - [ ] Phase 3: add importer UX/docs and parity tests using representative OPUS samples
+      - [x] Phase 3: add importer UX/docs and parity tests using representative OPUS samples
     - [ ] Add GPS offset observation support (G4-style rover-offset handling) in parse/adjust/report pipelines
       - [ ] Phase 1: extend parser/types for rover-offset observation records and associated orientation metadata
       - [ ] Phase 2: apply offset transformation into effective GNSS vectors in adjustment equations
