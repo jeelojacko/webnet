@@ -37,6 +37,7 @@ Options:
   --out <path>                  Write output payload to file instead of stdout
   --units <m|ft>
   --coord-mode <2D|3D>
+  --preanalysis <on|off>
   --autoadjust <on|off>
   --autoadjust-threshold <n>
   --autoadjust-cycles <n>
@@ -110,6 +111,15 @@ const parseArgs = (argv: string[]): CliConfig => {
         throw new Error(`Invalid --units value "${value}"`);
       }
       config.parseOptions.units = value as UnitsMode;
+      i += 1;
+      continue;
+    }
+    if (arg === '--preanalysis') {
+      const value = nextValue(i, arg).toLowerCase();
+      if (value !== 'on' && value !== 'off') {
+        throw new Error(`Invalid --preanalysis value "${argv[i + 1]}"`);
+      }
+      config.parseOptions.preanalysisMode = value === 'on';
       i += 1;
       continue;
     }
@@ -224,6 +234,8 @@ const run = (): number => {
             iterations: result.iterations,
             dof: result.dof,
             seuw: result.seuw,
+            preanalysisMode: result.preanalysisMode === true,
+            plannedObservationCount: result.parseState?.plannedObservationCount ?? 0,
             stationCount: Object.keys(result.stations).length,
             observationCount: result.observations.length,
             chiSquare: result.chiSquare,
@@ -284,6 +296,11 @@ const run = (): number => {
             `WebNet CLI solve summary`,
             `Input: ${inputPath}`,
             `Profile: ${cfg.profile}`,
+            `Run mode: ${
+              result.preanalysisMode
+                ? `PREANALYSIS (planned observations=${result.parseState?.plannedObservationCount ?? 0})`
+                : 'ADJUSTMENT'
+            }`,
             `Converged: ${result.converged ? 'YES' : 'NO'}`,
             `Iterations: ${result.iterations}`,
             `DOF: ${result.dof}`,

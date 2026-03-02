@@ -53,6 +53,7 @@ interface ReportViewProps {
   excludedIds: Set<number>
   onToggleExclude: (_id: number) => void
   onApplyImpactExclude: (_id: number) => void
+  onApplyPreanalysisAction: (_id: number) => void
   onReRun: () => void
   onClearExclusions: () => void
   overrides: Record<number, { obs?: number | { dE: number; dN: number }; stdDev?: number }>
@@ -74,6 +75,7 @@ const ReportView: React.FC<ReportViewProps> = ({
   excludedIds,
   onToggleExclude,
   onApplyImpactExclude,
+  onApplyPreanalysisAction,
   onReRun,
   onClearExclusions,
   overrides: _overrides,
@@ -199,6 +201,7 @@ const ReportView: React.FC<ReportViewProps> = ({
   const stationCovariances = result.stationCovariances ?? []
   const relativeCovariances = result.relativeCovariances ?? []
   const weakGeometryDiagnostics = result.weakGeometryDiagnostics
+  const preanalysisImpactDiagnostics = result.preanalysisImpactDiagnostics
   const flaggedStationCues = (weakGeometryDiagnostics?.stationCues ?? []).filter(
     (cue) => cue.severity !== 'ok',
   )
@@ -1165,6 +1168,119 @@ const ReportView: React.FC<ReportViewProps> = ({
             Predicted covariance uses sigma0^2 = 1.0. Residual-based QC, chi-square, suspect ranking,
             and exclusion workflows are disabled in this mode.
           </div>
+        </div>
+      )}
+
+      {isPreanalysis && preanalysisImpactDiagnostics && preanalysisImpactDiagnostics.rows.length > 0 && (
+        <div className="mb-6 border border-slate-800 rounded overflow-hidden">
+          <div className="px-3 py-2 text-xs text-slate-400 uppercase tracking-wider border-b border-slate-800 bg-slate-900/40">
+            Planned Observation What-If Analysis
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-6 gap-3 p-3 text-xs text-slate-300 border-b border-slate-800/60">
+            <div>
+              <div className="text-slate-500">Active Planned</div>
+              <div>{preanalysisImpactDiagnostics.activePlannedCount}</div>
+            </div>
+            <div>
+              <div className="text-slate-500">Excluded Planned</div>
+              <div>{preanalysisImpactDiagnostics.excludedPlannedCount}</div>
+            </div>
+            <div>
+              <div className="text-slate-500">Worst Station Major</div>
+              <div>
+                {preanalysisImpactDiagnostics.baseWorstStationMajor != null
+                  ? `${(preanalysisImpactDiagnostics.baseWorstStationMajor * unitScale).toFixed(4)} ${units}`
+                  : '-'}
+              </div>
+            </div>
+            <div>
+              <div className="text-slate-500">Worst Pair SigmaDist</div>
+              <div>
+                {preanalysisImpactDiagnostics.baseWorstPairSigmaDist != null
+                  ? `${(preanalysisImpactDiagnostics.baseWorstPairSigmaDist * unitScale).toFixed(4)} ${units}`
+                  : '-'}
+              </div>
+            </div>
+            <div>
+              <div className="text-slate-500">Weak Stations</div>
+              <div>{preanalysisImpactDiagnostics.baseWeakStationCount}</div>
+            </div>
+            <div>
+              <div className="text-slate-500">Weak Pairs</div>
+              <div>{preanalysisImpactDiagnostics.baseWeakPairCount}</div>
+            </div>
+          </div>
+          <table className="w-full text-left text-xs">
+            <thead>
+              <tr className="text-slate-500 border-b border-slate-800/60">
+                <th className="py-2 px-3">#</th>
+                <th className="py-2">Action</th>
+                <th className="py-2">Type</th>
+                <th className="py-2">Stations</th>
+                <th className="py-2 text-right">Line</th>
+                <th className="py-2 text-right">dWorstMaj ({units})</th>
+                <th className="py-2 text-right">dMedianMaj ({units})</th>
+                <th className="py-2 text-right">dWorstPair ({units})</th>
+                <th className="py-2 text-right">dWeakStn</th>
+                <th className="py-2 text-right">dWeakPair</th>
+                <th className="py-2 text-right">Score</th>
+                <th className="py-2 text-right px-3">Apply</th>
+              </tr>
+            </thead>
+            <tbody className="text-slate-300">
+              {preanalysisImpactDiagnostics.rows.map((row, idx) => {
+                const alreadyExcluded = excludedIds.has(row.obsId)
+                return (
+                  <tr key={`preanalysis-impact-${row.obsId}-${idx}`} className="border-b border-slate-800/30">
+                    <td className="py-1 px-3 text-slate-500">{idx + 1}</td>
+                    <td className="py-1 uppercase text-slate-400">
+                      {row.action === 'remove' ? 'REMOVE' : 'ADD BACK'}
+                    </td>
+                    <td className="py-1 uppercase text-slate-400">{row.type}</td>
+                    <td className="py-1">{row.stations}</td>
+                    <td className="py-1 text-right font-mono text-slate-500">{row.sourceLine ?? '-'}</td>
+                    <td className="py-1 text-right font-mono">
+                      {row.deltaWorstStationMajor != null
+                        ? (row.deltaWorstStationMajor * unitScale).toFixed(4)
+                        : '-'}
+                    </td>
+                    <td className="py-1 text-right font-mono">
+                      {row.deltaMedianStationMajor != null
+                        ? (row.deltaMedianStationMajor * unitScale).toFixed(4)
+                        : '-'}
+                    </td>
+                    <td className="py-1 text-right font-mono">
+                      {row.deltaWorstPairSigmaDist != null
+                        ? (row.deltaWorstPairSigmaDist * unitScale).toFixed(4)
+                        : '-'}
+                    </td>
+                    <td className="py-1 text-right font-mono">{row.deltaWeakStationCount ?? '-'}</td>
+                    <td className="py-1 text-right font-mono">{row.deltaWeakPairCount ?? '-'}</td>
+                    <td className="py-1 text-right font-mono">{row.score != null ? row.score.toFixed(2) : '-'}</td>
+                    <td className="py-1 px-3 text-right">
+                      <button
+                        onClick={() => onApplyPreanalysisAction(row.obsId)}
+                        disabled={row.status !== 'ok'}
+                        className={`px-2 py-0.5 rounded border text-[10px] ${
+                          row.status !== 'ok'
+                            ? 'border-slate-700 text-slate-600 cursor-not-allowed'
+                            : 'border-cyan-700 text-cyan-200 hover:bg-cyan-950/30'
+                        }`}
+                      >
+                        {row.action === 'remove'
+                          ? alreadyExcluded
+                            ? 'Removed'
+                            : 'Remove + Re-run'
+                          : alreadyExcluded
+                            ? 'Add Back + Re-run'
+                            : 'Added'}
+                      </button>
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
         </div>
       )}
 

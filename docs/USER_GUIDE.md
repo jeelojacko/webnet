@@ -16,6 +16,7 @@ WebNet is a browser-based least-squares adjustment network similar to industry-s
 ## Example Datasets
 
 WebNet includes ready-to-run TS examples in `public/examples/`:
+- `preanalysis_network_plan.dat` (planned `?` observations for predicted-precision / what-if review)
 - `ts_d_distances.dat` (distance-only, `D`)
 - `ts_a_angles.dat` (angle-only, `A`)
 - `ts_b_bearings.dat` (bearing-only, `B`)
@@ -58,6 +59,11 @@ Directives that control parsing behavior:
 -   `.AMODE [AUTO|ANGLE|DIR]`: Controls interpretation of `A` records. `AUTO` uses strict heuristics; `ANGLE` forces turned-angle interpretation; `DIR` forces azimuth/direction interpretation.
 -   `.TSCORR [ON|OFF|SET|SETUP|rho]`: Enables TS angular correlation blocks with optional scope (`SET` or `SETUP`) and correlation coefficient `rho` (0..0.95).
 -   `.ROBUST [OFF|HUBER [k]]`: Enables robust reweighting during iteration (Huber mode). Typical `k` is about 1.5.
+
+### Preanalysis / Network Planning
+- Enable `Preanalysis` in Project Options -> Adjustment, or run the CLI with `npm run adjust:cli -- --input <file> --coord-mode 2D --preanalysis on`.
+- Planned observations use `?` in place of measured values. WebNet derives those values from the current approximate geometry and computes predicted covariance with `sigma0^2 = 1`.
+- Residual-based QA is intentionally suppressed in this mode. Instead, the report focuses on predicted station precision, connected-pair relative precision, weak-geometry cues, and a what-if table for removing or re-adding planned observations before rerunning.
 
 ### Stations
 -   **Structure**: `C StationID [North] [East] [Elev] [! ! !]` (Order depends on `.ORDER`)
@@ -161,4 +167,5 @@ Structured data collection methods:
 -   **Traverse Loop Ranking**: Per-loop closure rows are ranked by severity and listed with ratio/ppm/angular/vertical cues to quickly isolate weak closure legs.
 -   **Map/Vertical Reduction**: When map mode is active, horizontal distances apply the configured map scale; with `.VRED CURVREF` and `.CURVREF ON`, zenith calculations include curvature/refraction correction.
 -   **Post-Adjusted Sideshots**: SS observations are excluded from adjustment but reported in a dedicated section with computed HD/dH, coordinate outputs, and propagated σ values. Azimuth source is labeled (`target`, `explicit`, or `setup`). If azimuth cannot be derived, the note column explains why.
+-   **Preanalysis What-If Planning**: In preanalysis mode, the report adds a planning table that estimates how removing or re-adding each planned observation changes worst/median station ellipse size, worst connected-pair distance sigma, and weak-geometry counts.
 

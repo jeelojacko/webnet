@@ -19,6 +19,7 @@ describe('ReportView GPS sideshot sections', () => {
         excludedIds={new Set<number>()}
         onToggleExclude={() => {}}
         onApplyImpactExclude={() => {}}
+        onApplyPreanalysisAction={() => {}}
         onReRun={() => {}}
         onClearExclusions={() => {}}
         overrides={{}}
@@ -52,6 +53,7 @@ describe('ReportView GPS sideshot sections', () => {
         excludedIds={new Set<number>()}
         onToggleExclude={() => {}}
         onApplyImpactExclude={() => {}}
+        onApplyPreanalysisAction={() => {}}
         onReRun={() => {}}
         onClearExclusions={() => {}}
         overrides={{}}

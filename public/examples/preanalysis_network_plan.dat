@@ -1,0 +1,22 @@
+# Planned 2D network for preanalysis / network planning.
+# Enable Project Options -> Adjustment -> Preanalysis, then run.
+# The report will show predicted ellipses plus a what-if table for
+# removing or re-adding planned observations.
+
+.2D
+C CTRL1 0 0 0 ! !
+C CTRL2 150 0 0 ! !
+C P1 60 45 0
+C P2 105 65 0
+
+# Planned distances and turned angles use ? placeholders.
+D CTRL1-P1 ? 0.003
+D CTRL2-P1 ? 0.003
+A P1-CTRL1-CTRL2 ? 1.0
+
+D CTRL1-P2 ? 0.003
+D CTRL2-P2 ? 0.003
+A P2-CTRL1-CTRL2 ? 1.0
+
+# Cross-link to strengthen relative precision between planned points.
+D P1-P2 ? 0.004

@@ -20,6 +20,33 @@ describe('ReportView preanalysis sections', () => {
       maxIterations: 6,
       parseOptions: { preanalysisMode: true, coordMode: '2D' },
     }).solve();
+    result.preanalysisImpactDiagnostics = {
+      enabled: true,
+      activePlannedCount: 3,
+      excludedPlannedCount: 0,
+      baseWorstStationMajor: 0.01,
+      baseMedianStationMajor: 0.008,
+      baseWorstPairSigmaDist: 0.012,
+      baseWeakStationCount: 1,
+      baseWeakPairCount: 0,
+      rows: [
+        {
+          obsId: 1,
+          type: 'dist',
+          stations: 'A -> P',
+          sourceLine: 5,
+          plannedActive: true,
+          action: 'remove',
+          deltaWorstStationMajor: 0.002,
+          deltaMedianStationMajor: 0.001,
+          deltaWorstPairSigmaDist: 0.003,
+          deltaWeakStationCount: 1,
+          deltaWeakPairCount: 0,
+          score: 0.25,
+          status: 'ok',
+        },
+      ],
+    };
 
     const html = renderToStaticMarkup(
       <ReportView
@@ -29,6 +56,7 @@ describe('ReportView preanalysis sections', () => {
         excludedIds={new Set<number>()}
         onToggleExclude={() => {}}
         onApplyImpactExclude={() => {}}
+        onApplyPreanalysisAction={() => {}}
         onReRun={() => {}}
         onClearExclusions={() => {}}
         overrides={{}}
@@ -48,6 +76,8 @@ describe('ReportView preanalysis sections', () => {
     expect(html).toContain('Station Covariance Blocks');
     expect(html).toContain('Predicted Relative Precision (Connected Pairs)');
     expect(html).toContain('Weak Geometry Cues');
+    expect(html).toContain('Planned Observation What-If Analysis');
+    expect(html).toContain('Remove + Re-run');
     expect(html).not.toContain('Observations &amp; Residuals');
     expect(html).not.toContain('Top Suspects');
   });

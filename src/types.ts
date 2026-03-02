@@ -89,6 +89,34 @@ export interface WeakGeometryDiagnostics {
   relativeCues: WeakGeometryRelativeCue[];
 }
 
+export interface PreanalysisImpactDiagnosticRow {
+  obsId: number;
+  type: Observation['type'];
+  stations: string;
+  sourceLine?: number;
+  plannedActive: boolean;
+  action: 'add' | 'remove';
+  deltaWorstStationMajor?: number;
+  deltaMedianStationMajor?: number;
+  deltaWorstPairSigmaDist?: number;
+  deltaWeakStationCount?: number;
+  deltaWeakPairCount?: number;
+  score?: number;
+  status: 'ok' | 'failed';
+}
+
+export interface PreanalysisImpactDiagnostics {
+  enabled: boolean;
+  activePlannedCount: number;
+  excludedPlannedCount: number;
+  baseWorstStationMajor?: number;
+  baseMedianStationMajor?: number;
+  baseWorstPairSigmaDist?: number;
+  baseWeakStationCount: number;
+  baseWeakPairCount: number;
+  rows: PreanalysisImpactDiagnosticRow[];
+}
+
 export interface Station {
   x: number;
   y: number;
@@ -545,6 +573,7 @@ export interface AdjustmentResult {
   stationCovariances?: StationCovarianceBlock[];
   relativeCovariances?: RelativeCovarianceBlock[];
   weakGeometryDiagnostics?: WeakGeometryDiagnostics;
+  preanalysisImpactDiagnostics?: PreanalysisImpactDiagnostics;
   chiSquare?: {
     T: number;
     dof: number;

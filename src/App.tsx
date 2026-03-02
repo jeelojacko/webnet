@@ -733,6 +733,7 @@ const App: React.FC = () => {
   };
 
   const IMPACT_MAX_CANDIDATES = 8;
+  const PREANALYSIS_IMPACT_MAX_CANDIDATES = 24;
   const AUTO_ADJUST_MIN_REDUNDANCY = 0.05;
 
   const observationStationsLabel = (obs: Observation): string => {
@@ -794,6 +795,30 @@ const App: React.FC = () => {
     });
     return maxShift;
   };
+
+  const medianOf = (values: number[]): number | undefined => {
+    const sorted = values.filter((value) => Number.isFinite(value)).sort((a, b) => a - b);
+    if (sorted.length === 0) return undefined;
+    const mid = Math.floor(sorted.length / 2);
+    if (sorted.length % 2 === 1) return sorted[mid];
+    return 0.5 * (sorted[mid - 1] + sorted[mid]);
+  };
+
+  const preanalysisStationMajors = (res: AdjustmentResult): number[] =>
+    (res.stationCovariances ?? []).map(
+      (row) => row.ellipse?.semiMajor ?? Math.max(row.sigmaE, row.sigmaN),
+    );
+
+  const preanalysisRelativeMetrics = (res: AdjustmentResult): number[] =>
+    (res.relativeCovariances ?? []).map(
+      (row) => row.sigmaDist ?? row.ellipse?.semiMajor ?? Math.max(row.sigmaE, row.sigmaN),
+    );
+
+  const preanalysisWeakStationCount = (res: AdjustmentResult): number =>
+    (res.weakGeometryDiagnostics?.stationCues ?? []).filter((cue) => cue.severity !== 'ok').length;
+
+  const preanalysisWeakPairCount = (res: AdjustmentResult): number =>
+    (res.weakGeometryDiagnostics?.relativeCues ?? []).filter((cue) => cue.severity !== 'ok').length;
 
   const normalizeClusterApprovedMerges = (
     merges: ClusterApprovedMerge[],
@@ -1485,6 +1510,35 @@ const App: React.FC = () => {
           );
         });
       }
+      lines.push('');
+    }
+    if (isPreanalysis && res.preanalysisImpactDiagnostics) {
+      lines.push('--- Planned Observation What-If Analysis ---');
+      lines.push(
+        `activePlanned=${res.preanalysisImpactDiagnostics.activePlannedCount}, excludedPlanned=${res.preanalysisImpactDiagnostics.excludedPlannedCount}, worstStationMajor=${
+          res.preanalysisImpactDiagnostics.baseWorstStationMajor != null
+            ? `${(res.preanalysisImpactDiagnostics.baseWorstStationMajor * unitScale).toFixed(4)} ${linearUnit}`
+            : '-'
+        }, worstPairSigmaDist=${
+          res.preanalysisImpactDiagnostics.baseWorstPairSigmaDist != null
+            ? `${(res.preanalysisImpactDiagnostics.baseWorstPairSigmaDist * unitScale).toFixed(4)} ${linearUnit}`
+            : '-'
+        }, weakStations=${res.preanalysisImpactDiagnostics.baseWeakStationCount}, weakPairs=${res.preanalysisImpactDiagnostics.baseWeakPairCount}`,
+      );
+      lines.push('Action\tType\tStations\tLine\tdWorstMaj\tdMedianMaj\tdWorstPair\tdWeakStn\tdWeakPair\tScore\tStatus');
+      res.preanalysisImpactDiagnostics.rows.forEach((row) => {
+        lines.push(
+          `${row.action}\t${row.type}\t${row.stations}\t${row.sourceLine ?? '-'}\t${
+            row.deltaWorstStationMajor != null ? (row.deltaWorstStationMajor * unitScale).toFixed(4) : '-'
+          }\t${
+            row.deltaMedianStationMajor != null ? (row.deltaMedianStationMajor * unitScale).toFixed(4) : '-'
+          }\t${
+            row.deltaWorstPairSigmaDist != null ? (row.deltaWorstPairSigmaDist * unitScale).toFixed(4) : '-'
+          }\t${row.deltaWeakStationCount ?? '-'}\t${row.deltaWeakPairCount ?? '-'}\t${
+            row.score != null ? row.score.toFixed(2) : '-'
+          }\t${row.status}`,
+        );
+      });
       lines.push('');
     }
     if (!isPreanalysis && res.typeSummary && Object.keys(res.typeSummary).length > 0) {
@@ -3498,6 +3552,119 @@ const App: React.FC = () => {
     return rows;
   };
 
+  const buildPreanalysisImpactDiagnostics = (
+    base: AdjustmentResult,
+    baseExclusions: Set<number>,
+    overrideValues: Record<number, ObservationOverride>,
+    approvedClusterMerges: ClusterApprovedMerge[],
+  ): NonNullable<AdjustmentResult['preanalysisImpactDiagnostics']> => {
+    const allPlannedRows = [...base.observations].filter((obs) => obs.planned === true);
+    const plannedRows = allPlannedRows
+      .filter((obs) => obs.planned === true)
+      .sort((a, b) => {
+        const aActive = baseExclusions.has(a.id) ? 0 : 1;
+        const bActive = baseExclusions.has(b.id) ? 0 : 1;
+        if (bActive !== aActive) return bActive - aActive;
+        return (a.sourceLine ?? Number.MAX_SAFE_INTEGER) - (b.sourceLine ?? Number.MAX_SAFE_INTEGER);
+      })
+      .slice(0, PREANALYSIS_IMPACT_MAX_CANDIDATES);
+
+    const baseStationMajors = preanalysisStationMajors(base);
+    const baseRelativeMetrics = preanalysisRelativeMetrics(base);
+    const baseWorstStationMajor =
+      baseStationMajors.length > 0 ? Math.max(...baseStationMajors) : undefined;
+    const baseMedianStationMajor = medianOf(baseStationMajors);
+    const baseWorstPairSigmaDist =
+      baseRelativeMetrics.length > 0 ? Math.max(...baseRelativeMetrics) : undefined;
+    const baseWeakStations = preanalysisWeakStationCount(base);
+    const baseWeakPairs = preanalysisWeakPairCount(base);
+
+    const rows = plannedRows.map((obs) => {
+      const plannedActive = !baseExclusions.has(obs.id);
+      const action: 'add' | 'remove' = plannedActive ? 'remove' : 'add';
+      const row: NonNullable<AdjustmentResult['preanalysisImpactDiagnostics']>['rows'][number] = {
+        obsId: obs.id,
+        type: obs.type,
+        stations: observationStationsLabel(obs),
+        sourceLine: obs.sourceLine,
+        plannedActive,
+        action,
+        status: 'failed',
+      };
+      try {
+        const altExclusions = new Set(baseExclusions);
+        if (plannedActive) altExclusions.add(obs.id);
+        else altExclusions.delete(obs.id);
+        const alt = solveCore(altExclusions, undefined, overrideValues, approvedClusterMerges);
+        const altStationMajors = preanalysisStationMajors(alt);
+        const altRelativeMetrics = preanalysisRelativeMetrics(alt);
+        const altWorstStationMajor =
+          altStationMajors.length > 0 ? Math.max(...altStationMajors) : undefined;
+        const altMedianStationMajor = medianOf(altStationMajors);
+        const altWorstPairSigmaDist =
+          altRelativeMetrics.length > 0 ? Math.max(...altRelativeMetrics) : undefined;
+        const altWeakStations = preanalysisWeakStationCount(alt);
+        const altWeakPairs = preanalysisWeakPairCount(alt);
+
+        const deltaWorstStationMajor =
+          altWorstStationMajor != null && baseWorstStationMajor != null
+            ? altWorstStationMajor - baseWorstStationMajor
+            : undefined;
+        const deltaMedianStationMajor =
+          altMedianStationMajor != null && baseMedianStationMajor != null
+            ? altMedianStationMajor - baseMedianStationMajor
+            : undefined;
+        const deltaWorstPairSigmaDist =
+          altWorstPairSigmaDist != null && baseWorstPairSigmaDist != null
+            ? altWorstPairSigmaDist - baseWorstPairSigmaDist
+            : undefined;
+        const deltaWeakStationCount = altWeakStations - baseWeakStations;
+        const deltaWeakPairCount = altWeakPairs - baseWeakPairs;
+        const direction = action === 'remove' ? 1 : -1;
+        const score =
+          direction * (deltaWorstStationMajor ?? 0) * 40 +
+          direction * (deltaMedianStationMajor ?? 0) * 20 +
+          direction * (deltaWorstPairSigmaDist ?? 0) * 25 +
+          direction * deltaWeakStationCount * 5 +
+          direction * deltaWeakPairCount * 4;
+
+        return {
+          ...row,
+          deltaWorstStationMajor,
+          deltaMedianStationMajor,
+          deltaWorstPairSigmaDist,
+          deltaWeakStationCount,
+          deltaWeakPairCount,
+          score: Number.isFinite(score) ? score : undefined,
+          status: 'ok',
+        };
+      } catch {
+        return row;
+      }
+    });
+
+    rows.sort((a, b) => {
+      if (a.status !== b.status) return a.status === 'ok' ? -1 : 1;
+      if (a.action !== b.action) return a.action === 'remove' ? -1 : 1;
+      const bScore = b.score ?? Number.NEGATIVE_INFINITY;
+      const aScore = a.score ?? Number.NEGATIVE_INFINITY;
+      if (bScore !== aScore) return bScore - aScore;
+      return (a.sourceLine ?? Number.MAX_SAFE_INTEGER) - (b.sourceLine ?? Number.MAX_SAFE_INTEGER);
+    });
+
+    return {
+      enabled: true,
+      activePlannedCount: allPlannedRows.filter((obs) => !baseExclusions.has(obs.id)).length,
+      excludedPlannedCount: allPlannedRows.filter((obs) => baseExclusions.has(obs.id)).length,
+      baseWorstStationMajor,
+      baseMedianStationMajor,
+      baseWorstPairSigmaDist,
+      baseWeakStationCount: baseWeakStations,
+      baseWeakPairCount: baseWeakPairs,
+      rows,
+    };
+  };
+
   const solveWithImpacts = (
     excludeSet: Set<number>,
     overrideValues: Record<number, ObservationOverride> = overrides,
@@ -3507,6 +3674,12 @@ const App: React.FC = () => {
     const profileCtx = resolveProfileContext(parseSettings);
     if (profileCtx.effectiveParse.preanalysisMode) {
       solved.suspectImpactDiagnostics = undefined;
+      solved.preanalysisImpactDiagnostics = buildPreanalysisImpactDiagnostics(
+        solved,
+        excludeSet,
+        overrideValues,
+        approvedClusterMerges,
+      );
       solved.robustComparison = {
         enabled: false,
         classicalTop: [],
@@ -3521,6 +3694,7 @@ const App: React.FC = () => {
       overrideValues,
       approvedClusterMerges,
     );
+    solved.preanalysisImpactDiagnostics = undefined;
     if (profileCtx.effectiveParse.robustMode !== 'none') {
       const classical = solveCore(
         excludeSet,
@@ -3679,6 +3853,17 @@ const App: React.FC = () => {
   const applyImpactExclusion = (id: number) => {
     const next = new Set(excludedIds);
     next.add(id);
+    setExcludedIds(next);
+    runWithExclusions(next, activeClusterApprovedMerges, {
+      candidates: result?.clusterDiagnostics?.candidates ?? [],
+      decisions: clusterReviewDecisions,
+    });
+  };
+
+  const applyPreanalysisPlanningAction = (id: number) => {
+    const next = new Set(excludedIds);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
     setExcludedIds(next);
     runWithExclusions(next, activeClusterApprovedMerges, {
       candidates: result?.clusterDiagnostics?.candidates ?? [],
@@ -5519,6 +5704,7 @@ const App: React.FC = () => {
                     excludedIds={excludedIds}
                     onToggleExclude={toggleExclude}
                     onApplyImpactExclude={applyImpactExclusion}
+                    onApplyPreanalysisAction={applyPreanalysisPlanningAction}
                     onReRun={handleRun}
                     onClearExclusions={clearExclusions}
                     overrides={overrides}

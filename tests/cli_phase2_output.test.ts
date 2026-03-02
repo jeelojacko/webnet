@@ -9,6 +9,7 @@ const ROOT = process.cwd();
 const TSX_CLI = path.resolve(ROOT, 'node_modules', 'tsx', 'dist', 'cli.mjs');
 const WEBNET_CLI = path.resolve(ROOT, 'src', 'cli.ts');
 const STABLE_INPUT = path.resolve(ROOT, 'tests', 'fixtures', 'cli_smoke.dat');
+const PREANALYSIS_INPUT = path.resolve(ROOT, 'tests', 'fixtures', 'preanalysis_cli.dat');
 
 const runCli = (args: string[]) =>
   spawnSync(process.execPath, [TSX_CLI, WEBNET_CLI, ...args], {
@@ -71,5 +72,25 @@ describe('CLI phase 2 output modes', () => {
     expect(payload.parseState?.autoAdjustStdResThreshold).toBeCloseTo(3.5, 8);
     expect(payload.parseState?.autoAdjustMaxCycles).toBe(2);
     expect(payload.parseState?.autoAdjustMaxRemovalsPerCycle).toBe(2);
+  });
+
+  it('supports preanalysis mode from the CLI', () => {
+    const res = runCli([
+      '--input',
+      PREANALYSIS_INPUT,
+      '--output',
+      'json',
+      '--coord-mode',
+      '2D',
+      '--preanalysis',
+      'on',
+    ]);
+    expect(res.status).toBe(0);
+    const payload = JSON.parse(res.stdout);
+    expect(payload.success).toBe(true);
+    expect(payload.preanalysisMode).toBe(true);
+    expect(payload.plannedObservationCount).toBeGreaterThan(0);
+    expect(payload.parseState?.preanalysisMode).toBe(true);
+    expect(payload.parseState?.plannedObservationCount).toBeGreaterThan(0);
   });
 });
