@@ -1246,4 +1246,20 @@ describe('LSAEngine', () => {
     expect(on.autoSideshotDiagnostics?.candidateCount ?? 0).toBeGreaterThan(0);
     expect(off.autoSideshotDiagnostics).toBeUndefined();
   });
+
+  it('converges a weak but recoverable network through the damping path', () => {
+    const input = readFileSync('tests/fixtures/regularized_recoverable_phase1.dat', 'utf-8');
+    const result = new LSAEngine({ input, maxIterations: 20 }).solve();
+
+    expect(result.success).toBe(true);
+    expect(result.converged).toBe(true);
+    expect(result.logs.some((line) => line.includes('normal-equation factorization required diagonal damping'))).toBe(true);
+    expect(result.logs.some((line) => line.includes('pivoted symmetric LDLT recovery'))).toBe(true);
+    expect(result.logs.some((line) => line.includes('Normal equation solve failed'))).toBe(false);
+    expect(result.dof).toBe(1);
+    expect(Number.isFinite(result.stations.P1.x)).toBe(true);
+    expect(Number.isFinite(result.stations.P1.y)).toBe(true);
+    expect(Number.isFinite(result.stations.P2.x)).toBe(true);
+    expect(Number.isFinite(result.stations.P2.y)).toBe(true);
+  });
 });

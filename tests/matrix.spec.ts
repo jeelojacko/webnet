@@ -4,6 +4,7 @@ import {
   choleskyDecomposeWithDamping,
   inv,
   invertSymmetricLDLT,
+  invertSymmetricLDLTWithInfo,
   invertSPDCholesky,
   ldltDecomposeSymmetric,
   multiply,
@@ -162,5 +163,15 @@ describe('matrix helpers', () => {
     expect(invM[0][1]).toBeCloseTo(1)
     expect(invM[1][0]).toBeCloseTo(1)
     expect(invM[1][1]).toBeCloseTo(0)
+  })
+
+  it('reports 2x2 pivot-block usage for LDLT recovery info', () => {
+    const result = invertSymmetricLDLTWithInfo([
+      [0, 1],
+      [1, 0],
+    ])
+
+    expect(result.twoByTwoPivotCount).toBe(1)
+    expect(result.factorization.blockSizes).toEqual([2, -1])
   })
 })

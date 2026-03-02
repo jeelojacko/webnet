@@ -8,7 +8,7 @@ import type { GeoidGridModel } from './geoid';
 import {
   invertSPDFromCholesky,
   choleskyDecomposeWithDamping,
-  invertSymmetricLDLT,
+  invertSymmetricLDLTWithInfo,
   multiply,
   solveSPDFromCholesky,
   transpose,
@@ -276,11 +276,15 @@ export class LSAEngine {
     context: string,
   ): number[][] {
     try {
-      const exactScaledInverse = invertSymmetricLDLT(scaledN);
+      const recovery = invertSymmetricLDLTWithInfo(scaledN);
+      const pivotSuffix =
+        recovery.twoByTwoPivotCount > 0
+          ? ` (2x2 pivot blocks=${recovery.twoByTwoPivotCount})`
+          : '';
       this.log(
-        `Warning: ${context} used pivoted symmetric LDLT recovery on the scaled undamped normal matrix to avoid damping bias in covariance output.`,
+        `Warning: ${context} used pivoted symmetric LDLT recovery on the scaled undamped normal matrix to avoid damping bias in covariance output${pivotSuffix}.`,
       );
-      return this.unscaleNormalInverse(exactScaledInverse, scale);
+      return this.unscaleNormalInverse(recovery.inverse, scale);
     } catch (error) {
       const detail = error instanceof Error ? ` ${error.message}` : '';
       this.log(

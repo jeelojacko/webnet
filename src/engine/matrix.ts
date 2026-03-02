@@ -11,6 +11,11 @@ export interface PivotedLDLTResult {
   blockSizes: number[];
   permutation: number[];
 }
+export interface InvertSymmetricLDLTResult {
+  inverse: Matrix;
+  factorization: PivotedLDLTResult;
+  twoByTwoPivotCount: number;
+}
 
 export const zeros = (rows: number, cols: number): Matrix =>
   Array.from({ length: rows }, () => Array.from({ length: cols }, () => 0));
@@ -416,14 +421,20 @@ export const solveSymmetricLDLT = (factorization: PivotedLDLTResult, b: Matrix):
   return x;
 };
 
-export const invertSymmetricLDLT = (m: Matrix): Matrix => {
+export const invertSymmetricLDLTWithInfo = (m: Matrix): InvertSymmetricLDLTResult => {
   const factorization = ldltDecomposeSymmetric(m);
   const identity = zeros(m.length, m.length);
   for (let i = 0; i < m.length; i += 1) {
     identity[i][i] = 1;
   }
-  return solveSymmetricLDLT(factorization, identity);
+  return {
+    inverse: solveSymmetricLDLT(factorization, identity),
+    factorization,
+    twoByTwoPivotCount: factorization.blockSizes.filter((size) => size === 2).length,
+  };
 };
+
+export const invertSymmetricLDLT = (m: Matrix): Matrix => invertSymmetricLDLTWithInfo(m).inverse;
 
 export const inv = (m: Matrix): Matrix => {
   const n = m.length;

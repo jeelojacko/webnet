@@ -36,6 +36,7 @@
 - [x] Add scaled diagonal-damped Cholesky regularization for ill-conditioned normal matrices, while recovering undamped scaled covariance for diagnostics when regularization would bias residual/redundancy outputs
 - [x] Replace the remaining diagnostic covariance-recovery inversion with pivoted symmetric `LDLᵀ` solving and add a singular `industry_demo.dat` regression test for the fail-cleanly path
 - [x] Strengthen symmetric-indefinite covariance recovery with 2x2 pivot-block `LDLᵀ` support and make singular damped solves fail earlier with an explicit singular-after-damping message
+- [x] Add LDLT pivot-block diagnostics and a weak-but-recoverable regularized network fixture to lock the boundary between usable regularization and singular-after-damping failure
 - [x] industry-style summary parity: compute per-type statistical summary from weighted residual contributions (`vTPv` by observation family) and display both error-factor and variance-factor chi-square bounds in summaries/listings
 - [x] industry-style summary parity Phase 2: normalize per-type error factors using industry-style global DOF scaling (`sqrt(totalCount/dof)`) so group factors align with industry listings
 - [x] Cluster UX controls: add Project Options -> Adjustment toggle for cluster detection ON/OFF and top-level report button to revert applied cluster merges
