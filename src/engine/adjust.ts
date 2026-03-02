@@ -149,6 +149,18 @@ interface CoordinateConstraintEquation {
 }
 
 type EquationRowInfo = { obs: Observation; component?: 'E' | 'N' } | null;
+type RobustWeightMatrixBase = {
+  diagonal: number[];
+  correlatedPairs: { i: number; j: number; base: number }[];
+};
+type RobustWeightSummary = {
+  factors: number[];
+  downweightedRows: number;
+  minWeight: number;
+  maxNorm: number;
+  meanWeight: number;
+  topRows: NonNullable<AdjustmentResult['robustDiagnostics']>['topDownweightedRows'];
+};
 
 export class LSAEngine {
   input: string;
@@ -1027,17 +1039,64 @@ export class LSAEngine {
     return Math.max(this.effectiveStdDev(info.obs), 1e-12);
   }
 
-  private applyRobustReweighting(
+  private robustCorrelationRowGroups(rowInfo: EquationRowInfo[]): number[][] {
+    if (!this.tsCorrelationEnabled) return [];
+    const groups = new Map<string, number[]>();
+    rowInfo.forEach((info, index) => {
+      if (!info || info.component) return;
+      const group = this.tsCorrelationGroup(info.obs);
+      if (!group) return;
+      const sigma = this.rowSigma(info);
+      if (!Number.isFinite(sigma) || sigma <= 0) return;
+      const rows = groups.get(group.key) ?? [];
+      rows.push(index);
+      groups.set(group.key, rows);
+    });
+    return [...groups.values()].filter((rows) => rows.length > 1);
+  }
+
+  private captureRobustWeightBase(
     P: number[][],
-    L: number[][],
     rowInfo: EquationRowInfo[],
-    iteration?: number,
-    recordDiagnostics = false,
+  ): RobustWeightMatrixBase {
+    const diagonal = P.map((row, i) => row[i] ?? 0);
+    const correlatedPairs: RobustWeightMatrixBase['correlatedPairs'] = [];
+    this.robustCorrelationRowGroups(rowInfo).forEach((rows) => {
+      for (let a = 0; a < rows.length; a += 1) {
+        const i = rows[a];
+        for (let b = a + 1; b < rows.length; b += 1) {
+          const j = rows[b];
+          const base = P[i][j] ?? 0;
+          if (Math.abs(base) <= 0) continue;
+          correlatedPairs.push({ i, j, base });
+        }
+      }
+    });
+    return { diagonal, correlatedPairs };
+  }
+
+  private applyRobustWeightFactors(
+    P: number[][],
+    base: RobustWeightMatrixBase,
+    factors: number[],
   ): void {
-    if (this.robustMode !== 'huber') return;
+    for (let i = 0; i < P.length; i += 1) {
+      P[i][i] = (base.diagonal[i] ?? 0) * (factors[i] ?? 1);
+    }
+    base.correlatedPairs.forEach(({ i, j, base: pairBase }) => {
+      const scale = Math.sqrt((factors[i] ?? 1) * (factors[j] ?? 1));
+      const scaled = pairBase * scale;
+      P[i][j] = scaled;
+      P[j][i] = scaled;
+    });
+  }
+
+  private computeRobustWeightSummary(
+    residuals: number[],
+    rowInfo: EquationRowInfo[],
+  ): RobustWeightSummary {
     const k = Math.max(0.5, Math.min(10, this.robustK || 1.5));
-    const factors = new Array(P.length).fill(1);
-    const norms = new Array(P.length).fill(0);
+    const factors = new Array(rowInfo.length).fill(1);
 
     let downweightedRows = 0;
     let minWeight = 1;
@@ -1051,8 +1110,7 @@ export class LSAEngine {
       const info = rowInfo[i];
       if (!info) continue;
       const sigma = this.rowSigma(info);
-      const norm = Math.abs(L[i][0]) / Math.max(sigma, 1e-24);
-      norms[i] = norm;
+      const norm = Math.abs(residuals[i] ?? 0) / Math.max(sigma, 1e-24);
       maxNorm = Math.max(maxNorm, norm);
       let w = 1;
       if (norm > k) w = k / norm;
@@ -1063,53 +1121,54 @@ export class LSAEngine {
       if (w < 0.999999) {
         downweightedRows += 1;
         minWeight = Math.min(minWeight, w);
-        if (recordDiagnostics) {
-          candidates.push({
-            obsId: info.obs.id,
-            type: info.obs.type,
-            stations: this.observationStations(info.obs),
-            sourceLine: info.obs.sourceLine,
-            weight: w,
-            norm,
-          });
-        }
+        candidates.push({
+          obsId: info.obs.id,
+          type: info.obs.type,
+          stations: this.observationStations(info.obs),
+          sourceLine: info.obs.sourceLine,
+          weight: w,
+          norm,
+        });
       }
     }
 
-    const sqrtFactors = factors.map((w) => Math.sqrt(w));
-    for (let i = 0; i < P.length; i += 1) {
-      for (let j = 0; j < P.length; j += 1) {
-        const scale = sqrtFactors[i] * sqrtFactors[j];
-        if (scale === 1) continue;
-        P[i][j] *= scale;
-      }
-    }
-
-    if (recordDiagnostics && this.robustDiagnostics && iteration != null) {
-      const topRows = candidates
+    return {
+      factors,
+      downweightedRows,
+      minWeight: downweightedRows > 0 ? minWeight : 1,
+      maxNorm,
+      meanWeight: meanWeightCount > 0 ? meanWeightSum / meanWeightCount : 1,
+      topRows: candidates
         .sort((a, b) => {
           if (a.weight !== b.weight) return a.weight - b.weight;
           return b.norm - a.norm;
         })
-        .slice(0, 15);
-      this.robustDiagnostics.iterations.push({
-        iteration,
-        downweightedRows,
-        meanWeight: meanWeightCount > 0 ? meanWeightSum / meanWeightCount : 1,
-        minWeight: downweightedRows > 0 ? minWeight : 1,
-        maxNorm,
-      });
-      this.robustDiagnostics.topDownweightedRows = topRows;
-      this.log(
-        `Iter ${iteration} robust(${this.robustMode}): downweighted=${downweightedRows}, minW=${(downweightedRows >
-        0
-          ? minWeight
-          : 1
-        ).toFixed(3)}, meanW=${(meanWeightCount > 0 ? meanWeightSum / meanWeightCount : 1).toFixed(
-          3,
-        )}, max|v/sigma|=${maxNorm.toFixed(2)}`,
-      );
+        .slice(0, 15),
+    };
+  }
+
+  private recordRobustDiagnostics(iteration: number, summary: RobustWeightSummary): void {
+    if (!this.robustDiagnostics) return;
+    this.robustDiagnostics.iterations.push({
+      iteration,
+      downweightedRows: summary.downweightedRows,
+      meanWeight: summary.meanWeight,
+      minWeight: summary.minWeight,
+      maxNorm: summary.maxNorm,
+    });
+    this.robustDiagnostics.topDownweightedRows = summary.topRows;
+    this.log(
+      `Iter ${iteration} robust(${this.robustMode}): downweighted=${summary.downweightedRows}, minW=${summary.minWeight.toFixed(3)}, meanW=${summary.meanWeight.toFixed(3)}, max|v/sigma|=${summary.maxNorm.toFixed(2)}`,
+    );
+  }
+
+  private maxRobustWeightDelta(a: number[], b: number[]): number {
+    const count = Math.max(a.length, b.length);
+    let maxDelta = 0;
+    for (let i = 0; i < count; i += 1) {
+      maxDelta = Math.max(maxDelta, Math.abs((a[i] ?? 1) - (b[i] ?? 1)));
     }
+    return maxDelta;
   }
 
   private computeDirectionSetPrefit(
@@ -2900,30 +2959,73 @@ export class LSAEngine {
       });
 
       this.applyTsCorrelationToWeightMatrix(P, rowInfo);
-      this.applyRobustReweighting(P, L, rowInfo, iter + 1, true);
 
       try {
         const AT = transpose(A);
-        const ATP = multiply(AT, P);
-        const N = multiply(ATP, A);
-        const conditionEstimate = this.estimateCondition(N);
-        this.condition = {
-          estimate: conditionEstimate,
-          threshold: this.maxCondition,
-          flagged: conditionEstimate > this.maxCondition,
-        };
-        if (conditionEstimate > this.maxCondition && !this.conditionWarned) {
-          this.log(
-            `Warning: normal matrix appears ill-conditioned (estimate=${conditionEstimate.toExponential(
-              3,
-            )}, threshold=${this.maxCondition.toExponential(3)}).`,
-          );
-          this.conditionWarned = true;
+        let X: number[][];
+        let solvedP = P;
+        if (this.robustMode === 'huber') {
+          const baseWeights = this.captureRobustWeightBase(P, rowInfo);
+          let factors = new Array(P.length).fill(1);
+          let finalSummary: RobustWeightSummary | null = null;
+          const maxInnerIterations = 5;
+          const weightTolerance = 1e-3;
+          for (let inner = 0; inner < maxInnerIterations; inner += 1) {
+            this.applyRobustWeightFactors(P, baseWeights, factors);
+            solvedP = P;
+            const ATP = multiply(AT, solvedP);
+            const N = multiply(ATP, A);
+            const conditionEstimate = this.estimateCondition(N);
+            this.condition = {
+              estimate: conditionEstimate,
+              threshold: this.maxCondition,
+              flagged: conditionEstimate > this.maxCondition,
+            };
+            if (conditionEstimate > this.maxCondition && !this.conditionWarned) {
+              this.log(
+                `Warning: normal matrix appears ill-conditioned (estimate=${conditionEstimate.toExponential(
+                  3,
+                )}, threshold=${this.maxCondition.toExponential(3)}).`,
+              );
+              this.conditionWarned = true;
+            }
+            const U = multiply(ATP, L);
+            const normalSolution = this.solveNormalEquations(N, U);
+            X = normalSolution.correction;
+            this.Qxx = normalSolution.qxx;
+            const AX = multiply(A, X);
+            const residuals = AX.map((rowValue, i) => rowValue[0] - L[i][0]);
+            finalSummary = this.computeRobustWeightSummary(residuals, rowInfo);
+            if (this.maxRobustWeightDelta(factors, finalSummary.factors) < weightTolerance) {
+              break;
+            }
+            factors = finalSummary.factors.slice();
+          }
+          if (finalSummary) {
+            this.recordRobustDiagnostics(iter + 1, finalSummary);
+          }
+        } else {
+          const ATP = multiply(AT, P);
+          const N = multiply(ATP, A);
+          const conditionEstimate = this.estimateCondition(N);
+          this.condition = {
+            estimate: conditionEstimate,
+            threshold: this.maxCondition,
+            flagged: conditionEstimate > this.maxCondition,
+          };
+          if (conditionEstimate > this.maxCondition && !this.conditionWarned) {
+            this.log(
+              `Warning: normal matrix appears ill-conditioned (estimate=${conditionEstimate.toExponential(
+                3,
+              )}, threshold=${this.maxCondition.toExponential(3)}).`,
+            );
+            this.conditionWarned = true;
+          }
+          const U = multiply(ATP, L);
+          const normalSolution = this.solveNormalEquations(N, U);
+          X = normalSolution.correction;
+          this.Qxx = normalSolution.qxx;
         }
-        const U = multiply(ATP, L);
-        const normalSolution = this.solveNormalEquations(N, U);
-        const X = normalSolution.correction;
-        this.Qxx = normalSolution.qxx;
 
         if (this.debug) {
           const AX = multiply(A, X);
@@ -2937,8 +3039,8 @@ export class LSAEngine {
             maxBefore = Math.max(maxBefore, Math.abs(v0));
             maxAfter = Math.max(maxAfter, Math.abs(v1));
           }
-          const sumBefore = this.weightedQuadratic(P, L);
-          const sumAfter = this.weightedQuadratic(P, Vnew);
+          const sumBefore = this.weightedQuadratic(solvedP, L);
+          const sumAfter = this.weightedQuadratic(solvedP, Vnew);
           const ratio = sumBefore > 0 ? sumAfter / sumBefore : 0;
           const msg =
             `Iter ${iter + 1} step check: ` +
@@ -3801,7 +3903,12 @@ export class LSAEngine {
         });
 
         this.applyTsCorrelationToWeightMatrix(P, rowInfo, true);
-        this.applyRobustReweighting(P, L, rowInfo, undefined, false);
+        if (this.robustMode === 'huber') {
+          const baseWeights = this.captureRobustWeightBase(P, rowInfo);
+          const residuals = L.map((row) => -row[0]);
+          const summary = this.computeRobustWeightSummary(residuals, rowInfo);
+          this.applyRobustWeightFactors(P, baseWeights, summary.factors);
+        }
 
         try {
           const AT = transpose(A);

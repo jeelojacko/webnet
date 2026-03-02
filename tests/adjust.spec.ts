@@ -1292,6 +1292,25 @@ describe('LSAEngine', () => {
     expect(result.logs.some((l) => l.includes('robust(huber)'))).toBe(true);
   });
 
+  it('bases robust weights on postfit residuals instead of prefit GPS misclosures', () => {
+    const input = [
+      '.2D',
+      '.ROBUST HUBER 1.5',
+      'C A 0 0 0 ! !',
+      'C B 100 0 0 ! !',
+      'C U 1000 1000 0',
+      'G GPS A U 50 80 0.01 0.01 0',
+      'G GPS B U -50 80 0.01 0.01 0',
+    ].join('\n');
+    const result = new LSAEngine({ input, maxIterations: 8 }).solve();
+
+    expect(result.robustDiagnostics).toBeDefined();
+    expect(result.robustDiagnostics?.iterations[0]?.downweightedRows ?? -1).toBe(0);
+    expect(result.robustDiagnostics?.iterations[0]?.maxNorm ?? Infinity).toBeLessThan(1e-6);
+    expect(result.stations.U.x).toBeCloseTo(50, 6);
+    expect(result.stations.U.y).toBeCloseTo(80, 6);
+  });
+
   it('computes post-adjusted sideshot coordinates/precision when azimuth reference exists', () => {
     const input = readFileSync('tests/fixtures/sideshot_postadjust_known.dat', 'utf-8');
     const engine = new LSAEngine({ input, maxIterations: 10 });

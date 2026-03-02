@@ -12,6 +12,7 @@
 - [x] Export adjustment results as text + refresh-to-last-run input
 - [x] Input editor comment workflow: line-wise block toggle via `Shift+3` (`#`) on multiline selections plus right-click `Toggle # Comment` action
 - [x] Match industry-standard centering inflation for slope distances and zeniths using horizontal/vertical centering geometry factors, with fixture-locked reference coverage
+- [x] Fix robust reweighting to use postfit residual IRLS with cheap diagonal/block weight updates
 - [x] GPS Phase 1 foundation: CRS state model + projection abstraction (`LEGACY`/`ENU`) with default-off transform controls in Project Options -> GPS
 - [x] GPS Phase 2 modeling: optional CRS grid-ground scale + convergence corrections in solver/inverse workflows with default-off GPS controls
 - [x] GPS Phase 3 diagnostics: surface CRS projection/scale/convergence state in report/processing-summary/industry-listing outputs with regression coverage
