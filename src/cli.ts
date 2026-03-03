@@ -5,11 +5,12 @@ import process from 'node:process';
 import { LSAEngine } from './engine/adjust';
 import type { ParseOptions } from './types';
 import { buildIndustryStyleListingText } from './engine/industryListing';
+import { buildLandXmlText } from './engine/landxml';
 
 type SolveProfile = 'webnet' | 'industry-parity';
 type UnitsMode = 'm' | 'ft';
 type CoordMode = '2D' | '3D';
-type OutputFormat = 'summary' | 'json' | 'listing';
+type OutputFormat = 'summary' | 'json' | 'listing' | 'landxml';
 
 const EXIT_OK = 0;
 const EXIT_SOLVE_FAILED = 1;
@@ -33,7 +34,7 @@ Options:
   --input, -i <path>            Input adjustment file (required)
   --profile <webnet|industry-parity>
   --max-iterations <n>
-  --output <summary|json|listing>
+  --output <summary|json|listing|landxml>
   --out <path>                  Write output payload to file instead of stdout
   --units <m|ft>
   --coord-mode <2D|3D>
@@ -93,7 +94,7 @@ const parseArgs = (argv: string[]): CliConfig => {
     }
     if (arg === '--output') {
       const value = nextValue(i, arg);
-      if (value !== 'summary' && value !== 'json' && value !== 'listing') {
+      if (value !== 'summary' && value !== 'json' && value !== 'listing' && value !== 'landxml') {
         throw new Error(`Invalid --output value "${value}"`);
       }
       config.outputFormat = value as OutputFormat;
@@ -292,22 +293,31 @@ const run = (): number => {
                 parseState.qFixAngularSigmaSec ?? profileParseOptions.qFixAngularSigmaSec,
             },
           )
-        : [
-            `WebNet CLI solve summary`,
-            `Input: ${inputPath}`,
-            `Profile: ${cfg.profile}`,
-            `Run mode: ${
-              result.preanalysisMode
-                ? `PREANALYSIS (planned observations=${result.parseState?.plannedObservationCount ?? 0})`
-                : 'ADJUSTMENT'
-            }`,
-            `Converged: ${result.converged ? 'YES' : 'NO'}`,
-            `Iterations: ${result.iterations}`,
-            `DOF: ${result.dof}`,
-            `SEUW: ${result.seuw.toFixed(6)}`,
-            `Stations: ${Object.keys(result.stations).length}`,
-            `Observations: ${result.observations.length}`,
-          ].join('\n');
+        : cfg.outputFormat === 'landxml'
+          ? buildLandXmlText(result, {
+              units: (parseState.units ?? profileParseOptions.units ?? 'm') as UnitsMode,
+              solveProfile: cfg.profile,
+              showLostStations: true,
+              projectName: path.basename(inputPath, path.extname(inputPath)),
+              applicationName: 'WebNet',
+              applicationVersion: '0.0.0',
+            })
+          : [
+              `WebNet CLI solve summary`,
+              `Input: ${inputPath}`,
+              `Profile: ${cfg.profile}`,
+              `Run mode: ${
+                result.preanalysisMode
+                  ? `PREANALYSIS (planned observations=${result.parseState?.plannedObservationCount ?? 0})`
+                  : 'ADJUSTMENT'
+              }`,
+              `Converged: ${result.converged ? 'YES' : 'NO'}`,
+              `Iterations: ${result.iterations}`,
+              `DOF: ${result.dof}`,
+              `SEUW: ${result.seuw.toFixed(6)}`,
+              `Stations: ${Object.keys(result.stations).length}`,
+              `Observations: ${result.observations.length}`,
+            ].join('\n');
 
   try {
     if (cfg.outputPath) {

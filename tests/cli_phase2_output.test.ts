@@ -31,18 +31,22 @@ describe('CLI phase 2 output modes', () => {
   it('writes industry-style listing output to file', () => {
     const outDir = mkdtempSync(path.join(tmpdir(), 'webnet-cli-'));
     const outPath = path.join(outDir, 'listing.txt');
-    const res = runCli([
-      '--input',
-      STABLE_INPUT,
-      '--output',
-      'listing',
-      '--out',
-      outPath,
-    ]);
+    const res = runCli(['--input', STABLE_INPUT, '--output', 'listing', '--out', outPath]);
     expect(res.status).toBe(0);
     const text = readFileSync(outPath, 'utf-8');
     expect(text).toContain('INDUSTRY-STANDARD-STYLE Listing');
     expect(text).toContain('Adjusted Coordinates');
+  });
+
+  it('writes LandXML output to file', () => {
+    const outDir = mkdtempSync(path.join(tmpdir(), 'webnet-cli-'));
+    const outPath = path.join(outDir, 'network.xml');
+    const res = runCli(['--input', STABLE_INPUT, '--output', 'landxml', '--out', outPath]);
+    expect(res.status).toBe(0);
+    const text = readFileSync(outPath, 'utf-8');
+    expect(text).toContain('<LandXML xmlns="http://www.landxml.org/schema/LandXML-1.2"');
+    expect(text).toContain('<CgPoints>');
+    expect(text).toContain('<PlanFeatures name="WebNet Connections">');
   });
 
   it('returns deterministic usage error code for missing input files', () => {

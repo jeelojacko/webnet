@@ -29,6 +29,7 @@ import {
   type AutoAdjustConfig,
 } from './engine/autoAdjust';
 import { buildIndustryStyleListingText } from './engine/industryListing';
+import { buildLandXmlText } from './engine/landxml';
 import { importExternalInput } from './engine/opus';
 import { isPreanalysisWhatIfCandidate } from './engine/preanalysis';
 import type {
@@ -401,7 +402,7 @@ const INDUSTRY_DEFAULT_INSTRUMENT_CODE = 'S9';
 const INDUSTRY_DEFAULT_INSTRUMENT: Instrument = createDefaultS9Instrument();
 
 type TabKey = 'report' | 'processing-summary' | 'industry-output' | 'map';
-type ExportFormat = 'webnet' | 'industry-style';
+type ExportFormat = 'webnet' | 'industry-style' | 'landxml';
 
 const SETTINGS_TOOLTIPS = {
   solveProfile:
@@ -426,7 +427,8 @@ const SETTINGS_TOOLTIPS = {
   autoAdjustThreshold:
     'Absolute standardized residual threshold |t| used for non-local-test auto-adjust candidate selection.',
   order: 'Coordinate field order expected in control records and shown in report tables.',
-  angleUnits: 'Angular input units for survey records. DMS uses D-M-S tokens; DD uses decimal degrees.',
+  angleUnits:
+    'Angular input units for survey records. DMS uses D-M-S tokens; DD uses decimal degrees.',
   angleStationOrder:
     'Angle station triplet order for A/M/T style records: AT-FROM-TO or FROM-AT-TO.',
   angleMode:
@@ -458,8 +460,7 @@ const SETTINGS_TOOLTIPS = {
     'Convergence correction angle in decimal degrees. Positive rotates modeled azimuths clockwise from grid north.',
   geoidModelEnabled:
     'Enable optional geoid/grid model support. Default OFF keeps existing height behavior unchanged.',
-  geoidModelId:
-    'Geoid/grid model identifier. Built-in demo IDs: NGS-DEMO, NRC-DEMO.',
+  geoidModelId: 'Geoid/grid model identifier. Built-in demo IDs: NGS-DEMO, NRC-DEMO.',
   geoidInterpolation:
     'Interpolation method used for geoid/grid lookup and height conversion when geoid model support is enabled.',
   geoidHeightConversionEnabled:
@@ -484,8 +485,7 @@ const SETTINGS_TOOLTIPS = {
     'Fixed angular sigma constant in arcseconds used when angular observation sigma token is "!" (.QFIX ANGULAR).',
   descriptionReconcileMode:
     'Policy for repeated station descriptions: FIRST keeps first description; APPEND concatenates unique descriptions.',
-  descriptionAppendDelimiter:
-    'Delimiter used when description reconciliation mode is APPEND.',
+  descriptionAppendDelimiter: 'Delimiter used when description reconciliation mode is APPEND.',
   lonSign: 'Longitude sign convention for geographic parsing (.LONSIGN W- or W+).',
   tsCorrelation:
     'Enable correlated angular stochastic modeling for TS setups/sets using a common correlation coefficient rho.',
@@ -536,7 +536,8 @@ const SETTINGS_TOOLTIPS = {
     'Include adjusted observations/residuals table in industry-style listing output.',
   listingShowErrorPropagation:
     'Include error propagation (station standard deviations) section in industry-style listing output.',
-  listingShowProcessingNotes: 'Include processing log notes section in industry-style listing output.',
+  listingShowProcessingNotes:
+    'Include processing log notes section in industry-style listing output.',
   listingShowAzimuthsBearings:
     'When disabled, azimuth/bearing style observations are omitted from adjusted-observation listing rows.',
   listingSortCoordinatesBy:
@@ -556,12 +557,10 @@ const PROJECT_OPTION_TAB_TOOLTIPS: Record<ProjectOptionsTab, string> = {
     'Project instrument library editor for EDM, angular, centering, and vertical precision parameters.',
   'listing-file':
     'Controls which sections appear in industry-style listing/export output and how listing rows are sorted.',
-  'other-files':
-    'Reserved area for additional output-file and auxiliary export controls.',
+  'other-files': 'Reserved area for additional output-file and auxiliary export controls.',
   special:
     'Special parsing and interpretation controls such as A-record mode and description reconciliation.',
-  gps:
-    'CRS/geodetic settings, GPS loop checks, geoid/grid options, and GPS AddHiHt defaults.',
+  gps: 'CRS/geodetic settings, GPS loop checks, geoid/grid options, and GPS AddHiHt defaults.',
   modeling:
     'Advanced stochastic-model controls such as TS angular correlation and robust adjustment settings.',
 };
@@ -585,16 +584,12 @@ const PROJECT_OPTION_SECTION_TOOLTIPS: Record<string, string> = {
     'Parser interpretation controls for A-record handling and repeated-description reconciliation.',
   'CRS / Geodetic Setup':
     'Coordinate reference system, projection, grid scale, and convergence options for geodetic workflows.',
-  'GPS Loop Check':
-    'Enable or disable GNSS loop-closure diagnostics and related reporting.',
+  'GPS Loop Check': 'Enable or disable GNSS loop-closure diagnostics and related reporting.',
   'GPS AddHiHt Defaults':
     'Default parser-side antenna-height settings used by GPS AddHiHt workflows.',
-  'Geoid/Grid Model':
-    'Optional geoid/grid-model lookup and height-conversion controls.',
-  'TS Correlation':
-    'Angular correlation settings for total station observations by setup or set.',
-  'Robust Model':
-    'Robust adjustment controls for downweighting large residuals during solving.',
+  'Geoid/Grid Model': 'Optional geoid/grid-model lookup and height-conversion controls.',
+  'TS Correlation': 'Angular correlation settings for total station observations by setup or set.',
+  'Robust Model': 'Robust adjustment controls for downweighting large residuals during solving.',
   'Other File Outputs':
     'Placeholder area for future non-listing output-file switches and export controls.',
 };
@@ -769,7 +764,9 @@ const App: React.FC = () => {
 
     root.querySelectorAll('label').forEach((label) => {
       if (label.getAttribute('title')) return;
-      const control = label.querySelector<HTMLElement>('input[title], select[title], textarea[title], button[title]');
+      const control = label.querySelector<HTMLElement>(
+        'input[title], select[title], textarea[title], button[title]',
+      );
       const tip = control?.getAttribute('title');
       if (tip) label.setAttribute('title', tip);
     });
@@ -1023,7 +1020,9 @@ const App: React.FC = () => {
     const effectiveInstrumentLibrary = parity
       ? { ...projectInstruments, [INDUSTRY_DEFAULT_INSTRUMENT_CODE]: INDUSTRY_DEFAULT_INSTRUMENT }
       : projectInstruments;
-    const currentInstrument = parity ? INDUSTRY_DEFAULT_INSTRUMENT_CODE : selectedInstrument || undefined;
+    const currentInstrument = parity
+      ? INDUSTRY_DEFAULT_INSTRUMENT_CODE
+      : selectedInstrument || undefined;
     return {
       parity,
       effectiveParse,
@@ -1033,10 +1032,7 @@ const App: React.FC = () => {
     };
   };
 
-  const buildRunDiagnostics = (
-    base: ParseSettings,
-    solved?: AdjustmentResult,
-  ): RunDiagnostics => {
+  const buildRunDiagnostics = (base: ParseSettings, solved?: AdjustmentResult): RunDiagnostics => {
     const profileCtx = resolveProfileContext(base);
     const parseState = (solved?.parseState ?? profileCtx.effectiveParse) as ParseOptions;
     const parse = {
@@ -1080,9 +1076,7 @@ const App: React.FC = () => {
         profileCtx.effectiveParse.crsConvergenceEnabled ??
         false,
       crsConvergenceAngleRad:
-        parseState.crsConvergenceAngleRad ??
-        profileCtx.effectiveParse.crsConvergenceAngleRad ??
-        0,
+        parseState.crsConvergenceAngleRad ?? profileCtx.effectiveParse.crsConvergenceAngleRad ?? 0,
       geoidModelEnabled:
         parseState.geoidModelEnabled ?? profileCtx.effectiveParse.geoidModelEnabled ?? false,
       geoidModelId: parseState.geoidModelId ?? profileCtx.effectiveParse.geoidModelId ?? 'NGS-DEMO',
@@ -1229,7 +1223,8 @@ const App: React.FC = () => {
     const descriptionAppendDelimiter =
       res.parseState?.descriptionAppendDelimiter ?? parseSettings.descriptionAppendDelimiter;
     const reconciledDescriptions = res.parseState?.reconciledDescriptions ?? {};
-    const stationDescription = (stationId: string): string => reconciledDescriptions[stationId] ?? '';
+    const stationDescription = (stationId: string): string =>
+      reconciledDescriptions[stationId] ?? '';
     const aliasObsRefsByLine = new Map<number, string[]>();
     aliasTrace.forEach((entry) => {
       if (entry.context !== 'observation') return;
@@ -1357,7 +1352,9 @@ const App: React.FC = () => {
       `Description reconciliation: ${descriptionReconcileMode.toUpperCase()}${descriptionReconcileMode === 'append' ? ` (delimiter="${descriptionAppendDelimiter}")` : ''}`,
     );
     lines.push(`Show lost stations in export: ${showLostStationsInOutputs ? 'ON' : 'OFF'}`);
-    lines.push(`Robust mode: ${runDiag.robustMode.toUpperCase()} (k=${runDiag.robustK.toFixed(2)})`);
+    lines.push(
+      `Robust mode: ${runDiag.robustMode.toUpperCase()} (k=${runDiag.robustK.toFixed(2)})`,
+    );
     lines.push(
       `Reductions: map=${runDiag.mapMode} (scale=${runDiag.mapScaleFactor.toFixed(8)}), crsScale=${runDiag.crsGridScaleEnabled ? `ON(${runDiag.crsGridScaleFactor.toFixed(8)})` : 'OFF'}, crsConv=${runDiag.crsConvergenceEnabled ? `ON(${(runDiag.crsConvergenceAngleRad * RAD_TO_DEG).toFixed(6)} deg)` : 'OFF'}, geoid=${runDiag.geoidModelEnabled ? `ON(${runDiag.geoidModelId},${runDiag.geoidInterpolation.toUpperCase()},loaded=${runDiag.geoidModelLoaded ? 'YES' : 'NO'})` : 'OFF'}, geoidH=${runDiag.geoidHeightConversionEnabled ? `ON(${runDiag.geoidOutputHeightDatum.toUpperCase()},conv=${runDiag.geoidConvertedStationCount},skip=${runDiag.geoidSkippedStationCount})` : 'OFF'}, gpsAddHiHt=${runDiag.gpsAddHiHtEnabled ? `ON(HI=${(runDiag.gpsAddHiHtHiM * unitScale).toFixed(4)}${linearUnit},HT=${(runDiag.gpsAddHiHtHtM * unitScale).toFixed(4)}${linearUnit})` : 'OFF'}, vRed=${runDiag.verticalReduction}, curvRef=${runDiag.applyCurvatureRefraction ? 'ON' : 'OFF'} (k=${runDiag.refractionCoefficient.toFixed(3)}), normalize=${runDiag.normalize ? 'ON' : 'OFF'}`,
     );
@@ -1365,7 +1362,10 @@ const App: React.FC = () => {
       `Default sigmas used: ${runDiag.defaultSigmaCount}${runDiag.defaultSigmaByType ? ` (${runDiag.defaultSigmaByType})` : ''}`,
     );
     lines.push(`Stochastic defaults: ${runDiag.stochasticDefaultsSummary}`);
-    if ((res.parseState?.aliasExplicitCount ?? 0) > 0 || (res.parseState?.aliasRuleCount ?? 0) > 0) {
+    if (
+      (res.parseState?.aliasExplicitCount ?? 0) > 0 ||
+      (res.parseState?.aliasRuleCount ?? 0) > 0
+    ) {
       lines.push(
         `Alias canonicalization: explicit=${res.parseState?.aliasExplicitCount ?? 0}, rules=${res.parseState?.aliasRuleCount ?? 0}, references=${aliasTrace.length}`,
       );
@@ -1415,7 +1415,9 @@ const App: React.FC = () => {
       lines.push(
         `Preanalysis summary: plannedObs=${res.parseState?.plannedObservationCount ?? 0}, stationCovBlocks=${outputStationCovariances.length}, connectedPairBlocks=${outputRelativeCovariances.length}`,
       );
-      lines.push('Residual-based QC: disabled (chi-square, suspect ranking, and exclusion workflows omitted).');
+      lines.push(
+        'Residual-based QC: disabled (chi-square, suspect ranking, and exclusion workflows omitted).',
+      );
     } else if (res.chiSquare) {
       lines.push(
         `Chi-square: T=${res.chiSquare.T.toFixed(4)} dof=${res.chiSquare.dof} p=${res.chiSquare.p.toFixed(
@@ -1494,7 +1496,9 @@ const App: React.FC = () => {
       lines.push(
         `Cluster detection: pass=${cd.passMode}, mode=${cd.linkageMode}, dim=${cd.dimension}, tol=${(
           cd.tolerance * unitScale
-        ).toFixed(4)} ${linearUnit}, pairHits=${cd.pairCount}, candidates=${cd.candidateCount}, approvedMerges=${cd.approvedMergeCount ?? 0}, mergeOutcomes=${cd.mergeOutcomes?.length ?? 0}, rejected=${cd.rejectedProposals?.length ?? 0}`,
+        ).toFixed(
+          4,
+        )} ${linearUnit}, pairHits=${cd.pairCount}, candidates=${cd.candidateCount}, approvedMerges=${cd.approvedMergeCount ?? 0}, mergeOutcomes=${cd.mergeOutcomes?.length ?? 0}, rejected=${cd.rejectedProposals?.length ?? 0}`,
       );
     }
     if (!isPreanalysis && res.autoAdjustDiagnostics?.enabled) {
@@ -1510,7 +1514,11 @@ const App: React.FC = () => {
       );
     }
     lines.push('');
-    lines.push(isPreanalysis ? '--- Predicted Coordinates and Precision ---' : '--- Adjusted Coordinates ---');
+    lines.push(
+      isPreanalysis
+        ? '--- Predicted Coordinates and Precision ---'
+        : '--- Adjusted Coordinates ---',
+    );
     lines.push(
       'ID\tDescription\tNorthing\tEasting\tHeight\tType\tσN\tσE\tσH\tEllMaj\tEllMin\tEllAz\tEllMaj95\tEllMin95',
     );
@@ -1558,9 +1566,9 @@ const App: React.FC = () => {
       lines.push('From\tTo\tTypes\tσN\tσE\tσDist\tσAz(")\tCEE\tCEN\tCNN');
       outputRelativeCovariances.forEach((row) => {
         lines.push(
-          `${row.from}\t${row.to}\t${row.connectionTypes.join(',')}\t${(row.sigmaN * unitScale).toFixed(
-            4,
-          )}\t${(row.sigmaE * unitScale).toFixed(4)}\t${
+          `${row.from}\t${row.to}\t${row.connectionTypes.join(',')}\t${(
+            row.sigmaN * unitScale
+          ).toFixed(4)}\t${(row.sigmaE * unitScale).toFixed(4)}\t${
             row.sigmaDist != null ? (row.sigmaDist * unitScale).toFixed(4) : '-'
           }\t${row.sigmaAz != null ? (row.sigmaAz * RAD_TO_DEG * 3600).toFixed(2) : '-'}\t${(
             row.cEE *
@@ -1607,7 +1615,9 @@ const App: React.FC = () => {
         flaggedRelativeCues.forEach((cue) => {
           lines.push(
             `Pair ${cue.from}-${cue.to}: ${cue.severity.toUpperCase()} metric=${
-              cue.distanceMetric != null ? `${(cue.distanceMetric * unitScale).toFixed(4)} ${linearUnit}` : '-'
+              cue.distanceMetric != null
+                ? `${(cue.distanceMetric * unitScale).toFixed(4)} ${linearUnit}`
+                : '-'
             } ratio=${cue.relativeToMedian != null ? `${cue.relativeToMedian.toFixed(2)}x` : '-'} shape=${
               cue.ellipseRatio != null ? `${cue.ellipseRatio.toFixed(2)}x` : '-'
             } ${cue.note}`,
@@ -1629,15 +1639,23 @@ const App: React.FC = () => {
             : '-'
         }, weakStations=${res.preanalysisImpactDiagnostics.baseWeakStationCount}, weakPairs=${res.preanalysisImpactDiagnostics.baseWeakPairCount}`,
       );
-      lines.push('Action\tType\tStations\tLine\tdWorstMaj\tdMedianMaj\tdWorstPair\tdWeakStn\tdWeakPair\tScore\tStatus');
+      lines.push(
+        'Action\tType\tStations\tLine\tdWorstMaj\tdMedianMaj\tdWorstPair\tdWeakStn\tdWeakPair\tScore\tStatus',
+      );
       res.preanalysisImpactDiagnostics.rows.forEach((row) => {
         lines.push(
           `${row.action}\t${row.type}\t${row.stations}\t${row.sourceLine ?? '-'}\t${
-            row.deltaWorstStationMajor != null ? (row.deltaWorstStationMajor * unitScale).toFixed(4) : '-'
+            row.deltaWorstStationMajor != null
+              ? (row.deltaWorstStationMajor * unitScale).toFixed(4)
+              : '-'
           }\t${
-            row.deltaMedianStationMajor != null ? (row.deltaMedianStationMajor * unitScale).toFixed(4) : '-'
+            row.deltaMedianStationMajor != null
+              ? (row.deltaMedianStationMajor * unitScale).toFixed(4)
+              : '-'
           }\t${
-            row.deltaWorstPairSigmaDist != null ? (row.deltaWorstPairSigmaDist * unitScale).toFixed(4) : '-'
+            row.deltaWorstPairSigmaDist != null
+              ? (row.deltaWorstPairSigmaDist * unitScale).toFixed(4)
+              : '-'
           }\t${row.deltaWeakStationCount ?? '-'}\t${row.deltaWeakPairCount ?? '-'}\t${
             row.score != null ? row.score.toFixed(2) : '-'
           }\t${row.status}`,
@@ -1863,9 +1881,7 @@ const App: React.FC = () => {
       if (ad.removed.length > 0) {
         lines.push('');
         lines.push('Removed observations:');
-        lines.push(
-          'ObsID   Type        Stations                 Line    |t|     Redund   Reason',
-        );
+        lines.push('ObsID   Type        Stations                 Line    |t|     Redund   Reason');
         ad.removed.forEach((row) => {
           lines.push(
             `${String(row.obsId).padStart(5)}   ${row.type.toUpperCase().padEnd(10)}  ${row.stations.padEnd(22)}  ${String(row.sourceLine ?? '-').padStart(4)}  ${row.stdRes.toFixed(2).padStart(6)}  ${(row.redundancy != null ? row.redundancy.toFixed(3) : '-').padStart(7)}  ${row.reason}`,
@@ -1900,7 +1916,9 @@ const App: React.FC = () => {
       lines.push(
         `Pass=${cd.passMode.toUpperCase()} Mode=${cd.linkageMode.toUpperCase()} Dim=${cd.dimension} Tolerance=${(
           cd.tolerance * unitScale
-        ).toFixed(4)} ${linearUnit} PairHits=${cd.pairCount} Candidates=${cd.candidateCount} ApprovedMerges=${cd.approvedMergeCount ?? 0} MergeOutcomes=${outcomes.length} Rejected=${rejected.length}`,
+        ).toFixed(
+          4,
+        )} ${linearUnit} PairHits=${cd.pairCount} Candidates=${cd.candidateCount} ApprovedMerges=${cd.approvedMergeCount ?? 0} MergeOutcomes=${outcomes.length} Rejected=${rejected.length}`,
       );
       if (cd.candidates.length > 0) {
         lines.push(
@@ -1911,16 +1929,20 @@ const App: React.FC = () => {
           lines.push(
             `${c.key.padEnd(18)} ${c.representativeId.padEnd(12)} ${String(c.memberCount).padStart(7)}  ${(
               c.maxSeparation * unitScale
-            ).toFixed(4).padStart(12)} ${(
-              c.meanSeparation * unitScale
-            ).toFixed(4).padStart(12)}  ${flags.padEnd(15)} ${c.stationIds.join(', ')}`,
+            )
+              .toFixed(4)
+              .padStart(12)} ${(c.meanSeparation * unitScale)
+              .toFixed(4)
+              .padStart(12)}  ${flags.padEnd(15)} ${c.stationIds.join(', ')}`,
           );
         });
       }
       if (outcomes.length > 0) {
         lines.push('');
         lines.push('--- Cluster Merge Outcomes (Delta From Retained Point) ---');
-        lines.push('Alias              Canonical          dE           dN           dH           d2D          d3D          Status');
+        lines.push(
+          'Alias              Canonical          dE           dN           dH           d2D          d3D          Status',
+        );
         outcomes.forEach((row) => {
           lines.push(
             `${row.aliasId.padEnd(18)} ${row.canonicalId.padEnd(18)} ${(row.deltaE != null ? (row.deltaE * unitScale).toFixed(4) : '-').padStart(12)} ${(row.deltaN != null ? (row.deltaN * unitScale).toFixed(4) : '-').padStart(12)} ${(row.deltaH != null ? (row.deltaH * unitScale).toFixed(4) : '-').padStart(12)} ${(row.horizontalDelta != null ? (row.horizontalDelta * unitScale).toFixed(4) : '-').padStart(12)} ${(row.spatialDelta != null ? (row.spatialDelta * unitScale).toFixed(4) : '-').padStart(12)}  ${row.missing ? 'MISSING PASS1 DATA' : 'OK'}`,
@@ -1930,7 +1952,9 @@ const App: React.FC = () => {
       if (rejected.length > 0) {
         lines.push('');
         lines.push('--- Rejected Cluster Proposals ---');
-        lines.push('Key                Rep          Members  Retained      Station IDs                        Reason');
+        lines.push(
+          'Key                Rep          Members  Retained      Station IDs                        Reason',
+        );
         rejected.forEach((row) => {
           lines.push(
             `${row.key.padEnd(18)} ${row.representativeId.padEnd(12)} ${String(row.memberCount).padStart(7)}  ${(row.retainedId ?? '-').padEnd(12)} ${row.stationIds.join(', ').padEnd(32)} ${row.reason}`,
@@ -2798,10 +2822,7 @@ const App: React.FC = () => {
         lines.push('');
       }
     }
-    const appendSideshotSection = (
-      title: string,
-      sideshots: typeof outputSideshots,
-    ): void => {
+    const appendSideshotSection = (title: string, sideshots: typeof outputSideshots): void => {
       if (sideshots.length === 0) return;
       lines.push(`--- ${title} ---`);
       const rows = sideshots.map((s) => ({
@@ -3018,127 +3039,127 @@ const App: React.FC = () => {
         return `${scope}:${sign}${(correction * unitScale).toFixed(4)}${linearUnit}`;
       };
       outputObservations.forEach((obs) => {
-      let stations = '';
-      let obsStr = '';
-      let calcStr = '';
-      let resStr = '';
-      const angular = isAngularType(obs.type);
-      if (obs.type === 'angle') {
-        stations = `${obs.at}-${obs.from}-${obs.to}`;
-        obsStr = radToDmsStr(obs.obs);
-        calcStr = obs.calc != null ? radToDmsStr(obs.calc as number) : '-';
-        resStr =
-          obs.residual != null
-            ? `${((obs.residual as number) * RAD_TO_DEG * 3600).toFixed(2)}"`
-            : '-';
-      } else if (obs.type === 'direction') {
-        const reductionLabel =
-          obs.rawCount != null
-            ? ` [raw ${obs.rawCount}->1, F1:${obs.rawFace1Count ?? '-'} F2:${obs.rawFace2Count ?? '-'}]`
-            : '';
-        stations = `${obs.at}-${obs.to} (${obs.setId})${reductionLabel}`;
-        obsStr = radToDmsStr(obs.obs);
-        calcStr = obs.calc != null ? radToDmsStr(obs.calc as number) : '-';
-        resStr =
-          obs.residual != null
-            ? `${((obs.residual as number) * RAD_TO_DEG * 3600).toFixed(2)}"`
-            : '-';
-      } else if (obs.type === 'dir') {
-        stations = `${obs.from}-${obs.to}`;
-        obsStr = radToDmsStr(obs.obs);
-        calcStr = obs.calc != null ? radToDmsStr(obs.calc as number) : '-';
-        resStr =
-          obs.residual != null
-            ? `${((obs.residual as number) * RAD_TO_DEG * 3600).toFixed(2)}"`
-            : '-';
-      } else if (obs.type === 'dist') {
-        stations = `${obs.from}-${obs.to}`;
-        obsStr = (obs.obs * unitScale).toFixed(4);
-        calcStr = obs.calc != null ? ((obs.calc as number) * unitScale).toFixed(4) : '-';
-        resStr = obs.residual != null ? ((obs.residual as number) * unitScale).toFixed(4) : '-';
-      } else if (obs.type === 'bearing') {
-        stations = `${obs.from}-${obs.to}`;
-        obsStr = radToDmsStr(obs.obs);
-        calcStr = obs.calc != null ? radToDmsStr(obs.calc as number) : '-';
-        resStr =
-          obs.residual != null
-            ? `${((obs.residual as number) * RAD_TO_DEG * 3600).toFixed(2)}"`
-            : '-';
-      } else if (obs.type === 'zenith') {
-        stations = `${obs.from}-${obs.to}`;
-        obsStr = radToDmsStr(obs.obs);
-        calcStr = obs.calc != null ? radToDmsStr(obs.calc as number) : '-';
-        resStr =
-          obs.residual != null
-            ? `${((obs.residual as number) * RAD_TO_DEG * 3600).toFixed(2)}"`
-            : '-';
-      } else if (obs.type === 'gps') {
-        stations = `${obs.from}-${obs.to}`;
-        obsStr = `dE=${(obs.obs.dE * unitScale).toFixed(3)}, dN=${(obs.obs.dN * unitScale).toFixed(3)}`;
-        calcStr =
-          obs.calc != null
-            ? `dE=${((obs.calc as { dE: number }).dE * unitScale).toFixed(3)}, dN=${(
-                (obs.calc as { dN: number; dE: number }).dN * unitScale
-              ).toFixed(3)}`
-            : '-';
-        resStr =
-          obs.residual != null
-            ? `vE=${((obs.residual as { vE: number }).vE * unitScale).toFixed(3)}, vN=${(
-                (obs.residual as { vN: number; vE: number }).vN * unitScale
-              ).toFixed(3)}`
-            : '-';
-      } else if (obs.type === 'lev') {
-        stations = `${obs.from}-${obs.to}`;
-        obsStr = (obs.obs * unitScale).toFixed(4);
-        calcStr = obs.calc != null ? ((obs.calc as number) * unitScale).toFixed(4) : '-';
-        resStr = obs.residual != null ? ((obs.residual as number) * unitScale).toFixed(4) : '-';
-      }
-      stations = `${stations}${aliasRefsForLine(obs.sourceLine)}`;
+        let stations = '';
+        let obsStr = '';
+        let calcStr = '';
+        let resStr = '';
+        const angular = isAngularType(obs.type);
+        if (obs.type === 'angle') {
+          stations = `${obs.at}-${obs.from}-${obs.to}`;
+          obsStr = radToDmsStr(obs.obs);
+          calcStr = obs.calc != null ? radToDmsStr(obs.calc as number) : '-';
+          resStr =
+            obs.residual != null
+              ? `${((obs.residual as number) * RAD_TO_DEG * 3600).toFixed(2)}"`
+              : '-';
+        } else if (obs.type === 'direction') {
+          const reductionLabel =
+            obs.rawCount != null
+              ? ` [raw ${obs.rawCount}->1, F1:${obs.rawFace1Count ?? '-'} F2:${obs.rawFace2Count ?? '-'}]`
+              : '';
+          stations = `${obs.at}-${obs.to} (${obs.setId})${reductionLabel}`;
+          obsStr = radToDmsStr(obs.obs);
+          calcStr = obs.calc != null ? radToDmsStr(obs.calc as number) : '-';
+          resStr =
+            obs.residual != null
+              ? `${((obs.residual as number) * RAD_TO_DEG * 3600).toFixed(2)}"`
+              : '-';
+        } else if (obs.type === 'dir') {
+          stations = `${obs.from}-${obs.to}`;
+          obsStr = radToDmsStr(obs.obs);
+          calcStr = obs.calc != null ? radToDmsStr(obs.calc as number) : '-';
+          resStr =
+            obs.residual != null
+              ? `${((obs.residual as number) * RAD_TO_DEG * 3600).toFixed(2)}"`
+              : '-';
+        } else if (obs.type === 'dist') {
+          stations = `${obs.from}-${obs.to}`;
+          obsStr = (obs.obs * unitScale).toFixed(4);
+          calcStr = obs.calc != null ? ((obs.calc as number) * unitScale).toFixed(4) : '-';
+          resStr = obs.residual != null ? ((obs.residual as number) * unitScale).toFixed(4) : '-';
+        } else if (obs.type === 'bearing') {
+          stations = `${obs.from}-${obs.to}`;
+          obsStr = radToDmsStr(obs.obs);
+          calcStr = obs.calc != null ? radToDmsStr(obs.calc as number) : '-';
+          resStr =
+            obs.residual != null
+              ? `${((obs.residual as number) * RAD_TO_DEG * 3600).toFixed(2)}"`
+              : '-';
+        } else if (obs.type === 'zenith') {
+          stations = `${obs.from}-${obs.to}`;
+          obsStr = radToDmsStr(obs.obs);
+          calcStr = obs.calc != null ? radToDmsStr(obs.calc as number) : '-';
+          resStr =
+            obs.residual != null
+              ? `${((obs.residual as number) * RAD_TO_DEG * 3600).toFixed(2)}"`
+              : '-';
+        } else if (obs.type === 'gps') {
+          stations = `${obs.from}-${obs.to}`;
+          obsStr = `dE=${(obs.obs.dE * unitScale).toFixed(3)}, dN=${(obs.obs.dN * unitScale).toFixed(3)}`;
+          calcStr =
+            obs.calc != null
+              ? `dE=${((obs.calc as { dE: number }).dE * unitScale).toFixed(3)}, dN=${(
+                  (obs.calc as { dN: number; dE: number }).dN * unitScale
+                ).toFixed(3)}`
+              : '-';
+          resStr =
+            obs.residual != null
+              ? `vE=${((obs.residual as { vE: number }).vE * unitScale).toFixed(3)}, vN=${(
+                  (obs.residual as { vN: number; vE: number }).vN * unitScale
+                ).toFixed(3)}`
+              : '-';
+        } else if (obs.type === 'lev') {
+          stations = `${obs.from}-${obs.to}`;
+          obsStr = (obs.obs * unitScale).toFixed(4);
+          calcStr = obs.calc != null ? ((obs.calc as number) * unitScale).toFixed(4) : '-';
+          resStr = obs.residual != null ? ((obs.residual as number) * unitScale).toFixed(4) : '-';
+        }
+        stations = `${stations}${aliasRefsForLine(obs.sourceLine)}`;
 
-      const localTest =
-        obs.localTestComponents != null
-          ? `E:${obs.localTestComponents.passE ? 'PASS' : 'FAIL'} N:${
-              obs.localTestComponents.passN ? 'PASS' : 'FAIL'
-            }`
-          : obs.localTest != null
-            ? obs.localTest.pass
-              ? 'PASS'
-              : 'FAIL'
-            : '-';
-      const mdb =
-        obs.mdbComponents != null
-          ? `E=${formatMdb(obs.mdbComponents.mE, angular)}, N=${formatMdb(obs.mdbComponents.mN, angular)}`
-          : obs.mdb != null
-            ? formatMdb(obs.mdb, angular)
-            : '-';
-      const stdResAbs = Math.abs(obs.stdRes ?? 0);
+        const localTest =
+          obs.localTestComponents != null
+            ? `E:${obs.localTestComponents.passE ? 'PASS' : 'FAIL'} N:${
+                obs.localTestComponents.passN ? 'PASS' : 'FAIL'
+              }`
+            : obs.localTest != null
+              ? obs.localTest.pass
+                ? 'PASS'
+                : 'FAIL'
+              : '-';
+        const mdb =
+          obs.mdbComponents != null
+            ? `E=${formatMdb(obs.mdbComponents.mE, angular)}, N=${formatMdb(obs.mdbComponents.mN, angular)}`
+            : obs.mdb != null
+              ? formatMdb(obs.mdb, angular)
+              : '-';
+        const stdResAbs = Math.abs(obs.stdRes ?? 0);
 
-      rows.push({
-        type: obs.type,
-        stations,
-        sourceLine: obs.sourceLine != null ? String(obs.sourceLine) : '-',
-        obs: obsStr || '-',
-        calc: calcStr || '-',
-        residual: resStr || '-',
-        stdRes:
-          obs.stdResComponents != null
-            ? `${obs.stdResComponents.tE.toFixed(3)}/${obs.stdResComponents.tN.toFixed(3)}`
-            : obs.stdRes != null
-              ? obs.stdRes.toFixed(3)
-              : '-',
-        redundancy:
-          typeof obs.redundancy === 'object'
-            ? `${obs.redundancy.rE.toFixed(3)}/${obs.redundancy.rN.toFixed(3)}`
-            : obs.redundancy != null
-              ? obs.redundancy.toFixed(3)
-              : '-',
-        localTest,
-        mdb,
-        prism: prismTagForObservation(obs),
-        tag: autoSideshotObsIds.has(obs.id) ? 'AUTO-SS' : '-',
-        stdResAbs,
+        rows.push({
+          type: obs.type,
+          stations,
+          sourceLine: obs.sourceLine != null ? String(obs.sourceLine) : '-',
+          obs: obsStr || '-',
+          calc: calcStr || '-',
+          residual: resStr || '-',
+          stdRes:
+            obs.stdResComponents != null
+              ? `${obs.stdResComponents.tE.toFixed(3)}/${obs.stdResComponents.tN.toFixed(3)}`
+              : obs.stdRes != null
+                ? obs.stdRes.toFixed(3)
+                : '-',
+          redundancy:
+            typeof obs.redundancy === 'object'
+              ? `${obs.redundancy.rE.toFixed(3)}/${obs.redundancy.rN.toFixed(3)}`
+              : obs.redundancy != null
+                ? obs.redundancy.toFixed(3)
+                : '-',
+          localTest,
+          mdb,
+          prism: prismTagForObservation(obs),
+          tag: autoSideshotObsIds.has(obs.id) ? 'AUTO-SS' : '-',
+          stdResAbs,
+        });
       });
-    });
 
       rows.sort((a, b) => b.stdResAbs - a.stdResAbs);
       const suspects = rows
@@ -3146,216 +3167,221 @@ const App: React.FC = () => {
         .slice(0, 20);
 
       if (suspects.length > 0) {
-      lines.push('--- Top Suspects ---');
-      const suspectHeader = {
-        rank: '#',
-        type: 'Type',
-        stations: 'Stations',
-        line: 'Line',
-        stdRes: 'StdRes',
-        local: 'Local',
-        mdb: 'MDB',
-      };
-      const suspectRows = suspects.map((r, idx) => ({
-        rank: String(idx + 1),
-        type: r.type,
-        stations: r.stations,
-        line: r.sourceLine,
-        stdRes: r.stdRes,
-        local: r.localTest,
-        mdb: r.mdb,
-      }));
-      const suspectWidths = {
-        rank: Math.max(suspectHeader.rank.length, ...suspectRows.map((r) => r.rank.length)),
-        type: Math.max(suspectHeader.type.length, ...suspectRows.map((r) => r.type.length)),
-        stations: Math.max(
-          suspectHeader.stations.length,
-          ...suspectRows.map((r) => r.stations.length),
-        ),
-        line: Math.max(suspectHeader.line.length, ...suspectRows.map((r) => r.line.length)),
-        stdRes: Math.max(suspectHeader.stdRes.length, ...suspectRows.map((r) => r.stdRes.length)),
-        local: Math.max(suspectHeader.local.length, ...suspectRows.map((r) => r.local.length)),
-        mdb: Math.max(suspectHeader.mdb.length, ...suspectRows.map((r) => r.mdb.length)),
-      };
-      const pad = (value: string, size: number) => value.padEnd(size, ' ');
-      lines.push(
-        [
-          pad(suspectHeader.rank, suspectWidths.rank),
-          pad(suspectHeader.type, suspectWidths.type),
-          pad(suspectHeader.stations, suspectWidths.stations),
-          pad(suspectHeader.line, suspectWidths.line),
-          pad(suspectHeader.stdRes, suspectWidths.stdRes),
-          pad(suspectHeader.local, suspectWidths.local),
-          pad(suspectHeader.mdb, suspectWidths.mdb),
-        ].join('  '),
-      );
-      suspectRows.forEach((r) => {
+        lines.push('--- Top Suspects ---');
+        const suspectHeader = {
+          rank: '#',
+          type: 'Type',
+          stations: 'Stations',
+          line: 'Line',
+          stdRes: 'StdRes',
+          local: 'Local',
+          mdb: 'MDB',
+        };
+        const suspectRows = suspects.map((r, idx) => ({
+          rank: String(idx + 1),
+          type: r.type,
+          stations: r.stations,
+          line: r.sourceLine,
+          stdRes: r.stdRes,
+          local: r.localTest,
+          mdb: r.mdb,
+        }));
+        const suspectWidths = {
+          rank: Math.max(suspectHeader.rank.length, ...suspectRows.map((r) => r.rank.length)),
+          type: Math.max(suspectHeader.type.length, ...suspectRows.map((r) => r.type.length)),
+          stations: Math.max(
+            suspectHeader.stations.length,
+            ...suspectRows.map((r) => r.stations.length),
+          ),
+          line: Math.max(suspectHeader.line.length, ...suspectRows.map((r) => r.line.length)),
+          stdRes: Math.max(suspectHeader.stdRes.length, ...suspectRows.map((r) => r.stdRes.length)),
+          local: Math.max(suspectHeader.local.length, ...suspectRows.map((r) => r.local.length)),
+          mdb: Math.max(suspectHeader.mdb.length, ...suspectRows.map((r) => r.mdb.length)),
+        };
+        const pad = (value: string, size: number) => value.padEnd(size, ' ');
         lines.push(
           [
-            pad(r.rank, suspectWidths.rank),
-            pad(r.type, suspectWidths.type),
-            pad(r.stations, suspectWidths.stations),
-            pad(r.line, suspectWidths.line),
-            pad(r.stdRes, suspectWidths.stdRes),
-            pad(r.local, suspectWidths.local),
-            pad(r.mdb, suspectWidths.mdb),
+            pad(suspectHeader.rank, suspectWidths.rank),
+            pad(suspectHeader.type, suspectWidths.type),
+            pad(suspectHeader.stations, suspectWidths.stations),
+            pad(suspectHeader.line, suspectWidths.line),
+            pad(suspectHeader.stdRes, suspectWidths.stdRes),
+            pad(suspectHeader.local, suspectWidths.local),
+            pad(suspectHeader.mdb, suspectWidths.mdb),
           ].join('  '),
         );
-      });
-      lines.push('');
+        suspectRows.forEach((r) => {
+          lines.push(
+            [
+              pad(r.rank, suspectWidths.rank),
+              pad(r.type, suspectWidths.type),
+              pad(r.stations, suspectWidths.stations),
+              pad(r.line, suspectWidths.line),
+              pad(r.stdRes, suspectWidths.stdRes),
+              pad(r.local, suspectWidths.local),
+              pad(r.mdb, suspectWidths.mdb),
+            ].join('  '),
+          );
+        });
+        lines.push('');
       }
 
       if (res.suspectImpactDiagnostics && res.suspectImpactDiagnostics.length > 0) {
-      lines.push('--- Suspect Impact Analysis (what-if exclusion) ---');
-      const impactRows = res.suspectImpactDiagnostics.map((d, idx) => ({
-        rank: String(idx + 1),
-        type: d.type,
-        stations: d.stations,
-        line: d.sourceLine != null ? String(d.sourceLine) : '-',
-        baseStdRes: d.baseStdRes != null ? d.baseStdRes.toFixed(2) : '-',
-        dSeuw: d.deltaSeuw != null ? d.deltaSeuw.toFixed(4) : '-',
-        dMaxStd: d.deltaMaxStdRes != null ? d.deltaMaxStdRes.toFixed(2) : '-',
-        chi: d.chiDelta,
-        shift: d.maxCoordShift != null ? (d.maxCoordShift * unitScale).toFixed(4) : '-',
-        score: d.score != null ? d.score.toFixed(1) : '-',
-        status: d.status.toUpperCase(),
-      }));
-      const impactHeader = {
-        rank: '#',
-        type: 'Type',
-        stations: 'Stations',
-        line: 'Line',
-        baseStdRes: 'Base|t|',
-        dSeuw: 'dSEUW',
-        dMaxStd: 'dMax|t|',
-        chi: 'ChiDelta',
-        shift: `MaxShift(${linearUnit})`,
-        score: 'Score',
-        status: 'Status',
-      };
-      const impactWidths = {
-        rank: Math.max(impactHeader.rank.length, ...impactRows.map((r) => r.rank.length)),
-        type: Math.max(impactHeader.type.length, ...impactRows.map((r) => r.type.length)),
-        stations: Math.max(
-          impactHeader.stations.length,
-          ...impactRows.map((r) => r.stations.length),
-        ),
-        line: Math.max(impactHeader.line.length, ...impactRows.map((r) => r.line.length)),
-        baseStdRes: Math.max(
-          impactHeader.baseStdRes.length,
-          ...impactRows.map((r) => r.baseStdRes.length),
-        ),
-        dSeuw: Math.max(impactHeader.dSeuw.length, ...impactRows.map((r) => r.dSeuw.length)),
-        dMaxStd: Math.max(impactHeader.dMaxStd.length, ...impactRows.map((r) => r.dMaxStd.length)),
-        chi: Math.max(impactHeader.chi.length, ...impactRows.map((r) => r.chi.length)),
-        shift: Math.max(impactHeader.shift.length, ...impactRows.map((r) => r.shift.length)),
-        score: Math.max(impactHeader.score.length, ...impactRows.map((r) => r.score.length)),
-        status: Math.max(impactHeader.status.length, ...impactRows.map((r) => r.status.length)),
-      };
-      const pad = (value: string, size: number) => value.padEnd(size, ' ');
-      lines.push(
-        [
-          pad(impactHeader.rank, impactWidths.rank),
-          pad(impactHeader.type, impactWidths.type),
-          pad(impactHeader.stations, impactWidths.stations),
-          pad(impactHeader.line, impactWidths.line),
-          pad(impactHeader.baseStdRes, impactWidths.baseStdRes),
-          pad(impactHeader.dSeuw, impactWidths.dSeuw),
-          pad(impactHeader.dMaxStd, impactWidths.dMaxStd),
-          pad(impactHeader.chi, impactWidths.chi),
-          pad(impactHeader.shift, impactWidths.shift),
-          pad(impactHeader.score, impactWidths.score),
-          pad(impactHeader.status, impactWidths.status),
-        ].join('  '),
-      );
-      impactRows.forEach((r) => {
+        lines.push('--- Suspect Impact Analysis (what-if exclusion) ---');
+        const impactRows = res.suspectImpactDiagnostics.map((d, idx) => ({
+          rank: String(idx + 1),
+          type: d.type,
+          stations: d.stations,
+          line: d.sourceLine != null ? String(d.sourceLine) : '-',
+          baseStdRes: d.baseStdRes != null ? d.baseStdRes.toFixed(2) : '-',
+          dSeuw: d.deltaSeuw != null ? d.deltaSeuw.toFixed(4) : '-',
+          dMaxStd: d.deltaMaxStdRes != null ? d.deltaMaxStdRes.toFixed(2) : '-',
+          chi: d.chiDelta,
+          shift: d.maxCoordShift != null ? (d.maxCoordShift * unitScale).toFixed(4) : '-',
+          score: d.score != null ? d.score.toFixed(1) : '-',
+          status: d.status.toUpperCase(),
+        }));
+        const impactHeader = {
+          rank: '#',
+          type: 'Type',
+          stations: 'Stations',
+          line: 'Line',
+          baseStdRes: 'Base|t|',
+          dSeuw: 'dSEUW',
+          dMaxStd: 'dMax|t|',
+          chi: 'ChiDelta',
+          shift: `MaxShift(${linearUnit})`,
+          score: 'Score',
+          status: 'Status',
+        };
+        const impactWidths = {
+          rank: Math.max(impactHeader.rank.length, ...impactRows.map((r) => r.rank.length)),
+          type: Math.max(impactHeader.type.length, ...impactRows.map((r) => r.type.length)),
+          stations: Math.max(
+            impactHeader.stations.length,
+            ...impactRows.map((r) => r.stations.length),
+          ),
+          line: Math.max(impactHeader.line.length, ...impactRows.map((r) => r.line.length)),
+          baseStdRes: Math.max(
+            impactHeader.baseStdRes.length,
+            ...impactRows.map((r) => r.baseStdRes.length),
+          ),
+          dSeuw: Math.max(impactHeader.dSeuw.length, ...impactRows.map((r) => r.dSeuw.length)),
+          dMaxStd: Math.max(
+            impactHeader.dMaxStd.length,
+            ...impactRows.map((r) => r.dMaxStd.length),
+          ),
+          chi: Math.max(impactHeader.chi.length, ...impactRows.map((r) => r.chi.length)),
+          shift: Math.max(impactHeader.shift.length, ...impactRows.map((r) => r.shift.length)),
+          score: Math.max(impactHeader.score.length, ...impactRows.map((r) => r.score.length)),
+          status: Math.max(impactHeader.status.length, ...impactRows.map((r) => r.status.length)),
+        };
+        const pad = (value: string, size: number) => value.padEnd(size, ' ');
         lines.push(
           [
-            pad(r.rank, impactWidths.rank),
-            pad(r.type, impactWidths.type),
-            pad(r.stations, impactWidths.stations),
-            pad(r.line, impactWidths.line),
-            pad(r.baseStdRes, impactWidths.baseStdRes),
-            pad(r.dSeuw, impactWidths.dSeuw),
-            pad(r.dMaxStd, impactWidths.dMaxStd),
-            pad(r.chi, impactWidths.chi),
-            pad(r.shift, impactWidths.shift),
-            pad(r.score, impactWidths.score),
-            pad(r.status, impactWidths.status),
+            pad(impactHeader.rank, impactWidths.rank),
+            pad(impactHeader.type, impactWidths.type),
+            pad(impactHeader.stations, impactWidths.stations),
+            pad(impactHeader.line, impactWidths.line),
+            pad(impactHeader.baseStdRes, impactWidths.baseStdRes),
+            pad(impactHeader.dSeuw, impactWidths.dSeuw),
+            pad(impactHeader.dMaxStd, impactWidths.dMaxStd),
+            pad(impactHeader.chi, impactWidths.chi),
+            pad(impactHeader.shift, impactWidths.shift),
+            pad(impactHeader.score, impactWidths.score),
+            pad(impactHeader.status, impactWidths.status),
           ].join('  '),
         );
-      });
-      lines.push('');
+        impactRows.forEach((r) => {
+          lines.push(
+            [
+              pad(r.rank, impactWidths.rank),
+              pad(r.type, impactWidths.type),
+              pad(r.stations, impactWidths.stations),
+              pad(r.line, impactWidths.line),
+              pad(r.baseStdRes, impactWidths.baseStdRes),
+              pad(r.dSeuw, impactWidths.dSeuw),
+              pad(r.dMaxStd, impactWidths.dMaxStd),
+              pad(r.chi, impactWidths.chi),
+              pad(r.shift, impactWidths.shift),
+              pad(r.score, impactWidths.score),
+              pad(r.status, impactWidths.status),
+            ].join('  '),
+          );
+        });
+        lines.push('');
       }
 
       const headers = {
-      type: 'Type',
-      stations: 'Stations',
-      sourceLine: 'Line',
-      obs: 'Obs',
-      calc: 'Calc',
-      residual: 'Residual',
-      stdRes: 'StdRes',
-      redundancy: 'Redund',
-      localTest: 'Local',
-      mdb: 'MDB',
-      prism: 'Prism',
-      tag: 'Tag',
-    };
+        type: 'Type',
+        stations: 'Stations',
+        sourceLine: 'Line',
+        obs: 'Obs',
+        calc: 'Calc',
+        residual: 'Residual',
+        stdRes: 'StdRes',
+        redundancy: 'Redund',
+        localTest: 'Local',
+        mdb: 'MDB',
+        prism: 'Prism',
+        tag: 'Tag',
+      };
       const widths = {
-      type: Math.max(headers.type.length, ...rows.map((r) => r.type.length)),
-      stations: Math.max(headers.stations.length, ...rows.map((r) => r.stations.length)),
-      sourceLine: Math.max(headers.sourceLine.length, ...rows.map((r) => r.sourceLine.length)),
-      obs: Math.max(headers.obs.length, ...rows.map((r) => r.obs.length)),
-      calc: Math.max(headers.calc.length, ...rows.map((r) => r.calc.length)),
-      residual: Math.max(headers.residual.length, ...rows.map((r) => r.residual.length)),
-      stdRes: Math.max(headers.stdRes.length, ...rows.map((r) => r.stdRes.length)),
-      redundancy: Math.max(headers.redundancy.length, ...rows.map((r) => r.redundancy.length)),
-      localTest: Math.max(headers.localTest.length, ...rows.map((r) => r.localTest.length)),
-      mdb: Math.max(headers.mdb.length, ...rows.map((r) => r.mdb.length)),
-      prism: Math.max(headers.prism.length, ...rows.map((r) => r.prism.length)),
-      tag: Math.max(headers.tag.length, ...rows.map((r) => r.tag.length)),
-    };
+        type: Math.max(headers.type.length, ...rows.map((r) => r.type.length)),
+        stations: Math.max(headers.stations.length, ...rows.map((r) => r.stations.length)),
+        sourceLine: Math.max(headers.sourceLine.length, ...rows.map((r) => r.sourceLine.length)),
+        obs: Math.max(headers.obs.length, ...rows.map((r) => r.obs.length)),
+        calc: Math.max(headers.calc.length, ...rows.map((r) => r.calc.length)),
+        residual: Math.max(headers.residual.length, ...rows.map((r) => r.residual.length)),
+        stdRes: Math.max(headers.stdRes.length, ...rows.map((r) => r.stdRes.length)),
+        redundancy: Math.max(headers.redundancy.length, ...rows.map((r) => r.redundancy.length)),
+        localTest: Math.max(headers.localTest.length, ...rows.map((r) => r.localTest.length)),
+        mdb: Math.max(headers.mdb.length, ...rows.map((r) => r.mdb.length)),
+        prism: Math.max(headers.prism.length, ...rows.map((r) => r.prism.length)),
+        tag: Math.max(headers.tag.length, ...rows.map((r) => r.tag.length)),
+      };
       const pad = (value: string, size: number) => value.padEnd(size, ' ');
       lines.push(
-      [
-        pad(headers.type, widths.type),
-        pad(headers.stations, widths.stations),
-        pad(headers.sourceLine, widths.sourceLine),
-        pad(headers.obs, widths.obs),
-        pad(headers.calc, widths.calc),
-        pad(headers.residual, widths.residual),
-        pad(headers.stdRes, widths.stdRes),
-        pad(headers.redundancy, widths.redundancy),
-        pad(headers.localTest, widths.localTest),
-        pad(headers.mdb, widths.mdb),
-        pad(headers.prism, widths.prism),
-        pad(headers.tag, widths.tag),
-      ].join('  '),
+        [
+          pad(headers.type, widths.type),
+          pad(headers.stations, widths.stations),
+          pad(headers.sourceLine, widths.sourceLine),
+          pad(headers.obs, widths.obs),
+          pad(headers.calc, widths.calc),
+          pad(headers.residual, widths.residual),
+          pad(headers.stdRes, widths.stdRes),
+          pad(headers.redundancy, widths.redundancy),
+          pad(headers.localTest, widths.localTest),
+          pad(headers.mdb, widths.mdb),
+          pad(headers.prism, widths.prism),
+          pad(headers.tag, widths.tag),
+        ].join('  '),
       );
       rows.forEach((r) => {
         lines.push(
-        [
-          pad(r.type, widths.type),
-          pad(r.stations, widths.stations),
-          pad(r.sourceLine, widths.sourceLine),
-          pad(r.obs, widths.obs),
-          pad(r.calc, widths.calc),
-          pad(r.residual, widths.residual),
-          pad(r.stdRes, widths.stdRes),
-          pad(r.redundancy, widths.redundancy),
-          pad(r.localTest, widths.localTest),
-          pad(r.mdb, widths.mdb),
-          pad(r.prism, widths.prism),
-          pad(r.tag, widths.tag),
-        ].join('  '),
+          [
+            pad(r.type, widths.type),
+            pad(r.stations, widths.stations),
+            pad(r.sourceLine, widths.sourceLine),
+            pad(r.obs, widths.obs),
+            pad(r.calc, widths.calc),
+            pad(r.residual, widths.residual),
+            pad(r.stdRes, widths.stdRes),
+            pad(r.redundancy, widths.redundancy),
+            pad(r.localTest, widths.localTest),
+            pad(r.mdb, widths.mdb),
+            pad(r.prism, widths.prism),
+            pad(r.tag, widths.tag),
+          ].join('  '),
         );
       });
       lines.push('');
     }
     if (aliasTrace.length > 0) {
       lines.push('--- Alias Reference Trace ---');
-      lines.push('Context  Detail            Line  SourceAlias          CanonicalID          Reference');
+      lines.push(
+        'Context  Detail            Line  SourceAlias          CanonicalID          Reference',
+      );
       aliasTrace.forEach((entry) => {
         lines.push(
           `${entry.context.padEnd(8)}  ${(entry.detail ?? '-').padEnd(16)}  ${String(entry.sourceLine ?? '-').padStart(4)}  ${entry.sourceId.padEnd(19)}  ${entry.canonicalId.padEnd(19)}  ${entry.reference ?? '-'}`,
@@ -3440,11 +3466,28 @@ const App: React.FC = () => {
 
   const handleExportResults = async () => {
     if (!result) return;
+    const runDiag = runDiagnostics ?? buildRunDiagnostics(parseSettings, result);
     const text =
-      exportFormat === 'industry-style' ? buildIndustryListingText(result) : buildResultsText(result);
+      exportFormat === 'industry-style'
+        ? buildIndustryListingText(result)
+        : exportFormat === 'landxml'
+          ? buildLandXmlText(result, {
+              units: settings.units,
+              solveProfile: runDiag.solveProfile,
+              showLostStations: settings.listingShowLostStations,
+              projectName: 'webnet-adjustment',
+              applicationName: 'WebNet',
+              applicationVersion: '0.0.0',
+            })
+          : buildResultsText(result);
+    const isXmlExport = exportFormat === 'landxml';
     const suggestedName = `${
-      exportFormat === 'industry-style' ? 'industry-style-listing' : 'webnet-results'
-    }-${new Date().toISOString().slice(0, 10)}.txt`;
+      exportFormat === 'industry-style'
+        ? 'industry-style-listing'
+        : exportFormat === 'landxml'
+          ? 'webnet-landxml'
+          : 'webnet-results'
+    }-${new Date().toISOString().slice(0, 10)}.${isXmlExport ? 'xml' : 'txt'}`;
     const picker = (window as any).showSaveFilePicker;
     if (picker) {
       try {
@@ -3452,8 +3495,8 @@ const App: React.FC = () => {
           suggestedName,
           types: [
             {
-              description: 'Text Files',
-              accept: { 'text/plain': ['.txt'] },
+              description: isXmlExport ? 'LandXML Files' : 'Text Files',
+              accept: isXmlExport ? { 'application/xml': ['.xml'] } : { 'text/plain': ['.txt'] },
             },
           ],
         });
@@ -3466,7 +3509,7 @@ const App: React.FC = () => {
       }
     }
 
-    const blob = new Blob([text], { type: 'text/plain' });
+    const blob = new Blob([text], { type: isXmlExport ? 'application/xml' : 'text/plain' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -3690,7 +3733,9 @@ const App: React.FC = () => {
         const aActive = baseExclusions.has(a.id) ? 0 : 1;
         const bActive = baseExclusions.has(b.id) ? 0 : 1;
         if (bActive !== aActive) return bActive - aActive;
-        return (a.sourceLine ?? Number.MAX_SAFE_INTEGER) - (b.sourceLine ?? Number.MAX_SAFE_INTEGER);
+        return (
+          (a.sourceLine ?? Number.MAX_SAFE_INTEGER) - (b.sourceLine ?? Number.MAX_SAFE_INTEGER)
+        );
       })
       .slice(0, PREANALYSIS_IMPACT_MAX_CANDIDATES);
 
@@ -3890,12 +3935,11 @@ const App: React.FC = () => {
       enabled:
         parseSettings.preanalysisMode === true
           ? false
-          : inlineAutoAdjust?.enabled ?? parseSettings.autoAdjustEnabled,
+          : (inlineAutoAdjust?.enabled ?? parseSettings.autoAdjustEnabled),
       maxCycles: inlineAutoAdjust?.maxCycles ?? parseSettings.autoAdjustMaxCycles,
       maxRemovalsPerCycle:
         inlineAutoAdjust?.maxRemovalsPerCycle ?? parseSettings.autoAdjustMaxRemovalsPerCycle,
-      stdResThreshold:
-        inlineAutoAdjust?.stdResThreshold ?? parseSettings.autoAdjustStdResThreshold,
+      stdResThreshold: inlineAutoAdjust?.stdResThreshold ?? parseSettings.autoAdjustStdResThreshold,
       minRedundancy: AUTO_ADJUST_MIN_REDUNDANCY,
     };
     if (autoAdjustConfig.enabled) {
@@ -3908,7 +3952,11 @@ const App: React.FC = () => {
       effectiveExclusions = autoAdjustSummary.finalExcludedIds;
     }
 
-    const solved = solveWithImpacts(effectiveExclusions, effectiveOverrides, effectiveClusterMerges);
+    const solved = solveWithImpacts(
+      effectiveExclusions,
+      effectiveOverrides,
+      effectiveClusterMerges,
+    );
     if (autoAdjustSummary?.enabled) {
       solved.autoAdjustDiagnostics = {
         enabled: true,
@@ -3932,7 +3980,7 @@ const App: React.FC = () => {
     }
     if (solved.clusterDiagnostics?.enabled) {
       const contextCandidates =
-        reviewContext?.candidates ?? (result?.clusterDiagnostics?.candidates ?? []);
+        reviewContext?.candidates ?? result?.clusterDiagnostics?.candidates ?? [];
       const contextDecisions = reviewContext?.decisions ?? clusterReviewDecisions;
       const rejected = buildRejectedClusterProposals(contextCandidates, contextDecisions);
       solved.clusterDiagnostics.rejectedProposals = rejected;
@@ -4062,7 +4110,11 @@ const App: React.FC = () => {
     handleInstrumentFieldChange(code, key, metricValue);
   };
 
-  const handleInstrumentNumericFieldChange = (code: string, key: keyof Instrument, value: string) => {
+  const handleInstrumentNumericFieldChange = (
+    code: string,
+    key: keyof Instrument,
+    value: string,
+  ) => {
     const parsed = Number.parseFloat(value);
     handleInstrumentFieldChange(code, key, Number.isFinite(parsed) ? parsed : 0);
   };
@@ -4270,6 +4322,7 @@ const App: React.FC = () => {
           >
             <option value="webnet">Export: WebNet</option>
             <option value="industry-style">Export: industry-style</option>
+            <option value="landxml">Export: LandXML</option>
           </select>
           <button
             onClick={handleExportResults}
@@ -4436,9 +4489,7 @@ const App: React.FC = () => {
                             type="checkbox"
                             className="accent-blue-400"
                             checked={settingsDraft.map3dEnabled}
-                            onChange={(e) =>
-                              handleDraftSetting('map3dEnabled', e.target.checked)
-                            }
+                            onChange={(e) => handleDraftSetting('map3dEnabled', e.target.checked)}
                           />
                           <span>{settingsDraft.map3dEnabled ? 'Enabled' : 'Disabled'}</span>
                         </div>
@@ -4455,7 +4506,9 @@ const App: React.FC = () => {
                               handleDraftParseSetting('autoSideshotEnabled', e.target.checked)
                             }
                           />
-                          <span>{parseSettingsDraft.autoSideshotEnabled ? 'Enabled' : 'Disabled'}</span>
+                          <span>
+                            {parseSettingsDraft.autoSideshotEnabled ? 'Enabled' : 'Disabled'}
+                          </span>
                         </div>
                       </label>
                       <label className={optionLabelClass}>
@@ -4471,7 +4524,9 @@ const App: React.FC = () => {
                               handleDraftParseSetting('autoAdjustEnabled', e.target.checked)
                             }
                           />
-                          <span>{parseSettingsDraft.autoAdjustEnabled ? 'Enabled' : 'Disabled'}</span>
+                          <span>
+                            {parseSettingsDraft.autoAdjustEnabled ? 'Enabled' : 'Disabled'}
+                          </span>
                         </div>
                       </label>
                     </div>
@@ -4486,7 +4541,8 @@ const App: React.FC = () => {
                           step={0.1}
                           value={parseSettingsDraft.autoAdjustStdResThreshold}
                           disabled={
-                            parseSettingsDraft.preanalysisMode || !parseSettingsDraft.autoAdjustEnabled
+                            parseSettingsDraft.preanalysisMode ||
+                            !parseSettingsDraft.autoAdjustEnabled
                           }
                           onChange={(e) =>
                             handleDraftParseSetting(
@@ -4509,7 +4565,8 @@ const App: React.FC = () => {
                           step={1}
                           value={parseSettingsDraft.autoAdjustMaxCycles}
                           disabled={
-                            parseSettingsDraft.preanalysisMode || !parseSettingsDraft.autoAdjustEnabled
+                            parseSettingsDraft.preanalysisMode ||
+                            !parseSettingsDraft.autoAdjustEnabled
                           }
                           onChange={(e) =>
                             handleDraftParseSetting(
@@ -4532,7 +4589,8 @@ const App: React.FC = () => {
                           step={1}
                           value={parseSettingsDraft.autoAdjustMaxRemovalsPerCycle}
                           disabled={
-                            parseSettingsDraft.preanalysisMode || !parseSettingsDraft.autoAdjustEnabled
+                            parseSettingsDraft.preanalysisMode ||
+                            !parseSettingsDraft.autoAdjustEnabled
                           }
                           onChange={(e) =>
                             handleDraftParseSetting(
@@ -4759,9 +4817,7 @@ const App: React.FC = () => {
                           type="checkbox"
                           className="accent-blue-400"
                           checked={parseSettingsDraft.normalize}
-                          onChange={(e) =>
-                            handleDraftParseSetting('normalize', e.target.checked)
-                          }
+                          onChange={(e) => handleDraftParseSetting('normalize', e.target.checked)}
                         />
                         <span>{parseSettingsDraft.normalize ? 'Enabled' : 'Disabled'}</span>
                       </div>
@@ -5367,7 +5423,9 @@ const App: React.FC = () => {
                             handleDraftParseSetting('crsTransformEnabled', e.target.checked)
                           }
                         />
-                        <span>{parseSettingsDraft.crsTransformEnabled ? 'Enabled' : 'Disabled'}</span>
+                        <span>
+                          {parseSettingsDraft.crsTransformEnabled ? 'Enabled' : 'Disabled'}
+                        </span>
                       </div>
                     </label>
                     <label className={optionLabelClass}>
@@ -5384,7 +5442,9 @@ const App: React.FC = () => {
                         }
                         className={`${optionInputClass} mt-1 disabled:opacity-50 disabled:cursor-not-allowed`}
                       >
-                        <option value="legacy-equirectangular">LEGACY Local (Equirectangular)</option>
+                        <option value="legacy-equirectangular">
+                          LEGACY Local (Equirectangular)
+                        </option>
                         <option value="local-enu">Local ENU (Tangent Plane)</option>
                       </select>
                     </label>
@@ -5489,7 +5549,9 @@ const App: React.FC = () => {
                             handleDraftParseSetting('gpsLoopCheckEnabled', e.target.checked)
                           }
                         />
-                        <span>{parseSettingsDraft.gpsLoopCheckEnabled ? 'Enabled' : 'Disabled'}</span>
+                        <span>
+                          {parseSettingsDraft.gpsLoopCheckEnabled ? 'Enabled' : 'Disabled'}
+                        </span>
                       </div>
                     </label>
                     <div className="pt-2 border-t border-slate-700/70">
@@ -5630,7 +5692,10 @@ const App: React.FC = () => {
                           checked={parseSettingsDraft.geoidHeightConversionEnabled}
                           disabled={!parseSettingsDraft.geoidModelEnabled}
                           onChange={(e) =>
-                            handleDraftParseSetting('geoidHeightConversionEnabled', e.target.checked)
+                            handleDraftParseSetting(
+                              'geoidHeightConversionEnabled',
+                              e.target.checked,
+                            )
                           }
                         />
                         <span>
@@ -5960,8 +6025,7 @@ const App: React.FC = () => {
                             geoidModelLoaded: runDiagnostics.geoidModelLoaded,
                             geoidModelMetadata: runDiagnostics.geoidModelMetadata,
                             geoidSampleUndulationM: runDiagnostics.geoidSampleUndulationM,
-                            geoidConvertedStationCount:
-                              runDiagnostics.geoidConvertedStationCount,
+                            geoidConvertedStationCount: runDiagnostics.geoidConvertedStationCount,
                             geoidSkippedStationCount: runDiagnostics.geoidSkippedStationCount,
                             gpsAddHiHtEnabled: runDiagnostics.gpsAddHiHtEnabled,
                             gpsAddHiHtHiM: runDiagnostics.gpsAddHiHtHiM,
@@ -5981,7 +6045,9 @@ const App: React.FC = () => {
                     }
                   />
                 )}
-                {activeTab === 'industry-output' && <IndustryOutputView text={buildIndustryListingText(result)} />}
+                {activeTab === 'industry-output' && (
+                  <IndustryOutputView text={buildIndustryListingText(result)} />
+                )}
                 {activeTab === 'map' && (
                   <MapView
                     result={result}
