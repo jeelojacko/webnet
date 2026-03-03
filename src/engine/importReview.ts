@@ -10,7 +10,7 @@ import {
   serializeImportedObservationRecord,
 } from './importers';
 
-export type ImportReviewItemKind = 'control' | 'observation';
+export type ImportReviewItemKind = 'control' | 'observation' | 'comment';
 export type ImportReviewGroupKind = 'control' | 'setup' | 'resection' | 'gps';
 export type ImportReviewOutputPreset = 'clean-webnet' | 'field-grouped' | 'ts-direction-set';
 
@@ -22,10 +22,15 @@ export interface ImportReviewItem {
   sourceType: string;
   sourceLine?: number;
   sourceCode?: string;
+  sourceMethod?: string;
+  sourceClassification?: string;
+  sourceObservationKind?: ImportedObservationRecord['kind'];
   setupId?: string;
   backsightId?: string;
   targetId?: string;
   stationId?: string;
+  synthetic?: boolean;
+  defaultText?: string;
 }
 
 export interface ImportReviewGroup {
@@ -83,11 +88,20 @@ const normalizeFaceLabel = (value: string | undefined): string | null => {
   return normalized ? prettifyToken(normalized) : null;
 };
 
+export const isImportReviewMtaItem = (item: ImportReviewItem): boolean =>
+  item.kind === 'observation' && item.sourceMethod === 'MEANTURNEDANGLE';
+
+export const isImportReviewRawMeasurementItem = (item: ImportReviewItem): boolean =>
+  item.kind === 'observation' &&
+  Boolean(item.sourceMethod) &&
+  item.sourceMethod !== 'MEANTURNEDANGLE';
+
 const deriveSourceType = (
   kind: ImportReviewItemKind,
   record: ImportedControlStationRecord | ImportedObservationRecord,
 ): string => {
   if (kind === 'control') return 'Control Point';
+  if (kind === 'comment') return 'Comment';
   const classification = record.sourceMeta?.classification;
   const faceLabel = normalizeFaceLabel(record.sourceMeta?.face);
   const withFace = (value: string): string => (faceLabel ? `${value} (${faceLabel})` : value);
@@ -224,6 +238,9 @@ const makeObservationItem = (
       sourceType: deriveSourceType('observation', observation),
       sourceLine: observation.sourceLine,
       sourceCode: observation.sourceCode,
+      sourceMethod: observation.sourceMeta?.method,
+      sourceClassification: observation.sourceMeta?.classification,
+      sourceObservationKind: observation.kind,
       setupId: observation.atId,
       backsightId: observation.fromId,
       targetId: observation.toId,
@@ -239,6 +256,9 @@ const makeObservationItem = (
       sourceType: deriveSourceType('observation', observation),
       sourceLine: observation.sourceLine,
       sourceCode: observation.sourceCode,
+      sourceMethod: observation.sourceMeta?.method,
+      sourceClassification: observation.sourceMeta?.classification,
+      sourceObservationKind: observation.kind,
       setupId: observation.fromId,
       targetId: observation.toId,
     };
@@ -252,6 +272,9 @@ const makeObservationItem = (
     sourceType: deriveSourceType('observation', observation),
     sourceLine: observation.sourceLine,
     sourceCode: observation.sourceCode,
+    sourceMethod: observation.sourceMeta?.method,
+    sourceClassification: observation.sourceMeta?.classification,
+    sourceObservationKind: observation.kind,
     setupId: observation.fromId,
     targetId: observation.toId,
   };
@@ -307,6 +330,93 @@ export const buildImportReviewModel = (dataset: ImportedDataset): ImportReviewMo
     warnings: dataset.trace.filter((entry) => entry.level === 'warning'),
     errors: dataset.trace.filter((entry) => entry.level === 'error'),
   };
+};
+
+const cloneImportReviewModel = (model: ImportReviewModel): ImportReviewModel => ({
+  groups: model.groups.map((group) => ({
+    ...group,
+    itemIds: [...group.itemIds],
+  })),
+  items: model.items.map((item) => ({ ...item })),
+  warnings: [...model.warnings],
+  errors: [...model.errors],
+});
+
+export const duplicateImportReviewItem = (
+  model: ImportReviewModel,
+  itemId: string,
+  nextId: string,
+): ImportReviewModel => {
+  const nextModel = cloneImportReviewModel(model);
+  const sourceItem = nextModel.items.find((item) => item.id === itemId);
+  if (!sourceItem || sourceItem.kind === 'comment') return nextModel;
+  const group = nextModel.groups.find((entry) => entry.key === sourceItem.groupKey);
+  if (!group) return nextModel;
+  const insertIndex = group.itemIds.indexOf(itemId);
+  const duplicateItem: ImportReviewItem = {
+    ...sourceItem,
+    id: nextId,
+    synthetic: true,
+  };
+  nextModel.items.push(duplicateItem);
+  group.itemIds.splice(insertIndex + 1, 0, nextId);
+  return nextModel;
+};
+
+export const insertImportReviewCommentRow = (
+  model: ImportReviewModel,
+  afterItemId: string,
+  nextId: string,
+): ImportReviewModel => {
+  const nextModel = cloneImportReviewModel(model);
+  const sourceItem = nextModel.items.find((item) => item.id === afterItemId);
+  if (!sourceItem) return nextModel;
+  const group = nextModel.groups.find((entry) => entry.key === sourceItem.groupKey);
+  if (!group) return nextModel;
+  const insertIndex = group.itemIds.indexOf(afterItemId);
+  const commentItem: ImportReviewItem = {
+    id: nextId,
+    kind: 'comment',
+    index: -1,
+    groupKey: sourceItem.groupKey,
+    sourceType: 'Comment',
+    synthetic: true,
+    defaultText: '# COMMENT',
+  };
+  nextModel.items.push(commentItem);
+  group.itemIds.splice(insertIndex + 1, 0, nextId);
+  return nextModel;
+};
+
+export const moveImportReviewItem = (
+  model: ImportReviewModel,
+  itemId: string,
+  nextGroupKey: string,
+): ImportReviewModel => {
+  const nextModel = cloneImportReviewModel(model);
+  const item = nextModel.items.find((entry) => entry.id === itemId);
+  if (!item || item.groupKey === nextGroupKey) return nextModel;
+  const sourceGroup = nextModel.groups.find((group) => group.key === item.groupKey);
+  const targetGroup = nextModel.groups.find((group) => group.key === nextGroupKey);
+  if (!sourceGroup || !targetGroup) return nextModel;
+  sourceGroup.itemIds = sourceGroup.itemIds.filter((entry) => entry !== itemId);
+  targetGroup.itemIds.push(itemId);
+  item.groupKey = nextGroupKey;
+  return nextModel;
+};
+
+export const removeImportReviewItem = (
+  model: ImportReviewModel,
+  itemId: string,
+): ImportReviewModel => {
+  const nextModel = cloneImportReviewModel(model);
+  const item = nextModel.items.find((entry) => entry.id === itemId);
+  if (!item?.synthetic) return nextModel;
+  nextModel.items = nextModel.items.filter((entry) => entry.id !== itemId);
+  nextModel.groups.forEach((group) => {
+    group.itemIds = group.itemIds.filter((entry) => entry !== itemId);
+  });
+  return nextModel;
 };
 
 const appendObservationLines = (
@@ -377,6 +487,10 @@ export const buildImportReviewDisplayTextMap = (
       output[item.id] = override;
       return;
     }
+    if (item.kind === 'comment') {
+      output[item.id] = item.defaultText ?? '# COMMENT';
+      return;
+    }
     if (item.kind === 'control') {
       output[item.id] = serializeImportedControlStationRecord(dataset.controlStations[item.index]);
       return;
@@ -413,6 +527,15 @@ const appendPresetObservationLines = (
   appendObservationLines(lines, observation, state);
 };
 
+const resolveFieldGroupedBucket = (item: ImportReviewItem): string | null => {
+  if (item.kind !== 'observation') return null;
+  if (item.sourceMethod === 'MEANTURNEDANGLE') return 'MTA OBS';
+  if (item.sourceClassification === 'BackSight') return 'BACKSIGHT OBS';
+  if (item.sourceClassification === 'Check') return 'CHECK OBS';
+  if (item.sourceMethod) return 'RAW OBS';
+  return null;
+};
+
 export const buildImportReviewText = (
   dataset: ImportedDataset,
   model: ImportReviewModel,
@@ -444,54 +567,47 @@ export const buildImportReviewText = (
     if (lines.length > 0) lines.push('');
     if (comment) lines.push(`# ${comment}`);
 
-    if (
+    const isDirectionSetGroup =
       preset === 'ts-direction-set' &&
       group.kind === 'resection' &&
       group.backsightId &&
-      includedItems.some((item) => {
-        const observation = dataset.observations[item.index];
-        return observation.kind === 'measurement' || observation.kind === 'angle';
-      })
-    ) {
-      const directionItems = includedItems.filter((item) => {
-        const observation = dataset.observations[item.index];
-        return observation.kind === 'measurement' || observation.kind === 'angle';
-      });
-      const otherItems = includedItems.filter((item) => {
-        const observation = dataset.observations[item.index];
-        return observation.kind !== 'measurement' && observation.kind !== 'angle';
-      });
+      includedItems.some((item) => item.kind === 'observation');
 
-      otherItems.forEach((item) => {
-        if (item.kind === 'control') {
-          lines.push(options.rowOverrides?.[item.id] ?? serializeImportedControlStationRecord(dataset.controlStations[item.index]));
-          return;
-        }
-        appendPresetObservationLines(
-          lines,
-          dataset.observations[item.index],
-          preset,
-          splitOverrideLines(options.rowOverrides?.[item.id]),
-          state,
-        );
-      });
-
+    if (isDirectionSetGroup) {
       lines.push(`DB ${group.setupId ?? includedItems[0]?.setupId ?? ''}`.trimEnd());
       lines.push(`DN ${group.backsightId} 000-00-00`);
-      directionItems.forEach((item) => {
-        appendPresetObservationLines(
-          lines,
-          dataset.observations[item.index],
-          preset,
-          splitOverrideLines(options.rowOverrides?.[item.id]),
-          state,
-        );
-      });
-      lines.push('DE');
-      return;
     }
 
+    const distinctFieldBuckets =
+      preset === 'field-grouped'
+        ? new Set(
+            includedItems
+              .map((item) => resolveFieldGroupedBucket(item))
+              .filter((value): value is string => Boolean(value)),
+          )
+        : new Set<string>();
+    let lastFieldBucket: string | null = null;
+
     includedItems.forEach((item) => {
+      if (item.kind === 'comment') {
+        const override = options.rowOverrides?.[item.id];
+        const commentLines = splitOverrideLines(override ?? item.defaultText ?? '# COMMENT');
+        commentLines.forEach((line) => lines.push(line));
+        return;
+      }
+
+      if (
+        preset === 'field-grouped' &&
+        group.kind !== 'control' &&
+        distinctFieldBuckets.size > 1
+      ) {
+        const nextBucket = resolveFieldGroupedBucket(item);
+        if (nextBucket && nextBucket !== lastFieldBucket) {
+          lines.push(`# ${nextBucket}`);
+          lastFieldBucket = nextBucket;
+        }
+      }
+
       if (item.kind === 'control') {
         const override = options.rowOverrides?.[item.id];
         if (override?.trim()) {
@@ -509,6 +625,10 @@ export const buildImportReviewText = (
         state,
       );
     });
+
+    if (isDirectionSetGroup) {
+      lines.push('DE');
+    }
   });
 
   lines.push('');

@@ -40,6 +40,12 @@ import {
   buildImportReviewDisplayTextMap,
   buildImportReviewModel,
   buildImportReviewText,
+  duplicateImportReviewItem,
+  insertImportReviewCommentRow,
+  isImportReviewMtaItem,
+  isImportReviewRawMeasurementItem,
+  moveImportReviewItem,
+  removeImportReviewItem,
   type ImportReviewModel,
   type ImportReviewOutputPreset,
 } from './engine/importReview';
@@ -425,6 +431,7 @@ type ImportReviewState = {
   groupComments: Record<string, string>;
   rowOverrides: Record<string, string>;
   preset: ImportReviewOutputPreset;
+  nextSyntheticId: number;
 };
 
 const SETTINGS_TOOLTIPS = {
@@ -3560,6 +3567,7 @@ const App: React.FC = () => {
           groupComments,
           rowOverrides: {},
           preset: 'clean-webnet',
+          nextSyntheticId: 1,
         });
       } else {
         setInput(imported.text);
@@ -3594,6 +3602,34 @@ const App: React.FC = () => {
     });
   };
 
+  const handleImportReviewSetBulkExcludeMta = (excluded: boolean) => {
+    setImportReviewState((prev) => {
+      if (!prev) return prev;
+      const nextExcluded = new Set(prev.excludedItemIds);
+      prev.reviewModel.items
+        .filter((item) => isImportReviewMtaItem(item))
+        .forEach((item) => {
+          if (excluded) nextExcluded.add(item.id);
+          else nextExcluded.delete(item.id);
+        });
+      return { ...prev, excludedItemIds: nextExcluded };
+    });
+  };
+
+  const handleImportReviewSetBulkExcludeRaw = (excluded: boolean) => {
+    setImportReviewState((prev) => {
+      if (!prev) return prev;
+      const nextExcluded = new Set(prev.excludedItemIds);
+      prev.reviewModel.items
+        .filter((item) => isImportReviewRawMeasurementItem(item))
+        .forEach((item) => {
+          if (excluded) nextExcluded.add(item.id);
+          else nextExcluded.delete(item.id);
+        });
+      return { ...prev, excludedItemIds: nextExcluded };
+    });
+  };
+
   const handleImportReviewCommentChange = (groupKey: string, value: string) => {
     setImportReviewState((prev) =>
       prev
@@ -3624,6 +3660,69 @@ const App: React.FC = () => {
 
   const handleImportReviewPresetChange = (preset: ImportReviewOutputPreset) => {
     setImportReviewState((prev) => (prev ? { ...prev, preset } : prev));
+  };
+
+  const handleImportReviewDuplicateRow = (itemId: string) => {
+    setImportReviewState((prev) => {
+      if (!prev) return prev;
+      const nextId = `synthetic:${prev.nextSyntheticId}`;
+      const sourceOverride = prev.rowOverrides[itemId];
+      return {
+        ...prev,
+        reviewModel: duplicateImportReviewItem(prev.reviewModel, itemId, nextId),
+        rowOverrides:
+          sourceOverride != null
+            ? {
+                ...prev.rowOverrides,
+                [nextId]: sourceOverride,
+              }
+            : prev.rowOverrides,
+        nextSyntheticId: prev.nextSyntheticId + 1,
+      };
+    });
+  };
+
+  const handleImportReviewInsertCommentBelow = (itemId: string) => {
+    setImportReviewState((prev) => {
+      if (!prev) return prev;
+      const nextId = `synthetic:${prev.nextSyntheticId}`;
+      return {
+        ...prev,
+        reviewModel: insertImportReviewCommentRow(prev.reviewModel, itemId, nextId),
+        rowOverrides: {
+          ...prev.rowOverrides,
+          [nextId]: '# COMMENT',
+        },
+        nextSyntheticId: prev.nextSyntheticId + 1,
+      };
+    });
+  };
+
+  const handleImportReviewMoveRow = (itemId: string, groupKey: string) => {
+    setImportReviewState((prev) =>
+      prev
+        ? {
+            ...prev,
+            reviewModel: moveImportReviewItem(prev.reviewModel, itemId, groupKey),
+          }
+        : prev,
+    );
+  };
+
+  const handleImportReviewRemoveRow = (itemId: string) => {
+    setImportReviewState((prev) => {
+      if (!prev) return prev;
+      const nextExcluded = new Set(prev.excludedItemIds);
+      nextExcluded.delete(itemId);
+      const nextRowOverrides = { ...prev.rowOverrides };
+      delete nextRowOverrides[itemId];
+      return {
+        ...prev,
+        reviewModel: removeImportReviewItem(prev.reviewModel, itemId),
+        excludedItemIds: nextExcluded,
+        rowOverrides: nextRowOverrides,
+      };
+    });
   };
 
   const handleCancelImportReview = () => {
@@ -3664,6 +3763,16 @@ const App: React.FC = () => {
       importReviewState.preset,
       importReviewState.rowOverrides,
     );
+  }, [importReviewState]);
+
+  const importReviewMoveTargetGroups = useMemo(() => {
+    if (!importReviewState) return [];
+    return importReviewState.reviewModel.groups
+      .filter((group) => group.kind !== 'control')
+      .map((group) => ({
+        key: group.key,
+        label: group.label,
+      }));
   }, [importReviewState]);
 
   const solveCore = (
@@ -6177,10 +6286,17 @@ const App: React.FC = () => {
           excludedItemIds={importReviewState.excludedItemIds}
           groupComments={importReviewState.groupComments}
           preset={importReviewState.preset}
+          moveTargetGroups={importReviewMoveTargetGroups}
           onPresetChange={handleImportReviewPresetChange}
+          onSetBulkExcludeMta={handleImportReviewSetBulkExcludeMta}
+          onSetBulkExcludeRaw={handleImportReviewSetBulkExcludeRaw}
           onToggleExclude={handleImportReviewToggleExclude}
           onCommentChange={handleImportReviewCommentChange}
           onRowTextChange={handleImportReviewRowTextChange}
+          onDuplicateRow={handleImportReviewDuplicateRow}
+          onInsertCommentBelow={handleImportReviewInsertCommentBelow}
+          onMoveRow={handleImportReviewMoveRow}
+          onRemoveRow={handleImportReviewRemoveRow}
           onCancel={handleCancelImportReview}
           onImport={handleApplyImportReview}
         />

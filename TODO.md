@@ -225,6 +225,7 @@
       - [x] Phase 4E: add regression coverage for staged import review, exclusion behavior, and clean final text generation
       - [x] Phase 4F: add row-level editable imported text plus output-style presets (`Clean WebNet`, `Field Grouped`, `TS Direction Set`) so users can tune final grouped import text before committing it to the editor
       - [x] Phase 4G: preserve raw JobXML direct readings alongside MTA rows, carry setup/shot metadata through import review, and only classify true JobXML `StandardResection` setups as resection blocks so grouped presets match field reports more closely
+      - [x] Phase 4H: add staged-row bulk exclude toggles for `MTA` vs raw imported observations, plus row-level duplicate/comment/move actions and smarter `Field Grouped` subheaders for setup-style review output
   - [ ] Leveling improvements (highest impact -> lowest):
     - [ ] Add dedicated differential leveling loop-closure check workflow (independent of traverse diagnostics)
       - [ ] Phase 1: detect and enumerate leveling loops from `L`/level-sensitive records with station-path traceability

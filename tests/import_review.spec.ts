@@ -6,6 +6,11 @@ import {
   buildImportReviewDisplayTextMap,
   buildImportReviewModel,
   buildImportReviewText,
+  duplicateImportReviewItem,
+  insertImportReviewCommentRow,
+  isImportReviewMtaItem,
+  isImportReviewRawMeasurementItem,
+  moveImportReviewItem,
 } from '../src/engine/importReview';
 
 const jobXmlTrimbleFixture = readFileSync(
@@ -108,5 +113,40 @@ describe('import review workflow', () => {
     expect(text).toContain('DM 077 000-00-00.0 3.8984 90.0000 1.6500/1.5500');
     expect(text).toContain('DM 235 090-52-25.5 17.4323');
     expect(text).toContain('DE');
+  });
+
+  it('supports bulk MTA/raw targeting and staged duplicate/comment/move actions in field-grouped output', () => {
+    const imported = importExternalInput(
+      jobXmlTrimbleFixture,
+      'jobxml_trimble_station_setup_sample.jxl',
+    );
+    const baseModel = buildImportReviewModel(imported.dataset!);
+    const mtaItems = baseModel.items.filter((item) => isImportReviewMtaItem(item));
+    const rawItems = baseModel.items.filter((item) => isImportReviewRawMeasurementItem(item));
+
+    expect(mtaItems.length).toBe(2);
+    expect(rawItems.length).toBe(4);
+
+    const duplicatedModel = duplicateImportReviewItem(baseModel, 'observation:4', 'synthetic:1');
+    const withCommentModel = insertImportReviewCommentRow(duplicatedModel, 'observation:4', 'synthetic:2');
+    const stagedModel = moveImportReviewItem(withCommentModel, 'synthetic:2', 'setup:1:bs:1000');
+
+    const text = buildImportReviewText(imported.dataset!, stagedModel, {
+      includedItemIds: new Set(stagedModel.items.map((item) => item.id)),
+      groupComments: {
+        control: 'CONTROL',
+        'setup:1:bs:1000': 'SETUP 1',
+      },
+      rowOverrides: {
+        'synthetic:2': '# AVERAGE SET',
+      },
+      preset: 'field-grouped',
+    });
+
+    expect(text).toContain('# BACKSIGHT OBS');
+    expect(text).toContain('# RAW OBS');
+    expect(text).toContain('# MTA OBS');
+    expect(text).toContain('# AVERAGE SET');
+    expect(text.match(/M 1-1000-2 286-51-24.7 22.2574 89.9566 1.6500\/1.6920/g)).toHaveLength(2);
   });
 });

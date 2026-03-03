@@ -16,10 +16,17 @@ interface ImportReviewModalProps {
   excludedItemIds: Set<string>;
   groupComments: Record<string, string>;
   preset: ImportReviewOutputPreset;
+  moveTargetGroups: Array<{ key: string; label: string }>;
   onPresetChange: (_preset: ImportReviewOutputPreset) => void;
+  onSetBulkExcludeMta: (_excluded: boolean) => void;
+  onSetBulkExcludeRaw: (_excluded: boolean) => void;
   onToggleExclude: (_itemId: string) => void;
   onCommentChange: (_groupKey: string, _value: string) => void;
   onRowTextChange: (_itemId: string, _value: string) => void;
+  onDuplicateRow: (_itemId: string) => void;
+  onInsertCommentBelow: (_itemId: string) => void;
+  onMoveRow: (_itemId: string, _groupKey: string) => void;
+  onRemoveRow: (_itemId: string) => void;
   onCancel: () => void;
   onImport: () => void;
 }
@@ -63,10 +70,17 @@ const ImportReviewModal: React.FC<ImportReviewModalProps> = ({
   excludedItemIds,
   groupComments,
   preset,
+  moveTargetGroups,
   onPresetChange,
+  onSetBulkExcludeMta,
+  onSetBulkExcludeRaw,
   onToggleExclude,
   onCommentChange,
   onRowTextChange,
+  onDuplicateRow,
+  onInsertCommentBelow,
+  onMoveRow,
+  onRemoveRow,
   onCancel,
   onImport,
 }) => {
@@ -75,6 +89,19 @@ const ImportReviewModal: React.FC<ImportReviewModalProps> = ({
     [reviewModel.items],
   );
   const includedCount = reviewModel.items.filter((item) => !excludedItemIds.has(item.id)).length;
+  const mtaItems = reviewModel.items.filter(
+    (item) => item.kind === 'observation' && item.sourceMethod === 'MEANTURNEDANGLE',
+  );
+  const rawItems = reviewModel.items.filter(
+    (item) =>
+      item.kind === 'observation' &&
+      Boolean(item.sourceMethod) &&
+      item.sourceMethod !== 'MEANTURNEDANGLE',
+  );
+  const excludeMtaChecked =
+    mtaItems.length > 0 && mtaItems.every((item) => excludedItemIds.has(item.id));
+  const excludeRawChecked =
+    rawItems.length > 0 && rawItems.every((item) => excludedItemIds.has(item.id));
 
   const renderGroup = (group: ImportReviewGroup) => {
     const items = group.itemIds
@@ -121,11 +148,15 @@ const ImportReviewModal: React.FC<ImportReviewModalProps> = ({
                 <th className="border-b border-slate-700 px-3 py-2 text-center font-semibold">
                   Exclude
                 </th>
+                <th className="border-b border-slate-700 px-3 py-2 text-left font-semibold">
+                  Actions
+                </th>
               </tr>
             </thead>
             <tbody>
               {items.map((item) => {
                 const excluded = excludedItemIds.has(item.id);
+                const canMove = item.groupKey !== 'control' && moveTargetGroups.length > 1;
                 return (
                   <tr key={item.id} className={excluded ? 'bg-slate-950/40 text-slate-500' : ''}>
                     <td className="border-b border-slate-800 px-3 py-2 align-top">
@@ -154,6 +185,53 @@ const ImportReviewModal: React.FC<ImportReviewModalProps> = ({
                         className="accent-amber-400"
                         title={excluded ? 'Excluded from final import' : 'Include in final import'}
                       />
+                    </td>
+                    <td className="border-b border-slate-800 px-3 py-2 align-top">
+                      <div className="flex min-w-[220px] flex-col gap-2">
+                        <div className="flex flex-wrap gap-2">
+                          {item.kind !== 'comment' && (
+                            <button
+                              type="button"
+                              onClick={() => onDuplicateRow(item.id)}
+                              className="border border-slate-600 bg-slate-950 px-2 py-1 text-[11px] uppercase tracking-wide text-slate-200 hover:border-cyan-400"
+                            >
+                              Duplicate
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => onInsertCommentBelow(item.id)}
+                            className="border border-slate-600 bg-slate-950 px-2 py-1 text-[11px] uppercase tracking-wide text-slate-200 hover:border-cyan-400"
+                          >
+                            Comment Below
+                          </button>
+                          {item.synthetic && (
+                            <button
+                              type="button"
+                              onClick={() => onRemoveRow(item.id)}
+                              className="border border-rose-800 bg-rose-950/40 px-2 py-1 text-[11px] uppercase tracking-wide text-rose-200 hover:border-rose-500"
+                            >
+                              Remove
+                            </button>
+                          )}
+                        </div>
+                        {canMove && (
+                          <label className="flex flex-col text-[10px] uppercase tracking-wide text-slate-400">
+                            Move To
+                            <select
+                              value={item.groupKey}
+                              onChange={(event) => onMoveRow(item.id, event.target.value)}
+                              className="mt-1 border border-slate-700 bg-slate-950 px-2 py-1 text-[11px] text-slate-100 focus:border-cyan-400 focus:outline-none"
+                            >
+                              {moveTargetGroups.map((target) => (
+                                <option key={target.key} value={target.key}>
+                                  {target.label}
+                                </option>
+                              ))}
+                            </select>
+                          </label>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 );
@@ -199,6 +277,28 @@ const ImportReviewModal: React.FC<ImportReviewModalProps> = ({
                   {PRESET_OPTIONS.find((option) => option.value === preset)?.description}
                 </span>
               </label>
+              <div className="grid gap-2 text-left text-[11px] uppercase tracking-wide text-slate-400">
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={excludeMtaChecked}
+                    disabled={mtaItems.length === 0}
+                    onChange={(event) => onSetBulkExcludeMta(event.target.checked)}
+                    className="accent-amber-400"
+                  />
+                  <span>Exclude MTA Obs ({mtaItems.length})</span>
+                </label>
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={excludeRawChecked}
+                    disabled={rawItems.length === 0}
+                    onChange={(event) => onSetBulkExcludeRaw(event.target.checked)}
+                    className="accent-amber-400"
+                  />
+                  <span>Exclude Raw Obs ({rawItems.length})</span>
+                </label>
+              </div>
             </div>
           </div>
           {detailLines.length > 0 && (

@@ -45,6 +45,9 @@ describe('ImportReviewModal', () => {
           sourceType: 'Measurement',
           sourceLine: 44,
           sourceCode: 'PointRecord',
+          sourceMethod: 'MEANTURNEDANGLE',
+          sourceClassification: 'MTA',
+          sourceObservationKind: 'measurement',
           setupId: 'STN1',
           backsightId: 'BS1',
           targetId: 'P1',
@@ -76,10 +79,17 @@ describe('ImportReviewModal', () => {
         excludedItemIds={new Set(['observation:0'])}
         groupComments={{ control: 'CONTROL', 'setup:STN1:bs:BS1': 'SETUP STN1' }}
         preset="ts-direction-set"
+        moveTargetGroups={[{ key: 'setup:STN1:bs:BS1', label: 'Setup STN1 (BS BS1)' }]}
         onPresetChange={() => {}}
+        onSetBulkExcludeMta={() => {}}
+        onSetBulkExcludeRaw={() => {}}
         onToggleExclude={() => {}}
         onCommentChange={() => {}}
         onRowTextChange={() => {}}
+        onDuplicateRow={() => {}}
+        onInsertCommentBelow={() => {}}
+        onMoveRow={() => {}}
+        onRemoveRow={() => {}}
         onCancel={() => {}}
         onImport={() => {}}
       />,
@@ -90,8 +100,12 @@ describe('ImportReviewModal', () => {
     expect(html).toContain('Source Type');
     expect(html).toContain('Source Line');
     expect(html).toContain('Exclude');
+    expect(html).toContain('Actions');
     expect(html).toContain('Output Style');
     expect(html).toContain('TS Direction Set');
+    expect(html).toContain('Exclude MTA Obs (1)');
+    expect(html).toContain('Duplicate');
+    expect(html).toContain('Comment Below');
     expect(html).toContain('Control');
     expect(html).toContain('Setup STN1');
     expect(html).toContain('Import Diagnostics');
