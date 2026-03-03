@@ -1,3 +1,5 @@
+import { DEG_TO_RAD, radToDmsStr } from './angles';
+
 export interface OpusCovarianceSummary {
   sigmaNorthM?: number;
   sigmaEastM?: number;
@@ -35,21 +37,38 @@ export interface ImportedInputNotice {
   detailLines: string[];
 }
 
-export interface ImportedControlStationRecord {
+export interface ImportedTraceEntry {
+  level: 'info' | 'warning' | 'error';
+  message: string;
+  sourceLine?: number;
+  sourceCode?: string;
+  raw?: string;
+}
+
+export interface ImportedRecordBase {
+  sourceLine?: number;
+  sourceCode?: string;
+  description?: string;
+  note?: string;
+}
+
+export interface ImportedControlStationRecord extends ImportedRecordBase {
   kind: 'control-station';
   stationId: string;
-  coordinateMode: 'geodetic';
-  latitudeDeg: number;
-  longitudeDeg: number;
-  heightDatum: 'ellipsoid' | 'orthometric';
-  heightM: number;
+  coordinateMode: 'geodetic' | 'local';
+  northM?: number;
+  eastM?: number;
+  latitudeDeg?: number;
+  longitudeDeg?: number;
+  heightDatum?: 'ellipsoid' | 'orthometric';
+  heightM?: number;
   sigmaNorthM?: number;
   sigmaEastM?: number;
   sigmaHeightM?: number;
   corrEN?: number;
 }
 
-export interface ImportedGnssVectorRecord {
+export interface ImportedGnssVectorRecord extends ImportedRecordBase {
   kind: 'gnss-vector';
   fromId: string;
   toId: string;
@@ -63,7 +82,61 @@ export interface ImportedGnssVectorRecord {
   gpsMode?: 'network' | 'sideshot';
 }
 
-export type ImportedObservationRecord = ImportedGnssVectorRecord;
+export interface ImportedDistanceObservationRecord extends ImportedRecordBase {
+  kind: 'distance';
+  fromId: string;
+  toId: string;
+  distanceM: number;
+  hiM?: number;
+  htM?: number;
+}
+
+export interface ImportedDistanceVerticalObservationRecord extends ImportedRecordBase {
+  kind: 'distance-vertical';
+  fromId: string;
+  toId: string;
+  distanceM: number;
+  verticalMode: 'zenith' | 'delta-h';
+  verticalValue: number;
+  hiM?: number;
+  htM?: number;
+}
+
+export interface ImportedBearingObservationRecord extends ImportedRecordBase {
+  kind: 'bearing';
+  fromId: string;
+  toId: string;
+  bearingDeg: number;
+}
+
+export interface ImportedAngleObservationRecord extends ImportedRecordBase {
+  kind: 'angle';
+  atId: string;
+  fromId: string;
+  toId: string;
+  angleDeg: number;
+}
+
+export interface ImportedMeasurementObservationRecord extends ImportedRecordBase {
+  kind: 'measurement';
+  atId: string;
+  fromId: string;
+  toId: string;
+  angleDeg: number;
+  distanceM: number;
+  verticalMode?: 'zenith' | 'delta-h';
+  verticalValue?: number;
+  hiM?: number;
+  htM?: number;
+}
+
+export type ImportedObservationRecord =
+  | ImportedGnssVectorRecord
+  | ImportedDistanceObservationRecord
+  | ImportedDistanceVerticalObservationRecord
+  | ImportedBearingObservationRecord
+  | ImportedAngleObservationRecord
+  | ImportedMeasurementObservationRecord;
 
 export interface ImportedDataset {
   importerId: string;
@@ -73,6 +146,7 @@ export interface ImportedDataset {
   comments: string[];
   controlStations: ImportedControlStationRecord[];
   observations: ImportedObservationRecord[];
+  trace: ImportedTraceEntry[];
   legacy?: {
     opus?: OpusImportResult;
   };
@@ -95,6 +169,22 @@ export interface ExternalInputImporter {
   detect: (_input: string, _sourceName?: string) => boolean;
   parse: (_input: string, _sourceName?: string) => ImportedDataset | null;
 }
+
+const FIELDGENIUS_RECORD_CODES = new Set([
+  'OC',
+  'LS',
+  'STN',
+  'BK',
+  'BS',
+  'SS',
+  'TR',
+  'FR',
+  'FS',
+  'SP',
+  'PT',
+  'GS',
+  'CV',
+]);
 
 const collapseWhitespace = (value: string): string => value.replace(/\s+/g, ' ').trim();
 
@@ -192,22 +282,96 @@ const deriveStationId = (
 
 const formatNumber = (value: number, decimals: number): string => value.toFixed(decimals);
 
-const serializeControlStationRecord = (station: ImportedControlStationRecord): string => {
-  const recordType = station.heightDatum === 'ellipsoid' ? 'PH' : 'P';
-  return [
-    recordType,
-    station.stationId,
-    formatNumber(station.latitudeDeg, 9),
-    formatNumber(station.longitudeDeg, 9),
-    formatNumber(station.heightM, 4),
-    formatNumber(station.sigmaNorthM ?? 0, 4),
-    formatNumber(station.sigmaEastM ?? 0, 4),
-    formatNumber(station.sigmaHeightM ?? 0, 4),
-    formatNumber(station.corrEN ?? 0, 4),
-  ].join(' ');
+const toDmsString = (valueDeg: number): string => radToDmsStr(valueDeg * DEG_TO_RAD);
+
+const decodeXmlEntities = (value: string): string =>
+  value
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&apos;/g, "'")
+    .replace(/&amp;/g, '&');
+
+const lineNumberAtIndex = (input: string, index: number): number =>
+  input.slice(0, Math.max(0, index)).split(/\r?\n/).length;
+
+const plural = (count: number, label: string): string => `${count} ${label}${count === 1 ? '' : 's'}`;
+
+const buildTraceSummary = (trace: ImportedTraceEntry[]): { warnings: number; errors: number } => ({
+  warnings: trace.filter((entry) => entry.level === 'warning').length,
+  errors: trace.filter((entry) => entry.level === 'error').length,
+});
+
+const sourceLeaf = (sourceName?: string): string =>
+  sourceName?.replace(/\\/g, '/').split('/').pop() ?? 'imported file';
+
+const appendDescription = (line: string, description?: string): string =>
+  description ? `${line} '${description.replace(/'/g, '')}` : line;
+
+const formatHiHt = (hiM?: number, htM?: number): string | undefined =>
+  hiM != null || htM != null
+    ? `${formatNumber(hiM ?? 0, 4)}/${formatNumber(htM ?? 0, 4)}`
+    : undefined;
+
+const buildRecordComment = (record: ImportedRecordBase): string | null => {
+  if (record.sourceLine == null && !record.sourceCode && !record.note) return null;
+  const parts: string[] = ['Imported source'];
+  if (record.sourceLine != null) parts.push(`line ${record.sourceLine}`);
+  if (record.sourceCode) parts.push(`[${record.sourceCode}]`);
+  if (record.note) parts.push(record.note);
+  return `# ${parts.join(' ')}`;
 };
 
-const serializeObservationRecord = (observation: ImportedObservationRecord): string => {
+const serializeControlStationRecord = (station: ImportedControlStationRecord): string => {
+  if (station.coordinateMode === 'geodetic') {
+    const recordType = station.heightDatum === 'ellipsoid' ? 'PH' : 'P';
+    const tokens = [
+      recordType,
+      station.stationId,
+      formatNumber(station.latitudeDeg ?? 0, 9),
+      formatNumber(station.longitudeDeg ?? 0, 9),
+      formatNumber(station.heightM ?? 0, 4),
+    ];
+    if (
+      station.sigmaNorthM != null ||
+      station.sigmaEastM != null ||
+      station.sigmaHeightM != null ||
+      station.corrEN != null
+    ) {
+      tokens.push(
+        formatNumber(station.sigmaNorthM ?? 0, 4),
+        formatNumber(station.sigmaEastM ?? 0, 4),
+        formatNumber(station.sigmaHeightM ?? 0, 4),
+        formatNumber(station.corrEN ?? 0, 4),
+      );
+    }
+    return appendDescription(tokens.join(' '), station.description);
+  }
+
+  const tokens = [
+    'C',
+    station.stationId,
+    formatNumber(station.eastM ?? 0, 4),
+    formatNumber(station.northM ?? 0, 4),
+    formatNumber(station.heightM ?? 0, 4),
+  ];
+  if (
+    station.sigmaEastM != null ||
+    station.sigmaNorthM != null ||
+    station.sigmaHeightM != null ||
+    station.corrEN != null
+  ) {
+    tokens.push(
+      formatNumber(station.sigmaEastM ?? 0, 4),
+      formatNumber(station.sigmaNorthM ?? 0, 4),
+      formatNumber(station.sigmaHeightM ?? 0, 4),
+      formatNumber(station.corrEN ?? 0, 4),
+    );
+  }
+  return appendDescription(tokens.join(' '), station.description);
+};
+
+const serializeObservationRecord = (observation: ImportedObservationRecord): string[] => {
   if (observation.kind === 'gnss-vector') {
     const tokens = [
       'G',
@@ -227,24 +391,132 @@ const serializeObservationRecord = (observation: ImportedObservationRecord): str
     } else {
       tokens.push(formatNumber(observation.sigmaEastM ?? observation.sigmaNorthM ?? 0, 4));
     }
-    return tokens.join(' ');
+    return [tokens.join(' ')];
   }
 
-  return '';
+  if (observation.kind === 'distance') {
+    const tokens = [
+      'D',
+      observation.fromId,
+      observation.toId,
+      formatNumber(observation.distanceM, 4),
+    ];
+    const hiHt = formatHiHt(observation.hiM, observation.htM);
+    if (hiHt) tokens.push(hiHt);
+    return [tokens.join(' ')];
+  }
+
+  if (observation.kind === 'distance-vertical') {
+    const tokens = [
+      'DV',
+      observation.fromId,
+      observation.toId,
+      formatNumber(observation.distanceM, 4),
+      formatNumber(observation.verticalValue, 4),
+    ];
+    const hiHt = formatHiHt(observation.hiM, observation.htM);
+    if (hiHt) tokens.push(hiHt);
+    return [observation.verticalMode === 'delta-h' ? '.DELTA ON' : '.DELTA OFF', tokens.join(' ')];
+  }
+
+  if (observation.kind === 'bearing') {
+    return [
+      ['B', observation.fromId, observation.toId, formatNumber(observation.bearingDeg, 4)].join(' '),
+    ];
+  }
+
+  if (observation.kind === 'angle') {
+    return [
+      ['A', `${observation.atId}-${observation.fromId}-${observation.toId}`, toDmsString(observation.angleDeg)].join(
+        ' ',
+      ),
+    ];
+  }
+
+  if (observation.kind === 'measurement') {
+    const tokens = [
+      'M',
+      `${observation.atId}-${observation.fromId}-${observation.toId}`,
+      toDmsString(observation.angleDeg),
+      formatNumber(observation.distanceM, 4),
+    ];
+    if (observation.verticalMode && observation.verticalValue != null) {
+      tokens.push(formatNumber(observation.verticalValue, 4));
+    }
+    const hiHt = formatHiHt(observation.hiM, observation.htM);
+    if (hiHt) tokens.push(hiHt);
+    return [
+      observation.verticalMode === 'delta-h' ? '.DELTA ON' : '.DELTA OFF',
+      tokens.join(' '),
+    ];
+  }
+
+  return [];
 };
 
 export const convertImportedDatasetToWebNetInput = (dataset: ImportedDataset): string => {
   const lines: string[] = [];
+  let currentDeltaMode: 'delta-h' | 'zenith' | null = null;
+  let currentGpsMode: 'network' | 'sideshot' | null = null;
+
   dataset.comments.forEach((comment) => {
     lines.push(comment.startsWith('#') ? comment : `# ${comment}`);
   });
+  lines.push('.UNITS M');
+  if (dataset.controlStations.some((station) => station.coordinateMode === 'local')) {
+    lines.push('.ORDER EN');
+  }
+
   dataset.controlStations.forEach((station) => {
+    const comment = buildRecordComment(station);
+    if (comment) lines.push(comment);
     lines.push(serializeControlStationRecord(station));
   });
+
   dataset.observations.forEach((observation) => {
-    const line = serializeObservationRecord(observation);
-    if (line) lines.push(line);
+    if (observation.kind === 'gnss-vector') {
+      const desiredGpsMode = observation.gpsMode ?? 'network';
+      if (currentGpsMode !== desiredGpsMode) {
+        lines.push(`.GPS ${desiredGpsMode.toUpperCase()}`);
+        currentGpsMode = desiredGpsMode;
+      }
+    }
+
+    const comment = buildRecordComment(observation);
+    if (comment) lines.push(comment);
+
+    serializeObservationRecord(observation).forEach((line) => {
+      if (line === '.DELTA ON') {
+        if (currentDeltaMode !== 'delta-h') {
+          lines.push(line);
+          currentDeltaMode = 'delta-h';
+        }
+        return;
+      }
+      if (line === '.DELTA OFF') {
+        if (currentDeltaMode !== 'zenith') {
+          lines.push(line);
+          currentDeltaMode = 'zenith';
+        }
+        return;
+      }
+      lines.push(line);
+    });
   });
+
+  if (dataset.trace.length > 0) {
+    lines.push('');
+    lines.push('# Import Trace');
+    dataset.trace.forEach((entry) => {
+      const parts = [entry.level.toUpperCase()];
+      if (entry.sourceLine != null) parts.push(`line ${entry.sourceLine}`);
+      if (entry.sourceCode) parts.push(`[${entry.sourceCode}]`);
+      parts.push(entry.message);
+      if (entry.raw) parts.push(`raw=${entry.raw}`);
+      lines.push(`# ${parts.join(' ')}`);
+    });
+  }
+
   lines.push('');
   return lines.join('\n');
 };
@@ -392,14 +664,632 @@ const buildOpusImportedDataset = (opus: OpusImportResult): ImportedDataset => {
       },
     ],
     observations: [],
+    trace: [],
     legacy: {
       opus,
     },
   };
 };
 
+const matchXmlBlocks = (
+  input: string,
+  tagName: string,
+): { block: string; index: number }[] => {
+  const matches: { block: string; index: number }[] = [];
+  const pattern = new RegExp(`<${tagName}\\b[^>]*>([\\s\\S]*?)<\\/${tagName}>`, 'gi');
+  let match: RegExpExecArray | null;
+  while ((match = pattern.exec(input)) !== null) {
+    matches.push({ block: match[0], index: match.index });
+  }
+  return matches;
+};
+
+const extractXmlText = (input: string, tagNames: string[]): string | undefined => {
+  for (const tagName of tagNames) {
+    const pattern = new RegExp(`<${tagName}\\b[^>]*>([\\s\\S]*?)<\\/${tagName}>`, 'i');
+    const match = input.match(pattern);
+    if (match?.[1]) {
+      const text = collapseWhitespace(decodeXmlEntities(match[1]));
+      if (text) return text;
+    }
+  }
+  return undefined;
+};
+
+const extractXmlNumber = (input: string, tagNames: string[]): number | undefined => {
+  const text = extractXmlText(input, tagNames);
+  if (!text) return undefined;
+  const value = Number.parseFloat(text);
+  return Number.isFinite(value) ? value : undefined;
+};
+
+const hasXmlTag = (input: string, tagNames: string[]): boolean =>
+  tagNames.some((tagName) => new RegExp(`<${tagName}\\b`, 'i').test(input));
+
+const choosePreferredStation = (
+  existing: ImportedControlStationRecord | undefined,
+  candidate: ImportedControlStationRecord,
+): ImportedControlStationRecord => {
+  if (!existing) return candidate;
+  if (existing.coordinateMode !== candidate.coordinateMode) {
+    return candidate.coordinateMode === 'geodetic' ? candidate : existing;
+  }
+  const existingScore =
+    Number(existing.heightM != null) +
+    Number(existing.sigmaEastM != null || existing.sigmaNorthM != null) +
+    Number(existing.description != null);
+  const candidateScore =
+    Number(candidate.heightM != null) +
+    Number(candidate.sigmaEastM != null || candidate.sigmaNorthM != null) +
+    Number(candidate.description != null);
+  return candidateScore >= existingScore ? candidate : existing;
+};
+
+const buildTraceDetailLine = (trace: ImportedTraceEntry[]): string | null => {
+  const { warnings, errors } = buildTraceSummary(trace);
+  if (warnings === 0 && errors === 0) return null;
+  const parts: string[] = [];
+  if (warnings > 0) parts.push(`Warnings: ${warnings}`);
+  if (errors > 0) parts.push(`Errors: ${errors}`);
+  parts.push('unsupported content left in comment form for traceability.');
+  return parts.join('. ');
+};
+
+const detectJobXml = (input: string, sourceName?: string): boolean => {
+  const fileName = sourceName?.toLowerCase() ?? '';
+  const looksXml = /^\s*<\?xml\b|^\s*<\w+/i.test(input);
+  const hasJobTags =
+    /<JOBFile\b/i.test(input) ||
+    /<FieldBook\b/i.test(input) ||
+    /<Reductions\b/i.test(input) ||
+    /<PointRecord\b/i.test(input);
+  return (
+    (fileName.endsWith('.jxl') || fileName.endsWith('.jobxml') || fileName.endsWith('.xml') || looksXml) &&
+    hasJobTags
+  );
+};
+
+const parseJobXml = (input: string, sourceName?: string): ImportedDataset | null => {
+  if (!detectJobXml(input, sourceName)) return null;
+
+  const trace: ImportedTraceEntry[] = [];
+  const stationMap = new Map<string, ImportedControlStationRecord>();
+  const pointBlocks = matchXmlBlocks(input, 'PointRecord');
+  const fileLabel = sourceLeaf(sourceName);
+
+  pointBlocks.forEach(({ block, index }) => {
+    const sourceLine = lineNumberAtIndex(input, index);
+    const rawName = extractXmlText(block, ['Name', 'PointName', 'PointNumber', 'PointID']);
+    const stationId = rawName ? sanitizeStationId(rawName) : undefined;
+    if (!stationId) {
+      trace.push({
+        level: 'warning',
+        sourceLine,
+        sourceCode: 'PointRecord',
+        message: 'Skipped point record without a usable point name.',
+      });
+      return;
+    }
+
+    const northM = extractXmlNumber(block, ['North', 'Northing', 'GridNorth']);
+    const eastM = extractXmlNumber(block, ['East', 'Easting', 'GridEast']);
+    const elevationM = extractXmlNumber(block, [
+      'Elevation',
+      'OrthometricHeight',
+      'ReducedLevel',
+      'Height',
+    ]);
+    const latitudeDeg = extractXmlNumber(block, ['Latitude', 'Lat']);
+    const longitudeDeg = extractXmlNumber(block, ['Longitude', 'Lon', 'Long']);
+    const ellipsoidHeightM = extractXmlNumber(block, ['EllipsoidHeight', 'EllHeight']);
+    const sigmaNorthM = extractXmlNumber(block, ['SigmaNorth', 'StdDevNorth', 'StdevNorth']);
+    const sigmaEastM = extractXmlNumber(block, ['SigmaEast', 'StdDevEast', 'StdevEast']);
+    const sigmaHeightM = extractXmlNumber(block, ['SigmaHeight', 'StdDevHeight', 'StdevHeight']);
+    const corrEN = extractXmlNumber(block, ['CorrelationEN', 'CorrEN']);
+    const description = extractXmlText(block, ['Code', 'Description', 'Descriptor', 'FeatureCode']);
+
+    if (latitudeDeg != null && longitudeDeg != null) {
+      const candidate: ImportedControlStationRecord = {
+        kind: 'control-station',
+        coordinateMode: 'geodetic',
+        stationId,
+        latitudeDeg,
+        longitudeDeg,
+        heightDatum: ellipsoidHeightM != null ? 'ellipsoid' : 'orthometric',
+        heightM: ellipsoidHeightM ?? elevationM ?? 0,
+        sigmaNorthM,
+        sigmaEastM,
+        sigmaHeightM,
+        corrEN,
+        description,
+        sourceLine,
+        sourceCode: 'PointRecord',
+      };
+      const existing = stationMap.get(stationId);
+      if (existing) {
+        trace.push({
+          level: 'warning',
+          sourceLine,
+          sourceCode: 'PointRecord',
+          message: `Duplicate JobXML point ${stationId}; keeping the richer coordinate record.`,
+        });
+      }
+      stationMap.set(stationId, choosePreferredStation(existing, candidate));
+      return;
+    }
+
+    if (northM != null && eastM != null) {
+      const candidate: ImportedControlStationRecord = {
+        kind: 'control-station',
+        coordinateMode: 'local',
+        stationId,
+        northM,
+        eastM,
+        heightM: elevationM ?? 0,
+        sigmaNorthM,
+        sigmaEastM,
+        sigmaHeightM,
+        corrEN,
+        description,
+        sourceLine,
+        sourceCode: 'PointRecord',
+      };
+      const existing = stationMap.get(stationId);
+      if (existing) {
+        trace.push({
+          level: 'warning',
+          sourceLine,
+          sourceCode: 'PointRecord',
+          message: `Duplicate JobXML point ${stationId}; keeping the richer coordinate record.`,
+        });
+      }
+      stationMap.set(stationId, choosePreferredStation(existing, candidate));
+      return;
+    }
+
+    if (hasXmlTag(block, ['Circle', 'StationID', 'StationRecordID', 'BackBearingID', 'TargetID'])) {
+      trace.push({
+        level: 'warning',
+        sourceLine,
+        sourceCode: 'PointRecord',
+        message: `JobXML measurement-style point ${stationId} was not converted because no reduced coordinates were present.`,
+      });
+      return;
+    }
+
+    trace.push({
+      level: 'warning',
+      sourceLine,
+      sourceCode: 'PointRecord',
+      message: `JobXML point ${stationId} was skipped because no supported coordinate payload was found.`,
+    });
+  });
+
+  const controlStations = [...stationMap.values()];
+  if (controlStations.length === 0) return null;
+
+  const detailLines = [
+    `Imported ${plural(controlStations.length, 'point')} from ${fileLabel} into normalized WebNet input.`,
+  ];
+  const traceDetail = buildTraceDetailLine(trace);
+  if (traceDetail) detailLines.push(traceDetail);
+
+  return {
+    importerId: 'jobxml',
+    formatLabel: 'JobXML field data',
+    summary: `Imported JobXML dataset with ${plural(controlStations.length, 'point')}`,
+    notice: {
+      title: 'Imported JobXML dataset',
+      detailLines,
+    },
+    comments: [
+      'Imported from JobXML dataset',
+      `Source file: ${fileLabel}`,
+      `Imported points: ${controlStations.length}`,
+    ],
+    controlStations,
+    observations: [],
+    trace,
+  };
+};
+
+interface ParsedFieldGeniusLine {
+  code: string;
+  fields: Record<string, string>;
+  raw: string;
+}
+
+const normalizeFieldKey = (value: string): string => value.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+
+const parseFieldGeniusLine = (line: string): ParsedFieldGeniusLine | null => {
+  const trimmed = line.trim();
+  if (!trimmed || trimmed.startsWith(';') || trimmed.startsWith('#') || trimmed.startsWith('//')) {
+    return null;
+  }
+  if (/^FIELDGENIUS\b/i.test(trimmed) && !trimmed.includes(',')) {
+    return null;
+  }
+  const tokens = trimmed.split(/\s*,\s*/).map((token) => token.trim()).filter(Boolean);
+  if (tokens.length === 0) return null;
+  const code = tokens[0].toUpperCase();
+  const fields: Record<string, string> = {};
+  const positional: string[] = [];
+
+  for (let i = 1; i < tokens.length; i += 1) {
+    const token = tokens[i];
+    const eqIndex = token.indexOf('=');
+    const colonIndex = token.indexOf(':');
+    const sepIndex =
+      eqIndex >= 0 && colonIndex >= 0 ? Math.min(eqIndex, colonIndex) : Math.max(eqIndex, colonIndex);
+    if (sepIndex > 0) {
+      const key = normalizeFieldKey(token.slice(0, sepIndex));
+      const value = token.slice(sepIndex + 1).trim();
+      if (key) fields[key] = value;
+      continue;
+    }
+
+    if (/^[A-Za-z][A-Za-z0-9_]*$/.test(token) && i + 1 < tokens.length) {
+      const next = tokens[i + 1];
+      if (!/[=:]/.test(next)) {
+        fields[normalizeFieldKey(token)] = next.trim();
+        i += 1;
+        continue;
+      }
+    }
+
+    positional.push(token);
+  }
+
+  positional.forEach((value, index) => {
+    fields[`POS${index + 1}`] = value;
+  });
+
+  return { code, fields, raw: trimmed };
+};
+
+const detectFieldGeniusRaw = (input: string, sourceName?: string): boolean => {
+  const fileName = sourceName?.toLowerCase() ?? '';
+  const lines = input.split(/\r?\n/).slice(0, 20);
+  const recognized = lines
+    .map((line) => parseFieldGeniusLine(line))
+    .filter((row): row is ParsedFieldGeniusLine => row != null && FIELDGENIUS_RECORD_CODES.has(row.code))
+    .length;
+  return fileName.endsWith('.raw') || /FIELDGENIUS/i.test(input) || recognized >= 2;
+};
+
+const pickField = (fields: Record<string, string>, keys: string[]): string | undefined => {
+  for (const key of keys) {
+    const value = fields[normalizeFieldKey(key)];
+    if (value != null && value !== '') return value;
+  }
+  return undefined;
+};
+
+const pickNumberField = (fields: Record<string, string>, keys: string[]): number | undefined => {
+  const value = pickField(fields, keys);
+  if (value == null) return undefined;
+  const parsed = Number.parseFloat(value);
+  return Number.isFinite(parsed) ? parsed : undefined;
+};
+
+const buildLocalStationFromFieldGenius = (
+  code: string,
+  fields: Record<string, string>,
+  sourceLine: number,
+): ImportedControlStationRecord | null => {
+  const rawPointId = pickField(fields, ['PN', 'PT', 'POINT', 'POINTID', 'NAME', 'ID', 'POS1']);
+  if (!rawPointId) return null;
+  const eastM = pickNumberField(fields, ['E', 'EAST', 'EASTING', 'X']);
+  const northM = pickNumberField(fields, ['N', 'NORTH', 'NORTHING', 'Y']);
+  const heightM =
+    pickNumberField(fields, ['Z', 'EL', 'ELEV', 'ELEVATION', 'H', 'HEIGHT']) ?? 0;
+  if (eastM == null || northM == null) return null;
+  return {
+    kind: 'control-station',
+    coordinateMode: 'local',
+    stationId: sanitizeStationId(rawPointId),
+    eastM,
+    northM,
+    heightM,
+    description: pickField(fields, ['DESC', 'DESCRIPTION', 'CODE', 'FC']),
+    sourceLine,
+    sourceCode: code,
+  };
+};
+
+const parseFieldGenius = (input: string, sourceName?: string): ImportedDataset | null => {
+  if (!detectFieldGeniusRaw(input, sourceName)) return null;
+
+  const trace: ImportedTraceEntry[] = [];
+  const controlStations = new Map<string, ImportedControlStationRecord>();
+  const observations: ImportedObservationRecord[] = [];
+  const fileLabel = sourceLeaf(sourceName);
+  let occupyId: string | undefined;
+  let backsightId: string | undefined;
+  let hiM: number | undefined;
+
+  input.split(/\r?\n/).forEach((line, index) => {
+    const sourceLine = index + 1;
+    const parsed = parseFieldGeniusLine(line);
+    if (!parsed) return;
+
+    const { code, fields, raw } = parsed;
+    if (!FIELDGENIUS_RECORD_CODES.has(code)) {
+      trace.push({
+        level: 'warning',
+        sourceLine,
+        sourceCode: code,
+        message: 'Unsupported FieldGenius record type was not converted.',
+        raw,
+      });
+      return;
+    }
+
+    const localStation = buildLocalStationFromFieldGenius(code, fields, sourceLine);
+    if (localStation) {
+      const existing = controlStations.get(localStation.stationId);
+      controlStations.set(localStation.stationId, choosePreferredStation(existing, localStation));
+    }
+
+    if (code === 'OC' || code === 'LS' || code === 'STN') {
+      const rawPointId = pickField(fields, ['PN', 'POINT', 'NAME', 'POS1']);
+      if (!rawPointId) {
+        trace.push({
+          level: 'error',
+          sourceLine,
+          sourceCode: code,
+          message: 'Setup record missing occupy point identifier.',
+          raw,
+        });
+        return;
+      }
+      occupyId = sanitizeStationId(rawPointId);
+      hiM = pickNumberField(fields, ['HI', 'IH', 'INSTHT']);
+      if (hiM == null) hiM = pickNumberField(fields, ['POS2']);
+      return;
+    }
+
+    if (code === 'BK' || code === 'BS') {
+      const rawPointId = pickField(fields, ['PN', 'POINT', 'NAME', 'POS1']);
+      if (!rawPointId) {
+        trace.push({
+          level: 'warning',
+          sourceLine,
+          sourceCode: code,
+          message: 'Backsight record missing backsight point identifier.',
+          raw,
+        });
+        return;
+      }
+      backsightId = sanitizeStationId(rawPointId);
+      return;
+    }
+
+    if (code === 'SP' || code === 'PT' || code === 'GS' || code === 'CV') {
+      if (!localStation) {
+        trace.push({
+          level: code === 'GS' || code === 'CV' ? 'warning' : 'error',
+          sourceLine,
+          sourceCode: code,
+          message: 'Point record missing East/North coordinates and was skipped.',
+          raw,
+        });
+      }
+      return;
+    }
+
+    if (code === 'SS' || code === 'TR' || code === 'FR' || code === 'FS') {
+      if (!occupyId) {
+        trace.push({
+          level: 'error',
+          sourceLine,
+          sourceCode: code,
+          message: 'Shot record encountered before any occupy setup.',
+          raw,
+        });
+        return;
+      }
+
+      const targetIdRaw = pickField(fields, ['PN', 'POINT', 'POINTID', 'NAME', 'TARGET', 'POS1']);
+      if (!targetIdRaw) {
+        trace.push({
+          level: 'error',
+          sourceLine,
+          sourceCode: code,
+          message: 'Shot record missing target point identifier.',
+          raw,
+        });
+        return;
+      }
+      const targetId = sanitizeStationId(targetIdRaw);
+      const htM = pickNumberField(fields, ['HT', 'RH', 'RODHT', 'TARGETHT']);
+      const angleDeg = pickNumberField(fields, ['HA', 'HZ', 'HORANGLE', 'ANGLE', 'HR']);
+      const azimuthDeg = pickNumberField(fields, ['AZ', 'AZI', 'AZIMUTH', 'BRG', 'BEARING']);
+      const distanceM = pickNumberField(fields, ['SD', 'HD', 'DIST', 'DISTANCE', 'SLOPE']);
+      const zenithDeg = pickNumberField(fields, ['VA', 'ZE', 'ZENITH', 'VZ']);
+      const deltaHM = pickNumberField(fields, ['DH', 'DELTAH', 'VD']);
+
+      if (angleDeg != null && backsightId && distanceM != null) {
+        observations.push({
+          kind: 'measurement',
+          atId: occupyId,
+          fromId: backsightId,
+          toId: targetId,
+          angleDeg,
+          distanceM,
+          verticalMode: zenithDeg != null ? 'zenith' : deltaHM != null ? 'delta-h' : undefined,
+          verticalValue: zenithDeg ?? deltaHM,
+          hiM,
+          htM,
+          sourceLine,
+          sourceCode: code,
+          note: 'converted to M',
+        });
+        return;
+      }
+
+      if (angleDeg != null && backsightId) {
+        observations.push({
+          kind: 'angle',
+          atId: occupyId,
+          fromId: backsightId,
+          toId: targetId,
+          angleDeg,
+          sourceLine,
+          sourceCode: code,
+          note: 'converted to A',
+        });
+        return;
+      }
+
+      if (azimuthDeg != null) {
+        observations.push({
+          kind: 'bearing',
+          fromId: occupyId,
+          toId: targetId,
+          bearingDeg: azimuthDeg,
+          sourceLine,
+          sourceCode: code,
+          note: 'converted to B',
+        });
+        if (distanceM != null && (zenithDeg != null || deltaHM != null)) {
+          observations.push({
+            kind: 'distance-vertical',
+            fromId: occupyId,
+            toId: targetId,
+            distanceM,
+            verticalMode: zenithDeg != null ? 'zenith' : 'delta-h',
+            verticalValue: zenithDeg ?? deltaHM ?? 0,
+            hiM,
+            htM,
+            sourceLine,
+            sourceCode: code,
+            note: 'converted to DV',
+          });
+        } else if (distanceM != null) {
+          observations.push({
+            kind: 'distance',
+            fromId: occupyId,
+            toId: targetId,
+            distanceM,
+            hiM,
+            htM,
+            sourceLine,
+            sourceCode: code,
+            note: 'converted to D',
+          });
+        }
+        return;
+      }
+
+      if (distanceM != null && (zenithDeg != null || deltaHM != null)) {
+        observations.push({
+          kind: 'distance-vertical',
+          fromId: occupyId,
+          toId: targetId,
+          distanceM,
+          verticalMode: zenithDeg != null ? 'zenith' : 'delta-h',
+          verticalValue: zenithDeg ?? deltaHM ?? 0,
+          hiM,
+          htM,
+          sourceLine,
+          sourceCode: code,
+          note: 'converted to DV',
+        });
+        trace.push({
+          level: 'warning',
+          sourceLine,
+          sourceCode: code,
+          message: `Shot ${targetId} had no usable angle or azimuth; imported as distance/vertical only.`,
+        });
+        return;
+      }
+
+      if (distanceM != null) {
+        observations.push({
+          kind: 'distance',
+          fromId: occupyId,
+          toId: targetId,
+          distanceM,
+          hiM,
+          htM,
+          sourceLine,
+          sourceCode: code,
+          note: 'converted to D',
+        });
+        trace.push({
+          level: 'warning',
+          sourceLine,
+          sourceCode: code,
+          message: `Shot ${targetId} had no usable angle or azimuth; imported as distance only.`,
+        });
+        return;
+      }
+
+      trace.push({
+        level: 'warning',
+        sourceLine,
+        sourceCode: code,
+        message: `Shot ${targetId} did not contain a supported observation payload.`,
+        raw,
+      });
+      return;
+    }
+
+    trace.push({
+      level: 'warning',
+      sourceLine,
+      sourceCode: code,
+      message: 'Supported FieldGenius record was recognized but not yet converted.',
+      raw,
+    });
+  });
+
+  const stations = [...controlStations.values()];
+  if (stations.length === 0 && observations.length === 0) return null;
+
+  const detailLines = [
+    `Imported ${plural(stations.length, 'point')} and ${plural(observations.length, 'observation')} from ${fileLabel} into normalized WebNet input.`,
+  ];
+  const traceDetail = buildTraceDetailLine(trace);
+  if (traceDetail) detailLines.push(traceDetail);
+
+  return {
+    importerId: 'fieldgenius-raw',
+    formatLabel: 'FieldGenius raw field data',
+    summary: `Imported FieldGenius dataset with ${plural(stations.length, 'point')} and ${plural(observations.length, 'observation')}`,
+    notice: {
+      title: 'Imported FieldGenius dataset',
+      detailLines,
+    },
+    comments: [
+      'Imported from FieldGenius raw data',
+      `Source file: ${fileLabel}`,
+      `Imported points: ${stations.length}`,
+      `Imported observations: ${observations.length}`,
+    ],
+    controlStations: stations,
+    observations,
+    trace,
+  };
+};
+
 export const convertOpusReportToWebNetInput = (opus: OpusImportResult): string =>
   convertImportedDatasetToWebNetInput(buildOpusImportedDataset(opus));
+
+const jobXmlImporter: ExternalInputImporter = {
+  id: 'jobxml',
+  formatLabel: 'JobXML field data',
+  detect: (input, sourceName) => detectJobXml(input, sourceName),
+  parse: (input, sourceName) => parseJobXml(input, sourceName),
+};
+
+const fieldGeniusImporter: ExternalInputImporter = {
+  id: 'fieldgenius-raw',
+  formatLabel: 'FieldGenius raw field data',
+  detect: (input, sourceName) => detectFieldGeniusRaw(input, sourceName),
+  parse: (input, sourceName) => parseFieldGenius(input, sourceName),
+};
 
 const opusImporter: ExternalInputImporter = {
   id: 'opus-report',
@@ -411,7 +1301,7 @@ const opusImporter: ExternalInputImporter = {
   },
 };
 
-const REGISTERED_IMPORTERS: ExternalInputImporter[] = [opusImporter];
+const REGISTERED_IMPORTERS: ExternalInputImporter[] = [jobXmlImporter, fieldGeniusImporter, opusImporter];
 
 export const getExternalImporters = (): ExternalInputImporter[] => [...REGISTERED_IMPORTERS];
 

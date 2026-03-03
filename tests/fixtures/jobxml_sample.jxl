@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<JOBFile>
+  <Reductions>
+    <PointRecord ID="P1">
+      <Name>STN1</Name>
+      <North>1000.000</North>
+      <East>5000.000</East>
+      <Elevation>100.000</Elevation>
+      <Code>SETUP</Code>
+    </PointRecord>
+    <PointRecord ID="P2">
+      <Name>GPS-1</Name>
+      <Latitude>44.653429353</Latitude>
+      <Longitude>-63.582441392</Longitude>
+      <EllipsoidHeight>123.456</EllipsoidHeight>
+      <SigmaNorth>0.008</SigmaNorth>
+      <SigmaEast>0.010</SigmaEast>
+      <SigmaHeight>0.015</SigmaHeight>
+      <CorrelationEN>-0.250</CorrelationEN>
+    </PointRecord>
+  </Reductions>
+  <FieldBook>
+    <PointRecord ID="OBS1">
+      <Name>SHOT-1</Name>
+      <Circle>
+        <HorizontalCircle>123.4500</HorizontalCircle>
+        <VerticalCircle>95.0000</VerticalCircle>
+        <EDMDistance>45.678</EDMDistance>
+      </Circle>
+      <StationID>ST01</StationID>
+      <BackBearingID>BB01</BackBearingID>
+    </PointRecord>
+  </FieldBook>
+</JOBFile>

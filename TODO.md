@@ -214,7 +214,7 @@
       - [x] Phase 3: add round-trip/interoperability checks against common LandXML consumers
     - [~] Add native field-data importer pipeline parity for major Industry Standard sources (JobXML/DBX/FieldGenius/Carlson/TDS) instead of `.dat`-only workflows
       - [x] Phase 1: design importer plugin interface and normalized intermediate observation model
-      - [ ] Phase 2: implement first-party JobXML + FieldGenius importers with error-log traceability
+      - [x] Phase 2: implement first-party JobXML + FieldGenius importers with error-log traceability
       - [ ] Phase 3: implement DBX/Carlson/TDS importers with converter-option parity where practical
       - [ ] Phase 4: integrate import UI workflow (auto-add output dataset) and add fixture-based conformance tests
   - [ ] Leveling improvements (highest impact -> lowest):
