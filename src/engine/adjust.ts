@@ -20,8 +20,10 @@ import type {
   ClusterApprovedMerge,
   ClusterMergeOutcome,
   DirectionRejectDiagnostic,
+  DistanceObservation,
   DirectionObservation,
   GpsObservation,
+  LevelObservation,
   Observation,
   Station,
   StationId,
@@ -410,6 +412,50 @@ export class LSAEngine {
   private getInstrument(obs: Observation): Instrument | undefined {
     if (!obs.instCode) return undefined;
     return this.instrumentLibrary[obs.instCode];
+  }
+
+  private findPairedVerticalObservation(obs: DistanceObservation): LevelObservation | Observation | undefined {
+    return this.observations.find(
+      (candidate) =>
+        candidate.sourceLine === obs.sourceLine &&
+        candidate.type === 'zenith' &&
+        'from' in candidate &&
+        'to' in candidate &&
+        candidate.from === obs.from &&
+        candidate.to === obs.to,
+    );
+  }
+
+  private getObservedHorizontalDistanceIn2D(obs: DistanceObservation): {
+    observedDistance: number;
+    sigmaDistance: number;
+    usedZenith: boolean;
+  } {
+    const sigmaDistance = this.effectiveStdDev(obs);
+    if (!this.is2D || obs.mode !== 'slope') {
+      return {
+        observedDistance: obs.obs,
+        sigmaDistance,
+        usedZenith: false,
+      };
+    }
+    const pairedVertical = this.findPairedVerticalObservation(obs);
+    if (!pairedVertical || pairedVertical.type !== 'zenith') {
+      return {
+        observedDistance: obs.obs,
+        sigmaDistance,
+        usedZenith: false,
+      };
+    }
+    const z = pairedVertical.obs;
+    const sigmaZ = this.effectiveStdDev(pairedVertical);
+    return {
+      observedDistance: obs.obs * Math.sin(z),
+      sigmaDistance: Math.sqrt(
+        (Math.sin(z) * sigmaDistance) ** 2 + (obs.obs * Math.cos(z) * sigmaZ) ** 2,
+      ),
+      usedZenith: true,
+    };
   }
 
   private defaultDistanceSigmaMeters(obs: Observation & { type: 'dist' }): number {
@@ -2866,20 +2912,22 @@ export class LSAEngine {
               : horiz;
           const corrected = this.correctedDistanceModel(obs, calcDistRaw);
           const calcDist = corrected.calcDistance;
-          const v = obs.obs - calcDist;
+          const observed2dDistance = this.getObservedHorizontalDistanceIn2D(obs);
+          const observedDistance = observed2dDistance.observedDistance;
+          const v = observedDistance - calcDist;
 
           L[row][0] = v;
           rowInfo.push({ obs });
           if (this.debug) {
-            const sigmaUsed = this.effectiveStdDev(obs);
+            const sigmaUsed = observed2dDistance.sigmaDistance;
             const wRad = v;
             const norm = sigmaUsed ? wRad / sigmaUsed : 0;
             this.logObsDebug(
               iter + 1,
               `DIST#${obs.id}`,
-              `from=${from} to=${to} obs=${obs.obs.toFixed(4)}m calc=${calcDist.toFixed(
+              `from=${from} to=${to} obs=${observedDistance.toFixed(4)}m calc=${calcDist.toFixed(
                 4,
-              )}m w=${wRad.toFixed(6)}m norm=${norm.toFixed(3)} sigma=${sigmaUsed.toFixed(6)}m mode=${obs.mode} prism=${corrected.prismCorrection.toFixed(4)}m`,
+              )}m w=${wRad.toFixed(6)}m norm=${norm.toFixed(3)} sigma=${sigmaUsed.toFixed(6)}m mode=${obs.mode}${this.is2D && observed2dDistance.usedZenith ? ' 2D-reduced' : ''} prism=${corrected.prismCorrection.toFixed(4)}m`,
             );
           }
           const denom = calcDistRaw || 1;
@@ -2908,7 +2956,7 @@ export class LSAEngine {
             A[row][toIdx.h] = dD_dH2;
           }
 
-          const sigma = this.effectiveStdDev(obs);
+          const sigma = observed2dDistance.sigmaDistance;
           const w = 1.0 / (sigma * sigma);
           P[row][row] = w;
 

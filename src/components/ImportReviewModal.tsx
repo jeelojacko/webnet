@@ -5,6 +5,7 @@ import type {
   ImportReviewItem,
   ImportReviewModel,
   ImportReviewOutputPreset,
+  ImportReviewRowTypeOverride,
 } from '../engine/importReview';
 
 interface ImportReviewModalProps {
@@ -14,18 +15,22 @@ interface ImportReviewModalProps {
   reviewModel: ImportReviewModel;
   displayedRows: Record<string, string>;
   excludedItemIds: Set<string>;
+  fixedItemIds: Set<string>;
   groupLabels: Record<string, string>;
   groupComments: Record<string, string>;
+  rowTypeOverrides: Record<string, ImportReviewRowTypeOverride>;
   preset: ImportReviewOutputPreset;
   moveTargetGroups: Array<{ key: string; label: string }>;
   onPresetChange: (_preset: ImportReviewOutputPreset) => void;
   onSetBulkExcludeMta: (_excluded: boolean) => void;
   onSetBulkExcludeRaw: (_excluded: boolean) => void;
   onToggleExclude: (_itemId: string) => void;
+  onToggleFixed: (_itemId: string) => void;
   onCreateEmptySetupGroup: () => void;
   onGroupLabelChange: (_groupKey: string, _value: string) => void;
   onCommentChange: (_groupKey: string, _value: string) => void;
   onRowTextChange: (_itemId: string, _value: string) => void;
+  onRowTypeChange: (_itemId: string, _value: ImportReviewRowTypeOverride) => void;
   onDuplicateRow: (_itemId: string) => void;
   onInsertCommentBelow: (_itemId: string) => void;
   onCreateSetupGroup: (_itemId: string) => void;
@@ -63,9 +68,7 @@ const traceLineLabel = (entry: ImportedTraceEntry): string => {
 };
 
 const rowSourceLabel = (item: ImportReviewItem): string =>
-  item.sourceLine != null
-    ? `${item.sourceLine}${item.sourceCode ? ` [${item.sourceCode}]` : ''}`
-    : item.sourceCode ?? '-';
+  item.sourceLine != null ? String(item.sourceLine) : '-';
 
 const ImportReviewModal: React.FC<ImportReviewModalProps> = ({
   sourceName,
@@ -74,18 +77,22 @@ const ImportReviewModal: React.FC<ImportReviewModalProps> = ({
   reviewModel,
   displayedRows,
   excludedItemIds,
+  fixedItemIds,
   groupLabels,
   groupComments,
+  rowTypeOverrides,
   preset,
   moveTargetGroups,
   onPresetChange,
   onSetBulkExcludeMta,
   onSetBulkExcludeRaw,
   onToggleExclude,
+  onToggleFixed,
   onCreateEmptySetupGroup,
   onGroupLabelChange,
   onCommentChange,
   onRowTextChange,
+  onRowTypeChange,
   onDuplicateRow,
   onInsertCommentBelow,
   onCreateSetupGroup,
@@ -181,6 +188,12 @@ const ImportReviewModal: React.FC<ImportReviewModalProps> = ({
                   <th className="border-b border-slate-700 px-3 py-2 text-left font-semibold">
                     Source Line
                   </th>
+                  <th className="border-b border-slate-700 px-3 py-2 text-left font-semibold">
+                    Type
+                  </th>
+                  <th className="border-b border-slate-700 px-3 py-2 text-center font-semibold">
+                    Fixed
+                  </th>
                   <th className="border-b border-slate-700 px-3 py-2 text-center font-semibold">
                     Exclude
                   </th>
@@ -192,6 +205,7 @@ const ImportReviewModal: React.FC<ImportReviewModalProps> = ({
               <tbody>
                 {items.map((item) => {
                   const excluded = excludedItemIds.has(item.id);
+                  const fixed = fixedItemIds.has(item.id);
                   const canMove = item.groupKey !== 'control' && moveTargetGroups.length > 1;
                   return (
                     <tr key={item.id} className={excluded ? 'bg-slate-950/40 text-slate-500' : ''}>
@@ -212,6 +226,35 @@ const ImportReviewModal: React.FC<ImportReviewModalProps> = ({
                       </td>
                       <td className="border-b border-slate-800 px-3 py-2 text-slate-300 align-top">
                         {rowSourceLabel(item)}
+                      </td>
+                      <td className="border-b border-slate-800 px-3 py-2 align-top">
+                        {item.kind === 'observation' ? (
+                          <select
+                            value={rowTypeOverrides[item.id] ?? 'auto'}
+                            onChange={(event) =>
+                              onRowTypeChange(item.id, event.target.value as ImportReviewRowTypeOverride)
+                            }
+                            className="w-full border border-slate-700 bg-slate-950 px-2 py-1 text-[11px] text-slate-100 focus:border-cyan-400 focus:outline-none"
+                          >
+                            <option value="auto">Auto</option>
+                            <option value="measurement">M</option>
+                            <option value="distance">D</option>
+                            <option value="angle">A</option>
+                            <option value="vertical">V</option>
+                            <option value="bearing">B</option>
+                          </select>
+                        ) : (
+                          <span className="text-slate-500">-</span>
+                        )}
+                      </td>
+                      <td className="border-b border-slate-800 px-3 py-2 text-center align-top">
+                        <input
+                          type="checkbox"
+                          checked={fixed}
+                          onChange={() => onToggleFixed(item.id)}
+                          className="accent-cyan-400"
+                          title={fixed ? 'Import with fixed ! token' : 'Import normally'}
+                        />
                       </td>
                       <td className="border-b border-slate-800 px-3 py-2 text-center align-top">
                         <input

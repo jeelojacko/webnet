@@ -2491,10 +2491,17 @@ export const parseInput = (
           const toMeters = state.units === 'ft' ? 1 / FT_PER_M : 1;
           const angParsed = parseObservedAngleToken(ang, 'dms');
           const distParsed = parseObservedLinearToken(parts[3], toMeters);
-          const hasVertical = state.coordMode !== '2D';
-          const vert = hasVertical ? parts[4] : undefined;
+          const vert = parts[4];
+          const hasVerticalToken =
+            state.coordMode !== '2D'
+              ? Boolean(vert)
+              : state.deltaMode === 'slope' &&
+                Boolean(vert) &&
+                (String(vert).includes('-') ||
+                  Math.abs((parseObservedAngleToken(String(vert), 'dd').value * 180) / Math.PI) >
+                    45);
           const vertParsed =
-            hasVertical && vert
+            hasVerticalToken && vert
               ? state.deltaMode === 'horiz'
                 ? parseObservedLinearToken(vert, toMeters)
                 : parseObservedAngleToken(vert, 'dd')
@@ -2503,9 +2510,9 @@ export const parseInput = (
             logs.push(`Invalid M record at line ${lineNum}, skipping.`);
             continue;
           }
-          const sigmaStart = hasVertical ? 5 : 4;
+          const sigmaStart = hasVerticalToken ? 5 : 4;
           const restTokens = parts.slice(sigmaStart);
-          const { sigmas, rest } = extractSigmaTokens(restTokens, hasVertical ? 3 : 2);
+          const { sigmas, rest } = extractSigmaTokens(restTokens, hasVerticalToken ? 3 : 2);
           const { hi, ht } = extractHiHt(rest);
           const instCode = state.currentInstrument ?? '';
           const inst = instCode ? instrumentLibrary[instCode] : undefined;
@@ -2530,6 +2537,25 @@ export const parseInput = (
           const angRad = angParsed.value;
           const faceWeight =
             angRad >= Math.PI ? angResolved.sigma * FACE2_WEIGHT : angResolved.sigma;
+          let distObs = distParsed.value;
+          let distStdDev = distResolved.sigma * toMeters;
+          let distMode: 'slope' | 'horiz' = state.deltaMode;
+          if (
+            state.coordMode === '2D' &&
+            state.deltaMode === 'slope' &&
+            vert &&
+            vertParsed &&
+            vertParsed.valid
+          ) {
+            const zen = vertParsed.value;
+            const sigmaZ = vertResolved.sigma * SEC_TO_RAD;
+            distObs = distParsed.value * Math.sin(zen);
+            distStdDev = Math.sqrt(
+              (Math.sin(zen) * distResolved.sigma * toMeters) ** 2 +
+                (distParsed.value * Math.cos(zen) * sigmaZ) ** 2,
+            );
+            distMode = 'horiz';
+          }
           pushObservation({
             id: obsId++,
             type: 'angle',
@@ -2551,15 +2577,17 @@ export const parseInput = (
             setId: '',
             from: at,
             to,
-            obs: distParsed.value,
+            obs: distObs,
             planned: distParsed.planned,
-            stdDev: distResolved.sigma * toMeters,
+            stdDev: distStdDev,
             sigmaSource: distResolved.source,
             hi: hi != null ? hi * toMeters : undefined,
             ht: ht != null ? ht * toMeters : undefined,
-            mode: state.deltaMode,
+            mode: distMode,
           });
-          if (state.deltaMode === 'horiz' && vert) {
+          if (state.coordMode === '2D') {
+            // In 2D, consume the vertical token only to reduce slope distances to HD.
+          } else if (state.deltaMode === 'horiz' && vert) {
             pushObservation({
               id: obsId++,
               type: 'lev',

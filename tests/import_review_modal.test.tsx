@@ -77,18 +77,22 @@ describe('ImportReviewModal', () => {
           'observation:0': 'DM P1 045-07-24.2 100.0000',
         }}
         excludedItemIds={new Set(['observation:0'])}
+        fixedItemIds={new Set(['control:0'])}
         groupLabels={{ control: 'Control', 'setup:STN1:bs:BS1': 'Setup STN1 (BS BS1)' }}
         groupComments={{ control: 'CONTROL', 'setup:STN1:bs:BS1': 'SETUP STN1' }}
+        rowTypeOverrides={{ 'observation:0': 'distance' }}
         preset="ts-direction-set"
         moveTargetGroups={[{ key: 'setup:STN1:bs:BS1', label: 'Setup STN1 (BS BS1)' }]}
         onPresetChange={() => {}}
         onSetBulkExcludeMta={() => {}}
         onSetBulkExcludeRaw={() => {}}
         onToggleExclude={() => {}}
+        onToggleFixed={() => {}}
         onCreateEmptySetupGroup={() => {}}
         onGroupLabelChange={() => {}}
         onCommentChange={() => {}}
         onRowTextChange={() => {}}
+        onRowTypeChange={() => {}}
         onDuplicateRow={() => {}}
         onInsertCommentBelow={() => {}}
         onCreateSetupGroup={() => {}}
@@ -105,6 +109,8 @@ describe('ImportReviewModal', () => {
     expect(html).toContain('Imported Data');
     expect(html).toContain('Source Type');
     expect(html).toContain('Source Line');
+    expect(html).toContain('Type');
+    expect(html).toContain('Fixed');
     expect(html).toContain('Exclude');
     expect(html).toContain('Actions');
     expect(html).toContain('Output Style');

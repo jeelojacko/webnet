@@ -52,6 +52,7 @@ import {
   removeImportReviewItem,
   type ImportReviewModel,
   type ImportReviewOutputPreset,
+  type ImportReviewRowTypeOverride,
 } from './engine/importReview';
 import { isPreanalysisWhatIfCandidate } from './engine/preanalysis';
 import type {
@@ -432,9 +433,11 @@ type ImportReviewState = {
   dataset: ImportedDataset;
   reviewModel: ImportReviewModel;
   excludedItemIds: Set<string>;
+  fixedItemIds: Set<string>;
   groupLabels: Record<string, string>;
   groupComments: Record<string, string>;
   rowOverrides: Record<string, string>;
+  rowTypeOverrides: Record<string, ImportReviewRowTypeOverride>;
   preset: ImportReviewOutputPreset;
   nextSyntheticId: number;
 };
@@ -3572,9 +3575,11 @@ const App: React.FC = () => {
           dataset: imported.dataset,
           reviewModel,
           excludedItemIds: new Set(),
+          fixedItemIds: new Set(),
           groupLabels,
           groupComments,
           rowOverrides: {},
+          rowTypeOverrides: {},
           preset: 'clean-webnet',
           nextSyntheticId: 1,
         });
@@ -3608,6 +3613,16 @@ const App: React.FC = () => {
       if (nextExcluded.has(itemId)) nextExcluded.delete(itemId);
       else nextExcluded.add(itemId);
       return { ...prev, excludedItemIds: nextExcluded };
+    });
+  };
+
+  const handleImportReviewToggleFixed = (itemId: string) => {
+    setImportReviewState((prev) => {
+      if (!prev) return prev;
+      const nextFixed = new Set(prev.fixedItemIds);
+      if (nextFixed.has(itemId)) nextFixed.delete(itemId);
+      else nextFixed.add(itemId);
+      return { ...prev, fixedItemIds: nextFixed };
     });
   };
 
@@ -3681,6 +3696,23 @@ const App: React.FC = () => {
     );
   };
 
+  const handleImportReviewRowTypeChange = (
+    itemId: string,
+    value: ImportReviewRowTypeOverride,
+  ) => {
+    setImportReviewState((prev) =>
+      prev
+        ? {
+            ...prev,
+            rowTypeOverrides: {
+              ...prev.rowTypeOverrides,
+              [itemId]: value,
+            },
+          }
+        : prev,
+    );
+  };
+
   const handleImportReviewPresetChange = (preset: ImportReviewOutputPreset) => {
     setImportReviewState((prev) => (prev ? { ...prev, preset } : prev));
   };
@@ -3690,9 +3722,13 @@ const App: React.FC = () => {
       if (!prev) return prev;
       const nextId = `synthetic:${prev.nextSyntheticId}`;
       const sourceOverride = prev.rowOverrides[itemId];
+      const sourceRowTypeOverride = prev.rowTypeOverrides[itemId];
+      const nextFixed = new Set(prev.fixedItemIds);
+      if (nextFixed.has(itemId)) nextFixed.add(nextId);
       return {
         ...prev,
         reviewModel: duplicateImportReviewItem(prev.reviewModel, itemId, nextId),
+        fixedItemIds: nextFixed,
         rowOverrides:
           sourceOverride != null
             ? {
@@ -3700,6 +3736,13 @@ const App: React.FC = () => {
                 [nextId]: sourceOverride,
               }
             : prev.rowOverrides,
+        rowTypeOverrides:
+          sourceRowTypeOverride != null
+            ? {
+                ...prev.rowTypeOverrides,
+                [nextId]: sourceRowTypeOverride,
+              }
+            : prev.rowTypeOverrides,
         nextSyntheticId: prev.nextSyntheticId + 1,
       };
     });
@@ -3812,13 +3855,19 @@ const App: React.FC = () => {
       if (!prev) return prev;
       const nextExcluded = new Set(prev.excludedItemIds);
       nextExcluded.delete(itemId);
+      const nextFixed = new Set(prev.fixedItemIds);
+      nextFixed.delete(itemId);
       const nextRowOverrides = { ...prev.rowOverrides };
+      const nextRowTypeOverrides = { ...prev.rowTypeOverrides };
       delete nextRowOverrides[itemId];
+      delete nextRowTypeOverrides[itemId];
       return {
         ...prev,
         reviewModel: removeImportReviewItem(prev.reviewModel, itemId),
         excludedItemIds: nextExcluded,
+        fixedItemIds: nextFixed,
         rowOverrides: nextRowOverrides,
+        rowTypeOverrides: nextRowTypeOverrides,
       };
     });
   };
@@ -3857,6 +3906,8 @@ const App: React.FC = () => {
         includedItemIds,
         groupComments: importReviewState.groupComments,
         rowOverrides: importReviewState.rowOverrides,
+        rowTypeOverrides: importReviewState.rowTypeOverrides,
+        fixedItemIds: importReviewState.fixedItemIds,
         preset: importReviewState.preset,
       },
     );
@@ -6398,18 +6449,22 @@ const App: React.FC = () => {
           reviewModel={importReviewState.reviewModel}
           displayedRows={importReviewDisplayedRows}
           excludedItemIds={importReviewState.excludedItemIds}
+          fixedItemIds={importReviewState.fixedItemIds}
           groupLabels={importReviewState.groupLabels}
           groupComments={importReviewState.groupComments}
+          rowTypeOverrides={importReviewState.rowTypeOverrides}
           preset={importReviewState.preset}
           moveTargetGroups={importReviewMoveTargetGroups}
           onPresetChange={handleImportReviewPresetChange}
           onSetBulkExcludeMta={handleImportReviewSetBulkExcludeMta}
           onSetBulkExcludeRaw={handleImportReviewSetBulkExcludeRaw}
           onToggleExclude={handleImportReviewToggleExclude}
+          onToggleFixed={handleImportReviewToggleFixed}
           onCreateEmptySetupGroup={handleImportReviewCreateEmptySetupGroup}
           onGroupLabelChange={handleImportReviewGroupLabelChange}
           onCommentChange={handleImportReviewCommentChange}
           onRowTextChange={handleImportReviewRowTextChange}
+          onRowTypeChange={handleImportReviewRowTypeChange}
           onDuplicateRow={handleImportReviewDuplicateRow}
           onInsertCommentBelow={handleImportReviewInsertCommentBelow}
           onCreateSetupGroup={handleImportReviewCreateSetupGroup}

@@ -15,6 +15,13 @@ import {
 export type ImportReviewItemKind = 'control' | 'observation' | 'comment';
 export type ImportReviewGroupKind = 'control' | 'setup' | 'resection' | 'gps';
 export type ImportReviewOutputPreset = 'clean-webnet' | 'field-grouped' | 'ts-direction-set';
+export type ImportReviewRowTypeOverride =
+  | 'auto'
+  | 'measurement'
+  | 'distance'
+  | 'angle'
+  | 'vertical'
+  | 'bearing';
 
 export interface ImportReviewItem {
   id: string;
@@ -58,6 +65,8 @@ export interface BuildImportReviewTextOptions {
   includedItemIds: Set<string>;
   groupComments?: Record<string, string>;
   rowOverrides?: Record<string, string>;
+  rowTypeOverrides?: Record<string, ImportReviewRowTypeOverride>;
+  fixedItemIds?: Set<string>;
   preset?: ImportReviewOutputPreset;
 }
 
@@ -153,7 +162,11 @@ const serializeObservationPreview = (
       formatLinear(observation.distanceM),
     ];
     if (observation.verticalMode && observation.verticalValue != null) {
-      tokens.push(formatLinear(observation.verticalValue));
+      tokens.push(
+        observation.verticalMode === 'zenith'
+          ? formatAngleDms(observation.verticalValue)
+          : formatLinear(observation.verticalValue),
+      );
     }
     if (observation.hiM != null || observation.htM != null) {
       tokens.push(`${formatLinear(observation.hiM ?? 0)}/${formatLinear(observation.htM ?? 0)}`);
@@ -168,6 +181,106 @@ const serializeObservationPreview = (
   return serializeImportedObservationRecord(observation)
     .filter((line) => !line.startsWith('.'))
     .join(' | ');
+};
+
+const appendFixedTokenToLine = (line: string): string =>
+  line.endsWith(' !') || line.startsWith('#') || line.startsWith('.')
+    ? line
+    : `${line} !`;
+
+const applyFixedTokenToLines = (lines: string[], fixed: boolean): string[] => {
+  if (!fixed) return lines;
+  let applied = false;
+  return lines.map((line) => {
+    if (applied || line.startsWith('.')) return line;
+    applied = true;
+    return appendFixedTokenToLine(line);
+  });
+};
+
+const serializeDistanceFocusedObservation = (observation: ImportedObservationRecord): string[] => {
+  if (observation.kind === 'measurement') {
+    if (observation.verticalMode && observation.verticalValue != null) {
+      return [
+        observation.verticalMode === 'delta-h' ? '.DELTA ON' : '.DELTA OFF',
+        [
+          'DV',
+          observation.atId,
+          observation.toId,
+          formatLinear(observation.distanceM),
+          observation.verticalMode === 'zenith'
+            ? formatAngleDms(observation.verticalValue)
+            : formatLinear(observation.verticalValue),
+        ].join(' '),
+      ];
+    }
+    return [['D', observation.atId, observation.toId, formatLinear(observation.distanceM)].join(' ')];
+  }
+  if (observation.kind === 'distance-vertical') {
+    return [
+      observation.verticalMode === 'delta-h' ? '.DELTA ON' : '.DELTA OFF',
+      [
+        'DV',
+        observation.fromId,
+        observation.toId,
+        formatLinear(observation.distanceM),
+        observation.verticalMode === 'zenith'
+          ? formatAngleDms(observation.verticalValue)
+          : formatLinear(observation.verticalValue),
+      ].join(' '),
+    ];
+  }
+  if (observation.kind === 'distance') {
+    return [['D', observation.fromId, observation.toId, formatLinear(observation.distanceM)].join(' ')];
+  }
+  return serializeImportedObservationRecord(observation);
+};
+
+const serializeAngleFocusedObservation = (observation: ImportedObservationRecord): string[] => {
+  if (observation.kind === 'measurement') {
+    return [['A', `${observation.atId}-${observation.fromId}-${observation.toId}`, formatAngleDms(observation.angleDeg)].join(' ')];
+  }
+  if (observation.kind === 'angle') {
+    return [['A', `${observation.atId}-${observation.fromId}-${observation.toId}`, formatAngleDms(observation.angleDeg)].join(' ')];
+  }
+  return serializeImportedObservationRecord(observation);
+};
+
+const serializeVerticalFocusedObservation = (observation: ImportedObservationRecord): string[] => {
+  if (observation.kind === 'measurement' && observation.verticalMode && observation.verticalValue != null) {
+    return [
+      observation.verticalMode === 'delta-h' ? '.DELTA ON' : '.DELTA OFF',
+      [
+        'V',
+        observation.atId,
+        observation.toId,
+        observation.verticalMode === 'zenith'
+          ? formatAngleDms(observation.verticalValue)
+          : formatLinear(observation.verticalValue),
+      ].join(' '),
+    ];
+  }
+  if (observation.kind === 'distance-vertical' || observation.kind === 'vertical') {
+    return [
+      observation.verticalMode === 'delta-h' ? '.DELTA ON' : '.DELTA OFF',
+      [
+        'V',
+        observation.fromId,
+        observation.toId,
+        observation.verticalMode === 'zenith'
+          ? formatAngleDms(observation.verticalValue)
+          : formatLinear(observation.verticalValue),
+      ].join(' '),
+    ];
+  }
+  return serializeImportedObservationRecord(observation);
+};
+
+const serializeBearingFocusedObservation = (observation: ImportedObservationRecord): string[] => {
+  if (observation.kind === 'bearing') {
+    return [['B', observation.fromId, observation.toId, formatLinear(observation.bearingDeg)].join(' ')];
+  }
+  return serializeImportedObservationRecord(observation);
 };
 
 const buildGroupMeta = (
@@ -515,41 +628,6 @@ export const removeImportReviewItem = (
   return nextModel;
 };
 
-const appendObservationLines = (
-  lines: string[],
-  observation: ImportedObservationRecord,
-  state: {
-    currentDeltaMode: 'delta-h' | 'zenith' | null;
-    currentGpsMode: 'network' | 'sideshot' | null;
-  },
-) => {
-  if (observation.kind === 'gnss-vector') {
-    const desiredGpsMode = observation.gpsMode ?? 'network';
-    if (state.currentGpsMode !== desiredGpsMode) {
-      lines.push(`.GPS ${desiredGpsMode.toUpperCase()}`);
-      state.currentGpsMode = desiredGpsMode;
-    }
-  }
-
-  serializeImportedObservationRecord(observation).forEach((line) => {
-    if (line === '.DELTA ON') {
-      if (state.currentDeltaMode !== 'delta-h') {
-        lines.push(line);
-        state.currentDeltaMode = 'delta-h';
-      }
-      return;
-    }
-    if (line === '.DELTA OFF') {
-      if (state.currentDeltaMode !== 'zenith') {
-        lines.push(line);
-        state.currentDeltaMode = 'zenith';
-      }
-      return;
-    }
-    lines.push(line);
-  });
-};
-
 const serializeTsDirectionSetMeasurement = (
   observation: ImportedMeasurementObservationRecord,
 ): string => {
@@ -597,6 +675,32 @@ const serializeTsDirectionSetRecord = (observation: ImportedObservationRecord): 
   return serializeImportedObservationRecord(observation);
 };
 
+const serializeObservationForImport = (
+  observation: ImportedObservationRecord,
+  preset: ImportReviewOutputPreset,
+  rowTypeOverride: ImportReviewRowTypeOverride,
+): string[] => {
+  if (rowTypeOverride === 'distance') {
+    return serializeDistanceFocusedObservation(observation);
+  }
+  if (rowTypeOverride === 'angle') {
+    return serializeAngleFocusedObservation(observation);
+  }
+  if (rowTypeOverride === 'vertical') {
+    return serializeVerticalFocusedObservation(observation);
+  }
+  if (rowTypeOverride === 'bearing') {
+    return serializeBearingFocusedObservation(observation);
+  }
+  if (rowTypeOverride === 'measurement') {
+    return serializeImportedObservationRecord(observation);
+  }
+  if (preset === 'ts-direction-set') {
+    return serializeTsDirectionSetRecord(observation);
+  }
+  return serializeImportedObservationRecord(observation);
+};
+
 export const buildImportReviewDisplayTextMap = (
   dataset: ImportedDataset,
   model: ImportReviewModel,
@@ -631,6 +735,8 @@ const appendPresetObservationLines = (
   observation: ImportedObservationRecord,
   preset: ImportReviewOutputPreset,
   overrideLines: string[] | undefined,
+  rowTypeOverride: ImportReviewRowTypeOverride,
+  fixed: boolean,
   state: {
     currentDeltaMode: 'delta-h' | 'zenith' | null;
     currentGpsMode: 'network' | 'sideshot' | null;
@@ -640,19 +746,35 @@ const appendPresetObservationLines = (
     overrideLines.forEach((line) => lines.push(line));
     return;
   }
-
-  if (
-    preset === 'ts-direction-set' &&
-    (observation.kind === 'measurement' ||
-      observation.kind === 'angle' ||
-      observation.kind === 'distance' ||
-      observation.kind === 'bearing')
-  ) {
-    serializeTsDirectionSetRecord(observation).forEach((line) => lines.push(line));
-    return;
-  }
-
-  appendObservationLines(lines, observation, state);
+  const serializedLines = applyFixedTokenToLines(
+    serializeObservationForImport(observation, preset, rowTypeOverride),
+    fixed,
+  );
+  serializedLines.forEach((line) => {
+    if (line === '.DELTA ON') {
+      if (state.currentDeltaMode !== 'delta-h') {
+        lines.push(line);
+        state.currentDeltaMode = 'delta-h';
+      }
+      return;
+    }
+    if (line === '.DELTA OFF') {
+      if (state.currentDeltaMode !== 'zenith') {
+        lines.push(line);
+        state.currentDeltaMode = 'zenith';
+      }
+      return;
+    }
+    if (line.startsWith('.GPS ')) {
+      const desiredGpsMode = /SIDESHOT/i.test(line) ? 'sideshot' : 'network';
+      if (state.currentGpsMode !== desiredGpsMode) {
+        lines.push(line);
+        state.currentGpsMode = desiredGpsMode;
+      }
+      return;
+    }
+    lines.push(line);
+  });
 };
 
 const isBacksightTargetItem = (item: ImportReviewItem, group: ImportReviewGroup): boolean =>
@@ -793,7 +915,10 @@ export const buildImportReviewText = (
         if (override?.trim()) {
           splitOverrideLines(override).forEach((line) => lines.push(line));
         } else {
-          lines.push(serializeImportedControlStationRecord(dataset.controlStations[item.index]));
+          const controlLine = serializeImportedControlStationRecord(dataset.controlStations[item.index]);
+          lines.push(
+            options.fixedItemIds?.has(item.id) ? appendFixedTokenToLine(controlLine) : controlLine,
+          );
         }
         return;
       }
@@ -802,6 +927,8 @@ export const buildImportReviewText = (
         dataset.observations[item.index],
         preset,
         splitOverrideLines(options.rowOverrides?.[item.id]),
+        options.rowTypeOverrides?.[item.id] ?? 'auto',
+        options.fixedItemIds?.has(item.id) ?? false,
         state,
       );
     });

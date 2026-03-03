@@ -233,4 +233,28 @@ describe('import review workflow', () => {
       text.indexOf('M 1-1000-2 286-51-21.9 22.2576'),
     );
   });
+
+  it('supports fixed toggles and distance-focused type overrides during final import', () => {
+    const imported = importExternalInput(
+      jobXmlTrimbleFixture,
+      'jobxml_trimble_station_setup_sample.jxl',
+    );
+    const reviewModel = buildImportReviewModel(imported.dataset!);
+    const text = buildImportReviewText(imported.dataset!, reviewModel, {
+      includedItemIds: new Set(reviewModel.items.map((item) => item.id)),
+      groupComments: {
+        control: 'CONTROL',
+        'setup:1:bs:1000': 'SETUP 1',
+      },
+      rowTypeOverrides: {
+        'observation:4': 'distance',
+      },
+      fixedItemIds: new Set(['control:0', 'observation:4']),
+      preset: 'ts-direction-set',
+    });
+
+    expect(text).toContain('C 1 2.3460 -2.4303 0.0000 !');
+    expect(text).toContain('DV 1 2 22.2574 089-57-23.8 !');
+    expect(text).not.toContain('M 1-1000-2 286-51-24.7 22.2574');
+  });
 });

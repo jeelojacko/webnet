@@ -97,6 +97,25 @@ describe('parseInput', () => {
     expect(mLine?.stdDev).toBeCloseTo((4.0 * (Math.PI / 180)) / 3600, 12);
   });
 
+  it('reduces 2D slope M distances to horizontal when a zenith is provided', () => {
+    const parsed = parseInput(
+      [
+        '.2D',
+        '.DELTA OFF',
+        'C 1 0 0 !',
+        'C 1000 0 10 !',
+        'C 2 20 0',
+        'M 1-1000-2 286-51-24.7 22.2574 089-57-23.8',
+      ].join('\n'),
+    );
+    const distObs = parsed.observations.find(
+      (o) => o.type === 'dist' && 'from' in o && o.from === '1' && o.to === '2',
+    );
+    expect(distObs).toBeDefined();
+    expect(distObs?.obs).toBeCloseTo(22.2574 * Math.sin((89 + 57 / 60 + 23.8 / 3600) * (Math.PI / 180)), 9);
+    expect(parsed.observations.some((o) => o.type === 'zenith')).toBe(false);
+  });
+
   it('supports .ORDER FROMATTO for A/M station triplets', () => {
     const parsed = parseInput(
       [
