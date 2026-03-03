@@ -6,6 +6,7 @@ import {
   buildImportReviewDisplayTextMap,
   buildImportReviewModel,
   buildImportReviewText,
+  createEmptyImportReviewGroup,
   createImportReviewGroupFromItem,
   duplicateImportReviewItem,
   insertImportReviewCommentRow,
@@ -88,7 +89,7 @@ describe('import review workflow', () => {
     );
 
     const targetItem = reviewModel.items.find(
-      (item) => displayedRows[item.id] === 'DM 235 090-52-21.0 17.4322 89.9500 1.6500/1.5500',
+      (item) => displayedRows[item.id] === 'DM 235 090-52-21.0 17.4322',
     );
     expect(targetItem).toBeDefined();
 
@@ -111,7 +112,7 @@ describe('import review workflow', () => {
     expect(text).toContain('# RESECTION');
     expect(text).toContain('DB 1000');
     expect(text).toContain('DN 077 000-00-00');
-    expect(text).toContain('DM 077 000-00-00.0 3.8984 90.0000 1.6500/1.5500');
+    expect(text).toContain('DM 077 000-00-00.0 3.8984');
     expect(text).toContain('DM 235 090-52-25.5 17.4323');
     expect(text).toContain('DE');
   });
@@ -163,5 +164,41 @@ describe('import review workflow', () => {
     expect(text).toContain('# AVERAGE SET');
     expect(text).toContain('# CUSTOM SETUP 1');
     expect(text.match(/M 1-1000-2 286-51-24.7 22.2574 89.9566 1.6500\/1.6920/g)).toHaveLength(2);
+  });
+
+  it('supports empty setup-group staging before rows are moved into it', () => {
+    const imported = importExternalInput(
+      jobXmlTrimbleFixture,
+      'jobxml_trimble_station_setup_sample.jxl',
+    );
+    const baseModel = buildImportReviewModel(imported.dataset!);
+    const withEmptyGroup = createEmptyImportReviewGroup(
+      baseModel,
+      'synthetic-group:1',
+      'Custom Setup 1',
+      'CUSTOM SETUP 1',
+      'setup:1:bs:1000',
+    );
+    const movedModel = moveImportReviewItem(withEmptyGroup, 'observation:4', 'synthetic-group:1');
+
+    expect(withEmptyGroup.groups.map((group) => group.label)).toEqual([
+      'Control',
+      'Setup 1 (BS 1000)',
+      'Custom Setup 1',
+    ]);
+
+    const text = buildImportReviewText(imported.dataset!, movedModel, {
+      includedItemIds: new Set(movedModel.items.map((item) => item.id)),
+      groupComments: {
+        control: 'CONTROL',
+        'setup:1:bs:1000': 'SETUP 1',
+        'synthetic-group:1': 'CUSTOM SETUP 1',
+      },
+      preset: 'ts-direction-set',
+    });
+
+    expect(text).toContain('# CUSTOM SETUP 1');
+    expect(text).toContain('M 1-1000-2 286-51-24.7 22.2574');
+    expect(text).toContain('D 1-1000 4.7265');
   });
 });

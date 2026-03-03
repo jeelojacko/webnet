@@ -77,6 +77,7 @@ describe('ImportReviewModal', () => {
           'observation:0': 'DM P1 045-07-24.2 100.0000',
         }}
         excludedItemIds={new Set(['observation:0'])}
+        groupLabels={{ control: 'Control', 'setup:STN1:bs:BS1': 'Setup STN1 (BS BS1)' }}
         groupComments={{ control: 'CONTROL', 'setup:STN1:bs:BS1': 'SETUP STN1' }}
         preset="ts-direction-set"
         moveTargetGroups={[{ key: 'setup:STN1:bs:BS1', label: 'Setup STN1 (BS BS1)' }]}
@@ -84,12 +85,15 @@ describe('ImportReviewModal', () => {
         onSetBulkExcludeMta={() => {}}
         onSetBulkExcludeRaw={() => {}}
         onToggleExclude={() => {}}
+        onCreateEmptySetupGroup={() => {}}
+        onGroupLabelChange={() => {}}
         onCommentChange={() => {}}
         onRowTextChange={() => {}}
         onDuplicateRow={() => {}}
         onInsertCommentBelow={() => {}}
         onCreateSetupGroup={() => {}}
         onMoveRow={() => {}}
+        onRemoveGroup={() => {}}
         onRemoveRow={() => {}}
         onCancel={() => {}}
         onImport={() => {}}
@@ -104,6 +108,8 @@ describe('ImportReviewModal', () => {
     expect(html).toContain('Actions');
     expect(html).toContain('Output Style');
     expect(html).toContain('TS Direction Set');
+    expect(html).toContain('Add Empty Setup');
+    expect(html).toContain('Setup Label');
     expect(html).toContain('Exclude MTA Obs (1)');
     expect(html).toContain('Duplicate');
     expect(html).toContain('Comment Below');

@@ -40,12 +40,14 @@ import {
   buildImportReviewDisplayTextMap,
   buildImportReviewModel,
   buildImportReviewText,
+  createEmptyImportReviewGroup,
   createImportReviewGroupFromItem,
   duplicateImportReviewItem,
   insertImportReviewCommentRow,
   isImportReviewMtaItem,
   isImportReviewRawMeasurementItem,
   moveImportReviewItem,
+  removeImportReviewGroup,
   removeImportReviewItem,
   type ImportReviewModel,
   type ImportReviewOutputPreset,
@@ -429,6 +431,7 @@ type ImportReviewState = {
   dataset: ImportedDataset;
   reviewModel: ImportReviewModel;
   excludedItemIds: Set<string>;
+  groupLabels: Record<string, string>;
   groupComments: Record<string, string>;
   rowOverrides: Record<string, string>;
   preset: ImportReviewOutputPreset;
@@ -3559,12 +3562,16 @@ const App: React.FC = () => {
         const groupComments = Object.fromEntries(
           reviewModel.groups.map((group) => [group.key, group.defaultComment]),
         );
+        const groupLabels = Object.fromEntries(
+          reviewModel.groups.map((group) => [group.key, group.label]),
+        );
         setImportReviewState({
           sourceName: file.name,
           notice: imported.notice,
           dataset: imported.dataset,
           reviewModel,
           excludedItemIds: new Set(),
+          groupLabels,
           groupComments,
           rowOverrides: {},
           preset: 'clean-webnet',
@@ -3645,6 +3652,20 @@ const App: React.FC = () => {
     );
   };
 
+  const handleImportReviewGroupLabelChange = (groupKey: string, value: string) => {
+    setImportReviewState((prev) =>
+      prev
+        ? {
+            ...prev,
+            groupLabels: {
+              ...prev.groupLabels,
+              [groupKey]: value,
+            },
+          }
+        : prev,
+    );
+  };
+
   const handleImportReviewRowTextChange = (itemId: string, value: string) => {
     setImportReviewState((prev) =>
       prev
@@ -3718,6 +3739,42 @@ const App: React.FC = () => {
           label,
           defaultComment,
         ),
+        groupLabels: {
+          ...prev.groupLabels,
+          [groupKey]: label,
+        },
+        groupComments: {
+          ...prev.groupComments,
+          [groupKey]: defaultComment,
+        },
+        nextSyntheticId: prev.nextSyntheticId + 1,
+      };
+    });
+  };
+
+  const handleImportReviewCreateEmptySetupGroup = () => {
+    setImportReviewState((prev) => {
+      if (!prev) return prev;
+      const suffix = prev.nextSyntheticId;
+      const groupKey = `synthetic-group:${suffix}`;
+      const label = `Custom Setup ${suffix}`;
+      const defaultComment = `CUSTOM SETUP ${suffix}`;
+      const lastNonControlGroup =
+        [...prev.reviewModel.groups].reverse().find((group) => group.kind !== 'control')?.key ??
+        'control';
+      return {
+        ...prev,
+        reviewModel: createEmptyImportReviewGroup(
+          prev.reviewModel,
+          groupKey,
+          label,
+          defaultComment,
+          lastNonControlGroup,
+        ),
+        groupLabels: {
+          ...prev.groupLabels,
+          [groupKey]: label,
+        },
         groupComments: {
           ...prev.groupComments,
           [groupKey]: defaultComment,
@@ -3750,6 +3807,22 @@ const App: React.FC = () => {
         reviewModel: removeImportReviewItem(prev.reviewModel, itemId),
         excludedItemIds: nextExcluded,
         rowOverrides: nextRowOverrides,
+      };
+    });
+  };
+
+  const handleImportReviewRemoveGroup = (groupKey: string) => {
+    setImportReviewState((prev) => {
+      if (!prev) return prev;
+      const nextGroupLabels = { ...prev.groupLabels };
+      const nextGroupComments = { ...prev.groupComments };
+      delete nextGroupLabels[groupKey];
+      delete nextGroupComments[groupKey];
+      return {
+        ...prev,
+        reviewModel: removeImportReviewGroup(prev.reviewModel, groupKey),
+        groupLabels: nextGroupLabels,
+        groupComments: nextGroupComments,
       };
     });
   };
@@ -3800,7 +3873,7 @@ const App: React.FC = () => {
       .filter((group) => group.kind !== 'control')
       .map((group) => ({
         key: group.key,
-        label: group.label,
+        label: importReviewState.groupLabels[group.key] ?? group.label,
       }));
   }, [importReviewState]);
 
@@ -6313,6 +6386,7 @@ const App: React.FC = () => {
           reviewModel={importReviewState.reviewModel}
           displayedRows={importReviewDisplayedRows}
           excludedItemIds={importReviewState.excludedItemIds}
+          groupLabels={importReviewState.groupLabels}
           groupComments={importReviewState.groupComments}
           preset={importReviewState.preset}
           moveTargetGroups={importReviewMoveTargetGroups}
@@ -6320,12 +6394,15 @@ const App: React.FC = () => {
           onSetBulkExcludeMta={handleImportReviewSetBulkExcludeMta}
           onSetBulkExcludeRaw={handleImportReviewSetBulkExcludeRaw}
           onToggleExclude={handleImportReviewToggleExclude}
+          onCreateEmptySetupGroup={handleImportReviewCreateEmptySetupGroup}
+          onGroupLabelChange={handleImportReviewGroupLabelChange}
           onCommentChange={handleImportReviewCommentChange}
           onRowTextChange={handleImportReviewRowTextChange}
           onDuplicateRow={handleImportReviewDuplicateRow}
           onInsertCommentBelow={handleImportReviewInsertCommentBelow}
           onCreateSetupGroup={handleImportReviewCreateSetupGroup}
           onMoveRow={handleImportReviewMoveRow}
+          onRemoveGroup={handleImportReviewRemoveGroup}
           onRemoveRow={handleImportReviewRemoveRow}
           onCancel={handleCancelImportReview}
           onImport={handleApplyImportReview}

@@ -1,7 +1,9 @@
 import { DEG_TO_RAD, radToDmsStr } from './angles';
 import type {
+  ImportedAngleObservationRecord,
   ImportedControlStationRecord,
   ImportedDataset,
+  ImportedMeasurementObservationRecord,
   ImportedObservationRecord,
   ImportedTraceEntry,
 } from './importers';
@@ -38,6 +40,7 @@ export interface ImportReviewGroup {
   kind: ImportReviewGroupKind;
   label: string;
   defaultComment: string;
+  synthetic?: boolean;
   setupId?: string;
   backsightId?: string;
   itemIds: string[];
@@ -384,6 +387,7 @@ export const createImportReviewGroupFromItem = (
     kind: sourceGroup.kind === 'control' ? 'setup' : sourceGroup.kind,
     label,
     defaultComment,
+    synthetic: true,
     setupId: item.setupId ?? sourceGroup.setupId,
     backsightId: item.backsightId ?? sourceGroup.backsightId,
     itemIds: [itemId],
@@ -391,6 +395,42 @@ export const createImportReviewGroupFromItem = (
   sourceGroup.itemIds = sourceGroup.itemIds.filter((entry) => entry !== itemId);
   item.groupKey = nextGroupKey;
   nextModel.groups.splice(sourceGroupIndex + 1, 0, nextGroup);
+  return nextModel;
+};
+
+export const createEmptyImportReviewGroup = (
+  model: ImportReviewModel,
+  nextGroupKey: string,
+  label: string,
+  defaultComment: string,
+  afterGroupKey?: string,
+): ImportReviewModel => {
+  const nextModel = cloneImportReviewModel(model);
+  if (nextModel.groups.some((group) => group.key === nextGroupKey)) return nextModel;
+  const insertAfterIndex =
+    afterGroupKey != null
+      ? nextModel.groups.findIndex((group) => group.key === afterGroupKey)
+      : nextModel.groups.length - 1;
+  const nextGroup: ImportReviewGroup = {
+    key: nextGroupKey,
+    kind: 'setup',
+    label,
+    defaultComment,
+    synthetic: true,
+    itemIds: [],
+  };
+  nextModel.groups.splice(Math.max(insertAfterIndex, 0) + 1, 0, nextGroup);
+  return nextModel;
+};
+
+export const removeImportReviewGroup = (
+  model: ImportReviewModel,
+  groupKey: string,
+): ImportReviewModel => {
+  const nextModel = cloneImportReviewModel(model);
+  nextModel.groups = nextModel.groups.filter(
+    (group) => !(group.key === groupKey && group.synthetic && group.itemIds.length === 0),
+  );
   return nextModel;
 };
 
@@ -485,23 +525,50 @@ const appendObservationLines = (
   });
 };
 
-const getPresetRowLines = (
-  observation: ImportedObservationRecord,
-  preset: ImportReviewOutputPreset,
-): string[] => {
-  if (preset !== 'ts-direction-set') {
-    return serializeImportedObservationRecord(observation);
+const serializeTsDirectionSetMeasurement = (
+  observation: ImportedMeasurementObservationRecord,
+): string => {
+  const isResection = isResectionSetupType(observation.sourceMeta?.setupType);
+  if (isResection) {
+    return ['DM', observation.toId, formatAngleDms(observation.angleDeg), formatLinear(observation.distanceM)].join(
+      ' ',
+    );
   }
+  if (observation.toId === observation.fromId) {
+    return ['D', `${observation.atId}-${observation.fromId}`, formatLinear(observation.distanceM)].join(' ');
+  }
+  return [
+    'M',
+    `${observation.atId}-${observation.fromId}-${observation.toId}`,
+    formatAngleDms(observation.angleDeg),
+    formatLinear(observation.distanceM),
+  ].join(' ');
+};
 
+const serializeTsDirectionSetAngle = (observation: ImportedAngleObservationRecord): string => {
+  if (isResectionSetupType(observation.sourceMeta?.setupType)) {
+    return ['DN', observation.toId, formatAngleDms(observation.angleDeg)].join(' ');
+  }
+  return [
+    'A',
+    `${observation.atId}-${observation.fromId}-${observation.toId}`,
+    formatAngleDms(observation.angleDeg),
+  ].join(' ');
+};
+
+const serializeTsDirectionSetRecord = (observation: ImportedObservationRecord): string[] => {
   if (observation.kind === 'measurement') {
-    const line = serializeObservationPreview(observation, preset);
-    return [line];
+    return [serializeTsDirectionSetMeasurement(observation)];
   }
-
   if (observation.kind === 'angle') {
-    return [serializeObservationPreview(observation, preset)];
+    return [serializeTsDirectionSetAngle(observation)];
   }
-
+  if (observation.kind === 'distance') {
+    return [['D', `${observation.fromId}-${observation.toId}`, formatLinear(observation.distanceM)].join(' ')];
+  }
+  if (observation.kind === 'bearing') {
+    return [['B', `${observation.fromId}-${observation.toId}`, formatAngleDms(observation.bearingDeg)].join(' ')];
+  }
   return serializeImportedObservationRecord(observation);
 };
 
@@ -526,7 +593,10 @@ export const buildImportReviewDisplayTextMap = (
       output[item.id] = serializeImportedControlStationRecord(dataset.controlStations[item.index]);
       return;
     }
-    output[item.id] = serializeObservationPreview(dataset.observations[item.index], preset);
+    output[item.id] =
+      preset === 'ts-direction-set'
+        ? serializeTsDirectionSetRecord(dataset.observations[item.index]).join(' | ')
+        : serializeObservationPreview(dataset.observations[item.index], preset);
   });
   return output;
 };
@@ -548,10 +618,12 @@ const appendPresetObservationLines = (
 
   if (
     preset === 'ts-direction-set' &&
-    (observation.kind === 'measurement' || observation.kind === 'angle') &&
-    isResectionSetupType(observation.sourceMeta?.setupType)
+    (observation.kind === 'measurement' ||
+      observation.kind === 'angle' ||
+      observation.kind === 'distance' ||
+      observation.kind === 'bearing')
   ) {
-    getPresetRowLines(observation, preset).forEach((line) => lines.push(line));
+    serializeTsDirectionSetRecord(observation).forEach((line) => lines.push(line));
     return;
   }
 

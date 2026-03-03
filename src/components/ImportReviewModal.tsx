@@ -14,6 +14,7 @@ interface ImportReviewModalProps {
   reviewModel: ImportReviewModel;
   displayedRows: Record<string, string>;
   excludedItemIds: Set<string>;
+  groupLabels: Record<string, string>;
   groupComments: Record<string, string>;
   preset: ImportReviewOutputPreset;
   moveTargetGroups: Array<{ key: string; label: string }>;
@@ -21,12 +22,15 @@ interface ImportReviewModalProps {
   onSetBulkExcludeMta: (_excluded: boolean) => void;
   onSetBulkExcludeRaw: (_excluded: boolean) => void;
   onToggleExclude: (_itemId: string) => void;
+  onCreateEmptySetupGroup: () => void;
+  onGroupLabelChange: (_groupKey: string, _value: string) => void;
   onCommentChange: (_groupKey: string, _value: string) => void;
   onRowTextChange: (_itemId: string, _value: string) => void;
   onDuplicateRow: (_itemId: string) => void;
   onInsertCommentBelow: (_itemId: string) => void;
   onCreateSetupGroup: (_itemId: string) => void;
   onMoveRow: (_itemId: string, _groupKey: string) => void;
+  onRemoveGroup: (_groupKey: string) => void;
   onRemoveRow: (_itemId: string) => void;
   onCancel: () => void;
   onImport: () => void;
@@ -69,6 +73,7 @@ const ImportReviewModal: React.FC<ImportReviewModalProps> = ({
   reviewModel,
   displayedRows,
   excludedItemIds,
+  groupLabels,
   groupComments,
   preset,
   moveTargetGroups,
@@ -76,12 +81,15 @@ const ImportReviewModal: React.FC<ImportReviewModalProps> = ({
   onSetBulkExcludeMta,
   onSetBulkExcludeRaw,
   onToggleExclude,
+  onCreateEmptySetupGroup,
+  onGroupLabelChange,
   onCommentChange,
   onRowTextChange,
   onDuplicateRow,
   onInsertCommentBelow,
   onCreateSetupGroup,
   onMoveRow,
+  onRemoveGroup,
   onRemoveRow,
   onCancel,
   onImport,
@@ -109,147 +117,172 @@ const ImportReviewModal: React.FC<ImportReviewModalProps> = ({
     const items = group.itemIds
       .map((itemId) => itemLookup.get(itemId))
       .filter((item): item is ImportReviewItem => Boolean(item));
-    if (items.length === 0) return null;
 
     return (
       <section key={group.key} className="border border-slate-600 bg-slate-900/70">
         <div className="border-b border-slate-700 bg-slate-800/80 px-4 py-3">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-            <div>
-              <div className="text-sm font-semibold text-slate-100">{group.label}</div>
+            <div className="grid gap-2">
+              <label className="flex min-w-[260px] flex-col text-[11px] uppercase tracking-wide text-slate-400">
+                Setup Label
+                <input
+                  type="text"
+                  value={groupLabels[group.key] ?? group.label}
+                  onChange={(event) => onGroupLabelChange(group.key, event.target.value)}
+                  className="mt-1 border border-slate-600 bg-slate-950 px-2 py-1 text-xs text-slate-100 focus:border-cyan-400 focus:outline-none"
+                  placeholder="Optional setup label"
+                />
+              </label>
               <div className="text-[11px] uppercase tracking-wide text-slate-400">
                 {items.length} imported row{items.length === 1 ? '' : 's'}
               </div>
             </div>
-            <label className="flex min-w-[320px] flex-col text-[11px] uppercase tracking-wide text-slate-400">
-              Comment Line
-              <input
-                type="text"
-                value={groupComments[group.key] ?? group.defaultComment}
-                onChange={(event) => onCommentChange(group.key, event.target.value)}
-                className="mt-1 border border-slate-600 bg-slate-950 px-2 py-1 text-xs text-slate-100 focus:border-cyan-400 focus:outline-none"
-                placeholder="Optional group comment"
-              />
-            </label>
+            <div className="flex flex-col gap-2 lg:items-end">
+              <label className="flex min-w-[320px] flex-col text-[11px] uppercase tracking-wide text-slate-400">
+                Comment Line
+                <input
+                  type="text"
+                  value={groupComments[group.key] ?? group.defaultComment}
+                  onChange={(event) => onCommentChange(group.key, event.target.value)}
+                  className="mt-1 border border-slate-600 bg-slate-950 px-2 py-1 text-xs text-slate-100 focus:border-cyan-400 focus:outline-none"
+                  placeholder="Optional group comment"
+                />
+              </label>
+              {group.synthetic && items.length === 0 && (
+                <button
+                  type="button"
+                  onClick={() => onRemoveGroup(group.key)}
+                  className="border border-rose-800 bg-rose-950/40 px-2 py-1 text-[11px] uppercase tracking-wide text-rose-200 hover:border-rose-500"
+                >
+                  Remove Empty Group
+                </button>
+              )}
+            </div>
           </div>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="min-w-full border-collapse text-xs">
-            <thead className="bg-slate-950/80 text-slate-300">
-              <tr>
-                <th className="border-b border-slate-700 px-3 py-2 text-left font-semibold">
-                  Imported Data
-                </th>
-                <th className="border-b border-slate-700 px-3 py-2 text-left font-semibold">
-                  Source Type
-                </th>
-                <th className="border-b border-slate-700 px-3 py-2 text-left font-semibold">
-                  Source Line
-                </th>
-                <th className="border-b border-slate-700 px-3 py-2 text-center font-semibold">
-                  Exclude
-                </th>
-                <th className="border-b border-slate-700 px-3 py-2 text-left font-semibold">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {items.map((item) => {
-                const excluded = excludedItemIds.has(item.id);
-                const canMove = item.groupKey !== 'control' && moveTargetGroups.length > 1;
-                return (
-                  <tr key={item.id} className={excluded ? 'bg-slate-950/40 text-slate-500' : ''}>
-                    <td className="border-b border-slate-800 px-3 py-2 align-top">
-                      <textarea
-                        value={displayedRows[item.id] ?? ''}
-                        onChange={(event) => onRowTextChange(item.id, event.target.value)}
-                        className={`min-h-[54px] w-full resize-y border bg-slate-950 px-2 py-1 font-mono text-[11px] focus:outline-none ${
-                          excluded
-                            ? 'border-slate-800 text-slate-500'
-                            : 'border-slate-700 text-slate-100 focus:border-cyan-400'
-                        }`}
-                        spellCheck={false}
-                      />
-                    </td>
-                    <td className="border-b border-slate-800 px-3 py-2 text-slate-300 align-top">
-                      {item.sourceType}
-                    </td>
-                    <td className="border-b border-slate-800 px-3 py-2 text-slate-300 align-top">
-                      {rowSourceLabel(item)}
-                    </td>
-                    <td className="border-b border-slate-800 px-3 py-2 text-center align-top">
-                      <input
-                        type="checkbox"
-                        checked={excluded}
-                        onChange={() => onToggleExclude(item.id)}
-                        className="accent-amber-400"
-                        title={excluded ? 'Excluded from final import' : 'Include in final import'}
-                      />
-                    </td>
-                    <td className="border-b border-slate-800 px-3 py-2 align-top">
-                      <div className="flex min-w-[220px] flex-col gap-2">
-                        <div className="flex flex-wrap gap-2">
-                          {item.kind !== 'comment' && (
+        {items.length === 0 ? (
+          <div className="px-4 py-4 text-xs text-slate-400">
+            Empty setup group. Use the row move controls to place imported rows here before final import.
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="min-w-full border-collapse text-xs">
+              <thead className="bg-slate-950/80 text-slate-300">
+                <tr>
+                  <th className="border-b border-slate-700 px-3 py-2 text-left font-semibold">
+                    Imported Data
+                  </th>
+                  <th className="border-b border-slate-700 px-3 py-2 text-left font-semibold">
+                    Source Type
+                  </th>
+                  <th className="border-b border-slate-700 px-3 py-2 text-left font-semibold">
+                    Source Line
+                  </th>
+                  <th className="border-b border-slate-700 px-3 py-2 text-center font-semibold">
+                    Exclude
+                  </th>
+                  <th className="border-b border-slate-700 px-3 py-2 text-left font-semibold">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {items.map((item) => {
+                  const excluded = excludedItemIds.has(item.id);
+                  const canMove = item.groupKey !== 'control' && moveTargetGroups.length > 1;
+                  return (
+                    <tr key={item.id} className={excluded ? 'bg-slate-950/40 text-slate-500' : ''}>
+                      <td className="border-b border-slate-800 px-3 py-2 align-top">
+                        <textarea
+                          value={displayedRows[item.id] ?? ''}
+                          onChange={(event) => onRowTextChange(item.id, event.target.value)}
+                          className={`min-h-[54px] w-full resize-y border bg-slate-950 px-2 py-1 font-mono text-[11px] focus:outline-none ${
+                            excluded
+                              ? 'border-slate-800 text-slate-500'
+                              : 'border-slate-700 text-slate-100 focus:border-cyan-400'
+                          }`}
+                          spellCheck={false}
+                        />
+                      </td>
+                      <td className="border-b border-slate-800 px-3 py-2 text-slate-300 align-top">
+                        {item.sourceType}
+                      </td>
+                      <td className="border-b border-slate-800 px-3 py-2 text-slate-300 align-top">
+                        {rowSourceLabel(item)}
+                      </td>
+                      <td className="border-b border-slate-800 px-3 py-2 text-center align-top">
+                        <input
+                          type="checkbox"
+                          checked={excluded}
+                          onChange={() => onToggleExclude(item.id)}
+                          className="accent-amber-400"
+                          title={excluded ? 'Excluded from final import' : 'Include in final import'}
+                        />
+                      </td>
+                      <td className="border-b border-slate-800 px-3 py-2 align-top">
+                        <div className="flex min-w-[220px] flex-col gap-2">
+                          <div className="flex flex-wrap gap-2">
+                            {item.kind !== 'comment' && (
+                              <button
+                                type="button"
+                                onClick={() => onDuplicateRow(item.id)}
+                                className="border border-slate-600 bg-slate-950 px-2 py-1 text-[11px] uppercase tracking-wide text-slate-200 hover:border-cyan-400"
+                              >
+                                Duplicate
+                              </button>
+                            )}
                             <button
                               type="button"
-                              onClick={() => onDuplicateRow(item.id)}
+                              onClick={() => onInsertCommentBelow(item.id)}
                               className="border border-slate-600 bg-slate-950 px-2 py-1 text-[11px] uppercase tracking-wide text-slate-200 hover:border-cyan-400"
                             >
-                              Duplicate
+                              Comment Below
                             </button>
-                          )}
-                          <button
-                            type="button"
-                            onClick={() => onInsertCommentBelow(item.id)}
-                            className="border border-slate-600 bg-slate-950 px-2 py-1 text-[11px] uppercase tracking-wide text-slate-200 hover:border-cyan-400"
-                          >
-                            Comment Below
-                          </button>
-                          {item.groupKey !== 'control' && (
-                            <button
-                              type="button"
-                              onClick={() => onCreateSetupGroup(item.id)}
-                              className="border border-slate-600 bg-slate-950 px-2 py-1 text-[11px] uppercase tracking-wide text-slate-200 hover:border-cyan-400"
-                            >
-                              New Setup
-                            </button>
-                          )}
-                          {item.synthetic && (
-                            <button
-                              type="button"
-                              onClick={() => onRemoveRow(item.id)}
-                              className="border border-rose-800 bg-rose-950/40 px-2 py-1 text-[11px] uppercase tracking-wide text-rose-200 hover:border-rose-500"
-                            >
-                              Remove
-                            </button>
+                            {item.groupKey !== 'control' && (
+                              <button
+                                type="button"
+                                onClick={() => onCreateSetupGroup(item.id)}
+                                className="border border-slate-600 bg-slate-950 px-2 py-1 text-[11px] uppercase tracking-wide text-slate-200 hover:border-cyan-400"
+                              >
+                                New Setup
+                              </button>
+                            )}
+                            {item.synthetic && (
+                              <button
+                                type="button"
+                                onClick={() => onRemoveRow(item.id)}
+                                className="border border-rose-800 bg-rose-950/40 px-2 py-1 text-[11px] uppercase tracking-wide text-rose-200 hover:border-rose-500"
+                              >
+                                Remove
+                              </button>
+                            )}
+                          </div>
+                          {canMove && (
+                            <label className="flex flex-col text-[10px] uppercase tracking-wide text-slate-400">
+                              Move To
+                              <select
+                                value={item.groupKey}
+                                onChange={(event) => onMoveRow(item.id, event.target.value)}
+                                className="mt-1 border border-slate-700 bg-slate-950 px-2 py-1 text-[11px] text-slate-100 focus:border-cyan-400 focus:outline-none"
+                              >
+                                {moveTargetGroups.map((target) => (
+                                  <option key={target.key} value={target.key}>
+                                    {target.label}
+                                  </option>
+                                ))}
+                              </select>
+                            </label>
                           )}
                         </div>
-                        {canMove && (
-                          <label className="flex flex-col text-[10px] uppercase tracking-wide text-slate-400">
-                            Move To
-                            <select
-                              value={item.groupKey}
-                              onChange={(event) => onMoveRow(item.id, event.target.value)}
-                              className="mt-1 border border-slate-700 bg-slate-950 px-2 py-1 text-[11px] text-slate-100 focus:border-cyan-400 focus:outline-none"
-                            >
-                              {moveTargetGroups.map((target) => (
-                                <option key={target.key} value={target.key}>
-                                  {target.label}
-                                </option>
-                              ))}
-                            </select>
-                          </label>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
       </section>
     );
   };
@@ -288,6 +321,13 @@ const ImportReviewModal: React.FC<ImportReviewModalProps> = ({
                   {PRESET_OPTIONS.find((option) => option.value === preset)?.description}
                 </span>
               </label>
+              <button
+                type="button"
+                onClick={onCreateEmptySetupGroup}
+                className="border border-slate-600 bg-slate-950 px-3 py-2 text-[11px] uppercase tracking-wide text-slate-200 hover:border-cyan-400"
+              >
+                Add Empty Setup
+              </button>
               <div className="grid gap-2 text-left text-[11px] uppercase tracking-wide text-slate-400">
                 <label className="flex items-center gap-2">
                   <input
