@@ -208,10 +208,10 @@
       - [x] Phase 1: extend parser/types for rover-offset observation records and associated orientation metadata
       - [x] Phase 2: apply offset transformation into effective GNSS vectors in adjustment equations
       - [x] Phase 3: add report/export transparency for applied offsets and validate via dedicated fixtures
-    - [~] Add LandXML export for adjusted coordinates/connections
+    - [x] Add LandXML export for adjusted coordinates/connections
       - [x] Phase 1: define LandXML export schema mapping for stations, observations, ellipses, and metadata
       - [x] Phase 2: build deterministic serializer with unit/profile annotations and file-write UX
-      - [ ] Phase 3: add round-trip/interoperability checks against common LandXML consumers
+      - [x] Phase 3: add round-trip/interoperability checks against common LandXML consumers
     - [ ] Add native field-data importer pipeline parity for major Industry Standard sources (JobXML/DBX/FieldGenius/Carlson/TDS) instead of `.dat`-only workflows
       - [ ] Phase 1: design importer plugin interface and normalized intermediate observation model
       - [ ] Phase 2: implement first-party JobXML + FieldGenius importers with error-log traceability
