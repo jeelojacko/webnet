@@ -239,6 +239,13 @@ export interface GpsObservation extends ObservationBase {
   gpsMode?: GpsVectorMode;
   gpsAntennaHiM?: number;
   gpsAntennaHtM?: number;
+  gpsOffsetAzimuthRad?: number;
+  gpsOffsetDistanceM?: number;
+  gpsOffsetZenithRad?: number;
+  gpsOffsetDeltaE?: number;
+  gpsOffsetDeltaN?: number;
+  gpsOffsetDeltaH?: number;
+  gpsOffsetSourceLine?: number;
   from: StationId;
   to: StationId;
   obs: { dE: number; dN: number };
@@ -509,6 +516,7 @@ export interface ParseOptions {
   gpsAddHiHtMissingHeightCount?: number;
   gpsAddHiHtScaleMin?: number;
   gpsAddHiHtScaleMax?: number;
+  gpsOffsetObservationCount?: number;
   lonSign?: LonSign;
   currentInstrument?: string;
   edmMode?: 'additive' | 'propagated';

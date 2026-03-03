@@ -1,0 +1,6 @@
+# GPS rover offset phase 3 fixture
+.2D
+C A 0 0 0 ! !
+C B 12 0 0
+G GPS1 A B 10.0000 0.0000 0.0050 0.0050
+G4 90.0000 2.0000 90.0000

@@ -103,10 +103,9 @@ const AMODE_AUTO_MAX_DIR_RAD = 3 * DEG_TO_RAD;
 const AMODE_AUTO_MARGIN_RAD = 0.5 * DEG_TO_RAD;
 const DESCRIPTION_RECORD_TYPES = new Set(['C', 'P', 'PH', 'CH', 'EH', 'E']);
 const normalizeDescriptionText = (value: string): string => value.replace(/\s+/g, ' ').trim();
-const normalizeDescriptionKey = (value: string): string => normalizeDescriptionText(value).toUpperCase();
-const splitInlineCommentAndDescription = (
-  line: string,
-): { line: string; description?: string } => {
+const normalizeDescriptionKey = (value: string): string =>
+  normalizeDescriptionText(value).toUpperCase();
+const splitInlineCommentAndDescription = (line: string): { line: string; description?: string } => {
   const hash = line.indexOf('#');
   const quote = line.indexOf("'");
   let cut = -1;
@@ -305,8 +304,7 @@ const defaultDirectionSigmaSec = (inst: Instrument | undefined): number =>
 const defaultAzimuthSigmaSec = (inst: Instrument | undefined): number =>
   inst?.azBearingPrecision_sec ?? defaultDirectionSigmaSec(inst);
 
-const defaultZenithSigmaSec = (inst: Instrument | undefined): number =>
-  inst?.vaPrecision_sec ?? 0;
+const defaultZenithSigmaSec = (inst: Instrument | undefined): number => inst?.vaPrecision_sec ?? 0;
 
 const defaultElevDiffSigma = (inst: Instrument | undefined, spanMeters: number): number => {
   if (!inst) return 0;
@@ -396,7 +394,10 @@ const parseGpsVectorModeToken = (token?: string): GpsVectorMode | null => {
   return null;
 };
 
-const parseLinearMetersToken = (token: string | undefined, units: ParseOptions['units']): number | null => {
+const parseLinearMetersToken = (
+  token: string | undefined,
+  units: ParseOptions['units'],
+): number | null => {
   if (!token) return null;
   const parsed = parseFloat(token);
   if (!Number.isFinite(parsed)) return null;
@@ -506,6 +507,7 @@ export const parseInput = (
   const lines = input.split('\n');
   let lineNum = 0;
   let obsId = 0;
+  let lastGpsObservation: GpsObservation | undefined;
   const autoCreatedStations = new Set<StationId>();
   const rejectedAutoCreateTokens = new Set<string>();
   const preanalysisMode = state.preanalysisMode === true;
@@ -620,16 +622,16 @@ export const parseInput = (
     const canonical = rawCanonical.trim();
     if (!alias || !canonical) return false;
     if (alias === canonical) {
-      logs.push(`Warning: .ALIAS ${alias}=${canonical} ignored at line ${lineNum}; mapping is identity.`);
+      logs.push(
+        `Warning: .ALIAS ${alias}=${canonical} ignored at line ${lineNum}; mapping is identity.`,
+      );
       return false;
     }
     explicitAliases.set(alias, canonical);
     explicitAliasLines.set(alias, lineNum);
     return true;
   };
-  const applyAliasRulesOnce = (
-    id: StationId,
-  ): { mappedId: StationId; steps: string[] } => {
+  const applyAliasRulesOnce = (id: StationId): { mappedId: StationId; steps: string[] } => {
     let mapped = id;
     const steps: string[] = [];
     for (const rule of aliasRules) {
@@ -675,7 +677,9 @@ export const parseInput = (
         const next = explicitAliases.get(current);
         if (!next || next === current) return { id: current, steps };
         const explicitLine = explicitAliasLines.get(current);
-        steps.push(`EXPLICIT ${current}->${next}${explicitLine != null ? ` (line ${explicitLine})` : ''}`);
+        steps.push(
+          `EXPLICIT ${current}->${next}${explicitLine != null ? ` (line ${explicitLine})` : ''}`,
+        );
         current = next;
       }
     };
@@ -735,7 +739,9 @@ export const parseInput = (
         continue;
       }
       if (i + 1 >= flattened.length) {
-        logs.push(`Warning: dangling .ALIAS token "${token}" at line ${lineNum}; expected alias pair.`);
+        logs.push(
+          `Warning: dangling .ALIAS token "${token}" at line ${lineNum}; expected alias pair.`,
+        );
         break;
       }
       if (addExplicitAlias(token, flattened[i + 1])) added += 1;
@@ -1166,7 +1172,9 @@ export const parseInput = (
         }
         if (modeToken === 'MODEL') {
           if (!parts[2]) {
-            logs.push(`Warning: .GEOID MODEL missing id at line ${lineNum}; keeping current model.`);
+            logs.push(
+              `Warning: .GEOID MODEL missing id at line ${lineNum}; keeping current model.`,
+            );
             continue;
           }
           state.geoidModelId = normalizeGeoidModelId(parts[2]);
@@ -1174,11 +1182,7 @@ export const parseInput = (
           logs.push(`Geoid/grid model set to ON (model=${state.geoidModelId})`);
           continue;
         }
-        if (
-          modeToken === 'INTERP' ||
-          modeToken === 'INTERPOLATION' ||
-          modeToken === 'METHOD'
-        ) {
+        if (modeToken === 'INTERP' || modeToken === 'INTERPOLATION' || modeToken === 'METHOD') {
           const method = parseGeoidInterpolationToken(parts[2]);
           if (!method) {
             logs.push(
@@ -1243,9 +1247,7 @@ export const parseInput = (
             state.gpsLoopCheckEnabled = false;
             logs.push('GPS loop check set to OFF');
           } else {
-            logs.push(
-              `Warning: invalid .GPS CHECK option at line ${lineNum}; expected OFF or ON.`,
-            );
+            logs.push(`Warning: invalid .GPS CHECK option at line ${lineNum}; expected OFF or ON.`);
           }
           if (parts.length > 3) {
             logs.push(
@@ -1258,8 +1260,10 @@ export const parseInput = (
           const arg1 = (parts[2] || '').trim();
           const arg1Upper = arg1.toUpperCase();
           const unitLabel = state.units === 'ft' ? 'ft' : 'm';
-          const toDisplayUnits = (meters: number) => (state.units === 'ft' ? meters * FT_PER_M : meters);
-          const formatLinear = (meters: number) => `${toDisplayUnits(meters).toFixed(4)} ${unitLabel}`;
+          const toDisplayUnits = (meters: number) =>
+            state.units === 'ft' ? meters * FT_PER_M : meters;
+          const formatLinear = (meters: number) =>
+            `${toDisplayUnits(meters).toFixed(4)} ${unitLabel}`;
 
           if (!arg1 || arg1Upper === 'ON') {
             state.gpsAddHiHtEnabled = true;
@@ -1529,7 +1533,9 @@ export const parseInput = (
           logs.push(
             `Auto-adjust set to ${state.autoAdjustEnabled ? 'ON' : 'OFF'} (|t|>=${(
               state.autoAdjustStdResThreshold ?? 4
-            ).toFixed(2)}, cycles=${state.autoAdjustMaxCycles ?? 3}, maxRemovals=${state.autoAdjustMaxRemovalsPerCycle ?? 1})`,
+            ).toFixed(
+              2,
+            )}, cycles=${state.autoAdjustMaxCycles ?? 3}, maxRemovals=${state.autoAdjustMaxRemovalsPerCycle ?? 1})`,
           );
         }
       } else if (op === '.PRISM') {
@@ -1578,18 +1584,16 @@ export const parseInput = (
         state.prismEnabled = true;
         state.prismOffset = offsetM;
         state.prismScope = scope;
-        logs.push(
-          `Prism correction set to ON (offset=${offsetM.toFixed(4)} m, scope=${scope})`,
-        );
+        logs.push(`Prism correction set to ON (offset=${offsetM.toFixed(4)} m, scope=${scope})`);
         if (Math.abs(offsetM) > 2) {
-          logs.push(
-            `Warning: large prism offset at line ${lineNum} (${offsetM.toFixed(4)} m)`,
-          );
+          logs.push(`Warning: large prism offset at line ${lineNum} (${offsetM.toFixed(4)} m)`);
         }
       } else if (op === '.ROTATION') {
         const token = parts[1];
         if (!token) {
-          logs.push(`Warning: .ROTATION missing angle at line ${lineNum}; expected .ROTATION <angle>.`);
+          logs.push(
+            `Warning: .ROTATION missing angle at line ${lineNum}; expected .ROTATION <angle>.`,
+          );
           continue;
         }
         const delta = parseAngleTokenRad(token, state, 'dd');
@@ -1750,7 +1754,9 @@ export const parseInput = (
           const from = aliasArgs[1] ?? '';
           const to = aliasArgs[2] ?? '';
           if (!from || !to) {
-            logs.push(`Warning: invalid .ALIAS PREFIX at line ${lineNum}; expected ".ALIAS PREFIX from to"`);
+            logs.push(
+              `Warning: invalid .ALIAS PREFIX at line ${lineNum}; expected ".ALIAS PREFIX from to"`,
+            );
           } else {
             aliasRules.push({ kind: 'prefix', from, to, sourceLine: lineNum });
             logs.push(`Alias prefix rule added: ${from} -> ${to}`);
@@ -1759,7 +1765,9 @@ export const parseInput = (
           const from = aliasArgs[1] ?? '';
           const to = aliasArgs[2] ?? '';
           if (!from || !to) {
-            logs.push(`Warning: invalid .ALIAS SUFFIX at line ${lineNum}; expected ".ALIAS SUFFIX from to"`);
+            logs.push(
+              `Warning: invalid .ALIAS SUFFIX at line ${lineNum}; expected ".ALIAS SUFFIX from to"`,
+            );
           } else {
             aliasRules.push({ kind: 'suffix', from, to, sourceLine: lineNum });
             logs.push(`Alias suffix rule added: ${from} -> ${to}`);
@@ -1798,6 +1806,9 @@ export const parseInput = (
 
     const parts = line.split(/\s+/);
     const code = parts[0]?.toUpperCase();
+    if (code !== 'G' && code !== 'G4') {
+      lastGpsObservation = undefined;
+    }
     if (code && DESCRIPTION_RECORD_TYPES.has(code)) {
       const stationId = (parts[1] ?? '').trim();
       const description = parsedInline.description;
@@ -2085,7 +2096,12 @@ export const parseInput = (
         }
 
         const inst = instCode ? instrumentLibrary[instCode] : undefined;
-        const defaultSigma = defaultDistanceSigma(inst, distParsed.planned ? 0 : parseFloat(distToken), state.edmMode, 0);
+        const defaultSigma = defaultDistanceSigma(
+          inst,
+          distParsed.planned ? 0 : parseFloat(distToken),
+          state.edmMode,
+          0,
+        );
         const { sigma, source } = resolveLinearSigma(sigmas[0], defaultSigma);
 
         const obs: DistanceObservation = {
@@ -2205,7 +2221,9 @@ export const parseInput = (
         const stdTokens = parts.slice(nextIndex + 1);
         const { sigmas } = extractSigmaTokens(stdTokens, 1);
         const toMeters = state.units === 'ft' ? 1 / FT_PER_M : 1;
-        const inst = state.currentInstrument ? instrumentLibrary[state.currentInstrument] : undefined;
+        const inst = state.currentInstrument
+          ? instrumentLibrary[state.currentInstrument]
+          : undefined;
         if (state.deltaMode === 'horiz') {
           const dhParsed = parseObservedLinearToken(valToken, toMeters);
           if (!dhParsed.valid) {
@@ -2402,12 +2420,14 @@ export const parseInput = (
         if (state.deltaMode === 'horiz' && vert) {
           const dhParsed = parseObservedLinearToken(vert, toMeters);
           if (!dhParsed.valid) {
-            logs.push(`Invalid BM vertical difference at line ${lineNum}, skipping vertical component.`);
+            logs.push(
+              `Invalid BM vertical difference at line ${lineNum}, skipping vertical component.`,
+            );
           } else {
-          const dhResolved = resolveLinearSigma(
-            sigVert,
-            defaultElevDiffSigma(inst, Math.abs(distParsed.value)),
-          );
+            const dhResolved = resolveLinearSigma(
+              sigVert,
+              defaultElevDiffSigma(inst, Math.abs(distParsed.value)),
+            );
             pushObservation({
               id: obsId++,
               type: 'lev',
@@ -2426,8 +2446,8 @@ export const parseInput = (
           if (!zenParsed.valid) {
             logs.push(`Invalid BM zenith at line ${lineNum}, skipping vertical component.`);
           } else {
-          const baseZen = defaultZenithSigmaSec(inst);
-          const zenResolved = resolveAngularSigma(sigVert, baseZen);
+            const baseZen = defaultZenithSigmaSec(inst);
+            const zenResolved = resolveAngularSigma(sigVert, baseZen);
             pushObservation({
               id: obsId++,
               type: 'zenith',
@@ -3110,8 +3130,8 @@ export const parseInput = (
           id: obsId++,
           type: 'gps',
           gpsMode: state.gpsVectorMode ?? 'network',
-          gpsAntennaHiM: state.gpsAddHiHtEnabled ? state.gpsAddHiHtHiM ?? 0 : undefined,
-          gpsAntennaHtM: state.gpsAddHiHtEnabled ? state.gpsAddHiHtHtM ?? 0 : undefined,
+          gpsAntennaHiM: state.gpsAddHiHtEnabled ? (state.gpsAddHiHtHiM ?? 0) : undefined,
+          gpsAntennaHtM: state.gpsAddHiHtEnabled ? (state.gpsAddHiHtHtM ?? 0) : undefined,
           instCode,
           from,
           to,
@@ -3126,6 +3146,51 @@ export const parseInput = (
           corrEN: corr,
         };
         pushObservation(obs);
+        lastGpsObservation = obs;
+      } else if (code === 'G4') {
+        if (!lastGpsObservation) {
+          logs.push(
+            `Warning: GPS rover offset (G4) at line ${lineNum} has no preceding G vector; ignored.`,
+          );
+          continue;
+        }
+        const azimuth = parseAngleTokenRad(parts[1], state, 'dms');
+        const distanceM = parseLinearMetersToken(parts[2], state.units);
+        const zenith = parseAngleTokenRad(parts[3], state, 'dms');
+        if (
+          !Number.isFinite(azimuth) ||
+          !Number.isFinite(distanceM ?? Number.NaN) ||
+          !Number.isFinite(zenith)
+        ) {
+          logs.push(
+            `Warning: invalid GPS rover offset (G4) at line ${lineNum}; expected azimuth, distance, and zenith.`,
+          );
+          continue;
+        }
+        if (parts.length > 4) {
+          logs.push(
+            `Warning: extra GPS rover offset (G4) tokens ignored at line ${lineNum}; expected azimuth, distance, and zenith only.`,
+          );
+        }
+        const horizDistance = (distanceM as number) * Math.sin(zenith);
+        const deltaH = (distanceM as number) * Math.cos(zenith);
+        const deltaE = horizDistance * Math.sin(azimuth);
+        const deltaN = horizDistance * Math.cos(azimuth);
+        if (lastGpsObservation.gpsOffsetDistanceM != null) {
+          logs.push(
+            `Warning: GPS rover offset (G4) at line ${lineNum} replaced an earlier offset on ${lastGpsObservation.from}-${lastGpsObservation.to}.`,
+          );
+        }
+        lastGpsObservation.gpsOffsetAzimuthRad = wrapTo2Pi(azimuth);
+        lastGpsObservation.gpsOffsetDistanceM = distanceM as number;
+        lastGpsObservation.gpsOffsetZenithRad = zenith;
+        lastGpsObservation.gpsOffsetDeltaE = deltaE;
+        lastGpsObservation.gpsOffsetDeltaN = deltaN;
+        lastGpsObservation.gpsOffsetDeltaH = deltaH;
+        lastGpsObservation.gpsOffsetSourceLine = lineNum;
+        logs.push(
+          `GPS rover offset attached to ${lastGpsObservation.from}-${lastGpsObservation.to}: dE=${deltaE.toFixed(4)} m, dN=${deltaN.toFixed(4)} m, dH=${deltaH.toFixed(4)} m`,
+        );
       } else if (code === 'L') {
         const instCode = parts[1];
         const from = parts[2];
@@ -3205,7 +3270,14 @@ export const parseInput = (
     const remapObservation = (obs: Observation): void => {
       if (obs.type === 'angle') {
         const at = resolveAlias(obs.at);
-        addAliasTrace(obs.at, at.canonicalId, 'observation', obs.sourceLine, `${obs.type}.at`, at.reference);
+        addAliasTrace(
+          obs.at,
+          at.canonicalId,
+          'observation',
+          obs.sourceLine,
+          `${obs.type}.at`,
+          at.reference,
+        );
         obs.at = at.canonicalId;
         const from = resolveAlias(obs.from);
         addAliasTrace(
@@ -3218,14 +3290,35 @@ export const parseInput = (
         );
         obs.from = from.canonicalId;
         const to = resolveAlias(obs.to);
-        addAliasTrace(obs.to, to.canonicalId, 'observation', obs.sourceLine, `${obs.type}.to`, to.reference);
+        addAliasTrace(
+          obs.to,
+          to.canonicalId,
+          'observation',
+          obs.sourceLine,
+          `${obs.type}.to`,
+          to.reference,
+        );
         obs.to = to.canonicalId;
       } else if (obs.type === 'direction') {
         const at = resolveAlias(obs.at);
-        addAliasTrace(obs.at, at.canonicalId, 'observation', obs.sourceLine, `${obs.type}.at`, at.reference);
+        addAliasTrace(
+          obs.at,
+          at.canonicalId,
+          'observation',
+          obs.sourceLine,
+          `${obs.type}.at`,
+          at.reference,
+        );
         obs.at = at.canonicalId;
         const to = resolveAlias(obs.to);
-        addAliasTrace(obs.to, to.canonicalId, 'observation', obs.sourceLine, `${obs.type}.to`, to.reference);
+        addAliasTrace(
+          obs.to,
+          to.canonicalId,
+          'observation',
+          obs.sourceLine,
+          `${obs.type}.to`,
+          to.reference,
+        );
         obs.to = to.canonicalId;
       } else if (
         obs.type === 'dist' ||
@@ -3246,7 +3339,14 @@ export const parseInput = (
         );
         obs.from = from.canonicalId;
         const to = resolveAlias(obs.to);
-        addAliasTrace(obs.to, to.canonicalId, 'observation', obs.sourceLine, `${obs.type}.to`, to.reference);
+        addAliasTrace(
+          obs.to,
+          to.canonicalId,
+          'observation',
+          obs.sourceLine,
+          `${obs.type}.to`,
+          to.reference,
+        );
         obs.to = to.canonicalId;
       }
       if (obs.calc != null && typeof obs.calc === 'object') {
@@ -3333,18 +3433,25 @@ export const parseInput = (
       const fixedH = (target.fixedH ?? false) || (incoming.fixedH ?? false);
       applyFixities(target, { x: fixedX, y: fixedY, h: fixedH }, state.coordMode);
       if (target.sx == null && incoming.sx != null) target.sx = incoming.sx;
-      else if (target.sx != null && incoming.sx != null) target.sx = Math.min(target.sx, incoming.sx);
+      else if (target.sx != null && incoming.sx != null)
+        target.sx = Math.min(target.sx, incoming.sx);
       if (target.sy == null && incoming.sy != null) target.sy = incoming.sy;
-      else if (target.sy != null && incoming.sy != null) target.sy = Math.min(target.sy, incoming.sy);
+      else if (target.sy != null && incoming.sy != null)
+        target.sy = Math.min(target.sy, incoming.sy);
       if (target.sh == null && incoming.sh != null) target.sh = incoming.sh;
-      else if (target.sh != null && incoming.sh != null) target.sh = Math.min(target.sh, incoming.sh);
-      if (target.constraintX == null && incoming.constraintX != null) target.constraintX = incoming.constraintX;
-      if (target.constraintY == null && incoming.constraintY != null) target.constraintY = incoming.constraintY;
-      if (target.constraintH == null && incoming.constraintH != null) target.constraintH = incoming.constraintH;
+      else if (target.sh != null && incoming.sh != null)
+        target.sh = Math.min(target.sh, incoming.sh);
+      if (target.constraintX == null && incoming.constraintX != null)
+        target.constraintX = incoming.constraintX;
+      if (target.constraintY == null && incoming.constraintY != null)
+        target.constraintY = incoming.constraintY;
+      if (target.constraintH == null && incoming.constraintH != null)
+        target.constraintH = incoming.constraintH;
       if (target.constraintCorrXY == null && incoming.constraintCorrXY != null) {
         target.constraintCorrXY = incoming.constraintCorrXY;
       }
-      if (target.heightType == null && incoming.heightType != null) target.heightType = incoming.heightType;
+      if (target.heightType == null && incoming.heightType != null)
+        target.heightType = incoming.heightType;
       if (target.latDeg == null && incoming.latDeg != null) target.latDeg = incoming.latDeg;
       if (target.lonDeg == null && incoming.lonDeg != null) target.lonDeg = incoming.lonDeg;
     };
@@ -3444,7 +3551,9 @@ export const parseInput = (
   state.descriptionRepeatedStationCount = state.descriptionScanSummary.filter(
     (row) => row.recordCount > 1,
   ).length;
-  state.descriptionConflictCount = state.descriptionScanSummary.filter((row) => row.conflict).length;
+  state.descriptionConflictCount = state.descriptionScanSummary.filter(
+    (row) => row.conflict,
+  ).length;
   const descriptionReconcileMode =
     state.descriptionReconcileMode ?? defaultParseOptions.descriptionReconcileMode;
   const descriptionDelimiter =
@@ -3455,7 +3564,9 @@ export const parseInput = (
   state.descriptionScanSummary.forEach((row) => {
     if (row.descriptions.length === 0) return;
     reconciledDescriptions[row.stationId] =
-      descriptionReconcileMode === 'append' ? row.descriptions.join(descriptionDelimiter) : row.descriptions[0];
+      descriptionReconcileMode === 'append'
+        ? row.descriptions.join(descriptionDelimiter)
+        : row.descriptions[0];
   });
   state.reconciledDescriptions = reconciledDescriptions;
   if (state.descriptionTrace.length > 0) {
@@ -3502,6 +3613,12 @@ export const parseInput = (
     logs.push(
       `Preanalysis parsing: mode=ON, planned observations=${state.plannedObservationCount ?? 0}`,
     );
+  }
+  state.gpsOffsetObservationCount = observations.filter(
+    (obs): obs is GpsObservation => obs.type === 'gps' && obs.gpsOffsetDistanceM != null,
+  ).length;
+  if ((state.gpsOffsetObservationCount ?? 0) > 0) {
+    logs.push(`GPS rover offsets parsed: ${state.gpsOffsetObservationCount}`);
   }
   logs.push(
     `Counts: ${Object.entries(typeSummary)

@@ -131,7 +131,9 @@ const chiSquareQuantile = (prob: number, dof: number): number => {
 };
 
 const medianOf = (values: number[]): number | undefined => {
-  const sorted = values.filter((value) => Number.isFinite(value) && value > 0).sort((a, b) => a - b);
+  const sorted = values
+    .filter((value) => Number.isFinite(value) && value > 0)
+    .sort((a, b) => a - b);
   if (sorted.length === 0) return undefined;
   const mid = Math.floor(sorted.length / 2);
   if (sorted.length % 2 === 1) return sorted[mid];
@@ -293,9 +295,7 @@ export class LSAEngine {
       const diag = Math.abs(row[i] ?? 0);
       return diag > 1e-30 && Number.isFinite(diag) ? 1 / Math.sqrt(diag) : 1;
     });
-    const scaled = N.map((row, i) =>
-      row.map((value, j) => value * scale[i] * scale[j]),
-    );
+    const scaled = N.map((row, i) => row.map((value, j) => value * scale[i] * scale[j]));
     return { scaled, scale };
   }
 
@@ -320,9 +320,7 @@ export class LSAEngine {
     try {
       const recovery = invertSymmetricLDLTWithInfo(scaledN);
       const pivotSuffix =
-        recovery.twoByTwoPivotCount > 0
-          ? ` (2x2 pivot blocks=${recovery.twoByTwoPivotCount})`
-          : '';
+        recovery.twoByTwoPivotCount > 0 ? ` (2x2 pivot blocks=${recovery.twoByTwoPivotCount})` : '';
       this.log(
         `Warning: ${context} used pivoted symmetric LDLT recovery on the scaled undamped normal matrix to avoid damping bias in covariance output${pivotSuffix}.`,
       );
@@ -418,11 +416,7 @@ export class LSAEngine {
     const inst = this.getInstrument(obs);
     if (!inst) return 0;
     const geom = this.centeringLineGeometry(obs.from, obs.to, obs.hi ?? 0, obs.ht ?? 0);
-    const modeledDistance = this.is2D
-      ? geom.horiz
-      : obs.mode === 'slope'
-        ? geom.slope
-        : geom.horiz;
+    const modeledDistance = this.is2D ? geom.horiz : obs.mode === 'slope' ? geom.slope : geom.horiz;
     const ppmTerm = inst.edm_ppm * 1e-6 * modeledDistance;
     const edmMode = this.parseState?.edmMode ?? this.parseOptions?.edmMode ?? 'additive';
     if (edmMode === 'propagated') {
@@ -431,20 +425,48 @@ export class LSAEngine {
     return Math.abs(inst.edm_const) + Math.abs(ppmTerm);
   }
 
+  private gpsRoverOffsetVector(obs: GpsObservation): {
+    dE: number;
+    dN: number;
+    dH: number;
+    horizDistance: number;
+    applied: boolean;
+  } {
+    const dE = Number.isFinite(obs.gpsOffsetDeltaE ?? Number.NaN)
+      ? (obs.gpsOffsetDeltaE as number)
+      : 0;
+    const dN = Number.isFinite(obs.gpsOffsetDeltaN ?? Number.NaN)
+      ? (obs.gpsOffsetDeltaN as number)
+      : 0;
+    const dH = Number.isFinite(obs.gpsOffsetDeltaH ?? Number.NaN)
+      ? (obs.gpsOffsetDeltaH as number)
+      : 0;
+    const horizDistance = Math.hypot(dE, dN);
+    return {
+      dE,
+      dN,
+      dH,
+      horizDistance,
+      applied: horizDistance > 1e-12 || Math.abs(dH) > 1e-12,
+    };
+  }
+
   private plannedGpsRawVector(obs: GpsObservation): { dE: number; dN: number } {
     const from = this.stations[obs.from];
     const to = this.stations[obs.to];
     if (!from || !to) return { dE: 0, dN: 0 };
-    const dE = to.x - from.x;
-    const dN = to.y - from.y;
+    const offset = this.gpsRoverOffsetVector(obs);
+    const dE = to.x - from.x - offset.dE;
+    const dN = to.y - from.y - offset.dN;
     const horizGround = Math.hypot(dE, dN);
     if (horizGround <= 1e-12) return { dE, dN };
 
     const hi = Number.isFinite(obs.gpsAntennaHiM ?? Number.NaN) ? (obs.gpsAntennaHiM as number) : 0;
     const ht = Number.isFinite(obs.gpsAntennaHtM ?? Number.NaN) ? (obs.gpsAntennaHtM as number) : 0;
-    const deltaGround = to.h - from.h;
+    const deltaGround = to.h - offset.dH - from.h;
     const deltaAntenna = deltaGround + (ht - hi);
-    const rawHorizSq = horizGround * horizGround + deltaGround * deltaGround - deltaAntenna * deltaAntenna;
+    const rawHorizSq =
+      horizGround * horizGround + deltaGround * deltaGround - deltaAntenna * deltaAntenna;
     if (!Number.isFinite(rawHorizSq) || rawHorizSq <= 1e-12) {
       return { dE, dN };
     }
@@ -461,11 +483,7 @@ export class LSAEngine {
       plannedCount += 1;
       if (obs.type === 'dist') {
         const geom = this.centeringLineGeometry(obs.from, obs.to, obs.hi ?? 0, obs.ht ?? 0);
-        const rawDistance = this.is2D
-          ? geom.horiz
-          : obs.mode === 'slope'
-            ? geom.slope
-            : geom.horiz;
+        const rawDistance = this.is2D ? geom.horiz : obs.mode === 'slope' ? geom.slope : geom.horiz;
         obs.obs = this.correctedDistanceModel(obs, rawDistance).calcDistance;
         if (obs.sigmaSource === 'default') {
           obs.stdDev = this.defaultDistanceSigmaMeters(obs);
@@ -555,8 +573,7 @@ export class LSAEngine {
       const slope = Math.max(geom.slope, 1e-12);
       const horizRatioSq = (geom.horiz / slope) ** 2;
       const elevRatioSq = (geom.elev / slope) ** 2;
-      const centeringVariance =
-        horizRatioSq * centerHorizSq + 2 * elevRatioSq * centerVertSq;
+      const centeringVariance = horizRatioSq * centerHorizSq + 2 * elevRatioSq * centerVertSq;
       return Math.max(Math.sqrt(sigma * sigma + centeringVariance), 1e-12);
     }
     if (obs.type === 'direction') {
@@ -599,8 +616,7 @@ export class LSAEngine {
       const horizRatioSq = (geom.horiz / slope) ** 2;
       const elevRatioSq = (geom.elev / slope) ** 2;
       // Convert the geometry-weighted linear centering projection into angular variance (radians^2).
-      const linearVariance =
-        elevRatioSq * centerHorizSq + 2 * horizRatioSq * centerVertSq;
+      const linearVariance = elevRatioSq * centerHorizSq + 2 * horizRatioSq * centerVertSq;
       const term = Math.sqrt(Math.max(linearVariance, 0)) / slope;
       return Math.max(Math.sqrt(sigma * sigma + term * term), 1e-12);
     }
@@ -650,11 +666,16 @@ export class LSAEngine {
   private gpsObservedVector(obs: GpsObservation): { dE: number; dN: number; scale: number } {
     const rawE = Number.isFinite(obs.obs.dE) ? obs.obs.dE : 0;
     const rawN = Number.isFinite(obs.obs.dN) ? obs.obs.dN : 0;
+    const offset = this.gpsRoverOffsetVector(obs);
     const horizRaw = Math.hypot(rawE, rawN);
-    if (horizRaw <= 1e-12) return { dE: rawE, dN: rawN, scale: 1 };
+    if (horizRaw <= 1e-12) {
+      return { dE: offset.dE, dN: offset.dN, scale: 1 };
+    }
 
     const hasAntennaMeta = obs.gpsAntennaHiM != null || obs.gpsAntennaHtM != null;
-    if (!hasAntennaMeta) return { dE: rawE, dN: rawN, scale: 1 };
+    if (!hasAntennaMeta) {
+      return { dE: rawE + offset.dE, dN: rawN + offset.dN, scale: 1 };
+    }
 
     const hi = Number.isFinite(obs.gpsAntennaHiM ?? Number.NaN) ? (obs.gpsAntennaHiM as number) : 0;
     const ht = Number.isFinite(obs.gpsAntennaHtM ?? Number.NaN) ? (obs.gpsAntennaHtM as number) : 0;
@@ -665,20 +686,22 @@ export class LSAEngine {
       ? (this.stations[obs.to]?.h as number)
       : 0;
 
-    const deltaGround = toH - fromH;
+    const deltaGround = toH - offset.dH - fromH;
     const deltaAntenna = deltaGround + (ht - hi);
     const slope = Math.hypot(horizRaw, deltaAntenna);
     const horizCorrectedSq = slope * slope - deltaGround * deltaGround;
     if (!Number.isFinite(horizCorrectedSq) || horizCorrectedSq <= 0) {
-      return { dE: rawE, dN: rawN, scale: 1 };
+      return { dE: rawE + offset.dE, dN: rawN + offset.dN, scale: 1 };
     }
     const horizCorrected = Math.sqrt(horizCorrectedSq);
     if (!Number.isFinite(horizCorrected) || horizCorrected <= 1e-12) {
-      return { dE: rawE, dN: rawN, scale: 1 };
+      return { dE: rawE + offset.dE, dN: rawN + offset.dN, scale: 1 };
     }
     const scale = horizCorrected / horizRaw;
-    if (!Number.isFinite(scale) || scale <= 0) return { dE: rawE, dN: rawN, scale: 1 };
-    return { dE: rawE * scale, dN: rawN * scale, scale };
+    if (!Number.isFinite(scale) || scale <= 0) {
+      return { dE: rawE + offset.dE, dN: rawN + offset.dN, scale: 1 };
+    }
+    return { dE: rawE * scale + offset.dE, dN: rawN * scale + offset.dN, scale };
   }
 
   private updateGpsAddHiHtDiagnostics(): void {
@@ -795,7 +818,8 @@ export class LSAEngine {
     adjacency.forEach((rows) => {
       rows.sort(
         (a, b) =>
-          a.neighbor.localeCompare(b.neighbor, undefined, { numeric: true }) || a.edgeIdx - b.edgeIdx,
+          a.neighbor.localeCompare(b.neighbor, undefined, { numeric: true }) ||
+          a.edgeIdx - b.edgeIdx,
       );
     });
 
@@ -843,13 +867,15 @@ export class LSAEngine {
 
       while ((parentInfo.get(a)?.depth ?? 0) > (parentInfo.get(b)?.depth ?? 0)) {
         const info = parentInfo.get(a);
-        if (!info || info.parent == null || info.edgeIdx == null || info.dirFromParent == null) return null;
+        if (!info || info.parent == null || info.edgeIdx == null || info.dirFromParent == null)
+          return null;
         upSegments.push({ edgeIdx: info.edgeIdx, dir: -info.dirFromParent });
         a = info.parent;
       }
       while ((parentInfo.get(b)?.depth ?? 0) > (parentInfo.get(a)?.depth ?? 0)) {
         const info = parentInfo.get(b);
-        if (!info || info.parent == null || info.edgeIdx == null || info.dirFromParent == null) return null;
+        if (!info || info.parent == null || info.edgeIdx == null || info.dirFromParent == null)
+          return null;
         downSegments.push({ edgeIdx: info.edgeIdx, dir: info.dirFromParent });
         b = info.parent;
       }
@@ -931,7 +957,8 @@ export class LSAEngine {
         const linearPpm = loopDistance > EPS ? (closureMag / loopDistance) * 1e6 : undefined;
         const toleranceM = GPS_LOOP_BASE_TOLERANCE_M + GPS_LOOP_TOLERANCE_PPM * 1e-6 * loopDistance;
         const pass = closureMag <= toleranceM + EPS;
-        const severity = toleranceM > EPS ? closureMag / toleranceM : closureMag > EPS ? Infinity : 0;
+        const severity =
+          toleranceM > EPS ? closureMag / toleranceM : closureMag > EPS ? Infinity : 0;
         if (edge.sourceLine != null) lineSet.add(edge.sourceLine);
         return {
           rank: 0,
@@ -1508,7 +1535,10 @@ export class LSAEngine {
         alreadyTargetCount += 1;
         return;
       }
-      if (!Number.isFinite(station.latDeg ?? Number.NaN) || !Number.isFinite(station.lonDeg ?? Number.NaN)) {
+      if (
+        !Number.isFinite(station.latDeg ?? Number.NaN) ||
+        !Number.isFinite(station.lonDeg ?? Number.NaN)
+      ) {
         skippedCount += 1;
         missingGeodeticCount += 1;
         return;
@@ -1604,7 +1634,9 @@ export class LSAEngine {
   private prismCorrectionForObservation(obs: Observation): number {
     if (obs.type !== 'dist' && obs.type !== 'zenith') return 0;
 
-    const obsOffset = Number.isFinite(obs.prismCorrectionM ?? NaN) ? (obs.prismCorrectionM ?? 0) : undefined;
+    const obsOffset = Number.isFinite(obs.prismCorrectionM ?? NaN)
+      ? (obs.prismCorrectionM ?? 0)
+      : undefined;
     if (obsOffset != null) {
       if (obs.prismScope === 'set') {
         const setId = typeof obs.setId === 'string' ? obs.setId.trim() : '';
@@ -1613,7 +1645,11 @@ export class LSAEngine {
       return obsOffset;
     }
 
-    if (!this.prismEnabled || !Number.isFinite(this.prismOffset) || Math.abs(this.prismOffset) <= 0) {
+    if (
+      !this.prismEnabled ||
+      !Number.isFinite(this.prismOffset) ||
+      Math.abs(this.prismOffset) <= 0
+    ) {
       return 0;
     }
     if ((this.prismScope ?? 'global') === 'set') {
@@ -1718,7 +1754,9 @@ export class LSAEngine {
         Number.isFinite(st.constraintCorrXY ?? Number.NaN) &&
         Math.abs(st.constraintCorrXY ?? 0) > 1e-12;
       const correlationKey = hasCorrelatedXY ? `CTRLXY:${stationId}` : undefined;
-      const corrXY = hasCorrelatedXY ? Math.max(-0.999, Math.min(0.999, st.constraintCorrXY ?? 0)) : undefined;
+      const corrXY = hasCorrelatedXY
+        ? Math.max(-0.999, Math.min(0.999, st.constraintCorrXY ?? 0))
+        : undefined;
       if (
         idx.x != null &&
         st.sx != null &&
@@ -2112,6 +2150,12 @@ export class LSAEngine {
         fromSt && Number.isFinite(cov.cNN) ? Math.sqrt((fromSt.sN ?? 0) ** 2 + cov.cNN) : undefined;
       const notes: string[] = [];
       if (!fromSt) notes.push('occupy station not solved; sideshot coordinate unavailable');
+      const offset = this.gpsRoverOffsetVector(obs);
+      if (offset.applied) {
+        notes.push(
+          `rover offset dE=${offset.dE.toFixed(4)}m dN=${offset.dN.toFixed(4)}m dH=${offset.dH.toFixed(4)}m`,
+        );
+      }
 
       rows.push({
         id: `${from}->${to}@${sourceLine ?? rows.length + 1}:GPS`,
@@ -2158,7 +2202,9 @@ export class LSAEngine {
     return undefined;
   }
 
-  private computeAutoSideshotDiagnostics(): NonNullable<AdjustmentResult['autoSideshotDiagnostics']> {
+  private computeAutoSideshotDiagnostics(): NonNullable<
+    AdjustmentResult['autoSideshotDiagnostics']
+  > {
     const threshold = 0.1;
     type MPair = { angle?: Observation; dist?: Observation };
     const byLine = new Map<number, MPair>();
@@ -2237,9 +2283,7 @@ export class LSAEngine {
     };
   }
 
-  private normalizeApprovedClusterMerges(
-    merges?: ClusterApprovedMerge[],
-  ): ClusterApprovedMerge[] {
+  private normalizeApprovedClusterMerges(merges?: ClusterApprovedMerge[]): ClusterApprovedMerge[] {
     if (!merges || merges.length === 0) return [];
     const seen = new Set<string>();
     const cleaned = merges
@@ -2282,7 +2326,9 @@ export class LSAEngine {
         const deltaH = is2D ? undefined : alias.h - canonical.h;
         const horizontalDelta = Math.hypot(deltaE, deltaN);
         const spatialDelta =
-          deltaH == null ? horizontalDelta : Math.sqrt(deltaE * deltaE + deltaN * deltaN + deltaH * deltaH);
+          deltaH == null
+            ? horizontalDelta
+            : Math.sqrt(deltaE * deltaE + deltaN * deltaN + deltaH * deltaH);
         return {
           aliasId: merge.aliasId,
           canonicalId: merge.canonicalId,
@@ -2412,9 +2458,7 @@ export class LSAEngine {
       this.parseOptions?.geoidModelId ??
       'NGS-DEMO') as string;
     this.geoidInterpolation =
-      parsed.parseState?.geoidInterpolation ??
-      this.parseOptions?.geoidInterpolation ??
-      'bilinear';
+      parsed.parseState?.geoidInterpolation ?? this.parseOptions?.geoidInterpolation ?? 'bilinear';
     this.geoidHeightConversionEnabled =
       parsed.parseState?.geoidHeightConversionEnabled ??
       this.parseOptions?.geoidHeightConversionEnabled ??
@@ -2581,7 +2625,9 @@ export class LSAEngine {
       );
     }
     if (this.preanalysisMode) {
-      this.log('Preanalysis mode active: residual-based QC, chi-square, and robust reweighting are disabled.');
+      this.log(
+        'Preanalysis mode active: residual-based QC, chi-square, and robust reweighting are disabled.',
+      );
     } else if (this.robustMode === 'huber') {
       this.robustDiagnostics = {
         enabled: true,
@@ -2839,8 +2885,7 @@ export class LSAEngine {
           const denom = calcDistRaw || 1;
           const dD_dE2 = (dx / denom) * corrected.mapScale;
           const dD_dN2 = (dy / denom) * corrected.mapScale;
-          const dD_dH2 =
-            !this.is2D && obs.mode === 'slope' ? (dz / denom) * corrected.mapScale : 0;
+          const dD_dH2 = !this.is2D && obs.mode === 'slope' ? (dz / denom) * corrected.mapScale : 0;
 
           const fromIdx = this.paramIndex[from];
           if (fromIdx?.x != null) {
@@ -4472,7 +4517,9 @@ export class LSAEngine {
       );
     }
     if (this.preanalysisMode) {
-      this.log('Preanalysis statistics: using a-priori variance factor 1.0 and skipping residual-based diagnostics.');
+      this.log(
+        'Preanalysis statistics: using a-priori variance factor 1.0 and skipping residual-based diagnostics.',
+      );
     }
 
     const summary: Record<
@@ -4751,11 +4798,14 @@ export class LSAEngine {
 
       if (this.preanalysisMode) {
         const stationMedian = medianOf(
-          stationCovariances.map((block) => block.ellipse?.semiMajor ?? Math.max(block.sigmaE, block.sigmaN)),
+          stationCovariances.map(
+            (block) => block.ellipse?.semiMajor ?? Math.max(block.sigmaE, block.sigmaN),
+          ),
         );
         const relativeMedian = medianOf(
           relativeCovariances.map(
-            (block) => block.sigmaDist ?? block.ellipse?.semiMajor ?? Math.max(block.sigmaE, block.sigmaN),
+            (block) =>
+              block.sigmaDist ?? block.ellipse?.semiMajor ?? Math.max(block.sigmaE, block.sigmaN),
           ),
         );
         const stationCues: NonNullable<AdjustmentResult['weakGeometryDiagnostics']>['stationCues'] =
@@ -4779,27 +4829,28 @@ export class LSAEngine {
               note: `major=${horizontalMetric.toFixed(4)}m, medianRatio=${relativeToMedian.toFixed(2)}x${ellipseRatio != null ? `, shape=${ellipseRatio.toFixed(2)}x` : ''}`,
             };
           });
-        const relativeCues: NonNullable<AdjustmentResult['weakGeometryDiagnostics']>['relativeCues'] =
-          relativeCovariances.map((block) => {
-            const distanceMetric =
-              block.sigmaDist ?? block.ellipse?.semiMajor ?? Math.max(block.sigmaE, block.sigmaN);
-            const relativeToMedian =
-              relativeMedian && relativeMedian > 0 ? distanceMetric / relativeMedian : 1;
-            const ellipseRatio =
-              block.ellipse != null
-                ? block.ellipse.semiMajor / Math.max(block.ellipse.semiMinor, 1e-12)
-                : undefined;
-            const severity = classifyWeakGeometrySeverity(relativeToMedian, ellipseRatio);
-            return {
-              from: block.from,
-              to: block.to,
-              severity,
-              distanceMetric,
-              relativeToMedian,
-              ellipseRatio,
-              note: `sigmaDist=${distanceMetric.toFixed(4)}m, medianRatio=${relativeToMedian.toFixed(2)}x${ellipseRatio != null ? `, shape=${ellipseRatio.toFixed(2)}x` : ''}`,
-            };
-          });
+        const relativeCues: NonNullable<
+          AdjustmentResult['weakGeometryDiagnostics']
+        >['relativeCues'] = relativeCovariances.map((block) => {
+          const distanceMetric =
+            block.sigmaDist ?? block.ellipse?.semiMajor ?? Math.max(block.sigmaE, block.sigmaN);
+          const relativeToMedian =
+            relativeMedian && relativeMedian > 0 ? distanceMetric / relativeMedian : 1;
+          const ellipseRatio =
+            block.ellipse != null
+              ? block.ellipse.semiMajor / Math.max(block.ellipse.semiMinor, 1e-12)
+              : undefined;
+          const severity = classifyWeakGeometrySeverity(relativeToMedian, ellipseRatio);
+          return {
+            from: block.from,
+            to: block.to,
+            severity,
+            distanceMetric,
+            relativeToMedian,
+            ellipseRatio,
+            note: `sigmaDist=${distanceMetric.toFixed(4)}m, medianRatio=${relativeToMedian.toFixed(2)}x${ellipseRatio != null ? `, shape=${ellipseRatio.toFixed(2)}x` : ''}`,
+          };
+        });
         this.weakGeometryDiagnostics = {
           enabled: true,
           stationMedianHorizontal: stationMedian ?? 0,
@@ -5511,7 +5562,8 @@ export class LSAEngine {
     );
     const linkageMode = this.clusterLinkageMode ?? 'single';
     const passMode =
-      (this.parseOptions?.clusterDualPassRan ?? false) || this.parseOptions?.clusterPassLabel === 'pass2'
+      (this.parseOptions?.clusterDualPassRan ?? false) ||
+      this.parseOptions?.clusterPassLabel === 'pass2'
         ? 'dual-pass'
         : 'single-pass';
 

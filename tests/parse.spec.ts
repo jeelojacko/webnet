@@ -192,8 +192,12 @@ describe('parseInput', () => {
     expect(parsed.logs.some((l) => l.includes('Preanalysis parsing: mode=ON'))).toBe(true);
     expect(parsed.observations.every((obs) => obs.planned === true)).toBe(true);
 
-    const dist = parsed.observations.find((obs) => obs.type === 'dist') as DistanceObservation | undefined;
-    const angle = parsed.observations.find((obs) => obs.type === 'angle') as AngleObservation | undefined;
+    const dist = parsed.observations.find((obs) => obs.type === 'dist') as
+      | DistanceObservation
+      | undefined;
+    const angle = parsed.observations.find((obs) => obs.type === 'angle') as
+      | AngleObservation
+      | undefined;
     expect(dist?.obs ?? Number.NaN).toBe(0);
     expect(angle?.obs ?? Number.NaN).toBe(0);
   });
@@ -231,7 +235,9 @@ describe('parseInput', () => {
   });
 
   it('keeps CRS transforms disabled by default and parses .CRS state directives', () => {
-    const base = parseInput(['.UNITS METERS DD', 'P ORG 40 105 0 ! !', 'P TGT 41 106 0'].join('\n'));
+    const base = parseInput(
+      ['.UNITS METERS DD', 'P ORG 40 105 0 ! !', 'P TGT 41 106 0'].join('\n'),
+    );
     expect(base.parseState.crsTransformEnabled).toBe(false);
     expect(base.parseState.crsProjectionModel).toBe('legacy-equirectangular');
 
@@ -358,7 +364,7 @@ describe('parseInput', () => {
   });
 
   it('supports .QFIX and /QFIX overrides for fixed angular/linear sigma constants', () => {
-    const secToRad = (Math.PI / 180) / 3600;
+    const secToRad = Math.PI / 180 / 3600;
     const parsed = parseInput(
       [
         '.UNITS FEET DMS',
@@ -370,7 +376,9 @@ describe('parseInput', () => {
         'B A-B 090-00-00.0 !',
       ].join('\n'),
     );
-    const dist = parsed.observations.find((o) => o.type === 'dist') as DistanceObservation | undefined;
+    const dist = parsed.observations.find((o) => o.type === 'dist') as
+      | DistanceObservation
+      | undefined;
     const bearing = parsed.observations.find((o) => o.type === 'bearing');
     expect(dist).toBeDefined();
     expect(bearing).toBeDefined();
@@ -434,7 +442,10 @@ describe('parseInput', () => {
       ].join('\n'),
     );
     const expectedDeg = 335.5;
-    expect((parsed.parseState.rotationAngleRad ?? 0) * (180 / Math.PI)).toBeCloseTo(expectedDeg, 10);
+    expect((parsed.parseState.rotationAngleRad ?? 0) * (180 / Math.PI)).toBeCloseTo(
+      expectedDeg,
+      10,
+    );
     expect(parsed.logs.some((l) => l.includes('Plan rotation updated'))).toBe(true);
   });
 
@@ -655,6 +666,37 @@ describe('parseInput', () => {
     expect(parsed.logs.some((l) => l.includes('GPS AddHiHt set to OFF'))).toBe(true);
   });
 
+  it('parses GPS rover offset (G4) records onto the preceding G vector', () => {
+    const parsed = parseInput(
+      [
+        '.2D',
+        'C A 0 0 0 ! !',
+        'C B 12 0 0',
+        'G GPS1 A B 10.0000 0.0000 0.0050 0.0050',
+        'G4 90.0000 2.0000 90.0000',
+      ].join('\n'),
+    );
+    const gps = parsed.observations.find((o) => o.type === 'gps');
+    expect(gps?.type).toBe('gps');
+    if (gps?.type === 'gps') {
+      expect(gps.gpsOffsetSourceLine).toBe(5);
+      expect(gps.gpsOffsetDistanceM ?? 0).toBeCloseTo(2, 10);
+      expect(gps.gpsOffsetDeltaE ?? 0).toBeCloseTo(2, 10);
+      expect(gps.gpsOffsetDeltaN ?? 0).toBeCloseTo(0, 10);
+      expect(gps.gpsOffsetDeltaH ?? 0).toBeCloseTo(0, 10);
+    }
+    expect(parsed.parseState.gpsOffsetObservationCount ?? 0).toBe(1);
+    expect(parsed.logs.some((line) => line.includes('GPS rover offset attached to A-B'))).toBe(
+      true,
+    );
+  });
+
+  it('warns when GPS rover offset (G4) has no preceding G vector', () => {
+    const parsed = parseInput(['.2D', 'C A 0 0 0 ! !', 'G4 90.0000 2.0000 90.0000'].join('\n'));
+    expect(parsed.parseState.gpsOffsetObservationCount ?? 0).toBe(0);
+    expect(parsed.logs.some((line) => line.includes('has no preceding G vector'))).toBe(true);
+  });
+
   it('parses .GPS CHECK toggle state with OFF-by-default behavior', () => {
     const base = parseInput(['C A 0 0 0 !', 'C B 100 0 0', 'G GPS1 A B 100 0 0.01'].join('\n'));
     expect(base.parseState.gpsLoopCheckEnabled ?? false).toBe(false);
@@ -786,13 +828,12 @@ describe('parseInput', () => {
     expect(parsed.stations.B1).toBeDefined();
     expect(parsed.parseState.aliasExplicitCount).toBe(2);
     expect(parsed.parseState.aliasRuleCount).toBe(0);
-    expect(parsed.parseState.aliasExplicitMappings?.map((m) => `${m.sourceId}->${m.canonicalId}`)).toEqual([
-      'P1->A1',
-      'Q1->B1',
-    ]);
-    expect(parsed.parseState.aliasTrace?.some((t) => t.context === 'observation' && t.sourceLine === 5)).toBe(
-      true,
-    );
+    expect(
+      parsed.parseState.aliasExplicitMappings?.map((m) => `${m.sourceId}->${m.canonicalId}`),
+    ).toEqual(['P1->A1', 'Q1->B1']);
+    expect(
+      parsed.parseState.aliasTrace?.some((t) => t.context === 'observation' && t.sourceLine === 5),
+    ).toBe(true);
     expect(parsed.logs.some((l) => l.includes('Alias canonicalization applied'))).toBe(true);
   });
 
@@ -842,10 +883,9 @@ describe('parseInput', () => {
     const parsed = parseInput(readFileSync('tests/fixtures/alias_phase4_mixed.dat', 'utf-8'));
     expect(parsed.parseState.aliasExplicitCount).toBe(2);
     expect(parsed.parseState.aliasRuleCount).toBe(1);
-    expect(parsed.parseState.aliasExplicitMappings?.map((m) => `${m.sourceId}->${m.canonicalId}`)).toEqual([
-      'ROVER1->PT_100',
-      'STA01->STA_1',
-    ]);
+    expect(
+      parsed.parseState.aliasExplicitMappings?.map((m) => `${m.sourceId}->${m.canonicalId}`),
+    ).toEqual(['ROVER1->PT_100', 'STA01->STA_1']);
     expect(parsed.parseState.aliasRuleSummaries?.map((r) => r.rule)).toEqual(['PREFIX TMP_ PT_']);
 
     expect(parsed.stations.PT_100).toBeDefined();
@@ -854,7 +894,9 @@ describe('parseInput', () => {
     expect(parsed.stations.STA01).toBeUndefined();
 
     const dist = parsed.observations.find((o) => o.type === 'dist');
-    const angle = parsed.observations.find((o) => o.type === 'angle') as AngleObservation | undefined;
+    const angle = parsed.observations.find((o) => o.type === 'angle') as
+      | AngleObservation
+      | undefined;
     const gps = parsed.observations.find((o) => o.type === 'gps');
     const lev = parsed.observations.find((o) => o.type === 'lev');
     expect(dist?.type).toBe('dist');
@@ -949,8 +991,8 @@ describe('parseInput', () => {
     expect(parsed.parseState.descriptionReconcileMode).toBe('append');
     expect(parsed.parseState.descriptionAppendDelimiter).toBe('::');
     expect(parsed.parseState.reconciledDescriptions?.A).toBe('Alpha::Beta::Gamma');
-    expect(parsed.logs.some((line) => line.includes('Description reconciliation set to APPEND'))).toBe(
-      true,
-    );
+    expect(
+      parsed.logs.some((line) => line.includes('Description reconciliation set to APPEND')),
+    ).toBe(true);
   });
 });

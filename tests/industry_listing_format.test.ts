@@ -84,8 +84,12 @@ describe('industry listing phase 5 formatting locks', () => {
     });
 
     expect(listing).not.toContain('Processing Notes');
-    expect(listing).toContain('From       To               Azimuth    Distance       95% RelConfidence');
-    expect(listing).toContain('                                                    Azi    Dist       PPM');
+    expect(listing).toContain(
+      'From       To               Azimuth    Distance       95% RelConfidence',
+    );
+    expect(listing).toContain(
+      '                                                    Azi    Dist       PPM',
+    );
     expect(listing).toContain('Station                 Semi-Major    Semi-Minor   Azimuth of');
     expect(listing).toContain('Stations                Semi-Major    Semi-Minor   Azimuth of');
     expect(listing).toContain('From       To               Axis          Axis     Major Axis');
@@ -372,9 +376,13 @@ describe('industry listing phase 5 formatting locks', () => {
   });
 
   it('reports plan rotation in project options and changes rotated output coordinates', () => {
-    const baseInput = ['.2D', 'C A 0 0 0 ! !', 'C B 100 0 0', 'B A-B 090.0000 1.0', 'D A-B 100.0000 0.001'].join(
-      '\n',
-    );
+    const baseInput = [
+      '.2D',
+      'C A 0 0 0 ! !',
+      'C B 100 0 0',
+      'B A-B 090.0000 1.0',
+      'D A-B 100.0000 0.001',
+    ].join('\n');
     const rotatedInput = ['.ROTATION 10', baseInput].join('\n');
     const baseResult = new LSAEngine({ input: baseInput, maxIterations: 10 }).solve();
     const rotatedResult = new LSAEngine({ input: rotatedInput, maxIterations: 10 }).solve();
@@ -413,7 +421,10 @@ describe('industry listing phase 5 formatting locks', () => {
       );
 
     const baseListing = buildListing(baseResult, baseResult.parseState?.rotationAngleRad ?? 0);
-    const rotatedListing = buildListing(rotatedResult, rotatedResult.parseState?.rotationAngleRad ?? 0);
+    const rotatedListing = buildListing(
+      rotatedResult,
+      rotatedResult.parseState?.rotationAngleRad ?? 0,
+    );
 
     expect(baseListing).toContain('Plan Rotation                      : OFF');
     expect(rotatedListing).toContain('Plan Rotation                      : ON (10.000000 deg)');
@@ -812,5 +823,48 @@ describe('industry listing phase 5 formatting locks', () => {
     expect(listing).toContain('+1/-1/neutral=1');
     expect(listing).toContain('defaultZero=1');
     expect(listing).toContain('missingHeight=0');
+  });
+
+  it('surfaces GPS rover offset diagnostics and listing rows', () => {
+    const input = readFileSync('tests/fixtures/gps_offset_phase3.dat', 'utf-8');
+    const result = new LSAEngine({ input, maxIterations: 6 }).solve();
+    const listing = buildIndustryStyleListingText(
+      result,
+      {
+        maxIterations: 6,
+        units: 'm',
+        listingShowCoordinates: true,
+        listingShowObservationsResiduals: true,
+        listingShowErrorPropagation: true,
+        listingShowProcessingNotes: false,
+        listingShowAzimuthsBearings: true,
+        listingShowLostStations: true,
+        listingSortCoordinatesBy: 'input',
+        listingSortObservationsBy: 'input',
+        listingObservationLimit: 200,
+      },
+      {
+        coordMode: '2D',
+        order: 'EN',
+        angleUnits: 'dd',
+        angleStationOrder: 'atfromto',
+        deltaMode: 'horiz',
+        refractionCoefficient: 0.13,
+      },
+      {
+        solveProfile: 'webnet',
+        angleCenteringModel: 'geometry-aware-correlated-rays',
+        defaultSigmaCount: 0,
+        defaultSigmaByType: '',
+        stochasticDefaultsSummary: '',
+        rotationAngleRad: 0,
+      },
+    );
+
+    expect(listing).toContain('GPS Rover Offsets');
+    expect(listing).toContain('GPS Rover Offset Observations');
+    expect(listing).toContain('1:5');
+    expect(listing).toContain('1:6');
+    expect(listing).toContain('2.0000');
   });
 });

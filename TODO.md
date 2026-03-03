@@ -181,9 +181,9 @@
       - [x] Phase 5: add what-if planning UX for adding/removing planned observations and comparing predicted precision changes, plus CLI/docs/examples/fixture coverage for preanalysis workflows (including omitted-value `D`/`A` planning rows)
   - [ ] GPS improvements (highest impact -> lowest):
   - [~] Add full coordinate-system/geodetic engine integration (project CRS selection, grid-ground factors, convergence reporting)
-      - [x] Phase 1: add CRS selection/state model and projection abstraction for input/output transformations
-      - [x] Phase 2: integrate grid-ground scale/convergence calculations into observation modeling and inverse tools
-      - [x] Phase 3: surface CRS/scale/convergence diagnostics in reports/exports with parity fixtures
+    - [x] Phase 1: add CRS selection/state model and projection abstraction for input/output transformations
+    - [x] Phase 2: integrate grid-ground scale/convergence calculations into observation modeling and inverse tools
+    - [x] Phase 3: surface CRS/scale/convergence diagnostics in reports/exports with parity fixtures
     - [~] Add direct geoid/grid model support (NGS/NRC/BYN-style models) plus input/output ellipsoid selection controls
       - [x] Phase 1: add geoid/grid file ingestion pipeline (metadata, interpolation, caching, validation)
       - [x] Phase 2: wire ellipsoid/geoid model choice into height conversions for parse/solve/export paths
@@ -204,10 +204,10 @@
       - [x] Phase 1: implement OPUS/OPUS-RS parser for station coordinates, covariance, and metadata extraction
       - [x] Phase 2: map imported covariance into GNSS observation/control constraints with unit/axis normalization
       - [x] Phase 3: add importer UX/docs and parity tests using representative OPUS samples
-    - [ ] Add GPS offset observation support (G4-style rover-offset handling) in parse/adjust/report pipelines
-      - [ ] Phase 1: extend parser/types for rover-offset observation records and associated orientation metadata
-      - [ ] Phase 2: apply offset transformation into effective GNSS vectors in adjustment equations
-      - [ ] Phase 3: add report/export transparency for applied offsets and validate via dedicated fixtures
+    - [x] Add GPS offset observation support (G4-style rover-offset handling) in parse/adjust/report pipelines
+      - [x] Phase 1: extend parser/types for rover-offset observation records and associated orientation metadata
+      - [x] Phase 2: apply offset transformation into effective GNSS vectors in adjustment equations
+      - [x] Phase 3: add report/export transparency for applied offsets and validate via dedicated fixtures
     - [ ] Add LandXML export for adjusted coordinates/connections
       - [ ] Phase 1: define LandXML export schema mapping for stations, observations, ellipses, and metadata
       - [ ] Phase 2: build deterministic serializer with unit/profile annotations and file-write UX
@@ -223,7 +223,7 @@
       - [ ] Phase 2: compute closure and misclosure statistics per loop independent of TS traverse metrics
       - [ ] Phase 3: add dedicated leveling loop section in processing/report/export with ranked suspect loops
     - [ ] Add level-loop tolerance checks (length-based configurable criteria with pass/warn flags)
-      - [ ] Phase 1: add configurable tolerance model (e.g., k*sqrt(Km), fixed constants) in project options
+      - [ ] Phase 1: add configurable tolerance model (e.g., k\*sqrt(Km), fixed constants) in project options
       - [ ] Phase 2: evaluate each loop against configured tolerances and produce pass/warn/fail flags
       - [ ] Phase 3: include tolerance outcomes in listing/export and pin behavior with tolerance fixture tests
     - [ ] Add detailed level-loop report blocks (total loop length, per-segment lengths, closure/tolerance outcomes)

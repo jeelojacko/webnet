@@ -163,7 +163,9 @@ describe('LSAEngine', () => {
 
     const angle = result.observations.find((o) => o.type === 'angle' && o.sourceLine === 9);
     const bearing = result.observations.find((o) => o.type === 'bearing' && o.sourceLine === 8);
-    const direction = result.observations.find((o) => o.type === 'direction' && o.sourceLine === 11);
+    const direction = result.observations.find(
+      (o) => o.type === 'direction' && o.sourceLine === 11,
+    );
 
     expect(angle?.effectiveDistance).toBeDefined();
     expect(bearing?.effectiveDistance).toBeDefined();
@@ -269,7 +271,11 @@ describe('LSAEngine', () => {
       result.observations.some(
         (o) =>
           (o.type === 'angle' && (o.at === 'ROVER1' || o.from === 'ROVER1' || o.to === 'ROVER1')) ||
-          ('from' in o && (o.from === 'ROVER1' || o.to === 'ROVER1' || o.from === 'TMP_100' || o.to === 'TMP_100')),
+          ('from' in o &&
+            (o.from === 'ROVER1' ||
+              o.to === 'ROVER1' ||
+              o.from === 'TMP_100' ||
+              o.to === 'TMP_100')),
       ),
     ).toBe(false);
     expect((result.parseState?.aliasTrace?.length ?? 0) > 0).toBe(true);
@@ -325,7 +331,10 @@ describe('LSAEngine', () => {
       'D A-B 100.0000 0.005',
       'G GPS1 A B 120.0000 0.0000 0.001 0.001',
     ].join('\n');
-    const network = new LSAEngine({ input: ['.GPS NETWORK', base].join('\n'), maxIterations: 10 }).solve();
+    const network = new LSAEngine({
+      input: ['.GPS NETWORK', base].join('\n'),
+      maxIterations: 10,
+    }).solve();
     const sideshot = new LSAEngine({
       input: ['.GPS SIDESHOT', base].join('\n'),
       maxIterations: 10,
@@ -334,7 +343,9 @@ describe('LSAEngine', () => {
     expect(network.parseState?.gpsVectorMode).toBe('network');
     expect(sideshot.parseState?.gpsVectorMode).toBe('sideshot');
     expect(sideshot.logs.some((l) => l.includes('excluded from adjustment equations'))).toBe(true);
-    expect(Math.abs((network.stations.B?.x ?? 0) - (sideshot.stations.B?.x ?? 0))).toBeGreaterThan(5);
+    expect(Math.abs((network.stations.B?.x ?? 0) - (sideshot.stations.B?.x ?? 0))).toBeGreaterThan(
+      5,
+    );
   });
 
   it('computes post-adjust GPS sideshot coordinate/precision rows', () => {
@@ -374,7 +385,9 @@ describe('LSAEngine', () => {
     expect(baseRow?.horizDistance ?? 0).toBeCloseTo(10, 10);
     expect(correctedRow?.horizDistance ?? 0).toBeCloseTo(expectedDistance, 8);
     expect(correctedRow?.easting ?? 0).toBeCloseTo(1000 + expectedDistance, 8);
-    expect((correctedRow?.horizDistance ?? 0) - (baseRow?.horizDistance ?? 0)).toBeGreaterThan(0.04);
+    expect((correctedRow?.horizDistance ?? 0) - (baseRow?.horizDistance ?? 0)).toBeGreaterThan(
+      0.04,
+    );
   });
 
   it('applies GPS AddHiHt antenna preprocessing in phase 2 while keeping OFF/default behavior unchanged', () => {
@@ -388,7 +401,10 @@ describe('LSAEngine', () => {
     const addHiHtInput = ['.GPS AddHiHt ON 1.5000 2.0000', baseInput].join('\n');
 
     const base = new LSAEngine({ input: baseInput, maxIterations: 10 }).solve();
-    const withAddHiHtDefault = new LSAEngine({ input: addHiHtDefaultInput, maxIterations: 10 }).solve();
+    const withAddHiHtDefault = new LSAEngine({
+      input: addHiHtDefaultInput,
+      maxIterations: 10,
+    }).solve();
     const withAddHiHt = new LSAEngine({ input: addHiHtInput, maxIterations: 10 }).solve();
 
     expect(withAddHiHtDefault.parseState?.gpsAddHiHtEnabled ?? false).toBe(true);
@@ -430,7 +446,44 @@ describe('LSAEngine', () => {
     expect(parse?.gpsAddHiHtMissingHeightCount ?? 0).toBe(0);
     expect(parse?.gpsAddHiHtScaleMin ?? 1).toBeLessThan(1);
     expect(parse?.gpsAddHiHtScaleMax ?? 1).toBeGreaterThan(1);
-    expect(result.logs.some((line) => line.includes('GPS AddHiHt preprocessing: vectors=3'))).toBe(true);
+    expect(result.logs.some((line) => line.includes('GPS AddHiHt preprocessing: vectors=3'))).toBe(
+      true,
+    );
+  });
+
+  it('applies GPS rover offsets to network vectors in the adjustment equations', () => {
+    const input = readFileSync('tests/fixtures/gps_offset_phase3.dat', 'utf-8');
+    const result = new LSAEngine({ input, maxIterations: 6 }).solve();
+    const gps = result.observations.find((o) => o.type === 'gps');
+
+    expect(result.success).toBe(true);
+    expect(result.parseState?.gpsOffsetObservationCount ?? 0).toBe(1);
+    expect(result.stations.B?.x ?? 0).toBeCloseTo(12, 8);
+    expect(result.stations.B?.y ?? 0).toBeCloseTo(0, 8);
+    expect(gps?.type).toBe('gps');
+    if (gps?.type === 'gps') {
+      expect(gps.calc?.dE ?? 0).toBeCloseTo(12, 8);
+      expect(gps.residual?.vE ?? 0).toBeCloseTo(0, 8);
+      expect(gps.gpsOffsetDeltaE ?? 0).toBeCloseTo(2, 8);
+    }
+  });
+
+  it('applies GPS rover offsets to GPS sideshot coordinates and notes the offset in output rows', () => {
+    const input = [
+      '.GPS SIDESHOT',
+      '.2D',
+      'C OCC 1000 2000 0 ! !',
+      'G GPS1 OCC RTK1 10.0000 0.0000 0.0200 0.0200',
+      'G4 90.0000 2.0000 90.0000',
+    ].join('\n');
+    const result = new LSAEngine({ input, maxIterations: 5 }).solve();
+    const row = result.sideshots?.find((s) => s.mode === 'gps' && s.to === 'RTK1');
+
+    expect(row).toBeDefined();
+    expect(row?.horizDistance ?? 0).toBeCloseTo(12, 8);
+    expect(row?.easting ?? 0).toBeCloseTo(1012, 8);
+    expect(row?.northing ?? 0).toBeCloseTo(2000, 8);
+    expect(row?.note ?? '').toContain('rover offset');
   });
 
   it('computes GPS loop-candidate closure diagnostics when GPS loop check is enabled', () => {
@@ -454,7 +507,9 @@ describe('LSAEngine', () => {
     expect(loopDiag?.loops[0].closureMag ?? 0).toBeGreaterThan(0.02);
     expect(loopDiag?.loops[0].closureMag ?? 0).toBeLessThan(0.03);
     expect(loopDiag?.loops[0].toleranceM ?? 0).toBeGreaterThan(loopDiag?.loops[0].closureMag ?? 0);
-    expect(result.logs.some((line) => line.includes('GPS loop check: vectors=3, loops=1'))).toBe(true);
+    expect(result.logs.some((line) => line.includes('GPS loop check: vectors=3, loops=1'))).toBe(
+      true,
+    );
   });
 
   it('applies GPS loop tolerances and severity ranking for mixed pass/warn loops', () => {
@@ -473,13 +528,17 @@ describe('LSAEngine', () => {
     expect(loopDiag?.loops[1].pass ?? false).toBe(true);
     expect(loopDiag?.loops[0].severity ?? 0).toBeGreaterThan(loopDiag?.loops[1].severity ?? 0);
     expect(loopDiag?.loops[0].toleranceM ?? 0).toBeGreaterThan(0);
-    expect(loopDiag?.loops[0].linearPpm ?? 0).toBeGreaterThan(loopDiag?.thresholds.ppmTolerance ?? 0);
+    expect(loopDiag?.loops[0].linearPpm ?? 0).toBeGreaterThan(
+      loopDiag?.thresholds.ppmTolerance ?? 0,
+    );
     expect(loopDiag?.loops[1].linearPpm ?? 0).toBeLessThan(loopDiag?.loops[0].linearPpm ?? 0);
     expect(loopDiag?.loops[0].closureMag ?? 0).toBeGreaterThan(loopDiag?.loops[0].toleranceM ?? 0);
     expect(loopDiag?.loops[1].closureMag ?? 0).toBeLessThan(loopDiag?.loops[1].toleranceM ?? 0);
-    expect(result.logs.some((line) => line.includes('GPS loop check: vectors=5, loops=2, pass=1, warn=1'))).toBe(
-      true,
-    );
+    expect(
+      result.logs.some((line) =>
+        line.includes('GPS loop check: vectors=5, loops=2, pass=1, warn=1'),
+      ),
+    ).toBe(true);
   });
 
   it('keeps GPS loop diagnostics disabled by default when not requested', () => {
@@ -544,7 +603,7 @@ describe('LSAEngine', () => {
     expect(correlated.stations.P.x).not.toBeCloseTo(diagonal.stations.P.x, 3);
     expect(correlated.stations.P.y).not.toBeCloseTo(diagonal.stations.P.y, 3);
     expect(correlated.stations.P.x).toBeCloseTo(8.6528, 2);
-    expect(correlated.stations.P.y).toBeCloseTo(-1.7880, 2);
+    expect(correlated.stations.P.y).toBeCloseTo(-1.788, 2);
   });
 
   it('handles mixed GPS NETWORK + GPS SIDESHOT vectors with dedicated post-adjust sideshot output', () => {
@@ -557,14 +616,16 @@ describe('LSAEngine', () => {
     const gpsSideshotObs = result.observations.find(
       (o) => o.type === 'gps' && o.gpsMode === 'sideshot',
     );
-    const gpsSideshotRow = result.sideshots?.find(
-      (row) => row.mode === 'gps' && row.to === 'RTK1',
-    );
+    const gpsSideshotRow = result.sideshots?.find((row) => row.mode === 'gps' && row.to === 'RTK1');
 
     expect(result.success).toBe(true);
     expect(gpsNetworkObs).toBeDefined();
     expect(gpsSideshotObs).toBeDefined();
-    expect(result.logs.some((l) => l.includes('GPS sideshot vectors excluded from adjustment equations: 1'))).toBe(true);
+    expect(
+      result.logs.some((l) =>
+        l.includes('GPS sideshot vectors excluded from adjustment equations: 1'),
+      ),
+    ).toBe(true);
     expect(gpsSideshotRow).toBeDefined();
     expect(gpsSideshotRow?.azimuthSource).toBe('vector');
     expect(gpsSideshotRow?.easting ?? 0).toBeCloseTo(1004.25, 8);
@@ -1215,8 +1276,7 @@ describe('LSAEngine', () => {
     );
     const expectedZen = Math.sqrt(
       (1 * SEC_TO_RAD) ** 2 +
-        (Math.sqrt((e / s) ** 2 * (0.03 ** 2 + 0.04 ** 2) + 2 * (d / s) ** 2 * 0.02 ** 2) / s) **
-          2,
+        (Math.sqrt((e / s) ** 2 * (0.03 ** 2 + 0.04 ** 2) + 2 * (d / s) ** 2 * 0.02 ** 2) / s) ** 2,
     );
 
     expect(sigmaDist).toBeCloseTo(expectedDist, 12);
@@ -1371,8 +1431,12 @@ describe('LSAEngine', () => {
     expect(result.autoSideshotDiagnostics).toBeUndefined();
     expect((result.stationCovariances?.length ?? 0) >= 2).toBe(true);
     expect(result.stationCovariances?.some((row) => row.stationId === 'P')).toBe(true);
-    expect(result.relativeCovariances?.some((row) => row.from === 'A' && row.to === 'P')).toBe(true);
-    expect(result.relativeCovariances?.some((row) => row.from === 'A' && row.to === 'Q')).toBe(true);
+    expect(result.relativeCovariances?.some((row) => row.from === 'A' && row.to === 'P')).toBe(
+      true,
+    );
+    expect(result.relativeCovariances?.some((row) => row.from === 'A' && row.to === 'Q')).toBe(
+      true,
+    );
     expect(result.relativeCovariances?.some((row) => row.from === 'P' && row.to === 'Q')).toBe(
       false,
     );
@@ -1380,7 +1444,7 @@ describe('LSAEngine', () => {
     expect(result.logs.some((l) => l.includes('Preanalysis mode'))).toBe(true);
     expect(result.logs.some((l) => l.includes('Preanalysis covariance blocks'))).toBe(true);
     expect(result.logs.some((l) => l.includes('skipping residual-based diagnostics'))).toBe(true);
-    expect(result.observations.every((obs) => Math.abs((obs.stdRes ?? 0)) < 1e-9)).toBe(true);
+    expect(result.observations.every((obs) => Math.abs(obs.stdRes ?? 0) < 1e-9)).toBe(true);
     expect((result.stations.P.sE ?? 0) > 0).toBe(true);
     expect((result.stations.P.sN ?? 0) > 0).toBe(true);
   });
@@ -1590,7 +1654,11 @@ describe('LSAEngine', () => {
 
     expect(result.success).toBe(true);
     expect(result.converged).toBe(true);
-    expect(result.logs.some((line) => line.includes('normal-equation factorization required diagonal damping'))).toBe(true);
+    expect(
+      result.logs.some((line) =>
+        line.includes('normal-equation factorization required diagonal damping'),
+      ),
+    ).toBe(true);
     expect(result.logs.some((line) => line.includes('pivoted symmetric LDLT recovery'))).toBe(true);
     expect(result.logs.some((line) => line.includes('Normal equation solve failed'))).toBe(false);
     expect(result.dof).toBe(1);
