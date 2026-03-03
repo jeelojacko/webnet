@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<DBXSurveyExport>
+  <Points>
+    <Point name="STN3">
+      <Northing>3000.0000</Northing>
+      <Easting>7000.0000</Easting>
+      <Elevation>75.0000</Elevation>
+      <Description>SETUP</Description>
+    </Point>
+    <Point name="BS3">
+      <Northing>2900.0000</Northing>
+      <Easting>7000.0000</Easting>
+      <Elevation>74.5000</Elevation>
+    </Point>
+    <Point name="GPS_3">
+      <Latitude>44.653429353</Latitude>
+      <Longitude>-63.582441392</Longitude>
+      <EllipsoidHeight>123.4560</EllipsoidHeight>
+      <SigmaNorth>0.0080</SigmaNorth>
+      <SigmaEast>0.0100</SigmaEast>
+      <SigmaHeight>0.0150</SigmaHeight>
+      <CorrelationEN>-0.2500</CorrelationEN>
+    </Point>
+  </Points>
+  <Setups>
+    <Setup id="SET1">
+      <OccupyPoint>STN3</OccupyPoint>
+      <BacksightPoint>BS3</BacksightPoint>
+      <InstrumentHeight>1.6000</InstrumentHeight>
+    </Setup>
+  </Setups>
+  <Observations>
+    <Observation setupId="SET1">
+      <TargetPoint>P4</TargetPoint>
+      <HorizontalAngle>45.1234</HorizontalAngle>
+      <SlopeDistance>80.0000</SlopeDistance>
+      <Zenith>92.5000</Zenith>
+      <TargetHeight>1.7000</TargetHeight>
+    </Observation>
+  </Observations>
+</DBXSurveyExport>
