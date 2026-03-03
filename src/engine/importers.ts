@@ -355,7 +355,9 @@ const buildRecordComment = (record: ImportedRecordBase): string | null => {
   return `# ${parts.join(' ')}`;
 };
 
-const serializeControlStationRecord = (station: ImportedControlStationRecord): string => {
+export const serializeImportedControlStationRecord = (
+  station: ImportedControlStationRecord,
+): string => {
   if (station.coordinateMode === 'geodetic') {
     const recordType = station.heightDatum === 'ellipsoid' ? 'PH' : 'P';
     const tokens = [
@@ -404,7 +406,9 @@ const serializeControlStationRecord = (station: ImportedControlStationRecord): s
   return appendDescription(tokens.join(' '), station.description);
 };
 
-const serializeObservationRecord = (observation: ImportedObservationRecord): string[] => {
+export const serializeImportedObservationRecord = (
+  observation: ImportedObservationRecord,
+): string[] => {
   if (observation.kind === 'gnss-vector') {
     const tokens = [
       'G',
@@ -516,7 +520,7 @@ export const convertImportedDatasetToWebNetInput = (dataset: ImportedDataset): s
   dataset.controlStations.forEach((station) => {
     const comment = buildRecordComment(station);
     if (comment) lines.push(comment);
-    lines.push(serializeControlStationRecord(station));
+    lines.push(serializeImportedControlStationRecord(station));
   });
 
   dataset.observations.forEach((observation) => {
@@ -531,7 +535,7 @@ export const convertImportedDatasetToWebNetInput = (dataset: ImportedDataset): s
     const comment = buildRecordComment(observation);
     if (comment) lines.push(comment);
 
-    serializeObservationRecord(observation).forEach((line) => {
+    serializeImportedObservationRecord(observation).forEach((line) => {
       if (line === '.DELTA ON') {
         if (currentDeltaMode !== 'delta-h') {
           lines.push(line);
@@ -764,6 +768,14 @@ const extractXmlNumber = (input: string, tagNames: string[]): number | undefined
 const hasXmlTag = (input: string, tagNames: string[]): boolean =>
   tagNames.some((tagName) => new RegExp(`<${tagName}\\b`, 'i').test(input));
 
+const extractXmlBlock = (input: string, tagNames: string[]): string | undefined => {
+  for (const tagName of tagNames) {
+    const match = input.match(new RegExp(`<${tagName}\\b[^>]*>[\\s\\S]*?<\\/${tagName}>`, 'i'));
+    if (match?.[0]) return match[0];
+  }
+  return undefined;
+};
+
 interface JobXmlSetupContext {
   occupyId?: string;
   backsightId?: string;
@@ -774,6 +786,8 @@ interface JobXmlSetupContext {
 interface JobXmlBacksightContext {
   stationId?: string;
   horizontalCircleDeg?: number;
+  face1HorizontalCircleDeg?: number;
+  face2HorizontalCircleDeg?: number;
   bearingDeg?: number;
 }
 
@@ -842,6 +856,28 @@ const resolveJobXmlPointFromBlock = (
 const normalizeAngleDeg = (value: number): number => {
   const wrapped = ((value % 360) + 360) % 360;
   return wrapped === 360 ? 0 : wrapped;
+};
+
+const computeLocalAzimuthDeg = (
+  fromStation: ImportedControlStationRecord | undefined,
+  toStation: ImportedControlStationRecord | undefined,
+): number | undefined => {
+  if (
+    !fromStation ||
+    !toStation ||
+    fromStation.coordinateMode !== 'local' ||
+    toStation.coordinateMode !== 'local' ||
+    fromStation.eastM == null ||
+    fromStation.northM == null ||
+    toStation.eastM == null ||
+    toStation.northM == null
+  ) {
+    return undefined;
+  }
+  const deltaEast = toStation.eastM - fromStation.eastM;
+  const deltaNorth = toStation.northM - fromStation.northM;
+  if (Math.abs(deltaEast) < 1e-12 && Math.abs(deltaNorth) < 1e-12) return undefined;
+  return normalizeAngleDeg(Math.atan2(deltaEast, deltaNorth) * RAD_TO_DEG);
 };
 
 const choosePreferredStation = (
@@ -1028,6 +1064,34 @@ const appendImportedObservationBundle = ({
   }
 };
 
+const buildJobXmlMeasurementKey = (
+  stationRecordRef: string | undefined,
+  backBearingRef: string | undefined,
+  targetRecordRef: string | undefined,
+  fallbackTargetId: string | undefined,
+): string | null => {
+  const parts = [stationRecordRef, backBearingRef, targetRecordRef ?? fallbackTargetId].map((value) =>
+    collapseWhitespace(value ?? ''),
+  );
+  if (!parts[0] || !parts[2]) return null;
+  return parts.join('|');
+};
+
+const pickJobXmlBacksightCircleDeg = (
+  backsightContext: JobXmlBacksightContext | undefined,
+  faceText: string | undefined,
+): number | undefined => {
+  if (!backsightContext) return undefined;
+  const face = collapseWhitespace(faceText ?? '').toUpperCase();
+  if (face === 'FACE1') {
+    return backsightContext.face1HorizontalCircleDeg ?? backsightContext.horizontalCircleDeg;
+  }
+  if (face === 'FACE2') {
+    return backsightContext.face2HorizontalCircleDeg ?? backsightContext.horizontalCircleDeg;
+  }
+  return backsightContext.horizontalCircleDeg;
+};
+
 const detectJobXml = (input: string, sourceName?: string): boolean => {
   const fileName = sourceName?.toLowerCase() ?? '';
   const looksXml = /^\s*<\?xml\b|^\s*<\w+/i.test(input);
@@ -1056,10 +1120,21 @@ const parseJobXml = (input: string, sourceName?: string): ImportedDataset | null
   const targetContexts = new Map<string, JobXmlTargetContext>();
   const observations: ImportedObservationRecord[] = [];
   const pointBlocks = matchXmlBlocks(input, 'PointRecord');
+  const reducedPointBlocks = matchXmlBlocks(input, 'Point');
   const measurementBlocks: { block: string; index: number }[] = [];
   const fileLabel = sourceLeaf(sourceName);
 
   pointBlocks.forEach(({ block }) => {
+    const rawName = extractXmlText(block, ['Name', 'PointName', 'PointNumber', 'PointID']);
+    const stationId = rawName ? sanitizeStationId(rawName) : undefined;
+    const xmlId = extractXmlAttribute(block, ['ID', 'Id']);
+    if (stationId) {
+      registerJobXmlPointReference(pointRefLookup, rawName, stationId);
+      registerJobXmlPointReference(pointRefLookup, xmlId, stationId);
+    }
+  });
+
+  reducedPointBlocks.forEach(({ block }) => {
     const rawName = extractXmlText(block, ['Name', 'PointName', 'PointNumber', 'PointID']);
     const stationId = rawName ? sanitizeStationId(rawName) : undefined;
     const xmlId = extractXmlAttribute(block, ['ID', 'Id']);
@@ -1103,7 +1178,15 @@ const parseJobXml = (input: string, sourceName?: string): ImportedDataset | null
       'VerticalCircle',
       'Azimuth',
       'Bearing',
+      'MTA',
+      'ComputedGrid',
+      'ObservationPolarDeltas',
     ]);
+
+    if (looksLikeMeasurement) {
+      measurementBlocks.push({ block, index });
+      return;
+    }
 
     if (latitudeDeg != null && longitudeDeg != null) {
       if (!stationId) {
@@ -1184,11 +1267,6 @@ const parseJobXml = (input: string, sourceName?: string): ImportedDataset | null
       return;
     }
 
-    if (looksLikeMeasurement) {
-      measurementBlocks.push({ block, index });
-      return;
-    }
-
     if (!stationId) {
       trace.push({
         level: 'warning',
@@ -1207,6 +1285,70 @@ const parseJobXml = (input: string, sourceName?: string): ImportedDataset | null
     });
   });
 
+  reducedPointBlocks.forEach(({ block, index }) => {
+    const sourceLine = lineNumberAtIndex(input, index);
+    const rawName = extractXmlText(block, ['Name', 'PointName', 'PointNumber', 'PointID']);
+    const stationId = rawName ? sanitizeStationId(rawName) : undefined;
+    const xmlId = extractXmlAttribute(block, ['ID', 'Id']);
+    const gridBlock = extractXmlBlock(block, ['Grid']) ?? block;
+    const northM = extractXmlNumber(gridBlock, ['North', 'Northing', 'GridNorth']);
+    const eastM = extractXmlNumber(gridBlock, ['East', 'Easting', 'GridEast']);
+    const elevationM = extractXmlNumber(gridBlock, [
+      'Elevation',
+      'OrthometricHeight',
+      'ReducedLevel',
+      'Height',
+    ]);
+    const latitudeDeg = extractXmlNumber(gridBlock, ['Latitude', 'Lat']);
+    const longitudeDeg = extractXmlNumber(gridBlock, ['Longitude', 'Lon', 'Long']);
+    const ellipsoidHeightM = extractXmlNumber(gridBlock, ['EllipsoidHeight', 'EllHeight']);
+    const description = extractXmlText(block, ['Code', 'Description', 'Descriptor', 'FeatureCode']);
+
+    if (!stationId) return;
+
+    let candidate: ImportedControlStationRecord | null = null;
+    if (latitudeDeg != null && longitudeDeg != null) {
+      candidate = {
+        kind: 'control-station',
+        coordinateMode: 'geodetic',
+        stationId,
+        latitudeDeg,
+        longitudeDeg,
+        heightDatum: ellipsoidHeightM != null ? 'ellipsoid' : 'orthometric',
+        heightM: ellipsoidHeightM ?? elevationM ?? 0,
+        description,
+        sourceLine,
+        sourceCode: 'Point',
+      };
+    } else if (northM != null && eastM != null) {
+      candidate = {
+        kind: 'control-station',
+        coordinateMode: 'local',
+        stationId,
+        northM,
+        eastM,
+        heightM: elevationM,
+        description,
+        sourceLine,
+        sourceCode: 'Point',
+      };
+    }
+
+    if (!candidate) return;
+
+    const existing = stationMap.get(stationId);
+    if (existing) {
+      trace.push({
+        level: 'warning',
+        sourceLine,
+        sourceCode: 'Point',
+        message: `Duplicate JobXML point ${stationId}; keeping the richer coordinate record.`,
+      });
+    }
+    stationMap.set(stationId, choosePreferredStation(existing, candidate));
+    registerJobXmlPointReference(pointRefLookup, xmlId, stationId);
+  });
+
   matchXmlBlocks(input, 'StationRecord').forEach(({ block }) => {
     const xmlId = extractXmlAttribute(block, ['ID', 'Id']);
     if (!xmlId) return;
@@ -1217,12 +1359,18 @@ const parseJobXml = (input: string, sourceName?: string): ImportedDataset | null
       pointRefLookup,
       stationMap,
     );
-    const hiM = extractXmlNumber(block, ['InstrumentHeight', 'HI', 'IH', 'InstHeight']);
+    const hiM = extractXmlNumber(block, [
+      'InstrumentHeight',
+      'TheodoliteHeight',
+      'HI',
+      'IH',
+      'InstHeight',
+    ]);
     const backsightRecordRef = extractXmlText(block, ['BackBearingID', 'BackBearingRecordID']);
     const backsightId = resolveJobXmlPointFromBlock(
       block,
       ['BackSightPointID', 'BacksightPointID', 'BackBearingPointID'],
-      ['BacksightName', 'BackSightName'],
+      ['BacksightName', 'BackSightName', 'BackSight'],
       pointRefLookup,
       stationMap,
     );
@@ -1232,16 +1380,51 @@ const parseJobXml = (input: string, sourceName?: string): ImportedDataset | null
   matchXmlBlocks(input, 'BackBearingRecord').forEach(({ block }) => {
     const xmlId = extractXmlAttribute(block, ['ID', 'Id']);
     if (!xmlId) return;
+    const stationRecordRef = extractXmlText(block, ['StationRecordID']);
+    const setupContext = stationRecordRef ? setupContexts.get(stationRecordRef) : undefined;
+    const occupyId =
+      setupContext?.occupyId ??
+      resolveJobXmlPointFromBlock(
+        block,
+        ['StationRecordID'],
+        ['Station'],
+        pointRefLookup,
+        stationMap,
+      );
     const stationId = resolveJobXmlPointFromBlock(
       block,
       ['PointID', 'PointRecordID', 'BackSightPointID', 'BacksightPointID', 'TargetPointID'],
-      ['Name', 'PointName', 'PointNumber', 'BacksightName', 'BackSightName'],
+      ['Name', 'PointName', 'PointNumber', 'BacksightName', 'BackSightName', 'BackSight'],
       pointRefLookup,
       stationMap,
     );
-    const horizontalCircleDeg = extractXmlNumber(block, ['HorizontalCircle', 'Hz']);
-    const bearingDeg = extractXmlNumber(block, ['Azimuth', 'Bearing', 'BackBearing']);
-    backsightContexts.set(xmlId, { stationId, horizontalCircleDeg, bearingDeg });
+    const face1HorizontalCircleDeg = extractXmlNumber(block, ['Face1HorizontalCircle']);
+    const face2HorizontalCircleDeg = extractXmlNumber(block, ['Face2HorizontalCircle']);
+    const horizontalCircleDeg =
+      extractXmlNumber(block, ['HorizontalCircle', 'Hz']) ?? face1HorizontalCircleDeg;
+    const orientationCorrectionDeg = extractXmlNumber(block, ['OrientationCorrection']);
+    const explicitBearingDeg = extractXmlNumber(block, ['Azimuth', 'Bearing', 'BackBearing']);
+    const bearingFromCoords = computeLocalAzimuthDeg(
+      occupyId ? stationMap.get(occupyId) : undefined,
+      stationId ? stationMap.get(stationId) : undefined,
+    );
+    const derivedBearingDeg =
+      explicitBearingDeg ??
+      bearingFromCoords ??
+      (orientationCorrectionDeg != null && face1HorizontalCircleDeg != null
+        ? normalizeAngleDeg(face1HorizontalCircleDeg + orientationCorrectionDeg)
+        : orientationCorrectionDeg != null && face2HorizontalCircleDeg != null
+          ? normalizeAngleDeg(face2HorizontalCircleDeg + orientationCorrectionDeg + 180)
+          : orientationCorrectionDeg != null && horizontalCircleDeg != null
+            ? normalizeAngleDeg(horizontalCircleDeg + orientationCorrectionDeg)
+            : undefined);
+    backsightContexts.set(xmlId, {
+      stationId,
+      horizontalCircleDeg,
+      face1HorizontalCircleDeg,
+      face2HorizontalCircleDeg,
+      bearingDeg: derivedBearingDeg,
+    });
   });
 
   matchXmlBlocks(input, 'TargetRecord').forEach(({ block }) => {
@@ -1259,11 +1442,45 @@ const parseJobXml = (input: string, sourceName?: string): ImportedDataset | null
     if (stationId) registerJobXmlPointReference(pointRefLookup, xmlId, stationId);
   });
 
+  const measurementKeysWithMta = new Set<string>();
+  measurementBlocks.forEach(({ block }) => {
+    const method = collapseWhitespace(extractXmlText(block, ['Method']) ?? '').toUpperCase();
+    const isMta = method === 'MEANTURNEDANGLE' || hasXmlTag(block, ['MTA']);
+    if (!isMta) return;
+    const fallbackTargetId = sanitizeStationId(
+      extractXmlText(block, ['Name', 'PointName', 'PointNumber', 'PointID']) ?? '',
+    );
+    const key = buildJobXmlMeasurementKey(
+      extractXmlText(block, ['StationRecordID', 'StationID']),
+      extractXmlText(block, ['BackBearingID', 'BackBearingRecordID']),
+      extractXmlText(block, ['TargetID', 'TargetRecordID']),
+      fallbackTargetId || undefined,
+    );
+    if (key) measurementKeysWithMta.add(key);
+  });
+
   measurementBlocks.forEach(({ block, index }) => {
     const sourceLine = lineNumberAtIndex(input, index);
+    const isDeleted = /<Deleted>\s*true\s*<\/Deleted>/i.test(block);
+    if (isDeleted) return;
+
     const rawName = extractXmlText(block, ['Name', 'PointName', 'PointNumber', 'PointID']);
     const fallbackTargetId = rawName ? sanitizeStationId(rawName) : undefined;
     const stationRecordRef = extractXmlText(block, ['StationRecordID', 'StationID']);
+    const backBearingRef = extractXmlText(block, ['BackBearingID', 'BackBearingRecordID']);
+    const targetRecordRef = extractXmlText(block, ['TargetID', 'TargetRecordID']);
+    const method = collapseWhitespace(extractXmlText(block, ['Method']) ?? '').toUpperCase();
+    const isMta = method === 'MEANTURNEDANGLE' || hasXmlTag(block, ['MTA']);
+    const measurementKey = buildJobXmlMeasurementKey(
+      stationRecordRef,
+      backBearingRef,
+      targetRecordRef,
+      fallbackTargetId,
+    );
+    if (!isMta && measurementKey && measurementKeysWithMta.has(measurementKey)) {
+      return;
+    }
+
     const setupContext = stationRecordRef ? setupContexts.get(stationRecordRef) : undefined;
     const occupyId =
       setupContext?.occupyId ??
@@ -1275,7 +1492,6 @@ const parseJobXml = (input: string, sourceName?: string): ImportedDataset | null
         stationMap,
       );
 
-    const targetRecordRef = extractXmlText(block, ['TargetID', 'TargetRecordID']);
     const targetContext = targetRecordRef ? targetContexts.get(targetRecordRef) : undefined;
     const targetId =
       targetContext?.stationId ??
@@ -1288,10 +1504,10 @@ const parseJobXml = (input: string, sourceName?: string): ImportedDataset | null
       ) ??
       fallbackTargetId;
 
-    const backBearingRef =
-      extractXmlText(block, ['BackBearingID', 'BackBearingRecordID']) ??
-      setupContext?.backsightRecordRef;
-    const backsightContext = backBearingRef ? backsightContexts.get(backBearingRef) : undefined;
+    const resolvedBackBearingRef = backBearingRef ?? setupContext?.backsightRecordRef;
+    const backsightContext = resolvedBackBearingRef
+      ? backsightContexts.get(resolvedBackBearingRef)
+      : undefined;
     const backsightId =
       backsightContext?.stationId ??
       setupContext?.backsightId ??
@@ -1304,40 +1520,93 @@ const parseJobXml = (input: string, sourceName?: string): ImportedDataset | null
       );
 
     const hiM =
-      extractXmlNumber(block, ['InstrumentHeight', 'HI', 'IH', 'InstHeight']) ?? setupContext?.hiM;
+      extractXmlNumber(block, [
+        'InstrumentHeight',
+        'TheodoliteHeight',
+        'HI',
+        'IH',
+        'InstHeight',
+      ]) ?? setupContext?.hiM;
     const htM =
       extractXmlNumber(block, ['TargetHeight', 'PrismHeight', 'RodHeight', 'HT']) ??
       targetContext?.htM;
-    const horizontalCircleDeg = extractXmlNumber(block, ['HorizontalCircle', 'Hz']);
-    const explicitAngleDeg = extractXmlNumber(block, ['HorizontalAngle', 'TurnedAngle']);
+    const circleBlock = extractXmlBlock(block, ['Circle']);
+    const mtaBlock = extractXmlBlock(block, ['MTA']);
+    const measurementDataBlock = mtaBlock ?? circleBlock ?? block;
+    const faceText = extractXmlText(block, ['Face']);
+    const horizontalCircleDeg = extractXmlNumber(measurementDataBlock, ['HorizontalCircle', 'Hz']);
+    const explicitAngleDeg =
+      extractXmlNumber(block, ['HorizontalAngle', 'TurnedAngle']) ??
+      (isMta ? horizontalCircleDeg : undefined);
     const explicitBearingDeg = extractXmlNumber(block, ['Azimuth', 'Bearing']);
-    const distanceM = extractXmlNumber(block, [
+    const distanceM = extractXmlNumber(measurementDataBlock, [
       'EDMDistance',
       'SlopeDistance',
       'Distance',
       'HorizontalDistance',
     ]);
-    const zenithDeg = extractXmlNumber(block, ['VerticalCircle', 'ZenithAngle', 'Zenith']);
-    const deltaHM = extractXmlNumber(block, ['DeltaHeight', 'VerticalDistance', 'DeltaH']);
+    const zenithDeg = extractXmlNumber(measurementDataBlock, [
+      'VerticalCircle',
+      'ZenithAngle',
+      'Zenith',
+    ]);
+    const deltaHM = extractXmlNumber(measurementDataBlock, [
+      'DeltaHeight',
+      'VerticalDistance',
+      'DeltaH',
+    ]);
+    const backsightCircleDeg = pickJobXmlBacksightCircleDeg(backsightContext, faceText);
 
     const derivedAngleDeg =
       explicitAngleDeg != null
         ? normalizeAngleDeg(explicitAngleDeg)
-        : horizontalCircleDeg != null && backsightContext?.horizontalCircleDeg != null
-          ? normalizeAngleDeg(horizontalCircleDeg - backsightContext.horizontalCircleDeg)
+        : horizontalCircleDeg != null && backsightCircleDeg != null
+          ? normalizeAngleDeg(horizontalCircleDeg - backsightCircleDeg)
           : undefined;
     const derivedBearingDeg =
       explicitBearingDeg != null
         ? normalizeAngleDeg(explicitBearingDeg)
+        : isMta && horizontalCircleDeg != null && backsightContext?.bearingDeg != null
+          ? normalizeAngleDeg(backsightContext.bearingDeg + horizontalCircleDeg)
         : horizontalCircleDeg != null &&
-            backsightContext?.horizontalCircleDeg != null &&
-            backsightContext.bearingDeg != null
+            backsightCircleDeg != null &&
+            backsightContext?.bearingDeg != null
           ? normalizeAngleDeg(
-              backsightContext.bearingDeg -
-                backsightContext.horizontalCircleDeg +
-                horizontalCircleDeg,
+              backsightContext.bearingDeg - backsightCircleDeg + horizontalCircleDeg,
             )
           : undefined;
+
+    if (targetId) {
+      const computedGridBlock = extractXmlBlock(block, ['ComputedGrid']);
+      const computedNorthM = computedGridBlock
+        ? extractXmlNumber(computedGridBlock, ['North', 'Northing', 'GridNorth'])
+        : undefined;
+      const computedEastM = computedGridBlock
+        ? extractXmlNumber(computedGridBlock, ['East', 'Easting', 'GridEast'])
+        : undefined;
+      const computedElevationM = computedGridBlock
+        ? extractXmlNumber(computedGridBlock, [
+            'Elevation',
+            'OrthometricHeight',
+            'ReducedLevel',
+            'Height',
+          ])
+        : undefined;
+      if (computedNorthM != null && computedEastM != null) {
+        const candidate: ImportedControlStationRecord = {
+          kind: 'control-station',
+          coordinateMode: 'local',
+          stationId: targetId,
+          northM: computedNorthM,
+          eastM: computedEastM,
+          heightM: computedElevationM,
+          sourceLine,
+          sourceCode: 'PointRecord',
+        };
+        const existing = stationMap.get(targetId);
+        stationMap.set(targetId, choosePreferredStation(existing, candidate));
+      }
+    }
 
     if (occupyId && backsightId && targetId && derivedAngleDeg != null) {
       if (distanceM != null) {

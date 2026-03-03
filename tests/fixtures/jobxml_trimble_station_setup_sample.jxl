@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<JOBFile jobName="TRIMBLE_SAMPLE">
+  <FieldBook>
+    <StationRecord ID="ST01">
+      <StationName>1</StationName>
+      <TheodoliteHeight>1.65</TheodoliteHeight>
+      <BackBearingID>BB01</BackBearingID>
+    </StationRecord>
+
+    <BackBearingRecord ID="BB01">
+      <StationRecordID>ST01</StationRecordID>
+      <Station>1</Station>
+      <BackSight>1000</BackSight>
+      <Face1HorizontalCircle>343.27387502865</Face1HorizontalCircle>
+      <Face2HorizontalCircle>163.2776832</Face2HorizontalCircle>
+      <OrientationCorrection>-0.00190408567279</OrientationCorrection>
+    </BackBearingRecord>
+
+    <TargetRecord ID="TGT02">
+      <PrismType>CustomPrism</PrismType>
+      <PrismConstant>-0.0344</PrismConstant>
+      <TargetHeight>1.692</TargetHeight>
+    </TargetRecord>
+
+    <PointRecord ID="OBS02-F1">
+      <Name>2</Name>
+      <Method>DirectReading</Method>
+      <Classification>Normal</Classification>
+      <Deleted>false</Deleted>
+      <Circle>
+        <HorizontalCircle>270.1318482</HorizontalCircle>
+        <VerticalCircle>89.9556732</VerticalCircle>
+        <EDMDistance>22.25735</EDMDistance>
+        <Face>Face1</Face>
+      </Circle>
+      <StationID>ST01</StationID>
+      <BackBearingID>BB01</BackBearingID>
+      <TargetID>TGT02</TargetID>
+      <ComputedGrid>
+        <North>-2.3791479530841</North>
+        <East>-19.876902519713</East>
+      </ComputedGrid>
+    </PointRecord>
+
+    <PointRecord ID="OBS02-F2">
+      <Name>2</Name>
+      <Method>DirectReading</Method>
+      <Classification>Normal</Classification>
+      <Deleted>false</Deleted>
+      <Circle>
+        <HorizontalCircle>90.1337571</HorizontalCircle>
+        <VerticalCircle>270.0442827</VerticalCircle>
+        <EDMDistance>22.2576</EDMDistance>
+        <Face>Face2</Face>
+      </Circle>
+      <StationID>ST01</StationID>
+      <BackBearingID>BB01</BackBearingID>
+      <TargetID>TGT02</TargetID>
+      <ComputedGrid>
+        <North>-2.379884042263</North>
+        <East>-19.877154215244</East>
+      </ComputedGrid>
+    </PointRecord>
+
+    <PointRecord ID="OBS02-MTA">
+      <Name>2</Name>
+      <Method>MeanTurnedAngle</Method>
+      <Classification>MTA</Classification>
+      <Deleted>false</Deleted>
+      <MTA>
+        <HorizontalCircle>286.85686266067</HorizontalCircle>
+        <VerticalCircle>89.956615275</VerticalCircle>
+        <EDMDistance>22.2574175</EDMDistance>
+      </MTA>
+      <StationID>ST01</StationID>
+      <BackBearingID>BB01</BackBearingID>
+      <TargetID>TGT02</TargetID>
+      <ComputedGrid>
+        <North>-2.3795785239118</North>
+        <East>-19.87697128685</East>
+      </ComputedGrid>
+    </PointRecord>
+
+    <TargetRecord ID="TGT03">
+      <PrismType>CustomPrism</PrismType>
+      <PrismConstant>-0.0344</PrismConstant>
+      <TargetHeight>1.800</TargetHeight>
+    </TargetRecord>
+
+    <PointRecord ID="OBS03-F1">
+      <Name>CHK1</Name>
+      <Method>DirectReading</Method>
+      <Classification>Check</Classification>
+      <Deleted>false</Deleted>
+      <Circle>
+        <HorizontalCircle>350.0000000</HorizontalCircle>
+        <VerticalCircle>95.0000000</VerticalCircle>
+        <EDMDistance>100.0000</EDMDistance>
+        <Face>Face1</Face>
+      </Circle>
+      <StationID>ST01</StationID>
+      <BackBearingID>BB01</BackBearingID>
+      <TargetID>TGT03</TargetID>
+      <ComputedGrid>
+        <North>88.632697771098</North>
+        <East>-14.719772277005</East>
+        <Elevation>19.0000</Elevation>
+      </ComputedGrid>
+    </PointRecord>
+
+    <PointRecord ID="OBS03-DEL">
+      <Name>CHK1</Name>
+      <Method>DirectReading</Method>
+      <Classification>Check</Classification>
+      <Deleted>true</Deleted>
+      <Circle>
+        <HorizontalCircle>351.0000000</HorizontalCircle>
+        <VerticalCircle>95.1000000</VerticalCircle>
+        <EDMDistance>100.5000</EDMDistance>
+        <Face>Face1</Face>
+      </Circle>
+      <StationID>ST01</StationID>
+      <BackBearingID>BB01</BackBearingID>
+      <TargetID>TGT03</TargetID>
+    </PointRecord>
+  </FieldBook>
+
+  <Reductions>
+    <Point>
+      <ID>P1</ID>
+      <Name>1</Name>
+      <Grid>
+        <North>-2.4302870197975</North>
+        <East>2.3459834880366</East>
+      </Grid>
+    </Point>
+    <Point>
+      <ID>P2</ID>
+      <Name>1000</Name>
+      <Grid>
+        <North>2.0628497960431</North>
+        <East>0.99574441246962</East>
+      </Grid>
+    </Point>
+    <Point>
+      <ID>P3</ID>
+      <Name>2</Name>
+      <Grid>
+        <North>-2.3795785239118</North>
+        <East>-19.87697128685</East>
+      </Grid>
+    </Point>
+    <Point>
+      <ID>P4</ID>
+      <Name>CHK1</Name>
+      <Grid>
+        <North>88.632697771098</North>
+        <East>-14.719772277005</East>
+        <Elevation>19.0000</Elevation>
+      </Grid>
+    </Point>
+  </Reductions>
+</JOBFile>

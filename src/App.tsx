@@ -16,6 +16,7 @@ import {
   Download,
 } from 'lucide-react';
 import InputPane from './components/InputPane';
+import ImportReviewModal from './components/ImportReviewModal';
 import ReportView from './components/ReportView';
 import MapView from './components/MapView';
 import ProcessingSummaryView from './components/ProcessingSummaryView';
@@ -30,7 +31,16 @@ import {
 } from './engine/autoAdjust';
 import { buildIndustryStyleListingText } from './engine/industryListing';
 import { buildLandXmlText } from './engine/landxml';
-import { importExternalInput, type ImportedInputNotice } from './engine/importers';
+import {
+  importExternalInput,
+  type ImportedDataset,
+  type ImportedInputNotice,
+} from './engine/importers';
+import {
+  buildImportReviewModel,
+  buildImportReviewText,
+  type ImportReviewModel,
+} from './engine/importReview';
 import { isPreanalysisWhatIfCandidate } from './engine/preanalysis';
 import type {
   AdjustmentResult,
@@ -404,6 +414,15 @@ const INDUSTRY_DEFAULT_INSTRUMENT: Instrument = createDefaultS9Instrument();
 type TabKey = 'report' | 'processing-summary' | 'industry-output' | 'map';
 type ExportFormat = 'webnet' | 'industry-style' | 'landxml';
 
+type ImportReviewState = {
+  sourceName: string;
+  notice: ImportedInputNotice;
+  dataset: ImportedDataset;
+  reviewModel: ImportReviewModel;
+  excludedItemIds: Set<string>;
+  groupComments: Record<string, string>;
+};
+
 const SETTINGS_TOOLTIPS = {
   solveProfile:
     'Run profile. WEBNET uses current app defaults/features. Industry Standard parity forces classical solve and raw direction-set adjustment with industry-like default instrument precision.',
@@ -611,6 +630,7 @@ const PROJECT_OPTION_TABS: Array<{ id: ProjectOptionsTab; label: string }> = [
 const App: React.FC = () => {
   const [input, setInput] = useState<string>(DEFAULT_INPUT);
   const [importNotice, setImportNotice] = useState<ImportedInputNotice | null>(null);
+  const [importReviewState, setImportReviewState] = useState<ImportReviewState | null>(null);
   const [result, setResult] = useState<AdjustmentResult | null>(null);
   const [runDiagnostics, setRunDiagnostics] = useState<RunDiagnostics | null>(null);
   const [runElapsedMs, setRunElapsedMs] = useState<number | null>(null);
@@ -3522,12 +3542,28 @@ const App: React.FC = () => {
     reader.onload = () => {
       const text = typeof reader.result === 'string' ? reader.result : '';
       const imported = importExternalInput(text, file.name);
-      setInput(imported.text);
-      setImportNotice(imported.notice ?? null);
-      setExcludedIds(new Set());
-      setOverrides({});
-      setClusterReviewDecisions({});
-      setActiveClusterApprovedMerges([]);
+      if (imported.detected && imported.dataset && imported.notice) {
+        const reviewModel = buildImportReviewModel(imported.dataset);
+        const groupComments = Object.fromEntries(
+          reviewModel.groups.map((group) => [group.key, group.defaultComment]),
+        );
+        setImportReviewState({
+          sourceName: file.name,
+          notice: imported.notice,
+          dataset: imported.dataset,
+          reviewModel,
+          excludedItemIds: new Set(),
+          groupComments,
+        });
+      } else {
+        setInput(imported.text);
+        setImportNotice(imported.notice ?? null);
+        setImportReviewState(null);
+        setExcludedIds(new Set());
+        setOverrides({});
+        setClusterReviewDecisions({});
+        setActiveClusterApprovedMerges([]);
+      }
     };
     reader.readAsText(file);
     e.target.value = '';
@@ -3540,6 +3576,58 @@ const App: React.FC = () => {
   const handleInputChange = (value: string) => {
     setInput(value);
     if (importNotice) setImportNotice(null);
+  };
+
+  const handleImportReviewToggleExclude = (itemId: string) => {
+    setImportReviewState((prev) => {
+      if (!prev) return prev;
+      const nextExcluded = new Set(prev.excludedItemIds);
+      if (nextExcluded.has(itemId)) nextExcluded.delete(itemId);
+      else nextExcluded.add(itemId);
+      return { ...prev, excludedItemIds: nextExcluded };
+    });
+  };
+
+  const handleImportReviewCommentChange = (groupKey: string, value: string) => {
+    setImportReviewState((prev) =>
+      prev
+        ? {
+            ...prev,
+            groupComments: {
+              ...prev.groupComments,
+              [groupKey]: value,
+            },
+          }
+        : prev,
+    );
+  };
+
+  const handleCancelImportReview = () => {
+    setImportReviewState(null);
+  };
+
+  const handleApplyImportReview = () => {
+    if (!importReviewState) return;
+    const includedItemIds = new Set(
+      importReviewState.reviewModel.items
+        .filter((item) => !importReviewState.excludedItemIds.has(item.id))
+        .map((item) => item.id),
+    );
+    const nextInput = buildImportReviewText(
+      importReviewState.dataset,
+      importReviewState.reviewModel,
+      {
+        includedItemIds,
+        groupComments: importReviewState.groupComments,
+      },
+    );
+    setInput(nextInput);
+    setImportNotice(importReviewState.notice);
+    setImportReviewState(null);
+    setExcludedIds(new Set());
+    setOverrides({});
+    setClusterReviewDecisions({});
+    setActiveClusterApprovedMerges([]);
   };
 
   const solveCore = (
@@ -6042,6 +6130,21 @@ const App: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {importReviewState && (
+        <ImportReviewModal
+          sourceName={importReviewState.sourceName}
+          title={importReviewState.notice.title}
+          detailLines={importReviewState.notice.detailLines}
+          reviewModel={importReviewState.reviewModel}
+          excludedItemIds={importReviewState.excludedItemIds}
+          groupComments={importReviewState.groupComments}
+          onToggleExclude={handleImportReviewToggleExclude}
+          onCommentChange={handleImportReviewCommentChange}
+          onCancel={handleCancelImportReview}
+          onImport={handleApplyImportReview}
+        />
+      )}
     </div>
   );
 };

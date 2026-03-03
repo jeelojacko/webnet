@@ -6,6 +6,10 @@ import { parseInput } from '../src/engine/parse';
 
 const jobXmlFixture = readFileSync('tests/fixtures/jobxml_sample.jxl', 'utf-8');
 const jobXmlMeasurementFixture = readFileSync('tests/fixtures/jobxml_measurement_sample.jxl', 'utf-8');
+const jobXmlTrimbleFixture = readFileSync(
+  'tests/fixtures/jobxml_trimble_station_setup_sample.jxl',
+  'utf-8',
+);
 const fieldGeniusFixture = readFileSync('tests/fixtures/fieldgenius_sample.raw', 'utf-8');
 
 describe('Phase 2 external importers', () => {
@@ -78,6 +82,69 @@ describe('Phase 2 external importers', () => {
         (obs) => obs.type === 'zenith' && 'from' in obs && obs.from === 'STN1' && obs.to === 'SHOT_1',
       ),
     ).toBe(true);
+  });
+
+  it('imports Trimble-style station setup JobXML using reduced points, MTA preference, and face-based backsight circles', () => {
+    const imported = importExternalInput(
+      jobXmlTrimbleFixture,
+      'jobxml_trimble_station_setup_sample.jxl',
+    );
+
+    expect(imported.detected).toBe(true);
+    expect(imported.importerId).toBe('jobxml');
+    expect(imported.notice?.detailLines[0]).toContain('Imported 4 points and 2 observations');
+    expect(imported.dataset?.controlStations).toHaveLength(4);
+    expect(imported.dataset?.observations).toHaveLength(2);
+    expect(imported.dataset?.trace).toHaveLength(0);
+
+    const measurementObs = imported.dataset?.observations.filter(
+      (obs) => obs.kind === 'measurement',
+    );
+    expect(measurementObs).toHaveLength(2);
+    expect(measurementObs?.[0]).toMatchObject({
+      kind: 'measurement',
+      atId: '1',
+      fromId: '1000',
+      toId: '2',
+      hiM: 1.65,
+      htM: 1.692,
+    });
+    expect(measurementObs?.[0].angleDeg).toBeCloseTo(286.85686266067, 8);
+    expect(measurementObs?.[0].distanceM).toBeCloseTo(22.2574175, 8);
+    expect(measurementObs?.[0].verticalMode).toBe('zenith');
+    expect(measurementObs?.[0].verticalValue).toBeCloseTo(89.956615275, 8);
+
+    expect(measurementObs?.[1]).toMatchObject({
+      kind: 'measurement',
+      atId: '1',
+      fromId: '1000',
+      toId: 'CHK1',
+      hiM: 1.65,
+      htM: 1.8,
+    });
+    expect(measurementObs?.[1].angleDeg).toBeCloseTo(6.72612497135, 8);
+    expect(measurementObs?.[1].distanceM).toBeCloseTo(100, 8);
+
+    expect(imported.text).toContain('M 1-1000-2');
+    expect(imported.text).toContain('1.6500/1.6920');
+    expect(imported.text).toContain('M 1-1000-CHK1');
+    expect(imported.text).not.toContain('OBS03-DEL');
+
+    const parsed = parseInput(imported.text);
+    expect(parsed.stations['1']).toBeDefined();
+    expect(parsed.stations['1000']).toBeDefined();
+    expect(parsed.stations['2']).toBeDefined();
+    expect(parsed.stations.CHK1).toBeDefined();
+    expect(
+      parsed.observations.filter(
+        (obs) =>
+          obs.type === 'angle' &&
+          'at' in obs &&
+          obs.at === '1' &&
+          obs.from === '1000' &&
+          (obs.to === '2' || obs.to === 'CHK1'),
+      ),
+    ).toHaveLength(2);
   });
 
   it('imports core FieldGenius setup and shot records into normalized WebNet observations with trace comments', () => {
