@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<JOBFile jobName="TRIMBLE_RESECTION_SAMPLE">
+  <FieldBook>
+    <StationRecord ID="RST01">
+      <StationName>1000</StationName>
+      <TheodoliteHeight>1.650</TheodoliteHeight>
+      <BackBearingID>BBR01</BackBearingID>
+      <StationType>StandardResection</StationType>
+    </StationRecord>
+
+    <BackBearingRecord ID="BBR01">
+      <StationRecordID>RST01</StationRecordID>
+      <Station>1000</Station>
+      <BackSight>077</BackSight>
+      <Face1HorizontalCircle>356.55637321303</Face1HorizontalCircle>
+      <Face2HorizontalCircle>176.56030826093</Face2HorizontalCircle>
+      <OrientationCorrection>-0.00196752395312</OrientationCorrection>
+    </BackBearingRecord>
+
+    <TargetRecord ID="TGT77">
+      <PrismType>CustomPrism</PrismType>
+      <PrismConstant>-0.0344</PrismConstant>
+      <TargetHeight>1.550</TargetHeight>
+    </TargetRecord>
+
+    <PointRecord ID="OBS77-F1">
+      <Name>077</Name>
+      <Method>DirectReading</Method>
+      <Classification>BackSight</Classification>
+      <Deleted>false</Deleted>
+      <Circle>
+        <HorizontalCircle>356.55637321303</HorizontalCircle>
+        <VerticalCircle>90.0000000</VerticalCircle>
+        <EDMDistance>3.89842</EDMDistance>
+        <Face>Face1</Face>
+      </Circle>
+      <StationID>RST01</StationID>
+      <BackBearingID>BBR01</BackBearingID>
+      <TargetID>TGT77</TargetID>
+      <ComputedGrid>
+        <North>5.956045</North>
+        <East>0.761471</East>
+      </ComputedGrid>
+    </PointRecord>
+
+    <PointRecord ID="OBS77-MTA">
+      <Name>077</Name>
+      <Method>MeanTurnedAngle</Method>
+      <Classification>MTA</Classification>
+      <Deleted>false</Deleted>
+      <MTA>
+        <HorizontalCircle>0.0000000</HorizontalCircle>
+        <VerticalCircle>90.0000000</VerticalCircle>
+        <EDMDistance>3.89843</EDMDistance>
+      </MTA>
+      <StationID>RST01</StationID>
+      <BackBearingID>BBR01</BackBearingID>
+      <TargetID>TGT77</TargetID>
+      <ComputedGrid>
+        <North>5.956045</North>
+        <East>0.761471</East>
+      </ComputedGrid>
+    </PointRecord>
+
+    <TargetRecord ID="TGT235">
+      <PrismType>CustomPrism</PrismType>
+      <PrismConstant>-0.0344</PrismConstant>
+      <TargetHeight>1.550</TargetHeight>
+    </TargetRecord>
+
+    <PointRecord ID="OBS235-F1">
+      <Name>235</Name>
+      <Method>DirectReading</Method>
+      <Classification>Normal</Classification>
+      <Deleted>false</Deleted>
+      <Circle>
+        <HorizontalCircle>87.4310570</HorizontalCircle>
+        <VerticalCircle>89.9000000</VerticalCircle>
+        <EDMDistance>17.43227</EDMDistance>
+        <Face>Face1</Face>
+      </Circle>
+      <StationID>RST01</StationID>
+      <BackBearingID>BBR01</BackBearingID>
+      <TargetID>TGT235</TargetID>
+      <ComputedGrid>
+        <North>2.845067</North>
+        <East>18.407659</East>
+      </ComputedGrid>
+    </PointRecord>
+
+    <PointRecord ID="OBS235-F2">
+      <Name>235</Name>
+      <Method>DirectReading</Method>
+      <Classification>Normal</Classification>
+      <Deleted>false</Deleted>
+      <Circle>
+        <HorizontalCircle>267.4344474</HorizontalCircle>
+        <VerticalCircle>270.1000000</VerticalCircle>
+        <EDMDistance>17.43220</EDMDistance>
+        <Face>Face2</Face>
+      </Circle>
+      <StationID>RST01</StationID>
+      <BackBearingID>BBR01</BackBearingID>
+      <TargetID>TGT235</TargetID>
+      <ComputedGrid>
+        <North>2.845067</North>
+        <East>18.407659</East>
+      </ComputedGrid>
+    </PointRecord>
+
+    <PointRecord ID="OBS235-MTA">
+      <Name>235</Name>
+      <Method>MeanTurnedAngle</Method>
+      <Classification>MTA</Classification>
+      <Deleted>false</Deleted>
+      <MTA>
+        <HorizontalCircle>90.8725000</HorizontalCircle>
+        <VerticalCircle>89.9500000</VerticalCircle>
+        <EDMDistance>17.43224</EDMDistance>
+      </MTA>
+      <StationID>RST01</StationID>
+      <BackBearingID>BBR01</BackBearingID>
+      <TargetID>TGT235</TargetID>
+      <ComputedGrid>
+        <North>2.845067</North>
+        <East>18.407659</East>
+      </ComputedGrid>
+    </PointRecord>
+  </FieldBook>
+
+  <Reductions>
+    <Point>
+      <ID>P-1000</ID>
+      <Name>1000</Name>
+      <Grid>
+        <North>2.063000</North>
+        <East>0.996000</East>
+      </Grid>
+    </Point>
+    <Point>
+      <ID>P-077</ID>
+      <Name>077</Name>
+      <Grid>
+        <North>5.956045</North>
+        <East>0.761471</East>
+      </Grid>
+    </Point>
+    <Point>
+      <ID>P-235</ID>
+      <Name>235</Name>
+      <Grid>
+        <North>2.845067</North>
+        <East>18.407659</East>
+      </Grid>
+    </Point>
+  </Reductions>
+</JOBFile>

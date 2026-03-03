@@ -73,11 +73,33 @@ const deriveObservationSetupId = (observation: ImportedObservationRecord): strin
   return observation.fromId;
 };
 
+const isResectionSetupType = (value: string | undefined): boolean =>
+  /resection/i.test((value ?? '').trim());
+
+const normalizeFaceLabel = (value: string | undefined): string | null => {
+  const normalized = (value ?? '').trim().toUpperCase();
+  if (normalized === 'FACE1') return 'F1';
+  if (normalized === 'FACE2') return 'F2';
+  return normalized ? prettifyToken(normalized) : null;
+};
+
 const deriveSourceType = (
   kind: ImportReviewItemKind,
   record: ImportedControlStationRecord | ImportedObservationRecord,
 ): string => {
   if (kind === 'control') return 'Control Point';
+  const classification = record.sourceMeta?.classification;
+  const faceLabel = normalizeFaceLabel(record.sourceMeta?.face);
+  const withFace = (value: string): string => (faceLabel ? `${value} (${faceLabel})` : value);
+  if (record.sourceMeta?.method === 'MEANTURNEDANGLE') {
+    return withFace(record.kind === 'angle' ? 'MTA Angle' : 'MTA Measurement');
+  }
+  if (classification === 'BackSight') {
+    return withFace('Backsight Shot');
+  }
+  if (classification === 'Check') {
+    return withFace('Check Shot');
+  }
   if (record.kind === 'gnss-vector') return 'GNSS Vector';
   if (record.kind === 'distance') return 'Distance';
   if (record.kind === 'distance-vertical') return 'Distance + Vertical';
@@ -92,7 +114,11 @@ const serializeObservationPreview = (
   observation: ImportedObservationRecord,
   preset: ImportReviewOutputPreset,
 ): string => {
-  if (preset !== 'ts-direction-set') {
+  const isResection =
+    (observation.kind === 'measurement' || observation.kind === 'angle') &&
+    isResectionSetupType(observation.sourceMeta?.setupType);
+
+  if (preset !== 'ts-direction-set' || !isResection) {
     return serializeImportedObservationRecord(observation)
       .filter((line) => !line.startsWith('.'))
       .join(' | ');
@@ -146,16 +172,14 @@ const buildGroupMeta = (
     'tds-raw',
     'dbx-export',
   ]).has(importerId);
+  const setupType = observation.sourceMeta?.setupType;
+  const isResection = importerId === 'jobxml' && isResectionSetupType(setupType);
 
-  if (
-    isSetupAwareImporter &&
-    (observation.kind === 'measurement' || observation.kind === 'angle') &&
-    observation.toId === observation.fromId
-  ) {
+  if (isSetupAwareImporter && (observation.kind === 'measurement' || observation.kind === 'angle') && isResection) {
     return {
       key: `resection:${setupId}:bs:${observation.fromId}`,
       kind: 'resection',
-      label: `Resection ${setupId}`,
+      label: `Resection ${setupId}${observation.fromId ? ` (BS ${observation.fromId})` : ''}`,
       defaultComment: `RESECTION ${setupId}`,
       setupId,
       backsightId: observation.fromId,
@@ -377,7 +401,11 @@ const appendPresetObservationLines = (
     return;
   }
 
-  if (preset === 'ts-direction-set' && (observation.kind === 'measurement' || observation.kind === 'angle')) {
+  if (
+    preset === 'ts-direction-set' &&
+    (observation.kind === 'measurement' || observation.kind === 'angle') &&
+    isResectionSetupType(observation.sourceMeta?.setupType)
+  ) {
     getPresetRowLines(observation, preset).forEach((line) => lines.push(line));
     return;
   }
@@ -418,7 +446,7 @@ export const buildImportReviewText = (
 
     if (
       preset === 'ts-direction-set' &&
-      group.kind !== 'control' &&
+      group.kind === 'resection' &&
       group.backsightId &&
       includedItems.some((item) => {
         const observation = dataset.observations[item.index];

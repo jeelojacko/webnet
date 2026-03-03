@@ -5,6 +5,7 @@
       <StationName>1</StationName>
       <TheodoliteHeight>1.65</TheodoliteHeight>
       <BackBearingID>BB01</BackBearingID>
+      <StationType>StationSetup</StationType>
     </StationRecord>
 
     <BackBearingRecord ID="BB01">
@@ -15,6 +16,51 @@
       <Face2HorizontalCircle>163.2776832</Face2HorizontalCircle>
       <OrientationCorrection>-0.00190408567279</OrientationCorrection>
     </BackBearingRecord>
+
+    <TargetRecord ID="TGTBS">
+      <PrismType>CustomPrism</PrismType>
+      <PrismConstant>-0.0344</PrismConstant>
+      <TargetHeight>1.550</TargetHeight>
+    </TargetRecord>
+
+    <PointRecord ID="OBSBS-F1">
+      <Name>1000</Name>
+      <Method>DirectReading</Method>
+      <Classification>BackSight</Classification>
+      <Deleted>false</Deleted>
+      <Circle>
+        <HorizontalCircle>343.27387502865</HorizontalCircle>
+        <VerticalCircle>90.0100000</VerticalCircle>
+        <EDMDistance>4.72650</EDMDistance>
+        <Face>Face1</Face>
+      </Circle>
+      <StationID>ST01</StationID>
+      <BackBearingID>BB01</BackBearingID>
+      <TargetID>TGTBS</TargetID>
+      <ComputedGrid>
+        <North>2.0628497960431</North>
+        <East>0.99574441246962</East>
+      </ComputedGrid>
+    </PointRecord>
+
+    <PointRecord ID="OBSBS-MTA">
+      <Name>1000</Name>
+      <Method>MeanTurnedAngle</Method>
+      <Classification>MTA</Classification>
+      <Deleted>false</Deleted>
+      <MTA>
+        <HorizontalCircle>0.0000000</HorizontalCircle>
+        <VerticalCircle>90.0150000</VerticalCircle>
+        <EDMDistance>4.72655</EDMDistance>
+      </MTA>
+      <StationID>ST01</StationID>
+      <BackBearingID>BB01</BackBearingID>
+      <TargetID>TGTBS</TargetID>
+      <ComputedGrid>
+        <North>2.0628497960431</North>
+        <East>0.99574441246962</East>
+      </ComputedGrid>
+    </PointRecord>
 
     <TargetRecord ID="TGT02">
       <PrismType>CustomPrism</PrismType>

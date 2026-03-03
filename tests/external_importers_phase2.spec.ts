@@ -36,7 +36,7 @@ describe('Phase 2 external importers', () => {
       'PH GPS_1 44.653429353 -63.582441392 123.4560 0.0080 0.0100 0.0150 -0.2500',
     );
     expect(imported.text).toContain(
-      '# WARNING line 23 [PointRecord] JobXML measurement-style point SHOT_1 was not converted because no reduced coordinates were present.',
+      '# WARNING line 23 [PointRecord] JobXML measurement-style point SHOT_1 was not converted because the station, target, or direction context could not be resolved.',
     );
 
     const parsed = parseInput(imported.text);
@@ -92,16 +92,40 @@ describe('Phase 2 external importers', () => {
 
     expect(imported.detected).toBe(true);
     expect(imported.importerId).toBe('jobxml');
-    expect(imported.notice?.detailLines[0]).toContain('Imported 4 points and 2 observations');
+    expect(imported.notice?.detailLines[0]).toContain('Imported 4 points and 6 observations');
     expect(imported.dataset?.controlStations).toHaveLength(4);
-    expect(imported.dataset?.observations).toHaveLength(2);
+    expect(imported.dataset?.observations).toHaveLength(6);
     expect(imported.dataset?.trace).toHaveLength(0);
 
     const measurementObs = imported.dataset?.observations.filter(
       (obs) => obs.kind === 'measurement',
     );
-    expect(measurementObs).toHaveLength(2);
+    expect(measurementObs).toHaveLength(6);
     expect(measurementObs?.[0]).toMatchObject({
+      kind: 'measurement',
+      atId: '1',
+      fromId: '1000',
+      toId: '1000',
+      hiM: 1.65,
+      htM: 1.55,
+      sourceMeta: {
+        classification: 'BackSight',
+        setupType: 'StationSetup',
+      },
+    });
+    expect(measurementObs?.[1]).toMatchObject({
+      kind: 'measurement',
+      atId: '1',
+      fromId: '1000',
+      toId: '1000',
+      hiM: 1.65,
+      htM: 1.55,
+      sourceMeta: {
+        method: 'MEANTURNEDANGLE',
+        setupType: 'StationSetup',
+      },
+    });
+    expect(measurementObs?.[2]).toMatchObject({
       kind: 'measurement',
       atId: '1',
       fromId: '1000',
@@ -109,12 +133,12 @@ describe('Phase 2 external importers', () => {
       hiM: 1.65,
       htM: 1.692,
     });
-    expect(measurementObs?.[0].angleDeg).toBeCloseTo(286.85686266067, 8);
-    expect(measurementObs?.[0].distanceM).toBeCloseTo(22.2574175, 8);
-    expect(measurementObs?.[0].verticalMode).toBe('zenith');
-    expect(measurementObs?.[0].verticalValue).toBeCloseTo(89.956615275, 8);
+    expect(measurementObs?.[2].angleDeg).toBeCloseTo(286.85797317135, 8);
+    expect(measurementObs?.[2].distanceM).toBeCloseTo(22.25735, 8);
+    expect(measurementObs?.[2].verticalMode).toBe('zenith');
+    expect(measurementObs?.[2].verticalValue).toBeCloseTo(89.9556732, 8);
 
-    expect(measurementObs?.[1]).toMatchObject({
+    expect(measurementObs?.[5]).toMatchObject({
       kind: 'measurement',
       atId: '1',
       fromId: '1000',
@@ -122,9 +146,10 @@ describe('Phase 2 external importers', () => {
       hiM: 1.65,
       htM: 1.8,
     });
-    expect(measurementObs?.[1].angleDeg).toBeCloseTo(6.72612497135, 8);
-    expect(measurementObs?.[1].distanceM).toBeCloseTo(100, 8);
+    expect(measurementObs?.[5].angleDeg).toBeCloseTo(6.72612497135, 8);
+    expect(measurementObs?.[5].distanceM).toBeCloseTo(100, 8);
 
+    expect(imported.text).toContain('M 1-1000-1000');
     expect(imported.text).toContain('M 1-1000-2');
     expect(imported.text).toContain('1.6500/1.6920');
     expect(imported.text).toContain('M 1-1000-CHK1');
@@ -142,9 +167,9 @@ describe('Phase 2 external importers', () => {
           'at' in obs &&
           obs.at === '1' &&
           obs.from === '1000' &&
-          (obs.to === '2' || obs.to === 'CHK1'),
+          (obs.to === '1000' || obs.to === '2' || obs.to === 'CHK1'),
       ),
-    ).toHaveLength(2);
+    ).toHaveLength(6);
   });
 
   it('imports core FieldGenius setup and shot records into normalized WebNet observations with trace comments', () => {
