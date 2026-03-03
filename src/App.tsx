@@ -47,6 +47,7 @@ import {
   isImportReviewMtaItem,
   isImportReviewRawMeasurementItem,
   moveImportReviewItem,
+  reorderImportReviewItemWithinGroup,
   removeImportReviewGroup,
   removeImportReviewItem,
   type ImportReviewModel,
@@ -3795,6 +3796,17 @@ const App: React.FC = () => {
     );
   };
 
+  const handleImportReviewReorderRow = (itemId: string, direction: 'up' | 'down') => {
+    setImportReviewState((prev) =>
+      prev
+        ? {
+            ...prev,
+            reviewModel: reorderImportReviewItemWithinGroup(prev.reviewModel, itemId, direction),
+          }
+        : prev,
+    );
+  };
+
   const handleImportReviewRemoveRow = (itemId: string) => {
     setImportReviewState((prev) => {
       if (!prev) return prev;
@@ -6402,6 +6414,7 @@ const App: React.FC = () => {
           onInsertCommentBelow={handleImportReviewInsertCommentBelow}
           onCreateSetupGroup={handleImportReviewCreateSetupGroup}
           onMoveRow={handleImportReviewMoveRow}
+          onReorderRow={handleImportReviewReorderRow}
           onRemoveGroup={handleImportReviewRemoveGroup}
           onRemoveRow={handleImportReviewRemoveRow}
           onCancel={handleCancelImportReview}

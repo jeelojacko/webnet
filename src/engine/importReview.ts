@@ -41,6 +41,7 @@ export interface ImportReviewGroup {
   label: string;
   defaultComment: string;
   synthetic?: boolean;
+  manualOrder?: boolean;
   setupId?: string;
   backsightId?: string;
   itemIds: string[];
@@ -388,6 +389,7 @@ export const createImportReviewGroupFromItem = (
     label,
     defaultComment,
     synthetic: true,
+    manualOrder: true,
     setupId: item.setupId ?? sourceGroup.setupId,
     backsightId: item.backsightId ?? sourceGroup.backsightId,
     itemIds: [itemId],
@@ -417,6 +419,7 @@ export const createEmptyImportReviewGroup = (
     label,
     defaultComment,
     synthetic: true,
+    manualOrder: true,
     itemIds: [],
   };
   nextModel.groups.splice(Math.max(insertAfterIndex, 0) + 1, 0, nextGroup);
@@ -472,7 +475,29 @@ export const moveImportReviewItem = (
   if (!sourceGroup || !targetGroup) return nextModel;
   sourceGroup.itemIds = sourceGroup.itemIds.filter((entry) => entry !== itemId);
   targetGroup.itemIds.push(itemId);
+  sourceGroup.manualOrder = true;
+  targetGroup.manualOrder = true;
   item.groupKey = nextGroupKey;
+  return nextModel;
+};
+
+export const reorderImportReviewItemWithinGroup = (
+  model: ImportReviewModel,
+  itemId: string,
+  direction: 'up' | 'down',
+): ImportReviewModel => {
+  const nextModel = cloneImportReviewModel(model);
+  const item = nextModel.items.find((entry) => entry.id === itemId);
+  if (!item) return nextModel;
+  const group = nextModel.groups.find((entry) => entry.key === item.groupKey);
+  if (!group) return nextModel;
+  const index = group.itemIds.indexOf(itemId);
+  if (index < 0) return nextModel;
+  const targetIndex = direction === 'up' ? index - 1 : index + 1;
+  if (targetIndex < 0 || targetIndex >= group.itemIds.length) return nextModel;
+  const [moved] = group.itemIds.splice(index, 1);
+  group.itemIds.splice(targetIndex, 0, moved);
+  group.manualOrder = true;
   return nextModel;
 };
 
@@ -653,7 +678,7 @@ const orderFieldGroupedItems = (
   items: ImportReviewItem[],
   group: ImportReviewGroup,
 ): ImportReviewItem[] => {
-  if (items.some((item) => item.kind === 'comment' || item.synthetic)) return items;
+  if (group.manualOrder || items.some((item) => item.kind === 'comment' || item.synthetic)) return items;
   return [...items].sort((left, right) => {
     if (left.kind === 'comment' || right.kind === 'comment') return 0;
     const leftBacksight = isBacksightTargetItem(left, group) ? 0 : 1;
@@ -730,7 +755,7 @@ export const buildImportReviewText = (
     }
 
     const orderedItems =
-      preset === 'field-grouped' && group.kind !== 'control'
+      (preset === 'field-grouped' || preset === 'ts-direction-set') && group.kind !== 'control'
         ? orderFieldGroupedItems(includedItems, group)
         : includedItems;
     const distinctFieldSections =

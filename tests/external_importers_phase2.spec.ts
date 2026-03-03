@@ -56,7 +56,9 @@ describe('Phase 2 external importers', () => {
     expect(imported.dataset?.observations).toHaveLength(1);
     expect(imported.dataset?.trace).toHaveLength(0);
     expect(imported.text).toContain('[PointRecord] converted to M');
-    expect(imported.text).toContain('M STN1-BS1-SHOT_1 045-07-24.2 100.0000 95.0000 1.5000/1.8000');
+    expect(imported.text).toContain(
+      'M STN1-BS1-SHOT_1 045-07-24.2 100.0000 095-00-00.0 1.5000/1.8000',
+    );
 
     const parsed = parseInput(imported.text);
     expect(parsed.stations.STN1).toBeDefined();
@@ -182,7 +184,9 @@ describe('Phase 2 external importers', () => {
     expect(imported.notice?.detailLines[1]).toContain('Warnings: 2');
     expect(imported.text).toContain("C STN1 5000.0000 1000.0000 100.0000 'SETUP");
     expect(imported.text).toContain('# Imported source line 4 [SS] converted to M');
-    expect(imported.text).toContain('M STN1-BS1-P1 045-07-24.2 100.0000 95.0000 1.5000/1.8000');
+    expect(imported.text).toContain(
+      'M STN1-BS1-P1 045-07-24.2 100.0000 095-00-00.0 1.5000/1.8000',
+    );
     expect(imported.text).toContain('# Imported source line 5 [SS] converted to B');
     expect(imported.text).toContain('B STN1 P2 135.0000');
     expect(imported.text).toContain('# Imported source line 5 [SS] converted to D');

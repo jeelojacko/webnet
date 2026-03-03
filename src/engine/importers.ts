@@ -354,6 +354,11 @@ const formatHiHt = (hiM?: number, htM?: number): string | undefined =>
     ? `${formatNumber(hiM ?? 0, 4)}/${formatNumber(htM ?? 0, 4)}`
     : undefined;
 
+const formatImportedVerticalValue = (
+  verticalMode: 'zenith' | 'delta-h',
+  verticalValue: number,
+): string => (verticalMode === 'zenith' ? toDmsString(verticalValue) : formatNumber(verticalValue, 4));
+
 const buildRecordComment = (record: ImportedRecordBase): string | null => {
   if (record.sourceLine == null && !record.sourceCode && !record.note) return null;
   const parts: string[] = ['Imported source'];
@@ -457,7 +462,7 @@ export const serializeImportedObservationRecord = (
       observation.fromId,
       observation.toId,
       formatNumber(observation.distanceM, 4),
-      formatNumber(observation.verticalValue, 4),
+      formatImportedVerticalValue(observation.verticalMode, observation.verticalValue),
     ];
     const hiHt = formatHiHt(observation.hiM, observation.htM);
     if (hiHt) tokens.push(hiHt);
@@ -469,7 +474,7 @@ export const serializeImportedObservationRecord = (
       'V',
       observation.fromId,
       observation.toId,
-      formatNumber(observation.verticalValue, 4),
+      formatImportedVerticalValue(observation.verticalMode, observation.verticalValue),
     ];
     const hiHt = formatHiHt(observation.hiM, observation.htM);
     if (hiHt) tokens.push(hiHt);
@@ -502,7 +507,7 @@ export const serializeImportedObservationRecord = (
       formatNumber(observation.distanceM, 4),
     ];
     if (observation.verticalMode && observation.verticalValue != null) {
-      tokens.push(formatNumber(observation.verticalValue, 4));
+      tokens.push(formatImportedVerticalValue(observation.verticalMode, observation.verticalValue));
     }
     const hiHt = formatHiHt(observation.hiM, observation.htM);
     if (hiHt) tokens.push(hiHt);

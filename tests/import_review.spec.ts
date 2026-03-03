@@ -13,6 +13,7 @@ import {
   isImportReviewMtaItem,
   isImportReviewRawMeasurementItem,
   moveImportReviewItem,
+  reorderImportReviewItemWithinGroup,
 } from '../src/engine/importReview';
 
 const jobXmlTrimbleFixture = readFileSync(
@@ -69,10 +70,10 @@ describe('import review workflow', () => {
     expect(text).toContain('.ORDER EN');
     expect(text).toContain('# CONTROL');
     expect(text).toContain('# SETUP 1');
-    expect(text).toContain('M 1-1000-1000 000-00-00.0 4.7265 90.0100 1.6500/1.5500');
-    expect(text).toContain('M 1-1000-1000 000-00-00.0 4.7265 90.0150 1.6500/1.5500');
+    expect(text).toContain('M 1-1000-1000 000-00-00.0 4.7265 090-00-36.0 1.6500/1.5500');
+    expect(text).toContain('M 1-1000-1000 000-00-00.0 4.7265 090-00-54.0 1.6500/1.5500');
     expect(text).toContain('C 1000 0.9957 2.0628 0.0000');
-    expect(text).toContain('M 1-1000-2 286-51-24.7 22.2574 89.9566 1.6500/1.6920');
+    expect(text).toContain('M 1-1000-2 286-51-24.7 22.2574 089-57-23.8 1.6500/1.6920');
     expect(text).not.toContain('CHK1');
     expect(text).not.toContain('source line');
     expect(text).not.toContain('# Import Trace');
@@ -163,7 +164,7 @@ describe('import review workflow', () => {
     expect(text).toContain('# TARGET CHK1');
     expect(text).toContain('# AVERAGE SET');
     expect(text).toContain('# CUSTOM SETUP 1');
-    expect(text.match(/M 1-1000-2 286-51-24.7 22.2574 89.9566 1.6500\/1.6920/g)).toHaveLength(2);
+    expect(text.match(/M 1-1000-2 286-51-24.7 22.2574 089-57-23.8 1.6500\/1.6920/g)).toHaveLength(2);
   });
 
   it('supports empty setup-group staging before rows are moved into it', () => {
@@ -200,5 +201,36 @@ describe('import review workflow', () => {
     expect(text).toContain('# CUSTOM SETUP 1');
     expect(text).toContain('M 1-1000-2 286-51-24.7 22.2574');
     expect(text).toContain('D 1-1000 4.7265');
+  });
+
+  it('formats imported zenith values as DMS and supports manual row ordering within a setup group', () => {
+    const imported = importExternalInput(
+      jobXmlTrimbleFixture,
+      'jobxml_trimble_station_setup_sample.jxl',
+    );
+    const baseModel = buildImportReviewModel(imported.dataset!);
+    const displayedRows = buildImportReviewDisplayTextMap(
+      imported.dataset!,
+      baseModel,
+      'clean-webnet',
+    );
+
+    expect(displayedRows['observation:0']).toContain('090-00-36.0');
+    expect(displayedRows['observation:1']).toContain('090-00-54.0');
+
+    const movedUpModel = reorderImportReviewItemWithinGroup(baseModel, 'observation:4', 'up');
+    const text = buildImportReviewText(imported.dataset!, movedUpModel, {
+      includedItemIds: new Set(movedUpModel.items.map((item) => item.id)),
+      groupComments: {
+        control: 'CONTROL',
+        'setup:1:bs:1000': 'SETUP 1',
+      },
+      preset: 'ts-direction-set',
+    });
+
+    expect(text).toContain('D 1-1000 4.7265');
+    expect(text.indexOf('M 1-1000-2 286-51-24.7 22.2574')).toBeLessThan(
+      text.indexOf('M 1-1000-2 286-51-21.9 22.2576'),
+    );
   });
 });

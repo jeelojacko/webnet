@@ -30,6 +30,7 @@ interface ImportReviewModalProps {
   onInsertCommentBelow: (_itemId: string) => void;
   onCreateSetupGroup: (_itemId: string) => void;
   onMoveRow: (_itemId: string, _groupKey: string) => void;
+  onReorderRow: (_itemId: string, _direction: 'up' | 'down') => void;
   onRemoveGroup: (_groupKey: string) => void;
   onRemoveRow: (_itemId: string) => void;
   onCancel: () => void;
@@ -89,6 +90,7 @@ const ImportReviewModal: React.FC<ImportReviewModalProps> = ({
   onInsertCommentBelow,
   onCreateSetupGroup,
   onMoveRow,
+  onReorderRow,
   onRemoveGroup,
   onRemoveRow,
   onCancel,
@@ -238,6 +240,20 @@ const ImportReviewModal: React.FC<ImportReviewModalProps> = ({
                               className="border border-slate-600 bg-slate-950 px-2 py-1 text-[11px] uppercase tracking-wide text-slate-200 hover:border-cyan-400"
                             >
                               Comment Below
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => onReorderRow(item.id, 'up')}
+                              className="border border-slate-600 bg-slate-950 px-2 py-1 text-[11px] uppercase tracking-wide text-slate-200 hover:border-cyan-400"
+                            >
+                              Move Up
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => onReorderRow(item.id, 'down')}
+                              className="border border-slate-600 bg-slate-950 px-2 py-1 text-[11px] uppercase tracking-wide text-slate-200 hover:border-cyan-400"
+                            >
+                              Move Down
                             </button>
                             {item.groupKey !== 'control' && (
                               <button

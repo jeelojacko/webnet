@@ -26,7 +26,9 @@ describe('Phase 3 external importers', () => {
     expect(imported.notice?.detailLines[1]).toContain('Warnings: 1');
     expect(imported.text).toContain("C STN1 5000.0000 1000.0000 100.0000 'SETUP");
     expect(imported.text).toContain('# Imported source line 7 [SS] converted to M');
-    expect(imported.text).toContain('M STN1-BS1-P1 045-12-34.0 100.0000 95.0000 1.5000/1.8000');
+    expect(imported.text).toContain(
+      'M STN1-BS1-P1 045-12-34.0 100.0000 095-00-00.0 1.5000/1.8000',
+    );
     expect(imported.text).toContain('# Imported source line 8 [TR] converted to B');
     expect(imported.text).toContain('B STN1 P2 135.0000');
     expect(imported.text).toContain('# Imported source line 8 [TR] converted to D');
@@ -85,7 +87,9 @@ describe('Phase 3 external importers', () => {
       'PH GPS_3 44.653429353 -63.582441392 123.4560 0.0080 0.0100 0.0150 -0.2500',
     );
     expect(imported.text).toContain('# Imported source line 33 [Observation] converted to M');
-    expect(imported.text).toContain('M STN3-BS3-P4 045-07-24.2 80.0000 92.5000 1.6000/1.7000');
+    expect(imported.text).toContain(
+      'M STN3-BS3-P4 045-07-24.2 80.0000 092-30-00.0 1.6000/1.7000',
+    );
 
     const parsed = parseInput(imported.text);
     expect(parsed.stations.STN3).toBeDefined();
