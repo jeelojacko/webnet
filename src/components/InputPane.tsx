@@ -98,7 +98,7 @@ const InputPane: React.FC<InputPaneProps> = ({
   return (
     <div className="border-r border-slate-700 flex flex-col min-w-[260px] flex-none h-full">
       <div className="bg-slate-800 px-4 py-2 text-xs font-semibold text-slate-400 flex justify-between items-center">
-        <span>INPUT DATA (.dat / OPUS)</span> <FileText size={14} />
+        <span>INPUT DATA (.dat / imported reports)</span> <FileText size={14} />
       </div>
       {importNotice && (
         <div className="border-b border-cyan-900/60 bg-cyan-950/30 px-4 py-3 text-[11px] text-cyan-100">
@@ -131,7 +131,7 @@ const InputPane: React.FC<InputPaneProps> = ({
           className="bg-slate-950 text-slate-600 text-right pr-2 pt-4 font-mono text-xs select-none w-10 overflow-hidden"
           style={{ lineHeight: '1.625' }} // Match leading-relaxed of textarea (approx 1.625)
         >
-          {lines.map(n => (
+          {lines.map((n) => (
             <div key={n} className="leading-relaxed">
               {n}
             </div>

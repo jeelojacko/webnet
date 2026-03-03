@@ -30,7 +30,7 @@ import {
 } from './engine/autoAdjust';
 import { buildIndustryStyleListingText } from './engine/industryListing';
 import { buildLandXmlText } from './engine/landxml';
-import { importExternalInput } from './engine/opus';
+import { importExternalInput, type ImportedInputNotice } from './engine/importers';
 import { isPreanalysisWhatIfCandidate } from './engine/preanalysis';
 import type {
   AdjustmentResult,
@@ -610,10 +610,7 @@ const PROJECT_OPTION_TABS: Array<{ id: ProjectOptionsTab; label: string }> = [
  ****************************/
 const App: React.FC = () => {
   const [input, setInput] = useState<string>(DEFAULT_INPUT);
-  const [importNotice, setImportNotice] = useState<{
-    title: string;
-    detailLines: string[];
-  } | null>(null);
+  const [importNotice, setImportNotice] = useState<ImportedInputNotice | null>(null);
   const [result, setResult] = useState<AdjustmentResult | null>(null);
   const [runDiagnostics, setRunDiagnostics] = useState<RunDiagnostics | null>(null);
   const [runElapsedMs, setRunElapsedMs] = useState<number | null>(null);
@@ -3526,23 +3523,7 @@ const App: React.FC = () => {
       const text = typeof reader.result === 'string' ? reader.result : '';
       const imported = importExternalInput(text, file.name);
       setInput(imported.text);
-      if (imported.detected && imported.opus) {
-        const opus = imported.opus;
-        const recordType = opus.ellipsoidHeightM != null ? 'PH' : 'P';
-        const covarianceLabel =
-          opus.covariance.source === 'report-correlation'
-            ? `corrEN=${(opus.covariance.corrEN ?? 0).toFixed(4)}`
-            : 'diagonal-only';
-        setImportNotice({
-          title: `Imported ${opus.metadata.solutionType.toUpperCase()} report`,
-          detailLines: [
-            `Station ${opus.stationId} converted to ${recordType} control input from ${file.name}.`,
-            `Reference frame: ${opus.metadata.referenceFrame ?? 'n/a'}. Covariance: ${covarianceLabel}.`,
-          ],
-        });
-      } else {
-        setImportNotice(null);
-      }
+      setImportNotice(imported.notice ?? null);
       setExcludedIds(new Set());
       setOverrides({});
       setClusterReviewDecisions({});
@@ -4304,7 +4285,7 @@ const App: React.FC = () => {
           <input
             ref={fileInputRef}
             type="file"
-            accept=".dat,.txt,.sum,.rpt"
+            accept=".dat,.txt,.sum,.rpt,.xml"
             className="hidden"
             onChange={handleFileChange}
           />

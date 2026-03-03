@@ -3,26 +3,26 @@ import { describe, expect, it } from 'vitest';
 
 import InputPane from '../src/components/InputPane';
 
-describe('InputPane OPUS import notice', () => {
-  it('renders the OPUS import banner when an imported report is loaded', () => {
+describe('InputPane import notice', () => {
+  it('renders a generic external-import banner when imported input is loaded', () => {
     const html = renderToStaticMarkup(
       <InputPane
         input={'P TEST 1 2 3'}
         onChange={() => {}}
         importNotice={{
-          title: 'Imported OPUS report',
+          title: 'Imported JobXML dataset',
           detailLines: [
-            'Station ALPHA123 converted to P control input from opus_sample.txt.',
-            'Reference frame: ITRF2020(EPOCH:2023.5000). Covariance: corrEN=0.1250.',
+            'Imported 42 records from sample.jobxml into normalized WebNet input.',
+            'Warnings: 1 unsupported code left in comment form for traceability.',
           ],
         }}
         onClearImportNotice={() => {}}
       />,
     );
 
-    expect(html).toContain('Imported OPUS report');
-    expect(html).toContain('Station ALPHA123 converted to P control input from opus_sample.txt.');
-    expect(html).toContain('Covariance: corrEN=0.1250.');
+    expect(html).toContain('Imported JobXML dataset');
+    expect(html).toContain('Imported 42 records from sample.jobxml into normalized WebNet input.');
+    expect(html).toContain('Warnings: 1 unsupported code left in comment form for traceability.');
     expect(html).toContain('Dismiss');
   });
 });

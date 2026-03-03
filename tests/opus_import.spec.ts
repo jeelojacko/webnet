@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
+import { getExternalImporters } from '../src/engine/importers';
 import { importExternalInput, parseOpusReport } from '../src/engine/opus';
 import { parseInput } from '../src/engine/parse';
 
@@ -9,6 +10,10 @@ const fixtureWithCorrelation = `${fixture}\nE/N CORRELATION: -0.2500\n`;
 const opusFixture = readFileSync('tests/fixtures/opus_sample.txt', 'utf-8');
 
 describe('OPUS import', () => {
+  it('registers OPUS as a generic external importer', () => {
+    expect(getExternalImporters().map((importer) => importer.id)).toContain('opus-report');
+  });
+
   it('parses OPUS-RS report coordinates, sigmas, and metadata', () => {
     const parsed = parseOpusReport(fixture, 'opus_rs_sample.txt');
     expect(parsed).not.toBeNull();
@@ -31,7 +36,10 @@ describe('OPUS import', () => {
   it('converts OPUS reports into a WebNet PH record that the parser accepts', () => {
     const imported = importExternalInput(fixture, 'opus_rs_sample.txt');
     expect(imported.detected).toBe(true);
-    expect(imported.format).toBe('opus-report');
+    expect(imported.format).toBe('external-import');
+    expect(imported.importerId).toBe('opus-report');
+    expect(imported.notice?.title).toBe('Imported OPUS-RS report');
+    expect(imported.dataset?.controlStations).toHaveLength(1);
     expect(imported.text).toContain('# Imported from NGS OPUS-RS solution report');
     expect(imported.text).toContain(
       'PH NOVA0010 44.653429353 -63.582441392 123.4560 0.0080 0.0100 0.0150 0.0000',
@@ -78,6 +86,9 @@ describe('OPUS import', () => {
 
     const imported = importExternalInput(opusFixture, 'opus_sample.txt');
     expect(imported.summary).toContain('Imported OPUS report as ALPHA123');
+    expect(imported.notice?.detailLines[0]).toContain(
+      'Station ALPHA123 converted to P control input',
+    );
     expect(imported.text).toContain(
       'P ALPHA123 35.209602192 -80.753429353 250.1230 0.0120 0.0140 0.0210 0.1250',
     );
