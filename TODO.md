@@ -221,8 +221,9 @@
       - [x] Phase 4A: add import-review staging model so external imports open in a review dialog instead of writing directly into the input editor
       - [x] Phase 4B: build grouped import-review UI with control block at top, setup/station grouping where available, per-row source type/source line visibility, include-exclude toggles, and warning/error section
       - [x] Phase 4C: support editable/importable comment rows (for example `# CONTROL`, `# SETUP 1`, custom user notes) and serialize only included reviewed rows into clean editor text without raw trace comments
-      - [~] Phase 4D: add importer grouping metadata/helpers across JobXML/FieldGenius/Carlson/TDS/DBX so setup-aware sources can render meaningful group labels in the import-review UI
+      - [x] Phase 4D: add importer grouping metadata/helpers across JobXML/FieldGenius/Carlson/TDS/DBX so setup-aware sources can render meaningful group labels in the import-review UI
       - [x] Phase 4E: add regression coverage for staged import review, exclusion behavior, and clean final text generation
+      - [x] Phase 4F: add row-level editable imported text plus output-style presets (`Clean WebNet`, `Field Grouped`, `TS Direction Set`) so users can tune final grouped import text before committing it to the editor
   - [ ] Leveling improvements (highest impact -> lowest):
     - [ ] Add dedicated differential leveling loop-closure check workflow (independent of traverse diagnostics)
       - [ ] Phase 1: detect and enumerate leveling loops from `L`/level-sensitive records with station-path traceability

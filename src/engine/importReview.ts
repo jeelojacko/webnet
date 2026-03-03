@@ -1,3 +1,4 @@
+import { DEG_TO_RAD, radToDmsStr } from './angles';
 import type {
   ImportedControlStationRecord,
   ImportedDataset,
@@ -10,22 +11,30 @@ import {
 } from './importers';
 
 export type ImportReviewItemKind = 'control' | 'observation';
+export type ImportReviewGroupKind = 'control' | 'setup' | 'resection' | 'gps';
+export type ImportReviewOutputPreset = 'clean-webnet' | 'field-grouped' | 'ts-direction-set';
 
 export interface ImportReviewItem {
   id: string;
   kind: ImportReviewItemKind;
   index: number;
   groupKey: string;
-  importedData: string;
   sourceType: string;
   sourceLine?: number;
   sourceCode?: string;
+  setupId?: string;
+  backsightId?: string;
+  targetId?: string;
+  stationId?: string;
 }
 
 export interface ImportReviewGroup {
   key: string;
+  kind: ImportReviewGroupKind;
   label: string;
   defaultComment: string;
+  setupId?: string;
+  backsightId?: string;
   itemIds: string[];
 }
 
@@ -36,36 +45,32 @@ export interface ImportReviewModel {
   errors: ImportedTraceEntry[];
 }
 
+export interface BuildImportReviewTextOptions {
+  includedItemIds: Set<string>;
+  groupComments?: Record<string, string>;
+  rowOverrides?: Record<string, string>;
+  preset?: ImportReviewOutputPreset;
+}
+
 const prettifyToken = (value: string): string =>
   value
     .replace(/-/g, ' ')
     .replace(/_/g, ' ')
     .replace(/\b\w/g, (char) => char.toUpperCase());
 
+const formatLinear = (value: number): string => value.toFixed(4);
+
+const formatAngleDms = (valueDeg: number): string => radToDmsStr(valueDeg * DEG_TO_RAD);
+
+const splitOverrideLines = (value: string | undefined): string[] =>
+  value
+    ?.split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0) ?? [];
+
 const deriveObservationSetupId = (observation: ImportedObservationRecord): string => {
   if (observation.kind === 'measurement' || observation.kind === 'angle') return observation.atId;
   return observation.fromId;
-};
-
-const deriveObservationGroup = (
-  observation: ImportedObservationRecord,
-): { key: string; label: string; defaultComment: string } => {
-  if (observation.kind === 'gnss-vector') {
-    const mode = observation.gpsMode === 'sideshot' ? 'GPS Sideshot' : 'GPS Network';
-    const key = `gps:${observation.gpsMode ?? 'network'}:${observation.fromId}`;
-    return {
-      key,
-      label: `${mode} ${observation.fromId}`,
-      defaultComment: `${mode.toUpperCase()} ${observation.fromId}`,
-    };
-  }
-
-  const setupId = deriveObservationSetupId(observation);
-  return {
-    key: `setup:${setupId}`,
-    label: `Setup ${setupId}`,
-    defaultComment: `SETUP ${setupId}`,
-  };
 };
 
 const deriveSourceType = (
@@ -83,9 +88,149 @@ const deriveSourceType = (
   return prettifyToken(record.kind);
 };
 
-const previewLineForObservation = (observation: ImportedObservationRecord): string => {
-  const lines = serializeImportedObservationRecord(observation).filter((line) => !line.startsWith('.'));
-  return lines.join(' | ');
+const serializeObservationPreview = (
+  observation: ImportedObservationRecord,
+  preset: ImportReviewOutputPreset,
+): string => {
+  if (preset !== 'ts-direction-set') {
+    return serializeImportedObservationRecord(observation)
+      .filter((line) => !line.startsWith('.'))
+      .join(' | ');
+  }
+
+  if (observation.kind === 'measurement') {
+    const tokens = [
+      'DM',
+      observation.toId,
+      formatAngleDms(observation.angleDeg),
+      formatLinear(observation.distanceM),
+    ];
+    if (observation.verticalMode && observation.verticalValue != null) {
+      tokens.push(formatLinear(observation.verticalValue));
+    }
+    if (observation.hiM != null || observation.htM != null) {
+      tokens.push(`${formatLinear(observation.hiM ?? 0)}/${formatLinear(observation.htM ?? 0)}`);
+    }
+    return tokens.join(' ');
+  }
+
+  if (observation.kind === 'angle') {
+    return ['DN', observation.toId, formatAngleDms(observation.angleDeg)].join(' ');
+  }
+
+  return serializeImportedObservationRecord(observation)
+    .filter((line) => !line.startsWith('.'))
+    .join(' | ');
+};
+
+const buildGroupMeta = (
+  importerId: string,
+  observation: ImportedObservationRecord,
+): Omit<ImportReviewGroup, 'itemIds'> => {
+  if (observation.kind === 'gnss-vector') {
+    const mode = observation.gpsMode === 'sideshot' ? 'GPS Sideshot' : 'GPS Network';
+    return {
+      key: `gps:${observation.gpsMode ?? 'network'}:${observation.fromId}`,
+      kind: 'gps',
+      label: `${mode} ${observation.fromId}`,
+      defaultComment: `${mode.toUpperCase()} ${observation.fromId}`,
+      setupId: observation.fromId,
+    };
+  }
+
+  const setupId = deriveObservationSetupId(observation);
+  const isSetupAwareImporter = new Set([
+    'jobxml',
+    'fieldgenius-raw',
+    'carlson-rw5',
+    'tds-raw',
+    'dbx-export',
+  ]).has(importerId);
+
+  if (
+    isSetupAwareImporter &&
+    (observation.kind === 'measurement' || observation.kind === 'angle') &&
+    observation.toId === observation.fromId
+  ) {
+    return {
+      key: `resection:${setupId}:bs:${observation.fromId}`,
+      kind: 'resection',
+      label: `Resection ${setupId}`,
+      defaultComment: `RESECTION ${setupId}`,
+      setupId,
+      backsightId: observation.fromId,
+    };
+  }
+
+  if (
+    isSetupAwareImporter &&
+    (observation.kind === 'measurement' || observation.kind === 'angle') &&
+    observation.fromId
+  ) {
+    return {
+      key: `setup:${setupId}:bs:${observation.fromId}`,
+      kind: 'setup',
+      label: `Setup ${setupId} (BS ${observation.fromId})`,
+      defaultComment: `SETUP ${setupId}`,
+      setupId,
+      backsightId: observation.fromId,
+    };
+  }
+
+  return {
+    key: `setup:${setupId}`,
+    kind: 'setup',
+    label: `Setup ${setupId}`,
+    defaultComment: `SETUP ${setupId}`,
+    setupId,
+  };
+};
+
+const makeObservationItem = (
+  observation: ImportedObservationRecord,
+  index: number,
+  groupKey: string,
+): ImportReviewItem => {
+  if (observation.kind === 'measurement' || observation.kind === 'angle') {
+    return {
+      id: `observation:${index}`,
+      kind: 'observation',
+      index,
+      groupKey,
+      sourceType: deriveSourceType('observation', observation),
+      sourceLine: observation.sourceLine,
+      sourceCode: observation.sourceCode,
+      setupId: observation.atId,
+      backsightId: observation.fromId,
+      targetId: observation.toId,
+    };
+  }
+
+  if (observation.kind === 'gnss-vector') {
+    return {
+      id: `observation:${index}`,
+      kind: 'observation',
+      index,
+      groupKey,
+      sourceType: deriveSourceType('observation', observation),
+      sourceLine: observation.sourceLine,
+      sourceCode: observation.sourceCode,
+      setupId: observation.fromId,
+      targetId: observation.toId,
+    };
+  }
+
+  return {
+    id: `observation:${index}`,
+    kind: 'observation',
+    index,
+    groupKey,
+    sourceType: deriveSourceType('observation', observation),
+    sourceLine: observation.sourceLine,
+    sourceCode: observation.sourceCode,
+    setupId: observation.fromId,
+    targetId: observation.toId,
+  };
 };
 
 export const buildImportReviewModel = (dataset: ImportedDataset): ImportReviewModel => {
@@ -103,6 +248,7 @@ export const buildImportReviewModel = (dataset: ImportedDataset): ImportReviewMo
 
   const controlGroup = ensureGroup({
     key: 'control',
+    kind: 'control',
     label: 'Control',
     defaultComment: 'CONTROL',
   });
@@ -114,31 +260,21 @@ export const buildImportReviewModel = (dataset: ImportedDataset): ImportReviewMo
       kind: 'control',
       index,
       groupKey: controlGroup.key,
-      importedData: serializeImportedControlStationRecord(station),
       sourceType: deriveSourceType('control', station),
       sourceLine: station.sourceLine,
       sourceCode: station.sourceCode,
+      stationId: station.stationId,
     };
     items.push(item);
     controlGroup.itemIds.push(id);
   });
 
   dataset.observations.forEach((observation, index) => {
-    const groupMeta = deriveObservationGroup(observation);
+    const groupMeta = buildGroupMeta(dataset.importerId, observation);
     const group = ensureGroup(groupMeta);
-    const id = `observation:${index}`;
-    const item: ImportReviewItem = {
-      id,
-      kind: 'observation',
-      index,
-      groupKey: group.key,
-      importedData: previewLineForObservation(observation),
-      sourceType: deriveSourceType('observation', observation),
-      sourceLine: observation.sourceLine,
-      sourceCode: observation.sourceCode,
-    };
+    const item = makeObservationItem(observation, index, group.key);
     items.push(item);
-    group.itemIds.push(id);
+    group.itemIds.push(item.id);
   });
 
   return {
@@ -148,11 +284,6 @@ export const buildImportReviewModel = (dataset: ImportedDataset): ImportReviewMo
     errors: dataset.trace.filter((entry) => entry.level === 'error'),
   };
 };
-
-export interface BuildImportReviewTextOptions {
-  includedItemIds: Set<string>;
-  groupComments?: Record<string, string>;
-}
 
 const appendObservationLines = (
   lines: string[],
@@ -189,6 +320,71 @@ const appendObservationLines = (
   });
 };
 
+const getPresetRowLines = (
+  observation: ImportedObservationRecord,
+  preset: ImportReviewOutputPreset,
+): string[] => {
+  if (preset !== 'ts-direction-set') {
+    return serializeImportedObservationRecord(observation);
+  }
+
+  if (observation.kind === 'measurement') {
+    const line = serializeObservationPreview(observation, preset);
+    return [line];
+  }
+
+  if (observation.kind === 'angle') {
+    return [serializeObservationPreview(observation, preset)];
+  }
+
+  return serializeImportedObservationRecord(observation);
+};
+
+export const buildImportReviewDisplayTextMap = (
+  dataset: ImportedDataset,
+  model: ImportReviewModel,
+  preset: ImportReviewOutputPreset,
+  rowOverrides: Record<string, string> = {},
+): Record<string, string> => {
+  const output: Record<string, string> = {};
+  model.items.forEach((item) => {
+    const override = rowOverrides[item.id];
+    if (override != null) {
+      output[item.id] = override;
+      return;
+    }
+    if (item.kind === 'control') {
+      output[item.id] = serializeImportedControlStationRecord(dataset.controlStations[item.index]);
+      return;
+    }
+    output[item.id] = serializeObservationPreview(dataset.observations[item.index], preset);
+  });
+  return output;
+};
+
+const appendPresetObservationLines = (
+  lines: string[],
+  observation: ImportedObservationRecord,
+  preset: ImportReviewOutputPreset,
+  overrideLines: string[] | undefined,
+  state: {
+    currentDeltaMode: 'delta-h' | 'zenith' | null;
+    currentGpsMode: 'network' | 'sideshot' | null;
+  },
+) => {
+  if (overrideLines && overrideLines.length > 0) {
+    overrideLines.forEach((line) => lines.push(line));
+    return;
+  }
+
+  if (preset === 'ts-direction-set' && (observation.kind === 'measurement' || observation.kind === 'angle')) {
+    getPresetRowLines(observation, preset).forEach((line) => lines.push(line));
+    return;
+  }
+
+  appendObservationLines(lines, observation, state);
+};
+
 export const buildImportReviewText = (
   dataset: ImportedDataset,
   model: ImportReviewModel,
@@ -196,15 +392,17 @@ export const buildImportReviewText = (
 ): string => {
   const lines: string[] = [];
   const itemLookup = new Map(model.items.map((item) => [item.id, item]));
+  const preset = options.preset ?? 'clean-webnet';
   const state = {
     currentDeltaMode: null as 'delta-h' | 'zenith' | null,
     currentGpsMode: null as 'network' | 'sideshot' | null,
   };
 
-  lines.push('.UNITS M');
-  if (dataset.controlStations.some((station) => station.coordinateMode === 'local')) {
-    lines.push('.ORDER EN');
+  if (preset === 'ts-direction-set') {
+    lines.push('.2D');
   }
+  lines.push('.UNITS M');
+  lines.push('.ORDER EN');
 
   model.groups.forEach((group) => {
     const includedItems = group.itemIds
@@ -218,12 +416,70 @@ export const buildImportReviewText = (
     if (lines.length > 0) lines.push('');
     if (comment) lines.push(`# ${comment}`);
 
+    if (
+      preset === 'ts-direction-set' &&
+      group.kind !== 'control' &&
+      group.backsightId &&
+      includedItems.some((item) => {
+        const observation = dataset.observations[item.index];
+        return observation.kind === 'measurement' || observation.kind === 'angle';
+      })
+    ) {
+      const directionItems = includedItems.filter((item) => {
+        const observation = dataset.observations[item.index];
+        return observation.kind === 'measurement' || observation.kind === 'angle';
+      });
+      const otherItems = includedItems.filter((item) => {
+        const observation = dataset.observations[item.index];
+        return observation.kind !== 'measurement' && observation.kind !== 'angle';
+      });
+
+      otherItems.forEach((item) => {
+        if (item.kind === 'control') {
+          lines.push(options.rowOverrides?.[item.id] ?? serializeImportedControlStationRecord(dataset.controlStations[item.index]));
+          return;
+        }
+        appendPresetObservationLines(
+          lines,
+          dataset.observations[item.index],
+          preset,
+          splitOverrideLines(options.rowOverrides?.[item.id]),
+          state,
+        );
+      });
+
+      lines.push(`DB ${group.setupId ?? includedItems[0]?.setupId ?? ''}`.trimEnd());
+      lines.push(`DN ${group.backsightId} 000-00-00`);
+      directionItems.forEach((item) => {
+        appendPresetObservationLines(
+          lines,
+          dataset.observations[item.index],
+          preset,
+          splitOverrideLines(options.rowOverrides?.[item.id]),
+          state,
+        );
+      });
+      lines.push('DE');
+      return;
+    }
+
     includedItems.forEach((item) => {
       if (item.kind === 'control') {
-        lines.push(serializeImportedControlStationRecord(dataset.controlStations[item.index]));
+        const override = options.rowOverrides?.[item.id];
+        if (override?.trim()) {
+          splitOverrideLines(override).forEach((line) => lines.push(line));
+        } else {
+          lines.push(serializeImportedControlStationRecord(dataset.controlStations[item.index]));
+        }
         return;
       }
-      appendObservationLines(lines, dataset.observations[item.index], state);
+      appendPresetObservationLines(
+        lines,
+        dataset.observations[item.index],
+        preset,
+        splitOverrideLines(options.rowOverrides?.[item.id]),
+        state,
+      );
     });
   });
 

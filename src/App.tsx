@@ -37,9 +37,11 @@ import {
   type ImportedInputNotice,
 } from './engine/importers';
 import {
+  buildImportReviewDisplayTextMap,
   buildImportReviewModel,
   buildImportReviewText,
   type ImportReviewModel,
+  type ImportReviewOutputPreset,
 } from './engine/importReview';
 import { isPreanalysisWhatIfCandidate } from './engine/preanalysis';
 import type {
@@ -421,6 +423,8 @@ type ImportReviewState = {
   reviewModel: ImportReviewModel;
   excludedItemIds: Set<string>;
   groupComments: Record<string, string>;
+  rowOverrides: Record<string, string>;
+  preset: ImportReviewOutputPreset;
 };
 
 const SETTINGS_TOOLTIPS = {
@@ -3554,6 +3558,8 @@ const App: React.FC = () => {
           reviewModel,
           excludedItemIds: new Set(),
           groupComments,
+          rowOverrides: {},
+          preset: 'clean-webnet',
         });
       } else {
         setInput(imported.text);
@@ -3602,6 +3608,24 @@ const App: React.FC = () => {
     );
   };
 
+  const handleImportReviewRowTextChange = (itemId: string, value: string) => {
+    setImportReviewState((prev) =>
+      prev
+        ? {
+            ...prev,
+            rowOverrides: {
+              ...prev.rowOverrides,
+              [itemId]: value,
+            },
+          }
+        : prev,
+    );
+  };
+
+  const handleImportReviewPresetChange = (preset: ImportReviewOutputPreset) => {
+    setImportReviewState((prev) => (prev ? { ...prev, preset } : prev));
+  };
+
   const handleCancelImportReview = () => {
     setImportReviewState(null);
   };
@@ -3619,6 +3643,8 @@ const App: React.FC = () => {
       {
         includedItemIds,
         groupComments: importReviewState.groupComments,
+        rowOverrides: importReviewState.rowOverrides,
+        preset: importReviewState.preset,
       },
     );
     setInput(nextInput);
@@ -3629,6 +3655,16 @@ const App: React.FC = () => {
     setClusterReviewDecisions({});
     setActiveClusterApprovedMerges([]);
   };
+
+  const importReviewDisplayedRows = useMemo(() => {
+    if (!importReviewState) return {};
+    return buildImportReviewDisplayTextMap(
+      importReviewState.dataset,
+      importReviewState.reviewModel,
+      importReviewState.preset,
+      importReviewState.rowOverrides,
+    );
+  }, [importReviewState]);
 
   const solveCore = (
     excludeSet: Set<number>,
@@ -6137,10 +6173,14 @@ const App: React.FC = () => {
           title={importReviewState.notice.title}
           detailLines={importReviewState.notice.detailLines}
           reviewModel={importReviewState.reviewModel}
+          displayedRows={importReviewDisplayedRows}
           excludedItemIds={importReviewState.excludedItemIds}
           groupComments={importReviewState.groupComments}
+          preset={importReviewState.preset}
+          onPresetChange={handleImportReviewPresetChange}
           onToggleExclude={handleImportReviewToggleExclude}
           onCommentChange={handleImportReviewCommentChange}
+          onRowTextChange={handleImportReviewRowTextChange}
           onCancel={handleCancelImportReview}
           onImport={handleApplyImportReview}
         />
