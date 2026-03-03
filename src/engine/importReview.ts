@@ -73,6 +73,9 @@ const splitOverrideLines = (value: string | undefined): string[] =>
     .map((line) => line.trim())
     .filter((line) => line.length > 0) ?? [];
 
+const compareImportTokens = (left: string | undefined, right: string | undefined): number =>
+  (left ?? '').localeCompare(right ?? '', undefined, { numeric: true, sensitivity: 'base' });
+
 const deriveObservationSetupId = (observation: ImportedObservationRecord): string => {
   if (observation.kind === 'measurement' || observation.kind === 'angle') return observation.atId;
   return observation.fromId;
@@ -363,6 +366,34 @@ export const duplicateImportReviewItem = (
   return nextModel;
 };
 
+export const createImportReviewGroupFromItem = (
+  model: ImportReviewModel,
+  itemId: string,
+  nextGroupKey: string,
+  label: string,
+  defaultComment: string,
+): ImportReviewModel => {
+  const nextModel = cloneImportReviewModel(model);
+  const item = nextModel.items.find((entry) => entry.id === itemId);
+  if (!item || item.groupKey === 'control') return nextModel;
+  const sourceGroupIndex = nextModel.groups.findIndex((group) => group.key === item.groupKey);
+  if (sourceGroupIndex < 0) return nextModel;
+  const sourceGroup = nextModel.groups[sourceGroupIndex];
+  const nextGroup: ImportReviewGroup = {
+    key: nextGroupKey,
+    kind: sourceGroup.kind === 'control' ? 'setup' : sourceGroup.kind,
+    label,
+    defaultComment,
+    setupId: item.setupId ?? sourceGroup.setupId,
+    backsightId: item.backsightId ?? sourceGroup.backsightId,
+    itemIds: [itemId],
+  };
+  sourceGroup.itemIds = sourceGroup.itemIds.filter((entry) => entry !== itemId);
+  item.groupKey = nextGroupKey;
+  nextModel.groups.splice(sourceGroupIndex + 1, 0, nextGroup);
+  return nextModel;
+};
+
 export const insertImportReviewCommentRow = (
   model: ImportReviewModel,
   afterItemId: string,
@@ -527,11 +558,59 @@ const appendPresetObservationLines = (
   appendObservationLines(lines, observation, state);
 };
 
-const resolveFieldGroupedBucket = (item: ImportReviewItem): string | null => {
+const isBacksightTargetItem = (item: ImportReviewItem, group: ImportReviewGroup): boolean =>
+  item.kind === 'observation' &&
+  Boolean(group.backsightId) &&
+  Boolean(item.targetId) &&
+  item.targetId === group.backsightId;
+
+const getFieldGroupedOrderRank = (item: ImportReviewItem, group: ImportReviewGroup): number => {
+  if (item.kind !== 'observation') return 99;
+  if (isBacksightTargetItem(item, group)) {
+    if (item.sourceClassification === 'BackSight') return 0;
+    if (item.sourceClassification === 'Check') return 1;
+    if (item.sourceMethod === 'MEANTURNEDANGLE') return 2;
+    return 3;
+  }
+  if (item.sourceMethod === 'MEANTURNEDANGLE') return 2;
+  if (item.sourceClassification === 'Check') return 1;
+  return 0;
+};
+
+const orderFieldGroupedItems = (
+  items: ImportReviewItem[],
+  group: ImportReviewGroup,
+): ImportReviewItem[] => {
+  if (items.some((item) => item.kind === 'comment' || item.synthetic)) return items;
+  return [...items].sort((left, right) => {
+    if (left.kind === 'comment' || right.kind === 'comment') return 0;
+    const leftBacksight = isBacksightTargetItem(left, group) ? 0 : 1;
+    const rightBacksight = isBacksightTargetItem(right, group) ? 0 : 1;
+    if (leftBacksight !== rightBacksight) return leftBacksight - rightBacksight;
+    const targetCompare = compareImportTokens(left.targetId, right.targetId);
+    if (targetCompare !== 0) return targetCompare;
+    const leftRank = getFieldGroupedOrderRank(left, group);
+    const rightRank = getFieldGroupedOrderRank(right, group);
+    if (leftRank !== rightRank) return leftRank - rightRank;
+    const sourceLineCompare = (left.sourceLine ?? Number.MAX_SAFE_INTEGER) - (right.sourceLine ?? Number.MAX_SAFE_INTEGER);
+    if (sourceLineCompare !== 0) return sourceLineCompare;
+    return compareImportTokens(left.id, right.id);
+  });
+};
+
+const resolveFieldGroupedSection = (
+  item: ImportReviewItem,
+  group: ImportReviewGroup,
+): string | null => {
   if (item.kind !== 'observation') return null;
-  if (item.sourceMethod === 'MEANTURNEDANGLE') return 'MTA OBS';
-  if (item.sourceClassification === 'BackSight') return 'BACKSIGHT OBS';
+  if (isBacksightTargetItem(item, group) && group.backsightId) {
+    return `BACKSIGHT ${group.backsightId}`;
+  }
+  if (item.targetId) {
+    return `${group.kind === 'resection' ? 'RESECTION TARGET' : 'TARGET'} ${item.targetId}`;
+  }
   if (item.sourceClassification === 'Check') return 'CHECK OBS';
+  if (item.sourceMethod === 'MEANTURNEDANGLE') return 'MTA OBS';
   if (item.sourceMethod) return 'RAW OBS';
   return null;
 };
@@ -578,17 +657,21 @@ export const buildImportReviewText = (
       lines.push(`DN ${group.backsightId} 000-00-00`);
     }
 
-    const distinctFieldBuckets =
+    const orderedItems =
+      preset === 'field-grouped' && group.kind !== 'control'
+        ? orderFieldGroupedItems(includedItems, group)
+        : includedItems;
+    const distinctFieldSections =
       preset === 'field-grouped'
         ? new Set(
-            includedItems
-              .map((item) => resolveFieldGroupedBucket(item))
+            orderedItems
+              .map((item) => resolveFieldGroupedSection(item, group))
               .filter((value): value is string => Boolean(value)),
           )
         : new Set<string>();
-    let lastFieldBucket: string | null = null;
+    let lastFieldSection: string | null = null;
 
-    includedItems.forEach((item) => {
+    orderedItems.forEach((item) => {
       if (item.kind === 'comment') {
         const override = options.rowOverrides?.[item.id];
         const commentLines = splitOverrideLines(override ?? item.defaultText ?? '# COMMENT');
@@ -599,12 +682,12 @@ export const buildImportReviewText = (
       if (
         preset === 'field-grouped' &&
         group.kind !== 'control' &&
-        distinctFieldBuckets.size > 1
+        distinctFieldSections.size > 1
       ) {
-        const nextBucket = resolveFieldGroupedBucket(item);
-        if (nextBucket && nextBucket !== lastFieldBucket) {
-          lines.push(`# ${nextBucket}`);
-          lastFieldBucket = nextBucket;
+        const nextSection = resolveFieldGroupedSection(item, group);
+        if (nextSection && nextSection !== lastFieldSection) {
+          lines.push(`# ${nextSection}`);
+          lastFieldSection = nextSection;
         }
       }
 

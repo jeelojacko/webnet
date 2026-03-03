@@ -6,6 +6,7 @@ import {
   buildImportReviewDisplayTextMap,
   buildImportReviewModel,
   buildImportReviewText,
+  createImportReviewGroupFromItem,
   duplicateImportReviewItem,
   insertImportReviewCommentRow,
   isImportReviewMtaItem,
@@ -115,7 +116,7 @@ describe('import review workflow', () => {
     expect(text).toContain('DE');
   });
 
-  it('supports bulk MTA/raw targeting and staged duplicate/comment/move actions in field-grouped output', () => {
+  it('supports bulk MTA/raw targeting, target-based field grouping, and staged row actions', () => {
     const imported = importExternalInput(
       jobXmlTrimbleFixture,
       'jobxml_trimble_station_setup_sample.jxl',
@@ -129,13 +130,21 @@ describe('import review workflow', () => {
 
     const duplicatedModel = duplicateImportReviewItem(baseModel, 'observation:4', 'synthetic:1');
     const withCommentModel = insertImportReviewCommentRow(duplicatedModel, 'observation:4', 'synthetic:2');
-    const stagedModel = moveImportReviewItem(withCommentModel, 'synthetic:2', 'setup:1:bs:1000');
+    const movedModel = moveImportReviewItem(withCommentModel, 'synthetic:2', 'setup:1:bs:1000');
+    const stagedModel = createImportReviewGroupFromItem(
+      movedModel,
+      'observation:4',
+      'synthetic-group:1',
+      'Custom Setup 1',
+      'CUSTOM SETUP 1',
+    );
 
     const text = buildImportReviewText(imported.dataset!, stagedModel, {
       includedItemIds: new Set(stagedModel.items.map((item) => item.id)),
       groupComments: {
         control: 'CONTROL',
         'setup:1:bs:1000': 'SETUP 1',
+        'synthetic-group:1': 'CUSTOM SETUP 1',
       },
       rowOverrides: {
         'synthetic:2': '# AVERAGE SET',
@@ -143,10 +152,16 @@ describe('import review workflow', () => {
       preset: 'field-grouped',
     });
 
-    expect(text).toContain('# BACKSIGHT OBS');
-    expect(text).toContain('# RAW OBS');
-    expect(text).toContain('# MTA OBS');
+    expect(stagedModel.groups.map((group) => group.label)).toEqual([
+      'Control',
+      'Setup 1 (BS 1000)',
+      'Custom Setup 1',
+    ]);
+    expect(text).toContain('# BACKSIGHT 1000');
+    expect(text).toContain('# TARGET 2');
+    expect(text).toContain('# TARGET CHK1');
     expect(text).toContain('# AVERAGE SET');
+    expect(text).toContain('# CUSTOM SETUP 1');
     expect(text.match(/M 1-1000-2 286-51-24.7 22.2574 89.9566 1.6500\/1.6920/g)).toHaveLength(2);
   });
 });

@@ -88,6 +88,7 @@ describe('ImportReviewModal', () => {
         onRowTextChange={() => {}}
         onDuplicateRow={() => {}}
         onInsertCommentBelow={() => {}}
+        onCreateSetupGroup={() => {}}
         onMoveRow={() => {}}
         onRemoveRow={() => {}}
         onCancel={() => {}}
@@ -106,6 +107,7 @@ describe('ImportReviewModal', () => {
     expect(html).toContain('Exclude MTA Obs (1)');
     expect(html).toContain('Duplicate');
     expect(html).toContain('Comment Below');
+    expect(html).toContain('New Setup');
     expect(html).toContain('Control');
     expect(html).toContain('Setup STN1');
     expect(html).toContain('Import Diagnostics');

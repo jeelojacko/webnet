@@ -25,6 +25,7 @@ interface ImportReviewModalProps {
   onRowTextChange: (_itemId: string, _value: string) => void;
   onDuplicateRow: (_itemId: string) => void;
   onInsertCommentBelow: (_itemId: string) => void;
+  onCreateSetupGroup: (_itemId: string) => void;
   onMoveRow: (_itemId: string, _groupKey: string) => void;
   onRemoveRow: (_itemId: string) => void;
   onCancel: () => void;
@@ -79,6 +80,7 @@ const ImportReviewModal: React.FC<ImportReviewModalProps> = ({
   onRowTextChange,
   onDuplicateRow,
   onInsertCommentBelow,
+  onCreateSetupGroup,
   onMoveRow,
   onRemoveRow,
   onCancel,
@@ -205,6 +207,15 @@ const ImportReviewModal: React.FC<ImportReviewModalProps> = ({
                           >
                             Comment Below
                           </button>
+                          {item.groupKey !== 'control' && (
+                            <button
+                              type="button"
+                              onClick={() => onCreateSetupGroup(item.id)}
+                              className="border border-slate-600 bg-slate-950 px-2 py-1 text-[11px] uppercase tracking-wide text-slate-200 hover:border-cyan-400"
+                            >
+                              New Setup
+                            </button>
+                          )}
                           {item.synthetic && (
                             <button
                               type="button"

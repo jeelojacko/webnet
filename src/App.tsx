@@ -40,6 +40,7 @@ import {
   buildImportReviewDisplayTextMap,
   buildImportReviewModel,
   buildImportReviewText,
+  createImportReviewGroupFromItem,
   duplicateImportReviewItem,
   insertImportReviewCommentRow,
   isImportReviewMtaItem,
@@ -3698,6 +3699,34 @@ const App: React.FC = () => {
     });
   };
 
+  const handleImportReviewCreateSetupGroup = (itemId: string) => {
+    setImportReviewState((prev) => {
+      if (!prev) return prev;
+      const sourceItem = prev.reviewModel.items.find((item) => item.id === itemId);
+      if (!sourceItem) return prev;
+      const suffix = prev.nextSyntheticId;
+      const setupToken = sourceItem.setupId ? ` ${sourceItem.setupId}` : '';
+      const label = `Custom Setup${setupToken} ${suffix}`;
+      const defaultComment = `CUSTOM SETUP${setupToken} ${suffix}`.toUpperCase();
+      const groupKey = `synthetic-group:${suffix}`;
+      return {
+        ...prev,
+        reviewModel: createImportReviewGroupFromItem(
+          prev.reviewModel,
+          itemId,
+          groupKey,
+          label,
+          defaultComment,
+        ),
+        groupComments: {
+          ...prev.groupComments,
+          [groupKey]: defaultComment,
+        },
+        nextSyntheticId: prev.nextSyntheticId + 1,
+      };
+    });
+  };
+
   const handleImportReviewMoveRow = (itemId: string, groupKey: string) => {
     setImportReviewState((prev) =>
       prev
@@ -6295,6 +6324,7 @@ const App: React.FC = () => {
           onRowTextChange={handleImportReviewRowTextChange}
           onDuplicateRow={handleImportReviewDuplicateRow}
           onInsertCommentBelow={handleImportReviewInsertCommentBelow}
+          onCreateSetupGroup={handleImportReviewCreateSetupGroup}
           onMoveRow={handleImportReviewMoveRow}
           onRemoveRow={handleImportReviewRemoveRow}
           onCancel={handleCancelImportReview}
