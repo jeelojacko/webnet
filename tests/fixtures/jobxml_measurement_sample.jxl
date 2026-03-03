@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<JOBFile>
+  <Reductions>
+    <PointRecord ID="P1">
+      <Name>STN1</Name>
+      <North>1000.000</North>
+      <East>5000.000</East>
+      <Elevation>100.000</Elevation>
+      <Code>SETUP</Code>
+    </PointRecord>
+    <PointRecord ID="P2">
+      <Name>BS1</Name>
+      <North>1200.000</North>
+      <East>5100.000</East>
+      <Elevation>102.000</Elevation>
+      <Code>BS</Code>
+    </PointRecord>
+  </Reductions>
+  <FieldBook>
+    <StationRecord ID="ST01">
+      <StationID>P1</StationID>
+      <InstrumentHeight>1.500</InstrumentHeight>
+      <BackBearingID>BB01</BackBearingID>
+    </StationRecord>
+    <BackBearingRecord ID="BB01">
+      <PointID>P2</PointID>
+      <Circle>
+        <HorizontalCircle>10.0000</HorizontalCircle>
+      </Circle>
+    </BackBearingRecord>
+    <TargetRecord ID="T1">
+      <Name>SHOT-1</Name>
+      <TargetHeight>1.800</TargetHeight>
+    </TargetRecord>
+    <PointRecord ID="OBS1">
+      <StationID>ST01</StationID>
+      <BackBearingID>BB01</BackBearingID>
+      <TargetID>T1</TargetID>
+      <Circle>
+        <HorizontalCircle>55.1234</HorizontalCircle>
+        <VerticalCircle>95.0000</VerticalCircle>
+        <EDMDistance>100.000</EDMDistance>
+      </Circle>
+    </PointRecord>
+  </FieldBook>
+</JOBFile>

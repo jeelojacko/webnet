@@ -5,6 +5,7 @@ import { getExternalImporters, importExternalInput } from '../src/engine/importe
 import { parseInput } from '../src/engine/parse';
 
 const jobXmlFixture = readFileSync('tests/fixtures/jobxml_sample.jxl', 'utf-8');
+const jobXmlMeasurementFixture = readFileSync('tests/fixtures/jobxml_measurement_sample.jxl', 'utf-8');
 const fieldGeniusFixture = readFileSync('tests/fixtures/fieldgenius_sample.raw', 'utf-8');
 
 describe('Phase 2 external importers', () => {
@@ -23,6 +24,7 @@ describe('Phase 2 external importers', () => {
     expect(imported.notice?.detailLines[0]).toContain('Imported 2 points');
     expect(imported.notice?.detailLines[1]).toContain('Warnings: 1');
     expect(imported.dataset?.controlStations).toHaveLength(2);
+    expect(imported.dataset?.observations).toHaveLength(0);
     expect(imported.dataset?.trace).toHaveLength(1);
     expect(imported.text).toContain(".ORDER EN");
     expect(imported.text).toContain("C STN1 5000.0000 1000.0000 100.0000 'SETUP");
@@ -38,6 +40,44 @@ describe('Phase 2 external importers', () => {
     expect(parsed.stations.GPS_1).toBeDefined();
     expect(parsed.stations.GPS_1.heightType).toBe('ellipsoid');
     expect(parsed.stations.GPS_1.constraintCorrXY).toBeCloseTo(-0.25, 8);
+  });
+
+  it('converts JobXML station and measurement records when setup context is resolvable', () => {
+    const imported = importExternalInput(jobXmlMeasurementFixture, 'jobxml_measurement_sample.jxl');
+
+    expect(imported.detected).toBe(true);
+    expect(imported.importerId).toBe('jobxml');
+    expect(imported.notice?.detailLines[0]).toContain('Imported 2 points and 1 observation');
+    expect(imported.dataset?.controlStations).toHaveLength(2);
+    expect(imported.dataset?.observations).toHaveLength(1);
+    expect(imported.dataset?.trace).toHaveLength(0);
+    expect(imported.text).toContain('[PointRecord] converted to M');
+    expect(imported.text).toContain('M STN1-BS1-SHOT_1 045-07-24.2 100.0000 95.0000 1.5000/1.8000');
+
+    const parsed = parseInput(imported.text);
+    expect(parsed.stations.STN1).toBeDefined();
+    expect(parsed.stations.BS1).toBeDefined();
+    expect(parsed.stations.SHOT_1).toBeDefined();
+    expect(
+      parsed.observations.some(
+        (obs) =>
+          obs.type === 'angle' &&
+          'at' in obs &&
+          obs.at === 'STN1' &&
+          obs.from === 'BS1' &&
+          obs.to === 'SHOT_1',
+      ),
+    ).toBe(true);
+    expect(
+      parsed.observations.some(
+        (obs) => obs.type === 'dist' && 'from' in obs && obs.from === 'STN1' && obs.to === 'SHOT_1',
+      ),
+    ).toBe(true);
+    expect(
+      parsed.observations.some(
+        (obs) => obs.type === 'zenith' && 'from' in obs && obs.from === 'STN1' && obs.to === 'SHOT_1',
+      ),
+    ).toBe(true);
   });
 
   it('imports core FieldGenius setup and shot records into normalized WebNet observations with trace comments', () => {
