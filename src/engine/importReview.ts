@@ -67,10 +67,12 @@ export interface ImportReviewModel {
 export interface ImportReviewComparisonTotals {
   controlStations: number;
   observations: number;
-  comparableObservations: number;
+  comparedObservations: number;
   warnings: number;
   errors: number;
 }
+
+export type ImportReviewComparisonMode = 'non-mta-only' | 'all-raw';
 
 export interface ImportReviewComparisonRow {
   key: string;
@@ -83,6 +85,7 @@ export interface ImportReviewComparisonRow {
 }
 
 export interface ImportReviewComparisonSummary {
+  mode: ImportReviewComparisonMode;
   primarySourceName: string;
   comparisonSourceName: string;
   primaryImporterId: string;
@@ -103,6 +106,11 @@ export interface BuildImportReviewTextOptions {
 
 const isComparableObservation = (observation: ImportedObservationRecord): boolean =>
   observation.sourceMeta?.method !== 'MEANTURNEDANGLE';
+
+const isObservationIncludedInComparison = (
+  observation: ImportedObservationRecord,
+  mode: ImportReviewComparisonMode,
+): boolean => (mode === 'all-raw' ? true : isComparableObservation(observation));
 
 const prettifyToken = (value: string): string =>
   value
@@ -133,6 +141,17 @@ const comparisonFamilyLabel = (observation: ImportedObservationRecord): string =
   if (observation.kind === 'bearing') return 'B';
   if (observation.kind === 'gnss-vector') return 'G';
   return prettifyToken(observation.kind);
+};
+
+const comparisonFamilyLabelForKind = (kind: ImportedObservationRecord['kind']): string => {
+  if (kind === 'measurement') return 'M';
+  if (kind === 'angle') return 'A';
+  if (kind === 'distance-vertical') return 'DV';
+  if (kind === 'distance') return 'D';
+  if (kind === 'vertical') return 'V';
+  if (kind === 'bearing') return 'B';
+  if (kind === 'gnss-vector') return 'G';
+  return prettifyToken(kind);
 };
 
 const deriveObservationSetupId = (observation: ImportedObservationRecord): string => {
@@ -559,11 +578,14 @@ export const buildImportReviewComparisonSummary = (
   primarySourceName: string,
   comparisonDataset: ImportedDataset,
   comparisonSourceName: string,
+  mode: ImportReviewComparisonMode = 'non-mta-only',
 ): ImportReviewComparisonSummary => {
   const makeTotals = (dataset: ImportedDataset): ImportReviewComparisonTotals => ({
     controlStations: dataset.controlStations.length,
     observations: dataset.observations.length,
-    comparableObservations: dataset.observations.filter((observation) => isComparableObservation(observation)).length,
+    comparedObservations: dataset.observations.filter((observation) =>
+      isObservationIncludedInComparison(observation, mode),
+    ).length,
     warnings: dataset.trace.filter((entry) => entry.level === 'warning').length,
     errors: dataset.trace.filter((entry) => entry.level === 'error').length,
   });
@@ -571,7 +593,7 @@ export const buildImportReviewComparisonSummary = (
   const accumulate = (dataset: ImportedDataset): Map<string, Omit<ImportReviewComparisonRow, 'primaryCount' | 'comparisonCount' | 'delta'>> => {
     const buckets = new Map<string, Omit<ImportReviewComparisonRow, 'primaryCount' | 'comparisonCount' | 'delta'>>();
     dataset.observations
-      .filter((observation) => isComparableObservation(observation))
+      .filter((observation) => isObservationIncludedInComparison(observation, mode))
       .forEach((observation) => {
         const setupId = deriveObservationSetupId(observation);
         const backsightId = deriveObservationBacksightId(observation);
@@ -592,7 +614,7 @@ export const buildImportReviewComparisonSummary = (
 
   const primaryCounts = new Map<string, number>();
   primaryDataset.observations
-    .filter((observation) => isComparableObservation(observation))
+    .filter((observation) => isObservationIncludedInComparison(observation, mode))
     .forEach((observation) => {
       const key = [
         deriveObservationSetupId(observation),
@@ -605,7 +627,7 @@ export const buildImportReviewComparisonSummary = (
 
   const comparisonCounts = new Map<string, number>();
   comparisonDataset.observations
-    .filter((observation) => isComparableObservation(observation))
+    .filter((observation) => isObservationIncludedInComparison(observation, mode))
     .forEach((observation) => {
       const key = [
         deriveObservationSetupId(observation),
@@ -648,6 +670,7 @@ export const buildImportReviewComparisonSummary = (
     });
 
   return {
+    mode,
     primarySourceName,
     comparisonSourceName,
     primaryImporterId: primaryDataset.importerId,
@@ -656,6 +679,19 @@ export const buildImportReviewComparisonSummary = (
     comparisonTotals: makeTotals(comparisonDataset),
     rows,
   };
+};
+
+export const buildImportReviewComparisonKeyForItem = (
+  item: ImportReviewItem,
+  mode: ImportReviewComparisonMode,
+): string | null => {
+  if (item.kind !== 'observation' || !item.sourceObservationKind) return null;
+  if (mode === 'non-mta-only' && item.sourceMethod === 'MEANTURNEDANGLE') return null;
+  const setupId = item.setupId ?? '';
+  const backsightId = item.backsightId ?? '';
+  const targetId = item.targetId ?? '';
+  const family = comparisonFamilyLabelForKind(item.sourceObservationKind);
+  return [setupId, backsightId, targetId, family].join('|');
 };
 
 const cloneImportReviewModel = (model: ImportReviewModel): ImportReviewModel => ({

@@ -1,6 +1,10 @@
 import React from 'react';
 import type { ImportedTraceEntry } from '../engine/importers';
+import {
+  buildImportReviewComparisonKeyForItem,
+} from '../engine/importReview';
 import type {
+  ImportReviewComparisonMode,
   ImportReviewComparisonSummary,
   ImportReviewGroup,
   ImportReviewItem,
@@ -15,6 +19,7 @@ interface ImportReviewModalProps {
   detailLines: string[];
   reviewModel: ImportReviewModel;
   comparisonSummary?: ImportReviewComparisonSummary | null;
+  comparisonMode: ImportReviewComparisonMode;
   displayedRows: Record<string, string>;
   excludedItemIds: Set<string>;
   fixedItemIds: Set<string>;
@@ -25,6 +30,7 @@ interface ImportReviewModalProps {
   moveTargetGroups: Array<{ key: string; label: string }>;
   onCompareFile: () => void;
   onClearComparison: () => void;
+  onComparisonModeChange: (_mode: ImportReviewComparisonMode) => void;
   onPresetChange: (_preset: ImportReviewOutputPreset) => void;
   onSetBulkExcludeMta: (_excluded: boolean) => void;
   onSetBulkExcludeRaw: (_excluded: boolean) => void;
@@ -127,6 +133,7 @@ const ImportReviewModal: React.FC<ImportReviewModalProps> = ({
   detailLines,
   reviewModel,
   comparisonSummary = null,
+  comparisonMode,
   displayedRows,
   excludedItemIds,
   fixedItemIds,
@@ -137,6 +144,7 @@ const ImportReviewModal: React.FC<ImportReviewModalProps> = ({
   moveTargetGroups,
   onCompareFile,
   onClearComparison,
+  onComparisonModeChange,
   onPresetChange,
   onSetBulkExcludeMta,
   onSetBulkExcludeRaw,
@@ -176,6 +184,10 @@ const ImportReviewModal: React.FC<ImportReviewModalProps> = ({
     mtaItems.length > 0 && mtaItems.every((item) => excludedItemIds.has(item.id));
   const excludeRawChecked =
     rawItems.length > 0 && rawItems.every((item) => excludedItemIds.has(item.id));
+  const comparisonDiffKeys = React.useMemo(
+    () => new Set((comparisonSummary?.rows ?? []).map((row) => row.key)),
+    [comparisonSummary],
+  );
 
   const renderGroup = (group: ImportReviewGroup) => {
     const items = group.itemIds
@@ -277,8 +289,20 @@ const ImportReviewModal: React.FC<ImportReviewModalProps> = ({
                   const excluded = excludedItemIds.has(item.id);
                   const fixed = fixedItemIds.has(item.id);
                   const canMove = item.groupKey !== 'control' && moveTargetGroups.length > 1;
+                  const comparisonKey = buildImportReviewComparisonKeyForItem(item, comparisonMode);
+                  const hasComparisonDiff =
+                    comparisonKey != null && comparisonDiffKeys.has(comparisonKey);
                   return (
-                    <tr key={item.id} className={excluded ? 'bg-slate-950/40 text-slate-500' : ''}>
+                    <tr
+                      key={item.id}
+                      className={
+                        excluded
+                          ? 'bg-slate-950/40 text-slate-500'
+                          : hasComparisonDiff
+                            ? 'bg-amber-950/20'
+                            : ''
+                      }
+                    >
                       <td className="border-b border-slate-800 px-3 py-2 align-top">
                         <textarea
                           value={displayedRows[item.id] ?? ''}
@@ -286,6 +310,8 @@ const ImportReviewModal: React.FC<ImportReviewModalProps> = ({
                           className={`min-h-[54px] w-full resize-y border bg-slate-950 px-2 py-1 font-mono text-[11px] focus:outline-none ${
                             excluded
                               ? 'border-slate-800 text-slate-500'
+                              : hasComparisonDiff
+                                ? 'border-amber-700/70 text-slate-100 focus:border-amber-400'
                               : 'border-slate-700 text-slate-100 focus:border-cyan-400'
                           }`}
                           spellCheck={false}
@@ -496,6 +522,37 @@ const ImportReviewModal: React.FC<ImportReviewModalProps> = ({
                   <span>Exclude Raw Obs ({rawItems.length})</span>
                 </label>
               </div>
+              {comparisonSummary && (
+                <div className="grid gap-2 text-left">
+                  <div className="text-[11px] uppercase tracking-wide text-slate-400">
+                    Compare Preset
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => onComparisonModeChange('non-mta-only')}
+                      className={`border px-3 py-2 text-[11px] uppercase tracking-wide ${
+                        comparisonMode === 'non-mta-only'
+                          ? 'border-cyan-400 bg-cyan-900 text-cyan-100'
+                          : 'border-slate-600 bg-slate-950 text-slate-200 hover:border-cyan-400'
+                      }`}
+                    >
+                      Non-MTA Only
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => onComparisonModeChange('all-raw')}
+                      className={`border px-3 py-2 text-[11px] uppercase tracking-wide ${
+                        comparisonMode === 'all-raw'
+                          ? 'border-cyan-400 bg-cyan-900 text-cyan-100'
+                          : 'border-slate-600 bg-slate-950 text-slate-200 hover:border-cyan-400'
+                      }`}
+                    >
+                      All Raw Rows
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
           {detailLines.length > 0 && (
@@ -513,7 +570,9 @@ const ImportReviewModal: React.FC<ImportReviewModalProps> = ({
               <div className="border-b border-cyan-800/60 bg-cyan-950/40 px-4 py-3">
                 <div className="text-sm font-semibold text-cyan-100">Compare / Reconcile</div>
                 <div className="text-[11px] uppercase tracking-wide text-cyan-200/80">
-                  Comparable counts exclude JobXML MTA rows so report exports and raw XML can be checked side by side
+                  {comparisonMode === 'non-mta-only'
+                    ? 'Comparing non-MTA observations only so report exports and raw XML can be checked side by side'
+                    : 'Comparing all raw imported observations, including JobXML MTA rows'}
                 </div>
               </div>
               <div className="grid gap-4 px-4 py-4 lg:grid-cols-2">
@@ -528,7 +587,9 @@ const ImportReviewModal: React.FC<ImportReviewModalProps> = ({
                     <div>Importer: {comparisonSummary.primaryImporterId}</div>
                     <div>Points: {comparisonSummary.primaryTotals.controlStations}</div>
                     <div>Raw Obs: {comparisonSummary.primaryTotals.observations}</div>
-                    <div>Comparable Obs: {comparisonSummary.primaryTotals.comparableObservations}</div>
+                    <div>
+                      Compared Obs: {comparisonSummary.primaryTotals.comparedObservations}
+                    </div>
                   </div>
                 </div>
                 <div className="border border-slate-700 bg-slate-950/60 p-3 text-xs text-slate-200">
@@ -543,14 +604,17 @@ const ImportReviewModal: React.FC<ImportReviewModalProps> = ({
                     <div>Points: {comparisonSummary.comparisonTotals.controlStations}</div>
                     <div>Raw Obs: {comparisonSummary.comparisonTotals.observations}</div>
                     <div>
-                      Comparable Obs: {comparisonSummary.comparisonTotals.comparableObservations}
+                      Compared Obs: {comparisonSummary.comparisonTotals.comparedObservations}
                     </div>
                   </div>
                 </div>
               </div>
               <div className="border-t border-cyan-800/40 px-4 py-3 text-xs text-slate-300">
-                Comparable delta: {comparisonSummary.primaryTotals.comparableObservations -
-                  comparisonSummary.comparisonTotals.comparableObservations}
+                Compared delta: {comparisonSummary.primaryTotals.comparedObservations -
+                  comparisonSummary.comparisonTotals.comparedObservations}
+                <div className="mt-1 text-[11px] text-amber-200/80">
+                  Highlighted staged rows belong to setup/target/family buckets that differ between the two files.
+                </div>
               </div>
               {comparisonSummary.rows.length > 0 && (
                 <div className="max-h-72 overflow-y-auto border-t border-cyan-800/40">

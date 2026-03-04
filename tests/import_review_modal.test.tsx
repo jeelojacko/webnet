@@ -73,6 +73,7 @@ describe('ImportReviewModal', () => {
         ]}
         reviewModel={reviewModel}
         comparisonSummary={{
+          mode: 'non-mta-only',
           primarySourceName: 'sample.jxl',
           comparisonSourceName: 'sample.htm',
           primaryImporterId: 'jobxml',
@@ -80,14 +81,14 @@ describe('ImportReviewModal', () => {
           primaryTotals: {
             controlStations: 2,
             observations: 5,
-            comparableObservations: 4,
+            comparedObservations: 4,
             warnings: 0,
             errors: 0,
           },
           comparisonTotals: {
             controlStations: 2,
             observations: 4,
-            comparableObservations: 4,
+            comparedObservations: 4,
             warnings: 0,
             errors: 0,
           },
@@ -103,6 +104,7 @@ describe('ImportReviewModal', () => {
             },
           ],
         }}
+        comparisonMode="non-mta-only"
         displayedRows={{
           'control:0': 'C STN1 5000.0000 1000.0000 100.0000',
           'observation:0': 'DM P1 045-07-24.2 100.0000',
@@ -116,6 +118,7 @@ describe('ImportReviewModal', () => {
         moveTargetGroups={[{ key: 'setup:STN1:bs:BS1', label: 'Setup STN1 (BS BS1)' }]}
         onCompareFile={() => {}}
         onClearComparison={() => {}}
+        onComparisonModeChange={() => {}}
         onPresetChange={() => {}}
         onSetBulkExcludeMta={() => {}}
         onSetBulkExcludeRaw={() => {}}
@@ -163,8 +166,13 @@ describe('ImportReviewModal', () => {
     expect(html).toContain('Import Diagnostics');
     expect(html).toContain('Unsupported measurement skipped.');
     expect(html).toContain('Compare / Reconcile');
+    expect(html).toContain('Compare Preset');
+    expect(html).toContain('Non-MTA Only');
+    expect(html).toContain('All Raw Rows');
     expect(html).toContain('sample.htm');
-    expect(html).toContain('Comparable Obs');
+    expect(html).toContain('Compared Obs');
+    expect(html).toContain('Compared delta');
+    expect(html).toContain('Highlight');
     expect(html).toContain('Clear Compare');
     expect(html).toContain('>DV<');
     expect(html).toContain('>DN<');

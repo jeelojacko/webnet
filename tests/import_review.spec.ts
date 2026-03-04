@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { importExternalInput } from '../src/engine/importers';
 import {
   buildImportReviewComparisonSummary,
+  buildImportReviewComparisonKeyForItem,
   buildImportReviewDisplayTextMap,
   buildImportReviewModel,
   buildImportReviewText,
@@ -395,9 +396,49 @@ describe('import review workflow', () => {
       'sample.htm',
     );
 
+    expect(summary.mode).toBe('non-mta-only');
     expect(summary.primaryTotals.observations).toBe(3);
-    expect(summary.primaryTotals.comparableObservations).toBe(2);
-    expect(summary.comparisonTotals.comparableObservations).toBe(2);
+    expect(summary.primaryTotals.comparedObservations).toBe(2);
+    expect(summary.comparisonTotals.comparedObservations).toBe(2);
     expect(summary.rows).toHaveLength(0);
+
+    const allRawSummary = buildImportReviewComparisonSummary(
+      primary,
+      'sample.jxl',
+      comparison,
+      'sample.htm',
+      'all-raw',
+    );
+
+    expect(allRawSummary.mode).toBe('all-raw');
+    expect(allRawSummary.primaryTotals.comparedObservations).toBe(3);
+    expect(allRawSummary.comparisonTotals.comparedObservations).toBe(2);
+    expect(allRawSummary.rows).toHaveLength(1);
+    expect(allRawSummary.rows[0]).toMatchObject({
+      key: '1|1000|2|M',
+      primaryCount: 2,
+      comparisonCount: 1,
+      delta: 1,
+    });
+  });
+
+  it('builds item-level comparison keys that respect the active compare mode', () => {
+    const imported = importExternalInput(
+      jobXmlTrimbleFixture,
+      'jobxml_trimble_station_setup_sample.jxl',
+    );
+    const reviewModel = buildImportReviewModel(imported.dataset!);
+    const rawItem = reviewModel.items.find(
+      (item) => isImportReviewRawMeasurementItem(item) && item.targetId === '2',
+    );
+    const mtaItem = reviewModel.items.find(
+      (item) => isImportReviewMtaItem(item) && item.targetId === '2',
+    );
+
+    expect(rawItem).toBeDefined();
+    expect(mtaItem).toBeDefined();
+    expect(buildImportReviewComparisonKeyForItem(rawItem!, 'non-mta-only')).toBe('1|1000|2|M');
+    expect(buildImportReviewComparisonKeyForItem(mtaItem!, 'non-mta-only')).toBeNull();
+    expect(buildImportReviewComparisonKeyForItem(mtaItem!, 'all-raw')).toBe('1|1000|2|M');
   });
 });

@@ -1,6 +1,7 @@
 import React from 'react';
 import { FileText } from 'lucide-react';
 import { toggleHashCommentsInSelection } from './commentToggle';
+import { INPUT_PANE_CONTEXT_MENU_ORDER } from './inputPaneContextMenu';
 
 interface InputPaneProps {
   input: string;
@@ -11,6 +12,13 @@ interface InputPaneProps {
   } | null;
   onClearImportNotice?: () => void;
 }
+
+type ContextMenuState = {
+  x: number;
+  y: number;
+  hasSelection: boolean;
+  canToggleComment: boolean;
+};
 
 const InputPane: React.FC<InputPaneProps> = ({
   input,
@@ -23,7 +31,7 @@ const InputPane: React.FC<InputPaneProps> = ({
   const textareaRef = React.useRef<HTMLTextAreaElement>(null);
   const numbersRef = React.useRef<HTMLDivElement>(null);
   const editorWrapRef = React.useRef<HTMLDivElement>(null);
-  const [contextMenu, setContextMenu] = React.useState<{ x: number; y: number } | null>(null);
+  const [contextMenu, setContextMenu] = React.useState<ContextMenuState | null>(null);
 
   const handleScroll = () => {
     if (textareaRef.current && numbersRef.current) {
@@ -51,6 +59,90 @@ const InputPane: React.FC<InputPaneProps> = ({
     [input, onChange],
   );
 
+  const restoreSelection = React.useCallback((start: number, end: number) => {
+    requestAnimationFrame(() => {
+      if (!textareaRef.current) return;
+      textareaRef.current.focus();
+      textareaRef.current.setSelectionRange(start, end);
+    });
+  }, []);
+
+  const replaceSelection = React.useCallback(
+    (textarea: HTMLTextAreaElement, replacement: string) => {
+      const start = textarea.selectionStart ?? 0;
+      const end = textarea.selectionEnd ?? 0;
+      const nextValue = `${textarea.value.slice(0, start)}${replacement}${textarea.value.slice(end)}`;
+      const nextCaret = start + replacement.length;
+      onChange(nextValue);
+      restoreSelection(nextCaret, nextCaret);
+    },
+    [onChange, restoreSelection],
+  );
+
+  const execNativeEditorCommand = React.useCallback((command: 'undo' | 'redo' | 'copy' | 'cut') => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+    textarea.focus();
+    document.execCommand(command);
+  }, []);
+
+  const handleCopy = React.useCallback(async () => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+    const start = textarea.selectionStart ?? 0;
+    const end = textarea.selectionEnd ?? 0;
+    const selectedText = textarea.value.slice(start, end);
+    if (!selectedText) return;
+    try {
+      await navigator.clipboard.writeText(selectedText);
+    } catch {
+      execNativeEditorCommand('copy');
+    }
+  }, [execNativeEditorCommand]);
+
+  const handleCut = React.useCallback(async () => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+    const start = textarea.selectionStart ?? 0;
+    const end = textarea.selectionEnd ?? 0;
+    const selectedText = textarea.value.slice(start, end);
+    if (!selectedText) return;
+    try {
+      await navigator.clipboard.writeText(selectedText);
+      replaceSelection(textarea, '');
+    } catch {
+      execNativeEditorCommand('cut');
+    }
+  }, [execNativeEditorCommand, replaceSelection]);
+
+  const handlePaste = React.useCallback(async () => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+    try {
+      const clipboardText = await navigator.clipboard.readText();
+      replaceSelection(textarea, clipboardText);
+    } catch {
+      textarea.focus();
+      document.execCommand('paste');
+    }
+  }, [replaceSelection]);
+
+  const handleDeleteSelection = React.useCallback(() => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+    const start = textarea.selectionStart ?? 0;
+    const end = textarea.selectionEnd ?? 0;
+    if (start === end) return;
+    replaceSelection(textarea, '');
+  }, [replaceSelection]);
+
+  const handleSelectAll = React.useCallback(() => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+    textarea.focus();
+    textarea.setSelectionRange(0, textarea.value.length);
+  }, []);
+
   const handleKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
     const isHashShortcut = event.key === '#' || (event.shiftKey && event.code === 'Digit3');
     if (!isHashShortcut || event.metaKey || event.ctrlKey || event.altKey) return;
@@ -68,16 +160,41 @@ const InputPane: React.FC<InputPaneProps> = ({
     const textarea = event.currentTarget;
     const start = textarea.selectionStart ?? 0;
     const end = textarea.selectionEnd ?? 0;
-    if (start === end) {
-      setContextMenu(null);
-      return;
-    }
     event.preventDefault();
     const bounds = editorWrapRef.current?.getBoundingClientRect();
     const x = bounds ? event.clientX - bounds.left : event.clientX;
     const y = bounds ? event.clientY - bounds.top : event.clientY;
-    setContextMenu({ x, y });
+    const selected = input.slice(start, end);
+    setContextMenu({
+      x,
+      y,
+      hasSelection: start !== end,
+      canToggleComment: selected.length > 0,
+    });
   };
+
+  const handleContextMenuAction = React.useCallback(
+    async (action: 'undo' | 'redo' | 'cut' | 'copy' | 'paste' | 'delete' | 'select-all' | 'toggle-comment') => {
+      if (action === 'undo') execNativeEditorCommand('undo');
+      if (action === 'redo') execNativeEditorCommand('redo');
+      if (action === 'copy') await handleCopy();
+      if (action === 'cut') await handleCut();
+      if (action === 'paste') await handlePaste();
+      if (action === 'delete') handleDeleteSelection();
+      if (action === 'select-all') handleSelectAll();
+      if (action === 'toggle-comment' && textareaRef.current) applyCommentToggle(textareaRef.current);
+      setContextMenu(null);
+    },
+    [
+      applyCommentToggle,
+      execNativeEditorCommand,
+      handleCopy,
+      handleCut,
+      handleDeleteSelection,
+      handlePaste,
+      handleSelectAll,
+    ],
+  );
 
   React.useEffect(() => {
     if (!contextMenu) return;
@@ -153,17 +270,64 @@ const InputPane: React.FC<InputPaneProps> = ({
             style={{ left: contextMenu.x, top: contextMenu.y }}
             onPointerDown={(event) => event.stopPropagation()}
           >
-            <button
-              type="button"
-              className="w-full px-3 py-2 text-left text-xs text-slate-200 hover:bg-slate-700"
-              onClick={() => {
-                const textarea = textareaRef.current;
-                if (textarea) applyCommentToggle(textarea);
-                setContextMenu(null);
-              }}
-            >
-              Toggle # Comment
-            </button>
+            {[
+              { id: 'undo', label: INPUT_PANE_CONTEXT_MENU_ORDER[0], disabled: false },
+              { id: 'redo', label: INPUT_PANE_CONTEXT_MENU_ORDER[1], disabled: false },
+              { id: 'sep-edit-1', label: '', separator: true },
+              {
+                id: 'cut',
+                label: INPUT_PANE_CONTEXT_MENU_ORDER[2],
+                disabled: !contextMenu.hasSelection,
+              },
+              {
+                id: 'copy',
+                label: INPUT_PANE_CONTEXT_MENU_ORDER[3],
+                disabled: !contextMenu.hasSelection,
+              },
+              { id: 'paste', label: INPUT_PANE_CONTEXT_MENU_ORDER[4], disabled: false },
+              {
+                id: 'delete',
+                label: INPUT_PANE_CONTEXT_MENU_ORDER[5],
+                disabled: !contextMenu.hasSelection,
+              },
+              { id: 'select-all', label: INPUT_PANE_CONTEXT_MENU_ORDER[6], disabled: false },
+              { id: 'sep-edit-2', label: '', separator: true },
+              {
+                id: 'toggle-comment',
+                label: INPUT_PANE_CONTEXT_MENU_ORDER[7],
+                disabled: !contextMenu.canToggleComment,
+              },
+            ].map((action) =>
+              'separator' in action && action.separator ? (
+                <div key={action.id} className="my-1 border-t border-slate-700" />
+              ) : (
+                <button
+                  key={action.id}
+                  type="button"
+                  disabled={action.disabled}
+                  className={`w-full px-3 py-2 text-left text-xs ${
+                    action.disabled
+                      ? 'cursor-not-allowed text-slate-500'
+                      : 'text-slate-200 hover:bg-slate-700'
+                  }`}
+                  onClick={() =>
+                    void handleContextMenuAction(
+                      action.id as
+                        | 'undo'
+                        | 'redo'
+                        | 'cut'
+                        | 'copy'
+                        | 'paste'
+                        | 'delete'
+                        | 'select-all'
+                        | 'toggle-comment',
+                    )
+                  }
+                >
+                  {action.label}
+                </button>
+              ),
+            )}
           </div>
         ) : null}
       </div>

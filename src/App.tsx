@@ -52,6 +52,7 @@ import {
   removeImportReviewGroup,
   removeImportReviewItem,
   type ImportReviewModel,
+  type ImportReviewComparisonMode,
   type ImportReviewOutputPreset,
   type ImportReviewRowTypeOverride,
   type ImportReviewComparisonSummary,
@@ -442,6 +443,7 @@ type ImportReviewState = {
   comparisonNotice?: ImportedInputNotice;
   comparisonDataset?: ImportedDataset;
   comparisonSummary?: ImportReviewComparisonSummary | null;
+  comparisonMode: ImportReviewComparisonMode;
   excludedItemIds: Set<string>;
   fixedItemIds: Set<string>;
   groupLabels: Record<string, string>;
@@ -3588,6 +3590,7 @@ const App: React.FC = () => {
                     prev.sourceName,
                     imported.dataset,
                     file.name,
+                    prev.comparisonMode,
                   ),
                 }
               : prev,
@@ -3610,6 +3613,7 @@ const App: React.FC = () => {
           dataset: imported.dataset,
           reviewModel,
           comparisonSummary: null,
+          comparisonMode: 'non-mta-only',
           excludedItemIds: new Set(),
           fixedItemIds: new Set(),
           groupLabels,
@@ -3771,6 +3775,26 @@ const App: React.FC = () => {
 
   const handleImportReviewPresetChange = (preset: ImportReviewOutputPreset) => {
     setImportReviewState((prev) => (prev ? { ...prev, preset } : prev));
+  };
+
+  const handleImportReviewComparisonModeChange = (mode: ImportReviewComparisonMode) => {
+    setImportReviewState((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        comparisonMode: mode,
+        comparisonSummary:
+          prev.comparisonDataset && prev.comparisonSourceName
+            ? buildImportReviewComparisonSummary(
+                prev.dataset,
+                prev.sourceName,
+                prev.comparisonDataset,
+                prev.comparisonSourceName,
+                mode,
+              )
+            : prev.comparisonSummary,
+      };
+    });
   };
 
   const handleImportReviewDuplicateRow = (itemId: string) => {
@@ -6522,6 +6546,7 @@ const App: React.FC = () => {
           detailLines={importReviewState.notice.detailLines}
           reviewModel={importReviewState.reviewModel}
           comparisonSummary={importReviewState.comparisonSummary ?? null}
+          comparisonMode={importReviewState.comparisonMode}
           displayedRows={importReviewDisplayedRows}
           excludedItemIds={importReviewState.excludedItemIds}
           fixedItemIds={importReviewState.fixedItemIds}
@@ -6532,6 +6557,7 @@ const App: React.FC = () => {
           moveTargetGroups={importReviewMoveTargetGroups}
           onCompareFile={handleImportReviewCompareFile}
           onClearComparison={handleImportReviewClearComparison}
+          onComparisonModeChange={handleImportReviewComparisonModeChange}
           onPresetChange={handleImportReviewPresetChange}
           onSetBulkExcludeMta={handleImportReviewSetBulkExcludeMta}
           onSetBulkExcludeRaw={handleImportReviewSetBulkExcludeRaw}
