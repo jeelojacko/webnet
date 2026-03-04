@@ -240,7 +240,9 @@ const ReportView: React.FC<ReportViewProps> = ({
     .filter((loop) => !loop.pass)
     .slice(0, 20);
   const levelingLoopDiagnostics = result.levelingLoopDiagnostics;
-  const levelingLoopSuspects = (levelingLoopDiagnostics?.loops ?? []).slice(0, 20);
+  const levelingLoopSuspects = (levelingLoopDiagnostics?.loops ?? [])
+    .filter((loop) => !loop.pass)
+    .slice(0, 20);
   const directionRejects = [...(result.directionRejectDiagnostics ?? [])].sort((a, b) => {
     const la = a.sourceLine ?? Number.MAX_SAFE_INTEGER;
     const lb = b.sourceLine ?? Number.MAX_SAFE_INTEGER;
@@ -3024,6 +3026,13 @@ const ReportView: React.FC<ReportViewProps> = ({
                   : '-'}
               </div>
             </div>
+            <div>
+              <div className="text-slate-500">Tolerance Model</div>
+              <div className="font-mono text-[11px]">
+                {levelingLoopDiagnostics.thresholds.baseMm.toFixed(2)}mm +{' '}
+                {levelingLoopDiagnostics.thresholds.perSqrtKmMm.toFixed(2)}mm*sqrt(km)
+              </div>
+            </div>
           </div>
           {levelingLoopDiagnostics.loops.length > 0 && (
             <div className="overflow-x-auto w-full border-t border-slate-800">
@@ -3036,7 +3045,9 @@ const ReportView: React.FC<ReportViewProps> = ({
                     <th className="py-2 px-3 font-semibold text-right">dH ({units})</th>
                     <th className="py-2 px-3 font-semibold text-right">|dH| ({units})</th>
                     <th className="py-2 px-3 font-semibold text-right">Len (km)</th>
+                    <th className="py-2 px-3 font-semibold text-right">Tol (mm)</th>
                     <th className="py-2 px-3 font-semibold text-right">mm/sqrt(km)</th>
+                    <th className="py-2 px-3 font-semibold text-right">Status</th>
                     <th className="py-2 px-3 font-semibold text-right">Lines</th>
                   </tr>
                 </thead>
@@ -3049,12 +3060,59 @@ const ReportView: React.FC<ReportViewProps> = ({
                       <td className="py-1 px-3 text-right">{(loop.closure * unitScale).toFixed(4)}</td>
                       <td className="py-1 px-3 text-right">{(loop.absClosure * unitScale).toFixed(4)}</td>
                       <td className="py-1 px-3 text-right">{loop.loopLengthKm.toFixed(3)}</td>
+                      <td className="py-1 px-3 text-right">{loop.toleranceMm.toFixed(2)}</td>
                       <td className="py-1 px-3 text-right">{loop.closurePerSqrtKmMm.toFixed(2)}</td>
+                      <td
+                        className={`py-1 px-3 text-right ${loop.pass ? 'text-green-400' : 'text-yellow-400'}`}
+                      >
+                        {loop.pass ? 'PASS' : 'WARN'}
+                      </td>
                       <td className="py-1 px-3 text-right">
                         {loop.sourceLines.length > 0 ? loop.sourceLines.join(',') : '-'}
                       </td>
                     </tr>
                   ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+          {levelingLoopDiagnostics.loops.length > 0 && (
+            <div className="overflow-x-auto w-full border-t border-slate-800">
+              <table className="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr className="text-slate-500 border-b border-slate-800">
+                    <th className="py-2 px-3 font-semibold">Loop</th>
+                    <th className="py-2 px-3 font-semibold text-right">Seg</th>
+                    <th className="py-2 px-3 font-semibold">From</th>
+                    <th className="py-2 px-3 font-semibold">To</th>
+                    <th className="py-2 px-3 font-semibold text-right">dH ({units})</th>
+                    <th className="py-2 px-3 font-semibold text-right">Len (km)</th>
+                    <th className="py-2 px-3 font-semibold text-right">Line</th>
+                    <th className="py-2 px-3 font-semibold text-right">Role</th>
+                  </tr>
+                </thead>
+                <tbody className="text-slate-300">
+                  {levelingLoopDiagnostics.loops.flatMap((loop) =>
+                    loop.segments.map((segment, index) => (
+                      <tr
+                        key={`${loop.key}-${index}-${segment.from}-${segment.to}`}
+                        className="border-b border-slate-800/50"
+                      >
+                        <td className="py-1 px-3">{loop.key}</td>
+                        <td className="py-1 px-3 text-right">{index + 1}</td>
+                        <td className="py-1 px-3">{segment.from}</td>
+                        <td className="py-1 px-3">{segment.to}</td>
+                        <td className="py-1 px-3 text-right">
+                          {(segment.observedDh * unitScale).toFixed(4)}
+                        </td>
+                        <td className="py-1 px-3 text-right">{segment.lengthKm.toFixed(3)}</td>
+                        <td className="py-1 px-3 text-right">{segment.sourceLine ?? '-'}</td>
+                        <td className="py-1 px-3 text-right">
+                          {segment.closureLeg ? 'Closure' : 'Traverse'}
+                        </td>
+                      </tr>
+                    )),
+                  )}
                 </tbody>
               </table>
             </div>
@@ -3075,6 +3133,7 @@ const ReportView: React.FC<ReportViewProps> = ({
                 <th className="py-2">Path</th>
                 <th className="py-2 text-right">|dH| ({units})</th>
                 <th className="py-2 text-right">Len (km)</th>
+                <th className="py-2 text-right">Tol (mm)</th>
                 <th className="py-2 text-right">mm/sqrt(km)</th>
                 <th className="py-2 text-right px-3">Lines</th>
               </tr>
@@ -3089,6 +3148,7 @@ const ReportView: React.FC<ReportViewProps> = ({
                     {(loop.absClosure * unitScale).toFixed(4)}
                   </td>
                   <td className="py-1 text-right font-mono">{loop.loopLengthKm.toFixed(3)}</td>
+                  <td className="py-1 text-right font-mono">{loop.toleranceMm.toFixed(2)}</td>
                   <td className="py-1 text-right font-mono">
                     {loop.closurePerSqrtKmMm.toFixed(2)}
                   </td>

@@ -42,6 +42,13 @@ describe('parseInput', () => {
     expect(levelOnly.logs.some((l) => l.includes('.LWEIGHT applied'))).toBe(true);
   });
 
+  it('parses configurable level-loop tolerance settings', () => {
+    const parsed = parseInput(['.LEVELTOL BASE 1.5 K 6.0', 'C A 0 0 0 ! ! !'].join('\n'));
+    expect(parsed.parseState.levelLoopToleranceBaseMm).toBeCloseTo(1.5, 8);
+    expect(parsed.parseState.levelLoopTolerancePerSqrtKmMm).toBeCloseTo(6.0, 8);
+    expect(parsed.logs.some((l) => l.includes('Level-loop tolerance set'))).toBe(true);
+  });
+
   it('parses bearings and zeniths', () => {
     const bearingFixture = readFileSync('tests/fixtures/bearing_vertical.dat', 'utf-8');
     const parsed = parseInput(bearingFixture);

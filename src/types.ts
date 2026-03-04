@@ -450,8 +450,11 @@ export interface LevelingLoopDiagnosticRow {
   closure: number;
   absClosure: number;
   loopLengthKm: number;
+  toleranceMm: number;
+  toleranceM: number;
   closurePerSqrtKmMm: number;
   severity: number;
+  pass: boolean;
   segments: LevelLoopSegment[];
 }
 
@@ -460,6 +463,10 @@ export interface LevelingLoopDiagnostics {
   observationCount: number;
   loopCount: number;
   totalLengthKm: number;
+  thresholds: {
+    baseMm: number;
+    perSqrtKmMm: number;
+  };
   worstClosure?: number;
   worstClosurePerSqrtKmMm?: number;
   loops: LevelingLoopDiagnosticRow[];
@@ -540,6 +547,8 @@ export interface ParseOptions {
   gpsAddHiHtHiM?: number;
   gpsAddHiHtHtM?: number;
   gpsLoopCheckEnabled?: boolean;
+  levelLoopToleranceBaseMm?: number;
+  levelLoopTolerancePerSqrtKmMm?: number;
   gpsAddHiHtVectorCount?: number;
   gpsAddHiHtAppliedCount?: number;
   gpsAddHiHtPositiveCount?: number;

@@ -242,11 +242,11 @@
       - [x] Phase 1: detect and enumerate leveling loops from `L`/level-sensitive records with station-path traceability
       - [x] Phase 2: compute closure and misclosure statistics per loop independent of TS traverse metrics
       - [x] Phase 3: add dedicated leveling loop section in processing/report/export with ranked suspect loops
-    - [ ] Add level-loop tolerance checks (length-based configurable criteria with pass/warn flags)
-      - [ ] Phase 1: add configurable tolerance model (e.g., k\*sqrt(Km), fixed constants) in project options
-      - [ ] Phase 2: evaluate each loop against configured tolerances and produce pass/warn/fail flags
-      - [ ] Phase 3: include tolerance outcomes in listing/export and pin behavior with tolerance fixture tests
-    - [ ] Add detailed level-loop report blocks (total loop length, per-segment lengths, closure/tolerance outcomes)
+    - [x] Add level-loop tolerance checks (length-based configurable criteria with pass/warn flags)
+      - [x] Phase 1: add configurable tolerance model (e.g., k\*sqrt(Km), fixed constants) in project options
+      - [x] Phase 2: evaluate each loop against configured tolerances and produce pass/warn/fail flags
+      - [x] Phase 3: include tolerance outcomes in listing/export and pin behavior with tolerance fixture tests
+    - [x] Add detailed level-loop report blocks (total loop length, per-segment lengths, closure/tolerance outcomes)
       - [x] Phase 1: compute and persist per-segment and total loop lengths for leveling loops
-      - [ ] Phase 2: add detailed report tables and industry-style listing rows for leveling loop details
-      - [ ] Phase 3: add export formatting and regression tests for report structure/content parity
+      - [x] Phase 2: add detailed report tables and industry-style listing rows for leveling loop details
+      - [x] Phase 3: add export formatting and regression tests for report structure/content parity

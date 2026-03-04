@@ -15,9 +15,13 @@ describe('ProcessingSummaryView leveling loop diagnostics', () => {
       <ProcessingSummaryView result={result} units="m" runElapsedMs={null} runDiagnostics={null} />,
     );
 
-    expect(html).toContain('Leveling Loop Check: obs=5, loops=2, totalLength=4.100km');
+    expect(html).toContain(
+      'Leveling Loop Check: obs=5, loops=2, totalLength=4.100km, tolerance=0.00mm+4.00mm*sqrt(km)',
+    );
     expect(html).toContain('#1 LL-');
     expect(html).toContain('#2 LL-');
+    expect(html).toContain('WARN');
+    expect(html).toContain('tol=');
     expect(html).toContain('mm/sqrt(km)=');
     expect(html).toContain('path=');
   });

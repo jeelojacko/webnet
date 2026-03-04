@@ -39,6 +39,8 @@ const EARTH_RADIUS_M = 6378137;
 const GPS_ADDHIHT_SCALE_TOL = 1e-9;
 const GPS_LOOP_BASE_TOLERANCE_M = 0.02;
 const GPS_LOOP_TOLERANCE_PPM = 50;
+const LEVEL_LOOP_DEFAULT_BASE_MM = 0;
+const LEVEL_LOOP_DEFAULT_PER_SQRT_KM_MM = 4;
 
 const gammln = (xx: number): number => {
   const cof = [
@@ -252,6 +254,8 @@ export class LSAEngine {
   private clusterLinkageMode: ParseOptions['clusterLinkageMode'] = 'single';
   private clusterTolerance2D = 0.03;
   private clusterTolerance3D = 0.05;
+  private levelLoopToleranceBaseMm = LEVEL_LOOP_DEFAULT_BASE_MM;
+  private levelLoopTolerancePerSqrtKmMm = LEVEL_LOOP_DEFAULT_PER_SQRT_KM_MM;
   private chiSquare?: AdjustmentResult['chiSquare'];
   private statisticalSummary?: AdjustmentResult['statisticalSummary'];
   private typeSummary?: Record<
@@ -1251,10 +1255,15 @@ export class LSAEngine {
             return acc + segEdge.lengthKm;
           }, 0) + edge.lengthKm;
         const absClosure = Math.abs(closure);
+        const toleranceMm =
+          this.levelLoopToleranceBaseMm +
+          this.levelLoopTolerancePerSqrtKmMm * Math.sqrt(Math.max(loopLengthKm, 0));
+        const toleranceM = toleranceMm / 1000;
         const closurePerSqrtKmMm =
           loopLengthKm > EPS
             ? (absClosure * 1000) / Math.sqrt(loopLengthKm)
             : absClosure * 1000;
+        const pass = absClosure <= toleranceM + EPS;
         return {
           rank: 0,
           key: `LL-${idx + 1}-${edge.from}`,
@@ -1264,8 +1273,11 @@ export class LSAEngine {
           closure,
           absClosure,
           loopLengthKm,
+          toleranceMm,
+          toleranceM,
           closurePerSqrtKmMm,
-          severity: closurePerSqrtKmMm,
+          severity: toleranceMm > EPS ? absClosure * 1000 / toleranceMm : closurePerSqrtKmMm,
+          pass,
           segments,
         };
       })
@@ -1284,6 +1296,10 @@ export class LSAEngine {
       observationCount: edges.length,
       loopCount: rankedLoops.length,
       totalLengthKm,
+      thresholds: {
+        baseMm: this.levelLoopToleranceBaseMm,
+        perSqrtKmMm: this.levelLoopTolerancePerSqrtKmMm,
+      },
       worstClosure: rankedLoops[0]?.absClosure,
       worstClosurePerSqrtKmMm: rankedLoops[0]?.closurePerSqrtKmMm,
       loops: rankedLoops,
@@ -2792,11 +2808,21 @@ export class LSAEngine {
       parsed.parseState?.clusterTolerance2D ?? this.parseOptions?.clusterTolerance2D ?? 0.03;
     this.clusterTolerance3D =
       parsed.parseState?.clusterTolerance3D ?? this.parseOptions?.clusterTolerance3D ?? 0.05;
+    this.levelLoopToleranceBaseMm =
+      parsed.parseState?.levelLoopToleranceBaseMm ??
+      this.parseOptions?.levelLoopToleranceBaseMm ??
+      LEVEL_LOOP_DEFAULT_BASE_MM;
+    this.levelLoopTolerancePerSqrtKmMm =
+      parsed.parseState?.levelLoopTolerancePerSqrtKmMm ??
+      this.parseOptions?.levelLoopTolerancePerSqrtKmMm ??
+      LEVEL_LOOP_DEFAULT_PER_SQRT_KM_MM;
     const gpsLoopCheckEnabled =
       parsed.parseState?.gpsLoopCheckEnabled ?? this.parseOptions?.gpsLoopCheckEnabled ?? false;
     this.parseState = parsed.parseState;
     if (this.parseState) {
       this.parseState.gpsLoopCheckEnabled = gpsLoopCheckEnabled;
+      this.parseState.levelLoopToleranceBaseMm = this.levelLoopToleranceBaseMm;
+      this.parseState.levelLoopTolerancePerSqrtKmMm = this.levelLoopTolerancePerSqrtKmMm;
       this.parseState.geoidHeightConversionEnabled = this.geoidHeightConversionEnabled;
       this.parseState.geoidOutputHeightDatum = this.geoidOutputHeightDatum;
       this.parseState.geoidModelLoaded = false;
@@ -3010,11 +3036,11 @@ export class LSAEngine {
     if (levelingRows.length > 0) {
       this.levelingLoopDiagnostics = this.computeLevelingLoopDiagnostics(levelingRows);
       this.log(
-        `Leveling loop check: observations=${this.levelingLoopDiagnostics.observationCount}, loops=${this.levelingLoopDiagnostics.loopCount}, totalLength=${this.levelingLoopDiagnostics.totalLengthKm.toFixed(3)}km`,
+        `Leveling loop check: observations=${this.levelingLoopDiagnostics.observationCount}, loops=${this.levelingLoopDiagnostics.loopCount}, totalLength=${this.levelingLoopDiagnostics.totalLengthKm.toFixed(3)}km, tolerance=${this.levelingLoopDiagnostics.thresholds.baseMm.toFixed(3)}mm+${this.levelingLoopDiagnostics.thresholds.perSqrtKmMm.toFixed(3)}mm*sqrt(km)`,
       );
       this.levelingLoopDiagnostics.loops.slice(0, 10).forEach((loop) => {
         this.log(
-          `  #${loop.rank} ${loop.key}: path=${loop.stationPath.join('->')} closure=${loop.closure.toFixed(4)}m |closure|=${loop.absClosure.toFixed(4)}m len=${loop.loopLengthKm.toFixed(3)}km mm/sqrt(km)=${loop.closurePerSqrtKmMm.toFixed(2)} lines=${loop.sourceLines.length > 0 ? loop.sourceLines.join(',') : '-'}`,
+          `  #${loop.rank} ${loop.key}: path=${loop.stationPath.join('->')} closure=${loop.closure.toFixed(4)}m |closure|=${loop.absClosure.toFixed(4)}m len=${loop.loopLengthKm.toFixed(3)}km tol=${loop.toleranceMm.toFixed(2)}mm mm/sqrt(km)=${loop.closurePerSqrtKmMm.toFixed(2)} status=${loop.pass ? 'PASS' : 'WARN'} lines=${loop.sourceLines.length > 0 ? loop.sourceLines.join(',') : '-'}`,
         );
       });
     }

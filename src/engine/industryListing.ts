@@ -38,6 +38,8 @@ export interface IndustryListingRunDiagnostics {
   defaultSigmaByType: string;
   stochasticDefaultsSummary: string;
   rotationAngleRad: number;
+  levelLoopToleranceBaseMm?: number;
+  levelLoopTolerancePerSqrtKmMm?: number;
   qFixLinearSigmaM?: number;
   qFixAngularSigmaSec?: number;
   crsTransformEnabled?: boolean;
@@ -153,6 +155,10 @@ export const buildIndustryStyleListingText = (
   const gpsAddHiHtScaleMin = parseState?.gpsAddHiHtScaleMin ?? runDiag.gpsAddHiHtScaleMin ?? 1;
   const gpsAddHiHtScaleMax = parseState?.gpsAddHiHtScaleMax ?? runDiag.gpsAddHiHtScaleMax ?? 1;
   const gpsLoopCheckEnabled = parseState?.gpsLoopCheckEnabled ?? false;
+  const levelLoopToleranceBaseMm =
+    parseState?.levelLoopToleranceBaseMm ?? runDiag.levelLoopToleranceBaseMm ?? 0;
+  const levelLoopTolerancePerSqrtKmMm =
+    parseState?.levelLoopTolerancePerSqrtKmMm ?? runDiag.levelLoopTolerancePerSqrtKmMm ?? 4;
   const gpsLoopDiagnostics = res.gpsLoopDiagnostics;
   const levelingLoopDiagnostics = res.levelingLoopDiagnostics;
   const isPreanalysis = res.preanalysisMode === true;
@@ -289,6 +295,9 @@ export const buildIndustryStyleListingText = (
   }
   lines.push(
     `      GPS Loop Check                  : ${gpsLoopCheckEnabled ? 'ON' : 'OFF'}${gpsLoopDiagnostics?.enabled ? ` (vectors=${gpsLoopDiagnostics.vectorCount}, loops=${gpsLoopDiagnostics.loopCount}, pass=${gpsLoopDiagnostics.passCount}, warn=${gpsLoopDiagnostics.warnCount})` : ''}`,
+  );
+  lines.push(
+    `      Level Loop Tolerance           : base=${levelLoopToleranceBaseMm.toFixed(2)} mm, k=${levelLoopTolerancePerSqrtKmMm.toFixed(2)} mm/sqrt(km)`,
   );
   lines.push(
     `      GPS Rover Offsets              : ${gpsOffsetObservations.length > 0 ? `${gpsOffsetObservations.length} applied` : 'none'}`,
@@ -948,23 +957,43 @@ export const buildIndustryStyleListingText = (
     addCenteredHeading('Differential Leveling Loop Diagnostics');
     lines.push('');
     lines.push(
-      `observations=${levelingLoopDiagnostics.observationCount}, loops=${levelingLoopDiagnostics.loopCount}, totalLength=${levelingLoopDiagnostics.totalLengthKm.toFixed(3)}km, worst|dH|=${levelingLoopDiagnostics.worstClosure != null ? (levelingLoopDiagnostics.worstClosure * unitScale).toFixed(4) : '-'}${linearUnit}`,
+      `observations=${levelingLoopDiagnostics.observationCount}, loops=${levelingLoopDiagnostics.loopCount}, totalLength=${levelingLoopDiagnostics.totalLengthKm.toFixed(3)}km, tolerance=${levelingLoopDiagnostics.thresholds.baseMm.toFixed(2)}mm+${levelingLoopDiagnostics.thresholds.perSqrtKmMm.toFixed(2)}mm*sqrt(km), worst|dH|=${levelingLoopDiagnostics.worstClosure != null ? (levelingLoopDiagnostics.worstClosure * unitScale).toFixed(4) : '-'}${linearUnit}`,
     );
     lines.push('');
     const levelingLoopRows = levelingLoopDiagnostics.loops.map((loop) => [
       String(loop.rank),
       loop.key,
+      loop.pass ? 'PASS' : 'WARN',
       (loop.closure * unitScale).toFixed(4),
       (loop.absClosure * unitScale).toFixed(4),
       loop.loopLengthKm.toFixed(3),
+      loop.toleranceMm.toFixed(2),
       loop.closurePerSqrtKmMm.toFixed(2),
       loop.sourceLines.length > 0 ? loop.sourceLines.join(',') : '-',
       loop.stationPath.join('->'),
     ]);
     renderTextTable(
-      ['#', 'Loop', `dH (${linearUnit})`, `|dH| (${linearUnit})`, 'Len (km)', 'mm/sqrt(km)', 'Lines', 'Path'],
+      ['#', 'Loop', 'Status', `dH (${linearUnit})`, `|dH| (${linearUnit})`, 'Len (km)', 'Tol (mm)', 'mm/sqrt(km)', 'Lines', 'Path'],
       levelingLoopRows,
-      [2, 3, 4, 5],
+      [3, 4, 5, 6, 7],
+    );
+    lines.push('');
+    const levelingSegmentRows = levelingLoopDiagnostics.loops.flatMap((loop) =>
+      loop.segments.map((segment, index) => [
+        loop.key,
+        String(index + 1),
+        segment.from,
+        segment.to,
+        (segment.observedDh * unitScale).toFixed(4),
+        segment.lengthKm.toFixed(3),
+        segment.sourceLine != null ? String(segment.sourceLine) : '-',
+        segment.closureLeg ? 'Closure' : 'Traverse',
+      ]),
+    );
+    renderTextTable(
+      ['Loop', 'Seg', 'From', 'To', `dH (${linearUnit})`, 'Len (km)', 'Line', 'Role'],
+      levelingSegmentRows,
+      [1, 4, 5, 6],
     );
   }
 

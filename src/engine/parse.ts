@@ -58,6 +58,8 @@ const defaultParseOptions: ParseOptions = {
   gpsAddHiHtHiM: 0,
   gpsAddHiHtHtM: 0,
   gpsLoopCheckEnabled: false,
+  levelLoopToleranceBaseMm: 0,
+  levelLoopTolerancePerSqrtKmMm: 4,
   lonSign: 'west-negative',
   currentInstrument: undefined,
   edmMode: 'additive',
@@ -1351,6 +1353,87 @@ export const parseInput = (
           state.levelWeight = val;
           logs.push(`Level weight set to ${val}`);
         }
+      } else if (op === '.LEVELTOL') {
+        const args = parts.slice(1);
+        const parsePositive = (token?: string): number | undefined => {
+          const parsed = parseFloat(token || '');
+          if (!Number.isFinite(parsed) || parsed < 0) return undefined;
+          return parsed;
+        };
+        if (args.length === 0) {
+          logs.push(
+            `Level-loop tolerance unchanged: base=${(state.levelLoopToleranceBaseMm ?? 0).toFixed(3)} mm, k=${(state.levelLoopTolerancePerSqrtKmMm ?? 4).toFixed(3)} mm/sqrt(km)`,
+          );
+          continue;
+        }
+        if (
+          ['OFF', 'NONE', 'DEFAULT', 'RESET'].includes((args[0] || '').trim().toUpperCase())
+        ) {
+          state.levelLoopToleranceBaseMm = 0;
+          state.levelLoopTolerancePerSqrtKmMm = 4;
+          logs.push('Level-loop tolerance reset to default: base=0.000 mm, k=4.000 mm/sqrt(km)');
+          continue;
+        }
+
+        let baseMm = state.levelLoopToleranceBaseMm ?? 0;
+        let kMm = state.levelLoopTolerancePerSqrtKmMm ?? 4;
+        let updated = false;
+
+        if (args.length >= 2) {
+          const first = parsePositive(args[0]);
+          const second = parsePositive(args[1]);
+          if (first != null && second != null) {
+            baseMm = first;
+            kMm = second;
+            updated = true;
+          }
+        }
+        for (let i = 0; i < args.length; i += 1) {
+          const label = (args[i] || '').trim().toUpperCase();
+          if (label === 'BASE' || label === 'B') {
+            const val = parsePositive(args[i + 1]);
+            if (val == null) {
+              logs.push(
+                `Warning: .LEVELTOL missing/invalid BASE value at line ${lineNum}; expected non-negative number in mm.`,
+              );
+              continue;
+            }
+            baseMm = val;
+            updated = true;
+            i += 1;
+            continue;
+          }
+          if (label === 'K' || label === 'SQRTKM' || label === 'PERKM') {
+            const val = parsePositive(args[i + 1]);
+            if (val == null) {
+              logs.push(
+                `Warning: .LEVELTOL missing/invalid K value at line ${lineNum}; expected non-negative number in mm/sqrt(km).`,
+              );
+              continue;
+            }
+            kMm = val;
+            updated = true;
+            i += 1;
+          }
+        }
+        if (!updated && args.length === 1) {
+          const kOnly = parsePositive(args[0]);
+          if (kOnly != null) {
+            kMm = kOnly;
+            updated = true;
+          }
+        }
+        if (!updated) {
+          logs.push(
+            `Warning: unrecognized .LEVELTOL option at line ${lineNum}; expected ".LEVELTOL <base_mm> <k_mm_sqrt_km>" or labeled BASE/K tokens.`,
+          );
+          continue;
+        }
+        state.levelLoopToleranceBaseMm = baseMm;
+        state.levelLoopTolerancePerSqrtKmMm = kMm;
+        logs.push(
+          `Level-loop tolerance set: base=${baseMm.toFixed(3)} mm, k=${kMm.toFixed(3)} mm/sqrt(km)`,
+        );
       } else if (op === '.QFIX') {
         const args = parts.slice(1);
         const toMeters = state.units === 'ft' ? 1 / FT_PER_M : 1;

@@ -36,10 +36,13 @@ describe('ReportView leveling loop sections', () => {
     );
 
     expect(html).toContain('Leveling Loop Diagnostics');
+    expect(html).toContain('Tolerance Model');
     expect(html).toContain('Leveling Loop Suspects (ranked)');
     expect(html).toContain('LL-1');
     expect(html).toContain('LL-2');
+    expect(html).toContain('Tol (mm)');
     expect(html).toContain('mm/sqrt(km)');
     expect(html).toContain('C-&gt;A-&gt;D-&gt;C');
+    expect(html).toContain('Closure');
   });
 });
