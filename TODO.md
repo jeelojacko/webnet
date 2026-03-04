@@ -250,3 +250,6 @@
       - [x] Phase 1: compute and persist per-segment and total loop lengths for leveling loops
       - [x] Phase 2: add detailed report tables and industry-style listing rows for leveling loop details
       - [x] Phase 3: add export formatting and regression tests for report structure/content parity
+    - [x] Add level-loop preset shortcuts and segment-level QA ranking
+      - [x] Phase 1: add built-in level-loop tolerance presets in Project Options for quick switching between common screening models
+      - [x] Phase 2: aggregate suspect segments across warn loops and surface ranked segment suspects in report/summary/listing outputs

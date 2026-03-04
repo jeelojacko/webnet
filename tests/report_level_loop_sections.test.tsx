@@ -38,6 +38,7 @@ describe('ReportView leveling loop sections', () => {
     expect(html).toContain('Leveling Loop Diagnostics');
     expect(html).toContain('Tolerance Model');
     expect(html).toContain('Leveling Loop Suspects (ranked)');
+    expect(html).toContain('Leveling Segment Suspects');
     expect(html).toContain('LL-1');
     expect(html).toContain('LL-2');
     expect(html).toContain('Tol (mm)');

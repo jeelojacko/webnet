@@ -243,6 +243,12 @@ const ReportView: React.FC<ReportViewProps> = ({
   const levelingLoopSuspects = (levelingLoopDiagnostics?.loops ?? [])
     .filter((loop) => !loop.pass)
     .slice(0, 20);
+  const levelingSegmentSuspects = (levelingLoopDiagnostics?.suspectSegments ?? []).slice(0, 10);
+  const highlightedLevelingSegmentLines = new Set(
+    levelingSegmentSuspects
+      .map((segment) => segment.sourceLine)
+      .filter((line): line is number => line != null),
+  );
   const directionRejects = [...(result.directionRejectDiagnostics ?? [])].sort((a, b) => {
     const la = a.sourceLine ?? Number.MAX_SAFE_INTEGER;
     const lb = b.sourceLine ?? Number.MAX_SAFE_INTEGER;
@@ -2997,7 +3003,7 @@ const ReportView: React.FC<ReportViewProps> = ({
           <div className="px-3 py-2 text-xs text-slate-400 uppercase tracking-wider border-b border-slate-800 bg-slate-900/40">
             Leveling Loop Diagnostics
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-3 p-3 text-xs text-slate-300">
+          <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-8 gap-3 p-3 text-xs text-slate-300">
             <div>
               <div className="text-slate-500">Observations</div>
               <div>{levelingLoopDiagnostics.observationCount}</div>
@@ -3007,8 +3013,18 @@ const ReportView: React.FC<ReportViewProps> = ({
               <div>{levelingLoopDiagnostics.loopCount}</div>
             </div>
             <div>
+              <div className="text-slate-500">Pass / Warn</div>
+              <div>
+                {levelingLoopDiagnostics.passCount} / {levelingLoopDiagnostics.warnCount}
+              </div>
+            </div>
+            <div>
               <div className="text-slate-500">Total Length (km)</div>
               <div>{levelingLoopDiagnostics.totalLengthKm.toFixed(3)}</div>
+            </div>
+            <div>
+              <div className="text-slate-500">Warn Length (km)</div>
+              <div>{levelingLoopDiagnostics.warnTotalLengthKm.toFixed(3)}</div>
             </div>
             <div>
               <div className="text-slate-500">Worst |dH| ({units})</div>
@@ -3031,6 +3047,18 @@ const ReportView: React.FC<ReportViewProps> = ({
               <div className="font-mono text-[11px]">
                 {levelingLoopDiagnostics.thresholds.baseMm.toFixed(2)}mm +{' '}
                 {levelingLoopDiagnostics.thresholds.perSqrtKmMm.toFixed(2)}mm*sqrt(km)
+              </div>
+            </div>
+            <div>
+              <div className="text-slate-500">Worst Loop</div>
+              <div className="font-mono">{levelingLoopDiagnostics.worstLoopKey ?? '-'}</div>
+            </div>
+            <div>
+              <div className="text-slate-500">Top Suspect Segment</div>
+              <div className="font-mono">
+                {levelingLoopDiagnostics.suspectSegments[0]
+                  ? `${levelingLoopDiagnostics.suspectSegments[0].from}->${levelingLoopDiagnostics.suspectSegments[0].to}`
+                  : '-'}
               </div>
             </div>
           </div>
@@ -3096,7 +3124,12 @@ const ReportView: React.FC<ReportViewProps> = ({
                     loop.segments.map((segment, index) => (
                       <tr
                         key={`${loop.key}-${index}-${segment.from}-${segment.to}`}
-                        className="border-b border-slate-800/50"
+                        className={`border-b border-slate-800/50 ${
+                          segment.sourceLine != null &&
+                          highlightedLevelingSegmentLines.has(segment.sourceLine)
+                            ? 'bg-yellow-950/20'
+                            : ''
+                        }`}
                       >
                         <td className="py-1 px-3">{loop.key}</td>
                         <td className="py-1 px-3 text-right">{index + 1}</td>
@@ -3155,6 +3188,49 @@ const ReportView: React.FC<ReportViewProps> = ({
                   <td className="py-1 px-3 text-right font-mono">
                     {loop.sourceLines.length > 0 ? loop.sourceLines.join(',') : '-'}
                   </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {!isPreanalysis && levelingSegmentSuspects.length > 0 && (
+        <div className="mb-6 border border-slate-800 rounded overflow-hidden">
+          <div className="px-4 py-2 border-b border-slate-800 bg-slate-900/60 text-xs uppercase tracking-wider text-slate-400">
+            Leveling Segment Suspects
+          </div>
+          <table className="w-full text-left text-xs">
+            <thead>
+              <tr className="text-slate-500 border-b border-slate-800/60">
+                <th className="py-2 px-3">#</th>
+                <th className="py-2">Segment</th>
+                <th className="py-2 text-right">Line</th>
+                <th className="py-2 text-right">Warn Loops</th>
+                <th className="py-2 text-right">Score</th>
+                <th className="py-2 text-right">Max |dH| ({units})</th>
+                <th className="py-2 text-right">Worst Loop</th>
+              </tr>
+            </thead>
+            <tbody className="text-slate-300">
+              {levelingSegmentSuspects.map((segment) => (
+                <tr
+                  key={`level-segment-suspect-${segment.key}`}
+                  className="border-b border-slate-800/30"
+                >
+                  <td className="py-1 px-3 text-slate-500">{segment.rank}</td>
+                  <td className="py-1 font-mono">
+                    {segment.from}
+                    {'->'}
+                    {segment.to}
+                  </td>
+                  <td className="py-1 text-right font-mono">{segment.sourceLine ?? '-'}</td>
+                  <td className="py-1 text-right font-mono">{segment.warnLoopCount}</td>
+                  <td className="py-1 text-right font-mono">{segment.suspectScore.toFixed(2)}</td>
+                  <td className="py-1 text-right font-mono">
+                    {(segment.maxAbsDh * unitScale).toFixed(4)}
+                  </td>
+                  <td className="py-1 text-right font-mono">{segment.worstLoopKey ?? '-'}</td>
                 </tr>
               ))}
             </tbody>

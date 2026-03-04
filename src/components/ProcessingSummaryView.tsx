@@ -259,11 +259,16 @@ const ProcessingSummaryView: React.FC<ProcessingSummaryViewProps> = ({
     const levelingLoopDiagnostics = result.levelingLoopDiagnostics;
     if (levelingLoopDiagnostics?.enabled) {
       lines.push(
-        `Leveling Loop Check: obs=${levelingLoopDiagnostics.observationCount}, loops=${levelingLoopDiagnostics.loopCount}, totalLength=${levelingLoopDiagnostics.totalLengthKm.toFixed(3)}km, tolerance=${levelingLoopDiagnostics.thresholds.baseMm.toFixed(2)}mm+${levelingLoopDiagnostics.thresholds.perSqrtKmMm.toFixed(2)}mm*sqrt(km)`,
+        `Leveling Loop Check: obs=${levelingLoopDiagnostics.observationCount}, loops=${levelingLoopDiagnostics.loopCount}, pass=${levelingLoopDiagnostics.passCount}, warn=${levelingLoopDiagnostics.warnCount}, totalLength=${levelingLoopDiagnostics.totalLengthKm.toFixed(3)}km, warnLength=${levelingLoopDiagnostics.warnTotalLengthKm.toFixed(3)}km, tolerance=${levelingLoopDiagnostics.thresholds.baseMm.toFixed(2)}mm+${levelingLoopDiagnostics.thresholds.perSqrtKmMm.toFixed(2)}mm*sqrt(km)`,
       );
       levelingLoopDiagnostics.loops.slice(0, 15).forEach((loop) => {
         lines.push(
           `  #${loop.rank} ${loop.key} ${loop.pass ? 'PASS' : 'WARN'} |dH|=${(loop.absClosure * unitScale).toFixed(4)}${linearUnit} len=${loop.loopLengthKm.toFixed(3)}km tol=${loop.toleranceMm.toFixed(2)}mm mm/sqrt(km)=${loop.closurePerSqrtKmMm.toFixed(2)} path=${loop.stationPath.join('->')}`,
+        );
+      });
+      levelingLoopDiagnostics.suspectSegments.slice(0, 3).forEach((segment) => {
+        lines.push(
+          `  suspect #${segment.rank} ${segment.from}->${segment.to} line=${segment.sourceLine ?? '-'} loops=${segment.warnLoopCount} score=${segment.suspectScore.toFixed(2)} worst=${segment.worstLoopKey ?? '-'}`,
         );
       });
       if (levelingLoopDiagnostics.loops.length > 15) {

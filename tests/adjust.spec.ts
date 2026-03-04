@@ -587,7 +587,10 @@ describe('LSAEngine', () => {
     expect(loopDiag?.enabled ?? false).toBe(true);
     expect(loopDiag?.observationCount ?? 0).toBe(5);
     expect(loopDiag?.loopCount ?? 0).toBe(2);
+    expect(loopDiag?.passCount ?? 0).toBe(0);
+    expect(loopDiag?.warnCount ?? 0).toBe(2);
     expect(loopDiag?.totalLengthKm ?? 0).toBeCloseTo(4.1, 8);
+    expect(loopDiag?.warnTotalLengthKm ?? 0).toBeCloseTo(5.2, 8);
     expect(loopDiag?.thresholds.baseMm ?? 0).toBeCloseTo(0, 8);
     expect(loopDiag?.thresholds.perSqrtKmMm ?? 0).toBeCloseTo(4, 8);
     expect(loopDiag?.loops[0].rank ?? 0).toBe(1);
@@ -602,6 +605,9 @@ describe('LSAEngine', () => {
     expect(loopDiag?.loops[0].pass ?? true).toBe(false);
     expect(loopDiag?.loops[1].pass ?? false).toBe(false);
     expect(loopDiag?.loops[0].segments.length ?? 0).toBeGreaterThan(0);
+    expect(loopDiag?.suspectSegments[0].sourceLine).toBe(14);
+    expect(loopDiag?.suspectSegments[0].warnLoopCount ?? 0).toBeGreaterThan(0);
+    expect(loopDiag?.suspectSegments[0].suspectScore ?? 0).toBeGreaterThan(0);
     expect(loopDiag?.loops[0].closurePerSqrtKmMm ?? 0).toBeGreaterThan(
       loopDiag?.loops[1].closurePerSqrtKmMm ?? 0,
     );

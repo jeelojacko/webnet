@@ -45,10 +45,11 @@ describe('industry listing leveling loop diagnostics', () => {
 
     expect(text).toContain('Differential Leveling Loop Diagnostics');
     expect(text).toContain(
-      'observations=5, loops=2, totalLength=4.100km, tolerance=0.00mm+4.00mm*sqrt(km)',
+      'observations=5, loops=2, pass=0, warn=2, totalLength=4.100km, warnLength=5.200km, tolerance=0.00mm+4.00mm*sqrt(km)',
     );
     expect(text).toContain('LL-1');
     expect(text).toContain('LL-2');
+    expect(text).toContain('WarnLoops');
     expect(text).toContain('Status');
     expect(text).toContain('Closure');
     expect(text).toContain('mm/sqrt(km)');

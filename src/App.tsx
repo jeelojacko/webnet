@@ -33,6 +33,12 @@ import {
 import { buildIndustryStyleListingText } from './engine/industryListing';
 import { buildLandXmlText } from './engine/landxml';
 import {
+  LEVEL_LOOP_TOLERANCE_PRESETS,
+  findLevelLoopTolerancePreset,
+  getLevelLoopTolerancePresetLabel,
+  type LevelLoopTolerancePresetId,
+} from './engine/levelLoopTolerance';
+import {
   importExternalInput,
   type ImportedDataset,
   type ImportedInputNotice,
@@ -429,6 +435,8 @@ const SETTINGS_TOOLTIPS = {
     'Base differential-leveling loop tolerance component in millimeters. Total tolerance = BASE + K*sqrt(km).',
   levelLoopToleranceK:
     'Differential-leveling loop tolerance coefficient K in millimeters per sqrt(km). Total tolerance = BASE + K*sqrt(km).',
+  levelLoopTolerancePreset:
+    'Quick preset selector for common differential-leveling loop tolerance models. Choosing a preset updates the base and K fields below.',
   gpsAddHiHtEnabled:
     'Enable parser-side GPS AddHiHt defaults for GNSS vectors. Default OFF keeps current GNSS preprocessing unchanged.',
   gpsAddHiHtHi:
@@ -535,7 +543,7 @@ const PROJECT_OPTION_SECTION_TOOLTIPS: Record<string, string> = {
   'Vertical Reduction':
     'Vertical modeling controls for curvature/refraction and slope-to-vertical reduction behavior.',
   'Weighting Helpers':
-    'Auxiliary weighting constants that support observation precision defaults such as .LWEIGHT.',
+    'Auxiliary weighting constants and preset shortcuts that support observation precision defaults such as .LWEIGHT and level-loop tolerance screening.',
   'Industry-Style Listing Contents':
     'Select which sections are included in the industry-style listing/export output.',
   'Industry-Style Listing Sort/Scope':
@@ -1298,7 +1306,7 @@ const App: React.FC = () => {
     );
     lines.push(`GPS loop check: ${runDiag.gpsLoopCheckEnabled ? 'ON' : 'OFF'}`);
     lines.push(
-      `Level loop tolerance: base=${runDiag.levelLoopToleranceBaseMm.toFixed(2)} mm, k=${runDiag.levelLoopTolerancePerSqrtKmMm.toFixed(2)} mm/sqrt(km)`,
+      `Level loop tolerance: ${getLevelLoopTolerancePresetLabel(runDiag.levelLoopToleranceBaseMm, runDiag.levelLoopTolerancePerSqrtKmMm)} (base=${runDiag.levelLoopToleranceBaseMm.toFixed(2)} mm, k=${runDiag.levelLoopTolerancePerSqrtKmMm.toFixed(2)} mm/sqrt(km))`,
     );
     lines.push(
       `GPS AddHiHt defaults: ${runDiag.gpsAddHiHtEnabled ? `ON (HI=${(runDiag.gpsAddHiHtHiM * unitScale).toFixed(4)} ${linearUnit}, HT=${(runDiag.gpsAddHiHtHtM * unitScale).toFixed(4)} ${linearUnit})` : 'OFF'}`,
@@ -4482,6 +4490,17 @@ const App: React.FC = () => {
     setParseSettingsDraft((prev) => ({ ...prev, [key]: value }));
   };
 
+  const handleLevelLoopPresetChange = (presetId: LevelLoopTolerancePresetId) => {
+    if (presetId === 'custom') return;
+    const preset = LEVEL_LOOP_TOLERANCE_PRESETS.find((row) => row.id === presetId);
+    if (!preset) return;
+    setParseSettingsDraft((prev) => ({
+      ...prev,
+      levelLoopToleranceBaseMm: preset.baseMm,
+      levelLoopTolerancePerSqrtKmMm: preset.perSqrtKmMm,
+    }));
+  };
+
   const handleDraftSetting = <K extends keyof SettingsState>(key: K, value: SettingsState[K]) => {
     setSettingsDraft((prev) => ({ ...prev, [key]: value }));
   };
@@ -4632,6 +4651,11 @@ const App: React.FC = () => {
   const selectedInstrumentMeta = selectedInstrumentDraft
     ? projectInstrumentsDraft[selectedInstrumentDraft]
     : undefined;
+  const activeLevelLoopPreset =
+    findLevelLoopTolerancePreset(
+      parseSettingsDraft.levelLoopToleranceBaseMm,
+      parseSettingsDraft.levelLoopTolerancePerSqrtKmMm,
+    ) ?? null;
   const instrumentLinearUnit = settingsDraft.units === 'ft' ? 'FeetUS' : 'Meters';
   const displayLinear = (meters: number): number =>
     settingsDraft.units === 'ft' ? meters * FT_PER_M : meters;
@@ -5585,6 +5609,32 @@ const App: React.FC = () => {
                         className={`${optionInputClass} mt-1 max-w-xs`}
                       />
                     </label>
+                    <label className={optionLabelClass}>
+                      Level Loop Preset
+                      <select
+                        title={SETTINGS_TOOLTIPS.levelLoopTolerancePreset}
+                        value={activeLevelLoopPreset?.id ?? 'custom'}
+                        onChange={(e) =>
+                          handleLevelLoopPresetChange(
+                            e.target.value as LevelLoopTolerancePresetId,
+                          )
+                        }
+                        className={`${optionInputClass} mt-1 max-w-xs`}
+                      >
+                        {LEVEL_LOOP_TOLERANCE_PRESETS.map((preset) => (
+                          <option key={preset.id} value={preset.id}>
+                            {preset.label} ({preset.baseMm.toFixed(1)} +{' '}
+                            {preset.perSqrtKmMm.toFixed(1)}*sqrt(km))
+                          </option>
+                        ))}
+                        <option value="custom">Custom</option>
+                      </select>
+                    </label>
+                    <div className="text-[11px] text-slate-400 leading-relaxed">
+                      {activeLevelLoopPreset
+                        ? `${activeLevelLoopPreset.label}: ${activeLevelLoopPreset.description}`
+                        : 'Custom tolerance model: edits to Base or K leave the preset selector on Custom.'}
+                    </div>
                     <label className={optionLabelClass}>
                       Level Loop Base Tol (mm)
                       <input

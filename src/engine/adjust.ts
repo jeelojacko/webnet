@@ -24,6 +24,7 @@ import type {
   DirectionObservation,
   GpsObservation,
   LevelObservation,
+  LevelingLoopSegmentSuspectRow,
   Observation,
   Station,
   StationId,
@@ -1291,18 +1292,81 @@ export class LSAEngine {
       })
       .map((loop, idx) => ({ ...loop, rank: idx + 1 }));
 
+    const passCount = rankedLoops.filter((loop) => loop.pass).length;
+    const warnLoops = rankedLoops.filter((loop) => !loop.pass);
+    const warnCount = warnLoops.length;
+    const warnTotalLengthKm = warnLoops.reduce((acc, loop) => acc + loop.loopLengthKm, 0);
+    const suspectSegments = (() => {
+      const segmentMap = new Map<
+        string,
+        Omit<LevelingLoopSegmentSuspectRow, 'rank'>
+      >();
+      warnLoops.forEach((loop) => {
+        loop.segments.forEach((segment) => {
+          const key =
+            segment.sourceLine != null
+              ? `L${segment.sourceLine}`
+              : `${segment.from}->${segment.to}-${segment.closureLeg ? 'closure' : 'traverse'}`;
+          const existing = segmentMap.get(key);
+          if (existing) {
+            existing.occurrenceCount += 1;
+            existing.warnLoopCount += 1;
+            existing.totalLengthKm += segment.lengthKm;
+            existing.maxAbsDh = Math.max(existing.maxAbsDh, Math.abs(segment.observedDh));
+            existing.suspectScore += loop.severity;
+            existing.closureLegCount += segment.closureLeg ? 1 : 0;
+            if (loop.severity > existing.worstLoopSeverity) {
+              existing.worstLoopSeverity = loop.severity;
+              existing.worstLoopKey = loop.key;
+            }
+            return;
+          }
+          segmentMap.set(key, {
+            key,
+            from: segment.from,
+            to: segment.to,
+            sourceLine: segment.sourceLine,
+            occurrenceCount: 1,
+            warnLoopCount: 1,
+            totalLengthKm: segment.lengthKm,
+            maxAbsDh: Math.abs(segment.observedDh),
+            suspectScore: loop.severity,
+            worstLoopKey: loop.key,
+            worstLoopSeverity: loop.severity,
+            closureLegCount: segment.closureLeg ? 1 : 0,
+          });
+        });
+      });
+      return [...segmentMap.values()]
+        .sort((a, b) => {
+          if (b.suspectScore !== a.suspectScore) return b.suspectScore - a.suspectScore;
+          if (b.warnLoopCount !== a.warnLoopCount) return b.warnLoopCount - a.warnLoopCount;
+          if (b.maxAbsDh !== a.maxAbsDh) return b.maxAbsDh - a.maxAbsDh;
+          const la = a.sourceLine ?? Number.MAX_SAFE_INTEGER;
+          const lb = b.sourceLine ?? Number.MAX_SAFE_INTEGER;
+          if (la !== lb) return la - lb;
+          return a.key.localeCompare(b.key, undefined, { numeric: true });
+        })
+        .map((segment, idx) => ({ ...segment, rank: idx + 1 }));
+    })();
+
     return {
       enabled: true,
       observationCount: edges.length,
       loopCount: rankedLoops.length,
+      passCount,
+      warnCount,
       totalLengthKm,
+      warnTotalLengthKm,
       thresholds: {
         baseMm: this.levelLoopToleranceBaseMm,
         perSqrtKmMm: this.levelLoopTolerancePerSqrtKmMm,
       },
+      worstLoopKey: rankedLoops[0]?.key,
       worstClosure: rankedLoops[0]?.absClosure,
       worstClosurePerSqrtKmMm: rankedLoops[0]?.closurePerSqrtKmMm,
       loops: rankedLoops,
+      suspectSegments,
     };
   }
 
@@ -3041,6 +3105,11 @@ export class LSAEngine {
       this.levelingLoopDiagnostics.loops.slice(0, 10).forEach((loop) => {
         this.log(
           `  #${loop.rank} ${loop.key}: path=${loop.stationPath.join('->')} closure=${loop.closure.toFixed(4)}m |closure|=${loop.absClosure.toFixed(4)}m len=${loop.loopLengthKm.toFixed(3)}km tol=${loop.toleranceMm.toFixed(2)}mm mm/sqrt(km)=${loop.closurePerSqrtKmMm.toFixed(2)} status=${loop.pass ? 'PASS' : 'WARN'} lines=${loop.sourceLines.length > 0 ? loop.sourceLines.join(',') : '-'}`,
+        );
+      });
+      this.levelingLoopDiagnostics.suspectSegments.slice(0, 5).forEach((segment) => {
+        this.log(
+          `  suspect #${segment.rank} ${segment.from}->${segment.to}: line=${segment.sourceLine ?? '-'} warnLoops=${segment.warnLoopCount} score=${segment.suspectScore.toFixed(2)} worst=${segment.worstLoopKey ?? '-'}`,
         );
       });
     }

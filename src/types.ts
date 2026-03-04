@@ -441,6 +441,22 @@ export interface LevelLoopSegment {
   closureLeg?: boolean;
 }
 
+export interface LevelingLoopSegmentSuspectRow {
+  rank: number;
+  key: string;
+  from: StationId;
+  to: StationId;
+  sourceLine?: number;
+  occurrenceCount: number;
+  warnLoopCount: number;
+  totalLengthKm: number;
+  maxAbsDh: number;
+  suspectScore: number;
+  worstLoopKey?: string;
+  worstLoopSeverity: number;
+  closureLegCount: number;
+}
+
 export interface LevelingLoopDiagnosticRow {
   rank: number;
   key: string;
@@ -462,14 +478,19 @@ export interface LevelingLoopDiagnostics {
   enabled: boolean;
   observationCount: number;
   loopCount: number;
+  passCount: number;
+  warnCount: number;
   totalLengthKm: number;
+  warnTotalLengthKm: number;
   thresholds: {
     baseMm: number;
     perSqrtKmMm: number;
   };
+  worstLoopKey?: string;
   worstClosure?: number;
   worstClosurePerSqrtKmMm?: number;
   loops: LevelingLoopDiagnosticRow[];
+  suspectSegments: LevelingLoopSegmentSuspectRow[];
 }
 
 export interface AliasExplicitMapping {

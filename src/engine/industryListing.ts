@@ -1,4 +1,5 @@
 import { RAD_TO_DEG, radToDmsStr } from './angles';
+import { getLevelLoopTolerancePresetLabel } from './levelLoopTolerance';
 import type { AdjustmentResult, GpsObservation, Observation } from '../types';
 
 const FT_PER_M = 3.280839895;
@@ -297,7 +298,7 @@ export const buildIndustryStyleListingText = (
     `      GPS Loop Check                  : ${gpsLoopCheckEnabled ? 'ON' : 'OFF'}${gpsLoopDiagnostics?.enabled ? ` (vectors=${gpsLoopDiagnostics.vectorCount}, loops=${gpsLoopDiagnostics.loopCount}, pass=${gpsLoopDiagnostics.passCount}, warn=${gpsLoopDiagnostics.warnCount})` : ''}`,
   );
   lines.push(
-    `      Level Loop Tolerance           : base=${levelLoopToleranceBaseMm.toFixed(2)} mm, k=${levelLoopTolerancePerSqrtKmMm.toFixed(2)} mm/sqrt(km)`,
+    `      Level Loop Tolerance           : ${getLevelLoopTolerancePresetLabel(levelLoopToleranceBaseMm, levelLoopTolerancePerSqrtKmMm)} (base=${levelLoopToleranceBaseMm.toFixed(2)} mm, k=${levelLoopTolerancePerSqrtKmMm.toFixed(2)} mm/sqrt(km))`,
   );
   lines.push(
     `      GPS Rover Offsets              : ${gpsOffsetObservations.length > 0 ? `${gpsOffsetObservations.length} applied` : 'none'}`,
@@ -957,7 +958,7 @@ export const buildIndustryStyleListingText = (
     addCenteredHeading('Differential Leveling Loop Diagnostics');
     lines.push('');
     lines.push(
-      `observations=${levelingLoopDiagnostics.observationCount}, loops=${levelingLoopDiagnostics.loopCount}, totalLength=${levelingLoopDiagnostics.totalLengthKm.toFixed(3)}km, tolerance=${levelingLoopDiagnostics.thresholds.baseMm.toFixed(2)}mm+${levelingLoopDiagnostics.thresholds.perSqrtKmMm.toFixed(2)}mm*sqrt(km), worst|dH|=${levelingLoopDiagnostics.worstClosure != null ? (levelingLoopDiagnostics.worstClosure * unitScale).toFixed(4) : '-'}${linearUnit}`,
+      `observations=${levelingLoopDiagnostics.observationCount}, loops=${levelingLoopDiagnostics.loopCount}, pass=${levelingLoopDiagnostics.passCount}, warn=${levelingLoopDiagnostics.warnCount}, totalLength=${levelingLoopDiagnostics.totalLengthKm.toFixed(3)}km, warnLength=${levelingLoopDiagnostics.warnTotalLengthKm.toFixed(3)}km, tolerance=${levelingLoopDiagnostics.thresholds.baseMm.toFixed(2)}mm+${levelingLoopDiagnostics.thresholds.perSqrtKmMm.toFixed(2)}mm*sqrt(km), worst|dH|=${levelingLoopDiagnostics.worstClosure != null ? (levelingLoopDiagnostics.worstClosure * unitScale).toFixed(4) : '-'}${linearUnit}`,
     );
     lines.push('');
     const levelingLoopRows = levelingLoopDiagnostics.loops.map((loop) => [
@@ -995,6 +996,23 @@ export const buildIndustryStyleListingText = (
       levelingSegmentRows,
       [1, 4, 5, 6],
     );
+    if (levelingLoopDiagnostics.suspectSegments.length > 0) {
+      lines.push('');
+      const levelingSuspectRows = levelingLoopDiagnostics.suspectSegments.map((segment) => [
+        String(segment.rank),
+        `${segment.from}->${segment.to}`,
+        segment.sourceLine != null ? String(segment.sourceLine) : '-',
+        String(segment.warnLoopCount),
+        segment.suspectScore.toFixed(2),
+        (segment.maxAbsDh * unitScale).toFixed(4),
+        segment.worstLoopKey ?? '-',
+      ]);
+      renderTextTable(
+        ['#', 'Segment', 'Line', 'WarnLoops', 'Score', `Max |dH| (${linearUnit})`, 'Worst Loop'],
+        levelingSuspectRows,
+        [2, 3, 4, 5],
+      );
+    }
   }
 
   if (settings.listingShowErrorPropagation) {
