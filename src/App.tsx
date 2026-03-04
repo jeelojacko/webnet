@@ -21,6 +21,7 @@ import ReportView from './components/ReportView';
 import MapView from './components/MapView';
 import ProcessingSummaryView from './components/ProcessingSummaryView';
 import IndustryOutputView from './components/IndustryOutputView';
+import { DEFAULT_INPUT } from './defaultInput';
 import { LSAEngine } from './engine/adjust';
 import { RAD_TO_DEG, radToDmsStr } from './engine/angles';
 import {
@@ -169,105 +170,6 @@ const parseInstrumentLibraryFromInput = (rawInput: string): InstrumentLibrary =>
   });
   return lib;
 };
-
-/****************************
- * CONSTANTS & DEFAULT INPUT
- ****************************/
-const DEFAULT_INPUT = `# WebNet Example - 10 Point Mixed Network
-# - 3 control points with fixed XYH
-# - 7 unknown stations (XYH adjusted)
-# - Total station sets (angles & distances)
-# - GPS vectors (planimetric)
-# - Leveling height differences
-# - Instrument library and usage
-
-# --- INSTRUMENT LIBRARY ---
-# I <CODE> <Desc-with-dashes> <edm_const(m)> <edm_ppm> <hz_precision(")> <va_precision(")> <inst_centr(m)> <tgt_centr(m)> [gps_xy_std(m)] [lev_std(mm/km)]
-I TS1   TS-Geodetic-1mm+1ppm      0.001   1.0   1.0   1.0   0.003   0.003   0.020   1.5
-I TS2   TS-Construction-3mm+2ppm  0.003   2.0   3.0   3.0   0.003   0.003   0.050   2.0
-I GPS1  GNSS-Base-Rover-Fix       0.0   0.0   0.0   0.0   0.0   0.0   0.010   4.0
-I LEV1  Digital-Level-0.7mm       0.0   0.0   0.0   0.0   0.0   0.0   0.000   0.7
-
-# --- CONTROL / STATIONS ---
-# C <ID> <E> <N> <H> [! ! ! to fix components; lone * is legacy-fixed with warning]
-C 1000  5000.000 5000.000  100.000  !
-C 1001  5300.000 5000.000  102.000  !
-C 1002  5150.000 5300.000  101.500  !
-
-C 2000  5050.000 5050.000  100.200
-C 2001  5250.000 5050.000  101.000
-C 2002  5200.000 5200.000  101.200
-C 2003  5100.000 5200.000  100.800
-C 2004  5000.000 5300.000  100.600
-C 2005  5300.000 5300.000  101.400
-C 2006  5150.000 5400.000  101.000
-
-# --- TOTAL STATION DISTANCES (2 sets) ---
-# D <InstCode> <SetID> <From> <To> <Dist(m)> <Std(m-raw)>
-D TS1  S1  1000 2000   70.711   0.003
-D TS1  S1  2000 2001  200.000   0.003
-D TS1  S1  2001 1001   70.711   0.003
-D TS1  S1  1001 2002  223.607   0.003
-D TS1  S1  2002 2003  100.000   0.003
-D TS1  S1  2003 1000  223.607   0.003
-
-# Second set with slight differences (redundant but realistic)
-D TS1  S2  1000 2000   70.712   0.003
-D TS1  S2  2000 2001  200.001   0.003
-D TS1  S2  2001 1001   70.710   0.003
-D TS1  S2  1001 2002  223.606   0.003
-D TS1  S2  2002 2003  100.000   0.003
-D TS1  S2  2003 1000  223.606   0.003
-
-# --- TOTAL STATION ANGLES (Sets S1/S2) ---
-# A <InstCode> <SetID> <At> <From> <To> <Angle(dms)> <Std(")>
-# Angles are generated from the station coordinates.
-A TS1  S1  1000 1001 2000  315.0000  1.0
-A TS1  S1  1000 2000 2003  341.3354  1.0
-A TS1  S1  1001 1000 2001  045.0000  1.0
-A TS1  S1  1001 2001 2002  018.2606  1.0
-A TS1  S1  1002 2003 2002  306.5212  1.0
-A TS1  S1  1002 2004 2005  180.0000  1.0
-
-# Slightly perturbed second set
-A TS1  S2  1000 1001 2000  315.0000  1.0
-A TS1  S2  1000 2000 2003  341.3354  1.0
-A TS1  S2  1001 1000 2001  044.5960  1.0
-A TS1  S2  1001 2001 2002  018.2606  1.0
-A TS1  S2  1002 2003 2002  306.5212  1.0
-A TS1  S2  1002 2004 2005  180.0000  1.0
-
-# --- GPS OBSERVATIONS (planimetric) ---
-# G <InstCode> <From> <To> <dE(m)> <dN(m)> <Std_XY(m)>
-# These are baselines derived from coordinates with tiny noise.
-G GPS1 1000 1001  299.999   0.001  0.010
-G GPS1 1001 1002 -149.999 299.999  0.010
-G GPS1 1002 1000 -150.000 -300.000 0.010
-
-G GPS1 1000 2004   0.001 300.001  0.020
-G GPS1 1001 2005  -0.002 299.998  0.020
-G GPS1 1002 2006   0.001 100.000  0.020
-
-# --- LEVELING OBSERVATIONS ---
-# L <InstCode> <From> <To> <dH(m)> <Len(km)> <Std(mm/km-raw)>
-# These tie ALL unknown heights into the network.
-L LEV1 1000 1001   2.0009   0.30   0.7
-L LEV1 1001 1002  -0.4991   0.34   0.7
-L LEV1 1002 1000  -1.5009   0.34   0.7
-
-L LEV1 1000 2000   0.1992   0.07   0.7
-L LEV1 2000 2001   0.8007   0.20   0.7
-L LEV1 2001 1001   1.0005   0.07   0.7
-
-L LEV1 1002 2003  -0.6997   0.11   0.7
-L LEV1 2003 2004  -0.2004   0.14   0.7
-L LEV1 2004 1000  -0.5998   0.30   0.7
-
-# Extra lines to constrain heights of 2002, 2005, 2006
-L LEV1 1001 2002  -0.7998   0.22   0.7
-L LEV1 1001 2005  -0.5998   0.30   0.7
-L LEV1 1002 2006  -0.5007   0.10   0.7
-`;
 
 type Units = 'm' | 'ft';
 type ListingSortCoordinatesBy = 'input' | 'name';

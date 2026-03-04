@@ -174,8 +174,7 @@ const InputPane: React.FC<InputPaneProps> = ({
       const clipboardText = await navigator.clipboard.readText();
       replaceTextareaRange(textarea, clipboardText, start, end, 'end');
     } catch {
-      textarea.focus();
-      document.execCommand('paste');
+      return;
     }
   }, [replaceTextareaRange]);
 
@@ -351,6 +350,7 @@ const InputPane: React.FC<InputPaneProps> = ({
             className="absolute z-20 min-w-44 rounded border border-slate-600 bg-slate-800 shadow-lg"
             style={{ left: contextMenu.x, top: contextMenu.y }}
             onPointerDown={(event) => event.stopPropagation()}
+            onContextMenu={(event) => event.preventDefault()}
           >
             {[
               { id: 'undo', label: INPUT_PANE_CONTEXT_MENU_ORDER[0], disabled: false },
@@ -397,7 +397,9 @@ const InputPane: React.FC<InputPaneProps> = ({
                       ? 'cursor-not-allowed text-slate-500'
                       : 'text-slate-200 hover:bg-slate-700'
                   }`}
-                  onClick={() =>
+                  onPointerDown={(event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
                     void handleContextMenuAction(
                       action.id as
                         | 'undo'
@@ -409,8 +411,8 @@ const InputPane: React.FC<InputPaneProps> = ({
                         | 'select-all'
                         | 'block-comment'
                         | 'block-uncomment',
-                    )
-                  }
+                    );
+                  }}
                 >
                   {action.label}
                 </button>

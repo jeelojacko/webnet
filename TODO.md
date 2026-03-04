@@ -12,6 +12,7 @@
 - [x] Export adjustment results as text + refresh-to-last-run input
 - [x] Input editor comment workflow: line-wise block toggle via `Shift+3` (`#`) on multiline selections plus right-click `Toggle # Comment` action
 - [x] Import-review fixed toggles: emit family-appropriate fixed `!` markers for imported control/TS/GNSS/vertical rows, and accept fixed GNSS/leveling sigma tokens on parse/reimport
+- [x] Input editor/context menu polish: route custom `Paste` through the app menu immediately (while still respecting any browser clipboard-permission prompt), and replace the built-in starter file with a convergent mixed regression example that keeps `SEUW` near `1.0` for quick regression checks
 - [x] Exclude fixed planned observations from preanalysis what-if candidates so fixed bearing/control planning rows are not presented as removable
 - [x] Add a separate locked planned-observations preanalysis section and hover-help coverage for preanalysis report headers/labels
 - [x] Extend hover-help coverage to remaining report summary-card labels and Project Options modal tabs/sections/field labels/instrument editor controls
