@@ -37,6 +37,7 @@ import {
   type ImportedInputNotice,
 } from './engine/importers';
 import {
+  buildImportReviewComparisonSummary,
   buildImportReviewDisplayTextMap,
   buildImportReviewModel,
   buildImportReviewText,
@@ -53,6 +54,7 @@ import {
   type ImportReviewModel,
   type ImportReviewOutputPreset,
   type ImportReviewRowTypeOverride,
+  type ImportReviewComparisonSummary,
 } from './engine/importReview';
 import { isPreanalysisWhatIfCandidate } from './engine/preanalysis';
 import type {
@@ -426,12 +428,20 @@ const INDUSTRY_DEFAULT_INSTRUMENT: Instrument = createDefaultS9Instrument();
 
 type TabKey = 'report' | 'processing-summary' | 'industry-output' | 'map';
 type ExportFormat = 'webnet' | 'industry-style' | 'landxml';
+type FilePickerMode = 'replace' | 'compare';
+
+const IMPORT_FILE_ACCEPT =
+  '.dat,.txt,.sum,.rpt,.xml,.jxl,.jobxml,.htm,.html,.rw5,.cr5,.raw,.dbx';
 
 type ImportReviewState = {
   sourceName: string;
   notice: ImportedInputNotice;
   dataset: ImportedDataset;
   reviewModel: ImportReviewModel;
+  comparisonSourceName?: string;
+  comparisonNotice?: ImportedInputNotice;
+  comparisonDataset?: ImportedDataset;
+  comparisonSummary?: ImportReviewComparisonSummary | null;
   excludedItemIds: Set<string>;
   fixedItemIds: Set<string>;
   groupLabels: Record<string, string>;
@@ -743,6 +753,7 @@ const App: React.FC = () => {
     ClusterApprovedMerge[]
   >([]);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const filePickerModeRef = useRef<FilePickerMode>('replace');
   const layoutRef = useRef<HTMLDivElement | null>(null);
   const settingsModalContentRef = useRef<HTMLDivElement | null>(null);
   const isResizingRef = useRef(false);
@@ -3557,10 +3568,34 @@ const App: React.FC = () => {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    const pickerMode = filePickerModeRef.current;
+    filePickerModeRef.current = 'replace';
     const reader = new FileReader();
     reader.onload = () => {
       const text = typeof reader.result === 'string' ? reader.result : '';
       const imported = importExternalInput(text, file.name);
+      if (pickerMode === 'compare' && importReviewState) {
+        if (imported.detected && imported.dataset && imported.notice) {
+          setImportReviewState((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  comparisonSourceName: file.name,
+                  comparisonNotice: imported.notice,
+                  comparisonDataset: imported.dataset,
+                  comparisonSummary: buildImportReviewComparisonSummary(
+                    prev.dataset,
+                    prev.sourceName,
+                    imported.dataset,
+                    file.name,
+                  ),
+                }
+              : prev,
+          );
+        }
+        e.target.value = '';
+        return;
+      }
       if (imported.detected && imported.dataset && imported.notice) {
         const reviewModel = buildImportReviewModel(imported.dataset);
         const groupComments = Object.fromEntries(
@@ -3574,6 +3609,7 @@ const App: React.FC = () => {
           notice: imported.notice,
           dataset: imported.dataset,
           reviewModel,
+          comparisonSummary: null,
           excludedItemIds: new Set(),
           fixedItemIds: new Set(),
           groupLabels,
@@ -3597,7 +3633,8 @@ const App: React.FC = () => {
     e.target.value = '';
   };
 
-  const triggerFileSelect = () => {
+  const triggerFileSelect = (mode: FilePickerMode = 'replace') => {
+    filePickerModeRef.current = mode;
     fileInputRef.current?.click();
   };
 
@@ -3890,6 +3927,24 @@ const App: React.FC = () => {
 
   const handleCancelImportReview = () => {
     setImportReviewState(null);
+  };
+
+  const handleImportReviewCompareFile = () => {
+    triggerFileSelect('compare');
+  };
+
+  const handleImportReviewClearComparison = () => {
+    setImportReviewState((prev) =>
+      prev
+        ? {
+            ...prev,
+            comparisonSourceName: undefined,
+            comparisonNotice: undefined,
+            comparisonDataset: undefined,
+            comparisonSummary: null,
+          }
+        : prev,
+    );
   };
 
   const handleApplyImportReview = () => {
@@ -4683,7 +4738,7 @@ const App: React.FC = () => {
           <input
             ref={fileInputRef}
             type="file"
-            accept=".dat,.txt,.sum,.rpt,.xml"
+            accept={IMPORT_FILE_ACCEPT}
             className="hidden"
             onChange={handleFileChange}
           />
@@ -6447,6 +6502,7 @@ const App: React.FC = () => {
           title={importReviewState.notice.title}
           detailLines={importReviewState.notice.detailLines}
           reviewModel={importReviewState.reviewModel}
+          comparisonSummary={importReviewState.comparisonSummary ?? null}
           displayedRows={importReviewDisplayedRows}
           excludedItemIds={importReviewState.excludedItemIds}
           fixedItemIds={importReviewState.fixedItemIds}
@@ -6455,6 +6511,8 @@ const App: React.FC = () => {
           rowTypeOverrides={importReviewState.rowTypeOverrides}
           preset={importReviewState.preset}
           moveTargetGroups={importReviewMoveTargetGroups}
+          onCompareFile={handleImportReviewCompareFile}
+          onClearComparison={handleImportReviewClearComparison}
           onPresetChange={handleImportReviewPresetChange}
           onSetBulkExcludeMta={handleImportReviewSetBulkExcludeMta}
           onSetBulkExcludeRaw={handleImportReviewSetBulkExcludeRaw}

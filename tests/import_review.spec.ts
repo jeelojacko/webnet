@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 
 import { importExternalInput } from '../src/engine/importers';
 import {
+  buildImportReviewComparisonSummary,
   buildImportReviewDisplayTextMap,
   buildImportReviewModel,
   buildImportReviewText,
@@ -15,6 +16,7 @@ import {
   moveImportReviewItem,
   reorderImportReviewItemWithinGroup,
 } from '../src/engine/importReview';
+import type { ImportedDataset } from '../src/engine/importers';
 
 const jobXmlTrimbleFixture = readFileSync(
   'tests/fixtures/jobxml_trimble_station_setup_sample.jxl',
@@ -298,5 +300,82 @@ describe('import review workflow', () => {
     expect(text).toContain('DN 1000 000-00-00.0');
     expect(text).toContain('DM 2 286-51-24.7 22.2574 089-57-23.8');
     expect(text).toContain('DE');
+  });
+
+  it('builds comparison summaries with comparable counts excluding MTA rows', () => {
+    const primary: ImportedDataset = {
+      importerId: 'jobxml',
+      formatLabel: 'JobXML',
+      summary: 'primary',
+      notice: { title: 'primary', detailLines: [] },
+      comments: [],
+      controlStations: [],
+      observations: [
+        {
+          kind: 'measurement',
+          atId: '1',
+          fromId: '1000',
+          toId: '2',
+          angleDeg: 10,
+          distanceM: 20,
+          sourceMeta: { method: 'DIRECTREADING' },
+        },
+        {
+          kind: 'measurement',
+          atId: '1',
+          fromId: '1000',
+          toId: '2',
+          angleDeg: 10,
+          distanceM: 20,
+          sourceMeta: { method: 'MEANTURNEDANGLE' },
+        },
+        {
+          kind: 'vertical',
+          fromId: '1',
+          toId: '200',
+          verticalMode: 'zenith',
+          verticalValue: 90,
+        },
+      ],
+      trace: [],
+    };
+    const comparison: ImportedDataset = {
+      importerId: 'trimble-survey-report',
+      formatLabel: 'Survey Report',
+      summary: 'comparison',
+      notice: { title: 'comparison', detailLines: [] },
+      comments: [],
+      controlStations: [],
+      observations: [
+        {
+          kind: 'measurement',
+          atId: '1',
+          fromId: '1000',
+          toId: '2',
+          angleDeg: 10,
+          distanceM: 20,
+        },
+        {
+          kind: 'vertical',
+          fromId: '1',
+          toId: '200',
+          verticalMode: 'zenith',
+          verticalValue: 90,
+        },
+      ],
+      trace: [],
+    };
+
+    const summary = buildImportReviewComparisonSummary(
+      primary,
+      'sample.jxl',
+      comparison,
+      'sample.htm',
+    );
+
+    expect(summary.primaryTotals.observations).toBe(3);
+    expect(summary.primaryTotals.comparableObservations).toBe(2);
+    expect(summary.comparisonTotals.comparableObservations).toBe(2);
+    expect(summary.rows).toHaveLength(0);
   });
 });

@@ -1,6 +1,7 @@
 import React from 'react';
 import type { ImportedTraceEntry } from '../engine/importers';
 import type {
+  ImportReviewComparisonSummary,
   ImportReviewGroup,
   ImportReviewItem,
   ImportReviewModel,
@@ -13,6 +14,7 @@ interface ImportReviewModalProps {
   title: string;
   detailLines: string[];
   reviewModel: ImportReviewModel;
+  comparisonSummary?: ImportReviewComparisonSummary | null;
   displayedRows: Record<string, string>;
   excludedItemIds: Set<string>;
   fixedItemIds: Set<string>;
@@ -21,6 +23,8 @@ interface ImportReviewModalProps {
   rowTypeOverrides: Record<string, ImportReviewRowTypeOverride>;
   preset: ImportReviewOutputPreset;
   moveTargetGroups: Array<{ key: string; label: string }>;
+  onCompareFile: () => void;
+  onClearComparison: () => void;
   onPresetChange: (_preset: ImportReviewOutputPreset) => void;
   onSetBulkExcludeMta: (_excluded: boolean) => void;
   onSetBulkExcludeRaw: (_excluded: boolean) => void;
@@ -121,6 +125,7 @@ const ImportReviewModal: React.FC<ImportReviewModalProps> = ({
   title,
   detailLines,
   reviewModel,
+  comparisonSummary = null,
   displayedRows,
   excludedItemIds,
   fixedItemIds,
@@ -129,6 +134,8 @@ const ImportReviewModal: React.FC<ImportReviewModalProps> = ({
   rowTypeOverrides,
   preset,
   moveTargetGroups,
+  onCompareFile,
+  onClearComparison,
   onPresetChange,
   onSetBulkExcludeMta,
   onSetBulkExcludeRaw,
@@ -432,6 +439,24 @@ const ImportReviewModal: React.FC<ImportReviewModalProps> = ({
               >
                 Add Empty Setup
               </button>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={onCompareFile}
+                  className="border border-slate-600 bg-slate-950 px-3 py-2 text-[11px] uppercase tracking-wide text-slate-200 hover:border-cyan-400"
+                >
+                  Compare File
+                </button>
+                {comparisonSummary && (
+                  <button
+                    type="button"
+                    onClick={onClearComparison}
+                    className="border border-slate-600 bg-slate-950 px-3 py-2 text-[11px] uppercase tracking-wide text-slate-200 hover:border-cyan-400"
+                  >
+                    Clear Compare
+                  </button>
+                )}
+              </div>
               <div className="grid gap-2 text-left text-[11px] uppercase tracking-wide text-slate-400">
                 <label className="flex items-center gap-2">
                   <input
@@ -466,6 +491,113 @@ const ImportReviewModal: React.FC<ImportReviewModalProps> = ({
         </div>
 
         <div className="flex-1 space-y-4 overflow-y-auto bg-slate-950 px-5 py-4">
+          {comparisonSummary && (
+            <section className="border border-cyan-800/60 bg-cyan-950/20">
+              <div className="border-b border-cyan-800/60 bg-cyan-950/40 px-4 py-3">
+                <div className="text-sm font-semibold text-cyan-100">Compare / Reconcile</div>
+                <div className="text-[11px] uppercase tracking-wide text-cyan-200/80">
+                  Comparable counts exclude JobXML MTA rows so report exports and raw XML can be checked side by side
+                </div>
+              </div>
+              <div className="grid gap-4 px-4 py-4 lg:grid-cols-2">
+                <div className="border border-slate-700 bg-slate-950/60 p-3 text-xs text-slate-200">
+                  <div className="text-[11px] uppercase tracking-wide text-slate-400">
+                    Primary
+                  </div>
+                  <div className="mt-1 font-semibold text-white">
+                    {comparisonSummary.primarySourceName}
+                  </div>
+                  <div className="mt-2 space-y-1">
+                    <div>Importer: {comparisonSummary.primaryImporterId}</div>
+                    <div>Points: {comparisonSummary.primaryTotals.controlStations}</div>
+                    <div>Raw Obs: {comparisonSummary.primaryTotals.observations}</div>
+                    <div>Comparable Obs: {comparisonSummary.primaryTotals.comparableObservations}</div>
+                  </div>
+                </div>
+                <div className="border border-slate-700 bg-slate-950/60 p-3 text-xs text-slate-200">
+                  <div className="text-[11px] uppercase tracking-wide text-slate-400">
+                    Comparison
+                  </div>
+                  <div className="mt-1 font-semibold text-white">
+                    {comparisonSummary.comparisonSourceName}
+                  </div>
+                  <div className="mt-2 space-y-1">
+                    <div>Importer: {comparisonSummary.comparisonImporterId}</div>
+                    <div>Points: {comparisonSummary.comparisonTotals.controlStations}</div>
+                    <div>Raw Obs: {comparisonSummary.comparisonTotals.observations}</div>
+                    <div>
+                      Comparable Obs: {comparisonSummary.comparisonTotals.comparableObservations}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="border-t border-cyan-800/40 px-4 py-3 text-xs text-slate-300">
+                Comparable delta: {comparisonSummary.primaryTotals.comparableObservations -
+                  comparisonSummary.comparisonTotals.comparableObservations}
+              </div>
+              {comparisonSummary.rows.length > 0 && (
+                <div className="max-h-72 overflow-y-auto border-t border-cyan-800/40">
+                  <table className="min-w-full border-collapse text-xs">
+                    <thead className="bg-slate-950/80 text-slate-300">
+                      <tr>
+                        <th className="border-b border-slate-700 px-3 py-2 text-left font-semibold">
+                          Setup
+                        </th>
+                        <th className="border-b border-slate-700 px-3 py-2 text-left font-semibold">
+                          Target
+                        </th>
+                        <th className="border-b border-slate-700 px-3 py-2 text-left font-semibold">
+                          Family
+                        </th>
+                        <th className="border-b border-slate-700 px-3 py-2 text-right font-semibold">
+                          {comparisonSummary.primarySourceName}
+                        </th>
+                        <th className="border-b border-slate-700 px-3 py-2 text-right font-semibold">
+                          {comparisonSummary.comparisonSourceName}
+                        </th>
+                        <th className="border-b border-slate-700 px-3 py-2 text-right font-semibold">
+                          Delta
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {comparisonSummary.rows.slice(0, 80).map((row) => (
+                        <tr key={row.key}>
+                          <td className="border-b border-slate-800 px-3 py-2 text-slate-200">
+                            {row.setupLabel}
+                          </td>
+                          <td className="border-b border-slate-800 px-3 py-2 text-slate-200">
+                            {row.targetLabel}
+                          </td>
+                          <td className="border-b border-slate-800 px-3 py-2 text-slate-300">
+                            {row.family}
+                          </td>
+                          <td className="border-b border-slate-800 px-3 py-2 text-right text-slate-200">
+                            {row.primaryCount}
+                          </td>
+                          <td className="border-b border-slate-800 px-3 py-2 text-right text-slate-200">
+                            {row.comparisonCount}
+                          </td>
+                          <td
+                            className={`border-b border-slate-800 px-3 py-2 text-right ${
+                              row.delta === 0
+                                ? 'text-slate-300'
+                                : row.delta > 0
+                                  ? 'text-amber-300'
+                                  : 'text-cyan-300'
+                            }`}
+                          >
+                            {row.delta > 0 ? `+${row.delta}` : row.delta}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </section>
+          )}
+
           {reviewModel.groups.map(renderGroup)}
 
           {(reviewModel.warnings.length > 0 || reviewModel.errors.length > 0) && (

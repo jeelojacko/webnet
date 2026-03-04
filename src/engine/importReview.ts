@@ -64,6 +64,34 @@ export interface ImportReviewModel {
   errors: ImportedTraceEntry[];
 }
 
+export interface ImportReviewComparisonTotals {
+  controlStations: number;
+  observations: number;
+  comparableObservations: number;
+  warnings: number;
+  errors: number;
+}
+
+export interface ImportReviewComparisonRow {
+  key: string;
+  setupLabel: string;
+  targetLabel: string;
+  family: string;
+  primaryCount: number;
+  comparisonCount: number;
+  delta: number;
+}
+
+export interface ImportReviewComparisonSummary {
+  primarySourceName: string;
+  comparisonSourceName: string;
+  primaryImporterId: string;
+  comparisonImporterId: string;
+  primaryTotals: ImportReviewComparisonTotals;
+  comparisonTotals: ImportReviewComparisonTotals;
+  rows: ImportReviewComparisonRow[];
+}
+
 export interface BuildImportReviewTextOptions {
   includedItemIds: Set<string>;
   groupComments?: Record<string, string>;
@@ -72,6 +100,9 @@ export interface BuildImportReviewTextOptions {
   fixedItemIds?: Set<string>;
   preset?: ImportReviewOutputPreset;
 }
+
+const isComparableObservation = (observation: ImportedObservationRecord): boolean =>
+  observation.sourceMeta?.method !== 'MEANTURNEDANGLE';
 
 const prettifyToken = (value: string): string =>
   value
@@ -92,10 +123,27 @@ const splitOverrideLines = (value: string | undefined): string[] =>
 const compareImportTokens = (left: string | undefined, right: string | undefined): number =>
   (left ?? '').localeCompare(right ?? '', undefined, { numeric: true, sensitivity: 'base' });
 
+const comparisonFamilyLabel = (observation: ImportedObservationRecord): string => {
+  if (observation.kind === 'measurement') return 'M';
+  if (observation.kind === 'angle') return 'A';
+  if (observation.kind === 'distance-vertical') return 'DV';
+  if (observation.kind === 'distance') return 'D';
+  if (observation.kind === 'vertical') return 'V';
+  if (observation.kind === 'bearing') return 'B';
+  if (observation.kind === 'gnss-vector') return 'G';
+  return prettifyToken(observation.kind);
+};
+
 const deriveObservationSetupId = (observation: ImportedObservationRecord): string => {
   if (observation.kind === 'measurement' || observation.kind === 'angle') return observation.atId;
   return observation.fromId;
 };
+
+const deriveObservationBacksightId = (observation: ImportedObservationRecord): string | undefined =>
+  observation.kind === 'measurement' || observation.kind === 'angle' ? observation.fromId : undefined;
+
+const deriveObservationTargetId = (observation: ImportedObservationRecord): string =>
+  observation.kind === 'measurement' || observation.kind === 'angle' ? observation.toId : observation.toId;
 
 const isResectionSetupType = (value: string | undefined): boolean =>
   /resection/i.test((value ?? '').trim());
@@ -504,6 +552,110 @@ export const buildImportReviewModel = (dataset: ImportedDataset): ImportReviewMo
     items,
     warnings: dataset.trace.filter((entry) => entry.level === 'warning'),
     errors: dataset.trace.filter((entry) => entry.level === 'error'),
+  };
+};
+
+export const buildImportReviewComparisonSummary = (
+  primaryDataset: ImportedDataset,
+  primarySourceName: string,
+  comparisonDataset: ImportedDataset,
+  comparisonSourceName: string,
+): ImportReviewComparisonSummary => {
+  const makeTotals = (dataset: ImportedDataset): ImportReviewComparisonTotals => ({
+    controlStations: dataset.controlStations.length,
+    observations: dataset.observations.length,
+    comparableObservations: dataset.observations.filter((observation) => isComparableObservation(observation)).length,
+    warnings: dataset.trace.filter((entry) => entry.level === 'warning').length,
+    errors: dataset.trace.filter((entry) => entry.level === 'error').length,
+  });
+
+  const accumulate = (dataset: ImportedDataset): Map<string, Omit<ImportReviewComparisonRow, 'primaryCount' | 'comparisonCount' | 'delta'>> => {
+    const buckets = new Map<string, Omit<ImportReviewComparisonRow, 'primaryCount' | 'comparisonCount' | 'delta'>>();
+    dataset.observations
+      .filter((observation) => isComparableObservation(observation))
+      .forEach((observation) => {
+        const setupId = deriveObservationSetupId(observation);
+        const backsightId = deriveObservationBacksightId(observation);
+        const targetId = deriveObservationTargetId(observation);
+        const family = comparisonFamilyLabel(observation);
+        const key = [setupId, backsightId ?? '', targetId, family].join('|');
+        if (!buckets.has(key)) {
+          buckets.set(key, {
+            key,
+            setupLabel: backsightId ? `Setup ${setupId} (BS ${backsightId})` : `Setup ${setupId}`,
+            targetLabel: targetId,
+            family,
+          });
+        }
+      });
+    return buckets;
+  };
+
+  const primaryCounts = new Map<string, number>();
+  primaryDataset.observations
+    .filter((observation) => isComparableObservation(observation))
+    .forEach((observation) => {
+      const key = [
+        deriveObservationSetupId(observation),
+        deriveObservationBacksightId(observation) ?? '',
+        deriveObservationTargetId(observation),
+        comparisonFamilyLabel(observation),
+      ].join('|');
+      primaryCounts.set(key, (primaryCounts.get(key) ?? 0) + 1);
+    });
+
+  const comparisonCounts = new Map<string, number>();
+  comparisonDataset.observations
+    .filter((observation) => isComparableObservation(observation))
+    .forEach((observation) => {
+      const key = [
+        deriveObservationSetupId(observation),
+        deriveObservationBacksightId(observation) ?? '',
+        deriveObservationTargetId(observation),
+        comparisonFamilyLabel(observation),
+      ].join('|');
+      comparisonCounts.set(key, (comparisonCounts.get(key) ?? 0) + 1);
+    });
+
+  const rowMeta = new Map([
+    ...accumulate(primaryDataset).entries(),
+    ...accumulate(comparisonDataset).entries(),
+  ]);
+
+  const rows = [...new Set([...primaryCounts.keys(), ...comparisonCounts.keys()])]
+    .map((key) => {
+      const meta = rowMeta.get(key);
+      const primaryCount = primaryCounts.get(key) ?? 0;
+      const comparisonCount = comparisonCounts.get(key) ?? 0;
+      return {
+        key,
+        setupLabel: meta?.setupLabel ?? key,
+        targetLabel: meta?.targetLabel ?? '',
+        family: meta?.family ?? '',
+        primaryCount,
+        comparisonCount,
+        delta: primaryCount - comparisonCount,
+      };
+    })
+    .filter((row) => row.delta !== 0)
+    .sort((left, right) => {
+      const magnitudeCompare = Math.abs(right.delta) - Math.abs(left.delta);
+      if (magnitudeCompare !== 0) return magnitudeCompare;
+      const setupCompare = compareImportTokens(left.setupLabel, right.setupLabel);
+      if (setupCompare !== 0) return setupCompare;
+      const targetCompare = compareImportTokens(left.targetLabel, right.targetLabel);
+      if (targetCompare !== 0) return targetCompare;
+      return compareImportTokens(left.family, right.family);
+    });
+
+  return {
+    primarySourceName,
+    comparisonSourceName,
+    primaryImporterId: primaryDataset.importerId,
+    comparisonImporterId: comparisonDataset.importerId,
+    primaryTotals: makeTotals(primaryDataset),
+    comparisonTotals: makeTotals(comparisonDataset),
+    rows,
   };
 };
 

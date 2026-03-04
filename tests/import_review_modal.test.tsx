@@ -72,6 +72,37 @@ describe('ImportReviewModal', () => {
           'Imported 2 points and 1 observation from sample.jxl into normalized WebNet input.',
         ]}
         reviewModel={reviewModel}
+        comparisonSummary={{
+          primarySourceName: 'sample.jxl',
+          comparisonSourceName: 'sample.htm',
+          primaryImporterId: 'jobxml',
+          comparisonImporterId: 'trimble-survey-report',
+          primaryTotals: {
+            controlStations: 2,
+            observations: 5,
+            comparableObservations: 4,
+            warnings: 0,
+            errors: 0,
+          },
+          comparisonTotals: {
+            controlStations: 2,
+            observations: 4,
+            comparableObservations: 4,
+            warnings: 0,
+            errors: 0,
+          },
+          rows: [
+            {
+              key: 'STN1|BS1|P1|M',
+              setupLabel: 'Setup STN1 (BS BS1)',
+              targetLabel: 'P1',
+              family: 'M',
+              primaryCount: 2,
+              comparisonCount: 1,
+              delta: 1,
+            },
+          ],
+        }}
         displayedRows={{
           'control:0': 'C STN1 5000.0000 1000.0000 100.0000',
           'observation:0': 'DM P1 045-07-24.2 100.0000',
@@ -83,6 +114,8 @@ describe('ImportReviewModal', () => {
         rowTypeOverrides={{ 'observation:0': 'distance' }}
         preset="ts-direction-set"
         moveTargetGroups={[{ key: 'setup:STN1:bs:BS1', label: 'Setup STN1 (BS BS1)' }]}
+        onCompareFile={() => {}}
+        onClearComparison={() => {}}
         onPresetChange={() => {}}
         onSetBulkExcludeMta={() => {}}
         onSetBulkExcludeRaw={() => {}}
@@ -127,6 +160,10 @@ describe('ImportReviewModal', () => {
     expect(html).toContain('Setup STN1');
     expect(html).toContain('Import Diagnostics');
     expect(html).toContain('Unsupported measurement skipped.');
+    expect(html).toContain('Compare / Reconcile');
+    expect(html).toContain('sample.htm');
+    expect(html).toContain('Comparable Obs');
+    expect(html).toContain('Clear Compare');
     expect(html).toContain('>DV<');
     expect(html).toContain('>DN<');
     expect(html).toContain('>DM<');

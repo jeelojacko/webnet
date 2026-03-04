@@ -1690,6 +1690,21 @@ const parseJobXml = (input: string, sourceName?: string): ImportedDataset | null
           note: 'converted to A',
           sourceMeta,
         });
+        if (zenithDeg != null || deltaHM != null) {
+          observations.push({
+            kind: 'vertical',
+            fromId: occupyId,
+            toId: targetId,
+            verticalMode: zenithDeg != null ? 'zenith' : 'delta-h',
+            verticalValue: zenithDeg ?? deltaHM ?? 0,
+            hiM,
+            htM,
+            sourceLine,
+            sourceCode: 'PointRecord',
+            note: 'converted to V',
+            sourceMeta,
+          });
+        }
       }
       return;
     }
@@ -1731,6 +1746,20 @@ const parseJobXml = (input: string, sourceName?: string): ImportedDataset | null
           sourceLine,
           sourceCode: 'PointRecord',
           note: 'converted to D',
+          sourceMeta,
+        });
+      } else if (zenithDeg != null || deltaHM != null) {
+        observations.push({
+          kind: 'vertical',
+          fromId: occupyId,
+          toId: targetId,
+          verticalMode: zenithDeg != null ? 'zenith' : 'delta-h',
+          verticalValue: zenithDeg ?? deltaHM ?? 0,
+          hiM,
+          htM,
+          sourceLine,
+          sourceCode: 'PointRecord',
+          note: 'converted to V',
           sourceMeta,
         });
       }
