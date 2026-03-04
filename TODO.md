@@ -15,6 +15,7 @@
 - [x] Input editor/context menu polish: route custom `Paste` through the app menu immediately (while still respecting any browser clipboard-permission prompt), and replace the built-in starter file with a convergent mixed regression example that keeps `SEUW` near `1.0` for quick regression checks
 - [x] Project Options refresh: add user-editable named level-loop tolerance presets, replace the Other Files placeholder with real export/output controls, and condense the Adjustment, GPS, General, Instrument, Special, and Modeling settings tabs into cleaner card/grid layouts with inline toggles and right-aligned inputs
 - [x] Project Options modal regression coverage: add focused layout tests for Adjustment, General, Instrument, GPS, Other Files, and Modeling tab rendering so condensed modal structure stays stable
+- [x] Project Options modal interaction coverage: add jsdom interaction tests for tab switching plus `Apply`/`Cancel` draft persistence/discard behavior
 - [x] Exclude fixed planned observations from preanalysis what-if candidates so fixed bearing/control planning rows are not presented as removable
 - [x] Add a separate locked planned-observations preanalysis section and hover-help coverage for preanalysis report headers/labels
 - [x] Extend hover-help coverage to remaining report summary-card labels and Project Options modal tabs/sections/field labels/instrument editor controls
