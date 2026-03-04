@@ -432,6 +432,39 @@ export interface AutoSideshotDiagnostics {
   candidates: AutoSideshotCandidate[];
 }
 
+export interface LevelLoopSegment {
+  from: StationId;
+  to: StationId;
+  observedDh: number;
+  lengthKm: number;
+  sourceLine?: number;
+  closureLeg?: boolean;
+}
+
+export interface LevelingLoopDiagnosticRow {
+  rank: number;
+  key: string;
+  stationPath: StationId[];
+  edgeCount: number;
+  sourceLines: number[];
+  closure: number;
+  absClosure: number;
+  loopLengthKm: number;
+  closurePerSqrtKmMm: number;
+  severity: number;
+  segments: LevelLoopSegment[];
+}
+
+export interface LevelingLoopDiagnostics {
+  enabled: boolean;
+  observationCount: number;
+  loopCount: number;
+  totalLengthKm: number;
+  worstClosure?: number;
+  worstClosurePerSqrtKmMm?: number;
+  loops: LevelingLoopDiagnosticRow[];
+}
+
 export interface AliasExplicitMapping {
   sourceId: StationId;
   canonicalId: StationId;
@@ -902,6 +935,7 @@ export interface AdjustmentResult {
       pass: boolean;
     }[];
   };
+  levelingLoopDiagnostics?: LevelingLoopDiagnostics;
   clusterDiagnostics?: {
     enabled: boolean;
     passMode: 'single-pass' | 'dual-pass';

@@ -578,6 +578,34 @@ describe('LSAEngine', () => {
     expect(loopDiag?.loops[0].closureMag ?? 0).toBeGreaterThan(loopDiag?.loops[0].toleranceM ?? 0);
   });
 
+  it('computes dedicated differential leveling loop diagnostics with ranked loop closures', () => {
+    const input = readFileSync('tests/fixtures/level_loop_phase1.dat', 'utf-8');
+    const result = new LSAEngine({ input, maxIterations: 10 }).solve();
+    const loopDiag = result.levelingLoopDiagnostics;
+
+    expect(result.success).toBe(true);
+    expect(loopDiag?.enabled ?? false).toBe(true);
+    expect(loopDiag?.observationCount ?? 0).toBe(5);
+    expect(loopDiag?.loopCount ?? 0).toBe(2);
+    expect(loopDiag?.totalLengthKm ?? 0).toBeCloseTo(4.1, 8);
+    expect(loopDiag?.loops[0].rank ?? 0).toBe(1);
+    expect(loopDiag?.loops[1].rank ?? 0).toBe(2);
+    expect(loopDiag?.loops[0].stationPath.join('->') ?? '').toContain('A');
+    expect(loopDiag?.loops[0].stationPath.join('->') ?? '').toContain('D');
+    expect(loopDiag?.loops[0].sourceLines ?? []).toContain(14);
+    expect(loopDiag?.loops[0].sourceLines ?? []).toContain(16);
+    expect(loopDiag?.loops[0].absClosure ?? 0).toBeCloseTo(0.02, 8);
+    expect(loopDiag?.loops[1].absClosure ?? 0).toBeCloseTo(0.01, 8);
+    expect(loopDiag?.loops[0].closurePerSqrtKmMm ?? 0).toBeGreaterThan(
+      loopDiag?.loops[1].closurePerSqrtKmMm ?? 0,
+    );
+    expect(
+      result.logs.some((line) =>
+        line.includes('Leveling loop check: observations=5, loops=2, totalLength=4.100km'),
+      ),
+    ).toBe(true);
+  });
+
   it('applies correlated XY control constraints when control covariance includes EN correlation', () => {
     const diagonalInput = [
       '.2D',

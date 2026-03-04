@@ -239,6 +239,8 @@ const ReportView: React.FC<ReportViewProps> = ({
   const gpsLoopSuspects = (gpsLoopDiagnostics?.loops ?? [])
     .filter((loop) => !loop.pass)
     .slice(0, 20);
+  const levelingLoopDiagnostics = result.levelingLoopDiagnostics;
+  const levelingLoopSuspects = (levelingLoopDiagnostics?.loops ?? []).slice(0, 20);
   const directionRejects = [...(result.directionRejectDiagnostics ?? [])].sort((a, b) => {
     const la = a.sourceLine ?? Number.MAX_SAFE_INTEGER;
     const lb = b.sourceLine ?? Number.MAX_SAFE_INTEGER;
@@ -2985,6 +2987,118 @@ const ReportView: React.FC<ReportViewProps> = ({
               </table>
             </div>
           )}
+        </div>
+      )}
+
+      {!isPreanalysis && levelingLoopDiagnostics?.enabled && (
+        <div className="mb-6 border border-slate-800 rounded overflow-hidden">
+          <div className="px-3 py-2 text-xs text-slate-400 uppercase tracking-wider border-b border-slate-800 bg-slate-900/40">
+            Leveling Loop Diagnostics
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3 p-3 text-xs text-slate-300">
+            <div>
+              <div className="text-slate-500">Observations</div>
+              <div>{levelingLoopDiagnostics.observationCount}</div>
+            </div>
+            <div>
+              <div className="text-slate-500">Loop Count</div>
+              <div>{levelingLoopDiagnostics.loopCount}</div>
+            </div>
+            <div>
+              <div className="text-slate-500">Total Length (km)</div>
+              <div>{levelingLoopDiagnostics.totalLengthKm.toFixed(3)}</div>
+            </div>
+            <div>
+              <div className="text-slate-500">Worst |dH| ({units})</div>
+              <div>
+                {levelingLoopDiagnostics.worstClosure != null
+                  ? (levelingLoopDiagnostics.worstClosure * unitScale).toFixed(4)
+                  : '-'}
+              </div>
+            </div>
+            <div>
+              <div className="text-slate-500">Worst mm/sqrt(km)</div>
+              <div>
+                {levelingLoopDiagnostics.worstClosurePerSqrtKmMm != null
+                  ? levelingLoopDiagnostics.worstClosurePerSqrtKmMm.toFixed(2)
+                  : '-'}
+              </div>
+            </div>
+          </div>
+          {levelingLoopDiagnostics.loops.length > 0 && (
+            <div className="overflow-x-auto w-full border-t border-slate-800">
+              <table className="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr className="text-slate-500 border-b border-slate-800">
+                    <th className="py-2 px-3 font-semibold">#</th>
+                    <th className="py-2 px-3 font-semibold">Loop</th>
+                    <th className="py-2 px-3 font-semibold">Path</th>
+                    <th className="py-2 px-3 font-semibold text-right">dH ({units})</th>
+                    <th className="py-2 px-3 font-semibold text-right">|dH| ({units})</th>
+                    <th className="py-2 px-3 font-semibold text-right">Len (km)</th>
+                    <th className="py-2 px-3 font-semibold text-right">mm/sqrt(km)</th>
+                    <th className="py-2 px-3 font-semibold text-right">Lines</th>
+                  </tr>
+                </thead>
+                <tbody className="text-slate-300">
+                  {levelingLoopDiagnostics.loops.map((loop) => (
+                    <tr key={loop.key} className="border-b border-slate-800/50">
+                      <td className="py-1 px-3 text-slate-500">{loop.rank}</td>
+                      <td className="py-1 px-3">{loop.key}</td>
+                      <td className="py-1 px-3">{loop.stationPath.join('->')}</td>
+                      <td className="py-1 px-3 text-right">{(loop.closure * unitScale).toFixed(4)}</td>
+                      <td className="py-1 px-3 text-right">{(loop.absClosure * unitScale).toFixed(4)}</td>
+                      <td className="py-1 px-3 text-right">{loop.loopLengthKm.toFixed(3)}</td>
+                      <td className="py-1 px-3 text-right">{loop.closurePerSqrtKmMm.toFixed(2)}</td>
+                      <td className="py-1 px-3 text-right">
+                        {loop.sourceLines.length > 0 ? loop.sourceLines.join(',') : '-'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+
+      {!isPreanalysis && levelingLoopSuspects.length > 0 && (
+        <div className="mb-6 border border-slate-800 rounded overflow-hidden">
+          <div className="px-4 py-2 border-b border-slate-800 bg-slate-900/60 text-xs uppercase tracking-wider text-slate-400">
+            Leveling Loop Suspects (ranked)
+          </div>
+          <table className="w-full text-left text-xs">
+            <thead>
+              <tr className="text-slate-500 border-b border-slate-800/60">
+                <th className="py-2 px-3">#</th>
+                <th className="py-2">Loop</th>
+                <th className="py-2">Path</th>
+                <th className="py-2 text-right">|dH| ({units})</th>
+                <th className="py-2 text-right">Len (km)</th>
+                <th className="py-2 text-right">mm/sqrt(km)</th>
+                <th className="py-2 text-right px-3">Lines</th>
+              </tr>
+            </thead>
+            <tbody className="text-slate-300">
+              {levelingLoopSuspects.map((loop) => (
+                <tr key={`level-suspect-${loop.key}`} className="border-b border-slate-800/30">
+                  <td className="py-1 px-3 text-slate-500">{loop.rank}</td>
+                  <td className="py-1">{loop.key}</td>
+                  <td className="py-1">{loop.stationPath.join('->')}</td>
+                  <td className="py-1 text-right font-mono">
+                    {(loop.absClosure * unitScale).toFixed(4)}
+                  </td>
+                  <td className="py-1 text-right font-mono">{loop.loopLengthKm.toFixed(3)}</td>
+                  <td className="py-1 text-right font-mono">
+                    {loop.closurePerSqrtKmMm.toFixed(2)}
+                  </td>
+                  <td className="py-1 px-3 text-right font-mono">
+                    {loop.sourceLines.length > 0 ? loop.sourceLines.join(',') : '-'}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
 

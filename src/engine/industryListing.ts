@@ -154,6 +154,7 @@ export const buildIndustryStyleListingText = (
   const gpsAddHiHtScaleMax = parseState?.gpsAddHiHtScaleMax ?? runDiag.gpsAddHiHtScaleMax ?? 1;
   const gpsLoopCheckEnabled = parseState?.gpsLoopCheckEnabled ?? false;
   const gpsLoopDiagnostics = res.gpsLoopDiagnostics;
+  const levelingLoopDiagnostics = res.levelingLoopDiagnostics;
   const isPreanalysis = res.preanalysisMode === true;
   const descriptionReconcileMode =
     parseState?.descriptionReconcileMode ?? parseSettings.descriptionReconcileMode ?? 'first';
@@ -940,6 +941,30 @@ export const buildIndustryStyleListingText = (
       ],
       gpsLoopRows,
       [3, 4, 5, 7],
+    );
+  }
+  if (levelingLoopDiagnostics?.enabled) {
+    lines.push('');
+    addCenteredHeading('Differential Leveling Loop Diagnostics');
+    lines.push('');
+    lines.push(
+      `observations=${levelingLoopDiagnostics.observationCount}, loops=${levelingLoopDiagnostics.loopCount}, totalLength=${levelingLoopDiagnostics.totalLengthKm.toFixed(3)}km, worst|dH|=${levelingLoopDiagnostics.worstClosure != null ? (levelingLoopDiagnostics.worstClosure * unitScale).toFixed(4) : '-'}${linearUnit}`,
+    );
+    lines.push('');
+    const levelingLoopRows = levelingLoopDiagnostics.loops.map((loop) => [
+      String(loop.rank),
+      loop.key,
+      (loop.closure * unitScale).toFixed(4),
+      (loop.absClosure * unitScale).toFixed(4),
+      loop.loopLengthKm.toFixed(3),
+      loop.closurePerSqrtKmMm.toFixed(2),
+      loop.sourceLines.length > 0 ? loop.sourceLines.join(',') : '-',
+      loop.stationPath.join('->'),
+    ]);
+    renderTextTable(
+      ['#', 'Loop', `dH (${linearUnit})`, `|dH| (${linearUnit})`, 'Len (km)', 'mm/sqrt(km)', 'Lines', 'Path'],
+      levelingLoopRows,
+      [2, 3, 4, 5],
     );
   }
 

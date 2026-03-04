@@ -281,6 +281,7 @@ export class LSAEngine {
   private traverseDiagnostics?: AdjustmentResult['traverseDiagnostics'];
   private sideshots?: AdjustmentResult['sideshots'];
   private gpsLoopDiagnostics?: AdjustmentResult['gpsLoopDiagnostics'];
+  private levelingLoopDiagnostics?: AdjustmentResult['levelingLoopDiagnostics'];
   private autoSideshotDiagnostics?: AdjustmentResult['autoSideshotDiagnostics'];
   private clusterDiagnostics?: AdjustmentResult['clusterDiagnostics'];
   private condition?: AdjustmentResult['condition'];
@@ -1044,6 +1045,247 @@ export class LSAEngine {
         baseToleranceM: GPS_LOOP_BASE_TOLERANCE_M,
         ppmTolerance: GPS_LOOP_TOLERANCE_PPM,
       },
+      loops: rankedLoops,
+    };
+  }
+
+  private computeLevelingLoopDiagnostics(
+    levelingObservations: LevelObservation[],
+  ): NonNullable<AdjustmentResult['levelingLoopDiagnostics']> {
+    type LoopEdge = {
+      idx: number;
+      obsId: number;
+      from: StationId;
+      to: StationId;
+      dH: number;
+      lengthKm: number;
+      sourceLine?: number;
+    };
+    type ParentInfo = {
+      parent?: StationId;
+      edgeIdx?: number;
+      dirFromParent?: 1 | -1;
+      depth: number;
+      component: number;
+    };
+    type AdjacencyRow = {
+      edgeIdx: number;
+      neighbor: StationId;
+      dir: 1 | -1;
+    };
+
+    const edges: LoopEdge[] = levelingObservations.map((obs, idx) => ({
+      idx,
+      obsId: obs.id,
+      from: obs.from,
+      to: obs.to,
+      dH: obs.obs,
+      lengthKm: obs.lenKm,
+      sourceLine: obs.sourceLine,
+    }));
+    const totalLengthKm = edges.reduce((acc, edge) => acc + edge.lengthKm, 0);
+    const stations = [...new Set(edges.flatMap((edge) => [edge.from, edge.to]))].sort((a, b) =>
+      a.localeCompare(b, undefined, { numeric: true }),
+    );
+    const adjacency = new Map<StationId, AdjacencyRow[]>();
+    edges.forEach((edge) => {
+      const fromList = adjacency.get(edge.from) ?? [];
+      fromList.push({ edgeIdx: edge.idx, neighbor: edge.to, dir: 1 });
+      adjacency.set(edge.from, fromList);
+      const toList = adjacency.get(edge.to) ?? [];
+      toList.push({ edgeIdx: edge.idx, neighbor: edge.from, dir: -1 });
+      adjacency.set(edge.to, toList);
+    });
+    adjacency.forEach((rows) => {
+      rows.sort(
+        (a, b) =>
+          a.neighbor.localeCompare(b.neighbor, undefined, { numeric: true }) ||
+          a.edgeIdx - b.edgeIdx,
+      );
+    });
+
+    const parentInfo = new Map<StationId, ParentInfo>();
+    const treeEdgeIdx = new Set<number>();
+    let componentId = 0;
+
+    stations.forEach((start) => {
+      if (parentInfo.has(start)) return;
+      componentId += 1;
+      parentInfo.set(start, { depth: 0, component: componentId });
+      const queue: StationId[] = [start];
+      for (let q = 0; q < queue.length; q += 1) {
+        const current = queue[q];
+        const currentInfo = parentInfo.get(current);
+        if (!currentInfo) continue;
+        (adjacency.get(current) ?? []).forEach((row) => {
+          if (!parentInfo.has(row.neighbor)) {
+            parentInfo.set(row.neighbor, {
+              parent: current,
+              edgeIdx: row.edgeIdx,
+              dirFromParent: row.dir,
+              depth: currentInfo.depth + 1,
+              component: componentId,
+            });
+            treeEdgeIdx.add(row.edgeIdx);
+            queue.push(row.neighbor);
+          }
+        });
+      }
+    });
+
+    const buildPath = (
+      from: StationId,
+      to: StationId,
+    ): { stations: StationId[]; segments: { edgeIdx: number; dir: number }[] } | null => {
+      const fromInfo = parentInfo.get(from);
+      const toInfo = parentInfo.get(to);
+      if (!fromInfo || !toInfo || fromInfo.component !== toInfo.component) return null;
+
+      let a = from;
+      let b = to;
+      const upSegments: { edgeIdx: number; dir: number }[] = [];
+      const downSegments: { edgeIdx: number; dir: number }[] = [];
+
+      while ((parentInfo.get(a)?.depth ?? 0) > (parentInfo.get(b)?.depth ?? 0)) {
+        const info = parentInfo.get(a);
+        if (!info || info.parent == null || info.edgeIdx == null || info.dirFromParent == null)
+          return null;
+        upSegments.push({ edgeIdx: info.edgeIdx, dir: -info.dirFromParent });
+        a = info.parent;
+      }
+      while ((parentInfo.get(b)?.depth ?? 0) > (parentInfo.get(a)?.depth ?? 0)) {
+        const info = parentInfo.get(b);
+        if (!info || info.parent == null || info.edgeIdx == null || info.dirFromParent == null)
+          return null;
+        downSegments.push({ edgeIdx: info.edgeIdx, dir: info.dirFromParent });
+        b = info.parent;
+      }
+      while (a !== b) {
+        const infoA = parentInfo.get(a);
+        const infoB = parentInfo.get(b);
+        if (
+          !infoA ||
+          !infoB ||
+          infoA.parent == null ||
+          infoB.parent == null ||
+          infoA.edgeIdx == null ||
+          infoB.edgeIdx == null ||
+          infoA.dirFromParent == null ||
+          infoB.dirFromParent == null
+        ) {
+          return null;
+        }
+        upSegments.push({ edgeIdx: infoA.edgeIdx, dir: -infoA.dirFromParent });
+        downSegments.push({ edgeIdx: infoB.edgeIdx, dir: infoB.dirFromParent });
+        a = infoA.parent;
+        b = infoB.parent;
+      }
+
+      const segments = [...upSegments, ...downSegments.reverse()];
+      const stationPath: StationId[] = [from];
+      let cursor = from;
+      segments.forEach((seg) => {
+        const edge = edges[seg.edgeIdx];
+        if (!edge) return;
+        const next = seg.dir >= 0 ? edge.to : edge.from;
+        if (cursor === next) {
+          const alt = seg.dir >= 0 ? edge.from : edge.to;
+          stationPath.push(alt);
+          cursor = alt;
+          return;
+        }
+        stationPath.push(next);
+        cursor = next;
+      });
+      if (stationPath[stationPath.length - 1] !== to) stationPath.push(to);
+      return { stations: stationPath, segments };
+    };
+
+    const nonTreeEdges = edges
+      .filter((edge) => !treeEdgeIdx.has(edge.idx))
+      .sort((a, b) => {
+        const la = a.sourceLine ?? Number.MAX_SAFE_INTEGER;
+        const lb = b.sourceLine ?? Number.MAX_SAFE_INTEGER;
+        if (la !== lb) return la - lb;
+        if (a.obsId !== b.obsId) return a.obsId - b.obsId;
+        return a.idx - b.idx;
+      });
+
+    const loops = nonTreeEdges
+      .map((edge, idx) => {
+        const treePath = buildPath(edge.from, edge.to);
+        if (!treePath) return null;
+        let closure = 0;
+        const lineSet = new Set<number>();
+        const segments = treePath.segments
+          .map((segment) => {
+            const segEdge = edges[segment.edgeIdx];
+            if (!segEdge) return null;
+            const observedDh = segment.dir * segEdge.dH;
+            closure += observedDh;
+            if (segEdge.sourceLine != null) lineSet.add(segEdge.sourceLine);
+            return {
+              from: segment.dir >= 0 ? segEdge.from : segEdge.to,
+              to: segment.dir >= 0 ? segEdge.to : segEdge.from,
+              observedDh,
+              lengthKm: segEdge.lengthKm,
+              sourceLine: segEdge.sourceLine,
+              closureLeg: false,
+            };
+          })
+          .filter((segment): segment is NonNullable<typeof segment> => segment != null);
+        closure -= edge.dH;
+        if (edge.sourceLine != null) lineSet.add(edge.sourceLine);
+        segments.push({
+          from: edge.to,
+          to: edge.from,
+          observedDh: -edge.dH,
+          lengthKm: edge.lengthKm,
+          sourceLine: edge.sourceLine,
+          closureLeg: true,
+        });
+        const loopLengthKm =
+          treePath.segments.reduce((acc, segment) => {
+            const segEdge = edges[segment.edgeIdx];
+            if (!segEdge) return acc;
+            return acc + segEdge.lengthKm;
+          }, 0) + edge.lengthKm;
+        const absClosure = Math.abs(closure);
+        const closurePerSqrtKmMm =
+          loopLengthKm > EPS
+            ? (absClosure * 1000) / Math.sqrt(loopLengthKm)
+            : absClosure * 1000;
+        return {
+          rank: 0,
+          key: `LL-${idx + 1}-${edge.from}`,
+          stationPath: [...treePath.stations, edge.from],
+          edgeCount: treePath.segments.length + 1,
+          sourceLines: [...lineSet].sort((a, b) => a - b),
+          closure,
+          absClosure,
+          loopLengthKm,
+          closurePerSqrtKmMm,
+          severity: closurePerSqrtKmMm,
+          segments,
+        };
+      })
+      .filter((loop): loop is NonNullable<typeof loop> => loop != null);
+
+    const rankedLoops = loops
+      .sort((a, b) => {
+        if (b.severity !== a.severity) return b.severity - a.severity;
+        if (b.absClosure !== a.absClosure) return b.absClosure - a.absClosure;
+        return a.key.localeCompare(b.key, undefined, { numeric: true });
+      })
+      .map((loop, idx) => ({ ...loop, rank: idx + 1 }));
+
+    return {
+      enabled: true,
+      observationCount: edges.length,
+      loopCount: rankedLoops.length,
+      totalLengthKm,
+      worstClosure: rankedLoops[0]?.absClosure,
+      worstClosurePerSqrtKmMm: rankedLoops[0]?.closurePerSqrtKmMm,
       loops: rankedLoops,
     };
   }
@@ -2573,6 +2815,7 @@ export class LSAEngine {
     this.residualDiagnostics = undefined;
     this.clusterDiagnostics = undefined;
     this.gpsLoopDiagnostics = undefined;
+    this.levelingLoopDiagnostics = undefined;
     this.chiSquare = undefined;
     this.statisticalSummary = undefined;
     this.typeSummary = undefined;
@@ -2758,6 +3001,20 @@ export class LSAEngine {
       this.gpsLoopDiagnostics.loops.slice(0, 10).forEach((loop) => {
         this.log(
           `  #${loop.rank} ${loop.key}: path=${loop.stationPath.join('->')} closure(dE=${loop.closureE.toFixed(4)}m,dN=${loop.closureN.toFixed(4)}m,|d|=${loop.closureMag.toFixed(4)}m) tol=${loop.toleranceM.toFixed(4)}m ppm=${loop.linearPpm != null ? loop.linearPpm.toFixed(1) : '-'} sev=${loop.severity.toFixed(2)} status=${loop.pass ? 'PASS' : 'WARN'} lines=${loop.sourceLines.length > 0 ? loop.sourceLines.join(',') : '-'}`,
+        );
+      });
+    }
+    const levelingRows = this.observations.filter(
+      (obs): obs is LevelObservation => this.isObservationActive(obs) && obs.type === 'lev',
+    );
+    if (levelingRows.length > 0) {
+      this.levelingLoopDiagnostics = this.computeLevelingLoopDiagnostics(levelingRows);
+      this.log(
+        `Leveling loop check: observations=${this.levelingLoopDiagnostics.observationCount}, loops=${this.levelingLoopDiagnostics.loopCount}, totalLength=${this.levelingLoopDiagnostics.totalLengthKm.toFixed(3)}km`,
+      );
+      this.levelingLoopDiagnostics.loops.slice(0, 10).forEach((loop) => {
+        this.log(
+          `  #${loop.rank} ${loop.key}: path=${loop.stationPath.join('->')} closure=${loop.closure.toFixed(4)}m |closure|=${loop.absClosure.toFixed(4)}m len=${loop.loopLengthKm.toFixed(3)}km mm/sqrt(km)=${loop.closurePerSqrtKmMm.toFixed(2)} lines=${loop.sourceLines.length > 0 ? loop.sourceLines.join(',') : '-'}`,
         );
       });
     }
@@ -5865,6 +6122,7 @@ export class LSAEngine {
       traverseDiagnostics: this.traverseDiagnostics,
       sideshots: this.sideshots,
       gpsLoopDiagnostics: this.gpsLoopDiagnostics,
+      levelingLoopDiagnostics: this.levelingLoopDiagnostics,
       autoSideshotDiagnostics: this.autoSideshotDiagnostics,
       clusterDiagnostics: this.clusterDiagnostics,
       directionRejectDiagnostics: this.directionRejectDiagnostics,

@@ -238,15 +238,15 @@
       - [x] Phase 4P: add compare-mode presets (`Non-MTA Only` vs `All Raw Rows`), highlight staged rows that belong to mismatched comparison buckets, and expand the input-editor context menu with standard edit actions above `Toggle # Comment`
       - [x] Phase 4Q: split editor comment actions into explicit `Block Comment` / `Block Uncomment`, preserve native undo/redo history for comment/paste/delete/cut menu edits, and make `Tab` insert a literal tab in the input textarea
   - [ ] Leveling improvements (highest impact -> lowest):
-    - [ ] Add dedicated differential leveling loop-closure check workflow (independent of traverse diagnostics)
-      - [ ] Phase 1: detect and enumerate leveling loops from `L`/level-sensitive records with station-path traceability
-      - [ ] Phase 2: compute closure and misclosure statistics per loop independent of TS traverse metrics
-      - [ ] Phase 3: add dedicated leveling loop section in processing/report/export with ranked suspect loops
+    - [x] Add dedicated differential leveling loop-closure check workflow (independent of traverse diagnostics)
+      - [x] Phase 1: detect and enumerate leveling loops from `L`/level-sensitive records with station-path traceability
+      - [x] Phase 2: compute closure and misclosure statistics per loop independent of TS traverse metrics
+      - [x] Phase 3: add dedicated leveling loop section in processing/report/export with ranked suspect loops
     - [ ] Add level-loop tolerance checks (length-based configurable criteria with pass/warn flags)
       - [ ] Phase 1: add configurable tolerance model (e.g., k\*sqrt(Km), fixed constants) in project options
       - [ ] Phase 2: evaluate each loop against configured tolerances and produce pass/warn/fail flags
       - [ ] Phase 3: include tolerance outcomes in listing/export and pin behavior with tolerance fixture tests
     - [ ] Add detailed level-loop report blocks (total loop length, per-segment lengths, closure/tolerance outcomes)
-      - [ ] Phase 1: compute and persist per-segment and total loop lengths for leveling loops
+      - [x] Phase 1: compute and persist per-segment and total loop lengths for leveling loops
       - [ ] Phase 2: add detailed report tables and industry-style listing rows for leveling loop details
       - [ ] Phase 3: add export formatting and regression tests for report structure/content parity

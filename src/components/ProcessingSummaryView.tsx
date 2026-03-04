@@ -256,6 +256,22 @@ const ProcessingSummaryView: React.FC<ProcessingSummaryViewProps> = ({
         lines.push(`  ... ${gpsLoopDiagnostics.loops.length - 15} more GPS loop diagnostics`);
       }
     }
+    const levelingLoopDiagnostics = result.levelingLoopDiagnostics;
+    if (levelingLoopDiagnostics?.enabled) {
+      lines.push(
+        `Leveling Loop Check: obs=${levelingLoopDiagnostics.observationCount}, loops=${levelingLoopDiagnostics.loopCount}, totalLength=${levelingLoopDiagnostics.totalLengthKm.toFixed(3)}km`,
+      );
+      levelingLoopDiagnostics.loops.slice(0, 15).forEach((loop) => {
+        lines.push(
+          `  #${loop.rank} ${loop.key} |dH|=${(loop.absClosure * unitScale).toFixed(4)}${linearUnit} len=${loop.loopLengthKm.toFixed(3)}km mm/sqrt(km)=${loop.closurePerSqrtKmMm.toFixed(2)} path=${loop.stationPath.join('->')}`,
+        );
+      });
+      if (levelingLoopDiagnostics.loops.length > 15) {
+        lines.push(
+          `  ... ${levelingLoopDiagnostics.loops.length - 15} more leveling loop diagnostics`,
+        );
+      }
+    }
     const lostStations = result.parseState?.lostStationIds ?? [];
     lines.push(
       `Lost Stations: ${lostStations.length > 0 ? `${lostStations.length} (${lostStations.join(', ')})` : 'none'}`,
