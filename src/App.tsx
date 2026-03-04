@@ -524,6 +524,8 @@ const SETTINGS_TOOLTIPS = {
     'Sort adjusted-observation listing rows by input line order, station name, or residual size.',
   listingObservationLimit:
     'Maximum number of adjusted-observation rows written in industry-style output (1-500).',
+  exportFormat:
+    'Select the current output format used by the export action: WebNet text, industry-style listing text, or LandXML.',
 } as const;
 
 const PROJECT_OPTION_TAB_TOOLTIPS: Record<ProjectOptionsTab, string> = {
@@ -535,7 +537,7 @@ const PROJECT_OPTION_TAB_TOOLTIPS: Record<ProjectOptionsTab, string> = {
     'Project instrument library editor for EDM, angular, centering, and vertical precision parameters.',
   'listing-file':
     'Controls which sections appear in industry-style listing/export output and how listing rows are sorted.',
-  'other-files': 'Reserved area for additional output-file and auxiliary export controls.',
+  'other-files': 'Export format and auxiliary output-file controls.',
   special:
     'Special parsing and interpretation controls such as A-record mode and description reconciliation.',
   gps: 'CRS/geodetic settings, GPS loop checks, geoid/grid options, and GPS AddHiHt defaults.',
@@ -569,7 +571,7 @@ const PROJECT_OPTION_SECTION_TOOLTIPS: Record<string, string> = {
   'TS Correlation': 'Angular correlation settings for total station observations by setup or set.',
   'Robust Model': 'Robust adjustment controls for downweighting large residuals during solving.',
   'Other File Outputs':
-    'Placeholder area for future non-listing output-file switches and export controls.',
+    'Export format selection plus auxiliary output behavior shared across text and XML exports.',
 };
 
 const PROJECT_OPTION_TABS: Array<{ id: ProjectOptionsTab; label: string }> = [
@@ -696,10 +698,18 @@ const resolveLevelLoopTolerancePreset = (
   };
 };
 
+type AppProps = {
+  initialSettingsModalOpen?: boolean;
+  initialOptionsTab?: ProjectOptionsTab;
+};
+
 /****************************
  * UI COMPONENTS
  ****************************/
-const App: React.FC = () => {
+const App: React.FC<AppProps> = ({
+  initialSettingsModalOpen = false,
+  initialOptionsTab = 'adjustment',
+}) => {
   const [input, setInput] = useState<string>(DEFAULT_INPUT);
   const [importNotice, setImportNotice] = useState<ImportedInputNotice | null>(null);
   const [importReviewState, setImportReviewState] = useState<ImportReviewState | null>(null);
@@ -785,8 +795,8 @@ const App: React.FC = () => {
   const [selectedInstrument, setSelectedInstrument] = useState('S9');
   const [splitPercent, setSplitPercent] = useState(35); // left pane width (%)
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
-  const [activeOptionsTab, setActiveOptionsTab] = useState<ProjectOptionsTab>('adjustment');
+  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(initialSettingsModalOpen);
+  const [activeOptionsTab, setActiveOptionsTab] = useState<ProjectOptionsTab>(initialOptionsTab);
   const [settingsDraft, setSettingsDraft] = useState<SettingsState>(settings);
   const [parseSettingsDraft, setParseSettingsDraft] = useState<ParseSettings>(parseSettings);
   const [projectInstrumentsDraft, setProjectInstrumentsDraft] =
@@ -4840,40 +4850,6 @@ const App: React.FC = () => {
     'w-full bg-slate-700 text-xs border border-slate-500 text-white rounded px-2 py-1 outline-none focus:border-blue-400';
   const optionLabelClass = 'text-[11px] text-slate-300 uppercase tracking-wide';
 
-  const renderPlaceholderPanel = (title: string, note: string) => (
-    <div className="space-y-3">
-      <div
-        className="text-xs uppercase tracking-wider text-slate-300"
-        title={PROJECT_OPTION_SECTION_TOOLTIPS[title] ?? note}
-      >
-        {title}
-      </div>
-      <div className="bg-slate-700/60 border border-slate-500 rounded p-3 text-xs text-slate-300">
-        {note}
-      </div>
-      <div className="grid grid-cols-2 gap-3">
-        <label className={optionLabelClass}>
-          Future Option A
-          <input
-            disabled
-            value="Not implemented"
-            readOnly
-            className={`${optionInputClass} mt-1 opacity-50 cursor-not-allowed`}
-          />
-        </label>
-        <label className={optionLabelClass}>
-          Future Option B
-          <input
-            disabled
-            value="Not implemented"
-            readOnly
-            className={`${optionInputClass} mt-1 opacity-50 cursor-not-allowed`}
-          />
-        </label>
-      </div>
-    </div>
-  );
-
   return (
     <div className="fixed inset-0 flex flex-col bg-slate-900 text-slate-100 font-sans overflow-hidden">
       <header className="h-16 bg-slate-800 border-b border-slate-700 flex items-center px-3 md:px-4 shrink-0 w-full gap-3">
@@ -6135,11 +6111,70 @@ const App: React.FC = () => {
                 </div>
               )}
 
-              {activeOptionsTab === 'other-files' &&
-                renderPlaceholderPanel(
-                  'Other File Outputs',
-                  'Coordinate and auxiliary output file switches are reserved for the industry-style output phase.',
-                )}
+              {activeOptionsTab === 'other-files' && (
+                <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+                  <SettingsCard
+                    title="Other File Outputs"
+                    tooltip={PROJECT_OPTION_SECTION_TOOLTIPS['Other File Outputs']}
+                  >
+                    <SettingsRow label="Export Format" tooltip={SETTINGS_TOOLTIPS.exportFormat}>
+                      <select
+                        title={SETTINGS_TOOLTIPS.exportFormat}
+                        value={exportFormat}
+                        onChange={(e) => setExportFormat(e.target.value as ExportFormat)}
+                        className={optionInputClass}
+                      >
+                        <option value="webnet">WebNet</option>
+                        <option value="industry-style">Industry Standard Output</option>
+                        <option value="landxml">LandXML</option>
+                      </select>
+                    </SettingsRow>
+                    <SettingsRow
+                      label="Output Extension"
+                      tooltip="Current file extension used by the active export format."
+                    >
+                      <div className="rounded border border-slate-500 bg-slate-700 px-2 py-1 text-xs text-slate-100">
+                        {exportFormat === 'landxml' ? '.xml' : '.txt'}
+                      </div>
+                    </SettingsRow>
+                    <SettingsRow
+                      label="Output Family"
+                      tooltip="Describes the current export target generated by the toolbar export action."
+                    >
+                      <div className="rounded border border-slate-500 bg-slate-700 px-2 py-1 text-xs text-slate-100">
+                        {exportFormat === 'webnet'
+                          ? 'WebNet text report'
+                          : exportFormat === 'industry-style'
+                            ? 'Industry-style listing'
+                            : 'LandXML 1.2'}
+                      </div>
+                    </SettingsRow>
+                  </SettingsCard>
+                  <SettingsCard
+                    title="Output Visibility"
+                    tooltip="Shared output toggles that affect exported text/XML deliverables."
+                  >
+                    <SettingsRow
+                      label="Show Lost Stations in Output"
+                      tooltip={SETTINGS_TOOLTIPS.listingShowLostStations}
+                      className="md:grid-cols-[minmax(0,1fr)_auto]"
+                    >
+                      <SettingsToggle
+                        title={SETTINGS_TOOLTIPS.listingShowLostStations}
+                        checked={settingsDraft.listingShowLostStations}
+                        onChange={(checked) =>
+                          handleDraftSetting('listingShowLostStations', checked)
+                        }
+                      />
+                    </SettingsRow>
+                    <div className="rounded-md border border-slate-400/60 bg-slate-700/20 px-3 py-2 text-[11px] text-slate-200 leading-relaxed">
+                      Listing-specific section visibility and sort controls still live in the
+                      <span className="font-semibold"> Listing File </span>
+                      tab. This tab is for high-level export target and shared output behavior.
+                    </div>
+                  </SettingsCard>
+                </div>
+              )}
 
               {activeOptionsTab === 'special' && (
                 <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
@@ -6505,11 +6540,6 @@ const App: React.FC = () => {
                         CRS transforms, GPS loop checks, geoid/grid modeling, and GPS AddHiHt
                         defaults all stay <strong>OFF</strong> unless you explicitly enable them
                         here or in the input file.
-                      </div>
-                      <div>
-                        The GPS pane is intentionally condensed: labels stay on the left, controls
-                        stay on the right, and disable rules mirror the parser defaults already in
-                        the engine.
                       </div>
                     </div>
                   </SettingsCard>
