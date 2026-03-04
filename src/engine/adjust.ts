@@ -293,6 +293,11 @@ export class LSAEngine {
   private controlConstraints?: AdjustmentResult['controlConstraints'];
   private parseState?: ParseOptions;
   private conditionWarned = false;
+  private azimuthCache = new Map<string, { az: number; dist: number }>();
+  private zenithCache = new Map<
+    string,
+    { z: number; dist: number; horiz: number; dh: number; crCorr: number }
+  >();
 
   private matrixIsFinite(m: number[][]): boolean {
     return m.every((row) => row.every((value) => Number.isFinite(value)));
@@ -1876,7 +1881,23 @@ export class LSAEngine {
     this.logs.push(msg);
   }
 
+  private clearGeometryCache() {
+    this.azimuthCache.clear();
+    this.zenithCache.clear();
+  }
+
+  private collectActiveObservations(): Observation[] {
+    const active: Observation[] = [];
+    this.observations.forEach((obs) => {
+      if (this.isObservationActive(obs)) active.push(obs);
+    });
+    return active;
+  }
+
   private getAzimuth(fromID: StationId, toID: StationId): { az: number; dist: number } {
+    const cacheKey = `${fromID}|${toID}`;
+    const cached = this.azimuthCache.get(cacheKey);
+    if (cached) return cached;
     const s1 = this.stations[fromID];
     const s2 = this.stations[toID];
     if (!s1 || !s2) return { az: 0, dist: 0 };
@@ -1884,7 +1905,9 @@ export class LSAEngine {
     const dy = s2.y - s1.y;
     let az = Math.atan2(dx, dy);
     if (az < 0) az += 2 * Math.PI;
-    return { az, dist: Math.sqrt(dx * dx + dy * dy) };
+    const result = { az, dist: Math.sqrt(dx * dx + dy * dy) };
+    this.azimuthCache.set(cacheKey, result);
+    return result;
   }
 
   private applyGeoidHeightConversions(model: GeoidGridModel): void {
@@ -2053,6 +2076,9 @@ export class LSAEngine {
     hi = 0,
     ht = 0,
   ): { z: number; dist: number; horiz: number; dh: number; crCorr: number } {
+    const cacheKey = `${fromID}|${toID}|${hi}|${ht}`;
+    const cached = this.zenithCache.get(cacheKey);
+    if (cached) return cached;
     const s1 = this.stations[fromID];
     const s2 = this.stations[toID];
     if (!s1 || !s2) return { z: 0, dist: 0, horiz: 0, dh: 0, crCorr: 0 };
@@ -2064,7 +2090,9 @@ export class LSAEngine {
     const zGeom = dist === 0 ? 0 : Math.acos(dh / dist);
     const crCorr = this.curvatureRefractionAngle(horiz);
     const z = Math.min(Math.PI, Math.max(0, zGeom + crCorr));
-    return { z, dist, horiz, dh, crCorr };
+    const result = { z, dist, horiz, dh, crCorr };
+    this.zenithCache.set(cacheKey, result);
+    return result;
   }
 
   private effectiveDistanceForAngularObservation(obs: Observation): number | undefined {
@@ -2913,6 +2941,7 @@ export class LSAEngine {
     this.relativeCovariances = undefined;
     this.weakGeometryDiagnostics = undefined;
     this.conditionWarned = false;
+    this.clearGeometryCache();
 
     if ((this.directionRejectDiagnostics?.length ?? 0) > 0) {
       this.log(`Direction rejects captured: ${this.directionRejectDiagnostics?.length}`);
@@ -3079,10 +3108,11 @@ export class LSAEngine {
     }
 
     this.updateGpsAddHiHtDiagnostics();
+    const activeObservations = this.collectActiveObservations();
     if (gpsLoopCheckEnabled) {
-      const gpsNetworkRows = this.observations.filter(
+      const gpsNetworkRows = activeObservations.filter(
         (obs): obs is GpsObservation =>
-          this.isObservationActive(obs) && obs.type === 'gps' && obs.gpsMode !== 'sideshot',
+          obs.type === 'gps' && obs.gpsMode !== 'sideshot',
       );
       this.gpsLoopDiagnostics = this.computeGpsLoopDiagnostics(gpsNetworkRows);
       this.log(
@@ -3094,8 +3124,8 @@ export class LSAEngine {
         );
       });
     }
-    const levelingRows = this.observations.filter(
-      (obs): obs is LevelObservation => this.isObservationActive(obs) && obs.type === 'lev',
+    const levelingRows = activeObservations.filter(
+      (obs): obs is LevelObservation => obs.type === 'lev',
     );
     if (levelingRows.length > 0) {
       this.levelingLoopDiagnostics = this.computeLevelingLoopDiagnostics(levelingRows);
@@ -3123,7 +3153,6 @@ export class LSAEngine {
       return this.buildResult();
     }
 
-    const activeObservations = this.observations.filter((obs) => this.isObservationActive(obs));
     const gpsSideshotCount = this.observations.filter(
       (obs) => obs.type === 'gps' && obs.gpsMode === 'sideshot',
     ).length;
@@ -3239,6 +3268,7 @@ export class LSAEngine {
 
     for (let iter = 0; iter < this.maxIterations; iter++) {
       this.iterations += 1;
+      this.clearGeometryCache();
 
       const A = zeros(numObsEquations, numParams);
       const L = zeros(numObsEquations, 1);
@@ -3822,13 +3852,13 @@ export class LSAEngine {
       } catch (error) {
         const detail = error instanceof Error ? ` ${error.message}` : '';
         this.log(`Normal equation solve failed (singular or otherwise unstable).${detail}`);
-        this.calculateStatistics(this.paramIndex, false);
+        this.calculateStatistics(this.paramIndex, false, activeObservations);
         return this.buildResult();
       }
     }
 
     if (!this.converged) this.log('Warning: Max iterations reached.');
-    this.calculateStatistics(this.paramIndex, !!this.Qxx);
+    this.calculateStatistics(this.paramIndex, !!this.Qxx, activeObservations);
     return this.buildResult();
   }
 
@@ -3854,7 +3884,9 @@ export class LSAEngine {
   private calculateStatistics(
     paramIndex: Record<StationId, { x?: number; y?: number; h?: number }>,
     hasQxx: boolean,
+    activeObservationsInput?: Observation[],
   ) {
+    this.clearGeometryCache();
     let vtpv = 0;
     const closureResiduals: string[] = [];
     const closureVectors: { from: StationId; to: StationId; dE: number; dN: number }[] = [];
@@ -3888,7 +3920,7 @@ export class LSAEngine {
         orientation: number;
       }
     >();
-    const activeObservations = this.observations.filter((obs) => this.isObservationActive(obs));
+    const activeObservations = activeObservationsInput ?? this.collectActiveObservations();
     const constraints = this.buildCoordinateConstraints(paramIndex);
     const tsCorrelationRows = new Map<
       string,
@@ -3950,8 +3982,7 @@ export class LSAEngine {
       tsCorrelationRows.set(group.key, entry);
     };
 
-    this.observations.forEach((obs) => {
-      if (!this.isObservationActive(obs)) return;
+    activeObservations.forEach((obs) => {
       obs.effectiveDistance = undefined;
       if (obs.type === 'dist') {
         const s1 = this.stations[obs.from];

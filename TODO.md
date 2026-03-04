@@ -16,6 +16,10 @@
 - [x] Project Options refresh: add user-editable named level-loop tolerance presets, replace the Other Files placeholder with real export/output controls, and condense the Adjustment, GPS, General, Instrument, Special, and Modeling settings tabs into cleaner card/grid layouts with inline toggles and right-aligned inputs
 - [x] Project Options modal regression coverage: add focused layout tests for Adjustment, General, Instrument, GPS, Other Files, and Modeling tab rendering so condensed modal structure stays stable
 - [x] Project Options modal interaction coverage: add jsdom interaction tests for tab switching plus `Apply`/`Cancel` draft persistence/discard behavior
+- [ ] No-result-change optimization batch plan:
+  - [x] Batch 1 (solver): cache active observations per solve stage and add per-iteration geometry caching for repeated azimuth/zenith lookups in `adjust.ts`
+  - [ ] Batch 2 (UI/report): memoize heavy derived report arrays and lazy-load heavy result tabs to reduce initial payload/first render cost
+  - [ ] Batch 3 (parser/import): reduce parser directive hot-loop allocations and trim repeated importer regex rescans for large external files
 - [x] Exclude fixed planned observations from preanalysis what-if candidates so fixed bearing/control planning rows are not presented as removable
 - [x] Add a separate locked planned-observations preanalysis section and hover-help coverage for preanalysis report headers/labels
 - [x] Extend hover-help coverage to remaining report summary-card labels and Project Options modal tabs/sections/field labels/instrument editor controls
