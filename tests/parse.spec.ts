@@ -116,6 +116,26 @@ describe('parseInput', () => {
     expect(parsed.observations.some((o) => o.type === 'zenith')).toBe(false);
   });
 
+  it('accepts hyphenated from-to vertical records in the same way as split tokens', () => {
+    const parsed = parseInput(
+      [
+        '.3D',
+        '.DELTA OFF',
+        'C 2 0 0 0 ! ! !',
+        'C 2000 10 0 0',
+        'V 2-2000 279-34-03.2 1.6920/0.0000',
+      ].join('\n'),
+    );
+    const vertical = parsed.observations.find(
+      (obs) => obs.type === 'zenith' && 'from' in obs && obs.from === '2' && obs.to === '2000',
+    );
+    expect(vertical).toBeDefined();
+    expect(vertical?.obs ?? Number.NaN).toBeCloseTo(
+      ((279 + 34 / 60 + 3.2 / 3600) * Math.PI) / 180,
+      12,
+    );
+  });
+
   it('supports .ORDER FROMATTO for A/M station triplets', () => {
     const parsed = parseInput(
       [

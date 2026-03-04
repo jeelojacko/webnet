@@ -363,6 +363,8 @@ const formatImportedVerticalValue = (
   verticalValue: number,
 ): string => (verticalMode === 'zenith' ? toDmsString(verticalValue) : formatNumber(verticalValue, 4));
 
+const formatFromToToken = (fromId: string, toId: string): string => `${fromId}-${toId}`;
+
 const buildRecordComment = (record: ImportedRecordBase): string | null => {
   if (record.sourceLine == null && !record.sourceCode && !record.note) return null;
   const parts: string[] = ['Imported source'];
@@ -476,8 +478,7 @@ export const serializeImportedObservationRecord = (
   if (observation.kind === 'vertical') {
     const tokens = [
       'V',
-      observation.fromId,
-      observation.toId,
+      formatFromToToken(observation.fromId, observation.toId),
       formatImportedVerticalValue(observation.verticalMode, observation.verticalValue),
     ];
     const hiHt = formatHiHt(observation.hiM, observation.htM);

@@ -28,6 +28,7 @@ interface ImportReviewModalProps {
   onPresetChange: (_preset: ImportReviewOutputPreset) => void;
   onSetBulkExcludeMta: (_excluded: boolean) => void;
   onSetBulkExcludeRaw: (_excluded: boolean) => void;
+  onSetGroupExcluded: (_groupKey: string, _excluded: boolean) => void;
   onToggleExclude: (_itemId: string) => void;
   onToggleFixed: (_itemId: string) => void;
   onCreateEmptySetupGroup: () => void;
@@ -139,6 +140,7 @@ const ImportReviewModal: React.FC<ImportReviewModalProps> = ({
   onPresetChange,
   onSetBulkExcludeMta,
   onSetBulkExcludeRaw,
+  onSetGroupExcluded,
   onToggleExclude,
   onToggleFixed,
   onCreateEmptySetupGroup,
@@ -179,6 +181,9 @@ const ImportReviewModal: React.FC<ImportReviewModalProps> = ({
     const items = group.itemIds
       .map((itemId) => itemLookup.get(itemId))
       .filter((item): item is ImportReviewItem => Boolean(item));
+    const observableItems = items.filter((item) => item.kind === 'observation');
+    const excludeGroupChecked =
+      observableItems.length > 0 && observableItems.every((item) => excludedItemIds.has(item.id));
 
     return (
       <section key={group.key} className="border border-slate-600 bg-slate-900/70">
@@ -198,6 +203,18 @@ const ImportReviewModal: React.FC<ImportReviewModalProps> = ({
               <div className="text-[11px] uppercase tracking-wide text-slate-400">
                 {items.length} imported row{items.length === 1 ? '' : 's'}
               </div>
+              {group.kind !== 'control' && (
+                <label className="flex items-center gap-2 text-[11px] uppercase tracking-wide text-slate-300">
+                  <input
+                    type="checkbox"
+                    checked={excludeGroupChecked}
+                    disabled={observableItems.length === 0}
+                    onChange={(event) => onSetGroupExcluded(group.key, event.target.checked)}
+                    className="accent-amber-400"
+                  />
+                  Exclude Setup
+                </label>
+              )}
             </div>
             <div className="flex flex-col gap-2 lg:items-end">
               <label className="flex min-w-[320px] flex-col text-[11px] uppercase tracking-wide text-slate-400">

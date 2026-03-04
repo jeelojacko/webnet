@@ -113,6 +113,7 @@ const prettifyToken = (value: string): string =>
 const formatLinear = (value: number): string => value.toFixed(4);
 
 const formatAngleDms = (valueDeg: number): string => radToDmsStr(valueDeg * DEG_TO_RAD);
+const formatFromToToken = (fromId: string, toId: string): string => `${fromId}-${toId}`;
 
 const splitOverrideLines = (value: string | undefined): string[] =>
   value
@@ -318,8 +319,7 @@ const serializeVerticalFocusedObservation = (observation: ImportedObservationRec
       observation.verticalMode === 'delta-h' ? '.DELTA ON' : '.DELTA OFF',
       [
         'V',
-        observation.atId,
-        observation.toId,
+        formatFromToToken(observation.atId, observation.toId),
         observation.verticalMode === 'zenith'
           ? formatAngleDms(observation.verticalValue)
           : formatLinear(observation.verticalValue),
@@ -331,8 +331,7 @@ const serializeVerticalFocusedObservation = (observation: ImportedObservationRec
       observation.verticalMode === 'delta-h' ? '.DELTA ON' : '.DELTA OFF',
       [
         'V',
-        observation.fromId,
-        observation.toId,
+        formatFromToToken(observation.fromId, observation.toId),
         observation.verticalMode === 'zenith'
           ? formatAngleDms(observation.verticalValue)
           : formatLinear(observation.verticalValue),

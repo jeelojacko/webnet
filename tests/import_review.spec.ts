@@ -276,6 +276,28 @@ describe('import review workflow', () => {
     expect(distanceVerticalText).toContain('DV 1 2 22.2574 089-57-23.8 !');
   });
 
+  it('supports vertical row overrides with hyphenated from-to formatting', () => {
+    const imported = importExternalInput(
+      jobXmlTrimbleFixture,
+      'jobxml_trimble_station_setup_sample.jxl',
+    );
+    const reviewModel = buildImportReviewModel(imported.dataset!);
+    const text = buildImportReviewText(imported.dataset!, reviewModel, {
+      includedItemIds: new Set(['observation:4']),
+      groupComments: {
+        'setup:1:bs:1000': 'SETUP 1',
+      },
+      rowTypeOverrides: {
+        'observation:4': 'vertical',
+      },
+      preset: 'clean-webnet',
+    });
+
+    expect(text).toContain('.DELTA OFF');
+    expect(text).toContain('V 1-2 089-57-23.8');
+    expect(text).not.toContain('V 1 2 089-57-23.8');
+  });
+
   it('supports DN and DM row-type overrides for setup-aware JobXML groups', () => {
     const imported = importExternalInput(
       jobXmlTrimbleFixture,

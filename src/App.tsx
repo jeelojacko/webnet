@@ -3691,6 +3691,25 @@ const App: React.FC = () => {
     });
   };
 
+  const handleImportReviewSetGroupExcluded = (groupKey: string, excluded: boolean) => {
+    setImportReviewState((prev) => {
+      if (!prev) return prev;
+      const group = prev.reviewModel.groups.find((entry) => entry.key === groupKey);
+      if (!group) return prev;
+      const itemLookup = new Map(prev.reviewModel.items.map((item) => [item.id, item]));
+      const nextExcluded = new Set(prev.excludedItemIds);
+      group.itemIds
+        .map((itemId) => itemLookup.get(itemId))
+        .filter((item): item is Exclude<typeof item, undefined> => Boolean(item))
+        .filter((item) => item.kind === 'observation')
+        .forEach((item) => {
+          if (excluded) nextExcluded.add(item.id);
+          else nextExcluded.delete(item.id);
+        });
+      return { ...prev, excludedItemIds: nextExcluded };
+    });
+  };
+
   const handleImportReviewCommentChange = (groupKey: string, value: string) => {
     setImportReviewState((prev) =>
       prev
@@ -6516,6 +6535,7 @@ const App: React.FC = () => {
           onPresetChange={handleImportReviewPresetChange}
           onSetBulkExcludeMta={handleImportReviewSetBulkExcludeMta}
           onSetBulkExcludeRaw={handleImportReviewSetBulkExcludeRaw}
+          onSetGroupExcluded={handleImportReviewSetGroupExcluded}
           onToggleExclude={handleImportReviewToggleExclude}
           onToggleFixed={handleImportReviewToggleFixed}
           onCreateEmptySetupGroup={handleImportReviewCreateEmptySetupGroup}

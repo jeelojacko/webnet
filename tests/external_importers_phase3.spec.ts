@@ -60,7 +60,7 @@ describe('Phase 3 external importers', () => {
     expect(imported.text).toContain('D STN2 P3 75.0000 1.4000/1.7000');
     expect(imported.text).toContain('# Imported source line 6 [SS] converted to V');
     expect(imported.text).toContain('.DELTA ON');
-    expect(imported.text).toContain('V STN2 P3 -1.2500 1.4000/1.7000');
+    expect(imported.text).toContain('V STN2-P3 -1.2500 1.4000/1.7000');
 
     const parsed = parseInput(imported.text);
     expect(parsed.stations.STN2).toBeDefined();

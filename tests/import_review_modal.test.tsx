@@ -119,6 +119,7 @@ describe('ImportReviewModal', () => {
         onPresetChange={() => {}}
         onSetBulkExcludeMta={() => {}}
         onSetBulkExcludeRaw={() => {}}
+        onSetGroupExcluded={() => {}}
         onToggleExclude={() => {}}
         onToggleFixed={() => {}}
         onCreateEmptySetupGroup={() => {}}
@@ -150,6 +151,7 @@ describe('ImportReviewModal', () => {
     expect(html).toContain('TS Direction Set');
     expect(html).toContain('Add Empty Setup');
     expect(html).toContain('Setup Label');
+    expect(html).toContain('Exclude Setup');
     expect(html).toContain('Exclude MTA Obs (1)');
     expect(html).toContain('Duplicate');
     expect(html).toContain('Comment Below');
