@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { AlertTriangle, CheckCircle } from 'lucide-react';
 import type { AdjustmentResult, ClusterApprovedMerge, GpsObservation, Observation } from '../types';
 import { RAD_TO_DEG, radToDmsStr } from '../engine/angles';
@@ -161,6 +161,8 @@ interface ReportViewProps {
   onClearClusterMerges: () => void;
 }
 
+type SortedObservation = Observation & { originalIndex: number };
+
 const ReportView: React.FC<ReportViewProps> = ({
   result,
   units,
@@ -191,42 +193,74 @@ const ReportView: React.FC<ReportViewProps> = ({
   const [ellipseMode, setEllipseMode] = useState<'1sigma' | '95'>('1sigma');
   const ellipseConfidenceScale = ellipseMode === '95' ? 2.4477 : 1;
 
-  const sortedObs = [...result.observations]
-    .map((obs, index) => ({ ...obs, originalIndex: index }))
-    .sort(
-      (a, b) => Math.abs((b as Observation).stdRes || 0) - Math.abs((a as Observation).stdRes || 0),
-    );
+  const sortedObs = useMemo<SortedObservation[]>(
+    () =>
+      [...result.observations]
+        .map((obs, index) => ({ ...obs, originalIndex: index }))
+        .sort((a, b) => Math.abs(b.stdRes || 0) - Math.abs(a.stdRes || 0)),
+    [result.observations],
+  );
+  const observationsByType = useMemo(() => {
+    const byTypeMap = new Map<Observation['type'], SortedObservation[]>();
+    sortedObs.forEach((obs) => {
+      const list = byTypeMap.get(obs.type) ?? [];
+      list.push(obs);
+      byTypeMap.set(obs.type, list);
+    });
+    return byTypeMap;
+  }, [sortedObs]);
+  const byType = (type: Observation['type']): SortedObservation[] =>
+    observationsByType.get(type) ?? [];
 
-  const byType = (type: Observation['type']) => sortedObs.filter((o) => o.type === type);
-
-  const analysis = sortedObs.filter((o) => Math.abs((o as Observation).stdRes || 0) > 2);
-  const topSuspects = sortedObs
-    .filter((o) => {
-      const obs = o as Observation;
-      return (obs.localTest != null && !obs.localTest.pass) || Math.abs(obs.stdRes || 0) >= 2;
-    })
-    .slice(0, 20);
-  const topDirectionTargetSuspects = [...(result.directionTargetDiagnostics ?? [])]
-    .filter((d) => d.localPass === false || (d.stdRes ?? 0) >= 2 || (d.rawSpreadArcSec ?? 0) >= 5)
-    .slice(0, 20);
-  const topDirectionRepeatabilitySuspects = [...(result.directionRepeatabilityDiagnostics ?? [])]
-    .filter(
-      (d) => d.localFailCount > 0 || (d.maxStdRes ?? 0) >= 2 || (d.maxRawSpreadArcSec ?? 0) >= 5,
-    )
-    .slice(0, 20);
-  const setupSuspects = [...(result.setupDiagnostics ?? [])]
-    .filter((s) => s.localFailCount > 0 || (s.maxStdRes ?? 0) >= 2)
-    .sort((a, b) => {
-      if (b.localFailCount !== a.localFailCount) return b.localFailCount - a.localFailCount;
-      const bMax = b.maxStdRes ?? 0;
-      const aMax = a.maxStdRes ?? 0;
-      if (bMax !== aMax) return bMax - aMax;
-      const bRms = b.rmsStdRes ?? 0;
-      const aRms = a.rmsStdRes ?? 0;
-      if (bRms !== aRms) return bRms - aRms;
-      return a.station.localeCompare(b.station);
-    })
-    .slice(0, 20);
+  const analysis = useMemo(
+    () => sortedObs.filter((obs) => Math.abs(obs.stdRes || 0) > 2),
+    [sortedObs],
+  );
+  const topSuspects = useMemo(
+    () =>
+      sortedObs
+        .filter(
+          (obs) => (obs.localTest != null && !obs.localTest.pass) || Math.abs(obs.stdRes || 0) >= 2,
+        )
+        .slice(0, 20),
+    [sortedObs],
+  );
+  const topDirectionTargetSuspects = useMemo(
+    () =>
+      [...(result.directionTargetDiagnostics ?? [])]
+        .filter(
+          (d) => d.localPass === false || (d.stdRes ?? 0) >= 2 || (d.rawSpreadArcSec ?? 0) >= 5,
+        )
+        .slice(0, 20),
+    [result.directionTargetDiagnostics],
+  );
+  const topDirectionRepeatabilitySuspects = useMemo(
+    () =>
+      [...(result.directionRepeatabilityDiagnostics ?? [])]
+        .filter(
+          (d) =>
+            d.localFailCount > 0 || (d.maxStdRes ?? 0) >= 2 || (d.maxRawSpreadArcSec ?? 0) >= 5,
+        )
+        .slice(0, 20),
+    [result.directionRepeatabilityDiagnostics],
+  );
+  const setupSuspects = useMemo(
+    () =>
+      [...(result.setupDiagnostics ?? [])]
+        .filter((s) => s.localFailCount > 0 || (s.maxStdRes ?? 0) >= 2)
+        .sort((a, b) => {
+          if (b.localFailCount !== a.localFailCount) return b.localFailCount - a.localFailCount;
+          const bMax = b.maxStdRes ?? 0;
+          const aMax = a.maxStdRes ?? 0;
+          if (bMax !== aMax) return bMax - aMax;
+          const bRms = b.rmsStdRes ?? 0;
+          const aRms = a.rmsStdRes ?? 0;
+          if (bRms !== aRms) return bRms - aRms;
+          return a.station.localeCompare(b.station);
+        })
+        .slice(0, 20),
+    [result.setupDiagnostics],
+  );
   const traverseLoops = result.traverseDiagnostics?.loops ?? [];
   const traverseLoopSuspects = traverseLoops
     .filter(
@@ -236,61 +270,103 @@ const ReportView: React.FC<ReportViewProps> = ({
     )
     .slice(0, 20);
   const gpsLoopDiagnostics = result.gpsLoopDiagnostics;
-  const gpsLoopSuspects = (gpsLoopDiagnostics?.loops ?? [])
-    .filter((loop) => !loop.pass)
-    .slice(0, 20);
+  const gpsLoopSuspects = useMemo(
+    () =>
+      (gpsLoopDiagnostics?.loops ?? [])
+        .filter((loop) => !loop.pass)
+        .slice(0, 20),
+    [gpsLoopDiagnostics],
+  );
   const levelingLoopDiagnostics = result.levelingLoopDiagnostics;
-  const levelingLoopSuspects = (levelingLoopDiagnostics?.loops ?? [])
-    .filter((loop) => !loop.pass)
-    .slice(0, 20);
-  const levelingSegmentSuspects = (levelingLoopDiagnostics?.suspectSegments ?? []).slice(0, 10);
-  const highlightedLevelingSegmentLines = new Set(
-    levelingSegmentSuspects
-      .map((segment) => segment.sourceLine)
-      .filter((line): line is number => line != null),
+  const levelingLoopSuspects = useMemo(
+    () =>
+      (levelingLoopDiagnostics?.loops ?? [])
+        .filter((loop) => !loop.pass)
+        .slice(0, 20),
+    [levelingLoopDiagnostics],
   );
-  const directionRejects = [...(result.directionRejectDiagnostics ?? [])].sort((a, b) => {
-    const la = a.sourceLine ?? Number.MAX_SAFE_INTEGER;
-    const lb = b.sourceLine ?? Number.MAX_SAFE_INTEGER;
-    if (la !== lb) return la - lb;
-    const sa = a.setId ?? '';
-    const sb = b.setId ?? '';
-    return sa.localeCompare(sb);
-  });
-  const aliasTrace = [...(result.parseState?.aliasTrace ?? [])].sort((a, b) => {
-    const la = a.sourceLine ?? Number.MAX_SAFE_INTEGER;
-    const lb = b.sourceLine ?? Number.MAX_SAFE_INTEGER;
-    if (la !== lb) return la - lb;
-    const ca = a.context ?? '';
-    const cb = b.context ?? '';
-    if (ca !== cb) return ca.localeCompare(cb);
-    return a.sourceId.localeCompare(b.sourceId);
-  });
-  const descriptionTrace = [...(result.parseState?.descriptionTrace ?? [])].sort((a, b) => {
-    if (a.sourceLine !== b.sourceLine) return a.sourceLine - b.sourceLine;
-    return a.stationId.localeCompare(b.stationId, undefined, { numeric: true });
-  });
-  const descriptionScanSummary = [...(result.parseState?.descriptionScanSummary ?? [])].sort(
-    (a, b) => a.stationId.localeCompare(b.stationId, undefined, { numeric: true }),
+  const levelingSegmentSuspects = useMemo(
+    () => (levelingLoopDiagnostics?.suspectSegments ?? []).slice(0, 10),
+    [levelingLoopDiagnostics],
   );
-  const descriptionConflicts = descriptionScanSummary.filter((row) => row.conflict);
-  const descriptionRefsByStation = descriptionTrace.reduce<
-    Map<string, { key: string; description: string; lines: number[] }[]>
-  >((acc, entry) => {
-    const key = entry.stationId;
-    const rows = acc.get(key) ?? [];
-    const normalized = entry.description.replace(/\s+/g, ' ').trim().toUpperCase();
-    const existing = rows.find((row) => row.key === normalized);
-    if (existing) {
-      if (!existing.lines.includes(entry.sourceLine)) existing.lines.push(entry.sourceLine);
-    } else {
-      rows.push({ key: normalized, description: entry.description, lines: [entry.sourceLine] });
-    }
-    acc.set(key, rows);
-    return acc;
-  }, new Map());
+  const highlightedLevelingSegmentLines = useMemo(
+    () =>
+      new Set(
+        levelingSegmentSuspects
+          .map((segment) => segment.sourceLine)
+          .filter((line): line is number => line != null),
+      ),
+    [levelingSegmentSuspects],
+  );
+  const directionRejects = useMemo(
+    () =>
+      [...(result.directionRejectDiagnostics ?? [])].sort((a, b) => {
+        const la = a.sourceLine ?? Number.MAX_SAFE_INTEGER;
+        const lb = b.sourceLine ?? Number.MAX_SAFE_INTEGER;
+        if (la !== lb) return la - lb;
+        const sa = a.setId ?? '';
+        const sb = b.setId ?? '';
+        return sa.localeCompare(sb);
+      }),
+    [result.directionRejectDiagnostics],
+  );
+  const aliasTrace = useMemo(
+    () =>
+      [...(result.parseState?.aliasTrace ?? [])].sort((a, b) => {
+        const la = a.sourceLine ?? Number.MAX_SAFE_INTEGER;
+        const lb = b.sourceLine ?? Number.MAX_SAFE_INTEGER;
+        if (la !== lb) return la - lb;
+        const ca = a.context ?? '';
+        const cb = b.context ?? '';
+        if (ca !== cb) return ca.localeCompare(cb);
+        return a.sourceId.localeCompare(b.sourceId);
+      }),
+    [result.parseState?.aliasTrace],
+  );
+  const descriptionTrace = useMemo(
+    () =>
+      [...(result.parseState?.descriptionTrace ?? [])].sort((a, b) => {
+        if (a.sourceLine !== b.sourceLine) return a.sourceLine - b.sourceLine;
+        return a.stationId.localeCompare(b.stationId, undefined, { numeric: true });
+      }),
+    [result.parseState?.descriptionTrace],
+  );
+  const descriptionScanSummary = useMemo(
+    () =>
+      [...(result.parseState?.descriptionScanSummary ?? [])].sort((a, b) =>
+        a.stationId.localeCompare(b.stationId, undefined, { numeric: true }),
+      ),
+    [result.parseState?.descriptionScanSummary],
+  );
+  const descriptionConflicts = useMemo(
+    () => descriptionScanSummary.filter((row) => row.conflict),
+    [descriptionScanSummary],
+  );
+  const descriptionRefsByStation = useMemo(
+    () =>
+      descriptionTrace.reduce<Map<string, { key: string; description: string; lines: number[] }[]>>(
+        (acc, entry) => {
+          const key = entry.stationId;
+          const rows = acc.get(key) ?? [];
+          const normalized = entry.description.replace(/\s+/g, ' ').trim().toUpperCase();
+          const existing = rows.find((row) => row.key === normalized);
+          if (existing) {
+            if (!existing.lines.includes(entry.sourceLine)) existing.lines.push(entry.sourceLine);
+          } else {
+            rows.push({ key: normalized, description: entry.description, lines: [entry.sourceLine] });
+          }
+          acc.set(key, rows);
+          return acc;
+        },
+        new Map(),
+      ),
+    [descriptionTrace],
+  );
   const clusterDiagnostics = result.clusterDiagnostics;
-  const clusterCandidates = clusterDiagnostics?.candidates ?? [];
+  const clusterCandidates = useMemo(
+    () => clusterDiagnostics?.candidates ?? [],
+    [clusterDiagnostics],
+  );
   const clusterAppliedMerges =
     clusterDiagnostics?.appliedMerges && clusterDiagnostics.appliedMerges.length > 0
       ? clusterDiagnostics.appliedMerges
@@ -299,16 +375,32 @@ const ReportView: React.FC<ReportViewProps> = ({
   const clusterRejectedProposals = clusterDiagnostics?.rejectedProposals ?? [];
   const autoAdjustDiagnostics = result.autoAdjustDiagnostics;
   const autoSideshotDiagnostics = result.autoSideshotDiagnostics;
-  const autoSideshotObsIds = new Set(
-    autoSideshotDiagnostics?.candidates.flatMap((c) => [c.angleObsId, c.distObsId]) ?? [],
+  const autoSideshotObsIds = useMemo(
+    () =>
+      new Set(autoSideshotDiagnostics?.candidates.flatMap((c) => [c.angleObsId, c.distObsId]) ?? []),
+    [autoSideshotDiagnostics],
   );
-  const tsSideshots = (result.sideshots ?? []).filter((s) => s.mode !== 'gps');
-  const gpsSideshots = (result.sideshots ?? []).filter((s) => s.mode === 'gps');
-  const gpsOffsetObservations = result.observations.filter(
-    (obs): obs is GpsObservation => obs.type === 'gps' && obs.gpsOffsetDistanceM != null,
+  const tsSideshots = useMemo(
+    () => (result.sideshots ?? []).filter((s) => s.mode !== 'gps'),
+    [result.sideshots],
   );
-  const lostStationIds = [...(result.parseState?.lostStationIds ?? [])].sort((a, b) =>
-    a.localeCompare(b, undefined, { numeric: true }),
+  const gpsSideshots = useMemo(
+    () => (result.sideshots ?? []).filter((s) => s.mode === 'gps'),
+    [result.sideshots],
+  );
+  const gpsOffsetObservations = useMemo(
+    () =>
+      result.observations.filter(
+        (obs): obs is GpsObservation => obs.type === 'gps' && obs.gpsOffsetDistanceM != null,
+      ),
+    [result.observations],
+  );
+  const lostStationIds = useMemo(
+    () =>
+      [...(result.parseState?.lostStationIds ?? [])].sort((a, b) =>
+        a.localeCompare(b, undefined, { numeric: true }),
+      ),
+    [result.parseState?.lostStationIds],
   );
   const descriptionReconcileMode = result.parseState?.descriptionReconcileMode ?? 'first';
   const descriptionAppendDelimiter = result.parseState?.descriptionAppendDelimiter ?? ' | ';
@@ -319,34 +411,41 @@ const ReportView: React.FC<ReportViewProps> = ({
   const relativeCovariances = result.relativeCovariances ?? [];
   const weakGeometryDiagnostics = result.weakGeometryDiagnostics;
   const preanalysisImpactDiagnostics = result.preanalysisImpactDiagnostics;
-  const lockedPreanalysisObservations = isPreanalysis
-    ? result.observations.filter(isLockedPreanalysisObservation)
-    : [];
-  const flaggedStationCues = (weakGeometryDiagnostics?.stationCues ?? []).filter(
-    (cue) => cue.severity !== 'ok',
+  const lockedPreanalysisObservations = useMemo(
+    () => (isPreanalysis ? result.observations.filter(isLockedPreanalysisObservation) : []),
+    [isPreanalysis, result.observations],
   );
-  const flaggedRelativeCues = (weakGeometryDiagnostics?.relativeCues ?? []).filter(
-    (cue) => cue.severity !== 'ok',
+  const flaggedStationCues = useMemo(
+    () => (weakGeometryDiagnostics?.stationCues ?? []).filter((cue) => cue.severity !== 'ok'),
+    [weakGeometryDiagnostics],
   );
-  const clusterReviewStats = clusterCandidates.reduce(
-    (acc, candidate) => {
-      const decision = clusterReviewDecisions[candidate.key];
-      const status = decision?.status ?? 'pending';
-      const canonicalId =
-        decision && candidate.stationIds.includes(decision.canonicalId)
-          ? decision.canonicalId
-          : candidate.representativeId;
-      if (status === 'approve') {
-        acc.approved += 1;
-        acc.plannedMerges += candidate.stationIds.filter((id) => id !== canonicalId).length;
-      } else if (status === 'reject') {
-        acc.rejected += 1;
-      } else {
-        acc.pending += 1;
-      }
-      return acc;
-    },
-    { approved: 0, rejected: 0, pending: 0, plannedMerges: 0 },
+  const flaggedRelativeCues = useMemo(
+    () => (weakGeometryDiagnostics?.relativeCues ?? []).filter((cue) => cue.severity !== 'ok'),
+    [weakGeometryDiagnostics],
+  );
+  const clusterReviewStats = useMemo(
+    () =>
+      clusterCandidates.reduce(
+        (acc, candidate) => {
+          const decision = clusterReviewDecisions[candidate.key];
+          const status = decision?.status ?? 'pending';
+          const canonicalId =
+            decision && candidate.stationIds.includes(decision.canonicalId)
+              ? decision.canonicalId
+              : candidate.representativeId;
+          if (status === 'approve') {
+            acc.approved += 1;
+            acc.plannedMerges += candidate.stationIds.filter((id) => id !== canonicalId).length;
+          } else if (status === 'reject') {
+            acc.rejected += 1;
+          } else {
+            acc.pending += 1;
+          }
+          return acc;
+        },
+        { approved: 0, rejected: 0, pending: 0, plannedMerges: 0 },
+      ),
+    [clusterCandidates, clusterReviewDecisions],
   );
   const isAngularType = (type: Observation['type']) =>
     type === 'angle' ||

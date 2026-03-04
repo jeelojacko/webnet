@@ -17,10 +17,7 @@ import {
 } from 'lucide-react';
 import InputPane from './components/InputPane';
 import ImportReviewModal from './components/ImportReviewModal';
-import ReportView from './components/ReportView';
-import MapView from './components/MapView';
-import ProcessingSummaryView from './components/ProcessingSummaryView';
-import IndustryOutputView from './components/IndustryOutputView';
+
 import { DEFAULT_INPUT } from './defaultInput';
 import { LSAEngine } from './engine/adjust';
 import { RAD_TO_DEG, radToDmsStr } from './engine/angles';
@@ -85,6 +82,11 @@ import type {
   GeoidInterpolationMethod,
   GeoidHeightDatum,
 } from './types';
+
+const ReportView = React.lazy(() => import('./components/ReportView'));
+const MapView = React.lazy(() => import('./components/MapView'));
+const ProcessingSummaryView = React.lazy(() => import('./components/ProcessingSummaryView'));
+const IndustryOutputView = React.lazy(() => import('./components/IndustryOutputView'));
 
 const FT_PER_M = 3.280839895;
 const M_PER_FT = 1 / FT_PER_M;
@@ -6754,91 +6756,100 @@ const App: React.FC<AppProps> = ({
                 <p>Paste/edit data, then press "Adjust" to solve.</p>
               </div>
             ) : (
-              <>
-                {activeTab === 'report' && (
-                  <ReportView
-                    result={result}
-                    units={settings.units}
-                    runDiagnostics={runDiagnostics}
-                    excludedIds={excludedIds}
-                    onToggleExclude={toggleExclude}
-                    onApplyImpactExclude={applyImpactExclusion}
-                    onApplyPreanalysisAction={applyPreanalysisPlanningAction}
-                    onReRun={handleRun}
-                    onClearExclusions={clearExclusions}
-                    overrides={overrides}
-                    onOverride={handleOverride}
-                    onResetOverrides={resetOverrides}
-                    clusterReviewDecisions={clusterReviewDecisions}
-                    activeClusterApprovedMerges={activeClusterApprovedMerges}
-                    onClusterDecisionStatus={handleClusterDecisionStatus}
-                    onClusterCanonicalSelection={handleClusterCanonicalSelection}
-                    onApplyClusterMerges={applyClusterReviewMerges}
-                    onResetClusterReview={resetClusterReview}
-                    onClearClusterMerges={clearClusterApprovedMerges}
-                  />
-                )}
-                {activeTab === 'processing-summary' && (
-                  <ProcessingSummaryView
-                    result={result}
-                    units={settings.units}
-                    runElapsedMs={runElapsedMs}
-                    runDiagnostics={
-                      runDiagnostics
-                        ? {
-                            solveProfile: runDiagnostics.solveProfile,
-                            directionSetMode: runDiagnostics.directionSetMode,
-                            profileDefaultInstrumentFallback:
-                              runDiagnostics.profileDefaultInstrumentFallback,
-                            rotationAngleRad: runDiagnostics.rotationAngleRad,
-                            crsTransformEnabled: runDiagnostics.crsTransformEnabled,
-                            crsProjectionModel: runDiagnostics.crsProjectionModel,
-                            crsLabel: runDiagnostics.crsLabel,
-                            crsGridScaleEnabled: runDiagnostics.crsGridScaleEnabled,
-                            crsGridScaleFactor: runDiagnostics.crsGridScaleFactor,
-                            crsConvergenceEnabled: runDiagnostics.crsConvergenceEnabled,
-                            crsConvergenceAngleRad: runDiagnostics.crsConvergenceAngleRad,
-                            geoidModelEnabled: runDiagnostics.geoidModelEnabled,
-                            geoidModelId: runDiagnostics.geoidModelId,
-                            geoidInterpolation: runDiagnostics.geoidInterpolation,
-                            geoidHeightConversionEnabled:
-                              runDiagnostics.geoidHeightConversionEnabled,
-                            geoidOutputHeightDatum: runDiagnostics.geoidOutputHeightDatum,
-                            geoidModelLoaded: runDiagnostics.geoidModelLoaded,
-                            geoidModelMetadata: runDiagnostics.geoidModelMetadata,
-                            geoidSampleUndulationM: runDiagnostics.geoidSampleUndulationM,
-                            geoidConvertedStationCount: runDiagnostics.geoidConvertedStationCount,
-                            geoidSkippedStationCount: runDiagnostics.geoidSkippedStationCount,
-                            gpsAddHiHtEnabled: runDiagnostics.gpsAddHiHtEnabled,
-                            gpsAddHiHtHiM: runDiagnostics.gpsAddHiHtHiM,
-                            gpsAddHiHtHtM: runDiagnostics.gpsAddHiHtHtM,
-                            gpsAddHiHtVectorCount: runDiagnostics.gpsAddHiHtVectorCount,
-                            gpsAddHiHtAppliedCount: runDiagnostics.gpsAddHiHtAppliedCount,
-                            gpsAddHiHtPositiveCount: runDiagnostics.gpsAddHiHtPositiveCount,
-                            gpsAddHiHtNegativeCount: runDiagnostics.gpsAddHiHtNegativeCount,
-                            gpsAddHiHtNeutralCount: runDiagnostics.gpsAddHiHtNeutralCount,
-                            gpsAddHiHtDefaultZeroCount: runDiagnostics.gpsAddHiHtDefaultZeroCount,
-                            gpsAddHiHtMissingHeightCount:
-                              runDiagnostics.gpsAddHiHtMissingHeightCount,
-                            gpsAddHiHtScaleMin: runDiagnostics.gpsAddHiHtScaleMin,
-                            gpsAddHiHtScaleMax: runDiagnostics.gpsAddHiHtScaleMax,
-                          }
-                        : null
-                    }
-                  />
-                )}
-                {activeTab === 'industry-output' && (
-                  <IndustryOutputView text={buildIndustryListingText(result)} />
-                )}
-                {activeTab === 'map' && (
-                  <MapView
-                    result={result}
-                    units={settings.units}
-                    showLostStations={settings.mapShowLostStations}
-                    mode={settings.map3dEnabled ? '3d' : '2d'}
-                  />
-                )}
-              </>
+              <React.Suspense
+                fallback={
+                  <div className="flex h-full items-center justify-center text-sm text-slate-400">
+                    Loading tab...
+                  </div>
+                }
+              >
+                <>
+                  {activeTab === 'report' && (
+                    <ReportView
+                      result={result}
+                      units={settings.units}
+                      runDiagnostics={runDiagnostics}
+                      excludedIds={excludedIds}
+                      onToggleExclude={toggleExclude}
+                      onApplyImpactExclude={applyImpactExclusion}
+                      onApplyPreanalysisAction={applyPreanalysisPlanningAction}
+                      onReRun={handleRun}
+                      onClearExclusions={clearExclusions}
+                      overrides={overrides}
+                      onOverride={handleOverride}
+                      onResetOverrides={resetOverrides}
+                      clusterReviewDecisions={clusterReviewDecisions}
+                      activeClusterApprovedMerges={activeClusterApprovedMerges}
+                      onClusterDecisionStatus={handleClusterDecisionStatus}
+                      onClusterCanonicalSelection={handleClusterCanonicalSelection}
+                      onApplyClusterMerges={applyClusterReviewMerges}
+                      onResetClusterReview={resetClusterReview}
+                      onClearClusterMerges={clearClusterApprovedMerges}
+                    />
+                  )}
+                  {activeTab === 'processing-summary' && (
+                    <ProcessingSummaryView
+                      result={result}
+                      units={settings.units}
+                      runElapsedMs={runElapsedMs}
+                      runDiagnostics={
+                        runDiagnostics
+                          ? {
+                              solveProfile: runDiagnostics.solveProfile,
+                              directionSetMode: runDiagnostics.directionSetMode,
+                              profileDefaultInstrumentFallback:
+                                runDiagnostics.profileDefaultInstrumentFallback,
+                              rotationAngleRad: runDiagnostics.rotationAngleRad,
+                              crsTransformEnabled: runDiagnostics.crsTransformEnabled,
+                              crsProjectionModel: runDiagnostics.crsProjectionModel,
+                              crsLabel: runDiagnostics.crsLabel,
+                              crsGridScaleEnabled: runDiagnostics.crsGridScaleEnabled,
+                              crsGridScaleFactor: runDiagnostics.crsGridScaleFactor,
+                              crsConvergenceEnabled: runDiagnostics.crsConvergenceEnabled,
+                              crsConvergenceAngleRad: runDiagnostics.crsConvergenceAngleRad,
+                              geoidModelEnabled: runDiagnostics.geoidModelEnabled,
+                              geoidModelId: runDiagnostics.geoidModelId,
+                              geoidInterpolation: runDiagnostics.geoidInterpolation,
+                              geoidHeightConversionEnabled:
+                                runDiagnostics.geoidHeightConversionEnabled,
+                              geoidOutputHeightDatum: runDiagnostics.geoidOutputHeightDatum,
+                              geoidModelLoaded: runDiagnostics.geoidModelLoaded,
+                              geoidModelMetadata: runDiagnostics.geoidModelMetadata,
+                              geoidSampleUndulationM: runDiagnostics.geoidSampleUndulationM,
+                              geoidConvertedStationCount: runDiagnostics.geoidConvertedStationCount,
+                              geoidSkippedStationCount: runDiagnostics.geoidSkippedStationCount,
+                              gpsAddHiHtEnabled: runDiagnostics.gpsAddHiHtEnabled,
+                              gpsAddHiHtHiM: runDiagnostics.gpsAddHiHtHiM,
+                              gpsAddHiHtHtM: runDiagnostics.gpsAddHiHtHtM,
+                              gpsAddHiHtVectorCount: runDiagnostics.gpsAddHiHtVectorCount,
+                              gpsAddHiHtAppliedCount: runDiagnostics.gpsAddHiHtAppliedCount,
+                              gpsAddHiHtPositiveCount: runDiagnostics.gpsAddHiHtPositiveCount,
+                              gpsAddHiHtNegativeCount: runDiagnostics.gpsAddHiHtNegativeCount,
+                              gpsAddHiHtNeutralCount: runDiagnostics.gpsAddHiHtNeutralCount,
+                              gpsAddHiHtDefaultZeroCount:
+                                runDiagnostics.gpsAddHiHtDefaultZeroCount,
+                              gpsAddHiHtMissingHeightCount:
+                                runDiagnostics.gpsAddHiHtMissingHeightCount,
+                              gpsAddHiHtScaleMin: runDiagnostics.gpsAddHiHtScaleMin,
+                              gpsAddHiHtScaleMax: runDiagnostics.gpsAddHiHtScaleMax,
+                            }
+                          : null
+                      }
+                    />
+                  )}
+                  {activeTab === 'industry-output' && (
+                    <IndustryOutputView text={buildIndustryListingText(result)} />
+                  )}
+                  {activeTab === 'map' && (
+                    <MapView
+                      result={result}
+                      units={settings.units}
+                      showLostStations={settings.mapShowLostStations}
+                      mode={settings.map3dEnabled ? '3d' : '2d'}
+                    />
+                  )}
+                </>
+              </React.Suspense>
             )}
           </div>
         </div>
