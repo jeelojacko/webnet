@@ -269,12 +269,86 @@ describe('import review workflow', () => {
       preset: 'ts-direction-set',
     });
 
-    expect(distanceText).toContain('C 1 2.3460 -2.4303 0.0000 !');
+    expect(distanceText).toContain('C 1 2.3460 -2.4303 0.0000 ! !');
     expect(distanceText).toContain('D 1 2 22.2574 !');
     expect(distanceText).not.toContain('DV 1 2 22.2574');
     expect(distanceText).not.toContain('M 1-1000-2 286-51-24.7 22.2574');
 
-    expect(distanceVerticalText).toContain('DV 1 2 22.2574 089-57-23.8 !');
+    expect(distanceVerticalText).toContain('DV 1 2 22.2574 089-57-23.8 ! !');
+  });
+
+  it('emits family-appropriate fixed markers for control, TS, vertical, bearing, and GNSS import rows', () => {
+    const dataset: ImportedDataset = {
+      importerId: 'jobxml',
+      formatLabel: 'Synthetic import',
+      summary: 'synthetic',
+      notice: { title: 'synthetic', detailLines: [] },
+      comments: [],
+      controlStations: [
+        {
+          kind: 'control-station',
+          coordinateMode: 'local',
+          stationId: 'C1',
+          eastM: 100,
+          northM: 200,
+          heightM: 5,
+        },
+      ],
+      observations: [
+        {
+          kind: 'measurement',
+          atId: '1',
+          fromId: '1000',
+          toId: '2',
+          angleDeg: 45,
+          distanceM: 10,
+          verticalMode: 'zenith',
+          verticalValue: 90,
+        },
+        {
+          kind: 'vertical',
+          fromId: '1',
+          toId: '2',
+          verticalMode: 'zenith',
+          verticalValue: 90,
+        },
+        {
+          kind: 'bearing',
+          fromId: '1',
+          toId: '2',
+          bearingDeg: 180,
+        },
+        {
+          kind: 'gnss-vector',
+          fromId: 'GPS1',
+          toId: 'GPS2',
+          deltaEastM: 1,
+          deltaNorthM: 2,
+        },
+      ],
+      trace: [],
+    };
+
+    const reviewModel = buildImportReviewModel(dataset);
+    const text3d = buildImportReviewText(dataset, reviewModel, {
+      includedItemIds: new Set(reviewModel.items.map((item) => item.id)),
+      fixedItemIds: new Set(reviewModel.items.map((item) => item.id)),
+      coordMode: '3D',
+      preset: 'clean-webnet',
+    });
+    const text2d = buildImportReviewText(dataset, reviewModel, {
+      includedItemIds: new Set(reviewModel.items.map((item) => item.id)),
+      fixedItemIds: new Set(['control:0']),
+      coordMode: '2D',
+      preset: 'clean-webnet',
+    });
+
+    expect(text3d).toContain('C C1 100.0000 200.0000 5.0000 ! ! !');
+    expect(text2d).toContain('C C1 100.0000 200.0000 5.0000 ! !');
+    expect(text3d).toContain('M 1-1000-2 045-00-00.0 10.0000 090-00-00.0 ! ! !');
+    expect(text3d).toContain('V 1-2 090-00-00.0 !');
+    expect(text3d).toContain('B 1 2 180.0000 !');
+    expect(text3d).toContain('G GPS GPS1 GPS2 1.0000 2.0000 0.0000 0.0000 0.0000 ! !');
   });
 
   it('supports vertical row overrides with hyphenated from-to formatting', () => {

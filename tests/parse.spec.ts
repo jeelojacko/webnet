@@ -619,6 +619,21 @@ describe('parseInput', () => {
     expect(g?.corrEN).toBeCloseTo(0.3, 8);
   });
 
+  it('parses GNSS fixed sigma tokens', () => {
+    const parsed = parseInput(
+      ['.2D', 'C A 0 0 0 ! !', 'C B 100 0 0', 'G GPS1 A B 10 20 ! !'].join('\n'),
+    );
+    const g = parsed.observations.find((o) => o.type === 'gps');
+    expect(g?.type).toBe('gps');
+    if (g?.type === 'gps') {
+      expect(g.from).toBe('A');
+      expect(g.to).toBe('B');
+      expect(g.stdDevE).toBeCloseTo(1e-9, 12);
+      expect(g.stdDevN).toBeCloseTo(1e-9, 12);
+      expect(g.sigmaSource).toBe('fixed');
+    }
+  });
+
   it('parses .GPS NETWORK/.GPS SIDESHOT mode state and tags G observations', () => {
     const base = parseInput(
       ['I GPS1 GNSS 0 0 0 0 0 0 0.002', 'C A 0 0 0 !', 'C B 100 0 0', 'G GPS1 A B 100 0 0.01'].join(
@@ -734,6 +749,16 @@ describe('parseInput', () => {
     const parsed = parseInput(['.2D', 'C A 0 0 0 ! !', 'G4 90.0000 2.0000 90.0000'].join('\n'));
     expect(parsed.parseState.gpsOffsetObservationCount ?? 0).toBe(0);
     expect(parsed.logs.some((line) => line.includes('has no preceding G vector'))).toBe(true);
+  });
+
+  it('parses fixed leveling sigma tokens', () => {
+    const parsed = parseInput(['C A 0 0 0 !', 'C B 0 0 0', 'L LVL A B 1.0 0.1 !'].join('\n'));
+    const lev = parsed.observations.find((o) => o.type === 'lev');
+    expect(lev?.type).toBe('lev');
+    if (lev?.type === 'lev') {
+      expect(lev.stdDev).toBeCloseTo(1e-9, 12);
+      expect(lev.sigmaSource).toBe('fixed');
+    }
   });
 
   it('parses .GPS CHECK toggle state with OFF-by-default behavior', () => {

@@ -11,6 +11,7 @@ import {
   serializeImportedControlStationRecord,
   serializeImportedObservationRecord,
 } from './importers';
+import type { CoordMode } from '../types';
 
 export type ImportReviewItemKind = 'control' | 'observation' | 'comment';
 export type ImportReviewGroupKind = 'control' | 'setup' | 'resection' | 'gps';
@@ -102,6 +103,7 @@ export interface BuildImportReviewTextOptions {
   rowTypeOverrides?: Record<string, ImportReviewRowTypeOverride>;
   fixedItemIds?: Set<string>;
   preset?: ImportReviewOutputPreset;
+  coordMode?: CoordMode;
 }
 
 const isComparableObservation = (observation: ImportedObservationRecord): boolean =>
@@ -254,18 +256,64 @@ const serializeObservationPreview = (
     .join(' | ');
 };
 
-const appendFixedTokenToLine = (line: string): string =>
-  line.endsWith(' !') || line.startsWith('#') || line.startsWith('.')
-    ? line
-    : `${line} !`;
+const hasExplicitFixedOrFloatTokens = (tokens: string[]): boolean =>
+  tokens.some((token) => token === '!' || token === '*');
 
-const applyFixedTokenToLines = (lines: string[], fixed: boolean): string[] => {
+const isHiHtToken = (token: string | undefined): boolean => Boolean(token && token.includes('/'));
+
+const fixedTokenCountForRecordLine = (line: string, coordMode: CoordMode): number => {
+  const tokens = line.trim().split(/\s+/).filter(Boolean);
+  if (tokens.length === 0 || hasExplicitFixedOrFloatTokens(tokens)) return 0;
+  const code = tokens[0]?.toUpperCase();
+  if (!code || code.startsWith('#') || code.startsWith('.')) return 0;
+
+  if (code === 'C' || code === 'P' || code === 'PH' || code === 'CH') {
+    return coordMode === '2D' ? 2 : 3;
+  }
+
+  if (code === 'D' || code === 'A' || code === 'B' || code === 'V' || code === 'DN' || code === 'L') {
+    return 1;
+  }
+
+  if (code === 'DV') {
+    return 2;
+  }
+
+  if (code === 'G') {
+    return tokens.length >= 11 ? 3 : 2;
+  }
+
+  if (code === 'M' || code === 'DM') {
+    const verticalToken = tokens[4];
+    return isHiHtToken(verticalToken) || verticalToken == null ? 2 : 3;
+  }
+
+  if (code === 'BM') {
+    const verticalToken = tokens[5];
+    return isHiHtToken(verticalToken) || verticalToken == null ? 2 : 3;
+  }
+
+  return 1;
+};
+
+const appendFixedTokensToLine = (line: string, coordMode: CoordMode): string => {
+  const count = fixedTokenCountForRecordLine(line, coordMode);
+  if (count <= 0) return line;
+  return `${line} ${Array.from({ length: count }, () => '!').join(' ')}`;
+};
+
+const applyFixedTokensToLines = (
+  lines: string[],
+  fixed: boolean,
+  coordMode: CoordMode,
+): string[] => {
   if (!fixed) return lines;
   let applied = false;
   return lines.map((line) => {
     if (applied || line.startsWith('.')) return line;
-    applied = true;
-    return appendFixedTokenToLine(line);
+    const nextLine = appendFixedTokensToLine(line, coordMode);
+    if (nextLine !== line) applied = true;
+    return nextLine;
   });
 };
 
@@ -988,18 +1036,20 @@ const appendPresetObservationLines = (
   overrideLines: string[] | undefined,
   rowTypeOverride: ImportReviewRowTypeOverride,
   fixed: boolean,
+  coordMode: CoordMode,
   state: {
     currentDeltaMode: 'delta-h' | 'zenith' | null;
     currentGpsMode: 'network' | 'sideshot' | null;
   },
 ) => {
   if (overrideLines && overrideLines.length > 0) {
-    overrideLines.forEach((line) => lines.push(line));
+    applyFixedTokensToLines(overrideLines, fixed, coordMode).forEach((line) => lines.push(line));
     return;
   }
-  const serializedLines = applyFixedTokenToLines(
+  const serializedLines = applyFixedTokensToLines(
     serializeObservationForImport(observation, preset, rowTypeOverride),
     fixed,
+    coordMode,
   );
   serializedLines.forEach((line) => {
     if (line === '.DELTA ON') {
@@ -1096,6 +1146,7 @@ export const buildImportReviewText = (
   const lines: string[] = [];
   const itemLookup = new Map(model.items.map((item) => [item.id, item]));
   const preset = options.preset ?? 'clean-webnet';
+  const coordMode = options.coordMode ?? (preset === 'ts-direction-set' ? '2D' : '3D');
   const state = {
     currentDeltaMode: null as 'delta-h' | 'zenith' | null,
     currentGpsMode: null as 'network' | 'sideshot' | null,
@@ -1167,11 +1218,17 @@ export const buildImportReviewText = (
       if (item.kind === 'control') {
         const override = options.rowOverrides?.[item.id];
         if (override?.trim()) {
-          splitOverrideLines(override).forEach((line) => lines.push(line));
+          applyFixedTokensToLines(
+            splitOverrideLines(override),
+            options.fixedItemIds?.has(item.id) ?? false,
+            coordMode,
+          ).forEach((line) => lines.push(line));
         } else {
           const controlLine = serializeImportedControlStationRecord(dataset.controlStations[item.index]);
           lines.push(
-            options.fixedItemIds?.has(item.id) ? appendFixedTokenToLine(controlLine) : controlLine,
+            options.fixedItemIds?.has(item.id)
+              ? appendFixedTokensToLine(controlLine, coordMode)
+              : controlLine,
           );
         }
         return;
@@ -1183,6 +1240,7 @@ export const buildImportReviewText = (
         splitOverrideLines(options.rowOverrides?.[item.id]),
         options.rowTypeOverrides?.[item.id] ?? 'auto',
         options.fixedItemIds?.has(item.id) ?? false,
+        coordMode,
         state,
       );
     });

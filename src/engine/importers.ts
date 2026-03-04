@@ -431,6 +431,7 @@ export const serializeImportedObservationRecord = (
   if (observation.kind === 'gnss-vector') {
     const tokens = [
       'G',
+      'GPS',
       observation.fromId,
       observation.toId,
       formatNumber(observation.deltaEastM, 4),
@@ -445,7 +446,11 @@ export const serializeImportedObservationRecord = (
         formatNumber(observation.corrEN ?? 0, 4),
       );
     } else {
-      tokens.push(formatNumber(observation.sigmaEastM ?? observation.sigmaNorthM ?? 0, 4));
+      tokens.push(
+        formatNumber(observation.sigmaEastM ?? 0, 4),
+        formatNumber(observation.sigmaNorthM ?? observation.sigmaEastM ?? 0, 4),
+        formatNumber(observation.corrEN ?? 0, 4),
+      );
     }
     return [tokens.join(' ')];
   }

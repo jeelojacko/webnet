@@ -3138,14 +3138,15 @@ export const parseInput = (
           logs.push(`Invalid GPS vector at line ${lineNum}, skipping.`);
           continue;
         }
-        const stdEraw = parseFloat(parts[6] || '');
-        const stdNraw = parseFloat(parts[7] || '');
-        const corrRaw = parseFloat(parts[8] || '');
+        const { sigmas, rest } = extractSigmaTokens(parts.slice(6), 2);
+        const corrRaw = parseFloat(rest[0] || '');
 
         const inst = instrumentLibrary[instCode];
         const defaultStd = inst?.gpsStd_xy ?? 0;
-        let sigmaE = Number.isNaN(stdEraw) ? defaultStd : stdEraw;
-        let sigmaN = Number.isNaN(stdNraw) ? sigmaE : stdNraw;
+        const sigmaEResolved = resolveLinearSigma(sigmas[0], defaultStd);
+        const sigmaNResolved = resolveLinearSigma(sigmas[1], sigmaEResolved.sigma);
+        let sigmaE = sigmaEResolved.sigma;
+        let sigmaN = sigmaNResolved.sigma;
         const corr = Number.isNaN(corrRaw) ? 0 : Math.max(-0.999, Math.min(0.999, corrRaw));
 
         if (inst && inst.gpsStd_xy > 0) {
@@ -3172,6 +3173,16 @@ export const parseInput = (
           stdDevE: state.units === 'ft' ? sigmaE / FT_PER_M : sigmaE,
           stdDevN: state.units === 'ft' ? sigmaN / FT_PER_M : sigmaN,
           corrEN: corr,
+          sigmaSource:
+            sigmaEResolved.source === sigmaNResolved.source
+              ? sigmaEResolved.source
+              : sigmaEResolved.source === 'fixed' || sigmaNResolved.source === 'fixed'
+                ? 'fixed'
+                : sigmaEResolved.source === 'explicit' || sigmaNResolved.source === 'explicit'
+                  ? 'explicit'
+                  : sigmaEResolved.source === 'float' || sigmaNResolved.source === 'float'
+                    ? 'float'
+                    : 'default',
         };
         pushObservation(obs);
         lastGpsObservation = obs;
@@ -3236,14 +3247,15 @@ export const parseInput = (
               ? lenRaw / FT_PER_M / 1000
               : lenRaw
             : 0;
-        const stdMmPerKmRaw = parseFloat(parts[6] || '');
-        const baseStd = Number.isNaN(stdMmPerKmRaw) ? (state.levelWeight ?? 0) : stdMmPerKmRaw;
-        if (Number.isNaN(stdMmPerKmRaw) && state.levelWeight != null) {
+        const sigmaToken = parseSigmaToken(parts[6]) ?? undefined;
+        const baseStd = state.levelWeight ?? 0;
+        if (!sigmaToken && state.levelWeight != null) {
           logs.push(`.LWEIGHT applied for leveling at line ${lineNum}: ${state.levelWeight} mm/km`);
         }
 
         const inst = instrumentLibrary[instCode];
-        let sigma = (baseStd * lenKm) / 1000.0;
+        const levelResolved = resolveLinearSigma(sigmaToken, (baseStd * lenKm) / 1000.0);
+        let sigma = levelResolved.sigma;
         if (inst && inst.levStd_mmPerKm > 0) {
           const lib = (inst.levStd_mmPerKm * lenKm) / 1000.0;
           sigma = Math.sqrt(sigma * sigma + lib * lib);
@@ -3263,6 +3275,7 @@ export const parseInput = (
           planned: dHParsed.planned,
           lenKm,
           stdDev: sigma,
+          sigmaSource: levelResolved.source,
         };
         pushObservation(obs);
       } else {

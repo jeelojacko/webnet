@@ -4007,6 +4007,7 @@ const App: React.FC = () => {
         rowTypeOverrides: importReviewState.rowTypeOverrides,
         fixedItemIds: importReviewState.fixedItemIds,
         preset: importReviewState.preset,
+        coordMode: parseSettings.coordMode,
       },
     );
     setInput(nextInput);
