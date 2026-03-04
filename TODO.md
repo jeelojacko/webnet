@@ -19,7 +19,7 @@
 - [ ] No-result-change optimization batch plan:
   - [x] Batch 1 (solver): cache active observations per solve stage and add per-iteration geometry caching for repeated azimuth/zenith lookups in `adjust.ts`
   - [x] Batch 2 (UI/report): memoize heavy derived report arrays and lazy-load heavy result tabs to reduce initial payload/first render cost
-  - [ ] Batch 3 (parser/import): reduce parser directive hot-loop allocations and trim repeated importer regex rescans for large external files
+  - [x] Batch 3 (parser/import): reduce parser directive hot-loop allocations and trim repeated importer regex rescans for large external files
 - [x] Exclude fixed planned observations from preanalysis what-if candidates so fixed bearing/control planning rows are not presented as removable
 - [x] Add a separate locked planned-observations preanalysis section and hover-help coverage for preanalysis report headers/labels
 - [x] Extend hover-help coverage to remaining report summary-card labels and Project Options modal tabs/sections/field labels/instrument editor controls

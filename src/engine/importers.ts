@@ -311,8 +311,41 @@ const decodeXmlEntities = (value: string): string =>
     .replace(/&apos;/g, "'")
     .replace(/&amp;/g, '&');
 
-const lineNumberAtIndex = (input: string, index: number): number =>
-  input.slice(0, Math.max(0, index)).split(/\r?\n/).length;
+type LineNumberResolver = (_index: number) => number;
+
+const buildLineNumberResolver = (input: string): LineNumberResolver => {
+  const newlineIndices: number[] = [];
+  for (let idx = input.indexOf('\n'); idx !== -1; idx = input.indexOf('\n', idx + 1)) {
+    newlineIndices.push(idx);
+  }
+  return (index: number): number => {
+    const clamped = Math.max(0, Math.min(index, input.length));
+    let lo = 0;
+    let hi = newlineIndices.length;
+    while (lo < hi) {
+      const mid = (lo + hi) >>> 1;
+      if (newlineIndices[mid] < clamped) lo = mid + 1;
+      else hi = mid;
+    }
+    return lo + 1;
+  };
+};
+
+const takeLeadingLines = (input: string, maxLines: number): string[] => {
+  if (maxLines <= 0) return [];
+  const lines: string[] = [];
+  let start = 0;
+  while (start <= input.length && lines.length < maxLines) {
+    let end = input.indexOf('\n', start);
+    if (end === -1) end = input.length;
+    let line = input.slice(start, end);
+    if (line.endsWith('\r')) line = line.slice(0, -1);
+    lines.push(line);
+    if (end === input.length) break;
+    start = end + 1;
+  }
+  return lines;
+};
 
 const plural = (count: number, label: string): string =>
   `${count} ${label}${count === 1 ? '' : 's'}`;
@@ -1187,6 +1220,7 @@ const detectJobXml = (input: string, sourceName?: string): boolean => {
 const parseJobXml = (input: string, sourceName?: string): ImportedDataset | null => {
   if (!detectJobXml(input, sourceName)) return null;
 
+  const resolveSourceLine = buildLineNumberResolver(input);
   const trace: ImportedTraceEntry[] = [];
   const stationMap = new Map<string, ImportedControlStationRecord>();
   const pointRefLookup = new Map<string, string>();
@@ -1220,7 +1254,7 @@ const parseJobXml = (input: string, sourceName?: string): ImportedDataset | null
   });
 
   pointBlocks.forEach(({ block, index }) => {
-    const sourceLine = lineNumberAtIndex(input, index);
+    const sourceLine = resolveSourceLine(index);
     const rawName = extractXmlText(block, ['Name', 'PointName', 'PointNumber', 'PointID']);
     const stationId = rawName ? sanitizeStationId(rawName) : undefined;
     const xmlId = extractXmlAttribute(block, ['ID', 'Id']);
@@ -1361,7 +1395,7 @@ const parseJobXml = (input: string, sourceName?: string): ImportedDataset | null
   });
 
   reducedPointBlocks.forEach(({ block, index }) => {
-    const sourceLine = lineNumberAtIndex(input, index);
+    const sourceLine = resolveSourceLine(index);
     const rawName = extractXmlText(block, ['Name', 'PointName', 'PointNumber', 'PointID']);
     const stationId = rawName ? sanitizeStationId(rawName) : undefined;
     const xmlId = extractXmlAttribute(block, ['ID', 'Id']);
@@ -1519,7 +1553,7 @@ const parseJobXml = (input: string, sourceName?: string): ImportedDataset | null
   });
 
   measurementBlocks.forEach(({ block, index }) => {
-    const sourceLine = lineNumberAtIndex(input, index);
+    const sourceLine = resolveSourceLine(index);
     const isDeleted = /<Deleted>\s*true\s*<\/Deleted>/i.test(block);
     if (isDeleted) return;
 
@@ -1896,6 +1930,7 @@ const RW5_INLINE_FIELD_KEYS = [
   'N',
   'E',
 ].sort((a, b) => b.length - a.length);
+const RW5_KEY_VALUE_PATTERN = /^([A-Za-z]{1,8})(.*)$/;
 
 interface ParsedRw5Line {
   code: string;
@@ -1913,13 +1948,11 @@ interface Rw5Context {
 }
 
 const looksLikeRw5Raw = (input: string): boolean => {
-  const recognized = input
-    .split(/\r?\n/)
-    .slice(0, 40)
+  const recognized = takeLeadingLines(input, 40)
     .map((line) => parseRw5Line(line))
     .filter((row): row is ParsedRw5Line => row != null && RW5_RECORD_CODES.has(row.code));
   if (recognized.length < 2) return false;
-  return recognized.some((row) => !/[=:]/.test(row.raw));
+  return recognized.some((row) => !row.raw.includes('=') && !row.raw.includes(':'));
 };
 
 const parseRw5Line = (line: string): ParsedRw5Line | null => {
@@ -1965,7 +1998,7 @@ const parseRw5Line = (line: string): ParsedRw5Line | null => {
       continue;
     }
 
-    const keyValueMatch = token.match(/^([A-Za-z]{1,8})(.*)$/);
+    const keyValueMatch = token.match(RW5_KEY_VALUE_PATTERN);
     if (keyValueMatch) {
       const key = normalizeFieldKey(keyValueMatch[1]);
       const remainder = keyValueMatch[2].trim();
@@ -2334,8 +2367,15 @@ interface ParsedFieldGeniusLine {
   raw: string;
 }
 
-const normalizeFieldKey = (value: string): string =>
-  value.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+const normalizedFieldKeyCache = new Map<string, string>();
+const normalizeFieldKey = (value: string): string => {
+  const cached = normalizedFieldKeyCache.get(value);
+  if (cached != null) return cached;
+  const normalized = value.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+  normalizedFieldKeyCache.set(value, normalized);
+  return normalized;
+};
+const FIELDGENIUS_BARE_KEY_PATTERN = /^[A-Za-z][A-Za-z0-9_]*$/;
 
 const parseFieldGeniusLine = (line: string): ParsedFieldGeniusLine | null => {
   const trimmed = line.trim();
@@ -2369,9 +2409,9 @@ const parseFieldGeniusLine = (line: string): ParsedFieldGeniusLine | null => {
       continue;
     }
 
-    if (/^[A-Za-z][A-Za-z0-9_]*$/.test(token) && i + 1 < tokens.length) {
+    if (FIELDGENIUS_BARE_KEY_PATTERN.test(token) && i + 1 < tokens.length) {
       const next = tokens[i + 1];
-      if (!/[=:]/.test(next)) {
+      if (!next.includes('=') && !next.includes(':')) {
         fields[normalizeFieldKey(token)] = next.trim();
         i += 1;
         continue;
@@ -2390,14 +2430,16 @@ const parseFieldGeniusLine = (line: string): ParsedFieldGeniusLine | null => {
 
 const detectFieldGeniusRaw = (input: string, sourceName?: string): boolean => {
   const fileName = sourceName?.toLowerCase() ?? '';
-  const lines = input.split(/\r?\n/).slice(0, 20);
+  const lines = takeLeadingLines(input, 20);
   const parsedRows = lines
     .map((line) => parseFieldGeniusLine(line))
     .filter(
       (row): row is ParsedFieldGeniusLine => row != null && FIELDGENIUS_RECORD_CODES.has(row.code),
     );
   const recognized = parsedRows.length;
-  const hasExplicitAssignments = parsedRows.some((row) => /[=:]/.test(row.raw));
+  const hasExplicitAssignments = parsedRows.some(
+    (row) => row.raw.includes('=') || row.raw.includes(':'),
+  );
   return (
     /FIELDGENIUS/i.test(input) ||
     ((fileName.endsWith('.raw') || recognized >= 2) && hasExplicitAssignments)
@@ -2745,6 +2787,7 @@ const detectTrimbleSurveyReport = (input: string, sourceName?: string): boolean 
 const parseTrimbleSurveyReport = (input: string, sourceName?: string): ImportedDataset | null => {
   if (!detectTrimbleSurveyReport(input, sourceName)) return null;
 
+  const resolveSourceLine = buildLineNumberResolver(input);
   const trace: ImportedTraceEntry[] = [];
   const stationMap = new Map<string, ImportedControlStationRecord>();
   const observations: ImportedObservationRecord[] = [];
@@ -2754,7 +2797,7 @@ const parseTrimbleSurveyReport = (input: string, sourceName?: string): ImportedD
 
   tables.forEach((table) => {
     if (table.rows.length === 0) return;
-    const sourceLine = lineNumberAtIndex(input, table.index);
+    const sourceLine = resolveSourceLine(table.index);
 
     if (table.caption === 'Station setup') {
       const values = tableRowPairsToMap(table.rows[0] ?? []);
@@ -2914,6 +2957,7 @@ const detectDbxTextExport = (input: string, sourceName?: string): boolean => {
 const parseDbxTextExport = (input: string, sourceName?: string): ImportedDataset | null => {
   if (!detectDbxTextExport(input, sourceName)) return null;
 
+  const resolveSourceLine = buildLineNumberResolver(input);
   const trace: ImportedTraceEntry[] = [];
   const stationMap = new Map<string, ImportedControlStationRecord>();
   const setupContexts = new Map<string, DbxSetupContext>();
@@ -2921,7 +2965,7 @@ const parseDbxTextExport = (input: string, sourceName?: string): ImportedDataset
   const fileLabel = sourceLeaf(sourceName);
 
   matchXmlBlocks(input, 'Point').forEach(({ block, index }) => {
-    const sourceLine = lineNumberAtIndex(input, index);
+    const sourceLine = resolveSourceLine(index);
     const rawName =
       extractXmlAttribute(block, ['name', 'pointName', 'id']) ??
       extractXmlText(block, ['Name', 'PointName', 'PointID', 'ID']);
@@ -3032,7 +3076,7 @@ const parseDbxTextExport = (input: string, sourceName?: string): ImportedDataset
   ];
 
   observationBlocks.forEach(({ block, index }) => {
-    const sourceLine = lineNumberAtIndex(input, index);
+    const sourceLine = resolveSourceLine(index);
     const setupRef =
       extractXmlAttribute(block, ['setupId', 'SetupID']) ?? extractXmlText(block, ['SetupID']);
     const setupContext = setupRef ? setupContexts.get(setupRef) : undefined;

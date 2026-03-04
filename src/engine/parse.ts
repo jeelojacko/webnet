@@ -119,6 +119,42 @@ const splitInlineCommentAndDescription = (line: string): { line: string; descrip
   return description ? { line: parsedLine, description } : { line: parsedLine };
 };
 
+const isWhitespaceCharCode = (code: number): boolean =>
+  code === 32 || code === 9 || code === 10 || code === 11 || code === 12 || code === 13;
+
+const splitWhitespaceTokens = (line: string): string[] => {
+  const tokens: string[] = [];
+  let start = -1;
+  for (let i = 0; i < line.length; i += 1) {
+    if (isWhitespaceCharCode(line.charCodeAt(i))) {
+      if (start >= 0) {
+        tokens.push(line.slice(start, i));
+        start = -1;
+      }
+    } else if (start < 0) {
+      start = i;
+    }
+  }
+  if (start >= 0) tokens.push(line.slice(start));
+  return tokens;
+};
+
+const splitCommaTokens = (tokens: string[], trimSegments: boolean): string[] => {
+  const expanded: string[] = [];
+  tokens.forEach((token) => {
+    let start = 0;
+    for (let i = 0; i <= token.length; i += 1) {
+      if (i === token.length || token.charCodeAt(i) === 44) {
+        const segment = token.slice(start, i);
+        const normalized = trimSegments ? segment.trim() : segment;
+        if (normalized.length > 0) expanded.push(normalized);
+        start = i + 1;
+      }
+    }
+  });
+  return expanded;
+};
+
 const isNumericToken = (token: string): boolean => {
   if (!token) return false;
   if (token === '!' || token === '*') return false;
@@ -720,7 +756,7 @@ export const parseInput = (
     aliasTraceEntries.push({ sourceId, canonicalId, sourceLine, context, detail, reference });
   };
   const parseAliasPairs = (tokens: string[]): number => {
-    const flattened = tokens.flatMap((token) => token.split(',')).filter(Boolean);
+    const flattened = splitCommaTokens(tokens, false);
     let added = 0;
     for (let i = 0; i < flattened.length; ) {
       const token = flattened[i];
@@ -912,7 +948,7 @@ export const parseInput = (
 
     // Inline options
     if (line.startsWith('.') || line.startsWith('/')) {
-      const parts = line.split(/\s+/);
+      const parts = splitWhitespaceTokens(line);
       const rawOp = parts[0].toUpperCase();
       const op = rawOp.startsWith('/') ? `.${rawOp.slice(1)}` : rawOp;
       if (op === '.UNITS' && parts[1]) {
@@ -1693,11 +1729,7 @@ export const parseInput = (
           `Plan rotation updated at line ${lineNum}: +${(delta * RAD_TO_DEG).toFixed(6)}° => ${(next * RAD_TO_DEG).toFixed(6)}°`,
         );
       } else if (op === '.LOSTSTATIONS') {
-        const tokens = parts
-          .slice(1)
-          .flatMap((token) => token.split(','))
-          .map((token) => token.trim())
-          .filter((token) => token.length > 0);
+        const tokens = splitCommaTokens(parts.slice(1), true);
         if (tokens.length === 0) {
           logs.push(
             `Warning: .LOSTSTATIONS missing station IDs at line ${lineNum}; expected .LOSTSTATIONS <id...> or .LOSTSTATIONS CLEAR.`,
@@ -1887,7 +1919,7 @@ export const parseInput = (
       continue;
     }
 
-    const parts = line.split(/\s+/);
+    const parts = splitWhitespaceTokens(line);
     const code = parts[0]?.toUpperCase();
     if (code !== 'G' && code !== 'G4') {
       lastGpsObservation = undefined;
