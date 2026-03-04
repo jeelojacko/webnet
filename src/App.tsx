@@ -5581,31 +5581,26 @@ const App: React.FC = () => {
               )}
 
               {activeOptionsTab === 'general' && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="border border-slate-400 p-3 space-y-3">
-                    <div
-                      className="text-xs uppercase tracking-wider text-slate-200"
-                      title={PROJECT_OPTION_SECTION_TOOLTIPS['Local/Grid Reduction']}
-                    >
-                      Local/Grid Reduction
-                    </div>
-                    <label className={optionLabelClass}>
-                      Map Mode
+                <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+                  <SettingsCard
+                    title="Local / Grid Reduction"
+                    tooltip={PROJECT_OPTION_SECTION_TOOLTIPS['Local/Grid Reduction']}
+                  >
+                    <SettingsRow label="Map Mode" tooltip={SETTINGS_TOOLTIPS.mapMode}>
                       <select
                         title={SETTINGS_TOOLTIPS.mapMode}
                         value={parseSettingsDraft.mapMode}
                         onChange={(e) =>
                           handleDraftParseSetting('mapMode', e.target.value as MapMode)
                         }
-                        className={`${optionInputClass} mt-1`}
+                        className={optionInputClass}
                       >
                         <option value="off">Off</option>
                         <option value="on">On</option>
                         <option value="anglecalc">AngleCalc</option>
                       </select>
-                    </label>
-                    <label className={optionLabelClass}>
-                      Map Scale Factor
+                    </SettingsRow>
+                    <SettingsRow label="Map Scale Factor" tooltip={SETTINGS_TOOLTIPS.mapScale}>
                       <input
                         title={SETTINGS_TOOLTIPS.mapScale}
                         type="number"
@@ -5619,49 +5614,43 @@ const App: React.FC = () => {
                             e.target.value === '' ? undefined : parseFloat(e.target.value),
                           )
                         }
-                        className={`${optionInputClass} mt-1`}
+                        className={optionInputClass}
                       />
-                    </label>
-                    <label className={optionLabelClass}>
-                      Normalize Mixed Face Data
-                      <div className="mt-1 flex items-center gap-2 text-xs">
-                        <input
-                          title={SETTINGS_TOOLTIPS.normalize}
-                          type="checkbox"
-                          className="accent-blue-400"
-                          checked={parseSettingsDraft.normalize}
-                          onChange={(e) => handleDraftParseSetting('normalize', e.target.checked)}
-                        />
-                        <span>{parseSettingsDraft.normalize ? 'Enabled' : 'Disabled'}</span>
-                      </div>
-                    </label>
-                  </div>
-                  <div className="border border-slate-400 p-3 space-y-3">
-                    <div
-                      className="text-xs uppercase tracking-wider text-slate-200"
-                      title={PROJECT_OPTION_SECTION_TOOLTIPS['Vertical Reduction']}
+                    </SettingsRow>
+                    <SettingsRow
+                      label="Normalize Mixed Face Data"
+                      tooltip={SETTINGS_TOOLTIPS.normalize}
+                      className="md:grid-cols-[minmax(0,1fr)_auto]"
                     >
-                      Vertical Reduction
-                    </div>
-                    <label className={optionLabelClass}>
-                      Curvature / Refraction
-                      <div className="mt-1 flex items-center gap-2 text-xs">
-                        <input
-                          title={SETTINGS_TOOLTIPS.curvatureRefraction}
-                          type="checkbox"
-                          className="accent-blue-400"
-                          checked={parseSettingsDraft.applyCurvatureRefraction}
-                          onChange={(e) =>
-                            handleDraftParseSetting('applyCurvatureRefraction', e.target.checked)
-                          }
-                        />
-                        <span>
-                          {parseSettingsDraft.applyCurvatureRefraction ? 'Enabled' : 'Disabled'}
-                        </span>
-                      </div>
-                    </label>
-                    <label className={optionLabelClass}>
-                      Refraction Coefficient
+                      <SettingsToggle
+                        title={SETTINGS_TOOLTIPS.normalize}
+                        checked={parseSettingsDraft.normalize}
+                        onChange={(checked) => handleDraftParseSetting('normalize', checked)}
+                      />
+                    </SettingsRow>
+                  </SettingsCard>
+
+                  <SettingsCard
+                    title="Vertical Reduction"
+                    tooltip={PROJECT_OPTION_SECTION_TOOLTIPS['Vertical Reduction']}
+                  >
+                    <SettingsRow
+                      label="Curvature / Refraction"
+                      tooltip={SETTINGS_TOOLTIPS.curvatureRefraction}
+                      className="md:grid-cols-[minmax(0,1fr)_auto]"
+                    >
+                      <SettingsToggle
+                        title={SETTINGS_TOOLTIPS.curvatureRefraction}
+                        checked={parseSettingsDraft.applyCurvatureRefraction}
+                        onChange={(checked) =>
+                          handleDraftParseSetting('applyCurvatureRefraction', checked)
+                        }
+                      />
+                    </SettingsRow>
+                    <SettingsRow
+                      label="Refraction Coefficient"
+                      tooltip={SETTINGS_TOOLTIPS.refractionK}
+                    >
                       <input
                         title={SETTINGS_TOOLTIPS.refractionK}
                         type="number"
@@ -5677,11 +5666,13 @@ const App: React.FC = () => {
                               : 0.13,
                           )
                         }
-                        className={`${optionInputClass} mt-1`}
+                        className={optionInputClass}
                       />
-                    </label>
-                    <label className={optionLabelClass}>
-                      Vertical Reduction Mode
+                    </SettingsRow>
+                    <SettingsRow
+                      label="Vertical Reduction Mode"
+                      tooltip={SETTINGS_TOOLTIPS.verticalReduction}
+                    >
                       <select
                         title={SETTINGS_TOOLTIPS.verticalReduction}
                         value={parseSettingsDraft.verticalReduction}
@@ -5691,27 +5682,29 @@ const App: React.FC = () => {
                             e.target.value as VerticalReductionMode,
                           )
                         }
-                        className={`${optionInputClass} mt-1`}
+                        className={optionInputClass}
                       >
                         <option value="none">None</option>
                         <option value="curvref">CurvRef</option>
                       </select>
-                    </label>
-                  </div>
+                    </SettingsRow>
+                  </SettingsCard>
                 </div>
               )}
 
               {activeOptionsTab === 'instrument' && (
                 <div className="space-y-4">
-                  <div className="border border-slate-400 p-3 space-y-3">
-                    <div className="flex items-end gap-3">
-                      <label className={`${optionLabelClass} flex-1 max-w-xs`}>
-                        Instrument
+                  <SettingsCard
+                    title="Instrument Selection"
+                    tooltip="Select the active project instrument, create new instruments, and edit the description for the current instrument."
+                  >
+                    <SettingsRow label="Instrument" tooltip={SETTINGS_TOOLTIPS.instrument}>
+                      <div className="flex items-center gap-2">
                         <select
                           title={SETTINGS_TOOLTIPS.instrument}
                           value={selectedInstrumentDraft}
                           onChange={(e) => setSelectedInstrumentDraft(e.target.value)}
-                          className={`${optionInputClass} mt-1`}
+                          className={optionInputClass}
                         >
                           {Object.keys(projectInstrumentsDraft).length === 0 && (
                             <option value="">(none)</option>
@@ -5722,19 +5715,21 @@ const App: React.FC = () => {
                             </option>
                           ))}
                         </select>
-                      </label>
-                      <button
-                        type="button"
-                        onClick={addNewInstrument}
-                        className="h-[30px] px-3 text-xs border border-slate-300 bg-slate-500 hover:bg-slate-400"
-                        title={SETTINGS_TOOLTIPS.newInstrument}
-                      >
-                        New Instrument
-                      </button>
-                    </div>
+                        <button
+                          type="button"
+                          onClick={addNewInstrument}
+                          className="px-3 py-1 text-[11px] border border-slate-300 bg-slate-600 hover:bg-slate-500 text-slate-100"
+                          title={SETTINGS_TOOLTIPS.newInstrument}
+                        >
+                          New
+                        </button>
+                      </div>
+                    </SettingsRow>
                     {selectedInstrumentMeta && (
-                      <label className={optionLabelClass}>
-                        Instrument Description
+                      <SettingsRow
+                        label="Instrument Description"
+                        tooltip={SETTINGS_TOOLTIPS.instrumentDescription}
+                      >
                         <input
                           title={SETTINGS_TOOLTIPS.instrumentDescription}
                           type="text"
@@ -5746,22 +5741,21 @@ const App: React.FC = () => {
                               e.target.value,
                             )
                           }
-                          className={`${optionInputClass} mt-1`}
+                          className={optionInputClass}
                         />
-                      </label>
+                      </SettingsRow>
                     )}
-                  </div>
+                  </SettingsCard>
                   {selectedInstrumentMeta ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="border border-slate-400 p-3 space-y-3">
-                        <div
-                          className="text-xs uppercase tracking-wider text-slate-200"
-                          title="Horizontal EDM, angular, azimuth, and horizontal centering parameters for the selected instrument."
+                    <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+                      <SettingsCard
+                        title="Horizontal Precision"
+                        tooltip="Horizontal EDM, angular, azimuth, and horizontal centering parameters for the selected instrument."
+                      >
+                        <SettingsRow
+                          label={`Distance Constant (${instrumentLinearUnit})`}
+                          tooltip={SETTINGS_TOOLTIPS.instrumentDistanceConstant}
                         >
-                          Horizontal Precision
-                        </div>
-                        <label className={optionLabelClass}>
-                          Distance Constant ({instrumentLinearUnit})
                           <input
                             title={SETTINGS_TOOLTIPS.instrumentDistanceConstant}
                             type="number"
@@ -5775,11 +5769,13 @@ const App: React.FC = () => {
                                 settingsDraft.units,
                               )
                             }
-                            className={`${optionInputClass} mt-1`}
+                            className={optionInputClass}
                           />
-                        </label>
-                        <label className={optionLabelClass}>
-                          Distance PPM
+                        </SettingsRow>
+                        <SettingsRow
+                          label="Distance PPM"
+                          tooltip={SETTINGS_TOOLTIPS.instrumentDistancePpm}
+                        >
                           <input
                             title={SETTINGS_TOOLTIPS.instrumentDistancePpm}
                             type="number"
@@ -5792,11 +5788,13 @@ const App: React.FC = () => {
                                 e.target.value,
                               )
                             }
-                            className={`${optionInputClass} mt-1`}
+                            className={optionInputClass}
                           />
-                        </label>
-                        <label className={optionLabelClass}>
-                          Angle (Seconds)
+                        </SettingsRow>
+                        <SettingsRow
+                          label="Angle (Seconds)"
+                          tooltip={SETTINGS_TOOLTIPS.instrumentAngleSeconds}
+                        >
                           <input
                             title={SETTINGS_TOOLTIPS.instrumentAngleSeconds}
                             type="number"
@@ -5809,11 +5807,13 @@ const App: React.FC = () => {
                                 e.target.value,
                               )
                             }
-                            className={`${optionInputClass} mt-1`}
+                            className={optionInputClass}
                           />
-                        </label>
-                        <label className={optionLabelClass}>
-                          Direction (Seconds)
+                        </SettingsRow>
+                        <SettingsRow
+                          label="Direction (Seconds)"
+                          tooltip={SETTINGS_TOOLTIPS.instrumentDirectionSeconds}
+                        >
                           <input
                             title={SETTINGS_TOOLTIPS.instrumentDirectionSeconds}
                             type="number"
@@ -5826,11 +5826,13 @@ const App: React.FC = () => {
                                 e.target.value,
                               )
                             }
-                            className={`${optionInputClass} mt-1`}
+                            className={optionInputClass}
                           />
-                        </label>
-                        <label className={optionLabelClass}>
-                          Azimuth / Bearing (Seconds)
+                        </SettingsRow>
+                        <SettingsRow
+                          label="Azimuth / Bearing (Seconds)"
+                          tooltip={SETTINGS_TOOLTIPS.instrumentAzBearingSeconds}
+                        >
                           <input
                             title={SETTINGS_TOOLTIPS.instrumentAzBearingSeconds}
                             type="number"
@@ -5843,11 +5845,13 @@ const App: React.FC = () => {
                                 e.target.value,
                               )
                             }
-                            className={`${optionInputClass} mt-1`}
+                            className={optionInputClass}
                           />
-                        </label>
-                        <label className={optionLabelClass}>
-                          Centering Horiz. Instrument ({instrumentLinearUnit})
+                        </SettingsRow>
+                        <SettingsRow
+                          label={`Centering Horiz. Instrument (${instrumentLinearUnit})`}
+                          tooltip={SETTINGS_TOOLTIPS.instrumentCenteringHorizInst}
+                        >
                           <input
                             title={SETTINGS_TOOLTIPS.instrumentCenteringHorizInst}
                             type="number"
@@ -5861,11 +5865,13 @@ const App: React.FC = () => {
                                 settingsDraft.units,
                               )
                             }
-                            className={`${optionInputClass} mt-1`}
+                            className={optionInputClass}
                           />
-                        </label>
-                        <label className={optionLabelClass}>
-                          Centering Horiz. Target ({instrumentLinearUnit})
+                        </SettingsRow>
+                        <SettingsRow
+                          label={`Centering Horiz. Target (${instrumentLinearUnit})`}
+                          tooltip={SETTINGS_TOOLTIPS.instrumentCenteringHorizTarget}
+                        >
                           <input
                             title={SETTINGS_TOOLTIPS.instrumentCenteringHorizTarget}
                             type="number"
@@ -5879,19 +5885,18 @@ const App: React.FC = () => {
                                 settingsDraft.units,
                               )
                             }
-                            className={`${optionInputClass} mt-1`}
+                            className={optionInputClass}
                           />
-                        </label>
-                      </div>
-                      <div className="border border-slate-400 p-3 space-y-3">
-                        <div
-                          className="text-xs uppercase tracking-wider text-slate-200"
-                          title="Vertical-angle, elevation-difference, and vertical centering parameters for the selected instrument."
+                        </SettingsRow>
+                      </SettingsCard>
+                      <SettingsCard
+                        title="Vertical Precision"
+                        tooltip="Vertical-angle, elevation-difference, and vertical centering parameters for the selected instrument."
+                      >
+                        <SettingsRow
+                          label="Zenith (Seconds)"
+                          tooltip={SETTINGS_TOOLTIPS.instrumentZenithSeconds}
                         >
-                          Vertical Precision
-                        </div>
-                        <label className={optionLabelClass}>
-                          Zenith (Seconds)
                           <input
                             title={SETTINGS_TOOLTIPS.instrumentZenithSeconds}
                             type="number"
@@ -5905,11 +5910,13 @@ const App: React.FC = () => {
                                 e.target.value,
                               )
                             }
-                            className={`${optionInputClass} mt-1 disabled:opacity-50 disabled:cursor-not-allowed`}
+                            className={`${optionInputClass} disabled:opacity-50 disabled:cursor-not-allowed`}
                           />
-                        </label>
-                        <label className={optionLabelClass}>
-                          Elev Diff Constant ({instrumentLinearUnit})
+                        </SettingsRow>
+                        <SettingsRow
+                          label={`Elev Diff Constant (${instrumentLinearUnit})`}
+                          tooltip={SETTINGS_TOOLTIPS.instrumentElevDiffConstant}
+                        >
                           <input
                             title={SETTINGS_TOOLTIPS.instrumentElevDiffConstant}
                             type="number"
@@ -5924,11 +5931,13 @@ const App: React.FC = () => {
                                 settingsDraft.units,
                               )
                             }
-                            className={`${optionInputClass} mt-1 disabled:opacity-50 disabled:cursor-not-allowed`}
+                            className={`${optionInputClass} disabled:opacity-50 disabled:cursor-not-allowed`}
                           />
-                        </label>
-                        <label className={optionLabelClass}>
-                          Elev Diff PPM
+                        </SettingsRow>
+                        <SettingsRow
+                          label="Elev Diff PPM"
+                          tooltip={SETTINGS_TOOLTIPS.instrumentElevDiffPpm}
+                        >
                           <input
                             title={SETTINGS_TOOLTIPS.instrumentElevDiffPpm}
                             type="number"
@@ -5942,11 +5951,13 @@ const App: React.FC = () => {
                                 e.target.value,
                               )
                             }
-                            className={`${optionInputClass} mt-1 disabled:opacity-50 disabled:cursor-not-allowed`}
+                            className={`${optionInputClass} disabled:opacity-50 disabled:cursor-not-allowed`}
                           />
-                        </label>
-                        <label className={optionLabelClass}>
-                          Centering Vertical ({instrumentLinearUnit})
+                        </SettingsRow>
+                        <SettingsRow
+                          label={`Centering Vertical (${instrumentLinearUnit})`}
+                          tooltip={SETTINGS_TOOLTIPS.instrumentCenteringVertical}
+                        >
                           <input
                             title={SETTINGS_TOOLTIPS.instrumentCenteringVertical}
                             type="number"
@@ -5961,13 +5972,18 @@ const App: React.FC = () => {
                                 settingsDraft.units,
                               )
                             }
-                            className={`${optionInputClass} mt-1 disabled:opacity-50 disabled:cursor-not-allowed`}
+                            className={`${optionInputClass} disabled:opacity-50 disabled:cursor-not-allowed`}
                           />
-                        </label>
-                      </div>
+                        </SettingsRow>
+                      </SettingsCard>
                     </div>
                   ) : (
-                    <div className="text-xs text-slate-200">No instrument selected.</div>
+                    <SettingsCard
+                      title="Instrument Selection"
+                      tooltip="No project instrument is currently selected."
+                    >
+                      <div className="text-xs text-slate-200">No instrument selected.</div>
+                    </SettingsCard>
                   )}
                 </div>
               )}
@@ -6126,31 +6142,29 @@ const App: React.FC = () => {
                 )}
 
               {activeOptionsTab === 'special' && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="border border-slate-400 p-3 space-y-3">
-                    <div
-                      className="text-xs uppercase tracking-wider text-slate-200"
-                      title={PROJECT_OPTION_SECTION_TOOLTIPS['Observation Interpretation']}
-                    >
-                      Observation Interpretation
-                    </div>
-                    <label className={optionLabelClass}>
-                      A-Record Mode
+                <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+                  <SettingsCard
+                    title="Observation Interpretation"
+                    tooltip={PROJECT_OPTION_SECTION_TOOLTIPS['Observation Interpretation']}
+                  >
+                    <SettingsRow label="A-Record Mode" tooltip={SETTINGS_TOOLTIPS.angleMode}>
                       <select
                         title={SETTINGS_TOOLTIPS.angleMode}
                         value={parseSettingsDraft.angleMode}
                         onChange={(e) =>
                           handleDraftParseSetting('angleMode', e.target.value as AngleMode)
                         }
-                        className={`${optionInputClass} mt-1`}
+                        className={optionInputClass}
                       >
                         <option value="auto">AUTO</option>
                         <option value="angle">ANGLE</option>
                         <option value="dir">DIR</option>
                       </select>
-                    </label>
-                    <label className={optionLabelClass}>
-                      Description Reconcile Mode
+                    </SettingsRow>
+                    <SettingsRow
+                      label="Description Reconcile Mode"
+                      tooltip={SETTINGS_TOOLTIPS.descriptionReconcileMode}
+                    >
                       <select
                         title={SETTINGS_TOOLTIPS.descriptionReconcileMode}
                         value={parseSettingsDraft.descriptionReconcileMode}
@@ -6160,14 +6174,16 @@ const App: React.FC = () => {
                             e.target.value as ParseSettings['descriptionReconcileMode'],
                           )
                         }
-                        className={`${optionInputClass} mt-1`}
+                        className={optionInputClass}
                       >
                         <option value="first">FIRST</option>
                         <option value="append">APPEND</option>
                       </select>
-                    </label>
-                    <label className={optionLabelClass}>
-                      Description Append Delimiter
+                    </SettingsRow>
+                    <SettingsRow
+                      label="Description Append Delimiter"
+                      tooltip={SETTINGS_TOOLTIPS.descriptionAppendDelimiter}
+                    >
                       <input
                         title={SETTINGS_TOOLTIPS.descriptionAppendDelimiter}
                         type="text"
@@ -6179,14 +6195,19 @@ const App: React.FC = () => {
                             e.target.value.length > 0 ? e.target.value : ' | ',
                           )
                         }
-                        className={`${optionInputClass} mt-1 disabled:opacity-50 disabled:cursor-not-allowed`}
+                        className={`${optionInputClass} disabled:opacity-50 disabled:cursor-not-allowed`}
                       />
-                    </label>
-                  </div>
-                  <div className="border border-slate-400 p-3 text-xs text-slate-200 leading-relaxed">
-                    Industry Standard parity profile forces classical solving and raw direction-set
-                    processing with industry default instrument fallback.
-                  </div>
+                    </SettingsRow>
+                  </SettingsCard>
+                  <SettingsCard
+                    title="Profile Note"
+                    tooltip="Run-profile constraints and interpretation notes for parity mode."
+                  >
+                    <div className="text-xs text-slate-200 leading-relaxed">
+                      Industry Standard parity profile forces classical solving and raw
+                      direction-set processing with industry default instrument fallback.
+                    </div>
+                  </SettingsCard>
                 </div>
               )}
 
@@ -6496,34 +6517,29 @@ const App: React.FC = () => {
               )}
 
               {activeOptionsTab === 'modeling' && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="border border-slate-400 p-3 space-y-3">
-                    <div
-                      className="text-xs uppercase tracking-wider text-slate-200"
-                      title={PROJECT_OPTION_SECTION_TOOLTIPS['TS Correlation']}
+                <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+                  <SettingsCard
+                    title="TS Correlation"
+                    tooltip={PROJECT_OPTION_SECTION_TOOLTIPS['TS Correlation']}
+                  >
+                    <SettingsRow
+                      label="Enable Correlation"
+                      tooltip={SETTINGS_TOOLTIPS.tsCorrelation}
+                      className="md:grid-cols-[minmax(0,1fr)_auto]"
                     >
-                      TS Correlation
-                    </div>
-                    <label className={optionLabelClass}>
-                      Enable Correlation
-                      <div className="mt-1 flex items-center gap-2 text-xs">
-                        <input
-                          title={SETTINGS_TOOLTIPS.tsCorrelation}
-                          type="checkbox"
-                          className="accent-blue-400"
-                          checked={parseSettingsDraft.tsCorrelationEnabled}
-                          disabled={parityProfileActive}
-                          onChange={(e) =>
-                            handleDraftParseSetting('tsCorrelationEnabled', e.target.checked)
-                          }
-                        />
-                        <span>
-                          {parseSettingsDraft.tsCorrelationEnabled ? 'Enabled' : 'Disabled'}
-                        </span>
-                      </div>
-                    </label>
-                    <label className={optionLabelClass}>
-                      Correlation Scope
+                      <SettingsToggle
+                        title={SETTINGS_TOOLTIPS.tsCorrelation}
+                        checked={parseSettingsDraft.tsCorrelationEnabled}
+                        disabled={parityProfileActive}
+                        onChange={(checked) =>
+                          handleDraftParseSetting('tsCorrelationEnabled', checked)
+                        }
+                      />
+                    </SettingsRow>
+                    <SettingsRow
+                      label="Correlation Scope"
+                      tooltip={SETTINGS_TOOLTIPS.tsCorrelationScope}
+                    >
                       <select
                         title={SETTINGS_TOOLTIPS.tsCorrelationScope}
                         value={parseSettingsDraft.tsCorrelationScope}
@@ -6534,14 +6550,13 @@ const App: React.FC = () => {
                             e.target.value as TsCorrelationScope,
                           )
                         }
-                        className={`${optionInputClass} mt-1 disabled:opacity-50 disabled:cursor-not-allowed`}
+                        className={`${optionInputClass} disabled:opacity-50 disabled:cursor-not-allowed`}
                       >
                         <option value="set">SET</option>
                         <option value="setup">SETUP</option>
                       </select>
-                    </label>
-                    <label className={optionLabelClass}>
-                      Correlation ρ
+                    </SettingsRow>
+                    <SettingsRow label="Correlation ρ" tooltip={SETTINGS_TOOLTIPS.tsCorrelationRho}>
                       <input
                         title={SETTINGS_TOOLTIPS.tsCorrelationRho}
                         type="number"
@@ -6558,20 +6573,16 @@ const App: React.FC = () => {
                               : 0.25,
                           )
                         }
-                        className={`${optionInputClass} mt-1 disabled:opacity-50 disabled:cursor-not-allowed`}
+                        className={`${optionInputClass} disabled:opacity-50 disabled:cursor-not-allowed`}
                       />
-                    </label>
-                  </div>
+                    </SettingsRow>
+                  </SettingsCard>
 
-                  <div className="border border-slate-400 p-3 space-y-3">
-                    <div
-                      className="text-xs uppercase tracking-wider text-slate-200"
-                      title={PROJECT_OPTION_SECTION_TOOLTIPS['Robust Model']}
-                    >
-                      Robust Model
-                    </div>
-                    <label className={optionLabelClass}>
-                      Robust Mode
+                  <SettingsCard
+                    title="Robust Model"
+                    tooltip={PROJECT_OPTION_SECTION_TOOLTIPS['Robust Model']}
+                  >
+                    <SettingsRow label="Robust Mode" tooltip={SETTINGS_TOOLTIPS.robustMode}>
                       <select
                         title={SETTINGS_TOOLTIPS.robustMode}
                         value={parseSettingsDraft.robustMode}
@@ -6579,14 +6590,13 @@ const App: React.FC = () => {
                           handleDraftParseSetting('robustMode', e.target.value as RobustMode)
                         }
                         disabled={parityProfileActive}
-                        className={`${optionInputClass} mt-1 disabled:opacity-50 disabled:cursor-not-allowed`}
+                        className={`${optionInputClass} disabled:opacity-50 disabled:cursor-not-allowed`}
                       >
                         <option value="none">OFF</option>
                         <option value="huber">Huber</option>
                       </select>
-                    </label>
-                    <label className={optionLabelClass}>
-                      Robust k
+                    </SettingsRow>
+                    <SettingsRow label="Robust k" tooltip={SETTINGS_TOOLTIPS.robustK}>
                       <input
                         title={SETTINGS_TOOLTIPS.robustK}
                         type="number"
@@ -6603,10 +6613,10 @@ const App: React.FC = () => {
                           )
                         }
                         disabled={parityProfileActive}
-                        className={`${optionInputClass} mt-1 disabled:opacity-50 disabled:cursor-not-allowed`}
+                        className={`${optionInputClass} disabled:opacity-50 disabled:cursor-not-allowed`}
                       />
-                    </label>
-                  </div>
+                    </SettingsRow>
+                  </SettingsCard>
                 </div>
               )}
             </div>
