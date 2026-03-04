@@ -32,6 +32,20 @@ describe('Project Options modal layout', () => {
     expect(html).toContain('Centering Vertical');
   });
 
+  it('renders the condensed general layout with reduction controls grouped in cards', () => {
+    const html = renderToStaticMarkup(
+      <App initialSettingsModalOpen={true} initialOptionsTab="general" />,
+    );
+
+    expect(html).toContain('Local / Grid Reduction');
+    expect(html).toContain('Map Mode');
+    expect(html).toContain('Map Scale Factor');
+    expect(html).toContain('Normalize Mixed Face Data');
+    expect(html).toContain('Vertical Reduction');
+    expect(html).toContain('Curvature / Refraction');
+    expect(html).toContain('Vertical Reduction Mode');
+  });
+
   it('renders the gps layout without the removed condensed-pane helper sentence', () => {
     const html = renderToStaticMarkup(
       <App initialSettingsModalOpen={true} initialOptionsTab="gps" />,
@@ -57,5 +71,19 @@ describe('Project Options modal layout', () => {
     expect(html).toContain('Show Lost Stations in Output');
     expect(html).not.toContain('Future Option A');
     expect(html).not.toContain('Not implemented');
+  });
+
+  it('renders the condensed modeling layout with TS correlation and robust controls', () => {
+    const html = renderToStaticMarkup(
+      <App initialSettingsModalOpen={true} initialOptionsTab="modeling" />,
+    );
+
+    expect(html).toContain('TS Correlation');
+    expect(html).toContain('Enable Correlation');
+    expect(html).toContain('Correlation Scope');
+    expect(html).toContain('Correlation ρ');
+    expect(html).toContain('Robust Model');
+    expect(html).toContain('Robust Mode');
+    expect(html).toContain('Robust k');
   });
 });
