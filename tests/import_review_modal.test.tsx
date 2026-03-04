@@ -127,5 +127,8 @@ describe('ImportReviewModal', () => {
     expect(html).toContain('Setup STN1');
     expect(html).toContain('Import Diagnostics');
     expect(html).toContain('Unsupported measurement skipped.');
+    expect(html).toContain('>DV<');
+    expect(html).toContain('>DN<');
+    expect(html).toContain('>DM<');
   });
 });

@@ -10,6 +10,10 @@ const jobXmlTrimbleFixture = readFileSync(
   'tests/fixtures/jobxml_trimble_station_setup_sample.jxl',
   'utf-8',
 );
+const trimbleSurveyReportFixture = readFileSync(
+  'tests/fixtures/trimble_survey_report_sample.htm',
+  'utf-8',
+);
 const fieldGeniusFixture = readFileSync('tests/fixtures/fieldgenius_sample.raw', 'utf-8');
 
 describe('Phase 2 external importers', () => {
@@ -17,6 +21,45 @@ describe('Phase 2 external importers', () => {
     const ids = getExternalImporters().map((importer) => importer.id);
     expect(ids).toContain('jobxml');
     expect(ids).toContain('fieldgenius-raw');
+    expect(ids).toContain('trimble-survey-report');
+  });
+
+  it('imports Trimble survey-report HTML as a fallback field-data source', () => {
+    const imported = importExternalInput(trimbleSurveyReportFixture, 'trimble_survey_report_sample.htm');
+
+    expect(imported.detected).toBe(true);
+    expect(imported.importerId).toBe('trimble-survey-report');
+    expect(imported.notice?.title).toBe('Imported survey report dataset');
+    expect(imported.notice?.detailLines[0]).toContain('Imported 2 points and 2 observations');
+    expect(imported.dataset?.controlStations).toHaveLength(2);
+    expect(imported.dataset?.observations).toHaveLength(2);
+    expect(imported.dataset?.trace).toHaveLength(0);
+
+    expect(imported.text).toContain('.ORDER EN');
+    expect(imported.text).toContain('C 1000 0.9960 2.0630 0.0000');
+    expect(imported.text).toContain('C 077 0.7610 5.9560 2.9020');
+    expect(imported.text).toContain('M 1000-077-077 356-33-44.0 4.0860 072-33-12.0 1.6660/0.0000');
+    expect(imported.text).toContain('M 1000-077-235 087-25-51.0 17.4450 087-48-40.0 1.6660/1.8000');
+
+    const parsed = parseInput(imported.text);
+    expect(parsed.stations['1000']).toBeDefined();
+    expect(parsed.stations['077']).toBeDefined();
+    expect(parsed.stations['235']).toBeDefined();
+    expect(
+      parsed.observations.some(
+        (obs) =>
+          obs.type === 'angle' &&
+          'at' in obs &&
+          obs.at === '1000' &&
+          obs.from === '077' &&
+          obs.to === '235',
+      ),
+    ).toBe(true);
+    expect(
+      parsed.observations.some(
+        (obs) => obs.type === 'dist' && 'from' in obs && obs.from === '1000' && obs.to === '235',
+      ),
+    ).toBe(true);
   });
 
   it('imports JobXML reduced points and preserves unsupported measurement records in the trace log', () => {

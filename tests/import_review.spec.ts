@@ -234,13 +234,13 @@ describe('import review workflow', () => {
     );
   });
 
-  it('supports fixed toggles and distance-focused type overrides during final import', () => {
+  it('supports fixed toggles plus D and DV type overrides during final import', () => {
     const imported = importExternalInput(
       jobXmlTrimbleFixture,
       'jobxml_trimble_station_setup_sample.jxl',
     );
     const reviewModel = buildImportReviewModel(imported.dataset!);
-    const text = buildImportReviewText(imported.dataset!, reviewModel, {
+    const distanceText = buildImportReviewText(imported.dataset!, reviewModel, {
       includedItemIds: new Set(reviewModel.items.map((item) => item.id)),
       groupComments: {
         control: 'CONTROL',
@@ -253,8 +253,50 @@ describe('import review workflow', () => {
       preset: 'ts-direction-set',
     });
 
-    expect(text).toContain('C 1 2.3460 -2.4303 0.0000 !');
-    expect(text).toContain('DV 1 2 22.2574 089-57-23.8 !');
-    expect(text).not.toContain('M 1-1000-2 286-51-24.7 22.2574');
+    const distanceVerticalText = buildImportReviewText(imported.dataset!, reviewModel, {
+      includedItemIds: new Set(reviewModel.items.map((item) => item.id)),
+      groupComments: {
+        control: 'CONTROL',
+        'setup:1:bs:1000': 'SETUP 1',
+      },
+      rowTypeOverrides: {
+        'observation:4': 'distance-vertical',
+      },
+      fixedItemIds: new Set(['control:0', 'observation:4']),
+      preset: 'ts-direction-set',
+    });
+
+    expect(distanceText).toContain('C 1 2.3460 -2.4303 0.0000 !');
+    expect(distanceText).toContain('D 1 2 22.2574 !');
+    expect(distanceText).not.toContain('DV 1 2 22.2574');
+    expect(distanceText).not.toContain('M 1-1000-2 286-51-24.7 22.2574');
+
+    expect(distanceVerticalText).toContain('DV 1 2 22.2574 089-57-23.8 !');
+  });
+
+  it('supports DN and DM row-type overrides for setup-aware JobXML groups', () => {
+    const imported = importExternalInput(
+      jobXmlTrimbleFixture,
+      'jobxml_trimble_station_setup_sample.jxl',
+    );
+    const reviewModel = buildImportReviewModel(imported.dataset!);
+    const text = buildImportReviewText(imported.dataset!, reviewModel, {
+      includedItemIds: new Set(['observation:0', 'observation:4']),
+      groupComments: {
+        'setup:1:bs:1000': 'SETUP 1 DIRSET',
+      },
+      rowTypeOverrides: {
+        'observation:0': 'direction-angle',
+        'observation:4': 'direction-measurement',
+      },
+      preset: 'clean-webnet',
+    });
+
+    expect(text).toContain('# SETUP 1 DIRSET');
+    expect(text).toContain('DB 1');
+    expect(text).toContain('DN 1000 000-00-00');
+    expect(text).toContain('DN 1000 000-00-00.0');
+    expect(text).toContain('DM 2 286-51-24.7 22.2574 089-57-23.8');
+    expect(text).toContain('DE');
   });
 });

@@ -19,9 +19,12 @@ export type ImportReviewRowTypeOverride =
   | 'auto'
   | 'measurement'
   | 'distance'
+  | 'distance-vertical'
   | 'angle'
   | 'vertical'
-  | 'bearing';
+  | 'bearing'
+  | 'direction-angle'
+  | 'direction-measurement';
 
 export interface ImportReviewItem {
   id: string;
@@ -200,6 +203,21 @@ const applyFixedTokenToLines = (lines: string[], fixed: boolean): string[] => {
 
 const serializeDistanceFocusedObservation = (observation: ImportedObservationRecord): string[] => {
   if (observation.kind === 'measurement') {
+    return [['D', observation.atId, observation.toId, formatLinear(observation.distanceM)].join(' ')];
+  }
+  if (observation.kind === 'distance-vertical') {
+    return [['D', observation.fromId, observation.toId, formatLinear(observation.distanceM)].join(' ')];
+  }
+  if (observation.kind === 'distance') {
+    return [['D', observation.fromId, observation.toId, formatLinear(observation.distanceM)].join(' ')];
+  }
+  return serializeImportedObservationRecord(observation);
+};
+
+const serializeDistanceVerticalFocusedObservation = (
+  observation: ImportedObservationRecord,
+): string[] => {
+  if (observation.kind === 'measurement') {
     if (observation.verticalMode && observation.verticalValue != null) {
       return [
         observation.verticalMode === 'delta-h' ? '.DELTA ON' : '.DELTA OFF',
@@ -279,6 +297,43 @@ const serializeVerticalFocusedObservation = (observation: ImportedObservationRec
 const serializeBearingFocusedObservation = (observation: ImportedObservationRecord): string[] => {
   if (observation.kind === 'bearing') {
     return [['B', observation.fromId, observation.toId, formatLinear(observation.bearingDeg)].join(' ')];
+  }
+  return serializeImportedObservationRecord(observation);
+};
+
+const serializeDirectionAngleFocusedObservation = (
+  observation: ImportedObservationRecord,
+): string[] => {
+  if (observation.kind === 'measurement') {
+    return [['DN', observation.toId, formatAngleDms(observation.angleDeg)].join(' ')];
+  }
+  if (observation.kind === 'angle') {
+    return [['DN', observation.toId, formatAngleDms(observation.angleDeg)].join(' ')];
+  }
+  return serializeImportedObservationRecord(observation);
+};
+
+const serializeDirectionMeasurementFocusedObservation = (
+  observation: ImportedObservationRecord,
+): string[] => {
+  if (observation.kind === 'measurement') {
+    const tokens = [
+      'DM',
+      observation.toId,
+      formatAngleDms(observation.angleDeg),
+      formatLinear(observation.distanceM),
+    ];
+    if (observation.verticalMode && observation.verticalValue != null) {
+      tokens.push(
+        observation.verticalMode === 'zenith'
+          ? formatAngleDms(observation.verticalValue)
+          : formatLinear(observation.verticalValue),
+      );
+    }
+    return [tokens.join(' ')];
+  }
+  if (observation.kind === 'angle') {
+    return [['DN', observation.toId, formatAngleDms(observation.angleDeg)].join(' ')];
   }
   return serializeImportedObservationRecord(observation);
 };
@@ -683,6 +738,9 @@ const serializeObservationForImport = (
   if (rowTypeOverride === 'distance') {
     return serializeDistanceFocusedObservation(observation);
   }
+  if (rowTypeOverride === 'distance-vertical') {
+    return serializeDistanceVerticalFocusedObservation(observation);
+  }
   if (rowTypeOverride === 'angle') {
     return serializeAngleFocusedObservation(observation);
   }
@@ -691,6 +749,12 @@ const serializeObservationForImport = (
   }
   if (rowTypeOverride === 'bearing') {
     return serializeBearingFocusedObservation(observation);
+  }
+  if (rowTypeOverride === 'direction-angle') {
+    return serializeDirectionAngleFocusedObservation(observation);
+  }
+  if (rowTypeOverride === 'direction-measurement') {
+    return serializeDirectionMeasurementFocusedObservation(observation);
   }
   if (rowTypeOverride === 'measurement') {
     return serializeImportedObservationRecord(observation);
@@ -776,6 +840,9 @@ const appendPresetObservationLines = (
     lines.push(line);
   });
 };
+
+const isDirectionSetRowType = (value: ImportReviewRowTypeOverride): boolean =>
+  value === 'direction-angle' || value === 'direction-measurement';
 
 const isBacksightTargetItem = (item: ImportReviewItem, group: ImportReviewGroup): boolean =>
   item.kind === 'observation' &&
@@ -866,10 +933,10 @@ export const buildImportReviewText = (
     if (comment) lines.push(`# ${comment}`);
 
     const isDirectionSetGroup =
-      preset === 'ts-direction-set' &&
-      group.kind === 'resection' &&
-      group.backsightId &&
-      includedItems.some((item) => item.kind === 'observation');
+      Boolean(group.backsightId) &&
+      includedItems.some((item) => item.kind === 'observation') &&
+      ((preset === 'ts-direction-set' && group.kind === 'resection') ||
+        includedItems.some((item) => isDirectionSetRowType(options.rowTypeOverrides?.[item.id] ?? 'auto')));
 
     if (isDirectionSetGroup) {
       lines.push(`DB ${group.setupId ?? includedItems[0]?.setupId ?? ''}`.trimEnd());

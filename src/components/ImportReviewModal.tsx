@@ -70,6 +70,52 @@ const traceLineLabel = (entry: ImportedTraceEntry): string => {
 const rowSourceLabel = (item: ImportReviewItem): string =>
   item.sourceLine != null ? String(item.sourceLine) : '-';
 
+const rowTypeOptionsForItem = (
+  item: ImportReviewItem,
+): Array<{ value: ImportReviewRowTypeOverride; label: string }> => {
+  if (item.kind !== 'observation') return [];
+
+  const options: Array<{ value: ImportReviewRowTypeOverride; label: string }> = [
+    { value: 'auto', label: 'Auto' },
+  ];
+
+  switch (item.sourceObservationKind) {
+    case 'measurement':
+      options.push({ value: 'measurement', label: 'M' });
+      options.push({ value: 'distance', label: 'D' });
+      options.push({ value: 'distance-vertical', label: 'DV' });
+      options.push({ value: 'angle', label: 'A' });
+      options.push({ value: 'vertical', label: 'V' });
+      if (item.setupId && item.backsightId) {
+        options.push({ value: 'direction-angle', label: 'DN' });
+        options.push({ value: 'direction-measurement', label: 'DM' });
+      }
+      return options;
+    case 'angle':
+      options.push({ value: 'angle', label: 'A' });
+      if (item.setupId && item.backsightId) {
+        options.push({ value: 'direction-angle', label: 'DN' });
+      }
+      return options;
+    case 'distance-vertical':
+      options.push({ value: 'distance', label: 'D' });
+      options.push({ value: 'distance-vertical', label: 'DV' });
+      options.push({ value: 'vertical', label: 'V' });
+      return options;
+    case 'distance':
+      options.push({ value: 'distance', label: 'D' });
+      return options;
+    case 'vertical':
+      options.push({ value: 'vertical', label: 'V' });
+      return options;
+    case 'bearing':
+      options.push({ value: 'bearing', label: 'B' });
+      return options;
+    default:
+      return options;
+  }
+};
+
 const ImportReviewModal: React.FC<ImportReviewModalProps> = ({
   sourceName,
   title,
@@ -236,12 +282,11 @@ const ImportReviewModal: React.FC<ImportReviewModalProps> = ({
                             }
                             className="w-full border border-slate-700 bg-slate-950 px-2 py-1 text-[11px] text-slate-100 focus:border-cyan-400 focus:outline-none"
                           >
-                            <option value="auto">Auto</option>
-                            <option value="measurement">M</option>
-                            <option value="distance">D</option>
-                            <option value="angle">A</option>
-                            <option value="vertical">V</option>
-                            <option value="bearing">B</option>
+                            {rowTypeOptionsForItem(item).map((option) => (
+                              <option key={option.value} value={option.value}>
+                                {option.label}
+                              </option>
+                            ))}
                           </select>
                         ) : (
                           <span className="text-slate-500">-</span>
