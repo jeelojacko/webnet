@@ -35,8 +35,6 @@ import { buildLandXmlText } from './engine/landxml';
 import {
   LEVEL_LOOP_TOLERANCE_PRESETS,
   findLevelLoopTolerancePreset,
-  getLevelLoopTolerancePresetLabel,
-  type LevelLoopTolerancePresetId,
 } from './engine/levelLoopTolerance';
 import {
   importExternalInput,
@@ -343,8 +341,20 @@ type TabKey = 'report' | 'processing-summary' | 'industry-output' | 'map';
 type ExportFormat = 'webnet' | 'industry-style' | 'landxml';
 type FilePickerMode = 'replace' | 'compare';
 
-const IMPORT_FILE_ACCEPT =
-  '.dat,.txt,.sum,.rpt,.xml,.jxl,.jobxml,.htm,.html,.rw5,.cr5,.raw,.dbx';
+type CustomLevelLoopTolerancePreset = {
+  id: string;
+  name: string;
+  baseMm: number;
+  perSqrtKmMm: number;
+};
+
+type ResolvedLevelLoopTolerancePreset = {
+  id: string;
+  label: string;
+  description: string;
+};
+
+const IMPORT_FILE_ACCEPT = '.dat,.txt,.sum,.rpt,.xml,.jxl,.jobxml,.htm,.html,.rw5,.cr5,.raw,.dbx';
 
 type ImportReviewState = {
   sourceName: string;
@@ -573,6 +583,119 @@ const PROJECT_OPTION_TABS: Array<{ id: ProjectOptionsTab; label: string }> = [
   { id: 'modeling', label: 'Modeling' },
 ];
 
+type SettingsCardProps = {
+  title: string;
+  tooltip: string;
+  children: React.ReactNode;
+  className?: string;
+};
+
+const SettingsCard: React.FC<SettingsCardProps> = ({ title, tooltip, children, className }) => (
+  <div
+    className={`rounded-md border border-slate-400 bg-slate-600/40 p-3 space-y-3 ${className ?? ''}`}
+  >
+    <div
+      className="text-xs uppercase tracking-wider text-slate-100 border-b border-slate-400/60 pb-2"
+      title={tooltip}
+    >
+      {title}
+    </div>
+    {children}
+  </div>
+);
+
+type SettingsRowProps = {
+  label: string;
+  tooltip: string;
+  children: React.ReactNode;
+  className?: string;
+};
+
+const SettingsRow: React.FC<SettingsRowProps> = ({ label, tooltip, children, className }) => (
+  <label
+    className={`grid gap-2 md:grid-cols-[minmax(0,1fr)_minmax(190px,240px)] md:items-center text-[11px] uppercase tracking-wide text-slate-200 ${className ?? ''}`}
+    title={tooltip}
+  >
+    <span>{label}</span>
+    <div>{children}</div>
+  </label>
+);
+
+type SettingsToggleProps = {
+  checked: boolean;
+  disabled?: boolean;
+  title: string;
+  onChange: (_checked: boolean) => void;
+};
+
+const SettingsToggle: React.FC<SettingsToggleProps> = ({ checked, disabled, title, onChange }) => (
+  <label className="inline-flex items-center gap-2 text-xs normal-case tracking-normal text-slate-100">
+    <span className="relative inline-flex h-6 w-11 items-center">
+      <input
+        title={title}
+        type="checkbox"
+        className="peer sr-only"
+        checked={checked}
+        disabled={disabled}
+        onChange={(e) => onChange(e.target.checked)}
+      />
+      <span className="absolute inset-0 rounded-full bg-slate-400 transition-colors peer-checked:bg-blue-500 peer-disabled:cursor-not-allowed peer-disabled:opacity-50" />
+      <span className="absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white transition-transform peer-checked:translate-x-5 peer-disabled:opacity-80" />
+    </span>
+    <span className={`${disabled ? 'text-slate-400' : 'text-slate-100'}`}>
+      {checked ? 'Enabled' : 'Disabled'}
+    </span>
+  </label>
+);
+
+const createCustomLevelLoopTolerancePreset = (
+  seed?: Partial<Omit<CustomLevelLoopTolerancePreset, 'id'>>,
+): CustomLevelLoopTolerancePreset => ({
+  id: `lvl-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+  name: seed?.name?.trim() || 'Custom Preset',
+  baseMm: seed?.baseMm ?? 0,
+  perSqrtKmMm: seed?.perSqrtKmMm ?? 4,
+});
+
+const findCustomLevelLoopTolerancePreset = (
+  presets: CustomLevelLoopTolerancePreset[],
+  baseMm: number,
+  perSqrtKmMm: number,
+): CustomLevelLoopTolerancePreset | undefined =>
+  presets.find(
+    (preset) =>
+      Math.abs(preset.baseMm - baseMm) <= 1e-9 &&
+      Math.abs(preset.perSqrtKmMm - perSqrtKmMm) <= 1e-9,
+  );
+
+const resolveLevelLoopTolerancePreset = (
+  presets: CustomLevelLoopTolerancePreset[],
+  baseMm: number,
+  perSqrtKmMm: number,
+): ResolvedLevelLoopTolerancePreset => {
+  const builtin = findLevelLoopTolerancePreset(baseMm, perSqrtKmMm);
+  if (builtin) {
+    return {
+      id: builtin.id,
+      label: builtin.label,
+      description: builtin.description,
+    };
+  }
+  const custom = findCustomLevelLoopTolerancePreset(presets, baseMm, perSqrtKmMm);
+  if (custom) {
+    return {
+      id: custom.id,
+      label: custom.name.trim() || 'Custom Preset',
+      description: `Saved custom tolerance model (${custom.baseMm.toFixed(1)} + ${custom.perSqrtKmMm.toFixed(1)}*sqrt(km)).`,
+    };
+  }
+  return {
+    id: 'custom',
+    label: 'Custom',
+    description: 'Custom tolerance model: edits to Base or K leave the preset selector on Custom.',
+  };
+};
+
 /****************************
  * UI COMPONENTS
  ****************************/
@@ -656,6 +779,9 @@ const App: React.FC = () => {
     S9: createDefaultS9Instrument(),
     ...parseInstrumentLibraryFromInput(DEFAULT_INPUT),
   }));
+  const [levelLoopCustomPresets, setLevelLoopCustomPresets] = useState<
+    CustomLevelLoopTolerancePreset[]
+  >([]);
   const [selectedInstrument, setSelectedInstrument] = useState('S9');
   const [splitPercent, setSplitPercent] = useState(35); // left pane width (%)
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -665,6 +791,8 @@ const App: React.FC = () => {
   const [parseSettingsDraft, setParseSettingsDraft] = useState<ParseSettings>(parseSettings);
   const [projectInstrumentsDraft, setProjectInstrumentsDraft] =
     useState<InstrumentLibrary>(projectInstruments);
+  const [levelLoopCustomPresetsDraft, setLevelLoopCustomPresetsDraft] =
+    useState<CustomLevelLoopTolerancePreset[]>(levelLoopCustomPresets);
   const [selectedInstrumentDraft, setSelectedInstrumentDraft] = useState(selectedInstrument);
   const [excludedIds, setExcludedIds] = useState<Set<number>>(new Set());
   const [overrides, setOverrides] = useState<Record<number, ObservationOverride>>({});
@@ -1305,8 +1433,13 @@ const App: React.FC = () => {
       `Geoid height conversion: ${runDiag.geoidHeightConversionEnabled ? `ON (target=${runDiag.geoidOutputHeightDatum.toUpperCase()}, converted=${runDiag.geoidConvertedStationCount}, skipped=${runDiag.geoidSkippedStationCount})` : 'OFF'}`,
     );
     lines.push(`GPS loop check: ${runDiag.gpsLoopCheckEnabled ? 'ON' : 'OFF'}`);
+    const levelLoopPresetSummary = resolveLevelLoopTolerancePreset(
+      levelLoopCustomPresets,
+      runDiag.levelLoopToleranceBaseMm,
+      runDiag.levelLoopTolerancePerSqrtKmMm,
+    );
     lines.push(
-      `Level loop tolerance: ${getLevelLoopTolerancePresetLabel(runDiag.levelLoopToleranceBaseMm, runDiag.levelLoopTolerancePerSqrtKmMm)} (base=${runDiag.levelLoopToleranceBaseMm.toFixed(2)} mm, k=${runDiag.levelLoopTolerancePerSqrtKmMm.toFixed(2)} mm/sqrt(km))`,
+      `Level loop tolerance: ${levelLoopPresetSummary.label} (base=${runDiag.levelLoopToleranceBaseMm.toFixed(2)} mm, k=${runDiag.levelLoopTolerancePerSqrtKmMm.toFixed(2)} mm/sqrt(km))`,
     );
     lines.push(
       `GPS AddHiHt defaults: ${runDiag.gpsAddHiHtEnabled ? `ON (HI=${(runDiag.gpsAddHiHtHiM * unitScale).toFixed(4)} ${linearUnit}, HT=${(runDiag.gpsAddHiHtHtM * unitScale).toFixed(4)} ${linearUnit})` : 'OFF'}`,
@@ -3689,10 +3822,7 @@ const App: React.FC = () => {
     );
   };
 
-  const handleImportReviewRowTypeChange = (
-    itemId: string,
-    value: ImportReviewRowTypeOverride,
-  ) => {
+  const handleImportReviewRowTypeChange = (itemId: string, value: ImportReviewRowTypeOverride) => {
     setImportReviewState((prev) =>
       prev
         ? {
@@ -4461,6 +4591,7 @@ const App: React.FC = () => {
     setSettingsDraft(settings);
     setParseSettingsDraft(parseSettings);
     setProjectInstrumentsDraft(cloneInstrumentLibrary(projectInstruments));
+    setLevelLoopCustomPresetsDraft(levelLoopCustomPresets.map((preset) => ({ ...preset })));
     setSelectedInstrumentDraft(selectedInstrument);
     setActiveOptionsTab('adjustment');
     setIsSettingsModalOpen(true);
@@ -4470,6 +4601,7 @@ const App: React.FC = () => {
     setSettings(settingsDraft);
     setParseSettings(parseSettingsDraft);
     setProjectInstruments(cloneInstrumentLibrary(projectInstrumentsDraft));
+    setLevelLoopCustomPresets(levelLoopCustomPresetsDraft.map((preset) => ({ ...preset })));
     setSelectedInstrument(selectedInstrumentDraft);
     setIsSettingsModalOpen(false);
   };
@@ -4490,15 +4622,59 @@ const App: React.FC = () => {
     setParseSettingsDraft((prev) => ({ ...prev, [key]: value }));
   };
 
-  const handleLevelLoopPresetChange = (presetId: LevelLoopTolerancePresetId) => {
+  const handleLevelLoopPresetChange = (presetId: string) => {
     if (presetId === 'custom') return;
     const preset = LEVEL_LOOP_TOLERANCE_PRESETS.find((row) => row.id === presetId);
-    if (!preset) return;
+    if (preset) {
+      setParseSettingsDraft((prev) => ({
+        ...prev,
+        levelLoopToleranceBaseMm: preset.baseMm,
+        levelLoopTolerancePerSqrtKmMm: preset.perSqrtKmMm,
+      }));
+      return;
+    }
+    const customPreset = levelLoopCustomPresetsDraft.find((row) => row.id === presetId);
+    if (!customPreset) return;
     setParseSettingsDraft((prev) => ({
       ...prev,
-      levelLoopToleranceBaseMm: preset.baseMm,
-      levelLoopTolerancePerSqrtKmMm: preset.perSqrtKmMm,
+      levelLoopToleranceBaseMm: customPreset.baseMm,
+      levelLoopTolerancePerSqrtKmMm: customPreset.perSqrtKmMm,
     }));
+  };
+
+  const handleLevelLoopCustomPresetFieldChange = (
+    id: string,
+    key: keyof Omit<CustomLevelLoopTolerancePreset, 'id'>,
+    value: string,
+  ) => {
+    setLevelLoopCustomPresetsDraft((prev) =>
+      prev.map((preset) => {
+        if (preset.id !== id) return preset;
+        if (key === 'name') {
+          return { ...preset, name: value };
+        }
+        const parsed = Number.parseFloat(value);
+        return {
+          ...preset,
+          [key]: Number.isFinite(parsed) ? Math.max(0, parsed) : 0,
+        };
+      }),
+    );
+  };
+
+  const addLevelLoopCustomPreset = () => {
+    setLevelLoopCustomPresetsDraft((prev) => [
+      ...prev,
+      createCustomLevelLoopTolerancePreset({
+        name: `Custom ${prev.length + 1}`,
+        baseMm: parseSettingsDraft.levelLoopToleranceBaseMm,
+        perSqrtKmMm: parseSettingsDraft.levelLoopTolerancePerSqrtKmMm,
+      }),
+    ]);
+  };
+
+  const removeLevelLoopCustomPreset = (id: string) => {
+    setLevelLoopCustomPresetsDraft((prev) => prev.filter((preset) => preset.id !== id));
   };
 
   const handleDraftSetting = <K extends keyof SettingsState>(key: K, value: SettingsState[K]) => {
@@ -4651,11 +4827,12 @@ const App: React.FC = () => {
   const selectedInstrumentMeta = selectedInstrumentDraft
     ? projectInstrumentsDraft[selectedInstrumentDraft]
     : undefined;
-  const activeLevelLoopPreset =
-    findLevelLoopTolerancePreset(
-      parseSettingsDraft.levelLoopToleranceBaseMm,
-      parseSettingsDraft.levelLoopTolerancePerSqrtKmMm,
-    ) ?? null;
+  const activeLevelLoopPreset = resolveLevelLoopTolerancePreset(
+    levelLoopCustomPresetsDraft,
+    parseSettingsDraft.levelLoopToleranceBaseMm,
+    parseSettingsDraft.levelLoopTolerancePerSqrtKmMm,
+  );
+  const activeLevelLoopPresetId = activeLevelLoopPreset.id;
   const instrumentLinearUnit = settingsDraft.units === 'ft' ? 'FeetUS' : 'Meters';
   const displayLinear = (meters: number): number =>
     settingsDraft.units === 'ft' ? meters * FT_PER_M : meters;
@@ -4826,276 +5003,346 @@ const App: React.FC = () => {
 
             <div className="bg-slate-500 p-4 max-h-[70vh] overflow-auto">
               {activeOptionsTab === 'adjustment' && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="border border-slate-400 p-3 space-y-3">
-                    <div
-                      className="text-xs uppercase tracking-wider text-slate-200"
-                      title={PROJECT_OPTION_SECTION_TOOLTIPS['Adjustment Solution']}
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+                    <SettingsCard
+                      title="Solver Configuration"
+                      tooltip={PROJECT_OPTION_SECTION_TOOLTIPS['Adjustment Solution']}
                     >
-                      Adjustment Solution
-                    </div>
-                    <label className={optionLabelClass}>
-                      Run Profile
-                      <select
-                        title={SETTINGS_TOOLTIPS.solveProfile}
-                        value={parseSettingsDraft.solveProfile}
-                        onChange={(e) =>
-                          handleDraftParseSetting('solveProfile', e.target.value as SolveProfile)
-                        }
-                        className={`${optionInputClass} mt-1`}
-                      >
-                        <option value="webnet">WebNet</option>
-                        <option value="industry-parity">Industry Standard Parity</option>
-                      </select>
-                    </label>
-                    <label className={optionLabelClass}>
-                      Coordinate Mode
-                      <select
-                        title={SETTINGS_TOOLTIPS.coordMode}
-                        value={parseSettingsDraft.coordMode}
-                        onChange={(e) =>
-                          handleDraftParseSetting('coordMode', e.target.value as CoordMode)
-                        }
-                        className={`${optionInputClass} mt-1`}
-                      >
-                        <option value="2D">2D</option>
-                        <option value="3D">3D</option>
-                      </select>
-                    </label>
-                    <div className="grid grid-cols-1 sm:grid-cols-6 gap-3">
-                      <label className={optionLabelClass}>
-                        Preanalysis
-                        <div className="mt-1 flex items-center gap-2 text-xs">
-                          <input
-                            title={SETTINGS_TOOLTIPS.preanalysisMode}
-                            type="checkbox"
-                            className="accent-blue-400"
-                            checked={parseSettingsDraft.preanalysisMode}
-                            onChange={(e) =>
-                              handleDraftParseSetting('preanalysisMode', e.target.checked)
-                            }
-                          />
-                          <span>{parseSettingsDraft.preanalysisMode ? 'Enabled' : 'Disabled'}</span>
-                        </div>
-                      </label>
-                      <label className={optionLabelClass}>
-                        Cluster Detection
-                        <div className="mt-1 flex items-center gap-2 text-xs">
-                          <input
-                            title={SETTINGS_TOOLTIPS.clusterDetection}
-                            type="checkbox"
-                            className="accent-blue-400"
-                            checked={parseSettingsDraft.clusterDetectionEnabled}
-                            onChange={(e) =>
-                              handleDraftParseSetting('clusterDetectionEnabled', e.target.checked)
-                            }
-                          />
-                          <span>
-                            {parseSettingsDraft.clusterDetectionEnabled ? 'Enabled' : 'Disabled'}
-                          </span>
-                        </div>
-                      </label>
-                      <label className={optionLabelClass}>
-                        Map Show Lost
-                        <div className="mt-1 flex items-center gap-2 text-xs">
-                          <input
-                            title={SETTINGS_TOOLTIPS.mapShowLostStations}
-                            type="checkbox"
-                            className="accent-blue-400"
-                            checked={settingsDraft.mapShowLostStations}
-                            onChange={(e) =>
-                              handleDraftSetting('mapShowLostStations', e.target.checked)
-                            }
-                          />
-                          <span>{settingsDraft.mapShowLostStations ? 'Enabled' : 'Disabled'}</span>
-                        </div>
-                      </label>
-                      <label className={optionLabelClass}>
-                        Map 3D
-                        <div className="mt-1 flex items-center gap-2 text-xs">
-                          <input
-                            title={SETTINGS_TOOLTIPS.map3dEnabled}
-                            type="checkbox"
-                            className="accent-blue-400"
-                            checked={settingsDraft.map3dEnabled}
-                            onChange={(e) => handleDraftSetting('map3dEnabled', e.target.checked)}
-                          />
-                          <span>{settingsDraft.map3dEnabled ? 'Enabled' : 'Disabled'}</span>
-                        </div>
-                      </label>
-                      <label className={optionLabelClass}>
-                        Auto-Sideshot
-                        <div className="mt-1 flex items-center gap-2 text-xs">
-                          <input
-                            title={SETTINGS_TOOLTIPS.autoSideshot}
-                            type="checkbox"
-                            className="accent-blue-400"
-                            checked={parseSettingsDraft.autoSideshotEnabled}
-                            onChange={(e) =>
-                              handleDraftParseSetting('autoSideshotEnabled', e.target.checked)
-                            }
-                          />
-                          <span>
-                            {parseSettingsDraft.autoSideshotEnabled ? 'Enabled' : 'Disabled'}
-                          </span>
-                        </div>
-                      </label>
-                      <label className={optionLabelClass}>
-                        Auto-Adjust
-                        <div className="mt-1 flex items-center gap-2 text-xs">
-                          <input
-                            title={SETTINGS_TOOLTIPS.autoAdjust}
-                            type="checkbox"
-                            className="accent-blue-400"
-                            checked={parseSettingsDraft.autoAdjustEnabled}
-                            disabled={parseSettingsDraft.preanalysisMode}
-                            onChange={(e) =>
-                              handleDraftParseSetting('autoAdjustEnabled', e.target.checked)
-                            }
-                          />
-                          <span>
-                            {parseSettingsDraft.autoAdjustEnabled ? 'Enabled' : 'Disabled'}
-                          </span>
-                        </div>
-                      </label>
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                      <label className={optionLabelClass}>
-                        Auto-Adjust |t| Threshold
-                        <input
-                          title={SETTINGS_TOOLTIPS.autoAdjustThreshold}
-                          type="number"
-                          min={1}
-                          max={20}
-                          step={0.1}
-                          value={parseSettingsDraft.autoAdjustStdResThreshold}
-                          disabled={
-                            parseSettingsDraft.preanalysisMode ||
-                            !parseSettingsDraft.autoAdjustEnabled
-                          }
-                          onChange={(e) =>
-                            handleDraftParseSetting(
-                              'autoAdjustStdResThreshold',
-                              Number.isFinite(parseFloat(e.target.value))
-                                ? Math.max(1, Math.min(20, parseFloat(e.target.value)))
-                                : 4,
-                            )
-                          }
-                          className={`${optionInputClass} mt-1 disabled:opacity-50 disabled:cursor-not-allowed`}
-                        />
-                      </label>
-                      <label className={optionLabelClass}>
-                        Auto-Adjust Max Cycles
-                        <input
-                          title={SETTINGS_TOOLTIPS.autoAdjustMaxCycles}
-                          type="number"
-                          min={1}
-                          max={20}
-                          step={1}
-                          value={parseSettingsDraft.autoAdjustMaxCycles}
-                          disabled={
-                            parseSettingsDraft.preanalysisMode ||
-                            !parseSettingsDraft.autoAdjustEnabled
-                          }
-                          onChange={(e) =>
-                            handleDraftParseSetting(
-                              'autoAdjustMaxCycles',
-                              Number.isFinite(parseInt(e.target.value, 10))
-                                ? Math.max(1, Math.min(20, parseInt(e.target.value, 10)))
-                                : 3,
-                            )
-                          }
-                          className={`${optionInputClass} mt-1 disabled:opacity-50 disabled:cursor-not-allowed`}
-                        />
-                      </label>
-                      <label className={optionLabelClass}>
-                        Auto-Adjust Max Removals/Cycle
-                        <input
-                          title={SETTINGS_TOOLTIPS.autoAdjustMaxRemovalsPerCycle}
-                          type="number"
-                          min={1}
-                          max={10}
-                          step={1}
-                          value={parseSettingsDraft.autoAdjustMaxRemovalsPerCycle}
-                          disabled={
-                            parseSettingsDraft.preanalysisMode ||
-                            !parseSettingsDraft.autoAdjustEnabled
-                          }
-                          onChange={(e) =>
-                            handleDraftParseSetting(
-                              'autoAdjustMaxRemovalsPerCycle',
-                              Number.isFinite(parseInt(e.target.value, 10))
-                                ? Math.max(1, Math.min(10, parseInt(e.target.value, 10)))
-                                : 1,
-                            )
-                          }
-                          className={`${optionInputClass} mt-1 disabled:opacity-50 disabled:cursor-not-allowed`}
-                        />
-                      </label>
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <label className={optionLabelClass}>
-                        QFIX Linear Sigma ({settingsDraft.units})
-                        <input
-                          title={SETTINGS_TOOLTIPS.qFixLinearSigma}
-                          type="number"
-                          min={0}
-                          step="any"
-                          value={
-                            settingsDraft.units === 'ft'
-                              ? parseSettingsDraft.qFixLinearSigmaM * FT_PER_M
-                              : parseSettingsDraft.qFixLinearSigmaM
-                          }
-                          onChange={(e) =>
-                            handleDraftParseSetting(
-                              'qFixLinearSigmaM',
-                              Number.isFinite(parseFloat(e.target.value)) &&
-                                parseFloat(e.target.value) > 0
-                                ? settingsDraft.units === 'ft'
-                                  ? parseFloat(e.target.value) * M_PER_FT
-                                  : parseFloat(e.target.value)
-                                : 1e-9,
-                            )
-                          }
-                          className={`${optionInputClass} mt-1`}
-                        />
-                      </label>
-                      <label className={optionLabelClass}>
-                        QFIX Angular Sigma (")
-                        <input
-                          title={SETTINGS_TOOLTIPS.qFixAngularSigma}
-                          type="number"
-                          min={0}
-                          step="any"
-                          value={parseSettingsDraft.qFixAngularSigmaSec}
-                          onChange={(e) =>
-                            handleDraftParseSetting(
-                              'qFixAngularSigmaSec',
-                              Number.isFinite(parseFloat(e.target.value)) &&
-                                parseFloat(e.target.value) > 0
-                                ? parseFloat(e.target.value)
-                                : 1e-9,
-                            )
-                          }
-                          className={`${optionInputClass} mt-1`}
-                        />
-                      </label>
-                    </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <label className={optionLabelClass}>
-                        Linear Units
+                      <SettingsRow label="Run Profile" tooltip={SETTINGS_TOOLTIPS.solveProfile}>
                         <select
-                          title={SETTINGS_TOOLTIPS.units}
-                          value={settingsDraft.units}
-                          onChange={handleDraftUnitChange}
-                          className={`${optionInputClass} mt-1`}
+                          title={SETTINGS_TOOLTIPS.solveProfile}
+                          value={parseSettingsDraft.solveProfile}
+                          onChange={(e) =>
+                            handleDraftParseSetting('solveProfile', e.target.value as SolveProfile)
+                          }
+                          className={optionInputClass}
                         >
-                          <option value="m">Meters</option>
-                          <option value="ft">Feet</option>
+                          <option value="webnet">WebNet</option>
+                          <option value="industry-parity">Industry Standard Parity</option>
                         </select>
-                      </label>
-                      <label className={optionLabelClass}>
-                        Max Iterations
+                      </SettingsRow>
+                      <SettingsRow label="Coordinate Mode" tooltip={SETTINGS_TOOLTIPS.coordMode}>
+                        <select
+                          title={SETTINGS_TOOLTIPS.coordMode}
+                          value={parseSettingsDraft.coordMode}
+                          onChange={(e) =>
+                            handleDraftParseSetting('coordMode', e.target.value as CoordMode)
+                          }
+                          className={optionInputClass}
+                        >
+                          <option value="2D">2D</option>
+                          <option value="3D">3D</option>
+                        </select>
+                      </SettingsRow>
+                      <div className="rounded-md border border-slate-400/70 bg-slate-700/20 p-3 space-y-3">
+                        <div className="text-[11px] uppercase tracking-wide text-slate-200">
+                          Automated Adjustment Actions
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <SettingsRow
+                            label="Preanalysis"
+                            tooltip={SETTINGS_TOOLTIPS.preanalysisMode}
+                            className="md:grid-cols-[minmax(0,1fr)_auto]"
+                          >
+                            <SettingsToggle
+                              title={SETTINGS_TOOLTIPS.preanalysisMode}
+                              checked={parseSettingsDraft.preanalysisMode}
+                              onChange={(checked) =>
+                                handleDraftParseSetting('preanalysisMode', checked)
+                              }
+                            />
+                          </SettingsRow>
+                          <SettingsRow
+                            label="Auto-Sideshot"
+                            tooltip={SETTINGS_TOOLTIPS.autoSideshot}
+                            className="md:grid-cols-[minmax(0,1fr)_auto]"
+                          >
+                            <SettingsToggle
+                              title={SETTINGS_TOOLTIPS.autoSideshot}
+                              checked={parseSettingsDraft.autoSideshotEnabled}
+                              onChange={(checked) =>
+                                handleDraftParseSetting('autoSideshotEnabled', checked)
+                              }
+                            />
+                          </SettingsRow>
+                          <SettingsRow
+                            label="Cluster Detection"
+                            tooltip={SETTINGS_TOOLTIPS.clusterDetection}
+                            className="md:grid-cols-[minmax(0,1fr)_auto]"
+                          >
+                            <SettingsToggle
+                              title={SETTINGS_TOOLTIPS.clusterDetection}
+                              checked={parseSettingsDraft.clusterDetectionEnabled}
+                              onChange={(checked) =>
+                                handleDraftParseSetting('clusterDetectionEnabled', checked)
+                              }
+                            />
+                          </SettingsRow>
+                          <SettingsRow
+                            label="Auto-Adjust"
+                            tooltip={SETTINGS_TOOLTIPS.autoAdjust}
+                            className="md:grid-cols-[minmax(0,1fr)_auto]"
+                          >
+                            <SettingsToggle
+                              title={SETTINGS_TOOLTIPS.autoAdjust}
+                              checked={parseSettingsDraft.autoAdjustEnabled}
+                              disabled={parseSettingsDraft.preanalysisMode}
+                              onChange={(checked) =>
+                                handleDraftParseSetting('autoAdjustEnabled', checked)
+                              }
+                            />
+                          </SettingsRow>
+                          <SettingsRow
+                            label="Map Show Lost"
+                            tooltip={SETTINGS_TOOLTIPS.mapShowLostStations}
+                            className="md:grid-cols-[minmax(0,1fr)_auto]"
+                          >
+                            <SettingsToggle
+                              title={SETTINGS_TOOLTIPS.mapShowLostStations}
+                              checked={settingsDraft.mapShowLostStations}
+                              onChange={(checked) =>
+                                handleDraftSetting('mapShowLostStations', checked)
+                              }
+                            />
+                          </SettingsRow>
+                          <SettingsRow
+                            label="Map 3D"
+                            tooltip={SETTINGS_TOOLTIPS.map3dEnabled}
+                            className="md:grid-cols-[minmax(0,1fr)_auto]"
+                          >
+                            <SettingsToggle
+                              title={SETTINGS_TOOLTIPS.map3dEnabled}
+                              checked={settingsDraft.map3dEnabled}
+                              onChange={(checked) => handleDraftSetting('map3dEnabled', checked)}
+                            />
+                          </SettingsRow>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <label className={optionLabelClass}>
+                          Auto-Adjust |t| Threshold
+                          <input
+                            title={SETTINGS_TOOLTIPS.autoAdjustThreshold}
+                            type="number"
+                            min={1}
+                            max={20}
+                            step={0.1}
+                            value={parseSettingsDraft.autoAdjustStdResThreshold}
+                            disabled={
+                              parseSettingsDraft.preanalysisMode ||
+                              !parseSettingsDraft.autoAdjustEnabled
+                            }
+                            onChange={(e) =>
+                              handleDraftParseSetting(
+                                'autoAdjustStdResThreshold',
+                                Number.isFinite(parseFloat(e.target.value))
+                                  ? Math.max(1, Math.min(20, parseFloat(e.target.value)))
+                                  : 4,
+                              )
+                            }
+                            className={`${optionInputClass} mt-1 disabled:opacity-50 disabled:cursor-not-allowed`}
+                          />
+                        </label>
+                        <label className={optionLabelClass}>
+                          Auto-Adjust Max Cycles
+                          <input
+                            title={SETTINGS_TOOLTIPS.autoAdjustMaxCycles}
+                            type="number"
+                            min={1}
+                            max={20}
+                            step={1}
+                            value={parseSettingsDraft.autoAdjustMaxCycles}
+                            disabled={
+                              parseSettingsDraft.preanalysisMode ||
+                              !parseSettingsDraft.autoAdjustEnabled
+                            }
+                            onChange={(e) =>
+                              handleDraftParseSetting(
+                                'autoAdjustMaxCycles',
+                                Number.isFinite(parseInt(e.target.value, 10))
+                                  ? Math.max(1, Math.min(20, parseInt(e.target.value, 10)))
+                                  : 3,
+                              )
+                            }
+                            className={`${optionInputClass} mt-1 disabled:opacity-50 disabled:cursor-not-allowed`}
+                          />
+                        </label>
+                        <label className={optionLabelClass}>
+                          Auto-Adjust Max Removals/Cycle
+                          <input
+                            title={SETTINGS_TOOLTIPS.autoAdjustMaxRemovalsPerCycle}
+                            type="number"
+                            min={1}
+                            max={10}
+                            step={1}
+                            value={parseSettingsDraft.autoAdjustMaxRemovalsPerCycle}
+                            disabled={
+                              parseSettingsDraft.preanalysisMode ||
+                              !parseSettingsDraft.autoAdjustEnabled
+                            }
+                            onChange={(e) =>
+                              handleDraftParseSetting(
+                                'autoAdjustMaxRemovalsPerCycle',
+                                Number.isFinite(parseInt(e.target.value, 10))
+                                  ? Math.max(1, Math.min(10, parseInt(e.target.value, 10)))
+                                  : 1,
+                              )
+                            }
+                            className={`${optionInputClass} mt-1 disabled:opacity-50 disabled:cursor-not-allowed`}
+                          />
+                        </label>
+                      </div>
+                    </SettingsCard>
+
+                    <SettingsCard
+                      title="Geodetic Framework"
+                      tooltip={PROJECT_OPTION_SECTION_TOOLTIPS['Station and Angle Order']}
+                    >
+                      <SettingsRow label="Coordinate Order" tooltip={SETTINGS_TOOLTIPS.order}>
+                        <select
+                          title={SETTINGS_TOOLTIPS.order}
+                          value={parseSettingsDraft.order}
+                          onChange={(e) =>
+                            handleDraftParseSetting('order', e.target.value as OrderMode)
+                          }
+                          className={optionInputClass}
+                        >
+                          <option value="NE">North-East</option>
+                          <option value="EN">East-North</option>
+                        </select>
+                      </SettingsRow>
+                      <SettingsRow
+                        label="Distance / Vertical Data Type"
+                        tooltip={SETTINGS_TOOLTIPS.deltaMode}
+                      >
+                        <select
+                          title={SETTINGS_TOOLTIPS.deltaMode}
+                          value={parseSettingsDraft.deltaMode}
+                          onChange={(e) =>
+                            handleDraftParseSetting('deltaMode', e.target.value as DeltaMode)
+                          }
+                          className={optionInputClass}
+                        >
+                          <option value="slope">Slope Dist / Zenith</option>
+                          <option value="horiz">Horiz Dist / Elev Diff</option>
+                        </select>
+                      </SettingsRow>
+                      <SettingsRow
+                        label="Angle Data Station Order"
+                        tooltip={SETTINGS_TOOLTIPS.angleStationOrder}
+                      >
+                        <select
+                          title={SETTINGS_TOOLTIPS.angleStationOrder}
+                          value={parseSettingsDraft.angleStationOrder}
+                          onChange={(e) =>
+                            handleDraftParseSetting(
+                              'angleStationOrder',
+                              e.target.value as 'atfromto' | 'fromatto',
+                            )
+                          }
+                          className={optionInputClass}
+                        >
+                          <option value="atfromto">At-From-To</option>
+                          <option value="fromatto">From-At-To</option>
+                        </select>
+                      </SettingsRow>
+                      <SettingsRow
+                        label="Longitude Sign Convention"
+                        tooltip={SETTINGS_TOOLTIPS.lonSign}
+                      >
+                        <select
+                          title={SETTINGS_TOOLTIPS.lonSign}
+                          value={parseSettingsDraft.lonSign}
+                          onChange={(e) =>
+                            handleDraftParseSetting(
+                              'lonSign',
+                              e.target.value as ParseSettings['lonSign'],
+                            )
+                          }
+                          className={optionInputClass}
+                        >
+                          <option value="west-negative">Negative West / Positive East</option>
+                          <option value="west-positive">Positive West / Negative East</option>
+                        </select>
+                      </SettingsRow>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <label className={optionLabelClass}>
+                          QFIX Linear Sigma ({settingsDraft.units === 'ft' ? 'ft' : 'm'})
+                          <input
+                            title={SETTINGS_TOOLTIPS.qFixLinearSigma}
+                            type="number"
+                            min={0}
+                            step="any"
+                            value={
+                              settingsDraft.units === 'ft'
+                                ? parseSettingsDraft.qFixLinearSigmaM * FT_PER_M
+                                : parseSettingsDraft.qFixLinearSigmaM
+                            }
+                            onChange={(e) =>
+                              handleDraftParseSetting(
+                                'qFixLinearSigmaM',
+                                Number.isFinite(parseFloat(e.target.value)) &&
+                                  parseFloat(e.target.value) > 0
+                                  ? settingsDraft.units === 'ft'
+                                    ? parseFloat(e.target.value) * M_PER_FT
+                                    : parseFloat(e.target.value)
+                                  : 1e-9,
+                              )
+                            }
+                            className={`${optionInputClass} mt-1`}
+                          />
+                        </label>
+                        <label className={optionLabelClass}>
+                          QFIX Angular Sigma (")
+                          <input
+                            title={SETTINGS_TOOLTIPS.qFixAngularSigma}
+                            type="number"
+                            min={0}
+                            step="any"
+                            value={parseSettingsDraft.qFixAngularSigmaSec}
+                            onChange={(e) =>
+                              handleDraftParseSetting(
+                                'qFixAngularSigmaSec',
+                                Number.isFinite(parseFloat(e.target.value)) &&
+                                  parseFloat(e.target.value) > 0
+                                  ? parseFloat(e.target.value)
+                                  : 1e-9,
+                              )
+                            }
+                            className={`${optionInputClass} mt-1`}
+                          />
+                        </label>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <label className={optionLabelClass}>
+                          Linear Units
+                          <select
+                            title={SETTINGS_TOOLTIPS.units}
+                            value={settingsDraft.units}
+                            onChange={handleDraftUnitChange}
+                            className={`${optionInputClass} mt-1`}
+                          >
+                            <option value="m">Meters</option>
+                            <option value="ft">Feet</option>
+                          </select>
+                        </label>
+                        <label className={optionLabelClass}>
+                          Angular Units
+                          <select
+                            title={SETTINGS_TOOLTIPS.angleUnits}
+                            value={parseSettingsDraft.angleUnits}
+                            onChange={(e) =>
+                              handleDraftParseSetting('angleUnits', e.target.value as 'dms' | 'dd')
+                            }
+                            className={`${optionInputClass} mt-1`}
+                          >
+                            <option value="dms">DMS</option>
+                            <option value="dd">Decimal Degrees</option>
+                          </select>
+                        </label>
+                      </div>
+                      <SettingsRow label="Max Iterations" tooltip={SETTINGS_TOOLTIPS.maxIterations}>
                         <input
                           title={SETTINGS_TOOLTIPS.maxIterations}
                           type="number"
@@ -5103,96 +5350,233 @@ const App: React.FC = () => {
                           max={100}
                           value={settingsDraft.maxIterations}
                           onChange={handleDraftIterChange}
-                          className={`${optionInputClass} mt-1`}
+                          className={optionInputClass}
                         />
-                      </label>
-                    </div>
-                    <label className={optionLabelClass}>
-                      Distance / Vertical Data Type
-                      <select
-                        title={SETTINGS_TOOLTIPS.deltaMode}
-                        value={parseSettingsDraft.deltaMode}
-                        onChange={(e) =>
-                          handleDraftParseSetting('deltaMode', e.target.value as DeltaMode)
-                        }
-                        className={`${optionInputClass} mt-1`}
-                      >
-                        <option value="slope">Slope Dist / Zenith</option>
-                        <option value="horiz">Horiz Dist / Elev Diff</option>
-                      </select>
-                    </label>
+                      </SettingsRow>
+                    </SettingsCard>
                   </div>
 
-                  <div className="border border-slate-400 p-3 space-y-3">
-                    <div
-                      className="text-xs uppercase tracking-wider text-slate-200"
-                      title={PROJECT_OPTION_SECTION_TOOLTIPS['Station and Angle Order']}
-                    >
-                      Station and Angle Order
+                  <SettingsCard
+                    title="Leveling / Weighting"
+                    tooltip={PROJECT_OPTION_SECTION_TOOLTIPS['Weighting Helpers']}
+                  >
+                    <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1.15fr)_minmax(320px,0.85fr)] gap-4">
+                      <div className="space-y-3">
+                        <SettingsRow
+                          label=".LWEIGHT (mm/km)"
+                          tooltip={SETTINGS_TOOLTIPS.levelWeight}
+                        >
+                          <input
+                            title={SETTINGS_TOOLTIPS.levelWeight}
+                            type="number"
+                            min={0}
+                            step={0.1}
+                            value={parseSettingsDraft.levelWeight ?? ''}
+                            onChange={(e) =>
+                              handleDraftParseSetting(
+                                'levelWeight',
+                                e.target.value === '' ? undefined : parseFloat(e.target.value),
+                              )
+                            }
+                            className={optionInputClass}
+                          />
+                        </SettingsRow>
+                        <SettingsRow
+                          label="Level Loop Preset"
+                          tooltip={SETTINGS_TOOLTIPS.levelLoopTolerancePreset}
+                        >
+                          <select
+                            title={SETTINGS_TOOLTIPS.levelLoopTolerancePreset}
+                            value={activeLevelLoopPresetId}
+                            onChange={(e) => handleLevelLoopPresetChange(e.target.value)}
+                            className={optionInputClass}
+                          >
+                            {LEVEL_LOOP_TOLERANCE_PRESETS.map((preset) => (
+                              <option key={preset.id} value={preset.id}>
+                                {preset.label} ({preset.baseMm.toFixed(1)} +{' '}
+                                {preset.perSqrtKmMm.toFixed(1)}*sqrt(km))
+                              </option>
+                            ))}
+                            {levelLoopCustomPresetsDraft.length > 0 && (
+                              <optgroup label="Saved Custom Presets">
+                                {levelLoopCustomPresetsDraft.map((preset) => (
+                                  <option key={preset.id} value={preset.id}>
+                                    {preset.name} ({preset.baseMm.toFixed(1)} +{' '}
+                                    {preset.perSqrtKmMm.toFixed(1)}*sqrt(km))
+                                  </option>
+                                ))}
+                              </optgroup>
+                            )}
+                            <option value="custom">Custom</option>
+                          </select>
+                        </SettingsRow>
+                        <div className="rounded-md border border-slate-400/60 bg-slate-700/20 px-3 py-2 text-[11px] text-slate-200 leading-relaxed">
+                          <div className="font-semibold text-slate-100">
+                            {activeLevelLoopPreset.label}
+                          </div>
+                          <div>{activeLevelLoopPreset.description}</div>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <label className={optionLabelClass}>
+                            Level Loop Base Tol (mm)
+                            <input
+                              title={SETTINGS_TOOLTIPS.levelLoopToleranceBase}
+                              type="number"
+                              min={0}
+                              step={0.1}
+                              value={parseSettingsDraft.levelLoopToleranceBaseMm}
+                              onChange={(e) =>
+                                handleDraftParseSetting(
+                                  'levelLoopToleranceBaseMm',
+                                  Number.isFinite(parseFloat(e.target.value))
+                                    ? Math.max(0, parseFloat(e.target.value))
+                                    : 0,
+                                )
+                              }
+                              className={`${optionInputClass} mt-1`}
+                            />
+                          </label>
+                          <label className={optionLabelClass}>
+                            Level Loop K (mm/sqrt(km))
+                            <input
+                              title={SETTINGS_TOOLTIPS.levelLoopToleranceK}
+                              type="number"
+                              min={0}
+                              step={0.1}
+                              value={parseSettingsDraft.levelLoopTolerancePerSqrtKmMm}
+                              onChange={(e) =>
+                                handleDraftParseSetting(
+                                  'levelLoopTolerancePerSqrtKmMm',
+                                  Number.isFinite(parseFloat(e.target.value))
+                                    ? Math.max(0, parseFloat(e.target.value))
+                                    : 4,
+                                )
+                              }
+                              className={`${optionInputClass} mt-1`}
+                            />
+                          </label>
+                        </div>
+                        <div className="text-[11px] text-slate-300 leading-relaxed">
+                          Loop tolerance is evaluated as{' '}
+                          <span className="font-semibold">base + k * sqrt(km)</span>. Built-in
+                          presets are instant shortcuts; saved custom presets let you keep
+                          office-specific standards in the project options.
+                        </div>
+                      </div>
+
+                      <div className="rounded-md border border-slate-400/70 bg-slate-700/20 p-3 space-y-3">
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="text-[11px] uppercase tracking-wide text-slate-200">
+                            Saved Custom Presets
+                          </div>
+                          <button
+                            type="button"
+                            onClick={addLevelLoopCustomPreset}
+                            className="px-3 py-1 text-[11px] border border-slate-300 bg-slate-600 hover:bg-slate-500 text-slate-100"
+                            title="Save the current Base and K values as a reusable named custom preset."
+                          >
+                            Add Current
+                          </button>
+                        </div>
+                        {levelLoopCustomPresetsDraft.length === 0 ? (
+                          <div className="text-[11px] text-slate-300 leading-relaxed">
+                            No custom presets saved yet. Use{' '}
+                            <span className="font-semibold">Add Current</span> to capture the active
+                            Base and K values with a reusable name.
+                          </div>
+                        ) : (
+                          <div className="space-y-3">
+                            {levelLoopCustomPresetsDraft.map((preset) => (
+                              <div
+                                key={preset.id}
+                                className={`rounded-md border p-3 space-y-3 ${
+                                  activeLevelLoopPresetId === preset.id
+                                    ? 'border-blue-300 bg-blue-950/20'
+                                    : 'border-slate-400/70 bg-slate-600/30'
+                                }`}
+                              >
+                                <label className={optionLabelClass}>
+                                  Preset Name
+                                  <input
+                                    type="text"
+                                    value={preset.name}
+                                    onChange={(e) =>
+                                      handleLevelLoopCustomPresetFieldChange(
+                                        preset.id,
+                                        'name',
+                                        e.target.value,
+                                      )
+                                    }
+                                    className={`${optionInputClass} mt-1`}
+                                  />
+                                </label>
+                                <div className="grid grid-cols-2 gap-3">
+                                  <label className={optionLabelClass}>
+                                    Base (mm)
+                                    <input
+                                      type="number"
+                                      min={0}
+                                      step={0.1}
+                                      value={preset.baseMm}
+                                      onChange={(e) =>
+                                        handleLevelLoopCustomPresetFieldChange(
+                                          preset.id,
+                                          'baseMm',
+                                          e.target.value,
+                                        )
+                                      }
+                                      className={`${optionInputClass} mt-1`}
+                                    />
+                                  </label>
+                                  <label className={optionLabelClass}>
+                                    K (mm/sqrt(km))
+                                    <input
+                                      type="number"
+                                      min={0}
+                                      step={0.1}
+                                      value={preset.perSqrtKmMm}
+                                      onChange={(e) =>
+                                        handleLevelLoopCustomPresetFieldChange(
+                                          preset.id,
+                                          'perSqrtKmMm',
+                                          e.target.value,
+                                        )
+                                      }
+                                      className={`${optionInputClass} mt-1`}
+                                    />
+                                  </label>
+                                </div>
+                                <div className="flex items-center justify-between gap-2">
+                                  <div className="text-[11px] text-slate-300">
+                                    {preset.baseMm.toFixed(1)} + {preset.perSqrtKmMm.toFixed(1)}
+                                    *sqrt(km)
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    <button
+                                      type="button"
+                                      onClick={() => handleLevelLoopPresetChange(preset.id)}
+                                      className="px-3 py-1 text-[11px] border border-slate-300 bg-slate-600 hover:bg-slate-500 text-slate-100"
+                                      title="Apply this saved custom preset to the active level-loop tolerance."
+                                    >
+                                      Use
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => removeLevelLoopCustomPreset(preset.id)}
+                                      className="px-3 py-1 text-[11px] border border-rose-300/70 bg-rose-950/30 hover:bg-rose-900/40 text-rose-100"
+                                      title="Delete this saved custom preset from the draft project settings."
+                                    >
+                                      Delete
+                                    </button>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                     </div>
-                    <label className={optionLabelClass}>
-                      Coordinate Order
-                      <select
-                        title={SETTINGS_TOOLTIPS.order}
-                        value={parseSettingsDraft.order}
-                        onChange={(e) =>
-                          handleDraftParseSetting('order', e.target.value as OrderMode)
-                        }
-                        className={`${optionInputClass} mt-1`}
-                      >
-                        <option value="NE">North-East</option>
-                        <option value="EN">East-North</option>
-                      </select>
-                    </label>
-                    <label className={optionLabelClass}>
-                      Angular Units
-                      <select
-                        title={SETTINGS_TOOLTIPS.angleUnits}
-                        value={parseSettingsDraft.angleUnits}
-                        onChange={(e) =>
-                          handleDraftParseSetting('angleUnits', e.target.value as 'dms' | 'dd')
-                        }
-                        className={`${optionInputClass} mt-1`}
-                      >
-                        <option value="dms">DMS</option>
-                        <option value="dd">Decimal Degrees</option>
-                      </select>
-                    </label>
-                    <label className={optionLabelClass}>
-                      Angle Data Station Order
-                      <select
-                        title={SETTINGS_TOOLTIPS.angleStationOrder}
-                        value={parseSettingsDraft.angleStationOrder}
-                        onChange={(e) =>
-                          handleDraftParseSetting(
-                            'angleStationOrder',
-                            e.target.value as 'atfromto' | 'fromatto',
-                          )
-                        }
-                        className={`${optionInputClass} mt-1`}
-                      >
-                        <option value="atfromto">At-From-To</option>
-                        <option value="fromatto">From-At-To</option>
-                      </select>
-                    </label>
-                    <label className={optionLabelClass}>
-                      Longitude Sign Convention
-                      <select
-                        title={SETTINGS_TOOLTIPS.lonSign}
-                        value={parseSettingsDraft.lonSign}
-                        onChange={(e) =>
-                          handleDraftParseSetting(
-                            'lonSign',
-                            e.target.value as ParseSettings['lonSign'],
-                          )
-                        }
-                        className={`${optionInputClass} mt-1`}
-                      >
-                        <option value="west-negative">Negative West / Positive East</option>
-                        <option value="west-positive">Positive West / Negative East</option>
-                      </select>
-                    </label>
-                  </div>
+                  </SettingsCard>
                 </div>
               )}
 
@@ -5585,95 +5969,6 @@ const App: React.FC = () => {
                   ) : (
                     <div className="text-xs text-slate-200">No instrument selected.</div>
                   )}
-                  <div className="border border-slate-400 p-3 space-y-2">
-                    <div
-                      className="text-xs uppercase tracking-wider text-slate-200"
-                      title={PROJECT_OPTION_SECTION_TOOLTIPS['Weighting Helpers']}
-                    >
-                      Weighting Helpers
-                    </div>
-                    <label className={optionLabelClass}>
-                      .LWEIGHT (mm/km)
-                      <input
-                        title={SETTINGS_TOOLTIPS.levelWeight}
-                        type="number"
-                        min={0}
-                        step={0.1}
-                        value={parseSettingsDraft.levelWeight ?? ''}
-                        onChange={(e) =>
-                          handleDraftParseSetting(
-                            'levelWeight',
-                            e.target.value === '' ? undefined : parseFloat(e.target.value),
-                          )
-                        }
-                        className={`${optionInputClass} mt-1 max-w-xs`}
-                      />
-                    </label>
-                    <label className={optionLabelClass}>
-                      Level Loop Preset
-                      <select
-                        title={SETTINGS_TOOLTIPS.levelLoopTolerancePreset}
-                        value={activeLevelLoopPreset?.id ?? 'custom'}
-                        onChange={(e) =>
-                          handleLevelLoopPresetChange(
-                            e.target.value as LevelLoopTolerancePresetId,
-                          )
-                        }
-                        className={`${optionInputClass} mt-1 max-w-xs`}
-                      >
-                        {LEVEL_LOOP_TOLERANCE_PRESETS.map((preset) => (
-                          <option key={preset.id} value={preset.id}>
-                            {preset.label} ({preset.baseMm.toFixed(1)} +{' '}
-                            {preset.perSqrtKmMm.toFixed(1)}*sqrt(km))
-                          </option>
-                        ))}
-                        <option value="custom">Custom</option>
-                      </select>
-                    </label>
-                    <div className="text-[11px] text-slate-400 leading-relaxed">
-                      {activeLevelLoopPreset
-                        ? `${activeLevelLoopPreset.label}: ${activeLevelLoopPreset.description}`
-                        : 'Custom tolerance model: edits to Base or K leave the preset selector on Custom.'}
-                    </div>
-                    <label className={optionLabelClass}>
-                      Level Loop Base Tol (mm)
-                      <input
-                        title={SETTINGS_TOOLTIPS.levelLoopToleranceBase}
-                        type="number"
-                        min={0}
-                        step={0.1}
-                        value={parseSettingsDraft.levelLoopToleranceBaseMm}
-                        onChange={(e) =>
-                          handleDraftParseSetting(
-                            'levelLoopToleranceBaseMm',
-                            Number.isFinite(parseFloat(e.target.value))
-                              ? Math.max(0, parseFloat(e.target.value))
-                              : 0,
-                          )
-                        }
-                        className={`${optionInputClass} mt-1 max-w-xs`}
-                      />
-                    </label>
-                    <label className={optionLabelClass}>
-                      Level Loop K (mm/sqrt(km))
-                      <input
-                        title={SETTINGS_TOOLTIPS.levelLoopToleranceK}
-                        type="number"
-                        min={0}
-                        step={0.1}
-                        value={parseSettingsDraft.levelLoopTolerancePerSqrtKmMm}
-                        onChange={(e) =>
-                          handleDraftParseSetting(
-                            'levelLoopTolerancePerSqrtKmMm',
-                            Number.isFinite(parseFloat(e.target.value))
-                              ? Math.max(0, parseFloat(e.target.value))
-                              : 4,
-                          )
-                        }
-                        className={`${optionInputClass} mt-1 max-w-xs`}
-                      />
-                    </label>
-                  </div>
                 </div>
               )}
 
@@ -5896,33 +6191,28 @@ const App: React.FC = () => {
               )}
 
               {activeOptionsTab === 'gps' && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="border border-slate-400 p-3 space-y-3">
-                    <div
-                      className="text-xs uppercase tracking-wider text-slate-200"
-                      title={PROJECT_OPTION_SECTION_TOOLTIPS['CRS / Geodetic Setup']}
+                <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+                  <SettingsCard
+                    title="Geodetic Framework"
+                    tooltip={PROJECT_OPTION_SECTION_TOOLTIPS['CRS / Geodetic Setup']}
+                  >
+                    <SettingsRow
+                      label="CRS Transforms"
+                      tooltip={SETTINGS_TOOLTIPS.crsTransformEnabled}
+                      className="md:grid-cols-[minmax(0,1fr)_auto]"
                     >
-                      CRS / Geodetic Setup
-                    </div>
-                    <label className={optionLabelClass}>
-                      Enable CRS Transforms
-                      <div className="mt-1 flex items-center gap-2 text-xs">
-                        <input
-                          title={SETTINGS_TOOLTIPS.crsTransformEnabled}
-                          type="checkbox"
-                          className="accent-blue-400"
-                          checked={parseSettingsDraft.crsTransformEnabled}
-                          onChange={(e) =>
-                            handleDraftParseSetting('crsTransformEnabled', e.target.checked)
-                          }
-                        />
-                        <span>
-                          {parseSettingsDraft.crsTransformEnabled ? 'Enabled' : 'Disabled'}
-                        </span>
-                      </div>
-                    </label>
-                    <label className={optionLabelClass}>
-                      Projection Model
+                      <SettingsToggle
+                        title={SETTINGS_TOOLTIPS.crsTransformEnabled}
+                        checked={parseSettingsDraft.crsTransformEnabled}
+                        onChange={(checked) =>
+                          handleDraftParseSetting('crsTransformEnabled', checked)
+                        }
+                      />
+                    </SettingsRow>
+                    <SettingsRow
+                      label="Projection Model"
+                      tooltip={SETTINGS_TOOLTIPS.crsProjectionModel}
+                    >
                       <select
                         title={SETTINGS_TOOLTIPS.crsProjectionModel}
                         value={parseSettingsDraft.crsProjectionModel}
@@ -5933,43 +6223,40 @@ const App: React.FC = () => {
                             e.target.value as CrsProjectionModel,
                           )
                         }
-                        className={`${optionInputClass} mt-1 disabled:opacity-50 disabled:cursor-not-allowed`}
+                        className={`${optionInputClass} disabled:opacity-50 disabled:cursor-not-allowed`}
                       >
                         <option value="legacy-equirectangular">
                           LEGACY Local (Equirectangular)
                         </option>
                         <option value="local-enu">Local ENU (Tangent Plane)</option>
                       </select>
-                    </label>
-                    <label className={optionLabelClass}>
-                      CRS Label
+                    </SettingsRow>
+                    <SettingsRow label="CRS Label" tooltip={SETTINGS_TOOLTIPS.crsLabel}>
                       <input
                         title={SETTINGS_TOOLTIPS.crsLabel}
                         type="text"
                         value={parseSettingsDraft.crsLabel}
                         onChange={(e) => handleDraftParseSetting('crsLabel', e.target.value)}
-                        className={`${optionInputClass} mt-1`}
+                        className={optionInputClass}
                       />
-                    </label>
-                    <label className={optionLabelClass}>
-                      Enable Grid-Ground Scale
-                      <div className="mt-1 flex items-center gap-2 text-xs">
-                        <input
-                          title={SETTINGS_TOOLTIPS.crsGridScaleEnabled}
-                          type="checkbox"
-                          className="accent-blue-400"
-                          checked={parseSettingsDraft.crsGridScaleEnabled}
-                          onChange={(e) =>
-                            handleDraftParseSetting('crsGridScaleEnabled', e.target.checked)
-                          }
-                        />
-                        <span>
-                          {parseSettingsDraft.crsGridScaleEnabled ? 'Enabled' : 'Disabled'}
-                        </span>
-                      </div>
-                    </label>
-                    <label className={optionLabelClass}>
-                      Grid Scale Factor
+                    </SettingsRow>
+                    <SettingsRow
+                      label="Grid-Ground Scale"
+                      tooltip={SETTINGS_TOOLTIPS.crsGridScaleEnabled}
+                      className="md:grid-cols-[minmax(0,1fr)_auto]"
+                    >
+                      <SettingsToggle
+                        title={SETTINGS_TOOLTIPS.crsGridScaleEnabled}
+                        checked={parseSettingsDraft.crsGridScaleEnabled}
+                        onChange={(checked) =>
+                          handleDraftParseSetting('crsGridScaleEnabled', checked)
+                        }
+                      />
+                    </SettingsRow>
+                    <SettingsRow
+                      label="Grid Scale Factor"
+                      tooltip={SETTINGS_TOOLTIPS.crsGridScaleFactor}
+                    >
                       <input
                         title={SETTINGS_TOOLTIPS.crsGridScaleFactor}
                         type="number"
@@ -5984,28 +6271,26 @@ const App: React.FC = () => {
                             Number.isFinite(parsed) && parsed > 0 ? parsed : 1,
                           );
                         }}
-                        className={`${optionInputClass} mt-1 disabled:opacity-50 disabled:cursor-not-allowed`}
+                        className={`${optionInputClass} disabled:opacity-50 disabled:cursor-not-allowed`}
                       />
-                    </label>
-                    <label className={optionLabelClass}>
-                      Enable Convergence Correction
-                      <div className="mt-1 flex items-center gap-2 text-xs">
-                        <input
-                          title={SETTINGS_TOOLTIPS.crsConvergenceEnabled}
-                          type="checkbox"
-                          className="accent-blue-400"
-                          checked={parseSettingsDraft.crsConvergenceEnabled}
-                          onChange={(e) =>
-                            handleDraftParseSetting('crsConvergenceEnabled', e.target.checked)
-                          }
-                        />
-                        <span>
-                          {parseSettingsDraft.crsConvergenceEnabled ? 'Enabled' : 'Disabled'}
-                        </span>
-                      </div>
-                    </label>
-                    <label className={optionLabelClass}>
-                      Convergence Angle (deg)
+                    </SettingsRow>
+                    <SettingsRow
+                      label="Convergence Correction"
+                      tooltip={SETTINGS_TOOLTIPS.crsConvergenceEnabled}
+                      className="md:grid-cols-[minmax(0,1fr)_auto]"
+                    >
+                      <SettingsToggle
+                        title={SETTINGS_TOOLTIPS.crsConvergenceEnabled}
+                        checked={parseSettingsDraft.crsConvergenceEnabled}
+                        onChange={(checked) =>
+                          handleDraftParseSetting('crsConvergenceEnabled', checked)
+                        }
+                      />
+                    </SettingsRow>
+                    <SettingsRow
+                      label="Convergence Angle (deg)"
+                      tooltip={SETTINGS_TOOLTIPS.crsConvergenceAngle}
+                    >
                       <input
                         title={SETTINGS_TOOLTIPS.crsConvergenceAngle}
                         type="number"
@@ -6019,65 +6304,51 @@ const App: React.FC = () => {
                             Number.isFinite(parsed) ? parsed / RAD_TO_DEG : 0,
                           );
                         }}
-                        className={`${optionInputClass} mt-1 disabled:opacity-50 disabled:cursor-not-allowed`}
+                        className={`${optionInputClass} disabled:opacity-50 disabled:cursor-not-allowed`}
                       />
-                    </label>
-                    <div className="pt-2 border-t border-slate-700/70">
-                      <div
-                        className="text-xs uppercase tracking-wider text-slate-300"
-                        title={PROJECT_OPTION_SECTION_TOOLTIPS['GPS Loop Check']}
-                      >
-                        GPS Loop Check
-                      </div>
-                    </div>
-                    <label className={optionLabelClass}>
-                      Enable GPS Loop Check
-                      <div className="mt-1 flex items-center gap-2 text-xs">
-                        <input
-                          title={SETTINGS_TOOLTIPS.gpsLoopCheckEnabled}
-                          type="checkbox"
-                          className="accent-blue-400"
-                          checked={parseSettingsDraft.gpsLoopCheckEnabled}
-                          onChange={(e) =>
-                            handleDraftParseSetting('gpsLoopCheckEnabled', e.target.checked)
-                          }
-                        />
-                        <span>
-                          {parseSettingsDraft.gpsLoopCheckEnabled ? 'Enabled' : 'Disabled'}
-                        </span>
-                      </div>
-                    </label>
-                    <div className="pt-2 border-t border-slate-700/70">
-                      <div
-                        className="text-xs uppercase tracking-wider text-slate-300"
-                        title={PROJECT_OPTION_SECTION_TOOLTIPS['GPS AddHiHt Defaults']}
-                      >
-                        GPS AddHiHt Defaults
-                      </div>
-                    </div>
-                    <label className={optionLabelClass}>
-                      Enable GPS AddHiHt
-                      <div className="mt-1 flex items-center gap-2 text-xs">
-                        <input
-                          title={SETTINGS_TOOLTIPS.gpsAddHiHtEnabled}
-                          type="checkbox"
-                          className="accent-blue-400"
-                          checked={parseSettingsDraft.gpsAddHiHtEnabled}
-                          onChange={(e) =>
-                            handleDraftParseSetting('gpsAddHiHtEnabled', e.target.checked)
-                          }
-                        />
-                        <span>{parseSettingsDraft.gpsAddHiHtEnabled ? 'Enabled' : 'Disabled'}</span>
-                      </div>
-                    </label>
-                    <label className={optionLabelClass}>
-                      GPS AddHiHt HI ({settings.units})
+                    </SettingsRow>
+                  </SettingsCard>
+
+                  <SettingsCard
+                    title="GPS & Height Options"
+                    tooltip={PROJECT_OPTION_SECTION_TOOLTIPS['GPS Loop Check']}
+                  >
+                    <SettingsRow
+                      label="GPS Loop Check"
+                      tooltip={SETTINGS_TOOLTIPS.gpsLoopCheckEnabled}
+                      className="md:grid-cols-[minmax(0,1fr)_auto]"
+                    >
+                      <SettingsToggle
+                        title={SETTINGS_TOOLTIPS.gpsLoopCheckEnabled}
+                        checked={parseSettingsDraft.gpsLoopCheckEnabled}
+                        onChange={(checked) =>
+                          handleDraftParseSetting('gpsLoopCheckEnabled', checked)
+                        }
+                      />
+                    </SettingsRow>
+                    <SettingsRow
+                      label="GPS AddHiHt"
+                      tooltip={SETTINGS_TOOLTIPS.gpsAddHiHtEnabled}
+                      className="md:grid-cols-[minmax(0,1fr)_auto]"
+                    >
+                      <SettingsToggle
+                        title={SETTINGS_TOOLTIPS.gpsAddHiHtEnabled}
+                        checked={parseSettingsDraft.gpsAddHiHtEnabled}
+                        onChange={(checked) =>
+                          handleDraftParseSetting('gpsAddHiHtEnabled', checked)
+                        }
+                      />
+                    </SettingsRow>
+                    <SettingsRow
+                      label={`GPS AddHiHt HI (${settingsDraft.units === 'ft' ? 'ft' : 'm'})`}
+                      tooltip={SETTINGS_TOOLTIPS.gpsAddHiHtHi}
+                    >
                       <input
                         title={SETTINGS_TOOLTIPS.gpsAddHiHtHi}
                         type="number"
                         step={0.0001}
                         value={
-                          settings.units === 'ft'
+                          settingsDraft.units === 'ft'
                             ? parseSettingsDraft.gpsAddHiHtHiM * FT_PER_M
                             : parseSettingsDraft.gpsAddHiHtHiM
                         }
@@ -6085,23 +6356,25 @@ const App: React.FC = () => {
                         onChange={(e) => {
                           const parsed = Number.parseFloat(e.target.value);
                           const meters = Number.isFinite(parsed)
-                            ? settings.units === 'ft'
+                            ? settingsDraft.units === 'ft'
                               ? parsed * M_PER_FT
                               : parsed
                             : 0;
                           handleDraftParseSetting('gpsAddHiHtHiM', meters);
                         }}
-                        className={`${optionInputClass} mt-1 disabled:opacity-50 disabled:cursor-not-allowed`}
+                        className={`${optionInputClass} disabled:opacity-50 disabled:cursor-not-allowed`}
                       />
-                    </label>
-                    <label className={optionLabelClass}>
-                      GPS AddHiHt HT ({settings.units})
+                    </SettingsRow>
+                    <SettingsRow
+                      label={`GPS AddHiHt HT (${settingsDraft.units === 'ft' ? 'ft' : 'm'})`}
+                      tooltip={SETTINGS_TOOLTIPS.gpsAddHiHtHt}
+                    >
                       <input
                         title={SETTINGS_TOOLTIPS.gpsAddHiHtHt}
                         type="number"
                         step={0.0001}
                         value={
-                          settings.units === 'ft'
+                          settingsDraft.units === 'ft'
                             ? parseSettingsDraft.gpsAddHiHtHtM * FT_PER_M
                             : parseSettingsDraft.gpsAddHiHtHtM
                         }
@@ -6109,40 +6382,32 @@ const App: React.FC = () => {
                         onChange={(e) => {
                           const parsed = Number.parseFloat(e.target.value);
                           const meters = Number.isFinite(parsed)
-                            ? settings.units === 'ft'
+                            ? settingsDraft.units === 'ft'
                               ? parsed * M_PER_FT
                               : parsed
                             : 0;
                           handleDraftParseSetting('gpsAddHiHtHtM', meters);
                         }}
-                        className={`${optionInputClass} mt-1 disabled:opacity-50 disabled:cursor-not-allowed`}
+                        className={`${optionInputClass} disabled:opacity-50 disabled:cursor-not-allowed`}
                       />
-                    </label>
-                    <div className="pt-2 border-t border-slate-700/70">
-                      <div
-                        className="text-xs uppercase tracking-wider text-slate-300"
-                        title={PROJECT_OPTION_SECTION_TOOLTIPS['Geoid/Grid Model']}
-                      >
-                        Geoid/Grid Model
-                      </div>
-                    </div>
-                    <label className={optionLabelClass}>
-                      Enable Geoid/Grid Model
-                      <div className="mt-1 flex items-center gap-2 text-xs">
-                        <input
-                          title={SETTINGS_TOOLTIPS.geoidModelEnabled}
-                          type="checkbox"
-                          className="accent-blue-400"
-                          checked={parseSettingsDraft.geoidModelEnabled}
-                          onChange={(e) =>
-                            handleDraftParseSetting('geoidModelEnabled', e.target.checked)
-                          }
-                        />
-                        <span>{parseSettingsDraft.geoidModelEnabled ? 'Enabled' : 'Disabled'}</span>
-                      </div>
-                    </label>
-                    <label className={optionLabelClass}>
-                      Geoid/Grid Model ID
+                    </SettingsRow>
+                    <SettingsRow
+                      label="Geoid/Grid Model"
+                      tooltip={SETTINGS_TOOLTIPS.geoidModelEnabled}
+                      className="md:grid-cols-[minmax(0,1fr)_auto]"
+                    >
+                      <SettingsToggle
+                        title={SETTINGS_TOOLTIPS.geoidModelEnabled}
+                        checked={parseSettingsDraft.geoidModelEnabled}
+                        onChange={(checked) =>
+                          handleDraftParseSetting('geoidModelEnabled', checked)
+                        }
+                      />
+                    </SettingsRow>
+                    <SettingsRow
+                      label="Geoid/Grid Model ID"
+                      tooltip={SETTINGS_TOOLTIPS.geoidModelId}
+                    >
                       <input
                         title={SETTINGS_TOOLTIPS.geoidModelId}
                         type="text"
@@ -6154,11 +6419,13 @@ const App: React.FC = () => {
                             (e.target.value || 'NGS-DEMO').toUpperCase(),
                           )
                         }
-                        className={`${optionInputClass} mt-1 disabled:opacity-50 disabled:cursor-not-allowed`}
+                        className={`${optionInputClass} disabled:opacity-50 disabled:cursor-not-allowed`}
                       />
-                    </label>
-                    <label className={optionLabelClass}>
-                      Geoid Interpolation
+                    </SettingsRow>
+                    <SettingsRow
+                      label="Geoid Interpolation"
+                      tooltip={SETTINGS_TOOLTIPS.geoidInterpolation}
+                    >
                       <select
                         title={SETTINGS_TOOLTIPS.geoidInterpolation}
                         value={parseSettingsDraft.geoidInterpolation}
@@ -6169,35 +6436,30 @@ const App: React.FC = () => {
                             e.target.value as GeoidInterpolationMethod,
                           )
                         }
-                        className={`${optionInputClass} mt-1 disabled:opacity-50 disabled:cursor-not-allowed`}
+                        className={`${optionInputClass} disabled:opacity-50 disabled:cursor-not-allowed`}
                       >
                         <option value="bilinear">BILINEAR</option>
                         <option value="nearest">NEAREST</option>
                       </select>
-                    </label>
-                    <label className={optionLabelClass}>
-                      Enable Geoid Height Conversion
-                      <div className="mt-1 flex items-center gap-2 text-xs">
-                        <input
-                          title={SETTINGS_TOOLTIPS.geoidHeightConversionEnabled}
-                          type="checkbox"
-                          className="accent-blue-400"
-                          checked={parseSettingsDraft.geoidHeightConversionEnabled}
-                          disabled={!parseSettingsDraft.geoidModelEnabled}
-                          onChange={(e) =>
-                            handleDraftParseSetting(
-                              'geoidHeightConversionEnabled',
-                              e.target.checked,
-                            )
-                          }
-                        />
-                        <span>
-                          {parseSettingsDraft.geoidHeightConversionEnabled ? 'Enabled' : 'Disabled'}
-                        </span>
-                      </div>
-                    </label>
-                    <label className={optionLabelClass}>
-                      Geoid Output Height Datum
+                    </SettingsRow>
+                    <SettingsRow
+                      label="Geoid Height Conversion"
+                      tooltip={SETTINGS_TOOLTIPS.geoidHeightConversionEnabled}
+                      className="md:grid-cols-[minmax(0,1fr)_auto]"
+                    >
+                      <SettingsToggle
+                        title={SETTINGS_TOOLTIPS.geoidHeightConversionEnabled}
+                        checked={parseSettingsDraft.geoidHeightConversionEnabled}
+                        disabled={!parseSettingsDraft.geoidModelEnabled}
+                        onChange={(checked) =>
+                          handleDraftParseSetting('geoidHeightConversionEnabled', checked)
+                        }
+                      />
+                    </SettingsRow>
+                    <SettingsRow
+                      label="Geoid Output Height Datum"
+                      tooltip={SETTINGS_TOOLTIPS.geoidOutputHeightDatum}
+                    >
                       <select
                         title={SETTINGS_TOOLTIPS.geoidOutputHeightDatum}
                         value={parseSettingsDraft.geoidOutputHeightDatum}
@@ -6211,38 +6473,25 @@ const App: React.FC = () => {
                             e.target.value as GeoidHeightDatum,
                           )
                         }
-                        className={`${optionInputClass} mt-1 disabled:opacity-50 disabled:cursor-not-allowed`}
+                        className={`${optionInputClass} disabled:opacity-50 disabled:cursor-not-allowed`}
                       >
                         <option value="orthometric">ORTHOMETRIC</option>
                         <option value="ellipsoid">ELLIPSOID</option>
                       </select>
-                    </label>
-                  </div>
-                  <div className="border border-slate-400 p-3 text-xs text-slate-200 leading-relaxed space-y-2">
-                    <div>
-                      Defaults are safe: CRS transforms are <strong>OFF</strong> unless explicitly
-                      enabled here or via `.CRS` input directives.
+                    </SettingsRow>
+                    <div className="rounded-md border border-slate-400/60 bg-slate-700/20 px-3 py-2 text-[11px] text-slate-200 leading-relaxed space-y-2">
+                      <div>
+                        CRS transforms, GPS loop checks, geoid/grid modeling, and GPS AddHiHt
+                        defaults all stay <strong>OFF</strong> unless you explicitly enable them
+                        here or in the input file.
+                      </div>
+                      <div>
+                        The GPS pane is intentionally condensed: labels stay on the left, controls
+                        stay on the right, and disable rules mirror the parser defaults already in
+                        the engine.
+                      </div>
                     </div>
-                    <div>
-                      With transforms OFF, existing `P/PH` local projection behavior is preserved.
-                    </div>
-                    <div>
-                      Grid-ground scale and convergence are optional and remain <strong>OFF</strong>{' '}
-                      unless explicitly enabled here or via `.CRS` directives.
-                    </div>
-                    <div>
-                      GPS loop-check diagnostics are <strong>OFF</strong> by default and only run
-                      when explicitly enabled here or via `.GPS CHECK`.
-                    </div>
-                    <div>
-                      Geoid/grid model support and geoid height conversion are both{' '}
-                      <strong>OFF</strong> by default and require explicit user enablement.
-                    </div>
-                    <div>
-                      GPS AddHiHt defaults are <strong>OFF</strong> by default and only active when
-                      explicitly enabled here or via `.GPS AddHiHt`.
-                    </div>
-                  </div>
+                  </SettingsCard>
                 </div>
               )}
 
