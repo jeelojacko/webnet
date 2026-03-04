@@ -234,6 +234,7 @@
       - [x] Phase 4N: add `.jxl`/`.htm` to the default import picker filter, add compare/reconcile review support for pairing JobXML with survey-report imports, and carry JobXML angle-only verticals so `UNDERT2.jxl` and `UNDERT2.htm` reconcile to the same comparable observation count when `MTA` rows are excluded
       - [x] Phase 4O: add per-setup staged exclude toggles in import review, emit imported `V` rows as hyphenated `from-to` tokens, and lock parser/import-review coverage for hyphenated vertical observation formatting
       - [x] Phase 4P: add compare-mode presets (`Non-MTA Only` vs `All Raw Rows`), highlight staged rows that belong to mismatched comparison buckets, and expand the input-editor context menu with standard edit actions above `Toggle # Comment`
+      - [x] Phase 4Q: split editor comment actions into explicit `Block Comment` / `Block Uncomment`, preserve native undo/redo history for comment/paste/delete/cut menu edits, and make `Tab` insert a literal tab in the input textarea
   - [ ] Leveling improvements (highest impact -> lowest):
     - [ ] Add dedicated differential leveling loop-closure check workflow (independent of traverse diagnostics)
       - [ ] Phase 1: detect and enumerate leveling loops from `L`/level-sensitive records with station-path traceability

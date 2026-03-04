@@ -38,7 +38,8 @@ describe('InputPane context menu', () => {
       'Paste',
       'Delete',
       'Select All',
-      'Toggle # Comment',
+      'Block Comment',
+      'Block Uncomment',
     ]);
   });
 });

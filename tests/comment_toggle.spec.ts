@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { toggleHashCommentsInSelection } from '../src/components/commentToggle';
+import {
+  blockCommentSelection,
+  blockUncommentSelection,
+  toggleHashCommentsInSelection,
+} from '../src/components/commentToggle';
 
 describe('input comment toggle helper', () => {
   it('comments a selected block line-by-line', () => {
@@ -32,13 +36,35 @@ describe('input comment toggle helper', () => {
     );
   });
 
-  it('comments only uncommented lines in mixed selections', () => {
+  it('toggle comment now comments every line in mixed selections so existing comments can be nested safely', () => {
     const input = ['# D\t1000-235\t17.43226789', 'M\t1000-235-1\t075-50-41.0\t4.72668215'].join(
       '\n',
     );
     const result = toggleHashCommentsInSelection(input, 0, input.length);
     expect(result.text).toBe(
-      ['# D\t1000-235\t17.43226789', '# M\t1000-235-1\t075-50-41.0\t4.72668215'].join('\n'),
+      ['# # D\t1000-235\t17.43226789', '# M\t1000-235-1\t075-50-41.0\t4.72668215'].join('\n'),
     );
+  });
+
+  it('block comment always prefixes # even when the line is already a comment', () => {
+    const input = ['# setup 1', 'M\t1000-235-1\t075-50-41.0\t4.72668215'].join('\n');
+    const result = blockCommentSelection(input, 0, input.length);
+    expect(result.text).toBe(
+      ['# # setup 1', '# M\t1000-235-1\t075-50-41.0\t4.72668215'].join('\n'),
+    );
+  });
+
+  it('block uncomment removes only one left-most # marker', () => {
+    const input = ['# # setup 1', '# M\t1000-235-1\t075-50-41.0\t4.72668215'].join('\n');
+    const result = blockUncommentSelection(input, 0, input.length);
+    expect(result.text).toBe(
+      ['# setup 1', 'M\t1000-235-1\t075-50-41.0\t4.72668215'].join('\n'),
+    );
+  });
+
+  it('block uncomment leaves ## style comments unchanged because they are not # markers', () => {
+    const input = ['## heading', '# regular comment'].join('\n');
+    const result = blockUncommentSelection(input, 0, input.length);
+    expect(result.text).toBe(['## heading', 'regular comment'].join('\n'));
   });
 });

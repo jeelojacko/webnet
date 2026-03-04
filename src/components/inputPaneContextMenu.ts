@@ -6,5 +6,6 @@ export const INPUT_PANE_CONTEXT_MENU_ORDER = [
   'Paste',
   'Delete',
   'Select All',
-  'Toggle # Comment',
+  'Block Comment',
+  'Block Uncomment',
 ] as const;

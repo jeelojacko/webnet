@@ -1,6 +1,6 @@
 import React from 'react';
 import { FileText } from 'lucide-react';
-import { toggleHashCommentsInSelection } from './commentToggle';
+import { blockCommentSelection, blockUncommentSelection } from './commentToggle';
 import { INPUT_PANE_CONTEXT_MENU_ORDER } from './inputPaneContextMenu';
 
 interface InputPaneProps {
@@ -17,7 +17,8 @@ type ContextMenuState = {
   x: number;
   y: number;
   hasSelection: boolean;
-  canToggleComment: boolean;
+  canBlockComment: boolean;
+  canBlockUncomment: boolean;
 };
 
 const InputPane: React.FC<InputPaneProps> = ({
@@ -40,43 +41,92 @@ const InputPane: React.FC<InputPaneProps> = ({
     setContextMenu(null);
   };
 
-  const applyCommentToggle = React.useCallback(
+  const dispatchTextareaInput = React.useCallback((textarea: HTMLTextAreaElement) => {
+    textarea.dispatchEvent(new Event('input', { bubbles: true }));
+  }, []);
+
+  const replaceTextareaRangeWithNativeEdit = React.useCallback(
+    (
+      textarea: HTMLTextAreaElement,
+      replacement: string,
+      start: number,
+      end: number,
+      selectionMode: 'select' | 'start' | 'end' | 'preserve' = 'end',
+    ): boolean => {
+      textarea.focus();
+      textarea.setSelectionRange(start, end);
+      const replaced = document.execCommand('insertText', false, replacement);
+      if (!replaced) return false;
+      if (selectionMode === 'select') {
+        textarea.setSelectionRange(start, start + replacement.length);
+      } else if (selectionMode === 'start') {
+        textarea.setSelectionRange(start, start);
+      } else if (selectionMode === 'preserve') {
+        textarea.setSelectionRange(start, start + replacement.length);
+      }
+      return true;
+    },
+    [],
+  );
+
+  const replaceTextareaRange = React.useCallback(
+    (
+      textarea: HTMLTextAreaElement,
+      replacement: string,
+      start: number,
+      end: number,
+      selectionMode: 'select' | 'start' | 'end' | 'preserve' = 'end',
+    ) => {
+      if (
+        replaceTextareaRangeWithNativeEdit(textarea, replacement, start, end, selectionMode)
+      ) {
+        return;
+      }
+      textarea.focus();
+      textarea.setRangeText(replacement, start, end, selectionMode);
+      dispatchTextareaInput(textarea);
+    },
+    [dispatchTextareaInput, replaceTextareaRangeWithNativeEdit],
+  );
+
+  const applyBlockComment = React.useCallback(
     (textarea: HTMLTextAreaElement) => {
-      const result = toggleHashCommentsInSelection(
-        input,
+      const result = blockCommentSelection(
+        textarea.value,
         textarea.selectionStart ?? 0,
         textarea.selectionEnd ?? 0,
       );
       if (!result.changed) return;
 
-      onChange(result.text);
-      requestAnimationFrame(() => {
-        if (!textareaRef.current) return;
-        textareaRef.current.focus();
-        textareaRef.current.setSelectionRange(result.selectionStart, result.selectionEnd);
-      });
+      replaceTextareaRange(
+        textarea,
+        result.text.slice(result.replaceStart, result.selectionEnd),
+        result.replaceStart,
+        result.replaceEnd,
+        'select',
+      );
     },
-    [input, onChange],
+    [replaceTextareaRange],
   );
 
-  const restoreSelection = React.useCallback((start: number, end: number) => {
-    requestAnimationFrame(() => {
-      if (!textareaRef.current) return;
-      textareaRef.current.focus();
-      textareaRef.current.setSelectionRange(start, end);
-    });
-  }, []);
+  const applyBlockUncomment = React.useCallback(
+    (textarea: HTMLTextAreaElement) => {
+      const result = blockUncommentSelection(
+        textarea.value,
+        textarea.selectionStart ?? 0,
+        textarea.selectionEnd ?? 0,
+      );
+      if (!result.changed) return;
 
-  const replaceSelection = React.useCallback(
-    (textarea: HTMLTextAreaElement, replacement: string) => {
-      const start = textarea.selectionStart ?? 0;
-      const end = textarea.selectionEnd ?? 0;
-      const nextValue = `${textarea.value.slice(0, start)}${replacement}${textarea.value.slice(end)}`;
-      const nextCaret = start + replacement.length;
-      onChange(nextValue);
-      restoreSelection(nextCaret, nextCaret);
+      replaceTextareaRange(
+        textarea,
+        result.text.slice(result.replaceStart, result.selectionEnd),
+        result.replaceStart,
+        result.replaceEnd,
+        'select',
+      );
     },
-    [onChange, restoreSelection],
+    [replaceTextareaRange],
   );
 
   const execNativeEditorCommand = React.useCallback((command: 'undo' | 'redo' | 'copy' | 'cut') => {
@@ -109,23 +159,25 @@ const InputPane: React.FC<InputPaneProps> = ({
     if (!selectedText) return;
     try {
       await navigator.clipboard.writeText(selectedText);
-      replaceSelection(textarea, '');
+      replaceTextareaRange(textarea, '', start, end, 'end');
     } catch {
       execNativeEditorCommand('cut');
     }
-  }, [execNativeEditorCommand, replaceSelection]);
+  }, [execNativeEditorCommand, replaceTextareaRange]);
 
   const handlePaste = React.useCallback(async () => {
     const textarea = textareaRef.current;
     if (!textarea) return;
+    const start = textarea.selectionStart ?? 0;
+    const end = textarea.selectionEnd ?? 0;
     try {
       const clipboardText = await navigator.clipboard.readText();
-      replaceSelection(textarea, clipboardText);
+      replaceTextareaRange(textarea, clipboardText, start, end, 'end');
     } catch {
       textarea.focus();
       document.execCommand('paste');
     }
-  }, [replaceSelection]);
+  }, [replaceTextareaRange]);
 
   const handleDeleteSelection = React.useCallback(() => {
     const textarea = textareaRef.current;
@@ -133,8 +185,8 @@ const InputPane: React.FC<InputPaneProps> = ({
     const start = textarea.selectionStart ?? 0;
     const end = textarea.selectionEnd ?? 0;
     if (start === end) return;
-    replaceSelection(textarea, '');
-  }, [replaceSelection]);
+    replaceTextareaRange(textarea, '', start, end, 'end');
+  }, [replaceTextareaRange]);
 
   const handleSelectAll = React.useCallback(() => {
     const textarea = textareaRef.current;
@@ -144,16 +196,30 @@ const InputPane: React.FC<InputPaneProps> = ({
   }, []);
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    const isHashShortcut = event.key === '#' || (event.shiftKey && event.code === 'Digit3');
-    if (!isHashShortcut || event.metaKey || event.ctrlKey || event.altKey) return;
     const textarea = event.currentTarget;
+    const isModifier = event.metaKey || event.ctrlKey || event.altKey;
+    const isHashShortcut = event.key === '#' || (event.shiftKey && event.code === 'Digit3');
+
+    if (event.key === 'Tab' && !isModifier) {
+      event.preventDefault();
+      const start = textarea.selectionStart ?? 0;
+      const end = textarea.selectionEnd ?? 0;
+      replaceTextareaRange(textarea, '\t', start, end, 'end');
+      return;
+    }
+
+    if (event.ctrlKey && !event.shiftKey && !event.altKey && event.key.toLowerCase() === 'y') {
+      event.preventDefault();
+      execNativeEditorCommand('redo');
+      return;
+    }
+
+    if (!isHashShortcut || isModifier) return;
     const start = textarea.selectionStart ?? 0;
     const end = textarea.selectionEnd ?? 0;
     if (start === end) return;
-    const selected = input.slice(start, end);
-    if (!selected.includes('\n')) return;
     event.preventDefault();
-    applyCommentToggle(textarea);
+    applyBlockComment(textarea);
   };
 
   const handleContextMenu = (event: React.MouseEvent<HTMLTextAreaElement>) => {
@@ -164,17 +230,30 @@ const InputPane: React.FC<InputPaneProps> = ({
     const bounds = editorWrapRef.current?.getBoundingClientRect();
     const x = bounds ? event.clientX - bounds.left : event.clientX;
     const y = bounds ? event.clientY - bounds.top : event.clientY;
-    const selected = input.slice(start, end);
+    const selected = textarea.value.slice(start, end);
     setContextMenu({
       x,
       y,
       hasSelection: start !== end,
-      canToggleComment: selected.length > 0,
+      canBlockComment: selected.length > 0,
+      canBlockUncomment:
+        selected.length > 0 && selected.split('\n').some((line) => /^\s*#\s/.test(line)),
     });
   };
 
   const handleContextMenuAction = React.useCallback(
-    async (action: 'undo' | 'redo' | 'cut' | 'copy' | 'paste' | 'delete' | 'select-all' | 'toggle-comment') => {
+    async (
+      action:
+        | 'undo'
+        | 'redo'
+        | 'cut'
+        | 'copy'
+        | 'paste'
+        | 'delete'
+        | 'select-all'
+        | 'block-comment'
+        | 'block-uncomment',
+    ) => {
       if (action === 'undo') execNativeEditorCommand('undo');
       if (action === 'redo') execNativeEditorCommand('redo');
       if (action === 'copy') await handleCopy();
@@ -182,11 +261,14 @@ const InputPane: React.FC<InputPaneProps> = ({
       if (action === 'paste') await handlePaste();
       if (action === 'delete') handleDeleteSelection();
       if (action === 'select-all') handleSelectAll();
-      if (action === 'toggle-comment' && textareaRef.current) applyCommentToggle(textareaRef.current);
+      if (action === 'block-comment' && textareaRef.current) applyBlockComment(textareaRef.current);
+      if (action === 'block-uncomment' && textareaRef.current)
+        applyBlockUncomment(textareaRef.current);
       setContextMenu(null);
     },
     [
-      applyCommentToggle,
+      applyBlockComment,
+      applyBlockUncomment,
       execNativeEditorCommand,
       handleCopy,
       handleCut,
@@ -293,9 +375,14 @@ const InputPane: React.FC<InputPaneProps> = ({
               { id: 'select-all', label: INPUT_PANE_CONTEXT_MENU_ORDER[6], disabled: false },
               { id: 'sep-edit-2', label: '', separator: true },
               {
-                id: 'toggle-comment',
+                id: 'block-comment',
                 label: INPUT_PANE_CONTEXT_MENU_ORDER[7],
-                disabled: !contextMenu.canToggleComment,
+                disabled: !contextMenu.canBlockComment,
+              },
+              {
+                id: 'block-uncomment',
+                label: INPUT_PANE_CONTEXT_MENU_ORDER[8],
+                disabled: !contextMenu.canBlockUncomment,
               },
             ].map((action) =>
               'separator' in action && action.separator ? (
@@ -320,7 +407,8 @@ const InputPane: React.FC<InputPaneProps> = ({
                         | 'paste'
                         | 'delete'
                         | 'select-all'
-                        | 'toggle-comment',
+                        | 'block-comment'
+                        | 'block-uncomment',
                     )
                   }
                 >
