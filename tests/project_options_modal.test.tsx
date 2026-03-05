@@ -65,6 +65,12 @@ describe('Project Options modal layout', () => {
     );
 
     expect(html).toContain('Other File Outputs');
+    expect(html).toContain('Project Files');
+    expect(html).toContain('Open Project');
+    expect(html).toContain('Save Project');
+    expect(html).toContain('Adjusted Points Export');
+    expect(html).toContain('Adjusted Points Preset');
+    expect(html).toContain('Adjusted Points Delimiter');
     expect(html).toContain('Export Format');
     expect(html).toContain('Output Extension');
     expect(html).toContain('Output Visibility');

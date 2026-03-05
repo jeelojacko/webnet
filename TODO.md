@@ -17,6 +17,7 @@
 - [x] Project Options modal regression coverage: add focused layout tests for Adjustment, General, Instrument, GPS, Other Files, and Modeling tab rendering so condensed modal structure stays stable
 - [x] Project Options modal interaction coverage: add jsdom interaction tests for tab switching plus `Apply`/`Cancel` draft persistence/discard behavior
 - [x] Field-collection parser expansion: support SS shorthand station tokens (`SS at-to` / `SS at-from-to`) with deterministic angle defaults + HI/HT parsing, and add `GS` GNSS topo coordinate records as post-adjust (equation-excluded) outputs across report/summary/map/export
+- [x] Workspace persistence + adjusted-points deliverables: add save/open project files (`webnet-project` JSON with input + settings + instruments + export prefs), add configurable adjusted-points export (preset/custom columns, delimiter, optional LAT/LON, max-6 dynamic ordering), and expose both via toolbar and Project Options -> Other Files with regression tests
 - [ ] No-result-change optimization batch plan:
   - [x] Batch 1 (solver): cache active observations per solve stage and add per-iteration geometry caching for repeated azimuth/zenith lookups in `adjust.ts`
   - [x] Batch 2 (UI/report): memoize heavy derived report arrays and lazy-load heavy result tabs to reduce initial payload/first render cost

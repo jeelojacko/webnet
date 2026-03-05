@@ -350,6 +350,51 @@ export type CrsProjectionModel = 'legacy-equirectangular' | 'local-enu';
 export type GeoidInterpolationMethod = 'bilinear' | 'nearest';
 export type GeoidHeightDatum = 'orthometric' | 'ellipsoid';
 export type GpsVectorMode = 'network' | 'sideshot';
+export type ProjectExportFormat = 'webnet' | 'industry-style' | 'landxml';
+export type AdjustedPointsColumnId = 'P' | 'N' | 'E' | 'Z' | 'D' | 'LAT' | 'LON' | 'EL';
+export type AdjustedPointsDelimiter = 'comma' | 'space' | 'tab';
+export type AdjustedPointsOutputFormat = 'csv' | 'text';
+export type AdjustedPointsPresetId =
+  | 'PNEZD'
+  | 'PENZD'
+  | 'PNEZ'
+  | 'PENZ'
+  | 'NEZ'
+  | 'PEN'
+  | 'custom';
+
+export interface AdjustedPointsExportSettings {
+  format: AdjustedPointsOutputFormat;
+  delimiter: AdjustedPointsDelimiter;
+  columns: AdjustedPointsColumnId[];
+  presetId: AdjustedPointsPresetId;
+  includeLostStations: boolean;
+}
+
+export interface CustomLevelLoopTolerancePreset {
+  id: string;
+  name: string;
+  baseMm: number;
+  perSqrtKmMm: number;
+}
+
+export interface WebNetProjectFileV1 {
+  kind: 'webnet-project';
+  schemaVersion: 1;
+  savedAt: string;
+  input: string;
+  ui: {
+    settings: Record<string, unknown>;
+    parseSettings: Record<string, unknown>;
+    exportFormat: ProjectExportFormat;
+    adjustedPointsExport: AdjustedPointsExportSettings;
+  };
+  project: {
+    projectInstruments: InstrumentLibrary;
+    selectedInstrument: string;
+    levelLoopCustomPresets: CustomLevelLoopTolerancePreset[];
+  };
+}
 
 export interface ClusterApprovedMerge {
   aliasId: StationId;

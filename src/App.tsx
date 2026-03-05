@@ -5,6 +5,7 @@ import {
   Activity,
   AlertTriangle,
   CheckCircle,
+  FolderOpen,
   FileText,
   Map as MapIcon,
   Minimize2,
@@ -12,6 +13,7 @@ import {
   PanelLeftOpen,
   Play,
   RefreshCw,
+  Save,
   Settings,
   Download,
 } from 'lucide-react';
@@ -30,9 +32,18 @@ import {
 import { buildIndustryStyleListingText } from './engine/industryListing';
 import { buildLandXmlText } from './engine/landxml';
 import {
+  ADJUSTED_POINTS_ALL_COLUMNS,
+  ADJUSTED_POINTS_PRESET_COLUMNS,
+  DEFAULT_ADJUSTED_POINTS_EXPORT_SETTINGS,
+  buildAdjustedPointsExportText,
+  inferAdjustedPointsPresetId,
+  sanitizeAdjustedPointsExportSettings,
+} from './engine/adjustedPointsExport';
+import {
   LEVEL_LOOP_TOLERANCE_PRESETS,
   findLevelLoopTolerancePreset,
 } from './engine/levelLoopTolerance';
+import { parseProjectFile, serializeProjectFile } from './engine/projectFile';
 import {
   importExternalInput,
   type ImportedDataset,
@@ -69,6 +80,10 @@ import type {
   Observation,
   ObservationOverride,
   CoordMode,
+  AdjustedPointsColumnId,
+  AdjustedPointsExportSettings,
+  AdjustedPointsPresetId,
+  CustomLevelLoopTolerancePreset,
   DirectionSetMode,
   ParseOptions,
   OrderMode,
@@ -76,6 +91,7 @@ import type {
   MapMode,
   AngleMode,
   VerticalReductionMode,
+  ProjectExportFormat,
   TsCorrelationScope,
   RobustMode,
   CrsProjectionModel,
@@ -340,15 +356,7 @@ const INDUSTRY_DEFAULT_INSTRUMENT_CODE = 'S9';
 const INDUSTRY_DEFAULT_INSTRUMENT: Instrument = createDefaultS9Instrument();
 
 type TabKey = 'report' | 'processing-summary' | 'industry-output' | 'map';
-type ExportFormat = 'webnet' | 'industry-style' | 'landxml';
 type FilePickerMode = 'replace' | 'compare';
-
-type CustomLevelLoopTolerancePreset = {
-  id: string;
-  name: string;
-  baseMm: number;
-  perSqrtKmMm: number;
-};
 
 type ResolvedLevelLoopTolerancePreset = {
   id: string;
@@ -357,6 +365,7 @@ type ResolvedLevelLoopTolerancePreset = {
 };
 
 const IMPORT_FILE_ACCEPT = '.dat,.txt,.sum,.rpt,.xml,.jxl,.jobxml,.htm,.html,.rw5,.cr5,.raw,.dbx';
+const PROJECT_FILE_ACCEPT = '.wnproj,.wnproj.json,.json';
 
 type ImportReviewState = {
   sourceName: string;
@@ -528,6 +537,16 @@ const SETTINGS_TOOLTIPS = {
     'Maximum number of adjusted-observation rows written in industry-style output (1-500).',
   exportFormat:
     'Select the current output format used by the export action: WebNet text, industry-style listing text, or LandXML.',
+  adjustedPointsFormat:
+    'Select text or CSV framing for adjusted-points exports. Both still honor the chosen delimiter and column order.',
+  adjustedPointsDelimiter:
+    'Delimiter used in adjusted-points output rows (comma, single space, or tab).',
+  adjustedPointsPreset:
+    'Preset column-order templates for adjusted points. Manual column edits switch to Custom.',
+  adjustedPointsIncludeLost:
+    'Include or omit lost stations in adjusted-points exports.',
+  projectFiles:
+    'Save or open complete project workspaces (input + settings + instruments + export preferences) without storing solved results.',
 } as const;
 
 const PROJECT_OPTION_TAB_TOOLTIPS: Record<ProjectOptionsTab, string> = {
@@ -574,6 +593,9 @@ const PROJECT_OPTION_SECTION_TOOLTIPS: Record<string, string> = {
   'Robust Model': 'Robust adjustment controls for downweighting large residuals during solving.',
   'Other File Outputs':
     'Export format selection plus auxiliary output behavior shared across text and XML exports.',
+  'Project Files': 'Save/open full project workspaces as versioned JSON project files.',
+  'Adjusted Points Export':
+    'Configure adjusted-point output presets, delimiter, and dynamic column selection/order.',
 };
 
 const PROJECT_OPTION_TABS: Array<{ id: ProjectOptionsTab; label: string }> = [
@@ -718,7 +740,7 @@ const App: React.FC<AppProps> = ({
   const [result, setResult] = useState<AdjustmentResult | null>(null);
   const [runDiagnostics, setRunDiagnostics] = useState<RunDiagnostics | null>(null);
   const [runElapsedMs, setRunElapsedMs] = useState<number | null>(null);
-  const [exportFormat, setExportFormat] = useState<ExportFormat>('webnet');
+  const [exportFormat, setExportFormat] = useState<ProjectExportFormat>('webnet');
   const [lastRunInput, setLastRunInput] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<TabKey>('report');
   const [settings, setSettings] = useState<SettingsState>({
@@ -791,6 +813,11 @@ const App: React.FC<AppProps> = ({
     S9: createDefaultS9Instrument(),
     ...parseInstrumentLibraryFromInput(DEFAULT_INPUT),
   }));
+  const [adjustedPointsExportSettings, setAdjustedPointsExportSettings] =
+    useState<AdjustedPointsExportSettings>({
+      ...DEFAULT_ADJUSTED_POINTS_EXPORT_SETTINGS,
+      includeLostStations: true,
+    });
   const [levelLoopCustomPresets, setLevelLoopCustomPresets] = useState<
     CustomLevelLoopTolerancePreset[]
   >([]);
@@ -805,6 +832,8 @@ const App: React.FC<AppProps> = ({
     useState<InstrumentLibrary>(projectInstruments);
   const [levelLoopCustomPresetsDraft, setLevelLoopCustomPresetsDraft] =
     useState<CustomLevelLoopTolerancePreset[]>(levelLoopCustomPresets);
+  const [adjustedPointsExportSettingsDraft, setAdjustedPointsExportSettingsDraft] =
+    useState<AdjustedPointsExportSettings>(adjustedPointsExportSettings);
   const [selectedInstrumentDraft, setSelectedInstrumentDraft] = useState(selectedInstrument);
   const [excludedIds, setExcludedIds] = useState<Set<number>>(new Set());
   const [overrides, setOverrides] = useState<Record<number, ObservationOverride>>({});
@@ -815,7 +844,9 @@ const App: React.FC<AppProps> = ({
     ClusterApprovedMerge[]
   >([]);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const projectFileInputRef = useRef<HTMLInputElement | null>(null);
   const filePickerModeRef = useRef<FilePickerMode>('replace');
+  const adjustedPointsDragRef = useRef<AdjustedPointsColumnId | null>(null);
   const layoutRef = useRef<HTMLDivElement | null>(null);
   const settingsModalContentRef = useRef<HTMLDivElement | null>(null);
   const isResizingRef = useRef(false);
@@ -3663,6 +3694,179 @@ const App: React.FC<AppProps> = ({
     URL.revokeObjectURL(url);
   };
 
+  const clearRunStateAfterWorkspaceLoad = () => {
+    setResult(null);
+    setRunDiagnostics(null);
+    setRunElapsedMs(null);
+    setLastRunInput(null);
+    setExcludedIds(new Set());
+    setOverrides({});
+    setClusterReviewDecisions({});
+    setActiveClusterApprovedMerges([]);
+    setImportReviewState(null);
+  };
+
+  const handleExportAdjustedPoints = async () => {
+    if (!result) return;
+    const text = buildAdjustedPointsExportText({
+      result,
+      units: settings.units,
+      settings: adjustedPointsExportSettings,
+    });
+    const extension = adjustedPointsExportSettings.format === 'csv' ? 'csv' : 'txt';
+    const suggestedName = `webnet-adjusted-points-${new Date().toISOString().slice(0, 10)}.${extension}`;
+    const picker = (window as any).showSaveFilePicker;
+    if (picker) {
+      try {
+        const handle = await picker({
+          suggestedName,
+          types: [
+            {
+              description:
+                adjustedPointsExportSettings.format === 'csv'
+                  ? 'CSV Files'
+                  : 'Text Files',
+              accept:
+                adjustedPointsExportSettings.format === 'csv'
+                  ? { 'text/csv': ['.csv'] }
+                  : { 'text/plain': ['.txt'] },
+            },
+          ],
+        });
+        const writable = await handle.createWritable();
+        await writable.write(text);
+        await writable.close();
+        return;
+      } catch (err) {
+        if ((err as Error)?.name === 'AbortError') return;
+      }
+    }
+    const blob = new Blob([text], {
+      type: adjustedPointsExportSettings.format === 'csv' ? 'text/csv' : 'text/plain',
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = suggestedName;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleSaveProject = async () => {
+    const projectText = serializeProjectFile({
+      input,
+      ui: {
+        settings: settings as unknown as Record<string, unknown>,
+        parseSettings: parseSettings as unknown as Record<string, unknown>,
+        exportFormat,
+        adjustedPointsExport: adjustedPointsExportSettings,
+      },
+      project: {
+        projectInstruments,
+        selectedInstrument,
+        levelLoopCustomPresets,
+      },
+    });
+    const suggestedName = `webnet-project-${new Date().toISOString().slice(0, 10)}.wnproj.json`;
+    const picker = (window as any).showSaveFilePicker;
+    if (picker) {
+      try {
+        const handle = await picker({
+          suggestedName,
+          types: [
+            {
+              description: 'WebNet Project',
+              accept: { 'application/json': ['.wnproj', '.wnproj.json', '.json'] },
+            },
+          ],
+        });
+        const writable = await handle.createWritable();
+        await writable.write(projectText);
+        await writable.close();
+        setImportNotice({
+          title: 'Project saved',
+          detailLines: ['Project file written successfully.'],
+        });
+        return;
+      } catch (err) {
+        if ((err as Error)?.name === 'AbortError') return;
+      }
+    }
+    const blob = new Blob([projectText], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = suggestedName;
+    a.click();
+    URL.revokeObjectURL(url);
+    setImportNotice({
+      title: 'Project saved',
+      detailLines: [`Downloaded ${suggestedName}.`],
+    });
+  };
+
+  const handleProjectFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const rawText = typeof reader.result === 'string' ? reader.result : '';
+      const parsed = parseProjectFile(rawText, {
+        settings: settings as unknown as Record<string, unknown>,
+        parseSettings: parseSettings as unknown as Record<string, unknown>,
+        exportFormat,
+        adjustedPointsExport: adjustedPointsExportSettings,
+        projectInstruments,
+        selectedInstrument,
+        levelLoopCustomPresets,
+      });
+      if (!parsed.ok) {
+        setImportNotice({
+          title: 'Project load failed',
+          detailLines: parsed.errors,
+        });
+        return;
+      }
+
+      const loadedSettings = parsed.project.ui.settings as unknown as SettingsState;
+      const loadedParseSettings = parsed.project.ui.parseSettings as unknown as ParseSettings;
+      const loadedAdjustedPointsSettings = sanitizeAdjustedPointsExportSettings(
+        parsed.project.ui.adjustedPointsExport,
+        {
+          ...DEFAULT_ADJUSTED_POINTS_EXPORT_SETTINGS,
+          includeLostStations: loadedSettings.listingShowLostStations,
+        },
+      );
+      setInput(parsed.project.input);
+      setSettings(loadedSettings);
+      setParseSettings(loadedParseSettings);
+      setExportFormat(parsed.project.ui.exportFormat);
+      setAdjustedPointsExportSettings(loadedAdjustedPointsSettings);
+      setProjectInstruments(cloneInstrumentLibrary(parsed.project.project.projectInstruments));
+      setSelectedInstrument(parsed.project.project.selectedInstrument);
+      setLevelLoopCustomPresets(
+        parsed.project.project.levelLoopCustomPresets.map((preset) => ({ ...preset })),
+      );
+
+      setSettingsDraft(loadedSettings);
+      setParseSettingsDraft(loadedParseSettings);
+      setProjectInstrumentsDraft(cloneInstrumentLibrary(parsed.project.project.projectInstruments));
+      setSelectedInstrumentDraft(parsed.project.project.selectedInstrument);
+      setLevelLoopCustomPresetsDraft(
+        parsed.project.project.levelLoopCustomPresets.map((preset) => ({ ...preset })),
+      );
+      setAdjustedPointsExportSettingsDraft(loadedAdjustedPointsSettings);
+
+      clearRunStateAfterWorkspaceLoad();
+      setImportNotice({
+        title: 'Project loaded',
+        detailLines: [`Loaded ${file.name}.`, 'Run Adjust to regenerate reports and outputs.'],
+      });
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  };
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -3736,6 +3940,10 @@ const App: React.FC<AppProps> = ({
   const triggerFileSelect = (mode: FilePickerMode = 'replace') => {
     filePickerModeRef.current = mode;
     fileInputRef.current?.click();
+  };
+
+  const triggerProjectFileSelect = () => {
+    projectFileInputRef.current?.click();
   };
 
   const handleInputChange = (value: string) => {
@@ -4622,6 +4830,7 @@ const App: React.FC<AppProps> = ({
     setParseSettingsDraft(parseSettings);
     setProjectInstrumentsDraft(cloneInstrumentLibrary(projectInstruments));
     setLevelLoopCustomPresetsDraft(levelLoopCustomPresets.map((preset) => ({ ...preset })));
+    setAdjustedPointsExportSettingsDraft({ ...adjustedPointsExportSettings });
     setSelectedInstrumentDraft(selectedInstrument);
     setActiveOptionsTab('adjustment');
     setIsSettingsModalOpen(true);
@@ -4632,6 +4841,12 @@ const App: React.FC<AppProps> = ({
     setParseSettings(parseSettingsDraft);
     setProjectInstruments(cloneInstrumentLibrary(projectInstrumentsDraft));
     setLevelLoopCustomPresets(levelLoopCustomPresetsDraft.map((preset) => ({ ...preset })));
+    setAdjustedPointsExportSettings(
+      sanitizeAdjustedPointsExportSettings(
+        adjustedPointsExportSettingsDraft,
+        DEFAULT_ADJUSTED_POINTS_EXPORT_SETTINGS,
+      ),
+    );
     setSelectedInstrument(selectedInstrumentDraft);
     setIsSettingsModalOpen(false);
   };
@@ -4650,6 +4865,92 @@ const App: React.FC<AppProps> = ({
     value: ParseSettings[K],
   ) => {
     setParseSettingsDraft((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const handleDraftAdjustedPointsSetting = <K extends keyof AdjustedPointsExportSettings>(
+    key: K,
+    value: AdjustedPointsExportSettings[K],
+  ) => {
+    setAdjustedPointsExportSettingsDraft((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const handleAdjustedPointsPresetChange = (presetId: AdjustedPointsPresetId) => {
+    if (presetId === 'custom') {
+      setAdjustedPointsExportSettingsDraft((prev) => ({ ...prev, presetId: 'custom' }));
+      return;
+    }
+    const columns = ADJUSTED_POINTS_PRESET_COLUMNS[presetId];
+    setAdjustedPointsExportSettingsDraft((prev) => ({
+      ...prev,
+      columns: [...columns],
+      presetId,
+    }));
+  };
+
+  const handleAdjustedPointsToggleColumn = (columnId: AdjustedPointsColumnId, enabled: boolean) => {
+    setAdjustedPointsExportSettingsDraft((prev) => {
+      const currentlyEnabled = prev.columns.includes(columnId);
+      if (enabled === currentlyEnabled) return prev;
+      if (enabled) {
+        if (prev.columns.length >= 6) return prev;
+        const nextColumns = [...prev.columns, columnId];
+        return {
+          ...prev,
+          columns: nextColumns,
+          presetId: inferAdjustedPointsPresetId(nextColumns),
+        };
+      }
+      if (prev.columns.length <= 1) return prev;
+      const nextColumns = prev.columns.filter((entry) => entry !== columnId);
+      return {
+        ...prev,
+        columns: nextColumns,
+        presetId: inferAdjustedPointsPresetId(nextColumns),
+      };
+    });
+  };
+
+  const handleAdjustedPointsMoveColumn = (
+    columnId: AdjustedPointsColumnId,
+    direction: 'left' | 'right',
+  ) => {
+    setAdjustedPointsExportSettingsDraft((prev) => {
+      const index = prev.columns.indexOf(columnId);
+      if (index < 0) return prev;
+      const targetIndex = direction === 'left' ? index - 1 : index + 1;
+      if (targetIndex < 0 || targetIndex >= prev.columns.length) return prev;
+      const nextColumns = [...prev.columns];
+      const [moved] = nextColumns.splice(index, 1);
+      nextColumns.splice(targetIndex, 0, moved);
+      return {
+        ...prev,
+        columns: nextColumns,
+        presetId: inferAdjustedPointsPresetId(nextColumns),
+      };
+    });
+  };
+
+  const handleAdjustedPointsDragStart = (columnId: AdjustedPointsColumnId) => {
+    adjustedPointsDragRef.current = columnId;
+  };
+
+  const handleAdjustedPointsDrop = (targetColumnId: AdjustedPointsColumnId) => {
+    const sourceColumn = adjustedPointsDragRef.current;
+    adjustedPointsDragRef.current = null;
+    if (!sourceColumn || sourceColumn === targetColumnId) return;
+    setAdjustedPointsExportSettingsDraft((prev) => {
+      const sourceIndex = prev.columns.indexOf(sourceColumn);
+      const targetIndex = prev.columns.indexOf(targetColumnId);
+      if (sourceIndex < 0 || targetIndex < 0) return prev;
+      const nextColumns = [...prev.columns];
+      const [moved] = nextColumns.splice(sourceIndex, 1);
+      nextColumns.splice(targetIndex, 0, moved);
+      return {
+        ...prev,
+        columns: nextColumns,
+        presetId: inferAdjustedPointsPresetId(nextColumns),
+      };
+    });
   };
 
   const handleLevelLoopPresetChange = (presetId: string) => {
@@ -4910,15 +5211,37 @@ const App: React.FC<AppProps> = ({
             className="hidden"
             onChange={handleFileChange}
           />
+          <input
+            ref={projectFileInputRef}
+            type="file"
+            accept={PROJECT_FILE_ACCEPT}
+            className="hidden"
+            onChange={handleProjectFileChange}
+          />
           <button
             onClick={triggerFileSelect}
+            title="Open data/import file"
             className="p-2 bg-slate-700 hover:bg-slate-600 rounded text-slate-300 transition-colors"
           >
             <FileText size={18} />
           </button>
+          <button
+            onClick={triggerProjectFileSelect}
+            title="Open project file"
+            className="p-2 bg-slate-700 hover:bg-slate-600 rounded text-slate-300 transition-colors"
+          >
+            <FolderOpen size={18} />
+          </button>
+          <button
+            onClick={handleSaveProject}
+            title="Save project file"
+            className="p-2 bg-slate-700 hover:bg-slate-600 rounded text-slate-300 transition-colors"
+          >
+            <Save size={18} />
+          </button>
           <select
             value={exportFormat}
-            onChange={(e) => setExportFormat(e.target.value as ExportFormat)}
+            onChange={(e) => setExportFormat(e.target.value as ProjectExportFormat)}
             title="Export format"
             className="h-9 bg-slate-700 border border-slate-600 text-slate-100 text-xs rounded px-2"
           >
@@ -4937,6 +5260,18 @@ const App: React.FC<AppProps> = ({
             }`}
           >
             <Download size={18} />
+          </button>
+          <button
+            onClick={handleExportAdjustedPoints}
+            disabled={!result}
+            title={result ? 'Export adjusted points' : 'Run adjustment to export adjusted points'}
+            className={`h-9 px-2 rounded text-[11px] uppercase tracking-wide transition-colors ${
+              result
+                ? 'bg-slate-700 hover:bg-slate-600 text-slate-200'
+                : 'bg-slate-800 opacity-50 cursor-not-allowed text-slate-400'
+            }`}
+          >
+            Pts
           </button>
           <button
             onClick={handleRun}
@@ -6141,7 +6476,7 @@ const App: React.FC<AppProps> = ({
                       <select
                         title={SETTINGS_TOOLTIPS.exportFormat}
                         value={exportFormat}
-                        onChange={(e) => setExportFormat(e.target.value as ExportFormat)}
+                        onChange={(e) => setExportFormat(e.target.value as ProjectExportFormat)}
                         className={optionInputClass}
                       >
                         <option value="webnet">WebNet</option>
@@ -6169,6 +6504,216 @@ const App: React.FC<AppProps> = ({
                             : 'LandXML 1.2'}
                       </div>
                     </SettingsRow>
+                  </SettingsCard>
+                  <SettingsCard
+                    title="Project Files"
+                    tooltip={PROJECT_OPTION_SECTION_TOOLTIPS['Project Files']}
+                  >
+                    <div className="space-y-2">
+                      <div className="text-xs text-slate-200 leading-relaxed">
+                        Save or reopen complete project workspaces (input text + settings +
+                        instruments + adjusted-points export preferences). Solved reports are not
+                        stored.
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          type="button"
+                          title={SETTINGS_TOOLTIPS.projectFiles}
+                          onClick={triggerProjectFileSelect}
+                          className="rounded border border-slate-400 bg-slate-700 px-3 py-1 text-xs text-slate-100 hover:bg-slate-600"
+                        >
+                          Open Project
+                        </button>
+                        <button
+                          type="button"
+                          title={SETTINGS_TOOLTIPS.projectFiles}
+                          onClick={handleSaveProject}
+                          className="rounded border border-slate-400 bg-slate-700 px-3 py-1 text-xs text-slate-100 hover:bg-slate-600"
+                        >
+                          Save Project
+                        </button>
+                      </div>
+                      <div className="rounded-md border border-slate-400/60 bg-slate-700/20 px-3 py-2 text-[11px] text-slate-200 leading-relaxed">
+                        Schema: <span className="font-semibold">webnet-project v1</span>
+                      </div>
+                    </div>
+                  </SettingsCard>
+                  <SettingsCard
+                    title="Adjusted Points Export"
+                    tooltip={PROJECT_OPTION_SECTION_TOOLTIPS['Adjusted Points Export']}
+                    className="xl:col-span-2"
+                  >
+                    <div className="grid grid-cols-1 xl:grid-cols-3 gap-3">
+                      <div className="space-y-3">
+                        <SettingsRow
+                          label="Adjusted Points Preset"
+                          tooltip={SETTINGS_TOOLTIPS.adjustedPointsPreset}
+                        >
+                          <select
+                            title={SETTINGS_TOOLTIPS.adjustedPointsPreset}
+                            value={adjustedPointsExportSettingsDraft.presetId}
+                            onChange={(e) =>
+                              handleAdjustedPointsPresetChange(
+                                e.target.value as AdjustedPointsPresetId,
+                              )
+                            }
+                            className={optionInputClass}
+                          >
+                            <option value="PNEZD">PNEZD</option>
+                            <option value="PENZD">PENZD</option>
+                            <option value="PNEZ">PNEZ</option>
+                            <option value="PENZ">PENZ</option>
+                            <option value="NEZ">NEZ</option>
+                            <option value="PEN">PEN</option>
+                            <option value="custom">Custom</option>
+                          </select>
+                        </SettingsRow>
+                        <SettingsRow
+                          label="Adjusted Points Format"
+                          tooltip={SETTINGS_TOOLTIPS.adjustedPointsFormat}
+                        >
+                          <select
+                            title={SETTINGS_TOOLTIPS.adjustedPointsFormat}
+                            value={adjustedPointsExportSettingsDraft.format}
+                            onChange={(e) =>
+                              handleDraftAdjustedPointsSetting(
+                                'format',
+                                e.target.value as AdjustedPointsExportSettings['format'],
+                              )
+                            }
+                            className={optionInputClass}
+                          >
+                            <option value="csv">CSV</option>
+                            <option value="text">Text</option>
+                          </select>
+                        </SettingsRow>
+                        <SettingsRow
+                          label="Adjusted Points Delimiter"
+                          tooltip={SETTINGS_TOOLTIPS.adjustedPointsDelimiter}
+                        >
+                          <select
+                            title={SETTINGS_TOOLTIPS.adjustedPointsDelimiter}
+                            value={adjustedPointsExportSettingsDraft.delimiter}
+                            onChange={(e) =>
+                              handleDraftAdjustedPointsSetting(
+                                'delimiter',
+                                e.target.value as AdjustedPointsExportSettings['delimiter'],
+                              )
+                            }
+                            className={optionInputClass}
+                          >
+                            <option value="comma">Comma</option>
+                            <option value="space">Space</option>
+                            <option value="tab">Tab</option>
+                          </select>
+                        </SettingsRow>
+                        <SettingsRow
+                          label="Include Lost Stations"
+                          tooltip={SETTINGS_TOOLTIPS.adjustedPointsIncludeLost}
+                          className="md:grid-cols-[minmax(0,1fr)_auto]"
+                        >
+                          <SettingsToggle
+                            title={SETTINGS_TOOLTIPS.adjustedPointsIncludeLost}
+                            checked={adjustedPointsExportSettingsDraft.includeLostStations}
+                            onChange={(checked) =>
+                              handleDraftAdjustedPointsSetting('includeLostStations', checked)
+                            }
+                          />
+                        </SettingsRow>
+                        <div className="rounded-md border border-slate-400/60 bg-slate-700/20 px-3 py-2 text-[11px] text-slate-200 leading-relaxed">
+                          Selected columns: {adjustedPointsExportSettingsDraft.columns.length}/6
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <div className="text-[11px] uppercase tracking-wide text-slate-300">
+                          Available Columns
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          {ADJUSTED_POINTS_ALL_COLUMNS.map((columnId) => {
+                            const checked = adjustedPointsExportSettingsDraft.columns.includes(
+                              columnId,
+                            );
+                            const disableEnable =
+                              !checked && adjustedPointsExportSettingsDraft.columns.length >= 6;
+                            const disableDisable =
+                              checked && adjustedPointsExportSettingsDraft.columns.length <= 1;
+                            return (
+                              <label
+                                key={`adj-col-${columnId}`}
+                                className={`flex items-center gap-2 rounded border px-2 py-1 text-xs ${
+                                  checked
+                                    ? 'border-blue-400/70 bg-blue-900/20 text-blue-100'
+                                    : 'border-slate-500 bg-slate-700/30 text-slate-200'
+                                }`}
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={checked}
+                                  disabled={checked ? disableDisable : disableEnable}
+                                  onChange={(e) =>
+                                    handleAdjustedPointsToggleColumn(columnId, e.target.checked)
+                                  }
+                                />
+                                <span>{columnId}</span>
+                              </label>
+                            );
+                          })}
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <div className="text-[11px] uppercase tracking-wide text-slate-300">
+                          Selected Order
+                        </div>
+                        <div className="space-y-1">
+                          {adjustedPointsExportSettingsDraft.columns.map((columnId, index) => (
+                            <div
+                              key={`adj-order-${columnId}`}
+                              className="flex items-center justify-between rounded border border-slate-500 bg-slate-700/30 px-2 py-1 text-xs text-slate-100"
+                              draggable
+                              onDragStart={() => handleAdjustedPointsDragStart(columnId)}
+                              onDragOver={(event) => event.preventDefault()}
+                              onDrop={() => handleAdjustedPointsDrop(columnId)}
+                            >
+                              <span className="font-semibold">
+                                {index + 1}. {columnId}
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <button
+                                  type="button"
+                                  title={`Move ${columnId} left`}
+                                  disabled={index === 0}
+                                  onClick={() => handleAdjustedPointsMoveColumn(columnId, 'left')}
+                                  className="rounded border border-slate-500 px-1 py-0.5 disabled:opacity-40"
+                                >
+                                  {'<'}
+                                </button>
+                                <button
+                                  type="button"
+                                  title={`Move ${columnId} right`}
+                                  disabled={index === adjustedPointsExportSettingsDraft.columns.length - 1}
+                                  onClick={() => handleAdjustedPointsMoveColumn(columnId, 'right')}
+                                  className="rounded border border-slate-500 px-1 py-0.5 disabled:opacity-40"
+                                >
+                                  {'>'}
+                                </button>
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={handleExportAdjustedPoints}
+                          disabled={!result}
+                          className={`w-full rounded border px-2 py-1 text-xs ${
+                            result
+                              ? 'border-blue-400 bg-blue-600/20 text-blue-100 hover:bg-blue-600/35'
+                              : 'border-slate-600 bg-slate-700/30 text-slate-400 cursor-not-allowed'
+                          }`}
+                        >
+                          Export Adjusted Points
+                        </button>
+                      </div>
+                    </div>
                   </SettingsCard>
                   <SettingsCard
                     title="Output Visibility"
