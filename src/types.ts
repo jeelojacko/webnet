@@ -529,6 +529,18 @@ export interface DescriptionScanSummary {
   sourceLines: number[];
 }
 
+export interface GpsTopoCoordinateShot {
+  pointId: StationId;
+  east: number;
+  north: number;
+  height?: number;
+  sigmaE?: number;
+  sigmaN?: number;
+  sigmaH?: number;
+  fromId?: StationId;
+  sourceLine: number;
+}
+
 export interface ParseOptions {
   units: UnitsMode;
   coordMode: CoordMode;
@@ -626,6 +638,7 @@ export interface ParseOptions {
   descriptionReconcileMode?: DescriptionReconcileMode;
   descriptionAppendDelimiter?: string;
   reconciledDescriptions?: Record<StationId, string>;
+  gpsTopoShots?: GpsTopoCoordinateShot[];
   plannedObservationCount?: number;
 }
 
@@ -923,9 +936,11 @@ export interface AdjustmentResult {
     from: StationId;
     to: StationId;
     mode: 'slope' | 'horiz' | 'gps';
+    sourceType?: 'SS' | 'G' | 'GS';
+    relationFrom?: StationId;
     hasAzimuth: boolean;
     azimuth?: number;
-    azimuthSource?: 'explicit' | 'setup' | 'target' | 'vector';
+    azimuthSource?: 'explicit' | 'setup' | 'target' | 'vector' | 'coordinate';
     sigmaAz?: number;
     distance: number;
     horizDistance: number;

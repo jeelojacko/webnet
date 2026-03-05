@@ -880,6 +880,58 @@ describe('parseInput', () => {
     expect((ssDist?.calc as { backsightId?: string })?.backsightId).toBe('BS');
   });
 
+  it('parses sideshot station-token shorthand SS at-from-to with setup-angle default and HI/HT', () => {
+    const parsed = parseInput(
+      [
+        'C OCC 0 0 0 !',
+        'C BS 0 100 0 !',
+        'TB OCC BS',
+        'SS OCC-BS-SH 090-00-00.0 10.0 90.0 1.7000/1.5720',
+      ].join('\n'),
+    );
+    const ssDist = parsed.observations.find((o) => o.type === 'dist' && o.setId === 'SS');
+    const ssZen = parsed.observations.find((o) => o.type === 'zenith' && o.from === 'OCC' && o.to === 'SH');
+    expect(ssDist?.type).toBe('dist');
+    if (ssDist?.type === 'dist') {
+      expect(ssDist.from).toBe('OCC');
+      expect(ssDist.to).toBe('SH');
+      expect((ssDist.calc as { hzObs?: number })?.hzObs).toBeDefined();
+      expect((ssDist.calc as { backsightId?: string })?.backsightId).toBe('BS');
+      expect(ssDist.hi).toBeCloseTo(1.7, 8);
+      expect(ssDist.ht).toBeCloseTo(1.572, 8);
+    }
+    expect(ssZen?.type).toBe('zenith');
+    if (ssZen?.type === 'zenith') {
+      expect(ssZen.hi).toBeCloseTo(1.7, 8);
+      expect(ssZen.ht).toBeCloseTo(1.572, 8);
+    }
+  });
+
+  it('parses sideshot station-token shorthand SS at-to with azimuth default', () => {
+    const parsed = parseInput(['C OCC 0 0 0 !', 'SS OCC-SH 090-00-00.0 10.0 90.0'].join('\n'));
+    const ssDist = parsed.observations.find((o) => o.type === 'dist' && o.setId === 'SS');
+    expect(ssDist?.type).toBe('dist');
+    if (ssDist?.type === 'dist') {
+      const calc = ssDist.calc as { azimuthObs?: number; hzObs?: number };
+      expect(calc.azimuthObs).toBeDefined();
+      expect(calc.hzObs).toBeUndefined();
+    }
+  });
+
+  it('parses GS coordinate shots honoring .ORDER coordinate and sigma mapping', () => {
+    const parsed = parseInput(
+      ['.ORDER NE', 'C OCC 0 0 0 ! !', 'GS RTK1 200.0 100.0 0.020 0.030 FROM=OCC'].join('\n'),
+    );
+    const shots = parsed.parseState.gpsTopoShots ?? [];
+    expect(shots).toHaveLength(1);
+    expect(shots[0].pointId).toBe('RTK1');
+    expect(shots[0].east).toBeCloseTo(100, 8);
+    expect(shots[0].north).toBeCloseTo(200, 8);
+    expect(shots[0].sigmaE).toBeCloseTo(0.03, 8);
+    expect(shots[0].sigmaN).toBeCloseTo(0.02, 8);
+    expect(shots[0].fromId).toBe('OCC');
+  });
+
   it('applies explicit .ALIAS mappings to station and observation IDs', () => {
     const parsed = parseInput(
       ['.2D', '.ALIAS P1=A1 Q1=B1', 'C A1 0 0 0 !', 'C B1 100 0 0 !', 'D P1-Q1 100 0.01'].join(

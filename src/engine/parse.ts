@@ -17,6 +17,7 @@ import type {
   StationMap,
   StationId,
   ParseOptions,
+  GpsTopoCoordinateShot,
   MapMode,
   AngleMode,
   GeoidHeightDatum,
@@ -54,6 +55,7 @@ const defaultParseOptions: ParseOptions = {
   geoidConvertedStationCount: 0,
   geoidSkippedStationCount: 0,
   gpsVectorMode: 'network',
+  gpsTopoShots: [],
   gpsAddHiHtEnabled: false,
   gpsAddHiHtHiM: 0,
   gpsAddHiHtHtM: 0,
@@ -365,6 +367,61 @@ const parseFromTo = (
   return { from, to, nextIndex: startIndex + 2 };
 };
 
+type SsStationTokens =
+  | {
+      mode: 'legacy';
+      at: string;
+      to: string;
+      explicitBacksight?: undefined;
+      angleTokenIndex: number;
+    }
+  | {
+      mode: 'at-to';
+      at: string;
+      to: string;
+      explicitBacksight?: undefined;
+      angleTokenIndex: number;
+    }
+  | {
+      mode: 'at-from-to';
+      at: string;
+      to: string;
+      explicitBacksight: string;
+      angleTokenIndex: number;
+    };
+
+const parseSsStationTokens = (parts: string[]): SsStationTokens | null => {
+  const first = parts[1] ?? '';
+  if (!first) return null;
+  if (first.includes('-')) {
+    const stations = first.split('-').map((token) => token.trim()).filter(Boolean);
+    if (stations.length === 2) {
+      return {
+        mode: 'at-to',
+        at: stations[0],
+        to: stations[1],
+        angleTokenIndex: 2,
+      };
+    }
+    if (stations.length === 3) {
+      return {
+        mode: 'at-from-to',
+        at: stations[0],
+        explicitBacksight: stations[1],
+        to: stations[2],
+        angleTokenIndex: 2,
+      };
+    }
+    return null;
+  }
+  return {
+    mode: 'legacy',
+    at: first,
+    to: parts[2] ?? '',
+    angleTokenIndex: 3,
+  };
+};
+
 const extractHiHt = (tokens: string[]): { hi?: number; ht?: number; rest: string[] } => {
   const idx = tokens.findIndex((t) => t.includes('/'));
   if (idx < 0) return { rest: tokens };
@@ -486,6 +543,7 @@ export const parseInput = (
   const directionRejectDiagnostics: DirectionRejectDiagnostic[] = [];
   const state: ParseOptions = { ...defaultParseOptions, ...opts };
   state.plannedObservationCount = 0;
+  state.gpsTopoShots = [];
   if (state.directionSetMode === 'raw') {
     logs.push('Direction set processing mode forced to raw (no target reduction).');
   }
@@ -3085,8 +3143,15 @@ export const parseInput = (
         logs.push('Direction set end');
       } else if (code === 'SS') {
         // Sideshot: dist + optional vertical
-        const from = parts[1];
-        const to = parts[2];
+        const stationTokens = parseSsStationTokens(parts);
+        if (!stationTokens) {
+          logs.push(`Invalid sideshot station token at line ${lineNum}, skipping`);
+          continue;
+        }
+        const from = stationTokens.at;
+        const to = stationTokens.to;
+        const explicitBacksight = stationTokens.mode === 'at-from-to' ? stationTokens.explicitBacksight : undefined;
+        const angleTokenIndex = stationTokens.angleTokenIndex;
         if (from === to || from === traverseCtx.backsight || to === traverseCtx.occupy) {
           logs.push(`Invalid sideshot occupy/backsight at line ${lineNum}, skipping`);
           continue;
@@ -3103,28 +3168,51 @@ export const parseInput = (
         }
         const instCode = state.currentInstrument ?? '';
         const inst = instCode ? instrumentLibrary[instCode] : undefined;
-        const firstTokenRaw = parts[3] || '';
+        const firstTokenRaw = parts[angleTokenIndex] || '';
         const isAzPrefix = /^AZ=/i.test(firstTokenRaw) || firstTokenRaw.startsWith('@');
         const isHzPrefix = /^(HZ|HA|ANG)=/i.test(firstTokenRaw);
+        const unprefixedAngleRad = parseAngleTokenRad(firstTokenRaw, state, 'dd');
+        const hasUnprefixedAngle = !isAzPrefix && !isHzPrefix && Number.isFinite(unprefixedAngleRad);
         const isDmsAngle = firstTokenRaw.includes('-');
         const isSetupAngleByPattern =
-          !isAzPrefix &&
-          !isHzPrefix &&
+          stationTokens.mode === 'legacy' &&
+          hasUnprefixedAngle &&
           isDmsAngle &&
-          Number.isFinite(parseFloat(parts[4] || '')) &&
-          !!traverseCtx.backsight;
-        const angleMode: 'none' | 'az' | 'hz' = isAzPrefix
-          ? 'az'
-          : isHzPrefix || isSetupAngleByPattern
-            ? 'hz'
-            : 'none';
+          Number.isFinite(parseFloat(parts[angleTokenIndex + 1] || '')) &&
+          (!!traverseCtx.backsight || !!explicitBacksight);
+        const angleMode: 'none' | 'az' | 'hz' =
+          isAzPrefix
+            ? 'az'
+            : isHzPrefix
+              ? 'hz'
+              : stationTokens.mode === 'at-from-to' && hasUnprefixedAngle
+                ? 'hz'
+                : stationTokens.mode === 'at-to' && hasUnprefixedAngle
+                  ? 'az'
+                  : isSetupAngleByPattern
+                    ? 'hz'
+                    : 'none';
         let azimuthObs: number | undefined;
         let azimuthStdDev: number | undefined;
         let hzObs: number | undefined;
         let hzStdDev: number | undefined;
-        let distIndex = 3;
-        let vertIndex = 4;
-        let sigmaIndex = 5;
+        let distIndex = angleTokenIndex;
+        let vertIndex = angleTokenIndex + 1;
+        let sigmaIndex = angleTokenIndex + 2;
+        const resolvedBacksight = explicitBacksight ?? traverseCtx.backsight;
+        if (angleMode === 'hz' && !resolvedBacksight) {
+          logs.push(`Sideshot setup-angle mode requires a backsight at line ${lineNum}, skipping`);
+          continue;
+        }
+        if (
+          explicitBacksight &&
+          traverseCtx.backsight &&
+          explicitBacksight !== traverseCtx.backsight
+        ) {
+          logs.push(
+            `Sideshot at line ${lineNum}: explicit backsight ${explicitBacksight} differs from active backsight ${traverseCtx.backsight}; explicit backsight used.`,
+          );
+        }
         if (angleMode !== 'none') {
           const cleanAngle = firstTokenRaw.replace(/^(AZ|HZ|HA|ANG)=/i, '').replace(/^@/, '');
           const angleRad = parseAngleTokenRad(cleanAngle, state, 'dd');
@@ -3137,9 +3225,9 @@ export const parseInput = (
           } else {
             hzObs = angleRad;
           }
-          distIndex = 4;
-          vertIndex = 5;
-          sigmaIndex = 6;
+          distIndex = angleTokenIndex + 1;
+          vertIndex = angleTokenIndex + 2;
+          sigmaIndex = angleTokenIndex + 3;
         }
         const dist = parseFloat(parts[distIndex] || '0');
         const vert = parts[vertIndex];
@@ -3147,7 +3235,7 @@ export const parseInput = (
           logs.push(`Invalid sideshot distance at line ${lineNum}, skipping`);
           continue;
         }
-        const { sigmas } = extractSigmaTokens(parts.slice(sigmaIndex), 3);
+        const { sigmas, rest } = extractSigmaTokens(parts.slice(sigmaIndex), 3);
         let sigmaAzToken: SigmaToken | undefined;
         let sigmaDistToken: SigmaToken | undefined;
         let sigmaVertToken: SigmaToken | undefined;
@@ -3183,6 +3271,7 @@ export const parseInput = (
           sigmaDistToken,
           defaultDistanceSigma(inst, dist, state.edmMode, 0),
         );
+        const { hi, ht } = extractHiHt(rest);
         const toMeters = state.units === 'ft' ? 1 / FT_PER_M : 1;
         pushObservation({
           id: obsId++,
@@ -3196,6 +3285,8 @@ export const parseInput = (
           stdDev: distResolved.sigma * toMeters,
           sigmaSource: distResolved.source,
           mode: state.deltaMode,
+          hi: hi != null ? hi * toMeters : undefined,
+          ht: ht != null ? ht * toMeters : undefined,
           // mark sideshots to allow downstream exclusion if desired
           calc: {
             sideshot: true,
@@ -3203,7 +3294,7 @@ export const parseInput = (
             azimuthStdDev,
             hzObs,
             hzStdDev,
-            backsightId: hzObs != null ? traverseCtx.backsight : undefined,
+            backsightId: hzObs != null ? resolvedBacksight : undefined,
             azimuthSource: azimuthObs != null ? 'explicit' : hzObs != null ? 'setup' : 'target',
           },
         });
@@ -3238,10 +3329,83 @@ export const parseInput = (
               obs: zenRad,
               stdDev: zenResolved.sigma * SEC_TO_RAD,
               sigmaSource: zenResolved.source,
+              hi: hi != null ? hi * toMeters : undefined,
+              ht: ht != null ? ht * toMeters : undefined,
               calc: { sideshot: true },
             });
           }
         }
+      } else if (code === 'GS') {
+        const pointId = parts[1];
+        if (!pointId) {
+          logs.push(`Invalid GS record at line ${lineNum}, missing point identifier.`);
+          continue;
+        }
+        const payload = parts.slice(2);
+        let fromId: string | undefined;
+        const numericTokens: string[] = [];
+        payload.forEach((token) => {
+          if (/^FROM=/i.test(token)) {
+            const candidate = token.split('=').slice(1).join('=').trim();
+            if (candidate) fromId = candidate;
+            return;
+          }
+          numericTokens.push(token);
+        });
+        if (numericTokens.length < 2) {
+          logs.push(`Invalid GS record at line ${lineNum}, expected at least E/N coordinates.`);
+          continue;
+        }
+        const c1 = parseFloat(numericTokens[0]);
+        const c2 = parseFloat(numericTokens[1]);
+        if (!Number.isFinite(c1) || !Number.isFinite(c2)) {
+          logs.push(`Invalid GS coordinate token(s) at line ${lineNum}, skipping.`);
+          continue;
+        }
+        const tail = numericTokens.slice(2).map((token) => parseFloat(token));
+        if (tail.some((value) => !Number.isFinite(value))) {
+          logs.push(`Invalid GS numeric payload at line ${lineNum}, skipping.`);
+          continue;
+        }
+        const toMeters = state.units === 'ft' ? 1 / FT_PER_M : 1;
+        const east = state.order === 'EN' ? c1 * toMeters : c2 * toMeters;
+        const north = state.order === 'EN' ? c2 * toMeters : c1 * toMeters;
+        let height: number | undefined;
+        let sigma1: number | undefined;
+        let sigma2: number | undefined;
+        let sigmaH: number | undefined;
+        if (tail.length === 1) {
+          height = tail[0] * toMeters;
+        } else if (tail.length === 2) {
+          sigma1 = tail[0] * toMeters;
+          sigma2 = tail[1] * toMeters;
+        } else if (tail.length === 3) {
+          height = tail[0] * toMeters;
+          sigma1 = tail[1] * toMeters;
+          sigma2 = tail[2] * toMeters;
+        } else if (tail.length >= 4) {
+          height = tail[0] * toMeters;
+          sigma1 = tail[1] * toMeters;
+          sigma2 = tail[2] * toMeters;
+          sigmaH = tail[3] * toMeters;
+          if (tail.length > 4) {
+            logs.push(`Warning: extra GS tokens ignored at line ${lineNum} (expected up to sigmaH).`);
+          }
+        }
+        const sigmaE = state.order === 'EN' ? sigma1 : sigma2;
+        const sigmaN = state.order === 'EN' ? sigma2 : sigma1;
+        const shot: GpsTopoCoordinateShot = {
+          pointId,
+          east,
+          north,
+          height,
+          sigmaE,
+          sigmaN,
+          sigmaH,
+          fromId,
+          sourceLine: lineNum,
+        };
+        state.gpsTopoShots?.push(shot);
       } else if (code === 'G') {
         const instCode = parts[1];
         const from = parts[2];
@@ -3522,6 +3686,30 @@ export const parseInput = (
       }
     };
     observations.forEach(remapObservation);
+    state.gpsTopoShots?.forEach((shot) => {
+      const target = resolveAlias(shot.pointId);
+      addAliasTrace(
+        shot.pointId,
+        target.canonicalId,
+        'observation',
+        shot.sourceLine,
+        'GS.point',
+        target.reference,
+      );
+      shot.pointId = target.canonicalId;
+      if (shot.fromId) {
+        const from = resolveAlias(shot.fromId);
+        addAliasTrace(
+          shot.fromId,
+          from.canonicalId,
+          'observation',
+          shot.sourceLine,
+          'GS.from',
+          from.reference,
+        );
+        shot.fromId = from.canonicalId;
+      }
+    });
     directionRejectDiagnostics.forEach((diag) => {
       const occupy = resolveAlias(diag.occupy);
       addAliasTrace(

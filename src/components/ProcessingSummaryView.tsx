@@ -325,19 +325,29 @@ const ProcessingSummaryView: React.FC<ProcessingSummaryViewProps> = ({
     }
     const tsSideshots = (result.sideshots ?? []).filter((s) => s.mode !== 'gps');
     const gpsSideshots = (result.sideshots ?? []).filter((s) => s.mode === 'gps');
+    const gpsVectorSideshots = gpsSideshots.filter((s) => s.sourceType !== 'GS');
+    const gpsCoordinateSideshots = gpsSideshots.filter((s) => s.sourceType === 'GS');
     if (tsSideshots.length > 0 || gpsSideshots.length > 0) {
       lines.push(
-        `Post-Adjust Sideshots: TS=${tsSideshots.length}, GPS vectors=${gpsSideshots.length}`,
+        `Post-Adjust Sideshots: TS=${tsSideshots.length}, GPS vectors=${gpsVectorSideshots.length}, GS coordinates=${gpsCoordinateSideshots.length}`,
       );
-      gpsSideshots.slice(0, 15).forEach((row) => {
+      gpsVectorSideshots.slice(0, 15).forEach((row) => {
         lines.push(
           `  GPS sideshot line=${row.sourceLine ?? '-'} ${row.from}->${row.to} HD=${(
             row.horizDistance * unitScale
           ).toFixed(4)}${linearUnit} az=${row.azimuth != null ? `${((row.azimuth * 180) / Math.PI).toFixed(6)}deg` : '-'}${row.note ? ` note=${row.note}` : ''}`,
         );
       });
-      if (gpsSideshots.length > 15) {
-        lines.push(`  ... ${gpsSideshots.length - 15} more GPS sideshot vectors`);
+      if (gpsVectorSideshots.length > 15) {
+        lines.push(`  ... ${gpsVectorSideshots.length - 15} more GPS sideshot vectors`);
+      }
+      gpsCoordinateSideshots.slice(0, 15).forEach((row) => {
+        lines.push(
+          `  GS line=${row.sourceLine ?? '-'} ${row.to} N=${((row.northing ?? 0) * unitScale).toFixed(4)}${linearUnit} E=${((row.easting ?? 0) * unitScale).toFixed(4)}${linearUnit} relation=${row.relationFrom ? `FROM=${row.relationFrom}` : 'standalone'}${row.note ? ` note=${row.note}` : ''}`,
+        );
+      });
+      if (gpsCoordinateSideshots.length > 15) {
+        lines.push(`  ... ${gpsCoordinateSideshots.length - 15} more GS coordinate rows`);
       }
     }
     const aliasTrace = result.parseState?.aliasTrace ?? [];

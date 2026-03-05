@@ -152,6 +152,7 @@ export const buildLandXmlText = (
   (res.sideshots ?? [])
     .filter((row) => (showLostStations ? true : !res.stations[row.to]?.lost))
     .forEach((row) => {
+      const relationFrom = row.relationFrom ?? row.from;
       if (!pointMap.has(row.to) && row.northing != null && row.easting != null) {
         pointMap.set(row.to, {
           id: row.to,
@@ -167,11 +168,13 @@ export const buildLandXmlText = (
           azimuthSource: row.azimuthSource,
         });
       }
-      if (!pointMap.has(row.from)) return;
+      if (row.sourceType === 'GS' && !row.relationFrom) return;
+      if (!relationFrom || relationFrom === row.to) return;
+      if (!pointMap.has(relationFrom)) return;
       if (!pointMap.has(row.to)) return;
-      const key = buildConnectionKey(row.from, row.to, 'sideshot');
+      const key = buildConnectionKey(relationFrom, row.to, 'sideshot');
       const existing = connectionMap.get(key) ?? {
-        from: row.from,
+        from: relationFrom,
         to: row.to,
         kind: 'sideshot' as const,
         observationTypes: new Set<string>(),

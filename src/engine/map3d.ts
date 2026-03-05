@@ -7,6 +7,7 @@ export interface Map3DStationNode {
   position: Vec3;
   fixed: boolean;
   lost: boolean;
+  source?: 'station' | 'sideshot';
   ellipsoid?: {
     semiMajor: number;
     semiMinor: number;
@@ -54,13 +55,14 @@ export const buildMap3DScene = (
   result: AdjustmentResult,
   showLostStations = true,
 ): Map3DScene => {
-  const stations = Object.entries(result.stations)
+  const stations: Map3DStationNode[] = Object.entries(result.stations)
     .filter(([, st]) => showLostStations || !st.lost)
     .map(([id, st]) => ({
       id,
       position: { x: st.x, y: st.y, z: st.h },
       fixed: st.fixed,
       lost: st.lost ?? false,
+      source: 'station' as const,
       ellipsoid:
         st.errorEllipse || st.sH != null
           ? {
@@ -72,11 +74,33 @@ export const buildMap3DScene = (
           : undefined,
     }));
 
+  const stationIdSet = new Set(stations.map((s) => s.id));
+  (result.sideshots ?? []).forEach((row) => {
+    if (row.easting == null || row.northing == null) return;
+    if (stationIdSet.has(row.to)) return;
+    stationIdSet.add(row.to);
+    stations.push({
+      id: row.to,
+      position: { x: row.easting, y: row.northing, z: row.height ?? 0 },
+      fixed: false,
+      lost: false,
+      source: 'sideshot',
+      ellipsoid:
+        row.sigmaE != null || row.sigmaN != null || row.sigmaH != null
+          ? {
+              semiMajor: Math.max(row.sigmaE ?? 0, row.sigmaN ?? 0),
+              semiMinor: Math.min(row.sigmaE ?? 0, row.sigmaN ?? 0),
+              semiVertical: row.sigmaH ?? 0,
+              thetaDeg: 0,
+            }
+          : undefined,
+    });
+  });
+
   if (stations.length === 0) {
     return { stations: [], edges: [], extents: ZERO_EXTENTS };
   }
 
-  const stationIdSet = new Set(stations.map((s) => s.id));
   const edgeSeen = new Set<string>();
   const edges: Map3DEdge[] = [];
   result.observations.forEach((obs) => {
@@ -90,6 +114,18 @@ export const buildMap3DScene = (
     if (edgeSeen.has(key)) return;
     edgeSeen.add(key);
     edges.push({ from: obs.from, to: obs.to });
+  });
+  (result.sideshots ?? []).forEach((row) => {
+    const from = row.relationFrom ?? row.from;
+    if (!from || from === row.to) return;
+    if (!stationIdSet.has(from) || !stationIdSet.has(row.to)) return;
+    const key =
+      from.localeCompare(row.to, undefined, { numeric: true }) <= 0
+        ? `${from}|${row.to}`
+        : `${row.to}|${from}`;
+    if (edgeSeen.has(key)) return;
+    edgeSeen.add(key);
+    edges.push({ from, to: row.to });
   });
 
   const xs = stations.map((s) => s.position.x);

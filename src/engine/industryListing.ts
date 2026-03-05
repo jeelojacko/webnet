@@ -193,6 +193,12 @@ export const buildIndustryStyleListingText = (
   );
   const tsSideshotsForListing = sideshotsForListing.filter((row) => row.mode !== 'gps');
   const gpsSideshotsForListing = sideshotsForListing.filter((row) => row.mode === 'gps');
+  const gpsVectorSideshotsForListing = gpsSideshotsForListing.filter(
+    (row) => row.sourceType !== 'GS',
+  );
+  const gpsCoordinateSideshotsForListing = gpsSideshotsForListing.filter(
+    (row) => row.sourceType === 'GS',
+  );
   const gpsOffsetObservations = observationsForListing.filter(
     (obs): obs is GpsObservation => obs.type === 'gps' && obs.gpsOffsetDistanceM != null,
   );
@@ -882,7 +888,11 @@ export const buildIndustryStyleListingText = (
     );
   };
   renderSideshotListingSection('Post-Adjusted Sideshots (TS)', tsSideshotsForListing);
-  renderSideshotListingSection('Post-Adjusted GPS Sideshot Vectors', gpsSideshotsForListing);
+  renderSideshotListingSection('Post-Adjusted GPS Sideshot Vectors', gpsVectorSideshotsForListing);
+  renderSideshotListingSection(
+    'Post-Adjusted GNSS Topo Coordinates (GS)',
+    gpsCoordinateSideshotsForListing,
+  );
   if (gpsOffsetObservations.length > 0) {
     lines.push('');
     addCenteredHeading('GPS Rover Offset Observations');

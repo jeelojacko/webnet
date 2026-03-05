@@ -367,6 +367,45 @@ describe('LSAEngine', () => {
     expect(row?.sigmaN).toBeGreaterThan(0);
   });
 
+  it('keeps solve results unchanged when GS coordinate shots are present, and emits GS post-adjust rows', () => {
+    const baseInput = [
+      '.2D',
+      'C A 0 0 0 ! !',
+      'C B 100 0 0 ! !',
+      'C C 20 10 0',
+      'B A-C 063-26-06.0 5.0',
+      'D A-C 22.3606798 0.010',
+    ].join('\n');
+    const withGsInput = [
+      baseInput,
+      'GS RTK1 30.000 40.000 1.500 0.020 0.030 0.040 FROM=C',
+      'GS RTK2 32.000 42.000 0.030 0.040',
+    ].join('\n');
+
+    const base = new LSAEngine({ input: baseInput, maxIterations: 10 }).solve();
+    const withGs = new LSAEngine({ input: withGsInput, maxIterations: 10 }).solve();
+
+    expect(withGs.observations.length).toBe(base.observations.length);
+    expect(withGs.dof).toBe(base.dof);
+    expect(withGs.stations.C?.x ?? 0).toBeCloseTo(base.stations.C?.x ?? 0, 10);
+    expect(withGs.stations.C?.y ?? 0).toBeCloseTo(base.stations.C?.y ?? 0, 10);
+    expect(withGs.stations.C?.h ?? 0).toBeCloseTo(base.stations.C?.h ?? 0, 10);
+
+    const gsRows = (withGs.sideshots ?? []).filter((row) => row.sourceType === 'GS');
+    expect(gsRows).toHaveLength(2);
+
+    const related = gsRows.find((row) => row.to === 'RTK1');
+    expect(related).toBeDefined();
+    expect(related?.relationFrom).toBe('C');
+    expect(related?.hasAzimuth).toBe(true);
+    expect(related?.azimuthSource).toBe('coordinate');
+
+    const standalone = gsRows.find((row) => row.to === 'RTK2');
+    expect(standalone).toBeDefined();
+    expect(standalone?.relationFrom).toBeUndefined();
+    expect(standalone?.note?.includes('standalone coordinate shot')).toBe(true);
+  });
+
   it('applies GPS AddHiHt correction to GPS sideshot vectors only when enabled', () => {
     const baseInput = [
       '.GPS SIDESHOT',

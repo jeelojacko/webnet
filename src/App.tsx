@@ -1389,6 +1389,8 @@ const App: React.FC<AppProps> = ({
     );
     const outputTsSideshots = outputSideshots.filter((ss) => ss.mode !== 'gps');
     const outputGpsSideshots = outputSideshots.filter((ss) => ss.mode === 'gps');
+    const outputGpsVectorSideshots = outputGpsSideshots.filter((ss) => ss.sourceType !== 'GS');
+    const outputGpsCoordinateSideshots = outputGpsSideshots.filter((ss) => ss.sourceType === 'GS');
     const gpsLoopDiagnostics = res.gpsLoopDiagnostics;
     const isPreanalysis = res.preanalysisMode === true;
     lines.push(`# WebNet Adjustment Results`);
@@ -2957,6 +2959,13 @@ const App: React.FC<AppProps> = ({
         to: s.to,
         line: s.sourceLine != null ? String(s.sourceLine) : '-',
         mode: s.mode,
+        source: s.sourceType ?? '-',
+        relation:
+          s.sourceType === 'GS'
+            ? s.relationFrom
+              ? `FROM=${s.relationFrom}`
+              : 'standalone'
+            : '-',
         az: s.azimuth != null ? radToDmsStr(s.azimuth) : '-',
         azSrc: s.azimuthSource ?? '-',
         hd: (s.horizDistance * unitScale).toFixed(4),
@@ -2974,6 +2983,8 @@ const App: React.FC<AppProps> = ({
         to: 'To',
         line: 'Line',
         mode: 'Mode',
+        source: 'Source',
+        relation: 'Relation',
         az: 'Az',
         azSrc: 'AzSrc',
         hd: `HD(${linearUnit})`,
@@ -2991,6 +3002,8 @@ const App: React.FC<AppProps> = ({
         to: Math.max(header.to.length, ...rows.map((r) => r.to.length)),
         line: Math.max(header.line.length, ...rows.map((r) => r.line.length)),
         mode: Math.max(header.mode.length, ...rows.map((r) => r.mode.length)),
+        source: Math.max(header.source.length, ...rows.map((r) => r.source.length)),
+        relation: Math.max(header.relation.length, ...rows.map((r) => r.relation.length)),
         az: Math.max(header.az.length, ...rows.map((r) => r.az.length)),
         azSrc: Math.max(header.azSrc.length, ...rows.map((r) => r.azSrc.length)),
         hd: Math.max(header.hd.length, ...rows.map((r) => r.hd.length)),
@@ -3010,6 +3023,8 @@ const App: React.FC<AppProps> = ({
           pad(header.to, widths.to),
           pad(header.line, widths.line),
           pad(header.mode, widths.mode),
+          pad(header.source, widths.source),
+          pad(header.relation, widths.relation),
           pad(header.az, widths.az),
           pad(header.azSrc, widths.azSrc),
           pad(header.hd, widths.hd),
@@ -3030,6 +3045,8 @@ const App: React.FC<AppProps> = ({
             pad(r.to, widths.to),
             pad(r.line, widths.line),
             pad(r.mode, widths.mode),
+            pad(r.source, widths.source),
+            pad(r.relation, widths.relation),
             pad(r.az, widths.az),
             pad(r.azSrc, widths.azSrc),
             pad(r.hd, widths.hd),
@@ -3047,7 +3064,8 @@ const App: React.FC<AppProps> = ({
       lines.push('');
     };
     appendSideshotSection('Post-Adjusted Sideshots (TS)', outputTsSideshots);
-    appendSideshotSection('Post-Adjusted GPS Sideshot Vectors', outputGpsSideshots);
+    appendSideshotSection('Post-Adjusted GPS Sideshot Vectors', outputGpsVectorSideshots);
+    appendSideshotSection('Post-Adjusted GNSS Topo Coordinates (GS)', outputGpsCoordinateSideshots);
     const appendGpsLoopSection = (): void => {
       if (!gpsLoopDiagnostics?.enabled) return;
       lines.push('--- GPS Loop Diagnostics ---');

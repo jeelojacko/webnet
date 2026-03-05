@@ -212,4 +212,27 @@ describe('LandXML export', () => {
     expect(xml).toContain('<Property label="kind" value="sideshot" />');
     expect(xml).toContain('<Property label="observationTypes" value="sideshot-gps" />');
   });
+
+  it('exports standalone GS points without creating degenerate self-connections', () => {
+    const input = [
+      '.2D',
+      'C A 0 0 0 ! !',
+      'C C 20 10 0',
+      'B A-C 063-26-06.0 5.0',
+      'D A-C 22.3606798 0.010',
+      'GS RTK2 32.000 42.000 0.030 0.040',
+    ].join('\n');
+    const result = new LSAEngine({ input, maxIterations: 10 }).solve();
+    const xml = buildLandXmlText(result, {
+      units: 'm',
+      solveProfile: 'webnet',
+      generatedAt: new Date('2026-03-03T12:00:00Z'),
+    });
+    const parsed = parseLandXml(xml);
+
+    expect(parsed.points.has('RTK2')).toBe(true);
+    expect(
+      parsed.connections.some((connection) => connection.startRef === 'RTK2' && connection.endRef === 'RTK2'),
+    ).toBe(false);
+  });
 });

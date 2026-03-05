@@ -2498,6 +2498,7 @@ export class LSAEngine {
         from,
         to,
         mode,
+        sourceType: 'SS',
         hasAzimuth,
         azimuth,
         azimuthSource: hasExplicitAz
@@ -2559,6 +2560,7 @@ export class LSAEngine {
         from,
         to,
         mode: 'gps',
+        sourceType: 'G',
         hasAzimuth,
         azimuth,
         azimuthSource: hasAzimuth ? 'vector' : undefined,
@@ -2568,6 +2570,84 @@ export class LSAEngine {
         northing,
         sigmaE,
         sigmaN,
+        note: notes.length ? notes.join('; ') : undefined,
+      });
+    });
+
+    (this.parseState?.gpsTopoShots ?? []).forEach((shot, idx) => {
+      const sourceLine = shot.sourceLine;
+      const relationFrom = shot.fromId?.trim() ? shot.fromId : undefined;
+      const from = relationFrom ?? shot.pointId;
+      const to = shot.pointId;
+      const fromSt = relationFrom ? this.stations[relationFrom] : undefined;
+      const baseSigmaE = shot.sigmaE;
+      const baseSigmaN = shot.sigmaN;
+      const baseSigmaH = shot.sigmaH;
+      let hasAzimuth = false;
+      let azimuth: number | undefined;
+      let horizDistance = 0;
+      let distance = 0;
+      let deltaH: number | undefined;
+      const notes: string[] = [];
+      if (fromSt) {
+        const dE = shot.east - fromSt.x;
+        const dN = shot.north - fromSt.y;
+        horizDistance = Math.hypot(dE, dN);
+        distance = horizDistance;
+        if (horizDistance > 1e-12) {
+          let az = Math.atan2(dE, dN);
+          if (az < 0) az += 2 * Math.PI;
+          azimuth = this.modeledAzimuth(az);
+          hasAzimuth = true;
+        }
+        if (shot.height != null) deltaH = shot.height - fromSt.h;
+      } else if (relationFrom) {
+        notes.push(`FROM=${relationFrom} not solved; relation unavailable`);
+      } else {
+        notes.push('standalone coordinate shot');
+      }
+
+      const sigmaE =
+        baseSigmaE != null
+          ? Math.sqrt((fromSt?.sE ?? 0) ** 2 + baseSigmaE ** 2)
+          : fromSt
+            ? fromSt.sE
+            : undefined;
+      const sigmaN =
+        baseSigmaN != null
+          ? Math.sqrt((fromSt?.sN ?? 0) ** 2 + baseSigmaN ** 2)
+          : fromSt
+            ? fromSt.sN
+            : undefined;
+      const sigmaH =
+        shot.height != null
+          ? baseSigmaH != null
+            ? Math.sqrt((fromSt?.sH ?? 0) ** 2 + baseSigmaH ** 2)
+            : fromSt
+              ? fromSt.sH
+              : undefined
+          : undefined;
+
+      rows.push({
+        id: `${from}->${to}@${sourceLine ?? rows.length + idx + 1}:GS`,
+        sourceLine,
+        from,
+        to,
+        mode: 'gps',
+        sourceType: 'GS',
+        relationFrom,
+        hasAzimuth,
+        azimuth,
+        azimuthSource: hasAzimuth ? 'coordinate' : undefined,
+        distance,
+        horizDistance,
+        deltaH,
+        easting: shot.east,
+        northing: shot.north,
+        height: shot.height,
+        sigmaE,
+        sigmaN,
+        sigmaH,
         note: notes.length ? notes.join('; ') : undefined,
       });
     });

@@ -388,6 +388,14 @@ const ReportView: React.FC<ReportViewProps> = ({
     () => (result.sideshots ?? []).filter((s) => s.mode === 'gps'),
     [result.sideshots],
   );
+  const gpsVectorSideshots = useMemo(
+    () => gpsSideshots.filter((s) => s.sourceType !== 'GS'),
+    [gpsSideshots],
+  );
+  const gpsCoordinateSideshots = useMemo(
+    () => gpsSideshots.filter((s) => s.sourceType === 'GS'),
+    [gpsSideshots],
+  );
   const gpsOffsetObservations = useMemo(
     () =>
       result.observations.filter(
@@ -537,6 +545,8 @@ const ReportView: React.FC<ReportViewProps> = ({
                 <th className="py-2 px-3 font-semibold">To</th>
                 <th className="py-2 px-3 font-semibold text-right">Line</th>
                 <th className="py-2 px-3 font-semibold text-right">Mode</th>
+                <th className="py-2 px-3 font-semibold text-right">Source</th>
+                <th className="py-2 px-3 font-semibold text-right">Relation</th>
                 <th className="py-2 px-3 font-semibold text-right">Az</th>
                 <th className="py-2 px-3 font-semibold text-right">Az Src</th>
                 <th className="py-2 px-3 font-semibold text-right">HD ({units})</th>
@@ -557,6 +567,14 @@ const ReportView: React.FC<ReportViewProps> = ({
                   <td className="py-1 px-3">{s.to}</td>
                   <td className="py-1 px-3 text-right">{s.sourceLine ?? '-'}</td>
                   <td className="py-1 px-3 text-right">{s.mode}</td>
+                  <td className="py-1 px-3 text-right">{s.sourceType ?? '-'}</td>
+                  <td className="py-1 px-3 text-right">
+                    {s.sourceType === 'GS'
+                      ? s.relationFrom
+                        ? `FROM=${s.relationFrom}`
+                        : 'standalone'
+                      : '-'}
+                  </td>
                   <td className="py-1 px-3 text-right">
                     {s.azimuth != null ? radToDmsStr(s.azimuth) : '-'}
                   </td>
@@ -655,6 +673,8 @@ const ReportView: React.FC<ReportViewProps> = ({
       FROM: 'Start station for the row.',
       TO: 'End station for the row.',
       MODE: 'Observation reduction/interpretation mode used for this row.',
+      SOURCE: 'Original data family for post-adjust rows (for example SS, G vector, or GS coordinate shot).',
+      RELATION: 'How this row is tied to the network (for example FROM=<station> or standalone coordinate).',
       AZ: 'Azimuth/bearing direction value.',
       STN: 'Station identifier.',
       NORTHING: 'Adjusted northing coordinate.',
@@ -3890,7 +3910,8 @@ const ReportView: React.FC<ReportViewProps> = ({
       {(tsSideshots.length > 0 || gpsSideshots.length > 0) && (
         <>
           {renderSideshotSection('Post-Adjusted Sideshots (TS)', tsSideshots)}
-          {renderSideshotSection('Post-Adjusted GPS Sideshot Vectors', gpsSideshots)}
+          {renderSideshotSection('Post-Adjusted GPS Sideshot Vectors', gpsVectorSideshots)}
+          {renderSideshotSection('Post-Adjusted GNSS Topo Coordinates (GS)', gpsCoordinateSideshots)}
         </>
       )}
 
