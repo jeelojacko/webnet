@@ -76,10 +76,29 @@ const findSelectForSettingsRow = (container: HTMLElement, rowLabel: string): HTM
   return select;
 };
 
+const findInputForSettingsRow = (container: HTMLElement, rowLabel: string): HTMLInputElement => {
+  const row = Array.from(container.querySelectorAll('label')).find((entry) =>
+    entry.textContent?.includes(rowLabel),
+  );
+  if (!row) throw new Error(`Settings row "${rowLabel}" not found.`);
+  const input = row.querySelector('input');
+  if (!input) throw new Error(`No input control found in "${rowLabel}".`);
+  return input as HTMLInputElement;
+};
+
 const setSelectValue = async (select: HTMLSelectElement, value: string): Promise<void> => {
   await act(async () => {
     select.value = value;
     select.dispatchEvent(new Event('change', { bubbles: true }));
+  });
+};
+
+const setInputValue = async (input: HTMLInputElement, value: string): Promise<void> => {
+  await act(async () => {
+    const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set;
+    setter?.call(input, value);
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    input.dispatchEvent(new Event('change', { bubbles: true }));
   });
 };
 
@@ -144,6 +163,42 @@ describe('Project Options modal interactions', () => {
     }
   });
 
+  it('persists convergence-limit draft edits after Apply', async () => {
+    const app = await mountApp('adjustment');
+    try {
+      const firstLimit = findInputForSettingsRow(app.container, 'Convergence Limit');
+      expect(firstLimit.value).toBe('0.01');
+      await setInputValue(firstLimit, '0.1');
+
+      await clickButtonByExactText(app.container, 'Apply');
+      await clickOpenProjectOptions(app.container);
+      await clickButtonByExactText(app.container, 'Adjustment');
+
+      const reopenedLimit = findInputForSettingsRow(app.container, 'Convergence Limit');
+      expect(reopenedLimit.value).toBe('0.1');
+    } finally {
+      await app.cleanup();
+    }
+  });
+
+  it('discards unsaved convergence-limit edits when Cancel is clicked', async () => {
+    const app = await mountApp('adjustment');
+    try {
+      const firstLimit = findInputForSettingsRow(app.container, 'Convergence Limit');
+      expect(firstLimit.value).toBe('0.01');
+      await setInputValue(firstLimit, '0.2');
+
+      await clickButtonByExactText(app.container, 'Cancel');
+      await clickOpenProjectOptions(app.container);
+      await clickButtonByExactText(app.container, 'Adjustment');
+
+      const reopenedLimit = findInputForSettingsRow(app.container, 'Convergence Limit');
+      expect(reopenedLimit.value).toBe('0.01');
+    } finally {
+      await app.cleanup();
+    }
+  });
+
   it('persists adjusted-points export preset and custom column ordering after Apply', async () => {
     const app = await mountApp('other-files');
     try {
@@ -182,6 +237,52 @@ describe('Project Options modal interactions', () => {
         'Adjusted Points Delimiter',
       );
       expect(reopenedDelimiter.value).toBe('comma');
+    } finally {
+      await app.cleanup();
+    }
+  });
+
+  it('persists coordinate-system settings after Apply in GPS tab', async () => {
+    const app = await mountApp('gps');
+    try {
+      const mode = findSelectForSettingsRow(app.container, 'Coord System Mode');
+      expect(mode.value).toBe('local');
+      await setSelectValue(mode, 'grid');
+
+      const crs = findSelectForSettingsRow(app.container, 'CRS (Grid Mode)');
+      await setSelectValue(crs, 'CA_NAD83_CSRS_UTM_19N');
+
+      const distanceMode = findSelectForSettingsRow(app.container, 'Distance Mode');
+      await setSelectValue(distanceMode, 'ellipsoidal');
+
+      await clickButtonByExactText(app.container, 'Apply');
+      await clickOpenProjectOptions(app.container);
+      await clickButtonByExactText(app.container, 'GPS');
+
+      const reopenedMode = findSelectForSettingsRow(app.container, 'Coord System Mode');
+      const reopenedCrs = findSelectForSettingsRow(app.container, 'CRS (Grid Mode)');
+      const reopenedDistanceMode = findSelectForSettingsRow(app.container, 'Distance Mode');
+      expect(reopenedMode.value).toBe('grid');
+      expect(reopenedCrs.value).toBe('CA_NAD83_CSRS_UTM_19N');
+      expect(reopenedDistanceMode.value).toBe('ellipsoidal');
+    } finally {
+      await app.cleanup();
+    }
+  });
+
+  it('discards unsaved coordinate-system edits when Cancel is clicked', async () => {
+    const app = await mountApp('gps');
+    try {
+      const avgGeoid = findInputForSettingsRow(app.container, 'Average Geoid Height');
+      expect(avgGeoid.value).toBe('0');
+      await setInputValue(avgGeoid, '31.25');
+
+      await clickButtonByExactText(app.container, 'Cancel');
+      await clickOpenProjectOptions(app.container);
+      await clickButtonByExactText(app.container, 'GPS');
+
+      const reopenedAvgGeoid = findInputForSettingsRow(app.container, 'Average Geoid Height');
+      expect(reopenedAvgGeoid.value).toBe('0');
     } finally {
       await app.cleanup();
     }

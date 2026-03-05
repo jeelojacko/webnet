@@ -93,6 +93,7 @@ describe('industry listing phase 5 formatting locks', () => {
     expect(listing).toContain('Station                 Semi-Major    Semi-Minor   Azimuth of');
     expect(listing).toContain('Stations                Semi-Major    Semi-Minor   Azimuth of');
     expect(listing).toContain('From       To               Axis          Axis     Major Axis');
+    expect(listing).toContain('Convergence Limit; Max Iterations   : 0.010000; 25');
 
     // Lock coordinate/std-dev spacing to prevent merged numeric columns.
     expect(listing).toMatch(/^\s*1\s+-\s+-?\d+\.\d{4}\s+-?\d+\.\d{4}\s*$/m);

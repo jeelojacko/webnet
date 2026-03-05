@@ -38,6 +38,16 @@ Options:
   --out <path>                  Write output payload to file instead of stdout
   --units <m|ft>
   --coord-mode <2D|3D>
+  --coord-system-mode <local|grid>
+  --crs-id <id>
+  --local-datum-scheme <average-scale|common-elevation>
+  --average-scale-factor <n>
+  --common-elevation <m>
+  --average-geoid-height <m>
+  --grid-bearing-mode <measured|grid>
+  --grid-distance-mode <measured|grid|ellipsoidal>
+  --grid-angle-mode <measured|grid>
+  --grid-direction-mode <measured|grid>
   --preanalysis <on|off>
   --autoadjust <on|off>
   --autoadjust-threshold <n>
@@ -169,6 +179,94 @@ const parseArgs = (argv: string[]): CliConfig => {
       i += 1;
       continue;
     }
+    if (arg === '--coord-system-mode') {
+      const value = nextValue(i, arg).toLowerCase();
+      if (value !== 'local' && value !== 'grid') {
+        throw new Error(`Invalid --coord-system-mode value "${argv[i + 1]}"`);
+      }
+      config.parseOptions.coordSystemMode = value;
+      i += 1;
+      continue;
+    }
+    if (arg === '--crs-id') {
+      const value = nextValue(i, arg).trim();
+      if (!value) throw new Error('Invalid --crs-id value');
+      config.parseOptions.crsId = value.toUpperCase();
+      i += 1;
+      continue;
+    }
+    if (arg === '--local-datum-scheme') {
+      const value = nextValue(i, arg).toLowerCase();
+      if (value !== 'average-scale' && value !== 'common-elevation') {
+        throw new Error(`Invalid --local-datum-scheme value "${argv[i + 1]}"`);
+      }
+      config.parseOptions.localDatumScheme = value;
+      i += 1;
+      continue;
+    }
+    if (arg === '--average-scale-factor') {
+      const value = Number.parseFloat(nextValue(i, arg));
+      if (!Number.isFinite(value) || value <= 0) {
+        throw new Error(`Invalid --average-scale-factor value "${argv[i + 1]}"`);
+      }
+      config.parseOptions.averageScaleFactor = value;
+      i += 1;
+      continue;
+    }
+    if (arg === '--common-elevation') {
+      const value = Number.parseFloat(nextValue(i, arg));
+      if (!Number.isFinite(value)) {
+        throw new Error(`Invalid --common-elevation value "${argv[i + 1]}"`);
+      }
+      config.parseOptions.commonElevation = value;
+      i += 1;
+      continue;
+    }
+    if (arg === '--average-geoid-height') {
+      const value = Number.parseFloat(nextValue(i, arg));
+      if (!Number.isFinite(value)) {
+        throw new Error(`Invalid --average-geoid-height value "${argv[i + 1]}"`);
+      }
+      config.parseOptions.averageGeoidHeight = value;
+      i += 1;
+      continue;
+    }
+    if (arg === '--grid-bearing-mode') {
+      const value = nextValue(i, arg).toLowerCase();
+      if (value !== 'measured' && value !== 'grid') {
+        throw new Error(`Invalid --grid-bearing-mode value "${argv[i + 1]}"`);
+      }
+      config.parseOptions.gridBearingMode = value;
+      i += 1;
+      continue;
+    }
+    if (arg === '--grid-distance-mode') {
+      const value = nextValue(i, arg).toLowerCase();
+      if (value !== 'measured' && value !== 'grid' && value !== 'ellipsoidal') {
+        throw new Error(`Invalid --grid-distance-mode value "${argv[i + 1]}"`);
+      }
+      config.parseOptions.gridDistanceMode = value;
+      i += 1;
+      continue;
+    }
+    if (arg === '--grid-angle-mode') {
+      const value = nextValue(i, arg).toLowerCase();
+      if (value !== 'measured' && value !== 'grid') {
+        throw new Error(`Invalid --grid-angle-mode value "${argv[i + 1]}"`);
+      }
+      config.parseOptions.gridAngleMode = value;
+      i += 1;
+      continue;
+    }
+    if (arg === '--grid-direction-mode') {
+      const value = nextValue(i, arg).toLowerCase();
+      if (value !== 'measured' && value !== 'grid') {
+        throw new Error(`Invalid --grid-direction-mode value "${argv[i + 1]}"`);
+      }
+      config.parseOptions.gridDirectionMode = value;
+      i += 1;
+      continue;
+    }
     throw new Error(`Unknown option "${arg}"`);
   }
 
@@ -288,6 +386,22 @@ const run = (): number => {
               defaultSigmaByType: '',
               stochasticDefaultsSummary: 'cli',
               rotationAngleRad: parseState.rotationAngleRad ?? 0,
+              coordSystemMode:
+                parseState.coordSystemMode ?? profileParseOptions.coordSystemMode ?? 'local',
+              crsId: parseState.crsId ?? profileParseOptions.crsId,
+              localDatumScheme:
+                parseState.localDatumScheme ?? profileParseOptions.localDatumScheme,
+              averageScaleFactor:
+                parseState.averageScaleFactor ?? profileParseOptions.averageScaleFactor,
+              commonElevation: parseState.commonElevation ?? profileParseOptions.commonElevation,
+              averageGeoidHeight:
+                parseState.averageGeoidHeight ?? profileParseOptions.averageGeoidHeight,
+              gridBearingMode: parseState.gridBearingMode ?? profileParseOptions.gridBearingMode,
+              gridDistanceMode:
+                parseState.gridDistanceMode ?? profileParseOptions.gridDistanceMode,
+              gridAngleMode: parseState.gridAngleMode ?? profileParseOptions.gridAngleMode,
+              gridDirectionMode:
+                parseState.gridDirectionMode ?? profileParseOptions.gridDirectionMode,
               qFixLinearSigmaM: parseState.qFixLinearSigmaM ?? profileParseOptions.qFixLinearSigmaM,
               qFixAngularSigmaSec:
                 parseState.qFixAngularSigmaSec ?? profileParseOptions.qFixAngularSigmaSec,

@@ -97,4 +97,36 @@ describe('CLI phase 2 output modes', () => {
     expect(payload.parseState?.preanalysisMode).toBe(true);
     expect(payload.parseState?.plannedObservationCount).toBeGreaterThan(0);
   });
+
+  it('supports coordinate-system CLI flags for Canada-first workflows', () => {
+    const res = runCli([
+      '--input',
+      STABLE_INPUT,
+      '--output',
+      'json',
+      '--coord-system-mode',
+      'grid',
+      '--crs-id',
+      'CA_NAD83_CSRS_UTM_19N',
+      '--grid-bearing-mode',
+      'measured',
+      '--grid-distance-mode',
+      'ellipsoidal',
+      '--grid-angle-mode',
+      'grid',
+      '--grid-direction-mode',
+      'measured',
+      '--average-geoid-height',
+      '28.5',
+    ]);
+    expect(res.status).toBe(0);
+    const payload = JSON.parse(res.stdout);
+    expect(payload.parseState?.coordSystemMode).toBe('grid');
+    expect(payload.parseState?.crsId).toBe('CA_NAD83_CSRS_UTM_19N');
+    expect(payload.parseState?.gridBearingMode).toBe('measured');
+    expect(payload.parseState?.gridDistanceMode).toBe('ellipsoidal');
+    expect(payload.parseState?.gridAngleMode).toBe('grid');
+    expect(payload.parseState?.gridDirectionMode).toBe('measured');
+    expect(payload.parseState?.averageGeoidHeight).toBeCloseTo(28.5, 8);
+  });
 });

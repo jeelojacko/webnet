@@ -136,6 +136,10 @@ export interface Station {
   heightType?: 'orthometric' | 'ellipsoid';
   latDeg?: number;
   lonDeg?: number;
+  convergenceAngleRad?: number;
+  gridScaleFactor?: number;
+  elevationFactor?: number;
+  combinedFactor?: number;
   errorEllipse?: StationErrorEllipse;
   sN?: number;
   sE?: number;
@@ -162,6 +166,8 @@ interface ObservationBase {
   localTestComponents?: { passE: boolean; passN: boolean };
   mdb?: number;
   mdbComponents?: { mE: number; mN: number };
+  gridObsMode?: GridObservationMode;
+  gridDistanceMode?: GridDistanceInputMode;
 }
 
 export interface SideshotCalcMeta {
@@ -347,6 +353,10 @@ export type ClusterLinkageMode = 'single' | 'complete';
 export type ClusterPassLabel = 'single' | 'pass1' | 'pass2';
 export type DescriptionReconcileMode = 'first' | 'append';
 export type CrsProjectionModel = 'legacy-equirectangular' | 'local-enu';
+export type CoordSystemMode = 'local' | 'grid';
+export type LocalDatumScheme = 'average-scale' | 'common-elevation';
+export type GridObservationMode = 'measured' | 'grid';
+export type GridDistanceInputMode = 'measured' | 'grid' | 'ellipsoidal';
 export type GeoidInterpolationMethod = 'bilinear' | 'nearest';
 export type GeoidHeightDatum = 'orthometric' | 'ellipsoid';
 export type GpsVectorMode = 'network' | 'sideshot';
@@ -589,6 +599,16 @@ export interface GpsTopoCoordinateShot {
 export interface ParseOptions {
   units: UnitsMode;
   coordMode: CoordMode;
+  coordSystemMode?: CoordSystemMode;
+  crsId?: string;
+  localDatumScheme?: LocalDatumScheme;
+  averageScaleFactor?: number;
+  commonElevation?: number;
+  averageGeoidHeight?: number;
+  gridBearingMode?: GridObservationMode;
+  gridDistanceMode?: GridDistanceInputMode;
+  gridAngleMode?: GridObservationMode;
+  gridDirectionMode?: GridObservationMode;
   preanalysisMode?: boolean;
   order: OrderMode;
   angleUnits?: AngleUnitsMode;

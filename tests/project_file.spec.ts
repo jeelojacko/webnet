@@ -10,6 +10,7 @@ import type { InstrumentLibrary } from '../src/types';
 const defaults = {
   settings: {
     maxIterations: 10,
+    convergenceLimit: 0.01,
     units: 'm',
     listingShowLostStations: true,
   },
@@ -53,6 +54,7 @@ describe('project file serialization/parsing', () => {
       ui: {
         settings: {
           maxIterations: 15,
+          convergenceLimit: 0.1,
           units: 'ft',
           listingShowLostStations: false,
         },
@@ -82,6 +84,7 @@ describe('project file serialization/parsing', () => {
     if (!parsed.ok) return;
     expect(parsed.project.input).toContain('C A');
     expect(parsed.project.ui.exportFormat).toBe('industry-style');
+    expect(parsed.project.ui.settings.convergenceLimit).toBe(0.1);
     expect(parsed.project.ui.adjustedPointsExport.columns).toEqual(['P', 'E', 'N', 'Z']);
     expect(parsed.project.project.selectedInstrument).toBe('S9');
     expect(parsed.project.project.levelLoopCustomPresets).toHaveLength(1);
@@ -111,6 +114,7 @@ describe('project file serialization/parsing', () => {
         ui: {
           settings: {
             maxIterations: 'bad',
+            convergenceLimit: 'bad',
             units: 'm',
           },
           parseSettings: {
@@ -130,8 +134,8 @@ describe('project file serialization/parsing', () => {
     expect(parsed.ok).toBe(true);
     if (!parsed.ok) return;
     expect(parsed.project.ui.settings.maxIterations).toBe(defaults.settings.maxIterations);
+    expect(parsed.project.ui.settings.convergenceLimit).toBe(defaults.settings.convergenceLimit);
     expect(parsed.project.ui.adjustedPointsExport.columns.length).toBe(6);
     expect(parsed.project.project.selectedInstrument).toBe('S9');
   });
 });
-

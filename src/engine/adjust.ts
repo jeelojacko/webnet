@@ -4,6 +4,7 @@ import {
   interpolateGeoidUndulation,
   loadBuiltinGeoidGridModel,
 } from './geoid';
+import { computeElevationFactor, computeGridFactors, inverseENToGeodetic } from './geodesy';
 import type { GeoidGridModel } from './geoid';
 import {
   invertSPDFromCholesky,
@@ -230,6 +231,12 @@ export class LSAEngine {
   private debug = false;
   private mapMode: ParseOptions['mapMode'] = 'off';
   private mapScaleFactor = 1;
+  private coordSystemMode: ParseOptions['coordSystemMode'] = 'local';
+  private crsId = 'CA_NAD83_CSRS_UTM_20N';
+  private localDatumScheme: ParseOptions['localDatumScheme'] = 'average-scale';
+  private averageScaleFactor = 1;
+  private commonElevation = 0;
+  private averageGeoidHeight = 0;
   private crsGridScaleEnabled = false;
   private crsGridScaleFactor = 1;
   private crsConvergenceEnabled = false;
@@ -556,11 +563,19 @@ export class LSAEngine {
         return;
       }
       if (obs.type === 'direction') {
-        obs.obs = this.modeledAzimuth(this.getAzimuth(obs.at, obs.to).az);
+        obs.obs = this.modeledAzimuth(
+          this.getAzimuth(obs.at, obs.to).az,
+          obs.at,
+          obs.gridObsMode !== 'grid',
+        );
         return;
       }
       if (obs.type === 'bearing' || obs.type === 'dir') {
-        obs.obs = this.modeledAzimuth(this.getAzimuth(obs.from, obs.to).az);
+        obs.obs = this.modeledAzimuth(
+          this.getAzimuth(obs.from, obs.to).az,
+          obs.from,
+          obs.gridObsMode !== 'grid',
+        );
         return;
       }
       if (obs.type === 'zenith') {
@@ -1715,7 +1730,11 @@ export class LSAEngine {
       if (obs.type !== 'direction') return;
       const dir = obs as any;
       if (!this.stations[dir.at] || !this.stations[dir.to]) return;
-      const az = this.modeledAzimuth(this.getAzimuth(dir.at, dir.to).az);
+      const az = this.modeledAzimuth(
+        this.getAzimuth(dir.at, dir.to).az,
+        dir.at,
+        dir.gridObsMode !== 'grid',
+      );
       const diff = ((dir.obs - az + Math.PI) % (2 * Math.PI)) - Math.PI;
       const entry = groups.get(dir.setId) ?? {
         count: 0,
@@ -1863,7 +1882,7 @@ export class LSAEngine {
     input,
     maxIterations = 10,
     instrumentLibrary = {},
-    convergenceThreshold = 0.0001,
+    convergenceThreshold = 0.01,
     excludeIds,
     overrides,
     parseOptions,
@@ -1871,7 +1890,10 @@ export class LSAEngine {
     this.input = input;
     this.maxIterations = maxIterations;
     this.instrumentLibrary = { ...instrumentLibrary };
-    this.convergenceThreshold = convergenceThreshold;
+    this.convergenceThreshold =
+      Number.isFinite(convergenceThreshold) && convergenceThreshold > 0
+        ? convergenceThreshold
+        : 0.01;
     this.excludeIds = excludeIds;
     this.overrides = overrides;
     this.parseOptions = parseOptions;
@@ -1977,9 +1999,126 @@ export class LSAEngine {
     }
   }
 
-  private modeledAzimuth(rawAz: number): number {
-    let az = rawAz;
+  private applyAverageGeoidHeightConversions(): void {
+    const undulation = this.averageGeoidHeight;
+    if (!Number.isFinite(undulation) || Math.abs(undulation) <= 0) {
+      this.log(
+        'Warning: geoid height conversion requested but fallback average geoid height is zero/invalid; conversion skipped.',
+      );
+      return;
+    }
+    const targetDatum = this.geoidOutputHeightDatum === 'ellipsoid' ? 'ellipsoid' : 'orthometric';
+    let convertedCount = 0;
+    Object.values(this.stations).forEach((station) => {
+      const currentType = station.heightType === 'ellipsoid' ? 'ellipsoid' : 'orthometric';
+      if (currentType === targetDatum) return;
+      const delta = targetDatum === 'orthometric' ? -undulation : undulation;
+      station.h += delta;
+      if (Number.isFinite(station.constraintH ?? Number.NaN)) {
+        station.constraintH = (station.constraintH ?? 0) + delta;
+      }
+      station.heightType = targetDatum;
+      convertedCount += 1;
+    });
+    if (this.parseState) {
+      this.parseState.geoidHeightConversionEnabled = true;
+      this.parseState.geoidOutputHeightDatum = targetDatum;
+      this.parseState.geoidConvertedStationCount = convertedCount;
+      this.parseState.geoidSkippedStationCount = 0;
+    }
+    this.log(
+      `Geoid height conversion fallback: ON (target=${targetDatum.toUpperCase()}, avgN=${undulation.toFixed(4)}m, converted=${convertedCount})`,
+    );
+  }
+
+  private stationEllipsoidHeight(station: Station): number {
+    if (station.heightType === 'ellipsoid') return station.h;
+    return station.h + this.averageGeoidHeight;
+  }
+
+  private stationGeodetic(stationId: StationId): { latDeg: number; lonDeg: number } | null {
+    const station = this.stations[stationId];
+    if (!station) return null;
+    if (Number.isFinite(station.latDeg ?? Number.NaN) && Number.isFinite(station.lonDeg ?? Number.NaN)) {
+      return { latDeg: station.latDeg as number, lonDeg: station.lonDeg as number };
+    }
+    if (this.coordSystemMode !== 'grid') return null;
+    const originLatDeg = this.parseState?.originLatDeg;
+    const originLonDeg = this.parseState?.originLonDeg;
+    if (!Number.isFinite(originLatDeg ?? Number.NaN) || !Number.isFinite(originLonDeg ?? Number.NaN)) {
+      return null;
+    }
+    const inv = inverseENToGeodetic({
+      east: station.x,
+      north: station.y,
+      originLatDeg: originLatDeg as number,
+      originLonDeg: originLonDeg as number,
+      model: this.parseState?.crsProjectionModel ?? 'legacy-equirectangular',
+      coordSystemMode: this.coordSystemMode,
+      crsId: this.crsId,
+    });
+    if (!inv) return null;
+    station.latDeg = inv.latDeg;
+    station.lonDeg = inv.lonDeg;
+    return inv;
+  }
+
+  private stationFactorSnapshot(stationId: StationId): {
+    convergenceAngleRad: number;
+    gridScaleFactor: number;
+    elevationFactor: number;
+    combinedFactor: number;
+  } {
+    const station = this.stations[stationId];
+    if (!station) {
+      return { convergenceAngleRad: 0, gridScaleFactor: 1, elevationFactor: 1, combinedFactor: 1 };
+    }
+    let convergenceAngleRad = 0;
+    let gridScaleFactor = 1;
+    if (this.coordSystemMode === 'grid') {
+      const geo = this.stationGeodetic(stationId);
+      if (geo) {
+        const factors = computeGridFactors(geo.latDeg, geo.lonDeg, this.crsId);
+        if (factors) {
+          convergenceAngleRad = factors.convergenceAngleRad;
+          gridScaleFactor = factors.gridScaleFactor;
+        }
+      }
+    }
+    if (this.crsGridScaleEnabled) {
+      gridScaleFactor *= this.crsGridScaleFactor;
+    }
     if (
+      this.crsConvergenceEnabled &&
+      Number.isFinite(this.crsConvergenceAngleRad) &&
+      Math.abs(this.crsConvergenceAngleRad) > 0
+    ) {
+      convergenceAngleRad += this.crsConvergenceAngleRad;
+    }
+    const elevationFactor = computeElevationFactor(this.stationEllipsoidHeight(station), EARTH_RADIUS_M);
+    const combinedFactor = gridScaleFactor * elevationFactor;
+    station.convergenceAngleRad = convergenceAngleRad;
+    station.gridScaleFactor = gridScaleFactor;
+    station.elevationFactor = elevationFactor;
+    station.combinedFactor = combinedFactor;
+    return { convergenceAngleRad, gridScaleFactor, elevationFactor, combinedFactor };
+  }
+
+  private measuredAngleCorrection(at: StationId, from: StationId, to: StationId): number {
+    if (this.coordSystemMode !== 'grid') return 0;
+    const mode = this.stations[at];
+    if (!mode) return 0;
+    const convFrom = this.stationFactorSnapshot(from).convergenceAngleRad;
+    const convTo = this.stationFactorSnapshot(to).convergenceAngleRad;
+    return convTo - convFrom;
+  }
+
+  private modeledAzimuth(rawAz: number, atStationId?: StationId, applyConvergence = true): number {
+    let az = rawAz;
+    if (applyConvergence && atStationId) {
+      az += this.stationFactorSnapshot(atStationId).convergenceAngleRad;
+    } else if (
+      applyConvergence &&
       this.crsConvergenceEnabled &&
       Number.isFinite(this.crsConvergenceAngleRad) &&
       Math.abs(this.crsConvergenceAngleRad) > 0
@@ -2011,11 +2150,32 @@ export class LSAEngine {
   }
 
   private crsDistanceScaleForObservation(obs: Observation): number {
-    if (!this.crsGridScaleEnabled) return 1;
     if (obs.type !== 'dist') return 1;
-    if (!Number.isFinite(this.crsGridScaleFactor) || this.crsGridScaleFactor <= 0) return 1;
-    if (this.is2D) return this.crsGridScaleFactor;
-    return obs.mode === 'horiz' ? this.crsGridScaleFactor : 1;
+    if (this.coordSystemMode === 'local') {
+      const legacyGridScale =
+        this.crsGridScaleEnabled && Number.isFinite(this.crsGridScaleFactor) && this.crsGridScaleFactor > 0
+          ? this.crsGridScaleFactor
+          : 1;
+      if (this.localDatumScheme === 'common-elevation') {
+        const from = this.stations[obs.from];
+        const to = this.stations[obs.to];
+        if (!from || !to) return 1;
+        const meanElevation = (from.h + to.h) / 2;
+        const factor = (EARTH_RADIUS_M + this.commonElevation) / (EARTH_RADIUS_M + meanElevation);
+        const localFactor = Number.isFinite(factor) && factor > 0 ? factor : 1;
+        return localFactor * legacyGridScale;
+      }
+      return this.averageScaleFactor * legacyGridScale;
+    }
+
+    const fromF = this.stationFactorSnapshot(obs.from);
+    const toF = this.stationFactorSnapshot(obs.to);
+    const avgGridScale = (fromF.gridScaleFactor + toF.gridScaleFactor) / 2;
+    const avgCombined = (fromF.combinedFactor + toF.combinedFactor) / 2;
+    const distMode = obs.gridDistanceMode ?? 'measured';
+    if (distMode === 'grid') return 1;
+    if (distMode === 'ellipsoidal') return avgGridScale;
+    return avgCombined;
   }
 
   private distanceScaleForObservation(obs: Observation): number {
@@ -2407,7 +2567,7 @@ export class LSAEngine {
       let setupAzimuth: number | undefined;
       if (hasSetupHz && backsightId && backsightSt) {
         const bs = this.getAzimuth(from, backsightId).az;
-        setupAzimuth = this.modeledAzimuth(bs + (setupHz as number));
+        setupAzimuth = this.modeledAzimuth(bs + (setupHz as number), from);
       }
       const hasAzimuth = hasExplicitAz || setupAzimuth != null || hasTargetAz;
       const azimuth = hasExplicitAz
@@ -2415,7 +2575,7 @@ export class LSAEngine {
         : setupAzimuth != null
           ? setupAzimuth
           : hasTargetAz
-            ? this.modeledAzimuth(this.getAzimuth(from, to).az)
+            ? this.modeledAzimuth(this.getAzimuth(from, to).az, from)
             : undefined;
       let sigmaAz = hasExplicitAz ? (explicitSigmaAz ?? 0) : 0;
       if (!hasExplicitAz && setupAzimuth != null && backsightId && backsightSt) {
@@ -2597,7 +2757,7 @@ export class LSAEngine {
         if (horizDistance > 1e-12) {
           let az = Math.atan2(dE, dN);
           if (az < 0) az += 2 * Math.PI;
-          azimuth = this.modeledAzimuth(az);
+          azimuth = this.modeledAzimuth(az, relationFrom);
           hasAzimuth = true;
         }
         if (shot.height != null) deltaH = shot.height - fromSt.h;
@@ -2914,6 +3074,22 @@ export class LSAEngine {
     this.mapMode = parsed.parseState?.mapMode ?? this.parseOptions?.mapMode ?? 'off';
     this.mapScaleFactor =
       parsed.parseState?.mapScaleFactor ?? this.parseOptions?.mapScaleFactor ?? 1;
+    this.coordSystemMode =
+      parsed.parseState?.coordSystemMode ?? this.parseOptions?.coordSystemMode ?? 'local';
+    this.crsId = parsed.parseState?.crsId ?? this.parseOptions?.crsId ?? 'CA_NAD83_CSRS_UTM_20N';
+    this.localDatumScheme =
+      parsed.parseState?.localDatumScheme ?? this.parseOptions?.localDatumScheme ?? 'average-scale';
+    this.averageScaleFactor =
+      parsed.parseState?.averageScaleFactor ?? this.parseOptions?.averageScaleFactor ?? 1;
+    if (!Number.isFinite(this.averageScaleFactor) || this.averageScaleFactor <= 0) {
+      this.averageScaleFactor = 1;
+    }
+    this.commonElevation =
+      parsed.parseState?.commonElevation ?? this.parseOptions?.commonElevation ?? 0;
+    if (!Number.isFinite(this.commonElevation)) this.commonElevation = 0;
+    this.averageGeoidHeight =
+      parsed.parseState?.averageGeoidHeight ?? this.parseOptions?.averageGeoidHeight ?? 0;
+    if (!Number.isFinite(this.averageGeoidHeight)) this.averageGeoidHeight = 0;
     this.crsGridScaleEnabled =
       parsed.parseState?.crsGridScaleEnabled ?? this.parseOptions?.crsGridScaleEnabled ?? false;
     this.crsGridScaleFactor =
@@ -2992,6 +3168,12 @@ export class LSAEngine {
       parsed.parseState?.gpsLoopCheckEnabled ?? this.parseOptions?.gpsLoopCheckEnabled ?? false;
     this.parseState = parsed.parseState;
     if (this.parseState) {
+      this.parseState.coordSystemMode = this.coordSystemMode;
+      this.parseState.crsId = this.crsId;
+      this.parseState.localDatumScheme = this.localDatumScheme;
+      this.parseState.averageScaleFactor = this.averageScaleFactor;
+      this.parseState.commonElevation = this.commonElevation;
+      this.parseState.averageGeoidHeight = this.averageGeoidHeight;
       this.parseState.gpsLoopCheckEnabled = gpsLoopCheckEnabled;
       this.parseState.levelLoopToleranceBaseMm = this.levelLoopToleranceBaseMm;
       this.parseState.levelLoopTolerancePerSqrtKmMm = this.levelLoopTolerancePerSqrtKmMm;
@@ -3032,6 +3214,9 @@ export class LSAEngine {
         `Map reduction active: mode=${this.mapMode}, scale=${this.mapScaleFactor.toFixed(8)}`,
       );
     }
+    this.log(
+      `Coordinate system mode: ${this.coordSystemMode.toUpperCase()}${this.coordSystemMode === 'grid' ? ` (CRS=${this.crsId})` : ` (datum=${this.localDatumScheme}, scale=${this.averageScaleFactor.toFixed(8)}, commonElev=${this.commonElevation.toFixed(4)}m)`}`,
+    );
     if (this.crsGridScaleEnabled) {
       this.log(`CRS grid-ground scale active: factor=${this.crsGridScaleFactor.toFixed(8)}`);
     }
@@ -3089,13 +3274,9 @@ export class LSAEngine {
     }
     if (this.geoidHeightConversionEnabled) {
       if (!this.geoidModelEnabled) {
-        this.log(
-          'Warning: geoid height conversion requested but geoid/grid model is OFF; conversion skipped.',
-        );
+        this.applyAverageGeoidHeightConversions();
       } else if (!geoidModel) {
-        this.log(
-          'Warning: geoid height conversion requested but geoid/grid model did not load; conversion skipped.',
-        );
+        this.applyAverageGeoidHeightConversions();
       } else {
         this.applyGeoidHeightConversions(geoidModel);
       }
@@ -3345,6 +3526,7 @@ export class LSAEngine {
     directionSetIds.forEach((id, idx) => {
       dirParamMap[id] = stationParamCount + idx;
     });
+    let prevObjectiveBefore: number | null = null;
 
     for (let iter = 0; iter < this.maxIterations; iter++) {
       this.iterations += 1;
@@ -3429,6 +3611,9 @@ export class LSAEngine {
           const azTo = this.getAzimuth(at, to);
           const azFrom = this.getAzimuth(at, from);
           let calcAngle = azTo.az - azFrom.az;
+          if (obs.gridObsMode !== 'grid') {
+            calcAngle += this.measuredAngleCorrection(at, from, to);
+          }
           if (calcAngle < 0) calcAngle += 2 * Math.PI;
           let diff = obs.obs - calcAngle;
           diff = this.wrapToPi(diff);
@@ -3558,7 +3743,7 @@ export class LSAEngine {
         } else if (obs.type === 'bearing') {
           const { from, to } = obs;
           const az = this.getAzimuth(from, to);
-          const calc = this.modeledAzimuth(az.az);
+          const calc = this.modeledAzimuth(az.az, from, obs.gridObsMode !== 'grid');
           let v = obs.obs - calc;
           if (v > Math.PI) v -= 2 * Math.PI;
           if (v < -Math.PI) v += 2 * Math.PI;
@@ -3591,7 +3776,7 @@ export class LSAEngine {
         } else if (obs.type === 'dir') {
           const { from, to } = obs;
           const az = this.getAzimuth(from, to);
-          const calc = this.modeledAzimuth(az.az);
+          const calc = this.modeledAzimuth(az.az, from, obs.gridObsMode !== 'grid');
           let v0 = obs.obs - calc;
           if (v0 > Math.PI) v0 -= 2 * Math.PI;
           if (v0 < -Math.PI) v0 += 2 * Math.PI;
@@ -3648,7 +3833,7 @@ export class LSAEngine {
           if (!this.stations[at] || !this.stations[to]) return;
           const az = this.getAzimuth(at, to);
           const orientation = this.directionOrientations[setId] ?? 0;
-          let calc = orientation + this.modeledAzimuth(az.az);
+          let calc = orientation + this.modeledAzimuth(az.az, at, obs.gridObsMode !== 'grid');
           calc %= 2 * Math.PI;
           if (calc < 0) calc += 2 * Math.PI;
           let v = obs.obs - calc;
@@ -3861,20 +4046,30 @@ export class LSAEngine {
           this.Qxx = normalSolution.qxx;
         }
 
+        const AX = multiply(A, X);
+        const Vnew = zeros(numObsEquations, 1);
+        let maxBefore = 0;
+        let maxAfter = 0;
+        for (let i = 0; i < numObsEquations; i += 1) {
+          const v0 = L[i][0];
+          const v1 = v0 - AX[i][0];
+          Vnew[i][0] = v1;
+          maxBefore = Math.max(maxBefore, Math.abs(v0));
+          maxAfter = Math.max(maxAfter, Math.abs(v1));
+        }
+        const sumBefore = this.weightedQuadratic(solvedP, L);
+        const sumAfter = this.weightedQuadratic(solvedP, Vnew);
+        const objectiveDeltaWithinIter = Math.abs(sumBefore - sumAfter);
+        const objectiveDeltaBetweenIterations =
+          prevObjectiveBefore == null
+            ? Number.POSITIVE_INFINITY
+            : Math.abs(sumBefore - prevObjectiveBefore);
+        const objectiveDeltaRelative =
+          prevObjectiveBefore == null
+            ? Number.POSITIVE_INFINITY
+            : objectiveDeltaBetweenIterations / Math.max(Math.abs(prevObjectiveBefore), 1);
+
         if (this.debug) {
-          const AX = multiply(A, X);
-          const Vnew = zeros(numObsEquations, 1);
-          let maxBefore = 0;
-          let maxAfter = 0;
-          for (let i = 0; i < numObsEquations; i += 1) {
-            const v0 = L[i][0];
-            const v1 = v0 - AX[i][0];
-            Vnew[i][0] = v1;
-            maxBefore = Math.max(maxBefore, Math.abs(v0));
-            maxAfter = Math.max(maxAfter, Math.abs(v1));
-          }
-          const sumBefore = this.weightedQuadratic(solvedP, L);
-          const sumAfter = this.weightedQuadratic(solvedP, Vnew);
           const ratio = sumBefore > 0 ? sumAfter / sumBefore : 0;
           const msg =
             `Iter ${iter + 1} step check: ` +
@@ -3925,10 +4120,22 @@ export class LSAEngine {
         });
 
         this.log(`Iter ${iter + 1}: Max Corr = ${maxCorrection.toFixed(4)}`);
-        if (maxCorrection < this.convergenceThreshold) {
+        this.log(
+          `Iter ${iter + 1}: vTPv before=${sumBefore.toExponential(6)} after=${sumAfter.toExponential(
+            6,
+          )} delta(within)=${objectiveDeltaWithinIter.toExponential(6)} delta(iter)=${objectiveDeltaBetweenIterations.toExponential(6)} delta(rel)=${objectiveDeltaRelative.toExponential(6)}`,
+        );
+        if (
+          prevObjectiveBefore != null &&
+          objectiveDeltaRelative < this.convergenceThreshold
+        ) {
+          this.log(
+            `Converged: relative iteration objective delta ${objectiveDeltaRelative.toExponential(6)} < limit ${this.convergenceThreshold.toExponential(6)}`,
+          );
           this.converged = true;
           break;
         }
+        prevObjectiveBefore = sumBefore;
       } catch (error) {
         const detail = error instanceof Error ? ` ${error.message}` : '';
         this.log(`Normal equation solve failed (singular or otherwise unstable).${detail}`);
@@ -4095,6 +4302,9 @@ export class LSAEngine {
         const azTo = this.getAzimuth(obs.at, obs.to).az;
         const azFrom = this.getAzimuth(obs.at, obs.from).az;
         let calcAngle = azTo - azFrom;
+        if (obs.gridObsMode !== 'grid') {
+          calcAngle += this.measuredAngleCorrection(obs.at, obs.from, obs.to);
+        }
         if (calcAngle < 0) calcAngle += 2 * Math.PI;
         let v = obs.obs - calcAngle;
         if (v > Math.PI) v -= 2 * Math.PI;
@@ -4138,7 +4348,11 @@ export class LSAEngine {
         addObservationContribution(obs, q);
       } else if (obs.type === 'bearing') {
         obs.effectiveDistance = this.effectiveDistanceForAngularObservation(obs);
-        const calcAz = this.modeledAzimuth(this.getAzimuth(obs.from, obs.to).az);
+        const calcAz = this.modeledAzimuth(
+          this.getAzimuth(obs.from, obs.to).az,
+          obs.from,
+          obs.gridObsMode !== 'grid',
+        );
         let v = obs.obs - calcAz;
         if (v > Math.PI) v -= 2 * Math.PI;
         if (v < -Math.PI) v += 2 * Math.PI;
@@ -4152,7 +4366,11 @@ export class LSAEngine {
         collectTsCorrelationRow(obs, v, sigma);
       } else if (obs.type === 'dir') {
         obs.effectiveDistance = this.effectiveDistanceForAngularObservation(obs);
-        const calcAz = this.modeledAzimuth(this.getAzimuth(obs.from, obs.to).az);
+        const calcAz = this.modeledAzimuth(
+          this.getAzimuth(obs.from, obs.to).az,
+          obs.from,
+          obs.gridObsMode !== 'grid',
+        );
         let v0 = obs.obs - calcAz;
         if (v0 > Math.PI) v0 -= 2 * Math.PI;
         if (v0 < -Math.PI) v0 += 2 * Math.PI;
@@ -4174,7 +4392,11 @@ export class LSAEngine {
       } else if (obs.type === 'direction') {
         obs.effectiveDistance = this.effectiveDistanceForAngularObservation(obs);
         const dir = obs as any;
-        const az = this.modeledAzimuth(this.getAzimuth(dir.at, dir.to).az);
+        const az = this.modeledAzimuth(
+          this.getAzimuth(dir.at, dir.to).az,
+          dir.at,
+          dir.gridObsMode !== 'grid',
+        );
         const orientation = this.directionOrientations[dir.setId] ?? 0;
         let calc = orientation + az;
         calc %= 2 * Math.PI;
@@ -4512,6 +4734,9 @@ export class LSAEngine {
             const azTo = this.getAzimuth(obs.at, obs.to);
             const azFrom = this.getAzimuth(obs.at, obs.from);
             let calcAngle = azTo.az - azFrom.az;
+            if (obs.gridObsMode !== 'grid') {
+              calcAngle += this.measuredAngleCorrection(obs.at, obs.from, obs.to);
+            }
             if (calcAngle < 0) calcAngle += 2 * Math.PI;
             let diff = obs.obs - calcAngle;
             diff = this.wrapToPi(diff);
@@ -4595,7 +4820,7 @@ export class LSAEngine {
 
           if (obs.type === 'bearing') {
             const az = this.getAzimuth(obs.from, obs.to);
-            const calc = this.modeledAzimuth(az.az);
+            const calc = this.modeledAzimuth(az.az, obs.from, obs.gridObsMode !== 'grid');
             let v = obs.obs - calc;
             if (v > Math.PI) v -= 2 * Math.PI;
             if (v < -Math.PI) v += 2 * Math.PI;
@@ -4619,7 +4844,7 @@ export class LSAEngine {
 
           if (obs.type === 'dir') {
             const az = this.getAzimuth(obs.from, obs.to);
-            const calc = this.modeledAzimuth(az.az);
+            const calc = this.modeledAzimuth(az.az, obs.from, obs.gridObsMode !== 'grid');
             let v0 = obs.obs - calc;
             if (v0 > Math.PI) v0 -= 2 * Math.PI;
             if (v0 < -Math.PI) v0 += 2 * Math.PI;
@@ -4652,7 +4877,7 @@ export class LSAEngine {
             const dir = obs as any;
             const az = this.getAzimuth(dir.at, dir.to);
             const orientation = this.directionOrientations[dir.setId] ?? 0;
-            let calc = orientation + this.modeledAzimuth(az.az);
+            let calc = orientation + this.modeledAzimuth(az.az, dir.at, dir.gridObsMode !== 'grid');
             calc %= 2 * Math.PI;
             if (calc < 0) calc += 2 * Math.PI;
             let v = dir.obs - calc;
@@ -6258,6 +6483,11 @@ export class LSAEngine {
   private buildResult(): AdjustmentResult {
     if (!this.sideshots) {
       this.sideshots = this.computeSideshotResults();
+    }
+    if (this.coordSystemMode === 'grid') {
+      Object.keys(this.stations).forEach((id) => {
+        this.stationFactorSnapshot(id);
+      });
     }
     const autoSideshotEnabled =
       this.parseState?.autoSideshotEnabled ?? this.parseOptions?.autoSideshotEnabled ?? true;

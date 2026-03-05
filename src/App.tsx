@@ -44,6 +44,7 @@ import {
   findLevelLoopTolerancePreset,
 } from './engine/levelLoopTolerance';
 import { parseProjectFile, serializeProjectFile } from './engine/projectFile';
+import { CANADA_CRS_CATALOG, DEFAULT_CANADA_CRS_ID } from './engine/crsCatalog';
 import {
   importExternalInput,
   type ImportedDataset,
@@ -95,6 +96,10 @@ import type {
   TsCorrelationScope,
   RobustMode,
   CrsProjectionModel,
+  CoordSystemMode,
+  LocalDatumScheme,
+  GridObservationMode,
+  GridDistanceInputMode,
   GeoidInterpolationMethod,
   GeoidHeightDatum,
 } from './types';
@@ -199,6 +204,7 @@ type ListingSortObservationsBy = 'input' | 'name' | 'residual';
 
 type SettingsState = {
   maxIterations: number;
+  convergenceLimit: number;
   units: Units;
   mapShowLostStations: boolean;
   map3dEnabled: boolean;
@@ -249,6 +255,16 @@ type RunDiagnostics = {
   robustK: number;
   qFixLinearSigmaM: number;
   qFixAngularSigmaSec: number;
+  coordSystemMode: CoordSystemMode;
+  crsId: string;
+  localDatumScheme: LocalDatumScheme;
+  averageScaleFactor: number;
+  commonElevation: number;
+  averageGeoidHeight: number;
+  gridBearingMode: GridObservationMode;
+  gridDistanceMode: GridDistanceInputMode;
+  gridAngleMode: GridObservationMode;
+  gridDirectionMode: GridObservationMode;
   crsTransformEnabled: boolean;
   crsProjectionModel: CrsProjectionModel;
   crsLabel: string;
@@ -295,6 +311,16 @@ type RunDiagnostics = {
 type ParseSettings = {
   solveProfile: SolveProfile;
   coordMode: CoordMode;
+  coordSystemMode: CoordSystemMode;
+  crsId: string;
+  localDatumScheme: LocalDatumScheme;
+  averageScaleFactor: number;
+  commonElevation: number;
+  averageGeoidHeight: number;
+  gridBearingMode: GridObservationMode;
+  gridDistanceMode: GridDistanceInputMode;
+  gridAngleMode: GridObservationMode;
+  gridDirectionMode: GridObservationMode;
   preanalysisMode: boolean;
   clusterDetectionEnabled: boolean;
   autoSideshotEnabled: boolean;
@@ -393,6 +419,8 @@ const SETTINGS_TOOLTIPS = {
   units:
     'Display units for coordinates and report values. The solver still works internally in meters/radians.',
   maxIterations: 'Maximum least-squares iterations before the run stops if convergence is slow.',
+  convergenceLimit:
+    'When the change in weighted standardized residual sum (vTPv) between iterations is below this value, the run is considered converged and iterations stop.',
   coordMode:
     '2D adjusts horizontal coordinates only. 3D also adjusts heights and uses vertical observations.',
   preanalysisMode:
@@ -421,6 +449,22 @@ const SETTINGS_TOOLTIPS = {
   mapMode:
     'Map-ground handling mode. OFF leaves values unchanged; ON/ANGLECALC apply map-scale behavior during reductions.',
   mapScale: 'Scale factor used by map mode. 1.000000 means no map scaling.',
+  coordSystemMode:
+    'Coordinate-system reduction mode. LOCAL applies local datum schemes; GRID applies CRS-based grid/geodetic reductions.',
+  crsId:
+    'Selected projected CRS identifier for GRID mode. Canada-first catalog currently includes NAD83(CSRS) UTM zones.',
+  localDatumScheme:
+    'LOCAL mode datum scheme. Average Scale applies a fixed scale; Common Elevation scales by mean station elevation.',
+  averageScaleFactor: 'Fixed scale factor used when LOCAL datum scheme is Average Scale.',
+  commonElevation:
+    'Common elevation datum (meters) used when LOCAL datum scheme is Common Elevation.',
+  averageGeoidHeight:
+    'Average geoid undulation (meters) used as fallback for height conversion and elevation-factor workflows.',
+  gridBearingMode: 'GRID/MEASURED input mode for bearing/azimuth observations in grid workflows.',
+  gridDistanceMode:
+    'GRID/MEASURED/ELLIPSOIDAL input mode for distances in grid workflows.',
+  gridAngleMode: 'GRID/MEASURED input mode for angle observations in grid workflows.',
+  gridDirectionMode: 'GRID/MEASURED input mode for direction observations in grid workflows.',
   curvatureRefraction:
     'Apply curvature/refraction correction in vertical reductions for applicable total station observations.',
   refractionK:
@@ -745,6 +789,7 @@ const App: React.FC<AppProps> = ({
   const [activeTab, setActiveTab] = useState<TabKey>('report');
   const [settings, setSettings] = useState<SettingsState>({
     maxIterations: 10,
+    convergenceLimit: 0.01,
     units: 'm',
     mapShowLostStations: true,
     map3dEnabled: false,
@@ -761,6 +806,16 @@ const App: React.FC<AppProps> = ({
   const [parseSettings, setParseSettings] = useState<ParseSettings>({
     solveProfile: 'industry-parity',
     coordMode: '3D',
+    coordSystemMode: 'local',
+    crsId: DEFAULT_CANADA_CRS_ID,
+    localDatumScheme: 'average-scale',
+    averageScaleFactor: 1,
+    commonElevation: 0,
+    averageGeoidHeight: 0,
+    gridBearingMode: 'grid',
+    gridDistanceMode: 'measured',
+    gridAngleMode: 'measured',
+    gridDirectionMode: 'measured',
     preanalysisMode: false,
     clusterDetectionEnabled: false,
     autoSideshotEnabled: true,
@@ -852,6 +907,13 @@ const App: React.FC<AppProps> = ({
   const isResizingRef = useRef(false);
 
   const parsedInputInstruments = useMemo(() => parseInstrumentLibraryFromInput(input), [input]);
+  const selectedDraftCrs = useMemo(
+    () =>
+      CANADA_CRS_CATALOG.find((row) => row.id === parseSettingsDraft.crsId) ??
+      CANADA_CRS_CATALOG.find((row) => row.id === DEFAULT_CANADA_CRS_ID) ??
+      CANADA_CRS_CATALOG[0],
+    [parseSettingsDraft.crsId],
+  );
 
   useEffect(() => {
     setProjectInstruments((prev) => {
@@ -1176,6 +1238,26 @@ const App: React.FC<AppProps> = ({
     const profileCtx = resolveProfileContext(base);
     const parseState = (solved?.parseState ?? profileCtx.effectiveParse) as ParseOptions;
     const parse = {
+      coordSystemMode:
+        parseState.coordSystemMode ?? profileCtx.effectiveParse.coordSystemMode ?? 'local',
+      crsId: parseState.crsId ?? profileCtx.effectiveParse.crsId ?? DEFAULT_CANADA_CRS_ID,
+      localDatumScheme:
+        parseState.localDatumScheme ??
+        profileCtx.effectiveParse.localDatumScheme ??
+        'average-scale',
+      averageScaleFactor:
+        parseState.averageScaleFactor ?? profileCtx.effectiveParse.averageScaleFactor ?? 1,
+      commonElevation: parseState.commonElevation ?? profileCtx.effectiveParse.commonElevation ?? 0,
+      averageGeoidHeight:
+        parseState.averageGeoidHeight ?? profileCtx.effectiveParse.averageGeoidHeight ?? 0,
+      gridBearingMode:
+        parseState.gridBearingMode ?? profileCtx.effectiveParse.gridBearingMode ?? 'grid',
+      gridDistanceMode:
+        parseState.gridDistanceMode ?? profileCtx.effectiveParse.gridDistanceMode ?? 'measured',
+      gridAngleMode:
+        parseState.gridAngleMode ?? profileCtx.effectiveParse.gridAngleMode ?? 'measured',
+      gridDirectionMode:
+        parseState.gridDirectionMode ?? profileCtx.effectiveParse.gridDirectionMode ?? 'measured',
       mapMode: parseState.mapMode ?? profileCtx.effectiveParse.mapMode,
       mapScaleFactor: parseState.mapScaleFactor ?? profileCtx.effectiveParse.mapScaleFactor ?? 1,
       normalize: parseState.normalize ?? profileCtx.effectiveParse.normalize,
@@ -1316,6 +1398,16 @@ const App: React.FC<AppProps> = ({
       robustK: parse.robustK,
       qFixLinearSigmaM: parse.qFixLinearSigmaM ?? 1e-9,
       qFixAngularSigmaSec: parse.qFixAngularSigmaSec ?? 1e-9,
+      coordSystemMode: parse.coordSystemMode,
+      crsId: parse.crsId,
+      localDatumScheme: parse.localDatumScheme,
+      averageScaleFactor: parse.averageScaleFactor,
+      commonElevation: parse.commonElevation,
+      averageGeoidHeight: parse.averageGeoidHeight,
+      gridBearingMode: parse.gridBearingMode,
+      gridDistanceMode: parse.gridDistanceMode,
+      gridAngleMode: parse.gridAngleMode,
+      gridDirectionMode: parse.gridDirectionMode,
       crsTransformEnabled: parse.crsTransformEnabled,
       crsProjectionModel: parse.crsProjectionModel,
       crsLabel: parse.crsLabel,
@@ -1456,6 +1548,21 @@ const App: React.FC<AppProps> = ({
     );
     lines.push(
       `Plan rotation: ${Math.abs(runDiag.rotationAngleRad) > 1e-12 ? `ON (${(runDiag.rotationAngleRad * RAD_TO_DEG).toFixed(6)} deg)` : 'OFF'}`,
+    );
+    lines.push(
+      `Coordinate system mode: ${runDiag.coordSystemMode.toUpperCase()} (CRS=${runDiag.crsId})`,
+    );
+    if (runDiag.coordSystemMode === 'local') {
+      lines.push(
+        `Local datum scheme: ${runDiag.localDatumScheme.toUpperCase()} (scale=${runDiag.averageScaleFactor.toFixed(8)}, commonElev=${(runDiag.commonElevation * unitScale).toFixed(4)} ${linearUnit})`,
+      );
+    } else {
+      lines.push(
+        `Grid observation modes: bearing=${runDiag.gridBearingMode.toUpperCase()}, distance=${runDiag.gridDistanceMode.toUpperCase()}, angle=${runDiag.gridAngleMode.toUpperCase()}, direction=${runDiag.gridDirectionMode.toUpperCase()}`,
+      );
+    }
+    lines.push(
+      `Average geoid height fallback: ${(runDiag.averageGeoidHeight * unitScale).toFixed(4)} ${linearUnit}`,
     );
     lines.push(
       `CRS transforms: ${runDiag.crsTransformEnabled ? `ON (${runDiag.crsProjectionModel}, label="${runDiag.crsLabel || 'unnamed'}")` : 'OFF'}`,
@@ -3577,6 +3684,7 @@ const App: React.FC<AppProps> = ({
       res,
       {
         maxIterations: settings.maxIterations,
+        convergenceLimit: settings.convergenceLimit,
         units: settings.units,
         listingShowLostStations: settings.listingShowLostStations,
         listingShowCoordinates: settings.listingShowCoordinates,
@@ -3605,6 +3713,16 @@ const App: React.FC<AppProps> = ({
         defaultSigmaByType: runDiag.defaultSigmaByType,
         stochasticDefaultsSummary: runDiag.stochasticDefaultsSummary,
         rotationAngleRad: runDiag.rotationAngleRad,
+        coordSystemMode: runDiag.coordSystemMode,
+        crsId: runDiag.crsId,
+        localDatumScheme: runDiag.localDatumScheme,
+        averageScaleFactor: runDiag.averageScaleFactor,
+        commonElevation: runDiag.commonElevation,
+        averageGeoidHeight: runDiag.averageGeoidHeight,
+        gridBearingMode: runDiag.gridBearingMode,
+        gridDistanceMode: runDiag.gridDistanceMode,
+        gridAngleMode: runDiag.gridAngleMode,
+        gridDirectionMode: runDiag.gridDirectionMode,
         qFixLinearSigmaM: runDiag.qFixLinearSigmaM,
         qFixAngularSigmaSec: runDiag.qFixAngularSigmaSec,
         crsTransformEnabled: runDiag.crsTransformEnabled,
@@ -4355,12 +4473,23 @@ const App: React.FC<AppProps> = ({
     const engine = new LSAEngine({
       input,
       maxIterations: settings.maxIterations,
+      convergenceThreshold: settings.convergenceLimit,
       instrumentLibrary: profileCtx.effectiveInstrumentLibrary,
       excludeIds: excludeSet,
       overrides: overrideValues,
       parseOptions: {
         units: settings.units,
         coordMode: effectiveParse.coordMode,
+        coordSystemMode: effectiveParse.coordSystemMode,
+        crsId: effectiveParse.crsId,
+        localDatumScheme: effectiveParse.localDatumScheme,
+        averageScaleFactor: effectiveParse.averageScaleFactor,
+        commonElevation: effectiveParse.commonElevation,
+        averageGeoidHeight: effectiveParse.averageGeoidHeight,
+        gridBearingMode: effectiveParse.gridBearingMode,
+        gridDistanceMode: effectiveParse.gridDistanceMode,
+        gridAngleMode: effectiveParse.gridAngleMode,
+        gridDirectionMode: effectiveParse.gridDirectionMode,
         preanalysisMode: effectiveParse.preanalysisMode,
         order: effectiveParse.order,
         angleUnits: effectiveParse.angleUnits,
@@ -4858,6 +4987,12 @@ const App: React.FC<AppProps> = ({
   const handleDraftIterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = parseInt(e.target.value, 10) || 1;
     setSettingsDraft((prev) => ({ ...prev, maxIterations: val }));
+  };
+
+  const handleDraftConvergenceLimitChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const parsed = Number.parseFloat(e.target.value);
+    const val = Number.isFinite(parsed) && parsed > 0 ? parsed : 0.01;
+    setSettingsDraft((prev) => ({ ...prev, convergenceLimit: val }));
   };
 
   const handleDraftParseSetting = <K extends keyof ParseSettings>(
@@ -5370,12 +5505,14 @@ const App: React.FC<AppProps> = ({
                         <div className="text-[11px] uppercase tracking-wide text-slate-200">
                           Automated Adjustment Actions
                         </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                          <SettingsRow
-                            label="Preanalysis"
-                            tooltip={SETTINGS_TOOLTIPS.preanalysisMode}
-                            className="md:grid-cols-[minmax(0,1fr)_auto]"
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          <div
+                            className="rounded border border-slate-400/60 bg-slate-700/20 px-2 py-2 flex items-center justify-between gap-2"
+                            title={SETTINGS_TOOLTIPS.preanalysisMode}
                           >
+                            <span className="text-[11px] uppercase tracking-wide text-slate-200">
+                              Preanalysis
+                            </span>
                             <SettingsToggle
                               title={SETTINGS_TOOLTIPS.preanalysisMode}
                               checked={parseSettingsDraft.preanalysisMode}
@@ -5383,12 +5520,14 @@ const App: React.FC<AppProps> = ({
                                 handleDraftParseSetting('preanalysisMode', checked)
                               }
                             />
-                          </SettingsRow>
-                          <SettingsRow
-                            label="Auto-Sideshot"
-                            tooltip={SETTINGS_TOOLTIPS.autoSideshot}
-                            className="md:grid-cols-[minmax(0,1fr)_auto]"
+                          </div>
+                          <div
+                            className="rounded border border-slate-400/60 bg-slate-700/20 px-2 py-2 flex items-center justify-between gap-2"
+                            title={SETTINGS_TOOLTIPS.autoSideshot}
                           >
+                            <span className="text-[11px] uppercase tracking-wide text-slate-200">
+                              Auto-Sideshot
+                            </span>
                             <SettingsToggle
                               title={SETTINGS_TOOLTIPS.autoSideshot}
                               checked={parseSettingsDraft.autoSideshotEnabled}
@@ -5396,12 +5535,14 @@ const App: React.FC<AppProps> = ({
                                 handleDraftParseSetting('autoSideshotEnabled', checked)
                               }
                             />
-                          </SettingsRow>
-                          <SettingsRow
-                            label="Cluster Detection"
-                            tooltip={SETTINGS_TOOLTIPS.clusterDetection}
-                            className="md:grid-cols-[minmax(0,1fr)_auto]"
+                          </div>
+                          <div
+                            className="rounded border border-slate-400/60 bg-slate-700/20 px-2 py-2 flex items-center justify-between gap-2"
+                            title={SETTINGS_TOOLTIPS.clusterDetection}
                           >
+                            <span className="text-[11px] uppercase tracking-wide text-slate-200">
+                              Cluster Detection
+                            </span>
                             <SettingsToggle
                               title={SETTINGS_TOOLTIPS.clusterDetection}
                               checked={parseSettingsDraft.clusterDetectionEnabled}
@@ -5409,12 +5550,14 @@ const App: React.FC<AppProps> = ({
                                 handleDraftParseSetting('clusterDetectionEnabled', checked)
                               }
                             />
-                          </SettingsRow>
-                          <SettingsRow
-                            label="Auto-Adjust"
-                            tooltip={SETTINGS_TOOLTIPS.autoAdjust}
-                            className="md:grid-cols-[minmax(0,1fr)_auto]"
+                          </div>
+                          <div
+                            className="rounded border border-slate-400/60 bg-slate-700/20 px-2 py-2 flex items-center justify-between gap-2"
+                            title={SETTINGS_TOOLTIPS.autoAdjust}
                           >
+                            <span className="text-[11px] uppercase tracking-wide text-slate-200">
+                              Auto-Adjust
+                            </span>
                             <SettingsToggle
                               title={SETTINGS_TOOLTIPS.autoAdjust}
                               checked={parseSettingsDraft.autoAdjustEnabled}
@@ -5423,32 +5566,13 @@ const App: React.FC<AppProps> = ({
                                 handleDraftParseSetting('autoAdjustEnabled', checked)
                               }
                             />
-                          </SettingsRow>
-                          <SettingsRow
-                            label="Map Show Lost"
-                            tooltip={SETTINGS_TOOLTIPS.mapShowLostStations}
-                            className="md:grid-cols-[minmax(0,1fr)_auto]"
-                          >
-                            <SettingsToggle
-                              title={SETTINGS_TOOLTIPS.mapShowLostStations}
-                              checked={settingsDraft.mapShowLostStations}
-                              onChange={(checked) =>
-                                handleDraftSetting('mapShowLostStations', checked)
-                              }
-                            />
-                          </SettingsRow>
-                          <SettingsRow
-                            label="Map 3D"
-                            tooltip={SETTINGS_TOOLTIPS.map3dEnabled}
-                            className="md:grid-cols-[minmax(0,1fr)_auto]"
-                          >
-                            <SettingsToggle
-                              title={SETTINGS_TOOLTIPS.map3dEnabled}
-                              checked={settingsDraft.map3dEnabled}
-                              onChange={(checked) => handleDraftSetting('map3dEnabled', checked)}
-                            />
-                          </SettingsRow>
+                          </div>
                         </div>
+                        {parseSettingsDraft.preanalysisMode && (
+                          <div className="text-[11px] text-slate-300">
+                            Auto-Adjust is disabled while Preanalysis mode is enabled.
+                          </div>
+                        )}
                       </div>
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                         <label className={optionLabelClass}>
@@ -5673,17 +5797,32 @@ const App: React.FC<AppProps> = ({
                           </select>
                         </label>
                       </div>
-                      <SettingsRow label="Max Iterations" tooltip={SETTINGS_TOOLTIPS.maxIterations}>
-                        <input
-                          title={SETTINGS_TOOLTIPS.maxIterations}
-                          type="number"
-                          min={1}
-                          max={100}
-                          value={settingsDraft.maxIterations}
-                          onChange={handleDraftIterChange}
-                          className={optionInputClass}
-                        />
-                      </SettingsRow>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <label className={optionLabelClass}>
+                          Max Iterations
+                          <input
+                            title={SETTINGS_TOOLTIPS.maxIterations}
+                            type="number"
+                            min={1}
+                            max={100}
+                            value={settingsDraft.maxIterations}
+                            onChange={handleDraftIterChange}
+                            className={`${optionInputClass} mt-1`}
+                          />
+                        </label>
+                        <label className={optionLabelClass}>
+                          Convergence Limit
+                          <input
+                            title={SETTINGS_TOOLTIPS.convergenceLimit}
+                            type="number"
+                            min={0}
+                            step="any"
+                            value={settingsDraft.convergenceLimit}
+                            onChange={handleDraftConvergenceLimitChange}
+                            className={`${optionInputClass} mt-1`}
+                          />
+                        </label>
+                      </div>
                     </SettingsCard>
                   </div>
 
@@ -5957,6 +6096,28 @@ const App: React.FC<AppProps> = ({
                         title={SETTINGS_TOOLTIPS.normalize}
                         checked={parseSettingsDraft.normalize}
                         onChange={(checked) => handleDraftParseSetting('normalize', checked)}
+                      />
+                    </SettingsRow>
+                    <SettingsRow
+                      label="Map Show Lost Stations"
+                      tooltip={SETTINGS_TOOLTIPS.mapShowLostStations}
+                      className="md:grid-cols-[minmax(0,1fr)_auto]"
+                    >
+                      <SettingsToggle
+                        title={SETTINGS_TOOLTIPS.mapShowLostStations}
+                        checked={settingsDraft.mapShowLostStations}
+                        onChange={(checked) => handleDraftSetting('mapShowLostStations', checked)}
+                      />
+                    </SettingsRow>
+                    <SettingsRow
+                      label="Map 3D"
+                      tooltip={SETTINGS_TOOLTIPS.map3dEnabled}
+                      className="md:grid-cols-[minmax(0,1fr)_auto]"
+                    >
+                      <SettingsToggle
+                        title={SETTINGS_TOOLTIPS.map3dEnabled}
+                        checked={settingsDraft.map3dEnabled}
+                        onChange={(checked) => handleDraftSetting('map3dEnabled', checked)}
                       />
                     </SettingsRow>
                   </SettingsCard>
@@ -6814,11 +6975,230 @@ const App: React.FC<AppProps> = ({
               {activeOptionsTab === 'gps' && (
                 <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
                   <SettingsCard
-                    title="Geodetic Framework"
+                    title="Coordinate System (Canada-First)"
                     tooltip={PROJECT_OPTION_SECTION_TOOLTIPS['CRS / Geodetic Setup']}
                   >
+                    <SettingsRow label="Coord System Mode" tooltip={SETTINGS_TOOLTIPS.coordSystemMode}>
+                      <select
+                        title={SETTINGS_TOOLTIPS.coordSystemMode}
+                        value={parseSettingsDraft.coordSystemMode}
+                        onChange={(e) =>
+                          handleDraftParseSetting(
+                            'coordSystemMode',
+                            e.target.value as CoordSystemMode,
+                          )
+                        }
+                        className={optionInputClass}
+                      >
+                        <option value="local">LOCAL</option>
+                        <option value="grid">GRID</option>
+                      </select>
+                    </SettingsRow>
+                    <SettingsRow label="CRS (Grid Mode)" tooltip={SETTINGS_TOOLTIPS.crsId}>
+                      <select
+                        title={SETTINGS_TOOLTIPS.crsId}
+                        value={parseSettingsDraft.crsId}
+                        disabled={parseSettingsDraft.coordSystemMode !== 'grid'}
+                        onChange={(e) => handleDraftParseSetting('crsId', e.target.value)}
+                        className={`${optionInputClass} disabled:opacity-50 disabled:cursor-not-allowed`}
+                      >
+                        {CANADA_CRS_CATALOG.map((crs) => (
+                          <option key={crs.id} value={crs.id}>
+                            {crs.id} - {crs.label}
+                          </option>
+                        ))}
+                      </select>
+                    </SettingsRow>
+                    <div className="rounded-md border border-slate-400/60 bg-slate-700/20 px-3 py-2 text-[11px] text-slate-200 leading-relaxed space-y-1">
+                      <div className="uppercase tracking-wide text-slate-100">CRS Details</div>
+                      <div>ID: {selectedDraftCrs?.id ?? parseSettingsDraft.crsId}</div>
+                      <div>Datum: {selectedDraftCrs?.datum ?? '-'}</div>
+                      <div>
+                        Projection: {selectedDraftCrs?.projectionFamily?.toUpperCase() ?? '-'} (zone{' '}
+                        {selectedDraftCrs?.zoneNumber ?? '-'})
+                      </div>
+                      <div>Axis/Unit: {selectedDraftCrs?.axisOrder ?? '-'} / {selectedDraftCrs?.linearUnit ?? '-'}</div>
+                      <div>Area of Use: {selectedDraftCrs?.areaOfUse ?? '-'}</div>
+                    </div>
+                    <SettingsRow label="Local Datum Scheme" tooltip={SETTINGS_TOOLTIPS.localDatumScheme}>
+                      <select
+                        title={SETTINGS_TOOLTIPS.localDatumScheme}
+                        value={parseSettingsDraft.localDatumScheme}
+                        disabled={parseSettingsDraft.coordSystemMode !== 'local'}
+                        onChange={(e) =>
+                          handleDraftParseSetting(
+                            'localDatumScheme',
+                            e.target.value as LocalDatumScheme,
+                          )
+                        }
+                        className={`${optionInputClass} disabled:opacity-50 disabled:cursor-not-allowed`}
+                      >
+                        <option value="average-scale">Average Scale Factor</option>
+                        <option value="common-elevation">Common Elevation</option>
+                      </select>
+                    </SettingsRow>
+                    <SettingsRow label="Average Scale Factor" tooltip={SETTINGS_TOOLTIPS.averageScaleFactor}>
+                      <input
+                        title={SETTINGS_TOOLTIPS.averageScaleFactor}
+                        type="number"
+                        min={0.000001}
+                        step={0.00000001}
+                        value={parseSettingsDraft.averageScaleFactor}
+                        disabled={
+                          parseSettingsDraft.coordSystemMode !== 'local' ||
+                          parseSettingsDraft.localDatumScheme !== 'average-scale'
+                        }
+                        onChange={(e) => {
+                          const parsed = Number.parseFloat(e.target.value);
+                          handleDraftParseSetting(
+                            'averageScaleFactor',
+                            Number.isFinite(parsed) && parsed > 0 ? parsed : 1,
+                          );
+                        }}
+                        className={`${optionInputClass} disabled:opacity-50 disabled:cursor-not-allowed`}
+                      />
+                    </SettingsRow>
                     <SettingsRow
-                      label="CRS Transforms"
+                      label={`Common Elevation (${settingsDraft.units === 'ft' ? 'ft' : 'm'})`}
+                      tooltip={SETTINGS_TOOLTIPS.commonElevation}
+                    >
+                      <input
+                        title={SETTINGS_TOOLTIPS.commonElevation}
+                        type="number"
+                        step={0.001}
+                        value={
+                          settingsDraft.units === 'ft'
+                            ? parseSettingsDraft.commonElevation * FT_PER_M
+                            : parseSettingsDraft.commonElevation
+                        }
+                        disabled={
+                          parseSettingsDraft.coordSystemMode !== 'local' ||
+                          parseSettingsDraft.localDatumScheme !== 'common-elevation'
+                        }
+                        onChange={(e) => {
+                          const parsed = Number.parseFloat(e.target.value);
+                          const meters = Number.isFinite(parsed)
+                            ? settingsDraft.units === 'ft'
+                              ? parsed * M_PER_FT
+                              : parsed
+                            : 0;
+                          handleDraftParseSetting('commonElevation', meters);
+                        }}
+                        className={`${optionInputClass} disabled:opacity-50 disabled:cursor-not-allowed`}
+                      />
+                    </SettingsRow>
+                    <SettingsRow
+                      label={`Average Geoid Height (${settingsDraft.units === 'ft' ? 'ft' : 'm'})`}
+                      tooltip={SETTINGS_TOOLTIPS.averageGeoidHeight}
+                    >
+                      <input
+                        title={SETTINGS_TOOLTIPS.averageGeoidHeight}
+                        type="number"
+                        step={0.001}
+                        value={
+                          settingsDraft.units === 'ft'
+                            ? parseSettingsDraft.averageGeoidHeight * FT_PER_M
+                            : parseSettingsDraft.averageGeoidHeight
+                        }
+                        onChange={(e) => {
+                          const parsed = Number.parseFloat(e.target.value);
+                          const meters = Number.isFinite(parsed)
+                            ? settingsDraft.units === 'ft'
+                              ? parsed * M_PER_FT
+                              : parsed
+                            : 0;
+                          handleDraftParseSetting('averageGeoidHeight', meters);
+                        }}
+                        className={optionInputClass}
+                      />
+                    </SettingsRow>
+                    <div className="rounded-md border border-slate-400/60 bg-slate-700/20 px-3 py-2 text-[11px] text-slate-200 leading-relaxed space-y-2">
+                      <div className="uppercase tracking-wide text-slate-100">
+                        Observation Input Mode (.MEASURED / .GRID)
+                      </div>
+                      <div className="grid gap-2">
+                        <SettingsRow
+                          label="Bearing/Azimuth Mode"
+                          tooltip={SETTINGS_TOOLTIPS.gridBearingMode}
+                        >
+                          <select
+                            title={SETTINGS_TOOLTIPS.gridBearingMode}
+                            value={parseSettingsDraft.gridBearingMode}
+                            disabled={parseSettingsDraft.coordSystemMode !== 'grid'}
+                            onChange={(e) =>
+                              handleDraftParseSetting(
+                                'gridBearingMode',
+                                e.target.value as GridObservationMode,
+                              )
+                            }
+                            className={`${optionInputClass} disabled:opacity-50 disabled:cursor-not-allowed`}
+                          >
+                            <option value="measured">MEASURED</option>
+                            <option value="grid">GRID</option>
+                          </select>
+                        </SettingsRow>
+                        <SettingsRow label="Distance Mode" tooltip={SETTINGS_TOOLTIPS.gridDistanceMode}>
+                          <select
+                            title={SETTINGS_TOOLTIPS.gridDistanceMode}
+                            value={parseSettingsDraft.gridDistanceMode}
+                            disabled={parseSettingsDraft.coordSystemMode !== 'grid'}
+                            onChange={(e) =>
+                              handleDraftParseSetting(
+                                'gridDistanceMode',
+                                e.target.value as GridDistanceInputMode,
+                              )
+                            }
+                            className={`${optionInputClass} disabled:opacity-50 disabled:cursor-not-allowed`}
+                          >
+                            <option value="measured">MEASURED (Ground)</option>
+                            <option value="grid">GRID</option>
+                            <option value="ellipsoidal">ELLIPSOIDAL</option>
+                          </select>
+                        </SettingsRow>
+                        <SettingsRow label="Angle Mode" tooltip={SETTINGS_TOOLTIPS.gridAngleMode}>
+                          <select
+                            title={SETTINGS_TOOLTIPS.gridAngleMode}
+                            value={parseSettingsDraft.gridAngleMode}
+                            disabled={parseSettingsDraft.coordSystemMode !== 'grid'}
+                            onChange={(e) =>
+                              handleDraftParseSetting(
+                                'gridAngleMode',
+                                e.target.value as GridObservationMode,
+                              )
+                            }
+                            className={`${optionInputClass} disabled:opacity-50 disabled:cursor-not-allowed`}
+                          >
+                            <option value="measured">MEASURED</option>
+                            <option value="grid">GRID</option>
+                          </select>
+                        </SettingsRow>
+                        <SettingsRow label="Direction Mode" tooltip={SETTINGS_TOOLTIPS.gridDirectionMode}>
+                          <select
+                            title={SETTINGS_TOOLTIPS.gridDirectionMode}
+                            value={parseSettingsDraft.gridDirectionMode}
+                            disabled={parseSettingsDraft.coordSystemMode !== 'grid'}
+                            onChange={(e) =>
+                              handleDraftParseSetting(
+                                'gridDirectionMode',
+                                e.target.value as GridObservationMode,
+                              )
+                            }
+                            className={`${optionInputClass} disabled:opacity-50 disabled:cursor-not-allowed`}
+                          >
+                            <option value="measured">MEASURED</option>
+                            <option value="grid">GRID</option>
+                          </select>
+                        </SettingsRow>
+                      </div>
+                    </div>
+                  </SettingsCard>
+
+                  <SettingsCard
+                    title="Advanced CRS/GPS/Height"
+                    tooltip={PROJECT_OPTION_SECTION_TOOLTIPS['GPS Loop Check']}
+                  >
+                    <SettingsRow
+                      label="CRS Transforms (Legacy)"
                       tooltip={SETTINGS_TOOLTIPS.crsTransformEnabled}
                       className="md:grid-cols-[minmax(0,1fr)_auto]"
                     >
@@ -6831,7 +7211,7 @@ const App: React.FC<AppProps> = ({
                       />
                     </SettingsRow>
                     <SettingsRow
-                      label="Projection Model"
+                      label="Projection Model (Legacy)"
                       tooltip={SETTINGS_TOOLTIPS.crsProjectionModel}
                     >
                       <select
@@ -6852,7 +7232,7 @@ const App: React.FC<AppProps> = ({
                         <option value="local-enu">Local ENU (Tangent Plane)</option>
                       </select>
                     </SettingsRow>
-                    <SettingsRow label="CRS Label" tooltip={SETTINGS_TOOLTIPS.crsLabel}>
+                    <SettingsRow label="CRS Label (Legacy)" tooltip={SETTINGS_TOOLTIPS.crsLabel}>
                       <input
                         title={SETTINGS_TOOLTIPS.crsLabel}
                         type="text"
@@ -6862,7 +7242,7 @@ const App: React.FC<AppProps> = ({
                       />
                     </SettingsRow>
                     <SettingsRow
-                      label="Grid-Ground Scale"
+                      label="Grid-Ground Scale Override"
                       tooltip={SETTINGS_TOOLTIPS.crsGridScaleEnabled}
                       className="md:grid-cols-[minmax(0,1fr)_auto]"
                     >
@@ -6875,7 +7255,7 @@ const App: React.FC<AppProps> = ({
                       />
                     </SettingsRow>
                     <SettingsRow
-                      label="Grid Scale Factor"
+                      label="Grid Scale Factor Override"
                       tooltip={SETTINGS_TOOLTIPS.crsGridScaleFactor}
                     >
                       <input
@@ -6896,7 +7276,7 @@ const App: React.FC<AppProps> = ({
                       />
                     </SettingsRow>
                     <SettingsRow
-                      label="Convergence Correction"
+                      label="Convergence Override"
                       tooltip={SETTINGS_TOOLTIPS.crsConvergenceEnabled}
                       className="md:grid-cols-[minmax(0,1fr)_auto]"
                     >
@@ -6909,7 +7289,7 @@ const App: React.FC<AppProps> = ({
                       />
                     </SettingsRow>
                     <SettingsRow
-                      label="Convergence Angle (deg)"
+                      label="Convergence Angle Override (deg)"
                       tooltip={SETTINGS_TOOLTIPS.crsConvergenceAngle}
                     >
                       <input
@@ -6928,12 +7308,6 @@ const App: React.FC<AppProps> = ({
                         className={`${optionInputClass} disabled:opacity-50 disabled:cursor-not-allowed`}
                       />
                     </SettingsRow>
-                  </SettingsCard>
-
-                  <SettingsCard
-                    title="GPS & Height Options"
-                    tooltip={PROJECT_OPTION_SECTION_TOOLTIPS['GPS Loop Check']}
-                  >
                     <SettingsRow
                       label="GPS Loop Check"
                       tooltip={SETTINGS_TOOLTIPS.gpsLoopCheckEnabled}
@@ -7102,9 +7476,9 @@ const App: React.FC<AppProps> = ({
                     </SettingsRow>
                     <div className="rounded-md border border-slate-400/60 bg-slate-700/20 px-3 py-2 text-[11px] text-slate-200 leading-relaxed space-y-2">
                       <div>
-                        CRS transforms, GPS loop checks, geoid/grid modeling, and GPS AddHiHt
-                        defaults all stay <strong>OFF</strong> unless you explicitly enable them
-                        here or in the input file.
+                        Canada-first grid workflows use the Coordinate System settings in the left
+                        card. Advanced overrides here are optional compatibility controls and remain
+                        <strong> OFF</strong> unless explicitly enabled.
                       </div>
                     </div>
                   </SettingsCard>
@@ -7363,6 +7737,16 @@ const App: React.FC<AppProps> = ({
                               profileDefaultInstrumentFallback:
                                 runDiagnostics.profileDefaultInstrumentFallback,
                               rotationAngleRad: runDiagnostics.rotationAngleRad,
+                              coordSystemMode: runDiagnostics.coordSystemMode,
+                              crsId: runDiagnostics.crsId,
+                              localDatumScheme: runDiagnostics.localDatumScheme,
+                              averageScaleFactor: runDiagnostics.averageScaleFactor,
+                              commonElevation: runDiagnostics.commonElevation,
+                              averageGeoidHeight: runDiagnostics.averageGeoidHeight,
+                              gridBearingMode: runDiagnostics.gridBearingMode,
+                              gridDistanceMode: runDiagnostics.gridDistanceMode,
+                              gridAngleMode: runDiagnostics.gridAngleMode,
+                              gridDirectionMode: runDiagnostics.gridDirectionMode,
                               crsTransformEnabled: runDiagnostics.crsTransformEnabled,
                               crsProjectionModel: runDiagnostics.crsProjectionModel,
                               crsLabel: runDiagnostics.crsLabel,

@@ -10,6 +10,16 @@ interface ProcessingSummaryViewProps {
     directionSetMode: 'reduced' | 'raw';
     profileDefaultInstrumentFallback: boolean;
     rotationAngleRad: number;
+    coordSystemMode?: 'local' | 'grid';
+    crsId?: string;
+    localDatumScheme?: 'average-scale' | 'common-elevation';
+    averageScaleFactor?: number;
+    commonElevation?: number;
+    averageGeoidHeight?: number;
+    gridBearingMode?: 'measured' | 'grid';
+    gridDistanceMode?: 'measured' | 'grid' | 'ellipsoidal';
+    gridAngleMode?: 'measured' | 'grid';
+    gridDirectionMode?: 'measured' | 'grid';
     crsTransformEnabled?: boolean;
     crsProjectionModel?: 'legacy-equirectangular' | 'local-enu';
     crsLabel?: string;
@@ -213,6 +223,21 @@ const ProcessingSummaryView: React.FC<ProcessingSummaryViewProps> = ({
         `Run Profile: ${runDiagnostics.solveProfile.toUpperCase()} (dirSets=${runDiagnostics.directionSetMode}, profileFallback=${runDiagnostics.profileDefaultInstrumentFallback ? 'ON' : 'OFF'})`,
       );
       lines.push(`Plan Rotation: ${(runDiagnostics.rotationAngleRad * 180 / Math.PI).toFixed(6)} deg`);
+      lines.push(
+        `Coordinate System: ${(runDiagnostics.coordSystemMode ?? 'local').toUpperCase()} (CRS=${runDiagnostics.crsId ?? '-'})`,
+      );
+      if ((runDiagnostics.coordSystemMode ?? 'local') === 'local') {
+        lines.push(
+          `Local Datum Scheme: ${String(runDiagnostics.localDatumScheme ?? 'average-scale').toUpperCase()} (scale=${(runDiagnostics.averageScaleFactor ?? 1).toFixed(8)}, commonElev=${(((runDiagnostics.commonElevation ?? 0) * unitScale)).toFixed(4)}${linearUnit})`,
+        );
+      } else {
+        lines.push(
+          `Grid Input Modes: bearing=${String(runDiagnostics.gridBearingMode ?? 'grid').toUpperCase()}, distance=${String(runDiagnostics.gridDistanceMode ?? 'measured').toUpperCase()}, angle=${String(runDiagnostics.gridAngleMode ?? 'measured').toUpperCase()}, direction=${String(runDiagnostics.gridDirectionMode ?? 'measured').toUpperCase()}`,
+        );
+      }
+      lines.push(
+        `Average Geoid Height Fallback: ${(((runDiagnostics.averageGeoidHeight ?? 0) * unitScale)).toFixed(4)}${linearUnit}`,
+      );
       lines.push(
         `CRS / Projection: ${runDiagnostics.crsTransformEnabled ? `ON (${runDiagnostics.crsProjectionModel ?? 'legacy-equirectangular'}, label="${runDiagnostics.crsLabel || 'unnamed'}")` : 'OFF'}`,
       );

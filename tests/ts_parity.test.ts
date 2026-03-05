@@ -84,7 +84,7 @@ describe('TS parity harness (phase 1)', () => {
     const result = solveStarParity(input)
 
     expect(result.converged).toBe(true)
-    expect(result.iterations).toBe(4)
+    expect(result.iterations).toBe(5)
     expect(result.dof).toBe(165)
     expect(result.typeSummary?.direction?.count ?? 0).toBe(18)
     expect(result.seuw).toBeCloseTo(0.9728, 3)

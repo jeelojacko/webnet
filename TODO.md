@@ -1,6 +1,10 @@
 # TODO - WebNet
 
 - [x] Add TypeScript tooling (tsconfig, TSX entry) and migrate LSA engine/UI to TS modules
+- [x] Add Canada-first coordinate-system Phase 1 support (Local/Grid mode, NAD83(CSRS) UTM catalog, `.SCALE` + `.MEASURED`/`.GRID` directives, mode-aware reductions, GPS/CRS UI controls, report/listing diagnostics, CLI flags, and parser/engine/UI regression coverage)
+- [x] Keep `manual/` local-only by adding repo ignore/docs policy (`manual/` in `.gitignore`, process note in `agents.md`, no `.gitattributes` exclusion semantics)
+- [x] Fix Vitest/jsdom worker startup compatibility on current Node runtime by pinning `jsdom` to `26.1.0`
+- [x] Clean up Project Options -> Adjustment action controls (keep only adjustment workflows) and move map display toggles to General -> Local/Grid Reduction
 - [x] Update ESLint to parse TS/TSX and ensure lint/build pass
 - [x] Split UI into smaller components (Layout, Report, InputPane) to reduce App.tsx size
 - [x] Add CI + coverage for Vitest suite (matrix/angles/parser/engine fixtures added; GitHub Actions workflow + coverage script)
@@ -16,6 +20,7 @@
 - [x] Project Options refresh: add user-editable named level-loop tolerance presets, replace the Other Files placeholder with real export/output controls, and condense the Adjustment, GPS, General, Instrument, Special, and Modeling settings tabs into cleaner card/grid layouts with inline toggles and right-aligned inputs
 - [x] Project Options modal regression coverage: add focused layout tests for Adjustment, General, Instrument, GPS, Other Files, and Modeling tab rendering so condensed modal structure stays stable
 - [x] Project Options modal interaction coverage: add jsdom interaction tests for tab switching plus `Apply`/`Cancel` draft persistence/discard behavior
+- [x] Adjustment convergence controls: add user-facing `Convergence Limit` beside `Max Iterations`, persist it in project settings, and wire solver stopping to iteration-to-iteration `vTPv` delta with listing output parity
 - [x] Field-collection parser expansion: support SS shorthand station tokens (`SS at-to` / `SS at-from-to`) with deterministic angle defaults + HI/HT parsing, and add `GS` GNSS topo coordinate records as post-adjust (equation-excluded) outputs across report/summary/map/export
 - [x] Workspace persistence + adjusted-points deliverables: add save/open project files (`webnet-project` JSON with input + settings + instruments + export prefs), add configurable adjusted-points export (preset/custom columns, delimiter, optional LAT/LON, max-6 dynamic ordering), and expose both via toolbar and Project Options -> Other Files with regression tests
 - [ ] No-result-change optimization batch plan:

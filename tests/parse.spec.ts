@@ -321,6 +321,53 @@ describe('parseInput', () => {
     expect(deltaN).toBeGreaterThan(10);
   });
 
+  it('parses .SCALE and grid/measured observation mode directives', () => {
+    const parsed = parseInput(
+      [
+        '.2D',
+        '.SCALE 0.99995000',
+        '.GRID BEARING DISTANCE=ELLIPSOIDAL ANGLE DIRECTION',
+        '.MEASURED DIRECTION',
+        'C A 0 0 0 ! !',
+        'C B 100 0 0 ! !',
+        'C C 100 100 0',
+        'B A-B 090.000000 1.0',
+        'D A-C 141.421356 0.01',
+        'A B-A-C 090.000000 1.0',
+      ].join('\n'),
+    );
+    expect(parsed.parseState.averageScaleFactor).toBeCloseTo(0.99995, 10);
+    expect(parsed.parseState.gridBearingMode).toBe('grid');
+    expect(parsed.parseState.gridDistanceMode).toBe('ellipsoidal');
+    expect(parsed.parseState.gridAngleMode).toBe('grid');
+    expect(parsed.parseState.gridDirectionMode).toBe('measured');
+
+    const bearing = parsed.observations.find((o) => o.type === 'bearing');
+    const dist = parsed.observations.find((o) => o.type === 'dist');
+    const angle = parsed.observations.find((o) => o.type === 'angle');
+    expect(bearing?.gridObsMode).toBe('grid');
+    expect(dist?.gridObsMode).toBe('grid');
+    expect(dist?.gridDistanceMode).toBe('ellipsoidal');
+    expect(angle?.gridObsMode).toBe('grid');
+  });
+
+  it('supports .CRS MODE/ID and .CRS GRID <id> aliases for coordinate-system selection', () => {
+    const viaModeId = parseInput(
+      ['.CRS MODE GRID', '.CRS ID CA_NAD83_CSRS_UTM_19N', 'C A 0 0 0 ! !'].join('\n'),
+    );
+    expect(viaModeId.parseState.coordSystemMode).toBe('grid');
+    expect(viaModeId.parseState.crsId).toBe('CA_NAD83_CSRS_UTM_19N');
+
+    const viaGridAlias = parseInput(
+      ['.CRS LOCAL', '.CRS GRID CA_NAD83_CSRS_UTM_20N', 'C A 0 0 0 ! !'].join('\n'),
+    );
+    expect(viaGridAlias.parseState.coordSystemMode).toBe('grid');
+    expect(viaGridAlias.parseState.crsId).toBe('CA_NAD83_CSRS_UTM_20N');
+    expect(viaGridAlias.logs.some((l) => l.includes('Coordinate system mode set to GRID'))).toBe(
+      true,
+    );
+  });
+
   it('parses optional CRS scale/convergence directives with explicit OFF support', () => {
     const enabled = parseInput(
       [

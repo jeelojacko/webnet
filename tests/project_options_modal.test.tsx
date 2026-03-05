@@ -14,6 +14,7 @@ describe('Project Options modal layout', () => {
     expect(html).toContain('Solver Configuration');
     expect(html).toContain('Geodetic Framework');
     expect(html).toContain('Leveling / Weighting');
+    expect(html).toContain('Convergence Limit');
     expect(html).toContain('Level Loop Preset');
     expect(html).toContain('Saved Custom Presets');
     expect(html).toContain('Add Current');
@@ -51,7 +52,12 @@ describe('Project Options modal layout', () => {
       <App initialSettingsModalOpen={true} initialOptionsTab="gps" />,
     );
 
-    expect(html).toContain('GPS &amp; Height Options');
+    expect(html).toContain('Coordinate System (Canada-First)');
+    expect(html).toContain('Coord System Mode');
+    expect(html).toContain('CRS (Grid Mode)');
+    expect(html).toContain('Average Geoid Height');
+    expect(html).toContain('Observation Input Mode (.MEASURED / .GRID)');
+    expect(html).toContain('Advanced CRS/GPS/Height');
     expect(html).toContain('GPS Loop Check');
     expect(html).toContain('Geoid/Grid Model');
     expect(html).not.toContain(

@@ -9,6 +9,7 @@ export type IndustryListingSortObservationsBy = 'input' | 'name' | 'residual';
 
 export interface IndustryListingSettings {
   maxIterations: number;
+  convergenceLimit?: number;
   units: 'm' | 'ft';
   listingShowCoordinates: boolean;
   listingShowObservationsResiduals: boolean;
@@ -39,6 +40,16 @@ export interface IndustryListingRunDiagnostics {
   defaultSigmaByType: string;
   stochasticDefaultsSummary: string;
   rotationAngleRad: number;
+  coordSystemMode?: 'local' | 'grid';
+  crsId?: string;
+  localDatumScheme?: 'average-scale' | 'common-elevation';
+  averageScaleFactor?: number;
+  commonElevation?: number;
+  averageGeoidHeight?: number;
+  gridBearingMode?: 'measured' | 'grid';
+  gridDistanceMode?: 'measured' | 'grid' | 'ellipsoidal';
+  gridAngleMode?: 'measured' | 'grid';
+  gridDirectionMode?: 'measured' | 'grid';
   levelLoopToleranceBaseMm?: number;
   levelLoopTolerancePerSqrtKmMm?: number;
   qFixLinearSigmaM?: number;
@@ -108,6 +119,21 @@ export const buildIndustryStyleListingText = (
   const qFixLinearSigmaM = parseState?.qFixLinearSigmaM ?? runDiag.qFixLinearSigmaM ?? 1e-9;
   const qFixAngularSigmaSec =
     parseState?.qFixAngularSigmaSec ?? runDiag.qFixAngularSigmaSec ?? 1e-9;
+  const coordSystemMode = parseState?.coordSystemMode ?? runDiag.coordSystemMode ?? 'local';
+  const crsId = parseState?.crsId ?? runDiag.crsId ?? 'CA_NAD83_CSRS_UTM_20N';
+  const localDatumScheme =
+    parseState?.localDatumScheme ?? runDiag.localDatumScheme ?? 'average-scale';
+  const averageScaleFactor =
+    parseState?.averageScaleFactor ?? runDiag.averageScaleFactor ?? 1;
+  const commonElevation = parseState?.commonElevation ?? runDiag.commonElevation ?? 0;
+  const averageGeoidHeight =
+    parseState?.averageGeoidHeight ?? runDiag.averageGeoidHeight ?? 0;
+  const gridBearingMode = parseState?.gridBearingMode ?? runDiag.gridBearingMode ?? 'grid';
+  const gridDistanceMode =
+    parseState?.gridDistanceMode ?? runDiag.gridDistanceMode ?? 'measured';
+  const gridAngleMode = parseState?.gridAngleMode ?? runDiag.gridAngleMode ?? 'measured';
+  const gridDirectionMode =
+    parseState?.gridDirectionMode ?? runDiag.gridDirectionMode ?? 'measured';
   const crsTransformEnabled =
     parseState?.crsTransformEnabled ?? runDiag.crsTransformEnabled ?? false;
   const crsProjectionModel =
@@ -262,7 +288,15 @@ export const buildIndustryStyleListingText = (
   lines.push(
     `      Distance/Vertical Data Type         : ${(parseState?.deltaMode ?? parseSettings.deltaMode) === 'horiz' ? 'Hor Dist/DE' : 'Slope Dist/Zenith'}`,
   );
-  lines.push(`      Convergence Limit; Max Iterations   : 0.001000; ${settings.maxIterations}`);
+  const convergenceLimit =
+    typeof settings.convergenceLimit === 'number' &&
+    Number.isFinite(settings.convergenceLimit) &&
+    settings.convergenceLimit > 0
+      ? settings.convergenceLimit
+      : 0.01;
+  lines.push(
+    `      Convergence Limit; Max Iterations   : ${convergenceLimit.toFixed(6)}; ${settings.maxIterations}`,
+  );
   lines.push(
     `      Default Coefficient of Refraction   : ${(parseState?.refractionCoefficient ?? parseSettings.refractionCoefficient).toFixed(6)}`,
   );
@@ -271,6 +305,21 @@ export const buildIndustryStyleListingText = (
   );
   lines.push(
     `      Plan Rotation                      : ${Math.abs(rotationAngleRad) > 1e-12 ? `ON (${(rotationAngleRad * RAD_TO_DEG).toFixed(6)} deg)` : 'OFF'}`,
+  );
+  lines.push(
+    `      Coordinate System Mode           : ${coordSystemMode.toUpperCase()} (CRS=${crsId})`,
+  );
+  if (coordSystemMode === 'local') {
+    lines.push(
+      `      Local Datum Scheme              : ${localDatumScheme.toUpperCase()} (scale=${averageScaleFactor.toFixed(8)}, commonElev=${(commonElevation * unitScale).toFixed(4)} ${linearUnit})`,
+    );
+  } else {
+    lines.push(
+      `      Grid Input Modes                : bearing=${gridBearingMode.toUpperCase()}, distance=${gridDistanceMode.toUpperCase()}, angle=${gridAngleMode.toUpperCase()}, direction=${gridDirectionMode.toUpperCase()}`,
+    );
+  }
+  lines.push(
+    `      Average Geoid Height            : ${(averageGeoidHeight * unitScale).toFixed(4)} ${linearUnit}`,
   );
   lines.push(
     `      CRS / Projection                   : ${crsTransformEnabled ? `ON (${crsProjectionModel}, label="${crsLabel || 'unnamed'}")` : 'OFF'}`,
@@ -507,6 +556,46 @@ export const buildIndustryStyleListingText = (
       (st.x * unitScale).toFixed(4),
     ]);
     renderTextTable(['Station', 'Description', 'N', 'E'], coordRows, [2, 3]);
+
+    if (coordSystemMode === 'grid') {
+      const geodeticRows = stationEntriesForListing.map(([id, st]) => [
+        id,
+        Number.isFinite(st.latDeg ?? Number.NaN) ? (st.latDeg as number).toFixed(9) : '-',
+        Number.isFinite(st.lonDeg ?? Number.NaN) ? (st.lonDeg as number).toFixed(9) : '-',
+        (st.h * unitScale).toFixed(4),
+        st.heightType === 'orthometric' ? 'ORTHO' : 'ELLIP',
+      ]);
+      lines.push('');
+      addCenteredHeading('Geodetic Position Summary');
+      lines.push('');
+      renderTextTable(
+        ['Station', 'Lat (deg)', 'Lon (deg)', `Height (${linearUnit})`, 'HeightType'],
+        geodeticRows,
+        [3],
+      );
+
+      const factorRows = stationEntriesForListing.map(([id, st]) => [
+        id,
+        (((st.convergenceAngleRad ?? 0) * RAD_TO_DEG)).toFixed(8),
+        (st.gridScaleFactor ?? 1).toFixed(8),
+        (st.elevationFactor ?? 1).toFixed(8),
+        (st.combinedFactor ?? 1).toFixed(8),
+      ]);
+      lines.push('');
+      addCenteredHeading('Grid/Combined Factor Diagnostics');
+      lines.push('');
+      renderTextTable(
+        [
+          'Station',
+          'Convergence (deg)',
+          'GridScale',
+          'ElevFactor',
+          'CombinedFactor',
+        ],
+        factorRows,
+        [1, 2, 3, 4],
+      );
+    }
   }
 
   const compareObsByInput = (a: Observation, b: Observation) => {
@@ -841,6 +930,45 @@ export const buildIndustryStyleListingText = (
           `${row.from.padEnd(10)} ${row.to.padEnd(10)} ${row.azimuth.padStart(14)} ${row.distance.padStart(10)} ${row.sigmaAz95.padStart(7)} ${row.sigmaDist95.padStart(8)} ${row.ppm95.padStart(10)}`,
         );
       });
+    }
+
+    if (coordSystemMode === 'grid') {
+      const gridDistanceRows = listingObservations
+        .filter((obs): obs is Observation & { type: 'dist' } => obs.type === 'dist')
+        .map((obs) => {
+          const from = res.stations[obs.from];
+          const to = res.stations[obs.to];
+          const gridDist =
+            from && to ? Math.hypot(to.x - from.x, to.y - from.y) : Number.NaN;
+          const avgGridScale =
+            from && to
+              ? ((from.gridScaleFactor ?? 1) + (to.gridScaleFactor ?? 1)) / 2
+              : 1;
+          const avgCombined =
+            from && to
+              ? ((from.combinedFactor ?? 1) + (to.combinedFactor ?? 1)) / 2
+              : 1;
+          const mode = obs.gridDistanceMode ?? gridDistanceMode;
+          const scaleUsed =
+            mode === 'grid' ? 1 : mode === 'ellipsoidal' ? avgGridScale : avgCombined;
+          const groundEq =
+            Number.isFinite(gridDist) && scaleUsed > 0 ? gridDist / scaleUsed : Number.NaN;
+          return [
+            `${obs.from}-${obs.to}${aliasRefsForLine(obs.sourceLine)}`,
+            mode.toUpperCase(),
+            (obs.obs * unitScale).toFixed(4),
+            Number.isFinite(gridDist) ? (gridDist * unitScale).toFixed(4) : '-',
+            Number.isFinite(groundEq) ? (groundEq * unitScale).toFixed(4) : '-',
+            scaleUsed.toFixed(8),
+            obs.sourceLine != null ? `1:${obs.sourceLine}` : '-',
+          ];
+        });
+      renderAdjustedSection(
+        `Grid vs Ground Distance Diagnostics (${linearUnit})`,
+        gridDistanceRows,
+        ['Stations', 'Mode', 'Input', 'GridDist', 'GroundEq', 'ScaleUsed', 'File:Line'],
+        [2, 3, 4, 5],
+      );
     }
   }
   const renderSideshotListingSection = (title: string, rows: typeof sideshotsForListing) => {

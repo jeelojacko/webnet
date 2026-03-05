@@ -36,6 +36,25 @@ describe('LSAEngine', () => {
     expect(result.observations.some((o) => o.type === 'zenith')).toBe(true);
   });
 
+  it('uses convergence-limit objective delta threshold for iteration stopping', () => {
+    const loose = new LSAEngine({
+      input: fixture,
+      maxIterations: 25,
+      convergenceThreshold: 0.1,
+    }).solve();
+    const tight = new LSAEngine({
+      input: fixture,
+      maxIterations: 25,
+      convergenceThreshold: 1e-6,
+    }).solve();
+
+    expect(loose.iterations).toBeLessThanOrEqual(tight.iterations);
+    expect(Number.isFinite(loose.seuw)).toBe(true);
+    expect(Number.isFinite(tight.seuw)).toBe(true);
+    expect(loose.logs.some((line) => line.includes('vTPv before='))).toBe(true);
+    expect(tight.logs.some((line) => line.includes('vTPv before='))).toBe(true);
+  });
+
   it('keeps CRS phase-2 modeling neutral by default and applies optional scale/convergence when enabled', () => {
     const input = [
       '.2D',
@@ -59,6 +78,7 @@ describe('LSAEngine', () => {
       input,
       maxIterations: 10,
       parseOptions: {
+        gridBearingMode: 'measured',
         crsConvergenceEnabled: true,
         crsConvergenceAngleRad: 1 * DEG_TO_RAD,
       },
@@ -67,8 +87,109 @@ describe('LSAEngine', () => {
     expect(base.parseState?.crsGridScaleEnabled ?? false).toBe(false);
     expect(base.parseState?.crsConvergenceEnabled ?? false).toBe(false);
     expect(withScale.stations.B.x).toBeGreaterThan((base.stations.B.x ?? 0) + 0.03);
-    expect(withConvergence.stations.B.x).toBeLessThan(base.stations.B.x ?? 0);
+    expect(Math.abs((withConvergence.stations.B.x ?? 0) - (base.stations.B.x ?? 0))).toBeLessThan(
+      0.1,
+    );
     expect(Math.abs(withConvergence.stations.B.y ?? 0)).toBeGreaterThan(1);
+  });
+
+  it('applies local datum reduction schemes (average-scale and common-elevation)', () => {
+    const input = [
+      '.2D',
+      '.UNITS METERS DD',
+      'C A 0 0 0 ! !',
+      'C B 100 0 0',
+      'D A-B 100.000 0.001',
+      'B A-B 090.000000 1.0',
+    ].join('\n');
+
+    const base = new LSAEngine({
+      input,
+      maxIterations: 10,
+      parseOptions: { coordSystemMode: 'local', localDatumScheme: 'average-scale', averageScaleFactor: 1 },
+    }).solve();
+    const avgScale = new LSAEngine({
+      input,
+      maxIterations: 10,
+      parseOptions: {
+        coordSystemMode: 'local',
+        localDatumScheme: 'average-scale',
+        averageScaleFactor: 0.9996,
+      },
+    }).solve();
+    const commonElev = new LSAEngine({
+      input,
+      maxIterations: 10,
+      parseOptions: {
+        coordSystemMode: 'local',
+        localDatumScheme: 'common-elevation',
+        commonElevation: 1000,
+      },
+    }).solve();
+
+    expect(avgScale.stations.B.x).toBeGreaterThan(base.stations.B.x ?? 0);
+    expect(commonElev.stations.B.x).toBeLessThan(base.stations.B.x ?? 0);
+  });
+
+  it('respects measured-vs-grid distance and bearing modes in grid workflows', () => {
+    const input = [
+      '.2D',
+      '.UNITS METERS DD',
+      'C A 0 0 0 ! !',
+      'C B 100 0 0',
+      'D A-B 100.000 0.001',
+      'B A-B 090.000000 1.0',
+    ].join('\n');
+
+    const measuredDistance = new LSAEngine({
+      input,
+      maxIterations: 10,
+      parseOptions: {
+        coordSystemMode: 'grid',
+        crsId: 'CA_NAD83_CSRS_UTM_20N',
+        gridDistanceMode: 'measured',
+        crsGridScaleEnabled: true,
+        crsGridScaleFactor: 0.9996,
+      },
+    }).solve();
+    const gridDistance = new LSAEngine({
+      input,
+      maxIterations: 10,
+      parseOptions: {
+        coordSystemMode: 'grid',
+        crsId: 'CA_NAD83_CSRS_UTM_20N',
+        gridDistanceMode: 'grid',
+        crsGridScaleEnabled: true,
+        crsGridScaleFactor: 0.9996,
+      },
+    }).solve();
+    const measuredBearing = new LSAEngine({
+      input,
+      maxIterations: 10,
+      parseOptions: {
+        coordSystemMode: 'grid',
+        crsId: 'CA_NAD83_CSRS_UTM_20N',
+        gridBearingMode: 'measured',
+        crsConvergenceEnabled: true,
+        crsConvergenceAngleRad: 1 * DEG_TO_RAD,
+      },
+    }).solve();
+    const gridBearing = new LSAEngine({
+      input,
+      maxIterations: 10,
+      parseOptions: {
+        coordSystemMode: 'grid',
+        crsId: 'CA_NAD83_CSRS_UTM_20N',
+        gridBearingMode: 'grid',
+        crsConvergenceEnabled: true,
+        crsConvergenceAngleRad: 1 * DEG_TO_RAD,
+      },
+    }).solve();
+
+    expect(measuredDistance.stations.B.x).toBeGreaterThan(gridDistance.stations.B.x ?? 0);
+    expect(Math.abs(measuredBearing.stations.B.y ?? 0)).toBeGreaterThan(
+      Math.abs(gridBearing.stations.B.y ?? 0) + 1,
+    );
   });
 
   it('loads optional geoid/grid model pipeline only when explicitly enabled', () => {
@@ -155,6 +276,24 @@ describe('LSAEngine', () => {
     expect(conversionWithoutModel.parseState?.geoidConvertedStationCount ?? 0).toBe(0);
     expect(conversionWithoutModel.stations.ORTH.h).toBeCloseTo(base.stations.ORTH.h, 10);
     expect(conversionWithoutModel.logs.some((l) => l.includes('conversion requested'))).toBe(true);
+  });
+
+  it('uses average geoid height fallback conversion when geoid model is not loaded', () => {
+    const input = ['.3D', 'C A 0 0 100 ! ! !', 'C B 10 0 95'].join('\n');
+    const converted = new LSAEngine({
+      input,
+      maxIterations: 5,
+      parseOptions: {
+        geoidHeightConversionEnabled: true,
+        geoidOutputHeightDatum: 'ellipsoid',
+        averageGeoidHeight: 30,
+      },
+    }).solve();
+
+    expect(converted.parseState?.geoidHeightConversionEnabled ?? false).toBe(true);
+    expect(converted.parseState?.geoidConvertedStationCount ?? 0).toBeGreaterThan(0);
+    expect(converted.stations.A.h).toBeCloseTo(130, 8);
+    expect(converted.logs.some((line) => line.includes('conversion fallback: ON'))).toBe(true);
   });
 
   it('computes fixture-locked effective distance values for angle/direction/bearing rows', () => {

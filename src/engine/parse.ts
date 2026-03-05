@@ -1,13 +1,17 @@
 import { dmsToRad, RAD_TO_DEG, SEC_TO_RAD } from './angles';
 import { parseAutoAdjustDirectiveTokens } from './autoAdjust';
+import { DEFAULT_CANADA_CRS_ID } from './crsCatalog';
 import { normalizeGeoidModelId, parseGeoidInterpolationToken } from './geoid';
 import { parseCrsProjectionModelToken, projectGeodeticToEN } from './geodesy';
 import type {
   AngleObservation,
+  CoordSystemMode,
   CrsProjectionModel,
   DistanceObservation,
   DirectionRejectDiagnostic,
   DirObservation,
+  GridDistanceInputMode,
+  GridObservationMode,
   GpsObservation,
   Instrument,
   InstrumentLibrary,
@@ -27,6 +31,16 @@ import type {
 const defaultParseOptions: ParseOptions = {
   units: 'm',
   coordMode: '3D',
+  coordSystemMode: 'local',
+  crsId: DEFAULT_CANADA_CRS_ID,
+  localDatumScheme: 'average-scale',
+  averageScaleFactor: 1,
+  commonElevation: 0,
+  averageGeoidHeight: 0,
+  gridBearingMode: 'grid',
+  gridDistanceMode: 'measured',
+  gridAngleMode: 'measured',
+  gridDirectionMode: 'measured',
   preanalysisMode: false,
   order: 'EN',
   angleStationOrder: 'atfromto',
@@ -471,6 +485,58 @@ const activeCrsProjectionModel = (state: ParseOptions): CrsProjectionModel =>
     ? (state.crsProjectionModel ?? 'legacy-equirectangular')
     : 'legacy-equirectangular';
 
+const applyGridObservationDirective = (
+  state: ParseOptions,
+  mode: 'grid' | 'measured',
+  parts: string[],
+): string => {
+  const tokens = parts.slice(1).map((token) => token.toUpperCase());
+  const applyAll = tokens.length === 0;
+
+  const setBearing = () => {
+    state.gridBearingMode = mode;
+  };
+  const setDistance = (distanceMode?: GridDistanceInputMode) => {
+    state.gridDistanceMode = distanceMode ?? (mode === 'grid' ? 'grid' : 'measured');
+  };
+  const setAngle = () => {
+    state.gridAngleMode = mode;
+  };
+  const setDirection = () => {
+    state.gridDirectionMode = mode;
+  };
+
+  if (applyAll) {
+    setBearing();
+    setDistance();
+    setAngle();
+    setDirection();
+    return `${mode.toUpperCase()} mode applied to bearings/distances/angles/directions`;
+  }
+
+  tokens.forEach((token) => {
+    if (token.startsWith('BEA')) setBearing();
+    else if (
+      token === 'DIST=ELLIP' ||
+      token === 'DIST=ELLIPSOIDAL' ||
+      token === 'DIST=ELLIPSOID' ||
+      token === 'DISTANCE=ELLIP' ||
+      token === 'DISTANCE=ELLIPSOIDAL' ||
+      token === 'DISTANCE=ELLIPSOID'
+    ) {
+      setDistance('ellipsoidal');
+    } else if (token.startsWith('DIST')) {
+      setDistance();
+    } else if (token.startsWith('ANG')) {
+      setAngle();
+    } else if (token.startsWith('DIR')) {
+      setDirection();
+    }
+  });
+
+  return `${mode.toUpperCase()} mode updated: bearing=${state.gridBearingMode?.toUpperCase()}, distance=${(state.gridDistanceMode ?? 'measured').toUpperCase()}, angle=${state.gridAngleMode?.toUpperCase()}, direction=${state.gridDirectionMode?.toUpperCase()}`;
+};
+
 const parseGeoidHeightDatumToken = (token?: string): GeoidHeightDatum | null => {
   if (!token) return null;
   const upper = token.trim().toUpperCase();
@@ -544,6 +610,27 @@ export const parseInput = (
   const state: ParseOptions = { ...defaultParseOptions, ...opts };
   state.plannedObservationCount = 0;
   state.gpsTopoShots = [];
+  const currentGridModeForType = (
+    obsType: Observation['type'],
+  ): { gridObsMode?: GridObservationMode; gridDistanceMode?: GridDistanceInputMode } => {
+    if (obsType === 'dist') {
+      const distanceMode = state.gridDistanceMode ?? 'measured';
+      return {
+        gridObsMode: distanceMode === 'measured' ? 'measured' : 'grid',
+        gridDistanceMode: distanceMode,
+      };
+    }
+    if (obsType === 'bearing' || obsType === 'dir') {
+      return { gridObsMode: state.gridBearingMode ?? 'grid' };
+    }
+    if (obsType === 'angle') {
+      return { gridObsMode: state.gridAngleMode ?? 'measured' };
+    }
+    if (obsType === 'direction') {
+      return { gridObsMode: state.gridDirectionMode ?? 'measured' };
+    }
+    return {};
+  };
   if (state.directionSetMode === 'raw') {
     logs.push('Direction set processing mode forced to raw (no target reduction).');
   }
@@ -697,6 +784,13 @@ export const parseInput = (
   const pushObservation = <T extends Observation>(obs: T): void => {
     ensureObservationStations(obs);
     if (obs.sourceLine == null) obs.sourceLine = lineNum;
+    const gridMode = currentGridModeForType(obs.type);
+    if (obs.gridObsMode == null && gridMode.gridObsMode != null) {
+      obs.gridObsMode = gridMode.gridObsMode;
+    }
+    if (obs.type === 'dist' && obs.gridDistanceMode == null && gridMode.gridDistanceMode != null) {
+      obs.gridDistanceMode = gridMode.gridDistanceMode;
+    }
     if (obs.planned) {
       state.plannedObservationCount = (state.plannedObservationCount ?? 0) + 1;
     }
@@ -1048,6 +1142,26 @@ export const parseInput = (
         });
         if (linearChanged) logs.push(`Units set to ${state.units}`);
         if (angleChanged) logs.push(`Angle units set to ${state.angleUnits?.toUpperCase()}`);
+      } else if (op === '.SCALE') {
+        const factorToken = parts[1];
+        if (!factorToken) {
+          state.averageScaleFactor = defaultParseOptions.averageScaleFactor;
+          logs.push(`Average scale factor reset to ${state.averageScaleFactor?.toFixed(8)}`);
+        } else {
+          const factor = Number.parseFloat(factorToken);
+          if (Number.isFinite(factor) && factor > 0) {
+            state.averageScaleFactor = factor;
+            logs.push(`Average scale factor set to ${factor.toFixed(8)}`);
+          } else {
+            logs.push(
+              `Warning: invalid .SCALE factor at line ${lineNum}; expected positive number.`,
+            );
+          }
+        }
+      } else if (op === '.MEASURED') {
+        logs.push(applyGridObservationDirective(state, 'measured', parts));
+      } else if (op === '.GRID') {
+        logs.push(applyGridObservationDirective(state, 'grid', parts));
       } else if (op === '.COORD' && parts[1]) {
         state.coordMode = parts[1].toUpperCase() === '2D' ? '2D' : '3D';
         logs.push(`Coord mode set to ${state.coordMode}`);
@@ -1102,7 +1216,7 @@ export const parseInput = (
         const modeToken = (parts[1] || '').toUpperCase();
         if (!modeToken) {
           logs.push(
-            `Warning: .CRS missing mode at line ${lineNum}; expected OFF, ON [model], SCALE, CONVERGENCE, LABEL, or model token.`,
+            `Warning: .CRS missing mode at line ${lineNum}; expected OFF, ON [model], LOCAL/GRID, SCALE, CONVERGENCE, LABEL, ID, or model token.`,
           );
           continue;
         }
@@ -1117,6 +1231,56 @@ export const parseInput = (
           const label = parts.slice(2).join(' ').trim();
           state.crsLabel = label;
           logs.push(`CRS label set to "${label || 'unnamed'}"`);
+          continue;
+        }
+
+        if (modeToken === 'LOCAL') {
+          state.coordSystemMode = 'local';
+          logs.push('Coordinate system mode set to LOCAL');
+          continue;
+        }
+
+        if (modeToken === 'GRID' && parts[2]) {
+          const gridArg = parts[2].trim();
+          const gridArgUpper = gridArg.toUpperCase();
+          const maybeFactor = Number.parseFloat(gridArg);
+          if (
+            gridArgUpper !== 'ON' &&
+            gridArgUpper !== 'OFF' &&
+            gridArgUpper !== 'NONE' &&
+            (!Number.isFinite(maybeFactor) || maybeFactor <= 0)
+          ) {
+            state.coordSystemMode = 'grid';
+            state.crsId = gridArg.toUpperCase();
+            logs.push(`Coordinate system mode set to GRID (CRS=${state.crsId})`);
+            continue;
+          }
+        }
+
+        if (modeToken === 'MODE' && parts[2]) {
+          const mode = parts[2].trim().toUpperCase();
+          if (mode === 'LOCAL') {
+            state.coordSystemMode = 'local';
+            logs.push('Coordinate system mode set to LOCAL');
+          } else if (mode === 'GRID') {
+            state.coordSystemMode = 'grid';
+            logs.push(`Coordinate system mode set to GRID (CRS=${state.crsId})`);
+          } else {
+            logs.push(
+              `Warning: invalid .CRS MODE value at line ${lineNum}; expected LOCAL or GRID.`,
+            );
+          }
+          continue;
+        }
+
+        if (modeToken === 'ID' || modeToken === 'SYSTEM') {
+          if (!parts[2]) {
+            logs.push(`Warning: .CRS ${modeToken} missing id at line ${lineNum}.`);
+            continue;
+          }
+          state.crsId = parts[2].trim().toUpperCase();
+          state.coordSystemMode = 'grid';
+          logs.push(`CRS id set to ${state.crsId} (coord system mode=GRID)`);
           continue;
         }
 
@@ -1241,7 +1405,7 @@ export const parseInput = (
         }
 
         logs.push(
-          `Warning: unrecognized .CRS option at line ${lineNum}; expected OFF, ON [LEGACY|ENU], SCALE, CONVERGENCE, LABEL, or model token.`,
+          `Warning: unrecognized .CRS option at line ${lineNum}; expected OFF, ON [LEGACY|ENU], LOCAL/GRID, SCALE, CONVERGENCE, LABEL, ID, or model token.`,
         );
       } else if (op === '.GEOID') {
         const modeToken = (parts[1] || '').toUpperCase();
@@ -2127,6 +2291,8 @@ export const parseInput = (
           originLatDeg: state.originLatDeg ?? latDeg,
           originLonDeg: state.originLonDeg ?? lonDeg,
           model: projectionModel,
+          coordSystemMode: state.coordSystemMode,
+          crsId: state.crsId,
         });
         const toMeters = state.units === 'ft' ? 1 / FT_PER_M : 1;
         const st: any =
@@ -2163,7 +2329,11 @@ export const parseInput = (
           st.constraintH = st.h;
         }
         stations[id] = st;
-        if (state.crsTransformEnabled) {
+        if (state.coordSystemMode === 'grid') {
+          logs.push(
+            `P record projected to grid EN (meters) for ${id} using CRS=${state.crsId ?? 'unknown'} (model=${model})`,
+          );
+        } else if (state.crsTransformEnabled) {
           logs.push(
             `P record projected to local EN (meters) for ${id} using ${model} (CRS="${state.crsLabel || 'unnamed'}")`,
           );
