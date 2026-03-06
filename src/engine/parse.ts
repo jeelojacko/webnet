@@ -2465,11 +2465,21 @@ export const parseInput = (
         if (state.preferExternalInstruments && instCode && existingInstruments[instCode]) {
           continue;
         }
-        const desc = parts[2]?.replace(/-/g, ' ') ?? '';
-        const numeric = parts
-          .slice(3)
-          .map((p) => parseFloat(p))
-          .filter((v) => !Number.isNaN(v));
+        const instrumentTokens = parts.slice(2);
+        const numericStart = instrumentTokens.findIndex((token) => isNumericToken(token));
+        const numericTokens =
+          numericStart >= 0 ? instrumentTokens.slice(numericStart) : ([] as string[]);
+        const descTokens =
+          numericStart >= 0 ? instrumentTokens.slice(0, numericStart) : instrumentTokens;
+        let desc = descTokens.join(' ').trim();
+        if (
+          (desc.startsWith('"') && desc.endsWith('"')) ||
+          (desc.startsWith("'") && desc.endsWith("'"))
+        ) {
+          desc = desc.slice(1, -1);
+        }
+        desc = desc.replace(/-/g, ' ');
+        const numeric = numericTokens.filter((token) => isNumericToken(token)).map((token) => parseFloat(token));
         const legacy = numeric.length > 0 && numeric.length < 6;
         const edmConst = legacy ? (numeric[1] ?? 0) : (numeric[0] ?? 0);
         const edmPpm = legacy ? (numeric[0] ?? 0) : (numeric[1] ?? 0);

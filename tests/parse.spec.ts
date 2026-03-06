@@ -18,6 +18,21 @@ describe('parseInput', () => {
     expect(parsed.instrumentLibrary.TS1.desc).toBe('TS Geodetic 1mm+1ppm');
   });
 
+  it('parses quoted instrument descriptions without shifting numeric fields', () => {
+    const parsed = parseInput('I S9 "Trimble S9 0.5" 0.001 1 0.5 0.5 0.00075 0');
+    const s9 = parsed.instrumentLibrary.S9;
+    expect(s9).toBeDefined();
+    expect(s9.desc).toBe('Trimble S9 0.5');
+    expect(s9.edm_const).toBeCloseTo(0.001, 12);
+    expect(s9.edm_ppm).toBeCloseTo(1, 12);
+    expect(s9.hzPrecision_sec).toBeCloseTo(0.5, 12);
+    expect(s9.vaPrecision_sec).toBeCloseTo(0.5, 12);
+    expect(s9.dirPrecision_sec).toBeCloseTo(0.5, 12);
+    expect(s9.azBearingPrecision_sec).toBeCloseTo(0.5, 12);
+    expect(s9.instCentr_m).toBeCloseTo(0.00075, 12);
+    expect(s9.tgtCentr_m).toBeCloseTo(0, 12);
+  });
+
   it('parses observations', () => {
     expect(parsed.observations.length).toBeGreaterThan(0);
     const types = parsed.observations.reduce<Record<string, number>>((acc, o) => {

@@ -151,6 +151,7 @@ const createDefaultS9Instrument = (): Instrument => ({
   hzPrecision_sec: 0.5,
   dirPrecision_sec: 0.5,
   azBearingPrecision_sec: 0.5,
+  vaPrecision_sec: 0.5,
   instCentr_m: 0.00075,
   tgtCentr_m: 0,
 });
@@ -163,21 +164,55 @@ const cloneInstrumentLibrary = (library: InstrumentLibrary): InstrumentLibrary =
   return clone;
 };
 
+const stripUnquotedHashComment = (line: string): string => {
+  let quote: '"' | "'" | null = null;
+  for (let i = 0; i < line.length; i += 1) {
+    const ch = line[i];
+    if (quote) {
+      if (ch === quote) quote = null;
+      continue;
+    }
+    if (ch === '"' || ch === "'") {
+      quote = ch;
+      continue;
+    }
+    if (ch === '#') return line.slice(0, i);
+  }
+  return line;
+};
+
+const tokenizePreservingQuotes = (line: string): string[] => line.match(/"[^"]*"|'[^']*'|\S+/g) ?? [];
+
+const isStrictNumericToken = (token: string): boolean =>
+  /^[+-]?(?:(?:\d+(?:\.\d*)?)|(?:\.\d+))(?:[eE][+-]?\d+)?$/.test(token.trim());
+
 const parseInstrumentLibraryFromInput = (rawInput: string): InstrumentLibrary => {
   const lines = rawInput.split('\n');
   const lib: InstrumentLibrary = {};
   lines.forEach((raw) => {
-    const line = raw.trim();
+    const line = stripUnquotedHashComment(raw).trim();
     if (!line || line.startsWith('#')) return;
-    const parts = line.split(/\s+/);
-    if (parts[0]?.toUpperCase() !== 'I' || parts.length < 4) return;
+    const parts = tokenizePreservingQuotes(line);
+    if (parts[0]?.toUpperCase() !== 'I' || parts.length < 3) return;
 
     const instCode = parts[1];
-    const desc = parts[2]?.replace(/-/g, ' ') ?? '';
-    const numeric = parts
-      .slice(3)
-      .map((p) => Number.parseFloat(p))
-      .filter((v) => !Number.isNaN(v));
+    const instrumentTokens = parts.slice(2);
+    const numericStart = instrumentTokens.findIndex((token) => isStrictNumericToken(token));
+    const descTokens =
+      numericStart >= 0 ? instrumentTokens.slice(0, numericStart) : instrumentTokens;
+    const numericTokens =
+      numericStart >= 0 ? instrumentTokens.slice(numericStart) : ([] as string[]);
+    let desc = descTokens.join(' ').trim();
+    if (
+      (desc.startsWith('"') && desc.endsWith('"')) ||
+      (desc.startsWith("'") && desc.endsWith("'"))
+    ) {
+      desc = desc.slice(1, -1);
+    }
+    desc = desc.replace(/-/g, ' ');
+    const numeric = numericTokens
+      .filter((token) => isStrictNumericToken(token))
+      .map((token) => Number.parseFloat(token));
     const legacy = numeric.length > 0 && numeric.length < 6;
     const edmConst = legacy ? (numeric[1] ?? 0) : (numeric[0] ?? 0);
     const edmPpm = legacy ? (numeric[0] ?? 0) : (numeric[1] ?? 0);
