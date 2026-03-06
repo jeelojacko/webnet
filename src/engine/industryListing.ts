@@ -3,6 +3,8 @@ import { getLevelLoopTolerancePresetLabel } from './levelLoopTolerance';
 import type {
   AdjustmentResult,
   CoordSystemDiagnosticCode,
+  DatumSufficiencyReport,
+  GnssVectorFrame,
   GpsObservation,
   Observation,
 } from '../types';
@@ -49,8 +51,12 @@ export interface IndustryListingRunDiagnostics {
   crsId?: string;
   localDatumScheme?: 'average-scale' | 'common-elevation';
   averageScaleFactor?: number;
+  scaleOverrideActive?: boolean;
   commonElevation?: number;
   averageGeoidHeight?: number;
+  gnssVectorFrameDefault?: GnssVectorFrame;
+  gnssFrameConfirmed?: boolean;
+  datumSufficiencyReport?: DatumSufficiencyReport;
   gridBearingMode?: 'measured' | 'grid';
   gridDistanceMode?: 'measured' | 'grid' | 'ellipsoidal';
   gridAngleMode?: 'measured' | 'grid';
@@ -136,6 +142,10 @@ export const buildIndustryStyleListingText = (
     parseState?.localDatumScheme ?? runDiag.localDatumScheme ?? 'average-scale';
   const averageScaleFactor =
     parseState?.averageScaleFactor ?? runDiag.averageScaleFactor ?? 1;
+  const scaleOverrideActive =
+    parseState?.scaleOverrideActive ??
+    runDiag.scaleOverrideActive ??
+    false;
   const commonElevation = parseState?.commonElevation ?? runDiag.commonElevation ?? 0;
   const averageGeoidHeight =
     parseState?.averageGeoidHeight ?? runDiag.averageGeoidHeight ?? 0;
@@ -149,6 +159,10 @@ export const buildIndustryStyleListingText = (
     parseState?.coordSystemDiagnostics ?? runDiag.coordSystemDiagnostics ?? [];
   const coordSystemWarningMessages =
     parseState?.coordSystemWarningMessages ?? runDiag.coordSystemWarningMessages ?? [];
+  const datumSufficiency = parseState?.datumSufficiencyReport ?? runDiag.datumSufficiencyReport;
+  const gnssVectorFrameDefault =
+    parseState?.gnssVectorFrameDefault ?? runDiag.gnssVectorFrameDefault ?? 'gridNEU';
+  const gnssFrameConfirmed = parseState?.gnssFrameConfirmed ?? runDiag.gnssFrameConfirmed ?? false;
   const crsDatumOpId = parseState?.crsDatumOpId ?? runDiag.crsDatumOpId;
   const crsDatumFallbackUsed =
     parseState?.crsDatumFallbackUsed ?? runDiag.crsDatumFallbackUsed ?? false;
@@ -339,6 +353,23 @@ export const buildIndustryStyleListingText = (
     lines.push(
       `      Grid Input Modes                : bearing=${gridBearingMode.toUpperCase()}, distance=${gridDistanceMode.toUpperCase()}, angle=${gridAngleMode.toUpperCase()}, direction=${gridDirectionMode.toUpperCase()}`,
     );
+    lines.push(
+      `      .SCALE Override Active         : ${scaleOverrideActive ? `YES (k=${averageScaleFactor.toFixed(8)})` : 'NO'}`,
+    );
+    lines.push(
+      `      GNSS Frame Default             : ${gnssVectorFrameDefault} (confirmed=${gnssFrameConfirmed ? 'YES' : 'NO'})`,
+    );
+  }
+  if (datumSufficiency) {
+    lines.push(
+      `      Datum Sufficiency              : ${datumSufficiency.status.toUpperCase()}${datumSufficiency.reasons.length > 0 ? ` (${datumSufficiency.reasons.length} reason${datumSufficiency.reasons.length === 1 ? '' : 's'})` : ''}`,
+    );
+    datumSufficiency.reasons.forEach((reason) => {
+      lines.push(`      Datum Reason                   : ${reason}`);
+    });
+    datumSufficiency.suggestions.forEach((suggestion) => {
+      lines.push(`      Datum Suggestion               : ${suggestion}`);
+    });
   }
   lines.push(
     `      Average Geoid Height            : ${(averageGeoidHeight * unitScale).toFixed(4)} ${linearUnit}`,

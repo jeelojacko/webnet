@@ -21,6 +21,7 @@ import type {
   AdjustmentResult,
   ClusterApprovedMerge,
   ClusterMergeOutcome,
+  DatumSufficiencyReport,
   DirectionRejectDiagnostic,
   DistanceObservation,
   DirectionObservation,
@@ -36,6 +37,8 @@ import type {
   ObservationOverride,
   ParseOptions,
   CoordSystemDiagnosticCode,
+  CoordInputClass,
+  GnssVectorFrame,
 } from '../types';
 
 const EPS = 1e-10;
@@ -238,6 +241,7 @@ export class LSAEngine {
   private crsId = 'CA_NAD83_CSRS_UTM_20N';
   private localDatumScheme: ParseOptions['localDatumScheme'] = 'average-scale';
   private averageScaleFactor = 1;
+  private scaleOverrideActive = false;
   private commonElevation = 0;
   private averageGeoidHeight = 0;
   private crsGridScaleEnabled = false;
@@ -249,6 +253,7 @@ export class LSAEngine {
   private geoidInterpolation: ParseOptions['geoidInterpolation'] = 'bilinear';
   private geoidHeightConversionEnabled = false;
   private geoidOutputHeightDatum: ParseOptions['geoidOutputHeightDatum'] = 'orthometric';
+  private activeGeoidModel: GeoidGridModel | null = null;
   private applyCurvatureRefraction = false;
   private refractionCoefficient = 0.13;
   private verticalReduction: ParseOptions['verticalReduction'] = 'none';
@@ -316,6 +321,8 @@ export class LSAEngine {
   private coordSystemDiagnostics = new Set<CoordSystemDiagnosticCode>();
   private coordSystemWarningMessages: string[] = [];
   private coordWarningSeen = new Set<string>();
+  private gnssFrameConfirmed = false;
+  private datumSufficiencyReport?: DatumSufficiencyReport;
   private crsDatumOpId = '';
   private crsDatumFallbackUsed = false;
   private crsAreaOfUseStatus: 'inside' | 'outside' | 'unknown' = 'unknown';
@@ -758,15 +765,48 @@ export class LSAEngine {
   private gpsObservedVector(obs: GpsObservation): { dE: number; dN: number; scale: number } {
     const rawE = Number.isFinite(obs.obs.dE) ? obs.obs.dE : 0;
     const rawN = Number.isFinite(obs.obs.dN) ? obs.obs.dN : 0;
+    const frame: GnssVectorFrame =
+      obs.gnssVectorFrame ?? this.parseState?.gnssVectorFrameDefault ?? 'gridNEU';
+    let frameE = rawE;
+    let frameN = rawN;
+    const frameDistance = Math.hypot(rawE, rawN);
+
+    if (frame === 'enuLocal' || frame === 'llhBaseline') {
+      const convergence = this.stationFactorSnapshot(obs.from).convergenceAngleRad;
+      const azLocal = Math.atan2(rawE, rawN);
+      const azGrid = azLocal + convergence;
+      frameE = frameDistance * Math.sin(azGrid);
+      frameN = frameDistance * Math.cos(azGrid);
+      if (frameDistance > 200000) {
+        this.addCoordSystemWarning(
+          `GNSS frame sanity check: ${obs.from}-${obs.to} declared ${frame} with unusually long horizontal span ${frameDistance.toFixed(3)}m.`,
+        );
+      }
+    } else if (frame === 'ecefDelta') {
+      this.addCoordSystemWarning(
+        `GNSS frame ${frame} currently uses raw dE/dN proxy for ${obs.from}-${obs.to}; verify imported frame metadata.`,
+      );
+      if (frameDistance < 0.001 || frameDistance > 1_000_000) {
+        this.addCoordSystemWarning(
+          `GNSS frame sanity check: ${obs.from}-${obs.to} ${frame} vector magnitude ${frameDistance.toFixed(6)}m looks inconsistent.`,
+        );
+      }
+    } else if (frame === 'unknown') {
+      this.addCoordSystemDiagnostic(
+        'GNSS_FRAME_UNCONFIRMED',
+        `GNSS frame UNKNOWN for ${obs.from}-${obs.to}; solve requires explicit frame confirmation.`,
+      );
+    }
+
     const offset = this.gpsRoverOffsetVector(obs);
-    const horizRaw = Math.hypot(rawE, rawN);
+    const horizRaw = Math.hypot(frameE, frameN);
     if (horizRaw <= 1e-12) {
       return { dE: offset.dE, dN: offset.dN, scale: 1 };
     }
 
     const hasAntennaMeta = obs.gpsAntennaHiM != null || obs.gpsAntennaHtM != null;
     if (!hasAntennaMeta) {
-      return { dE: rawE + offset.dE, dN: rawN + offset.dN, scale: 1 };
+      return { dE: frameE + offset.dE, dN: frameN + offset.dN, scale: 1 };
     }
 
     const hi = Number.isFinite(obs.gpsAntennaHiM ?? Number.NaN) ? (obs.gpsAntennaHiM as number) : 0;
@@ -783,17 +823,17 @@ export class LSAEngine {
     const slope = Math.hypot(horizRaw, deltaAntenna);
     const horizCorrectedSq = slope * slope - deltaGround * deltaGround;
     if (!Number.isFinite(horizCorrectedSq) || horizCorrectedSq <= 0) {
-      return { dE: rawE + offset.dE, dN: rawN + offset.dN, scale: 1 };
+      return { dE: frameE + offset.dE, dN: frameN + offset.dN, scale: 1 };
     }
     const horizCorrected = Math.sqrt(horizCorrectedSq);
     if (!Number.isFinite(horizCorrected) || horizCorrected <= 1e-12) {
-      return { dE: rawE + offset.dE, dN: rawN + offset.dN, scale: 1 };
+      return { dE: frameE + offset.dE, dN: frameN + offset.dN, scale: 1 };
     }
     const scale = horizCorrected / horizRaw;
     if (!Number.isFinite(scale) || scale <= 0) {
-      return { dE: rawE + offset.dE, dN: rawN + offset.dN, scale: 1 };
+      return { dE: frameE + offset.dE, dN: frameN + offset.dN, scale: 1 };
     }
-    return { dE: rawE * scale + offset.dE, dN: rawN * scale + offset.dN, scale };
+    return { dE: frameE * scale + offset.dE, dN: frameN * scale + offset.dN, scale };
   }
 
   private updateGpsAddHiHtDiagnostics(): void {
@@ -1935,6 +1975,15 @@ export class LSAEngine {
     this.log(`Warning: ${normalized}`);
   }
 
+  private addCoordSystemWarning(warning: string): void {
+    const normalized = warning.trim();
+    if (!normalized) return;
+    if (this.coordWarningSeen.has(normalized)) return;
+    this.coordWarningSeen.add(normalized);
+    this.coordSystemWarningMessages.push(normalized);
+    this.log(`Warning: ${normalized}`);
+  }
+
   private clearCoordSystemDiagnostics(): void {
     this.coordSystemDiagnostics.clear();
     this.coordSystemWarningMessages = [];
@@ -1957,6 +2006,131 @@ export class LSAEngine {
       if (this.isObservationActive(obs)) active.push(obs);
     });
     return active;
+  }
+
+  private evaluateGridInputGate(activeObservations: Observation[]): {
+    blocked: boolean;
+    reasons: string[];
+    suggestions: string[];
+  } {
+    if (this.coordSystemMode !== 'grid') {
+      return { blocked: false, reasons: [], suggestions: [] };
+    }
+    const classes = new Set<CoordInputClass>();
+    Object.values(this.stations).forEach((station) => {
+      const hasControlLikeInput =
+        (station.fixedX ?? false) ||
+        (station.fixedY ?? false) ||
+        Number.isFinite(station.sx ?? Number.NaN) ||
+        Number.isFinite(station.sy ?? Number.NaN) ||
+        Number.isFinite(station.latDeg ?? Number.NaN) ||
+        Number.isFinite(station.lonDeg ?? Number.NaN) ||
+        (station.coordInputClass != null && station.coordInputClass !== 'unknown');
+      if (!hasControlLikeInput) return;
+      classes.add(station.coordInputClass ?? 'unknown');
+    });
+    const hasGrid = classes.has('grid');
+    const hasGeodetic = classes.has('geodetic');
+    const hasLocal = classes.has('local');
+    const hasUnknown = classes.has('unknown');
+    const reasons: string[] = [];
+    const suggestions: string[] = [];
+
+    if (hasUnknown) {
+      reasons.push(
+        'Grid mode input class check failed: one or more stations are UNKNOWN class (including geodetic records missing CRS/datum tagging).',
+      );
+      suggestions.push('Tag geodetic records with explicit CRS/datum or re-enter as grid/projected coordinates.');
+    }
+    if (hasLocal && (hasGrid || hasGeodetic)) {
+      reasons.push(
+        'Grid mode input class check failed: LOCAL coordinates mixed with GRID/GEODETIC coordinates without localization transform.',
+      );
+      suggestions.push('Remove local records or define a localization workflow before mixing systems.');
+    }
+    if (hasGeodetic && (!this.crsId || !this.crsId.trim())) {
+      reasons.push('Grid mode input class check failed: GEODETIC coordinates provided but CRS id is missing.');
+      suggestions.push('Set project CRS id before running a grid solve.');
+    }
+
+    const unknownGnssRows = activeObservations.filter(
+      (obs) =>
+        obs.type === 'gps' &&
+        (obs.gnssVectorFrame ?? this.parseState?.gnssVectorFrameDefault ?? 'gridNEU') ===
+          'unknown' &&
+        !((obs.gnssFrameConfirmed ?? false) || this.gnssFrameConfirmed),
+    );
+    if (unknownGnssRows.length > 0) {
+      reasons.push(
+        `Grid mode GNSS frame check failed: ${unknownGnssRows.length} vector(s) are UNKNOWN frame and not confirmed.`,
+      );
+      suggestions.push('Set .GPS FRAME to a known frame (GRIDNEU/ENULOCAL/ECEFDELTA/LLHBASELINE) or confirm unknown frame usage.');
+    }
+
+    return {
+      blocked: reasons.length > 0,
+      reasons,
+      suggestions,
+    };
+  }
+
+  private evaluateDatumSufficiency(activeObservations: Observation[]): DatumSufficiencyReport {
+    const reasons: string[] = [];
+    const suggestions: string[] = [];
+    let status: DatumSufficiencyReport['status'] = 'ok';
+
+    const hasDistanceLike = activeObservations.some((obs) => obs.type === 'dist' || obs.type === 'gps');
+    const hasAngularFamilies = activeObservations.some(
+      (obs) => obs.type === 'angle' || obs.type === 'bearing' || obs.type === 'dir' || obs.type === 'direction',
+    );
+    const weightedOrFixedXYCount = Object.values(this.stations).filter((station) => {
+      const fixedXY = (station.fixedX ?? false) && (station.fixedY ?? false);
+      const weightedXY =
+        Number.isFinite(station.sx ?? Number.NaN) && Number.isFinite(station.sy ?? Number.NaN);
+      return fixedXY || weightedXY;
+    }).length;
+    const weightedOrFixedHCount = Object.values(this.stations).filter((station) => {
+      const fixedH = station.fixedH ?? false;
+      const weightedH = Number.isFinite(station.sh ?? Number.NaN);
+      return fixedH || weightedH;
+    }).length;
+
+    if (this.is2D) {
+      const scaleDefined =
+        hasDistanceLike ||
+        weightedOrFixedXYCount >= 2 ||
+        (weightedOrFixedXYCount >= 1 && !hasAngularFamilies);
+      if (!scaleDefined) {
+        status = 'hard-fail';
+        reasons.push(
+          '2D datum sufficiency failed: scale is undefined (no distance-like constraints and control does not constrain scale).',
+        );
+        suggestions.push('Add at least one distance-like constraint (distance/GNSS) or add fixed/weighted coordinate control that constrains scale.');
+      } else if (weightedOrFixedXYCount < 2) {
+        status = 'soft-warn';
+        reasons.push(
+          '2D datum sufficiency warning: weak horizontal datum control (few fixed/weighted coordinate constraints).',
+        );
+        suggestions.push('Add a second fixed/weighted control point or a fixed azimuth/bearing constraint to strengthen orientation.');
+      }
+    } else {
+      if (weightedOrFixedXYCount === 0) {
+        status = 'hard-fail';
+        reasons.push('3D datum sufficiency failed: horizontal datum is undefined (no fixed/weighted XY control).');
+        suggestions.push('Add fixed or weighted XY control points.');
+      } else if (weightedOrFixedXYCount < 2) {
+        status = 'soft-warn';
+        reasons.push('3D datum sufficiency warning: weak horizontal control (single fixed/weighted XY constraint).');
+        suggestions.push('Add another fixed/weighted control point to stabilize orientation/scale.');
+      }
+      if (weightedOrFixedHCount === 0) {
+        status = 'hard-fail';
+        reasons.push('3D datum sufficiency failed: vertical datum is undefined (no fixed/weighted height control).');
+        suggestions.push('Add fixed/weighted height control or leveling/GNSS height constraints.');
+      }
+    }
+
+    return { status, reasons, suggestions };
   }
 
   private getAzimuth(fromID: StationId, toID: StationId): { az: number; dist: number } {
@@ -2078,16 +2252,57 @@ export class LSAEngine {
     );
   }
 
-  private stationEllipsoidHeight(station: Station): number {
-    if (station.heightType === 'ellipsoid') return station.h;
-    if (!Number.isFinite(this.averageGeoidHeight) || Math.abs(this.averageGeoidHeight) <= 0) {
+  private resolveStationEllipsoidHeight(station: Station): {
+    ellipsoidHeightUsed: number;
+    source: 'perStationGeoid+H' | 'avgGeoid+H' | 'providedEllipsoid' | 'assumed0';
+  } {
+    if (station.heightType === 'ellipsoid') {
+      station.ellipsoidHeightUsed = station.h;
+      station.ellipsoidHeightSource = 'providedEllipsoid';
+      return { ellipsoidHeightUsed: station.h, source: 'providedEllipsoid' };
+    }
+
+    if (
+      this.activeGeoidModel &&
+      Number.isFinite(station.latDeg ?? Number.NaN) &&
+      Number.isFinite(station.lonDeg ?? Number.NaN)
+    ) {
+      const undulation = interpolateGeoidUndulation(
+        this.activeGeoidModel,
+        station.latDeg as number,
+        station.lonDeg as number,
+        this.geoidInterpolation ?? 'bilinear',
+      );
+      if (Number.isFinite(undulation ?? Number.NaN)) {
+        const ellipsoidHeightUsed = station.h + (undulation as number);
+        station.ellipsoidHeightUsed = ellipsoidHeightUsed;
+        station.ellipsoidHeightSource = 'perStationGeoid+H';
+        return { ellipsoidHeightUsed, source: 'perStationGeoid+H' };
+      }
+    }
+
+    if (Number.isFinite(this.averageGeoidHeight) && Math.abs(this.averageGeoidHeight) > 0) {
+      const ellipsoidHeightUsed = station.h + this.averageGeoidHeight;
+      station.ellipsoidHeightUsed = ellipsoidHeightUsed;
+      station.ellipsoidHeightSource = 'avgGeoid+H';
       this.addCoordSystemDiagnostic(
         'GEOID_FALLBACK',
-        'Average geoid height fallback is zero/invalid while ellipsoid height is required; orthometric heights used as-is.',
+        `Station geoid fallback to average N (${this.averageGeoidHeight.toFixed(4)}m) applied while resolving ellipsoid heights.`,
       );
-      return station.h;
+      return { ellipsoidHeightUsed, source: 'avgGeoid+H' };
     }
-    return station.h + this.averageGeoidHeight;
+
+    station.ellipsoidHeightUsed = station.h;
+    station.ellipsoidHeightSource = 'assumed0';
+    this.addCoordSystemDiagnostic(
+      'GEOID_FALLBACK',
+      'Average geoid height fallback is zero/invalid while ellipsoid height is required; orthometric heights used as-is.',
+    );
+    return { ellipsoidHeightUsed: station.h, source: 'assumed0' };
+  }
+
+  private stationEllipsoidHeight(station: Station): number {
+    return this.resolveStationEllipsoidHeight(station).ellipsoidHeightUsed;
   }
 
   private stationGeodetic(stationId: StationId): { latDeg: number; lonDeg: number } | null {
@@ -2319,8 +2534,18 @@ export class LSAEngine {
     const avgGridScale = (fromF.gridScaleFactor + toF.gridScaleFactor) / 2;
     const avgCombined = (fromF.combinedFactor + toF.combinedFactor) / 2;
     const distMode = obs.gridDistanceMode ?? 'measured';
-    if (distMode === 'grid') return 1;
-    if (distMode === 'ellipsoidal') return avgGridScale;
+    const distanceKind =
+      obs.distanceKind ??
+      (distMode === 'ellipsoidal' ? 'ellipsoidal' : distMode === 'grid' ? 'grid' : 'ground');
+    if (distanceKind === 'grid') return 1;
+    if (distanceKind === 'ellipsoidal') return avgGridScale;
+    if (this.scaleOverrideActive) {
+      this.addCoordSystemDiagnostic(
+        'SCALE_OVERRIDE_USED',
+        `.SCALE override active in GRID mode: measured distances use k=${this.averageScaleFactor.toFixed(8)} (combined factor replaced).`,
+      );
+      return this.averageScaleFactor;
+    }
     return avgCombined;
   }
 
@@ -3230,6 +3455,8 @@ export class LSAEngine {
     if (!Number.isFinite(this.averageScaleFactor) || this.averageScaleFactor <= 0) {
       this.averageScaleFactor = 1;
     }
+    this.scaleOverrideActive =
+      parsed.parseState?.scaleOverrideActive ?? this.parseOptions?.scaleOverrideActive ?? false;
     this.commonElevation =
       parsed.parseState?.commonElevation ?? this.parseOptions?.commonElevation ?? 0;
     if (!Number.isFinite(this.commonElevation)) this.commonElevation = 0;
@@ -3312,20 +3539,38 @@ export class LSAEngine {
       LEVEL_LOOP_DEFAULT_PER_SQRT_KM_MM;
     const gpsLoopCheckEnabled =
       parsed.parseState?.gpsLoopCheckEnabled ?? this.parseOptions?.gpsLoopCheckEnabled ?? false;
+    this.gnssFrameConfirmed =
+      parsed.parseState?.gnssFrameConfirmed ?? this.parseOptions?.gnssFrameConfirmed ?? false;
     this.parseState = parsed.parseState;
     if (this.parseState) {
       this.parseState.coordSystemMode = this.coordSystemMode;
       this.parseState.crsId = this.crsId;
       this.parseState.localDatumScheme = this.localDatumScheme;
       this.parseState.averageScaleFactor = this.averageScaleFactor;
+      this.parseState.scaleOverrideActive = this.scaleOverrideActive;
       this.parseState.commonElevation = this.commonElevation;
       this.parseState.averageGeoidHeight = this.averageGeoidHeight;
+      this.parseState.reductionContext = this.parseState.reductionContext ?? {
+        inputSpaceDefault:
+          (this.parseState.gridDistanceMode ?? 'measured') === 'measured' ? 'measured' : 'grid',
+        distanceKind:
+          (this.parseState.gridDistanceMode ?? 'measured') === 'ellipsoidal'
+            ? 'ellipsoidal'
+            : (this.parseState.gridDistanceMode ?? 'measured') === 'grid'
+              ? 'grid'
+              : 'ground',
+        bearingKind: this.parseState.gridBearingMode ?? 'grid',
+        explicitOverrideActive: this.scaleOverrideActive,
+      };
       this.parseState.observationMode = {
         bearing: this.parseState.gridBearingMode ?? 'grid',
         distance: this.parseState.gridDistanceMode ?? 'measured',
         angle: this.parseState.gridAngleMode ?? 'measured',
         direction: this.parseState.gridDirectionMode ?? 'measured',
       };
+      this.parseState.gnssFrameConfirmed = this.gnssFrameConfirmed;
+      this.parseState.gnssVectorFrameDefault =
+        this.parseState.gnssVectorFrameDefault ?? this.parseOptions?.gnssVectorFrameDefault ?? 'gridNEU';
       this.parseState.gpsLoopCheckEnabled = gpsLoopCheckEnabled;
       this.parseState.levelLoopToleranceBaseMm = this.levelLoopToleranceBaseMm;
       this.parseState.levelLoopTolerancePerSqrtKmMm = this.levelLoopTolerancePerSqrtKmMm;
@@ -3385,10 +3630,12 @@ export class LSAEngine {
       );
     }
     let geoidModel: GeoidGridModel | null = null;
+    this.activeGeoidModel = null;
     if (this.geoidModelEnabled) {
       const loaded = loadBuiltinGeoidGridModel(this.geoidModelId);
       if (loaded.model) {
         geoidModel = loaded.model;
+        this.activeGeoidModel = geoidModel;
         const metadata = geoidGridMetadataSummary(loaded.model);
         if (this.parseState) {
           this.parseState.geoidModelLoaded = true;
@@ -3424,6 +3671,7 @@ export class LSAEngine {
           }
         }
       } else {
+        this.activeGeoidModel = null;
         if (this.parseState) {
           this.parseState.geoidModelLoaded = false;
           this.parseState.geoidModelMetadata = loaded.warning ?? '';
@@ -3544,6 +3792,52 @@ export class LSAEngine {
 
     this.updateGpsAddHiHtDiagnostics();
     const activeObservations = this.collectActiveObservations();
+    const gridInputGate = this.evaluateGridInputGate(activeObservations);
+    if (gridInputGate.blocked) {
+      this.addCoordSystemDiagnostic('CRS_INPUT_MIX_BLOCKED');
+      if (
+        gridInputGate.reasons.some((reason) =>
+          reason.toUpperCase().includes('UNKNOWN FRAME'),
+        )
+      ) {
+        this.addCoordSystemDiagnostic('GNSS_FRAME_UNCONFIRMED');
+      }
+      gridInputGate.reasons.forEach((reason) => this.log(`Error: ${reason}`));
+      gridInputGate.suggestions.forEach((suggestion) =>
+        this.log(`Suggestion: ${suggestion}`),
+      );
+      this.datumSufficiencyReport = {
+        status: 'hard-fail',
+        reasons: [...gridInputGate.reasons],
+        suggestions: [...gridInputGate.suggestions],
+      };
+      if (this.parseState) {
+        this.parseState.datumSufficiencyReport = this.datumSufficiencyReport;
+      }
+      return this.buildResult();
+    }
+    this.datumSufficiencyReport = this.evaluateDatumSufficiency(activeObservations);
+    if (this.datumSufficiencyReport.status === 'hard-fail') {
+      this.addCoordSystemDiagnostic('DATUM_HARD_FAIL');
+      this.datumSufficiencyReport.reasons.forEach((reason) => this.log(`Error: ${reason}`));
+      this.datumSufficiencyReport.suggestions.forEach((suggestion) =>
+        this.log(`Suggestion: ${suggestion}`),
+      );
+      if (this.parseState) {
+        this.parseState.datumSufficiencyReport = this.datumSufficiencyReport;
+      }
+      return this.buildResult();
+    }
+    if (this.datumSufficiencyReport.status === 'soft-warn') {
+      this.addCoordSystemDiagnostic('DATUM_SOFT_WARN');
+      this.datumSufficiencyReport.reasons.forEach((reason) => this.log(`Warning: ${reason}`));
+      this.datumSufficiencyReport.suggestions.forEach((suggestion) =>
+        this.log(`Suggestion: ${suggestion}`),
+      );
+    }
+    if (this.parseState) {
+      this.parseState.datumSufficiencyReport = this.datumSufficiencyReport;
+    }
     if (gpsLoopCheckEnabled) {
       const gpsNetworkRows = activeObservations.filter(
         (obs): obs is GpsObservation =>
@@ -6686,6 +6980,21 @@ export class LSAEngine {
         angle: this.parseState.gridAngleMode ?? 'measured',
         direction: this.parseState.gridDirectionMode ?? 'measured',
       };
+      this.parseState.reductionContext = {
+        inputSpaceDefault:
+          (this.parseState.gridDistanceMode ?? 'measured') === 'measured' ? 'measured' : 'grid',
+        distanceKind:
+          (this.parseState.gridDistanceMode ?? 'measured') === 'ellipsoidal'
+            ? 'ellipsoidal'
+            : (this.parseState.gridDistanceMode ?? 'measured') === 'grid'
+              ? 'grid'
+              : 'ground',
+        bearingKind: this.parseState.gridBearingMode ?? 'grid',
+        explicitOverrideActive: this.scaleOverrideActive,
+      };
+      this.parseState.scaleOverrideActive = this.scaleOverrideActive;
+      this.parseState.gnssFrameConfirmed = this.gnssFrameConfirmed;
+      this.parseState.datumSufficiencyReport = this.datumSufficiencyReport;
     }
     const autoSideshotEnabled =
       this.parseState?.autoSideshotEnabled ?? this.parseOptions?.autoSideshotEnabled ?? true;

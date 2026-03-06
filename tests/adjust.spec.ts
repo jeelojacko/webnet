@@ -192,6 +192,94 @@ describe('LSAEngine', () => {
     );
   });
 
+  it('applies .SCALE replacement only to measured grid-distance reductions', () => {
+    const input = [
+      '.2D',
+      '.UNITS METERS DD',
+      '.CRS GRID CA_NAD83_CSRS_UTM_20N',
+      'C A 0 0 0 ! !',
+      'C B 100 0 0',
+      'B A-B 90.000000 1.0',
+      'D A-B 100.000 0.001',
+    ].join('\n');
+
+    const baseline = new LSAEngine({
+      input,
+      maxIterations: 8,
+      parseOptions: {
+        coordSystemMode: 'grid',
+        gridDistanceMode: 'measured',
+      },
+    }).solve();
+    const scaled = new LSAEngine({
+      input,
+      maxIterations: 8,
+      parseOptions: {
+        coordSystemMode: 'grid',
+        gridDistanceMode: 'measured',
+        averageScaleFactor: 1.0025,
+        scaleOverrideActive: true,
+      },
+    }).solve();
+    const scaledGridDistance = new LSAEngine({
+      input,
+      maxIterations: 8,
+      parseOptions: {
+        coordSystemMode: 'grid',
+        gridDistanceMode: 'grid',
+        averageScaleFactor: 1.0025,
+        scaleOverrideActive: true,
+      },
+    }).solve();
+
+    expect(baseline.converged).toBe(true);
+    expect(scaled.converged).toBe(true);
+    expect(Math.abs((scaled.stations.B.x ?? 0) - (baseline.stations.B.x ?? 0))).toBeGreaterThan(
+      0.1,
+    );
+    expect(scaled.parseState?.coordSystemDiagnostics?.includes('SCALE_OVERRIDE_USED')).toBe(true);
+    expect(Math.abs((scaledGridDistance.stations.B.x ?? 0) - (baseline.stations.B.x ?? 0))).toBeLessThan(
+      1e-4,
+    );
+  });
+
+  it('blocks grid solve when GNSS vector frame is unknown and unconfirmed', () => {
+    const input = [
+      '.2D',
+      '.CRS GRID CA_NAD83_CSRS_UTM_20N',
+      '.GPS FRAME UNKNOWN',
+      '.GPS CONFIRM OFF',
+      'C A 0 0 0 ! !',
+      'C B 100 0 0',
+      'G GPS1 A B 100 0 0.01',
+    ].join('\n');
+    const result = new LSAEngine({ input, maxIterations: 6 }).solve();
+
+    expect(result.success).toBe(false);
+    expect(result.parseState?.coordSystemDiagnostics?.includes('CRS_INPUT_MIX_BLOCKED')).toBe(true);
+    expect(result.parseState?.coordSystemDiagnostics?.includes('GNSS_FRAME_UNCONFIRMED')).toBe(
+      true,
+    );
+  });
+
+  it('blocks grid solve when local and geodetic coordinate classes are mixed', () => {
+    const input = [
+      '.2D',
+      '.CRS LOCAL',
+      'C A 0 0 0 ! !',
+      '.CRS GRID CA_NAD83_CSRS_UTM_20N',
+      'P B 45.000000 -63.000000 0',
+      'D A-B 100.000 0.005',
+    ].join('\n');
+    const result = new LSAEngine({ input, maxIterations: 6 }).solve();
+
+    expect(result.success).toBe(false);
+    expect(result.parseState?.coordSystemDiagnostics?.includes('CRS_INPUT_MIX_BLOCKED')).toBe(true);
+    expect(result.logs.some((line) => line.includes('LOCAL coordinates mixed with GRID/GEODETIC'))).toBe(
+      true,
+    );
+  });
+
   it('flags CRS area-of-use warnings (warning-only) when geodetic stations are outside bounds', () => {
     const input = [
       '.2D',
@@ -223,6 +311,9 @@ describe('LSAEngine', () => {
     const result = new LSAEngine({ input, maxIterations: 8 }).solve();
 
     expect(result.parseState?.coordSystemDiagnostics?.includes('FACTOR_APPROXIMATION_USED')).toBe(
+      true,
+    );
+    expect(result.parseState?.coordSystemDiagnostics?.includes('FACTOR_FALLBACK_PROJ_USED')).toBe(
       true,
     );
     expect(result.stations.A.factorComputationSource).toBe('numerical-fallback');

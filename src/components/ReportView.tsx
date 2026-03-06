@@ -1,6 +1,14 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { AlertTriangle, CheckCircle } from 'lucide-react';
-import type { AdjustmentResult, ClusterApprovedMerge, GpsObservation, Observation } from '../types';
+import type {
+  AdjustmentResult,
+  ClusterApprovedMerge,
+  CoordSystemDiagnosticCode,
+  DatumSufficiencyReport,
+  GnssVectorFrame,
+  GpsObservation,
+  Observation,
+} from '../types';
 import { RAD_TO_DEG, radToDmsStr } from '../engine/angles';
 import { isLockedPreanalysisObservation } from '../engine/preanalysis';
 
@@ -74,6 +82,14 @@ const REPORT_STATIC_TOOLTIPS: Record<string, string> = {
   'CRS Grid Scale': 'Whether CRS grid-ground scale correction was enabled and the factor used.',
   'CRS Convergence':
     'Whether CRS convergence correction was enabled and the convergence angle used.',
+  'Coordinate System':
+    'Active coordinate-system mode and CRS used for reduction modeling in this solve.',
+  'Grid Input Modes':
+    'Observation input-space assumptions for grid workflows; .SCALE and GNSS frame defaults are shown with this context.',
+  'Datum Sufficiency':
+    'Pre-solve datum sufficiency gate status. HARD-FAIL blocks solve, SOFT-WARN allows solve with warnings and suggestions.',
+  'CRS Diagnostics':
+    'Deterministic coordinate-system diagnostic codes and warning counts emitted during preprocessing/modeling.',
   'Geoid/Grid Model':
     'Geoid/grid-model enablement state, selected model, and interpolation method.',
   'Geoid Height Conversion':
@@ -133,6 +149,22 @@ interface ReportViewProps {
     qFixAngularSigmaSec: number;
     profileDefaultInstrumentFallback: boolean;
     angleCenteringModel: 'geometry-aware-correlated-rays';
+    coordSystemMode?: 'local' | 'grid';
+    crsId?: string;
+    localDatumScheme?: 'average-scale' | 'common-elevation';
+    averageScaleFactor?: number;
+    scaleOverrideActive?: boolean;
+    commonElevation?: number;
+    averageGeoidHeight?: number;
+    gnssVectorFrameDefault?: GnssVectorFrame;
+    gnssFrameConfirmed?: boolean;
+    gridBearingMode?: 'measured' | 'grid';
+    gridDistanceMode?: 'measured' | 'grid' | 'ellipsoidal';
+    gridAngleMode?: 'measured' | 'grid';
+    gridDirectionMode?: 'measured' | 'grid';
+    datumSufficiencyReport?: DatumSufficiencyReport;
+    coordSystemDiagnostics?: CoordSystemDiagnosticCode[];
+    coordSystemWarningMessages?: string[];
     defaultSigmaCount: number;
     defaultSigmaByType: string;
     stochasticDefaultsSummary: string;
@@ -1465,6 +1497,49 @@ const ReportView: React.FC<ReportViewProps> = ({
               </div>
               <div>{`${(runDiagnostics.rotationAngleRad * RAD_TO_DEG).toFixed(6)}°`}</div>
             </div>
+            <div>
+              <div className="text-slate-500" title={REPORT_STATIC_TOOLTIPS['Coordinate System']}>
+                Coordinate System
+              </div>
+              <div>
+                {(runDiagnostics.coordSystemMode ?? 'local').toUpperCase()} (
+                {runDiagnostics.crsId ?? '-'})
+              </div>
+            </div>
+            <div className="col-span-2">
+              <div className="text-slate-500" title={REPORT_STATIC_TOOLTIPS['Grid Input Modes']}>
+                Grid Input Modes
+              </div>
+              <div className="break-words">
+                {(runDiagnostics.coordSystemMode ?? 'local') === 'grid'
+                  ? `bearing=${String(runDiagnostics.gridBearingMode ?? 'grid').toUpperCase()}, distance=${String(runDiagnostics.gridDistanceMode ?? 'measured').toUpperCase()}, angle=${String(runDiagnostics.gridAngleMode ?? 'measured').toUpperCase()}, direction=${String(runDiagnostics.gridDirectionMode ?? 'measured').toUpperCase()}, .SCALE=${runDiagnostics.scaleOverrideActive ? `ON(k=${(runDiagnostics.averageScaleFactor ?? 1).toFixed(8)})` : 'OFF'}, GNSS frame=${runDiagnostics.gnssVectorFrameDefault ?? 'gridNEU'} (confirmed=${runDiagnostics.gnssFrameConfirmed ? 'YES' : 'NO'})`
+                  : `${String(runDiagnostics.localDatumScheme ?? 'average-scale').toUpperCase()} (scale=${(runDiagnostics.averageScaleFactor ?? 1).toFixed(8)}, commonElev=${((runDiagnostics.commonElevation ?? 0) * unitScale).toFixed(4)}${units})`}
+              </div>
+            </div>
+            {runDiagnostics.datumSufficiencyReport && (
+              <div className="col-span-2">
+                <div className="text-slate-500" title={REPORT_STATIC_TOOLTIPS['Datum Sufficiency']}>
+                  Datum Sufficiency
+                </div>
+                <div className="break-words">
+                  {runDiagnostics.datumSufficiencyReport.status.toUpperCase()}
+                  {runDiagnostics.datumSufficiencyReport.reasons.length > 0
+                    ? `: ${runDiagnostics.datumSufficiencyReport.reasons.join(' | ')}`
+                    : ''}
+                </div>
+              </div>
+            )}
+            {(runDiagnostics.coordSystemDiagnostics?.length ?? 0) > 0 && (
+              <div className="col-span-2">
+                <div className="text-slate-500" title={REPORT_STATIC_TOOLTIPS['CRS Diagnostics']}>
+                  CRS Diagnostics
+                </div>
+                <div className="break-words">
+                  {runDiagnostics.coordSystemDiagnostics?.join(', ')}
+                  {` (warnings=${runDiagnostics.coordSystemWarningMessages?.length ?? 0})`}
+                </div>
+              </div>
+            )}
             <div>
               <div className="text-slate-500" title={REPORT_STATIC_TOOLTIPS['CRS / Projection']}>
                 CRS / Projection

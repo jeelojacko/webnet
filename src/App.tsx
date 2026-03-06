@@ -107,8 +107,10 @@ import type {
   GridDistanceInputMode,
   ObservationModeSettings,
   CoordSystemDiagnosticCode,
+  DatumSufficiencyReport,
   GeoidInterpolationMethod,
   GeoidHeightDatum,
+  GnssVectorFrame,
 } from './types';
 
 const ReportView = React.lazy(() => import('./components/ReportView'));
@@ -268,13 +270,17 @@ type RunDiagnostics = {
   crsId: string;
   localDatumScheme: LocalDatumScheme;
   averageScaleFactor: number;
+  scaleOverrideActive: boolean;
   commonElevation: number;
   averageGeoidHeight: number;
+  gnssVectorFrameDefault: GnssVectorFrame;
+  gnssFrameConfirmed: boolean;
   observationMode: ObservationModeSettings;
   gridBearingMode: GridObservationMode;
   gridDistanceMode: GridDistanceInputMode;
   gridAngleMode: GridObservationMode;
   gridDirectionMode: GridObservationMode;
+  datumSufficiencyReport?: DatumSufficiencyReport;
   coordSystemDiagnostics: CoordSystemDiagnosticCode[];
   coordSystemWarningMessages: string[];
   crsDatumOpId?: string;
@@ -333,6 +339,8 @@ type ParseSettings = {
   averageScaleFactor: number;
   commonElevation: number;
   averageGeoidHeight: number;
+  gnssVectorFrameDefault: GnssVectorFrame;
+  gnssFrameConfirmed: boolean;
   observationMode?: ObservationModeSettings;
   gridBearingMode: GridObservationMode;
   gridDistanceMode: GridDistanceInputMode;
@@ -491,6 +499,10 @@ const SETTINGS_TOOLTIPS = {
     'GRID/MEASURED/ELLIPSOIDAL input mode for distances in grid workflows.',
   gridAngleMode: 'GRID/MEASURED input mode for angle observations in grid workflows.',
   gridDirectionMode: 'GRID/MEASURED input mode for direction observations in grid workflows.',
+  gnssVectorFrameDefault:
+    'Default frame for GNSS vectors when individual rows do not override it. UNKNOWN requires explicit confirmation before grid solves.',
+  gnssFrameConfirmed:
+    'Confirms that unknown GNSS vector-frame inputs are intentionally accepted for this run. Leave OFF to enforce frame tagging.',
   curvatureRefraction:
     'Apply curvature/refraction correction in vertical reductions for applicable total station observations.',
   refractionK:
@@ -902,6 +914,8 @@ const App: React.FC<AppProps> = ({
     averageScaleFactor: 1,
     commonElevation: 0,
     averageGeoidHeight: 0,
+    gnssVectorFrameDefault: 'gridNEU',
+    gnssFrameConfirmed: false,
     observationMode: {
       bearing: 'grid',
       distance: 'measured',
@@ -1396,9 +1410,16 @@ const App: React.FC<AppProps> = ({
         'average-scale',
       averageScaleFactor:
         parseState.averageScaleFactor ?? profileCtx.effectiveParse.averageScaleFactor ?? 1,
+      scaleOverrideActive: parseState.scaleOverrideActive ?? false,
       commonElevation: parseState.commonElevation ?? profileCtx.effectiveParse.commonElevation ?? 0,
       averageGeoidHeight:
         parseState.averageGeoidHeight ?? profileCtx.effectiveParse.averageGeoidHeight ?? 0,
+      gnssVectorFrameDefault:
+        parseState.gnssVectorFrameDefault ??
+        profileCtx.effectiveParse.gnssVectorFrameDefault ??
+        'gridNEU',
+      gnssFrameConfirmed:
+        parseState.gnssFrameConfirmed ?? profileCtx.effectiveParse.gnssFrameConfirmed ?? false,
       observationMode:
         parseState.observationMode ??
         profileCtx.effectiveParse.observationMode ?? {
@@ -1507,6 +1528,7 @@ const App: React.FC<AppProps> = ({
       geoidSkippedStationCount: parseState.geoidSkippedStationCount ?? 0,
       coordSystemDiagnostics: parseState.coordSystemDiagnostics ?? [],
       coordSystemWarningMessages: parseState.coordSystemWarningMessages ?? [],
+      datumSufficiencyReport: parseState.datumSufficiencyReport,
       crsDatumOpId: parseState.crsDatumOpId,
       crsDatumFallbackUsed: parseState.crsDatumFallbackUsed ?? false,
       crsAreaOfUseStatus: parseState.crsAreaOfUseStatus ?? 'unknown',
@@ -1573,13 +1595,17 @@ const App: React.FC<AppProps> = ({
       crsId: parse.crsId,
       localDatumScheme: parse.localDatumScheme,
       averageScaleFactor: parse.averageScaleFactor,
+      scaleOverrideActive: parse.scaleOverrideActive ?? false,
       commonElevation: parse.commonElevation,
       averageGeoidHeight: parse.averageGeoidHeight,
+      gnssVectorFrameDefault: parse.gnssVectorFrameDefault ?? 'gridNEU',
+      gnssFrameConfirmed: parse.gnssFrameConfirmed ?? false,
       observationMode: parse.observationMode,
       gridBearingMode: parse.gridBearingMode,
       gridDistanceMode: parse.gridDistanceMode,
       gridAngleMode: parse.gridAngleMode,
       gridDirectionMode: parse.gridDirectionMode,
+      datumSufficiencyReport: parse.datumSufficiencyReport,
       coordSystemDiagnostics: parse.coordSystemDiagnostics ?? [],
       coordSystemWarningMessages: parse.coordSystemWarningMessages ?? [],
       crsDatumOpId: parse.crsDatumOpId,
@@ -1738,6 +1764,12 @@ const App: React.FC<AppProps> = ({
       lines.push(
         `Grid observation modes: bearing=${runDiag.gridBearingMode.toUpperCase()}, distance=${runDiag.gridDistanceMode.toUpperCase()}, angle=${runDiag.gridAngleMode.toUpperCase()}, direction=${runDiag.gridDirectionMode.toUpperCase()}`,
       );
+      lines.push(
+        `.SCALE override: ${runDiag.scaleOverrideActive ? `ON (k=${runDiag.averageScaleFactor.toFixed(8)})` : 'OFF'}`,
+      );
+      lines.push(
+        `GNSS frame default: ${runDiag.gnssVectorFrameDefault} (confirmed=${runDiag.gnssFrameConfirmed ? 'YES' : 'NO'})`,
+      );
     }
     lines.push(
       `Average geoid height fallback: ${(runDiag.averageGeoidHeight * unitScale).toFixed(4)} ${linearUnit}`,
@@ -1761,6 +1793,17 @@ const App: React.FC<AppProps> = ({
     }
     if (runDiag.coordSystemDiagnostics.length > 0) {
       lines.push(`Coord-system diagnostics: ${runDiag.coordSystemDiagnostics.join(', ')}`);
+    }
+    if (runDiag.datumSufficiencyReport) {
+      lines.push(
+        `Datum sufficiency: ${runDiag.datumSufficiencyReport.status.toUpperCase()}${runDiag.datumSufficiencyReport.reasons.length > 0 ? ` (${runDiag.datumSufficiencyReport.reasons.length} reason${runDiag.datumSufficiencyReport.reasons.length === 1 ? '' : 's'})` : ''}`,
+      );
+      runDiag.datumSufficiencyReport.reasons.forEach((reason) => {
+        lines.push(`Datum reason: ${reason}`);
+      });
+      runDiag.datumSufficiencyReport.suggestions.forEach((suggestion) => {
+        lines.push(`Datum suggestion: ${suggestion}`);
+      });
     }
     if (runDiag.coordSystemWarningMessages.length > 0) {
       runDiag.coordSystemWarningMessages.slice(0, 20).forEach((warning) => {
@@ -4705,6 +4748,8 @@ const App: React.FC<AppProps> = ({
         averageScaleFactor: effectiveParse.averageScaleFactor,
         commonElevation: effectiveParse.commonElevation,
         averageGeoidHeight: effectiveParse.averageGeoidHeight,
+        gnssVectorFrameDefault: effectiveParse.gnssVectorFrameDefault,
+        gnssFrameConfirmed: effectiveParse.gnssFrameConfirmed,
         observationMode: {
           bearing: effectiveParse.gridBearingMode,
           distance: effectiveParse.gridDistanceMode,
@@ -7369,6 +7414,19 @@ const App: React.FC<AppProps> = ({
                           station(s) outside CRS bounds (warning-only).
                         </div>
                       )}
+                    {runDiagnostics?.datumSufficiencyReport &&
+                      runDiagnostics.datumSufficiencyReport.status !== 'ok' && (
+                        <div
+                          className={`rounded px-2 py-1 text-[10px] ${
+                            runDiagnostics.datumSufficiencyReport.status === 'hard-fail'
+                              ? 'border border-red-300/70 bg-red-900/35 text-red-100'
+                              : 'border border-amber-300/60 bg-amber-900/30 text-amber-100'
+                          }`}
+                        >
+                          Datum sufficiency ({runDiagnostics.datumSufficiencyReport.status.toUpperCase()}
+                          ): {runDiagnostics.datumSufficiencyReport.reasons[0] ?? 'review run diagnostics'}.
+                        </div>
+                      )}
                     <SettingsRow label="Local Datum Scheme" tooltip={SETTINGS_TOOLTIPS.localDatumScheme}>
                       <select
                         title={SETTINGS_TOOLTIPS.localDatumScheme}
@@ -7736,6 +7794,41 @@ const App: React.FC<AppProps> = ({
                       />
                     </SettingsRow>
                     <SettingsRow
+                      label="GNSS Vector Frame Default"
+                      tooltip={SETTINGS_TOOLTIPS.gnssVectorFrameDefault}
+                    >
+                      <select
+                        title={SETTINGS_TOOLTIPS.gnssVectorFrameDefault}
+                        value={parseSettingsDraft.gnssVectorFrameDefault}
+                        onChange={(e) =>
+                          handleDraftParseSetting(
+                            'gnssVectorFrameDefault',
+                            e.target.value as GnssVectorFrame,
+                          )
+                        }
+                        className={optionInputClass}
+                      >
+                        <option value="gridNEU">GRID NEU</option>
+                        <option value="enuLocal">ENU Local</option>
+                        <option value="ecefDelta">ECEF Delta</option>
+                        <option value="llhBaseline">LLH Baseline</option>
+                        <option value="unknown">Unknown</option>
+                      </select>
+                    </SettingsRow>
+                    <SettingsRow
+                      label="Confirm Unknown GNSS Frames"
+                      tooltip={SETTINGS_TOOLTIPS.gnssFrameConfirmed}
+                      className="md:grid-cols-[minmax(0,1fr)_auto]"
+                    >
+                      <SettingsToggle
+                        title={SETTINGS_TOOLTIPS.gnssFrameConfirmed}
+                        checked={parseSettingsDraft.gnssFrameConfirmed}
+                        onChange={(checked) =>
+                          handleDraftParseSetting('gnssFrameConfirmed', checked)
+                        }
+                      />
+                    </SettingsRow>
+                    <SettingsRow
                       label="Geoid/Grid Model"
                       tooltip={SETTINGS_TOOLTIPS.geoidModelEnabled}
                       className="md:grid-cols-[minmax(0,1fr)_auto]"
@@ -8090,12 +8183,16 @@ const App: React.FC<AppProps> = ({
                               crsId: runDiagnostics.crsId,
                               localDatumScheme: runDiagnostics.localDatumScheme,
                               averageScaleFactor: runDiagnostics.averageScaleFactor,
+                              scaleOverrideActive: runDiagnostics.scaleOverrideActive,
                               commonElevation: runDiagnostics.commonElevation,
                               averageGeoidHeight: runDiagnostics.averageGeoidHeight,
+                              gnssVectorFrameDefault: runDiagnostics.gnssVectorFrameDefault,
+                              gnssFrameConfirmed: runDiagnostics.gnssFrameConfirmed,
                               gridBearingMode: runDiagnostics.gridBearingMode,
                               gridDistanceMode: runDiagnostics.gridDistanceMode,
                               gridAngleMode: runDiagnostics.gridAngleMode,
                               gridDirectionMode: runDiagnostics.gridDirectionMode,
+                              datumSufficiencyReport: runDiagnostics.datumSufficiencyReport,
                               coordSystemDiagnostics: runDiagnostics.coordSystemDiagnostics,
                               coordSystemWarningMessages:
                                 runDiagnostics.coordSystemWarningMessages,

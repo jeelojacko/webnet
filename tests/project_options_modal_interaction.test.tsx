@@ -86,6 +86,18 @@ const findInputForSettingsRow = (container: HTMLElement, rowLabel: string): HTML
   return input as HTMLInputElement;
 };
 
+const clickToggleForSettingsRow = async (container: HTMLElement, rowLabel: string): Promise<void> => {
+  const row = Array.from(container.querySelectorAll('label')).find((entry) =>
+    entry.textContent?.includes(rowLabel),
+  );
+  if (!row) throw new Error(`Settings row "${rowLabel}" not found.`);
+  const input = row.querySelector('input[type="checkbox"]') as HTMLInputElement | null;
+  if (!input) throw new Error(`No toggle input found in "${rowLabel}".`);
+  await act(async () => {
+    input.click();
+  });
+};
+
 const setSelectValue = async (select: HTMLSelectElement, value: string): Promise<void> => {
   await act(async () => {
     select.value = value;
@@ -340,6 +352,30 @@ describe('Project Options modal interactions', () => {
 
       const reopenedAvgGeoid = findInputForSettingsRow(app.container, 'Average Geoid Height');
       expect(reopenedAvgGeoid.value).toBe('0');
+    } finally {
+      await app.cleanup();
+    }
+  });
+
+  it('persists GNSS frame defaults and confirmation state after Apply in GPS tab', async () => {
+    const app = await mountApp('gps');
+    try {
+      const frame = findSelectForSettingsRow(app.container, 'GNSS Vector Frame Default');
+      expect(frame.value).toBe('gridNEU');
+      await setSelectValue(frame, 'unknown');
+      await clickToggleForSettingsRow(app.container, 'Confirm Unknown GNSS Frames');
+
+      await clickButtonByExactText(app.container, 'Apply');
+      await clickOpenProjectOptions(app.container);
+      await clickButtonByExactText(app.container, 'GPS');
+
+      const reopenedFrame = findSelectForSettingsRow(app.container, 'GNSS Vector Frame Default');
+      expect(reopenedFrame.value).toBe('unknown');
+      const row = Array.from(app.container.querySelectorAll('label')).find((entry) =>
+        entry.textContent?.includes('Confirm Unknown GNSS Frames'),
+      );
+      const toggle = row?.querySelector('input[type="checkbox"]') as HTMLInputElement | null;
+      expect(toggle?.checked).toBe(true);
     } finally {
       await app.cleanup();
     }

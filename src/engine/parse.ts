@@ -5,14 +5,20 @@ import { normalizeGeoidModelId, parseGeoidInterpolationToken } from './geoid';
 import { parseCrsProjectionModelToken, projectGeodeticToEN } from './geodesy';
 import type {
   AngleObservation,
+  BearingKind,
+  CoordInputClass,
   CoordSystemMode,
   CrsProjectionModel,
   DistanceObservation,
   DirectionRejectDiagnostic,
   DirObservation,
+  GnssVectorFrame,
   GridDistanceInputMode,
   GridObservationMode,
   ObservationModeSettings,
+  ReductionContext,
+  ReductionDistanceKind,
+  ReductionInputSpace,
   GpsObservation,
   Instrument,
   InstrumentLibrary,
@@ -36,8 +42,15 @@ const defaultParseOptions: ParseOptions = {
   crsId: DEFAULT_CANADA_CRS_ID,
   localDatumScheme: 'average-scale',
   averageScaleFactor: 1,
+  scaleOverrideActive: false,
   commonElevation: 0,
   averageGeoidHeight: 0,
+  reductionContext: {
+    inputSpaceDefault: 'measured',
+    distanceKind: 'ground',
+    bearingKind: 'grid',
+    explicitOverrideActive: false,
+  },
   observationMode: {
     bearing: 'grid',
     distance: 'measured',
@@ -76,6 +89,8 @@ const defaultParseOptions: ParseOptions = {
   geoidConvertedStationCount: 0,
   geoidSkippedStationCount: 0,
   gpsVectorMode: 'network',
+  gnssVectorFrameDefault: 'gridNEU',
+  gnssFrameConfirmed: false,
   gpsTopoShots: [],
   gpsAddHiHtEnabled: false,
   gpsAddHiHtHiM: 0,
@@ -492,12 +507,43 @@ const activeCrsProjectionModel = (state: ParseOptions): CrsProjectionModel =>
     ? (state.crsProjectionModel ?? 'legacy-equirectangular')
     : 'legacy-equirectangular';
 
+const gridDistanceModeToReductionDistanceKind = (
+  mode?: GridDistanceInputMode,
+): ReductionDistanceKind => {
+  if (mode === 'ellipsoidal') return 'ellipsoidal';
+  if (mode === 'grid') return 'grid';
+  return 'ground';
+};
+
+const reductionDistanceKindToGridDistanceMode = (
+  kind?: ReductionDistanceKind,
+  inputSpaceDefault: ReductionInputSpace = 'measured',
+): GridDistanceInputMode => {
+  if (kind === 'ellipsoidal') return 'ellipsoidal';
+  if (kind === 'grid') return 'grid';
+  return inputSpaceDefault === 'grid' ? 'grid' : 'measured';
+};
+
 const syncObservationModeFromLegacyFields = (state: ParseOptions): void => {
   state.observationMode = {
     bearing: state.gridBearingMode ?? defaultParseOptions.gridBearingMode ?? 'grid',
     distance: state.gridDistanceMode ?? defaultParseOptions.gridDistanceMode ?? 'measured',
     angle: state.gridAngleMode ?? defaultParseOptions.gridAngleMode ?? 'measured',
     direction: state.gridDirectionMode ?? defaultParseOptions.gridDirectionMode ?? 'measured',
+  };
+};
+
+const syncReductionContextFromLegacyFields = (
+  state: ParseOptions,
+  explicitOverrideActive = false,
+): void => {
+  const distanceMode = state.gridDistanceMode ?? defaultParseOptions.gridDistanceMode ?? 'measured';
+  state.reductionContext = {
+    inputSpaceDefault: distanceMode === 'measured' ? 'measured' : 'grid',
+    distanceKind: gridDistanceModeToReductionDistanceKind(distanceMode),
+    bearingKind: (state.gridBearingMode ?? defaultParseOptions.gridBearingMode ?? 'grid') as BearingKind,
+    explicitOverrideActive:
+      explicitOverrideActive || state.reductionContext?.explicitOverrideActive === true,
   };
 };
 
@@ -517,11 +563,26 @@ const syncLegacyFieldsFromObservationMode = (state: ParseOptions): void => {
   state.observationMode = normalized;
 };
 
+const syncLegacyFieldsFromReductionContext = (state: ParseOptions): void => {
+  const context = state.reductionContext;
+  if (!context) return;
+  state.gridBearingMode = context.bearingKind;
+  state.gridDistanceMode = reductionDistanceKindToGridDistanceMode(
+    context.distanceKind,
+    context.inputSpaceDefault,
+  );
+};
+
 const normalizeObservationModeState = (state: ParseOptions): void => {
-  if (state.observationMode) {
+  if (state.reductionContext) {
+    syncLegacyFieldsFromReductionContext(state);
+    syncObservationModeFromLegacyFields(state);
+  } else if (state.observationMode) {
     syncLegacyFieldsFromObservationMode(state);
+    syncReductionContextFromLegacyFields(state, false);
   } else {
     syncObservationModeFromLegacyFields(state);
+    syncReductionContextFromLegacyFields(state, false);
   }
 };
 
@@ -555,6 +616,7 @@ const applyGridObservationDirective = (
     setAngle();
     setDirection();
     syncObservationModeFromLegacyFields(state);
+    syncReductionContextFromLegacyFields(state, true);
     return `${mode.toUpperCase()} mode applied to bearings/distances/angles/directions`;
   }
 
@@ -564,6 +626,7 @@ const applyGridObservationDirective = (
     state.gridAngleMode = defaultParseOptions.gridAngleMode;
     state.gridDirectionMode = defaultParseOptions.gridDirectionMode;
     syncObservationModeFromLegacyFields(state);
+    syncReductionContextFromLegacyFields(state, true);
     return `${mode.toUpperCase()} mode reset to defaults: bearing=${state.gridBearingMode?.toUpperCase()}, distance=${(state.gridDistanceMode ?? 'measured').toUpperCase()}, angle=${state.gridAngleMode?.toUpperCase()}, direction=${state.gridDirectionMode?.toUpperCase()}`;
   }
 
@@ -587,6 +650,7 @@ const applyGridObservationDirective = (
     }
   });
   syncObservationModeFromLegacyFields(state);
+  syncReductionContextFromLegacyFields(state, true);
 
   return `${mode.toUpperCase()} mode updated: bearing=${state.gridBearingMode?.toUpperCase()}, distance=${(state.gridDistanceMode ?? 'measured').toUpperCase()}, angle=${state.gridAngleMode?.toUpperCase()}, direction=${state.gridDirectionMode?.toUpperCase()}`;
 };
@@ -606,6 +670,19 @@ const parseGpsVectorModeToken = (token?: string): GpsVectorMode | null => {
   if (!upper) return null;
   if (upper === 'NETWORK' || upper === 'NET') return 'network';
   if (upper === 'SIDESHOT' || upper === 'SS') return 'sideshot';
+  return null;
+};
+
+const parseGnssVectorFrameToken = (token?: string): GnssVectorFrame | null => {
+  if (!token) return null;
+  const upper = token.trim().toUpperCase();
+  if (!upper) return null;
+  if (upper === 'GRIDNEU' || upper === 'GRID' || upper === 'NEU') return 'gridNEU';
+  if (upper === 'ENULOCAL' || upper === 'ENU' || upper === 'LOCALENU') return 'enuLocal';
+  if (upper === 'ECEFDELTA' || upper === 'ECEF' || upper === 'DXDYDZ') return 'ecefDelta';
+  if (upper === 'LLHBASELINE' || upper === 'LLH' || upper === 'GEODETICBASELINE')
+    return 'llhBaseline';
+  if (upper === 'UNKNOWN' || upper === 'UNSPECIFIED') return 'unknown';
   return null;
 };
 
@@ -665,27 +742,40 @@ export const parseInput = (
   if (!opts.observationMode) {
     state.observationMode = undefined;
   }
+  if (!opts.reductionContext) {
+    state.reductionContext = undefined;
+  }
   normalizeObservationModeState(state);
   state.plannedObservationCount = 0;
   state.gpsTopoShots = [];
   const currentGridModeForType = (
     obsType: Observation['type'],
-  ): { gridObsMode?: GridObservationMode; gridDistanceMode?: GridDistanceInputMode } => {
+  ): {
+    gridObsMode?: GridObservationMode;
+    gridDistanceMode?: GridDistanceInputMode;
+    inputSpace?: ReductionInputSpace;
+    distanceKind?: ReductionDistanceKind;
+  } => {
     if (obsType === 'dist') {
       const distanceMode = state.gridDistanceMode ?? 'measured';
       return {
         gridObsMode: distanceMode === 'measured' ? 'measured' : 'grid',
         gridDistanceMode: distanceMode,
+        inputSpace: distanceMode === 'measured' ? 'measured' : 'grid',
+        distanceKind: gridDistanceModeToReductionDistanceKind(distanceMode),
       };
     }
     if (obsType === 'bearing' || obsType === 'dir') {
-      return { gridObsMode: state.gridBearingMode ?? 'grid' };
+      const gridObsMode = state.gridBearingMode ?? 'grid';
+      return { gridObsMode, inputSpace: gridObsMode };
     }
     if (obsType === 'angle') {
-      return { gridObsMode: state.gridAngleMode ?? 'measured' };
+      const gridObsMode = state.gridAngleMode ?? 'measured';
+      return { gridObsMode, inputSpace: gridObsMode };
     }
     if (obsType === 'direction') {
-      return { gridObsMode: state.gridDirectionMode ?? 'measured' };
+      const gridObsMode = state.gridDirectionMode ?? 'measured';
+      return { gridObsMode, inputSpace: gridObsMode };
     }
     return {};
   };
@@ -795,6 +885,7 @@ export const parseInput = (
       x: 0,
       y: 0,
       h: 0,
+      coordInputClass: 'unknown',
       lost: lostStationIds.has(id),
       fixed: false,
       fixedX: false,
@@ -839,6 +930,23 @@ export const parseInput = (
       ensureStation(obs.to, `${obs.type} observation`);
     }
   };
+  const assignStationCoordClass = (
+    station: StationMap[string],
+    stationId: StationId,
+    incomingClass: CoordInputClass,
+    context: string,
+  ): void => {
+    const existingClass = station.coordInputClass;
+    if (!existingClass) {
+      station.coordInputClass = incomingClass;
+      return;
+    }
+    if (existingClass === incomingClass) return;
+    station.coordInputClass = 'unknown';
+    logs.push(
+      `Warning: station ${stationId} has mixed coordinate classes (${existingClass} vs ${incomingClass}) from ${context}; marked as UNKNOWN class.`,
+    );
+  };
   const pushObservation = <T extends Observation>(obs: T): void => {
     ensureObservationStations(obs);
     if (obs.sourceLine == null) obs.sourceLine = lineNum;
@@ -848,6 +956,12 @@ export const parseInput = (
     }
     if (obs.type === 'dist' && obs.gridDistanceMode == null && gridMode.gridDistanceMode != null) {
       obs.gridDistanceMode = gridMode.gridDistanceMode;
+    }
+    if (obs.inputSpace == null && gridMode.inputSpace != null) {
+      obs.inputSpace = gridMode.inputSpace;
+    }
+    if (obs.type === 'dist' && obs.distanceKind == null && gridMode.distanceKind != null) {
+      obs.distanceKind = gridMode.distanceKind;
     }
     if (obs.planned) {
       state.plannedObservationCount = (state.plannedObservationCount ?? 0) + 1;
@@ -1204,11 +1318,21 @@ export const parseInput = (
         const factorToken = parts[1];
         if (!factorToken) {
           state.averageScaleFactor = defaultParseOptions.averageScaleFactor;
+          state.scaleOverrideActive = false;
+          if (state.reductionContext) {
+            state.reductionContext.explicitOverrideActive = false;
+          }
           logs.push(`Average scale factor reset to ${state.averageScaleFactor?.toFixed(8)}`);
         } else {
           const factor = Number.parseFloat(factorToken);
           if (Number.isFinite(factor) && factor > 0) {
             state.averageScaleFactor = factor;
+            state.scaleOverrideActive = true;
+            if (!state.reductionContext) {
+              syncReductionContextFromLegacyFields(state, true);
+            } else {
+              state.reductionContext.explicitOverrideActive = true;
+            }
             logs.push(`Average scale factor set to ${factor.toFixed(8)}`);
           } else {
             logs.push(
@@ -1654,10 +1778,54 @@ export const parseInput = (
           continue;
         }
 
+        if (modeToken === 'FRAME' || modeToken === 'FRM') {
+          const frame = parseGnssVectorFrameToken(parts[2]);
+          if (!frame) {
+            logs.push(
+              `Warning: invalid .GPS FRAME option at line ${lineNum}; expected GRIDNEU, ENULOCAL, ECEFDELTA, LLHBASELINE, or UNKNOWN.`,
+            );
+            continue;
+          }
+          state.gnssVectorFrameDefault = frame;
+          if (frame === 'unknown') {
+            state.gnssFrameConfirmed = false;
+          }
+          const confirmToken = (parts[3] || '').trim().toUpperCase();
+          if (confirmToken === 'CONFIRM' || confirmToken === 'ON' || confirmToken === 'TRUE') {
+            state.gnssFrameConfirmed = true;
+          } else if (
+            confirmToken === 'OFF' ||
+            confirmToken === 'FALSE' ||
+            confirmToken === 'RESET'
+          ) {
+            state.gnssFrameConfirmed = false;
+          }
+          logs.push(
+            `GPS vector frame default set to ${frame} (confirmed=${state.gnssFrameConfirmed ? 'YES' : 'NO'})`,
+          );
+          continue;
+        }
+
+        if (modeToken === 'CONFIRM') {
+          const arg = (parts[2] || '').trim().toUpperCase();
+          if (!arg || arg === 'ON' || arg === 'TRUE') {
+            state.gnssFrameConfirmed = true;
+            logs.push('GPS frame confirmation set to ON');
+          } else if (arg === 'OFF' || arg === 'FALSE' || arg === 'RESET') {
+            state.gnssFrameConfirmed = false;
+            logs.push('GPS frame confirmation set to OFF');
+          } else {
+            logs.push(
+              `Warning: invalid .GPS CONFIRM option at line ${lineNum}; expected ON or OFF.`,
+            );
+          }
+          continue;
+        }
+
         const mode = parseGpsVectorModeToken(parts[1]);
         if (!mode) {
           logs.push(
-            `Warning: unrecognized .GPS option at line ${lineNum}; expected NETWORK, SIDESHOT, AddHiHt, or CHECK.`,
+            `Warning: unrecognized .GPS option at line ${lineNum}; expected NETWORK, SIDESHOT, AddHiHt, CHECK, FRAME, or CONFIRM.`,
           );
           continue;
         }
@@ -2287,6 +2455,12 @@ export const parseInput = (
         st.x = east * toMeters;
         st.y = north * toMeters;
         if (is3D) st.h = h * toMeters;
+        assignStationCoordClass(
+          st,
+          id,
+          state.coordSystemMode === 'grid' ? 'grid' : 'local',
+          `C record line ${lineNum}`,
+        );
 
         applyFixities(st, { x: fixE, y: fixN, h: is3D ? fixH : undefined }, state.coordMode);
 
@@ -2362,6 +2536,12 @@ export const parseInput = (
         st.latDeg = latDeg;
         st.lonDeg = lonDeg;
         st.heightType = code === 'PH' ? 'ellipsoid' : 'orthometric';
+        assignStationCoordClass(
+          st,
+          id,
+          state.crsId ? 'geodetic' : 'unknown',
+          `${code} record line ${lineNum}`,
+        );
         applyFixities(
           st,
           {
@@ -3666,6 +3846,8 @@ export const parseInput = (
           id: obsId++,
           type: 'gps',
           gpsMode: state.gpsVectorMode ?? 'network',
+          gnssVectorFrame: state.gnssVectorFrameDefault ?? 'gridNEU',
+          gnssFrameConfirmed: state.gnssFrameConfirmed ?? false,
           gpsAntennaHiM: state.gpsAddHiHtEnabled ? (state.gpsAddHiHtHiM ?? 0) : undefined,
           gpsAntennaHtM: state.gpsAddHiHtEnabled ? (state.gpsAddHiHtHtM ?? 0) : undefined,
           instCode,

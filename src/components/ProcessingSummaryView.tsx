@@ -1,5 +1,11 @@
 import React, { useMemo } from 'react';
-import type { AdjustmentResult, CoordSystemDiagnosticCode, Observation } from '../types';
+import type {
+  AdjustmentResult,
+  CoordSystemDiagnosticCode,
+  DatumSufficiencyReport,
+  GnssVectorFrame,
+  Observation,
+} from '../types';
 
 interface ProcessingSummaryViewProps {
   result: AdjustmentResult;
@@ -14,12 +20,16 @@ interface ProcessingSummaryViewProps {
     crsId?: string;
     localDatumScheme?: 'average-scale' | 'common-elevation';
     averageScaleFactor?: number;
+    scaleOverrideActive?: boolean;
     commonElevation?: number;
     averageGeoidHeight?: number;
+    gnssVectorFrameDefault?: GnssVectorFrame;
+    gnssFrameConfirmed?: boolean;
     gridBearingMode?: 'measured' | 'grid';
     gridDistanceMode?: 'measured' | 'grid' | 'ellipsoidal';
     gridAngleMode?: 'measured' | 'grid';
     gridDirectionMode?: 'measured' | 'grid';
+    datumSufficiencyReport?: DatumSufficiencyReport;
     coordSystemDiagnostics?: CoordSystemDiagnosticCode[];
     coordSystemWarningMessages?: string[];
     crsDatumOpId?: string;
@@ -239,6 +249,35 @@ const ProcessingSummaryView: React.FC<ProcessingSummaryViewProps> = ({
       } else {
         lines.push(
           `Grid Input Modes: bearing=${String(runDiagnostics.gridBearingMode ?? 'grid').toUpperCase()}, distance=${String(runDiagnostics.gridDistanceMode ?? 'measured').toUpperCase()}, angle=${String(runDiagnostics.gridAngleMode ?? 'measured').toUpperCase()}, direction=${String(runDiagnostics.gridDirectionMode ?? 'measured').toUpperCase()}`,
+        );
+        lines.push(
+          `.SCALE Override: ${
+            runDiagnostics.scaleOverrideActive ?? result.parseState?.scaleOverrideActive ?? false
+              ? `ON (k=${(runDiagnostics.averageScaleFactor ?? 1).toFixed(8)})`
+              : 'OFF'
+          }`,
+        );
+        lines.push(
+          `GNSS Frame Default: ${
+            runDiagnostics.gnssVectorFrameDefault ??
+            result.parseState?.gnssVectorFrameDefault ??
+            'gridNEU'
+          } (confirmed=${
+            runDiagnostics.gnssFrameConfirmed ?? result.parseState?.gnssFrameConfirmed
+              ? 'YES'
+              : 'NO'
+          })`,
+        );
+      }
+      const datumSufficiency =
+        runDiagnostics.datumSufficiencyReport ?? result.parseState?.datumSufficiencyReport;
+      if (datumSufficiency) {
+        lines.push(
+          `Datum Sufficiency: ${datumSufficiency.status.toUpperCase()} (${datumSufficiency.reasons.length} reason${datumSufficiency.reasons.length === 1 ? '' : 's'})`,
+        );
+        datumSufficiency.reasons.forEach((reason) => lines.push(`  Reason: ${reason}`));
+        datumSufficiency.suggestions.forEach((suggestion) =>
+          lines.push(`  Suggestion: ${suggestion}`),
         );
       }
       lines.push(

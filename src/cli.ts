@@ -49,6 +49,8 @@ Options:
   --grid-distance-mode <measured|grid|ellipsoidal>
   --grid-angle-mode <measured|grid>
   --grid-direction-mode <measured|grid>
+  --gnss-vector-frame <gridNEU|enuLocal|ecefDelta|llhBaseline|unknown>
+  --gnss-frame-confirm <on|off>
   --preanalysis <on|off>
   --autoadjust <on|off>
   --autoadjust-threshold <n>
@@ -56,6 +58,16 @@ Options:
   --autoadjust-max-removals <n>
   --help, -h
 `;
+
+const parseGnssVectorFrameArg = (value: string): ParseOptions['gnssVectorFrameDefault'] => {
+  const token = value.trim().toLowerCase();
+  if (token === 'gridneu' || token === 'grid' || token === 'neu') return 'gridNEU';
+  if (token === 'enulocal' || token === 'enu') return 'enuLocal';
+  if (token === 'ecefdelta' || token === 'ecef') return 'ecefDelta';
+  if (token === 'llhbaseline' || token === 'llh') return 'llhBaseline';
+  if (token === 'unknown') return 'unknown';
+  return undefined;
+};
 
 const parseArgs = (argv: string[]): CliConfig => {
   const config: CliConfig = {
@@ -265,6 +277,24 @@ const parseArgs = (argv: string[]): CliConfig => {
         throw new Error(`Invalid --grid-direction-mode value "${argv[i + 1]}"`);
       }
       config.parseOptions.gridDirectionMode = value;
+      i += 1;
+      continue;
+    }
+    if (arg === '--gnss-vector-frame') {
+      const value = parseGnssVectorFrameArg(nextValue(i, arg));
+      if (!value) {
+        throw new Error(`Invalid --gnss-vector-frame value "${argv[i + 1]}"`);
+      }
+      config.parseOptions.gnssVectorFrameDefault = value;
+      i += 1;
+      continue;
+    }
+    if (arg === '--gnss-frame-confirm') {
+      const value = nextValue(i, arg).toLowerCase();
+      if (value !== 'on' && value !== 'off') {
+        throw new Error(`Invalid --gnss-frame-confirm value "${argv[i + 1]}"`);
+      }
+      config.parseOptions.gnssFrameConfirmed = value === 'on';
       i += 1;
       continue;
     }

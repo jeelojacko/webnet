@@ -116,6 +116,10 @@ describe('CLI phase 2 output modes', () => {
       'grid',
       '--grid-direction-mode',
       'measured',
+      '--gnss-vector-frame',
+      'unknown',
+      '--gnss-frame-confirm',
+      'on',
       '--average-geoid-height',
       '28.5',
     ]);
@@ -127,6 +131,8 @@ describe('CLI phase 2 output modes', () => {
     expect(payload.parseState?.gridDistanceMode).toBe('ellipsoidal');
     expect(payload.parseState?.gridAngleMode).toBe('grid');
     expect(payload.parseState?.gridDirectionMode).toBe('measured');
+    expect(payload.parseState?.gnssVectorFrameDefault).toBe('unknown');
+    expect(payload.parseState?.gnssFrameConfirmed).toBe(true);
     expect(payload.parseState?.averageGeoidHeight).toBeCloseTo(28.5, 8);
   });
 

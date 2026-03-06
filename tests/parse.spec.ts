@@ -337,10 +337,17 @@ describe('parseInput', () => {
       ].join('\n'),
     );
     expect(parsed.parseState.averageScaleFactor).toBeCloseTo(0.99995, 10);
+    expect(parsed.parseState.scaleOverrideActive).toBe(true);
     expect(parsed.parseState.gridBearingMode).toBe('grid');
     expect(parsed.parseState.gridDistanceMode).toBe('ellipsoidal');
     expect(parsed.parseState.gridAngleMode).toBe('grid');
     expect(parsed.parseState.gridDirectionMode).toBe('measured');
+    expect(parsed.parseState.reductionContext).toEqual({
+      inputSpaceDefault: 'grid',
+      distanceKind: 'ellipsoidal',
+      bearingKind: 'grid',
+      explicitOverrideActive: true,
+    });
     expect(parsed.parseState.observationMode).toEqual({
       bearing: 'grid',
       distance: 'ellipsoidal',
@@ -354,6 +361,8 @@ describe('parseInput', () => {
     expect(bearing?.gridObsMode).toBe('grid');
     expect(dist?.gridObsMode).toBe('grid');
     expect(dist?.gridDistanceMode).toBe('ellipsoidal');
+    expect(dist?.inputSpace).toBe('grid');
+    expect(dist?.distanceKind).toBe('ellipsoidal');
     expect(angle?.gridObsMode).toBe('grid');
   });
 
@@ -751,6 +760,30 @@ describe('parseInput', () => {
     if (gps?.type === 'gps') expect(gps.gpsMode).toBe('sideshot');
     expect(parsed.logs.some((l) => l.includes('GPS vector mode set to SIDESHOT'))).toBe(true);
     expect(parsed.logs.some((l) => l.includes('GPS vector mode set to NETWORK'))).toBe(true);
+  });
+
+  it('parses .GPS FRAME/.GPS CONFIRM and tags GNSS frame metadata on vectors', () => {
+    const parsed = parseInput(
+      [
+        '.GPS FRAME UNKNOWN',
+        '.GPS CONFIRM OFF',
+        '.GPS FRAME ENULOCAL ON',
+        'C A 0 0 0 !',
+        'C B 100 0 0',
+        'G GPS1 A B 100 0 0.01',
+      ].join('\n'),
+    );
+    const gps = parsed.observations.find((o) => o.type === 'gps');
+    expect(parsed.parseState.gnssVectorFrameDefault).toBe('enuLocal');
+    expect(parsed.parseState.gnssFrameConfirmed).toBe(true);
+    expect(gps?.type).toBe('gps');
+    if (gps?.type === 'gps') {
+      expect(gps.gnssVectorFrame).toBe('enuLocal');
+      expect(gps.gnssFrameConfirmed).toBe(true);
+    }
+    expect(parsed.logs.some((l) => l.includes('GPS vector frame default set to enuLocal'))).toBe(
+      true,
+    );
   });
 
   it('parses .GPS AddHiHt state with defaults and tags G observations', () => {

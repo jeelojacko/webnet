@@ -133,6 +133,7 @@ export interface Station {
   fixedX?: boolean;
   fixedY?: boolean;
   fixedH?: boolean;
+  coordInputClass?: CoordInputClass;
   heightType?: 'orthometric' | 'ellipsoid';
   latDeg?: number;
   lonDeg?: number;
@@ -141,6 +142,8 @@ export interface Station {
   elevationFactor?: number;
   combinedFactor?: number;
   factorComputationSource?: 'projection-formula' | 'numerical-fallback';
+  ellipsoidHeightUsed?: number;
+  ellipsoidHeightSource?: EllipsoidHeightSource;
   errorEllipse?: StationErrorEllipse;
   sN?: number;
   sE?: number;
@@ -170,6 +173,8 @@ interface ObservationBase {
   localTestComponents?: { passE: boolean; passN: boolean };
   mdb?: number;
   mdbComponents?: { mE: number; mN: number };
+  inputSpace?: ReductionInputSpace;
+  distanceKind?: ReductionDistanceKind;
   gridObsMode?: GridObservationMode;
   gridDistanceMode?: GridDistanceInputMode;
 }
@@ -248,6 +253,8 @@ export interface DirObservation extends ObservationBase {
 export interface GpsObservation extends ObservationBase {
   type: 'gps';
   gpsMode?: GpsVectorMode;
+  gnssVectorFrame?: GnssVectorFrame;
+  gnssFrameConfirmed?: boolean;
   gpsAntennaHiM?: number;
   gpsAntennaHtM?: number;
   gpsOffsetAzimuthRad?: number;
@@ -363,16 +370,43 @@ export type CoordSystemMode = 'local' | 'grid';
 export type LocalDatumScheme = 'average-scale' | 'common-elevation';
 export type GridObservationMode = 'measured' | 'grid';
 export type GridDistanceInputMode = 'measured' | 'grid' | 'ellipsoidal';
+export type ReductionInputSpace = 'measured' | 'grid';
+export type ReductionDistanceKind = 'ground' | 'grid' | 'ellipsoidal';
+export type BearingKind = 'grid' | 'measured';
+export type CoordInputClass = 'grid' | 'geodetic' | 'local' | 'unknown';
+export type GnssVectorFrame = 'gridNEU' | 'enuLocal' | 'ecefDelta' | 'llhBaseline' | 'unknown';
+export type EllipsoidHeightSource =
+  | 'perStationGeoid+H'
+  | 'avgGeoid+H'
+  | 'providedEllipsoid'
+  | 'assumed0';
 export type CoordSystemDiagnosticCode =
   | 'CRS_OUT_OF_AREA'
   | 'CRS_DATUM_FALLBACK'
   | 'GEOID_FALLBACK'
-  | 'FACTOR_APPROXIMATION_USED';
+  | 'FACTOR_APPROXIMATION_USED'
+  | 'CRS_INPUT_MIX_BLOCKED'
+  | 'GNSS_FRAME_UNCONFIRMED'
+  | 'DATUM_HARD_FAIL'
+  | 'DATUM_SOFT_WARN'
+  | 'SCALE_OVERRIDE_USED'
+  | 'FACTOR_FALLBACK_PROJ_USED';
 export interface ObservationModeSettings {
   bearing: GridObservationMode;
   distance: GridDistanceInputMode;
   angle: GridObservationMode;
   direction: GridObservationMode;
+}
+export interface ReductionContext {
+  inputSpaceDefault: ReductionInputSpace;
+  distanceKind: ReductionDistanceKind;
+  bearingKind: BearingKind;
+  explicitOverrideActive: boolean;
+}
+export interface DatumSufficiencyReport {
+  status: 'hard-fail' | 'soft-warn' | 'ok';
+  reasons: string[];
+  suggestions: string[];
 }
 export type GeoidInterpolationMethod = 'bilinear' | 'nearest';
 export type GeoidHeightDatum = 'orthometric' | 'ellipsoid';
@@ -620,8 +654,10 @@ export interface ParseOptions {
   crsId?: string;
   localDatumScheme?: LocalDatumScheme;
   averageScaleFactor?: number;
+  scaleOverrideActive?: boolean;
   commonElevation?: number;
   averageGeoidHeight?: number;
+  reductionContext?: ReductionContext;
   observationMode?: ObservationModeSettings;
   gridBearingMode?: GridObservationMode;
   gridDistanceMode?: GridDistanceInputMode;
@@ -633,6 +669,7 @@ export interface ParseOptions {
   crsDatumFallbackUsed?: boolean;
   crsAreaOfUseStatus?: 'inside' | 'outside' | 'unknown';
   crsOutOfAreaStationCount?: number;
+  datumSufficiencyReport?: DatumSufficiencyReport;
   preanalysisMode?: boolean;
   order: OrderMode;
   angleUnits?: AngleUnitsMode;
@@ -665,6 +702,8 @@ export interface ParseOptions {
   geoidConvertedStationCount?: number;
   geoidSkippedStationCount?: number;
   gpsVectorMode?: GpsVectorMode;
+  gnssVectorFrameDefault?: GnssVectorFrame;
+  gnssFrameConfirmed?: boolean;
   gpsAddHiHtEnabled?: boolean;
   gpsAddHiHtHiM?: number;
   gpsAddHiHtHtM?: number;

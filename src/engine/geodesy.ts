@@ -462,9 +462,9 @@ export const computeGridFactors = (
     datumOpId: datum.datumOpId,
     warnings: [
       ...datum.warnings,
-      `Projection-factor formula unavailable for ${def.id}; numerical approximation used.`,
+      `Projection-factor formula unavailable for ${def.id}; PROJ numeric fallback used (method=finite-difference, op=${datum.datumOpId || 'UNSPECIFIED'}).`,
     ],
-    diagnostics: [...datum.diagnostics, 'FACTOR_APPROXIMATION_USED'],
+    diagnostics: [...datum.diagnostics, 'FACTOR_APPROXIMATION_USED', 'FACTOR_FALLBACK_PROJ_USED'],
   };
 };
 
