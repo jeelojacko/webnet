@@ -7,6 +7,7 @@ import {
   CheckCircle,
   FolderOpen,
   FileText,
+  Info,
   Map as MapIcon,
   Minimize2,
   PanelLeftClose,
@@ -44,7 +45,11 @@ import {
   findLevelLoopTolerancePreset,
 } from './engine/levelLoopTolerance';
 import { parseProjectFile, serializeProjectFile } from './engine/projectFile';
-import { CANADA_CRS_CATALOG, DEFAULT_CANADA_CRS_ID } from './engine/crsCatalog';
+import {
+  CANADA_CRS_CATALOG,
+  DEFAULT_CANADA_CRS_ID,
+  type CrsCatalogGroup,
+} from './engine/crsCatalog';
 import {
   importExternalInput,
   type ImportedDataset,
@@ -229,6 +234,8 @@ type ProjectOptionsTab =
   | 'special'
   | 'gps'
   | 'modeling';
+
+type CrsCatalogGroupFilter = 'all' | CrsCatalogGroup;
 
 type RunDiagnostics = {
   solveProfile: SolveProfile;
@@ -451,8 +458,12 @@ const SETTINGS_TOOLTIPS = {
   mapScale: 'Scale factor used by map mode. 1.000000 means no map scaling.',
   coordSystemMode:
     'Coordinate-system reduction mode. LOCAL applies local datum schemes; GRID applies CRS-based grid/geodetic reductions.',
+  crsCatalogGroup:
+    'Filter the CRS picker list by catalog group (for example Canada UTM, Canada MTM, or provincial systems).',
   crsId:
-    'Selected projected CRS identifier for GRID mode. Canada-first catalog currently includes NAD83(CSRS) UTM zones.',
+    'Selected projected CRS identifier for GRID mode. Canada-first catalog includes NAD83(CSRS) UTM, MTM, and priority provincial systems.',
+  crsProjectionParameters:
+    'Read-only projection definition parameters from the selected CRS (PROJ string tokens).',
   localDatumScheme:
     'LOCAL mode datum scheme. Average Scale applies a fixed scale; Common Elevation scales by mean station elevation.',
   averageScaleFactor: 'Fixed scale factor used when LOCAL datum scheme is Average Scale.',
@@ -766,6 +777,58 @@ const resolveLevelLoopTolerancePreset = (
   };
 };
 
+const CRS_CATALOG_GROUP_OPTIONS: Array<{
+  id: CrsCatalogGroupFilter;
+  label: string;
+  description: string;
+}> = [
+  {
+    id: 'all',
+    label: 'All Catalogs',
+    description: 'Show all available CRS entries.',
+  },
+  {
+    id: 'global',
+    label: 'Global',
+    description: 'Global/non-Canada CRS entries.',
+  },
+  {
+    id: 'canada-utm',
+    label: 'Canada UTM',
+    description: 'NAD83(CSRS) UTM zones for Canada.',
+  },
+  {
+    id: 'canada-mtm',
+    label: 'Canada MTM',
+    description: 'NAD83(CSRS) MTM zones for Canada.',
+  },
+  {
+    id: 'canada-provincial',
+    label: 'Canada Provincial',
+    description: 'Priority provincial CRS entries.',
+  },
+];
+
+const resolveCatalogGroupFromCrsId = (crsId?: string): CrsCatalogGroupFilter => {
+  const selected = CANADA_CRS_CATALOG.find((row) => row.id === (crsId ?? '').trim());
+  return selected?.catalogGroup ?? 'all';
+};
+
+const parseProj4Parameters = (proj4: string): Array<{ key: string; value: string }> =>
+  proj4
+    .split(/\s+/)
+    .map((token) => token.trim())
+    .filter((token) => token.startsWith('+'))
+    .map((token) => token.slice(1))
+    .map((token) => {
+      const sep = token.indexOf('=');
+      if (sep < 0) return { key: token, value: 'true' };
+      return {
+        key: token.slice(0, sep),
+        value: token.slice(sep + 1),
+      };
+    });
+
 type AppProps = {
   initialSettingsModalOpen?: boolean;
   initialOptionsTab?: ProjectOptionsTab;
@@ -883,6 +946,9 @@ const App: React.FC<AppProps> = ({
   const [activeOptionsTab, setActiveOptionsTab] = useState<ProjectOptionsTab>(initialOptionsTab);
   const [settingsDraft, setSettingsDraft] = useState<SettingsState>(settings);
   const [parseSettingsDraft, setParseSettingsDraft] = useState<ParseSettings>(parseSettings);
+  const [crsCatalogGroupFilter, setCrsCatalogGroupFilter] =
+    useState<CrsCatalogGroupFilter>(resolveCatalogGroupFromCrsId(parseSettings.crsId));
+  const [showCrsProjectionParams, setShowCrsProjectionParams] = useState(false);
   const [projectInstrumentsDraft, setProjectInstrumentsDraft] =
     useState<InstrumentLibrary>(projectInstruments);
   const [levelLoopCustomPresetsDraft, setLevelLoopCustomPresetsDraft] =
@@ -914,6 +980,42 @@ const App: React.FC<AppProps> = ({
       CANADA_CRS_CATALOG[0],
     [parseSettingsDraft.crsId],
   );
+  const crsCatalogGroupCounts = useMemo(() => {
+    const counts: Record<CrsCatalogGroupFilter, number> = {
+      all: CANADA_CRS_CATALOG.length,
+      global: 0,
+      'canada-utm': 0,
+      'canada-mtm': 0,
+      'canada-provincial': 0,
+    };
+    CANADA_CRS_CATALOG.forEach((row) => {
+      counts[row.catalogGroup] += 1;
+    });
+    return counts;
+  }, []);
+  const filteredDraftCrsCatalog = useMemo(() => {
+    if (crsCatalogGroupFilter === 'all') return CANADA_CRS_CATALOG;
+    return CANADA_CRS_CATALOG.filter((row) => row.catalogGroup === crsCatalogGroupFilter);
+  }, [crsCatalogGroupFilter]);
+  const visibleDraftCrsCatalog = useMemo(() => {
+    if (filteredDraftCrsCatalog.length > 0) return filteredDraftCrsCatalog;
+    if (selectedDraftCrs) return [selectedDraftCrs];
+    return [];
+  }, [filteredDraftCrsCatalog, selectedDraftCrs]);
+  const selectedCrsProj4Params = useMemo(
+    () => parseProj4Parameters(selectedDraftCrs?.proj4 ?? ''),
+    [selectedDraftCrs],
+  );
+
+  useEffect(() => {
+    if (crsCatalogGroupFilter === 'all') return;
+    if (filteredDraftCrsCatalog.length === 0) return;
+    if (filteredDraftCrsCatalog.some((row) => row.id === parseSettingsDraft.crsId)) return;
+    setParseSettingsDraft((prev) => ({
+      ...prev,
+      crsId: filteredDraftCrsCatalog[0].id,
+    }));
+  }, [crsCatalogGroupFilter, filteredDraftCrsCatalog, parseSettingsDraft.crsId]);
 
   useEffect(() => {
     setProjectInstruments((prev) => {
@@ -4957,6 +5059,8 @@ const App: React.FC<AppProps> = ({
   const openProjectOptions = () => {
     setSettingsDraft(settings);
     setParseSettingsDraft(parseSettings);
+    setCrsCatalogGroupFilter(resolveCatalogGroupFromCrsId(parseSettings.crsId));
+    setShowCrsProjectionParams(false);
     setProjectInstrumentsDraft(cloneInstrumentLibrary(projectInstruments));
     setLevelLoopCustomPresetsDraft(levelLoopCustomPresets.map((preset) => ({ ...preset })));
     setAdjustedPointsExportSettingsDraft({ ...adjustedPointsExportSettings });
@@ -4977,6 +5081,7 @@ const App: React.FC<AppProps> = ({
       ),
     );
     setSelectedInstrument(selectedInstrumentDraft);
+    setShowCrsProjectionParams(false);
     setIsSettingsModalOpen(false);
   };
 
@@ -6994,6 +7099,24 @@ const App: React.FC<AppProps> = ({
                         <option value="grid">GRID</option>
                       </select>
                     </SettingsRow>
+                    <SettingsRow label="CRS Catalog Group" tooltip={SETTINGS_TOOLTIPS.crsCatalogGroup}>
+                      <select
+                        title={SETTINGS_TOOLTIPS.crsCatalogGroup}
+                        value={crsCatalogGroupFilter}
+                        onChange={(e) => setCrsCatalogGroupFilter(e.target.value as CrsCatalogGroupFilter)}
+                        className={optionInputClass}
+                      >
+                        {CRS_CATALOG_GROUP_OPTIONS.map((group) => {
+                          const count = crsCatalogGroupCounts[group.id] ?? 0;
+                          const disabled = group.id !== 'all' && count === 0;
+                          return (
+                            <option key={group.id} value={group.id} disabled={disabled}>
+                              {group.label} ({count})
+                            </option>
+                          );
+                        })}
+                      </select>
+                    </SettingsRow>
                     <SettingsRow label="CRS (Grid Mode)" tooltip={SETTINGS_TOOLTIPS.crsId}>
                       <select
                         title={SETTINGS_TOOLTIPS.crsId}
@@ -7002,23 +7125,70 @@ const App: React.FC<AppProps> = ({
                         onChange={(e) => handleDraftParseSetting('crsId', e.target.value)}
                         className={`${optionInputClass} disabled:opacity-50 disabled:cursor-not-allowed`}
                       >
-                        {CANADA_CRS_CATALOG.map((crs) => (
+                        {visibleDraftCrsCatalog.map((crs) => (
                           <option key={crs.id} value={crs.id}>
                             {crs.id} - {crs.label}
                           </option>
                         ))}
                       </select>
                     </SettingsRow>
+                    {filteredDraftCrsCatalog.length === 0 && (
+                      <div className="rounded border border-amber-300/50 bg-amber-900/20 px-2 py-1 text-[10px] text-amber-100">
+                        No CRS entries are loaded for this catalog group yet.
+                      </div>
+                    )}
                     <div className="rounded-md border border-slate-400/60 bg-slate-700/20 px-3 py-2 text-[11px] text-slate-200 leading-relaxed space-y-1">
-                      <div className="uppercase tracking-wide text-slate-100">CRS Details</div>
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="uppercase tracking-wide text-slate-100">CRS Details</div>
+                        <button
+                          type="button"
+                          title={SETTINGS_TOOLTIPS.crsProjectionParameters}
+                          onClick={() => setShowCrsProjectionParams((prev) => !prev)}
+                          className="inline-flex items-center gap-1 rounded border border-slate-300/60 bg-slate-700/30 px-2 py-0.5 text-[10px] uppercase tracking-wide text-slate-100 hover:bg-slate-600/40"
+                        >
+                          <Info className="h-3.5 w-3.5" />
+                          {showCrsProjectionParams ? 'Hide Params' : 'Show Params'}
+                        </button>
+                      </div>
                       <div>ID: {selectedDraftCrs?.id ?? parseSettingsDraft.crsId}</div>
+                      <div>EPSG: {selectedDraftCrs?.epsgCode ?? '-'}</div>
+                      <div>
+                        Catalog Group:{' '}
+                        {selectedDraftCrs?.catalogGroup
+                          ?.replace('canada-', 'Canada ')
+                          .replace('global', 'Global')
+                          .toUpperCase() ?? '-'}
+                      </div>
                       <div>Datum: {selectedDraftCrs?.datum ?? '-'}</div>
                       <div>
-                        Projection: {selectedDraftCrs?.projectionFamily?.toUpperCase() ?? '-'} (zone{' '}
-                        {selectedDraftCrs?.zoneNumber ?? '-'})
+                        Projection:{' '}
+                        {selectedDraftCrs?.projectionFamily
+                          ?.toUpperCase()
+                          .replaceAll('-', ' ') ?? '-'}
+                        {selectedDraftCrs?.zoneNumber != null
+                          ? ` (zone ${selectedDraftCrs.zoneNumber})`
+                          : ''}
                       </div>
                       <div>Axis/Unit: {selectedDraftCrs?.axisOrder ?? '-'} / {selectedDraftCrs?.linearUnit ?? '-'}</div>
                       <div>Area of Use: {selectedDraftCrs?.areaOfUse ?? '-'}</div>
+                      {showCrsProjectionParams && (
+                        <div className="mt-2 space-y-2 rounded border border-slate-300/40 bg-slate-800/30 p-2">
+                          <div className="uppercase tracking-wide text-slate-100">
+                            Projection Parameters
+                          </div>
+                          <div className="break-all rounded bg-slate-900/50 px-2 py-1 font-mono text-[10px] leading-relaxed text-slate-100">
+                            {selectedDraftCrs?.proj4 ?? '-'}
+                          </div>
+                          <div className="grid grid-cols-2 gap-x-3 gap-y-1 font-mono text-[10px] text-slate-100">
+                            {selectedCrsProj4Params.map((row) => (
+                              <React.Fragment key={row.key}>
+                                <span className="text-slate-300">{row.key}</span>
+                                <span className="break-all">{row.value}</span>
+                              </React.Fragment>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
                     <SettingsRow label="Local Datum Scheme" tooltip={SETTINGS_TOOLTIPS.localDatumScheme}>
                       <select

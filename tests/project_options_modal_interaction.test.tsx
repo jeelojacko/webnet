@@ -270,6 +270,42 @@ describe('Project Options modal interactions', () => {
     }
   });
 
+  it('filters CRS choices by catalog group in GPS tab', async () => {
+    const app = await mountApp('gps');
+    try {
+      const mode = findSelectForSettingsRow(app.container, 'Coord System Mode');
+      await setSelectValue(mode, 'grid');
+
+      const group = findSelectForSettingsRow(app.container, 'CRS Catalog Group');
+      await setSelectValue(group, 'canada-provincial');
+
+      const crs = findSelectForSettingsRow(app.container, 'CRS (Grid Mode)');
+      const optionValues = Array.from(crs.options).map((entry) => entry.value);
+      expect(optionValues).toContain('CA_NAD83_CSRS_NB_STEREO_DOUBLE');
+      expect(optionValues.some((value) => value.includes('_UTM_'))).toBe(false);
+      expect(optionValues.some((value) => value.includes('_MTM_'))).toBe(false);
+    } finally {
+      await app.cleanup();
+    }
+  });
+
+  it('toggles the CRS projection-parameter detail popup', async () => {
+    const app = await mountApp('gps');
+    try {
+      expect(app.container.textContent).toContain('Show Params');
+      expect(app.container.textContent).not.toContain('Projection Parameters');
+
+      await clickButtonByExactText(app.container, 'Show Params');
+      expect(app.container.textContent).toContain('Projection Parameters');
+      expect(app.container.textContent).toContain('+proj=utm');
+
+      await clickButtonByExactText(app.container, 'Hide Params');
+      expect(app.container.textContent).not.toContain('Projection Parameters');
+    } finally {
+      await app.cleanup();
+    }
+  });
+
   it('discards unsaved coordinate-system edits when Cancel is clicked', async () => {
     const app = await mountApp('gps');
     try {

@@ -366,6 +366,12 @@ describe('parseInput', () => {
     expect(viaGridAlias.logs.some((l) => l.includes('Coordinate system mode set to GRID'))).toBe(
       true,
     );
+
+    const viaEpsgAlias = parseInput(
+      ['.CRS GRID EPSG:2953', 'C A 0 0 0 ! !'].join('\n'),
+    );
+    expect(viaEpsgAlias.parseState.coordSystemMode).toBe('grid');
+    expect(viaEpsgAlias.parseState.crsId).toBe('CA_NAD83_CSRS_NB_STEREO_DOUBLE');
   });
 
   it('parses optional CRS scale/convergence directives with explicit OFF support', () => {

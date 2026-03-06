@@ -1,6 +1,6 @@
 import { dmsToRad, RAD_TO_DEG, SEC_TO_RAD } from './angles';
 import { parseAutoAdjustDirectiveTokens } from './autoAdjust';
-import { DEFAULT_CANADA_CRS_ID } from './crsCatalog';
+import { DEFAULT_CANADA_CRS_ID, normalizeCrsId } from './crsCatalog';
 import { normalizeGeoidModelId, parseGeoidInterpolationToken } from './geoid';
 import { parseCrsProjectionModelToken, projectGeodeticToEN } from './geodesy';
 import type {
@@ -1251,7 +1251,7 @@ export const parseInput = (
             (!Number.isFinite(maybeFactor) || maybeFactor <= 0)
           ) {
             state.coordSystemMode = 'grid';
-            state.crsId = gridArg.toUpperCase();
+            state.crsId = normalizeCrsId(gridArg) ?? state.crsId;
             logs.push(`Coordinate system mode set to GRID (CRS=${state.crsId})`);
             continue;
           }
@@ -1278,7 +1278,7 @@ export const parseInput = (
             logs.push(`Warning: .CRS ${modeToken} missing id at line ${lineNum}.`);
             continue;
           }
-          state.crsId = parts[2].trim().toUpperCase();
+          state.crsId = normalizeCrsId(parts[2]) ?? state.crsId;
           state.coordSystemMode = 'grid';
           logs.push(`CRS id set to ${state.crsId} (coord system mode=GRID)`);
           continue;

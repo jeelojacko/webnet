@@ -129,4 +129,21 @@ describe('CLI phase 2 output modes', () => {
     expect(payload.parseState?.gridDirectionMode).toBe('measured');
     expect(payload.parseState?.averageGeoidHeight).toBeCloseTo(28.5, 8);
   });
+
+  it('accepts EPSG aliases for --crs-id and normalizes to catalog ids', () => {
+    const res = runCli([
+      '--input',
+      STABLE_INPUT,
+      '--output',
+      'json',
+      '--coord-system-mode',
+      'grid',
+      '--crs-id',
+      'EPSG:2953',
+    ]);
+    expect(res.status).toBe(0);
+    const payload = JSON.parse(res.stdout);
+    expect(payload.parseState?.coordSystemMode).toBe('grid');
+    expect(payload.parseState?.crsId).toBe('CA_NAD83_CSRS_NB_STEREO_DOUBLE');
+  });
 });

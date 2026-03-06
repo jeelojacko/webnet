@@ -6,6 +6,7 @@ import { LSAEngine } from './engine/adjust';
 import type { ParseOptions } from './types';
 import { buildIndustryStyleListingText } from './engine/industryListing';
 import { buildLandXmlText } from './engine/landxml';
+import { normalizeCrsId } from './engine/crsCatalog';
 
 type SolveProfile = 'webnet' | 'industry-parity';
 type UnitsMode = 'm' | 'ft';
@@ -191,7 +192,7 @@ const parseArgs = (argv: string[]): CliConfig => {
     if (arg === '--crs-id') {
       const value = nextValue(i, arg).trim();
       if (!value) throw new Error('Invalid --crs-id value');
-      config.parseOptions.crsId = value.toUpperCase();
+      config.parseOptions.crsId = normalizeCrsId(value) ?? value.toUpperCase();
       i += 1;
       continue;
     }

@@ -54,8 +54,10 @@ describe('Project Options modal layout', () => {
 
     expect(html).toContain('Coordinate System (Canada-First)');
     expect(html).toContain('Coord System Mode');
+    expect(html).toContain('CRS Catalog Group');
     expect(html).toContain('CRS (Grid Mode)');
     expect(html).toContain('Average Geoid Height');
+    expect(html).toContain('Show Params');
     expect(html).toContain('Observation Input Mode (.MEASURED / .GRID)');
     expect(html).toContain('Advanced CRS/GPS/Height');
     expect(html).toContain('GPS Loop Check');
