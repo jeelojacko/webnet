@@ -1,6 +1,11 @@
 import { RAD_TO_DEG, radToDmsStr } from './angles';
 import { getLevelLoopTolerancePresetLabel } from './levelLoopTolerance';
-import type { AdjustmentResult, GpsObservation, Observation } from '../types';
+import type {
+  AdjustmentResult,
+  CoordSystemDiagnosticCode,
+  GpsObservation,
+  Observation,
+} from '../types';
 
 const FT_PER_M = 3.280839895;
 
@@ -50,6 +55,12 @@ export interface IndustryListingRunDiagnostics {
   gridDistanceMode?: 'measured' | 'grid' | 'ellipsoidal';
   gridAngleMode?: 'measured' | 'grid';
   gridDirectionMode?: 'measured' | 'grid';
+  coordSystemDiagnostics?: CoordSystemDiagnosticCode[];
+  coordSystemWarningMessages?: string[];
+  crsDatumOpId?: string;
+  crsDatumFallbackUsed?: boolean;
+  crsAreaOfUseStatus?: 'inside' | 'outside' | 'unknown';
+  crsOutOfAreaStationCount?: number;
   levelLoopToleranceBaseMm?: number;
   levelLoopTolerancePerSqrtKmMm?: number;
   qFixLinearSigmaM?: number;
@@ -134,6 +145,17 @@ export const buildIndustryStyleListingText = (
   const gridAngleMode = parseState?.gridAngleMode ?? runDiag.gridAngleMode ?? 'measured';
   const gridDirectionMode =
     parseState?.gridDirectionMode ?? runDiag.gridDirectionMode ?? 'measured';
+  const coordSystemDiagnostics =
+    parseState?.coordSystemDiagnostics ?? runDiag.coordSystemDiagnostics ?? [];
+  const coordSystemWarningMessages =
+    parseState?.coordSystemWarningMessages ?? runDiag.coordSystemWarningMessages ?? [];
+  const crsDatumOpId = parseState?.crsDatumOpId ?? runDiag.crsDatumOpId;
+  const crsDatumFallbackUsed =
+    parseState?.crsDatumFallbackUsed ?? runDiag.crsDatumFallbackUsed ?? false;
+  const crsAreaOfUseStatus =
+    parseState?.crsAreaOfUseStatus ?? runDiag.crsAreaOfUseStatus ?? 'unknown';
+  const crsOutOfAreaStationCount =
+    parseState?.crsOutOfAreaStationCount ?? runDiag.crsOutOfAreaStationCount ?? 0;
   const crsTransformEnabled =
     parseState?.crsTransformEnabled ?? runDiag.crsTransformEnabled ?? false;
   const crsProjectionModel =
@@ -330,6 +352,24 @@ export const buildIndustryStyleListingText = (
   lines.push(
     `      CRS Convergence                   : ${crsConvergenceEnabled ? `ON (${(crsConvergenceAngleRad * RAD_TO_DEG).toFixed(6)} deg)` : 'OFF'}`,
   );
+  if (coordSystemMode === 'grid') {
+    lines.push(
+      `      CRS Datum Operation              : ${crsDatumOpId ?? '-'}${crsDatumFallbackUsed ? ' (fallback)' : ''}`,
+    );
+    lines.push(
+      `      CRS Area-of-Use Status          : ${crsAreaOfUseStatus.toUpperCase()}${crsAreaOfUseStatus === 'outside' ? ` (outside=${crsOutOfAreaStationCount})` : ''}`,
+    );
+  }
+  if (coordSystemDiagnostics.length > 0) {
+    lines.push(
+      `      CRS Diagnostics                 : ${coordSystemDiagnostics.join(', ')}`,
+    );
+  }
+  if (coordSystemWarningMessages.length > 0) {
+    lines.push(
+      `      CRS Warning Count              : ${coordSystemWarningMessages.length}`,
+    );
+  }
   lines.push(
     `      Geoid/Grid Model                 : ${geoidModelEnabled ? `ON (${geoidModelId}, ${geoidInterpolation.toUpperCase()}, loaded=${geoidModelLoaded ? 'YES' : 'NO'})` : 'OFF'}`,
   );
@@ -580,6 +620,7 @@ export const buildIndustryStyleListingText = (
         (st.gridScaleFactor ?? 1).toFixed(8),
         (st.elevationFactor ?? 1).toFixed(8),
         (st.combinedFactor ?? 1).toFixed(8),
+        (st.factorComputationSource ?? 'projection-formula').toUpperCase(),
       ]);
       lines.push('');
       addCenteredHeading('Grid/Combined Factor Diagnostics');
@@ -591,6 +632,7 @@ export const buildIndustryStyleListingText = (
           'GridScale',
           'ElevFactor',
           'CombinedFactor',
+          'Source',
         ],
         factorRows,
         [1, 2, 3, 4],

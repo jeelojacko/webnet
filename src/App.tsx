@@ -105,6 +105,8 @@ import type {
   LocalDatumScheme,
   GridObservationMode,
   GridDistanceInputMode,
+  ObservationModeSettings,
+  CoordSystemDiagnosticCode,
   GeoidInterpolationMethod,
   GeoidHeightDatum,
 } from './types';
@@ -268,10 +270,17 @@ type RunDiagnostics = {
   averageScaleFactor: number;
   commonElevation: number;
   averageGeoidHeight: number;
+  observationMode: ObservationModeSettings;
   gridBearingMode: GridObservationMode;
   gridDistanceMode: GridDistanceInputMode;
   gridAngleMode: GridObservationMode;
   gridDirectionMode: GridObservationMode;
+  coordSystemDiagnostics: CoordSystemDiagnosticCode[];
+  coordSystemWarningMessages: string[];
+  crsDatumOpId?: string;
+  crsDatumFallbackUsed: boolean;
+  crsAreaOfUseStatus: 'inside' | 'outside' | 'unknown';
+  crsOutOfAreaStationCount: number;
   crsTransformEnabled: boolean;
   crsProjectionModel: CrsProjectionModel;
   crsLabel: string;
@@ -324,6 +333,7 @@ type ParseSettings = {
   averageScaleFactor: number;
   commonElevation: number;
   averageGeoidHeight: number;
+  observationMode?: ObservationModeSettings;
   gridBearingMode: GridObservationMode;
   gridDistanceMode: GridDistanceInputMode;
   gridAngleMode: GridObservationMode;
@@ -361,11 +371,16 @@ type ParseSettings = {
   geoidInterpolation: GeoidInterpolationMethod;
   geoidHeightConversionEnabled: boolean;
   geoidOutputHeightDatum: GeoidHeightDatum;
+  gpsLoopCheckEnabled: boolean;
   gpsAddHiHtEnabled: boolean;
   gpsAddHiHtHiM: number;
   gpsAddHiHtHtM: number;
   qFixLinearSigmaM: number;
   qFixAngularSigmaSec: number;
+  prismEnabled: boolean;
+  prismOffset: number;
+  prismScope: 'global' | 'set';
+  directionSetMode?: DirectionSetMode;
   descriptionReconcileMode: 'first' | 'append';
   descriptionAppendDelimiter: string;
   lonSign: 'west-positive' | 'west-negative';
@@ -687,7 +702,7 @@ const SettingsCard: React.FC<SettingsCardProps> = ({ title, tooltip, children, c
 
 type SettingsRowProps = {
   label: string;
-  tooltip: string;
+  tooltip?: string;
   children: React.ReactNode;
   className?: string;
 };
@@ -829,6 +844,18 @@ const parseProj4Parameters = (proj4: string): Array<{ key: string; value: string
       };
     });
 
+const buildObservationModeFromGridFields = (state: {
+  gridBearingMode: GridObservationMode;
+  gridDistanceMode: GridDistanceInputMode;
+  gridAngleMode: GridObservationMode;
+  gridDirectionMode: GridObservationMode;
+}): ObservationModeSettings => ({
+  bearing: state.gridBearingMode,
+  distance: state.gridDistanceMode,
+  angle: state.gridAngleMode,
+  direction: state.gridDirectionMode,
+});
+
 type AppProps = {
   initialSettingsModalOpen?: boolean;
   initialOptionsTab?: ProjectOptionsTab;
@@ -875,6 +902,12 @@ const App: React.FC<AppProps> = ({
     averageScaleFactor: 1,
     commonElevation: 0,
     averageGeoidHeight: 0,
+    observationMode: {
+      bearing: 'grid',
+      distance: 'measured',
+      angle: 'measured',
+      direction: 'measured',
+    },
     gridBearingMode: 'grid',
     gridDistanceMode: 'measured',
     gridAngleMode: 'measured',
@@ -918,6 +951,9 @@ const App: React.FC<AppProps> = ({
     gpsAddHiHtHtM: 0,
     qFixLinearSigmaM: 1e-9,
     qFixAngularSigmaSec: 1e-9,
+    prismEnabled: false,
+    prismOffset: 0,
+    prismScope: 'global',
     descriptionReconcileMode: 'first',
     descriptionAppendDelimiter: ' | ',
     lonSign: 'west-negative',
@@ -948,6 +984,7 @@ const App: React.FC<AppProps> = ({
   const [parseSettingsDraft, setParseSettingsDraft] = useState<ParseSettings>(parseSettings);
   const [crsCatalogGroupFilter, setCrsCatalogGroupFilter] =
     useState<CrsCatalogGroupFilter>(resolveCatalogGroupFromCrsId(parseSettings.crsId));
+  const [crsSearchQuery, setCrsSearchQuery] = useState('');
   const [showCrsProjectionParams, setShowCrsProjectionParams] = useState(false);
   const [projectInstrumentsDraft, setProjectInstrumentsDraft] =
     useState<InstrumentLibrary>(projectInstruments);
@@ -997,13 +1034,23 @@ const App: React.FC<AppProps> = ({
     if (crsCatalogGroupFilter === 'all') return CANADA_CRS_CATALOG;
     return CANADA_CRS_CATALOG.filter((row) => row.catalogGroup === crsCatalogGroupFilter);
   }, [crsCatalogGroupFilter]);
+  const searchedDraftCrsCatalog = useMemo(() => {
+    const token = crsSearchQuery.trim().toUpperCase();
+    if (!token) return filteredDraftCrsCatalog;
+    return filteredDraftCrsCatalog.filter((row) => {
+      const id = row.id.toUpperCase();
+      const label = row.label.toUpperCase();
+      const epsg = (row.epsgCode ?? '').toUpperCase();
+      return id.includes(token) || label.includes(token) || epsg.includes(token);
+    });
+  }, [crsSearchQuery, filteredDraftCrsCatalog]);
   const visibleDraftCrsCatalog = useMemo(() => {
-    if (filteredDraftCrsCatalog.length > 0) return filteredDraftCrsCatalog;
+    if (searchedDraftCrsCatalog.length > 0) return searchedDraftCrsCatalog;
     if (selectedDraftCrs) return [selectedDraftCrs];
     return [];
-  }, [filteredDraftCrsCatalog, selectedDraftCrs]);
+  }, [searchedDraftCrsCatalog, selectedDraftCrs]);
   const selectedCrsProj4Params = useMemo(
-    () => parseProj4Parameters(selectedDraftCrs?.proj4 ?? ''),
+    () => selectedDraftCrs?.projParams ?? parseProj4Parameters(selectedDraftCrs?.proj4 ?? ''),
     [selectedDraftCrs],
   );
 
@@ -1282,26 +1329,26 @@ const App: React.FC<AppProps> = ({
   const buildRejectedClusterProposals = (
     candidates: ClusterCandidate[],
     decisions: Record<string, ClusterReviewDecision>,
-  ): ClusterRejectedProposal[] =>
-    candidates
-      .map((candidate) => {
-        const decision = decisions[candidate.key];
-        if (!decision || decision.status !== 'reject') return null;
-        const retainedId =
-          decision.canonicalId && candidate.stationIds.includes(decision.canonicalId)
-            ? decision.canonicalId
-            : undefined;
-        return {
-          key: candidate.key,
-          representativeId: candidate.representativeId,
-          stationIds: [...candidate.stationIds],
-          memberCount: candidate.memberCount,
-          retainedId,
-          reason: 'Rejected by user review',
-        } satisfies ClusterRejectedProposal;
-      })
-      .filter((row): row is ClusterRejectedProposal => row != null)
-      .sort((a, b) => a.key.localeCompare(b.key, undefined, { numeric: true }));
+  ): ClusterRejectedProposal[] => {
+    const rows: ClusterRejectedProposal[] = [];
+    candidates.forEach((candidate) => {
+      const decision = decisions[candidate.key];
+      if (!decision || decision.status !== 'reject') return;
+      const retainedId =
+        decision.canonicalId && candidate.stationIds.includes(decision.canonicalId)
+          ? decision.canonicalId
+          : undefined;
+      rows.push({
+        key: candidate.key,
+        representativeId: candidate.representativeId,
+        stationIds: [...candidate.stationIds],
+        memberCount: candidate.memberCount,
+        retainedId,
+        reason: 'Rejected by user review',
+      });
+    });
+    return rows.sort((a, b) => a.key.localeCompare(b.key, undefined, { numeric: true }));
+  };
 
   const resolveProfileContext = (base: ParseSettings) => {
     const parity = base.solveProfile === 'industry-parity';
@@ -1320,7 +1367,7 @@ const App: React.FC<AppProps> = ({
           autoAdjustEnabled: false,
         }
       : parityParse;
-    const directionSetMode = parity ? 'raw' : 'reduced';
+    const directionSetMode: DirectionSetMode = parity ? 'raw' : 'reduced';
     const effectiveInstrumentLibrary = parity
       ? { ...projectInstruments, [INDUSTRY_DEFAULT_INSTRUMENT_CODE]: INDUSTRY_DEFAULT_INSTRUMENT }
       : projectInstruments;
@@ -1352,6 +1399,22 @@ const App: React.FC<AppProps> = ({
       commonElevation: parseState.commonElevation ?? profileCtx.effectiveParse.commonElevation ?? 0,
       averageGeoidHeight:
         parseState.averageGeoidHeight ?? profileCtx.effectiveParse.averageGeoidHeight ?? 0,
+      observationMode:
+        parseState.observationMode ??
+        profileCtx.effectiveParse.observationMode ?? {
+          bearing:
+            parseState.gridBearingMode ?? profileCtx.effectiveParse.gridBearingMode ?? 'grid',
+          distance:
+            parseState.gridDistanceMode ??
+            profileCtx.effectiveParse.gridDistanceMode ??
+            'measured',
+          angle:
+            parseState.gridAngleMode ?? profileCtx.effectiveParse.gridAngleMode ?? 'measured',
+          direction:
+            parseState.gridDirectionMode ??
+            profileCtx.effectiveParse.gridDirectionMode ??
+            'measured',
+        },
       gridBearingMode:
         parseState.gridBearingMode ?? profileCtx.effectiveParse.gridBearingMode ?? 'grid',
       gridDistanceMode:
@@ -1442,6 +1505,12 @@ const App: React.FC<AppProps> = ({
       geoidSampleUndulationM: parseState.geoidSampleUndulationM,
       geoidConvertedStationCount: parseState.geoidConvertedStationCount ?? 0,
       geoidSkippedStationCount: parseState.geoidSkippedStationCount ?? 0,
+      coordSystemDiagnostics: parseState.coordSystemDiagnostics ?? [],
+      coordSystemWarningMessages: parseState.coordSystemWarningMessages ?? [],
+      crsDatumOpId: parseState.crsDatumOpId,
+      crsDatumFallbackUsed: parseState.crsDatumFallbackUsed ?? false,
+      crsAreaOfUseStatus: parseState.crsAreaOfUseStatus ?? 'unknown',
+      crsOutOfAreaStationCount: parseState.crsOutOfAreaStationCount ?? 0,
       edmMode: parseState.edmMode ?? 'additive',
       applyCentering: parseState.applyCentering ?? true,
       addCenteringToExplicit: parseState.addCenteringToExplicit ?? false,
@@ -1506,10 +1575,17 @@ const App: React.FC<AppProps> = ({
       averageScaleFactor: parse.averageScaleFactor,
       commonElevation: parse.commonElevation,
       averageGeoidHeight: parse.averageGeoidHeight,
+      observationMode: parse.observationMode,
       gridBearingMode: parse.gridBearingMode,
       gridDistanceMode: parse.gridDistanceMode,
       gridAngleMode: parse.gridAngleMode,
       gridDirectionMode: parse.gridDirectionMode,
+      coordSystemDiagnostics: parse.coordSystemDiagnostics ?? [],
+      coordSystemWarningMessages: parse.coordSystemWarningMessages ?? [],
+      crsDatumOpId: parse.crsDatumOpId,
+      crsDatumFallbackUsed: parse.crsDatumFallbackUsed ?? false,
+      crsAreaOfUseStatus: parse.crsAreaOfUseStatus ?? 'unknown',
+      crsOutOfAreaStationCount: parse.crsOutOfAreaStationCount ?? 0,
       crsTransformEnabled: parse.crsTransformEnabled,
       crsProjectionModel: parse.crsProjectionModel,
       crsLabel: parse.crsLabel,
@@ -1675,6 +1751,27 @@ const App: React.FC<AppProps> = ({
     lines.push(
       `CRS convergence: ${runDiag.crsConvergenceEnabled ? `ON (${(runDiag.crsConvergenceAngleRad * RAD_TO_DEG).toFixed(6)} deg)` : 'OFF'}`,
     );
+    if (runDiag.coordSystemMode === 'grid') {
+      lines.push(
+        `CRS datum operation: ${runDiag.crsDatumOpId ?? 'unknown'}${runDiag.crsDatumFallbackUsed ? ' (fallback)' : ''}`,
+      );
+      lines.push(
+        `CRS area-of-use status: ${runDiag.crsAreaOfUseStatus.toUpperCase()}${runDiag.crsAreaOfUseStatus === 'outside' ? ` (outside stations=${runDiag.crsOutOfAreaStationCount})` : ''}`,
+      );
+    }
+    if (runDiag.coordSystemDiagnostics.length > 0) {
+      lines.push(`Coord-system diagnostics: ${runDiag.coordSystemDiagnostics.join(', ')}`);
+    }
+    if (runDiag.coordSystemWarningMessages.length > 0) {
+      runDiag.coordSystemWarningMessages.slice(0, 20).forEach((warning) => {
+        lines.push(`Coord-system warning: ${warning}`);
+      });
+      if (runDiag.coordSystemWarningMessages.length > 20) {
+        lines.push(
+          `Coord-system warning overflow: +${runDiag.coordSystemWarningMessages.length - 20} more`,
+        );
+      }
+    }
     lines.push(
       `Geoid/Grid model: ${runDiag.geoidModelEnabled ? `ON (${runDiag.geoidModelId}, interp=${runDiag.geoidInterpolation.toUpperCase()}, loaded=${runDiag.geoidModelLoaded ? 'YES' : 'NO'})` : 'OFF'}`,
     );
@@ -3825,6 +3922,12 @@ const App: React.FC<AppProps> = ({
         gridDistanceMode: runDiag.gridDistanceMode,
         gridAngleMode: runDiag.gridAngleMode,
         gridDirectionMode: runDiag.gridDirectionMode,
+        coordSystemDiagnostics: runDiag.coordSystemDiagnostics,
+        coordSystemWarningMessages: runDiag.coordSystemWarningMessages,
+        crsDatumOpId: runDiag.crsDatumOpId,
+        crsDatumFallbackUsed: runDiag.crsDatumFallbackUsed,
+        crsAreaOfUseStatus: runDiag.crsAreaOfUseStatus,
+        crsOutOfAreaStationCount: runDiag.crsOutOfAreaStationCount,
         qFixLinearSigmaM: runDiag.qFixLinearSigmaM,
         qFixAngularSigmaSec: runDiag.qFixAngularSigmaSec,
         crsTransformEnabled: runDiag.crsTransformEnabled,
@@ -4050,6 +4153,20 @@ const App: React.FC<AppProps> = ({
 
       const loadedSettings = parsed.project.ui.settings as unknown as SettingsState;
       const loadedParseSettings = parsed.project.ui.parseSettings as unknown as ParseSettings;
+      const normalizedLoadedParseSettings: ParseSettings = {
+        ...loadedParseSettings,
+        ...(loadedParseSettings.observationMode
+          ? {
+              gridBearingMode: loadedParseSettings.observationMode.bearing,
+              gridDistanceMode: loadedParseSettings.observationMode.distance,
+              gridAngleMode: loadedParseSettings.observationMode.angle,
+              gridDirectionMode: loadedParseSettings.observationMode.direction,
+            }
+          : {}),
+        observationMode:
+          loadedParseSettings.observationMode ??
+          buildObservationModeFromGridFields(loadedParseSettings),
+      };
       const loadedAdjustedPointsSettings = sanitizeAdjustedPointsExportSettings(
         parsed.project.ui.adjustedPointsExport,
         {
@@ -4059,7 +4176,7 @@ const App: React.FC<AppProps> = ({
       );
       setInput(parsed.project.input);
       setSettings(loadedSettings);
-      setParseSettings(loadedParseSettings);
+      setParseSettings(normalizedLoadedParseSettings);
       setExportFormat(parsed.project.ui.exportFormat);
       setAdjustedPointsExportSettings(loadedAdjustedPointsSettings);
       setProjectInstruments(cloneInstrumentLibrary(parsed.project.project.projectInstruments));
@@ -4069,7 +4186,7 @@ const App: React.FC<AppProps> = ({
       );
 
       setSettingsDraft(loadedSettings);
-      setParseSettingsDraft(loadedParseSettings);
+      setParseSettingsDraft(normalizedLoadedParseSettings);
       setProjectInstrumentsDraft(cloneInstrumentLibrary(parsed.project.project.projectInstruments));
       setSelectedInstrumentDraft(parsed.project.project.selectedInstrument);
       setLevelLoopCustomPresetsDraft(
@@ -4108,7 +4225,7 @@ const App: React.FC<AppProps> = ({
                   comparisonSummary: buildImportReviewComparisonSummary(
                     prev.dataset,
                     prev.sourceName,
-                    imported.dataset,
+                    imported.dataset!,
                     file.name,
                     prev.comparisonMode,
                   ),
@@ -4588,6 +4705,12 @@ const App: React.FC<AppProps> = ({
         averageScaleFactor: effectiveParse.averageScaleFactor,
         commonElevation: effectiveParse.commonElevation,
         averageGeoidHeight: effectiveParse.averageGeoidHeight,
+        observationMode: {
+          bearing: effectiveParse.gridBearingMode,
+          distance: effectiveParse.gridDistanceMode,
+          angle: effectiveParse.gridAngleMode,
+          direction: effectiveParse.gridDirectionMode,
+        },
         gridBearingMode: effectiveParse.gridBearingMode,
         gridDistanceMode: effectiveParse.gridDistanceMode,
         gridAngleMode: effectiveParse.gridAngleMode,
@@ -4761,7 +4884,8 @@ const App: React.FC<AppProps> = ({
     const baseWeakStations = preanalysisWeakStationCount(base);
     const baseWeakPairs = preanalysisWeakPairCount(base);
 
-    const rows = plannedRows.map((obs) => {
+    const rows: NonNullable<AdjustmentResult['preanalysisImpactDiagnostics']>['rows'] =
+      plannedRows.map((obs) => {
       const plannedActive = !baseExclusions.has(obs.id);
       const action: 'add' | 'remove' = plannedActive ? 'remove' : 'add';
       const row: NonNullable<AdjustmentResult['preanalysisImpactDiagnostics']>['rows'][number] = {
@@ -4823,7 +4947,7 @@ const App: React.FC<AppProps> = ({
       } catch {
         return row;
       }
-    });
+      });
 
     rows.sort((a, b) => {
       if (a.status !== b.status) return a.status === 'ok' ? -1 : 1;
@@ -5104,7 +5228,29 @@ const App: React.FC<AppProps> = ({
     key: K,
     value: ParseSettings[K],
   ) => {
-    setParseSettingsDraft((prev) => ({ ...prev, [key]: value }));
+    setParseSettingsDraft((prev) => {
+      const next = { ...prev, [key]: value };
+      if (key === 'observationMode') {
+        const mode = value as ObservationModeSettings | undefined;
+        if (mode) {
+          next.gridBearingMode = mode.bearing;
+          next.gridDistanceMode = mode.distance;
+          next.gridAngleMode = mode.angle;
+          next.gridDirectionMode = mode.direction;
+          next.observationMode = mode;
+        }
+        return next;
+      }
+      if (
+        key === 'gridBearingMode' ||
+        key === 'gridDistanceMode' ||
+        key === 'gridAngleMode' ||
+        key === 'gridDirectionMode'
+      ) {
+        next.observationMode = buildObservationModeFromGridFields(next);
+      }
+      return next;
+    });
   };
 
   const handleDraftAdjustedPointsSetting = <K extends keyof AdjustedPointsExportSettings>(
@@ -5459,7 +5605,7 @@ const App: React.FC<AppProps> = ({
             onChange={handleProjectFileChange}
           />
           <button
-            onClick={triggerFileSelect}
+            onClick={() => triggerFileSelect()}
             title="Open data/import file"
             className="p-2 bg-slate-700 hover:bg-slate-600 rounded text-slate-300 transition-colors"
           >
@@ -7117,6 +7263,15 @@ const App: React.FC<AppProps> = ({
                         })}
                       </select>
                     </SettingsRow>
+                    <SettingsRow label="CRS Search">
+                      <input
+                        type="text"
+                        value={crsSearchQuery}
+                        onChange={(e) => setCrsSearchQuery(e.target.value)}
+                        placeholder="Filter by ID, label, or EPSG"
+                        className={optionInputClass}
+                      />
+                    </SettingsRow>
                     <SettingsRow label="CRS (Grid Mode)" tooltip={SETTINGS_TOOLTIPS.crsId}>
                       <select
                         title={SETTINGS_TOOLTIPS.crsId}
@@ -7135,6 +7290,11 @@ const App: React.FC<AppProps> = ({
                     {filteredDraftCrsCatalog.length === 0 && (
                       <div className="rounded border border-amber-300/50 bg-amber-900/20 px-2 py-1 text-[10px] text-amber-100">
                         No CRS entries are loaded for this catalog group yet.
+                      </div>
+                    )}
+                    {filteredDraftCrsCatalog.length > 0 && searchedDraftCrsCatalog.length === 0 && (
+                      <div className="rounded border border-amber-300/50 bg-amber-900/20 px-2 py-1 text-[10px] text-amber-100">
+                        Search filter returned no CRS rows in this catalog group.
                       </div>
                     )}
                     <div className="rounded-md border border-slate-400/60 bg-slate-700/20 px-3 py-2 text-[11px] text-slate-200 leading-relaxed space-y-1">
@@ -7171,6 +7331,18 @@ const App: React.FC<AppProps> = ({
                       </div>
                       <div>Axis/Unit: {selectedDraftCrs?.axisOrder ?? '-'} / {selectedDraftCrs?.linearUnit ?? '-'}</div>
                       <div>Area of Use: {selectedDraftCrs?.areaOfUse ?? '-'}</div>
+                      <div>
+                        Datum Op: {selectedDraftCrs?.supportedDatumOps.primary ?? '-'}
+                        {selectedDraftCrs?.supportedDatumOps.fallbacks?.length
+                          ? ` (fallbacks=${selectedDraftCrs.supportedDatumOps.fallbacks.length})`
+                          : ''}
+                      </div>
+                      <div>
+                        Area Bounds:{' '}
+                        {selectedDraftCrs?.areaOfUseBounds
+                          ? `lat ${selectedDraftCrs.areaOfUseBounds.minLatDeg.toFixed(3)}..${selectedDraftCrs.areaOfUseBounds.maxLatDeg.toFixed(3)}, lon ${selectedDraftCrs.areaOfUseBounds.minLonDeg.toFixed(3)}..${selectedDraftCrs.areaOfUseBounds.maxLonDeg.toFixed(3)}`
+                          : '-'}
+                      </div>
                       {showCrsProjectionParams && (
                         <div className="mt-2 space-y-2 rounded border border-slate-300/40 bg-slate-800/30 p-2">
                           <div className="uppercase tracking-wide text-slate-100">
@@ -7190,6 +7362,13 @@ const App: React.FC<AppProps> = ({
                         </div>
                       )}
                     </div>
+                    {parseSettingsDraft.coordSystemMode === 'grid' &&
+                      runDiagnostics?.crsAreaOfUseStatus === 'outside' && (
+                        <div className="rounded border border-amber-300/60 bg-amber-900/30 px-2 py-1 text-[10px] text-amber-100">
+                          Area-of-use warning: last run flagged {runDiagnostics.crsOutOfAreaStationCount}{' '}
+                          station(s) outside CRS bounds (warning-only).
+                        </div>
+                      )}
                     <SettingsRow label="Local Datum Scheme" tooltip={SETTINGS_TOOLTIPS.localDatumScheme}>
                       <select
                         title={SETTINGS_TOOLTIPS.localDatumScheme}
@@ -7917,6 +8096,13 @@ const App: React.FC<AppProps> = ({
                               gridDistanceMode: runDiagnostics.gridDistanceMode,
                               gridAngleMode: runDiagnostics.gridAngleMode,
                               gridDirectionMode: runDiagnostics.gridDirectionMode,
+                              coordSystemDiagnostics: runDiagnostics.coordSystemDiagnostics,
+                              coordSystemWarningMessages:
+                                runDiagnostics.coordSystemWarningMessages,
+                              crsDatumOpId: runDiagnostics.crsDatumOpId,
+                              crsDatumFallbackUsed: runDiagnostics.crsDatumFallbackUsed,
+                              crsAreaOfUseStatus: runDiagnostics.crsAreaOfUseStatus,
+                              crsOutOfAreaStationCount: runDiagnostics.crsOutOfAreaStationCount,
                               crsTransformEnabled: runDiagnostics.crsTransformEnabled,
                               crsProjectionModel: runDiagnostics.crsProjectionModel,
                               crsLabel: runDiagnostics.crsLabel,

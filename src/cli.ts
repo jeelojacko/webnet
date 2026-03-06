@@ -311,8 +311,8 @@ const run = (): number => {
     parseOptions: cfg.parseOptions,
   });
   const result = engine.solve();
-  const parseState = result.parseState ?? {};
-  const profileParseOptions = {
+  const parseState: Partial<ParseOptions> = result.parseState ?? {};
+  const profileParseOptions: Partial<ParseOptions> = {
     ...(cfg.parseOptions ?? {}),
     ...(cfg.profile === 'industry-parity'
       ? {

@@ -3,6 +3,7 @@
 - [x] Add TypeScript tooling (tsconfig, TSX entry) and migrate LSA engine/UI to TS modules
 - [x] Add Canada-first coordinate-system Phase 1 support (Local/Grid mode, NAD83(CSRS) UTM catalog, `.SCALE` + `.MEASURED`/`.GRID` directives, mode-aware reductions, GPS/CRS UI controls, report/listing diagnostics, CLI flags, and parser/engine/UI regression coverage)
 - [x] Start Canada-first coordinate-system Phase 2 catalog expansion (NAD83(CSRS) MTM zones, priority provincial CRS entries, NB Stereographic Double Projection, and EPSG alias normalization in parser/CLI)
+- [x] Complete Canada-first coordinate-system accuracy pass (CRS metadata expansion with proj params/area bounds/datum-op support, projection-formula factor engine with diagnostic fallback path, solver coord-system diagnostics + area-of-use warnings, standardized `observationMode` parse state, CRS search UI + enriched CRS detail panel, and regression coverage for parser/engine/catalog/UI)
 - [x] Keep `manual/` local-only by adding repo ignore/docs policy (`manual/` in `.gitignore`, process note in `agents.md`, no `.gitattributes` exclusion semantics)
 - [x] Fix Vitest/jsdom worker startup compatibility on current Node runtime by pinning `jsdom` to `26.1.0`
 - [x] Clean up Project Options -> Adjustment action controls (keep only adjustment workflows) and move map display toggles to General -> Local/Grid Reduction

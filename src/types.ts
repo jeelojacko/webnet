@@ -140,6 +140,7 @@ export interface Station {
   gridScaleFactor?: number;
   elevationFactor?: number;
   combinedFactor?: number;
+  factorComputationSource?: 'projection-formula' | 'numerical-fallback';
   errorEllipse?: StationErrorEllipse;
   sN?: number;
   sE?: number;
@@ -153,9 +154,12 @@ interface ObservationBase {
   sourceLine?: number;
   type: 'dist' | 'angle' | 'direction' | 'dir' | 'gps' | 'lev' | 'bearing' | 'zenith';
   instCode: string;
+  setId?: string;
   stdDev: number;
   planned?: boolean;
   sigmaSource?: 'default' | 'explicit' | 'fixed' | 'float';
+  prismCorrectionM?: number;
+  prismScope?: 'global' | 'set';
   calc?: unknown;
   residual?: unknown;
   stdRes?: number;
@@ -231,6 +235,7 @@ export interface DirectionObservation extends ObservationBase {
 
 export interface DirObservation extends ObservationBase {
   type: 'dir';
+  setId?: string;
   from: StationId;
   to: StationId;
   obs: number; // radians
@@ -322,9 +327,10 @@ export interface DirectionRejectDiagnostic {
   detail: string;
 }
 
-export type ObservationOverride =
-  | { obs?: number; stdDev?: number }
-  | { obs?: { dE: number; dN: number }; stdDev?: number };
+export type ObservationOverride = {
+  obs?: number | { dE: number; dN: number };
+  stdDev?: number;
+};
 
 export interface ParseResult {
   stations: StationMap;
@@ -357,6 +363,17 @@ export type CoordSystemMode = 'local' | 'grid';
 export type LocalDatumScheme = 'average-scale' | 'common-elevation';
 export type GridObservationMode = 'measured' | 'grid';
 export type GridDistanceInputMode = 'measured' | 'grid' | 'ellipsoidal';
+export type CoordSystemDiagnosticCode =
+  | 'CRS_OUT_OF_AREA'
+  | 'CRS_DATUM_FALLBACK'
+  | 'GEOID_FALLBACK'
+  | 'FACTOR_APPROXIMATION_USED';
+export interface ObservationModeSettings {
+  bearing: GridObservationMode;
+  distance: GridDistanceInputMode;
+  angle: GridObservationMode;
+  direction: GridObservationMode;
+}
 export type GeoidInterpolationMethod = 'bilinear' | 'nearest';
 export type GeoidHeightDatum = 'orthometric' | 'ellipsoid';
 export type GpsVectorMode = 'network' | 'sideshot';
@@ -605,10 +622,17 @@ export interface ParseOptions {
   averageScaleFactor?: number;
   commonElevation?: number;
   averageGeoidHeight?: number;
+  observationMode?: ObservationModeSettings;
   gridBearingMode?: GridObservationMode;
   gridDistanceMode?: GridDistanceInputMode;
   gridAngleMode?: GridObservationMode;
   gridDirectionMode?: GridObservationMode;
+  coordSystemDiagnostics?: CoordSystemDiagnosticCode[];
+  coordSystemWarningMessages?: string[];
+  crsDatumOpId?: string;
+  crsDatumFallbackUsed?: boolean;
+  crsAreaOfUseStatus?: 'inside' | 'outside' | 'unknown';
+  crsOutOfAreaStationCount?: number;
   preanalysisMode?: boolean;
   order: OrderMode;
   angleUnits?: AngleUnitsMode;

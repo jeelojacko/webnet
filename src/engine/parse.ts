@@ -12,6 +12,7 @@ import type {
   DirObservation,
   GridDistanceInputMode,
   GridObservationMode,
+  ObservationModeSettings,
   GpsObservation,
   Instrument,
   InstrumentLibrary,
@@ -37,6 +38,12 @@ const defaultParseOptions: ParseOptions = {
   averageScaleFactor: 1,
   commonElevation: 0,
   averageGeoidHeight: 0,
+  observationMode: {
+    bearing: 'grid',
+    distance: 'measured',
+    angle: 'measured',
+    direction: 'measured',
+  },
   gridBearingMode: 'grid',
   gridDistanceMode: 'measured',
   gridAngleMode: 'measured',
@@ -485,6 +492,39 @@ const activeCrsProjectionModel = (state: ParseOptions): CrsProjectionModel =>
     ? (state.crsProjectionModel ?? 'legacy-equirectangular')
     : 'legacy-equirectangular';
 
+const syncObservationModeFromLegacyFields = (state: ParseOptions): void => {
+  state.observationMode = {
+    bearing: state.gridBearingMode ?? defaultParseOptions.gridBearingMode ?? 'grid',
+    distance: state.gridDistanceMode ?? defaultParseOptions.gridDistanceMode ?? 'measured',
+    angle: state.gridAngleMode ?? defaultParseOptions.gridAngleMode ?? 'measured',
+    direction: state.gridDirectionMode ?? defaultParseOptions.gridDirectionMode ?? 'measured',
+  };
+};
+
+const syncLegacyFieldsFromObservationMode = (state: ParseOptions): void => {
+  const mode = state.observationMode;
+  if (!mode) return;
+  const normalized: ObservationModeSettings = {
+    bearing: mode.bearing ?? defaultParseOptions.gridBearingMode ?? 'grid',
+    distance: mode.distance ?? defaultParseOptions.gridDistanceMode ?? 'measured',
+    angle: mode.angle ?? defaultParseOptions.gridAngleMode ?? 'measured',
+    direction: mode.direction ?? defaultParseOptions.gridDirectionMode ?? 'measured',
+  };
+  state.gridBearingMode = normalized.bearing;
+  state.gridDistanceMode = normalized.distance;
+  state.gridAngleMode = normalized.angle;
+  state.gridDirectionMode = normalized.direction;
+  state.observationMode = normalized;
+};
+
+const normalizeObservationModeState = (state: ParseOptions): void => {
+  if (state.observationMode) {
+    syncLegacyFieldsFromObservationMode(state);
+  } else {
+    syncObservationModeFromLegacyFields(state);
+  }
+};
+
 const applyGridObservationDirective = (
   state: ParseOptions,
   mode: 'grid' | 'measured',
@@ -492,6 +532,9 @@ const applyGridObservationDirective = (
 ): string => {
   const tokens = parts.slice(1).map((token) => token.toUpperCase());
   const applyAll = tokens.length === 0;
+  const resetToDefaults = tokens.some(
+    (token) => token === 'OFF' || token === 'NONE' || token === 'RESET' || token === 'DEFAULT',
+  );
 
   const setBearing = () => {
     state.gridBearingMode = mode;
@@ -511,7 +554,17 @@ const applyGridObservationDirective = (
     setDistance();
     setAngle();
     setDirection();
+    syncObservationModeFromLegacyFields(state);
     return `${mode.toUpperCase()} mode applied to bearings/distances/angles/directions`;
+  }
+
+  if (resetToDefaults) {
+    state.gridBearingMode = defaultParseOptions.gridBearingMode;
+    state.gridDistanceMode = defaultParseOptions.gridDistanceMode;
+    state.gridAngleMode = defaultParseOptions.gridAngleMode;
+    state.gridDirectionMode = defaultParseOptions.gridDirectionMode;
+    syncObservationModeFromLegacyFields(state);
+    return `${mode.toUpperCase()} mode reset to defaults: bearing=${state.gridBearingMode?.toUpperCase()}, distance=${(state.gridDistanceMode ?? 'measured').toUpperCase()}, angle=${state.gridAngleMode?.toUpperCase()}, direction=${state.gridDirectionMode?.toUpperCase()}`;
   }
 
   tokens.forEach((token) => {
@@ -533,6 +586,7 @@ const applyGridObservationDirective = (
       setDirection();
     }
   });
+  syncObservationModeFromLegacyFields(state);
 
   return `${mode.toUpperCase()} mode updated: bearing=${state.gridBearingMode?.toUpperCase()}, distance=${(state.gridDistanceMode ?? 'measured').toUpperCase()}, angle=${state.gridAngleMode?.toUpperCase()}, direction=${state.gridDirectionMode?.toUpperCase()}`;
 };
@@ -608,6 +662,10 @@ export const parseInput = (
   const logs: string[] = [];
   const directionRejectDiagnostics: DirectionRejectDiagnostic[] = [];
   const state: ParseOptions = { ...defaultParseOptions, ...opts };
+  if (!opts.observationMode) {
+    state.observationMode = undefined;
+  }
+  normalizeObservationModeState(state);
   state.plannedObservationCount = 0;
   state.gpsTopoShots = [];
   const currentGridModeForType = (
@@ -4069,7 +4127,9 @@ export const parseInput = (
     (row) => row.conflict,
   ).length;
   const descriptionReconcileMode =
-    state.descriptionReconcileMode ?? defaultParseOptions.descriptionReconcileMode;
+    (state.descriptionReconcileMode ?? defaultParseOptions.descriptionReconcileMode ?? 'first') as
+      | 'first'
+      | 'append';
   const descriptionDelimiter =
     state.descriptionAppendDelimiter ?? defaultParseOptions.descriptionAppendDelimiter ?? ' | ';
   state.descriptionReconcileMode = descriptionReconcileMode;
@@ -4134,6 +4194,7 @@ export const parseInput = (
   if ((state.gpsOffsetObservationCount ?? 0) > 0) {
     logs.push(`GPS rover offsets parsed: ${state.gpsOffsetObservationCount}`);
   }
+  normalizeObservationModeState(state);
   logs.push(
     `Counts: ${Object.entries(typeSummary)
       .map(([k, v]) => `${k}=${v}`)

@@ -55,6 +55,7 @@
 - Current behavior also includes expanded hover-help coverage across non-preanalysis report summary cards/solve-profile labels and across the Project Options modal, including tab buttons, section headings, field labels, and instrument-editor controls in addition to existing control-level tooltips.
 - Current behavior also includes Canada-first coordinate-system Phase 1 rollout: Local/Grid mode state, Canada NAD83(CSRS) UTM CRS catalog, parser directives (`.SCALE`, `.MEASURED`, `.GRID` including `DISTANCE=ELLIPSOIDAL`), mode-aware reduction modeling with per-station convergence/grid/elevation/combined factors, expanded GPS/CRS options UI, grid/geodetic diagnostics in report/listing, and matching CLI flags for coordinate-system batch control.
 - Current behavior also includes Canada-first coordinate-system Phase 2 catalog start: CRS catalog expansion with NAD83(CSRS) MTM zones and priority provincial entries (including New Brunswick Stereographic Double Projection), plus CRS-ID normalization so parser/CLI `.CRS ID` and `--crs-id` accept either canonical catalog IDs or EPSG aliases.
+- Current behavior also includes Canada-first coordinate-system accuracy upgrades: CRS definitions now expose projection-parameter rows, area-of-use bounds, and supported datum-operation metadata; parser state includes standardized `observationMode` alongside legacy grid mode fields; geodesy factor computation now uses projection-family formulas for TM and oblique stereographic systems with deterministic numerical-fallback diagnostics; solver captures coordinate-system diagnostic codes/warnings (`CRS_OUT_OF_AREA`, `CRS_DATUM_FALLBACK`, `GEOID_FALLBACK`, `FACTOR_APPROXIMATION_USED`) and surfaces datum-op + area-of-use status in parse/report/listing outputs; listings include per-station factor source; and Project Options -> GPS now includes CRS search filtering plus richer CRS details (datum operation + area bounds) and out-of-area warning visibility from the latest run.
 - Current behavior also includes Project Options Adjustment-tab action cleanup: adjustment-action toggles are now limited to `Preanalysis`, `Auto-Sideshot`, `Cluster Detection`, and `Auto-Adjust`, while map-display toggles (`Map Show Lost Stations`, `Map 3D`) were moved under General -> Local/Grid Reduction.
 - Current behavior also includes test-runner compatibility hardening by pinning `jsdom` to `26.1.0`, restoring stable Vitest jsdom interaction-worker startup on the current Node runtime.
 
@@ -82,6 +83,7 @@
 npm install      # install deps
 npm run dev      # start Vite dev server
 npm run lint     # ESLint over repo
+npm run typecheck # TypeScript check (no emit)
 npm run test     # Vitest (watch)
 npm run test:run # Vitest (CI/one-shot)
 npm run build    # production build
@@ -129,6 +131,7 @@ npm run format:check # Prettier check
 - After each batch of updates, run:
   - `npm install`
   - `npm run lint`
+  - `npm run typecheck`
   - `npm run test`
   - `npm run build`.
 - If any command errors, fix the issues and rerun the full sequence until all commands succeed before pushing.

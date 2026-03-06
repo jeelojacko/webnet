@@ -289,6 +289,27 @@ describe('Project Options modal interactions', () => {
     }
   });
 
+  it('filters CRS choices by search token in GPS tab', async () => {
+    const app = await mountApp('gps');
+    try {
+      const mode = findSelectForSettingsRow(app.container, 'Coord System Mode');
+      await setSelectValue(mode, 'grid');
+
+      const group = findSelectForSettingsRow(app.container, 'CRS Catalog Group');
+      await setSelectValue(group, 'canada-provincial');
+
+      const search = findInputForSettingsRow(app.container, 'CRS Search');
+      await setInputValue(search, 'new brunswick');
+
+      const crs = findSelectForSettingsRow(app.container, 'CRS (Grid Mode)');
+      const optionValues = Array.from(crs.options).map((entry) => entry.value);
+      expect(optionValues).toContain('CA_NAD83_CSRS_NB_STEREO_DOUBLE');
+      expect(optionValues).not.toContain('CA_NAD83_CSRS_PEI_STEREOGRAPHIC');
+    } finally {
+      await app.cleanup();
+    }
+  });
+
   it('toggles the CRS projection-parameter detail popup', async () => {
     const app = await mountApp('gps');
     try {

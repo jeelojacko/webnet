@@ -142,7 +142,7 @@ const comparisonFamilyLabel = (observation: ImportedObservationRecord): string =
   if (observation.kind === 'vertical') return 'V';
   if (observation.kind === 'bearing') return 'B';
   if (observation.kind === 'gnss-vector') return 'G';
-  return prettifyToken(observation.kind);
+  return 'Obs';
 };
 
 const comparisonFamilyLabelForKind = (kind: ImportedObservationRecord['kind']): string => {
@@ -153,7 +153,7 @@ const comparisonFamilyLabelForKind = (kind: ImportedObservationRecord['kind']): 
   if (kind === 'vertical') return 'V';
   if (kind === 'bearing') return 'B';
   if (kind === 'gnss-vector') return 'G';
-  return prettifyToken(kind);
+  return 'Obs';
 };
 
 const deriveObservationSetupId = (observation: ImportedObservationRecord): string => {

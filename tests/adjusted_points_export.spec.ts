@@ -7,7 +7,7 @@ import {
   inferAdjustedPointsPresetId,
   sanitizeAdjustedPointsExportSettings,
 } from '../src/engine/adjustedPointsExport';
-import type { AdjustmentResult } from '../src/types';
+import type { AdjustedPointsExportSettings, AdjustmentResult } from '../src/types';
 
 const buildResult = (): AdjustmentResult =>
   ({
@@ -122,7 +122,7 @@ describe('adjusted points export', () => {
   });
 
   it('supports comma, space, and tab delimiters with quoting for descriptions', () => {
-    const base = {
+    const base: AdjustedPointsExportSettings = {
       ...DEFAULT_ADJUSTED_POINTS_EXPORT_SETTINGS,
       columns: ['P', 'D'],
     };
@@ -176,4 +176,3 @@ describe('adjusted points export', () => {
     expect(settings.columns).toHaveLength(6);
   });
 });
-

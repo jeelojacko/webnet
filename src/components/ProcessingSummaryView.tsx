@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import type { AdjustmentResult, Observation } from '../types';
+import type { AdjustmentResult, CoordSystemDiagnosticCode, Observation } from '../types';
 
 interface ProcessingSummaryViewProps {
   result: AdjustmentResult;
@@ -20,6 +20,12 @@ interface ProcessingSummaryViewProps {
     gridDistanceMode?: 'measured' | 'grid' | 'ellipsoidal';
     gridAngleMode?: 'measured' | 'grid';
     gridDirectionMode?: 'measured' | 'grid';
+    coordSystemDiagnostics?: CoordSystemDiagnosticCode[];
+    coordSystemWarningMessages?: string[];
+    crsDatumOpId?: string;
+    crsDatumFallbackUsed?: boolean;
+    crsAreaOfUseStatus?: 'inside' | 'outside' | 'unknown';
+    crsOutOfAreaStationCount?: number;
     crsTransformEnabled?: boolean;
     crsProjectionModel?: 'legacy-equirectangular' | 'local-enu';
     crsLabel?: string;
@@ -67,7 +73,7 @@ const classifyRow = (obs: Observation): string => {
   if (obs.type === 'gps') return 'GPS';
   if (obs.type === 'lev') return 'Leveling';
   if (obs.type === 'zenith') return 'Zenith';
-  return obs.type.toUpperCase();
+  return 'Other';
 };
 
 const elapsedStr = (ms: number | null): string => {
@@ -247,6 +253,22 @@ const ProcessingSummaryView: React.FC<ProcessingSummaryViewProps> = ({
       lines.push(
         `CRS Convergence: ${runDiagnostics.crsConvergenceEnabled ? `ON (${(((runDiagnostics.crsConvergenceAngleRad ?? 0) * 180) / Math.PI).toFixed(6)} deg)` : 'OFF'}`,
       );
+      if ((runDiagnostics.coordSystemMode ?? 'local') === 'grid') {
+        lines.push(
+          `CRS Datum Operation: ${runDiagnostics.crsDatumOpId ?? '-'}${runDiagnostics.crsDatumFallbackUsed ? ' (fallback)' : ''}`,
+        );
+        lines.push(
+          `CRS Area-of-Use: ${String(runDiagnostics.crsAreaOfUseStatus ?? 'unknown').toUpperCase()}${runDiagnostics.crsAreaOfUseStatus === 'outside' ? ` (outside=${runDiagnostics.crsOutOfAreaStationCount ?? 0})` : ''}`,
+        );
+      }
+      if ((runDiagnostics.coordSystemDiagnostics?.length ?? 0) > 0) {
+        lines.push(`CRS Diagnostics: ${runDiagnostics.coordSystemDiagnostics?.join(', ')}`);
+      }
+      if ((runDiagnostics.coordSystemWarningMessages?.length ?? 0) > 0) {
+        lines.push(
+          `CRS Warning Count: ${runDiagnostics.coordSystemWarningMessages?.length ?? 0}`,
+        );
+      }
       lines.push(
         `Geoid/Grid Model: ${runDiagnostics.geoidModelEnabled ? `ON (${runDiagnostics.geoidModelId ?? 'NGS-DEMO'}, ${String(runDiagnostics.geoidInterpolation ?? 'bilinear').toUpperCase()}, loaded=${runDiagnostics.geoidModelLoaded ? 'YES' : 'NO'})` : 'OFF'}`,
       );

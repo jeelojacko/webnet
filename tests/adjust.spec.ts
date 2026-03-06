@@ -192,6 +192,43 @@ describe('LSAEngine', () => {
     );
   });
 
+  it('flags CRS area-of-use warnings (warning-only) when geodetic stations are outside bounds', () => {
+    const input = [
+      '.2D',
+      '.UNITS METERS DD',
+      '.CRS GRID CA_NAD83_CSRS_NB_STEREO_DOUBLE',
+      'P A 54.000000 -115.000000 0 ! !',
+      'P B 54.001000 -115.001000 0',
+      'B A-B 045.000000 1.0',
+      'D A-B 100.0000 0.005',
+    ].join('\n');
+    const result = new LSAEngine({ input, maxIterations: 8 }).solve();
+
+    expect(result.parseState?.coordSystemDiagnostics?.includes('CRS_OUT_OF_AREA')).toBe(true);
+    expect(result.parseState?.crsAreaOfUseStatus).toBe('outside');
+    expect((result.parseState?.crsOutOfAreaStationCount ?? 0) > 0).toBe(true);
+    expect(result.success || result.converged || result.iterations > 0).toBe(true);
+  });
+
+  it('records factor approximation diagnostics for projection families without closed-form factor support', () => {
+    const input = [
+      '.2D',
+      '.UNITS METERS DD',
+      '.CRS GRID CA_NAD83_CSRS_ON_MNR_LAMBERT',
+      'P A 50.000000 -85.000000 0 ! !',
+      'P B 50.001000 -84.999000 0',
+      'B A-B 045.000000 1.0',
+      'D A-B 120.0000 0.005',
+    ].join('\n');
+    const result = new LSAEngine({ input, maxIterations: 8 }).solve();
+
+    expect(result.parseState?.coordSystemDiagnostics?.includes('FACTOR_APPROXIMATION_USED')).toBe(
+      true,
+    );
+    expect(result.stations.A.factorComputationSource).toBe('numerical-fallback');
+    expect(result.stations.B.factorComputationSource).toBe('numerical-fallback');
+  });
+
   it('loads optional geoid/grid model pipeline only when explicitly enabled', () => {
     const input = [
       '.2D',

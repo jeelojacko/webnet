@@ -341,6 +341,12 @@ describe('parseInput', () => {
     expect(parsed.parseState.gridDistanceMode).toBe('ellipsoidal');
     expect(parsed.parseState.gridAngleMode).toBe('grid');
     expect(parsed.parseState.gridDirectionMode).toBe('measured');
+    expect(parsed.parseState.observationMode).toEqual({
+      bearing: 'grid',
+      distance: 'ellipsoidal',
+      angle: 'grid',
+      direction: 'measured',
+    });
 
     const bearing = parsed.observations.find((o) => o.type === 'bearing');
     const dist = parsed.observations.find((o) => o.type === 'dist');
@@ -349,6 +355,29 @@ describe('parseInput', () => {
     expect(dist?.gridObsMode).toBe('grid');
     expect(dist?.gridDistanceMode).toBe('ellipsoidal');
     expect(angle?.gridObsMode).toBe('grid');
+  });
+
+  it('supports .GRID OFF reset semantics for observation mode defaults', () => {
+    const parsed = parseInput(
+      [
+        '.GRID BEARING DISTANCE=ELLIPSOIDAL ANGLE DIRECTION',
+        '.GRID OFF',
+        'C A 0 0 0 ! !',
+        'C B 10 0 0',
+        'D A-B 10 0.01',
+      ].join('\n'),
+    );
+    expect(parsed.parseState.gridBearingMode).toBe('grid');
+    expect(parsed.parseState.gridDistanceMode).toBe('measured');
+    expect(parsed.parseState.gridAngleMode).toBe('measured');
+    expect(parsed.parseState.gridDirectionMode).toBe('measured');
+    expect(parsed.parseState.observationMode).toEqual({
+      bearing: 'grid',
+      distance: 'measured',
+      angle: 'measured',
+      direction: 'measured',
+    });
+    expect(parsed.logs.some((line) => line.includes('mode reset to defaults'))).toBe(true);
   });
 
   it('supports .CRS MODE/ID and .CRS GRID <id> aliases for coordinate-system selection', () => {

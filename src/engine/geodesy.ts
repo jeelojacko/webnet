@@ -1,13 +1,39 @@
 import proj4 from 'proj4';
 
-import type { CoordSystemMode, CrsProjectionModel } from '../types';
-import { getCrsDefinition } from './crsCatalog';
+import type { CoordSystemDiagnosticCode, CoordSystemMode, CrsProjectionModel } from '../types';
+import { getCrsDefinition, type CrsDefinition } from './crsCatalog';
 
 const WGS84_A = 6378137;
 const WGS84_F = 1 / 298.257223563;
 const WGS84_E2 = WGS84_F * (2 - WGS84_F);
+const GRS80_F = 1 / 298.257222101;
+const GRS80_E2 = GRS80_F * (2 - GRS80_F);
+const GRS80_EP2 = GRS80_E2 / (1 - GRS80_E2);
 const DEG_TO_RAD = Math.PI / 180;
 const RAD_TO_DEG = 180 / Math.PI;
+
+export type FactorComputationSource = 'projection-formula' | 'numerical-fallback';
+
+export interface TransformResult {
+  east: number;
+  north: number;
+  hEllipsoid?: number;
+  crsId?: string;
+  datumOpId: string;
+  warnings: string[];
+  diagnostics: CoordSystemDiagnosticCode[];
+}
+
+export interface FactorSnapshot {
+  convergenceRad: number;
+  gridScale: number;
+  elevationFactor: number;
+  combinedFactor: number;
+  source: FactorComputationSource;
+  datumOpId?: string;
+  warnings: string[];
+  diagnostics: CoordSystemDiagnosticCode[];
+}
 
 const geodeticToEcef = (
   latDeg: number,
@@ -71,13 +97,21 @@ const projectGrid = (
   latDeg: number,
   lonDeg: number,
   crsId?: string,
-): { east: number; north: number; crsId?: string } | null => {
+): TransformResult | null => {
   const def = getCrsDefinition(crsId);
   if (!def) return null;
+  const datum = resolveDatumOperation(def);
   try {
     const [east, north] = proj4('WGS84', def.proj4, [lonDeg, latDeg]);
     if (!Number.isFinite(east) || !Number.isFinite(north)) return null;
-    return { east, north, crsId: def.id };
+    return {
+      east,
+      north,
+      crsId: def.id,
+      datumOpId: datum.datumOpId,
+      warnings: [...datum.warnings],
+      diagnostics: [...datum.diagnostics],
+    };
   } catch {
     return null;
   }
@@ -87,13 +121,28 @@ const inverseGrid = (
   east: number,
   north: number,
   crsId?: string,
-): { latDeg: number; lonDeg: number; crsId?: string } | null => {
+): {
+  latDeg: number;
+  lonDeg: number;
+  crsId?: string;
+  datumOpId: string;
+  warnings: string[];
+  diagnostics: CoordSystemDiagnosticCode[];
+} | null => {
   const def = getCrsDefinition(crsId);
   if (!def) return null;
+  const datum = resolveDatumOperation(def);
   try {
     const [lonDeg, latDeg] = proj4(def.proj4, 'WGS84', [east, north]);
     if (!Number.isFinite(latDeg) || !Number.isFinite(lonDeg)) return null;
-    return { latDeg, lonDeg, crsId: def.id };
+    return {
+      latDeg,
+      lonDeg,
+      crsId: def.id,
+      datumOpId: datum.datumOpId,
+      warnings: [...datum.warnings],
+      diagnostics: [...datum.diagnostics],
+    };
   } catch {
     return null;
   }
@@ -127,7 +176,15 @@ export const projectGeodeticToEN = (params: {
   model: CrsProjectionModel;
   coordSystemMode?: CoordSystemMode;
   crsId?: string;
-}): { east: number; north: number; model: CrsProjectionModel; crsId?: string } => {
+}): {
+  east: number;
+  north: number;
+  model: CrsProjectionModel;
+  crsId?: string;
+  datumOpId?: string;
+  warnings?: string[];
+  diagnostics?: CoordSystemDiagnosticCode[];
+} => {
   const { latDeg, lonDeg, originLatDeg, originLonDeg, model, coordSystemMode, crsId } = params;
   if (coordSystemMode === 'grid') {
     const projected = projectGrid(latDeg, lonDeg, crsId);
@@ -137,6 +194,9 @@ export const projectGeodeticToEN = (params: {
         north: projected.north,
         model,
         crsId: projected.crsId,
+        datumOpId: projected.datumOpId,
+        warnings: projected.warnings,
+        diagnostics: projected.diagnostics,
       };
     }
   }
@@ -156,11 +216,27 @@ export const inverseENToGeodetic = (params: {
   model: CrsProjectionModel;
   coordSystemMode?: CoordSystemMode;
   crsId?: string;
-}): { latDeg: number; lonDeg: number } | null => {
+}):
+  | {
+      latDeg: number;
+      lonDeg: number;
+      datumOpId?: string;
+      warnings?: string[];
+      diagnostics?: CoordSystemDiagnosticCode[];
+    }
+  | null => {
   const { east, north, originLatDeg, originLonDeg, model, coordSystemMode, crsId } = params;
   if (coordSystemMode === 'grid') {
     const inv = inverseGrid(east, north, crsId);
-    if (inv) return { latDeg: inv.latDeg, lonDeg: inv.lonDeg };
+    if (inv) {
+      return {
+        latDeg: inv.latDeg,
+        lonDeg: inv.lonDeg,
+        datumOpId: inv.datumOpId,
+        warnings: inv.warnings,
+        diagnostics: inv.diagnostics,
+      };
+    }
     return null;
   }
 
@@ -182,13 +258,105 @@ export const inverseENToGeodetic = (params: {
 export interface GridFactors {
   convergenceAngleRad: number;
   gridScaleFactor: number;
+  source: FactorComputationSource;
+  datumOpId?: string;
+  warnings: string[];
+  diagnostics: CoordSystemDiagnosticCode[];
 }
 
-export const computeGridFactors = (
+const wrapLonRad = (lonRad: number): number => {
+  let wrapped = lonRad;
+  while (wrapped > Math.PI) wrapped -= 2 * Math.PI;
+  while (wrapped < -Math.PI) wrapped += 2 * Math.PI;
+  return wrapped;
+};
+
+const defaultLon0ForDef = (def: CrsDefinition): number | undefined => {
+  if (Number.isFinite(def.projectionParams?.lon0Deg ?? Number.NaN)) {
+    return def.projectionParams?.lon0Deg;
+  }
+  if (def.projectionFamily === 'utm' && Number.isFinite(def.zoneNumber ?? Number.NaN)) {
+    return (def.zoneNumber as number) * 6 - 183;
+  }
+  return undefined;
+};
+
+const defaultScaleForDef = (def: CrsDefinition): number => {
+  if (Number.isFinite(def.projectionParams?.k0 ?? Number.NaN)) {
+    return Math.max(1e-12, def.projectionParams?.k0 as number);
+  }
+  if (def.projectionFamily === 'utm') return 0.9996;
+  if (def.projectionFamily === 'mtm') return 0.9999;
+  return 1;
+};
+
+const tmFactors = (
+  latDeg: number,
+  lonDeg: number,
+  def: CrsDefinition,
+): { convergenceAngleRad: number; gridScaleFactor: number } | null => {
+  const lon0Deg = defaultLon0ForDef(def);
+  if (!Number.isFinite(lon0Deg ?? Number.NaN)) return null;
+  const k0 = defaultScaleForDef(def);
+  const lat = latDeg * DEG_TO_RAD;
+  const lon = lonDeg * DEG_TO_RAD;
+  const lon0 = (lon0Deg as number) * DEG_TO_RAD;
+  const dLon = wrapLonRad(lon - lon0);
+  const sinLat = Math.sin(lat);
+  const cosLat = Math.cos(lat);
+  const tanLat = Math.tan(lat);
+  const t = tanLat * tanLat;
+  const c = GRS80_EP2 * cosLat * cosLat;
+  const a = dLon * cosLat;
+  const a2 = a * a;
+  const a4 = a2 * a2;
+  const k =
+    k0 *
+    (1 +
+      ((1 + c) * a2) / 2 +
+      ((5 - 4 * t + 42 * c + 13 * c * c - 28 * GRS80_EP2) * a4) / 24);
+  const convergenceAngleRad = Math.atan2(Math.tan(dLon) * sinLat, 1);
+  if (!Number.isFinite(k) || k <= 0 || !Number.isFinite(convergenceAngleRad)) return null;
+  return { convergenceAngleRad, gridScaleFactor: k };
+};
+
+const obliqueStereographicFactors = (
+  latDeg: number,
+  lonDeg: number,
+  def: CrsDefinition,
+): { convergenceAngleRad: number; gridScaleFactor: number } | null => {
+  const lat0Deg = def.projectionParams?.lat0Deg;
+  const lon0Deg = defaultLon0ForDef(def);
+  if (!Number.isFinite(lat0Deg ?? Number.NaN) || !Number.isFinite(lon0Deg ?? Number.NaN)) {
+    return null;
+  }
+  const k0 = defaultScaleForDef(def);
+  const lat = latDeg * DEG_TO_RAD;
+  const lon = lonDeg * DEG_TO_RAD;
+  const lat0 = (lat0Deg as number) * DEG_TO_RAD;
+  const lon0 = (lon0Deg as number) * DEG_TO_RAD;
+  const dLon = wrapLonRad(lon - lon0);
+  const sinLat = Math.sin(lat);
+  const cosLat = Math.cos(lat);
+  const sinLat0 = Math.sin(lat0);
+  const cosLat0 = Math.cos(lat0);
+  const denom = 1 + sinLat0 * sinLat + cosLat0 * cosLat * Math.cos(dLon);
+  if (!Number.isFinite(denom) || Math.abs(denom) < 1e-12) return null;
+  const gridScaleFactor = (2 * k0) / denom;
+  const convergenceAngleRad = Math.atan2(
+    Math.sin(dLon) * cosLat0,
+    sinLat * cosLat0 - cosLat * sinLat0 * Math.cos(dLon),
+  );
+  if (!Number.isFinite(gridScaleFactor) || gridScaleFactor <= 0) return null;
+  if (!Number.isFinite(convergenceAngleRad)) return null;
+  return { convergenceAngleRad, gridScaleFactor };
+};
+
+const numericGridFactors = (
   latDeg: number,
   lonDeg: number,
   crsId?: string,
-): GridFactors | null => {
+): { convergenceAngleRad: number; gridScaleFactor: number } | null => {
   const base = projectGrid(latDeg, lonDeg, crsId);
   if (!base) return null;
 
@@ -212,6 +380,92 @@ export const computeGridFactors = (
   const gridScaleFactor =
     Number.isFinite(gridDist) && gridDist > 0 ? Math.max(gridDist / eastProbeMeters, 1e-9) : 1;
   return { convergenceAngleRad, gridScaleFactor };
+};
+
+const resolveDatumOperation = (def?: CrsDefinition): {
+  datumOpId: string;
+  warnings: string[];
+  diagnostics: CoordSystemDiagnosticCode[];
+  fallbackUsed: boolean;
+} => {
+  if (!def) {
+    return {
+      datumOpId: 'UNRESOLVED',
+      warnings: ['CRS datum operation unresolved: unknown CRS definition.'],
+      diagnostics: ['CRS_DATUM_FALLBACK'],
+      fallbackUsed: true,
+    };
+  }
+  const primary = def.supportedDatumOps?.primary?.trim();
+  if (primary) {
+    return {
+      datumOpId: primary,
+      warnings: [],
+      diagnostics: [],
+      fallbackUsed: false,
+    };
+  }
+  const fallback = def.supportedDatumOps?.fallbacks?.find((token) => token.trim().length > 0);
+  if (fallback) {
+    return {
+      datumOpId: fallback,
+      warnings: [`CRS datum operation fallback used for ${def.id}: ${fallback}`],
+      diagnostics: ['CRS_DATUM_FALLBACK'],
+      fallbackUsed: true,
+    };
+  }
+  return {
+    datumOpId: 'WGS84-ASSUMED',
+    warnings: [`CRS datum operation fallback used for ${def.id}: WGS84-ASSUMED`],
+    diagnostics: ['CRS_DATUM_FALLBACK'],
+    fallbackUsed: true,
+  };
+};
+
+export const computeGridFactors = (
+  latDeg: number,
+  lonDeg: number,
+  crsId?: string,
+): GridFactors | null => {
+  const def = getCrsDefinition(crsId);
+  const datum = resolveDatumOperation(def);
+  if (!def) return null;
+
+  let formula: { convergenceAngleRad: number; gridScaleFactor: number } | null = null;
+  if (
+    def.projectionFamily === 'utm' ||
+    def.projectionFamily === 'mtm' ||
+    def.projectionFamily === 'transverse-mercator'
+  ) {
+    formula = tmFactors(latDeg, lonDeg, def);
+  } else if (def.projectionFamily === 'oblique-stereographic') {
+    formula = obliqueStereographicFactors(latDeg, lonDeg, def);
+  }
+
+  if (formula) {
+    return {
+      convergenceAngleRad: formula.convergenceAngleRad,
+      gridScaleFactor: formula.gridScaleFactor,
+      source: 'projection-formula',
+      datumOpId: datum.datumOpId,
+      warnings: [...datum.warnings],
+      diagnostics: [...datum.diagnostics],
+    };
+  }
+
+  const numeric = numericGridFactors(latDeg, lonDeg, crsId);
+  if (!numeric) return null;
+  return {
+    convergenceAngleRad: numeric.convergenceAngleRad,
+    gridScaleFactor: numeric.gridScaleFactor,
+    source: 'numerical-fallback',
+    datumOpId: datum.datumOpId,
+    warnings: [
+      ...datum.warnings,
+      `Projection-factor formula unavailable for ${def.id}; numerical approximation used.`,
+    ],
+    diagnostics: [...datum.diagnostics, 'FACTOR_APPROXIMATION_USED'],
+  };
 };
 
 export const computeElevationFactor = (
