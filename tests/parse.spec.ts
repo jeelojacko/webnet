@@ -389,6 +389,51 @@ describe('parseInput', () => {
     expect(parsed.logs.some((line) => line.includes('mode reset to defaults'))).toBe(true);
   });
 
+  it('tracks directive ranges and no-effect warnings for trailing directives', () => {
+    const parsed = parseInput(
+      [
+        '.2D',
+        '.GRID',
+        'C A 0 0 0 ! !',
+        'C B 10 0 0',
+        'D A-B 10 0.01',
+        '.MEASURED',
+      ].join('\n'),
+    );
+    const dist = parsed.observations.find((obs) => obs.type === 'dist');
+    expect(dist?.gridDistanceMode).toBe('grid');
+    expect(parsed.parseState.gridDistanceMode).toBe('measured');
+    expect(parsed.parseState.directiveTransitions?.length).toBe(2);
+    expect(parsed.parseState.directiveTransitions?.[0].obsCountInRange).toBe(1);
+    expect(parsed.parseState.directiveTransitions?.[1].obsCountInRange).toBe(0);
+    expect(parsed.parseState.directiveNoEffectWarnings).toEqual([
+      {
+        line: 6,
+        directive: '.MEASURED',
+        reason: 'noSubsequentObservations',
+      },
+    ]);
+    expect(parsed.parseState.parsedUsageSummary?.distance.grid).toBe(1);
+    expect(parsed.parseState.parsedUsageSummary?.total).toBe(1);
+  });
+
+  it('warns when directives are followed by non-observation records only', () => {
+    const parsed = parseInput(
+      [
+        '.2D',
+        '.GRID',
+        'C A 0 0 0 ! !',
+        'C B 10 0 0',
+        'D A-B 10 0.01',
+        '.MEASURED',
+        'C C 20 0 0',
+      ].join('\n'),
+    );
+    const warning = parsed.parseState.directiveNoEffectWarnings?.[0];
+    expect(warning).toBeDefined();
+    expect(warning?.reason).toBe('noSubsequentObsRecords');
+  });
+
   it('supports .CRS MODE/ID and .CRS GRID <id> aliases for coordinate-system selection', () => {
     const viaModeId = parseInput(
       ['.CRS MODE GRID', '.CRS ID CA_NAD83_CSRS_UTM_19N', 'C A 0 0 0 ! !'].join('\n'),

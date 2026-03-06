@@ -2,9 +2,14 @@ import React, { useMemo } from 'react';
 import type {
   AdjustmentResult,
   CoordSystemDiagnosticCode,
+  CrsOffReason,
+  CrsStatus,
   DatumSufficiencyReport,
+  DirectiveNoEffectWarning,
+  DirectiveTransition,
   GnssVectorFrame,
   Observation,
+  ReductionUsageSummary,
 } from '../types';
 
 interface ProcessingSummaryViewProps {
@@ -30,8 +35,14 @@ interface ProcessingSummaryViewProps {
     gridAngleMode?: 'measured' | 'grid';
     gridDirectionMode?: 'measured' | 'grid';
     datumSufficiencyReport?: DatumSufficiencyReport;
+    parsedUsageSummary?: ReductionUsageSummary;
+    usedInSolveUsageSummary?: ReductionUsageSummary;
+    directiveTransitions?: DirectiveTransition[];
+    directiveNoEffectWarnings?: DirectiveNoEffectWarning[];
     coordSystemDiagnostics?: CoordSystemDiagnosticCode[];
     coordSystemWarningMessages?: string[];
+    crsStatus?: CrsStatus;
+    crsOffReason?: CrsOffReason;
     crsDatumOpId?: string;
     crsDatumFallbackUsed?: boolean;
     crsAreaOfUseStatus?: 'inside' | 'outside' | 'unknown';
@@ -234,6 +245,16 @@ const ProcessingSummaryView: React.FC<ProcessingSummaryViewProps> = ({
         `Error Factor Bounds (${Math.sqrt(result.chiSquare.varianceFactorLower).toFixed(3)}/${Math.sqrt(result.chiSquare.varianceFactorUpper).toFixed(3)})`,
       );
     }
+    const formatUsageSummary = (summary?: ReductionUsageSummary): string => {
+      if (!summary) return 'unavailable';
+      return [
+        `bearing[g=${summary.bearing.grid},m=${summary.bearing.measured}]`,
+        `angle[g=${summary.angle.grid},m=${summary.angle.measured}]`,
+        `direction[g=${summary.direction.grid},m=${summary.direction.measured}]`,
+        `distance[ground=${summary.distance.ground},grid=${summary.distance.grid},ellip=${summary.distance.ellipsoidal}]`,
+        `total=${summary.total}`,
+      ].join('; ');
+    };
     if (runDiagnostics) {
       lines.push(
         `Run Profile: ${runDiagnostics.solveProfile.toUpperCase()} (dirSets=${runDiagnostics.directionSetMode}, profileFallback=${runDiagnostics.profileDefaultInstrumentFallback ? 'ON' : 'OFF'})`,
@@ -248,7 +269,7 @@ const ProcessingSummaryView: React.FC<ProcessingSummaryViewProps> = ({
         );
       } else {
         lines.push(
-          `Grid Input Modes: bearing=${String(runDiagnostics.gridBearingMode ?? 'grid').toUpperCase()}, distance=${String(runDiagnostics.gridDistanceMode ?? 'measured').toUpperCase()}, angle=${String(runDiagnostics.gridAngleMode ?? 'measured').toUpperCase()}, direction=${String(runDiagnostics.gridDirectionMode ?? 'measured').toUpperCase()}`,
+          `Directive Context (End of File): bearing=${String(runDiagnostics.gridBearingMode ?? 'grid').toUpperCase()}, distance=${String(runDiagnostics.gridDistanceMode ?? 'measured').toUpperCase()}, angle=${String(runDiagnostics.gridAngleMode ?? 'measured').toUpperCase()}, direction=${String(runDiagnostics.gridDirectionMode ?? 'measured').toUpperCase()}`,
         );
         lines.push(
           `.SCALE Override: ${
@@ -268,6 +289,34 @@ const ProcessingSummaryView: React.FC<ProcessingSummaryViewProps> = ({
               : 'NO'
           })`,
         );
+        lines.push(
+          `Applied Reduction Modes (Parsed): ${formatUsageSummary(
+            runDiagnostics.parsedUsageSummary,
+          )}`,
+        );
+        lines.push(
+          `Applied Reduction Modes (Used In Solve): ${formatUsageSummary(
+            runDiagnostics.usedInSolveUsageSummary,
+          )}`,
+        );
+        const hasDirectiveContextDelta =
+          JSON.stringify(runDiagnostics.parsedUsageSummary) !==
+          JSON.stringify(runDiagnostics.usedInSolveUsageSummary);
+        if (hasDirectiveContextDelta) {
+          lines.push(
+            'Note: parsed reduction usage differs from used-in-solve usage due to filtering/exclusions.',
+          );
+        }
+        (runDiagnostics.directiveNoEffectWarnings ?? []).forEach((warning) => {
+          lines.push(
+            `Directive no-effect warning: ${warning.directive} at line ${warning.line} (${warning.reason})`,
+          );
+        });
+        (runDiagnostics.directiveTransitions ?? []).forEach((transition) => {
+          lines.push(
+            `Directive range: ${transition.directive} line ${transition.effectiveFromLine}${transition.effectiveToLine != null ? `-${transition.effectiveToLine}` : '-EOF'} (obs=${transition.obsCountInRange})`,
+          );
+        });
       }
       const datumSufficiency =
         runDiagnostics.datumSufficiencyReport ?? result.parseState?.datumSufficiencyReport;
@@ -284,7 +333,12 @@ const ProcessingSummaryView: React.FC<ProcessingSummaryViewProps> = ({
         `Average Geoid Height Fallback: ${(((runDiagnostics.averageGeoidHeight ?? 0) * unitScale)).toFixed(4)}${linearUnit}`,
       );
       lines.push(
-        `CRS / Projection: ${runDiagnostics.crsTransformEnabled ? `ON (${runDiagnostics.crsProjectionModel ?? 'legacy-equirectangular'}, label="${runDiagnostics.crsLabel || 'unnamed'}")` : 'OFF'}`,
+        `CRS / Projection: ${
+          (runDiagnostics.crsStatus ??
+            (runDiagnostics.crsTransformEnabled ? 'on' : 'off')) === 'on'
+            ? `ON (${runDiagnostics.crsProjectionModel ?? 'legacy-equirectangular'}, label="${runDiagnostics.crsLabel || 'unnamed'}")`
+            : `OFF${runDiagnostics.crsOffReason ? ` (${runDiagnostics.crsOffReason})` : ''}`
+        }`,
       );
       lines.push(
         `CRS Grid-Ground Scale: ${runDiagnostics.crsGridScaleEnabled ? `ON (${(runDiagnostics.crsGridScaleFactor ?? 1).toFixed(8)})` : 'OFF'}`,

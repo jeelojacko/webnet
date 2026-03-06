@@ -142,6 +142,7 @@ export interface Station {
   elevationFactor?: number;
   combinedFactor?: number;
   factorComputationSource?: 'projection-formula' | 'numerical-fallback';
+  factorComputationMethod?: FactorComputationMethod;
   ellipsoidHeightUsed?: number;
   ellipsoidHeightSource?: EllipsoidHeightSource;
   errorEllipse?: StationErrorEllipse;
@@ -370,9 +371,20 @@ export type CoordSystemMode = 'local' | 'grid';
 export type LocalDatumScheme = 'average-scale' | 'common-elevation';
 export type GridObservationMode = 'measured' | 'grid';
 export type GridDistanceInputMode = 'measured' | 'grid' | 'ellipsoidal';
+export type CrsStatus = 'on' | 'off';
+export type CrsOffReason =
+  | 'noCRSSelected'
+  | 'projDbMissing'
+  | 'noInverseAvailable'
+  | 'inverseFailed'
+  | 'unsupportedCrsFamily'
+  | 'disabledByProfile'
+  | 'crsInitFailed'
+  | 'missingGridFiles';
 export type ReductionInputSpace = 'measured' | 'grid';
 export type ReductionDistanceKind = 'ground' | 'grid' | 'ellipsoidal';
 export type BearingKind = 'grid' | 'measured';
+export type FactorComputationMethod = 'inverseToGeodetic' | 'directGrid' | 'fallback';
 export type CoordInputClass = 'grid' | 'geodetic' | 'local' | 'unknown';
 export type GnssVectorFrame = 'gridNEU' | 'enuLocal' | 'ecefDelta' | 'llhBaseline' | 'unknown';
 export type EllipsoidHeightSource =
@@ -407,6 +419,34 @@ export interface DatumSufficiencyReport {
   status: 'hard-fail' | 'soft-warn' | 'ok';
   reasons: string[];
   suggestions: string[];
+}
+export interface ReductionUsageSummary {
+  bearing: { grid: number; measured: number };
+  angle: { grid: number; measured: number };
+  direction: { grid: number; measured: number };
+  distance: { ground: number; grid: number; ellipsoidal: number };
+  total: number;
+}
+export interface DirectiveTransitionState {
+  gridBearingMode: GridObservationMode;
+  gridDistanceMode: GridDistanceInputMode;
+  gridAngleMode: GridObservationMode;
+  gridDirectionMode: GridObservationMode;
+  averageScaleFactor: number;
+  scaleOverrideActive: boolean;
+}
+export interface DirectiveTransition {
+  line: number;
+  directive: string;
+  stateAfter: DirectiveTransitionState;
+  effectiveFromLine: number;
+  effectiveToLine?: number;
+  obsCountInRange: number;
+}
+export interface DirectiveNoEffectWarning {
+  line: number;
+  directive: string;
+  reason: 'noSubsequentObservations' | 'noSubsequentObsRecords';
 }
 export type GeoidInterpolationMethod = 'bilinear' | 'nearest';
 export type GeoidHeightDatum = 'orthometric' | 'ellipsoid';
@@ -669,7 +709,13 @@ export interface ParseOptions {
   crsDatumFallbackUsed?: boolean;
   crsAreaOfUseStatus?: 'inside' | 'outside' | 'unknown';
   crsOutOfAreaStationCount?: number;
+  crsStatus?: CrsStatus;
+  crsOffReason?: CrsOffReason;
   datumSufficiencyReport?: DatumSufficiencyReport;
+  directiveTransitions?: DirectiveTransition[];
+  directiveNoEffectWarnings?: DirectiveNoEffectWarning[];
+  parsedUsageSummary?: ReductionUsageSummary;
+  usedInSolveUsageSummary?: ReductionUsageSummary;
   preanalysisMode?: boolean;
   order: OrderMode;
   angleUnits?: AngleUnitsMode;

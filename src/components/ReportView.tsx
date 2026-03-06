@@ -4,10 +4,15 @@ import type {
   AdjustmentResult,
   ClusterApprovedMerge,
   CoordSystemDiagnosticCode,
+  CrsOffReason,
+  CrsStatus,
   DatumSufficiencyReport,
+  DirectiveNoEffectWarning,
+  DirectiveTransition,
   GnssVectorFrame,
   GpsObservation,
   Observation,
+  ReductionUsageSummary,
 } from '../types';
 import { RAD_TO_DEG, radToDmsStr } from '../engine/angles';
 import { isLockedPreanalysisObservation } from '../engine/preanalysis';
@@ -86,6 +91,10 @@ const REPORT_STATIC_TOOLTIPS: Record<string, string> = {
     'Active coordinate-system mode and CRS used for reduction modeling in this solve.',
   'Grid Input Modes':
     'Observation input-space assumptions for grid workflows; .SCALE and GNSS frame defaults are shown with this context.',
+  'Directive Context (End of File)':
+    'Final directive state after parsing. It may differ from observation rows parsed earlier in the file.',
+  'Applied Reduction Modes':
+    'Reduction-mode counts actually applied to parsed observations and to observations used in solve equations.',
   'Datum Sufficiency':
     'Pre-solve datum sufficiency gate status. HARD-FAIL blocks solve, SOFT-WARN allows solve with warnings and suggestions.',
   'CRS Diagnostics':
@@ -162,9 +171,15 @@ interface ReportViewProps {
     gridDistanceMode?: 'measured' | 'grid' | 'ellipsoidal';
     gridAngleMode?: 'measured' | 'grid';
     gridDirectionMode?: 'measured' | 'grid';
+    parsedUsageSummary?: ReductionUsageSummary;
+    usedInSolveUsageSummary?: ReductionUsageSummary;
+    directiveTransitions?: DirectiveTransition[];
+    directiveNoEffectWarnings?: DirectiveNoEffectWarning[];
     datumSufficiencyReport?: DatumSufficiencyReport;
     coordSystemDiagnostics?: CoordSystemDiagnosticCode[];
     coordSystemWarningMessages?: string[];
+    crsStatus?: CrsStatus;
+    crsOffReason?: CrsOffReason;
     defaultSigmaCount: number;
     defaultSigmaByType: string;
     stochasticDefaultsSummary: string;
@@ -222,6 +237,16 @@ const ReportView: React.FC<ReportViewProps> = ({
   const ellipseScale = units === 'm' ? 100 : 12;
   const covarianceScale = unitScale * unitScale;
   const isPreanalysis = result.preanalysisMode === true;
+  const formatReductionUsage = (summary?: ReductionUsageSummary): string => {
+    if (!summary) return 'unavailable';
+    return [
+      `bearing[g=${summary.bearing.grid},m=${summary.bearing.measured}]`,
+      `angle[g=${summary.angle.grid},m=${summary.angle.measured}]`,
+      `direction[g=${summary.direction.grid},m=${summary.direction.measured}]`,
+      `distance[ground=${summary.distance.ground},grid=${summary.distance.grid},ellip=${summary.distance.ellipsoidal}]`,
+      `total=${summary.total}`,
+    ].join('; ');
+  };
   const [ellipseMode, setEllipseMode] = useState<'1sigma' | '95'>('1sigma');
   const ellipseConfidenceScale = ellipseMode === '95' ? 2.4477 : 1;
 
@@ -1507,8 +1532,11 @@ const ReportView: React.FC<ReportViewProps> = ({
               </div>
             </div>
             <div className="col-span-2">
-              <div className="text-slate-500" title={REPORT_STATIC_TOOLTIPS['Grid Input Modes']}>
-                Grid Input Modes
+              <div
+                className="text-slate-500"
+                title={REPORT_STATIC_TOOLTIPS['Directive Context (End of File)']}
+              >
+                Directive Context (End of File)
               </div>
               <div className="break-words">
                 {(runDiagnostics.coordSystemMode ?? 'local') === 'grid'
@@ -1516,6 +1544,44 @@ const ReportView: React.FC<ReportViewProps> = ({
                   : `${String(runDiagnostics.localDatumScheme ?? 'average-scale').toUpperCase()} (scale=${(runDiagnostics.averageScaleFactor ?? 1).toFixed(8)}, commonElev=${((runDiagnostics.commonElevation ?? 0) * unitScale).toFixed(4)}${units})`}
               </div>
             </div>
+            {(runDiagnostics.coordSystemMode ?? 'local') === 'grid' && (
+              <div className="col-span-2">
+                <div className="text-slate-500" title={REPORT_STATIC_TOOLTIPS['Applied Reduction Modes']}>
+                  Applied Reduction Modes
+                </div>
+                <div className="break-words">
+                  Parsed: {formatReductionUsage(runDiagnostics.parsedUsageSummary)}
+                  <br />
+                  Used In Solve: {formatReductionUsage(runDiagnostics.usedInSolveUsageSummary)}
+                </div>
+              </div>
+            )}
+            {(runDiagnostics.directiveNoEffectWarnings?.length ?? 0) > 0 && (
+              <div className="col-span-2">
+                <div className="text-slate-500" title={REPORT_STATIC_TOOLTIPS['Applied Reduction Modes']}>
+                  No-Effect Directives
+                </div>
+                <div className="break-words">
+                  {(runDiagnostics.directiveNoEffectWarnings ?? [])
+                    .map((w) => `${w.directive} @line ${w.line} (${w.reason})`)
+                    .join(' | ')}
+                </div>
+              </div>
+            )}
+            {(runDiagnostics.directiveTransitions?.length ?? 0) > 0 && (
+              <div className="col-span-2">
+                <div className="text-slate-500" title={REPORT_STATIC_TOOLTIPS['Applied Reduction Modes']}>
+                  Directive Ranges
+                </div>
+                <div className="break-words">
+                  {(runDiagnostics.directiveTransitions ?? [])
+                    .map((t) =>
+                      `${t.directive} line ${t.effectiveFromLine}${t.effectiveToLine != null ? `-${t.effectiveToLine}` : '-EOF'} (obs=${t.obsCountInRange})`,
+                    )
+                    .join(' | ')}
+                </div>
+              </div>
+            )}
             {runDiagnostics.datumSufficiencyReport && (
               <div className="col-span-2">
                 <div className="text-slate-500" title={REPORT_STATIC_TOOLTIPS['Datum Sufficiency']}>
@@ -1545,9 +1611,10 @@ const ReportView: React.FC<ReportViewProps> = ({
                 CRS / Projection
               </div>
               <div>
-                {runDiagnostics.crsTransformEnabled
+                {(runDiagnostics.crsStatus ??
+                (runDiagnostics.crsTransformEnabled ? 'on' : 'off')) === 'on'
                   ? `ON (${runDiagnostics.crsProjectionModel}, label="${runDiagnostics.crsLabel || 'unnamed'}")`
-                  : 'OFF'}
+                  : `OFF${runDiagnostics.crsOffReason ? ` (${runDiagnostics.crsOffReason})` : ''}`}
               </div>
             </div>
             <div>

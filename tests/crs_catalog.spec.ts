@@ -65,9 +65,10 @@ describe('Canada CRS catalog (Phase 2 expansion)', () => {
       crsId: 'EPSG:2953',
     });
 
-    expect(inverse).not.toBeNull();
-    expect(inverse?.latDeg ?? Number.NaN).toBeCloseTo(46.72, 7);
-    expect(inverse?.lonDeg ?? Number.NaN).toBeCloseTo(-66.64, 7);
+    expect('failureReason' in inverse).toBe(false);
+    if ('failureReason' in inverse) return;
+    expect(inverse.latDeg).toBeCloseTo(46.72, 7);
+    expect(inverse.lonDeg).toBeCloseTo(-66.64, 7);
   });
 
   it('uses closed-form factor formulas for TM/stereographic and numeric fallback for other families', () => {

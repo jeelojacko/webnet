@@ -38,7 +38,11 @@ import type {
   ParseOptions,
   CoordSystemDiagnosticCode,
   CoordInputClass,
+  CrsOffReason,
+  CrsStatus,
+  FactorComputationMethod,
   GnssVectorFrame,
+  ReductionUsageSummary,
 } from '../types';
 
 const EPS = 1e-10;
@@ -152,6 +156,50 @@ const medianOf = (values: number[]): number | undefined => {
 };
 
 const makePairKey = (a: StationId, b: StationId): string => (a < b ? `${a}|${b}` : `${b}|${a}`);
+
+const createReductionUsageSummary = (): ReductionUsageSummary => ({
+  bearing: { grid: 0, measured: 0 },
+  angle: { grid: 0, measured: 0 },
+  direction: { grid: 0, measured: 0 },
+  distance: { ground: 0, grid: 0, ellipsoidal: 0 },
+  total: 0,
+});
+
+const summarizeReductionUsage = (observations: Observation[]): ReductionUsageSummary => {
+  const summary = createReductionUsageSummary();
+  observations.forEach((obs) => {
+    if (obs.type === 'bearing') {
+      const mode = obs.gridObsMode === 'measured' ? 'measured' : 'grid';
+      summary.bearing[mode] += 1;
+      summary.total += 1;
+      return;
+    }
+    if (obs.type === 'angle') {
+      const mode = obs.gridObsMode === 'grid' ? 'grid' : 'measured';
+      summary.angle[mode] += 1;
+      summary.total += 1;
+      return;
+    }
+    if (obs.type === 'direction' || obs.type === 'dir') {
+      const mode = obs.gridObsMode === 'grid' ? 'grid' : 'measured';
+      summary.direction[mode] += 1;
+      summary.total += 1;
+      return;
+    }
+    if (obs.type === 'dist') {
+      const kind: 'ground' | 'grid' | 'ellipsoidal' =
+        obs.distanceKind ??
+        (obs.gridDistanceMode === 'ellipsoidal'
+          ? 'ellipsoidal'
+          : obs.gridDistanceMode === 'grid'
+            ? 'grid'
+            : 'ground');
+      summary.distance[kind] += 1;
+      summary.total += 1;
+    }
+  });
+  return summary;
+};
 
 const classifyWeakGeometrySeverity = (
   relativeToMedian: number,
@@ -316,11 +364,14 @@ export class LSAEngine {
       elevationFactor: number;
       combinedFactor: number;
       source: 'projection-formula' | 'numerical-fallback';
+      factorComputationMethod: FactorComputationMethod;
     }
   >();
   private coordSystemDiagnostics = new Set<CoordSystemDiagnosticCode>();
   private coordSystemWarningMessages: string[] = [];
   private coordWarningSeen = new Set<string>();
+  private crsStatus: CrsStatus = 'off';
+  private crsOffReason?: CrsOffReason = 'disabledByProfile';
   private gnssFrameConfirmed = false;
   private datumSufficiencyReport?: DatumSufficiencyReport;
   private crsDatumOpId = '';
@@ -1984,6 +2035,17 @@ export class LSAEngine {
     this.log(`Warning: ${normalized}`);
   }
 
+  private setCrsOff(reason: CrsOffReason, warning?: string): void {
+    this.crsStatus = 'off';
+    this.crsOffReason = reason;
+    if (warning) this.addCoordSystemWarning(warning);
+  }
+
+  private setCrsOn(): void {
+    this.crsStatus = 'on';
+    this.crsOffReason = undefined;
+  }
+
   private clearCoordSystemDiagnostics(): void {
     this.coordSystemDiagnostics.clear();
     this.coordSystemWarningMessages = [];
@@ -1992,6 +2054,8 @@ export class LSAEngine {
     this.crsDatumFallbackUsed = false;
     this.crsAreaOfUseStatus = 'unknown';
     this.crsOutOfAreaStationCount = 0;
+    this.crsStatus = 'off';
+    this.crsOffReason = this.coordSystemMode === 'grid' ? 'noCRSSelected' : 'disabledByProfile';
   }
 
   private clearGeometryCache() {
@@ -2308,25 +2372,54 @@ export class LSAEngine {
   private stationGeodetic(stationId: StationId): { latDeg: number; lonDeg: number } | null {
     const station = this.stations[stationId];
     if (!station) return null;
-    if (Number.isFinite(station.latDeg ?? Number.NaN) && Number.isFinite(station.lonDeg ?? Number.NaN)) {
+    if (
+      Number.isFinite(station.latDeg ?? Number.NaN) &&
+      Number.isFinite(station.lonDeg ?? Number.NaN)
+    ) {
+      if (this.coordSystemMode === 'grid') this.setCrsOn();
       return { latDeg: station.latDeg as number, lonDeg: station.lonDeg as number };
     }
     if (this.coordSystemMode !== 'grid') return null;
-    const originLatDeg = this.parseState?.originLatDeg;
-    const originLonDeg = this.parseState?.originLonDeg;
-    if (!Number.isFinite(originLatDeg ?? Number.NaN) || !Number.isFinite(originLonDeg ?? Number.NaN)) {
-      return null;
-    }
     const inv = inverseENToGeodetic({
       east: station.x,
       north: station.y,
-      originLatDeg: originLatDeg as number,
-      originLonDeg: originLonDeg as number,
+      originLatDeg: this.parseState?.originLatDeg,
+      originLonDeg: this.parseState?.originLonDeg,
       model: this.parseState?.crsProjectionModel ?? 'legacy-equirectangular',
       coordSystemMode: this.coordSystemMode,
       crsId: this.crsId,
     });
-    if (!inv) return null;
+    if ('failureReason' in inv) {
+      const reason = inv.failureReason;
+      if (reason === 'noCRSSelected') {
+        this.setCrsOff('noCRSSelected', 'Grid coordinate mode is active but CRS id is missing.');
+      } else if (reason === 'noInverseAvailable') {
+        this.setCrsOff(
+          'noInverseAvailable',
+          `CRS inverse unavailable for ${this.crsId || 'unspecified CRS'} while resolving station geodetics.`,
+        );
+      } else if (reason === 'crsInitFailed') {
+        this.setCrsOff(
+          'crsInitFailed',
+          `CRS initialization failed for ${this.crsId || 'unspecified CRS'} while resolving station geodetics.`,
+        );
+      } else if (reason === 'inverseFailed') {
+        this.setCrsOff(
+          'inverseFailed',
+          `CRS inverse failed for station ${stationId} in ${this.crsId || 'unspecified CRS'}.`,
+        );
+      } else if (reason === 'projDbMissing') {
+        this.setCrsOff('projDbMissing', 'Projection database is unavailable for CRS inverse operations.');
+      } else if (reason === 'missingGridFiles') {
+        this.setCrsOff('missingGridFiles', 'Required grid-shift files are missing for CRS datum/vertical operations.');
+      } else if (reason === 'unsupportedCrsFamily') {
+        this.setCrsOff('unsupportedCrsFamily', `Unsupported CRS family for ${this.crsId || 'unspecified CRS'}.`);
+      } else {
+        this.setCrsOff('disabledByProfile');
+      }
+      return null;
+    }
+    this.setCrsOn();
     if (inv.datumOpId && !this.crsDatumOpId) {
       this.crsDatumOpId = inv.datumOpId;
     }
@@ -2346,6 +2439,7 @@ export class LSAEngine {
     elevationFactor: number;
     combinedFactor: number;
     source: 'projection-formula' | 'numerical-fallback';
+    factorComputationMethod: FactorComputationMethod;
   } {
     const station = this.stations[stationId];
     if (!station) {
@@ -2355,6 +2449,7 @@ export class LSAEngine {
         elevationFactor: 1,
         combinedFactor: 1,
         source: 'projection-formula',
+        factorComputationMethod: 'fallback',
       };
     }
     const cacheKey = [
@@ -2375,6 +2470,7 @@ export class LSAEngine {
     let convergenceAngleRad = 0;
     let gridScaleFactor = 1;
     let source: 'projection-formula' | 'numerical-fallback' = 'projection-formula';
+    let factorComputationMethod: FactorComputationMethod = 'fallback';
     if (this.coordSystemMode === 'grid') {
       const geo = this.stationGeodetic(stationId);
       if (geo) {
@@ -2383,6 +2479,8 @@ export class LSAEngine {
           convergenceAngleRad = factors.convergenceAngleRad;
           gridScaleFactor = factors.gridScaleFactor;
           source = factors.source;
+          factorComputationMethod =
+            factors.source === 'numerical-fallback' ? 'fallback' : 'inverseToGeodetic';
           if (factors.datumOpId && !this.crsDatumOpId) {
             this.crsDatumOpId = factors.datumOpId;
           }
@@ -2418,7 +2516,15 @@ export class LSAEngine {
     station.elevationFactor = elevationFactor;
     station.combinedFactor = combinedFactor;
     station.factorComputationSource = source;
-    const snapshot = { convergenceAngleRad, gridScaleFactor, elevationFactor, combinedFactor, source };
+    station.factorComputationMethod = factorComputationMethod;
+    const snapshot = {
+      convergenceAngleRad,
+      gridScaleFactor,
+      elevationFactor,
+      combinedFactor,
+      source,
+      factorComputationMethod,
+    };
     this.stationFactorCache.set(cacheKey, snapshot);
     return snapshot;
   }
@@ -3583,10 +3689,14 @@ export class LSAEngine {
       this.parseState.geoidSkippedStationCount = 0;
       this.parseState.coordSystemDiagnostics = [];
       this.parseState.coordSystemWarningMessages = [];
+      this.parseState.crsStatus = this.coordSystemMode === 'grid' ? 'off' : undefined;
+      this.parseState.crsOffReason =
+        this.coordSystemMode === 'grid' ? 'noCRSSelected' : undefined;
       this.parseState.crsDatumOpId = '';
       this.parseState.crsDatumFallbackUsed = false;
       this.parseState.crsAreaOfUseStatus = 'unknown';
       this.parseState.crsOutOfAreaStationCount = 0;
+      this.parseState.usedInSolveUsageSummary = undefined;
     }
     this.is2D = this.coordMode === '2D';
     this.condition = undefined;
@@ -3608,6 +3718,13 @@ export class LSAEngine {
     this.conditionWarned = false;
     this.clearCoordSystemDiagnostics();
     this.clearGeometryCache();
+    if (this.coordSystemMode !== 'grid') {
+      this.setCrsOff('disabledByProfile');
+    } else if (!this.crsId || !this.crsId.trim()) {
+      this.setCrsOff('noCRSSelected', 'Grid coordinate mode is active but CRS id is missing.');
+    } else {
+      this.setCrsOff('noInverseAvailable');
+    }
 
     if ((this.directionRejectDiagnostics?.length ?? 0) > 0) {
       this.log(`Direction rejects captured: ${this.directionRejectDiagnostics?.length}`);
@@ -3792,6 +3909,11 @@ export class LSAEngine {
 
     this.updateGpsAddHiHtDiagnostics();
     const activeObservations = this.collectActiveObservations();
+    if (this.parseState) {
+      this.parseState.usedInSolveUsageSummary = summarizeReductionUsage(activeObservations);
+      this.parseState.parsedUsageSummary =
+        this.parseState.parsedUsageSummary ?? summarizeReductionUsage(this.observations);
+    }
     const gridInputGate = this.evaluateGridInputGate(activeObservations);
     if (gridInputGate.blocked) {
       this.addCoordSystemDiagnostic('CRS_INPUT_MIX_BLOCKED');
@@ -6969,6 +7091,13 @@ export class LSAEngine {
       const diagnostics = Array.from(this.coordSystemDiagnostics.values()).sort();
       this.parseState.coordSystemDiagnostics = diagnostics;
       this.parseState.coordSystemWarningMessages = [...this.coordSystemWarningMessages];
+      if (this.coordSystemMode === 'grid') {
+        this.parseState.crsStatus = this.crsStatus;
+        this.parseState.crsOffReason = this.crsStatus === 'off' ? this.crsOffReason : undefined;
+      } else {
+        this.parseState.crsStatus = undefined;
+        this.parseState.crsOffReason = undefined;
+      }
       this.parseState.crsDatumOpId = this.crsDatumOpId || undefined;
       this.parseState.crsDatumFallbackUsed =
         this.crsDatumFallbackUsed || diagnostics.includes('CRS_DATUM_FALLBACK');
@@ -6995,6 +7124,10 @@ export class LSAEngine {
       this.parseState.scaleOverrideActive = this.scaleOverrideActive;
       this.parseState.gnssFrameConfirmed = this.gnssFrameConfirmed;
       this.parseState.datumSufficiencyReport = this.datumSufficiencyReport;
+      this.parseState.parsedUsageSummary =
+        this.parseState.parsedUsageSummary ?? summarizeReductionUsage(this.observations);
+      this.parseState.usedInSolveUsageSummary =
+        this.parseState.usedInSolveUsageSummary ?? summarizeReductionUsage(this.collectActiveObservations());
     }
     const autoSideshotEnabled =
       this.parseState?.autoSideshotEnabled ?? this.parseOptions?.autoSideshotEnabled ?? true;

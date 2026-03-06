@@ -107,10 +107,15 @@ import type {
   GridDistanceInputMode,
   ObservationModeSettings,
   CoordSystemDiagnosticCode,
+  CrsOffReason,
+  CrsStatus,
   DatumSufficiencyReport,
+  DirectiveNoEffectWarning,
+  DirectiveTransition,
   GeoidInterpolationMethod,
   GeoidHeightDatum,
   GnssVectorFrame,
+  ReductionUsageSummary,
 } from './types';
 
 const ReportView = React.lazy(() => import('./components/ReportView'));
@@ -281,8 +286,14 @@ type RunDiagnostics = {
   gridAngleMode: GridObservationMode;
   gridDirectionMode: GridObservationMode;
   datumSufficiencyReport?: DatumSufficiencyReport;
+  parsedUsageSummary?: ReductionUsageSummary;
+  usedInSolveUsageSummary?: ReductionUsageSummary;
+  directiveTransitions?: DirectiveTransition[];
+  directiveNoEffectWarnings?: DirectiveNoEffectWarning[];
   coordSystemDiagnostics: CoordSystemDiagnosticCode[];
   coordSystemWarningMessages: string[];
+  crsStatus?: CrsStatus;
+  crsOffReason?: CrsOffReason;
   crsDatumOpId?: string;
   crsDatumFallbackUsed: boolean;
   crsAreaOfUseStatus: 'inside' | 'outside' | 'unknown';
@@ -1528,7 +1539,13 @@ const App: React.FC<AppProps> = ({
       geoidSkippedStationCount: parseState.geoidSkippedStationCount ?? 0,
       coordSystemDiagnostics: parseState.coordSystemDiagnostics ?? [],
       coordSystemWarningMessages: parseState.coordSystemWarningMessages ?? [],
+      crsStatus: parseState.crsStatus ?? (parseState.crsTransformEnabled ? 'on' : 'off'),
+      crsOffReason: parseState.crsOffReason,
       datumSufficiencyReport: parseState.datumSufficiencyReport,
+      parsedUsageSummary: parseState.parsedUsageSummary,
+      usedInSolveUsageSummary: parseState.usedInSolveUsageSummary,
+      directiveTransitions: parseState.directiveTransitions ?? [],
+      directiveNoEffectWarnings: parseState.directiveNoEffectWarnings ?? [],
       crsDatumOpId: parseState.crsDatumOpId,
       crsDatumFallbackUsed: parseState.crsDatumFallbackUsed ?? false,
       crsAreaOfUseStatus: parseState.crsAreaOfUseStatus ?? 'unknown',
@@ -1608,10 +1625,16 @@ const App: React.FC<AppProps> = ({
       datumSufficiencyReport: parse.datumSufficiencyReport,
       coordSystemDiagnostics: parse.coordSystemDiagnostics ?? [],
       coordSystemWarningMessages: parse.coordSystemWarningMessages ?? [],
+      crsStatus: parse.crsStatus ?? (parse.crsTransformEnabled ? 'on' : 'off'),
+      crsOffReason: parse.crsOffReason,
       crsDatumOpId: parse.crsDatumOpId,
       crsDatumFallbackUsed: parse.crsDatumFallbackUsed ?? false,
       crsAreaOfUseStatus: parse.crsAreaOfUseStatus ?? 'unknown',
       crsOutOfAreaStationCount: parse.crsOutOfAreaStationCount ?? 0,
+      parsedUsageSummary: parse.parsedUsageSummary,
+      usedInSolveUsageSummary: parse.usedInSolveUsageSummary,
+      directiveTransitions: parse.directiveTransitions ?? [],
+      directiveNoEffectWarnings: parse.directiveNoEffectWarnings ?? [],
       crsTransformEnabled: parse.crsTransformEnabled,
       crsProjectionModel: parse.crsProjectionModel,
       crsLabel: parse.crsLabel,
@@ -3965,8 +3988,14 @@ const App: React.FC<AppProps> = ({
         gridDistanceMode: runDiag.gridDistanceMode,
         gridAngleMode: runDiag.gridAngleMode,
         gridDirectionMode: runDiag.gridDirectionMode,
+        parsedUsageSummary: runDiag.parsedUsageSummary,
+        usedInSolveUsageSummary: runDiag.usedInSolveUsageSummary,
+        directiveTransitions: runDiag.directiveTransitions,
+        directiveNoEffectWarnings: runDiag.directiveNoEffectWarnings,
         coordSystemDiagnostics: runDiag.coordSystemDiagnostics,
         coordSystemWarningMessages: runDiag.coordSystemWarningMessages,
+        crsStatus: runDiag.crsStatus,
+        crsOffReason: runDiag.crsOffReason,
         crsDatumOpId: runDiag.crsDatumOpId,
         crsDatumFallbackUsed: runDiag.crsDatumFallbackUsed,
         crsAreaOfUseStatus: runDiag.crsAreaOfUseStatus,
@@ -8193,9 +8222,16 @@ const App: React.FC<AppProps> = ({
                               gridAngleMode: runDiagnostics.gridAngleMode,
                               gridDirectionMode: runDiagnostics.gridDirectionMode,
                               datumSufficiencyReport: runDiagnostics.datumSufficiencyReport,
+                              parsedUsageSummary: runDiagnostics.parsedUsageSummary,
+                              usedInSolveUsageSummary: runDiagnostics.usedInSolveUsageSummary,
+                              directiveTransitions: runDiagnostics.directiveTransitions,
+                              directiveNoEffectWarnings:
+                                runDiagnostics.directiveNoEffectWarnings,
                               coordSystemDiagnostics: runDiagnostics.coordSystemDiagnostics,
                               coordSystemWarningMessages:
                                 runDiagnostics.coordSystemWarningMessages,
+                              crsStatus: runDiagnostics.crsStatus,
+                              crsOffReason: runDiagnostics.crsOffReason,
                               crsDatumOpId: runDiagnostics.crsDatumOpId,
                               crsDatumFallbackUsed: runDiagnostics.crsDatumFallbackUsed,
                               crsAreaOfUseStatus: runDiagnostics.crsAreaOfUseStatus,

@@ -9,6 +9,9 @@ import type {
   CoordInputClass,
   CoordSystemMode,
   CrsProjectionModel,
+  DirectiveNoEffectWarning,
+  DirectiveTransition,
+  DirectiveTransitionState,
   DistanceObservation,
   DirectionRejectDiagnostic,
   DirObservation,
@@ -19,6 +22,7 @@ import type {
   ReductionContext,
   ReductionDistanceKind,
   ReductionInputSpace,
+  ReductionUsageSummary,
   GpsObservation,
   Instrument,
   InstrumentLibrary,
@@ -134,6 +138,8 @@ const defaultParseOptions: ParseOptions = {
   clusterDualPassRan: false,
   clusterApprovedMergeCount: 0,
   preferExternalInstruments: false,
+  directiveTransitions: [],
+  directiveNoEffectWarnings: [],
 };
 
 const FT_PER_M = 3.280839895;
@@ -655,6 +661,59 @@ const applyGridObservationDirective = (
   return `${mode.toUpperCase()} mode updated: bearing=${state.gridBearingMode?.toUpperCase()}, distance=${(state.gridDistanceMode ?? 'measured').toUpperCase()}, angle=${state.gridAngleMode?.toUpperCase()}, direction=${state.gridDirectionMode?.toUpperCase()}`;
 };
 
+const directiveTransitionStateFromParseState = (state: ParseOptions): DirectiveTransitionState => ({
+  gridBearingMode: state.gridBearingMode ?? defaultParseOptions.gridBearingMode ?? 'grid',
+  gridDistanceMode: state.gridDistanceMode ?? defaultParseOptions.gridDistanceMode ?? 'measured',
+  gridAngleMode: state.gridAngleMode ?? defaultParseOptions.gridAngleMode ?? 'measured',
+  gridDirectionMode: state.gridDirectionMode ?? defaultParseOptions.gridDirectionMode ?? 'measured',
+  averageScaleFactor: state.averageScaleFactor ?? defaultParseOptions.averageScaleFactor ?? 1,
+  scaleOverrideActive: state.scaleOverrideActive ?? false,
+});
+
+const createReductionUsageSummary = (): ReductionUsageSummary => ({
+  bearing: { grid: 0, measured: 0 },
+  angle: { grid: 0, measured: 0 },
+  direction: { grid: 0, measured: 0 },
+  distance: { ground: 0, grid: 0, ellipsoidal: 0 },
+  total: 0,
+});
+
+const summarizeReductionUsage = (observations: Observation[]): ReductionUsageSummary => {
+  const summary = createReductionUsageSummary();
+  observations.forEach((obs) => {
+    if (obs.type === 'bearing') {
+      const mode = obs.gridObsMode === 'measured' ? 'measured' : 'grid';
+      summary.bearing[mode] += 1;
+      summary.total += 1;
+      return;
+    }
+    if (obs.type === 'angle') {
+      const mode = obs.gridObsMode === 'grid' ? 'grid' : 'measured';
+      summary.angle[mode] += 1;
+      summary.total += 1;
+      return;
+    }
+    if (obs.type === 'direction' || obs.type === 'dir') {
+      const mode = obs.gridObsMode === 'grid' ? 'grid' : 'measured';
+      summary.direction[mode] += 1;
+      summary.total += 1;
+      return;
+    }
+    if (obs.type === 'dist') {
+      const kind: 'ground' | 'grid' | 'ellipsoidal' =
+        obs.distanceKind ??
+        (obs.gridDistanceMode === 'ellipsoidal'
+          ? 'ellipsoidal'
+          : obs.gridDistanceMode === 'grid'
+            ? 'grid'
+            : 'ground');
+      summary.distance[kind] += 1;
+      summary.total += 1;
+    }
+  });
+  return summary;
+};
+
 const parseGeoidHeightDatumToken = (token?: string): GeoidHeightDatum | null => {
   if (!token) return null;
   const upper = token.trim().toUpperCase();
@@ -748,6 +807,17 @@ export const parseInput = (
   normalizeObservationModeState(state);
   state.plannedObservationCount = 0;
   state.gpsTopoShots = [];
+  const directiveTransitions: DirectiveTransition[] = [];
+  const directiveNoEffectWarnings: DirectiveNoEffectWarning[] = [];
+  const recordDirectiveTransition = (directive: string) => {
+    directiveTransitions.push({
+      line: lineNum,
+      directive,
+      stateAfter: directiveTransitionStateFromParseState(state),
+      effectiveFromLine: lineNum,
+      obsCountInRange: 0,
+    });
+  };
   const currentGridModeForType = (
     obsType: Observation['type'],
   ): {
@@ -1323,6 +1393,7 @@ export const parseInput = (
             state.reductionContext.explicitOverrideActive = false;
           }
           logs.push(`Average scale factor reset to ${state.averageScaleFactor?.toFixed(8)}`);
+          recordDirectiveTransition('.SCALE');
         } else {
           const factor = Number.parseFloat(factorToken);
           if (Number.isFinite(factor) && factor > 0) {
@@ -1334,6 +1405,7 @@ export const parseInput = (
               state.reductionContext.explicitOverrideActive = true;
             }
             logs.push(`Average scale factor set to ${factor.toFixed(8)}`);
+            recordDirectiveTransition('.SCALE');
           } else {
             logs.push(
               `Warning: invalid .SCALE factor at line ${lineNum}; expected positive number.`,
@@ -1342,8 +1414,10 @@ export const parseInput = (
         }
       } else if (op === '.MEASURED') {
         logs.push(applyGridObservationDirective(state, 'measured', parts));
+        recordDirectiveTransition('.MEASURED');
       } else if (op === '.GRID') {
         logs.push(applyGridObservationDirective(state, 'grid', parts));
+        recordDirectiveTransition('.GRID');
       } else if (op === '.COORD' && parts[1]) {
         state.coordMode = parts[1].toUpperCase() === '2D' ? '2D' : '3D';
         logs.push(`Coord mode set to ${state.coordMode}`);
@@ -4377,6 +4451,55 @@ export const parseInput = (
     logs.push(`GPS rover offsets parsed: ${state.gpsOffsetObservationCount}`);
   }
   normalizeObservationModeState(state);
+  if (directiveTransitions.length > 0) {
+    const observationLines = observations
+      .map((obs) => obs.sourceLine)
+      .filter((line): line is number => Number.isFinite(line as number)) as number[];
+    const hasSubsequentDataLines = (sourceLine: number): boolean => {
+      for (let i = sourceLine; i < lines.length; i += 1) {
+        const rawLine = lines[i];
+        if (!rawLine) continue;
+        const trimmed = rawLine.trim();
+        if (!trimmed) continue;
+        const parsedInline = splitInlineCommentAndDescription(trimmed);
+        if (!parsedInline.line || parsedInline.line.startsWith('#')) continue;
+        return true;
+      }
+      return false;
+    };
+    directiveTransitions.forEach((transition, index) => {
+      const next = directiveTransitions[index + 1];
+      transition.effectiveToLine = next ? next.line - 1 : undefined;
+      transition.obsCountInRange = observationLines.filter((obsLine) => {
+        if (obsLine < transition.effectiveFromLine) return false;
+        if (transition.effectiveToLine == null) return true;
+        return obsLine <= transition.effectiveToLine;
+      }).length;
+      if (transition.obsCountInRange > 0) return;
+      if (!hasSubsequentDataLines(transition.line)) {
+        directiveNoEffectWarnings.push({
+          line: transition.line,
+          directive: transition.directive,
+          reason: 'noSubsequentObservations',
+        });
+      } else {
+        directiveNoEffectWarnings.push({
+          line: transition.line,
+          directive: transition.directive,
+          reason: 'noSubsequentObsRecords',
+        });
+      }
+    });
+  }
+  state.directiveTransitions = directiveTransitions;
+  state.directiveNoEffectWarnings = directiveNoEffectWarnings;
+  state.parsedUsageSummary = summarizeReductionUsage(observations);
+  state.usedInSolveUsageSummary = undefined;
+  directiveNoEffectWarnings.forEach((warning) => {
+    logs.push(
+      `Warning: ${warning.directive} at line ${warning.line} had no effect (${warning.reason}).`,
+    );
+  });
   logs.push(
     `Counts: ${Object.entries(typeSummary)
       .map(([k, v]) => `${k}=${v}`)

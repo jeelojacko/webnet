@@ -685,6 +685,54 @@ describe('industry listing phase 5 formatting locks', () => {
     expect(listing).toContain('ON (0.250000 deg)');
   });
 
+  it('shows CRS / Projection as ON for projected-only NB grid jobs', () => {
+    const input = [
+      '.2D',
+      '.UNITS METERS DD',
+      '.CRS GRID CA_NAD83_CSRS_NB_STEREO_DOUBLE',
+      'C A 2500000.0000 7500000.0000 0 ! !',
+      'C B 2500800.0000 7500000.0000 0',
+      'B A-B 090.0000 1.0',
+      'D A-B 800.0000 0.005',
+    ].join('\n');
+    const result = new LSAEngine({ input, maxIterations: 10 }).solve();
+    const listing = buildIndustryStyleListingText(
+      result,
+      {
+        maxIterations: 10,
+        units: 'm',
+        listingShowLostStations: true,
+        listingShowCoordinates: true,
+        listingShowObservationsResiduals: true,
+        listingShowErrorPropagation: true,
+        listingShowProcessingNotes: false,
+        listingShowAzimuthsBearings: true,
+        listingSortCoordinatesBy: 'name',
+        listingSortObservationsBy: 'name',
+        listingObservationLimit: 500,
+      },
+      {
+        coordMode: '2D',
+        order: 'EN',
+        angleUnits: 'dd',
+        angleStationOrder: 'atfromto',
+        deltaMode: 'horiz',
+        refractionCoefficient: 0.13,
+      },
+      {
+        solveProfile: 'industry-parity',
+        angleCenteringModel: 'geometry-aware-correlated-rays',
+        defaultSigmaCount: 0,
+        defaultSigmaByType: '',
+        stochasticDefaultsSummary: 'inst=S9',
+        rotationAngleRad: 0,
+      },
+    );
+
+    expect(listing).toContain('Coordinate System Mode           : GRID (CRS=CA_NAD83_CSRS_NB_STEREO_DOUBLE)');
+    expect(listing).toMatch(/CRS \/ Projection\s+: ON/);
+  });
+
   it('applies append-style description reconciliation in listing output rows', () => {
     const input = [
       '.2D',

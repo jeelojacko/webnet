@@ -3,10 +3,15 @@ import { getLevelLoopTolerancePresetLabel } from './levelLoopTolerance';
 import type {
   AdjustmentResult,
   CoordSystemDiagnosticCode,
+  CrsOffReason,
+  CrsStatus,
   DatumSufficiencyReport,
+  DirectiveNoEffectWarning,
+  DirectiveTransition,
   GnssVectorFrame,
   GpsObservation,
   Observation,
+  ReductionUsageSummary,
 } from '../types';
 
 const FT_PER_M = 3.280839895;
@@ -57,12 +62,18 @@ export interface IndustryListingRunDiagnostics {
   gnssVectorFrameDefault?: GnssVectorFrame;
   gnssFrameConfirmed?: boolean;
   datumSufficiencyReport?: DatumSufficiencyReport;
+  parsedUsageSummary?: ReductionUsageSummary;
+  usedInSolveUsageSummary?: ReductionUsageSummary;
+  directiveTransitions?: DirectiveTransition[];
+  directiveNoEffectWarnings?: DirectiveNoEffectWarning[];
   gridBearingMode?: 'measured' | 'grid';
   gridDistanceMode?: 'measured' | 'grid' | 'ellipsoidal';
   gridAngleMode?: 'measured' | 'grid';
   gridDirectionMode?: 'measured' | 'grid';
   coordSystemDiagnostics?: CoordSystemDiagnosticCode[];
   coordSystemWarningMessages?: string[];
+  crsStatus?: CrsStatus;
+  crsOffReason?: CrsOffReason;
   crsDatumOpId?: string;
   crsDatumFallbackUsed?: boolean;
   crsAreaOfUseStatus?: 'inside' | 'outside' | 'unknown';
@@ -155,6 +166,13 @@ export const buildIndustryStyleListingText = (
   const gridAngleMode = parseState?.gridAngleMode ?? runDiag.gridAngleMode ?? 'measured';
   const gridDirectionMode =
     parseState?.gridDirectionMode ?? runDiag.gridDirectionMode ?? 'measured';
+  const parsedUsageSummary =
+    parseState?.parsedUsageSummary ?? runDiag.parsedUsageSummary;
+  const usedInSolveUsageSummary =
+    parseState?.usedInSolveUsageSummary ?? runDiag.usedInSolveUsageSummary;
+  const directiveTransitions = parseState?.directiveTransitions ?? runDiag.directiveTransitions ?? [];
+  const directiveNoEffectWarnings =
+    parseState?.directiveNoEffectWarnings ?? runDiag.directiveNoEffectWarnings ?? [];
   const coordSystemDiagnostics =
     parseState?.coordSystemDiagnostics ?? runDiag.coordSystemDiagnostics ?? [];
   const coordSystemWarningMessages =
@@ -182,6 +200,9 @@ export const buildIndustryStyleListingText = (
     parseState?.crsConvergenceEnabled ?? runDiag.crsConvergenceEnabled ?? false;
   const crsConvergenceAngleRad =
     parseState?.crsConvergenceAngleRad ?? runDiag.crsConvergenceAngleRad ?? 0;
+  const crsStatus =
+    parseState?.crsStatus ?? runDiag.crsStatus ?? (crsTransformEnabled ? 'on' : 'off');
+  const crsOffReason = parseState?.crsOffReason ?? runDiag.crsOffReason;
   const geoidModelEnabled = parseState?.geoidModelEnabled ?? runDiag.geoidModelEnabled ?? false;
   const geoidModelId = parseState?.geoidModelId ?? runDiag.geoidModelId ?? 'NGS-DEMO';
   const geoidInterpolation =
@@ -264,6 +285,16 @@ export const buildIndustryStyleListingText = (
   const gpsOffsetObservations = observationsForListing.filter(
     (obs): obs is GpsObservation => obs.type === 'gps' && obs.gpsOffsetDistanceM != null,
   );
+  const formatReductionUsage = (summary?: ReductionUsageSummary): string => {
+    if (!summary) return 'unavailable';
+    return [
+      `bearing[g=${summary.bearing.grid},m=${summary.bearing.measured}]`,
+      `angle[g=${summary.angle.grid},m=${summary.angle.measured}]`,
+      `direction[g=${summary.direction.grid},m=${summary.direction.measured}]`,
+      `distance[ground=${summary.distance.ground},grid=${summary.distance.grid},ellip=${summary.distance.ellipsoidal}]`,
+      `total=${summary.total}`,
+    ].join('; ');
+  };
   const aliasTrace = parseState?.aliasTrace ?? [];
   const descriptionTrace = parseState?.descriptionTrace ?? [];
   const descriptionScanSummary = parseState?.descriptionScanSummary ?? [];
@@ -351,7 +382,7 @@ export const buildIndustryStyleListingText = (
     );
   } else {
     lines.push(
-      `      Grid Input Modes                : bearing=${gridBearingMode.toUpperCase()}, distance=${gridDistanceMode.toUpperCase()}, angle=${gridAngleMode.toUpperCase()}, direction=${gridDirectionMode.toUpperCase()}`,
+      `      Directive Context (End of File): bearing=${gridBearingMode.toUpperCase()}, distance=${gridDistanceMode.toUpperCase()}, angle=${gridAngleMode.toUpperCase()}, direction=${gridDirectionMode.toUpperCase()}`,
     );
     lines.push(
       `      .SCALE Override Active         : ${scaleOverrideActive ? `YES (k=${averageScaleFactor.toFixed(8)})` : 'NO'}`,
@@ -359,6 +390,32 @@ export const buildIndustryStyleListingText = (
     lines.push(
       `      GNSS Frame Default             : ${gnssVectorFrameDefault} (confirmed=${gnssFrameConfirmed ? 'YES' : 'NO'})`,
     );
+    lines.push(
+      `      Applied Reduction Modes (Parsed): ${formatReductionUsage(parsedUsageSummary)}`,
+    );
+    lines.push(
+      `      Applied Reduction Modes (Used) : ${formatReductionUsage(usedInSolveUsageSummary)}`,
+    );
+    if (directiveTransitions.length > 0) {
+      lines.push(
+        `      Directive Transition Count     : ${directiveTransitions.length}`,
+      );
+      directiveTransitions.slice(0, 20).forEach((transition) => {
+        lines.push(
+          `      Directive Range               : ${transition.directive} line ${transition.effectiveFromLine}${transition.effectiveToLine != null ? `-${transition.effectiveToLine}` : '-EOF'} (obs=${transition.obsCountInRange})`,
+        );
+      });
+      if (directiveTransitions.length > 20) {
+        lines.push(
+          `      Directive Range Overflow      : +${directiveTransitions.length - 20} more`,
+        );
+      }
+    }
+    directiveNoEffectWarnings.forEach((warning) => {
+      lines.push(
+        `      Directive No-Effect            : ${warning.directive} line ${warning.line} (${warning.reason})`,
+      );
+    });
   }
   if (datumSufficiency) {
     lines.push(
@@ -375,7 +432,7 @@ export const buildIndustryStyleListingText = (
     `      Average Geoid Height            : ${(averageGeoidHeight * unitScale).toFixed(4)} ${linearUnit}`,
   );
   lines.push(
-    `      CRS / Projection                   : ${crsTransformEnabled ? `ON (${crsProjectionModel}, label="${crsLabel || 'unnamed'}")` : 'OFF'}`,
+    `      CRS / Projection                   : ${crsStatus === 'on' ? `ON (${crsProjectionModel}, label="${crsLabel || 'unnamed'}")` : `OFF${crsOffReason ? ` (${crsOffReason})` : ''}`}`,
   );
   lines.push(
     `      CRS Grid-Ground Scale             : ${crsGridScaleEnabled ? `ON (${crsGridScaleFactor.toFixed(8)})` : 'OFF'}`,

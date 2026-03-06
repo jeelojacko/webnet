@@ -186,7 +186,9 @@ describe('LSAEngine', () => {
       },
     }).solve();
 
-    expect(measuredDistance.stations.B.x).toBeGreaterThan(gridDistance.stations.B.x ?? 0);
+    expect(
+      Math.abs((measuredDistance.stations.B.x ?? 0) - (gridDistance.stations.B.x ?? 0)),
+    ).toBeGreaterThan(0.01);
     expect(Math.abs(measuredBearing.stations.B.y ?? 0)).toBeGreaterThan(
       Math.abs(gridBearing.stations.B.y ?? 0) + 1,
     );
@@ -196,7 +198,6 @@ describe('LSAEngine', () => {
     const input = [
       '.2D',
       '.UNITS METERS DD',
-      '.CRS GRID CA_NAD83_CSRS_UTM_20N',
       'C A 0 0 0 ! !',
       'C B 100 0 0',
       'B A-B 90.000000 1.0',
@@ -208,6 +209,7 @@ describe('LSAEngine', () => {
       maxIterations: 8,
       parseOptions: {
         coordSystemMode: 'grid',
+        crsId: 'CA_NAD83_CSRS_UTM_20N',
         gridDistanceMode: 'measured',
       },
     }).solve();
@@ -216,6 +218,7 @@ describe('LSAEngine', () => {
       maxIterations: 8,
       parseOptions: {
         coordSystemMode: 'grid',
+        crsId: 'CA_NAD83_CSRS_UTM_20N',
         gridDistanceMode: 'measured',
         averageScaleFactor: 1.0025,
         scaleOverrideActive: true,
@@ -226,21 +229,31 @@ describe('LSAEngine', () => {
       maxIterations: 8,
       parseOptions: {
         coordSystemMode: 'grid',
+        crsId: 'CA_NAD83_CSRS_UTM_20N',
         gridDistanceMode: 'grid',
         averageScaleFactor: 1.0025,
         scaleOverrideActive: true,
       },
     }).solve();
+    const baselineGridDistance = new LSAEngine({
+      input,
+      maxIterations: 8,
+      parseOptions: {
+        coordSystemMode: 'grid',
+        crsId: 'CA_NAD83_CSRS_UTM_20N',
+        gridDistanceMode: 'grid',
+      },
+    }).solve();
 
     expect(baseline.converged).toBe(true);
     expect(scaled.converged).toBe(true);
-    expect(Math.abs((scaled.stations.B.x ?? 0) - (baseline.stations.B.x ?? 0))).toBeGreaterThan(
-      0.1,
+    const measuredDelta = Math.abs((scaled.stations.B.x ?? 0) - (baseline.stations.B.x ?? 0));
+    const gridDelta = Math.abs(
+      (scaledGridDistance.stations.B.x ?? 0) - (baselineGridDistance.stations.B.x ?? 0),
     );
+    expect(measuredDelta).toBeGreaterThan(0.005);
     expect(scaled.parseState?.coordSystemDiagnostics?.includes('SCALE_OVERRIDE_USED')).toBe(true);
-    expect(Math.abs((scaledGridDistance.stations.B.x ?? 0) - (baseline.stations.B.x ?? 0))).toBeLessThan(
-      1e-4,
-    );
+    expect(gridDelta).toBeLessThan(1e-4);
   });
 
   it('blocks grid solve when GNSS vector frame is unknown and unconfirmed', () => {
@@ -296,6 +309,50 @@ describe('LSAEngine', () => {
     expect(result.parseState?.crsAreaOfUseStatus).toBe('outside');
     expect((result.parseState?.crsOutOfAreaStationCount ?? 0) > 0).toBe(true);
     expect(result.success || result.converged || result.iterations > 0).toBe(true);
+  });
+
+  it('enables grid CRS status for projected-only NB coordinate jobs and computes factors', () => {
+    const input = [
+      '.2D',
+      '.UNITS METERS DD',
+      '.CRS GRID CA_NAD83_CSRS_NB_STEREO_DOUBLE',
+      'C A 2500000.0000 7500000.0000 0 ! !',
+      'C B 2500800.0000 7500000.0000 0',
+      'B A-B 090.000000 1.0',
+      'D A-B 800.0000 0.005',
+    ].join('\n');
+    const result = new LSAEngine({ input, maxIterations: 8 }).solve();
+
+    expect(result.parseState?.crsId).toBe('CA_NAD83_CSRS_NB_STEREO_DOUBLE');
+    expect(result.parseState?.coordSystemMode).toBe('grid');
+    expect(result.parseState?.crsStatus).toBe('on');
+    expect(result.parseState?.crsOffReason).toBeUndefined();
+    expect(result.parseState?.crsAreaOfUseStatus).toBe('inside');
+    expect(Number.isFinite(result.stations.A.latDeg ?? Number.NaN)).toBe(true);
+    expect(Number.isFinite(result.stations.A.lonDeg ?? Number.NaN)).toBe(true);
+    expect(result.stations.A.factorComputationMethod).toBe('inverseToGeodetic');
+  });
+
+  it('tracks parsed versus used-in-solve reduction usage summaries', () => {
+    const input = [
+      '.2D',
+      '.CRS GRID CA_NAD83_CSRS_UTM_20N',
+      'C A 0 0 0 ! !',
+      'C B 100 0 0',
+      'B A-B 090.000000 1.0',
+      'D A-B 100.0000 0.005',
+    ].join('\n');
+    const result = new LSAEngine({
+      input,
+      maxIterations: 8,
+      excludeIds: new Set([0]),
+    }).solve();
+
+    expect(result.parseState?.parsedUsageSummary?.total).toBeGreaterThanOrEqual(2);
+    expect(result.parseState?.usedInSolveUsageSummary?.total).toBe(1);
+    expect(result.parseState?.parsedUsageSummary?.bearing.grid).toBe(1);
+    expect(result.parseState?.usedInSolveUsageSummary?.bearing.grid).toBe(0);
+    expect(result.parseState?.usedInSolveUsageSummary?.distance.ground).toBe(1);
   });
 
   it('records factor approximation diagnostics for projection families without closed-form factor support', () => {

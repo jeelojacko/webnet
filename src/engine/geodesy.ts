@@ -121,20 +121,25 @@ const inverseGrid = (
   east: number,
   north: number,
   crsId?: string,
-): {
-  latDeg: number;
-  lonDeg: number;
-  crsId?: string;
-  datumOpId: string;
-  warnings: string[];
-  diagnostics: CoordSystemDiagnosticCode[];
-} | null => {
+):
+  | {
+      latDeg: number;
+      lonDeg: number;
+      crsId?: string;
+      datumOpId: string;
+      warnings: string[];
+      diagnostics: CoordSystemDiagnosticCode[];
+    }
+  | { failureReason: 'noCRSSelected' | 'noInverseAvailable' | 'inverseFailed' | 'crsInitFailed' } => {
+  if (!crsId || !crsId.trim()) return { failureReason: 'noCRSSelected' };
   const def = getCrsDefinition(crsId);
-  if (!def) return null;
+  if (!def) return { failureReason: 'noInverseAvailable' };
   const datum = resolveDatumOperation(def);
   try {
     const [lonDeg, latDeg] = proj4(def.proj4, 'WGS84', [east, north]);
-    if (!Number.isFinite(latDeg) || !Number.isFinite(lonDeg)) return null;
+    if (!Number.isFinite(latDeg) || !Number.isFinite(lonDeg)) {
+      return { failureReason: 'inverseFailed' };
+    }
     return {
       latDeg,
       lonDeg,
@@ -143,8 +148,12 @@ const inverseGrid = (
       warnings: [...datum.warnings],
       diagnostics: [...datum.diagnostics],
     };
-  } catch {
-    return null;
+  } catch (error) {
+    const message = error instanceof Error ? error.message.toLowerCase() : '';
+    if (message.includes('unknown projection') || message.includes('parse')) {
+      return { failureReason: 'crsInitFailed' };
+    }
+    return { failureReason: 'inverseFailed' };
   }
 };
 
@@ -211,8 +220,8 @@ export const projectGeodeticToEN = (params: {
 export const inverseENToGeodetic = (params: {
   east: number;
   north: number;
-  originLatDeg: number;
-  originLonDeg: number;
+  originLatDeg?: number;
+  originLonDeg?: number;
   model: CrsProjectionModel;
   coordSystemMode?: CoordSystemMode;
   crsId?: string;
@@ -224,33 +233,51 @@ export const inverseENToGeodetic = (params: {
       warnings?: string[];
       diagnostics?: CoordSystemDiagnosticCode[];
     }
-  | null => {
+  | {
+      failureReason:
+        | 'noCRSSelected'
+        | 'projDbMissing'
+        | 'noInverseAvailable'
+        | 'inverseFailed'
+        | 'unsupportedCrsFamily'
+        | 'disabledByProfile'
+        | 'crsInitFailed'
+        | 'missingGridFiles';
+    } => {
   const { east, north, originLatDeg, originLonDeg, model, coordSystemMode, crsId } = params;
   if (coordSystemMode === 'grid') {
     const inv = inverseGrid(east, north, crsId);
-    if (inv) {
+    if ('failureReason' in inv) {
       return {
-        latDeg: inv.latDeg,
-        lonDeg: inv.lonDeg,
-        datumOpId: inv.datumOpId,
-        warnings: inv.warnings,
-        diagnostics: inv.diagnostics,
+        failureReason:
+          inv.failureReason === 'noInverseAvailable' ? 'noInverseAvailable' : inv.failureReason,
       };
     }
-    return null;
+    return {
+      latDeg: inv.latDeg,
+      lonDeg: inv.lonDeg,
+      datumOpId: inv.datumOpId,
+      warnings: inv.warnings,
+      diagnostics: inv.diagnostics,
+    };
   }
 
   if (model === 'local-enu') {
     // Local ENU inverse is not currently needed for parser workflows.
     // Keep behavior aligned with legacy fallback when unknown.
-    return null;
+    return { failureReason: 'noInverseAvailable' };
+  }
+  if (!Number.isFinite(originLatDeg ?? Number.NaN) || !Number.isFinite(originLonDeg ?? Number.NaN)) {
+    return { failureReason: 'inverseFailed' };
   }
 
-  const lat0 = originLatDeg * DEG_TO_RAD;
-  const lon0 = originLonDeg * DEG_TO_RAD;
+  const lat0 = (originLatDeg as number) * DEG_TO_RAD;
+  const lon0 = (originLonDeg as number) * DEG_TO_RAD;
   const lat = lat0 + north / WGS84_A;
   const cosLat0 = Math.cos(lat0);
-  if (!Number.isFinite(cosLat0) || Math.abs(cosLat0) < 1e-12) return null;
+  if (!Number.isFinite(cosLat0) || Math.abs(cosLat0) < 1e-12) {
+    return { failureReason: 'inverseFailed' };
+  }
   const lon = lon0 + east / (WGS84_A * cosLat0);
   return { latDeg: lat * RAD_TO_DEG, lonDeg: lon * RAD_TO_DEG };
 };
