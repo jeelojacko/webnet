@@ -49,7 +49,7 @@
   - [x] Phase 2: add relative-path inheritance and nested include-order tests for both parser bundle mode and CLI filesystem mode
   - [x] Phase 3: add CLI hard-fail regression coverage for missing/cycle/depth/relative-path include scenarios with deterministic exit behavior
 - [ ] Legacy compatibility corpus gate:
-  - [ ] Phase 1: curate mixed legacy-project corpus fixture set and define expected run-mode outcomes per project
+  - [x] Phase 1: curate mixed legacy-project corpus fixture set and define expected run-mode outcomes per project
   - [ ] Phase 2: add corpus harness command that enforces parse success, run success, and no silent directive drops
   - [ ] Phase 3: wire corpus harness into CI with failure summary artifacts and parity baseline tracking
 - [x] Exclude fixed planned observations from preanalysis what-if candidates so fixed bearing/control planning rows are not presented as removable
@@ -86,7 +86,7 @@
 - [x] industry-style summary parity: compute per-type statistical summary from weighted residual contributions (`vTPv` by observation family) and display both error-factor and variance-factor chi-square bounds in summaries/listings
 - [x] industry-style summary parity Phase 2: normalize per-type error factors using industry-style global DOF scaling (`sqrt(totalCount/dof)`) so group factors align with industry listings
 - [x] Cluster UX controls: add Project Options -> Adjustment toggle for cluster detection ON/OFF and top-level report button to revert applied cluster merges
-- [x] Set default adjustment startup profile to Industry Standard parity, default cluster detection OFF, and default project instrument to `S9` (`Trimble S9 0.5"`) with parity baseline stochastic values
+- [x] Set default adjustment startup profile to Industry Standard parity, default cluster detection OFF, and default project instrument to `S9` (`industry standard S9 0.5"`) with parity baseline stochastic values
 - [x] Industry-style listing readability/parity plan (format + section structure):
   - [x] Phase 1: fix spacing/alignment defects in listing text columns so Northing/Easting and similar adjacent numeric fields are always separated by explicit padding (coordinates, station std devs, and adjusted obs rows such as direction/azimuth families)
   - [x] Phase 2: remove "Processing Notes" block from industry-style output and replace with observation-family blocks that match industry style headings/order
@@ -263,7 +263,7 @@
       - [x] Phase 1: design importer plugin interface and normalized intermediate observation model
       - [x] Phase 2: implement first-party JobXML + FieldGenius importers with error-log traceability, including JobXML setup-context station/measurement conversion when occupy/backsight/target references can be resolved
       - [x] Phase 3: implement DBX/Carlson/TDS importers with converter-option parity where practical
-      - [x] Phase 3A: improve Trimble-style JobXML station-setup imports (`Reductions -> Point`, face-circle backsights, `TheodoliteHeight`, `MTA` preference, deleted-shot filtering) so exported S-series datasets import as usable TS observations instead of mostly duplicate reduced points
+      - [x] Phase 3A: improve industry-software-style JobXML station-setup imports (`Reductions -> Point`, face-circle backsights, `TheodoliteHeight`, `MTA` preference, deleted-shot filtering) so exported S-series datasets import as usable TS observations instead of mostly duplicate reduced points
       - [x] Phase 4: integrate staged import UI workflow and add fixture-based conformance tests
       - [x] Phase 4A: add import-review staging model so external imports open in a review dialog instead of writing directly into the input editor
       - [x] Phase 4B: build grouped import-review UI with control block at top, setup/station grouping where available, per-row source type/source line visibility, include-exclude toggles, and warning/error section
@@ -277,7 +277,7 @@
       - [x] Phase 4J: tune the `TS Direction Set` preset toward cleaner `DB/DN/DM/DE` + `D/M/A` setup output and add richer setup-editing controls (inline setup labels plus empty setup-group staging)
       - [x] Phase 4K: emit imported zenith values in DMS instead of rounded decimal degrees, use target-aware ordering in `TS Direction Set` groups by default, and add manual row up/down reordering within a setup group
       - [x] Phase 4L: add import-review fixed toggles plus per-row type overrides for final import shaping, simplify source-line display to line numbers only, and keep 2D slope-distance imports reducing to HD when a zenith is available
-      - [x] Phase 4M: expand import-review row-type overrides with explicit `D`/`DV`/`DN`/`DM` setup-aware shaping for JobXML imports and add Trimble survey-report `.htm` fallback importing for station/shot tables when no `.jxl` is available
+      - [x] Phase 4M: expand import-review row-type overrides with explicit `D`/`DV`/`DN`/`DM` setup-aware shaping for JobXML imports and add industry software survey-report `.htm` fallback importing for station/shot tables when no `.jxl` is available
       - [x] Phase 4N: add `.jxl`/`.htm` to the default import picker filter, add compare/reconcile review support for pairing JobXML with survey-report imports, and carry JobXML angle-only verticals so `UNDERT2.jxl` and `UNDERT2.htm` reconcile to the same comparable observation count when `MTA` rows are excluded
       - [x] Phase 4O: add per-setup staged exclude toggles in import review, emit imported `V` rows as hyphenated `from-to` tokens, and lock parser/import-review coverage for hyphenated vertical observation formatting
       - [x] Phase 4P: add compare-mode presets (`Non-MTA Only` vs `All Raw Rows`), highlight staged rows that belong to mismatched comparison buckets, and expand the input-editor context menu with standard edit actions above `Toggle # Comment`

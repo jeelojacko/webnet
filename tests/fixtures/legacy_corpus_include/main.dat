@@ -1,0 +1,6 @@
+.UNITS M
+.INCLUDE section/setup.dat
+.INCLUDE section/loop.dat
+C ROOT 0 0 0 ! !
+D ROOT-A 10.000 0.005
+A ROOT-A-C 90-00-00 5

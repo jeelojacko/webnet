@@ -1,0 +1,91 @@
+{
+  "version": 1,
+  "description": "Phase 1 curated mixed legacy-project corpus with expected run-mode outcomes.",
+  "projects": [
+    {
+      "id": "legacy_cli_smoke_adjustment",
+      "inputPath": "tests/fixtures/cli_smoke.dat",
+      "profile": "webnet",
+      "parseMode": "legacy",
+      "runMode": "adjustment",
+      "expected": {
+        "parseSuccess": true,
+        "runSuccess": true
+      },
+      "tags": ["conventional", "baseline"]
+    },
+    {
+      "id": "legacy_cli_smoke_blunder_detect",
+      "inputPath": "tests/fixtures/cli_smoke.dat",
+      "profile": "webnet",
+      "parseMode": "legacy",
+      "runMode": "blunder-detect",
+      "expected": {
+        "parseSuccess": true,
+        "runSuccess": true
+      },
+      "tags": ["conventional", "blunder"]
+    },
+    {
+      "id": "legacy_include_data_check",
+      "inputPath": "tests/fixtures/legacy_corpus_include/main.dat",
+      "profile": "webnet",
+      "parseMode": "legacy",
+      "runMode": "data-check",
+      "expected": {
+        "parseSuccess": true,
+        "runSuccess": true
+      },
+      "tags": ["include", "data-check"]
+    },
+    {
+      "id": "legacy_preanalysis_plan",
+      "inputPath": "tests/fixtures/preanalysis_cli.dat",
+      "profile": "webnet",
+      "parseMode": "legacy",
+      "runMode": "preanalysis",
+      "expected": {
+        "parseSuccess": true,
+        "runSuccess": true
+      },
+      "tags": ["preanalysis", "planning"]
+    },
+    {
+      "id": "legacy_gnss_data_check",
+      "inputPath": "tests/fixtures/gps_network_sideshot_phase3.dat",
+      "profile": "webnet",
+      "parseMode": "legacy",
+      "runMode": "data-check",
+      "expected": {
+        "parseSuccess": true,
+        "runSuccess": true
+      },
+      "tags": ["gnss", "data-check"]
+    },
+    {
+      "id": "legacy_level_loop_adjustment",
+      "inputPath": "tests/fixtures/level_loop_phase1.dat",
+      "profile": "webnet",
+      "parseMode": "legacy",
+      "runMode": "adjustment",
+      "expected": {
+        "parseSuccess": true,
+        "runSuccess": true
+      },
+      "tags": ["leveling", "adjustment"]
+    },
+    {
+      "id": "legacy_leveling_only_blunder_incompatible",
+      "inputPath": "tests/fixtures/legacy_leveling_only.dat",
+      "profile": "webnet",
+      "parseMode": "legacy",
+      "runMode": "blunder-detect",
+      "expected": {
+        "parseSuccess": true,
+        "runSuccess": false,
+        "requiredDiagnostics": ["BLUNDER_LEVELING_ONLY"]
+      },
+      "tags": ["leveling", "incompatibility", "blunder"]
+    }
+  ]
+}
