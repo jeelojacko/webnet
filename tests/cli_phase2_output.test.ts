@@ -18,6 +18,8 @@ const runCli = (args: string[]) =>
     encoding: 'utf-8',
   });
 
+const normalizePath = (value: string): string => value.replace(/\\/g, '/');
+
 describe('CLI phase 2 output modes', () => {
   it('emits machine-readable JSON payloads', () => {
     const res = runCli(['--input', STABLE_INPUT, '--output', 'json']);
@@ -202,24 +204,135 @@ describe('CLI phase 2 output modes', () => {
     const trace = payload.parseState?.includeTrace as
       | Array<{ parentSourceFile?: string; sourceFile: string; line: number }>
       | undefined;
-    const norm = (value: string): string => value.replace(/\\/g, '/');
     expect(trace).toEqual([
       {
-        parentSourceFile: norm(mainPath),
-        sourceFile: norm(path.join(sectionDir, 'first.dat')),
+        parentSourceFile: normalizePath(mainPath),
+        sourceFile: normalizePath(path.join(sectionDir, 'first.dat')),
         line: 1,
       },
       {
-        parentSourceFile: norm(path.join(sectionDir, 'first.dat')),
-        sourceFile: norm(path.join(sharedDir, 'grand.dat')),
+        parentSourceFile: normalizePath(path.join(sectionDir, 'first.dat')),
+        sourceFile: normalizePath(path.join(sharedDir, 'grand.dat')),
         line: 2,
       },
       {
-        parentSourceFile: norm(mainPath),
-        sourceFile: norm(path.join(sectionDir, 'second.dat')),
+        parentSourceFile: normalizePath(mainPath),
+        sourceFile: normalizePath(path.join(sectionDir, 'second.dat')),
         line: 2,
       },
     ]);
+  });
+
+  it('hard-fails runs when include cycles are detected', () => {
+    const outDir = mkdtempSync(path.join(tmpdir(), 'webnet-cli-include-cycle-'));
+    const mainPath = path.join(outDir, 'main.dat');
+    const aPath = path.join(outDir, 'a.dat');
+    const bPath = path.join(outDir, 'b.dat');
+
+    writeFileSync(mainPath, '.INCLUDE a.dat\nC ROOT 0 0 0 ! !', 'utf-8');
+    writeFileSync(aPath, '.INCLUDE b.dat\nC A 0 10 0 ! !', 'utf-8');
+    writeFileSync(bPath, '.INCLUDE a.dat\nC B 10 10 0 ! !', 'utf-8');
+
+    const res = runCli(['--input', mainPath, '--output', 'json']);
+    expect(res.status).toBe(1);
+    const payload = JSON.parse(res.stdout);
+    expect(payload.success).toBe(false);
+
+    const cycleDiag = (payload.parseState?.includeErrors ?? []).find(
+      (entry: { code?: string }) => entry.code === 'include-cycle',
+    ) as
+      | {
+          code: string;
+          sourceFile?: string;
+          includePath?: string;
+          line?: number;
+          stack?: string[];
+        }
+      | undefined;
+    expect(cycleDiag).toBeDefined();
+    expect(cycleDiag?.sourceFile).toBe(normalizePath(bPath));
+    expect(cycleDiag?.line).toBe(1);
+    expect(cycleDiag?.includePath).toBe('a.dat');
+    expect(cycleDiag?.stack).toEqual([
+      normalizePath(mainPath),
+      normalizePath(aPath),
+      normalizePath(bPath),
+      normalizePath(aPath),
+    ]);
+  });
+
+  it('hard-fails runs when include depth is exceeded', () => {
+    const outDir = mkdtempSync(path.join(tmpdir(), 'webnet-cli-include-depth-'));
+    const mainPath = path.join(outDir, 'main.dat');
+    writeFileSync(mainPath, '.INCLUDE f0.dat\nC ROOT 0 0 0 ! !', 'utf-8');
+
+    for (let i = 0; i < 16; i += 1) {
+      const filePath = path.join(outDir, `f${i}.dat`);
+      if (i < 15) {
+        writeFileSync(filePath, `.INCLUDE f${i + 1}.dat\nC P${i} ${i} ${i} 0 ! !`, 'utf-8');
+      } else {
+        writeFileSync(filePath, '.INCLUDE f16.dat\nC P15 15 15 0 ! !', 'utf-8');
+      }
+    }
+    writeFileSync(path.join(outDir, 'f16.dat'), 'C P16 16 16 0 ! !', 'utf-8');
+
+    const res = runCli(['--input', mainPath, '--output', 'json']);
+    expect(res.status).toBe(1);
+    const payload = JSON.parse(res.stdout);
+    expect(payload.success).toBe(false);
+
+    const depthDiag = (payload.parseState?.includeErrors ?? []).find(
+      (entry: { code?: string }) => entry.code === 'include-depth-exceeded',
+    ) as
+      | {
+          code: string;
+          sourceFile?: string;
+          includePath?: string;
+          line?: number;
+          message?: string;
+        }
+      | undefined;
+    expect(depthDiag).toBeDefined();
+    expect(depthDiag?.sourceFile).toBe(normalizePath(path.join(outDir, 'f14.dat')));
+    expect(depthDiag?.line).toBe(1);
+    expect(depthDiag?.includePath).toBe('f15.dat');
+    expect(depthDiag?.message).toContain('limit=16');
+  });
+
+  it('hard-fails runs when child-relative include paths cannot be resolved', () => {
+    const outDir = mkdtempSync(path.join(tmpdir(), 'webnet-cli-include-rel-missing-'));
+    const mainPath = path.join(outDir, 'main.dat');
+    const sectionDir = path.join(outDir, 'section');
+    mkdirSync(sectionDir, { recursive: true });
+
+    writeFileSync(mainPath, '.INCLUDE section/first.dat\nC ROOT 0 0 0 ! !', 'utf-8');
+    writeFileSync(
+      path.join(sectionDir, 'first.dat'),
+      ['C F1 0 10 0 ! !', '.INCLUDE ../shared/missing.dat', 'C F2 10 10 0', 'D F1-F2 10'].join(
+        '\n',
+      ),
+      'utf-8',
+    );
+
+    const res = runCli(['--input', mainPath, '--output', 'json']);
+    expect(res.status).toBe(1);
+    const payload = JSON.parse(res.stdout);
+    expect(payload.success).toBe(false);
+
+    const missingDiag = (payload.parseState?.includeErrors ?? []).find(
+      (entry: { code?: string; includePath?: string }) =>
+        entry.code === 'include-not-found' && entry.includePath === '../shared/missing.dat',
+    ) as
+      | {
+          code: string;
+          sourceFile?: string;
+          includePath?: string;
+          line?: number;
+        }
+      | undefined;
+    expect(missingDiag).toBeDefined();
+    expect(missingDiag?.sourceFile).toBe(normalizePath(path.join(sectionDir, 'first.dat')));
+    expect(missingDiag?.line).toBe(2);
   });
 
   it('supports coordinate-system CLI flags for Canada-first workflows', () => {

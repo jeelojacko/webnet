@@ -44,10 +44,10 @@
     - [x] Phase 2B: add processing-summary run-mode blocks for `data-check` differences and `blunder-detect` cycle/warning notes
     - [x] Phase 2C: add industry-listing run-mode sections and regression tests for `data-check` and `blunder-detect` output
   - [x] Phase 3: implement exhaustive run-mode incompatibility matrix with clear diagnostics and mode-gated regression coverage
-- [ ] Include pipeline test-gate completion:
+- [x] Include pipeline test-gate completion:
   - [x] Phase 1: add parser regression tests for include cycle and include depth failures with exact source-file/line diagnostics
   - [x] Phase 2: add relative-path inheritance and nested include-order tests for both parser bundle mode and CLI filesystem mode
-  - [ ] Phase 3: add CLI hard-fail regression coverage for missing/cycle/depth/relative-path include scenarios with deterministic exit behavior
+  - [x] Phase 3: add CLI hard-fail regression coverage for missing/cycle/depth/relative-path include scenarios with deterministic exit behavior
 - [ ] Legacy compatibility corpus gate:
   - [ ] Phase 1: curate mixed legacy-project corpus fixture set and define expected run-mode outcomes per project
   - [ ] Phase 2: add corpus harness command that enforces parse success, run success, and no silent directive drops
