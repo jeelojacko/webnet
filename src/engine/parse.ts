@@ -37,6 +37,9 @@ import type {
   AngleMode,
   GeoidHeightDatum,
   GpsVectorMode,
+  ParseCompatibilityDiagnostic,
+  ParseCompatibilityDiagnosticCode,
+  ParseCompatibilityMode,
 } from '../types';
 
 const defaultParseOptions: ParseOptions = {
@@ -84,6 +87,10 @@ const defaultParseOptions: ParseOptions = {
   crsConvergenceAngleRad: 0,
   geoidModelEnabled: false,
   geoidModelId: 'NGS-DEMO',
+  geoidSourceFormat: 'builtin',
+  geoidSourcePath: '',
+  geoidSourceResolvedFormat: 'builtin',
+  geoidSourceFallbackUsed: false,
   geoidInterpolation: 'bilinear',
   geoidHeightConversionEnabled: false,
   geoidOutputHeightDatum: 'orthometric',
@@ -129,6 +136,13 @@ const defaultParseOptions: ParseOptions = {
   autoAdjustStdResThreshold: 4,
   autoSideshotEnabled: true,
   directionSetMode: 'reduced',
+  parseCompatibilityMode: 'legacy',
+  parseCompatibilityDiagnostics: [],
+  ambiguousCount: 0,
+  legacyFallbackCount: 0,
+  strictRejectCount: 0,
+  rewriteSuggestionCount: 0,
+  parseModeMigrated: false,
   clusterDetectionEnabled: true,
   clusterLinkageMode: 'single',
   clusterTolerance2D: 0.03,
@@ -798,6 +812,14 @@ export const parseInput = (
   const logs: string[] = [];
   const directionRejectDiagnostics: DirectionRejectDiagnostic[] = [];
   const state: ParseOptions = { ...defaultParseOptions, ...opts };
+  const compatibilityMode: ParseCompatibilityMode =
+    opts.parseCompatibilityMode ?? state.parseCompatibilityMode ?? 'legacy';
+  state.parseCompatibilityMode = compatibilityMode;
+  const compatibilityDiagnostics: ParseCompatibilityDiagnostic[] = [];
+  let ambiguousCount = 0;
+  let legacyFallbackCount = 0;
+  let strictRejectCount = 0;
+  let rewriteSuggestionCount = 0;
   if (!opts.observationMode) {
     state.observationMode = undefined;
   }
@@ -809,6 +831,44 @@ export const parseInput = (
   state.gpsTopoShots = [];
   const directiveTransitions: DirectiveTransition[] = [];
   const directiveNoEffectWarnings: DirectiveNoEffectWarning[] = [];
+  const addCompatibilityDiagnostic = (
+    code: ParseCompatibilityDiagnosticCode,
+    line: number,
+    recordType: string,
+    message: string,
+    rewriteSuggestion?: string,
+    fallbackApplied = false,
+    severity: 'warning' | 'error' = 'warning',
+  ): void => {
+    const normalizedSeverity = compatibilityMode === 'strict' ? 'error' : severity;
+    compatibilityDiagnostics.push({
+      code,
+      line,
+      recordType,
+      mode: compatibilityMode,
+      severity: normalizedSeverity,
+      message,
+      rewriteSuggestion,
+      fallbackApplied,
+    });
+    if (rewriteSuggestion) rewriteSuggestionCount += 1;
+    if (
+      code === 'ROLE_AMBIGUITY' ||
+      code === 'TOKEN_ROLE_COLLISION' ||
+      code === 'OVERLOADED_STATION_FORM' ||
+      code === 'SIGMA_POSITION_AMBIGUITY' ||
+      code === 'MIXED_LEGACY_SYNTAX'
+    ) {
+      ambiguousCount += 1;
+    }
+    if (fallbackApplied) legacyFallbackCount += 1;
+    if (normalizedSeverity === 'error') strictRejectCount += 1;
+    const prefix = normalizedSeverity === 'error' ? 'Error' : 'Warning';
+    const suggestionText = rewriteSuggestion ? ` Rewrite: ${rewriteSuggestion}` : '';
+    logs.push(
+      `${prefix}: [${code}] ${recordType} line ${line}: ${message}${suggestionText}`.trim(),
+    );
+  };
   const recordDirectiveTransition = (directive: string) => {
     directiveTransitions.push({
       line: lineNum,
@@ -938,6 +998,57 @@ export const parseInput = (
     const parsed = parseAngleTokenRad(token, state, fallbackMode);
     if (!Number.isFinite(parsed)) return { value: 0, planned: false, valid: false };
     return { value: parsed, planned: false, valid: true };
+  };
+  const isIntegerLikeToken = (token: string): boolean => /^[+-]?\d+$/.test(token.trim());
+  const scoreDistanceCandidate = (candidate: {
+    instCode: string;
+    from: string;
+    to: string;
+    distToken: string;
+    setId: string;
+    explicitInst: boolean;
+  }): number => {
+    let score = 0;
+    if (candidate.distToken.includes('.') || candidate.distToken.includes('?')) score += 2;
+    if (candidate.setId) score += 1;
+    if (isIntegerLikeToken(candidate.from)) score += 1;
+    if (isIntegerLikeToken(candidate.to)) score += 1;
+    if (candidate.setId && isIntegerLikeToken(candidate.from) && isIntegerLikeToken(candidate.to)) {
+      score += 2;
+    }
+    if (stations[candidate.from]) score += 2;
+    if (stations[candidate.to]) score += 2;
+    if (candidate.explicitInst && candidate.instCode && !stations[candidate.instCode]) score += 1;
+    if (
+      candidate.explicitInst &&
+      !candidate.setId &&
+      /^[A-Za-z_]/.test(candidate.from) &&
+      isIntegerLikeToken(candidate.to)
+    ) {
+      score -= 2;
+    }
+    if (looksLikeNumericMeasurement(candidate.from) || looksLikeNumericMeasurement(candidate.to)) {
+      score -= 12;
+    }
+    return score;
+  };
+  const rejectNumericStationTokens = (
+    recordType: string,
+    sourceLine: number,
+    stationTokens: Array<{ role: string; value: string }>,
+  ): boolean => {
+    const bad = stationTokens.find((row) => looksLikeNumericMeasurement(row.value));
+    if (!bad) return false;
+    addCompatibilityDiagnostic(
+      'NUMERIC_STATION_TOKEN_REJECTED',
+      sourceLine,
+      recordType,
+      `token "${bad.value}" for ${bad.role} looks like a measurement, not a station id`,
+      `Rewrite ${recordType} with explicit station tokens and keep numeric values in observation fields only.`,
+      false,
+      compatibilityMode === 'strict' ? 'error' : 'warning',
+    );
+    return compatibilityMode === 'strict';
   };
   const ensureStation = (id: StationId, context: string): void => {
     if (!id) return;
@@ -1667,7 +1778,7 @@ export const parseInput = (
         const modeToken = (parts[1] || '').toUpperCase();
         if (!modeToken) {
           logs.push(
-            `Warning: .GEOID missing mode at line ${lineNum}; expected OFF, ON [model], MODEL, INTERP, or HEIGHT.`,
+            `Warning: .GEOID missing mode at line ${lineNum}; expected OFF, ON [model], MODEL, SOURCE, FILE, INTERP, or HEIGHT.`,
           );
           continue;
         }
@@ -1696,6 +1807,52 @@ export const parseInput = (
           state.geoidModelId = normalizeGeoidModelId(parts[2]);
           state.geoidModelEnabled = true;
           logs.push(`Geoid/grid model set to ON (model=${state.geoidModelId})`);
+          continue;
+        }
+        if (modeToken === 'SOURCE') {
+          const formatToken = (parts[2] || '').toUpperCase();
+          if (formatToken === 'BUILTIN' || formatToken === 'INTERNAL') {
+            state.geoidSourceFormat = 'builtin';
+            state.geoidSourcePath = '';
+            logs.push('Geoid source set to BUILTIN');
+            continue;
+          }
+          if (formatToken === 'GTX' || formatToken === 'BYN') {
+            state.geoidSourceFormat = formatToken === 'GTX' ? 'gtx' : 'byn';
+            const pathToken = parts.slice(3).join(' ').trim();
+            state.geoidSourcePath = pathToken;
+            logs.push(
+              `Geoid source set to ${formatToken}${pathToken ? ` (${pathToken})` : ''}`,
+            );
+            continue;
+          }
+          logs.push(
+            `Warning: invalid .GEOID SOURCE option at line ${lineNum}; expected BUILTIN, GTX [path], or BYN [path].`,
+          );
+          continue;
+        }
+        if (modeToken === 'FILE' || modeToken === 'PATH') {
+          const sourcePath = parts.slice(2).join(' ').trim();
+          if (!sourcePath) {
+            logs.push(
+              `Warning: .GEOID ${modeToken} missing path at line ${lineNum}; expected a GTX/BYN file path.`,
+            );
+            continue;
+          }
+          const lowerPath = sourcePath.toLowerCase();
+          if (lowerPath.endsWith('.gtx')) state.geoidSourceFormat = 'gtx';
+          else if (lowerPath.endsWith('.byn')) state.geoidSourceFormat = 'byn';
+          else {
+            logs.push(
+              `Warning: .GEOID ${modeToken} path at line ${lineNum} does not end with .gtx or .byn; keeping source format ${String(state.geoidSourceFormat ?? 'builtin').toUpperCase()}.`,
+            );
+          }
+          state.geoidSourcePath = sourcePath;
+          logs.push(
+            `Geoid source path set to ${sourcePath} (format=${String(
+              state.geoidSourceFormat ?? 'builtin',
+            ).toUpperCase()})`,
+          );
           continue;
         }
         if (modeToken === 'INTERP' || modeToken === 'INTERPOLATION' || modeToken === 'METHOD') {
@@ -1750,7 +1907,7 @@ export const parseInput = (
           continue;
         }
         logs.push(
-          `Warning: unrecognized .GEOID option at line ${lineNum}; expected OFF, ON [model], MODEL, INTERP, or HEIGHT.`,
+          `Warning: unrecognized .GEOID option at line ${lineNum}; expected OFF, ON [model], MODEL, SOURCE, FILE, INTERP, or HEIGHT.`,
         );
       } else if (op === '.GPS') {
         const modeToken = (parts[1] || '').toUpperCase();
@@ -2741,26 +2898,120 @@ export const parseInput = (
         }
         stations[id] = st;
       } else if (code === 'D') {
-        const hasInst =
-          (!!parts[1] && !!instrumentLibrary[parts[1]]) ||
-          (parts.length > 5 && /[A-Za-z]/.test(parts[1]) && /[A-Za-z]/.test(parts[2]));
-        const explicitInst = hasInst ? parts[1] : '';
-        const instCode = explicitInst || state.currentInstrument || '';
-        const setId = hasInst ? parts[2] : '';
-        const startIdx = hasInst ? 3 : 1;
-        const { from, to, nextIndex } = parseFromTo(parts, startIdx);
-        const distToken = parts[nextIndex];
-        const restTokens = parts.slice(nextIndex + 1);
+        const explicitInstKnown = parts[1] && instrumentLibrary[parts[1]] ? parts[1] : '';
+        const toMeters = state.units === 'ft' ? 1 / FT_PER_M : 1;
+        const candidates: Array<{
+          from: string;
+          to: string;
+          nextIndex: number;
+          instCode: string;
+          setId: string;
+          explicitInst: boolean;
+        }> = [];
+        const pushDistanceCandidate = (
+          instCode: string,
+          setId: string,
+          startIndex: number,
+          candidateExplicitInst: boolean,
+        ) => {
+          const parsedFromTo = parseFromTo(parts, startIndex);
+          if (!parsedFromTo.from || !parsedFromTo.to) return;
+          const distToken = parts[parsedFromTo.nextIndex];
+          const distParsed = parseObservedLinearToken(distToken, toMeters);
+          if (!distParsed.valid) return;
+          candidates.push({
+            from: parsedFromTo.from,
+            to: parsedFromTo.to,
+            nextIndex: parsedFromTo.nextIndex,
+            instCode,
+            setId,
+            explicitInst: candidateExplicitInst,
+          });
+        };
+
+        if (explicitInstKnown) {
+          pushDistanceCandidate(explicitInstKnown, '', 2, true);
+          if (parts[2]) {
+            pushDistanceCandidate(explicitInstKnown, parts[2], 3, true);
+          }
+        }
+
+        pushDistanceCandidate(state.currentInstrument ?? '', '', 1, false);
+
+        if (!explicitInstKnown && parts[1]) {
+          pushDistanceCandidate(parts[1], '', 2, true);
+          if (parts[2]) {
+            pushDistanceCandidate(parts[1], parts[2], 3, true);
+          }
+        }
+
+        if (candidates.length === 0) {
+          logs.push(`Invalid distance at line ${lineNum}, skipping D record.`);
+          continue;
+        }
+
+        const scored = candidates.map((candidate) => {
+          const distToken = parts[candidate.nextIndex] ?? '';
+          return {
+            candidate,
+            score: scoreDistanceCandidate({
+              instCode: candidate.instCode,
+              from: candidate.from,
+              to: candidate.to,
+              distToken,
+              setId: candidate.setId,
+              explicitInst: candidate.explicitInst,
+            }),
+          };
+        });
+        scored.sort((a, b) => b.score - a.score);
+        const best = scored[0];
+        const tie = scored.length > 1 && scored[1].score === best.score;
+        if (tie) {
+          const rewrite =
+            'Use explicit form: D <inst?> <set?> <from> <to> <distance> [sigma] [HI/HT].';
+          if (compatibilityMode === 'strict') {
+            addCompatibilityDiagnostic(
+              'ROLE_AMBIGUITY',
+              lineNum,
+              'D',
+              'multiple valid D-record interpretations were found.',
+              rewrite,
+              false,
+              'error',
+            );
+            continue;
+          }
+          addCompatibilityDiagnostic(
+            'ROLE_AMBIGUITY',
+            lineNum,
+            'D',
+            'multiple valid D-record interpretations were found; applied legacy fallback.',
+            rewrite,
+            true,
+          );
+        }
+
+        const chosen = best.candidate;
+        if (
+          rejectNumericStationTokens('D', lineNum, [
+            { role: 'FROM', value: chosen.from },
+            { role: 'TO', value: chosen.to },
+          ])
+        ) {
+          continue;
+        }
+        const distToken = parts[chosen.nextIndex];
+        const restTokens = parts.slice(chosen.nextIndex + 1);
         const { sigmas, rest } = extractSigmaTokens(restTokens, 1);
         const { hi, ht } = extractHiHt(rest);
-        const toMeters = state.units === 'ft' ? 1 / FT_PER_M : 1;
         const distParsed = parseObservedLinearToken(distToken, toMeters);
         if (!distParsed.valid) {
           logs.push(`Invalid distance at line ${lineNum}, skipping D record.`);
           continue;
         }
 
-        const inst = instCode ? instrumentLibrary[instCode] : undefined;
+        const inst = chosen.instCode ? instrumentLibrary[chosen.instCode] : undefined;
         const defaultSigma = defaultDistanceSigma(
           inst,
           distParsed.planned ? 0 : parseFloat(distToken),
@@ -2773,10 +3024,10 @@ export const parseInput = (
           id: obsId++,
           type: 'dist',
           subtype: 'ts',
-          instCode,
-          setId,
-          from,
-          to,
+          instCode: chosen.instCode,
+          setId: chosen.setId,
+          from: chosen.from,
+          to: chosen.to,
           obs: distParsed.value,
           planned: distParsed.planned,
           stdDev: sigma * toMeters,
@@ -2787,27 +3038,147 @@ export const parseInput = (
         };
         pushObservation(obs);
       } else if (code === 'A') {
-        const tokens = parts[1].includes('-') ? parts[1].split('-') : [];
-        const hasInst = tokens.length === 0;
-        const explicitInst = hasInst ? parts[1] : '';
-        const instCode = explicitInst || state.currentInstrument || '';
-        const setId = hasInst ? parts[2] : '';
-        const s1 = hasInst ? parts[3] : tokens[0];
-        const s2 = hasInst ? parts[4] : tokens[1];
-        const s3 = hasInst ? parts[5] : tokens[2];
         const stationOrder = state.angleStationOrder ?? 'atfromto';
-        const at = stationOrder === 'atfromto' ? s1 : s2;
-        const from = stationOrder === 'atfromto' ? s2 : s1;
-        const to = s3;
-        const angToken = hasInst ? parts[6] : parts[2];
-        const angleParsed = parseObservedAngleToken(angToken, 'dms');
-        if (!angleParsed.valid) {
+        const angleCandidates: Array<{
+          instCode: string;
+          setId: string;
+          s1: string;
+          s2: string;
+          s3: string;
+          stdTokenIndex: number;
+          explicitInst: boolean;
+          angleParsed: { value: number; planned: boolean; valid: boolean };
+        }> = [];
+        const pushAngleCandidate = (
+          instCode: string,
+          setId: string,
+          s1: string,
+          s2: string,
+          s3: string,
+          angToken: string | undefined,
+          stdTokenIndex: number,
+          explicitInst: boolean,
+        ) => {
+          if (!s1 || !s2 || !s3 || stdTokenIndex < 0) return;
+          if (!angToken && !preanalysisMode) return;
+          const angleParsed = parseObservedAngleToken(angToken, 'dms');
+          if (!angleParsed.valid) return;
+          angleCandidates.push({
+            instCode,
+            setId,
+            s1,
+            s2,
+            s3,
+            stdTokenIndex,
+            explicitInst,
+            angleParsed,
+          });
+        };
+
+        const inlineTriplet = parts[1]?.includes('-') ? parts[1].split('-') : [];
+        if (inlineTriplet.length === 3) {
+          pushAngleCandidate(
+            state.currentInstrument ?? '',
+            '',
+            inlineTriplet[0],
+            inlineTriplet[1],
+            inlineTriplet[2],
+            parts[2],
+            3,
+            false,
+          );
+        }
+        pushAngleCandidate(
+          state.currentInstrument ?? '',
+          '',
+          parts[1] ?? '',
+          parts[2] ?? '',
+          parts[3] ?? '',
+          parts[4],
+          5,
+          false,
+        );
+        pushAngleCandidate(parts[1] ?? '', '', parts[2] ?? '', parts[3] ?? '', parts[4] ?? '', parts[5], 6, true);
+        pushAngleCandidate(
+          parts[1] ?? '',
+          parts[2] ?? '',
+          parts[3] ?? '',
+          parts[4] ?? '',
+          parts[5] ?? '',
+          parts[6],
+          7,
+          true,
+        );
+
+        if (angleCandidates.length === 0) {
           logs.push(`Invalid angle at line ${lineNum}, skipping A record.`);
           continue;
         }
+        const scored = angleCandidates.map((candidate) => {
+          let score = 0;
+          if (stations[candidate.s1]) score += 2;
+          if (stations[candidate.s2]) score += 2;
+          if (stations[candidate.s3]) score += 2;
+          if (candidate.explicitInst) score += 1;
+          if (candidate.setId) score += 1;
+          if (candidate.instCode && instrumentLibrary[candidate.instCode]) score += 2;
+          if (
+            looksLikeNumericMeasurement(candidate.s1) ||
+            looksLikeNumericMeasurement(candidate.s2) ||
+            looksLikeNumericMeasurement(candidate.s3)
+          ) {
+            score -= 12;
+          }
+          return { candidate, score };
+        });
+        scored.sort((a, b) => b.score - a.score);
+        const best = scored[0];
+        const tie = scored.length > 1 && scored[1].score === best.score;
+        if (tie) {
+          const rewrite = 'Use explicit form: A <inst?> <set?> <at> <from> <to> <angle> [sigma].';
+          if (compatibilityMode === 'strict') {
+            addCompatibilityDiagnostic(
+              'ROLE_AMBIGUITY',
+              lineNum,
+              'A',
+              'multiple valid A-record interpretations were found.',
+              rewrite,
+              false,
+              'error',
+            );
+            continue;
+          }
+          addCompatibilityDiagnostic(
+            'ROLE_AMBIGUITY',
+            lineNum,
+            'A',
+            'multiple valid A-record interpretations were found; applied legacy fallback.',
+            rewrite,
+            true,
+          );
+        }
+
+        const chosen = best.candidate;
+        const instCode = chosen.instCode;
+        const setId = chosen.setId;
+        const s1 = chosen.s1;
+        const s2 = chosen.s2;
+        const s3 = chosen.s3;
+        const at = stationOrder === 'atfromto' ? s1 : s2;
+        const from = stationOrder === 'atfromto' ? s2 : s1;
+        const to = s3;
+        if (
+          rejectNumericStationTokens('A', lineNum, [
+            { role: 'AT', value: at },
+            { role: 'FROM', value: from },
+            { role: 'TO', value: to },
+          ])
+        ) {
+          continue;
+        }
+        const angleParsed = chosen.angleParsed;
         const angleRad = angleParsed.value;
-        const stdTokenIndex = hasInst ? 7 : 3;
-        const { sigmas } = extractSigmaTokens(parts.slice(stdTokenIndex), 1);
+        const { sigmas } = extractSigmaTokens(parts.slice(chosen.stdTokenIndex), 1);
 
         const inst = instCode ? instrumentLibrary[instCode] : undefined;
         const defaultSigma = defaultHorizontalAngleSigmaSec(inst);
@@ -3899,17 +4270,97 @@ export const parseInput = (
         };
         state.gpsTopoShots?.push(shot);
       } else if (code === 'G') {
-        const instCode = parts[1];
-        const from = parts[2];
-        const to = parts[3];
         const toMeters = state.units === 'ft' ? 1 / FT_PER_M : 1;
-        const dEParsed = parseObservedLinearToken(parts[4], toMeters);
-        const dNParsed = parseObservedLinearToken(parts[5], toMeters);
-        if (!dEParsed.valid || !dNParsed.valid) {
+        const candidates: Array<{
+          instCode: string;
+          from: string;
+          to: string;
+          explicitForm: boolean;
+          numericStart: number;
+          dEParsed: { value: number; planned: boolean; valid: boolean };
+          dNParsed: { value: number; planned: boolean; valid: boolean };
+        }> = [];
+        const pushGpsCandidate = (
+          instCode: string,
+          from: string,
+          to: string,
+          numericStart: number,
+          explicitForm: boolean,
+        ) => {
+          if (!from || !to) return;
+          const dEParsed = parseObservedLinearToken(parts[numericStart], toMeters);
+          const dNParsed = parseObservedLinearToken(parts[numericStart + 1], toMeters);
+          if (!dEParsed.valid || !dNParsed.valid) return;
+          candidates.push({
+            instCode,
+            from,
+            to,
+            explicitForm,
+            numericStart,
+            dEParsed,
+            dNParsed,
+          });
+        };
+        pushGpsCandidate(parts[1] ?? '', parts[2] ?? '', parts[3] ?? '', 4, true);
+        pushGpsCandidate('', parts[1] ?? '', parts[2] ?? '', 3, false);
+        if (candidates.length === 0) {
           logs.push(`Invalid GPS vector at line ${lineNum}, skipping.`);
           continue;
         }
-        const { sigmas, rest } = extractSigmaTokens(parts.slice(6), 2);
+        const scored = candidates.map((candidate) => {
+          let score = 0;
+          if (stations[candidate.from]) score += 2;
+          if (stations[candidate.to]) score += 2;
+          if (candidate.explicitForm) score += 1;
+          if (candidate.instCode && instrumentLibrary[candidate.instCode]) score += 2;
+          if (candidate.explicitForm && candidate.instCode && !stations[candidate.instCode]) score += 1;
+          if (
+            looksLikeNumericMeasurement(candidate.from) ||
+            looksLikeNumericMeasurement(candidate.to)
+          ) {
+            score -= 12;
+          }
+          return { candidate, score };
+        });
+        scored.sort((a, b) => b.score - a.score);
+        const best = scored[0];
+        const tie = scored.length > 1 && scored[1].score === best.score;
+        if (tie) {
+          const rewrite = 'Use explicit form: G <inst?> <from> <to> <dE> <dN> [sigmaE sigmaN [corr]].';
+          if (compatibilityMode === 'strict') {
+            addCompatibilityDiagnostic(
+              'ROLE_AMBIGUITY',
+              lineNum,
+              'G',
+              'multiple valid G-record interpretations were found.',
+              rewrite,
+              false,
+              'error',
+            );
+            continue;
+          }
+          addCompatibilityDiagnostic(
+            'ROLE_AMBIGUITY',
+            lineNum,
+            'G',
+            'multiple valid G-record interpretations were found; applied legacy fallback.',
+            rewrite,
+            true,
+          );
+        }
+        const chosen = best.candidate;
+        const instCode = chosen.instCode;
+        const from = chosen.from;
+        const to = chosen.to;
+        if (
+          rejectNumericStationTokens('G', lineNum, [
+            { role: 'FROM', value: from },
+            { role: 'TO', value: to },
+          ])
+        ) {
+          continue;
+        }
+        const { sigmas, rest } = extractSigmaTokens(parts.slice(chosen.numericStart + 2), 2);
         const corrRaw = parseFloat(rest[0] || '');
 
         const inst = instrumentLibrary[instCode];
@@ -3937,10 +4388,10 @@ export const parseInput = (
           instCode,
           from,
           to,
-          planned: dEParsed.planned || dNParsed.planned,
+          planned: chosen.dEParsed.planned || chosen.dNParsed.planned,
           obs: {
-            dE: dEParsed.value,
-            dN: dNParsed.value,
+            dE: chosen.dEParsed.value,
+            dN: chosen.dNParsed.value,
           },
           stdDev: state.units === 'ft' ? sigmaMean / FT_PER_M : sigmaMean,
           stdDevE: state.units === 'ft' ? sigmaE / FT_PER_M : sigmaE,
@@ -4004,23 +4455,94 @@ export const parseInput = (
           `GPS rover offset attached to ${lastGpsObservation.from}-${lastGpsObservation.to}: dE=${deltaE.toFixed(4)} m, dN=${deltaN.toFixed(4)} m, dH=${deltaH.toFixed(4)} m`,
         );
       } else if (code === 'L') {
-        const instCode = parts[1];
-        const from = parts[2];
-        const to = parts[3];
         const toMeters = state.units === 'ft' ? 1 / FT_PER_M : 1;
-        const dHParsed = parseObservedLinearToken(parts[4], toMeters);
-        if (!dHParsed.valid) {
+        const candidates: Array<{
+          instCode: string;
+          from: string;
+          to: string;
+          explicitForm: boolean;
+          valueStart: number;
+          dHParsed: { value: number; planned: boolean; valid: boolean };
+        }> = [];
+        const pushLevelCandidate = (
+          instCode: string,
+          from: string,
+          to: string,
+          valueStart: number,
+          explicitForm: boolean,
+        ) => {
+          if (!from || !to) return;
+          const dHParsed = parseObservedLinearToken(parts[valueStart], toMeters);
+          if (!dHParsed.valid) return;
+          candidates.push({ instCode, from, to, explicitForm, valueStart, dHParsed });
+        };
+        pushLevelCandidate(parts[1] ?? '', parts[2] ?? '', parts[3] ?? '', 4, true);
+        pushLevelCandidate(state.currentInstrument ?? '', parts[1] ?? '', parts[2] ?? '', 3, false);
+        if (candidates.length === 0) {
           logs.push(`Invalid leveling observation at line ${lineNum}, skipping.`);
           continue;
         }
-        const lenRaw = parseFloat(parts[5] || '0');
+        const scored = candidates.map((candidate) => {
+          let score = 0;
+          if (stations[candidate.from]) score += 2;
+          if (stations[candidate.to]) score += 2;
+          if (candidate.explicitForm) score += 1;
+          if (candidate.instCode && instrumentLibrary[candidate.instCode]) score += 2;
+          if (candidate.explicitForm && candidate.instCode && !stations[candidate.instCode]) score += 1;
+          if (
+            looksLikeNumericMeasurement(candidate.from) ||
+            looksLikeNumericMeasurement(candidate.to)
+          ) {
+            score -= 12;
+          }
+          return { candidate, score };
+        });
+        scored.sort((a, b) => b.score - a.score);
+        const best = scored[0];
+        const tie = scored.length > 1 && scored[1].score === best.score;
+        if (tie) {
+          const rewrite = 'Use explicit form: L <inst?> <from> <to> <dH> <lenKm> [sigma].';
+          if (compatibilityMode === 'strict') {
+            addCompatibilityDiagnostic(
+              'ROLE_AMBIGUITY',
+              lineNum,
+              'L',
+              'multiple valid L-record interpretations were found.',
+              rewrite,
+              false,
+              'error',
+            );
+            continue;
+          }
+          addCompatibilityDiagnostic(
+            'ROLE_AMBIGUITY',
+            lineNum,
+            'L',
+            'multiple valid L-record interpretations were found; applied legacy fallback.',
+            rewrite,
+            true,
+          );
+        }
+        const chosen = best.candidate;
+        const instCode = chosen.instCode;
+        const from = chosen.from;
+        const to = chosen.to;
+        if (
+          rejectNumericStationTokens('L', lineNum, [
+            { role: 'FROM', value: from },
+            { role: 'TO', value: to },
+          ])
+        ) {
+          continue;
+        }
+        const lenRaw = parseFloat(parts[chosen.valueStart + 1] || '0');
         const lenKm =
           Number.isFinite(lenRaw) && lenRaw > 0
             ? state.units === 'ft'
               ? lenRaw / FT_PER_M / 1000
               : lenRaw
             : 0;
-        const sigmaToken = parseSigmaToken(parts[6]) ?? undefined;
+        const sigmaToken = parseSigmaToken(parts[chosen.valueStart + 2]) ?? undefined;
         const baseStd = state.levelWeight ?? 0;
         if (!sigmaToken && state.levelWeight != null) {
           logs.push(`.LWEIGHT applied for leveling at line ${lineNum}: ${state.levelWeight} mm/km`);
@@ -4044,8 +4566,8 @@ export const parseInput = (
           instCode,
           from,
           to,
-          obs: dHParsed.value,
-          planned: dHParsed.planned,
+          obs: chosen.dHParsed.value,
+          planned: chosen.dHParsed.planned,
           lenKm,
           stdDev: sigma,
           sigmaSource: levelResolved.source,
@@ -4505,11 +5027,19 @@ export const parseInput = (
   state.directiveNoEffectWarnings = directiveNoEffectWarnings;
   state.parsedUsageSummary = summarizeReductionUsage(observations);
   state.usedInSolveUsageSummary = undefined;
+  state.parseCompatibilityDiagnostics = compatibilityDiagnostics;
+  state.ambiguousCount = ambiguousCount;
+  state.legacyFallbackCount = legacyFallbackCount;
+  state.strictRejectCount = strictRejectCount;
+  state.rewriteSuggestionCount = rewriteSuggestionCount;
   directiveNoEffectWarnings.forEach((warning) => {
     logs.push(
       `Warning: ${warning.directive} at line ${warning.line} had no effect (${warning.reason}).`,
     );
   });
+  logs.push(
+    `Parse compatibility: mode=${compatibilityMode}, ambiguous=${ambiguousCount}, fallbacks=${legacyFallbackCount}, strictRejects=${strictRejectCount}, rewrites=${rewriteSuggestionCount}`,
+  );
   logs.push(
     `Counts: ${Object.entries(typeSummary)
       .map(([k, v]) => `${k}=${v}`)

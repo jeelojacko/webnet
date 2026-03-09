@@ -114,7 +114,10 @@ import type {
   DirectiveTransition,
   GeoidInterpolationMethod,
   GeoidHeightDatum,
+  GeoidSourceFormat,
   GnssVectorFrame,
+  ParseCompatibilityDiagnostic,
+  ParseCompatibilityMode,
   ReductionUsageSummary,
 } from './types';
 
@@ -304,6 +307,13 @@ type RunDiagnostics = {
   tsCorrelationRho: number;
   robustMode: RobustMode;
   robustK: number;
+  parseCompatibilityMode: ParseCompatibilityMode;
+  parseModeMigrated: boolean;
+  parseCompatibilityDiagnostics: ParseCompatibilityDiagnostic[];
+  ambiguousCount: number;
+  legacyFallbackCount: number;
+  strictRejectCount: number;
+  rewriteSuggestionCount: number;
   qFixLinearSigmaM: number;
   qFixAngularSigmaSec: number;
   coordSystemMode: CoordSystemMode;
@@ -342,6 +352,10 @@ type RunDiagnostics = {
   crsConvergenceAngleRad: number;
   geoidModelEnabled: boolean;
   geoidModelId: string;
+  geoidSourceFormat: GeoidSourceFormat;
+  geoidSourcePath: string;
+  geoidSourceResolvedFormat: GeoidSourceFormat;
+  geoidSourceFallbackUsed: boolean;
   geoidInterpolation: GeoidInterpolationMethod;
   geoidHeightConversionEnabled: boolean;
   geoidOutputHeightDatum: GeoidHeightDatum;
@@ -422,6 +436,8 @@ type ParseSettings = {
   crsConvergenceAngleRad: number;
   geoidModelEnabled: boolean;
   geoidModelId: string;
+  geoidSourceFormat: GeoidSourceFormat;
+  geoidSourcePath: string;
   geoidInterpolation: GeoidInterpolationMethod;
   geoidHeightConversionEnabled: boolean;
   geoidOutputHeightDatum: GeoidHeightDatum;
@@ -443,6 +459,8 @@ type ParseSettings = {
   tsCorrelationScope: TsCorrelationScope;
   robustMode: RobustMode;
   robustK: number;
+  parseCompatibilityMode: ParseCompatibilityMode;
+  parseModeMigrated: boolean;
 };
 
 type ClusterReviewStatus = 'pending' | 'approve' | 'reject';
@@ -492,6 +510,10 @@ type ImportReviewState = {
 const SETTINGS_TOOLTIPS = {
   solveProfile:
     'Run profile. WEBNET uses current app defaults/features. Industry Standard parity forces classical solve and raw direction-set adjustment with industry-like default instrument precision.',
+  parseCompatibilityMode:
+    'Parser compatibility mode. LEGACY keeps grammar-first parsing with controlled compatibility fallbacks; STRICT enforces deterministic grammar-only parsing and rejects ambiguous lines.',
+  parseModeMigration:
+    'Marks the project as migrated to strict parser behavior. Migrated projects persist parser mode metadata and avoid legacy-default loading rules.',
   units:
     'Display units for coordinates and report values. The solver still works internally in meters/radians.',
   maxIterations: 'Maximum least-squares iterations before the run stops if convergence is slow.',
@@ -571,7 +593,14 @@ const SETTINGS_TOOLTIPS = {
     'Convergence correction angle in decimal degrees. Positive rotates modeled azimuths clockwise from grid north.',
   geoidModelEnabled:
     'Enable optional geoid/grid model support. Default OFF keeps existing height behavior unchanged.',
-  geoidModelId: 'Geoid/grid model identifier. Built-in demo IDs: NGS-DEMO, NRC-DEMO.',
+  geoidModelId:
+    'Geoid/grid model identifier. Built-in demo IDs: NGS-DEMO, NRC-DEMO, NAD83-CSRS-DEMO.',
+  geoidSourceFormat:
+    'Geoid/grid source format. BUILTIN uses packaged demo grids. GTX/BYN use external model files.',
+  geoidSourcePath:
+    'External geoid/grid file path for GTX/BYN loading. Leave empty to rely on CLI-provided source data or fall back behavior.',
+  geoidSourceFile:
+    'Browser geoid file loader for GTX/BYN sources. Loaded bytes are used directly during browser runs.',
   geoidInterpolation:
     'Interpolation method used for geoid/grid lookup and height conversion when geoid model support is enabled.',
   geoidHeightConversionEnabled:
@@ -676,6 +705,12 @@ const SETTINGS_TOOLTIPS = {
   projectFiles:
     'Save or open complete project workspaces (input + settings + instruments + export preferences) without storing solved results.',
 } as const;
+
+const BUILTIN_GEOID_MODEL_OPTIONS: Array<{ id: string; label: string }> = [
+  { id: 'NGS-DEMO', label: 'NGS-DEMO (US sample)' },
+  { id: 'NRC-DEMO', label: 'NRC-DEMO (Canada sample)' },
+  { id: 'NAD83-CSRS-DEMO', label: 'NAD83-CSRS-DEMO (CGG2013A-style sample)' },
+];
 
 const PROJECT_OPTION_TAB_TOOLTIPS: Record<ProjectOptionsTab, string> = {
   adjustment:
@@ -1002,6 +1037,8 @@ const App: React.FC<AppProps> = ({
     crsConvergenceAngleRad: 0,
     geoidModelEnabled: false,
     geoidModelId: 'NGS-DEMO',
+    geoidSourceFormat: 'builtin',
+    geoidSourcePath: '',
     geoidInterpolation: 'bilinear',
     geoidHeightConversionEnabled: false,
     geoidOutputHeightDatum: 'orthometric',
@@ -1022,7 +1059,11 @@ const App: React.FC<AppProps> = ({
     tsCorrelationScope: 'set',
     robustMode: 'none',
     robustK: 1.5,
+    parseCompatibilityMode: 'strict',
+    parseModeMigrated: true,
   });
+  const [geoidSourceData, setGeoidSourceData] = useState<Uint8Array | null>(null);
+  const [geoidSourceDataLabel, setGeoidSourceDataLabel] = useState('');
   const [projectInstruments, setProjectInstruments] = useState<InstrumentLibrary>(() => ({
     S9: createDefaultS9Instrument(),
     ...parseInstrumentLibraryFromInput(DEFAULT_INPUT),
@@ -1042,6 +1083,8 @@ const App: React.FC<AppProps> = ({
   const [activeOptionsTab, setActiveOptionsTab] = useState<ProjectOptionsTab>(initialOptionsTab);
   const [settingsDraft, setSettingsDraft] = useState<SettingsState>(settings);
   const [parseSettingsDraft, setParseSettingsDraft] = useState<ParseSettings>(parseSettings);
+  const [geoidSourceDataDraft, setGeoidSourceDataDraft] = useState<Uint8Array | null>(null);
+  const [geoidSourceDataLabelDraft, setGeoidSourceDataLabelDraft] = useState('');
   const [crsCatalogGroupFilter, setCrsCatalogGroupFilter] =
     useState<CrsCatalogGroupFilter>(resolveCatalogGroupFromCrsId(parseSettings.crsId));
   const [crsSearchQuery, setCrsSearchQuery] = useState('');
@@ -1063,6 +1106,7 @@ const App: React.FC<AppProps> = ({
   >([]);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const projectFileInputRef = useRef<HTMLInputElement | null>(null);
+  const geoidSourceFileInputRef = useRef<HTMLInputElement | null>(null);
   const filePickerModeRef = useRef<FilePickerMode>('replace');
   const adjustedPointsDragRef = useRef<AdjustedPointsColumnId | null>(null);
   const layoutRef = useRef<HTMLDivElement | null>(null);
@@ -1412,14 +1456,19 @@ const App: React.FC<AppProps> = ({
 
   const resolveProfileContext = (base: ParseSettings) => {
     const parity = base.solveProfile === 'industry-parity';
+    const defaultParseCompatibilityMode: ParseCompatibilityMode = parity ? 'strict' : 'legacy';
     const parityParse = parity
       ? {
           ...base,
           robustMode: 'none' as RobustMode,
           tsCorrelationEnabled: false,
           tsCorrelationRho: 0,
+          parseCompatibilityMode: base.parseCompatibilityMode ?? defaultParseCompatibilityMode,
         }
-      : base;
+      : {
+          ...base,
+          parseCompatibilityMode: base.parseCompatibilityMode ?? defaultParseCompatibilityMode,
+        };
     const effectiveParse = base.preanalysisMode
       ? {
           ...parityParse,
@@ -1507,6 +1556,17 @@ const App: React.FC<AppProps> = ({
       tsCorrelationRho: parseState.tsCorrelationRho ?? profileCtx.effectiveParse.tsCorrelationRho,
       robustMode: parseState.robustMode ?? profileCtx.effectiveParse.robustMode,
       robustK: parseState.robustK ?? profileCtx.effectiveParse.robustK,
+      parseCompatibilityMode:
+        parseState.parseCompatibilityMode ??
+        profileCtx.effectiveParse.parseCompatibilityMode ??
+        (profileCtx.parity ? 'strict' : 'legacy'),
+      parseModeMigrated:
+        parseState.parseModeMigrated ?? profileCtx.effectiveParse.parseModeMigrated ?? false,
+      parseCompatibilityDiagnostics: parseState.parseCompatibilityDiagnostics ?? [],
+      ambiguousCount: parseState.ambiguousCount ?? 0,
+      legacyFallbackCount: parseState.legacyFallbackCount ?? 0,
+      strictRejectCount: parseState.strictRejectCount ?? 0,
+      rewriteSuggestionCount: parseState.rewriteSuggestionCount ?? 0,
       qFixLinearSigmaM: parseState.qFixLinearSigmaM ?? profileCtx.effectiveParse.qFixLinearSigmaM,
       qFixAngularSigmaSec:
         parseState.qFixAngularSigmaSec ?? profileCtx.effectiveParse.qFixAngularSigmaSec,
@@ -1534,6 +1594,16 @@ const App: React.FC<AppProps> = ({
       geoidModelEnabled:
         parseState.geoidModelEnabled ?? profileCtx.effectiveParse.geoidModelEnabled ?? false,
       geoidModelId: parseState.geoidModelId ?? profileCtx.effectiveParse.geoidModelId ?? 'NGS-DEMO',
+      geoidSourceFormat:
+        parseState.geoidSourceFormat ?? profileCtx.effectiveParse.geoidSourceFormat ?? 'builtin',
+      geoidSourcePath:
+        parseState.geoidSourcePath ?? profileCtx.effectiveParse.geoidSourcePath ?? '',
+      geoidSourceResolvedFormat:
+        parseState.geoidSourceResolvedFormat ??
+        parseState.geoidSourceFormat ??
+        profileCtx.effectiveParse.geoidSourceFormat ??
+        'builtin',
+      geoidSourceFallbackUsed: parseState.geoidSourceFallbackUsed ?? false,
       geoidInterpolation:
         parseState.geoidInterpolation ?? profileCtx.effectiveParse.geoidInterpolation ?? 'bilinear',
       geoidHeightConversionEnabled:
@@ -1641,6 +1711,13 @@ const App: React.FC<AppProps> = ({
       tsCorrelationRho: parse.tsCorrelationRho,
       robustMode: parse.robustMode,
       robustK: parse.robustK,
+      parseCompatibilityMode: parse.parseCompatibilityMode,
+      parseModeMigrated: parse.parseModeMigrated,
+      parseCompatibilityDiagnostics: parse.parseCompatibilityDiagnostics,
+      ambiguousCount: parse.ambiguousCount,
+      legacyFallbackCount: parse.legacyFallbackCount,
+      strictRejectCount: parse.strictRejectCount,
+      rewriteSuggestionCount: parse.rewriteSuggestionCount,
       qFixLinearSigmaM: parse.qFixLinearSigmaM ?? 1e-9,
       qFixAngularSigmaSec: parse.qFixAngularSigmaSec ?? 1e-9,
       coordSystemMode: parse.coordSystemMode,
@@ -1679,6 +1756,10 @@ const App: React.FC<AppProps> = ({
       crsConvergenceAngleRad: parse.crsConvergenceAngleRad,
       geoidModelEnabled: parse.geoidModelEnabled,
       geoidModelId: parse.geoidModelId,
+      geoidSourceFormat: parse.geoidSourceFormat,
+      geoidSourcePath: parse.geoidSourcePath,
+      geoidSourceResolvedFormat: parse.geoidSourceResolvedFormat,
+      geoidSourceFallbackUsed: parse.geoidSourceFallbackUsed,
       geoidInterpolation: parse.geoidInterpolation,
       geoidHeightConversionEnabled: parse.geoidHeightConversionEnabled,
       geoidOutputHeightDatum: parse.geoidOutputHeightDatum,
@@ -1876,6 +1957,9 @@ const App: React.FC<AppProps> = ({
     lines.push(
       `Geoid/Grid model: ${runDiag.geoidModelEnabled ? `ON (${runDiag.geoidModelId}, interp=${runDiag.geoidInterpolation.toUpperCase()}, loaded=${runDiag.geoidModelLoaded ? 'YES' : 'NO'})` : 'OFF'}`,
     );
+    lines.push(
+      `Geoid/Grid source: format=${runDiag.geoidSourceFormat.toUpperCase()}${runDiag.geoidSourcePath ? `, path=${runDiag.geoidSourcePath}` : ''}, resolved=${runDiag.geoidSourceResolvedFormat.toUpperCase()}, fallback=${runDiag.geoidSourceFallbackUsed ? 'YES' : 'NO'}`,
+    );
     if (runDiag.geoidModelEnabled) {
       lines.push(
         `Geoid metadata: ${runDiag.geoidModelMetadata || 'unavailable'}${runDiag.geoidSampleUndulationM != null ? `; sampleN=${runDiag.geoidSampleUndulationM.toFixed(4)}m` : ''}`,
@@ -1922,6 +2006,14 @@ const App: React.FC<AppProps> = ({
     lines.push(
       `Robust mode: ${runDiag.robustMode.toUpperCase()} (k=${runDiag.robustK.toFixed(2)})`,
     );
+    lines.push(
+      `Parse compatibility: mode=${runDiag.parseCompatibilityMode.toUpperCase()}, ambiguous=${runDiag.ambiguousCount}, fallbacks=${runDiag.legacyFallbackCount}, strictRejects=${runDiag.strictRejectCount}, rewrites=${runDiag.rewriteSuggestionCount}, migrated=${runDiag.parseModeMigrated ? 'YES' : 'NO'}`,
+    );
+    if (runDiag.parity && runDiag.parseCompatibilityMode === 'legacy') {
+      lines.push(
+        'Parse compatibility warning: industry-parity profile is running in LEGACY parse mode; migrate to STRICT to lock deterministic grammar behavior.',
+      );
+    }
     lines.push(
       `Reductions: map=${runDiag.mapMode} (scale=${runDiag.mapScaleFactor.toFixed(8)}), crsScale=${runDiag.crsGridScaleEnabled ? `ON(${runDiag.crsGridScaleFactor.toFixed(8)})` : 'OFF'}, crsConv=${runDiag.crsConvergenceEnabled ? `ON(${(runDiag.crsConvergenceAngleRad * RAD_TO_DEG).toFixed(6)} deg)` : 'OFF'}, geoid=${runDiag.geoidModelEnabled ? `ON(${runDiag.geoidModelId},${runDiag.geoidInterpolation.toUpperCase()},loaded=${runDiag.geoidModelLoaded ? 'YES' : 'NO'})` : 'OFF'}, geoidH=${runDiag.geoidHeightConversionEnabled ? `ON(${runDiag.geoidOutputHeightDatum.toUpperCase()},conv=${runDiag.geoidConvertedStationCount},skip=${runDiag.geoidSkippedStationCount})` : 'OFF'}, gpsAddHiHt=${runDiag.gpsAddHiHtEnabled ? `ON(HI=${(runDiag.gpsAddHiHtHiM * unitScale).toFixed(4)}${linearUnit},HT=${(runDiag.gpsAddHiHtHtM * unitScale).toFixed(4)}${linearUnit})` : 'OFF'}, vRed=${runDiag.verticalReduction}, curvRef=${runDiag.applyCurvatureRefraction ? 'ON' : 'OFF'} (k=${runDiag.refractionCoefficient.toFixed(3)}), normalize=${runDiag.normalize ? 'ON' : 'OFF'}`,
     );
@@ -4260,6 +4352,20 @@ const App: React.FC<AppProps> = ({
 
       const loadedSettings = parsed.project.ui.settings as unknown as SettingsState;
       const loadedParseSettings = parsed.project.ui.parseSettings as unknown as ParseSettings;
+      const projectSchemaVersion = parsed.project.schemaVersion;
+      const profileForMode = loadedParseSettings.solveProfile ?? 'webnet';
+      const migrationFlag = parsed.project.ui.migration?.parseModeMigrated === true;
+      const defaultCompatibilityMode: ParseCompatibilityMode =
+        projectSchemaVersion === 1
+          ? 'legacy'
+          : loadedParseSettings.parseCompatibilityMode ??
+            (migrationFlag
+              ? 'strict'
+              : profileForMode === 'industry-parity'
+                ? 'strict'
+                : 'legacy');
+      const defaultMigratedFlag =
+        projectSchemaVersion === 1 ? false : (loadedParseSettings.parseModeMigrated ?? migrationFlag);
       const normalizedLoadedParseSettings: ParseSettings = {
         ...loadedParseSettings,
         ...(loadedParseSettings.observationMode
@@ -4273,6 +4379,11 @@ const App: React.FC<AppProps> = ({
         observationMode:
           loadedParseSettings.observationMode ??
           buildObservationModeFromGridFields(loadedParseSettings),
+        parseCompatibilityMode:
+          loadedParseSettings.parseCompatibilityMode ?? defaultCompatibilityMode,
+        parseModeMigrated: defaultMigratedFlag,
+        geoidSourceFormat: loadedParseSettings.geoidSourceFormat ?? 'builtin',
+        geoidSourcePath: loadedParseSettings.geoidSourcePath ?? '',
       };
       const loadedAdjustedPointsSettings = sanitizeAdjustedPointsExportSettings(
         parsed.project.ui.adjustedPointsExport,
@@ -4284,6 +4395,8 @@ const App: React.FC<AppProps> = ({
       setInput(parsed.project.input);
       setSettings(loadedSettings);
       setParseSettings(normalizedLoadedParseSettings);
+      setGeoidSourceData(null);
+      setGeoidSourceDataLabel('');
       setExportFormat(parsed.project.ui.exportFormat);
       setAdjustedPointsExportSettings(loadedAdjustedPointsSettings);
       setProjectInstruments(cloneInstrumentLibrary(parsed.project.project.projectInstruments));
@@ -4294,6 +4407,8 @@ const App: React.FC<AppProps> = ({
 
       setSettingsDraft(loadedSettings);
       setParseSettingsDraft(normalizedLoadedParseSettings);
+      setGeoidSourceDataDraft(null);
+      setGeoidSourceDataLabelDraft('');
       setProjectInstrumentsDraft(cloneInstrumentLibrary(parsed.project.project.projectInstruments));
       setSelectedInstrumentDraft(parsed.project.project.selectedInstrument);
       setLevelLoopCustomPresetsDraft(
@@ -4803,6 +4918,8 @@ const App: React.FC<AppProps> = ({
       instrumentLibrary: profileCtx.effectiveInstrumentLibrary,
       excludeIds: excludeSet,
       overrides: overrideValues,
+      geoidSourceData:
+        effectiveParse.geoidSourceFormat !== 'builtin' ? (geoidSourceData ?? undefined) : undefined,
       parseOptions: {
         units: settings.units,
         coordMode: effectiveParse.coordMode,
@@ -4848,6 +4965,8 @@ const App: React.FC<AppProps> = ({
         crsConvergenceAngleRad: effectiveParse.crsConvergenceAngleRad,
         geoidModelEnabled: effectiveParse.geoidModelEnabled,
         geoidModelId: effectiveParse.geoidModelId,
+        geoidSourceFormat: effectiveParse.geoidSourceFormat,
+        geoidSourcePath: effectiveParse.geoidSourcePath,
         geoidInterpolation: effectiveParse.geoidInterpolation,
         geoidHeightConversionEnabled: effectiveParse.geoidHeightConversionEnabled,
         geoidOutputHeightDatum: effectiveParse.geoidOutputHeightDatum,
@@ -4865,6 +4984,8 @@ const App: React.FC<AppProps> = ({
         tsCorrelationScope: effectiveParse.tsCorrelationScope,
         robustMode: effectiveParse.robustMode,
         robustK: effectiveParse.robustK,
+        parseCompatibilityMode: effectiveParse.parseCompatibilityMode,
+        parseModeMigrated: effectiveParse.parseModeMigrated,
         autoAdjustEnabled: effectiveParse.autoAdjustEnabled,
         autoAdjustMaxCycles: effectiveParse.autoAdjustMaxCycles,
         autoAdjustMaxRemovalsPerCycle: effectiveParse.autoAdjustMaxRemovalsPerCycle,
@@ -5292,6 +5413,8 @@ const App: React.FC<AppProps> = ({
   const openProjectOptions = () => {
     setSettingsDraft(settings);
     setParseSettingsDraft(parseSettings);
+    setGeoidSourceDataDraft(geoidSourceData);
+    setGeoidSourceDataLabelDraft(geoidSourceDataLabel);
     setCrsCatalogGroupFilter(resolveCatalogGroupFromCrsId(parseSettings.crsId));
     setShowCrsProjectionParams(false);
     setProjectInstrumentsDraft(cloneInstrumentLibrary(projectInstruments));
@@ -5305,6 +5428,8 @@ const App: React.FC<AppProps> = ({
   const applyProjectOptions = () => {
     setSettings(settingsDraft);
     setParseSettings(parseSettingsDraft);
+    setGeoidSourceData(geoidSourceDataDraft);
+    setGeoidSourceDataLabel(geoidSourceDataLabelDraft);
     setProjectInstruments(cloneInstrumentLibrary(projectInstrumentsDraft));
     setLevelLoopCustomPresets(levelLoopCustomPresetsDraft.map((preset) => ({ ...preset })));
     setAdjustedPointsExportSettings(
@@ -5337,6 +5462,10 @@ const App: React.FC<AppProps> = ({
     key: K,
     value: ParseSettings[K],
   ) => {
+    if (key === 'geoidSourceFormat' && value === 'builtin') {
+      setGeoidSourceDataDraft(null);
+      setGeoidSourceDataLabelDraft('');
+    }
     setParseSettingsDraft((prev) => {
       const next = { ...prev, [key]: value };
       if (key === 'observationMode') {
@@ -5358,8 +5487,56 @@ const App: React.FC<AppProps> = ({
       ) {
         next.observationMode = buildObservationModeFromGridFields(next);
       }
+      if (key === 'geoidSourceFormat' && value === 'builtin') {
+        next.geoidSourcePath = '';
+      }
       return next;
     });
+  };
+
+  const migrateDraftParseModeToStrict = () => {
+    setParseSettingsDraft((prev) => ({
+      ...prev,
+      parseCompatibilityMode: 'strict',
+      parseModeMigrated: true,
+    }));
+  };
+
+  const clearDraftGeoidSourceData = () => {
+    setGeoidSourceDataDraft(null);
+    setGeoidSourceDataLabelDraft('');
+  };
+
+  const handleGeoidSourceFilePick = () => {
+    geoidSourceFileInputRef.current?.click();
+  };
+
+  const handleGeoidSourceFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (!(reader.result instanceof ArrayBuffer)) return;
+      const bytes = new Uint8Array(reader.result);
+      const lowerName = file.name.toLowerCase();
+      const inferredFormat: GeoidSourceFormat =
+        lowerName.endsWith('.gtx')
+          ? 'gtx'
+          : lowerName.endsWith('.byn')
+            ? 'byn'
+            : parseSettingsDraft.geoidSourceFormat === 'builtin'
+              ? 'gtx'
+              : parseSettingsDraft.geoidSourceFormat;
+      setGeoidSourceDataDraft(bytes);
+      setGeoidSourceDataLabelDraft(`${file.name} (${bytes.byteLength.toLocaleString()} bytes)`);
+      setParseSettingsDraft((prev) => ({
+        ...prev,
+        geoidSourceFormat: inferredFormat,
+        geoidSourcePath: file.name,
+      }));
+    };
+    reader.readAsArrayBuffer(file);
+    e.target.value = '';
   };
 
   const handleDraftAdjustedPointsSetting = <K extends keyof AdjustedPointsExportSettings>(
@@ -5848,6 +6025,48 @@ const App: React.FC<AppProps> = ({
                           <option value="industry-parity">Industry Standard Parity</option>
                         </select>
                       </SettingsRow>
+                      <SettingsRow
+                        label="Parse Mode"
+                        tooltip={SETTINGS_TOOLTIPS.parseCompatibilityMode}
+                      >
+                        <select
+                          title={SETTINGS_TOOLTIPS.parseCompatibilityMode}
+                          value={parseSettingsDraft.parseCompatibilityMode}
+                          onChange={(e) =>
+                            handleDraftParseSetting(
+                              'parseCompatibilityMode',
+                              e.target.value as ParseCompatibilityMode,
+                            )
+                          }
+                          className={optionInputClass}
+                        >
+                          <option value="legacy">Legacy (compatibility)</option>
+                          <option value="strict">Strict (deterministic)</option>
+                        </select>
+                      </SettingsRow>
+                      <div className="rounded-md border border-slate-400/70 bg-slate-700/20 px-3 py-2 text-xs text-slate-200 space-y-2">
+                        <div>
+                          Migration status:{' '}
+                          {parseSettingsDraft.parseModeMigrated ? 'Migrated' : 'Legacy project'}
+                        </div>
+                        {!parseSettingsDraft.parseModeMigrated && (
+                          <button
+                            type="button"
+                            title={SETTINGS_TOOLTIPS.parseModeMigration}
+                            onClick={migrateDraftParseModeToStrict}
+                            className="rounded border border-emerald-400/80 bg-emerald-700/30 px-2 py-1 text-[11px] uppercase tracking-wide text-emerald-100 hover:bg-emerald-700/45"
+                          >
+                            Migrate To Strict
+                          </button>
+                        )}
+                        {parseSettingsDraft.solveProfile === 'industry-parity' &&
+                          parseSettingsDraft.parseCompatibilityMode === 'legacy' && (
+                            <div className="text-amber-200">
+                              Industry-parity profile is running in legacy parse mode. Strict mode
+                              is recommended for deterministic parser behavior.
+                            </div>
+                          )}
+                      </div>
                       <SettingsRow label="Coordinate Mode" tooltip={SETTINGS_TOOLTIPS.coordMode}>
                         <select
                           title={SETTINGS_TOOLTIPS.coordMode}
@@ -7909,19 +8128,115 @@ const App: React.FC<AppProps> = ({
                       label="Geoid/Grid Model ID"
                       tooltip={SETTINGS_TOOLTIPS.geoidModelId}
                     >
-                      <input
-                        title={SETTINGS_TOOLTIPS.geoidModelId}
-                        type="text"
-                        value={parseSettingsDraft.geoidModelId}
+                      <div className="flex flex-col gap-1">
+                        <input
+                          title={SETTINGS_TOOLTIPS.geoidModelId}
+                          type="text"
+                          list="builtin-geoid-model-options"
+                          value={parseSettingsDraft.geoidModelId}
+                          disabled={!parseSettingsDraft.geoidModelEnabled}
+                          onChange={(e) =>
+                            handleDraftParseSetting(
+                              'geoidModelId',
+                              (e.target.value || 'NGS-DEMO').toUpperCase(),
+                            )
+                          }
+                          className={`${optionInputClass} disabled:opacity-50 disabled:cursor-not-allowed`}
+                        />
+                        <datalist id="builtin-geoid-model-options">
+                          {BUILTIN_GEOID_MODEL_OPTIONS.map((row) => (
+                            <option key={row.id} value={row.id}>
+                              {row.label}
+                            </option>
+                          ))}
+                        </datalist>
+                        <span className="text-[11px] text-slate-300">
+                          Common presets include <strong>NAD83-CSRS-DEMO</strong> for Canada-first
+                          workflows.
+                        </span>
+                      </div>
+                    </SettingsRow>
+                    <SettingsRow
+                      label="Geoid Source Format"
+                      tooltip={SETTINGS_TOOLTIPS.geoidSourceFormat}
+                    >
+                      <select
+                        title={SETTINGS_TOOLTIPS.geoidSourceFormat}
+                        value={parseSettingsDraft.geoidSourceFormat}
                         disabled={!parseSettingsDraft.geoidModelEnabled}
                         onChange={(e) =>
                           handleDraftParseSetting(
-                            'geoidModelId',
-                            (e.target.value || 'NGS-DEMO').toUpperCase(),
+                            'geoidSourceFormat',
+                            e.target.value as GeoidSourceFormat,
                           )
                         }
                         className={`${optionInputClass} disabled:opacity-50 disabled:cursor-not-allowed`}
+                      >
+                        <option value="builtin">BUILTIN</option>
+                        <option value="gtx">GTX</option>
+                        <option value="byn">BYN</option>
+                      </select>
+                    </SettingsRow>
+                    <SettingsRow
+                      label="Geoid Source Path"
+                      tooltip={SETTINGS_TOOLTIPS.geoidSourcePath}
+                    >
+                      <input
+                        title={SETTINGS_TOOLTIPS.geoidSourcePath}
+                        type="text"
+                        value={parseSettingsDraft.geoidSourcePath}
+                        disabled={
+                          !parseSettingsDraft.geoidModelEnabled ||
+                          parseSettingsDraft.geoidSourceFormat === 'builtin'
+                        }
+                        onChange={(e) =>
+                          handleDraftParseSetting('geoidSourcePath', e.target.value)
+                        }
+                        placeholder="C:\\path\\model.gtx or /path/model.byn"
+                        className={`${optionInputClass} disabled:opacity-50 disabled:cursor-not-allowed`}
                       />
+                    </SettingsRow>
+                    <SettingsRow label="Geoid Source File" tooltip={SETTINGS_TOOLTIPS.geoidSourceFile}>
+                      <div className="flex flex-col gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <button
+                            type="button"
+                            title={SETTINGS_TOOLTIPS.geoidSourceFile}
+                            disabled={
+                              !parseSettingsDraft.geoidModelEnabled ||
+                              parseSettingsDraft.geoidSourceFormat === 'builtin'
+                            }
+                            onClick={handleGeoidSourceFilePick}
+                            className="rounded border border-slate-400/70 bg-slate-700/30 px-2 py-1 text-xs text-slate-100 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-700/45"
+                          >
+                            Load GTX/BYN File
+                          </button>
+                          <button
+                            type="button"
+                            disabled={
+                              !parseSettingsDraft.geoidModelEnabled ||
+                              parseSettingsDraft.geoidSourceFormat === 'builtin' ||
+                              geoidSourceDataDraft == null
+                            }
+                            onClick={clearDraftGeoidSourceData}
+                            className="rounded border border-slate-500/70 bg-slate-700/20 px-2 py-1 text-xs text-slate-200 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-700/35"
+                          >
+                            Clear File Bytes
+                          </button>
+                        </div>
+                        <input
+                          ref={geoidSourceFileInputRef}
+                          type="file"
+                          accept=".gtx,.byn,application/octet-stream"
+                          className="hidden"
+                          onChange={handleGeoidSourceFileChange}
+                        />
+                        <span className="text-[11px] text-slate-300">
+                          {geoidSourceDataDraft
+                            ? `Loaded: ${geoidSourceDataLabelDraft}`
+                            : 'No browser-loaded geoid file bytes.'}
+                        </span>
+                      </div>
                     </SettingsRow>
                     <SettingsRow
                       label="Geoid Interpolation"

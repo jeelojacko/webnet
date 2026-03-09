@@ -99,6 +99,51 @@ describe('parseInput', () => {
     expect(parsed.logs.some((l) => l.includes('Auto-created station 6'))).toBe(true);
   });
 
+  it('keeps D-record token roles stable so numeric measurements do not become station ids', () => {
+    const parsed = parseInput(
+      [
+        'I TS1 "Demo" 0.001 1 1.0 1.0 0 0',
+        'C 1000 0 0 0 ! ! !',
+        'C 2000 10 0 0',
+        'D TS1 SET1 1000 2000 123.456 0.01',
+      ].join('\n'),
+    );
+    const dist = parsed.observations.find((obs) => obs.type === 'dist') as
+      | DistanceObservation
+      | undefined;
+    expect(dist).toBeDefined();
+    expect(dist?.from).toBe('1000');
+    expect(dist?.to).toBe('2000');
+    expect(parsed.stations['123.456']).toBeUndefined();
+    expect(parsed.parseState.ambiguousCount).toBe(0);
+  });
+
+  it('applies strict-vs-legacy numeric-token station handling with coded diagnostics', () => {
+    const source = [
+      'I TS1 "Demo" 0.001 1 1.0 1.0 0 0',
+      'C A 0 0 0 ! ! !',
+      'C B 10 0 0',
+      'D TS1 100.500 B 12.300 0.01',
+    ].join('\n');
+    const legacy = parseInput(source, {}, { parseCompatibilityMode: 'legacy' });
+    const strict = parseInput(source, {}, { parseCompatibilityMode: 'strict' });
+    expect(legacy.observations.filter((obs) => obs.type === 'dist')).toHaveLength(1);
+    expect(legacy.parseState.strictRejectCount).toBe(0);
+    expect(
+      legacy.parseState.parseCompatibilityDiagnostics?.some(
+        (diag) => diag.code === 'NUMERIC_STATION_TOKEN_REJECTED',
+      ),
+    ).toBe(true);
+    expect(strict.observations.filter((obs) => obs.type === 'dist')).toHaveLength(0);
+    expect(strict.parseState.strictRejectCount).toBeGreaterThan(0);
+    expect(
+      strict.parseState.parseCompatibilityDiagnostics?.some(
+        (diag) => diag.code === 'NUMERIC_STATION_TOKEN_REJECTED' && diag.severity === 'error',
+      ),
+    ).toBe(true);
+    expect(strict.parseState.rewriteSuggestionCount).toBeGreaterThan(0);
+  });
+
   it('parses 2D M records with angle/dist sigmas and no vertical observation', () => {
     const parsed = parseInput(
       readFileSync('tests/fixtures/triangulation_trilateration_2d.dat', 'utf-8'),

@@ -1,6 +1,12 @@
 # TODO - WebNet
 
 - [x] Add TypeScript tooling (tsconfig, TSX entry) and migrate LSA engine/UI to TS modules
+- [x] Industry-parity Phase 1 foundation: add dual parser compatibility modes (`legacy` fallback-aware vs `strict` deterministic), coded compatibility diagnostics/counters, and numeric-token station misparse guards for D/A/G/L parsing paths
+- [x] Industry-parity migration plumbing: bump project file schema to v2 with parser-mode migration metadata while preserving v1 backward loading in legacy mode
+- [x] CLI parity controls: add `--parse-mode` and geoid-source CLI options (`--geoid-model-id`, `--geoid-interpolation`, `--geoid-source-format`, `--geoid-source-path`) with parse-state propagation and regression coverage
+- [x] Geodetic expansion follow-up: complete external GTX/BYN loader support (binary parser implementation, engine/CLI source-byte wiring, deterministic built-in fallback diagnostics, and GTX/BYN regression fixtures/tests)
+- [x] Browser geoid-source completion: add Project Options geoid file-byte loading for GTX/BYN so browser runs consume external geoid data directly (not path-only metadata), with NAD83(CSRS) built-in preset selection support
+- [x] Computational parity harness expansion: roll out tiered tolerance gates (summary/coordinate/residual) across multi-fixture reference projects
 - [x] Add Canada-first coordinate-system Phase 1 support (Local/Grid mode, NAD83(CSRS) UTM catalog, `.SCALE` + `.MEASURED`/`.GRID` directives, mode-aware reductions, GPS/CRS UI controls, report/listing diagnostics, CLI flags, and parser/engine/UI regression coverage)
 - [x] Start Canada-first coordinate-system Phase 2 catalog expansion (NAD83(CSRS) MTM zones, priority provincial CRS entries, NB Stereographic Double Projection, and EPSG alias normalization in parser/CLI)
 - [x] Complete Canada-first coordinate-system accuracy pass (CRS metadata expansion with proj params/area bounds/datum-op support, projection-formula factor engine with diagnostic fallback path, solver coord-system diagnostics + area-of-use warnings, standardized `observationMode` parse state, CRS search UI + enriched CRS detail panel, and regression coverage for parser/engine/catalog/UI)

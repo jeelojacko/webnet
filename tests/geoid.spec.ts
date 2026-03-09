@@ -1,12 +1,20 @@
+import path from 'node:path';
+import { readFileSync } from 'node:fs';
+
 import { describe, expect, it } from 'vitest';
 import {
   geoidGridMetadataSummary,
   interpolateGeoidUndulation,
   loadBuiltinGeoidGridModel,
+  loadGeoidGridModel,
+  normalizeGeoidModelId,
   parseGeoidInterpolationToken,
 } from '../src/engine/geoid';
 
 describe('geoid grid pipeline', () => {
+  const FIXTURE_GTX = path.resolve('tests', 'fixtures', 'mock_geoid.gtx');
+  const FIXTURE_BYN = path.resolve('tests', 'fixtures', 'mock_geoid.byn');
+
   it('loads builtin models with cache behavior and metadata', () => {
     const first = loadBuiltinGeoidGridModel('NGS-DEMO');
     expect(first.model).toBeDefined();
@@ -57,5 +65,59 @@ describe('geoid grid pipeline', () => {
     expect(parseGeoidInterpolationToken('bilinear')).toBe('bilinear');
     expect(parseGeoidInterpolationToken('nearest')).toBe('nearest');
     expect(parseGeoidInterpolationToken('unknown')).toBeNull();
+  });
+
+  it('loads external GTX models from source bytes with deterministic metadata', () => {
+    const sourceData = readFileSync(FIXTURE_GTX);
+    const loaded = loadGeoidGridModel({
+      modelId: 'mock-gtx',
+      sourceFormat: 'gtx',
+      sourceData,
+    });
+    expect(loaded.model).toBeDefined();
+    expect(loaded.resolvedFormat).toBe('gtx');
+    expect(loaded.fallbackUsed).toBe(false);
+    expect(loaded.warning).toBeUndefined();
+    const midpoint = interpolateGeoidUndulation(loaded.model!, 40.5, -104.5, 'bilinear');
+    expect(midpoint).toBeCloseTo(-28.5, 8);
+    expect(loaded.model?.source).toContain('external:GTX');
+  });
+
+  it('loads external BYN models from source bytes with deterministic metadata', () => {
+    const sourceData = readFileSync(FIXTURE_BYN);
+    const loaded = loadGeoidGridModel({
+      modelId: 'mock-byn',
+      sourceFormat: 'byn',
+      sourceData,
+    });
+    expect(loaded.model).toBeDefined();
+    expect(loaded.resolvedFormat).toBe('byn');
+    expect(loaded.fallbackUsed).toBe(false);
+    expect(loaded.warning).toBeUndefined();
+    const midpoint = interpolateGeoidUndulation(loaded.model!, 40.5, -104.5, 'bilinear');
+    expect(midpoint).toBeCloseTo(-28.5, 8);
+    expect(loaded.model?.source).toContain('external:BYN');
+  });
+
+  it('falls back to built-in model when external geoid source cannot be parsed', () => {
+    const loaded = loadGeoidGridModel({
+      modelId: 'NGS-DEMO',
+      sourceFormat: 'gtx',
+      sourceData: new Uint8Array([1, 2, 3, 4]),
+    });
+    expect(loaded.model).toBeDefined();
+    expect(loaded.model?.id).toBe('NGS-DEMO');
+    expect(loaded.resolvedFormat).toBe('builtin');
+    expect(loaded.fallbackUsed).toBe(true);
+    expect(loaded.warning).toContain('failed to parse GTX geoid/grid source');
+  });
+
+  it('supports NAD83(CSRS) built-in model aliases for Canada-first workflows', () => {
+    expect(normalizeGeoidModelId('CGG2013A')).toBe('NAD83-CSRS-DEMO');
+    const loaded = loadBuiltinGeoidGridModel('NAD83-CSRS');
+    expect(loaded.model).toBeDefined();
+    expect(loaded.model?.id).toBe('NAD83-CSRS-DEMO');
+    const sample = interpolateGeoidUndulation(loaded.model!, 52, -96, 'bilinear');
+    expect(sample).not.toBeNull();
   });
 });

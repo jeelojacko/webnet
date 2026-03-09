@@ -2,7 +2,7 @@ import { RAD_TO_DEG, DEG_TO_RAD } from './angles';
 import {
   geoidGridMetadataSummary,
   interpolateGeoidUndulation,
-  loadBuiltinGeoidGridModel,
+  loadGeoidGridModel,
 } from './geoid';
 import { computeElevationFactor, computeGridFactors, inverseENToGeodetic } from './geodesy';
 import { getCrsDefinition, isGeodeticInsideAreaOfUse } from './crsCatalog';
@@ -219,6 +219,7 @@ interface EngineOptions {
   overrides?: Record<number, ObservationOverride>;
   options?: Partial<ParseOptions>;
   parseOptions?: Partial<ParseOptions>;
+  geoidSourceData?: ArrayBuffer | Uint8Array;
 }
 
 interface CoordinateConstraintEquation {
@@ -298,6 +299,9 @@ export class LSAEngine {
   private crsConvergenceAngleRad = 0;
   private geoidModelEnabled = false;
   private geoidModelId = 'NGS-DEMO';
+  private geoidSourceFormat: ParseOptions['geoidSourceFormat'] = 'builtin';
+  private geoidSourcePath = '';
+  private geoidSourceData?: Uint8Array;
   private geoidInterpolation: ParseOptions['geoidInterpolation'] = 'bilinear';
   private geoidHeightConversionEnabled = false;
   private geoidOutputHeightDatum: ParseOptions['geoidOutputHeightDatum'] = 'orthometric';
@@ -1998,6 +2002,7 @@ export class LSAEngine {
     overrides,
     options,
     parseOptions,
+    geoidSourceData,
   }: EngineOptions) {
     this.input = input;
     this.maxIterations = maxIterations;
@@ -2009,6 +2014,12 @@ export class LSAEngine {
     this.excludeIds = excludeIds;
     this.overrides = overrides;
     this.parseOptions = parseOptions ?? options;
+    this.geoidSourceData =
+      geoidSourceData instanceof Uint8Array
+        ? geoidSourceData
+        : geoidSourceData instanceof ArrayBuffer
+          ? new Uint8Array(geoidSourceData)
+          : undefined;
   }
 
   private log(msg: string) {
@@ -3588,6 +3599,18 @@ export class LSAEngine {
     this.geoidModelId = (parsed.parseState?.geoidModelId ??
       this.parseOptions?.geoidModelId ??
       'NGS-DEMO') as string;
+    this.geoidSourceFormat =
+      parsed.parseState?.geoidSourceFormat ?? this.parseOptions?.geoidSourceFormat ?? 'builtin';
+    if (
+      this.geoidSourceFormat !== 'builtin' &&
+      this.geoidSourceFormat !== 'gtx' &&
+      this.geoidSourceFormat !== 'byn'
+    ) {
+      this.geoidSourceFormat = 'builtin';
+    }
+    this.geoidSourcePath = String(
+      parsed.parseState?.geoidSourcePath ?? this.parseOptions?.geoidSourcePath ?? '',
+    ).trim();
     this.geoidInterpolation =
       parsed.parseState?.geoidInterpolation ?? this.parseOptions?.geoidInterpolation ?? 'bilinear';
     this.geoidHeightConversionEnabled =
@@ -3656,6 +3679,10 @@ export class LSAEngine {
       this.parseState.scaleOverrideActive = this.scaleOverrideActive;
       this.parseState.commonElevation = this.commonElevation;
       this.parseState.averageGeoidHeight = this.averageGeoidHeight;
+      this.parseState.geoidSourceFormat = this.geoidSourceFormat;
+      this.parseState.geoidSourcePath = this.geoidSourcePath;
+      this.parseState.geoidSourceResolvedFormat = this.geoidSourceFormat;
+      this.parseState.geoidSourceFallbackUsed = false;
       this.parseState.reductionContext = this.parseState.reductionContext ?? {
         inputSpaceDefault:
           (this.parseState.gridDistanceMode ?? 'measured') === 'measured' ? 'measured' : 'grid',
@@ -3749,7 +3776,12 @@ export class LSAEngine {
     let geoidModel: GeoidGridModel | null = null;
     this.activeGeoidModel = null;
     if (this.geoidModelEnabled) {
-      const loaded = loadBuiltinGeoidGridModel(this.geoidModelId);
+      const loaded = loadGeoidGridModel({
+        modelId: this.geoidModelId,
+        sourceFormat: this.geoidSourceFormat ?? 'builtin',
+        sourcePath: this.geoidSourcePath,
+        sourceData: this.geoidSourceData,
+      });
       if (loaded.model) {
         geoidModel = loaded.model;
         this.activeGeoidModel = geoidModel;
@@ -3759,9 +3791,12 @@ export class LSAEngine {
           this.parseState.geoidModelMetadata = metadata;
           this.parseState.geoidModelId = loaded.model.id;
           this.parseState.geoidInterpolation = this.geoidInterpolation ?? 'bilinear';
+          this.parseState.geoidSourceResolvedFormat = loaded.resolvedFormat;
+          this.parseState.geoidSourceFallbackUsed = loaded.fallbackUsed;
         }
+        if (loaded.warning) this.log(`Warning: ${loaded.warning}`);
         this.log(
-          `Geoid/grid model loaded: ${metadata} (interp=${(this.geoidInterpolation ?? 'bilinear').toUpperCase()}, cache=${loaded.fromCache ? 'HIT' : 'MISS'})`,
+          `Geoid/grid model loaded: ${metadata} (interp=${(this.geoidInterpolation ?? 'bilinear').toUpperCase()}, format=${loaded.resolvedFormat.toUpperCase()}, fallback=${loaded.fallbackUsed ? 'YES' : 'NO'}, cache=${loaded.fromCache ? 'HIT' : 'MISS'})`,
         );
         const originLat = this.parseState?.originLatDeg;
         const originLon = this.parseState?.originLonDeg;
@@ -3792,6 +3827,8 @@ export class LSAEngine {
         if (this.parseState) {
           this.parseState.geoidModelLoaded = false;
           this.parseState.geoidModelMetadata = loaded.warning ?? '';
+          this.parseState.geoidSourceResolvedFormat = loaded.resolvedFormat;
+          this.parseState.geoidSourceFallbackUsed = loaded.fallbackUsed;
         }
         this.log(`Warning: ${loaded.warning ?? 'failed to load geoid/grid model.'}`);
       }

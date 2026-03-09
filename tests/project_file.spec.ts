@@ -19,6 +19,8 @@ const defaults = {
     coordMode: '3D',
     order: 'EN',
     angleUnits: 'dms',
+    parseCompatibilityMode: 'strict',
+    parseModeMigrated: true,
   },
   exportFormat: 'webnet' as const,
   adjustedPointsExport: DEFAULT_ADJUSTED_POINTS_EXPORT_SETTINGS,
@@ -82,6 +84,7 @@ describe('project file serialization/parsing', () => {
     const parsed = parseProjectFile(text, defaults);
     expect(parsed.ok).toBe(true);
     if (!parsed.ok) return;
+    expect(parsed.project.schemaVersion).toBe(2);
     expect(parsed.project.input).toContain('C A');
     expect(parsed.project.ui.exportFormat).toBe('industry-style');
     expect(parsed.project.ui.settings.convergenceLimit).toBe(0.1);
@@ -133,9 +136,49 @@ describe('project file serialization/parsing', () => {
     );
     expect(parsed.ok).toBe(true);
     if (!parsed.ok) return;
+    expect(parsed.project.schemaVersion).toBe(1);
     expect(parsed.project.ui.settings.maxIterations).toBe(defaults.settings.maxIterations);
     expect(parsed.project.ui.settings.convergenceLimit).toBe(defaults.settings.convergenceLimit);
+    expect(parsed.project.ui.parseSettings.parseCompatibilityMode).toBe('legacy');
+    expect(parsed.project.ui.parseSettings.parseModeMigrated).toBe(false);
     expect(parsed.project.ui.adjustedPointsExport.columns.length).toBe(6);
     expect(parsed.project.project.selectedInstrument).toBe('S9');
+  });
+
+  it('honors schema v2 parser migration metadata and strict mode', () => {
+    const parsed = parseProjectFile(
+      JSON.stringify({
+        kind: 'webnet-project',
+        schemaVersion: 2,
+        input: '.3D',
+        ui: {
+          settings: {
+            maxIterations: 7,
+          },
+          parseSettings: {
+            solveProfile: 'industry-parity',
+            parseCompatibilityMode: 'strict',
+            parseModeMigrated: true,
+          },
+          migration: {
+            parseModeMigrated: true,
+            migratedAt: '2026-03-09T12:00:00.000Z',
+          },
+        },
+        project: {
+          projectInstruments: defaults.projectInstruments,
+          selectedInstrument: 'S9',
+          levelLoopCustomPresets: [],
+        },
+      }),
+      defaults,
+    );
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+    expect(parsed.project.schemaVersion).toBe(2);
+    expect(parsed.project.ui.parseSettings.parseCompatibilityMode).toBe('strict');
+    expect(parsed.project.ui.parseSettings.parseModeMigrated).toBe(true);
+    expect(parsed.project.ui.migration?.parseModeMigrated).toBe(true);
+    expect(parsed.project.ui.migration?.migratedAt).toBe('2026-03-09T12:00:00.000Z');
   });
 });

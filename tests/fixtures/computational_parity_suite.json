@@ -1,0 +1,180 @@
+{
+  "fixtures": [
+    {
+      "id": "cli_smoke_webnet",
+      "inputPath": "tests/fixtures/cli_smoke.dat",
+      "profile": "webnet",
+      "summary": {
+        "converged": true,
+        "iterations": 3,
+        "dof": 1,
+        "seuw": 0.0547627475,
+        "seuwTolerance": 0.000001
+      },
+      "coordinates": {
+        "P": {
+          "x": 30.0000621659,
+          "y": 39.9999366419,
+          "tol": 0.001
+        }
+      },
+      "residual": {
+        "maxStdRes": 1.0,
+        "tol": 0.001
+      }
+    },
+    {
+      "id": "industry_phase2_reference",
+      "inputPath": "tests/fixtures/industry_parity_phase2.dat",
+      "profile": "industry-parity",
+      "summary": {
+        "converged": true,
+        "iterations": 5,
+        "dof": 165,
+        "seuw": 0.9727553194,
+        "seuwTolerance": 0.001
+      },
+      "coordinates": {
+        "1000": {
+          "x": 0.9954059058,
+          "y": 2.061903377,
+          "tol": 0.005
+        },
+        "1": {
+          "x": 2.3561398008,
+          "y": -2.4644207825,
+          "tol": 0.005
+        },
+        "9": {
+          "x": 101.4484689295,
+          "y": -1.4038842505,
+          "tol": 0.005
+        }
+      },
+      "residual": {
+        "maxStdRes": 3.457228377,
+        "tol": 0.05
+      }
+    },
+    {
+      "id": "alias_phase4_mixed",
+      "inputPath": "tests/fixtures/alias_phase4_mixed.dat",
+      "profile": "webnet",
+      "summary": {
+        "converged": true,
+        "iterations": 6,
+        "dof": 2,
+        "seuw": 6294.1765293,
+        "seuwTolerance": 5
+      },
+      "coordinates": {
+        "PT_100": {
+          "x": 61.437973374,
+          "y": -29.7308356996,
+          "tol": 0.1
+        }
+      },
+      "residual": {
+        "maxStdRes": 1.4309171468,
+        "tol": 0.05
+      }
+    },
+    {
+      "id": "auto_sideshot_phase4",
+      "inputPath": "tests/fixtures/auto_sideshot_phase4.dat",
+      "profile": "webnet",
+      "summary": {
+        "converged": true,
+        "iterations": 9,
+        "dof": 2,
+        "seuw": 111132547.2268732,
+        "seuwTolerance": 5000
+      },
+      "coordinates": {
+        "P1": {
+          "x": 50.0025101969,
+          "y": 49.9976620518,
+          "tol": 0.05
+        },
+        "P2": {
+          "x": 40.0000000000,
+          "y": 69.2820323028,
+          "tol": 0.05
+        }
+      },
+      "residual": {
+        "maxStdRes": 0.008998264,
+        "tol": 0.01
+      }
+    },
+    {
+      "id": "effective_distance_phase3",
+      "inputPath": "tests/fixtures/effective_distance_phase3.dat",
+      "profile": "webnet",
+      "summary": {
+        "converged": true,
+        "iterations": 2,
+        "dof": 2,
+        "seuw": 0.0125717894,
+        "seuwTolerance": 0.000001
+      },
+      "coordinates": {
+        "P": {
+          "x": 100.0000204299,
+          "y": -0.0000006002,
+          "tol": 0.001
+        }
+      },
+      "residual": {
+        "maxStdRes": 1.4142135621,
+        "tol": 0.000001
+      }
+    },
+    {
+      "id": "gps_network_sideshot_phase3",
+      "inputPath": "tests/fixtures/gps_network_sideshot_phase3.dat",
+      "profile": "webnet",
+      "summary": {
+        "converged": true,
+        "iterations": 2,
+        "dof": 1,
+        "seuw": 0.0032568013,
+        "seuwTolerance": 0.000001
+      },
+      "coordinates": {
+        "NET": {
+          "x": 1009.9999762157,
+          "y": 2004.9999732427,
+          "tol": 0.02
+        }
+      },
+      "residual": {
+        "maxStdRes": 1.0000000008,
+        "tol": 0.01
+      }
+    },
+    {
+      "id": "gps_offset_phase3",
+      "inputPath": "tests/fixtures/gps_offset_phase3.dat",
+      "profile": "webnet",
+      "summary": {
+        "converged": true,
+        "iterations": 2,
+        "dof": 0,
+        "seuw": 0,
+        "seuwTolerance": 0
+      },
+      "coordinates": {
+        "B": {
+          "x": 12,
+          "y": 0.0000000000,
+          "tol": 0.000001
+        }
+      },
+      "residual": {
+        "maxStdRes": 0,
+        "tol": 0
+      }
+    }
+  ]
+}

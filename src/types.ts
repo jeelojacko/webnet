@@ -366,6 +366,7 @@ export type DirectionSetMode = 'reduced' | 'raw';
 export type ClusterLinkageMode = 'single' | 'complete';
 export type ClusterPassLabel = 'single' | 'pass1' | 'pass2';
 export type DescriptionReconcileMode = 'first' | 'append';
+export type ParseCompatibilityMode = 'legacy' | 'strict';
 export type CrsProjectionModel = 'legacy-equirectangular' | 'local-enu';
 export type CoordSystemMode = 'local' | 'grid';
 export type LocalDatumScheme = 'average-scale' | 'common-elevation';
@@ -448,8 +449,27 @@ export interface DirectiveNoEffectWarning {
   directive: string;
   reason: 'noSubsequentObservations' | 'noSubsequentObsRecords';
 }
+export type ParseCompatibilityDiagnosticCode =
+  | 'ROLE_AMBIGUITY'
+  | 'TOKEN_ROLE_COLLISION'
+  | 'OVERLOADED_STATION_FORM'
+  | 'SIGMA_POSITION_AMBIGUITY'
+  | 'MIXED_LEGACY_SYNTAX'
+  | 'STRICT_REJECTED'
+  | 'NUMERIC_STATION_TOKEN_REJECTED';
+export interface ParseCompatibilityDiagnostic {
+  code: ParseCompatibilityDiagnosticCode;
+  line: number;
+  recordType?: string;
+  mode: ParseCompatibilityMode;
+  severity: 'warning' | 'error';
+  message: string;
+  rewriteSuggestion?: string;
+  fallbackApplied?: boolean;
+}
 export type GeoidInterpolationMethod = 'bilinear' | 'nearest';
 export type GeoidHeightDatum = 'orthometric' | 'ellipsoid';
+export type GeoidSourceFormat = 'builtin' | 'gtx' | 'byn';
 export type GpsVectorMode = 'network' | 'sideshot';
 export type ProjectExportFormat = 'webnet' | 'industry-style' | 'landxml';
 export type AdjustedPointsColumnId = 'P' | 'N' | 'E' | 'Z' | 'D' | 'LAT' | 'LON' | 'EL';
@@ -489,6 +509,28 @@ export interface WebNetProjectFileV1 {
     parseSettings: Record<string, unknown>;
     exportFormat: ProjectExportFormat;
     adjustedPointsExport: AdjustedPointsExportSettings;
+  };
+  project: {
+    projectInstruments: InstrumentLibrary;
+    selectedInstrument: string;
+    levelLoopCustomPresets: CustomLevelLoopTolerancePreset[];
+  };
+}
+
+export interface WebNetProjectFileV2 {
+  kind: 'webnet-project';
+  schemaVersion: 2;
+  savedAt: string;
+  input: string;
+  ui: {
+    settings: Record<string, unknown>;
+    parseSettings: Record<string, unknown>;
+    exportFormat: ProjectExportFormat;
+    adjustedPointsExport: AdjustedPointsExportSettings;
+    migration?: {
+      parseModeMigrated?: boolean;
+      migratedAt?: string;
+    };
   };
   project: {
     projectInstruments: InstrumentLibrary;
@@ -688,6 +730,13 @@ export interface GpsTopoCoordinateShot {
 }
 
 export interface ParseOptions {
+  parseCompatibilityMode?: ParseCompatibilityMode;
+  parseCompatibilityDiagnostics?: ParseCompatibilityDiagnostic[];
+  ambiguousCount?: number;
+  legacyFallbackCount?: number;
+  strictRejectCount?: number;
+  rewriteSuggestionCount?: number;
+  parseModeMigrated?: boolean;
   units: UnitsMode;
   coordMode: CoordMode;
   coordSystemMode?: CoordSystemMode;
@@ -739,6 +788,10 @@ export interface ParseOptions {
   crsConvergenceAngleRad?: number;
   geoidModelEnabled?: boolean;
   geoidModelId?: string;
+  geoidSourceFormat?: GeoidSourceFormat;
+  geoidSourcePath?: string;
+  geoidSourceResolvedFormat?: GeoidSourceFormat;
+  geoidSourceFallbackUsed?: boolean;
   geoidInterpolation?: GeoidInterpolationMethod;
   geoidHeightConversionEnabled?: boolean;
   geoidOutputHeightDatum?: GeoidHeightDatum;

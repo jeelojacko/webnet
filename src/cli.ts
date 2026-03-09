@@ -39,6 +39,7 @@ Options:
   --out <path>                  Write output payload to file instead of stdout
   --units <m|ft>
   --coord-mode <2D|3D>
+  --parse-mode <legacy|strict>
   --coord-system-mode <local|grid>
   --crs-id <id>
   --local-datum-scheme <average-scale|common-elevation>
@@ -49,6 +50,10 @@ Options:
   --grid-distance-mode <measured|grid|ellipsoidal>
   --grid-angle-mode <measured|grid>
   --grid-direction-mode <measured|grid>
+  --geoid-model-id <id>
+  --geoid-interpolation <bilinear|nearest>
+  --geoid-source-format <builtin|gtx|byn>
+  --geoid-source-path <path>
   --gnss-vector-frame <gridNEU|enuLocal|ecefDelta|llhBaseline|unknown>
   --gnss-frame-confirm <on|off>
   --preanalysis <on|off>
@@ -66,6 +71,24 @@ const parseGnssVectorFrameArg = (value: string): ParseOptions['gnssVectorFrameDe
   if (token === 'ecefdelta' || token === 'ecef') return 'ecefDelta';
   if (token === 'llhbaseline' || token === 'llh') return 'llhBaseline';
   if (token === 'unknown') return 'unknown';
+  return undefined;
+};
+
+const parseParseModeArg = (value: string): ParseOptions['parseCompatibilityMode'] => {
+  const token = value.trim().toLowerCase();
+  if (token === 'legacy' || token === 'strict') return token;
+  return undefined;
+};
+
+const parseGeoidSourceFormatArg = (value: string): ParseOptions['geoidSourceFormat'] => {
+  const token = value.trim().toLowerCase();
+  if (token === 'builtin' || token === 'gtx' || token === 'byn') return token;
+  return undefined;
+};
+
+const parseGeoidInterpolationArg = (value: string): ParseOptions['geoidInterpolation'] => {
+  const token = value.trim().toLowerCase();
+  if (token === 'bilinear' || token === 'nearest') return token;
   return undefined;
 };
 
@@ -192,6 +215,16 @@ const parseArgs = (argv: string[]): CliConfig => {
       i += 1;
       continue;
     }
+    if (arg === '--parse-mode') {
+      const value = parseParseModeArg(nextValue(i, arg));
+      if (!value) {
+        throw new Error(`Invalid --parse-mode value "${argv[i + 1]}"`);
+      }
+      config.parseOptions.parseCompatibilityMode = value;
+      config.parseOptions.parseModeMigrated = value === 'strict';
+      i += 1;
+      continue;
+    }
     if (arg === '--coord-system-mode') {
       const value = nextValue(i, arg).toLowerCase();
       if (value !== 'local' && value !== 'grid') {
@@ -280,6 +313,46 @@ const parseArgs = (argv: string[]): CliConfig => {
       i += 1;
       continue;
     }
+    if (arg === '--geoid-model-id') {
+      const value = nextValue(i, arg).trim();
+      if (!value) {
+        throw new Error('Invalid --geoid-model-id value');
+      }
+      config.parseOptions.geoidModelId = value.toUpperCase();
+      config.parseOptions.geoidModelEnabled = true;
+      i += 1;
+      continue;
+    }
+    if (arg === '--geoid-interpolation') {
+      const value = parseGeoidInterpolationArg(nextValue(i, arg));
+      if (!value) {
+        throw new Error(`Invalid --geoid-interpolation value "${argv[i + 1]}"`);
+      }
+      config.parseOptions.geoidInterpolation = value;
+      config.parseOptions.geoidModelEnabled = true;
+      i += 1;
+      continue;
+    }
+    if (arg === '--geoid-source-format') {
+      const value = parseGeoidSourceFormatArg(nextValue(i, arg));
+      if (!value) {
+        throw new Error(`Invalid --geoid-source-format value "${argv[i + 1]}"`);
+      }
+      config.parseOptions.geoidSourceFormat = value;
+      config.parseOptions.geoidModelEnabled = true;
+      i += 1;
+      continue;
+    }
+    if (arg === '--geoid-source-path') {
+      const value = nextValue(i, arg).trim();
+      if (!value) {
+        throw new Error('Invalid --geoid-source-path value');
+      }
+      config.parseOptions.geoidSourcePath = value;
+      config.parseOptions.geoidModelEnabled = true;
+      i += 1;
+      continue;
+    }
     if (arg === '--gnss-vector-frame') {
       const value = parseGnssVectorFrameArg(nextValue(i, arg));
       if (!value) {
@@ -311,6 +384,13 @@ const parseArgs = (argv: string[]): CliConfig => {
     config.parseOptions.tsCorrelationEnabled = false;
     config.parseOptions.tsCorrelationRho = 0;
   }
+  if (!config.parseOptions.parseCompatibilityMode) {
+    config.parseOptions.parseCompatibilityMode =
+      config.profile === 'industry-parity' ? 'strict' : 'legacy';
+  }
+  if (typeof config.parseOptions.parseModeMigrated !== 'boolean') {
+    config.parseOptions.parseModeMigrated = config.parseOptions.parseCompatibilityMode === 'strict';
+  }
 
   return config;
 };
@@ -334,11 +414,29 @@ const run = (): number => {
     process.stderr.write(`Failed to read input file "${inputPath}": ${message}\n`);
     return EXIT_USAGE_ERROR;
   }
+  let geoidSourceData: Uint8Array | undefined;
+  if (
+    cfg.parseOptions.geoidSourceFormat &&
+    cfg.parseOptions.geoidSourceFormat !== 'builtin' &&
+    typeof cfg.parseOptions.geoidSourcePath === 'string' &&
+    cfg.parseOptions.geoidSourcePath.trim().length > 0
+  ) {
+    const geoidPath = path.resolve(process.cwd(), cfg.parseOptions.geoidSourcePath.trim());
+    try {
+      geoidSourceData = readFileSync(geoidPath);
+      cfg.parseOptions.geoidSourcePath = geoidPath;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      process.stderr.write(`Failed to read geoid source file "${geoidPath}": ${message}\n`);
+      return EXIT_USAGE_ERROR;
+    }
+  }
 
   const engine = new LSAEngine({
     input: inputText,
     maxIterations: cfg.maxIterations,
     parseOptions: cfg.parseOptions,
+    geoidSourceData,
   });
   const result = engine.solve();
   const parseState: Partial<ParseOptions> = result.parseState ?? {};

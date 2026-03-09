@@ -10,6 +10,7 @@ const TSX_CLI = path.resolve(ROOT, 'node_modules', 'tsx', 'dist', 'cli.mjs');
 const WEBNET_CLI = path.resolve(ROOT, 'src', 'cli.ts');
 const STABLE_INPUT = path.resolve(ROOT, 'tests', 'fixtures', 'cli_smoke.dat');
 const PREANALYSIS_INPUT = path.resolve(ROOT, 'tests', 'fixtures', 'preanalysis_cli.dat');
+const GEOID_GTX_INPUT = path.resolve(ROOT, 'tests', 'fixtures', 'mock_geoid.gtx');
 
 const runCli = (args: string[]) =>
   spawnSync(process.execPath, [TSX_CLI, WEBNET_CLI, ...args], {
@@ -151,5 +152,35 @@ describe('CLI phase 2 output modes', () => {
     const payload = JSON.parse(res.stdout);
     expect(payload.parseState?.coordSystemMode).toBe('grid');
     expect(payload.parseState?.crsId).toBe('CA_NAD83_CSRS_NB_STEREO_DOUBLE');
+  });
+
+  it('supports parse mode and geoid source CLI options', () => {
+    const res = runCli([
+      '--input',
+      STABLE_INPUT,
+      '--output',
+      'json',
+      '--parse-mode',
+      'strict',
+      '--geoid-model-id',
+      'NGS-DEMO',
+      '--geoid-interpolation',
+      'nearest',
+      '--geoid-source-format',
+      'gtx',
+      '--geoid-source-path',
+      GEOID_GTX_INPUT,
+    ]);
+    expect(res.status).toBe(0);
+    const payload = JSON.parse(res.stdout);
+    expect(payload.parseState?.parseCompatibilityMode).toBe('strict');
+    expect(payload.parseState?.parseModeMigrated).toBe(true);
+    expect(payload.parseState?.geoidModelEnabled).toBe(true);
+    expect(payload.parseState?.geoidModelId).toBe('NGS-DEMO');
+    expect(payload.parseState?.geoidInterpolation).toBe('nearest');
+    expect(payload.parseState?.geoidSourceFormat).toBe('gtx');
+    expect(payload.parseState?.geoidSourcePath).toBe(GEOID_GTX_INPUT);
+    expect(payload.parseState?.geoidSourceResolvedFormat).toBe('gtx');
+    expect(payload.parseState?.geoidSourceFallbackUsed).toBe(false);
   });
 });

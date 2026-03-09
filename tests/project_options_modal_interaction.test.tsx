@@ -380,4 +380,22 @@ describe('Project Options modal interactions', () => {
       await app.cleanup();
     }
   });
+
+  it('supports selecting NAD83(CSRS) geoid model presets in GPS tab', async () => {
+    const app = await mountApp('gps');
+    try {
+      await clickToggleForSettingsRow(app.container, 'Geoid/Grid Model');
+      const geoidModelId = findInputForSettingsRow(app.container, 'Geoid/Grid Model ID');
+      await setInputValue(geoidModelId, 'NAD83-CSRS-DEMO');
+
+      await clickButtonByExactText(app.container, 'Apply');
+      await clickOpenProjectOptions(app.container);
+      await clickButtonByExactText(app.container, 'GPS');
+
+      const reopenedGeoidModelId = findInputForSettingsRow(app.container, 'Geoid/Grid Model ID');
+      expect(reopenedGeoidModelId.value).toBe('NAD83-CSRS-DEMO');
+    } finally {
+      await app.cleanup();
+    }
+  });
 });
