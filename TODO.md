@@ -46,7 +46,7 @@
   - [x] Phase 3: implement exhaustive run-mode incompatibility matrix with clear diagnostics and mode-gated regression coverage
 - [ ] Include pipeline test-gate completion:
   - [x] Phase 1: add parser regression tests for include cycle and include depth failures with exact source-file/line diagnostics
-  - [ ] Phase 2: add relative-path inheritance and nested include-order tests for both parser bundle mode and CLI filesystem mode
+  - [x] Phase 2: add relative-path inheritance and nested include-order tests for both parser bundle mode and CLI filesystem mode
   - [ ] Phase 3: add CLI hard-fail regression coverage for missing/cycle/depth/relative-path include scenarios with deterministic exit behavior
 - [ ] Legacy compatibility corpus gate:
   - [ ] Phase 1: curate mixed legacy-project corpus fixture set and define expected run-mode outcomes per project

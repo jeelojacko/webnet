@@ -948,8 +948,31 @@ type ParseInputLineEntry =
 
 const normalizePathToken = (value: string): string => value.replace(/\\/g, '/');
 
+const collapsePathToken = (value: string): string => {
+  const normalized = normalizePathToken(value).trim();
+  if (!normalized) return '';
+  const absolute = normalized.startsWith('/');
+  const segments = normalized.split('/');
+  const stack: string[] = [];
+  segments.forEach((segment) => {
+    if (!segment || segment === '.') return;
+    if (segment === '..') {
+      if (stack.length > 0 && stack[stack.length - 1] !== '..') {
+        stack.pop();
+      } else if (!absolute) {
+        stack.push('..');
+      }
+      return;
+    }
+    stack.push(segment);
+  });
+  const joined = stack.join('/');
+  if (absolute) return joined ? `/${joined}` : '/';
+  return joined;
+};
+
 const parentDirectoryToken = (sourceFile?: string): string => {
-  const normalized = normalizePathToken(sourceFile ?? '').trim();
+  const normalized = collapsePathToken(sourceFile ?? '');
   if (!normalized || normalized === '<input>') return '';
   const idx = normalized.lastIndexOf('/');
   return idx < 0 ? '' : normalized.slice(0, idx);
@@ -964,11 +987,12 @@ const resolveIncludeFromMap = (
   const raw = includePath.trim();
   if (!raw) return null;
   const normalizedRaw = normalizePathToken(raw);
+  const collapsedRaw = collapsePathToken(raw);
   const parentDir = parentDirectoryToken(parentSourceFile);
-  const candidateKeys = new Set<string>([raw, normalizedRaw]);
+  const candidateKeys = new Set<string>([raw, normalizedRaw, collapsedRaw]);
   if (parentDir) {
-    candidateKeys.add(`${parentDir}/${raw}`);
-    candidateKeys.add(`${parentDir}/${normalizedRaw}`);
+    candidateKeys.add(collapsePathToken(`${parentDir}/${raw}`));
+    candidateKeys.add(collapsePathToken(`${parentDir}/${normalizedRaw}`));
   }
   for (const key of candidateKeys) {
     if (includeFiles[key] != null) {
@@ -991,9 +1015,9 @@ const expandInputWithIncludes = (
   const includeErrors: ParseIncludeError[] = [];
   const lines: ParseInputLineEntry[] = [];
   const includeFiles = opts.includeFiles ?? {};
-  const rootSource = opts.sourceFile?.trim() || '<input>';
+  const rootSource = collapsePathToken(opts.sourceFile?.trim() || '') || '<input>';
   const maxDepth = Math.max(1, opts.includeMaxDepth ?? 16);
-  const rootStack = [...(opts.includeStack ?? []), normalizePathToken(rootSource)].filter(Boolean);
+  const rootStack = [...(opts.includeStack ?? []), collapsePathToken(rootSource)].filter(Boolean);
   const seenRootStack = new Set(rootStack);
 
   const walk = (text: string, sourceFile: string, stack: string[]): void => {
@@ -1073,7 +1097,7 @@ const expandInputWithIncludes = (
             logs.push(`Error: ${message}`);
             return;
           }
-          const normalizedSource = normalizePathToken(resolved.sourceFile);
+          const normalizedSource = collapsePathToken(resolved.sourceFile);
           if (stack.includes(normalizedSource)) {
             const cycleStack = [...stack, normalizedSource];
             const message = `include cycle detected at ${sourceFile}:${sourceLine}: ${cycleStack.join(' -> ')}`;

@@ -1,5 +1,5 @@
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
@@ -158,6 +158,68 @@ describe('CLI phase 2 output modes', () => {
     expect(payload.success).toBe(false);
     expect(payload.parseState?.includeErrors?.length).toBeGreaterThan(0);
     expect(payload.parseState?.includeErrors?.[0]?.code).toBe('include-not-found');
+  });
+
+  it('resolves nested include relative paths and keeps deterministic include order in CLI mode', () => {
+    const outDir = mkdtempSync(path.join(tmpdir(), 'webnet-cli-include-rel-'));
+    const mainPath = path.join(outDir, 'main.dat');
+    const sectionDir = path.join(outDir, 'section');
+    const nestedDir = path.join(sectionDir, 'nested');
+    const sharedDir = path.join(outDir, 'shared');
+
+    mkdirSync(sectionDir, { recursive: true });
+    mkdirSync(nestedDir, { recursive: true });
+    mkdirSync(sharedDir, { recursive: true });
+
+    writeFileSync(
+      mainPath,
+      ['.INCLUDE section/first.dat', '.INCLUDE section/second.dat', 'C ROOT 0 0 0 ! !'].join('\n'),
+      'utf-8',
+    );
+    writeFileSync(
+      path.join(sectionDir, 'first.dat'),
+      ['C F1 0 10 0 ! !', '.INCLUDE ../shared/grand.dat', 'C F2 10 10 0', 'D F1-F2 10'].join(
+        '\n',
+      ),
+      'utf-8',
+    );
+    writeFileSync(path.join(sharedDir, 'grand.dat'), ['C G1 0 20 0 ! !', 'C G2 10 20 0', 'D G1-G2 10'].join('\n'), 'utf-8');
+    writeFileSync(path.join(sectionDir, 'second.dat'), ['C S1 0 30 0 ! !', 'C S2 10 30 0', 'D S1-S2 10'].join('\n'), 'utf-8');
+
+    const res = runCli([
+      '--input',
+      mainPath,
+      '--output',
+      'json',
+      '--run-mode',
+      'data-check',
+      '--coord-mode',
+      '2D',
+    ]);
+    expect(res.status).toBe(0);
+    const payload = JSON.parse(res.stdout);
+    expect(payload.success).toBe(true);
+    const trace = payload.parseState?.includeTrace as
+      | Array<{ parentSourceFile?: string; sourceFile: string; line: number }>
+      | undefined;
+    const norm = (value: string): string => value.replace(/\\/g, '/');
+    expect(trace).toEqual([
+      {
+        parentSourceFile: norm(mainPath),
+        sourceFile: norm(path.join(sectionDir, 'first.dat')),
+        line: 1,
+      },
+      {
+        parentSourceFile: norm(path.join(sectionDir, 'first.dat')),
+        sourceFile: norm(path.join(sharedDir, 'grand.dat')),
+        line: 2,
+      },
+      {
+        parentSourceFile: norm(mainPath),
+        sourceFile: norm(path.join(sectionDir, 'second.dat')),
+        line: 2,
+      },
+    ]);
   });
 
   it('supports coordinate-system CLI flags for Canada-first workflows', () => {

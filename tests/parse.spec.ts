@@ -335,6 +335,58 @@ describe('parseInput', () => {
     expect(parsed.parseState.includeErrors?.[0].line).toBe(1);
   });
 
+  it('resolves nested include relative paths in bundle mode and preserves include order', () => {
+    const parsed = parseInput(
+      [
+        '.INCLUDE section/first.dat',
+        '.INCLUDE section/second.dat',
+        'C ROOT 0 0 0 ! !',
+      ].join('\n'),
+      {},
+      {
+        sourceFile: 'main/project.dat',
+        includeFiles: {
+          'main/section/first.dat':
+            'C F1 0 10 0 ! !\n.INCLUDE ../shared/grand.dat\nC F2 10 10 0\nD F1-F2 10',
+          'main/shared/grand.dat': 'C G1 0 20 0 ! !\nC G2 10 20 0\nD G1-G2 10',
+          'main/section/second.dat': 'C S1 0 30 0 ! !\nC S2 10 30 0\nD S1-S2 10',
+        },
+      },
+    );
+
+    expect(parsed.parseState.includeErrors).toEqual([]);
+    expect(parsed.parseState.includeTrace).toEqual([
+      {
+        parentSourceFile: 'main/project.dat',
+        sourceFile: 'main/section/first.dat',
+        line: 1,
+      },
+      {
+        parentSourceFile: 'main/section/first.dat',
+        sourceFile: 'main/shared/grand.dat',
+        line: 2,
+      },
+      {
+        parentSourceFile: 'main/project.dat',
+        sourceFile: 'main/section/second.dat',
+        line: 2,
+      },
+    ]);
+
+    const findDistIndex = (from: string, to: string): number =>
+      parsed.observations.findIndex(
+        (obs) => obs.type === 'dist' && 'from' in obs && 'to' in obs && obs.from === from && obs.to === to,
+      );
+    const nestedDistIndex = findDistIndex('G1', 'G2');
+    const firstDistIndex = findDistIndex('F1', 'F2');
+    const secondDistIndex = findDistIndex('S1', 'S2');
+    expect(nestedDistIndex).toBeGreaterThan(-1);
+    expect(firstDistIndex).toBeGreaterThan(-1);
+    expect(secondDistIndex).toBeGreaterThan(-1);
+    expect(nestedDistIndex).toBeLessThan(firstDistIndex);
+    expect(firstDistIndex).toBeLessThan(secondDistIndex);
+  });
+
   it('captures include cycle errors with exact source file and line diagnostics', () => {
     const parsed = parseInput(
       ['.INCLUDE a.dat', 'C ROOT 0 0 0 ! !'].join('\n'),
