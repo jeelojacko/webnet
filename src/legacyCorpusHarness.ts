@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
 import { fileURLToPath } from 'node:url';
@@ -36,21 +36,64 @@ export interface UnknownInlineDirectiveCandidate {
   reason: 'unknown' | 'ambiguous';
 }
 
-interface ProjectCheckResult {
-  project: LegacyCorpusProject;
+export interface LegacyCorpusProjectSnapshot {
+  id: string;
+  profile: SolveProfile;
+  parseMode: LegacyCorpusProject['parseMode'];
+  runMode: LegacyCorpusProject['runMode'];
+  expectedParseSuccess: boolean;
+  expectedRunSuccess: boolean;
   parseSuccess: boolean;
   runSuccess: boolean;
+  stationCount: number;
+  observationCount: number;
+  includeErrorCount: number;
+  parseErrorDiagnosticCount: number;
+  strictRejectCount: number;
+  rewriteSuggestionCount: number;
+  ambiguousCount: number;
+  legacyFallbackCount: number;
+  runModeDiagnosticCodes: string[];
+  silentDirectiveDropCount: number;
+}
+
+export interface LegacyCorpusBaselineFile {
+  schemaVersion: 1;
+  manifestPath: string;
+  projectCount: number;
+  projects: LegacyCorpusProjectSnapshot[];
+}
+
+interface ProjectCheckResult {
+  project: LegacyCorpusProject;
+  snapshot: LegacyCorpusProjectSnapshot;
   silentDirectiveDrops: UnknownInlineDirectiveCandidate[];
-  missingRequiredDiagnostics: string[];
   failures: string[];
 }
 
-interface HarnessRunSummary {
+interface HarnessRunSummary extends LegacyCorpusBaselineFile {
+  generatedAt: string;
+  projectFailureCount: number;
+  baselineMismatchCount: number;
+  gateFailed: boolean;
+  projectFailures: Array<{
+    id: string;
+    failures: string[];
+  }>;
+  baselineComparison?: {
+    baselinePath: string;
+    mismatchCount: number;
+    mismatches: string[];
+  };
+}
+
+interface HarnessCliArgs {
   manifestPath: string;
-  projectCount: number;
-  passedCount: number;
-  failedCount: number;
-  projectResults: ProjectCheckResult[];
+  manifestPathForSummary: string;
+  summaryJsonPath?: string;
+  summaryTextPath?: string;
+  baselinePath?: string;
+  writeBaselinePath?: string;
 }
 
 const DEFAULT_MANIFEST_PATH = path.resolve(
@@ -59,8 +102,21 @@ const DEFAULT_MANIFEST_PATH = path.resolve(
   'fixtures',
   'legacy_compatibility_corpus_phase1.json',
 );
+const DEFAULT_BASELINE_PATH = path.resolve(
+  process.cwd(),
+  'tests',
+  'fixtures',
+  'legacy_compatibility_corpus_phase1_baseline.json',
+);
 
 const normalizePath = (value: string): string => value.replace(/\\/g, '/');
+const toPortablePath = (value: string): string => {
+  const rel = path.relative(process.cwd(), value);
+  if (rel && !rel.startsWith('..') && !path.isAbsolute(rel)) {
+    return normalizePath(rel);
+  }
+  return normalizePath(value);
+};
 
 const trimInlineCommentAndDescription = (line: string): string => {
   const hash = line.indexOf('#');
@@ -153,6 +209,189 @@ export const findSilentDirectiveDrops = (
   );
 };
 
+const loadManifest = (manifestPath: string): LegacyCorpusManifest => {
+  const raw = readFileSync(manifestPath, 'utf-8');
+  return JSON.parse(raw) as LegacyCorpusManifest;
+};
+
+const loadBaseline = (baselinePath: string): LegacyCorpusBaselineFile => {
+  const raw = readFileSync(baselinePath, 'utf-8');
+  return JSON.parse(raw) as LegacyCorpusBaselineFile;
+};
+
+const writeTextFile = (filePath: string, content: string): void => {
+  mkdirSync(path.dirname(filePath), { recursive: true });
+  writeFileSync(filePath, content, 'utf-8');
+};
+
+const writeJsonFile = (filePath: string, value: unknown): void => {
+  writeTextFile(filePath, `${JSON.stringify(value, null, 2)}\n`);
+};
+
+export const compareSummaryProjectsToBaseline = (
+  projects: LegacyCorpusProjectSnapshot[],
+  baselineProjects: LegacyCorpusProjectSnapshot[],
+): string[] => {
+  const mismatches: string[] = [];
+  const currentById = new Map(projects.map((project) => [project.id, project]));
+  const baselineById = new Map(baselineProjects.map((project) => [project.id, project]));
+  const allIds = new Set([...currentById.keys(), ...baselineById.keys()]);
+  const sortableIds = [...allIds].sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+  const comparableKeys: Array<keyof LegacyCorpusProjectSnapshot> = [
+    'profile',
+    'parseMode',
+    'runMode',
+    'expectedParseSuccess',
+    'expectedRunSuccess',
+    'parseSuccess',
+    'runSuccess',
+    'stationCount',
+    'observationCount',
+    'includeErrorCount',
+    'parseErrorDiagnosticCount',
+    'strictRejectCount',
+    'rewriteSuggestionCount',
+    'ambiguousCount',
+    'legacyFallbackCount',
+    'runModeDiagnosticCodes',
+    'silentDirectiveDropCount',
+  ];
+
+  sortableIds.forEach((id) => {
+    const current = currentById.get(id);
+    const baseline = baselineById.get(id);
+    if (!current) {
+      mismatches.push(`baseline project missing in current run: ${id}`);
+      return;
+    }
+    if (!baseline) {
+      mismatches.push(`new project not present in baseline: ${id}`);
+      return;
+    }
+    comparableKeys.forEach((key) => {
+      const currentValue = current[key];
+      const baselineValue = baseline[key];
+      const equal =
+        Array.isArray(currentValue) || Array.isArray(baselineValue)
+          ? JSON.stringify(currentValue) === JSON.stringify(baselineValue)
+          : currentValue === baselineValue;
+      if (!equal) {
+        mismatches.push(
+          `baseline mismatch ${id}.${key}: expected=${JSON.stringify(baselineValue)} actual=${JSON.stringify(currentValue)}`,
+        );
+      }
+    });
+  });
+  return mismatches;
+};
+
+const parseArgs = (argv: string[]): HarnessCliArgs => {
+  let manifestPath = DEFAULT_MANIFEST_PATH;
+  let summaryJsonPath: string | undefined;
+  let summaryTextPath: string | undefined;
+  let baselinePath: string | undefined;
+  let writeBaselinePath: string | undefined;
+
+  for (let i = 0; i < argv.length; i += 1) {
+    const arg = argv[i];
+    if (arg === '--manifest') {
+      const value = argv[i + 1];
+      if (!value || value.startsWith('-')) {
+        throw new Error('Missing value for --manifest');
+      }
+      manifestPath = path.resolve(process.cwd(), value);
+      i += 1;
+      continue;
+    }
+    if (arg === '--summary-json') {
+      const value = argv[i + 1];
+      if (!value || value.startsWith('-')) {
+        throw new Error('Missing value for --summary-json');
+      }
+      summaryJsonPath = path.resolve(process.cwd(), value);
+      i += 1;
+      continue;
+    }
+    if (arg === '--summary-text') {
+      const value = argv[i + 1];
+      if (!value || value.startsWith('-')) {
+        throw new Error('Missing value for --summary-text');
+      }
+      summaryTextPath = path.resolve(process.cwd(), value);
+      i += 1;
+      continue;
+    }
+    if (arg === '--baseline') {
+      const value = argv[i + 1];
+      if (!value || value.startsWith('-')) {
+        throw new Error('Missing value for --baseline');
+      }
+      baselinePath = path.resolve(process.cwd(), value);
+      i += 1;
+      continue;
+    }
+    if (arg === '--write-baseline') {
+      const value = argv[i + 1];
+      if (!value || value.startsWith('-')) {
+        throw new Error('Missing value for --write-baseline');
+      }
+      writeBaselinePath = path.resolve(process.cwd(), value);
+      i += 1;
+      continue;
+    }
+    if (arg === '--ci') {
+      baselinePath = DEFAULT_BASELINE_PATH;
+      summaryJsonPath = path.resolve(process.cwd(), 'artifacts', 'legacy-corpus', 'summary.json');
+      summaryTextPath = path.resolve(process.cwd(), 'artifacts', 'legacy-corpus', 'summary.txt');
+      continue;
+    }
+    if (arg === '--help' || arg === '-h') {
+      throw new Error('help');
+    }
+    throw new Error(`Unknown option "${arg}"`);
+  }
+
+  return {
+    manifestPath,
+    manifestPathForSummary: toPortablePath(manifestPath),
+    summaryJsonPath,
+    summaryTextPath,
+    baselinePath,
+    writeBaselinePath,
+  };
+};
+
+const renderSummary = (summary: HarnessRunSummary): string => {
+  const lines: string[] = [];
+  lines.push('Legacy compatibility corpus harness');
+  lines.push(`Manifest: ${summary.manifestPath}`);
+  lines.push(`Projects: ${summary.projectCount}`);
+  summary.projectFailures.forEach((projectFailure) => {
+    lines.push(`FAIL ${projectFailure.id}`);
+    projectFailure.failures.forEach((failure) => lines.push(`  - ${failure}`));
+  });
+  summary.projects.forEach((snapshot) => {
+    if (summary.projectFailures.some((failure) => failure.id === snapshot.id)) return;
+    lines.push(
+      `PASS ${snapshot.id} (parse=${snapshot.parseSuccess}, run=${snapshot.runSuccess}, silentDrops=${snapshot.silentDirectiveDropCount})`,
+    );
+  });
+  if (summary.baselineComparison) {
+    if (summary.baselineComparison.mismatchCount === 0) {
+      lines.push(`Baseline compare: PASS (${summary.baselineComparison.baselinePath})`);
+    } else {
+      lines.push(
+        `Baseline compare: FAIL (${summary.baselineComparison.mismatchCount} mismatches)`,
+      );
+      summary.baselineComparison.mismatches.forEach((message) => lines.push(`  - ${message}`));
+    }
+  }
+  lines.push(
+    `Legacy corpus harness summary: projectFailures=${summary.projectFailureCount} baselineMismatches=${summary.baselineMismatchCount} gateFailed=${summary.gateFailed}`,
+  );
+  return lines.join('\n');
+};
+
 const runProjectChecks = (project: LegacyCorpusProject): ProjectCheckResult => {
   const inputPath = path.resolve(process.cwd(), project.inputPath);
   const input = readFileSync(inputPath, 'utf-8');
@@ -191,11 +430,13 @@ const runProjectChecks = (project: LegacyCorpusProject): ProjectCheckResult => {
     unknownInlineCandidates,
     parseState?.parseCompatibilityDiagnostics ?? [],
   );
+  const runModeDiagnosticCodes = [
+    ...new Set((parseState?.runModeCompatibilityDiagnostics ?? []).map((diag) => diag.code)),
+  ].sort();
   const requiredDiagnostics = project.expected.requiredDiagnostics ?? [];
-  const runDiagCodes = new Set(
-    (parseState?.runModeCompatibilityDiagnostics ?? []).map((diag) => diag.code),
+  const missingRequiredDiagnostics = requiredDiagnostics.filter(
+    (code) => !runModeDiagnosticCodes.includes(code),
   );
-  const missingRequiredDiagnostics = requiredDiagnostics.filter((code) => !runDiagCodes.has(code));
 
   const failures: string[] = [];
   if (parseSuccess !== project.expected.parseSuccess) {
@@ -212,110 +453,174 @@ const runProjectChecks = (project: LegacyCorpusProject): ProjectCheckResult => {
     failures.push(
       `silent directive drops detected (${silentDirectiveDrops.length}) for unknown/ambiguous inline options`,
     );
+    silentDirectiveDrops.forEach((drop) => {
+      failures.push(`silent-drop at ${drop.sourceFile}:${drop.line} token=${drop.token}`);
+    });
   }
   if (missingRequiredDiagnostics.length > 0) {
     failures.push(`missing required diagnostics: ${missingRequiredDiagnostics.join(', ')}`);
   }
 
-  return {
-    project,
+  const snapshot: LegacyCorpusProjectSnapshot = {
+    id: project.id,
+    profile: project.profile,
+    parseMode: project.parseMode,
+    runMode: project.runMode,
+    expectedParseSuccess: project.expected.parseSuccess,
+    expectedRunSuccess: project.expected.runSuccess,
     parseSuccess,
     runSuccess,
+    stationCount: Object.keys(result.stations).length,
+    observationCount: result.observations.length,
+    includeErrorCount: parseState?.includeErrors?.length ?? 0,
+    parseErrorDiagnosticCount:
+      parseState?.parseCompatibilityDiagnostics?.filter((diag) => diag.severity === 'error').length ??
+      0,
+    strictRejectCount: parseState?.strictRejectCount ?? 0,
+    rewriteSuggestionCount: parseState?.rewriteSuggestionCount ?? 0,
+    ambiguousCount: parseState?.ambiguousCount ?? 0,
+    legacyFallbackCount: parseState?.legacyFallbackCount ?? 0,
+    runModeDiagnosticCodes,
+    silentDirectiveDropCount: silentDirectiveDrops.length,
+  };
+
+  return {
+    project,
+    snapshot,
     silentDirectiveDrops,
-    missingRequiredDiagnostics,
     failures,
   };
 };
 
-const loadManifest = (manifestPath: string): LegacyCorpusManifest => {
-  const raw = readFileSync(manifestPath, 'utf-8');
-  return JSON.parse(raw) as LegacyCorpusManifest;
-};
-
-const parseArgs = (argv: string[]): { manifestPath: string } => {
-  let manifestPath = DEFAULT_MANIFEST_PATH;
-  for (let i = 0; i < argv.length; i += 1) {
-    const arg = argv[i];
-    if (arg === '--manifest') {
-      const value = argv[i + 1];
-      if (!value || value.startsWith('-')) {
-        throw new Error('Missing value for --manifest');
-      }
-      manifestPath = path.resolve(process.cwd(), value);
-      i += 1;
-      continue;
-    }
-    if (arg === '--help' || arg === '-h') {
-      throw new Error('help');
-    }
-    throw new Error(`Unknown option "${arg}"`);
-  }
-  return { manifestPath };
-};
-
-const renderSummary = (summary: HarnessRunSummary): string => {
-  const lines: string[] = [];
-  lines.push('Legacy compatibility corpus harness');
-  lines.push(`Manifest: ${summary.manifestPath}`);
-  lines.push(`Projects: ${summary.projectCount}`);
-  summary.projectResults.forEach((projectResult) => {
-    if (projectResult.failures.length === 0) {
-      lines.push(
-        `PASS ${projectResult.project.id} (parse=${projectResult.parseSuccess}, run=${projectResult.runSuccess}, silentDrops=0)`,
-      );
-      return;
-    }
-    lines.push(`FAIL ${projectResult.project.id}`);
-    projectResult.failures.forEach((failure) => lines.push(`  - ${failure}`));
-    projectResult.silentDirectiveDrops.forEach((drop) =>
-      lines.push(`  - silent-drop at ${drop.sourceFile}:${drop.line} token=${drop.token}`),
-    );
-  });
-  lines.push(
-    `Legacy corpus harness summary: passed=${summary.passedCount} failed=${summary.failedCount}`,
-  );
-  return lines.join('\n');
-};
-
 export const runLegacyCorpusHarness = (argv: string[] = []): number => {
-  let manifestPath: string;
+  let args: HarnessCliArgs;
   try {
-    manifestPath = parseArgs(argv).manifestPath;
+    args = parseArgs(argv);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     if (message === 'help') {
       process.stdout.write(
-        'Usage: npm run corpus:legacy [-- --manifest <path/to/legacy_compatibility_corpus.json>]\n',
+        [
+          'Usage: npm run corpus:legacy [-- [options]]',
+          '',
+          'Options:',
+          '  --manifest <path>        Corpus manifest path',
+          '  --summary-json <path>    Write JSON summary file',
+          '  --summary-text <path>    Write text summary file',
+          '  --baseline <path>        Compare current run against baseline snapshot',
+          '  --write-baseline <path>  Write baseline snapshot from current run',
+          '  --ci                     Use CI defaults (baseline + artifact outputs)',
+        ].join('\n') + '\n',
       );
       return 0;
     }
     process.stderr.write(
-      `Legacy corpus harness argument error: ${message}\nUsage: npm run corpus:legacy [-- --manifest <path>]\n`,
+      `Legacy corpus harness argument error: ${message}\nUse --help for usage.\n`,
     );
     return 2;
   }
 
   let manifest: LegacyCorpusManifest;
   try {
-    manifest = loadManifest(manifestPath);
+    manifest = loadManifest(args.manifestPath);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    process.stderr.write(`Failed to load legacy corpus manifest "${manifestPath}": ${message}\n`);
+    process.stderr.write(`Failed to load legacy corpus manifest "${args.manifestPath}": ${message}\n`);
     return 2;
   }
 
   const projectResults = manifest.projects.map((project) => runProjectChecks(project));
-  const failedCount = projectResults.filter((result) => result.failures.length > 0).length;
-  const passedCount = projectResults.length - failedCount;
+  const projectFailures = projectResults
+    .filter((result) => result.failures.length > 0)
+    .map((result) => ({
+      id: result.project.id,
+      failures: result.failures,
+    }));
+
+  let baselineComparison:
+    | {
+        baselinePath: string;
+        mismatchCount: number;
+        mismatches: string[];
+      }
+    | undefined;
+  if (args.baselinePath) {
+    try {
+      const baseline = loadBaseline(args.baselinePath);
+      const mismatches = compareSummaryProjectsToBaseline(
+        projectResults.map((result) => result.snapshot),
+        baseline.projects,
+      );
+      baselineComparison = {
+        baselinePath: toPortablePath(args.baselinePath),
+        mismatchCount: mismatches.length,
+        mismatches,
+      };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      baselineComparison = {
+        baselinePath: toPortablePath(args.baselinePath),
+        mismatchCount: 1,
+        mismatches: [`failed to load/compare baseline: ${message}`],
+      };
+    }
+  }
+
+  const baselineMismatchCount = baselineComparison?.mismatchCount ?? 0;
+  const gateFailed = projectFailures.length > 0 || baselineMismatchCount > 0;
   const summary: HarnessRunSummary = {
-    manifestPath,
+    schemaVersion: 1,
+    manifestPath: args.manifestPathForSummary,
     projectCount: projectResults.length,
-    passedCount,
-    failedCount,
-    projectResults,
+    projects: projectResults.map((result) => result.snapshot),
+    generatedAt: new Date().toISOString(),
+    projectFailureCount: projectFailures.length,
+    baselineMismatchCount,
+    gateFailed,
+    projectFailures,
+    baselineComparison,
   };
-  process.stdout.write(`${renderSummary(summary)}\n`);
-  return failedCount === 0 ? 0 : 1;
+
+  const summaryText = `${renderSummary(summary)}\n`;
+  process.stdout.write(summaryText);
+
+  if (args.summaryTextPath) {
+    try {
+      writeTextFile(args.summaryTextPath, summaryText);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      process.stderr.write(`Failed to write summary text "${args.summaryTextPath}": ${message}\n`);
+      return 2;
+    }
+  }
+
+  if (args.summaryJsonPath) {
+    try {
+      writeJsonFile(args.summaryJsonPath, summary);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      process.stderr.write(`Failed to write summary JSON "${args.summaryJsonPath}": ${message}\n`);
+      return 2;
+    }
+  }
+
+  if (args.writeBaselinePath) {
+    try {
+      const baseline: LegacyCorpusBaselineFile = {
+        schemaVersion: 1,
+        manifestPath: args.manifestPathForSummary,
+        projectCount: summary.projectCount,
+        projects: summary.projects,
+      };
+      writeJsonFile(args.writeBaselinePath, baseline);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      process.stderr.write(`Failed to write baseline "${args.writeBaselinePath}": ${message}\n`);
+      return 2;
+    }
+  }
+
+  return gateFailed ? 1 : 0;
 };
 
 const entryPath = process.argv[1] ? path.resolve(process.argv[1]) : '';
