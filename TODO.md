@@ -1,7 +1,7 @@
 # TODO - WebNet
 
 - [x] Add TypeScript tooling (tsconfig, TSX entry) and migrate LSA engine/UI to TS modules
-- [x] STAR*NET input-compatibility parity batch 1: parser directive normalization aliases/unique-prefix handling, `.DATA` block gating, `.SEPARATOR` station token support, `.3REDUCE` horizontal-equation behavior, include preprocessor with source-file traceability + scoped state restore, CLI include filesystem resolution + hard-fail diagnostics, new CLI run modes (`data-check`, `blunder-detect`), and project file schema v3 bundle support (`mainInput` + `includeFiles`) with v1/v2 migration
+- [x] Industry-standard input-compatibility parity batch 1: parser directive normalization aliases/unique-prefix handling, `.DATA` block gating, `.SEPARATOR` station token support, `.3REDUCE` horizontal-equation behavior, include preprocessor with source-file traceability + scoped state restore, CLI include filesystem resolution + hard-fail diagnostics, new CLI run modes (`data-check`, `blunder-detect`), and project file schema v3 bundle support (`mainInput` + `includeFiles`) with v1/v2 migration
 - [x] Industry-parity Phase 1 foundation: add dual parser compatibility modes (`legacy` fallback-aware vs `strict` deterministic), coded compatibility diagnostics/counters, and numeric-token station misparse guards for D/A/G/L parsing paths
 - [x] Industry-parity migration plumbing: bump project file schema to v2 with parser-mode migration metadata while preserving v1 backward loading in legacy mode
 - [x] CLI parity controls: add `--parse-mode` and geoid-source CLI options (`--geoid-model-id`, `--geoid-interpolation`, `--geoid-source-format`, `--geoid-source-path`) with parse-state propagation and regression coverage
@@ -45,7 +45,7 @@
     - [x] Phase 2C: add industry-listing run-mode sections and regression tests for `data-check` and `blunder-detect` output
   - [x] Phase 3: implement exhaustive run-mode incompatibility matrix with clear diagnostics and mode-gated regression coverage
 - [ ] Include pipeline test-gate completion:
-  - [ ] Phase 1: add parser regression tests for include cycle and include depth failures with exact source-file/line diagnostics
+  - [x] Phase 1: add parser regression tests for include cycle and include depth failures with exact source-file/line diagnostics
   - [ ] Phase 2: add relative-path inheritance and nested include-order tests for both parser bundle mode and CLI filesystem mode
   - [ ] Phase 3: add CLI hard-fail regression coverage for missing/cycle/depth/relative-path include scenarios with deterministic exit behavior
 - [ ] Legacy compatibility corpus gate:

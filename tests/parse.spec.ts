@@ -335,6 +335,54 @@ describe('parseInput', () => {
     expect(parsed.parseState.includeErrors?.[0].line).toBe(1);
   });
 
+  it('captures include cycle errors with exact source file and line diagnostics', () => {
+    const parsed = parseInput(
+      ['.INCLUDE a.dat', 'C ROOT 0 0 0 ! !'].join('\n'),
+      {},
+      {
+        sourceFile: 'main/project.dat',
+        includeFiles: {
+          'main/a.dat': '.INCLUDE b.dat\nC A 0 10 0 ! !',
+          'main/b.dat': '.INCLUDE a.dat\nC B 10 10 0',
+        },
+      },
+    );
+
+    expect(parsed.parseState.includeErrors?.length).toBe(1);
+    expect(parsed.parseState.includeErrors?.[0].code).toBe('include-cycle');
+    expect(parsed.parseState.includeErrors?.[0].sourceFile).toBe('main/b.dat');
+    expect(parsed.parseState.includeErrors?.[0].line).toBe(1);
+    expect(parsed.parseState.includeErrors?.[0].includePath).toBe('a.dat');
+    expect(parsed.parseState.includeErrors?.[0].stack).toEqual([
+      'main/project.dat',
+      'main/a.dat',
+      'main/b.dat',
+      'main/a.dat',
+    ]);
+  });
+
+  it('captures include depth-exceeded errors with exact source file and line diagnostics', () => {
+    const parsed = parseInput(
+      ['.INCLUDE a.dat', 'C ROOT 0 0 0 ! !'].join('\n'),
+      {},
+      {
+        sourceFile: 'main/project.dat',
+        includeMaxDepth: 2,
+        includeFiles: {
+          'main/a.dat': '.INCLUDE b.dat\nC A 0 10 0 ! !',
+          'main/b.dat': 'C B 10 10 0',
+        },
+      },
+    );
+
+    expect(parsed.parseState.includeErrors?.length).toBe(1);
+    expect(parsed.parseState.includeErrors?.[0].code).toBe('include-depth-exceeded');
+    expect(parsed.parseState.includeErrors?.[0].sourceFile).toBe('main/a.dat');
+    expect(parsed.parseState.includeErrors?.[0].line).toBe(1);
+    expect(parsed.parseState.includeErrors?.[0].includePath).toBe('b.dat');
+    expect(parsed.parseState.includeErrors?.[0].message).toContain('limit=2');
+  });
+
   it('parses planned observation placeholders when preanalysis mode is enabled', () => {
     const parsed = parseInput(
       [
