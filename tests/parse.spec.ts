@@ -57,6 +57,36 @@ describe('parseInput', () => {
     expect(levelOnly.logs.some((l) => l.includes('.LWEIGHT applied'))).toBe(true);
   });
 
+  it('applies .LWEIGHT fallback to non-L delta-mode leveling paths when sigma is omitted', () => {
+    const parsed = parseInput(
+      [
+        '.DELTA ON',
+        '.LWEIGHT 1.0',
+        'C A 0 0 0 ! ! !',
+        'C B 100 0 0',
+        'C C 200 0 0',
+        'DV A-B 100 0.25',
+        'M A-B-C 090-00-00 100 0.10',
+      ].join('\n'),
+    );
+    const dvLev = parsed.observations.find(
+      (o) => o.type === 'lev' && o.from === 'A' && o.to === 'B',
+    ) as LevelObservation | undefined;
+    const mLev = parsed.observations.find(
+      (o) => o.type === 'lev' && o.from === 'A' && o.to === 'C',
+    ) as LevelObservation | undefined;
+    expect(dvLev).toBeDefined();
+    expect(mLev).toBeDefined();
+    expect(dvLev?.stdDev ?? Number.NaN).toBeCloseTo(0.0001, 10); // 1.0 mm/km over 0.1 km
+    expect(mLev?.stdDev ?? Number.NaN).toBeCloseTo(0.0001, 10); // 1.0 mm/km over 0.1 km
+    expect(parsed.logs.some((line) => line.includes('.LWEIGHT fallback applied for DV'))).toBe(
+      true,
+    );
+    expect(parsed.logs.some((line) => line.includes('.LWEIGHT fallback applied for M'))).toBe(
+      true,
+    );
+  });
+
   it('parses configurable level-loop tolerance settings', () => {
     const parsed = parseInput(['.LEVELTOL BASE 1.5 K 6.0', 'C A 0 0 0 ! ! !'].join('\n'));
     expect(parsed.parseState.levelLoopToleranceBaseMm).toBeCloseTo(1.5, 8);

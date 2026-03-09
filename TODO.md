@@ -118,9 +118,9 @@
   - [x] Resolve fixity/free-marker semantics mismatch (`*` meaning) between docs/parser/TODO and standard industry-standard expectations
 - [ ] industry-standard format compatibility (Section 5.6):
   - [x] Elevation-only parsing (E records) with std errors/fixity and unit conversion
-  - [~] Implement global inline options: .UNITS, .COORD 2D/3D, .ORDER NE/EN, .2D/.3D, .DELTA ON/OFF, .MAPMODE, .LWEIGHT, .NORMALIZE, .END (parses/logs complete; .LWEIGHT applied to leveling weights; header exposes coord/order/delta/map/normalize/.LWEIGHT/lon-sign defaults; remaining wiring pending per code type)
-    - [ ] Phase 1: build directive-application matrix by observation family to identify remaining per-code-type wiring gaps
-    - [ ] Phase 2: complete parser-to-observation wiring for remaining code families so inline options behave consistently across TS/GNSS/leveling/traverse workflows
+  - [~] Implement global inline options: .UNITS, .COORD 2D/3D, .ORDER NE/EN, .2D/.3D, .DELTA ON/OFF, .MAPMODE, .LWEIGHT, .NORMALIZE, .END (core parser support and baseline behavior are implemented; .LWEIGHT is applied for leveling and run headers expose active defaults; remaining work is explicit parity-audit coverage/matrixing of directive effects by observation family and edge-case code paths)
+    - [x] Phase 1: build directive-application matrix by observation family to identify remaining per-code-type wiring gaps (`docs/INLINE_OPTION_APPLICATION_MATRIX.md`)
+    - [x] Phase 2: close matrix-identified wiring gaps by code family (implemented `.LWEIGHT` fallback propagation for non-`L` leveling-producing paths: `V`/`DV`/`M`/`BM`/`T`/`DM`/`SS` when vertical sigma is omitted)
     - [ ] Phase 3: add fixture-locked semantics coverage for each directive family and verify report/listing run-profile parity output
   - [x] Coordinate/position/elevation records: C (2D/3D with per-component std errs and !/\* fixity, NE/EN order), P geodetic positions (lat/long [+H], std errs mapped to NE, longitude sign), E elevation-only, ellipsoid variants CH/PH/EH (parsed; P/PH projected to local EN via first P origin; ellipsoid height flagged)
   - [x] Single obs: A angles (At-From-To or From-At-To), D distances (2D HD; 3D slope/HD per mode with HI/HT), V vertical (zenith or dH per mode with HI/HT), B bearings/azimuths (solved)

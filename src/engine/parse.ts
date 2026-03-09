@@ -1605,6 +1605,36 @@ export const parseInput = (
     (state.units === 'ft' ? 1 / FT_PER_M : 1) * (state.linearMultiplier ?? 1);
   const effectiveDistanceMode = (): 'slope' | 'horiz' =>
     state.threeReduceMode && state.deltaMode === 'slope' ? 'horiz' : state.deltaMode;
+  const levelWeightSigmaFromSpanMeters = (spanMeters: number): number => {
+    const levelWeightMmPerKm = state.levelWeight;
+    if (
+      levelWeightMmPerKm == null ||
+      !Number.isFinite(levelWeightMmPerKm) ||
+      levelWeightMmPerKm <= 0
+    ) {
+      return 0;
+    }
+    const spanKm = Math.abs(spanMeters) / 1000;
+    return (levelWeightMmPerKm * spanKm) / 1000;
+  };
+  const resolveLevelingSigma = (
+    token: SigmaToken | undefined,
+    inst: Instrument | undefined,
+    spanMeters: number,
+    contextCode: string,
+    sourceLine: number,
+  ): { sigma: number; source: SigmaSource } => {
+    const absSpanMeters = Math.abs(spanMeters);
+    const levelWeightSigma = levelWeightSigmaFromSpanMeters(absSpanMeters);
+    if (!token && levelWeightSigma > 0) {
+      logs.push(
+        `.LWEIGHT fallback applied for ${contextCode} at line ${sourceLine}: ${state.levelWeight} mm/km over ${(absSpanMeters / 1000).toFixed(4)} km`,
+      );
+    }
+    const instSigma = defaultElevDiffSigma(inst, absSpanMeters);
+    const defaultSigma = Math.sqrt(levelWeightSigma * levelWeightSigma + instSigma * instSigma);
+    return resolveLinearSigma(token, defaultSigma);
+  };
   const parseObservedLinearToken = (
     token: string | undefined,
     toMeters: number,
@@ -4107,7 +4137,7 @@ export const parseInput = (
             logs.push(`Invalid vertical difference at line ${lineNum}, skipping V record.`);
             continue;
           }
-          const resolved = resolveLinearSigma(sigmas[0], defaultElevDiffSigma(inst, 0));
+          const resolved = resolveLevelingSigma(sigmas[0], inst, 0, 'V', lineNum);
           const std = resolved.sigma * toMeters;
           const obs: LevelObservation = {
             id: obsId++,
@@ -4171,9 +4201,12 @@ export const parseInput = (
             0,
           );
           const distResolved = resolveLinearSigma(sigmas[0], defaultDist);
-          const dhResolved = resolveLinearSigma(
+          const dhResolved = resolveLevelingSigma(
             sigmas[1],
-            defaultElevDiffSigma(inst, Math.abs(distParsed.value)),
+            inst,
+            Math.abs(distParsed.value),
+            'DV',
+            lineNum,
           );
           pushObservation({
             id: obsId++,
@@ -4336,9 +4369,12 @@ export const parseInput = (
               `Invalid BM vertical difference at line ${lineNum}, skipping vertical component.`,
             );
           } else {
-            const dhResolved = resolveLinearSigma(
+            const dhResolved = resolveLevelingSigma(
               sigVert,
-              defaultElevDiffSigma(inst, Math.abs(distParsed.value)),
+              inst,
+              Math.abs(distParsed.value),
+              'BM',
+              lineNum,
             );
             pushObservation({
               id: obsId++,
@@ -4440,14 +4476,10 @@ export const parseInput = (
               0,
             ),
           );
-          const defaultVertSigma =
-            state.deltaMode === 'horiz'
-              ? defaultElevDiffSigma(inst, Math.abs(distParsed.value))
-              : defaultZenithSigmaSec(inst);
           const vertResolved =
             state.deltaMode === 'horiz'
-              ? resolveLinearSigma(sigmas[2], defaultVertSigma)
-              : resolveAngularSigma(sigmas[2], defaultVertSigma);
+              ? resolveLevelingSigma(sigmas[2], inst, Math.abs(distParsed.value), 'M', lineNum)
+              : resolveAngularSigma(sigmas[2], defaultZenithSigmaSec(inst));
           const angRad = angParsed.value;
           const faceWeight =
             angRad >= Math.PI ? angResolved.sigma * FACE2_WEIGHT : angResolved.sigma;
@@ -4651,14 +4683,10 @@ export const parseInput = (
               0,
             ),
           );
-          const defaultVertSigma =
-            state.deltaMode === 'horiz'
-              ? defaultElevDiffSigma(inst, Math.abs(distParsed.value))
-              : defaultZenithSigmaSec(inst);
           const vertResolved =
             state.deltaMode === 'horiz'
-              ? resolveLinearSigma(sigmas[2], defaultVertSigma)
-              : resolveAngularSigma(sigmas[2], defaultVertSigma);
+              ? resolveLevelingSigma(sigmas[2], inst, Math.abs(distParsed.value), code, lineNum)
+              : resolveAngularSigma(sigmas[2], defaultZenithSigmaSec(inst));
           const bearingRad = applyPlanRotation(bearingParsed.value, state);
           pushObservation({
             id: obsId++,
@@ -4774,14 +4802,10 @@ export const parseInput = (
               0,
             ),
           );
-          const defaultVertSigma =
-            state.deltaMode === 'horiz'
-              ? defaultElevDiffSigma(inst, Math.abs(distParsed.value))
-              : defaultZenithSigmaSec(inst);
           const vertResolved =
             state.deltaMode === 'horiz'
-              ? resolveLinearSigma(sigmas[2], defaultVertSigma)
-              : resolveAngularSigma(sigmas[2], defaultVertSigma);
+              ? resolveLevelingSigma(sigmas[2], inst, Math.abs(distParsed.value), code, lineNum)
+              : resolveAngularSigma(sigmas[2], defaultZenithSigmaSec(inst));
           const angRad = angParsed.value;
           const isFace2 = angRad >= Math.PI;
           if (state.normalize === false) {
@@ -5014,9 +5038,12 @@ export const parseInput = (
           });
           if (vert) {
             if (state.deltaMode === 'horiz') {
-              const dhResolved = resolveLinearSigma(
+              const dhResolved = resolveLevelingSigma(
                 sigmas[2],
-                defaultElevDiffSigma(inst, Math.abs(distParsed.value)),
+                inst,
+                Math.abs(distParsed.value),
+                'DM',
+                lineNum,
               );
               pushObservation({
                 id: obsId++,
@@ -5215,9 +5242,12 @@ export const parseInput = (
         if (vert) {
           if (state.deltaMode === 'horiz') {
             const dh = parseFloat(vert) * toMeters;
-            const dhResolved = resolveLinearSigma(
+            const dhResolved = resolveLevelingSigma(
               sigmaVertToken,
-              defaultElevDiffSigma(inst, dist * toMeters),
+              inst,
+              dist * toMeters,
+              'SS',
+              lineNum,
             );
             pushObservation({
               id: obsId++,
