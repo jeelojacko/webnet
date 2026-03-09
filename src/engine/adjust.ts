@@ -44,6 +44,7 @@ import type {
   GnssVectorFrame,
   ReductionUsageSummary,
   RunMode,
+  RunModeCompatibilityDiagnostic,
 } from '../types';
 
 const EPS = 1e-10;
@@ -317,6 +318,7 @@ export class LSAEngine {
   private robustK = 1.5;
   private runMode: RunMode = 'adjustment';
   private preanalysisMode = false;
+  private runModeCompatibilityDiagnostics: RunModeCompatibilityDiagnostic[] = [];
   private prismEnabled = false;
   private prismOffset = 0;
   private prismScope: ParseOptions['prismScope'] = 'global';
@@ -2028,6 +2030,204 @@ export class LSAEngine {
     this.logs.push(msg);
   }
 
+  private resolveRunModeCompatibilityOptions(
+    requestedRunMode: RunMode,
+    options: Partial<ParseOptions>,
+  ): { effectiveOptions: Partial<ParseOptions>; diagnostics: RunModeCompatibilityDiagnostic[] } {
+    const effectiveOptions: Partial<ParseOptions> = { ...(options ?? {}) };
+    const diagnostics: RunModeCompatibilityDiagnostic[] = [];
+    const warn = (code: string, message: string, action?: string): void => {
+      diagnostics.push({ code, severity: 'warning', message, action });
+    };
+
+    const hasClusterMerges = (effectiveOptions.clusterApprovedMerges?.length ?? 0) > 0;
+    const robustRequested = (effectiveOptions.robustMode ?? 'none') !== 'none';
+    const autoAdjustRequested = effectiveOptions.autoAdjustEnabled === true;
+    const autoSideshotRequested = effectiveOptions.autoSideshotEnabled !== false;
+    const clusterRequested = effectiveOptions.clusterDetectionEnabled !== false;
+
+    if (requestedRunMode === 'adjustment') {
+      if (effectiveOptions.preanalysisMode === true) {
+        warn(
+          'ADJUSTMENT_IGNORES_PREANALYSIS_FLAG',
+          'preanalysisMode=true is ignored when runMode=adjustment.',
+          'Using preanalysisMode=false for this run.',
+        );
+      }
+      effectiveOptions.preanalysisMode = false;
+    }
+
+    if (requestedRunMode === 'preanalysis') {
+      effectiveOptions.preanalysisMode = true;
+      if (autoAdjustRequested) {
+        warn(
+          'PREANALYSIS_DISALLOWS_AUTOADJUST',
+          'Auto-adjust is not available in preanalysis mode.',
+          'Disabling auto-adjust for this run.',
+        );
+        effectiveOptions.autoAdjustEnabled = false;
+      }
+      if (robustRequested) {
+        warn(
+          'PREANALYSIS_DISALLOWS_ROBUST',
+          'Robust reweighting is not available in preanalysis mode.',
+          'Using robustMode=none for this run.',
+        );
+        effectiveOptions.robustMode = 'none';
+      }
+      if (autoSideshotRequested) {
+        warn(
+          'PREANALYSIS_SKIPS_AUTOSIDESHOT',
+          'Auto-sideshot detection is skipped in preanalysis mode.',
+          'Disabling auto-sideshot diagnostics for this run.',
+        );
+        effectiveOptions.autoSideshotEnabled = false;
+      }
+      if (clusterRequested) {
+        warn(
+          'PREANALYSIS_SKIPS_CLUSTER',
+          'Cluster detection is skipped in preanalysis mode.',
+          'Disabling cluster detection for this run.',
+        );
+        effectiveOptions.clusterDetectionEnabled = false;
+      }
+      if (hasClusterMerges) {
+        warn(
+          'PREANALYSIS_DISALLOWS_CLUSTER_MERGES',
+          'Approved cluster merges are not applied in preanalysis mode.',
+          'Ignoring approved cluster merges for this run.',
+        );
+        effectiveOptions.clusterApprovedMerges = [];
+        effectiveOptions.clusterApprovedMergeCount = 0;
+        effectiveOptions.clusterDualPassRan = false;
+      }
+    }
+
+    if (requestedRunMode === 'data-check') {
+      effectiveOptions.preanalysisMode = false;
+      if (autoAdjustRequested) {
+        warn(
+          'DATACHECK_DISALLOWS_AUTOADJUST',
+          'Auto-adjust is not available in Data Check Only mode.',
+          'Disabling auto-adjust for this run.',
+        );
+        effectiveOptions.autoAdjustEnabled = false;
+      }
+      if (robustRequested) {
+        warn(
+          'DATACHECK_DISALLOWS_ROBUST',
+          'Robust reweighting is not available in Data Check Only mode.',
+          'Using robustMode=none for this run.',
+        );
+        effectiveOptions.robustMode = 'none';
+      }
+      if (autoSideshotRequested) {
+        warn(
+          'DATACHECK_SKIPS_AUTOSIDESHOT',
+          'Auto-sideshot detection is skipped in Data Check Only mode.',
+          'Disabling auto-sideshot diagnostics for this run.',
+        );
+        effectiveOptions.autoSideshotEnabled = false;
+      }
+      if (clusterRequested) {
+        warn(
+          'DATACHECK_SKIPS_CLUSTER',
+          'Cluster detection is skipped in Data Check Only mode.',
+          'Disabling cluster detection for this run.',
+        );
+        effectiveOptions.clusterDetectionEnabled = false;
+      }
+      if (hasClusterMerges) {
+        warn(
+          'DATACHECK_DISALLOWS_CLUSTER_MERGES',
+          'Approved cluster merges are not applied in Data Check Only mode.',
+          'Ignoring approved cluster merges for this run.',
+        );
+        effectiveOptions.clusterApprovedMerges = [];
+        effectiveOptions.clusterApprovedMergeCount = 0;
+        effectiveOptions.clusterDualPassRan = false;
+      }
+    }
+
+    if (requestedRunMode === 'blunder-detect') {
+      effectiveOptions.preanalysisMode = false;
+      if (autoAdjustRequested) {
+        warn(
+          'BLUNDER_DISALLOWS_AUTOADJUST',
+          'Auto-adjust is not available in Blunder Detect mode.',
+          'Disabling auto-adjust for this run.',
+        );
+        effectiveOptions.autoAdjustEnabled = false;
+      }
+      if (robustRequested) {
+        warn(
+          'BLUNDER_DISALLOWS_ROBUST',
+          'Robust reweighting is not available in Blunder Detect mode.',
+          'Using robustMode=none for this run.',
+        );
+        effectiveOptions.robustMode = 'none';
+      }
+      if (autoSideshotRequested) {
+        warn(
+          'BLUNDER_SKIPS_AUTOSIDESHOT',
+          'Auto-sideshot detection is skipped in Blunder Detect mode.',
+          'Disabling auto-sideshot diagnostics for this run.',
+        );
+        effectiveOptions.autoSideshotEnabled = false;
+      }
+      if (clusterRequested) {
+        warn(
+          'BLUNDER_SKIPS_CLUSTER',
+          'Cluster detection is skipped in Blunder Detect mode.',
+          'Disabling cluster detection for this run.',
+        );
+        effectiveOptions.clusterDetectionEnabled = false;
+      }
+      if (hasClusterMerges) {
+        warn(
+          'BLUNDER_DISALLOWS_CLUSTER_MERGES',
+          'Approved cluster merges are not applied in Blunder Detect mode.',
+          'Ignoring approved cluster merges for this run.',
+        );
+        effectiveOptions.clusterApprovedMerges = [];
+        effectiveOptions.clusterApprovedMergeCount = 0;
+        effectiveOptions.clusterDualPassRan = false;
+      }
+      if (effectiveOptions.clusterPassLabel && effectiveOptions.clusterPassLabel !== 'single') {
+        warn(
+          'BLUNDER_RESETS_CLUSTER_PASS_LABEL',
+          `Cluster pass label ${effectiveOptions.clusterPassLabel} is not used in Blunder Detect mode.`,
+          'Using clusterPassLabel=single for this run.',
+        );
+      }
+      effectiveOptions.clusterPassLabel = 'single';
+    }
+
+    effectiveOptions.runMode = requestedRunMode;
+    if (requestedRunMode !== 'preanalysis') {
+      effectiveOptions.preanalysisMode = false;
+    }
+    return { effectiveOptions, diagnostics };
+  }
+
+  private runModeCompatibilityDiagnosticLines(
+    diagnostics: RunModeCompatibilityDiagnostic[],
+  ): string[] {
+    return diagnostics.map((diag) => {
+      const head =
+        diag.severity === 'error'
+          ? `Error: Run-mode compatibility [${diag.code}] ${diag.message}`
+          : `Warning: Run-mode compatibility [${diag.code}] ${diag.message}`;
+      return diag.action ? `${head} Action: ${diag.action}` : head;
+    });
+  }
+
+  private emitRunModeCompatibilityDiagnostics(
+    diagnostics: RunModeCompatibilityDiagnostic[],
+  ): void {
+    this.runModeCompatibilityDiagnosticLines(diagnostics).forEach((line) => this.log(line));
+  }
+
   private addCoordSystemDiagnostic(code: CoordSystemDiagnosticCode, warning?: string): void {
     this.coordSystemDiagnostics.add(code);
     if (!warning) return;
@@ -3586,7 +3786,9 @@ export class LSAEngine {
     return this.buildResult();
   }
 
-  private runBlunderDetectWorkflow(): AdjustmentResult {
+  private runBlunderDetectWorkflow(
+    runModeDiagnostics: RunModeCompatibilityDiagnostic[],
+  ): AdjustmentResult {
     const baseOptions: Partial<ParseOptions> = {
       ...(this.parseOptions ?? {}),
       runMode: 'adjustment',
@@ -3635,16 +3837,29 @@ export class LSAEngine {
 
     if (!finalResult) {
       this.converged = false;
+      this.runMode = 'blunder-detect';
+      this.runModeCompatibilityDiagnostics = [...runModeDiagnostics];
+      if (this.parseState) {
+        this.parseState.runMode = 'blunder-detect';
+        this.parseState.runModeCompatibilityDiagnostics = [...runModeDiagnostics];
+      }
+      this.emitRunModeCompatibilityDiagnostics(runModeDiagnostics);
       this.log('Error: blunder-detect workflow could not produce a solve result.');
       return this.buildResult();
     }
     const mergedParseState = finalResult.parseState
-      ? ({ ...finalResult.parseState, runMode: 'blunder-detect' as const } as ParseOptions)
+      ? ({
+          ...finalResult.parseState,
+          runMode: 'blunder-detect' as const,
+          runModeCompatibilityDiagnostics: [...runModeDiagnostics],
+        } as ParseOptions)
       : undefined;
+    const runModeCompatibilityLines = this.runModeCompatibilityDiagnosticLines(runModeDiagnostics);
     return {
       ...finalResult,
       parseState: mergedParseState,
       logs: [
+        ...runModeCompatibilityLines,
         'Blunder Detect mode: iterative deweighting diagnostics (not a replacement for full adjustment QA).',
         ...cycleLogs,
         ...finalResult.logs,
@@ -3656,9 +3871,12 @@ export class LSAEngine {
     const requestedRunMode: RunMode =
       this.parseOptions?.runMode ??
       (this.parseOptions?.preanalysisMode ? 'preanalysis' : 'adjustment');
-    if (requestedRunMode === 'blunder-detect') {
-      return this.runBlunderDetectWorkflow();
-    }
+    const runModeCompatibility = this.resolveRunModeCompatibilityOptions(
+      requestedRunMode,
+      this.parseOptions ?? {},
+    );
+    this.parseOptions = runModeCompatibility.effectiveOptions;
+    this.runModeCompatibilityDiagnostics = [...runModeCompatibility.diagnostics];
 
     const passLabel = this.parseOptions?.clusterPassLabel ?? 'single';
     const approvedMerges = this.normalizeApprovedClusterMerges(
@@ -3750,6 +3968,10 @@ export class LSAEngine {
       this.dof = 0;
       this.seuw = 0;
       this.parseState = parsed.parseState;
+      if (this.parseState) {
+        this.parseState.runModeCompatibilityDiagnostics = [...this.runModeCompatibilityDiagnostics];
+      }
+      this.emitRunModeCompatibilityDiagnostics(this.runModeCompatibilityDiagnostics);
       this.logs.push(
         `Run failed: include preprocessing reported ${includeErrors.length} error(s).`,
       );
@@ -3885,6 +4107,7 @@ export class LSAEngine {
     if (this.parseState) {
       this.parseState.runMode = this.runMode;
       this.parseState.preanalysisMode = this.preanalysisMode;
+      this.parseState.runModeCompatibilityDiagnostics = [...this.runModeCompatibilityDiagnostics];
       this.parseState.coordSystemMode = this.coordSystemMode;
       this.parseState.crsId = this.crsId;
       this.parseState.localDatumScheme = this.localDatumScheme;
@@ -4164,19 +4387,35 @@ export class LSAEngine {
       this.parseState.parsedUsageSummary =
         this.parseState.parsedUsageSummary ?? summarizeReductionUsage(this.observations);
     }
-    if (this.runMode === 'data-check') {
-      return this.runDataCheckOnly(activeObservations);
-    }
     if (
       this.runMode === 'blunder-detect' &&
       activeObservations.length > 0 &&
       activeObservations.every((obs) => obs.type === 'lev')
     ) {
-      this.log(
-        'Error: blunder-detect mode is not supported for leveling-only datasets; use adjustment mode for this dataset.',
-      );
+      const levelingOnlyError: RunModeCompatibilityDiagnostic = {
+        code: 'BLUNDER_LEVELING_ONLY',
+        severity: 'error',
+        message: 'Blunder Detect mode is not supported for leveling-only datasets.',
+        action: 'Use adjustment or data-check mode for this dataset.',
+      };
+      this.runModeCompatibilityDiagnostics = [
+        ...this.runModeCompatibilityDiagnostics,
+        levelingOnlyError,
+      ];
+      if (this.parseState) {
+        this.parseState.runModeCompatibilityDiagnostics = [...this.runModeCompatibilityDiagnostics];
+      }
+      this.emitRunModeCompatibilityDiagnostics(this.runModeCompatibilityDiagnostics);
       this.converged = false;
       return this.buildResult();
+    }
+    if (this.runMode === 'blunder-detect') {
+      return this.runBlunderDetectWorkflow(this.runModeCompatibilityDiagnostics);
+    }
+
+    this.emitRunModeCompatibilityDiagnostics(this.runModeCompatibilityDiagnostics);
+    if (this.runMode === 'data-check') {
+      return this.runDataCheckOnly(activeObservations);
     }
     const gridInputGate = this.evaluateGridInputGate(activeObservations);
     if (gridInputGate.blocked) {

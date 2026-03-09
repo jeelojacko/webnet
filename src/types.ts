@@ -591,6 +591,13 @@ export interface ParseIncludeError {
   stack?: string[];
 }
 
+export interface RunModeCompatibilityDiagnostic {
+  code: string;
+  severity: 'warning' | 'error';
+  message: string;
+  action?: string;
+}
+
 export interface ClusterApprovedMerge {
   aliasId: StationId;
   canonicalId: StationId;
@@ -783,6 +790,7 @@ export interface GpsTopoCoordinateShot {
 
 export interface ParseOptions {
   runMode?: RunMode;
+  runModeCompatibilityDiagnostics?: RunModeCompatibilityDiagnostic[];
   parseCompatibilityMode?: ParseCompatibilityMode;
   directiveAbbreviationMode?: 'off' | 'unique-prefix';
   unknownDirectivePolicy?: 'legacy-warn' | 'strict-error';

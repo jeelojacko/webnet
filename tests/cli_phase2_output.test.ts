@@ -122,6 +122,31 @@ describe('CLI phase 2 output modes', () => {
     expect(blunderPayload.parseState?.runMode).toBe('blunder-detect');
   });
 
+  it('hard-fails blunder-detect mode for leveling-only datasets with compatibility diagnostics', () => {
+    const outDir = mkdtempSync(path.join(tmpdir(), 'webnet-cli-runmode-'));
+    const inputPath = path.join(outDir, 'level_only.dat');
+    writeFileSync(
+      inputPath,
+      [
+        'C A 0 0 100.000 ! ! !',
+        'C B 0 0 100.900',
+        'L A-B 0.9000 0.25',
+      ].join('\n'),
+      'utf-8',
+    );
+
+    const res = runCli(['--input', inputPath, '--output', 'json', '--run-mode', 'blunder-detect']);
+    expect(res.status).toBe(1);
+    const payload = JSON.parse(res.stdout);
+    expect(payload.success).toBe(false);
+    expect(payload.runMode).toBe('blunder-detect');
+    expect(payload.parseState?.runMode).toBe('blunder-detect');
+    const diagCodes = new Set(
+      (payload.parseState?.runModeCompatibilityDiagnostics ?? []).map((diag: { code: string }) => diag.code),
+    );
+    expect(diagCodes.has('BLUNDER_LEVELING_ONLY')).toBe(true);
+  });
+
   it('hard-fails runs when include files are missing', () => {
     const outDir = mkdtempSync(path.join(tmpdir(), 'webnet-cli-include-'));
     const inputPath = path.join(outDir, 'main.dat');

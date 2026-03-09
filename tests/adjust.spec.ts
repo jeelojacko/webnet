@@ -1929,6 +1929,104 @@ describe('LSAEngine', () => {
     expect(candidates.some((obs) => obs.id === bearing?.id)).toBe(false);
   });
 
+  it('enforces data-check mode incompatibility matrix with explicit diagnostics', () => {
+    const input = [
+      '.2D',
+      'C A 0 0 0 ! !',
+      'C B 100 0 0 ! !',
+      'C U 50 40 0',
+      'D A-U 64.031 0.003',
+      'D B-U 64.031 0.003',
+    ].join('\n');
+
+    const result = new LSAEngine({
+      input,
+      maxIterations: 8,
+      parseOptions: {
+        runMode: 'data-check',
+        coordMode: '2D',
+        autoAdjustEnabled: true,
+        robustMode: 'huber',
+        autoSideshotEnabled: true,
+        clusterDetectionEnabled: true,
+      },
+    }).solve();
+
+    expect(result.success).toBe(true);
+    expect(result.parseState?.runMode).toBe('data-check');
+    const diagCodes = new Set(
+      (result.parseState?.runModeCompatibilityDiagnostics ?? []).map((diag) => diag.code),
+    );
+    expect(diagCodes.has('DATACHECK_DISALLOWS_AUTOADJUST')).toBe(true);
+    expect(diagCodes.has('DATACHECK_DISALLOWS_ROBUST')).toBe(true);
+    expect(diagCodes.has('DATACHECK_SKIPS_AUTOSIDESHOT')).toBe(true);
+    expect(diagCodes.has('DATACHECK_SKIPS_CLUSTER')).toBe(true);
+    expect(result.logs.some((line) => line.includes('[DATACHECK_DISALLOWS_AUTOADJUST]'))).toBe(
+      true,
+    );
+    expect(result.logs.some((line) => line.includes('[DATACHECK_DISALLOWS_ROBUST]'))).toBe(true);
+  });
+
+  it('enforces blunder-detect mode overrides with explicit diagnostics', () => {
+    const input = [
+      '.2D',
+      'C A 0 0 0 ! !',
+      'C B 100 0 0 ! !',
+      'C U 50 60 0',
+      'D A-U 78.102 0.003',
+      'D B-U 78.102 0.003',
+      'A U-A-B 78-30-00.0 1.0',
+    ].join('\n');
+
+    const result = new LSAEngine({
+      input,
+      maxIterations: 8,
+      parseOptions: {
+        runMode: 'blunder-detect',
+        coordMode: '2D',
+        autoAdjustEnabled: true,
+        robustMode: 'huber',
+        autoSideshotEnabled: true,
+        clusterDetectionEnabled: true,
+      },
+    }).solve();
+
+    expect(result.success).toBe(true);
+    expect(result.parseState?.runMode).toBe('blunder-detect');
+    const diagCodes = new Set(
+      (result.parseState?.runModeCompatibilityDiagnostics ?? []).map((diag) => diag.code),
+    );
+    expect(diagCodes.has('BLUNDER_DISALLOWS_AUTOADJUST')).toBe(true);
+    expect(diagCodes.has('BLUNDER_DISALLOWS_ROBUST')).toBe(true);
+    expect(diagCodes.has('BLUNDER_SKIPS_AUTOSIDESHOT')).toBe(true);
+    expect(diagCodes.has('BLUNDER_SKIPS_CLUSTER')).toBe(true);
+    expect(result.logs.some((line) => line.includes('[BLUNDER_DISALLOWS_AUTOADJUST]'))).toBe(true);
+    expect(result.logs.some((line) => line.includes('[BLUNDER_DISALLOWS_ROBUST]'))).toBe(true);
+  });
+
+  it('hard-fails blunder-detect mode for leveling-only datasets with compatibility diagnostics', () => {
+    const input = [
+      'C A 0 0 100.000 ! ! !',
+      'C B 0 0 100.900',
+      'L A-B 0.9000 0.25',
+    ].join('\n');
+
+    const result = new LSAEngine({
+      input,
+      maxIterations: 8,
+      parseOptions: { runMode: 'blunder-detect' },
+    }).solve();
+
+    expect(result.success).toBe(false);
+    expect(result.parseState?.runMode).toBe('blunder-detect');
+    const levelOnlyDiag = (result.parseState?.runModeCompatibilityDiagnostics ?? []).find(
+      (diag) => diag.code === 'BLUNDER_LEVELING_ONLY',
+    );
+    expect(levelOnlyDiag).toBeDefined();
+    expect(levelOnlyDiag?.severity).toBe('error');
+    expect(result.logs.some((line) => line.includes('[BLUNDER_LEVELING_ONLY]'))).toBe(true);
+  });
+
   it('computes post-adjusted sideshot coordinates/precision when azimuth reference exists', () => {
     const input = readFileSync('tests/fixtures/sideshot_postadjust_known.dat', 'utf-8');
     const engine = new LSAEngine({ input, maxIterations: 10 });
