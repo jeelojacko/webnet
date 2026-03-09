@@ -50,7 +50,10 @@
   - [x] Phase 3: add CLI hard-fail regression coverage for missing/cycle/depth/relative-path include scenarios with deterministic exit behavior
 - [ ] Legacy compatibility corpus gate:
   - [x] Phase 1: curate mixed legacy-project corpus fixture set and define expected run-mode outcomes per project
-  - [ ] Phase 2: add corpus harness command that enforces parse success, run success, and no silent directive drops
+  - [x] Phase 2: add corpus harness command that enforces parse success, run success, and no silent directive drops
+    - [x] Add `npm run corpus:legacy` harness entrypoint (`src/legacyCorpusHarness.ts`) with include-aware filesystem resolution and deterministic pass/fail summary output
+    - [x] Enforce gate checks per corpus project: expected parse success, expected run success, required run-mode diagnostics, and no silent unknown/ambiguous inline-directive drops
+    - [x] Add harness regression tests for default pass path, deterministic mismatch failure path, and silent-directive-drop detector behavior (`tests/legacy_corpus_harness.test.ts`)
   - [ ] Phase 3: wire corpus harness into CI with failure summary artifacts and parity baseline tracking
 - [x] Exclude fixed planned observations from preanalysis what-if candidates so fixed bearing/control planning rows are not presented as removable
 - [x] Add a separate locked planned-observations preanalysis section and hover-help coverage for preanalysis report headers/labels

@@ -904,7 +904,7 @@ type NormalizedInlineDirective = {
   candidates?: string[];
 };
 
-const normalizeInlineDirective = (
+export const normalizeInlineDirective = (
   rawDirectiveToken: string,
   abbreviationMode: ParseOptions['directiveAbbreviationMode'] = 'unique-prefix',
 ): NormalizedInlineDirective => {

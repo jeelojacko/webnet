@@ -14,6 +14,7 @@
     "test:run": "vitest run",
     "test:cov": "vitest run --coverage",
     "adjust:cli": "tsx src/cli.ts",
+    "corpus:legacy": "tsx src/legacyCorpusHarness.ts",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "prepare": "husky"
