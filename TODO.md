@@ -38,7 +38,7 @@
   - [x] Batch 2 (UI/report): memoize heavy derived report arrays and lazy-load heavy result tabs to reduce initial payload/first render cost
   - [x] Batch 3 (parser/import): reduce parser directive hot-loop allocations and trim repeated importer regex rescans for large external files
 - [ ] Run-mode parity completion (UI/report path + compatibility constraints):
-  - [ ] Phase 1: wire UI solve path and Project Options state so run mode supports `adjustment`/`preanalysis`/`data-check`/`blunder-detect` instead of forcing `adjustment|preanalysis` in `App.tsx`
+  - [x] Phase 1: wire UI solve path and Project Options state so run mode supports `adjustment`/`preanalysis`/`data-check`/`blunder-detect` instead of forcing `adjustment|preanalysis` in `App.tsx`
   - [ ] Phase 2: add run-mode-specific report/listing/processing-summary sections (including data-check differences and blunder-detect warning/profile text)
   - [ ] Phase 3: implement exhaustive run-mode incompatibility matrix with clear diagnostics and mode-gated regression coverage
 - [ ] Include pipeline test-gate completion:

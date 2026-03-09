@@ -193,6 +193,24 @@ describe('Project Options modal interactions', () => {
     }
   });
 
+  it('persists run-mode selection after Apply in Adjustment tab', async () => {
+    const app = await mountApp('adjustment');
+    try {
+      const firstRunMode = findSelectForSettingsRow(app.container, 'Run Mode');
+      expect(firstRunMode.value).toBe('adjustment');
+      await setSelectValue(firstRunMode, 'data-check');
+
+      await clickButtonByExactText(app.container, 'Apply');
+      await clickOpenProjectOptions(app.container);
+      await clickButtonByExactText(app.container, 'Adjustment');
+
+      const reopenedRunMode = findSelectForSettingsRow(app.container, 'Run Mode');
+      expect(reopenedRunMode.value).toBe('data-check');
+    } finally {
+      await app.cleanup();
+    }
+  });
+
   it('discards unsaved convergence-limit edits when Cancel is clicked', async () => {
     const app = await mountApp('adjustment');
     try {

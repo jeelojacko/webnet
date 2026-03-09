@@ -119,6 +119,7 @@ import type {
   ParseCompatibilityDiagnostic,
   ParseCompatibilityMode,
   ReductionUsageSummary,
+  RunMode,
 } from './types';
 
 const ReportView = React.lazy(() => import('./components/ReportView'));
@@ -287,6 +288,7 @@ type CrsCatalogGroupFilter = 'all' | CrsCatalogGroup;
 type RunDiagnostics = {
   solveProfile: SolveProfile;
   parity: boolean;
+  runMode: RunMode;
   preanalysisMode: boolean;
   plannedObservationCount: number;
   autoSideshotEnabled: boolean;
@@ -406,6 +408,7 @@ type ParseSettings = {
   gridDistanceMode: GridDistanceInputMode;
   gridAngleMode: GridObservationMode;
   gridDirectionMode: GridObservationMode;
+  runMode: RunMode;
   preanalysisMode: boolean;
   clusterDetectionEnabled: boolean;
   autoSideshotEnabled: boolean;
@@ -521,6 +524,8 @@ const SETTINGS_TOOLTIPS = {
     'When the change in weighted standardized residual sum (vTPv) between iterations is below this value, the run is considered converged and iterations stop.',
   coordMode:
     '2D adjusts horizontal coordinates only. 3D also adjusts heights and uses vertical observations.',
+  runMode:
+    'Select run workflow. Adjustment performs full least-squares; Preanalysis predicts precision from planning geometry; Data Check runs consistency checks without full adjustment output; Blunder Detect runs iterative deweight diagnostics.',
   preanalysisMode:
     'Preanalysis resolves planned observations from approximate geometry and reports predicted precision without residual-based QC.',
   clusterDetection:
@@ -1008,6 +1013,7 @@ const App: React.FC<AppProps> = ({
     gridDistanceMode: 'measured',
     gridAngleMode: 'measured',
     gridDirectionMode: 'measured',
+    runMode: 'adjustment',
     preanalysisMode: false,
     clusterDetectionEnabled: false,
     autoSideshotEnabled: true,
@@ -1457,26 +1463,39 @@ const App: React.FC<AppProps> = ({
 
   const resolveProfileContext = (base: ParseSettings) => {
     const parity = base.solveProfile === 'industry-parity';
+    const requestedRunMode: RunMode =
+      base.runMode ?? (base.preanalysisMode ? 'preanalysis' : 'adjustment');
+    const normalizedBase: ParseSettings = {
+      ...base,
+      runMode: requestedRunMode,
+      preanalysisMode: requestedRunMode === 'preanalysis',
+    };
     const defaultParseCompatibilityMode: ParseCompatibilityMode = parity ? 'strict' : 'legacy';
     const parityParse = parity
       ? {
-          ...base,
+          ...normalizedBase,
           robustMode: 'none' as RobustMode,
           tsCorrelationEnabled: false,
           tsCorrelationRho: 0,
-          parseCompatibilityMode: base.parseCompatibilityMode ?? defaultParseCompatibilityMode,
+          parseCompatibilityMode:
+            normalizedBase.parseCompatibilityMode ?? defaultParseCompatibilityMode,
         }
       : {
-          ...base,
-          parseCompatibilityMode: base.parseCompatibilityMode ?? defaultParseCompatibilityMode,
+          ...normalizedBase,
+          parseCompatibilityMode:
+            normalizedBase.parseCompatibilityMode ?? defaultParseCompatibilityMode,
         };
-    const effectiveParse = base.preanalysisMode
+    const effectiveParse = requestedRunMode === 'preanalysis'
       ? {
           ...parityParse,
           robustMode: 'none' as RobustMode,
           autoAdjustEnabled: false,
+          preanalysisMode: true,
         }
-      : parityParse;
+      : {
+          ...parityParse,
+          preanalysisMode: false,
+        };
     const directionSetMode: DirectionSetMode = parity ? 'raw' : 'reduced';
     const effectiveInstrumentLibrary = parity
       ? { ...projectInstruments, [INDUSTRY_DEFAULT_INSTRUMENT_CODE]: INDUSTRY_DEFAULT_INSTRUMENT }
@@ -1497,6 +1516,10 @@ const App: React.FC<AppProps> = ({
     const profileCtx = resolveProfileContext(base);
     const parseState = (solved?.parseState ?? profileCtx.effectiveParse) as ParseOptions;
     const parse = {
+      runMode:
+        parseState.runMode ??
+        profileCtx.effectiveParse.runMode ??
+        (profileCtx.effectiveParse.preanalysisMode ? 'preanalysis' : 'adjustment'),
       coordSystemMode:
         parseState.coordSystemMode ?? profileCtx.effectiveParse.coordSystemMode ?? 'local',
       crsId: parseState.crsId ?? profileCtx.effectiveParse.crsId ?? DEFAULT_CANADA_CRS_ID,
@@ -1690,7 +1713,8 @@ const App: React.FC<AppProps> = ({
     return {
       solveProfile: base.solveProfile,
       parity: profileCtx.parity,
-      preanalysisMode: parseState.preanalysisMode ?? profileCtx.effectiveParse.preanalysisMode,
+      runMode: parse.runMode,
+      preanalysisMode: parse.runMode === 'preanalysis',
       plannedObservationCount: parseState.plannedObservationCount ?? 0,
       autoSideshotEnabled: parseState.autoSideshotEnabled ?? base.autoSideshotEnabled,
       autoAdjustEnabled: parseState.autoAdjustEnabled ?? base.autoAdjustEnabled,
@@ -1860,11 +1884,19 @@ const App: React.FC<AppProps> = ({
     const outputGpsCoordinateSideshots = outputGpsSideshots.filter((ss) => ss.sourceType === 'GS');
     const gpsLoopDiagnostics = res.gpsLoopDiagnostics;
     const isPreanalysis = res.preanalysisMode === true;
+    const runModeProfileText =
+      runDiag.runMode === 'preanalysis'
+        ? `PREANALYSIS(planned=${runDiag.plannedObservationCount})`
+        : runDiag.runMode.toUpperCase();
+    const runModeSummaryText =
+      runDiag.runMode === 'preanalysis'
+        ? `PREANALYSIS (planned observations=${runDiag.plannedObservationCount})`
+        : runDiag.runMode.toUpperCase();
     lines.push(`# WebNet Adjustment Results`);
     lines.push(`# Generated: ${now.toLocaleString()}`);
     lines.push(`# Linear units: ${linearUnit}`);
     lines.push(
-      `# Reduction: profile=${runDiag.solveProfile}, runMode=${runDiag.preanalysisMode ? `PREANALYSIS(planned=${runDiag.plannedObservationCount})` : 'ADJUSTMENT'}, autoSideshot=${runDiag.autoSideshotEnabled ? 'ON' : 'OFF'}, autoAdjust=${runDiag.autoAdjustEnabled ? 'ON' : 'OFF'}(|t|>=${runDiag.autoAdjustStdResThreshold.toFixed(2)},cycles=${runDiag.autoAdjustMaxCycles},maxRm=${runDiag.autoAdjustMaxRemovalsPerCycle}), dirSets=${runDiag.directionSetMode}, mapMode=${runDiag.mapMode}, mapScale=${runDiag.mapScaleFactor.toFixed(8)}, crsScale=${runDiag.crsGridScaleEnabled ? `ON(${runDiag.crsGridScaleFactor.toFixed(8)})` : 'OFF'}, crsConv=${runDiag.crsConvergenceEnabled ? `ON(${(runDiag.crsConvergenceAngleRad * RAD_TO_DEG).toFixed(6)}deg)` : 'OFF'}, geoid=${runDiag.geoidModelEnabled ? `ON(${runDiag.geoidModelId},${runDiag.geoidInterpolation.toUpperCase()})` : 'OFF'}, geoidH=${runDiag.geoidHeightConversionEnabled ? `ON(${runDiag.geoidOutputHeightDatum.toUpperCase()},conv=${runDiag.geoidConvertedStationCount},skip=${runDiag.geoidSkippedStationCount})` : 'OFF'}, gpsLoop=${runDiag.gpsLoopCheckEnabled ? 'ON' : 'OFF'}, levelLoopTol=${runDiag.levelLoopToleranceBaseMm.toFixed(2)}mm+${runDiag.levelLoopTolerancePerSqrtKmMm.toFixed(2)}mm*sqrt(km), gpsAddHiHt=${runDiag.gpsAddHiHtEnabled ? `ON(HI=${(runDiag.gpsAddHiHtHiM * unitScale).toFixed(4)}${linearUnit},HT=${(runDiag.gpsAddHiHtHtM * unitScale).toFixed(4)}${linearUnit})` : 'OFF'}, curvRef=${runDiag.applyCurvatureRefraction ? 'ON' : 'OFF'}, k=${runDiag.refractionCoefficient.toFixed(3)}, vRed=${runDiag.verticalReduction}, qfixLin=${(runDiag.qFixLinearSigmaM * unitScale).toExponential(6)}${linearUnit}, qfixAng=${runDiag.qFixAngularSigmaSec.toExponential(6)}sec, prism=${runDiag.prismEnabled ? `ON(${runDiag.prismOffset.toFixed(4)}m,${runDiag.prismScope})` : 'OFF'}, rotation=${(runDiag.rotationAngleRad * RAD_TO_DEG).toFixed(6)}deg, tsCorr=${runDiag.tsCorrelationEnabled ? 'ON' : 'OFF'}(${runDiag.tsCorrelationScope},rho=${runDiag.tsCorrelationRho.toFixed(3)}), robust=${runDiag.robustMode.toUpperCase()}(k=${runDiag.robustK.toFixed(2)})`,
+      `# Reduction: profile=${runDiag.solveProfile}, runMode=${runModeProfileText}, autoSideshot=${runDiag.autoSideshotEnabled ? 'ON' : 'OFF'}, autoAdjust=${runDiag.autoAdjustEnabled ? 'ON' : 'OFF'}(|t|>=${runDiag.autoAdjustStdResThreshold.toFixed(2)},cycles=${runDiag.autoAdjustMaxCycles},maxRm=${runDiag.autoAdjustMaxRemovalsPerCycle}), dirSets=${runDiag.directionSetMode}, mapMode=${runDiag.mapMode}, mapScale=${runDiag.mapScaleFactor.toFixed(8)}, crsScale=${runDiag.crsGridScaleEnabled ? `ON(${runDiag.crsGridScaleFactor.toFixed(8)})` : 'OFF'}, crsConv=${runDiag.crsConvergenceEnabled ? `ON(${(runDiag.crsConvergenceAngleRad * RAD_TO_DEG).toFixed(6)}deg)` : 'OFF'}, geoid=${runDiag.geoidModelEnabled ? `ON(${runDiag.geoidModelId},${runDiag.geoidInterpolation.toUpperCase()})` : 'OFF'}, geoidH=${runDiag.geoidHeightConversionEnabled ? `ON(${runDiag.geoidOutputHeightDatum.toUpperCase()},conv=${runDiag.geoidConvertedStationCount},skip=${runDiag.geoidSkippedStationCount})` : 'OFF'}, gpsLoop=${runDiag.gpsLoopCheckEnabled ? 'ON' : 'OFF'}, levelLoopTol=${runDiag.levelLoopToleranceBaseMm.toFixed(2)}mm+${runDiag.levelLoopTolerancePerSqrtKmMm.toFixed(2)}mm*sqrt(km), gpsAddHiHt=${runDiag.gpsAddHiHtEnabled ? `ON(HI=${(runDiag.gpsAddHiHtHiM * unitScale).toFixed(4)}${linearUnit},HT=${(runDiag.gpsAddHiHtHtM * unitScale).toFixed(4)}${linearUnit})` : 'OFF'}, curvRef=${runDiag.applyCurvatureRefraction ? 'ON' : 'OFF'}, k=${runDiag.refractionCoefficient.toFixed(3)}, vRed=${runDiag.verticalReduction}, qfixLin=${(runDiag.qFixLinearSigmaM * unitScale).toExponential(6)}${linearUnit}, qfixAng=${runDiag.qFixAngularSigmaSec.toExponential(6)}sec, prism=${runDiag.prismEnabled ? `ON(${runDiag.prismOffset.toFixed(4)}m,${runDiag.prismScope})` : 'OFF'}, rotation=${(runDiag.rotationAngleRad * RAD_TO_DEG).toFixed(6)}deg, tsCorr=${runDiag.tsCorrelationEnabled ? 'ON' : 'OFF'}(${runDiag.tsCorrelationScope},rho=${runDiag.tsCorrelationRho.toFixed(3)}), robust=${runDiag.robustMode.toUpperCase()}(k=${runDiag.robustK.toFixed(2)})`,
     );
     lines.push(
       `# Parity: profileFallback=${runDiag.profileDefaultInstrumentFallback ? 'ON' : 'OFF'}, angleCentering=${runDiag.angleCenteringModel}, normalize=${runDiag.normalize ? 'ON' : 'OFF'}, angleMode=${runDiag.angleMode.toUpperCase()}`,
@@ -1872,9 +1904,7 @@ const App: React.FC<AppProps> = ({
     lines.push('');
     lines.push('--- Solve Profile Diagnostics ---');
     lines.push(`Profile: ${runDiag.solveProfile.toUpperCase()}`);
-    lines.push(
-      `Run mode: ${runDiag.preanalysisMode ? `PREANALYSIS (planned observations=${runDiag.plannedObservationCount})` : 'ADJUSTMENT'}`,
-    );
+    lines.push(`Run mode: ${runModeSummaryText}`);
     lines.push(`Direction-set mode: ${runDiag.directionSetMode}`);
     lines.push(`Auto-sideshot detection: ${runDiag.autoSideshotEnabled ? 'ON' : 'OFF'}`);
     lines.push(
@@ -4368,8 +4398,14 @@ const App: React.FC<AppProps> = ({
                 : 'legacy');
       const defaultMigratedFlag =
         projectSchemaVersion === 1 ? false : (loadedParseSettings.parseModeMigrated ?? migrationFlag);
+      const normalizedRunMode: RunMode =
+        loadedParseSettings.preanalysisMode === true
+          ? 'preanalysis'
+          : (loadedParseSettings.runMode ?? 'adjustment');
       const normalizedLoadedParseSettings: ParseSettings = {
         ...loadedParseSettings,
+        runMode: normalizedRunMode,
+        preanalysisMode: normalizedRunMode === 'preanalysis',
         ...(loadedParseSettings.observationMode
           ? {
               gridBearingMode: loadedParseSettings.observationMode.bearing,
@@ -4926,7 +4962,7 @@ const App: React.FC<AppProps> = ({
       geoidSourceData:
         effectiveParse.geoidSourceFormat !== 'builtin' ? (geoidSourceData ?? undefined) : undefined,
       parseOptions: {
-        runMode: effectiveParse.preanalysisMode ? 'preanalysis' : 'adjustment',
+        runMode: effectiveParse.runMode,
         sourceFile: '<project-main>',
         includeFiles: projectIncludeFiles,
         units: settings.units,
@@ -4949,7 +4985,7 @@ const App: React.FC<AppProps> = ({
         gridDistanceMode: effectiveParse.gridDistanceMode,
         gridAngleMode: effectiveParse.gridAngleMode,
         gridDirectionMode: effectiveParse.gridDirectionMode,
-        preanalysisMode: effectiveParse.preanalysisMode,
+        preanalysisMode: effectiveParse.runMode === 'preanalysis',
         order: effectiveParse.order,
         angleUnits: effectiveParse.angleUnits,
         angleStationOrder: effectiveParse.angleStationOrder,
@@ -5216,7 +5252,7 @@ const App: React.FC<AppProps> = ({
   ): AdjustmentResult => {
     const solved = solveCore(excludeSet, undefined, overrideValues, approvedClusterMerges);
     const profileCtx = resolveProfileContext(parseSettings);
-    if (profileCtx.effectiveParse.preanalysisMode) {
+    if (profileCtx.effectiveParse.runMode === 'preanalysis') {
       solved.suspectImpactDiagnostics = undefined;
       solved.preanalysisImpactDiagnostics = buildPreanalysisImpactDiagnostics(
         solved,
@@ -5224,6 +5260,17 @@ const App: React.FC<AppProps> = ({
         overrideValues,
         approvedClusterMerges,
       );
+      solved.robustComparison = {
+        enabled: false,
+        classicalTop: [],
+        robustTop: [],
+        overlapCount: 0,
+      };
+      return solved;
+    }
+    if (profileCtx.effectiveParse.runMode !== 'adjustment') {
+      solved.suspectImpactDiagnostics = undefined;
+      solved.preanalysisImpactDiagnostics = undefined;
       solved.robustComparison = {
         enabled: false,
         classicalTop: [],
@@ -5305,11 +5352,11 @@ const App: React.FC<AppProps> = ({
     }
 
     const inlineAutoAdjust = extractAutoAdjustDirectiveFromInput(input);
+    const uiRunMode: RunMode =
+      parseSettings.runMode ?? (parseSettings.preanalysisMode ? 'preanalysis' : 'adjustment');
     const autoAdjustConfig: AutoAdjustConfig = {
       enabled:
-        parseSettings.preanalysisMode === true
-          ? false
-          : (inlineAutoAdjust?.enabled ?? parseSettings.autoAdjustEnabled),
+        uiRunMode === 'adjustment' ? (inlineAutoAdjust?.enabled ?? parseSettings.autoAdjustEnabled) : false,
       maxCycles: inlineAutoAdjust?.maxCycles ?? parseSettings.autoAdjustMaxCycles,
       maxRemovalsPerCycle:
         inlineAutoAdjust?.maxRemovalsPerCycle ?? parseSettings.autoAdjustMaxRemovalsPerCycle,
@@ -5372,6 +5419,8 @@ const App: React.FC<AppProps> = ({
       solved.logs.unshift(
         `Run mode: preanalysis (planned observations=${runProfile.plannedObservationCount}, residual-based QC disabled).`,
       );
+    } else if (runProfile.runMode !== 'adjustment') {
+      solved.logs.unshift(`Run mode: ${runProfile.runMode}.`);
     }
     if (
       inputChangedSinceLastRun &&
@@ -5476,6 +5525,24 @@ const App: React.FC<AppProps> = ({
     }
     setParseSettingsDraft((prev) => {
       const next = { ...prev, [key]: value };
+      if (key === 'runMode') {
+        const runMode = value as RunMode;
+        next.runMode = runMode;
+        next.preanalysisMode = runMode === 'preanalysis';
+        if (runMode !== 'adjustment') {
+          next.autoAdjustEnabled = false;
+        }
+        return next;
+      }
+      if (key === 'preanalysisMode') {
+        const preanalysisMode = value as boolean;
+        next.preanalysisMode = preanalysisMode;
+        next.runMode = preanalysisMode ? 'preanalysis' : 'adjustment';
+        if (preanalysisMode) {
+          next.autoAdjustEnabled = false;
+        }
+        return next;
+      }
       if (key === 'observationMode') {
         const mode = value as ObservationModeSettings | undefined;
         if (mode) {
@@ -6093,21 +6160,25 @@ const App: React.FC<AppProps> = ({
                           Automated Adjustment Actions
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                          <div
-                            className="rounded border border-slate-400/60 bg-slate-700/20 px-2 py-2 flex items-center justify-between gap-2"
-                            title={SETTINGS_TOOLTIPS.preanalysisMode}
+                          <label
+                            className="rounded border border-slate-400/60 bg-slate-700/20 px-2 py-2 flex flex-col gap-2 text-[11px] uppercase tracking-wide text-slate-200"
+                            title={SETTINGS_TOOLTIPS.runMode}
                           >
-                            <span className="text-[11px] uppercase tracking-wide text-slate-200">
-                              Preanalysis
-                            </span>
-                            <SettingsToggle
-                              title={SETTINGS_TOOLTIPS.preanalysisMode}
-                              checked={parseSettingsDraft.preanalysisMode}
-                              onChange={(checked) =>
-                                handleDraftParseSetting('preanalysisMode', checked)
+                            <span>Run Mode</span>
+                            <select
+                              title={SETTINGS_TOOLTIPS.runMode}
+                              value={parseSettingsDraft.runMode}
+                              onChange={(e) =>
+                                handleDraftParseSetting('runMode', e.target.value as RunMode)
                               }
-                            />
-                          </div>
+                              className={optionInputClass}
+                            >
+                              <option value="adjustment">Adjustment</option>
+                              <option value="preanalysis">Preanalysis</option>
+                              <option value="data-check">Data Check</option>
+                              <option value="blunder-detect">Blunder Detect</option>
+                            </select>
+                          </label>
                           <div
                             className="rounded border border-slate-400/60 bg-slate-700/20 px-2 py-2 flex items-center justify-between gap-2"
                             title={SETTINGS_TOOLTIPS.autoSideshot}
@@ -6148,16 +6219,16 @@ const App: React.FC<AppProps> = ({
                             <SettingsToggle
                               title={SETTINGS_TOOLTIPS.autoAdjust}
                               checked={parseSettingsDraft.autoAdjustEnabled}
-                              disabled={parseSettingsDraft.preanalysisMode}
+                              disabled={parseSettingsDraft.runMode !== 'adjustment'}
                               onChange={(checked) =>
                                 handleDraftParseSetting('autoAdjustEnabled', checked)
                               }
                             />
                           </div>
                         </div>
-                        {parseSettingsDraft.preanalysisMode && (
+                        {parseSettingsDraft.runMode !== 'adjustment' && (
                           <div className="text-[11px] text-slate-300">
-                            Auto-Adjust is disabled while Preanalysis mode is enabled.
+                            Auto-Adjust is disabled unless Run Mode is set to Adjustment.
                           </div>
                         )}
                       </div>
@@ -6172,7 +6243,7 @@ const App: React.FC<AppProps> = ({
                             step={0.1}
                             value={parseSettingsDraft.autoAdjustStdResThreshold}
                             disabled={
-                              parseSettingsDraft.preanalysisMode ||
+                              parseSettingsDraft.runMode !== 'adjustment' ||
                               !parseSettingsDraft.autoAdjustEnabled
                             }
                             onChange={(e) =>
@@ -6196,7 +6267,7 @@ const App: React.FC<AppProps> = ({
                             step={1}
                             value={parseSettingsDraft.autoAdjustMaxCycles}
                             disabled={
-                              parseSettingsDraft.preanalysisMode ||
+                              parseSettingsDraft.runMode !== 'adjustment' ||
                               !parseSettingsDraft.autoAdjustEnabled
                             }
                             onChange={(e) =>
@@ -6220,7 +6291,7 @@ const App: React.FC<AppProps> = ({
                             step={1}
                             value={parseSettingsDraft.autoAdjustMaxRemovalsPerCycle}
                             disabled={
-                              parseSettingsDraft.preanalysisMode ||
+                              parseSettingsDraft.runMode !== 'adjustment' ||
                               !parseSettingsDraft.autoAdjustEnabled
                             }
                             onChange={(e) =>
