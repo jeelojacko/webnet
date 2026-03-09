@@ -5,7 +5,7 @@ import type {
   InstrumentLibrary,
   ProjectExportFormat,
   ParseCompatibilityMode,
-  WebNetProjectFileV2,
+  WebNetProjectFileV3,
 } from '../types';
 import {
   DEFAULT_ADJUSTED_POINTS_EXPORT_SETTINGS,
@@ -23,8 +23,9 @@ export interface ProjectFileDefaults {
 }
 
 export interface ParsedProjectPayload {
-  schemaVersion?: 1 | 2;
+  schemaVersion?: 1 | 2 | 3;
   input: string;
+  includeFiles: Record<string, string>;
   ui: {
     settings: Record<string, unknown>;
     parseSettings: Record<string, unknown>;
@@ -164,6 +165,16 @@ const sanitizeParseCompatibilityMode = (value: unknown): ParseCompatibilityMode 
   return undefined;
 };
 
+const sanitizeIncludeFiles = (value: unknown): Record<string, string> => {
+  if (!isRecord(value)) return {};
+  const next: Record<string, string> = {};
+  Object.entries(value).forEach(([key, raw]) => {
+    if (!key.trim() || typeof raw !== 'string') return;
+    next[key] = raw;
+  });
+  return next;
+};
+
 export const serializeProjectFile = (project: ParsedProjectPayload): string => {
   const nowIso = new Date().toISOString();
   const parseSettings = cloneRecord(project.ui.parseSettings);
@@ -175,11 +186,12 @@ export const serializeProjectFile = (project: ParsedProjectPayload): string => {
     modeFromSettings ?? (parseModeMigrated ? 'strict' : 'legacy');
   parseSettings.parseCompatibilityMode = parseCompatibilityMode;
   parseSettings.parseModeMigrated = parseModeMigrated;
-  const payload: WebNetProjectFileV2 = {
+  const payload: WebNetProjectFileV3 = {
     kind: 'webnet-project',
-    schemaVersion: 2,
+    schemaVersion: 3,
     savedAt: nowIso,
-    input: project.input,
+    mainInput: project.input,
+    includeFiles: sanitizeIncludeFiles(project.includeFiles),
     ui: {
       settings: cloneRecord(project.ui.settings),
       parseSettings,
@@ -220,13 +232,21 @@ export const parseProjectFile = (
     errors.push('Project file kind is invalid (expected "webnet-project").');
   }
   const schemaVersionRaw = parsed.schemaVersion;
-  const schemaVersion: 1 | 2 = schemaVersionRaw === 2 ? 2 : 1;
-  if (schemaVersionRaw !== 1 && schemaVersionRaw !== 2) {
-    errors.push('Project file schemaVersion is unsupported (expected 1 or 2).');
+  const schemaVersion: 1 | 2 | 3 = schemaVersionRaw === 3 ? 3 : schemaVersionRaw === 2 ? 2 : 1;
+  if (schemaVersionRaw !== 1 && schemaVersionRaw !== 2 && schemaVersionRaw !== 3) {
+    errors.push('Project file schemaVersion is unsupported (expected 1, 2, or 3).');
   }
   if (errors.length > 0) return { ok: false, errors };
 
-  const input = typeof parsed.input === 'string' ? parsed.input : '';
+  const input =
+    schemaVersion === 3
+      ? typeof parsed.mainInput === 'string'
+        ? parsed.mainInput
+        : ''
+      : typeof parsed.input === 'string'
+        ? parsed.input
+        : '';
+  const includeFiles = schemaVersion === 3 ? sanitizeIncludeFiles(parsed.includeFiles) : {};
   const ui = isRecord(parsed.ui) ? parsed.ui : {};
   const project = isRecord(parsed.project) ? parsed.project : {};
   const parseSettingsRaw = isRecord(ui.parseSettings) ? ui.parseSettings : {};
@@ -282,6 +302,7 @@ export const parseProjectFile = (
     project: {
       schemaVersion,
       input,
+      includeFiles,
       ui: {
         settings,
         parseSettings,

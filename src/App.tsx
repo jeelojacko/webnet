@@ -964,6 +964,7 @@ const App: React.FC<AppProps> = ({
   const [input, setInput] = useState<string>(DEFAULT_INPUT);
   const [importNotice, setImportNotice] = useState<ImportedInputNotice | null>(null);
   const [importReviewState, setImportReviewState] = useState<ImportReviewState | null>(null);
+  const [projectIncludeFiles, setProjectIncludeFiles] = useState<Record<string, string>>({});
   const [result, setResult] = useState<AdjustmentResult | null>(null);
   const [runDiagnostics, setRunDiagnostics] = useState<RunDiagnostics | null>(null);
   const [runElapsedMs, setRunElapsedMs] = useState<number | null>(null);
@@ -4277,6 +4278,7 @@ const App: React.FC<AppProps> = ({
   const handleSaveProject = async () => {
     const projectText = serializeProjectFile({
       input,
+      includeFiles: projectIncludeFiles,
       ui: {
         settings: settings as unknown as Record<string, unknown>,
         parseSettings: parseSettings as unknown as Record<string, unknown>,
@@ -4393,6 +4395,7 @@ const App: React.FC<AppProps> = ({
         },
       );
       setInput(parsed.project.input);
+      setProjectIncludeFiles({ ...(parsed.project.includeFiles ?? {}) });
       setSettings(loadedSettings);
       setParseSettings(normalizedLoadedParseSettings);
       setGeoidSourceData(null);
@@ -4484,6 +4487,7 @@ const App: React.FC<AppProps> = ({
         });
       } else {
         setInput(imported.text);
+        setProjectIncludeFiles({});
         setImportNotice(imported.notice ?? null);
         setImportReviewState(null);
         setExcludedIds(new Set());
@@ -4871,6 +4875,7 @@ const App: React.FC<AppProps> = ({
       },
     );
     setInput(nextInput);
+    setProjectIncludeFiles({});
     setImportNotice(importReviewState.notice);
     setImportReviewState(null);
     setExcludedIds(new Set());
@@ -4921,6 +4926,9 @@ const App: React.FC<AppProps> = ({
       geoidSourceData:
         effectiveParse.geoidSourceFormat !== 'builtin' ? (geoidSourceData ?? undefined) : undefined,
       parseOptions: {
+        runMode: effectiveParse.preanalysisMode ? 'preanalysis' : 'adjustment',
+        sourceFile: '<project-main>',
+        includeFiles: projectIncludeFiles,
         units: settings.units,
         coordMode: effectiveParse.coordMode,
         coordSystemMode: effectiveParse.coordSystemMode,

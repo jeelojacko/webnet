@@ -156,6 +156,7 @@ export type StationMap = Record<StationId, Station>;
 interface ObservationBase {
   id: number;
   sourceLine?: number;
+  sourceFile?: string;
   type: 'dist' | 'angle' | 'direction' | 'dir' | 'gps' | 'lev' | 'bearing' | 'zenith';
   instCode: string;
   setId?: string;
@@ -328,6 +329,7 @@ export interface DirectionRejectDiagnostic {
   occupy: StationId;
   target?: StationId;
   sourceLine?: number;
+  sourceFile?: string;
   recordType?: 'DN' | 'DM' | 'DB' | 'DE' | 'UNKNOWN';
   reason: 'mixed-face' | 'no-shots' | 'missing-context';
   expectedFace?: 'face1' | 'face2';
@@ -367,6 +369,7 @@ export type ClusterLinkageMode = 'single' | 'complete';
 export type ClusterPassLabel = 'single' | 'pass1' | 'pass2';
 export type DescriptionReconcileMode = 'first' | 'append';
 export type ParseCompatibilityMode = 'legacy' | 'strict';
+export type RunMode = 'adjustment' | 'preanalysis' | 'data-check' | 'blunder-detect';
 export type CrsProjectionModel = 'legacy-equirectangular' | 'local-enu';
 export type CoordSystemMode = 'local' | 'grid';
 export type LocalDatumScheme = 'average-scale' | 'common-elevation';
@@ -460,6 +463,7 @@ export type ParseCompatibilityDiagnosticCode =
 export interface ParseCompatibilityDiagnostic {
   code: ParseCompatibilityDiagnosticCode;
   line: number;
+  sourceFile?: string;
   recordType?: string;
   mode: ParseCompatibilityMode;
   severity: 'warning' | 'error';
@@ -537,6 +541,54 @@ export interface WebNetProjectFileV2 {
     selectedInstrument: string;
     levelLoopCustomPresets: CustomLevelLoopTolerancePreset[];
   };
+}
+
+export interface WebNetProjectFileV3 {
+  kind: 'webnet-project';
+  schemaVersion: 3;
+  savedAt: string;
+  mainInput: string;
+  includeFiles: Record<string, string>;
+  ui: {
+    settings: Record<string, unknown>;
+    parseSettings: Record<string, unknown>;
+    exportFormat: ProjectExportFormat;
+    adjustedPointsExport: AdjustedPointsExportSettings;
+    migration?: {
+      parseModeMigrated?: boolean;
+      migratedAt?: string;
+    };
+  };
+  project: {
+    projectInstruments: InstrumentLibrary;
+    selectedInstrument: string;
+    levelLoopCustomPresets: CustomLevelLoopTolerancePreset[];
+  };
+}
+
+export interface ParseIncludeRequest {
+  includePath: string;
+  parentSourceFile?: string;
+  line: number;
+  stack: string[];
+}
+
+export interface ParseIncludeResponse {
+  sourceFile: string;
+  content: string;
+}
+
+export type ParseIncludeResolver = (
+  _request: ParseIncludeRequest,
+) => ParseIncludeResponse | null;
+
+export interface ParseIncludeError {
+  code: 'missing-include-path' | 'include-not-found' | 'include-cycle' | 'include-depth-exceeded';
+  sourceFile: string;
+  line: number;
+  includePath?: string;
+  message: string;
+  stack?: string[];
 }
 
 export interface ClusterApprovedMerge {
@@ -730,13 +782,28 @@ export interface GpsTopoCoordinateShot {
 }
 
 export interface ParseOptions {
+  runMode?: RunMode;
   parseCompatibilityMode?: ParseCompatibilityMode;
+  directiveAbbreviationMode?: 'off' | 'unique-prefix';
+  unknownDirectivePolicy?: 'legacy-warn' | 'strict-error';
   parseCompatibilityDiagnostics?: ParseCompatibilityDiagnostic[];
   ambiguousCount?: number;
   legacyFallbackCount?: number;
   strictRejectCount?: number;
   rewriteSuggestionCount?: number;
   parseModeMigrated?: boolean;
+  sourceFile?: string;
+  includeFiles?: Record<string, string>;
+  includeResolver?: ParseIncludeResolver;
+  includeMaxDepth?: number;
+  includeStack?: string[];
+  includeTrace?: {
+    parentSourceFile?: string;
+    sourceFile: string;
+    line: number;
+  }[];
+  includeErrors?: ParseIncludeError[];
+  compatibilityAcceptedNoOpDirectives?: string[];
   units: UnitsMode;
   coordMode: CoordMode;
   coordSystemMode?: CoordSystemMode;
@@ -867,6 +934,21 @@ export interface ParseOptions {
   reconciledDescriptions?: Record<StationId, string>;
   gpsTopoShots?: GpsTopoCoordinateShot[];
   plannedObservationCount?: number;
+  stationSeparator?: string;
+  dataInputEnabled?: boolean;
+  threeReduceMode?: boolean;
+  linearMultiplier?: number;
+  elevationInputMode?: 'orthometric' | 'ellipsoid';
+  projectElevationMeters?: number;
+  vLevelMode?:
+    | 'off'
+    | 'feet'
+    | 'miles'
+    | 'meters'
+    | 'kilometers'
+    | 'turns'
+    | 'none';
+  vLevelNoneStdErrMeters?: number;
 }
 
 export interface AdjustmentResult {

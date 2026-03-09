@@ -1,5 +1,5 @@
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, readFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
@@ -97,6 +97,42 @@ describe('CLI phase 2 output modes', () => {
     expect(payload.plannedObservationCount).toBeGreaterThan(0);
     expect(payload.parseState?.preanalysisMode).toBe(true);
     expect(payload.parseState?.plannedObservationCount).toBeGreaterThan(0);
+  });
+
+  it('supports explicit run-mode flags for data-check and blunder-detect', () => {
+    const dataCheck = runCli(['--input', STABLE_INPUT, '--output', 'json', '--run-mode', 'data-check']);
+    expect(dataCheck.status).toBe(0);
+    const dataPayload = JSON.parse(dataCheck.stdout);
+    expect(dataPayload.success).toBe(true);
+    expect(dataPayload.runMode).toBe('data-check');
+    expect(dataPayload.parseState?.runMode).toBe('data-check');
+
+    const blunder = runCli([
+      '--input',
+      STABLE_INPUT,
+      '--output',
+      'json',
+      '--run-mode',
+      'blunder-detect',
+    ]);
+    expect(blunder.status).toBe(0);
+    const blunderPayload = JSON.parse(blunder.stdout);
+    expect(blunderPayload.success).toBe(true);
+    expect(blunderPayload.runMode).toBe('blunder-detect');
+    expect(blunderPayload.parseState?.runMode).toBe('blunder-detect');
+  });
+
+  it('hard-fails runs when include files are missing', () => {
+    const outDir = mkdtempSync(path.join(tmpdir(), 'webnet-cli-include-'));
+    const inputPath = path.join(outDir, 'main.dat');
+    writeFileSync(inputPath, ['.INCLUDE missing/child.dat', 'C A 0 0 0 ! !'].join('\n'), 'utf-8');
+
+    const res = runCli(['--input', inputPath, '--output', 'json']);
+    expect(res.status).toBe(1);
+    const payload = JSON.parse(res.stdout);
+    expect(payload.success).toBe(false);
+    expect(payload.parseState?.includeErrors?.length).toBeGreaterThan(0);
+    expect(payload.parseState?.includeErrors?.[0]?.code).toBe('include-not-found');
   });
 
   it('supports coordinate-system CLI flags for Canada-first workflows', () => {

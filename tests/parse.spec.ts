@@ -277,6 +277,64 @@ describe('parseInput', () => {
     expect(parsed.logs.some((l) => l.includes('Auto-adjust set to ON'))).toBe(true);
   });
 
+  it('expands .INCLUDE content from include bundle files and tracks source file traceability', () => {
+    const parsed = parseInput(
+      ['.UNITS M', '.INCLUDE child/network1.dat', 'C A 0 0 0 ! !', 'C B 10 0 0', 'D A-B 10'].join(
+        '\n',
+      ),
+      {},
+      {
+        sourceFile: 'main/project.dat',
+        includeFiles: {
+          'main/child/network1.dat': 'C X 0 10 0 ! !\nC Y 10 10 0\nD X-Y 10',
+        },
+      },
+    );
+    expect(parsed.parseState.includeTrace?.length).toBe(1);
+    expect(parsed.parseState.includeTrace?.[0].parentSourceFile).toBe('main/project.dat');
+    expect(parsed.parseState.includeTrace?.[0].sourceFile).toBe('main/child/network1.dat');
+    const fromInclude = parsed.observations.find(
+      (obs) => 'from' in obs && 'to' in obs && obs.from === 'X' && obs.to === 'Y',
+    );
+    expect(fromInclude?.sourceFile).toBe('main/child/network1.dat');
+  });
+
+  it('restores parent parse-state after include scope exits', () => {
+    const parsed = parseInput(
+      ['.UNITS FT', '.INCLUDE child/set.dat', 'C A 0 0 0 ! !', 'C B 10 0 0', 'D A-B 10'].join(
+        '\n',
+      ),
+      {},
+      {
+        sourceFile: 'main/project.dat',
+        includeFiles: {
+          'main/child/set.dat': '.UNITS M\nC X 0 10 0 ! !\nC Y 10 10 0\nD X-Y 10',
+        },
+      },
+    );
+    const includeDist = parsed.observations.find(
+      (obs) => 'from' in obs && 'to' in obs && obs.from === 'X' && obs.to === 'Y',
+    );
+    const parentDist = parsed.observations.find(
+      (obs) => 'from' in obs && 'to' in obs && obs.from === 'A' && obs.to === 'B',
+    );
+    expect(includeDist?.obs).toBeCloseTo(10, 8);
+    expect(parentDist?.obs).toBeCloseTo(10 / 3.280839895, 8);
+    expect(parsed.parseState.units).toBe('ft');
+  });
+
+  it('captures include errors for missing include files', () => {
+    const parsed = parseInput(
+      ['.INCLUDE field/does-not-exist.dat', 'C A 0 0 0 ! !'].join('\n'),
+      {},
+      { sourceFile: 'main/project.dat', includeFiles: {} },
+    );
+    expect(parsed.parseState.includeErrors?.length).toBe(1);
+    expect(parsed.parseState.includeErrors?.[0].code).toBe('include-not-found');
+    expect(parsed.parseState.includeErrors?.[0].sourceFile).toBe('main/project.dat');
+    expect(parsed.parseState.includeErrors?.[0].line).toBe(1);
+  });
+
   it('parses planned observation placeholders when preanalysis mode is enabled', () => {
     const parsed = parseInput(
       [

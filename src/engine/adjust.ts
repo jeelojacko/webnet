@@ -43,6 +43,7 @@ import type {
   FactorComputationMethod,
   GnssVectorFrame,
   ReductionUsageSummary,
+  RunMode,
 } from '../types';
 
 const EPS = 1e-10;
@@ -314,6 +315,7 @@ export class LSAEngine {
   private tsCorrelationScope: ParseOptions['tsCorrelationScope'] = 'set';
   private robustMode: ParseOptions['robustMode'] = 'none';
   private robustK = 1.5;
+  private runMode: RunMode = 'adjustment';
   private preanalysisMode = false;
   private prismEnabled = false;
   private prismOffset = 0;
@@ -3476,12 +3478,193 @@ export class LSAEngine {
       );
   }
 
+  private runDataCheckOnly(activeObservations: Observation[]): AdjustmentResult {
+    this.runMode = 'data-check';
+    this.iterations = 0;
+    this.dof = 0;
+    this.seuw = 0;
+    this.converged = true;
+    this.log(
+      'Data Check Only mode: reporting approximate-geometry differences from observations (no least-squares adjustment).',
+    );
+
+    const ranked: Array<{ obsId: number; type: Observation['type']; diff: number }> = [];
+    activeObservations.forEach((obs) => {
+      if (obs.type === 'dist') {
+        const s1 = this.stations[obs.from];
+        const s2 = this.stations[obs.to];
+        if (!s1 || !s2) return;
+        const geom = this.centeringLineGeometry(obs.from, obs.to, obs.hi ?? 0, obs.ht ?? 0);
+        const rawCalc = this.is2D ? geom.horiz : obs.mode === 'slope' ? geom.slope : geom.horiz;
+        const corrected = this.correctedDistanceModel(obs, rawCalc);
+        const observed = this.getObservedHorizontalDistanceIn2D(obs);
+        const residual = observed.observedDistance - corrected.calcDistance;
+        obs.calc = corrected.calcDistance;
+        obs.residual = residual;
+        obs.stdRes = observed.sigmaDistance > 0 ? residual / observed.sigmaDistance : 0;
+        ranked.push({ obsId: obs.id, type: obs.type, diff: Math.abs(residual) });
+        return;
+      }
+      if (obs.type === 'angle') {
+        const azFrom = this.getAzimuth(obs.at, obs.from);
+        const azTo = this.getAzimuth(obs.at, obs.to);
+        let calc = azTo.az - azFrom.az;
+        if (calc < 0) calc += 2 * Math.PI;
+        const residual = ((obs.obs - calc + Math.PI) % (2 * Math.PI)) - Math.PI;
+        obs.calc = calc;
+        obs.residual = residual;
+        obs.stdRes = obs.stdDev > 0 ? residual / obs.stdDev : 0;
+        ranked.push({ obsId: obs.id, type: obs.type, diff: Math.abs(residual) });
+        return;
+      }
+      if (obs.type === 'bearing' || obs.type === 'dir') {
+        const from = obs.type === 'bearing' ? obs.from : obs.from;
+        const to = obs.type === 'bearing' ? obs.to : obs.to;
+        const calc = this.getAzimuth(from, to).az;
+        const residual = ((obs.obs - calc + Math.PI) % (2 * Math.PI)) - Math.PI;
+        obs.calc = calc;
+        obs.residual = residual;
+        obs.stdRes = obs.stdDev > 0 ? residual / obs.stdDev : 0;
+        ranked.push({ obsId: obs.id, type: obs.type, diff: Math.abs(residual) });
+        return;
+      }
+      if (obs.type === 'direction') {
+        const calc = this.getAzimuth(obs.at, obs.to).az;
+        const residual = ((obs.obs - calc + Math.PI) % (2 * Math.PI)) - Math.PI;
+        obs.calc = calc;
+        obs.residual = residual;
+        obs.stdRes = obs.stdDev > 0 ? residual / obs.stdDev : 0;
+        ranked.push({ obsId: obs.id, type: obs.type, diff: Math.abs(residual) });
+        return;
+      }
+      if (obs.type === 'lev') {
+        const s1 = this.stations[obs.from];
+        const s2 = this.stations[obs.to];
+        if (!s1 || !s2) return;
+        const calc = s2.h - s1.h;
+        const residual = obs.obs - calc;
+        obs.calc = calc;
+        obs.residual = residual;
+        obs.stdRes = obs.stdDev > 0 ? residual / obs.stdDev : 0;
+        ranked.push({ obsId: obs.id, type: obs.type, diff: Math.abs(residual) });
+        return;
+      }
+      if (obs.type === 'zenith') {
+        const geom = this.getZenith(obs.from, obs.to, obs.hi ?? 0, obs.ht ?? 0);
+        const calc = geom.z;
+        const residual = ((obs.obs - calc + Math.PI) % (2 * Math.PI)) - Math.PI;
+        obs.calc = calc;
+        obs.residual = residual;
+        obs.stdRes = obs.stdDev > 0 ? residual / obs.stdDev : 0;
+        ranked.push({ obsId: obs.id, type: obs.type, diff: Math.abs(residual) });
+        return;
+      }
+      if (obs.type === 'gps') {
+        const s1 = this.stations[obs.from];
+        const s2 = this.stations[obs.to];
+        if (!s1 || !s2) return;
+        const calc = { dE: s2.x - s1.x, dN: s2.y - s1.y };
+        const residual = { vE: obs.obs.dE - calc.dE, vN: obs.obs.dN - calc.dN };
+        obs.calc = calc;
+        obs.residual = residual;
+        const sigmaE = Math.max(obs.stdDevE ?? obs.stdDev ?? 1, 1e-12);
+        const sigmaN = Math.max(obs.stdDevN ?? obs.stdDev ?? 1, 1e-12);
+        obs.stdRes = Math.hypot(residual.vE / sigmaE, residual.vN / sigmaN);
+        ranked.push({ obsId: obs.id, type: obs.type, diff: Math.hypot(residual.vE, residual.vN) });
+      }
+    });
+
+    ranked
+      .sort((a, b) => b.diff - a.diff)
+      .slice(0, 25)
+      .forEach((row, idx) => {
+        this.log(
+          `  Difference #${idx + 1}: obs ${row.obsId} [${row.type}] |diff|=${row.diff.toExponential(6)}`,
+        );
+      });
+    this.log('Data Check Only complete.');
+    return this.buildResult();
+  }
+
+  private runBlunderDetectWorkflow(): AdjustmentResult {
+    const baseOptions: Partial<ParseOptions> = {
+      ...(this.parseOptions ?? {}),
+      runMode: 'adjustment',
+      preanalysisMode: false,
+      robustMode: 'none',
+      autoAdjustEnabled: false,
+      clusterPassLabel: this.parseOptions?.clusterPassLabel ?? 'single',
+    };
+    let workingOverrides = { ...(this.overrides ?? {}) };
+    const cycleLogs: string[] = [];
+    const maxCycles = 3;
+    const threshold = 3;
+    let finalResult: AdjustmentResult | null = null;
+
+    for (let cycle = 1; cycle <= maxCycles; cycle += 1) {
+      const cycleEngine = new LSAEngine({
+        input: this.input,
+        maxIterations: this.maxIterations,
+        instrumentLibrary: this.instrumentLibrary,
+        convergenceThreshold: this.convergenceThreshold,
+        excludeIds: this.excludeIds,
+        overrides: workingOverrides,
+        parseOptions: baseOptions,
+        geoidSourceData: this.geoidSourceData,
+      });
+      const solved = cycleEngine.solve();
+      finalResult = solved;
+      const ranked = [...solved.observations]
+        .filter((obs) => Number.isFinite(obs.stdRes))
+        .sort((a, b) => Math.abs(b.stdRes ?? 0) - Math.abs(a.stdRes ?? 0));
+      const top = ranked[0];
+      if (!top || Math.abs(top.stdRes ?? 0) < threshold) {
+        cycleLogs.push(
+          `Blunder cycle ${cycle}: stop (max |t| ${Math.abs(top?.stdRes ?? 0).toFixed(3)} < ${threshold.toFixed(3)}).`,
+        );
+        break;
+      }
+      workingOverrides[top.id] = {
+        ...(workingOverrides[top.id] ?? {}),
+        stdDev: Math.max((top.stdDev ?? 1) * 4, 1e-9),
+      };
+      cycleLogs.push(
+        `Blunder cycle ${cycle}: deweight obs ${top.id} (${top.type}, line=${top.sourceLine ?? '-'}) |t|=${Math.abs(top.stdRes ?? 0).toFixed(3)} newSigma=${workingOverrides[top.id].stdDev?.toExponential(6)}.`,
+      );
+    }
+
+    if (!finalResult) {
+      this.converged = false;
+      this.log('Error: blunder-detect workflow could not produce a solve result.');
+      return this.buildResult();
+    }
+    const mergedParseState = finalResult.parseState
+      ? ({ ...finalResult.parseState, runMode: 'blunder-detect' as const } as ParseOptions)
+      : undefined;
+    return {
+      ...finalResult,
+      parseState: mergedParseState,
+      logs: [
+        'Blunder Detect mode: iterative deweighting diagnostics (not a replacement for full adjustment QA).',
+        ...cycleLogs,
+        ...finalResult.logs,
+      ],
+    };
+  }
+
   solve(): AdjustmentResult {
+    const requestedRunMode: RunMode =
+      this.parseOptions?.runMode ??
+      (this.parseOptions?.preanalysisMode ? 'preanalysis' : 'adjustment');
+    if (requestedRunMode === 'blunder-detect') {
+      return this.runBlunderDetectWorkflow();
+    }
+
     const passLabel = this.parseOptions?.clusterPassLabel ?? 'single';
     const approvedMerges = this.normalizeApprovedClusterMerges(
       this.parseOptions?.clusterApprovedMerges,
     );
-    if (approvedMerges.length > 0 && passLabel !== 'pass2') {
+    if (approvedMerges.length > 0 && passLabel !== 'pass2' && requestedRunMode === 'adjustment') {
       const pass1Options: Partial<ParseOptions> = {
         ...(this.parseOptions ?? {}),
         clusterApprovedMerges: [],
@@ -3555,6 +3738,28 @@ export class LSAEngine {
     this.instrumentLibrary = parsed.instrumentLibrary;
     this.logs = [...parsed.logs];
     this.directionRejectDiagnostics = parsed.directionRejectDiagnostics ?? [];
+    const parseRunMode =
+      parsed.parseState?.runMode ??
+      this.parseOptions?.runMode ??
+      (parsed.parseState?.preanalysisMode ? 'preanalysis' : 'adjustment');
+    this.runMode = parseRunMode;
+    const includeErrors = parsed.parseState?.includeErrors ?? [];
+    if (includeErrors.length > 0) {
+      this.converged = false;
+      this.iterations = 0;
+      this.dof = 0;
+      this.seuw = 0;
+      this.parseState = parsed.parseState;
+      this.logs.push(
+        `Run failed: include preprocessing reported ${includeErrors.length} error(s).`,
+      );
+      includeErrors.forEach((error) => {
+        this.logs.push(
+          `  include-error ${error.code} at ${error.sourceFile}:${error.line}${error.includePath ? ` (${error.includePath})` : ''}: ${error.message}`,
+        );
+      });
+      return this.buildResult();
+    }
     this.coordMode = parsed.parseState?.coordMode ?? this.parseOptions?.coordMode ?? '3D';
     this.addCenteringToExplicit = parsed.parseState?.addCenteringToExplicit ?? false;
     this.applyCentering = parsed.parseState?.applyCentering ?? true;
@@ -3638,11 +3843,17 @@ export class LSAEngine {
       parsed.parseState?.tsCorrelationRho ?? this.parseOptions?.tsCorrelationRho ?? 0.25;
     this.tsCorrelationScope =
       parsed.parseState?.tsCorrelationScope ?? this.parseOptions?.tsCorrelationScope ?? 'set';
-    this.preanalysisMode =
+    const resolvedPreanalysisMode =
       parsed.parseState?.preanalysisMode ?? this.parseOptions?.preanalysisMode ?? false;
+    this.preanalysisMode =
+      this.runMode === 'preanalysis'
+        ? true
+        : this.runMode === 'data-check' || this.runMode === 'blunder-detect'
+          ? false
+          : resolvedPreanalysisMode;
     this.robustMode = parsed.parseState?.robustMode ?? this.parseOptions?.robustMode ?? 'none';
     this.robustK = parsed.parseState?.robustK ?? this.parseOptions?.robustK ?? 1.5;
-    if (this.preanalysisMode) {
+    if (this.preanalysisMode || this.runMode === 'data-check') {
       this.robustMode = 'none';
     }
     this.prismEnabled = parsed.parseState?.prismEnabled ?? this.parseOptions?.prismEnabled ?? false;
@@ -3672,6 +3883,8 @@ export class LSAEngine {
       parsed.parseState?.gnssFrameConfirmed ?? this.parseOptions?.gnssFrameConfirmed ?? false;
     this.parseState = parsed.parseState;
     if (this.parseState) {
+      this.parseState.runMode = this.runMode;
+      this.parseState.preanalysisMode = this.preanalysisMode;
       this.parseState.coordSystemMode = this.coordSystemMode;
       this.parseState.crsId = this.crsId;
       this.parseState.localDatumScheme = this.localDatumScheme;
@@ -3950,6 +4163,20 @@ export class LSAEngine {
       this.parseState.usedInSolveUsageSummary = summarizeReductionUsage(activeObservations);
       this.parseState.parsedUsageSummary =
         this.parseState.parsedUsageSummary ?? summarizeReductionUsage(this.observations);
+    }
+    if (this.runMode === 'data-check') {
+      return this.runDataCheckOnly(activeObservations);
+    }
+    if (
+      this.runMode === 'blunder-detect' &&
+      activeObservations.length > 0 &&
+      activeObservations.every((obs) => obs.type === 'lev')
+    ) {
+      this.log(
+        'Error: blunder-detect mode is not supported for leveling-only datasets; use adjustment mode for this dataset.',
+      );
+      this.converged = false;
+      return this.buildResult();
     }
     const gridInputGate = this.evaluateGridInputGate(activeObservations);
     if (gridInputGate.blocked) {
@@ -7166,9 +7393,15 @@ export class LSAEngine {
       this.parseState.usedInSolveUsageSummary =
         this.parseState.usedInSolveUsageSummary ?? summarizeReductionUsage(this.collectActiveObservations());
     }
+    const includeErrorCount = this.parseState?.includeErrors?.length ?? 0;
+    const runMode = this.runMode;
     const autoSideshotEnabled =
       this.parseState?.autoSideshotEnabled ?? this.parseOptions?.autoSideshotEnabled ?? true;
-    if (this.preanalysisMode) {
+    if (runMode === 'data-check') {
+      this.autoSideshotDiagnostics = undefined;
+      this.clusterDiagnostics = undefined;
+      this.logs.push('Data Check Only: auto-sideshot and cluster diagnostics are skipped.');
+    } else if (this.preanalysisMode) {
       this.autoSideshotDiagnostics = undefined;
       this.logs.push('Auto-sideshot detection (M-lines): disabled in preanalysis mode');
     } else if (autoSideshotEnabled) {
@@ -7187,7 +7420,7 @@ export class LSAEngine {
       this.autoSideshotDiagnostics = undefined;
       this.logs.push('Auto-sideshot detection (M-lines): disabled');
     }
-    if (!this.clusterDiagnostics) {
+    if (runMode !== 'data-check' && !this.clusterDiagnostics) {
       this.clusterDiagnostics = this.computeClusterDiagnostics();
       if (this.clusterDiagnostics.enabled) {
         this.logs.push(
@@ -7205,8 +7438,10 @@ export class LSAEngine {
         });
       }
     }
+    const success =
+      includeErrorCount === 0 && (runMode === 'data-check' ? true : this.converged);
     return {
-      success: this.converged,
+      success,
       converged: this.converged,
       iterations: this.iterations,
       stations: this.stations,

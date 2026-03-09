@@ -1,6 +1,7 @@
 # TODO - WebNet
 
 - [x] Add TypeScript tooling (tsconfig, TSX entry) and migrate LSA engine/UI to TS modules
+- [x] STAR*NET input-compatibility parity batch 1: parser directive normalization aliases/unique-prefix handling, `.DATA` block gating, `.SEPARATOR` station token support, `.3REDUCE` horizontal-equation behavior, include preprocessor with source-file traceability + scoped state restore, CLI include filesystem resolution + hard-fail diagnostics, new CLI run modes (`data-check`, `blunder-detect`), and project file schema v3 bundle support (`mainInput` + `includeFiles`) with v1/v2 migration
 - [x] Industry-parity Phase 1 foundation: add dual parser compatibility modes (`legacy` fallback-aware vs `strict` deterministic), coded compatibility diagnostics/counters, and numeric-token station misparse guards for D/A/G/L parsing paths
 - [x] Industry-parity migration plumbing: bump project file schema to v2 with parser-mode migration metadata while preserving v1 backward loading in legacy mode
 - [x] CLI parity controls: add `--parse-mode` and geoid-source CLI options (`--geoid-model-id`, `--geoid-interpolation`, `--geoid-source-format`, `--geoid-source-path`) with parse-state propagation and regression coverage

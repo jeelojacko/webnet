@@ -39,6 +39,7 @@ Options:
   --out <path>                  Write output payload to file instead of stdout
   --units <m|ft>
   --coord-mode <2D|3D>
+  --run-mode <adjustment|preanalysis|data-check|blunder-detect>
   --parse-mode <legacy|strict>
   --coord-system-mode <local|grid>
   --crs-id <id>
@@ -63,6 +64,15 @@ Options:
   --autoadjust-max-removals <n>
   --help, -h
 `;
+
+const parseRunModeArg = (value: string): ParseOptions['runMode'] => {
+  const token = value.trim().toLowerCase();
+  if (token === 'adjustment') return 'adjustment';
+  if (token === 'preanalysis') return 'preanalysis';
+  if (token === 'data-check' || token === 'datacheck') return 'data-check';
+  if (token === 'blunder-detect' || token === 'blunderdetect') return 'blunder-detect';
+  return undefined;
+};
 
 const parseGnssVectorFrameArg = (value: string): ParseOptions['gnssVectorFrameDefault'] => {
   const token = value.trim().toLowerCase();
@@ -100,6 +110,7 @@ const parseArgs = (argv: string[]): CliConfig => {
     outputFormat: 'summary',
     parseOptions: {},
   };
+  let runModeExplicit = false;
 
   const nextValue = (index: number, flag: string): string => {
     const value = argv[index + 1];
@@ -167,6 +178,20 @@ const parseArgs = (argv: string[]): CliConfig => {
         throw new Error(`Invalid --preanalysis value "${argv[i + 1]}"`);
       }
       config.parseOptions.preanalysisMode = value === 'on';
+      if (!runModeExplicit) {
+        config.parseOptions.runMode = value === 'on' ? 'preanalysis' : 'adjustment';
+      }
+      i += 1;
+      continue;
+    }
+    if (arg === '--run-mode') {
+      const value = parseRunModeArg(nextValue(i, arg));
+      if (!value) {
+        throw new Error(`Invalid --run-mode value "${argv[i + 1]}"`);
+      }
+      config.parseOptions.runMode = value;
+      config.parseOptions.preanalysisMode = value === 'preanalysis';
+      runModeExplicit = true;
       i += 1;
       continue;
     }
@@ -391,6 +416,18 @@ const parseArgs = (argv: string[]): CliConfig => {
   if (typeof config.parseOptions.parseModeMigrated !== 'boolean') {
     config.parseOptions.parseModeMigrated = config.parseOptions.parseCompatibilityMode === 'strict';
   }
+  if (!config.parseOptions.runMode) {
+    config.parseOptions.runMode = config.parseOptions.preanalysisMode ? 'preanalysis' : 'adjustment';
+  }
+  if (config.parseOptions.runMode === 'preanalysis') {
+    config.parseOptions.preanalysisMode = true;
+  } else if (
+    config.parseOptions.runMode === 'adjustment' ||
+    config.parseOptions.runMode === 'data-check' ||
+    config.parseOptions.runMode === 'blunder-detect'
+  ) {
+    config.parseOptions.preanalysisMode = false;
+  }
 
   return config;
 };
@@ -406,6 +443,27 @@ const run = (): number => {
   }
 
   const inputPath = path.resolve(process.cwd(), cfg.inputPath);
+  cfg.parseOptions.sourceFile = inputPath;
+  const includeCache = new Map<string, string>();
+  cfg.parseOptions.includeResolver = ({
+    includePath,
+    parentSourceFile,
+  }) => {
+    const baseFile =
+      parentSourceFile && parentSourceFile !== '<input>' ? parentSourceFile : inputPath;
+    const resolved = path.resolve(path.dirname(baseFile), includePath);
+    try {
+      const cached = includeCache.get(resolved);
+      if (cached != null) {
+        return { sourceFile: resolved, content: cached };
+      }
+      const content = readFileSync(resolved, 'utf-8');
+      includeCache.set(resolved, content);
+      return { sourceFile: resolved, content };
+    } catch {
+      return null;
+    }
+  };
   let inputText: string;
   try {
     inputText = readFileSync(inputPath, 'utf-8');
@@ -463,6 +521,7 @@ const run = (): number => {
             dof: result.dof,
             seuw: result.seuw,
             preanalysisMode: result.preanalysisMode === true,
+            runMode: result.parseState?.runMode ?? cfg.parseOptions.runMode ?? 'adjustment',
             plannedObservationCount: result.parseState?.plannedObservationCount ?? 0,
             stationCount: Object.keys(result.stations).length,
             observationCount: result.observations.length,
@@ -550,9 +609,13 @@ const run = (): number => {
               `Input: ${inputPath}`,
               `Profile: ${cfg.profile}`,
               `Run mode: ${
-                result.preanalysisMode
+                result.parseState?.runMode === 'preanalysis'
                   ? `PREANALYSIS (planned observations=${result.parseState?.plannedObservationCount ?? 0})`
-                  : 'ADJUSTMENT'
+                  : result.parseState?.runMode === 'data-check'
+                    ? 'DATA-CHECK'
+                    : result.parseState?.runMode === 'blunder-detect'
+                      ? 'BLUNDER-DETECT'
+                      : 'ADJUSTMENT'
               }`,
               `Converged: ${result.converged ? 'YES' : 'NO'}`,
               `Iterations: ${result.iterations}`,

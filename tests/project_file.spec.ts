@@ -53,6 +53,9 @@ describe('project file serialization/parsing', () => {
   it('round-trips project payload for input/settings/instruments/export config', () => {
     const text = serializeProjectFile({
       input: '.2D\nC A 0 0 0 ! !',
+      includeFiles: {
+        'sub/job1.dat': 'C X 1 1 0',
+      },
       ui: {
         settings: {
           maxIterations: 15,
@@ -84,8 +87,9 @@ describe('project file serialization/parsing', () => {
     const parsed = parseProjectFile(text, defaults);
     expect(parsed.ok).toBe(true);
     if (!parsed.ok) return;
-    expect(parsed.project.schemaVersion).toBe(2);
+    expect(parsed.project.schemaVersion).toBe(3);
     expect(parsed.project.input).toContain('C A');
+    expect(parsed.project.includeFiles['sub/job1.dat']).toContain('C X');
     expect(parsed.project.ui.exportFormat).toBe('industry-style');
     expect(parsed.project.ui.settings.convergenceLimit).toBe(0.1);
     expect(parsed.project.ui.adjustedPointsExport.columns).toEqual(['P', 'E', 'N', 'Z']);
@@ -137,6 +141,7 @@ describe('project file serialization/parsing', () => {
     expect(parsed.ok).toBe(true);
     if (!parsed.ok) return;
     expect(parsed.project.schemaVersion).toBe(1);
+    expect(parsed.project.includeFiles).toEqual({});
     expect(parsed.project.ui.settings.maxIterations).toBe(defaults.settings.maxIterations);
     expect(parsed.project.ui.settings.convergenceLimit).toBe(defaults.settings.convergenceLimit);
     expect(parsed.project.ui.parseSettings.parseCompatibilityMode).toBe('legacy');
@@ -176,9 +181,47 @@ describe('project file serialization/parsing', () => {
     expect(parsed.ok).toBe(true);
     if (!parsed.ok) return;
     expect(parsed.project.schemaVersion).toBe(2);
+    expect(parsed.project.includeFiles).toEqual({});
     expect(parsed.project.ui.parseSettings.parseCompatibilityMode).toBe('strict');
     expect(parsed.project.ui.parseSettings.parseModeMigrated).toBe(true);
     expect(parsed.project.ui.migration?.parseModeMigrated).toBe(true);
     expect(parsed.project.ui.migration?.migratedAt).toBe('2026-03-09T12:00:00.000Z');
+  });
+
+  it('loads schema v3 include bundles using mainInput/includeFiles fields', () => {
+    const parsed = parseProjectFile(
+      JSON.stringify({
+        kind: 'webnet-project',
+        schemaVersion: 3,
+        mainInput: '.INCLUDE field/set1.dat',
+        includeFiles: {
+          'field/set1.dat': 'C A 0 0 0 ! !',
+        },
+        ui: {
+          settings: {
+            maxIterations: 7,
+          },
+          parseSettings: {
+            solveProfile: 'industry-parity',
+            parseCompatibilityMode: 'strict',
+            parseModeMigrated: true,
+          },
+          migration: {
+            parseModeMigrated: true,
+          },
+        },
+        project: {
+          projectInstruments: defaults.projectInstruments,
+          selectedInstrument: 'S9',
+          levelLoopCustomPresets: [],
+        },
+      }),
+      defaults,
+    );
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+    expect(parsed.project.schemaVersion).toBe(3);
+    expect(parsed.project.input).toContain('.INCLUDE field/set1.dat');
+    expect(parsed.project.includeFiles['field/set1.dat']).toContain('C A 0 0 0 ! !');
   });
 });
