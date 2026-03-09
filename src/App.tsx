@@ -1892,6 +1892,67 @@ const App: React.FC<AppProps> = ({
       runDiag.runMode === 'preanalysis'
         ? `PREANALYSIS (planned observations=${runDiag.plannedObservationCount})`
         : runDiag.runMode.toUpperCase();
+    const isDataCheckMode = runDiag.runMode === 'data-check';
+    const isBlunderDetectMode = runDiag.runMode === 'blunder-detect';
+    const dataCheckDiffRows = isDataCheckMode
+      ? outputObservations
+          .map((obs) => {
+            if (
+              obs.type === 'dist' ||
+              obs.type === 'lev' ||
+              obs.type === 'angle' ||
+              obs.type === 'direction' ||
+              obs.type === 'bearing' ||
+              obs.type === 'dir' ||
+              obs.type === 'zenith'
+            ) {
+              const residual = typeof obs.residual === 'number' ? obs.residual : Number.NaN;
+              if (!Number.isFinite(residual)) return null;
+              const angular =
+                obs.type === 'angle' ||
+                obs.type === 'direction' ||
+                obs.type === 'bearing' ||
+                obs.type === 'dir' ||
+                obs.type === 'zenith';
+              const diff = angular
+                ? Math.abs(residual * RAD_TO_DEG * 3600)
+                : Math.abs(residual) * unitScale;
+              const stations =
+                obs.type === 'angle'
+                  ? `${obs.at}-${obs.from}-${obs.to}`
+                  : 'from' in obs && 'to' in obs
+                    ? `${obs.from}-${obs.to}`
+                    : '-';
+              return {
+                obs,
+                stations,
+                diff,
+                label: angular ? `${diff.toFixed(2)}"` : `${diff.toFixed(4)} ${linearUnit}`,
+              };
+            }
+            if (obs.type === 'gps' && obs.residual && typeof obs.residual === 'object') {
+              const residual = obs.residual as { vE?: number; vN?: number };
+              const vE = Number.isFinite(residual.vE as number)
+                ? (residual.vE as number)
+                : Number.NaN;
+              const vN = Number.isFinite(residual.vN as number)
+                ? (residual.vN as number)
+                : Number.NaN;
+              if (!Number.isFinite(vE) || !Number.isFinite(vN)) return null;
+              const diff = Math.hypot(vE, vN) * unitScale;
+              return {
+                obs,
+                stations: `${obs.from}-${obs.to}`,
+                diff,
+                label: `${diff.toFixed(4)} ${linearUnit}`,
+              };
+            }
+            return null;
+          })
+          .filter((row): row is NonNullable<typeof row> => row != null)
+          .sort((a, b) => b.diff - a.diff)
+          .slice(0, 25)
+      : [];
     lines.push(`# WebNet Adjustment Results`);
     lines.push(`# Generated: ${now.toLocaleString()}`);
     lines.push(`# Linear units: ${linearUnit}`);
@@ -1905,6 +1966,27 @@ const App: React.FC<AppProps> = ({
     lines.push('--- Solve Profile Diagnostics ---');
     lines.push(`Profile: ${runDiag.solveProfile.toUpperCase()}`);
     lines.push(`Run mode: ${runModeSummaryText}`);
+    if (isDataCheckMode) {
+      lines.push('Data Check Only: Differences from Observations');
+      dataCheckDiffRows.forEach((row, idx) => {
+        lines.push(
+          `  #${idx + 1} ${row.obs.type.toUpperCase()} ${row.stations} diff=${row.label} |t|=${
+            row.obs.stdRes != null && Number.isFinite(row.obs.stdRes)
+              ? Math.abs(row.obs.stdRes).toFixed(2)
+              : '-'
+          } line=${row.obs.sourceLine ?? '-'}`,
+        );
+      });
+    }
+    if (isBlunderDetectMode) {
+      lines.push(
+        'Blunder Detect Warning: iterative deweighting diagnostics (not a replacement for full adjustment QA).',
+      );
+      res.logs
+        .filter((line) => line.startsWith('Blunder cycle '))
+        .slice(0, 20)
+        .forEach((line) => lines.push(`  ${line}`));
+    }
     lines.push(`Direction-set mode: ${runDiag.directionSetMode}`);
     lines.push(`Auto-sideshot detection: ${runDiag.autoSideshotEnabled ? 'ON' : 'OFF'}`);
     lines.push(

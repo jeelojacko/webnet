@@ -39,7 +39,10 @@
   - [x] Batch 3 (parser/import): reduce parser directive hot-loop allocations and trim repeated importer regex rescans for large external files
 - [ ] Run-mode parity completion (UI/report path + compatibility constraints):
   - [x] Phase 1: wire UI solve path and Project Options state so run mode supports `adjustment`/`preanalysis`/`data-check`/`blunder-detect` instead of forcing `adjustment|preanalysis` in `App.tsx`
-  - [ ] Phase 2: add run-mode-specific report/listing/processing-summary sections (including data-check differences and blunder-detect warning/profile text)
+  - [x] Phase 2: add run-mode-specific report/listing/processing-summary sections (including data-check differences and blunder-detect warning/profile text)
+    - [x] Phase 2A: add report-view run-mode sections for `data-check` (Differences from Observations) and `blunder-detect` warning/profile messaging
+    - [x] Phase 2B: add processing-summary run-mode blocks for `data-check` differences and `blunder-detect` cycle/warning notes
+    - [x] Phase 2C: add industry-listing run-mode sections and regression tests for `data-check` and `blunder-detect` output
   - [ ] Phase 3: implement exhaustive run-mode incompatibility matrix with clear diagnostics and mode-gated regression coverage
 - [ ] Include pipeline test-gate completion:
   - [ ] Phase 1: add parser regression tests for include cycle and include depth failures with exact source-file/line diagnostics

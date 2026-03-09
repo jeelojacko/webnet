@@ -13,6 +13,7 @@ import type {
   GpsObservation,
   Observation,
   ReductionUsageSummary,
+  RunMode,
 } from '../types';
 import { RAD_TO_DEG, radToDmsStr } from '../engine/angles';
 import { isLockedPreanalysisObservation } from '../engine/preanalysis';
@@ -122,6 +123,7 @@ interface ReportViewProps {
   units: 'm' | 'ft';
   runDiagnostics: {
     solveProfile: 'webnet' | 'industry-parity';
+    runMode?: RunMode;
     parity: boolean;
     directionSetMode: 'reduced' | 'raw';
     mapMode: 'off' | 'on' | 'anglecalc';
@@ -237,6 +239,12 @@ const ReportView: React.FC<ReportViewProps> = ({
   const ellipseScale = units === 'm' ? 100 : 12;
   const covarianceScale = unitScale * unitScale;
   const isPreanalysis = result.preanalysisMode === true;
+  const runMode: RunMode =
+    result.parseState?.runMode ??
+    runDiagnostics?.runMode ??
+    (isPreanalysis ? 'preanalysis' : 'adjustment');
+  const isDataCheck = runMode === 'data-check';
+  const isBlunderDetect = runMode === 'blunder-detect';
   const formatReductionUsage = (summary?: ReductionUsageSummary): string => {
     if (!summary) return 'unavailable';
     return [
@@ -272,6 +280,76 @@ const ReportView: React.FC<ReportViewProps> = ({
   const analysis = useMemo(
     () => sortedObs.filter((obs) => Math.abs(obs.stdRes || 0) > 2),
     [sortedObs],
+  );
+  const dataCheckDiffRows = useMemo(() => {
+    if (!isDataCheck) return [] as Array<{
+      obs: Observation;
+      stations: string;
+      diffMagnitude: number;
+      diffLabel: string;
+    }>;
+    const stations = (obs: Observation): string => {
+      if (obs.type === 'angle') return `${obs.at}-${obs.from}-${obs.to}`;
+      if (obs.type === 'direction') return `${obs.at}-${obs.to}`;
+      if ('from' in obs && 'to' in obs) return `${obs.from}-${obs.to}`;
+      return '-';
+    };
+    const describeDiff = (obs: Observation): { magnitude: number; label: string } | null => {
+      if (
+        obs.type === 'dist' ||
+        obs.type === 'lev' ||
+        obs.type === 'angle' ||
+        obs.type === 'direction' ||
+        obs.type === 'bearing' ||
+        obs.type === 'dir' ||
+        obs.type === 'zenith'
+      ) {
+        const residual = typeof obs.residual === 'number' ? obs.residual : Number.NaN;
+        if (!Number.isFinite(residual)) return null;
+        if (
+          obs.type === 'angle' ||
+          obs.type === 'direction' ||
+          obs.type === 'bearing' ||
+          obs.type === 'dir' ||
+          obs.type === 'zenith'
+        ) {
+          const arcsec = Math.abs(residual * RAD_TO_DEG * 3600);
+          return { magnitude: arcsec, label: `${arcsec.toFixed(2)}"` };
+        }
+        const linear = Math.abs(residual) * unitScale;
+        return { magnitude: linear, label: `${linear.toFixed(4)} ${units}` };
+      }
+      if (obs.type === 'gps' && obs.residual && typeof obs.residual === 'object') {
+        const residual = obs.residual as { vE?: number; vN?: number };
+        const vE = Number.isFinite(residual.vE as number) ? (residual.vE as number) : Number.NaN;
+        const vN = Number.isFinite(residual.vN as number) ? (residual.vN as number) : Number.NaN;
+        if (!Number.isFinite(vE) || !Number.isFinite(vN)) return null;
+        const linear = Math.hypot(vE, vN) * unitScale;
+        return { magnitude: linear, label: `${linear.toFixed(4)} ${units}` };
+      }
+      return null;
+    };
+    return result.observations
+      .map((obs) => {
+        const diff = describeDiff(obs);
+        if (!diff) return null;
+        return {
+          obs,
+          stations: stations(obs),
+          diffMagnitude: diff.magnitude,
+          diffLabel: diff.label,
+        };
+      })
+      .filter((row): row is NonNullable<typeof row> => row != null)
+      .sort((a, b) => b.diffMagnitude - a.diffMagnitude)
+      .slice(0, 25);
+  }, [isDataCheck, result.observations, unitScale, units]);
+  const blunderCycleLines = useMemo(
+    () =>
+      isBlunderDetect
+        ? result.logs.filter((line) => line.startsWith('Blunder cycle ')).slice(0, 15)
+        : [],
+    [isBlunderDetect, result.logs],
   );
   const topSuspects = useMemo(
     () =>
@@ -1432,6 +1510,76 @@ const ReportView: React.FC<ReportViewProps> = ({
         </div>
       </div>
 
+      {isDataCheck && (
+        <div className="mb-6 border border-sky-700/40 rounded bg-sky-950/20">
+          <div className="px-3 py-2 text-xs text-sky-200 uppercase tracking-wider border-b border-sky-800/40">
+            Data Check Only: Differences from Observations
+          </div>
+          <div className="px-3 py-2 text-xs text-slate-300">
+            Approximate-geometry check only. No least-squares adjustment statistics are produced in
+            this mode.
+          </div>
+          <div className="overflow-auto px-3 pb-3">
+            <table className="w-full text-xs">
+              <thead className="text-slate-400 uppercase border-b border-slate-800">
+                <tr>
+                  <th className="py-2 text-left">#</th>
+                  <th className="py-2 text-left">Type</th>
+                  <th className="py-2 text-left">Stations</th>
+                  <th className="py-2 text-right">Difference</th>
+                  <th className="py-2 text-right">|t|</th>
+                  <th className="py-2 text-right">Line</th>
+                </tr>
+              </thead>
+              <tbody>
+                {dataCheckDiffRows.map((row, idx) => (
+                  <tr key={`data-check-diff-${row.obs.id}-${idx}`} className="border-b border-slate-900/70">
+                    <td className="py-1">{idx + 1}</td>
+                    <td className="py-1 uppercase text-slate-400">{row.obs.type}</td>
+                    <td className="py-1">{row.stations}</td>
+                    <td className="py-1 text-right font-mono">{row.diffLabel}</td>
+                    <td className="py-1 text-right font-mono">
+                      {row.obs.stdRes != null && Number.isFinite(row.obs.stdRes)
+                        ? Math.abs(row.obs.stdRes).toFixed(2)
+                        : '-'}
+                    </td>
+                    <td className="py-1 text-right font-mono text-slate-500">
+                      {row.obs.sourceLine ?? '-'}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {isBlunderDetect && (
+        <div className="mb-6 border border-amber-700/40 rounded bg-amber-950/20">
+          <div className="px-3 py-2 text-xs text-amber-200 uppercase tracking-wider border-b border-amber-800/40">
+            Blunder Detect Mode
+          </div>
+          <div className="px-3 py-2 text-xs text-slate-300">
+            Iterative deweighting diagnostics run. This is screening support and not a replacement
+            for full adjustment QA.
+          </div>
+          {blunderCycleLines.length > 0 && (
+            <div className="px-3 pb-3">
+              <div className="text-[11px] uppercase tracking-wide text-slate-400 mb-1">
+                Cycle Trace
+              </div>
+              <div className="space-y-1 text-xs text-slate-300">
+                {blunderCycleLines.map((line, idx) => (
+                  <div key={`blunder-cycle-${idx}`} className="font-mono">
+                    {line}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       {runDiagnostics && (
         <div className="mb-6 border border-slate-800 rounded overflow-hidden">
           <div
@@ -1448,6 +1596,10 @@ const ReportView: React.FC<ReportViewProps> = ({
               <div className={runDiagnostics.parity ? 'text-blue-300' : ''}>
                 {runDiagnostics.solveProfile.toUpperCase()}
               </div>
+            </div>
+            <div>
+              <div className="text-slate-500">Run Mode</div>
+              <div>{runMode.toUpperCase()}</div>
             </div>
             <div>
               <div className="text-slate-500" title={REPORT_STATIC_TOOLTIPS['Direction Sets']}>

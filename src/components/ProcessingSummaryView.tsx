@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { RAD_TO_DEG } from '../engine/angles';
 import type {
   AdjustmentResult,
   CoordSystemDiagnosticCode,
@@ -10,6 +11,7 @@ import type {
   GnssVectorFrame,
   Observation,
   ReductionUsageSummary,
+  RunMode,
 } from '../types';
 
 interface ProcessingSummaryViewProps {
@@ -18,6 +20,7 @@ interface ProcessingSummaryViewProps {
   runElapsedMs: number | null;
   runDiagnostics: {
     solveProfile: 'webnet' | 'industry-parity';
+    runMode?: RunMode;
     directionSetMode: 'reduced' | 'raw';
     profileDefaultInstrumentFallback: boolean;
     rotationAngleRad: number;
@@ -119,6 +122,12 @@ const ProcessingSummaryView: React.FC<ProcessingSummaryViewProps> = ({
   const text = useMemo(() => {
     const unitScale = units === 'ft' ? FT_PER_M : 1;
     const linearUnit = units === 'ft' ? 'ft' : 'm';
+    const runMode: RunMode =
+      result.parseState?.runMode ??
+      runDiagnostics?.runMode ??
+      (result.preanalysisMode ? 'preanalysis' : 'adjustment');
+    const isDataCheck = runMode === 'data-check';
+    const isBlunderDetect = runMode === 'blunder-detect';
     let summaryRows: SummaryRow[] = [];
     let totalCount = 0;
     if (result.statisticalSummary?.byGroup?.length) {
@@ -155,7 +164,15 @@ const ProcessingSummaryView: React.FC<ProcessingSummaryViewProps> = ({
     lines.push('Loading Network Data ...');
     lines.push('Checking Network Data ...');
     lines.push('');
-    lines.push('Performing Network Adjustment ...');
+    if (isDataCheck) {
+      lines.push('Performing Data Check Only ...');
+    } else if (isBlunderDetect) {
+      lines.push('Performing Blunder Detect Workflow ...');
+    } else if (runMode === 'preanalysis') {
+      lines.push('Performing Preanalysis Workflow ...');
+    } else {
+      lines.push('Performing Network Adjustment ...');
+    }
     for (let i = 1; i <= result.iterations; i += 1) {
       lines.push(`  Iteration # ${i}`);
     }
@@ -164,6 +181,80 @@ const ProcessingSummaryView: React.FC<ProcessingSummaryViewProps> = ({
         ? `Solution has converged in ${result.iterations} iterations`
         : `Solution did not fully converge after ${result.iterations} iterations`,
     );
+    if (isDataCheck) {
+      const dataCheckRows = result.observations
+        .map((obs) => {
+          if (
+            obs.type === 'dist' ||
+            obs.type === 'lev' ||
+            obs.type === 'angle' ||
+            obs.type === 'direction' ||
+            obs.type === 'bearing' ||
+            obs.type === 'dir' ||
+            obs.type === 'zenith'
+          ) {
+            const residual = typeof obs.residual === 'number' ? obs.residual : Number.NaN;
+            if (!Number.isFinite(residual)) return null;
+            const value =
+              obs.type === 'angle' ||
+              obs.type === 'direction' ||
+              obs.type === 'bearing' ||
+              obs.type === 'dir' ||
+              obs.type === 'zenith'
+                ? Math.abs(residual * RAD_TO_DEG * 3600)
+                : Math.abs(residual) * unitScale;
+            const label =
+              obs.type === 'angle' ||
+              obs.type === 'direction' ||
+              obs.type === 'bearing' ||
+              obs.type === 'dir' ||
+              obs.type === 'zenith'
+                ? `${value.toFixed(2)}"`
+                : `${value.toFixed(4)}${linearUnit}`;
+            const stations =
+              obs.type === 'angle'
+                ? `${obs.at}-${obs.from}-${obs.to}`
+                : 'from' in obs && 'to' in obs
+                  ? `${obs.from}-${obs.to}`
+                  : '-';
+            return { obs, value, label, stations };
+          }
+          if (obs.type === 'gps' && obs.residual && typeof obs.residual === 'object') {
+            const residual = obs.residual as { vE?: number; vN?: number };
+            const vE = Number.isFinite(residual.vE as number) ? (residual.vE as number) : Number.NaN;
+            const vN = Number.isFinite(residual.vN as number) ? (residual.vN as number) : Number.NaN;
+            if (!Number.isFinite(vE) || !Number.isFinite(vN)) return null;
+            const value = Math.hypot(vE, vN) * unitScale;
+            const stations = `${obs.from}-${obs.to}`;
+            return { obs, value, label: `${value.toFixed(4)}${linearUnit}`, stations };
+          }
+          return null;
+        })
+        .filter((row): row is NonNullable<typeof row> => row != null)
+        .sort((a, b) => b.value - a.value)
+        .slice(0, 20);
+      lines.push('');
+      lines.push('Data Check Only: Differences from Observations');
+      lines.push(
+        `${padRight('Obs#', 8)}${padRight('Type', 12)}${padRight('Stations', 18)}${padLeft('Difference', 16)}${padLeft('|t|', 8)}${padLeft('Line', 8)}`,
+      );
+      dataCheckRows.forEach((row) => {
+        lines.push(
+          `${padRight(String(row.obs.id), 8)}${padRight(row.obs.type.toUpperCase(), 12)}${padRight(row.stations, 18)}${padLeft(row.label, 16)}${padLeft(Number.isFinite(row.obs.stdRes ?? Number.NaN) ? Math.abs(row.obs.stdRes ?? 0).toFixed(2) : '-', 8)}${padLeft(row.obs.sourceLine != null ? String(row.obs.sourceLine) : '-', 8)}`,
+        );
+      });
+    }
+    if (isBlunderDetect) {
+      lines.push('');
+      lines.push('Blunder Detect Mode');
+      lines.push(
+        'Warning: iterative deweighting diagnostics; not a replacement for full adjustment QA.',
+      );
+      const cycleLines = result.logs
+        .filter((line) => line.startsWith('Blunder cycle '))
+        .slice(0, 15);
+      cycleLines.forEach((line) => lines.push(`  ${line}`));
+    }
     lines.push('');
     lines.push('Statistical Summary');
     lines.push(`${padRight('Observation', 18)}${padLeft('Count', 7)}${padLeft('Error Factor', 14)}`);
@@ -259,6 +350,7 @@ const ProcessingSummaryView: React.FC<ProcessingSummaryViewProps> = ({
       lines.push(
         `Run Profile: ${runDiagnostics.solveProfile.toUpperCase()} (dirSets=${runDiagnostics.directionSetMode}, profileFallback=${runDiagnostics.profileDefaultInstrumentFallback ? 'ON' : 'OFF'})`,
       );
+      lines.push(`Run Mode: ${runMode.toUpperCase()}`);
       lines.push(`Plan Rotation: ${(runDiagnostics.rotationAngleRad * 180 / Math.PI).toFixed(6)} deg`);
       lines.push(
         `Coordinate System: ${(runDiagnostics.coordSystemMode ?? 'local').toUpperCase()} (CRS=${runDiagnostics.crsId ?? '-'})`,

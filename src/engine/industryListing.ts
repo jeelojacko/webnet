@@ -12,6 +12,7 @@ import type {
   GpsObservation,
   Observation,
   ReductionUsageSummary,
+  RunMode,
 } from '../types';
 
 const FT_PER_M = 3.280839895;
@@ -47,6 +48,7 @@ export interface IndustryListingParseSettings {
 
 export interface IndustryListingRunDiagnostics {
   solveProfile: 'webnet' | 'industry-parity';
+  runMode?: RunMode;
   angleCenteringModel: 'geometry-aware-correlated-rays';
   defaultSigmaCount: number;
   defaultSigmaByType: string;
@@ -246,6 +248,18 @@ export const buildIndustryStyleListingText = (
   const gpsLoopDiagnostics = res.gpsLoopDiagnostics;
   const levelingLoopDiagnostics = res.levelingLoopDiagnostics;
   const isPreanalysis = res.preanalysisMode === true;
+  const runMode: RunMode =
+    parseState?.runMode ??
+    runDiag.runMode ??
+    (isPreanalysis ? 'preanalysis' : 'adjustment');
+  const runPurpose =
+    runMode === 'preanalysis'
+      ? 'Preanalysis / Predicted Precision'
+      : runMode === 'data-check'
+        ? 'Data Check Only / Approximate Geometry'
+        : runMode === 'blunder-detect'
+          ? 'Blunder Detect / Iterative Deweight Diagnostics'
+          : 'Adjustment / Postfit QA';
   const descriptionReconcileMode =
     parseState?.descriptionReconcileMode ?? parseSettings.descriptionReconcileMode ?? 'first';
   const descriptionAppendDelimiter =
@@ -337,8 +351,9 @@ export const buildIndustryStyleListingText = (
   lines.push(
     `      Industry Standard Run Mode                   : ${runDiag.solveProfile === 'industry-parity' ? 'Parity Profile (Classical)' : 'WebNet Default Profile'}`,
   );
+  lines.push(`      Run Mode                            : ${runMode.toUpperCase()}`);
   lines.push(
-    `      Run Purpose                         : ${isPreanalysis ? 'Preanalysis / Predicted Precision' : 'Adjustment / Postfit QA'}`,
+    `      Run Purpose                         : ${runPurpose}`,
   );
   lines.push(
     `      Type of Adjustment                  : ${parseState?.coordMode ?? parseSettings.coordMode}`,
@@ -955,6 +970,60 @@ export const buildIndustryStyleListingText = (
     })
     .filter((row) => row.distance !== '-')
     .sort((a, b) => compareStationIds(a.from, b.from) || compareStationIds(a.to, b.to));
+  const dataCheckDifferenceRows = observationsForListing
+    .map((obs) => {
+      const stations =
+        obs.type === 'angle'
+          ? `${obs.at}-${obs.from}-${obs.to}`
+          : 'from' in obs && 'to' in obs
+            ? `${obs.from}-${obs.to}`
+            : '-';
+      if (
+        obs.type === 'dist' ||
+        obs.type === 'lev' ||
+        obs.type === 'angle' ||
+        obs.type === 'direction' ||
+        obs.type === 'bearing' ||
+        obs.type === 'dir' ||
+        obs.type === 'zenith'
+      ) {
+        const residual = typeof obs.residual === 'number' ? obs.residual : Number.NaN;
+        if (!Number.isFinite(residual)) return null;
+        const angular =
+          obs.type === 'angle' ||
+          obs.type === 'direction' ||
+          obs.type === 'bearing' ||
+          obs.type === 'dir' ||
+          obs.type === 'zenith';
+        const diffMag = angular ? Math.abs(residual * RAD_TO_DEG * 3600) : Math.abs(residual) * unitScale;
+        const diffLabel = angular ? `${diffMag.toFixed(2)}"` : diffMag.toFixed(4);
+        return {
+          obs,
+          stations,
+          diffMag,
+          diffLabel,
+          diffUnit: angular ? 'arcsec' : linearUnit,
+        };
+      }
+      if (obs.type === 'gps' && obs.residual && typeof obs.residual === 'object') {
+        const residual = obs.residual as { vE?: number; vN?: number };
+        const vE = Number.isFinite(residual.vE as number) ? (residual.vE as number) : Number.NaN;
+        const vN = Number.isFinite(residual.vN as number) ? (residual.vN as number) : Number.NaN;
+        if (!Number.isFinite(vE) || !Number.isFinite(vN)) return null;
+        const diffMag = Math.hypot(vE, vN) * unitScale;
+        return {
+          obs,
+          stations,
+          diffMag,
+          diffLabel: diffMag.toFixed(4),
+          diffUnit: linearUnit,
+        };
+      }
+      return null;
+    })
+    .filter((row): row is NonNullable<typeof row> => row != null)
+    .sort((a, b) => b.diffMag - a.diffMag)
+    .slice(0, 25);
 
   const renderAdjustedSection = (
     title: string,
@@ -972,6 +1041,38 @@ export const buildIndustryStyleListingText = (
     lines.push('');
     renderTextTable(headers, rows, rightAligned);
   };
+
+  if (!isPreanalysis && runMode === 'data-check' && dataCheckDifferenceRows.length > 0) {
+    lines.push('');
+    addCenteredHeading('Data Check Only - Differences from Observations');
+    lines.push('');
+    renderTextTable(
+      ['Obs', 'Type', 'Stations', 'Difference', 'Unit', 'StdRes', 'File:Line'],
+      dataCheckDifferenceRows.map((row) => [
+        String(row.obs.id),
+        row.obs.type.toUpperCase(),
+        `${row.stations}${aliasRefsForLine(row.obs.sourceLine)}${autoSideshotSuffix(row.obs)}`,
+        row.diffLabel,
+        row.diffUnit,
+        Number.isFinite(row.obs.stdRes ?? Number.NaN)
+          ? Math.abs(row.obs.stdRes ?? 0).toFixed(2)
+          : '-',
+        row.obs.sourceLine != null ? `1:${row.obs.sourceLine}` : '-',
+      ]),
+      [0, 3, 5],
+    );
+  }
+
+  if (!isPreanalysis && runMode === 'blunder-detect') {
+    lines.push('');
+    addCenteredHeading('Blunder Detect Mode');
+    lines.push('Warning: iterative deweighting diagnostics; not a replacement for full adjustment QA.');
+    const cycleLines = res.logs.filter((line) => line.startsWith('Blunder cycle ')).slice(0, 20);
+    if (cycleLines.length > 0) {
+      lines.push('');
+      cycleLines.forEach((line) => lines.push(`  ${line}`));
+    }
+  }
 
   if (
     !isPreanalysis &&
