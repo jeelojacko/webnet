@@ -33,10 +33,22 @@
 - [x] Adjustment convergence controls: add user-facing `Convergence Limit` beside `Max Iterations`, persist it in project settings, and wire solver stopping to iteration-to-iteration `vTPv` delta with listing output parity
 - [x] Field-collection parser expansion: support SS shorthand station tokens (`SS at-to` / `SS at-from-to`) with deterministic angle defaults + HI/HT parsing, and add `GS` GNSS topo coordinate records as post-adjust (equation-excluded) outputs across report/summary/map/export
 - [x] Workspace persistence + adjusted-points deliverables: add save/open project files (`webnet-project` JSON with input + settings + instruments + export prefs), add configurable adjusted-points export (preset/custom columns, delimiter, optional LAT/LON, max-6 dynamic ordering), and expose both via toolbar and Project Options -> Other Files with regression tests
-- [ ] No-result-change optimization batch plan:
+- [x] No-result-change optimization batch plan:
   - [x] Batch 1 (solver): cache active observations per solve stage and add per-iteration geometry caching for repeated azimuth/zenith lookups in `adjust.ts`
   - [x] Batch 2 (UI/report): memoize heavy derived report arrays and lazy-load heavy result tabs to reduce initial payload/first render cost
   - [x] Batch 3 (parser/import): reduce parser directive hot-loop allocations and trim repeated importer regex rescans for large external files
+- [ ] Run-mode parity completion (UI/report path + compatibility constraints):
+  - [ ] Phase 1: wire UI solve path and Project Options state so run mode supports `adjustment`/`preanalysis`/`data-check`/`blunder-detect` instead of forcing `adjustment|preanalysis` in `App.tsx`
+  - [ ] Phase 2: add run-mode-specific report/listing/processing-summary sections (including data-check differences and blunder-detect warning/profile text)
+  - [ ] Phase 3: implement exhaustive run-mode incompatibility matrix with clear diagnostics and mode-gated regression coverage
+- [ ] Include pipeline test-gate completion:
+  - [ ] Phase 1: add parser regression tests for include cycle and include depth failures with exact source-file/line diagnostics
+  - [ ] Phase 2: add relative-path inheritance and nested include-order tests for both parser bundle mode and CLI filesystem mode
+  - [ ] Phase 3: add CLI hard-fail regression coverage for missing/cycle/depth/relative-path include scenarios with deterministic exit behavior
+- [ ] Legacy compatibility corpus gate:
+  - [ ] Phase 1: curate mixed legacy-project corpus fixture set and define expected run-mode outcomes per project
+  - [ ] Phase 2: add corpus harness command that enforces parse success, run success, and no silent directive drops
+  - [ ] Phase 3: wire corpus harness into CI with failure summary artifacts and parity baseline tracking
 - [x] Exclude fixed planned observations from preanalysis what-if candidates so fixed bearing/control planning rows are not presented as removable
 - [x] Add a separate locked planned-observations preanalysis section and hover-help coverage for preanalysis report headers/labels
 - [x] Extend hover-help coverage to remaining report summary-card labels and Project Options modal tabs/sections/field labels/instrument editor controls
@@ -72,7 +84,7 @@
 - [x] industry-style summary parity Phase 2: normalize per-type error factors using industry-style global DOF scaling (`sqrt(totalCount/dof)`) so group factors align with industry listings
 - [x] Cluster UX controls: add Project Options -> Adjustment toggle for cluster detection ON/OFF and top-level report button to revert applied cluster merges
 - [x] Set default adjustment startup profile to Industry Standard parity, default cluster detection OFF, and default project instrument to `S9` (`Trimble S9 0.5"`) with parity baseline stochastic values
-- [~] Industry-style listing readability/parity plan (format + section structure):
+- [x] Industry-style listing readability/parity plan (format + section structure):
   - [x] Phase 1: fix spacing/alignment defects in listing text columns so Northing/Easting and similar adjacent numeric fields are always separated by explicit padding (coordinates, station std devs, and adjusted obs rows such as direction/azimuth families)
   - [x] Phase 2: remove "Processing Notes" block from industry-style output and replace with observation-family blocks that match industry style headings/order
   - [x] Phase 3: split adjusted observation listing into dedicated family sections:
@@ -86,7 +98,7 @@
     - [x] `Relative Error Ellipses (Meters)` with `Confidence Region = 95%`
     - [x] Drive azimuth confidence + relative ellipse rows from observed station relationships (including fixed-to-adjusted pairs), instead of listing all unknown-pair combinations
   - [x] Phase 5: add fixtures/tests to lock spacing, headings, section ordering, and key row formats for industry-style listing output (`tests/industry_listing_format.test.ts` + `tests/fixtures/industry_listing_phase5_expected_headings.json`)
-- [ ] Adjustment report parity roadmap (industry-standard alignment):
+- [x] Adjustment report parity roadmap (industry-standard alignment):
   - [x] Implement weighted control constraints from coordinate/elevation std errors (not only fixed/free) so control uncertainty participates in the solve
   - [x] Wire and report normal-matrix conditioning diagnostics (condition estimate + warnings for weak geometry)
   - [x] Upgrade outlier handling from fixed sigma thresholds to formal local tests with decision limits and MDB
@@ -98,6 +110,9 @@
 - [ ] industry-standard format compatibility (Section 5.6):
   - [x] Elevation-only parsing (E records) with std errors/fixity and unit conversion
   - [~] Implement global inline options: .UNITS, .COORD 2D/3D, .ORDER NE/EN, .2D/.3D, .DELTA ON/OFF, .MAPMODE, .LWEIGHT, .NORMALIZE, .END (parses/logs complete; .LWEIGHT applied to leveling weights; header exposes coord/order/delta/map/normalize/.LWEIGHT/lon-sign defaults; remaining wiring pending per code type)
+    - [ ] Phase 1: build directive-application matrix by observation family to identify remaining per-code-type wiring gaps
+    - [ ] Phase 2: complete parser-to-observation wiring for remaining code families so inline options behave consistently across TS/GNSS/leveling/traverse workflows
+    - [ ] Phase 3: add fixture-locked semantics coverage for each directive family and verify report/listing run-profile parity output
   - [x] Coordinate/position/elevation records: C (2D/3D with per-component std errs and !/\* fixity, NE/EN order), P geodetic positions (lat/long [+H], std errs mapped to NE, longitude sign), E elevation-only, ellipsoid variants CH/PH/EH (parsed; P/PH projected to local EN via first P origin; ellipsoid height flagged)
   - [x] Single obs: A angles (At-From-To or From-At-To), D distances (2D HD; 3D slope/HD per mode with HI/HT), V vertical (zenith or dH per mode with HI/HT), B bearings/azimuths (solved)
   - [x] Multiple obs: M (angle+dist+vertical with std err rules, HI/HT), BM (bearing/az+dist+vertical), DV (dist+vertical) with std errs and HI/HT (delta-mode emits dH; slope-mode emits zenith; face-2 weighting applied; defaults for stds/HI/HT captured)
@@ -108,6 +123,9 @@
   - [x] Sideshots: SS diverted from adjustment, compute post-adjust, disallow occupy/backsight, optional name checking (basic parse to dist + vert/zenith; excluded from adjustment; occupy/backsight validation added; cannot target fixed control)
   - Leveling: L dH with distance or turns, std err or per-unit via .LWEIGHT (fallback applied; ft lengths converted to km), allow fixity/free
   - [~] Fixity/weights: support ! fixed per component, legacy \* fixed, numeric std errs per obs/component (free markers not implemented)
+    - [ ] Phase 1: define free-marker semantics and precedence relative to `!`, legacy `*`, and numeric sigma tokens by record family
+    - [ ] Phase 2: implement parser support and diagnostics for free markers on coordinate and observation components
+    - [ ] Phase 3: apply free-marker behavior in weighting/constraint building and add report/listing traceability + regression tests
   - [x] Instrument library: EDM const/ppm, HZ/VA precision, instrument/target centering; .I to set current instrument
   - [x] Std error tokens (&/!/\*/numeric) for observations; .EDM additive/propagated; .CENTERING on/off; .ADDC add-centering mode
   - [x] Debug logging toggle (.DEBUG) to dump per-observation calc/residual/sigma by iteration
@@ -123,7 +141,7 @@
   - Fixtures/tests: add industry-standard-style fixtures for 2D/3D, TS+GPS+Leveling, traverses, direction sets, sideshots; Vitest cases for parsing/mode toggles and solves (bearing/zenith added)
   - Docs/UI: [x] Created `docs/USER_GUIDE.md` and `public/examples/industry_demo.dat`; list supported industry-standard codes/options, UI hints, surface parser errors with line numbers
 
-- [ ] Total Station parity roadmap:
+- [x] Total Station parity roadmap:
   - [x] Phase 1: add TS parity harness baseline fixture + tests for stable TS-only outputs
   - [x] Phase 1: add safer A-record interpretation with explicit `.AMODE` controls (AUTO/ANGLE/DIR)
   - [x] Phase 2: full face-set reduction workflow (face1/face2 set means, reduced set sigmas, raw-vs-reduced diagnostics)
@@ -145,19 +163,19 @@
   - [x] Phase 16: add residual-quality diagnostics summary (|t| bins, local-test fail totals, redundancy weakness counts, worst-observation trace, and by-type screening table) in report/export
   - [x] Phase 17: improve 2D triangulation/trilateration compatibility by parsing 2D `M` lines with angle/dist sigma tokens (no forced vertical token) and auto-creating missing non-sideshot stations referenced in observations
 
-- [ ] Industry Standard v6-v14 parity gaps (prioritized from release notes; missing in WebNet today):
-  - [ ] Conventional surveying improvements (highest impact -> lowest):
+- [x] Industry Standard v6-v14 parity gaps (prioritized from release notes; missing in WebNet today):
+  - [x] Conventional surveying improvements (highest impact -> lowest):
     - [x] Implement `.ALIAS` point aliasing (explicit and pattern-based alias rules) with full solve/report traceability
       - [x] Phase 1: parser/state support for `.ALIAS` (explicit map, prefix/suffix/additive patterns, validation diagnostics)
       - [x] Phase 2: station/observation identity resolution so aliases collapse to canonical point IDs before unknown-building
       - [x] Phase 3: reporting/export traceability (canonical ID + source alias references in listing/errors/find)
       - [x] Phase 4: parity tests for mixed alias scenarios (conventional/GNSS/leveling references across files)
-    - [~] Add cluster-detection adjustment mode (dual-pass solve with user approval/override of point-cluster aliasing)
+    - [x] Add cluster-detection adjustment mode (dual-pass solve with user approval/override of point-cluster aliasing)
       - [x] Phase 1: implement post-pass cluster candidate detection (2D/3D tolerance, linkage mode, deterministic cluster keys)
       - [x] Phase 2: dual-pass solve pipeline (pass-1 detect, pass-2 apply approved merges, retain reproducible run profile)
       - [x] Phase 3: UI review/override table (approve/reject cluster merges, choose retained key point)
       - [x] Phase 4: reporting section for cluster outcomes (merged points, deltas from retained point, rejected proposals)
-    - [~] Add Auto-Adjust workflow (iterative solve + automatic outlier exclusion thresholds + removed-observation listing section)
+    - [x] Add Auto-Adjust workflow (iterative solve + automatic outlier exclusion thresholds + removed-observation listing section)
       - [x] Phase 1: solver loop controller for repeated adjust cycles (max |t| threshold, max removals/cycle, max cycles)
       - [x] Phase 2: robust outlier candidate selection policy (local-test aware, redundancy guards, tie-break consistency)
       - [x] Phase 3: run log/report output for each cycle and final "removed observations" listing with line traceability
@@ -205,12 +223,12 @@
       - [x] Phase 3: compute preanalysis covariance with a-priori unit variance (`sigma0^2 = 1`) and expose station covariance blocks plus relative covariance blocks for connected station pairs without relying on residual-based QC
       - [x] Phase 4: render predicted station standard deviations, station error ellipses, relative error ellipses, and weak-geometry cues in report/map/output views, with residual-based checks disabled in preanalysis mode
       - [x] Phase 5: add what-if planning UX for adding/removing planned observations and comparing predicted precision changes, plus CLI/docs/examples/fixture coverage for preanalysis workflows (including omitted-value `D`/`A` planning rows)
-  - [ ] GPS improvements (highest impact -> lowest):
-  - [~] Add full coordinate-system/geodetic engine integration (project CRS selection, grid-ground factors, convergence reporting)
+  - [x] GPS improvements (highest impact -> lowest):
+  - [x] Add full coordinate-system/geodetic engine integration (project CRS selection, grid-ground factors, convergence reporting)
     - [x] Phase 1: add CRS selection/state model and projection abstraction for input/output transformations
     - [x] Phase 2: integrate grid-ground scale/convergence calculations into observation modeling and inverse tools
     - [x] Phase 3: surface CRS/scale/convergence diagnostics in reports/exports with parity fixtures
-    - [~] Add direct geoid/grid model support (NGS/NRC/BYN-style models) plus input/output ellipsoid selection controls
+    - [x] Add direct geoid/grid model support (NGS/NRC/BYN-style models) plus input/output ellipsoid selection controls
       - [x] Phase 1: add geoid/grid file ingestion pipeline (metadata, interpolation, caching, validation)
       - [x] Phase 2: wire ellipsoid/geoid model choice into height conversions for parse/solve/export paths
       - [x] Phase 3: add project options UI + diagnostics for active model and tests against known checkpoints
@@ -238,12 +256,12 @@
       - [x] Phase 1: define LandXML export schema mapping for stations, observations, ellipses, and metadata
       - [x] Phase 2: build deterministic serializer with unit/profile annotations and file-write UX
       - [x] Phase 3: add round-trip/interoperability checks against common LandXML consumers
-    - [~] Add native field-data importer pipeline parity for major Industry Standard sources (JobXML/DBX/FieldGenius/Carlson/TDS) instead of `.dat`-only workflows
+    - [x] Add native field-data importer pipeline parity for major Industry Standard sources (JobXML/DBX/FieldGenius/Carlson/TDS) instead of `.dat`-only workflows
       - [x] Phase 1: design importer plugin interface and normalized intermediate observation model
       - [x] Phase 2: implement first-party JobXML + FieldGenius importers with error-log traceability, including JobXML setup-context station/measurement conversion when occupy/backsight/target references can be resolved
       - [x] Phase 3: implement DBX/Carlson/TDS importers with converter-option parity where practical
       - [x] Phase 3A: improve Trimble-style JobXML station-setup imports (`Reductions -> Point`, face-circle backsights, `TheodoliteHeight`, `MTA` preference, deleted-shot filtering) so exported S-series datasets import as usable TS observations instead of mostly duplicate reduced points
-      - [~] Phase 4: integrate staged import UI workflow and add fixture-based conformance tests
+      - [x] Phase 4: integrate staged import UI workflow and add fixture-based conformance tests
       - [x] Phase 4A: add import-review staging model so external imports open in a review dialog instead of writing directly into the input editor
       - [x] Phase 4B: build grouped import-review UI with control block at top, setup/station grouping where available, per-row source type/source line visibility, include-exclude toggles, and warning/error section
       - [x] Phase 4C: support editable/importable comment rows (for example `# CONTROL`, `# SETUP 1`, custom user notes) and serialize only included reviewed rows into clean editor text without raw trace comments
@@ -261,7 +279,7 @@
       - [x] Phase 4O: add per-setup staged exclude toggles in import review, emit imported `V` rows as hyphenated `from-to` tokens, and lock parser/import-review coverage for hyphenated vertical observation formatting
       - [x] Phase 4P: add compare-mode presets (`Non-MTA Only` vs `All Raw Rows`), highlight staged rows that belong to mismatched comparison buckets, and expand the input-editor context menu with standard edit actions above `Toggle # Comment`
       - [x] Phase 4Q: split editor comment actions into explicit `Block Comment` / `Block Uncomment`, preserve native undo/redo history for comment/paste/delete/cut menu edits, and make `Tab` insert a literal tab in the input textarea
-  - [ ] Leveling improvements (highest impact -> lowest):
+  - [x] Leveling improvements (highest impact -> lowest):
     - [x] Add dedicated differential leveling loop-closure check workflow (independent of traverse diagnostics)
       - [x] Phase 1: detect and enumerate leveling loops from `L`/level-sensitive records with station-path traceability
       - [x] Phase 2: compute closure and misclosure statistics per loop independent of TS traverse metrics
