@@ -129,9 +129,12 @@ npm run format:check # Prettier check
 ## Process Note
 
 - Update TODO.md, README.md, and agents.md after every batch of updates.
+- Before starting a batch, add planned tasks for that batch to TODO.md (as checklist items) so implementation scope is explicit.
+- During a batch, update TODO.md continuously: mark tasks complete as soon as they are finished, and keep in-progress/remaining items accurate.
 - Keep `manual/` local-only reference material. Do not commit `manual/` contents to git.
 - When referencing competing or external software in code, docs, comments, tests, or examples, use generic wording such as `industry standard software` or `industry software` instead of product names unless a specific file format or interoperability feature requires the exact name.
 - Commit and push to GitHub after every completed batch of improvements.
+- Always commit and push to GitHub immediately after each completed batch; do not leave finished batches unpushed.
 - After each batch of updates, run:
   - `npm install`
   - `npm run lint`
