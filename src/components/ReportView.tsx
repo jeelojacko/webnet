@@ -277,10 +277,6 @@ const ReportView: React.FC<ReportViewProps> = ({
   const byType = (type: Observation['type']): SortedObservation[] =>
     observationsByType.get(type) ?? [];
 
-  const analysis = useMemo(
-    () => sortedObs.filter((obs) => Math.abs(obs.stdRes || 0) > 2),
-    [sortedObs],
-  );
   const dataCheckDiffRows = useMemo(() => {
     if (!isDataCheck) return [] as Array<{
       obs: Observation;
@@ -351,15 +347,6 @@ const ReportView: React.FC<ReportViewProps> = ({
         : [],
     [isBlunderDetect, result.logs],
   );
-  const topSuspects = useMemo(
-    () =>
-      sortedObs
-        .filter(
-          (obs) => (obs.localTest != null && !obs.localTest.pass) || Math.abs(obs.stdRes || 0) >= 2,
-        )
-        .slice(0, 20),
-    [sortedObs],
-  );
   const topDirectionTargetSuspects = useMemo(
     () =>
       [...(result.directionTargetDiagnostics ?? [])]
@@ -378,23 +365,6 @@ const ReportView: React.FC<ReportViewProps> = ({
         )
         .slice(0, 20),
     [result.directionRepeatabilityDiagnostics],
-  );
-  const setupSuspects = useMemo(
-    () =>
-      [...(result.setupDiagnostics ?? [])]
-        .filter((s) => s.localFailCount > 0 || (s.maxStdRes ?? 0) >= 2)
-        .sort((a, b) => {
-          if (b.localFailCount !== a.localFailCount) return b.localFailCount - a.localFailCount;
-          const bMax = b.maxStdRes ?? 0;
-          const aMax = a.maxStdRes ?? 0;
-          if (bMax !== aMax) return bMax - aMax;
-          const bRms = b.rmsStdRes ?? 0;
-          const aRms = a.rmsStdRes ?? 0;
-          if (bRms !== aRms) return bRms - aRms;
-          return a.station.localeCompare(b.station);
-        })
-        .slice(0, 20),
-    [result.setupDiagnostics],
   );
   const traverseLoops = result.traverseDiagnostics?.loops ?? [];
   const traverseLoopSuspects = traverseLoops
@@ -1192,9 +1162,39 @@ const ReportView: React.FC<ReportViewProps> = ({
     );
   };
 
+  const showClusterMergeRevert = clusterDiagnostics?.enabled === true;
+  const showTsCorrelationDiagnosticsSection =
+    result.tsCorrelationDiagnostics?.enabled === true &&
+    (result.tsCorrelationDiagnostics?.equationCount ?? 0) > 0;
+  const showAutoSideshotDiagnosticsSection =
+    autoSideshotDiagnostics?.enabled === true &&
+    (autoSideshotDiagnostics?.candidates.length ?? 0) > 0;
+  const showLevelingLoopDiagnosticsSection =
+    !isPreanalysis &&
+    (levelingLoopDiagnostics?.enabled ?? false) &&
+    (levelingLoopDiagnostics?.loops.length ?? 0) > 0;
+  const runCoordSystemMode = runDiagnostics?.coordSystemMode ?? 'local';
+  const showSolveProfileMapScale =
+    runDiagnostics != null &&
+    (runDiagnostics.mapMode !== 'off' || Math.abs(runDiagnostics.mapScaleFactor - 1) > 1e-9);
+  const showSolveProfileVertical =
+    runDiagnostics != null &&
+    (runDiagnostics.verticalReduction !== 'none' || runDiagnostics.applyCurvatureRefraction);
+  const showSolveProfileRotation =
+    runDiagnostics != null && Math.abs(runDiagnostics.rotationAngleRad) > 1e-12;
+  const showSolveProfileDirectiveContext =
+    runDiagnostics != null &&
+    (runCoordSystemMode === 'grid' ||
+      (runDiagnostics.localDatumScheme ?? 'average-scale') !== 'average-scale' ||
+      Math.abs((runDiagnostics.averageScaleFactor ?? 1) - 1) > 1e-9 ||
+      Math.abs(runDiagnostics.commonElevation ?? 0) > 1e-9);
+
   return (
-    <div ref={reportRootRef} className="p-6 font-mono text-sm w-full">
-      <div className="flex items-center justify-between mb-4 text-xs text-slate-400">
+    <div ref={reportRootRef} className="p-6 font-mono text-sm w-full flex flex-col">
+      <div
+        className="flex items-center justify-between mb-4 text-xs text-slate-400"
+        style={{ order: -220 }}
+      >
         <div className="space-x-3">
           <button
             onClick={onReRun}
@@ -1208,17 +1208,19 @@ const ReportView: React.FC<ReportViewProps> = ({
           <button onClick={onResetOverrides} className="px-3 py-1 bg-slate-700 rounded">
             Reset overrides
           </button>
-          <button
-            onClick={onClearClusterMerges}
-            disabled={clusterAppliedMerges.length === 0}
-            className={`px-3 py-1 rounded ${
-              clusterAppliedMerges.length === 0
-                ? 'bg-slate-800 text-slate-600 cursor-not-allowed'
-                : 'bg-amber-700 hover:bg-amber-600 text-white'
-            }`}
-          >
-            Revert cluster merges
-          </button>
+          {showClusterMergeRevert && (
+            <button
+              onClick={onClearClusterMerges}
+              disabled={clusterAppliedMerges.length === 0}
+              className={`px-3 py-1 rounded ${
+                clusterAppliedMerges.length === 0
+                  ? 'bg-slate-800 text-slate-600 cursor-not-allowed'
+                  : 'bg-amber-700 hover:bg-amber-600 text-white'
+              }`}
+            >
+              Revert cluster merges
+            </button>
+          )}
         </div>
         <div className="space-x-2 text-slate-500">
           <span>
@@ -1227,94 +1229,11 @@ const ReportView: React.FC<ReportViewProps> = ({
         </div>
       </div>
 
-      {analysis.length > 0 && (
-        <div className="mb-8">
-          <h2 className="text-xl font-bold text-white mb-4">Outlier Analysis (&gt; 2 sigma)</h2>
-          <div className="bg-red-900/10 border border-red-800/50 rounded p-3 flex items-start space-x-2 mb-4">
-            <AlertTriangle className="text-red-400 mt-0.5" size={18} />
-            <div className="text-xs text-red-100">
-              Residuals above 2.0 sigma are highlighted. Toggle them off and re-run to test
-              re-weighting.
-            </div>
-          </div>
-        </div>
-      )}
-      {!isPreanalysis && topSuspects.length > 0 && (
-        <div className="mb-8 border border-slate-800 rounded overflow-hidden">
-          <div className="px-4 py-2 border-b border-slate-800 bg-slate-900/60 text-xs uppercase tracking-wider text-slate-400">
-            Top Suspects (ranked)
-          </div>
-          <table className="w-full text-left text-xs">
-            <thead>
-              <tr className="text-slate-500 border-b border-slate-800/60">
-                <th className="py-2 px-3">#</th>
-                <th className="py-2">Type</th>
-                <th className="py-2">Stations</th>
-                <th className="py-2 text-right">Line</th>
-                <th className="py-2 text-right">StdRes</th>
-                <th className="py-2 text-right">Local</th>
-                <th className="py-2 text-right px-3">MDB</th>
-              </tr>
-            </thead>
-            <tbody className="text-slate-300">
-              {topSuspects.map((obs, idx) => {
-                const angular = isAngularType(obs.type);
-                const local =
-                  obs.localTestComponents != null
-                    ? `E:${obs.localTestComponents.passE ? 'P' : 'F'} N:${
-                        obs.localTestComponents.passN ? 'P' : 'F'
-                      }`
-                    : obs.localTest != null
-                      ? obs.localTest.pass
-                        ? 'PASS'
-                        : 'FAIL'
-                      : '-';
-                const mdb =
-                  obs.mdbComponents != null
-                    ? `E=${formatMdb(obs.mdbComponents.mE, angular)} N=${formatMdb(
-                        obs.mdbComponents.mN,
-                        angular,
-                      )}`
-                    : obs.mdb != null
-                      ? formatMdb(obs.mdb, angular)
-                      : '-';
-                return (
-                  <tr key={`sus-${obs.id}-${idx}`} className="border-b border-slate-800/30">
-                    <td className="py-1 px-3 text-slate-500">{idx + 1}</td>
-                    <td className="py-1 uppercase text-slate-400">{obs.type}</td>
-                    <td className="py-1">
-                      {'at' in obs && 'from' in obs && 'to' in obs
-                        ? `${obs.at}-${obs.from}-${obs.to}`
-                        : 'at' in obs && 'to' in obs
-                          ? `${obs.at}-${obs.to}`
-                          : 'from' in obs && 'to' in obs
-                            ? `${obs.from}-${obs.to}`
-                            : '-'}
-                    </td>
-                    <td className="py-1 text-right font-mono text-slate-500">
-                      {obs.sourceLine != null ? obs.sourceLine : '-'}
-                    </td>
-                    <td className="py-1 text-right font-mono">{(obs.stdRes ?? 0).toFixed(2)}</td>
-                    <td
-                      className={`py-1 text-right font-mono ${
-                        local.includes('F') || local === 'FAIL' ? 'text-red-400' : 'text-slate-300'
-                      }`}
-                    >
-                      {local}
-                    </td>
-                    <td className="py-1 px-3 text-right font-mono text-slate-400">{mdb}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      )}
 
       {!isPreanalysis &&
         result.suspectImpactDiagnostics &&
         result.suspectImpactDiagnostics.length > 0 && (
-          <div className="mb-8 border border-slate-800 rounded overflow-hidden">
+          <div className="mb-8 border border-slate-800 rounded overflow-hidden" style={{ order: -140 }}>
             <div className="px-4 py-2 border-b border-slate-800 bg-slate-900/60 text-xs uppercase tracking-wider text-slate-400">
               Suspect Impact Analysis (what-if exclusion)
             </div>
@@ -1386,7 +1305,7 @@ const ReportView: React.FC<ReportViewProps> = ({
           </div>
         )}
 
-      <div className="mb-8 border-b border-slate-800 pb-6">
+      <div className="mb-8 border-b border-slate-800 pb-6" style={{ order: -210 }}>
         <h2
           className="text-xl font-bold text-white mb-4"
           title={REPORT_STATIC_TOOLTIPS['Adjustment Summary']}
@@ -1581,7 +1500,7 @@ const ReportView: React.FC<ReportViewProps> = ({
       )}
 
       {runDiagnostics && (
-        <div className="mb-6 border border-slate-800 rounded overflow-hidden">
+        <div className="mb-6 border border-slate-800 rounded overflow-hidden" style={{ order: -200 }}>
           <div
             className="px-3 py-2 text-xs text-slate-400 uppercase tracking-wider border-b border-slate-800 bg-slate-900/40"
             title={REPORT_STATIC_TOOLTIPS['Solve Profile Diagnostics']}
@@ -1607,83 +1526,89 @@ const ReportView: React.FC<ReportViewProps> = ({
               </div>
               <div>{runDiagnostics.directionSetMode.toUpperCase()}</div>
             </div>
-            <div>
-              <div className="text-slate-500" title={REPORT_STATIC_TOOLTIPS['Profile Fallback']}>
-                Profile Fallback
-              </div>
-              <div>{runDiagnostics.profileDefaultInstrumentFallback ? 'ON' : 'OFF'}</div>
-            </div>
-            <div>
-              <div className="text-slate-500" title={REPORT_STATIC_TOOLTIPS['Angle Centering']}>
-                Angle Centering
-              </div>
-              <div>{runDiagnostics.angleCenteringModel}</div>
-            </div>
-            <div>
-              <div className="text-slate-500" title={REPORT_STATIC_TOOLTIPS['TS Correlation']}>
-                TS Correlation
-              </div>
+            {runDiagnostics.profileDefaultInstrumentFallback && (
               <div>
-                {runDiagnostics.tsCorrelationEnabled
-                  ? `ON (${runDiagnostics.tsCorrelationScope}, rho=${runDiagnostics.tsCorrelationRho.toFixed(3)})`
-                  : 'OFF'}
+                <div className="text-slate-500" title={REPORT_STATIC_TOOLTIPS['Profile Fallback']}>
+                  Profile Fallback
+                </div>
+                <div>ON</div>
               </div>
-            </div>
-            <div>
-              <div className="text-slate-500" title={REPORT_STATIC_TOOLTIPS.Robust}>
-                Robust
-              </div>
+            )}
+            {runDiagnostics.tsCorrelationEnabled && (
               <div>
-                {runDiagnostics.robustMode.toUpperCase()} (k={runDiagnostics.robustK.toFixed(2)})
+                <div className="text-slate-500" title={REPORT_STATIC_TOOLTIPS['TS Correlation']}>
+                  TS Correlation
+                </div>
+                <div>
+                  {`ON (${runDiagnostics.tsCorrelationScope}, rho=${runDiagnostics.tsCorrelationRho.toFixed(3)})`}
+                </div>
               </div>
-            </div>
-            <div>
-              <div className="text-slate-500" title={REPORT_STATIC_TOOLTIPS['Map / Scale']}>
-                Map / Scale
-              </div>
+            )}
+            {runDiagnostics.robustMode !== 'none' && (
               <div>
-                {runDiagnostics.mapMode.toUpperCase()} / {runDiagnostics.mapScaleFactor.toFixed(8)}
+                <div className="text-slate-500" title={REPORT_STATIC_TOOLTIPS.Robust}>
+                  Robust
+                </div>
+                <div>
+                  {runDiagnostics.robustMode.toUpperCase()} (k={runDiagnostics.robustK.toFixed(2)})
+                </div>
               </div>
-            </div>
-            <div>
-              <div className="text-slate-500" title={REPORT_STATIC_TOOLTIPS['Vertical / CurvRef']}>
-                Vertical / CurvRef
-              </div>
+            )}
+            {showSolveProfileMapScale && (
               <div>
-                {runDiagnostics.verticalReduction.toUpperCase()} /{' '}
-                {runDiagnostics.applyCurvatureRefraction
-                  ? `ON (k=${runDiagnostics.refractionCoefficient.toFixed(3)})`
-                  : 'OFF'}
+                <div className="text-slate-500" title={REPORT_STATIC_TOOLTIPS['Map / Scale']}>
+                  Map / Scale
+                </div>
+                <div>
+                  {runDiagnostics.mapMode.toUpperCase()} / {runDiagnostics.mapScaleFactor.toFixed(8)}
+                </div>
               </div>
-            </div>
-            <div>
-              <div className="text-slate-500" title={REPORT_STATIC_TOOLTIPS.Normalize}>
-                Normalize
+            )}
+            {showSolveProfileVertical && (
+              <div>
+                <div className="text-slate-500" title={REPORT_STATIC_TOOLTIPS['Vertical / CurvRef']}>
+                  Vertical / CurvRef
+                </div>
+                <div>
+                  {runDiagnostics.verticalReduction.toUpperCase()} /{' '}
+                  {runDiagnostics.applyCurvatureRefraction
+                    ? `ON (k=${runDiagnostics.refractionCoefficient.toFixed(3)})`
+                    : 'OFF'}
+                </div>
               </div>
-              <div>{runDiagnostics.normalize ? 'ON' : 'OFF'}</div>
-            </div>
-            <div>
-              <div className="text-slate-500" title={REPORT_STATIC_TOOLTIPS['A-Mode']}>
-                A-Mode
+            )}
+            {runDiagnostics.normalize && (
+              <div>
+                <div className="text-slate-500" title={REPORT_STATIC_TOOLTIPS.Normalize}>
+                  Normalize
+                </div>
+                <div>ON</div>
               </div>
-              <div>{runDiagnostics.angleMode.toUpperCase()}</div>
-            </div>
-            <div>
-              <div className="text-slate-500" title={REPORT_STATIC_TOOLTIPS['Plan Rotation']}>
-                Plan Rotation
+            )}
+            {runDiagnostics.angleMode !== 'auto' && (
+              <div>
+                <div className="text-slate-500" title={REPORT_STATIC_TOOLTIPS['A-Mode']}>
+                  A-Mode
+                </div>
+                <div>{runDiagnostics.angleMode.toUpperCase()}</div>
               </div>
-              <div>{`${(runDiagnostics.rotationAngleRad * RAD_TO_DEG).toFixed(6)}°`}</div>
-            </div>
+            )}
+            {showSolveProfileRotation && (
+              <div>
+                <div className="text-slate-500" title={REPORT_STATIC_TOOLTIPS['Plan Rotation']}>
+                  Plan Rotation
+                </div>
+                <div>{`${(runDiagnostics.rotationAngleRad * RAD_TO_DEG).toFixed(6)}°`}</div>
+              </div>
+            )}
             <div>
               <div className="text-slate-500" title={REPORT_STATIC_TOOLTIPS['Coordinate System']}>
                 Coordinate System
               </div>
-              <div>
-                {(runDiagnostics.coordSystemMode ?? 'local').toUpperCase()} (
-                {runDiagnostics.crsId ?? '-'})
-              </div>
+              <div>{runCoordSystemMode === 'local' ? 'LOCAL' : `GRID (${runDiagnostics.crsId ?? '-'})`}</div>
             </div>
-            <div className="col-span-2">
+            {showSolveProfileDirectiveContext && (
+              <div className="col-span-2">
               <div
                 className="text-slate-500"
                 title={REPORT_STATIC_TOOLTIPS['Directive Context (End of File)']}
@@ -1696,7 +1621,8 @@ const ReportView: React.FC<ReportViewProps> = ({
                   : `${String(runDiagnostics.localDatumScheme ?? 'average-scale').toUpperCase()} (scale=${(runDiagnostics.averageScaleFactor ?? 1).toFixed(8)}, commonElev=${((runDiagnostics.commonElevation ?? 0) * unitScale).toFixed(4)}${units})`}
               </div>
             </div>
-            {(runDiagnostics.coordSystemMode ?? 'local') === 'grid' && (
+            )}
+            {runCoordSystemMode === 'grid' && (
               <div className="col-span-2">
                 <div className="text-slate-500" title={REPORT_STATIC_TOOLTIPS['Applied Reduction Modes']}>
                   Applied Reduction Modes
@@ -1758,60 +1684,58 @@ const ReportView: React.FC<ReportViewProps> = ({
                 </div>
               </div>
             )}
-            <div>
-              <div className="text-slate-500" title={REPORT_STATIC_TOOLTIPS['CRS / Projection']}>
-                CRS / Projection
-              </div>
+            {(runCoordSystemMode === 'grid' || runDiagnostics.crsTransformEnabled) && (
               <div>
-                {(runDiagnostics.crsStatus ??
-                (runDiagnostics.crsTransformEnabled ? 'on' : 'off')) === 'on'
-                  ? `ON (${runDiagnostics.crsProjectionModel}, label="${runDiagnostics.crsLabel || 'unnamed'}")`
-                  : `OFF${runDiagnostics.crsOffReason ? ` (${runDiagnostics.crsOffReason})` : ''}`}
+                <div className="text-slate-500" title={REPORT_STATIC_TOOLTIPS['CRS / Projection']}>
+                  CRS / Projection
+                </div>
+                <div>
+                  {(runDiagnostics.crsStatus ??
+                  (runDiagnostics.crsTransformEnabled ? 'on' : 'off')) === 'on'
+                    ? `ON (${runDiagnostics.crsProjectionModel}, label="${runDiagnostics.crsLabel || 'unnamed'}")`
+                    : `OFF${runDiagnostics.crsOffReason ? ` (${runDiagnostics.crsOffReason})` : ''}`}
+                </div>
               </div>
-            </div>
-            <div>
-              <div className="text-slate-500" title={REPORT_STATIC_TOOLTIPS['CRS Grid Scale']}>
-                CRS Grid Scale
-              </div>
+            )}
+            {runDiagnostics.crsGridScaleEnabled && (
               <div>
-                {runDiagnostics.crsGridScaleEnabled
-                  ? `ON (${runDiagnostics.crsGridScaleFactor.toFixed(8)})`
-                  : 'OFF'}
+                <div className="text-slate-500" title={REPORT_STATIC_TOOLTIPS['CRS Grid Scale']}>
+                  CRS Grid Scale
+                </div>
+                <div>{`ON (${runDiagnostics.crsGridScaleFactor.toFixed(8)})`}</div>
               </div>
-            </div>
-            <div>
-              <div className="text-slate-500" title={REPORT_STATIC_TOOLTIPS['CRS Convergence']}>
-                CRS Convergence
-              </div>
+            )}
+            {runDiagnostics.crsConvergenceEnabled && (
               <div>
-                {runDiagnostics.crsConvergenceEnabled
-                  ? `ON (${(runDiagnostics.crsConvergenceAngleRad * RAD_TO_DEG).toFixed(6)}°)`
-                  : 'OFF'}
+                <div className="text-slate-500" title={REPORT_STATIC_TOOLTIPS['CRS Convergence']}>
+                  CRS Convergence
+                </div>
+                <div>{`ON (${(runDiagnostics.crsConvergenceAngleRad * RAD_TO_DEG).toFixed(6)}°)`}</div>
               </div>
-            </div>
-            <div>
-              <div className="text-slate-500" title={REPORT_STATIC_TOOLTIPS['Geoid/Grid Model']}>
-                Geoid/Grid Model
-              </div>
+            )}
+            {runDiagnostics.geoidModelEnabled && (
               <div>
-                {runDiagnostics.geoidModelEnabled
-                  ? `ON (${runDiagnostics.geoidModelId}, ${runDiagnostics.geoidInterpolation.toUpperCase()}, loaded=${runDiagnostics.geoidModelLoaded ? 'YES' : 'NO'})`
-                  : 'OFF'}
+                <div className="text-slate-500" title={REPORT_STATIC_TOOLTIPS['Geoid/Grid Model']}>
+                  Geoid/Grid Model
+                </div>
+                <div>
+                  {`ON (${runDiagnostics.geoidModelId}, ${runDiagnostics.geoidInterpolation.toUpperCase()}, loaded=${runDiagnostics.geoidModelLoaded ? 'YES' : 'NO'})`}
+                </div>
               </div>
-            </div>
-            <div>
-              <div
-                className="text-slate-500"
-                title={REPORT_STATIC_TOOLTIPS['Geoid Height Conversion']}
-              >
-                Geoid Height Conversion
-              </div>
+            )}
+            {runDiagnostics.geoidHeightConversionEnabled && (
               <div>
-                {runDiagnostics.geoidHeightConversionEnabled
-                  ? `ON (${runDiagnostics.geoidOutputHeightDatum.toUpperCase()}, converted=${runDiagnostics.geoidConvertedStationCount}, skipped=${runDiagnostics.geoidSkippedStationCount})`
-                  : 'OFF'}
+                <div
+                  className="text-slate-500"
+                  title={REPORT_STATIC_TOOLTIPS['Geoid Height Conversion']}
+                >
+                  Geoid Height Conversion
+                </div>
+                <div>
+                  {`ON (${runDiagnostics.geoidOutputHeightDatum.toUpperCase()}, converted=${runDiagnostics.geoidConvertedStationCount}, skipped=${runDiagnostics.geoidSkippedStationCount})`}
+                </div>
               </div>
-            </div>
+            )}
             <div>
               <div
                 className="text-slate-500"
@@ -1837,45 +1761,44 @@ const ReportView: React.FC<ReportViewProps> = ({
                 </div>
               </div>
             )}
-            <div className="col-span-2">
-              <div className="text-slate-500" title={REPORT_STATIC_TOOLTIPS['Lost Stations']}>
-                Lost Stations
+            {lostStationIds.length > 0 && (
+              <div className="col-span-2">
+                <div className="text-slate-500" title={REPORT_STATIC_TOOLTIPS['Lost Stations']}>
+                  Lost Stations
+                </div>
+                <div className="break-words">{`${lostStationIds.length} (${lostStationIds.join(', ')})`}</div>
               </div>
-              <div className="break-words">
-                {lostStationIds.length > 0
-                  ? `${lostStationIds.length} (${lostStationIds.join(', ')})`
-                  : 'none'}
+            )}
+            {descriptionReconcileMode === 'append' && (
+              <div className="col-span-2">
+                <div
+                  className="text-slate-500"
+                  title={REPORT_STATIC_TOOLTIPS['Description Reconciliation']}
+                >
+                  Description Reconciliation
+                </div>
+                <div className="break-words">{`APPEND (delimiter="${descriptionAppendDelimiter}")`}</div>
               </div>
-            </div>
-            <div className="col-span-2">
-              <div
-                className="text-slate-500"
-                title={REPORT_STATIC_TOOLTIPS['Description Reconciliation']}
-              >
-                Description Reconciliation
+            )}
+            {runDiagnostics.defaultSigmaCount > 0 && (
+              <div className="col-span-2">
+                <div className="text-slate-500" title={REPORT_STATIC_TOOLTIPS['Default Sigmas']}>
+                  Default Sigmas
+                </div>
+                <div>
+                  {runDiagnostics.defaultSigmaCount}
+                  {runDiagnostics.defaultSigmaByType ? ` (${runDiagnostics.defaultSigmaByType})` : ''}
+                </div>
               </div>
-              <div className="break-words">
-                {descriptionReconcileMode.toUpperCase()}
-                {descriptionReconcileMode === 'append'
-                  ? ` (delimiter="${descriptionAppendDelimiter}")`
-                  : ''}
+            )}
+            {runDiagnostics.defaultSigmaCount > 0 && (
+              <div className="col-span-2">
+                <div className="text-slate-500" title={REPORT_STATIC_TOOLTIPS['Stochastic Defaults']}>
+                  Stochastic Defaults
+                </div>
+                <div className="break-words">{runDiagnostics.stochasticDefaultsSummary}</div>
               </div>
-            </div>
-            <div className="col-span-2">
-              <div className="text-slate-500" title={REPORT_STATIC_TOOLTIPS['Default Sigmas']}>
-                Default Sigmas
-              </div>
-              <div>
-                {runDiagnostics.defaultSigmaCount}
-                {runDiagnostics.defaultSigmaByType ? ` (${runDiagnostics.defaultSigmaByType})` : ''}
-              </div>
-            </div>
-            <div className="col-span-2">
-              <div className="text-slate-500" title={REPORT_STATIC_TOOLTIPS['Stochastic Defaults']}>
-                Stochastic Defaults
-              </div>
-              <div className="break-words">{runDiagnostics.stochasticDefaultsSummary}</div>
-            </div>
+            )}
           </div>
         </div>
       )}
@@ -2673,7 +2596,7 @@ const ReportView: React.FC<ReportViewProps> = ({
         </div>
       )}
 
-      {autoSideshotDiagnostics?.enabled && (
+      {showAutoSideshotDiagnosticsSection && (
         <div className="mb-6 border border-slate-800 rounded overflow-hidden">
           <div className="px-3 py-2 text-xs text-slate-400 uppercase tracking-wider border-b border-slate-800 bg-slate-900/40">
             Auto Sideshot Candidates (M Records)
@@ -2696,62 +2619,56 @@ const ReportView: React.FC<ReportViewProps> = ({
               <div>{autoSideshotDiagnostics.threshold.toFixed(2)}</div>
             </div>
           </div>
-          {autoSideshotDiagnostics.candidates.length > 0 ? (
-            <div className="overflow-x-auto w-full">
-              <table className="w-full text-left border-collapse text-xs">
-                <thead>
-                  <tr className="text-slate-500 border-b border-slate-800">
-                    <th className="py-2 px-3 font-semibold text-right">Line</th>
-                    <th className="py-2 px-3 font-semibold">Occupy</th>
-                    <th className="py-2 px-3 font-semibold">Backsight</th>
-                    <th className="py-2 px-3 font-semibold">Target</th>
-                    <th className="py-2 px-3 font-semibold text-right">Angle Obs</th>
-                    <th className="py-2 px-3 font-semibold text-right">Dist Obs</th>
-                    <th className="py-2 px-3 font-semibold text-right">Angle Red</th>
-                    <th className="py-2 px-3 font-semibold text-right">Dist Red</th>
-                    <th className="py-2 px-3 font-semibold text-right">Min Red</th>
-                    <th className="py-2 px-3 font-semibold text-right">Max |t|</th>
+          <div className="overflow-x-auto w-full">
+            <table className="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr className="text-slate-500 border-b border-slate-800">
+                  <th className="py-2 px-3 font-semibold text-right">Line</th>
+                  <th className="py-2 px-3 font-semibold">Occupy</th>
+                  <th className="py-2 px-3 font-semibold">Backsight</th>
+                  <th className="py-2 px-3 font-semibold">Target</th>
+                  <th className="py-2 px-3 font-semibold text-right">Angle Obs</th>
+                  <th className="py-2 px-3 font-semibold text-right">Dist Obs</th>
+                  <th className="py-2 px-3 font-semibold text-right">Angle Red</th>
+                  <th className="py-2 px-3 font-semibold text-right">Dist Red</th>
+                  <th className="py-2 px-3 font-semibold text-right">Min Red</th>
+                  <th className="py-2 px-3 font-semibold text-right">Max |t|</th>
+                </tr>
+              </thead>
+              <tbody className="text-slate-300">
+                {autoSideshotDiagnostics.candidates.map((row, idx) => (
+                  <tr
+                    key={`auto-sideshot-${row.sourceLine ?? 'na'}-${row.target}-${idx}`}
+                    className="border-b border-slate-800/50"
+                  >
+                    <td className="py-1 px-3 text-right font-mono">{row.sourceLine ?? '-'}</td>
+                    <td className="py-1 px-3 font-mono">{row.occupy}</td>
+                    <td className="py-1 px-3 font-mono">{row.backsight}</td>
+                    <td className="py-1 px-3 font-mono">{row.target}</td>
+                    <td className="py-1 px-3 text-right font-mono">{row.angleObsId}</td>
+                    <td className="py-1 px-3 text-right font-mono">{row.distObsId}</td>
+                    <td className="py-1 px-3 text-right font-mono">
+                      {row.angleRedundancy.toFixed(3)}
+                    </td>
+                    <td className="py-1 px-3 text-right font-mono">
+                      {row.distRedundancy.toFixed(3)}
+                    </td>
+                    <td className="py-1 px-3 text-right font-mono">
+                      {row.minRedundancy.toFixed(3)}
+                    </td>
+                    <td className="py-1 px-3 text-right font-mono">
+                      {row.maxAbsStdRes.toFixed(2)}
+                    </td>
                   </tr>
-                </thead>
-                <tbody className="text-slate-300">
-                  {autoSideshotDiagnostics.candidates.map((row, idx) => (
-                    <tr
-                      key={`auto-sideshot-${row.sourceLine ?? 'na'}-${row.target}-${idx}`}
-                      className="border-b border-slate-800/50"
-                    >
-                      <td className="py-1 px-3 text-right font-mono">{row.sourceLine ?? '-'}</td>
-                      <td className="py-1 px-3 font-mono">{row.occupy}</td>
-                      <td className="py-1 px-3 font-mono">{row.backsight}</td>
-                      <td className="py-1 px-3 font-mono">{row.target}</td>
-                      <td className="py-1 px-3 text-right font-mono">{row.angleObsId}</td>
-                      <td className="py-1 px-3 text-right font-mono">{row.distObsId}</td>
-                      <td className="py-1 px-3 text-right font-mono">
-                        {row.angleRedundancy.toFixed(3)}
-                      </td>
-                      <td className="py-1 px-3 text-right font-mono">
-                        {row.distRedundancy.toFixed(3)}
-                      </td>
-                      <td className="py-1 px-3 text-right font-mono">
-                        {row.minRedundancy.toFixed(3)}
-                      </td>
-                      <td className="py-1 px-3 text-right font-mono">
-                        {row.maxAbsStdRes.toFixed(2)}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <div className="px-3 py-2 text-xs text-slate-500">
-              No non-redundant M-record sideshot candidates met the current threshold.
-            </div>
-          )}
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 
       {!isPreanalysis && result.residualDiagnostics && (
-        <div className="mb-6 border border-slate-800 rounded overflow-hidden">
+        <div className="mb-6 border border-slate-800 rounded overflow-hidden" style={{ order: -170 }}>
           <div className="px-3 py-2 text-xs text-slate-400 uppercase tracking-wider border-b border-slate-800 bg-slate-900/40">
             Residual Diagnostics
           </div>
@@ -3038,7 +2955,7 @@ const ReportView: React.FC<ReportViewProps> = ({
         </div>
       )}
 
-      {result.tsCorrelationDiagnostics && (
+      {showTsCorrelationDiagnosticsSection && result.tsCorrelationDiagnostics && (
         <div className="mb-6 border border-slate-800 rounded overflow-hidden">
           <div className="px-3 py-2 text-xs text-slate-400 uppercase tracking-wider border-b border-slate-800 bg-slate-900/40">
             TS Correlation Diagnostics
@@ -3411,7 +3328,7 @@ const ReportView: React.FC<ReportViewProps> = ({
         </div>
       )}
 
-      {!isPreanalysis && levelingLoopDiagnostics?.enabled && (
+      {showLevelingLoopDiagnosticsSection && levelingLoopDiagnostics && (
         <div className="mb-6 border border-slate-800 rounded overflow-hidden">
           <div className="px-3 py-2 text-xs text-slate-400 uppercase tracking-wider border-b border-slate-800 bg-slate-900/40">
             Leveling Loop Diagnostics
@@ -4086,7 +4003,7 @@ const ReportView: React.FC<ReportViewProps> = ({
       )}
 
       {!isPreanalysis && result.setupDiagnostics && result.setupDiagnostics.length > 0 && (
-        <div className="mb-8 border border-slate-800 rounded overflow-hidden">
+        <div className="mb-8 border border-slate-800 rounded overflow-hidden" style={{ order: -160 }}>
           <div className="px-3 py-2 text-xs text-slate-400 uppercase tracking-wider border-b border-slate-800 bg-slate-900/40">
             Setup Diagnostics
           </div>
@@ -4150,54 +4067,6 @@ const ReportView: React.FC<ReportViewProps> = ({
               </tbody>
             </table>
           </div>
-        </div>
-      )}
-
-      {!isPreanalysis && setupSuspects.length > 0 && (
-        <div className="mb-8 border border-slate-800 rounded overflow-hidden">
-          <div className="px-4 py-2 border-b border-slate-800 bg-slate-900/60 text-xs uppercase tracking-wider text-slate-400">
-            Setup Suspects (ranked)
-          </div>
-          <table className="w-full text-left text-xs">
-            <thead>
-              <tr className="text-slate-500 border-b border-slate-800/60">
-                <th className="py-2 px-3">#</th>
-                <th className="py-2">Setup</th>
-                <th className="py-2 text-right">Local Fail</th>
-                <th className="py-2 text-right">Max |t|</th>
-                <th className="py-2 text-right">RMS |t|</th>
-                <th className="py-2">Worst Obs</th>
-                <th className="py-2 text-right px-3">Line</th>
-              </tr>
-            </thead>
-            <tbody className="text-slate-300">
-              {setupSuspects.map((s, idx) => (
-                <tr key={`ss-${s.station}-${idx}`} className="border-b border-slate-800/30">
-                  <td className="py-1 px-3 text-slate-500">{idx + 1}</td>
-                  <td className="py-1">{s.station}</td>
-                  <td
-                    className={`py-1 text-right font-mono ${s.localFailCount > 0 ? 'text-red-400' : ''}`}
-                  >
-                    {s.localFailCount}
-                  </td>
-                  <td className="py-1 text-right font-mono">
-                    {s.maxStdRes != null ? s.maxStdRes.toFixed(2) : '-'}
-                  </td>
-                  <td className="py-1 text-right font-mono">
-                    {s.rmsStdRes != null ? s.rmsStdRes.toFixed(2) : '-'}
-                  </td>
-                  <td className="py-1 text-slate-400">
-                    {s.worstObsType != null
-                      ? `${s.worstObsType.toUpperCase()} ${s.worstObsStations ?? ''}`.trim()
-                      : '-'}
-                  </td>
-                  <td className="py-1 px-3 text-right font-mono text-slate-500">
-                    {s.worstObsLine ?? '-'}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
         </div>
       )}
 
@@ -4274,7 +4143,7 @@ const ReportView: React.FC<ReportViewProps> = ({
         </div>
       )}
 
-      <div className="mb-8">
+      <div className="mb-8" style={{ order: -190 }}>
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-blue-400 font-bold text-base uppercase tracking-wider">
             {isPreanalysis
@@ -4584,7 +4453,7 @@ const ReportView: React.FC<ReportViewProps> = ({
       )}
 
       {!isPreanalysis && (
-        <div className="mb-8">
+        <div className="mb-8" style={{ order: -180 }}>
           <h3 className="text-blue-400 font-bold mb-3 text-base uppercase tracking-wider">
             Observations & Residuals
           </h3>

@@ -45,6 +45,7 @@ npm run dev
 ## Status
 
 - Core adjustment engine is in TypeScript modules under `src/engine` with React UI composed from `src/App.tsx` + `src/components`.
+- Adjustment report results pane now prioritizes summary-first flow: `Adjustment Summary` + trimmed `Solve Profile Diagnostics` stay at the top, followed by `Adjusted Coordinates`, `Observations & Residuals`, `Residual Diagnostics`, `Setup Diagnostics`, and `Suspect Impact Analysis`; redundant ranked suspect blocks were removed, optional diagnostics sections now hide when toggled off or non-applicable, cluster-revert action only appears when cluster workflow is enabled, and local-coordinate profile labeling no longer appends grid CRS text.
 - Lint/build/test pass in CI; formatting via Prettier/lint-staged.
 - Dev tooling audit upgrade applied: Vite `6.4.1`, Vitest `4.0.18`, and esbuild `0.25.12` (current `npm audit` clean).
 - CLI batch wrapper now supports `summary`, `json`, `listing`, and `landxml` output modes (`--output`) with optional file writes (`--out`) and deterministic exit codes (`0` success, `1` solve failure, `2` usage/file/output errors), plus auto-adjust flags (`--autoadjust`, `--autoadjust-threshold`, `--autoadjust-cycles`, `--autoadjust-max-removals`), preanalysis mode (`--preanalysis on`), parser compatibility mode (`--parse-mode legacy|strict`), and geoid source controls (`--geoid-model-id`, `--geoid-interpolation`, `--geoid-source-format`, `--geoid-source-path`) via `npm run adjust:cli -- --input <file> ...`; CI includes CLI smoke runs against `tests/fixtures/cli_smoke.dat`.

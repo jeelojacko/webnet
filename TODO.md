@@ -116,14 +116,14 @@
   - [x] Improve exported `.txt` report to be unit-correct, sorted by blunder likelihood, and include suspect ranking
   - [x] Extend GNSS weighting from simplified isotropic XY to richer component/covariance models
   - [x] Resolve fixity/free-marker semantics mismatch (`*` meaning) between docs/parser/TODO and standard industry-standard expectations
-- [ ] Adjustment report results-pane cleanup plan (ordering, visibility gates, and profile trimming):
-  - [ ] Phase 1: make `Adjustment Summary` the first report block, remove the top outlier-analysis note, keep `Solve Profile Diagnostics` immediately under summary, then enforce section order: `Adjusted Coordinates` -> `Observations & Residuals` -> `Residual Diagnostics` -> `Setup Diagnostics` -> `Suspect Impact Analysis (what-if exclusion)`
-  - [ ] Phase 2: remove redundant sections `Top Suspects (ranked)` and `Setup Suspects (ranked)` from the adjustment report pane
-  - [ ] Phase 3: add conditional visibility gates so optional sections render only when both conditions are true: feature toggle is ON and section has applicable data (`TS Correlation Diagnostics`, `Leveling Loop Diagnostics`, `Auto Sideshot Candidates`)
-  - [ ] Phase 4: hide cluster actions when not applicable (do not show `Revert cluster merges` unless cluster workflow is enabled for the run context)
-  - [ ] Phase 5: trim `Solve Profile Diagnostics` to show only active/non-default settings (hide OFF/default rows such as TS correlation OFF, robust NONE, map-scale off/1.0, vertical/curvref none/off, zero rotation, unused lost-station and CRS/geoid details)
-  - [ ] Phase 6: local-job profile text cleanup: when coordinate system mode is LOCAL, do not display grid CRS/projection identifiers in the coordinate-system summary line
-  - [ ] Phase 7: add report-view regression tests for section ordering, removal of redundant blocks, and conditional visibility behavior
+- [x] Adjustment report results-pane cleanup plan (ordering, visibility gates, and profile trimming):
+  - [x] Phase 1: make `Adjustment Summary` the first report block, remove the top outlier-analysis note, keep `Solve Profile Diagnostics` immediately under summary, then enforce section order: `Adjusted Coordinates` -> `Observations & Residuals` -> `Residual Diagnostics` -> `Setup Diagnostics` -> `Suspect Impact Analysis (what-if exclusion)`
+  - [x] Phase 2: remove redundant sections `Top Suspects (ranked)` and `Setup Suspects (ranked)` from the adjustment report pane
+  - [x] Phase 3: add conditional visibility gates so optional sections render only when both conditions are true: feature toggle is ON and section has applicable data (`TS Correlation Diagnostics`, `Leveling Loop Diagnostics`, `Auto Sideshot Candidates`)
+  - [x] Phase 4: hide cluster actions when not applicable (do not show `Revert cluster merges` unless cluster workflow is enabled for the run context)
+  - [x] Phase 5: trim `Solve Profile Diagnostics` to show only active/non-default settings (hide OFF/default rows such as TS correlation OFF, robust NONE, map-scale off/1.0, vertical/curvref none/off, zero rotation, unused lost-station and CRS/geoid details)
+  - [x] Phase 6: local-job profile text cleanup: when coordinate system mode is LOCAL, do not display grid CRS/projection identifiers in the coordinate-system summary line
+  - [x] Phase 7: add report-view regression tests for section ordering, removal of redundant blocks, and conditional visibility behavior
 - [ ] industry-standard format compatibility (Section 5.6):
   - [x] Elevation-only parsing (E records) with std errors/fixity and unit conversion
   - [~] Implement global inline options: .UNITS, .COORD 2D/3D, .ORDER NE/EN, .2D/.3D, .DELTA ON/OFF, .MAPMODE, .LWEIGHT, .NORMALIZE, .END (core parser support and baseline behavior are implemented; .LWEIGHT is applied for leveling and run headers expose active defaults; remaining work is explicit parity-audit coverage/matrixing of directive effects by observation family and edge-case code paths)
