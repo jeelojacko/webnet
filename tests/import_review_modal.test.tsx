@@ -122,6 +122,7 @@ describe('ImportReviewModal', () => {
         onPresetChange={() => {}}
         onSetBulkExcludeMta={() => {}}
         onSetBulkExcludeRaw={() => {}}
+        onConvertSlopeZenithToHd2D={() => {}}
         onSetGroupExcluded={() => {}}
         onToggleExclude={() => {}}
         onToggleFixed={() => {}}
@@ -156,6 +157,7 @@ describe('ImportReviewModal', () => {
     expect(html).toContain('Setup Label');
     expect(html).toContain('Exclude Setup');
     expect(html).toContain('Exclude MTA Obs (1)');
+    expect(html).toContain('Convert SD+Zenith to HD (2D)');
     expect(html).toContain('Duplicate');
     expect(html).toContain('Comment Below');
     expect(html).toContain('Move Up');

@@ -34,6 +34,7 @@ interface ImportReviewModalProps {
   onPresetChange: (_preset: ImportReviewOutputPreset) => void;
   onSetBulkExcludeMta: (_excluded: boolean) => void;
   onSetBulkExcludeRaw: (_excluded: boolean) => void;
+  onConvertSlopeZenithToHd2D: () => void;
   onSetGroupExcluded: (_groupKey: string, _excluded: boolean) => void;
   onToggleExclude: (_itemId: string) => void;
   onToggleFixed: (_itemId: string) => void;
@@ -148,6 +149,7 @@ const ImportReviewModal: React.FC<ImportReviewModalProps> = ({
   onPresetChange,
   onSetBulkExcludeMta,
   onSetBulkExcludeRaw,
+  onConvertSlopeZenithToHd2D,
   onSetGroupExcluded,
   onToggleExclude,
   onToggleFixed,
@@ -521,6 +523,13 @@ const ImportReviewModal: React.FC<ImportReviewModalProps> = ({
                   />
                   <span>Exclude Raw Obs ({rawItems.length})</span>
                 </label>
+                <button
+                  type="button"
+                  onClick={onConvertSlopeZenithToHd2D}
+                  className="border border-slate-600 bg-slate-950 px-3 py-2 text-[11px] uppercase tracking-wide text-slate-200 hover:border-cyan-400"
+                >
+                  Convert SD+Zenith to HD (2D)
+                </button>
               </div>
               {comparisonSummary && (
                 <div className="grid gap-2 text-left">

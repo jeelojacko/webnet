@@ -182,11 +182,21 @@ export interface ImportedInputResult {
   opus?: OpusImportResult;
 }
 
+export type ExternalImportAngleMode = 'raw' | 'reduced';
+
+export interface ExternalImportParseOptions {
+  angleMode?: ExternalImportAngleMode;
+}
+
 export interface ExternalInputImporter {
   id: string;
   formatLabel: string;
   detect: (_input: string, _sourceName?: string) => boolean;
-  parse: (_input: string, _sourceName?: string) => ImportedDataset | null;
+  parse: (
+    _input: string,
+    _sourceName?: string,
+    _options?: ExternalImportParseOptions,
+  ) => ImportedDataset | null;
 }
 
 const FIELDGENIUS_RECORD_CODES = new Set([
@@ -409,51 +419,68 @@ const buildRecordComment = (record: ImportedRecordBase): string | null => {
 
 export const serializeImportedControlStationRecord = (
   station: ImportedControlStationRecord,
+  _coordMode: '2D' | '3D' = '3D',
+  stripHeight = false,
 ): string => {
   if (station.coordinateMode === 'geodetic') {
-    const recordType = station.heightDatum === 'ellipsoid' ? 'PH' : 'P';
+    const includeHeight = !stripHeight;
+    const recordType =
+      includeHeight && station.heightDatum === 'ellipsoid' ? 'PH' : 'P';
     const tokens = [
       recordType,
       station.stationId,
       formatNumber(station.latitudeDeg ?? 0, 9),
       formatNumber(station.longitudeDeg ?? 0, 9),
-      formatNumber(station.heightM ?? 0, 4),
     ];
+    if (includeHeight) {
+      tokens.push(formatNumber(station.heightM ?? 0, 4));
+    }
     if (
       station.sigmaNorthM != null ||
       station.sigmaEastM != null ||
-      station.sigmaHeightM != null ||
+      (includeHeight && station.sigmaHeightM != null) ||
       station.corrEN != null
     ) {
       tokens.push(
         formatNumber(station.sigmaNorthM ?? 0, 4),
         formatNumber(station.sigmaEastM ?? 0, 4),
-        formatNumber(station.sigmaHeightM ?? 0, 4),
-        formatNumber(station.corrEN ?? 0, 4),
       );
+      if (includeHeight) {
+        tokens.push(formatNumber(station.sigmaHeightM ?? 0, 4));
+      }
+      if (station.corrEN != null) {
+        tokens.push(formatNumber(station.corrEN ?? 0, 4));
+      }
     }
     return appendDescription(tokens.join(' '), station.description);
   }
 
+  const includeHeight = !stripHeight;
   const tokens = [
     'C',
     station.stationId,
     formatNumber(station.eastM ?? 0, 4),
     formatNumber(station.northM ?? 0, 4),
-    formatNumber(station.heightM ?? 0, 4),
   ];
+  if (includeHeight) {
+    tokens.push(formatNumber(station.heightM ?? 0, 4));
+  }
   if (
     station.sigmaEastM != null ||
     station.sigmaNorthM != null ||
-    station.sigmaHeightM != null ||
+    (includeHeight && station.sigmaHeightM != null) ||
     station.corrEN != null
   ) {
     tokens.push(
       formatNumber(station.sigmaEastM ?? 0, 4),
       formatNumber(station.sigmaNorthM ?? 0, 4),
-      formatNumber(station.sigmaHeightM ?? 0, 4),
-      formatNumber(station.corrEN ?? 0, 4),
     );
+    if (includeHeight) {
+      tokens.push(formatNumber(station.sigmaHeightM ?? 0, 4));
+    }
+    if (station.corrEN != null) {
+      tokens.push(formatNumber(station.corrEN ?? 0, 4));
+    }
   }
   return appendDescription(tokens.join(' '), station.description);
 };
@@ -1217,9 +1244,14 @@ const detectJobXml = (input: string, sourceName?: string): boolean => {
   );
 };
 
-const parseJobXml = (input: string, sourceName?: string): ImportedDataset | null => {
+const parseJobXml = (
+  input: string,
+  sourceName?: string,
+  options?: ExternalImportParseOptions,
+): ImportedDataset | null => {
   if (!detectJobXml(input, sourceName)) return null;
 
+  const angleMode = options?.angleMode ?? 'reduced';
   const resolveSourceLine = buildLineNumberResolver(input);
   const trace: ImportedTraceEntry[] = [];
   const stationMap = new Map<string, ImportedControlStationRecord>();
@@ -1652,8 +1684,12 @@ const parseJobXml = (input: string, sourceName?: string): ImportedDataset | null
     const derivedAngleDeg =
       explicitAngleDeg != null
         ? normalizeAngleDeg(explicitAngleDeg)
-        : horizontalCircleDeg != null && backsightCircleDeg != null
-          ? normalizeAngleDeg(horizontalCircleDeg - backsightCircleDeg)
+        : horizontalCircleDeg != null
+          ? angleMode === 'raw'
+            ? normalizeAngleDeg(horizontalCircleDeg)
+            : backsightCircleDeg != null
+              ? normalizeAngleDeg(horizontalCircleDeg - backsightCircleDeg)
+              : undefined
           : undefined;
     const derivedBearingDeg =
       explicitBearingDeg != null
@@ -2784,7 +2820,11 @@ const detectTrimbleSurveyReport = (input: string, sourceName?: string): boolean 
   );
 };
 
-const parseTrimbleSurveyReport = (input: string, sourceName?: string): ImportedDataset | null => {
+const parseTrimbleSurveyReport = (
+  input: string,
+  sourceName?: string,
+  _options?: ExternalImportParseOptions,
+): ImportedDataset | null => {
   if (!detectTrimbleSurveyReport(input, sourceName)) return null;
 
   const resolveSourceLine = buildLineNumberResolver(input);
@@ -3192,14 +3232,14 @@ const jobXmlImporter: ExternalInputImporter = {
   id: 'jobxml',
   formatLabel: 'JobXML field data',
   detect: (input, sourceName) => detectJobXml(input, sourceName),
-  parse: (input, sourceName) => parseJobXml(input, sourceName),
+  parse: (input, sourceName, options) => parseJobXml(input, sourceName, options),
 };
 
 const trimbleSurveyReportImporter: ExternalInputImporter = {
   id: 'trimble-survey-report',
   formatLabel: 'Trimble survey report',
   detect: (input, sourceName) => detectTrimbleSurveyReport(input, sourceName),
-  parse: (input, sourceName) => parseTrimbleSurveyReport(input, sourceName),
+  parse: (input, sourceName, options) => parseTrimbleSurveyReport(input, sourceName, options),
 };
 
 const carlsonImporter: ExternalInputImporter = {
@@ -3245,7 +3285,11 @@ const REGISTERED_IMPORTERS: ExternalInputImporter[] = [
 
 export const getExternalImporters = (): ExternalInputImporter[] => [...REGISTERED_IMPORTERS];
 
-export const importExternalInput = (input: string, sourceName?: string): ImportedInputResult => {
+export const importExternalInput = (
+  input: string,
+  sourceName?: string,
+  options: ExternalImportParseOptions = {},
+): ImportedInputResult => {
   const importer = REGISTERED_IMPORTERS.find((candidate) => candidate.detect(input, sourceName));
   if (!importer) {
     return {
@@ -3255,7 +3299,7 @@ export const importExternalInput = (input: string, sourceName?: string): Importe
     };
   }
 
-  const dataset = importer.parse(input, sourceName);
+  const dataset = importer.parse(input, sourceName, options);
   if (!dataset) {
     return {
       detected: false,

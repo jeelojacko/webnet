@@ -52,6 +52,7 @@ import {
 } from './engine/crsCatalog';
 import {
   importExternalInput,
+  type ExternalImportAngleMode,
   type ImportedDataset,
   type ImportedInputNotice,
 } from './engine/importers';
@@ -60,6 +61,7 @@ import {
   buildImportReviewDisplayTextMap,
   buildImportReviewModel,
   buildImportReviewText,
+  convertImportedDatasetSlopeZenithToHd2D,
   createEmptyImportReviewGroup,
   createImportReviewGroupFromItem,
   duplicateImportReviewItem,
@@ -149,7 +151,7 @@ const createInstrument = (code: string, desc = ''): Instrument => ({
 });
 
 const createDefaultS9Instrument = (): Instrument => ({
-  ...createInstrument('S9', 'Trimble S9 0.5"'),
+  ...createInstrument('S9', 'industry standard S9 0.5"'),
   edm_const: 0.001,
   edm_ppm: 1,
   hzPrecision_sec: 0.5,
@@ -480,6 +482,11 @@ const INDUSTRY_DEFAULT_INSTRUMENT: Instrument = createDefaultS9Instrument();
 
 type TabKey = 'report' | 'processing-summary' | 'industry-output' | 'map';
 type FilePickerMode = 'replace' | 'compare';
+type ImportAnglePromptChoice = ExternalImportAngleMode;
+type PendingAnglePromptFile = {
+  file: File;
+  pickerMode: FilePickerMode;
+};
 
 type ResolvedLevelLoopTolerancePreset = {
   id: string;
@@ -489,6 +496,28 @@ type ResolvedLevelLoopTolerancePreset = {
 
 const IMPORT_FILE_ACCEPT = '.dat,.txt,.sum,.rpt,.xml,.jxl,.jobxml,.htm,.html,.rw5,.cr5,.raw,.dbx';
 const PROJECT_FILE_ACCEPT = '.wnproj,.wnproj.json,.json';
+const IMPORT_ANGLE_PROMPT_FILE_RE = /\.(jxl|jobxml|htm|html)$/i;
+
+const requiresImportAngleModePrompt = (fileName: string): boolean =>
+  IMPORT_ANGLE_PROMPT_FILE_RE.test(fileName.trim());
+
+const buildReducedAngleRowTypeOverrides = (
+  reviewModel: ImportReviewModel,
+): Record<string, ImportReviewRowTypeOverride> => {
+  const overrides: Record<string, ImportReviewRowTypeOverride> = {};
+  reviewModel.items.forEach((item) => {
+    if (item.kind !== 'observation') return;
+    if (!item.setupId || !item.backsightId) return;
+    if (item.sourceObservationKind === 'measurement') {
+      overrides[item.id] = 'direction-measurement';
+      return;
+    }
+    if (item.sourceObservationKind === 'angle') {
+      overrides[item.id] = 'direction-angle';
+    }
+  });
+  return overrides;
+};
 
 type ImportReviewState = {
   sourceName: string;
@@ -507,6 +536,7 @@ type ImportReviewState = {
   rowOverrides: Record<string, string>;
   rowTypeOverrides: Record<string, ImportReviewRowTypeOverride>;
   preset: ImportReviewOutputPreset;
+  force2DOutput: boolean;
   nextSyntheticId: number;
 };
 
@@ -969,6 +999,9 @@ const App: React.FC<AppProps> = ({
   const [input, setInput] = useState<string>(DEFAULT_INPUT);
   const [importNotice, setImportNotice] = useState<ImportedInputNotice | null>(null);
   const [importReviewState, setImportReviewState] = useState<ImportReviewState | null>(null);
+  const [pendingAnglePromptFile, setPendingAnglePromptFile] = useState<PendingAnglePromptFile | null>(
+    null,
+  );
   const [projectIncludeFiles, setProjectIncludeFiles] = useState<Record<string, string>>({});
   const [result, setResult] = useState<AdjustmentResult | null>(null);
   const [runDiagnostics, setRunDiagnostics] = useState<RunDiagnostics | null>(null);
@@ -4547,15 +4580,19 @@ const App: React.FC<AppProps> = ({
     e.target.value = '';
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const pickerMode = filePickerModeRef.current;
-    filePickerModeRef.current = 'replace';
+  const processImportedFileSelection = (
+    file: File,
+    pickerMode: FilePickerMode,
+    angleMode?: ImportAnglePromptChoice,
+  ) => {
     const reader = new FileReader();
     reader.onload = () => {
       const text = typeof reader.result === 'string' ? reader.result : '';
-      const imported = importExternalInput(text, file.name);
+      const imported = importExternalInput(
+        text,
+        file.name,
+        angleMode != null ? { angleMode } : {},
+      );
       if (pickerMode === 'compare' && importReviewState) {
         if (imported.detected && imported.dataset && imported.notice) {
           setImportReviewState((prev) =>
@@ -4576,11 +4613,15 @@ const App: React.FC<AppProps> = ({
               : prev,
           );
         }
-        e.target.value = '';
         return;
       }
       if (imported.detected && imported.dataset && imported.notice) {
         const reviewModel = buildImportReviewModel(imported.dataset);
+        const useReducedDirectionPreset =
+          angleMode === 'reduced' && requiresImportAngleModePrompt(file.name);
+        const rowTypeOverrides = useReducedDirectionPreset
+          ? buildReducedAngleRowTypeOverrides(reviewModel)
+          : {};
         const groupComments = Object.fromEntries(
           reviewModel.groups.map((group) => [group.key, group.defaultComment]),
         );
@@ -4599,8 +4640,9 @@ const App: React.FC<AppProps> = ({
           groupLabels,
           groupComments,
           rowOverrides: {},
-          rowTypeOverrides: {},
-          preset: 'clean-webnet',
+          rowTypeOverrides,
+          preset: useReducedDirectionPreset ? 'ts-direction-set' : 'clean-webnet',
+          force2DOutput: false,
           nextSyntheticId: 1,
         });
       } else {
@@ -4615,7 +4657,31 @@ const App: React.FC<AppProps> = ({
       }
     };
     reader.readAsText(file);
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const pickerMode = filePickerModeRef.current;
+    filePickerModeRef.current = 'replace';
     e.target.value = '';
+    if (pickerMode === 'replace' && requiresImportAngleModePrompt(file.name)) {
+      setPendingAnglePromptFile({ file, pickerMode });
+      return;
+    }
+    processImportedFileSelection(file, pickerMode);
+  };
+
+  const handleImportAnglePromptChoice = (choice: ImportAnglePromptChoice) => {
+    setPendingAnglePromptFile((prev) => {
+      if (!prev) return prev;
+      processImportedFileSelection(prev.file, prev.pickerMode, choice);
+      return null;
+    });
+  };
+
+  const handleImportAnglePromptCancel = () => {
+    setPendingAnglePromptFile(null);
   };
 
   const triggerFileSelect = (mode: FilePickerMode = 'replace') => {
@@ -4677,6 +4743,46 @@ const App: React.FC<AppProps> = ({
           else nextExcluded.delete(item.id);
         });
       return { ...prev, excludedItemIds: nextExcluded };
+    });
+  };
+
+  const handleImportReviewConvertSlopeZenithToHd2D = () => {
+    setImportReviewState((prev) => {
+      if (!prev) return prev;
+      const nextDataset = convertImportedDatasetSlopeZenithToHd2D(prev.dataset);
+      const nextReviewModel = buildImportReviewModel(nextDataset);
+      const itemIds = new Set(nextReviewModel.items.map((item) => item.id));
+      const nextExcludedItemIds = new Set(
+        [...prev.excludedItemIds].filter((itemId) => itemIds.has(itemId)),
+      );
+      const nextFixedItemIds = new Set(
+        [...prev.fixedItemIds].filter((itemId) => itemIds.has(itemId)),
+      );
+      const nextGroupLabels = Object.fromEntries(
+        nextReviewModel.groups.map((group) => [group.key, prev.groupLabels[group.key] ?? group.label]),
+      );
+      const nextGroupComments = Object.fromEntries(
+        nextReviewModel.groups.map((group) => [
+          group.key,
+          prev.groupComments[group.key] ?? group.defaultComment,
+        ]),
+      );
+      return {
+        ...prev,
+        dataset: nextDataset,
+        reviewModel: nextReviewModel,
+        groupLabels: nextGroupLabels,
+        groupComments: nextGroupComments,
+        excludedItemIds: nextExcludedItemIds,
+        fixedItemIds: nextFixedItemIds,
+        rowOverrides: {},
+        rowTypeOverrides: {},
+        comparisonSourceName: undefined,
+        comparisonNotice: undefined,
+        comparisonDataset: undefined,
+        comparisonSummary: null,
+        force2DOutput: true,
+      };
     });
   };
 
@@ -4989,7 +5095,8 @@ const App: React.FC<AppProps> = ({
         rowTypeOverrides: importReviewState.rowTypeOverrides,
         fixedItemIds: importReviewState.fixedItemIds,
         preset: importReviewState.preset,
-        coordMode: parseSettings.coordMode,
+        coordMode: importReviewState.force2DOutput ? '2D' : parseSettings.coordMode,
+        force2D: importReviewState.force2DOutput,
       },
     );
     setInput(nextInput);
@@ -5008,9 +5115,11 @@ const App: React.FC<AppProps> = ({
       importReviewState.dataset,
       importReviewState.reviewModel,
       importReviewState.preset,
+      importReviewState.force2DOutput ? '2D' : parseSettings.coordMode,
       importReviewState.rowOverrides,
+      importReviewState.force2DOutput,
     );
-  }, [importReviewState]);
+  }, [importReviewState, parseSettings.coordMode]);
 
   const importReviewMoveTargetGroups = useMemo(() => {
     if (!importReviewState) return [];
@@ -8802,6 +8911,57 @@ const App: React.FC<AppProps> = ({
         </div>
       </div>
 
+      {pendingAnglePromptFile && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 px-4 py-6">
+          <div className="w-full max-w-md border border-slate-500 bg-slate-900 shadow-2xl">
+            <div className="border-b border-slate-700 bg-slate-800 px-5 py-4">
+              <div className="text-[11px] uppercase tracking-[0.24em] text-cyan-300">
+                Import Angle Mode
+              </div>
+              <div className="mt-1 text-lg font-semibold text-white">
+                Choose Horizontal-Angle Handling
+              </div>
+              <div className="mt-1 text-xs text-slate-400">{pendingAnglePromptFile.file.name}</div>
+            </div>
+            <div className="space-y-3 px-5 py-4 text-sm text-slate-200">
+              <div>
+                <button
+                  type="button"
+                  onClick={() => handleImportAnglePromptChoice('raw')}
+                  className="w-full border border-slate-600 bg-slate-950 px-3 py-3 text-left text-xs uppercase tracking-wide text-slate-100 hover:border-cyan-400"
+                >
+                  Raw Angles
+                </button>
+                <div className="mt-1 text-xs text-slate-400">
+                  Keep imported angle values as-is from the source file.
+                </div>
+              </div>
+              <div>
+                <button
+                  type="button"
+                  onClick={() => handleImportAnglePromptChoice('reduced')}
+                  className="w-full border border-cyan-500 bg-cyan-900/40 px-3 py-3 text-left text-xs uppercase tracking-wide text-cyan-100 hover:bg-cyan-800/60"
+                >
+                  Reduced Angles (BS = 0)
+                </button>
+                <div className="mt-1 text-xs text-slate-400">
+                  Use reduced-angle workflow with backsight-zero direction-set shaping.
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center justify-end border-t border-slate-700 bg-slate-800 px-5 py-4">
+              <button
+                type="button"
+                onClick={handleImportAnglePromptCancel}
+                className="border border-slate-500 bg-slate-700 px-4 py-2 text-xs uppercase tracking-wide text-slate-200 hover:bg-slate-600"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {importReviewState && (
         <ImportReviewModal
           sourceName={importReviewState.sourceName}
@@ -8824,6 +8984,7 @@ const App: React.FC<AppProps> = ({
           onPresetChange={handleImportReviewPresetChange}
           onSetBulkExcludeMta={handleImportReviewSetBulkExcludeMta}
           onSetBulkExcludeRaw={handleImportReviewSetBulkExcludeRaw}
+          onConvertSlopeZenithToHd2D={handleImportReviewConvertSlopeZenithToHd2D}
           onSetGroupExcluded={handleImportReviewSetGroupExcluded}
           onToggleExclude={handleImportReviewToggleExclude}
           onToggleFixed={handleImportReviewToggleFixed}

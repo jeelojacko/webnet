@@ -296,6 +296,7 @@
       - [x] Phase 4O: add per-setup staged exclude toggles in import review, emit imported `V` rows as hyphenated `from-to` tokens, and lock parser/import-review coverage for hyphenated vertical observation formatting
       - [x] Phase 4P: add compare-mode presets (`Non-MTA Only` vs `All Raw Rows`), highlight staged rows that belong to mismatched comparison buckets, and expand the input-editor context menu with standard edit actions above `Toggle # Comment`
       - [x] Phase 4Q: split editor comment actions into explicit `Block Comment` / `Block Uncomment`, preserve native undo/redo history for comment/paste/delete/cut menu edits, and make `Tab` insert a literal tab in the input textarea
+      - [x] Phase 4R: add import-time angle-mode selection for `.jxl/.jobxml/.htm/.html` (`Raw Angles` vs `Reduced Angles (BS = 0)` before parsing), and add an import-review action to convert all SD+zenith observations to HD-only 2D output (strip HI/HT, strip control Z/elevation fields, emit `.2D`)
   - [x] Leveling improvements (highest impact -> lowest):
     - [x] Add dedicated differential leveling loop-closure check workflow (independent of traverse diagnostics)
       - [x] Phase 1: detect and enumerate leveling loops from `L`/level-sensitive records with station-path traceability

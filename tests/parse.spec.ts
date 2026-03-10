@@ -19,10 +19,10 @@ describe('parseInput', () => {
   });
 
   it('parses quoted instrument descriptions without shifting numeric fields', () => {
-    const parsed = parseInput('I S9 "Trimble S9 0.5" 0.001 1 0.5 0.5 0.00075 0');
+    const parsed = parseInput('I S9 "industry standard S9 0.5" 0.001 1 0.5 0.5 0.00075 0');
     const s9 = parsed.instrumentLibrary.S9;
     expect(s9).toBeDefined();
-    expect(s9.desc).toBe('Trimble S9 0.5');
+    expect(s9.desc).toBe('industry standard S9 0.5');
     expect(s9.edm_const).toBeCloseTo(0.001, 12);
     expect(s9.edm_ppm).toBeCloseTo(1, 12);
     expect(s9.hzPrecision_sec).toBeCloseTo(0.5, 12);

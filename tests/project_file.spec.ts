@@ -27,7 +27,7 @@ const defaults = {
   projectInstruments: {
     S9: {
       code: 'S9',
-      desc: 'Trimble S9',
+      desc: 'industry standard S9',
       edm_const: 0.001,
       edm_ppm: 1,
       hzPrecision_sec: 0.5,

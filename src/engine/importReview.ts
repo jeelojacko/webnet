@@ -104,6 +104,7 @@ export interface BuildImportReviewTextOptions {
   fixedItemIds?: Set<string>;
   preset?: ImportReviewOutputPreset;
   coordMode?: CoordMode;
+  force2D?: boolean;
 }
 
 const isComparableObservation = (observation: ImportedObservationRecord): boolean =>
@@ -1000,11 +1001,85 @@ const serializeObservationForImport = (
   return serializeImportedObservationRecord(observation);
 };
 
+const slopeZenithToHorizontalDistance = (
+  slopeDistanceM: number,
+  zenithDeg: number,
+): number => {
+  const zenithRad = zenithDeg * DEG_TO_RAD;
+  const horizontal = slopeDistanceM * Math.sin(zenithRad);
+  return Number.isFinite(horizontal) ? Math.abs(horizontal) : slopeDistanceM;
+};
+
+export const convertImportedDatasetSlopeZenithToHd2D = (
+  dataset: ImportedDataset,
+): ImportedDataset => {
+  const controlStations = dataset.controlStations.map((station) => ({
+    ...station,
+    heightM: undefined,
+    sigmaHeightM: undefined,
+  }));
+  const observations = dataset.observations.map((observation) => {
+    if (
+      observation.kind === 'measurement' &&
+      observation.verticalMode === 'zenith' &&
+      observation.verticalValue != null &&
+      Number.isFinite(observation.verticalValue)
+    ) {
+      const horizontalDistanceM = slopeZenithToHorizontalDistance(
+        observation.distanceM,
+        observation.verticalValue,
+      );
+      return {
+        ...observation,
+        distanceM: horizontalDistanceM,
+        verticalMode: undefined,
+        verticalValue: undefined,
+        hiM: undefined,
+        htM: undefined,
+        note: observation.note
+          ? `${observation.note}; converted SD+zenith -> HD`
+          : 'converted SD+zenith -> HD',
+      } as ImportedObservationRecord;
+    }
+    if (
+      observation.kind === 'distance-vertical' &&
+      observation.verticalMode === 'zenith' &&
+      Number.isFinite(observation.verticalValue)
+    ) {
+      const horizontalDistanceM = slopeZenithToHorizontalDistance(
+        observation.distanceM,
+        observation.verticalValue,
+      );
+      return {
+        kind: 'distance',
+        fromId: observation.fromId,
+        toId: observation.toId,
+        distanceM: horizontalDistanceM,
+        sourceLine: observation.sourceLine,
+        sourceCode: observation.sourceCode,
+        description: observation.description,
+        sourceMeta: observation.sourceMeta,
+        note: observation.note
+          ? `${observation.note}; converted SD+zenith -> HD`
+          : 'converted SD+zenith -> HD',
+      } as ImportedObservationRecord;
+    }
+    return observation;
+  });
+  return {
+    ...dataset,
+    controlStations,
+    observations,
+  };
+};
+
 export const buildImportReviewDisplayTextMap = (
   dataset: ImportedDataset,
   model: ImportReviewModel,
   preset: ImportReviewOutputPreset,
+  coordMode: CoordMode = '3D',
   rowOverrides: Record<string, string> = {},
+  force2D = false,
 ): Record<string, string> => {
   const output: Record<string, string> = {};
   model.items.forEach((item) => {
@@ -1018,7 +1093,11 @@ export const buildImportReviewDisplayTextMap = (
       return;
     }
     if (item.kind === 'control') {
-      output[item.id] = serializeImportedControlStationRecord(dataset.controlStations[item.index]);
+      output[item.id] = serializeImportedControlStationRecord(
+        dataset.controlStations[item.index],
+        coordMode,
+        force2D,
+      );
       return;
     }
     output[item.id] =
@@ -1146,13 +1225,14 @@ export const buildImportReviewText = (
   const lines: string[] = [];
   const itemLookup = new Map(model.items.map((item) => [item.id, item]));
   const preset = options.preset ?? 'clean-webnet';
-  const coordMode = options.coordMode ?? (preset === 'ts-direction-set' ? '2D' : '3D');
+  const coordMode: CoordMode =
+    options.force2D === true ? '2D' : (options.coordMode ?? (preset === 'ts-direction-set' ? '2D' : '3D'));
   const state = {
     currentDeltaMode: null as 'delta-h' | 'zenith' | null,
     currentGpsMode: null as 'network' | 'sideshot' | null,
   };
 
-  if (preset === 'ts-direction-set') {
+  if (coordMode === '2D') {
     lines.push('.2D');
   }
   lines.push('.UNITS M');
@@ -1224,7 +1304,11 @@ export const buildImportReviewText = (
             coordMode,
           ).forEach((line) => lines.push(line));
         } else {
-          const controlLine = serializeImportedControlStationRecord(dataset.controlStations[item.index]);
+          const controlLine = serializeImportedControlStationRecord(
+            dataset.controlStations[item.index],
+            coordMode,
+            options.force2D === true,
+          );
           lines.push(
             options.fixedItemIds?.has(item.id)
               ? appendFixedTokensToLine(controlLine, coordMode)
