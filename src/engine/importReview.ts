@@ -105,6 +105,7 @@ export interface BuildImportReviewTextOptions {
   preset?: ImportReviewOutputPreset;
   faceNormalizationMode?: FaceNormalizationMode;
   syntheticDirectionBacksightMode?: 'auto' | 'always' | 'never';
+  emitDirectionFaceHints?: boolean;
   coordMode?: CoordMode;
   force2D?: boolean;
 }
@@ -237,6 +238,31 @@ const parseDirectionLineTarget = (line: string): string | undefined => {
   const code = tokens[0]?.toUpperCase();
   if (code !== 'DN' && code !== 'DM') return undefined;
   return tokens[1];
+};
+
+const parseDirectionFaceHintToken = (token: string | undefined): DirectionFaceBucket | null => {
+  const raw = token?.trim();
+  if (!raw) return null;
+  let normalized = raw.toUpperCase().replace(/[^A-Z0-9=]/g, '');
+  if (!normalized) return null;
+  if (normalized.startsWith('FACE=')) normalized = normalized.slice(5);
+  if (normalized.startsWith('FACE')) normalized = normalized.slice(4);
+  if (normalized === 'F1') normalized = '1';
+  if (normalized === 'F2') normalized = '2';
+  if (normalized === '1') return 'face1';
+  if (normalized === '2') return 'face2';
+  return null;
+};
+
+const appendDirectionLineFaceHint = (line: string, face: DirectionFaceBucket): string => {
+  if (face === 'unresolved') return line;
+  const tokens = line.trim().split(/\s+/).filter(Boolean);
+  if (tokens.length < 3) return line;
+  const code = tokens[0]?.toUpperCase();
+  if (code !== 'DN' && code !== 'DM') return line;
+  if (tokens.some((token) => parseDirectionFaceHintToken(token) != null)) return line;
+  tokens.push(face === 'face1' ? 'F1' : 'F2');
+  return tokens.join(' ');
 };
 
 const normalizeDirectionLineFace2ToFace1 = (line: string): string | null => {
@@ -1322,6 +1348,7 @@ const buildFaceAwareDirectionSetLines = (
   coordMode: CoordMode,
   faceNormalizationMode: FaceNormalizationMode | undefined,
   syntheticDirectionBacksightMode: 'auto' | 'always' | 'never',
+  emitDirectionFaceHints: boolean,
 ): string[] | null => {
   const serializedEntries: Array<{ line: string; face: DirectionFaceBucket }> = [];
   const commentLines: string[] = [];
@@ -1375,8 +1402,13 @@ const buildFaceAwareDirectionSetLines = (
 
   if (!splitByFace) {
     const normalizedLines = serializedEntries.map((entry) => {
-      if (!normalizeFace2 || entry.face !== 'face2') return entry.line;
-      return normalizeDirectionLineFace2ToFace1(entry.line) ?? entry.line;
+      const normalizedLine =
+        normalizeFace2 && entry.face === 'face2'
+          ? normalizeDirectionLineFace2ToFace1(entry.line) ?? entry.line
+          : entry.line;
+      if (!emitDirectionFaceHints) return normalizedLine;
+      const effectiveFace: DirectionFaceBucket = entry.face === 'unresolved' ? 'unresolved' : 'face1';
+      return appendDirectionLineFaceHint(normalizedLine, effectiveFace);
     });
     nextLines.push(`DB ${setupId}`.trimEnd());
     if (
@@ -1393,15 +1425,17 @@ const buildFaceAwareDirectionSetLines = (
     return nextLines;
   }
 
+  const decorateSplitLine = (line: string, face: DirectionFaceBucket): string =>
+    emitDirectionFaceHints ? appendDirectionLineFaceHint(line, face) : line;
   const face1Lines = serializedEntries
     .filter((entry) => entry.face === 'face1')
-    .map((entry) => entry.line);
+    .map((entry) => decorateSplitLine(entry.line, 'face1'));
   const face2Lines = serializedEntries
     .filter((entry) => entry.face === 'face2')
-    .map((entry) => entry.line);
+    .map((entry) => decorateSplitLine(entry.line, 'face2'));
   const unresolvedLines = serializedEntries
     .filter((entry) => entry.face === 'unresolved')
-    .map((entry) => entry.line);
+    .map((entry) => decorateSplitLine(entry.line, 'unresolved'));
   const blocks = [
     { label: '# FACE 1', lines: face1Lines },
     { label: '# FACE 2', lines: face2Lines },
@@ -1549,6 +1583,7 @@ export const buildImportReviewText = (
         coordMode,
         options.faceNormalizationMode,
         syntheticBacksightMode,
+        options.emitDirectionFaceHints ?? false,
       );
       if (faceAwareLines) {
         faceAwareLines.forEach((line) => lines.push(line));

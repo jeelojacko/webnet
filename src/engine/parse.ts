@@ -1999,6 +1999,34 @@ export const parseInput = (
     source === 'metadata' ||
     source === 'zenith' ||
     (source === 'cluster' && (state.directionFaceReliabilityFromCluster ?? false));
+  const parseDirectionFaceHintToken = (token: string | undefined): DirectionFace | null => {
+    const raw = token?.trim();
+    if (!raw) return null;
+    let normalized = raw.toUpperCase().replace(/[^A-Z0-9=]/g, '');
+    if (!normalized) return null;
+    if (normalized.startsWith('FACE=')) normalized = normalized.slice(5);
+    if (normalized.startsWith('FACE')) normalized = normalized.slice(4);
+    if (normalized === 'F1') normalized = '1';
+    if (normalized === 'F2') normalized = '2';
+    if (normalized === '1') return 'face1';
+    if (normalized === '2') return 'face2';
+    return null;
+  };
+  const stripDirectionFaceHints = (
+    tokens: string[],
+  ): { face: DirectionFace | null; tokens: string[] } => {
+    let face: DirectionFace | null = null;
+    const remaining: string[] = [];
+    tokens.forEach((token) => {
+      const parsed = parseDirectionFaceHintToken(token);
+      if (parsed != null && face == null) {
+        face = parsed;
+        return;
+      }
+      remaining.push(token);
+    });
+    return { face, tokens: remaining };
+  };
   const inferFaceFromZenith = (
     zenithRad?: number,
   ): { face: DirectionFace; source: DirectionFaceSource } | null => {
@@ -5274,7 +5302,18 @@ export const parseInput = (
 
         const toMeters = linearToMetersFactor();
         const distParsed = code === 'DM' ? parseObservedLinearToken(parts[3], toMeters) : null;
-        const vert = code === 'DM' ? parts[4] : undefined;
+        let vert: string | undefined;
+        let tailTokens: string[] = [];
+        if (code === 'DM') {
+          const candidate = parts[4];
+          const candidateIsFace = parseDirectionFaceHintToken(candidate) != null;
+          vert = candidate && !candidateIsFace ? candidate : undefined;
+          tailTokens = parts.slice(vert ? 5 : 4);
+        } else {
+          tailTokens = parts.slice(3);
+        }
+        const strippedFaceHints = stripDirectionFaceHints(tailTokens);
+        tailTokens = strippedFaceHints.tokens;
         const vertParsed =
           code === 'DM' && vert
             ? state.deltaMode === 'horiz'
@@ -5285,9 +5324,8 @@ export const parseInput = (
           logs.push(`Invalid direction-measure record at line ${lineNum}, skipping ${code}.`);
           continue;
         }
-        const sigmaStart = code === 'DM' ? 5 : 3;
         const sigmaCount = code === 'DM' ? 3 : 1;
-        const { sigmas } = extractSigmaTokens(parts.slice(sigmaStart), sigmaCount);
+        const { sigmas } = extractSigmaTokens(tailTokens, sigmaCount);
 
         const inst = traverseCtx.dirInstCode
           ? instrumentLibrary[traverseCtx.dirInstCode]
@@ -5304,8 +5342,10 @@ export const parseInput = (
             : undefined;
         const inferredFace = inferFaceFromZenith(zenithCandidate);
         const fallbackFace: DirectionFace = angRad >= Math.PI ? 'face2' : 'face1';
-        const thisFace: DirectionFace = inferredFace?.face ?? fallbackFace;
-        const faceSource: DirectionFaceSource = inferredFace?.source ?? 'fallback';
+        const explicitFace = strippedFaceHints.face;
+        const thisFace: DirectionFace = explicitFace ?? inferredFace?.face ?? fallbackFace;
+        const faceSource: DirectionFaceSource =
+          explicitFace != null ? 'metadata' : inferredFace?.source ?? 'fallback';
         const raw: RawDirectionShot = {
           to,
           obs: angRad,

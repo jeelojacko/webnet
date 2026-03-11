@@ -931,6 +931,30 @@ describe('parseInput', () => {
     expect(parsed.parseState.directionSetTreatmentDiagnostics?.[0]?.faceSource).toBe('zenith');
   });
 
+  it('honors explicit DN/DM face hints so pre-normalized imported angles do not strict-reject', () => {
+    const parsed = parseInput(
+      [
+        'I TS1 TS-1 0 0 1 0 1',
+        'C 5 0 0 0 *',
+        'C 3 -10 -10 0',
+        'C 6 30 -10 0',
+        'DB 5 3',
+        'DM 3 268-15-55.2 15.5837 F1',
+        'DM 3 268-16-03.2 15.5845 F1',
+        'DM 6 097-26-16.8 33.6071 F1',
+        'DM 6 097-26-17.1 33.6069 F1',
+        'DE',
+      ].join('\n'),
+      {},
+      { faceNormalizationMode: 'on', parseCompatibilityMode: 'strict' },
+    );
+    const dirs = parsed.observations.filter((o) => o.type === 'direction');
+    expect(dirs).toHaveLength(2);
+    expect(parsed.directionRejectDiagnostics?.length ?? 0).toBe(0);
+    expect(parsed.parseState.directionSetTreatmentDiagnostics?.[0]?.faceSource).toBe('metadata');
+    expect(parsed.parseState.directionSetTreatmentDiagnostics?.[0]?.policyOutcome).toBe('accepted');
+  });
+
   it('keeps known-face split sets when normalization mode is off', () => {
     const parsed = parseInput(
       [

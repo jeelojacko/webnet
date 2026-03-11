@@ -5186,6 +5186,7 @@ const App: React.FC<AppProps> = ({
         fixedItemIds: importReviewState.fixedItemIds,
         preset: importReviewState.preset,
         faceNormalizationMode: importReviewState.importFaceNormalizationMode,
+        emitDirectionFaceHints: true,
         coordMode: importReviewState.force2DOutput ? '2D' : parseSettings.coordMode,
         force2D: importReviewState.force2DOutput,
       },

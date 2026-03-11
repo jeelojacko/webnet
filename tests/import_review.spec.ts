@@ -364,6 +364,49 @@ describe('import review workflow', () => {
     expect(text).not.toContain('DM 10 274-00-00.0');
   });
 
+  it('emits direction face hints when requested so imported face provenance survives final parsing', () => {
+    const dataset: ImportedDataset = {
+      importerId: 'jobxml',
+      formatLabel: 'Synthetic face normalize with hints',
+      summary: 'synthetic',
+      notice: { title: 'synthetic', detailLines: [] },
+      comments: [],
+      controlStations: [],
+      observations: [
+        {
+          kind: 'measurement',
+          atId: '9',
+          fromId: '8',
+          toId: '8',
+          angleDeg: 84,
+          distanceM: 7.4892,
+          sourceMeta: { setupType: 'StandardResection', face: 'FACE1' },
+        },
+        {
+          kind: 'measurement',
+          atId: '9',
+          fromId: '8',
+          toId: '8',
+          angleDeg: 264,
+          distanceM: 7.4887,
+          sourceMeta: { setupType: 'StandardResection', face: 'FACE2' },
+        },
+      ],
+      trace: [],
+    };
+    const reviewModel = buildImportReviewModel(dataset);
+    const text = buildImportReviewText(dataset, reviewModel, {
+      includedItemIds: new Set(reviewModel.items.map((item) => item.id)),
+      preset: 'ts-direction-set',
+      faceNormalizationMode: 'on',
+      emitDirectionFaceHints: true,
+    });
+
+    expect(text).toContain('DM 8 084-00-00.0 7.4892 F1');
+    expect((text.match(/F1/g) ?? []).length).toBeGreaterThanOrEqual(2);
+    expect(text).not.toContain('F2');
+  });
+
   it('retains inferred face metadata through SD+zenith to HD conversion so split mode still works', () => {
     const rawDataset: ImportedDataset = {
       importerId: 'jobxml',
