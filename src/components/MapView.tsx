@@ -1,6 +1,11 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { AdjustmentResult } from '../types';
-import { buildMap3DScene, createDefaultMap3DCamera, type Map3DCamera, type Vec3 } from '../engine/map3d';
+import {
+  buildMap3DScene,
+  createDefaultMap3DCamera,
+  type Map3DCamera,
+  type Vec3,
+} from '../engine/map3d';
 import { RAD_TO_DEG, radToDmsStr } from '../engine/angles';
 import { computeInverse2D, computePivotAngles } from '../engine/mapTools';
 
@@ -65,7 +70,10 @@ const MapView: React.FC<MapViewProps> = ({
     typeof window !== 'undefined' ? window.innerWidth : 1280,
   );
 
-  const scene3d = useMemo(() => buildMap3DScene(result, showLostStations), [result, showLostStations]);
+  const scene3d = useMemo(
+    () => buildMap3DScene(result, showLostStations),
+    [result, showLostStations],
+  );
 
   const { points, bbox } = useMemo(() => {
     if (scene3d.stations.length === 0) {
@@ -217,7 +225,10 @@ const MapView: React.FC<MapViewProps> = ({
     if (scene3d.stations.length > 500 || scene3d.edges.length > 1000) {
       return `network too large (${scene3d.stations.length} stations, ${scene3d.edges.length} edges)`;
     }
-    if (effectiveViewportWidth < 768 && (scene3d.stations.length > 140 || scene3d.edges.length > 260)) {
+    if (
+      effectiveViewportWidth < 768 &&
+      (scene3d.stations.length > 140 || scene3d.edges.length > 260)
+    ) {
       return `mobile viewport (${effectiveViewportWidth}px) with dense geometry`;
     }
     return null;
@@ -330,7 +341,11 @@ const MapView: React.FC<MapViewProps> = ({
         const factor = Math.exp(event.deltaY * 0.0015);
         return {
           ...prev,
-          distance: clamp(prev.distance * factor, 0.6, Math.max(50000, scene3d.extents.radius * 80)),
+          distance: clamp(
+            prev.distance * factor,
+            0.6,
+            Math.max(50000, scene3d.extents.radius * 80),
+          ),
         };
       });
       return;
@@ -457,7 +472,10 @@ const MapView: React.FC<MapViewProps> = ({
   }, [projected3d]);
 
   const buildEllipsoidRings = useCallback(
-    (center: Vec3, ellipsoid: { semiMajor: number; semiMinor: number; semiVertical: number; thetaDeg: number }) => {
+    (
+      center: Vec3,
+      ellipsoid: { semiMajor: number; semiMinor: number; semiVertical: number; thetaDeg: number },
+    ) => {
       const theta = ellipsoid.thetaDeg * DEG_TO_RAD;
       const cosT = Math.cos(theta);
       const sinT = Math.sin(theta);
@@ -569,7 +587,8 @@ const MapView: React.FC<MapViewProps> = ({
     <div className="h-full p-4 flex flex-col min-h-0">
       <div className="flex items-center justify-between mb-3 text-xs text-slate-400 shrink-0">
         <span>
-          Map view ({effectiveMode.toUpperCase()} scaled) — coords & ellipses in {units} ({unitScale.toFixed(4)} factor)
+          Map view ({effectiveMode.toUpperCase()} scaled) — coords & ellipses in {units} (
+          {unitScale.toFixed(4)} factor)
         </span>
         <span className="text-slate-500">
           {effectiveMode === '3d'
@@ -699,16 +718,25 @@ const MapView: React.FC<MapViewProps> = ({
                           ? (value * unitScale).toFixed(4)
                           : '-';
                       return (
-                        <tr key={`point-tool-${stationId}`} className="border-b border-slate-800/60">
+                        <tr
+                          key={`point-tool-${stationId}`}
+                          className="border-b border-slate-800/60"
+                        >
                           <td className="px-2 py-1">{stationId}</td>
                           {isPreanalysis ? (
                             <td className="px-2 py-1 uppercase">
                               {stationSeverity(stationId) ?? '-'}
                             </td>
                           ) : null}
-                          <td className="px-2 py-1 text-right">{(station.y * unitScale).toFixed(4)}</td>
-                          <td className="px-2 py-1 text-right">{(station.x * unitScale).toFixed(4)}</td>
-                          <td className="px-2 py-1 text-right">{(station.h * unitScale).toFixed(4)}</td>
+                          <td className="px-2 py-1 text-right">
+                            {(station.y * unitScale).toFixed(4)}
+                          </td>
+                          <td className="px-2 py-1 text-right">
+                            {(station.x * unitScale).toFixed(4)}
+                          </td>
+                          <td className="px-2 py-1 text-right">
+                            {(station.h * unitScale).toFixed(4)}
+                          </td>
                           <td className="px-2 py-1 text-right">{formatStd(station.sN)}</td>
                           <td className="px-2 py-1 text-right">{formatStd(station.sE)}</td>
                           <td className="px-2 py-1 text-right">{formatStd(station.sH)}</td>
@@ -788,13 +816,13 @@ const MapView: React.FC<MapViewProps> = ({
                     <div className="space-y-1">
                       <div>
                         Az {inverseFromId} → {inverseToId}:{' '}
-                        <span className="font-mono">{radToDmsStr(inverse.azimuthFromToRad)}</span>{' '}
-                        ({(inverse.azimuthFromToRad * RAD_TO_DEG).toFixed(6)} deg)
+                        <span className="font-mono">{radToDmsStr(inverse.azimuthFromToRad)}</span> (
+                        {(inverse.azimuthFromToRad * RAD_TO_DEG).toFixed(6)} deg)
                       </div>
                       <div>
                         Az {inverseToId} → {inverseFromId}:{' '}
-                        <span className="font-mono">{radToDmsStr(inverse.azimuthToFromRad)}</span>{' '}
-                        ({(inverse.azimuthToFromRad * RAD_TO_DEG).toFixed(6)} deg)
+                        <span className="font-mono">{radToDmsStr(inverse.azimuthToFromRad)}</span> (
+                        {(inverse.azimuthToFromRad * RAD_TO_DEG).toFixed(6)} deg)
                       </div>
                       <div>
                         Horizontal distance:{' '}
@@ -902,12 +930,16 @@ const MapView: React.FC<MapViewProps> = ({
                     <div className="space-y-1">
                       <div>
                         Inside angle at {anglePivotId}:{' '}
-                        <span className="font-mono">{radToDmsStr(angleBetween.insideAngleRad)}</span>{' '}
+                        <span className="font-mono">
+                          {radToDmsStr(angleBetween.insideAngleRad)}
+                        </span>{' '}
                         ({(angleBetween.insideAngleRad * RAD_TO_DEG).toFixed(6)} deg)
                       </div>
                       <div>
                         Outside angle at {anglePivotId}:{' '}
-                        <span className="font-mono">{radToDmsStr(angleBetween.outsideAngleRad)}</span>{' '}
+                        <span className="font-mono">
+                          {radToDmsStr(angleBetween.outsideAngleRad)}
+                        </span>{' '}
                         ({(angleBetween.outsideAngleRad * RAD_TO_DEG).toFixed(6)} deg)
                       </div>
                     </div>
@@ -1049,7 +1081,12 @@ const MapView: React.FC<MapViewProps> = ({
                         opacity={0.45}
                       />
                     ))}
-                    <circle cx={p.x} cy={p.y} r={pointRadius} fill={stationFill(node.id, node.fixed)} />
+                    <circle
+                      cx={p.x}
+                      cy={p.y}
+                      r={pointRadius}
+                      fill={stationFill(node.id, node.fixed)}
+                    />
                     <text
                       x={p.x + labelOffset}
                       y={p.y - labelOffset}

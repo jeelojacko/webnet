@@ -149,7 +149,8 @@ const hasLocalFailure = (obs: Observation): boolean => {
 };
 
 const redundancyValue = (obs: Observation): number | undefined => {
-  if (typeof obs.redundancy === 'number') return Number.isFinite(obs.redundancy) ? obs.redundancy : undefined;
+  if (typeof obs.redundancy === 'number')
+    return Number.isFinite(obs.redundancy) ? obs.redundancy : undefined;
   if (obs.redundancy && typeof obs.redundancy === 'object') {
     const re = obs.redundancy.rE;
     const rn = obs.redundancy.rN;

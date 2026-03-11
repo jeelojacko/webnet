@@ -153,26 +153,21 @@ export const buildIndustryStyleListingText = (
   const crsId = parseState?.crsId ?? runDiag.crsId ?? 'CA_NAD83_CSRS_UTM_20N';
   const localDatumScheme =
     parseState?.localDatumScheme ?? runDiag.localDatumScheme ?? 'average-scale';
-  const averageScaleFactor =
-    parseState?.averageScaleFactor ?? runDiag.averageScaleFactor ?? 1;
+  const averageScaleFactor = parseState?.averageScaleFactor ?? runDiag.averageScaleFactor ?? 1;
   const scaleOverrideActive =
-    parseState?.scaleOverrideActive ??
-    runDiag.scaleOverrideActive ??
-    false;
+    parseState?.scaleOverrideActive ?? runDiag.scaleOverrideActive ?? false;
   const commonElevation = parseState?.commonElevation ?? runDiag.commonElevation ?? 0;
-  const averageGeoidHeight =
-    parseState?.averageGeoidHeight ?? runDiag.averageGeoidHeight ?? 0;
+  const averageGeoidHeight = parseState?.averageGeoidHeight ?? runDiag.averageGeoidHeight ?? 0;
   const gridBearingMode = parseState?.gridBearingMode ?? runDiag.gridBearingMode ?? 'grid';
-  const gridDistanceMode =
-    parseState?.gridDistanceMode ?? runDiag.gridDistanceMode ?? 'measured';
+  const gridDistanceMode = parseState?.gridDistanceMode ?? runDiag.gridDistanceMode ?? 'measured';
   const gridAngleMode = parseState?.gridAngleMode ?? runDiag.gridAngleMode ?? 'measured';
   const gridDirectionMode =
     parseState?.gridDirectionMode ?? runDiag.gridDirectionMode ?? 'measured';
-  const parsedUsageSummary =
-    parseState?.parsedUsageSummary ?? runDiag.parsedUsageSummary;
+  const parsedUsageSummary = parseState?.parsedUsageSummary ?? runDiag.parsedUsageSummary;
   const usedInSolveUsageSummary =
     parseState?.usedInSolveUsageSummary ?? runDiag.usedInSolveUsageSummary;
-  const directiveTransitions = parseState?.directiveTransitions ?? runDiag.directiveTransitions ?? [];
+  const directiveTransitions =
+    parseState?.directiveTransitions ?? runDiag.directiveTransitions ?? [];
   const directiveNoEffectWarnings =
     parseState?.directiveNoEffectWarnings ?? runDiag.directiveNoEffectWarnings ?? [];
   const coordSystemDiagnostics =
@@ -249,9 +244,7 @@ export const buildIndustryStyleListingText = (
   const levelingLoopDiagnostics = res.levelingLoopDiagnostics;
   const isPreanalysis = res.preanalysisMode === true;
   const runMode: RunMode =
-    parseState?.runMode ??
-    runDiag.runMode ??
-    (isPreanalysis ? 'preanalysis' : 'adjustment');
+    parseState?.runMode ?? runDiag.runMode ?? (isPreanalysis ? 'preanalysis' : 'adjustment');
   const runPurpose =
     runMode === 'preanalysis'
       ? 'Preanalysis / Predicted Precision'
@@ -352,9 +345,7 @@ export const buildIndustryStyleListingText = (
     `      Industry Standard Run Mode                   : ${runDiag.solveProfile === 'industry-parity' ? 'Parity Profile (Classical)' : 'WebNet Default Profile'}`,
   );
   lines.push(`      Run Mode                            : ${runMode.toUpperCase()}`);
-  lines.push(
-    `      Run Purpose                         : ${runPurpose}`,
-  );
+  lines.push(`      Run Purpose                         : ${runPurpose}`);
   lines.push(
     `      Type of Adjustment                  : ${parseState?.coordMode ?? parseSettings.coordMode}`,
   );
@@ -412,9 +403,7 @@ export const buildIndustryStyleListingText = (
       `      Applied Reduction Modes (Used) : ${formatReductionUsage(usedInSolveUsageSummary)}`,
     );
     if (directiveTransitions.length > 0) {
-      lines.push(
-        `      Directive Transition Count     : ${directiveTransitions.length}`,
-      );
+      lines.push(`      Directive Transition Count     : ${directiveTransitions.length}`);
       directiveTransitions.slice(0, 20).forEach((transition) => {
         lines.push(
           `      Directive Range               : ${transition.directive} line ${transition.effectiveFromLine}${transition.effectiveToLine != null ? `-${transition.effectiveToLine}` : '-EOF'} (obs=${transition.obsCountInRange})`,
@@ -464,14 +453,10 @@ export const buildIndustryStyleListingText = (
     );
   }
   if (coordSystemDiagnostics.length > 0) {
-    lines.push(
-      `      CRS Diagnostics                 : ${coordSystemDiagnostics.join(', ')}`,
-    );
+    lines.push(`      CRS Diagnostics                 : ${coordSystemDiagnostics.join(', ')}`);
   }
   if (coordSystemWarningMessages.length > 0) {
-    lines.push(
-      `      CRS Warning Count              : ${coordSystemWarningMessages.length}`,
-    );
+    lines.push(`      CRS Warning Count              : ${coordSystemWarningMessages.length}`);
   }
   lines.push(
     `      Geoid/Grid Model                 : ${geoidModelEnabled ? `ON (${geoidModelId}, ${geoidInterpolation.toUpperCase()}, loaded=${geoidModelLoaded ? 'YES' : 'NO'})` : 'OFF'}`,
@@ -719,7 +704,7 @@ export const buildIndustryStyleListingText = (
 
       const factorRows = stationEntriesForListing.map(([id, st]) => [
         id,
-        (((st.convergenceAngleRad ?? 0) * RAD_TO_DEG)).toFixed(8),
+        ((st.convergenceAngleRad ?? 0) * RAD_TO_DEG).toFixed(8),
         (st.gridScaleFactor ?? 1).toFixed(8),
         (st.elevationFactor ?? 1).toFixed(8),
         (st.combinedFactor ?? 1).toFixed(8),
@@ -729,14 +714,7 @@ export const buildIndustryStyleListingText = (
       addCenteredHeading('Grid/Combined Factor Diagnostics');
       lines.push('');
       renderTextTable(
-        [
-          'Station',
-          'Convergence (deg)',
-          'GridScale',
-          'ElevFactor',
-          'CombinedFactor',
-          'Source',
-        ],
+        ['Station', 'Convergence (deg)', 'GridScale', 'ElevFactor', 'CombinedFactor', 'Source'],
         factorRows,
         [1, 2, 3, 4],
       );
@@ -995,7 +973,9 @@ export const buildIndustryStyleListingText = (
           obs.type === 'bearing' ||
           obs.type === 'dir' ||
           obs.type === 'zenith';
-        const diffMag = angular ? Math.abs(residual * RAD_TO_DEG * 3600) : Math.abs(residual) * unitScale;
+        const diffMag = angular
+          ? Math.abs(residual * RAD_TO_DEG * 3600)
+          : Math.abs(residual) * unitScale;
         const diffLabel = angular ? `${diffMag.toFixed(2)}"` : diffMag.toFixed(4);
         return {
           obs,
@@ -1066,7 +1046,9 @@ export const buildIndustryStyleListingText = (
   if (!isPreanalysis && runMode === 'blunder-detect') {
     lines.push('');
     addCenteredHeading('Blunder Detect Mode');
-    lines.push('Warning: iterative deweighting diagnostics; not a replacement for full adjustment QA.');
+    lines.push(
+      'Warning: iterative deweighting diagnostics; not a replacement for full adjustment QA.',
+    );
     const cycleLines = res.logs.filter((line) => line.startsWith('Blunder cycle ')).slice(0, 20);
     if (cycleLines.length > 0) {
       lines.push('');
@@ -1169,16 +1151,11 @@ export const buildIndustryStyleListingText = (
         .map((obs) => {
           const from = res.stations[obs.from];
           const to = res.stations[obs.to];
-          const gridDist =
-            from && to ? Math.hypot(to.x - from.x, to.y - from.y) : Number.NaN;
+          const gridDist = from && to ? Math.hypot(to.x - from.x, to.y - from.y) : Number.NaN;
           const avgGridScale =
-            from && to
-              ? ((from.gridScaleFactor ?? 1) + (to.gridScaleFactor ?? 1)) / 2
-              : 1;
+            from && to ? ((from.gridScaleFactor ?? 1) + (to.gridScaleFactor ?? 1)) / 2 : 1;
           const avgCombined =
-            from && to
-              ? ((from.combinedFactor ?? 1) + (to.combinedFactor ?? 1)) / 2
-              : 1;
+            from && to ? ((from.combinedFactor ?? 1) + (to.combinedFactor ?? 1)) / 2 : 1;
           const mode = obs.gridDistanceMode ?? gridDistanceMode;
           const scaleUsed =
             mode === 'grid' ? 1 : mode === 'ellipsoidal' ? avgGridScale : avgCombined;
@@ -1343,7 +1320,18 @@ export const buildIndustryStyleListingText = (
       loop.stationPath.join('->'),
     ]);
     renderTextTable(
-      ['#', 'Loop', 'Status', `dH (${linearUnit})`, `|dH| (${linearUnit})`, 'Len (km)', 'Tol (mm)', 'mm/sqrt(km)', 'Lines', 'Path'],
+      [
+        '#',
+        'Loop',
+        'Status',
+        `dH (${linearUnit})`,
+        `|dH| (${linearUnit})`,
+        'Len (km)',
+        'Tol (mm)',
+        'mm/sqrt(km)',
+        'Lines',
+        'Path',
+      ],
       levelingLoopRows,
       [3, 4, 5, 6, 7],
     );

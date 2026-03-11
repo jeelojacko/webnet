@@ -199,8 +199,7 @@ export const invertSPDFromCholesky = (l: Matrix): Matrix => {
   return solveSPDFromCholesky(l, identity);
 };
 
-export const invertSPDCholesky = (m: Matrix): Matrix =>
-  invertSPDFromCholesky(choleskyDecompose(m));
+export const invertSPDCholesky = (m: Matrix): Matrix => invertSPDFromCholesky(choleskyDecompose(m));
 
 export const invertSPDWithDamping = (
   m: Matrix,
@@ -230,10 +229,7 @@ const swapLowerPrefixRows = (lower: Matrix, a: number, b: number, prefixCols: nu
   }
 };
 
-export const ldltDecomposeSymmetric = (
-  m: Matrix,
-  tolerance = 1e-14,
-): PivotedLDLTResult => {
+export const ldltDecomposeSymmetric = (m: Matrix, tolerance = 1e-14): PivotedLDLTResult => {
   const n = m.length;
   if (n === 0) {
     return { lower: [], diagonal: [], offDiagonal: [], blockSizes: [], permutation: [] };
@@ -262,7 +258,11 @@ export const ldltDecomposeSymmetric = (
       }
     }
 
-    if (Math.max(absakk, colmax) <= tolerance || !Number.isFinite(absakk) || !Number.isFinite(colmax)) {
+    if (
+      Math.max(absakk, colmax) <= tolerance ||
+      !Number.isFinite(absakk) ||
+      !Number.isFinite(colmax)
+    ) {
       throw new Error(`Symmetric LDLT pivot too small at step ${k} (pivot=${work[k][k]}).`);
     }
 

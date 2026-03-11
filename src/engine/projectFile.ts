@@ -134,9 +134,7 @@ const sanitizeCustomPresets = (
   candidate.forEach((entry, index) => {
     if (!isRecord(entry)) return;
     const id =
-      typeof entry.id === 'string' && entry.id.trim()
-        ? entry.id
-        : `loaded-preset-${index + 1}`;
+      typeof entry.id === 'string' && entry.id.trim() ? entry.id : `loaded-preset-${index + 1}`;
     const name =
       typeof entry.name === 'string' && entry.name.trim() ? entry.name : `Custom ${index + 1}`;
     const baseMm =
@@ -180,7 +178,9 @@ export const serializeProjectFile = (project: ParsedProjectPayload): string => {
   const parseSettings = cloneRecord(project.ui.parseSettings);
   const modeFromSettings = sanitizeParseCompatibilityMode(parseSettings.parseCompatibilityMode);
   const migratedFromSettings =
-    typeof parseSettings.parseModeMigrated === 'boolean' ? parseSettings.parseModeMigrated : undefined;
+    typeof parseSettings.parseModeMigrated === 'boolean'
+      ? parseSettings.parseModeMigrated
+      : undefined;
   const parseModeMigrated = migratedFromSettings ?? modeFromSettings === 'strict';
   const parseCompatibilityMode: ParseCompatibilityMode =
     modeFromSettings ?? (parseModeMigrated ? 'strict' : 'legacy');
@@ -208,7 +208,9 @@ export const serializeProjectFile = (project: ParsedProjectPayload): string => {
     project: {
       projectInstruments: cloneInstruments(project.project.projectInstruments),
       selectedInstrument: project.project.selectedInstrument,
-      levelLoopCustomPresets: project.project.levelLoopCustomPresets.map((preset) => ({ ...preset })),
+      levelLoopCustomPresets: project.project.levelLoopCustomPresets.map((preset) => ({
+        ...preset,
+      })),
     },
   };
   return JSON.stringify(payload, null, 2);
@@ -291,7 +293,7 @@ export const parseProjectFile = (
       ? selectedInstrumentRaw
       : projectInstruments[defaults.selectedInstrument]
         ? defaults.selectedInstrument
-        : Object.keys(projectInstruments)[0] ?? defaults.selectedInstrument;
+        : (Object.keys(projectInstruments)[0] ?? defaults.selectedInstrument);
   const levelLoopCustomPresets = sanitizeCustomPresets(
     project.levelLoopCustomPresets,
     defaults.levelLoopCustomPresets,

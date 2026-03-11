@@ -44,9 +44,7 @@ const defaults = {
     },
   } as InstrumentLibrary,
   selectedInstrument: 'S9',
-  levelLoopCustomPresets: [
-    { id: 'c1', name: 'Custom 1', baseMm: 2, perSqrtKmMm: 5 },
-  ],
+  levelLoopCustomPresets: [{ id: 'c1', name: 'Custom 1', baseMm: 2, perSqrtKmMm: 5 }],
 };
 
 describe('project file serialization/parsing', () => {

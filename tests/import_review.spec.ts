@@ -28,7 +28,10 @@ const jobXmlTrimbleResectionFixture = readFileSync(
   'tests/fixtures/jobxml_trimble_resection_sample.jxl',
   'utf-8',
 );
-const jobXmlMeasurementFixture = readFileSync('tests/fixtures/jobxml_measurement_sample.jxl', 'utf-8');
+const jobXmlMeasurementFixture = readFileSync(
+  'tests/fixtures/jobxml_measurement_sample.jxl',
+  'utf-8',
+);
 
 describe('import review workflow', () => {
   it('builds grouped setup rows, preserves raw+MTA shots, and avoids false resection grouping', () => {
@@ -53,8 +56,12 @@ describe('import review workflow', () => {
     expect(reviewModel.warnings).toHaveLength(0);
     expect(reviewModel.errors).toHaveLength(0);
     expect(reviewModel.groups.some((group) => group.kind === 'resection')).toBe(false);
-    expect(reviewModel.items.filter((item) => item.sourceType.includes('MTA')).length).toBeGreaterThan(0);
-    expect(reviewModel.items.filter((item) => item.sourceType.includes('Backsight')).length).toBeGreaterThan(0);
+    expect(
+      reviewModel.items.filter((item) => item.sourceType.includes('MTA')).length,
+    ).toBeGreaterThan(0);
+    expect(
+      reviewModel.items.filter((item) => item.sourceType.includes('Backsight')).length,
+    ).toBeGreaterThan(0);
 
     const includedItemIds = new Set(
       reviewModel.items
@@ -85,7 +92,10 @@ describe('import review workflow', () => {
   });
 
   it('supports ts-direction-set preset and row-level overrides for true resection groups', () => {
-    const imported = importExternalInput(jobXmlTrimbleResectionFixture, 'jobxml_trimble_resection_sample.jxl');
+    const imported = importExternalInput(
+      jobXmlTrimbleResectionFixture,
+      'jobxml_trimble_resection_sample.jxl',
+    );
     const reviewModel = buildImportReviewModel(imported.dataset!);
     const includedItemIds = new Set(reviewModel.items.map((item) => item.id));
     const displayedRows = buildImportReviewDisplayTextMap(
@@ -114,7 +124,10 @@ describe('import review workflow', () => {
     });
 
     expect(text).toContain('.2D');
-    expect(reviewModel.groups.map((group) => group.label)).toEqual(['Control', 'Resection 1000 (BS 077)']);
+    expect(reviewModel.groups.map((group) => group.label)).toEqual([
+      'Control',
+      'Resection 1000 (BS 077)',
+    ]);
     expect(text).toContain('# RESECTION');
     expect(text).toContain('DB 1000');
     expect(text).toContain('DN 077 000-00-00');
@@ -182,7 +195,11 @@ describe('import review workflow', () => {
     expect(rawItems.length).toBe(4);
 
     const duplicatedModel = duplicateImportReviewItem(baseModel, 'observation:4', 'synthetic:1');
-    const withCommentModel = insertImportReviewCommentRow(duplicatedModel, 'observation:4', 'synthetic:2');
+    const withCommentModel = insertImportReviewCommentRow(
+      duplicatedModel,
+      'observation:4',
+      'synthetic:2',
+    );
     const movedModel = moveImportReviewItem(withCommentModel, 'synthetic:2', 'setup:1:bs:1000');
     const stagedModel = createImportReviewGroupFromItem(
       movedModel,
@@ -215,7 +232,9 @@ describe('import review workflow', () => {
     expect(text).toContain('# TARGET CHK1');
     expect(text).toContain('# AVERAGE SET');
     expect(text).toContain('# CUSTOM SETUP 1');
-    expect(text.match(/M 1-1000-2 286-51-24.7 22.2574 089-57-23.8 1.6500\/1.6920/g)).toHaveLength(2);
+    expect(text.match(/M 1-1000-2 286-51-24.7 22.2574 089-57-23.8 1.6500\/1.6920/g)).toHaveLength(
+      2,
+    );
   });
 
   it('supports empty setup-group staging before rows are moved into it', () => {

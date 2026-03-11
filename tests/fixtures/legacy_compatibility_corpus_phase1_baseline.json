@@ -40,10 +40,7 @@
       "rewriteSuggestionCount": 0,
       "ambiguousCount": 0,
       "legacyFallbackCount": 0,
-      "runModeDiagnosticCodes": [
-        "BLUNDER_SKIPS_AUTOSIDESHOT",
-        "BLUNDER_SKIPS_CLUSTER"
-      ],
+      "runModeDiagnosticCodes": ["BLUNDER_SKIPS_AUTOSIDESHOT", "BLUNDER_SKIPS_CLUSTER"],
       "silentDirectiveDropCount": 0
     },
     {
@@ -63,10 +60,7 @@
       "rewriteSuggestionCount": 0,
       "ambiguousCount": 0,
       "legacyFallbackCount": 0,
-      "runModeDiagnosticCodes": [
-        "DATACHECK_SKIPS_AUTOSIDESHOT",
-        "DATACHECK_SKIPS_CLUSTER"
-      ],
+      "runModeDiagnosticCodes": ["DATACHECK_SKIPS_AUTOSIDESHOT", "DATACHECK_SKIPS_CLUSTER"],
       "silentDirectiveDropCount": 0
     },
     {
@@ -86,10 +80,7 @@
       "rewriteSuggestionCount": 0,
       "ambiguousCount": 0,
       "legacyFallbackCount": 0,
-      "runModeDiagnosticCodes": [
-        "PREANALYSIS_SKIPS_AUTOSIDESHOT",
-        "PREANALYSIS_SKIPS_CLUSTER"
-      ],
+      "runModeDiagnosticCodes": ["PREANALYSIS_SKIPS_AUTOSIDESHOT", "PREANALYSIS_SKIPS_CLUSTER"],
       "silentDirectiveDropCount": 0
     },
     {
@@ -109,10 +100,7 @@
       "rewriteSuggestionCount": 0,
       "ambiguousCount": 0,
       "legacyFallbackCount": 0,
-      "runModeDiagnosticCodes": [
-        "DATACHECK_SKIPS_AUTOSIDESHOT",
-        "DATACHECK_SKIPS_CLUSTER"
-      ],
+      "runModeDiagnosticCodes": ["DATACHECK_SKIPS_AUTOSIDESHOT", "DATACHECK_SKIPS_CLUSTER"],
       "silentDirectiveDropCount": 0
     },
     {

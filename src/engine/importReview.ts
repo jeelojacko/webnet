@@ -162,11 +162,17 @@ const deriveObservationSetupId = (observation: ImportedObservationRecord): strin
   return observation.fromId;
 };
 
-const deriveObservationBacksightId = (observation: ImportedObservationRecord): string | undefined =>
-  observation.kind === 'measurement' || observation.kind === 'angle' ? observation.fromId : undefined;
+const deriveObservationBacksightId = (
+  observation: ImportedObservationRecord,
+): string | undefined =>
+  observation.kind === 'measurement' || observation.kind === 'angle'
+    ? observation.fromId
+    : undefined;
 
 const deriveObservationTargetId = (observation: ImportedObservationRecord): string =>
-  observation.kind === 'measurement' || observation.kind === 'angle' ? observation.toId : observation.toId;
+  observation.kind === 'measurement' || observation.kind === 'angle'
+    ? observation.toId
+    : observation.toId;
 
 const isResectionSetupType = (value: string | undefined): boolean =>
   /resection/i.test((value ?? '').trim());
@@ -272,7 +278,14 @@ const fixedTokenCountForRecordLine = (line: string, coordMode: CoordMode): numbe
     return coordMode === '2D' ? 2 : 3;
   }
 
-  if (code === 'D' || code === 'A' || code === 'B' || code === 'V' || code === 'DN' || code === 'L') {
+  if (
+    code === 'D' ||
+    code === 'A' ||
+    code === 'B' ||
+    code === 'V' ||
+    code === 'DN' ||
+    code === 'L'
+  ) {
     return 1;
   }
 
@@ -320,13 +333,19 @@ const applyFixedTokensToLines = (
 
 const serializeDistanceFocusedObservation = (observation: ImportedObservationRecord): string[] => {
   if (observation.kind === 'measurement') {
-    return [['D', observation.atId, observation.toId, formatLinear(observation.distanceM)].join(' ')];
+    return [
+      ['D', observation.atId, observation.toId, formatLinear(observation.distanceM)].join(' '),
+    ];
   }
   if (observation.kind === 'distance-vertical') {
-    return [['D', observation.fromId, observation.toId, formatLinear(observation.distanceM)].join(' ')];
+    return [
+      ['D', observation.fromId, observation.toId, formatLinear(observation.distanceM)].join(' '),
+    ];
   }
   if (observation.kind === 'distance') {
-    return [['D', observation.fromId, observation.toId, formatLinear(observation.distanceM)].join(' ')];
+    return [
+      ['D', observation.fromId, observation.toId, formatLinear(observation.distanceM)].join(' '),
+    ];
   }
   return serializeImportedObservationRecord(observation);
 };
@@ -349,7 +368,9 @@ const serializeDistanceVerticalFocusedObservation = (
         ].join(' '),
       ];
     }
-    return [['D', observation.atId, observation.toId, formatLinear(observation.distanceM)].join(' ')];
+    return [
+      ['D', observation.atId, observation.toId, formatLinear(observation.distanceM)].join(' '),
+    ];
   }
   if (observation.kind === 'distance-vertical') {
     return [
@@ -366,23 +387,41 @@ const serializeDistanceVerticalFocusedObservation = (
     ];
   }
   if (observation.kind === 'distance') {
-    return [['D', observation.fromId, observation.toId, formatLinear(observation.distanceM)].join(' ')];
+    return [
+      ['D', observation.fromId, observation.toId, formatLinear(observation.distanceM)].join(' '),
+    ];
   }
   return serializeImportedObservationRecord(observation);
 };
 
 const serializeAngleFocusedObservation = (observation: ImportedObservationRecord): string[] => {
   if (observation.kind === 'measurement') {
-    return [['A', `${observation.atId}-${observation.fromId}-${observation.toId}`, formatAngleDms(observation.angleDeg)].join(' ')];
+    return [
+      [
+        'A',
+        `${observation.atId}-${observation.fromId}-${observation.toId}`,
+        formatAngleDms(observation.angleDeg),
+      ].join(' '),
+    ];
   }
   if (observation.kind === 'angle') {
-    return [['A', `${observation.atId}-${observation.fromId}-${observation.toId}`, formatAngleDms(observation.angleDeg)].join(' ')];
+    return [
+      [
+        'A',
+        `${observation.atId}-${observation.fromId}-${observation.toId}`,
+        formatAngleDms(observation.angleDeg),
+      ].join(' '),
+    ];
   }
   return serializeImportedObservationRecord(observation);
 };
 
 const serializeVerticalFocusedObservation = (observation: ImportedObservationRecord): string[] => {
-  if (observation.kind === 'measurement' && observation.verticalMode && observation.verticalValue != null) {
+  if (
+    observation.kind === 'measurement' &&
+    observation.verticalMode &&
+    observation.verticalValue != null
+  ) {
     return [
       observation.verticalMode === 'delta-h' ? '.DELTA ON' : '.DELTA OFF',
       [
@@ -411,7 +450,9 @@ const serializeVerticalFocusedObservation = (observation: ImportedObservationRec
 
 const serializeBearingFocusedObservation = (observation: ImportedObservationRecord): string[] => {
   if (observation.kind === 'bearing') {
-    return [['B', observation.fromId, observation.toId, formatLinear(observation.bearingDeg)].join(' ')];
+    return [
+      ['B', observation.fromId, observation.toId, formatLinear(observation.bearingDeg)].join(' '),
+    ];
   }
   return serializeImportedObservationRecord(observation);
 };
@@ -479,7 +520,11 @@ const buildGroupMeta = (
   const setupType = observation.sourceMeta?.setupType;
   const isResection = importerId === 'jobxml' && isResectionSetupType(setupType);
 
-  if (isSetupAwareImporter && (observation.kind === 'measurement' || observation.kind === 'angle') && isResection) {
+  if (
+    isSetupAwareImporter &&
+    (observation.kind === 'measurement' || observation.kind === 'angle') &&
+    isResection
+  ) {
     return {
       key: `resection:${setupId}:bs:${observation.fromId}`,
       kind: 'resection',
@@ -639,8 +684,13 @@ export const buildImportReviewComparisonSummary = (
     errors: dataset.trace.filter((entry) => entry.level === 'error').length,
   });
 
-  const accumulate = (dataset: ImportedDataset): Map<string, Omit<ImportReviewComparisonRow, 'primaryCount' | 'comparisonCount' | 'delta'>> => {
-    const buckets = new Map<string, Omit<ImportReviewComparisonRow, 'primaryCount' | 'comparisonCount' | 'delta'>>();
+  const accumulate = (
+    dataset: ImportedDataset,
+  ): Map<string, Omit<ImportReviewComparisonRow, 'primaryCount' | 'comparisonCount' | 'delta'>> => {
+    const buckets = new Map<
+      string,
+      Omit<ImportReviewComparisonRow, 'primaryCount' | 'comparisonCount' | 'delta'>
+    >();
     dataset.observations
       .filter((observation) => isObservationIncludedInComparison(observation, mode))
       .forEach((observation) => {
@@ -924,12 +974,19 @@ const serializeTsDirectionSetMeasurement = (
 ): string => {
   const isResection = isResectionSetupType(observation.sourceMeta?.setupType);
   if (isResection) {
-    return ['DM', observation.toId, formatAngleDms(observation.angleDeg), formatLinear(observation.distanceM)].join(
-      ' ',
-    );
+    return [
+      'DM',
+      observation.toId,
+      formatAngleDms(observation.angleDeg),
+      formatLinear(observation.distanceM),
+    ].join(' ');
   }
   if (observation.toId === observation.fromId) {
-    return ['D', `${observation.atId}-${observation.fromId}`, formatLinear(observation.distanceM)].join(' ');
+    return [
+      'D',
+      `${observation.atId}-${observation.fromId}`,
+      formatLinear(observation.distanceM),
+    ].join(' ');
   }
   return [
     'M',
@@ -958,10 +1015,20 @@ const serializeTsDirectionSetRecord = (observation: ImportedObservationRecord): 
     return [serializeTsDirectionSetAngle(observation)];
   }
   if (observation.kind === 'distance') {
-    return [['D', `${observation.fromId}-${observation.toId}`, formatLinear(observation.distanceM)].join(' ')];
+    return [
+      ['D', `${observation.fromId}-${observation.toId}`, formatLinear(observation.distanceM)].join(
+        ' ',
+      ),
+    ];
   }
   if (observation.kind === 'bearing') {
-    return [['B', `${observation.fromId}-${observation.toId}`, formatAngleDms(observation.bearingDeg)].join(' ')];
+    return [
+      [
+        'B',
+        `${observation.fromId}-${observation.toId}`,
+        formatAngleDms(observation.bearingDeg),
+      ].join(' '),
+    ];
   }
   return serializeImportedObservationRecord(observation);
 };
@@ -1001,10 +1068,7 @@ const serializeObservationForImport = (
   return serializeImportedObservationRecord(observation);
 };
 
-const slopeZenithToHorizontalDistance = (
-  slopeDistanceM: number,
-  zenithDeg: number,
-): number => {
+const slopeZenithToHorizontalDistance = (slopeDistanceM: number, zenithDeg: number): number => {
   const zenithRad = zenithDeg * DEG_TO_RAD;
   const horizontal = slopeDistanceM * Math.sin(zenithRad);
   return Number.isFinite(horizontal) ? Math.abs(horizontal) : slopeDistanceM;
@@ -1183,7 +1247,8 @@ const orderFieldGroupedItems = (
   items: ImportReviewItem[],
   group: ImportReviewGroup,
 ): ImportReviewItem[] => {
-  if (group.manualOrder || items.some((item) => item.kind === 'comment' || item.synthetic)) return items;
+  if (group.manualOrder || items.some((item) => item.kind === 'comment' || item.synthetic))
+    return items;
   return [...items].sort((left, right) => {
     if (left.kind === 'comment' || right.kind === 'comment') return 0;
     const leftBacksight = isBacksightTargetItem(left, group) ? 0 : 1;
@@ -1194,7 +1259,8 @@ const orderFieldGroupedItems = (
     const leftRank = getFieldGroupedOrderRank(left, group);
     const rightRank = getFieldGroupedOrderRank(right, group);
     if (leftRank !== rightRank) return leftRank - rightRank;
-    const sourceLineCompare = (left.sourceLine ?? Number.MAX_SAFE_INTEGER) - (right.sourceLine ?? Number.MAX_SAFE_INTEGER);
+    const sourceLineCompare =
+      (left.sourceLine ?? Number.MAX_SAFE_INTEGER) - (right.sourceLine ?? Number.MAX_SAFE_INTEGER);
     if (sourceLineCompare !== 0) return sourceLineCompare;
     return compareImportTokens(left.id, right.id);
   });
@@ -1226,7 +1292,9 @@ export const buildImportReviewText = (
   const itemLookup = new Map(model.items.map((item) => [item.id, item]));
   const preset = options.preset ?? 'clean-webnet';
   const coordMode: CoordMode =
-    options.force2D === true ? '2D' : (options.coordMode ?? (preset === 'ts-direction-set' ? '2D' : '3D'));
+    options.force2D === true
+      ? '2D'
+      : (options.coordMode ?? (preset === 'ts-direction-set' ? '2D' : '3D'));
   const state = {
     currentDeltaMode: null as 'delta-h' | 'zenith' | null,
     currentGpsMode: null as 'network' | 'sideshot' | null,
@@ -1254,7 +1322,9 @@ export const buildImportReviewText = (
       Boolean(group.backsightId) &&
       includedItems.some((item) => item.kind === 'observation') &&
       ((preset === 'ts-direction-set' && group.kind === 'resection') ||
-        includedItems.some((item) => isDirectionSetRowType(options.rowTypeOverrides?.[item.id] ?? 'auto')));
+        includedItems.some((item) =>
+          isDirectionSetRowType(options.rowTypeOverrides?.[item.id] ?? 'auto'),
+        ));
 
     if (isDirectionSetGroup) {
       lines.push(`DB ${group.setupId ?? includedItems[0]?.setupId ?? ''}`.trimEnd());

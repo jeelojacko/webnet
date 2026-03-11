@@ -51,10 +51,7 @@ const ZERO_EXTENTS: Map3DScene['extents'] = {
   radius: 1,
 };
 
-export const buildMap3DScene = (
-  result: AdjustmentResult,
-  showLostStations = true,
-): Map3DScene => {
+export const buildMap3DScene = (result: AdjustmentResult, showLostStations = true): Map3DScene => {
   const stations: Map3DStationNode[] = Object.entries(result.stations)
     .filter(([, st]) => showLostStations || !st.lost)
     .map(([id, st]) => ({
@@ -104,7 +101,11 @@ export const buildMap3DScene = (
   const edgeSeen = new Set<string>();
   const edges: Map3DEdge[] = [];
   result.observations.forEach((obs) => {
-    if ((obs.type !== 'dist' && obs.type !== 'gps') || !stationIdSet.has(obs.from) || !stationIdSet.has(obs.to)) {
+    if (
+      (obs.type !== 'dist' && obs.type !== 'gps') ||
+      !stationIdSet.has(obs.from) ||
+      !stationIdSet.has(obs.to)
+    ) {
       return;
     }
     const key =

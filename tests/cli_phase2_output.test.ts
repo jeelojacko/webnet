@@ -102,7 +102,14 @@ describe('CLI phase 2 output modes', () => {
   });
 
   it('supports explicit run-mode flags for data-check and blunder-detect', () => {
-    const dataCheck = runCli(['--input', STABLE_INPUT, '--output', 'json', '--run-mode', 'data-check']);
+    const dataCheck = runCli([
+      '--input',
+      STABLE_INPUT,
+      '--output',
+      'json',
+      '--run-mode',
+      'data-check',
+    ]);
     expect(dataCheck.status).toBe(0);
     const dataPayload = JSON.parse(dataCheck.stdout);
     expect(dataPayload.success).toBe(true);
@@ -129,11 +136,7 @@ describe('CLI phase 2 output modes', () => {
     const inputPath = path.join(outDir, 'level_only.dat');
     writeFileSync(
       inputPath,
-      [
-        'C A 0 0 100.000 ! ! !',
-        'C B 0 0 100.900',
-        'L A-B 0.9000 0.25',
-      ].join('\n'),
+      ['C A 0 0 100.000 ! ! !', 'C B 0 0 100.900', 'L A-B 0.9000 0.25'].join('\n'),
       'utf-8',
     );
 
@@ -144,7 +147,9 @@ describe('CLI phase 2 output modes', () => {
     expect(payload.runMode).toBe('blunder-detect');
     expect(payload.parseState?.runMode).toBe('blunder-detect');
     const diagCodes = new Set(
-      (payload.parseState?.runModeCompatibilityDiagnostics ?? []).map((diag: { code: string }) => diag.code),
+      (payload.parseState?.runModeCompatibilityDiagnostics ?? []).map(
+        (diag: { code: string }) => diag.code,
+      ),
     );
     expect(diagCodes.has('BLUNDER_LEVELING_ONLY')).toBe(true);
   });
@@ -180,13 +185,19 @@ describe('CLI phase 2 output modes', () => {
     );
     writeFileSync(
       path.join(sectionDir, 'first.dat'),
-      ['C F1 0 10 0 ! !', '.INCLUDE ../shared/grand.dat', 'C F2 10 10 0', 'D F1-F2 10'].join(
-        '\n',
-      ),
+      ['C F1 0 10 0 ! !', '.INCLUDE ../shared/grand.dat', 'C F2 10 10 0', 'D F1-F2 10'].join('\n'),
       'utf-8',
     );
-    writeFileSync(path.join(sharedDir, 'grand.dat'), ['C G1 0 20 0 ! !', 'C G2 10 20 0', 'D G1-G2 10'].join('\n'), 'utf-8');
-    writeFileSync(path.join(sectionDir, 'second.dat'), ['C S1 0 30 0 ! !', 'C S2 10 30 0', 'D S1-S2 10'].join('\n'), 'utf-8');
+    writeFileSync(
+      path.join(sharedDir, 'grand.dat'),
+      ['C G1 0 20 0 ! !', 'C G2 10 20 0', 'D G1-G2 10'].join('\n'),
+      'utf-8',
+    );
+    writeFileSync(
+      path.join(sectionDir, 'second.dat'),
+      ['C S1 0 30 0 ! !', 'C S2 10 30 0', 'D S1-S2 10'].join('\n'),
+      'utf-8',
+    );
 
     const res = runCli([
       '--input',

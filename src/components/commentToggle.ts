@@ -103,8 +103,7 @@ export const toggleHashCommentsInSelection = (
   const block = text.slice(lineStart, lineEnd);
   const lines = block.split('\n');
   const hasContent = lines.some((line) => line.trim().length > 0);
-  const shouldUncomment =
-    hasContent && lines.every((line) => !line.trim() || /^\s*#\s/.test(line));
+  const shouldUncomment = hasContent && lines.every((line) => !line.trim() || /^\s*#\s/.test(line));
   return transformHashCommentsInSelection(
     text,
     selectionStart,

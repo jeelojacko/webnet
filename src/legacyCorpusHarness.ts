@@ -136,7 +136,13 @@ const parseSucceeded = (parseState: ParseOptions | undefined): boolean => {
 };
 
 const createIncludeResolver = (inputPath: string, includeCache: Map<string, string>) => {
-  return ({ includePath, parentSourceFile }: { includePath: string; parentSourceFile?: string }) => {
+  return ({
+    includePath,
+    parentSourceFile,
+  }: {
+    includePath: string;
+    parentSourceFile?: string;
+  }) => {
     const baseFile =
       parentSourceFile && parentSourceFile !== '<input>' ? parentSourceFile : inputPath;
     const resolved = path.resolve(path.dirname(baseFile), includePath);
@@ -380,9 +386,7 @@ const renderSummary = (summary: HarnessRunSummary): string => {
     if (summary.baselineComparison.mismatchCount === 0) {
       lines.push(`Baseline compare: PASS (${summary.baselineComparison.baselinePath})`);
     } else {
-      lines.push(
-        `Baseline compare: FAIL (${summary.baselineComparison.mismatchCount} mismatches)`,
-      );
+      lines.push(`Baseline compare: FAIL (${summary.baselineComparison.mismatchCount} mismatches)`);
       summary.baselineComparison.mismatches.forEach((message) => lines.push(`  - ${message}`));
     }
   }
@@ -474,8 +478,8 @@ const runProjectChecks = (project: LegacyCorpusProject): ProjectCheckResult => {
     observationCount: result.observations.length,
     includeErrorCount: parseState?.includeErrors?.length ?? 0,
     parseErrorDiagnosticCount:
-      parseState?.parseCompatibilityDiagnostics?.filter((diag) => diag.severity === 'error').length ??
-      0,
+      parseState?.parseCompatibilityDiagnostics?.filter((diag) => diag.severity === 'error')
+        .length ?? 0,
     strictRejectCount: parseState?.strictRejectCount ?? 0,
     rewriteSuggestionCount: parseState?.rewriteSuggestionCount ?? 0,
     ambiguousCount: parseState?.ambiguousCount ?? 0,
@@ -525,7 +529,9 @@ export const runLegacyCorpusHarness = (argv: string[] = []): number => {
     manifest = loadManifest(args.manifestPath);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    process.stderr.write(`Failed to load legacy corpus manifest "${args.manifestPath}": ${message}\n`);
+    process.stderr.write(
+      `Failed to load legacy corpus manifest "${args.manifestPath}": ${message}\n`,
+    );
     return 2;
   }
 

@@ -5,7 +5,10 @@ import { getExternalImporters, importExternalInput } from '../src/engine/importe
 import { parseInput } from '../src/engine/parse';
 
 const jobXmlFixture = readFileSync('tests/fixtures/jobxml_sample.jxl', 'utf-8');
-const jobXmlMeasurementFixture = readFileSync('tests/fixtures/jobxml_measurement_sample.jxl', 'utf-8');
+const jobXmlMeasurementFixture = readFileSync(
+  'tests/fixtures/jobxml_measurement_sample.jxl',
+  'utf-8',
+);
 const jobXmlTrimbleFixture = readFileSync(
   'tests/fixtures/jobxml_trimble_station_setup_sample.jxl',
   'utf-8',
@@ -25,7 +28,10 @@ describe('Phase 2 external importers', () => {
   });
 
   it('imports Trimble survey-report HTML as a fallback field-data source', () => {
-    const imported = importExternalInput(trimbleSurveyReportFixture, 'trimble_survey_report_sample.htm');
+    const imported = importExternalInput(
+      trimbleSurveyReportFixture,
+      'trimble_survey_report_sample.htm',
+    );
 
     expect(imported.detected).toBe(true);
     expect(imported.importerId).toBe('trimble-survey-report');
@@ -73,7 +79,7 @@ describe('Phase 2 external importers', () => {
     expect(imported.dataset?.controlStations).toHaveLength(2);
     expect(imported.dataset?.observations).toHaveLength(0);
     expect(imported.dataset?.trace).toHaveLength(1);
-    expect(imported.text).toContain(".ORDER EN");
+    expect(imported.text).toContain('.ORDER EN');
     expect(imported.text).toContain("C STN1 5000.0000 1000.0000 100.0000 'SETUP");
     expect(imported.text).toContain(
       'PH GPS_1 44.653429353 -63.582441392 123.4560 0.0080 0.0100 0.0150 -0.2500',
@@ -124,7 +130,8 @@ describe('Phase 2 external importers', () => {
     ).toBe(true);
     expect(
       parsed.observations.some(
-        (obs) => obs.type === 'zenith' && 'from' in obs && obs.from === 'STN1' && obs.to === 'SHOT_1',
+        (obs) =>
+          obs.type === 'zenith' && 'from' in obs && obs.from === 'STN1' && obs.to === 'SHOT_1',
       ),
     ).toBe(true);
   });
@@ -227,14 +234,14 @@ describe('Phase 2 external importers', () => {
     expect(imported.notice?.detailLines[1]).toContain('Warnings: 2');
     expect(imported.text).toContain("C STN1 5000.0000 1000.0000 100.0000 'SETUP");
     expect(imported.text).toContain('# Imported source line 4 [SS] converted to M');
-    expect(imported.text).toContain(
-      'M STN1-BS1-P1 045-07-24.2 100.0000 095-00-00.0 1.5000/1.8000',
-    );
+    expect(imported.text).toContain('M STN1-BS1-P1 045-07-24.2 100.0000 095-00-00.0 1.5000/1.8000');
     expect(imported.text).toContain('# Imported source line 5 [SS] converted to B');
     expect(imported.text).toContain('B STN1 P2 135.0000');
     expect(imported.text).toContain('# Imported source line 5 [SS] converted to D');
     expect(imported.text).toContain('D STN1 P2 50.0000 1.5000/1.6000');
-    expect(imported.text).toContain('# WARNING line 6 [GS] Point record missing East/North coordinates and was skipped. raw=GS,PN=GPS1');
+    expect(imported.text).toContain(
+      '# WARNING line 6 [GS] Point record missing East/North coordinates and was skipped. raw=GS,PN=GPS1',
+    );
     expect(imported.text).toContain(
       '# WARNING line 7 [XX] Unsupported FieldGenius record type was not converted. raw=XX,DATA=UNSUPPORTED',
     );
@@ -245,11 +252,11 @@ describe('Phase 2 external importers', () => {
     expect(parsed.stations.P1).toBeDefined();
     expect(parsed.stations.P2).toBeDefined();
     expect(parsed.observations.some((obs) => obs.type === 'angle')).toBe(true);
-    expect(parsed.observations.some((obs) => obs.type === 'dist' && 'to' in obs && obs.to === 'P1')).toBe(
-      true,
-    );
-    expect(parsed.observations.some((obs) => obs.type === 'bearing' && 'to' in obs && obs.to === 'P2')).toBe(
-      true,
-    );
+    expect(
+      parsed.observations.some((obs) => obs.type === 'dist' && 'to' in obs && obs.to === 'P1'),
+    ).toBe(true);
+    expect(
+      parsed.observations.some((obs) => obs.type === 'bearing' && 'to' in obs && obs.to === 'P2'),
+    ).toBe(true);
   });
 });

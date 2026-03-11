@@ -161,9 +161,8 @@ const buildCanadaMtm = (row: {
   supportedDatumOps: CANADA_DATUM_OPS,
 });
 
-const CANADA_UTM_CATALOG: CrsDefinition[] = Array.from(
-  { length: 16 },
-  (_, idx) => buildCanadaUtm(7 + idx),
+const CANADA_UTM_CATALOG: CrsDefinition[] = Array.from({ length: 16 }, (_, idx) =>
+  buildCanadaUtm(7 + idx),
 );
 
 const CANADA_MTM_CATALOG: CrsDefinition[] = MTM_ZONE_METADATA.map((row) => buildCanadaMtm(row));
@@ -345,9 +344,6 @@ export const isGeodeticInsideAreaOfUse = (
   if (!Number.isFinite(latDeg) || !Number.isFinite(lonDeg)) return null;
   const b = def.areaOfUseBounds;
   return (
-    latDeg >= b.minLatDeg &&
-    latDeg <= b.maxLatDeg &&
-    lonDeg >= b.minLonDeg &&
-    lonDeg <= b.maxLonDeg
+    latDeg >= b.minLatDeg && latDeg <= b.maxLatDeg && lonDeg >= b.minLonDeg && lonDeg <= b.maxLonDeg
   );
 };

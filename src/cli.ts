@@ -417,7 +417,9 @@ const parseArgs = (argv: string[]): CliConfig => {
     config.parseOptions.parseModeMigrated = config.parseOptions.parseCompatibilityMode === 'strict';
   }
   if (!config.parseOptions.runMode) {
-    config.parseOptions.runMode = config.parseOptions.preanalysisMode ? 'preanalysis' : 'adjustment';
+    config.parseOptions.runMode = config.parseOptions.preanalysisMode
+      ? 'preanalysis'
+      : 'adjustment';
   }
   if (config.parseOptions.runMode === 'preanalysis') {
     config.parseOptions.preanalysisMode = true;
@@ -445,10 +447,7 @@ const run = (): number => {
   const inputPath = path.resolve(process.cwd(), cfg.inputPath);
   cfg.parseOptions.sourceFile = inputPath;
   const includeCache = new Map<string, string>();
-  cfg.parseOptions.includeResolver = ({
-    includePath,
-    parentSourceFile,
-  }) => {
+  cfg.parseOptions.includeResolver = ({ includePath, parentSourceFile }) => {
     const baseFile =
       parentSourceFile && parentSourceFile !== '<input>' ? parentSourceFile : inputPath;
     const resolved = path.resolve(path.dirname(baseFile), includePath);
@@ -577,16 +576,14 @@ const run = (): number => {
               coordSystemMode:
                 parseState.coordSystemMode ?? profileParseOptions.coordSystemMode ?? 'local',
               crsId: parseState.crsId ?? profileParseOptions.crsId,
-              localDatumScheme:
-                parseState.localDatumScheme ?? profileParseOptions.localDatumScheme,
+              localDatumScheme: parseState.localDatumScheme ?? profileParseOptions.localDatumScheme,
               averageScaleFactor:
                 parseState.averageScaleFactor ?? profileParseOptions.averageScaleFactor,
               commonElevation: parseState.commonElevation ?? profileParseOptions.commonElevation,
               averageGeoidHeight:
                 parseState.averageGeoidHeight ?? profileParseOptions.averageGeoidHeight,
               gridBearingMode: parseState.gridBearingMode ?? profileParseOptions.gridBearingMode,
-              gridDistanceMode:
-                parseState.gridDistanceMode ?? profileParseOptions.gridDistanceMode,
+              gridDistanceMode: parseState.gridDistanceMode ?? profileParseOptions.gridDistanceMode,
               gridAngleMode: parseState.gridAngleMode ?? profileParseOptions.gridAngleMode,
               gridDirectionMode:
                 parseState.gridDirectionMode ?? profileParseOptions.gridDirectionMode,

@@ -73,9 +73,11 @@ export const inferAdjustedPointsPresetId = (
   columns: AdjustedPointsColumnId[],
 ): AdjustedPointsPresetId => {
   const normalized = normalizeAdjustedPointsColumns(columns);
-  const preset = (Object.entries(ADJUSTED_POINTS_PRESET_COLUMNS) as Array<
-    [Exclude<AdjustedPointsPresetId, 'custom'>, AdjustedPointsColumnId[]]
-  >).find(([, presetColumns]) => {
+  const preset = (
+    Object.entries(ADJUSTED_POINTS_PRESET_COLUMNS) as Array<
+      [Exclude<AdjustedPointsPresetId, 'custom'>, AdjustedPointsColumnId[]]
+    >
+  ).find(([, presetColumns]) => {
     if (presetColumns.length !== normalized.length) return false;
     return presetColumns.every((value, idx) => value === normalized[idx]);
   });
@@ -104,8 +106,11 @@ export const sanitizeAdjustedPointsExportSettings = (
   fallback: AdjustedPointsExportSettings = DEFAULT_ADJUSTED_POINTS_EXPORT_SETTINGS,
 ): AdjustedPointsExportSettings => {
   const record =
-    typeof candidate === 'object' && candidate != null ? (candidate as Record<string, unknown>) : {};
-  const format = record.format === 'text' || record.format === 'csv' ? record.format : fallback.format;
+    typeof candidate === 'object' && candidate != null
+      ? (candidate as Record<string, unknown>)
+      : {};
+  const format =
+    record.format === 'text' || record.format === 'csv' ? record.format : fallback.format;
   const delimiter =
     record.delimiter === 'comma' || record.delimiter === 'space' || record.delimiter === 'tab'
       ? record.delimiter
@@ -173,4 +178,3 @@ export const buildAdjustedPointsExportText = (params: {
   const body = rows.map((row) => row.join(delimiter));
   return [header, ...body].join('\n');
 };
-

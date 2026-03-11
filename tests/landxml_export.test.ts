@@ -232,7 +232,9 @@ describe('LandXML export', () => {
 
     expect(parsed.points.has('RTK2')).toBe(true);
     expect(
-      parsed.connections.some((connection) => connection.startRef === 'RTK2' && connection.endRef === 'RTK2'),
+      parsed.connections.some(
+        (connection) => connection.startRef === 'RTK2' && connection.endRef === 'RTK2',
+      ),
     ).toBe(false);
   });
 });

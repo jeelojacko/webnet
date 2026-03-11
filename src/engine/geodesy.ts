@@ -93,11 +93,7 @@ const projectLocalEnu = (
   return { east, north };
 };
 
-const projectGrid = (
-  latDeg: number,
-  lonDeg: number,
-  crsId?: string,
-): TransformResult | null => {
+const projectGrid = (latDeg: number, lonDeg: number, crsId?: string): TransformResult | null => {
   const def = getCrsDefinition(crsId);
   if (!def) return null;
   const datum = resolveDatumOperation(def);
@@ -130,7 +126,9 @@ const inverseGrid = (
       warnings: string[];
       diagnostics: CoordSystemDiagnosticCode[];
     }
-  | { failureReason: 'noCRSSelected' | 'noInverseAvailable' | 'inverseFailed' | 'crsInitFailed' } => {
+  | {
+      failureReason: 'noCRSSelected' | 'noInverseAvailable' | 'inverseFailed' | 'crsInitFailed';
+    } => {
   if (!crsId || !crsId.trim()) return { failureReason: 'noCRSSelected' };
   const def = getCrsDefinition(crsId);
   if (!def) return { failureReason: 'noInverseAvailable' };
@@ -157,9 +155,7 @@ const inverseGrid = (
   }
 };
 
-export const parseCrsProjectionModelToken = (
-  token?: string,
-): CrsProjectionModel | null => {
+export const parseCrsProjectionModelToken = (token?: string): CrsProjectionModel | null => {
   if (!token) return null;
   const upper = token.trim().toUpperCase();
   if (!upper) return null;
@@ -267,7 +263,10 @@ export const inverseENToGeodetic = (params: {
     // Keep behavior aligned with legacy fallback when unknown.
     return { failureReason: 'noInverseAvailable' };
   }
-  if (!Number.isFinite(originLatDeg ?? Number.NaN) || !Number.isFinite(originLonDeg ?? Number.NaN)) {
+  if (
+    !Number.isFinite(originLatDeg ?? Number.NaN) ||
+    !Number.isFinite(originLonDeg ?? Number.NaN)
+  ) {
     return { failureReason: 'inverseFailed' };
   }
 
@@ -338,10 +337,7 @@ const tmFactors = (
   const a2 = a * a;
   const a4 = a2 * a2;
   const k =
-    k0 *
-    (1 +
-      ((1 + c) * a2) / 2 +
-      ((5 - 4 * t + 42 * c + 13 * c * c - 28 * GRS80_EP2) * a4) / 24);
+    k0 * (1 + ((1 + c) * a2) / 2 + ((5 - 4 * t + 42 * c + 13 * c * c - 28 * GRS80_EP2) * a4) / 24);
   const convergenceAngleRad = Math.atan2(Math.tan(dLon) * sinLat, 1);
   if (!Number.isFinite(k) || k <= 0 || !Number.isFinite(convergenceAngleRad)) return null;
   return { convergenceAngleRad, gridScaleFactor: k };
@@ -409,7 +405,9 @@ const numericGridFactors = (
   return { convergenceAngleRad, gridScaleFactor };
 };
 
-const resolveDatumOperation = (def?: CrsDefinition): {
+const resolveDatumOperation = (
+  def?: CrsDefinition,
+): {
   datumOpId: string;
   warnings: string[];
   diagnostics: CoordSystemDiagnosticCode[];

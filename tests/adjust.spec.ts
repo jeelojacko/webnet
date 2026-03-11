@@ -106,7 +106,11 @@ describe('LSAEngine', () => {
     const base = new LSAEngine({
       input,
       maxIterations: 10,
-      parseOptions: { coordSystemMode: 'local', localDatumScheme: 'average-scale', averageScaleFactor: 1 },
+      parseOptions: {
+        coordSystemMode: 'local',
+        localDatumScheme: 'average-scale',
+        averageScaleFactor: 1,
+      },
     }).solve();
     const avgScale = new LSAEngine({
       input,
@@ -288,9 +292,9 @@ describe('LSAEngine', () => {
 
     expect(result.success).toBe(false);
     expect(result.parseState?.coordSystemDiagnostics?.includes('CRS_INPUT_MIX_BLOCKED')).toBe(true);
-    expect(result.logs.some((line) => line.includes('LOCAL coordinates mixed with GRID/GEODETIC'))).toBe(
-      true,
-    );
+    expect(
+      result.logs.some((line) => line.includes('LOCAL coordinates mixed with GRID/GEODETIC')),
+    ).toBe(true);
   });
 
   it('flags CRS area-of-use warnings (warning-only) when geodetic stations are outside bounds', () => {
@@ -2005,11 +2009,7 @@ describe('LSAEngine', () => {
   });
 
   it('hard-fails blunder-detect mode for leveling-only datasets with compatibility diagnostics', () => {
-    const input = [
-      'C A 0 0 100.000 ! ! !',
-      'C B 0 0 100.900',
-      'L A-B 0.9000 0.25',
-    ].join('\n');
+    const input = ['C A 0 0 100.000 ! ! !', 'C B 0 0 100.900', 'L A-B 0.9000 0.25'].join('\n');
 
     const result = new LSAEngine({
       input,

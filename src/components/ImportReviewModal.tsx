@@ -1,8 +1,6 @@
 import React from 'react';
 import type { ImportedTraceEntry } from '../engine/importers';
-import {
-  buildImportReviewComparisonKeyForItem,
-} from '../engine/importReview';
+import { buildImportReviewComparisonKeyForItem } from '../engine/importReview';
 import type {
   ImportReviewComparisonMode,
   ImportReviewComparisonSummary,
@@ -68,7 +66,8 @@ const PRESET_OPTIONS: { value: ImportReviewOutputPreset; label: string; descript
   {
     value: 'ts-direction-set',
     label: 'TS Direction Set',
-    description: 'Shape angle/measurement groups into DB/DN/DM/DE-style setup blocks where possible.',
+    description:
+      'Shape angle/measurement groups into DB/DN/DM/DE-style setup blocks where possible.',
   },
 ];
 
@@ -256,7 +255,8 @@ const ImportReviewModal: React.FC<ImportReviewModalProps> = ({
 
         {items.length === 0 ? (
           <div className="px-4 py-4 text-xs text-slate-400">
-            Empty setup group. Use the row move controls to place imported rows here before final import.
+            Empty setup group. Use the row move controls to place imported rows here before final
+            import.
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -314,7 +314,7 @@ const ImportReviewModal: React.FC<ImportReviewModalProps> = ({
                               ? 'border-slate-800 text-slate-500'
                               : hasComparisonDiff
                                 ? 'border-amber-700/70 text-slate-100 focus:border-amber-400'
-                              : 'border-slate-700 text-slate-100 focus:border-cyan-400'
+                                : 'border-slate-700 text-slate-100 focus:border-cyan-400'
                           }`}
                           spellCheck={false}
                         />
@@ -330,7 +330,10 @@ const ImportReviewModal: React.FC<ImportReviewModalProps> = ({
                           <select
                             value={rowTypeOverrides[item.id] ?? 'auto'}
                             onChange={(event) =>
-                              onRowTypeChange(item.id, event.target.value as ImportReviewRowTypeOverride)
+                              onRowTypeChange(
+                                item.id,
+                                event.target.value as ImportReviewRowTypeOverride,
+                              )
                             }
                             className="w-full border border-slate-700 bg-slate-950 px-2 py-1 text-[11px] text-slate-100 focus:border-cyan-400 focus:outline-none"
                           >
@@ -359,7 +362,9 @@ const ImportReviewModal: React.FC<ImportReviewModalProps> = ({
                           checked={excluded}
                           onChange={() => onToggleExclude(item.id)}
                           className="accent-amber-400"
-                          title={excluded ? 'Excluded from final import' : 'Include in final import'}
+                          title={
+                            excluded ? 'Excluded from final import' : 'Include in final import'
+                          }
                         />
                       </td>
                       <td className="border-b border-slate-800 px-3 py-2 align-top">
@@ -457,14 +462,20 @@ const ImportReviewModal: React.FC<ImportReviewModalProps> = ({
             </div>
             <div className="grid gap-3 text-xs text-slate-300 lg:min-w-[340px]">
               <div className="text-right">
-                <div>{includedCount} row{includedCount === 1 ? '' : 's'} selected for import</div>
-                <div>{reviewModel.warnings.length} warnings, {reviewModel.errors.length} errors</div>
+                <div>
+                  {includedCount} row{includedCount === 1 ? '' : 's'} selected for import
+                </div>
+                <div>
+                  {reviewModel.warnings.length} warnings, {reviewModel.errors.length} errors
+                </div>
               </div>
               <label className="flex flex-col text-left text-[11px] uppercase tracking-wide text-slate-400">
                 Output Style
                 <select
                   value={preset}
-                  onChange={(event) => onPresetChange(event.target.value as ImportReviewOutputPreset)}
+                  onChange={(event) =>
+                    onPresetChange(event.target.value as ImportReviewOutputPreset)
+                  }
                   className="mt-1 border border-slate-600 bg-slate-950 px-2 py-2 text-xs text-slate-100 focus:border-cyan-400 focus:outline-none"
                 >
                   {PRESET_OPTIONS.map((option) => (
@@ -586,9 +597,7 @@ const ImportReviewModal: React.FC<ImportReviewModalProps> = ({
               </div>
               <div className="grid gap-4 px-4 py-4 lg:grid-cols-2">
                 <div className="border border-slate-700 bg-slate-950/60 p-3 text-xs text-slate-200">
-                  <div className="text-[11px] uppercase tracking-wide text-slate-400">
-                    Primary
-                  </div>
+                  <div className="text-[11px] uppercase tracking-wide text-slate-400">Primary</div>
                   <div className="mt-1 font-semibold text-white">
                     {comparisonSummary.primarySourceName}
                   </div>
@@ -596,9 +605,7 @@ const ImportReviewModal: React.FC<ImportReviewModalProps> = ({
                     <div>Importer: {comparisonSummary.primaryImporterId}</div>
                     <div>Points: {comparisonSummary.primaryTotals.controlStations}</div>
                     <div>Raw Obs: {comparisonSummary.primaryTotals.observations}</div>
-                    <div>
-                      Compared Obs: {comparisonSummary.primaryTotals.comparedObservations}
-                    </div>
+                    <div>Compared Obs: {comparisonSummary.primaryTotals.comparedObservations}</div>
                   </div>
                 </div>
                 <div className="border border-slate-700 bg-slate-950/60 p-3 text-xs text-slate-200">
@@ -619,10 +626,12 @@ const ImportReviewModal: React.FC<ImportReviewModalProps> = ({
                 </div>
               </div>
               <div className="border-t border-cyan-800/40 px-4 py-3 text-xs text-slate-300">
-                Compared delta: {comparisonSummary.primaryTotals.comparedObservations -
+                Compared delta:{' '}
+                {comparisonSummary.primaryTotals.comparedObservations -
                   comparisonSummary.comparisonTotals.comparedObservations}
                 <div className="mt-1 text-[11px] text-amber-200/80">
-                  Highlighted staged rows belong to setup/target/family buckets that differ between the two files.
+                  Highlighted staged rows belong to setup/target/family buckets that differ between
+                  the two files.
                 </div>
               </div>
               {comparisonSummary.rows.length > 0 && (

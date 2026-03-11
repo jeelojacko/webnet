@@ -77,9 +77,7 @@ const InputPane: React.FC<InputPaneProps> = ({
       end: number,
       selectionMode: 'select' | 'start' | 'end' | 'preserve' = 'end',
     ) => {
-      if (
-        replaceTextareaRangeWithNativeEdit(textarea, replacement, start, end, selectionMode)
-      ) {
+      if (replaceTextareaRangeWithNativeEdit(textarea, replacement, start, end, selectionMode)) {
         return;
       }
       textarea.focus();

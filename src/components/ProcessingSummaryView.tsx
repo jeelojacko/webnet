@@ -93,7 +93,8 @@ const FT_PER_M = 3.280839895;
 const classifyRow = (obs: Observation): string => {
   if (obs.type === 'angle') return 'Angles';
   if (obs.type === 'dist') return 'Distances';
-  if (obs.type === 'direction' || obs.type === 'dir' || obs.type === 'bearing') return 'Az/Bearings';
+  if (obs.type === 'direction' || obs.type === 'dir' || obs.type === 'bearing')
+    return 'Az/Bearings';
   if (obs.type === 'gps') return 'GPS';
   if (obs.type === 'lev') return 'Leveling';
   if (obs.type === 'zenith') return 'Zenith';
@@ -221,8 +222,12 @@ const ProcessingSummaryView: React.FC<ProcessingSummaryViewProps> = ({
           }
           if (obs.type === 'gps' && obs.residual && typeof obs.residual === 'object') {
             const residual = obs.residual as { vE?: number; vN?: number };
-            const vE = Number.isFinite(residual.vE as number) ? (residual.vE as number) : Number.NaN;
-            const vN = Number.isFinite(residual.vN as number) ? (residual.vN as number) : Number.NaN;
+            const vE = Number.isFinite(residual.vE as number)
+              ? (residual.vE as number)
+              : Number.NaN;
+            const vN = Number.isFinite(residual.vN as number)
+              ? (residual.vN as number)
+              : Number.NaN;
             if (!Number.isFinite(vE) || !Number.isFinite(vN)) return null;
             const value = Math.hypot(vE, vN) * unitScale;
             const stations = `${obs.from}-${obs.to}`;
@@ -257,7 +262,9 @@ const ProcessingSummaryView: React.FC<ProcessingSummaryViewProps> = ({
     }
     lines.push('');
     lines.push('Statistical Summary');
-    lines.push(`${padRight('Observation', 18)}${padLeft('Count', 7)}${padLeft('Error Factor', 14)}`);
+    lines.push(
+      `${padRight('Observation', 18)}${padLeft('Count', 7)}${padLeft('Error Factor', 14)}`,
+    );
     summaryRows.forEach((row) => {
       lines.push(
         `${padRight(row.label, 18)}${padLeft(row.count.toString(), 7)}${padLeft(
@@ -271,7 +278,10 @@ const ProcessingSummaryView: React.FC<ProcessingSummaryViewProps> = ({
         `${padRight('Total', 18)}${padLeft(totalCount.toString(), 7)}${padLeft(result.seuw.toFixed(3), 14)}`,
       );
     }
-    const effectiveByFamily = new Map<string, { count: number; sum: number; min: number; max: number }>();
+    const effectiveByFamily = new Map<
+      string,
+      { count: number; sum: number; min: number; max: number }
+    >();
     result.observations.forEach((obs) => {
       if (!Number.isFinite(obs.effectiveDistance)) return;
       const effectiveDistance = obs.effectiveDistance as number;
@@ -313,7 +323,7 @@ const ProcessingSummaryView: React.FC<ProcessingSummaryViewProps> = ({
         .forEach(([label, row]) => {
           lines.push(
             `${padRight(label, 18)}${padLeft(row.count.toString(), 7)}${padLeft(
-              (row.sum / row.count * unitScale).toFixed(4),
+              ((row.sum / row.count) * unitScale).toFixed(4),
               12,
             )}${padLeft((row.min * unitScale).toFixed(4), 12)}${padLeft(
               (row.max * unitScale).toFixed(4),
@@ -351,13 +361,15 @@ const ProcessingSummaryView: React.FC<ProcessingSummaryViewProps> = ({
         `Run Profile: ${runDiagnostics.solveProfile.toUpperCase()} (dirSets=${runDiagnostics.directionSetMode}, profileFallback=${runDiagnostics.profileDefaultInstrumentFallback ? 'ON' : 'OFF'})`,
       );
       lines.push(`Run Mode: ${runMode.toUpperCase()}`);
-      lines.push(`Plan Rotation: ${(runDiagnostics.rotationAngleRad * 180 / Math.PI).toFixed(6)} deg`);
+      lines.push(
+        `Plan Rotation: ${((runDiagnostics.rotationAngleRad * 180) / Math.PI).toFixed(6)} deg`,
+      );
       lines.push(
         `Coordinate System: ${(runDiagnostics.coordSystemMode ?? 'local').toUpperCase()} (CRS=${runDiagnostics.crsId ?? '-'})`,
       );
       if ((runDiagnostics.coordSystemMode ?? 'local') === 'local') {
         lines.push(
-          `Local Datum Scheme: ${String(runDiagnostics.localDatumScheme ?? 'average-scale').toUpperCase()} (scale=${(runDiagnostics.averageScaleFactor ?? 1).toFixed(8)}, commonElev=${(((runDiagnostics.commonElevation ?? 0) * unitScale)).toFixed(4)}${linearUnit})`,
+          `Local Datum Scheme: ${String(runDiagnostics.localDatumScheme ?? 'average-scale').toUpperCase()} (scale=${(runDiagnostics.averageScaleFactor ?? 1).toFixed(8)}, commonElev=${((runDiagnostics.commonElevation ?? 0) * unitScale).toFixed(4)}${linearUnit})`,
         );
       } else {
         lines.push(
@@ -365,7 +377,7 @@ const ProcessingSummaryView: React.FC<ProcessingSummaryViewProps> = ({
         );
         lines.push(
           `.SCALE Override: ${
-            runDiagnostics.scaleOverrideActive ?? result.parseState?.scaleOverrideActive ?? false
+            (runDiagnostics.scaleOverrideActive ?? result.parseState?.scaleOverrideActive ?? false)
               ? `ON (k=${(runDiagnostics.averageScaleFactor ?? 1).toFixed(8)})`
               : 'OFF'
           }`,
@@ -376,7 +388,7 @@ const ProcessingSummaryView: React.FC<ProcessingSummaryViewProps> = ({
             result.parseState?.gnssVectorFrameDefault ??
             'gridNEU'
           } (confirmed=${
-            runDiagnostics.gnssFrameConfirmed ?? result.parseState?.gnssFrameConfirmed
+            (runDiagnostics.gnssFrameConfirmed ?? result.parseState?.gnssFrameConfirmed)
               ? 'YES'
               : 'NO'
           })`,
@@ -422,12 +434,11 @@ const ProcessingSummaryView: React.FC<ProcessingSummaryViewProps> = ({
         );
       }
       lines.push(
-        `Average Geoid Height Fallback: ${(((runDiagnostics.averageGeoidHeight ?? 0) * unitScale)).toFixed(4)}${linearUnit}`,
+        `Average Geoid Height Fallback: ${((runDiagnostics.averageGeoidHeight ?? 0) * unitScale).toFixed(4)}${linearUnit}`,
       );
       lines.push(
         `CRS / Projection: ${
-          (runDiagnostics.crsStatus ??
-            (runDiagnostics.crsTransformEnabled ? 'on' : 'off')) === 'on'
+          (runDiagnostics.crsStatus ?? (runDiagnostics.crsTransformEnabled ? 'on' : 'off')) === 'on'
             ? `ON (${runDiagnostics.crsProjectionModel ?? 'legacy-equirectangular'}, label="${runDiagnostics.crsLabel || 'unnamed'}")`
             : `OFF${runDiagnostics.crsOffReason ? ` (${runDiagnostics.crsOffReason})` : ''}`
         }`,
@@ -450,9 +461,7 @@ const ProcessingSummaryView: React.FC<ProcessingSummaryViewProps> = ({
         lines.push(`CRS Diagnostics: ${runDiagnostics.coordSystemDiagnostics?.join(', ')}`);
       }
       if ((runDiagnostics.coordSystemWarningMessages?.length ?? 0) > 0) {
-        lines.push(
-          `CRS Warning Count: ${runDiagnostics.coordSystemWarningMessages?.length ?? 0}`,
-        );
+        lines.push(`CRS Warning Count: ${runDiagnostics.coordSystemWarningMessages?.length ?? 0}`);
       }
       lines.push(
         `Geoid/Grid Model: ${runDiagnostics.geoidModelEnabled ? `ON (${runDiagnostics.geoidModelId ?? 'NGS-DEMO'}, ${String(runDiagnostics.geoidInterpolation ?? 'bilinear').toUpperCase()}, loaded=${runDiagnostics.geoidModelLoaded ? 'YES' : 'NO'})` : 'OFF'}`,
@@ -466,7 +475,7 @@ const ProcessingSummaryView: React.FC<ProcessingSummaryViewProps> = ({
         `Geoid Height Conversion: ${runDiagnostics.geoidHeightConversionEnabled ? `ON (${String(runDiagnostics.geoidOutputHeightDatum ?? 'orthometric').toUpperCase()}, converted=${runDiagnostics.geoidConvertedStationCount ?? 0}, skipped=${runDiagnostics.geoidSkippedStationCount ?? 0})` : 'OFF'}`,
       );
       lines.push(
-        `GPS AddHiHt Defaults: ${runDiagnostics.gpsAddHiHtEnabled ? `ON (HI=${(((runDiagnostics.gpsAddHiHtHiM ?? 0) * unitScale)).toFixed(4)}${linearUnit}, HT=${(((runDiagnostics.gpsAddHiHtHtM ?? 0) * unitScale)).toFixed(4)}${linearUnit})` : 'OFF'}`,
+        `GPS AddHiHt Defaults: ${runDiagnostics.gpsAddHiHtEnabled ? `ON (HI=${((runDiagnostics.gpsAddHiHtHiM ?? 0) * unitScale).toFixed(4)}${linearUnit}, HT=${((runDiagnostics.gpsAddHiHtHtM ?? 0) * unitScale).toFixed(4)}${linearUnit})` : 'OFF'}`,
       );
       if (runDiagnostics.gpsAddHiHtEnabled) {
         lines.push(
@@ -567,7 +576,9 @@ const ProcessingSummaryView: React.FC<ProcessingSummaryViewProps> = ({
         lines.push(
           `  GPS sideshot line=${row.sourceLine ?? '-'} ${row.from}->${row.to} HD=${(
             row.horizDistance * unitScale
-          ).toFixed(4)}${linearUnit} az=${row.azimuth != null ? `${((row.azimuth * 180) / Math.PI).toFixed(6)}deg` : '-'}${row.note ? ` note=${row.note}` : ''}`,
+          ).toFixed(
+            4,
+          )}${linearUnit} az=${row.azimuth != null ? `${((row.azimuth * 180) / Math.PI).toFixed(6)}deg` : '-'}${row.note ? ` note=${row.note}` : ''}`,
         );
       });
       if (gpsVectorSideshots.length > 15) {
@@ -583,7 +594,10 @@ const ProcessingSummaryView: React.FC<ProcessingSummaryViewProps> = ({
       }
     }
     const aliasTrace = result.parseState?.aliasTrace ?? [];
-    if ((result.parseState?.aliasExplicitCount ?? 0) > 0 || (result.parseState?.aliasRuleCount ?? 0) > 0) {
+    if (
+      (result.parseState?.aliasExplicitCount ?? 0) > 0 ||
+      (result.parseState?.aliasRuleCount ?? 0) > 0
+    ) {
       lines.push(
         `Alias Canonicalization: explicit=${result.parseState?.aliasExplicitCount ?? 0}, rules=${result.parseState?.aliasRuleCount ?? 0}, remaps=${aliasTrace.length}`,
       );

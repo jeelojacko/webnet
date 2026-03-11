@@ -187,7 +187,8 @@ const stripUnquotedHashComment = (line: string): string => {
   return line;
 };
 
-const tokenizePreservingQuotes = (line: string): string[] => line.match(/"[^"]*"|'[^']*'|\S+/g) ?? [];
+const tokenizePreservingQuotes = (line: string): string[] =>
+  line.match(/"[^"]*"|'[^']*'|\S+/g) ?? [];
 
 const isStrictNumericToken = (token: string): boolean =>
   /^[+-]?(?:(?:\d+(?:\.\d*)?)|(?:\.\d+))(?:[eE][+-]?\d+)?$/.test(token.trim());
@@ -598,8 +599,7 @@ const SETTINGS_TOOLTIPS = {
   averageGeoidHeight:
     'Average geoid undulation (meters) used as fallback for height conversion and elevation-factor workflows.',
   gridBearingMode: 'GRID/MEASURED input mode for bearing/azimuth observations in grid workflows.',
-  gridDistanceMode:
-    'GRID/MEASURED/ELLIPSOIDAL input mode for distances in grid workflows.',
+  gridDistanceMode: 'GRID/MEASURED/ELLIPSOIDAL input mode for distances in grid workflows.',
   gridAngleMode: 'GRID/MEASURED input mode for angle observations in grid workflows.',
   gridDirectionMode: 'GRID/MEASURED input mode for direction observations in grid workflows.',
   gnssVectorFrameDefault:
@@ -735,8 +735,7 @@ const SETTINGS_TOOLTIPS = {
     'Delimiter used in adjusted-points output rows (comma, single space, or tab).',
   adjustedPointsPreset:
     'Preset column-order templates for adjusted points. Manual column edits switch to Custom.',
-  adjustedPointsIncludeLost:
-    'Include or omit lost stations in adjusted-points exports.',
+  adjustedPointsIncludeLost: 'Include or omit lost stations in adjusted-points exports.',
   projectFiles:
     'Save or open complete project workspaces (input + settings + instruments + export preferences) without storing solved results.',
 } as const;
@@ -999,9 +998,8 @@ const App: React.FC<AppProps> = ({
   const [input, setInput] = useState<string>(DEFAULT_INPUT);
   const [importNotice, setImportNotice] = useState<ImportedInputNotice | null>(null);
   const [importReviewState, setImportReviewState] = useState<ImportReviewState | null>(null);
-  const [pendingAnglePromptFile, setPendingAnglePromptFile] = useState<PendingAnglePromptFile | null>(
-    null,
-  );
+  const [pendingAnglePromptFile, setPendingAnglePromptFile] =
+    useState<PendingAnglePromptFile | null>(null);
   const [projectIncludeFiles, setProjectIncludeFiles] = useState<Record<string, string>>({});
   const [result, setResult] = useState<AdjustmentResult | null>(null);
   const [runDiagnostics, setRunDiagnostics] = useState<RunDiagnostics | null>(null);
@@ -1125,8 +1123,9 @@ const App: React.FC<AppProps> = ({
   const [parseSettingsDraft, setParseSettingsDraft] = useState<ParseSettings>(parseSettings);
   const [geoidSourceDataDraft, setGeoidSourceDataDraft] = useState<Uint8Array | null>(null);
   const [geoidSourceDataLabelDraft, setGeoidSourceDataLabelDraft] = useState('');
-  const [crsCatalogGroupFilter, setCrsCatalogGroupFilter] =
-    useState<CrsCatalogGroupFilter>(resolveCatalogGroupFromCrsId(parseSettings.crsId));
+  const [crsCatalogGroupFilter, setCrsCatalogGroupFilter] = useState<CrsCatalogGroupFilter>(
+    resolveCatalogGroupFromCrsId(parseSettings.crsId),
+  );
   const [crsSearchQuery, setCrsSearchQuery] = useState('');
   const [showCrsProjectionParams, setShowCrsProjectionParams] = useState(false);
   const [projectInstrumentsDraft, setProjectInstrumentsDraft] =
@@ -1518,17 +1517,18 @@ const App: React.FC<AppProps> = ({
           parseCompatibilityMode:
             normalizedBase.parseCompatibilityMode ?? defaultParseCompatibilityMode,
         };
-    const effectiveParse = requestedRunMode === 'preanalysis'
-      ? {
-          ...parityParse,
-          robustMode: 'none' as RobustMode,
-          autoAdjustEnabled: false,
-          preanalysisMode: true,
-        }
-      : {
-          ...parityParse,
-          preanalysisMode: false,
-        };
+    const effectiveParse =
+      requestedRunMode === 'preanalysis'
+        ? {
+            ...parityParse,
+            robustMode: 'none' as RobustMode,
+            autoAdjustEnabled: false,
+            preanalysisMode: true,
+          }
+        : {
+            ...parityParse,
+            preanalysisMode: false,
+          };
     const directionSetMode: DirectionSetMode = parity ? 'raw' : 'reduced';
     const effectiveInstrumentLibrary = parity
       ? { ...projectInstruments, [INDUSTRY_DEFAULT_INSTRUMENT_CODE]: INDUSTRY_DEFAULT_INSTRUMENT }
@@ -1572,17 +1572,13 @@ const App: React.FC<AppProps> = ({
         'gridNEU',
       gnssFrameConfirmed:
         parseState.gnssFrameConfirmed ?? profileCtx.effectiveParse.gnssFrameConfirmed ?? false,
-      observationMode:
-        parseState.observationMode ??
+      observationMode: parseState.observationMode ??
         profileCtx.effectiveParse.observationMode ?? {
           bearing:
             parseState.gridBearingMode ?? profileCtx.effectiveParse.gridBearingMode ?? 'grid',
           distance:
-            parseState.gridDistanceMode ??
-            profileCtx.effectiveParse.gridDistanceMode ??
-            'measured',
-          angle:
-            parseState.gridAngleMode ?? profileCtx.effectiveParse.gridAngleMode ?? 'measured',
+            parseState.gridDistanceMode ?? profileCtx.effectiveParse.gridDistanceMode ?? 'measured',
+          angle: parseState.gridAngleMode ?? profileCtx.effectiveParse.gridAngleMode ?? 'measured',
           direction:
             parseState.gridDirectionMode ??
             profileCtx.effectiveParse.gridDirectionMode ??
@@ -3637,11 +3633,7 @@ const App: React.FC<AppProps> = ({
         mode: s.mode,
         source: s.sourceType ?? '-',
         relation:
-          s.sourceType === 'GS'
-            ? s.relationFrom
-              ? `FROM=${s.relationFrom}`
-              : 'standalone'
-            : '-',
+          s.sourceType === 'GS' ? (s.relationFrom ? `FROM=${s.relationFrom}` : 'standalone') : '-',
         az: s.azimuth != null ? radToDmsStr(s.azimuth) : '-',
         azSrc: s.azimuthSource ?? '-',
         hd: (s.horizDistance * unitScale).toFixed(4),
@@ -4391,9 +4383,7 @@ const App: React.FC<AppProps> = ({
           types: [
             {
               description:
-                adjustedPointsExportSettings.format === 'csv'
-                  ? 'CSV Files'
-                  : 'Text Files',
+                adjustedPointsExportSettings.format === 'csv' ? 'CSV Files' : 'Text Files',
               accept:
                 adjustedPointsExportSettings.format === 'csv'
                   ? { 'text/csv': ['.csv'] }
@@ -4505,14 +4495,16 @@ const App: React.FC<AppProps> = ({
       const defaultCompatibilityMode: ParseCompatibilityMode =
         projectSchemaVersion === 1
           ? 'legacy'
-          : loadedParseSettings.parseCompatibilityMode ??
+          : (loadedParseSettings.parseCompatibilityMode ??
             (migrationFlag
               ? 'strict'
               : profileForMode === 'industry-parity'
                 ? 'strict'
-                : 'legacy');
+                : 'legacy'));
       const defaultMigratedFlag =
-        projectSchemaVersion === 1 ? false : (loadedParseSettings.parseModeMigrated ?? migrationFlag);
+        projectSchemaVersion === 1
+          ? false
+          : (loadedParseSettings.parseModeMigrated ?? migrationFlag);
       const normalizedRunMode: RunMode =
         loadedParseSettings.preanalysisMode === true
           ? 'preanalysis'
@@ -4588,11 +4580,7 @@ const App: React.FC<AppProps> = ({
     const reader = new FileReader();
     reader.onload = () => {
       const text = typeof reader.result === 'string' ? reader.result : '';
-      const imported = importExternalInput(
-        text,
-        file.name,
-        angleMode != null ? { angleMode } : {},
-      );
+      const imported = importExternalInput(text, file.name, angleMode != null ? { angleMode } : {});
       if (pickerMode === 'compare' && importReviewState) {
         if (imported.detected && imported.dataset && imported.notice) {
           setImportReviewState((prev) =>
@@ -4759,7 +4747,10 @@ const App: React.FC<AppProps> = ({
         [...prev.fixedItemIds].filter((itemId) => itemIds.has(itemId)),
       );
       const nextGroupLabels = Object.fromEntries(
-        nextReviewModel.groups.map((group) => [group.key, prev.groupLabels[group.key] ?? group.label]),
+        nextReviewModel.groups.map((group) => [
+          group.key,
+          prev.groupLabels[group.key] ?? group.label,
+        ]),
       );
       const nextGroupComments = Object.fromEntries(
         nextReviewModel.groups.map((group) => [
@@ -5351,67 +5342,67 @@ const App: React.FC<AppProps> = ({
 
     const rows: NonNullable<AdjustmentResult['preanalysisImpactDiagnostics']>['rows'] =
       plannedRows.map((obs) => {
-      const plannedActive = !baseExclusions.has(obs.id);
-      const action: 'add' | 'remove' = plannedActive ? 'remove' : 'add';
-      const row: NonNullable<AdjustmentResult['preanalysisImpactDiagnostics']>['rows'][number] = {
-        obsId: obs.id,
-        type: obs.type,
-        stations: observationStationsLabel(obs),
-        sourceLine: obs.sourceLine,
-        plannedActive,
-        action,
-        status: 'failed',
-      };
-      try {
-        const altExclusions = new Set(baseExclusions);
-        if (plannedActive) altExclusions.add(obs.id);
-        else altExclusions.delete(obs.id);
-        const alt = solveCore(altExclusions, undefined, overrideValues, approvedClusterMerges);
-        const altStationMajors = preanalysisStationMajors(alt);
-        const altRelativeMetrics = preanalysisRelativeMetrics(alt);
-        const altWorstStationMajor =
-          altStationMajors.length > 0 ? Math.max(...altStationMajors) : undefined;
-        const altMedianStationMajor = medianOf(altStationMajors);
-        const altWorstPairSigmaDist =
-          altRelativeMetrics.length > 0 ? Math.max(...altRelativeMetrics) : undefined;
-        const altWeakStations = preanalysisWeakStationCount(alt);
-        const altWeakPairs = preanalysisWeakPairCount(alt);
-
-        const deltaWorstStationMajor =
-          altWorstStationMajor != null && baseWorstStationMajor != null
-            ? altWorstStationMajor - baseWorstStationMajor
-            : undefined;
-        const deltaMedianStationMajor =
-          altMedianStationMajor != null && baseMedianStationMajor != null
-            ? altMedianStationMajor - baseMedianStationMajor
-            : undefined;
-        const deltaWorstPairSigmaDist =
-          altWorstPairSigmaDist != null && baseWorstPairSigmaDist != null
-            ? altWorstPairSigmaDist - baseWorstPairSigmaDist
-            : undefined;
-        const deltaWeakStationCount = altWeakStations - baseWeakStations;
-        const deltaWeakPairCount = altWeakPairs - baseWeakPairs;
-        const direction = action === 'remove' ? 1 : -1;
-        const score =
-          direction * (deltaWorstStationMajor ?? 0) * 40 +
-          direction * (deltaMedianStationMajor ?? 0) * 20 +
-          direction * (deltaWorstPairSigmaDist ?? 0) * 25 +
-          direction * deltaWeakStationCount * 5 +
-          direction * deltaWeakPairCount * 4;
-
-        return {
-          ...row,
-          deltaWorstStationMajor,
-          deltaMedianStationMajor,
-          deltaWorstPairSigmaDist,
-          deltaWeakStationCount,
-          deltaWeakPairCount,
-          score: Number.isFinite(score) ? score : undefined,
-          status: 'ok',
+        const plannedActive = !baseExclusions.has(obs.id);
+        const action: 'add' | 'remove' = plannedActive ? 'remove' : 'add';
+        const row: NonNullable<AdjustmentResult['preanalysisImpactDiagnostics']>['rows'][number] = {
+          obsId: obs.id,
+          type: obs.type,
+          stations: observationStationsLabel(obs),
+          sourceLine: obs.sourceLine,
+          plannedActive,
+          action,
+          status: 'failed',
         };
-      } catch {
-        return row;
-      }
+        try {
+          const altExclusions = new Set(baseExclusions);
+          if (plannedActive) altExclusions.add(obs.id);
+          else altExclusions.delete(obs.id);
+          const alt = solveCore(altExclusions, undefined, overrideValues, approvedClusterMerges);
+          const altStationMajors = preanalysisStationMajors(alt);
+          const altRelativeMetrics = preanalysisRelativeMetrics(alt);
+          const altWorstStationMajor =
+            altStationMajors.length > 0 ? Math.max(...altStationMajors) : undefined;
+          const altMedianStationMajor = medianOf(altStationMajors);
+          const altWorstPairSigmaDist =
+            altRelativeMetrics.length > 0 ? Math.max(...altRelativeMetrics) : undefined;
+          const altWeakStations = preanalysisWeakStationCount(alt);
+          const altWeakPairs = preanalysisWeakPairCount(alt);
+
+          const deltaWorstStationMajor =
+            altWorstStationMajor != null && baseWorstStationMajor != null
+              ? altWorstStationMajor - baseWorstStationMajor
+              : undefined;
+          const deltaMedianStationMajor =
+            altMedianStationMajor != null && baseMedianStationMajor != null
+              ? altMedianStationMajor - baseMedianStationMajor
+              : undefined;
+          const deltaWorstPairSigmaDist =
+            altWorstPairSigmaDist != null && baseWorstPairSigmaDist != null
+              ? altWorstPairSigmaDist - baseWorstPairSigmaDist
+              : undefined;
+          const deltaWeakStationCount = altWeakStations - baseWeakStations;
+          const deltaWeakPairCount = altWeakPairs - baseWeakPairs;
+          const direction = action === 'remove' ? 1 : -1;
+          const score =
+            direction * (deltaWorstStationMajor ?? 0) * 40 +
+            direction * (deltaMedianStationMajor ?? 0) * 20 +
+            direction * (deltaWorstPairSigmaDist ?? 0) * 25 +
+            direction * deltaWeakStationCount * 5 +
+            direction * deltaWeakPairCount * 4;
+
+          return {
+            ...row,
+            deltaWorstStationMajor,
+            deltaMedianStationMajor,
+            deltaWorstPairSigmaDist,
+            deltaWeakStationCount,
+            deltaWeakPairCount,
+            score: Number.isFinite(score) ? score : undefined,
+            status: 'ok',
+          };
+        } catch {
+          return row;
+        }
       });
 
     rows.sort((a, b) => {
@@ -5547,7 +5538,9 @@ const App: React.FC<AppProps> = ({
       parseSettings.runMode ?? (parseSettings.preanalysisMode ? 'preanalysis' : 'adjustment');
     const autoAdjustConfig: AutoAdjustConfig = {
       enabled:
-        uiRunMode === 'adjustment' ? (inlineAutoAdjust?.enabled ?? parseSettings.autoAdjustEnabled) : false,
+        uiRunMode === 'adjustment'
+          ? (inlineAutoAdjust?.enabled ?? parseSettings.autoAdjustEnabled)
+          : false,
       maxCycles: inlineAutoAdjust?.maxCycles ?? parseSettings.autoAdjustMaxCycles,
       maxRemovalsPerCycle:
         inlineAutoAdjust?.maxRemovalsPerCycle ?? parseSettings.autoAdjustMaxRemovalsPerCycle,
@@ -5785,14 +5778,13 @@ const App: React.FC<AppProps> = ({
       if (!(reader.result instanceof ArrayBuffer)) return;
       const bytes = new Uint8Array(reader.result);
       const lowerName = file.name.toLowerCase();
-      const inferredFormat: GeoidSourceFormat =
-        lowerName.endsWith('.gtx')
-          ? 'gtx'
-          : lowerName.endsWith('.byn')
-            ? 'byn'
-            : parseSettingsDraft.geoidSourceFormat === 'builtin'
-              ? 'gtx'
-              : parseSettingsDraft.geoidSourceFormat;
+      const inferredFormat: GeoidSourceFormat = lowerName.endsWith('.gtx')
+        ? 'gtx'
+        : lowerName.endsWith('.byn')
+          ? 'byn'
+          : parseSettingsDraft.geoidSourceFormat === 'builtin'
+            ? 'gtx'
+            : parseSettingsDraft.geoidSourceFormat;
       setGeoidSourceDataDraft(bytes);
       setGeoidSourceDataLabelDraft(`${file.name} (${bytes.byteLength.toLocaleString()} bytes)`);
       setParseSettingsDraft((prev) => ({
@@ -7640,9 +7632,8 @@ const App: React.FC<AppProps> = ({
                         </div>
                         <div className="grid grid-cols-2 gap-2">
                           {ADJUSTED_POINTS_ALL_COLUMNS.map((columnId) => {
-                            const checked = adjustedPointsExportSettingsDraft.columns.includes(
-                              columnId,
-                            );
+                            const checked =
+                              adjustedPointsExportSettingsDraft.columns.includes(columnId);
                             const disableEnable =
                               !checked && adjustedPointsExportSettingsDraft.columns.length >= 6;
                             const disableDisable =
@@ -7700,7 +7691,9 @@ const App: React.FC<AppProps> = ({
                                 <button
                                   type="button"
                                   title={`Move ${columnId} right`}
-                                  disabled={index === adjustedPointsExportSettingsDraft.columns.length - 1}
+                                  disabled={
+                                    index === adjustedPointsExportSettingsDraft.columns.length - 1
+                                  }
                                   onClick={() => handleAdjustedPointsMoveColumn(columnId, 'right')}
                                   className="rounded border border-slate-500 px-1 py-0.5 disabled:opacity-40"
                                 >
@@ -7827,7 +7820,10 @@ const App: React.FC<AppProps> = ({
                     title="Coordinate System (Canada-First)"
                     tooltip={PROJECT_OPTION_SECTION_TOOLTIPS['CRS / Geodetic Setup']}
                   >
-                    <SettingsRow label="Coord System Mode" tooltip={SETTINGS_TOOLTIPS.coordSystemMode}>
+                    <SettingsRow
+                      label="Coord System Mode"
+                      tooltip={SETTINGS_TOOLTIPS.coordSystemMode}
+                    >
                       <select
                         title={SETTINGS_TOOLTIPS.coordSystemMode}
                         value={parseSettingsDraft.coordSystemMode}
@@ -7843,11 +7839,16 @@ const App: React.FC<AppProps> = ({
                         <option value="grid">GRID</option>
                       </select>
                     </SettingsRow>
-                    <SettingsRow label="CRS Catalog Group" tooltip={SETTINGS_TOOLTIPS.crsCatalogGroup}>
+                    <SettingsRow
+                      label="CRS Catalog Group"
+                      tooltip={SETTINGS_TOOLTIPS.crsCatalogGroup}
+                    >
                       <select
                         title={SETTINGS_TOOLTIPS.crsCatalogGroup}
                         value={crsCatalogGroupFilter}
-                        onChange={(e) => setCrsCatalogGroupFilter(e.target.value as CrsCatalogGroupFilter)}
+                        onChange={(e) =>
+                          setCrsCatalogGroupFilter(e.target.value as CrsCatalogGroupFilter)
+                        }
                         className={optionInputClass}
                       >
                         {CRS_CATALOG_GROUP_OPTIONS.map((group) => {
@@ -7920,14 +7921,16 @@ const App: React.FC<AppProps> = ({
                       <div>Datum: {selectedDraftCrs?.datum ?? '-'}</div>
                       <div>
                         Projection:{' '}
-                        {selectedDraftCrs?.projectionFamily
-                          ?.toUpperCase()
-                          .replaceAll('-', ' ') ?? '-'}
+                        {selectedDraftCrs?.projectionFamily?.toUpperCase().replaceAll('-', ' ') ??
+                          '-'}
                         {selectedDraftCrs?.zoneNumber != null
                           ? ` (zone ${selectedDraftCrs.zoneNumber})`
                           : ''}
                       </div>
-                      <div>Axis/Unit: {selectedDraftCrs?.axisOrder ?? '-'} / {selectedDraftCrs?.linearUnit ?? '-'}</div>
+                      <div>
+                        Axis/Unit: {selectedDraftCrs?.axisOrder ?? '-'} /{' '}
+                        {selectedDraftCrs?.linearUnit ?? '-'}
+                      </div>
                       <div>Area of Use: {selectedDraftCrs?.areaOfUse ?? '-'}</div>
                       <div>
                         Datum Op: {selectedDraftCrs?.supportedDatumOps.primary ?? '-'}
@@ -7963,8 +7966,9 @@ const App: React.FC<AppProps> = ({
                     {parseSettingsDraft.coordSystemMode === 'grid' &&
                       runDiagnostics?.crsAreaOfUseStatus === 'outside' && (
                         <div className="rounded border border-amber-300/60 bg-amber-900/30 px-2 py-1 text-[10px] text-amber-100">
-                          Area-of-use warning: last run flagged {runDiagnostics.crsOutOfAreaStationCount}{' '}
-                          station(s) outside CRS bounds (warning-only).
+                          Area-of-use warning: last run flagged{' '}
+                          {runDiagnostics.crsOutOfAreaStationCount} station(s) outside CRS bounds
+                          (warning-only).
                         </div>
                       )}
                     {runDiagnostics?.datumSufficiencyReport &&
@@ -7976,11 +7980,18 @@ const App: React.FC<AppProps> = ({
                               : 'border border-amber-300/60 bg-amber-900/30 text-amber-100'
                           }`}
                         >
-                          Datum sufficiency ({runDiagnostics.datumSufficiencyReport.status.toUpperCase()}
-                          ): {runDiagnostics.datumSufficiencyReport.reasons[0] ?? 'review run diagnostics'}.
+                          Datum sufficiency (
+                          {runDiagnostics.datumSufficiencyReport.status.toUpperCase()}
+                          ):{' '}
+                          {runDiagnostics.datumSufficiencyReport.reasons[0] ??
+                            'review run diagnostics'}
+                          .
                         </div>
                       )}
-                    <SettingsRow label="Local Datum Scheme" tooltip={SETTINGS_TOOLTIPS.localDatumScheme}>
+                    <SettingsRow
+                      label="Local Datum Scheme"
+                      tooltip={SETTINGS_TOOLTIPS.localDatumScheme}
+                    >
                       <select
                         title={SETTINGS_TOOLTIPS.localDatumScheme}
                         value={parseSettingsDraft.localDatumScheme}
@@ -7997,7 +8008,10 @@ const App: React.FC<AppProps> = ({
                         <option value="common-elevation">Common Elevation</option>
                       </select>
                     </SettingsRow>
-                    <SettingsRow label="Average Scale Factor" tooltip={SETTINGS_TOOLTIPS.averageScaleFactor}>
+                    <SettingsRow
+                      label="Average Scale Factor"
+                      tooltip={SETTINGS_TOOLTIPS.averageScaleFactor}
+                    >
                       <input
                         title={SETTINGS_TOOLTIPS.averageScaleFactor}
                         type="number"
@@ -8097,7 +8111,10 @@ const App: React.FC<AppProps> = ({
                             <option value="grid">GRID</option>
                           </select>
                         </SettingsRow>
-                        <SettingsRow label="Distance Mode" tooltip={SETTINGS_TOOLTIPS.gridDistanceMode}>
+                        <SettingsRow
+                          label="Distance Mode"
+                          tooltip={SETTINGS_TOOLTIPS.gridDistanceMode}
+                        >
                           <select
                             title={SETTINGS_TOOLTIPS.gridDistanceMode}
                             value={parseSettingsDraft.gridDistanceMode}
@@ -8132,7 +8149,10 @@ const App: React.FC<AppProps> = ({
                             <option value="grid">GRID</option>
                           </select>
                         </SettingsRow>
-                        <SettingsRow label="Direction Mode" tooltip={SETTINGS_TOOLTIPS.gridDirectionMode}>
+                        <SettingsRow
+                          label="Direction Mode"
+                          tooltip={SETTINGS_TOOLTIPS.gridDirectionMode}
+                        >
                           <select
                             title={SETTINGS_TOOLTIPS.gridDirectionMode}
                             value={parseSettingsDraft.gridDirectionMode}
@@ -8459,14 +8479,15 @@ const App: React.FC<AppProps> = ({
                           !parseSettingsDraft.geoidModelEnabled ||
                           parseSettingsDraft.geoidSourceFormat === 'builtin'
                         }
-                        onChange={(e) =>
-                          handleDraftParseSetting('geoidSourcePath', e.target.value)
-                        }
+                        onChange={(e) => handleDraftParseSetting('geoidSourcePath', e.target.value)}
                         placeholder="C:\\path\\model.gtx or /path/model.byn"
                         className={`${optionInputClass} disabled:opacity-50 disabled:cursor-not-allowed`}
                       />
                     </SettingsRow>
-                    <SettingsRow label="Geoid Source File" tooltip={SETTINGS_TOOLTIPS.geoidSourceFile}>
+                    <SettingsRow
+                      label="Geoid Source File"
+                      tooltip={SETTINGS_TOOLTIPS.geoidSourceFile}
+                    >
                       <div className="flex flex-col gap-2">
                         <div className="flex flex-wrap items-center gap-2">
                           <button
@@ -8845,11 +8866,9 @@ const App: React.FC<AppProps> = ({
                               parsedUsageSummary: runDiagnostics.parsedUsageSummary,
                               usedInSolveUsageSummary: runDiagnostics.usedInSolveUsageSummary,
                               directiveTransitions: runDiagnostics.directiveTransitions,
-                              directiveNoEffectWarnings:
-                                runDiagnostics.directiveNoEffectWarnings,
+                              directiveNoEffectWarnings: runDiagnostics.directiveNoEffectWarnings,
                               coordSystemDiagnostics: runDiagnostics.coordSystemDiagnostics,
-                              coordSystemWarningMessages:
-                                runDiagnostics.coordSystemWarningMessages,
+                              coordSystemWarningMessages: runDiagnostics.coordSystemWarningMessages,
                               crsStatus: runDiagnostics.crsStatus,
                               crsOffReason: runDiagnostics.crsOffReason,
                               crsDatumOpId: runDiagnostics.crsDatumOpId,
@@ -8882,8 +8901,7 @@ const App: React.FC<AppProps> = ({
                               gpsAddHiHtPositiveCount: runDiagnostics.gpsAddHiHtPositiveCount,
                               gpsAddHiHtNegativeCount: runDiagnostics.gpsAddHiHtNegativeCount,
                               gpsAddHiHtNeutralCount: runDiagnostics.gpsAddHiHtNeutralCount,
-                              gpsAddHiHtDefaultZeroCount:
-                                runDiagnostics.gpsAddHiHtDefaultZeroCount,
+                              gpsAddHiHtDefaultZeroCount: runDiagnostics.gpsAddHiHtDefaultZeroCount,
                               gpsAddHiHtMissingHeightCount:
                                 runDiagnostics.gpsAddHiHtMissingHeightCount,
                               gpsAddHiHtScaleMin: runDiagnostics.gpsAddHiHtScaleMin,

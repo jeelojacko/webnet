@@ -12,11 +12,7 @@ describe('MapView geometry tools', () => {
   });
 
   it('computes inside and outside angles at a pivot', () => {
-    const angles = computePivotAngles(
-      { x: 0, y: 0 },
-      { x: 0, y: 100 },
-      { x: 100, y: 0 },
-    );
+    const angles = computePivotAngles({ x: 0, y: 0 }, { x: 0, y: 100 }, { x: 100, y: 0 });
     expect(angles).toBeDefined();
     expect(angles?.insideAngleRad ?? 0).toBeCloseTo(Math.PI / 2, 10);
     expect(angles?.outsideAngleRad ?? 0).toBeCloseTo((Math.PI * 3) / 2, 10);

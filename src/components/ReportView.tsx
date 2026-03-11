@@ -278,12 +278,13 @@ const ReportView: React.FC<ReportViewProps> = ({
     observationsByType.get(type) ?? [];
 
   const dataCheckDiffRows = useMemo(() => {
-    if (!isDataCheck) return [] as Array<{
-      obs: Observation;
-      stations: string;
-      diffMagnitude: number;
-      diffLabel: string;
-    }>;
+    if (!isDataCheck)
+      return [] as Array<{
+        obs: Observation;
+        stations: string;
+        diffMagnitude: number;
+        diffLabel: string;
+      }>;
     const stations = (obs: Observation): string => {
       if (obs.type === 'angle') return `${obs.at}-${obs.from}-${obs.to}`;
       if (obs.type === 'direction') return `${obs.at}-${obs.to}`;
@@ -376,18 +377,12 @@ const ReportView: React.FC<ReportViewProps> = ({
     .slice(0, 20);
   const gpsLoopDiagnostics = result.gpsLoopDiagnostics;
   const gpsLoopSuspects = useMemo(
-    () =>
-      (gpsLoopDiagnostics?.loops ?? [])
-        .filter((loop) => !loop.pass)
-        .slice(0, 20),
+    () => (gpsLoopDiagnostics?.loops ?? []).filter((loop) => !loop.pass).slice(0, 20),
     [gpsLoopDiagnostics],
   );
   const levelingLoopDiagnostics = result.levelingLoopDiagnostics;
   const levelingLoopSuspects = useMemo(
-    () =>
-      (levelingLoopDiagnostics?.loops ?? [])
-        .filter((loop) => !loop.pass)
-        .slice(0, 20),
+    () => (levelingLoopDiagnostics?.loops ?? []).filter((loop) => !loop.pass).slice(0, 20),
     [levelingLoopDiagnostics],
   );
   const levelingSegmentSuspects = useMemo(
@@ -458,7 +453,11 @@ const ReportView: React.FC<ReportViewProps> = ({
           if (existing) {
             if (!existing.lines.includes(entry.sourceLine)) existing.lines.push(entry.sourceLine);
           } else {
-            rows.push({ key: normalized, description: entry.description, lines: [entry.sourceLine] });
+            rows.push({
+              key: normalized,
+              description: entry.description,
+              lines: [entry.sourceLine],
+            });
           }
           acc.set(key, rows);
           return acc;
@@ -482,7 +481,9 @@ const ReportView: React.FC<ReportViewProps> = ({
   const autoSideshotDiagnostics = result.autoSideshotDiagnostics;
   const autoSideshotObsIds = useMemo(
     () =>
-      new Set(autoSideshotDiagnostics?.candidates.flatMap((c) => [c.angleObsId, c.distObsId]) ?? []),
+      new Set(
+        autoSideshotDiagnostics?.candidates.flatMap((c) => [c.angleObsId, c.distObsId]) ?? [],
+      ),
     [autoSideshotDiagnostics],
   );
   const tsSideshots = useMemo(
@@ -778,8 +779,10 @@ const ReportView: React.FC<ReportViewProps> = ({
       FROM: 'Start station for the row.',
       TO: 'End station for the row.',
       MODE: 'Observation reduction/interpretation mode used for this row.',
-      SOURCE: 'Original data family for post-adjust rows (for example SS, G vector, or GS coordinate shot).',
-      RELATION: 'How this row is tied to the network (for example FROM=<station> or standalone coordinate).',
+      SOURCE:
+        'Original data family for post-adjust rows (for example SS, G vector, or GS coordinate shot).',
+      RELATION:
+        'How this row is tied to the network (for example FROM=<station> or standalone coordinate).',
       AZ: 'Azimuth/bearing direction value.',
       STN: 'Station identifier.',
       NORTHING: 'Adjusted northing coordinate.',
@@ -1229,11 +1232,13 @@ const ReportView: React.FC<ReportViewProps> = ({
         </div>
       </div>
 
-
       {!isPreanalysis &&
         result.suspectImpactDiagnostics &&
         result.suspectImpactDiagnostics.length > 0 && (
-          <div className="mb-8 border border-slate-800 rounded overflow-hidden" style={{ order: -140 }}>
+          <div
+            className="mb-8 border border-slate-800 rounded overflow-hidden"
+            style={{ order: -140 }}
+          >
             <div className="px-4 py-2 border-b border-slate-800 bg-slate-900/60 text-xs uppercase tracking-wider text-slate-400">
               Suspect Impact Analysis (what-if exclusion)
             </div>
@@ -1452,7 +1457,10 @@ const ReportView: React.FC<ReportViewProps> = ({
               </thead>
               <tbody>
                 {dataCheckDiffRows.map((row, idx) => (
-                  <tr key={`data-check-diff-${row.obs.id}-${idx}`} className="border-b border-slate-900/70">
+                  <tr
+                    key={`data-check-diff-${row.obs.id}-${idx}`}
+                    className="border-b border-slate-900/70"
+                  >
                     <td className="py-1">{idx + 1}</td>
                     <td className="py-1 uppercase text-slate-400">{row.obs.type}</td>
                     <td className="py-1">{row.stations}</td>
@@ -1500,7 +1508,10 @@ const ReportView: React.FC<ReportViewProps> = ({
       )}
 
       {runDiagnostics && (
-        <div className="mb-6 border border-slate-800 rounded overflow-hidden" style={{ order: -200 }}>
+        <div
+          className="mb-6 border border-slate-800 rounded overflow-hidden"
+          style={{ order: -200 }}
+        >
           <div
             className="px-3 py-2 text-xs text-slate-400 uppercase tracking-wider border-b border-slate-800 bg-slate-900/40"
             title={REPORT_STATIC_TOOLTIPS['Solve Profile Diagnostics']}
@@ -1560,13 +1571,17 @@ const ReportView: React.FC<ReportViewProps> = ({
                   Map / Scale
                 </div>
                 <div>
-                  {runDiagnostics.mapMode.toUpperCase()} / {runDiagnostics.mapScaleFactor.toFixed(8)}
+                  {runDiagnostics.mapMode.toUpperCase()} /{' '}
+                  {runDiagnostics.mapScaleFactor.toFixed(8)}
                 </div>
               </div>
             )}
             {showSolveProfileVertical && (
               <div>
-                <div className="text-slate-500" title={REPORT_STATIC_TOOLTIPS['Vertical / CurvRef']}>
+                <div
+                  className="text-slate-500"
+                  title={REPORT_STATIC_TOOLTIPS['Vertical / CurvRef']}
+                >
                   Vertical / CurvRef
                 </div>
                 <div>
@@ -1605,26 +1620,31 @@ const ReportView: React.FC<ReportViewProps> = ({
               <div className="text-slate-500" title={REPORT_STATIC_TOOLTIPS['Coordinate System']}>
                 Coordinate System
               </div>
-              <div>{runCoordSystemMode === 'local' ? 'LOCAL' : `GRID (${runDiagnostics.crsId ?? '-'})`}</div>
+              <div>
+                {runCoordSystemMode === 'local' ? 'LOCAL' : `GRID (${runDiagnostics.crsId ?? '-'})`}
+              </div>
             </div>
             {showSolveProfileDirectiveContext && (
               <div className="col-span-2">
-              <div
-                className="text-slate-500"
-                title={REPORT_STATIC_TOOLTIPS['Directive Context (End of File)']}
-              >
-                Directive Context (End of File)
+                <div
+                  className="text-slate-500"
+                  title={REPORT_STATIC_TOOLTIPS['Directive Context (End of File)']}
+                >
+                  Directive Context (End of File)
+                </div>
+                <div className="break-words">
+                  {(runDiagnostics.coordSystemMode ?? 'local') === 'grid'
+                    ? `bearing=${String(runDiagnostics.gridBearingMode ?? 'grid').toUpperCase()}, distance=${String(runDiagnostics.gridDistanceMode ?? 'measured').toUpperCase()}, angle=${String(runDiagnostics.gridAngleMode ?? 'measured').toUpperCase()}, direction=${String(runDiagnostics.gridDirectionMode ?? 'measured').toUpperCase()}, .SCALE=${runDiagnostics.scaleOverrideActive ? `ON(k=${(runDiagnostics.averageScaleFactor ?? 1).toFixed(8)})` : 'OFF'}, GNSS frame=${runDiagnostics.gnssVectorFrameDefault ?? 'gridNEU'} (confirmed=${runDiagnostics.gnssFrameConfirmed ? 'YES' : 'NO'})`
+                    : `${String(runDiagnostics.localDatumScheme ?? 'average-scale').toUpperCase()} (scale=${(runDiagnostics.averageScaleFactor ?? 1).toFixed(8)}, commonElev=${((runDiagnostics.commonElevation ?? 0) * unitScale).toFixed(4)}${units})`}
+                </div>
               </div>
-              <div className="break-words">
-                {(runDiagnostics.coordSystemMode ?? 'local') === 'grid'
-                  ? `bearing=${String(runDiagnostics.gridBearingMode ?? 'grid').toUpperCase()}, distance=${String(runDiagnostics.gridDistanceMode ?? 'measured').toUpperCase()}, angle=${String(runDiagnostics.gridAngleMode ?? 'measured').toUpperCase()}, direction=${String(runDiagnostics.gridDirectionMode ?? 'measured').toUpperCase()}, .SCALE=${runDiagnostics.scaleOverrideActive ? `ON(k=${(runDiagnostics.averageScaleFactor ?? 1).toFixed(8)})` : 'OFF'}, GNSS frame=${runDiagnostics.gnssVectorFrameDefault ?? 'gridNEU'} (confirmed=${runDiagnostics.gnssFrameConfirmed ? 'YES' : 'NO'})`
-                  : `${String(runDiagnostics.localDatumScheme ?? 'average-scale').toUpperCase()} (scale=${(runDiagnostics.averageScaleFactor ?? 1).toFixed(8)}, commonElev=${((runDiagnostics.commonElevation ?? 0) * unitScale).toFixed(4)}${units})`}
-              </div>
-            </div>
             )}
             {runCoordSystemMode === 'grid' && (
               <div className="col-span-2">
-                <div className="text-slate-500" title={REPORT_STATIC_TOOLTIPS['Applied Reduction Modes']}>
+                <div
+                  className="text-slate-500"
+                  title={REPORT_STATIC_TOOLTIPS['Applied Reduction Modes']}
+                >
                   Applied Reduction Modes
                 </div>
                 <div className="break-words">
@@ -1636,7 +1656,10 @@ const ReportView: React.FC<ReportViewProps> = ({
             )}
             {(runDiagnostics.directiveNoEffectWarnings?.length ?? 0) > 0 && (
               <div className="col-span-2">
-                <div className="text-slate-500" title={REPORT_STATIC_TOOLTIPS['Applied Reduction Modes']}>
+                <div
+                  className="text-slate-500"
+                  title={REPORT_STATIC_TOOLTIPS['Applied Reduction Modes']}
+                >
                   No-Effect Directives
                 </div>
                 <div className="break-words">
@@ -1648,13 +1671,17 @@ const ReportView: React.FC<ReportViewProps> = ({
             )}
             {(runDiagnostics.directiveTransitions?.length ?? 0) > 0 && (
               <div className="col-span-2">
-                <div className="text-slate-500" title={REPORT_STATIC_TOOLTIPS['Applied Reduction Modes']}>
+                <div
+                  className="text-slate-500"
+                  title={REPORT_STATIC_TOOLTIPS['Applied Reduction Modes']}
+                >
                   Directive Ranges
                 </div>
                 <div className="break-words">
                   {(runDiagnostics.directiveTransitions ?? [])
-                    .map((t) =>
-                      `${t.directive} line ${t.effectiveFromLine}${t.effectiveToLine != null ? `-${t.effectiveToLine}` : '-EOF'} (obs=${t.obsCountInRange})`,
+                    .map(
+                      (t) =>
+                        `${t.directive} line ${t.effectiveFromLine}${t.effectiveToLine != null ? `-${t.effectiveToLine}` : '-EOF'} (obs=${t.obsCountInRange})`,
                     )
                     .join(' | ')}
                 </div>
@@ -1691,7 +1718,7 @@ const ReportView: React.FC<ReportViewProps> = ({
                 </div>
                 <div>
                   {(runDiagnostics.crsStatus ??
-                  (runDiagnostics.crsTransformEnabled ? 'on' : 'off')) === 'on'
+                    (runDiagnostics.crsTransformEnabled ? 'on' : 'off')) === 'on'
                     ? `ON (${runDiagnostics.crsProjectionModel}, label="${runDiagnostics.crsLabel || 'unnamed'}")`
                     : `OFF${runDiagnostics.crsOffReason ? ` (${runDiagnostics.crsOffReason})` : ''}`}
                 </div>
@@ -1787,13 +1814,18 @@ const ReportView: React.FC<ReportViewProps> = ({
                 </div>
                 <div>
                   {runDiagnostics.defaultSigmaCount}
-                  {runDiagnostics.defaultSigmaByType ? ` (${runDiagnostics.defaultSigmaByType})` : ''}
+                  {runDiagnostics.defaultSigmaByType
+                    ? ` (${runDiagnostics.defaultSigmaByType})`
+                    : ''}
                 </div>
               </div>
             )}
             {runDiagnostics.defaultSigmaCount > 0 && (
               <div className="col-span-2">
-                <div className="text-slate-500" title={REPORT_STATIC_TOOLTIPS['Stochastic Defaults']}>
+                <div
+                  className="text-slate-500"
+                  title={REPORT_STATIC_TOOLTIPS['Stochastic Defaults']}
+                >
                   Stochastic Defaults
                 </div>
                 <div className="break-words">{runDiagnostics.stochasticDefaultsSummary}</div>
@@ -2668,7 +2700,10 @@ const ReportView: React.FC<ReportViewProps> = ({
       )}
 
       {!isPreanalysis && result.residualDiagnostics && (
-        <div className="mb-6 border border-slate-800 rounded overflow-hidden" style={{ order: -170 }}>
+        <div
+          className="mb-6 border border-slate-800 rounded overflow-hidden"
+          style={{ order: -170 }}
+        >
           <div className="px-3 py-2 text-xs text-slate-400 uppercase tracking-wider border-b border-slate-800 bg-slate-900/40">
             Residual Diagnostics
           </div>
@@ -3415,8 +3450,12 @@ const ReportView: React.FC<ReportViewProps> = ({
                       <td className="py-1 px-3 text-slate-500">{loop.rank}</td>
                       <td className="py-1 px-3">{loop.key}</td>
                       <td className="py-1 px-3">{loop.stationPath.join('->')}</td>
-                      <td className="py-1 px-3 text-right">{(loop.closure * unitScale).toFixed(4)}</td>
-                      <td className="py-1 px-3 text-right">{(loop.absClosure * unitScale).toFixed(4)}</td>
+                      <td className="py-1 px-3 text-right">
+                        {(loop.closure * unitScale).toFixed(4)}
+                      </td>
+                      <td className="py-1 px-3 text-right">
+                        {(loop.absClosure * unitScale).toFixed(4)}
+                      </td>
                       <td className="py-1 px-3 text-right">{loop.loopLengthKm.toFixed(3)}</td>
                       <td className="py-1 px-3 text-right">{loop.toleranceMm.toFixed(2)}</td>
                       <td className="py-1 px-3 text-right">{loop.closurePerSqrtKmMm.toFixed(2)}</td>
@@ -4003,7 +4042,10 @@ const ReportView: React.FC<ReportViewProps> = ({
       )}
 
       {!isPreanalysis && result.setupDiagnostics && result.setupDiagnostics.length > 0 && (
-        <div className="mb-8 border border-slate-800 rounded overflow-hidden" style={{ order: -160 }}>
+        <div
+          className="mb-8 border border-slate-800 rounded overflow-hidden"
+          style={{ order: -160 }}
+        >
           <div className="px-3 py-2 text-xs text-slate-400 uppercase tracking-wider border-b border-slate-800 bg-slate-900/40">
             Setup Diagnostics
           </div>
@@ -4074,7 +4116,10 @@ const ReportView: React.FC<ReportViewProps> = ({
         <>
           {renderSideshotSection('Post-Adjusted Sideshots (TS)', tsSideshots)}
           {renderSideshotSection('Post-Adjusted GPS Sideshot Vectors', gpsVectorSideshots)}
-          {renderSideshotSection('Post-Adjusted GNSS Topo Coordinates (GS)', gpsCoordinateSideshots)}
+          {renderSideshotSection(
+            'Post-Adjusted GNSS Topo Coordinates (GS)',
+            gpsCoordinateSideshots,
+          )}
         </>
       )}
 

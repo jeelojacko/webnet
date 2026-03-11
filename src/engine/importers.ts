@@ -404,7 +404,8 @@ const formatHiHt = (hiM?: number, htM?: number): string | undefined =>
 const formatImportedVerticalValue = (
   verticalMode: 'zenith' | 'delta-h',
   verticalValue: number,
-): string => (verticalMode === 'zenith' ? toDmsString(verticalValue) : formatNumber(verticalValue, 4));
+): string =>
+  verticalMode === 'zenith' ? toDmsString(verticalValue) : formatNumber(verticalValue, 4);
 
 const formatFromToToken = (fromId: string, toId: string): string => `${fromId}-${toId}`;
 
@@ -424,8 +425,7 @@ export const serializeImportedControlStationRecord = (
 ): string => {
   if (station.coordinateMode === 'geodetic') {
     const includeHeight = !stripHeight;
-    const recordType =
-      includeHeight && station.heightDatum === 'ellipsoid' ? 'PH' : 'P';
+    const recordType = includeHeight && station.heightDatum === 'ellipsoid' ? 'PH' : 'P';
     const tokens = [
       recordType,
       station.stationId,
@@ -861,7 +861,12 @@ const extractXmlBlock = (input: string, tagNames: string[]): string | undefined 
 
 const stripHtmlTags = (value: string): string =>
   collapseWhitespace(
-    decodeXmlEntities(value.replace(/<br\s*\/?>/gi, ' ').replace(/&nbsp;/gi, ' ').replace(/<[^>]+>/g, ' ')),
+    decodeXmlEntities(
+      value
+        .replace(/<br\s*\/?>/gi, ' ')
+        .replace(/&nbsp;/gi, ' ')
+        .replace(/<[^>]+>/g, ' '),
+    ),
   );
 
 interface HtmlTableBlock {
@@ -1637,13 +1642,8 @@ const parseJobXml = (
       );
 
     const hiM =
-      extractXmlNumber(block, [
-        'InstrumentHeight',
-        'TheodoliteHeight',
-        'HI',
-        'IH',
-        'InstHeight',
-      ]) ?? setupContext?.hiM;
+      extractXmlNumber(block, ['InstrumentHeight', 'TheodoliteHeight', 'HI', 'IH', 'InstHeight']) ??
+      setupContext?.hiM;
     const htM =
       extractXmlNumber(block, ['TargetHeight', 'PrismHeight', 'RodHeight', 'HT']) ??
       targetContext?.htM;
@@ -1696,13 +1696,13 @@ const parseJobXml = (
         ? normalizeAngleDeg(explicitBearingDeg)
         : isMta && horizontalCircleDeg != null && backsightContext?.bearingDeg != null
           ? normalizeAngleDeg(backsightContext.bearingDeg + horizontalCircleDeg)
-        : horizontalCircleDeg != null &&
-            backsightCircleDeg != null &&
-            backsightContext?.bearingDeg != null
-          ? normalizeAngleDeg(
-              backsightContext.bearingDeg - backsightCircleDeg + horizontalCircleDeg,
-            )
-          : undefined;
+          : horizontalCircleDeg != null &&
+              backsightCircleDeg != null &&
+              backsightContext?.bearingDeg != null
+            ? normalizeAngleDeg(
+                backsightContext.bearingDeg - backsightCircleDeg + horizontalCircleDeg,
+              )
+            : undefined;
 
     if (targetId) {
       const computedGridBlock = extractXmlBlock(block, ['ComputedGrid']);
@@ -2807,7 +2807,8 @@ interface SurveyReportSetupContext {
 
 const detectTrimbleSurveyReport = (input: string, sourceName?: string): boolean => {
   const fileName = sourceName?.toLowerCase() ?? '';
-  const looksLikeHtml = fileName.endsWith('.htm') || fileName.endsWith('.html') || /<html\b/i.test(input);
+  const looksLikeHtml =
+    fileName.endsWith('.htm') || fileName.endsWith('.html') || /<html\b/i.test(input);
   if (!looksLikeHtml) return false;
   return (
     /<title>\s*Survey Report\s*<\/title>/i.test(input) &&
@@ -2877,7 +2878,8 @@ const parseTrimbleSurveyReport = (
           level: 'warning',
           sourceLine,
           sourceCode: 'Point',
-          message: 'Survey report point table was skipped because Point/North/East could not be resolved.',
+          message:
+            'Survey report point table was skipped because Point/North/East could not be resolved.',
         });
         return;
       }
@@ -2919,8 +2921,12 @@ const parseTrimbleSurveyReport = (
       const zenithDeg = parseDmsAngleDegrees(values['VA'] ?? '');
       const htM = parseSurveyReportLinear(thirdValues['Target height']);
       const classification =
-        /B\.S\./i.test(pointLabel) || targetId === currentSetup.backsightId ? 'BackSight' : undefined;
-      const raw = [firstRow.join(' | '), stdErrorRow.join(' | '), thirdRow.join(' | ')].join(' || ');
+        /B\.S\./i.test(pointLabel) || targetId === currentSetup.backsightId
+          ? 'BackSight'
+          : undefined;
+      const raw = [firstRow.join(' | '), stdErrorRow.join(' | '), thirdRow.join(' | ')].join(
+        ' || ',
+      );
 
       appendImportedObservationBundle({
         observations,

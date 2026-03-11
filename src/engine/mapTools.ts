@@ -26,7 +26,11 @@ export const computeInverse2D = (from: XYPoint, to: XYPoint): MapInverse2D | nul
   return { azimuthFromToRad, azimuthToFromRad, distance2d };
 };
 
-export const computePivotAngles = (at: XYPoint, from: XYPoint, to: XYPoint): MapPivotAngles | null => {
+export const computePivotAngles = (
+  at: XYPoint,
+  from: XYPoint,
+  to: XYPoint,
+): MapPivotAngles | null => {
   const invA = computeInverse2D(at, from);
   const invB = computeInverse2D(at, to);
   if (!invA || !invB) return null;

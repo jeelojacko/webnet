@@ -479,14 +479,7 @@ export type ProjectExportFormat = 'webnet' | 'industry-style' | 'landxml';
 export type AdjustedPointsColumnId = 'P' | 'N' | 'E' | 'Z' | 'D' | 'LAT' | 'LON' | 'EL';
 export type AdjustedPointsDelimiter = 'comma' | 'space' | 'tab';
 export type AdjustedPointsOutputFormat = 'csv' | 'text';
-export type AdjustedPointsPresetId =
-  | 'PNEZD'
-  | 'PENZD'
-  | 'PNEZ'
-  | 'PENZ'
-  | 'NEZ'
-  | 'PEN'
-  | 'custom';
+export type AdjustedPointsPresetId = 'PNEZD' | 'PENZD' | 'PNEZ' | 'PENZ' | 'NEZ' | 'PEN' | 'custom';
 
 export interface AdjustedPointsExportSettings {
   format: AdjustedPointsOutputFormat;
@@ -578,9 +571,7 @@ export interface ParseIncludeResponse {
   content: string;
 }
 
-export type ParseIncludeResolver = (
-  _request: ParseIncludeRequest,
-) => ParseIncludeResponse | null;
+export type ParseIncludeResolver = (_request: ParseIncludeRequest) => ParseIncludeResponse | null;
 
 export interface ParseIncludeError {
   code: 'missing-include-path' | 'include-not-found' | 'include-cycle' | 'include-depth-exceeded';
@@ -948,14 +939,7 @@ export interface ParseOptions {
   linearMultiplier?: number;
   elevationInputMode?: 'orthometric' | 'ellipsoid';
   projectElevationMeters?: number;
-  vLevelMode?:
-    | 'off'
-    | 'feet'
-    | 'miles'
-    | 'meters'
-    | 'kilometers'
-    | 'turns'
-    | 'none';
+  vLevelMode?: 'off' | 'feet' | 'miles' | 'meters' | 'kilometers' | 'turns' | 'none';
   vLevelNoneStdErrMeters?: number;
 }
 

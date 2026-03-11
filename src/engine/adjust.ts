@@ -1,9 +1,5 @@
 import { RAD_TO_DEG, DEG_TO_RAD } from './angles';
-import {
-  geoidGridMetadataSummary,
-  interpolateGeoidUndulation,
-  loadGeoidGridModel,
-} from './geoid';
+import { geoidGridMetadataSummary, interpolateGeoidUndulation, loadGeoidGridModel } from './geoid';
 import { computeElevationFactor, computeGridFactors, inverseENToGeodetic } from './geodesy';
 import { getCrsDefinition, isGeodeticInsideAreaOfUse } from './crsCatalog';
 import type { GeoidGridModel } from './geoid';
@@ -518,7 +514,9 @@ export class LSAEngine {
     return this.instrumentLibrary[obs.instCode];
   }
 
-  private findPairedVerticalObservation(obs: DistanceObservation): LevelObservation | Observation | undefined {
+  private findPairedVerticalObservation(
+    obs: DistanceObservation,
+  ): LevelObservation | Observation | undefined {
     return this.observations.find(
       (candidate) =>
         candidate.sourceLine === obs.sourceLine &&
@@ -1400,9 +1398,7 @@ export class LSAEngine {
           this.levelLoopTolerancePerSqrtKmMm * Math.sqrt(Math.max(loopLengthKm, 0));
         const toleranceM = toleranceMm / 1000;
         const closurePerSqrtKmMm =
-          loopLengthKm > EPS
-            ? (absClosure * 1000) / Math.sqrt(loopLengthKm)
-            : absClosure * 1000;
+          loopLengthKm > EPS ? (absClosure * 1000) / Math.sqrt(loopLengthKm) : absClosure * 1000;
         const pass = absClosure <= toleranceM + EPS;
         return {
           rank: 0,
@@ -1416,7 +1412,7 @@ export class LSAEngine {
           toleranceMm,
           toleranceM,
           closurePerSqrtKmMm,
-          severity: toleranceMm > EPS ? absClosure * 1000 / toleranceMm : closurePerSqrtKmMm,
+          severity: toleranceMm > EPS ? (absClosure * 1000) / toleranceMm : closurePerSqrtKmMm,
           pass,
           segments,
         };
@@ -1436,10 +1432,7 @@ export class LSAEngine {
     const warnCount = warnLoops.length;
     const warnTotalLengthKm = warnLoops.reduce((acc, loop) => acc + loop.loopLengthKm, 0);
     const suspectSegments = (() => {
-      const segmentMap = new Map<
-        string,
-        Omit<LevelingLoopSegmentSuspectRow, 'rank'>
-      >();
+      const segmentMap = new Map<string, Omit<LevelingLoopSegmentSuspectRow, 'rank'>>();
       warnLoops.forEach((loop) => {
         loop.segments.forEach((segment) => {
           const key =
@@ -2222,9 +2215,7 @@ export class LSAEngine {
     });
   }
 
-  private emitRunModeCompatibilityDiagnostics(
-    diagnostics: RunModeCompatibilityDiagnostic[],
-  ): void {
+  private emitRunModeCompatibilityDiagnostics(diagnostics: RunModeCompatibilityDiagnostic[]): void {
     this.runModeCompatibilityDiagnosticLines(diagnostics).forEach((line) => this.log(line));
   }
 
@@ -2317,16 +2308,22 @@ export class LSAEngine {
       reasons.push(
         'Grid mode input class check failed: one or more stations are UNKNOWN class (including geodetic records missing CRS/datum tagging).',
       );
-      suggestions.push('Tag geodetic records with explicit CRS/datum or re-enter as grid/projected coordinates.');
+      suggestions.push(
+        'Tag geodetic records with explicit CRS/datum or re-enter as grid/projected coordinates.',
+      );
     }
     if (hasLocal && (hasGrid || hasGeodetic)) {
       reasons.push(
         'Grid mode input class check failed: LOCAL coordinates mixed with GRID/GEODETIC coordinates without localization transform.',
       );
-      suggestions.push('Remove local records or define a localization workflow before mixing systems.');
+      suggestions.push(
+        'Remove local records or define a localization workflow before mixing systems.',
+      );
     }
     if (hasGeodetic && (!this.crsId || !this.crsId.trim())) {
-      reasons.push('Grid mode input class check failed: GEODETIC coordinates provided but CRS id is missing.');
+      reasons.push(
+        'Grid mode input class check failed: GEODETIC coordinates provided but CRS id is missing.',
+      );
       suggestions.push('Set project CRS id before running a grid solve.');
     }
 
@@ -2341,7 +2338,9 @@ export class LSAEngine {
       reasons.push(
         `Grid mode GNSS frame check failed: ${unknownGnssRows.length} vector(s) are UNKNOWN frame and not confirmed.`,
       );
-      suggestions.push('Set .GPS FRAME to a known frame (GRIDNEU/ENULOCAL/ECEFDELTA/LLHBASELINE) or confirm unknown frame usage.');
+      suggestions.push(
+        'Set .GPS FRAME to a known frame (GRIDNEU/ENULOCAL/ECEFDELTA/LLHBASELINE) or confirm unknown frame usage.',
+      );
     }
 
     return {
@@ -2356,9 +2355,15 @@ export class LSAEngine {
     const suggestions: string[] = [];
     let status: DatumSufficiencyReport['status'] = 'ok';
 
-    const hasDistanceLike = activeObservations.some((obs) => obs.type === 'dist' || obs.type === 'gps');
+    const hasDistanceLike = activeObservations.some(
+      (obs) => obs.type === 'dist' || obs.type === 'gps',
+    );
     const hasAngularFamilies = activeObservations.some(
-      (obs) => obs.type === 'angle' || obs.type === 'bearing' || obs.type === 'dir' || obs.type === 'direction',
+      (obs) =>
+        obs.type === 'angle' ||
+        obs.type === 'bearing' ||
+        obs.type === 'dir' ||
+        obs.type === 'direction',
     );
     const weightedOrFixedXYCount = Object.values(this.stations).filter((station) => {
       const fixedXY = (station.fixedX ?? false) && (station.fixedY ?? false);
@@ -2382,27 +2387,39 @@ export class LSAEngine {
         reasons.push(
           '2D datum sufficiency failed: scale is undefined (no distance-like constraints and control does not constrain scale).',
         );
-        suggestions.push('Add at least one distance-like constraint (distance/GNSS) or add fixed/weighted coordinate control that constrains scale.');
+        suggestions.push(
+          'Add at least one distance-like constraint (distance/GNSS) or add fixed/weighted coordinate control that constrains scale.',
+        );
       } else if (weightedOrFixedXYCount < 2) {
         status = 'soft-warn';
         reasons.push(
           '2D datum sufficiency warning: weak horizontal datum control (few fixed/weighted coordinate constraints).',
         );
-        suggestions.push('Add a second fixed/weighted control point or a fixed azimuth/bearing constraint to strengthen orientation.');
+        suggestions.push(
+          'Add a second fixed/weighted control point or a fixed azimuth/bearing constraint to strengthen orientation.',
+        );
       }
     } else {
       if (weightedOrFixedXYCount === 0) {
         status = 'hard-fail';
-        reasons.push('3D datum sufficiency failed: horizontal datum is undefined (no fixed/weighted XY control).');
+        reasons.push(
+          '3D datum sufficiency failed: horizontal datum is undefined (no fixed/weighted XY control).',
+        );
         suggestions.push('Add fixed or weighted XY control points.');
       } else if (weightedOrFixedXYCount < 2) {
         status = 'soft-warn';
-        reasons.push('3D datum sufficiency warning: weak horizontal control (single fixed/weighted XY constraint).');
-        suggestions.push('Add another fixed/weighted control point to stabilize orientation/scale.');
+        reasons.push(
+          '3D datum sufficiency warning: weak horizontal control (single fixed/weighted XY constraint).',
+        );
+        suggestions.push(
+          'Add another fixed/weighted control point to stabilize orientation/scale.',
+        );
       }
       if (weightedOrFixedHCount === 0) {
         status = 'hard-fail';
-        reasons.push('3D datum sufficiency failed: vertical datum is undefined (no fixed/weighted height control).');
+        reasons.push(
+          '3D datum sufficiency failed: vertical datum is undefined (no fixed/weighted height control).',
+        );
         suggestions.push('Add fixed/weighted height control or leveling/GNSS height constraints.');
       }
     }
@@ -2622,11 +2639,20 @@ export class LSAEngine {
           `CRS inverse failed for station ${stationId} in ${this.crsId || 'unspecified CRS'}.`,
         );
       } else if (reason === 'projDbMissing') {
-        this.setCrsOff('projDbMissing', 'Projection database is unavailable for CRS inverse operations.');
+        this.setCrsOff(
+          'projDbMissing',
+          'Projection database is unavailable for CRS inverse operations.',
+        );
       } else if (reason === 'missingGridFiles') {
-        this.setCrsOff('missingGridFiles', 'Required grid-shift files are missing for CRS datum/vertical operations.');
+        this.setCrsOff(
+          'missingGridFiles',
+          'Required grid-shift files are missing for CRS datum/vertical operations.',
+        );
       } else if (reason === 'unsupportedCrsFamily') {
-        this.setCrsOff('unsupportedCrsFamily', `Unsupported CRS family for ${this.crsId || 'unspecified CRS'}.`);
+        this.setCrsOff(
+          'unsupportedCrsFamily',
+          `Unsupported CRS family for ${this.crsId || 'unspecified CRS'}.`,
+        );
       } else {
         this.setCrsOff('disabledByProfile');
       }
@@ -2640,7 +2666,9 @@ export class LSAEngine {
       this.addCoordSystemDiagnostic(code);
       if (code === 'CRS_DATUM_FALLBACK') this.crsDatumFallbackUsed = true;
     });
-    (inv.warnings ?? []).forEach((warning) => this.addCoordSystemDiagnostic('CRS_DATUM_FALLBACK', warning));
+    (inv.warnings ?? []).forEach((warning) =>
+      this.addCoordSystemDiagnostic('CRS_DATUM_FALLBACK', warning),
+    );
     station.latDeg = inv.latDeg;
     station.lonDeg = inv.lonDeg;
     return inv;
@@ -2722,7 +2750,10 @@ export class LSAEngine {
     ) {
       convergenceAngleRad += this.crsConvergenceAngleRad;
     }
-    const elevationFactor = computeElevationFactor(this.stationEllipsoidHeight(station), EARTH_RADIUS_M);
+    const elevationFactor = computeElevationFactor(
+      this.stationEllipsoidHeight(station),
+      EARTH_RADIUS_M,
+    );
     const combinedFactor = gridScaleFactor * elevationFactor;
     station.convergenceAngleRad = convergenceAngleRad;
     station.gridScaleFactor = gridScaleFactor;
@@ -2833,14 +2864,17 @@ export class LSAEngine {
     if (obs.type !== 'dist') return 1;
     if (this.coordSystemMode === 'local') {
       const legacyGridScale =
-        this.crsGridScaleEnabled && Number.isFinite(this.crsGridScaleFactor) && this.crsGridScaleFactor > 0
+        this.crsGridScaleEnabled &&
+        Number.isFinite(this.crsGridScaleFactor) &&
+        this.crsGridScaleFactor > 0
           ? this.crsGridScaleFactor
           : 1;
       if (this.localDatumScheme === 'common-elevation') {
         const from = this.stations[obs.from];
         const to = this.stations[obs.to];
         if (!from || !to) return 1;
-        const meanElevation = (this.stationEllipsoidHeight(from) + this.stationEllipsoidHeight(to)) / 2;
+        const meanElevation =
+          (this.stationEllipsoidHeight(from) + this.stationEllipsoidHeight(to)) / 2;
         const factor = (EARTH_RADIUS_M + this.commonElevation) / (EARTH_RADIUS_M + meanElevation);
         const localFactor = Number.isFinite(factor) && factor > 0 ? factor : 1;
         return localFactor * legacyGridScale;
@@ -4139,7 +4173,9 @@ export class LSAEngine {
       };
       this.parseState.gnssFrameConfirmed = this.gnssFrameConfirmed;
       this.parseState.gnssVectorFrameDefault =
-        this.parseState.gnssVectorFrameDefault ?? this.parseOptions?.gnssVectorFrameDefault ?? 'gridNEU';
+        this.parseState.gnssVectorFrameDefault ??
+        this.parseOptions?.gnssVectorFrameDefault ??
+        'gridNEU';
       this.parseState.gpsLoopCheckEnabled = gpsLoopCheckEnabled;
       this.parseState.levelLoopToleranceBaseMm = this.levelLoopToleranceBaseMm;
       this.parseState.levelLoopTolerancePerSqrtKmMm = this.levelLoopTolerancePerSqrtKmMm;
@@ -4153,8 +4189,7 @@ export class LSAEngine {
       this.parseState.coordSystemDiagnostics = [];
       this.parseState.coordSystemWarningMessages = [];
       this.parseState.crsStatus = this.coordSystemMode === 'grid' ? 'off' : undefined;
-      this.parseState.crsOffReason =
-        this.coordSystemMode === 'grid' ? 'noCRSSelected' : undefined;
+      this.parseState.crsOffReason = this.coordSystemMode === 'grid' ? 'noCRSSelected' : undefined;
       this.parseState.crsDatumOpId = '';
       this.parseState.crsDatumFallbackUsed = false;
       this.parseState.crsAreaOfUseStatus = 'unknown';
@@ -4290,7 +4325,9 @@ export class LSAEngine {
           `CRS area-of-use check: ${this.crsOutOfAreaStationCount} station(s) outside configured area bounds (warning-only).`,
         );
       } else {
-        this.log('CRS area-of-use check: unavailable (no CRS bounds metadata or no geodetic stations).');
+        this.log(
+          'CRS area-of-use check: unavailable (no CRS bounds metadata or no geodetic stations).',
+        );
       }
     }
     if (this.applyCurvatureRefraction && this.verticalReduction === 'curvref') {
@@ -4420,17 +4457,11 @@ export class LSAEngine {
     const gridInputGate = this.evaluateGridInputGate(activeObservations);
     if (gridInputGate.blocked) {
       this.addCoordSystemDiagnostic('CRS_INPUT_MIX_BLOCKED');
-      if (
-        gridInputGate.reasons.some((reason) =>
-          reason.toUpperCase().includes('UNKNOWN FRAME'),
-        )
-      ) {
+      if (gridInputGate.reasons.some((reason) => reason.toUpperCase().includes('UNKNOWN FRAME'))) {
         this.addCoordSystemDiagnostic('GNSS_FRAME_UNCONFIRMED');
       }
       gridInputGate.reasons.forEach((reason) => this.log(`Error: ${reason}`));
-      gridInputGate.suggestions.forEach((suggestion) =>
-        this.log(`Suggestion: ${suggestion}`),
-      );
+      gridInputGate.suggestions.forEach((suggestion) => this.log(`Suggestion: ${suggestion}`));
       this.datumSufficiencyReport = {
         status: 'hard-fail',
         reasons: [...gridInputGate.reasons],
@@ -4465,8 +4496,7 @@ export class LSAEngine {
     }
     if (gpsLoopCheckEnabled) {
       const gpsNetworkRows = activeObservations.filter(
-        (obs): obs is GpsObservation =>
-          obs.type === 'gps' && obs.gpsMode !== 'sideshot',
+        (obs): obs is GpsObservation => obs.type === 'gps' && obs.gpsMode !== 'sideshot',
       );
       this.gpsLoopDiagnostics = this.computeGpsLoopDiagnostics(gpsNetworkRows);
       this.log(
@@ -5220,10 +5250,7 @@ export class LSAEngine {
             6,
           )} delta(within)=${objectiveDeltaWithinIter.toExponential(6)} delta(iter)=${objectiveDeltaBetweenIterations.toExponential(6)} delta(rel)=${objectiveDeltaRelative.toExponential(6)}`,
         );
-        if (
-          prevObjectiveBefore != null &&
-          objectiveDeltaRelative < this.convergenceThreshold
-        ) {
+        if (prevObjectiveBefore != null && objectiveDeltaRelative < this.convergenceThreshold) {
           this.log(
             `Converged: relative iteration objective delta ${objectiveDeltaRelative.toExponential(6)} < limit ${this.convergenceThreshold.toExponential(6)}`,
           );
@@ -7630,7 +7657,8 @@ export class LSAEngine {
       this.parseState.parsedUsageSummary =
         this.parseState.parsedUsageSummary ?? summarizeReductionUsage(this.observations);
       this.parseState.usedInSolveUsageSummary =
-        this.parseState.usedInSolveUsageSummary ?? summarizeReductionUsage(this.collectActiveObservations());
+        this.parseState.usedInSolveUsageSummary ??
+        summarizeReductionUsage(this.collectActiveObservations());
     }
     const includeErrorCount = this.parseState?.includeErrors?.length ?? 0;
     const runMode = this.runMode;
@@ -7677,8 +7705,7 @@ export class LSAEngine {
         });
       }
     }
-    const success =
-      includeErrorCount === 0 && (runMode === 'data-check' ? true : this.converged);
+    const success = includeErrorCount === 0 && (runMode === 'data-check' ? true : this.converged);
     return {
       success,
       converged: this.converged,

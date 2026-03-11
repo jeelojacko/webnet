@@ -13,5 +13,3 @@ const IndustryOutputView: React.FC<IndustryOutputViewProps> = ({ text }) => (
 );
 
 export default IndustryOutputView;
-
-

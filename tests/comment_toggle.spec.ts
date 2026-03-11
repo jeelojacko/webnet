@@ -57,9 +57,7 @@ describe('input comment toggle helper', () => {
   it('block uncomment removes only one left-most # marker', () => {
     const input = ['# # setup 1', '# M\t1000-235-1\t075-50-41.0\t4.72668215'].join('\n');
     const result = blockUncommentSelection(input, 0, input.length);
-    expect(result.text).toBe(
-      ['# setup 1', 'M\t1000-235-1\t075-50-41.0\t4.72668215'].join('\n'),
-    );
+    expect(result.text).toBe(['# setup 1', 'M\t1000-235-1\t075-50-41.0\t4.72668215'].join('\n'));
   });
 
   it('block uncomment leaves ## style comments unchanged because they are not # markers', () => {

@@ -1,9 +1,4 @@
-export type LevelLoopTolerancePresetId =
-  | 'default'
-  | 'tight'
-  | 'balanced'
-  | 'relaxed'
-  | 'custom';
+export type LevelLoopTolerancePresetId = 'default' | 'tight' | 'balanced' | 'relaxed' | 'custom';
 
 export type LevelLoopTolerancePreset = {
   id: Exclude<LevelLoopTolerancePresetId, 'custom'>;
@@ -59,10 +54,7 @@ export const findLevelLoopTolerancePreset = (
 export const getLevelLoopTolerancePresetId = (
   baseMm: number,
   perSqrtKmMm: number,
-): LevelLoopTolerancePresetId =>
-  findLevelLoopTolerancePreset(baseMm, perSqrtKmMm)?.id ?? 'custom';
+): LevelLoopTolerancePresetId => findLevelLoopTolerancePreset(baseMm, perSqrtKmMm)?.id ?? 'custom';
 
-export const getLevelLoopTolerancePresetLabel = (
-  baseMm: number,
-  perSqrtKmMm: number,
-): string => findLevelLoopTolerancePreset(baseMm, perSqrtKmMm)?.label ?? 'Custom';
+export const getLevelLoopTolerancePresetLabel = (baseMm: number, perSqrtKmMm: number): string =>
+  findLevelLoopTolerancePreset(baseMm, perSqrtKmMm)?.label ?? 'Custom';

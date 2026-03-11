@@ -82,9 +82,7 @@ describe('parseInput', () => {
     expect(parsed.logs.some((line) => line.includes('.LWEIGHT fallback applied for DV'))).toBe(
       true,
     );
-    expect(parsed.logs.some((line) => line.includes('.LWEIGHT fallback applied for M'))).toBe(
-      true,
-    );
+    expect(parsed.logs.some((line) => line.includes('.LWEIGHT fallback applied for M'))).toBe(true);
   });
 
   it('parses configurable level-loop tolerance settings', () => {
@@ -209,7 +207,10 @@ describe('parseInput', () => {
       (o) => o.type === 'dist' && 'from' in o && o.from === '1' && o.to === '2',
     );
     expect(distObs).toBeDefined();
-    expect(distObs?.obs).toBeCloseTo(22.2574 * Math.sin((89 + 57 / 60 + 23.8 / 3600) * (Math.PI / 180)), 9);
+    expect(distObs?.obs).toBeCloseTo(
+      22.2574 * Math.sin((89 + 57 / 60 + 23.8 / 3600) * (Math.PI / 180)),
+      9,
+    );
     expect(parsed.observations.some((o) => o.type === 'zenith')).toBe(false);
   });
 
@@ -331,9 +332,7 @@ describe('parseInput', () => {
 
   it('restores parent parse-state after include scope exits', () => {
     const parsed = parseInput(
-      ['.UNITS FT', '.INCLUDE child/set.dat', 'C A 0 0 0 ! !', 'C B 10 0 0', 'D A-B 10'].join(
-        '\n',
-      ),
+      ['.UNITS FT', '.INCLUDE child/set.dat', 'C A 0 0 0 ! !', 'C B 10 0 0', 'D A-B 10'].join('\n'),
       {},
       {
         sourceFile: 'main/project.dat',
@@ -367,11 +366,7 @@ describe('parseInput', () => {
 
   it('resolves nested include relative paths in bundle mode and preserves include order', () => {
     const parsed = parseInput(
-      [
-        '.INCLUDE section/first.dat',
-        '.INCLUDE section/second.dat',
-        'C ROOT 0 0 0 ! !',
-      ].join('\n'),
+      ['.INCLUDE section/first.dat', '.INCLUDE section/second.dat', 'C ROOT 0 0 0 ! !'].join('\n'),
       {},
       {
         sourceFile: 'main/project.dat',
@@ -405,7 +400,8 @@ describe('parseInput', () => {
 
     const findDistIndex = (from: string, to: string): number =>
       parsed.observations.findIndex(
-        (obs) => obs.type === 'dist' && 'from' in obs && 'to' in obs && obs.from === from && obs.to === to,
+        (obs) =>
+          obs.type === 'dist' && 'from' in obs && 'to' in obs && obs.from === from && obs.to === to,
       );
     const nestedDistIndex = findDistIndex('G1', 'G2');
     const firstDistIndex = findDistIndex('F1', 'F2');
@@ -639,14 +635,7 @@ describe('parseInput', () => {
 
   it('tracks directive ranges and no-effect warnings for trailing directives', () => {
     const parsed = parseInput(
-      [
-        '.2D',
-        '.GRID',
-        'C A 0 0 0 ! !',
-        'C B 10 0 0',
-        'D A-B 10 0.01',
-        '.MEASURED',
-      ].join('\n'),
+      ['.2D', '.GRID', 'C A 0 0 0 ! !', 'C B 10 0 0', 'D A-B 10 0.01', '.MEASURED'].join('\n'),
     );
     const dist = parsed.observations.find((obs) => obs.type === 'dist');
     expect(dist?.gridDistanceMode).toBe('grid');
@@ -698,9 +687,7 @@ describe('parseInput', () => {
       true,
     );
 
-    const viaEpsgAlias = parseInput(
-      ['.CRS GRID EPSG:2953', 'C A 0 0 0 ! !'].join('\n'),
-    );
+    const viaEpsgAlias = parseInput(['.CRS GRID EPSG:2953', 'C A 0 0 0 ! !'].join('\n'));
     expect(viaEpsgAlias.parseState.coordSystemMode).toBe('grid');
     expect(viaEpsgAlias.parseState.crsId).toBe('CA_NAD83_CSRS_NB_STEREO_DOUBLE');
   });
@@ -1298,7 +1285,9 @@ describe('parseInput', () => {
       ].join('\n'),
     );
     const ssDist = parsed.observations.find((o) => o.type === 'dist' && o.setId === 'SS');
-    const ssZen = parsed.observations.find((o) => o.type === 'zenith' && o.from === 'OCC' && o.to === 'SH');
+    const ssZen = parsed.observations.find(
+      (o) => o.type === 'zenith' && o.from === 'OCC' && o.to === 'SH',
+    );
     expect(ssDist?.type).toBe('dist');
     if (ssDist?.type === 'dist') {
       expect(ssDist.from).toBe('OCC');

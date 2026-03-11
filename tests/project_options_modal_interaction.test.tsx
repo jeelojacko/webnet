@@ -86,7 +86,10 @@ const findInputForSettingsRow = (container: HTMLElement, rowLabel: string): HTML
   return input as HTMLInputElement;
 };
 
-const clickToggleForSettingsRow = async (container: HTMLElement, rowLabel: string): Promise<void> => {
+const clickToggleForSettingsRow = async (
+  container: HTMLElement,
+  rowLabel: string,
+): Promise<void> => {
   const row = Array.from(container.querySelectorAll('label')).find((entry) =>
     entry.textContent?.includes(rowLabel),
   );

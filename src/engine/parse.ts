@@ -513,9 +513,7 @@ const parseQuadrantBearingTokenToRad = (token: string): number | null => {
   const ns = match[1];
   const body = match[2];
   const ew = match[3];
-  const bodyDeg = body.includes('-')
-    ? dmsToRad(body) * RAD_TO_DEG
-    : Number.parseFloat(body);
+  const bodyDeg = body.includes('-') ? dmsToRad(body) * RAD_TO_DEG : Number.parseFloat(body);
   if (!Number.isFinite(bodyDeg)) return null;
   const clamped = Math.max(0, Math.min(90, bodyDeg));
   let azDeg = clamped;
@@ -613,7 +611,9 @@ const syncReductionContextFromLegacyFields = (
   state.reductionContext = {
     inputSpaceDefault: distanceMode === 'measured' ? 'measured' : 'grid',
     distanceKind: gridDistanceModeToReductionDistanceKind(distanceMode),
-    bearingKind: (state.gridBearingMode ?? defaultParseOptions.gridBearingMode ?? 'grid') as BearingKind,
+    bearingKind: (state.gridBearingMode ??
+      defaultParseOptions.gridBearingMode ??
+      'grid') as BearingKind,
     explicitOverrideActive:
       explicitOverrideActive || state.reductionContext?.explicitOverrideActive === true,
   };
@@ -1082,8 +1082,7 @@ const expandInputWithIncludes = (
             return;
           }
           const resolved =
-            resolvedByHook ??
-            resolveIncludeFromMap(includePath, includeFiles, sourceFile);
+            resolvedByHook ?? resolveIncludeFromMap(includePath, includeFiles, sourceFile);
           if (!resolved) {
             const message = `include not found at ${sourceFile}:${sourceLine}: "${includePath}".`;
             includeErrors.push({
@@ -1203,7 +1202,7 @@ export const parseInput = (
     opts.runMode ??
     ((opts.preanalysisMode ?? state.preanalysisMode)
       ? 'preanalysis'
-      : state.runMode ?? 'adjustment');
+      : (state.runMode ?? 'adjustment'));
   state.runMode = resolvedRunMode;
   if (resolvedRunMode === 'preanalysis') {
     state.preanalysisMode = true;
@@ -2308,7 +2307,9 @@ export const parseInput = (
       } else if (op === '.3REDUCE') {
         state.coordMode = '3D';
         state.threeReduceMode = true;
-        logs.push('Coord mode forced to 3D with 3REDUCE ON (slope/zenith reduced to horizontal-only)');
+        logs.push(
+          'Coord mode forced to 3D with 3REDUCE ON (slope/zenith reduced to horizontal-only)',
+        );
       } else if (op === '.DELTA' && parts[1]) {
         state.deltaMode = parts[1].toUpperCase() === 'ON' ? 'horiz' : 'slope';
         logs.push(`Delta mode set to ${state.deltaMode}`);
@@ -2566,9 +2567,7 @@ export const parseInput = (
             state.geoidSourceFormat = formatToken === 'GTX' ? 'gtx' : 'byn';
             const pathToken = parts.slice(3).join(' ').trim();
             state.geoidSourcePath = pathToken;
-            logs.push(
-              `Geoid source set to ${formatToken}${pathToken ? ` (${pathToken})` : ''}`,
-            );
+            logs.push(`Geoid source set to ${formatToken}${pathToken ? ` (${pathToken})` : ''}`);
             continue;
           }
           logs.push(
@@ -2822,9 +2821,7 @@ export const parseInput = (
           state.dataInputEnabled = true;
           logs.push('Data input block set to ON');
         } else {
-          logs.push(
-            `Warning: invalid .DATA option at line ${lineNum}; expected ON or OFF.`,
-          );
+          logs.push(`Warning: invalid .DATA option at line ${lineNum}; expected ON or OFF.`);
         }
       } else if (op === '.SEPARATOR') {
         const sepToken = parts[1];
@@ -2849,9 +2846,7 @@ export const parseInput = (
           );
           continue;
         }
-        if (
-          ['OFF', 'NONE', 'DEFAULT', 'RESET'].includes((args[0] || '').trim().toUpperCase())
-        ) {
+        if (['OFF', 'NONE', 'DEFAULT', 'RESET'].includes((args[0] || '').trim().toUpperCase())) {
           state.levelLoopToleranceBaseMm = 0;
           state.levelLoopTolerancePerSqrtKmMm = 4;
           logs.push('Level-loop tolerance reset to default: base=0.000 mm, k=4.000 mm/sqrt(km)');
@@ -3057,7 +3052,9 @@ export const parseInput = (
         const token = parts[1];
         if (!token) {
           state.projectElevationMeters = defaultParseOptions.projectElevationMeters ?? 0;
-          logs.push(`Project elevation reset to ${(state.projectElevationMeters ?? 0).toFixed(4)} m`);
+          logs.push(
+            `Project elevation reset to ${(state.projectElevationMeters ?? 0).toFixed(4)} m`,
+          );
         } else {
           const parsed = parseLinearMetersToken(token, state.units);
           if (!Number.isFinite(parsed ?? Number.NaN)) {
@@ -3078,8 +3075,7 @@ export const parseInput = (
         } else if (token.startsWith('NONE')) {
           state.vLevelMode = 'none';
           const eqIdx = token.indexOf('=');
-          const noneValueToken =
-            eqIdx >= 0 ? token.slice(eqIdx + 1) : (parts[2] ?? '');
+          const noneValueToken = eqIdx >= 0 ? token.slice(eqIdx + 1) : (parts[2] ?? '');
           const parsed = parseLinearMetersToken(noneValueToken, state.units);
           state.vLevelNoneStdErrMeters =
             Number.isFinite(parsed ?? Number.NaN) && parsed != null ? parsed : undefined;
@@ -3504,7 +3500,9 @@ export const parseInput = (
           desc = desc.slice(1, -1);
         }
         desc = desc.replace(/-/g, ' ');
-        const numeric = numericTokens.filter((token) => isNumericToken(token)).map((token) => parseFloat(token));
+        const numeric = numericTokens
+          .filter((token) => isNumericToken(token))
+          .map((token) => parseFloat(token));
         const legacy = numeric.length > 0 && numeric.length < 6;
         const edmConst = legacy ? (numeric[1] ?? 0) : (numeric[0] ?? 0);
         const edmPpm = legacy ? (numeric[0] ?? 0) : (numeric[1] ?? 0);
@@ -3943,10 +3941,9 @@ export const parseInput = (
           });
         };
 
-        const inlineTriplet =
-          parts[1]?.includes(state.stationSeparator ?? '-')
-            ? splitStationPairToken(parts[1], state.stationSeparator ?? '-')
-            : [];
+        const inlineTriplet = parts[1]?.includes(state.stationSeparator ?? '-')
+          ? splitStationPairToken(parts[1], state.stationSeparator ?? '-')
+          : [];
         if (inlineTriplet.length === 3) {
           pushAngleCandidate(
             state.currentInstrument ?? '',
@@ -3969,7 +3966,16 @@ export const parseInput = (
           5,
           false,
         );
-        pushAngleCandidate(parts[1] ?? '', '', parts[2] ?? '', parts[3] ?? '', parts[4] ?? '', parts[5], 6, true);
+        pushAngleCandidate(
+          parts[1] ?? '',
+          '',
+          parts[2] ?? '',
+          parts[3] ?? '',
+          parts[4] ?? '',
+          parts[5],
+          6,
+          true,
+        );
         pushAngleCandidate(
           parts[1] ?? '',
           parts[2] ?? '',
@@ -4409,7 +4415,9 @@ export const parseInput = (
             });
           }
         } else if (vert && state.threeReduceMode) {
-          logs.push(`3REDUCE active at line ${lineNum}: BM zenith component excluded from equations.`);
+          logs.push(
+            `3REDUCE active at line ${lineNum}: BM zenith component excluded from equations.`,
+          );
         }
         const bearingRad = applyPlanRotation(bearingParsed.value, state);
         const bearResolved = resolveAngularSigma(sigBear, defaultAzimuthSigmaSec(inst));
@@ -4561,7 +4569,9 @@ export const parseInput = (
               ht: ht != null ? ht * toMeters : undefined,
             });
           } else if (vert && state.threeReduceMode) {
-            logs.push(`3REDUCE active at line ${lineNum}: M zenith component excluded from equations.`);
+            logs.push(
+              `3REDUCE active at line ${lineNum}: M zenith component excluded from equations.`,
+            );
           }
         }
       } else if (code === 'B') {
@@ -4595,11 +4605,7 @@ export const parseInput = (
           const token2 = parts[2];
           const token3 = parts[3];
           const maybeBackBearing = parseAngleTokenRad(token1, state, 'dd');
-          if (
-            state.mapMode === 'anglecalc' &&
-            Number.isFinite(maybeBackBearing) &&
-            token2
-          ) {
+          if (state.mapMode === 'anglecalc' && Number.isFinite(maybeBackBearing) && token2) {
             traverseCtx.occupy = token3;
             traverseCtx.backsight = token2;
             traverseCtx.backsightRefAngle = wrapTo2Pi(maybeBackBearing);
@@ -4627,7 +4633,10 @@ export const parseInput = (
       } else if (code === 'T' || code === 'TE') {
         // Traverse legs: angle + dist + vertical relative to current occupy/backsight
         const mapModeActive = state.mapMode !== 'off';
-        if ((!mapModeActive && (!traverseCtx.occupy || !traverseCtx.backsight)) || (!traverseCtx.occupy && mapModeActive)) {
+        if (
+          (!mapModeActive && (!traverseCtx.occupy || !traverseCtx.backsight)) ||
+          (!traverseCtx.occupy && mapModeActive)
+        ) {
           logs.push(`Traverse context missing at line ${lineNum}, skipping ${code}`);
           continue;
         }
@@ -4704,10 +4713,11 @@ export const parseInput = (
             traverseCtx.backsight &&
             Number.isFinite(traverseCtx.backsightRefAngle ?? Number.NaN)
           ) {
-            const turned = wrapTo2Pi(
-              bearingRad - (traverseCtx.backsightRefAngle as number),
+            const turned = wrapTo2Pi(bearingRad - (traverseCtx.backsightRefAngle as number));
+            const angleResolved = resolveAngularSigma(
+              sigmas[0],
+              defaultHorizontalAngleSigmaSec(inst),
             );
-            const angleResolved = resolveAngularSigma(sigmas[0], defaultHorizontalAngleSigmaSec(inst));
             pushObservation({
               id: obsId++,
               type: 'angle',
@@ -5091,7 +5101,8 @@ export const parseInput = (
         }
         const from = stationTokens.at;
         const to = stationTokens.to;
-        const explicitBacksight = stationTokens.mode === 'at-from-to' ? stationTokens.explicitBacksight : undefined;
+        const explicitBacksight =
+          stationTokens.mode === 'at-from-to' ? stationTokens.explicitBacksight : undefined;
         const angleTokenIndex = stationTokens.angleTokenIndex;
         if (from === to || from === traverseCtx.backsight || to === traverseCtx.occupy) {
           logs.push(`Invalid sideshot occupy/backsight at line ${lineNum}, skipping`);
@@ -5113,7 +5124,8 @@ export const parseInput = (
         const isAzPrefix = /^AZ=/i.test(firstTokenRaw) || firstTokenRaw.startsWith('@');
         const isHzPrefix = /^(HZ|HA|ANG)=/i.test(firstTokenRaw);
         const unprefixedAngleRad = parseAngleTokenRad(firstTokenRaw, state, 'dd');
-        const hasUnprefixedAngle = !isAzPrefix && !isHzPrefix && Number.isFinite(unprefixedAngleRad);
+        const hasUnprefixedAngle =
+          !isAzPrefix && !isHzPrefix && Number.isFinite(unprefixedAngleRad);
         const isDmsAngle = firstTokenRaw.includes('-');
         const isSetupAngleByPattern =
           stationTokens.mode === 'legacy' &&
@@ -5121,18 +5133,17 @@ export const parseInput = (
           isDmsAngle &&
           Number.isFinite(parseFloat(parts[angleTokenIndex + 1] || '')) &&
           (!!traverseCtx.backsight || !!explicitBacksight);
-        const angleMode: 'none' | 'az' | 'hz' =
-          isAzPrefix
-            ? 'az'
-            : isHzPrefix
+        const angleMode: 'none' | 'az' | 'hz' = isAzPrefix
+          ? 'az'
+          : isHzPrefix
+            ? 'hz'
+            : stationTokens.mode === 'at-from-to' && hasUnprefixedAngle
               ? 'hz'
-              : stationTokens.mode === 'at-from-to' && hasUnprefixedAngle
-                ? 'hz'
-                : stationTokens.mode === 'at-to' && hasUnprefixedAngle
-                  ? 'az'
-                  : isSetupAngleByPattern
-                    ? 'hz'
-                    : 'none';
+              : stationTokens.mode === 'at-to' && hasUnprefixedAngle
+                ? 'az'
+                : isSetupAngleByPattern
+                  ? 'hz'
+                  : 'none';
         let azimuthObs: number | undefined;
         let azimuthStdDev: number | undefined;
         let hzObs: number | undefined;
@@ -5333,7 +5344,9 @@ export const parseInput = (
           sigma2 = tail[2] * toMeters;
           sigmaH = tail[3] * toMeters;
           if (tail.length > 4) {
-            logs.push(`Warning: extra GS tokens ignored at line ${lineNum} (expected up to sigmaH).`);
+            logs.push(
+              `Warning: extra GS tokens ignored at line ${lineNum} (expected up to sigmaH).`,
+            );
           }
         }
         const sigmaE = state.order === 'EN' ? sigma1 : sigma2;
@@ -5394,7 +5407,8 @@ export const parseInput = (
           if (stations[candidate.to]) score += 2;
           if (candidate.explicitForm) score += 1;
           if (candidate.instCode && instrumentLibrary[candidate.instCode]) score += 2;
-          if (candidate.explicitForm && candidate.instCode && !stations[candidate.instCode]) score += 1;
+          if (candidate.explicitForm && candidate.instCode && !stations[candidate.instCode])
+            score += 1;
           if (
             looksLikeNumericMeasurement(candidate.from) ||
             looksLikeNumericMeasurement(candidate.to)
@@ -5407,7 +5421,8 @@ export const parseInput = (
         const best = scored[0];
         const tie = scored.length > 1 && scored[1].score === best.score;
         if (tie) {
-          const rewrite = 'Use explicit form: G <inst?> <from> <to> <dE> <dN> [sigmaE sigmaN [corr]].';
+          const rewrite =
+            'Use explicit form: G <inst?> <from> <to> <dE> <dN> [sigmaE sigmaN [corr]].';
           if (compatibilityMode === 'strict') {
             addCompatibilityDiagnostic(
               'ROLE_AMBIGUITY',
@@ -5569,7 +5584,8 @@ export const parseInput = (
           if (stations[candidate.to]) score += 2;
           if (candidate.explicitForm) score += 1;
           if (candidate.instCode && instrumentLibrary[candidate.instCode]) score += 2;
-          if (candidate.explicitForm && candidate.instCode && !stations[candidate.instCode]) score += 1;
+          if (candidate.explicitForm && candidate.instCode && !stations[candidate.instCode])
+            score += 1;
           if (
             looksLikeNumericMeasurement(candidate.from) ||
             looksLikeNumericMeasurement(candidate.to)
@@ -5995,10 +6011,9 @@ export const parseInput = (
   state.descriptionConflictCount = state.descriptionScanSummary.filter(
     (row) => row.conflict,
   ).length;
-  const descriptionReconcileMode =
-    (state.descriptionReconcileMode ?? defaultParseOptions.descriptionReconcileMode ?? 'first') as
-      | 'first'
-      | 'append';
+  const descriptionReconcileMode = (state.descriptionReconcileMode ??
+    defaultParseOptions.descriptionReconcileMode ??
+    'first') as 'first' | 'append';
   const descriptionDelimiter =
     state.descriptionAppendDelimiter ?? defaultParseOptions.descriptionAppendDelimiter ?? ' | ';
   state.descriptionReconcileMode = descriptionReconcileMode;

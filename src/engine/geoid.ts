@@ -124,7 +124,12 @@ const isReasonableSpan = (min: number, max: number, step: number): boolean =>
   step <= Math.abs(max - min);
 
 const validateGridShape = (rows: number, cols: number): boolean =>
-  Number.isFinite(rows) && Number.isFinite(cols) && rows >= 2 && cols >= 2 && rows <= 200000 && cols <= 200000;
+  Number.isFinite(rows) &&
+  Number.isFinite(cols) &&
+  rows >= 2 &&
+  cols >= 2 &&
+  rows <= 200000 &&
+  cols <= 200000;
 
 const hashBytes = (bytes: Uint8Array): string => {
   let hash = 2166136261 >>> 0;
@@ -164,9 +169,7 @@ const readBinaryFromPathSync = (path: string): { bytes?: Uint8Array; warning?: s
   }
 };
 
-export const parseGeoidInterpolationToken = (
-  token?: string,
-): GeoidInterpolationMethod | null => {
+export const parseGeoidInterpolationToken = (token?: string): GeoidInterpolationMethod | null => {
   if (!token) return null;
   const upper = token.trim().toUpperCase();
   if (!upper) return null;
@@ -176,7 +179,9 @@ export const parseGeoidInterpolationToken = (
 };
 
 export const normalizeGeoidModelId = (token?: string): string => {
-  const normalized = String(token ?? '').trim().toUpperCase();
+  const normalized = String(token ?? '')
+    .trim()
+    .toUpperCase();
   if (!normalized) return 'NGS-DEMO';
   return BUILTIN_GEOID_MODEL_ALIASES[normalized] ?? normalized;
 };
@@ -253,7 +258,9 @@ const parseBuiltinModelText = (text: string, fallbackId: string): GeoidGridModel
   };
 };
 
-export const loadBuiltinGeoidGridModel = (rawId?: string): {
+export const loadBuiltinGeoidGridModel = (
+  rawId?: string,
+): {
   model: GeoidGridModel | null;
   fromCache: boolean;
   warning?: string;
@@ -364,14 +371,17 @@ const parseGtxGridModel = (
   if (bytes.byteLength < expectedFloat && bytes.byteLength < expectedDouble) return null;
   const valueSize = usesDouble ? 8 : 4;
 
-  const fileRows: number[][] = Array.from({ length: header.rows }, () => Array(header.cols).fill(0));
+  const fileRows: number[][] = Array.from({ length: header.rows }, () =>
+    Array(header.cols).fill(0),
+  );
   let offset = 40;
   for (let r = 0; r < header.rows; r += 1) {
     for (let c = 0; c < header.cols; c += 1) {
       if (offset + valueSize > view.byteLength) return null;
-      const raw = valueSize === 8
-        ? view.getFloat64(offset, header.littleEndian)
-        : view.getFloat32(offset, header.littleEndian);
+      const raw =
+        valueSize === 8
+          ? view.getFloat64(offset, header.littleEndian)
+          : view.getFloat32(offset, header.littleEndian);
       offset += valueSize;
       fileRows[r][c] = Math.abs(raw + 88.8888) < 1e-5 ? Number.NaN : raw;
     }
@@ -379,9 +389,7 @@ const parseGtxGridModel = (
 
   const rowsByLat = header.dLat < 0 ? [...fileRows].reverse() : fileRows;
   const values =
-    header.dLon < 0
-      ? rowsByLat.map((row) => [...row].reverse())
-      : rowsByLat.map((row) => [...row]);
+    header.dLon < 0 ? rowsByLat.map((row) => [...row].reverse()) : rowsByLat.map((row) => [...row]);
 
   const lat0 = header.dLat < 0 ? header.lat0 + header.dLat * (header.rows - 1) : header.lat0;
   const lat1 = header.dLat < 0 ? header.lat0 : header.lat0 + header.dLat * (header.rows - 1);
@@ -666,14 +674,14 @@ export const interpolateGeoidUndulation = (
   const z10 = model.values[i1][j0];
   const z01 = model.values[i0][j1];
   const z11 = model.values[i1][j1];
-  if (!Number.isFinite(z00) || !Number.isFinite(z10) || !Number.isFinite(z01) || !Number.isFinite(z11)) {
+  if (
+    !Number.isFinite(z00) ||
+    !Number.isFinite(z10) ||
+    !Number.isFinite(z01) ||
+    !Number.isFinite(z11)
+  ) {
     return null;
   }
 
-  return (
-    (1 - fu) * (1 - fv) * z00 +
-    fu * (1 - fv) * z10 +
-    (1 - fu) * fv * z01 +
-    fu * fv * z11
-  );
+  return (1 - fu) * (1 - fv) * z00 + fu * (1 - fv) * z10 + (1 - fu) * fv * z01 + fu * fv * z11;
 };

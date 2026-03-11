@@ -729,7 +729,9 @@ describe('industry listing phase 5 formatting locks', () => {
       },
     );
 
-    expect(listing).toContain('Coordinate System Mode           : GRID (CRS=CA_NAD83_CSRS_NB_STEREO_DOUBLE)');
+    expect(listing).toContain(
+      'Coordinate System Mode           : GRID (CRS=CA_NAD83_CSRS_NB_STEREO_DOUBLE)',
+    );
     expect(listing).toMatch(/CRS \/ Projection\s+: ON/);
   });
 

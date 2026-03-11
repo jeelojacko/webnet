@@ -40,13 +40,7 @@ describe('MapView 3D mode UI', () => {
       };
     }
     const html = renderToStaticMarkup(
-      <MapView
-        result={result}
-        units="m"
-        showLostStations
-        mode="3d"
-        viewportWidthOverride={640}
-      />,
+      <MapView result={result} units="m" showLostStations mode="3d" viewportWidthOverride={640} />,
     );
     expect(html).toContain('3D rendering fallback:');
     expect(html).not.toContain('>ISO<');

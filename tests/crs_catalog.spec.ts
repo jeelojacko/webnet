@@ -6,7 +6,11 @@ import {
   getCrsDefinition,
   resolveCrsDefinition,
 } from '../src/engine/crsCatalog';
-import { computeGridFactors, inverseENToGeodetic, projectGeodeticToEN } from '../src/engine/geodesy';
+import {
+  computeGridFactors,
+  inverseENToGeodetic,
+  projectGeodeticToEN,
+} from '../src/engine/geodesy';
 
 describe('Canada CRS catalog (Phase 2 expansion)', () => {
   it('keeps default UTM id and includes MTM + provincial entries', () => {
@@ -17,9 +21,7 @@ describe('Canada CRS catalog (Phase 2 expansion)', () => {
     expect(CANADA_CRS_CATALOG.some((row) => row.id === 'CA_NAD83_CSRS_NB_STEREO_DOUBLE')).toBe(
       true,
     );
-    expect(CANADA_CRS_CATALOG.some((row) => row.id === 'CA_NAD83_CSRS_ON_MNR_LAMBERT')).toBe(
-      true,
-    );
+    expect(CANADA_CRS_CATALOG.some((row) => row.id === 'CA_NAD83_CSRS_ON_MNR_LAMBERT')).toBe(true);
   });
 
   it('resolves CRS by canonical id and EPSG aliases', () => {
