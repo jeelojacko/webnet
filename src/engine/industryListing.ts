@@ -47,7 +47,12 @@ export interface IndustryListingParseSettings {
 }
 
 export interface IndustryListingRunDiagnostics {
-  solveProfile: 'webnet' | 'industry-parity';
+  solveProfile:
+    | 'webnet'
+    | 'industry-parity-current'
+    | 'industry-parity-legacy'
+    | 'legacy-compat'
+    | 'industry-parity';
   runMode?: RunMode;
   angleCenteringModel: 'geometry-aware-correlated-rays';
   defaultSigmaCount: number;
@@ -342,7 +347,7 @@ export const buildIndustryStyleListingText = (
   lines.push('                            Project Option Settings');
   lines.push('');
   lines.push(
-    `      Industry Standard Run Mode                   : ${runDiag.solveProfile === 'industry-parity' ? 'Parity Profile (Classical)' : 'WebNet Default Profile'}`,
+    `      Industry Standard Run Mode                   : ${runDiag.solveProfile === 'webnet' ? 'WebNet Default Profile' : 'Parity Profile (Classical)'}`,
   );
   lines.push(`      Run Mode                            : ${runMode.toUpperCase()}`);
   lines.push(`      Run Purpose                         : ${runPurpose}`);

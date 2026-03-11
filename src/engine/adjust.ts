@@ -5325,6 +5325,7 @@ export class LSAEngine {
         rawMaxResidualCount: number;
         rawMaxResidualSum: number;
         rawMaxResidualMax: number;
+        targetIds: Set<StationId>;
         occupy: StationId;
         orientation: number;
       }
@@ -5552,6 +5553,7 @@ export class LSAEngine {
           rawMaxResidualCount: 0,
           rawMaxResidualSum: 0,
           rawMaxResidualMax: 0,
+          targetIds: new Set<StationId>(),
           occupy: dir.at,
           orientation,
         };
@@ -5593,6 +5595,9 @@ export class LSAEngine {
           stat.rawMaxResidualCount += 1;
           stat.rawMaxResidualSum += rawMaxResidualArcSec;
           stat.rawMaxResidualMax = Math.max(stat.rawMaxResidualMax, rawMaxResidualArcSec);
+        }
+        if (typeof dir.to === 'string' && dir.to.trim().length > 0) {
+          stat.targetIds.add(dir.to);
         }
         stat.occupy = dir.at ?? stat.occupy;
         stat.orientation = orientation;
@@ -6751,14 +6756,20 @@ export class LSAEngine {
         const rms = Math.sqrt(stat.sumSq / Math.max(stat.count, 1));
         const orientDeg = (((stat.orientation * RAD_TO_DEG) % 360) + 360) % 360;
         const orientationSeArcSec = stat.count > 0 ? rms / Math.sqrt(stat.count) : undefined;
+        const targetCount = stat.targetIds.size;
+        const readingCount = stat.rawCount;
+        const underconstrainedOrientation = stat.count < 2 || targetCount < 2;
         return {
           setId,
           occupy: stat.occupy,
+          readingCount,
+          targetCount,
           rawCount: stat.rawCount,
           reducedCount: stat.reducedCount,
           face1Count: stat.face1Count,
           face2Count: stat.face2Count,
           pairedTargets: stat.pairedTargets,
+          underconstrainedOrientation,
           orientationDeg: orientDeg,
           residualMeanArcSec: mean,
           residualRmsArcSec: rms,
@@ -6779,7 +6790,7 @@ export class LSAEngine {
       this.logs.push('Direction set summary (arcsec residuals):');
       this.directionSetDiagnostics.forEach((stat) => {
         this.logs.push(
-          `  ${stat.setId} @ ${stat.occupy}: raw=${stat.rawCount}, reduced=${stat.reducedCount}, pairs=${stat.pairedTargets}, F1=${stat.face1Count}, F2=${stat.face2Count}, mean=${(stat.residualMeanArcSec ?? 0).toFixed(2)}", rms=${(stat.residualRmsArcSec ?? 0).toFixed(2)}", max=${(stat.residualMaxArcSec ?? 0).toFixed(2)}", pairDeltaMax=${(stat.maxFacePairDeltaArcSec ?? 0).toFixed(2)}", rawMax=${(stat.maxRawMaxResidualArcSec ?? 0).toFixed(2)}", orient=${(stat.orientationDeg ?? 0).toFixed(4)}°, orientSE=${(stat.orientationSeArcSec ?? 0).toFixed(2)}"`,
+          `  ${stat.setId} @ ${stat.occupy}: readings=${stat.readingCount}, targets=${stat.targetCount}, under=${stat.underconstrainedOrientation ? 'YES' : 'NO'}, raw=${stat.rawCount}, reduced=${stat.reducedCount}, pairs=${stat.pairedTargets}, F1=${stat.face1Count}, F2=${stat.face2Count}, mean=${(stat.residualMeanArcSec ?? 0).toFixed(2)}", rms=${(stat.residualRmsArcSec ?? 0).toFixed(2)}", max=${(stat.residualMaxArcSec ?? 0).toFixed(2)}", pairDeltaMax=${(stat.maxFacePairDeltaArcSec ?? 0).toFixed(2)}", rawMax=${(stat.maxRawMaxResidualArcSec ?? 0).toFixed(2)}", orient=${(stat.orientationDeg ?? 0).toFixed(4)}°, orientSE=${(stat.orientationSeArcSec ?? 0).toFixed(2)}"`,
         );
       });
     }

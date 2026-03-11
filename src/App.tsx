@@ -120,6 +120,7 @@ import type {
   GnssVectorFrame,
   ParseCompatibilityDiagnostic,
   ParseCompatibilityMode,
+  FaceNormalizationMode,
   ReductionUsageSummary,
   RunMode,
 } from './types';
@@ -275,7 +276,12 @@ type SettingsState = {
   listingObservationLimit: number;
 };
 
-type SolveProfile = 'webnet' | 'industry-parity';
+type SolveProfile =
+  | 'webnet'
+  | 'industry-parity-current'
+  | 'industry-parity-legacy'
+  | 'legacy-compat'
+  | 'industry-parity';
 type ProjectOptionsTab =
   | 'adjustment'
   | 'general'
@@ -303,6 +309,7 @@ type RunDiagnostics = {
   mapMode: MapMode;
   mapScaleFactor: number;
   normalize: boolean;
+  faceNormalizationMode: FaceNormalizationMode;
   angleMode: AngleMode;
   verticalReduction: VerticalReductionMode;
   applyCurvatureRefraction: boolean;
@@ -427,6 +434,7 @@ type ParseSettings = {
   mapMode: MapMode;
   mapScaleFactor?: number;
   normalize: boolean;
+  faceNormalizationMode: FaceNormalizationMode;
   applyCurvatureRefraction: boolean;
   refractionCoefficient: number;
   verticalReduction: VerticalReductionMode;
@@ -484,9 +492,12 @@ const INDUSTRY_DEFAULT_INSTRUMENT: Instrument = createDefaultS9Instrument();
 type TabKey = 'report' | 'processing-summary' | 'industry-output' | 'map';
 type FilePickerMode = 'replace' | 'compare';
 type ImportAnglePromptChoice = ExternalImportAngleMode;
+type ImportFacePromptChoice = Extract<FaceNormalizationMode, 'on' | 'off'>;
 type PendingAnglePromptFile = {
   file: File;
   pickerMode: FilePickerMode;
+  angleMode: ImportAnglePromptChoice;
+  faceMode: ImportFacePromptChoice;
 };
 
 type ResolvedLevelLoopTolerancePreset = {
@@ -537,13 +548,15 @@ type ImportReviewState = {
   rowOverrides: Record<string, string>;
   rowTypeOverrides: Record<string, ImportReviewRowTypeOverride>;
   preset: ImportReviewOutputPreset;
+  importFaceNormalizationMode: ImportFacePromptChoice;
+  importAngleMode?: ImportAnglePromptChoice;
   force2DOutput: boolean;
   nextSyntheticId: number;
 };
 
 const SETTINGS_TOOLTIPS = {
   solveProfile:
-    'Run profile. WEBNET uses current app defaults/features. Industry Standard parity forces classical solve and raw direction-set adjustment with industry-like default instrument precision.',
+    'Run profile mapping for parser strictness + face treatment. Current parity = strict + normalization ON, legacy parity = strict + normalization OFF, legacy-compat = legacy + normalization AUTO.',
   parseCompatibilityMode:
     'Parser compatibility mode. LEGACY keeps grammar-first parsing with controlled compatibility fallbacks; STRICT enforces deterministic grammar-only parsing and rejects ambiguous lines.',
   parseModeMigration:
@@ -657,7 +670,9 @@ const SETTINGS_TOOLTIPS = {
   gpsAddHiHtHt:
     'Default GPS antenna HT value used by .GPS AddHiHt when enabled. Value uses current linear units.',
   normalize:
-    'When ON, normalizes mixed-face direction/traverse observations to a consistent orientation convention.',
+    'Legacy normalize toggle mirror. Use Face Normalization Mode for explicit ON/OFF/AUTO behavior.',
+  faceNormalizationMode:
+    'Face-treatment policy: ON normalizes reliable face-II observations, OFF keeps split-face behavior, AUTO normalizes only when face is reliable and otherwise defers to parse compatibility policy.',
   levelWeight:
     'Optional .LWEIGHT value (mm/km) used as the leveling weight constant when computing leveling standard deviations.',
   qFixLinearSigma:
@@ -1024,7 +1039,7 @@ const App: React.FC<AppProps> = ({
     listingObservationLimit: 60,
   });
   const [parseSettings, setParseSettings] = useState<ParseSettings>({
-    solveProfile: 'industry-parity',
+    solveProfile: 'industry-parity-current',
     coordMode: '3D',
     coordSystemMode: 'local',
     crsId: DEFAULT_CANADA_CRS_ID,
@@ -1060,6 +1075,7 @@ const App: React.FC<AppProps> = ({
     mapMode: 'off',
     mapScaleFactor: 1,
     normalize: true,
+    faceNormalizationMode: 'on',
     applyCurvatureRefraction: false,
     refractionCoefficient: 0.13,
     verticalReduction: 'none',
@@ -1493,29 +1509,44 @@ const App: React.FC<AppProps> = ({
     return rows.sort((a, b) => a.key.localeCompare(b.key, undefined, { numeric: true }));
   };
 
+  const normalizeSolveProfile = (
+    profile: SolveProfile,
+  ): Exclude<SolveProfile, 'industry-parity'> =>
+    profile === 'industry-parity' ? 'industry-parity-current' : profile;
+
   const resolveProfileContext = (base: ParseSettings) => {
-    const parity = base.solveProfile === 'industry-parity';
+    const solveProfile = normalizeSolveProfile(base.solveProfile);
+    const parity = solveProfile !== 'webnet';
     const requestedRunMode: RunMode =
       base.runMode ?? (base.preanalysisMode ? 'preanalysis' : 'adjustment');
+    const defaultParseCompatibilityMode: ParseCompatibilityMode =
+      solveProfile === 'legacy-compat' ? 'legacy' : parity ? 'strict' : 'legacy';
+    const defaultFaceNormalizationMode: FaceNormalizationMode =
+      solveProfile === 'industry-parity-current'
+        ? 'on'
+        : solveProfile === 'industry-parity-legacy'
+          ? 'off'
+          : solveProfile === 'legacy-compat'
+            ? 'auto'
+            : (base.faceNormalizationMode ?? (base.normalize ? 'on' : 'off'));
     const normalizedBase: ParseSettings = {
       ...base,
+      solveProfile,
       runMode: requestedRunMode,
       preanalysisMode: requestedRunMode === 'preanalysis',
+      parseCompatibilityMode: base.parseCompatibilityMode ?? defaultParseCompatibilityMode,
+      faceNormalizationMode: base.faceNormalizationMode ?? defaultFaceNormalizationMode,
     };
-    const defaultParseCompatibilityMode: ParseCompatibilityMode = parity ? 'strict' : 'legacy';
+    normalizedBase.normalize = normalizedBase.faceNormalizationMode !== 'off';
     const parityParse = parity
       ? {
           ...normalizedBase,
           robustMode: 'none' as RobustMode,
           tsCorrelationEnabled: false,
           tsCorrelationRho: 0,
-          parseCompatibilityMode:
-            normalizedBase.parseCompatibilityMode ?? defaultParseCompatibilityMode,
         }
       : {
           ...normalizedBase,
-          parseCompatibilityMode:
-            normalizedBase.parseCompatibilityMode ?? defaultParseCompatibilityMode,
         };
     const effectiveParse =
       requestedRunMode === 'preanalysis'
@@ -1530,6 +1561,7 @@ const App: React.FC<AppProps> = ({
             preanalysisMode: false,
           };
     const directionSetMode: DirectionSetMode = parity ? 'raw' : 'reduced';
+    const allowClusterFaceReliability = solveProfile === 'legacy-compat';
     const effectiveInstrumentLibrary = parity
       ? { ...projectInstruments, [INDUSTRY_DEFAULT_INSTRUMENT_CODE]: INDUSTRY_DEFAULT_INSTRUMENT }
       : projectInstruments;
@@ -1540,6 +1572,7 @@ const App: React.FC<AppProps> = ({
       parity,
       effectiveParse,
       directionSetMode,
+      allowClusterFaceReliability,
       effectiveInstrumentLibrary,
       currentInstrument,
     };
@@ -1594,7 +1627,14 @@ const App: React.FC<AppProps> = ({
         parseState.gridDirectionMode ?? profileCtx.effectiveParse.gridDirectionMode ?? 'measured',
       mapMode: parseState.mapMode ?? profileCtx.effectiveParse.mapMode,
       mapScaleFactor: parseState.mapScaleFactor ?? profileCtx.effectiveParse.mapScaleFactor ?? 1,
-      normalize: parseState.normalize ?? profileCtx.effectiveParse.normalize,
+      faceNormalizationMode:
+        parseState.faceNormalizationMode ??
+        profileCtx.effectiveParse.faceNormalizationMode ??
+        ((parseState.normalize ?? profileCtx.effectiveParse.normalize) ? 'on' : 'off'),
+      normalize:
+        (parseState.faceNormalizationMode ??
+          profileCtx.effectiveParse.faceNormalizationMode ??
+          ((parseState.normalize ?? profileCtx.effectiveParse.normalize) ? 'on' : 'off')) !== 'off',
       angleMode: parseState.angleMode ?? profileCtx.effectiveParse.angleMode,
       verticalReduction:
         parseState.verticalReduction ?? profileCtx.effectiveParse.verticalReduction,
@@ -1740,7 +1780,7 @@ const App: React.FC<AppProps> = ({
       ? `inst=${activeDefaultInst.code} dist=${activeDefaultInst.edm_const.toFixed(4)}m+${activeDefaultInst.edm_ppm.toFixed(3)}ppm hz=${activeDefaultInst.hzPrecision_sec.toFixed(3)}" va=${activeDefaultInst.vaPrecision_sec.toFixed(3)}" centering=${activeDefaultInst.instCentr_m.toFixed(5)}/${activeDefaultInst.tgtCentr_m.toFixed(5)}m edm=${parse.edmMode} centerInflation=${parse.applyCentering ? `ON(explicit=${parse.addCenteringToExplicit ? 'ON' : 'OFF'})` : 'OFF'}`
       : `inst=none dist=0+0ppm hz=0" va=0" centering=0/0m edm=${parse.edmMode} centerInflation=${parse.applyCentering ? `ON(explicit=${parse.addCenteringToExplicit ? 'ON' : 'OFF'})` : 'OFF'}`;
     return {
-      solveProfile: base.solveProfile,
+      solveProfile: normalizeSolveProfile(base.solveProfile),
       parity: profileCtx.parity,
       runMode: parse.runMode,
       preanalysisMode: parse.runMode === 'preanalysis',
@@ -1756,6 +1796,7 @@ const App: React.FC<AppProps> = ({
       mapMode: parse.mapMode,
       mapScaleFactor: parse.mapScaleFactor ?? 1,
       normalize: parse.normalize,
+      faceNormalizationMode: parse.faceNormalizationMode,
       angleMode: parse.angleMode,
       verticalReduction: parse.verticalReduction,
       applyCurvatureRefraction: parse.applyCurvatureRefraction,
@@ -1989,7 +2030,7 @@ const App: React.FC<AppProps> = ({
       `# Reduction: profile=${runDiag.solveProfile}, runMode=${runModeProfileText}, autoSideshot=${runDiag.autoSideshotEnabled ? 'ON' : 'OFF'}, autoAdjust=${runDiag.autoAdjustEnabled ? 'ON' : 'OFF'}(|t|>=${runDiag.autoAdjustStdResThreshold.toFixed(2)},cycles=${runDiag.autoAdjustMaxCycles},maxRm=${runDiag.autoAdjustMaxRemovalsPerCycle}), dirSets=${runDiag.directionSetMode}, mapMode=${runDiag.mapMode}, mapScale=${runDiag.mapScaleFactor.toFixed(8)}, crsScale=${runDiag.crsGridScaleEnabled ? `ON(${runDiag.crsGridScaleFactor.toFixed(8)})` : 'OFF'}, crsConv=${runDiag.crsConvergenceEnabled ? `ON(${(runDiag.crsConvergenceAngleRad * RAD_TO_DEG).toFixed(6)}deg)` : 'OFF'}, geoid=${runDiag.geoidModelEnabled ? `ON(${runDiag.geoidModelId},${runDiag.geoidInterpolation.toUpperCase()})` : 'OFF'}, geoidH=${runDiag.geoidHeightConversionEnabled ? `ON(${runDiag.geoidOutputHeightDatum.toUpperCase()},conv=${runDiag.geoidConvertedStationCount},skip=${runDiag.geoidSkippedStationCount})` : 'OFF'}, gpsLoop=${runDiag.gpsLoopCheckEnabled ? 'ON' : 'OFF'}, levelLoopTol=${runDiag.levelLoopToleranceBaseMm.toFixed(2)}mm+${runDiag.levelLoopTolerancePerSqrtKmMm.toFixed(2)}mm*sqrt(km), gpsAddHiHt=${runDiag.gpsAddHiHtEnabled ? `ON(HI=${(runDiag.gpsAddHiHtHiM * unitScale).toFixed(4)}${linearUnit},HT=${(runDiag.gpsAddHiHtHtM * unitScale).toFixed(4)}${linearUnit})` : 'OFF'}, curvRef=${runDiag.applyCurvatureRefraction ? 'ON' : 'OFF'}, k=${runDiag.refractionCoefficient.toFixed(3)}, vRed=${runDiag.verticalReduction}, qfixLin=${(runDiag.qFixLinearSigmaM * unitScale).toExponential(6)}${linearUnit}, qfixAng=${runDiag.qFixAngularSigmaSec.toExponential(6)}sec, prism=${runDiag.prismEnabled ? `ON(${runDiag.prismOffset.toFixed(4)}m,${runDiag.prismScope})` : 'OFF'}, rotation=${(runDiag.rotationAngleRad * RAD_TO_DEG).toFixed(6)}deg, tsCorr=${runDiag.tsCorrelationEnabled ? 'ON' : 'OFF'}(${runDiag.tsCorrelationScope},rho=${runDiag.tsCorrelationRho.toFixed(3)}), robust=${runDiag.robustMode.toUpperCase()}(k=${runDiag.robustK.toFixed(2)})`,
     );
     lines.push(
-      `# Parity: profileFallback=${runDiag.profileDefaultInstrumentFallback ? 'ON' : 'OFF'}, angleCentering=${runDiag.angleCenteringModel}, normalize=${runDiag.normalize ? 'ON' : 'OFF'}, angleMode=${runDiag.angleMode.toUpperCase()}`,
+      `# Parity: profileFallback=${runDiag.profileDefaultInstrumentFallback ? 'ON' : 'OFF'}, angleCentering=${runDiag.angleCenteringModel}, faceNormalize=${runDiag.faceNormalizationMode.toUpperCase()}(normalize=${runDiag.normalize ? 'ON' : 'OFF'}), angleMode=${runDiag.angleMode.toUpperCase()}`,
     );
     lines.push('');
     lines.push('--- Solve Profile Diagnostics ---');
@@ -2153,11 +2194,11 @@ const App: React.FC<AppProps> = ({
     );
     if (runDiag.parity && runDiag.parseCompatibilityMode === 'legacy') {
       lines.push(
-        'Parse compatibility warning: industry-parity profile is running in LEGACY parse mode; migrate to STRICT to lock deterministic grammar behavior.',
+        'Parse compatibility warning: industry-compatible profile is running in LEGACY parse mode; migrate to STRICT to lock deterministic grammar behavior.',
       );
     }
     lines.push(
-      `Reductions: map=${runDiag.mapMode} (scale=${runDiag.mapScaleFactor.toFixed(8)}), crsScale=${runDiag.crsGridScaleEnabled ? `ON(${runDiag.crsGridScaleFactor.toFixed(8)})` : 'OFF'}, crsConv=${runDiag.crsConvergenceEnabled ? `ON(${(runDiag.crsConvergenceAngleRad * RAD_TO_DEG).toFixed(6)} deg)` : 'OFF'}, geoid=${runDiag.geoidModelEnabled ? `ON(${runDiag.geoidModelId},${runDiag.geoidInterpolation.toUpperCase()},loaded=${runDiag.geoidModelLoaded ? 'YES' : 'NO'})` : 'OFF'}, geoidH=${runDiag.geoidHeightConversionEnabled ? `ON(${runDiag.geoidOutputHeightDatum.toUpperCase()},conv=${runDiag.geoidConvertedStationCount},skip=${runDiag.geoidSkippedStationCount})` : 'OFF'}, gpsAddHiHt=${runDiag.gpsAddHiHtEnabled ? `ON(HI=${(runDiag.gpsAddHiHtHiM * unitScale).toFixed(4)}${linearUnit},HT=${(runDiag.gpsAddHiHtHtM * unitScale).toFixed(4)}${linearUnit})` : 'OFF'}, vRed=${runDiag.verticalReduction}, curvRef=${runDiag.applyCurvatureRefraction ? 'ON' : 'OFF'} (k=${runDiag.refractionCoefficient.toFixed(3)}), normalize=${runDiag.normalize ? 'ON' : 'OFF'}`,
+      `Reductions: map=${runDiag.mapMode} (scale=${runDiag.mapScaleFactor.toFixed(8)}), crsScale=${runDiag.crsGridScaleEnabled ? `ON(${runDiag.crsGridScaleFactor.toFixed(8)})` : 'OFF'}, crsConv=${runDiag.crsConvergenceEnabled ? `ON(${(runDiag.crsConvergenceAngleRad * RAD_TO_DEG).toFixed(6)} deg)` : 'OFF'}, geoid=${runDiag.geoidModelEnabled ? `ON(${runDiag.geoidModelId},${runDiag.geoidInterpolation.toUpperCase()},loaded=${runDiag.geoidModelLoaded ? 'YES' : 'NO'})` : 'OFF'}, geoidH=${runDiag.geoidHeightConversionEnabled ? `ON(${runDiag.geoidOutputHeightDatum.toUpperCase()},conv=${runDiag.geoidConvertedStationCount},skip=${runDiag.geoidSkippedStationCount})` : 'OFF'}, gpsAddHiHt=${runDiag.gpsAddHiHtEnabled ? `ON(HI=${(runDiag.gpsAddHiHtHiM * unitScale).toFixed(4)}${linearUnit},HT=${(runDiag.gpsAddHiHtHtM * unitScale).toFixed(4)}${linearUnit})` : 'OFF'}, vRed=${runDiag.verticalReduction}, curvRef=${runDiag.applyCurvatureRefraction ? 'ON' : 'OFF'} (k=${runDiag.refractionCoefficient.toFixed(3)}), faceNormalize=${runDiag.faceNormalizationMode.toUpperCase()}(normalize=${runDiag.normalize ? 'ON' : 'OFF'})`,
     );
     lines.push(
       `Default sigmas used: ${runDiag.defaultSigmaCount}${runDiag.defaultSigmaByType ? ` (${runDiag.defaultSigmaByType})` : ''}`,
@@ -2901,6 +2942,9 @@ const App: React.FC<AppProps> = ({
       const rows = res.directionSetDiagnostics.map((d) => ({
         setId: d.setId,
         occupy: d.occupy,
+        readings: String(d.readingCount),
+        targets: String(d.targetCount),
+        under: d.underconstrainedOrientation ? 'YES' : 'NO',
         raw: String(d.rawCount),
         reduced: String(d.reducedCount),
         pairs: String(d.pairedTargets),
@@ -2920,6 +2964,9 @@ const App: React.FC<AppProps> = ({
       const header = {
         setId: 'Set',
         occupy: 'Occupy',
+        readings: 'Readings',
+        targets: 'Targets',
+        under: 'Under',
         raw: 'Raw',
         reduced: 'Reduced',
         pairs: 'Pairs',
@@ -2937,6 +2984,9 @@ const App: React.FC<AppProps> = ({
       const widths = {
         setId: Math.max(header.setId.length, ...rows.map((r) => r.setId.length)),
         occupy: Math.max(header.occupy.length, ...rows.map((r) => r.occupy.length)),
+        readings: Math.max(header.readings.length, ...rows.map((r) => r.readings.length)),
+        targets: Math.max(header.targets.length, ...rows.map((r) => r.targets.length)),
+        under: Math.max(header.under.length, ...rows.map((r) => r.under.length)),
         raw: Math.max(header.raw.length, ...rows.map((r) => r.raw.length)),
         reduced: Math.max(header.reduced.length, ...rows.map((r) => r.reduced.length)),
         pairs: Math.max(header.pairs.length, ...rows.map((r) => r.pairs.length)),
@@ -2962,6 +3012,9 @@ const App: React.FC<AppProps> = ({
         [
           pad(header.setId, widths.setId),
           pad(header.occupy, widths.occupy),
+          pad(header.readings, widths.readings),
+          pad(header.targets, widths.targets),
+          pad(header.under, widths.under),
           pad(header.raw, widths.raw),
           pad(header.reduced, widths.reduced),
           pad(header.pairs, widths.pairs),
@@ -2982,6 +3035,9 @@ const App: React.FC<AppProps> = ({
           [
             pad(r.setId, widths.setId),
             pad(r.occupy, widths.occupy),
+            pad(r.readings, widths.readings),
+            pad(r.targets, widths.targets),
+            pad(r.under, widths.under),
             pad(r.raw, widths.raw),
             pad(r.reduced, widths.reduced),
             pad(r.pairs, widths.pairs),
@@ -4490,7 +4546,9 @@ const App: React.FC<AppProps> = ({
       const loadedSettings = parsed.project.ui.settings as unknown as SettingsState;
       const loadedParseSettings = parsed.project.ui.parseSettings as unknown as ParseSettings;
       const projectSchemaVersion = parsed.project.schemaVersion;
-      const profileForMode = loadedParseSettings.solveProfile ?? 'webnet';
+      const profileForMode = normalizeSolveProfile(
+        (loadedParseSettings.solveProfile ?? 'webnet') as SolveProfile,
+      );
       const migrationFlag = parsed.project.ui.migration?.parseModeMigrated === true;
       const defaultCompatibilityMode: ParseCompatibilityMode =
         projectSchemaVersion === 1
@@ -4498,9 +4556,21 @@ const App: React.FC<AppProps> = ({
           : (loadedParseSettings.parseCompatibilityMode ??
             (migrationFlag
               ? 'strict'
-              : profileForMode === 'industry-parity'
+              : profileForMode === 'industry-parity-current' ||
+                  profileForMode === 'industry-parity-legacy'
                 ? 'strict'
                 : 'legacy'));
+      const defaultFaceNormalizationMode: FaceNormalizationMode =
+        loadedParseSettings.faceNormalizationMode ??
+        (profileForMode === 'industry-parity-current'
+          ? 'on'
+          : profileForMode === 'industry-parity-legacy'
+            ? 'off'
+            : profileForMode === 'legacy-compat'
+              ? 'auto'
+              : loadedParseSettings.normalize
+                ? 'on'
+                : 'off');
       const defaultMigratedFlag =
         projectSchemaVersion === 1
           ? false
@@ -4511,6 +4581,7 @@ const App: React.FC<AppProps> = ({
           : (loadedParseSettings.runMode ?? 'adjustment');
       const normalizedLoadedParseSettings: ParseSettings = {
         ...loadedParseSettings,
+        solveProfile: profileForMode,
         runMode: normalizedRunMode,
         preanalysisMode: normalizedRunMode === 'preanalysis',
         ...(loadedParseSettings.observationMode
@@ -4526,6 +4597,8 @@ const App: React.FC<AppProps> = ({
           buildObservationModeFromGridFields(loadedParseSettings),
         parseCompatibilityMode:
           loadedParseSettings.parseCompatibilityMode ?? defaultCompatibilityMode,
+        faceNormalizationMode: defaultFaceNormalizationMode,
+        normalize: defaultFaceNormalizationMode !== 'off',
         parseModeMigrated: defaultMigratedFlag,
         geoidSourceFormat: loadedParseSettings.geoidSourceFormat ?? 'builtin',
         geoidSourcePath: loadedParseSettings.geoidSourcePath ?? '',
@@ -4576,6 +4649,7 @@ const App: React.FC<AppProps> = ({
     file: File,
     pickerMode: FilePickerMode,
     angleMode?: ImportAnglePromptChoice,
+    faceMode?: ImportFacePromptChoice,
   ) => {
     const reader = new FileReader();
     reader.onload = () => {
@@ -4605,11 +4679,15 @@ const App: React.FC<AppProps> = ({
       }
       if (imported.detected && imported.dataset && imported.notice) {
         const reviewModel = buildImportReviewModel(imported.dataset);
-        const useReducedDirectionPreset =
-          angleMode === 'reduced' && requiresImportAngleModePrompt(file.name);
+        const importedPromptedFile = requiresImportAngleModePrompt(file.name);
+        const useReducedDirectionPreset = importedPromptedFile && angleMode === 'reduced';
+        const useDirectionSetPreset =
+          importedPromptedFile && (angleMode === 'reduced' || faceMode != null);
         const rowTypeOverrides = useReducedDirectionPreset
           ? buildReducedAngleRowTypeOverrides(reviewModel)
           : {};
+        const selectedFaceMode: ImportFacePromptChoice =
+          faceMode ?? (parseSettings.faceNormalizationMode === 'off' ? 'off' : 'on');
         const groupComments = Object.fromEntries(
           reviewModel.groups.map((group) => [group.key, group.defaultComment]),
         );
@@ -4629,7 +4707,9 @@ const App: React.FC<AppProps> = ({
           groupComments,
           rowOverrides: {},
           rowTypeOverrides,
-          preset: useReducedDirectionPreset ? 'ts-direction-set' : 'clean-webnet',
+          preset: useDirectionSetPreset ? 'ts-direction-set' : 'clean-webnet',
+          importFaceNormalizationMode: selectedFaceMode,
+          importAngleMode: angleMode,
           force2DOutput: false,
           nextSyntheticId: 1,
         });
@@ -4654,16 +4734,35 @@ const App: React.FC<AppProps> = ({
     filePickerModeRef.current = 'replace';
     e.target.value = '';
     if (pickerMode === 'replace' && requiresImportAngleModePrompt(file.name)) {
-      setPendingAnglePromptFile({ file, pickerMode });
+      setPendingAnglePromptFile({
+        file,
+        pickerMode,
+        angleMode: 'reduced',
+        faceMode: parseSettings.faceNormalizationMode === 'off' ? 'off' : 'on',
+      });
       return;
     }
     processImportedFileSelection(file, pickerMode);
   };
 
-  const handleImportAnglePromptChoice = (choice: ImportAnglePromptChoice) => {
+  const handleImportAnglePromptSetAngleMode = (choice: ImportAnglePromptChoice) => {
     setPendingAnglePromptFile((prev) => {
       if (!prev) return prev;
-      processImportedFileSelection(prev.file, prev.pickerMode, choice);
+      return { ...prev, angleMode: choice };
+    });
+  };
+
+  const handleImportAnglePromptSetFaceMode = (choice: ImportFacePromptChoice) => {
+    setPendingAnglePromptFile((prev) => {
+      if (!prev) return prev;
+      return { ...prev, faceMode: choice };
+    });
+  };
+
+  const handleImportAnglePromptAccept = () => {
+    setPendingAnglePromptFile((prev) => {
+      if (!prev) return prev;
+      processImportedFileSelection(prev.file, prev.pickerMode, prev.angleMode, prev.faceMode);
       return null;
     });
   };
@@ -5086,6 +5185,7 @@ const App: React.FC<AppProps> = ({
         rowTypeOverrides: importReviewState.rowTypeOverrides,
         fixedItemIds: importReviewState.fixedItemIds,
         preset: importReviewState.preset,
+        faceNormalizationMode: importReviewState.importFaceNormalizationMode,
         coordMode: importReviewState.force2DOutput ? '2D' : parseSettings.coordMode,
         force2D: importReviewState.force2DOutput,
       },
@@ -5175,7 +5275,9 @@ const App: React.FC<AppProps> = ({
         deltaMode: effectiveParse.deltaMode,
         mapMode: effectiveParse.mapMode,
         mapScaleFactor: effectiveParse.mapScaleFactor,
-        normalize: effectiveParse.normalize,
+        faceNormalizationMode: effectiveParse.faceNormalizationMode,
+        normalize: effectiveParse.faceNormalizationMode !== 'off',
+        directionFaceReliabilityFromCluster: profileCtx.allowClusterFaceReliability,
         applyCurvatureRefraction: effectiveParse.applyCurvatureRefraction,
         refractionCoefficient: effectiveParse.refractionCoefficient,
         verticalReduction: effectiveParse.verticalReduction,
@@ -5709,6 +5811,22 @@ const App: React.FC<AppProps> = ({
     }
     setParseSettingsDraft((prev) => {
       const next = { ...prev, [key]: value };
+      if (key === 'solveProfile') {
+        const profile = normalizeSolveProfile(value as SolveProfile);
+        next.solveProfile = profile;
+        if (profile === 'industry-parity-current') {
+          next.parseCompatibilityMode = 'strict';
+          next.faceNormalizationMode = 'on';
+        } else if (profile === 'industry-parity-legacy') {
+          next.parseCompatibilityMode = 'strict';
+          next.faceNormalizationMode = 'off';
+        } else if (profile === 'legacy-compat') {
+          next.parseCompatibilityMode = 'legacy';
+          next.faceNormalizationMode = 'auto';
+        }
+        next.normalize = next.faceNormalizationMode !== 'off';
+        return next;
+      }
       if (key === 'runMode') {
         const runMode = value as RunMode;
         next.runMode = runMode;
@@ -5736,6 +5854,16 @@ const App: React.FC<AppProps> = ({
           next.gridDirectionMode = mode.direction;
           next.observationMode = mode;
         }
+        return next;
+      }
+      if (key === 'faceNormalizationMode') {
+        next.faceNormalizationMode = value as FaceNormalizationMode;
+        next.normalize = next.faceNormalizationMode !== 'off';
+        return next;
+      }
+      if (key === 'normalize') {
+        next.normalize = value as boolean;
+        next.faceNormalizationMode = next.normalize ? 'on' : 'off';
         return next;
       }
       if (
@@ -5992,7 +6120,7 @@ const App: React.FC<AppProps> = ({
     setSelectedInstrumentDraft(code);
   };
 
-  const parityProfileActive = parseSettingsDraft.solveProfile === 'industry-parity';
+  const parityProfileActive = normalizeSolveProfile(parseSettingsDraft.solveProfile) !== 'webnet';
 
   const toggleExclude = (id: number) => {
     setExcludedIds((prev) => {
@@ -6280,7 +6408,9 @@ const App: React.FC<AppProps> = ({
                           className={optionInputClass}
                         >
                           <option value="webnet">WebNet</option>
-                          <option value="industry-parity">Industry Standard Parity</option>
+                          <option value="industry-parity-current">Industry Parity (Current)</option>
+                          <option value="industry-parity-legacy">Industry Parity (Legacy)</option>
+                          <option value="legacy-compat">Legacy Compatibility</option>
                         </select>
                       </SettingsRow>
                       <SettingsRow
@@ -6317,11 +6447,11 @@ const App: React.FC<AppProps> = ({
                             Migrate To Strict
                           </button>
                         )}
-                        {parseSettingsDraft.solveProfile === 'industry-parity' &&
+                        {normalizeSolveProfile(parseSettingsDraft.solveProfile) !== 'webnet' &&
                           parseSettingsDraft.parseCompatibilityMode === 'legacy' && (
                             <div className="text-amber-200">
-                              Industry-parity profile is running in legacy parse mode. Strict mode
-                              is recommended for deterministic parser behavior.
+                              Industry-compatible profile is running in legacy parse mode. Strict
+                              mode is recommended for deterministic parser behavior.
                             </div>
                           )}
                       </div>
@@ -6929,15 +7059,24 @@ const App: React.FC<AppProps> = ({
                       />
                     </SettingsRow>
                     <SettingsRow
-                      label="Normalize Mixed Face Data"
-                      tooltip={SETTINGS_TOOLTIPS.normalize}
-                      className="md:grid-cols-[minmax(0,1fr)_auto]"
+                      label="Face Normalization Mode"
+                      tooltip={SETTINGS_TOOLTIPS.faceNormalizationMode}
                     >
-                      <SettingsToggle
-                        title={SETTINGS_TOOLTIPS.normalize}
-                        checked={parseSettingsDraft.normalize}
-                        onChange={(checked) => handleDraftParseSetting('normalize', checked)}
-                      />
+                      <select
+                        title={SETTINGS_TOOLTIPS.faceNormalizationMode}
+                        value={parseSettingsDraft.faceNormalizationMode}
+                        onChange={(e) =>
+                          handleDraftParseSetting(
+                            'faceNormalizationMode',
+                            e.target.value as FaceNormalizationMode,
+                          )
+                        }
+                        className={optionInputClass}
+                      >
+                        <option value="on">On (normalize reliable face-II)</option>
+                        <option value="off">Off (split-face)</option>
+                        <option value="auto">Auto (WebNet compatibility)</option>
+                      </select>
                     </SettingsRow>
                     <SettingsRow
                       label="Map Show Lost Stations"
@@ -8945,8 +9084,12 @@ const App: React.FC<AppProps> = ({
               <div>
                 <button
                   type="button"
-                  onClick={() => handleImportAnglePromptChoice('raw')}
-                  className="w-full border border-slate-600 bg-slate-950 px-3 py-3 text-left text-xs uppercase tracking-wide text-slate-100 hover:border-cyan-400"
+                  onClick={() => handleImportAnglePromptSetAngleMode('raw')}
+                  className={`w-full border px-3 py-3 text-left text-xs uppercase tracking-wide ${
+                    pendingAnglePromptFile.angleMode === 'raw'
+                      ? 'border-cyan-500 bg-cyan-900/40 text-cyan-100'
+                      : 'border-slate-600 bg-slate-950 text-slate-100 hover:border-cyan-400'
+                  }`}
                 >
                   Raw Angles
                 </button>
@@ -8957,13 +9100,56 @@ const App: React.FC<AppProps> = ({
               <div>
                 <button
                   type="button"
-                  onClick={() => handleImportAnglePromptChoice('reduced')}
-                  className="w-full border border-cyan-500 bg-cyan-900/40 px-3 py-3 text-left text-xs uppercase tracking-wide text-cyan-100 hover:bg-cyan-800/60"
+                  onClick={() => handleImportAnglePromptSetAngleMode('reduced')}
+                  className={`w-full border px-3 py-3 text-left text-xs uppercase tracking-wide ${
+                    pendingAnglePromptFile.angleMode === 'reduced'
+                      ? 'border-cyan-500 bg-cyan-900/40 text-cyan-100'
+                      : 'border-slate-600 bg-slate-950 text-slate-100 hover:border-cyan-400'
+                  }`}
                 >
                   Reduced Angles (BS = 0)
                 </button>
                 <div className="mt-1 text-xs text-slate-400">
                   Use reduced-angle workflow with backsight-zero direction-set shaping.
+                </div>
+              </div>
+              <div className="border-t border-slate-700 pt-3">
+                <div className="text-[11px] uppercase tracking-[0.22em] text-cyan-300">
+                  Face Treatment
+                </div>
+                <div className="mt-2 space-y-3">
+                  <div>
+                    <button
+                      type="button"
+                      onClick={() => handleImportAnglePromptSetFaceMode('on')}
+                      className={`w-full border px-3 py-3 text-left text-xs uppercase tracking-wide ${
+                        pendingAnglePromptFile.faceMode === 'on'
+                          ? 'border-cyan-500 bg-cyan-900/40 text-cyan-100'
+                          : 'border-slate-600 bg-slate-950 text-slate-100 hover:border-cyan-400'
+                      }`}
+                    >
+                      Normalized Behavior
+                    </button>
+                    <div className="mt-1 text-xs text-slate-400">
+                      Keep one logical direction set and normalize reliable face-II shots to face-I.
+                    </div>
+                  </div>
+                  <div>
+                    <button
+                      type="button"
+                      onClick={() => handleImportAnglePromptSetFaceMode('off')}
+                      className={`w-full border px-3 py-3 text-left text-xs uppercase tracking-wide ${
+                        pendingAnglePromptFile.faceMode === 'off'
+                          ? 'border-cyan-500 bg-cyan-900/40 text-cyan-100'
+                          : 'border-slate-600 bg-slate-950 text-slate-100 hover:border-cyan-400'
+                      }`}
+                    >
+                      Split Behavior
+                    </button>
+                    <div className="mt-1 text-xs text-slate-400">
+                      Split reliable face-I and face-II shots into separate direction-set blocks.
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -8974,6 +9160,13 @@ const App: React.FC<AppProps> = ({
                 className="border border-slate-500 bg-slate-700 px-4 py-2 text-xs uppercase tracking-wide text-slate-200 hover:bg-slate-600"
               >
                 Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleImportAnglePromptAccept}
+                className="ml-2 border border-cyan-500 bg-cyan-900/40 px-4 py-2 text-xs uppercase tracking-wide text-cyan-100 hover:bg-cyan-800/60"
+              >
+                Accept
               </button>
             </div>
           </div>

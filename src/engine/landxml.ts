@@ -4,7 +4,12 @@ const FT_PER_M = 3.280839895;
 
 export interface LandXmlExportSettings {
   units: 'm' | 'ft';
-  solveProfile: 'webnet' | 'industry-parity';
+  solveProfile:
+    | 'webnet'
+    | 'industry-parity-current'
+    | 'industry-parity-legacy'
+    | 'legacy-compat'
+    | 'industry-parity';
   showLostStations?: boolean;
   projectName?: string;
   applicationName?: string;

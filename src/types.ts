@@ -331,9 +331,31 @@ export interface DirectionRejectDiagnostic {
   sourceLine?: number;
   sourceFile?: string;
   recordType?: 'DN' | 'DM' | 'DB' | 'DE' | 'UNKNOWN';
-  reason: 'mixed-face' | 'no-shots' | 'missing-context';
+  reason: 'mixed-face' | 'unresolved-mixed-face' | 'no-shots' | 'missing-context';
   expectedFace?: 'face1' | 'face2';
   actualFace?: 'face1' | 'face2';
+  faceSource?: DirectionFaceSource;
+  treatmentDecision?: DirectionSetTreatmentDecision;
+  policyOutcome?: DirectionSetPolicyOutcome;
+  detail: string;
+}
+
+export type DirectionFaceSource = 'metadata' | 'zenith' | 'cluster' | 'fallback' | 'unresolved';
+export type DirectionSetTreatmentDecision = 'normalized' | 'split' | 'unresolved';
+export type DirectionSetPolicyOutcome = 'strict-reject' | 'legacy-fallback' | 'accepted';
+
+export interface DirectionSetTreatmentDiagnostic {
+  setId: string;
+  occupy: StationId;
+  sourceLine?: number;
+  sourceFile?: string;
+  faceSource: DirectionFaceSource;
+  treatmentDecision: DirectionSetTreatmentDecision;
+  policyOutcome: DirectionSetPolicyOutcome;
+  faceNormalizationMode: FaceNormalizationMode;
+  parseCompatibilityMode: ParseCompatibilityMode;
+  readingCount: number;
+  targetCount: number;
   detail: string;
 }
 
@@ -369,6 +391,7 @@ export type ClusterLinkageMode = 'single' | 'complete';
 export type ClusterPassLabel = 'single' | 'pass1' | 'pass2';
 export type DescriptionReconcileMode = 'first' | 'append';
 export type ParseCompatibilityMode = 'legacy' | 'strict';
+export type FaceNormalizationMode = 'on' | 'off' | 'auto';
 export type RunMode = 'adjustment' | 'preanalysis' | 'data-check' | 'blunder-detect';
 export type CrsProjectionModel = 'legacy-equirectangular' | 'local-enu';
 export type CoordSystemMode = 'local' | 'grid';
@@ -783,6 +806,13 @@ export interface ParseOptions {
   runMode?: RunMode;
   runModeCompatibilityDiagnostics?: RunModeCompatibilityDiagnostic[];
   parseCompatibilityMode?: ParseCompatibilityMode;
+  faceNormalizationMode?: FaceNormalizationMode;
+  directionFaceReliabilityFromCluster?: boolean;
+  directionFaceZenithWindowDeg?: number;
+  directionFaceClusterSeparationDeg?: number;
+  directionFaceClusterSeparationToleranceDeg?: number;
+  directionFaceClusterConfidenceMin?: number;
+  directionSetTreatmentDiagnostics?: DirectionSetTreatmentDiagnostic[];
   directiveAbbreviationMode?: 'off' | 'unique-prefix';
   unknownDirectivePolicy?: 'legacy-warn' | 'strict-error';
   parseCompatibilityDiagnostics?: ParseCompatibilityDiagnostic[];
@@ -1008,11 +1038,14 @@ export interface AdjustmentResult {
   directionSetDiagnostics?: {
     setId: string;
     occupy: StationId;
+    readingCount: number;
+    targetCount: number;
     rawCount: number;
     reducedCount: number;
     face1Count: number;
     face2Count: number;
     pairedTargets: number;
+    underconstrainedOrientation: boolean;
     orientationDeg?: number;
     residualMeanArcSec?: number;
     residualRmsArcSec?: number;

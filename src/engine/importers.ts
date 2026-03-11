@@ -49,6 +49,7 @@ export interface ImportedSourceMetadata {
   method?: string;
   classification?: string;
   face?: string;
+  faceSource?: 'metadata' | 'zenith';
   setupType?: string;
 }
 
@@ -394,6 +395,91 @@ const parseQuadrantBearingDegrees = (value: string): number | undefined => {
   if (quadrantMatch[1] === 'S' && quadrantMatch[3] === 'W') return 180 + angleDeg;
   if (quadrantMatch[1] === 'N' && quadrantMatch[3] === 'W') return 360 - angleDeg;
   return undefined;
+};
+
+const normalizeImportedFace = (value: string | undefined): 'FACE1' | 'FACE2' | undefined => {
+  if (!value) return undefined;
+  const normalized = collapseWhitespace(value)
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, '');
+  if (normalized === 'FACE1' || normalized === 'F1' || normalized === '1') return 'FACE1';
+  if (normalized === 'FACE2' || normalized === 'F2' || normalized === '2') return 'FACE2';
+  return undefined;
+};
+
+const inferImportedFaceFromZenith = (
+  zenithDeg: number | undefined,
+  windowDeg = 45,
+): 'FACE1' | 'FACE2' | undefined => {
+  if (!Number.isFinite(zenithDeg as number)) return undefined;
+  const wrapped = (((zenithDeg as number) % 360) + 360) % 360;
+  const distanceTo = (center: number): number => {
+    let delta = Math.abs(wrapped - center) % 360;
+    if (delta > 180) delta = 360 - delta;
+    return delta;
+  };
+  const f1Distance = distanceTo(90);
+  const f2Distance = distanceTo(270);
+  if (f1Distance <= windowDeg && f2Distance > windowDeg) return 'FACE1';
+  if (f2Distance <= windowDeg && f1Distance > windowDeg) return 'FACE2';
+  return undefined;
+};
+
+export const enrichImportedDatasetDirectionFaces = (
+  dataset: ImportedDataset,
+  options: { zenithWindowDeg?: number } = {},
+): ImportedDataset => {
+  const windowDeg = Math.max(1, options.zenithWindowDeg ?? 45);
+  let changed = false;
+  const observations = dataset.observations.map((observation) => {
+    if (observation.kind !== 'measurement' && observation.kind !== 'angle') {
+      return observation;
+    }
+
+    const existingFace = normalizeImportedFace(observation.sourceMeta?.face);
+    if (existingFace) {
+      if (
+        observation.sourceMeta?.face === existingFace &&
+        observation.sourceMeta?.faceSource === 'metadata'
+      ) {
+        return observation;
+      }
+      changed = true;
+      return {
+        ...observation,
+        sourceMeta: {
+          ...(observation.sourceMeta ?? {}),
+          face: existingFace,
+          faceSource: observation.sourceMeta?.faceSource ?? 'metadata',
+        },
+      } as ImportedObservationRecord;
+    }
+
+    const zenithDeg =
+      observation.kind === 'measurement' &&
+      observation.verticalMode === 'zenith' &&
+      Number.isFinite(observation.verticalValue)
+        ? observation.verticalValue
+        : undefined;
+    const inferredFace = inferImportedFaceFromZenith(zenithDeg, windowDeg);
+    if (!inferredFace) return observation;
+
+    changed = true;
+    return {
+      ...observation,
+      sourceMeta: {
+        ...(observation.sourceMeta ?? {}),
+        face: inferredFace,
+        faceSource: 'zenith',
+      },
+    } as ImportedObservationRecord;
+  });
+
+  if (!changed) return dataset;
+  return {
+    ...dataset,
+    observations,
+  };
 };
 
 const formatHiHt = (hiM?: number, htM?: number): string | undefined =>
@@ -3305,14 +3391,18 @@ export const importExternalInput = (
     };
   }
 
-  const dataset = importer.parse(input, sourceName, options);
-  if (!dataset) {
+  const parsedDataset = importer.parse(input, sourceName, options);
+  if (!parsedDataset) {
     return {
       detected: false,
       format: 'webnet',
       text: input,
     };
   }
+  const dataset =
+    parsedDataset.importerId === 'jobxml' || parsedDataset.importerId === 'trimble-survey-report'
+      ? enrichImportedDatasetDirectionFaces(parsedDataset)
+      : parsedDataset;
 
   return {
     detected: true,

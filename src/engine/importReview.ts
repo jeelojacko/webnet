@@ -1,4 +1,4 @@
-import { DEG_TO_RAD, radToDmsStr } from './angles';
+import { DEG_TO_RAD, RAD_TO_DEG, dmsToRad, radToDmsStr } from './angles';
 import type {
   ImportedAngleObservationRecord,
   ImportedControlStationRecord,
@@ -11,7 +11,7 @@ import {
   serializeImportedControlStationRecord,
   serializeImportedObservationRecord,
 } from './importers';
-import type { CoordMode } from '../types';
+import type { CoordMode, FaceNormalizationMode } from '../types';
 
 export type ImportReviewItemKind = 'control' | 'observation' | 'comment';
 export type ImportReviewGroupKind = 'control' | 'setup' | 'resection' | 'gps';
@@ -103,6 +103,8 @@ export interface BuildImportReviewTextOptions {
   rowTypeOverrides?: Record<string, ImportReviewRowTypeOverride>;
   fixedItemIds?: Set<string>;
   preset?: ImportReviewOutputPreset;
+  faceNormalizationMode?: FaceNormalizationMode;
+  syntheticDirectionBacksightMode?: 'auto' | 'always' | 'never';
   coordMode?: CoordMode;
   force2D?: boolean;
 }
@@ -182,6 +184,70 @@ const normalizeFaceLabel = (value: string | undefined): string | null => {
   if (normalized === 'FACE1') return 'F1';
   if (normalized === 'FACE2') return 'F2';
   return normalized ? prettifyToken(normalized) : null;
+};
+
+type DirectionFaceBucket = 'face1' | 'face2' | 'unresolved';
+
+const normalizeDirectionFace = (value: string | undefined): DirectionFaceBucket => {
+  const normalized = (value ?? '')
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, '');
+  if (normalized === 'FACE1' || normalized === 'F1' || normalized === '1') return 'face1';
+  if (normalized === 'FACE2' || normalized === 'F2' || normalized === '2') return 'face2';
+  return 'unresolved';
+};
+
+const inferDirectionFaceFromZenithDeg = (
+  zenithDeg: number | undefined,
+  windowDeg = 45,
+): DirectionFaceBucket => {
+  if (!Number.isFinite(zenithDeg as number)) return 'unresolved';
+  const wrapped = ((((zenithDeg as number) % 360) + 360) % 360) as number;
+  const distanceTo = (center: number): number => {
+    let delta = Math.abs(wrapped - center) % 360;
+    if (delta > 180) delta = 360 - delta;
+    return delta;
+  };
+  const dFace1 = distanceTo(90);
+  const dFace2 = distanceTo(270);
+  if (dFace1 <= windowDeg && dFace2 > windowDeg) return 'face1';
+  if (dFace2 <= windowDeg && dFace1 > windowDeg) return 'face2';
+  return 'unresolved';
+};
+
+const normalizeDirectionAngleDeg = (valueDeg: number): number => {
+  const wrapped = ((valueDeg % 360) + 360) % 360;
+  return wrapped === 360 ? 0 : wrapped;
+};
+
+const parseDirectionAngleTokenDeg = (token: string | undefined): number | undefined => {
+  const trimmed = token?.trim();
+  if (!trimmed) return undefined;
+  const dmsValue = dmsToRad(trimmed) * RAD_TO_DEG;
+  if (Number.isFinite(dmsValue)) return normalizeDirectionAngleDeg(dmsValue);
+  const numericValue = Number.parseFloat(trimmed);
+  if (Number.isFinite(numericValue)) return normalizeDirectionAngleDeg(numericValue);
+  return undefined;
+};
+
+const parseDirectionLineTarget = (line: string): string | undefined => {
+  const tokens = line.trim().split(/\s+/).filter(Boolean);
+  if (tokens.length < 3) return undefined;
+  const code = tokens[0]?.toUpperCase();
+  if (code !== 'DN' && code !== 'DM') return undefined;
+  return tokens[1];
+};
+
+const normalizeDirectionLineFace2ToFace1 = (line: string): string | null => {
+  const tokens = line.trim().split(/\s+/).filter(Boolean);
+  if (tokens.length < 3) return null;
+  const code = tokens[0]?.toUpperCase();
+  if (code !== 'DN' && code !== 'DM') return null;
+  const angleDeg = parseDirectionAngleTokenDeg(tokens[2]);
+  if (!Number.isFinite(angleDeg as number)) return null;
+  tokens[2] = formatAngleDms(normalizeDirectionAngleDeg((angleDeg as number) - 180));
+  return tokens.join(' ');
 };
 
 export const isImportReviewMtaItem = (item: ImportReviewItem): boolean =>
@@ -972,39 +1038,16 @@ export const removeImportReviewItem = (
 const serializeTsDirectionSetMeasurement = (
   observation: ImportedMeasurementObservationRecord,
 ): string => {
-  const isResection = isResectionSetupType(observation.sourceMeta?.setupType);
-  if (isResection) {
-    return [
-      'DM',
-      observation.toId,
-      formatAngleDms(observation.angleDeg),
-      formatLinear(observation.distanceM),
-    ].join(' ');
-  }
-  if (observation.toId === observation.fromId) {
-    return [
-      'D',
-      `${observation.atId}-${observation.fromId}`,
-      formatLinear(observation.distanceM),
-    ].join(' ');
-  }
   return [
-    'M',
-    `${observation.atId}-${observation.fromId}-${observation.toId}`,
+    'DM',
+    observation.toId,
     formatAngleDms(observation.angleDeg),
     formatLinear(observation.distanceM),
   ].join(' ');
 };
 
 const serializeTsDirectionSetAngle = (observation: ImportedAngleObservationRecord): string => {
-  if (isResectionSetupType(observation.sourceMeta?.setupType)) {
-    return ['DN', observation.toId, formatAngleDms(observation.angleDeg)].join(' ');
-  }
-  return [
-    'A',
-    `${observation.atId}-${observation.fromId}-${observation.toId}`,
-    formatAngleDms(observation.angleDeg),
-  ].join(' ');
+  return ['DN', observation.toId, formatAngleDms(observation.angleDeg)].join(' ');
 };
 
 const serializeTsDirectionSetRecord = (observation: ImportedObservationRecord): string[] => {
@@ -1082,7 +1125,10 @@ export const convertImportedDatasetSlopeZenithToHd2D = (
     heightM: undefined,
     sigmaHeightM: undefined,
   }));
-  const observations = dataset.observations.map((observation) => {
+  const observations = dataset.observations.flatMap((observation) => {
+    if (observation.kind === 'vertical') {
+      return [];
+    }
     if (
       observation.kind === 'measurement' &&
       observation.verticalMode === 'zenith' &&
@@ -1093,17 +1139,19 @@ export const convertImportedDatasetSlopeZenithToHd2D = (
         observation.distanceM,
         observation.verticalValue,
       );
-      return {
-        ...observation,
-        distanceM: horizontalDistanceM,
-        verticalMode: undefined,
-        verticalValue: undefined,
-        hiM: undefined,
-        htM: undefined,
-        note: observation.note
-          ? `${observation.note}; converted SD+zenith -> HD`
-          : 'converted SD+zenith -> HD',
-      } as ImportedObservationRecord;
+      return [
+        {
+          ...observation,
+          distanceM: horizontalDistanceM,
+          verticalMode: undefined,
+          verticalValue: undefined,
+          hiM: undefined,
+          htM: undefined,
+          note: observation.note
+            ? `${observation.note}; converted SD+zenith -> HD`
+            : 'converted SD+zenith -> HD',
+        } as ImportedObservationRecord,
+      ];
     }
     if (
       observation.kind === 'distance-vertical' &&
@@ -1114,21 +1162,23 @@ export const convertImportedDatasetSlopeZenithToHd2D = (
         observation.distanceM,
         observation.verticalValue,
       );
-      return {
-        kind: 'distance',
-        fromId: observation.fromId,
-        toId: observation.toId,
-        distanceM: horizontalDistanceM,
-        sourceLine: observation.sourceLine,
-        sourceCode: observation.sourceCode,
-        description: observation.description,
-        sourceMeta: observation.sourceMeta,
-        note: observation.note
-          ? `${observation.note}; converted SD+zenith -> HD`
-          : 'converted SD+zenith -> HD',
-      } as ImportedObservationRecord;
+      return [
+        {
+          kind: 'distance',
+          fromId: observation.fromId,
+          toId: observation.toId,
+          distanceM: horizontalDistanceM,
+          sourceLine: observation.sourceLine,
+          sourceCode: observation.sourceCode,
+          description: observation.description,
+          sourceMeta: observation.sourceMeta,
+          note: observation.note
+            ? `${observation.note}; converted SD+zenith -> HD`
+            : 'converted SD+zenith -> HD',
+        } as ImportedObservationRecord,
+      ];
     }
-    return observation;
+    return [observation];
   });
   return {
     ...dataset,
@@ -1223,6 +1273,161 @@ const appendPresetObservationLines = (
 
 const isDirectionSetRowType = (value: ImportReviewRowTypeOverride): boolean =>
   value === 'direction-angle' || value === 'direction-measurement';
+
+const isDirectionSetObservationItem = (
+  observation: ImportedObservationRecord,
+  rowTypeOverride: ImportReviewRowTypeOverride,
+  preset: ImportReviewOutputPreset,
+  group: ImportReviewGroup,
+): boolean => {
+  if (observation.kind !== 'measurement' && observation.kind !== 'angle') return false;
+  if (rowTypeOverride === 'direction-angle' || rowTypeOverride === 'direction-measurement') {
+    return true;
+  }
+  if (rowTypeOverride !== 'auto') return false;
+  return preset === 'ts-direction-set' && (group.kind === 'resection' || group.kind === 'setup');
+};
+
+const resolveDirectionFaceBucket = (
+  observation: ImportedObservationRecord,
+  zenithWindowDeg = 45,
+): DirectionFaceBucket => {
+  const metadataFace = normalizeDirectionFace(observation.sourceMeta?.face);
+  if (metadataFace !== 'unresolved') return metadataFace;
+  if (observation.kind !== 'measurement' || observation.verticalMode !== 'zenith') {
+    return 'unresolved';
+  }
+  return inferDirectionFaceFromZenithDeg(observation.verticalValue, zenithWindowDeg);
+};
+
+const shouldEmitSyntheticBacksightDnForDirectionBlock = (
+  mode: 'auto' | 'always' | 'never',
+  backsightId: string | undefined,
+  lines: string[],
+): boolean => {
+  if (!backsightId) return false;
+  if (mode === 'never') return false;
+  if (mode === 'always') return true;
+  return !lines.some((line) => parseDirectionLineTarget(line) === backsightId);
+};
+
+const buildFaceAwareDirectionSetLines = (
+  dataset: ImportedDataset,
+  orderedItems: ImportReviewItem[],
+  group: ImportReviewGroup,
+  preset: ImportReviewOutputPreset,
+  rowOverrides: Record<string, string> | undefined,
+  rowTypeOverrides: Record<string, ImportReviewRowTypeOverride> | undefined,
+  fixedItemIds: Set<string> | undefined,
+  coordMode: CoordMode,
+  faceNormalizationMode: FaceNormalizationMode | undefined,
+  syntheticDirectionBacksightMode: 'auto' | 'always' | 'never',
+): string[] | null => {
+  const serializedEntries: Array<{ line: string; face: DirectionFaceBucket }> = [];
+  const commentLines: string[] = [];
+  const zenithWindowDeg = 45;
+
+  for (const item of orderedItems) {
+    if (item.kind === 'comment') {
+      const commentOverride = rowOverrides?.[item.id];
+      splitOverrideLines(commentOverride ?? item.defaultText ?? '# COMMENT').forEach((line) =>
+        commentLines.push(line),
+      );
+      continue;
+    }
+    if (item.kind !== 'observation') {
+      return null;
+    }
+    const observation = dataset.observations[item.index];
+    const rowTypeOverride = rowTypeOverrides?.[item.id] ?? 'auto';
+    if (!isDirectionSetObservationItem(observation, rowTypeOverride, preset, group)) {
+      return null;
+    }
+    const overrideLines = splitOverrideLines(rowOverrides?.[item.id]);
+    const serializedLines = applyFixedTokensToLines(
+      overrideLines.length > 0
+        ? overrideLines
+        : serializeObservationForImport(observation, preset, rowTypeOverride),
+      fixedItemIds?.has(item.id) ?? false,
+      coordMode,
+    );
+    const faceBucket = resolveDirectionFaceBucket(observation, zenithWindowDeg);
+
+    for (const rawLine of serializedLines) {
+      if (!rawLine.trim() || rawLine.startsWith('#')) {
+        if (rawLine.trim()) commentLines.push(rawLine);
+        continue;
+      }
+      if (rawLine.startsWith('.')) return null;
+      if (!parseDirectionLineTarget(rawLine)) return null;
+      serializedEntries.push({ line: rawLine, face: faceBucket });
+    }
+  }
+
+  if (serializedEntries.length === 0) return null;
+
+  const mode = faceNormalizationMode ?? 'on';
+  const splitByFace = mode === 'off';
+  const normalizeFace2 = mode !== 'off';
+  const nextLines: string[] = [...commentLines];
+  const setupId = group.setupId ?? '';
+  const backsightId = group.backsightId;
+
+  if (!splitByFace) {
+    const normalizedLines = serializedEntries.map((entry) => {
+      if (!normalizeFace2 || entry.face !== 'face2') return entry.line;
+      return normalizeDirectionLineFace2ToFace1(entry.line) ?? entry.line;
+    });
+    nextLines.push(`DB ${setupId}`.trimEnd());
+    if (
+      shouldEmitSyntheticBacksightDnForDirectionBlock(
+        syntheticDirectionBacksightMode,
+        backsightId,
+        normalizedLines,
+      )
+    ) {
+      nextLines.push(`DN ${backsightId} 000-00-00`);
+    }
+    normalizedLines.forEach((line) => nextLines.push(line));
+    nextLines.push('DE');
+    return nextLines;
+  }
+
+  const face1Lines = serializedEntries
+    .filter((entry) => entry.face === 'face1')
+    .map((entry) => entry.line);
+  const face2Lines = serializedEntries
+    .filter((entry) => entry.face === 'face2')
+    .map((entry) => entry.line);
+  const unresolvedLines = serializedEntries
+    .filter((entry) => entry.face === 'unresolved')
+    .map((entry) => entry.line);
+  const blocks = [
+    { label: '# FACE 1', lines: face1Lines },
+    { label: '# FACE 2', lines: face2Lines },
+    { label: '# FACE UNRESOLVED', lines: unresolvedLines },
+  ].filter((block) => block.lines.length > 0);
+  const useFaceLabels = blocks.length > 1;
+
+  blocks.forEach((block, index) => {
+    if (index > 0) nextLines.push('');
+    if (useFaceLabels) nextLines.push(block.label);
+    nextLines.push(`DB ${setupId}`.trimEnd());
+    if (
+      shouldEmitSyntheticBacksightDnForDirectionBlock(
+        syntheticDirectionBacksightMode,
+        backsightId,
+        block.lines,
+      )
+    ) {
+      nextLines.push(`DN ${backsightId} 000-00-00`);
+    }
+    block.lines.forEach((line) => nextLines.push(line));
+    nextLines.push('DE');
+  });
+
+  return nextLines;
+};
 
 const isBacksightTargetItem = (item: ImportReviewItem, group: ImportReviewGroup): boolean =>
   item.kind === 'observation' &&
@@ -1321,20 +1526,56 @@ export const buildImportReviewText = (
     const isDirectionSetGroup =
       Boolean(group.backsightId) &&
       includedItems.some((item) => item.kind === 'observation') &&
-      ((preset === 'ts-direction-set' && group.kind === 'resection') ||
+      ((preset === 'ts-direction-set' && (group.kind === 'resection' || group.kind === 'setup')) ||
         includedItems.some((item) =>
           isDirectionSetRowType(options.rowTypeOverrides?.[item.id] ?? 'auto'),
         ));
-
-    if (isDirectionSetGroup) {
-      lines.push(`DB ${group.setupId ?? includedItems[0]?.setupId ?? ''}`.trimEnd());
-      lines.push(`DN ${group.backsightId} 000-00-00`);
-    }
+    const syntheticBacksightMode = options.syntheticDirectionBacksightMode ?? 'auto';
 
     const orderedItems =
       (preset === 'field-grouped' || preset === 'ts-direction-set') && group.kind !== 'control'
         ? orderFieldGroupedItems(includedItems, group)
         : includedItems;
+
+    if (isDirectionSetGroup) {
+      const faceAwareLines = buildFaceAwareDirectionSetLines(
+        dataset,
+        orderedItems,
+        group,
+        preset,
+        options.rowOverrides,
+        options.rowTypeOverrides,
+        options.fixedItemIds,
+        coordMode,
+        options.faceNormalizationMode,
+        syntheticBacksightMode,
+      );
+      if (faceAwareLines) {
+        faceAwareLines.forEach((line) => lines.push(line));
+        return;
+      }
+    }
+
+    const hasExplicitBacksightPointing =
+      Boolean(group.backsightId) &&
+      includedItems.some(
+        (item) =>
+          item.kind === 'observation' &&
+          item.targetId === group.backsightId &&
+          item.sourceClassification === 'BackSight',
+      );
+    const emitSyntheticBacksightDn =
+      isDirectionSetGroup &&
+      group.backsightId &&
+      (syntheticBacksightMode === 'always' ||
+        (syntheticBacksightMode === 'auto' && !hasExplicitBacksightPointing));
+
+    if (isDirectionSetGroup) {
+      lines.push(`DB ${group.setupId ?? includedItems[0]?.setupId ?? ''}`.trimEnd());
+      if (emitSyntheticBacksightDn) {
+        lines.push(`DN ${group.backsightId} 000-00-00`);
+      }
+    }
     const distinctFieldSections =
       preset === 'field-grouped'
         ? new Set(

@@ -69,10 +69,10 @@ const REPORT_STATIC_TOOLTIPS: Record<string, string> = {
   'Solve Profile Diagnostics':
     'Pinned run-profile settings that affected weighting, reductions, CRS behavior, and stochastic modeling for this solve.',
   Profile:
-    'Selected solve profile used for this run, such as WebNet defaults or industry-parity behavior.',
+    'Selected solve profile used for this run, such as WebNet defaults or modern/legacy industry-compatible behavior.',
   'Direction Sets': 'Direction-set processing mode used for the solve: reduced or raw.',
   'Profile Fallback':
-    'Whether the industry-parity profile fallback behavior for default instruments was active.',
+    'Whether the industry-compatible profile fallback behavior for default instruments was active.',
   'Angle Centering':
     'Angular centering model used when inflating angle precision from centering uncertainties.',
   'TS Correlation':
@@ -81,7 +81,8 @@ const REPORT_STATIC_TOOLTIPS: Record<string, string> = {
   'Map / Scale': 'Map-mode setting and associated map-scale factor used for horizontal reductions.',
   'Vertical / CurvRef':
     'Vertical reduction mode and whether curvature/refraction corrections were enabled.',
-  Normalize: 'Whether mixed-face direction/traverse observations were normalized before solving.',
+  Normalize:
+    'Face normalization mode for direction observations: ON/OFF/AUTO with explicit policy handling.',
   'A-Mode': 'Interpretation mode for A records during parsing and solve row construction.',
   'Plan Rotation': 'Cumulative plan rotation applied to azimuth-bearing style observations.',
   'CRS / Projection': 'CRS transform state and projection model used for geodetic positions.',
@@ -122,13 +123,19 @@ interface ReportViewProps {
   result: AdjustmentResult;
   units: 'm' | 'ft';
   runDiagnostics: {
-    solveProfile: 'webnet' | 'industry-parity';
+    solveProfile:
+      | 'webnet'
+      | 'industry-parity-current'
+      | 'industry-parity-legacy'
+      | 'legacy-compat'
+      | 'industry-parity';
     runMode?: RunMode;
     parity: boolean;
     directionSetMode: 'reduced' | 'raw';
     mapMode: 'off' | 'on' | 'anglecalc';
     mapScaleFactor: number;
     normalize: boolean;
+    faceNormalizationMode: 'on' | 'off' | 'auto';
     angleMode: 'auto' | 'angle' | 'dir';
     verticalReduction: 'none' | 'curvref';
     applyCurvatureRefraction: boolean;
@@ -409,6 +416,17 @@ const ReportView: React.FC<ReportViewProps> = ({
         return sa.localeCompare(sb);
       }),
     [result.directionRejectDiagnostics],
+  );
+  const directionTreatmentDiagnostics = useMemo(
+    () =>
+      [...(result.parseState?.directionSetTreatmentDiagnostics ?? [])].sort((a, b) => {
+        const la = a.sourceLine ?? Number.MAX_SAFE_INTEGER;
+        const lb = b.sourceLine ?? Number.MAX_SAFE_INTEGER;
+        if (la !== lb) return la - lb;
+        if (a.setId !== b.setId) return a.setId.localeCompare(b.setId);
+        return a.occupy.localeCompare(b.occupy);
+      }),
+    [result.parseState?.directionSetTreatmentDiagnostics],
   );
   const aliasTrace = useMemo(
     () =>
@@ -1592,14 +1610,15 @@ const ReportView: React.FC<ReportViewProps> = ({
                 </div>
               </div>
             )}
-            {runDiagnostics.normalize && (
-              <div>
-                <div className="text-slate-500" title={REPORT_STATIC_TOOLTIPS.Normalize}>
-                  Normalize
-                </div>
-                <div>ON</div>
+            <div>
+              <div className="text-slate-500" title={REPORT_STATIC_TOOLTIPS.Normalize}>
+                Normalize
               </div>
-            )}
+              <div>
+                {runDiagnostics.faceNormalizationMode.toUpperCase()} (
+                {runDiagnostics.normalize ? 'ON' : 'OFF'})
+              </div>
+            </div>
             {runDiagnostics.angleMode !== 'auto' && (
               <div>
                 <div className="text-slate-500" title={REPORT_STATIC_TOOLTIPS['A-Mode']}>
@@ -3667,6 +3686,9 @@ const ReportView: React.FC<ReportViewProps> = ({
                   <tr className="text-slate-500 border-b border-slate-800">
                     <th className="py-2 px-3 font-semibold">Set</th>
                     <th className="py-2 px-3 font-semibold">Occupy</th>
+                    <th className="py-2 px-3 font-semibold text-right">Readings</th>
+                    <th className="py-2 px-3 font-semibold text-right">Targets</th>
+                    <th className="py-2 px-3 font-semibold text-right">Under</th>
                     <th className="py-2 px-3 font-semibold text-right">Raw</th>
                     <th className="py-2 px-3 font-semibold text-right">Reduced</th>
                     <th className="py-2 px-3 font-semibold text-right">Pairs</th>
@@ -3687,6 +3709,11 @@ const ReportView: React.FC<ReportViewProps> = ({
                     <tr key={`${d.setId}-${d.occupy}`} className="border-b border-slate-800/50">
                       <td className="py-1 px-3">{d.setId}</td>
                       <td className="py-1 px-3">{d.occupy}</td>
+                      <td className="py-1 px-3 text-right">{d.readingCount}</td>
+                      <td className="py-1 px-3 text-right">{d.targetCount}</td>
+                      <td className="py-1 px-3 text-right">
+                        {d.underconstrainedOrientation ? 'YES' : 'NO'}
+                      </td>
                       <td className="py-1 px-3 text-right">{d.rawCount}</td>
                       <td className="py-1 px-3 text-right">{d.reducedCount}</td>
                       <td className="py-1 px-3 text-right">{d.pairedTargets}</td>
@@ -3821,6 +3848,53 @@ const ReportView: React.FC<ReportViewProps> = ({
           </div>
         )}
 
+      {directionTreatmentDiagnostics.length > 0 && (
+        <div className="mb-6 border border-slate-800 rounded overflow-hidden">
+          <div className="px-3 py-2 text-xs text-slate-400 uppercase tracking-wider border-b border-slate-800 bg-slate-900/40">
+            Direction Face Treatment Diagnostics
+          </div>
+          <div className="overflow-x-auto w-full">
+            <table className="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr className="text-slate-500 border-b border-slate-800">
+                  <th className="py-2 px-3 font-semibold">#</th>
+                  <th className="py-2 px-3 font-semibold">Set</th>
+                  <th className="py-2 px-3 font-semibold">Occupy</th>
+                  <th className="py-2 px-3 font-semibold text-right">Line</th>
+                  <th className="py-2 px-3 font-semibold text-right">Readings</th>
+                  <th className="py-2 px-3 font-semibold text-right">Targets</th>
+                  <th className="py-2 px-3 font-semibold">FaceSrc</th>
+                  <th className="py-2 px-3 font-semibold">Decision</th>
+                  <th className="py-2 px-3 font-semibold">Policy</th>
+                  <th className="py-2 px-3 font-semibold">Mode</th>
+                </tr>
+              </thead>
+              <tbody className="text-slate-300">
+                {directionTreatmentDiagnostics.map((diag, idx) => (
+                  <tr
+                    key={`d-face-${diag.setId}-${diag.occupy}-${diag.sourceLine ?? idx}-${idx}`}
+                    className="border-b border-slate-800/50"
+                  >
+                    <td className="py-1 px-3 text-slate-500">{idx + 1}</td>
+                    <td className="py-1 px-3">{diag.setId}</td>
+                    <td className="py-1 px-3">{diag.occupy}</td>
+                    <td className="py-1 px-3 text-right text-slate-500">
+                      {diag.sourceLine ?? '-'}
+                    </td>
+                    <td className="py-1 px-3 text-right">{diag.readingCount}</td>
+                    <td className="py-1 px-3 text-right">{diag.targetCount}</td>
+                    <td className="py-1 px-3">{diag.faceSource}</td>
+                    <td className="py-1 px-3">{diag.treatmentDecision}</td>
+                    <td className="py-1 px-3">{diag.policyOutcome}</td>
+                    <td className="py-1 px-3">{diag.faceNormalizationMode.toUpperCase()}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
       {directionRejects.length > 0 && (
         <div className="mb-6 border border-slate-800 rounded overflow-hidden">
           <div className="px-3 py-2 text-xs text-slate-400 uppercase tracking-wider border-b border-slate-800 bg-slate-900/40">
@@ -3838,6 +3912,9 @@ const ReportView: React.FC<ReportViewProps> = ({
                   <th className="py-2 px-3 font-semibold">Rec</th>
                   <th className="py-2 px-3 font-semibold">Expected</th>
                   <th className="py-2 px-3 font-semibold">Actual</th>
+                  <th className="py-2 px-3 font-semibold">FaceSrc</th>
+                  <th className="py-2 px-3 font-semibold">Decision</th>
+                  <th className="py-2 px-3 font-semibold">Policy</th>
                   <th className="py-2 px-3 font-semibold">Reason</th>
                 </tr>
               </thead>
@@ -3855,6 +3932,9 @@ const ReportView: React.FC<ReportViewProps> = ({
                     <td className="py-1 px-3">{r.recordType ?? '-'}</td>
                     <td className="py-1 px-3">{r.expectedFace ?? '-'}</td>
                     <td className="py-1 px-3">{r.actualFace ?? '-'}</td>
+                    <td className="py-1 px-3">{r.faceSource ?? '-'}</td>
+                    <td className="py-1 px-3">{r.treatmentDecision ?? '-'}</td>
+                    <td className="py-1 px-3">{r.policyOutcome ?? '-'}</td>
                     <td className="py-1 px-3 text-yellow-300">{r.detail}</td>
                   </tr>
                 ))}

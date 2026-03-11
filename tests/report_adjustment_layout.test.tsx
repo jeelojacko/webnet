@@ -22,6 +22,7 @@ const baseRunDiagnostics = {
   mapMode: 'off',
   mapScaleFactor: 1,
   normalize: false,
+  faceNormalizationMode: 'off',
   angleMode: 'auto',
   verticalReduction: 'none',
   applyCurvatureRefraction: false,

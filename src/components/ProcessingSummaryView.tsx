@@ -19,7 +19,12 @@ interface ProcessingSummaryViewProps {
   units: 'm' | 'ft';
   runElapsedMs: number | null;
   runDiagnostics: {
-    solveProfile: 'webnet' | 'industry-parity';
+    solveProfile:
+      | 'webnet'
+      | 'industry-parity-current'
+      | 'industry-parity-legacy'
+      | 'legacy-compat'
+      | 'industry-parity';
     runMode?: RunMode;
     directionSetMode: 'reduced' | 'raw';
     profileDefaultInstrumentFallback: boolean;

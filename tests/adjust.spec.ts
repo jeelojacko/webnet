@@ -1138,17 +1138,22 @@ describe('LSAEngine', () => {
 
   it('reports direction reduction diagnostics for face-paired sets', () => {
     const input = [
+      '.NORMALIZE ON',
       'C O 0 0 0 !',
       'C B 0 100 0 !',
       'C P 100 0 0',
       'D O-P 100.0 0.005',
       'D B-P 141.421356 0.005',
       'DB O B',
-      'DN P 090.0000 1.0',
-      'DM P 270.0000 100.0 0.0000 1.0 0.002',
+      'DM P 090.0000 100.0 090.0000 1.0 0.002',
+      'DM P 270.0000 100.0 270.0000 1.0 0.002',
       'DE',
     ].join('\n');
-    const engine = new LSAEngine({ input, maxIterations: 10 });
+    const engine = new LSAEngine({
+      input,
+      maxIterations: 10,
+      parseOptions: { parseCompatibilityMode: 'strict', faceNormalizationMode: 'on' },
+    });
     const result = engine.solve();
     expect(result.directionSetDiagnostics?.length).toBeGreaterThan(0);
     const first = result.directionSetDiagnostics?.[0];
@@ -1161,18 +1166,37 @@ describe('LSAEngine', () => {
   });
 
   it('supports raw direction-set solving mode without target reduction', () => {
-    const input = readFileSync('tests/fixtures/direction_face_balanced.dat', 'utf-8');
-    const reduced = new LSAEngine({ input, maxIterations: 10 }).solve();
+    const input = [
+      '.NORMALIZE ON',
+      'C O 0 0 0 !',
+      'C B 0 100 0 !',
+      'C P 100 0 0',
+      'D O-P 100.0 0.005',
+      'D B-P 141.421356 0.005',
+      'DB O B',
+      'DM P 090.0000 100.0 090.0000 1.0 0.002',
+      'DM P 270.0000 100.0 270.0000 1.0 0.002',
+      'DE',
+    ].join('\n');
+    const reduced = new LSAEngine({
+      input,
+      maxIterations: 10,
+      parseOptions: { parseCompatibilityMode: 'strict', faceNormalizationMode: 'on' },
+    }).solve();
     const raw = new LSAEngine({
       input,
       maxIterations: 10,
-      parseOptions: { directionSetMode: 'raw' },
+      parseOptions: {
+        directionSetMode: 'raw',
+        parseCompatibilityMode: 'strict',
+        faceNormalizationMode: 'on',
+      },
     }).solve();
     const reducedDir = reduced.observations.filter((o) => o.type === 'direction').length;
     const rawDir = raw.observations.filter((o) => o.type === 'direction').length;
     expect(reducedDir).toBe(1);
     expect(rawDir).toBe(2);
-    expect(raw.logs.some((l) => l.includes('raw mode'))).toBe(true);
+    expect(raw.logs.some((l) => l.includes('raw rows'))).toBe(true);
   });
 
   it('reports direction-target repeatability diagnostics and suspect ranking', () => {
@@ -1187,16 +1211,20 @@ describe('LSAEngine', () => {
       'D BS-P 141.421 0.003',
       'D BS-Q 134.164 0.003',
       'DB O BS',
-      'DN P 090-00-00.0 1.0',
-      'DN P 090-00-08.0 1.0',
-      'DN P 270-00-03.0 1.0',
-      'DN P 270-00-14.0 1.0',
-      'DN Q 108-26-06.0 1.0',
-      'DN Q 288-26-09.0 1.0',
+      'DM P 090-00-00.0 100.000 090-00-00.0 1.0 0.003',
+      'DM P 090-00-08.0 100.000 090-00-00.0 1.0 0.003',
+      'DM P 270-00-03.0 100.000 270-00-00.0 1.0 0.003',
+      'DM P 270-00-14.0 100.000 270-00-00.0 1.0 0.003',
+      'DM Q 108-26-06.0 126.491 090-00-00.0 1.0 0.003',
+      'DM Q 288-26-09.0 126.491 270-00-00.0 1.0 0.003',
       'DE',
     ].join('\n');
 
-    const engine = new LSAEngine({ input, maxIterations: 12 });
+    const engine = new LSAEngine({
+      input,
+      maxIterations: 12,
+      parseOptions: { parseCompatibilityMode: 'strict', faceNormalizationMode: 'on' },
+    });
     const result = engine.solve();
     const rows = result.directionTargetDiagnostics ?? [];
     expect(rows.length).toBeGreaterThanOrEqual(2);
@@ -1216,10 +1244,9 @@ describe('LSAEngine', () => {
     expect((pRow?.suspectScore ?? 0) >= (qRow?.suspectScore ?? 0)).toBe(true);
   });
 
-  it('propagates structured direction reject diagnostics from parser to result', () => {
+  it('propagates structured unresolved mixed-face reject diagnostics from parser to result', () => {
     const input = [
       '.2D',
-      '.NORMALIZE OFF',
       'C O 0 0 0 !',
       'C B 0 100 0 !',
       'C P 100 0 0',
@@ -1231,10 +1258,19 @@ describe('LSAEngine', () => {
       'DE',
     ].join('\n');
 
-    const engine = new LSAEngine({ input, maxIterations: 10 });
+    const engine = new LSAEngine({
+      input,
+      maxIterations: 10,
+      parseOptions: { parseCompatibilityMode: 'strict', faceNormalizationMode: 'on' },
+    });
     const result = engine.solve();
     expect((result.directionRejectDiagnostics?.length ?? 0) > 0).toBe(true);
-    expect(result.directionRejectDiagnostics?.some((d) => d.reason === 'mixed-face')).toBe(true);
+    expect(
+      result.directionRejectDiagnostics?.some((d) => d.reason === 'unresolved-mixed-face'),
+    ).toBe(true);
+    expect(
+      result.directionRejectDiagnostics?.some((d) => d.policyOutcome === 'strict-reject'),
+    ).toBe(true);
   });
 
   it('aggregates multi-set direction repeatability trends by occupy-target', () => {
@@ -1249,20 +1285,24 @@ describe('LSAEngine', () => {
       'D BS-P 141.421 0.003',
       'D BS-Q 134.164 0.003',
       'DB O BS',
-      'DN P 090-00-00.0 1.0',
-      'DN P 270-00-01.0 1.0',
-      'DN Q 108-26-06.0 1.0',
-      'DN Q 288-26-06.5 1.0',
+      'DM P 090-00-00.0 100.000 090-00-00.0 1.0 0.003',
+      'DM P 270-00-01.0 100.000 270-00-00.0 1.0 0.003',
+      'DM Q 108-26-06.0 126.491 090-00-00.0 1.0 0.003',
+      'DM Q 288-26-06.5 126.491 270-00-00.0 1.0 0.003',
       'DE',
       'DB O BS',
-      'DN P 090-00-12.0 1.0',
-      'DN P 270-00-18.0 1.0',
-      'DN Q 108-26-06.1 1.0',
-      'DN Q 288-26-06.3 1.0',
+      'DM P 090-00-12.0 100.000 090-00-00.0 1.0 0.003',
+      'DM P 270-00-18.0 100.000 270-00-00.0 1.0 0.003',
+      'DM Q 108-26-06.1 126.491 090-00-00.0 1.0 0.003',
+      'DM Q 288-26-06.3 126.491 270-00-00.0 1.0 0.003',
       'DE',
     ].join('\n');
 
-    const engine = new LSAEngine({ input, maxIterations: 12 });
+    const engine = new LSAEngine({
+      input,
+      maxIterations: 12,
+      parseOptions: { parseCompatibilityMode: 'strict', faceNormalizationMode: 'on' },
+    });
     const result = engine.solve();
     const rows = result.directionRepeatabilityDiagnostics ?? [];
     expect(rows.length).toBeGreaterThanOrEqual(2);

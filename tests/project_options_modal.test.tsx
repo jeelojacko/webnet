@@ -41,7 +41,7 @@ describe('Project Options modal layout', () => {
     expect(html).toContain('Local / Grid Reduction');
     expect(html).toContain('Map Mode');
     expect(html).toContain('Map Scale Factor');
-    expect(html).toContain('Normalize Mixed Face Data');
+    expect(html).toContain('Face Normalization Mode');
     expect(html).toContain('Vertical Reduction');
     expect(html).toContain('Curvature / Refraction');
     expect(html).toContain('Vertical Reduction Mode');

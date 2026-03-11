@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
-import { importExternalInput } from '../src/engine/importers';
+import { enrichImportedDatasetDirectionFaces, importExternalInput } from '../src/engine/importers';
 import {
   buildImportReviewComparisonSummary,
   buildImportReviewComparisonKeyForItem,
@@ -130,7 +130,7 @@ describe('import review workflow', () => {
     ]);
     expect(text).toContain('# RESECTION');
     expect(text).toContain('DB 1000');
-    expect(text).toContain('DN 077 000-00-00');
+    expect(text).not.toContain('DN 077 000-00-00');
     expect(text).toContain('DM 077 000-00-00.0 3.8984');
     expect(text).toContain('DM 235 090-52-25.5 17.4323');
     expect(text).toContain('DE');
@@ -156,7 +156,20 @@ describe('import review workflow', () => {
 
   it('converts SD+zenith to HD with HI/HT stripping and 2D import text output', () => {
     const imported = importExternalInput(jobXmlMeasurementFixture, 'jobxml_measurement_sample.jxl');
-    const convertedDataset = convertImportedDatasetSlopeZenithToHd2D(imported.dataset!);
+    const datasetWithVertical: ImportedDataset = {
+      ...imported.dataset!,
+      observations: [
+        ...imported.dataset!.observations,
+        {
+          kind: 'vertical',
+          fromId: 'STN1',
+          toId: 'VERT_ONLY',
+          verticalMode: 'zenith',
+          verticalValue: 95,
+        },
+      ],
+    };
+    const convertedDataset = convertImportedDatasetSlopeZenithToHd2D(datasetWithVertical);
     const reviewModel = buildImportReviewModel(convertedDataset);
     const text = buildImportReviewText(convertedDataset, reviewModel, {
       includedItemIds: new Set(reviewModel.items.map((item) => item.id)),
@@ -173,6 +186,7 @@ describe('import review workflow', () => {
     expect(convertedMeasurement.hiM).toBeUndefined();
     expect(convertedMeasurement.htM).toBeUndefined();
     expect(convertedMeasurement.distanceM).toBeCloseTo(99.6194698, 6);
+    expect(convertedDataset.observations.some((obs) => obs.kind === 'vertical')).toBe(false);
 
     expect(text).toContain('.2D');
     expect(text).toContain('C STN1 5000.0000 1000.0000');
@@ -180,6 +194,250 @@ describe('import review workflow', () => {
     expect(text).toContain('M STN1-BS1-SHOT_1 045-07-24.2 99.6195');
     expect(text).not.toContain('095-00-00.0');
     expect(text).not.toContain('1.5000/1.8000');
+    expect(text).not.toMatch(/^V\s+/m);
+  });
+
+  it('infers missing JobXML face metadata from zenith before SD+zenith to HD conversion', () => {
+    const imported = importExternalInput(
+      jobXmlTrimbleFixture,
+      'jobxml_trimble_station_setup_sample.jxl',
+    );
+    const mtaObservation = imported.dataset?.observations.find(
+      (obs) => obs.kind === 'measurement' && obs.sourceMeta?.method === 'MEANTURNEDANGLE',
+    ) as any;
+    expect(mtaObservation).toBeDefined();
+    expect(mtaObservation.sourceMeta?.face).toBe('FACE1');
+    expect(mtaObservation.sourceMeta?.faceSource).toBe('zenith');
+
+    const convertedDataset = convertImportedDatasetSlopeZenithToHd2D(imported.dataset!);
+    const convertedMtaObservation = convertedDataset.observations.find(
+      (obs) => obs.kind === 'measurement' && (obs as any).sourceMeta?.method === 'MEANTURNEDANGLE',
+    ) as any;
+    expect(convertedMtaObservation).toBeDefined();
+    expect(convertedMtaObservation.sourceMeta?.face).toBe('FACE1');
+    expect(convertedMtaObservation.sourceMeta?.faceSource).toBe('zenith');
+  });
+
+  it('splits resection direction-set output by face when normalization mode is off', () => {
+    const dataset: ImportedDataset = {
+      importerId: 'jobxml',
+      formatLabel: 'Synthetic face split',
+      summary: 'synthetic',
+      notice: { title: 'synthetic', detailLines: [] },
+      comments: [],
+      controlStations: [],
+      observations: [
+        {
+          kind: 'measurement',
+          atId: '9',
+          fromId: '8',
+          toId: '8',
+          angleDeg: 84,
+          distanceM: 7.4892,
+          sourceMeta: {
+            setupType: 'StandardResection',
+            classification: 'BackSight',
+            face: 'FACE1',
+          },
+        },
+        {
+          kind: 'measurement',
+          atId: '9',
+          fromId: '8',
+          toId: '10',
+          angleDeg: 94,
+          distanceM: 8.1145,
+          sourceMeta: { setupType: 'StandardResection', face: 'FACE1' },
+        },
+        {
+          kind: 'measurement',
+          atId: '9',
+          fromId: '8',
+          toId: '8',
+          angleDeg: 264,
+          distanceM: 7.4887,
+          sourceMeta: {
+            setupType: 'StandardResection',
+            classification: 'BackSight',
+            face: 'FACE2',
+          },
+        },
+        {
+          kind: 'measurement',
+          atId: '9',
+          fromId: '8',
+          toId: '10',
+          angleDeg: 274,
+          distanceM: 8.1142,
+          sourceMeta: { setupType: 'StandardResection', face: 'FACE2' },
+        },
+      ],
+      trace: [],
+    };
+
+    const reviewModel = buildImportReviewModel(dataset);
+    const text = buildImportReviewText(dataset, reviewModel, {
+      includedItemIds: new Set(reviewModel.items.map((item) => item.id)),
+      preset: 'ts-direction-set',
+      faceNormalizationMode: 'off',
+    });
+
+    expect(text).toContain('# FACE 1');
+    expect(text).toContain('# FACE 2');
+    expect((text.match(/^DB 9$/gm) ?? []).length).toBe(2);
+    expect(text).toContain('DM 8 084-00-00.0 7.4892');
+    expect(text).toContain('DM 8 264-00-00.0 7.4887');
+    expect(text).toContain('DM 10 094-00-00.0 8.1145');
+    expect(text).toContain('DM 10 274-00-00.0 8.1142');
+  });
+
+  it('normalizes face-II direction-set rows into face-I convention when normalization mode is on', () => {
+    const dataset: ImportedDataset = {
+      importerId: 'jobxml',
+      formatLabel: 'Synthetic face normalize',
+      summary: 'synthetic',
+      notice: { title: 'synthetic', detailLines: [] },
+      comments: [],
+      controlStations: [],
+      observations: [
+        {
+          kind: 'measurement',
+          atId: '9',
+          fromId: '8',
+          toId: '8',
+          angleDeg: 84,
+          distanceM: 7.4892,
+          sourceMeta: {
+            setupType: 'StandardResection',
+            classification: 'BackSight',
+            face: 'FACE1',
+          },
+        },
+        {
+          kind: 'measurement',
+          atId: '9',
+          fromId: '8',
+          toId: '10',
+          angleDeg: 94,
+          distanceM: 8.1145,
+          sourceMeta: { setupType: 'StandardResection', face: 'FACE1' },
+        },
+        {
+          kind: 'measurement',
+          atId: '9',
+          fromId: '8',
+          toId: '8',
+          angleDeg: 264,
+          distanceM: 7.4887,
+          sourceMeta: {
+            setupType: 'StandardResection',
+            classification: 'BackSight',
+            face: 'FACE2',
+          },
+        },
+        {
+          kind: 'measurement',
+          atId: '9',
+          fromId: '8',
+          toId: '10',
+          angleDeg: 274,
+          distanceM: 8.1142,
+          sourceMeta: { setupType: 'StandardResection', face: 'FACE2' },
+        },
+      ],
+      trace: [],
+    };
+
+    const reviewModel = buildImportReviewModel(dataset);
+    const text = buildImportReviewText(dataset, reviewModel, {
+      includedItemIds: new Set(reviewModel.items.map((item) => item.id)),
+      preset: 'ts-direction-set',
+      faceNormalizationMode: 'on',
+    });
+
+    expect(text).not.toContain('# FACE 1');
+    expect(text).not.toContain('# FACE 2');
+    expect((text.match(/^DB 9$/gm) ?? []).length).toBe(1);
+    expect((text.match(/DM 8 084-00-00\.0/g) ?? []).length).toBe(2);
+    expect((text.match(/DM 10 094-00-00\.0/g) ?? []).length).toBe(2);
+    expect(text).not.toContain('DM 8 264-00-00.0');
+    expect(text).not.toContain('DM 10 274-00-00.0');
+  });
+
+  it('retains inferred face metadata through SD+zenith to HD conversion so split mode still works', () => {
+    const rawDataset: ImportedDataset = {
+      importerId: 'jobxml',
+      formatLabel: 'Synthetic zenith face inference',
+      summary: 'synthetic',
+      notice: { title: 'synthetic', detailLines: [] },
+      comments: [],
+      controlStations: [],
+      observations: [
+        {
+          kind: 'measurement',
+          atId: '9',
+          fromId: '8',
+          toId: '8',
+          angleDeg: 84,
+          distanceM: 7.4892,
+          verticalMode: 'zenith',
+          verticalValue: 90,
+          sourceMeta: { setupType: 'StandardResection', classification: 'BackSight' },
+        },
+        {
+          kind: 'measurement',
+          atId: '9',
+          fromId: '8',
+          toId: '10',
+          angleDeg: 94,
+          distanceM: 8.1145,
+          verticalMode: 'zenith',
+          verticalValue: 90,
+          sourceMeta: { setupType: 'StandardResection' },
+        },
+        {
+          kind: 'measurement',
+          atId: '9',
+          fromId: '8',
+          toId: '8',
+          angleDeg: 264,
+          distanceM: 7.4887,
+          verticalMode: 'zenith',
+          verticalValue: 270,
+          sourceMeta: { setupType: 'StandardResection', classification: 'BackSight' },
+        },
+        {
+          kind: 'measurement',
+          atId: '9',
+          fromId: '8',
+          toId: '10',
+          angleDeg: 274,
+          distanceM: 8.1142,
+          verticalMode: 'zenith',
+          verticalValue: 270,
+          sourceMeta: { setupType: 'StandardResection' },
+        },
+      ],
+      trace: [],
+    };
+    const enriched = enrichImportedDatasetDirectionFaces(rawDataset);
+    expect((enriched.observations[0] as any).sourceMeta?.face).toBe('FACE1');
+    expect((enriched.observations[2] as any).sourceMeta?.face).toBe('FACE2');
+
+    const converted = convertImportedDatasetSlopeZenithToHd2D(enriched);
+    expect((converted.observations[0] as any).verticalMode).toBeUndefined();
+    expect((converted.observations[2] as any).verticalMode).toBeUndefined();
+    expect((converted.observations[0] as any).sourceMeta?.face).toBe('FACE1');
+    expect((converted.observations[2] as any).sourceMeta?.face).toBe('FACE2');
+
+    const reviewModel = buildImportReviewModel(converted);
+    const text = buildImportReviewText(converted, reviewModel, {
+      includedItemIds: new Set(reviewModel.items.map((item) => item.id)),
+      preset: 'ts-direction-set',
+      faceNormalizationMode: 'off',
+    });
+    expect(text).toContain('# FACE 1');
+    expect(text).toContain('# FACE 2');
   });
 
   it('supports bulk MTA/raw targeting, target-based field grouping, and staged row actions', () => {
@@ -269,8 +527,8 @@ describe('import review workflow', () => {
     });
 
     expect(text).toContain('# CUSTOM SETUP 1');
-    expect(text).toContain('M 1-1000-2 286-51-24.7 22.2574');
-    expect(text).toContain('D 1-1000 4.7265');
+    expect(text).toContain('DM 2 286-51-24.7 22.2574');
+    expect(text).toContain('DM 1000 000-00-00.0 4.7265');
   });
 
   it('formats imported zenith values as DMS and supports manual row ordering within a setup group', () => {
@@ -298,9 +556,9 @@ describe('import review workflow', () => {
       preset: 'ts-direction-set',
     });
 
-    expect(text).toContain('D 1-1000 4.7265');
-    expect(text.indexOf('M 1-1000-2 286-51-24.7 22.2574')).toBeLessThan(
-      text.indexOf('M 1-1000-2 286-51-21.9 22.2576'),
+    expect(text).toContain('DM 1000 000-00-00.0 4.7265');
+    expect(text.indexOf('DM 2 286-51-24.7 22.2574')).toBeLessThan(
+      text.indexOf('DM 2 106-51-21.9 22.2576'),
     );
   });
 

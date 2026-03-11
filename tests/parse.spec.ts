@@ -906,51 +906,142 @@ describe('parseInput', () => {
     expect(parsed.logs.some((l) => l.includes('Traverse end'))).toBe(true);
   });
 
-  it('rejects mixed-face directions when normalize off', () => {
+  it('normalizes known-face direction data into one logical set when mode is on', () => {
+    const parsed = parseInput(
+      [
+        'I TS1 TS-1 0 0 1 0 1',
+        'C O 0 0 0 *',
+        'C B 0 100 0',
+        'C P 100 0 0',
+        'DB O B',
+        'DM P 090.0000 100.0 090.0000 1.0 0.002',
+        'DM P 270.0000 100.0 270.0000 1.0 0.002',
+        'DE',
+      ].join('\n'),
+      {},
+      { faceNormalizationMode: 'on', parseCompatibilityMode: 'strict' },
+    );
+    const dirs = parsed.observations.filter((o) => o.type === 'direction');
+    expect(dirs).toHaveLength(1);
+    expect(dirs[0]?.setId).toBe('O#1');
+    expect(parsed.directionRejectDiagnostics?.length ?? 0).toBe(0);
+    expect(parsed.parseState.directionSetTreatmentDiagnostics?.[0]?.treatmentDecision).toBe(
+      'normalized',
+    );
+    expect(parsed.parseState.directionSetTreatmentDiagnostics?.[0]?.faceSource).toBe('zenith');
+  });
+
+  it('keeps known-face split sets when normalization mode is off', () => {
+    const parsed = parseInput(
+      [
+        'I TS1 TS-1 0 0 1 0 1',
+        'C O 0 0 0 *',
+        'C B 0 100 0',
+        'C P 100 0 0',
+        'DB O B',
+        'DM P 090.0000 100.0 090.0000 1.0 0.002',
+        'DM P 270.0000 100.0 270.0000 1.0 0.002',
+        'DE',
+      ].join('\n'),
+      {},
+      { faceNormalizationMode: 'off', parseCompatibilityMode: 'strict' },
+    );
+    const dirs = parsed.observations.filter((o) => o.type === 'direction');
+    expect(dirs).toHaveLength(2);
+    const setIds = dirs.map((o) => o.setId).sort();
+    expect(setIds).toEqual(['O#1:F1', 'O#1:F2']);
+    expect(parsed.directionRejectDiagnostics?.length ?? 0).toBe(0);
+    expect(parsed.parseState.directionSetTreatmentDiagnostics?.[0]?.treatmentDecision).toBe(
+      'split',
+    );
+  });
+
+  it('rejects unresolved mixed-face sets in strict mode', () => {
     const parsed = parseInput(
       readFileSync('tests/fixtures/direction_face_mixed.dat', 'utf-8'),
       {},
-      { normalize: false },
+      { faceNormalizationMode: 'on', parseCompatibilityMode: 'strict' },
     );
-    expect(parsed.logs.some((l) => l.includes('Mixed face direction rejected'))).toBe(true);
-    expect(parsed.directionRejectDiagnostics?.some((d) => d.reason === 'mixed-face')).toBe(true);
+    expect(parsed.observations.some((o) => o.type === 'direction')).toBe(false);
+    expect(
+      parsed.directionRejectDiagnostics?.some((d) => d.reason === 'unresolved-mixed-face'),
+    ).toBe(true);
+    const diag = parsed.parseState.directionSetTreatmentDiagnostics?.[0];
+    expect(diag?.policyOutcome).toBe('strict-reject');
+    expect(diag?.treatmentDecision).toBe('unresolved');
   });
 
-  it('accepts paired face directions when normalized', () => {
-    const parsed = parseInput(readFileSync('tests/fixtures/direction_face_balanced.dat', 'utf-8'));
-    const dirCount = parsed.observations.filter((o) => o.type === 'direction').length;
-    expect(dirCount).toBe(1);
-    const dir = parsed.observations.find((o) => o.type === 'direction');
-    expect(dir?.rawCount).toBe(2);
-    expect(dir?.rawFace1Count).toBe(1);
-    expect(dir?.rawFace2Count).toBe(1);
-    if (dir?.type === 'direction') {
-      expect(dir.rawMaxResidual).toBeDefined();
-      expect(dir.facePairDelta).toBeDefined();
-      expect(dir.face1Spread).toBeDefined();
-      expect(dir.face2Spread).toBeDefined();
-    }
-    expect(parsed.logs.some((l) => l.includes('Direction set reduction'))).toBe(true);
-    expect(parsed.logs.some((l) => l.includes('Mixed face'))).toBe(false);
+  it('uses deterministic legacy fallback for unresolved mixed-face sets', () => {
+    const parsed = parseInput(
+      readFileSync('tests/fixtures/direction_face_mixed.dat', 'utf-8'),
+      {},
+      { faceNormalizationMode: 'on', parseCompatibilityMode: 'legacy' },
+    );
+    const dirs = parsed.observations.filter((o) => o.type === 'direction');
+    expect(dirs).toHaveLength(2);
+    expect(parsed.logs.some((l) => l.includes('legacy fallback applied'))).toBe(true);
+    const diag = parsed.parseState.directionSetTreatmentDiagnostics?.[0];
+    expect(diag?.policyOutcome).toBe('legacy-fallback');
+    expect(diag?.treatmentDecision).toBe('split');
+  });
+
+  it('applies auto mode semantics: reliable faces normalize; unresolved follows compatibility mode', () => {
+    const reliable = parseInput(
+      [
+        'I TS1 TS-1 0 0 1 0 1',
+        'C O 0 0 0 *',
+        'C B 0 100 0',
+        'C P 100 0 0',
+        'DB O B',
+        'DM P 090.0000 100.0 090.0000 1.0 0.002',
+        'DM P 270.0000 100.0 270.0000 1.0 0.002',
+        'DE',
+      ].join('\n'),
+      {},
+      { faceNormalizationMode: 'auto', parseCompatibilityMode: 'strict' },
+    );
+    expect(reliable.observations.filter((o) => o.type === 'direction')).toHaveLength(1);
+    expect(reliable.parseState.directionSetTreatmentDiagnostics?.[0]?.treatmentDecision).toBe(
+      'normalized',
+    );
+
+    const unresolvedStrict = parseInput(
+      readFileSync('tests/fixtures/direction_face_mixed.dat', 'utf-8'),
+      {},
+      { faceNormalizationMode: 'auto', parseCompatibilityMode: 'strict' },
+    );
+    expect(unresolvedStrict.observations.some((o) => o.type === 'direction')).toBe(false);
+    expect(
+      unresolvedStrict.parseState.directionSetTreatmentDiagnostics?.[0]?.policyOutcome,
+    ).toBe('strict-reject');
+
+    const unresolvedLegacy = parseInput(
+      readFileSync('tests/fixtures/direction_face_mixed.dat', 'utf-8'),
+      {},
+      { faceNormalizationMode: 'auto', parseCompatibilityMode: 'legacy' },
+    );
+    expect(unresolvedLegacy.observations.filter((o) => o.type === 'direction')).toHaveLength(2);
+    expect(
+      unresolvedLegacy.parseState.directionSetTreatmentDiagnostics?.[0]?.policyOutcome,
+    ).toBe('legacy-fallback');
   });
 
   it('keeps raw direction observations when directionSetMode is raw', () => {
     const parsed = parseInput(
       readFileSync('tests/fixtures/direction_face_balanced.dat', 'utf-8'),
       {},
-      { normalize: true, directionSetMode: 'raw' },
+      { faceNormalizationMode: 'off', directionSetMode: 'raw' },
     );
     const dirs = parsed.observations.filter((o) => o.type === 'direction');
     expect(dirs).toHaveLength(2);
-    expect(parsed.logs.some((l) => l.includes('raw mode'))).toBe(true);
-    expect(parsed.logs.some((l) => l.includes('Direction set reduction'))).toBe(false);
+    expect(parsed.logs.some((l) => l.includes('raw rows'))).toBe(true);
   });
 
   it('reduces direction sets by target (unpaired targets remain separate)', () => {
     const parsed = parseInput(readFileSync('tests/fixtures/direction_faceset.dat', 'utf-8'));
     const dirs = parsed.observations.filter((o) => o.type === 'direction');
     expect(dirs).toHaveLength(2);
-    expect(parsed.logs.some((l) => l.includes('paired targets=0'))).toBe(true);
+    expect(parsed.logs.some((l) => l.includes('pairedTargets=0'))).toBe(true);
   });
 
   it('rejects invalid sideshot occupy/backsight', () => {
