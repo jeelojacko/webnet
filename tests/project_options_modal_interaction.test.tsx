@@ -101,6 +101,16 @@ const clickToggleForSettingsRow = async (
   });
 };
 
+const getToggleForSettingsRow = (container: HTMLElement, rowLabel: string): HTMLInputElement => {
+  const row = Array.from(container.querySelectorAll('label')).find((entry) =>
+    entry.textContent?.includes(rowLabel),
+  );
+  if (!row) throw new Error(`Settings row "${rowLabel}" not found.`);
+  const input = row.querySelector('input[type="checkbox"]') as HTMLInputElement | null;
+  if (!input) throw new Error(`No toggle input found in "${rowLabel}".`);
+  return input;
+};
+
 const setSelectValue = async (select: HTMLSelectElement, value: string): Promise<void> => {
   await act(async () => {
     select.value = value;
@@ -270,6 +280,109 @@ describe('Project Options modal interactions', () => {
         'Adjusted Points Delimiter',
       );
       expect(reopenedDelimiter.value).toBe('comma');
+    } finally {
+      await app.cleanup();
+    }
+  });
+
+  it('persists rotation transform draft edits after Apply in Other Files tab', async () => {
+    const app = await mountApp('other-files');
+    try {
+      const toggle = getToggleForSettingsRow(app.container, 'Enable Rotation');
+      expect(toggle.checked).toBe(false);
+      await clickToggleForSettingsRow(app.container, 'Enable Rotation');
+
+      const angle = findInputForSettingsRow(app.container, 'Angle (deg)');
+      await setInputValue(angle, '22.5');
+      await clickButtonByExactText(app.container, 'Select Points');
+
+      await clickButtonByExactText(app.container, 'Apply');
+      await clickOpenProjectOptions(app.container);
+      await clickButtonByExactText(app.container, 'Other Files');
+
+      const reopenedToggle = getToggleForSettingsRow(app.container, 'Enable Rotation');
+      const reopenedAngle = findInputForSettingsRow(app.container, 'Angle (deg)');
+      expect(reopenedToggle.checked).toBe(true);
+      expect(reopenedAngle.value).toBe('22.5');
+      expect(app.container.textContent).toContain('Selected points:');
+    } finally {
+      await app.cleanup();
+    }
+  });
+
+  it('discards unsaved rotation transform edits when Cancel is clicked', async () => {
+    const app = await mountApp('other-files');
+    try {
+      await clickToggleForSettingsRow(app.container, 'Enable Rotation');
+      const angle = findInputForSettingsRow(app.container, 'Angle (deg)');
+      await setInputValue(angle, '45');
+
+      await clickButtonByExactText(app.container, 'Cancel');
+      await clickOpenProjectOptions(app.container);
+      await clickButtonByExactText(app.container, 'Other Files');
+
+      const reopenedToggle = getToggleForSettingsRow(app.container, 'Enable Rotation');
+      const reopenedAngle = findInputForSettingsRow(app.container, 'Angle (deg)');
+      expect(reopenedToggle.checked).toBe(false);
+      expect(reopenedAngle.value).toBe('0');
+    } finally {
+      await app.cleanup();
+    }
+  });
+
+  it('supports select-points popup OK/Cancel semantics for rotation scope', async () => {
+    const app = await mountApp('other-files');
+    try {
+      await clickButtonByExactText(app.container, 'Cancel');
+      await clickButtonByExactText(app.container, 'Adjust');
+      await clickOpenProjectOptions(app.container);
+      await clickButtonByExactText(app.container, 'Other Files');
+
+      await clickToggleForSettingsRow(app.container, 'Enable Rotation');
+      await clickButtonByExactText(app.container, 'Select Points');
+      expect(app.container.textContent).toContain('Rotation Scope');
+      expect(app.container.textContent).toContain('Pivot station is auto-included');
+
+      const modalRoot = app.container.querySelector(
+        "div[class*='z-[60]']",
+      ) as HTMLDivElement | null;
+      if (!modalRoot) throw new Error('Rotation scope modal not found.');
+      const stationToggles = Array.from(
+        modalRoot.querySelectorAll('input[type="checkbox"]'),
+      ) as HTMLInputElement[];
+      expect(stationToggles.length).toBeGreaterThan(0);
+
+      await act(async () => {
+        stationToggles[0].click();
+      });
+      const modalCancel = Array.from(modalRoot.querySelectorAll('button')).find(
+        (entry) => entry.textContent?.trim() === 'Cancel',
+      ) as HTMLButtonElement | undefined;
+      if (!modalCancel) throw new Error('Rotation scope modal cancel button not found.');
+      await act(async () => {
+        modalCancel.click();
+      });
+      expect(app.container.textContent).toContain('Selected points: 0');
+
+      await clickButtonByExactText(app.container, 'Select Points');
+      const modalRoot2 = app.container.querySelector(
+        "div[class*='z-[60]']",
+      ) as HTMLDivElement | null;
+      if (!modalRoot2) throw new Error('Rotation scope modal not found.');
+      const stationToggles2 = Array.from(
+        modalRoot2.querySelectorAll('input[type="checkbox"]'),
+      ) as HTMLInputElement[];
+      await act(async () => {
+        stationToggles2[0].click();
+      });
+      const modalOk = Array.from(modalRoot2.querySelectorAll('button')).find(
+        (entry) => entry.textContent?.trim() === 'OK',
+      ) as HTMLButtonElement | undefined;
+      if (!modalOk) throw new Error('Rotation scope modal OK button not found.');
+      await act(async () => {
+        modalOk.click();
+      });
+      expect(app.container.textContent).not.toContain('Selected points: 0');
     } finally {
       await app.cleanup();
     }

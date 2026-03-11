@@ -5337,7 +5337,7 @@ export const parseInput = (
           code === 'DM' &&
           state.deltaMode !== 'horiz' &&
           vertParsed != null &&
-          !Boolean((vertParsed as { planned?: boolean }).planned)
+          !(vertParsed as { planned?: boolean }).planned
             ? (vertParsed as { value: number }).value
             : undefined;
         const inferredFace = inferFaceFromZenith(zenithCandidate);

@@ -1,5 +1,6 @@
 # TODO - WebNet
 
+- [x] Add post-adjust adjusted-points Transform support (rotation-only v1): persisted transform settings, Project Options -> Other Files -> Transform UI (rotation with pivot/scope/select-points popup + translation/scale placeholders), export-time validation, and dual-section adjusted-points export output (original + transform notes + rotated coordinates)
 - [x] Add TypeScript tooling (tsconfig, TSX entry) and migrate LSA engine/UI to TS modules
 - [x] Industry-standard input-compatibility parity batch 1: parser directive normalization aliases/unique-prefix handling, `.DATA` block gating, `.SEPARATOR` station token support, `.3REDUCE` horizontal-equation behavior, include preprocessor with source-file traceability + scoped state restore, CLI include filesystem resolution + hard-fail diagnostics, new CLI run modes (`data-check`, `blunder-detect`), and project file schema v3 bundle support (`mainInput` + `includeFiles`) with v1/v2 migration
 - [x] Industry-parity Phase 1 foundation: add dual parser compatibility modes (`legacy` fallback-aware vs `strict` deterministic), coded compatibility diagnostics/counters, and numeric-token station misparse guards for D/A/G/L parsing paths

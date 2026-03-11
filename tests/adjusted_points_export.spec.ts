@@ -6,6 +6,7 @@ import {
   buildAdjustedPointsExportText,
   inferAdjustedPointsPresetId,
   sanitizeAdjustedPointsExportSettings,
+  validateAdjustedPointsRotationTransform,
 } from '../src/engine/adjustedPointsExport';
 import type { AdjustedPointsExportSettings, AdjustmentResult } from '../src/types';
 
@@ -174,5 +175,97 @@ describe('adjusted points export', () => {
       columns: ['P', 'N', 'E', 'Z', 'D', 'LAT', 'LON', 'EL'],
     });
     expect(settings.columns).toHaveLength(6);
+  });
+
+  it('keeps legacy output when rotation is disabled', () => {
+    const text = buildAdjustedPointsExportText({
+      result: buildResult(),
+      units: 'm',
+      settings: DEFAULT_ADJUSTED_POINTS_EXPORT_SETTINGS,
+    });
+    expect(text).not.toContain('# TRANSFORM NOTES');
+    expect(text).not.toContain('# ROTATED COORDINATES');
+  });
+
+  it('rotates all points counterclockwise with positive angle and keeps pivot unchanged', () => {
+    const text = buildAdjustedPointsExportText({
+      result: buildResult(),
+      units: 'm',
+      settings: sanitizeAdjustedPointsExportSettings({
+        ...DEFAULT_ADJUSTED_POINTS_EXPORT_SETTINGS,
+        columns: ['P', 'E', 'N'],
+        transform: {
+          rotation: {
+            enabled: true,
+            angleDeg: 90,
+            pivotStationId: 'CTRL',
+            scope: 'all',
+            selectedStationIds: [],
+          },
+          translation: { enabled: false },
+          scale: { enabled: false },
+        },
+      }),
+    });
+    expect(text).toContain('# TRANSFORM NOTES');
+    expect(text).toContain('# Positive angle convention: counterclockwise about pivot');
+    expect(text).toContain('# Scope: ALL');
+    const rotatedHeaderIndex = text.split('\n').findIndex((line) => line === '# ROTATED COORDINATES');
+    expect(rotatedHeaderIndex).toBeGreaterThan(0);
+    const rotatedRows = text.split('\n').slice(rotatedHeaderIndex + 2);
+    const ctrl = rotatedRows.find((row) => row.startsWith('CTRL,'));
+    const p1 = rotatedRows.find((row) => row.startsWith('P1,'));
+    expect(ctrl).toBe('CTRL,1000.0000,2000.0000');
+    expect(p1).toBe('P1,997.6544,2001.2345');
+  });
+
+  it('selected scope emits selected points plus pivot in rotated section', () => {
+    const text = buildAdjustedPointsExportText({
+      result: buildResult(),
+      units: 'm',
+      settings: sanitizeAdjustedPointsExportSettings({
+        ...DEFAULT_ADJUSTED_POINTS_EXPORT_SETTINGS,
+        columns: ['P', 'E', 'N'],
+        transform: {
+          rotation: {
+            enabled: true,
+            angleDeg: 15,
+            pivotStationId: 'CTRL',
+            scope: 'selected',
+            selectedStationIds: ['P1'],
+          },
+          translation: { enabled: false },
+          scale: { enabled: false },
+        },
+      }),
+    });
+    const rotatedHeaderIndex = text.split('\n').findIndex((line) => line === '# ROTATED COORDINATES');
+    const rotatedRows = text.split('\n').slice(rotatedHeaderIndex + 2);
+    expect(rotatedRows.some((row) => row.startsWith('CTRL,'))).toBe(true);
+    expect(rotatedRows.some((row) => row.startsWith('P1,'))).toBe(true);
+    expect(rotatedRows.some((row) => row.startsWith('LOST1,'))).toBe(false);
+  });
+
+  it('validates missing pivot when rotation is enabled', () => {
+    const validation = validateAdjustedPointsRotationTransform({
+      result: buildResult(),
+      settings: sanitizeAdjustedPointsExportSettings({
+        ...DEFAULT_ADJUSTED_POINTS_EXPORT_SETTINGS,
+        transform: {
+          rotation: {
+            enabled: true,
+            angleDeg: 10,
+            pivotStationId: '',
+            scope: 'all',
+            selectedStationIds: [],
+          },
+          translation: { enabled: false },
+          scale: { enabled: false },
+        },
+      }),
+    });
+    expect(validation.valid).toBe(false);
+    if (validation.valid) return;
+    expect(validation.message).toContain('pivot');
   });
 });

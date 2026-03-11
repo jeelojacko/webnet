@@ -37,8 +37,11 @@ import {
   ADJUSTED_POINTS_PRESET_COLUMNS,
   DEFAULT_ADJUSTED_POINTS_EXPORT_SETTINGS,
   buildAdjustedPointsExportText,
+  cloneAdjustedPointsExportSettings,
+  getAdjustedPointsExportStationIds,
   inferAdjustedPointsPresetId,
   sanitizeAdjustedPointsExportSettings,
+  validateAdjustedPointsRotationTransform,
 } from './engine/adjustedPointsExport';
 import {
   LEVEL_LOOP_TOLERANCE_PRESETS,
@@ -751,6 +754,14 @@ const SETTINGS_TOOLTIPS = {
   adjustedPointsPreset:
     'Preset column-order templates for adjusted points. Manual column edits switch to Custom.',
   adjustedPointsIncludeLost: 'Include or omit lost stations in adjusted-points exports.',
+  adjustedPointsTransformRotation:
+    'Rotation is export-only and applies after adjustment. Positive angle rotates counterclockwise about the selected pivot.',
+  adjustedPointsTransformPivot:
+    'Pivot station used as the fixed rotation origin for adjusted-points export.',
+  adjustedPointsTransformScope:
+    'All Points rotates every exported station. Select Points rotates only selected stations plus the pivot.',
+  adjustedPointsTransformAngle:
+    'Rotation angle in decimal degrees. Positive values rotate counterclockwise.',
   projectFiles:
     'Save or open complete project workspaces (input + settings + instruments + export preferences) without storing solved results.',
 } as const;
@@ -808,6 +819,8 @@ const PROJECT_OPTION_SECTION_TOOLTIPS: Record<string, string> = {
   'Project Files': 'Save/open full project workspaces as versioned JSON project files.',
   'Adjusted Points Export':
     'Configure adjusted-point output presets, delimiter, and dynamic column selection/order.',
+  Transform:
+    'Post-adjustment export transform settings. Rotation is active in v1; translation and scale are placeholders.',
 };
 
 const PROJECT_OPTION_TABS: Array<{ id: ProjectOptionsTab; label: string }> = [
@@ -1123,10 +1136,12 @@ const App: React.FC<AppProps> = ({
     ...parseInstrumentLibraryFromInput(DEFAULT_INPUT),
   }));
   const [adjustedPointsExportSettings, setAdjustedPointsExportSettings] =
-    useState<AdjustedPointsExportSettings>({
-      ...DEFAULT_ADJUSTED_POINTS_EXPORT_SETTINGS,
-      includeLostStations: true,
-    });
+    useState<AdjustedPointsExportSettings>(() =>
+      cloneAdjustedPointsExportSettings({
+        ...DEFAULT_ADJUSTED_POINTS_EXPORT_SETTINGS,
+        includeLostStations: true,
+      }),
+    );
   const [levelLoopCustomPresets, setLevelLoopCustomPresets] = useState<
     CustomLevelLoopTolerancePreset[]
   >([]);
@@ -1149,7 +1164,13 @@ const App: React.FC<AppProps> = ({
   const [levelLoopCustomPresetsDraft, setLevelLoopCustomPresetsDraft] =
     useState<CustomLevelLoopTolerancePreset[]>(levelLoopCustomPresets);
   const [adjustedPointsExportSettingsDraft, setAdjustedPointsExportSettingsDraft] =
-    useState<AdjustedPointsExportSettings>(adjustedPointsExportSettings);
+    useState<AdjustedPointsExportSettings>(() =>
+      cloneAdjustedPointsExportSettings(adjustedPointsExportSettings),
+    );
+  const [isAdjustedPointsTransformSelectOpen, setIsAdjustedPointsTransformSelectOpen] =
+    useState(false);
+  const [adjustedPointsTransformSelectedDraft, setAdjustedPointsTransformSelectedDraft] =
+    useState<string[]>([]);
   const [selectedInstrumentDraft, setSelectedInstrumentDraft] = useState(selectedInstrument);
   const [excludedIds, setExcludedIds] = useState<Set<number>>(new Set());
   const [overrides, setOverrides] = useState<Record<number, ObservationOverride>>({});
@@ -1212,6 +1233,34 @@ const App: React.FC<AppProps> = ({
     () => selectedDraftCrs?.projParams ?? parseProj4Parameters(selectedDraftCrs?.proj4 ?? ''),
     [selectedDraftCrs],
   );
+  const adjustedPointsDraftStationIds = useMemo(() => {
+    if (!result) return [] as string[];
+    return getAdjustedPointsExportStationIds(
+      result,
+      adjustedPointsExportSettingsDraft.includeLostStations,
+    );
+  }, [result, adjustedPointsExportSettingsDraft.includeLostStations]);
+  const adjustedPointsRotationDraftValidationMessage = useMemo(() => {
+    const rotation = adjustedPointsExportSettingsDraft.transform.rotation;
+    if (!rotation.enabled) return null;
+    if (!rotation.pivotStationId.trim()) return 'Rotation requires a pivot station.';
+    if (!result) return 'Run adjustment before exporting rotated coordinates.';
+    const validation = validateAdjustedPointsRotationTransform({
+      result,
+      settings: adjustedPointsExportSettingsDraft,
+    });
+    if (validation.valid) return null;
+    return validation.message;
+  }, [result, adjustedPointsExportSettingsDraft]);
+  const adjustedPointsRotationSelectedInSetCount = useMemo(() => {
+    const stationSet = new Set(adjustedPointsDraftStationIds);
+    return adjustedPointsExportSettingsDraft.transform.rotation.selectedStationIds.filter((id) =>
+      stationSet.has(id),
+    ).length;
+  }, [
+    adjustedPointsDraftStationIds,
+    adjustedPointsExportSettingsDraft.transform.rotation.selectedStationIds,
+  ]);
 
   useEffect(() => {
     if (crsCatalogGroupFilter === 'all') return;
@@ -1259,13 +1308,21 @@ const App: React.FC<AppProps> = ({
   useEffect(() => {
     if (!isSettingsModalOpen) return;
     const handleKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setIsSettingsModalOpen(false);
+      if (event.key !== 'Escape') return;
+      if (isAdjustedPointsTransformSelectOpen) {
+        setIsAdjustedPointsTransformSelectOpen(false);
+        setAdjustedPointsTransformSelectedDraft([]);
+        return;
+      }
+      setIsAdjustedPointsTransformSelectOpen(false);
+      setAdjustedPointsTransformSelectedDraft([]);
+      setIsSettingsModalOpen(false);
     };
     document.addEventListener('keydown', handleKey);
     return () => {
       document.removeEventListener('keydown', handleKey);
     };
-  }, [isSettingsModalOpen]);
+  }, [isAdjustedPointsTransformSelectOpen, isSettingsModalOpen]);
 
   useEffect(() => {
     if (!isSettingsModalOpen) return;
@@ -4424,6 +4481,20 @@ const App: React.FC<AppProps> = ({
 
   const handleExportAdjustedPoints = async () => {
     if (!result) return;
+    const rotationValidation = validateAdjustedPointsRotationTransform({
+      result,
+      settings: adjustedPointsExportSettings,
+    });
+    if (!rotationValidation.valid) {
+      setImportNotice({
+        title: 'Adjusted Points Export Blocked',
+        detailLines: [
+          rotationValidation.message,
+          'Open Project Options -> Other Files -> Transform and update rotation settings.',
+        ],
+      });
+      return;
+    }
     const text = buildAdjustedPointsExportText({
       result,
       units: settings.units,
@@ -4617,7 +4688,7 @@ const App: React.FC<AppProps> = ({
       setGeoidSourceData(null);
       setGeoidSourceDataLabel('');
       setExportFormat(parsed.project.ui.exportFormat);
-      setAdjustedPointsExportSettings(loadedAdjustedPointsSettings);
+      setAdjustedPointsExportSettings(cloneAdjustedPointsExportSettings(loadedAdjustedPointsSettings));
       setProjectInstruments(cloneInstrumentLibrary(parsed.project.project.projectInstruments));
       setSelectedInstrument(parsed.project.project.selectedInstrument);
       setLevelLoopCustomPresets(
@@ -4633,7 +4704,11 @@ const App: React.FC<AppProps> = ({
       setLevelLoopCustomPresetsDraft(
         parsed.project.project.levelLoopCustomPresets.map((preset) => ({ ...preset })),
       );
-      setAdjustedPointsExportSettingsDraft(loadedAdjustedPointsSettings);
+      setAdjustedPointsExportSettingsDraft(
+        cloneAdjustedPointsExportSettings(loadedAdjustedPointsSettings),
+      );
+      setIsAdjustedPointsTransformSelectOpen(false);
+      setAdjustedPointsTransformSelectedDraft([]);
 
       clearRunStateAfterWorkspaceLoad();
       setImportNotice({
@@ -5754,6 +5829,12 @@ const App: React.FC<AppProps> = ({
     });
   };
 
+  const closeProjectOptions = () => {
+    setIsAdjustedPointsTransformSelectOpen(false);
+    setAdjustedPointsTransformSelectedDraft([]);
+    setIsSettingsModalOpen(false);
+  };
+
   const openProjectOptions = () => {
     setSettingsDraft(settings);
     setParseSettingsDraft(parseSettings);
@@ -5763,27 +5844,31 @@ const App: React.FC<AppProps> = ({
     setShowCrsProjectionParams(false);
     setProjectInstrumentsDraft(cloneInstrumentLibrary(projectInstruments));
     setLevelLoopCustomPresetsDraft(levelLoopCustomPresets.map((preset) => ({ ...preset })));
-    setAdjustedPointsExportSettingsDraft({ ...adjustedPointsExportSettings });
+    setAdjustedPointsExportSettingsDraft(cloneAdjustedPointsExportSettings(adjustedPointsExportSettings));
+    setIsAdjustedPointsTransformSelectOpen(false);
+    setAdjustedPointsTransformSelectedDraft([]);
     setSelectedInstrumentDraft(selectedInstrument);
     setActiveOptionsTab('adjustment');
     setIsSettingsModalOpen(true);
   };
 
   const applyProjectOptions = () => {
+    const sanitizedAdjustedPointsSettings = sanitizeAdjustedPointsExportSettings(
+      adjustedPointsExportSettingsDraft,
+      DEFAULT_ADJUSTED_POINTS_EXPORT_SETTINGS,
+    );
     setSettings(settingsDraft);
     setParseSettings(parseSettingsDraft);
     setGeoidSourceData(geoidSourceDataDraft);
     setGeoidSourceDataLabel(geoidSourceDataLabelDraft);
     setProjectInstruments(cloneInstrumentLibrary(projectInstrumentsDraft));
     setLevelLoopCustomPresets(levelLoopCustomPresetsDraft.map((preset) => ({ ...preset })));
-    setAdjustedPointsExportSettings(
-      sanitizeAdjustedPointsExportSettings(
-        adjustedPointsExportSettingsDraft,
-        DEFAULT_ADJUSTED_POINTS_EXPORT_SETTINGS,
-      ),
-    );
+    setAdjustedPointsExportSettings(cloneAdjustedPointsExportSettings(sanitizedAdjustedPointsSettings));
+    setAdjustedPointsExportSettingsDraft(cloneAdjustedPointsExportSettings(sanitizedAdjustedPointsSettings));
     setSelectedInstrument(selectedInstrumentDraft);
     setShowCrsProjectionParams(false);
+    setIsAdjustedPointsTransformSelectOpen(false);
+    setAdjustedPointsTransformSelectedDraft([]);
     setIsSettingsModalOpen(false);
   };
 
@@ -5931,6 +6016,56 @@ const App: React.FC<AppProps> = ({
     value: AdjustedPointsExportSettings[K],
   ) => {
     setAdjustedPointsExportSettingsDraft((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const handleDraftAdjustedPointsRotationSetting = <
+    K extends keyof AdjustedPointsExportSettings['transform']['rotation'],
+  >(
+    key: K,
+    value: AdjustedPointsExportSettings['transform']['rotation'][K],
+  ) => {
+    setAdjustedPointsExportSettingsDraft((prev) => ({
+      ...prev,
+      transform: {
+        ...prev.transform,
+        rotation: {
+          ...prev.transform.rotation,
+          [key]: value,
+        },
+      },
+    }));
+  };
+
+  const openAdjustedPointsTransformSelectModal = () => {
+    setAdjustedPointsTransformSelectedDraft([
+      ...adjustedPointsExportSettingsDraft.transform.rotation.selectedStationIds,
+    ]);
+    setIsAdjustedPointsTransformSelectOpen(true);
+  };
+
+  const closeAdjustedPointsTransformSelectModal = () => {
+    setIsAdjustedPointsTransformSelectOpen(false);
+    setAdjustedPointsTransformSelectedDraft([]);
+  };
+
+  const handleAdjustedPointsTransformToggleSelected = (stationId: string, enabled: boolean) => {
+    setAdjustedPointsTransformSelectedDraft((prev) => {
+      const exists = prev.includes(stationId);
+      if (enabled && exists) return prev;
+      if (!enabled && !exists) return prev;
+      if (enabled) return [...prev, stationId];
+      return prev.filter((entry) => entry !== stationId);
+    });
+  };
+
+  const applyAdjustedPointsTransformSelection = () => {
+    const stationSet = new Set(adjustedPointsDraftStationIds);
+    const nextSelected = [...new Set(adjustedPointsTransformSelectedDraft)].filter((id) =>
+      stationSet.has(id),
+    );
+    handleDraftAdjustedPointsRotationSetting('selectedStationIds', nextSelected);
+    setIsAdjustedPointsTransformSelectOpen(false);
+    setAdjustedPointsTransformSelectedDraft([]);
   };
 
   const handleAdjustedPointsPresetChange = (presetId: AdjustedPointsPresetId) => {
@@ -6350,7 +6485,7 @@ const App: React.FC<AppProps> = ({
       {isSettingsModalOpen && (
         <div
           className="fixed inset-0 z-50 bg-slate-950/70 flex items-start justify-center p-4 md:p-10"
-          onClick={() => setIsSettingsModalOpen(false)}
+          onClick={closeProjectOptions}
         >
           <div
             className="w-full max-w-5xl bg-slate-600 border border-slate-400 shadow-2xl text-slate-100"
@@ -6366,7 +6501,7 @@ const App: React.FC<AppProps> = ({
               </div>
               <button
                 type="button"
-                onClick={() => setIsSettingsModalOpen(false)}
+                onClick={closeProjectOptions}
                 className="text-xs px-2 py-1 border border-slate-300 bg-slate-500 hover:bg-slate-400"
                 title="Close Project Options without applying draft changes."
               >
@@ -7859,6 +7994,175 @@ const App: React.FC<AppProps> = ({
                     </div>
                   </SettingsCard>
                   <SettingsCard
+                    title="Transform"
+                    tooltip={PROJECT_OPTION_SECTION_TOOLTIPS.Transform}
+                    className="xl:col-span-2"
+                  >
+                    <div className="grid grid-cols-1 xl:grid-cols-3 gap-3">
+                      <div className="rounded-md border border-cyan-500/50 bg-cyan-900/10 p-3 space-y-3">
+                        <div className="text-[11px] uppercase tracking-wide text-cyan-200">
+                          Rotation
+                        </div>
+                        <SettingsRow
+                          label="Enable Rotation"
+                          tooltip={SETTINGS_TOOLTIPS.adjustedPointsTransformRotation}
+                          className="md:grid-cols-[minmax(0,1fr)_auto]"
+                        >
+                          <SettingsToggle
+                            title={SETTINGS_TOOLTIPS.adjustedPointsTransformRotation}
+                            checked={adjustedPointsExportSettingsDraft.transform.rotation.enabled}
+                            onChange={(checked) =>
+                              handleDraftAdjustedPointsRotationSetting('enabled', checked)
+                            }
+                          />
+                        </SettingsRow>
+                        <SettingsRow
+                          label="Pivot Station"
+                          tooltip={SETTINGS_TOOLTIPS.adjustedPointsTransformPivot}
+                        >
+                          <select
+                            title={SETTINGS_TOOLTIPS.adjustedPointsTransformPivot}
+                            value={adjustedPointsExportSettingsDraft.transform.rotation.pivotStationId}
+                            disabled={
+                              !adjustedPointsExportSettingsDraft.transform.rotation.enabled ||
+                              adjustedPointsDraftStationIds.length === 0
+                            }
+                            onChange={(e) =>
+                              handleDraftAdjustedPointsRotationSetting(
+                                'pivotStationId',
+                                e.target.value,
+                              )
+                            }
+                            className={`${optionInputClass} disabled:opacity-50 disabled:cursor-not-allowed`}
+                          >
+                            <option value="">Select pivot station</option>
+                            {adjustedPointsDraftStationIds.map((stationId) => (
+                              <option key={`adj-transform-pivot-${stationId}`} value={stationId}>
+                                {stationId}
+                              </option>
+                            ))}
+                          </select>
+                        </SettingsRow>
+                        <SettingsRow
+                          label="Angle (deg)"
+                          tooltip={SETTINGS_TOOLTIPS.adjustedPointsTransformAngle}
+                        >
+                          <input
+                            title={SETTINGS_TOOLTIPS.adjustedPointsTransformAngle}
+                            type="number"
+                            step={0.000001}
+                            value={adjustedPointsExportSettingsDraft.transform.rotation.angleDeg}
+                            disabled={!adjustedPointsExportSettingsDraft.transform.rotation.enabled}
+                            onChange={(e) => {
+                              const parsed = Number.parseFloat(e.target.value);
+                              handleDraftAdjustedPointsRotationSetting(
+                                'angleDeg',
+                                Number.isFinite(parsed) ? parsed : 0,
+                              );
+                            }}
+                            className={`${optionInputClass} disabled:opacity-50 disabled:cursor-not-allowed`}
+                          />
+                        </SettingsRow>
+                        <SettingsRow
+                          label="Scope"
+                          tooltip={SETTINGS_TOOLTIPS.adjustedPointsTransformScope}
+                        >
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() =>
+                                handleDraftAdjustedPointsRotationSetting('scope', 'all')
+                              }
+                              disabled={!adjustedPointsExportSettingsDraft.transform.rotation.enabled}
+                              className={`rounded border px-2 py-1 text-xs uppercase tracking-wide ${
+                                adjustedPointsExportSettingsDraft.transform.rotation.scope === 'all'
+                                  ? 'border-cyan-400 bg-cyan-800/40 text-cyan-100'
+                                  : 'border-slate-500 bg-slate-700 text-slate-100 hover:bg-slate-600'
+                              } disabled:opacity-50 disabled:cursor-not-allowed`}
+                            >
+                              All Points
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                handleDraftAdjustedPointsRotationSetting('scope', 'selected');
+                                if (adjustedPointsDraftStationIds.length > 0) {
+                                  openAdjustedPointsTransformSelectModal();
+                                }
+                              }}
+                              disabled={!adjustedPointsExportSettingsDraft.transform.rotation.enabled}
+                              className={`rounded border px-2 py-1 text-xs uppercase tracking-wide ${
+                                adjustedPointsExportSettingsDraft.transform.rotation.scope ===
+                                'selected'
+                                  ? 'border-cyan-400 bg-cyan-800/40 text-cyan-100'
+                                  : 'border-slate-500 bg-slate-700 text-slate-100 hover:bg-slate-600'
+                              } disabled:opacity-50 disabled:cursor-not-allowed`}
+                            >
+                              Select Points
+                            </button>
+                          </div>
+                        </SettingsRow>
+                        {adjustedPointsExportSettingsDraft.transform.rotation.scope ===
+                          'selected' && (
+                          <div className="rounded border border-cyan-400/40 bg-slate-800/60 px-3 py-2 text-[11px] text-slate-200 space-y-2">
+                            <div>
+                              Selected points: {adjustedPointsRotationSelectedInSetCount}
+                              {' | '}Pivot auto-included in rotated output.
+                            </div>
+                            <button
+                              type="button"
+                              onClick={openAdjustedPointsTransformSelectModal}
+                              disabled={
+                                !adjustedPointsExportSettingsDraft.transform.rotation.enabled ||
+                                adjustedPointsDraftStationIds.length === 0
+                              }
+                              className="rounded border border-cyan-400/70 bg-cyan-900/40 px-2 py-1 text-xs uppercase tracking-wide text-cyan-100 hover:bg-cyan-800/60 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              Select Points
+                            </button>
+                          </div>
+                        )}
+                        <div className="rounded border border-cyan-500/30 bg-slate-800/60 px-3 py-2 text-[11px] text-slate-200 leading-relaxed">
+                          Positive angle rotates counterclockwise about the pivot. Rotation is
+                          applied only in adjusted-points export and does not alter solved
+                          coordinates or reports.
+                        </div>
+                        {adjustedPointsRotationDraftValidationMessage && (
+                          <div className="rounded border border-amber-500/60 bg-amber-900/20 px-3 py-2 text-[11px] text-amber-100">
+                            {adjustedPointsRotationDraftValidationMessage}
+                          </div>
+                        )}
+                        {adjustedPointsDraftStationIds.length === 0 && (
+                          <div className="rounded border border-slate-500/60 bg-slate-800/60 px-3 py-2 text-[11px] text-slate-300">
+                            Run adjustment to populate station choices for pivot/selection.
+                          </div>
+                        )}
+                      </div>
+                      <div className="rounded-md border border-slate-500/60 bg-slate-700/20 p-3 space-y-2 opacity-80">
+                        <div className="text-[11px] uppercase tracking-wide text-slate-300">
+                          Translation
+                        </div>
+                        <div className="rounded border border-slate-500/60 bg-slate-800/50 px-3 py-2 text-[11px] text-slate-300">
+                          Coming Soon
+                        </div>
+                        <div className="text-[11px] text-slate-400">
+                          Reserved transform slot. No translation is applied in v1.
+                        </div>
+                      </div>
+                      <div className="rounded-md border border-slate-500/60 bg-slate-700/20 p-3 space-y-2 opacity-80">
+                        <div className="text-[11px] uppercase tracking-wide text-slate-300">
+                          Scale
+                        </div>
+                        <div className="rounded border border-slate-500/60 bg-slate-800/50 px-3 py-2 text-[11px] text-slate-300">
+                          Coming Soon
+                        </div>
+                        <div className="text-[11px] text-slate-400">
+                          Reserved transform slot. No scale factor is applied in v1.
+                        </div>
+                      </div>
+                    </div>
+                  </SettingsCard>
+                  <SettingsCard
                     title="Output Visibility"
                     tooltip="Shared output toggles that affect exported text/XML deliverables."
                   >
@@ -8845,7 +9149,7 @@ const App: React.FC<AppProps> = ({
             <div className="flex items-center justify-end gap-2 border-t border-slate-400 bg-slate-600 px-4 py-3">
               <button
                 type="button"
-                onClick={() => setIsSettingsModalOpen(false)}
+                onClick={closeProjectOptions}
                 className="px-4 py-1 text-xs border border-slate-300 bg-slate-500 hover:bg-slate-400"
                 title="Close Project Options and discard any unsaved draft changes."
               >
@@ -8858,6 +9162,77 @@ const App: React.FC<AppProps> = ({
                 title="Apply the current Project Options draft to the active project."
               >
                 Apply
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {isSettingsModalOpen && isAdjustedPointsTransformSelectOpen && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/85 px-4 py-6"
+          onClick={closeAdjustedPointsTransformSelectModal}
+        >
+          <div
+            className="w-full max-w-md border border-slate-500 bg-slate-900 shadow-2xl"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="border-b border-slate-700 bg-slate-800 px-5 py-4">
+              <div className="text-[11px] uppercase tracking-[0.24em] text-cyan-300">
+                Rotation Scope
+              </div>
+              <div className="mt-1 text-lg font-semibold text-white">Select Points</div>
+              <div className="mt-1 text-xs text-slate-400">
+                Select points to rotate. Pivot station is auto-included in rotated output.
+              </div>
+            </div>
+            <div className="max-h-[50vh] space-y-2 overflow-auto px-5 py-4">
+              {adjustedPointsDraftStationIds.length === 0 ? (
+                <div className="rounded border border-slate-600 bg-slate-800/70 px-3 py-2 text-xs text-slate-300">
+                  No stations available. Run adjustment to populate the export set.
+                </div>
+              ) : (
+                adjustedPointsDraftStationIds.map((stationId) => {
+                  const checked = adjustedPointsTransformSelectedDraft.includes(stationId);
+                  return (
+                    <label
+                      key={`adj-transform-select-${stationId}`}
+                      className={`flex items-center gap-2 rounded border px-3 py-2 text-xs ${
+                        checked
+                          ? 'border-cyan-500/70 bg-cyan-900/25 text-cyan-100'
+                          : 'border-slate-600 bg-slate-800/60 text-slate-200'
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={(event) =>
+                          handleAdjustedPointsTransformToggleSelected(
+                            stationId,
+                            event.target.checked,
+                          )
+                        }
+                      />
+                      <span>{stationId}</span>
+                    </label>
+                  );
+                })
+              )}
+            </div>
+            <div className="flex items-center justify-end border-t border-slate-700 bg-slate-800 px-5 py-4">
+              <button
+                type="button"
+                onClick={closeAdjustedPointsTransformSelectModal}
+                className="border border-slate-500 bg-slate-700 px-4 py-2 text-xs uppercase tracking-wide text-slate-200 hover:bg-slate-600"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={applyAdjustedPointsTransformSelection}
+                className="ml-2 border border-cyan-500 bg-cyan-900/40 px-4 py-2 text-xs uppercase tracking-wide text-cyan-100 hover:bg-cyan-800/60"
+              >
+                OK
               </button>
             </div>
           </div>

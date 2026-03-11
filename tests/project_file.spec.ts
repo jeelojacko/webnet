@@ -73,6 +73,17 @@ describe('project file serialization/parsing', () => {
           delimiter: 'tab',
           columns: ['P', 'E', 'N', 'Z'],
           includeLostStations: false,
+          transform: {
+            rotation: {
+              enabled: true,
+              angleDeg: 12.5,
+              pivotStationId: 'A1',
+              scope: 'selected',
+              selectedStationIds: ['A2', 'A3'],
+            },
+            translation: { enabled: false },
+            scale: { enabled: false },
+          },
         }),
       },
       project: {
@@ -91,6 +102,14 @@ describe('project file serialization/parsing', () => {
     expect(parsed.project.ui.exportFormat).toBe('industry-style');
     expect(parsed.project.ui.settings.convergenceLimit).toBe(0.1);
     expect(parsed.project.ui.adjustedPointsExport.columns).toEqual(['P', 'E', 'N', 'Z']);
+    expect(parsed.project.ui.adjustedPointsExport.transform.rotation.enabled).toBe(true);
+    expect(parsed.project.ui.adjustedPointsExport.transform.rotation.angleDeg).toBe(12.5);
+    expect(parsed.project.ui.adjustedPointsExport.transform.rotation.pivotStationId).toBe('A1');
+    expect(parsed.project.ui.adjustedPointsExport.transform.rotation.scope).toBe('selected');
+    expect(parsed.project.ui.adjustedPointsExport.transform.rotation.selectedStationIds).toEqual([
+      'A2',
+      'A3',
+    ]);
     expect(parsed.project.project.selectedInstrument).toBe('S9');
     expect(parsed.project.project.levelLoopCustomPresets).toHaveLength(1);
   });
@@ -145,6 +164,9 @@ describe('project file serialization/parsing', () => {
     expect(parsed.project.ui.parseSettings.parseCompatibilityMode).toBe('legacy');
     expect(parsed.project.ui.parseSettings.parseModeMigrated).toBe(false);
     expect(parsed.project.ui.adjustedPointsExport.columns.length).toBe(6);
+    expect(parsed.project.ui.adjustedPointsExport.transform.rotation.enabled).toBe(false);
+    expect(parsed.project.ui.adjustedPointsExport.transform.rotation.scope).toBe('all');
+    expect(parsed.project.ui.adjustedPointsExport.transform.rotation.pivotStationId).toBe('');
     expect(parsed.project.project.selectedInstrument).toBe('S9');
   });
 

@@ -503,6 +503,29 @@ export type AdjustedPointsColumnId = 'P' | 'N' | 'E' | 'Z' | 'D' | 'LAT' | 'LON'
 export type AdjustedPointsDelimiter = 'comma' | 'space' | 'tab';
 export type AdjustedPointsOutputFormat = 'csv' | 'text';
 export type AdjustedPointsPresetId = 'PNEZD' | 'PENZD' | 'PNEZ' | 'PENZ' | 'NEZ' | 'PEN' | 'custom';
+export type AdjustedPointsRotationScope = 'all' | 'selected';
+
+export interface AdjustedPointsRotationTransformSettings {
+  enabled: boolean;
+  angleDeg: number;
+  pivotStationId: string;
+  scope: AdjustedPointsRotationScope;
+  selectedStationIds: string[];
+}
+
+export interface AdjustedPointsTranslationTransformSettings {
+  enabled: boolean;
+}
+
+export interface AdjustedPointsScaleTransformSettings {
+  enabled: boolean;
+}
+
+export interface AdjustedPointsTransformSettings {
+  rotation: AdjustedPointsRotationTransformSettings;
+  translation: AdjustedPointsTranslationTransformSettings;
+  scale: AdjustedPointsScaleTransformSettings;
+}
 
 export interface AdjustedPointsExportSettings {
   format: AdjustedPointsOutputFormat;
@@ -510,6 +533,7 @@ export interface AdjustedPointsExportSettings {
   columns: AdjustedPointsColumnId[];
   presetId: AdjustedPointsPresetId;
   includeLostStations: boolean;
+  transform: AdjustedPointsTransformSettings;
 }
 
 export interface CustomLevelLoopTolerancePreset {
