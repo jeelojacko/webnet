@@ -337,34 +337,101 @@ export const buildIndustryStyleListingText = (
     line != null && aliasObsRefsByLine.has(line)
       ? ` [alias ${aliasObsRefsByLine.get(line)?.join(', ')}]`
       : '';
+  const settingLabelWidth = 37;
+  const pushSettingRow = (label: string, value: string): void => {
+    lines.push(`${label.padEnd(settingLabelWidth)} : ${value}`);
+  };
+  const pushTable = (
+    headers: string[],
+    rows: string[][],
+    rightAligned: number[] = [],
+    indent = '',
+  ): void => {
+    if (rows.length === 0) return;
+    const right = new Set(rightAligned);
+    const widths = headers.map((h, col) =>
+      Math.max(
+        h.length,
+        ...rows.map((row) => {
+          const v = row[col] ?? '';
+          return v.length;
+        }),
+      ),
+    );
+    const formatCell = (value: string, width: number, alignRight: boolean) =>
+      alignRight ? value.padStart(width) : value.padEnd(width);
+    lines.push(
+      `${indent}${headers.map((h, col) => formatCell(h, widths[col], right.has(col))).join('  ')}`,
+    );
+    rows.forEach((row) => {
+      lines.push(
+        `${indent}${headers.map((_, col) => formatCell(row[col] ?? '', widths[col], right.has(col))).join('  ')}`,
+      );
+    });
+  };
+  const parseStochasticDefaultsRows = (
+    summary: string,
+  ): Array<{ label: string; value: string }> => {
+    const clean = summary.trim();
+    if (!clean) return [];
+    const keyMatches = Array.from(clean.matchAll(/([A-Za-z][A-Za-z0-9]*)=/g));
+    if (keyMatches.length === 0) return [{ label: 'Defaults Summary', value: clean }];
+    const keyToLabel: Record<string, string> = {
+      inst: 'Instrument',
+      dist: 'Distance (const+ppm)',
+      hz: 'Horizontal Angle Precision',
+      va: 'Vertical Angle Precision',
+      centering: 'Centering (inst/tgt)',
+      edm: 'EDM Mode',
+      centerInflation: 'Centering Inflation',
+    };
+    const rows: Array<{ label: string; value: string }> = [];
+    keyMatches.forEach((match, idx) => {
+      const key = match[1];
+      const start = (match.index ?? 0) + match[0].length;
+      const end =
+        idx + 1 < keyMatches.length ? (keyMatches[idx + 1].index ?? clean.length) : clean.length;
+      const value = clean.slice(start, end).trim();
+      if (!value) return;
+      rows.push({ label: keyToLabel[key] ?? `Setting ${key}`, value });
+    });
+    return rows.length > 0 ? rows : [{ label: 'Defaults Summary', value: clean }];
+  };
 
-  lines.push('                INDUSTRY-STANDARD-STYLE Listing (WebNet Emulation)');
-  lines.push(`                       Run Date: ${now.toLocaleString()}`);
+  lines.push('INDUSTRY-STANDARD-STYLE Listing (WebNet Emulation)');
+  lines.push(`Run Date: ${now.toLocaleString()}`);
   lines.push('');
-  lines.push('                   Summary of Files Used and Option Settings');
-  lines.push('                   =========================================');
+  lines.push('Summary of Files Used and Option Settings');
+  lines.push('=========================================');
   lines.push('');
-  lines.push('                            Project Option Settings');
+  lines.push('Project Option Settings');
   lines.push('');
-  lines.push(
-    `      Industry Standard Run Mode                   : ${runDiag.solveProfile === 'webnet' ? 'WebNet Default Profile' : 'Parity Profile (Classical)'}`,
+  pushSettingRow(
+    'Industry Standard Run Mode',
+    runDiag.solveProfile === 'webnet' ? 'WebNet Default Profile' : 'Parity Profile (Classical)',
   );
-  lines.push(`      Run Mode                            : ${runMode.toUpperCase()}`);
-  lines.push(`      Run Purpose                         : ${runPurpose}`);
-  lines.push(
-    `      Type of Adjustment                  : ${parseState?.coordMode ?? parseSettings.coordMode}`,
+  pushSettingRow('Run Mode', runMode.toUpperCase());
+  pushSettingRow('Run Purpose', runPurpose);
+  pushSettingRow('Type of Adjustment', parseState?.coordMode ?? parseSettings.coordMode);
+  pushSettingRow(
+    'Project Units',
+    `${linearUnit}; ${(parseState?.angleUnits ?? parseSettings.angleUnits).toUpperCase()}`,
   );
-  lines.push(
-    `      Project Units                       : ${linearUnit}; ${(parseState?.angleUnits ?? parseSettings.angleUnits).toUpperCase()}`,
+  pushSettingRow(
+    'Input/Output Coordinate Order',
+    (parseState?.order ?? parseSettings.order) === 'NE' ? 'North-East' : 'East-North',
   );
-  lines.push(
-    `      Input/Output Coordinate Order       : ${(parseState?.order ?? parseSettings.order) === 'NE' ? 'North-East' : 'East-North'}`,
+  pushSettingRow(
+    'Angle Data Station Order',
+    (parseState?.angleStationOrder ?? parseSettings.angleStationOrder) === 'atfromto'
+      ? 'At-From-To'
+      : 'From-At-To',
   );
-  lines.push(
-    `      Angle Data Station Order            : ${(parseState?.angleStationOrder ?? parseSettings.angleStationOrder) === 'atfromto' ? 'At-From-To' : 'From-At-To'}`,
-  );
-  lines.push(
-    `      Distance/Vertical Data Type         : ${(parseState?.deltaMode ?? parseSettings.deltaMode) === 'horiz' ? 'Hor Dist/DE' : 'Slope Dist/Zenith'}`,
+  pushSettingRow(
+    'Distance/Vertical Data Type',
+    (parseState?.deltaMode ?? parseSettings.deltaMode) === 'horiz'
+      ? 'Hor Dist/DE'
+      : 'Slope Dist/Zenith',
   );
   const convergenceLimit =
     typeof settings.convergenceLimit === 'number' &&
@@ -372,225 +439,257 @@ export const buildIndustryStyleListingText = (
     settings.convergenceLimit > 0
       ? settings.convergenceLimit
       : 0.01;
-  lines.push(
-    `      Convergence Limit; Max Iterations   : ${convergenceLimit.toFixed(6)}; ${settings.maxIterations}`,
+  pushSettingRow(
+    'Convergence Limit; Max Iterations',
+    `${convergenceLimit.toFixed(6)}; ${settings.maxIterations}`,
   );
-  lines.push(
-    `      Default Coefficient of Refraction   : ${(parseState?.refractionCoefficient ?? parseSettings.refractionCoefficient).toFixed(6)}`,
+  pushSettingRow(
+    'Default Coefficient of Refraction',
+    (parseState?.refractionCoefficient ?? parseSettings.refractionCoefficient).toFixed(6),
   );
-  lines.push(
-    `      Prism Correction                    : ${prismEnabled ? `ON (${prismOffset.toFixed(4)} m, scope=${prismScope})` : 'OFF'}`,
+  pushSettingRow(
+    'Prism Correction',
+    prismEnabled ? `ON (${prismOffset.toFixed(4)} m, scope=${prismScope})` : 'OFF',
   );
-  lines.push(
-    `      Plan Rotation                      : ${Math.abs(rotationAngleRad) > 1e-12 ? `ON (${(rotationAngleRad * RAD_TO_DEG).toFixed(6)} deg)` : 'OFF'}`,
+  pushSettingRow(
+    'Plan Rotation',
+    Math.abs(rotationAngleRad) > 1e-12
+      ? `ON (${(rotationAngleRad * RAD_TO_DEG).toFixed(6)} deg)`
+      : 'OFF',
   );
-  lines.push(
-    `      Coordinate System Mode           : ${coordSystemMode.toUpperCase()} (CRS=${crsId})`,
-  );
+  pushSettingRow('Coordinate System Mode', `${coordSystemMode.toUpperCase()} (CRS=${crsId})`);
   if (coordSystemMode === 'local') {
-    lines.push(
-      `      Local Datum Scheme              : ${localDatumScheme.toUpperCase()} (scale=${averageScaleFactor.toFixed(8)}, commonElev=${(commonElevation * unitScale).toFixed(4)} ${linearUnit})`,
+    pushSettingRow(
+      'Local Datum Scheme',
+      `${localDatumScheme.toUpperCase()} (scale=${averageScaleFactor.toFixed(8)}, commonElev=${(commonElevation * unitScale).toFixed(4)} ${linearUnit})`,
     );
   } else {
-    lines.push(
-      `      Directive Context (End of File): bearing=${gridBearingMode.toUpperCase()}, distance=${gridDistanceMode.toUpperCase()}, angle=${gridAngleMode.toUpperCase()}, direction=${gridDirectionMode.toUpperCase()}`,
+    pushSettingRow(
+      'Directive Context (End of File)',
+      `bearing=${gridBearingMode.toUpperCase()}, distance=${gridDistanceMode.toUpperCase()}, angle=${gridAngleMode.toUpperCase()}, direction=${gridDirectionMode.toUpperCase()}`,
     );
-    lines.push(
-      `      .SCALE Override Active         : ${scaleOverrideActive ? `YES (k=${averageScaleFactor.toFixed(8)})` : 'NO'}`,
+    pushSettingRow(
+      '.SCALE Override Active',
+      scaleOverrideActive ? `YES (k=${averageScaleFactor.toFixed(8)})` : 'NO',
     );
-    lines.push(
-      `      GNSS Frame Default             : ${gnssVectorFrameDefault} (confirmed=${gnssFrameConfirmed ? 'YES' : 'NO'})`,
+    pushSettingRow(
+      'GNSS Frame Default',
+      `${gnssVectorFrameDefault} (confirmed=${gnssFrameConfirmed ? 'YES' : 'NO'})`,
     );
-    lines.push(
-      `      Applied Reduction Modes (Parsed): ${formatReductionUsage(parsedUsageSummary)}`,
-    );
-    lines.push(
-      `      Applied Reduction Modes (Used) : ${formatReductionUsage(usedInSolveUsageSummary)}`,
-    );
+    pushSettingRow('Applied Reduction Modes (Parsed)', formatReductionUsage(parsedUsageSummary));
+    pushSettingRow('Applied Reduction Modes (Used)', formatReductionUsage(usedInSolveUsageSummary));
     if (directiveTransitions.length > 0) {
-      lines.push(`      Directive Transition Count     : ${directiveTransitions.length}`);
+      pushSettingRow('Directive Transition Count', String(directiveTransitions.length));
       directiveTransitions.slice(0, 20).forEach((transition) => {
-        lines.push(
-          `      Directive Range               : ${transition.directive} line ${transition.effectiveFromLine}${transition.effectiveToLine != null ? `-${transition.effectiveToLine}` : '-EOF'} (obs=${transition.obsCountInRange})`,
+        pushSettingRow(
+          'Directive Range',
+          `${transition.directive} line ${transition.effectiveFromLine}${transition.effectiveToLine != null ? `-${transition.effectiveToLine}` : '-EOF'} (obs=${transition.obsCountInRange})`,
         );
       });
       if (directiveTransitions.length > 20) {
-        lines.push(
-          `      Directive Range Overflow      : +${directiveTransitions.length - 20} more`,
-        );
+        pushSettingRow('Directive Range Overflow', `+${directiveTransitions.length - 20} more`);
       }
     }
     directiveNoEffectWarnings.forEach((warning) => {
-      lines.push(
-        `      Directive No-Effect            : ${warning.directive} line ${warning.line} (${warning.reason})`,
+      pushSettingRow(
+        'Directive No-Effect',
+        `${warning.directive} line ${warning.line} (${warning.reason})`,
       );
     });
   }
   if (datumSufficiency) {
-    lines.push(
-      `      Datum Sufficiency              : ${datumSufficiency.status.toUpperCase()}${datumSufficiency.reasons.length > 0 ? ` (${datumSufficiency.reasons.length} reason${datumSufficiency.reasons.length === 1 ? '' : 's'})` : ''}`,
+    pushSettingRow(
+      'Datum Sufficiency',
+      `${datumSufficiency.status.toUpperCase()}${datumSufficiency.reasons.length > 0 ? ` (${datumSufficiency.reasons.length} reason${datumSufficiency.reasons.length === 1 ? '' : 's'})` : ''}`,
     );
     datumSufficiency.reasons.forEach((reason) => {
-      lines.push(`      Datum Reason                   : ${reason}`);
+      pushSettingRow('Datum Reason', reason);
     });
     datumSufficiency.suggestions.forEach((suggestion) => {
-      lines.push(`      Datum Suggestion               : ${suggestion}`);
+      pushSettingRow('Datum Suggestion', suggestion);
     });
   }
-  lines.push(
-    `      Average Geoid Height            : ${(averageGeoidHeight * unitScale).toFixed(4)} ${linearUnit}`,
+  pushSettingRow('Average Geoid Height', `${(averageGeoidHeight * unitScale).toFixed(4)} ${linearUnit}`);
+  pushSettingRow(
+    'CRS / Projection',
+    crsStatus === 'on'
+      ? `ON (${crsProjectionModel}, label="${crsLabel || 'unnamed'}")`
+      : `OFF${crsOffReason ? ` (${crsOffReason})` : ''}`,
   );
-  lines.push(
-    `      CRS / Projection                   : ${crsStatus === 'on' ? `ON (${crsProjectionModel}, label="${crsLabel || 'unnamed'}")` : `OFF${crsOffReason ? ` (${crsOffReason})` : ''}`}`,
+  pushSettingRow(
+    'CRS Grid-Ground Scale',
+    crsGridScaleEnabled ? `ON (${crsGridScaleFactor.toFixed(8)})` : 'OFF',
   );
-  lines.push(
-    `      CRS Grid-Ground Scale             : ${crsGridScaleEnabled ? `ON (${crsGridScaleFactor.toFixed(8)})` : 'OFF'}`,
-  );
-  lines.push(
-    `      CRS Convergence                   : ${crsConvergenceEnabled ? `ON (${(crsConvergenceAngleRad * RAD_TO_DEG).toFixed(6)} deg)` : 'OFF'}`,
+  pushSettingRow(
+    'CRS Convergence',
+    crsConvergenceEnabled ? `ON (${(crsConvergenceAngleRad * RAD_TO_DEG).toFixed(6)} deg)` : 'OFF',
   );
   if (coordSystemMode === 'grid') {
-    lines.push(
-      `      CRS Datum Operation              : ${crsDatumOpId ?? '-'}${crsDatumFallbackUsed ? ' (fallback)' : ''}`,
+    pushSettingRow(
+      'CRS Datum Operation',
+      `${crsDatumOpId ?? '-'}${crsDatumFallbackUsed ? ' (fallback)' : ''}`,
     );
-    lines.push(
-      `      CRS Area-of-Use Status          : ${crsAreaOfUseStatus.toUpperCase()}${crsAreaOfUseStatus === 'outside' ? ` (outside=${crsOutOfAreaStationCount})` : ''}`,
+    pushSettingRow(
+      'CRS Area-of-Use Status',
+      `${crsAreaOfUseStatus.toUpperCase()}${crsAreaOfUseStatus === 'outside' ? ` (outside=${crsOutOfAreaStationCount})` : ''}`,
     );
   }
   if (coordSystemDiagnostics.length > 0) {
-    lines.push(`      CRS Diagnostics                 : ${coordSystemDiagnostics.join(', ')}`);
+    pushSettingRow('CRS Diagnostics', coordSystemDiagnostics.join(', '));
   }
   if (coordSystemWarningMessages.length > 0) {
-    lines.push(`      CRS Warning Count              : ${coordSystemWarningMessages.length}`);
+    pushSettingRow('CRS Warning Count', String(coordSystemWarningMessages.length));
   }
-  lines.push(
-    `      Geoid/Grid Model                 : ${geoidModelEnabled ? `ON (${geoidModelId}, ${geoidInterpolation.toUpperCase()}, loaded=${geoidModelLoaded ? 'YES' : 'NO'})` : 'OFF'}`,
+  pushSettingRow(
+    'Geoid/Grid Model',
+    geoidModelEnabled
+      ? `ON (${geoidModelId}, ${geoidInterpolation.toUpperCase()}, loaded=${geoidModelLoaded ? 'YES' : 'NO'})`
+      : 'OFF',
   );
   if (geoidModelEnabled) {
-    lines.push(
-      `      Geoid Metadata                  : ${geoidModelMetadata || 'unavailable'}${geoidSampleUndulationM != null ? `; sampleN=${geoidSampleUndulationM.toFixed(4)} m` : ''}`,
+    pushSettingRow(
+      'Geoid Metadata',
+      `${geoidModelMetadata || 'unavailable'}${geoidSampleUndulationM != null ? `; sampleN=${geoidSampleUndulationM.toFixed(4)} m` : ''}`,
     );
   }
-  lines.push(
-    `      Geoid Height Conversion        : ${geoidHeightConversionEnabled ? `ON (${geoidOutputHeightDatum.toUpperCase()}, converted=${geoidConvertedStationCount}, skipped=${geoidSkippedStationCount})` : 'OFF'}`,
+  pushSettingRow(
+    'Geoid Height Conversion',
+    geoidHeightConversionEnabled
+      ? `ON (${geoidOutputHeightDatum.toUpperCase()}, converted=${geoidConvertedStationCount}, skipped=${geoidSkippedStationCount})`
+      : 'OFF',
   );
-  lines.push(
-    `      GPS AddHiHt Defaults            : ${gpsAddHiHtEnabled ? `ON (HI=${(gpsAddHiHtHiM * unitScale).toFixed(4)} ${linearUnit}, HT=${(gpsAddHiHtHtM * unitScale).toFixed(4)} ${linearUnit})` : 'OFF'}`,
+  pushSettingRow(
+    'GPS AddHiHt Defaults',
+    gpsAddHiHtEnabled
+      ? `ON (HI=${(gpsAddHiHtHiM * unitScale).toFixed(4)} ${linearUnit}, HT=${(gpsAddHiHtHtM * unitScale).toFixed(4)} ${linearUnit})`
+      : 'OFF',
   );
   if (gpsAddHiHtEnabled) {
-    lines.push(
-      `      GPS AddHiHt Preprocess          : vectors=${gpsAddHiHtVectorCount}, adjusted=${gpsAddHiHtAppliedCount} (+${gpsAddHiHtPositiveCount}/-${gpsAddHiHtNegativeCount}/neutral=${gpsAddHiHtNeutralCount}), defaultZero=${gpsAddHiHtDefaultZeroCount}, missingHeight=${gpsAddHiHtMissingHeightCount}, scale=[${gpsAddHiHtScaleMin.toFixed(8)}, ${gpsAddHiHtScaleMax.toFixed(8)}]`,
+    pushSettingRow(
+      'GPS AddHiHt Preprocess',
+      `vectors=${gpsAddHiHtVectorCount}, adjusted=${gpsAddHiHtAppliedCount} (+${gpsAddHiHtPositiveCount}/-${gpsAddHiHtNegativeCount}/neutral=${gpsAddHiHtNeutralCount}), defaultZero=${gpsAddHiHtDefaultZeroCount}, missingHeight=${gpsAddHiHtMissingHeightCount}, scale=[${gpsAddHiHtScaleMin.toFixed(8)}, ${gpsAddHiHtScaleMax.toFixed(8)}]`,
     );
   }
-  lines.push(
-    `      GPS Loop Check                  : ${gpsLoopCheckEnabled ? 'ON' : 'OFF'}${gpsLoopDiagnostics?.enabled ? ` (vectors=${gpsLoopDiagnostics.vectorCount}, loops=${gpsLoopDiagnostics.loopCount}, pass=${gpsLoopDiagnostics.passCount}, warn=${gpsLoopDiagnostics.warnCount})` : ''}`,
+  pushSettingRow(
+    'GPS Loop Check',
+    `${gpsLoopCheckEnabled ? 'ON' : 'OFF'}${gpsLoopDiagnostics?.enabled ? ` (vectors=${gpsLoopDiagnostics.vectorCount}, loops=${gpsLoopDiagnostics.loopCount}, pass=${gpsLoopDiagnostics.passCount}, warn=${gpsLoopDiagnostics.warnCount})` : ''}`,
   );
-  lines.push(
-    `      Level Loop Tolerance           : ${getLevelLoopTolerancePresetLabel(levelLoopToleranceBaseMm, levelLoopTolerancePerSqrtKmMm)} (base=${levelLoopToleranceBaseMm.toFixed(2)} mm, k=${levelLoopTolerancePerSqrtKmMm.toFixed(2)} mm/sqrt(km))`,
+  pushSettingRow(
+    'Level Loop Tolerance',
+    `${getLevelLoopTolerancePresetLabel(levelLoopToleranceBaseMm, levelLoopTolerancePerSqrtKmMm)} (base=${levelLoopToleranceBaseMm.toFixed(2)} mm, k=${levelLoopTolerancePerSqrtKmMm.toFixed(2)} mm/sqrt(km))`,
   );
-  lines.push(
-    `      GPS Rover Offsets              : ${gpsOffsetObservations.length > 0 ? `${gpsOffsetObservations.length} applied` : 'none'}`,
+  pushSettingRow(
+    'GPS Rover Offsets',
+    gpsOffsetObservations.length > 0 ? `${gpsOffsetObservations.length} applied` : 'none',
   );
-  lines.push(
-    `      Lost Stations                     : ${lostStationIds.length > 0 ? `${lostStationIds.length} (${lostStationIds.join(', ')})` : 'none'}`,
+  pushSettingRow(
+    'Lost Stations',
+    lostStationIds.length > 0 ? `${lostStationIds.length} (${lostStationIds.join(', ')})` : 'none',
   );
-  lines.push(
-    `      QFIX (Linear/Angular)            : ${(qFixLinearSigmaM * unitScale).toExponential(6)} ${linearUnit}; ${qFixAngularSigmaSec.toExponential(6)}"`,
+  pushSettingRow(
+    'QFIX (Linear/Angular)',
+    `${(qFixLinearSigmaM * unitScale).toExponential(6)} ${linearUnit}; ${qFixAngularSigmaSec.toExponential(6)}"`,
   );
-  lines.push(
-    `      Description Reconciliation       : ${descriptionReconcileMode.toUpperCase()}${descriptionReconcileMode === 'append' ? ` (delimiter="${descriptionAppendDelimiter}")` : ''}`,
+  pushSettingRow(
+    'Description Reconciliation',
+    `${descriptionReconcileMode.toUpperCase()}${descriptionReconcileMode === 'append' ? ` (delimiter="${descriptionAppendDelimiter}")` : ''}`,
   );
   if ((parseState?.descriptionScanSummary?.length ?? 0) > 0) {
-    lines.push(
-      `      Description Scan                  : repeated=${parseState?.descriptionRepeatedStationCount ?? 0}, conflicts=${parseState?.descriptionConflictCount ?? 0}, stations=${parseState?.descriptionScanSummary?.length ?? 0}`,
+    pushSettingRow(
+      'Description Scan',
+      `repeated=${parseState?.descriptionRepeatedStationCount ?? 0}, conflicts=${parseState?.descriptionConflictCount ?? 0}, stations=${parseState?.descriptionScanSummary?.length ?? 0}`,
     );
   }
-  lines.push(`      Show Lost Stations in Output      : ${showLostStations ? 'ON' : 'OFF'}`);
+  pushSettingRow('Show Lost Stations in Output', showLostStations ? 'ON' : 'OFF');
   if (res.clusterDiagnostics?.enabled) {
-    lines.push(
-      `      Cluster Detection Mode             : ${res.clusterDiagnostics.passMode.toUpperCase()} / ${res.clusterDiagnostics.linkageMode.toUpperCase()} (${res.clusterDiagnostics.dimension}, tol=${(res.clusterDiagnostics.tolerance * unitScale).toFixed(4)} ${linearUnit}, merges=${res.clusterDiagnostics.approvedMergeCount ?? 0}, outcomes=${res.clusterDiagnostics.mergeOutcomes?.length ?? 0}, rejected=${res.clusterDiagnostics.rejectedProposals?.length ?? 0})`,
+    pushSettingRow(
+      'Cluster Detection Mode',
+      `${res.clusterDiagnostics.passMode.toUpperCase()} / ${res.clusterDiagnostics.linkageMode.toUpperCase()} (${res.clusterDiagnostics.dimension}, tol=${(res.clusterDiagnostics.tolerance * unitScale).toFixed(4)} ${linearUnit}, merges=${res.clusterDiagnostics.approvedMergeCount ?? 0}, outcomes=${res.clusterDiagnostics.mergeOutcomes?.length ?? 0}, rejected=${res.clusterDiagnostics.rejectedProposals?.length ?? 0})`,
     );
   }
   if (res.autoAdjustDiagnostics?.enabled) {
-    lines.push(
-      `      Auto-Adjust                        : ON (|t|>=${res.autoAdjustDiagnostics.threshold.toFixed(2)}, cycles=${res.autoAdjustDiagnostics.maxCycles}, maxRm/cycle=${res.autoAdjustDiagnostics.maxRemovalsPerCycle}, minRedund=${res.autoAdjustDiagnostics.minRedundancy.toFixed(2)}, stop=${res.autoAdjustDiagnostics.stopReason}, removed=${res.autoAdjustDiagnostics.removed.length})`,
+    pushSettingRow(
+      'Auto-Adjust',
+      `ON (|t|>=${res.autoAdjustDiagnostics.threshold.toFixed(2)}, cycles=${res.autoAdjustDiagnostics.maxCycles}, maxRm/cycle=${res.autoAdjustDiagnostics.maxRemovalsPerCycle}, minRedund=${res.autoAdjustDiagnostics.minRedundancy.toFixed(2)}, stop=${res.autoAdjustDiagnostics.stopReason}, removed=${res.autoAdjustDiagnostics.removed.length})`,
     );
   }
   if (autoSideshotEnabled && res.autoSideshotDiagnostics?.enabled) {
-    lines.push(
-      `      Auto Sideshot (M-lines)            : ON (evaluated=${res.autoSideshotDiagnostics.evaluatedCount}, candidates=${res.autoSideshotDiagnostics.candidateCount}, excluded-control=${res.autoSideshotDiagnostics.excludedControlCount}, minRedund<${res.autoSideshotDiagnostics.threshold.toFixed(2)})`,
+    pushSettingRow(
+      'Auto Sideshot (M-lines)',
+      `ON (evaluated=${res.autoSideshotDiagnostics.evaluatedCount}, candidates=${res.autoSideshotDiagnostics.candidateCount}, excluded-control=${res.autoSideshotDiagnostics.excludedControlCount}, minRedund<${res.autoSideshotDiagnostics.threshold.toFixed(2)})`,
     );
   } else {
-    lines.push('      Auto Sideshot (M-lines)            : OFF');
+    pushSettingRow('Auto Sideshot (M-lines)', 'OFF');
   }
   if ((parseState?.aliasExplicitCount ?? 0) > 0 || (parseState?.aliasRuleCount ?? 0) > 0) {
-    lines.push(
-      `      Alias Canonicalization              : explicit=${parseState?.aliasExplicitCount ?? 0}, rules=${parseState?.aliasRuleCount ?? 0}, references=${aliasTrace.length}`,
+    pushSettingRow(
+      'Alias Canonicalization',
+      `explicit=${parseState?.aliasExplicitCount ?? 0}, rules=${parseState?.aliasRuleCount ?? 0}, references=${aliasTrace.length}`,
     );
   }
   lines.push('');
-  lines.push('                       Instrument Standard Error Settings');
+  lines.push('Instrument Standard Error Settings');
   lines.push('');
-  lines.push('      Active Project Instrument Defaults');
-  lines.push(
-    `        Distances (Constant)              : ${runDiag.stochasticDefaultsSummary.includes('inst=') ? runDiag.stochasticDefaultsSummary : '-'}`,
-  );
-  lines.push(
-    `        Centering / Inflation             : ${runDiag.angleCenteringModel}; ${runDiag.defaultSigmaCount} default-sigma obs${runDiag.defaultSigmaByType ? ` (${runDiag.defaultSigmaByType})` : ''}`,
+  lines.push('Active Project Instrument Defaults');
+  const stochasticRows = parseStochasticDefaultsRows(runDiag.stochasticDefaultsSummary);
+  if (stochasticRows.length === 0) {
+    pushSettingRow('Defaults Summary', '-');
+  } else {
+    stochasticRows.forEach((row) => {
+      pushSettingRow(row.label, row.value);
+    });
+  }
+  pushSettingRow('Centering Model', runDiag.angleCenteringModel);
+  pushSettingRow(
+    'Default Sigma Usage',
+    `${runDiag.defaultSigmaCount} default-sigma obs${runDiag.defaultSigmaByType ? ` (${runDiag.defaultSigmaByType})` : ''}`,
   );
   if ((parseState?.aliasExplicitMappings?.length ?? 0) > 0) {
-    lines.push('      Explicit Alias Mappings');
+    lines.push('Explicit Alias Mappings');
     parseState?.aliasExplicitMappings?.forEach((m) => {
       lines.push(
-        `        ${m.sourceId} -> ${m.canonicalId}${m.sourceLine != null ? ` (line ${m.sourceLine})` : ''}`,
+        `${m.sourceId} -> ${m.canonicalId}${m.sourceLine != null ? ` (line ${m.sourceLine})` : ''}`,
       );
     });
   }
   if ((parseState?.aliasRuleSummaries?.length ?? 0) > 0) {
-    lines.push('      Alias Rules');
+    lines.push('Alias Rules');
     parseState?.aliasRuleSummaries?.forEach((r) => {
-      lines.push(`        ${r.rule} (line ${r.sourceLine})`);
+      lines.push(`${r.rule} (line ${r.sourceLine})`);
     });
   }
   lines.push('');
-  lines.push('                    Summary of Unadjusted Input Observations');
-  lines.push('                    ========================================');
+  lines.push('Summary of Unadjusted Input Observations');
+  lines.push('========================================');
   lines.push('');
-  lines.push(
-    `                    Number of Entered Stations (${linearUnit}) = ${stationEntriesInputOrder.length}`,
+  pushSettingRow(
+    `Number of Entered Stations (${linearUnit})`,
+    `${stationEntriesInputOrder.length}`,
   );
-  lines.push(
-    `                    Fixed Stations = ${fixedStations}; Free Stations = ${freeStations}`,
-  );
+  pushSettingRow('Fixed Stations', `${fixedStations}`);
+  pushSettingRow('Free Stations', `${freeStations}`);
 
   const countByType = (type: Observation['type']) =>
     observationsForListing.filter((o) => o.type === type).length;
   lines.push('');
-  lines.push(
-    `                    Number of Angle Observations (${(parseState?.angleUnits ?? parseSettings.angleUnits).toUpperCase()}) = ${countByType('angle')}`,
-  );
-  lines.push(
-    `                 Number of Distance Observations (${linearUnit}) = ${countByType('dist')}`,
-  );
-  lines.push(
-    `                Number of Direction Observations (${(parseState?.angleUnits ?? parseSettings.angleUnits).toUpperCase()}) = ${countByType('direction') + countByType('dir') + countByType('bearing')}`,
+  const angleUnitToken = (parseState?.angleUnits ?? parseSettings.angleUnits).toUpperCase();
+  pushSettingRow(`Number of Angle Observations (${angleUnitToken})`, `${countByType('angle')}`);
+  pushSettingRow(`Number of Distance Observations (${linearUnit})`, `${countByType('dist')}`);
+  pushSettingRow(
+    `Number of Direction Observations (${angleUnitToken})`,
+    `${countByType('direction') + countByType('dir') + countByType('bearing')}`,
   );
   lines.push('');
-  lines.push('                         Adjustment Statistical Summary');
-  lines.push('                         ==============================');
+  lines.push('Adjustment Statistical Summary');
+  lines.push('==============================');
   lines.push('');
-  lines.push(`                        Iterations              = ${res.iterations}`);
+  pushSettingRow('Iterations', `${res.iterations}`);
+  pushSettingRow('Number of Stations', `${stationEntriesInputOrder.length}`);
+  pushSettingRow('Number of Observations', `${observationCount}`);
+  pushSettingRow('Number of Unknowns', `${unknownCount}`);
+  pushSettingRow('Number of Redundant Obs', `${res.dof}`);
   lines.push('');
-  lines.push(
-    `                        Number of Stations      = ${stationEntriesInputOrder.length}`,
-  );
-  lines.push('');
-  lines.push(`                        Number of Observations  = ${observationCount}`);
-  lines.push(`                        Number of Unknowns      = ${unknownCount}`);
-  lines.push(`                        Number of Redundant Obs = ${res.dof}`);
-  lines.push('');
-  lines.push('            Observation   Count   Sum Squares         Error');
-  lines.push('                                    of StdRes        Factor');
+  lines.push('Observation Statistics');
 
   const statRows = res.statisticalSummary?.byGroup?.length
     ? res.statisticalSummary.byGroup
@@ -629,26 +728,35 @@ export const buildIndustryStyleListingText = (
     res.statisticalSummary?.totalCount ?? statRows.reduce((sum, r) => sum + r.count, 0);
   const totalSumSquares =
     res.statisticalSummary?.totalSumSquares ?? statRows.reduce((sum, r) => sum + r.sumSquares, 0);
-  statRows.forEach((row) => {
-    lines.push(
-      `                 ${row.label.padEnd(12)}${row.count.toString().padStart(6)}${row.sumSquares.toFixed(3).padStart(14)}${row.errorFactor.toFixed(3).padStart(14)}`,
-    );
-  });
-  lines.push(
-    `                  Total${totalCount.toString().padStart(12)}${totalSumSquares.toFixed(3).padStart(14)}${res.seuw.toFixed(3).padStart(14)}`,
+  const statTableRows = statRows.map((row) => [
+    row.label,
+    row.count.toString(),
+    row.sumSquares.toFixed(3),
+    row.errorFactor.toFixed(3),
+  ]);
+  statTableRows.push([
+    'Total',
+    totalCount.toString(),
+    totalSumSquares.toFixed(3),
+    res.seuw.toFixed(3),
+  ]);
+  pushTable(
+    ['Observation', 'Count', 'Sum Squares of StdRes', 'Error Factor'],
+    statTableRows,
+    [1, 2, 3],
   );
   lines.push('');
   if (res.chiSquare) {
     const errorLower = Math.sqrt(res.chiSquare.varianceFactorLower);
     const errorUpper = Math.sqrt(res.chiSquare.varianceFactorUpper);
     lines.push(
-      `                  The Chi-Square Test at 5.00% Level ${res.chiSquare.pass95 ? 'Passed' : 'Failed'}`,
+      `The Chi-Square Test at 5.00% Level ${res.chiSquare.pass95 ? 'Passed' : 'Failed'}`,
     );
     lines.push(
-      `                       Lower/Upper Bounds (${errorLower.toFixed(3)}/${errorUpper.toFixed(3)})`,
+      `Lower/Upper Bounds (${errorLower.toFixed(3)}/${errorUpper.toFixed(3)})`,
     );
     lines.push(
-      `                       Variance Factor Bounds (${res.chiSquare.varianceFactorLower.toFixed(3)}/${res.chiSquare.varianceFactorUpper.toFixed(3)})`,
+      `Variance Factor Bounds (${res.chiSquare.varianceFactorLower.toFixed(3)}/${res.chiSquare.varianceFactorUpper.toFixed(3)})`,
     );
     lines.push('');
   }
@@ -657,25 +765,7 @@ export const buildIndustryStyleListingText = (
     lines.push(underline.repeat(title.length));
   };
   const renderTextTable = (headers: string[], rows: string[][], rightAligned: number[] = []) => {
-    if (rows.length === 0) return;
-    const right = new Set(rightAligned);
-    const widths = headers.map((h, col) =>
-      Math.max(
-        h.length,
-        ...rows.map((row) => {
-          const v = row[col] ?? '';
-          return v.length;
-        }),
-      ),
-    );
-    const formatCell = (value: string, width: number, alignRight: boolean) =>
-      alignRight ? value.padStart(width) : value.padEnd(width);
-    lines.push(headers.map((h, col) => formatCell(h, widths[col], right.has(col))).join('  '));
-    rows.forEach((row) => {
-      lines.push(
-        headers.map((_, col) => formatCell(row[col] ?? '', widths[col], right.has(col))).join('  '),
-      );
-    });
+    pushTable(headers, rows, rightAligned);
   };
 
   if (settings.listingShowCoordinates) {

@@ -93,7 +93,7 @@ describe('industry listing phase 5 formatting locks', () => {
     expect(listing).toContain('Station                 Semi-Major    Semi-Minor   Azimuth of');
     expect(listing).toContain('Stations                Semi-Major    Semi-Minor   Azimuth of');
     expect(listing).toContain('From       To               Axis          Axis     Major Axis');
-    expect(listing).toContain('Convergence Limit; Max Iterations   : 0.010000; 25');
+    expect(listing).toMatch(/Convergence Limit; Max Iterations\s+:\s+0\.010000; 25/);
 
     // Lock coordinate/std-dev spacing to prevent merged numeric columns.
     expect(listing).toMatch(/^\s*1\s+-\s+-?\d+\.\d{4}\s+-?\d+\.\d{4}\s*$/m);
@@ -427,8 +427,8 @@ describe('industry listing phase 5 formatting locks', () => {
       rotatedResult.parseState?.rotationAngleRad ?? 0,
     );
 
-    expect(baseListing).toContain('Plan Rotation                      : OFF');
-    expect(rotatedListing).toContain('Plan Rotation                      : ON (10.000000 deg)');
+    expect(baseListing).toMatch(/Plan Rotation\s+:\s+OFF/);
+    expect(rotatedListing).toMatch(/Plan Rotation\s+:\s+ON \(10\.000000 deg\)/);
 
     const coordRow = (listing: string, stationId: string): [number, number] => {
       const match = listing.match(
@@ -623,8 +623,8 @@ describe('industry listing phase 5 formatting locks', () => {
 
     expect(listingShown).toContain('Lost Stations');
     expect(listingShown).toContain('1 (B)');
-    expect(listingShown).toContain('Show Lost Stations in Output      : ON');
-    expect(listingHidden).toContain('Show Lost Stations in Output      : OFF');
+    expect(listingShown).toMatch(/Show Lost Stations in Output\s+:\s+ON/);
+    expect(listingHidden).toMatch(/Show Lost Stations in Output\s+:\s+OFF/);
     expect(listingShown).toMatch(/^\s*B\s+-\s+-?\d+\.\d{4}\s+-?\d+\.\d{4}\s*$/m);
     expect(listingHidden).not.toMatch(/^\s*B\s+-\s+-?\d+\.\d{4}\s+-?\d+\.\d{4}\s*$/m);
     expect(listingShown).toContain('A-B');
@@ -729,8 +729,8 @@ describe('industry listing phase 5 formatting locks', () => {
       },
     );
 
-    expect(listing).toContain(
-      'Coordinate System Mode           : GRID (CRS=CA_NAD83_CSRS_NB_STEREO_DOUBLE)',
+    expect(listing).toMatch(
+      /Coordinate System Mode\s+:\s+GRID \(CRS=CA_NAD83_CSRS_NB_STEREO_DOUBLE\)/,
     );
     expect(listing).toMatch(/CRS \/ Projection\s+: ON/);
   });
