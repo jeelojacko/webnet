@@ -9515,6 +9515,7 @@ const App: React.FC<AppProps> = ({
                       units={settings.units}
                       showLostStations={settings.mapShowLostStations}
                       mode={settings.map3dEnabled ? '3d' : '2d'}
+                      adjustedPointsExportSettings={adjustedPointsExportSettings}
                     />
                   )}
                 </>

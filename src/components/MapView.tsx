@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { AdjustmentResult } from '../types';
+import type { AdjustedPointsExportSettings, AdjustmentResult } from '../types';
 import {
   buildMap3DScene,
   createDefaultMap3DCamera,
@@ -8,6 +8,11 @@ import {
 } from '../engine/map3d';
 import { RAD_TO_DEG, radToDmsStr } from '../engine/angles';
 import { computeInverse2D, computePivotAngles } from '../engine/mapTools';
+import {
+  getAdjustedPointsExportStationIds,
+  sanitizeAdjustedPointsExportSettings,
+  validateAdjustedPointsRotationTransform,
+} from '../engine/adjustedPointsExport';
 
 const FT_PER_M = 3.280839895;
 const VIEW_W = 1000;
@@ -17,6 +22,7 @@ const MAX_ZOOM = 200;
 const MIDDLE_DBLCLICK_MS = 320;
 const DEG_TO_RAD = Math.PI / 180;
 const MAX_ELLIPSOID_SAMPLES = 28;
+const ROTATION_TINY_EPSILON = 1e-10;
 
 type ToolPanel = 'none' | 'points' | 'inverse' | 'angles';
 
@@ -26,6 +32,7 @@ interface MapViewProps {
   showLostStations?: boolean;
   mode?: '2d' | '3d';
   viewportWidthOverride?: number;
+  adjustedPointsExportSettings?: AdjustedPointsExportSettings;
 }
 
 type DragMode = 'none' | 'pan2d' | 'orbit3d' | 'pan3d';
@@ -38,6 +45,7 @@ const MapView: React.FC<MapViewProps> = ({
   showLostStations = true,
   mode = '2d',
   viewportWidthOverride,
+  adjustedPointsExportSettings,
 }) => {
   const unitScale = units === 'ft' ? FT_PER_M : 1;
   const isPreanalysis = result.preanalysisMode === true;
@@ -66,6 +74,7 @@ const MapView: React.FC<MapViewProps> = ({
   const [anglePivotInput, setAnglePivotInput] = useState('');
   const [angleFromInput, setAngleFromInput] = useState('');
   const [angleToInput, setAngleToInput] = useState('');
+  const [showTransformedCoordinates, setShowTransformedCoordinates] = useState(false);
   const [viewportWidth, setViewportWidth] = useState<number>(
     typeof window !== 'undefined' ? window.innerWidth : 1280,
   );
@@ -101,6 +110,130 @@ const MapView: React.FC<MapViewProps> = ({
     }));
     return { points: pts, bbox: { minX: minX - pad, minY: minY - pad, width, height } };
   }, [scene3d]);
+
+  const cleanAdjustedPointsExportSettings = useMemo(
+    () =>
+      adjustedPointsExportSettings
+        ? sanitizeAdjustedPointsExportSettings(adjustedPointsExportSettings)
+        : null,
+    [adjustedPointsExportSettings],
+  );
+
+  const transformedOverlayConfig = useMemo(() => {
+    const emptyMap = new Map<string, { east: number; north: number }>();
+    if (!cleanAdjustedPointsExportSettings) {
+      return {
+        enabled: false,
+        available: false,
+        reason: '',
+        angleDeg: 0,
+        pivotStationId: '',
+        scope: 'all' as const,
+        rotatedByStationId: emptyMap,
+      };
+    }
+
+    const rotation = cleanAdjustedPointsExportSettings.transform.rotation;
+    if (!rotation.enabled) {
+      return {
+        enabled: false,
+        available: false,
+        reason: '',
+        angleDeg: rotation.angleDeg,
+        pivotStationId: rotation.pivotStationId,
+        scope: rotation.scope,
+        rotatedByStationId: emptyMap,
+      };
+    }
+
+    const validation = validateAdjustedPointsRotationTransform({
+      result,
+      settings: cleanAdjustedPointsExportSettings,
+    });
+    if (!validation.valid) {
+      return {
+        enabled: true,
+        available: false,
+        reason: validation.message,
+        angleDeg: rotation.angleDeg,
+        pivotStationId: rotation.pivotStationId,
+        scope: rotation.scope,
+        rotatedByStationId: emptyMap,
+      };
+    }
+
+    const pivot = stations[rotation.pivotStationId];
+    if (!pivot) {
+      return {
+        enabled: true,
+        available: false,
+        reason: 'Rotation pivot station was not found in adjusted stations.',
+        angleDeg: rotation.angleDeg,
+        pivotStationId: rotation.pivotStationId,
+        scope: rotation.scope,
+        rotatedByStationId: emptyMap,
+      };
+    }
+
+    const exportedStationIds = getAdjustedPointsExportStationIds(
+      result,
+      cleanAdjustedPointsExportSettings.includeLostStations,
+    );
+    const exportedStationIdSet = new Set(exportedStationIds);
+    const rotateStationIds =
+      rotation.scope === 'all'
+        ? exportedStationIds
+        : [
+            ...new Set(
+              [...rotation.selectedStationIds, rotation.pivotStationId].filter((stationId) =>
+                exportedStationIdSet.has(stationId),
+              ),
+            ),
+          ];
+
+    if (rotateStationIds.length === 0) {
+      return {
+        enabled: true,
+        available: false,
+        reason: 'Rotation scope resolved to no stations in the current export set.',
+        angleDeg: rotation.angleDeg,
+        pivotStationId: rotation.pivotStationId,
+        scope: rotation.scope,
+        rotatedByStationId: emptyMap,
+      };
+    }
+
+    const angleRad = (rotation.angleDeg * Math.PI) / 180;
+    const cosTheta = Math.cos(angleRad);
+    const sinTheta = Math.sin(angleRad);
+    const rotatedByStationId = new Map<string, { east: number; north: number }>();
+
+    rotateStationIds.forEach((stationId) => {
+      const station = stations[stationId];
+      if (!station) return;
+      const dEast = station.x - pivot.x;
+      const dNorth = station.y - pivot.y;
+      const rotatedEast = pivot.x + dEast * cosTheta - dNorth * sinTheta;
+      const rotatedNorth = pivot.y + dEast * sinTheta + dNorth * cosTheta;
+      rotatedByStationId.set(stationId, {
+        east: Math.abs(rotatedEast) < ROTATION_TINY_EPSILON ? 0 : rotatedEast,
+        north: Math.abs(rotatedNorth) < ROTATION_TINY_EPSILON ? 0 : rotatedNorth,
+      });
+    });
+
+    return {
+      enabled: true,
+      available: rotatedByStationId.size > 0,
+      reason:
+        rotatedByStationId.size > 0
+          ? ''
+          : 'Rotation scope resolved to no adjusted stations after filtering.',
+      angleDeg: rotation.angleDeg,
+      pivotStationId: rotation.pivotStationId,
+      scope: rotation.scope,
+      rotatedByStationId,
+    };
+  }, [cleanAdjustedPointsExportSettings, result, stations]);
 
   const visibleStationIds = useMemo(
     () =>
@@ -234,6 +367,15 @@ const MapView: React.FC<MapViewProps> = ({
     return null;
   }, [mode, scene3d.edges.length, scene3d.stations.length, effectiveViewportWidth]);
   const effectiveMode: '2d' | '3d' = mode === '3d' && !fallbackReason ? '3d' : '2d';
+  const showTransformToggle = transformedOverlayConfig.enabled;
+  const transformedOverlayActive =
+    showTransformedCoordinates && transformedOverlayConfig.available && effectiveMode === '2d';
+
+  useEffect(() => {
+    if (!transformedOverlayConfig.available || effectiveMode !== '2d') {
+      setShowTransformedCoordinates(false);
+    }
+  }, [effectiveMode, transformedOverlayConfig.available]);
 
   const reset2dView = useCallback(() => {
     setView2d({ zoom: 1, panX: 0, panY: 0 });
@@ -251,13 +393,24 @@ const MapView: React.FC<MapViewProps> = ({
     reset2dView();
   }, [effectiveMode, reset2dView, reset3dView, bbox.minX, bbox.minY, bbox.width, bbox.height]);
 
+  const projection2d = useMemo(() => {
+    const safeWidth = Math.max(1e-9, bbox.width);
+    const safeHeight = Math.max(1e-9, bbox.height);
+    const scale = Math.min(VIEW_W / safeWidth, VIEW_H / safeHeight);
+    const contentWidth = safeWidth * scale;
+    const contentHeight = safeHeight * scale;
+    const offsetX = (VIEW_W - contentWidth) * 0.5;
+    const offsetY = (VIEW_H - contentHeight) * 0.5;
+    return { scale, offsetX, offsetY };
+  }, [bbox.height, bbox.width]);
+
   const project2d = useCallback(
     (x: number, y: number) => {
-      const px = ((x - bbox.minX) / bbox.width) * VIEW_W;
-      const py = VIEW_H - ((y - bbox.minY) / bbox.height) * VIEW_H;
+      const px = projection2d.offsetX + (x - bbox.minX) * projection2d.scale;
+      const py = VIEW_H - (projection2d.offsetY + (y - bbox.minY) * projection2d.scale);
       return { x: px, y: py };
     },
-    [bbox],
+    [bbox.minX, bbox.minY, projection2d],
   );
 
   const toSvgCoords = useCallback((clientX: number, clientY: number) => {
@@ -424,6 +577,63 @@ const MapView: React.FC<MapViewProps> = ({
   const labelStroke2d = labelStroke2dPx * invZoom2d;
   const labelOffset2d = labelOffset2dPx * invZoom2d;
   const marker2d = marker2dPx * invZoom2d;
+  const originalGeometryOpacity = transformedOverlayActive ? 0.25 : 1;
+
+  const transformedLines2d = useMemo(() => {
+    if (!transformedOverlayActive) return [] as Array<{ key: string; x1: number; y1: number; x2: number; y2: number }>;
+    return observations
+      .map((obs, idx) => {
+        if (obs.type !== 'dist' && obs.type !== 'gps') return null;
+        const fromStation = stations[obs.from];
+        const toStation = stations[obs.to];
+        if (!fromStation || !toStation) return null;
+        if (!showLostStations && (fromStation.lost || toStation.lost)) return null;
+        const from = transformedOverlayConfig.rotatedByStationId.get(obs.from);
+        const to = transformedOverlayConfig.rotatedByStationId.get(obs.to);
+        if (!from || !to) return null;
+        return {
+          key: `tx-line-${idx}`,
+          x1: from.east,
+          y1: from.north,
+          x2: to.east,
+          y2: to.north,
+        };
+      })
+      .filter((line): line is { key: string; x1: number; y1: number; x2: number; y2: number } => line != null);
+  }, [
+    observations,
+    showLostStations,
+    stations,
+    transformedOverlayActive,
+    transformedOverlayConfig.rotatedByStationId,
+  ]);
+
+  const transformedPoints2d = useMemo(() => {
+    if (!transformedOverlayActive) {
+      return [] as Array<{ id: string; x: number; y: number; fixed: boolean }>;
+    }
+    return points
+      .map((point) => {
+        const rotated = transformedOverlayConfig.rotatedByStationId.get(point.id);
+        if (!rotated) return null;
+        return {
+          id: point.id,
+          x: rotated.east,
+          y: rotated.north,
+          fixed: point.fixed,
+        };
+      })
+      .filter(
+        (
+          point,
+        ): point is {
+          id: string;
+          x: number;
+          y: number;
+          fixed: boolean;
+        } => point != null,
+      );
+  }, [points, transformedOverlayActive, transformedOverlayConfig.rotatedByStationId]);
 
   const project3d = useCallback(
     (point: Vec3) => {
@@ -587,7 +797,8 @@ const MapView: React.FC<MapViewProps> = ({
     <div className="h-full p-4 flex flex-col min-h-0">
       <div className="flex items-center justify-between mb-3 text-xs text-slate-400 shrink-0">
         <span>
-          Map view ({effectiveMode.toUpperCase()} scaled) — coords & ellipses in {units} (
+          Map view ({effectiveMode === '2d' ? '2D true-scale' : '3D scaled'}) — coords &
+          ellipses in {units} (
           {unitScale.toFixed(4)} factor)
         </span>
         <span className="text-slate-500">
@@ -597,6 +808,31 @@ const MapView: React.FC<MapViewProps> = ({
           {'; right-click=tools'}
         </span>
       </div>
+      {showTransformToggle && (
+        <div className="mb-2 flex flex-wrap items-center gap-3 rounded border border-slate-700/80 bg-slate-900/75 px-3 py-2 text-[11px] text-slate-200">
+          <label className="inline-flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={transformedOverlayActive}
+              onChange={(event) => setShowTransformedCoordinates(event.target.checked)}
+              disabled={!transformedOverlayConfig.available || effectiveMode !== '2d'}
+              className="h-3.5 w-3.5 rounded border-slate-500 bg-slate-950 text-cyan-400 focus:ring-cyan-500"
+            />
+            <span className="uppercase tracking-wide">Show transformed coordinates</span>
+          </label>
+          <span className="text-slate-400">
+            Pivot {transformedOverlayConfig.pivotStationId || '-'}; angle{' '}
+            {transformedOverlayConfig.angleDeg.toFixed(6)} deg; scope{' '}
+            {transformedOverlayConfig.scope === 'all' ? 'all points' : 'selected + pivot'}
+          </span>
+          {!transformedOverlayConfig.available && transformedOverlayConfig.reason && (
+            <span className="text-amber-300">{transformedOverlayConfig.reason}</span>
+          )}
+          {effectiveMode !== '2d' && transformedOverlayConfig.available && (
+            <span className="text-slate-400">2D map mode required for transformed overlay.</span>
+          )}
+        </div>
+      )}
       {mode === '3d' && fallbackReason && (
         <div className="mb-2 rounded border border-amber-800/60 bg-amber-950/30 px-3 py-2 text-[11px] text-amber-200">
           3D rendering fallback: {fallbackReason}. Showing 2D map for stable performance.
@@ -975,7 +1211,10 @@ const MapView: React.FC<MapViewProps> = ({
                 </marker>
               </defs>
 
-              <g transform={`translate(${view2d.panX} ${view2d.panY}) scale(${view2d.zoom})`}>
+              <g
+                transform={`translate(${view2d.panX} ${view2d.panY}) scale(${view2d.zoom})`}
+                opacity={originalGeometryOpacity}
+              >
                 {observations.map((obs, idx) => {
                   if (obs.type !== 'dist' && obs.type !== 'gps') return null;
                   const from = stations[obs.from];
@@ -1009,8 +1248,8 @@ const MapView: React.FC<MapViewProps> = ({
                         <ellipse
                           cx={proj.x}
                           cy={proj.y}
-                          rx={(ellipsoid.semiMajor * 100 * ellScale * VIEW_W) / bbox.width}
-                          ry={(ellipsoid.semiMinor * 100 * ellScale * VIEW_H) / bbox.height}
+                          rx={ellipsoid.semiMajor * 100 * ellScale * projection2d.scale}
+                          ry={ellipsoid.semiMinor * 100 * ellScale * projection2d.scale}
                           transform={`rotate(${ellipsoid.thetaDeg}, ${proj.x}, ${proj.y})`}
                           fill="none"
                           stroke={ellipseStroke(p.id)}
@@ -1039,6 +1278,52 @@ const MapView: React.FC<MapViewProps> = ({
                   );
                 })}
               </g>
+
+              {transformedOverlayActive && (
+                <g transform={`translate(${view2d.panX} ${view2d.panY}) scale(${view2d.zoom})`}>
+                  {transformedLines2d.map((line) => {
+                    const p1 = project2d(line.x1, line.y1);
+                    const p2 = project2d(line.x2, line.y2);
+                    return (
+                      <line
+                        key={line.key}
+                        x1={p1.x}
+                        y1={p1.y}
+                        x2={p2.x}
+                        y2={p2.y}
+                        stroke="#22d3ee"
+                        strokeWidth={lineWidth2d}
+                        opacity={0.85}
+                      />
+                    );
+                  })}
+
+                  {transformedPoints2d.map((point) => {
+                    const proj = project2d(point.x, point.y);
+                    return (
+                      <g key={`tx-point-${point.id}`}>
+                        <circle
+                          cx={proj.x}
+                          cy={proj.y}
+                          r={pointRadius2d}
+                          fill={point.fixed ? '#34d399' : '#f97316'}
+                        />
+                        <text
+                          x={proj.x + labelOffset2d}
+                          y={proj.y - labelOffset2d}
+                          fontSize={labelFont2d}
+                          fill="#f8fafc"
+                          stroke="#082f49"
+                          strokeWidth={labelStroke2d}
+                          paintOrder="stroke"
+                        >
+                          {point.id}
+                        </text>
+                      </g>
+                    );
+                  })}
+                </g>
+              )}
             </>
           )}
 
