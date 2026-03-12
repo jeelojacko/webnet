@@ -43,3 +43,22 @@ describe('InputPane context menu', () => {
     ]);
   });
 });
+
+describe('InputPane syntax coloring', () => {
+  it('renders comment/directive/observation/fixed token classes in the editor overlay', () => {
+    const html = renderToStaticMarkup(
+      <InputPane
+        input={`# COMMENT\n.UNITS M\nDB 9\nD 1-2 12.345 ! 0.005\nTE 1-2-3 000-00-00.0`}
+        onChange={() => {}}
+      />,
+    );
+
+    expect(html).toContain('<span class="text-slate-500"># COMMENT</span>');
+    expect(html).toContain('<span class="text-blue-300">.UNITS</span>');
+    expect(html).toContain('<span class="text-cyan-300">DB</span>');
+    expect(html).toContain('<span class="text-cyan-300">D</span>');
+    expect(html).toContain('<span class="text-red-400">!</span>');
+    expect(html).toContain('<span class="text-slate-300">0.005</span>');
+    expect(html).toContain('<span class="text-blue-400">TE</span>');
+  });
+});

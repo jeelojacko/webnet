@@ -3,70 +3,292 @@
 @tailwind utilities;
 
 :root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   line-height: 1.5;
   font-weight: 400;
-
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
-
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  color-scheme: dark;
+
+  --theme-slate-100: 251 241 199;
+  --theme-slate-200: 235 219 178;
+  --theme-slate-300: 213 196 161;
+  --theme-slate-400: 189 174 147;
+  --theme-slate-500: 168 153 132;
+  --theme-slate-600: 146 131 116;
+  --theme-slate-700: 102 92 84;
+  --theme-slate-800: 80 73 69;
+  --theme-slate-900: 60 56 54;
+  --theme-slate-950: 29 32 33;
+
+  --theme-blue-100: 211 230 229;
+  --theme-blue-300: 131 165 152;
+  --theme-blue-400: 111 152 160;
+  --theme-blue-500: 69 133 136;
+  --theme-blue-600: 7 102 120;
+  --theme-blue-900: 19 78 94;
+  --theme-blue-950: 15 61 73;
+
+  --theme-green-400: 184 187 38;
+  --theme-green-500: 152 151 26;
+  --theme-green-600: 121 116 14;
+  --theme-green-700: 95 106 32;
+  --theme-green-900: 63 74 26;
+
+  --theme-red-100: 242 205 190;
+  --theme-red-300: 251 73 52;
+  --theme-red-400: 226 61 46;
+  --theme-red-500: 204 36 29;
+  --theme-red-900: 157 0 6;
+
+  --theme-amber-100: 251 241 199;
+  --theme-amber-200: 242 229 188;
+  --theme-amber-300: 235 219 178;
+  --theme-amber-400: 213 196 161;
+  --theme-amber-500: 250 189 47;
+  --theme-amber-600: 215 153 33;
+  --theme-amber-700: 181 118 20;
+  --theme-amber-800: 157 106 26;
+  --theme-amber-900: 124 93 38;
+  --theme-amber-950: 90 69 29;
+
+  --theme-cyan-100: 224 241 210;
+  --theme-cyan-200: 207 233 195;
+  --theme-cyan-300: 142 192 124;
+  --theme-cyan-400: 122 181 111;
+  --theme-cyan-500: 104 157 106;
+  --theme-cyan-700: 66 123 88;
+  --theme-cyan-800: 53 105 74;
+  --theme-cyan-900: 39 79 59;
+  --theme-cyan-950: 29 59 45;
+
+  --theme-emerald-100: 217 231 199;
+  --theme-emerald-400: 142 192 124;
+  --theme-emerald-700: 66 123 88;
+
+  --theme-rose-100: 241 212 223;
+  --theme-rose-200: 232 189 206;
+  --theme-rose-300: 211 134 155;
+  --theme-rose-500: 177 98 134;
+  --theme-rose-800: 143 63 113;
+  --theme-rose-900: 124 63 88;
+  --theme-rose-950: 91 44 67;
 }
 
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
+:root[data-theme='gruvbox-light'] {
+  color-scheme: light;
+
+  --theme-slate-100: 40 40 40;
+  --theme-slate-200: 60 56 54;
+  --theme-slate-300: 80 73 69;
+  --theme-slate-400: 102 92 84;
+  --theme-slate-500: 124 111 100;
+  --theme-slate-600: 146 131 116;
+  --theme-slate-700: 189 174 147;
+  --theme-slate-800: 213 196 161;
+  --theme-slate-900: 235 219 178;
+  --theme-slate-950: 249 245 215;
+
+  --theme-blue-100: 7 102 120;
+  --theme-blue-300: 69 133 136;
+  --theme-blue-400: 104 157 142;
+  --theme-blue-500: 131 165 152;
+  --theme-blue-600: 184 201 192;
+  --theme-blue-900: 212 226 221;
+  --theme-blue-950: 232 240 236;
+
+  --theme-green-400: 121 116 14;
+  --theme-green-500: 152 151 26;
+  --theme-green-600: 184 187 38;
+  --theme-green-700: 214 214 106;
+  --theme-green-900: 230 232 170;
+
+  --theme-red-100: 157 0 6;
+  --theme-red-300: 204 36 29;
+  --theme-red-400: 231 72 63;
+  --theme-red-500: 251 73 52;
+  --theme-red-900: 247 197 184;
+
+  --theme-amber-100: 181 118 20;
+  --theme-amber-200: 215 153 33;
+  --theme-amber-300: 250 189 47;
+  --theme-amber-400: 242 199 92;
+  --theme-amber-500: 242 207 121;
+  --theme-amber-600: 235 207 144;
+  --theme-amber-700: 231 212 167;
+  --theme-amber-800: 235 219 178;
+  --theme-amber-900: 242 229 188;
+  --theme-amber-950: 251 241 199;
+
+  --theme-cyan-100: 66 123 88;
+  --theme-cyan-200: 104 157 106;
+  --theme-cyan-300: 142 192 124;
+  --theme-cyan-400: 173 208 143;
+  --theme-cyan-500: 194 220 168;
+  --theme-cyan-700: 215 232 188;
+  --theme-cyan-800: 228 240 209;
+  --theme-cyan-900: 238 246 227;
+  --theme-cyan-950: 246 251 241;
+
+  --theme-emerald-100: 66 123 88;
+  --theme-emerald-400: 104 157 106;
+  --theme-emerald-700: 142 192 124;
+
+  --theme-rose-100: 143 63 113;
+  --theme-rose-200: 177 98 134;
+  --theme-rose-300: 211 134 155;
+  --theme-rose-500: 224 169 188;
+  --theme-rose-800: 239 200 212;
+  --theme-rose-900: 246 223 232;
+  --theme-rose-950: 251 240 244;
 }
-a:hover {
-  color: #535bf2;
+
+:root[data-theme='catppuccin-mocha'] {
+  color-scheme: dark;
+
+  --theme-slate-100: 205 214 244;
+  --theme-slate-200: 186 194 222;
+  --theme-slate-300: 166 173 200;
+  --theme-slate-400: 147 153 178;
+  --theme-slate-500: 127 132 156;
+  --theme-slate-600: 108 112 134;
+  --theme-slate-700: 88 91 112;
+  --theme-slate-800: 69 71 90;
+  --theme-slate-900: 49 50 68;
+  --theme-slate-950: 30 30 46;
+
+  --theme-blue-100: 180 190 254;
+  --theme-blue-300: 137 180 250;
+  --theme-blue-400: 116 199 236;
+  --theme-blue-500: 137 220 235;
+  --theme-blue-600: 148 226 213;
+  --theme-blue-900: 65 70 95;
+  --theme-blue-950: 39 42 58;
+
+  --theme-green-400: 166 227 161;
+  --theme-green-500: 166 227 161;
+  --theme-green-600: 148 195 121;
+  --theme-green-700: 116 159 102;
+  --theme-green-900: 61 90 61;
+
+  --theme-red-100: 242 205 205;
+  --theme-red-300: 243 139 168;
+  --theme-red-400: 235 160 172;
+  --theme-red-500: 243 139 168;
+  --theme-red-900: 176 79 104;
+
+  --theme-amber-100: 249 226 175;
+  --theme-amber-200: 250 179 135;
+  --theme-amber-300: 249 226 175;
+  --theme-amber-400: 247 216 165;
+  --theme-amber-500: 250 179 135;
+  --theme-amber-600: 233 169 125;
+  --theme-amber-700: 200 137 95;
+  --theme-amber-800: 168 111 76;
+  --theme-amber-900: 128 83 58;
+  --theme-amber-950: 90 57 42;
+
+  --theme-cyan-100: 148 226 213;
+  --theme-cyan-200: 137 220 235;
+  --theme-cyan-300: 116 199 236;
+  --theme-cyan-400: 137 180 250;
+  --theme-cyan-500: 148 226 213;
+  --theme-cyan-700: 83 160 170;
+  --theme-cyan-800: 61 128 140;
+  --theme-cyan-900: 45 97 109;
+  --theme-cyan-950: 31 69 80;
+
+  --theme-emerald-100: 166 227 161;
+  --theme-emerald-400: 148 226 213;
+  --theme-emerald-700: 83 160 170;
+
+  --theme-rose-100: 245 194 231;
+  --theme-rose-200: 203 166 247;
+  --theme-rose-300: 243 139 168;
+  --theme-rose-500: 203 166 247;
+  --theme-rose-800: 153 117 197;
+  --theme-rose-900: 114 87 148;
+  --theme-rose-950: 77 60 100;
+}
+
+:root[data-theme='catppuccin-latte'] {
+  color-scheme: light;
+
+  --theme-slate-100: 76 79 105;
+  --theme-slate-200: 92 95 119;
+  --theme-slate-300: 108 111 133;
+  --theme-slate-400: 124 127 147;
+  --theme-slate-500: 140 143 161;
+  --theme-slate-600: 156 160 176;
+  --theme-slate-700: 172 176 190;
+  --theme-slate-800: 188 192 204;
+  --theme-slate-900: 220 224 232;
+  --theme-slate-950: 239 241 245;
+
+  --theme-blue-100: 30 102 245;
+  --theme-blue-300: 32 159 181;
+  --theme-blue-400: 4 165 229;
+  --theme-blue-500: 30 102 245;
+  --theme-blue-600: 114 135 253;
+  --theme-blue-900: 206 216 252;
+  --theme-blue-950: 231 236 255;
+
+  --theme-green-400: 64 160 43;
+  --theme-green-500: 23 146 153;
+  --theme-green-600: 102 185 81;
+  --theme-green-700: 134 201 90;
+  --theme-green-900: 214 236 205;
+
+  --theme-red-100: 210 15 57;
+  --theme-red-300: 230 69 83;
+  --theme-red-400: 221 120 120;
+  --theme-red-500: 210 15 57;
+  --theme-red-900: 247 221 224;
+
+  --theme-amber-100: 223 142 29;
+  --theme-amber-200: 254 100 11;
+  --theme-amber-300: 238 163 69;
+  --theme-amber-400: 243 185 92;
+  --theme-amber-500: 247 205 122;
+  --theme-amber-600: 249 219 152;
+  --theme-amber-700: 251 230 181;
+  --theme-amber-800: 252 236 206;
+  --theme-amber-900: 253 244 228;
+  --theme-amber-950: 255 249 240;
+
+  --theme-cyan-100: 23 146 153;
+  --theme-cyan-200: 32 159 181;
+  --theme-cyan-300: 4 165 229;
+  --theme-cyan-400: 30 102 245;
+  --theme-cyan-500: 114 135 253;
+  --theme-cyan-700: 152 169 253;
+  --theme-cyan-800: 183 195 254;
+  --theme-cyan-900: 213 221 255;
+  --theme-cyan-950: 237 241 255;
+
+  --theme-emerald-100: 23 146 153;
+  --theme-emerald-400: 64 160 43;
+  --theme-emerald-700: 134 201 90;
+
+  --theme-rose-100: 136 57 239;
+  --theme-rose-200: 234 118 203;
+  --theme-rose-300: 221 120 120;
+  --theme-rose-500: 220 138 120;
+  --theme-rose-800: 240 196 190;
+  --theme-rose-900: 247 220 216;
+  --theme-rose-950: 252 237 234;
 }
 
 body {
   margin: 0;
-  display: flex;
-  place-items: center;
   min-width: 320px;
   min-height: 100vh;
+  background-color: rgb(var(--theme-slate-950));
+  color: rgb(var(--theme-slate-100));
 }
 
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
-}
-
-button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  background-color: #1a1a1a;
-  cursor: pointer;
-  transition: border-color 0.25s;
-}
-button:hover {
-  border-color: #646cff;
-}
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
-}
-
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
-  }
-  a:hover {
-    color: #747bff;
-  }
-  button {
-    background-color: #f9f9f9;
-  }
+#root {
+  min-height: 100vh;
 }

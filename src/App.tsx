@@ -259,6 +259,7 @@ const parseInstrumentLibraryFromInput = (rawInput: string): InstrumentLibrary =>
 };
 
 type Units = 'm' | 'ft';
+type UiTheme = 'gruvbox-dark' | 'gruvbox-light' | 'catppuccin-mocha' | 'catppuccin-latte';
 type ListingSortCoordinatesBy = 'input' | 'name';
 type ListingSortObservationsBy = 'input' | 'name' | 'residual';
 
@@ -266,6 +267,7 @@ type SettingsState = {
   maxIterations: number;
   convergenceLimit: number;
   units: Units;
+  uiTheme: UiTheme;
   mapShowLostStations: boolean;
   map3dEnabled: boolean;
   listingShowLostStations: boolean;
@@ -277,6 +279,15 @@ type SettingsState = {
   listingSortCoordinatesBy: ListingSortCoordinatesBy;
   listingSortObservationsBy: ListingSortObservationsBy;
   listingObservationLimit: number;
+};
+
+const DEFAULT_UI_THEME: UiTheme = 'gruvbox-dark';
+
+const normalizeUiTheme = (value: unknown): UiTheme => {
+  if (value === 'gruvbox-light') return 'gruvbox-light';
+  if (value === 'catppuccin-mocha') return 'catppuccin-mocha';
+  if (value === 'catppuccin-latte') return 'catppuccin-latte';
+  return 'gruvbox-dark';
 };
 
 type SolveProfile =
@@ -566,6 +577,8 @@ const SETTINGS_TOOLTIPS = {
     'Marks the project as migrated to strict parser behavior. Migrated projects persist parser mode metadata and avoid legacy-default loading rules.',
   units:
     'Display units for coordinates and report values. The solver still works internally in meters/radians.',
+  uiTheme:
+    'UI color theme for the app shell and project options. Gruvbox Dark is the default modern theme.',
   maxIterations: 'Maximum least-squares iterations before the run stops if convergence is slow.',
   convergenceLimit:
     'When the change in weighted standardized residual sum (vTPv) between iterations is below this value, the run is considered converged and iterations stop.',
@@ -700,6 +713,8 @@ const SETTINGS_TOOLTIPS = {
     'Select an instrument code to view parsed EDM/angle/centering and other precision parameters.',
   newInstrument:
     'Create a new project instrument definition and add it to the project instrument library.',
+  duplicateInstrument:
+    'Duplicate the selected instrument into a new instrument code while preserving current precision and centering values.',
   instrumentDescription:
     'Free-text description for the selected project instrument. Used for display and report context only.',
   instrumentDistanceConstant:
@@ -1039,6 +1054,7 @@ const App: React.FC<AppProps> = ({
     maxIterations: 10,
     convergenceLimit: 0.01,
     units: 'm',
+    uiTheme: DEFAULT_UI_THEME,
     mapShowLostStations: true,
     map3dEnabled: false,
     listingShowLostStations: true,
@@ -1261,6 +1277,13 @@ const App: React.FC<AppProps> = ({
     adjustedPointsDraftStationIds,
     adjustedPointsExportSettingsDraft.transform.rotation.selectedStationIds,
   ]);
+
+  useEffect(() => {
+    const activeTheme = normalizeUiTheme(
+      isSettingsModalOpen ? settingsDraft.uiTheme : settings.uiTheme,
+    );
+    document.documentElement.setAttribute('data-theme', activeTheme);
+  }, [isSettingsModalOpen, settings.uiTheme, settingsDraft.uiTheme]);
 
   useEffect(() => {
     if (crsCatalogGroupFilter === 'all') return;
@@ -4615,6 +4638,10 @@ const App: React.FC<AppProps> = ({
       }
 
       const loadedSettings = parsed.project.ui.settings as unknown as SettingsState;
+      const normalizedLoadedSettings: SettingsState = {
+        ...loadedSettings,
+        uiTheme: normalizeUiTheme(loadedSettings?.uiTheme),
+      };
       const loadedParseSettings = parsed.project.ui.parseSettings as unknown as ParseSettings;
       const projectSchemaVersion = parsed.project.schemaVersion;
       const profileForMode = normalizeSolveProfile(
@@ -4678,12 +4705,12 @@ const App: React.FC<AppProps> = ({
         parsed.project.ui.adjustedPointsExport,
         {
           ...DEFAULT_ADJUSTED_POINTS_EXPORT_SETTINGS,
-          includeLostStations: loadedSettings.listingShowLostStations,
+          includeLostStations: normalizedLoadedSettings.listingShowLostStations,
         },
       );
       setInput(parsed.project.input);
       setProjectIncludeFiles({ ...(parsed.project.includeFiles ?? {}) });
-      setSettings(loadedSettings);
+      setSettings(normalizedLoadedSettings);
       setParseSettings(normalizedLoadedParseSettings);
       setGeoidSourceData(null);
       setGeoidSourceDataLabel('');
@@ -4695,7 +4722,7 @@ const App: React.FC<AppProps> = ({
         parsed.project.project.levelLoopCustomPresets.map((preset) => ({ ...preset })),
       );
 
-      setSettingsDraft(loadedSettings);
+      setSettingsDraft(normalizedLoadedSettings);
       setParseSettingsDraft(normalizedLoadedParseSettings);
       setGeoidSourceDataDraft(null);
       setGeoidSourceDataLabelDraft('');
@@ -5857,7 +5884,12 @@ const App: React.FC<AppProps> = ({
       adjustedPointsExportSettingsDraft,
       DEFAULT_ADJUSTED_POINTS_EXPORT_SETTINGS,
     );
-    setSettings(settingsDraft);
+    const sanitizedSettings: SettingsState = {
+      ...settingsDraft,
+      uiTheme: normalizeUiTheme(settingsDraft.uiTheme),
+    };
+    setSettings(sanitizedSettings);
+    setSettingsDraft(sanitizedSettings);
     setParseSettings(parseSettingsDraft);
     setGeoidSourceData(geoidSourceDataDraft);
     setGeoidSourceDataLabel(geoidSourceDataLabelDraft);
@@ -6253,6 +6285,30 @@ const App: React.FC<AppProps> = ({
       if (prev[code]) return prev;
       return { ...prev, [code]: createInstrument(code, code) };
     });
+    setSelectedInstrumentDraft(code);
+  };
+
+  const duplicateSelectedInstrument = () => {
+    const sourceInstrument = selectedInstrumentDraft
+      ? projectInstrumentsDraft[selectedInstrumentDraft]
+      : undefined;
+    if (!sourceInstrument) return;
+    const suggested = `${sourceInstrument.code}_COPY`;
+    const name = window.prompt('Name for duplicated instrument', suggested);
+    if (!name) return;
+    const code = name.trim();
+    if (!code) return;
+    if (projectInstrumentsDraft[code]) {
+      window.alert(`Instrument "${code}" already exists.`);
+      return;
+    }
+    setProjectInstrumentsDraft((prev) => ({
+      ...prev,
+      [code]: {
+        ...sourceInstrument,
+        code,
+      },
+    }));
     setSelectedInstrumentDraft(code);
   };
 
@@ -7194,6 +7250,21 @@ const App: React.FC<AppProps> = ({
                         className={optionInputClass}
                       />
                     </SettingsRow>
+                    <SettingsRow label="UI Theme" tooltip={SETTINGS_TOOLTIPS.uiTheme}>
+                      <select
+                        title={SETTINGS_TOOLTIPS.uiTheme}
+                        value={settingsDraft.uiTheme}
+                        onChange={(e) =>
+                          handleDraftSetting('uiTheme', normalizeUiTheme(e.target.value))
+                        }
+                        className={optionInputClass}
+                      >
+                        <option value="gruvbox-dark">Gruvbox Dark</option>
+                        <option value="gruvbox-light">Gruvbox Light</option>
+                        <option value="catppuccin-mocha">Catppuccin Mocha</option>
+                        <option value="catppuccin-latte">Catppuccin Latte</option>
+                      </select>
+                    </SettingsRow>
                     <SettingsRow
                       label="Face Normalization Mode"
                       tooltip={SETTINGS_TOOLTIPS.faceNormalizationMode}
@@ -7330,6 +7401,15 @@ const App: React.FC<AppProps> = ({
                           title={SETTINGS_TOOLTIPS.newInstrument}
                         >
                           New
+                        </button>
+                        <button
+                          type="button"
+                          onClick={duplicateSelectedInstrument}
+                          disabled={!selectedInstrumentMeta}
+                          className="px-3 py-1 text-[11px] border border-slate-300 bg-slate-600 hover:bg-slate-500 text-slate-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                          title={SETTINGS_TOOLTIPS.duplicateInstrument}
+                        >
+                          Duplicate
                         </button>
                       </div>
                     </SettingsRow>

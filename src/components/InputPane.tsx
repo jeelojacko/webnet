@@ -21,6 +21,112 @@ type ContextMenuState = {
   canBlockUncomment: boolean;
 };
 
+const INPUT_EDITOR_BASE_TOKEN_CLASS = 'text-slate-300';
+const INPUT_EDITOR_COMMENT_CLASS = 'text-slate-500';
+const INPUT_EDITOR_DIRECTIVE_CLASS = 'text-blue-300';
+const INPUT_EDITOR_FIXED_CLASS = 'text-red-400';
+
+const INPUT_EDITOR_OBS_TOKEN_CLASS: Record<string, string> = {
+  C: 'text-amber-100',
+  P: 'text-amber-100',
+  PH: 'text-amber-100',
+  CH: 'text-amber-100',
+  EH: 'text-amber-100',
+  E: 'text-amber-100',
+  D: 'text-cyan-300',
+  DV: 'text-cyan-200',
+  A: 'text-blue-300',
+  B: 'text-rose-300',
+  V: 'text-green-400',
+  G: 'text-amber-300',
+  L: 'text-emerald-400',
+  M: 'text-amber-200',
+  BM: 'text-emerald-400',
+  SS: 'text-rose-200',
+  DB: 'text-cyan-300',
+  DN: 'text-cyan-300',
+  DM: 'text-cyan-300',
+  DE: 'text-cyan-300',
+  TB: 'text-blue-400',
+  T: 'text-blue-400',
+  TE: 'text-blue-400',
+  ET: 'text-blue-400',
+};
+
+const isWhitespaceToken = (token: string): boolean => /^\s+$/.test(token);
+
+const tokenizeWithWhitespace = (value: string): string[] => value.match(/(\s+|[^\s]+)/g) ?? [];
+
+const findUnquotedHashIndex = (line: string): number => {
+  let quote: '"' | "'" | null = null;
+  for (let i = 0; i < line.length; i += 1) {
+    const ch = line[i];
+    if (quote) {
+      if (ch === quote) quote = null;
+      continue;
+    }
+    if (ch === '"' || ch === "'") {
+      quote = ch;
+      continue;
+    }
+    if (ch === '#') return i;
+  }
+  return -1;
+};
+
+const renderHighlightedLine = (line: string, lineIndex: number): React.ReactNode => {
+  if (line.length === 0) return null;
+  const trimmed = line.trimStart();
+  if (trimmed.startsWith('#') || trimmed.startsWith("'")) {
+    return (
+      <span key={`input-comment-${lineIndex}`} className={INPUT_EDITOR_COMMENT_CLASS}>
+        {line}
+      </span>
+    );
+  }
+
+  const hashIndex = findUnquotedHashIndex(line);
+  const codePart = hashIndex >= 0 ? line.slice(0, hashIndex) : line;
+  const commentPart = hashIndex >= 0 ? line.slice(hashIndex) : '';
+  const tokens = tokenizeWithWhitespace(codePart);
+  const firstNonWhitespaceIndex = tokens.findIndex((token) => !isWhitespaceToken(token));
+  const firstTokenUpper =
+    firstNonWhitespaceIndex >= 0 ? tokens[firstNonWhitespaceIndex].toUpperCase() : '';
+  const directiveLine = firstTokenUpper.startsWith('.') || firstTokenUpper.startsWith('/');
+  const rendered: React.ReactNode[] = [];
+
+  tokens.forEach((token, tokenIndex) => {
+    if (isWhitespaceToken(token)) {
+      rendered.push(
+        <React.Fragment key={`input-ws-${lineIndex}-${tokenIndex}`}>{token}</React.Fragment>,
+      );
+      return;
+    }
+    let className = directiveLine ? INPUT_EDITOR_DIRECTIVE_CLASS : INPUT_EDITOR_BASE_TOKEN_CLASS;
+    if (!directiveLine && tokenIndex === firstNonWhitespaceIndex) {
+      className = INPUT_EDITOR_OBS_TOKEN_CLASS[firstTokenUpper] ?? INPUT_EDITOR_BASE_TOKEN_CLASS;
+    }
+    if (/^[!&]+$/.test(token)) {
+      className = INPUT_EDITOR_FIXED_CLASS;
+    }
+    rendered.push(
+      <span key={`input-token-${lineIndex}-${tokenIndex}`} className={className}>
+        {token}
+      </span>,
+    );
+  });
+
+  if (commentPart) {
+    rendered.push(
+      <span key={`input-inline-comment-${lineIndex}`} className={INPUT_EDITOR_COMMENT_CLASS}>
+        {commentPart}
+      </span>,
+    );
+  }
+
+  return <>{rendered}</>;
+};
+
 const InputPane: React.FC<InputPaneProps> = ({
   input,
   onChange,
@@ -31,12 +137,26 @@ const InputPane: React.FC<InputPaneProps> = ({
   const lines = Array.from({ length: lineCount }, (_, i) => i + 1);
   const textareaRef = React.useRef<HTMLTextAreaElement>(null);
   const numbersRef = React.useRef<HTMLDivElement>(null);
+  const highlightRef = React.useRef<HTMLPreElement>(null);
   const editorWrapRef = React.useRef<HTMLDivElement>(null);
   const [contextMenu, setContextMenu] = React.useState<ContextMenuState | null>(null);
+  const highlightedInput = React.useMemo(() => {
+    const editorLines = input.split('\n');
+    return editorLines.map((line, lineIndex) => (
+      <React.Fragment key={`input-line-${lineIndex}`}>
+        {renderHighlightedLine(line, lineIndex)}
+        {lineIndex < editorLines.length - 1 ? '\n' : null}
+      </React.Fragment>
+    ));
+  }, [input]);
 
   const handleScroll = () => {
     if (textareaRef.current && numbersRef.current) {
       numbersRef.current.scrollTop = textareaRef.current.scrollTop;
+    }
+    if (textareaRef.current && highlightRef.current) {
+      highlightRef.current.scrollTop = textareaRef.current.scrollTop;
+      highlightRef.current.scrollLeft = textareaRef.current.scrollLeft;
     }
     setContextMenu(null);
   };
@@ -333,16 +453,25 @@ const InputPane: React.FC<InputPaneProps> = ({
             </div>
           ))}
         </div>
-        <textarea
-          ref={textareaRef}
-          value={input}
-          onChange={(e) => onChange(e.target.value)}
-          onScroll={handleScroll}
-          onKeyDown={handleKeyDown}
-          onContextMenu={handleContextMenu}
-          className="flex-1 bg-slate-900 text-slate-300 p-4 font-mono text-xs resize-none focus:outline-none leading-relaxed selection:bg-blue-500/30 whitespace-pre"
-          spellCheck={false}
-        />
+        <div className="relative flex-1 bg-slate-900">
+          <pre
+            ref={highlightRef}
+            aria-hidden={true}
+            className="pointer-events-none absolute inset-0 overflow-hidden p-4 font-mono text-xs leading-relaxed whitespace-pre"
+          >
+            {highlightedInput}
+          </pre>
+          <textarea
+            ref={textareaRef}
+            value={input}
+            onChange={(e) => onChange(e.target.value)}
+            onScroll={handleScroll}
+            onKeyDown={handleKeyDown}
+            onContextMenu={handleContextMenu}
+            className="absolute inset-0 h-full w-full resize-none bg-transparent p-4 font-mono text-xs leading-relaxed text-transparent caret-slate-100 focus:outline-none selection:bg-blue-500/30 selection:text-transparent whitespace-pre"
+            spellCheck={false}
+          />
+        </div>
         {contextMenu ? (
           <div
             className="absolute z-20 min-w-44 rounded border border-slate-600 bg-slate-800 shadow-lg"

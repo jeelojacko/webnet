@@ -29,6 +29,7 @@ describe('Project Options modal layout', () => {
     expect(html).toContain('Horizontal Precision');
     expect(html).toContain('Vertical Precision');
     expect(html).toContain('Instrument Description');
+    expect(html).toContain('Duplicate');
     expect(html).toContain('Distance Constant');
     expect(html).toContain('Centering Vertical');
   });
@@ -41,6 +42,11 @@ describe('Project Options modal layout', () => {
     expect(html).toContain('Local / Grid Reduction');
     expect(html).toContain('Map Mode');
     expect(html).toContain('Map Scale Factor');
+    expect(html).toContain('UI Theme');
+    expect(html).toContain('Gruvbox Dark');
+    expect(html).toContain('Gruvbox Light');
+    expect(html).toContain('Catppuccin Mocha');
+    expect(html).toContain('Catppuccin Latte');
     expect(html).toContain('Face Normalization Mode');
     expect(html).toContain('Vertical Reduction');
     expect(html).toContain('Curvature / Refraction');

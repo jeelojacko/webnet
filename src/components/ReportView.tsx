@@ -1219,7 +1219,7 @@ const ReportView: React.FC<ReportViewProps> = ({
         <div className="space-x-3">
           <button
             onClick={onReRun}
-            className="px-3 py-1 bg-green-700 hover:bg-green-600 text-white rounded"
+            className="px-3 py-1 bg-green-700 hover:bg-green-600 text-slate-100 rounded"
           >
             Re-run with exclusions
           </button>
@@ -1236,7 +1236,7 @@ const ReportView: React.FC<ReportViewProps> = ({
               className={`px-3 py-1 rounded ${
                 clusterAppliedMerges.length === 0
                   ? 'bg-slate-800 text-slate-600 cursor-not-allowed'
-                  : 'bg-amber-700 hover:bg-amber-600 text-white'
+                  : 'bg-amber-700 hover:bg-amber-600 text-slate-100'
               }`}
             >
               Revert cluster merges
@@ -1330,7 +1330,7 @@ const ReportView: React.FC<ReportViewProps> = ({
 
       <div className="mb-8 border-b border-slate-800 pb-6" style={{ order: -210 }}>
         <h2
-          className="text-xl font-bold text-white mb-4"
+          className="text-xl font-bold text-slate-100 mb-4"
           title={REPORT_STATIC_TOOLTIPS['Adjustment Summary']}
         >
           Adjustment Summary
@@ -4280,13 +4280,13 @@ const ReportView: React.FC<ReportViewProps> = ({
             <div className="flex rounded border border-slate-700 overflow-hidden">
               <button
                 onClick={() => setEllipseMode('1sigma')}
-                className={`px-2 py-0.5 ${ellipseMode === '1sigma' ? 'bg-slate-700 text-white' : 'bg-slate-900/60 text-slate-400'}`}
+                className={`px-2 py-0.5 ${ellipseMode === '1sigma' ? 'bg-slate-700 text-slate-100' : 'bg-slate-900/60 text-slate-400'}`}
               >
                 1σ
               </button>
               <button
                 onClick={() => setEllipseMode('95')}
-                className={`px-2 py-0.5 ${ellipseMode === '95' ? 'bg-slate-700 text-white' : 'bg-slate-900/60 text-slate-400'}`}
+                className={`px-2 py-0.5 ${ellipseMode === '95' ? 'bg-slate-700 text-slate-100' : 'bg-slate-900/60 text-slate-400'}`}
               >
                 95%
               </button>
@@ -4316,15 +4316,15 @@ const ReportView: React.FC<ReportViewProps> = ({
                   key={id}
                   className="border-b border-slate-800/50 hover:bg-slate-900/50 transition-colors"
                 >
-                  <td className="py-1 font-medium text-white">{id}</td>
+                  <td className="py-1 font-medium text-slate-100">{id}</td>
                   <td className="py-1 text-xs text-slate-400">{stationDescription(id)}</td>
-                  <td className="py-1 text-right text-yellow-100/90">
+                  <td className="py-1 text-right text-slate-200">
                     {(stn.y * unitScale).toFixed(4)}
                   </td>
-                  <td className="py-1 text-right text-yellow-100/90">
+                  <td className="py-1 text-right text-slate-200">
                     {(stn.x * unitScale).toFixed(4)}
                   </td>
-                  <td className="py-1 text-right text-yellow-100/90">
+                  <td className="py-1 text-right text-slate-200">
                     {(stn.h * unitScale).toFixed(4)}
                   </td>
                   <td className="py-1 text-right text-xs text-slate-400">

@@ -2,7 +2,7 @@
 
 import React, { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import App from '../src/App';
 
@@ -16,6 +16,7 @@ type MountedApp = {
 const mountApp = async (
   initialOptionsTab: React.ComponentProps<typeof App>['initialOptionsTab'],
 ): Promise<MountedApp> => {
+  document.documentElement.setAttribute('data-theme', 'gruvbox-dark');
   const container = document.createElement('div');
   document.body.appendChild(container);
   const root: Root = createRoot(container);
@@ -188,6 +189,43 @@ describe('Project Options modal interactions', () => {
     }
   });
 
+  it('applies UI theme selection and persists after Apply in General tab', async () => {
+    const app = await mountApp('general');
+    try {
+      const themeSelect = findSelectForSettingsRow(app.container, 'UI Theme');
+      expect(themeSelect.value).toBe('gruvbox-dark');
+      expect(document.documentElement.getAttribute('data-theme')).toBe('gruvbox-dark');
+
+      await setSelectValue(themeSelect, 'gruvbox-light');
+      expect(document.documentElement.getAttribute('data-theme')).toBe('gruvbox-light');
+
+      await clickButtonByExactText(app.container, 'Apply');
+      expect(document.documentElement.getAttribute('data-theme')).toBe('gruvbox-light');
+
+      await clickOpenProjectOptions(app.container);
+      await clickButtonByExactText(app.container, 'General');
+      const reopenedThemeSelect = findSelectForSettingsRow(app.container, 'UI Theme');
+      expect(reopenedThemeSelect.value).toBe('gruvbox-light');
+    } finally {
+      await app.cleanup();
+    }
+  });
+
+  it('reverts unsaved UI theme preview when Cancel is clicked', async () => {
+    const app = await mountApp('general');
+    try {
+      expect(document.documentElement.getAttribute('data-theme')).toBe('gruvbox-dark');
+      const themeSelect = findSelectForSettingsRow(app.container, 'UI Theme');
+      await setSelectValue(themeSelect, 'gruvbox-light');
+      expect(document.documentElement.getAttribute('data-theme')).toBe('gruvbox-light');
+
+      await clickButtonByExactText(app.container, 'Cancel');
+      expect(document.documentElement.getAttribute('data-theme')).toBe('gruvbox-dark');
+    } finally {
+      await app.cleanup();
+    }
+  });
+
   it('persists convergence-limit draft edits after Apply', async () => {
     const app = await mountApp('adjustment');
     try {
@@ -281,6 +319,28 @@ describe('Project Options modal interactions', () => {
       );
       expect(reopenedDelimiter.value).toBe('comma');
     } finally {
+      await app.cleanup();
+    }
+  });
+
+  it('duplicates selected instrument values into a new instrument code', async () => {
+    const promptSpy = vi.spyOn(window, 'prompt').mockReturnValue('S9_COPY');
+    const alertSpy = vi.spyOn(window, 'alert').mockImplementation(() => {});
+    const app = await mountApp('instrument');
+    try {
+      await clickButtonByExactText(app.container, 'Duplicate');
+
+      const instrumentSelect = findSelectForSettingsRow(app.container, 'Instrument');
+      const optionValues = Array.from(instrumentSelect.options).map((entry) => entry.value);
+      expect(optionValues).toContain('S9_COPY');
+      expect(instrumentSelect.value).toBe('S9_COPY');
+
+      const description = findInputForSettingsRow(app.container, 'Instrument Description');
+      expect(description.value).toContain('industry standard S9');
+      expect(alertSpy).not.toHaveBeenCalled();
+    } finally {
+      promptSpy.mockRestore();
+      alertSpy.mockRestore();
       await app.cleanup();
     }
   });
