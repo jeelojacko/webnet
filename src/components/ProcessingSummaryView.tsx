@@ -180,7 +180,7 @@ const ProcessingSummaryView: React.FC<ProcessingSummaryViewProps> = ({
       lines.push('Performing Network Adjustment ...');
     }
     for (let i = 1; i <= result.iterations; i += 1) {
-      lines.push(`  Iteration # ${i}`);
+      lines.push(`Iteration # ${i}`);
     }
     lines.push(
       result.converged
@@ -263,7 +263,7 @@ const ProcessingSummaryView: React.FC<ProcessingSummaryViewProps> = ({
       const cycleLines = result.logs
         .filter((line) => line.startsWith('Blunder cycle '))
         .slice(0, 15);
-      cycleLines.forEach((line) => lines.push(`  ${line}`));
+      cycleLines.forEach((line) => lines.push(line));
     }
     lines.push('');
     lines.push('Statistical Summary');
@@ -433,9 +433,9 @@ const ProcessingSummaryView: React.FC<ProcessingSummaryViewProps> = ({
         lines.push(
           `Datum Sufficiency: ${datumSufficiency.status.toUpperCase()} (${datumSufficiency.reasons.length} reason${datumSufficiency.reasons.length === 1 ? '' : 's'})`,
         );
-        datumSufficiency.reasons.forEach((reason) => lines.push(`  Reason: ${reason}`));
+        datumSufficiency.reasons.forEach((reason) => lines.push(`Reason: ${reason}`));
         datumSufficiency.suggestions.forEach((suggestion) =>
-          lines.push(`  Suggestion: ${suggestion}`),
+          lines.push(`Suggestion: ${suggestion}`),
         );
       }
       lines.push(
@@ -495,11 +495,11 @@ const ProcessingSummaryView: React.FC<ProcessingSummaryViewProps> = ({
       );
       gpsLoopDiagnostics.loops.slice(0, 15).forEach((loop) => {
         lines.push(
-          `  #${loop.rank} ${loop.key} ${loop.pass ? 'PASS' : 'WARN'} |d|=${(loop.closureMag * unitScale).toFixed(4)}${linearUnit} tol=${(loop.toleranceM * unitScale).toFixed(4)}${linearUnit} ppm=${loop.linearPpm != null ? loop.linearPpm.toFixed(1) : '-'} ratio=${loop.closureRatio != null ? `1:${loop.closureRatio.toFixed(0)}` : '-'} path=${loop.stationPath.join('->')}`,
+          `#${loop.rank} ${loop.key} ${loop.pass ? 'PASS' : 'WARN'} |d|=${(loop.closureMag * unitScale).toFixed(4)}${linearUnit} tol=${(loop.toleranceM * unitScale).toFixed(4)}${linearUnit} ppm=${loop.linearPpm != null ? loop.linearPpm.toFixed(1) : '-'} ratio=${loop.closureRatio != null ? `1:${loop.closureRatio.toFixed(0)}` : '-'} path=${loop.stationPath.join('->')}`,
         );
       });
       if (gpsLoopDiagnostics.loops.length > 15) {
-        lines.push(`  ... ${gpsLoopDiagnostics.loops.length - 15} more GPS loop diagnostics`);
+        lines.push(`... ${gpsLoopDiagnostics.loops.length - 15} more GPS loop diagnostics`);
       }
     }
     const levelingLoopDiagnostics = result.levelingLoopDiagnostics;
@@ -509,17 +509,17 @@ const ProcessingSummaryView: React.FC<ProcessingSummaryViewProps> = ({
       );
       levelingLoopDiagnostics.loops.slice(0, 15).forEach((loop) => {
         lines.push(
-          `  #${loop.rank} ${loop.key} ${loop.pass ? 'PASS' : 'WARN'} |dH|=${(loop.absClosure * unitScale).toFixed(4)}${linearUnit} len=${loop.loopLengthKm.toFixed(3)}km tol=${loop.toleranceMm.toFixed(2)}mm mm/sqrt(km)=${loop.closurePerSqrtKmMm.toFixed(2)} path=${loop.stationPath.join('->')}`,
+          `#${loop.rank} ${loop.key} ${loop.pass ? 'PASS' : 'WARN'} |dH|=${(loop.absClosure * unitScale).toFixed(4)}${linearUnit} len=${loop.loopLengthKm.toFixed(3)}km tol=${loop.toleranceMm.toFixed(2)}mm mm/sqrt(km)=${loop.closurePerSqrtKmMm.toFixed(2)} path=${loop.stationPath.join('->')}`,
         );
       });
       levelingLoopDiagnostics.suspectSegments.slice(0, 3).forEach((segment) => {
         lines.push(
-          `  suspect #${segment.rank} ${segment.from}->${segment.to} line=${segment.sourceLine ?? '-'} loops=${segment.warnLoopCount} score=${segment.suspectScore.toFixed(2)} worst=${segment.worstLoopKey ?? '-'}`,
+          `suspect #${segment.rank} ${segment.from}->${segment.to} line=${segment.sourceLine ?? '-'} loops=${segment.warnLoopCount} score=${segment.suspectScore.toFixed(2)} worst=${segment.worstLoopKey ?? '-'}`,
         );
       });
       if (levelingLoopDiagnostics.loops.length > 15) {
         lines.push(
-          `  ... ${levelingLoopDiagnostics.loops.length - 15} more leveling loop diagnostics`,
+          `... ${levelingLoopDiagnostics.loops.length - 15} more leveling loop diagnostics`,
         );
       }
     }
@@ -543,16 +543,16 @@ const ProcessingSummaryView: React.FC<ProcessingSummaryViewProps> = ({
       );
       ad.cycles.forEach((cycle) => {
         lines.push(
-          `  Cycle ${cycle.cycle}: seuw=${cycle.seuw.toFixed(4)}, max|t|=${cycle.maxAbsStdRes.toFixed(2)}, removals=${cycle.removals.length}`,
+          `Cycle ${cycle.cycle}: seuw=${cycle.seuw.toFixed(4)}, max|t|=${cycle.maxAbsStdRes.toFixed(2)}, removals=${cycle.removals.length}`,
         );
       });
       ad.removed.slice(0, 30).forEach((row) => {
         lines.push(
-          `  Removed obs#${row.obsId} ${row.type.toUpperCase()} ${row.stations} line=${row.sourceLine ?? '-'} |t|=${row.stdRes.toFixed(2)} reason=${row.reason}${row.redundancy != null ? ` redund=${row.redundancy.toFixed(3)}` : ''}`,
+          `Removed obs#${row.obsId} ${row.type.toUpperCase()} ${row.stations} line=${row.sourceLine ?? '-'} |t|=${row.stdRes.toFixed(2)} reason=${row.reason}${row.redundancy != null ? ` redund=${row.redundancy.toFixed(3)}` : ''}`,
         );
       });
       if (ad.removed.length > 30) {
-        lines.push(`  ... ${ad.removed.length - 30} more removed observations`);
+        lines.push(`... ${ad.removed.length - 30} more removed observations`);
       }
     }
     if (result.autoSideshotDiagnostics?.enabled) {
@@ -562,11 +562,11 @@ const ProcessingSummaryView: React.FC<ProcessingSummaryViewProps> = ({
       );
       sd.candidates.slice(0, 20).forEach((row) => {
         lines.push(
-          `  line=${row.sourceLine ?? '-'} ${row.occupy}->${row.target} (bs=${row.backsight}) minRed=${row.minRedundancy.toFixed(3)} max|t|=${row.maxAbsStdRes.toFixed(2)}`,
+          `line=${row.sourceLine ?? '-'} ${row.occupy}->${row.target} (bs=${row.backsight}) minRed=${row.minRedundancy.toFixed(3)} max|t|=${row.maxAbsStdRes.toFixed(2)}`,
         );
       });
       if (sd.candidates.length > 20) {
-        lines.push(`  ... ${sd.candidates.length - 20} more auto-sideshot candidates`);
+        lines.push(`... ${sd.candidates.length - 20} more auto-sideshot candidates`);
       }
     }
     const tsSideshots = (result.sideshots ?? []).filter((s) => s.mode !== 'gps');
@@ -579,7 +579,7 @@ const ProcessingSummaryView: React.FC<ProcessingSummaryViewProps> = ({
       );
       gpsVectorSideshots.slice(0, 15).forEach((row) => {
         lines.push(
-          `  GPS sideshot line=${row.sourceLine ?? '-'} ${row.from}->${row.to} HD=${(
+          `GPS sideshot line=${row.sourceLine ?? '-'} ${row.from}->${row.to} HD=${(
             row.horizDistance * unitScale
           ).toFixed(
             4,
@@ -587,15 +587,15 @@ const ProcessingSummaryView: React.FC<ProcessingSummaryViewProps> = ({
         );
       });
       if (gpsVectorSideshots.length > 15) {
-        lines.push(`  ... ${gpsVectorSideshots.length - 15} more GPS sideshot vectors`);
+        lines.push(`... ${gpsVectorSideshots.length - 15} more GPS sideshot vectors`);
       }
       gpsCoordinateSideshots.slice(0, 15).forEach((row) => {
         lines.push(
-          `  GS line=${row.sourceLine ?? '-'} ${row.to} N=${((row.northing ?? 0) * unitScale).toFixed(4)}${linearUnit} E=${((row.easting ?? 0) * unitScale).toFixed(4)}${linearUnit} relation=${row.relationFrom ? `FROM=${row.relationFrom}` : 'standalone'}${row.note ? ` note=${row.note}` : ''}`,
+          `GS line=${row.sourceLine ?? '-'} ${row.to} N=${((row.northing ?? 0) * unitScale).toFixed(4)}${linearUnit} E=${((row.easting ?? 0) * unitScale).toFixed(4)}${linearUnit} relation=${row.relationFrom ? `FROM=${row.relationFrom}` : 'standalone'}${row.note ? ` note=${row.note}` : ''}`,
         );
       });
       if (gpsCoordinateSideshots.length > 15) {
-        lines.push(`  ... ${gpsCoordinateSideshots.length - 15} more GS coordinate rows`);
+        lines.push(`... ${gpsCoordinateSideshots.length - 15} more GS coordinate rows`);
       }
     }
     const aliasTrace = result.parseState?.aliasTrace ?? [];
@@ -609,11 +609,11 @@ const ProcessingSummaryView: React.FC<ProcessingSummaryViewProps> = ({
       const sample = aliasTrace.slice(0, 15);
       sample.forEach((entry) => {
         lines.push(
-          `  ${entry.context} line=${entry.sourceLine ?? '-'} ${entry.detail ?? '-'}: ${entry.sourceId} -> ${entry.canonicalId}`,
+          `${entry.context} line=${entry.sourceLine ?? '-'} ${entry.detail ?? '-'}: ${entry.sourceId} -> ${entry.canonicalId}`,
         );
       });
       if (aliasTrace.length > sample.length) {
-        lines.push(`  ... ${aliasTrace.length - sample.length} more alias references`);
+        lines.push(`... ${aliasTrace.length - sample.length} more alias references`);
       }
     }
     if (result.clusterDiagnostics?.enabled) {
@@ -622,12 +622,12 @@ const ProcessingSummaryView: React.FC<ProcessingSummaryViewProps> = ({
       );
       result.clusterDiagnostics.candidates.slice(0, 10).forEach((c) => {
         lines.push(
-          `  ${c.key}: rep=${c.representativeId}, members=${c.stationIds.join(',')}, maxSep=${c.maxSeparation.toFixed(4)}m`,
+          `${c.key}: rep=${c.representativeId}, members=${c.stationIds.join(',')}, maxSep=${c.maxSeparation.toFixed(4)}m`,
         );
       });
       if (result.clusterDiagnostics.candidates.length > 10) {
         lines.push(
-          `  ... ${result.clusterDiagnostics.candidates.length - 10} more cluster candidates`,
+          `... ${result.clusterDiagnostics.candidates.length - 10} more cluster candidates`,
         );
       }
       const outcomes = result.clusterDiagnostics.mergeOutcomes ?? [];
@@ -635,11 +635,11 @@ const ProcessingSummaryView: React.FC<ProcessingSummaryViewProps> = ({
         lines.push(`Cluster Merge Outcomes: ${outcomes.length}`);
         outcomes.slice(0, 15).forEach((row) => {
           lines.push(
-            `  ${row.aliasId}->${row.canonicalId}: dE=${row.deltaE != null ? row.deltaE.toFixed(4) : '-'}m dN=${row.deltaN != null ? row.deltaN.toFixed(4) : '-'}m dH=${row.deltaH != null ? `${row.deltaH.toFixed(4)}m` : '-'} d2D=${row.horizontalDelta != null ? `${row.horizontalDelta.toFixed(4)}m` : '-'} d3D=${row.spatialDelta != null ? `${row.spatialDelta.toFixed(4)}m` : '-'}${row.missing ? ' (missing pass1 data)' : ''}`,
+            `${row.aliasId}->${row.canonicalId}: dE=${row.deltaE != null ? row.deltaE.toFixed(4) : '-'}m dN=${row.deltaN != null ? row.deltaN.toFixed(4) : '-'}m dH=${row.deltaH != null ? `${row.deltaH.toFixed(4)}m` : '-'} d2D=${row.horizontalDelta != null ? `${row.horizontalDelta.toFixed(4)}m` : '-'} d3D=${row.spatialDelta != null ? `${row.spatialDelta.toFixed(4)}m` : '-'}${row.missing ? ' (missing pass1 data)' : ''}`,
           );
         });
         if (outcomes.length > 15) {
-          lines.push(`  ... ${outcomes.length - 15} more merge outcomes`);
+          lines.push(`... ${outcomes.length - 15} more merge outcomes`);
         }
       }
       const rejected = result.clusterDiagnostics.rejectedProposals ?? [];
@@ -647,11 +647,11 @@ const ProcessingSummaryView: React.FC<ProcessingSummaryViewProps> = ({
         lines.push(`Rejected Cluster Proposals: ${rejected.length}`);
         rejected.slice(0, 15).forEach((row) => {
           lines.push(
-            `  ${row.key}: rep=${row.representativeId}, members=${row.stationIds.join(',')}, retained=${row.retainedId ?? '-'}, reason=${row.reason}`,
+            `${row.key}: rep=${row.representativeId}, members=${row.stationIds.join(',')}, retained=${row.retainedId ?? '-'}, reason=${row.reason}`,
           );
         });
         if (rejected.length > 15) {
-          lines.push(`  ... ${rejected.length - 15} more rejected proposals`);
+          lines.push(`... ${rejected.length - 15} more rejected proposals`);
         }
       }
     }
@@ -662,15 +662,15 @@ const ProcessingSummaryView: React.FC<ProcessingSummaryViewProps> = ({
     lines.push('Network Processing Completed');
     lines.push(`Elapsed Time = ${elapsedStr(runElapsedMs)}`);
     lines.push('');
-    lines.push('Processing Notes:');
-    result.logs.slice(0, 30).forEach((line) => lines.push(`  ${line}`));
+    lines.push(`Processing Notes (${result.logs.length}):`);
+    result.logs.forEach((line) => lines.push(line));
     return lines.join('\n');
   }, [result, units, runElapsedMs, runDiagnostics]);
 
   return (
-    <div className="h-full p-4 bg-slate-950 text-slate-100">
-      <div className="h-full border border-slate-700 bg-slate-900 overflow-auto rounded">
-        <pre className="text-xs leading-5 font-mono p-3 whitespace-pre-wrap">{text}</pre>
+    <div className="h-full min-h-0 box-border p-4 bg-slate-950 text-slate-100">
+      <div className="h-full min-h-0 border border-slate-700 bg-slate-900 overflow-auto rounded">
+        <pre className="text-xs leading-5 font-mono p-3 pb-6 whitespace-pre-wrap">{text}</pre>
       </div>
     </div>
   );

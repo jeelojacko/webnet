@@ -43,4 +43,21 @@ describe('ProcessingSummaryView run-mode sections', () => {
     expect(html).toContain('Blunder Detect Mode');
     expect(html).toContain('not a replacement for full adjustment QA');
   });
+
+  it('renders full processing notes without truncating long logs', () => {
+    const result = new LSAEngine({
+      input,
+      maxIterations: 6,
+      parseOptions: { runMode: 'adjustment', coordMode: '2D' },
+    }).solve();
+    result.logs = Array.from({ length: 45 }, (_, idx) => `LOG-LINE-${idx + 1}`);
+
+    const html = renderToStaticMarkup(
+      <ProcessingSummaryView result={result} units="m" runElapsedMs={null} runDiagnostics={null} />,
+    );
+
+    expect(html).toContain('Processing Notes (45):');
+    expect(html).toContain('LOG-LINE-1');
+    expect(html).toContain('LOG-LINE-45');
+  });
 });
