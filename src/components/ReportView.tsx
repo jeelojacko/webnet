@@ -219,6 +219,56 @@ interface ReportViewProps {
 
 type SortedObservation = Observation & { originalIndex: number };
 
+const COLLAPSIBLE_DETAIL_SECTION_IDS = [
+  'suspect-impact-analysis',
+  'solve-profile-diagnostics',
+  'auto-adjust-diagnostics',
+  'auto-sideshot-candidates',
+  'residual-diagnostics',
+  'robust-diagnostics',
+  'robust-vs-classical-suspects',
+  'ts-correlation-diagnostics',
+  'traverse-diagnostics',
+  'traverse-closure-suspects',
+  'gps-loop-diagnostics',
+  'leveling-loop-diagnostics',
+  'leveling-loop-suspects',
+  'leveling-segment-suspects',
+  'gps-loop-suspects',
+  'direction-set-diagnostics',
+  'direction-target-repeatability',
+  'direction-face-treatment-diagnostics',
+  'direction-reject-diagnostics',
+  'direction-target-suspects-top',
+  'direction-repeatability-multi-set',
+  'direction-repeatability-suspects-top',
+  'setup-diagnostics',
+  'post-adjusted-sideshots-ts',
+  'post-adjusted-gps-sideshot-vectors',
+  'post-adjusted-gnss-topo-coordinates',
+  'gps-rover-offsets',
+  'per-type-summary',
+  'relative-precision-unknowns',
+  'angles-ts',
+  'directions-db-dn',
+  'bearings-azimuths',
+  'directions-azimuth',
+  'zenith-vertical-angles',
+  'gps-vectors',
+  'distances-ts',
+  'leveling-dh',
+] as const;
+
+type CollapsibleDetailSectionId = (typeof COLLAPSIBLE_DETAIL_SECTION_IDS)[number];
+
+const createCollapsedDetailSectionsState = (): Record<CollapsibleDetailSectionId, boolean> => {
+  const next = {} as Record<CollapsibleDetailSectionId, boolean>;
+  COLLAPSIBLE_DETAIL_SECTION_IDS.forEach((id) => {
+    next[id] = false;
+  });
+  return next;
+};
+
 const ReportView: React.FC<ReportViewProps> = ({
   result,
   units,
@@ -263,7 +313,30 @@ const ReportView: React.FC<ReportViewProps> = ({
     ].join('; ');
   };
   const [ellipseMode, setEllipseMode] = useState<'1sigma' | '95'>('1sigma');
+  const [collapsedDetailSections, setCollapsedDetailSections] = useState<
+    Record<CollapsibleDetailSectionId, boolean>
+  >(createCollapsedDetailSectionsState);
   const ellipseConfidenceScale = ellipseMode === '95' ? 2.4477 : 1;
+  const allDetailSectionsCollapsed = COLLAPSIBLE_DETAIL_SECTION_IDS.every(
+    (id) => collapsedDetailSections[id],
+  );
+  const isSectionCollapsed = (id: CollapsibleDetailSectionId): boolean =>
+    collapsedDetailSections[id] ?? false;
+  const toggleDetailSection = (id: CollapsibleDetailSectionId) => {
+    setCollapsedDetailSections((prev) => ({
+      ...prev,
+      [id]: !prev[id],
+    }));
+  };
+  const setAllDetailSectionsCollapsed = (collapsed: boolean) => {
+    setCollapsedDetailSections((prev) => {
+      const next = { ...prev };
+      COLLAPSIBLE_DETAIL_SECTION_IDS.forEach((id) => {
+        next[id] = collapsed;
+      });
+      return next;
+    });
+  };
 
   const sortedObs = useMemo<SortedObservation[]>(
     () =>
@@ -654,14 +727,26 @@ const ReportView: React.FC<ReportViewProps> = ({
   const renderSideshotSection = (
     title: string,
     rows: NonNullable<AdjustmentResult['sideshots']>,
+    sectionId?: CollapsibleDetailSectionId,
   ) => {
     if (rows.length === 0) return null;
+    const collapsed = sectionId ? isSectionCollapsed(sectionId) : false;
     return (
       <div className="mb-8 border border-slate-800 rounded overflow-hidden">
-        <div className="px-3 py-2 text-xs text-slate-400 uppercase tracking-wider border-b border-slate-800 bg-slate-900/40">
-          {title}
-        </div>
-        <div className="overflow-x-auto w-full">
+        {sectionId ? (
+          renderCollapsibleSectionHeader({
+            sectionId,
+            label: title,
+            className:
+              'px-3 py-2 text-xs uppercase tracking-wider border-b border-slate-800 bg-slate-900/40',
+            labelClassName: 'text-slate-400',
+          })
+        ) : (
+          <div className="px-3 py-2 text-xs text-slate-400 uppercase tracking-wider border-b border-slate-800 bg-slate-900/40">
+            {title}
+          </div>
+        )}
+        {!collapsed && <div className="overflow-x-auto w-full">
           <table className="w-full text-left border-collapse text-xs">
             <thead>
               <tr className="text-slate-500 border-b border-slate-800">
@@ -732,7 +817,7 @@ const ReportView: React.FC<ReportViewProps> = ({
               ))}
             </tbody>
           </table>
-        </div>
+        </div>}
       </div>
     );
   };
@@ -932,17 +1017,58 @@ const ReportView: React.FC<ReportViewProps> = ({
     });
   });
 
-  const renderTable = (obsList: Observation[], title: string) => {
+  const renderCollapsibleSectionHeader = (params: {
+    sectionId: CollapsibleDetailSectionId;
+    label: string;
+    className: string;
+    labelClassName: string;
+    title?: string;
+  }) => {
+    const { sectionId, label, className, labelClassName, title } = params;
+    const collapsed = isSectionCollapsed(sectionId);
+    return (
+      <button
+        type="button"
+        onClick={() => toggleDetailSection(sectionId)}
+        className={`${className} w-full text-left flex items-center justify-between`}
+        aria-expanded={!collapsed}
+      >
+        <span className={labelClassName} title={title}>
+          {label}
+        </span>
+        <span className="text-[10px] text-slate-500 uppercase tracking-wide">
+          {collapsed ? 'Show' : 'Hide'}
+        </span>
+      </button>
+    );
+  };
+
+  const renderTable = (
+    obsList: Observation[],
+    title: string,
+    sectionId?: CollapsibleDetailSectionId,
+  ) => {
     if (!obsList.length) return null;
+    const collapsed = sectionId ? isSectionCollapsed(sectionId) : false;
     return (
       <div className="mb-6 bg-slate-900/30 border border-slate-800/50 rounded overflow-hidden">
-        <div className="bg-slate-800/50 px-4 py-2 border-b border-slate-700 flex items-center justify-between">
-          <span className="text-blue-400 font-bold uppercase tracking-wider text-xs">{title}</span>
-          <span className="text-[10px] text-slate-500">
-            Toggle exclusions below and click Re-run
-          </span>
-        </div>
-        <table className="w-full text-left text-xs">
+        {sectionId ? (
+          renderCollapsibleSectionHeader({
+            sectionId,
+            label: title,
+            className: 'bg-slate-800/50 px-4 py-2 border-b border-slate-700',
+            labelClassName: 'text-blue-400 font-bold uppercase tracking-wider text-xs',
+          })
+        ) : (
+          <div className="bg-slate-800/50 px-4 py-2 border-b border-slate-700 flex items-center justify-between">
+            <span className="text-blue-400 font-bold uppercase tracking-wider text-xs">{title}</span>
+            <span className="text-[10px] text-slate-500">
+              Toggle exclusions below and click Re-run
+            </span>
+          </div>
+        )}
+        {!collapsed && (
+          <table className="w-full text-left text-xs">
           <thead>
             <tr className="text-slate-500 border-b border-slate-800/50">
               <th className="py-2 px-4">Use</th>
@@ -1178,7 +1304,8 @@ const ReportView: React.FC<ReportViewProps> = ({
               );
             })}
           </tbody>
-        </table>
+          </table>
+        )}
       </div>
     );
   };
@@ -1223,6 +1350,12 @@ const ReportView: React.FC<ReportViewProps> = ({
           >
             Re-run with exclusions
           </button>
+          <button
+            onClick={() => setAllDetailSectionsCollapsed(!allDetailSectionsCollapsed)}
+            className="px-3 py-1 bg-slate-700 rounded hover:bg-slate-600 text-slate-100"
+          >
+            {allDetailSectionsCollapsed ? 'Expand detail sections' : 'Collapse detail sections'}
+          </button>
           <button onClick={onClearExclusions} className="px-3 py-1 bg-slate-700 rounded">
             Reset exclusions
           </button>
@@ -1257,10 +1390,15 @@ const ReportView: React.FC<ReportViewProps> = ({
             className="mb-8 border border-slate-800 rounded overflow-hidden"
             style={{ order: -140 }}
           >
-            <div className="px-4 py-2 border-b border-slate-800 bg-slate-900/60 text-xs uppercase tracking-wider text-slate-400">
-              Suspect Impact Analysis (what-if exclusion)
-            </div>
-            <table className="w-full text-left text-xs">
+            {renderCollapsibleSectionHeader({
+              sectionId: 'suspect-impact-analysis',
+              label: 'Suspect Impact Analysis (what-if exclusion)',
+              className:
+                'px-4 py-2 border-b border-slate-800 bg-slate-900/60 text-xs uppercase tracking-wider',
+              labelClassName: 'text-slate-400',
+            })}
+            {!isSectionCollapsed('suspect-impact-analysis') && (
+              <table className="w-full text-left text-xs">
               <thead>
                 <tr className="text-slate-500 border-b border-slate-800/60">
                   <th className="py-2 px-3">#</th>
@@ -1324,7 +1462,8 @@ const ReportView: React.FC<ReportViewProps> = ({
                   );
                 })}
               </tbody>
-            </table>
+              </table>
+            )}
           </div>
         )}
 
@@ -1530,13 +1669,16 @@ const ReportView: React.FC<ReportViewProps> = ({
           className="mb-6 border border-slate-800 rounded overflow-hidden"
           style={{ order: -200 }}
         >
-          <div
-            className="px-3 py-2 text-xs text-slate-400 uppercase tracking-wider border-b border-slate-800 bg-slate-900/40"
-            title={REPORT_STATIC_TOOLTIPS['Solve Profile Diagnostics']}
-          >
-            Solve Profile Diagnostics
-          </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-3 text-xs text-slate-300">
+          {renderCollapsibleSectionHeader({
+            sectionId: 'solve-profile-diagnostics',
+            label: 'Solve Profile Diagnostics',
+            className:
+              'px-3 py-2 text-xs uppercase tracking-wider border-b border-slate-800 bg-slate-900/40',
+            labelClassName: 'text-slate-400',
+            title: REPORT_STATIC_TOOLTIPS['Solve Profile Diagnostics'],
+          })}
+          {!isSectionCollapsed('solve-profile-diagnostics') && (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-3 text-xs text-slate-300">
             <div>
               <div className="text-slate-500" title={REPORT_STATIC_TOOLTIPS.Profile}>
                 Profile
@@ -1850,7 +1992,8 @@ const ReportView: React.FC<ReportViewProps> = ({
                 <div className="break-words">{runDiagnostics.stochasticDefaultsSummary}</div>
               </div>
             )}
-          </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -2556,10 +2699,16 @@ const ReportView: React.FC<ReportViewProps> = ({
 
       {autoAdjustDiagnostics?.enabled && (
         <div className="mb-6 border border-slate-800 rounded overflow-hidden">
-          <div className="px-3 py-2 text-xs text-slate-400 uppercase tracking-wider border-b border-slate-800 bg-slate-900/40">
-            Auto-Adjust Diagnostics
-          </div>
-          <div className="grid grid-cols-2 md:grid-cols-6 gap-3 p-3 text-xs text-slate-300 border-b border-slate-800/60">
+          {renderCollapsibleSectionHeader({
+            sectionId: 'auto-adjust-diagnostics',
+            label: 'Auto-Adjust Diagnostics',
+            className:
+              'px-3 py-2 text-xs uppercase tracking-wider border-b border-slate-800 bg-slate-900/40',
+            labelClassName: 'text-slate-400',
+          })}
+          {!isSectionCollapsed('auto-adjust-diagnostics') && (
+            <>
+              <div className="grid grid-cols-2 md:grid-cols-6 gap-3 p-3 text-xs text-slate-300 border-b border-slate-800/60">
             <div>
               <div className="text-slate-500">Threshold</div>
               <div>|t| &gt;= {autoAdjustDiagnostics.threshold.toFixed(2)}</div>
@@ -2584,8 +2733,8 @@ const ReportView: React.FC<ReportViewProps> = ({
               <div className="text-slate-500">Total Removed</div>
               <div>{autoAdjustDiagnostics.removed.length}</div>
             </div>
-          </div>
-          <div className="overflow-x-auto w-full border-b border-slate-800">
+              </div>
+              <div className="overflow-x-auto w-full border-b border-slate-800">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
                 <tr className="text-slate-500 border-b border-slate-800">
@@ -2608,9 +2757,9 @@ const ReportView: React.FC<ReportViewProps> = ({
                 ))}
               </tbody>
             </table>
-          </div>
-          {autoAdjustDiagnostics.removed.length > 0 && (
-            <div className="overflow-x-auto w-full">
+              </div>
+              {autoAdjustDiagnostics.removed.length > 0 && (
+                <div className="overflow-x-auto w-full">
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
                   <tr className="text-slate-500 border-b border-slate-800">
@@ -2642,17 +2791,25 @@ const ReportView: React.FC<ReportViewProps> = ({
                   ))}
                 </tbody>
               </table>
-            </div>
+                </div>
+              )}
+            </>
           )}
         </div>
       )}
 
       {showAutoSideshotDiagnosticsSection && (
         <div className="mb-6 border border-slate-800 rounded overflow-hidden">
-          <div className="px-3 py-2 text-xs text-slate-400 uppercase tracking-wider border-b border-slate-800 bg-slate-900/40">
-            Auto Sideshot Candidates (M Records)
-          </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-3 text-xs text-slate-300 border-b border-slate-800/60">
+          {renderCollapsibleSectionHeader({
+            sectionId: 'auto-sideshot-candidates',
+            label: 'Auto Sideshot Candidates (M Records)',
+            className:
+              'px-3 py-2 text-xs uppercase tracking-wider border-b border-slate-800 bg-slate-900/40',
+            labelClassName: 'text-slate-400',
+          })}
+          {!isSectionCollapsed('auto-sideshot-candidates') && (
+            <>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-3 text-xs text-slate-300 border-b border-slate-800/60">
             <div>
               <div className="text-slate-500">Evaluated M Pairs</div>
               <div>{autoSideshotDiagnostics.evaluatedCount}</div>
@@ -2669,8 +2826,8 @@ const ReportView: React.FC<ReportViewProps> = ({
               <div className="text-slate-500">Min Redundancy Threshold</div>
               <div>{autoSideshotDiagnostics.threshold.toFixed(2)}</div>
             </div>
-          </div>
-          <div className="overflow-x-auto w-full">
+              </div>
+              <div className="overflow-x-auto w-full">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
                 <tr className="text-slate-500 border-b border-slate-800">
@@ -2714,7 +2871,9 @@ const ReportView: React.FC<ReportViewProps> = ({
                 ))}
               </tbody>
             </table>
-          </div>
+              </div>
+            </>
+          )}
         </div>
       )}
 
@@ -2723,10 +2882,16 @@ const ReportView: React.FC<ReportViewProps> = ({
           className="mb-6 border border-slate-800 rounded overflow-hidden"
           style={{ order: -170 }}
         >
-          <div className="px-3 py-2 text-xs text-slate-400 uppercase tracking-wider border-b border-slate-800 bg-slate-900/40">
-            Residual Diagnostics
-          </div>
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-3 p-3 text-xs text-slate-300">
+          {renderCollapsibleSectionHeader({
+            sectionId: 'residual-diagnostics',
+            label: 'Residual Diagnostics',
+            className:
+              'px-3 py-2 text-xs uppercase tracking-wider border-b border-slate-800 bg-slate-900/40',
+            labelClassName: 'text-slate-400',
+          })}
+          {!isSectionCollapsed('residual-diagnostics') && (
+            <>
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-3 p-3 text-xs text-slate-300">
             <div>
               <div className="text-slate-500">Obs</div>
               <div>{result.residualDiagnostics.observationCount}</div>
@@ -2788,9 +2953,9 @@ const ReportView: React.FC<ReportViewProps> = ({
                   : '-'}
               </div>
             </div>
-          </div>
-          {result.residualDiagnostics.byType.length > 0 && (
-            <div className="overflow-x-auto w-full border-t border-slate-800">
+              </div>
+              {result.residualDiagnostics.byType.length > 0 && (
+                <div className="overflow-x-auto w-full border-t border-slate-800">
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
                   <tr className="text-slate-500 border-b border-slate-800">
@@ -2833,17 +2998,25 @@ const ReportView: React.FC<ReportViewProps> = ({
                   ))}
                 </tbody>
               </table>
-            </div>
+                </div>
+              )}
+            </>
           )}
         </div>
       )}
 
       {result.robustDiagnostics && (
         <div className="mb-6 border border-slate-800 rounded overflow-hidden">
-          <div className="px-3 py-2 text-xs text-slate-400 uppercase tracking-wider border-b border-slate-800 bg-slate-900/40">
-            Robust Diagnostics
-          </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-3 text-xs text-slate-300">
+          {renderCollapsibleSectionHeader({
+            sectionId: 'robust-diagnostics',
+            label: 'Robust Diagnostics',
+            className:
+              'px-3 py-2 text-xs uppercase tracking-wider border-b border-slate-800 bg-slate-900/40',
+            labelClassName: 'text-slate-400',
+          })}
+          {!isSectionCollapsed('robust-diagnostics') && (
+            <>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-3 text-xs text-slate-300">
             <div>
               <div className="text-slate-500">Mode</div>
               <div>
@@ -2870,9 +3043,9 @@ const ReportView: React.FC<ReportViewProps> = ({
                   : 0}
               </div>
             </div>
-          </div>
-          {result.robustDiagnostics.enabled && result.robustDiagnostics.iterations.length > 0 && (
-            <div className="overflow-x-auto w-full border-t border-slate-800">
+              </div>
+              {result.robustDiagnostics.enabled && result.robustDiagnostics.iterations.length > 0 && (
+                <div className="overflow-x-auto w-full border-t border-slate-800">
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
                   <tr className="text-slate-500 border-b border-slate-800">
@@ -2895,11 +3068,11 @@ const ReportView: React.FC<ReportViewProps> = ({
                   ))}
                 </tbody>
               </table>
-            </div>
-          )}
-          {result.robustDiagnostics.enabled &&
-            result.robustDiagnostics.topDownweightedRows.length > 0 && (
-              <div className="overflow-x-auto w-full border-t border-slate-800">
+                </div>
+              )}
+              {result.robustDiagnostics.enabled &&
+                result.robustDiagnostics.topDownweightedRows.length > 0 && (
+                <div className="overflow-x-auto w-full border-t border-slate-800">
                 <table className="w-full text-left border-collapse text-xs">
                   <thead>
                     <tr className="text-slate-500 border-b border-slate-800">
@@ -2929,24 +3102,32 @@ const ReportView: React.FC<ReportViewProps> = ({
                     ))}
                   </tbody>
                 </table>
-              </div>
-            )}
+                </div>
+              )}
+            </>
+          )}
         </div>
       )}
 
       {!isPreanalysis && result.robustComparison?.enabled && (
         <div className="mb-6 border border-slate-800 rounded overflow-hidden">
-          <div className="px-3 py-2 text-xs text-slate-400 uppercase tracking-wider border-b border-slate-800 bg-slate-900/40">
-            Robust vs Classical Suspects (Top 10)
-          </div>
-          <div className="px-3 py-2 text-xs text-slate-400 border-b border-slate-800">
+          {renderCollapsibleSectionHeader({
+            sectionId: 'robust-vs-classical-suspects',
+            label: 'Robust vs Classical Suspects (Top 10)',
+            className:
+              'px-3 py-2 text-xs uppercase tracking-wider border-b border-slate-800 bg-slate-900/40',
+            labelClassName: 'text-slate-400',
+          })}
+          {!isSectionCollapsed('robust-vs-classical-suspects') && (
+            <>
+              <div className="px-3 py-2 text-xs text-slate-400 border-b border-slate-800">
             Overlap: {result.robustComparison.overlapCount}/
             {Math.min(
               result.robustComparison.classicalTop.length,
               result.robustComparison.robustTop.length,
             )}
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-0">
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-0">
             <div className="border-r border-slate-800">
               <div className="px-3 py-2 text-[11px] text-slate-500 uppercase tracking-wider border-b border-slate-800">
                 Classical
@@ -3005,16 +3186,24 @@ const ReportView: React.FC<ReportViewProps> = ({
                 </tbody>
               </table>
             </div>
-          </div>
+              </div>
+            </>
+          )}
         </div>
       )}
 
       {showTsCorrelationDiagnosticsSection && result.tsCorrelationDiagnostics && (
         <div className="mb-6 border border-slate-800 rounded overflow-hidden">
-          <div className="px-3 py-2 text-xs text-slate-400 uppercase tracking-wider border-b border-slate-800 bg-slate-900/40">
-            TS Correlation Diagnostics
-          </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-3 text-xs text-slate-300">
+          {renderCollapsibleSectionHeader({
+            sectionId: 'ts-correlation-diagnostics',
+            label: 'TS Correlation Diagnostics',
+            className:
+              'px-3 py-2 text-xs uppercase tracking-wider border-b border-slate-800 bg-slate-900/40',
+            labelClassName: 'text-slate-400',
+          })}
+          {!isSectionCollapsed('ts-correlation-diagnostics') && (
+            <>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-3 text-xs text-slate-300">
             <div>
               <div className="text-slate-500">Enabled</div>
               <div>{result.tsCorrelationDiagnostics.enabled ? 'ON' : 'OFF'}</div>
@@ -3051,10 +3240,10 @@ const ReportView: React.FC<ReportViewProps> = ({
                   : '-'}
               </div>
             </div>
-          </div>
-          {result.tsCorrelationDiagnostics.enabled &&
-            result.tsCorrelationDiagnostics.groups.length > 0 && (
-              <div className="overflow-x-auto w-full border-t border-slate-800">
+              </div>
+              {result.tsCorrelationDiagnostics.enabled &&
+                result.tsCorrelationDiagnostics.groups.length > 0 && (
+                <div className="overflow-x-auto w-full border-t border-slate-800">
                 <table className="w-full text-left border-collapse text-xs">
                   <thead>
                     <tr className="text-slate-500 border-b border-slate-800">
@@ -3085,17 +3274,25 @@ const ReportView: React.FC<ReportViewProps> = ({
                     ))}
                   </tbody>
                 </table>
-              </div>
-            )}
+                </div>
+              )}
+            </>
+          )}
         </div>
       )}
 
       {!isPreanalysis && result.traverseDiagnostics && (
         <div className="mb-6 border border-slate-800 rounded overflow-hidden">
-          <div className="px-3 py-2 text-xs text-slate-400 uppercase tracking-wider border-b border-slate-800 bg-slate-900/40">
-            Traverse Diagnostics
-          </div>
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-3 p-3 text-xs text-slate-300">
+          {renderCollapsibleSectionHeader({
+            sectionId: 'traverse-diagnostics',
+            label: 'Traverse Diagnostics',
+            className:
+              'px-3 py-2 text-xs uppercase tracking-wider border-b border-slate-800 bg-slate-900/40',
+            labelClassName: 'text-slate-400',
+          })}
+          {!isSectionCollapsed('traverse-diagnostics') && (
+            <>
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-3 p-3 text-xs text-slate-300">
             <div>
               <div className="text-slate-500">Closure Count</div>
               <div>{result.traverseDiagnostics.closureCount}</div>
@@ -3176,9 +3373,9 @@ const ReportView: React.FC<ReportViewProps> = ({
                   : '-'}
               </div>
             </div>
-          </div>
-          {traverseLoops.length > 0 && (
-            <div className="overflow-x-auto w-full border-t border-slate-800">
+              </div>
+              {traverseLoops.length > 0 && (
+                <div className="overflow-x-auto w-full border-t border-slate-800">
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
                   <tr className="text-slate-500 border-b border-slate-800">
@@ -3231,17 +3428,24 @@ const ReportView: React.FC<ReportViewProps> = ({
                   ))}
                 </tbody>
               </table>
-            </div>
+                </div>
+              )}
+            </>
           )}
         </div>
       )}
 
       {!isPreanalysis && traverseLoopSuspects.length > 0 && (
         <div className="mb-6 border border-slate-800 rounded overflow-hidden">
-          <div className="px-4 py-2 border-b border-slate-800 bg-slate-900/60 text-xs uppercase tracking-wider text-slate-400">
-            Traverse Closure Suspects
-          </div>
-          <table className="w-full text-left text-xs">
+          {renderCollapsibleSectionHeader({
+            sectionId: 'traverse-closure-suspects',
+            label: 'Traverse Closure Suspects',
+            className:
+              'px-4 py-2 border-b border-slate-800 bg-slate-900/60 text-xs uppercase tracking-wider',
+            labelClassName: 'text-slate-400',
+          })}
+          {!isSectionCollapsed('traverse-closure-suspects') && (
+            <table className="w-full text-left text-xs">
             <thead>
               <tr className="text-slate-500 border-b border-slate-800/60">
                 <th className="py-2 px-3">#</th>
@@ -3282,16 +3486,23 @@ const ReportView: React.FC<ReportViewProps> = ({
                 </tr>
               ))}
             </tbody>
-          </table>
+            </table>
+          )}
         </div>
       )}
 
       {gpsLoopDiagnostics?.enabled && (
         <div className="mb-6 border border-slate-800 rounded overflow-hidden">
-          <div className="px-3 py-2 text-xs text-slate-400 uppercase tracking-wider border-b border-slate-800 bg-slate-900/40">
-            GPS Loop Diagnostics
-          </div>
-          <div className="grid grid-cols-2 md:grid-cols-6 gap-3 p-3 text-xs text-slate-300">
+          {renderCollapsibleSectionHeader({
+            sectionId: 'gps-loop-diagnostics',
+            label: 'GPS Loop Diagnostics',
+            className:
+              'px-3 py-2 text-xs uppercase tracking-wider border-b border-slate-800 bg-slate-900/40',
+            labelClassName: 'text-slate-400',
+          })}
+          {!isSectionCollapsed('gps-loop-diagnostics') && (
+            <>
+              <div className="grid grid-cols-2 md:grid-cols-6 gap-3 p-3 text-xs text-slate-300">
             <div>
               <div className="text-slate-500">Vectors</div>
               <div>{gpsLoopDiagnostics.vectorCount}</div>
@@ -3323,9 +3534,9 @@ const ReportView: React.FC<ReportViewProps> = ({
                 {units} + {gpsLoopDiagnostics.thresholds.ppmTolerance}ppm*dist
               </div>
             </div>
-          </div>
-          {gpsLoopDiagnostics.loops.length > 0 && (
-            <div className="overflow-x-auto w-full border-t border-slate-800">
+              </div>
+              {gpsLoopDiagnostics.loops.length > 0 && (
+                <div className="overflow-x-auto w-full border-t border-slate-800">
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
                   <tr className="text-slate-500 border-b border-slate-800">
@@ -3377,17 +3588,25 @@ const ReportView: React.FC<ReportViewProps> = ({
                   ))}
                 </tbody>
               </table>
-            </div>
+                </div>
+              )}
+            </>
           )}
         </div>
       )}
 
       {showLevelingLoopDiagnosticsSection && levelingLoopDiagnostics && (
         <div className="mb-6 border border-slate-800 rounded overflow-hidden">
-          <div className="px-3 py-2 text-xs text-slate-400 uppercase tracking-wider border-b border-slate-800 bg-slate-900/40">
-            Leveling Loop Diagnostics
-          </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-8 gap-3 p-3 text-xs text-slate-300">
+          {renderCollapsibleSectionHeader({
+            sectionId: 'leveling-loop-diagnostics',
+            label: 'Leveling Loop Diagnostics',
+            className:
+              'px-3 py-2 text-xs uppercase tracking-wider border-b border-slate-800 bg-slate-900/40',
+            labelClassName: 'text-slate-400',
+          })}
+          {!isSectionCollapsed('leveling-loop-diagnostics') && (
+            <>
+              <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-8 gap-3 p-3 text-xs text-slate-300">
             <div>
               <div className="text-slate-500">Observations</div>
               <div>{levelingLoopDiagnostics.observationCount}</div>
@@ -3445,9 +3664,9 @@ const ReportView: React.FC<ReportViewProps> = ({
                   : '-'}
               </div>
             </div>
-          </div>
-          {levelingLoopDiagnostics.loops.length > 0 && (
-            <div className="overflow-x-auto w-full border-t border-slate-800">
+              </div>
+              {levelingLoopDiagnostics.loops.length > 0 && (
+                <div className="overflow-x-auto w-full border-t border-slate-800">
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
                   <tr className="text-slate-500 border-b border-slate-800">
@@ -3490,10 +3709,10 @@ const ReportView: React.FC<ReportViewProps> = ({
                   ))}
                 </tbody>
               </table>
-            </div>
-          )}
-          {levelingLoopDiagnostics.loops.length > 0 && (
-            <div className="overflow-x-auto w-full border-t border-slate-800">
+                </div>
+              )}
+              {levelingLoopDiagnostics.loops.length > 0 && (
+                <div className="overflow-x-auto w-full border-t border-slate-800">
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
                   <tr className="text-slate-500 border-b border-slate-800">
@@ -3536,17 +3755,24 @@ const ReportView: React.FC<ReportViewProps> = ({
                   )}
                 </tbody>
               </table>
-            </div>
+                </div>
+              )}
+            </>
           )}
         </div>
       )}
 
       {!isPreanalysis && levelingLoopSuspects.length > 0 && (
         <div className="mb-6 border border-slate-800 rounded overflow-hidden">
-          <div className="px-4 py-2 border-b border-slate-800 bg-slate-900/60 text-xs uppercase tracking-wider text-slate-400">
-            Leveling Loop Suspects (ranked)
-          </div>
-          <table className="w-full text-left text-xs">
+          {renderCollapsibleSectionHeader({
+            sectionId: 'leveling-loop-suspects',
+            label: 'Leveling Loop Suspects (ranked)',
+            className:
+              'px-4 py-2 border-b border-slate-800 bg-slate-900/60 text-xs uppercase tracking-wider',
+            labelClassName: 'text-slate-400',
+          })}
+          {!isSectionCollapsed('leveling-loop-suspects') && (
+            <table className="w-full text-left text-xs">
             <thead>
               <tr className="text-slate-500 border-b border-slate-800/60">
                 <th className="py-2 px-3">#</th>
@@ -3579,16 +3805,22 @@ const ReportView: React.FC<ReportViewProps> = ({
                 </tr>
               ))}
             </tbody>
-          </table>
+            </table>
+          )}
         </div>
       )}
 
       {!isPreanalysis && levelingSegmentSuspects.length > 0 && (
         <div className="mb-6 border border-slate-800 rounded overflow-hidden">
-          <div className="px-4 py-2 border-b border-slate-800 bg-slate-900/60 text-xs uppercase tracking-wider text-slate-400">
-            Leveling Segment Suspects
-          </div>
-          <table className="w-full text-left text-xs">
+          {renderCollapsibleSectionHeader({
+            sectionId: 'leveling-segment-suspects',
+            label: 'Leveling Segment Suspects',
+            className:
+              'px-4 py-2 border-b border-slate-800 bg-slate-900/60 text-xs uppercase tracking-wider',
+            labelClassName: 'text-slate-400',
+          })}
+          {!isSectionCollapsed('leveling-segment-suspects') && (
+            <table className="w-full text-left text-xs">
             <thead>
               <tr className="text-slate-500 border-b border-slate-800/60">
                 <th className="py-2 px-3">#</th>
@@ -3622,16 +3854,22 @@ const ReportView: React.FC<ReportViewProps> = ({
                 </tr>
               ))}
             </tbody>
-          </table>
+            </table>
+          )}
         </div>
       )}
 
       {gpsLoopSuspects.length > 0 && (
         <div className="mb-6 border border-slate-800 rounded overflow-hidden">
-          <div className="px-4 py-2 border-b border-slate-800 bg-slate-900/60 text-xs uppercase tracking-wider text-slate-400">
-            GPS Loop Suspects (ranked)
-          </div>
-          <table className="w-full text-left text-xs">
+          {renderCollapsibleSectionHeader({
+            sectionId: 'gps-loop-suspects',
+            label: 'GPS Loop Suspects (ranked)',
+            className:
+              'px-4 py-2 border-b border-slate-800 bg-slate-900/60 text-xs uppercase tracking-wider',
+            labelClassName: 'text-slate-400',
+          })}
+          {!isSectionCollapsed('gps-loop-suspects') && (
+            <table className="w-full text-left text-xs">
             <thead>
               <tr className="text-slate-500 border-b border-slate-800/60">
                 <th className="py-2 px-3">#</th>
@@ -3669,7 +3907,8 @@ const ReportView: React.FC<ReportViewProps> = ({
                 </tr>
               ))}
             </tbody>
-          </table>
+            </table>
+          )}
         </div>
       )}
 
@@ -3677,10 +3916,15 @@ const ReportView: React.FC<ReportViewProps> = ({
         result.directionSetDiagnostics &&
         result.directionSetDiagnostics.length > 0 && (
           <div className="mb-6 border border-slate-800 rounded overflow-hidden">
-            <div className="px-3 py-2 text-xs text-slate-400 uppercase tracking-wider border-b border-slate-800 bg-slate-900/40">
-              Direction Set Diagnostics
-            </div>
-            <div className="overflow-x-auto w-full">
+            {renderCollapsibleSectionHeader({
+              sectionId: 'direction-set-diagnostics',
+              label: 'Direction Set Diagnostics',
+              className:
+                'px-3 py-2 text-xs uppercase tracking-wider border-b border-slate-800 bg-slate-900/40',
+              labelClassName: 'text-slate-400',
+            })}
+            {!isSectionCollapsed('direction-set-diagnostics') && (
+              <div className="overflow-x-auto w-full">
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
                   <tr className="text-slate-500 border-b border-slate-800">
@@ -3755,7 +3999,8 @@ const ReportView: React.FC<ReportViewProps> = ({
                   ))}
                 </tbody>
               </table>
-            </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -3763,10 +4008,15 @@ const ReportView: React.FC<ReportViewProps> = ({
         result.directionTargetDiagnostics &&
         result.directionTargetDiagnostics.length > 0 && (
           <div className="mb-6 border border-slate-800 rounded overflow-hidden">
-            <div className="px-3 py-2 text-xs text-slate-400 uppercase tracking-wider border-b border-slate-800 bg-slate-900/40">
-              Direction Target Repeatability (ranked)
-            </div>
-            <div className="overflow-x-auto w-full">
+            {renderCollapsibleSectionHeader({
+              sectionId: 'direction-target-repeatability',
+              label: 'Direction Target Repeatability (ranked)',
+              className:
+                'px-3 py-2 text-xs uppercase tracking-wider border-b border-slate-800 bg-slate-900/40',
+              labelClassName: 'text-slate-400',
+            })}
+            {!isSectionCollapsed('direction-target-repeatability') && (
+              <div className="overflow-x-auto w-full">
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
                   <tr className="text-slate-500 border-b border-slate-800">
@@ -3844,16 +4094,22 @@ const ReportView: React.FC<ReportViewProps> = ({
                   ))}
                 </tbody>
               </table>
-            </div>
+              </div>
+            )}
           </div>
         )}
 
       {directionTreatmentDiagnostics.length > 0 && (
         <div className="mb-6 border border-slate-800 rounded overflow-hidden">
-          <div className="px-3 py-2 text-xs text-slate-400 uppercase tracking-wider border-b border-slate-800 bg-slate-900/40">
-            Direction Face Treatment Diagnostics
-          </div>
-          <div className="overflow-x-auto w-full">
+          {renderCollapsibleSectionHeader({
+            sectionId: 'direction-face-treatment-diagnostics',
+            label: 'Direction Face Treatment Diagnostics',
+            className:
+              'px-3 py-2 text-xs uppercase tracking-wider border-b border-slate-800 bg-slate-900/40',
+            labelClassName: 'text-slate-400',
+          })}
+          {!isSectionCollapsed('direction-face-treatment-diagnostics') && (
+            <div className="overflow-x-auto w-full">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
                 <tr className="text-slate-500 border-b border-slate-800">
@@ -3891,16 +4147,22 @@ const ReportView: React.FC<ReportViewProps> = ({
                 ))}
               </tbody>
             </table>
-          </div>
+            </div>
+          )}
         </div>
       )}
 
       {directionRejects.length > 0 && (
         <div className="mb-6 border border-slate-800 rounded overflow-hidden">
-          <div className="px-3 py-2 text-xs text-slate-400 uppercase tracking-wider border-b border-slate-800 bg-slate-900/40">
-            Direction Reject Diagnostics
-          </div>
-          <div className="overflow-x-auto w-full">
+          {renderCollapsibleSectionHeader({
+            sectionId: 'direction-reject-diagnostics',
+            label: 'Direction Reject Diagnostics',
+            className:
+              'px-3 py-2 text-xs uppercase tracking-wider border-b border-slate-800 bg-slate-900/40',
+            labelClassName: 'text-slate-400',
+          })}
+          {!isSectionCollapsed('direction-reject-diagnostics') && (
+            <div className="overflow-x-auto w-full">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
                 <tr className="text-slate-500 border-b border-slate-800">
@@ -3940,16 +4202,22 @@ const ReportView: React.FC<ReportViewProps> = ({
                 ))}
               </tbody>
             </table>
-          </div>
+            </div>
+          )}
         </div>
       )}
 
       {!isPreanalysis && topDirectionTargetSuspects.length > 0 && (
         <div className="mb-8 border border-slate-800 rounded overflow-hidden">
-          <div className="px-4 py-2 border-b border-slate-800 bg-slate-900/60 text-xs uppercase tracking-wider text-slate-400">
-            Direction Target Suspects (top)
-          </div>
-          <table className="w-full text-left text-xs">
+          {renderCollapsibleSectionHeader({
+            sectionId: 'direction-target-suspects-top',
+            label: 'Direction Target Suspects (top)',
+            className:
+              'px-4 py-2 border-b border-slate-800 bg-slate-900/60 text-xs uppercase tracking-wider',
+            labelClassName: 'text-slate-400',
+          })}
+          {!isSectionCollapsed('direction-target-suspects-top') && (
+            <table className="w-full text-left text-xs">
             <thead>
               <tr className="text-slate-500 border-b border-slate-800/60">
                 <th className="py-2 px-3">#</th>
@@ -3985,7 +4253,8 @@ const ReportView: React.FC<ReportViewProps> = ({
                 </tr>
               ))}
             </tbody>
-          </table>
+            </table>
+          )}
         </div>
       )}
 
@@ -3993,10 +4262,15 @@ const ReportView: React.FC<ReportViewProps> = ({
         result.directionRepeatabilityDiagnostics &&
         result.directionRepeatabilityDiagnostics.length > 0 && (
           <div className="mb-6 border border-slate-800 rounded overflow-hidden">
-            <div className="px-3 py-2 text-xs text-slate-400 uppercase tracking-wider border-b border-slate-800 bg-slate-900/40">
-              Direction Repeatability By Occupy-Target (multi-set)
-            </div>
-            <div className="overflow-x-auto w-full">
+            {renderCollapsibleSectionHeader({
+              sectionId: 'direction-repeatability-multi-set',
+              label: 'Direction Repeatability By Occupy-Target (multi-set)',
+              className:
+                'px-3 py-2 text-xs uppercase tracking-wider border-b border-slate-800 bg-slate-900/40',
+              labelClassName: 'text-slate-400',
+            })}
+            {!isSectionCollapsed('direction-repeatability-multi-set') && (
+              <div className="overflow-x-auto w-full">
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
                   <tr className="text-slate-500 border-b border-slate-800">
@@ -4068,16 +4342,22 @@ const ReportView: React.FC<ReportViewProps> = ({
                   ))}
                 </tbody>
               </table>
-            </div>
+              </div>
+            )}
           </div>
         )}
 
       {!isPreanalysis && topDirectionRepeatabilitySuspects.length > 0 && (
         <div className="mb-8 border border-slate-800 rounded overflow-hidden">
-          <div className="px-4 py-2 border-b border-slate-800 bg-slate-900/60 text-xs uppercase tracking-wider text-slate-400">
-            Direction Repeatability Suspects (top)
-          </div>
-          <table className="w-full text-left text-xs">
+          {renderCollapsibleSectionHeader({
+            sectionId: 'direction-repeatability-suspects-top',
+            label: 'Direction Repeatability Suspects (top)',
+            className:
+              'px-4 py-2 border-b border-slate-800 bg-slate-900/60 text-xs uppercase tracking-wider',
+            labelClassName: 'text-slate-400',
+          })}
+          {!isSectionCollapsed('direction-repeatability-suspects-top') && (
+            <table className="w-full text-left text-xs">
             <thead>
               <tr className="text-slate-500 border-b border-slate-800/60">
                 <th className="py-2 px-3">#</th>
@@ -4117,19 +4397,27 @@ const ReportView: React.FC<ReportViewProps> = ({
                 </tr>
               ))}
             </tbody>
-          </table>
+            </table>
+          )}
         </div>
       )}
 
-      {!isPreanalysis && result.setupDiagnostics && result.setupDiagnostics.length > 0 && (
+      {!isPreanalysis &&
+        result.setupDiagnostics &&
+        result.setupDiagnostics.length > 0 && (
         <div
           className="mb-8 border border-slate-800 rounded overflow-hidden"
           style={{ order: -160 }}
         >
-          <div className="px-3 py-2 text-xs text-slate-400 uppercase tracking-wider border-b border-slate-800 bg-slate-900/40">
-            Setup Diagnostics
-          </div>
-          <div className="overflow-x-auto w-full">
+          {renderCollapsibleSectionHeader({
+            sectionId: 'setup-diagnostics',
+            label: 'Setup Diagnostics',
+            className:
+              'px-3 py-2 text-xs uppercase tracking-wider border-b border-slate-800 bg-slate-900/40',
+            labelClassName: 'text-slate-400',
+          })}
+          {!isSectionCollapsed('setup-diagnostics') && (
+            <div className="overflow-x-auto w-full">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
                 <tr className="text-slate-500 border-b border-slate-800">
@@ -4188,27 +4476,41 @@ const ReportView: React.FC<ReportViewProps> = ({
                 ))}
               </tbody>
             </table>
-          </div>
+            </div>
+          )}
         </div>
       )}
 
       {(tsSideshots.length > 0 || gpsSideshots.length > 0) && (
         <>
-          {renderSideshotSection('Post-Adjusted Sideshots (TS)', tsSideshots)}
-          {renderSideshotSection('Post-Adjusted GPS Sideshot Vectors', gpsVectorSideshots)}
+          {renderSideshotSection(
+            'Post-Adjusted Sideshots (TS)',
+            tsSideshots,
+            'post-adjusted-sideshots-ts',
+          )}
+          {renderSideshotSection(
+            'Post-Adjusted GPS Sideshot Vectors',
+            gpsVectorSideshots,
+            'post-adjusted-gps-sideshot-vectors',
+          )}
           {renderSideshotSection(
             'Post-Adjusted GNSS Topo Coordinates (GS)',
             gpsCoordinateSideshots,
+            'post-adjusted-gnss-topo-coordinates',
           )}
         </>
       )}
 
       {gpsOffsetObservations.length > 0 && (
         <div className="mb-8 border border-slate-800 rounded overflow-hidden">
-          <div className="px-3 py-2 text-xs text-slate-400 uppercase tracking-wider border-b border-slate-800 bg-slate-900/40">
-            GPS Rover Offsets
-          </div>
-          <div className="overflow-x-auto w-full">
+          {renderCollapsibleSectionHeader({
+            sectionId: 'gps-rover-offsets',
+            label: 'GPS Rover Offsets',
+            className:
+              'px-3 py-2 text-xs uppercase tracking-wider border-b border-slate-800 bg-slate-900/40',
+            labelClassName: 'text-slate-400',
+          })}
+          {!isSectionCollapsed('gps-rover-offsets') && <div className="overflow-x-auto w-full">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
                 <tr className="text-slate-500 border-b border-slate-800">
@@ -4264,7 +4566,7 @@ const ReportView: React.FC<ReportViewProps> = ({
                 ))}
               </tbody>
             </table>
-          </div>
+          </div>}
         </div>
       )}
 
@@ -4588,12 +4890,22 @@ const ReportView: React.FC<ReportViewProps> = ({
               MDB: arcsec (angular) / {units} (linear). Toggle rows to exclude and press Re-run
             </span>
           </div>
+          {allDetailSectionsCollapsed && (
+            <div className="mb-3 rounded border border-slate-800 bg-slate-900/40 px-3 py-2 text-xs text-slate-400">
+              Detail sections are collapsed. Click any section header to expand it, or use
+              “Expand detail sections”.
+            </div>
+          )}
           {result.typeSummary && Object.keys(result.typeSummary).length > 0 && (
             <div className="mb-4 border border-slate-800 rounded">
-              <div className="px-3 py-2 text-xs text-slate-400 uppercase tracking-wider border-b border-slate-800">
-                Per-Type Summary
-              </div>
-              <div className="overflow-x-auto w-full">
+              {renderCollapsibleSectionHeader({
+                sectionId: 'per-type-summary',
+                label: 'Per-Type Summary',
+                className: 'px-3 py-2 text-xs uppercase tracking-wider border-b border-slate-800',
+                labelClassName: 'text-slate-400',
+              })}
+              {!isSectionCollapsed('per-type-summary') && (
+                <div className="overflow-x-auto w-full">
                 <table className="w-full text-left border-collapse text-xs">
                   <thead>
                     <tr className="text-slate-500 border-b border-slate-800">
@@ -4622,15 +4934,20 @@ const ReportView: React.FC<ReportViewProps> = ({
                     ))}
                   </tbody>
                 </table>
-              </div>
+                </div>
+              )}
             </div>
           )}
           {result.relativePrecision && result.relativePrecision.length > 0 && (
             <div className="mb-4 border border-slate-800 rounded">
-              <div className="px-3 py-2 text-xs text-slate-400 uppercase tracking-wider border-b border-slate-800">
-                Relative Precision (Unknowns)
-              </div>
-              <div className="overflow-x-auto w-full">
+              {renderCollapsibleSectionHeader({
+                sectionId: 'relative-precision-unknowns',
+                label: 'Relative Precision (Unknowns)',
+                className: 'px-3 py-2 text-xs uppercase tracking-wider border-b border-slate-800',
+                labelClassName: 'text-slate-400',
+              })}
+              {!isSectionCollapsed('relative-precision-unknowns') && (
+                <div className="overflow-x-auto w-full">
                 <table className="w-full text-left border-collapse text-xs">
                   <thead>
                     <tr className="text-slate-500 border-b border-slate-800">
@@ -4688,17 +5005,18 @@ const ReportView: React.FC<ReportViewProps> = ({
                     ))}
                   </tbody>
                 </table>
-              </div>
+                </div>
+              )}
             </div>
           )}
-          {renderTable(byType('angle'), 'Angles (TS)')}
-          {renderTable(byType('direction'), 'Directions (DB/DN)')}
-          {renderTable(byType('dist'), 'Distances (TS)')}
-          {renderTable(byType('bearing'), 'Bearings/Azimuths')}
-          {renderTable(byType('dir'), 'Directions (Azimuth)')}
-          {renderTable(byType('zenith'), 'Zenith/Vertical Angles')}
-          {renderTable(byType('gps'), 'GPS Vectors')}
-          {renderTable(byType('lev'), 'Leveling dH')}
+          {renderTable(byType('angle'), 'Angles (TS)', 'angles-ts')}
+          {renderTable(byType('direction'), 'Directions (DB/DN)', 'directions-db-dn')}
+          {renderTable(byType('dist'), 'Distances (TS)', 'distances-ts')}
+          {renderTable(byType('bearing'), 'Bearings/Azimuths', 'bearings-azimuths')}
+          {renderTable(byType('dir'), 'Directions (Azimuth)', 'directions-azimuth')}
+          {renderTable(byType('zenith'), 'Zenith/Vertical Angles', 'zenith-vertical-angles')}
+          {renderTable(byType('gps'), 'GPS Vectors', 'gps-vectors')}
+          {renderTable(byType('lev'), 'Leveling dH', 'leveling-dh')}
         </div>
       )}
 
