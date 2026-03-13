@@ -867,6 +867,7 @@ const ReportView: React.FC<ReportViewProps> = ({
       OCCUPY: 'Instrument setup station where observations were made.',
       WEIGHT: 'Robust weight applied to this equation row (1=no downweighting).',
       NORM: 'Normalized residual magnitude |v/sigma| used for robust weighting.',
+      'MAX DW': 'Maximum change in robust weights between inner reweighting passes this iteration.',
       TARGET: 'Observed foresight/target station.',
       SCORE: 'Ranking score used to prioritize likely suspect rows.',
       STATUS: 'Pass/warn classification against configured closure thresholds.',
@@ -917,6 +918,8 @@ const ReportView: React.FC<ReportViewProps> = ({
       return 'Minimum robust weight in the iteration (smaller indicates stronger downweighting).';
     if (upper.startsWith('MAX |V/SIGMA|'))
       return 'Maximum normalized residual magnitude used by robust weighting.';
+    if (upper.startsWith('MAX DW'))
+      return 'Maximum absolute robust-weight change between consecutive inner reweighting passes.';
     if (upper.startsWith('DMAX|T|'))
       return 'Change in maximum absolute standardized residual after exclusion.';
     if (upper.startsWith('CHI')) return 'Chi-square model test change after what-if exclusion.';
@@ -3054,6 +3057,7 @@ const ReportView: React.FC<ReportViewProps> = ({
                     <th className="py-2 px-3 font-semibold text-right">Mean Weight</th>
                     <th className="py-2 px-3 font-semibold text-right">Min Weight</th>
                     <th className="py-2 px-3 font-semibold text-right">Max |v/sigma|</th>
+                    <th className="py-2 px-3 font-semibold text-right">Max dW</th>
                   </tr>
                 </thead>
                 <tbody className="text-slate-300">
@@ -3064,6 +3068,9 @@ const ReportView: React.FC<ReportViewProps> = ({
                       <td className="py-1 px-3 text-right">{it.meanWeight.toFixed(3)}</td>
                       <td className="py-1 px-3 text-right">{it.minWeight.toFixed(3)}</td>
                       <td className="py-1 px-3 text-right">{it.maxNorm.toFixed(2)}</td>
+                      <td className="py-1 px-3 text-right">
+                        {it.maxWeightDelta != null ? it.maxWeightDelta.toFixed(4) : '-'}
+                      </td>
                     </tr>
                   ))}
                 </tbody>

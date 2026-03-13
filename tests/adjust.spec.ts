@@ -1827,6 +1827,9 @@ describe('LSAEngine', () => {
     expect(result.robustDiagnostics?.enabled).toBe(true);
     expect(result.robustDiagnostics?.mode).toBe('huber');
     expect((result.robustDiagnostics?.iterations.length ?? 0) > 0).toBe(true);
+    expect(result.robustDiagnostics?.iterations[0]?.maxWeightDelta).toBeDefined();
+    expect((result.robustDiagnostics?.iterations[0]?.maxWeightDelta ?? 0) >= 0).toBe(true);
+    expect(result.logs.some((l) => l.includes('maxDeltaW='))).toBe(true);
     expect(result.logs.some((l) => l.includes('robust(huber)'))).toBe(true);
   });
 

@@ -1184,6 +1184,7 @@ export interface AdjustmentResult {
       meanWeight: number;
       minWeight: number;
       maxNorm: number;
+      maxWeightDelta?: number;
     }[];
     topDownweightedRows: {
       obsId: number;

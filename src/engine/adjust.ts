@@ -1804,7 +1804,11 @@ export class LSAEngine {
     };
   }
 
-  private recordRobustDiagnostics(iteration: number, summary: RobustWeightSummary): void {
+  private recordRobustDiagnostics(
+    iteration: number,
+    summary: RobustWeightSummary,
+    maxWeightDelta: number,
+  ): void {
     if (!this.robustDiagnostics) return;
     this.robustDiagnostics.iterations.push({
       iteration,
@@ -1812,10 +1816,11 @@ export class LSAEngine {
       meanWeight: summary.meanWeight,
       minWeight: summary.minWeight,
       maxNorm: summary.maxNorm,
+      maxWeightDelta,
     });
     this.robustDiagnostics.topDownweightedRows = summary.topRows;
     this.log(
-      `Iter ${iteration} robust(${this.robustMode}): downweighted=${summary.downweightedRows}, minW=${summary.minWeight.toFixed(3)}, meanW=${summary.meanWeight.toFixed(3)}, max|v/sigma|=${summary.maxNorm.toFixed(2)}`,
+      `Iter ${iteration} robust(${this.robustMode}): downweighted=${summary.downweightedRows}, minW=${summary.minWeight.toFixed(3)}, meanW=${summary.meanWeight.toFixed(3)}, max|v/sigma|=${summary.maxNorm.toFixed(2)}, maxDeltaW=${maxWeightDelta.toFixed(4)}`,
     );
   }
 
@@ -5112,6 +5117,7 @@ export class LSAEngine {
           const baseWeights = this.captureRobustWeightBase(P, rowInfo);
           let factors = new Array(P.length).fill(1);
           let finalSummary: RobustWeightSummary | null = null;
+          let finalWeightDelta = 0;
           const maxInnerIterations = 5;
           const weightTolerance = 1e-3;
           for (let inner = 0; inner < maxInnerIterations; inner += 1) {
@@ -5140,13 +5146,14 @@ export class LSAEngine {
             const AX = multiply(A, X);
             const residuals = AX.map((rowValue, i) => rowValue[0] - L[i][0]);
             finalSummary = this.computeRobustWeightSummary(residuals, rowInfo);
-            if (this.maxRobustWeightDelta(factors, finalSummary.factors) < weightTolerance) {
+            finalWeightDelta = this.maxRobustWeightDelta(factors, finalSummary.factors);
+            if (finalWeightDelta < weightTolerance) {
               break;
             }
             factors = finalSummary.factors.slice();
           }
           if (finalSummary) {
-            this.recordRobustDiagnostics(iter + 1, finalSummary);
+            this.recordRobustDiagnostics(iter + 1, finalSummary, finalWeightDelta);
           }
         } else {
           const ATP = multiply(AT, P);
