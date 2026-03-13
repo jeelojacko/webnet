@@ -144,6 +144,48 @@ describe('industry listing phase 5 formatting locks', () => {
     expect(listing).toMatch(/^\s*O-P\s+.+\s+.+\s+100\.0000\s+.+\s+.+\s+1:11\s*$/m);
   });
 
+  it('keeps centerInflation details on a single instrument-settings row', () => {
+    const input = ['.2D', 'C A 0 0 0 ! !', 'C B 100 0 0', 'B A-B 090.0000 1.0', 'D A-B 100 0.005'].join(
+      '\n',
+    );
+    const result = new LSAEngine({ input, maxIterations: 10 }).solve();
+    const listing = buildIndustryStyleListingText(
+      result,
+      {
+        maxIterations: 10,
+        units: 'm',
+        listingShowCoordinates: true,
+        listingShowObservationsResiduals: true,
+        listingShowErrorPropagation: true,
+        listingShowProcessingNotes: false,
+        listingShowAzimuthsBearings: true,
+        listingSortCoordinatesBy: 'name',
+        listingSortObservationsBy: 'input',
+        listingObservationLimit: 500,
+      },
+      {
+        coordMode: '2D',
+        order: 'EN',
+        angleUnits: 'dms',
+        angleStationOrder: 'atfromto',
+        deltaMode: 'horiz',
+        refractionCoefficient: 0.13,
+      },
+      {
+        solveProfile: 'industry-parity',
+        angleCenteringModel: 'geometry-aware-correlated-rays',
+        defaultSigmaCount: 0,
+        defaultSigmaByType: '',
+        stochasticDefaultsSummary:
+          'inst=S9 dist=0.0010m+1.000ppm hz=0.500" va=0.500" centering=0.00050/0.00000m edm=additive centerInflation=ON(explicit=OFF)',
+        rotationAngleRad: 0,
+      },
+    );
+
+    expect(listing).toMatch(/Centering Inflation\s+:\s+ON\(explicit=OFF\)/);
+    expect(listing).not.toContain('Setting explicit');
+  });
+
   it('renders dedicated GPS sideshot listing section for mixed GPS network datasets', () => {
     const input = readFileSync('tests/fixtures/gps_network_sideshot_phase3.dat', 'utf-8');
     const result = new LSAEngine({ input, maxIterations: 10 }).solve();

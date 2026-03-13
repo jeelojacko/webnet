@@ -374,7 +374,7 @@ export const buildIndustryStyleListingText = (
   ): Array<{ label: string; value: string }> => {
     const clean = summary.trim();
     if (!clean) return [];
-    const keyMatches = Array.from(clean.matchAll(/([A-Za-z][A-Za-z0-9]*)=/g));
+    const keyMatches = Array.from(clean.matchAll(/(?:^|\s)([A-Za-z][A-Za-z0-9]*)=/g));
     if (keyMatches.length === 0) return [{ label: 'Defaults Summary', value: clean }];
     const keyToLabel: Record<string, string> = {
       inst: 'Instrument',

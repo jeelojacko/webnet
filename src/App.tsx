@@ -1643,10 +1643,17 @@ const App: React.FC<AppProps> = ({
     const directionSetMode: DirectionSetMode = parity ? 'raw' : 'reduced';
     const allowClusterFaceReliability = solveProfile === 'legacy-compat';
     const effectiveInstrumentLibrary = parity
-      ? { ...projectInstruments, [INDUSTRY_DEFAULT_INSTRUMENT_CODE]: INDUSTRY_DEFAULT_INSTRUMENT }
+      ? {
+          ...projectInstruments,
+          ...(projectInstruments[INDUSTRY_DEFAULT_INSTRUMENT_CODE]
+            ? {}
+            : { [INDUSTRY_DEFAULT_INSTRUMENT_CODE]: INDUSTRY_DEFAULT_INSTRUMENT }),
+        }
       : projectInstruments;
     const currentInstrument = parity
-      ? INDUSTRY_DEFAULT_INSTRUMENT_CODE
+      ? selectedInstrument && effectiveInstrumentLibrary[selectedInstrument]
+        ? selectedInstrument
+        : INDUSTRY_DEFAULT_INSTRUMENT_CODE
       : selectedInstrument || undefined;
     return {
       parity,
