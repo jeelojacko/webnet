@@ -13,6 +13,13 @@
   - [x] Keep filter/windowing state local to the report without changing solve outputs
   - [x] Add regression coverage for report filtering and load-more behavior
 
+- [ ] Scalability batch 3 - operator workflows and parity closeout:
+  - [x] Add source-line jump from report rows back to the editor
+  - [x] Add pinned/favorite report sections for quicker navigation
+  - [x] Add a compact current-vs-last-run settings diff before rerun
+  - [ ] Complete remaining Section 5.6 compatibility work
+  - [ ] Add browser-oriented large-project benchmark fixture coverage
+
 - [x] Add post-adjust adjusted-points Transform support (rotation-only v1): persisted transform settings, Project Options -> Other Files -> Transform UI (rotation with pivot/scope/select-points popup + translation/scale placeholders), export-time validation, and dual-section adjusted-points export output (original + transform notes + rotated coordinates)
 - [x] Add TypeScript tooling (tsconfig, TSX entry) and migrate LSA engine/UI to TS modules
 - [x] Industry-standard input-compatibility parity batch 1: parser directive normalization aliases/unique-prefix handling, `.DATA` block gating, `.SEPARATOR` station token support, `.3REDUCE` horizontal-equation behavior, include preprocessor with source-file traceability + scoped state restore, CLI include filesystem resolution + hard-fail diagnostics, new CLI run modes (`data-check`, `blunder-detect`), and project file schema v3 bundle support (`mainInput` + `includeFiles`) with v1/v2 migration

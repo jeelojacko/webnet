@@ -13,6 +13,10 @@ interface InputPaneProps {
   onClearImportNotice?: () => void;
 }
 
+export type InputPaneHandle = {
+  jumpToLine: (_lineNumber: number) => void;
+};
+
 type ContextMenuState = {
   x: number;
   y: number;
@@ -25,6 +29,7 @@ const INPUT_EDITOR_BASE_TOKEN_CLASS = 'text-slate-300';
 const INPUT_EDITOR_COMMENT_CLASS = 'text-slate-500';
 const INPUT_EDITOR_DIRECTIVE_CLASS = 'text-blue-300';
 const INPUT_EDITOR_FIXED_CLASS = 'text-red-400';
+const INPUT_EDITOR_LINE_HEIGHT_PX = 19.5;
 
 const INPUT_EDITOR_OBS_TOKEN_CLASS: Record<string, string> = {
   C: 'text-amber-100',
@@ -127,12 +132,8 @@ const renderHighlightedLine = (line: string, lineIndex: number): React.ReactNode
   return <>{rendered}</>;
 };
 
-const InputPane: React.FC<InputPaneProps> = ({
-  input,
-  onChange,
-  importNotice = null,
-  onClearImportNotice,
-}) => {
+const InputPane = React.forwardRef<InputPaneHandle, InputPaneProps>(
+  ({ input, onChange, importNotice = null, onClearImportNotice }, ref) => {
   const lineCount = input.split('\n').length;
   const lines = Array.from({ length: lineCount }, (_, i) => i + 1);
   const textareaRef = React.useRef<HTMLTextAreaElement>(null);
@@ -140,6 +141,8 @@ const InputPane: React.FC<InputPaneProps> = ({
   const highlightRef = React.useRef<HTMLPreElement>(null);
   const editorWrapRef = React.useRef<HTMLDivElement>(null);
   const [contextMenu, setContextMenu] = React.useState<ContextMenuState | null>(null);
+  const [jumpHighlightLine, setJumpHighlightLine] = React.useState<number | null>(null);
+  const jumpHighlightTimeoutRef = React.useRef<number | null>(null);
   const highlightedInput = React.useMemo(() => {
     const editorLines = input.split('\n');
     return editorLines.map((line, lineIndex) => (
@@ -150,7 +153,7 @@ const InputPane: React.FC<InputPaneProps> = ({
     ));
   }, [input]);
 
-  const handleScroll = () => {
+  const handleScroll = React.useCallback(() => {
     if (textareaRef.current && numbersRef.current) {
       numbersRef.current.scrollTop = textareaRef.current.scrollTop;
     }
@@ -159,7 +162,55 @@ const InputPane: React.FC<InputPaneProps> = ({
       highlightRef.current.scrollLeft = textareaRef.current.scrollLeft;
     }
     setContextMenu(null);
-  };
+  }, []);
+
+  const jumpToLine = React.useCallback(
+    (lineNumber: number) => {
+      const textarea = textareaRef.current;
+      if (!textarea) return;
+      const linesForSelection = input.split('\n');
+      const clampedLine = Math.min(Math.max(Math.trunc(lineNumber), 1), linesForSelection.length);
+      let start = 0;
+      for (let i = 0; i < clampedLine - 1; i += 1) {
+        start += linesForSelection[i].length + 1;
+      }
+      const end = start + linesForSelection[clampedLine - 1].length;
+      textarea.focus();
+      textarea.setSelectionRange(start, end);
+      const targetScrollTop = Math.max(
+        0,
+        (clampedLine - 1) * INPUT_EDITOR_LINE_HEIGHT_PX - textarea.clientHeight / 2,
+      );
+      textarea.scrollTop = targetScrollTop;
+      handleScroll();
+      setJumpHighlightLine(clampedLine);
+      if (jumpHighlightTimeoutRef.current != null) {
+        window.clearTimeout(jumpHighlightTimeoutRef.current);
+      }
+      jumpHighlightTimeoutRef.current = window.setTimeout(() => {
+        setJumpHighlightLine((current) => (current === clampedLine ? null : current));
+        jumpHighlightTimeoutRef.current = null;
+      }, 1600);
+    },
+    [handleScroll, input],
+  );
+
+  React.useImperativeHandle(
+    ref,
+    () => ({
+      jumpToLine,
+    }),
+    [jumpToLine],
+  );
+
+  React.useEffect(
+    () => () => {
+      if (jumpHighlightTimeoutRef.current != null) {
+        window.clearTimeout(jumpHighlightTimeoutRef.current);
+      }
+    },
+    [],
+  );
 
   const dispatchTextareaInput = React.useCallback((textarea: HTMLTextAreaElement) => {
     textarea.dispatchEvent(new Event('input', { bubbles: true }));
@@ -448,7 +499,10 @@ const InputPane: React.FC<InputPaneProps> = ({
           style={{ lineHeight: '1.625' }} // Match leading-relaxed of textarea (approx 1.625)
         >
           {lines.map((n) => (
-            <div key={n} className="leading-relaxed">
+            <div
+              key={n}
+              className={`leading-relaxed ${jumpHighlightLine === n ? 'bg-blue-500/20 text-blue-200' : ''}`}
+            >
               {n}
             </div>
           ))}
@@ -550,6 +604,7 @@ const InputPane: React.FC<InputPaneProps> = ({
       </div>
     </div>
   );
-};
+  },
+);
 
 export default InputPane;

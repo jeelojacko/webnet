@@ -213,6 +213,8 @@ interface ReportViewProps {
   onApplyPreanalysisAction: (_id: number) => void;
   onReRun: () => void;
   onClearExclusions: () => void;
+  onJumpToSourceLine?: (_sourceLine: number) => void;
+  pendingRunSettingDiffs?: string[];
   overrides: Record<number, { obs?: number | { dE: number; dN: number }; stdDev?: number }>;
   onOverride: (
     _id: number,
@@ -303,8 +305,13 @@ const ReportView: React.FC<ReportViewProps> = ({
   onApplyClusterMerges,
   onResetClusterReview,
   onClearClusterMerges,
+  onJumpToSourceLine,
+  pendingRunSettingDiffs = [],
 }) => {
   const reportRootRef = useRef<HTMLDivElement | null>(null);
+  const detailSectionHeaderRefs = useRef<
+    Partial<Record<CollapsibleDetailSectionId, HTMLDivElement | null>>
+  >({});
   const unitScale = units === 'ft' ? FT_PER_M : 1;
   const ellipseUnit = units === 'm' ? 'cm' : 'in';
   const ellipseScale = units === 'm' ? 100 : 12;
@@ -338,6 +345,9 @@ const ReportView: React.FC<ReportViewProps> = ({
     'all' | 'included' | 'excluded'
   >('all');
   const [tableRowLimits, setTableRowLimits] = useState<Record<string, number>>({});
+  const [pinnedDetailSections, setPinnedDetailSections] = useState<
+    Array<{ id: CollapsibleDetailSectionId; label: string }>
+  >([]);
   const deferredReportFilterQuery = useDeferredValue(reportFilterQuery);
   const ellipseConfidenceScale = ellipseMode === '95' ? 2.4477 : 1;
   const allDetailSectionsCollapsed = COLLAPSIBLE_DETAIL_SECTION_IDS.every(
@@ -376,6 +386,25 @@ const ReportView: React.FC<ReportViewProps> = ({
       ...prev,
       [key]: (prev[key] ?? step) + step,
     }));
+  };
+  const isDetailSectionPinned = (id: CollapsibleDetailSectionId): boolean =>
+    pinnedDetailSections.some((entry) => entry.id === id);
+  const togglePinnedDetailSection = (id: CollapsibleDetailSectionId, label: string) => {
+    setPinnedDetailSections((prev) => {
+      if (prev.some((entry) => entry.id === id)) return prev.filter((entry) => entry.id !== id);
+      return [...prev, { id, label }];
+    });
+  };
+  const jumpToPinnedSection = (id: CollapsibleDetailSectionId) => {
+    const target = detailSectionHeaderRefs.current[id];
+    if (!target) return;
+    if (isSectionCollapsed(id)) {
+      setCollapsedDetailSections((prev) => ({
+        ...prev,
+        [id]: false,
+      }));
+    }
+    target.scrollIntoView({ block: 'start', behavior: 'smooth' });
   };
   const isSectionCollapsed = (id: CollapsibleDetailSectionId): boolean =>
     collapsedDetailSections[id] ?? false;
@@ -927,7 +956,7 @@ const ReportView: React.FC<ReportViewProps> = ({
                 <tr key={s.id} className="border-b border-slate-800/50">
                   <td className="py-1 px-3">{s.from}</td>
                   <td className="py-1 px-3">{s.to}</td>
-                  <td className="py-1 px-3 text-right">{s.sourceLine ?? '-'}</td>
+                  <td className="py-1 px-3 text-right">{renderSourceLineLink(s.sourceLine)}</td>
                   <td className="py-1 px-3 text-right">{s.mode}</td>
                   <td className="py-1 px-3 text-right">{s.sourceType ?? '-'}</td>
                   <td className="py-1 px-3 text-right">
@@ -1182,20 +1211,41 @@ const ReportView: React.FC<ReportViewProps> = ({
   }) => {
     const { sectionId, label, className, labelClassName, title } = params;
     const collapsed = isSectionCollapsed(sectionId);
+    const pinned = isDetailSectionPinned(sectionId);
     return (
-      <button
-        type="button"
-        onClick={() => toggleDetailSection(sectionId)}
-        className={`${className} w-full text-left flex items-center justify-between`}
-        aria-expanded={!collapsed}
+      <div
+        ref={(node) => {
+          detailSectionHeaderRefs.current[sectionId] = node;
+        }}
+        className={`${className} flex items-center gap-2`}
       >
-        <span className={labelClassName} title={title}>
-          {label}
-        </span>
-        <span className="text-[10px] text-slate-500 uppercase tracking-wide">
-          {collapsed ? 'Show' : 'Hide'}
-        </span>
-      </button>
+        <button
+          type="button"
+          onClick={() => toggleDetailSection(sectionId)}
+          className="flex-1 text-left flex items-center justify-between"
+          aria-expanded={!collapsed}
+        >
+          <span className={labelClassName} title={title}>
+            {label}
+            {pinned ? <span className="ml-2 text-[10px] text-amber-300">Pinned</span> : null}
+          </span>
+          <span className="text-[10px] text-slate-500 uppercase tracking-wide">
+            {collapsed ? 'Show' : 'Hide'}
+          </span>
+        </button>
+        <button
+          type="button"
+          onClick={() => togglePinnedDetailSection(sectionId, label)}
+          className={`rounded border px-2 py-1 text-[10px] uppercase tracking-wide ${
+            pinned
+              ? 'border-amber-500/60 bg-amber-900/30 text-amber-200'
+              : 'border-slate-600 text-slate-400 hover:bg-slate-800'
+          }`}
+          title={pinned ? `Unpin ${label}` : `Pin ${label}`}
+        >
+          {pinned ? 'Unpin' : 'Pin'}
+        </button>
+      </div>
     );
   };
 
@@ -1220,6 +1270,21 @@ const ReportView: React.FC<ReportViewProps> = ({
           Show more
         </button>
       </div>
+    );
+  };
+
+  const renderSourceLineLink = (line: number | null | undefined) => {
+    if (line == null) return '-';
+    if (!onJumpToSourceLine) return line;
+    return (
+      <button
+        type="button"
+        onClick={() => onJumpToSourceLine(line)}
+        className="font-mono text-blue-300 underline decoration-dotted underline-offset-2 hover:text-blue-200"
+        title={`Jump to line ${line} in the input editor`}
+      >
+        {line}
+      </button>
     );
   };
 
@@ -1441,7 +1506,7 @@ const ReportView: React.FC<ReportViewProps> = ({
                       </td>
                       <td className="py-1">{stationsLabel}</td>
                       <td className="py-1 text-right font-mono text-slate-500">
-                        {obs.sourceLine != null ? obs.sourceLine : '-'}
+                        {renderSourceLineLink(obs.sourceLine)}
                       </td>
                       <td className="py-1 text-right font-mono text-slate-400">{obsStr || '-'}</td>
                       <td className="py-1 text-right font-mono text-slate-500">{calcStr}</td>
@@ -1576,6 +1641,65 @@ const ReportView: React.FC<ReportViewProps> = ({
         </div>
       </div>
 
+      {pendingRunSettingDiffs.length > 0 && (
+        <div
+          className="mb-4 rounded border border-amber-800/60 bg-amber-950/20 px-4 py-3 text-xs text-amber-100"
+          style={{ order: -215 }}
+        >
+          <div className="font-semibold uppercase tracking-wide text-amber-200">
+            Pending rerun settings diff
+          </div>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {pendingRunSettingDiffs.slice(0, 6).map((diff) => (
+              <span
+                key={diff}
+                className="rounded border border-amber-700/60 bg-amber-900/20 px-2 py-1"
+              >
+                {diff}
+              </span>
+            ))}
+            {pendingRunSettingDiffs.length > 6 ? (
+              <span className="rounded border border-amber-700/60 bg-amber-900/20 px-2 py-1">
+                +{pendingRunSettingDiffs.length - 6} more
+              </span>
+            ) : null}
+          </div>
+        </div>
+      )}
+
+      {pinnedDetailSections.length > 0 && (
+        <div
+          className="mb-4 rounded border border-blue-900/50 bg-slate-900/50 px-4 py-3 text-xs text-slate-300"
+          style={{ order: -205 }}
+        >
+          <div className="flex items-center justify-between gap-3">
+            <div className="font-semibold uppercase tracking-wide text-blue-300">
+              Pinned Sections
+            </div>
+            <button
+              type="button"
+              onClick={() => setPinnedDetailSections([])}
+              className="rounded border border-slate-700 px-2 py-1 text-[10px] uppercase tracking-wide text-slate-300 hover:bg-slate-800"
+            >
+              Clear Pins
+            </button>
+          </div>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {pinnedDetailSections.map((entry) => (
+              <button
+                key={entry.id}
+                type="button"
+                onClick={() => jumpToPinnedSection(entry.id)}
+                className="rounded border border-blue-700/50 bg-blue-900/20 px-2 py-1 text-blue-200 hover:bg-blue-900/35"
+                data-report-pinned-chip={entry.id}
+              >
+                {entry.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {!isPreanalysis &&
         result.suspectImpactDiagnostics &&
         result.suspectImpactDiagnostics.length > 0 && (
@@ -1616,7 +1740,7 @@ const ReportView: React.FC<ReportViewProps> = ({
                       <td className="py-1 uppercase text-slate-400">{d.type}</td>
                       <td className="py-1">{d.stations}</td>
                       <td className="py-1 text-right font-mono text-slate-500">
-                        {d.sourceLine ?? '-'}
+                        {renderSourceLineLink(d.sourceLine)}
                       </td>
                       <td className="py-1 text-right font-mono">
                         {d.baseStdRes != null ? d.baseStdRes.toFixed(2) : '-'}
@@ -1821,7 +1945,7 @@ const ReportView: React.FC<ReportViewProps> = ({
                         : '-'}
                     </td>
                     <td className="py-1 text-right font-mono text-slate-500">
-                      {row.obs.sourceLine ?? '-'}
+                      {renderSourceLineLink(row.obs.sourceLine)}
                     </td>
                   </tr>
                 ))}
@@ -2285,7 +2409,7 @@ const ReportView: React.FC<ReportViewProps> = ({
                   <td className="py-1 px-3">{idx + 1}</td>
                   <td className="py-1 uppercase">{obs.type}</td>
                   <td className="py-1">{observationStationsLabel(obs)}</td>
-                  <td className="py-1 text-right font-mono">{obs.sourceLine ?? '-'}</td>
+                  <td className="py-1 text-right font-mono">{renderSourceLineLink(obs.sourceLine)}</td>
                   <td className="py-1 text-right font-mono">{observationValueLabel(obs)}</td>
                   <td className="py-1 text-right font-mono">{fixedSigmaLabel(obs)}</td>
                   <td className="py-1 px-3">
@@ -2398,7 +2522,7 @@ const ReportView: React.FC<ReportViewProps> = ({
                       <td className="py-1 uppercase text-slate-400">{row.type}</td>
                       <td className="py-1">{row.stations}</td>
                       <td className="py-1 text-right font-mono text-slate-500">
-                        {row.sourceLine ?? '-'}
+                        {renderSourceLineLink(row.sourceLine)}
                       </td>
                       <td className="py-1 text-right font-mono">
                         {row.deltaWorstStationMajor != null
@@ -2497,7 +2621,7 @@ const ReportView: React.FC<ReportViewProps> = ({
                     <td className="py-1 px-3 uppercase">{entry.context}</td>
                     <td className="py-1 px-3">{entry.detail ?? '-'}</td>
                     <td className="py-1 px-3 text-right text-slate-500">
-                      {entry.sourceLine ?? '-'}
+                      {renderSourceLineLink(entry.sourceLine)}
                     </td>
                     <td className="py-1 px-3 font-mono">{entry.sourceId}</td>
                     <td className="py-1 px-3 font-mono">{entry.canonicalId}</td>
@@ -2974,7 +3098,7 @@ const ReportView: React.FC<ReportViewProps> = ({
                       <td className="py-1 px-3 text-right font-mono">{row.obsId}</td>
                       <td className="py-1 px-3 uppercase">{row.type}</td>
                       <td className="py-1 px-3 font-mono">{row.stations}</td>
-                      <td className="py-1 px-3 text-right">{row.sourceLine ?? '-'}</td>
+                      <td className="py-1 px-3 text-right">{renderSourceLineLink(row.sourceLine)}</td>
                       <td className="py-1 px-3 text-right font-mono">{row.stdRes.toFixed(2)}</td>
                       <td className="py-1 px-3 text-right font-mono">
                         {row.redundancy != null ? row.redundancy.toFixed(3) : '-'}
@@ -3042,7 +3166,9 @@ const ReportView: React.FC<ReportViewProps> = ({
                     key={`auto-sideshot-${row.sourceLine ?? 'na'}-${row.target}-${idx}`}
                     className="border-b border-slate-800/50"
                   >
-                    <td className="py-1 px-3 text-right font-mono">{row.sourceLine ?? '-'}</td>
+                    <td className="py-1 px-3 text-right font-mono">
+                      {renderSourceLineLink(row.sourceLine)}
+                    </td>
                     <td className="py-1 px-3 font-mono">{row.occupy}</td>
                     <td className="py-1 px-3 font-mono">{row.backsight}</td>
                     <td className="py-1 px-3 font-mono">{row.target}</td>
@@ -3291,7 +3417,7 @@ const ReportView: React.FC<ReportViewProps> = ({
                         <td className="py-1 px-3 uppercase text-slate-400">{r.type}</td>
                         <td className="py-1 px-3">{r.stations}</td>
                         <td className="py-1 px-3 text-right text-slate-500">
-                          {r.sourceLine ?? '-'}
+                          {renderSourceLineLink(r.sourceLine)}
                         </td>
                         <td className="py-1 px-3 text-right">{r.weight.toFixed(3)}</td>
                         <td className="py-1 px-3 text-right">{r.norm.toFixed(2)}</td>
@@ -3345,7 +3471,9 @@ const ReportView: React.FC<ReportViewProps> = ({
                       <td className="py-1 px-3 text-slate-500">{r.rank}</td>
                       <td className="py-1 px-3 uppercase text-slate-400">{r.type}</td>
                       <td className="py-1 px-3">{r.stations}</td>
-                      <td className="py-1 px-3 text-right text-slate-500">{r.sourceLine ?? '-'}</td>
+                      <td className="py-1 px-3 text-right text-slate-500">
+                        {renderSourceLineLink(r.sourceLine)}
+                      </td>
                       <td className={`py-1 px-3 text-right ${r.localFail ? 'text-red-400' : ''}`}>
                         {r.stdRes != null ? r.stdRes.toFixed(2) : '-'}
                       </td>
@@ -3374,7 +3502,9 @@ const ReportView: React.FC<ReportViewProps> = ({
                       <td className="py-1 px-3 text-slate-500">{r.rank}</td>
                       <td className="py-1 px-3 uppercase text-slate-400">{r.type}</td>
                       <td className="py-1 px-3">{r.stations}</td>
-                      <td className="py-1 px-3 text-right text-slate-500">{r.sourceLine ?? '-'}</td>
+                      <td className="py-1 px-3 text-right text-slate-500">
+                        {renderSourceLineLink(r.sourceLine)}
+                      </td>
                       <td className={`py-1 px-3 text-right ${r.localFail ? 'text-red-400' : ''}`}>
                         {r.stdRes != null ? r.stdRes.toFixed(2) : '-'}
                       </td>
@@ -3956,7 +4086,9 @@ const ReportView: React.FC<ReportViewProps> = ({
                           {(segment.observedDh * unitScale).toFixed(4)}
                         </td>
                         <td className="py-1 px-3 text-right">{segment.lengthKm.toFixed(3)}</td>
-                        <td className="py-1 px-3 text-right">{segment.sourceLine ?? '-'}</td>
+                        <td className="py-1 px-3 text-right">
+                          {renderSourceLineLink(segment.sourceLine)}
+                        </td>
                         <td className="py-1 px-3 text-right">
                           {segment.closureLeg ? 'Closure' : 'Traverse'}
                         </td>
@@ -4062,7 +4194,9 @@ const ReportView: React.FC<ReportViewProps> = ({
                     {'->'}
                     {segment.to}
                   </td>
-                  <td className="py-1 text-right font-mono">{segment.sourceLine ?? '-'}</td>
+                  <td className="py-1 text-right font-mono">
+                    {renderSourceLineLink(segment.sourceLine)}
+                  </td>
                   <td className="py-1 text-right font-mono">{segment.warnLoopCount}</td>
                   <td className="py-1 text-right font-mono">{segment.suspectScore.toFixed(2)}</td>
                   <td className="py-1 text-right font-mono">
@@ -4277,7 +4411,9 @@ const ReportView: React.FC<ReportViewProps> = ({
                       <td className="py-1 px-3">{d.setId}</td>
                       <td className="py-1 px-3">{d.occupy}</td>
                       <td className="py-1 px-3">{d.target}</td>
-                      <td className="py-1 px-3 text-right text-slate-500">{d.sourceLine ?? '-'}</td>
+                      <td className="py-1 px-3 text-right text-slate-500">
+                        {renderSourceLineLink(d.sourceLine)}
+                      </td>
                       <td className="py-1 px-3 text-right">{d.rawCount}</td>
                       <td className="py-1 px-3 text-right">{d.face1Count}</td>
                       <td className="py-1 px-3 text-right">{d.face2Count}</td>
@@ -4361,7 +4497,7 @@ const ReportView: React.FC<ReportViewProps> = ({
                     <td className="py-1 px-3">{diag.setId}</td>
                     <td className="py-1 px-3">{diag.occupy}</td>
                     <td className="py-1 px-3 text-right text-slate-500">
-                      {diag.sourceLine ?? '-'}
+                      {renderSourceLineLink(diag.sourceLine)}
                     </td>
                     <td className="py-1 px-3 text-right">{diag.readingCount}</td>
                     <td className="py-1 px-3 text-right">{diag.targetCount}</td>
@@ -4416,7 +4552,9 @@ const ReportView: React.FC<ReportViewProps> = ({
                     <td className="py-1 px-3">{r.setId}</td>
                     <td className="py-1 px-3">{r.occupy}</td>
                     <td className="py-1 px-3">{r.target ?? '-'}</td>
-                    <td className="py-1 px-3 text-right text-slate-500">{r.sourceLine ?? '-'}</td>
+                    <td className="py-1 px-3 text-right text-slate-500">
+                      {renderSourceLineLink(r.sourceLine)}
+                    </td>
                     <td className="py-1 px-3">{r.recordType ?? '-'}</td>
                     <td className="py-1 px-3">{r.expectedFace ?? '-'}</td>
                     <td className="py-1 px-3">{r.actualFace ?? '-'}</td>
@@ -4766,7 +4904,7 @@ const ReportView: React.FC<ReportViewProps> = ({
                   >
                     <td className="py-1 px-3">{obs.from}</td>
                     <td className="py-1 px-3">{obs.to}</td>
-                    <td className="py-1 px-3 text-right">{obs.sourceLine ?? '-'}</td>
+                    <td className="py-1 px-3 text-right">{renderSourceLineLink(obs.sourceLine)}</td>
                     <td className="py-1 px-3 text-right">{obs.gpsOffsetSourceLine ?? '-'}</td>
                     <td className="py-1 px-3 text-right">
                       {obs.gpsOffsetAzimuthRad != null ? radToDmsStr(obs.gpsOffsetAzimuthRad) : '-'}

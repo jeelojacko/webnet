@@ -19,7 +19,7 @@ import {
   Download,
   Square,
 } from 'lucide-react';
-import InputPane from './components/InputPane';
+import InputPane, { type InputPaneHandle } from './components/InputPane';
 import ImportReviewModal from './components/ImportReviewModal';
 
 import { DEFAULT_INPUT } from './defaultInput';
@@ -502,6 +502,135 @@ type ClusterReviewDecision = {
 };
 
 type ClusterCandidate = NonNullable<AdjustmentResult['clusterDiagnostics']>['candidates'][number];
+
+type RunSettingsSnapshot = {
+  maxIterations: number;
+  convergenceLimit: number;
+  units: Units;
+  solveProfile: SolveProfile;
+  runMode: RunMode;
+  coordMode: CoordMode;
+  coordSystemMode: CoordSystemMode;
+  crsId: string;
+  directionSetMode: DirectionSetMode;
+  mapMode: MapMode;
+  mapScaleFactor: number;
+  verticalReduction: VerticalReductionMode;
+  applyCurvatureRefraction: boolean;
+  tsCorrelationEnabled: boolean;
+  tsCorrelationScope: TsCorrelationScope;
+  tsCorrelationRho: number;
+  robustMode: RobustMode;
+  robustK: number;
+  clusterDetectionEnabled: boolean;
+  autoSideshotEnabled: boolean;
+  autoAdjustEnabled: boolean;
+  autoAdjustMaxCycles: number;
+  autoAdjustMaxRemovalsPerCycle: number;
+  autoAdjustStdResThreshold: number;
+  selectedInstrument: string;
+};
+
+const createRunSettingsSnapshot = (
+  settings: SettingsState,
+  parseSettings: ParseSettings,
+  selectedInstrument: string,
+): RunSettingsSnapshot => ({
+  maxIterations: settings.maxIterations,
+  convergenceLimit: settings.convergenceLimit,
+  units: settings.units,
+  solveProfile: parseSettings.solveProfile,
+  runMode: parseSettings.runMode,
+  coordMode: parseSettings.coordMode,
+  coordSystemMode: parseSettings.coordSystemMode,
+  crsId: parseSettings.crsId,
+  directionSetMode: parseSettings.directionSetMode ?? 'reduced',
+  mapMode: parseSettings.mapMode,
+  mapScaleFactor: parseSettings.mapScaleFactor ?? 1,
+  verticalReduction: parseSettings.verticalReduction,
+  applyCurvatureRefraction: parseSettings.applyCurvatureRefraction,
+  tsCorrelationEnabled: parseSettings.tsCorrelationEnabled,
+  tsCorrelationScope: parseSettings.tsCorrelationScope,
+  tsCorrelationRho: parseSettings.tsCorrelationRho,
+  robustMode: parseSettings.robustMode,
+  robustK: parseSettings.robustK,
+  clusterDetectionEnabled: parseSettings.clusterDetectionEnabled,
+  autoSideshotEnabled: parseSettings.autoSideshotEnabled,
+  autoAdjustEnabled: parseSettings.autoAdjustEnabled,
+  autoAdjustMaxCycles: parseSettings.autoAdjustMaxCycles,
+  autoAdjustMaxRemovalsPerCycle: parseSettings.autoAdjustMaxRemovalsPerCycle,
+  autoAdjustStdResThreshold: parseSettings.autoAdjustStdResThreshold,
+  selectedInstrument,
+});
+
+const formatRunSettingsSnapshotValue = (label: string, value: unknown): string => {
+  if (label === 'Convergence Limit' && typeof value === 'number') return value.toFixed(4);
+  if (label === 'Map Scale' && typeof value === 'number') return value.toFixed(6);
+  if (label === 'TS Correlation' && typeof value === 'string') return value;
+  if (label === 'Robust Model' && typeof value === 'string') return value;
+  if (label === 'CRS' && typeof value === 'string') return value || 'local';
+  return String(value);
+};
+
+const buildPendingRunSettingDiffs = (
+  current: RunSettingsSnapshot,
+  previous: RunSettingsSnapshot | null,
+): string[] => {
+  if (!previous) return [];
+  const diffs: string[] = [];
+  const pushDiff = (label: string, currentValue: unknown, previousValue: unknown) => {
+    if (currentValue === previousValue) return;
+    diffs.push(
+      `${label}: ${formatRunSettingsSnapshotValue(label, previousValue)} -> ${formatRunSettingsSnapshotValue(label, currentValue)}`,
+    );
+  };
+
+  pushDiff('Units', current.units, previous.units);
+  pushDiff('Run Mode', current.runMode, previous.runMode);
+  pushDiff('Solve Profile', current.solveProfile, previous.solveProfile);
+  pushDiff('Coord Mode', current.coordMode, previous.coordMode);
+  pushDiff('Coordinate System', current.coordSystemMode, previous.coordSystemMode);
+  pushDiff('CRS', current.crsId, previous.crsId);
+  pushDiff('Max Iterations', current.maxIterations, previous.maxIterations);
+  pushDiff('Convergence Limit', current.convergenceLimit, previous.convergenceLimit);
+  pushDiff('Direction Sets', current.directionSetMode, previous.directionSetMode);
+  pushDiff('Map Mode', current.mapMode, previous.mapMode);
+  pushDiff('Map Scale', current.mapScaleFactor, previous.mapScaleFactor);
+  pushDiff('Vertical Reduction', current.verticalReduction, previous.verticalReduction);
+  pushDiff('Curv/Refraction', current.applyCurvatureRefraction, previous.applyCurvatureRefraction);
+  pushDiff(
+    'TS Correlation',
+    current.tsCorrelationEnabled
+      ? `${current.tsCorrelationScope} @ ${current.tsCorrelationRho.toFixed(2)}`
+      : 'off',
+    previous.tsCorrelationEnabled
+      ? `${previous.tsCorrelationScope} @ ${previous.tsCorrelationRho.toFixed(2)}`
+      : 'off',
+  );
+  pushDiff(
+    'Robust Model',
+    current.robustMode === 'none' ? 'off' : `${current.robustMode} @ ${current.robustK.toFixed(2)}`,
+    previous.robustMode === 'none'
+      ? 'off'
+      : `${previous.robustMode} @ ${previous.robustK.toFixed(2)}`,
+  );
+  pushDiff('Cluster Detection', current.clusterDetectionEnabled, previous.clusterDetectionEnabled);
+  pushDiff('Auto-Sideshot', current.autoSideshotEnabled, previous.autoSideshotEnabled);
+  pushDiff('Auto-Adjust', current.autoAdjustEnabled, previous.autoAdjustEnabled);
+  pushDiff('Auto-Adjust Cycles', current.autoAdjustMaxCycles, previous.autoAdjustMaxCycles);
+  pushDiff(
+    'Auto-Adjust Removals',
+    current.autoAdjustMaxRemovalsPerCycle,
+    previous.autoAdjustMaxRemovalsPerCycle,
+  );
+  pushDiff(
+    'Auto-Adjust Threshold',
+    current.autoAdjustStdResThreshold,
+    previous.autoAdjustStdResThreshold,
+  );
+  pushDiff('Instrument', current.selectedInstrument || 'none', previous.selectedInstrument || 'none');
+  return diffs;
+};
 
 const INDUSTRY_DEFAULT_INSTRUMENT_CODE = 'S9';
 const INDUSTRY_DEFAULT_INSTRUMENT: Instrument = createDefaultS9Instrument();
@@ -1058,6 +1187,10 @@ const App: React.FC<AppProps> = ({
   const [runElapsedMs, setRunElapsedMs] = useState<number | null>(null);
   const [exportFormat, setExportFormat] = useState<ProjectExportFormat>('webnet');
   const [lastRunInput, setLastRunInput] = useState<string | null>(null);
+  const [lastRunSettingsSnapshot, setLastRunSettingsSnapshot] = useState<RunSettingsSnapshot | null>(
+    null,
+  );
+  const [pendingEditorJumpLine, setPendingEditorJumpLine] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState<TabKey>('report');
   const [settings, setSettings] = useState<SettingsState>({
     maxIterations: 10,
@@ -1216,6 +1349,7 @@ const App: React.FC<AppProps> = ({
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const projectFileInputRef = useRef<HTMLInputElement | null>(null);
   const geoidSourceFileInputRef = useRef<HTMLInputElement | null>(null);
+  const inputPaneRef = useRef<InputPaneHandle | null>(null);
   const filePickerModeRef = useRef<FilePickerMode>('replace');
   const adjustedPointsDragRef = useRef<AdjustedPointsColumnId | null>(null);
   const layoutRef = useRef<HTMLDivElement | null>(null);
@@ -1225,6 +1359,14 @@ const App: React.FC<AppProps> = ({
     useAdjustmentRunner(runWithExclusionsDirect);
 
   const parsedInputInstruments = useMemo(() => parseInstrumentLibraryFromInput(input), [input]);
+  const currentRunSettingsSnapshot = useMemo(
+    () => createRunSettingsSnapshot(settings, parseSettings, selectedInstrument),
+    [parseSettings, selectedInstrument, settings],
+  );
+  const pendingRunSettingDiffs = useMemo(
+    () => buildPendingRunSettingDiffs(currentRunSettingsSnapshot, lastRunSettingsSnapshot),
+    [currentRunSettingsSnapshot, lastRunSettingsSnapshot],
+  );
   const runPhaseLabel = useMemo(() => {
     if (pipelineState.status === 'running') {
       if (pipelineState.phase === 'queued') return 'Queued';
@@ -1390,6 +1532,16 @@ const App: React.FC<AppProps> = ({
       setSelectedInstrumentDraft(codes[0] || '');
     }
   }, [isSettingsModalOpen, projectInstrumentsDraft, selectedInstrumentDraft]);
+
+  useEffect(() => {
+    if (pendingEditorJumpLine == null || !isSidebarOpen) return;
+    const lineNumber = pendingEditorJumpLine;
+    const frame = window.requestAnimationFrame(() => {
+      inputPaneRef.current?.jumpToLine(lineNumber);
+      setPendingEditorJumpLine((current) => (current === lineNumber ? null : current));
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [isSidebarOpen, pendingEditorJumpLine]);
 
   useEffect(() => {
     if (!isSettingsModalOpen) return;
@@ -5866,6 +6018,7 @@ const App: React.FC<AppProps> = ({
     context: {
       inputSnapshot: string;
       parseSettingsSnapshot: ParseSettings;
+      settingsSnapshot: RunSettingsSnapshot;
       reviewContext?: {
         candidates: ClusterCandidate[];
         decisions: Record<string, ClusterReviewDecision>;
@@ -5909,6 +6062,7 @@ const App: React.FC<AppProps> = ({
       setClusterReviewDecisions({});
     }
     setLastRunInput(context.inputSnapshot);
+    setLastRunSettingsSnapshot(context.settingsSnapshot);
     setExcludedIds(new Set(outcome.effectiveExcludedIds));
     setActiveClusterApprovedMerges(outcome.effectiveClusterApprovedMerges);
     setRunDiagnostics(runProfile);
@@ -5943,6 +6097,7 @@ const App: React.FC<AppProps> = ({
     const context = {
       inputSnapshot: input,
       parseSettingsSnapshot: { ...parseSettings },
+      settingsSnapshot: currentRunSettingsSnapshot,
       reviewContext,
     };
     void runAdjustment(request)
@@ -5958,6 +6113,12 @@ const App: React.FC<AppProps> = ({
       candidates: result?.clusterDiagnostics?.candidates ?? [],
       decisions: clusterReviewDecisions,
     });
+  };
+
+  const handleJumpToSourceLine = (lineNumber: number) => {
+    if (!Number.isFinite(lineNumber) || lineNumber <= 0) return;
+    if (!isSidebarOpen) setIsSidebarOpen(true);
+    setPendingEditorJumpLine(Math.trunc(lineNumber));
   };
 
   const applyImpactExclusion = (id: number) => {
@@ -9752,6 +9913,7 @@ const App: React.FC<AppProps> = ({
           <>
             <div style={{ width: `${splitPercent}%` }}>
               <InputPane
+                ref={inputPaneRef}
                 input={input}
                 onChange={handleInputChange}
                 importNotice={importNotice}
@@ -9847,6 +10009,8 @@ const App: React.FC<AppProps> = ({
                       onApplyPreanalysisAction={applyPreanalysisPlanningAction}
                       onReRun={handleRun}
                       onClearExclusions={clearExclusions}
+                      onJumpToSourceLine={handleJumpToSourceLine}
+                      pendingRunSettingDiffs={pendingRunSettingDiffs}
                       overrides={overrides}
                       onOverride={handleOverride}
                       onResetOverrides={resetOverrides}
