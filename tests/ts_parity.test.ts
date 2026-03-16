@@ -17,7 +17,7 @@ const solveStarParity = (input: string) =>
         dirPrecision_sec: 0.5,
         azBearingPrecision_sec: 0.5,
         vaPrecision_sec: 0.5,
-        instCentr_m: 0.00075,
+        instCentr_m: 0.0005,
         tgtCentr_m: 0,
         vertCentr_m: 0,
         elevDiff_const_m: 0,
@@ -83,9 +83,9 @@ describe('TS parity harness (phase 1)', () => {
     expect(result.iterations).toBe(5);
     expect(result.dof).toBe(165);
     expect(result.typeSummary?.direction?.count ?? 0).toBe(18);
-    expect(result.seuw).toBeCloseTo(0.9728, 3);
+    expect(result.seuw).toBeCloseTo(1.1284, 3);
     expect(result.statisticalSummary?.totalCount ?? 0).toBe(196);
-    expect(result.statisticalSummary?.totalErrorFactorByDof ?? 0).toBeCloseTo(0.9728, 3);
+    expect(result.statisticalSummary?.totalErrorFactorByDof ?? 0).toBeCloseTo(1.1284, 3);
 
     const byGroup = new Map(
       (result.statisticalSummary?.byGroup ?? []).map((row) => [row.label, row]),
@@ -93,19 +93,19 @@ describe('TS parity harness (phase 1)', () => {
     expect(byGroup.get('Angles')?.count ?? 0).toBe(72);
     expect(byGroup.get('Directions')?.count ?? 0).toBe(18);
     expect(byGroup.get('Distances')?.count ?? 0).toBe(106);
-    expect(byGroup.get('Angles')?.errorFactor ?? 0).toBeCloseTo(1.128, 2);
-    expect(byGroup.get('Directions')?.errorFactor ?? 0).toBeCloseTo(0.992, 3);
-    expect(byGroup.get('Distances')?.errorFactor ?? 0).toBeCloseTo(0.846, 3);
+    expect(byGroup.get('Angles')?.errorFactor ?? 0).toBeCloseTo(1.274, 2);
+    expect(byGroup.get('Directions')?.errorFactor ?? 0).toBeCloseTo(1.364, 3);
+    expect(byGroup.get('Distances')?.errorFactor ?? 0).toBeCloseTo(0.968, 3);
 
     const p1000 = result.stations['1000'];
     const p1 = result.stations['1'];
     const p9 = result.stations['9'];
-    expect(p1000.x).toBeCloseTo(0.9954, 4);
-    expect(p1000.y).toBeCloseTo(2.0619, 4);
-    expect(p1.x).toBeCloseTo(2.3561, 4);
-    expect(p1.y).toBeCloseTo(-2.4644, 4);
-    expect(p9.x).toBeCloseTo(101.4485, 4);
-    expect(p9.y).toBeCloseTo(-1.4039, 4);
+    expect(p1000.x).toBeCloseTo(0.9956, 4);
+    expect(p1000.y).toBeCloseTo(2.0620, 4);
+    expect(p1.x).toBeCloseTo(2.3563, 4);
+    expect(p1.y).toBeCloseTo(-2.4643, 4);
+    expect(p9.x).toBeCloseTo(101.4486, 4);
+    expect(p9.y).toBeCloseTo(-1.4043, 4);
   });
 
   it('tracks industry benchmark signatures for coords, SEUW, and top residual behavior', () => {

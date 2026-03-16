@@ -44,6 +44,11 @@ import {
   sanitizeAdjustedPointsExportSettings,
 } from './engine/adjustedPointsExport';
 import {
+  DEFAULT_QFIX_ANGULAR_SIGMA_SEC,
+  DEFAULT_QFIX_LINEAR_SIGMA_M,
+  DEFAULT_S9_INSTRUMENT_CENTERING_HORIZ_M,
+} from './engine/defaults';
+import {
   LEVEL_LOOP_TOLERANCE_PRESETS,
   findLevelLoopTolerancePreset,
 } from './engine/levelLoopTolerance';
@@ -165,7 +170,7 @@ const createDefaultS9Instrument = (): Instrument => ({
   dirPrecision_sec: 0.5,
   azBearingPrecision_sec: 0.5,
   vaPrecision_sec: 0.5,
-  instCentr_m: 0.00075,
+  instCentr_m: DEFAULT_S9_INSTRUMENT_CENTERING_HORIZ_M,
   tgtCentr_m: 0,
 });
 
@@ -1271,8 +1276,8 @@ const App: React.FC<AppProps> = ({
     gpsAddHiHtEnabled: false,
     gpsAddHiHtHiM: 0,
     gpsAddHiHtHtM: 0,
-    qFixLinearSigmaM: 1e-9,
-    qFixAngularSigmaSec: 1e-9,
+    qFixLinearSigmaM: DEFAULT_QFIX_LINEAR_SIGMA_M,
+    qFixAngularSigmaSec: DEFAULT_QFIX_ANGULAR_SIGMA_SEC,
     prismEnabled: false,
     prismOffset: 0,
     prismScope: 'global',
@@ -2115,8 +2120,8 @@ const App: React.FC<AppProps> = ({
       legacyFallbackCount: parse.legacyFallbackCount,
       strictRejectCount: parse.strictRejectCount,
       rewriteSuggestionCount: parse.rewriteSuggestionCount,
-      qFixLinearSigmaM: parse.qFixLinearSigmaM ?? 1e-9,
-      qFixAngularSigmaSec: parse.qFixAngularSigmaSec ?? 1e-9,
+      qFixLinearSigmaM: parse.qFixLinearSigmaM ?? DEFAULT_QFIX_LINEAR_SIGMA_M,
+      qFixAngularSigmaSec: parse.qFixAngularSigmaSec ?? DEFAULT_QFIX_ANGULAR_SIGMA_SEC,
       coordSystemMode: parse.coordSystemMode,
       crsId: parse.crsId,
       localDatumScheme: parse.localDatumScheme,
@@ -7332,7 +7337,7 @@ const App: React.FC<AppProps> = ({
                                   ? settingsDraft.units === 'ft'
                                     ? parseFloat(e.target.value) * M_PER_FT
                                     : parseFloat(e.target.value)
-                                  : 1e-9,
+                                  : DEFAULT_QFIX_LINEAR_SIGMA_M,
                               )
                             }
                             className={`${optionInputClass} mt-1`}
@@ -7352,7 +7357,7 @@ const App: React.FC<AppProps> = ({
                                 Number.isFinite(parseFloat(e.target.value)) &&
                                   parseFloat(e.target.value) > 0
                                   ? parseFloat(e.target.value)
-                                  : 1e-9,
+                                  : DEFAULT_QFIX_ANGULAR_SIGMA_SEC,
                               )
                             }
                             className={`${optionInputClass} mt-1`}

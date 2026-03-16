@@ -5,6 +5,10 @@ import { describe, expect, it } from 'vitest';
 
 import ReportView from '../src/components/ReportView';
 import { LSAEngine } from '../src/engine/adjust';
+import {
+  DEFAULT_QFIX_ANGULAR_SIGMA_SEC,
+  DEFAULT_QFIX_LINEAR_SIGMA_M,
+} from '../src/engine/defaults';
 import { buildIndustryStyleListingText } from '../src/engine/industryListing';
 
 const buildRunDiagnostics = (result: ReturnType<LSAEngine['solve']>) => ({
@@ -43,8 +47,8 @@ const buildRunDiagnostics = (result: ReturnType<LSAEngine['solve']>) => ({
   geoidSampleUndulationM: result.parseState?.geoidSampleUndulationM,
   geoidConvertedStationCount: result.parseState?.geoidConvertedStationCount ?? 0,
   geoidSkippedStationCount: result.parseState?.geoidSkippedStationCount ?? 0,
-  qFixLinearSigmaM: result.parseState?.qFixLinearSigmaM ?? 1e-9,
-  qFixAngularSigmaSec: result.parseState?.qFixAngularSigmaSec ?? 1e-9,
+  qFixLinearSigmaM: result.parseState?.qFixLinearSigmaM ?? DEFAULT_QFIX_LINEAR_SIGMA_M,
+  qFixAngularSigmaSec: result.parseState?.qFixAngularSigmaSec ?? DEFAULT_QFIX_ANGULAR_SIGMA_SEC,
   profileDefaultInstrumentFallback: false,
   angleCenteringModel: 'geometry-aware-correlated-rays' as const,
   coordSystemMode: result.parseState?.coordSystemMode ?? 'local',

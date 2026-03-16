@@ -1,5 +1,10 @@
 import { DEFAULT_INPUT } from '../../src/defaultInput';
 import { DEFAULT_CANADA_CRS_ID } from '../../src/engine/crsCatalog';
+import {
+  DEFAULT_QFIX_ANGULAR_SIGMA_SEC,
+  DEFAULT_QFIX_LINEAR_SIGMA_M,
+  DEFAULT_S9_INSTRUMENT_CENTERING_HORIZ_M,
+} from '../../src/engine/defaults';
 import type { InstrumentLibrary } from '../../src/types';
 import type { RunSessionRequest } from '../../src/engine/runSession';
 
@@ -13,7 +18,7 @@ const buildInstrumentLibrary = (): InstrumentLibrary => ({
     dirPrecision_sec: 0.5,
     azBearingPrecision_sec: 0.5,
     vaPrecision_sec: 0.5,
-    instCentr_m: 0.00075,
+    instCentr_m: DEFAULT_S9_INSTRUMENT_CENTERING_HORIZ_M,
     tgtCentr_m: 0,
     vertCentr_m: 0,
     elevDiff_const_m: 0,
@@ -93,8 +98,8 @@ export const createRunSessionRequest = (
     gpsAddHiHtEnabled: false,
     gpsAddHiHtHiM: 0,
     gpsAddHiHtHtM: 0,
-    qFixLinearSigmaM: 1e-9,
-    qFixAngularSigmaSec: 1e-9,
+    qFixLinearSigmaM: DEFAULT_QFIX_LINEAR_SIGMA_M,
+    qFixAngularSigmaSec: DEFAULT_QFIX_ANGULAR_SIGMA_SEC,
     prismEnabled: false,
     prismOffset: 0,
     prismScope: 'global',

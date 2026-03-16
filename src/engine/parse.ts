@@ -1,6 +1,10 @@
 import { dmsToRad, RAD_TO_DEG, SEC_TO_RAD } from './angles';
 import { parseAutoAdjustDirectiveTokens } from './autoAdjust';
 import { DEFAULT_CANADA_CRS_ID, normalizeCrsId } from './crsCatalog';
+import {
+  DEFAULT_QFIX_ANGULAR_SIGMA_SEC,
+  DEFAULT_QFIX_LINEAR_SIGMA_M,
+} from './defaults';
 import { normalizeGeoidModelId, parseGeoidInterpolationToken } from './geoid';
 import { parseCrsProjectionModelToken, projectGeodeticToEN } from './geodesy';
 import type {
@@ -139,8 +143,8 @@ const defaultParseOptions: ParseOptions = {
   robustK: 1.5,
   descriptionReconcileMode: 'first',
   descriptionAppendDelimiter: ' | ',
-  qFixLinearSigmaM: 1e-9,
-  qFixAngularSigmaSec: 1e-9,
+  qFixLinearSigmaM: DEFAULT_QFIX_LINEAR_SIGMA_M,
+  qFixAngularSigmaSec: DEFAULT_QFIX_ANGULAR_SIGMA_SEC,
   prismEnabled: false,
   prismOffset: 0,
   prismScope: 'global',
@@ -1656,7 +1660,7 @@ export const parseInput = (
     token: SigmaToken | undefined,
     defaultSigma: number,
   ): { sigma: number; source: SigmaSource } => {
-    const fixedM = Math.max(1e-12, state.qFixLinearSigmaM ?? FIXED_SIGMA);
+    const fixedM = Math.max(1e-12, state.qFixLinearSigmaM ?? DEFAULT_QFIX_LINEAR_SIGMA_M);
     const fixedInputUnits = state.units === 'ft' ? fixedM * FT_PER_M : fixedM;
     return resolveSigma(token, defaultSigma, fixedInputUnits, FLOAT_SIGMA);
   };
@@ -1664,7 +1668,7 @@ export const parseInput = (
     token: SigmaToken | undefined,
     defaultSigma: number,
   ): { sigma: number; source: SigmaSource } => {
-    const fixedSec = Math.max(1e-12, state.qFixAngularSigmaSec ?? FIXED_SIGMA);
+    const fixedSec = Math.max(1e-12, state.qFixAngularSigmaSec ?? DEFAULT_QFIX_ANGULAR_SIGMA_SEC);
     return resolveSigma(token, defaultSigma, fixedSec, FLOAT_SIGMA);
   };
 
@@ -3301,8 +3305,8 @@ export const parseInput = (
         const unitLabel = state.units === 'ft' ? 'ft' : 'm';
         const formatSigma = (value: number) => value.toExponential(6);
         if (args.length === 0) {
-          const linear = state.qFixLinearSigmaM ?? FIXED_SIGMA;
-          const angular = state.qFixAngularSigmaSec ?? FIXED_SIGMA;
+          const linear = state.qFixLinearSigmaM ?? DEFAULT_QFIX_LINEAR_SIGMA_M;
+          const angular = state.qFixAngularSigmaSec ?? DEFAULT_QFIX_ANGULAR_SIGMA_SEC;
           const linearDisplay = state.units === 'ft' ? linear * FT_PER_M : linear;
           logs.push(
             `QFIX unchanged: linear=${formatSigma(linearDisplay)} ${unitLabel}, angular=${formatSigma(angular)}"`,
@@ -3311,11 +3315,14 @@ export const parseInput = (
         }
         const mode = args[0].toUpperCase();
         if (mode === 'OFF' || mode === 'NONE' || mode === 'DEFAULT' || mode === 'RESET') {
-          state.qFixLinearSigmaM = FIXED_SIGMA;
-          state.qFixAngularSigmaSec = FIXED_SIGMA;
-          const linearDisplay = state.units === 'ft' ? FIXED_SIGMA * FT_PER_M : FIXED_SIGMA;
+          state.qFixLinearSigmaM = DEFAULT_QFIX_LINEAR_SIGMA_M;
+          state.qFixAngularSigmaSec = DEFAULT_QFIX_ANGULAR_SIGMA_SEC;
+          const linearDisplay =
+            state.units === 'ft'
+              ? DEFAULT_QFIX_LINEAR_SIGMA_M * FT_PER_M
+              : DEFAULT_QFIX_LINEAR_SIGMA_M;
           logs.push(
-            `QFIX reset to defaults: linear=${formatSigma(linearDisplay)} ${unitLabel}, angular=${formatSigma(FIXED_SIGMA)}"`,
+            `QFIX reset to defaults: linear=${formatSigma(linearDisplay)} ${unitLabel}, angular=${formatSigma(DEFAULT_QFIX_ANGULAR_SIGMA_SEC)}"`,
           );
           continue;
         }
@@ -3325,8 +3332,8 @@ export const parseInput = (
           return parsed;
         };
 
-        let linearM = state.qFixLinearSigmaM ?? FIXED_SIGMA;
-        let angularSec = state.qFixAngularSigmaSec ?? FIXED_SIGMA;
+        let linearM = state.qFixLinearSigmaM ?? DEFAULT_QFIX_LINEAR_SIGMA_M;
+        let angularSec = state.qFixAngularSigmaSec ?? DEFAULT_QFIX_ANGULAR_SIGMA_SEC;
         let updatedLinear = false;
         let updatedAngular = false;
 

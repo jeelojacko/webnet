@@ -2,26 +2,26 @@
   "summary": {
     "iterations": 5,
     "dof": 165,
-    "seuw": 0.972,
+    "seuw": 1.1284,
     "seuwTolerance": 0.01,
-    "chiPass95": true
+    "chiPass95": false
   },
   "coordinates": {
-    "1000": { "northing": 2.0619, "easting": 0.9954, "tol": 0.003 },
-    "1": { "northing": -2.4644, "easting": 2.3561, "tol": 0.003 },
-    "9": { "northing": -1.4039, "easting": 101.4485, "tol": 0.004 },
-    "2000": { "northing": 3.0344, "easting": -19.8969, "tol": 0.004 },
-    "12": { "northing": 11.2201, "easting": 85.4372, "tol": 0.004 }
+    "1000": { "northing": 2.0620, "easting": 0.9956, "tol": 0.003 },
+    "1": { "northing": -2.4643, "easting": 2.3563, "tol": 0.003 },
+    "9": { "northing": -1.4043, "easting": 101.4486, "tol": 0.004 },
+    "2000": { "northing": 3.0346, "easting": -19.8967, "tol": 0.004 },
+    "12": { "northing": 11.2198, "easting": 85.4375, "tol": 0.004 }
   },
   "residualSignatures": {
     "maxAngle": {
       "stations": "3-4-200",
-      "stdRes": 3.1,
+      "stdRes": 3.0,
       "tol": 0.7
     },
     "maxDirection": {
-      "stations": "1000-425",
-      "stdRes": 1.5,
+      "stations": "1000-2025",
+      "stdRes": 1.9,
       "tol": 0.7
     }
   }

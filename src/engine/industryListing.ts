@@ -1,4 +1,8 @@
 import { RAD_TO_DEG, radToDmsStr } from './angles';
+import {
+  DEFAULT_QFIX_ANGULAR_SIGMA_SEC,
+  DEFAULT_QFIX_LINEAR_SIGMA_M,
+} from './defaults';
 import { getLevelLoopTolerancePresetLabel } from './levelLoopTolerance';
 import type {
   AdjustmentResult,
@@ -157,9 +161,12 @@ export const buildIndustryStyleListingText = (
   const normalize = parseState?.normalize ?? true;
   const faceNormalizationMode = parseState?.faceNormalizationMode ?? 'on';
   const rotationAngleRad = parseState?.rotationAngleRad ?? runDiag.rotationAngleRad ?? 0;
-  const qFixLinearSigmaM = parseState?.qFixLinearSigmaM ?? runDiag.qFixLinearSigmaM ?? 1e-9;
+  const qFixLinearSigmaM =
+    parseState?.qFixLinearSigmaM ?? runDiag.qFixLinearSigmaM ?? DEFAULT_QFIX_LINEAR_SIGMA_M;
   const qFixAngularSigmaSec =
-    parseState?.qFixAngularSigmaSec ?? runDiag.qFixAngularSigmaSec ?? 1e-9;
+    parseState?.qFixAngularSigmaSec ??
+    runDiag.qFixAngularSigmaSec ??
+    DEFAULT_QFIX_ANGULAR_SIGMA_SEC;
   const coordSystemMode = parseState?.coordSystemMode ?? runDiag.coordSystemMode ?? 'local';
   const crsId = parseState?.crsId ?? runDiag.crsId ?? 'CA_NAD83_CSRS_UTM_20N';
   const localDatumScheme =

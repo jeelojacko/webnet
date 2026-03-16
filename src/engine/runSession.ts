@@ -4,6 +4,11 @@ import {
   runAutoAdjustCycles,
   type AutoAdjustConfig,
 } from './autoAdjust';
+import {
+  DEFAULT_QFIX_ANGULAR_SIGMA_SEC,
+  DEFAULT_QFIX_LINEAR_SIGMA_M,
+  DEFAULT_S9_INSTRUMENT_CENTERING_HORIZ_M,
+} from './defaults';
 import { isPreanalysisWhatIfCandidate } from './preanalysis';
 import { normalizeClusterApprovedMerges, solveEngine } from './solveEngine';
 import type {
@@ -166,7 +171,7 @@ const INDUSTRY_DEFAULT_INSTRUMENT: Instrument = {
   dirPrecision_sec: 0.5,
   azBearingPrecision_sec: 0.5,
   vaPrecision_sec: 0.5,
-  instCentr_m: 0.00075,
+  instCentr_m: DEFAULT_S9_INSTRUMENT_CENTERING_HORIZ_M,
   tgtCentr_m: 0,
 };
 
@@ -392,8 +397,8 @@ const buildParseOptions = (
   gpsAddHiHtEnabled: effectiveParse.gpsAddHiHtEnabled,
   gpsAddHiHtHiM: effectiveParse.gpsAddHiHtHiM,
   gpsAddHiHtHtM: effectiveParse.gpsAddHiHtHtM,
-  qFixLinearSigmaM: effectiveParse.qFixLinearSigmaM,
-  qFixAngularSigmaSec: effectiveParse.qFixAngularSigmaSec,
+  qFixLinearSigmaM: effectiveParse.qFixLinearSigmaM ?? DEFAULT_QFIX_LINEAR_SIGMA_M,
+  qFixAngularSigmaSec: effectiveParse.qFixAngularSigmaSec ?? DEFAULT_QFIX_ANGULAR_SIGMA_SEC,
   descriptionReconcileMode: effectiveParse.descriptionReconcileMode,
   descriptionAppendDelimiter: effectiveParse.descriptionAppendDelimiter,
   lonSign: effectiveParse.lonSign,

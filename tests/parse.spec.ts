@@ -1182,8 +1182,8 @@ describe('parseInput', () => {
     if (g?.type === 'gps') {
       expect(g.from).toBe('A');
       expect(g.to).toBe('B');
-      expect(g.stdDevE).toBeCloseTo(1e-9, 12);
-      expect(g.stdDevN).toBeCloseTo(1e-9, 12);
+      expect(g.stdDevE).toBeCloseTo(1e-7, 12);
+      expect(g.stdDevN).toBeCloseTo(1e-7, 12);
       expect(g.sigmaSource).toBe('fixed');
     }
   });
@@ -1347,7 +1347,7 @@ describe('parseInput', () => {
     const lev = parsed.observations.find((o) => o.type === 'lev');
     expect(lev?.type).toBe('lev');
     if (lev?.type === 'lev') {
-      expect(lev.stdDev).toBeCloseTo(1e-9, 12);
+      expect(lev.stdDev).toBeCloseTo(1e-7, 12);
       expect(lev.sigmaSource).toBe('fixed');
     }
   });

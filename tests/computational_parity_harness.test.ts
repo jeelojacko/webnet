@@ -30,7 +30,7 @@ const INDUSTRY_FALLBACK_LIBRARY: InstrumentLibrary = {
     dirPrecision_sec: 0.5,
     azBearingPrecision_sec: 0.5,
     vaPrecision_sec: 0.5,
-    instCentr_m: 0.00075,
+    instCentr_m: 0.0005,
     tgtCentr_m: 0,
     vertCentr_m: 0,
     elevDiff_const_m: 0,
