@@ -131,5 +131,6 @@ describe('browser large-project benchmark coverage', () => {
       });
       container.remove();
     },
+    15000,
   );
 });

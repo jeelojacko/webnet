@@ -148,4 +148,58 @@ describe('ReportView operator workflows', () => {
     });
     container.remove();
   });
+
+  it('shows observation-weight traceability for mixed weighting sources in report tables', async () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root: Root = createRoot(container);
+    const result = new LSAEngine({
+      input: [
+        '.2D',
+        'C A 0 0 0 ! !',
+        'C B 100 0 0 ! !',
+        'C P 40 30 0',
+        'D A-P 50 !',
+        'A P-A-B 90-00-00 *',
+        'G GPS1 A P 40 30 ! *',
+      ].join('\n'),
+      maxIterations: 8,
+    }).solve();
+
+    await act(async () => {
+      root.render(
+        <ReportView
+          result={result}
+          units="m"
+          runDiagnostics={null}
+          excludedIds={new Set<number>()}
+          onToggleExclude={() => {}}
+          onApplyImpactExclude={() => {}}
+          onApplyPreanalysisAction={() => {}}
+          onReRun={() => {}}
+          onClearExclusions={() => {}}
+          overrides={{}}
+          onOverride={() => {}}
+          onResetOverrides={() => {}}
+          clusterReviewDecisions={{}}
+          activeClusterApprovedMerges={[]}
+          onClusterDecisionStatus={() => {}}
+          onClusterCanonicalSelection={() => {}}
+          onApplyClusterMerges={() => {}}
+          onResetClusterReview={() => {}}
+          onClearClusterMerges={() => {}}
+        />,
+      );
+    });
+
+    expect(container.textContent).toContain('Weight');
+    expect(container.textContent).toContain('FIXED');
+    expect(container.textContent).toContain('FLOAT');
+    expect(container.textContent).toContain('E=FIXED N=FLOAT');
+
+    await act(async () => {
+      root.unmount();
+    });
+    container.remove();
+  });
 });

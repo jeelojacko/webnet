@@ -42,6 +42,7 @@ import type {
   ParseCompatibilityMode,
   ParseIncludeError,
   FaceNormalizationMode,
+  SigmaSource,
   DirectionFaceSource,
   DirectionSetTreatmentDecision,
   DirectionSetPolicyOutcome,
@@ -369,8 +370,6 @@ type SigmaToken =
   | { kind: 'numeric'; value: number }
   | { kind: 'fixed' }
   | { kind: 'float' };
-
-type SigmaSource = 'default' | 'explicit' | 'fixed' | 'float';
 
 const FIXED_SIGMA = 1e-9;
 const FLOAT_SIGMA = 1e9;
@@ -6025,6 +6024,8 @@ export const parseInput = (
           stdDev: state.units === 'ft' ? sigmaMean / FT_PER_M : sigmaMean,
           stdDevE: state.units === 'ft' ? sigmaE / FT_PER_M : sigmaE,
           stdDevN: state.units === 'ft' ? sigmaN / FT_PER_M : sigmaN,
+          sigmaSourceE: sigmaEResolved.source,
+          sigmaSourceN: sigmaNResolved.source,
           corrEN: corr,
           sigmaSource:
             sigmaEResolved.source === sigmaNResolved.source

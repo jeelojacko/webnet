@@ -104,6 +104,54 @@ describe('industry listing phase 5 formatting locks', () => {
     expect(listing).toMatch(/^\s*1000\s+77\s+\d+\.\d{6}\s+\d+\.\d{6}\s+\d{1,3}-\d{2}\s*$/m);
   });
 
+  it('renders control-component traceability for fixed, free, and weighted control rows', () => {
+    const input = [
+      '.3D',
+      'C A 0 0 10 0.010 0.020 0.030 ! *',
+      'C B 100 0 10 ! ! !',
+      'C P 60 40 10',
+      'D B-P 56.5685425 0.005',
+      'B B-P 123-41-24.1 2',
+      'G A P 60 40 0.010 0.010',
+    ].join('\n');
+    const result = new LSAEngine({ input, maxIterations: 10 }).solve();
+    const listing = buildIndustryStyleListingText(
+      result,
+      {
+        maxIterations: 10,
+        units: 'm',
+        listingShowCoordinates: true,
+        listingShowObservationsResiduals: true,
+        listingShowErrorPropagation: true,
+        listingShowProcessingNotes: false,
+        listingShowAzimuthsBearings: true,
+        listingSortCoordinatesBy: 'name',
+        listingSortObservationsBy: 'input',
+        listingObservationLimit: 500,
+      },
+      {
+        coordMode: '3D',
+        order: 'EN',
+        angleUnits: 'dms',
+        angleStationOrder: 'atfromto',
+        deltaMode: 'horiz',
+        refractionCoefficient: 0.13,
+      },
+      {
+        solveProfile: 'industry-parity',
+        angleCenteringModel: 'geometry-aware-correlated-rays',
+        defaultSigmaCount: 0,
+        defaultSigmaByType: '',
+        stochasticDefaultsSummary: 'inst=S9',
+        rotationAngleRad: 0,
+      },
+    );
+
+    expect(listing).toContain('Control Component Status');
+    expect(listing).toMatch(/^\s*A\s+-\s+N=FREE E=FIXED H=WEIGHTED\s*$/m);
+    expect(listing).toMatch(/^\s*B\s+-\s+N=FIXED E=FIXED H=FIXED\s*$/m);
+  });
+
   it('renders effective-distance column values for adjusted angle/direction rows', () => {
     const input = readFileSync('tests/fixtures/effective_distance_phase3.dat', 'utf-8');
     const result = new LSAEngine({ input, maxIterations: 10 }).solve();
@@ -142,6 +190,57 @@ describe('industry listing phase 5 formatting locks', () => {
     expect(listing).toContain('EffDist (Meters)');
     expect(listing).toMatch(/^\s*O-BS-P\s+.+\s+.+\s+100\.0000\s+.+\s+.+\s+1:9\s*$/m);
     expect(listing).toMatch(/^\s*O-P\s+.+\s+.+\s+100\.0000\s+.+\s+.+\s+1:11\s*$/m);
+  });
+
+  it('renders observation-weight traceability for mixed record families', () => {
+    const input = [
+      '.2D',
+      'C A 0 0 0 ! !',
+      'C B 100 0 0 ! !',
+      'C P 40 30 0',
+      'D A-P 50 !',
+      'A P-A-B 90-00-00 *',
+      'B B-P 306.8699',
+      'G GPS1 A P 40 30 ! *',
+    ].join('\n');
+    const result = new LSAEngine({ input, maxIterations: 10 }).solve();
+    const listing = buildIndustryStyleListingText(
+      result,
+      {
+        maxIterations: 10,
+        units: 'm',
+        listingShowCoordinates: true,
+        listingShowObservationsResiduals: true,
+        listingShowErrorPropagation: true,
+        listingShowProcessingNotes: false,
+        listingShowAzimuthsBearings: true,
+        listingSortCoordinatesBy: 'name',
+        listingSortObservationsBy: 'input',
+        listingObservationLimit: 500,
+      },
+      {
+        coordMode: '2D',
+        order: 'EN',
+        angleUnits: 'dms',
+        angleStationOrder: 'atfromto',
+        deltaMode: 'horiz',
+        refractionCoefficient: 0.13,
+      },
+      {
+        solveProfile: 'industry-parity',
+        angleCenteringModel: 'geometry-aware-correlated-rays',
+        defaultSigmaCount: 0,
+        defaultSigmaByType: '',
+        stochasticDefaultsSummary: 'inst=S9',
+        rotationAngleRad: 0,
+      },
+    );
+
+    expect(listing).toContain('Observation Weighting Traceability');
+    expect(listing).toMatch(/^\s*DIST\s+A-P\s+FIXED\s+1:5\s*$/m);
+    expect(listing).toMatch(/^\s*ANGLE\s+P-A-B\s+FLOAT\s+1:6\s*$/m);
+    expect(listing).toMatch(/^\s*BEARING\s+B-P\s+DEFAULT\s+1:7\s*$/m);
+    expect(listing).toMatch(/^\s*GPS\s+A-P\s+E=FIXED N=FLOAT\s+1:8\s*$/m);
   });
 
   it('keeps centerInflation details on a single instrument-settings row', () => {

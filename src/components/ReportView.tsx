@@ -14,6 +14,7 @@ import type {
   Observation,
   ReductionUsageSummary,
   RunMode,
+  SigmaSource,
   Station,
 } from '../types';
 import { RAD_TO_DEG, radToDmsStr } from '../engine/angles';
@@ -945,6 +946,26 @@ const ReportView: React.FC<ReportViewProps> = ({
     }
     return `${(obs.stdDev * unitScale).toExponential(3)} ${units}`;
   };
+  const sigmaSourceLabel = (source?: SigmaSource): string => {
+    switch (source ?? 'explicit') {
+      case 'default':
+        return 'DEFAULT';
+      case 'fixed':
+        return 'FIXED';
+      case 'float':
+        return 'FLOAT';
+      default:
+        return 'EXPLICIT';
+    }
+  };
+  const observationWeightLabel = (obs: Observation): string => {
+    if (obs.type === 'gps') {
+      const east = sigmaSourceLabel(obs.sigmaSourceE ?? obs.sigmaSource);
+      const north = sigmaSourceLabel(obs.sigmaSourceN ?? obs.sigmaSource);
+      return east === north ? east : `E=${east} N=${north}`;
+    }
+    return sigmaSourceLabel(obs.sigmaSource);
+  };
   const renderSideshotSection = (
     title: string,
     rows: NonNullable<AdjustmentResult['sideshots']>,
@@ -1370,6 +1391,7 @@ const ReportView: React.FC<ReportViewProps> = ({
                   <th className="py-2 text-right">Redund</th>
                   <th className="py-2 text-right">Local</th>
                   <th className="py-2 text-right">MDB</th>
+                  <th className="py-2 text-right">Weight</th>
                   <th className="py-2 text-right px-4">StdDev (override)</th>
                 </tr>
               </thead>
@@ -1571,6 +1593,9 @@ const ReportView: React.FC<ReportViewProps> = ({
                         {localStr}
                       </td>
                       <td className="py-1 text-right font-mono text-slate-500">{mdbStr}</td>
+                      <td className="py-1 text-right font-mono text-slate-400">
+                        {observationWeightLabel(obs)}
+                      </td>
                       <td className="py-1 px-4 text-right font-mono text-slate-400">
                         <input
                           type="number"

@@ -13,6 +13,8 @@ import type {
   Observation,
   ReductionUsageSummary,
   RunMode,
+  SigmaSource,
+  Station,
 } from '../types';
 
 const FT_PER_M = 3.280839895;
@@ -767,6 +769,39 @@ export const buildIndustryStyleListingText = (
   const renderTextTable = (headers: string[], rows: string[][], rightAligned: number[] = []) => {
     pushTable(headers, rows, rightAligned);
   };
+  const summarizeControlComponentStatus = (station: Station): string | null => {
+    const parts: string[] = [];
+    const pushPart = (label: string, mode?: Station['constraintModeX']) => {
+      if (!mode || mode === 'approximate') return;
+      parts.push(`${label}=${mode.toUpperCase()}`);
+    };
+    pushPart('N', station.constraintModeY);
+    pushPart('E', station.constraintModeX);
+    if ((parseState?.coordMode ?? parseSettings.coordMode) === '3D') {
+      pushPart('H', station.constraintModeH);
+    }
+    return parts.length > 0 ? parts.join(' ') : null;
+  };
+  const sigmaSourceLabel = (source?: SigmaSource): string => {
+    switch (source ?? 'explicit') {
+      case 'default':
+        return 'DEFAULT';
+      case 'fixed':
+        return 'FIXED';
+      case 'float':
+        return 'FLOAT';
+      default:
+        return 'EXPLICIT';
+    }
+  };
+  const summarizeObservationWeight = (obs: Observation): string => {
+    if (obs.type === 'gps') {
+      const east = sigmaSourceLabel(obs.sigmaSourceE ?? obs.sigmaSource);
+      const north = sigmaSourceLabel(obs.sigmaSourceN ?? obs.sigmaSource);
+      return east === north ? east : `E=${east} N=${north}`;
+    }
+    return sigmaSourceLabel(obs.sigmaSource);
+  };
 
   if (settings.listingShowCoordinates) {
     lines.push('');
@@ -779,6 +814,17 @@ export const buildIndustryStyleListingText = (
       (st.x * unitScale).toFixed(4),
     ]);
     renderTextTable(['Station', 'Description', 'N', 'E'], coordRows, [2, 3]);
+
+    const controlStatusRows = stationEntriesForListing
+      .map(([id, st]) => [id, stationDescription(id) || '-', summarizeControlComponentStatus(st)] as const)
+      .filter(([, , summary]) => summary != null)
+      .map(([id, description, summary]) => [id, description, summary ?? '-']);
+    if (controlStatusRows.length > 0) {
+      lines.push('');
+      addCenteredHeading('Control Component Status');
+      lines.push('');
+      renderTextTable(['Station', 'Description', 'Components'], controlStatusRows);
+    }
 
     if (coordSystemMode === 'grid') {
       const geodeticRows = stationEntriesForListing.map(([id, st]) => [
@@ -1273,6 +1319,28 @@ export const buildIndustryStyleListingText = (
         [2, 3, 4, 5],
       );
     }
+
+    const weightingRows = listingObservations.map((obs) => [
+      obs.type.toUpperCase(),
+      obs.type === 'angle'
+        ? `${obs.at}-${obs.from}-${obs.to}${aliasRefsForLine(obs.sourceLine)}${autoSideshotSuffix(obs)}`
+        : obs.type === 'direction'
+          ? `${obs.at}-${obs.to}${aliasRefsForLine(obs.sourceLine)}${autoSideshotSuffix(obs)}`
+          : 'from' in obs && 'to' in obs
+            ? `${obs.from}-${obs.to}${aliasRefsForLine(obs.sourceLine)}${autoSideshotSuffix(obs)}${prismSuffix(obs)}`
+            : '-',
+      summarizeObservationWeight(obs),
+      obs.sourceLine != null ? `1:${obs.sourceLine}` : '-',
+    ]);
+    renderAdjustedSection(
+      'Observation Weighting Traceability',
+      weightingRows,
+      ['Type', 'Stations', 'Weight', 'File:Line'],
+      [],
+      [
+        'Weight shows whether each observation used explicit, default, fixed, or float sigma handling.',
+      ],
+    );
   }
   const renderSideshotListingSection = (title: string, rows: typeof sideshotsForListing) => {
     if (rows.length === 0) return;

@@ -1188,6 +1188,19 @@ describe('parseInput', () => {
     }
   });
 
+  it('preserves per-component GNSS sigma-source traceability when weighting sources differ', () => {
+    const parsed = parseInput(
+      ['.2D', 'C A 0 0 0 ! !', 'C B 100 0 0', 'G GPS1 A B 10 20 ! *'].join('\n'),
+    );
+    const g = parsed.observations.find((o) => o.type === 'gps');
+    expect(g?.type).toBe('gps');
+    if (g?.type === 'gps') {
+      expect(g.sigmaSource).toBe('fixed');
+      expect(g.sigmaSourceE).toBe('fixed');
+      expect(g.sigmaSourceN).toBe('float');
+    }
+  });
+
   it('parses .GPS NETWORK/.GPS SIDESHOT mode state and tags G observations', () => {
     const base = parseInput(
       ['I GPS1 GNSS 0 0 0 0 0 0 0.002', 'C A 0 0 0 !', 'C B 100 0 0', 'G GPS1 A B 100 0 0.01'].join(

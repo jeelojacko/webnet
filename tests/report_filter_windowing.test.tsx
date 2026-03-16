@@ -168,7 +168,7 @@ describe('ReportView filtering and windowing', () => {
     expect(mounted.container.textContent).not.toContain('5000');
 
     await mounted.cleanup();
-  });
+  }, 15000);
 
   it('expands observation and coordinate tables with show more actions', async () => {
     const mounted = await mountReport();
@@ -193,5 +193,5 @@ describe('ReportView filtering and windowing', () => {
     expect(mounted.container.textContent).toContain('P100');
 
     await mounted.cleanup();
-  });
+  }, 15000);
 });

@@ -156,6 +156,8 @@ export interface Station {
 
 export type StationMap = Record<StationId, Station>;
 
+export type SigmaSource = 'default' | 'explicit' | 'fixed' | 'float';
+
 interface ObservationBase {
   id: number;
   sourceLine?: number;
@@ -165,7 +167,7 @@ interface ObservationBase {
   setId?: string;
   stdDev: number;
   planned?: boolean;
-  sigmaSource?: 'default' | 'explicit' | 'fixed' | 'float';
+  sigmaSource?: SigmaSource;
   prismCorrectionM?: number;
   prismScope?: 'global' | 'set';
   calc?: unknown;
@@ -274,6 +276,8 @@ export interface GpsObservation extends ObservationBase {
   obs: { dE: number; dN: number };
   stdDevE?: number;
   stdDevN?: number;
+  sigmaSourceE?: SigmaSource;
+  sigmaSourceN?: SigmaSource;
   corrEN?: number;
   calc?: { dE: number; dN: number };
   residual?: { vE: number; vN: number };
