@@ -1,5 +1,12 @@
 # TODO - WebNet
 
+- [x] Scalability batch 1 - worker run pipeline foundation:
+  - [x] Extract shared browser/CLI solve helpers into a pure run-session module
+  - [x] Add typed worker protocol (`RunRequest` / `RunProgress` / `RunSuccess` / `RunFailure` / `RunCancel`) and browser worker entrypoint
+  - [x] Add a worker-backed UI run hook with fallback direct execution, progress state, and cancel support
+  - [x] Keep last successful result visible during rerun and surface run-phase status in the toolbar
+  - [x] Add regression coverage for worker-path parity and in-flight UI behavior
+
 - [x] Add post-adjust adjusted-points Transform support (rotation-only v1): persisted transform settings, Project Options -> Other Files -> Transform UI (rotation with pivot/scope/select-points popup + translation/scale placeholders), export-time validation, and dual-section adjusted-points export output (original + transform notes + rotated coordinates)
 - [x] Add TypeScript tooling (tsconfig, TSX entry) and migrate LSA engine/UI to TS modules
 - [x] Industry-standard input-compatibility parity batch 1: parser directive normalization aliases/unique-prefix handling, `.DATA` block gating, `.SEPARATOR` station token support, `.3REDUCE` horizontal-equation behavior, include preprocessor with source-file traceability + scoped state restore, CLI include filesystem resolution + hard-fail diagnostics, new CLI run modes (`data-check`, `blunder-detect`), and project file schema v3 bundle support (`mainInput` + `includeFiles`) with v1/v2 migration

@@ -17,12 +17,12 @@ import {
   Save,
   Settings,
   Download,
+  Square,
 } from 'lucide-react';
 import InputPane from './components/InputPane';
 import ImportReviewModal from './components/ImportReviewModal';
 
 import { DEFAULT_INPUT } from './defaultInput';
-import { LSAEngine } from './engine/adjust';
 import { RAD_TO_DEG, radToDmsStr, dmsToRad } from './engine/angles';
 import {
   extractAutoAdjustDirectiveFromInput,
@@ -48,6 +48,7 @@ import {
   findLevelLoopTolerancePreset,
 } from './engine/levelLoopTolerance';
 import { parseProjectFile, serializeProjectFile } from './engine/projectFile';
+import { solveEngine } from './engine/solveEngine';
 import {
   CANADA_CRS_CATALOG,
   DEFAULT_CANADA_CRS_ID,
@@ -82,6 +83,8 @@ import {
   type ImportReviewComparisonSummary,
 } from './engine/importReview';
 import { isPreanalysisWhatIfCandidate } from './engine/preanalysis';
+import { type RunSessionOutcome, type RunSessionRequest } from './engine/runSession';
+import { useAdjustmentRunner } from './hooks/useAdjustmentRunner';
 import type {
   AdjustmentResult,
   ClusterApprovedMerge,
@@ -1218,8 +1221,21 @@ const App: React.FC<AppProps> = ({
   const layoutRef = useRef<HTMLDivElement | null>(null);
   const settingsModalContentRef = useRef<HTMLDivElement | null>(null);
   const isResizingRef = useRef(false);
+  const { pipelineState, run: runAdjustment, cancel: cancelAdjustment } =
+    useAdjustmentRunner(runWithExclusionsDirect);
 
   const parsedInputInstruments = useMemo(() => parseInstrumentLibraryFromInput(input), [input]);
+  const runPhaseLabel = useMemo(() => {
+    if (pipelineState.status === 'running') {
+      if (pipelineState.phase === 'queued') return 'Queued';
+      if (pipelineState.phase === 'solving') return 'Solving';
+      if (pipelineState.phase === 'finalizing') return 'Finalizing';
+      return 'Running';
+    }
+    if (pipelineState.status === 'cancelled') return 'Cancelled';
+    if (pipelineState.status === 'failed') return 'Failed';
+    return null;
+  }, [pipelineState.phase, pipelineState.status]);
   const selectedDraftCrs = useMemo(
     () =>
       CANADA_CRS_CATALOG.find((row) => row.id === parseSettingsDraft.crsId) ??
@@ -5391,7 +5407,7 @@ const App: React.FC<AppProps> = ({
     const normalizedClusterMerges = effectiveParse.clusterDetectionEnabled
       ? normalizeClusterApprovedMerges(approvedClusterMerges)
       : [];
-    const engine = new LSAEngine({
+    return solveEngine({
       input,
       maxIterations: settings.maxIterations,
       convergenceThreshold: settings.convergenceLimit,
@@ -5483,7 +5499,6 @@ const App: React.FC<AppProps> = ({
         preferExternalInstruments: true,
       },
     });
-    return engine.solve();
   };
 
   const buildSuspectImpactDiagnostics = (
@@ -5758,25 +5773,18 @@ const App: React.FC<AppProps> = ({
     return solved;
   };
 
-  const runWithExclusions = (
-    excludeSet: Set<number>,
-    approvedClusterMerges: ClusterApprovedMerge[] = activeClusterApprovedMerges,
-    reviewContext?: {
-      candidates: ClusterCandidate[];
-      decisions: Record<string, ClusterReviewDecision>;
-    },
-  ) => {
+  function runWithExclusionsDirect(request: RunSessionRequest): RunSessionOutcome {
     const runStartMs = Date.now();
-    let effectiveExclusions = excludeSet;
-    let effectiveOverrides = overrides;
-    let effectiveClusterMerges = normalizeClusterApprovedMerges(approvedClusterMerges);
+    let effectiveExclusions = new Set(request.excludedIds);
+    let effectiveOverrides = request.overrides;
+    let effectiveClusterMerges = normalizeClusterApprovedMerges(request.approvedClusterMerges);
     let autoAdjustSummary: ReturnType<typeof runAutoAdjustCycles> | null = null;
     if (!parseSettings.clusterDetectionEnabled) {
       effectiveClusterMerges = [];
     }
-    const inputChangedSinceLastRun = lastRunInput != null && input !== lastRunInput;
-    const droppedExclusions = inputChangedSinceLastRun ? excludeSet.size : 0;
-    const droppedOverrides = inputChangedSinceLastRun ? Object.keys(overrides).length : 0;
+    const inputChangedSinceLastRun = request.lastRunInput != null && request.input !== request.lastRunInput;
+    const droppedExclusions = inputChangedSinceLastRun ? effectiveExclusions.size : 0;
+    const droppedOverrides = inputChangedSinceLastRun ? Object.keys(effectiveOverrides).length : 0;
     const droppedClusterMerges = inputChangedSinceLastRun ? effectiveClusterMerges.length : 0;
 
     if (
@@ -5786,24 +5794,22 @@ const App: React.FC<AppProps> = ({
       effectiveExclusions = new Set();
       effectiveOverrides = {};
       effectiveClusterMerges = [];
-      setExcludedIds(new Set());
-      setOverrides({});
-      setClusterReviewDecisions({});
-      setActiveClusterApprovedMerges([]);
     }
 
-    const inlineAutoAdjust = extractAutoAdjustDirectiveFromInput(input);
+    const inlineAutoAdjust = extractAutoAdjustDirectiveFromInput(request.input);
     const uiRunMode: RunMode =
-      parseSettings.runMode ?? (parseSettings.preanalysisMode ? 'preanalysis' : 'adjustment');
+      request.parseSettings.runMode ??
+      (request.parseSettings.preanalysisMode ? 'preanalysis' : 'adjustment');
     const autoAdjustConfig: AutoAdjustConfig = {
       enabled:
         uiRunMode === 'adjustment'
-          ? (inlineAutoAdjust?.enabled ?? parseSettings.autoAdjustEnabled)
+          ? (inlineAutoAdjust?.enabled ?? request.parseSettings.autoAdjustEnabled)
           : false,
-      maxCycles: inlineAutoAdjust?.maxCycles ?? parseSettings.autoAdjustMaxCycles,
+      maxCycles: inlineAutoAdjust?.maxCycles ?? request.parseSettings.autoAdjustMaxCycles,
       maxRemovalsPerCycle:
-        inlineAutoAdjust?.maxRemovalsPerCycle ?? parseSettings.autoAdjustMaxRemovalsPerCycle,
-      stdResThreshold: inlineAutoAdjust?.stdResThreshold ?? parseSettings.autoAdjustStdResThreshold,
+        inlineAutoAdjust?.maxRemovalsPerCycle ?? request.parseSettings.autoAdjustMaxRemovalsPerCycle,
+      stdResThreshold:
+        inlineAutoAdjust?.stdResThreshold ?? request.parseSettings.autoAdjustStdResThreshold,
       minRedundancy: AUTO_ADJUST_MIN_REDUNDANCY,
     };
     if (autoAdjustConfig.enabled) {
@@ -5842,17 +5848,42 @@ const App: React.FC<AppProps> = ({
         solved.logs.unshift(autoLines[i]);
       }
     }
+
+    return {
+      result: solved,
+      effectiveExcludedIds: [...effectiveExclusions],
+      effectiveClusterApprovedMerges: effectiveClusterMerges,
+      droppedExclusions,
+      droppedOverrides,
+      droppedClusterMerges,
+      inputChangedSinceLastRun,
+      elapsedMs: Date.now() - runStartMs,
+    };
+  }
+
+  const applyRunOutcome = (
+    outcome: RunSessionOutcome,
+    context: {
+      inputSnapshot: string;
+      parseSettingsSnapshot: ParseSettings;
+      reviewContext?: {
+        candidates: ClusterCandidate[];
+        decisions: Record<string, ClusterReviewDecision>;
+      };
+    },
+  ) => {
+    const solved = outcome.result;
     if (solved.clusterDiagnostics?.enabled) {
       const contextCandidates =
-        reviewContext?.candidates ?? result?.clusterDiagnostics?.candidates ?? [];
-      const contextDecisions = reviewContext?.decisions ?? clusterReviewDecisions;
+        context.reviewContext?.candidates ?? result?.clusterDiagnostics?.candidates ?? [];
+      const contextDecisions = context.reviewContext?.decisions ?? clusterReviewDecisions;
       const rejected = buildRejectedClusterProposals(contextCandidates, contextDecisions);
       solved.clusterDiagnostics.rejectedProposals = rejected;
       if (rejected.length > 0) {
         solved.logs.unshift(`Cluster review: rejected proposals=${rejected.length}`);
       }
     }
-    const runProfile = buildRunDiagnostics(parseSettings, solved);
+    const runProfile = buildRunDiagnostics(context.parseSettingsSnapshot, solved);
     if (runProfile.parity) {
       solved.logs.unshift(
         'Solve profile: Industry Standard parity (raw directions, classical weighting, industry default instrument fallback).',
@@ -5866,20 +5897,60 @@ const App: React.FC<AppProps> = ({
       solved.logs.unshift(`Run mode: ${runProfile.runMode}.`);
     }
     if (
-      inputChangedSinceLastRun &&
-      (droppedExclusions > 0 || droppedOverrides > 0 || droppedClusterMerges > 0)
+      outcome.inputChangedSinceLastRun &&
+      (outcome.droppedExclusions > 0 ||
+        outcome.droppedOverrides > 0 ||
+        outcome.droppedClusterMerges > 0)
     ) {
       solved.logs.unshift(
-        `Input changed since previous run: cleared ${droppedExclusions} exclusion(s), ${droppedOverrides} override(s), and ${droppedClusterMerges} approved cluster merge(s).`,
+        `Input changed since previous run: cleared ${outcome.droppedExclusions} exclusion(s), ${outcome.droppedOverrides} override(s), and ${outcome.droppedClusterMerges} approved cluster merge(s).`,
       );
+      setOverrides({});
+      setClusterReviewDecisions({});
     }
-    setLastRunInput(input);
-    setExcludedIds(new Set(effectiveExclusions));
-    setActiveClusterApprovedMerges(effectiveClusterMerges);
+    setLastRunInput(context.inputSnapshot);
+    setExcludedIds(new Set(outcome.effectiveExcludedIds));
+    setActiveClusterApprovedMerges(outcome.effectiveClusterApprovedMerges);
     setRunDiagnostics(runProfile);
-    setRunElapsedMs(Date.now() - runStartMs);
+    setRunElapsedMs(outcome.elapsedMs);
     setResult(solved);
     setActiveTab('report');
+  };
+
+  const runWithExclusions = (
+    excludeSet: Set<number>,
+    approvedClusterMerges: ClusterApprovedMerge[] = activeClusterApprovedMerges,
+    reviewContext?: {
+      candidates: ClusterCandidate[];
+      decisions: Record<string, ClusterReviewDecision>;
+    },
+  ) => {
+    const request: RunSessionRequest = {
+      input,
+      lastRunInput,
+      maxIterations: settings.maxIterations,
+      convergenceLimit: settings.convergenceLimit,
+      units: settings.units,
+      parseSettings: { ...parseSettings },
+      projectInstruments: cloneInstrumentLibrary(projectInstruments),
+      selectedInstrument,
+      projectIncludeFiles: { ...projectIncludeFiles },
+      geoidSourceData,
+      excludedIds: [...excludeSet],
+      overrides: { ...overrides },
+      approvedClusterMerges,
+    };
+    const context = {
+      inputSnapshot: input,
+      parseSettingsSnapshot: { ...parseSettings },
+      reviewContext,
+    };
+    void runAdjustment(request)
+      .then((outcome) => applyRunOutcome(outcome, context))
+      .catch((error) => {
+        if (error instanceof Error && error.message === 'Run cancelled') return;
+        console.error(error);
+      });
   };
 
   const handleRun = () => {
@@ -6695,18 +6766,41 @@ const App: React.FC<AppProps> = ({
           >
             Pts
           </button>
-          <button
-            onClick={handleRun}
-            className="flex items-center space-x-2 bg-green-600 hover:bg-green-500 text-white px-4 py-1.5 rounded text-sm font-medium transition-colors shadow-lg shadow-green-900/20"
-          >
-            <Play size={16} /> <span>Adjust</span>
-          </button>
+          {pipelineState.status === 'running' ? (
+            <button
+              onClick={cancelAdjustment}
+              className="flex items-center space-x-2 bg-amber-600 hover:bg-amber-500 text-white px-4 py-1.5 rounded text-sm font-medium transition-colors shadow-lg shadow-amber-900/20"
+              title="Cancel current run"
+            >
+              <Square size={14} /> <span>Cancel</span>
+            </button>
+          ) : (
+            <button
+              onClick={handleRun}
+              className="flex items-center space-x-2 bg-green-600 hover:bg-green-500 text-white px-4 py-1.5 rounded text-sm font-medium transition-colors shadow-lg shadow-green-900/20"
+            >
+              <Play size={16} /> <span>Adjust</span>
+            </button>
+          )}
           <button
             onClick={handleResetToLastRun}
-            className="p-2 bg-slate-700 hover:bg-slate-600 rounded text-slate-300 transition-colors"
+            disabled={pipelineState.status === 'running'}
+            className={`p-2 rounded text-slate-300 transition-colors ${
+              pipelineState.status === 'running'
+                ? 'bg-slate-800 opacity-50 cursor-not-allowed'
+                : 'bg-slate-700 hover:bg-slate-600'
+            }`}
           >
             <RefreshCw size={18} />
           </button>
+          {runPhaseLabel ? (
+            <div className="rounded border border-slate-600 bg-slate-800/80 px-2 py-1 text-[11px] uppercase tracking-wide text-slate-300">
+              {runPhaseLabel}
+              <span className="ml-2 text-slate-500">
+                {pipelineState.workerBacked ? 'Worker' : 'Direct'}
+              </span>
+            </div>
+          ) : null}
         </div>
       </header>
 

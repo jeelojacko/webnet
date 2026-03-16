@@ -2,7 +2,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
 
-import { LSAEngine } from './engine/adjust';
+import { solveEngine } from './engine/solveEngine';
 import type { ParseOptions } from './types';
 import { buildIndustryStyleListingText } from './engine/industryListing';
 import { buildLandXmlText } from './engine/landxml';
@@ -536,13 +536,12 @@ const run = (): number => {
     }
   }
 
-  const engine = new LSAEngine({
+  const result = solveEngine({
     input: inputText,
     maxIterations: cfg.maxIterations,
     parseOptions: cfg.parseOptions,
     geoidSourceData,
   });
-  const result = engine.solve();
   const parseState: Partial<ParseOptions> = result.parseState ?? {};
   const parityProfile = cfg.profile !== 'webnet';
   const profileParseOptions: Partial<ParseOptions> = {
