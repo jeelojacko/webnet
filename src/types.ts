@@ -133,6 +133,9 @@ export interface Station {
   fixedX?: boolean;
   fixedY?: boolean;
   fixedH?: boolean;
+  constraintModeX?: 'fixed' | 'weighted' | 'free' | 'approximate';
+  constraintModeY?: 'fixed' | 'weighted' | 'free' | 'approximate';
+  constraintModeH?: 'fixed' | 'weighted' | 'free' | 'approximate';
   coordInputClass?: CoordInputClass;
   heightType?: 'orthometric' | 'ellipsoid';
   latDeg?: number;

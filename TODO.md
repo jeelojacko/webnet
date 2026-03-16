@@ -18,7 +18,7 @@
   - [x] Add pinned/favorite report sections for quicker navigation
   - [x] Add a compact current-vs-last-run settings diff before rerun
   - [ ] Complete remaining Section 5.6 compatibility work
-  - [ ] Add browser-oriented large-project benchmark fixture coverage
+  - [x] Add browser-oriented large-project benchmark fixture coverage
 
 - [x] Add post-adjust adjusted-points Transform support (rotation-only v1): persisted transform settings, Project Options -> Other Files -> Transform UI (rotation with pivot/scope/select-points popup + translation/scale placeholders), export-time validation, and dual-section adjusted-points export output (original + transform notes + rotated coordinates)
 - [x] Add TypeScript tooling (tsconfig, TSX entry) and migrate LSA engine/UI to TS modules
@@ -160,10 +160,10 @@
   - [x] A records auto-classify as DIR (azimuth) vs turned angle using initial coords; DIR uses closest residual with optional 180° flip
   - [x] Sideshots: SS diverted from adjustment, compute post-adjust, disallow occupy/backsight, optional name checking (basic parse to dist + vert/zenith; excluded from adjustment; occupy/backsight validation added; cannot target fixed control)
   - Leveling: L dH with distance or turns, std err or per-unit via .LWEIGHT (fallback applied; ft lengths converted to km), allow fixity/free
-  - [~] Fixity/weights: support ! fixed per component, legacy \* fixed, numeric std errs per obs/component (free markers not implemented)
-    - [ ] Phase 1: define free-marker semantics and precedence relative to `!`, legacy `*`, and numeric sigma tokens by record family
-    - [ ] Phase 2: implement parser support and diagnostics for free markers on coordinate and observation components
-    - [ ] Phase 3: apply free-marker behavior in weighting/constraint building and add report/listing traceability + regression tests
+  - [~] Fixity/weights: support ! fixed per component, legacy \* fixed, numeric std errs per obs/component (coordinate free-marker semantics are now wired; broader Section 5.6 closeout remains)
+    - [x] Phase 1: define coordinate-record free-marker semantics and precedence relative to `!`, legacy `*`, and numeric sigma tokens
+    - [x] Phase 2: implement parser support + diagnostics so per-component `*` clears fixed/weighted control constraints on `C/P/CH/E/PH/EH` records, with regression coverage
+    - [ ] Phase 3: extend remaining free-marker traceability across listing/remaining record families and keep regression coverage fixture-locked
   - [x] Instrument library: EDM const/ppm, HZ/VA precision, instrument/target centering; .I to set current instrument
   - [x] Std error tokens (&/!/\*/numeric) for observations; .EDM additive/propagated; .CENTERING on/off; .ADDC add-centering mode
   - [x] Debug logging toggle (.DEBUG) to dump per-observation calc/residual/sigma by iteration

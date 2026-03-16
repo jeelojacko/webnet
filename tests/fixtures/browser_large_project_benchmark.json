@@ -1,0 +1,14 @@
+[
+  {
+    "id": "radial_bearing_distance_120",
+    "pointCount": 120,
+    "angleOffsetDeg": 7.5,
+    "radiusBaseM": 80,
+    "radiusStepM": 1.25,
+    "expectedStationCount": 121,
+    "expectedObservationCount": 240,
+    "reportWindowSize": 100,
+    "solveBudgetMs": 5000,
+    "renderBudgetMs": 4000
+  }
+]

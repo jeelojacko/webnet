@@ -91,4 +91,61 @@ describe('ReportView operator workflows', () => {
     });
     container.remove();
   });
+
+  it('surfaces weighted-control station badges with component traceability in adjusted coordinates', async () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root: Root = createRoot(container);
+    const result = new LSAEngine({
+      input: [
+        '.3D',
+        'C A 0 0 0 0.010 0.010 0.020',
+        'C B 100 0 0 ! ! !',
+        'C P 60 40 10',
+        'D B-P 56.5685425 0.005',
+        'B B-P 123-41-24.1 2',
+        'G A P 60 40 0.010 0.010',
+      ].join('\n'),
+      maxIterations: 8,
+    }).solve();
+
+    await act(async () => {
+      root.render(
+        <ReportView
+          result={result}
+          units="m"
+          runDiagnostics={null}
+          excludedIds={new Set<number>()}
+          onToggleExclude={() => {}}
+          onApplyImpactExclude={() => {}}
+          onApplyPreanalysisAction={() => {}}
+          onReRun={() => {}}
+          onClearExclusions={() => {}}
+          overrides={{}}
+          onOverride={() => {}}
+          onResetOverrides={() => {}}
+          clusterReviewDecisions={{}}
+          activeClusterApprovedMerges={[]}
+          onClusterDecisionStatus={() => {}}
+          onClusterCanonicalSelection={() => {}}
+          onApplyClusterMerges={() => {}}
+          onResetClusterReview={() => {}}
+          onClearClusterMerges={() => {}}
+        />,
+      );
+    });
+
+    const controlBadge = Array.from(container.querySelectorAll('span')).find(
+      (node) => node.textContent === 'CTRL',
+    ) as HTMLSpanElement | undefined;
+    expect(controlBadge).toBeDefined();
+    expect(controlBadge?.title).toContain('N:WEIGHTED');
+    expect(controlBadge?.title).toContain('E:WEIGHTED');
+    expect(controlBadge?.title).toContain('H:WEIGHTED');
+
+    await act(async () => {
+      root.unmount();
+    });
+    container.remove();
+  });
 });

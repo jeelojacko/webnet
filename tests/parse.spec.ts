@@ -85,6 +85,67 @@ describe('parseInput', () => {
     expect(parsed.logs.some((line) => line.includes('.LWEIGHT fallback applied for M'))).toBe(true);
   });
 
+  it('treats per-component * control markers as free and clears weighted constraints', () => {
+    const parsed = parseInput(
+      [
+        '.3D',
+        'C A 1000 2000 50 0.010 0.020 0.030 ! *',
+        'C B 1005 2005 55 0.030 0.040 0.050 * !',
+      ].join('\n'),
+    );
+    const a = parsed.stations.A;
+    const b = parsed.stations.B;
+
+    expect(a.fixedX).toBe(true);
+    expect(a.fixedY ?? false).toBe(false);
+    expect(a.constraintX).toBeUndefined();
+    expect(a.sx).toBeUndefined();
+    expect(a.constraintY).toBeUndefined();
+    expect(a.sy).toBeUndefined();
+    expect(a.constraintH).toBeCloseTo(a.h, 10);
+    expect(a.sh).toBeCloseTo(0.03, 10);
+    expect(a.constraintModeX).toBe('fixed');
+    expect(a.constraintModeY).toBe('free');
+    expect(a.constraintModeH).toBe('weighted');
+
+    expect(b.fixedY).toBe(true);
+    expect(b.fixedX ?? false).toBe(false);
+    expect(b.constraintY).toBeUndefined();
+    expect(b.sy).toBeUndefined();
+    expect(b.constraintX).toBeUndefined();
+    expect(b.sx).toBeUndefined();
+    expect(b.constraintH).toBeCloseTo(b.h, 10);
+    expect(b.sh).toBeCloseTo(0.05, 10);
+    expect(b.constraintModeY).toBe('fixed');
+    expect(b.constraintModeX).toBe('free');
+    expect(b.constraintModeH).toBe('weighted');
+
+    expect(
+      parsed.logs.some((line) => line.includes('Free-marker control components at line 2')),
+    ).toBe(true);
+  });
+
+  it('uses free markers to release prior fixed or weighted control components on later records', () => {
+    const parsed = parseInput(
+      [
+        '.2D',
+        'C A 1000 2000 0.010 0.020 ! !',
+        'C A 1000 2000 0.010 0.020 * *',
+      ].join('\n'),
+    );
+    const a = parsed.stations.A;
+
+    expect(a.fixed).toBe(false);
+    expect(a.fixedX ?? false).toBe(false);
+    expect(a.fixedY ?? false).toBe(false);
+    expect(a.constraintX).toBeUndefined();
+    expect(a.constraintY).toBeUndefined();
+    expect(a.sx).toBeUndefined();
+    expect(a.sy).toBeUndefined();
+    expect(a.constraintModeX).toBe('free');
+    expect(a.constraintModeY).toBe('free');
+  });
+
   it('parses configurable level-loop tolerance settings', () => {
     const parsed = parseInput(['.LEVELTOL BASE 1.5 K 6.0', 'C A 0 0 0 ! ! !'].join('\n'));
     expect(parsed.parseState.levelLoopToleranceBaseMm).toBeCloseTo(1.5, 8);

@@ -1478,6 +1478,36 @@ describe('LSAEngine', () => {
     expect(relaxedDist?.stdDev ?? 0).toBeCloseTo(0.01, 10);
   });
 
+  it('removes weighted control constraints from components marked free with per-component *', () => {
+    const weighted = new LSAEngine({
+      input: [
+        '.3D',
+        'C A 0 0 0 0.010 0.010 0.010',
+        'C B 100 0 0 ! ! !',
+        'C P 60 40 10',
+        'D B-P 56.5685425 0.005',
+        'B B-P 123-41-24.1 2',
+        'G A P 60 40 0.010 0.010',
+      ].join('\n'),
+      maxIterations: 10,
+    }).solve();
+    const freed = new LSAEngine({
+      input: [
+        '.3D',
+        'C A 0 0 0 0.010 0.010 0.010 * * *',
+        'C B 100 0 0 ! ! !',
+        'C P 60 40 10',
+        'D B-P 56.5685425 0.005',
+        'B B-P 123-41-24.1 2',
+        'G A P 60 40 0.010 0.010',
+      ].join('\n'),
+      maxIterations: 10,
+    }).solve();
+
+    expect(weighted.controlConstraints?.count ?? 0).toBeGreaterThan(0);
+    expect(freed.controlConstraints?.count ?? 0).toBe(0);
+  });
+
   it('applies global prism correction to modeled distance residuals', () => {
     const baseInput = [
       '.2D',

@@ -14,6 +14,7 @@ import type {
   Observation,
   ReductionUsageSummary,
   RunMode,
+  Station,
 } from '../types';
 import { RAD_TO_DEG, radToDmsStr } from '../engine/angles';
 import { isLockedPreanalysisObservation } from '../engine/preanalysis';
@@ -855,6 +856,44 @@ const ReportView: React.FC<ReportViewProps> = ({
   const formatEffectiveDistance = (value?: number): string => {
     if (value == null || !Number.isFinite(value) || value <= 0) return '-';
     return (value * unitScale).toFixed(4);
+  };
+  const stationConstraintModeSummary = (station: Station): string => {
+    const modeLabels: Array<[string, Station['constraintModeX'] | undefined]> = [
+      ['N', station.constraintModeY],
+      ['E', station.constraintModeX],
+    ];
+    if (result.parseState?.coordMode === '3D') {
+      modeLabels.push(['H', station.constraintModeH]);
+    }
+    const parts = modeLabels
+      .filter(([, mode]) => mode != null)
+      .map(([label, mode]) => `${label}:${String(mode).toUpperCase()}`);
+    return parts.length > 0 ? parts.join(' | ') : 'Adjusted station';
+  };
+  const stationTypeBadge = (
+    station: Station,
+  ): { label: 'FIXED' | 'CTRL' | 'ADJ'; className: string; title: string } => {
+    const hasConstraint =
+      station.constraintX != null || station.constraintY != null || station.constraintH != null;
+    if (station.fixed) {
+      return {
+        label: 'FIXED',
+        className: 'text-xs bg-slate-700 text-slate-300 px-1.5 py-0.5 rounded',
+        title: stationConstraintModeSummary(station),
+      };
+    }
+    if (hasConstraint) {
+      return {
+        label: 'CTRL',
+        className: 'text-xs bg-sky-900/70 text-sky-200 px-1.5 py-0.5 rounded',
+        title: stationConstraintModeSummary(station),
+      };
+    }
+    return {
+      label: 'ADJ',
+      className: 'text-xs text-slate-500',
+      title: stationConstraintModeSummary(station),
+    };
   };
   const preanalysisLabelTooltip = (label: string): string | undefined =>
     PREANALYSIS_LABEL_TOOLTIPS[label];
@@ -5089,13 +5128,14 @@ const ReportView: React.FC<ReportViewProps> = ({
                     {stn.sH != null ? (stn.sH * unitScale).toFixed(4) : '-'}
                   </td>
                   <td className="py-1 text-center">
-                    {stn.fixed ? (
-                      <span className="text-xs bg-slate-700 text-slate-300 px-1.5 py-0.5 rounded">
-                        FIXED
-                      </span>
-                    ) : (
-                      <span className="text-xs text-slate-500">ADJ</span>
-                    )}
+                    {(() => {
+                      const badge = stationTypeBadge(stn);
+                      return (
+                        <span className={badge.className} title={badge.title}>
+                          {badge.label}
+                        </span>
+                      );
+                    })()}
                   </td>
                   <td className="py-1 text-right text-xs text-slate-400">
                     {stn.errorEllipse

@@ -249,37 +249,60 @@ const isNumericToken = (token: string): boolean => {
   return !Number.isNaN(Number(token));
 };
 
+type ControlComponentMode = 'inherit' | 'fixed' | 'free';
+
 const parseFixityTokens = (
   tokens: string[],
   componentCount: number,
-): { fixities: boolean[]; hasTokens: boolean; legacyStarFixed: boolean } => {
+): {
+  componentModes: ControlComponentMode[];
+  fixities: boolean[];
+  hasTokens: boolean;
+  hasFreeMarkers: boolean;
+  legacyStarFixed: boolean;
+} => {
   const raw = tokens.filter((t) => t === '!' || t === '*');
   if (!raw.length) {
     return {
+      componentModes: new Array(componentCount).fill('inherit'),
       fixities: new Array(componentCount).fill(false),
       hasTokens: false,
+      hasFreeMarkers: false,
       legacyStarFixed: false,
     };
   }
   if (raw.length === 1 && raw[0] === '!') {
     return {
+      componentModes: new Array(componentCount).fill('fixed'),
       fixities: new Array(componentCount).fill(true),
       hasTokens: true,
+      hasFreeMarkers: false,
       legacyStarFixed: false,
     };
   }
   if (raw.length === 1 && raw[0] === '*') {
     return {
+      componentModes: new Array(componentCount).fill('fixed'),
       fixities: new Array(componentCount).fill(true),
       hasTokens: true,
+      hasFreeMarkers: false,
       legacyStarFixed: true,
     };
   }
+  const componentModes = new Array(componentCount).fill('inherit') as ControlComponentMode[];
   const fixities = new Array(componentCount).fill(false);
   for (let i = 0; i < componentCount && i < raw.length; i += 1) {
-    fixities[i] = raw[i] === '!';
+    const mode = raw[i] === '!' ? 'fixed' : 'free';
+    componentModes[i] = mode;
+    fixities[i] = mode === 'fixed';
   }
-  return { fixities, hasTokens: true, legacyStarFixed: false };
+  return {
+    componentModes,
+    fixities,
+    hasTokens: true,
+    hasFreeMarkers: componentModes.includes('free'),
+    legacyStarFixed: false,
+  };
 };
 
 const parseConstraintCorrToken = (value: number | undefined): number | undefined => {
@@ -299,6 +322,46 @@ const applyFixities = (
   const fy = station.fixedY ?? false;
   const fh = station.fixedH ?? false;
   station.fixed = coordMode === '2D' ? fx && fy : fx && fy && fh;
+};
+
+const clearStationConstraintComponent = (
+  station: StationMap[string],
+  component: 'x' | 'y' | 'h',
+): void => {
+  if (component === 'x') {
+    delete station.sx;
+    delete station.constraintX;
+  } else if (component === 'y') {
+    delete station.sy;
+    delete station.constraintY;
+  } else {
+    delete station.sh;
+    delete station.constraintH;
+  }
+  if (component === 'x' || component === 'y') {
+    delete station.constraintCorrXY;
+  }
+};
+
+const setStationConstraintMode = (
+  station: StationMap[string],
+  component: 'x' | 'y' | 'h',
+  mode: StationMap[string]['constraintModeX'],
+): void => {
+  if (component === 'x') station.constraintModeX = mode;
+  else if (component === 'y') station.constraintModeY = mode;
+  else station.constraintModeH = mode;
+};
+
+const resolveStationConstraintMode = (
+  explicitMode: ControlComponentMode,
+  fixed: boolean,
+  hasConstraint: boolean,
+): StationMap[string]['constraintModeX'] => {
+  if (explicitMode === 'free') return 'free';
+  if (fixed) return 'fixed';
+  if (hasConstraint) return 'weighted';
+  return 'approximate';
 };
 
 type SigmaToken =
@@ -3881,15 +3944,26 @@ export const parseInput = (
         const north = state.order === 'NE' ? (coords[0] ?? 0) : (coords[1] ?? 0);
         const east = state.order === 'NE' ? (coords[1] ?? 0) : (coords[0] ?? 0);
         const h = is3D ? (coords[2] ?? 0) : 0;
-        const { fixities, legacyStarFixed } = parseFixityTokens(tokens, coordCount);
+        const { componentModes, fixities, hasFreeMarkers, legacyStarFixed } = parseFixityTokens(
+          tokens,
+          coordCount,
+        );
         if (legacyStarFixed) {
           logs.push(
             `Warning: legacy lone "*" fixity at line ${lineNum} treated as fixed. Prefer "!" for fixed components.`,
           );
         }
+        if (hasFreeMarkers) {
+          logs.push(
+            `Free-marker control components at line ${lineNum} release fixed/weighted constraints for marked coordinates.`,
+          );
+        }
         const fixN = state.order === 'NE' ? fixities[0] : fixities[1];
         const fixE = state.order === 'NE' ? fixities[1] : fixities[0];
         const fixH = is3D ? fixities[2] : false;
+        const modeN = state.order === 'NE' ? componentModes[0] : componentModes[1];
+        const modeE = state.order === 'NE' ? componentModes[1] : componentModes[0];
+        const modeH = is3D ? componentModes[2] : 'inherit';
         const toMeters = linearToMetersFactor();
         const st =
           stations[id] ??
@@ -3905,25 +3979,53 @@ export const parseInput = (
         );
 
         applyFixities(st, { x: fixE, y: fixN, h: is3D ? fixH : undefined }, state.coordMode);
+        if (modeE !== 'inherit') clearStationConstraintComponent(st, 'x');
+        if (modeN !== 'inherit') clearStationConstraintComponent(st, 'y');
+        if (is3D && modeH !== 'inherit') clearStationConstraintComponent(st, 'h');
 
         const seN = state.order === 'NE' ? stds[0] : stds[1];
         const seE = state.order === 'NE' ? stds[1] : stds[0];
         const seH = is3D ? stds[2] : undefined;
         const corrXY = parseConstraintCorrToken(stds[is3D ? 3 : 2]);
-        if (!st.fixedX && seE) {
+        if (modeE !== 'free' && !st.fixedX && seE) {
           st.sx = seE * toMeters;
           st.constraintX = st.x;
         }
-        if (!st.fixedY && seN) {
+        if (modeN !== 'free' && !st.fixedY && seN) {
           st.sy = seN * toMeters;
           st.constraintY = st.y;
         }
-        if (!st.fixedX && !st.fixedY && st.sx != null && st.sy != null && corrXY != null) {
+        if (
+          modeE !== 'free' &&
+          modeN !== 'free' &&
+          !st.fixedX &&
+          !st.fixedY &&
+          st.sx != null &&
+          st.sy != null &&
+          corrXY != null
+        ) {
           st.constraintCorrXY = corrXY;
         }
-        if (is3D && !st.fixedH && seH) {
+        if (is3D && modeH !== 'free' && !st.fixedH && seH) {
           st.sh = seH * toMeters;
           st.constraintH = st.h;
+        }
+        setStationConstraintMode(
+          st,
+          'x',
+          resolveStationConstraintMode(modeE, st.fixedX ?? false, st.constraintX != null),
+        );
+        setStationConstraintMode(
+          st,
+          'y',
+          resolveStationConstraintMode(modeN, st.fixedY ?? false, st.constraintY != null),
+        );
+        if (is3D) {
+          setStationConstraintMode(
+            st,
+            'h',
+            resolveStationConstraintMode(modeH, st.fixedH ?? false, st.constraintH != null),
+          );
         }
 
         stations[id] = st;
@@ -3946,12 +4048,23 @@ export const parseInput = (
         const seE = state.coordMode === '3D' ? (restNumeric[2] ?? 0) : (restNumeric[1] ?? 0);
         const seH = state.coordMode === '3D' ? (restNumeric[3] ?? 0) : 0;
         const corrXY = parseConstraintCorrToken(restNumeric[state.coordMode === '3D' ? 4 : 2]);
-        const { fixities, legacyStarFixed } = parseFixityTokens(tokens, coordCount);
+        const { componentModes, fixities, hasFreeMarkers, legacyStarFixed } = parseFixityTokens(
+          tokens,
+          coordCount,
+        );
         if (legacyStarFixed) {
           logs.push(
             `Warning: legacy lone "*" fixity at line ${lineNum} treated as fixed. Prefer "!" for fixed components.`,
           );
         }
+        if (hasFreeMarkers) {
+          logs.push(
+            `Free-marker control components at line ${lineNum} release fixed/weighted constraints for marked coordinates.`,
+          );
+        }
+        const modeN = componentModes[0];
+        const modeE = componentModes[1];
+        const modeH = coordCount === 3 ? componentModes[2] : 'inherit';
 
         if (state.originLatDeg == null || state.originLonDeg == null) {
           state.originLatDeg = latDeg;
@@ -3993,20 +4106,48 @@ export const parseInput = (
           },
           state.coordMode,
         );
-        if (!st.fixedY && seN) {
+        if (modeE !== 'inherit') clearStationConstraintComponent(st, 'x');
+        if (modeN !== 'inherit') clearStationConstraintComponent(st, 'y');
+        if (coordCount === 3 && modeH !== 'inherit') clearStationConstraintComponent(st, 'h');
+        if (modeN !== 'free' && !st.fixedY && seN) {
           st.sy = seN * toMeters;
           st.constraintY = st.y;
         }
-        if (!st.fixedX && seE) {
+        if (modeE !== 'free' && !st.fixedX && seE) {
           st.sx = seE * toMeters;
           st.constraintX = st.x;
         }
-        if (!st.fixedX && !st.fixedY && st.sx != null && st.sy != null && corrXY != null) {
+        if (
+          modeE !== 'free' &&
+          modeN !== 'free' &&
+          !st.fixedX &&
+          !st.fixedY &&
+          st.sx != null &&
+          st.sy != null &&
+          corrXY != null
+        ) {
           st.constraintCorrXY = corrXY;
         }
-        if (state.coordMode === '3D' && !st.fixedH && seH) {
+        if (state.coordMode === '3D' && modeH !== 'free' && !st.fixedH && seH) {
           st.sh = seH * toMeters;
           st.constraintH = st.h;
+        }
+        setStationConstraintMode(
+          st,
+          'x',
+          resolveStationConstraintMode(modeE, st.fixedX ?? false, st.constraintX != null),
+        );
+        setStationConstraintMode(
+          st,
+          'y',
+          resolveStationConstraintMode(modeN, st.fixedY ?? false, st.constraintY != null),
+        );
+        if (state.coordMode === '3D') {
+          setStationConstraintMode(
+            st,
+            'h',
+            resolveStationConstraintMode(modeH, st.fixedH ?? false, st.constraintH != null),
+          );
         }
         stations[id] = st;
         if (state.coordSystemMode === 'grid') {
@@ -4032,10 +4173,18 @@ export const parseInput = (
         const north = state.order === 'NE' ? (coords[0] ?? 0) : (coords[1] ?? 0);
         const east = state.order === 'NE' ? (coords[1] ?? 0) : (coords[0] ?? 0);
         const h = is3D ? (coords[2] ?? 0) : (coords[0] ?? 0);
-        const { fixities, legacyStarFixed } = parseFixityTokens(tokens, coordCount);
+        const { componentModes, fixities, hasFreeMarkers, legacyStarFixed } = parseFixityTokens(
+          tokens,
+          coordCount,
+        );
         if (legacyStarFixed) {
           logs.push(
             `Warning: legacy lone "*" fixity at line ${lineNum} treated as fixed. Prefer "!" for fixed components.`,
+          );
+        }
+        if (hasFreeMarkers) {
+          logs.push(
+            `Free-marker control components at line ${lineNum} release fixed/weighted constraints for marked coordinates.`,
           );
         }
         const toMeters = linearToMetersFactor();
@@ -4050,26 +4199,57 @@ export const parseInput = (
         const fixN = state.order === 'NE' ? fixities[0] : fixities[1];
         const fixE = state.order === 'NE' ? fixities[1] : fixities[0];
         const fixH = is3D ? fixities[2] : false;
+        const modeN = state.order === 'NE' ? componentModes[0] : componentModes[1];
+        const modeE = state.order === 'NE' ? componentModes[1] : componentModes[0];
+        const modeH = is3D ? componentModes[2] : 'inherit';
         applyFixities(st, { x: fixE, y: fixN, h: is3D ? fixH : undefined }, state.coordMode);
+        if (modeE !== 'inherit') clearStationConstraintComponent(st, 'x');
+        if (modeN !== 'inherit') clearStationConstraintComponent(st, 'y');
+        if (is3D && modeH !== 'inherit') clearStationConstraintComponent(st, 'h');
 
         const seN = state.order === 'NE' ? stds[0] : stds[1];
         const seE = state.order === 'NE' ? stds[1] : stds[0];
         const seH = is3D ? stds[2] : undefined;
         const corrXY = parseConstraintCorrToken(stds[is3D ? 3 : 2]);
-        if (!st.fixedX && seE) {
+        if (modeE !== 'free' && !st.fixedX && seE) {
           st.sx = seE * toMeters;
           st.constraintX = st.x;
         }
-        if (!st.fixedY && seN) {
+        if (modeN !== 'free' && !st.fixedY && seN) {
           st.sy = seN * toMeters;
           st.constraintY = st.y;
         }
-        if (!st.fixedX && !st.fixedY && st.sx != null && st.sy != null && corrXY != null) {
+        if (
+          modeE !== 'free' &&
+          modeN !== 'free' &&
+          !st.fixedX &&
+          !st.fixedY &&
+          st.sx != null &&
+          st.sy != null &&
+          corrXY != null
+        ) {
           st.constraintCorrXY = corrXY;
         }
-        if (is3D && !st.fixedH && seH) {
+        if (is3D && modeH !== 'free' && !st.fixedH && seH) {
           st.sh = seH * toMeters;
           st.constraintH = st.h;
+        }
+        setStationConstraintMode(
+          st,
+          'x',
+          resolveStationConstraintMode(modeE, st.fixedX ?? false, st.constraintX != null),
+        );
+        setStationConstraintMode(
+          st,
+          'y',
+          resolveStationConstraintMode(modeN, st.fixedY ?? false, st.constraintY != null),
+        );
+        if (is3D) {
+          setStationConstraintMode(
+            st,
+            'h',
+            resolveStationConstraintMode(modeH, st.fixedH ?? false, st.constraintH != null),
+          );
         }
 
         stations[id] = st;
@@ -4080,23 +4260,38 @@ export const parseInput = (
         const numeric = tokens.filter(isNumericToken).map((p) => parseFloat(p));
         const elev = numeric[0] ?? 0;
         const stdErr = numeric[1] ?? 0;
-        const { fixities, legacyStarFixed } = parseFixityTokens(tokens, 1);
+        const { componentModes, fixities, hasFreeMarkers, legacyStarFixed } = parseFixityTokens(
+          tokens,
+          1,
+        );
         if (legacyStarFixed) {
           logs.push(
             `Warning: legacy lone "*" fixity at line ${lineNum} treated as fixed. Prefer "!" for fixed components.`,
           );
         }
+        if (hasFreeMarkers) {
+          logs.push(
+            `Free-marker control components at line ${lineNum} release fixed/weighted constraints for marked coordinates.`,
+          );
+        }
         const fixH = fixities[0] ?? false;
+        const modeH = componentModes[0];
         const toMeters = linearToMetersFactor();
         const st: any =
           stations[id] ??
           ({ x: 0, y: 0, h: 0, fixed: false, fixedX: false, fixedY: false, fixedH: false } as any);
         st.h = elev * toMeters;
         applyFixities(st, { h: fixH }, state.coordMode);
-        if (!st.fixedH && stdErr) {
+        if (modeH !== 'inherit') clearStationConstraintComponent(st, 'h');
+        if (modeH !== 'free' && !st.fixedH && stdErr) {
           st.sh = stdErr * toMeters;
           st.constraintH = st.h;
         }
+        setStationConstraintMode(
+          st,
+          'h',
+          resolveStationConstraintMode(modeH, st.fixedH ?? false, st.constraintH != null),
+        );
         stations[id] = st;
       } else if (code === 'D') {
         const explicitInstKnown = parts[1] && instrumentLibrary[parts[1]] ? parts[1] : '';
@@ -6245,6 +6440,12 @@ export const parseInput = (
       if (target.constraintCorrXY == null && incoming.constraintCorrXY != null) {
         target.constraintCorrXY = incoming.constraintCorrXY;
       }
+      if (target.constraintModeX == null && incoming.constraintModeX != null)
+        target.constraintModeX = incoming.constraintModeX;
+      if (target.constraintModeY == null && incoming.constraintModeY != null)
+        target.constraintModeY = incoming.constraintModeY;
+      if (target.constraintModeH == null && incoming.constraintModeH != null)
+        target.constraintModeH = incoming.constraintModeH;
       if (target.heightType == null && incoming.heightType != null)
         target.heightType = incoming.heightType;
       if (target.latDeg == null && incoming.latDeg != null) target.latDeg = incoming.latDeg;
