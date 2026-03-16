@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import { AlertTriangle, CheckCircle } from 'lucide-react';
 import type {
   AdjustmentResult,
@@ -19,6 +19,20 @@ import { RAD_TO_DEG, radToDmsStr } from '../engine/angles';
 import { isLockedPreanalysisObservation } from '../engine/preanalysis';
 
 const FT_PER_M = 3.280839895;
+const REPORT_TABLE_WINDOW_SIZE = 100;
+const REPORT_DIAGNOSTIC_WINDOW_SIZE = 50;
+
+const OBSERVATION_FILTER_OPTIONS: Array<{ value: 'all' | Observation['type']; label: string }> = [
+  { value: 'all', label: 'All observation types' },
+  { value: 'angle', label: 'Angles (TS)' },
+  { value: 'direction', label: 'Directions (DB/DN)' },
+  { value: 'dist', label: 'Distances (TS)' },
+  { value: 'bearing', label: 'Bearings / Azimuths' },
+  { value: 'dir', label: 'Directions (Azimuth)' },
+  { value: 'zenith', label: 'Zenith / Vertical' },
+  { value: 'gps', label: 'GPS Vectors' },
+  { value: 'lev', label: 'Leveling dH' },
+];
 
 const PREANALYSIS_LABEL_TOOLTIPS: Record<string, string> = {
   'Preanalysis Planning Summary':
@@ -316,10 +330,53 @@ const ReportView: React.FC<ReportViewProps> = ({
   const [collapsedDetailSections, setCollapsedDetailSections] = useState<
     Record<CollapsibleDetailSectionId, boolean>
   >(createCollapsedDetailSectionsState);
+  const [reportFilterQuery, setReportFilterQuery] = useState('');
+  const [reportObservationTypeFilter, setReportObservationTypeFilter] = useState<
+    'all' | Observation['type']
+  >('all');
+  const [reportExclusionFilter, setReportExclusionFilter] = useState<
+    'all' | 'included' | 'excluded'
+  >('all');
+  const [tableRowLimits, setTableRowLimits] = useState<Record<string, number>>({});
+  const deferredReportFilterQuery = useDeferredValue(reportFilterQuery);
   const ellipseConfidenceScale = ellipseMode === '95' ? 2.4477 : 1;
   const allDetailSectionsCollapsed = COLLAPSIBLE_DETAIL_SECTION_IDS.every(
     (id) => collapsedDetailSections[id],
   );
+  const normalizedReportFilterQuery = deferredReportFilterQuery.trim().toLowerCase();
+  const normalizeSearchText = useCallback(
+    (...parts: Array<string | number | null | undefined>): string =>
+      parts
+        .filter((part) => part != null && `${part}`.trim() !== '')
+        .join(' ')
+        .toLowerCase(),
+    [],
+  );
+  const matchesReportQuery = useCallback(
+    (...parts: Array<string | number | null | undefined>): boolean =>
+      normalizedReportFilterQuery === '' ||
+      normalizeSearchText(...parts).includes(normalizedReportFilterQuery),
+    [normalizeSearchText, normalizedReportFilterQuery],
+  );
+  const observationFilterText = useCallback((obs: Observation): string => {
+    if (obs.type === 'angle') return `${obs.at} ${obs.from} ${obs.to}`;
+    if (obs.type === 'direction') return `${obs.at} ${obs.to} ${obs.setId ?? ''}`;
+    if ('from' in obs && 'to' in obs) return `${obs.from} ${obs.to}`;
+    return '';
+  }, []);
+  const rowLimitFor = (key: string, defaultSize = REPORT_TABLE_WINDOW_SIZE): number =>
+    tableRowLimits[key] ?? defaultSize;
+  const visibleRowsFor = <T,>(
+    key: string,
+    rows: T[],
+    defaultSize = REPORT_TABLE_WINDOW_SIZE,
+  ): T[] => rows.slice(0, rowLimitFor(key, defaultSize));
+  const showMoreRows = (key: string, step = REPORT_TABLE_WINDOW_SIZE) => {
+    setTableRowLimits((prev) => ({
+      ...prev,
+      [key]: (prev[key] ?? step) + step,
+    }));
+  };
   const isSectionCollapsed = (id: CollapsibleDetailSectionId): boolean =>
     collapsedDetailSections[id] ?? false;
   const toggleDetailSection = (id: CollapsibleDetailSectionId) => {
@@ -338,6 +395,16 @@ const ReportView: React.FC<ReportViewProps> = ({
     });
   };
 
+  useEffect(() => {
+    setTableRowLimits({});
+  }, [
+    excludedIds,
+    normalizedReportFilterQuery,
+    reportExclusionFilter,
+    reportObservationTypeFilter,
+    result,
+  ]);
+
   const sortedObs = useMemo<SortedObservation[]>(
     () =>
       [...result.observations]
@@ -345,15 +412,33 @@ const ReportView: React.FC<ReportViewProps> = ({
         .sort((a, b) => Math.abs(b.stdRes || 0) - Math.abs(a.stdRes || 0)),
     [result.observations],
   );
+  const filteredSortedObs = useMemo(
+    () =>
+      sortedObs.filter((obs) => {
+        if (reportObservationTypeFilter !== 'all' && obs.type !== reportObservationTypeFilter)
+          return false;
+        if (reportExclusionFilter === 'included' && excludedIds.has(obs.id)) return false;
+        if (reportExclusionFilter === 'excluded' && !excludedIds.has(obs.id)) return false;
+        return matchesReportQuery(obs.type, obs.sourceLine, observationFilterText(obs));
+      }),
+    [
+      excludedIds,
+      matchesReportQuery,
+      observationFilterText,
+      reportExclusionFilter,
+      reportObservationTypeFilter,
+      sortedObs,
+    ],
+  );
   const observationsByType = useMemo(() => {
     const byTypeMap = new Map<Observation['type'], SortedObservation[]>();
-    sortedObs.forEach((obs) => {
+    filteredSortedObs.forEach((obs) => {
       const list = byTypeMap.get(obs.type) ?? [];
       list.push(obs);
       byTypeMap.set(obs.type, list);
     });
     return byTypeMap;
-  }, [sortedObs]);
+  }, [filteredSortedObs]);
   const byType = (type: Observation['type']): SortedObservation[] =>
     observationsByType.get(type) ?? [];
 
@@ -501,6 +586,26 @@ const ReportView: React.FC<ReportViewProps> = ({
       }),
     [result.parseState?.directionSetTreatmentDiagnostics],
   );
+  const visibleTraverseLoopSuspects = visibleRowsFor(
+    'traverse-loop-suspects',
+    traverseLoopSuspects,
+    REPORT_DIAGNOSTIC_WINDOW_SIZE,
+  );
+  const visibleGpsLoopSuspects = visibleRowsFor(
+    'gps-loop-suspects',
+    gpsLoopSuspects,
+    REPORT_DIAGNOSTIC_WINDOW_SIZE,
+  );
+  const visibleLevelingLoopSuspects = visibleRowsFor(
+    'leveling-loop-suspects',
+    levelingLoopSuspects,
+    REPORT_DIAGNOSTIC_WINDOW_SIZE,
+  );
+  const visibleDirectionRejects = visibleRowsFor(
+    'direction-reject-diagnostics',
+    directionRejects,
+    REPORT_DIAGNOSTIC_WINDOW_SIZE,
+  );
   const aliasTrace = useMemo(
     () =>
       [...(result.parseState?.aliasTrace ?? [])].sort((a, b) => {
@@ -609,11 +714,59 @@ const ReportView: React.FC<ReportViewProps> = ({
   );
   const descriptionReconcileMode = result.parseState?.descriptionReconcileMode ?? 'first';
   const descriptionAppendDelimiter = result.parseState?.descriptionAppendDelimiter ?? ' | ';
-  const reconciledDescriptions = result.parseState?.reconciledDescriptions ?? {};
+  const reconciledDescriptions = useMemo(
+    () => result.parseState?.reconciledDescriptions ?? {},
+    [result.parseState?.reconciledDescriptions],
+  );
   const stationDescription = (stationId: string): string =>
     reconciledDescriptions[stationId] ?? '-';
-  const stationCovariances = result.stationCovariances ?? [];
-  const relativeCovariances = result.relativeCovariances ?? [];
+  const stationCovariances = useMemo(() => result.stationCovariances ?? [], [result.stationCovariances]);
+  const relativeCovariances = useMemo(
+    () => result.relativeCovariances ?? [],
+    [result.relativeCovariances],
+  );
+  const filteredStationRows = useMemo(
+    () =>
+      Object.entries(result.stations).filter(([stationId, station]) =>
+        matchesReportQuery(
+          stationId,
+          reconciledDescriptions[stationId],
+          station.fixed ? 'fixed' : 'adjusted',
+          station.x,
+          station.y,
+          station.h,
+        ),
+      ),
+    [matchesReportQuery, reconciledDescriptions, result.stations],
+  );
+  const filteredStationCovariances = useMemo(
+    () =>
+      stationCovariances.filter((block) =>
+        matchesReportQuery(
+          block.stationId,
+          reconciledDescriptions[block.stationId],
+          block.cEE,
+          block.cEN,
+          block.cNN,
+          block.cHH,
+        ),
+      ),
+    [matchesReportQuery, reconciledDescriptions, stationCovariances],
+  );
+  const filteredRelativeCovariances = useMemo(
+    () =>
+      relativeCovariances.filter((rel) =>
+        matchesReportQuery(rel.from, rel.to, rel.connectionTypes.join(' '), rel.sigmaDist, rel.sigmaAz),
+      ),
+    [matchesReportQuery, relativeCovariances],
+  );
+  const filteredRelativePrecision = useMemo(
+    () =>
+      (result.relativePrecision ?? []).filter((rel) =>
+        matchesReportQuery(rel.from, rel.to, rel.sigmaDist, rel.sigmaAz),
+      ),
+    [matchesReportQuery, result.relativePrecision],
+  );
   const weakGeometryDiagnostics = result.weakGeometryDiagnostics;
   const preanalysisImpactDiagnostics = result.preanalysisImpactDiagnostics;
   const lockedPreanalysisObservations = useMemo(
@@ -1046,12 +1199,38 @@ const ReportView: React.FC<ReportViewProps> = ({
     );
   };
 
+  const renderLoadMoreFooter = (
+    key: string,
+    shownCount: number,
+    totalCount: number,
+    step = REPORT_TABLE_WINDOW_SIZE,
+  ) => {
+    if (totalCount <= shownCount) return null;
+    return (
+      <div className="flex items-center justify-between gap-3 px-4 py-2 border-t border-slate-800/60 text-xs text-slate-400">
+        <span>
+          Showing {shownCount} of {totalCount} rows
+        </span>
+        <button
+          type="button"
+          onClick={() => showMoreRows(key, step)}
+          className="px-3 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-100"
+          data-report-load-more={key}
+        >
+          Show more
+        </button>
+      </div>
+    );
+  };
+
   const renderTable = (
     obsList: Observation[],
     title: string,
     sectionId?: CollapsibleDetailSectionId,
   ) => {
     if (!obsList.length) return null;
+    const tableKey = sectionId ? `observations-${sectionId}` : null;
+    const visibleObsList = tableKey ? visibleRowsFor(tableKey, obsList) : obsList;
     const collapsed = sectionId ? isSectionCollapsed(sectionId) : false;
     return (
       <div className="mb-6 bg-slate-900/30 border border-slate-800/50 rounded overflow-hidden">
@@ -1066,248 +1245,259 @@ const ReportView: React.FC<ReportViewProps> = ({
           <div className="bg-slate-800/50 px-4 py-2 border-b border-slate-700 flex items-center justify-between">
             <span className="text-blue-400 font-bold uppercase tracking-wider text-xs">{title}</span>
             <span className="text-[10px] text-slate-500">
-              Toggle exclusions below and click Re-run
+              {obsList.length} row{obsList.length === 1 ? '' : 's'}
             </span>
           </div>
         )}
         {!collapsed && (
-          <table className="w-full text-left text-xs">
-          <thead>
-            <tr className="text-slate-500 border-b border-slate-800/50">
-              <th className="py-2 px-4">Use</th>
-              <th className="py-2">Type</th>
-              <th className="py-2">Stations</th>
-              <th className="py-2 text-right">Line</th>
-              <th className="py-2 text-right">Obs</th>
-              <th className="py-2 text-right">Calc</th>
-              <th className="py-2 text-right">Residual</th>
-              <th className="py-2 text-right">EffDist ({units})</th>
-              <th className="py-2 text-right">StdRes</th>
-              <th className="py-2 text-right">Redund</th>
-              <th className="py-2 text-right">Local</th>
-              <th className="py-2 text-right">MDB</th>
-              <th className="py-2 text-right px-4">StdDev (override)</th>
-            </tr>
-          </thead>
-          <tbody className="text-slate-300">
-            {obsList.map((obs, i) => {
-              const isFail = Math.abs(obs.stdRes || 0) > 3;
-              const isWarn = Math.abs(obs.stdRes || 0) > 1 && !isFail;
-              const excluded = excludedIds.has(obs.id);
-              let stationsLabel = '';
-              let obsStr = '';
-              let calcStr = '';
-              let resStr = '';
-              let stdResStr = '-';
-              let redundancyStr = '-';
-              let localStr = '-';
-              let mdbStr = '-';
-              let effectiveDistanceStr = '-';
-              let stdDevVal = obs.stdDev * unitScale;
-              const sigmaSource = obs.sigmaSource || 'explicit';
-              const sigmaPlaceholder =
-                sigmaSource === 'default'
-                  ? 'auto'
-                  : sigmaSource === 'fixed'
-                    ? 'fixed'
-                    : sigmaSource === 'float'
-                      ? 'float'
-                      : '';
-              const angular = isAngularType(obs.type);
-
-              if (obs.type === 'angle') {
-                stationsLabel = `${obs.at}-${obs.from}-${obs.to}`;
-                obsStr = radToDmsStr(obs.obs);
-                calcStr = obs.calc != null ? radToDmsStr(obs.calc as number) : '-';
-                resStr =
-                  obs.residual != null
-                    ? `${((obs.residual as number) * RAD_TO_DEG * 3600).toFixed(2)}"`
-                    : '-';
-                stdDevVal = obs.stdDev * RAD_TO_DEG * 3600; // arcseconds
-              } else if (obs.type === 'direction') {
-                const reductionLabel =
-                  obs.rawCount != null
-                    ? ` [raw ${obs.rawCount}->1, F1:${obs.rawFace1Count ?? '-'} F2:${obs.rawFace2Count ?? '-'}]`
-                    : '';
-                stationsLabel = `${obs.at}-${obs.to} (${obs.setId})${reductionLabel}`;
-                obsStr = radToDmsStr(obs.obs);
-                calcStr = obs.calc != null ? radToDmsStr(obs.calc as number) : '-';
-                resStr =
-                  obs.residual != null
-                    ? `${((obs.residual as number) * RAD_TO_DEG * 3600).toFixed(2)}"`
-                    : '-';
-                stdDevVal = obs.stdDev * RAD_TO_DEG * 3600; // arcseconds
-              } else if (obs.type === 'dist') {
-                stationsLabel = `${obs.from}-${obs.to}`;
-                obsStr = (obs.obs * unitScale).toFixed(4);
-                calcStr = obs.calc != null ? ((obs.calc as number) * unitScale).toFixed(4) : '-';
-                resStr =
-                  obs.residual != null ? ((obs.residual as number) * unitScale).toFixed(4) : '-';
-              } else if (obs.type === 'gps') {
-                stationsLabel = `${obs.from}-${obs.to}`;
-                obsStr = `dE=${(obs.obs.dE * unitScale).toFixed(3)}, dN=${(
-                  obs.obs.dN * unitScale
-                ).toFixed(3)}`;
-                calcStr =
-                  obs.calc != null
-                    ? `dE=${((obs.calc as { dE: number }).dE * unitScale).toFixed(3)}, dN=${(
-                        obs.calc as { dN: number; dE: number }
-                      ).dN.toFixed(3)}`
-                    : '-';
-                resStr =
-                  obs.residual != null
-                    ? `vE=${((obs.residual as { vE: number }).vE * unitScale).toFixed(3)}, vN=${(
-                        obs.residual as { vN: number; vE: number }
-                      ).vN.toFixed(3)}`
-                    : '-';
-              } else if (obs.type === 'lev') {
-                stationsLabel = `${obs.from}-${obs.to}`;
-                obsStr = (obs.obs * unitScale).toFixed(4);
-                calcStr = obs.calc != null ? ((obs.calc as number) * unitScale).toFixed(4) : '-';
-                resStr =
-                  obs.residual != null ? ((obs.residual as number) * unitScale).toFixed(4) : '-';
-              } else if (obs.type === 'bearing') {
-                stationsLabel = `${obs.from}-${obs.to}`;
-                obsStr = radToDmsStr(obs.obs);
-                calcStr = obs.calc != null ? radToDmsStr(obs.calc as number) : '-';
-                resStr =
-                  obs.residual != null
-                    ? `${((obs.residual as number) * RAD_TO_DEG * 3600).toFixed(2)}"`
-                    : '-';
-                stdDevVal = obs.stdDev * RAD_TO_DEG * 3600;
-              } else if (obs.type === 'dir') {
-                stationsLabel = `${obs.from}-${obs.to}`;
-                obsStr = radToDmsStr(obs.obs);
-                calcStr = obs.calc != null ? radToDmsStr(obs.calc as number) : '-';
-                resStr =
-                  obs.residual != null
-                    ? `${((obs.residual as number) * RAD_TO_DEG * 3600).toFixed(2)}"`
-                    : '-';
-                stdDevVal = obs.stdDev * RAD_TO_DEG * 3600;
-              } else if (obs.type === 'zenith') {
-                stationsLabel = `${obs.from}-${obs.to}`;
-                obsStr = radToDmsStr(obs.obs);
-                calcStr = obs.calc != null ? radToDmsStr(obs.calc as number) : '-';
-                resStr =
-                  obs.residual != null
-                    ? `${((obs.residual as number) * RAD_TO_DEG * 3600).toFixed(2)}"`
-                    : '-';
-                stdDevVal = obs.stdDev * RAD_TO_DEG * 3600;
-              }
-
-              const stdDevDisplay =
-                sigmaSource === 'default' || sigmaSource === 'fixed' || sigmaSource === 'float'
-                  ? ''
-                  : stdDevVal.toFixed(4);
-
-              if (obs.stdResComponents) {
-                stdResStr = `${obs.stdResComponents.tE.toFixed(2)}/${obs.stdResComponents.tN.toFixed(2)}`;
-              } else if (obs.stdRes != null) {
-                stdResStr = obs.stdRes.toFixed(2);
-              }
-
-              if (typeof obs.redundancy === 'object' && obs.redundancy) {
-                redundancyStr = `${obs.redundancy.rE.toFixed(2)}/${obs.redundancy.rN.toFixed(2)}`;
-              } else if (typeof obs.redundancy === 'number') {
-                redundancyStr = obs.redundancy.toFixed(2);
-              }
-              if (obs.localTestComponents) {
-                localStr = `E:${obs.localTestComponents.passE ? 'P' : 'F'} N:${
-                  obs.localTestComponents.passN ? 'P' : 'F'
-                }`;
-              } else if (obs.localTest) {
-                localStr = obs.localTest.pass ? 'PASS' : 'FAIL';
-              }
-              if (obs.mdbComponents) {
-                mdbStr = `E=${formatMdb(obs.mdbComponents.mE, angular)} N=${formatMdb(
-                  obs.mdbComponents.mN,
-                  angular,
-                )}`;
-              } else if (obs.mdb != null) {
-                mdbStr = formatMdb(obs.mdb, angular);
-              }
-              if (angular) {
-                effectiveDistanceStr = formatEffectiveDistance(obs.effectiveDistance);
-              }
-              if (autoSideshotObsIds.has(obs.id)) {
-                stationsLabel = `${stationsLabel} [AUTO-SS]`;
-              }
-              const prismTag = prismAnnotation(obs);
-              if (prismTag) {
-                stationsLabel = `${stationsLabel}${prismTag}`;
-              }
-
-              return (
-                <tr
-                  key={i}
-                  className={`border-b border-slate-800/30 ${excluded ? 'opacity-50' : ''}`}
-                >
-                  <td className="py-1 px-4">
-                    <input
-                      type="checkbox"
-                      checked={!excluded}
-                      onChange={() => onToggleExclude(obs.id)}
-                      className="accent-blue-500"
-                    />
-                  </td>
-                  <td className="py-1 uppercase text-slate-500">
-                    {obs.type === 'dir' ? 'dir' : obs.type}
-                  </td>
-                  <td className="py-1">{stationsLabel}</td>
-                  <td className="py-1 text-right font-mono text-slate-500">
-                    {obs.sourceLine != null ? obs.sourceLine : '-'}
-                  </td>
-                  <td className="py-1 text-right font-mono text-slate-400">{obsStr || '-'}</td>
-                  <td className="py-1 text-right font-mono text-slate-500">{calcStr}</td>
-                  <td
-                    className={`py-1 text-right font-bold font-mono ${
-                      isFail ? 'text-red-500' : isWarn ? 'text-yellow-500' : 'text-green-500'
-                    }`}
-                  >
-                    {resStr}
-                  </td>
-                  <td className="py-1 text-right font-mono text-slate-400">
-                    {effectiveDistanceStr}
-                  </td>
-                  <td className="py-1 text-right font-mono text-slate-400">{stdResStr}</td>
-                  <td className="py-1 text-right font-mono text-slate-500">{redundancyStr}</td>
-                  <td
-                    className={`py-1 text-right font-mono ${
-                      localStr.includes('F') || localStr === 'FAIL'
-                        ? 'text-red-400'
-                        : 'text-slate-400'
-                    }`}
-                  >
-                    {localStr}
-                  </td>
-                  <td className="py-1 text-right font-mono text-slate-500">{mdbStr}</td>
-                  <td className="py-1 px-4 text-right font-mono text-slate-400">
-                    <input
-                      type="number"
-                      className="bg-slate-800 border border-slate-700 rounded px-1 w-20 text-right text-xs"
-                      defaultValue={stdDevDisplay}
-                      placeholder={sigmaPlaceholder}
-                      onBlur={(e) =>
-                        onOverride(obs.id, {
-                          stdDev:
-                            e.target.value.trim() === ''
-                              ? undefined
-                              : obs.type === 'angle' ||
-                                  obs.type === 'direction' ||
-                                  obs.type === 'bearing' ||
-                                  obs.type === 'dir' ||
-                                  obs.type === 'zenith'
-                                ? parseFloat(e.target.value) / (RAD_TO_DEG * 3600)
-                                : parseFloat(e.target.value) / unitScale,
-                        })
-                      }
-                    />
-                  </td>
+          <>
+            <table className="w-full text-left text-xs">
+              <thead>
+                <tr className="text-slate-500 border-b border-slate-800/50">
+                  <th className="py-2 px-4">Use</th>
+                  <th className="py-2">Type</th>
+                  <th className="py-2">Stations</th>
+                  <th className="py-2 text-right">Line</th>
+                  <th className="py-2 text-right">Obs</th>
+                  <th className="py-2 text-right">Calc</th>
+                  <th className="py-2 text-right">Residual</th>
+                  <th className="py-2 text-right">EffDist ({units})</th>
+                  <th className="py-2 text-right">StdRes</th>
+                  <th className="py-2 text-right">Redund</th>
+                  <th className="py-2 text-right">Local</th>
+                  <th className="py-2 text-right">MDB</th>
+                  <th className="py-2 text-right px-4">StdDev (override)</th>
                 </tr>
-              );
-            })}
-          </tbody>
-          </table>
+              </thead>
+              <tbody className="text-slate-300">
+                {visibleObsList.map((obs) => {
+                  const isFail = Math.abs(obs.stdRes || 0) > 3;
+                  const isWarn = Math.abs(obs.stdRes || 0) > 1 && !isFail;
+                  const excluded = excludedIds.has(obs.id);
+                  let stationsLabel = '';
+                  let obsStr = '';
+                  let calcStr = '';
+                  let resStr = '';
+                  let stdResStr = '-';
+                  let redundancyStr = '-';
+                  let localStr = '-';
+                  let mdbStr = '-';
+                  let effectiveDistanceStr = '-';
+                  let stdDevVal = obs.stdDev * unitScale;
+                  const sigmaSource = obs.sigmaSource || 'explicit';
+                  const sigmaPlaceholder =
+                    sigmaSource === 'default'
+                      ? 'auto'
+                      : sigmaSource === 'fixed'
+                        ? 'fixed'
+                        : sigmaSource === 'float'
+                          ? 'float'
+                          : '';
+                  const angular = isAngularType(obs.type);
+
+                  if (obs.type === 'angle') {
+                    stationsLabel = `${obs.at}-${obs.from}-${obs.to}`;
+                    obsStr = radToDmsStr(obs.obs);
+                    calcStr = obs.calc != null ? radToDmsStr(obs.calc as number) : '-';
+                    resStr =
+                      obs.residual != null
+                        ? `${((obs.residual as number) * RAD_TO_DEG * 3600).toFixed(2)}"`
+                        : '-';
+                    stdDevVal = obs.stdDev * RAD_TO_DEG * 3600;
+                  } else if (obs.type === 'direction') {
+                    const reductionLabel =
+                      obs.rawCount != null
+                        ? ` [raw ${obs.rawCount}->1, F1:${obs.rawFace1Count ?? '-'} F2:${obs.rawFace2Count ?? '-'}]`
+                        : '';
+                    stationsLabel = `${obs.at}-${obs.to} (${obs.setId})${reductionLabel}`;
+                    obsStr = radToDmsStr(obs.obs);
+                    calcStr = obs.calc != null ? radToDmsStr(obs.calc as number) : '-';
+                    resStr =
+                      obs.residual != null
+                        ? `${((obs.residual as number) * RAD_TO_DEG * 3600).toFixed(2)}"`
+                        : '-';
+                    stdDevVal = obs.stdDev * RAD_TO_DEG * 3600;
+                  } else if (obs.type === 'dist') {
+                    stationsLabel = `${obs.from}-${obs.to}`;
+                    obsStr = (obs.obs * unitScale).toFixed(4);
+                    calcStr =
+                      obs.calc != null ? ((obs.calc as number) * unitScale).toFixed(4) : '-';
+                    resStr =
+                      obs.residual != null
+                        ? ((obs.residual as number) * unitScale).toFixed(4)
+                        : '-';
+                  } else if (obs.type === 'gps') {
+                    stationsLabel = `${obs.from}-${obs.to}`;
+                    obsStr = `dE=${(obs.obs.dE * unitScale).toFixed(3)}, dN=${(
+                      obs.obs.dN * unitScale
+                    ).toFixed(3)}`;
+                    calcStr =
+                      obs.calc != null
+                        ? `dE=${((obs.calc as { dE: number }).dE * unitScale).toFixed(3)}, dN=${(
+                            obs.calc as { dN: number; dE: number }
+                          ).dN.toFixed(3)}`
+                        : '-';
+                    resStr =
+                      obs.residual != null
+                        ? `vE=${((obs.residual as { vE: number }).vE * unitScale).toFixed(3)}, vN=${(
+                            obs.residual as { vN: number; vE: number }
+                          ).vN.toFixed(3)}`
+                        : '-';
+                  } else if (obs.type === 'lev') {
+                    stationsLabel = `${obs.from}-${obs.to}`;
+                    obsStr = (obs.obs * unitScale).toFixed(4);
+                    calcStr =
+                      obs.calc != null ? ((obs.calc as number) * unitScale).toFixed(4) : '-';
+                    resStr =
+                      obs.residual != null
+                        ? ((obs.residual as number) * unitScale).toFixed(4)
+                        : '-';
+                  } else if (obs.type === 'bearing') {
+                    stationsLabel = `${obs.from}-${obs.to}`;
+                    obsStr = radToDmsStr(obs.obs);
+                    calcStr = obs.calc != null ? radToDmsStr(obs.calc as number) : '-';
+                    resStr =
+                      obs.residual != null
+                        ? `${((obs.residual as number) * RAD_TO_DEG * 3600).toFixed(2)}"`
+                        : '-';
+                    stdDevVal = obs.stdDev * RAD_TO_DEG * 3600;
+                  } else if (obs.type === 'dir') {
+                    stationsLabel = `${obs.from}-${obs.to}`;
+                    obsStr = radToDmsStr(obs.obs);
+                    calcStr = obs.calc != null ? radToDmsStr(obs.calc as number) : '-';
+                    resStr =
+                      obs.residual != null
+                        ? `${((obs.residual as number) * RAD_TO_DEG * 3600).toFixed(2)}"`
+                        : '-';
+                    stdDevVal = obs.stdDev * RAD_TO_DEG * 3600;
+                  } else if (obs.type === 'zenith') {
+                    stationsLabel = `${obs.from}-${obs.to}`;
+                    obsStr = radToDmsStr(obs.obs);
+                    calcStr = obs.calc != null ? radToDmsStr(obs.calc as number) : '-';
+                    resStr =
+                      obs.residual != null
+                        ? `${((obs.residual as number) * RAD_TO_DEG * 3600).toFixed(2)}"`
+                        : '-';
+                    stdDevVal = obs.stdDev * RAD_TO_DEG * 3600;
+                  }
+
+                  const stdDevDisplay =
+                    sigmaSource === 'default' || sigmaSource === 'fixed' || sigmaSource === 'float'
+                      ? ''
+                      : stdDevVal.toFixed(4);
+
+                  if (obs.stdResComponents) {
+                    stdResStr = `${obs.stdResComponents.tE.toFixed(2)}/${obs.stdResComponents.tN.toFixed(2)}`;
+                  } else if (obs.stdRes != null) {
+                    stdResStr = obs.stdRes.toFixed(2);
+                  }
+
+                  if (typeof obs.redundancy === 'object' && obs.redundancy) {
+                    redundancyStr = `${obs.redundancy.rE.toFixed(2)}/${obs.redundancy.rN.toFixed(2)}`;
+                  } else if (typeof obs.redundancy === 'number') {
+                    redundancyStr = obs.redundancy.toFixed(2);
+                  }
+                  if (obs.localTestComponents) {
+                    localStr = `E:${obs.localTestComponents.passE ? 'P' : 'F'} N:${
+                      obs.localTestComponents.passN ? 'P' : 'F'
+                    }`;
+                  } else if (obs.localTest) {
+                    localStr = obs.localTest.pass ? 'PASS' : 'FAIL';
+                  }
+                  if (obs.mdbComponents) {
+                    mdbStr = `E=${formatMdb(obs.mdbComponents.mE, angular)} N=${formatMdb(
+                      obs.mdbComponents.mN,
+                      angular,
+                    )}`;
+                  } else if (obs.mdb != null) {
+                    mdbStr = formatMdb(obs.mdb, angular);
+                  }
+                  if (angular) {
+                    effectiveDistanceStr = formatEffectiveDistance(obs.effectiveDistance);
+                  }
+                  if (autoSideshotObsIds.has(obs.id)) {
+                    stationsLabel = `${stationsLabel} [AUTO-SS]`;
+                  }
+                  const prismTag = prismAnnotation(obs);
+                  if (prismTag) {
+                    stationsLabel = `${stationsLabel}${prismTag}`;
+                  }
+
+                  return (
+                    <tr
+                      key={obs.id}
+                      className={`border-b border-slate-800/30 ${excluded ? 'opacity-50' : ''}`}
+                    >
+                      <td className="py-1 px-4">
+                        <input
+                          type="checkbox"
+                          checked={!excluded}
+                          onChange={() => onToggleExclude(obs.id)}
+                          className="accent-blue-500"
+                        />
+                      </td>
+                      <td className="py-1 uppercase text-slate-500">
+                        {obs.type === 'dir' ? 'dir' : obs.type}
+                      </td>
+                      <td className="py-1">{stationsLabel}</td>
+                      <td className="py-1 text-right font-mono text-slate-500">
+                        {obs.sourceLine != null ? obs.sourceLine : '-'}
+                      </td>
+                      <td className="py-1 text-right font-mono text-slate-400">{obsStr || '-'}</td>
+                      <td className="py-1 text-right font-mono text-slate-500">{calcStr}</td>
+                      <td
+                        className={`py-1 text-right font-bold font-mono ${
+                          isFail ? 'text-red-500' : isWarn ? 'text-yellow-500' : 'text-green-500'
+                        }`}
+                      >
+                        {resStr}
+                      </td>
+                      <td className="py-1 text-right font-mono text-slate-400">
+                        {effectiveDistanceStr}
+                      </td>
+                      <td className="py-1 text-right font-mono text-slate-400">{stdResStr}</td>
+                      <td className="py-1 text-right font-mono text-slate-500">{redundancyStr}</td>
+                      <td
+                        className={`py-1 text-right font-mono ${
+                          localStr.includes('F') || localStr === 'FAIL'
+                            ? 'text-red-400'
+                            : 'text-slate-400'
+                        }`}
+                      >
+                        {localStr}
+                      </td>
+                      <td className="py-1 text-right font-mono text-slate-500">{mdbStr}</td>
+                      <td className="py-1 px-4 text-right font-mono text-slate-400">
+                        <input
+                          type="number"
+                          className="bg-slate-800 border border-slate-700 rounded px-1 w-20 text-right text-xs"
+                          defaultValue={stdDevDisplay}
+                          placeholder={sigmaPlaceholder}
+                          onBlur={(e) =>
+                            onOverride(obs.id, {
+                              stdDev:
+                                e.target.value.trim() === ''
+                                  ? undefined
+                                  : obs.type === 'angle' ||
+                                      obs.type === 'direction' ||
+                                      obs.type === 'bearing' ||
+                                      obs.type === 'dir' ||
+                                      obs.type === 'zenith'
+                                    ? parseFloat(e.target.value) / (RAD_TO_DEG * 3600)
+                                    : parseFloat(e.target.value) / unitScale,
+                            })
+                          }
+                        />
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+            {tableKey
+              ? renderLoadMoreFooter(tableKey, visibleObsList.length, obsList.length)
+              : null}
+          </>
         )}
       </div>
     );
@@ -3452,48 +3642,61 @@ const ReportView: React.FC<ReportViewProps> = ({
             labelClassName: 'text-slate-400',
           })}
           {!isSectionCollapsed('traverse-closure-suspects') && (
-            <table className="w-full text-left text-xs">
-            <thead>
-              <tr className="text-slate-500 border-b border-slate-800/60">
-                <th className="py-2 px-3">#</th>
-                <th className="py-2">Loop</th>
-                <th className="py-2 text-right">Ratio</th>
-                <th className="py-2 text-right">Linear (ppm)</th>
-                <th className="py-2 text-right">Ang Miscl (")</th>
-                <th className="py-2 text-right">Vert Miscl ({units})</th>
-                <th className="py-2 text-right">Severity</th>
-                <th className="py-2 text-right px-3">Status</th>
-              </tr>
-            </thead>
-            <tbody className="text-slate-300">
-              {traverseLoopSuspects.map((l, idx) => (
-                <tr key={`trav-suspect-${l.key}-${idx}`} className="border-b border-slate-800/30">
-                  <td className="py-1 px-3 text-slate-500">{idx + 1}</td>
-                  <td className="py-1">{l.key}</td>
-                  <td className="py-1 text-right font-mono">
-                    {l.closureRatio != null ? `1:${l.closureRatio.toFixed(0)}` : '-'}
-                  </td>
-                  <td className="py-1 text-right font-mono">
-                    {l.linearPpm != null ? l.linearPpm.toFixed(1) : '-'}
-                  </td>
-                  <td className="py-1 text-right font-mono">
-                    {l.angularMisclosureArcSec != null ? l.angularMisclosureArcSec.toFixed(2) : '-'}
-                  </td>
-                  <td className="py-1 text-right font-mono">
-                    {l.verticalMisclosure != null
-                      ? (l.verticalMisclosure * unitScale).toFixed(4)
-                      : '-'}
-                  </td>
-                  <td className="py-1 text-right font-mono">{l.severity.toFixed(1)}</td>
-                  <td
-                    className={`py-1 px-3 text-right font-mono ${l.pass ? 'text-green-400' : 'text-yellow-400'}`}
-                  >
-                    {l.pass ? 'PASS' : 'WARN'}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-            </table>
+            <>
+              <table className="w-full text-left text-xs">
+                <thead>
+                  <tr className="text-slate-500 border-b border-slate-800/60">
+                    <th className="py-2 px-3">#</th>
+                    <th className="py-2">Loop</th>
+                    <th className="py-2 text-right">Ratio</th>
+                    <th className="py-2 text-right">Linear (ppm)</th>
+                    <th className="py-2 text-right">Ang Miscl (")</th>
+                    <th className="py-2 text-right">Vert Miscl ({units})</th>
+                    <th className="py-2 text-right">Severity</th>
+                    <th className="py-2 text-right px-3">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="text-slate-300">
+                  {visibleTraverseLoopSuspects.map((l, idx) => (
+                    <tr
+                      key={`trav-suspect-${l.key}-${idx}`}
+                      className="border-b border-slate-800/30"
+                    >
+                      <td className="py-1 px-3 text-slate-500">{idx + 1}</td>
+                      <td className="py-1">{l.key}</td>
+                      <td className="py-1 text-right font-mono">
+                        {l.closureRatio != null ? `1:${l.closureRatio.toFixed(0)}` : '-'}
+                      </td>
+                      <td className="py-1 text-right font-mono">
+                        {l.linearPpm != null ? l.linearPpm.toFixed(1) : '-'}
+                      </td>
+                      <td className="py-1 text-right font-mono">
+                        {l.angularMisclosureArcSec != null
+                          ? l.angularMisclosureArcSec.toFixed(2)
+                          : '-'}
+                      </td>
+                      <td className="py-1 text-right font-mono">
+                        {l.verticalMisclosure != null
+                          ? (l.verticalMisclosure * unitScale).toFixed(4)
+                          : '-'}
+                      </td>
+                      <td className="py-1 text-right font-mono">{l.severity.toFixed(1)}</td>
+                      <td
+                        className={`py-1 px-3 text-right font-mono ${l.pass ? 'text-green-400' : 'text-yellow-400'}`}
+                      >
+                        {l.pass ? 'PASS' : 'WARN'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {renderLoadMoreFooter(
+                'traverse-loop-suspects',
+                visibleTraverseLoopSuspects.length,
+                traverseLoopSuspects.length,
+                REPORT_DIAGNOSTIC_WINDOW_SIZE,
+              )}
+            </>
           )}
         </div>
       )}
@@ -3779,40 +3982,48 @@ const ReportView: React.FC<ReportViewProps> = ({
             labelClassName: 'text-slate-400',
           })}
           {!isSectionCollapsed('leveling-loop-suspects') && (
-            <table className="w-full text-left text-xs">
-            <thead>
-              <tr className="text-slate-500 border-b border-slate-800/60">
-                <th className="py-2 px-3">#</th>
-                <th className="py-2">Loop</th>
-                <th className="py-2">Path</th>
-                <th className="py-2 text-right">|dH| ({units})</th>
-                <th className="py-2 text-right">Len (km)</th>
-                <th className="py-2 text-right">Tol (mm)</th>
-                <th className="py-2 text-right">mm/sqrt(km)</th>
-                <th className="py-2 text-right px-3">Lines</th>
-              </tr>
-            </thead>
-            <tbody className="text-slate-300">
-              {levelingLoopSuspects.map((loop) => (
-                <tr key={`level-suspect-${loop.key}`} className="border-b border-slate-800/30">
-                  <td className="py-1 px-3 text-slate-500">{loop.rank}</td>
-                  <td className="py-1">{loop.key}</td>
-                  <td className="py-1">{loop.stationPath.join('->')}</td>
-                  <td className="py-1 text-right font-mono">
-                    {(loop.absClosure * unitScale).toFixed(4)}
-                  </td>
-                  <td className="py-1 text-right font-mono">{loop.loopLengthKm.toFixed(3)}</td>
-                  <td className="py-1 text-right font-mono">{loop.toleranceMm.toFixed(2)}</td>
-                  <td className="py-1 text-right font-mono">
-                    {loop.closurePerSqrtKmMm.toFixed(2)}
-                  </td>
-                  <td className="py-1 px-3 text-right font-mono">
-                    {loop.sourceLines.length > 0 ? loop.sourceLines.join(',') : '-'}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-            </table>
+            <>
+              <table className="w-full text-left text-xs">
+                <thead>
+                  <tr className="text-slate-500 border-b border-slate-800/60">
+                    <th className="py-2 px-3">#</th>
+                    <th className="py-2">Loop</th>
+                    <th className="py-2">Path</th>
+                    <th className="py-2 text-right">|dH| ({units})</th>
+                    <th className="py-2 text-right">Len (km)</th>
+                    <th className="py-2 text-right">Tol (mm)</th>
+                    <th className="py-2 text-right">mm/sqrt(km)</th>
+                    <th className="py-2 text-right px-3">Lines</th>
+                  </tr>
+                </thead>
+                <tbody className="text-slate-300">
+                  {visibleLevelingLoopSuspects.map((loop) => (
+                    <tr key={`level-suspect-${loop.key}`} className="border-b border-slate-800/30">
+                      <td className="py-1 px-3 text-slate-500">{loop.rank}</td>
+                      <td className="py-1">{loop.key}</td>
+                      <td className="py-1">{loop.stationPath.join('->')}</td>
+                      <td className="py-1 text-right font-mono">
+                        {(loop.absClosure * unitScale).toFixed(4)}
+                      </td>
+                      <td className="py-1 text-right font-mono">{loop.loopLengthKm.toFixed(3)}</td>
+                      <td className="py-1 text-right font-mono">{loop.toleranceMm.toFixed(2)}</td>
+                      <td className="py-1 text-right font-mono">
+                        {loop.closurePerSqrtKmMm.toFixed(2)}
+                      </td>
+                      <td className="py-1 px-3 text-right font-mono">
+                        {loop.sourceLines.length > 0 ? loop.sourceLines.join(',') : '-'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {renderLoadMoreFooter(
+                'leveling-loop-suspects',
+                visibleLevelingLoopSuspects.length,
+                levelingLoopSuspects.length,
+                REPORT_DIAGNOSTIC_WINDOW_SIZE,
+              )}
+            </>
           )}
         </div>
       )}
@@ -3876,45 +4087,53 @@ const ReportView: React.FC<ReportViewProps> = ({
             labelClassName: 'text-slate-400',
           })}
           {!isSectionCollapsed('gps-loop-suspects') && (
-            <table className="w-full text-left text-xs">
-            <thead>
-              <tr className="text-slate-500 border-b border-slate-800/60">
-                <th className="py-2 px-3">#</th>
-                <th className="py-2">Loop</th>
-                <th className="py-2 text-right">Mag ({units})</th>
-                <th className="py-2 text-right">Tol ({units})</th>
-                <th className="py-2 text-right">Linear (ppm)</th>
-                <th className="py-2 text-right">Ratio</th>
-                <th className="py-2 text-right">Severity</th>
-                <th className="py-2 text-right px-3">Status</th>
-              </tr>
-            </thead>
-            <tbody className="text-slate-300">
-              {gpsLoopSuspects.map((loop, idx) => (
-                <tr
-                  key={`gps-loop-suspect-${loop.key}-${idx}`}
-                  className="border-b border-slate-800/30"
-                >
-                  <td className="py-1 px-3 text-slate-500">{idx + 1}</td>
-                  <td className="py-1">{loop.key}</td>
-                  <td className="py-1 text-right font-mono">
-                    {(loop.closureMag * unitScale).toFixed(4)}
-                  </td>
-                  <td className="py-1 text-right font-mono">
-                    {(loop.toleranceM * unitScale).toFixed(4)}
-                  </td>
-                  <td className="py-1 text-right font-mono">
-                    {loop.linearPpm != null ? loop.linearPpm.toFixed(1) : '-'}
-                  </td>
-                  <td className="py-1 text-right font-mono">
-                    {loop.closureRatio != null ? `1:${loop.closureRatio.toFixed(0)}` : '-'}
-                  </td>
-                  <td className="py-1 text-right font-mono">{loop.severity.toFixed(2)}</td>
-                  <td className="py-1 px-3 text-right font-mono text-yellow-400">WARN</td>
-                </tr>
-              ))}
-            </tbody>
-            </table>
+            <>
+              <table className="w-full text-left text-xs">
+                <thead>
+                  <tr className="text-slate-500 border-b border-slate-800/60">
+                    <th className="py-2 px-3">#</th>
+                    <th className="py-2">Loop</th>
+                    <th className="py-2 text-right">Mag ({units})</th>
+                    <th className="py-2 text-right">Tol ({units})</th>
+                    <th className="py-2 text-right">Linear (ppm)</th>
+                    <th className="py-2 text-right">Ratio</th>
+                    <th className="py-2 text-right">Severity</th>
+                    <th className="py-2 text-right px-3">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="text-slate-300">
+                  {visibleGpsLoopSuspects.map((loop, idx) => (
+                    <tr
+                      key={`gps-loop-suspect-${loop.key}-${idx}`}
+                      className="border-b border-slate-800/30"
+                    >
+                      <td className="py-1 px-3 text-slate-500">{idx + 1}</td>
+                      <td className="py-1">{loop.key}</td>
+                      <td className="py-1 text-right font-mono">
+                        {(loop.closureMag * unitScale).toFixed(4)}
+                      </td>
+                      <td className="py-1 text-right font-mono">
+                        {(loop.toleranceM * unitScale).toFixed(4)}
+                      </td>
+                      <td className="py-1 text-right font-mono">
+                        {loop.linearPpm != null ? loop.linearPpm.toFixed(1) : '-'}
+                      </td>
+                      <td className="py-1 text-right font-mono">
+                        {loop.closureRatio != null ? `1:${loop.closureRatio.toFixed(0)}` : '-'}
+                      </td>
+                      <td className="py-1 text-right font-mono">{loop.severity.toFixed(2)}</td>
+                      <td className="py-1 px-3 text-right font-mono text-yellow-400">WARN</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {renderLoadMoreFooter(
+                'gps-loop-suspects',
+                visibleGpsLoopSuspects.length,
+                gpsLoopSuspects.length,
+                REPORT_DIAGNOSTIC_WINDOW_SIZE,
+              )}
+            </>
           )}
         </div>
       )}
@@ -4188,7 +4407,7 @@ const ReportView: React.FC<ReportViewProps> = ({
                 </tr>
               </thead>
               <tbody className="text-slate-300">
-                {directionRejects.map((r, idx) => (
+                {visibleDirectionRejects.map((r, idx) => (
                   <tr
                     key={`d-rej-${r.setId}-${r.target ?? 'set'}-${r.sourceLine ?? idx}-${idx}`}
                     className="border-b border-slate-800/50"
@@ -4209,6 +4428,12 @@ const ReportView: React.FC<ReportViewProps> = ({
                 ))}
               </tbody>
             </table>
+            {renderLoadMoreFooter(
+              'direction-reject-diagnostics',
+              visibleDirectionRejects.length,
+              directionRejects.length,
+              REPORT_DIAGNOSTIC_WINDOW_SIZE,
+            )}
             </div>
           )}
         </div>
@@ -4575,7 +4800,87 @@ const ReportView: React.FC<ReportViewProps> = ({
             </table>
           </div>}
         </div>
-      )}
+        )}
+
+      <div
+        className="mb-6 border border-slate-800/60 rounded bg-slate-900/40 p-4"
+        style={{ order: -195 }}
+      >
+        <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+          <div className="flex-1 min-w-0">
+            <div className="text-[11px] uppercase tracking-wider text-slate-500 mb-1">
+              Report filters
+            </div>
+            <input
+              type="text"
+              value={reportFilterQuery}
+              onChange={(event) => setReportFilterQuery(event.target.value)}
+              placeholder="Filter by station ID, source line, or table text"
+              aria-label="Report filter text"
+              className="w-full rounded border border-slate-700 bg-slate-950/60 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500"
+            />
+          </div>
+          {!isPreanalysis && (
+            <>
+              <div className="w-full md:w-64">
+                <div className="text-[11px] uppercase tracking-wider text-slate-500 mb-1">
+                  Observation type
+                </div>
+                <select
+                  value={reportObservationTypeFilter}
+                  onChange={(event) =>
+                    setReportObservationTypeFilter(
+                      event.target.value as 'all' | Observation['type'],
+                    )
+                  }
+                  aria-label="Observation type filter"
+                  className="w-full rounded border border-slate-700 bg-slate-950/60 px-3 py-2 text-sm text-slate-100"
+                >
+                  {OBSERVATION_FILTER_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="w-full md:w-48">
+                <div className="text-[11px] uppercase tracking-wider text-slate-500 mb-1">
+                  Exclusion status
+                </div>
+                <select
+                  value={reportExclusionFilter}
+                  onChange={(event) =>
+                    setReportExclusionFilter(
+                      event.target.value as 'all' | 'included' | 'excluded',
+                    )
+                  }
+                  aria-label="Observation exclusion filter"
+                  className="w-full rounded border border-slate-700 bg-slate-950/60 px-3 py-2 text-sm text-slate-100"
+                >
+                  <option value="all">All observations</option>
+                  <option value="included">Included only</option>
+                  <option value="excluded">Excluded only</option>
+                </select>
+              </div>
+            </>
+          )}
+          <button
+            type="button"
+            onClick={() => {
+              setReportFilterQuery('');
+              setReportObservationTypeFilter('all');
+              setReportExclusionFilter('all');
+            }}
+            className="rounded bg-slate-800 px-3 py-2 text-xs text-slate-100 hover:bg-slate-700"
+          >
+            Clear filters
+          </button>
+        </div>
+        <div className="mt-2 text-xs text-slate-500">
+          Observations: {filteredSortedObs.length}/{sortedObs.length}
+          {normalizedReportFilterQuery ? ` | Query: ${deferredReportFilterQuery.trim()}` : ''}
+        </div>
+      </div>
 
       <div className="mb-8" style={{ order: -190 }}>
         <div className="flex items-center justify-between mb-3">
@@ -4620,7 +4925,7 @@ const ReportView: React.FC<ReportViewProps> = ({
               </tr>
             </thead>
             <tbody className="text-slate-300">
-              {Object.entries(result.stations).map(([id, stn]) => (
+              {visibleRowsFor('adjusted-coordinates', filteredStationRows).map(([id, stn]) => (
                 <tr
                   key={id}
                   className="border-b border-slate-800/50 hover:bg-slate-900/50 transition-colors"
@@ -4676,10 +4981,15 @@ const ReportView: React.FC<ReportViewProps> = ({
               ))}
             </tbody>
           </table>
+          {renderLoadMoreFooter(
+            'adjusted-coordinates',
+            visibleRowsFor('adjusted-coordinates', filteredStationRows).length,
+            filteredStationRows.length,
+          )}
         </div>
       </div>
 
-      {isPreanalysis && stationCovariances.length > 0 && (
+      {isPreanalysis && filteredStationCovariances.length > 0 && (
         <div className="mb-4 border border-slate-800 rounded">
           <div
             className="px-3 py-2 text-xs text-slate-400 uppercase tracking-wider border-b border-slate-800"
@@ -4701,7 +5011,7 @@ const ReportView: React.FC<ReportViewProps> = ({
                 </tr>
               </thead>
               <tbody className="text-slate-300">
-                {stationCovariances.map((block) => (
+                {visibleRowsFor('station-covariances', filteredStationCovariances).map((block) => (
                   <tr
                     key={`station-cov-${block.stationId}`}
                     className="border-b border-slate-800/50"
@@ -4725,11 +5035,16 @@ const ReportView: React.FC<ReportViewProps> = ({
                 ))}
               </tbody>
             </table>
+            {renderLoadMoreFooter(
+              'station-covariances',
+              visibleRowsFor('station-covariances', filteredStationCovariances).length,
+              filteredStationCovariances.length,
+            )}
           </div>
         </div>
       )}
 
-      {isPreanalysis && relativeCovariances.length > 0 && (
+      {isPreanalysis && filteredRelativeCovariances.length > 0 && (
         <div className="mb-4 border border-slate-800 rounded">
           <div
             className="px-3 py-2 text-xs text-slate-400 uppercase tracking-wider border-b border-slate-800"
@@ -4754,7 +5069,8 @@ const ReportView: React.FC<ReportViewProps> = ({
                 </tr>
               </thead>
               <tbody className="text-slate-300">
-                {relativeCovariances.map((rel, idx) => (
+                {visibleRowsFor('relative-covariances', filteredRelativeCovariances).map(
+                  (rel, idx) => (
                   <tr
                     key={`preanalysis-rel-${rel.from}-${rel.to}-${idx}`}
                     className="border-b border-slate-800/50"
@@ -4780,9 +5096,15 @@ const ReportView: React.FC<ReportViewProps> = ({
                       {(rel.cNN * covarianceScale).toExponential(4)}
                     </td>
                   </tr>
-                ))}
+                  ),
+                )}
               </tbody>
             </table>
+            {renderLoadMoreFooter(
+              'relative-covariances',
+              visibleRowsFor('relative-covariances', filteredRelativeCovariances).length,
+              filteredRelativeCovariances.length,
+            )}
           </div>
         </div>
       )}
@@ -4945,7 +5267,7 @@ const ReportView: React.FC<ReportViewProps> = ({
               )}
             </div>
           )}
-          {result.relativePrecision && result.relativePrecision.length > 0 && (
+          {filteredRelativePrecision.length > 0 && (
             <div className="mb-4 border border-slate-800 rounded">
               {renderCollapsibleSectionHeader({
                 sectionId: 'relative-precision-unknowns',
@@ -4971,7 +5293,8 @@ const ReportView: React.FC<ReportViewProps> = ({
                     </tr>
                   </thead>
                   <tbody className="text-slate-300">
-                    {result.relativePrecision.map((rel, idx) => (
+                    {visibleRowsFor('relative-precision', filteredRelativePrecision).map(
+                      (rel, idx) => (
                       <tr
                         key={`${rel.from}-${rel.to}-${idx}`}
                         className="border-b border-slate-800/50"
@@ -5009,9 +5332,15 @@ const ReportView: React.FC<ReportViewProps> = ({
                           {rel.ellipse ? rel.ellipse.theta.toFixed(2) : '-'}
                         </td>
                       </tr>
-                    ))}
+                      ),
+                    )}
                   </tbody>
                 </table>
+                {renderLoadMoreFooter(
+                  'relative-precision',
+                  visibleRowsFor('relative-precision', filteredRelativePrecision).length,
+                  filteredRelativePrecision.length,
+                )}
                 </div>
               )}
             </div>
