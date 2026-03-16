@@ -503,25 +503,33 @@ export type AdjustedPointsColumnId = 'P' | 'N' | 'E' | 'Z' | 'D' | 'LAT' | 'LON'
 export type AdjustedPointsDelimiter = 'comma' | 'space' | 'tab';
 export type AdjustedPointsOutputFormat = 'csv' | 'text';
 export type AdjustedPointsPresetId = 'PNEZD' | 'PENZD' | 'PNEZ' | 'PENZ' | 'NEZ' | 'PEN' | 'custom';
-export type AdjustedPointsRotationScope = 'all' | 'selected';
+export type AdjustedPointsTransformScope = 'all' | 'selected';
+export type AdjustedPointsRotationScope = AdjustedPointsTransformScope;
+export type AdjustedPointsTranslationMethod = 'direction-distance' | 'anchor-coordinate';
 
 export interface AdjustedPointsRotationTransformSettings {
   enabled: boolean;
   angleDeg: number;
-  pivotStationId: string;
-  scope: AdjustedPointsRotationScope;
-  selectedStationIds: string[];
 }
 
 export interface AdjustedPointsTranslationTransformSettings {
   enabled: boolean;
+  method: AdjustedPointsTranslationMethod;
+  azimuthDeg: number;
+  distance: number;
+  targetE: number;
+  targetN: number;
 }
 
 export interface AdjustedPointsScaleTransformSettings {
   enabled: boolean;
+  factor: number;
 }
 
 export interface AdjustedPointsTransformSettings {
+  referenceStationId: string;
+  scope: AdjustedPointsTransformScope;
+  selectedStationIds: string[];
   rotation: AdjustedPointsRotationTransformSettings;
   translation: AdjustedPointsTranslationTransformSettings;
   scale: AdjustedPointsScaleTransformSettings;

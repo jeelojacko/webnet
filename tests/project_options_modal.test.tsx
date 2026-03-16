@@ -84,11 +84,14 @@ describe('Project Options modal layout', () => {
     expect(html).toContain('Save Project');
     expect(html).toContain('Adjusted Points Export');
     expect(html).toContain('Transform');
+    expect(html).toContain('Reference Point');
     expect(html).toContain('Rotation');
     expect(html).toContain('Translation');
     expect(html).toContain('Scale');
-    expect(html).toContain('Coming Soon');
+    expect(html).not.toContain('Coming Soon');
     expect(html).toContain('Enable Rotation');
+    expect(html).toContain('Enable Translation');
+    expect(html).toContain('Enable Scale');
     expect(html).toContain('All Points');
     expect(html).toContain('Select Points');
     expect(html).toContain('Adjusted Points Preset');

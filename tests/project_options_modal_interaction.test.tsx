@@ -352,7 +352,7 @@ describe('Project Options modal interactions', () => {
       expect(toggle.checked).toBe(false);
       await clickToggleForSettingsRow(app.container, 'Enable Rotation');
 
-      const angle = findInputForSettingsRow(app.container, 'Angle (deg)');
+      const angle = findInputForSettingsRow(app.container, 'Angle (deg or dms)');
       await setInputValue(angle, '22.5');
       await clickButtonByExactText(app.container, 'Select Points');
 
@@ -361,10 +361,9 @@ describe('Project Options modal interactions', () => {
       await clickButtonByExactText(app.container, 'Other Files');
 
       const reopenedToggle = getToggleForSettingsRow(app.container, 'Enable Rotation');
-      const reopenedAngle = findInputForSettingsRow(app.container, 'Angle (deg)');
+      const reopenedAngle = findInputForSettingsRow(app.container, 'Angle (deg or dms)');
       expect(reopenedToggle.checked).toBe(true);
-      expect(reopenedAngle.value).toBe('22.5');
-      expect(app.container.textContent).toContain('Selected points:');
+      expect(Number.parseFloat(reopenedAngle.value)).toBeCloseTo(22.5, 6);
     } finally {
       await app.cleanup();
     }
@@ -374,7 +373,7 @@ describe('Project Options modal interactions', () => {
     const app = await mountApp('other-files');
     try {
       await clickToggleForSettingsRow(app.container, 'Enable Rotation');
-      const angle = findInputForSettingsRow(app.container, 'Angle (deg)');
+      const angle = findInputForSettingsRow(app.container, 'Angle (deg or dms)');
       await setInputValue(angle, '45');
 
       await clickButtonByExactText(app.container, 'Cancel');
@@ -382,15 +381,69 @@ describe('Project Options modal interactions', () => {
       await clickButtonByExactText(app.container, 'Other Files');
 
       const reopenedToggle = getToggleForSettingsRow(app.container, 'Enable Rotation');
-      const reopenedAngle = findInputForSettingsRow(app.container, 'Angle (deg)');
+      const reopenedAngle = findInputForSettingsRow(app.container, 'Angle (deg or dms)');
       expect(reopenedToggle.checked).toBe(false);
-      expect(reopenedAngle.value).toBe('0');
+      expect(Number.parseFloat(reopenedAngle.value)).toBeCloseTo(0, 10);
     } finally {
       await app.cleanup();
     }
   });
 
-  it('supports select-points popup OK/Cancel semantics for rotation scope', async () => {
+  it('accepts DMS input for rotation angle and translation azimuth fields', async () => {
+    const app = await mountApp('other-files');
+    try {
+      await clickToggleForSettingsRow(app.container, 'Enable Rotation');
+      const rotationAngle = findInputForSettingsRow(app.container, 'Angle (deg or dms)');
+      await setInputValue(rotationAngle, '273-22-56.3');
+
+      await clickToggleForSettingsRow(app.container, 'Enable Translation');
+      const azimuth = findInputForSettingsRow(app.container, 'Azimuth (deg or dms)');
+      await setInputValue(azimuth, '273-22-56.3');
+
+      await clickButtonByExactText(app.container, 'Apply');
+      await clickOpenProjectOptions(app.container);
+      await clickButtonByExactText(app.container, 'Other Files');
+
+      const reopenedRotation = findInputForSettingsRow(app.container, 'Angle (deg or dms)');
+      const reopenedAzimuth = findInputForSettingsRow(app.container, 'Azimuth (deg or dms)');
+      expect(Number.parseFloat(reopenedRotation.value)).toBeCloseTo(273.38230556, 6);
+      expect(Number.parseFloat(reopenedAzimuth.value)).toBeCloseTo(273.38230556, 6);
+    } finally {
+      await app.cleanup();
+    }
+  });
+
+  it('shows inline rotation error and blocks apply when rotation angle is above 360', async () => {
+    const app = await mountApp('other-files');
+    try {
+      await clickToggleForSettingsRow(app.container, 'Enable Rotation');
+      const rotationAngle = findInputForSettingsRow(app.container, 'Angle (deg or dms)');
+      await setInputValue(rotationAngle, '361');
+
+      await clickButtonByExactText(app.container, 'Apply');
+      expect(app.container.textContent).toContain('Error: direction cannot be above 360.');
+      expect(app.container.textContent).toContain('Project Options');
+    } finally {
+      await app.cleanup();
+    }
+  });
+
+  it('shows inline azimuth format error and blocks apply when azimuth syntax is invalid', async () => {
+    const app = await mountApp('other-files');
+    try {
+      await clickToggleForSettingsRow(app.container, 'Enable Translation');
+      const azimuth = findInputForSettingsRow(app.container, 'Azimuth (deg or dms)');
+      await setInputValue(azimuth, 'd--m-s');
+
+      await clickButtonByExactText(app.container, 'Apply');
+      expect(app.container.textContent).toContain('Error: azimuth not in correct format.');
+      expect(app.container.textContent).toContain('Project Options');
+    } finally {
+      await app.cleanup();
+    }
+  });
+
+  it('supports select-points popup OK/Cancel semantics for shared transform scope', async () => {
     const app = await mountApp('other-files');
     try {
       await clickButtonByExactText(app.container, 'Cancel');
@@ -398,10 +451,9 @@ describe('Project Options modal interactions', () => {
       await clickOpenProjectOptions(app.container);
       await clickButtonByExactText(app.container, 'Other Files');
 
-      await clickToggleForSettingsRow(app.container, 'Enable Rotation');
       await clickButtonByExactText(app.container, 'Select Points');
-      expect(app.container.textContent).toContain('Rotation Scope');
-      expect(app.container.textContent).toContain('Pivot station is auto-included');
+      expect(app.container.textContent).toContain('Transform Scope');
+      expect(app.container.textContent).toContain('Reference point is auto-included');
 
       const modalRoot = app.container.querySelector(
         "div[class*='z-[60]']",

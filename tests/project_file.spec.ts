@@ -74,15 +74,22 @@ describe('project file serialization/parsing', () => {
           columns: ['P', 'E', 'N', 'Z'],
           includeLostStations: false,
           transform: {
+            referenceStationId: 'A1',
+            scope: 'selected',
+            selectedStationIds: ['A2', 'A3'],
             rotation: {
               enabled: true,
               angleDeg: 12.5,
-              pivotStationId: 'A1',
-              scope: 'selected',
-              selectedStationIds: ['A2', 'A3'],
             },
-            translation: { enabled: false },
-            scale: { enabled: false },
+            translation: {
+              enabled: false,
+              method: 'direction-distance',
+              azimuthDeg: 0,
+              distance: 0,
+              targetE: 0,
+              targetN: 0,
+            },
+            scale: { enabled: false, factor: 1 },
           },
         }),
       },
@@ -102,14 +109,14 @@ describe('project file serialization/parsing', () => {
     expect(parsed.project.ui.exportFormat).toBe('industry-style');
     expect(parsed.project.ui.settings.convergenceLimit).toBe(0.1);
     expect(parsed.project.ui.adjustedPointsExport.columns).toEqual(['P', 'E', 'N', 'Z']);
-    expect(parsed.project.ui.adjustedPointsExport.transform.rotation.enabled).toBe(true);
-    expect(parsed.project.ui.adjustedPointsExport.transform.rotation.angleDeg).toBe(12.5);
-    expect(parsed.project.ui.adjustedPointsExport.transform.rotation.pivotStationId).toBe('A1');
-    expect(parsed.project.ui.adjustedPointsExport.transform.rotation.scope).toBe('selected');
-    expect(parsed.project.ui.adjustedPointsExport.transform.rotation.selectedStationIds).toEqual([
+    expect(parsed.project.ui.adjustedPointsExport.transform.referenceStationId).toBe('A1');
+    expect(parsed.project.ui.adjustedPointsExport.transform.scope).toBe('selected');
+    expect(parsed.project.ui.adjustedPointsExport.transform.selectedStationIds).toEqual([
       'A2',
       'A3',
     ]);
+    expect(parsed.project.ui.adjustedPointsExport.transform.rotation.enabled).toBe(true);
+    expect(parsed.project.ui.adjustedPointsExport.transform.rotation.angleDeg).toBe(12.5);
     expect(parsed.project.project.selectedInstrument).toBe('S9');
     expect(parsed.project.project.levelLoopCustomPresets).toHaveLength(1);
   });
@@ -165,8 +172,8 @@ describe('project file serialization/parsing', () => {
     expect(parsed.project.ui.parseSettings.parseModeMigrated).toBe(false);
     expect(parsed.project.ui.adjustedPointsExport.columns.length).toBe(6);
     expect(parsed.project.ui.adjustedPointsExport.transform.rotation.enabled).toBe(false);
-    expect(parsed.project.ui.adjustedPointsExport.transform.rotation.scope).toBe('all');
-    expect(parsed.project.ui.adjustedPointsExport.transform.rotation.pivotStationId).toBe('');
+    expect(parsed.project.ui.adjustedPointsExport.transform.scope).toBe('all');
+    expect(parsed.project.ui.adjustedPointsExport.transform.referenceStationId).toBe('');
     expect(parsed.project.project.selectedInstrument).toBe('S9');
   });
 
@@ -206,6 +213,45 @@ describe('project file serialization/parsing', () => {
     expect(parsed.project.ui.parseSettings.parseModeMigrated).toBe(true);
     expect(parsed.project.ui.migration?.parseModeMigrated).toBe(true);
     expect(parsed.project.ui.migration?.migratedAt).toBe('2026-03-09T12:00:00.000Z');
+  });
+
+  it('migrates legacy rotation pivot/scope/selection fields into shared transform fields', () => {
+    const parsed = parseProjectFile(
+      JSON.stringify({
+        kind: 'webnet-project',
+        schemaVersion: 3,
+        mainInput: '.2D',
+        includeFiles: {},
+        ui: {
+          settings: {},
+          parseSettings: {},
+          adjustedPointsExport: {
+            transform: {
+              rotation: {
+                enabled: true,
+                angleDeg: 20,
+                pivotStationId: 'LEGACY_PIVOT',
+                scope: 'selected',
+                selectedStationIds: ['A', 'B'],
+              },
+            },
+          },
+        },
+        project: {
+          projectInstruments: defaults.projectInstruments,
+          selectedInstrument: 'S9',
+          levelLoopCustomPresets: [],
+        },
+      }),
+      defaults,
+    );
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+    expect(parsed.project.ui.adjustedPointsExport.transform.referenceStationId).toBe('LEGACY_PIVOT');
+    expect(parsed.project.ui.adjustedPointsExport.transform.scope).toBe('selected');
+    expect(parsed.project.ui.adjustedPointsExport.transform.selectedStationIds).toEqual(['A', 'B']);
+    expect(parsed.project.ui.adjustedPointsExport.transform.rotation.enabled).toBe(true);
+    expect(parsed.project.ui.adjustedPointsExport.transform.rotation.angleDeg).toBe(20);
   });
 
   it('loads schema v3 include bundles using mainInput/includeFiles fields', () => {

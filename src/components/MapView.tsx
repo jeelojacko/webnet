@@ -9,9 +9,8 @@ import {
 import { RAD_TO_DEG, radToDmsStr } from '../engine/angles';
 import { computeInverse2D, computePivotAngles } from '../engine/mapTools';
 import {
-  getAdjustedPointsExportStationIds,
+  buildAdjustedPointsTransformPreview,
   sanitizeAdjustedPointsExportSettings,
-  validateAdjustedPointsRotationTransform,
 } from '../engine/adjustedPointsExport';
 
 const FT_PER_M = 3.280839895;
@@ -22,7 +21,6 @@ const MAX_ZOOM = 200;
 const MIDDLE_DBLCLICK_MS = 320;
 const DEG_TO_RAD = Math.PI / 180;
 const MAX_ELLIPSOID_SAMPLES = 28;
-const ROTATION_TINY_EPSILON = 1e-10;
 
 type ToolPanel = 'none' | 'points' | 'inverse' | 'angles';
 
@@ -126,114 +124,42 @@ const MapView: React.FC<MapViewProps> = ({
         enabled: false,
         available: false,
         reason: '',
-        angleDeg: 0,
-        pivotStationId: '',
+        referenceStationId: '',
         scope: 'all' as const,
-        rotatedByStationId: emptyMap,
+        transformedByStationId: emptyMap,
+        scaleEnabled: false,
+        scaleFactor: 1,
+        rotationEnabled: false,
+        rotationAngleDeg: 0,
+        translationEnabled: false,
+        translationMethod: 'direction-distance' as const,
+        translationAzimuthDeg: 0,
+        translationDistanceM: 0,
       };
     }
-
-    const rotation = cleanAdjustedPointsExportSettings.transform.rotation;
-    if (!rotation.enabled) {
-      return {
-        enabled: false,
-        available: false,
-        reason: '',
-        angleDeg: rotation.angleDeg,
-        pivotStationId: rotation.pivotStationId,
-        scope: rotation.scope,
-        rotatedByStationId: emptyMap,
-      };
-    }
-
-    const validation = validateAdjustedPointsRotationTransform({
+    const preview = buildAdjustedPointsTransformPreview({
       result,
       settings: cleanAdjustedPointsExportSettings,
+      units,
+      includeLostStations: cleanAdjustedPointsExportSettings.includeLostStations,
     });
-    if (!validation.valid) {
-      return {
-        enabled: true,
-        available: false,
-        reason: validation.message,
-        angleDeg: rotation.angleDeg,
-        pivotStationId: rotation.pivotStationId,
-        scope: rotation.scope,
-        rotatedByStationId: emptyMap,
-      };
-    }
-
-    const pivot = stations[rotation.pivotStationId];
-    if (!pivot) {
-      return {
-        enabled: true,
-        available: false,
-        reason: 'Rotation pivot station was not found in adjusted stations.',
-        angleDeg: rotation.angleDeg,
-        pivotStationId: rotation.pivotStationId,
-        scope: rotation.scope,
-        rotatedByStationId: emptyMap,
-      };
-    }
-
-    const exportedStationIds = getAdjustedPointsExportStationIds(
-      result,
-      cleanAdjustedPointsExportSettings.includeLostStations,
-    );
-    const exportedStationIdSet = new Set(exportedStationIds);
-    const rotateStationIds =
-      rotation.scope === 'all'
-        ? exportedStationIds
-        : [
-            ...new Set(
-              [...rotation.selectedStationIds, rotation.pivotStationId].filter((stationId) =>
-                exportedStationIdSet.has(stationId),
-              ),
-            ),
-          ];
-
-    if (rotateStationIds.length === 0) {
-      return {
-        enabled: true,
-        available: false,
-        reason: 'Rotation scope resolved to no stations in the current export set.',
-        angleDeg: rotation.angleDeg,
-        pivotStationId: rotation.pivotStationId,
-        scope: rotation.scope,
-        rotatedByStationId: emptyMap,
-      };
-    }
-
-    const angleRad = (rotation.angleDeg * Math.PI) / 180;
-    const cosTheta = Math.cos(angleRad);
-    const sinTheta = Math.sin(angleRad);
-    const rotatedByStationId = new Map<string, { east: number; north: number }>();
-
-    rotateStationIds.forEach((stationId) => {
-      const station = stations[stationId];
-      if (!station) return;
-      const dEast = station.x - pivot.x;
-      const dNorth = station.y - pivot.y;
-      const rotatedEast = pivot.x + dEast * cosTheta - dNorth * sinTheta;
-      const rotatedNorth = pivot.y + dEast * sinTheta + dNorth * cosTheta;
-      rotatedByStationId.set(stationId, {
-        east: Math.abs(rotatedEast) < ROTATION_TINY_EPSILON ? 0 : rotatedEast,
-        north: Math.abs(rotatedNorth) < ROTATION_TINY_EPSILON ? 0 : rotatedNorth,
-      });
-    });
-
     return {
-      enabled: true,
-      available: rotatedByStationId.size > 0,
-      reason:
-        rotatedByStationId.size > 0
-          ? ''
-          : 'Rotation scope resolved to no adjusted stations after filtering.',
-      angleDeg: rotation.angleDeg,
-      pivotStationId: rotation.pivotStationId,
-      scope: rotation.scope,
-      rotatedByStationId,
+      enabled: preview.enabled,
+      available: preview.available,
+      reason: preview.reason,
+      referenceStationId: preview.referenceStationId,
+      scope: preview.scope,
+      transformedByStationId: preview.transformedByStationId,
+      scaleEnabled: preview.scaleEnabled,
+      scaleFactor: preview.scaleFactor,
+      rotationEnabled: preview.rotationEnabled,
+      rotationAngleDeg: preview.rotationAngleDeg,
+      translationEnabled: preview.translationEnabled,
+      translationMethod: preview.translationMethod,
+      translationAzimuthDeg: preview.translationAzimuthDeg,
+      translationDistanceM: preview.translationDistanceM,
     };
-  }, [cleanAdjustedPointsExportSettings, result, stations]);
+  }, [cleanAdjustedPointsExportSettings, result, units]);
 
   const visibleStationIds = useMemo(
     () =>
@@ -588,8 +514,8 @@ const MapView: React.FC<MapViewProps> = ({
         const toStation = stations[obs.to];
         if (!fromStation || !toStation) return null;
         if (!showLostStations && (fromStation.lost || toStation.lost)) return null;
-        const from = transformedOverlayConfig.rotatedByStationId.get(obs.from);
-        const to = transformedOverlayConfig.rotatedByStationId.get(obs.to);
+        const from = transformedOverlayConfig.transformedByStationId.get(obs.from);
+        const to = transformedOverlayConfig.transformedByStationId.get(obs.to);
         if (!from || !to) return null;
         return {
           key: `tx-line-${idx}`,
@@ -605,7 +531,7 @@ const MapView: React.FC<MapViewProps> = ({
     showLostStations,
     stations,
     transformedOverlayActive,
-    transformedOverlayConfig.rotatedByStationId,
+    transformedOverlayConfig.transformedByStationId,
   ]);
 
   const transformedPoints2d = useMemo(() => {
@@ -614,7 +540,7 @@ const MapView: React.FC<MapViewProps> = ({
     }
     return points
       .map((point) => {
-        const rotated = transformedOverlayConfig.rotatedByStationId.get(point.id);
+        const rotated = transformedOverlayConfig.transformedByStationId.get(point.id);
         if (!rotated) return null;
         return {
           id: point.id,
@@ -633,7 +559,7 @@ const MapView: React.FC<MapViewProps> = ({
           fixed: boolean;
         } => point != null,
       );
-  }, [points, transformedOverlayActive, transformedOverlayConfig.rotatedByStationId]);
+  }, [points, transformedOverlayActive, transformedOverlayConfig.transformedByStationId]);
 
   const project3d = useCallback(
     (point: Vec3) => {
@@ -821,9 +747,15 @@ const MapView: React.FC<MapViewProps> = ({
             <span className="uppercase tracking-wide">Show transformed coordinates</span>
           </label>
           <span className="text-slate-400">
-            Pivot {transformedOverlayConfig.pivotStationId || '-'}; angle{' '}
-            {transformedOverlayConfig.angleDeg.toFixed(6)} deg; scope{' '}
-            {transformedOverlayConfig.scope === 'all' ? 'all points' : 'selected + pivot'}
+            Ref {transformedOverlayConfig.referenceStationId || '-'}; scope{' '}
+            {transformedOverlayConfig.scope === 'all' ? 'all points' : 'selected + reference'}; order
+            scale-&gt;rotate-&gt;translate
+            {transformedOverlayConfig.scaleEnabled &&
+              `; k=${transformedOverlayConfig.scaleFactor.toFixed(6)}`}
+            {transformedOverlayConfig.rotationEnabled &&
+              `; rot=${transformedOverlayConfig.rotationAngleDeg.toFixed(6)}deg`}
+            {transformedOverlayConfig.translationEnabled &&
+              `; tr=${transformedOverlayConfig.translationMethod}, az=${transformedOverlayConfig.translationAzimuthDeg.toFixed(6)}deg, d=${(transformedOverlayConfig.translationDistanceM * unitScale).toFixed(4)} ${units}`}
           </span>
           {!transformedOverlayConfig.available && transformedOverlayConfig.reason && (
             <span className="text-amber-300">{transformedOverlayConfig.reason}</span>

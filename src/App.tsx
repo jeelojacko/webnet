@@ -23,7 +23,7 @@ import ImportReviewModal from './components/ImportReviewModal';
 
 import { DEFAULT_INPUT } from './defaultInput';
 import { LSAEngine } from './engine/adjust';
-import { RAD_TO_DEG, radToDmsStr } from './engine/angles';
+import { RAD_TO_DEG, radToDmsStr, dmsToRad } from './engine/angles';
 import {
   extractAutoAdjustDirectiveFromInput,
   formatAutoAdjustLogLines,
@@ -37,11 +37,11 @@ import {
   ADJUSTED_POINTS_PRESET_COLUMNS,
   DEFAULT_ADJUSTED_POINTS_EXPORT_SETTINGS,
   buildAdjustedPointsExportText,
+  validateAdjustedPointsTransform,
   cloneAdjustedPointsExportSettings,
   getAdjustedPointsExportStationIds,
   inferAdjustedPointsPresetId,
   sanitizeAdjustedPointsExportSettings,
-  validateAdjustedPointsRotationTransform,
 } from './engine/adjustedPointsExport';
 import {
   LEVEL_LOOP_TOLERANCE_PRESETS,
@@ -770,13 +770,19 @@ const SETTINGS_TOOLTIPS = {
     'Preset column-order templates for adjusted points. Manual column edits switch to Custom.',
   adjustedPointsIncludeLost: 'Include or omit lost stations in adjusted-points exports.',
   adjustedPointsTransformRotation:
-    'Rotation is export-only and applies after adjustment. Positive angle rotates counterclockwise about the selected pivot.',
-  adjustedPointsTransformPivot:
-    'Pivot station used as the fixed rotation origin for adjusted-points export.',
+    'Rotation is export-only and applies after adjustment. Positive angle rotates counterclockwise about the shared reference point.',
+  adjustedPointsTransformReference:
+    'Shared reference point used by transform actions: rotation and scale pivot around it, translation uses it as the anchor point.',
   adjustedPointsTransformScope:
-    'All Points rotates every exported station. Select Points rotates only selected stations plus the pivot.',
+    'All Points transforms every exported station. Select Points applies transforms only to selected stations plus the shared reference point.',
   adjustedPointsTransformAngle:
-    'Rotation angle in decimal degrees. Positive values rotate counterclockwise.',
+    'Rotation angle accepts decimal degrees or DMS (ddd-mm-ss.s). Positive values rotate counterclockwise.',
+  adjustedPointsTransformTranslationAzimuth:
+    'Translation azimuth accepts decimal degrees or DMS (ddd-mm-ss.s), using surveying convention 0=N, 90=E (clockwise).',
+  adjustedPointsTransformTranslationMethod:
+    'Choose translation by azimuth+distance or by assigning a new E/N coordinate to the shared reference station.',
+  adjustedPointsTransformScale:
+    'Scale factor (>0) resizes N/E coordinates about the shared reference point.',
   projectFiles:
     'Save or open complete project workspaces (input + settings + instruments + export preferences) without storing solved results.',
 } as const;
@@ -835,7 +841,7 @@ const PROJECT_OPTION_SECTION_TOOLTIPS: Record<string, string> = {
   'Adjusted Points Export':
     'Configure adjusted-point output presets, delimiter, and dynamic column selection/order.',
   Transform:
-    'Post-adjustment export transform settings. Rotation is active in v1; translation and scale are placeholders.',
+    'Post-adjustment export/map transform settings. All transforms are post-adjustment only and never alter solve results.',
 };
 
 const PROJECT_OPTION_TABS: Array<{ id: ProjectOptionsTab; label: string }> = [
@@ -1187,6 +1193,14 @@ const App: React.FC<AppProps> = ({
     useState(false);
   const [adjustedPointsTransformSelectedDraft, setAdjustedPointsTransformSelectedDraft] =
     useState<string[]>([]);
+  const [adjustedPointsRotationAngleInput, setAdjustedPointsRotationAngleInput] = useState('0');
+  const [adjustedPointsTranslationAzimuthInput, setAdjustedPointsTranslationAzimuthInput] =
+    useState('0');
+  const [adjustedPointsRotationAngleError, setAdjustedPointsRotationAngleError] = useState<
+    string | null
+  >(null);
+  const [adjustedPointsTranslationAzimuthError, setAdjustedPointsTranslationAzimuthError] =
+    useState<string | null>(null);
   const [selectedInstrumentDraft, setSelectedInstrumentDraft] = useState(selectedInstrument);
   const [excludedIds, setExcludedIds] = useState<Set<number>>(new Set());
   const [overrides, setOverrides] = useState<Record<number, ObservationOverride>>({});
@@ -1256,27 +1270,60 @@ const App: React.FC<AppProps> = ({
       adjustedPointsExportSettingsDraft.includeLostStations,
     );
   }, [result, adjustedPointsExportSettingsDraft.includeLostStations]);
-  const adjustedPointsRotationDraftValidationMessage = useMemo(() => {
-    const rotation = adjustedPointsExportSettingsDraft.transform.rotation;
-    if (!rotation.enabled) return null;
-    if (!rotation.pivotStationId.trim()) return 'Rotation requires a pivot station.';
-    if (!result) return 'Run adjustment before exporting rotated coordinates.';
-    const validation = validateAdjustedPointsRotationTransform({
+  const adjustedPointsTransformDraftValidationMessage = useMemo(() => {
+    const transform = adjustedPointsExportSettingsDraft.transform;
+    const anyEnabled =
+      transform.rotation.enabled || transform.translation.enabled || transform.scale.enabled;
+    if (!anyEnabled) return null;
+    if (!result) return 'Run adjustment before exporting transformed coordinates.';
+    const validation = validateAdjustedPointsTransform({
       result,
       settings: adjustedPointsExportSettingsDraft,
     });
     if (validation.valid) return null;
     return validation.message;
   }, [result, adjustedPointsExportSettingsDraft]);
-  const adjustedPointsRotationSelectedInSetCount = useMemo(() => {
+  const adjustedPointsTransformSelectedInSetCount = useMemo(() => {
     const stationSet = new Set(adjustedPointsDraftStationIds);
-    return adjustedPointsExportSettingsDraft.transform.rotation.selectedStationIds.filter((id) =>
+    return adjustedPointsExportSettingsDraft.transform.selectedStationIds.filter((id) =>
       stationSet.has(id),
     ).length;
   }, [
     adjustedPointsDraftStationIds,
-    adjustedPointsExportSettingsDraft.transform.rotation.selectedStationIds,
+    adjustedPointsExportSettingsDraft.transform.selectedStationIds,
   ]);
+
+  const parseTransformAngleInput = (raw: string): number | null => {
+    const trimmed = raw.trim();
+    if (!trimmed) return null;
+    const dmsPattern = /^[+-]?\d{1,3}-\d{1,2}-\d{1,2}(?:\.\d+)?$/;
+    if (dmsPattern.test(trimmed)) {
+      const body = trimmed.replace(/^[+-]/, '');
+      const parts = body.split('-');
+      if (parts.length !== 3) return null;
+      const degrees = Number.parseInt(parts[0], 10);
+      const minutes = Number.parseInt(parts[1], 10);
+      const seconds = Number.parseFloat(parts[2]);
+      if (
+        !Number.isFinite(degrees) ||
+        !Number.isFinite(minutes) ||
+        !Number.isFinite(seconds) ||
+        minutes < 0 ||
+        minutes >= 60 ||
+        seconds < 0 ||
+        seconds >= 60
+      ) {
+        return null;
+      }
+      const rad = dmsToRad(trimmed);
+      if (!Number.isFinite(rad)) return null;
+      return rad * RAD_TO_DEG;
+    }
+    const decimalPattern = /^[+-]?(?:\d+\.?\d*|\.\d+)$/;
+    if (!decimalPattern.test(trimmed)) return null;
+    const parsed = Number.parseFloat(trimmed);
+    return Number.isFinite(parsed) ? parsed : null;
+  };
 
   useEffect(() => {
     const activeTheme = normalizeUiTheme(
@@ -4511,16 +4558,16 @@ const App: React.FC<AppProps> = ({
 
   const handleExportAdjustedPoints = async () => {
     if (!result) return;
-    const rotationValidation = validateAdjustedPointsRotationTransform({
+    const transformValidation = validateAdjustedPointsTransform({
       result,
       settings: adjustedPointsExportSettings,
     });
-    if (!rotationValidation.valid) {
+    if (!transformValidation.valid) {
       setImportNotice({
         title: 'Adjusted Points Export Blocked',
         detailLines: [
-          rotationValidation.message,
-          'Open Project Options -> Other Files -> Transform and update rotation settings.',
+          transformValidation.message,
+          'Open Project Options -> Other Files -> Transform and update transform settings.',
         ],
       });
       return;
@@ -5866,6 +5913,8 @@ const App: React.FC<AppProps> = ({
   const closeProjectOptions = () => {
     setIsAdjustedPointsTransformSelectOpen(false);
     setAdjustedPointsTransformSelectedDraft([]);
+    setAdjustedPointsRotationAngleError(null);
+    setAdjustedPointsTranslationAzimuthError(null);
     setIsSettingsModalOpen(false);
   };
 
@@ -5879,6 +5928,14 @@ const App: React.FC<AppProps> = ({
     setProjectInstrumentsDraft(cloneInstrumentLibrary(projectInstruments));
     setLevelLoopCustomPresetsDraft(levelLoopCustomPresets.map((preset) => ({ ...preset })));
     setAdjustedPointsExportSettingsDraft(cloneAdjustedPointsExportSettings(adjustedPointsExportSettings));
+    setAdjustedPointsRotationAngleInput(
+      String(adjustedPointsExportSettings.transform.rotation.angleDeg ?? 0),
+    );
+    setAdjustedPointsTranslationAzimuthInput(
+      String(adjustedPointsExportSettings.transform.translation.azimuthDeg ?? 0),
+    );
+    setAdjustedPointsRotationAngleError(null);
+    setAdjustedPointsTranslationAzimuthError(null);
     setIsAdjustedPointsTransformSelectOpen(false);
     setAdjustedPointsTransformSelectedDraft([]);
     setSelectedInstrumentDraft(selectedInstrument);
@@ -5887,8 +5944,43 @@ const App: React.FC<AppProps> = ({
   };
 
   const applyProjectOptions = () => {
+    const normalizedDraft = cloneAdjustedPointsExportSettings(adjustedPointsExportSettingsDraft);
+    let rotationAngleError: string | null = null;
+    let translationAzimuthError: string | null = null;
+
+    if (normalizedDraft.transform.rotation.enabled) {
+      const parsedRotation = parseTransformAngleInput(adjustedPointsRotationAngleInput);
+      if (parsedRotation == null) {
+        rotationAngleError = 'Error: angle not in correct format.';
+      } else if (parsedRotation > 360) {
+        rotationAngleError = 'Error: direction cannot be above 360.';
+      } else {
+        normalizedDraft.transform.rotation.angleDeg = parsedRotation;
+      }
+    }
+
+    if (
+      normalizedDraft.transform.translation.enabled &&
+      normalizedDraft.transform.translation.method === 'direction-distance'
+    ) {
+      const parsedAzimuth = parseTransformAngleInput(adjustedPointsTranslationAzimuthInput);
+      if (parsedAzimuth == null) {
+        translationAzimuthError = 'Error: azimuth not in correct format.';
+      } else if (parsedAzimuth < 0 || parsedAzimuth > 360) {
+        translationAzimuthError = 'Error: direction must be between 0 and 360.';
+      } else {
+        normalizedDraft.transform.translation.azimuthDeg = parsedAzimuth;
+      }
+    }
+
+    setAdjustedPointsRotationAngleError(rotationAngleError);
+    setAdjustedPointsTranslationAzimuthError(translationAzimuthError);
+    if (rotationAngleError || translationAzimuthError) {
+      return;
+    }
+
     const sanitizedAdjustedPointsSettings = sanitizeAdjustedPointsExportSettings(
-      adjustedPointsExportSettingsDraft,
+      normalizedDraft,
       DEFAULT_ADJUSTED_POINTS_EXPORT_SETTINGS,
     );
     const sanitizedSettings: SettingsState = {
@@ -5904,6 +5996,14 @@ const App: React.FC<AppProps> = ({
     setLevelLoopCustomPresets(levelLoopCustomPresetsDraft.map((preset) => ({ ...preset })));
     setAdjustedPointsExportSettings(cloneAdjustedPointsExportSettings(sanitizedAdjustedPointsSettings));
     setAdjustedPointsExportSettingsDraft(cloneAdjustedPointsExportSettings(sanitizedAdjustedPointsSettings));
+    setAdjustedPointsRotationAngleInput(
+      String(sanitizedAdjustedPointsSettings.transform.rotation.angleDeg ?? 0),
+    );
+    setAdjustedPointsTranslationAzimuthInput(
+      String(sanitizedAdjustedPointsSettings.transform.translation.azimuthDeg ?? 0),
+    );
+    setAdjustedPointsRotationAngleError(null);
+    setAdjustedPointsTranslationAzimuthError(null);
     setSelectedInstrument(selectedInstrumentDraft);
     setShowCrsProjectionParams(false);
     setIsAdjustedPointsTransformSelectOpen(false);
@@ -6057,6 +6157,21 @@ const App: React.FC<AppProps> = ({
     setAdjustedPointsExportSettingsDraft((prev) => ({ ...prev, [key]: value }));
   };
 
+  const handleDraftAdjustedPointsTransformSetting = <
+    K extends keyof AdjustedPointsExportSettings['transform'],
+  >(
+    key: K,
+    value: AdjustedPointsExportSettings['transform'][K],
+  ) => {
+    setAdjustedPointsExportSettingsDraft((prev) => ({
+      ...prev,
+      transform: {
+        ...prev.transform,
+        [key]: value,
+      },
+    }));
+  };
+
   const handleDraftAdjustedPointsRotationSetting = <
     K extends keyof AdjustedPointsExportSettings['transform']['rotation'],
   >(
@@ -6075,9 +6190,59 @@ const App: React.FC<AppProps> = ({
     }));
   };
 
+  const handleDraftAdjustedPointsTranslationSetting = <
+    K extends keyof AdjustedPointsExportSettings['transform']['translation'],
+  >(
+    key: K,
+    value: AdjustedPointsExportSettings['transform']['translation'][K],
+  ) => {
+    setAdjustedPointsExportSettingsDraft((prev) => ({
+      ...prev,
+      transform: {
+        ...prev.transform,
+        translation: {
+          ...prev.transform.translation,
+          [key]: value,
+        },
+      },
+    }));
+  };
+
+  const handleDraftAdjustedPointsScaleSetting = <
+    K extends keyof AdjustedPointsExportSettings['transform']['scale'],
+  >(
+    key: K,
+    value: AdjustedPointsExportSettings['transform']['scale'][K],
+  ) => {
+    setAdjustedPointsExportSettingsDraft((prev) => ({
+      ...prev,
+      transform: {
+        ...prev.transform,
+        scale: {
+          ...prev.transform.scale,
+          [key]: value,
+        },
+      },
+    }));
+  };
+
+  const handleDraftAdjustedPointsRotationAngleInput = (raw: string) => {
+    setAdjustedPointsRotationAngleInput(raw);
+    if (adjustedPointsRotationAngleError) {
+      setAdjustedPointsRotationAngleError(null);
+    }
+  };
+
+  const handleDraftAdjustedPointsTranslationAzimuthInput = (raw: string) => {
+    setAdjustedPointsTranslationAzimuthInput(raw);
+    if (adjustedPointsTranslationAzimuthError) {
+      setAdjustedPointsTranslationAzimuthError(null);
+    }
+  };
+
   const openAdjustedPointsTransformSelectModal = () => {
     setAdjustedPointsTransformSelectedDraft([
-      ...adjustedPointsExportSettingsDraft.transform.rotation.selectedStationIds,
+      ...adjustedPointsExportSettingsDraft.transform.selectedStationIds,
     ]);
     setIsAdjustedPointsTransformSelectOpen(true);
   };
@@ -6102,7 +6267,7 @@ const App: React.FC<AppProps> = ({
     const nextSelected = [...new Set(adjustedPointsTransformSelectedDraft)].filter((id) =>
       stationSet.has(id),
     );
-    handleDraftAdjustedPointsRotationSetting('selectedStationIds', nextSelected);
+    handleDraftAdjustedPointsTransformSetting('selectedStationIds', nextSelected);
     setIsAdjustedPointsTransformSelectOpen(false);
     setAdjustedPointsTransformSelectedDraft([]);
   };
@@ -8085,70 +8250,34 @@ const App: React.FC<AppProps> = ({
                     tooltip={PROJECT_OPTION_SECTION_TOOLTIPS.Transform}
                     className="xl:col-span-2"
                   >
-                    <div className="grid grid-cols-1 xl:grid-cols-3 gap-3">
+                    <div className="space-y-3">
                       <div className="rounded-md border border-cyan-500/50 bg-cyan-900/10 p-3 space-y-3">
                         <div className="text-[11px] uppercase tracking-wide text-cyan-200">
-                          Rotation
+                          Shared Controls
                         </div>
                         <SettingsRow
-                          label="Enable Rotation"
-                          tooltip={SETTINGS_TOOLTIPS.adjustedPointsTransformRotation}
-                          className="md:grid-cols-[minmax(0,1fr)_auto]"
-                        >
-                          <SettingsToggle
-                            title={SETTINGS_TOOLTIPS.adjustedPointsTransformRotation}
-                            checked={adjustedPointsExportSettingsDraft.transform.rotation.enabled}
-                            onChange={(checked) =>
-                              handleDraftAdjustedPointsRotationSetting('enabled', checked)
-                            }
-                          />
-                        </SettingsRow>
-                        <SettingsRow
-                          label="Pivot Station"
-                          tooltip={SETTINGS_TOOLTIPS.adjustedPointsTransformPivot}
+                          label="Reference Point"
+                          tooltip={SETTINGS_TOOLTIPS.adjustedPointsTransformReference}
                         >
                           <select
-                            title={SETTINGS_TOOLTIPS.adjustedPointsTransformPivot}
-                            value={adjustedPointsExportSettingsDraft.transform.rotation.pivotStationId}
-                            disabled={
-                              !adjustedPointsExportSettingsDraft.transform.rotation.enabled ||
-                              adjustedPointsDraftStationIds.length === 0
-                            }
+                            title={SETTINGS_TOOLTIPS.adjustedPointsTransformReference}
+                            value={adjustedPointsExportSettingsDraft.transform.referenceStationId}
+                            disabled={adjustedPointsDraftStationIds.length === 0}
                             onChange={(e) =>
-                              handleDraftAdjustedPointsRotationSetting(
-                                'pivotStationId',
+                              handleDraftAdjustedPointsTransformSetting(
+                                'referenceStationId',
                                 e.target.value,
                               )
                             }
                             className={`${optionInputClass} disabled:opacity-50 disabled:cursor-not-allowed`}
                           >
-                            <option value="">Select pivot station</option>
+                            <option value="">Select reference station</option>
                             {adjustedPointsDraftStationIds.map((stationId) => (
-                              <option key={`adj-transform-pivot-${stationId}`} value={stationId}>
+                              <option key={`adj-transform-ref-${stationId}`} value={stationId}>
                                 {stationId}
                               </option>
                             ))}
                           </select>
-                        </SettingsRow>
-                        <SettingsRow
-                          label="Angle (deg)"
-                          tooltip={SETTINGS_TOOLTIPS.adjustedPointsTransformAngle}
-                        >
-                          <input
-                            title={SETTINGS_TOOLTIPS.adjustedPointsTransformAngle}
-                            type="number"
-                            step={0.000001}
-                            value={adjustedPointsExportSettingsDraft.transform.rotation.angleDeg}
-                            disabled={!adjustedPointsExportSettingsDraft.transform.rotation.enabled}
-                            onChange={(e) => {
-                              const parsed = Number.parseFloat(e.target.value);
-                              handleDraftAdjustedPointsRotationSetting(
-                                'angleDeg',
-                                Number.isFinite(parsed) ? parsed : 0,
-                              );
-                            }}
-                            className={`${optionInputClass} disabled:opacity-50 disabled:cursor-not-allowed`}
-                          />
                         </SettingsRow>
                         <SettingsRow
                           label="Scope"
@@ -8157,12 +8286,10 @@ const App: React.FC<AppProps> = ({
                           <div className="flex items-center gap-2">
                             <button
                               type="button"
-                              onClick={() =>
-                                handleDraftAdjustedPointsRotationSetting('scope', 'all')
-                              }
-                              disabled={!adjustedPointsExportSettingsDraft.transform.rotation.enabled}
+                              onClick={() => handleDraftAdjustedPointsTransformSetting('scope', 'all')}
+                              disabled={adjustedPointsDraftStationIds.length === 0}
                               className={`rounded border px-2 py-1 text-xs uppercase tracking-wide ${
-                                adjustedPointsExportSettingsDraft.transform.rotation.scope === 'all'
+                                adjustedPointsExportSettingsDraft.transform.scope === 'all'
                                   ? 'border-cyan-400 bg-cyan-800/40 text-cyan-100'
                                   : 'border-slate-500 bg-slate-700 text-slate-100 hover:bg-slate-600'
                               } disabled:opacity-50 disabled:cursor-not-allowed`}
@@ -8172,15 +8299,14 @@ const App: React.FC<AppProps> = ({
                             <button
                               type="button"
                               onClick={() => {
-                                handleDraftAdjustedPointsRotationSetting('scope', 'selected');
+                                handleDraftAdjustedPointsTransformSetting('scope', 'selected');
                                 if (adjustedPointsDraftStationIds.length > 0) {
                                   openAdjustedPointsTransformSelectModal();
                                 }
                               }}
-                              disabled={!adjustedPointsExportSettingsDraft.transform.rotation.enabled}
+                              disabled={adjustedPointsDraftStationIds.length === 0}
                               className={`rounded border px-2 py-1 text-xs uppercase tracking-wide ${
-                                adjustedPointsExportSettingsDraft.transform.rotation.scope ===
-                                'selected'
+                                adjustedPointsExportSettingsDraft.transform.scope === 'selected'
                                   ? 'border-cyan-400 bg-cyan-800/40 text-cyan-100'
                                   : 'border-slate-500 bg-slate-700 text-slate-100 hover:bg-slate-600'
                               } disabled:opacity-50 disabled:cursor-not-allowed`}
@@ -8189,20 +8315,16 @@ const App: React.FC<AppProps> = ({
                             </button>
                           </div>
                         </SettingsRow>
-                        {adjustedPointsExportSettingsDraft.transform.rotation.scope ===
-                          'selected' && (
+                        {adjustedPointsExportSettingsDraft.transform.scope === 'selected' && (
                           <div className="rounded border border-cyan-400/40 bg-slate-800/60 px-3 py-2 text-[11px] text-slate-200 space-y-2">
                             <div>
-                              Selected points: {adjustedPointsRotationSelectedInSetCount}
-                              {' | '}Pivot auto-included in rotated output.
+                              Selected points: {adjustedPointsTransformSelectedInSetCount}
+                              {' | '}Reference point auto-included in transform scope.
                             </div>
                             <button
                               type="button"
                               onClick={openAdjustedPointsTransformSelectModal}
-                              disabled={
-                                !adjustedPointsExportSettingsDraft.transform.rotation.enabled ||
-                                adjustedPointsDraftStationIds.length === 0
-                              }
+                              disabled={adjustedPointsDraftStationIds.length === 0}
                               className="rounded border border-cyan-400/70 bg-cyan-900/40 px-2 py-1 text-xs uppercase tracking-wide text-cyan-100 hover:bg-cyan-800/60 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                               Select Points
@@ -8210,43 +8332,248 @@ const App: React.FC<AppProps> = ({
                           </div>
                         )}
                         <div className="rounded border border-cyan-500/30 bg-slate-800/60 px-3 py-2 text-[11px] text-slate-200 leading-relaxed">
-                          Positive angle rotates counterclockwise about the pivot. Rotation is
-                          applied only in adjusted-points export and does not alter solved
-                          coordinates or reports.
+                          Shared reference and scope apply to all transform actions. Active order
+                          is Scale to Rotate to Translate.
                         </div>
-                        {adjustedPointsRotationDraftValidationMessage && (
-                          <div className="rounded border border-amber-500/60 bg-amber-900/20 px-3 py-2 text-[11px] text-amber-100">
-                            {adjustedPointsRotationDraftValidationMessage}
+                      </div>
+                      <div className="grid grid-cols-1 xl:grid-cols-3 gap-3">
+                        <div className="rounded-md border border-cyan-500/50 bg-cyan-900/10 p-3 space-y-3">
+                          <div className="text-[11px] uppercase tracking-wide text-cyan-200">
+                            Rotation
                           </div>
-                        )}
-                        {adjustedPointsDraftStationIds.length === 0 && (
-                          <div className="rounded border border-slate-500/60 bg-slate-800/60 px-3 py-2 text-[11px] text-slate-300">
-                            Run adjustment to populate station choices for pivot/selection.
+                          <SettingsRow
+                            label="Enable Rotation"
+                            tooltip={SETTINGS_TOOLTIPS.adjustedPointsTransformRotation}
+                            className="md:grid-cols-[minmax(0,1fr)_auto]"
+                          >
+                            <SettingsToggle
+                              title={SETTINGS_TOOLTIPS.adjustedPointsTransformRotation}
+                              checked={adjustedPointsExportSettingsDraft.transform.rotation.enabled}
+                              onChange={(checked) =>
+                                handleDraftAdjustedPointsRotationSetting('enabled', checked)
+                              }
+                            />
+                          </SettingsRow>
+                          <SettingsRow
+                            label="Angle (deg or dms)"
+                            tooltip={SETTINGS_TOOLTIPS.adjustedPointsTransformAngle}
+                          >
+                            <input
+                              title={SETTINGS_TOOLTIPS.adjustedPointsTransformAngle}
+                              type="text"
+                              value={adjustedPointsRotationAngleInput}
+                              disabled={!adjustedPointsExportSettingsDraft.transform.rotation.enabled}
+                              onChange={(e) =>
+                                handleDraftAdjustedPointsRotationAngleInput(e.target.value)
+                              }
+                              className={`${optionInputClass} disabled:opacity-50 disabled:cursor-not-allowed`}
+                              placeholder="ddd-mm-ss.s or decimal"
+                            />
+                          </SettingsRow>
+                          {adjustedPointsExportSettingsDraft.transform.rotation.enabled &&
+                            adjustedPointsRotationAngleError && (
+                            <div className="text-[11px] text-red-300">
+                              {adjustedPointsRotationAngleError}
+                            </div>
+                            )}
+                          <div className="rounded border border-cyan-500/30 bg-slate-800/60 px-3 py-2 text-[11px] text-slate-200 leading-relaxed">
+                            Positive angle rotates counterclockwise about the shared reference
+                            point.
                           </div>
-                        )}
+                        </div>
+                        <div className="rounded-md border border-cyan-500/50 bg-cyan-900/10 p-3 space-y-3">
+                          <div className="text-[11px] uppercase tracking-wide text-cyan-200">
+                            Translation
+                          </div>
+                          <SettingsRow
+                            label="Enable Translation"
+                            className="md:grid-cols-[minmax(0,1fr)_auto]"
+                          >
+                            <SettingsToggle
+                              title="Enable translation transform"
+                              checked={
+                                adjustedPointsExportSettingsDraft.transform.translation.enabled
+                              }
+                              onChange={(checked) =>
+                                handleDraftAdjustedPointsTranslationSetting('enabled', checked)
+                              }
+                            />
+                          </SettingsRow>
+                          <SettingsRow
+                            label="Method"
+                            tooltip={SETTINGS_TOOLTIPS.adjustedPointsTransformTranslationMethod}
+                          >
+                            <select
+                              value={adjustedPointsExportSettingsDraft.transform.translation.method}
+                              disabled={
+                                !adjustedPointsExportSettingsDraft.transform.translation.enabled
+                              }
+                              onChange={(e) =>
+                                handleDraftAdjustedPointsTranslationSetting(
+                                  'method',
+                                  e.target.value as 'direction-distance' | 'anchor-coordinate',
+                                )
+                              }
+                              className={`${optionInputClass} disabled:opacity-50 disabled:cursor-not-allowed`}
+                            >
+                              <option value="direction-distance">Direction + Distance</option>
+                              <option value="anchor-coordinate">Reference -&gt; New E/N</option>
+                            </select>
+                          </SettingsRow>
+                          {adjustedPointsExportSettingsDraft.transform.translation.method ===
+                          'direction-distance' ? (
+                            <>
+                              <SettingsRow
+                                label="Azimuth (deg or dms)"
+                                tooltip={
+                                  SETTINGS_TOOLTIPS.adjustedPointsTransformTranslationAzimuth
+                                }
+                              >
+                                <input
+                                  title={SETTINGS_TOOLTIPS.adjustedPointsTransformTranslationAzimuth}
+                                  type="text"
+                                  value={adjustedPointsTranslationAzimuthInput}
+                                  disabled={
+                                    !adjustedPointsExportSettingsDraft.transform.translation.enabled
+                                  }
+                                  onChange={(e) =>
+                                    handleDraftAdjustedPointsTranslationAzimuthInput(
+                                      e.target.value,
+                                    )
+                                  }
+                                  className={`${optionInputClass} disabled:opacity-50 disabled:cursor-not-allowed`}
+                                  placeholder="ddd-mm-ss.s or decimal"
+                                />
+                              </SettingsRow>
+                              {adjustedPointsExportSettingsDraft.transform.translation.enabled &&
+                                adjustedPointsTranslationAzimuthError && (
+                                <div className="text-[11px] text-red-300">
+                                  {adjustedPointsTranslationAzimuthError}
+                                </div>
+                                )}
+                              <SettingsRow label={`Distance (${settingsDraft.units})`}>
+                                <input
+                                  type="number"
+                                  step={0.0001}
+                                  value={
+                                    adjustedPointsExportSettingsDraft.transform.translation.distance
+                                  }
+                                  disabled={
+                                    !adjustedPointsExportSettingsDraft.transform.translation.enabled
+                                  }
+                                  onChange={(e) => {
+                                    const parsed = Number.parseFloat(e.target.value);
+                                    handleDraftAdjustedPointsTranslationSetting(
+                                      'distance',
+                                      Number.isFinite(parsed) ? parsed : 0,
+                                    );
+                                  }}
+                                  className={`${optionInputClass} disabled:opacity-50 disabled:cursor-not-allowed`}
+                                />
+                              </SettingsRow>
+                            </>
+                          ) : (
+                            <>
+                              <SettingsRow label={`New Easting (${settingsDraft.units})`}>
+                                <input
+                                  type="number"
+                                  step={0.0001}
+                                  value={
+                                    adjustedPointsExportSettingsDraft.transform.translation.targetE
+                                  }
+                                  disabled={
+                                    !adjustedPointsExportSettingsDraft.transform.translation.enabled
+                                  }
+                                  onChange={(e) => {
+                                    const parsed = Number.parseFloat(e.target.value);
+                                    handleDraftAdjustedPointsTranslationSetting(
+                                      'targetE',
+                                      Number.isFinite(parsed) ? parsed : 0,
+                                    );
+                                  }}
+                                  className={`${optionInputClass} disabled:opacity-50 disabled:cursor-not-allowed`}
+                                />
+                              </SettingsRow>
+                              <SettingsRow label={`New Northing (${settingsDraft.units})`}>
+                                <input
+                                  type="number"
+                                  step={0.0001}
+                                  value={
+                                    adjustedPointsExportSettingsDraft.transform.translation.targetN
+                                  }
+                                  disabled={
+                                    !adjustedPointsExportSettingsDraft.transform.translation.enabled
+                                  }
+                                  onChange={(e) => {
+                                    const parsed = Number.parseFloat(e.target.value);
+                                    handleDraftAdjustedPointsTranslationSetting(
+                                      'targetN',
+                                      Number.isFinite(parsed) ? parsed : 0,
+                                    );
+                                  }}
+                                  className={`${optionInputClass} disabled:opacity-50 disabled:cursor-not-allowed`}
+                                />
+                              </SettingsRow>
+                            </>
+                          )}
+                          <div className="rounded border border-cyan-500/30 bg-slate-800/60 px-3 py-2 text-[11px] text-slate-200 leading-relaxed">
+                            Azimuth convention is surveying style: 0 north, 90 east, 180 south, 270
+                            west.
+                          </div>
+                        </div>
+                        <div className="rounded-md border border-cyan-500/50 bg-cyan-900/10 p-3 space-y-3">
+                          <div className="text-[11px] uppercase tracking-wide text-cyan-200">
+                            Scale
+                          </div>
+                          <SettingsRow
+                            label="Enable Scale"
+                            className="md:grid-cols-[minmax(0,1fr)_auto]"
+                          >
+                            <SettingsToggle
+                              title="Enable scale transform"
+                              checked={adjustedPointsExportSettingsDraft.transform.scale.enabled}
+                              onChange={(checked) =>
+                                handleDraftAdjustedPointsScaleSetting('enabled', checked)
+                              }
+                            />
+                          </SettingsRow>
+                          <SettingsRow
+                            label="Factor"
+                            tooltip={SETTINGS_TOOLTIPS.adjustedPointsTransformScale}
+                          >
+                            <input
+                              title={SETTINGS_TOOLTIPS.adjustedPointsTransformScale}
+                              type="number"
+                              step={0.000001}
+                              min={0.000001}
+                              value={adjustedPointsExportSettingsDraft.transform.scale.factor}
+                              disabled={!adjustedPointsExportSettingsDraft.transform.scale.enabled}
+                              onChange={(e) => {
+                                const parsed = Number.parseFloat(e.target.value);
+                                handleDraftAdjustedPointsScaleSetting(
+                                  'factor',
+                                  Number.isFinite(parsed) ? parsed : 1,
+                                );
+                              }}
+                              className={`${optionInputClass} disabled:opacity-50 disabled:cursor-not-allowed`}
+                            />
+                          </SettingsRow>
+                          <div className="rounded border border-cyan-500/30 bg-slate-800/60 px-3 py-2 text-[11px] text-slate-200 leading-relaxed">
+                            Scale applies to N/E only and keeps the shared reference point fixed.
+                          </div>
+                        </div>
                       </div>
-                      <div className="rounded-md border border-slate-500/60 bg-slate-700/20 p-3 space-y-2 opacity-80">
-                        <div className="text-[11px] uppercase tracking-wide text-slate-300">
-                          Translation
+                      {adjustedPointsTransformDraftValidationMessage && (
+                        <div className="rounded border border-amber-500/60 bg-amber-900/20 px-3 py-2 text-[11px] text-amber-100">
+                          {adjustedPointsTransformDraftValidationMessage}
                         </div>
-                        <div className="rounded border border-slate-500/60 bg-slate-800/50 px-3 py-2 text-[11px] text-slate-300">
-                          Coming Soon
+                      )}
+                      {adjustedPointsDraftStationIds.length === 0 && (
+                        <div className="rounded border border-slate-500/60 bg-slate-800/60 px-3 py-2 text-[11px] text-slate-300">
+                          Run adjustment to populate station choices for transform reference and
+                          scope.
                         </div>
-                        <div className="text-[11px] text-slate-400">
-                          Reserved transform slot. No translation is applied in v1.
-                        </div>
-                      </div>
-                      <div className="rounded-md border border-slate-500/60 bg-slate-700/20 p-3 space-y-2 opacity-80">
-                        <div className="text-[11px] uppercase tracking-wide text-slate-300">
-                          Scale
-                        </div>
-                        <div className="rounded border border-slate-500/60 bg-slate-800/50 px-3 py-2 text-[11px] text-slate-300">
-                          Coming Soon
-                        </div>
-                        <div className="text-[11px] text-slate-400">
-                          Reserved transform slot. No scale factor is applied in v1.
-                        </div>
-                      </div>
+                      )}
                     </div>
                   </SettingsCard>
                   <SettingsCard
@@ -9266,11 +9593,11 @@ const App: React.FC<AppProps> = ({
           >
             <div className="border-b border-slate-700 bg-slate-800 px-5 py-4">
               <div className="text-[11px] uppercase tracking-[0.24em] text-cyan-300">
-                Rotation Scope
+                Transform Scope
               </div>
               <div className="mt-1 text-lg font-semibold text-white">Select Points</div>
               <div className="mt-1 text-xs text-slate-400">
-                Select points to rotate. Pivot station is auto-included in rotated output.
+                Select points to transform. Reference point is auto-included in transform scope.
               </div>
             </div>
             <div className="max-h-[50vh] space-y-2 overflow-auto px-5 py-4">
