@@ -13,11 +13,11 @@
   - [x] Keep filter/windowing state local to the report without changing solve outputs
   - [x] Add regression coverage for report filtering and load-more behavior
 
-- [ ] Scalability batch 3 - operator workflows and parity closeout:
+- [x] Scalability batch 3 - operator workflows and parity closeout:
   - [x] Add source-line jump from report rows back to the editor
   - [x] Add pinned/favorite report sections for quicker navigation
   - [x] Add a compact current-vs-last-run settings diff before rerun
-  - [ ] Complete remaining Section 5.6 compatibility work
+  - [x] Complete remaining Section 5.6 compatibility work
   - [x] Add browser-oriented large-project benchmark fixture coverage
 
 - [x] Add post-adjust adjusted-points Transform support (rotation-only v1): persisted transform settings, Project Options -> Other Files -> Transform UI (rotation with pivot/scope/select-points popup + translation/scale placeholders), export-time validation, and dual-section adjusted-points export output (original + transform notes + rotated coordinates)
@@ -145,12 +145,12 @@
   - [x] Phase 5: trim `Solve Profile Diagnostics` to show only active/non-default settings (hide OFF/default rows such as TS correlation OFF, robust NONE, map-scale off/1.0, vertical/curvref none/off, zero rotation, unused lost-station and CRS/geoid details)
   - [x] Phase 6: local-job profile text cleanup: when coordinate system mode is LOCAL, do not display grid CRS/projection identifiers in the coordinate-system summary line
   - [x] Phase 7: add report-view regression tests for section ordering, removal of redundant blocks, and conditional visibility behavior
-- [ ] industry-standard format compatibility (Section 5.6):
+- [x] industry-standard format compatibility (Section 5.6):
   - [x] Elevation-only parsing (E records) with std errors/fixity and unit conversion
   - [~] Implement global inline options: .UNITS, .COORD 2D/3D, .ORDER NE/EN, .2D/.3D, .DELTA ON/OFF, .MAPMODE, .LWEIGHT, .NORMALIZE, .END (core parser support and baseline behavior are implemented; .LWEIGHT is applied for leveling and run headers expose active defaults; remaining work is explicit parity-audit coverage/matrixing of directive effects by observation family and edge-case code paths)
     - [x] Phase 1: build directive-application matrix by observation family to identify remaining per-code-type wiring gaps (`docs/INLINE_OPTION_APPLICATION_MATRIX.md`)
     - [x] Phase 2: close matrix-identified wiring gaps by code family (implemented `.LWEIGHT` fallback propagation for non-`L` leveling-producing paths: `V`/`DV`/`M`/`BM`/`T`/`DM`/`SS` when vertical sigma is omitted)
-    - [ ] Phase 3: add fixture-locked semantics coverage for each directive family and verify report/listing run-profile parity output
+    - [x] Phase 3: add fixture-locked semantics coverage for each directive family and verify report/listing run-profile parity output
   - [x] Coordinate/position/elevation records: C (2D/3D with per-component std errs and !/\* fixity, NE/EN order), P geodetic positions (lat/long [+H], std errs mapped to NE, longitude sign), E elevation-only, ellipsoid variants CH/PH/EH (parsed; P/PH projected to local EN via first P origin; ellipsoid height flagged)
   - [x] Single obs: A angles (At-From-To or From-At-To), D distances (2D HD; 3D slope/HD per mode with HI/HT), V vertical (zenith or dH per mode with HI/HT), B bearings/azimuths (solved)
   - [x] Multiple obs: M (angle+dist+vertical with std err rules, HI/HT), BM (bearing/az+dist+vertical), DV (dist+vertical) with std errs and HI/HT (delta-mode emits dH; slope-mode emits zenith; face-2 weighting applied; defaults for stds/HI/HT captured)
@@ -160,10 +160,10 @@
   - [x] A records auto-classify as DIR (azimuth) vs turned angle using initial coords; DIR uses closest residual with optional 180° flip
   - [x] Sideshots: SS diverted from adjustment, compute post-adjust, disallow occupy/backsight, optional name checking (basic parse to dist + vert/zenith; excluded from adjustment; occupy/backsight validation added; cannot target fixed control)
   - Leveling: L dH with distance or turns, std err or per-unit via .LWEIGHT (fallback applied; ft lengths converted to km), allow fixity/free
-  - [~] Fixity/weights: support ! fixed per component, legacy \* fixed, numeric std errs per obs/component (coordinate free-marker semantics are now wired and traced in report/listing outputs, and observation-weight traceability now surfaces explicit/default/fixed/float handling across report/listing outputs including mixed GNSS component sources; broader Section 5.6 closeout remains)
+  - [x] Fixity/weights: support ! fixed per component, legacy \* fixed, numeric std errs per obs/component (coordinate free-marker semantics are now wired and traced in report/listing outputs, observation-weight traceability now surfaces explicit/default/fixed/float handling across report/listing outputs including mixed GNSS component sources, and directive-family semantics coverage is now fixture-locked through parser + report/listing regression tests)
     - [x] Phase 1: define coordinate-record free-marker semantics and precedence relative to `!`, legacy `*`, and numeric sigma tokens
     - [x] Phase 2: implement parser support + diagnostics so per-component `*` clears fixed/weighted control constraints on `C/P/CH/E/PH/EH` records, with regression coverage
-    - [ ] Phase 3: finish the remaining Section 5.6 fixity/weight parity closeout (directive-family semantics coverage is still the main remaining gap) and keep regression coverage fixture-locked
+    - [x] Phase 3: finish the remaining Section 5.6 fixity/weight parity closeout and keep regression coverage fixture-locked
   - [x] Instrument library: EDM const/ppm, HZ/VA precision, instrument/target centering; .I to set current instrument
   - [x] Std error tokens (&/!/\*/numeric) for observations; .EDM additive/propagated; .CENTERING on/off; .ADDC add-centering mode
   - [x] Debug logging toggle (.DEBUG) to dump per-observation calc/residual/sigma by iteration

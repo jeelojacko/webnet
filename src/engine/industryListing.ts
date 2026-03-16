@@ -152,6 +152,10 @@ export const buildIndustryStyleListingText = (
   const prismEnabled = parseState?.prismEnabled ?? false;
   const prismOffset = parseState?.prismOffset ?? 0;
   const prismScope = parseState?.prismScope ?? 'global';
+  const mapMode = parseState?.mapMode ?? 'off';
+  const mapScaleFactor = parseState?.mapScaleFactor ?? 1;
+  const normalize = parseState?.normalize ?? true;
+  const faceNormalizationMode = parseState?.faceNormalizationMode ?? 'on';
   const rotationAngleRad = parseState?.rotationAngleRad ?? runDiag.rotationAngleRad ?? 0;
   const qFixLinearSigmaM = parseState?.qFixLinearSigmaM ?? runDiag.qFixLinearSigmaM ?? 1e-9;
   const qFixAngularSigmaSec =
@@ -434,6 +438,11 @@ export const buildIndustryStyleListingText = (
     (parseState?.deltaMode ?? parseSettings.deltaMode) === 'horiz'
       ? 'Hor Dist/DE'
       : 'Slope Dist/Zenith',
+  );
+  pushSettingRow('Map Mode / Scale', `${mapMode.toUpperCase()} / ${mapScaleFactor.toFixed(8)}`);
+  pushSettingRow(
+    'Normalize',
+    `${faceNormalizationMode.toUpperCase()} (${normalize ? 'ON' : 'OFF'})`,
   );
   const convergenceLimit =
     typeof settings.convergenceLimit === 'number' &&
