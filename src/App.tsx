@@ -33,10 +33,7 @@ import {
 } from './engine/autoAdjust';
 import { buildIndustryStyleListingText } from './engine/industryListing';
 import { buildLandXmlText } from './engine/landxml';
-import {
-  buildExportBundleFiles,
-  type ExportBundlePreset,
-} from './engine/exportBundles';
+import { buildExportBundleFiles } from './engine/exportBundles';
 import {
   buildQaDerivedResult,
   buildRunComparisonText,
@@ -654,6 +651,51 @@ const INDUSTRY_DEFAULT_INSTRUMENT: Instrument = createDefaultS9Instrument();
 type TabKey = 'report' | 'processing-summary' | 'industry-output' | 'map';
 type FilePickerMode = 'replace' | 'compare';
 type ImportAnglePromptChoice = ExternalImportAngleMode;
+
+const getExportFormatTooltip = (format: ProjectExportFormat): string => {
+  switch (format) {
+    case 'points':
+      return 'Adjusted points using the current adjusted-points export settings.';
+    case 'webnet':
+      return 'Full WebNet text report.';
+    case 'industry-style':
+      return 'Industry-style listing output.';
+    case 'landxml':
+      return 'LandXML 1.2 export.';
+    case 'bundle-qa-standard':
+      return 'QA bundle containing WebNet report, industry listing, adjusted points, and comparison summary when available.';
+    case 'bundle-qa-standard-with-landxml':
+      return 'QA bundle containing WebNet report, industry listing, adjusted points, comparison summary when available, and LandXML.';
+    default:
+      return 'Export the current run output.';
+  }
+};
+
+const getExportFormatExtension = (format: ProjectExportFormat): string => {
+  if (format === 'landxml') return '.xml';
+  if (format === 'points') return 'configured (.csv or .txt)';
+  if (format === 'bundle-qa-standard' || format === 'bundle-qa-standard-with-landxml') return 'multiple files';
+  return '.txt';
+};
+
+const getExportFormatLabel = (format: ProjectExportFormat): string => {
+  switch (format) {
+    case 'points':
+      return 'Adjusted points';
+    case 'webnet':
+      return 'WebNet text report';
+    case 'industry-style':
+      return 'Industry-style listing';
+    case 'landxml':
+      return 'LandXML 1.2';
+    case 'bundle-qa-standard':
+      return 'QA bundle';
+    case 'bundle-qa-standard-with-landxml':
+      return 'QA bundle + LandXML';
+    default:
+      return 'Export output';
+  }
+};
 type ImportFacePromptChoice = Extract<FaceNormalizationMode, 'on' | 'off'>;
 type PendingAnglePromptFile = {
   file: File;
@@ -1201,7 +1243,7 @@ const App: React.FC<AppProps> = ({
   const [result, setResult] = useState<AdjustmentResult | null>(null);
   const [runDiagnostics, setRunDiagnostics] = useState<RunDiagnostics | null>(null);
   const [runElapsedMs, setRunElapsedMs] = useState<number | null>(null);
-  const [exportFormat, setExportFormat] = useState<ProjectExportFormat>('webnet');
+  const [exportFormat, setExportFormat] = useState<ProjectExportFormat>('points');
   const [lastRunInput, setLastRunInput] = useState<string | null>(null);
   const [lastRunSettingsSnapshot, setLastRunSettingsSnapshot] = useState<RunSettingsSnapshot | null>(
     null,
@@ -1384,8 +1426,6 @@ const App: React.FC<AppProps> = ({
     [currentRunSettingsSnapshot, lastRunSettingsSnapshot],
   );
   const {
-    exportBundlePreset,
-    setExportBundlePreset,
     runHistory,
     currentRunSnapshot,
     comparisonSelection,
@@ -4733,6 +4773,18 @@ const App: React.FC<AppProps> = ({
 
   const handleExportResults = async () => {
     if (!result) return;
+    if (exportFormat === 'points') {
+      await handleExportAdjustedPoints();
+      return;
+    }
+    if (exportFormat === 'bundle-qa-standard') {
+      handleExportBundle('qa-standard');
+      return;
+    }
+    if (exportFormat === 'bundle-qa-standard-with-landxml') {
+      handleExportBundle('qa-standard-with-landxml');
+      return;
+    }
     const text =
       exportFormat === 'industry-style'
         ? buildIndustryListingText(result)
@@ -4848,7 +4900,7 @@ const App: React.FC<AppProps> = ({
     );
   };
 
-  const handleExportBundle = () => {
+  const handleExportBundle = (preset: 'qa-standard' | 'qa-standard-with-landxml') => {
     if (!result) return;
     const transformValidation = validateAdjustedPointsTransform({
       result,
@@ -4872,7 +4924,7 @@ const App: React.FC<AppProps> = ({
     const webnetText = buildResultsText(result);
     const industryListingText = buildIndustryListingText(result);
     const landXmlText =
-      exportBundlePreset === 'qa-standard-with-landxml'
+      preset === 'qa-standard-with-landxml'
         ? buildLandXmlText(result, {
             units: settings.units,
             solveProfile:
@@ -4885,7 +4937,7 @@ const App: React.FC<AppProps> = ({
         : null;
     const dateStamp = new Date().toISOString().slice(0, 10);
     const files = buildExportBundleFiles({
-      preset: exportBundlePreset,
+      preset,
       dateStamp,
       adjustedPointsExtension: adjustedPointsExportSettings.format === 'csv' ? 'csv' : 'txt',
       webnetText,
@@ -6936,6 +6988,8 @@ const App: React.FC<AppProps> = ({
     setRunElapsedMs(null);
     setExcludedIds(new Set());
     setOverrides({});
+    clearRunComparisonState();
+    clearSelection();
   };
 
   const selectedInstrumentMeta = selectedInstrumentDraft
@@ -7025,26 +7079,24 @@ const App: React.FC<AppProps> = ({
           <select
             value={exportFormat}
             onChange={(e) => setExportFormat(e.target.value as ProjectExportFormat)}
-            title="Export format"
+            title={getExportFormatTooltip(exportFormat)}
             className="h-9 bg-slate-700 border border-slate-600 text-slate-100 text-xs rounded px-2"
           >
+            <option value="points">Export: points</option>
             <option value="webnet">Export: WebNet</option>
             <option value="industry-style">Export: industry-style</option>
             <option value="landxml">Export: LandXML</option>
-          </select>
-          <select
-            value={exportBundlePreset}
-            onChange={(e) => setExportBundlePreset(e.target.value as ExportBundlePreset)}
-            title="QA export bundle preset"
-            className="h-9 bg-slate-700 border border-slate-600 text-slate-100 text-xs rounded px-2"
-          >
-            <option value="qa-standard">Bundle: QA standard</option>
-            <option value="qa-standard-with-landxml">Bundle: QA + LandXML</option>
+            <option value="bundle-qa-standard">Export: QA bundle</option>
+            <option value="bundle-qa-standard-with-landxml">Export: QA bundle + LandXML</option>
           </select>
           <button
             onClick={handleExportResults}
             disabled={!result}
-            title={result ? 'Export Results' : 'Run adjustment to export results'}
+            title={
+              result
+                ? `Export ${getExportFormatLabel(exportFormat)}`
+                : 'Run adjustment to export results'
+            }
             className={`p-2 rounded text-slate-300 transition-colors ${
               result
                 ? 'bg-slate-700 hover:bg-slate-600'
@@ -7052,60 +7104,6 @@ const App: React.FC<AppProps> = ({
             }`}
           >
             <Download size={18} />
-          </button>
-          <button
-            onClick={handleExportBundle}
-            disabled={!result}
-            title={result ? 'Export QA bundle' : 'Run adjustment to export QA bundle'}
-            className={`h-9 px-3 rounded text-[11px] uppercase tracking-wide transition-colors ${
-              result
-                ? 'bg-slate-700 hover:bg-slate-600 text-slate-200'
-                : 'bg-slate-800 opacity-50 cursor-not-allowed text-slate-400'
-            }`}
-          >
-            Bundle
-          </button>
-          <button
-            onClick={handleExportAdjustedPoints}
-            disabled={!result}
-            title={result ? 'Export adjusted points' : 'Run adjustment to export adjusted points'}
-            className={`h-9 px-2 rounded text-[11px] uppercase tracking-wide transition-colors ${
-              result
-                ? 'bg-slate-700 hover:bg-slate-600 text-slate-200'
-                : 'bg-slate-800 opacity-50 cursor-not-allowed text-slate-400'
-            }`}
-          >
-            Pts
-          </button>
-          <button
-            onClick={() => {
-              selectPreviousSuspect();
-              setActiveTab('report');
-            }}
-            disabled={!hasSuspects}
-            title="Select previous suspect observation"
-            className={`h-9 px-3 rounded text-[11px] uppercase tracking-wide transition-colors ${
-              hasSuspects
-                ? 'bg-slate-700 hover:bg-slate-600 text-slate-200'
-                : 'bg-slate-800 opacity-50 cursor-not-allowed text-slate-400'
-            }`}
-          >
-            Prev
-          </button>
-          <button
-            onClick={() => {
-              selectNextSuspect();
-              setActiveTab('report');
-            }}
-            disabled={!hasSuspects}
-            title="Select next suspect observation"
-            className={`h-9 px-3 rounded text-[11px] uppercase tracking-wide transition-colors ${
-              hasSuspects
-                ? 'bg-slate-700 hover:bg-slate-600 text-slate-200'
-                : 'bg-slate-800 opacity-50 cursor-not-allowed text-slate-400'
-            }`}
-          >
-            Next
           </button>
           {selectedObservation && (
             <button
@@ -8449,14 +8447,17 @@ const App: React.FC<AppProps> = ({
                   >
                     <SettingsRow label="Export Format" tooltip={SETTINGS_TOOLTIPS.exportFormat}>
                       <select
-                        title={SETTINGS_TOOLTIPS.exportFormat}
+                        title={getExportFormatTooltip(exportFormat)}
                         value={exportFormat}
                         onChange={(e) => setExportFormat(e.target.value as ProjectExportFormat)}
                         className={optionInputClass}
                       >
+                        <option value="points">Adjusted Points</option>
                         <option value="webnet">WebNet</option>
                         <option value="industry-style">Industry Standard Output</option>
                         <option value="landxml">LandXML</option>
+                        <option value="bundle-qa-standard">QA Bundle</option>
+                        <option value="bundle-qa-standard-with-landxml">QA Bundle + LandXML</option>
                       </select>
                     </SettingsRow>
                     <SettingsRow
@@ -8464,7 +8465,7 @@ const App: React.FC<AppProps> = ({
                       tooltip="Current file extension used by the active export format."
                     >
                       <div className="rounded border border-slate-500 bg-slate-700 px-2 py-1 text-xs text-slate-100">
-                        {exportFormat === 'landxml' ? '.xml' : '.txt'}
+                        {getExportFormatExtension(exportFormat)}
                       </div>
                     </SettingsRow>
                     <SettingsRow
@@ -8472,11 +8473,18 @@ const App: React.FC<AppProps> = ({
                       tooltip="Describes the current export target generated by the toolbar export action."
                     >
                       <div className="rounded border border-slate-500 bg-slate-700 px-2 py-1 text-xs text-slate-100">
-                        {exportFormat === 'webnet'
-                          ? 'WebNet text report'
-                          : exportFormat === 'industry-style'
-                            ? 'Industry-style listing'
-                            : 'LandXML 1.2'}
+                        {getExportFormatLabel(exportFormat)}
+                      </div>
+                    </SettingsRow>
+                    <SettingsRow
+                      label="Export Details"
+                      tooltip="Detailed description for the currently selected export target."
+                    >
+                      <div
+                        title={getExportFormatTooltip(exportFormat)}
+                        className="rounded border border-slate-500 bg-slate-700 px-2 py-1 text-xs text-slate-100"
+                      >
+                        {getExportFormatTooltip(exportFormat)}
                       </div>
                     </SettingsRow>
                   </SettingsCard>
@@ -8676,18 +8684,9 @@ const App: React.FC<AppProps> = ({
                             </div>
                           ))}
                         </div>
-                        <button
-                          type="button"
-                          onClick={handleExportAdjustedPoints}
-                          disabled={!result}
-                          className={`w-full rounded border px-2 py-1 text-xs ${
-                            result
-                              ? 'border-blue-400 bg-blue-600/20 text-blue-100 hover:bg-blue-600/35'
-                              : 'border-slate-600 bg-slate-700/30 text-slate-400 cursor-not-allowed'
-                          }`}
-                        >
-                          Export Adjusted Points
-                        </button>
+                        <div className="rounded border border-slate-500 bg-slate-700/30 px-2 py-2 text-xs text-slate-200">
+                          Use the main export selector for adjusted-points output.
+                        </div>
                       </div>
                     </div>
                   </SettingsCard>
@@ -10126,6 +10125,7 @@ const App: React.FC<AppProps> = ({
               runHistory={runHistory}
               comparisonSelection={comparisonSelection}
               comparisonSummary={runComparisonSummary}
+              canNavigateSuspects={hasSuspects}
               onSelectBaseline={(snapshotId) =>
                 setComparisonSelection((prev) => ({
                   ...prev,
@@ -10153,6 +10153,14 @@ const App: React.FC<AppProps> = ({
                   residualDeltaThreshold: value,
                 }))
               }
+              onSelectPreviousSuspect={() => {
+                selectPreviousSuspect();
+                setActiveTab('report');
+              }}
+              onSelectNextSuspect={() => {
+                selectNextSuspect();
+                setActiveTab('report');
+              }}
               onSelectStation={(stationId) => {
                 selectStation(stationId, 'compare');
                 setActiveTab('map');

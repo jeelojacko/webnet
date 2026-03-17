@@ -7,10 +7,13 @@ interface RunComparisonPanelProps<TSettingsSnapshot = unknown, TRunDiagnostics =
   runHistory: Array<RunSnapshot<TSettingsSnapshot, TRunDiagnostics>>;
   comparisonSelection: ComparisonSelection;
   comparisonSummary: RunComparisonSummary | null;
+  canNavigateSuspects: boolean;
   onSelectBaseline: (_snapshotId: string) => void;
   onTogglePinBaseline: () => void;
   onStationThresholdChange: (_value: number) => void;
   onResidualThresholdChange: (_value: number) => void;
+  onSelectPreviousSuspect: () => void;
+  onSelectNextSuspect: () => void;
   onSelectStation: (_stationId: string) => void;
   onSelectObservation: (_observationId: number) => void;
 }
@@ -21,91 +24,145 @@ const RunComparisonPanel = <TSettingsSnapshot, TRunDiagnostics>({
   runHistory,
   comparisonSelection,
   comparisonSummary,
+  canNavigateSuspects,
   onSelectBaseline,
   onTogglePinBaseline,
   onStationThresholdChange,
   onResidualThresholdChange,
+  onSelectPreviousSuspect,
+  onSelectNextSuspect,
   onSelectStation,
   onSelectObservation,
 }: RunComparisonPanelProps<TSettingsSnapshot, TRunDiagnostics>) => {
   const baselineOptions = runHistory.filter((entry) => entry.id !== currentSnapshot.id);
+  const [isCollapsed, setIsCollapsed] = React.useState(true);
 
   return (
     <div className="border-b border-slate-800 bg-slate-900/70 px-4 py-3">
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-        <div className="min-w-0 flex-1">
-          <div className="text-[11px] uppercase tracking-[0.2em] text-cyan-300">Run Compare</div>
-          <div className="mt-1 text-sm text-slate-200">
-            Current: <span className="font-mono">{currentSnapshot.label}</span>
-            {baselineSnapshot ? (
-              <>
-                {' '}vs baseline <span className="font-mono">{baselineSnapshot.label}</span>
-              </>
-            ) : (
-              ' (run again to unlock comparison)'
-            )}
+      <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div className="min-w-0 flex-1">
+            <div className="text-[11px] uppercase tracking-[0.2em] text-cyan-300">Run Compare</div>
+            <div className="mt-1 text-sm text-slate-200">
+              Current: <span className="font-mono">{currentSnapshot.label}</span>
+              {baselineSnapshot ? (
+                <>
+                  {' '}vs baseline <span className="font-mono">{baselineSnapshot.label}</span>
+                </>
+              ) : (
+                ' (run again to unlock comparison)'
+              )}
+            </div>
+            <div className="mt-1 text-xs text-slate-400">
+              {comparisonSummary
+                ? `${comparisonSummary.movedStations.length} moved stations, ${comparisonSummary.residualChanges.length} residual deltas`
+                : 'Comparison summary unavailable until a baseline exists.'}
+            </div>
           </div>
-        </div>
-        <div className="grid gap-2 md:grid-cols-4 lg:w-auto">
-          <label className="text-xs text-slate-400">
-            <div className="mb-1 uppercase tracking-wide text-slate-500">Baseline</div>
-            <select
-              value={baselineSnapshot?.id ?? ''}
-              onChange={(event) => onSelectBaseline(event.target.value)}
-              className="w-full rounded border border-slate-700 bg-slate-950/60 px-3 py-2 text-sm text-slate-100"
-            >
-              <option value="">Latest previous run</option>
-              {baselineOptions.map((entry) => (
-                <option key={entry.id} value={entry.id}>
-                  {entry.label}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="text-xs text-slate-400">
-            <div className="mb-1 uppercase tracking-wide text-slate-500">Move threshold</div>
-            <input
-              type="number"
-              min={0}
-              step="any"
-              value={comparisonSelection.stationMovementThreshold}
-              onChange={(event) => onStationThresholdChange(Number.parseFloat(event.target.value) || 0)}
-              className="w-full rounded border border-slate-700 bg-slate-950/60 px-3 py-2 text-sm text-slate-100"
-            />
-          </label>
-          <label className="text-xs text-slate-400">
-            <div className="mb-1 uppercase tracking-wide text-slate-500">Residual threshold</div>
-            <input
-              type="number"
-              min={0}
-              step="any"
-              value={comparisonSelection.residualDeltaThreshold}
-              onChange={(event) => onResidualThresholdChange(Number.parseFloat(event.target.value) || 0)}
-              className="w-full rounded border border-slate-700 bg-slate-950/60 px-3 py-2 text-sm text-slate-100"
-            />
-          </label>
-          <div className="flex items-end">
+          <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
-              disabled={!baselineSnapshot}
-              onClick={onTogglePinBaseline}
-              className={`w-full rounded border px-3 py-2 text-xs uppercase tracking-wide ${
-                baselineSnapshot
-                  ? comparisonSelection.pinnedBaselineRunId === baselineSnapshot.id
-                    ? 'border-cyan-500 bg-cyan-950/40 text-cyan-100'
-                    : 'border-slate-700 bg-slate-950/60 text-slate-200 hover:border-cyan-400'
-                  : 'border-slate-800 bg-slate-950/40 text-slate-600'
-              }`}
+              onClick={() => setIsCollapsed((current) => !current)}
+              className="rounded border border-slate-700 bg-slate-950/60 px-3 py-2 text-xs uppercase tracking-wide text-slate-200 hover:border-cyan-400"
             >
-              {comparisonSelection.pinnedBaselineRunId === baselineSnapshot?.id
-                ? 'Pinned baseline'
-                : 'Pin baseline'}
+              {isCollapsed ? 'Show compare' : 'Hide compare'}
             </button>
           </div>
         </div>
+        {!isCollapsed && (
+          <div className="space-y-3">
+            <div className="grid gap-2 md:grid-cols-4 lg:w-auto">
+              <label className="text-xs text-slate-400">
+                <div className="mb-1 uppercase tracking-wide text-slate-500">Baseline</div>
+                <select
+                  value={baselineSnapshot?.id ?? ''}
+                  onChange={(event) => onSelectBaseline(event.target.value)}
+                  className="w-full rounded border border-slate-700 bg-slate-950/60 px-3 py-2 text-sm text-slate-100"
+                >
+                  <option value="">Latest previous run</option>
+                  {baselineOptions.map((entry) => (
+                    <option key={entry.id} value={entry.id}>
+                      {entry.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="text-xs text-slate-400">
+                <div className="mb-1 uppercase tracking-wide text-slate-500">Move threshold</div>
+                <input
+                  type="number"
+                  min={0}
+                  step="any"
+                  value={comparisonSelection.stationMovementThreshold}
+                  onChange={(event) =>
+                    onStationThresholdChange(Number.parseFloat(event.target.value) || 0)
+                  }
+                  className="w-full rounded border border-slate-700 bg-slate-950/60 px-3 py-2 text-sm text-slate-100"
+                />
+              </label>
+              <label className="text-xs text-slate-400">
+                <div className="mb-1 uppercase tracking-wide text-slate-500">Residual threshold</div>
+                <input
+                  type="number"
+                  min={0}
+                  step="any"
+                  value={comparisonSelection.residualDeltaThreshold}
+                  onChange={(event) =>
+                    onResidualThresholdChange(Number.parseFloat(event.target.value) || 0)
+                  }
+                  className="w-full rounded border border-slate-700 bg-slate-950/60 px-3 py-2 text-sm text-slate-100"
+                />
+              </label>
+              <div className="flex items-end">
+                <button
+                  type="button"
+                  disabled={!baselineSnapshot}
+                  onClick={onTogglePinBaseline}
+                  className={`w-full rounded border px-3 py-2 text-xs uppercase tracking-wide ${
+                    baselineSnapshot
+                      ? comparisonSelection.pinnedBaselineRunId === baselineSnapshot.id
+                        ? 'border-cyan-500 bg-cyan-950/40 text-cyan-100'
+                        : 'border-slate-700 bg-slate-950/60 text-slate-200 hover:border-cyan-400'
+                      : 'border-slate-800 bg-slate-950/40 text-slate-600'
+                  }`}
+                >
+                  {comparisonSelection.pinnedBaselineRunId === baselineSnapshot?.id
+                    ? 'Pinned baseline'
+                    : 'Pin baseline'}
+                </button>
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={onSelectPreviousSuspect}
+                disabled={!canNavigateSuspects}
+                className={`rounded border px-3 py-2 text-xs uppercase tracking-wide ${
+                  canNavigateSuspects
+                    ? 'border-slate-700 bg-slate-950/60 text-slate-200 hover:border-cyan-400'
+                    : 'border-slate-800 bg-slate-950/40 text-slate-600'
+                }`}
+              >
+                Prev suspect
+              </button>
+              <button
+                type="button"
+                onClick={onSelectNextSuspect}
+                disabled={!canNavigateSuspects}
+                className={`rounded border px-3 py-2 text-xs uppercase tracking-wide ${
+                  canNavigateSuspects
+                    ? 'border-slate-700 bg-slate-950/60 text-slate-200 hover:border-cyan-400'
+                    : 'border-slate-800 bg-slate-950/40 text-slate-600'
+                }`}
+              >
+                Next suspect
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
-      {comparisonSummary && (
+      {!isCollapsed && comparisonSummary && (
         <div className="mt-3 grid gap-3 xl:grid-cols-[1.1fr_1fr_1fr]">
           <div className="rounded border border-slate-800 bg-slate-950/40 p-3">
             <div className="mb-2 text-[11px] uppercase tracking-wide text-slate-500">Summary</div>

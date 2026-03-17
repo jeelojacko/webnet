@@ -63,6 +63,8 @@ describe('RunComparisonPanel', () => {
     const observationSpy = vi.fn();
     const baselineSpy = vi.fn();
     const pinSpy = vi.fn();
+    const prevSpy = vi.fn();
+    const nextSpy = vi.fn();
 
     await act(async () => {
       root.render(
@@ -72,10 +74,13 @@ describe('RunComparisonPanel', () => {
           runHistory={[currentSnapshot, baselineSnapshot]}
           comparisonSelection={selection}
           comparisonSummary={summary}
+          canNavigateSuspects
           onSelectBaseline={baselineSpy}
           onTogglePinBaseline={pinSpy}
           onStationThresholdChange={() => {}}
           onResidualThresholdChange={() => {}}
+          onSelectPreviousSuspect={prevSpy}
+          onSelectNextSuspect={nextSpy}
           onSelectStation={stationSpy}
           onSelectObservation={observationSpy}
         />,
@@ -83,6 +88,13 @@ describe('RunComparisonPanel', () => {
     });
 
     expect(container.textContent).toContain('Run Compare');
+    expect(container.textContent).not.toContain('Moved Stations');
+    const expandButton = Array.from(container.querySelectorAll('button')).find((button) =>
+      button.textContent?.includes('Show compare'),
+    ) as HTMLButtonElement;
+    await act(async () => {
+      expandButton.click();
+    });
     const stationButton = container.querySelector('[data-run-compare-station]') as HTMLButtonElement;
     const observationButton = container.querySelector(
       '[data-run-compare-observation]',
@@ -98,12 +110,20 @@ describe('RunComparisonPanel', () => {
       select.value = 'run-1';
       select.dispatchEvent(new Event('change', { bubbles: true }));
       pinButton.click();
+      Array.from(container.querySelectorAll('button'))
+        .find((button) => button.textContent?.includes('Prev suspect'))
+        ?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      Array.from(container.querySelectorAll('button'))
+        .find((button) => button.textContent?.includes('Next suspect'))
+        ?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     });
 
     expect(stationSpy).toHaveBeenCalled();
     expect(observationSpy).toHaveBeenCalled();
     expect(baselineSpy).toHaveBeenCalledWith('run-1');
     expect(pinSpy).toHaveBeenCalled();
+    expect(prevSpy).toHaveBeenCalled();
+    expect(nextSpy).toHaveBeenCalled();
 
     await act(async () => {
       root.unmount();

@@ -505,7 +505,13 @@ export type GeoidInterpolationMethod = 'bilinear' | 'nearest';
 export type GeoidHeightDatum = 'orthometric' | 'ellipsoid';
 export type GeoidSourceFormat = 'builtin' | 'gtx' | 'byn';
 export type GpsVectorMode = 'network' | 'sideshot';
-export type ProjectExportFormat = 'webnet' | 'industry-style' | 'landxml';
+export type ProjectExportFormat =
+  | 'points'
+  | 'webnet'
+  | 'industry-style'
+  | 'landxml'
+  | 'bundle-qa-standard'
+  | 'bundle-qa-standard-with-landxml';
 export type AdjustedPointsColumnId = 'P' | 'N' | 'E' | 'Z' | 'D' | 'LAT' | 'LON' | 'EL';
 export type AdjustedPointsDelimiter = 'comma' | 'space' | 'tab';
 export type AdjustedPointsOutputFormat = 'csv' | 'text';

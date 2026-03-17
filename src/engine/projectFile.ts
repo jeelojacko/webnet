@@ -154,7 +154,16 @@ const sanitizeExportFormat = (
   value: unknown,
   fallback: ProjectExportFormat,
 ): ProjectExportFormat => {
-  if (value === 'webnet' || value === 'industry-style' || value === 'landxml') return value;
+  if (
+    value === 'points' ||
+    value === 'webnet' ||
+    value === 'industry-style' ||
+    value === 'landxml' ||
+    value === 'bundle-qa-standard' ||
+    value === 'bundle-qa-standard-with-landxml'
+  ) {
+    return value;
+  }
   return fallback;
 };
 

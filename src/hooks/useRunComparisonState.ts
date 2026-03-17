@@ -7,7 +7,6 @@ import {
   type ComparisonSelection,
   type RunSnapshot,
 } from '../engine/qaWorkflow';
-import type { ExportBundlePreset } from '../engine/exportBundles';
 
 interface RecordRunSnapshotArgs<TSettingsSnapshot, TRunDiagnostics> {
   result: AdjustmentResult;
@@ -24,7 +23,6 @@ interface UseRunComparisonStateArgs<TSettingsSnapshot, TRunDiagnostics> {
     _previous: TSettingsSnapshot | null,
   ) => string[];
   initialComparisonSelection?: ComparisonSelection;
-  initialExportBundlePreset?: ExportBundlePreset;
 }
 
 const DEFAULT_COMPARISON_SELECTION: ComparisonSelection = {
@@ -37,10 +35,7 @@ const DEFAULT_COMPARISON_SELECTION: ComparisonSelection = {
 export const useRunComparisonState = <TSettingsSnapshot, TRunDiagnostics>({
   buildSettingDiffs,
   initialComparisonSelection = DEFAULT_COMPARISON_SELECTION,
-  initialExportBundlePreset = 'qa-standard',
 }: UseRunComparisonStateArgs<TSettingsSnapshot, TRunDiagnostics>) => {
-  const [exportBundlePreset, setExportBundlePreset] =
-    useState<ExportBundlePreset>(initialExportBundlePreset);
   const [runHistory, setRunHistory] = useState<Array<RunSnapshot<TSettingsSnapshot, TRunDiagnostics>>>(
     [],
   );
@@ -141,8 +136,6 @@ export const useRunComparisonState = <TSettingsSnapshot, TRunDiagnostics>({
   );
 
   return {
-    exportBundlePreset,
-    setExportBundlePreset,
     runHistory,
     currentRunSnapshot,
     comparisonSelection,
