@@ -57,7 +57,8 @@
     - [~] Split include expansion and include-scope state restoration into focused modules
       - [x] Extract include expansion, path normalization, and include-file-map resolution into `src/engine/parseIncludes.ts`
       - [x] Add focused module regression coverage for include expansion and cycle detection
-      - [ ] Extract include-scope snapshot/restore orchestration out of `src/engine/parse.ts`
+      - [x] Extract include-scope snapshot/restore orchestration out of `src/engine/parse.ts` into `src/engine/parseIncludeScope.ts`
+      - [x] Add focused module regression coverage for include-scope snapshot/restore behavior
     - [ ] Split canonicalization/traceability/post-parse passes into dedicated modules
   - [ ] Phase 4 - solver modular split
     - [ ] Split preprocessing into a dedicated module boundary

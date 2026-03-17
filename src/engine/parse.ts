@@ -1,6 +1,11 @@
 import { dmsToRad, RAD_TO_DEG, SEC_TO_RAD } from './angles';
 import { parseAutoAdjustDirectiveTokens } from './autoAdjust';
 import { DEFAULT_CANADA_CRS_ID, normalizeCrsId } from './crsCatalog';
+import {
+  createIncludeScopeSnapshot,
+  restoreIncludeScopeSnapshot,
+  type IncludeScopeSnapshot,
+} from './parseIncludeScope';
 import { expandInputWithIncludes } from './parseIncludes';
 import {
   DEFAULT_QFIX_ANGULAR_SIGMA_SEC,
@@ -1209,244 +1214,12 @@ export const parseInput = (
   const descriptionTraceEntries: NonNullable<ParseOptions['descriptionTrace']> = [];
   const aliasTraceSeen = new Set<string>();
   let lostStationIds = new Set<StationId>((state.lostStationIds ?? []).map((id) => `${id}`));
-  interface IncludeScopeSnapshot {
-    state: {
-      units: ParseOptions['units'];
-      coordMode: ParseOptions['coordMode'];
-      coordSystemMode?: ParseOptions['coordSystemMode'];
-      crsId?: ParseOptions['crsId'];
-      localDatumScheme?: ParseOptions['localDatumScheme'];
-      averageScaleFactor?: ParseOptions['averageScaleFactor'];
-      scaleOverrideActive?: ParseOptions['scaleOverrideActive'];
-      commonElevation?: ParseOptions['commonElevation'];
-      averageGeoidHeight?: ParseOptions['averageGeoidHeight'];
-      reductionContext?: ParseOptions['reductionContext'];
-      observationMode?: ParseOptions['observationMode'];
-      gridBearingMode?: ParseOptions['gridBearingMode'];
-      gridDistanceMode?: ParseOptions['gridDistanceMode'];
-      gridAngleMode?: ParseOptions['gridAngleMode'];
-      gridDirectionMode?: ParseOptions['gridDirectionMode'];
-      preanalysisMode?: ParseOptions['preanalysisMode'];
-      order: ParseOptions['order'];
-      angleUnits?: ParseOptions['angleUnits'];
-      angleStationOrder?: ParseOptions['angleStationOrder'];
-      deltaMode: ParseOptions['deltaMode'];
-      mapMode: ParseOptions['mapMode'];
-      normalize: ParseOptions['normalize'];
-      faceNormalizationMode?: ParseOptions['faceNormalizationMode'];
-      directionFaceReliabilityFromCluster?: ParseOptions['directionFaceReliabilityFromCluster'];
-      directionFaceZenithWindowDeg?: ParseOptions['directionFaceZenithWindowDeg'];
-      directionFaceClusterSeparationDeg?: ParseOptions['directionFaceClusterSeparationDeg'];
-      directionFaceClusterSeparationToleranceDeg?: ParseOptions['directionFaceClusterSeparationToleranceDeg'];
-      directionFaceClusterConfidenceMin?: ParseOptions['directionFaceClusterConfidenceMin'];
-      mapScaleFactor?: ParseOptions['mapScaleFactor'];
-      applyCurvatureRefraction?: ParseOptions['applyCurvatureRefraction'];
-      refractionCoefficient?: ParseOptions['refractionCoefficient'];
-      verticalReduction?: ParseOptions['verticalReduction'];
-      levelWeight?: ParseOptions['levelWeight'];
-      originLatDeg?: ParseOptions['originLatDeg'];
-      originLonDeg?: ParseOptions['originLonDeg'];
-      crsTransformEnabled?: ParseOptions['crsTransformEnabled'];
-      crsProjectionModel?: ParseOptions['crsProjectionModel'];
-      crsLabel?: ParseOptions['crsLabel'];
-      crsGridScaleEnabled?: ParseOptions['crsGridScaleEnabled'];
-      crsGridScaleFactor?: ParseOptions['crsGridScaleFactor'];
-      crsConvergenceEnabled?: ParseOptions['crsConvergenceEnabled'];
-      crsConvergenceAngleRad?: ParseOptions['crsConvergenceAngleRad'];
-      geoidModelEnabled?: ParseOptions['geoidModelEnabled'];
-      geoidModelId?: ParseOptions['geoidModelId'];
-      geoidSourceFormat?: ParseOptions['geoidSourceFormat'];
-      geoidSourcePath?: ParseOptions['geoidSourcePath'];
-      geoidInterpolation?: ParseOptions['geoidInterpolation'];
-      geoidHeightConversionEnabled?: ParseOptions['geoidHeightConversionEnabled'];
-      geoidOutputHeightDatum?: ParseOptions['geoidOutputHeightDatum'];
-      gpsVectorMode?: ParseOptions['gpsVectorMode'];
-      gnssVectorFrameDefault?: ParseOptions['gnssVectorFrameDefault'];
-      gnssFrameConfirmed?: ParseOptions['gnssFrameConfirmed'];
-      gpsAddHiHtEnabled?: ParseOptions['gpsAddHiHtEnabled'];
-      gpsAddHiHtHiM?: ParseOptions['gpsAddHiHtHiM'];
-      gpsAddHiHtHtM?: ParseOptions['gpsAddHiHtHtM'];
-      gpsLoopCheckEnabled?: ParseOptions['gpsLoopCheckEnabled'];
-      levelLoopToleranceBaseMm?: ParseOptions['levelLoopToleranceBaseMm'];
-      levelLoopTolerancePerSqrtKmMm?: ParseOptions['levelLoopTolerancePerSqrtKmMm'];
-      lonSign?: ParseOptions['lonSign'];
-      currentInstrument?: ParseOptions['currentInstrument'];
-      edmMode?: ParseOptions['edmMode'];
-      applyCentering?: ParseOptions['applyCentering'];
-      addCenteringToExplicit?: ParseOptions['addCenteringToExplicit'];
-      debug?: ParseOptions['debug'];
-      angleMode?: ParseOptions['angleMode'];
-      tsCorrelationEnabled?: ParseOptions['tsCorrelationEnabled'];
-      tsCorrelationRho?: ParseOptions['tsCorrelationRho'];
-      tsCorrelationScope?: ParseOptions['tsCorrelationScope'];
-      robustMode?: ParseOptions['robustMode'];
-      robustK?: ParseOptions['robustK'];
-      qFixLinearSigmaM?: ParseOptions['qFixLinearSigmaM'];
-      qFixAngularSigmaSec?: ParseOptions['qFixAngularSigmaSec'];
-      prismEnabled?: ParseOptions['prismEnabled'];
-      prismOffset?: ParseOptions['prismOffset'];
-      prismScope?: ParseOptions['prismScope'];
-      rotationAngleRad?: ParseOptions['rotationAngleRad'];
-      autoAdjustEnabled?: ParseOptions['autoAdjustEnabled'];
-      autoAdjustMaxCycles?: ParseOptions['autoAdjustMaxCycles'];
-      autoAdjustMaxRemovalsPerCycle?: ParseOptions['autoAdjustMaxRemovalsPerCycle'];
-      autoAdjustStdResThreshold?: ParseOptions['autoAdjustStdResThreshold'];
-      autoSideshotEnabled?: ParseOptions['autoSideshotEnabled'];
-      directionSetMode?: ParseOptions['directionSetMode'];
-      descriptionReconcileMode?: ParseOptions['descriptionReconcileMode'];
-      descriptionAppendDelimiter?: ParseOptions['descriptionAppendDelimiter'];
-      stationSeparator?: ParseOptions['stationSeparator'];
-      dataInputEnabled?: ParseOptions['dataInputEnabled'];
-      threeReduceMode?: ParseOptions['threeReduceMode'];
-      linearMultiplier?: ParseOptions['linearMultiplier'];
-      elevationInputMode?: ParseOptions['elevationInputMode'];
-      projectElevationMeters?: ParseOptions['projectElevationMeters'];
-      vLevelMode?: ParseOptions['vLevelMode'];
-      vLevelNoneStdErrMeters?: ParseOptions['vLevelNoneStdErrMeters'];
-      clusterDetectionEnabled?: ParseOptions['clusterDetectionEnabled'];
-      clusterLinkageMode?: ParseOptions['clusterLinkageMode'];
-      clusterTolerance2D?: ParseOptions['clusterTolerance2D'];
-      clusterTolerance3D?: ParseOptions['clusterTolerance3D'];
-    };
-    traverseCtx: {
-      occupy?: string;
-      backsight?: string;
-      backsightRefAngle?: number;
-      dirSetId?: string;
-      dirInstCode?: string;
-      dirRawShots?: RawDirectionShot[];
-    };
-    faceMode: 'unknown' | 'face1' | 'face2';
-    directionSetCount: number;
-    lastGpsObservation?: GpsObservation;
-    explicitAliases: Map<StationId, StationId>;
-    explicitAliasLines: Map<StationId, number>;
-    aliasRules: AliasRule[];
-    lostStationIds: Set<StationId>;
-  }
-  const cloneScopedParseState = (): IncludeScopeSnapshot['state'] => ({
-    units: state.units,
-    coordMode: state.coordMode,
-    coordSystemMode: state.coordSystemMode,
-    crsId: state.crsId,
-    localDatumScheme: state.localDatumScheme,
-    averageScaleFactor: state.averageScaleFactor,
-    scaleOverrideActive: state.scaleOverrideActive,
-    commonElevation: state.commonElevation,
-    averageGeoidHeight: state.averageGeoidHeight,
-    reductionContext: state.reductionContext ? { ...state.reductionContext } : undefined,
-    observationMode: state.observationMode ? { ...state.observationMode } : undefined,
-    gridBearingMode: state.gridBearingMode,
-    gridDistanceMode: state.gridDistanceMode,
-    gridAngleMode: state.gridAngleMode,
-    gridDirectionMode: state.gridDirectionMode,
-    preanalysisMode: state.preanalysisMode,
-    order: state.order,
-    angleUnits: state.angleUnits,
-    angleStationOrder: state.angleStationOrder,
-    deltaMode: state.deltaMode,
-    mapMode: state.mapMode,
-    normalize: state.normalize,
-    faceNormalizationMode: state.faceNormalizationMode,
-    directionFaceReliabilityFromCluster: state.directionFaceReliabilityFromCluster,
-    directionFaceZenithWindowDeg: state.directionFaceZenithWindowDeg,
-    directionFaceClusterSeparationDeg: state.directionFaceClusterSeparationDeg,
-    directionFaceClusterSeparationToleranceDeg: state.directionFaceClusterSeparationToleranceDeg,
-    directionFaceClusterConfidenceMin: state.directionFaceClusterConfidenceMin,
-    mapScaleFactor: state.mapScaleFactor,
-    applyCurvatureRefraction: state.applyCurvatureRefraction,
-    refractionCoefficient: state.refractionCoefficient,
-    verticalReduction: state.verticalReduction,
-    levelWeight: state.levelWeight,
-    originLatDeg: state.originLatDeg,
-    originLonDeg: state.originLonDeg,
-    crsTransformEnabled: state.crsTransformEnabled,
-    crsProjectionModel: state.crsProjectionModel,
-    crsLabel: state.crsLabel,
-    crsGridScaleEnabled: state.crsGridScaleEnabled,
-    crsGridScaleFactor: state.crsGridScaleFactor,
-    crsConvergenceEnabled: state.crsConvergenceEnabled,
-    crsConvergenceAngleRad: state.crsConvergenceAngleRad,
-    geoidModelEnabled: state.geoidModelEnabled,
-    geoidModelId: state.geoidModelId,
-    geoidSourceFormat: state.geoidSourceFormat,
-    geoidSourcePath: state.geoidSourcePath,
-    geoidInterpolation: state.geoidInterpolation,
-    geoidHeightConversionEnabled: state.geoidHeightConversionEnabled,
-    geoidOutputHeightDatum: state.geoidOutputHeightDatum,
-    gpsVectorMode: state.gpsVectorMode,
-    gnssVectorFrameDefault: state.gnssVectorFrameDefault,
-    gnssFrameConfirmed: state.gnssFrameConfirmed,
-    gpsAddHiHtEnabled: state.gpsAddHiHtEnabled,
-    gpsAddHiHtHiM: state.gpsAddHiHtHiM,
-    gpsAddHiHtHtM: state.gpsAddHiHtHtM,
-    gpsLoopCheckEnabled: state.gpsLoopCheckEnabled,
-    levelLoopToleranceBaseMm: state.levelLoopToleranceBaseMm,
-    levelLoopTolerancePerSqrtKmMm: state.levelLoopTolerancePerSqrtKmMm,
-    lonSign: state.lonSign,
-    currentInstrument: state.currentInstrument,
-    edmMode: state.edmMode,
-    applyCentering: state.applyCentering,
-    addCenteringToExplicit: state.addCenteringToExplicit,
-    debug: state.debug,
-    angleMode: state.angleMode,
-    tsCorrelationEnabled: state.tsCorrelationEnabled,
-    tsCorrelationRho: state.tsCorrelationRho,
-    tsCorrelationScope: state.tsCorrelationScope,
-    robustMode: state.robustMode,
-    robustK: state.robustK,
-    qFixLinearSigmaM: state.qFixLinearSigmaM,
-    qFixAngularSigmaSec: state.qFixAngularSigmaSec,
-    prismEnabled: state.prismEnabled,
-    prismOffset: state.prismOffset,
-    prismScope: state.prismScope,
-    rotationAngleRad: state.rotationAngleRad,
-    autoAdjustEnabled: state.autoAdjustEnabled,
-    autoAdjustMaxCycles: state.autoAdjustMaxCycles,
-    autoAdjustMaxRemovalsPerCycle: state.autoAdjustMaxRemovalsPerCycle,
-    autoAdjustStdResThreshold: state.autoAdjustStdResThreshold,
-    autoSideshotEnabled: state.autoSideshotEnabled,
-    directionSetMode: state.directionSetMode,
-    descriptionReconcileMode: state.descriptionReconcileMode,
-    descriptionAppendDelimiter: state.descriptionAppendDelimiter,
-    stationSeparator: state.stationSeparator,
-    dataInputEnabled: state.dataInputEnabled,
-    threeReduceMode: state.threeReduceMode,
-    linearMultiplier: state.linearMultiplier,
-    elevationInputMode: state.elevationInputMode,
-    projectElevationMeters: state.projectElevationMeters,
-    vLevelMode: state.vLevelMode,
-    vLevelNoneStdErrMeters: state.vLevelNoneStdErrMeters,
-    clusterDetectionEnabled: state.clusterDetectionEnabled,
-    clusterLinkageMode: state.clusterLinkageMode,
-    clusterTolerance2D: state.clusterTolerance2D,
-    clusterTolerance3D: state.clusterTolerance3D,
-  });
-  const restoreScopedParseState = (snapshot: IncludeScopeSnapshot['state']) => {
-    Object.assign(state, {
-      ...snapshot,
-      reductionContext: snapshot.reductionContext ? { ...snapshot.reductionContext } : undefined,
-      observationMode: snapshot.observationMode ? { ...snapshot.observationMode } : undefined,
-    });
-    normalizeObservationModeState(state);
-  };
-  const cloneTraverseContext = (): IncludeScopeSnapshot['traverseCtx'] => ({
-    occupy: traverseCtx.occupy,
-    backsight: traverseCtx.backsight,
-    backsightRefAngle: traverseCtx.backsightRefAngle,
-    dirSetId: traverseCtx.dirSetId,
-    dirInstCode: traverseCtx.dirInstCode,
-    dirRawShots: traverseCtx.dirRawShots?.map((shot) => ({ ...shot })),
-  });
-  const restoreTraverseContext = (snapshot: IncludeScopeSnapshot['traverseCtx']) => {
-    traverseCtx.occupy = snapshot.occupy;
-    traverseCtx.backsight = snapshot.backsight;
-    traverseCtx.backsightRefAngle = snapshot.backsightRefAngle;
-    traverseCtx.dirSetId = snapshot.dirSetId;
-    traverseCtx.dirInstCode = snapshot.dirInstCode;
-    traverseCtx.dirRawShots = snapshot.dirRawShots?.map((shot) => ({ ...shot }));
-  };
-  const includeScopeStack: IncludeScopeSnapshot[] = [];
+  const includeScopeStack: IncludeScopeSnapshot<
+    GpsObservation,
+    StationId,
+    AliasRule,
+    RawDirectionShot
+  >[] = [];
   const resolveLinearSigma = (
     token: SigmaToken | undefined,
     defaultSigma: number,
@@ -2290,17 +2063,21 @@ export const parseInput = (
     lineNum = entry.sourceLine;
     currentSourceFile = entry.sourceFile;
     if (entry.kind === 'include-enter') {
-      includeScopeStack.push({
-        state: cloneScopedParseState(),
-        traverseCtx: cloneTraverseContext(),
-        faceMode,
-        directionSetCount,
-        lastGpsObservation,
-        explicitAliases: new Map(explicitAliases),
-        explicitAliasLines: new Map(explicitAliasLines),
-        aliasRules: aliasRules.map((rule) => ({ ...rule })),
-        lostStationIds: new Set(lostStationIds),
-      });
+      includeScopeStack.push(
+        createIncludeScopeSnapshot({
+          state,
+          traverseCtx,
+          faceMode,
+          directionSetCount,
+          lastGpsObservation,
+          explicitAliases,
+          explicitAliasLines,
+          aliasRules,
+          lostStationIds,
+          cloneAliasRule: (rule) => ({ ...rule }),
+          cloneRawDirectionShot: (shot) => ({ ...shot }),
+        }),
+      );
       logs.push(
         `Include scope enter: parent=${entry.sourceFile}:${entry.sourceLine} child=${entry.includeSourceFile}`,
       );
@@ -2314,15 +2091,21 @@ export const parseInput = (
         );
         continue;
       }
-      restoreScopedParseState(snapshot.state);
-      restoreTraverseContext(snapshot.traverseCtx);
-      faceMode = snapshot.faceMode;
-      directionSetCount = snapshot.directionSetCount;
-      lastGpsObservation = snapshot.lastGpsObservation;
-      explicitAliases = new Map(snapshot.explicitAliases);
-      explicitAliasLines = new Map(snapshot.explicitAliasLines);
-      aliasRules = snapshot.aliasRules.map((rule) => ({ ...rule }));
-      lostStationIds = new Set(snapshot.lostStationIds);
+      const restoredScope = restoreIncludeScopeSnapshot({
+        stateTarget: state,
+        traverseCtxTarget: traverseCtx,
+        snapshot,
+        normalizeObservationModeState,
+        cloneAliasRule: (rule) => ({ ...rule }),
+        cloneRawDirectionShot: (shot) => ({ ...shot }),
+      });
+      faceMode = restoredScope.faceMode;
+      directionSetCount = restoredScope.directionSetCount;
+      lastGpsObservation = restoredScope.lastGpsObservation;
+      explicitAliases = restoredScope.explicitAliases;
+      explicitAliasLines = restoredScope.explicitAliasLines;
+      aliasRules = restoredScope.aliasRules;
+      lostStationIds = restoredScope.lostStationIds;
       logs.push(
         `Include scope exit: restored parent state at ${entry.sourceFile}:${entry.sourceLine} after ${entry.includeSourceFile}`,
       );
