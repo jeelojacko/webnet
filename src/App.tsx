@@ -39,12 +39,7 @@ import {
 } from './engine/exportBundles';
 import {
   buildQaDerivedResult,
-  buildRunComparison,
   buildRunComparisonText,
-  pushRunSnapshot,
-  resolveComparisonBaseline,
-  type ComparisonSelection,
-  type RunSnapshot,
 } from './engine/qaWorkflow';
 import {
   ADJUSTED_POINTS_ALL_COLUMNS,
@@ -105,6 +100,7 @@ import { isPreanalysisWhatIfCandidate } from './engine/preanalysis';
 import { type RunSessionOutcome, type RunSessionRequest } from './engine/runSession';
 import { useAdjustmentRunner } from './hooks/useAdjustmentRunner';
 import { useQaSelection } from './hooks/useQaSelection';
+import { useRunComparisonState } from './hooks/useRunComparisonState';
 import type {
   AdjustmentResult,
   ClusterApprovedMerge,
@@ -1206,7 +1202,6 @@ const App: React.FC<AppProps> = ({
   const [runDiagnostics, setRunDiagnostics] = useState<RunDiagnostics | null>(null);
   const [runElapsedMs, setRunElapsedMs] = useState<number | null>(null);
   const [exportFormat, setExportFormat] = useState<ProjectExportFormat>('webnet');
-  const [exportBundlePreset, setExportBundlePreset] = useState<ExportBundlePreset>('qa-standard');
   const [lastRunInput, setLastRunInput] = useState<string | null>(null);
   const [lastRunSettingsSnapshot, setLastRunSettingsSnapshot] = useState<RunSettingsSnapshot | null>(
     null,
@@ -1367,17 +1362,6 @@ const App: React.FC<AppProps> = ({
   const [activeClusterApprovedMerges, setActiveClusterApprovedMerges] = useState<
     ClusterApprovedMerge[]
   >([]);
-  const [runHistory, setRunHistory] = useState<Array<RunSnapshot<RunSettingsSnapshot, RunDiagnostics>>>(
-    [],
-  );
-  const [currentRunSnapshot, setCurrentRunSnapshot] =
-    useState<RunSnapshot<RunSettingsSnapshot, RunDiagnostics> | null>(null);
-  const [comparisonSelection, setComparisonSelection] = useState<ComparisonSelection>({
-    baselineRunId: null,
-    pinnedBaselineRunId: null,
-    stationMovementThreshold: 0.001,
-    residualDeltaThreshold: 0.25,
-  });
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const projectFileInputRef = useRef<HTMLInputElement | null>(null);
   const geoidSourceFileInputRef = useRef<HTMLInputElement | null>(null);
@@ -1387,7 +1371,6 @@ const App: React.FC<AppProps> = ({
   const layoutRef = useRef<HTMLDivElement | null>(null);
   const settingsModalContentRef = useRef<HTMLDivElement | null>(null);
   const isResizingRef = useRef(false);
-  const runSnapshotCounterRef = useRef(1);
   const { pipelineState, run: runAdjustment, cancel: cancelAdjustment } =
     useAdjustmentRunner(runWithExclusionsDirect);
 
@@ -1400,6 +1383,20 @@ const App: React.FC<AppProps> = ({
     () => buildPendingRunSettingDiffs(currentRunSettingsSnapshot, lastRunSettingsSnapshot),
     [currentRunSettingsSnapshot, lastRunSettingsSnapshot],
   );
+  const {
+    exportBundlePreset,
+    setExportBundlePreset,
+    runHistory,
+    currentRunSnapshot,
+    comparisonSelection,
+    setComparisonSelection,
+    baselineRunSnapshot,
+    runComparisonSummary,
+    clearRunComparisonState,
+    recordRunSnapshot,
+  } = useRunComparisonState<RunSettingsSnapshot, RunDiagnostics>({
+    buildSettingDiffs: buildPendingRunSettingDiffs,
+  });
   const qaDerivedResult = useMemo(() => (result ? buildQaDerivedResult(result) : null), [result]);
   const {
     selection,
@@ -1414,26 +1411,6 @@ const App: React.FC<AppProps> = ({
     selectPreviousSuspect,
     hasSuspects,
   } = useQaSelection(qaDerivedResult);
-  const baselineRunSnapshot = useMemo(
-    () => resolveComparisonBaseline(runHistory, currentRunSnapshot, comparisonSelection),
-    [comparisonSelection, currentRunSnapshot, runHistory],
-  );
-  const comparisonSettingDiffs = useMemo(() => {
-    if (!currentRunSnapshot || !baselineRunSnapshot) return [];
-    return buildPendingRunSettingDiffs(
-      currentRunSnapshot.settingsSnapshot,
-      baselineRunSnapshot.settingsSnapshot,
-    );
-  }, [baselineRunSnapshot, currentRunSnapshot]);
-  const runComparisonSummary = useMemo(() => {
-    if (!currentRunSnapshot || !baselineRunSnapshot) return null;
-    return buildRunComparison(
-      currentRunSnapshot,
-      baselineRunSnapshot,
-      comparisonSelection,
-      comparisonSettingDiffs,
-    );
-  }, [baselineRunSnapshot, comparisonSelection, comparisonSettingDiffs, currentRunSnapshot]);
   const runPhaseLabel = useMemo(() => {
     if (pipelineState.status === 'running') {
       if (pipelineState.phase === 'queued') return 'Queued';
@@ -4739,26 +4716,6 @@ const App: React.FC<AppProps> = ({
     );
   };
 
-  const currentWebNetReportText = useMemo(
-    () => (result ? buildResultsText(result) : ''),
-    [buildResultsText, result],
-  );
-  const currentIndustryListingText = useMemo(
-    () => (result ? buildIndustryListingText(result) : ''),
-    [buildIndustryListingText, result],
-  );
-  const currentLandXmlText = useMemo(() => {
-    if (!result) return '';
-    const runDiag = runDiagnostics ?? buildRunDiagnostics(parseSettings, result);
-    return buildLandXmlText(result, {
-      units: settings.units,
-      solveProfile: runDiag.solveProfile,
-      showLostStations: settings.listingShowLostStations,
-      projectName: 'webnet-adjustment',
-      applicationName: 'WebNet',
-      applicationVersion: '0.0.0',
-    });
-  }, [buildRunDiagnostics, parseSettings, result, runDiagnostics, settings.listingShowLostStations, settings.units]);
   const currentComparisonText = useMemo(
     () => (runComparisonSummary ? buildRunComparisonText(runComparisonSummary) : ''),
     [runComparisonSummary],
@@ -4778,10 +4735,18 @@ const App: React.FC<AppProps> = ({
     if (!result) return;
     const text =
       exportFormat === 'industry-style'
-        ? currentIndustryListingText
+        ? buildIndustryListingText(result)
         : exportFormat === 'landxml'
-          ? currentLandXmlText
-          : currentWebNetReportText;
+          ? buildLandXmlText(result, {
+              units: settings.units,
+              solveProfile:
+                (runDiagnostics ?? buildRunDiagnostics(parseSettings, result)).solveProfile,
+              showLostStations: settings.listingShowLostStations,
+              projectName: 'webnet-adjustment',
+              applicationName: 'WebNet',
+              applicationVersion: '0.0.0',
+            })
+          : buildResultsText(result);
     const isXmlExport = exportFormat === 'landxml';
     const suggestedName = `${
       exportFormat === 'industry-style'
@@ -4824,13 +4789,7 @@ const App: React.FC<AppProps> = ({
     setOverrides({});
     setClusterReviewDecisions({});
     setActiveClusterApprovedMerges([]);
-    setRunHistory([]);
-    setCurrentRunSnapshot(null);
-    setComparisonSelection((prev) => ({
-      ...prev,
-      baselineRunId: null,
-      pinnedBaselineRunId: null,
-    }));
+    clearRunComparisonState();
     clearSelection();
     setImportReviewState(null);
   };
@@ -4910,16 +4869,30 @@ const App: React.FC<AppProps> = ({
       units: settings.units,
       settings: adjustedPointsExportSettings,
     });
+    const webnetText = buildResultsText(result);
+    const industryListingText = buildIndustryListingText(result);
+    const landXmlText =
+      exportBundlePreset === 'qa-standard-with-landxml'
+        ? buildLandXmlText(result, {
+            units: settings.units,
+            solveProfile:
+              (runDiagnostics ?? buildRunDiagnostics(parseSettings, result)).solveProfile,
+            showLostStations: settings.listingShowLostStations,
+            projectName: 'webnet-adjustment',
+            applicationName: 'WebNet',
+            applicationVersion: '0.0.0',
+          })
+        : null;
     const dateStamp = new Date().toISOString().slice(0, 10);
     const files = buildExportBundleFiles({
       preset: exportBundlePreset,
       dateStamp,
       adjustedPointsExtension: adjustedPointsExportSettings.format === 'csv' ? 'csv' : 'txt',
-      webnetText: currentWebNetReportText,
-      industryListingText: currentIndustryListingText,
+      webnetText,
+      industryListingText,
       adjustedPointsText,
       comparisonText: currentComparisonText || null,
-      landXmlText: exportBundlePreset === 'qa-standard-with-landxml' ? currentLandXmlText : null,
+      landXmlText,
     });
     files.forEach((file) => downloadNamedTextFile(file.name, file.text, file.mimeType));
     setImportNotice({
@@ -6215,49 +6188,15 @@ const App: React.FC<AppProps> = ({
     setRunElapsedMs(outcome.elapsedMs);
     setResult(solved);
     setActiveTab('report');
-    const nextSnapshot: RunSnapshot<RunSettingsSnapshot, RunDiagnostics> = {
-      id: `run-${runSnapshotCounterRef.current}`,
-      createdAt: new Date().toISOString(),
-      label: `Run ${runSnapshotCounterRef.current.toString().padStart(2, '0')}`,
+    recordRunSnapshot({
       result: solved,
       runDiagnostics: runProfile,
       settingsSnapshot: context.settingsSnapshot,
-      excludedIds: outcome.effectiveExcludedIds.slice().sort((a, b) => a - b),
+      excludedIds: outcome.effectiveExcludedIds,
       overrideIds: Object.keys(overrides)
         .map((value) => Number.parseInt(value, 10))
-        .filter((value) => Number.isFinite(value))
-        .sort((a, b) => a - b),
-      approvedClusterMerges: outcome.effectiveClusterApprovedMerges.map((merge) => ({ ...merge })),
-    };
-    runSnapshotCounterRef.current += 1;
-    setCurrentRunSnapshot(nextSnapshot);
-    setRunHistory((prev) => {
-      const nextHistory = pushRunSnapshot(prev, nextSnapshot);
-      if (
-        !comparisonSelection.pinnedBaselineRunId &&
-        !comparisonSelection.baselineRunId &&
-        nextHistory.length > 1
-      ) {
-        setComparisonSelection((currentSelection) => ({
-          ...currentSelection,
-          baselineRunId: nextHistory[1]?.id ?? null,
-        }));
-      } else {
-        const availableIds = new Set(nextHistory.map((entry) => entry.id));
-        setComparisonSelection((currentSelection) => ({
-          ...currentSelection,
-          baselineRunId:
-            currentSelection.baselineRunId && !availableIds.has(currentSelection.baselineRunId)
-              ? nextHistory.find((entry) => entry.id !== nextSnapshot.id)?.id ?? null
-              : currentSelection.baselineRunId,
-          pinnedBaselineRunId:
-            currentSelection.pinnedBaselineRunId &&
-            !availableIds.has(currentSelection.pinnedBaselineRunId)
-              ? null
-              : currentSelection.pinnedBaselineRunId,
-        }));
-      }
-      return nextHistory;
+        .filter((value) => Number.isFinite(value)),
+      approvedClusterMerges: outcome.effectiveClusterApprovedMerges,
     });
   };
 
@@ -10441,7 +10380,7 @@ const App: React.FC<AppProps> = ({
                     />
                   )}
                   {activeTab === 'industry-output' && (
-                    <IndustryOutputView text={currentIndustryListingText} />
+                    <IndustryOutputView text={result ? buildIndustryListingText(result) : ''} />
                   )}
                   {activeTab === 'map' && (
                     <MapView
