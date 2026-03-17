@@ -55,6 +55,11 @@ export type ProjectOptionsTab =
   | 'gps'
   | 'modeling';
 export type CrsCatalogGroupFilter = 'all' | 'global' | 'canada-utm' | 'canada-mtm' | 'canada-provincial';
+export type ClusterReviewStatus = 'pending' | 'approve' | 'reject';
+export type ClusterReviewDecision = {
+  status: ClusterReviewStatus;
+  canonicalId: string;
+};
 
 export type SettingsState = {
   maxIterations: number;

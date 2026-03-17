@@ -34,6 +34,8 @@
     - [x] Extract workspace/project state and workspace-artifact reset semantics into a dedicated hook
     - [x] Extract Project Options draft state and apply/cancel orchestration into dedicated hooks/modules
     - [x] Extract import-review workflow state and handlers into a dedicated hook/module
+    - [x] Extract adjustment run/review orchestration (exclusions, overrides, cluster review state, rerun handlers, and outcome application) into a dedicated hook
+    - [x] Add focused hook regression coverage for adjustment run/review orchestration state transitions
     - [ ] Extract remaining top-level orchestration helpers so `App.tsx` becomes a shell/composition layer
   - [ ] Phase 2 - shared derived-model cleanup
     - [x] Add shared QA derived-data model for report/map comparison workflows

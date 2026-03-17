@@ -68,7 +68,7 @@ import {
 import { type ImportedInputNotice } from './engine/importers';
 import { isPreanalysisWhatIfCandidate } from './engine/preanalysis';
 import { type RunSessionOutcome, type RunSessionRequest } from './engine/runSession';
-import { useAdjustmentRunner } from './hooks/useAdjustmentRunner';
+import { useAdjustmentWorkflow } from './hooks/useAdjustmentWorkflow';
 import { useImportReviewWorkflow } from './hooks/useImportReviewWorkflow';
 import { useProjectOptionsState } from './hooks/useProjectOptionsState';
 import { useQaSelection } from './hooks/useQaSelection';
@@ -90,7 +90,6 @@ import type {
 import type {
   AdjustmentResult,
   ClusterApprovedMerge,
-  ClusterRejectedProposal,
   Instrument,
   InstrumentLibrary,
   Observation,
@@ -264,15 +263,6 @@ const normalizeUiTheme = (value: unknown): UiTheme => {
   return 'gruvbox-dark';
 };
 
-type ClusterReviewStatus = 'pending' | 'approve' | 'reject';
-
-type ClusterReviewDecision = {
-  status: ClusterReviewStatus;
-  canonicalId: string;
-};
-
-type ClusterCandidate = NonNullable<AdjustmentResult['clusterDiagnostics']>['candidates'][number];
-
 const createRunSettingsSnapshot = (
   settings: SettingsState,
   parseSettings: ParseSettings,
@@ -422,6 +412,15 @@ const getExportFormatLabel = (format: ProjectExportFormat): string => {
     default:
       return 'Export output';
   }
+};
+
+const measureElapsedMs = <T,>(work: () => T): { value: T; elapsedMs: number } => {
+  const startMs = Date.now();
+  const value = work();
+  return {
+    value,
+    elapsedMs: Date.now() - startMs,
+  };
 };
 type ResolvedLevelLoopTolerancePreset = {
   id: string;
@@ -1149,14 +1148,6 @@ const App: React.FC<AppProps> = ({
       return Number.isFinite(parsed) ? parsed : null;
     },
   });
-  const [excludedIds, setExcludedIds] = useState<Set<number>>(new Set());
-  const [overrides, setOverrides] = useState<Record<number, ObservationOverride>>({});
-  const [clusterReviewDecisions, setClusterReviewDecisions] = useState<
-    Record<string, ClusterReviewDecision>
-  >({});
-  const [activeClusterApprovedMerges, setActiveClusterApprovedMerges] = useState<
-    ClusterApprovedMerge[]
-  >([]);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const projectFileInputRef = useRef<HTMLInputElement | null>(null);
   const geoidSourceFileInputRef = useRef<HTMLInputElement | null>(null);
@@ -1210,9 +1201,6 @@ const App: React.FC<AppProps> = ({
     setImportNotice,
     resetWorkspaceForImportedInput: resetRunStateAfterImportedInput,
   });
-  const { pipelineState, run: runAdjustment, cancel: cancelAdjustment } =
-    useAdjustmentRunner(runWithExclusionsDirect);
-
   const parsedInputInstruments = useMemo(() => parseInstrumentLibraryFromInput(input), [input]);
   const currentRunSettingsSnapshot = useMemo(
     () => createRunSettingsSnapshot(settings, parseSettings, selectedInstrument),
@@ -1248,17 +1236,6 @@ const App: React.FC<AppProps> = ({
     selectPreviousSuspect,
     hasSuspects,
   } = useQaSelection(qaDerivedResult);
-  const runPhaseLabel = useMemo(() => {
-    if (pipelineState.status === 'running') {
-      if (pipelineState.phase === 'queued') return 'Queued';
-      if (pipelineState.phase === 'solving') return 'Solving';
-      if (pipelineState.phase === 'finalizing') return 'Finalizing';
-      return 'Running';
-    }
-    if (pipelineState.status === 'cancelled') return 'Cancelled';
-    if (pipelineState.status === 'failed') return 'Failed';
-    return null;
-  }, [pipelineState.phase, pipelineState.status]);
   const selectedDraftCrs = useMemo(
     () =>
       CANADA_CRS_CATALOG.find((row) => row.id === parseSettingsDraft.crsId) ??
@@ -1410,25 +1387,6 @@ const App: React.FC<AppProps> = ({
     projectInstrumentsDraft,
     selectedInstrumentDraft,
   ]);
-
-  useEffect(() => {
-    const candidates = result?.clusterDiagnostics?.candidates ?? [];
-    setClusterReviewDecisions((prev) => {
-      const next: Record<string, ClusterReviewDecision> = {};
-      candidates.forEach((candidate) => {
-        const prior = prev[candidate.key];
-        const canonicalId =
-          prior && candidate.stationIds.includes(prior.canonicalId)
-            ? prior.canonicalId
-            : candidate.representativeId;
-        next[candidate.key] = {
-          status: prior?.status ?? 'pending',
-          canonicalId,
-        };
-      });
-      return next;
-    });
-  }, [result?.clusterDiagnostics]);
 
   // handle dragging of vertical divider
   useEffect(() => {
@@ -1585,50 +1543,6 @@ const App: React.FC<AppProps> = ({
           a.canonicalId.localeCompare(b.canonicalId, undefined, { numeric: true }) ||
           a.aliasId.localeCompare(b.aliasId, undefined, { numeric: true }),
       );
-  };
-
-  const buildApprovedClusterMerges = (
-    res: AdjustmentResult | null,
-    decisions: Record<string, ClusterReviewDecision>,
-  ): ClusterApprovedMerge[] => {
-    const candidates = res?.clusterDiagnostics?.candidates ?? [];
-    const merges: ClusterApprovedMerge[] = [];
-    candidates.forEach((candidate) => {
-      const decision = decisions[candidate.key];
-      if (!decision || decision.status !== 'approve') return;
-      const canonicalId = candidate.stationIds.includes(decision.canonicalId)
-        ? decision.canonicalId
-        : candidate.representativeId;
-      candidate.stationIds.forEach((stationId) => {
-        if (stationId === canonicalId) return;
-        merges.push({ aliasId: stationId, canonicalId });
-      });
-    });
-    return normalizeClusterApprovedMerges(merges);
-  };
-
-  const buildRejectedClusterProposals = (
-    candidates: ClusterCandidate[],
-    decisions: Record<string, ClusterReviewDecision>,
-  ): ClusterRejectedProposal[] => {
-    const rows: ClusterRejectedProposal[] = [];
-    candidates.forEach((candidate) => {
-      const decision = decisions[candidate.key];
-      if (!decision || decision.status !== 'reject') return;
-      const retainedId =
-        decision.canonicalId && candidate.stationIds.includes(decision.canonicalId)
-          ? decision.canonicalId
-          : undefined;
-      rows.push({
-        key: candidate.key,
-        representativeId: candidate.representativeId,
-        stationIds: [...candidate.stationIds],
-        memberCount: candidate.memberCount,
-        retainedId,
-        reason: 'Rejected by user review',
-      });
-    });
-    return rows.sort((a, b) => a.key.localeCompare(b.key, undefined, { numeric: true }));
   };
 
   const normalizeSolveProfile = (
@@ -4562,10 +4476,7 @@ const App: React.FC<AppProps> = ({
 
   function resetRunStateAfterImportedInput() {
     clearWorkspaceArtifacts();
-    setExcludedIds(new Set());
-    setOverrides({});
-    setClusterReviewDecisions({});
-    setActiveClusterApprovedMerges([]);
+    resetAdjustmentWorkflowState();
     clearRunComparisonState();
     clearSelection();
     resetImportReviewWorkflow();
@@ -5253,230 +5164,157 @@ const App: React.FC<AppProps> = ({
   };
 
   function runWithExclusionsDirect(request: RunSessionRequest): RunSessionOutcome {
-    const runStartMs = Date.now();
-    let effectiveExclusions = new Set(request.excludedIds);
-    let effectiveOverrides = request.overrides;
-    let effectiveClusterMerges = normalizeClusterApprovedMerges(request.approvedClusterMerges);
-    let autoAdjustSummary: ReturnType<typeof runAutoAdjustCycles> | null = null;
-    if (!parseSettings.clusterDetectionEnabled) {
-      effectiveClusterMerges = [];
-    }
-    const inputChangedSinceLastRun = request.lastRunInput != null && request.input !== request.lastRunInput;
-    const droppedExclusions = inputChangedSinceLastRun ? effectiveExclusions.size : 0;
-    const droppedOverrides = inputChangedSinceLastRun ? Object.keys(effectiveOverrides).length : 0;
-    const droppedClusterMerges = inputChangedSinceLastRun ? effectiveClusterMerges.length : 0;
-
-    if (
-      inputChangedSinceLastRun &&
-      (droppedExclusions > 0 || droppedOverrides > 0 || droppedClusterMerges > 0)
-    ) {
-      effectiveExclusions = new Set();
-      effectiveOverrides = {};
-      effectiveClusterMerges = [];
-    }
-
-    const inlineAutoAdjust = extractAutoAdjustDirectiveFromInput(request.input);
-    const uiRunMode: RunMode =
-      request.parseSettings.runMode ??
-      (request.parseSettings.preanalysisMode ? 'preanalysis' : 'adjustment');
-    const autoAdjustConfig: AutoAdjustConfig = {
-      enabled:
-        uiRunMode === 'adjustment'
-          ? (inlineAutoAdjust?.enabled ?? request.parseSettings.autoAdjustEnabled)
-          : false,
-      maxCycles: inlineAutoAdjust?.maxCycles ?? request.parseSettings.autoAdjustMaxCycles,
-      maxRemovalsPerCycle:
-        inlineAutoAdjust?.maxRemovalsPerCycle ?? request.parseSettings.autoAdjustMaxRemovalsPerCycle,
-      stdResThreshold:
-        inlineAutoAdjust?.stdResThreshold ?? request.parseSettings.autoAdjustStdResThreshold,
-      minRedundancy: AUTO_ADJUST_MIN_REDUNDANCY,
-    };
-    if (autoAdjustConfig.enabled) {
-      autoAdjustSummary = runAutoAdjustCycles(
-        effectiveExclusions,
-        autoAdjustConfig,
-        (trialExclusions) =>
-          solveCore(trialExclusions, undefined, effectiveOverrides, effectiveClusterMerges),
-      );
-      effectiveExclusions = autoAdjustSummary.finalExcludedIds;
-    }
-
-    const solved = solveWithImpacts(
-      effectiveExclusions,
-      effectiveOverrides,
-      effectiveClusterMerges,
-    );
-    if (autoAdjustSummary?.enabled) {
-      solved.autoAdjustDiagnostics = {
-        enabled: true,
-        threshold: autoAdjustSummary.config.stdResThreshold,
-        maxCycles: autoAdjustSummary.config.maxCycles,
-        maxRemovalsPerCycle: autoAdjustSummary.config.maxRemovalsPerCycle,
-        minRedundancy: autoAdjustSummary.config.minRedundancy ?? AUTO_ADJUST_MIN_REDUNDANCY,
-        stopReason: autoAdjustSummary.stopReason,
-        cycles: autoAdjustSummary.cycles.map((cycle) => ({
-          cycle: cycle.cycle,
-          seuw: cycle.seuw,
-          maxAbsStdRes: cycle.maxAbsStdRes,
-          removals: [...cycle.removals],
-        })),
-        removed: autoAdjustSummary.cycles.flatMap((cycle) => cycle.removals),
-      };
-      const autoLines = formatAutoAdjustLogLines(autoAdjustSummary);
-      for (let i = autoLines.length - 1; i >= 0; i -= 1) {
-        solved.logs.unshift(autoLines[i]);
+    const { value, elapsedMs } = measureElapsedMs(() => {
+      let effectiveExclusions = new Set(request.excludedIds);
+      let effectiveOverrides = request.overrides;
+      let effectiveClusterMerges = normalizeClusterApprovedMerges(request.approvedClusterMerges);
+      let autoAdjustSummary: ReturnType<typeof runAutoAdjustCycles> | null = null;
+      if (!parseSettings.clusterDetectionEnabled) {
+        effectiveClusterMerges = [];
       }
-    }
+      const inputChangedSinceLastRun =
+        request.lastRunInput != null && request.input !== request.lastRunInput;
+      const droppedExclusions = inputChangedSinceLastRun ? effectiveExclusions.size : 0;
+      const droppedOverrides = inputChangedSinceLastRun ? Object.keys(effectiveOverrides).length : 0;
+      const droppedClusterMerges = inputChangedSinceLastRun ? effectiveClusterMerges.length : 0;
+
+      if (
+        inputChangedSinceLastRun &&
+        (droppedExclusions > 0 || droppedOverrides > 0 || droppedClusterMerges > 0)
+      ) {
+        effectiveExclusions = new Set();
+        effectiveOverrides = {};
+        effectiveClusterMerges = [];
+      }
+
+      const inlineAutoAdjust = extractAutoAdjustDirectiveFromInput(request.input);
+      const uiRunMode: RunMode =
+        request.parseSettings.runMode ??
+        (request.parseSettings.preanalysisMode ? 'preanalysis' : 'adjustment');
+      const autoAdjustConfig: AutoAdjustConfig = {
+        enabled:
+          uiRunMode === 'adjustment'
+            ? (inlineAutoAdjust?.enabled ?? request.parseSettings.autoAdjustEnabled)
+            : false,
+        maxCycles: inlineAutoAdjust?.maxCycles ?? request.parseSettings.autoAdjustMaxCycles,
+        maxRemovalsPerCycle:
+          inlineAutoAdjust?.maxRemovalsPerCycle ??
+          request.parseSettings.autoAdjustMaxRemovalsPerCycle,
+        stdResThreshold:
+          inlineAutoAdjust?.stdResThreshold ?? request.parseSettings.autoAdjustStdResThreshold,
+        minRedundancy: AUTO_ADJUST_MIN_REDUNDANCY,
+      };
+      if (autoAdjustConfig.enabled) {
+        autoAdjustSummary = runAutoAdjustCycles(
+          effectiveExclusions,
+          autoAdjustConfig,
+          (trialExclusions) =>
+            solveCore(trialExclusions, undefined, effectiveOverrides, effectiveClusterMerges),
+        );
+        effectiveExclusions = autoAdjustSummary.finalExcludedIds;
+      }
+
+      const solved = solveWithImpacts(
+        effectiveExclusions,
+        effectiveOverrides,
+        effectiveClusterMerges,
+      );
+      if (autoAdjustSummary?.enabled) {
+        solved.autoAdjustDiagnostics = {
+          enabled: true,
+          threshold: autoAdjustSummary.config.stdResThreshold,
+          maxCycles: autoAdjustSummary.config.maxCycles,
+          maxRemovalsPerCycle: autoAdjustSummary.config.maxRemovalsPerCycle,
+          minRedundancy: autoAdjustSummary.config.minRedundancy ?? AUTO_ADJUST_MIN_REDUNDANCY,
+          stopReason: autoAdjustSummary.stopReason,
+          cycles: autoAdjustSummary.cycles.map((cycle) => ({
+            cycle: cycle.cycle,
+            seuw: cycle.seuw,
+            maxAbsStdRes: cycle.maxAbsStdRes,
+            removals: [...cycle.removals],
+          })),
+          removed: autoAdjustSummary.cycles.flatMap((cycle) => cycle.removals),
+        };
+        const autoLines = formatAutoAdjustLogLines(autoAdjustSummary);
+        for (let i = autoLines.length - 1; i >= 0; i -= 1) {
+          solved.logs.unshift(autoLines[i]);
+        }
+      }
+
+      return {
+        result: solved,
+        effectiveExcludedIds: [...effectiveExclusions],
+        effectiveClusterApprovedMerges: effectiveClusterMerges,
+        droppedExclusions,
+        droppedOverrides,
+        droppedClusterMerges,
+        inputChangedSinceLastRun,
+      };
+    });
 
     return {
-      result: solved,
-      effectiveExcludedIds: [...effectiveExclusions],
-      effectiveClusterApprovedMerges: effectiveClusterMerges,
-      droppedExclusions,
-      droppedOverrides,
-      droppedClusterMerges,
-      inputChangedSinceLastRun,
-      elapsedMs: Date.now() - runStartMs,
+      ...value,
+      elapsedMs,
     };
   }
 
-  const applyRunOutcome = (
-    outcome: RunSessionOutcome,
-    context: {
-      inputSnapshot: string;
-      parseSettingsSnapshot: ParseSettings;
-      settingsSnapshot: RunSettingsSnapshot;
-      reviewContext?: {
-        candidates: ClusterCandidate[];
-        decisions: Record<string, ClusterReviewDecision>;
-      };
-    },
-  ) => {
-    const solved = outcome.result;
-    if (solved.clusterDiagnostics?.enabled) {
-      const contextCandidates =
-        context.reviewContext?.candidates ?? result?.clusterDiagnostics?.candidates ?? [];
-      const contextDecisions = context.reviewContext?.decisions ?? clusterReviewDecisions;
-      const rejected = buildRejectedClusterProposals(contextCandidates, contextDecisions);
-      solved.clusterDiagnostics.rejectedProposals = rejected;
-      if (rejected.length > 0) {
-        solved.logs.unshift(`Cluster review: rejected proposals=${rejected.length}`);
-      }
+  const {
+    pipelineState,
+    cancelAdjustment,
+    excludedIds,
+    overrides,
+    clusterReviewDecisions,
+    activeClusterApprovedMerges,
+    handleRun,
+    applyImpactExclusion,
+    applyPreanalysisPlanningAction,
+    toggleExclude,
+    clearExclusions,
+    handleOverride,
+    resetOverrides,
+    handleClusterDecisionStatus,
+    handleClusterCanonicalSelection,
+    applyClusterReviewMerges,
+    resetClusterReview,
+    clearClusterApprovedMerges,
+    resetAdjustmentWorkflowState,
+  } = useAdjustmentWorkflow<RunDiagnostics>({
+    input,
+    lastRunInput,
+    settings,
+    parseSettings,
+    projectInstruments,
+    selectedInstrument,
+    projectIncludeFiles,
+    geoidSourceData,
+    currentRunSettingsSnapshot,
+    result,
+    buildRunDiagnostics,
+    directRunner: runWithExclusionsDirect,
+    setResult,
+    setRunDiagnostics,
+    setRunElapsedMs,
+    setLastRunInput,
+    setLastRunSettingsSnapshot,
+    activateReportTab: () => setActiveTab('report'),
+    recordRunSnapshot,
+  });
+  const runPhaseLabel = useMemo(() => {
+    if (pipelineState.status === 'running') {
+      if (pipelineState.phase === 'queued') return 'Queued';
+      if (pipelineState.phase === 'solving') return 'Solving';
+      if (pipelineState.phase === 'finalizing') return 'Finalizing';
+      return 'Running';
     }
-    const runProfile = buildRunDiagnostics(context.parseSettingsSnapshot, solved);
-    if (runProfile.parity) {
-      solved.logs.unshift(
-        'Solve profile: Industry Standard parity (raw directions, classical weighting, industry default instrument fallback).',
-      );
-    }
-    if (runProfile.preanalysisMode) {
-      solved.logs.unshift(
-        `Run mode: preanalysis (planned observations=${runProfile.plannedObservationCount}, residual-based QC disabled).`,
-      );
-    } else if (runProfile.runMode !== 'adjustment') {
-      solved.logs.unshift(`Run mode: ${runProfile.runMode}.`);
-    }
-    if (
-      outcome.inputChangedSinceLastRun &&
-      (outcome.droppedExclusions > 0 ||
-        outcome.droppedOverrides > 0 ||
-        outcome.droppedClusterMerges > 0)
-    ) {
-      solved.logs.unshift(
-        `Input changed since previous run: cleared ${outcome.droppedExclusions} exclusion(s), ${outcome.droppedOverrides} override(s), and ${outcome.droppedClusterMerges} approved cluster merge(s).`,
-      );
-      setOverrides({});
-      setClusterReviewDecisions({});
-    }
-    setLastRunInput(context.inputSnapshot);
-    setLastRunSettingsSnapshot(context.settingsSnapshot);
-    setExcludedIds(new Set(outcome.effectiveExcludedIds));
-    setActiveClusterApprovedMerges(outcome.effectiveClusterApprovedMerges);
-    setRunDiagnostics(runProfile);
-    setRunElapsedMs(outcome.elapsedMs);
-    setResult(solved);
-    setActiveTab('report');
-    recordRunSnapshot({
-      result: solved,
-      runDiagnostics: runProfile,
-      settingsSnapshot: context.settingsSnapshot,
-      excludedIds: outcome.effectiveExcludedIds,
-      overrideIds: Object.keys(overrides)
-        .map((value) => Number.parseInt(value, 10))
-        .filter((value) => Number.isFinite(value)),
-      approvedClusterMerges: outcome.effectiveClusterApprovedMerges,
-    });
-  };
-
-  const runWithExclusions = (
-    excludeSet: Set<number>,
-    approvedClusterMerges: ClusterApprovedMerge[] = activeClusterApprovedMerges,
-    reviewContext?: {
-      candidates: ClusterCandidate[];
-      decisions: Record<string, ClusterReviewDecision>;
-    },
-  ) => {
-    const request: RunSessionRequest = {
-      input,
-      lastRunInput,
-      maxIterations: settings.maxIterations,
-      convergenceLimit: settings.convergenceLimit,
-      units: settings.units,
-      parseSettings: { ...parseSettings },
-      projectInstruments: cloneInstrumentLibrary(projectInstruments),
-      selectedInstrument,
-      projectIncludeFiles: { ...projectIncludeFiles },
-      geoidSourceData,
-      excludedIds: [...excludeSet],
-      overrides: { ...overrides },
-      approvedClusterMerges,
-    };
-    const context = {
-      inputSnapshot: input,
-      parseSettingsSnapshot: { ...parseSettings },
-      settingsSnapshot: currentRunSettingsSnapshot,
-      reviewContext,
-    };
-    void runAdjustment(request)
-      .then((outcome) => applyRunOutcome(outcome, context))
-      .catch((error) => {
-        if (error instanceof Error && error.message === 'Run cancelled') return;
-        console.error(error);
-      });
-  };
-
-  const handleRun = () => {
-    runWithExclusions(new Set(excludedIds), activeClusterApprovedMerges, {
-      candidates: result?.clusterDiagnostics?.candidates ?? [],
-      decisions: clusterReviewDecisions,
-    });
-  };
+    if (pipelineState.status === 'cancelled') return 'Cancelled';
+    if (pipelineState.status === 'failed') return 'Failed';
+    return null;
+  }, [pipelineState.phase, pipelineState.status]);
 
   const handleJumpToSourceLine = (lineNumber: number) => {
     if (!Number.isFinite(lineNumber) || lineNumber <= 0) return;
     if (!isSidebarOpen) setIsSidebarOpen(true);
     setPendingEditorJumpLine(Math.trunc(lineNumber));
-  };
-
-  const applyImpactExclusion = (id: number) => {
-    const next = new Set(excludedIds);
-    next.add(id);
-    setExcludedIds(next);
-    runWithExclusions(next, activeClusterApprovedMerges, {
-      candidates: result?.clusterDiagnostics?.candidates ?? [],
-      decisions: clusterReviewDecisions,
-    });
-  };
-
-  const applyPreanalysisPlanningAction = (id: number) => {
-    const next = new Set(excludedIds);
-    if (next.has(id)) next.delete(id);
-    else next.add(id);
-    setExcludedIds(next);
-    runWithExclusions(next, activeClusterApprovedMerges, {
-      candidates: result?.clusterDiagnostics?.candidates ?? [],
-      decisions: clusterReviewDecisions,
-    });
   };
 
   const handleDraftUnitChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -5954,94 +5792,11 @@ const App: React.FC<AppProps> = ({
 
   const parityProfileActive = normalizeSolveProfile(parseSettingsDraft.solveProfile) !== 'webnet';
 
-  const toggleExclude = (id: number) => {
-    setExcludedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  };
-
-  const clearExclusions = () => setExcludedIds(new Set());
-
-  const handleOverride = (id: number, payload: ObservationOverride) => {
-    setOverrides((prev) => ({ ...prev, [id]: { ...prev[id], ...payload } }));
-  };
-
-  const resetOverrides = () => setOverrides({});
-
-  const handleClusterDecisionStatus = (clusterKey: string, status: ClusterReviewStatus) => {
-    const candidate = result?.clusterDiagnostics?.candidates.find((c) => c.key === clusterKey);
-    if (!candidate) return;
-    setClusterReviewDecisions((prev) => {
-      const prior = prev[clusterKey];
-      const canonicalId =
-        prior && candidate.stationIds.includes(prior.canonicalId)
-          ? prior.canonicalId
-          : candidate.representativeId;
-      return {
-        ...prev,
-        [clusterKey]: {
-          status,
-          canonicalId,
-        },
-      };
-    });
-  };
-
-  const handleClusterCanonicalSelection = (clusterKey: string, canonicalId: string) => {
-    const candidate = result?.clusterDiagnostics?.candidates.find((c) => c.key === clusterKey);
-    if (!candidate) return;
-    if (!candidate.stationIds.includes(canonicalId)) return;
-    setClusterReviewDecisions((prev) => {
-      const prior = prev[clusterKey];
-      return {
-        ...prev,
-        [clusterKey]: {
-          status: prior?.status ?? 'pending',
-          canonicalId,
-        },
-      };
-    });
-  };
-
-  const applyClusterReviewMerges = () => {
-    const candidates = result?.clusterDiagnostics?.candidates ?? [];
-    const approved = buildApprovedClusterMerges(result, clusterReviewDecisions);
-    setActiveClusterApprovedMerges(approved);
-    runWithExclusions(new Set(excludedIds), approved, {
-      candidates,
-      decisions: clusterReviewDecisions,
-    });
-  };
-
-  const resetClusterReview = () => {
-    const candidates = result?.clusterDiagnostics?.candidates ?? [];
-    const next: Record<string, ClusterReviewDecision> = {};
-    candidates.forEach((candidate) => {
-      next[candidate.key] = {
-        status: 'pending',
-        canonicalId: candidate.representativeId,
-      };
-    });
-    setClusterReviewDecisions(next);
-  };
-
-  const clearClusterApprovedMerges = () => {
-    setActiveClusterApprovedMerges([]);
-    runWithExclusions(new Set(excludedIds), [], {
-      candidates: result?.clusterDiagnostics?.candidates ?? [],
-      decisions: clusterReviewDecisions,
-    });
-  };
-
   const handleResetToLastRun = () => {
     if (lastRunInput != null) setInput(lastRunInput);
     clearWorkspaceArtifacts();
     resetImportReviewWorkflow();
-    setExcludedIds(new Set());
-    setOverrides({});
+    resetAdjustmentWorkflowState();
     clearRunComparisonState();
     clearSelection();
   };
