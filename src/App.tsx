@@ -33,7 +33,6 @@ import {
 } from './engine/autoAdjust';
 import { buildIndustryStyleListingText } from './engine/industryListing';
 import { buildLandXmlText } from './engine/landxml';
-import { buildExportBundleFiles } from './engine/exportBundles';
 import {
   buildQaDerivedResult,
   buildRunComparisonText,
@@ -42,7 +41,6 @@ import {
   ADJUSTED_POINTS_ALL_COLUMNS,
   ADJUSTED_POINTS_PRESET_COLUMNS,
   DEFAULT_ADJUSTED_POINTS_EXPORT_SETTINGS,
-  buildAdjustedPointsExportText,
   validateAdjustedPointsTransform,
   cloneAdjustedPointsExportSettings,
   getAdjustedPointsExportStationIds,
@@ -68,6 +66,7 @@ import { type ImportedInputNotice } from './engine/importers';
 import { isPreanalysisWhatIfCandidate } from './engine/preanalysis';
 import { type RunSessionOutcome, type RunSessionRequest } from './engine/runSession';
 import { useAdjustmentWorkflow } from './hooks/useAdjustmentWorkflow';
+import { useExportWorkflow } from './hooks/useExportWorkflow';
 import { useImportReviewWorkflow } from './hooks/useImportReviewWorkflow';
 import { useProjectFileWorkflow } from './hooks/useProjectFileWorkflow';
 import { useProjectOptionsState } from './hooks/useProjectOptionsState';
@@ -4447,76 +4446,26 @@ const App: React.FC<AppProps> = ({
     () => (runComparisonSummary ? buildRunComparisonText(runComparisonSummary) : ''),
     [runComparisonSummary],
   );
-
-  const downloadNamedTextFile = (name: string, text: string, mimeType: string) => {
-    const blob = new Blob([text], { type: mimeType });
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement('a');
-    anchor.href = url;
-    anchor.download = name;
-    anchor.click();
-    URL.revokeObjectURL(url);
-  };
-
-  const handleExportResults = async () => {
-    if (!result) return;
-    if (exportFormat === 'points') {
-      await handleExportAdjustedPoints();
-      return;
-    }
-    if (exportFormat === 'bundle-qa-standard') {
-      handleExportBundle('qa-standard');
-      return;
-    }
-    if (exportFormat === 'bundle-qa-standard-with-landxml') {
-      handleExportBundle('qa-standard-with-landxml');
-      return;
-    }
-    const text =
-      exportFormat === 'industry-style'
-        ? buildIndustryListingText(result)
-        : exportFormat === 'landxml'
-          ? buildLandXmlText(result, {
-              units: settings.units,
-              solveProfile:
-                (runDiagnostics ?? buildRunDiagnostics(parseSettings, result)).solveProfile,
-              showLostStations: settings.listingShowLostStations,
-              projectName: 'webnet-adjustment',
-              applicationName: 'WebNet',
-              applicationVersion: '0.0.0',
-            })
-          : buildResultsText(result);
-    const isXmlExport = exportFormat === 'landxml';
-    const suggestedName = `${
-      exportFormat === 'industry-style'
-        ? 'industry-style-listing'
-        : exportFormat === 'landxml'
-          ? 'webnet-landxml'
-          : 'webnet-results'
-    }-${new Date().toISOString().slice(0, 10)}.${isXmlExport ? 'xml' : 'txt'}`;
-    const picker = (window as any).showSaveFilePicker;
-    if (picker) {
-      try {
-        const handle = await picker({
-          suggestedName,
-          types: [
-            {
-              description: isXmlExport ? 'LandXML Files' : 'Text Files',
-              accept: isXmlExport ? { 'application/xml': ['.xml'] } : { 'text/plain': ['.txt'] },
-            },
-          ],
-        });
-        const writable = await handle.createWritable();
-        await writable.write(text);
-        await writable.close();
-        return;
-      } catch (err) {
-        if ((err as Error)?.name === 'AbortError') return;
-      }
-    }
-
-    downloadNamedTextFile(suggestedName, text, isXmlExport ? 'application/xml' : 'text/plain');
-  };
+  const buildLandXmlExportText = (solved: AdjustmentResult) =>
+    buildLandXmlText(solved, {
+      units: settings.units,
+      solveProfile: (runDiagnostics ?? buildRunDiagnostics(parseSettings, solved)).solveProfile,
+      showLostStations: settings.listingShowLostStations,
+      projectName: 'webnet-adjustment',
+      applicationName: 'WebNet',
+      applicationVersion: '0.0.0',
+    });
+  const { handleExportResults } = useExportWorkflow({
+    result,
+    exportFormat,
+    units: settings.units,
+    adjustedPointsExportSettings,
+    currentComparisonText,
+    setImportNotice,
+    buildResultsText,
+    buildIndustryListingText,
+    buildLandXmlExportText,
+  });
 
   function resetRunStateAfterImportedInput() {
     clearWorkspaceArtifacts();
@@ -4525,113 +4474,6 @@ const App: React.FC<AppProps> = ({
     clearSelection();
     resetImportReviewWorkflow();
   }
-
-  const handleExportAdjustedPoints = async () => {
-    if (!result) return;
-    const transformValidation = validateAdjustedPointsTransform({
-      result,
-      settings: adjustedPointsExportSettings,
-    });
-    if (!transformValidation.valid) {
-      setImportNotice({
-        title: 'Adjusted Points Export Blocked',
-        detailLines: [
-          transformValidation.message,
-          'Open Project Options -> Other Files -> Transform and update transform settings.',
-        ],
-      });
-      return;
-    }
-    const text = buildAdjustedPointsExportText({
-      result,
-      units: settings.units,
-      settings: adjustedPointsExportSettings,
-    });
-    const extension = adjustedPointsExportSettings.format === 'csv' ? 'csv' : 'txt';
-    const suggestedName = `webnet-adjusted-points-${new Date().toISOString().slice(0, 10)}.${extension}`;
-    const picker = (window as any).showSaveFilePicker;
-    if (picker) {
-      try {
-        const handle = await picker({
-          suggestedName,
-          types: [
-            {
-              description:
-                adjustedPointsExportSettings.format === 'csv' ? 'CSV Files' : 'Text Files',
-              accept:
-                adjustedPointsExportSettings.format === 'csv'
-                  ? { 'text/csv': ['.csv'] }
-                  : { 'text/plain': ['.txt'] },
-            },
-          ],
-        });
-        const writable = await handle.createWritable();
-        await writable.write(text);
-        await writable.close();
-        return;
-      } catch (err) {
-        if ((err as Error)?.name === 'AbortError') return;
-      }
-    }
-    downloadNamedTextFile(
-      suggestedName,
-      text,
-      adjustedPointsExportSettings.format === 'csv' ? 'text/csv' : 'text/plain',
-    );
-  };
-
-  const handleExportBundle = (preset: 'qa-standard' | 'qa-standard-with-landxml') => {
-    if (!result) return;
-    const transformValidation = validateAdjustedPointsTransform({
-      result,
-      settings: adjustedPointsExportSettings,
-    });
-    if (!transformValidation.valid) {
-      setImportNotice({
-        title: 'QA Bundle Export Blocked',
-        detailLines: [
-          transformValidation.message,
-          'Open Project Options -> Other Files -> Transform and update transform settings.',
-        ],
-      });
-      return;
-    }
-    const adjustedPointsText = buildAdjustedPointsExportText({
-      result,
-      units: settings.units,
-      settings: adjustedPointsExportSettings,
-    });
-    const webnetText = buildResultsText(result);
-    const industryListingText = buildIndustryListingText(result);
-    const landXmlText =
-      preset === 'qa-standard-with-landxml'
-        ? buildLandXmlText(result, {
-            units: settings.units,
-            solveProfile:
-              (runDiagnostics ?? buildRunDiagnostics(parseSettings, result)).solveProfile,
-            showLostStations: settings.listingShowLostStations,
-            projectName: 'webnet-adjustment',
-            applicationName: 'WebNet',
-            applicationVersion: '0.0.0',
-          })
-        : null;
-    const dateStamp = new Date().toISOString().slice(0, 10);
-    const files = buildExportBundleFiles({
-      preset,
-      dateStamp,
-      adjustedPointsExtension: adjustedPointsExportSettings.format === 'csv' ? 'csv' : 'txt',
-      webnetText,
-      industryListingText,
-      adjustedPointsText,
-      comparisonText: currentComparisonText || null,
-      landXmlText,
-    });
-    files.forEach((file) => downloadNamedTextFile(file.name, file.text, file.mimeType));
-    setImportNotice({
-      title: 'QA bundle exported',
-      detailLines: files.map((file) => `Downloaded ${file.name}`),
-    });
-  };
 
   const handleInputChange = (value: string) => {
     setInput(value);

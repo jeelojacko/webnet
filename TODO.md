@@ -37,7 +37,10 @@
     - [x] Extract adjustment run/review orchestration (exclusions, overrides, cluster review state, rerun handlers, and outcome application) into a dedicated hook
     - [x] Add focused hook regression coverage for adjustment run/review orchestration state transitions
     - [x] Extract project save/load orchestration and project-file migration/apply fan-out into a dedicated hook/module
-    - [ ] Extract export dispatch/browser download helpers into a dedicated hook/module
+    - [x] Extract export dispatch/browser download helpers into a dedicated hook/module
+      - [x] Move text/XML save-picker + fallback download helpers out of `App.tsx`
+      - [x] Move export-format dispatch for points/WebNet/listing/LandXML/QA bundles into a dedicated hook
+      - [x] Add focused regression coverage for export dispatch and blocked-transform notice paths
     - [ ] Extract remaining top-level orchestration helpers so `App.tsx` becomes a shell/composition layer
   - [ ] Phase 2 - shared derived-model cleanup
     - [x] Add shared QA derived-data model for report/map comparison workflows
