@@ -20,6 +20,28 @@
   - [x] Complete remaining Section 5.6 compatibility work
   - [x] Add browser-oriented large-project benchmark fixture coverage
 
+- [ ] Architecture follow-up - phased implementation:
+  - [ ] Phase 1 - `App.tsx` decomposition
+    - [x] Extract run-comparison state/history into a dedicated hook
+    - [x] Extract workspace/project state and workspace-artifact reset semantics into a dedicated hook
+    - [x] Extract Project Options draft state and apply/cancel orchestration into dedicated hooks/modules
+    - [ ] Extract import-review workflow state and handlers into a dedicated hook/module
+    - [ ] Extract remaining top-level orchestration helpers so `App.tsx` becomes a shell/composition layer
+  - [ ] Phase 2 - shared derived-model cleanup
+    - [x] Add shared QA derived-data model for report/map comparison workflows
+    - [ ] Expand shared derived models so report/map/listing/processing-summary consume normalized data instead of rebuilding view-specific arrays
+  - [ ] Phase 3 - parser modular split
+    - [ ] Split parser directive-state management out of the current parser monolith
+    - [ ] Split record-family parsing into stable modules by observation/control family
+    - [ ] Split include expansion and include-scope state restoration into focused modules
+    - [ ] Split canonicalization/traceability/post-parse passes into dedicated modules
+  - [ ] Phase 4 - solver modular split
+    - [ ] Split preprocessing into a dedicated module boundary
+    - [ ] Split equation assembly / stochastic model setup into dedicated modules
+    - [ ] Split solve / iteration control into a dedicated module
+    - [ ] Split diagnostics/statistics shaping into a dedicated module
+    - [ ] Split final result shaping/export-ready data assembly into a dedicated module
+
 - [x] Add post-adjust adjusted-points Transform support (rotation-only v1): persisted transform settings, Project Options -> Other Files -> Transform UI (rotation with pivot/scope/select-points popup + translation/scale placeholders), export-time validation, and dual-section adjusted-points export output (original + transform notes + rotated coordinates)
 - [x] Add TypeScript tooling (tsconfig, TSX entry) and migrate LSA engine/UI to TS modules
 - [x] Industry-standard input-compatibility parity batch 1: parser directive normalization aliases/unique-prefix handling, `.DATA` block gating, `.SEPARATOR` station token support, `.3REDUCE` horizontal-equation behavior, include preprocessor with source-file traceability + scoped state restore, CLI include filesystem resolution + hard-fail diagnostics, new CLI run modes (`data-check`, `blunder-detect`), and project file schema v3 bundle support (`mainInput` + `includeFiles`) with v1/v2 migration

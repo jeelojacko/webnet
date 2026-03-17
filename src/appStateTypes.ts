@@ -1,0 +1,286 @@
+import type {
+  AdjustedPointsColumnId,
+  AngleMode,
+  CoordMode,
+  CoordSystemDiagnosticCode,
+  CoordSystemMode,
+  CrsOffReason,
+  CrsProjectionModel,
+  CrsStatus,
+  DatumSufficiencyReport,
+  DeltaMode,
+  DirectiveNoEffectWarning,
+  DirectiveTransition,
+  FaceNormalizationMode,
+  GeoidHeightDatum,
+  GeoidInterpolationMethod,
+  GeoidSourceFormat,
+  GnssVectorFrame,
+  GridDistanceInputMode,
+  GridObservationMode,
+  LocalDatumScheme,
+  MapMode,
+  ObservationModeSettings,
+  OrderMode,
+  ParseCompatibilityDiagnostic,
+  ParseCompatibilityMode,
+  ReductionUsageSummary,
+  RobustMode,
+  RunMode,
+  TsCorrelationScope,
+  VerticalReductionMode,
+} from './types';
+
+export type Units = 'm' | 'ft';
+export type UiTheme =
+  | 'gruvbox-dark'
+  | 'gruvbox-light'
+  | 'catppuccin-mocha'
+  | 'catppuccin-latte';
+export type ListingSortCoordinatesBy = 'input' | 'name';
+export type ListingSortObservationsBy = 'input' | 'name' | 'residual';
+export type SolveProfile =
+  | 'webnet'
+  | 'industry-parity-current'
+  | 'industry-parity-legacy'
+  | 'legacy-compat'
+  | 'industry-parity';
+export type ProjectOptionsTab =
+  | 'adjustment'
+  | 'general'
+  | 'instrument'
+  | 'listing-file'
+  | 'other-files'
+  | 'special'
+  | 'gps'
+  | 'modeling';
+export type CrsCatalogGroupFilter = 'all' | 'global' | 'canada-utm' | 'canada-mtm' | 'canada-provincial';
+
+export type SettingsState = {
+  maxIterations: number;
+  convergenceLimit: number;
+  units: Units;
+  uiTheme: UiTheme;
+  mapShowLostStations: boolean;
+  map3dEnabled: boolean;
+  listingShowLostStations: boolean;
+  listingShowCoordinates: boolean;
+  listingShowObservationsResiduals: boolean;
+  listingShowErrorPropagation: boolean;
+  listingShowProcessingNotes: boolean;
+  listingShowAzimuthsBearings: boolean;
+  listingSortCoordinatesBy: ListingSortCoordinatesBy;
+  listingSortObservationsBy: ListingSortObservationsBy;
+  listingObservationLimit: number;
+};
+
+export type ParseSettings = {
+  solveProfile: SolveProfile;
+  coordMode: CoordMode;
+  coordSystemMode: CoordSystemMode;
+  crsId: string;
+  localDatumScheme: LocalDatumScheme;
+  averageScaleFactor: number;
+  commonElevation: number;
+  averageGeoidHeight: number;
+  gnssVectorFrameDefault: GnssVectorFrame;
+  gnssFrameConfirmed: boolean;
+  observationMode?: ObservationModeSettings;
+  gridBearingMode: GridObservationMode;
+  gridDistanceMode: GridDistanceInputMode;
+  gridAngleMode: GridObservationMode;
+  gridDirectionMode: GridObservationMode;
+  runMode: RunMode;
+  preanalysisMode: boolean;
+  clusterDetectionEnabled: boolean;
+  autoSideshotEnabled: boolean;
+  autoAdjustEnabled: boolean;
+  autoAdjustMaxCycles: number;
+  autoAdjustMaxRemovalsPerCycle: number;
+  autoAdjustStdResThreshold: number;
+  order: OrderMode;
+  angleUnits: 'dms' | 'dd';
+  angleStationOrder: 'atfromto' | 'fromatto';
+  angleMode: AngleMode;
+  deltaMode: DeltaMode;
+  mapMode: MapMode;
+  mapScaleFactor?: number;
+  normalize: boolean;
+  faceNormalizationMode: FaceNormalizationMode;
+  applyCurvatureRefraction: boolean;
+  refractionCoefficient: number;
+  verticalReduction: VerticalReductionMode;
+  levelWeight?: number;
+  levelLoopToleranceBaseMm: number;
+  levelLoopTolerancePerSqrtKmMm: number;
+  crsTransformEnabled: boolean;
+  crsProjectionModel: CrsProjectionModel;
+  crsLabel: string;
+  crsGridScaleEnabled: boolean;
+  crsGridScaleFactor: number;
+  crsConvergenceEnabled: boolean;
+  crsConvergenceAngleRad: number;
+  geoidModelEnabled: boolean;
+  geoidModelId: string;
+  geoidSourceFormat: GeoidSourceFormat;
+  geoidSourcePath: string;
+  geoidInterpolation: GeoidInterpolationMethod;
+  geoidHeightConversionEnabled: boolean;
+  geoidOutputHeightDatum: GeoidHeightDatum;
+  gpsLoopCheckEnabled: boolean;
+  gpsAddHiHtEnabled: boolean;
+  gpsAddHiHtHiM: number;
+  gpsAddHiHtHtM: number;
+  qFixLinearSigmaM: number;
+  qFixAngularSigmaSec: number;
+  prismEnabled: boolean;
+  prismOffset: number;
+  prismScope: 'global' | 'set';
+  directionSetMode?: 'reduced' | 'raw';
+  descriptionReconcileMode: 'first' | 'append';
+  descriptionAppendDelimiter: string;
+  lonSign: 'west-positive' | 'west-negative';
+  tsCorrelationEnabled: boolean;
+  tsCorrelationRho: number;
+  tsCorrelationScope: TsCorrelationScope;
+  robustMode: RobustMode;
+  robustK: number;
+  parseCompatibilityMode: ParseCompatibilityMode;
+  parseModeMigrated: boolean;
+};
+
+export type RunDiagnostics = {
+  solveProfile: SolveProfile;
+  parity: boolean;
+  runMode: RunMode;
+  preanalysisMode: boolean;
+  plannedObservationCount: number;
+  autoSideshotEnabled: boolean;
+  autoAdjustEnabled: boolean;
+  autoAdjustMaxCycles: number;
+  autoAdjustMaxRemovalsPerCycle: number;
+  autoAdjustStdResThreshold: number;
+  directionSetMode: 'reduced' | 'raw';
+  mapMode: MapMode;
+  mapScaleFactor: number;
+  normalize: boolean;
+  faceNormalizationMode: FaceNormalizationMode;
+  angleMode: AngleMode;
+  verticalReduction: VerticalReductionMode;
+  applyCurvatureRefraction: boolean;
+  refractionCoefficient: number;
+  tsCorrelationEnabled: boolean;
+  tsCorrelationScope: TsCorrelationScope;
+  tsCorrelationRho: number;
+  robustMode: RobustMode;
+  robustK: number;
+  parseCompatibilityMode: ParseCompatibilityMode;
+  parseModeMigrated: boolean;
+  parseCompatibilityDiagnostics: ParseCompatibilityDiagnostic[];
+  ambiguousCount: number;
+  legacyFallbackCount: number;
+  strictRejectCount: number;
+  rewriteSuggestionCount: number;
+  qFixLinearSigmaM: number;
+  qFixAngularSigmaSec: number;
+  coordSystemMode: CoordSystemMode;
+  crsId: string;
+  localDatumScheme: LocalDatumScheme;
+  averageScaleFactor: number;
+  scaleOverrideActive: boolean;
+  commonElevation: number;
+  averageGeoidHeight: number;
+  gnssVectorFrameDefault: GnssVectorFrame;
+  gnssFrameConfirmed: boolean;
+  observationMode: ObservationModeSettings;
+  gridBearingMode: GridObservationMode;
+  gridDistanceMode: GridDistanceInputMode;
+  gridAngleMode: GridObservationMode;
+  gridDirectionMode: GridObservationMode;
+  datumSufficiencyReport?: DatumSufficiencyReport;
+  parsedUsageSummary?: ReductionUsageSummary;
+  usedInSolveUsageSummary?: ReductionUsageSummary;
+  directiveTransitions?: DirectiveTransition[];
+  directiveNoEffectWarnings?: DirectiveNoEffectWarning[];
+  coordSystemDiagnostics: CoordSystemDiagnosticCode[];
+  coordSystemWarningMessages: string[];
+  crsStatus?: CrsStatus;
+  crsOffReason?: CrsOffReason;
+  crsDatumOpId?: string;
+  crsDatumFallbackUsed: boolean;
+  crsAreaOfUseStatus: 'inside' | 'outside' | 'unknown';
+  crsOutOfAreaStationCount: number;
+  crsTransformEnabled: boolean;
+  crsProjectionModel: CrsProjectionModel;
+  crsLabel: string;
+  crsGridScaleEnabled: boolean;
+  crsGridScaleFactor: number;
+  crsConvergenceEnabled: boolean;
+  crsConvergenceAngleRad: number;
+  geoidModelEnabled: boolean;
+  geoidModelId: string;
+  geoidSourceFormat: GeoidSourceFormat;
+  geoidSourcePath: string;
+  geoidSourceResolvedFormat: GeoidSourceFormat;
+  geoidSourceFallbackUsed: boolean;
+  geoidInterpolation: GeoidInterpolationMethod;
+  geoidHeightConversionEnabled: boolean;
+  geoidOutputHeightDatum: GeoidHeightDatum;
+  gpsLoopCheckEnabled: boolean;
+  levelLoopToleranceBaseMm: number;
+  levelLoopTolerancePerSqrtKmMm: number;
+  gpsAddHiHtEnabled: boolean;
+  gpsAddHiHtHiM: number;
+  gpsAddHiHtHtM: number;
+  gpsAddHiHtVectorCount: number;
+  gpsAddHiHtAppliedCount: number;
+  gpsAddHiHtPositiveCount: number;
+  gpsAddHiHtNegativeCount: number;
+  gpsAddHiHtNeutralCount: number;
+  gpsAddHiHtDefaultZeroCount: number;
+  gpsAddHiHtMissingHeightCount: number;
+  gpsAddHiHtScaleMin: number;
+  gpsAddHiHtScaleMax: number;
+  geoidModelLoaded: boolean;
+  geoidModelMetadata: string;
+  geoidSampleUndulationM?: number;
+  geoidConvertedStationCount: number;
+  geoidSkippedStationCount: number;
+  prismEnabled: boolean;
+  prismOffset: number;
+  prismScope: 'global' | 'set';
+  rotationAngleRad: number;
+  profileDefaultInstrumentFallback: boolean;
+  angleCenteringModel: 'geometry-aware-correlated-rays';
+  defaultSigmaCount: number;
+  defaultSigmaByType: string;
+  stochasticDefaultsSummary: string;
+};
+
+export type RunSettingsSnapshot = {
+  maxIterations: number;
+  convergenceLimit: number;
+  units: Units;
+  solveProfile: SolveProfile;
+  runMode: RunMode;
+  coordMode: CoordMode;
+  coordSystemMode: CoordSystemMode;
+  crsId: string;
+  directionSetMode: 'reduced' | 'raw';
+  mapMode: MapMode;
+  mapScaleFactor: number;
+  verticalReduction: VerticalReductionMode;
+  applyCurvatureRefraction: boolean;
+  tsCorrelationEnabled: boolean;
+  tsCorrelationScope: TsCorrelationScope;
+  tsCorrelationRho: number;
+  robustMode: RobustMode;
+  robustK: number;
+  clusterDetectionEnabled: boolean;
+  autoSideshotEnabled: boolean;
+  autoAdjustEnabled: boolean;
+  autoAdjustMaxCycles: number;
+  autoAdjustMaxRemovalsPerCycle: number;
+  autoAdjustStdResThreshold: number;
+  selectedInstrument: string;
+};

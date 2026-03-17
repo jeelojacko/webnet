@@ -96,8 +96,23 @@ import {
 import { isPreanalysisWhatIfCandidate } from './engine/preanalysis';
 import { type RunSessionOutcome, type RunSessionRequest } from './engine/runSession';
 import { useAdjustmentRunner } from './hooks/useAdjustmentRunner';
+import { useProjectOptionsState } from './hooks/useProjectOptionsState';
 import { useQaSelection } from './hooks/useQaSelection';
 import { useRunComparisonState } from './hooks/useRunComparisonState';
+import { useWorkspaceProjectState } from './hooks/useWorkspaceProjectState';
+import type {
+  CrsCatalogGroupFilter,
+  ListingSortCoordinatesBy,
+  ListingSortObservationsBy,
+  ParseSettings,
+  ProjectOptionsTab,
+  RunDiagnostics,
+  RunSettingsSnapshot,
+  SettingsState,
+  SolveProfile,
+  Units,
+  UiTheme,
+} from './appStateTypes';
 import type {
   AdjustmentResult,
   ClusterApprovedMerge,
@@ -127,20 +142,12 @@ import type {
   GridObservationMode,
   GridDistanceInputMode,
   ObservationModeSettings,
-  CoordSystemDiagnosticCode,
-  CrsOffReason,
-  CrsStatus,
-  DatumSufficiencyReport,
-  DirectiveNoEffectWarning,
-  DirectiveTransition,
   GeoidInterpolationMethod,
   GeoidHeightDatum,
   GeoidSourceFormat,
   GnssVectorFrame,
-  ParseCompatibilityDiagnostic,
   ParseCompatibilityMode,
   FaceNormalizationMode,
-  ReductionUsageSummary,
   RunMode,
 } from './types';
 
@@ -274,29 +281,6 @@ const parseInstrumentLibraryFromInput = (rawInput: string): InstrumentLibrary =>
   return lib;
 };
 
-type Units = 'm' | 'ft';
-type UiTheme = 'gruvbox-dark' | 'gruvbox-light' | 'catppuccin-mocha' | 'catppuccin-latte';
-type ListingSortCoordinatesBy = 'input' | 'name';
-type ListingSortObservationsBy = 'input' | 'name' | 'residual';
-
-type SettingsState = {
-  maxIterations: number;
-  convergenceLimit: number;
-  units: Units;
-  uiTheme: UiTheme;
-  mapShowLostStations: boolean;
-  map3dEnabled: boolean;
-  listingShowLostStations: boolean;
-  listingShowCoordinates: boolean;
-  listingShowObservationsResiduals: boolean;
-  listingShowErrorPropagation: boolean;
-  listingShowProcessingNotes: boolean;
-  listingShowAzimuthsBearings: boolean;
-  listingSortCoordinatesBy: ListingSortCoordinatesBy;
-  listingSortObservationsBy: ListingSortObservationsBy;
-  listingObservationLimit: number;
-};
-
 const DEFAULT_UI_THEME: UiTheme = 'gruvbox-dark';
 
 const normalizeUiTheme = (value: unknown): UiTheme => {
@@ -304,207 +288,6 @@ const normalizeUiTheme = (value: unknown): UiTheme => {
   if (value === 'catppuccin-mocha') return 'catppuccin-mocha';
   if (value === 'catppuccin-latte') return 'catppuccin-latte';
   return 'gruvbox-dark';
-};
-
-type SolveProfile =
-  | 'webnet'
-  | 'industry-parity-current'
-  | 'industry-parity-legacy'
-  | 'legacy-compat'
-  | 'industry-parity';
-type ProjectOptionsTab =
-  | 'adjustment'
-  | 'general'
-  | 'instrument'
-  | 'listing-file'
-  | 'other-files'
-  | 'special'
-  | 'gps'
-  | 'modeling';
-
-type CrsCatalogGroupFilter = 'all' | CrsCatalogGroup;
-
-type RunDiagnostics = {
-  solveProfile: SolveProfile;
-  parity: boolean;
-  runMode: RunMode;
-  preanalysisMode: boolean;
-  plannedObservationCount: number;
-  autoSideshotEnabled: boolean;
-  autoAdjustEnabled: boolean;
-  autoAdjustMaxCycles: number;
-  autoAdjustMaxRemovalsPerCycle: number;
-  autoAdjustStdResThreshold: number;
-  directionSetMode: DirectionSetMode;
-  mapMode: MapMode;
-  mapScaleFactor: number;
-  normalize: boolean;
-  faceNormalizationMode: FaceNormalizationMode;
-  angleMode: AngleMode;
-  verticalReduction: VerticalReductionMode;
-  applyCurvatureRefraction: boolean;
-  refractionCoefficient: number;
-  tsCorrelationEnabled: boolean;
-  tsCorrelationScope: TsCorrelationScope;
-  tsCorrelationRho: number;
-  robustMode: RobustMode;
-  robustK: number;
-  parseCompatibilityMode: ParseCompatibilityMode;
-  parseModeMigrated: boolean;
-  parseCompatibilityDiagnostics: ParseCompatibilityDiagnostic[];
-  ambiguousCount: number;
-  legacyFallbackCount: number;
-  strictRejectCount: number;
-  rewriteSuggestionCount: number;
-  qFixLinearSigmaM: number;
-  qFixAngularSigmaSec: number;
-  coordSystemMode: CoordSystemMode;
-  crsId: string;
-  localDatumScheme: LocalDatumScheme;
-  averageScaleFactor: number;
-  scaleOverrideActive: boolean;
-  commonElevation: number;
-  averageGeoidHeight: number;
-  gnssVectorFrameDefault: GnssVectorFrame;
-  gnssFrameConfirmed: boolean;
-  observationMode: ObservationModeSettings;
-  gridBearingMode: GridObservationMode;
-  gridDistanceMode: GridDistanceInputMode;
-  gridAngleMode: GridObservationMode;
-  gridDirectionMode: GridObservationMode;
-  datumSufficiencyReport?: DatumSufficiencyReport;
-  parsedUsageSummary?: ReductionUsageSummary;
-  usedInSolveUsageSummary?: ReductionUsageSummary;
-  directiveTransitions?: DirectiveTransition[];
-  directiveNoEffectWarnings?: DirectiveNoEffectWarning[];
-  coordSystemDiagnostics: CoordSystemDiagnosticCode[];
-  coordSystemWarningMessages: string[];
-  crsStatus?: CrsStatus;
-  crsOffReason?: CrsOffReason;
-  crsDatumOpId?: string;
-  crsDatumFallbackUsed: boolean;
-  crsAreaOfUseStatus: 'inside' | 'outside' | 'unknown';
-  crsOutOfAreaStationCount: number;
-  crsTransformEnabled: boolean;
-  crsProjectionModel: CrsProjectionModel;
-  crsLabel: string;
-  crsGridScaleEnabled: boolean;
-  crsGridScaleFactor: number;
-  crsConvergenceEnabled: boolean;
-  crsConvergenceAngleRad: number;
-  geoidModelEnabled: boolean;
-  geoidModelId: string;
-  geoidSourceFormat: GeoidSourceFormat;
-  geoidSourcePath: string;
-  geoidSourceResolvedFormat: GeoidSourceFormat;
-  geoidSourceFallbackUsed: boolean;
-  geoidInterpolation: GeoidInterpolationMethod;
-  geoidHeightConversionEnabled: boolean;
-  geoidOutputHeightDatum: GeoidHeightDatum;
-  gpsLoopCheckEnabled: boolean;
-  levelLoopToleranceBaseMm: number;
-  levelLoopTolerancePerSqrtKmMm: number;
-  gpsAddHiHtEnabled: boolean;
-  gpsAddHiHtHiM: number;
-  gpsAddHiHtHtM: number;
-  gpsAddHiHtVectorCount: number;
-  gpsAddHiHtAppliedCount: number;
-  gpsAddHiHtPositiveCount: number;
-  gpsAddHiHtNegativeCount: number;
-  gpsAddHiHtNeutralCount: number;
-  gpsAddHiHtDefaultZeroCount: number;
-  gpsAddHiHtMissingHeightCount: number;
-  gpsAddHiHtScaleMin: number;
-  gpsAddHiHtScaleMax: number;
-  geoidModelLoaded: boolean;
-  geoidModelMetadata: string;
-  geoidSampleUndulationM?: number;
-  geoidConvertedStationCount: number;
-  geoidSkippedStationCount: number;
-  prismEnabled: boolean;
-  prismOffset: number;
-  prismScope: 'global' | 'set';
-  rotationAngleRad: number;
-  profileDefaultInstrumentFallback: boolean;
-  angleCenteringModel: 'geometry-aware-correlated-rays';
-  defaultSigmaCount: number;
-  defaultSigmaByType: string;
-  stochasticDefaultsSummary: string;
-};
-
-type ParseSettings = {
-  solveProfile: SolveProfile;
-  coordMode: CoordMode;
-  coordSystemMode: CoordSystemMode;
-  crsId: string;
-  localDatumScheme: LocalDatumScheme;
-  averageScaleFactor: number;
-  commonElevation: number;
-  averageGeoidHeight: number;
-  gnssVectorFrameDefault: GnssVectorFrame;
-  gnssFrameConfirmed: boolean;
-  observationMode?: ObservationModeSettings;
-  gridBearingMode: GridObservationMode;
-  gridDistanceMode: GridDistanceInputMode;
-  gridAngleMode: GridObservationMode;
-  gridDirectionMode: GridObservationMode;
-  runMode: RunMode;
-  preanalysisMode: boolean;
-  clusterDetectionEnabled: boolean;
-  autoSideshotEnabled: boolean;
-  autoAdjustEnabled: boolean;
-  autoAdjustMaxCycles: number;
-  autoAdjustMaxRemovalsPerCycle: number;
-  autoAdjustStdResThreshold: number;
-  order: OrderMode;
-  angleUnits: 'dms' | 'dd';
-  angleStationOrder: 'atfromto' | 'fromatto';
-  angleMode: AngleMode;
-  deltaMode: DeltaMode;
-  mapMode: MapMode;
-  mapScaleFactor?: number;
-  normalize: boolean;
-  faceNormalizationMode: FaceNormalizationMode;
-  applyCurvatureRefraction: boolean;
-  refractionCoefficient: number;
-  verticalReduction: VerticalReductionMode;
-  levelWeight?: number;
-  levelLoopToleranceBaseMm: number;
-  levelLoopTolerancePerSqrtKmMm: number;
-  crsTransformEnabled: boolean;
-  crsProjectionModel: CrsProjectionModel;
-  crsLabel: string;
-  crsGridScaleEnabled: boolean;
-  crsGridScaleFactor: number;
-  crsConvergenceEnabled: boolean;
-  crsConvergenceAngleRad: number;
-  geoidModelEnabled: boolean;
-  geoidModelId: string;
-  geoidSourceFormat: GeoidSourceFormat;
-  geoidSourcePath: string;
-  geoidInterpolation: GeoidInterpolationMethod;
-  geoidHeightConversionEnabled: boolean;
-  geoidOutputHeightDatum: GeoidHeightDatum;
-  gpsLoopCheckEnabled: boolean;
-  gpsAddHiHtEnabled: boolean;
-  gpsAddHiHtHiM: number;
-  gpsAddHiHtHtM: number;
-  qFixLinearSigmaM: number;
-  qFixAngularSigmaSec: number;
-  prismEnabled: boolean;
-  prismOffset: number;
-  prismScope: 'global' | 'set';
-  directionSetMode?: DirectionSetMode;
-  descriptionReconcileMode: 'first' | 'append';
-  descriptionAppendDelimiter: string;
-  lonSign: 'west-positive' | 'west-negative';
-  tsCorrelationEnabled: boolean;
-  tsCorrelationRho: number;
-  tsCorrelationScope: TsCorrelationScope;
-  robustMode: RobustMode;
-  robustK: number;
-  parseCompatibilityMode: ParseCompatibilityMode;
-  parseModeMigrated: boolean;
 };
 
 type ClusterReviewStatus = 'pending' | 'approve' | 'reject';
@@ -515,34 +298,6 @@ type ClusterReviewDecision = {
 };
 
 type ClusterCandidate = NonNullable<AdjustmentResult['clusterDiagnostics']>['candidates'][number];
-
-type RunSettingsSnapshot = {
-  maxIterations: number;
-  convergenceLimit: number;
-  units: Units;
-  solveProfile: SolveProfile;
-  runMode: RunMode;
-  coordMode: CoordMode;
-  coordSystemMode: CoordSystemMode;
-  crsId: string;
-  directionSetMode: DirectionSetMode;
-  mapMode: MapMode;
-  mapScaleFactor: number;
-  verticalReduction: VerticalReductionMode;
-  applyCurvatureRefraction: boolean;
-  tsCorrelationEnabled: boolean;
-  tsCorrelationScope: TsCorrelationScope;
-  tsCorrelationRho: number;
-  robustMode: RobustMode;
-  robustK: number;
-  clusterDetectionEnabled: boolean;
-  autoSideshotEnabled: boolean;
-  autoAdjustEnabled: boolean;
-  autoAdjustMaxCycles: number;
-  autoAdjustMaxRemovalsPerCycle: number;
-  autoAdjustStdResThreshold: number;
-  selectedInstrument: string;
-};
 
 const createRunSettingsSnapshot = (
   settings: SettingsState,
@@ -1234,22 +989,46 @@ const App: React.FC<AppProps> = ({
   initialSettingsModalOpen = false,
   initialOptionsTab = 'adjustment',
 }) => {
-  const [input, setInput] = useState<string>(DEFAULT_INPUT);
-  const [importNotice, setImportNotice] = useState<ImportedInputNotice | null>(null);
-  const [importReviewState, setImportReviewState] = useState<ImportReviewState | null>(null);
-  const [pendingAnglePromptFile, setPendingAnglePromptFile] =
-    useState<PendingAnglePromptFile | null>(null);
-  const [projectIncludeFiles, setProjectIncludeFiles] = useState<Record<string, string>>({});
-  const [result, setResult] = useState<AdjustmentResult | null>(null);
-  const [runDiagnostics, setRunDiagnostics] = useState<RunDiagnostics | null>(null);
-  const [runElapsedMs, setRunElapsedMs] = useState<number | null>(null);
-  const [exportFormat, setExportFormat] = useState<ProjectExportFormat>('points');
-  const [lastRunInput, setLastRunInput] = useState<string | null>(null);
-  const [lastRunSettingsSnapshot, setLastRunSettingsSnapshot] = useState<RunSettingsSnapshot | null>(
-    null,
-  );
-  const [pendingEditorJumpLine, setPendingEditorJumpLine] = useState<number | null>(null);
-  const [activeTab, setActiveTab] = useState<TabKey>('report');
+  const {
+    input,
+    setInput,
+    importNotice,
+    setImportNotice,
+    importReviewState,
+    setImportReviewState,
+    pendingAnglePromptFile,
+    setPendingAnglePromptFile,
+    projectIncludeFiles,
+    setProjectIncludeFiles,
+    result,
+    setResult,
+    runDiagnostics,
+    setRunDiagnostics,
+    runElapsedMs,
+    setRunElapsedMs,
+    exportFormat,
+    setExportFormat,
+    lastRunInput,
+    setLastRunInput,
+    lastRunSettingsSnapshot,
+    setLastRunSettingsSnapshot,
+    pendingEditorJumpLine,
+    setPendingEditorJumpLine,
+    activeTab,
+    setActiveTab,
+    clearWorkspaceArtifacts,
+  } = useWorkspaceProjectState<
+    ImportedInputNotice,
+    ImportReviewState,
+    PendingAnglePromptFile,
+    RunDiagnostics,
+    RunSettingsSnapshot,
+    TabKey
+  >({
+    initialInput: DEFAULT_INPUT,
+    initialExportFormat: 'points',
+    initialActiveTab: 'report',
+  });
   const [settings, setSettings] = useState<SettingsState>({
     maxIterations: 10,
     convergenceLimit: 0.01,
@@ -1364,38 +1143,104 @@ const App: React.FC<AppProps> = ({
   const [selectedInstrument, setSelectedInstrument] = useState('S9');
   const [splitPercent, setSplitPercent] = useState(35); // left pane width (%)
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(initialSettingsModalOpen);
-  const [activeOptionsTab, setActiveOptionsTab] = useState<ProjectOptionsTab>(initialOptionsTab);
-  const [settingsDraft, setSettingsDraft] = useState<SettingsState>(settings);
-  const [parseSettingsDraft, setParseSettingsDraft] = useState<ParseSettings>(parseSettings);
-  const [geoidSourceDataDraft, setGeoidSourceDataDraft] = useState<Uint8Array | null>(null);
-  const [geoidSourceDataLabelDraft, setGeoidSourceDataLabelDraft] = useState('');
-  const [crsCatalogGroupFilter, setCrsCatalogGroupFilter] = useState<CrsCatalogGroupFilter>(
-    resolveCatalogGroupFromCrsId(parseSettings.crsId),
-  );
-  const [crsSearchQuery, setCrsSearchQuery] = useState('');
-  const [showCrsProjectionParams, setShowCrsProjectionParams] = useState(false);
-  const [projectInstrumentsDraft, setProjectInstrumentsDraft] =
-    useState<InstrumentLibrary>(projectInstruments);
-  const [levelLoopCustomPresetsDraft, setLevelLoopCustomPresetsDraft] =
-    useState<CustomLevelLoopTolerancePreset[]>(levelLoopCustomPresets);
-  const [adjustedPointsExportSettingsDraft, setAdjustedPointsExportSettingsDraft] =
-    useState<AdjustedPointsExportSettings>(() =>
-      cloneAdjustedPointsExportSettings(adjustedPointsExportSettings),
-    );
-  const [isAdjustedPointsTransformSelectOpen, setIsAdjustedPointsTransformSelectOpen] =
-    useState(false);
-  const [adjustedPointsTransformSelectedDraft, setAdjustedPointsTransformSelectedDraft] =
-    useState<string[]>([]);
-  const [adjustedPointsRotationAngleInput, setAdjustedPointsRotationAngleInput] = useState('0');
-  const [adjustedPointsTranslationAzimuthInput, setAdjustedPointsTranslationAzimuthInput] =
-    useState('0');
-  const [adjustedPointsRotationAngleError, setAdjustedPointsRotationAngleError] = useState<
-    string | null
-  >(null);
-  const [adjustedPointsTranslationAzimuthError, setAdjustedPointsTranslationAzimuthError] =
-    useState<string | null>(null);
-  const [selectedInstrumentDraft, setSelectedInstrumentDraft] = useState(selectedInstrument);
+  const {
+    isSettingsModalOpen,
+    activeOptionsTab,
+    setActiveOptionsTab,
+    settingsDraft,
+    setSettingsDraft,
+    parseSettingsDraft,
+    setParseSettingsDraft,
+    geoidSourceDataDraft,
+    setGeoidSourceDataDraft,
+    geoidSourceDataLabelDraft,
+    setGeoidSourceDataLabelDraft,
+    crsCatalogGroupFilter,
+    setCrsCatalogGroupFilter,
+    crsSearchQuery,
+    setCrsSearchQuery,
+    showCrsProjectionParams,
+    setShowCrsProjectionParams,
+    projectInstrumentsDraft,
+    setProjectInstrumentsDraft,
+    levelLoopCustomPresetsDraft,
+    setLevelLoopCustomPresetsDraft,
+    adjustedPointsExportSettingsDraft,
+    setAdjustedPointsExportSettingsDraft,
+    isAdjustedPointsTransformSelectOpen,
+    setIsAdjustedPointsTransformSelectOpen,
+    adjustedPointsTransformSelectedDraft,
+    setAdjustedPointsTransformSelectedDraft,
+    adjustedPointsRotationAngleInput,
+    setAdjustedPointsRotationAngleInput,
+    adjustedPointsTranslationAzimuthInput,
+    setAdjustedPointsTranslationAzimuthInput,
+    adjustedPointsRotationAngleError,
+    setAdjustedPointsRotationAngleError,
+    adjustedPointsTranslationAzimuthError,
+    setAdjustedPointsTranslationAzimuthError,
+    selectedInstrumentDraft,
+    setSelectedInstrumentDraft,
+    closeProjectOptions,
+    openProjectOptions,
+    applyProjectOptions,
+  } = useProjectOptionsState({
+    initialSettingsModalOpen,
+    initialOptionsTab,
+    settings,
+    setSettings,
+    parseSettings,
+    setParseSettings,
+    geoidSourceData,
+    setGeoidSourceData,
+    geoidSourceDataLabel,
+    setGeoidSourceDataLabel,
+    projectInstruments,
+    setProjectInstruments,
+    levelLoopCustomPresets,
+    setLevelLoopCustomPresets,
+    adjustedPointsExportSettings,
+    setAdjustedPointsExportSettings,
+    selectedInstrument,
+    setSelectedInstrument,
+    cloneInstrumentLibrary,
+    cloneAdjustedPointsExportSettings,
+    sanitizeAdjustedPointsExportSettings: (draft) =>
+      sanitizeAdjustedPointsExportSettings(draft, DEFAULT_ADJUSTED_POINTS_EXPORT_SETTINGS),
+    normalizeUiTheme,
+    resolveCatalogGroupFromCrsId,
+    parseTransformAngleInput: (raw) => {
+      const trimmed = raw.trim();
+      if (!trimmed) return null;
+      const dmsPattern = /^[+-]?\d{1,3}-\d{1,2}-\d{1,2}(?:\.\d+)?$/;
+      if (dmsPattern.test(trimmed)) {
+        const body = trimmed.replace(/^[+-]/, '');
+        const parts = body.split('-');
+        if (parts.length !== 3) return null;
+        const degrees = Number.parseInt(parts[0], 10);
+        const minutes = Number.parseInt(parts[1], 10);
+        const seconds = Number.parseFloat(parts[2]);
+        if (
+          !Number.isFinite(degrees) ||
+          !Number.isFinite(minutes) ||
+          !Number.isFinite(seconds) ||
+          minutes < 0 ||
+          minutes >= 60 ||
+          seconds < 0 ||
+          seconds >= 60
+        ) {
+          return null;
+        }
+        const rad = dmsToRad(trimmed);
+        if (!Number.isFinite(rad)) return null;
+        return rad * RAD_TO_DEG;
+      }
+      const decimalPattern = /^[+-]?(?:\d+\.?\d*|\.\d+)$/;
+      if (!decimalPattern.test(trimmed)) return null;
+      const parsed = Number.parseFloat(trimmed);
+      return Number.isFinite(parsed) ? parsed : null;
+    },
+  });
   const [excludedIds, setExcludedIds] = useState<Set<number>>(new Set());
   const [overrides, setOverrides] = useState<Record<number, ObservationOverride>>({});
   const [clusterReviewDecisions, setClusterReviewDecisions] = useState<
@@ -1535,45 +1380,6 @@ const App: React.FC<AppProps> = ({
     adjustedPointsExportSettingsDraft.transform.selectedStationIds,
   ]);
 
-  const parseTransformAngleInput = (raw: string): number | null => {
-    const trimmed = raw.trim();
-    if (!trimmed) return null;
-    const dmsPattern = /^[+-]?\d{1,3}-\d{1,2}-\d{1,2}(?:\.\d+)?$/;
-    if (dmsPattern.test(trimmed)) {
-      const body = trimmed.replace(/^[+-]/, '');
-      const parts = body.split('-');
-      if (parts.length !== 3) return null;
-      const degrees = Number.parseInt(parts[0], 10);
-      const minutes = Number.parseInt(parts[1], 10);
-      const seconds = Number.parseFloat(parts[2]);
-      if (
-        !Number.isFinite(degrees) ||
-        !Number.isFinite(minutes) ||
-        !Number.isFinite(seconds) ||
-        minutes < 0 ||
-        minutes >= 60 ||
-        seconds < 0 ||
-        seconds >= 60
-      ) {
-        return null;
-      }
-      const rad = dmsToRad(trimmed);
-      if (!Number.isFinite(rad)) return null;
-      return rad * RAD_TO_DEG;
-    }
-    const decimalPattern = /^[+-]?(?:\d+\.?\d*|\.\d+)$/;
-    if (!decimalPattern.test(trimmed)) return null;
-    const parsed = Number.parseFloat(trimmed);
-    return Number.isFinite(parsed) ? parsed : null;
-  };
-
-  useEffect(() => {
-    const activeTheme = normalizeUiTheme(
-      isSettingsModalOpen ? settingsDraft.uiTheme : settings.uiTheme,
-    );
-    document.documentElement.setAttribute('data-theme', activeTheme);
-  }, [isSettingsModalOpen, settings.uiTheme, settingsDraft.uiTheme]);
-
   useEffect(() => {
     if (crsCatalogGroupFilter === 'all') return;
     if (filteredDraftCrsCatalog.length === 0) return;
@@ -1582,7 +1388,7 @@ const App: React.FC<AppProps> = ({
       ...prev,
       crsId: filteredDraftCrsCatalog[0].id,
     }));
-  }, [crsCatalogGroupFilter, filteredDraftCrsCatalog, parseSettingsDraft.crsId]);
+  }, [crsCatalogGroupFilter, filteredDraftCrsCatalog, parseSettingsDraft.crsId, setParseSettingsDraft]);
 
   useEffect(() => {
     setProjectInstruments((prev) => {
@@ -1608,16 +1414,6 @@ const App: React.FC<AppProps> = ({
   }, [projectInstruments, selectedInstrument]);
 
   useEffect(() => {
-    if (!isSettingsModalOpen) return;
-    const codes = Object.keys(projectInstrumentsDraft);
-    if (!selectedInstrumentDraft && codes.length > 0) {
-      setSelectedInstrumentDraft(codes[0]);
-    } else if (selectedInstrumentDraft && !projectInstrumentsDraft[selectedInstrumentDraft]) {
-      setSelectedInstrumentDraft(codes[0] || '');
-    }
-  }, [isSettingsModalOpen, projectInstrumentsDraft, selectedInstrumentDraft]);
-
-  useEffect(() => {
     if (pendingEditorJumpLine == null || !isSidebarOpen) return;
     const lineNumber = pendingEditorJumpLine;
     const frame = window.requestAnimationFrame(() => {
@@ -1625,7 +1421,7 @@ const App: React.FC<AppProps> = ({
       setPendingEditorJumpLine((current) => (current === lineNumber ? null : current));
     });
     return () => window.cancelAnimationFrame(frame);
-  }, [isSidebarOpen, pendingEditorJumpLine]);
+  }, [isSidebarOpen, pendingEditorJumpLine, setPendingEditorJumpLine]);
 
   useEffect(() => {
     if (!qaDerivedResult) {
@@ -1640,25 +1436,6 @@ const App: React.FC<AppProps> = ({
       clearSelection();
     }
   }, [clearSelection, qaDerivedResult, selection.observationId, selection.stationId]);
-
-  useEffect(() => {
-    if (!isSettingsModalOpen) return;
-    const handleKey = (event: KeyboardEvent) => {
-      if (event.key !== 'Escape') return;
-      if (isAdjustedPointsTransformSelectOpen) {
-        setIsAdjustedPointsTransformSelectOpen(false);
-        setAdjustedPointsTransformSelectedDraft([]);
-        return;
-      }
-      setIsAdjustedPointsTransformSelectOpen(false);
-      setAdjustedPointsTransformSelectedDraft([]);
-      setIsSettingsModalOpen(false);
-    };
-    document.addEventListener('keydown', handleKey);
-    return () => {
-      document.removeEventListener('keydown', handleKey);
-    };
-  }, [isAdjustedPointsTransformSelectOpen, isSettingsModalOpen]);
 
   useEffect(() => {
     if (!isSettingsModalOpen) return;
@@ -4832,18 +4609,13 @@ const App: React.FC<AppProps> = ({
   };
 
   const clearRunStateAfterWorkspaceLoad = () => {
-    setResult(null);
-    setRunDiagnostics(null);
-    setRunElapsedMs(null);
-    setLastRunInput(null);
-    setLastRunSettingsSnapshot(null);
+    clearWorkspaceArtifacts();
     setExcludedIds(new Set());
     setOverrides({});
     setClusterReviewDecisions({});
     setActiveClusterApprovedMerges([]);
     clearRunComparisonState();
     clearSelection();
-    setImportReviewState(null);
   };
 
   const handleExportAdjustedPoints = async () => {
@@ -6323,107 +6095,6 @@ const App: React.FC<AppProps> = ({
     });
   };
 
-  const closeProjectOptions = () => {
-    setIsAdjustedPointsTransformSelectOpen(false);
-    setAdjustedPointsTransformSelectedDraft([]);
-    setAdjustedPointsRotationAngleError(null);
-    setAdjustedPointsTranslationAzimuthError(null);
-    setIsSettingsModalOpen(false);
-  };
-
-  const openProjectOptions = () => {
-    setSettingsDraft(settings);
-    setParseSettingsDraft(parseSettings);
-    setGeoidSourceDataDraft(geoidSourceData);
-    setGeoidSourceDataLabelDraft(geoidSourceDataLabel);
-    setCrsCatalogGroupFilter(resolveCatalogGroupFromCrsId(parseSettings.crsId));
-    setShowCrsProjectionParams(false);
-    setProjectInstrumentsDraft(cloneInstrumentLibrary(projectInstruments));
-    setLevelLoopCustomPresetsDraft(levelLoopCustomPresets.map((preset) => ({ ...preset })));
-    setAdjustedPointsExportSettingsDraft(cloneAdjustedPointsExportSettings(adjustedPointsExportSettings));
-    setAdjustedPointsRotationAngleInput(
-      String(adjustedPointsExportSettings.transform.rotation.angleDeg ?? 0),
-    );
-    setAdjustedPointsTranslationAzimuthInput(
-      String(adjustedPointsExportSettings.transform.translation.azimuthDeg ?? 0),
-    );
-    setAdjustedPointsRotationAngleError(null);
-    setAdjustedPointsTranslationAzimuthError(null);
-    setIsAdjustedPointsTransformSelectOpen(false);
-    setAdjustedPointsTransformSelectedDraft([]);
-    setSelectedInstrumentDraft(selectedInstrument);
-    setActiveOptionsTab('adjustment');
-    setIsSettingsModalOpen(true);
-  };
-
-  const applyProjectOptions = () => {
-    const normalizedDraft = cloneAdjustedPointsExportSettings(adjustedPointsExportSettingsDraft);
-    let rotationAngleError: string | null = null;
-    let translationAzimuthError: string | null = null;
-
-    if (normalizedDraft.transform.rotation.enabled) {
-      const parsedRotation = parseTransformAngleInput(adjustedPointsRotationAngleInput);
-      if (parsedRotation == null) {
-        rotationAngleError = 'Error: angle not in correct format.';
-      } else if (parsedRotation > 360) {
-        rotationAngleError = 'Error: direction cannot be above 360.';
-      } else {
-        normalizedDraft.transform.rotation.angleDeg = parsedRotation;
-      }
-    }
-
-    if (
-      normalizedDraft.transform.translation.enabled &&
-      normalizedDraft.transform.translation.method === 'direction-distance'
-    ) {
-      const parsedAzimuth = parseTransformAngleInput(adjustedPointsTranslationAzimuthInput);
-      if (parsedAzimuth == null) {
-        translationAzimuthError = 'Error: azimuth not in correct format.';
-      } else if (parsedAzimuth < 0 || parsedAzimuth > 360) {
-        translationAzimuthError = 'Error: direction must be between 0 and 360.';
-      } else {
-        normalizedDraft.transform.translation.azimuthDeg = parsedAzimuth;
-      }
-    }
-
-    setAdjustedPointsRotationAngleError(rotationAngleError);
-    setAdjustedPointsTranslationAzimuthError(translationAzimuthError);
-    if (rotationAngleError || translationAzimuthError) {
-      return;
-    }
-
-    const sanitizedAdjustedPointsSettings = sanitizeAdjustedPointsExportSettings(
-      normalizedDraft,
-      DEFAULT_ADJUSTED_POINTS_EXPORT_SETTINGS,
-    );
-    const sanitizedSettings: SettingsState = {
-      ...settingsDraft,
-      uiTheme: normalizeUiTheme(settingsDraft.uiTheme),
-    };
-    setSettings(sanitizedSettings);
-    setSettingsDraft(sanitizedSettings);
-    setParseSettings(parseSettingsDraft);
-    setGeoidSourceData(geoidSourceDataDraft);
-    setGeoidSourceDataLabel(geoidSourceDataLabelDraft);
-    setProjectInstruments(cloneInstrumentLibrary(projectInstrumentsDraft));
-    setLevelLoopCustomPresets(levelLoopCustomPresetsDraft.map((preset) => ({ ...preset })));
-    setAdjustedPointsExportSettings(cloneAdjustedPointsExportSettings(sanitizedAdjustedPointsSettings));
-    setAdjustedPointsExportSettingsDraft(cloneAdjustedPointsExportSettings(sanitizedAdjustedPointsSettings));
-    setAdjustedPointsRotationAngleInput(
-      String(sanitizedAdjustedPointsSettings.transform.rotation.angleDeg ?? 0),
-    );
-    setAdjustedPointsTranslationAzimuthInput(
-      String(sanitizedAdjustedPointsSettings.transform.translation.azimuthDeg ?? 0),
-    );
-    setAdjustedPointsRotationAngleError(null);
-    setAdjustedPointsTranslationAzimuthError(null);
-    setSelectedInstrument(selectedInstrumentDraft);
-    setShowCrsProjectionParams(false);
-    setIsAdjustedPointsTransformSelectOpen(false);
-    setAdjustedPointsTransformSelectedDraft([]);
-    setIsSettingsModalOpen(false);
-  };
-
   const handleDraftUnitChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setSettingsDraft((prev) => ({ ...prev, units: e.target.value as Units }));
   };
@@ -6983,9 +6654,7 @@ const App: React.FC<AppProps> = ({
 
   const handleResetToLastRun = () => {
     if (lastRunInput != null) setInput(lastRunInput);
-    setResult(null);
-    setRunDiagnostics(null);
-    setRunElapsedMs(null);
+    clearWorkspaceArtifacts();
     setExcludedIds(new Set());
     setOverrides({});
     clearRunComparisonState();
