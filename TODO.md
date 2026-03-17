@@ -42,17 +42,22 @@
       - [x] Move export-format dispatch for points/WebNet/listing/LandXML/QA bundles into a dedicated hook
       - [x] Add focused regression coverage for export dispatch and blocked-transform notice paths
     - [ ] Extract remaining top-level orchestration helpers so `App.tsx` becomes a shell/composition layer
-      - [~] Extract run-profile/output builder logic (`resolveProfileContext`, run diagnostics, WebNet text, listing text, LandXML wrapper) into a dedicated hook/module
+      - [x] Extract run-profile/output builder logic (`resolveProfileContext`, run diagnostics, WebNet text, listing text, LandXML wrapper) into a dedicated hook/module
         - [x] Extract listing/LandXML output wrapper composition into `src/engine/runOutputBuilders.ts`
-        - [ ] Extract `resolveProfileContext` and run-diagnostics composition out of `App.tsx`
-        - [ ] Extract WebNet text report builder out of `App.tsx`
+        - [x] Extract `resolveProfileContext` and run-diagnostics composition out of `App.tsx`
+        - [x] Add focused regression coverage for extracted run-profile/run-diagnostics composition
+        - [x] Extract WebNet text report builder out of `App.tsx` into `src/engine/runResultsTextBuilder.ts`
+        - [x] Add focused regression coverage for extracted WebNet text report builder
   - [ ] Phase 2 - shared derived-model cleanup
     - [x] Add shared QA derived-data model for report/map comparison workflows
     - [ ] Expand shared derived models so report/map/listing/processing-summary consume normalized data instead of rebuilding view-specific arrays
   - [ ] Phase 3 - parser modular split
     - [ ] Split parser directive-state management out of the current parser monolith
     - [ ] Split record-family parsing into stable modules by observation/control family
-    - [ ] Split include expansion and include-scope state restoration into focused modules
+    - [~] Split include expansion and include-scope state restoration into focused modules
+      - [x] Extract include expansion, path normalization, and include-file-map resolution into `src/engine/parseIncludes.ts`
+      - [x] Add focused module regression coverage for include expansion and cycle detection
+      - [ ] Extract include-scope snapshot/restore orchestration out of `src/engine/parse.ts`
     - [ ] Split canonicalization/traceability/post-parse passes into dedicated modules
   - [ ] Phase 4 - solver modular split
     - [ ] Split preprocessing into a dedicated module boundary
