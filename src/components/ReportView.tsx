@@ -233,6 +233,10 @@ interface ReportViewProps {
   onApplyClusterMerges: () => void;
   onResetClusterReview: () => void;
   onClearClusterMerges: () => void;
+  selectedStationId?: string | null;
+  selectedObservationId?: number | null;
+  onSelectStation?: (_stationId: string) => void;
+  onSelectObservation?: (_observationId: number) => void;
 }
 
 type SortedObservation = Observation & { originalIndex: number };
@@ -309,6 +313,10 @@ const ReportView: React.FC<ReportViewProps> = ({
   onClearClusterMerges,
   onJumpToSourceLine,
   pendingRunSettingDiffs = [],
+  selectedStationId = null,
+  selectedObservationId = null,
+  onSelectStation,
+  onSelectObservation,
 }) => {
   const reportRootRef = useRef<HTMLDivElement | null>(null);
   const detailSectionHeaderRefs = useRef<
@@ -350,6 +358,13 @@ const ReportView: React.FC<ReportViewProps> = ({
   const [pinnedDetailSections, setPinnedDetailSections] = useState<
     Array<{ id: CollapsibleDetailSectionId; label: string }>
   >([]);
+  const rowSelectionClass = useCallback(
+    (selected: boolean) =>
+      selected
+        ? 'bg-cyan-950/30 ring-1 ring-inset ring-cyan-500/60'
+        : 'hover:bg-slate-900/50 transition-colors',
+    [],
+  );
   const deferredReportFilterQuery = useDeferredValue(reportFilterQuery);
   const ellipseConfidenceScale = ellipseMode === '95' ? 2.4477 : 1;
   const allDetailSectionsCollapsed = COLLAPSIBLE_DETAIL_SECTION_IDS.every(
@@ -1552,7 +1567,11 @@ const ReportView: React.FC<ReportViewProps> = ({
                   return (
                     <tr
                       key={obs.id}
-                      className={`border-b border-slate-800/30 ${excluded ? 'opacity-50' : ''}`}
+                      data-report-observation-row={obs.id}
+                      onClick={() => onSelectObservation?.(obs.id)}
+                      className={`border-b border-slate-800/30 ${excluded ? 'opacity-50' : ''} ${rowSelectionClass(
+                        selectedObservationId === obs.id,
+                      )} ${onSelectObservation ? 'cursor-pointer' : ''}`}
                     >
                       <td className="py-1 px-4">
                         <input
@@ -5130,7 +5149,11 @@ const ReportView: React.FC<ReportViewProps> = ({
               {visibleRowsFor('adjusted-coordinates', filteredStationRows).map(([id, stn]) => (
                 <tr
                   key={id}
-                  className="border-b border-slate-800/50 hover:bg-slate-900/50 transition-colors"
+                  data-report-station-row={id}
+                  onClick={() => onSelectStation?.(id)}
+                  className={`border-b border-slate-800/50 ${rowSelectionClass(
+                    selectedStationId === id,
+                  )} ${onSelectStation ? 'cursor-pointer' : ''}`}
                 >
                   <td className="py-1 font-medium text-slate-100">{id}</td>
                   <td className="py-1 text-xs text-slate-400">{stationDescription(id)}</td>

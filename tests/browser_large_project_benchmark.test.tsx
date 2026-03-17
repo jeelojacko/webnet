@@ -5,7 +5,9 @@ import React, { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { describe, expect, it } from 'vitest';
 
+import MapView from '../src/components/MapView';
 import ReportView from '../src/components/ReportView';
+import { buildQaDerivedResult } from '../src/engine/qaWorkflow';
 import { runAdjustmentSession } from '../src/engine/runSession';
 import { createRunSessionRequest } from './helpers/runSessionRequest';
 
@@ -48,7 +50,7 @@ const buildBenchmarkInput = (fixture: BrowserBenchmarkFixture): string => {
 
 describe('browser large-project benchmark coverage', () => {
   it.each(benchmarkFixtures)(
-    'keeps the large-project run-session solve and initial report render within guardrails for %s',
+    'keeps the large-project run-session solve and initial report/map render within guardrails for %s',
     async (fixture) => {
       const input = buildBenchmarkInput(fixture);
       const request = createRunSessionRequest({
@@ -74,43 +76,79 @@ describe('browser large-project benchmark coverage', () => {
       const container = document.createElement('div');
       document.body.appendChild(container);
       const root: Root = createRoot(container);
+      const derived = buildQaDerivedResult(outcome.result);
+      const firstObservationId = outcome.result.observations[0]?.id ?? null;
+
+      const BenchmarkHarness: React.FC = () => {
+        const [selectedObservationId, setSelectedObservationId] = React.useState<number | null>(
+          firstObservationId,
+        );
+        const [selectedStationId, setSelectedStationId] = React.useState<string | null>('P001');
+        return (
+          <div>
+            <div data-selection-status>
+              obs:{selectedObservationId ?? '-'} station:{selectedStationId ?? '-'}
+            </div>
+            <ReportView
+              result={outcome.result}
+              units="m"
+              runDiagnostics={null}
+              excludedIds={new Set<number>()}
+              onToggleExclude={() => {}}
+              onApplyImpactExclude={() => {}}
+              onApplyPreanalysisAction={() => {}}
+              onReRun={() => {}}
+              onClearExclusions={() => {}}
+              overrides={{}}
+              onOverride={() => {}}
+              onResetOverrides={() => {}}
+              clusterReviewDecisions={{}}
+              activeClusterApprovedMerges={[]}
+              onClusterDecisionStatus={() => {}}
+              onClusterCanonicalSelection={() => {}}
+              onApplyClusterMerges={() => {}}
+              onResetClusterReview={() => {}}
+              onClearClusterMerges={() => {}}
+              selectedStationId={selectedStationId}
+              selectedObservationId={selectedObservationId}
+              onSelectStation={setSelectedStationId}
+              onSelectObservation={setSelectedObservationId}
+            />
+            <MapView
+              result={outcome.result}
+              units="m"
+              derivedResult={derived}
+              selectedStationId={selectedStationId}
+              selectedObservationId={selectedObservationId}
+              onSelectStation={setSelectedStationId}
+              onSelectObservation={setSelectedObservationId}
+            />
+          </div>
+        );
+      };
 
       const renderStart = performance.now();
       await act(async () => {
-        root.render(
-          <ReportView
-            result={outcome.result}
-            units="m"
-            runDiagnostics={null}
-            excludedIds={new Set<number>()}
-            onToggleExclude={() => {}}
-            onApplyImpactExclude={() => {}}
-            onApplyPreanalysisAction={() => {}}
-            onReRun={() => {}}
-            onClearExclusions={() => {}}
-            overrides={{}}
-            onOverride={() => {}}
-            onResetOverrides={() => {}}
-            clusterReviewDecisions={{}}
-            activeClusterApprovedMerges={[]}
-            onClusterDecisionStatus={() => {}}
-            onClusterCanonicalSelection={() => {}}
-            onApplyClusterMerges={() => {}}
-            onResetClusterReview={() => {}}
-            onClearClusterMerges={() => {}}
-          />,
-        );
+        root.render(<BenchmarkHarness />);
       });
       const renderDurationMs = performance.now() - renderStart;
 
       expect(renderDurationMs).toBeLessThan(fixture.renderBudgetMs);
       expect(container.textContent).toContain('Adjusted Coordinates');
       expect(container.textContent).toContain('P001');
+      expect(container.querySelectorAll('[data-map-station]').length).toBe(fixture.expectedStationCount);
+      expect(container.querySelectorAll('[data-map-label]').length).toBeLessThan(
+        fixture.expectedStationCount,
+      );
 
       const showMoreButton = container.querySelector(
         '[data-report-load-more="adjusted-coordinates"]',
       ) as HTMLButtonElement | null;
+      const firstObservationRow = container.querySelector(
+        `[data-report-observation-row="${firstObservationId}"]`,
+      ) as HTMLTableRowElement | null;
       expect(showMoreButton).not.toBeNull();
+      expect(firstObservationRow).not.toBeNull();
       const coordinateHeading = Array.from(container.querySelectorAll('h3')).find((node) =>
         node.textContent?.includes('Adjusted Coordinates'),
       );
@@ -118,6 +156,7 @@ describe('browser large-project benchmark coverage', () => {
       expect(coordinateSection?.querySelectorAll('tbody tr').length).toBe(fixture.reportWindowSize);
 
       await act(async () => {
+        firstObservationRow?.click();
         showMoreButton?.click();
       });
 
@@ -125,6 +164,12 @@ describe('browser large-project benchmark coverage', () => {
         fixture.expectedStationCount,
       );
       expect(container.textContent).toContain(padPointId(fixture.pointCount - 1));
+      expect(container.querySelector('[data-selection-status]')?.textContent).toContain(
+        `obs:${firstObservationId}`,
+      );
+      expect(
+        container.querySelector(`[data-map-observation="${firstObservationId}"]`),
+      ).not.toBeNull();
 
       await act(async () => {
         root.unmount();

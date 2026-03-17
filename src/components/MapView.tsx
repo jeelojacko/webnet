@@ -8,6 +8,7 @@ import {
 } from '../engine/map3d';
 import { RAD_TO_DEG, radToDmsStr } from '../engine/angles';
 import { computeInverse2D, computePivotAngles } from '../engine/mapTools';
+import type { DerivedQaResult } from '../engine/qaWorkflow';
 import {
   buildAdjustedPointsTransformPreview,
   sanitizeAdjustedPointsExportSettings,
@@ -21,6 +22,10 @@ const MAX_ZOOM = 200;
 const MIDDLE_DBLCLICK_MS = 320;
 const DEG_TO_RAD = Math.PI / 180;
 const MAX_ELLIPSOID_SAMPLES = 28;
+const VIEWPORT_CLIP_MARGIN_PX = 80;
+const DENSE_LABEL_POINT_THRESHOLD = 90;
+const DENSE_LABEL_EDGE_THRESHOLD = 180;
+const LABEL_GRID_PX = 48;
 
 type ToolPanel = 'none' | 'points' | 'inverse' | 'angles';
 
@@ -31,9 +36,70 @@ interface MapViewProps {
   mode?: '2d' | '3d';
   viewportWidthOverride?: number;
   adjustedPointsExportSettings?: AdjustedPointsExportSettings;
+  derivedResult?: DerivedQaResult | null;
+  selectedStationId?: string | null;
+  selectedObservationId?: number | null;
+  onSelectStation?: (_stationId: string) => void;
+  onSelectObservation?: (_observationId: number) => void;
 }
 
 type DragMode = 'none' | 'pan2d' | 'orbit3d' | 'pan3d';
+
+interface ProjectedMapLine2D {
+  key: string;
+  observationId: number;
+  pairKey: string;
+  sourceLine: number | null;
+  x1: number;
+  y1: number;
+  x2: number;
+  y2: number;
+  screenX1: number;
+  screenY1: number;
+  screenX2: number;
+  screenY2: number;
+}
+
+interface ProjectedPoint2D {
+  id: string;
+  fixed: boolean;
+  x: number;
+  y: number;
+  screenX: number;
+  screenY: number;
+  ellipsoid?: {
+    semiMajor: number;
+    semiMinor: number;
+    semiVertical: number;
+    thetaDeg: number;
+  };
+}
+
+interface ViewportBounds {
+  minX: number;
+  maxX: number;
+  minY: number;
+  maxY: number;
+}
+
+const intersectsViewportBounds = (
+  bounds: ViewportBounds,
+  x1: number,
+  y1: number,
+  x2: number,
+  y2: number,
+): boolean => {
+  const minX = Math.min(x1, x2);
+  const maxX = Math.max(x1, x2);
+  const minY = Math.min(y1, y2);
+  const maxY = Math.max(y1, y2);
+  return !(
+    maxX < bounds.minX ||
+    minX > bounds.maxX ||
+    maxY < bounds.minY ||
+    minY > bounds.maxY
+  );
+};
 
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
 
@@ -44,6 +110,11 @@ const MapView: React.FC<MapViewProps> = ({
   mode = '2d',
   viewportWidthOverride,
   adjustedPointsExportSettings,
+  derivedResult = null,
+  selectedStationId = null,
+  selectedObservationId = null,
+  onSelectStation,
+  onSelectObservation,
 }) => {
   const unitScale = units === 'ft' ? FT_PER_M : 1;
   const isPreanalysis = result.preanalysisMode === true;
@@ -534,6 +605,171 @@ const MapView: React.FC<MapViewProps> = ({
     transformedOverlayConfig.transformedByStationId,
   ]);
 
+  const fallbackMapLinks = useMemo(
+    () =>
+      observations
+        .filter((obs) => obs.type === 'dist' || obs.type === 'gps' || obs.type === 'bearing' || obs.type === 'dir')
+        .map((obs) => ({
+          key: `obs-${obs.id}`,
+          observationId: obs.id,
+          type: obs.type,
+          fromId: obs.from,
+          toId: obs.to,
+          sourceLine: obs.sourceLine ?? null,
+          pairKey:
+            [obs.from, obs.to]
+              .slice()
+              .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }))
+              .join('|'),
+        })),
+    [observations],
+  );
+  const mapLinks = derivedResult?.mapLinks ?? fallbackMapLinks;
+  const mapLinkByPairKey = useMemo(() => {
+    const next = new Map<string, (typeof mapLinks)[number]>();
+    mapLinks.forEach((link) => {
+      if (!next.has(link.pairKey)) next.set(link.pairKey, link);
+    });
+    return next;
+  }, [mapLinks]);
+  const selectedObservationPairKey = useMemo(() => {
+    if (!derivedResult || selectedObservationId == null) return null;
+    return derivedResult.observationById.get(selectedObservationId)?.pairKey ?? null;
+  }, [derivedResult, selectedObservationId]);
+
+  const viewportBounds2d = useMemo<ViewportBounds>(
+    () => ({
+      minX: -VIEWPORT_CLIP_MARGIN_PX,
+      maxX: VIEW_W + VIEWPORT_CLIP_MARGIN_PX,
+      minY: -VIEWPORT_CLIP_MARGIN_PX,
+      maxY: VIEW_H + VIEWPORT_CLIP_MARGIN_PX,
+    }),
+    [],
+  );
+
+  const projectedMapLines2d = useMemo<ProjectedMapLine2D[]>(() => {
+    return mapLinks
+      .map((link) => {
+        const from = stations[link.fromId];
+        const to = stations[link.toId];
+        if (!from || !to) return null;
+        if (!showLostStations && (from.lost || to.lost)) return null;
+        const p1 = project2d(from.x, from.y);
+        const p2 = project2d(to.x, to.y);
+        return {
+          key: link.key,
+          observationId: link.observationId,
+          pairKey: link.pairKey,
+          sourceLine: link.sourceLine,
+          x1: p1.x,
+          y1: p1.y,
+          x2: p2.x,
+          y2: p2.y,
+          screenX1: view2d.panX + p1.x * view2d.zoom,
+          screenY1: view2d.panY + p1.y * view2d.zoom,
+          screenX2: view2d.panX + p2.x * view2d.zoom,
+          screenY2: view2d.panY + p2.y * view2d.zoom,
+        };
+      })
+      .filter((line): line is ProjectedMapLine2D => line != null);
+  }, [mapLinks, project2d, showLostStations, stations, view2d.panX, view2d.panY, view2d.zoom]);
+
+  const visibleMapLines2d = useMemo(() => {
+    return projectedMapLines2d.filter((line) => {
+      const isSelected =
+        line.observationId === selectedObservationId ||
+        (selectedObservationPairKey != null && line.pairKey === selectedObservationPairKey);
+      if (isSelected) return true;
+      return intersectsViewportBounds(
+        viewportBounds2d,
+        line.screenX1,
+        line.screenY1,
+        line.screenX2,
+        line.screenY2,
+      );
+    });
+  }, [projectedMapLines2d, selectedObservationId, selectedObservationPairKey, viewportBounds2d]);
+
+  const projectedPoints2d = useMemo<ProjectedPoint2D[]>(() => {
+    return points.map((point) => {
+      const projected = project2d(point.x, point.y);
+      return {
+        id: point.id,
+        fixed: point.fixed,
+        x: projected.x,
+        y: projected.y,
+        screenX: view2d.panX + projected.x * view2d.zoom,
+        screenY: view2d.panY + projected.y * view2d.zoom,
+        ellipsoid: point.ellipsoid,
+      };
+    });
+  }, [points, project2d, view2d.panX, view2d.panY, view2d.zoom]);
+
+  const visiblePoints2d = useMemo(() => {
+    const selectionMargin = 12;
+    return projectedPoints2d.filter((point) => {
+      if (point.id === selectedStationId) return true;
+      return (
+        point.screenX >= viewportBounds2d.minX - selectionMargin &&
+        point.screenX <= viewportBounds2d.maxX + selectionMargin &&
+        point.screenY >= viewportBounds2d.minY - selectionMargin &&
+        point.screenY <= viewportBounds2d.maxY + selectionMargin
+      );
+    });
+  }, [projectedPoints2d, selectedStationId, viewportBounds2d]);
+
+  const visiblePointLabels2d = useMemo(() => {
+    if (visiblePoints2d.length === 0) return new Set<string>();
+    const next = new Set<string>();
+    const denseView =
+      visiblePoints2d.length > DENSE_LABEL_POINT_THRESHOLD ||
+      visibleMapLines2d.length > DENSE_LABEL_EDGE_THRESHOLD;
+    if (!denseView) {
+      visiblePoints2d.forEach((point) => next.add(point.id));
+      return next;
+    }
+    const occupied = new Set<string>();
+    const sortedPoints = [...visiblePoints2d].sort((left, right) => {
+      const leftPriority =
+        (left.id === selectedStationId ? 1000 : 0) +
+        (stationSeverity(left.id) === 'weak' ? 100 : stationSeverity(left.id) === 'watch' ? 80 : 0) +
+        (left.fixed ? 10 : 0);
+      const rightPriority =
+        (right.id === selectedStationId ? 1000 : 0) +
+        (stationSeverity(right.id) === 'weak'
+          ? 100
+          : stationSeverity(right.id) === 'watch'
+            ? 80
+            : 0) +
+        (right.fixed ? 10 : 0);
+      if (leftPriority !== rightPriority) return rightPriority - leftPriority;
+      return left.id.localeCompare(right.id, undefined, { numeric: true });
+    });
+    sortedPoints.forEach((point) => {
+      const cellX = Math.floor(point.screenX / LABEL_GRID_PX);
+      const cellY = Math.floor(point.screenY / LABEL_GRID_PX);
+      const key = `${cellX}:${cellY}`;
+      if (!occupied.has(key) || point.id === selectedStationId) {
+        occupied.add(key);
+        next.add(point.id);
+      }
+    });
+    return next;
+  }, [selectedStationId, stationSeverity, visibleMapLines2d.length, visiblePoints2d]);
+
+  const mapDensitySummary = useMemo(() => {
+    const labelTotal = visiblePointLabels2d.size;
+    const labelSuppressed = visiblePoints2d.length - labelTotal;
+    const lineSuppressed = projectedMapLines2d.length - visibleMapLines2d.length;
+    return {
+      dense:
+        labelSuppressed > 0 || lineSuppressed > 0 || visibleMapLines2d.length > DENSE_LABEL_EDGE_THRESHOLD,
+      labelTotal,
+      labelSuppressed,
+      lineSuppressed,
+    };
+  }, [projectedMapLines2d.length, visibleMapLines2d.length, visiblePointLabels2d.size, visiblePoints2d.length]);
+
   const transformedPoints2d = useMemo(() => {
     if (!transformedOverlayActive) {
       return [] as Array<{ id: string; x: number; y: number; fixed: boolean }>;
@@ -606,6 +842,22 @@ const MapView: React.FC<MapViewProps> = ({
     projected3d.forEach((row) => map.set(row.node.id, row.p));
     return map;
   }, [projected3d]);
+
+  const visiblePointLabels3d = useMemo(() => {
+    if (projected3d.length === 0) return new Set<string>();
+    const denseView = projected3d.length > DENSE_LABEL_POINT_THRESHOLD;
+    if (!denseView) return new Set(projected3d.map((row) => row.node.id));
+    const next = new Set<string>();
+    const occupied = new Set<string>();
+    projected3d.forEach((row) => {
+      const key = `${Math.floor(row.p.x / LABEL_GRID_PX)}:${Math.floor(row.p.y / LABEL_GRID_PX)}`;
+      if (!occupied.has(key) || row.node.id === selectedStationId) {
+        occupied.add(key);
+        next.add(row.node.id);
+      }
+    });
+    return next;
+  }, [projected3d, selectedStationId]);
 
   const buildEllipsoidRings = useCallback(
     (
@@ -727,12 +979,22 @@ const MapView: React.FC<MapViewProps> = ({
           ellipses in {units} (
           {unitScale.toFixed(4)} factor)
         </span>
-        <span className="text-slate-500">
-          {effectiveMode === '3d'
-            ? 'Left-drag=orbit, middle-drag=pan, wheel=zoom, middle-double-click=reset'
-            : 'Wheel=zoom, middle-drag=pan, middle-double-click=reset extents'}
-          {'; right-click=tools'}
-        </span>
+        <div className="flex items-center gap-3">
+          {effectiveMode === '2d' && mapDensitySummary.dense && (
+            <span className="text-[11px] text-slate-500">
+              Dense view: labels {mapDensitySummary.labelTotal}/{visiblePoints2d.length}
+              {mapDensitySummary.lineSuppressed > 0
+                ? `, clipped links ${mapDensitySummary.lineSuppressed}`
+                : ''}
+            </span>
+          )}
+          <span className="text-slate-500">
+            {effectiveMode === '3d'
+              ? 'Left-drag=orbit, middle-drag=pan, wheel=zoom, middle-double-click=reset'
+              : 'Wheel=zoom, middle-drag=pan, middle-double-click=reset extents'}
+            {'; right-click=tools'}
+          </span>
+        </div>
       </div>
       {showTransformToggle && (
         <div className="mb-2 flex flex-wrap items-center gap-3 rounded border border-slate-700/80 bg-slate-900/75 px-3 py-2 text-[11px] text-slate-200">
@@ -1147,68 +1409,116 @@ const MapView: React.FC<MapViewProps> = ({
                 transform={`translate(${view2d.panX} ${view2d.panY}) scale(${view2d.zoom})`}
                 opacity={originalGeometryOpacity}
               >
-                {observations.map((obs, idx) => {
-                  if (obs.type !== 'dist' && obs.type !== 'gps') return null;
-                  const from = stations[obs.from];
-                  const to = stations[obs.to];
-                  if (!from || !to) return null;
-                  if (!showLostStations && (from.lost || to.lost)) return null;
-                  const p1 = project2d(from.x, from.y);
-                  const p2 = project2d(to.x, to.y);
-                  return (
+                {visibleMapLines2d
+                  .filter(
+                    (line) =>
+                      line.observationId !== selectedObservationId &&
+                      (selectedObservationPairKey == null || line.pairKey !== selectedObservationPairKey),
+                  )
+                  .map((line) => (
                     <line
-                      key={`obs-${idx}`}
-                      x1={p1.x}
-                      y1={p1.y}
-                      x2={p2.x}
-                      y2={p2.y}
+                      key={line.key}
+                      data-map-observation={line.observationId}
+                      x1={line.x1}
+                      y1={line.y1}
+                      x2={line.x2}
+                      y2={line.y2}
                       stroke="#475569"
                       strokeWidth={lineWidth2d}
                       markerEnd="url(#arrow)"
                       opacity={0.6}
+                      onClick={() => onSelectObservation?.(line.observationId)}
+                      className={onSelectObservation ? 'cursor-pointer' : undefined}
                     />
-                  );
-                })}
+                  ))}
 
-                {points.map((p) => {
-                  const proj = project2d(p.x, p.y);
-                  const ellipsoid = p.ellipsoid;
+                {visiblePoints2d.map((point) => {
+                  const ellipsoid = point.ellipsoid;
                   const ellScale = units === 'ft' ? 0.0328084 : 1;
                   return (
-                    <g key={p.id}>
+                    <g key={point.id}>
                       {ellipsoid && (
                         <ellipse
-                          cx={proj.x}
-                          cy={proj.y}
+                          cx={point.x}
+                          cy={point.y}
                           rx={ellipsoid.semiMajor * 100 * ellScale * projection2d.scale}
                           ry={ellipsoid.semiMinor * 100 * ellScale * projection2d.scale}
-                          transform={`rotate(${ellipsoid.thetaDeg}, ${proj.x}, ${proj.y})`}
+                          transform={`rotate(${ellipsoid.thetaDeg}, ${point.x}, ${point.y})`}
                           fill="none"
-                          stroke={ellipseStroke(p.id)}
+                          stroke={ellipseStroke(point.id)}
                           strokeWidth={ellipseStroke2d}
                           opacity={0.6}
                         />
                       )}
                       <circle
-                        cx={proj.x}
-                        cy={proj.y}
+                        data-map-station={point.id}
+                        cx={point.x}
+                        cy={point.y}
                         r={pointRadius2d}
-                        fill={stationFill(p.id, p.fixed)}
+                        fill={stationFill(point.id, point.fixed)}
+                        stroke="none"
+                        onClick={() => onSelectStation?.(point.id)}
+                        className={onSelectStation ? 'cursor-pointer' : undefined}
                       />
-                      <text
-                        x={proj.x + labelOffset2d}
-                        y={proj.y - labelOffset2d}
-                        fontSize={labelFont2d}
-                        fill="#e2e8f0"
-                        stroke="#020617"
-                        strokeWidth={labelStroke2d}
-                        paintOrder="stroke"
-                      >
-                        {p.id}
-                      </text>
+                      {visiblePointLabels2d.has(point.id) && (
+                        <text
+                          data-map-label={point.id}
+                          x={point.x + labelOffset2d}
+                          y={point.y - labelOffset2d}
+                          fontSize={labelFont2d}
+                          fill="#e2e8f0"
+                          stroke="#020617"
+                          strokeWidth={labelStroke2d}
+                          paintOrder="stroke"
+                        >
+                          {point.id}
+                        </text>
+                      )}
                     </g>
                   );
                 })}
+              </g>
+
+              <g transform={`translate(${view2d.panX} ${view2d.panY}) scale(${view2d.zoom})`}>
+                {visibleMapLines2d
+                  .filter(
+                    (line) =>
+                      line.observationId === selectedObservationId ||
+                      (selectedObservationPairKey != null && line.pairKey === selectedObservationPairKey),
+                  )
+                  .map((line) => (
+                    <line
+                      key={`${line.key}-selected`}
+                      data-map-observation={line.observationId}
+                      x1={line.x1}
+                      y1={line.y1}
+                      x2={line.x2}
+                      y2={line.y2}
+                      stroke="#22d3ee"
+                      strokeWidth={lineWidth2d * 2}
+                      markerEnd="url(#arrow)"
+                      opacity={1}
+                      onClick={() => onSelectObservation?.(line.observationId)}
+                      className={onSelectObservation ? 'cursor-pointer' : undefined}
+                    />
+                  ))}
+
+                {selectedStationId &&
+                  visiblePoints2d
+                    .filter((point) => point.id === selectedStationId)
+                    .map((point) => (
+                      <circle
+                        key={`selected-station-${point.id}`}
+                        data-map-station-selection={point.id}
+                        cx={point.x}
+                        cy={point.y}
+                        r={pointRadius2d * 1.45}
+                        fill="none"
+                        stroke="#22d3ee"
+                        strokeWidth={pointRadius2d * 0.6}
+                        pointerEvents="none"
+                      />
+                    ))}
               </g>
 
               {transformedOverlayActive && (
@@ -1240,17 +1550,20 @@ const MapView: React.FC<MapViewProps> = ({
                           r={pointRadius2d}
                           fill={point.fixed ? '#34d399' : '#f97316'}
                         />
-                        <text
-                          x={proj.x + labelOffset2d}
-                          y={proj.y - labelOffset2d}
-                          fontSize={labelFont2d}
-                          fill="#f8fafc"
-                          stroke="#082f49"
-                          strokeWidth={labelStroke2d}
-                          paintOrder="stroke"
-                        >
-                          {point.id}
-                        </text>
+                        {visiblePointLabels2d.has(point.id) && (
+                          <text
+                            data-map-label={point.id}
+                            x={proj.x + labelOffset2d}
+                            y={proj.y - labelOffset2d}
+                            fontSize={labelFont2d}
+                            fill="#f8fafc"
+                            stroke="#082f49"
+                            strokeWidth={labelStroke2d}
+                            paintOrder="stroke"
+                          >
+                            {point.id}
+                          </text>
+                        )}
                       </g>
                     );
                   })}
@@ -1266,9 +1579,19 @@ const MapView: React.FC<MapViewProps> = ({
                 const a = projected3dById.get(edge.from);
                 const b = projected3dById.get(edge.to);
                 if (!a || !b) return null;
+                const pairKey = [edge.from, edge.to]
+                  .slice()
+                  .sort((left, right) => left.localeCompare(right, undefined, { numeric: true }))
+                  .join('|');
+                const link = mapLinkByPairKey.get(pairKey) ?? null;
+                const isSelected =
+                  (link != null && link.observationId === selectedObservationId) ||
+                  (selectedObservationPairKey != null && pairKey === selectedObservationPairKey);
+                if (isSelected) return null;
                 return (
                   <line
                     key={`edge3d-${idx}`}
+                    data-map-observation={link?.observationId ?? `${edge.from}-${edge.to}`}
                     x1={a.x}
                     y1={a.y}
                     x2={b.x}
@@ -1276,6 +1599,41 @@ const MapView: React.FC<MapViewProps> = ({
                     stroke="#334155"
                     strokeWidth={1}
                     opacity={0.65}
+                    onClick={() => {
+                      if (link) onSelectObservation?.(link.observationId);
+                    }}
+                    className={link && onSelectObservation ? 'cursor-pointer' : undefined}
+                  />
+                );
+              })}
+              {scene3d.edges.map((edge, idx) => {
+                const a = projected3dById.get(edge.from);
+                const b = projected3dById.get(edge.to);
+                if (!a || !b) return null;
+                const pairKey = [edge.from, edge.to]
+                  .slice()
+                  .sort((left, right) => left.localeCompare(right, undefined, { numeric: true }))
+                  .join('|');
+                const link = mapLinkByPairKey.get(pairKey) ?? null;
+                const isSelected =
+                  (link != null && link.observationId === selectedObservationId) ||
+                  (selectedObservationPairKey != null && pairKey === selectedObservationPairKey);
+                if (!isSelected) return null;
+                return (
+                  <line
+                    key={`edge3d-selected-${idx}`}
+                    data-map-observation={link?.observationId ?? `${edge.from}-${edge.to}`}
+                    x1={a.x}
+                    y1={a.y}
+                    x2={b.x}
+                    y2={b.y}
+                    stroke="#22d3ee"
+                    strokeWidth={2}
+                    opacity={1}
+                    onClick={() => {
+                      if (link) onSelectObservation?.(link.observationId);
+                    }}
+                    className={link && onSelectObservation ? 'cursor-pointer' : undefined}
                   />
                 );
               })}
@@ -1299,22 +1657,40 @@ const MapView: React.FC<MapViewProps> = ({
                       />
                     ))}
                     <circle
+                      data-map-station={node.id}
                       cx={p.x}
                       cy={p.y}
                       r={pointRadius}
                       fill={stationFill(node.id, node.fixed)}
+                      stroke="none"
+                      onClick={() => onSelectStation?.(node.id)}
+                      className={onSelectStation ? 'cursor-pointer' : undefined}
                     />
-                    <text
-                      x={p.x + labelOffset}
-                      y={p.y - labelOffset}
-                      fontSize={labelSize}
-                      fill="#e2e8f0"
-                      stroke="#020617"
-                      strokeWidth={1.2}
-                      paintOrder="stroke"
-                    >
-                      {node.id}
-                    </text>
+                    {selectedStationId === node.id && (
+                      <circle
+                        cx={p.x}
+                        cy={p.y}
+                        r={pointRadius * 1.45}
+                        fill="none"
+                        stroke="#22d3ee"
+                        strokeWidth={2}
+                        pointerEvents="none"
+                      />
+                    )}
+                    {visiblePointLabels3d.has(node.id) && (
+                      <text
+                        data-map-label={node.id}
+                        x={p.x + labelOffset}
+                        y={p.y - labelOffset}
+                        fontSize={labelSize}
+                        fill="#e2e8f0"
+                        stroke="#020617"
+                        strokeWidth={1.2}
+                        paintOrder="stroke"
+                      >
+                        {node.id}
+                      </text>
+                    )}
                   </g>
                 );
               })}

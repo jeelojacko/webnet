@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import InputPane, { type InputPaneHandle } from './components/InputPane';
 import ImportReviewModal from './components/ImportReviewModal';
+import RunComparisonPanel from './components/RunComparisonPanel';
 
 import { DEFAULT_INPUT } from './defaultInput';
 import { RAD_TO_DEG, radToDmsStr, dmsToRad } from './engine/angles';
@@ -32,6 +33,19 @@ import {
 } from './engine/autoAdjust';
 import { buildIndustryStyleListingText } from './engine/industryListing';
 import { buildLandXmlText } from './engine/landxml';
+import {
+  buildExportBundleFiles,
+  type ExportBundlePreset,
+} from './engine/exportBundles';
+import {
+  buildQaDerivedResult,
+  buildRunComparison,
+  buildRunComparisonText,
+  pushRunSnapshot,
+  resolveComparisonBaseline,
+  type ComparisonSelection,
+  type RunSnapshot,
+} from './engine/qaWorkflow';
 import {
   ADJUSTED_POINTS_ALL_COLUMNS,
   ADJUSTED_POINTS_PRESET_COLUMNS,
@@ -90,6 +104,7 @@ import {
 import { isPreanalysisWhatIfCandidate } from './engine/preanalysis';
 import { type RunSessionOutcome, type RunSessionRequest } from './engine/runSession';
 import { useAdjustmentRunner } from './hooks/useAdjustmentRunner';
+import { useQaSelection } from './hooks/useQaSelection';
 import type {
   AdjustmentResult,
   ClusterApprovedMerge,
@@ -1191,6 +1206,7 @@ const App: React.FC<AppProps> = ({
   const [runDiagnostics, setRunDiagnostics] = useState<RunDiagnostics | null>(null);
   const [runElapsedMs, setRunElapsedMs] = useState<number | null>(null);
   const [exportFormat, setExportFormat] = useState<ProjectExportFormat>('webnet');
+  const [exportBundlePreset, setExportBundlePreset] = useState<ExportBundlePreset>('qa-standard');
   const [lastRunInput, setLastRunInput] = useState<string | null>(null);
   const [lastRunSettingsSnapshot, setLastRunSettingsSnapshot] = useState<RunSettingsSnapshot | null>(
     null,
@@ -1351,6 +1367,17 @@ const App: React.FC<AppProps> = ({
   const [activeClusterApprovedMerges, setActiveClusterApprovedMerges] = useState<
     ClusterApprovedMerge[]
   >([]);
+  const [runHistory, setRunHistory] = useState<Array<RunSnapshot<RunSettingsSnapshot, RunDiagnostics>>>(
+    [],
+  );
+  const [currentRunSnapshot, setCurrentRunSnapshot] =
+    useState<RunSnapshot<RunSettingsSnapshot, RunDiagnostics> | null>(null);
+  const [comparisonSelection, setComparisonSelection] = useState<ComparisonSelection>({
+    baselineRunId: null,
+    pinnedBaselineRunId: null,
+    stationMovementThreshold: 0.001,
+    residualDeltaThreshold: 0.25,
+  });
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const projectFileInputRef = useRef<HTMLInputElement | null>(null);
   const geoidSourceFileInputRef = useRef<HTMLInputElement | null>(null);
@@ -1360,6 +1387,7 @@ const App: React.FC<AppProps> = ({
   const layoutRef = useRef<HTMLDivElement | null>(null);
   const settingsModalContentRef = useRef<HTMLDivElement | null>(null);
   const isResizingRef = useRef(false);
+  const runSnapshotCounterRef = useRef(1);
   const { pipelineState, run: runAdjustment, cancel: cancelAdjustment } =
     useAdjustmentRunner(runWithExclusionsDirect);
 
@@ -1372,6 +1400,40 @@ const App: React.FC<AppProps> = ({
     () => buildPendingRunSettingDiffs(currentRunSettingsSnapshot, lastRunSettingsSnapshot),
     [currentRunSettingsSnapshot, lastRunSettingsSnapshot],
   );
+  const qaDerivedResult = useMemo(() => (result ? buildQaDerivedResult(result) : null), [result]);
+  const {
+    selection,
+    selectedObservation,
+    selectedStation,
+    selectObservation,
+    selectStation,
+    clearSelection,
+    pinnedObservations,
+    togglePinnedObservation,
+    selectNextSuspect,
+    selectPreviousSuspect,
+    hasSuspects,
+  } = useQaSelection(qaDerivedResult);
+  const baselineRunSnapshot = useMemo(
+    () => resolveComparisonBaseline(runHistory, currentRunSnapshot, comparisonSelection),
+    [comparisonSelection, currentRunSnapshot, runHistory],
+  );
+  const comparisonSettingDiffs = useMemo(() => {
+    if (!currentRunSnapshot || !baselineRunSnapshot) return [];
+    return buildPendingRunSettingDiffs(
+      currentRunSnapshot.settingsSnapshot,
+      baselineRunSnapshot.settingsSnapshot,
+    );
+  }, [baselineRunSnapshot, currentRunSnapshot]);
+  const runComparisonSummary = useMemo(() => {
+    if (!currentRunSnapshot || !baselineRunSnapshot) return null;
+    return buildRunComparison(
+      currentRunSnapshot,
+      baselineRunSnapshot,
+      comparisonSelection,
+      comparisonSettingDiffs,
+    );
+  }, [baselineRunSnapshot, comparisonSelection, comparisonSettingDiffs, currentRunSnapshot]);
   const runPhaseLabel = useMemo(() => {
     if (pipelineState.status === 'running') {
       if (pipelineState.phase === 'queued') return 'Queued';
@@ -1547,6 +1609,20 @@ const App: React.FC<AppProps> = ({
     });
     return () => window.cancelAnimationFrame(frame);
   }, [isSidebarOpen, pendingEditorJumpLine]);
+
+  useEffect(() => {
+    if (!qaDerivedResult) {
+      clearSelection();
+      return;
+    }
+    if (selection.observationId != null && !qaDerivedResult.observationById.has(selection.observationId)) {
+      clearSelection();
+      return;
+    }
+    if (selection.stationId != null && !qaDerivedResult.stationById.has(selection.stationId)) {
+      clearSelection();
+    }
+  }, [clearSelection, qaDerivedResult, selection.observationId, selection.stationId]);
 
   useEffect(() => {
     if (!isSettingsModalOpen) return;
@@ -4663,22 +4739,49 @@ const App: React.FC<AppProps> = ({
     );
   };
 
+  const currentWebNetReportText = useMemo(
+    () => (result ? buildResultsText(result) : ''),
+    [buildResultsText, result],
+  );
+  const currentIndustryListingText = useMemo(
+    () => (result ? buildIndustryListingText(result) : ''),
+    [buildIndustryListingText, result],
+  );
+  const currentLandXmlText = useMemo(() => {
+    if (!result) return '';
+    const runDiag = runDiagnostics ?? buildRunDiagnostics(parseSettings, result);
+    return buildLandXmlText(result, {
+      units: settings.units,
+      solveProfile: runDiag.solveProfile,
+      showLostStations: settings.listingShowLostStations,
+      projectName: 'webnet-adjustment',
+      applicationName: 'WebNet',
+      applicationVersion: '0.0.0',
+    });
+  }, [buildRunDiagnostics, parseSettings, result, runDiagnostics, settings.listingShowLostStations, settings.units]);
+  const currentComparisonText = useMemo(
+    () => (runComparisonSummary ? buildRunComparisonText(runComparisonSummary) : ''),
+    [runComparisonSummary],
+  );
+
+  const downloadNamedTextFile = (name: string, text: string, mimeType: string) => {
+    const blob = new Blob([text], { type: mimeType });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = name;
+    anchor.click();
+    URL.revokeObjectURL(url);
+  };
+
   const handleExportResults = async () => {
     if (!result) return;
-    const runDiag = runDiagnostics ?? buildRunDiagnostics(parseSettings, result);
     const text =
       exportFormat === 'industry-style'
-        ? buildIndustryListingText(result)
+        ? currentIndustryListingText
         : exportFormat === 'landxml'
-          ? buildLandXmlText(result, {
-              units: settings.units,
-              solveProfile: runDiag.solveProfile,
-              showLostStations: settings.listingShowLostStations,
-              projectName: 'webnet-adjustment',
-              applicationName: 'WebNet',
-              applicationVersion: '0.0.0',
-            })
-          : buildResultsText(result);
+          ? currentLandXmlText
+          : currentWebNetReportText;
     const isXmlExport = exportFormat === 'landxml';
     const suggestedName = `${
       exportFormat === 'industry-style'
@@ -4708,13 +4811,7 @@ const App: React.FC<AppProps> = ({
       }
     }
 
-    const blob = new Blob([text], { type: isXmlExport ? 'application/xml' : 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = suggestedName;
-    a.click();
-    URL.revokeObjectURL(url);
+    downloadNamedTextFile(suggestedName, text, isXmlExport ? 'application/xml' : 'text/plain');
   };
 
   const clearRunStateAfterWorkspaceLoad = () => {
@@ -4722,10 +4819,19 @@ const App: React.FC<AppProps> = ({
     setRunDiagnostics(null);
     setRunElapsedMs(null);
     setLastRunInput(null);
+    setLastRunSettingsSnapshot(null);
     setExcludedIds(new Set());
     setOverrides({});
     setClusterReviewDecisions({});
     setActiveClusterApprovedMerges([]);
+    setRunHistory([]);
+    setCurrentRunSnapshot(null);
+    setComparisonSelection((prev) => ({
+      ...prev,
+      baselineRunId: null,
+      pinnedBaselineRunId: null,
+    }));
+    clearSelection();
     setImportReviewState(null);
   };
 
@@ -4776,15 +4882,50 @@ const App: React.FC<AppProps> = ({
         if ((err as Error)?.name === 'AbortError') return;
       }
     }
-    const blob = new Blob([text], {
-      type: adjustedPointsExportSettings.format === 'csv' ? 'text/csv' : 'text/plain',
+    downloadNamedTextFile(
+      suggestedName,
+      text,
+      adjustedPointsExportSettings.format === 'csv' ? 'text/csv' : 'text/plain',
+    );
+  };
+
+  const handleExportBundle = () => {
+    if (!result) return;
+    const transformValidation = validateAdjustedPointsTransform({
+      result,
+      settings: adjustedPointsExportSettings,
     });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = suggestedName;
-    a.click();
-    URL.revokeObjectURL(url);
+    if (!transformValidation.valid) {
+      setImportNotice({
+        title: 'QA Bundle Export Blocked',
+        detailLines: [
+          transformValidation.message,
+          'Open Project Options -> Other Files -> Transform and update transform settings.',
+        ],
+      });
+      return;
+    }
+    const adjustedPointsText = buildAdjustedPointsExportText({
+      result,
+      units: settings.units,
+      settings: adjustedPointsExportSettings,
+    });
+    const dateStamp = new Date().toISOString().slice(0, 10);
+    const files = buildExportBundleFiles({
+      preset: exportBundlePreset,
+      dateStamp,
+      adjustedPointsExtension: adjustedPointsExportSettings.format === 'csv' ? 'csv' : 'txt',
+      webnetText: currentWebNetReportText,
+      industryListingText: currentIndustryListingText,
+      adjustedPointsText,
+      comparisonText: currentComparisonText || null,
+      landXmlText: exportBundlePreset === 'qa-standard-with-landxml' ? currentLandXmlText : null,
+    });
+    files.forEach((file) => downloadNamedTextFile(file.name, file.text, file.mimeType));
+    setImportNotice({
+      title: 'QA bundle exported',
+      detailLines: files.map((file) => `Downloaded ${file.name}`),
+    });
   };
 
   const handleSaveProject = async () => {
@@ -6074,6 +6215,50 @@ const App: React.FC<AppProps> = ({
     setRunElapsedMs(outcome.elapsedMs);
     setResult(solved);
     setActiveTab('report');
+    const nextSnapshot: RunSnapshot<RunSettingsSnapshot, RunDiagnostics> = {
+      id: `run-${runSnapshotCounterRef.current}`,
+      createdAt: new Date().toISOString(),
+      label: `Run ${runSnapshotCounterRef.current.toString().padStart(2, '0')}`,
+      result: solved,
+      runDiagnostics: runProfile,
+      settingsSnapshot: context.settingsSnapshot,
+      excludedIds: outcome.effectiveExcludedIds.slice().sort((a, b) => a - b),
+      overrideIds: Object.keys(overrides)
+        .map((value) => Number.parseInt(value, 10))
+        .filter((value) => Number.isFinite(value))
+        .sort((a, b) => a - b),
+      approvedClusterMerges: outcome.effectiveClusterApprovedMerges.map((merge) => ({ ...merge })),
+    };
+    runSnapshotCounterRef.current += 1;
+    setCurrentRunSnapshot(nextSnapshot);
+    setRunHistory((prev) => {
+      const nextHistory = pushRunSnapshot(prev, nextSnapshot);
+      if (
+        !comparisonSelection.pinnedBaselineRunId &&
+        !comparisonSelection.baselineRunId &&
+        nextHistory.length > 1
+      ) {
+        setComparisonSelection((currentSelection) => ({
+          ...currentSelection,
+          baselineRunId: nextHistory[1]?.id ?? null,
+        }));
+      } else {
+        const availableIds = new Set(nextHistory.map((entry) => entry.id));
+        setComparisonSelection((currentSelection) => ({
+          ...currentSelection,
+          baselineRunId:
+            currentSelection.baselineRunId && !availableIds.has(currentSelection.baselineRunId)
+              ? nextHistory.find((entry) => entry.id !== nextSnapshot.id)?.id ?? null
+              : currentSelection.baselineRunId,
+          pinnedBaselineRunId:
+            currentSelection.pinnedBaselineRunId &&
+            !availableIds.has(currentSelection.pinnedBaselineRunId)
+              ? null
+              : currentSelection.pinnedBaselineRunId,
+        }));
+      }
+      return nextHistory;
+    });
   };
 
   const runWithExclusions = (
@@ -6908,6 +7093,15 @@ const App: React.FC<AppProps> = ({
             <option value="industry-style">Export: industry-style</option>
             <option value="landxml">Export: LandXML</option>
           </select>
+          <select
+            value={exportBundlePreset}
+            onChange={(e) => setExportBundlePreset(e.target.value as ExportBundlePreset)}
+            title="QA export bundle preset"
+            className="h-9 bg-slate-700 border border-slate-600 text-slate-100 text-xs rounded px-2"
+          >
+            <option value="qa-standard">Bundle: QA standard</option>
+            <option value="qa-standard-with-landxml">Bundle: QA + LandXML</option>
+          </select>
           <button
             onClick={handleExportResults}
             disabled={!result}
@@ -6921,6 +7115,18 @@ const App: React.FC<AppProps> = ({
             <Download size={18} />
           </button>
           <button
+            onClick={handleExportBundle}
+            disabled={!result}
+            title={result ? 'Export QA bundle' : 'Run adjustment to export QA bundle'}
+            className={`h-9 px-3 rounded text-[11px] uppercase tracking-wide transition-colors ${
+              result
+                ? 'bg-slate-700 hover:bg-slate-600 text-slate-200'
+                : 'bg-slate-800 opacity-50 cursor-not-allowed text-slate-400'
+            }`}
+          >
+            Bundle
+          </button>
+          <button
             onClick={handleExportAdjustedPoints}
             disabled={!result}
             title={result ? 'Export adjusted points' : 'Run adjustment to export adjusted points'}
@@ -6932,6 +7138,47 @@ const App: React.FC<AppProps> = ({
           >
             Pts
           </button>
+          <button
+            onClick={() => {
+              selectPreviousSuspect();
+              setActiveTab('report');
+            }}
+            disabled={!hasSuspects}
+            title="Select previous suspect observation"
+            className={`h-9 px-3 rounded text-[11px] uppercase tracking-wide transition-colors ${
+              hasSuspects
+                ? 'bg-slate-700 hover:bg-slate-600 text-slate-200'
+                : 'bg-slate-800 opacity-50 cursor-not-allowed text-slate-400'
+            }`}
+          >
+            Prev
+          </button>
+          <button
+            onClick={() => {
+              selectNextSuspect();
+              setActiveTab('report');
+            }}
+            disabled={!hasSuspects}
+            title="Select next suspect observation"
+            className={`h-9 px-3 rounded text-[11px] uppercase tracking-wide transition-colors ${
+              hasSuspects
+                ? 'bg-slate-700 hover:bg-slate-600 text-slate-200'
+                : 'bg-slate-800 opacity-50 cursor-not-allowed text-slate-400'
+            }`}
+          >
+            Next
+          </button>
+          {selectedObservation && (
+            <button
+              onClick={() => togglePinnedObservation(selectedObservation.id)}
+              title="Pin or unpin the selected observation for quick return"
+              className="h-9 px-3 rounded bg-slate-700 hover:bg-slate-600 text-[11px] uppercase tracking-wide text-slate-200 transition-colors"
+            >
+              {pinnedObservations.some((entry) => entry.id === selectedObservation.id)
+                ? 'Unpin'
+                : 'Pin Row'}
+            </button>
+          )}
           {pipelineState.status === 'running' ? (
             <button
               onClick={cancelAdjustment}
@@ -9933,6 +10180,90 @@ const App: React.FC<AppProps> = ({
         )}
 
         <div className="flex flex-col bg-slate-950 flex-1 min-w-0 overflow-hidden">
+          {result && currentRunSnapshot && (
+            <RunComparisonPanel
+              currentSnapshot={currentRunSnapshot}
+              baselineSnapshot={baselineRunSnapshot}
+              runHistory={runHistory}
+              comparisonSelection={comparisonSelection}
+              comparisonSummary={runComparisonSummary}
+              onSelectBaseline={(snapshotId) =>
+                setComparisonSelection((prev) => ({
+                  ...prev,
+                  baselineRunId: snapshotId || null,
+                }))
+              }
+              onTogglePinBaseline={() =>
+                setComparisonSelection((prev) => ({
+                  ...prev,
+                  pinnedBaselineRunId:
+                    baselineRunSnapshot && prev.pinnedBaselineRunId !== baselineRunSnapshot.id
+                      ? baselineRunSnapshot.id
+                      : null,
+                }))
+              }
+              onStationThresholdChange={(value) =>
+                setComparisonSelection((prev) => ({
+                  ...prev,
+                  stationMovementThreshold: value,
+                }))
+              }
+              onResidualThresholdChange={(value) =>
+                setComparisonSelection((prev) => ({
+                  ...prev,
+                  residualDeltaThreshold: value,
+                }))
+              }
+              onSelectStation={(stationId) => {
+                selectStation(stationId, 'compare');
+                setActiveTab('map');
+              }}
+              onSelectObservation={(observationId) => {
+                selectObservation(observationId, 'compare');
+                setActiveTab('report');
+              }}
+            />
+          )}
+          {(selectedObservation || selectedStation || pinnedObservations.length > 0) && (
+            <div className="border-b border-slate-800 bg-slate-950/90 px-4 py-2 text-xs text-slate-300">
+              <div className="flex flex-wrap items-center gap-2">
+                {selectedObservation && (
+                  <span className="rounded border border-cyan-800 bg-cyan-950/30 px-2 py-1">
+                    Selected obs: {selectedObservation.type.toUpperCase()} {selectedObservation.stationsLabel}
+                    {selectedObservation.sourceLine != null ? ` @${selectedObservation.sourceLine}` : ''}
+                  </span>
+                )}
+                {selectedStation && (
+                  <span className="rounded border border-amber-800 bg-amber-950/30 px-2 py-1">
+                    Selected station: {selectedStation.id}
+                  </span>
+                )}
+                {pinnedObservations.map((entry) => (
+                  <button
+                    key={entry.id}
+                    type="button"
+                    data-qa-pinned-observation={entry.id}
+                    onClick={() => {
+                      selectObservation(entry.id, 'report');
+                      setActiveTab('report');
+                    }}
+                    className="rounded border border-slate-700 bg-slate-900/70 px-2 py-1 text-[11px] hover:border-cyan-400"
+                  >
+                    Pinned #{entry.id} {entry.type.toUpperCase()}
+                  </button>
+                ))}
+                {(selectedObservation || selectedStation) && (
+                  <button
+                    type="button"
+                    onClick={clearSelection}
+                    className="rounded border border-slate-700 bg-slate-900/70 px-2 py-1 text-[11px] hover:border-slate-500"
+                  >
+                    Clear selection
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
           <div className="flex items-center justify-between border-b border-slate-800 bg-slate-900 pr-4">
             <div className="flex">
               <button
@@ -10026,6 +10357,12 @@ const App: React.FC<AppProps> = ({
                       onApplyClusterMerges={applyClusterReviewMerges}
                       onResetClusterReview={resetClusterReview}
                       onClearClusterMerges={clearClusterApprovedMerges}
+                      selectedStationId={selection.stationId}
+                      selectedObservationId={selection.observationId}
+                      onSelectStation={(stationId) => selectStation(stationId, 'report')}
+                      onSelectObservation={(observationId) =>
+                        selectObservation(observationId, 'report')
+                      }
                     />
                   )}
                   {activeTab === 'processing-summary' && (
@@ -10104,7 +10441,7 @@ const App: React.FC<AppProps> = ({
                     />
                   )}
                   {activeTab === 'industry-output' && (
-                    <IndustryOutputView text={buildIndustryListingText(result)} />
+                    <IndustryOutputView text={currentIndustryListingText} />
                   )}
                   {activeTab === 'map' && (
                     <MapView
@@ -10113,6 +10450,13 @@ const App: React.FC<AppProps> = ({
                       showLostStations={settings.mapShowLostStations}
                       mode={settings.map3dEnabled ? '3d' : '2d'}
                       adjustedPointsExportSettings={adjustedPointsExportSettings}
+                      derivedResult={qaDerivedResult}
+                      selectedStationId={selection.stationId}
+                      selectedObservationId={selection.observationId}
+                      onSelectStation={(stationId) => selectStation(stationId, 'map')}
+                      onSelectObservation={(observationId) =>
+                        selectObservation(observationId, 'map')
+                      }
                     />
                   )}
                 </>
