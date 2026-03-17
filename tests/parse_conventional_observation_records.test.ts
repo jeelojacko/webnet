@@ -48,4 +48,62 @@ describe('parse conventional observation record families', () => {
     expect(deltaParsed.observations[1]).toMatchObject({ obs: 10, mode: 'horiz' });
     expect(deltaParsed.observations[2]).toMatchObject({ obs: 1.5 });
   });
+
+  it('parses BM records into distance, vertical, and bearing observations', () => {
+    const parsed = parseInput(['.DELTA ON', 'BM A B 90-00-00 10 1.25 2 0.02 0.03'].join('\n'));
+
+    expect(parsed.observations.map((obs) => obs.type)).toEqual(['dist', 'lev', 'bearing']);
+    expect(parsed.observations[0]).toMatchObject({
+      type: 'dist',
+      from: 'A',
+      to: 'B',
+      obs: 10,
+      stdDev: 0.02,
+    });
+    expect(parsed.observations[1]).toMatchObject({
+      type: 'lev',
+      from: 'A',
+      to: 'B',
+      obs: 1.25,
+      stdDev: 0.03,
+    });
+    expect(parsed.observations[2]).toMatchObject({
+      type: 'bearing',
+      from: 'A',
+      to: 'B',
+    });
+  });
+
+  it('parses M records with inline triplets, HI/HT, and 2D slope reduction', () => {
+    const parsed = parseInput(['.2D', 'M AT-FROM-TO 90-00-00 10 90-00-00 2 0.02 1.5/1.7'].join('\n'));
+
+    expect(parsed.observations).toHaveLength(2);
+    expect(parsed.observations[0]).toMatchObject({
+      type: 'angle',
+      at: 'AT',
+      from: 'FROM',
+      to: 'TO',
+    });
+    expect(parsed.observations[1]).toMatchObject({
+      type: 'dist',
+      from: 'AT',
+      to: 'TO',
+      mode: 'horiz',
+      hi: 1.5,
+      ht: 1.7,
+    });
+  });
+
+  it('parses B records as plan-rotated bearings', () => {
+    const parsed = parseInput(['.ROTATION 90', 'B A-B 0-00-00 2'].join('\n'));
+
+    expect(parsed.observations).toHaveLength(1);
+    expect(parsed.observations[0]).toMatchObject({
+      type: 'bearing',
+      from: 'A',
+      to: 'B',
+      stdDev: (2 / 3600) * (Math.PI / 180),
+    });
+    expect(parsed.observations[0].obs).toBeCloseTo(Math.PI / 2, 12);
+  });
 });

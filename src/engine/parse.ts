@@ -3,6 +3,8 @@ import { parseAutoAdjustDirectiveTokens } from './autoAdjust';
 import { DEFAULT_CANADA_CRS_ID, normalizeCrsId } from './crsCatalog';
 import { handleConventionalPrimitiveRecord } from './parseConventionalObservationRecords';
 import { handleControlRecord } from './parseControlRecords';
+import { handleDirectionSetRecord } from './parseDirectionSetRecords';
+import { handleTraverseRecord } from './parseTraverseRecords';
 import {
   createIncludeScopeSnapshot,
   restoreIncludeScopeSnapshot,
@@ -3305,6 +3307,7 @@ export const parseInput = (
             ),
           defaultDistanceSigma,
           defaultHorizontalAngleSigmaSec,
+          defaultAzimuthSigmaSec,
           defaultZenithSigmaSec,
           azimuthFromTo,
           wrapToPi,
@@ -3316,796 +3319,96 @@ export const parseInput = (
         });
         if (handledConventionalPrimitive) {
           obsId = conventionalObsIdRef.current;
-        } else if (code === 'BM') {
-        // Bearing + measurements. Bearing stored/logged; dist parsed; zenith or deltaH captured based on mode
-        const from = parts[1];
-        const to = parts[2];
-        const bearing = parts[3];
-        const toMeters = linearToMetersFactor();
-        const distParsed = parseObservedLinearToken(parts[4], toMeters);
-        const bearingParsed = parseObservedAngleToken(bearing, 'dd');
-        const vert = parts[5];
-        if (!distParsed.valid || !bearingParsed.valid) {
-          logs.push(`Invalid BM record at line ${lineNum}, skipping.`);
-          continue;
-        }
-        const instCode = state.currentInstrument ?? '';
-        const inst = instCode ? instrumentLibrary[instCode] : undefined;
-        const { sigmas } = extractSigmaTokens(parts.slice(6), 3);
-        let sigBear: SigmaToken | undefined;
-        let sigDist: SigmaToken | undefined;
-        let sigVert: SigmaToken | undefined;
-        if (sigmas.length === 1) {
-          sigDist = sigmas[0];
         } else {
-          sigBear = sigmas[0];
-          sigDist = sigmas[1];
-          sigVert = sigmas[2];
-        }
-        const distDefault = defaultDistanceSigma(
-          inst,
-          distParsed.planned ? 0 : parseFloat(parts[4]),
-          state.edmMode,
-          0,
-        );
-        const distResolved = resolveLinearSigma(sigDist, distDefault);
-        const bmZenParsed =
-          state.deltaMode === 'horiz' || !vert ? null : parseObservedAngleToken(vert, 'dd');
-        let bmDistObs = distParsed.value;
-        let bmDistStdDev = distResolved.sigma * toMeters;
-        let bmDistMode: 'slope' | 'horiz' = effectiveDistanceMode();
-        if (state.threeReduceMode && state.deltaMode === 'slope' && bmZenParsed?.valid) {
-          const zenSigmaSec = resolveAngularSigma(sigVert, defaultZenithSigmaSec(inst)).sigma;
-          const sigmaZ = zenSigmaSec * SEC_TO_RAD;
-          bmDistObs = distParsed.value * Math.sin(bmZenParsed.value);
-          bmDistStdDev = Math.sqrt(
-            (Math.sin(bmZenParsed.value) * distResolved.sigma * toMeters) ** 2 +
-              (distParsed.value * Math.cos(bmZenParsed.value) * sigmaZ) ** 2,
-          );
-          bmDistMode = 'horiz';
-        }
-        pushObservation({
-          id: obsId++,
-          type: 'dist',
-          subtype: 'ts',
-          instCode,
-          setId: '',
-          from,
-          to,
-          obs: bmDistObs,
-          planned: distParsed.planned,
-          stdDev: bmDistStdDev,
-          sigmaSource: distResolved.source,
-          mode: bmDistMode,
-        });
-        if (state.deltaMode === 'horiz' && vert) {
-          const dhParsed = parseObservedLinearToken(vert, toMeters);
-          if (!dhParsed.valid) {
-            logs.push(
-              `Invalid BM vertical difference at line ${lineNum}, skipping vertical component.`,
-            );
-          } else {
-            const dhResolved = resolveLevelingSigma(
-              sigVert,
-              inst,
-              Math.abs(distParsed.value),
-              'BM',
-              lineNum,
-            );
-            pushObservation({
-              id: obsId++,
-              type: 'lev',
-              instCode,
-              from,
-              to,
-              obs: dhParsed.value,
-              planned: dhParsed.planned,
-              lenKm: 0,
-              stdDev: dhResolved.sigma * toMeters,
-              sigmaSource: dhResolved.source,
-            });
-          }
-        } else if (vert && !state.threeReduceMode) {
-          const zenParsed = bmZenParsed ?? parseObservedAngleToken(vert, 'dd');
-          if (!zenParsed.valid) {
-            logs.push(`Invalid BM zenith at line ${lineNum}, skipping vertical component.`);
-          } else {
-            const baseZen = defaultZenithSigmaSec(inst);
-            const zenResolved = resolveAngularSigma(sigVert, baseZen);
-            pushObservation({
-              id: obsId++,
-              type: 'zenith',
-              instCode,
-              from,
-              to,
-              obs: zenParsed.value,
-              planned: zenParsed.planned,
-              stdDev: zenResolved.sigma * SEC_TO_RAD,
-              sigmaSource: zenResolved.source,
-            });
-          }
-        } else if (vert && state.threeReduceMode) {
-          logs.push(
-            `3REDUCE active at line ${lineNum}: BM zenith component excluded from equations.`,
-          );
-        }
-        const bearingRad = applyPlanRotation(bearingParsed.value, state);
-        const bearResolved = resolveAngularSigma(sigBear, defaultAzimuthSigmaSec(inst));
-        pushObservation({
-          id: obsId++,
-          type: 'bearing',
-          instCode,
-          from,
-          to,
-          obs: bearingRad,
-          planned: bearingParsed.planned,
-          stdDev: bearResolved.sigma * SEC_TO_RAD,
-          sigmaSource: bearResolved.source,
-        });
-      } else if (code === 'M') {
-        // Measure: angle + dist + vertical
-        const stations = splitStationPairToken(parts[1], state.stationSeparator ?? '-');
-        if (stations.length !== 3) {
-          logs.push(`M record malformed at line ${lineNum}`);
-        } else {
-          const stationOrder = state.angleStationOrder ?? 'atfromto';
-          const s1 = stations[0];
-          const s2 = stations[1];
-          const s3 = stations[2];
-          const at = stationOrder === 'atfromto' ? s1 : s2;
-          const from = stationOrder === 'atfromto' ? s2 : s1;
-          const to = s3;
-          const ang = parts[2];
-          const toMeters = linearToMetersFactor();
-          const angParsed = parseObservedAngleToken(ang, 'dms');
-          const distParsed = parseObservedLinearToken(parts[3], toMeters);
-          const vert = parts[4];
-          const hasVerticalToken =
-            state.coordMode !== '2D'
-              ? Boolean(vert)
-              : state.deltaMode === 'slope' &&
-                Boolean(vert) &&
-                (String(vert).includes('-') ||
-                  Math.abs((parseObservedAngleToken(String(vert), 'dd').value * 180) / Math.PI) >
-                    45);
-          const vertParsed =
-            hasVerticalToken && vert
-              ? state.deltaMode === 'horiz'
-                ? parseObservedLinearToken(vert, toMeters)
-                : parseObservedAngleToken(vert, 'dd')
-              : null;
-          if (!angParsed.valid || !distParsed.valid || (vert && vertParsed && !vertParsed.valid)) {
-            logs.push(`Invalid M record at line ${lineNum}, skipping.`);
-            continue;
-          }
-          const sigmaStart = hasVerticalToken ? 5 : 4;
-          const restTokens = parts.slice(sigmaStart);
-          const { sigmas, rest } = extractSigmaTokens(restTokens, hasVerticalToken ? 3 : 2);
-          const { hi, ht } = extractHiHt(rest);
-          const instCode = state.currentInstrument ?? '';
-          const inst = instCode ? instrumentLibrary[instCode] : undefined;
-          const angResolved = resolveAngularSigma(sigmas[0], defaultHorizontalAngleSigmaSec(inst));
-          const distResolved = resolveLinearSigma(
-            sigmas[1],
-            defaultDistanceSigma(
-              inst,
-              distParsed.planned ? 0 : parseFloat(parts[3]),
-              state.edmMode,
-              0,
-            ),
-          );
-          const vertResolved =
-            state.deltaMode === 'horiz'
-              ? resolveLevelingSigma(sigmas[2], inst, Math.abs(distParsed.value), 'M', lineNum)
-              : resolveAngularSigma(sigmas[2], defaultZenithSigmaSec(inst));
-          const angRad = angParsed.value;
-          const faceWeight =
-            angRad >= Math.PI ? angResolved.sigma * FACE2_WEIGHT : angResolved.sigma;
-          let distObs = distParsed.value;
-          let distStdDev = distResolved.sigma * toMeters;
-          let distMode: 'slope' | 'horiz' = effectiveDistanceMode();
-          if (
-            (state.coordMode === '2D' || state.threeReduceMode) &&
-            state.deltaMode === 'slope' &&
-            vert &&
-            vertParsed &&
-            vertParsed.valid
-          ) {
-            const zen = vertParsed.value;
-            const sigmaZ = vertResolved.sigma * SEC_TO_RAD;
-            distObs = distParsed.value * Math.sin(zen);
-            distStdDev = Math.sqrt(
-              (Math.sin(zen) * distResolved.sigma * toMeters) ** 2 +
-                (distParsed.value * Math.cos(zen) * sigmaZ) ** 2,
-            );
-            distMode = 'horiz';
-          }
-          pushObservation({
-            id: obsId++,
-            type: 'angle',
-            instCode,
-            setId: '',
-            at,
-            from,
-            to,
-            obs: angRad,
-            planned: angParsed.planned,
-            stdDev: faceWeight * SEC_TO_RAD,
-            sigmaSource: angResolved.source,
-          });
-          pushObservation({
-            id: obsId++,
-            type: 'dist',
-            subtype: 'ts',
-            instCode,
-            setId: '',
-            from: at,
-            to,
-            obs: distObs,
-            planned: distParsed.planned,
-            stdDev: distStdDev,
-            sigmaSource: distResolved.source,
-            hi: hi != null ? hi * toMeters : undefined,
-            ht: ht != null ? ht * toMeters : undefined,
-            mode: distMode,
-          });
-          if (state.coordMode === '2D') {
-            // In 2D, consume the vertical token only to reduce slope distances to HD.
-          } else if (state.deltaMode === 'horiz' && vert) {
-            pushObservation({
-              id: obsId++,
-              type: 'lev',
-              instCode,
-              from: at,
-              to,
-              obs: (vertParsed as { value: number }).value,
-              planned: Boolean(vertParsed?.planned),
-              lenKm: 0,
-              stdDev: vertResolved.sigma * toMeters,
-              sigmaSource: vertResolved.source,
-            });
-          } else if (vert && !state.threeReduceMode) {
-            pushObservation({
-              id: obsId++,
-              type: 'zenith',
-              instCode,
-              from: at,
-              to,
-              obs: (vertParsed as { value: number }).value,
-              planned: Boolean(vertParsed?.planned),
-              stdDev: vertResolved.sigma * SEC_TO_RAD,
-              sigmaSource: vertResolved.source,
-              hi: hi != null ? hi * toMeters : undefined,
-              ht: ht != null ? ht * toMeters : undefined,
-            });
-          } else if (vert && state.threeReduceMode) {
-            logs.push(
-              `3REDUCE active at line ${lineNum}: M zenith component excluded from equations.`,
-            );
-          }
-        }
-      } else if (code === 'B') {
-        const { from, to, nextIndex } = parseFromTo(parts, 1, state.stationSeparator ?? '-');
-        const bearingToken = parts[nextIndex];
-        const instCode = state.currentInstrument ?? '';
-        const inst = instCode ? instrumentLibrary[instCode] : undefined;
-        const { sigmas } = extractSigmaTokens(parts.slice(nextIndex + 1), 1);
-        const resolved = resolveAngularSigma(sigmas[0], defaultAzimuthSigmaSec(inst));
-        const bearingParsed = parseObservedAngleToken(bearingToken, 'dd');
-        if (!bearingParsed.valid) {
-          logs.push(`Invalid bearing at line ${lineNum}, skipping B record.`);
-          continue;
-        }
-        const bearingRad = applyPlanRotation(bearingParsed.value, state);
-        pushObservation({
-          id: obsId++,
-          type: 'bearing',
-          instCode,
-          from,
-          to,
-          obs: bearingRad,
-          planned: bearingParsed.planned,
-          stdDev: resolved.sigma * SEC_TO_RAD,
-          sigmaSource: resolved.source,
-        });
-      } else if (code === 'TB') {
-        // Traverse begin: set occupy + backsight context
-        if (state.mapMode !== 'off') {
-          const token1 = parts[1];
-          const token2 = parts[2];
-          const token3 = parts[3];
-          const maybeBackBearing = parseAngleTokenRad(token1, state, 'dd');
-          if (state.mapMode === 'anglecalc' && Number.isFinite(maybeBackBearing) && token2) {
-            traverseCtx.occupy = token3;
-            traverseCtx.backsight = token2;
-            traverseCtx.backsightRefAngle = wrapTo2Pi(maybeBackBearing);
-            logs.push(
-              `Map traverse start: occupy=${traverseCtx.occupy || '(pending)'} backsight=${traverseCtx.backsight} back-bearing=${(traverseCtx.backsightRefAngle * RAD_TO_DEG).toFixed(6)}deg`,
-            );
-          } else {
-            traverseCtx.occupy = token1;
-            traverseCtx.backsight = token2;
-            traverseCtx.backsightRefAngle = Number.isFinite(parseAngleTokenRad(token3, state, 'dd'))
-              ? wrapTo2Pi(parseAngleTokenRad(token3, state, 'dd'))
-              : undefined;
-            logs.push(
-              `Map traverse start at ${traverseCtx.occupy || '(pending)'} backsight ${traverseCtx.backsight || '(none)'}`,
-            );
-          }
-          faceMode = 'unknown';
-          continue;
-        }
-        traverseCtx.occupy = parts[1];
-        traverseCtx.backsight = parts[2];
-        traverseCtx.backsightRefAngle = undefined;
-        faceMode = 'unknown';
-        logs.push(`Traverse start at ${traverseCtx.occupy} backsight ${traverseCtx.backsight}`);
-      } else if (code === 'T' || code === 'TE') {
-        // Traverse legs: angle + dist + vertical relative to current occupy/backsight
-        const mapModeActive = state.mapMode !== 'off';
-        if (
-          (!mapModeActive && (!traverseCtx.occupy || !traverseCtx.backsight)) ||
-          (!traverseCtx.occupy && mapModeActive)
-        ) {
-          logs.push(`Traverse context missing at line ${lineNum}, skipping ${code}`);
-          continue;
-        }
-        if (
-          code !== 'TE' &&
-          (traverseCtx.occupy === parts[1] || traverseCtx.backsight === parts[1])
-        ) {
-          logs.push(`Traverse leg cannot occupy/backsight same as foresight at line ${lineNum}`);
-          continue;
-        }
-        const to = parts[1];
-        if (code === 'TE' && parts.length <= 2) {
-          logs.push(`Traverse end to ${to}`);
-          traverseCtx.occupy = undefined;
-          traverseCtx.backsight = undefined;
-          traverseCtx.backsightRefAngle = undefined;
-          faceMode = 'unknown';
-          continue;
-        }
-        const toMeters = linearToMetersFactor();
-        const instCode = state.currentInstrument ?? '';
-        const inst = instCode ? instrumentLibrary[instCode] : undefined;
-        if (mapModeActive) {
-          const bearingToken = parts[2];
-          const bearingParsed = parseObservedAngleToken(bearingToken, 'dd');
-          const distParsed =
-            parts[3] == null
-              ? { value: 0, planned: false, valid: true }
-              : parseObservedLinearToken(parts[3], toMeters);
-          const vert = parts[4];
-          const vertParsed =
-            vert == null
-              ? null
-              : state.deltaMode === 'horiz'
-                ? parseObservedLinearToken(vert, toMeters)
-                : parseObservedAngleToken(vert, 'dd');
-          if (
-            !bearingParsed.valid ||
-            !distParsed.valid ||
-            (vert && vertParsed && !vertParsed.valid)
-          ) {
-            logs.push(`Invalid map traverse record at line ${lineNum}, skipping ${code}.`);
-            continue;
-          }
-          const { sigmas } = extractSigmaTokens(parts.slice(5), 3);
-          const bearingResolved = resolveAngularSigma(sigmas[0], defaultAzimuthSigmaSec(inst));
-          const distResolved = resolveLinearSigma(
-            sigmas[1],
-            defaultDistanceSigma(
-              inst,
-              distParsed.planned ? 0 : parseFloat(parts[3] || '0'),
-              state.edmMode,
-              0,
-            ),
-          );
-          const vertResolved =
-            state.deltaMode === 'horiz'
-              ? resolveLevelingSigma(sigmas[2], inst, Math.abs(distParsed.value), code, lineNum)
-              : resolveAngularSigma(sigmas[2], defaultZenithSigmaSec(inst));
-          const bearingRad = applyPlanRotation(bearingParsed.value, state);
-          pushObservation({
-            id: obsId++,
-            type: 'bearing',
-            instCode,
-            from: traverseCtx.occupy as string,
-            to,
-            obs: bearingRad,
-            planned: bearingParsed.planned,
-            stdDev: bearingResolved.sigma * SEC_TO_RAD,
-            sigmaSource: bearingResolved.source,
-          });
-          if (
-            state.mapMode === 'anglecalc' &&
-            traverseCtx.backsight &&
-            Number.isFinite(traverseCtx.backsightRefAngle ?? Number.NaN)
-          ) {
-            const turned = wrapTo2Pi(bearingRad - (traverseCtx.backsightRefAngle as number));
-            const angleResolved = resolveAngularSigma(
-              sigmas[0],
-              defaultHorizontalAngleSigmaSec(inst),
-            );
-            pushObservation({
-              id: obsId++,
-              type: 'angle',
-              instCode,
-              setId: code,
-              at: traverseCtx.occupy as string,
-              from: traverseCtx.backsight,
-              to,
-              obs: turned,
-              planned: bearingParsed.planned,
-              stdDev: angleResolved.sigma * SEC_TO_RAD,
-              sigmaSource: angleResolved.source,
-            });
-          }
-          if (distParsed.planned || distParsed.value > 0) {
-            pushObservation({
-              id: obsId++,
-              type: 'dist',
-              subtype: 'ts',
-              instCode,
-              setId: code,
-              from: traverseCtx.occupy as string,
-              to,
-              obs: distParsed.value,
-              planned: distParsed.planned,
-              stdDev: distResolved.sigma * toMeters,
-              sigmaSource: distResolved.source,
-              mode: 'horiz',
-            });
-          }
-          if (vert) {
-            if (state.deltaMode === 'horiz') {
-              pushObservation({
-                id: obsId++,
-                type: 'lev',
-                instCode,
-                setId: code,
-                from: traverseCtx.occupy as string,
-                to,
-                obs: (vertParsed as { value: number }).value,
-                planned: Boolean(vertParsed?.planned),
-                lenKm: 0,
-                stdDev: vertResolved.sigma * toMeters,
-                sigmaSource: vertResolved.source,
-              });
-            } else {
-              if (state.threeReduceMode !== true) {
-                pushObservation({
-                  id: obsId++,
-                  type: 'zenith',
-                  instCode,
-                  setId: code,
-                  from: traverseCtx.occupy as string,
-                  to,
-                  obs: (vertParsed as { value: number }).value,
-                  planned: Boolean(vertParsed?.planned),
-                  stdDev: vertResolved.sigma * SEC_TO_RAD,
-                  sigmaSource: vertResolved.source,
-                });
-              }
-            }
-          }
-          traverseCtx.backsight = traverseCtx.occupy;
-          traverseCtx.occupy = to;
-          traverseCtx.backsightRefAngle = wrapTo2Pi(bearingRad + Math.PI);
-        } else {
-          const ang = parts[2];
-          const angParsed = parseObservedAngleToken(ang, 'dms');
-          const distParsed =
-            parts[3] == null
-              ? { value: 0, planned: false, valid: true }
-              : parseObservedLinearToken(parts[3], toMeters);
-          const vert = parts[4];
-          const vertParsed =
-            vert == null
-              ? null
-              : state.deltaMode === 'horiz'
-                ? parseObservedLinearToken(vert, toMeters)
-                : parseObservedAngleToken(vert, 'dd');
-          if (!angParsed.valid || !distParsed.valid || (vert && vertParsed && !vertParsed.valid)) {
-            logs.push(`Invalid traverse record at line ${lineNum}, skipping ${code}.`);
-            continue;
-          }
-          const { sigmas } = extractSigmaTokens(parts.slice(5), 3);
-          const angResolved = resolveAngularSigma(sigmas[0], defaultHorizontalAngleSigmaSec(inst));
-          const distResolved = resolveLinearSigma(
-            sigmas[1],
-            defaultDistanceSigma(
-              inst,
-              distParsed.planned ? 0 : parseFloat(parts[3] || '0'),
-              state.edmMode,
-              0,
-            ),
-          );
-          const vertResolved =
-            state.deltaMode === 'horiz'
-              ? resolveLevelingSigma(sigmas[2], inst, Math.abs(distParsed.value), code, lineNum)
-              : resolveAngularSigma(sigmas[2], defaultZenithSigmaSec(inst));
-          const angRad = angParsed.value;
-          const isFace2 = angRad >= Math.PI;
-          if (state.normalize === false) {
-            const thisFace = isFace2 ? 'face2' : 'face1';
-            if (faceMode === 'unknown') faceMode = thisFace;
-            if (faceMode !== thisFace) {
-              logs.push(`Mixed face traverse angle rejected at line ${lineNum}`);
-            } else {
-              pushObservation({
-                id: obsId++,
-                type: 'angle',
-                instCode,
-                setId: code,
-                at: traverseCtx.occupy as string,
-                from: traverseCtx.backsight as string,
-                to,
-                obs: angRad,
-                planned: angParsed.planned,
-                stdDev: angResolved.sigma * SEC_TO_RAD,
-                sigmaSource: angResolved.source,
-              });
-            }
-          } else {
-            const angStd = angResolved.sigma * (isFace2 ? FACE2_WEIGHT : 1);
-            pushObservation({
-              id: obsId++,
-              type: 'angle',
-              instCode,
-              setId: code,
-              at: traverseCtx.occupy as string,
-              from: traverseCtx.backsight as string,
-              to,
-              obs: angRad,
-              planned: angParsed.planned,
-              stdDev: angStd * SEC_TO_RAD,
-              sigmaSource: angResolved.source,
-            });
-          }
-          if (distParsed.planned || distParsed.value > 0) {
-            pushObservation({
-              id: obsId++,
-              type: 'dist',
-              subtype: 'ts',
-              instCode,
-              setId: code,
-              from: traverseCtx.occupy as string,
-              to,
-              obs: distParsed.value,
-              planned: distParsed.planned,
-              stdDev: distResolved.sigma * toMeters,
-              sigmaSource: distResolved.source,
-              mode: effectiveDistanceMode(),
-            });
-          }
-          if (vert) {
-            if (state.deltaMode === 'horiz') {
-              pushObservation({
-                id: obsId++,
-                type: 'lev',
-                instCode,
-                setId: code,
-                from: traverseCtx.occupy as string,
-                to,
-                obs: (vertParsed as { value: number }).value,
-                planned: Boolean(vertParsed?.planned),
-                lenKm: 0,
-                stdDev: vertResolved.sigma * toMeters,
-                sigmaSource: vertResolved.source,
-              });
-            } else if (state.threeReduceMode !== true) {
-              pushObservation({
-                id: obsId++,
-                type: 'zenith',
-                instCode,
-                setId: code,
-                from: traverseCtx.occupy as string,
-                to,
-                obs: (vertParsed as { value: number }).value,
-                planned: Boolean(vertParsed?.planned),
-                stdDev: vertResolved.sigma * SEC_TO_RAD,
-                sigmaSource: vertResolved.source,
-              });
-            }
-          }
-        }
-        if (code === 'TE') {
-          logs.push(`Traverse end to ${to}`);
-          traverseCtx.occupy = undefined;
-          traverseCtx.backsight = undefined;
-          traverseCtx.backsightRefAngle = undefined;
-          faceMode = 'unknown';
-        } else {
-          const prevOccupy = traverseCtx.occupy;
-          traverseCtx.occupy = to;
-          traverseCtx.backsight = prevOccupy;
-          if (state.mapMode !== 'off' && traverseCtx.backsightRefAngle == null) {
-            traverseCtx.backsightRefAngle = undefined;
-          }
-        }
-      } else if (code === 'DB') {
-        if (traverseCtx.dirSetId) {
-          flushDirectionSet('new DB');
-        }
-        const hasInst = parts[1] && instrumentLibrary[parts[1]];
-        const instCode = hasInst ? parts[1] : (state.currentInstrument ?? '');
-        const occupy = hasInst ? parts[2] : parts[1];
-        const backsight = hasInst ? parts[3] : parts[2];
-
-        traverseCtx.occupy = occupy;
-        traverseCtx.backsight = backsight;
-        traverseCtx.dirInstCode = instCode;
-        traverseCtx.dirRawShots = [];
-        directionSetCount += 1;
-        traverseCtx.dirSetId = `${occupy || 'SET'}#${directionSetCount}`;
-        faceMode = 'unknown';
-
-        if (backsight) {
-          logs.push(
-            `Direction set start at ${traverseCtx.occupy} backsight ${backsight}${instCode ? ` (inst ${instCode})` : ''}`,
-          );
-        } else {
-          logs.push(
-            `Direction set start at ${traverseCtx.occupy}${instCode ? ` (inst ${instCode})` : ''}`,
-          );
-        }
-      } else if (code === 'DN' || code === 'DM') {
-        if (!traverseCtx.occupy || !traverseCtx.dirSetId) {
-          logs.push(`Direction context missing at line ${lineNum}, skipping ${code}`);
-          directionRejectDiagnostics.push({
-            setId: 'UNKNOWN',
-            occupy: 'UNKNOWN',
-            sourceLine: lineNum,
-            sourceFile: currentSourceFile,
-            recordType: code,
-            reason: 'missing-context',
-            detail: `Direction context missing at line ${lineNum}`,
-          });
-          continue;
-        }
-
-        const to = parts[1];
-        const ang = parts[2];
-        const angParsed = parseObservedAngleToken(ang, 'dms');
-        if (!angParsed.valid) {
-          logs.push(`Invalid direction angle at line ${lineNum}, skipping ${code}.`);
-          continue;
-        }
-        const angRad = angParsed.value;
-
-        const toMeters = linearToMetersFactor();
-        const distParsed = code === 'DM' ? parseObservedLinearToken(parts[3], toMeters) : null;
-        let vert: string | undefined;
-        let tailTokens: string[] = [];
-        if (code === 'DM') {
-          const candidate = parts[4];
-          const candidateIsFace = parseDirectionFaceHintToken(candidate) != null;
-          vert = candidate && !candidateIsFace ? candidate : undefined;
-          tailTokens = parts.slice(vert ? 5 : 4);
-        } else {
-          tailTokens = parts.slice(3);
-        }
-        const strippedFaceHints = stripDirectionFaceHints(tailTokens);
-        tailTokens = strippedFaceHints.tokens;
-        const vertParsed =
-          code === 'DM' && vert
-            ? state.deltaMode === 'horiz'
-              ? parseObservedLinearToken(vert, toMeters)
-              : parseObservedAngleToken(vert, 'dd')
-            : null;
-        if ((distParsed && !distParsed.valid) || (vert && vertParsed && !vertParsed.valid)) {
-          logs.push(`Invalid direction-measure record at line ${lineNum}, skipping ${code}.`);
-          continue;
-        }
-        const sigmaCount = code === 'DM' ? 3 : 1;
-        const { sigmas } = extractSigmaTokens(tailTokens, sigmaCount);
-
-        const inst = traverseCtx.dirInstCode
-          ? instrumentLibrary[traverseCtx.dirInstCode]
-          : undefined;
-        const dirResolved = resolveAngularSigma(sigmas[0], defaultDirectionSigmaSec(inst));
-        const stdAng = dirResolved.sigma;
-
-        const zenithCandidate =
-          code === 'DM' &&
-          state.deltaMode !== 'horiz' &&
-          vertParsed != null &&
-          !(vertParsed as { planned?: boolean }).planned
-            ? (vertParsed as { value: number }).value
-            : undefined;
-        const inferredFace = inferFaceFromZenith(zenithCandidate);
-        const fallbackFace: DirectionFace = angRad >= Math.PI ? 'face2' : 'face1';
-        const explicitFace = strippedFaceHints.face;
-        const thisFace: DirectionFace = explicitFace ?? inferredFace?.face ?? fallbackFace;
-        const faceSource: DirectionFaceSource =
-          explicitFace != null ? 'metadata' : inferredFace?.source ?? 'fallback';
-        const raw: RawDirectionShot = {
-          to,
-          obs: angRad,
-          stdDev: stdAng * SEC_TO_RAD,
-          sigmaSource: dirResolved.source,
-          sourceLine: lineNum,
-          face: thisFace,
-          faceSource,
-          reliableFace: isReliableFaceSource(faceSource),
-        };
-        const existing = traverseCtx.dirRawShots ?? [];
-        existing.push(raw);
-        traverseCtx.dirRawShots = existing;
-
-        if (code === 'DM' && distParsed && (distParsed.planned || distParsed.value > 0)) {
-          const distResolved = resolveLinearSigma(
-            sigmas[1],
-            defaultDistanceSigma(
-              inst,
-              distParsed.planned ? 0 : parseFloat(parts[3] || '0'),
-              state.edmMode,
-              0,
-            ),
-          );
-          pushObservation({
-            id: obsId++,
-            type: 'dist',
-            subtype: 'ts',
-            instCode: traverseCtx.dirInstCode ?? '',
-            setId: code,
-            from: traverseCtx.occupy,
-            to,
-            obs: distParsed.value,
-            planned: distParsed.planned,
-            stdDev: distResolved.sigma * toMeters,
-            sigmaSource: distResolved.source,
-            mode: effectiveDistanceMode(),
-          });
-          if (vert) {
-            if (state.deltaMode === 'horiz') {
-              const dhResolved = resolveLevelingSigma(
-                sigmas[2],
+          const traverseObsIdRef = { current: obsId };
+          const faceModeRef = { current: faceMode };
+          const handledTraverse = handleTraverseRecord({
+            code,
+            parts,
+            lineNum,
+            state,
+            instrumentLibrary,
+            logs,
+            obsIdRef: traverseObsIdRef,
+            traverseCtx,
+            faceModeRef,
+            parseAngleTokenRad,
+            parseObservedLinearToken,
+            parseObservedAngleToken,
+            linearToMetersFactor,
+            effectiveDistanceMode,
+            extractSigmaTokens,
+            resolveLinearSigma: (token, defaultSigma) =>
+              resolveLinearSigma(token as SigmaToken | undefined, defaultSigma),
+            resolveAngularSigma: (token, defaultSigma) =>
+              resolveAngularSigma(token as SigmaToken | undefined, defaultSigma),
+            resolveLevelingSigma: (token, inst, spanMeters, contextCode, sourceLine) =>
+              resolveLevelingSigma(
+                token as SigmaToken | undefined,
                 inst,
-                Math.abs(distParsed.value),
-                'DM',
-                lineNum,
-              );
-              pushObservation({
-                id: obsId++,
-                type: 'lev',
-                instCode: traverseCtx.dirInstCode ?? '',
-                setId: code,
-                from: traverseCtx.occupy,
-                to,
-                obs: (vertParsed as { value: number }).value,
-                planned: Boolean(vertParsed?.planned),
-                lenKm: 0,
-                stdDev: dhResolved.sigma * toMeters,
-                sigmaSource: dhResolved.source,
-              });
-            } else if (!state.threeReduceMode) {
-              const zenResolved = resolveAngularSigma(sigmas[2], defaultZenithSigmaSec(inst));
-              pushObservation({
-                id: obsId++,
-                type: 'zenith',
-                instCode: traverseCtx.dirInstCode ?? '',
-                setId: code,
-                from: traverseCtx.occupy,
-                to,
-                obs: (vertParsed as { value: number }).value,
-                planned: Boolean(vertParsed?.planned),
-                stdDev: zenResolved.sigma * SEC_TO_RAD,
-                sigmaSource: zenResolved.source,
-              });
-            } else {
-              logs.push(
-                `3REDUCE active at line ${lineNum}: DM zenith component excluded from equations.`,
-              );
-            }
-          }
-        }
-      } else if (code === 'DE') {
-        if (traverseCtx.dirSetId) flushDirectionSet('DE');
-        logs.push('Direction set end');
-      } else if (code === 'SS') {
+                spanMeters,
+                contextCode,
+                sourceLine,
+              ),
+            defaultDistanceSigma,
+            defaultHorizontalAngleSigmaSec,
+            defaultAzimuthSigmaSec,
+            defaultZenithSigmaSec,
+            applyPlanRotation,
+            wrapTo2Pi,
+            pushObservation,
+            face2Weight: FACE2_WEIGHT,
+          });
+          if (handledTraverse) {
+            obsId = traverseObsIdRef.current;
+            faceMode = faceModeRef.current;
+          } else {
+            const directionObsIdRef = { current: obsId };
+            const directionSetCountRef = { current: directionSetCount };
+            const handledDirectionSet = handleDirectionSetRecord({
+              code,
+              parts,
+              lineNum,
+              state,
+              instrumentLibrary,
+              logs,
+              obsIdRef: directionObsIdRef,
+              currentSourceFile,
+              traverseCtx,
+              directionSetCountRef,
+              directionRejectDiagnostics,
+              parseObservedLinearToken,
+              parseObservedAngleToken,
+              parseDirectionFaceHintToken,
+              stripDirectionFaceHints,
+              inferFaceFromZenith,
+              isReliableFaceSource,
+              linearToMetersFactor,
+              effectiveDistanceMode,
+              extractSigmaTokens,
+              resolveLinearSigma: (token, defaultSigma) =>
+                resolveLinearSigma(token as SigmaToken | undefined, defaultSigma),
+              resolveAngularSigma: (token, defaultSigma) =>
+                resolveAngularSigma(token as SigmaToken | undefined, defaultSigma),
+              resolveLevelingSigma: (token, inst, spanMeters, contextCode, sourceLine) =>
+                resolveLevelingSigma(
+                  token as SigmaToken | undefined,
+                  inst,
+                  spanMeters,
+                  contextCode,
+                  sourceLine,
+                ),
+              defaultDistanceSigma,
+              defaultDirectionSigmaSec,
+              defaultZenithSigmaSec,
+              pushObservation,
+              flushDirectionSet,
+            });
+            if (handledDirectionSet) {
+              obsId = directionObsIdRef.current;
+              directionSetCount = directionSetCountRef.current;
+              if (code === 'DB') faceMode = 'unknown';
+            } else if (code === 'SS') {
         // Sideshot: dist + optional vertical
         const stationTokens = parseSsStationTokens(parts, state.stationSeparator ?? '-');
         if (!stationTokens) {
@@ -4687,6 +3990,8 @@ export const parseInput = (
         pushObservation(obs);
       } else {
         logs.push(`Unrecognized code "${code}" at line ${lineNum}, skipping`);
+      }
+      }
       }
       }
     } catch (e) {

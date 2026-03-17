@@ -60,7 +60,13 @@
       - [x] Extract control/geodetic record handling (`C`, `P/PH`, `CH/EH`, `E`) into `src/engine/parseControlRecords.ts`
       - [x] Add focused parser regression coverage for control/geodetic record families
       - [x] Extract conventional primitive observation handling (`D`, `A`, `V`, `DV`) into `src/engine/parseConventionalObservationRecords.ts`
-      - [x] Add focused parser regression coverage for conventional primitive observation families
+      - [x] Extend `src/engine/parseConventionalObservationRecords.ts` to cover bearing/measurement families (`B`, `BM`, `M`)
+      - [x] Add focused parser regression coverage for conventional primitive and bearing/measurement observation families
+      - [~] Extract traverse and direction-set families (`TB`, `T`, `TE`, `DB`, `DN`, `DM`, `DE`) into dedicated parser modules
+        - [x] Extract traverse-family handling (`TB`, `T`, `TE`) into `src/engine/parseTraverseRecords.ts`
+        - [x] Add focused parser regression coverage for traverse-family handling
+        - [x] Extract direction-set families (`DB`, `DN`, `DM`, `DE`) into `src/engine/parseDirectionSetRecords.ts`
+        - [x] Add focused parser regression coverage for direction-set families
     - [~] Split include expansion and include-scope state restoration into focused modules
       - [x] Extract include expansion, path normalization, and include-file-map resolution into `src/engine/parseIncludes.ts`
       - [x] Add focused module regression coverage for include expansion and cycle detection
