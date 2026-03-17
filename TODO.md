@@ -52,8 +52,13 @@
     - [x] Add shared QA derived-data model for report/map comparison workflows
     - [ ] Expand shared derived models so report/map/listing/processing-summary consume normalized data instead of rebuilding view-specific arrays
   - [ ] Phase 3 - parser modular split
-    - [ ] Split parser directive-state management out of the current parser monolith
-    - [ ] Split record-family parsing into stable modules by observation/control family
+    - [~] Split parser directive-state management out of the current parser monolith
+      - [x] Extract observation-mode normalization, directive transition snapshots, and no-effect warning synthesis into `src/engine/parseDirectiveState.ts`
+      - [x] Extract core parser state-directive handling (`.UNITS/.SCALE/.MEASURED/.GRID/.COORD/.ORDER/.2D/.3D/.3REDUCE/.DELTA/.MAPMODE/.MAPSCALE/.DATA/.SEPARATOR`) into `src/engine/parseDirectiveState.ts`
+      - [x] Add focused module regression coverage for directive-state normalization, transitions, and no-effect warnings
+    - [~] Split record-family parsing into stable modules by observation/control family
+      - [x] Extract control/geodetic record handling (`C`, `P/PH`, `CH/EH`, `E`) into `src/engine/parseControlRecords.ts`
+      - [x] Add focused parser regression coverage for control/geodetic record families
     - [~] Split include expansion and include-scope state restoration into focused modules
       - [x] Extract include expansion, path normalization, and include-file-map resolution into `src/engine/parseIncludes.ts`
       - [x] Add focused module regression coverage for include expansion and cycle detection

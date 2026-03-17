@@ -1,35 +1,39 @@
 import { dmsToRad, RAD_TO_DEG, SEC_TO_RAD } from './angles';
 import { parseAutoAdjustDirectiveTokens } from './autoAdjust';
 import { DEFAULT_CANADA_CRS_ID, normalizeCrsId } from './crsCatalog';
+import { handleControlRecord } from './parseControlRecords';
 import {
   createIncludeScopeSnapshot,
   restoreIncludeScopeSnapshot,
   type IncludeScopeSnapshot,
 } from './parseIncludeScope';
+import {
+  applyCoreDirectiveState,
+  directiveTransitionStateFromParseState,
+  finalizeDirectiveTransitions,
+  gridDistanceModeToReductionDistanceKind,
+  normalizeObservationModeState,
+} from './parseDirectiveState';
 import { expandInputWithIncludes } from './parseIncludes';
 import {
   DEFAULT_QFIX_ANGULAR_SIGMA_SEC,
   DEFAULT_QFIX_LINEAR_SIGMA_M,
 } from './defaults';
 import { normalizeGeoidModelId, parseGeoidInterpolationToken } from './geoid';
-import { parseCrsProjectionModelToken, projectGeodeticToEN } from './geodesy';
+import { parseCrsProjectionModelToken } from './geodesy';
 import type {
   AngleObservation,
-  BearingKind,
   CoordInputClass,
   CoordSystemMode,
   CrsProjectionModel,
   DirectiveNoEffectWarning,
   DirectiveTransition,
-  DirectiveTransitionState,
   DistanceObservation,
   DirectionRejectDiagnostic,
   DirObservation,
   GnssVectorFrame,
   GridDistanceInputMode,
   GridObservationMode,
-  ObservationModeSettings,
-  ReductionContext,
   ReductionDistanceKind,
   ReductionInputSpace,
   ReductionUsageSummary,
@@ -43,7 +47,6 @@ import type {
   StationId,
   ParseOptions,
   GpsTopoCoordinateShot,
-  MapMode,
   AngleMode,
   GeoidHeightDatum,
   GpsVectorMode,
@@ -658,165 +661,6 @@ const activeCrsProjectionModel = (state: ParseOptions): CrsProjectionModel =>
   state.crsTransformEnabled
     ? (state.crsProjectionModel ?? 'legacy-equirectangular')
     : 'legacy-equirectangular';
-
-const gridDistanceModeToReductionDistanceKind = (
-  mode?: GridDistanceInputMode,
-): ReductionDistanceKind => {
-  if (mode === 'ellipsoidal') return 'ellipsoidal';
-  if (mode === 'grid') return 'grid';
-  return 'ground';
-};
-
-const reductionDistanceKindToGridDistanceMode = (
-  kind?: ReductionDistanceKind,
-  inputSpaceDefault: ReductionInputSpace = 'measured',
-): GridDistanceInputMode => {
-  if (kind === 'ellipsoidal') return 'ellipsoidal';
-  if (kind === 'grid') return 'grid';
-  return inputSpaceDefault === 'grid' ? 'grid' : 'measured';
-};
-
-const syncObservationModeFromLegacyFields = (state: ParseOptions): void => {
-  state.observationMode = {
-    bearing: state.gridBearingMode ?? defaultParseOptions.gridBearingMode ?? 'grid',
-    distance: state.gridDistanceMode ?? defaultParseOptions.gridDistanceMode ?? 'measured',
-    angle: state.gridAngleMode ?? defaultParseOptions.gridAngleMode ?? 'measured',
-    direction: state.gridDirectionMode ?? defaultParseOptions.gridDirectionMode ?? 'measured',
-  };
-};
-
-const syncReductionContextFromLegacyFields = (
-  state: ParseOptions,
-  explicitOverrideActive = false,
-): void => {
-  const distanceMode = state.gridDistanceMode ?? defaultParseOptions.gridDistanceMode ?? 'measured';
-  state.reductionContext = {
-    inputSpaceDefault: distanceMode === 'measured' ? 'measured' : 'grid',
-    distanceKind: gridDistanceModeToReductionDistanceKind(distanceMode),
-    bearingKind: (state.gridBearingMode ??
-      defaultParseOptions.gridBearingMode ??
-      'grid') as BearingKind,
-    explicitOverrideActive:
-      explicitOverrideActive || state.reductionContext?.explicitOverrideActive === true,
-  };
-};
-
-const syncLegacyFieldsFromObservationMode = (state: ParseOptions): void => {
-  const mode = state.observationMode;
-  if (!mode) return;
-  const normalized: ObservationModeSettings = {
-    bearing: mode.bearing ?? defaultParseOptions.gridBearingMode ?? 'grid',
-    distance: mode.distance ?? defaultParseOptions.gridDistanceMode ?? 'measured',
-    angle: mode.angle ?? defaultParseOptions.gridAngleMode ?? 'measured',
-    direction: mode.direction ?? defaultParseOptions.gridDirectionMode ?? 'measured',
-  };
-  state.gridBearingMode = normalized.bearing;
-  state.gridDistanceMode = normalized.distance;
-  state.gridAngleMode = normalized.angle;
-  state.gridDirectionMode = normalized.direction;
-  state.observationMode = normalized;
-};
-
-const syncLegacyFieldsFromReductionContext = (state: ParseOptions): void => {
-  const context = state.reductionContext;
-  if (!context) return;
-  state.gridBearingMode = context.bearingKind;
-  state.gridDistanceMode = reductionDistanceKindToGridDistanceMode(
-    context.distanceKind,
-    context.inputSpaceDefault,
-  );
-};
-
-const normalizeObservationModeState = (state: ParseOptions): void => {
-  if (state.reductionContext) {
-    syncLegacyFieldsFromReductionContext(state);
-    syncObservationModeFromLegacyFields(state);
-  } else if (state.observationMode) {
-    syncLegacyFieldsFromObservationMode(state);
-    syncReductionContextFromLegacyFields(state, false);
-  } else {
-    syncObservationModeFromLegacyFields(state);
-    syncReductionContextFromLegacyFields(state, false);
-  }
-};
-
-const applyGridObservationDirective = (
-  state: ParseOptions,
-  mode: 'grid' | 'measured',
-  parts: string[],
-): string => {
-  const tokens = parts.slice(1).map((token) => token.toUpperCase());
-  const applyAll = tokens.length === 0;
-  const resetToDefaults = tokens.some(
-    (token) => token === 'OFF' || token === 'NONE' || token === 'RESET' || token === 'DEFAULT',
-  );
-
-  const setBearing = () => {
-    state.gridBearingMode = mode;
-  };
-  const setDistance = (distanceMode?: GridDistanceInputMode) => {
-    state.gridDistanceMode = distanceMode ?? (mode === 'grid' ? 'grid' : 'measured');
-  };
-  const setAngle = () => {
-    state.gridAngleMode = mode;
-  };
-  const setDirection = () => {
-    state.gridDirectionMode = mode;
-  };
-
-  if (applyAll) {
-    setBearing();
-    setDistance();
-    setAngle();
-    setDirection();
-    syncObservationModeFromLegacyFields(state);
-    syncReductionContextFromLegacyFields(state, true);
-    return `${mode.toUpperCase()} mode applied to bearings/distances/angles/directions`;
-  }
-
-  if (resetToDefaults) {
-    state.gridBearingMode = defaultParseOptions.gridBearingMode;
-    state.gridDistanceMode = defaultParseOptions.gridDistanceMode;
-    state.gridAngleMode = defaultParseOptions.gridAngleMode;
-    state.gridDirectionMode = defaultParseOptions.gridDirectionMode;
-    syncObservationModeFromLegacyFields(state);
-    syncReductionContextFromLegacyFields(state, true);
-    return `${mode.toUpperCase()} mode reset to defaults: bearing=${state.gridBearingMode?.toUpperCase()}, distance=${(state.gridDistanceMode ?? 'measured').toUpperCase()}, angle=${state.gridAngleMode?.toUpperCase()}, direction=${state.gridDirectionMode?.toUpperCase()}`;
-  }
-
-  tokens.forEach((token) => {
-    if (token.startsWith('BEA')) setBearing();
-    else if (
-      token === 'DIST=ELLIP' ||
-      token === 'DIST=ELLIPSOIDAL' ||
-      token === 'DIST=ELLIPSOID' ||
-      token === 'DISTANCE=ELLIP' ||
-      token === 'DISTANCE=ELLIPSOIDAL' ||
-      token === 'DISTANCE=ELLIPSOID'
-    ) {
-      setDistance('ellipsoidal');
-    } else if (token.startsWith('DIST')) {
-      setDistance();
-    } else if (token.startsWith('ANG')) {
-      setAngle();
-    } else if (token.startsWith('DIR')) {
-      setDirection();
-    }
-  });
-  syncObservationModeFromLegacyFields(state);
-  syncReductionContextFromLegacyFields(state, true);
-
-  return `${mode.toUpperCase()} mode updated: bearing=${state.gridBearingMode?.toUpperCase()}, distance=${(state.gridDistanceMode ?? 'measured').toUpperCase()}, angle=${state.gridAngleMode?.toUpperCase()}, direction=${state.gridDirectionMode?.toUpperCase()}`;
-};
-
-const directiveTransitionStateFromParseState = (state: ParseOptions): DirectiveTransitionState => ({
-  gridBearingMode: state.gridBearingMode ?? defaultParseOptions.gridBearingMode ?? 'grid',
-  gridDistanceMode: state.gridDistanceMode ?? defaultParseOptions.gridDistanceMode ?? 'measured',
-  gridAngleMode: state.gridAngleMode ?? defaultParseOptions.gridAngleMode ?? 'measured',
-  gridDirectionMode: state.gridDirectionMode ?? defaultParseOptions.gridDirectionMode ?? 'measured',
-  averageScaleFactor: state.averageScaleFactor ?? defaultParseOptions.averageScaleFactor ?? 1,
-  scaleOverrideActive: state.scaleOverrideActive ?? false,
-});
 
 const createReductionUsageSummary = (): ReductionUsageSummary => ({
   bearing: { grid: 0, measured: 0 },
@@ -2159,138 +2003,20 @@ export const parseInput = (
         continue;
       }
       const op = normalizedDirective.op;
-      if (op === '.UNITS' && parts[1]) {
-        let linearChanged = false;
-        let angleChanged = false;
-        parts.slice(1).forEach((rawToken) => {
-          const token = rawToken.toUpperCase();
-          if (
-            token === 'US' ||
-            token === 'FT' ||
-            token === 'FEET' ||
-            token === 'FOOT' ||
-            token === 'FOOTS'
-          ) {
-            state.units = 'ft';
-            linearChanged = true;
-            return;
-          }
-          if (
-            token === 'M' ||
-            token === 'METER' ||
-            token === 'METERS' ||
-            token === 'METRE' ||
-            token === 'METRES'
-          ) {
-            state.units = 'm';
-            linearChanged = true;
-            return;
-          }
-          if (token === 'DMS') {
-            state.angleUnits = 'dms';
-            angleChanged = true;
-            return;
-          }
-          if (token === 'DD' || token === 'DEG' || token === 'DEGREES') {
-            state.angleUnits = 'dd';
-            angleChanged = true;
-          }
-        });
-        if (linearChanged) logs.push(`Units set to ${state.units}`);
-        if (angleChanged) logs.push(`Angle units set to ${state.angleUnits?.toUpperCase()}`);
-      } else if (op === '.SCALE') {
-        const factorToken = parts[1];
-        if (!factorToken) {
-          state.averageScaleFactor = defaultParseOptions.averageScaleFactor;
-          state.scaleOverrideActive = false;
-          if (state.reductionContext) {
-            state.reductionContext.explicitOverrideActive = false;
-          }
-          logs.push(`Average scale factor reset to ${state.averageScaleFactor?.toFixed(8)}`);
-          recordDirectiveTransition('.SCALE');
-        } else {
-          const factor = Number.parseFloat(factorToken);
-          if (Number.isFinite(factor) && factor > 0) {
-            state.averageScaleFactor = factor;
-            state.scaleOverrideActive = true;
-            if (!state.reductionContext) {
-              syncReductionContextFromLegacyFields(state, true);
-            } else {
-              state.reductionContext.explicitOverrideActive = true;
-            }
-            logs.push(`Average scale factor set to ${factor.toFixed(8)}`);
-            recordDirectiveTransition('.SCALE');
-          } else {
-            logs.push(
-              `Warning: invalid .SCALE factor at line ${lineNum}; expected positive number.`,
-            );
-          }
-        }
-      } else if (op === '.MEASURED') {
-        logs.push(applyGridObservationDirective(state, 'measured', parts));
-        recordDirectiveTransition('.MEASURED');
-      } else if (op === '.GRID') {
-        logs.push(applyGridObservationDirective(state, 'grid', parts));
-        recordDirectiveTransition('.GRID');
-      } else if (op === '.COORD' && parts[1]) {
-        state.coordMode = parts[1].toUpperCase() === '2D' ? '2D' : '3D';
-        logs.push(`Coord mode set to ${state.coordMode}`);
-      } else if (op === '.ORDER' && parts[1]) {
-        let coordOrderSet = false;
-        let stationOrderSet = false;
-        parts.slice(1).forEach((rawToken) => {
-          const token = rawToken.toUpperCase();
-          if (token === 'NE' || token === 'EN') {
-            state.order = token as 'NE' | 'EN';
-            coordOrderSet = true;
-            return;
-          }
-          if (token === 'ATFROMTO' || token === 'AT-FROM-TO') {
-            state.angleStationOrder = 'atfromto';
-            stationOrderSet = true;
-            return;
-          }
-          if (token === 'FROMATTO' || token === 'FROM-AT-TO') {
-            state.angleStationOrder = 'fromatto';
-            stationOrderSet = true;
-          }
-        });
-        if (coordOrderSet) orderExplicit = true;
-        if (coordOrderSet || stationOrderSet) {
-          logs.push(
-            `Order set to ${state.order}; angle station order ${state.angleStationOrder?.toUpperCase()}`,
-          );
-        }
-      } else if (op === '.2D') {
-        state.coordMode = '2D';
-        state.threeReduceMode = false;
-        logs.push('Coord mode forced to 2D');
-      } else if (op === '.3D') {
-        state.coordMode = '3D';
-        state.threeReduceMode = false;
-        logs.push('Coord mode forced to 3D');
-      } else if (op === '.3REDUCE') {
-        state.coordMode = '3D';
-        state.threeReduceMode = true;
-        logs.push(
-          'Coord mode forced to 3D with 3REDUCE ON (slope/zenith reduced to horizontal-only)',
-        );
-      } else if (op === '.DELTA' && parts[1]) {
-        state.deltaMode = parts[1].toUpperCase() === 'ON' ? 'horiz' : 'slope';
-        logs.push(`Delta mode set to ${state.deltaMode}`);
-      } else if (op === '.MAPMODE') {
-        const mode = (parts[1] || '').toUpperCase();
-        const mapMode: MapMode =
-          mode === 'ANGLECALC' ? 'anglecalc' : mode === 'ON' || mode === 'GRID' ? 'on' : 'off';
-        state.mapMode = mapMode;
-        logs.push(`Map mode set to ${mapMode}`);
-      } else if (op === '.MAPSCALE' && parts[1]) {
-        const factor = parseFloat(parts[1]);
-        if (Number.isFinite(factor) && factor > 0) {
-          state.mapScaleFactor = factor;
-          logs.push(`Map scale factor set to ${factor}`);
-        }
-      } else if (op === '.CRS') {
+      const coreDirectiveResult = applyCoreDirectiveState({
+        op,
+        parts,
+        lineNum,
+        state,
+        logs,
+        orderExplicit,
+        recordDirectiveTransition,
+      });
+      if (coreDirectiveResult.handled) {
+        orderExplicit = coreDirectiveResult.orderExplicit;
+        continue;
+      }
+      if (op === '.CRS') {
         const modeToken = (parts[1] || '').toUpperCase();
         if (!modeToken) {
           logs.push(
@@ -3517,366 +3243,28 @@ export const parseInput = (
           levStd_mmPerKm: levStd,
         };
         instrumentLibrary[instCode] = inst;
-      } else if (code === 'C') {
-        const id = parts[1];
-        const tokens = parts.slice(2);
-        const numeric = tokens.filter(isNumericToken).map((p) => parseFloat(p));
-        const is3D = state.coordMode === '3D';
-        const coordCount = is3D ? 3 : 2;
-        const coords = numeric.slice(0, coordCount);
-        const stds = numeric.slice(coordCount);
-        const north = state.order === 'NE' ? (coords[0] ?? 0) : (coords[1] ?? 0);
-        const east = state.order === 'NE' ? (coords[1] ?? 0) : (coords[0] ?? 0);
-        const h = is3D ? (coords[2] ?? 0) : 0;
-        const { componentModes, fixities, hasFreeMarkers, legacyStarFixed } = parseFixityTokens(
-          tokens,
-          coordCount,
-        );
-        if (legacyStarFixed) {
-          logs.push(
-            `Warning: legacy lone "*" fixity at line ${lineNum} treated as fixed. Prefer "!" for fixed components.`,
-          );
-        }
-        if (hasFreeMarkers) {
-          logs.push(
-            `Free-marker control components at line ${lineNum} release fixed/weighted constraints for marked coordinates.`,
-          );
-        }
-        const fixN = state.order === 'NE' ? fixities[0] : fixities[1];
-        const fixE = state.order === 'NE' ? fixities[1] : fixities[0];
-        const fixH = is3D ? fixities[2] : false;
-        const modeN = state.order === 'NE' ? componentModes[0] : componentModes[1];
-        const modeE = state.order === 'NE' ? componentModes[1] : componentModes[0];
-        const modeH = is3D ? componentModes[2] : 'inherit';
-        const toMeters = linearToMetersFactor();
-        const st =
-          stations[id] ??
-          ({ x: 0, y: 0, h: 0, fixed: false, fixedX: false, fixedY: false, fixedH: false } as any);
-        st.x = east * toMeters;
-        st.y = north * toMeters;
-        if (is3D) st.h = h * toMeters;
-        assignStationCoordClass(
-          st,
-          id,
-          state.coordSystemMode === 'grid' ? 'grid' : 'local',
-          `C record line ${lineNum}`,
-        );
-
-        applyFixities(st, { x: fixE, y: fixN, h: is3D ? fixH : undefined }, state.coordMode);
-        if (modeE !== 'inherit') clearStationConstraintComponent(st, 'x');
-        if (modeN !== 'inherit') clearStationConstraintComponent(st, 'y');
-        if (is3D && modeH !== 'inherit') clearStationConstraintComponent(st, 'h');
-
-        const seN = state.order === 'NE' ? stds[0] : stds[1];
-        const seE = state.order === 'NE' ? stds[1] : stds[0];
-        const seH = is3D ? stds[2] : undefined;
-        const corrXY = parseConstraintCorrToken(stds[is3D ? 3 : 2]);
-        if (modeE !== 'free' && !st.fixedX && seE) {
-          st.sx = seE * toMeters;
-          st.constraintX = st.x;
-        }
-        if (modeN !== 'free' && !st.fixedY && seN) {
-          st.sy = seN * toMeters;
-          st.constraintY = st.y;
-        }
-        if (
-          modeE !== 'free' &&
-          modeN !== 'free' &&
-          !st.fixedX &&
-          !st.fixedY &&
-          st.sx != null &&
-          st.sy != null &&
-          corrXY != null
-        ) {
-          st.constraintCorrXY = corrXY;
-        }
-        if (is3D && modeH !== 'free' && !st.fixedH && seH) {
-          st.sh = seH * toMeters;
-          st.constraintH = st.h;
-        }
-        setStationConstraintMode(
-          st,
-          'x',
-          resolveStationConstraintMode(modeE, st.fixedX ?? false, st.constraintX != null),
-        );
-        setStationConstraintMode(
-          st,
-          'y',
-          resolveStationConstraintMode(modeN, st.fixedY ?? false, st.constraintY != null),
-        );
-        if (is3D) {
-          setStationConstraintMode(
-            st,
-            'h',
-            resolveStationConstraintMode(modeH, st.fixedH ?? false, st.constraintH != null),
-          );
-        }
-
-        stations[id] = st;
-      } else if (code === 'P' || code === 'PH') {
-        // Geodetic position (lat/long [+H]) projected to local EN using first P as origin (equirectangular)
-        const id = parts[1];
-        const latDeg = toDegrees(parts[2]);
-        let lonDeg = toDegrees(parts[3]);
-        if (state.lonSign === 'west-positive') {
-          lonDeg = -lonDeg;
-        }
-        const tokens = parts.slice(2);
-        const restNumeric = parts
-          .slice(4)
-          .filter(isNumericToken)
-          .map((p) => parseFloat(p));
-        const coordCount = state.coordMode === '3D' ? 3 : 2;
-        const elev = state.coordMode === '3D' ? (restNumeric[0] ?? 0) : 0;
-        const seN = state.coordMode === '3D' ? (restNumeric[1] ?? 0) : (restNumeric[0] ?? 0);
-        const seE = state.coordMode === '3D' ? (restNumeric[2] ?? 0) : (restNumeric[1] ?? 0);
-        const seH = state.coordMode === '3D' ? (restNumeric[3] ?? 0) : 0;
-        const corrXY = parseConstraintCorrToken(restNumeric[state.coordMode === '3D' ? 4 : 2]);
-        const { componentModes, fixities, hasFreeMarkers, legacyStarFixed } = parseFixityTokens(
-          tokens,
-          coordCount,
-        );
-        if (legacyStarFixed) {
-          logs.push(
-            `Warning: legacy lone "*" fixity at line ${lineNum} treated as fixed. Prefer "!" for fixed components.`,
-          );
-        }
-        if (hasFreeMarkers) {
-          logs.push(
-            `Free-marker control components at line ${lineNum} release fixed/weighted constraints for marked coordinates.`,
-          );
-        }
-        const modeN = componentModes[0];
-        const modeE = componentModes[1];
-        const modeH = coordCount === 3 ? componentModes[2] : 'inherit';
-
-        if (state.originLatDeg == null || state.originLonDeg == null) {
-          state.originLatDeg = latDeg;
-          state.originLonDeg = lonDeg;
-          logs.push(`P origin set to ${latDeg.toFixed(6)}, ${lonDeg.toFixed(6)}`);
-        }
-        const projectionModel = activeCrsProjectionModel(state);
-        const { east, north, model } = projectGeodeticToEN({
-          latDeg,
-          lonDeg,
-          originLatDeg: state.originLatDeg ?? latDeg,
-          originLonDeg: state.originLonDeg ?? lonDeg,
-          model: projectionModel,
-          coordSystemMode: state.coordSystemMode,
-          crsId: state.crsId,
-        });
-        const toMeters = linearToMetersFactor();
-        const st: any =
-          stations[id] ??
-          ({ x: 0, y: 0, h: 0, fixed: false, fixedX: false, fixedY: false, fixedH: false } as any);
-        st.x = east;
-        st.y = north;
-        st.h = elev * toMeters;
-        st.latDeg = latDeg;
-        st.lonDeg = lonDeg;
-        st.heightType = code === 'PH' ? 'ellipsoid' : 'orthometric';
-        assignStationCoordClass(
-          st,
-          id,
-          state.crsId ? 'geodetic' : 'unknown',
-          `${code} record line ${lineNum}`,
-        );
-        applyFixities(
-          st,
-          {
-            x: fixities[1] ?? false,
-            y: fixities[0] ?? false,
-            h: coordCount === 3 ? fixities[2] : undefined,
-          },
-          state.coordMode,
-        );
-        if (modeE !== 'inherit') clearStationConstraintComponent(st, 'x');
-        if (modeN !== 'inherit') clearStationConstraintComponent(st, 'y');
-        if (coordCount === 3 && modeH !== 'inherit') clearStationConstraintComponent(st, 'h');
-        if (modeN !== 'free' && !st.fixedY && seN) {
-          st.sy = seN * toMeters;
-          st.constraintY = st.y;
-        }
-        if (modeE !== 'free' && !st.fixedX && seE) {
-          st.sx = seE * toMeters;
-          st.constraintX = st.x;
-        }
-        if (
-          modeE !== 'free' &&
-          modeN !== 'free' &&
-          !st.fixedX &&
-          !st.fixedY &&
-          st.sx != null &&
-          st.sy != null &&
-          corrXY != null
-        ) {
-          st.constraintCorrXY = corrXY;
-        }
-        if (state.coordMode === '3D' && modeH !== 'free' && !st.fixedH && seH) {
-          st.sh = seH * toMeters;
-          st.constraintH = st.h;
-        }
-        setStationConstraintMode(
-          st,
-          'x',
-          resolveStationConstraintMode(modeE, st.fixedX ?? false, st.constraintX != null),
-        );
-        setStationConstraintMode(
-          st,
-          'y',
-          resolveStationConstraintMode(modeN, st.fixedY ?? false, st.constraintY != null),
-        );
-        if (state.coordMode === '3D') {
-          setStationConstraintMode(
-            st,
-            'h',
-            resolveStationConstraintMode(modeH, st.fixedH ?? false, st.constraintH != null),
-          );
-        }
-        stations[id] = st;
-        if (state.coordSystemMode === 'grid') {
-          logs.push(
-            `P record projected to grid EN (meters) for ${id} using CRS=${state.crsId ?? 'unknown'} (model=${model})`,
-          );
-        } else if (state.crsTransformEnabled) {
-          logs.push(
-            `P record projected to local EN (meters) for ${id} using ${model} (CRS="${state.crsLabel || 'unnamed'}")`,
-          );
-        } else {
-          logs.push(`P record projected to local EN (meters) for ${id}`);
-        }
-      } else if (code === 'CH' || code === 'EH') {
-        // Coordinate or elevation with ellipsoid height
-        const id = parts[1];
-        const tokens = parts.slice(2);
-        const numeric = tokens.filter(isNumericToken).map((p) => parseFloat(p));
-        const is3D = state.coordMode === '3D';
-        const coordCount = is3D ? 3 : 2;
-        const coords = numeric.slice(0, coordCount);
-        const stds = numeric.slice(coordCount);
-        const north = state.order === 'NE' ? (coords[0] ?? 0) : (coords[1] ?? 0);
-        const east = state.order === 'NE' ? (coords[1] ?? 0) : (coords[0] ?? 0);
-        const h = is3D ? (coords[2] ?? 0) : (coords[0] ?? 0);
-        const { componentModes, fixities, hasFreeMarkers, legacyStarFixed } = parseFixityTokens(
-          tokens,
-          coordCount,
-        );
-        if (legacyStarFixed) {
-          logs.push(
-            `Warning: legacy lone "*" fixity at line ${lineNum} treated as fixed. Prefer "!" for fixed components.`,
-          );
-        }
-        if (hasFreeMarkers) {
-          logs.push(
-            `Free-marker control components at line ${lineNum} release fixed/weighted constraints for marked coordinates.`,
-          );
-        }
-        const toMeters = linearToMetersFactor();
-        const st: any =
-          stations[id] ??
-          ({ x: 0, y: 0, h: 0, fixed: false, fixedX: false, fixedY: false, fixedH: false } as any);
-        st.x = east * toMeters;
-        st.y = north * toMeters;
-        st.h = h * toMeters;
-        st.heightType = 'ellipsoid';
-
-        const fixN = state.order === 'NE' ? fixities[0] : fixities[1];
-        const fixE = state.order === 'NE' ? fixities[1] : fixities[0];
-        const fixH = is3D ? fixities[2] : false;
-        const modeN = state.order === 'NE' ? componentModes[0] : componentModes[1];
-        const modeE = state.order === 'NE' ? componentModes[1] : componentModes[0];
-        const modeH = is3D ? componentModes[2] : 'inherit';
-        applyFixities(st, { x: fixE, y: fixN, h: is3D ? fixH : undefined }, state.coordMode);
-        if (modeE !== 'inherit') clearStationConstraintComponent(st, 'x');
-        if (modeN !== 'inherit') clearStationConstraintComponent(st, 'y');
-        if (is3D && modeH !== 'inherit') clearStationConstraintComponent(st, 'h');
-
-        const seN = state.order === 'NE' ? stds[0] : stds[1];
-        const seE = state.order === 'NE' ? stds[1] : stds[0];
-        const seH = is3D ? stds[2] : undefined;
-        const corrXY = parseConstraintCorrToken(stds[is3D ? 3 : 2]);
-        if (modeE !== 'free' && !st.fixedX && seE) {
-          st.sx = seE * toMeters;
-          st.constraintX = st.x;
-        }
-        if (modeN !== 'free' && !st.fixedY && seN) {
-          st.sy = seN * toMeters;
-          st.constraintY = st.y;
-        }
-        if (
-          modeE !== 'free' &&
-          modeN !== 'free' &&
-          !st.fixedX &&
-          !st.fixedY &&
-          st.sx != null &&
-          st.sy != null &&
-          corrXY != null
-        ) {
-          st.constraintCorrXY = corrXY;
-        }
-        if (is3D && modeH !== 'free' && !st.fixedH && seH) {
-          st.sh = seH * toMeters;
-          st.constraintH = st.h;
-        }
-        setStationConstraintMode(
-          st,
-          'x',
-          resolveStationConstraintMode(modeE, st.fixedX ?? false, st.constraintX != null),
-        );
-        setStationConstraintMode(
-          st,
-          'y',
-          resolveStationConstraintMode(modeN, st.fixedY ?? false, st.constraintY != null),
-        );
-        if (is3D) {
-          setStationConstraintMode(
-            st,
-            'h',
-            resolveStationConstraintMode(modeH, st.fixedH ?? false, st.constraintH != null),
-          );
-        }
-
-        stations[id] = st;
-      } else if (code === 'E') {
-        // Elevation only: E Station Elev [StdErr] [fixity]
-        const id = parts[1];
-        const tokens = parts.slice(2);
-        const numeric = tokens.filter(isNumericToken).map((p) => parseFloat(p));
-        const elev = numeric[0] ?? 0;
-        const stdErr = numeric[1] ?? 0;
-        const { componentModes, fixities, hasFreeMarkers, legacyStarFixed } = parseFixityTokens(
-          tokens,
-          1,
-        );
-        if (legacyStarFixed) {
-          logs.push(
-            `Warning: legacy lone "*" fixity at line ${lineNum} treated as fixed. Prefer "!" for fixed components.`,
-          );
-        }
-        if (hasFreeMarkers) {
-          logs.push(
-            `Free-marker control components at line ${lineNum} release fixed/weighted constraints for marked coordinates.`,
-          );
-        }
-        const fixH = fixities[0] ?? false;
-        const modeH = componentModes[0];
-        const toMeters = linearToMetersFactor();
-        const st: any =
-          stations[id] ??
-          ({ x: 0, y: 0, h: 0, fixed: false, fixedX: false, fixedY: false, fixedH: false } as any);
-        st.h = elev * toMeters;
-        applyFixities(st, { h: fixH }, state.coordMode);
-        if (modeH !== 'inherit') clearStationConstraintComponent(st, 'h');
-        if (modeH !== 'free' && !st.fixedH && stdErr) {
-          st.sh = stdErr * toMeters;
-          st.constraintH = st.h;
-        }
-        setStationConstraintMode(
-          st,
-          'h',
-          resolveStationConstraintMode(modeH, st.fixedH ?? false, st.constraintH != null),
-        );
-        stations[id] = st;
+      } else if (
+        handleControlRecord({
+          code,
+          parts,
+          lineNum,
+          state,
+          stations,
+          logs,
+          isNumericToken,
+          parseFixityTokens,
+          parseConstraintCorrToken,
+          applyFixities,
+          clearStationConstraintComponent,
+          setStationConstraintMode,
+          resolveStationConstraintMode,
+          assignStationCoordClass,
+          linearToMetersFactor,
+          toDegrees,
+          activeCrsProjectionModel,
+        })
+      ) {
+        // handled by parseControlRecords.ts
       } else if (code === 'D') {
         const explicitInstKnown = parts[1] && instrumentLibrary[parts[1]] ? parts[1] : '';
         const toMeters = linearToMetersFactor();
@@ -6207,47 +5595,14 @@ export const parseInput = (
     logs.push(`GPS rover offsets parsed: ${state.gpsOffsetObservationCount}`);
   }
   normalizeObservationModeState(state);
-  if (directiveTransitions.length > 0) {
-    const observationLines = observations
-      .map((obs) => obs.sourceLine)
-      .filter((line): line is number => Number.isFinite(line as number)) as number[];
-    const hasSubsequentDataLines = (sourceLine: number): boolean => {
-      for (let i = 0; i < lines.length; i += 1) {
-        const rawLine = lines[i];
-        if (rawLine.kind !== 'line') continue;
-        if (rawLine.sourceLine <= sourceLine) continue;
-        const trimmed = rawLine.raw.trim();
-        if (!trimmed) continue;
-        const parsedInline = splitInlineCommentAndDescription(trimmed);
-        if (!parsedInline.line || parsedInline.line.startsWith('#')) continue;
-        return true;
-      }
-      return false;
-    };
-    directiveTransitions.forEach((transition, index) => {
-      const next = directiveTransitions[index + 1];
-      transition.effectiveToLine = next ? next.line - 1 : undefined;
-      transition.obsCountInRange = observationLines.filter((obsLine) => {
-        if (obsLine < transition.effectiveFromLine) return false;
-        if (transition.effectiveToLine == null) return true;
-        return obsLine <= transition.effectiveToLine;
-      }).length;
-      if (transition.obsCountInRange > 0) return;
-      if (!hasSubsequentDataLines(transition.line)) {
-        directiveNoEffectWarnings.push({
-          line: transition.line,
-          directive: transition.directive,
-          reason: 'noSubsequentObservations',
-        });
-      } else {
-        directiveNoEffectWarnings.push({
-          line: transition.line,
-          directive: transition.directive,
-          reason: 'noSubsequentObsRecords',
-        });
-      }
-    });
-  }
+  directiveNoEffectWarnings.push(
+    ...finalizeDirectiveTransitions({
+      directiveTransitions,
+      observations,
+      lines,
+      splitInlineCommentAndDescription,
+    }),
+  );
   state.directiveTransitions = directiveTransitions;
   state.directiveNoEffectWarnings = directiveNoEffectWarnings;
   state.parsedUsageSummary = summarizeReductionUsage(observations);
