@@ -36,6 +36,8 @@
     - [x] Extract import-review workflow state and handlers into a dedicated hook/module
     - [x] Extract adjustment run/review orchestration (exclusions, overrides, cluster review state, rerun handlers, and outcome application) into a dedicated hook
     - [x] Add focused hook regression coverage for adjustment run/review orchestration state transitions
+    - [x] Extract project save/load orchestration and project-file migration/apply fan-out into a dedicated hook/module
+    - [ ] Extract export dispatch/browser download helpers into a dedicated hook/module
     - [ ] Extract remaining top-level orchestration helpers so `App.tsx` becomes a shell/composition layer
   - [ ] Phase 2 - shared derived-model cleanup
     - [x] Add shared QA derived-data model for report/map comparison workflows
