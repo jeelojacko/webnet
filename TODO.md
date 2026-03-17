@@ -59,6 +59,8 @@
     - [~] Split record-family parsing into stable modules by observation/control family
       - [x] Extract control/geodetic record handling (`C`, `P/PH`, `CH/EH`, `E`) into `src/engine/parseControlRecords.ts`
       - [x] Add focused parser regression coverage for control/geodetic record families
+      - [x] Extract conventional primitive observation handling (`D`, `A`, `V`, `DV`) into `src/engine/parseConventionalObservationRecords.ts`
+      - [x] Add focused parser regression coverage for conventional primitive observation families
     - [~] Split include expansion and include-scope state restoration into focused modules
       - [x] Extract include expansion, path normalization, and include-file-map resolution into `src/engine/parseIncludes.ts`
       - [x] Add focused module regression coverage for include expansion and cycle detection

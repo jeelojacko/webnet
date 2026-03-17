@@ -1,6 +1,7 @@
 import { dmsToRad, RAD_TO_DEG, SEC_TO_RAD } from './angles';
 import { parseAutoAdjustDirectiveTokens } from './autoAdjust';
 import { DEFAULT_CANADA_CRS_ID, normalizeCrsId } from './crsCatalog';
+import { handleConventionalPrimitiveRecord } from './parseConventionalObservationRecords';
 import { handleControlRecord } from './parseControlRecords';
 import {
   createIncludeScopeSnapshot,
@@ -3265,550 +3266,57 @@ export const parseInput = (
         })
       ) {
         // handled by parseControlRecords.ts
-      } else if (code === 'D') {
-        const explicitInstKnown = parts[1] && instrumentLibrary[parts[1]] ? parts[1] : '';
-        const toMeters = linearToMetersFactor();
-        const candidates: Array<{
-          from: string;
-          to: string;
-          nextIndex: number;
-          instCode: string;
-          setId: string;
-          explicitInst: boolean;
-        }> = [];
-        const pushDistanceCandidate = (
-          instCode: string,
-          setId: string,
-          startIndex: number,
-          candidateExplicitInst: boolean,
-        ) => {
-          const parsedFromTo = parseFromTo(parts, startIndex, state.stationSeparator ?? '-');
-          if (!parsedFromTo.from || !parsedFromTo.to) return;
-          const distToken = parts[parsedFromTo.nextIndex];
-          const distParsed = parseObservedLinearToken(distToken, toMeters);
-          if (!distParsed.valid) return;
-          candidates.push({
-            from: parsedFromTo.from,
-            to: parsedFromTo.to,
-            nextIndex: parsedFromTo.nextIndex,
-            instCode,
-            setId,
-            explicitInst: candidateExplicitInst,
-          });
-        };
-
-        if (explicitInstKnown) {
-          pushDistanceCandidate(explicitInstKnown, '', 2, true);
-          if (parts[2]) {
-            pushDistanceCandidate(explicitInstKnown, parts[2], 3, true);
-          }
-        }
-
-        pushDistanceCandidate(state.currentInstrument ?? '', '', 1, false);
-
-        if (!explicitInstKnown && parts[1]) {
-          pushDistanceCandidate(parts[1], '', 2, true);
-          if (parts[2]) {
-            pushDistanceCandidate(parts[1], parts[2], 3, true);
-          }
-        }
-
-        if (candidates.length === 0) {
-          logs.push(`Invalid distance at line ${lineNum}, skipping D record.`);
-          continue;
-        }
-
-        const scored = candidates.map((candidate) => {
-          const distToken = parts[candidate.nextIndex] ?? '';
-          return {
-            candidate,
-            score: scoreDistanceCandidate({
-              instCode: candidate.instCode,
-              from: candidate.from,
-              to: candidate.to,
-              distToken,
-              setId: candidate.setId,
-              explicitInst: candidate.explicitInst,
-            }),
-          };
+      } else {
+        const conventionalObsIdRef = { current: obsId };
+        const handledConventionalPrimitive = handleConventionalPrimitiveRecord({
+          code,
+          parts,
+          lineNum,
+          state,
+          stations,
+          instrumentLibrary,
+          logs,
+          obsIdRef: conventionalObsIdRef,
+          compatibilityMode,
+          preanalysisMode,
+          addCompatibilityDiagnostic,
+          rejectNumericStationTokens,
+          parseFromTo,
+          splitStationPairToken,
+          extractSigmaTokens,
+          extractHiHt,
+          parseObservedLinearToken,
+          parseObservedAngleToken,
+          linearToMetersFactor,
+          effectiveDistanceMode,
+          scoreDistanceCandidate,
+          looksLikeNumericMeasurement,
+          resolveLinearSigma: (token, defaultSigma) =>
+            resolveLinearSigma(token as SigmaToken | undefined, defaultSigma),
+          resolveAngularSigma: (token, defaultSigma) =>
+            resolveAngularSigma(token as SigmaToken | undefined, defaultSigma),
+          resolveLevelingSigma: (token, inst, spanMeters, contextCode, sourceLine) =>
+            resolveLevelingSigma(
+              token as SigmaToken | undefined,
+              inst,
+              spanMeters,
+              contextCode,
+              sourceLine,
+            ),
+          defaultDistanceSigma,
+          defaultHorizontalAngleSigmaSec,
+          defaultZenithSigmaSec,
+          azimuthFromTo,
+          wrapToPi,
+          applyPlanRotation,
+          pushObservation,
+          face2Weight: FACE2_WEIGHT,
+          amodeAutoMaxDirRad: AMODE_AUTO_MAX_DIR_RAD,
+          amodeAutoMarginRad: AMODE_AUTO_MARGIN_RAD,
         });
-        scored.sort((a, b) => b.score - a.score);
-        const best = scored[0];
-        const tie = scored.length > 1 && scored[1].score === best.score;
-        if (tie) {
-          const rewrite =
-            'Use explicit form: D <inst?> <set?> <from> <to> <distance> [sigma] [HI/HT].';
-          if (compatibilityMode === 'strict') {
-            addCompatibilityDiagnostic(
-              'ROLE_AMBIGUITY',
-              lineNum,
-              'D',
-              'multiple valid D-record interpretations were found.',
-              rewrite,
-              false,
-              'error',
-            );
-            continue;
-          }
-          addCompatibilityDiagnostic(
-            'ROLE_AMBIGUITY',
-            lineNum,
-            'D',
-            'multiple valid D-record interpretations were found; applied legacy fallback.',
-            rewrite,
-            true,
-          );
-        }
-
-        const chosen = best.candidate;
-        if (
-          rejectNumericStationTokens('D', lineNum, [
-            { role: 'FROM', value: chosen.from },
-            { role: 'TO', value: chosen.to },
-          ])
-        ) {
-          continue;
-        }
-        const distToken = parts[chosen.nextIndex];
-        const restTokens = parts.slice(chosen.nextIndex + 1);
-        const { sigmas, rest } = extractSigmaTokens(restTokens, 1);
-        const { hi, ht } = extractHiHt(rest);
-        const distParsed = parseObservedLinearToken(distToken, toMeters);
-        if (!distParsed.valid) {
-          logs.push(`Invalid distance at line ${lineNum}, skipping D record.`);
-          continue;
-        }
-
-        const inst = chosen.instCode ? instrumentLibrary[chosen.instCode] : undefined;
-        const defaultSigma = defaultDistanceSigma(
-          inst,
-          distParsed.planned ? 0 : parseFloat(distToken),
-          state.edmMode,
-          0,
-        );
-        const { sigma, source } = resolveLinearSigma(sigmas[0], defaultSigma);
-
-        const obs: DistanceObservation = {
-          id: obsId++,
-          type: 'dist',
-          subtype: 'ts',
-          instCode: chosen.instCode,
-          setId: chosen.setId,
-          from: chosen.from,
-          to: chosen.to,
-          obs: distParsed.value,
-          planned: distParsed.planned,
-          stdDev: sigma * toMeters,
-          sigmaSource: source,
-          hi: hi != null ? hi * toMeters : undefined,
-          ht: ht != null ? ht * toMeters : undefined,
-          mode: effectiveDistanceMode(),
-        };
-        pushObservation(obs);
-      } else if (code === 'A') {
-        const stationOrder = state.angleStationOrder ?? 'atfromto';
-        const angleCandidates: Array<{
-          instCode: string;
-          setId: string;
-          s1: string;
-          s2: string;
-          s3: string;
-          stdTokenIndex: number;
-          explicitInst: boolean;
-          angleParsed: { value: number; planned: boolean; valid: boolean };
-        }> = [];
-        const pushAngleCandidate = (
-          instCode: string,
-          setId: string,
-          s1: string,
-          s2: string,
-          s3: string,
-          angToken: string | undefined,
-          stdTokenIndex: number,
-          explicitInst: boolean,
-        ) => {
-          if (!s1 || !s2 || !s3 || stdTokenIndex < 0) return;
-          if (!angToken && !preanalysisMode) return;
-          const angleParsed = parseObservedAngleToken(angToken, 'dms');
-          if (!angleParsed.valid) return;
-          angleCandidates.push({
-            instCode,
-            setId,
-            s1,
-            s2,
-            s3,
-            stdTokenIndex,
-            explicitInst,
-            angleParsed,
-          });
-        };
-
-        const inlineTriplet = parts[1]?.includes(state.stationSeparator ?? '-')
-          ? splitStationPairToken(parts[1], state.stationSeparator ?? '-')
-          : [];
-        if (inlineTriplet.length === 3) {
-          pushAngleCandidate(
-            state.currentInstrument ?? '',
-            '',
-            inlineTriplet[0],
-            inlineTriplet[1],
-            inlineTriplet[2],
-            parts[2],
-            3,
-            false,
-          );
-        }
-        pushAngleCandidate(
-          state.currentInstrument ?? '',
-          '',
-          parts[1] ?? '',
-          parts[2] ?? '',
-          parts[3] ?? '',
-          parts[4],
-          5,
-          false,
-        );
-        pushAngleCandidate(
-          parts[1] ?? '',
-          '',
-          parts[2] ?? '',
-          parts[3] ?? '',
-          parts[4] ?? '',
-          parts[5],
-          6,
-          true,
-        );
-        pushAngleCandidate(
-          parts[1] ?? '',
-          parts[2] ?? '',
-          parts[3] ?? '',
-          parts[4] ?? '',
-          parts[5] ?? '',
-          parts[6],
-          7,
-          true,
-        );
-
-        if (angleCandidates.length === 0) {
-          logs.push(`Invalid angle at line ${lineNum}, skipping A record.`);
-          continue;
-        }
-        const scored = angleCandidates.map((candidate) => {
-          let score = 0;
-          if (stations[candidate.s1]) score += 2;
-          if (stations[candidate.s2]) score += 2;
-          if (stations[candidate.s3]) score += 2;
-          if (candidate.explicitInst) score += 1;
-          if (candidate.setId) score += 1;
-          if (candidate.instCode && instrumentLibrary[candidate.instCode]) score += 2;
-          if (
-            looksLikeNumericMeasurement(candidate.s1) ||
-            looksLikeNumericMeasurement(candidate.s2) ||
-            looksLikeNumericMeasurement(candidate.s3)
-          ) {
-            score -= 12;
-          }
-          return { candidate, score };
-        });
-        scored.sort((a, b) => b.score - a.score);
-        const best = scored[0];
-        const tie = scored.length > 1 && scored[1].score === best.score;
-        if (tie) {
-          const rewrite = 'Use explicit form: A <inst?> <set?> <at> <from> <to> <angle> [sigma].';
-          if (compatibilityMode === 'strict') {
-            addCompatibilityDiagnostic(
-              'ROLE_AMBIGUITY',
-              lineNum,
-              'A',
-              'multiple valid A-record interpretations were found.',
-              rewrite,
-              false,
-              'error',
-            );
-            continue;
-          }
-          addCompatibilityDiagnostic(
-            'ROLE_AMBIGUITY',
-            lineNum,
-            'A',
-            'multiple valid A-record interpretations were found; applied legacy fallback.',
-            rewrite,
-            true,
-          );
-        }
-
-        const chosen = best.candidate;
-        const instCode = chosen.instCode;
-        const setId = chosen.setId;
-        const s1 = chosen.s1;
-        const s2 = chosen.s2;
-        const s3 = chosen.s3;
-        const at = stationOrder === 'atfromto' ? s1 : s2;
-        const from = stationOrder === 'atfromto' ? s2 : s1;
-        const to = s3;
-        if (
-          rejectNumericStationTokens('A', lineNum, [
-            { role: 'AT', value: at },
-            { role: 'FROM', value: from },
-            { role: 'TO', value: to },
-          ])
-        ) {
-          continue;
-        }
-        const angleParsed = chosen.angleParsed;
-        const angleRad = angleParsed.value;
-        const { sigmas } = extractSigmaTokens(parts.slice(chosen.stdTokenIndex), 1);
-
-        const inst = instCode ? instrumentLibrary[instCode] : undefined;
-        const defaultSigma = defaultHorizontalAngleSigmaSec(inst);
-        const resolved = resolveAngularSigma(sigmas[0], defaultSigma);
-        let sigmaSec = resolved.sigma;
-        if (angleRad >= Math.PI) sigmaSec *= FACE2_WEIGHT;
-
-        let useDir = state.angleMode === 'dir';
-        if (state.angleMode === 'auto' && !angleParsed.planned) {
-          const azTo = azimuthFromTo(stations, at, to);
-          const azFrom = azimuthFromTo(stations, at, from);
-          if (azTo && azFrom) {
-            let predAngle = azTo.az - azFrom.az;
-            if (predAngle < 0) predAngle += 2 * Math.PI;
-            const rAngle = Math.abs(wrapToPi(angleRad - predAngle));
-
-            const predDir = azTo.az;
-            const r0 = wrapToPi(angleRad - predDir);
-            const r1 = wrapToPi(angleRad + Math.PI - predDir);
-            const rDir = Math.abs(r0) <= Math.abs(r1) ? Math.abs(r0) : Math.abs(r1);
-
-            const clearlyDir =
-              rDir <= AMODE_AUTO_MAX_DIR_RAD && rAngle - rDir >= AMODE_AUTO_MARGIN_RAD;
-            useDir = clearlyDir;
-            if (!useDir && rDir < rAngle && rDir <= AMODE_AUTO_MAX_DIR_RAD) {
-              logs.push(
-                `A record ambiguous at line ${lineNum}; kept ANGLE (rDir=${(
-                  rDir *
-                  RAD_TO_DEG *
-                  3600
-                ).toFixed(1)}", rAng=${(rAngle * RAD_TO_DEG * 3600).toFixed(
-                  1,
-                )}"). Use ".AMODE DIR" for azimuth mode.`,
-              );
-            }
-          }
-        }
-
-        if (useDir) {
-          const rotatedDir = applyPlanRotation(angleRad, state);
-          const obs: DirObservation = {
-            id: obsId++,
-            type: 'dir',
-            instCode,
-            setId,
-            from: at,
-            to,
-            obs: rotatedDir,
-            planned: angleParsed.planned,
-            stdDev: sigmaSec * SEC_TO_RAD,
-            sigmaSource: resolved.source,
-            flip180: true,
-          };
-          pushObservation(obs);
-          logs.push(`A record classified as DIR at line ${lineNum} (${at}-${to})`);
-        } else {
-          const obs: AngleObservation = {
-            id: obsId++,
-            type: 'angle',
-            instCode,
-            setId,
-            at,
-            from,
-            to,
-            obs: angleRad,
-            planned: angleParsed.planned,
-            stdDev: sigmaSec * SEC_TO_RAD,
-            sigmaSource: resolved.source,
-          };
-          pushObservation(obs);
-        }
-      } else if (code === 'V') {
-        // Vertical observation: zenith (slope mode) or deltaH (delta mode)
-        const { from, to, nextIndex } = parseFromTo(parts, 1, state.stationSeparator ?? '-');
-        const valToken = parts[nextIndex];
-        const stdTokens = parts.slice(nextIndex + 1);
-        const { sigmas } = extractSigmaTokens(stdTokens, 1);
-        const toMeters = linearToMetersFactor();
-        const inst = state.currentInstrument
-          ? instrumentLibrary[state.currentInstrument]
-          : undefined;
-        if (state.deltaMode === 'horiz') {
-          const dhParsed = parseObservedLinearToken(valToken, toMeters);
-          if (!dhParsed.valid) {
-            logs.push(`Invalid vertical difference at line ${lineNum}, skipping V record.`);
-            continue;
-          }
-          const resolved = resolveLevelingSigma(sigmas[0], inst, 0, 'V', lineNum);
-          const std = resolved.sigma * toMeters;
-          const obs: LevelObservation = {
-            id: obsId++,
-            type: 'lev',
-            instCode: state.currentInstrument ?? '',
-            from,
-            to,
-            obs: dhParsed.value,
-            planned: dhParsed.planned,
-            lenKm: 0,
-            stdDev: std,
-            sigmaSource: resolved.source,
-          };
-          pushObservation(obs);
-        } else {
-          const zenParsed = parseObservedAngleToken(valToken, 'dd');
-          if (!zenParsed.valid) {
-            logs.push(`Invalid zenith at line ${lineNum}, skipping V record.`);
-            continue;
-          }
-          if (state.threeReduceMode) {
-            logs.push(
-              `3REDUCE active at line ${lineNum}: V zenith record parsed for traceability and excluded from equations.`,
-            );
-            continue;
-          }
-          const base = defaultZenithSigmaSec(inst);
-          const resolved = resolveAngularSigma(sigmas[0], base);
-          pushObservation({
-            id: obsId++,
-            type: 'zenith',
-            instCode: state.currentInstrument ?? '',
-            from,
-            to,
-            obs: zenParsed.value,
-            planned: zenParsed.planned,
-            stdDev: resolved.sigma * SEC_TO_RAD,
-            sigmaSource: resolved.source,
-          });
-        }
-      } else if (code === 'DV') {
-        // Distance + vertical: in delta mode, HD + deltaH; in slope mode slope distance + zenith
-        const { from, to, nextIndex } = parseFromTo(parts, 1, state.stationSeparator ?? '-');
-        const toMeters = linearToMetersFactor();
-        const instCode = state.currentInstrument ?? '';
-        const inst = instCode ? instrumentLibrary[instCode] : undefined;
-        if (state.deltaMode === 'horiz') {
-          const distParsed = parseObservedLinearToken(parts[nextIndex], toMeters);
-          const dhParsed = parseObservedLinearToken(parts[nextIndex + 1], toMeters);
-          if (!distParsed.valid || !dhParsed.valid) {
-            logs.push(`Invalid DV horizontal record at line ${lineNum}, skipping.`);
-            continue;
-          }
-          const restTokens = parts.slice(nextIndex + 2);
-          const { sigmas, rest } = extractSigmaTokens(restTokens, 2);
-          const { hi, ht } = extractHiHt(rest);
-          const defaultDist = defaultDistanceSigma(
-            inst,
-            distParsed.planned ? 0 : parseFloat(parts[nextIndex]),
-            state.edmMode,
-            0,
-          );
-          const distResolved = resolveLinearSigma(sigmas[0], defaultDist);
-          const dhResolved = resolveLevelingSigma(
-            sigmas[1],
-            inst,
-            Math.abs(distParsed.value),
-            'DV',
-            lineNum,
-          );
-          pushObservation({
-            id: obsId++,
-            type: 'dist',
-            subtype: 'ts',
-            instCode,
-            setId: '',
-            from,
-            to,
-            obs: distParsed.value,
-            planned: distParsed.planned,
-            stdDev: distResolved.sigma * toMeters,
-            sigmaSource: distResolved.source,
-            hi: hi != null ? hi * toMeters : undefined,
-            ht: ht != null ? ht * toMeters : undefined,
-            mode: 'horiz',
-          });
-          pushObservation({
-            id: obsId++,
-            type: 'lev',
-            instCode,
-            from,
-            to,
-            obs: dhParsed.value,
-            planned: dhParsed.planned,
-            lenKm: 0,
-            stdDev: dhResolved.sigma * toMeters,
-            sigmaSource: dhResolved.source,
-          });
-        } else {
-          const distParsed = parseObservedLinearToken(parts[nextIndex], toMeters);
-          const zen = parts[nextIndex + 1];
-          const zenParsed = parseObservedAngleToken(zen, 'dd');
-          if (!distParsed.valid || !zenParsed.valid) {
-            logs.push(`Invalid DV slope record at line ${lineNum}, skipping.`);
-            continue;
-          }
-          const restTokens = parts.slice(nextIndex + 2);
-          const { sigmas, rest } = extractSigmaTokens(restTokens, 2);
-          const { hi, ht } = extractHiHt(rest);
-          const defaultDist = defaultDistanceSigma(
-            inst,
-            distParsed.planned ? 0 : parseFloat(parts[nextIndex]),
-            state.edmMode,
-            0,
-          );
-          const distResolved = resolveLinearSigma(sigmas[0], defaultDist);
-          const defaultZen = defaultZenithSigmaSec(inst);
-          const zenResolved = resolveAngularSigma(sigmas[1], defaultZen);
-          let distObs = distParsed.value;
-          let distStdDev = distResolved.sigma * toMeters;
-          let distMode: 'slope' | 'horiz' = effectiveDistanceMode();
-          if (state.threeReduceMode) {
-            const sigmaZ = zenResolved.sigma * SEC_TO_RAD;
-            distObs = distParsed.value * Math.sin(zenParsed.value);
-            distStdDev = Math.sqrt(
-              (Math.sin(zenParsed.value) * distResolved.sigma * toMeters) ** 2 +
-                (distParsed.value * Math.cos(zenParsed.value) * sigmaZ) ** 2,
-            );
-            distMode = 'horiz';
-          }
-          pushObservation({
-            id: obsId++,
-            type: 'dist',
-            subtype: 'ts',
-            instCode,
-            setId: '',
-            from,
-            to,
-            obs: distObs,
-            planned: distParsed.planned,
-            stdDev: distStdDev,
-            sigmaSource: distResolved.source,
-            hi: hi != null ? hi * toMeters : undefined,
-            ht: ht != null ? ht * toMeters : undefined,
-            mode: distMode,
-          });
-          if (!state.threeReduceMode) {
-            pushObservation({
-              id: obsId++,
-              type: 'zenith',
-              instCode,
-              from,
-              to,
-              obs: zenParsed.value,
-              planned: zenParsed.planned,
-              stdDev: zenResolved.sigma * SEC_TO_RAD,
-              sigmaSource: zenResolved.source,
-              hi: hi != null ? hi * toMeters : undefined,
-              ht: ht != null ? ht * toMeters : undefined,
-            });
-          }
-        }
-      } else if (code === 'BM') {
+        if (handledConventionalPrimitive) {
+          obsId = conventionalObsIdRef.current;
+        } else if (code === 'BM') {
         // Bearing + measurements. Bearing stored/logged; dist parsed; zenith or deltaH captured based on mode
         const from = parts[1];
         const to = parts[2];
@@ -5179,6 +4687,7 @@ export const parseInput = (
         pushObservation(obs);
       } else {
         logs.push(`Unrecognized code "${code}" at line ${lineNum}, skipping`);
+      }
       }
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
