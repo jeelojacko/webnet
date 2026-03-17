@@ -65,37 +65,11 @@ import {
   DEFAULT_CANADA_CRS_ID,
   type CrsCatalogGroup,
 } from './engine/crsCatalog';
-import {
-  importExternalInput,
-  type ExternalImportAngleMode,
-  type ImportedDataset,
-  type ImportedInputNotice,
-} from './engine/importers';
-import {
-  buildImportReviewComparisonSummary,
-  buildImportReviewDisplayTextMap,
-  buildImportReviewModel,
-  buildImportReviewText,
-  convertImportedDatasetSlopeZenithToHd2D,
-  createEmptyImportReviewGroup,
-  createImportReviewGroupFromItem,
-  duplicateImportReviewItem,
-  insertImportReviewCommentRow,
-  isImportReviewMtaItem,
-  isImportReviewRawMeasurementItem,
-  moveImportReviewItem,
-  reorderImportReviewItemWithinGroup,
-  removeImportReviewGroup,
-  removeImportReviewItem,
-  type ImportReviewModel,
-  type ImportReviewComparisonMode,
-  type ImportReviewOutputPreset,
-  type ImportReviewRowTypeOverride,
-  type ImportReviewComparisonSummary,
-} from './engine/importReview';
+import { type ImportedInputNotice } from './engine/importers';
 import { isPreanalysisWhatIfCandidate } from './engine/preanalysis';
 import { type RunSessionOutcome, type RunSessionRequest } from './engine/runSession';
 import { useAdjustmentRunner } from './hooks/useAdjustmentRunner';
+import { useImportReviewWorkflow } from './hooks/useImportReviewWorkflow';
 import { useProjectOptionsState } from './hooks/useProjectOptionsState';
 import { useQaSelection } from './hooks/useQaSelection';
 import { useRunComparisonState } from './hooks/useRunComparisonState';
@@ -404,8 +378,6 @@ const INDUSTRY_DEFAULT_INSTRUMENT_CODE = 'S9';
 const INDUSTRY_DEFAULT_INSTRUMENT: Instrument = createDefaultS9Instrument();
 
 type TabKey = 'report' | 'processing-summary' | 'industry-output' | 'map';
-type FilePickerMode = 'replace' | 'compare';
-type ImportAnglePromptChoice = ExternalImportAngleMode;
 
 const getExportFormatTooltip = (format: ProjectExportFormat): string => {
   switch (format) {
@@ -451,14 +423,6 @@ const getExportFormatLabel = (format: ProjectExportFormat): string => {
       return 'Export output';
   }
 };
-type ImportFacePromptChoice = Extract<FaceNormalizationMode, 'on' | 'off'>;
-type PendingAnglePromptFile = {
-  file: File;
-  pickerMode: FilePickerMode;
-  angleMode: ImportAnglePromptChoice;
-  faceMode: ImportFacePromptChoice;
-};
-
 type ResolvedLevelLoopTolerancePreset = {
   id: string;
   label: string;
@@ -467,51 +431,6 @@ type ResolvedLevelLoopTolerancePreset = {
 
 const IMPORT_FILE_ACCEPT = '.dat,.txt,.sum,.rpt,.xml,.jxl,.jobxml,.htm,.html,.rw5,.cr5,.raw,.dbx';
 const PROJECT_FILE_ACCEPT = '.wnproj,.wnproj.json,.json';
-const IMPORT_ANGLE_PROMPT_FILE_RE = /\.(jxl|jobxml|htm|html)$/i;
-
-const requiresImportAngleModePrompt = (fileName: string): boolean =>
-  IMPORT_ANGLE_PROMPT_FILE_RE.test(fileName.trim());
-
-const buildReducedAngleRowTypeOverrides = (
-  reviewModel: ImportReviewModel,
-): Record<string, ImportReviewRowTypeOverride> => {
-  const overrides: Record<string, ImportReviewRowTypeOverride> = {};
-  reviewModel.items.forEach((item) => {
-    if (item.kind !== 'observation') return;
-    if (!item.setupId || !item.backsightId) return;
-    if (item.sourceObservationKind === 'measurement') {
-      overrides[item.id] = 'direction-measurement';
-      return;
-    }
-    if (item.sourceObservationKind === 'angle') {
-      overrides[item.id] = 'direction-angle';
-    }
-  });
-  return overrides;
-};
-
-type ImportReviewState = {
-  sourceName: string;
-  notice: ImportedInputNotice;
-  dataset: ImportedDataset;
-  reviewModel: ImportReviewModel;
-  comparisonSourceName?: string;
-  comparisonNotice?: ImportedInputNotice;
-  comparisonDataset?: ImportedDataset;
-  comparisonSummary?: ImportReviewComparisonSummary | null;
-  comparisonMode: ImportReviewComparisonMode;
-  excludedItemIds: Set<string>;
-  fixedItemIds: Set<string>;
-  groupLabels: Record<string, string>;
-  groupComments: Record<string, string>;
-  rowOverrides: Record<string, string>;
-  rowTypeOverrides: Record<string, ImportReviewRowTypeOverride>;
-  preset: ImportReviewOutputPreset;
-  importFaceNormalizationMode: ImportFacePromptChoice;
-  importAngleMode?: ImportAnglePromptChoice;
-  force2DOutput: boolean;
-  nextSyntheticId: number;
-};
 
 const SETTINGS_TOOLTIPS = {
   solveProfile:
@@ -994,10 +913,6 @@ const App: React.FC<AppProps> = ({
     setInput,
     importNotice,
     setImportNotice,
-    importReviewState,
-    setImportReviewState,
-    pendingAnglePromptFile,
-    setPendingAnglePromptFile,
     projectIncludeFiles,
     setProjectIncludeFiles,
     result,
@@ -1017,14 +932,7 @@ const App: React.FC<AppProps> = ({
     activeTab,
     setActiveTab,
     clearWorkspaceArtifacts,
-  } = useWorkspaceProjectState<
-    ImportedInputNotice,
-    ImportReviewState,
-    PendingAnglePromptFile,
-    RunDiagnostics,
-    RunSettingsSnapshot,
-    TabKey
-  >({
+  } = useWorkspaceProjectState<ImportedInputNotice, RunDiagnostics, RunSettingsSnapshot, TabKey>({
     initialInput: DEFAULT_INPUT,
     initialExportFormat: 'points',
     initialActiveTab: 'report',
@@ -1253,11 +1161,55 @@ const App: React.FC<AppProps> = ({
   const projectFileInputRef = useRef<HTMLInputElement | null>(null);
   const geoidSourceFileInputRef = useRef<HTMLInputElement | null>(null);
   const inputPaneRef = useRef<InputPaneHandle | null>(null);
-  const filePickerModeRef = useRef<FilePickerMode>('replace');
   const adjustedPointsDragRef = useRef<AdjustedPointsColumnId | null>(null);
   const layoutRef = useRef<HTMLDivElement | null>(null);
   const settingsModalContentRef = useRef<HTMLDivElement | null>(null);
   const isResizingRef = useRef(false);
+  const {
+    importReviewState,
+    pendingAnglePromptFile,
+    triggerFileSelect,
+    handleFileChange,
+    handleImportAnglePromptSetAngleMode,
+    handleImportAnglePromptSetFaceMode,
+    handleImportAnglePromptAccept,
+    handleImportAnglePromptCancel,
+    handleImportReviewToggleExclude,
+    handleImportReviewToggleFixed,
+    handleImportReviewSetBulkExcludeMta,
+    handleImportReviewSetBulkExcludeRaw,
+    handleImportReviewConvertSlopeZenithToHd2D,
+    handleImportReviewSetGroupExcluded,
+    handleImportReviewCommentChange,
+    handleImportReviewGroupLabelChange,
+    handleImportReviewRowTextChange,
+    handleImportReviewRowTypeChange,
+    handleImportReviewPresetChange,
+    handleImportReviewComparisonModeChange,
+    handleImportReviewDuplicateRow,
+    handleImportReviewInsertCommentBelow,
+    handleImportReviewCreateSetupGroup,
+    handleImportReviewCreateEmptySetupGroup,
+    handleImportReviewMoveRow,
+    handleImportReviewReorderRow,
+    handleImportReviewRemoveRow,
+    handleImportReviewRemoveGroup,
+    handleCancelImportReview,
+    handleImportReviewCompareFile,
+    handleImportReviewClearComparison,
+    handleApplyImportReview,
+    importReviewDisplayedRows,
+    importReviewMoveTargetGroups,
+    resetImportReviewWorkflow,
+  } = useImportReviewWorkflow({
+    coordMode: parseSettings.coordMode,
+    faceNormalizationMode: parseSettings.faceNormalizationMode,
+    fileInputRef,
+    setInput,
+    setProjectIncludeFiles,
+    setImportNotice,
+    resetWorkspaceForImportedInput: resetRunStateAfterImportedInput,
+  });
   const { pipelineState, run: runAdjustment, cancel: cancelAdjustment } =
     useAdjustmentRunner(runWithExclusionsDirect);
 
@@ -4608,7 +4560,7 @@ const App: React.FC<AppProps> = ({
     downloadNamedTextFile(suggestedName, text, isXmlExport ? 'application/xml' : 'text/plain');
   };
 
-  const clearRunStateAfterWorkspaceLoad = () => {
+  function resetRunStateAfterImportedInput() {
     clearWorkspaceArtifacts();
     setExcludedIds(new Set());
     setOverrides({});
@@ -4616,7 +4568,8 @@ const App: React.FC<AppProps> = ({
     setActiveClusterApprovedMerges([]);
     clearRunComparisonState();
     clearSelection();
-  };
+    resetImportReviewWorkflow();
+  }
 
   const handleExportAdjustedPoints = async () => {
     if (!result) return;
@@ -4902,7 +4855,7 @@ const App: React.FC<AppProps> = ({
       setIsAdjustedPointsTransformSelectOpen(false);
       setAdjustedPointsTransformSelectedDraft([]);
 
-      clearRunStateAfterWorkspaceLoad();
+      resetRunStateAfterImportedInput();
       setImportNotice({
         title: 'Project loaded',
         detailLines: [`Loaded ${file.name}.`, 'Run Adjust to regenerate reports and outputs.'],
@@ -4910,137 +4863,6 @@ const App: React.FC<AppProps> = ({
     };
     reader.readAsText(file);
     e.target.value = '';
-  };
-
-  const processImportedFileSelection = (
-    file: File,
-    pickerMode: FilePickerMode,
-    angleMode?: ImportAnglePromptChoice,
-    faceMode?: ImportFacePromptChoice,
-  ) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      const text = typeof reader.result === 'string' ? reader.result : '';
-      const imported = importExternalInput(text, file.name, angleMode != null ? { angleMode } : {});
-      if (pickerMode === 'compare' && importReviewState) {
-        if (imported.detected && imported.dataset && imported.notice) {
-          setImportReviewState((prev) =>
-            prev
-              ? {
-                  ...prev,
-                  comparisonSourceName: file.name,
-                  comparisonNotice: imported.notice,
-                  comparisonDataset: imported.dataset,
-                  comparisonSummary: buildImportReviewComparisonSummary(
-                    prev.dataset,
-                    prev.sourceName,
-                    imported.dataset!,
-                    file.name,
-                    prev.comparisonMode,
-                  ),
-                }
-              : prev,
-          );
-        }
-        return;
-      }
-      if (imported.detected && imported.dataset && imported.notice) {
-        const reviewModel = buildImportReviewModel(imported.dataset);
-        const importedPromptedFile = requiresImportAngleModePrompt(file.name);
-        const useReducedDirectionPreset = importedPromptedFile && angleMode === 'reduced';
-        const useDirectionSetPreset =
-          importedPromptedFile && (angleMode === 'reduced' || faceMode != null);
-        const rowTypeOverrides = useReducedDirectionPreset
-          ? buildReducedAngleRowTypeOverrides(reviewModel)
-          : {};
-        const selectedFaceMode: ImportFacePromptChoice =
-          faceMode ?? (parseSettings.faceNormalizationMode === 'off' ? 'off' : 'on');
-        const groupComments = Object.fromEntries(
-          reviewModel.groups.map((group) => [group.key, group.defaultComment]),
-        );
-        const groupLabels = Object.fromEntries(
-          reviewModel.groups.map((group) => [group.key, group.label]),
-        );
-        setImportReviewState({
-          sourceName: file.name,
-          notice: imported.notice,
-          dataset: imported.dataset,
-          reviewModel,
-          comparisonSummary: null,
-          comparisonMode: 'non-mta-only',
-          excludedItemIds: new Set(),
-          fixedItemIds: new Set(),
-          groupLabels,
-          groupComments,
-          rowOverrides: {},
-          rowTypeOverrides,
-          preset: useDirectionSetPreset ? 'ts-direction-set' : 'clean-webnet',
-          importFaceNormalizationMode: selectedFaceMode,
-          importAngleMode: angleMode,
-          force2DOutput: false,
-          nextSyntheticId: 1,
-        });
-      } else {
-        setInput(imported.text);
-        setProjectIncludeFiles({});
-        setImportNotice(imported.notice ?? null);
-        setImportReviewState(null);
-        setExcludedIds(new Set());
-        setOverrides({});
-        setClusterReviewDecisions({});
-        setActiveClusterApprovedMerges([]);
-      }
-    };
-    reader.readAsText(file);
-  };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const pickerMode = filePickerModeRef.current;
-    filePickerModeRef.current = 'replace';
-    e.target.value = '';
-    if (pickerMode === 'replace' && requiresImportAngleModePrompt(file.name)) {
-      setPendingAnglePromptFile({
-        file,
-        pickerMode,
-        angleMode: 'reduced',
-        faceMode: parseSettings.faceNormalizationMode === 'off' ? 'off' : 'on',
-      });
-      return;
-    }
-    processImportedFileSelection(file, pickerMode);
-  };
-
-  const handleImportAnglePromptSetAngleMode = (choice: ImportAnglePromptChoice) => {
-    setPendingAnglePromptFile((prev) => {
-      if (!prev) return prev;
-      return { ...prev, angleMode: choice };
-    });
-  };
-
-  const handleImportAnglePromptSetFaceMode = (choice: ImportFacePromptChoice) => {
-    setPendingAnglePromptFile((prev) => {
-      if (!prev) return prev;
-      return { ...prev, faceMode: choice };
-    });
-  };
-
-  const handleImportAnglePromptAccept = () => {
-    setPendingAnglePromptFile((prev) => {
-      if (!prev) return prev;
-      processImportedFileSelection(prev.file, prev.pickerMode, prev.angleMode, prev.faceMode);
-      return null;
-    });
-  };
-
-  const handleImportAnglePromptCancel = () => {
-    setPendingAnglePromptFile(null);
-  };
-
-  const triggerFileSelect = (mode: FilePickerMode = 'replace') => {
-    filePickerModeRef.current = mode;
-    fileInputRef.current?.click();
   };
 
   const triggerProjectFileSelect = () => {
@@ -5051,444 +4873,6 @@ const App: React.FC<AppProps> = ({
     setInput(value);
     if (importNotice) setImportNotice(null);
   };
-
-  const handleImportReviewToggleExclude = (itemId: string) => {
-    setImportReviewState((prev) => {
-      if (!prev) return prev;
-      const nextExcluded = new Set(prev.excludedItemIds);
-      if (nextExcluded.has(itemId)) nextExcluded.delete(itemId);
-      else nextExcluded.add(itemId);
-      return { ...prev, excludedItemIds: nextExcluded };
-    });
-  };
-
-  const handleImportReviewToggleFixed = (itemId: string) => {
-    setImportReviewState((prev) => {
-      if (!prev) return prev;
-      const nextFixed = new Set(prev.fixedItemIds);
-      if (nextFixed.has(itemId)) nextFixed.delete(itemId);
-      else nextFixed.add(itemId);
-      return { ...prev, fixedItemIds: nextFixed };
-    });
-  };
-
-  const handleImportReviewSetBulkExcludeMta = (excluded: boolean) => {
-    setImportReviewState((prev) => {
-      if (!prev) return prev;
-      const nextExcluded = new Set(prev.excludedItemIds);
-      prev.reviewModel.items
-        .filter((item) => isImportReviewMtaItem(item))
-        .forEach((item) => {
-          if (excluded) nextExcluded.add(item.id);
-          else nextExcluded.delete(item.id);
-        });
-      return { ...prev, excludedItemIds: nextExcluded };
-    });
-  };
-
-  const handleImportReviewSetBulkExcludeRaw = (excluded: boolean) => {
-    setImportReviewState((prev) => {
-      if (!prev) return prev;
-      const nextExcluded = new Set(prev.excludedItemIds);
-      prev.reviewModel.items
-        .filter((item) => isImportReviewRawMeasurementItem(item))
-        .forEach((item) => {
-          if (excluded) nextExcluded.add(item.id);
-          else nextExcluded.delete(item.id);
-        });
-      return { ...prev, excludedItemIds: nextExcluded };
-    });
-  };
-
-  const handleImportReviewConvertSlopeZenithToHd2D = () => {
-    setImportReviewState((prev) => {
-      if (!prev) return prev;
-      const nextDataset = convertImportedDatasetSlopeZenithToHd2D(prev.dataset);
-      const nextReviewModel = buildImportReviewModel(nextDataset);
-      const itemIds = new Set(nextReviewModel.items.map((item) => item.id));
-      const nextExcludedItemIds = new Set(
-        [...prev.excludedItemIds].filter((itemId) => itemIds.has(itemId)),
-      );
-      const nextFixedItemIds = new Set(
-        [...prev.fixedItemIds].filter((itemId) => itemIds.has(itemId)),
-      );
-      const nextGroupLabels = Object.fromEntries(
-        nextReviewModel.groups.map((group) => [
-          group.key,
-          prev.groupLabels[group.key] ?? group.label,
-        ]),
-      );
-      const nextGroupComments = Object.fromEntries(
-        nextReviewModel.groups.map((group) => [
-          group.key,
-          prev.groupComments[group.key] ?? group.defaultComment,
-        ]),
-      );
-      return {
-        ...prev,
-        dataset: nextDataset,
-        reviewModel: nextReviewModel,
-        groupLabels: nextGroupLabels,
-        groupComments: nextGroupComments,
-        excludedItemIds: nextExcludedItemIds,
-        fixedItemIds: nextFixedItemIds,
-        rowOverrides: {},
-        rowTypeOverrides: {},
-        comparisonSourceName: undefined,
-        comparisonNotice: undefined,
-        comparisonDataset: undefined,
-        comparisonSummary: null,
-        force2DOutput: true,
-      };
-    });
-  };
-
-  const handleImportReviewSetGroupExcluded = (groupKey: string, excluded: boolean) => {
-    setImportReviewState((prev) => {
-      if (!prev) return prev;
-      const group = prev.reviewModel.groups.find((entry) => entry.key === groupKey);
-      if (!group) return prev;
-      const itemLookup = new Map(prev.reviewModel.items.map((item) => [item.id, item]));
-      const nextExcluded = new Set(prev.excludedItemIds);
-      group.itemIds
-        .map((itemId) => itemLookup.get(itemId))
-        .filter((item): item is Exclude<typeof item, undefined> => Boolean(item))
-        .filter((item) => item.kind === 'observation')
-        .forEach((item) => {
-          if (excluded) nextExcluded.add(item.id);
-          else nextExcluded.delete(item.id);
-        });
-      return { ...prev, excludedItemIds: nextExcluded };
-    });
-  };
-
-  const handleImportReviewCommentChange = (groupKey: string, value: string) => {
-    setImportReviewState((prev) =>
-      prev
-        ? {
-            ...prev,
-            groupComments: {
-              ...prev.groupComments,
-              [groupKey]: value,
-            },
-          }
-        : prev,
-    );
-  };
-
-  const handleImportReviewGroupLabelChange = (groupKey: string, value: string) => {
-    setImportReviewState((prev) =>
-      prev
-        ? {
-            ...prev,
-            groupLabels: {
-              ...prev.groupLabels,
-              [groupKey]: value,
-            },
-          }
-        : prev,
-    );
-  };
-
-  const handleImportReviewRowTextChange = (itemId: string, value: string) => {
-    setImportReviewState((prev) =>
-      prev
-        ? {
-            ...prev,
-            rowOverrides: {
-              ...prev.rowOverrides,
-              [itemId]: value,
-            },
-          }
-        : prev,
-    );
-  };
-
-  const handleImportReviewRowTypeChange = (itemId: string, value: ImportReviewRowTypeOverride) => {
-    setImportReviewState((prev) =>
-      prev
-        ? {
-            ...prev,
-            rowTypeOverrides: {
-              ...prev.rowTypeOverrides,
-              [itemId]: value,
-            },
-          }
-        : prev,
-    );
-  };
-
-  const handleImportReviewPresetChange = (preset: ImportReviewOutputPreset) => {
-    setImportReviewState((prev) => (prev ? { ...prev, preset } : prev));
-  };
-
-  const handleImportReviewComparisonModeChange = (mode: ImportReviewComparisonMode) => {
-    setImportReviewState((prev) => {
-      if (!prev) return prev;
-      return {
-        ...prev,
-        comparisonMode: mode,
-        comparisonSummary:
-          prev.comparisonDataset && prev.comparisonSourceName
-            ? buildImportReviewComparisonSummary(
-                prev.dataset,
-                prev.sourceName,
-                prev.comparisonDataset,
-                prev.comparisonSourceName,
-                mode,
-              )
-            : prev.comparisonSummary,
-      };
-    });
-  };
-
-  const handleImportReviewDuplicateRow = (itemId: string) => {
-    setImportReviewState((prev) => {
-      if (!prev) return prev;
-      const nextId = `synthetic:${prev.nextSyntheticId}`;
-      const sourceOverride = prev.rowOverrides[itemId];
-      const sourceRowTypeOverride = prev.rowTypeOverrides[itemId];
-      const nextFixed = new Set(prev.fixedItemIds);
-      if (nextFixed.has(itemId)) nextFixed.add(nextId);
-      return {
-        ...prev,
-        reviewModel: duplicateImportReviewItem(prev.reviewModel, itemId, nextId),
-        fixedItemIds: nextFixed,
-        rowOverrides:
-          sourceOverride != null
-            ? {
-                ...prev.rowOverrides,
-                [nextId]: sourceOverride,
-              }
-            : prev.rowOverrides,
-        rowTypeOverrides:
-          sourceRowTypeOverride != null
-            ? {
-                ...prev.rowTypeOverrides,
-                [nextId]: sourceRowTypeOverride,
-              }
-            : prev.rowTypeOverrides,
-        nextSyntheticId: prev.nextSyntheticId + 1,
-      };
-    });
-  };
-
-  const handleImportReviewInsertCommentBelow = (itemId: string) => {
-    setImportReviewState((prev) => {
-      if (!prev) return prev;
-      const nextId = `synthetic:${prev.nextSyntheticId}`;
-      return {
-        ...prev,
-        reviewModel: insertImportReviewCommentRow(prev.reviewModel, itemId, nextId),
-        rowOverrides: {
-          ...prev.rowOverrides,
-          [nextId]: '# COMMENT',
-        },
-        nextSyntheticId: prev.nextSyntheticId + 1,
-      };
-    });
-  };
-
-  const handleImportReviewCreateSetupGroup = (itemId: string) => {
-    setImportReviewState((prev) => {
-      if (!prev) return prev;
-      const sourceItem = prev.reviewModel.items.find((item) => item.id === itemId);
-      if (!sourceItem) return prev;
-      const suffix = prev.nextSyntheticId;
-      const setupToken = sourceItem.setupId ? ` ${sourceItem.setupId}` : '';
-      const label = `Custom Setup${setupToken} ${suffix}`;
-      const defaultComment = `CUSTOM SETUP${setupToken} ${suffix}`.toUpperCase();
-      const groupKey = `synthetic-group:${suffix}`;
-      return {
-        ...prev,
-        reviewModel: createImportReviewGroupFromItem(
-          prev.reviewModel,
-          itemId,
-          groupKey,
-          label,
-          defaultComment,
-        ),
-        groupLabels: {
-          ...prev.groupLabels,
-          [groupKey]: label,
-        },
-        groupComments: {
-          ...prev.groupComments,
-          [groupKey]: defaultComment,
-        },
-        nextSyntheticId: prev.nextSyntheticId + 1,
-      };
-    });
-  };
-
-  const handleImportReviewCreateEmptySetupGroup = () => {
-    setImportReviewState((prev) => {
-      if (!prev) return prev;
-      const suffix = prev.nextSyntheticId;
-      const groupKey = `synthetic-group:${suffix}`;
-      const label = `Custom Setup ${suffix}`;
-      const defaultComment = `CUSTOM SETUP ${suffix}`;
-      const lastNonControlGroup =
-        [...prev.reviewModel.groups].reverse().find((group) => group.kind !== 'control')?.key ??
-        'control';
-      return {
-        ...prev,
-        reviewModel: createEmptyImportReviewGroup(
-          prev.reviewModel,
-          groupKey,
-          label,
-          defaultComment,
-          lastNonControlGroup,
-        ),
-        groupLabels: {
-          ...prev.groupLabels,
-          [groupKey]: label,
-        },
-        groupComments: {
-          ...prev.groupComments,
-          [groupKey]: defaultComment,
-        },
-        nextSyntheticId: prev.nextSyntheticId + 1,
-      };
-    });
-  };
-
-  const handleImportReviewMoveRow = (itemId: string, groupKey: string) => {
-    setImportReviewState((prev) =>
-      prev
-        ? {
-            ...prev,
-            reviewModel: moveImportReviewItem(prev.reviewModel, itemId, groupKey),
-          }
-        : prev,
-    );
-  };
-
-  const handleImportReviewReorderRow = (itemId: string, direction: 'up' | 'down') => {
-    setImportReviewState((prev) =>
-      prev
-        ? {
-            ...prev,
-            reviewModel: reorderImportReviewItemWithinGroup(prev.reviewModel, itemId, direction),
-          }
-        : prev,
-    );
-  };
-
-  const handleImportReviewRemoveRow = (itemId: string) => {
-    setImportReviewState((prev) => {
-      if (!prev) return prev;
-      const nextExcluded = new Set(prev.excludedItemIds);
-      nextExcluded.delete(itemId);
-      const nextFixed = new Set(prev.fixedItemIds);
-      nextFixed.delete(itemId);
-      const nextRowOverrides = { ...prev.rowOverrides };
-      const nextRowTypeOverrides = { ...prev.rowTypeOverrides };
-      delete nextRowOverrides[itemId];
-      delete nextRowTypeOverrides[itemId];
-      return {
-        ...prev,
-        reviewModel: removeImportReviewItem(prev.reviewModel, itemId),
-        excludedItemIds: nextExcluded,
-        fixedItemIds: nextFixed,
-        rowOverrides: nextRowOverrides,
-        rowTypeOverrides: nextRowTypeOverrides,
-      };
-    });
-  };
-
-  const handleImportReviewRemoveGroup = (groupKey: string) => {
-    setImportReviewState((prev) => {
-      if (!prev) return prev;
-      const nextGroupLabels = { ...prev.groupLabels };
-      const nextGroupComments = { ...prev.groupComments };
-      delete nextGroupLabels[groupKey];
-      delete nextGroupComments[groupKey];
-      return {
-        ...prev,
-        reviewModel: removeImportReviewGroup(prev.reviewModel, groupKey),
-        groupLabels: nextGroupLabels,
-        groupComments: nextGroupComments,
-      };
-    });
-  };
-
-  const handleCancelImportReview = () => {
-    setImportReviewState(null);
-  };
-
-  const handleImportReviewCompareFile = () => {
-    triggerFileSelect('compare');
-  };
-
-  const handleImportReviewClearComparison = () => {
-    setImportReviewState((prev) =>
-      prev
-        ? {
-            ...prev,
-            comparisonSourceName: undefined,
-            comparisonNotice: undefined,
-            comparisonDataset: undefined,
-            comparisonSummary: null,
-          }
-        : prev,
-    );
-  };
-
-  const handleApplyImportReview = () => {
-    if (!importReviewState) return;
-    const includedItemIds = new Set(
-      importReviewState.reviewModel.items
-        .filter((item) => !importReviewState.excludedItemIds.has(item.id))
-        .map((item) => item.id),
-    );
-    const nextInput = buildImportReviewText(
-      importReviewState.dataset,
-      importReviewState.reviewModel,
-      {
-        includedItemIds,
-        groupComments: importReviewState.groupComments,
-        rowOverrides: importReviewState.rowOverrides,
-        rowTypeOverrides: importReviewState.rowTypeOverrides,
-        fixedItemIds: importReviewState.fixedItemIds,
-        preset: importReviewState.preset,
-        faceNormalizationMode: importReviewState.importFaceNormalizationMode,
-        emitDirectionFaceHints: true,
-        coordMode: importReviewState.force2DOutput ? '2D' : parseSettings.coordMode,
-        force2D: importReviewState.force2DOutput,
-      },
-    );
-    setInput(nextInput);
-    setProjectIncludeFiles({});
-    setImportNotice(importReviewState.notice);
-    setImportReviewState(null);
-    setExcludedIds(new Set());
-    setOverrides({});
-    setClusterReviewDecisions({});
-    setActiveClusterApprovedMerges([]);
-  };
-
-  const importReviewDisplayedRows = useMemo(() => {
-    if (!importReviewState) return {};
-    return buildImportReviewDisplayTextMap(
-      importReviewState.dataset,
-      importReviewState.reviewModel,
-      importReviewState.preset,
-      importReviewState.force2DOutput ? '2D' : parseSettings.coordMode,
-      importReviewState.rowOverrides,
-      importReviewState.force2DOutput,
-    );
-  }, [importReviewState, parseSettings.coordMode]);
-
-  const importReviewMoveTargetGroups = useMemo(() => {
-    if (!importReviewState) return [];
-    return importReviewState.reviewModel.groups
-      .filter((group) => group.kind !== 'control')
-      .map((group) => ({
-        key: group.key,
-        label: importReviewState.groupLabels[group.key] ?? group.label,
-      }));
-  }, [importReviewState]);
 
   const solveCore = (
     excludeSet: Set<number>,
@@ -6655,6 +6039,7 @@ const App: React.FC<AppProps> = ({
   const handleResetToLastRun = () => {
     if (lastRunInput != null) setInput(lastRunInput);
     clearWorkspaceArtifacts();
+    resetImportReviewWorkflow();
     setExcludedIds(new Set());
     setOverrides({});
     clearRunComparisonState();

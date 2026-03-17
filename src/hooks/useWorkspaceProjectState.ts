@@ -3,8 +3,6 @@ import type { AdjustmentResult, ProjectExportFormat } from '../types';
 
 interface UseWorkspaceProjectStateArgs<
   TImportNotice,
-  TImportReviewState,
-  TPendingAnglePromptFile,
   TRunDiagnostics,
   TRunSettingsSnapshot,
   TTabKey extends string,
@@ -17,8 +15,6 @@ interface UseWorkspaceProjectStateArgs<
 
 export const useWorkspaceProjectState = <
   TImportNotice,
-  TImportReviewState,
-  TPendingAnglePromptFile,
   TRunDiagnostics,
   TRunSettingsSnapshot,
   TTabKey extends string,
@@ -29,17 +25,12 @@ export const useWorkspaceProjectState = <
   initialImportNotice = null,
 }: UseWorkspaceProjectStateArgs<
   TImportNotice,
-  TImportReviewState,
-  TPendingAnglePromptFile,
   TRunDiagnostics,
   TRunSettingsSnapshot,
   TTabKey
 >) => {
   const [input, setInput] = useState<string>(initialInput);
   const [importNotice, setImportNotice] = useState<TImportNotice | null>(initialImportNotice);
-  const [importReviewState, setImportReviewState] = useState<TImportReviewState | null>(null);
-  const [pendingAnglePromptFile, setPendingAnglePromptFile] =
-    useState<TPendingAnglePromptFile | null>(null);
   const [projectIncludeFiles, setProjectIncludeFiles] = useState<Record<string, string>>({});
   const [result, setResult] = useState<AdjustmentResult | null>(null);
   const [runDiagnostics, setRunDiagnostics] = useState<TRunDiagnostics | null>(null);
@@ -57,8 +48,6 @@ export const useWorkspaceProjectState = <
     setRunElapsedMs(null);
     setLastRunInput(null);
     setLastRunSettingsSnapshot(null);
-    setImportReviewState(null);
-    setPendingAnglePromptFile(null);
     setPendingEditorJumpLine(null);
   }, []);
 
@@ -67,10 +56,6 @@ export const useWorkspaceProjectState = <
     setInput,
     importNotice,
     setImportNotice,
-    importReviewState,
-    setImportReviewState,
-    pendingAnglePromptFile,
-    setPendingAnglePromptFile,
     projectIncludeFiles,
     setProjectIncludeFiles,
     result,

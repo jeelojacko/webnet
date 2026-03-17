@@ -15,7 +15,7 @@ describe('useWorkspaceProjectState', () => {
     const root: Root = createRoot(container);
 
     const Harness = () => {
-      const state = useWorkspaceProjectState<string, { id: string }, string, string, string, 'report'>({
+      const state = useWorkspaceProjectState<string, string, string, 'report'>({
         initialInput: 'INPUT',
         initialExportFormat: 'points',
         initialActiveTab: 'report',
@@ -23,8 +23,6 @@ describe('useWorkspaceProjectState', () => {
       });
 
       useEffect(() => {
-        state.setImportReviewState({ id: 'review' });
-        state.setPendingAnglePromptFile('prompt');
         state.setResult({ converged: true } as never);
         state.setRunDiagnostics('diag');
         state.setRunElapsedMs(12);
@@ -39,8 +37,6 @@ describe('useWorkspaceProjectState', () => {
           <div data-input>{state.input}</div>
           <div data-export>{state.exportFormat}</div>
           <div data-notice>{state.importNotice ?? '-'}</div>
-          <div data-review>{state.importReviewState ? 'set' : 'null'}</div>
-          <div data-prompt>{state.pendingAnglePromptFile ?? '-'}</div>
           <div data-result>{state.result ? 'set' : 'null'}</div>
           <div data-diagnostics>{state.runDiagnostics ?? '-'}</div>
           <div data-elapsed>{state.runElapsedMs == null ? 'null' : String(state.runElapsedMs)}</div>
@@ -58,8 +54,6 @@ describe('useWorkspaceProjectState', () => {
     expect(container.querySelector('[data-input]')?.textContent).toBe('INPUT');
     expect(container.querySelector('[data-export]')?.textContent).toBe('points');
     expect(container.querySelector('[data-notice]')?.textContent).toBe('notice');
-    expect(container.querySelector('[data-review]')?.textContent).toBe('null');
-    expect(container.querySelector('[data-prompt]')?.textContent).toBe('-');
     expect(container.querySelector('[data-result]')?.textContent).toBe('null');
     expect(container.querySelector('[data-diagnostics]')?.textContent).toBe('-');
     expect(container.querySelector('[data-elapsed]')?.textContent).toBe('null');

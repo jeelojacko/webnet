@@ -20,12 +20,20 @@
   - [x] Complete remaining Section 5.6 compatibility work
   - [x] Add browser-oriented large-project benchmark fixture coverage
 
+- [x] QA-focused workflow batches:
+  - [x] Add shared QA derived-data models for report/map comparison workflows
+  - [x] Add unified report/map selection state with suspect navigation and pinned review rows
+  - [x] Add in-memory run history, baseline pinning, comparison summaries, and thresholded QA diffing
+  - [x] Add deterministic QA bundle export presets with optional LandXML inclusion
+  - [x] Add dense-map guards (viewport clipping, label suppression, active-selection overlays) and extend browser benchmark coverage
+  - [x] Refine comparison/export UX: collapsible comparison panel, comparison reset on refresh, single export selector with points default, and bundled export descriptions
+
 - [ ] Architecture follow-up - phased implementation:
   - [ ] Phase 1 - `App.tsx` decomposition
     - [x] Extract run-comparison state/history into a dedicated hook
     - [x] Extract workspace/project state and workspace-artifact reset semantics into a dedicated hook
     - [x] Extract Project Options draft state and apply/cancel orchestration into dedicated hooks/modules
-    - [ ] Extract import-review workflow state and handlers into a dedicated hook/module
+    - [x] Extract import-review workflow state and handlers into a dedicated hook/module
     - [ ] Extract remaining top-level orchestration helpers so `App.tsx` becomes a shell/composition layer
   - [ ] Phase 2 - shared derived-model cleanup
     - [x] Add shared QA derived-data model for report/map comparison workflows
