@@ -10,7 +10,7 @@ import type {
 import {
   serializeImportedControlStationRecord,
   serializeImportedObservationRecord,
-} from './importers';
+} from './importedRecordSerialization';
 import type { CoordMode, FaceNormalizationMode } from '../types';
 
 export type ImportReviewItemKind = 'control' | 'observation' | 'comment';

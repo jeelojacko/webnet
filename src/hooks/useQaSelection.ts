@@ -1,12 +1,8 @@
 import { useCallback, useMemo, useState } from 'react';
 import type { DerivedQaResult, DerivedObservationRef } from '../engine/qaWorkflow';
+import type { WorkspaceSelectionState } from '../appStateTypes';
 
-export interface QaSelectionState {
-  stationId: string | null;
-  observationId: number | null;
-  sourceLine: number | null;
-  origin: 'report' | 'map' | 'suspect' | 'compare' | null;
-}
+export type QaSelectionState = WorkspaceSelectionState;
 
 const EMPTY_SELECTION: QaSelectionState = {
   stationId: null,
@@ -15,9 +11,20 @@ const EMPTY_SELECTION: QaSelectionState = {
   origin: null,
 };
 
-export const useQaSelection = (derivedResult: DerivedQaResult | null) => {
-  const [selection, setSelection] = useState<QaSelectionState>(EMPTY_SELECTION);
-  const [pinnedObservationIds, setPinnedObservationIds] = useState<number[]>([]);
+interface UseQaSelectionArgs {
+  initialSelection?: QaSelectionState;
+  initialPinnedObservationIds?: number[];
+}
+
+export const useQaSelection = (
+  derivedResult: DerivedQaResult | null,
+  {
+    initialSelection = EMPTY_SELECTION,
+    initialPinnedObservationIds = [],
+  }: UseQaSelectionArgs = {},
+) => {
+  const [selection, setSelection] = useState<QaSelectionState>(initialSelection);
+  const [pinnedObservationIds, setPinnedObservationIds] = useState<number[]>(initialPinnedObservationIds);
 
   const selectedObservation = useMemo<DerivedObservationRef | null>(() => {
     if (!derivedResult || selection.observationId == null) return null;
@@ -65,12 +72,24 @@ export const useQaSelection = (derivedResult: DerivedQaResult | null) => {
     setSelection(EMPTY_SELECTION);
   }, []);
 
+  const restoreSelection = useCallback((nextSelection: QaSelectionState) => {
+    setSelection(nextSelection);
+  }, []);
+
   const togglePinnedObservation = useCallback((observationId: number) => {
     setPinnedObservationIds((prev) =>
       prev.includes(observationId)
         ? prev.filter((entry) => entry !== observationId)
         : [...prev, observationId],
     );
+  }, []);
+
+  const restorePinnedObservationIds = useCallback((nextObservationIds: number[]) => {
+    setPinnedObservationIds(nextObservationIds);
+  }, []);
+
+  const clearPinnedObservations = useCallback(() => {
+    setPinnedObservationIds([]);
   }, []);
 
   const pinnedObservations = useMemo(
@@ -106,8 +125,12 @@ export const useQaSelection = (derivedResult: DerivedQaResult | null) => {
     selectObservation,
     selectStation,
     clearSelection,
+    restoreSelection,
+    pinnedObservationIds,
     pinnedObservations,
     togglePinnedObservation,
+    restorePinnedObservationIds,
+    clearPinnedObservations,
     selectNextSuspect,
     selectPreviousSuspect,
     hasSuspects: (derivedResult?.suspectObservationIds.length ?? 0) > 0,

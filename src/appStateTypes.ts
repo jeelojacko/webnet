@@ -1,5 +1,6 @@
 import type {
   AdjustedPointsColumnId,
+  AdjustedPointsExportSettings,
   AngleMode,
   CoordMode,
   CoordSystemDiagnosticCode,
@@ -24,11 +25,14 @@ import type {
   OrderMode,
   ParseCompatibilityDiagnostic,
   ParseCompatibilityMode,
+  ProjectExportFormat,
   ReductionUsageSummary,
   RobustMode,
   RunMode,
   TsCorrelationScope,
   VerticalReductionMode,
+  InstrumentLibrary,
+  CustomLevelLoopTolerancePreset,
 } from './types';
 
 export type Units = 'm' | 'ft';
@@ -54,11 +58,49 @@ export type ProjectOptionsTab =
   | 'special'
   | 'gps'
   | 'modeling';
+export type WorkspaceTabKey = 'report' | 'processing-summary' | 'industry-output' | 'map';
 export type CrsCatalogGroupFilter = 'all' | 'global' | 'canada-utm' | 'canada-mtm' | 'canada-provincial';
 export type ClusterReviewStatus = 'pending' | 'approve' | 'reject';
 export type ClusterReviewDecision = {
   status: ClusterReviewStatus;
   canonicalId: string;
+};
+export type WorkspaceSelectionState = {
+  stationId: string | null;
+  observationId: number | null;
+  sourceLine: number | null;
+  origin: 'report' | 'map' | 'suspect' | 'compare' | null;
+};
+export type WorkspaceViewState = {
+  activeTab: WorkspaceTabKey;
+  splitPercent: number;
+  isSidebarOpen: boolean;
+  selection: WorkspaceSelectionState;
+  pinnedObservationIds: number[];
+};
+export type WorkspaceComparisonViewState = {
+  stationMovementThreshold: number;
+  residualDeltaThreshold: number;
+};
+export type WorkspaceDraftSnapshot = {
+  input: string;
+  projectIncludeFiles: Record<string, string>;
+  settings: SettingsState;
+  parseSettings: ParseSettings;
+  exportFormat: ProjectExportFormat;
+  adjustedPointsExportSettings: AdjustedPointsExportSettings;
+  projectInstruments: InstrumentLibrary;
+  selectedInstrument: string;
+  levelLoopCustomPresets: CustomLevelLoopTolerancePreset[];
+  geoidSourceDataBase64: string | null;
+  geoidSourceDataLabel: string;
+  view: WorkspaceViewState;
+  comparisonView: WorkspaceComparisonViewState;
+};
+export type WorkspaceRecoveryRecord = {
+  version: 1;
+  savedAt: string;
+  snapshot: WorkspaceDraftSnapshot;
 };
 
 export type SettingsState = {

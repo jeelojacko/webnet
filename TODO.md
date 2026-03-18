@@ -28,6 +28,67 @@
   - [x] Add dense-map guards (viewport clipping, label suppression, active-selection overlays) and extend browser benchmark coverage
   - [x] Refine comparison/export UX: collapsible comparison panel, comparison reset on refresh, single export selector with points default, and bundled export descriptions
 
+- [ ] WebNet next-cycle plan - shell hardening, draft recovery, and faster QA reruns:
+  - [x] Phase 0 - backlog codification
+    - [x] Add the full phased implementation plan to TODO before code changes
+    - [x] Break each phase into explicit checklist items instead of summary-only bullets
+    - [x] Separate architecture, UX, performance, and test-gate work so execution order stays locked
+    - [x] Update README.md and agents.md after each completed implementation batch
+  - [ ] Phase 1 - app shell completion and browser recovery
+    - [ ] Extract remaining App shell seams:
+      - [x] Extract top toolbar/status area into a dedicated shell component
+      - [x] Extract draft-recovery banner/actions into a dedicated shell component
+      - [x] Extract tab/workspace chrome into a dedicated shell component or hook-backed module
+      - [ ] Remove remaining direct engine/run orchestration paths from App.tsx so browser runs flow through one workflow path
+    - [ ] Add browser-local draft recovery:
+      - [x] Persist input text and include-file bundle locally
+      - [x] Persist settings, parse settings, selected instrument, and export settings locally
+      - [x] Persist active tab, split layout, sidebar visibility, report/map selection, comparison thresholds, and pinned review state locally
+      - [x] Restore draft state on startup with explicit recover/discard behavior
+      - [x] Add a clear-current-draft action
+    - [ ] Lazy-load heavy browser-only surfaces not needed on first paint:
+      - [x] Import-review workflow/modal
+      - [ ] Project Options modal body
+      - [x] External importer registry/converters
+      - [ ] Large detail panels tied to import/settings workflows
+    - [~] Add focused regression coverage for browser recovery, recover/discard/clear flows, and project-load replacement behavior
+      - [x] Add focused recovery-hook coverage for recover/discard/clear flows
+      - [x] Add focused workspace-shell coverage for tab switching and empty-state behavior
+      - [ ] Add project-load replacement behavior coverage against persisted local draft state
+  - [ ] Phase 2 - ReportView decomposition and QA workspace UX
+    - [ ] Split ReportView into section components backed by a shared report-section registry
+    - [ ] Extract shared report table/filter primitives for load-more, filtering, and row selection behavior
+    - [ ] Move report-local UI state into a dedicated hook/module:
+      - [ ] Filters
+      - [ ] Load-more window sizes
+      - [ ] Collapsed and pinned sections
+      - [ ] Selected station/observation context
+    - [ ] Persist report/map review state through the browser recovery layer
+    - [ ] Add fast QA navigation actions for next/previous suspect, jump-to-input, pin selected observation, and focus filter
+    - [ ] Add UI regression coverage proving report ordering/content/selection behavior remains stable after decomposition
+  - [ ] Phase 3 - scenario runtime and rerun performance
+    - [ ] Introduce a parsed-model/scenario-run service shared by browser and CLI
+    - [ ] Parse once per input/settings fingerprint and reuse parsed state for same-input reruns
+    - [ ] Reuse parsed state for exclusion trials, suspect-impact analysis, auto-adjust cycles, and compare scenarios
+    - [ ] Replace repeated parse/setup work for unchanged-input reruns without changing worker protocol or CLI behavior
+    - [ ] Move scenario workflows off ad hoc engine re-instantiation paths onto the shared scenario executor contract
+    - [ ] Extend the large-project benchmark with rerun latency budgets
+    - [ ] Add regression/performance coverage for cached reruns and scenario execution parity
+  - [ ] Phase 4 - remaining parser and solver core split
+    - [ ] Finish parser monolith extraction:
+      - [ ] Sigma/default-resolution helpers
+      - [ ] Alias-resolution and canonical-ID pipeline
+      - [ ] Direction-set reduction and treatment logic
+      - [ ] Directive command dispatch and handler registry
+    - [ ] Finish solver monolith extraction:
+      - [ ] Statistical test math and quantile helpers
+      - [ ] Weak-geometry classification and ranking
+      - [ ] Reduction-usage summarization
+      - [ ] Loop/setup/GPS diagnostic builders
+      - [ ] Cluster dual-pass orchestration
+    - [ ] Keep parse.ts as orchestration over parser handlers and adjust.ts as solve control over prepared services/builders
+    - [ ] Add focused module regression coverage for each extracted parser/solver seam
+
 - [ ] Architecture follow-up - phased implementation:
   - [ ] Phase 1 - `App.tsx` decomposition
     - [x] Extract run-comparison state/history into a dedicated hook

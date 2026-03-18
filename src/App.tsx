@@ -1,27 +1,12 @@
 // WebNet Adjustment (TypeScript)
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import {
-  Activity,
-  AlertTriangle,
-  CheckCircle,
-  FolderOpen,
-  FileText,
-  Info,
-  Map as MapIcon,
-  Minimize2,
-  PanelLeftClose,
-  PanelLeftOpen,
-  Play,
-  RefreshCw,
-  Save,
-  Settings,
-  Download,
-  Square,
-} from 'lucide-react';
+import { AlertTriangle, CheckCircle, Info } from 'lucide-react';
 import InputPane, { type InputPaneHandle } from './components/InputPane';
-import ImportReviewModal from './components/ImportReviewModal';
+import AppToolbar from './components/AppToolbar';
 import RunComparisonPanel from './components/RunComparisonPanel';
+import WorkspaceRecoveryBanner from './components/WorkspaceRecoveryBanner';
+import WorkspaceChrome from './components/WorkspaceChrome';
 
 import { DEFAULT_INPUT } from './defaultInput';
 import { RAD_TO_DEG, dmsToRad } from './engine/angles';
@@ -73,6 +58,11 @@ import { useProjectFileWorkflow } from './hooks/useProjectFileWorkflow';
 import { useProjectOptionsState } from './hooks/useProjectOptionsState';
 import { useQaSelection } from './hooks/useQaSelection';
 import { useRunComparisonState } from './hooks/useRunComparisonState';
+import {
+  decodeBase64ToUint8Array,
+  encodeUint8ArrayToBase64,
+  useWorkspaceRecovery,
+} from './hooks/useWorkspaceRecovery';
 import { useWorkspaceProjectState } from './hooks/useWorkspaceProjectState';
 import type {
   CrsCatalogGroupFilter,
@@ -86,6 +76,9 @@ import type {
   SolveProfile,
   Units,
   UiTheme,
+  WorkspaceDraftSnapshot,
+  WorkspaceTabKey,
+  WorkspaceViewState,
 } from './appStateTypes';
 import type {
   AdjustmentResult,
@@ -124,6 +117,7 @@ import type {
   RunMode,
 } from './types';
 
+const ImportReviewModal = React.lazy(() => import('./components/ImportReviewModal'));
 const ReportView = React.lazy(() => import('./components/ReportView'));
 const MapView = React.lazy(() => import('./components/MapView'));
 const ProcessingSummaryView = React.lazy(() => import('./components/ProcessingSummaryView'));
@@ -367,7 +361,7 @@ const buildPendingRunSettingDiffs = (
 const INDUSTRY_DEFAULT_INSTRUMENT_CODE = 'S9';
 const INDUSTRY_DEFAULT_INSTRUMENT: Instrument = createDefaultS9Instrument();
 
-type TabKey = 'report' | 'processing-summary' | 'industry-output' | 'map';
+type TabKey = WorkspaceTabKey;
 
 const getExportFormatTooltip = (format: ProjectExportFormat): string => {
   switch (format) {
@@ -1273,8 +1267,12 @@ const App: React.FC<AppProps> = ({
     selectObservation,
     selectStation,
     clearSelection,
+    restoreSelection,
+    pinnedObservationIds,
     pinnedObservations,
     togglePinnedObservation,
+    restorePinnedObservationIds,
+    clearPinnedObservations,
     selectNextSuspect,
     selectPreviousSuspect,
     hasSuspects,
@@ -1620,6 +1618,52 @@ const App: React.FC<AppProps> = ({
     () => (runComparisonSummary ? buildRunComparisonText(runComparisonSummary) : ''),
     [runComparisonSummary],
   );
+  const workspaceDraftSnapshot = useMemo<WorkspaceDraftSnapshot>(
+    () => ({
+      input,
+      projectIncludeFiles,
+      settings: { ...settings },
+      parseSettings: { ...parseSettings },
+      exportFormat,
+      adjustedPointsExportSettings: cloneAdjustedPointsExportSettings(adjustedPointsExportSettings),
+      projectInstruments: cloneInstrumentLibrary(projectInstruments),
+      selectedInstrument,
+      levelLoopCustomPresets: levelLoopCustomPresets.map((preset) => ({ ...preset })),
+      geoidSourceDataBase64: encodeUint8ArrayToBase64(geoidSourceData),
+      geoidSourceDataLabel,
+      view: {
+        activeTab,
+        splitPercent,
+        isSidebarOpen,
+        selection,
+        pinnedObservationIds,
+      },
+      comparisonView: {
+        stationMovementThreshold: comparisonSelection.stationMovementThreshold,
+        residualDeltaThreshold: comparisonSelection.residualDeltaThreshold,
+      },
+    }),
+    [
+      activeTab,
+      adjustedPointsExportSettings,
+      comparisonSelection.residualDeltaThreshold,
+      comparisonSelection.stationMovementThreshold,
+      geoidSourceData,
+      geoidSourceDataLabel,
+      input,
+      isSidebarOpen,
+      levelLoopCustomPresets,
+      parseSettings,
+      pinnedObservationIds,
+      projectIncludeFiles,
+      projectInstruments,
+      selection,
+      selectedInstrument,
+      settings,
+      splitPercent,
+      exportFormat,
+    ],
+  );
   const { handleExportResults } = useExportWorkflow({
     result,
     exportFormat,
@@ -1637,6 +1681,7 @@ const App: React.FC<AppProps> = ({
     resetAdjustmentWorkflowState();
     clearRunComparisonState();
     clearSelection();
+    clearPinnedObservations();
     resetImportReviewWorkflow();
   }
 
@@ -2159,6 +2204,83 @@ const App: React.FC<AppProps> = ({
     activateReportTab: () => setActiveTab('report'),
     recordRunSnapshot,
   });
+  const applyWorkspaceDraftSnapshot = (snapshot: WorkspaceDraftSnapshot) => {
+    const recoveredGeoidBytes = decodeBase64ToUint8Array(snapshot.geoidSourceDataBase64);
+    const clonedAdjustedPointsExport = cloneAdjustedPointsExportSettings(
+      snapshot.adjustedPointsExportSettings,
+    );
+    const clonedProjectInstruments = cloneInstrumentLibrary(snapshot.projectInstruments);
+    const clonedLevelLoopPresets = snapshot.levelLoopCustomPresets.map((preset) => ({
+      ...preset,
+    }));
+    clearWorkspaceArtifacts();
+    resetAdjustmentWorkflowState();
+    clearRunComparisonState();
+    clearSelection();
+    clearPinnedObservations();
+    resetImportReviewWorkflow();
+    setInput(snapshot.input);
+    setProjectIncludeFiles({ ...snapshot.projectIncludeFiles });
+    setSettings({ ...snapshot.settings });
+    setSettingsDraft({ ...snapshot.settings });
+    setParseSettings({ ...snapshot.parseSettings });
+    setParseSettingsDraft({ ...snapshot.parseSettings });
+    setGeoidSourceData(recoveredGeoidBytes);
+    setGeoidSourceDataDraft(recoveredGeoidBytes);
+    setGeoidSourceDataLabel(snapshot.geoidSourceDataLabel);
+    setGeoidSourceDataLabelDraft(snapshot.geoidSourceDataLabel);
+    setExportFormat(snapshot.exportFormat);
+    setAdjustedPointsExportSettings(clonedAdjustedPointsExport);
+    setAdjustedPointsExportSettingsDraft(
+      cloneAdjustedPointsExportSettings(clonedAdjustedPointsExport),
+    );
+    setProjectInstruments(clonedProjectInstruments);
+    setProjectInstrumentsDraft(cloneInstrumentLibrary(clonedProjectInstruments));
+    setSelectedInstrument(snapshot.selectedInstrument);
+    setSelectedInstrumentDraft(snapshot.selectedInstrument);
+    setLevelLoopCustomPresets(clonedLevelLoopPresets);
+    setLevelLoopCustomPresetsDraft(clonedLevelLoopPresets.map((preset) => ({ ...preset })));
+    setIsAdjustedPointsTransformSelectOpen(false);
+    setAdjustedPointsTransformSelectedDraft(
+      clonedAdjustedPointsExport.transform.selectedStationIds.slice(),
+    );
+    setAdjustedPointsRotationAngleInput('');
+    setAdjustedPointsTranslationAzimuthInput('');
+    setAdjustedPointsRotationAngleError(null);
+    setAdjustedPointsTranslationAzimuthError(null);
+    setCrsCatalogGroupFilter(resolveCatalogGroupFromCrsId(snapshot.parseSettings.crsId));
+    setCrsSearchQuery('');
+    setShowCrsProjectionParams(false);
+    setActiveTab(snapshot.view.activeTab);
+    setSplitPercent(Math.max(20, Math.min(80, snapshot.view.splitPercent)));
+    setIsSidebarOpen(snapshot.view.isSidebarOpen);
+    restoreSelection(snapshot.view.selection);
+    restorePinnedObservationIds(snapshot.view.pinnedObservationIds.slice());
+    setComparisonSelection((prev) => ({
+      ...prev,
+      baselineRunId: null,
+      pinnedBaselineRunId: null,
+      stationMovementThreshold: snapshot.comparisonView.stationMovementThreshold,
+      residualDeltaThreshold: snapshot.comparisonView.residualDeltaThreshold,
+    }));
+    setImportNotice({
+      title: 'Draft recovered',
+      detailLines: [
+        'Recovered browser-local workspace draft.',
+        'Adjustment results were not restored; rerun adjustment to rebuild report and map state.',
+      ],
+    });
+  };
+  const {
+    pendingRecovery,
+    hasStoredDraft,
+    recoverDraft,
+    discardRecoveredDraft,
+    clearCurrentDraft,
+  } = useWorkspaceRecovery({
+    snapshot: workspaceDraftSnapshot,
+    onRecover: applyWorkspaceDraftSnapshot,
+  });
   const runPhaseLabel = useMemo(() => {
     if (pipelineState.status === 'running') {
       if (pipelineState.phase === 'queued') return 'Queued';
@@ -2659,7 +2781,16 @@ const App: React.FC<AppProps> = ({
     resetAdjustmentWorkflowState();
     clearRunComparisonState();
     clearSelection();
+    clearPinnedObservations();
   };
+
+  const handleClearCurrentDraft = React.useCallback(() => {
+    clearCurrentDraft();
+    setImportNotice({
+      title: 'Local draft cleared',
+      detailLines: ['Browser-local draft recovery data was cleared for the current workspace.'],
+    });
+  }, [clearCurrentDraft, setImportNotice]);
 
   const selectedInstrumentMeta = selectedInstrumentDraft
     ? projectInstrumentsDraft[selectedInstrumentDraft]
@@ -2679,149 +2810,56 @@ const App: React.FC<AppProps> = ({
 
   return (
     <div className="fixed inset-0 flex flex-col bg-slate-900 text-slate-100 font-sans overflow-hidden">
-      <header className="h-16 bg-slate-800 border-b border-slate-700 flex items-center px-3 md:px-4 shrink-0 w-full gap-3">
-        <div className="flex items-center gap-3 min-w-0 flex-1">
-          <button
-            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-            className="p-1.5 hover:bg-slate-700 rounded text-slate-400 hover:text-white transition-colors"
-            title={isSidebarOpen ? 'Close Input Sidebar' : 'Open Input Sidebar'}
-          >
-            {isSidebarOpen ? <PanelLeftClose size={20} /> : <PanelLeftOpen size={20} />}
-          </button>
-          <div className="flex items-center space-x-2 min-w-0">
-            <Activity className="text-blue-400" size={24} />
-            <div className="flex flex-col min-w-0">
-              <h1 className="text-lg font-bold tracking-wide text-white leading-none truncate">
-                WebNet <span className="text-blue-400 font-light">Adjustment</span>
-              </h1>
-              <span className="text-xs text-slate-500 truncate">
-                Survey LSA - TS + GPS + Leveling
-              </span>
-            </div>
-          </div>
-          <button
-            onClick={openProjectOptions}
-            title="Open industry-style project options"
-            className="flex items-center space-x-2 px-3 py-1.5 rounded border text-xs uppercase tracking-wide bg-slate-900/60 border-slate-700 text-slate-300 hover:bg-slate-700"
-          >
-            <Settings size={14} />
-            <span>Project Options</span>
-          </button>
-        </div>
-
-        <div className="flex items-center gap-2 ml-auto shrink-0">
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept={IMPORT_FILE_ACCEPT}
-            className="hidden"
-            onChange={handleFileChange}
-          />
-          <input
-            ref={projectFileInputRef}
-            type="file"
-            accept={PROJECT_FILE_ACCEPT}
-            className="hidden"
-            onChange={handleProjectFileChange}
-          />
-          <button
-            onClick={() => triggerFileSelect()}
-            title="Open data/import file"
-            className="p-2 bg-slate-700 hover:bg-slate-600 rounded text-slate-300 transition-colors"
-          >
-            <FileText size={18} />
-          </button>
-          <button
-            onClick={triggerProjectFileSelect}
-            title="Open project file"
-            className="p-2 bg-slate-700 hover:bg-slate-600 rounded text-slate-300 transition-colors"
-          >
-            <FolderOpen size={18} />
-          </button>
-          <button
-            onClick={handleSaveProject}
-            title="Save project file"
-            className="p-2 bg-slate-700 hover:bg-slate-600 rounded text-slate-300 transition-colors"
-          >
-            <Save size={18} />
-          </button>
-          <select
-            value={exportFormat}
-            onChange={(e) => setExportFormat(e.target.value as ProjectExportFormat)}
-            title={getExportFormatTooltip(exportFormat)}
-            className="h-9 bg-slate-700 border border-slate-600 text-slate-100 text-xs rounded px-2"
-          >
-            <option value="points">Export: points</option>
-            <option value="webnet">Export: WebNet</option>
-            <option value="industry-style">Export: industry-style</option>
-            <option value="landxml">Export: LandXML</option>
-            <option value="bundle-qa-standard">Export: QA bundle</option>
-            <option value="bundle-qa-standard-with-landxml">Export: QA bundle + LandXML</option>
-          </select>
-          <button
-            onClick={handleExportResults}
-            disabled={!result}
-            title={
-              result
-                ? `Export ${getExportFormatLabel(exportFormat)}`
-                : 'Run adjustment to export results'
-            }
-            className={`p-2 rounded text-slate-300 transition-colors ${
-              result
-                ? 'bg-slate-700 hover:bg-slate-600'
-                : 'bg-slate-800 opacity-50 cursor-not-allowed'
-            }`}
-          >
-            <Download size={18} />
-          </button>
-          {selectedObservation && (
-            <button
-              onClick={() => togglePinnedObservation(selectedObservation.id)}
-              title="Pin or unpin the selected observation for quick return"
-              className="h-9 px-3 rounded bg-slate-700 hover:bg-slate-600 text-[11px] uppercase tracking-wide text-slate-200 transition-colors"
-            >
-              {pinnedObservations.some((entry) => entry.id === selectedObservation.id)
-                ? 'Unpin'
-                : 'Pin Row'}
-            </button>
-          )}
-          {pipelineState.status === 'running' ? (
-            <button
-              onClick={cancelAdjustment}
-              className="flex items-center space-x-2 bg-amber-600 hover:bg-amber-500 text-white px-4 py-1.5 rounded text-sm font-medium transition-colors shadow-lg shadow-amber-900/20"
-              title="Cancel current run"
-            >
-              <Square size={14} /> <span>Cancel</span>
-            </button>
-          ) : (
-            <button
-              onClick={handleRun}
-              className="flex items-center space-x-2 bg-green-600 hover:bg-green-500 text-white px-4 py-1.5 rounded text-sm font-medium transition-colors shadow-lg shadow-green-900/20"
-            >
-              <Play size={16} /> <span>Adjust</span>
-            </button>
-          )}
-          <button
-            onClick={handleResetToLastRun}
-            disabled={pipelineState.status === 'running'}
-            className={`p-2 rounded text-slate-300 transition-colors ${
-              pipelineState.status === 'running'
-                ? 'bg-slate-800 opacity-50 cursor-not-allowed'
-                : 'bg-slate-700 hover:bg-slate-600'
-            }`}
-          >
-            <RefreshCw size={18} />
-          </button>
-          {runPhaseLabel ? (
-            <div className="rounded border border-slate-600 bg-slate-800/80 px-2 py-1 text-[11px] uppercase tracking-wide text-slate-300">
-              {runPhaseLabel}
-              <span className="ml-2 text-slate-500">
-                {pipelineState.workerBacked ? 'Worker' : 'Direct'}
-              </span>
-            </div>
-          ) : null}
-        </div>
-      </header>
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept={IMPORT_FILE_ACCEPT}
+        className="hidden"
+        onChange={handleFileChange}
+      />
+      <input
+        ref={projectFileInputRef}
+        type="file"
+        accept={PROJECT_FILE_ACCEPT}
+        className="hidden"
+        onChange={handleProjectFileChange}
+      />
+      <AppToolbar
+        isSidebarOpen={isSidebarOpen}
+        onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
+        onOpenProjectOptions={openProjectOptions}
+        onOpenImportFile={() => triggerFileSelect()}
+        onOpenProjectFile={triggerProjectFileSelect}
+        onSaveProject={handleSaveProject}
+        exportFormat={exportFormat}
+        onExportFormatChange={setExportFormat}
+        exportTooltip={getExportFormatTooltip(exportFormat)}
+        exportLabel={getExportFormatLabel(exportFormat)}
+        onExportResults={handleExportResults}
+        canExport={!!result}
+        hasStoredDraft={hasStoredDraft}
+        onClearCurrentDraft={handleClearCurrentDraft}
+        selectedObservationId={selectedObservation?.id ?? null}
+        isSelectedObservationPinned={
+          selectedObservation != null &&
+          pinnedObservations.some((entry) => entry.id === selectedObservation.id)
+        }
+        onTogglePinSelectedObservation={() => {
+          if (selectedObservation) togglePinnedObservation(selectedObservation.id);
+        }}
+        pipelineState={pipelineState}
+        runPhaseLabel={runPhaseLabel}
+        onCancelRun={cancelAdjustment}
+        onRun={handleRun}
+        onResetToLastRun={handleResetToLastRun}
+      />
+      {pendingRecovery && (
+        <WorkspaceRecoveryBanner
+          savedAt={new Date(pendingRecovery.savedAt).toLocaleString()}
+          onRecover={recoverDraft}
+          onDiscard={discardRecoveredDraft}
+        />
+      )}
 
       {isSettingsModalOpen && (
         <div
@@ -5880,68 +5918,13 @@ const App: React.FC<AppProps> = ({
               </div>
             </div>
           )}
-          <div className="flex items-center justify-between border-b border-slate-800 bg-slate-900 pr-4">
-            <div className="flex">
-              <button
-                onClick={() => setActiveTab('report')}
-                className={`px-6 py-3 text-sm font-medium flex items-center space-x-2 border-b-2 transition-colors ${
-                  activeTab === 'report'
-                    ? 'border-blue-500 text-white bg-slate-800'
-                    : 'border-transparent text-slate-400 hover:text-slate-200'
-                }`}
-              >
-                <FileText size={16} /> <span>Adjustment Report</span>
-              </button>
-              <button
-                onClick={() => setActiveTab('processing-summary')}
-                className={`px-6 py-3 text-sm font-medium flex items-center space-x-2 border-b-2 transition-colors ${
-                  activeTab === 'processing-summary'
-                    ? 'border-blue-500 text-white bg-slate-800'
-                    : 'border-transparent text-slate-400 hover:text-slate-200'
-                }`}
-              >
-                <Activity size={16} /> <span>Processing Summary</span>
-              </button>
-              <button
-                onClick={() => setActiveTab('industry-output')}
-                className={`px-6 py-3 text-sm font-medium flex items-center space-x-2 border-b-2 transition-colors ${
-                  activeTab === 'industry-output'
-                    ? 'border-blue-500 text-white bg-slate-800'
-                    : 'border-transparent text-slate-400 hover:text-slate-200'
-                }`}
-              >
-                <FileText size={16} /> <span>Industry Standard Output</span>
-              </button>
-              <button
-                onClick={() => setActiveTab('map')}
-                className={`px-6 py-3 text-sm font-medium flex items-center space-x-2 border-b-2 transition-colors ${
-                  activeTab === 'map'
-                    ? 'border-blue-500 text-white bg-slate-800'
-                    : 'border-transparent text-slate-400 hover:text-slate-200'
-                }`}
-              >
-                <MapIcon size={16} /> <span>Map & Ellipses</span>
-              </button>
-            </div>
-            {!isSidebarOpen && (
-              <button
-                onClick={() => setIsSidebarOpen(true)}
-                className="text-xs flex items-center space-x-1 text-slate-500 hover:text-slate-300"
-              >
-                <Minimize2 size={12} /> <span>Show Input</span>
-              </button>
-            )}
-          </div>
-
-          <div
-            className={`flex-1 w-full ${activeTab === 'report' ? 'overflow-auto' : 'overflow-hidden'}`}
-          >
-            {!result ? (
-              <div className="flex flex-col items-center justify-center h-full text-slate-500 space-y-4">
-                <Activity size={48} className="opacity-20" />
-                <p>Paste/edit data, then press "Adjust" to solve.</p>
-              </div>
-            ) : (
+          <WorkspaceChrome
+            activeTab={activeTab}
+            onActiveTabChange={setActiveTab}
+            isSidebarOpen={isSidebarOpen}
+            onShowInput={() => setIsSidebarOpen(true)}
+            hasResult={Boolean(result)}
+            reportContent={
               <React.Suspense
                 fallback={
                   <div className="flex h-full items-center justify-center text-sm text-slate-400">
@@ -5949,136 +5932,156 @@ const App: React.FC<AppProps> = ({
                   </div>
                 }
               >
-                <>
-                  {activeTab === 'report' && (
-                    <ReportView
-                      result={result}
-                      units={settings.units}
-                      runDiagnostics={runDiagnostics}
-                      excludedIds={excludedIds}
-                      onToggleExclude={toggleExclude}
-                      onApplyImpactExclude={applyImpactExclusion}
-                      onApplyPreanalysisAction={applyPreanalysisPlanningAction}
-                      onReRun={handleRun}
-                      onClearExclusions={clearExclusions}
-                      onJumpToSourceLine={handleJumpToSourceLine}
-                      pendingRunSettingDiffs={pendingRunSettingDiffs}
-                      overrides={overrides}
-                      onOverride={handleOverride}
-                      onResetOverrides={resetOverrides}
-                      clusterReviewDecisions={clusterReviewDecisions}
-                      activeClusterApprovedMerges={activeClusterApprovedMerges}
-                      onClusterDecisionStatus={handleClusterDecisionStatus}
-                      onClusterCanonicalSelection={handleClusterCanonicalSelection}
-                      onApplyClusterMerges={applyClusterReviewMerges}
-                      onResetClusterReview={resetClusterReview}
-                      onClearClusterMerges={clearClusterApprovedMerges}
-                      selectedStationId={selection.stationId}
-                      selectedObservationId={selection.observationId}
-                      onSelectStation={(stationId) => selectStation(stationId, 'report')}
-                      onSelectObservation={(observationId) =>
-                        selectObservation(observationId, 'report')
-                      }
-                    />
-                  )}
-                  {activeTab === 'processing-summary' && (
-                    <ProcessingSummaryView
-                      result={result}
-                      units={settings.units}
-                      runElapsedMs={runElapsedMs}
-                      runDiagnostics={
-                        runDiagnostics
-                          ? {
-                              solveProfile: runDiagnostics.solveProfile,
-                              directionSetMode: runDiagnostics.directionSetMode,
-                              profileDefaultInstrumentFallback:
-                                runDiagnostics.profileDefaultInstrumentFallback,
-                              rotationAngleRad: runDiagnostics.rotationAngleRad,
-                              coordSystemMode: runDiagnostics.coordSystemMode,
-                              crsId: runDiagnostics.crsId,
-                              localDatumScheme: runDiagnostics.localDatumScheme,
-                              averageScaleFactor: runDiagnostics.averageScaleFactor,
-                              scaleOverrideActive: runDiagnostics.scaleOverrideActive,
-                              commonElevation: runDiagnostics.commonElevation,
-                              averageGeoidHeight: runDiagnostics.averageGeoidHeight,
-                              gnssVectorFrameDefault: runDiagnostics.gnssVectorFrameDefault,
-                              gnssFrameConfirmed: runDiagnostics.gnssFrameConfirmed,
-                              gridBearingMode: runDiagnostics.gridBearingMode,
-                              gridDistanceMode: runDiagnostics.gridDistanceMode,
-                              gridAngleMode: runDiagnostics.gridAngleMode,
-                              gridDirectionMode: runDiagnostics.gridDirectionMode,
-                              datumSufficiencyReport: runDiagnostics.datumSufficiencyReport,
-                              parsedUsageSummary: runDiagnostics.parsedUsageSummary,
-                              usedInSolveUsageSummary: runDiagnostics.usedInSolveUsageSummary,
-                              directiveTransitions: runDiagnostics.directiveTransitions,
-                              directiveNoEffectWarnings: runDiagnostics.directiveNoEffectWarnings,
-                              coordSystemDiagnostics: runDiagnostics.coordSystemDiagnostics,
-                              coordSystemWarningMessages: runDiagnostics.coordSystemWarningMessages,
-                              crsStatus: runDiagnostics.crsStatus,
-                              crsOffReason: runDiagnostics.crsOffReason,
-                              crsDatumOpId: runDiagnostics.crsDatumOpId,
-                              crsDatumFallbackUsed: runDiagnostics.crsDatumFallbackUsed,
-                              crsAreaOfUseStatus: runDiagnostics.crsAreaOfUseStatus,
-                              crsOutOfAreaStationCount: runDiagnostics.crsOutOfAreaStationCount,
-                              crsTransformEnabled: runDiagnostics.crsTransformEnabled,
-                              crsProjectionModel: runDiagnostics.crsProjectionModel,
-                              crsLabel: runDiagnostics.crsLabel,
-                              crsGridScaleEnabled: runDiagnostics.crsGridScaleEnabled,
-                              crsGridScaleFactor: runDiagnostics.crsGridScaleFactor,
-                              crsConvergenceEnabled: runDiagnostics.crsConvergenceEnabled,
-                              crsConvergenceAngleRad: runDiagnostics.crsConvergenceAngleRad,
-                              geoidModelEnabled: runDiagnostics.geoidModelEnabled,
-                              geoidModelId: runDiagnostics.geoidModelId,
-                              geoidInterpolation: runDiagnostics.geoidInterpolation,
-                              geoidHeightConversionEnabled:
-                                runDiagnostics.geoidHeightConversionEnabled,
-                              geoidOutputHeightDatum: runDiagnostics.geoidOutputHeightDatum,
-                              geoidModelLoaded: runDiagnostics.geoidModelLoaded,
-                              geoidModelMetadata: runDiagnostics.geoidModelMetadata,
-                              geoidSampleUndulationM: runDiagnostics.geoidSampleUndulationM,
-                              geoidConvertedStationCount: runDiagnostics.geoidConvertedStationCount,
-                              geoidSkippedStationCount: runDiagnostics.geoidSkippedStationCount,
-                              gpsAddHiHtEnabled: runDiagnostics.gpsAddHiHtEnabled,
-                              gpsAddHiHtHiM: runDiagnostics.gpsAddHiHtHiM,
-                              gpsAddHiHtHtM: runDiagnostics.gpsAddHiHtHtM,
-                              gpsAddHiHtVectorCount: runDiagnostics.gpsAddHiHtVectorCount,
-                              gpsAddHiHtAppliedCount: runDiagnostics.gpsAddHiHtAppliedCount,
-                              gpsAddHiHtPositiveCount: runDiagnostics.gpsAddHiHtPositiveCount,
-                              gpsAddHiHtNegativeCount: runDiagnostics.gpsAddHiHtNegativeCount,
-                              gpsAddHiHtNeutralCount: runDiagnostics.gpsAddHiHtNeutralCount,
-                              gpsAddHiHtDefaultZeroCount: runDiagnostics.gpsAddHiHtDefaultZeroCount,
-                              gpsAddHiHtMissingHeightCount:
-                                runDiagnostics.gpsAddHiHtMissingHeightCount,
-                              gpsAddHiHtScaleMin: runDiagnostics.gpsAddHiHtScaleMin,
-                              gpsAddHiHtScaleMax: runDiagnostics.gpsAddHiHtScaleMax,
-                            }
-                          : null
-                      }
-                    />
-                  )}
-                  {activeTab === 'industry-output' && (
-                    <IndustryOutputView text={result ? buildIndustryListingText(result) : ''} />
-                  )}
-                  {activeTab === 'map' && (
-                    <MapView
-                      result={result}
-                      units={settings.units}
-                      showLostStations={settings.mapShowLostStations}
-                      mode={settings.map3dEnabled ? '3d' : '2d'}
-                      adjustedPointsExportSettings={adjustedPointsExportSettings}
-                      derivedResult={qaDerivedResult}
-                      selectedStationId={selection.stationId}
-                      selectedObservationId={selection.observationId}
-                      onSelectStation={(stationId) => selectStation(stationId, 'map')}
-                      onSelectObservation={(observationId) =>
-                        selectObservation(observationId, 'map')
-                      }
-                    />
-                  )}
-                </>
+                <ReportView
+                  result={result!}
+                  units={settings.units}
+                  runDiagnostics={runDiagnostics}
+                  excludedIds={excludedIds}
+                  onToggleExclude={toggleExclude}
+                  onApplyImpactExclude={applyImpactExclusion}
+                  onApplyPreanalysisAction={applyPreanalysisPlanningAction}
+                  onReRun={handleRun}
+                  onClearExclusions={clearExclusions}
+                  onJumpToSourceLine={handleJumpToSourceLine}
+                  pendingRunSettingDiffs={pendingRunSettingDiffs}
+                  overrides={overrides}
+                  onOverride={handleOverride}
+                  onResetOverrides={resetOverrides}
+                  clusterReviewDecisions={clusterReviewDecisions}
+                  activeClusterApprovedMerges={activeClusterApprovedMerges}
+                  onClusterDecisionStatus={handleClusterDecisionStatus}
+                  onClusterCanonicalSelection={handleClusterCanonicalSelection}
+                  onApplyClusterMerges={applyClusterReviewMerges}
+                  onResetClusterReview={resetClusterReview}
+                  onClearClusterMerges={clearClusterApprovedMerges}
+                  selectedStationId={selection.stationId}
+                  selectedObservationId={selection.observationId}
+                  onSelectStation={(stationId) => selectStation(stationId, 'report')}
+                  onSelectObservation={(observationId) =>
+                    selectObservation(observationId, 'report')
+                  }
+                />
               </React.Suspense>
-            )}
-          </div>
+            }
+            processingSummaryContent={
+              <React.Suspense
+                fallback={
+                  <div className="flex h-full items-center justify-center text-sm text-slate-400">
+                    Loading tab...
+                  </div>
+                }
+              >
+                <ProcessingSummaryView
+                  result={result!}
+                  units={settings.units}
+                  runElapsedMs={runElapsedMs}
+                  runDiagnostics={
+                    runDiagnostics
+                      ? {
+                          solveProfile: runDiagnostics.solveProfile,
+                          directionSetMode: runDiagnostics.directionSetMode,
+                          profileDefaultInstrumentFallback:
+                            runDiagnostics.profileDefaultInstrumentFallback,
+                          rotationAngleRad: runDiagnostics.rotationAngleRad,
+                          coordSystemMode: runDiagnostics.coordSystemMode,
+                          crsId: runDiagnostics.crsId,
+                          localDatumScheme: runDiagnostics.localDatumScheme,
+                          averageScaleFactor: runDiagnostics.averageScaleFactor,
+                          scaleOverrideActive: runDiagnostics.scaleOverrideActive,
+                          commonElevation: runDiagnostics.commonElevation,
+                          averageGeoidHeight: runDiagnostics.averageGeoidHeight,
+                          gnssVectorFrameDefault: runDiagnostics.gnssVectorFrameDefault,
+                          gnssFrameConfirmed: runDiagnostics.gnssFrameConfirmed,
+                          gridBearingMode: runDiagnostics.gridBearingMode,
+                          gridDistanceMode: runDiagnostics.gridDistanceMode,
+                          gridAngleMode: runDiagnostics.gridAngleMode,
+                          gridDirectionMode: runDiagnostics.gridDirectionMode,
+                          datumSufficiencyReport: runDiagnostics.datumSufficiencyReport,
+                          parsedUsageSummary: runDiagnostics.parsedUsageSummary,
+                          usedInSolveUsageSummary: runDiagnostics.usedInSolveUsageSummary,
+                          directiveTransitions: runDiagnostics.directiveTransitions,
+                          directiveNoEffectWarnings: runDiagnostics.directiveNoEffectWarnings,
+                          coordSystemDiagnostics: runDiagnostics.coordSystemDiagnostics,
+                          coordSystemWarningMessages: runDiagnostics.coordSystemWarningMessages,
+                          crsStatus: runDiagnostics.crsStatus,
+                          crsOffReason: runDiagnostics.crsOffReason,
+                          crsDatumOpId: runDiagnostics.crsDatumOpId,
+                          crsDatumFallbackUsed: runDiagnostics.crsDatumFallbackUsed,
+                          crsAreaOfUseStatus: runDiagnostics.crsAreaOfUseStatus,
+                          crsOutOfAreaStationCount: runDiagnostics.crsOutOfAreaStationCount,
+                          crsTransformEnabled: runDiagnostics.crsTransformEnabled,
+                          crsProjectionModel: runDiagnostics.crsProjectionModel,
+                          crsLabel: runDiagnostics.crsLabel,
+                          crsGridScaleEnabled: runDiagnostics.crsGridScaleEnabled,
+                          crsGridScaleFactor: runDiagnostics.crsGridScaleFactor,
+                          crsConvergenceEnabled: runDiagnostics.crsConvergenceEnabled,
+                          crsConvergenceAngleRad: runDiagnostics.crsConvergenceAngleRad,
+                          geoidModelEnabled: runDiagnostics.geoidModelEnabled,
+                          geoidModelId: runDiagnostics.geoidModelId,
+                          geoidInterpolation: runDiagnostics.geoidInterpolation,
+                          geoidHeightConversionEnabled:
+                            runDiagnostics.geoidHeightConversionEnabled,
+                          geoidOutputHeightDatum: runDiagnostics.geoidOutputHeightDatum,
+                          geoidModelLoaded: runDiagnostics.geoidModelLoaded,
+                          geoidModelMetadata: runDiagnostics.geoidModelMetadata,
+                          geoidSampleUndulationM: runDiagnostics.geoidSampleUndulationM,
+                          geoidConvertedStationCount: runDiagnostics.geoidConvertedStationCount,
+                          geoidSkippedStationCount: runDiagnostics.geoidSkippedStationCount,
+                          gpsAddHiHtEnabled: runDiagnostics.gpsAddHiHtEnabled,
+                          gpsAddHiHtHiM: runDiagnostics.gpsAddHiHtHiM,
+                          gpsAddHiHtHtM: runDiagnostics.gpsAddHiHtHtM,
+                          gpsAddHiHtVectorCount: runDiagnostics.gpsAddHiHtVectorCount,
+                          gpsAddHiHtAppliedCount: runDiagnostics.gpsAddHiHtAppliedCount,
+                          gpsAddHiHtPositiveCount: runDiagnostics.gpsAddHiHtPositiveCount,
+                          gpsAddHiHtNegativeCount: runDiagnostics.gpsAddHiHtNegativeCount,
+                          gpsAddHiHtNeutralCount: runDiagnostics.gpsAddHiHtNeutralCount,
+                          gpsAddHiHtDefaultZeroCount: runDiagnostics.gpsAddHiHtDefaultZeroCount,
+                          gpsAddHiHtMissingHeightCount:
+                            runDiagnostics.gpsAddHiHtMissingHeightCount,
+                          gpsAddHiHtScaleMin: runDiagnostics.gpsAddHiHtScaleMin,
+                          gpsAddHiHtScaleMax: runDiagnostics.gpsAddHiHtScaleMax,
+                        }
+                      : null
+                  }
+                />
+              </React.Suspense>
+            }
+            industryOutputContent={
+              <React.Suspense
+                fallback={
+                  <div className="flex h-full items-center justify-center text-sm text-slate-400">
+                    Loading tab...
+                  </div>
+                }
+              >
+                <IndustryOutputView text={result ? buildIndustryListingText(result) : ''} />
+              </React.Suspense>
+            }
+            mapContent={
+              <React.Suspense
+                fallback={
+                  <div className="flex h-full items-center justify-center text-sm text-slate-400">
+                    Loading tab...
+                  </div>
+                }
+              >
+                <MapView
+                  result={result!}
+                  units={settings.units}
+                  showLostStations={settings.mapShowLostStations}
+                  mode={settings.map3dEnabled ? '3d' : '2d'}
+                  adjustedPointsExportSettings={adjustedPointsExportSettings}
+                  derivedResult={qaDerivedResult}
+                  selectedStationId={selection.stationId}
+                  selectedObservationId={selection.observationId}
+                  onSelectStation={(stationId) => selectStation(stationId, 'map')}
+                  onSelectObservation={(observationId) =>
+                    selectObservation(observationId, 'map')
+                  }
+                />
+              </React.Suspense>
+            }
+          />
         </div>
       </div>
 
@@ -6188,46 +6191,48 @@ const App: React.FC<AppProps> = ({
       )}
 
       {importReviewState && (
-        <ImportReviewModal
-          sourceName={importReviewState.sourceName}
-          title={importReviewState.notice.title}
-          detailLines={importReviewState.notice.detailLines}
-          reviewModel={importReviewState.reviewModel}
-          comparisonSummary={importReviewState.comparisonSummary ?? null}
-          comparisonMode={importReviewState.comparisonMode}
-          displayedRows={importReviewDisplayedRows}
-          excludedItemIds={importReviewState.excludedItemIds}
-          fixedItemIds={importReviewState.fixedItemIds}
-          groupLabels={importReviewState.groupLabels}
-          groupComments={importReviewState.groupComments}
-          rowTypeOverrides={importReviewState.rowTypeOverrides}
-          preset={importReviewState.preset}
-          moveTargetGroups={importReviewMoveTargetGroups}
-          onCompareFile={handleImportReviewCompareFile}
-          onClearComparison={handleImportReviewClearComparison}
-          onComparisonModeChange={handleImportReviewComparisonModeChange}
-          onPresetChange={handleImportReviewPresetChange}
-          onSetBulkExcludeMta={handleImportReviewSetBulkExcludeMta}
-          onSetBulkExcludeRaw={handleImportReviewSetBulkExcludeRaw}
-          onConvertSlopeZenithToHd2D={handleImportReviewConvertSlopeZenithToHd2D}
-          onSetGroupExcluded={handleImportReviewSetGroupExcluded}
-          onToggleExclude={handleImportReviewToggleExclude}
-          onToggleFixed={handleImportReviewToggleFixed}
-          onCreateEmptySetupGroup={handleImportReviewCreateEmptySetupGroup}
-          onGroupLabelChange={handleImportReviewGroupLabelChange}
-          onCommentChange={handleImportReviewCommentChange}
-          onRowTextChange={handleImportReviewRowTextChange}
-          onRowTypeChange={handleImportReviewRowTypeChange}
-          onDuplicateRow={handleImportReviewDuplicateRow}
-          onInsertCommentBelow={handleImportReviewInsertCommentBelow}
-          onCreateSetupGroup={handleImportReviewCreateSetupGroup}
-          onMoveRow={handleImportReviewMoveRow}
-          onReorderRow={handleImportReviewReorderRow}
-          onRemoveGroup={handleImportReviewRemoveGroup}
-          onRemoveRow={handleImportReviewRemoveRow}
-          onCancel={handleCancelImportReview}
-          onImport={handleApplyImportReview}
-        />
+        <React.Suspense fallback={null}>
+          <ImportReviewModal
+            sourceName={importReviewState.sourceName}
+            title={importReviewState.notice.title}
+            detailLines={importReviewState.notice.detailLines}
+            reviewModel={importReviewState.reviewModel}
+            comparisonSummary={importReviewState.comparisonSummary ?? null}
+            comparisonMode={importReviewState.comparisonMode}
+            displayedRows={importReviewDisplayedRows}
+            excludedItemIds={importReviewState.excludedItemIds}
+            fixedItemIds={importReviewState.fixedItemIds}
+            groupLabels={importReviewState.groupLabels}
+            groupComments={importReviewState.groupComments}
+            rowTypeOverrides={importReviewState.rowTypeOverrides}
+            preset={importReviewState.preset}
+            moveTargetGroups={importReviewMoveTargetGroups}
+            onCompareFile={handleImportReviewCompareFile}
+            onClearComparison={handleImportReviewClearComparison}
+            onComparisonModeChange={handleImportReviewComparisonModeChange}
+            onPresetChange={handleImportReviewPresetChange}
+            onSetBulkExcludeMta={handleImportReviewSetBulkExcludeMta}
+            onSetBulkExcludeRaw={handleImportReviewSetBulkExcludeRaw}
+            onConvertSlopeZenithToHd2D={handleImportReviewConvertSlopeZenithToHd2D}
+            onSetGroupExcluded={handleImportReviewSetGroupExcluded}
+            onToggleExclude={handleImportReviewToggleExclude}
+            onToggleFixed={handleImportReviewToggleFixed}
+            onCreateEmptySetupGroup={handleImportReviewCreateEmptySetupGroup}
+            onGroupLabelChange={handleImportReviewGroupLabelChange}
+            onCommentChange={handleImportReviewCommentChange}
+            onRowTextChange={handleImportReviewRowTextChange}
+            onRowTypeChange={handleImportReviewRowTypeChange}
+            onDuplicateRow={handleImportReviewDuplicateRow}
+            onInsertCommentBelow={handleImportReviewInsertCommentBelow}
+            onCreateSetupGroup={handleImportReviewCreateSetupGroup}
+            onMoveRow={handleImportReviewMoveRow}
+            onReorderRow={handleImportReviewReorderRow}
+            onRemoveGroup={handleImportReviewRemoveGroup}
+            onRemoveRow={handleImportReviewRemoveRow}
+            onCancel={handleCancelImportReview}
+            onImport={handleApplyImportReview}
+          />
+        </React.Suspense>
       )}
     </div>
   );

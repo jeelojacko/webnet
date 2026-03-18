@@ -1,0 +1,301 @@
+/** @vitest-environment jsdom */
+
+import React, { act, useEffect, useMemo, useState } from 'react';
+import { createRoot, type Root } from 'react-dom/client';
+import { describe, expect, it } from 'vitest';
+import { useWorkspaceRecovery } from '../src/hooks/useWorkspaceRecovery';
+import type { WorkspaceDraftSnapshot } from '../src/appStateTypes';
+
+(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
+
+const STORAGE_KEY = 'webnet.workspace-recovery.test';
+
+const buildSnapshot = (overrides: Partial<WorkspaceDraftSnapshot> = {}): WorkspaceDraftSnapshot => ({
+  input: 'INPUT',
+  projectIncludeFiles: {},
+  settings: {
+    maxIterations: 10,
+    convergenceLimit: 0.01,
+    units: 'm',
+    uiTheme: 'gruvbox-dark',
+    mapShowLostStations: true,
+    map3dEnabled: false,
+    listingShowLostStations: true,
+    listingShowCoordinates: true,
+    listingShowObservationsResiduals: true,
+    listingShowErrorPropagation: true,
+    listingShowProcessingNotes: true,
+    listingShowAzimuthsBearings: true,
+    listingSortCoordinatesBy: 'name',
+    listingSortObservationsBy: 'residual',
+    listingObservationLimit: 60,
+  },
+  parseSettings: {
+    solveProfile: 'industry-parity-current',
+    coordMode: '3D',
+    coordSystemMode: 'local',
+    crsId: 'LOCAL',
+    localDatumScheme: 'average-scale',
+    averageScaleFactor: 1,
+    commonElevation: 0,
+    averageGeoidHeight: 0,
+    gnssVectorFrameDefault: 'gridNEU',
+    gnssFrameConfirmed: false,
+    observationMode: {
+      bearing: 'grid',
+      distance: 'measured',
+      angle: 'measured',
+      direction: 'measured',
+    },
+    gridBearingMode: 'grid',
+    gridDistanceMode: 'measured',
+    gridAngleMode: 'measured',
+    gridDirectionMode: 'measured',
+    runMode: 'adjustment',
+    preanalysisMode: false,
+    clusterDetectionEnabled: false,
+    autoSideshotEnabled: true,
+    autoAdjustEnabled: false,
+    autoAdjustMaxCycles: 3,
+    autoAdjustMaxRemovalsPerCycle: 1,
+    autoAdjustStdResThreshold: 4,
+    order: 'EN',
+    angleUnits: 'dms',
+    angleStationOrder: 'atfromto',
+    angleMode: 'auto',
+    deltaMode: 'slope',
+    mapMode: 'off',
+    mapScaleFactor: 1,
+    normalize: true,
+    faceNormalizationMode: 'on',
+    applyCurvatureRefraction: false,
+    refractionCoefficient: 0.13,
+    verticalReduction: 'none',
+    levelWeight: undefined,
+    levelLoopToleranceBaseMm: 0,
+    levelLoopTolerancePerSqrtKmMm: 4,
+    crsTransformEnabled: false,
+    crsProjectionModel: 'legacy-equirectangular',
+    crsLabel: '',
+    crsGridScaleEnabled: false,
+    crsGridScaleFactor: 1,
+    crsConvergenceEnabled: false,
+    crsConvergenceAngleRad: 0,
+    geoidModelEnabled: false,
+    geoidModelId: 'NGS-DEMO',
+    geoidSourceFormat: 'builtin',
+    geoidSourcePath: '',
+    geoidInterpolation: 'bilinear',
+    geoidHeightConversionEnabled: false,
+    geoidOutputHeightDatum: 'orthometric',
+    gpsLoopCheckEnabled: false,
+    gpsAddHiHtEnabled: false,
+    gpsAddHiHtHiM: 0,
+    gpsAddHiHtHtM: 0,
+    qFixLinearSigmaM: 1e-7,
+    qFixAngularSigmaSec: 0.0010001,
+    prismEnabled: false,
+    prismOffset: 0,
+    prismScope: 'global',
+    directionSetMode: 'reduced',
+    descriptionReconcileMode: 'first',
+    descriptionAppendDelimiter: ' | ',
+    lonSign: 'west-negative',
+    tsCorrelationEnabled: false,
+    tsCorrelationRho: 0.25,
+    tsCorrelationScope: 'set',
+    robustMode: 'none',
+    robustK: 1.5,
+    parseCompatibilityMode: 'strict',
+    parseModeMigrated: true,
+  },
+  exportFormat: 'points',
+  adjustedPointsExportSettings: {
+    presetId: 'PNEZ',
+    format: 'csv',
+    delimiter: 'comma',
+    includeLostStations: true,
+    columns: ['P', 'N', 'E', 'Z'],
+    transform: {
+      referenceStationId: '',
+      scope: 'all',
+      selectedStationIds: [],
+      rotation: { enabled: false, angleDeg: 0 },
+      translation: { enabled: false, method: 'direction-distance', azimuthDeg: 0, distance: 0, targetE: 0, targetN: 0 },
+      scale: { enabled: false, factor: 1 },
+    },
+  },
+  projectInstruments: {},
+  selectedInstrument: 'S9',
+  levelLoopCustomPresets: [],
+  geoidSourceDataBase64: null,
+  geoidSourceDataLabel: '',
+  view: {
+    activeTab: 'report',
+    splitPercent: 35,
+    isSidebarOpen: true,
+    selection: {
+      stationId: null,
+      observationId: null,
+      sourceLine: null,
+      origin: null,
+    },
+    pinnedObservationIds: [],
+  },
+  comparisonView: {
+    stationMovementThreshold: 0.001,
+    residualDeltaThreshold: 0.25,
+  },
+  ...overrides,
+});
+
+describe('useWorkspaceRecovery', () => {
+  it('offers startup recovery and restores the stored snapshot', async () => {
+    window.localStorage.clear();
+    const savedSnapshot = buildSnapshot({ input: 'RECOVERED INPUT' });
+    window.localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({
+        version: 1,
+        savedAt: '2026-03-18T12:00:00.000Z',
+        snapshot: savedSnapshot,
+      }),
+    );
+
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root: Root = createRoot(container);
+
+    const Harness = () => {
+      const [snapshot, setSnapshot] = useState(buildSnapshot());
+      const recovery = useWorkspaceRecovery({
+        storageKey: STORAGE_KEY,
+        snapshot,
+        onRecover: setSnapshot,
+      });
+
+      return (
+        <div>
+          <div data-has>{recovery.hasStoredDraft ? 'yes' : 'no'}</div>
+          <div data-pending>{recovery.pendingRecovery ? 'yes' : 'no'}</div>
+          <div data-input>{snapshot.input}</div>
+          <button data-recover onClick={recovery.recoverDraft} />
+        </div>
+      );
+    };
+
+    await act(async () => {
+      root.render(<Harness />);
+    });
+
+    expect(container.querySelector('[data-pending]')?.textContent).toBe('yes');
+    expect(container.querySelector('[data-input]')?.textContent).toBe('INPUT');
+
+    await act(async () => {
+      (container.querySelector('[data-recover]') as HTMLButtonElement).click();
+    });
+
+    expect(container.querySelector('[data-pending]')?.textContent).toBe('no');
+    expect(container.querySelector('[data-input]')?.textContent).toBe('RECOVERED INPUT');
+
+    await act(async () => {
+      root.unmount();
+    });
+    container.remove();
+  });
+
+  it('discards a pending startup draft without immediately re-saving the current snapshot', async () => {
+    window.localStorage.clear();
+    window.localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({
+        version: 1,
+        savedAt: '2026-03-18T12:00:00.000Z',
+        snapshot: buildSnapshot({ input: 'OLD INPUT' }),
+      }),
+    );
+
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root: Root = createRoot(container);
+
+    const Harness = () => {
+      const recovery = useWorkspaceRecovery({
+        storageKey: STORAGE_KEY,
+        snapshot: useMemo(() => buildSnapshot({ input: 'CURRENT INPUT' }), []),
+        onRecover: () => undefined,
+      });
+
+      return <button data-discard onClick={recovery.discardRecoveredDraft} />;
+    };
+
+    await act(async () => {
+      root.render(<Harness />);
+    });
+
+    await act(async () => {
+      (container.querySelector('[data-discard]') as HTMLButtonElement).click();
+    });
+
+    expect(window.localStorage.getItem(STORAGE_KEY)).toBeNull();
+
+    await act(async () => {
+      root.unmount();
+    });
+    container.remove();
+  });
+
+  it('clears the current draft and only re-saves after the snapshot changes', async () => {
+    window.localStorage.clear();
+
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root: Root = createRoot(container);
+
+    const Harness = () => {
+      const [suffix, setSuffix] = useState('A');
+      const snapshot = useMemo(() => buildSnapshot({ input: `INPUT-${suffix}` }), [suffix]);
+      const recovery = useWorkspaceRecovery({
+        storageKey: STORAGE_KEY,
+        snapshot,
+        onRecover: () => undefined,
+      });
+
+      useEffect(() => {
+        if (!window.localStorage.getItem(STORAGE_KEY)) return;
+      }, []);
+
+      return (
+        <div>
+          <button data-clear onClick={recovery.clearCurrentDraft} />
+          <button data-change onClick={() => setSuffix('B')} />
+        </div>
+      );
+    };
+
+    await act(async () => {
+      root.render(<Harness />);
+    });
+
+    expect(window.localStorage.getItem(STORAGE_KEY)).not.toBeNull();
+
+    await act(async () => {
+      (container.querySelector('[data-clear]') as HTMLButtonElement).click();
+    });
+
+    expect(window.localStorage.getItem(STORAGE_KEY)).toBeNull();
+
+    await act(async () => {
+      (container.querySelector('[data-change]') as HTMLButtonElement).click();
+    });
+
+    const rawAfterChange = window.localStorage.getItem(STORAGE_KEY);
+    expect(rawAfterChange).not.toBeNull();
+    expect(rawAfterChange).toContain('INPUT-B');
+
+    await act(async () => {
+      root.unmount();
+    });
+    container.remove();
+  });
+});

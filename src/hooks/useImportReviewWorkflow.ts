@@ -22,7 +22,6 @@ import {
   type ImportReviewRowTypeOverride,
 } from '../engine/importReview';
 import {
-  importExternalInput,
   type ExternalImportAngleMode,
   type ImportedDataset,
   type ImportedInputNotice,
@@ -138,72 +137,79 @@ export const useImportReviewWorkflow = ({
     ) => {
       const reader = new FileReader();
       reader.onload = () => {
-        const text = typeof reader.result === 'string' ? reader.result : '';
-        const imported = importExternalInput(text, file.name, angleMode != null ? { angleMode } : {});
-        if (pickerMode === 'compare') {
-          if (imported.detected && imported.dataset && imported.notice) {
-            const comparisonDataset = imported.dataset;
-            setImportReviewState((prev) =>
-              prev
-                ? {
-                    ...prev,
-                    comparisonSourceName: file.name,
-                    comparisonNotice: imported.notice,
-                    comparisonDataset,
-                    comparisonSummary: buildImportReviewComparisonSummary(
-                      prev.dataset,
-                      prev.sourceName,
+        void (async () => {
+          const text = typeof reader.result === 'string' ? reader.result : '';
+          const { importExternalInput } = await import('../engine/importers');
+          const imported = importExternalInput(
+            text,
+            file.name,
+            angleMode != null ? { angleMode } : {},
+          );
+          if (pickerMode === 'compare') {
+            if (imported.detected && imported.dataset && imported.notice) {
+              const comparisonDataset = imported.dataset;
+              setImportReviewState((prev) =>
+                prev
+                  ? {
+                      ...prev,
+                      comparisonSourceName: file.name,
+                      comparisonNotice: imported.notice,
                       comparisonDataset,
-                      file.name,
-                      prev.comparisonMode,
-                    ),
-                  }
-                : prev,
-            );
+                      comparisonSummary: buildImportReviewComparisonSummary(
+                        prev.dataset,
+                        prev.sourceName,
+                        comparisonDataset,
+                        file.name,
+                        prev.comparisonMode,
+                      ),
+                    }
+                  : prev,
+              );
+            }
+            return;
           }
-          return;
-        }
 
-        if (imported.detected && imported.dataset && imported.notice) {
-          const reviewModel = buildImportReviewModel(imported.dataset);
-          const importedPromptedFile = requiresImportAngleModePrompt(file.name);
-          const useReducedDirectionPreset = importedPromptedFile && angleMode === 'reduced';
-          const useDirectionSetPreset =
-            importedPromptedFile && (angleMode === 'reduced' || faceMode != null);
-          const rowTypeOverrides = useReducedDirectionPreset
-            ? buildReducedAngleRowTypeOverrides(reviewModel)
-            : {};
-          const selectedFaceMode: ImportFacePromptChoice =
-            faceMode ?? (faceNormalizationMode === 'off' ? 'off' : 'on');
-          const groupComments = Object.fromEntries(
-            reviewModel.groups.map((group) => [group.key, group.defaultComment]),
-          );
-          const groupLabels = Object.fromEntries(
-            reviewModel.groups.map((group) => [group.key, group.label]),
-          );
-          setImportReviewState({
-            sourceName: file.name,
-            notice: imported.notice,
-            dataset: imported.dataset,
-            reviewModel,
-            comparisonSummary: null,
-            comparisonMode: 'non-mta-only',
-            excludedItemIds: new Set(),
-            fixedItemIds: new Set(),
-            groupLabels,
-            groupComments,
-            rowOverrides: {},
-            rowTypeOverrides,
-            preset: useDirectionSetPreset ? 'ts-direction-set' : 'clean-webnet',
-            importFaceNormalizationMode: selectedFaceMode,
-            importAngleMode: angleMode,
-            force2DOutput: false,
-            nextSyntheticId: 1,
-          });
-          return;
-        }
+          if (imported.detected && imported.dataset && imported.notice) {
+            const reviewModel = buildImportReviewModel(imported.dataset);
+            const importedPromptedFile = requiresImportAngleModePrompt(file.name);
+            const useReducedDirectionPreset = importedPromptedFile && angleMode === 'reduced';
+            const useDirectionSetPreset =
+              importedPromptedFile && (angleMode === 'reduced' || faceMode != null);
+            const rowTypeOverrides = useReducedDirectionPreset
+              ? buildReducedAngleRowTypeOverrides(reviewModel)
+              : {};
+            const selectedFaceMode: ImportFacePromptChoice =
+              faceMode ?? (faceNormalizationMode === 'off' ? 'off' : 'on');
+            const groupComments = Object.fromEntries(
+              reviewModel.groups.map((group) => [group.key, group.defaultComment]),
+            );
+            const groupLabels = Object.fromEntries(
+              reviewModel.groups.map((group) => [group.key, group.label]),
+            );
+            setImportReviewState({
+              sourceName: file.name,
+              notice: imported.notice,
+              dataset: imported.dataset,
+              reviewModel,
+              comparisonSummary: null,
+              comparisonMode: 'non-mta-only',
+              excludedItemIds: new Set(),
+              fixedItemIds: new Set(),
+              groupLabels,
+              groupComments,
+              rowOverrides: {},
+              rowTypeOverrides,
+              preset: useDirectionSetPreset ? 'ts-direction-set' : 'clean-webnet',
+              importFaceNormalizationMode: selectedFaceMode,
+              importAngleMode: angleMode,
+              force2DOutput: false,
+              nextSyntheticId: 1,
+            });
+            return;
+          }
 
-        applyImportedInput(imported.text, imported.notice ?? null);
+          applyImportedInput(imported.text, imported.notice ?? null);
+        })();
       };
       reader.readAsText(file);
     },
