@@ -74,8 +74,14 @@
       - [x] Add focused module regression coverage for include-scope snapshot/restore behavior
     - [ ] Split canonicalization/traceability/post-parse passes into dedicated modules
   - [ ] Phase 4 - solver modular split
-    - [ ] Split preprocessing into a dedicated module boundary
-    - [ ] Split equation assembly / stochastic model setup into dedicated modules
+    - [x] Split preprocessing into a dedicated module boundary
+      - [x] Extract solve-parameter preparation, auto-held height detection, direction-set ID collection, and weighted-control constraint planning into `src/engine/adjustmentPreprocessing.ts`
+      - [x] Extract shared control-constraint builders/correlation weighting into `src/engine/adjustmentConstraints.ts`
+      - [x] Add focused module regression coverage for solve-parameter preparation and correlated control constraints
+    - [x] Split equation assembly / stochastic model setup into dedicated modules
+      - [x] Extract solve-loop `A/L/P` assembly for observation families and weighted-control rows into `src/engine/adjustmentEquationAssembly.ts`
+      - [x] Keep `adjust.ts` as iteration orchestration while delegating solve-matrix assembly to the extracted module
+      - [x] Add focused module regression coverage for solve-matrix assembly
     - [ ] Split solve / iteration control into a dedicated module
     - [ ] Split diagnostics/statistics shaping into a dedicated module
     - [ ] Split final result shaping/export-ready data assembly into a dedicated module
