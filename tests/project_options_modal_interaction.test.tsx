@@ -94,6 +94,27 @@ const clickButtonByExactText = async (container: HTMLElement, label: string): Pr
   });
 };
 
+const clickProjectOptionsTab = async (
+  container: HTMLElement,
+  tab: NonNullable<React.ComponentProps<typeof App>['initialOptionsTab']>,
+): Promise<void> => {
+  const labelByTab: Record<
+    NonNullable<React.ComponentProps<typeof App>['initialOptionsTab']>,
+    string
+  > = {
+    adjustment: 'Adjustment',
+    general: 'General',
+    instrument: 'Instrument',
+    'listing-file': 'Listing File',
+    'other-files': 'Other Files',
+    special: 'Special',
+    gps: 'GPS',
+    modeling: 'Modeling',
+  };
+  await clickButtonByExactText(container, labelByTab[tab]);
+  await waitForTabContent(container, tab);
+};
+
 const clickButtonByTitle = async (container: HTMLElement, title: string): Promise<void> => {
   const button = container.querySelector(`button[title="${title}"]`) as HTMLButtonElement | null;
   if (!button) throw new Error(`Button with title "${title}" not found.`);
@@ -180,12 +201,12 @@ describe('Project Options modal interactions', () => {
       expect(app.container.textContent).toContain('Solver Configuration');
       expect(app.container.textContent).not.toContain('TS Correlation');
 
-      await clickButtonByExactText(app.container, 'Modeling');
+      await clickProjectOptionsTab(app.container, 'modeling');
       expect(app.container.textContent).toContain('TS Correlation');
       expect(app.container.textContent).toContain('Robust Model');
       expect(app.container.textContent).not.toContain('Solver Configuration');
 
-      await clickButtonByExactText(app.container, 'General');
+      await clickProjectOptionsTab(app.container, 'general');
       expect(app.container.textContent).toContain('Local / Grid Reduction');
       expect(app.container.textContent).toContain('Map Mode');
       expect(app.container.textContent).not.toContain('TS Correlation');
@@ -205,7 +226,7 @@ describe('Project Options modal interactions', () => {
       expect(app.container.textContent).not.toContain('Local / Grid Reduction');
 
       await clickOpenProjectOptions(app.container);
-      await clickButtonByExactText(app.container, 'General');
+      await clickProjectOptionsTab(app.container, 'general');
 
       const reopenedMapMode = findSelectForSettingsRow(app.container, 'Map Mode');
       expect(reopenedMapMode.value).toBe('anglecalc');
@@ -225,7 +246,7 @@ describe('Project Options modal interactions', () => {
       expect(app.container.textContent).not.toContain('Robust Model');
 
       await clickOpenProjectOptions(app.container);
-      await clickButtonByExactText(app.container, 'Modeling');
+      await clickProjectOptionsTab(app.container, 'modeling');
 
       const reopenedRobustMode = findSelectForSettingsRow(app.container, 'Robust Mode');
       expect(reopenedRobustMode.value).toBe('none');
@@ -248,7 +269,7 @@ describe('Project Options modal interactions', () => {
       expect(document.documentElement.getAttribute('data-theme')).toBe('gruvbox-light');
 
       await clickOpenProjectOptions(app.container);
-      await clickButtonByExactText(app.container, 'General');
+      await clickProjectOptionsTab(app.container, 'general');
       const reopenedThemeSelect = findSelectForSettingsRow(app.container, 'UI Theme');
       expect(reopenedThemeSelect.value).toBe('gruvbox-light');
     } finally {
@@ -280,7 +301,7 @@ describe('Project Options modal interactions', () => {
 
       await clickButtonByExactText(app.container, 'Apply');
       await clickOpenProjectOptions(app.container);
-      await clickButtonByExactText(app.container, 'Adjustment');
+      await clickProjectOptionsTab(app.container, 'adjustment');
 
       const reopenedLimit = findInputForSettingsRow(app.container, 'Convergence Limit');
       expect(reopenedLimit.value).toBe('0.1');
@@ -298,7 +319,7 @@ describe('Project Options modal interactions', () => {
 
       await clickButtonByExactText(app.container, 'Apply');
       await clickOpenProjectOptions(app.container);
-      await clickButtonByExactText(app.container, 'Adjustment');
+      await clickProjectOptionsTab(app.container, 'adjustment');
 
       const reopenedRunMode = findSelectForSettingsRow(app.container, 'Run Mode');
       expect(reopenedRunMode.value).toBe('data-check');
@@ -316,7 +337,7 @@ describe('Project Options modal interactions', () => {
 
       await clickButtonByExactText(app.container, 'Cancel');
       await clickOpenProjectOptions(app.container);
-      await clickButtonByExactText(app.container, 'Adjustment');
+      await clickProjectOptionsTab(app.container, 'adjustment');
 
       const reopenedLimit = findInputForSettingsRow(app.container, 'Convergence Limit');
       expect(reopenedLimit.value).toBe('0.01');
@@ -336,7 +357,7 @@ describe('Project Options modal interactions', () => {
 
       await clickButtonByExactText(app.container, 'Apply');
       await clickOpenProjectOptions(app.container);
-      await clickButtonByExactText(app.container, 'Other Files');
+      await clickProjectOptionsTab(app.container, 'other-files');
 
       const reopenedPreset = findSelectForSettingsRow(app.container, 'Adjusted Points Preset');
       expect(reopenedPreset.value).toBe('custom');
@@ -356,7 +377,7 @@ describe('Project Options modal interactions', () => {
 
       await clickButtonByExactText(app.container, 'Cancel');
       await clickOpenProjectOptions(app.container);
-      await clickButtonByExactText(app.container, 'Other Files');
+      await clickProjectOptionsTab(app.container, 'other-files');
 
       const reopenedDelimiter = findSelectForSettingsRow(
         app.container,
@@ -403,7 +424,7 @@ describe('Project Options modal interactions', () => {
 
       await clickButtonByExactText(app.container, 'Apply');
       await clickOpenProjectOptions(app.container);
-      await clickButtonByExactText(app.container, 'Other Files');
+      await clickProjectOptionsTab(app.container, 'other-files');
 
       const reopenedToggle = getToggleForSettingsRow(app.container, 'Enable Rotation');
       const reopenedAngle = findInputForSettingsRow(app.container, 'Angle (deg or dms)');
@@ -423,7 +444,7 @@ describe('Project Options modal interactions', () => {
 
       await clickButtonByExactText(app.container, 'Cancel');
       await clickOpenProjectOptions(app.container);
-      await clickButtonByExactText(app.container, 'Other Files');
+      await clickProjectOptionsTab(app.container, 'other-files');
 
       const reopenedToggle = getToggleForSettingsRow(app.container, 'Enable Rotation');
       const reopenedAngle = findInputForSettingsRow(app.container, 'Angle (deg or dms)');
@@ -447,7 +468,7 @@ describe('Project Options modal interactions', () => {
 
       await clickButtonByExactText(app.container, 'Apply');
       await clickOpenProjectOptions(app.container);
-      await clickButtonByExactText(app.container, 'Other Files');
+      await clickProjectOptionsTab(app.container, 'other-files');
 
       const reopenedRotation = findInputForSettingsRow(app.container, 'Angle (deg or dms)');
       const reopenedAzimuth = findInputForSettingsRow(app.container, 'Azimuth (deg or dms)');
@@ -494,7 +515,7 @@ describe('Project Options modal interactions', () => {
       await clickButtonByExactText(app.container, 'Cancel');
       await clickButtonByExactText(app.container, 'Adjust');
       await clickOpenProjectOptions(app.container);
-      await clickButtonByExactText(app.container, 'Other Files');
+      await clickProjectOptionsTab(app.container, 'other-files');
 
       await clickButtonByExactText(app.container, 'Select Points');
       expect(app.container.textContent).toContain('Transform Scope');
@@ -560,7 +581,7 @@ describe('Project Options modal interactions', () => {
 
       await clickButtonByExactText(app.container, 'Apply');
       await clickOpenProjectOptions(app.container);
-      await clickButtonByExactText(app.container, 'GPS');
+      await clickProjectOptionsTab(app.container, 'gps');
 
       const reopenedMode = findSelectForSettingsRow(app.container, 'Coord System Mode');
       const reopenedCrs = findSelectForSettingsRow(app.container, 'CRS (Grid Mode)');
@@ -639,7 +660,7 @@ describe('Project Options modal interactions', () => {
 
       await clickButtonByExactText(app.container, 'Cancel');
       await clickOpenProjectOptions(app.container);
-      await clickButtonByExactText(app.container, 'GPS');
+      await clickProjectOptionsTab(app.container, 'gps');
 
       const reopenedAvgGeoid = findInputForSettingsRow(app.container, 'Average Geoid Height');
       expect(reopenedAvgGeoid.value).toBe('0');
@@ -658,7 +679,7 @@ describe('Project Options modal interactions', () => {
 
       await clickButtonByExactText(app.container, 'Apply');
       await clickOpenProjectOptions(app.container);
-      await clickButtonByExactText(app.container, 'GPS');
+      await clickProjectOptionsTab(app.container, 'gps');
 
       const reopenedFrame = findSelectForSettingsRow(app.container, 'GNSS Vector Frame Default');
       expect(reopenedFrame.value).toBe('unknown');
@@ -681,7 +702,7 @@ describe('Project Options modal interactions', () => {
 
       await clickButtonByExactText(app.container, 'Apply');
       await clickOpenProjectOptions(app.container);
-      await clickButtonByExactText(app.container, 'GPS');
+      await clickProjectOptionsTab(app.container, 'gps');
 
       const reopenedGeoidModelId = findInputForSettingsRow(app.container, 'Geoid/Grid Model ID');
       expect(reopenedGeoidModelId.value).toBe('NAD83-CSRS-DEMO');
