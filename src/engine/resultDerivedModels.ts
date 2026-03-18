@@ -8,7 +8,7 @@ import type {
   Observation,
   ParseOptions,
   StationMap,
-  } from '../types';
+} from '../types';
 
 export type SortedObservation = Observation & { originalIndex: number };
 
@@ -254,6 +254,12 @@ export const resolveStationIdToken = (
   return stationIdLookup.get(token.toUpperCase()) ?? null;
 };
 
+export const buildStationPairKey = (left: string, right: string): string =>
+  [left, right]
+    .slice()
+    .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }))
+    .join('|');
+
 export const buildObservationMapLinks = (observations: Observation[]): ObservationMapLink[] =>
   observations
     .filter(
@@ -267,10 +273,7 @@ export const buildObservationMapLinks = (observations: Observation[]): Observati
       fromId: obs.from,
       toId: obs.to,
       sourceLine: obs.sourceLine ?? null,
-      pairKey: [obs.from, obs.to]
-        .slice()
-        .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }))
-        .join('|'),
+      pairKey: buildStationPairKey(obs.from, obs.to),
     }));
 
 export const buildMapLinkByPairKey = <TLink extends { pairKey: string }>(
@@ -302,6 +305,24 @@ export const scoreMapStationPriority = (input: {
     input.severity === 'weak' ? 100 : input.severity === 'watch' ? 80 : 0;
   const fixedBoost = input.fixed ? 10 : 0;
   return selectedBoost + severityBoost + fixedBoost;
+};
+
+export const resolveMapStationFillColor = (input: {
+  fixed: boolean;
+  severity?: 'watch' | 'weak' | null;
+}): string => {
+  if (input.fixed) return '#22c55e';
+  if (input.severity === 'weak') return '#ef4444';
+  if (input.severity === 'watch') return '#f59e0b';
+  return '#fbbf24';
+};
+
+export const resolveMapEllipseStrokeColor = (
+  severity?: 'watch' | 'weak' | null,
+): string => {
+  if (severity === 'weak') return '#fb7185';
+  if (severity === 'watch') return '#f59e0b';
+  return '#38bdf8';
 };
 
 export const buildResultTraceabilityModel = (

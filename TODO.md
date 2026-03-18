@@ -50,13 +50,13 @@
         - [x] Add focused regression coverage for extracted WebNet text report builder
   - [ ] Phase 2 - shared derived-model cleanup
     - [x] Add shared QA derived-data model for report/map comparison workflows
-    - [~] Expand shared derived models so report/map/listing/processing-summary consume normalized data instead of rebuilding view-specific arrays
+    - [x] Expand shared derived models so report/map/listing/processing-summary consume normalized data instead of rebuilding view-specific arrays
       - [x] Add `src/engine/resultDerivedModels.ts` for shared observation sorting/grouping, data-check diff rows, traceability normalization, and statistical-summary fallback shaping
       - [x] Rewire `ReportView`, `ProcessingSummaryView`, `industryListing`, and `runResultsTextBuilder` to consume the shared derived helpers instead of rebuilding those models inline
       - [x] Add focused regression coverage for shared derived-model helpers in `tests/result_derived_models.test.ts`
       - [x] Extend the shared derived-model path into remaining map-side non-geometry selectors (visible station IDs, weak-station severity, station ID lookup, and observation-pair link lookup) so `MapView` no longer rebuilds those selectors inline
       - [x] Extend the shared derived-model path into visible-station row metadata and shared station-priority scoring for `MapView` tool panels and dense-label prioritization
-      - [ ] Continue the shared derived-model path only where future map-side duplication remains meaningfully non-geometry-specific after the selector/priority extraction
+      - [x] Finish the remaining map-side selector cleanup by centralizing pair-key normalization plus severity-based station/ellipse styling helpers used by `MapView`
   - [ ] Phase 3 - parser modular split
     - [~] Split parser directive-state management out of the current parser monolith
       - [x] Extract observation-mode normalization, directive transition snapshots, and no-effect warning synthesis into `src/engine/parseDirectiveState.ts`
@@ -104,7 +104,7 @@
       - [x] Keep run-mode/auto-sideshot/cluster gating behavior stable while reducing `buildResult()` responsibility in `src/engine/adjust.ts`
       - [x] Add focused regression coverage for the extracted result builder
   - [ ] Next architecture follow-up
-    - [~] Expand shared derived models so report/map/listing/processing-summary consume normalized data instead of rebuilding view-specific arrays
+    - [x] Expand shared derived models so report/map/listing/processing-summary consume normalized data instead of rebuilding view-specific arrays
 
 - [x] Add post-adjust adjusted-points Transform support (rotation-only v1): persisted transform settings, Project Options -> Other Files -> Transform UI (rotation with pivot/scope/select-points popup + translation/scale placeholders), export-time validation, and dual-section adjusted-points export output (original + transform notes + rotated coordinates)
 - [x] Add TypeScript tooling (tsconfig, TSX entry) and migrate LSA engine/UI to TS modules

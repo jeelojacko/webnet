@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { LSAEngine } from '../src/engine/adjust';
 import { buildQaDerivedResult } from '../src/engine/qaWorkflow';
 import {
+  buildStationPairKey,
   buildDataCheckDiffRows,
   buildMapLinkByPairKey,
   buildObservationMapLinks,
@@ -15,6 +16,8 @@ import {
   resolveWeakStationSeverity,
   groupSortedObservationsByType,
   resolveSelectedObservationPairKey,
+  resolveMapEllipseStrokeColor,
+  resolveMapStationFillColor,
   resolveStationIdToken,
   scoreMapStationPriority,
   sortObservationsByStdRes,
@@ -183,11 +186,16 @@ describe('resultDerivedModels helpers', () => {
       { id: 'A', severity: null },
       { id: 'P', severity: 'weak' },
     ]);
+    expect(buildStationPairKey('P', 'A')).toBe('A|P');
     expect(fallbackMapLinks).toHaveLength(2);
     expect(mapLinkByPairKey.get('A|P')?.observationId).toBe(result.observations[0]?.id);
     expect(resolveSelectedObservationPairKey(derived.observationById, selectedObservationId)).toBe(
       'A|P',
     );
+    expect(resolveMapStationFillColor({ fixed: false, severity: 'weak' })).toBe('#ef4444');
+    expect(resolveMapStationFillColor({ fixed: true, severity: 'weak' })).toBe('#22c55e');
+    expect(resolveMapEllipseStrokeColor('watch')).toBe('#f59e0b');
+    expect(resolveMapEllipseStrokeColor(null)).toBe('#38bdf8');
     expect(
       scoreMapStationPriority({
         stationId: 'P',

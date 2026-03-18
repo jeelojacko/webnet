@@ -14,12 +14,15 @@ import {
   sanitizeAdjustedPointsExportSettings,
 } from '../engine/adjustedPointsExport';
 import {
+  buildStationPairKey,
   buildMapLinkByPairKey,
   buildObservationMapLinks,
   buildStationIdLookup,
   buildVisibleStationRows,
   buildVisibleStationIds,
   buildWeakStationSeverityLookup,
+  resolveMapEllipseStrokeColor,
+  resolveMapStationFillColor,
   resolveWeakStationSeverity,
   resolveSelectedObservationPairKey,
   resolveStationIdToken,
@@ -266,23 +269,13 @@ const MapView: React.FC<MapViewProps> = ({
   );
 
   const stationFill = useCallback(
-    (stationId: string, fixed: boolean): string => {
-      if (fixed) return '#22c55e';
-      const severity = stationSeverity(stationId);
-      if (severity === 'weak') return '#ef4444';
-      if (severity === 'watch') return '#f59e0b';
-      return '#fbbf24';
-    },
+    (stationId: string, fixed: boolean): string =>
+      resolveMapStationFillColor({ fixed, severity: stationSeverity(stationId) }),
     [stationSeverity],
   );
 
   const ellipseStroke = useCallback(
-    (stationId: string): string => {
-      const severity = stationSeverity(stationId);
-      if (severity === 'weak') return '#fb7185';
-      if (severity === 'watch') return '#f59e0b';
-      return '#38bdf8';
-    },
+    (stationId: string): string => resolveMapEllipseStrokeColor(stationSeverity(stationId)),
     [stationSeverity],
   );
 
@@ -1550,10 +1543,7 @@ const MapView: React.FC<MapViewProps> = ({
                 const a = projected3dById.get(edge.from);
                 const b = projected3dById.get(edge.to);
                 if (!a || !b) return null;
-                const pairKey = [edge.from, edge.to]
-                  .slice()
-                  .sort((left, right) => left.localeCompare(right, undefined, { numeric: true }))
-                  .join('|');
+                const pairKey = buildStationPairKey(edge.from, edge.to);
                 const link = mapLinkByPairKey.get(pairKey) ?? null;
                 const isSelected =
                   (link != null && link.observationId === selectedObservationId) ||
@@ -1581,10 +1571,7 @@ const MapView: React.FC<MapViewProps> = ({
                 const a = projected3dById.get(edge.from);
                 const b = projected3dById.get(edge.to);
                 if (!a || !b) return null;
-                const pairKey = [edge.from, edge.to]
-                  .slice()
-                  .sort((left, right) => left.localeCompare(right, undefined, { numeric: true }))
-                  .join('|');
+                const pairKey = buildStationPairKey(edge.from, edge.to);
                 const link = mapLinkByPairKey.get(pairKey) ?? null;
                 const isSelected =
                   (link != null && link.observationId === selectedObservationId) ||
