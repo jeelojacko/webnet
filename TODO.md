@@ -82,7 +82,10 @@
       - [x] Extract solve-loop `A/L/P` assembly for observation families and weighted-control rows into `src/engine/adjustmentEquationAssembly.ts`
       - [x] Keep `adjust.ts` as iteration orchestration while delegating solve-matrix assembly to the extracted module
       - [x] Add focused module regression coverage for solve-matrix assembly
-    - [ ] Split solve / iteration control into a dedicated module
+    - [x] Split solve / iteration control into a dedicated module
+      - [x] Extract robust/classical per-iteration normal-equation solve flow into `src/engine/adjustmentIteration.ts`
+      - [x] Extract station/orientation correction application into `src/engine/adjustmentIteration.ts`
+      - [x] Add focused regression coverage for iteration-step solving and correction application
     - [ ] Split diagnostics/statistics shaping into a dedicated module
     - [ ] Split final result shaping/export-ready data assembly into a dedicated module
 

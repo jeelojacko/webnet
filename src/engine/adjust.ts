@@ -19,10 +19,16 @@ import {
   coordinateConstraintWeightedSum,
 } from './adjustmentConstraints';
 import { assembleAdjustmentEquations } from './adjustmentEquationAssembly';
+import {
+  applyAdjustmentCorrections,
+  solveAdjustmentIteration,
+} from './adjustmentIteration';
 import { buildSolvePreparation } from './adjustmentPreprocessing';
 import type {
   CoordinateConstraintRowPlacement,
   EquationRowInfo,
+  RobustWeightMatrixBase,
+  RobustWeightSummary,
   SolveParameterIndex,
 } from './adjustmentSolveTypes';
 import type {
@@ -231,19 +237,6 @@ interface EngineOptions {
   parseOptions?: Partial<ParseOptions>;
   geoidSourceData?: ArrayBuffer | Uint8Array;
 }
-type RobustWeightMatrixBase = {
-  diagonal: number[];
-  correlatedPairs: { i: number; j: number; base: number }[];
-};
-type RobustWeightSummary = {
-  factors: number[];
-  downweightedRows: number;
-  minWeight: number;
-  maxNorm: number;
-  meanWeight: number;
-  topRows: NonNullable<AdjustmentResult['robustDiagnostics']>['topDownweightedRows'];
-};
-
 export class LSAEngine {
   input: string;
   stations: StationMap = {};
@@ -4432,87 +4425,27 @@ export class LSAEngine {
       );
 
       try {
-        const AT = transpose(A);
-        let X: number[][] = zeros(numParams, 1);
-        let solvedP = P;
-        if (this.robustMode === 'huber') {
-          const baseWeights = this.captureRobustWeightBase(P, rowInfo);
-          let factors = new Array(P.length).fill(1);
-          let finalSummary: RobustWeightSummary | null = null;
-          let finalWeightDelta = 0;
-          const maxInnerIterations = 5;
-          const weightTolerance = 1e-3;
-          for (let inner = 0; inner < maxInnerIterations; inner += 1) {
-            this.applyRobustWeightFactors(P, baseWeights, factors);
-            solvedP = P;
-            const ATP = multiply(AT, solvedP);
-            const N = multiply(ATP, A);
-            const conditionEstimate = this.estimateCondition(N);
-            this.condition = {
-              estimate: conditionEstimate,
-              threshold: this.maxCondition,
-              flagged: conditionEstimate > this.maxCondition,
-            };
-            if (conditionEstimate > this.maxCondition && !this.conditionWarned) {
-              this.log(
-                `Warning: normal matrix appears ill-conditioned (estimate=${conditionEstimate.toExponential(
-                  3,
-                )}, threshold=${this.maxCondition.toExponential(3)}).`,
-              );
-              this.conditionWarned = true;
-            }
-            const U = multiply(ATP, L);
-            const normalSolution = this.solveNormalEquations(N, U);
-            X = normalSolution.correction;
-            this.Qxx = normalSolution.qxx;
-            const AX = multiply(A, X);
-            const residuals = AX.map((rowValue, i) => rowValue[0] - L[i][0]);
-            finalSummary = this.computeRobustWeightSummary(residuals, rowInfo);
-            finalWeightDelta = this.maxRobustWeightDelta(factors, finalSummary.factors);
-            if (finalWeightDelta < weightTolerance) {
-              break;
-            }
-            factors = finalSummary.factors.slice();
-          }
-          if (finalSummary) {
-            this.recordRobustDiagnostics(iter + 1, finalSummary, finalWeightDelta);
-          }
-        } else {
-          const ATP = multiply(AT, P);
-          const N = multiply(ATP, A);
-          const conditionEstimate = this.estimateCondition(N);
-          this.condition = {
-            estimate: conditionEstimate,
-            threshold: this.maxCondition,
-            flagged: conditionEstimate > this.maxCondition,
-          };
-          if (conditionEstimate > this.maxCondition && !this.conditionWarned) {
-            this.log(
-              `Warning: normal matrix appears ill-conditioned (estimate=${conditionEstimate.toExponential(
-                3,
-              )}, threshold=${this.maxCondition.toExponential(3)}).`,
-            );
-            this.conditionWarned = true;
-          }
-          const U = multiply(ATP, L);
-          const normalSolution = this.solveNormalEquations(N, U);
-          X = normalSolution.correction;
-          this.Qxx = normalSolution.qxx;
-        }
-
-        const AX = multiply(A, X);
-        const Vnew = zeros(numObsEquations, 1);
-        let maxBefore = 0;
-        let maxAfter = 0;
-        for (let i = 0; i < numObsEquations; i += 1) {
-          const v0 = L[i][0];
-          const v1 = v0 - AX[i][0];
-          Vnew[i][0] = v1;
-          maxBefore = Math.max(maxBefore, Math.abs(v0));
-          maxAfter = Math.max(maxAfter, Math.abs(v1));
-        }
-        const sumBefore = this.weightedQuadratic(solvedP, L);
-        const sumAfter = this.weightedQuadratic(solvedP, Vnew);
+        const iterationResult = solveAdjustmentIteration(
+          {
+            robustMode: this.robustMode,
+            solveNormalEquations: this.solveNormalEquations.bind(this),
+            estimateCondition: this.estimateCondition.bind(this),
+            recordConditionEstimate: this.recordConditionEstimate.bind(this),
+            captureRobustWeightBase: this.captureRobustWeightBase.bind(this),
+            applyRobustWeightFactors: this.applyRobustWeightFactors.bind(this),
+            computeRobustWeightSummary: this.computeRobustWeightSummary.bind(this),
+            maxRobustWeightDelta: this.maxRobustWeightDelta.bind(this),
+            recordRobustDiagnostics: this.recordRobustDiagnostics.bind(this),
+            weightedQuadratic: this.weightedQuadratic.bind(this),
+          },
+          A,
+          L,
+          P,
+          rowInfo,
+          iter + 1,
+        );
+        this.Qxx = iterationResult.qxx;
+        const { correction, sumBefore, sumAfter, maxBefore, maxAfter } = iterationResult;
         const objectiveDeltaWithinIter = Math.abs(sumBefore - sumAfter);
         const objectiveDeltaBetweenIterations =
           prevObjectiveBefore == null
@@ -4541,37 +4474,14 @@ export class LSAEngine {
           }
         }
 
-        let maxCorrection = 0;
-        Object.entries(this.paramIndex).forEach(([id, idx]) => {
-          const st = this.stations[id];
-          if (!st) return;
-          if (idx.x != null) {
-            const dE = X[idx.x][0];
-            st.x += dE;
-            maxCorrection = Math.max(maxCorrection, Math.abs(dE));
-          }
-          if (idx.y != null) {
-            const dN = X[idx.y][0];
-            st.y += dN;
-            maxCorrection = Math.max(maxCorrection, Math.abs(dN));
-          }
-          if (!this.is2D && idx.h != null) {
-            const dH = X[idx.h][0];
-            st.h += dH;
-            maxCorrection = Math.max(maxCorrection, Math.abs(dH));
-          }
-        });
-
-        directionSetIds.forEach((id) => {
-          const idx = dirParamMap[id];
-          if (idx == null) return;
-          const dOri = X[idx][0];
-          const next = (this.directionOrientations[id] ?? 0) + dOri;
-          let wrapped = next % (2 * Math.PI);
-          if (wrapped < 0) wrapped += 2 * Math.PI;
-          this.directionOrientations[id] = wrapped;
-          maxCorrection = Math.max(maxCorrection, Math.abs(dOri));
-        });
+        const maxCorrection = applyAdjustmentCorrections(
+          this.stations,
+          this.paramIndex,
+          this.is2D,
+          this.directionOrientations,
+          dirParamMap,
+          correction,
+        );
 
         this.log(`Iter ${iter + 1}: Max Corr = ${maxCorrection.toFixed(4)}`);
         this.log(
@@ -4617,6 +4527,22 @@ export class LSAEngine {
       colMax = Math.max(colMax, csum);
     }
     return rowMax * colMax;
+  }
+
+  private recordConditionEstimate(conditionEstimate: number): void {
+    this.condition = {
+      estimate: conditionEstimate,
+      threshold: this.maxCondition,
+      flagged: conditionEstimate > this.maxCondition,
+    };
+    if (conditionEstimate > this.maxCondition && !this.conditionWarned) {
+      this.log(
+        `Warning: normal matrix appears ill-conditioned (estimate=${conditionEstimate.toExponential(
+          3,
+        )}, threshold=${this.maxCondition.toExponential(3)}).`,
+      );
+      this.conditionWarned = true;
+    }
   }
 
   private calculateStatistics(
