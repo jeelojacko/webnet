@@ -1,5 +1,6 @@
 import { RAD_TO_DEG, radToDmsStr } from './angles';
 import { findLevelLoopTolerancePreset } from './levelLoopTolerance';
+import { buildResultTraceabilityModel } from './resultDerivedModels';
 import type { ParseSettings, RunDiagnostics, SettingsState } from '../appStateTypes';
 import type { AdjustmentResult, CustomLevelLoopTolerancePreset, Observation } from '../types';
 
@@ -68,12 +69,17 @@ export const createRunResultsTextBuilder = ({
     const linearUnit = settings.units === 'ft' ? 'ft' : 'm';
     const unitScale = settings.units === 'ft' ? FT_PER_M : 1;
     const runDiag = runDiagnostics ?? buildRunDiagnostics(parseSettings, res);
-    const aliasTrace = res.parseState?.aliasTrace ?? [];
+    const traceabilityModel = buildResultTraceabilityModel(res.parseState);
+    const aliasTrace = traceabilityModel.aliasTrace;
     const descriptionReconcileMode =
-      res.parseState?.descriptionReconcileMode ?? parseSettings.descriptionReconcileMode;
+      res.parseState?.descriptionReconcileMode ??
+      traceabilityModel.descriptionReconcileMode ??
+      parseSettings.descriptionReconcileMode;
     const descriptionAppendDelimiter =
-      res.parseState?.descriptionAppendDelimiter ?? parseSettings.descriptionAppendDelimiter;
-    const reconciledDescriptions = res.parseState?.reconciledDescriptions ?? {};
+      res.parseState?.descriptionAppendDelimiter ??
+      traceabilityModel.descriptionAppendDelimiter ??
+      parseSettings.descriptionAppendDelimiter;
+    const reconciledDescriptions = traceabilityModel.reconciledDescriptions;
     const stationDescription = (stationId: string): string =>
       reconciledDescriptions[stationId] ?? '';
     const aliasObsRefsByLine = new Map<number, string[]>();
@@ -344,9 +350,7 @@ export const createRunResultsTextBuilder = ({
         `GPS loop diagnostics: vectors=${gpsLoopDiagnostics.vectorCount}, loops=${gpsLoopDiagnostics.loopCount}, pass=${gpsLoopDiagnostics.passCount}, warn=${gpsLoopDiagnostics.warnCount}, tolerance=${(gpsLoopDiagnostics.thresholds.baseToleranceM * unitScale).toFixed(4)}${linearUnit}+${gpsLoopDiagnostics.thresholds.ppmTolerance}ppm*dist`,
       );
     }
-    const lostStationIds = [...(res.parseState?.lostStationIds ?? [])].sort((a, b) =>
-      a.localeCompare(b, undefined, { numeric: true }),
-    );
+    const lostStationIds = traceabilityModel.lostStationIds;
     lines.push(
       `Lost stations: ${lostStationIds.length > 0 ? `${lostStationIds.length} (${lostStationIds.join(', ')})` : 'none'}`,
     );
@@ -387,11 +391,11 @@ export const createRunResultsTextBuilder = ({
         lines.push(`Alias rules: ${aliasRules.map((r) => `${r.rule}@${r.sourceLine}`).join('; ')}`);
       }
     }
-    const descriptionScanSummary = res.parseState?.descriptionScanSummary ?? [];
-    const descriptionTrace = res.parseState?.descriptionTrace ?? [];
+    const descriptionScanSummary = traceabilityModel.descriptionScanSummary;
+    const descriptionTrace = traceabilityModel.descriptionTrace;
     if (descriptionScanSummary.length > 0) {
       lines.push(
-        `Description scan: stations=${descriptionScanSummary.length}, repeated=${res.parseState?.descriptionRepeatedStationCount ?? 0}, conflicts=${res.parseState?.descriptionConflictCount ?? 0}`,
+        `Description scan: stations=${descriptionScanSummary.length}, repeated=${traceabilityModel.descriptionRepeatedStationCount}, conflicts=${traceabilityModel.descriptionConflictCount}`,
       );
       descriptionScanSummary
         .filter((row) => row.conflict)

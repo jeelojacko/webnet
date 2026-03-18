@@ -4,6 +4,10 @@ import {
   DEFAULT_QFIX_LINEAR_SIGMA_M,
 } from './defaults';
 import { getLevelLoopTolerancePresetLabel } from './levelLoopTolerance';
+import {
+  buildResultStatisticalSummaryModel,
+  buildResultTraceabilityModel,
+} from './resultDerivedModels';
 import type {
   AdjustmentResult,
   CoordSystemDiagnosticCode,
@@ -277,9 +281,8 @@ export const buildIndustryStyleListingText = (
     parseState?.descriptionAppendDelimiter ?? parseSettings.descriptionAppendDelimiter ?? ' | ';
   const reconciledDescriptions = parseState?.reconciledDescriptions ?? {};
   const stationDescription = (stationId: string): string => reconciledDescriptions[stationId] ?? '';
-  const lostStationIds = [...(parseState?.lostStationIds ?? [])].sort((a, b) =>
-    a.localeCompare(b, undefined, { numeric: true }),
-  );
+  const traceabilityModel = buildResultTraceabilityModel(parseState);
+  const lostStationIds = traceabilityModel.lostStationIds;
   const observationStationIds = (obs: Observation): string[] => {
     if (obs.type === 'angle') return [obs.at, obs.from, obs.to];
     if (obs.type === 'direction') return [obs.at, obs.to];
@@ -320,23 +323,9 @@ export const buildIndustryStyleListingText = (
       `total=${summary.total}`,
     ].join('; ');
   };
-  const aliasTrace = parseState?.aliasTrace ?? [];
-  const descriptionTrace = parseState?.descriptionTrace ?? [];
-  const descriptionScanSummary = parseState?.descriptionScanSummary ?? [];
-  const descriptionRefsByStation = descriptionTrace.reduce<
-    Map<string, { key: string; description: string; lines: number[] }[]>
-  >((acc, entry) => {
-    const rows = acc.get(entry.stationId) ?? [];
-    const key = entry.description.replace(/\s+/g, ' ').trim().toUpperCase();
-    const existing = rows.find((row) => row.key === key);
-    if (existing) {
-      if (!existing.lines.includes(entry.sourceLine)) existing.lines.push(entry.sourceLine);
-    } else {
-      rows.push({ key, description: entry.description, lines: [entry.sourceLine] });
-    }
-    acc.set(entry.stationId, rows);
-    return acc;
-  }, new Map());
+  const aliasTrace = traceabilityModel.aliasTrace;
+  const descriptionScanSummary = traceabilityModel.descriptionScanSummary;
+  const descriptionRefsByStation = traceabilityModel.descriptionRefsByStation;
   const aliasObsRefsByLine = new Map<number, string[]>();
   aliasTrace.forEach((entry) => {
     if (entry.context !== 'observation') return;
@@ -612,10 +601,10 @@ export const buildIndustryStyleListingText = (
     'Description Reconciliation',
     `${descriptionReconcileMode.toUpperCase()}${descriptionReconcileMode === 'append' ? ` (delimiter="${descriptionAppendDelimiter}")` : ''}`,
   );
-  if ((parseState?.descriptionScanSummary?.length ?? 0) > 0) {
+  if (descriptionScanSummary.length > 0) {
     pushSettingRow(
       'Description Scan',
-      `repeated=${parseState?.descriptionRepeatedStationCount ?? 0}, conflicts=${parseState?.descriptionConflictCount ?? 0}, stations=${parseState?.descriptionScanSummary?.length ?? 0}`,
+      `repeated=${traceabilityModel.descriptionRepeatedStationCount}, conflicts=${traceabilityModel.descriptionConflictCount}, stations=${descriptionScanSummary.length}`,
     );
   }
   pushSettingRow('Show Lost Stations in Output', showLostStations ? 'ON' : 'OFF');
@@ -709,43 +698,10 @@ export const buildIndustryStyleListingText = (
   lines.push('');
   lines.push('Observation Statistics');
 
-  const statRows = res.statisticalSummary?.byGroup?.length
-    ? res.statisticalSummary.byGroup
-    : (() => {
-        const groups: Array<{
-          label: string;
-          filter: (_obs: Observation) => boolean;
-        }> = [
-          { label: 'Angles', filter: (o) => o.type === 'angle' },
-          {
-            label: 'Directions',
-            filter: (o) => o.type === 'direction' || o.type === 'dir' || o.type === 'bearing',
-          },
-          { label: 'Distances', filter: (o) => o.type === 'dist' },
-          { label: 'GPS', filter: (o) => o.type === 'gps' },
-          { label: 'Leveling', filter: (o) => o.type === 'lev' },
-        ];
-        return groups
-          .map((group) => {
-            const obs = res.observations
-              .filter(group.filter)
-              .filter((o) => Number.isFinite(o.stdRes));
-            if (!obs.length) return null;
-            const sumSquares = obs.reduce((sum, o) => sum + (o.stdRes ?? 0) * (o.stdRes ?? 0), 0);
-            const factor = Math.sqrt(sumSquares / obs.length);
-            return { label: group.label, count: obs.length, sumSquares, errorFactor: factor };
-          })
-          .filter(
-            (
-              row,
-            ): row is { label: string; count: number; sumSquares: number; errorFactor: number } =>
-              row != null,
-          );
-      })();
-  const totalCount =
-    res.statisticalSummary?.totalCount ?? statRows.reduce((sum, r) => sum + r.count, 0);
-  const totalSumSquares =
-    res.statisticalSummary?.totalSumSquares ?? statRows.reduce((sum, r) => sum + r.sumSquares, 0);
+  const statisticalSummary = buildResultStatisticalSummaryModel(res, 'listing');
+  const statRows = statisticalSummary.rows;
+  const totalCount = statisticalSummary.totalCount;
+  const totalSumSquares = statisticalSummary.totalSumSquares;
   const statTableRows = statRows.map((row) => [
     row.label,
     row.count.toString(),
@@ -1775,7 +1731,7 @@ export const buildIndustryStyleListingText = (
     lines.push('                     ==================================');
     lines.push('');
     lines.push(
-      `Mode: ${descriptionReconcileMode.toUpperCase()}${descriptionReconcileMode === 'append' ? ` (delimiter="${descriptionAppendDelimiter}")` : ''}   Stations: ${descriptionScanSummary.length}   Repeated: ${parseState?.descriptionRepeatedStationCount ?? 0}   Conflicts: ${parseState?.descriptionConflictCount ?? 0}`,
+      `Mode: ${descriptionReconcileMode.toUpperCase()}${descriptionReconcileMode === 'append' ? ` (delimiter="${descriptionAppendDelimiter}")` : ''}   Stations: ${descriptionScanSummary.length}   Repeated: ${traceabilityModel.descriptionRepeatedStationCount}   Conflicts: ${traceabilityModel.descriptionConflictCount}`,
     );
     lines.push('Station      Records  Unique  Conflict  Description@Lines');
     descriptionScanSummary

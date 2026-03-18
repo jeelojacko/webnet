@@ -1,5 +1,4 @@
 import React, { useMemo } from 'react';
-import { RAD_TO_DEG } from '../engine/angles';
 import type {
   AdjustmentResult,
   CoordSystemDiagnosticCode,
@@ -9,10 +8,14 @@ import type {
   DirectiveNoEffectWarning,
   DirectiveTransition,
   GnssVectorFrame,
-  Observation,
   ReductionUsageSummary,
   RunMode,
 } from '../types';
+import {
+  buildDataCheckDiffRows,
+  buildResultStatisticalSummaryModel,
+  buildResultTraceabilityModel,
+} from '../engine/resultDerivedModels';
 
 interface ProcessingSummaryViewProps {
   result: AdjustmentResult;
@@ -87,24 +90,7 @@ interface ProcessingSummaryViewProps {
   } | null;
 }
 
-type SummaryRow = {
-  label: string;
-  count: number;
-  sumSquares: number;
-  errorFactor: number;
-};
 const FT_PER_M = 3.280839895;
-
-const classifyRow = (obs: Observation): string => {
-  if (obs.type === 'angle') return 'Angles';
-  if (obs.type === 'dist') return 'Distances';
-  if (obs.type === 'direction' || obs.type === 'dir' || obs.type === 'bearing')
-    return 'Az/Bearings';
-  if (obs.type === 'gps') return 'GPS';
-  if (obs.type === 'lev') return 'Leveling';
-  if (obs.type === 'zenith') return 'Zenith';
-  return 'Other';
-};
 
 const elapsedStr = (ms: number | null): string => {
   if (!ms || !Number.isFinite(ms) || ms < 0) return '00:00:00';
@@ -134,37 +120,10 @@ const ProcessingSummaryView: React.FC<ProcessingSummaryViewProps> = ({
       (result.preanalysisMode ? 'preanalysis' : 'adjustment');
     const isDataCheck = runMode === 'data-check';
     const isBlunderDetect = runMode === 'blunder-detect';
-    let summaryRows: SummaryRow[] = [];
-    let totalCount = 0;
-    if (result.statisticalSummary?.byGroup?.length) {
-      summaryRows = result.statisticalSummary.byGroup.map((row) => ({
-        label: row.label,
-        count: row.count,
-        sumSquares: row.sumSquares,
-        errorFactor: row.errorFactor,
-      }));
-      totalCount = result.statisticalSummary.totalCount;
-    } else {
-      const rowsMap = new Map<string, { count: number; sumSquares: number }>();
-      result.observations.forEach((obs) => {
-        if (!Number.isFinite(obs.stdRes)) return;
-        const key = classifyRow(obs);
-        const sumSq = (obs.stdRes ?? 0) * (obs.stdRes ?? 0);
-        const row = rowsMap.get(key) ?? { count: 0, sumSquares: 0 };
-        row.count += 1;
-        row.sumSquares += sumSq;
-        rowsMap.set(key, row);
-        totalCount += 1;
-      });
-      summaryRows = [...rowsMap.entries()]
-        .map(([label, row]) => ({
-          label,
-          count: row.count,
-          sumSquares: row.sumSquares,
-          errorFactor: row.count > 0 ? Math.sqrt(row.sumSquares / row.count) : 0,
-        }))
-        .sort((a, b) => a.label.localeCompare(b.label));
-    }
+    const statisticalSummary = buildResultStatisticalSummaryModel(result, 'ui');
+    const summaryRows = statisticalSummary.rows;
+    const totalCount = statisticalSummary.totalCount;
+    const traceabilityModel = buildResultTraceabilityModel(result.parseState);
 
     const lines: string[] = [];
     lines.push('Loading Network Data ...');
@@ -188,61 +147,12 @@ const ProcessingSummaryView: React.FC<ProcessingSummaryViewProps> = ({
         : `Solution did not fully converge after ${result.iterations} iterations`,
     );
     if (isDataCheck) {
-      const dataCheckRows = result.observations
-        .map((obs) => {
-          if (
-            obs.type === 'dist' ||
-            obs.type === 'lev' ||
-            obs.type === 'angle' ||
-            obs.type === 'direction' ||
-            obs.type === 'bearing' ||
-            obs.type === 'dir' ||
-            obs.type === 'zenith'
-          ) {
-            const residual = typeof obs.residual === 'number' ? obs.residual : Number.NaN;
-            if (!Number.isFinite(residual)) return null;
-            const value =
-              obs.type === 'angle' ||
-              obs.type === 'direction' ||
-              obs.type === 'bearing' ||
-              obs.type === 'dir' ||
-              obs.type === 'zenith'
-                ? Math.abs(residual * RAD_TO_DEG * 3600)
-                : Math.abs(residual) * unitScale;
-            const label =
-              obs.type === 'angle' ||
-              obs.type === 'direction' ||
-              obs.type === 'bearing' ||
-              obs.type === 'dir' ||
-              obs.type === 'zenith'
-                ? `${value.toFixed(2)}"`
-                : `${value.toFixed(4)}${linearUnit}`;
-            const stations =
-              obs.type === 'angle'
-                ? `${obs.at}-${obs.from}-${obs.to}`
-                : 'from' in obs && 'to' in obs
-                  ? `${obs.from}-${obs.to}`
-                  : '-';
-            return { obs, value, label, stations };
-          }
-          if (obs.type === 'gps' && obs.residual && typeof obs.residual === 'object') {
-            const residual = obs.residual as { vE?: number; vN?: number };
-            const vE = Number.isFinite(residual.vE as number)
-              ? (residual.vE as number)
-              : Number.NaN;
-            const vN = Number.isFinite(residual.vN as number)
-              ? (residual.vN as number)
-              : Number.NaN;
-            if (!Number.isFinite(vE) || !Number.isFinite(vN)) return null;
-            const value = Math.hypot(vE, vN) * unitScale;
-            const stations = `${obs.from}-${obs.to}`;
-            return { obs, value, label: `${value.toFixed(4)}${linearUnit}`, stations };
-          }
-          return null;
-        })
-        .filter((row): row is NonNullable<typeof row> => row != null)
-        .sort((a, b) => b.value - a.value)
-        .slice(0, 20);
+      const dataCheckRows = buildDataCheckDiffRows(result.observations, {
+        unitScale,
+        linearUnitLabel: linearUnit,
+        linearUnitSpacer: '',
+        limit: 20,
+      });
       lines.push('');
       lines.push('Data Check Only: Differences from Observations');
       lines.push(
@@ -250,7 +160,7 @@ const ProcessingSummaryView: React.FC<ProcessingSummaryViewProps> = ({
       );
       dataCheckRows.forEach((row) => {
         lines.push(
-          `${padRight(String(row.obs.id), 8)}${padRight(row.obs.type.toUpperCase(), 12)}${padRight(row.stations, 18)}${padLeft(row.label, 16)}${padLeft(Number.isFinite(row.obs.stdRes ?? Number.NaN) ? Math.abs(row.obs.stdRes ?? 0).toFixed(2) : '-', 8)}${padLeft(row.obs.sourceLine != null ? String(row.obs.sourceLine) : '-', 8)}`,
+          `${padRight(String(row.obs.id), 8)}${padRight(row.obs.type.toUpperCase(), 12)}${padRight(row.stations, 18)}${padLeft(row.diffLabel, 16)}${padLeft(Number.isFinite(row.obs.stdRes ?? Number.NaN) ? Math.abs(row.obs.stdRes ?? 0).toFixed(2) : '-', 8)}${padLeft(row.obs.sourceLine != null ? String(row.obs.sourceLine) : '-', 8)}`,
         );
       });
     }
@@ -523,16 +433,12 @@ const ProcessingSummaryView: React.FC<ProcessingSummaryViewProps> = ({
         );
       }
     }
-    const lostStations = result.parseState?.lostStationIds ?? [];
+    const lostStations = traceabilityModel.lostStationIds;
     lines.push(
       `Lost Stations: ${lostStations.length > 0 ? `${lostStations.length} (${lostStations.join(', ')})` : 'none'}`,
     );
-    const descriptionReconcileMode = result.parseState?.descriptionReconcileMode ?? 'first';
-    const descriptionAppendDelimiter = result.parseState?.descriptionAppendDelimiter ?? ' | ';
-    const descriptionRepeated = result.parseState?.descriptionRepeatedStationCount ?? 0;
-    const descriptionConflicts = result.parseState?.descriptionConflictCount ?? 0;
     lines.push(
-      `Description Reconcile: ${descriptionReconcileMode.toUpperCase()}${descriptionReconcileMode === 'append' ? ` (delimiter="${descriptionAppendDelimiter}")` : ''}; repeated=${descriptionRepeated}; conflicts=${descriptionConflicts}`,
+      `Description Reconcile: ${traceabilityModel.descriptionReconcileMode.toUpperCase()}${traceabilityModel.descriptionReconcileMode === 'append' ? ` (delimiter="${traceabilityModel.descriptionAppendDelimiter}")` : ''}; repeated=${traceabilityModel.descriptionRepeatedStationCount}; conflicts=${traceabilityModel.descriptionConflictCount}`,
     );
     const autoSideshotEnabled = result.parseState?.autoSideshotEnabled ?? true;
     lines.push(`Auto-Sideshot: ${autoSideshotEnabled ? 'ON' : 'OFF'}`);
@@ -598,7 +504,7 @@ const ProcessingSummaryView: React.FC<ProcessingSummaryViewProps> = ({
         lines.push(`... ${gpsCoordinateSideshots.length - 15} more GS coordinate rows`);
       }
     }
-    const aliasTrace = result.parseState?.aliasTrace ?? [];
+    const aliasTrace = traceabilityModel.aliasTrace;
     if (
       (result.parseState?.aliasExplicitCount ?? 0) > 0 ||
       (result.parseState?.aliasRuleCount ?? 0) > 0

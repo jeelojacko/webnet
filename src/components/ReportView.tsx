@@ -19,6 +19,14 @@ import type {
 } from '../types';
 import { RAD_TO_DEG, radToDmsStr } from '../engine/angles';
 import { isLockedPreanalysisObservation } from '../engine/preanalysis';
+import {
+  buildDataCheckDiffRows,
+  buildObservationSearchText,
+  buildResultTraceabilityModel,
+  groupSortedObservationsByType,
+  sortObservationsByStdRes,
+  type SortedObservation,
+} from '../engine/resultDerivedModels';
 
 const FT_PER_M = 3.280839895;
 const REPORT_TABLE_WINDOW_SIZE = 100;
@@ -239,8 +247,6 @@ interface ReportViewProps {
   onSelectObservation?: (_observationId: number) => void;
 }
 
-type SortedObservation = Observation & { originalIndex: number };
-
 const COLLAPSIBLE_DETAIL_SECTION_IDS = [
   'suspect-impact-analysis',
   'solve-profile-diagnostics',
@@ -385,12 +391,6 @@ const ReportView: React.FC<ReportViewProps> = ({
       normalizeSearchText(...parts).includes(normalizedReportFilterQuery),
     [normalizeSearchText, normalizedReportFilterQuery],
   );
-  const observationFilterText = useCallback((obs: Observation): string => {
-    if (obs.type === 'angle') return `${obs.at} ${obs.from} ${obs.to}`;
-    if (obs.type === 'direction') return `${obs.at} ${obs.to} ${obs.setId ?? ''}`;
-    if ('from' in obs && 'to' in obs) return `${obs.from} ${obs.to}`;
-    return '';
-  }, []);
   const rowLimitFor = (key: string, defaultSize = REPORT_TABLE_WINDOW_SIZE): number =>
     tableRowLimits[key] ?? defaultSize;
   const visibleRowsFor = <T,>(
@@ -452,10 +452,7 @@ const ReportView: React.FC<ReportViewProps> = ({
   ]);
 
   const sortedObs = useMemo<SortedObservation[]>(
-    () =>
-      [...result.observations]
-        .map((obs, index) => ({ ...obs, originalIndex: index }))
-        .sort((a, b) => Math.abs(b.stdRes || 0) - Math.abs(a.stdRes || 0)),
+    () => sortObservationsByStdRes(result.observations),
     [result.observations],
   );
   const filteredSortedObs = useMemo(
@@ -465,92 +462,25 @@ const ReportView: React.FC<ReportViewProps> = ({
           return false;
         if (reportExclusionFilter === 'included' && excludedIds.has(obs.id)) return false;
         if (reportExclusionFilter === 'excluded' && !excludedIds.has(obs.id)) return false;
-        return matchesReportQuery(obs.type, obs.sourceLine, observationFilterText(obs));
+        return matchesReportQuery(obs.type, obs.sourceLine, buildObservationSearchText(obs));
       }),
-    [
-      excludedIds,
-      matchesReportQuery,
-      observationFilterText,
-      reportExclusionFilter,
-      reportObservationTypeFilter,
-      sortedObs,
-    ],
+    [excludedIds, matchesReportQuery, reportExclusionFilter, reportObservationTypeFilter, sortedObs],
   );
-  const observationsByType = useMemo(() => {
-    const byTypeMap = new Map<Observation['type'], SortedObservation[]>();
-    filteredSortedObs.forEach((obs) => {
-      const list = byTypeMap.get(obs.type) ?? [];
-      list.push(obs);
-      byTypeMap.set(obs.type, list);
-    });
-    return byTypeMap;
-  }, [filteredSortedObs]);
+  const observationsByType = useMemo(
+    () => groupSortedObservationsByType(filteredSortedObs),
+    [filteredSortedObs],
+  );
   const byType = (type: Observation['type']): SortedObservation[] =>
     observationsByType.get(type) ?? [];
 
   const dataCheckDiffRows = useMemo(() => {
-    if (!isDataCheck)
-      return [] as Array<{
-        obs: Observation;
-        stations: string;
-        diffMagnitude: number;
-        diffLabel: string;
-      }>;
-    const stations = (obs: Observation): string => {
-      if (obs.type === 'angle') return `${obs.at}-${obs.from}-${obs.to}`;
-      if (obs.type === 'direction') return `${obs.at}-${obs.to}`;
-      if ('from' in obs && 'to' in obs) return `${obs.from}-${obs.to}`;
-      return '-';
-    };
-    const describeDiff = (obs: Observation): { magnitude: number; label: string } | null => {
-      if (
-        obs.type === 'dist' ||
-        obs.type === 'lev' ||
-        obs.type === 'angle' ||
-        obs.type === 'direction' ||
-        obs.type === 'bearing' ||
-        obs.type === 'dir' ||
-        obs.type === 'zenith'
-      ) {
-        const residual = typeof obs.residual === 'number' ? obs.residual : Number.NaN;
-        if (!Number.isFinite(residual)) return null;
-        if (
-          obs.type === 'angle' ||
-          obs.type === 'direction' ||
-          obs.type === 'bearing' ||
-          obs.type === 'dir' ||
-          obs.type === 'zenith'
-        ) {
-          const arcsec = Math.abs(residual * RAD_TO_DEG * 3600);
-          return { magnitude: arcsec, label: `${arcsec.toFixed(2)}"` };
-        }
-        const linear = Math.abs(residual) * unitScale;
-        return { magnitude: linear, label: `${linear.toFixed(4)} ${units}` };
-      }
-      if (obs.type === 'gps' && obs.residual && typeof obs.residual === 'object') {
-        const residual = obs.residual as { vE?: number; vN?: number };
-        const vE = Number.isFinite(residual.vE as number) ? (residual.vE as number) : Number.NaN;
-        const vN = Number.isFinite(residual.vN as number) ? (residual.vN as number) : Number.NaN;
-        if (!Number.isFinite(vE) || !Number.isFinite(vN)) return null;
-        const linear = Math.hypot(vE, vN) * unitScale;
-        return { magnitude: linear, label: `${linear.toFixed(4)} ${units}` };
-      }
-      return null;
-    };
-    return result.observations
-      .map((obs) => {
-        const diff = describeDiff(obs);
-        if (!diff) return null;
-        return {
-          obs,
-          stations: stations(obs),
-          diffMagnitude: diff.magnitude,
-          diffLabel: diff.label,
-        };
-      })
-      .filter((row): row is NonNullable<typeof row> => row != null)
-      .sort((a, b) => b.diffMagnitude - a.diffMagnitude)
-      .slice(0, 25);
+    if (!isDataCheck) return [];
+    return buildDataCheckDiffRows(result.observations, {
+      unitScale,
+      linearUnitLabel: units,
+      linearUnitSpacer: ' ',
+      limit: 25,
+    });
   }, [isDataCheck, result.observations, unitScale, units]);
   const blunderCycleLines = useMemo(
     () =>
@@ -652,62 +582,20 @@ const ReportView: React.FC<ReportViewProps> = ({
     directionRejects,
     REPORT_DIAGNOSTIC_WINDOW_SIZE,
   );
-  const aliasTrace = useMemo(
-    () =>
-      [...(result.parseState?.aliasTrace ?? [])].sort((a, b) => {
-        const la = a.sourceLine ?? Number.MAX_SAFE_INTEGER;
-        const lb = b.sourceLine ?? Number.MAX_SAFE_INTEGER;
-        if (la !== lb) return la - lb;
-        const ca = a.context ?? '';
-        const cb = b.context ?? '';
-        if (ca !== cb) return ca.localeCompare(cb);
-        return a.sourceId.localeCompare(b.sourceId);
-      }),
-    [result.parseState?.aliasTrace],
+  const traceabilityModel = useMemo(
+    () => buildResultTraceabilityModel(result.parseState),
+    [result.parseState],
   );
-  const descriptionTrace = useMemo(
-    () =>
-      [...(result.parseState?.descriptionTrace ?? [])].sort((a, b) => {
-        if (a.sourceLine !== b.sourceLine) return a.sourceLine - b.sourceLine;
-        return a.stationId.localeCompare(b.stationId, undefined, { numeric: true });
-      }),
-    [result.parseState?.descriptionTrace],
-  );
-  const descriptionScanSummary = useMemo(
-    () =>
-      [...(result.parseState?.descriptionScanSummary ?? [])].sort((a, b) =>
-        a.stationId.localeCompare(b.stationId, undefined, { numeric: true }),
-      ),
-    [result.parseState?.descriptionScanSummary],
-  );
-  const descriptionConflicts = useMemo(
-    () => descriptionScanSummary.filter((row) => row.conflict),
-    [descriptionScanSummary],
-  );
-  const descriptionRefsByStation = useMemo(
-    () =>
-      descriptionTrace.reduce<Map<string, { key: string; description: string; lines: number[] }[]>>(
-        (acc, entry) => {
-          const key = entry.stationId;
-          const rows = acc.get(key) ?? [];
-          const normalized = entry.description.replace(/\s+/g, ' ').trim().toUpperCase();
-          const existing = rows.find((row) => row.key === normalized);
-          if (existing) {
-            if (!existing.lines.includes(entry.sourceLine)) existing.lines.push(entry.sourceLine);
-          } else {
-            rows.push({
-              key: normalized,
-              description: entry.description,
-              lines: [entry.sourceLine],
-            });
-          }
-          acc.set(key, rows);
-          return acc;
-        },
-        new Map(),
-      ),
-    [descriptionTrace],
-  );
+  const {
+    aliasTrace,
+    descriptionScanSummary,
+    descriptionConflicts,
+    descriptionRefsByStation,
+    lostStationIds,
+    descriptionReconcileMode,
+    descriptionAppendDelimiter,
+    reconciledDescriptions,
+  } = traceabilityModel;
   const clusterDiagnostics = result.clusterDiagnostics;
   const clusterCandidates = useMemo(
     () => clusterDiagnostics?.candidates ?? [],
@@ -750,19 +638,6 @@ const ReportView: React.FC<ReportViewProps> = ({
         (obs): obs is GpsObservation => obs.type === 'gps' && obs.gpsOffsetDistanceM != null,
       ),
     [result.observations],
-  );
-  const lostStationIds = useMemo(
-    () =>
-      [...(result.parseState?.lostStationIds ?? [])].sort((a, b) =>
-        a.localeCompare(b, undefined, { numeric: true }),
-      ),
-    [result.parseState?.lostStationIds],
-  );
-  const descriptionReconcileMode = result.parseState?.descriptionReconcileMode ?? 'first';
-  const descriptionAppendDelimiter = result.parseState?.descriptionAppendDelimiter ?? ' | ';
-  const reconciledDescriptions = useMemo(
-    () => result.parseState?.reconciledDescriptions ?? {},
-    [result.parseState?.reconciledDescriptions],
   );
   const stationDescription = (stationId: string): string =>
     reconciledDescriptions[stationId] ?? '-';

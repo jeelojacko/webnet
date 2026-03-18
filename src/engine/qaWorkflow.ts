@@ -1,4 +1,5 @@
 import type { AdjustmentResult, ClusterApprovedMerge, Observation } from '../types';
+import { formatObservationStationsLabel } from './resultDerivedModels';
 
 export interface DerivedObservationRef {
   id: number;
@@ -101,15 +102,6 @@ const normalizeStationIds = (obs: Observation): string[] => {
     return [obs.from, obs.to];
   if (obs.type === 'bearing' || obs.type === 'dir') return [obs.from, obs.to];
   return [];
-};
-
-export const formatObservationStationsLabel = (obs: Observation): string => {
-  if (obs.type === 'angle') return `${obs.at}-${obs.from}-${obs.to}`;
-  if (obs.type === 'direction') return `${obs.at}-${obs.to}`;
-  if (obs.type === 'dist' || obs.type === 'gps' || obs.type === 'lev' || obs.type === 'zenith')
-    return `${obs.from}-${obs.to}`;
-  if (obs.type === 'bearing' || obs.type === 'dir') return `${obs.from}-${obs.to}`;
-  return '-';
 };
 
 export const buildObservationMatchKey = (obs: Observation): string =>
