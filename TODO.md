@@ -86,8 +86,14 @@
       - [x] Extract robust/classical per-iteration normal-equation solve flow into `src/engine/adjustmentIteration.ts`
       - [x] Extract station/orientation correction application into `src/engine/adjustmentIteration.ts`
       - [x] Add focused regression coverage for iteration-step solving and correction application
-    - [ ] Split diagnostics/statistics shaping into a dedicated module
-    - [ ] Split final result shaping/export-ready data assembly into a dedicated module
+    - [x] Split diagnostics/statistics shaping into a dedicated module
+      - [x] Extract statistical-summary, residual-diagnostics, and per-type residual summary builders into `src/engine/adjustmentStatisticsBuilders.ts`
+      - [x] Keep solver math and covariance diagnostics behavior unchanged while reducing `calculateStatistics` responsibility in `src/engine/adjust.ts`
+      - [x] Add focused regression coverage for the extracted statistics builders
+    - [x] Split final result shaping/export-ready data assembly into a dedicated module
+      - [x] Extract parse-state finalization and outward-facing `AdjustmentResult` payload assembly into `src/engine/adjustmentResultBuilder.ts`
+      - [x] Keep run-mode/auto-sideshot/cluster gating behavior stable while reducing `buildResult()` responsibility in `src/engine/adjust.ts`
+      - [x] Add focused regression coverage for the extracted result builder
 
 - [x] Add post-adjust adjusted-points Transform support (rotation-only v1): persisted transform settings, Project Options -> Other Files -> Transform UI (rotation with pivot/scope/select-points popup + translation/scale placeholders), export-time validation, and dual-section adjusted-points export output (original + transform notes + rotated coordinates)
 - [x] Add TypeScript tooling (tsconfig, TSX entry) and migrate LSA engine/UI to TS modules

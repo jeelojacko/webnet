@@ -24,6 +24,15 @@ import {
   solveAdjustmentIteration,
 } from './adjustmentIteration';
 import { buildSolvePreparation } from './adjustmentPreprocessing';
+import {
+  buildAdjustmentResultPayload,
+  finalizeResultParseState,
+} from './adjustmentResultBuilder';
+import {
+  buildObservationTypeSummary,
+  buildResidualDiagnostics,
+  buildStatisticalSummary,
+} from './adjustmentStatisticsBuilders';
 import type {
   CoordinateConstraintRowPlacement,
   EquationRowInfo,
@@ -4606,16 +4615,6 @@ export class LSAEngine {
       if (obs.type === 'zenith') return 'Zenith';
       return 'Other';
     };
-    const diagnosticRedundancyValue = (obs: Observation): number | undefined => {
-      if (typeof obs.redundancy === 'number') {
-        return Number.isFinite(obs.redundancy) ? obs.redundancy : undefined;
-      }
-      if (obs.redundancy && typeof obs.redundancy === 'object') {
-        const vals = [obs.redundancy.rE, obs.redundancy.rN].filter((v) => Number.isFinite(v));
-        if (vals.length > 0) return Math.min(...vals);
-      }
-      return undefined;
-    };
     const weightedByGroup = new Map<string, { count: number; sumSquares: number }>();
     const ensureGroup = (label: string): { count: number; sumSquares: number } => {
       const existing = weightedByGroup.get(label);
@@ -5442,38 +5441,7 @@ export class LSAEngine {
     }
 
     if (!this.preanalysisMode) {
-      const rows = Array.from(weightedByGroup.entries())
-        .map(([label, row]) => ({
-          label,
-          count: row.count,
-          sumSquares: row.sumSquares,
-          errorFactor: row.count > 0 ? Math.sqrt(Math.max(row.sumSquares, 0) / row.count) : 0,
-        }))
-        .sort((a, b) => {
-          const ai = groupOrder.indexOf(a.label);
-          const bi = groupOrder.indexOf(b.label);
-          const ao = ai >= 0 ? ai : Number.MAX_SAFE_INTEGER;
-          const bo = bi >= 0 ? bi : Number.MAX_SAFE_INTEGER;
-          if (ao !== bo) return ao - bo;
-          return a.label.localeCompare(b.label);
-        });
-      const totalCount = rows.reduce((sum, r) => sum + r.count, 0);
-      const totalSumSquares = rows.reduce((sum, r) => sum + r.sumSquares, 0);
-      const scaleToGlobalDof =
-        this.dof > 0 && totalCount > 0 ? Math.sqrt(totalCount / this.dof) : 1;
-      const byGroup = rows.map((row) => ({
-        ...row,
-        errorFactor: row.errorFactor * scaleToGlobalDof,
-      }));
-      this.statisticalSummary = {
-        byGroup,
-        totalCount,
-        totalSumSquares,
-        totalErrorFactorByCount:
-          totalCount > 0 ? Math.sqrt(Math.max(totalSumSquares, 0) / totalCount) : 0,
-        totalErrorFactorByDof:
-          this.dof > 0 ? Math.sqrt(Math.max(totalSumSquares, 0) / this.dof) : 0,
-      };
+      this.statisticalSummary = buildStatisticalSummary(weightedByGroup, groupOrder, this.dof);
     }
 
     if (!this.preanalysisMode) {
@@ -5497,143 +5465,13 @@ export class LSAEngine {
     }
 
     if (!this.preanalysisMode) {
-      const stationLabel = (obs: Observation): string => {
-        if (obs.type === 'angle') return `${obs.at}-${obs.from}-${obs.to}`;
-        if (obs.type === 'direction') return `${obs.at}-${obs.to}`;
-        if (
-          obs.type === 'dist' ||
-          obs.type === 'bearing' ||
-          obs.type === 'dir' ||
-          obs.type === 'gps' ||
-          obs.type === 'lev' ||
-          obs.type === 'zenith'
-        ) {
-          return `${obs.from}-${obs.to}`;
-        }
-        return '-';
-      };
-
-      const withStd = activeObservations.filter((o) => Number.isFinite(o.stdRes));
-      const over2 = withStd.filter((o) => Math.abs(o.stdRes ?? 0) > 2).length;
-      const over3 = withStd.filter((o) => Math.abs(o.stdRes ?? 0) > 3).length;
-      const over4 = withStd.filter((o) => Math.abs(o.stdRes ?? 0) > 4).length;
-      const localFailCount = activeObservations.filter(
-        (o) => o.localTest != null && !o.localTest.pass,
-      ).length;
-
-      const redundancies = activeObservations
-        .map((o) => diagnosticRedundancyValue(o))
-        .filter((v): v is number => v != null && Number.isFinite(v));
-      const meanRedundancy =
-        redundancies.length > 0
-          ? redundancies.reduce((acc, v) => acc + v, 0) / redundancies.length
-          : undefined;
-      const minRedundancy = redundancies.length > 0 ? Math.min(...redundancies) : undefined;
-      const lowRedundancyCount = redundancies.filter((v) => v < 0.2).length;
-      const veryLowRedundancyCount = redundancies.filter((v) => v < 0.1).length;
-
-      const worstObs = withStd
-        .map((obs) => ({
-          obs,
-          stdRes: Math.abs(obs.stdRes ?? 0),
-          redundancy: diagnosticRedundancyValue(obs),
-          localPass: obs.localTest?.pass,
-        }))
-        .sort((a, b) => {
-          if (b.stdRes !== a.stdRes) return b.stdRes - a.stdRes;
-          if ((a.localPass === false ? 1 : 0) !== (b.localPass === false ? 1 : 0)) {
-            return (b.localPass === false ? 1 : 0) - (a.localPass === false ? 1 : 0);
-          }
-          const ar = a.redundancy ?? Number.POSITIVE_INFINITY;
-          const br = b.redundancy ?? Number.POSITIVE_INFINITY;
-          if (ar !== br) return ar - br;
-          return a.obs.id - b.obs.id;
-        })[0];
-
-      const byTypeMap = new Map<
-        Observation['type'],
-        {
-          type: Observation['type'];
-          count: number;
-          withStdResCount: number;
-          localFailCount: number;
-          over3SigmaCount: number;
-          maxStdRes?: number;
-          redundancies: number[];
-        }
-      >();
-      activeObservations.forEach((obs) => {
-        const row = byTypeMap.get(obs.type) ?? {
-          type: obs.type,
-          count: 0,
-          withStdResCount: 0,
-          localFailCount: 0,
-          over3SigmaCount: 0,
-          maxStdRes: undefined,
-          redundancies: [],
-        };
-        row.count += 1;
-        if (Number.isFinite(obs.stdRes)) {
-          row.withStdResCount += 1;
-          row.maxStdRes = Math.max(row.maxStdRes ?? 0, Math.abs(obs.stdRes ?? 0));
-          if (Math.abs(obs.stdRes ?? 0) > 3) row.over3SigmaCount += 1;
-        }
-        if (obs.localTest != null && !obs.localTest.pass) row.localFailCount += 1;
-        const r = diagnosticRedundancyValue(obs);
-        if (r != null && Number.isFinite(r)) row.redundancies.push(r);
-        byTypeMap.set(obs.type, row);
-      });
-      const byType = Array.from(byTypeMap.values())
-        .map((row) => ({
-          type: row.type,
-          count: row.count,
-          withStdResCount: row.withStdResCount,
-          localFailCount: row.localFailCount,
-          over3SigmaCount: row.over3SigmaCount,
-          maxStdRes: row.maxStdRes,
-          meanRedundancy:
-            row.redundancies.length > 0
-              ? row.redundancies.reduce((acc, v) => acc + v, 0) / row.redundancies.length
-              : undefined,
-          minRedundancy: row.redundancies.length > 0 ? Math.min(...row.redundancies) : undefined,
-        }))
-        .sort((a, b) => {
-          if (b.localFailCount !== a.localFailCount) return b.localFailCount - a.localFailCount;
-          const bMax = b.maxStdRes ?? 0;
-          const aMax = a.maxStdRes ?? 0;
-          if (bMax !== aMax) return bMax - aMax;
-          return String(a.type).localeCompare(String(b.type));
-        });
-
-      this.residualDiagnostics = {
-        criticalT: this.localTestCritical,
-        observationCount: activeObservations.length,
-        withStdResCount: withStd.length,
-        over2SigmaCount: over2,
-        over3SigmaCount: over3,
-        over4SigmaCount: over4,
-        localFailCount,
-        lowRedundancyCount,
-        veryLowRedundancyCount,
-        meanRedundancy,
-        minRedundancy,
-        maxStdRes:
-          withStd.length > 0 ? Math.max(...withStd.map((o) => Math.abs(o.stdRes ?? 0))) : undefined,
-        worst: worstObs
-          ? {
-              obsId: worstObs.obs.id,
-              type: worstObs.obs.type,
-              stations: stationLabel(worstObs.obs),
-              sourceLine: worstObs.obs.sourceLine,
-              stdRes: worstObs.stdRes,
-              redundancy: worstObs.redundancy,
-              localPass: worstObs.localPass,
-            }
-          : undefined,
-        byType,
-      };
+      const residualDiagnostics = buildResidualDiagnostics(
+        activeObservations,
+        this.localTestCritical,
+      );
+      this.residualDiagnostics = residualDiagnostics;
       this.log(
-        `Residual diagnostics: |t|>2=${over2}, |t|>3=${over3}, localFail=${localFailCount}, lowRedund(<0.2)=${lowRedundancyCount}.`,
+        `Residual diagnostics: |t|>2=${residualDiagnostics.over2SigmaCount}, |t|>3=${residualDiagnostics.over3SigmaCount}, localFail=${residualDiagnostics.localFailCount}, lowRedund(<0.2)=${residualDiagnostics.lowRedundancyCount}.`,
       );
     }
     if (this.preanalysisMode) {
@@ -5642,64 +5480,7 @@ export class LSAEngine {
       );
     }
 
-    const summary: Record<
-      string,
-      {
-        count: number;
-        sumSq: number;
-        maxAbs: number;
-        maxStdRes: number;
-        over3: number;
-        over4: number;
-        unit: string;
-      }
-    > = {};
-    const addSummary = (type: string, value: number, stdRes: number, unit: string) => {
-      const entry =
-        summary[type] ??
-        ({ count: 0, sumSq: 0, maxAbs: 0, maxStdRes: 0, over3: 0, over4: 0, unit } as const);
-      entry.count += 1;
-      entry.sumSq += value * value;
-      entry.maxAbs = Math.max(entry.maxAbs, Math.abs(value));
-      entry.maxStdRes = Math.max(entry.maxStdRes, Math.abs(stdRes));
-      if (Math.abs(stdRes) > 3) entry.over3 += 1;
-      if (Math.abs(stdRes) > 4) entry.over4 += 1;
-      summary[type] = entry as any;
-    };
-    activeObservations.forEach((obs) => {
-      if (obs.residual == null) return;
-      const stdRes = obs.stdRes ?? 0;
-      if (
-        obs.type === 'angle' ||
-        obs.type === 'direction' ||
-        obs.type === 'dir' ||
-        obs.type === 'bearing' ||
-        obs.type === 'zenith'
-      ) {
-        const arcsec = (obs.residual as number) * RAD_TO_DEG * 3600;
-        addSummary(obs.type, arcsec, stdRes, 'arcsec');
-      } else if (obs.type === 'dist' || obs.type === 'lev') {
-        addSummary(obs.type, obs.residual as number, stdRes, 'm');
-      } else if (obs.type === 'gps') {
-        const v = obs.residual as { vE: number; vN: number };
-        const mag = Math.hypot(v.vE, v.vN);
-        addSummary(obs.type, mag, stdRes, 'm');
-      }
-    });
-    const typeSummary: AdjustmentResult['typeSummary'] = {};
-    Object.entries(summary).forEach(([type, entry]) => {
-      const rms = entry.count ? Math.sqrt(entry.sumSq / entry.count) : 0;
-      typeSummary[type] = {
-        count: entry.count,
-        rms,
-        maxAbs: entry.maxAbs,
-        maxStdRes: entry.maxStdRes,
-        over3: entry.over3,
-        over4: entry.over4,
-        unit: entry.unit,
-      };
-    });
-    this.typeSummary = typeSummary;
+    this.typeSummary = buildObservationTypeSummary(activeObservations);
 
     if (hasQxx && this.Qxx) {
       const precisionScaleSq =
@@ -6883,49 +6664,23 @@ export class LSAEngine {
         this.stationFactorSnapshot(id);
       });
     }
-    if (this.parseState) {
-      const diagnostics = Array.from(this.coordSystemDiagnostics.values()).sort();
-      this.parseState.coordSystemDiagnostics = diagnostics;
-      this.parseState.coordSystemWarningMessages = [...this.coordSystemWarningMessages];
-      if (this.coordSystemMode === 'grid') {
-        this.parseState.crsStatus = this.crsStatus;
-        this.parseState.crsOffReason = this.crsStatus === 'off' ? this.crsOffReason : undefined;
-      } else {
-        this.parseState.crsStatus = undefined;
-        this.parseState.crsOffReason = undefined;
-      }
-      this.parseState.crsDatumOpId = this.crsDatumOpId || undefined;
-      this.parseState.crsDatumFallbackUsed =
-        this.crsDatumFallbackUsed || diagnostics.includes('CRS_DATUM_FALLBACK');
-      this.parseState.crsAreaOfUseStatus = this.crsAreaOfUseStatus;
-      this.parseState.crsOutOfAreaStationCount = this.crsOutOfAreaStationCount;
-      this.parseState.observationMode = {
-        bearing: this.parseState.gridBearingMode ?? 'grid',
-        distance: this.parseState.gridDistanceMode ?? 'measured',
-        angle: this.parseState.gridAngleMode ?? 'measured',
-        direction: this.parseState.gridDirectionMode ?? 'measured',
-      };
-      this.parseState.reductionContext = {
-        inputSpaceDefault:
-          (this.parseState.gridDistanceMode ?? 'measured') === 'measured' ? 'measured' : 'grid',
-        distanceKind:
-          (this.parseState.gridDistanceMode ?? 'measured') === 'ellipsoidal'
-            ? 'ellipsoidal'
-            : (this.parseState.gridDistanceMode ?? 'measured') === 'grid'
-              ? 'grid'
-              : 'ground',
-        bearingKind: this.parseState.gridBearingMode ?? 'grid',
-        explicitOverrideActive: this.scaleOverrideActive,
-      };
-      this.parseState.scaleOverrideActive = this.scaleOverrideActive;
-      this.parseState.gnssFrameConfirmed = this.gnssFrameConfirmed;
-      this.parseState.datumSufficiencyReport = this.datumSufficiencyReport;
-      this.parseState.parsedUsageSummary =
-        this.parseState.parsedUsageSummary ?? summarizeReductionUsage(this.observations);
-      this.parseState.usedInSolveUsageSummary =
-        this.parseState.usedInSolveUsageSummary ??
-        summarizeReductionUsage(this.collectActiveObservations());
-    }
+    this.parseState = finalizeResultParseState({
+      parseState: this.parseState,
+      coordSystemMode: this.coordSystemMode,
+      coordSystemDiagnostics: this.coordSystemDiagnostics.values(),
+      coordSystemWarningMessages: this.coordSystemWarningMessages,
+      crsStatus: this.crsStatus,
+      crsOffReason: this.crsOffReason,
+      crsDatumOpId: this.crsDatumOpId,
+      crsDatumFallbackUsed: this.crsDatumFallbackUsed,
+      crsAreaOfUseStatus: this.crsAreaOfUseStatus,
+      crsOutOfAreaStationCount: this.crsOutOfAreaStationCount,
+      scaleOverrideActive: this.scaleOverrideActive,
+      gnssFrameConfirmed: this.gnssFrameConfirmed,
+      datumSufficiencyReport: this.datumSufficiencyReport,
+      parsedUsageSummary: summarizeReductionUsage(this.observations),
+      usedInSolveUsageSummary: summarizeReductionUsage(this.collectActiveObservations()),
+    });
     const includeErrorCount = this.parseState?.includeErrors?.length ?? 0;
     const runMode = this.runMode;
     const autoSideshotEnabled =
@@ -6972,7 +6727,7 @@ export class LSAEngine {
       }
     }
     const success = includeErrorCount === 0 && (runMode === 'data-check' ? true : this.converged);
-    return {
+    return buildAdjustmentResultPayload({
       success,
       converged: this.converged,
       iterations: this.iterations,
@@ -7006,6 +6761,6 @@ export class LSAEngine {
       autoSideshotDiagnostics: this.autoSideshotDiagnostics,
       clusterDiagnostics: this.clusterDiagnostics,
       directionRejectDiagnostics: this.directionRejectDiagnostics,
-    };
+    });
   }
 }
