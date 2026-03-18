@@ -1,4 +1,4 @@
-import React, { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef } from 'react';
 import { AlertTriangle, CheckCircle } from 'lucide-react';
 import type {
   AdjustmentResult,
@@ -27,22 +27,22 @@ import {
   sortObservationsByStdRes,
   type SortedObservation,
 } from '../engine/resultDerivedModels';
+import AdjustedCoordinatesSection from './report/AdjustedCoordinatesSection';
+import CollapsibleSectionHeader from './report/CollapsibleSectionHeader';
+import ObservationTableSection from './report/ObservationTableSection';
+import PinnedSectionsPanel from './report/PinnedSectionsPanel';
+import ReportFilterPanel from './report/ReportFilterPanel';
+import ReportLoadMoreFooter from './report/ReportLoadMoreFooter';
+import ReportToolbar from './report/ReportToolbar';
+import {
+  REPORT_DIAGNOSTIC_WINDOW_SIZE,
+  REPORT_TABLE_WINDOW_SIZE,
+  type CollapsibleDetailSectionId,
+} from './report/reportSectionRegistry';
+import SolveProfileDiagnosticsSection from './report/SolveProfileDiagnosticsSection';
+import { useReportViewState } from '../hooks/useReportViewState';
 
 const FT_PER_M = 3.280839895;
-const REPORT_TABLE_WINDOW_SIZE = 100;
-const REPORT_DIAGNOSTIC_WINDOW_SIZE = 50;
-
-const OBSERVATION_FILTER_OPTIONS: Array<{ value: 'all' | Observation['type']; label: string }> = [
-  { value: 'all', label: 'All observation types' },
-  { value: 'angle', label: 'Angles (TS)' },
-  { value: 'direction', label: 'Directions (DB/DN)' },
-  { value: 'dist', label: 'Distances (TS)' },
-  { value: 'bearing', label: 'Bearings / Azimuths' },
-  { value: 'dir', label: 'Directions (Azimuth)' },
-  { value: 'zenith', label: 'Zenith / Vertical' },
-  { value: 'gps', label: 'GPS Vectors' },
-  { value: 'lev', label: 'Leveling dH' },
-];
 
 const PREANALYSIS_LABEL_TOOLTIPS: Record<string, string> = {
   'Preanalysis Planning Summary':
@@ -247,56 +247,6 @@ interface ReportViewProps {
   onSelectObservation?: (_observationId: number) => void;
 }
 
-const COLLAPSIBLE_DETAIL_SECTION_IDS = [
-  'suspect-impact-analysis',
-  'solve-profile-diagnostics',
-  'auto-adjust-diagnostics',
-  'auto-sideshot-candidates',
-  'residual-diagnostics',
-  'robust-diagnostics',
-  'robust-vs-classical-suspects',
-  'ts-correlation-diagnostics',
-  'traverse-diagnostics',
-  'traverse-closure-suspects',
-  'gps-loop-diagnostics',
-  'leveling-loop-diagnostics',
-  'leveling-loop-suspects',
-  'leveling-segment-suspects',
-  'gps-loop-suspects',
-  'direction-set-diagnostics',
-  'direction-target-repeatability',
-  'direction-face-treatment-diagnostics',
-  'direction-reject-diagnostics',
-  'direction-target-suspects-top',
-  'direction-repeatability-multi-set',
-  'direction-repeatability-suspects-top',
-  'setup-diagnostics',
-  'post-adjusted-sideshots-ts',
-  'post-adjusted-gps-sideshot-vectors',
-  'post-adjusted-gnss-topo-coordinates',
-  'gps-rover-offsets',
-  'per-type-summary',
-  'relative-precision-unknowns',
-  'angles-ts',
-  'directions-db-dn',
-  'bearings-azimuths',
-  'directions-azimuth',
-  'zenith-vertical-angles',
-  'gps-vectors',
-  'distances-ts',
-  'leveling-dh',
-] as const;
-
-type CollapsibleDetailSectionId = (typeof COLLAPSIBLE_DETAIL_SECTION_IDS)[number];
-
-const createCollapsedDetailSectionsState = (): Record<CollapsibleDetailSectionId, boolean> => {
-  const next = {} as Record<CollapsibleDetailSectionId, boolean>;
-  COLLAPSIBLE_DETAIL_SECTION_IDS.forEach((id) => {
-    next[id] = false;
-  });
-  return next;
-};
-
 const ReportView: React.FC<ReportViewProps> = ({
   result,
   units,
@@ -349,21 +299,33 @@ const ReportView: React.FC<ReportViewProps> = ({
       `total=${summary.total}`,
     ].join('; ');
   };
-  const [ellipseMode, setEllipseMode] = useState<'1sigma' | '95'>('1sigma');
-  const [collapsedDetailSections, setCollapsedDetailSections] = useState<
-    Record<CollapsibleDetailSectionId, boolean>
-  >(createCollapsedDetailSectionsState);
-  const [reportFilterQuery, setReportFilterQuery] = useState('');
-  const [reportObservationTypeFilter, setReportObservationTypeFilter] = useState<
-    'all' | Observation['type']
-  >('all');
-  const [reportExclusionFilter, setReportExclusionFilter] = useState<
-    'all' | 'included' | 'excluded'
-  >('all');
-  const [tableRowLimits, setTableRowLimits] = useState<Record<string, number>>({});
-  const [pinnedDetailSections, setPinnedDetailSections] = useState<
-    Array<{ id: CollapsibleDetailSectionId; label: string }>
-  >([]);
+  const {
+    ellipseMode,
+    setEllipseMode,
+    ellipseConfidenceScale,
+    reportFilterQuery,
+    setReportFilterQuery,
+    reportObservationTypeFilter,
+    setReportObservationTypeFilter,
+    reportExclusionFilter,
+    setReportExclusionFilter,
+    clearFilters,
+    deferredReportFilterQuery,
+    normalizedReportFilterQuery,
+    pinnedDetailSections,
+    clearPinnedDetailSections,
+    isDetailSectionPinned,
+    togglePinnedDetailSection,
+    isSectionCollapsed,
+    toggleDetailSection,
+    allDetailSectionsCollapsed,
+    setAllDetailSectionsCollapsed,
+    visibleRowsFor,
+    showMoreRows,
+  } = useReportViewState({
+    result,
+    excludedIds,
+  });
   const rowSelectionClass = useCallback(
     (selected: boolean) =>
       selected
@@ -371,12 +333,6 @@ const ReportView: React.FC<ReportViewProps> = ({
         : 'hover:bg-slate-900/50 transition-colors',
     [],
   );
-  const deferredReportFilterQuery = useDeferredValue(reportFilterQuery);
-  const ellipseConfidenceScale = ellipseMode === '95' ? 2.4477 : 1;
-  const allDetailSectionsCollapsed = COLLAPSIBLE_DETAIL_SECTION_IDS.every(
-    (id) => collapsedDetailSections[id],
-  );
-  const normalizedReportFilterQuery = deferredReportFilterQuery.trim().toLowerCase();
   const normalizeSearchText = useCallback(
     (...parts: Array<string | number | null | undefined>): string =>
       parts
@@ -391,65 +347,14 @@ const ReportView: React.FC<ReportViewProps> = ({
       normalizeSearchText(...parts).includes(normalizedReportFilterQuery),
     [normalizeSearchText, normalizedReportFilterQuery],
   );
-  const rowLimitFor = (key: string, defaultSize = REPORT_TABLE_WINDOW_SIZE): number =>
-    tableRowLimits[key] ?? defaultSize;
-  const visibleRowsFor = <T,>(
-    key: string,
-    rows: T[],
-    defaultSize = REPORT_TABLE_WINDOW_SIZE,
-  ): T[] => rows.slice(0, rowLimitFor(key, defaultSize));
-  const showMoreRows = (key: string, step = REPORT_TABLE_WINDOW_SIZE) => {
-    setTableRowLimits((prev) => ({
-      ...prev,
-      [key]: (prev[key] ?? step) + step,
-    }));
-  };
-  const isDetailSectionPinned = (id: CollapsibleDetailSectionId): boolean =>
-    pinnedDetailSections.some((entry) => entry.id === id);
-  const togglePinnedDetailSection = (id: CollapsibleDetailSectionId, label: string) => {
-    setPinnedDetailSections((prev) => {
-      if (prev.some((entry) => entry.id === id)) return prev.filter((entry) => entry.id !== id);
-      return [...prev, { id, label }];
-    });
-  };
   const jumpToPinnedSection = (id: CollapsibleDetailSectionId) => {
     const target = detailSectionHeaderRefs.current[id];
     if (!target) return;
     if (isSectionCollapsed(id)) {
-      setCollapsedDetailSections((prev) => ({
-        ...prev,
-        [id]: false,
-      }));
+      toggleDetailSection(id);
     }
     target.scrollIntoView({ block: 'start', behavior: 'smooth' });
   };
-  const isSectionCollapsed = (id: CollapsibleDetailSectionId): boolean =>
-    collapsedDetailSections[id] ?? false;
-  const toggleDetailSection = (id: CollapsibleDetailSectionId) => {
-    setCollapsedDetailSections((prev) => ({
-      ...prev,
-      [id]: !prev[id],
-    }));
-  };
-  const setAllDetailSectionsCollapsed = (collapsed: boolean) => {
-    setCollapsedDetailSections((prev) => {
-      const next = { ...prev };
-      COLLAPSIBLE_DETAIL_SECTION_IDS.forEach((id) => {
-        next[id] = collapsed;
-      });
-      return next;
-    });
-  };
-
-  useEffect(() => {
-    setTableRowLimits({});
-  }, [
-    excludedIds,
-    normalizedReportFilterQuery,
-    reportExclusionFilter,
-    reportObservationTypeFilter,
-    result,
-  ]);
 
   const sortedObs = useMemo<SortedObservation[]>(
     () => sortObservationsByStdRes(result.observations),
@@ -726,12 +631,6 @@ const ReportView: React.FC<ReportViewProps> = ({
       ),
     [clusterCandidates, clusterReviewDecisions],
   );
-  const isAngularType = (type: Observation['type']) =>
-    type === 'angle' ||
-    type === 'direction' ||
-    type === 'bearing' ||
-    type === 'dir' ||
-    type === 'zenith';
   const prismAnnotation = (obs: Observation): string => {
     if (obs.type !== 'dist' && obs.type !== 'zenith') return '';
     const correction = obs.prismCorrectionM ?? 0;
@@ -1160,42 +1059,21 @@ const ReportView: React.FC<ReportViewProps> = ({
     title?: string;
   }) => {
     const { sectionId, label, className, labelClassName, title } = params;
-    const collapsed = isSectionCollapsed(sectionId);
-    const pinned = isDetailSectionPinned(sectionId);
     return (
-      <div
-        ref={(node) => {
-          detailSectionHeaderRefs.current[sectionId] = node;
+      <CollapsibleSectionHeader
+        sectionId={sectionId}
+        label={label}
+        className={className}
+        labelClassName={labelClassName}
+        title={title}
+        collapsed={isSectionCollapsed(sectionId)}
+        pinned={isDetailSectionPinned(sectionId)}
+        onToggleCollapse={toggleDetailSection}
+        onTogglePin={togglePinnedDetailSection}
+        onHeaderRef={(id, node) => {
+          detailSectionHeaderRefs.current[id] = node;
         }}
-        className={`${className} flex items-center gap-2`}
-      >
-        <button
-          type="button"
-          onClick={() => toggleDetailSection(sectionId)}
-          className="flex-1 text-left flex items-center justify-between"
-          aria-expanded={!collapsed}
-        >
-          <span className={labelClassName} title={title}>
-            {label}
-            {pinned ? <span className="ml-2 text-[10px] text-amber-300">Pinned</span> : null}
-          </span>
-          <span className="text-[10px] text-slate-500 uppercase tracking-wide">
-            {collapsed ? 'Show' : 'Hide'}
-          </span>
-        </button>
-        <button
-          type="button"
-          onClick={() => togglePinnedDetailSection(sectionId, label)}
-          className={`rounded border px-2 py-1 text-[10px] uppercase tracking-wide ${
-            pinned
-              ? 'border-amber-500/60 bg-amber-900/30 text-amber-200'
-              : 'border-slate-600 text-slate-400 hover:bg-slate-800'
-          }`}
-          title={pinned ? `Unpin ${label}` : `Pin ${label}`}
-        >
-          {pinned ? 'Unpin' : 'Pin'}
-        </button>
-      </div>
+      />
     );
   };
 
@@ -1205,21 +1083,14 @@ const ReportView: React.FC<ReportViewProps> = ({
     totalCount: number,
     step = REPORT_TABLE_WINDOW_SIZE,
   ) => {
-    if (totalCount <= shownCount) return null;
     return (
-      <div className="flex items-center justify-between gap-3 px-4 py-2 border-t border-slate-800/60 text-xs text-slate-400">
-        <span>
-          Showing {shownCount} of {totalCount} rows
-        </span>
-        <button
-          type="button"
-          onClick={() => showMoreRows(key, step)}
-          className="px-3 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-100"
-          data-report-load-more={key}
-        >
-          Show more
-        </button>
-      </div>
+      <ReportLoadMoreFooter
+        rowKey={key}
+        shownCount={shownCount}
+        totalCount={totalCount}
+        onShowMore={showMoreRows}
+        step={step}
+      />
     );
   };
 
@@ -1243,286 +1114,35 @@ const ReportView: React.FC<ReportViewProps> = ({
     title: string,
     sectionId?: CollapsibleDetailSectionId,
   ) => {
-    if (!obsList.length) return null;
-    const tableKey = sectionId ? `observations-${sectionId}` : null;
-    const visibleObsList = tableKey ? visibleRowsFor(tableKey, obsList) : obsList;
-    const collapsed = sectionId ? isSectionCollapsed(sectionId) : false;
     return (
-      <div className="mb-6 bg-slate-900/30 border border-slate-800/50 rounded overflow-hidden">
-        {sectionId ? (
-          renderCollapsibleSectionHeader({
-            sectionId,
-            label: title,
-            className: 'bg-slate-800/50 px-4 py-2 border-b border-slate-700',
-            labelClassName: 'text-blue-400 font-bold uppercase tracking-wider text-xs',
-          })
-        ) : (
-          <div className="bg-slate-800/50 px-4 py-2 border-b border-slate-700 flex items-center justify-between">
-            <span className="text-blue-400 font-bold uppercase tracking-wider text-xs">{title}</span>
-            <span className="text-[10px] text-slate-500">
-              {obsList.length} row{obsList.length === 1 ? '' : 's'}
-            </span>
-          </div>
-        )}
-        {!collapsed && (
-          <>
-            <table className="w-full text-left text-xs">
-              <thead>
-                <tr className="text-slate-500 border-b border-slate-800/50">
-                  <th className="py-2 px-4">Use</th>
-                  <th className="py-2">Type</th>
-                  <th className="py-2">Stations</th>
-                  <th className="py-2 text-right">Line</th>
-                  <th className="py-2 text-right">Obs</th>
-                  <th className="py-2 text-right">Calc</th>
-                  <th className="py-2 text-right">Residual</th>
-                  <th className="py-2 text-right">EffDist ({units})</th>
-                  <th className="py-2 text-right">StdRes</th>
-                  <th className="py-2 text-right">Redund</th>
-                  <th className="py-2 text-right">Local</th>
-                  <th className="py-2 text-right">MDB</th>
-                  <th className="py-2 text-right">Weight</th>
-                  <th className="py-2 text-right px-4">StdDev (override)</th>
-                </tr>
-              </thead>
-              <tbody className="text-slate-300">
-                {visibleObsList.map((obs) => {
-                  const isFail = Math.abs(obs.stdRes || 0) > 3;
-                  const isWarn = Math.abs(obs.stdRes || 0) > 1 && !isFail;
-                  const excluded = excludedIds.has(obs.id);
-                  let stationsLabel = '';
-                  let obsStr = '';
-                  let calcStr = '';
-                  let resStr = '';
-                  let stdResStr = '-';
-                  let redundancyStr = '-';
-                  let localStr = '-';
-                  let mdbStr = '-';
-                  let effectiveDistanceStr = '-';
-                  let stdDevVal = obs.stdDev * unitScale;
-                  const sigmaSource = obs.sigmaSource || 'explicit';
-                  const sigmaPlaceholder =
-                    sigmaSource === 'default'
-                      ? 'auto'
-                      : sigmaSource === 'fixed'
-                        ? 'fixed'
-                        : sigmaSource === 'float'
-                          ? 'float'
-                          : '';
-                  const angular = isAngularType(obs.type);
-
-                  if (obs.type === 'angle') {
-                    stationsLabel = `${obs.at}-${obs.from}-${obs.to}`;
-                    obsStr = radToDmsStr(obs.obs);
-                    calcStr = obs.calc != null ? radToDmsStr(obs.calc as number) : '-';
-                    resStr =
-                      obs.residual != null
-                        ? `${((obs.residual as number) * RAD_TO_DEG * 3600).toFixed(2)}"`
-                        : '-';
-                    stdDevVal = obs.stdDev * RAD_TO_DEG * 3600;
-                  } else if (obs.type === 'direction') {
-                    const reductionLabel =
-                      obs.rawCount != null
-                        ? ` [raw ${obs.rawCount}->1, F1:${obs.rawFace1Count ?? '-'} F2:${obs.rawFace2Count ?? '-'}]`
-                        : '';
-                    stationsLabel = `${obs.at}-${obs.to} (${obs.setId})${reductionLabel}`;
-                    obsStr = radToDmsStr(obs.obs);
-                    calcStr = obs.calc != null ? radToDmsStr(obs.calc as number) : '-';
-                    resStr =
-                      obs.residual != null
-                        ? `${((obs.residual as number) * RAD_TO_DEG * 3600).toFixed(2)}"`
-                        : '-';
-                    stdDevVal = obs.stdDev * RAD_TO_DEG * 3600;
-                  } else if (obs.type === 'dist') {
-                    stationsLabel = `${obs.from}-${obs.to}`;
-                    obsStr = (obs.obs * unitScale).toFixed(4);
-                    calcStr =
-                      obs.calc != null ? ((obs.calc as number) * unitScale).toFixed(4) : '-';
-                    resStr =
-                      obs.residual != null
-                        ? ((obs.residual as number) * unitScale).toFixed(4)
-                        : '-';
-                  } else if (obs.type === 'gps') {
-                    stationsLabel = `${obs.from}-${obs.to}`;
-                    obsStr = `dE=${(obs.obs.dE * unitScale).toFixed(3)}, dN=${(
-                      obs.obs.dN * unitScale
-                    ).toFixed(3)}`;
-                    calcStr =
-                      obs.calc != null
-                        ? `dE=${((obs.calc as { dE: number }).dE * unitScale).toFixed(3)}, dN=${(
-                            obs.calc as { dN: number; dE: number }
-                          ).dN.toFixed(3)}`
-                        : '-';
-                    resStr =
-                      obs.residual != null
-                        ? `vE=${((obs.residual as { vE: number }).vE * unitScale).toFixed(3)}, vN=${(
-                            obs.residual as { vN: number; vE: number }
-                          ).vN.toFixed(3)}`
-                        : '-';
-                  } else if (obs.type === 'lev') {
-                    stationsLabel = `${obs.from}-${obs.to}`;
-                    obsStr = (obs.obs * unitScale).toFixed(4);
-                    calcStr =
-                      obs.calc != null ? ((obs.calc as number) * unitScale).toFixed(4) : '-';
-                    resStr =
-                      obs.residual != null
-                        ? ((obs.residual as number) * unitScale).toFixed(4)
-                        : '-';
-                  } else if (obs.type === 'bearing') {
-                    stationsLabel = `${obs.from}-${obs.to}`;
-                    obsStr = radToDmsStr(obs.obs);
-                    calcStr = obs.calc != null ? radToDmsStr(obs.calc as number) : '-';
-                    resStr =
-                      obs.residual != null
-                        ? `${((obs.residual as number) * RAD_TO_DEG * 3600).toFixed(2)}"`
-                        : '-';
-                    stdDevVal = obs.stdDev * RAD_TO_DEG * 3600;
-                  } else if (obs.type === 'dir') {
-                    stationsLabel = `${obs.from}-${obs.to}`;
-                    obsStr = radToDmsStr(obs.obs);
-                    calcStr = obs.calc != null ? radToDmsStr(obs.calc as number) : '-';
-                    resStr =
-                      obs.residual != null
-                        ? `${((obs.residual as number) * RAD_TO_DEG * 3600).toFixed(2)}"`
-                        : '-';
-                    stdDevVal = obs.stdDev * RAD_TO_DEG * 3600;
-                  } else if (obs.type === 'zenith') {
-                    stationsLabel = `${obs.from}-${obs.to}`;
-                    obsStr = radToDmsStr(obs.obs);
-                    calcStr = obs.calc != null ? radToDmsStr(obs.calc as number) : '-';
-                    resStr =
-                      obs.residual != null
-                        ? `${((obs.residual as number) * RAD_TO_DEG * 3600).toFixed(2)}"`
-                        : '-';
-                    stdDevVal = obs.stdDev * RAD_TO_DEG * 3600;
-                  }
-
-                  const stdDevDisplay =
-                    sigmaSource === 'default' || sigmaSource === 'fixed' || sigmaSource === 'float'
-                      ? ''
-                      : stdDevVal.toFixed(4);
-
-                  if (obs.stdResComponents) {
-                    stdResStr = `${obs.stdResComponents.tE.toFixed(2)}/${obs.stdResComponents.tN.toFixed(2)}`;
-                  } else if (obs.stdRes != null) {
-                    stdResStr = obs.stdRes.toFixed(2);
-                  }
-
-                  if (typeof obs.redundancy === 'object' && obs.redundancy) {
-                    redundancyStr = `${obs.redundancy.rE.toFixed(2)}/${obs.redundancy.rN.toFixed(2)}`;
-                  } else if (typeof obs.redundancy === 'number') {
-                    redundancyStr = obs.redundancy.toFixed(2);
-                  }
-                  if (obs.localTestComponents) {
-                    localStr = `E:${obs.localTestComponents.passE ? 'P' : 'F'} N:${
-                      obs.localTestComponents.passN ? 'P' : 'F'
-                    }`;
-                  } else if (obs.localTest) {
-                    localStr = obs.localTest.pass ? 'PASS' : 'FAIL';
-                  }
-                  if (obs.mdbComponents) {
-                    mdbStr = `E=${formatMdb(obs.mdbComponents.mE, angular)} N=${formatMdb(
-                      obs.mdbComponents.mN,
-                      angular,
-                    )}`;
-                  } else if (obs.mdb != null) {
-                    mdbStr = formatMdb(obs.mdb, angular);
-                  }
-                  if (angular) {
-                    effectiveDistanceStr = formatEffectiveDistance(obs.effectiveDistance);
-                  }
-                  if (autoSideshotObsIds.has(obs.id)) {
-                    stationsLabel = `${stationsLabel} [AUTO-SS]`;
-                  }
-                  const prismTag = prismAnnotation(obs);
-                  if (prismTag) {
-                    stationsLabel = `${stationsLabel}${prismTag}`;
-                  }
-
-                  return (
-                    <tr
-                      key={obs.id}
-                      data-report-observation-row={obs.id}
-                      onClick={() => onSelectObservation?.(obs.id)}
-                      className={`border-b border-slate-800/30 ${excluded ? 'opacity-50' : ''} ${rowSelectionClass(
-                        selectedObservationId === obs.id,
-                      )} ${onSelectObservation ? 'cursor-pointer' : ''}`}
-                    >
-                      <td className="py-1 px-4">
-                        <input
-                          type="checkbox"
-                          checked={!excluded}
-                          onChange={() => onToggleExclude(obs.id)}
-                          className="accent-blue-500"
-                        />
-                      </td>
-                      <td className="py-1 uppercase text-slate-500">
-                        {obs.type === 'dir' ? 'dir' : obs.type}
-                      </td>
-                      <td className="py-1">{stationsLabel}</td>
-                      <td className="py-1 text-right font-mono text-slate-500">
-                        {renderSourceLineLink(obs.sourceLine)}
-                      </td>
-                      <td className="py-1 text-right font-mono text-slate-400">{obsStr || '-'}</td>
-                      <td className="py-1 text-right font-mono text-slate-500">{calcStr}</td>
-                      <td
-                        className={`py-1 text-right font-bold font-mono ${
-                          isFail ? 'text-red-500' : isWarn ? 'text-yellow-500' : 'text-green-500'
-                        }`}
-                      >
-                        {resStr}
-                      </td>
-                      <td className="py-1 text-right font-mono text-slate-400">
-                        {effectiveDistanceStr}
-                      </td>
-                      <td className="py-1 text-right font-mono text-slate-400">{stdResStr}</td>
-                      <td className="py-1 text-right font-mono text-slate-500">{redundancyStr}</td>
-                      <td
-                        className={`py-1 text-right font-mono ${
-                          localStr.includes('F') || localStr === 'FAIL'
-                            ? 'text-red-400'
-                            : 'text-slate-400'
-                        }`}
-                      >
-                        {localStr}
-                      </td>
-                      <td className="py-1 text-right font-mono text-slate-500">{mdbStr}</td>
-                      <td className="py-1 text-right font-mono text-slate-400">
-                        {observationWeightLabel(obs)}
-                      </td>
-                      <td className="py-1 px-4 text-right font-mono text-slate-400">
-                        <input
-                          type="number"
-                          className="bg-slate-800 border border-slate-700 rounded px-1 w-20 text-right text-xs"
-                          defaultValue={stdDevDisplay}
-                          placeholder={sigmaPlaceholder}
-                          onBlur={(e) =>
-                            onOverride(obs.id, {
-                              stdDev:
-                                e.target.value.trim() === ''
-                                  ? undefined
-                                  : obs.type === 'angle' ||
-                                      obs.type === 'direction' ||
-                                      obs.type === 'bearing' ||
-                                      obs.type === 'dir' ||
-                                      obs.type === 'zenith'
-                                    ? parseFloat(e.target.value) / (RAD_TO_DEG * 3600)
-                                    : parseFloat(e.target.value) / unitScale,
-                            })
-                          }
-                        />
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-            {tableKey
-              ? renderLoadMoreFooter(tableKey, visibleObsList.length, obsList.length)
-              : null}
-          </>
-        )}
-      </div>
+      <ObservationTableSection
+        obsList={obsList}
+        title={title}
+        sectionId={sectionId}
+        units={units}
+        unitScale={unitScale}
+        excludedIds={excludedIds}
+        autoSideshotObsIds={autoSideshotObsIds}
+        selectedObservationId={selectedObservationId}
+        onSelectObservation={onSelectObservation}
+        onToggleExclude={onToggleExclude}
+        onOverride={onOverride}
+        rowSelectionClass={rowSelectionClass}
+        visibleRowsFor={visibleRowsFor}
+        showMoreRows={showMoreRows}
+        renderSourceLineLink={renderSourceLineLink}
+        isSectionCollapsed={isSectionCollapsed}
+        isDetailSectionPinned={isDetailSectionPinned}
+        toggleDetailSection={toggleDetailSection}
+        togglePinnedDetailSection={togglePinnedDetailSection}
+        onHeaderRef={(id, node) => {
+          detailSectionHeaderRefs.current[id] = node;
+        }}
+        formatMdb={formatMdb}
+        formatEffectiveDistance={formatEffectiveDistance}
+        prismAnnotation={prismAnnotation}
+        observationWeightLabel={observationWeightLabel}
+      />
     );
   };
 
@@ -1537,67 +1157,20 @@ const ReportView: React.FC<ReportViewProps> = ({
     !isPreanalysis &&
     (levelingLoopDiagnostics?.enabled ?? false) &&
     (levelingLoopDiagnostics?.loops.length ?? 0) > 0;
-  const runCoordSystemMode = runDiagnostics?.coordSystemMode ?? 'local';
-  const showSolveProfileMapScale =
-    runDiagnostics != null &&
-    (runDiagnostics.mapMode !== 'off' || Math.abs(runDiagnostics.mapScaleFactor - 1) > 1e-9);
-  const showSolveProfileVertical =
-    runDiagnostics != null &&
-    (runDiagnostics.verticalReduction !== 'none' || runDiagnostics.applyCurvatureRefraction);
-  const showSolveProfileRotation =
-    runDiagnostics != null && Math.abs(runDiagnostics.rotationAngleRad) > 1e-12;
-  const showSolveProfileDirectiveContext =
-    runDiagnostics != null &&
-    (runCoordSystemMode === 'grid' ||
-      (runDiagnostics.localDatumScheme ?? 'average-scale') !== 'average-scale' ||
-      Math.abs((runDiagnostics.averageScaleFactor ?? 1) - 1) > 1e-9 ||
-      Math.abs(runDiagnostics.commonElevation ?? 0) > 1e-9);
-
   return (
     <div ref={reportRootRef} className="p-6 font-mono text-sm w-full flex flex-col">
-      <div
-        className="flex items-center justify-between mb-4 text-xs text-slate-400"
-        style={{ order: -220 }}
-      >
-        <div className="space-x-3">
-          <button
-            onClick={onReRun}
-            className="px-3 py-1 bg-green-700 hover:bg-green-600 text-slate-100 rounded"
-          >
-            Re-run with exclusions
-          </button>
-          <button
-            onClick={() => setAllDetailSectionsCollapsed(!allDetailSectionsCollapsed)}
-            className="px-3 py-1 bg-slate-700 rounded hover:bg-slate-600 text-slate-100"
-          >
-            {allDetailSectionsCollapsed ? 'Expand detail sections' : 'Collapse detail sections'}
-          </button>
-          <button onClick={onClearExclusions} className="px-3 py-1 bg-slate-700 rounded">
-            Reset exclusions
-          </button>
-          <button onClick={onResetOverrides} className="px-3 py-1 bg-slate-700 rounded">
-            Reset overrides
-          </button>
-          {showClusterMergeRevert && (
-            <button
-              onClick={onClearClusterMerges}
-              disabled={clusterAppliedMerges.length === 0}
-              className={`px-3 py-1 rounded ${
-                clusterAppliedMerges.length === 0
-                  ? 'bg-slate-800 text-slate-600 cursor-not-allowed'
-                  : 'bg-amber-700 hover:bg-amber-600 text-slate-100'
-              }`}
-            >
-              Revert cluster merges
-            </button>
-          )}
-        </div>
-        <div className="space-x-2 text-slate-500">
-          <span>
-            Unit scale: {unitScale.toFixed(4)} ({units})
-          </span>
-        </div>
-      </div>
+      <ReportToolbar
+        onReRun={onReRun}
+        onToggleCollapseAll={() => setAllDetailSectionsCollapsed(!allDetailSectionsCollapsed)}
+        allDetailSectionsCollapsed={allDetailSectionsCollapsed}
+        onClearExclusions={onClearExclusions}
+        onResetOverrides={onResetOverrides}
+        showClusterMergeRevert={showClusterMergeRevert}
+        clusterAppliedMergeCount={clusterAppliedMerges.length}
+        onClearClusterMerges={onClearClusterMerges}
+        unitScale={unitScale}
+        units={units}
+      />
 
       {pendingRunSettingDiffs.length > 0 && (
         <div
@@ -1625,38 +1198,11 @@ const ReportView: React.FC<ReportViewProps> = ({
         </div>
       )}
 
-      {pinnedDetailSections.length > 0 && (
-        <div
-          className="mb-4 rounded border border-blue-900/50 bg-slate-900/50 px-4 py-3 text-xs text-slate-300"
-          style={{ order: -205 }}
-        >
-          <div className="flex items-center justify-between gap-3">
-            <div className="font-semibold uppercase tracking-wide text-blue-300">
-              Pinned Sections
-            </div>
-            <button
-              type="button"
-              onClick={() => setPinnedDetailSections([])}
-              className="rounded border border-slate-700 px-2 py-1 text-[10px] uppercase tracking-wide text-slate-300 hover:bg-slate-800"
-            >
-              Clear Pins
-            </button>
-          </div>
-          <div className="mt-2 flex flex-wrap gap-2">
-            {pinnedDetailSections.map((entry) => (
-              <button
-                key={entry.id}
-                type="button"
-                onClick={() => jumpToPinnedSection(entry.id)}
-                className="rounded border border-blue-700/50 bg-blue-900/20 px-2 py-1 text-blue-200 hover:bg-blue-900/35"
-                data-report-pinned-chip={entry.id}
-              >
-                {entry.label}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
+      <PinnedSectionsPanel
+        pinnedDetailSections={pinnedDetailSections}
+        onClearPins={clearPinnedDetailSections}
+        onJumpToPinnedSection={jumpToPinnedSection}
+      />
 
       {!isPreanalysis &&
         result.suspectImpactDiagnostics &&
@@ -1939,338 +1485,27 @@ const ReportView: React.FC<ReportViewProps> = ({
         </div>
       )}
 
-      {runDiagnostics && (
-        <div
-          className="mb-6 border border-slate-800 rounded overflow-hidden"
-          style={{ order: -200 }}
-        >
-          {renderCollapsibleSectionHeader({
-            sectionId: 'solve-profile-diagnostics',
-            label: 'Solve Profile Diagnostics',
-            className:
-              'px-3 py-2 text-xs uppercase tracking-wider border-b border-slate-800 bg-slate-900/40',
-            labelClassName: 'text-slate-400',
-            title: REPORT_STATIC_TOOLTIPS['Solve Profile Diagnostics'],
-          })}
-          {!isSectionCollapsed('solve-profile-diagnostics') && (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-3 text-xs text-slate-300">
-            <div>
-              <div className="text-slate-500" title={REPORT_STATIC_TOOLTIPS.Profile}>
-                Profile
-              </div>
-              <div className={runDiagnostics.parity ? 'text-blue-300' : ''}>
-                {runDiagnostics.solveProfile.toUpperCase()}
-              </div>
-            </div>
-            <div>
-              <div className="text-slate-500">Run Mode</div>
-              <div>{runMode.toUpperCase()}</div>
-            </div>
-            <div>
-              <div className="text-slate-500" title={REPORT_STATIC_TOOLTIPS['Direction Sets']}>
-                Direction Sets
-              </div>
-              <div>{runDiagnostics.directionSetMode.toUpperCase()}</div>
-            </div>
-            {runDiagnostics.profileDefaultInstrumentFallback && (
-              <div>
-                <div className="text-slate-500" title={REPORT_STATIC_TOOLTIPS['Profile Fallback']}>
-                  Profile Fallback
-                </div>
-                <div>ON</div>
-              </div>
-            )}
-            {runDiagnostics.tsCorrelationEnabled && (
-              <div>
-                <div className="text-slate-500" title={REPORT_STATIC_TOOLTIPS['TS Correlation']}>
-                  TS Correlation
-                </div>
-                <div>
-                  {`ON (${runDiagnostics.tsCorrelationScope}, rho=${runDiagnostics.tsCorrelationRho.toFixed(3)})`}
-                </div>
-              </div>
-            )}
-            {runDiagnostics.robustMode !== 'none' && (
-              <div>
-                <div className="text-slate-500" title={REPORT_STATIC_TOOLTIPS.Robust}>
-                  Robust
-                </div>
-                <div>
-                  {runDiagnostics.robustMode.toUpperCase()} (k={runDiagnostics.robustK.toFixed(2)})
-                </div>
-              </div>
-            )}
-            {showSolveProfileMapScale && (
-              <div>
-                <div className="text-slate-500" title={REPORT_STATIC_TOOLTIPS['Map / Scale']}>
-                  Map / Scale
-                </div>
-                <div>
-                  {runDiagnostics.mapMode.toUpperCase()} /{' '}
-                  {runDiagnostics.mapScaleFactor.toFixed(8)}
-                </div>
-              </div>
-            )}
-            {showSolveProfileVertical && (
-              <div>
-                <div
-                  className="text-slate-500"
-                  title={REPORT_STATIC_TOOLTIPS['Vertical / CurvRef']}
-                >
-                  Vertical / CurvRef
-                </div>
-                <div>
-                  {runDiagnostics.verticalReduction.toUpperCase()} /{' '}
-                  {runDiagnostics.applyCurvatureRefraction
-                    ? `ON (k=${runDiagnostics.refractionCoefficient.toFixed(3)})`
-                    : 'OFF'}
-                </div>
-              </div>
-            )}
-            <div>
-              <div className="text-slate-500" title={REPORT_STATIC_TOOLTIPS.Normalize}>
-                Normalize
-              </div>
-              <div>
-                {runDiagnostics.faceNormalizationMode.toUpperCase()} (
-                {runDiagnostics.normalize ? 'ON' : 'OFF'})
-              </div>
-            </div>
-            {runDiagnostics.angleMode !== 'auto' && (
-              <div>
-                <div className="text-slate-500" title={REPORT_STATIC_TOOLTIPS['A-Mode']}>
-                  A-Mode
-                </div>
-                <div>{runDiagnostics.angleMode.toUpperCase()}</div>
-              </div>
-            )}
-            {showSolveProfileRotation && (
-              <div>
-                <div className="text-slate-500" title={REPORT_STATIC_TOOLTIPS['Plan Rotation']}>
-                  Plan Rotation
-                </div>
-                <div>{`${(runDiagnostics.rotationAngleRad * RAD_TO_DEG).toFixed(6)}°`}</div>
-              </div>
-            )}
-            <div>
-              <div className="text-slate-500" title={REPORT_STATIC_TOOLTIPS['Coordinate System']}>
-                Coordinate System
-              </div>
-              <div>
-                {runCoordSystemMode === 'local' ? 'LOCAL' : `GRID (${runDiagnostics.crsId ?? '-'})`}
-              </div>
-            </div>
-            {showSolveProfileDirectiveContext && (
-              <div className="col-span-2">
-                <div
-                  className="text-slate-500"
-                  title={REPORT_STATIC_TOOLTIPS['Directive Context (End of File)']}
-                >
-                  Directive Context (End of File)
-                </div>
-                <div className="break-words">
-                  {(runDiagnostics.coordSystemMode ?? 'local') === 'grid'
-                    ? `bearing=${String(runDiagnostics.gridBearingMode ?? 'grid').toUpperCase()}, distance=${String(runDiagnostics.gridDistanceMode ?? 'measured').toUpperCase()}, angle=${String(runDiagnostics.gridAngleMode ?? 'measured').toUpperCase()}, direction=${String(runDiagnostics.gridDirectionMode ?? 'measured').toUpperCase()}, .SCALE=${runDiagnostics.scaleOverrideActive ? `ON(k=${(runDiagnostics.averageScaleFactor ?? 1).toFixed(8)})` : 'OFF'}, GNSS frame=${runDiagnostics.gnssVectorFrameDefault ?? 'gridNEU'} (confirmed=${runDiagnostics.gnssFrameConfirmed ? 'YES' : 'NO'})`
-                    : `${String(runDiagnostics.localDatumScheme ?? 'average-scale').toUpperCase()} (scale=${(runDiagnostics.averageScaleFactor ?? 1).toFixed(8)}, commonElev=${((runDiagnostics.commonElevation ?? 0) * unitScale).toFixed(4)}${units})`}
-                </div>
-              </div>
-            )}
-            {runCoordSystemMode === 'grid' && (
-              <div className="col-span-2">
-                <div
-                  className="text-slate-500"
-                  title={REPORT_STATIC_TOOLTIPS['Applied Reduction Modes']}
-                >
-                  Applied Reduction Modes
-                </div>
-                <div className="break-words">
-                  Parsed: {formatReductionUsage(runDiagnostics.parsedUsageSummary)}
-                  <br />
-                  Used In Solve: {formatReductionUsage(runDiagnostics.usedInSolveUsageSummary)}
-                </div>
-              </div>
-            )}
-            {(runDiagnostics.directiveNoEffectWarnings?.length ?? 0) > 0 && (
-              <div className="col-span-2">
-                <div
-                  className="text-slate-500"
-                  title={REPORT_STATIC_TOOLTIPS['Applied Reduction Modes']}
-                >
-                  No-Effect Directives
-                </div>
-                <div className="break-words">
-                  {(runDiagnostics.directiveNoEffectWarnings ?? [])
-                    .map((w) => `${w.directive} @line ${w.line} (${w.reason})`)
-                    .join(' | ')}
-                </div>
-              </div>
-            )}
-            {(runDiagnostics.directiveTransitions?.length ?? 0) > 0 && (
-              <div className="col-span-2">
-                <div
-                  className="text-slate-500"
-                  title={REPORT_STATIC_TOOLTIPS['Applied Reduction Modes']}
-                >
-                  Directive Ranges
-                </div>
-                <div className="break-words">
-                  {(runDiagnostics.directiveTransitions ?? [])
-                    .map(
-                      (t) =>
-                        `${t.directive} line ${t.effectiveFromLine}${t.effectiveToLine != null ? `-${t.effectiveToLine}` : '-EOF'} (obs=${t.obsCountInRange})`,
-                    )
-                    .join(' | ')}
-                </div>
-              </div>
-            )}
-            {runDiagnostics.datumSufficiencyReport && (
-              <div className="col-span-2">
-                <div className="text-slate-500" title={REPORT_STATIC_TOOLTIPS['Datum Sufficiency']}>
-                  Datum Sufficiency
-                </div>
-                <div className="break-words">
-                  {runDiagnostics.datumSufficiencyReport.status.toUpperCase()}
-                  {runDiagnostics.datumSufficiencyReport.reasons.length > 0
-                    ? `: ${runDiagnostics.datumSufficiencyReport.reasons.join(' | ')}`
-                    : ''}
-                </div>
-              </div>
-            )}
-            {(runDiagnostics.coordSystemDiagnostics?.length ?? 0) > 0 && (
-              <div className="col-span-2">
-                <div className="text-slate-500" title={REPORT_STATIC_TOOLTIPS['CRS Diagnostics']}>
-                  CRS Diagnostics
-                </div>
-                <div className="break-words">
-                  {runDiagnostics.coordSystemDiagnostics?.join(', ')}
-                  {` (warnings=${runDiagnostics.coordSystemWarningMessages?.length ?? 0})`}
-                </div>
-              </div>
-            )}
-            {(runCoordSystemMode === 'grid' || runDiagnostics.crsTransformEnabled) && (
-              <div>
-                <div className="text-slate-500" title={REPORT_STATIC_TOOLTIPS['CRS / Projection']}>
-                  CRS / Projection
-                </div>
-                <div>
-                  {(runDiagnostics.crsStatus ??
-                    (runDiagnostics.crsTransformEnabled ? 'on' : 'off')) === 'on'
-                    ? `ON (${runDiagnostics.crsProjectionModel}, label="${runDiagnostics.crsLabel || 'unnamed'}")`
-                    : `OFF${runDiagnostics.crsOffReason ? ` (${runDiagnostics.crsOffReason})` : ''}`}
-                </div>
-              </div>
-            )}
-            {runDiagnostics.crsGridScaleEnabled && (
-              <div>
-                <div className="text-slate-500" title={REPORT_STATIC_TOOLTIPS['CRS Grid Scale']}>
-                  CRS Grid Scale
-                </div>
-                <div>{`ON (${runDiagnostics.crsGridScaleFactor.toFixed(8)})`}</div>
-              </div>
-            )}
-            {runDiagnostics.crsConvergenceEnabled && (
-              <div>
-                <div className="text-slate-500" title={REPORT_STATIC_TOOLTIPS['CRS Convergence']}>
-                  CRS Convergence
-                </div>
-                <div>{`ON (${(runDiagnostics.crsConvergenceAngleRad * RAD_TO_DEG).toFixed(6)}°)`}</div>
-              </div>
-            )}
-            {runDiagnostics.geoidModelEnabled && (
-              <div>
-                <div className="text-slate-500" title={REPORT_STATIC_TOOLTIPS['Geoid/Grid Model']}>
-                  Geoid/Grid Model
-                </div>
-                <div>
-                  {`ON (${runDiagnostics.geoidModelId}, ${runDiagnostics.geoidInterpolation.toUpperCase()}, loaded=${runDiagnostics.geoidModelLoaded ? 'YES' : 'NO'})`}
-                </div>
-              </div>
-            )}
-            {runDiagnostics.geoidHeightConversionEnabled && (
-              <div>
-                <div
-                  className="text-slate-500"
-                  title={REPORT_STATIC_TOOLTIPS['Geoid Height Conversion']}
-                >
-                  Geoid Height Conversion
-                </div>
-                <div>
-                  {`ON (${runDiagnostics.geoidOutputHeightDatum.toUpperCase()}, converted=${runDiagnostics.geoidConvertedStationCount}, skipped=${runDiagnostics.geoidSkippedStationCount})`}
-                </div>
-              </div>
-            )}
-            <div>
-              <div
-                className="text-slate-500"
-                title={REPORT_STATIC_TOOLTIPS['QFIX (Linear/Angular)']}
-              >
-                QFIX (Linear/Angular)
-              </div>
-              <div>
-                {(runDiagnostics.qFixLinearSigmaM * unitScale).toExponential(6)} {units} /{' '}
-                {runDiagnostics.qFixAngularSigmaSec.toExponential(6)}"
-              </div>
-            </div>
-            {runDiagnostics.geoidModelEnabled && (
-              <div className="col-span-2">
-                <div className="text-slate-500" title={REPORT_STATIC_TOOLTIPS['Geoid Metadata']}>
-                  Geoid Metadata
-                </div>
-                <div className="break-words">
-                  {runDiagnostics.geoidModelMetadata || 'unavailable'}
-                  {runDiagnostics.geoidSampleUndulationM != null
-                    ? `; sampleN=${runDiagnostics.geoidSampleUndulationM.toFixed(4)}m`
-                    : ''}
-                </div>
-              </div>
-            )}
-            {lostStationIds.length > 0 && (
-              <div className="col-span-2">
-                <div className="text-slate-500" title={REPORT_STATIC_TOOLTIPS['Lost Stations']}>
-                  Lost Stations
-                </div>
-                <div className="break-words">{`${lostStationIds.length} (${lostStationIds.join(', ')})`}</div>
-              </div>
-            )}
-            {descriptionReconcileMode === 'append' && (
-              <div className="col-span-2">
-                <div
-                  className="text-slate-500"
-                  title={REPORT_STATIC_TOOLTIPS['Description Reconciliation']}
-                >
-                  Description Reconciliation
-                </div>
-                <div className="break-words">{`APPEND (delimiter="${descriptionAppendDelimiter}")`}</div>
-              </div>
-            )}
-            {runDiagnostics.defaultSigmaCount > 0 && (
-              <div className="col-span-2">
-                <div className="text-slate-500" title={REPORT_STATIC_TOOLTIPS['Default Sigmas']}>
-                  Default Sigmas
-                </div>
-                <div>
-                  {runDiagnostics.defaultSigmaCount}
-                  {runDiagnostics.defaultSigmaByType
-                    ? ` (${runDiagnostics.defaultSigmaByType})`
-                    : ''}
-                </div>
-              </div>
-            )}
-            {runDiagnostics.defaultSigmaCount > 0 && (
-              <div className="col-span-2">
-                <div
-                  className="text-slate-500"
-                  title={REPORT_STATIC_TOOLTIPS['Stochastic Defaults']}
-                >
-                  Stochastic Defaults
-                </div>
-                <div className="break-words">{runDiagnostics.stochasticDefaultsSummary}</div>
-              </div>
-            )}
-            </div>
-          )}
-        </div>
-      )}
+      {runDiagnostics ? (
+        <SolveProfileDiagnosticsSection
+          runDiagnostics={runDiagnostics}
+          runMode={runMode}
+          units={units}
+          unitScale={unitScale}
+          lostStationIds={lostStationIds}
+          descriptionReconcileMode={descriptionReconcileMode}
+          descriptionAppendDelimiter={descriptionAppendDelimiter}
+          reportStaticTooltips={REPORT_STATIC_TOOLTIPS}
+          sectionId="solve-profile-diagnostics"
+          collapsed={isSectionCollapsed('solve-profile-diagnostics')}
+          pinned={isDetailSectionPinned('solve-profile-diagnostics')}
+          onToggleCollapse={toggleDetailSection}
+          onTogglePin={togglePinnedDetailSection}
+          onHeaderRef={(id, node) => {
+            detailSectionHeaderRefs.current[id] = node;
+          }}
+          formatReductionUsage={formatReductionUsage}
+        />
+      ) : null}
 
       {isPreanalysis && (
         <div className="mb-6 border border-cyan-900/70 rounded overflow-hidden">
@@ -4898,197 +4133,39 @@ const ReportView: React.FC<ReportViewProps> = ({
         </div>
         )}
 
-      <div
-        className="mb-6 border border-slate-800/60 rounded bg-slate-900/40 p-4"
-        style={{ order: -195 }}
-      >
-        <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-          <div className="flex-1 min-w-0">
-            <div className="text-[11px] uppercase tracking-wider text-slate-500 mb-1">
-              Report filters
-            </div>
-            <input
-              type="text"
-              value={reportFilterQuery}
-              onChange={(event) => setReportFilterQuery(event.target.value)}
-              placeholder="Filter by station ID, source line, or table text"
-              aria-label="Report filter text"
-              className="w-full rounded border border-slate-700 bg-slate-950/60 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500"
-            />
-          </div>
-          {!isPreanalysis && (
-            <>
-              <div className="w-full md:w-64">
-                <div className="text-[11px] uppercase tracking-wider text-slate-500 mb-1">
-                  Observation type
-                </div>
-                <select
-                  value={reportObservationTypeFilter}
-                  onChange={(event) =>
-                    setReportObservationTypeFilter(
-                      event.target.value as 'all' | Observation['type'],
-                    )
-                  }
-                  aria-label="Observation type filter"
-                  className="w-full rounded border border-slate-700 bg-slate-950/60 px-3 py-2 text-sm text-slate-100"
-                >
-                  {OBSERVATION_FILTER_OPTIONS.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="w-full md:w-48">
-                <div className="text-[11px] uppercase tracking-wider text-slate-500 mb-1">
-                  Exclusion status
-                </div>
-                <select
-                  value={reportExclusionFilter}
-                  onChange={(event) =>
-                    setReportExclusionFilter(
-                      event.target.value as 'all' | 'included' | 'excluded',
-                    )
-                  }
-                  aria-label="Observation exclusion filter"
-                  className="w-full rounded border border-slate-700 bg-slate-950/60 px-3 py-2 text-sm text-slate-100"
-                >
-                  <option value="all">All observations</option>
-                  <option value="included">Included only</option>
-                  <option value="excluded">Excluded only</option>
-                </select>
-              </div>
-            </>
-          )}
-          <button
-            type="button"
-            onClick={() => {
-              setReportFilterQuery('');
-              setReportObservationTypeFilter('all');
-              setReportExclusionFilter('all');
-            }}
-            className="rounded bg-slate-800 px-3 py-2 text-xs text-slate-100 hover:bg-slate-700"
-          >
-            Clear filters
-          </button>
-        </div>
-        <div className="mt-2 text-xs text-slate-500">
-          Observations: {filteredSortedObs.length}/{sortedObs.length}
-          {normalizedReportFilterQuery ? ` | Query: ${deferredReportFilterQuery.trim()}` : ''}
-        </div>
-      </div>
+      <ReportFilterPanel
+        isPreanalysis={isPreanalysis}
+        reportFilterQuery={reportFilterQuery}
+        onReportFilterQueryChange={setReportFilterQuery}
+        reportObservationTypeFilter={reportObservationTypeFilter}
+        onReportObservationTypeFilterChange={setReportObservationTypeFilter}
+        reportExclusionFilter={reportExclusionFilter}
+        onReportExclusionFilterChange={setReportExclusionFilter}
+        onClearFilters={clearFilters}
+        filteredObservationCount={filteredSortedObs.length}
+        totalObservationCount={sortedObs.length}
+        deferredReportFilterQuery={deferredReportFilterQuery}
+        normalizedReportFilterQuery={normalizedReportFilterQuery}
+      />
 
-      <div className="mb-8" style={{ order: -190 }}>
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="text-blue-400 font-bold text-base uppercase tracking-wider">
-            {isPreanalysis
-              ? `Predicted Coordinates & Precision (${units})`
-              : `Adjusted Coordinates (${units})`}
-          </h3>
-          <div className="flex items-center gap-2 text-xs text-slate-400">
-            <span>Ellipse</span>
-            <div className="flex rounded border border-slate-700 overflow-hidden">
-              <button
-                onClick={() => setEllipseMode('1sigma')}
-                className={`px-2 py-0.5 ${ellipseMode === '1sigma' ? 'bg-slate-700 text-slate-100' : 'bg-slate-900/60 text-slate-400'}`}
-              >
-                1σ
-              </button>
-              <button
-                onClick={() => setEllipseMode('95')}
-                className={`px-2 py-0.5 ${ellipseMode === '95' ? 'bg-slate-700 text-slate-100' : 'bg-slate-900/60 text-slate-400'}`}
-              >
-                95%
-              </button>
-            </div>
-          </div>
-        </div>
-        <div className="overflow-x-auto w-full">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="text-slate-500 border-b border-slate-800 text-xs">
-                <th className="py-2 font-semibold w-20">Stn</th>
-                <th className="py-2 font-semibold">Description</th>
-                <th className="py-2 font-semibold text-right">Northing</th>
-                <th className="py-2 font-semibold text-right">Easting</th>
-                <th className="py-2 font-semibold text-right">Height</th>
-                <th className="py-2 font-semibold text-right">σN</th>
-                <th className="py-2 font-semibold text-right">σE</th>
-                <th className="py-2 font-semibold text-right">σH</th>
-                <th className="py-2 font-semibold text-center">Type</th>
-                <th className="py-2 font-semibold text-right w-32">Ellipse ({ellipseUnit})</th>
-                <th className="py-2 font-semibold text-right w-20">Az (deg)</th>
-              </tr>
-            </thead>
-            <tbody className="text-slate-300">
-              {visibleRowsFor('adjusted-coordinates', filteredStationRows).map(([id, stn]) => (
-                <tr
-                  key={id}
-                  data-report-station-row={id}
-                  onClick={() => onSelectStation?.(id)}
-                  className={`border-b border-slate-800/50 ${rowSelectionClass(
-                    selectedStationId === id,
-                  )} ${onSelectStation ? 'cursor-pointer' : ''}`}
-                >
-                  <td className="py-1 font-medium text-slate-100">{id}</td>
-                  <td className="py-1 text-xs text-slate-400">{stationDescription(id)}</td>
-                  <td className="py-1 text-right text-slate-200">
-                    {(stn.y * unitScale).toFixed(4)}
-                  </td>
-                  <td className="py-1 text-right text-slate-200">
-                    {(stn.x * unitScale).toFixed(4)}
-                  </td>
-                  <td className="py-1 text-right text-slate-200">
-                    {(stn.h * unitScale).toFixed(4)}
-                  </td>
-                  <td className="py-1 text-right text-xs text-slate-400">
-                    {stn.sN != null ? (stn.sN * unitScale).toFixed(4) : '-'}
-                  </td>
-                  <td className="py-1 text-right text-xs text-slate-400">
-                    {stn.sE != null ? (stn.sE * unitScale).toFixed(4) : '-'}
-                  </td>
-                  <td className="py-1 text-right text-xs text-slate-400">
-                    {stn.sH != null ? (stn.sH * unitScale).toFixed(4) : '-'}
-                  </td>
-                  <td className="py-1 text-center">
-                    {(() => {
-                      const badge = stationTypeBadge(stn);
-                      return (
-                        <span className={badge.className} title={badge.title}>
-                          {badge.label}
-                        </span>
-                      );
-                    })()}
-                  </td>
-                  <td className="py-1 text-right text-xs text-slate-400">
-                    {stn.errorEllipse
-                      ? `${(
-                          stn.errorEllipse.semiMajor *
-                          ellipseConfidenceScale *
-                          ellipseScale *
-                          (units === 'ft' ? 0.0328084 : 1)
-                        ).toFixed(1)} / ${(
-                          stn.errorEllipse.semiMinor *
-                          ellipseConfidenceScale *
-                          ellipseScale *
-                          (units === 'ft' ? 0.0328084 : 1)
-                        ).toFixed(1)}`
-                      : '-'}
-                  </td>
-                  <td className="py-1 text-right text-xs text-slate-400">
-                    {stn.errorEllipse ? stn.errorEllipse.theta.toFixed(2) : '-'}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          {renderLoadMoreFooter(
-            'adjusted-coordinates',
-            visibleRowsFor('adjusted-coordinates', filteredStationRows).length,
-            filteredStationRows.length,
-          )}
-        </div>
-      </div>
+      <AdjustedCoordinatesSection
+        isPreanalysis={isPreanalysis}
+        units={units}
+        ellipseMode={ellipseMode}
+        onEllipseModeChange={setEllipseMode}
+        ellipseUnit={ellipseUnit}
+        ellipseConfidenceScale={ellipseConfidenceScale}
+        ellipseScale={ellipseScale}
+        filteredStationRows={filteredStationRows}
+        selectedStationId={selectedStationId}
+        onSelectStation={onSelectStation}
+        stationDescription={stationDescription}
+        stationTypeBadge={stationTypeBadge}
+        rowSelectionClass={rowSelectionClass}
+        unitScale={unitScale}
+        visibleRowsFor={visibleRowsFor}
+        renderLoadMoreFooter={renderLoadMoreFooter}
+      />
 
       {isPreanalysis && filteredStationCovariances.length > 0 && (
         <div className="mb-4 border border-slate-800 rounded">

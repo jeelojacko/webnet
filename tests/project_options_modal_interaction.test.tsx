@@ -27,8 +27,37 @@ const waitForProjectOptionsContent = async (container: HTMLElement): Promise<voi
   }
 };
 
+const tabReadyText: Record<
+  NonNullable<React.ComponentProps<typeof App>['initialOptionsTab']>,
+  string
+> = {
+  adjustment: 'Solver Configuration',
+  general: 'Local / Grid Reduction',
+  instrument: 'Instrument Selection',
+  'listing-file': 'Listing Output',
+  'other-files': 'Other File Outputs',
+  special: 'Special',
+  gps: 'Coordinate System (Canada-First)',
+  modeling: 'TS Correlation',
+};
+
+const waitForTabContent = async (
+  container: HTMLElement,
+  initialOptionsTab: NonNullable<React.ComponentProps<typeof App>['initialOptionsTab']>,
+): Promise<void> => {
+  const readyText = tabReadyText[initialOptionsTab];
+  for (let attempt = 0; attempt < 40; attempt += 1) {
+    if (container.textContent?.includes(readyText)) {
+      return;
+    }
+    await act(async () => {
+      await new Promise((resolve) => window.setTimeout(resolve, 0));
+    });
+  }
+};
+
 const mountApp = async (
-  initialOptionsTab: React.ComponentProps<typeof App>['initialOptionsTab'],
+  initialOptionsTab: NonNullable<React.ComponentProps<typeof App>['initialOptionsTab']>,
 ): Promise<MountedApp> => {
   document.documentElement.setAttribute('data-theme', 'gruvbox-dark');
   const container = document.createElement('div');
@@ -38,6 +67,7 @@ const mountApp = async (
     root.render(<App initialSettingsModalOpen={true} initialOptionsTab={initialOptionsTab} />);
   });
   await waitForProjectOptionsContent(container);
+  await waitForTabContent(container, initialOptionsTab);
   return {
     container,
     cleanup: async () => {

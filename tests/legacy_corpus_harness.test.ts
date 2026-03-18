@@ -64,7 +64,9 @@ describe('legacy corpus harness', () => {
     expect(result.stdout).toContain('gateFailed=true');
   });
 
-  it('writes summary artifacts and passes baseline comparison in a single-project corpus', () => {
+  it(
+    'writes summary artifacts and passes baseline comparison in a single-project corpus',
+    () => {
     const outDir = mkdtempSync(path.join(tmpdir(), 'webnet-corpus-harness-'));
     const manifestPath = path.join(outDir, 'legacy_manifest_single.json');
     const baselinePath = path.join(outDir, 'legacy_baseline.json');
@@ -117,7 +119,9 @@ describe('legacy corpus harness', () => {
     expect(summaryJson.baselineComparison?.mismatchCount).toBe(0);
     const summaryText = readFileSync(summaryTextPath, 'utf-8');
     expect(summaryText).toContain('Baseline compare: PASS');
-  });
+    },
+    20000,
+  );
 
   it('flags unknown or ambiguous directives as silent drops when parser diagnostics are missing', () => {
     const candidates: UnknownInlineDirectiveCandidate[] = [

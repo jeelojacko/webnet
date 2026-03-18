@@ -57,12 +57,12 @@
       - [x] Add focused workspace-shell coverage for tab switching and empty-state behavior
       - [x] Add project-load replacement behavior coverage against persisted local draft state
   - [ ] Phase 2 - ReportView decomposition and QA workspace UX
-    - [ ] Split ReportView into section components backed by a shared report-section registry
-    - [ ] Extract shared report table/filter primitives for load-more, filtering, and row selection behavior
+    - [x] Split ReportView into section components backed by a shared report-section registry
+    - [x] Extract shared report table/filter primitives for load-more, filtering, and row selection behavior
     - [ ] Move report-local UI state into a dedicated hook/module:
-      - [ ] Filters
-      - [ ] Load-more window sizes
-      - [ ] Collapsed and pinned sections
+      - [x] Filters
+      - [x] Load-more window sizes
+      - [x] Collapsed and pinned sections
       - [ ] Selected station/observation context
     - [ ] Persist report/map review state through the browser recovery layer
     - [ ] Add fast QA navigation actions for next/previous suspect, jump-to-input, pin selected observation, and focus filter
