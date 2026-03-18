@@ -72,7 +72,10 @@
       - [x] Add focused module regression coverage for include expansion and cycle detection
       - [x] Extract include-scope snapshot/restore orchestration out of `src/engine/parse.ts` into `src/engine/parseIncludeScope.ts`
       - [x] Add focused module regression coverage for include-scope snapshot/restore behavior
-    - [ ] Split canonicalization/traceability/post-parse passes into dedicated modules
+    - [x] Split canonicalization/traceability/post-parse passes into dedicated modules
+      - [x] Extract alias canonicalization, lost-station normalization, description reconciliation, directive-finalization, and final parse/log summary shaping into `src/engine/parsePostProcessing.ts`
+      - [x] Keep parser fixture behavior stable while reducing the final `parse.ts` post-processing tail
+      - [x] Add focused regression coverage for the extracted post-processing module
   - [ ] Phase 4 - solver modular split
     - [x] Split preprocessing into a dedicated module boundary
       - [x] Extract solve-parameter preparation, auto-held height detection, direction-set ID collection, and weighted-control constraint planning into `src/engine/adjustmentPreprocessing.ts`
@@ -94,6 +97,8 @@
       - [x] Extract parse-state finalization and outward-facing `AdjustmentResult` payload assembly into `src/engine/adjustmentResultBuilder.ts`
       - [x] Keep run-mode/auto-sideshot/cluster gating behavior stable while reducing `buildResult()` responsibility in `src/engine/adjust.ts`
       - [x] Add focused regression coverage for the extracted result builder
+  - [ ] Next architecture follow-up
+    - [ ] Expand shared derived models so report/map/listing/processing-summary consume normalized data instead of rebuilding view-specific arrays
 
 - [x] Add post-adjust adjusted-points Transform support (rotation-only v1): persisted transform settings, Project Options -> Other Files -> Transform UI (rotation with pivot/scope/select-points popup + translation/scale placeholders), export-time validation, and dual-section adjusted-points export output (original + transform notes + rotated coordinates)
 - [x] Add TypeScript tooling (tsconfig, TSX entry) and migrate LSA engine/UI to TS modules
