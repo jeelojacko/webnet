@@ -164,6 +164,7 @@
 - [x] Dev workflow: update Husky pre-commit hook to run one-shot tests (`npm run test:run`) instead of watch mode
 - [x] Sync README/agents docs with current parser/engine/UI state
 - [x] Audit remediation upgrade: force-updated dev tooling to Vite 6 / Vitest 4 / esbuild 0.25 and revalidated lint + test:run + build on `chore/audit-force-upgrade-test`
+- [x] Clean up lingering build/install caveats: override transitive `flatted` to clear `npm audit`, and tune Vite chunk-warning thresholds so production builds no longer emit the old oversized-engine warning
 - [x] Instrument settings overhaul: editable Project Options instrument library (with New Instrument flow, unit-aware fields, and 2D/3D gating), solver wiring to UI-selected defaults, external-instrument precedence over inline `I` records, and zeroed fallback precision defaults unless explicitly provided
 - [x] Replace explicit normal-matrix inversion in the primary adjustment solve with Cholesky-based SPD solves, and use the same factorization path for dense `Qxx` covariance inversion
 - [x] Add scaled diagonal-damped Cholesky regularization for ill-conditioned normal matrices, while recovering undamped scaled covariance for diagnostics when regularization would bias residual/redundancy outputs
