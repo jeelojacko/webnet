@@ -54,7 +54,8 @@
       - [x] Add `src/engine/resultDerivedModels.ts` for shared observation sorting/grouping, data-check diff rows, traceability normalization, and statistical-summary fallback shaping
       - [x] Rewire `ReportView`, `ProcessingSummaryView`, `industryListing`, and `runResultsTextBuilder` to consume the shared derived helpers instead of rebuilding those models inline
       - [x] Add focused regression coverage for shared derived-model helpers in `tests/result_derived_models.test.ts`
-      - [ ] Extend the shared derived-model path into remaining map-side non-geometry selectors where it meaningfully reduces duplicate station/selection metadata shaping
+      - [x] Extend the shared derived-model path into remaining map-side non-geometry selectors (visible station IDs, weak-station severity, station ID lookup, and observation-pair link lookup) so `MapView` no longer rebuilds those selectors inline
+      - [ ] Continue the shared derived-model path into any remaining map-side selection/metadata shaping that is still duplicated after the selector extraction
   - [ ] Phase 3 - parser modular split
     - [~] Split parser directive-state management out of the current parser monolith
       - [x] Extract observation-mode normalization, directive transition snapshots, and no-effect warning synthesis into `src/engine/parseDirectiveState.ts`

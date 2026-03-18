@@ -13,6 +13,15 @@ import {
   buildAdjustedPointsTransformPreview,
   sanitizeAdjustedPointsExportSettings,
 } from '../engine/adjustedPointsExport';
+import {
+  buildMapLinkByPairKey,
+  buildObservationMapLinks,
+  buildStationIdLookup,
+  buildVisibleStationIds,
+  buildWeakStationSeverityLookup,
+  resolveSelectedObservationPairKey,
+  resolveStationIdToken,
+} from '../engine/resultDerivedModels';
 
 const FT_PER_M = 3.280839895;
 const VIEW_W = 1000;
@@ -233,23 +242,14 @@ const MapView: React.FC<MapViewProps> = ({
   }, [cleanAdjustedPointsExportSettings, result, units]);
 
   const visibleStationIds = useMemo(
-    () =>
-      Object.entries(stations)
-        .filter(([, station]) => showLostStations || !station.lost)
-        .map(([stationId]) => stationId)
-        .sort((a, b) => a.localeCompare(b, undefined, { numeric: true })),
+    () => buildVisibleStationIds(stations, showLostStations),
     [showLostStations, stations],
   );
 
-  const weakStationSeverity = useMemo(() => {
-    const lookup = new Map<string, 'watch' | 'weak'>();
-    (result.weakGeometryDiagnostics?.stationCues ?? []).forEach((cue) => {
-      if (cue.severity === 'watch' || cue.severity === 'weak') {
-        lookup.set(cue.stationId, cue.severity);
-      }
-    });
-    return lookup;
-  }, [result.weakGeometryDiagnostics]);
+  const weakStationSeverity = useMemo(
+    () => buildWeakStationSeverityLookup(result.weakGeometryDiagnostics),
+    [result.weakGeometryDiagnostics],
+  );
 
   const stationSeverity = useCallback(
     (stationId: string): 'watch' | 'weak' | null => weakStationSeverity.get(stationId) ?? null,
@@ -277,20 +277,10 @@ const MapView: React.FC<MapViewProps> = ({
     [stationSeverity],
   );
 
-  const stationIdLookup = useMemo(() => {
-    const lookup = new Map<string, string>();
-    visibleStationIds.forEach((stationId) => {
-      lookup.set(stationId.toUpperCase(), stationId);
-    });
-    return lookup;
-  }, [visibleStationIds]);
+  const stationIdLookup = useMemo(() => buildStationIdLookup(visibleStationIds), [visibleStationIds]);
 
   const resolveStationId = useCallback(
-    (value: string): string | null => {
-      const token = value.trim();
-      if (!token) return null;
-      return stationIdLookup.get(token.toUpperCase()) ?? null;
-    },
+    (value: string): string | null => resolveStationIdToken(stationIdLookup, value),
     [stationIdLookup],
   );
 
@@ -605,37 +595,13 @@ const MapView: React.FC<MapViewProps> = ({
     transformedOverlayConfig.transformedByStationId,
   ]);
 
-  const fallbackMapLinks = useMemo(
-    () =>
-      observations
-        .filter((obs) => obs.type === 'dist' || obs.type === 'gps' || obs.type === 'bearing' || obs.type === 'dir')
-        .map((obs) => ({
-          key: `obs-${obs.id}`,
-          observationId: obs.id,
-          type: obs.type,
-          fromId: obs.from,
-          toId: obs.to,
-          sourceLine: obs.sourceLine ?? null,
-          pairKey:
-            [obs.from, obs.to]
-              .slice()
-              .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }))
-              .join('|'),
-        })),
-    [observations],
-  );
+  const fallbackMapLinks = useMemo(() => buildObservationMapLinks(observations), [observations]);
   const mapLinks = derivedResult?.mapLinks ?? fallbackMapLinks;
-  const mapLinkByPairKey = useMemo(() => {
-    const next = new Map<string, (typeof mapLinks)[number]>();
-    mapLinks.forEach((link) => {
-      if (!next.has(link.pairKey)) next.set(link.pairKey, link);
-    });
-    return next;
-  }, [mapLinks]);
-  const selectedObservationPairKey = useMemo(() => {
-    if (!derivedResult || selectedObservationId == null) return null;
-    return derivedResult.observationById.get(selectedObservationId)?.pairKey ?? null;
-  }, [derivedResult, selectedObservationId]);
+  const mapLinkByPairKey = useMemo(() => buildMapLinkByPairKey(mapLinks), [mapLinks]);
+  const selectedObservationPairKey = useMemo(
+    () => resolveSelectedObservationPairKey(derivedResult?.observationById, selectedObservationId),
+    [derivedResult?.observationById, selectedObservationId],
+  );
 
   const viewportBounds2d = useMemo<ViewportBounds>(
     () => ({

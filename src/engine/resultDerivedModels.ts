@@ -7,7 +7,8 @@ import type {
   DescriptionTraceEntry,
   Observation,
   ParseOptions,
-} from '../types';
+  StationMap,
+  } from '../types';
 
 export type SortedObservation = Observation & { originalIndex: number };
 
@@ -16,6 +17,16 @@ export interface DataCheckDiffRow {
   stations: string;
   diffMagnitude: number;
   diffLabel: string;
+}
+
+export interface ObservationMapLink {
+  key: string;
+  observationId: number;
+  type: Observation['type'];
+  fromId: string;
+  toId: string;
+  sourceLine: number | null;
+  pairKey: string;
 }
 
 export interface DescriptionReferenceRow {
@@ -182,6 +193,81 @@ export const buildDescriptionRefsByStation = (
     acc.set(entry.stationId, rows);
     return acc;
   }, new Map());
+
+export const buildVisibleStationIds = (
+  stations: StationMap,
+  showLostStations: boolean,
+): string[] =>
+  Object.entries(stations)
+    .filter(([, station]) => showLostStations || !station.lost)
+    .map(([stationId]) => stationId)
+    .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+
+export const buildWeakStationSeverityLookup = (
+  diagnostics?: AdjustmentResult['weakGeometryDiagnostics'],
+): Map<string, 'watch' | 'weak'> => {
+  const lookup = new Map<string, 'watch' | 'weak'>();
+  (diagnostics?.stationCues ?? []).forEach((cue) => {
+    if (cue.severity === 'watch' || cue.severity === 'weak') {
+      lookup.set(cue.stationId, cue.severity);
+    }
+  });
+  return lookup;
+};
+
+export const buildStationIdLookup = (stationIds: string[]): Map<string, string> => {
+  const lookup = new Map<string, string>();
+  stationIds.forEach((stationId) => {
+    lookup.set(stationId.toUpperCase(), stationId);
+  });
+  return lookup;
+};
+
+export const resolveStationIdToken = (
+  stationIdLookup: Map<string, string>,
+  value: string,
+): string | null => {
+  const token = value.trim();
+  if (!token) return null;
+  return stationIdLookup.get(token.toUpperCase()) ?? null;
+};
+
+export const buildObservationMapLinks = (observations: Observation[]): ObservationMapLink[] =>
+  observations
+    .filter(
+      (obs) =>
+        obs.type === 'dist' || obs.type === 'gps' || obs.type === 'bearing' || obs.type === 'dir',
+    )
+    .map((obs) => ({
+      key: `obs-${obs.id}`,
+      observationId: obs.id,
+      type: obs.type,
+      fromId: obs.from,
+      toId: obs.to,
+      sourceLine: obs.sourceLine ?? null,
+      pairKey: [obs.from, obs.to]
+        .slice()
+        .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }))
+        .join('|'),
+    }));
+
+export const buildMapLinkByPairKey = <TLink extends { pairKey: string }>(
+  mapLinks: TLink[],
+): Map<string, TLink> => {
+  const next = new Map<string, TLink>();
+  mapLinks.forEach((link) => {
+    if (!next.has(link.pairKey)) next.set(link.pairKey, link);
+  });
+  return next;
+};
+
+export const resolveSelectedObservationPairKey = (
+  observationById: Map<number, { pairKey: string | null }> | undefined,
+  selectedObservationId: number | null | undefined,
+): string | null => {
+  if (!observationById || selectedObservationId == null) return null;
+  return observationById.get(selectedObservationId)?.pairKey ?? null;
+};
 
 export const buildResultTraceabilityModel = (
   parseState?: ParseOptions,
