@@ -298,4 +298,78 @@ describe('useWorkspaceRecovery', () => {
     });
     container.remove();
   });
+
+  it('replaces the persisted draft snapshot when a project-style load swaps the workspace state', async () => {
+    window.localStorage.clear();
+
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root: Root = createRoot(container);
+
+    const Harness = () => {
+      const [snapshot, setSnapshot] = useState(
+        buildSnapshot({
+          input: 'DRAFT INPUT',
+          exportFormat: 'points',
+          projectIncludeFiles: { 'draft.dat': 'C P1 0 0 0' },
+        }),
+      );
+      useWorkspaceRecovery({
+        storageKey: STORAGE_KEY,
+        snapshot,
+        onRecover: () => undefined,
+      });
+
+      return (
+        <button
+          data-load-project
+          onClick={() =>
+            setSnapshot(
+              buildSnapshot({
+                input: 'PROJECT INPUT',
+                exportFormat: 'industry-style',
+                projectIncludeFiles: { 'loaded.dat': 'C P2 1 1 1' },
+                view: {
+                  activeTab: 'map',
+                  splitPercent: 42,
+                  isSidebarOpen: false,
+                  selection: {
+                    stationId: 'P2',
+                    observationId: null,
+                    sourceLine: 12,
+                    origin: 'report',
+                  },
+                  pinnedObservationIds: [7],
+                },
+              }),
+            )
+          }
+        />
+      );
+    };
+
+    await act(async () => {
+      root.render(<Harness />);
+    });
+
+    const initialRaw = window.localStorage.getItem(STORAGE_KEY);
+    expect(initialRaw).toContain('DRAFT INPUT');
+    expect(initialRaw).not.toContain('PROJECT INPUT');
+
+    await act(async () => {
+      (container.querySelector('[data-load-project]') as HTMLButtonElement).click();
+    });
+
+    const replacedRaw = window.localStorage.getItem(STORAGE_KEY);
+    expect(replacedRaw).toContain('PROJECT INPUT');
+    expect(replacedRaw).toContain('industry-style');
+    expect(replacedRaw).toContain('loaded.dat');
+    expect(replacedRaw).toContain('"activeTab":"map"');
+    expect(replacedRaw).not.toContain('DRAFT INPUT');
+
+    await act(async () => {
+      root.unmount();
+    });
+    container.remove();
+  });
 });

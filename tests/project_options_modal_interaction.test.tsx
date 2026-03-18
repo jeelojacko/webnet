@@ -13,6 +13,20 @@ type MountedApp = {
   cleanup: () => Promise<void>;
 };
 
+const waitForProjectOptionsContent = async (container: HTMLElement): Promise<void> => {
+  for (let attempt = 0; attempt < 20; attempt += 1) {
+    if (
+      container.textContent?.includes('Project Options') &&
+      !container.textContent.includes('Loading project options...')
+    ) {
+      return;
+    }
+    await act(async () => {
+      await new Promise((resolve) => window.setTimeout(resolve, 0));
+    });
+  }
+};
+
 const mountApp = async (
   initialOptionsTab: React.ComponentProps<typeof App>['initialOptionsTab'],
 ): Promise<MountedApp> => {
@@ -23,6 +37,7 @@ const mountApp = async (
   await act(async () => {
     root.render(<App initialSettingsModalOpen={true} initialOptionsTab={initialOptionsTab} />);
   });
+  await waitForProjectOptionsContent(container);
   return {
     container,
     cleanup: async () => {

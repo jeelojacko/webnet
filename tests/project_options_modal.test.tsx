@@ -1,120 +1,171 @@
-import React from 'react';
-import { renderToStaticMarkup } from 'react-dom/server';
+/** @vitest-environment jsdom */
+
+import React, { act } from 'react';
+import { createRoot, type Root } from 'react-dom/client';
 import { describe, expect, it } from 'vitest';
 
 import App from '../src/App';
 
+(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
+
+type MountedApp = {
+  container: HTMLDivElement;
+  cleanup: () => Promise<void>;
+};
+
+const waitForProjectOptionsContent = async (container: HTMLElement): Promise<void> => {
+  for (let attempt = 0; attempt < 20; attempt += 1) {
+    if (
+      container.textContent?.includes('Project Options') &&
+      !container.textContent.includes('Loading project options...')
+    ) {
+      return;
+    }
+    await act(async () => {
+      await new Promise((resolve) => window.setTimeout(resolve, 0));
+    });
+  }
+};
+
+const mountApp = async (
+  initialOptionsTab: React.ComponentProps<typeof App>['initialOptionsTab'],
+): Promise<MountedApp> => {
+  document.documentElement.setAttribute('data-theme', 'gruvbox-dark');
+  const container = document.createElement('div');
+  document.body.appendChild(container);
+  const root: Root = createRoot(container);
+  await act(async () => {
+    root.render(<App initialSettingsModalOpen={true} initialOptionsTab={initialOptionsTab} />);
+  });
+  await waitForProjectOptionsContent(container);
+  return {
+    container,
+    cleanup: async () => {
+      await act(async () => {
+        root.unmount();
+      });
+      container.remove();
+    },
+  };
+};
+
 describe('Project Options modal layout', () => {
-  it('renders the condensed adjustment layout with level-loop preset controls', () => {
-    const html = renderToStaticMarkup(
-      <App initialSettingsModalOpen={true} initialOptionsTab="adjustment" />,
-    );
-
-    expect(html).toContain('Project Options');
-    expect(html).toContain('Solver Configuration');
-    expect(html).toContain('Geodetic Framework');
-    expect(html).toContain('Leveling / Weighting');
-    expect(html).toContain('Convergence Limit');
-    expect(html).toContain('Level Loop Preset');
-    expect(html).toContain('Saved Custom Presets');
-    expect(html).toContain('Add Current');
+  it('renders the condensed adjustment layout with level-loop preset controls', async () => {
+    const app = await mountApp('adjustment');
+    try {
+      expect(app.container.textContent).toContain('Project Options');
+      expect(app.container.textContent).toContain('Solver Configuration');
+      expect(app.container.textContent).toContain('Geodetic Framework');
+      expect(app.container.textContent).toContain('Leveling / Weighting');
+      expect(app.container.textContent).toContain('Convergence Limit');
+      expect(app.container.textContent).toContain('Level Loop Preset');
+      expect(app.container.textContent).toContain('Saved Custom Presets');
+      expect(app.container.textContent).toContain('Add Current');
+    } finally {
+      await app.cleanup();
+    }
   });
 
-  it('renders the condensed instrument layout with labels left and inputs right', () => {
-    const html = renderToStaticMarkup(
-      <App initialSettingsModalOpen={true} initialOptionsTab="instrument" />,
-    );
-
-    expect(html).toContain('Instrument Selection');
-    expect(html).toContain('Horizontal Precision');
-    expect(html).toContain('Vertical Precision');
-    expect(html).toContain('Instrument Description');
-    expect(html).toContain('Duplicate');
-    expect(html).toContain('Distance Constant');
-    expect(html).toContain('Centering Vertical');
+  it('renders the condensed instrument layout with labels left and inputs right', async () => {
+    const app = await mountApp('instrument');
+    try {
+      expect(app.container.textContent).toContain('Instrument Selection');
+      expect(app.container.textContent).toContain('Horizontal Precision');
+      expect(app.container.textContent).toContain('Vertical Precision');
+      expect(app.container.textContent).toContain('Instrument Description');
+      expect(app.container.textContent).toContain('Duplicate');
+      expect(app.container.textContent).toContain('Distance Constant');
+      expect(app.container.textContent).toContain('Centering Vertical');
+    } finally {
+      await app.cleanup();
+    }
   });
 
-  it('renders the condensed general layout with reduction controls grouped in cards', () => {
-    const html = renderToStaticMarkup(
-      <App initialSettingsModalOpen={true} initialOptionsTab="general" />,
-    );
-
-    expect(html).toContain('Local / Grid Reduction');
-    expect(html).toContain('Map Mode');
-    expect(html).toContain('Map Scale Factor');
-    expect(html).toContain('UI Theme');
-    expect(html).toContain('Gruvbox Dark');
-    expect(html).toContain('Gruvbox Light');
-    expect(html).toContain('Catppuccin Mocha');
-    expect(html).toContain('Catppuccin Latte');
-    expect(html).toContain('Face Normalization Mode');
-    expect(html).toContain('Vertical Reduction');
-    expect(html).toContain('Curvature / Refraction');
-    expect(html).toContain('Vertical Reduction Mode');
+  it('renders the condensed general layout with reduction controls grouped in cards', async () => {
+    const app = await mountApp('general');
+    try {
+      expect(app.container.textContent).toContain('Local / Grid Reduction');
+      expect(app.container.textContent).toContain('Map Mode');
+      expect(app.container.textContent).toContain('Map Scale Factor');
+      expect(app.container.textContent).toContain('UI Theme');
+      expect(app.container.textContent).toContain('Gruvbox Dark');
+      expect(app.container.textContent).toContain('Gruvbox Light');
+      expect(app.container.textContent).toContain('Catppuccin Mocha');
+      expect(app.container.textContent).toContain('Catppuccin Latte');
+      expect(app.container.textContent).toContain('Face Normalization Mode');
+      expect(app.container.textContent).toContain('Vertical Reduction');
+      expect(app.container.textContent).toContain('Curvature / Refraction');
+      expect(app.container.textContent).toContain('Vertical Reduction Mode');
+    } finally {
+      await app.cleanup();
+    }
   });
 
-  it('renders the gps layout without the removed condensed-pane helper sentence', () => {
-    const html = renderToStaticMarkup(
-      <App initialSettingsModalOpen={true} initialOptionsTab="gps" />,
-    );
-
-    expect(html).toContain('Coordinate System (Canada-First)');
-    expect(html).toContain('Coord System Mode');
-    expect(html).toContain('CRS Catalog Group');
-    expect(html).toContain('CRS (Grid Mode)');
-    expect(html).toContain('Average Geoid Height');
-    expect(html).toContain('Show Params');
-    expect(html).toContain('Observation Input Mode (.MEASURED / .GRID)');
-    expect(html).toContain('Advanced CRS/GPS/Height');
-    expect(html).toContain('GPS Loop Check');
-    expect(html).toContain('Geoid/Grid Model');
-    expect(html).not.toContain(
-      'The GPS pane is intentionally condensed: labels stay on the left, controls stay on the right, and disable rules mirror the parser defaults already in the engine.',
-    );
+  it('renders the gps layout without the removed condensed-pane helper sentence', async () => {
+    const app = await mountApp('gps');
+    try {
+      expect(app.container.textContent).toContain('Coordinate System (Canada-First)');
+      expect(app.container.textContent).toContain('Coord System Mode');
+      expect(app.container.textContent).toContain('CRS Catalog Group');
+      expect(app.container.textContent).toContain('CRS (Grid Mode)');
+      expect(app.container.textContent).toContain('Average Geoid Height');
+      expect(app.container.textContent).toContain('Show Params');
+      expect(app.container.textContent).toContain('Observation Input Mode (.MEASURED / .GRID)');
+      expect(app.container.textContent).toContain('Advanced CRS/GPS/Height');
+      expect(app.container.textContent).toContain('GPS Loop Check');
+      expect(app.container.textContent).toContain('Geoid/Grid Model');
+      expect(app.container.textContent).not.toContain(
+        'The GPS pane is intentionally condensed: labels stay on the left, controls stay on the right, and disable rules mirror the parser defaults already in the engine.',
+      );
+    } finally {
+      await app.cleanup();
+    }
   });
 
-  it('renders real Other Files controls instead of the placeholder panel', () => {
-    const html = renderToStaticMarkup(
-      <App initialSettingsModalOpen={true} initialOptionsTab="other-files" />,
-    );
-
-    expect(html).toContain('Other File Outputs');
-    expect(html).toContain('Project Files');
-    expect(html).toContain('Open Project');
-    expect(html).toContain('Save Project');
-    expect(html).toContain('Adjusted Points Export');
-    expect(html).toContain('Transform');
-    expect(html).toContain('Reference Point');
-    expect(html).toContain('Rotation');
-    expect(html).toContain('Translation');
-    expect(html).toContain('Scale');
-    expect(html).not.toContain('Coming Soon');
-    expect(html).toContain('Enable Rotation');
-    expect(html).toContain('Enable Translation');
-    expect(html).toContain('Enable Scale');
-    expect(html).toContain('All Points');
-    expect(html).toContain('Select Points');
-    expect(html).toContain('Adjusted Points Preset');
-    expect(html).toContain('Adjusted Points Delimiter');
-    expect(html).toContain('Export Format');
-    expect(html).toContain('Output Extension');
-    expect(html).toContain('Output Visibility');
-    expect(html).toContain('Show Lost Stations in Output');
-    expect(html).not.toContain('Future Option A');
-    expect(html).not.toContain('Not implemented');
+  it('renders real Other Files controls instead of the placeholder panel', async () => {
+    const app = await mountApp('other-files');
+    try {
+      expect(app.container.textContent).toContain('Other File Outputs');
+      expect(app.container.textContent).toContain('Project Files');
+      expect(app.container.textContent).toContain('Open Project');
+      expect(app.container.textContent).toContain('Save Project');
+      expect(app.container.textContent).toContain('Adjusted Points Export');
+      expect(app.container.textContent).toContain('Transform');
+      expect(app.container.textContent).toContain('Reference Point');
+      expect(app.container.textContent).toContain('Rotation');
+      expect(app.container.textContent).toContain('Translation');
+      expect(app.container.textContent).toContain('Scale');
+      expect(app.container.textContent).not.toContain('Coming Soon');
+      expect(app.container.textContent).toContain('Enable Rotation');
+      expect(app.container.textContent).toContain('Enable Translation');
+      expect(app.container.textContent).toContain('Enable Scale');
+      expect(app.container.textContent).toContain('All Points');
+      expect(app.container.textContent).toContain('Select Points');
+      expect(app.container.textContent).toContain('Adjusted Points Preset');
+      expect(app.container.textContent).toContain('Adjusted Points Delimiter');
+      expect(app.container.textContent).toContain('Export Format');
+      expect(app.container.textContent).toContain('Output Extension');
+      expect(app.container.textContent).toContain('Output Visibility');
+      expect(app.container.textContent).toContain('Show Lost Stations in Output');
+      expect(app.container.textContent).not.toContain('Future Option A');
+      expect(app.container.textContent).not.toContain('Not implemented');
+    } finally {
+      await app.cleanup();
+    }
   });
 
-  it('renders the condensed modeling layout with TS correlation and robust controls', () => {
-    const html = renderToStaticMarkup(
-      <App initialSettingsModalOpen={true} initialOptionsTab="modeling" />,
-    );
-
-    expect(html).toContain('TS Correlation');
-    expect(html).toContain('Enable Correlation');
-    expect(html).toContain('Correlation Scope');
-    expect(html).toContain('Correlation ρ');
-    expect(html).toContain('Robust Model');
-    expect(html).toContain('Robust Mode');
-    expect(html).toContain('Robust k');
+  it('renders the condensed modeling layout with TS correlation and robust controls', async () => {
+    const app = await mountApp('modeling');
+    try {
+      expect(app.container.textContent).toContain('TS Correlation');
+      expect(app.container.textContent).toContain('Enable Correlation');
+      expect(app.container.textContent).toContain('Correlation Scope');
+      expect(app.container.textContent).toContain('Correlation ρ');
+      expect(app.container.textContent).toContain('Robust Model');
+      expect(app.container.textContent).toContain('Robust Mode');
+      expect(app.container.textContent).toContain('Robust k');
+    } finally {
+      await app.cleanup();
+    }
   });
 });

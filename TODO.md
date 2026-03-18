@@ -34,27 +34,28 @@
     - [x] Break each phase into explicit checklist items instead of summary-only bullets
     - [x] Separate architecture, UX, performance, and test-gate work so execution order stays locked
     - [x] Update README.md and agents.md after each completed implementation batch
-  - [ ] Phase 1 - app shell completion and browser recovery
-    - [ ] Extract remaining App shell seams:
+  - [x] Phase 1 - app shell completion and browser recovery
+    - [x] Extract remaining App shell seams:
       - [x] Extract top toolbar/status area into a dedicated shell component
       - [x] Extract draft-recovery banner/actions into a dedicated shell component
       - [x] Extract tab/workspace chrome into a dedicated shell component or hook-backed module
-      - [ ] Remove remaining direct engine/run orchestration paths from App.tsx so browser runs flow through one workflow path
-    - [ ] Add browser-local draft recovery:
+      - [x] Remove remaining direct engine/run orchestration paths from App.tsx so browser runs flow through one workflow path
+    - [x] Add browser-local draft recovery:
       - [x] Persist input text and include-file bundle locally
       - [x] Persist settings, parse settings, selected instrument, and export settings locally
       - [x] Persist active tab, split layout, sidebar visibility, report/map selection, comparison thresholds, and pinned review state locally
       - [x] Restore draft state on startup with explicit recover/discard behavior
       - [x] Add a clear-current-draft action
-    - [ ] Lazy-load heavy browser-only surfaces not needed on first paint:
+    - [x] Lazy-load heavy browser-only surfaces not needed on first paint:
       - [x] Import-review workflow/modal
-      - [ ] Project Options modal body
+      - [x] Project Options modal body
       - [x] External importer registry/converters
-      - [ ] Large detail panels tied to import/settings workflows
-    - [~] Add focused regression coverage for browser recovery, recover/discard/clear flows, and project-load replacement behavior
+      - [x] Large detail panels tied to import/settings workflows
+        - [x] Keep remaining minor detail panels inline after profiling; no additional first-paint hotspots justified another split in this phase
+    - [x] Add focused regression coverage for browser recovery, recover/discard/clear flows, and project-load replacement behavior
       - [x] Add focused recovery-hook coverage for recover/discard/clear flows
       - [x] Add focused workspace-shell coverage for tab switching and empty-state behavior
-      - [ ] Add project-load replacement behavior coverage against persisted local draft state
+      - [x] Add project-load replacement behavior coverage against persisted local draft state
   - [ ] Phase 2 - ReportView decomposition and QA workspace UX
     - [ ] Split ReportView into section components backed by a shared report-section registry
     - [ ] Extract shared report table/filter primitives for load-more, filtering, and row selection behavior
