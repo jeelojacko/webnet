@@ -29,6 +29,12 @@ export interface ObservationMapLink {
   pairKey: string;
 }
 
+export interface VisibleStationRow {
+  id: string;
+  station: StationMap[string];
+  severity: 'watch' | 'weak' | null;
+}
+
 export interface DescriptionReferenceRow {
   key: string;
   description: string;
@@ -203,6 +209,11 @@ export const buildVisibleStationIds = (
     .map(([stationId]) => stationId)
     .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
 
+export const resolveWeakStationSeverity = (
+  weakStationSeverity: Map<string, 'watch' | 'weak'>,
+  stationId: string,
+): 'watch' | 'weak' | null => weakStationSeverity.get(stationId) ?? null;
+
 export const buildWeakStationSeverityLookup = (
   diagnostics?: AdjustmentResult['weakGeometryDiagnostics'],
 ): Map<string, 'watch' | 'weak'> => {
@@ -222,6 +233,17 @@ export const buildStationIdLookup = (stationIds: string[]): Map<string, string> 
   });
   return lookup;
 };
+
+export const buildVisibleStationRows = (
+  stations: StationMap,
+  showLostStations: boolean,
+  weakStationSeverity: Map<string, 'watch' | 'weak'>,
+): VisibleStationRow[] =>
+  buildVisibleStationIds(stations, showLostStations).map((stationId) => ({
+    id: stationId,
+    station: stations[stationId],
+    severity: resolveWeakStationSeverity(weakStationSeverity, stationId),
+  }));
 
 export const resolveStationIdToken = (
   stationIdLookup: Map<string, string>,
@@ -267,6 +289,19 @@ export const resolveSelectedObservationPairKey = (
 ): string | null => {
   if (!observationById || selectedObservationId == null) return null;
   return observationById.get(selectedObservationId)?.pairKey ?? null;
+};
+
+export const scoreMapStationPriority = (input: {
+  stationId: string;
+  selectedStationId?: string | null;
+  severity?: 'watch' | 'weak' | null;
+  fixed?: boolean;
+}): number => {
+  const selectedBoost = input.stationId === input.selectedStationId ? 1000 : 0;
+  const severityBoost =
+    input.severity === 'weak' ? 100 : input.severity === 'watch' ? 80 : 0;
+  const fixedBoost = input.fixed ? 10 : 0;
+  return selectedBoost + severityBoost + fixedBoost;
 };
 
 export const buildResultTraceabilityModel = (

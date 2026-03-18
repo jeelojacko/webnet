@@ -17,10 +17,13 @@ import {
   buildMapLinkByPairKey,
   buildObservationMapLinks,
   buildStationIdLookup,
+  buildVisibleStationRows,
   buildVisibleStationIds,
   buildWeakStationSeverityLookup,
+  resolveWeakStationSeverity,
   resolveSelectedObservationPairKey,
   resolveStationIdToken,
+  scoreMapStationPriority,
 } from '../engine/resultDerivedModels';
 
 const FT_PER_M = 3.280839895;
@@ -252,8 +255,14 @@ const MapView: React.FC<MapViewProps> = ({
   );
 
   const stationSeverity = useCallback(
-    (stationId: string): 'watch' | 'weak' | null => weakStationSeverity.get(stationId) ?? null,
+    (stationId: string): 'watch' | 'weak' | null =>
+      resolveWeakStationSeverity(weakStationSeverity, stationId),
     [weakStationSeverity],
+  );
+
+  const visibleStationRows = useMemo(
+    () => buildVisibleStationRows(stations, showLostStations, weakStationSeverity),
+    [showLostStations, stations, weakStationSeverity],
   );
 
   const stationFill = useCallback(
@@ -696,18 +705,18 @@ const MapView: React.FC<MapViewProps> = ({
     }
     const occupied = new Set<string>();
     const sortedPoints = [...visiblePoints2d].sort((left, right) => {
-      const leftPriority =
-        (left.id === selectedStationId ? 1000 : 0) +
-        (stationSeverity(left.id) === 'weak' ? 100 : stationSeverity(left.id) === 'watch' ? 80 : 0) +
-        (left.fixed ? 10 : 0);
-      const rightPriority =
-        (right.id === selectedStationId ? 1000 : 0) +
-        (stationSeverity(right.id) === 'weak'
-          ? 100
-          : stationSeverity(right.id) === 'watch'
-            ? 80
-            : 0) +
-        (right.fixed ? 10 : 0);
+      const leftPriority = scoreMapStationPriority({
+        stationId: left.id,
+        selectedStationId,
+        severity: stationSeverity(left.id),
+        fixed: left.fixed,
+      });
+      const rightPriority = scoreMapStationPriority({
+        stationId: right.id,
+        selectedStationId,
+        severity: stationSeverity(right.id),
+        fixed: right.fixed,
+      });
       if (leftPriority !== rightPriority) return rightPriority - leftPriority;
       return left.id.localeCompare(right.id, undefined, { numeric: true });
     });
@@ -1106,9 +1115,7 @@ const MapView: React.FC<MapViewProps> = ({
                     </tr>
                   </thead>
                   <tbody className="text-slate-200">
-                    {visibleStationIds.map((stationId) => {
-                      const station = stations[stationId];
-                      if (!station) return null;
+                    {visibleStationRows.map(({ id: stationId, station, severity }) => {
                       const formatStd = (value?: number) =>
                         value != null && Number.isFinite(value)
                           ? (value * unitScale).toFixed(4)
@@ -1120,9 +1127,7 @@ const MapView: React.FC<MapViewProps> = ({
                         >
                           <td className="px-2 py-1">{stationId}</td>
                           {isPreanalysis ? (
-                            <td className="px-2 py-1 uppercase">
-                              {stationSeverity(stationId) ?? '-'}
-                            </td>
+                            <td className="px-2 py-1 uppercase">{severity ?? '-'}</td>
                           ) : null}
                           <td className="px-2 py-1 text-right">
                             {(station.y * unitScale).toFixed(4)}
@@ -1147,7 +1152,7 @@ const MapView: React.FC<MapViewProps> = ({
             {activeTool === 'inverse' && (
               <div className="space-y-2">
                 <datalist id="map-point-id-list">
-                  {visibleStationIds.map((stationId) => (
+                  {visibleStationRows.map(({ id: stationId }) => (
                     <option key={`inv-id-${stationId}`} value={stationId} />
                   ))}
                 </datalist>
@@ -1168,7 +1173,7 @@ const MapView: React.FC<MapViewProps> = ({
                         className="rounded border border-slate-600 bg-slate-950 px-2 py-1 text-slate-100"
                       >
                         <option value="">Select</option>
-                        {visibleStationIds.map((stationId) => (
+                        {visibleStationRows.map(({ id: stationId }) => (
                           <option key={`inv-from-${stationId}`} value={stationId}>
                             {stationId}
                           </option>
@@ -1192,7 +1197,7 @@ const MapView: React.FC<MapViewProps> = ({
                         className="rounded border border-slate-600 bg-slate-950 px-2 py-1 text-slate-100"
                       >
                         <option value="">Select</option>
-                        {visibleStationIds.map((stationId) => (
+                        {visibleStationRows.map(({ id: stationId }) => (
                           <option key={`inv-to-${stationId}`} value={stationId}>
                             {stationId}
                           </option>
@@ -1235,7 +1240,7 @@ const MapView: React.FC<MapViewProps> = ({
             {activeTool === 'angles' && (
               <div className="space-y-2">
                 <datalist id="map-angle-point-id-list">
-                  {visibleStationIds.map((stationId) => (
+                  {visibleStationRows.map(({ id: stationId }) => (
                     <option key={`ang-id-${stationId}`} value={stationId} />
                   ))}
                 </datalist>
@@ -1256,7 +1261,7 @@ const MapView: React.FC<MapViewProps> = ({
                         className="rounded border border-slate-600 bg-slate-950 px-2 py-1 text-slate-100"
                       >
                         <option value="">Select</option>
-                        {visibleStationIds.map((stationId) => (
+                        {visibleStationRows.map(({ id: stationId }) => (
                           <option key={`ang-piv-${stationId}`} value={stationId}>
                             {stationId}
                           </option>
@@ -1280,7 +1285,7 @@ const MapView: React.FC<MapViewProps> = ({
                         className="rounded border border-slate-600 bg-slate-950 px-2 py-1 text-slate-100"
                       >
                         <option value="">Select</option>
-                        {visibleStationIds.map((stationId) => (
+                        {visibleStationRows.map(({ id: stationId }) => (
                           <option key={`ang-from-${stationId}`} value={stationId}>
                             {stationId}
                           </option>
@@ -1304,7 +1309,7 @@ const MapView: React.FC<MapViewProps> = ({
                         className="rounded border border-slate-600 bg-slate-950 px-2 py-1 text-slate-100"
                       >
                         <option value="">Select</option>
-                        {visibleStationIds.map((stationId) => (
+                        {visibleStationRows.map(({ id: stationId }) => (
                           <option key={`ang-to-${stationId}`} value={stationId}>
                             {stationId}
                           </option>

@@ -9,11 +9,14 @@ import {
   buildResultStatisticalSummaryModel,
   buildResultTraceabilityModel,
   buildStationIdLookup,
+  buildVisibleStationRows,
   buildVisibleStationIds,
   buildWeakStationSeverityLookup,
+  resolveWeakStationSeverity,
   groupSortedObservationsByType,
   resolveSelectedObservationPairKey,
   resolveStationIdToken,
+  scoreMapStationPriority,
   sortObservationsByStdRes,
 } from '../src/engine/resultDerivedModels';
 
@@ -167,6 +170,7 @@ describe('resultDerivedModels helpers', () => {
     const visibleStationIds = buildVisibleStationIds(result.stations, false);
     const stationLookup = buildStationIdLookup(visibleStationIds);
     const weakStationSeverity = buildWeakStationSeverityLookup(result.weakGeometryDiagnostics);
+    const visibleStationRows = buildVisibleStationRows(result.stations, false, weakStationSeverity);
     const fallbackMapLinks = buildObservationMapLinks(result.observations);
     const mapLinkByPairKey = buildMapLinkByPairKey(fallbackMapLinks);
     const selectedObservationId = result.observations.find((obs) => obs.type === 'dist')?.id ?? null;
@@ -174,10 +178,30 @@ describe('resultDerivedModels helpers', () => {
     expect(visibleStationIds).toEqual(['A', 'P']);
     expect(resolveStationIdToken(stationLookup, 'p')).toBe('P');
     expect(weakStationSeverity.get('P')).toBe('weak');
+    expect(resolveWeakStationSeverity(weakStationSeverity, 'P')).toBe('weak');
+    expect(visibleStationRows.map((row) => ({ id: row.id, severity: row.severity }))).toEqual([
+      { id: 'A', severity: null },
+      { id: 'P', severity: 'weak' },
+    ]);
     expect(fallbackMapLinks).toHaveLength(2);
     expect(mapLinkByPairKey.get('A|P')?.observationId).toBe(result.observations[0]?.id);
     expect(resolveSelectedObservationPairKey(derived.observationById, selectedObservationId)).toBe(
       'A|P',
+    );
+    expect(
+      scoreMapStationPriority({
+        stationId: 'P',
+        selectedStationId: 'P',
+        severity: 'weak',
+        fixed: false,
+      }),
+    ).toBeGreaterThan(
+      scoreMapStationPriority({
+        stationId: 'A',
+        selectedStationId: 'P',
+        severity: null,
+        fixed: true,
+      }),
     );
   });
 });
