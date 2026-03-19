@@ -107,10 +107,14 @@
       - [x] Extract alias-resolution and canonical-ID pipeline into a dedicated parser module
       - [x] Rewire `parse.ts` and include-scope handling to consume the extracted alias pipeline
       - [x] Add focused regression coverage for alias resolution, directive handling, and cluster-merge preload behavior
+    - [x] Batch complete - direction-set reduction seam extraction:
+      - [x] Extract direction-set reduction and treatment logic into a dedicated parser module
+      - [x] Rewire `parse.ts` to route direction-set flushing and diagnostics through the extracted module
+      - [x] Add focused regression coverage for reduced/raw treatment decisions and reject diagnostics
     - [ ] Finish parser monolith extraction:
       - [x] Sigma/default-resolution helpers
       - [x] Alias-resolution and canonical-ID pipeline
-      - [ ] Direction-set reduction and treatment logic
+      - [x] Direction-set reduction and treatment logic
       - [ ] Directive command dispatch and handler registry
     - [ ] Finish solver monolith extraction:
       - [ ] Statistical test math and quantile helpers
