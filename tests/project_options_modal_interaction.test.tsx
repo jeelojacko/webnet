@@ -13,18 +13,31 @@ type MountedApp = {
   cleanup: () => Promise<void>;
 };
 
-const waitForProjectOptionsContent = async (container: HTMLElement): Promise<void> => {
-  for (let attempt = 0; attempt < 20; attempt += 1) {
-    if (
-      container.textContent?.includes('Project Options') &&
-      !container.textContent.includes('Loading project options...')
-    ) {
+const waitForCondition = async (
+  predicate: () => boolean,
+  timeoutMs: number,
+  failureMessage: string,
+): Promise<void> => {
+  const startedAt = Date.now();
+  while (Date.now() - startedAt < timeoutMs) {
+    if (predicate()) {
       return;
     }
     await act(async () => {
-      await new Promise((resolve) => window.setTimeout(resolve, 0));
+      await new Promise((resolve) => window.setTimeout(resolve, 10));
     });
   }
+  throw new Error(failureMessage);
+};
+
+const waitForProjectOptionsContent = async (container: HTMLElement): Promise<void> => {
+  await waitForCondition(
+    () =>
+      container.textContent?.includes('Project Options') === true &&
+      !container.textContent.includes('Loading project options...'),
+    5000,
+    'Project Options modal content did not finish loading within 5000ms.',
+  );
 };
 
 const tabReadyText: Record<
@@ -46,14 +59,11 @@ const waitForTabContent = async (
   initialOptionsTab: NonNullable<React.ComponentProps<typeof App>['initialOptionsTab']>,
 ): Promise<void> => {
   const readyText = tabReadyText[initialOptionsTab];
-  for (let attempt = 0; attempt < 40; attempt += 1) {
-    if (container.textContent?.includes(readyText)) {
-      return;
-    }
-    await act(async () => {
-      await new Promise((resolve) => window.setTimeout(resolve, 0));
-    });
-  }
+  await waitForCondition(
+    () => container.textContent?.includes(readyText) === true,
+    5000,
+    `Project Options tab "${initialOptionsTab}" did not render "${readyText}" within 5000ms.`,
+  );
 };
 
 const mountApp = async (
