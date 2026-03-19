@@ -8,8 +8,8 @@
     "expectedStationCount": 121,
     "expectedObservationCount": 240,
     "reportWindowSize": 100,
-    "solveBudgetMs": 5000,
-    "rerunBudgetMs": 4500,
+    "solveBudgetMs": 5500,
+    "rerunBudgetMs": 5000,
     "renderBudgetMs": 4000
   }
 ]

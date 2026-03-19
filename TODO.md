@@ -195,6 +195,10 @@
       - [x] Extract conventional primitive observation handling (`D`, `A`, `V`, `DV`) into `src/engine/parseConventionalObservationRecords.ts`
       - [x] Extend `src/engine/parseConventionalObservationRecords.ts` to cover bearing/measurement families (`B`, `BM`, `M`)
       - [x] Add focused parser regression coverage for conventional primitive and bearing/measurement observation families
+      - [x] Batch complete - field/GNSS/leveling record-family extraction:
+        - [x] Extract inline `SS` / `GS` / `G` / `G4` / `L` record handling into a dedicated parser module
+        - [x] Rewire `parse.ts` to delegate those record families without changing parser behavior
+        - [x] Add focused parser regression coverage for extracted sideshot/GNSS/leveling record handling
       - [~] Extract traverse and direction-set families (`TB`, `T`, `TE`, `DB`, `DN`, `DM`, `DE`) into dedicated parser modules
         - [x] Extract traverse-family handling (`TB`, `T`, `TE`) into `src/engine/parseTraverseRecords.ts`
         - [x] Add focused parser regression coverage for traverse-family handling

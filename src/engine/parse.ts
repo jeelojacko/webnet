@@ -3,6 +3,7 @@ import { DEFAULT_CANADA_CRS_ID } from './crsCatalog';
 import { handleConventionalPrimitiveRecord } from './parseConventionalObservationRecords';
 import { handleControlRecord } from './parseControlRecords';
 import { handleDirectionSetRecord } from './parseDirectionSetRecords';
+import { handleFieldObservationRecord } from './parseFieldObservationRecords';
 import { dispatchParseDirective } from './parseDirectiveRegistry';
 import {
   createDirectionSetWorkflow,
@@ -1468,591 +1469,63 @@ export const parseInput = (
               obsId = directionObsIdRef.current;
               directionSetCount = directionSetCountRef.current;
               if (code === 'DB') faceMode = 'unknown';
-            } else if (code === 'SS') {
-        // Sideshot: dist + optional vertical
-        const stationTokens = parseSsStationTokens(parts, state.stationSeparator ?? '-');
-        if (!stationTokens) {
-          logs.push(`Invalid sideshot station token at line ${lineNum}, skipping`);
-          continue;
-        }
-        const from = stationTokens.at;
-        const to = stationTokens.to;
-        const explicitBacksight =
-          stationTokens.mode === 'at-from-to' ? stationTokens.explicitBacksight : undefined;
-        const angleTokenIndex = stationTokens.angleTokenIndex;
-        if (from === to || from === traverseCtx.backsight || to === traverseCtx.occupy) {
-          logs.push(`Invalid sideshot occupy/backsight at line ${lineNum}, skipping`);
-          continue;
-        }
-        if (traverseCtx.occupy && from !== traverseCtx.occupy) {
-          logs.push(
-            `Sideshot must originate from current occupy (${traverseCtx.occupy}) at line ${lineNum}`,
-          );
-          continue;
-        }
-        if (stations[to]?.fixed) {
-          logs.push(`Sideshot cannot target fixed/control station (${to}) at line ${lineNum}`);
-          continue;
-        }
-        const instCode = state.currentInstrument ?? '';
-        const inst = instCode ? instrumentLibrary[instCode] : undefined;
-        const firstTokenRaw = parts[angleTokenIndex] || '';
-        const isAzPrefix = /^AZ=/i.test(firstTokenRaw) || firstTokenRaw.startsWith('@');
-        const isHzPrefix = /^(HZ|HA|ANG)=/i.test(firstTokenRaw);
-        const unprefixedAngleRad = parseAngleTokenRad(firstTokenRaw, state, 'dd');
-        const hasUnprefixedAngle =
-          !isAzPrefix && !isHzPrefix && Number.isFinite(unprefixedAngleRad);
-        const isDmsAngle = firstTokenRaw.includes('-');
-        const isSetupAngleByPattern =
-          stationTokens.mode === 'legacy' &&
-          hasUnprefixedAngle &&
-          isDmsAngle &&
-          Number.isFinite(parseFloat(parts[angleTokenIndex + 1] || '')) &&
-          (!!traverseCtx.backsight || !!explicitBacksight);
-        const angleMode: 'none' | 'az' | 'hz' = isAzPrefix
-          ? 'az'
-          : isHzPrefix
-            ? 'hz'
-            : stationTokens.mode === 'at-from-to' && hasUnprefixedAngle
-              ? 'hz'
-              : stationTokens.mode === 'at-to' && hasUnprefixedAngle
-                ? 'az'
-                : isSetupAngleByPattern
-                  ? 'hz'
-                  : 'none';
-        let azimuthObs: number | undefined;
-        let azimuthStdDev: number | undefined;
-        let hzObs: number | undefined;
-        let hzStdDev: number | undefined;
-        let distIndex = angleTokenIndex;
-        let vertIndex = angleTokenIndex + 1;
-        let sigmaIndex = angleTokenIndex + 2;
-        const resolvedBacksight = explicitBacksight ?? traverseCtx.backsight;
-        if (angleMode === 'hz' && !resolvedBacksight) {
-          logs.push(`Sideshot setup-angle mode requires a backsight at line ${lineNum}, skipping`);
-          continue;
-        }
-        if (
-          explicitBacksight &&
-          traverseCtx.backsight &&
-          explicitBacksight !== traverseCtx.backsight
-        ) {
-          logs.push(
-            `Sideshot at line ${lineNum}: explicit backsight ${explicitBacksight} differs from active backsight ${traverseCtx.backsight}; explicit backsight used.`,
-          );
-        }
-        if (angleMode !== 'none') {
-          const cleanAngle = firstTokenRaw.replace(/^(AZ|HZ|HA|ANG)=/i, '').replace(/^@/, '');
-          const angleRad = parseAngleTokenRad(cleanAngle, state, 'dd');
-          if (!Number.isFinite(angleRad)) {
-            logs.push(`Invalid sideshot horizontal angle/azimuth at line ${lineNum}, skipping`);
-            continue;
-          }
-          if (angleMode === 'az') {
-            azimuthObs = applyPlanRotation(angleRad, state);
-          } else {
-            hzObs = angleRad;
-          }
-          distIndex = angleTokenIndex + 1;
-          vertIndex = angleTokenIndex + 2;
-          sigmaIndex = angleTokenIndex + 3;
-        }
-        const dist = parseFloat(parts[distIndex] || '0');
-        const vert = parts[vertIndex];
-        if (!Number.isFinite(dist) || dist <= 0) {
-          logs.push(`Invalid sideshot distance at line ${lineNum}, skipping`);
-          continue;
-        }
-        const { sigmas, rest } = extractSigmaTokens(parts.slice(sigmaIndex), 3);
-        let sigmaAzToken: SigmaToken | undefined;
-        let sigmaDistToken: SigmaToken | undefined;
-        let sigmaVertToken: SigmaToken | undefined;
-        if (angleMode !== 'none') {
-          if (vert) {
-            if (sigmas.length >= 3) {
-              sigmaAzToken = sigmas[0];
-              sigmaDistToken = sigmas[1];
-              sigmaVertToken = sigmas[2];
-            } else if (sigmas.length === 2) {
-              sigmaDistToken = sigmas[0];
-              sigmaVertToken = sigmas[1];
-            } else if (sigmas.length === 1) {
-              sigmaDistToken = sigmas[0];
+            } else {
+              const fieldObsIdRef = { current: obsId };
+              const lastGpsObservationRef = { current: lastGpsObservation };
+              const handledFieldObservation = handleFieldObservationRecord({
+                code,
+                parts,
+                lineNum,
+                state,
+                stations,
+                instrumentLibrary,
+                logs,
+                obsIdRef: fieldObsIdRef,
+                compatibilityMode,
+                lastGpsObservationRef,
+                addCompatibilityDiagnostic,
+                rejectNumericStationTokens,
+                parseSsStationTokens,
+                parseAngleTokenRad,
+                parseLinearMetersToken,
+                parseObservedLinearToken,
+                parseSigmaToken,
+                extractSigmaTokens,
+                extractHiHt,
+                linearToMetersFactor,
+                effectiveDistanceMode,
+                looksLikeNumericMeasurement,
+                resolveLinearSigma: (token, defaultSigma) =>
+                  resolveLinearSigma(token, defaultSigma),
+                resolveAngularSigma: (token, defaultSigma) =>
+                  resolveAngularSigma(token, defaultSigma),
+                resolveLevelingSigma: (token, inst, spanMeters, contextCode, sourceLine) =>
+                  resolveLevelingSigma(
+                    token,
+                    inst,
+                    spanMeters,
+                    contextCode,
+                    sourceLine,
+                  ),
+                defaultDistanceSigma,
+                defaultDirectionSigmaSec,
+                defaultZenithSigmaSec,
+                defaultElevDiffSigma,
+                applyPlanRotation,
+                wrapTo2Pi,
+                pushObservation,
+                ftPerM: FT_PER_M,
+                traverseCtx,
+              });
+              if (handledFieldObservation) {
+                obsId = fieldObsIdRef.current;
+                lastGpsObservation = lastGpsObservationRef.current;
+              } else {
+                logs.push(`Unrecognized code "${code}" at line ${lineNum}, skipping`);
+              }
             }
-          } else if (sigmas.length >= 2) {
-            sigmaAzToken = sigmas[0];
-            sigmaDistToken = sigmas[1];
-          } else if (sigmas.length === 1) {
-            sigmaDistToken = sigmas[0];
-          }
-          const hzResolved = resolveAngularSigma(sigmaAzToken, defaultDirectionSigmaSec(inst));
-          if (angleMode === 'az') {
-            azimuthStdDev = hzResolved.sigma * SEC_TO_RAD;
-          } else {
-            hzStdDev = hzResolved.sigma * SEC_TO_RAD;
-          }
-        } else {
-          sigmaDistToken = sigmas[0];
-          sigmaVertToken = sigmas[1];
-        }
-        const distResolved = resolveLinearSigma(
-          sigmaDistToken,
-          defaultDistanceSigma(inst, dist, state.edmMode, 0),
-        );
-        const { hi, ht } = extractHiHt(rest);
-        const toMeters = linearToMetersFactor();
-        pushObservation({
-          id: obsId++,
-          type: 'dist',
-          subtype: 'ts',
-          instCode,
-          setId: 'SS',
-          from,
-          to,
-          obs: dist * toMeters,
-          stdDev: distResolved.sigma * toMeters,
-          sigmaSource: distResolved.source,
-          mode: effectiveDistanceMode(),
-          hi: hi != null ? hi * toMeters : undefined,
-          ht: ht != null ? ht * toMeters : undefined,
-          // mark sideshots to allow downstream exclusion if desired
-          calc: {
-            sideshot: true,
-            azimuthObs,
-            azimuthStdDev,
-            hzObs,
-            hzStdDev,
-            backsightId: hzObs != null ? resolvedBacksight : undefined,
-            azimuthSource: azimuthObs != null ? 'explicit' : hzObs != null ? 'setup' : 'target',
-          },
-        });
-        if (vert) {
-          if (state.deltaMode === 'horiz') {
-            const dh = parseFloat(vert) * toMeters;
-            const dhResolved = resolveLevelingSigma(
-              sigmaVertToken,
-              inst,
-              dist * toMeters,
-              'SS',
-              lineNum,
-            );
-            pushObservation({
-              id: obsId++,
-              type: 'lev',
-              instCode,
-              from,
-              to,
-              obs: dh,
-              lenKm: 0,
-              stdDev: dhResolved.sigma * toMeters,
-              sigmaSource: dhResolved.source,
-              calc: { sideshot: true },
-            });
-          } else {
-            const zenRad = parseAngleTokenRad(vert, state, 'dd');
-            const zenResolved = resolveAngularSigma(sigmaVertToken, defaultZenithSigmaSec(inst));
-            pushObservation({
-              id: obsId++,
-              type: 'zenith',
-              instCode,
-              from,
-              to,
-              obs: zenRad,
-              stdDev: zenResolved.sigma * SEC_TO_RAD,
-              sigmaSource: zenResolved.source,
-              hi: hi != null ? hi * toMeters : undefined,
-              ht: ht != null ? ht * toMeters : undefined,
-              calc: { sideshot: true },
-            });
           }
         }
-      } else if (code === 'GS') {
-        const pointId = parts[1];
-        if (!pointId) {
-          logs.push(`Invalid GS record at line ${lineNum}, missing point identifier.`);
-          continue;
-        }
-        const payload = parts.slice(2);
-        let fromId: string | undefined;
-        const numericTokens: string[] = [];
-        payload.forEach((token) => {
-          if (/^FROM=/i.test(token)) {
-            const candidate = token.split('=').slice(1).join('=').trim();
-            if (candidate) fromId = candidate;
-            return;
-          }
-          numericTokens.push(token);
-        });
-        if (numericTokens.length < 2) {
-          logs.push(`Invalid GS record at line ${lineNum}, expected at least E/N coordinates.`);
-          continue;
-        }
-        const c1 = parseFloat(numericTokens[0]);
-        const c2 = parseFloat(numericTokens[1]);
-        if (!Number.isFinite(c1) || !Number.isFinite(c2)) {
-          logs.push(`Invalid GS coordinate token(s) at line ${lineNum}, skipping.`);
-          continue;
-        }
-        const tail = numericTokens.slice(2).map((token) => parseFloat(token));
-        if (tail.some((value) => !Number.isFinite(value))) {
-          logs.push(`Invalid GS numeric payload at line ${lineNum}, skipping.`);
-          continue;
-        }
-        const toMeters = linearToMetersFactor();
-        const east = state.order === 'EN' ? c1 * toMeters : c2 * toMeters;
-        const north = state.order === 'EN' ? c2 * toMeters : c1 * toMeters;
-        let height: number | undefined;
-        let sigma1: number | undefined;
-        let sigma2: number | undefined;
-        let sigmaH: number | undefined;
-        if (tail.length === 1) {
-          height = tail[0] * toMeters;
-        } else if (tail.length === 2) {
-          sigma1 = tail[0] * toMeters;
-          sigma2 = tail[1] * toMeters;
-        } else if (tail.length === 3) {
-          height = tail[0] * toMeters;
-          sigma1 = tail[1] * toMeters;
-          sigma2 = tail[2] * toMeters;
-        } else if (tail.length >= 4) {
-          height = tail[0] * toMeters;
-          sigma1 = tail[1] * toMeters;
-          sigma2 = tail[2] * toMeters;
-          sigmaH = tail[3] * toMeters;
-          if (tail.length > 4) {
-            logs.push(
-              `Warning: extra GS tokens ignored at line ${lineNum} (expected up to sigmaH).`,
-            );
-          }
-        }
-        const sigmaE = state.order === 'EN' ? sigma1 : sigma2;
-        const sigmaN = state.order === 'EN' ? sigma2 : sigma1;
-        const shot: GpsTopoCoordinateShot = {
-          pointId,
-          east,
-          north,
-          height,
-          sigmaE,
-          sigmaN,
-          sigmaH,
-          fromId,
-          sourceLine: lineNum,
-        };
-        state.gpsTopoShots?.push(shot);
-      } else if (code === 'G') {
-        const toMeters = linearToMetersFactor();
-        const candidates: Array<{
-          instCode: string;
-          from: string;
-          to: string;
-          explicitForm: boolean;
-          numericStart: number;
-          dEParsed: { value: number; planned: boolean; valid: boolean };
-          dNParsed: { value: number; planned: boolean; valid: boolean };
-        }> = [];
-        const pushGpsCandidate = (
-          instCode: string,
-          from: string,
-          to: string,
-          numericStart: number,
-          explicitForm: boolean,
-        ) => {
-          if (!from || !to) return;
-          const dEParsed = parseObservedLinearToken(parts[numericStart], toMeters);
-          const dNParsed = parseObservedLinearToken(parts[numericStart + 1], toMeters);
-          if (!dEParsed.valid || !dNParsed.valid) return;
-          candidates.push({
-            instCode,
-            from,
-            to,
-            explicitForm,
-            numericStart,
-            dEParsed,
-            dNParsed,
-          });
-        };
-        pushGpsCandidate(parts[1] ?? '', parts[2] ?? '', parts[3] ?? '', 4, true);
-        pushGpsCandidate('', parts[1] ?? '', parts[2] ?? '', 3, false);
-        if (candidates.length === 0) {
-          logs.push(`Invalid GPS vector at line ${lineNum}, skipping.`);
-          continue;
-        }
-        const scored = candidates.map((candidate) => {
-          let score = 0;
-          if (stations[candidate.from]) score += 2;
-          if (stations[candidate.to]) score += 2;
-          if (candidate.explicitForm) score += 1;
-          if (candidate.instCode && instrumentLibrary[candidate.instCode]) score += 2;
-          if (candidate.explicitForm && candidate.instCode && !stations[candidate.instCode])
-            score += 1;
-          if (
-            looksLikeNumericMeasurement(candidate.from) ||
-            looksLikeNumericMeasurement(candidate.to)
-          ) {
-            score -= 12;
-          }
-          return { candidate, score };
-        });
-        scored.sort((a, b) => b.score - a.score);
-        const best = scored[0];
-        const tie = scored.length > 1 && scored[1].score === best.score;
-        if (tie) {
-          const rewrite =
-            'Use explicit form: G <inst?> <from> <to> <dE> <dN> [sigmaE sigmaN [corr]].';
-          if (compatibilityMode === 'strict') {
-            addCompatibilityDiagnostic(
-              'ROLE_AMBIGUITY',
-              lineNum,
-              'G',
-              'multiple valid G-record interpretations were found.',
-              rewrite,
-              false,
-              'error',
-            );
-            continue;
-          }
-          addCompatibilityDiagnostic(
-            'ROLE_AMBIGUITY',
-            lineNum,
-            'G',
-            'multiple valid G-record interpretations were found; applied legacy fallback.',
-            rewrite,
-            true,
-          );
-        }
-        const chosen = best.candidate;
-        const instCode = chosen.instCode;
-        const from = chosen.from;
-        const to = chosen.to;
-        if (
-          rejectNumericStationTokens('G', lineNum, [
-            { role: 'FROM', value: from },
-            { role: 'TO', value: to },
-          ])
-        ) {
-          continue;
-        }
-        const { sigmas, rest } = extractSigmaTokens(parts.slice(chosen.numericStart + 2), 2);
-        const corrRaw = parseFloat(rest[0] || '');
-
-        const inst = instrumentLibrary[instCode];
-        const defaultStd = inst?.gpsStd_xy ?? 0;
-        const sigmaEResolved = resolveLinearSigma(sigmas[0], defaultStd);
-        const sigmaNResolved = resolveLinearSigma(sigmas[1], sigmaEResolved.sigma);
-        let sigmaE = sigmaEResolved.sigma;
-        let sigmaN = sigmaNResolved.sigma;
-        const corr = Number.isNaN(corrRaw) ? 0 : Math.max(-0.999, Math.min(0.999, corrRaw));
-
-        if (inst && inst.gpsStd_xy > 0) {
-          sigmaE = Math.sqrt(sigmaE * sigmaE + inst.gpsStd_xy * inst.gpsStd_xy);
-          sigmaN = Math.sqrt(sigmaN * sigmaN + inst.gpsStd_xy * inst.gpsStd_xy);
-        }
-        const sigmaMean = Math.sqrt((sigmaE * sigmaE + sigmaN * sigmaN) / 2);
-
-        const obs: GpsObservation = {
-          id: obsId++,
-          type: 'gps',
-          gpsMode: state.gpsVectorMode ?? 'network',
-          gnssVectorFrame: state.gnssVectorFrameDefault ?? 'gridNEU',
-          gnssFrameConfirmed: state.gnssFrameConfirmed ?? false,
-          gpsAntennaHiM: state.gpsAddHiHtEnabled ? (state.gpsAddHiHtHiM ?? 0) : undefined,
-          gpsAntennaHtM: state.gpsAddHiHtEnabled ? (state.gpsAddHiHtHtM ?? 0) : undefined,
-          instCode,
-          from,
-          to,
-          planned: chosen.dEParsed.planned || chosen.dNParsed.planned,
-          obs: {
-            dE: chosen.dEParsed.value,
-            dN: chosen.dNParsed.value,
-          },
-          stdDev: state.units === 'ft' ? sigmaMean / FT_PER_M : sigmaMean,
-          stdDevE: state.units === 'ft' ? sigmaE / FT_PER_M : sigmaE,
-          stdDevN: state.units === 'ft' ? sigmaN / FT_PER_M : sigmaN,
-          sigmaSourceE: sigmaEResolved.source,
-          sigmaSourceN: sigmaNResolved.source,
-          corrEN: corr,
-          sigmaSource:
-            sigmaEResolved.source === sigmaNResolved.source
-              ? sigmaEResolved.source
-              : sigmaEResolved.source === 'fixed' || sigmaNResolved.source === 'fixed'
-                ? 'fixed'
-                : sigmaEResolved.source === 'explicit' || sigmaNResolved.source === 'explicit'
-                  ? 'explicit'
-                  : sigmaEResolved.source === 'float' || sigmaNResolved.source === 'float'
-                    ? 'float'
-                    : 'default',
-        };
-        pushObservation(obs);
-        lastGpsObservation = obs;
-      } else if (code === 'G4') {
-        if (!lastGpsObservation) {
-          logs.push(
-            `Warning: GPS rover offset (G4) at line ${lineNum} has no preceding G vector; ignored.`,
-          );
-          continue;
-        }
-        const azimuth = parseAngleTokenRad(parts[1], state, 'dms');
-        const distanceM = parseLinearMetersToken(parts[2], state.units);
-        const zenith = parseAngleTokenRad(parts[3], state, 'dms');
-        if (
-          !Number.isFinite(azimuth) ||
-          !Number.isFinite(distanceM ?? Number.NaN) ||
-          !Number.isFinite(zenith)
-        ) {
-          logs.push(
-            `Warning: invalid GPS rover offset (G4) at line ${lineNum}; expected azimuth, distance, and zenith.`,
-          );
-          continue;
-        }
-        if (parts.length > 4) {
-          logs.push(
-            `Warning: extra GPS rover offset (G4) tokens ignored at line ${lineNum}; expected azimuth, distance, and zenith only.`,
-          );
-        }
-        const horizDistance = (distanceM as number) * Math.sin(zenith);
-        const deltaH = (distanceM as number) * Math.cos(zenith);
-        const deltaE = horizDistance * Math.sin(azimuth);
-        const deltaN = horizDistance * Math.cos(azimuth);
-        if (lastGpsObservation.gpsOffsetDistanceM != null) {
-          logs.push(
-            `Warning: GPS rover offset (G4) at line ${lineNum} replaced an earlier offset on ${lastGpsObservation.from}-${lastGpsObservation.to}.`,
-          );
-        }
-        lastGpsObservation.gpsOffsetAzimuthRad = wrapTo2Pi(azimuth);
-        lastGpsObservation.gpsOffsetDistanceM = distanceM as number;
-        lastGpsObservation.gpsOffsetZenithRad = zenith;
-        lastGpsObservation.gpsOffsetDeltaE = deltaE;
-        lastGpsObservation.gpsOffsetDeltaN = deltaN;
-        lastGpsObservation.gpsOffsetDeltaH = deltaH;
-        lastGpsObservation.gpsOffsetSourceLine = lineNum;
-        logs.push(
-          `GPS rover offset attached to ${lastGpsObservation.from}-${lastGpsObservation.to}: dE=${deltaE.toFixed(4)} m, dN=${deltaN.toFixed(4)} m, dH=${deltaH.toFixed(4)} m`,
-        );
-      } else if (code === 'L') {
-        const toMeters = linearToMetersFactor();
-        const candidates: Array<{
-          instCode: string;
-          from: string;
-          to: string;
-          explicitForm: boolean;
-          valueStart: number;
-          dHParsed: { value: number; planned: boolean; valid: boolean };
-        }> = [];
-        const pushLevelCandidate = (
-          instCode: string,
-          from: string,
-          to: string,
-          valueStart: number,
-          explicitForm: boolean,
-        ) => {
-          if (!from || !to) return;
-          const dHParsed = parseObservedLinearToken(parts[valueStart], toMeters);
-          if (!dHParsed.valid) return;
-          candidates.push({ instCode, from, to, explicitForm, valueStart, dHParsed });
-        };
-        pushLevelCandidate(parts[1] ?? '', parts[2] ?? '', parts[3] ?? '', 4, true);
-        pushLevelCandidate(state.currentInstrument ?? '', parts[1] ?? '', parts[2] ?? '', 3, false);
-        if (candidates.length === 0) {
-          logs.push(`Invalid leveling observation at line ${lineNum}, skipping.`);
-          continue;
-        }
-        const scored = candidates.map((candidate) => {
-          let score = 0;
-          if (stations[candidate.from]) score += 2;
-          if (stations[candidate.to]) score += 2;
-          if (candidate.explicitForm) score += 1;
-          if (candidate.instCode && instrumentLibrary[candidate.instCode]) score += 2;
-          if (candidate.explicitForm && candidate.instCode && !stations[candidate.instCode])
-            score += 1;
-          if (
-            looksLikeNumericMeasurement(candidate.from) ||
-            looksLikeNumericMeasurement(candidate.to)
-          ) {
-            score -= 12;
-          }
-          return { candidate, score };
-        });
-        scored.sort((a, b) => b.score - a.score);
-        const best = scored[0];
-        const tie = scored.length > 1 && scored[1].score === best.score;
-        if (tie) {
-          const rewrite = 'Use explicit form: L <inst?> <from> <to> <dH> <lenKm> [sigma].';
-          if (compatibilityMode === 'strict') {
-            addCompatibilityDiagnostic(
-              'ROLE_AMBIGUITY',
-              lineNum,
-              'L',
-              'multiple valid L-record interpretations were found.',
-              rewrite,
-              false,
-              'error',
-            );
-            continue;
-          }
-          addCompatibilityDiagnostic(
-            'ROLE_AMBIGUITY',
-            lineNum,
-            'L',
-            'multiple valid L-record interpretations were found; applied legacy fallback.',
-            rewrite,
-            true,
-          );
-        }
-        const chosen = best.candidate;
-        const instCode = chosen.instCode;
-        const from = chosen.from;
-        const to = chosen.to;
-        if (
-          rejectNumericStationTokens('L', lineNum, [
-            { role: 'FROM', value: from },
-            { role: 'TO', value: to },
-          ])
-        ) {
-          continue;
-        }
-        const lenRaw = parseFloat(parts[chosen.valueStart + 1] || '0');
-        const lenKm =
-          Number.isFinite(lenRaw) && lenRaw > 0
-            ? state.units === 'ft'
-              ? lenRaw / FT_PER_M / 1000
-              : lenRaw
-            : 0;
-        const sigmaToken = parseSigmaToken(parts[chosen.valueStart + 2]) ?? undefined;
-        const baseStd = state.levelWeight ?? 0;
-        if (!sigmaToken && state.levelWeight != null) {
-          logs.push(`.LWEIGHT applied for leveling at line ${lineNum}: ${state.levelWeight} mm/km`);
-        }
-
-        const inst = instrumentLibrary[instCode];
-        const levelResolved = resolveLinearSigma(sigmaToken, (baseStd * lenKm) / 1000.0);
-        let sigma = levelResolved.sigma;
-        if (inst && inst.levStd_mmPerKm > 0) {
-          const lib = (inst.levStd_mmPerKm * lenKm) / 1000.0;
-          sigma = Math.sqrt(sigma * sigma + lib * lib);
-        }
-        if (inst) {
-          const elevModel = defaultElevDiffSigma(inst, lenKm * 1000);
-          sigma = Math.sqrt(sigma * sigma + elevModel * elevModel);
-        }
-
-        const obs: LevelObservation = {
-          id: obsId++,
-          type: 'lev',
-          instCode,
-          from,
-          to,
-          obs: chosen.dHParsed.value,
-          planned: chosen.dHParsed.planned,
-          lenKm,
-          stdDev: sigma,
-          sigmaSource: levelResolved.source,
-        };
-        pushObservation(obs);
-      } else {
-        logs.push(`Unrecognized code "${code}" at line ${lineNum}, skipping`);
-      }
-      }
-      }
       }
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
