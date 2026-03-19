@@ -115,13 +115,17 @@
       - [x] Extract non-core inline directive handling into a dedicated parser dispatch/registry module
       - [x] Rewire `parse.ts` to dispatch parser directives through the registry instead of the inline command chain
       - [x] Add focused regression coverage for registry dispatch, no-op compatibility directives, and `.END` termination
+    - [x] Batch complete - solver statistical-test math extraction:
+      - [x] Extract chi-square probability/quantile math into a dedicated solver helper module
+      - [x] Rewire `adjust.ts` to consume the extracted chi-square summary builder instead of inlining the test math
+      - [x] Add focused regression coverage for quantile inversion and chi-square summary shaping
     - [ ] Finish parser monolith extraction:
       - [x] Sigma/default-resolution helpers
       - [x] Alias-resolution and canonical-ID pipeline
       - [x] Direction-set reduction and treatment logic
       - [x] Directive command dispatch and handler registry
     - [ ] Finish solver monolith extraction:
-      - [ ] Statistical test math and quantile helpers
+      - [x] Statistical test math and quantile helpers
       - [ ] Weak-geometry classification and ranking
       - [ ] Reduction-usage summarization
       - [ ] Loop/setup/GPS diagnostic builders
