@@ -245,6 +245,8 @@ describe('useWorkspaceRecovery', () => {
         force2DOutput: false,
         nextSyntheticId: 1,
         conflicts: [],
+        conflictResolutions: {},
+        conflictRenameValues: {},
       },
     });
     window.localStorage.setItem(

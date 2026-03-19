@@ -3,7 +3,6 @@ import {
   buildImportReviewComparisonSummary,
   buildImportReviewDisplayTextMap,
   buildImportReviewModel,
-  buildImportReviewText,
   convertImportedDatasetSlopeZenithToHd2D,
   createEmptyImportReviewGroup,
   createImportReviewGroupFromItem,
@@ -23,7 +22,10 @@ import {
 } from '../engine/importReview';
 import {
   buildImportConflictSummary,
+  buildImportConflictResolutionDefaults,
+  buildResolvedImportText,
   type ImportConflict,
+  type ImportResolution,
 } from '../engine/importConflictReview';
 import {
   type ExternalImportAngleMode,
@@ -66,6 +68,9 @@ export type ImportReviewState = {
   force2DOutput: boolean;
   nextSyntheticId: number;
   conflicts: ImportConflict[];
+  conflictResolutions: Record<string, ImportResolution>;
+  conflictRenameValues: Record<string, string>;
+  resolutionValidationMessage: string | null;
 };
 
 const IMPORT_ANGLE_PROMPT_FILE_RE = /\.(jxl|jobxml|htm|html)$/i;
@@ -89,6 +94,41 @@ const buildReducedAngleRowTypeOverrides = (
     }
   });
   return overrides;
+};
+
+const buildDefaultConflictRenameValues = (conflicts: ImportConflict[]): Record<string, string> => {
+  const renameValues: Record<string, string> = {};
+  conflicts.forEach((conflict) => {
+    if (!conflict.resolutionKey.startsWith('control:')) return;
+    if (renameValues[conflict.resolutionKey]) return;
+    const token = conflict.targetLabel.trim();
+    renameValues[conflict.resolutionKey] = token ? `${token}_IMP` : 'IMPORTED_STATION';
+  });
+  return renameValues;
+};
+
+const mergeConflictResolutionDefaults = (
+  conflicts: ImportConflict[],
+  previousResolutions?: Record<string, ImportResolution>,
+): Record<string, ImportResolution> => {
+  const defaults = buildImportConflictResolutionDefaults(conflicts);
+  if (!previousResolutions) return defaults;
+  Object.keys(defaults).forEach((key) => {
+    if (previousResolutions[key]) defaults[key] = previousResolutions[key];
+  });
+  return defaults;
+};
+
+const mergeConflictRenameValues = (
+  conflicts: ImportConflict[],
+  previousRenameValues?: Record<string, string>,
+): Record<string, string> => {
+  const defaults = buildDefaultConflictRenameValues(conflicts);
+  if (!previousRenameValues) return defaults;
+  Object.keys(defaults).forEach((key) => {
+    if (previousRenameValues[key] != null) defaults[key] = previousRenameValues[key];
+  });
+  return defaults;
 };
 
 interface UseImportReviewWorkflowArgs {
@@ -142,9 +182,13 @@ export const useImportReviewWorkflow = ({
   }, []);
 
   const applyImportedInput = useCallback(
-    (nextInput: string, notice: ImportedInputNotice | null) => {
+    (
+      nextInput: string,
+      notice: ImportedInputNotice | null,
+      nextIncludeFiles: Record<string, string> = {},
+    ) => {
       setInput(nextInput);
-      setProjectIncludeFiles({});
+      setProjectIncludeFiles(nextIncludeFiles);
       setImportNotice(notice);
       resetWorkspaceForImportedInput();
       setImportReviewState(null);
@@ -232,6 +276,9 @@ export const useImportReviewWorkflow = ({
               force2DOutput: false,
               nextSyntheticId: 1,
               conflicts,
+              conflictResolutions: buildImportConflictResolutionDefaults(conflicts),
+              conflictRenameValues: buildDefaultConflictRenameValues(conflicts),
+              resolutionValidationMessage: null,
             });
             return;
           }
@@ -379,9 +426,51 @@ export const useImportReviewWorkflow = ({
         comparisonSummary: null,
         force2DOutput: true,
         conflicts: nextConflicts,
+        conflictResolutions: mergeConflictResolutionDefaults(
+          nextConflicts,
+          prev.conflictResolutions,
+        ),
+        conflictRenameValues: mergeConflictRenameValues(
+          nextConflicts,
+          prev.conflictRenameValues,
+        ),
+        resolutionValidationMessage: null,
       };
     });
   }, [buildImportConflicts]);
+
+  const handleImportConflictResolutionChange = useCallback(
+    (resolutionKey: string, resolution: ImportResolution) => {
+      setImportReviewState((prev) =>
+        prev
+          ? {
+              ...prev,
+              conflictResolutions: {
+                ...prev.conflictResolutions,
+                [resolutionKey]: resolution,
+              },
+              resolutionValidationMessage: null,
+            }
+          : prev,
+      );
+    },
+    [],
+  );
+
+  const handleImportConflictRenameValueChange = useCallback((resolutionKey: string, value: string) => {
+    setImportReviewState((prev) =>
+      prev
+        ? {
+            ...prev,
+            conflictRenameValues: {
+              ...prev.conflictRenameValues,
+              [resolutionKey]: value,
+            },
+            resolutionValidationMessage: null,
+          }
+        : prev,
+    );
+  }, []);
 
   const handleImportReviewSetGroupExcluded = useCallback((groupKey: string, excluded: boolean) => {
     setImportReviewState((prev) => {
@@ -658,6 +747,8 @@ export const useImportReviewWorkflow = ({
       force2DOutput: importReviewState.force2DOutput,
       nextSyntheticId: importReviewState.nextSyntheticId,
       conflicts: importReviewState.conflicts,
+      conflictResolutions: { ...importReviewState.conflictResolutions },
+      conflictRenameValues: { ...importReviewState.conflictRenameValues },
     };
   }, [importReviewState]);
 
@@ -699,6 +790,15 @@ export const useImportReviewWorkflow = ({
       force2DOutput: snapshot.force2DOutput,
       nextSyntheticId: snapshot.nextSyntheticId,
       conflicts: snapshot.conflicts,
+      conflictResolutions: mergeConflictResolutionDefaults(
+        snapshot.conflicts,
+        snapshot.conflictResolutions,
+      ),
+      conflictRenameValues: mergeConflictRenameValues(
+        snapshot.conflicts,
+        snapshot.conflictRenameValues,
+      ),
+      resolutionValidationMessage: null,
     });
     setPendingAnglePromptFile(null);
     filePickerModeRef.current = 'replace';
@@ -711,7 +811,13 @@ export const useImportReviewWorkflow = ({
         .filter((item) => !importReviewState.excludedItemIds.has(item.id))
         .map((item) => item.id),
     );
-    const nextInput = buildImportReviewText(importReviewState.dataset, importReviewState.reviewModel, {
+    const { text, missingRenameKeys } = buildResolvedImportText({
+      currentInput,
+      currentIncludeFiles,
+      parseSettings,
+      projectInstruments,
+      importedDataset: importReviewState.dataset,
+      reviewModel: importReviewState.reviewModel,
       includedItemIds,
       groupComments: importReviewState.groupComments,
       rowOverrides: importReviewState.rowOverrides,
@@ -719,12 +825,34 @@ export const useImportReviewWorkflow = ({
       fixedItemIds: importReviewState.fixedItemIds,
       preset: importReviewState.preset,
       faceNormalizationMode: importReviewState.importFaceNormalizationMode,
-      emitDirectionFaceHints: true,
       coordMode: importReviewState.force2DOutput ? '2D' : coordMode,
       force2D: importReviewState.force2DOutput,
+      conflicts: importReviewState.conflicts,
+      conflictResolutions: importReviewState.conflictResolutions,
+      conflictRenameValues: importReviewState.conflictRenameValues,
     });
-    applyImportedInput(nextInput, importReviewState.notice);
-  }, [applyImportedInput, coordMode, importReviewState]);
+    if (missingRenameKeys.length > 0) {
+      setImportReviewState((prev) =>
+        prev
+          ? {
+              ...prev,
+              resolutionValidationMessage:
+                'Enter a replacement station ID for every conflict set to Rename Incoming before importing.',
+            }
+          : prev,
+      );
+      return;
+    }
+    applyImportedInput(text, importReviewState.notice, currentIncludeFiles);
+  }, [
+    applyImportedInput,
+    coordMode,
+    currentIncludeFiles,
+    currentInput,
+    importReviewState,
+    parseSettings,
+    projectInstruments,
+  ]);
 
   const importReviewDisplayedRows = useMemo(() => {
     if (!importReviewState) return {};
@@ -769,6 +897,8 @@ export const useImportReviewWorkflow = ({
     handleImportReviewRowTypeChange,
     handleImportReviewPresetChange,
     handleImportReviewComparisonModeChange,
+    handleImportConflictResolutionChange,
+    handleImportConflictRenameValueChange,
     handleImportReviewDuplicateRow,
     handleImportReviewInsertCommentBelow,
     handleImportReviewCreateSetupGroup,

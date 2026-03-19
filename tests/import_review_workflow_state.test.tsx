@@ -192,6 +192,8 @@ describe('useImportReviewWorkflow', () => {
         <div>
           <div data-source>{state.importReviewState?.sourceName ?? '-'}</div>
           <div data-conflicts>{state.importReviewState?.conflicts.length ?? 0}</div>
+          <div data-resolution>{state.importReviewState?.conflictResolutions['control:0'] ?? '-'}</div>
+          <div data-rename>{state.importReviewState?.conflictRenameValues['control:0'] ?? '-'}</div>
           <div data-snapshot>{state.importReviewSnapshot?.sourceName ?? '-'}</div>
           <button
             onClick={() =>
@@ -255,6 +257,7 @@ describe('useImportReviewWorkflow', () => {
                   {
                     id: 'coordinate-conflict:P1:0',
                     type: 'coordinate-conflict',
+                    resolutionKey: 'control:0',
                     title: 'Coordinate values differ for the same station',
                     targetLabel: 'P1',
                     existingSummary: 'ID P1; E=100.0000; N=200.0000; H=10.0000',
@@ -262,6 +265,8 @@ describe('useImportReviewWorkflow', () => {
                     relatedItems: [{ kind: 'control', index: 0 }],
                   },
                 ],
+                conflictResolutions: { 'control:0': 'rename-incoming' },
+                conflictRenameValues: { 'control:0': 'P1_IMPORT' },
               })
             }
           >
@@ -283,6 +288,8 @@ describe('useImportReviewWorkflow', () => {
 
     expect(container.querySelector('[data-source]')?.textContent).toBe('imported.jxl');
     expect(container.querySelector('[data-conflicts]')?.textContent).toBe('1');
+    expect(container.querySelector('[data-resolution]')?.textContent).toBe('rename-incoming');
+    expect(container.querySelector('[data-rename]')?.textContent).toBe('P1_IMPORT');
     expect(container.querySelector('[data-snapshot]')?.textContent).toBe('imported.jxl');
 
     await act(async () => {

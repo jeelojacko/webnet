@@ -99,6 +99,7 @@ export interface ImportReviewComparisonSummary {
 export interface BuildImportReviewTextOptions {
   includedItemIds: Set<string>;
   groupComments?: Record<string, string>;
+  itemCommentLines?: Record<string, string[]>;
   rowOverrides?: Record<string, string>;
   rowTypeOverrides?: Record<string, ImportReviewRowTypeOverride>;
   fixedItemIds?: Set<string>;
@@ -1622,6 +1623,9 @@ export const buildImportReviewText = (
     let lastFieldSection: string | null = null;
 
     orderedItems.forEach((item) => {
+      const itemCommentLines = options.itemCommentLines?.[item.id] ?? [];
+      itemCommentLines.forEach((line) => lines.push(line));
+
       if (item.kind === 'comment') {
         const override = options.rowOverrides?.[item.id];
         const commentLines = splitOverrideLines(override ?? item.defaultText ?? '# COMMENT');

@@ -1179,6 +1179,8 @@ const App: React.FC<AppProps> = ({
     handleImportReviewSetBulkExcludeRaw,
     handleImportReviewConvertSlopeZenithToHd2D,
     handleImportReviewSetGroupExcluded,
+    handleImportConflictResolutionChange,
+    handleImportConflictRenameValueChange,
     handleImportReviewCommentChange,
     handleImportReviewGroupLabelChange,
     handleImportReviewRowTextChange,
@@ -2311,6 +2313,9 @@ const App: React.FC<AppProps> = ({
             rowTypeOverrides={importReviewState.rowTypeOverrides}
             preset={importReviewState.preset}
             conflicts={importReviewState.conflicts}
+            conflictResolutions={importReviewState.conflictResolutions}
+            conflictRenameValues={importReviewState.conflictRenameValues}
+            resolutionValidationMessage={importReviewState.resolutionValidationMessage}
             moveTargetGroups={importReviewMoveTargetGroups}
             onCompareFile={handleImportReviewCompareFile}
             onClearComparison={handleImportReviewClearComparison}
@@ -2320,6 +2325,8 @@ const App: React.FC<AppProps> = ({
             onSetBulkExcludeRaw={handleImportReviewSetBulkExcludeRaw}
             onConvertSlopeZenithToHd2D={handleImportReviewConvertSlopeZenithToHd2D}
             onSetGroupExcluded={handleImportReviewSetGroupExcluded}
+            onConflictResolutionChange={handleImportConflictResolutionChange}
+            onConflictRenameValueChange={handleImportConflictRenameValueChange}
             onToggleExclude={handleImportReviewToggleExclude}
             onToggleFixed={handleImportReviewToggleFixed}
             onCreateEmptySetupGroup={handleImportReviewCreateEmptySetupGroup}

@@ -43,6 +43,7 @@ import type {
 } from './engine/importers';
 import type {
   ImportConflict,
+  ImportResolution,
 } from './engine/importConflictReview';
 import type {
   ImportReviewComparisonMode,
@@ -141,6 +142,8 @@ export type ImportReviewDraftSnapshot = {
   force2DOutput: boolean;
   nextSyntheticId: number;
   conflicts: ImportConflict[];
+  conflictResolutions: Record<string, ImportResolution>;
+  conflictRenameValues: Record<string, string>;
 };
 export type WorkspaceDraftSnapshot = {
   input: string;

@@ -119,14 +119,19 @@ describe('ImportReviewModal', () => {
           {
             id: 'coordinate-conflict:STN1:0',
             type: 'coordinate-conflict',
+            resolutionKey: 'control:0',
             title: 'Coordinate values differ for the same station',
             targetLabel: 'STN1',
             existingSummary: 'ID STN1; E=5000.0000; N=1000.0000; H=100.0000',
             incomingSummary: 'ID STN1; E=5001.0000; N=1002.0000; H=100.5000',
             sourceLine: 12,
+            existingSourceLines: [3],
             relatedItems: [{ kind: 'control', index: 0 }],
           },
         ]}
+        conflictResolutions={{ 'control:0': 'rename-incoming' }}
+        conflictRenameValues={{ 'control:0': 'STN1_IMPORT' }}
+        resolutionValidationMessage="Enter a replacement station ID for every conflict set to Rename Incoming before importing."
         moveTargetGroups={[{ key: 'setup:STN1:bs:BS1', label: 'Setup STN1 (BS BS1)' }]}
         onCompareFile={() => {}}
         onClearComparison={() => {}}
@@ -136,6 +141,8 @@ describe('ImportReviewModal', () => {
         onSetBulkExcludeRaw={() => {}}
         onConvertSlopeZenithToHd2D={() => {}}
         onSetGroupExcluded={() => {}}
+        onConflictResolutionChange={() => {}}
+        onConflictRenameValueChange={() => {}}
         onToggleExclude={() => {}}
         onToggleFixed={() => {}}
         onCreateEmptySetupGroup={() => {}}
@@ -182,6 +189,11 @@ describe('ImportReviewModal', () => {
     expect(html).toContain('Compare / Reconcile');
     expect(html).toContain('Reconciliation Conflicts');
     expect(html).toContain('Coordinate values differ for the same station');
+    expect(html).toContain('Replace With Incoming');
+    expect(html).toContain('Rename Incoming');
+    expect(html).toContain('New Station ID');
+    expect(html).toContain('STN1_IMPORT');
+    expect(html).toContain('Existing: 3');
     expect(html).toContain('Compare Preset');
     expect(html).toContain('Non-MTA Only');
     expect(html).toContain('All Raw Rows');

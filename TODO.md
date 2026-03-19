@@ -14,12 +14,12 @@
       - [x] Detect and surface duplicate observation-family buckets by canonical endpoints against the current editor content
       - [x] Persist staged import review/conflict state through browser-local draft recovery while the import modal is open
       - [x] Add focused regression coverage for conflict detection, conflict rendering, and import-review snapshot restore
-    - [ ] Batch 2 - deterministic conflict resolution controls
-      - [ ] Support per-conflict `keep existing`
-      - [ ] Support per-conflict `replace with incoming`
-      - [ ] Support per-station `rename incoming station`
-      - [ ] Support per-conflict `keep both` with an explicit emitted comment marker in final text
-      - [ ] Apply conflict resolutions when writing reconciled text back into the editor instead of replacing the workspace blindly
+    - [x] Batch 2 - deterministic conflict resolution controls
+      - [x] Support per-conflict `keep existing`
+      - [x] Support per-conflict `replace with incoming`
+      - [x] Support per-station `rename incoming station`
+      - [x] Support per-conflict `keep both` with an explicit emitted comment marker in final text
+      - [x] Apply conflict resolutions when writing reconciled text back into the editor instead of replacing the workspace blindly
     - [ ] Batch 3 - multi-source reconciliation workspace
       - [ ] Expand the current compare-file flow into a true multi-source reconciliation workspace instead of count-only comparison
       - [ ] Keep reconciliation state browser-local and recoverable until the import session is applied or cancelled
