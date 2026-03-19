@@ -39,6 +39,10 @@ import { buildChiSquareSummary } from './adjustmentStatisticalMath';
 import { buildWeakGeometryDiagnostics } from './adjustmentWeakGeometry';
 import { buildGpsLoopDiagnostics, buildLevelingLoopDiagnostics } from './adjustmentLoopDiagnostics';
 import {
+  buildAutoSideshotDiagnostics,
+  buildClusterDiagnostics,
+} from './adjustmentReviewDiagnostics';
+import {
   buildSetupDiagnostics,
   buildTraverseDiagnostics,
 } from './adjustmentSetupTraverseDiagnostics';
@@ -2724,87 +2728,6 @@ export class LSAEngine {
     return undefined;
   }
 
-  private computeAutoSideshotDiagnostics(): NonNullable<
-    AdjustmentResult['autoSideshotDiagnostics']
-  > {
-    const threshold = 0.1;
-    type MPair = { angle?: Observation; dist?: Observation };
-    const byLine = new Map<number, MPair>();
-
-    this.observations.forEach((obs) => {
-      const sourceLine = obs.sourceLine;
-      if (sourceLine == null) return;
-      if (obs.type === 'angle' && String((obs as any).setId ?? '') === '') {
-        const row = byLine.get(sourceLine) ?? {};
-        row.angle = obs;
-        byLine.set(sourceLine, row);
-      } else if (
-        obs.type === 'dist' &&
-        obs.subtype === 'ts' &&
-        String((obs as any).setId ?? '') === ''
-      ) {
-        const row = byLine.get(sourceLine) ?? {};
-        row.dist = obs;
-        byLine.set(sourceLine, row);
-      }
-    });
-
-    const candidates: NonNullable<AdjustmentResult['autoSideshotDiagnostics']>['candidates'] = [];
-    let evaluatedCount = 0;
-    let excludedControlCount = 0;
-
-    [...byLine.entries()]
-      .sort((a, b) => a[0] - b[0])
-      .forEach(([sourceLine, pair]) => {
-        const angle = pair.angle;
-        const dist = pair.dist;
-        if (!angle || !dist || angle.type !== 'angle' || dist.type !== 'dist') return;
-        if (angle.at !== dist.from || angle.to !== dist.to) return;
-        evaluatedCount += 1;
-
-        const targetStation = this.stations[dist.to];
-        if (targetStation?.fixed) {
-          excludedControlCount += 1;
-          return;
-        }
-
-        const angleRedundancy = this.redundancyScalar(angle) ?? 0;
-        const distRedundancy = this.redundancyScalar(dist) ?? 0;
-        const minRedundancy = Math.min(angleRedundancy, distRedundancy);
-        if (minRedundancy >= threshold) return;
-
-        candidates.push({
-          sourceLine,
-          occupy: angle.at,
-          backsight: angle.from,
-          target: angle.to,
-          angleObsId: angle.id,
-          distObsId: dist.id,
-          angleRedundancy,
-          distRedundancy,
-          minRedundancy,
-          maxAbsStdRes: Math.max(Math.abs(angle.stdRes ?? 0), Math.abs(dist.stdRes ?? 0)),
-        });
-      });
-
-    candidates.sort((a, b) => {
-      if (a.minRedundancy !== b.minRedundancy) return a.minRedundancy - b.minRedundancy;
-      if (b.maxAbsStdRes !== a.maxAbsStdRes) return b.maxAbsStdRes - a.maxAbsStdRes;
-      const la = a.sourceLine ?? Number.MAX_SAFE_INTEGER;
-      const lb = b.sourceLine ?? Number.MAX_SAFE_INTEGER;
-      return la - lb;
-    });
-
-    return {
-      enabled: true,
-      threshold,
-      evaluatedCount,
-      excludedControlCount,
-      candidateCount: candidates.length,
-      candidates,
-    };
-  }
-
   private runDataCheckOnly(activeObservations: Observation[]): AdjustmentResult {
     this.runMode = 'data-check';
     this.iterations = 0;
@@ -5336,206 +5259,6 @@ export class LSAEngine {
     }
   }
 
-  private stationSeparation(a: Station, b: Station, dimension: '2D' | '3D'): number {
-    const dE = b.x - a.x;
-    const dN = b.y - a.y;
-    if (dimension === '2D') {
-      return Math.hypot(dE, dN);
-    }
-    const dH = b.h - a.h;
-    return Math.sqrt(dE * dE + dN * dN + dH * dH);
-  }
-
-  private computeClusterDiagnostics(): NonNullable<AdjustmentResult['clusterDiagnostics']> {
-    const dimension: '2D' | '3D' = this.is2D ? '2D' : '3D';
-    const tolerance = Math.max(
-      1e-9,
-      dimension === '2D' ? this.clusterTolerance2D : this.clusterTolerance3D,
-    );
-    const linkageMode = this.clusterLinkageMode ?? 'single';
-    const passMode =
-      (this.parseOptions?.clusterDualPassRan ?? false) ||
-      this.parseOptions?.clusterPassLabel === 'pass2'
-        ? 'dual-pass'
-        : 'single-pass';
-
-    if (!this.clusterDetectionEnabled) {
-      return {
-        enabled: false,
-        passMode,
-        linkageMode,
-        dimension,
-        tolerance,
-        pairCount: 0,
-        candidateCount: 0,
-        candidates: [],
-      };
-    }
-
-    const stationIds = Object.keys(this.stations)
-      .filter((id) => {
-        const s = this.stations[id];
-        if (!s) return false;
-        if (!Number.isFinite(s.x) || !Number.isFinite(s.y)) return false;
-        if (dimension === '3D' && !Number.isFinite(s.h)) return false;
-        return true;
-      })
-      .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
-
-    if (stationIds.length < 2) {
-      return {
-        enabled: true,
-        passMode,
-        linkageMode,
-        dimension,
-        tolerance,
-        pairCount: 0,
-        candidateCount: 0,
-        candidates: [],
-      };
-    }
-
-    const pairDist = new Map<string, number>();
-    const pairKey = (a: StationId, b: StationId): string => (a < b ? `${a}|${b}` : `${b}|${a}`);
-    const getDist = (a: StationId, b: StationId): number => {
-      const key = pairKey(a, b);
-      const cached = pairDist.get(key);
-      if (cached != null) return cached;
-      const sa = this.stations[a];
-      const sb = this.stations[b];
-      if (!sa || !sb) return Number.POSITIVE_INFINITY;
-      const dist = this.stationSeparation(sa, sb, dimension);
-      pairDist.set(key, dist);
-      return dist;
-    };
-
-    type Edge = { from: StationId; to: StationId; separation: number };
-    const withinTolEdges: Edge[] = [];
-    for (let i = 0; i < stationIds.length; i += 1) {
-      for (let j = i + 1; j < stationIds.length; j += 1) {
-        const from = stationIds[i];
-        const to = stationIds[j];
-        const separation = getDist(from, to);
-        if (separation <= tolerance) {
-          withinTolEdges.push({ from, to, separation });
-        }
-      }
-    }
-
-    let rawClusters: StationId[][] = [];
-    if (linkageMode === 'single') {
-      const parent = new Map<StationId, StationId>();
-      const find = (id: StationId): StationId => {
-        const p = parent.get(id) ?? id;
-        if (p === id) return p;
-        const root = find(p);
-        parent.set(id, root);
-        return root;
-      };
-      const union = (a: StationId, b: StationId): void => {
-        const ra = find(a);
-        const rb = find(b);
-        if (ra === rb) return;
-        const keep = ra.localeCompare(rb, undefined, { numeric: true }) <= 0 ? ra : rb;
-        const drop = keep === ra ? rb : ra;
-        parent.set(drop, keep);
-      };
-      stationIds.forEach((id) => parent.set(id, id));
-      withinTolEdges.forEach((e) => union(e.from, e.to));
-      const groups = new Map<StationId, StationId[]>();
-      stationIds.forEach((id) => {
-        const root = find(id);
-        const list = groups.get(root) ?? [];
-        list.push(id);
-        groups.set(root, list);
-      });
-      rawClusters = Array.from(groups.values()).filter((group) => group.length > 1);
-    } else {
-      const clusters: StationId[][] = [];
-      stationIds.forEach((id) => {
-        let placed = false;
-        for (const group of clusters) {
-          const fits = group.every((member) => getDist(id, member) <= tolerance);
-          if (fits) {
-            group.push(id);
-            placed = true;
-            break;
-          }
-        }
-        if (!placed) clusters.push([id]);
-      });
-      rawClusters = clusters.filter((group) => group.length > 1);
-    }
-
-    const unknownSet = new Set(this.unknowns);
-    const candidates = rawClusters
-      .map((group) =>
-        group.slice().sort((a, b) => a.localeCompare(b, undefined, { numeric: true })),
-      )
-      .sort((a, b) => a[0].localeCompare(b[0], undefined, { numeric: true }))
-      .map((stationIdsInCluster, idx) => {
-        let sumE = 0;
-        let sumN = 0;
-        let sumH = 0;
-        let hasFixed = false;
-        let hasUnknown = false;
-        stationIdsInCluster.forEach((id) => {
-          const st = this.stations[id];
-          if (!st) return;
-          sumE += st.x;
-          sumN += st.y;
-          sumH += st.h;
-          hasFixed = hasFixed || st.fixed;
-          hasUnknown = hasUnknown || unknownSet.has(id);
-        });
-        const pairRows: Edge[] = [];
-        let maxSeparation = 0;
-        let sumSeparation = 0;
-        let pairCount = 0;
-        for (let i = 0; i < stationIdsInCluster.length; i += 1) {
-          for (let j = i + 1; j < stationIdsInCluster.length; j += 1) {
-            const from = stationIdsInCluster[i];
-            const to = stationIdsInCluster[j];
-            const separation = getDist(from, to);
-            pairRows.push({ from, to, separation });
-            maxSeparation = Math.max(maxSeparation, separation);
-            sumSeparation += separation;
-            pairCount += 1;
-          }
-        }
-        pairRows.sort(
-          (a, b) =>
-            a.from.localeCompare(b.from, undefined, { numeric: true }) ||
-            a.to.localeCompare(b.to, undefined, { numeric: true }),
-        );
-        return {
-          key: `CL-${idx + 1}-${stationIdsInCluster[0]}`,
-          representativeId: stationIdsInCluster[0],
-          stationIds: stationIdsInCluster,
-          memberCount: stationIdsInCluster.length,
-          hasFixed,
-          hasUnknown,
-          centroidE: sumE / stationIdsInCluster.length,
-          centroidN: sumN / stationIdsInCluster.length,
-          centroidH: dimension === '3D' ? sumH / stationIdsInCluster.length : undefined,
-          maxSeparation,
-          meanSeparation: pairCount > 0 ? sumSeparation / pairCount : 0,
-          pairs: pairRows,
-        };
-      });
-
-    return {
-      enabled: true,
-      passMode,
-      linkageMode,
-      dimension,
-      tolerance,
-      pairCount: withinTolEdges.length,
-      candidateCount: candidates.length,
-      candidates,
-    };
-  }
-
   private buildResult(): AdjustmentResult {
     if (!this.sideshots) {
       this.sideshots = this.computeSideshotResults();
@@ -5575,7 +5298,12 @@ export class LSAEngine {
       this.logs.push('Auto-sideshot detection (M-lines): disabled in preanalysis mode');
     } else if (autoSideshotEnabled) {
       if (!this.autoSideshotDiagnostics) {
-        this.autoSideshotDiagnostics = this.computeAutoSideshotDiagnostics();
+        this.autoSideshotDiagnostics = buildAutoSideshotDiagnostics({
+          observations: this.observations,
+          stations: this.stations,
+          redundancyScalar: (obs) => this.redundancyScalar(obs),
+          threshold: 0.1,
+        });
         this.logs.push(
           `Auto-sideshot detection (M-lines): evaluated=${this.autoSideshotDiagnostics.evaluatedCount}, candidates=${this.autoSideshotDiagnostics.candidateCount}, excluded-control=${this.autoSideshotDiagnostics.excludedControlCount}, threshold=${this.autoSideshotDiagnostics.threshold.toFixed(2)}`,
         );
@@ -5590,7 +5318,23 @@ export class LSAEngine {
       this.logs.push('Auto-sideshot detection (M-lines): disabled');
     }
     if (runMode !== 'data-check' && !this.clusterDiagnostics) {
-      this.clusterDiagnostics = this.computeClusterDiagnostics();
+      const dimension: '2D' | '3D' = this.is2D ? '2D' : '3D';
+      this.clusterDiagnostics = buildClusterDiagnostics({
+        stations: this.stations,
+        unknowns: this.unknowns,
+        enabled: this.clusterDetectionEnabled,
+        linkageMode: this.clusterLinkageMode ?? 'single',
+        dimension,
+        tolerance: Math.max(
+          1e-9,
+          dimension === '2D' ? this.clusterTolerance2D : this.clusterTolerance3D,
+        ),
+        passMode:
+          (this.parseOptions?.clusterDualPassRan ?? false) ||
+          this.parseOptions?.clusterPassLabel === 'pass2'
+            ? 'dual-pass'
+            : 'single-pass',
+      });
       if (this.clusterDiagnostics.enabled) {
         this.logs.push(
           `Cluster detection: pass=${this.clusterDiagnostics.passMode}, mode=${this.clusterDiagnostics.linkageMode}, dim=${this.clusterDiagnostics.dimension}, tol=${this.clusterDiagnostics.tolerance.toFixed(4)}m, pairHits=${this.clusterDiagnostics.pairCount}, candidates=${this.clusterDiagnostics.candidateCount}`,

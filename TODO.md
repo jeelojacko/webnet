@@ -98,7 +98,7 @@
     - [x] Move scenario workflows off ad hoc engine re-instantiation paths onto the shared scenario executor contract
     - [x] Extend the large-project benchmark with rerun latency budgets
     - [x] Add regression/performance coverage for cached reruns and scenario execution parity
-  - [ ] Phase 4 - remaining parser and solver core split
+  - [x] Phase 4 - remaining parser and solver core split
     - [x] Batch complete - parser sigma helpers and cluster dual-pass extraction:
       - [x] Extract parser sigma/default-resolution helpers into a dedicated module
       - [x] Extract solver cluster dual-pass orchestration into a dedicated module
@@ -132,19 +132,24 @@
       - [x] Extract setup-summary and traverse-closure ranking builders into a dedicated solver module
       - [x] Rewire `adjust.ts` to consume the extracted diagnostic builders without changing report/log payloads
       - [x] Add focused regression coverage for extracted loop/setup/traverse diagnostic builders
-    - [ ] Finish parser monolith extraction:
+    - [x] Batch complete - Phase 4 orchestration closeout:
+      - [x] Extract auto-sideshot and cluster candidate diagnostics into dedicated solver builders
+      - [x] Rewire `adjust.ts`/`buildResult()` to consume the extracted builders while preserving log and result payload behavior
+      - [x] Add focused regression coverage for the extracted review-diagnostic builders
+      - [x] Close out the remaining Phase 4 monolith-extraction meta checklist items once `adjust.ts` is reduced to solve orchestration
+    - [x] Finish parser monolith extraction:
       - [x] Sigma/default-resolution helpers
       - [x] Alias-resolution and canonical-ID pipeline
       - [x] Direction-set reduction and treatment logic
       - [x] Directive command dispatch and handler registry
-    - [ ] Finish solver monolith extraction:
+    - [x] Finish solver monolith extraction:
       - [x] Statistical test math and quantile helpers
       - [x] Weak-geometry classification and ranking
       - [x] Reduction-usage summarization
       - [x] Loop/setup/GPS diagnostic builders
       - [x] Cluster dual-pass orchestration
-    - [ ] Keep parse.ts as orchestration over parser handlers and adjust.ts as solve control over prepared services/builders
-    - [ ] Add focused module regression coverage for each extracted parser/solver seam
+    - [x] Keep parse.ts as orchestration over parser handlers and adjust.ts as solve control over prepared services/builders
+    - [x] Add focused module regression coverage for each extracted parser/solver seam
 
 - [ ] Architecture follow-up - phased implementation:
   - [ ] Phase 1 - `App.tsx` decomposition
