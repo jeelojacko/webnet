@@ -184,12 +184,12 @@
       - [x] Extend the shared derived-model path into remaining map-side non-geometry selectors (visible station IDs, weak-station severity, station ID lookup, and observation-pair link lookup) so `MapView` no longer rebuilds those selectors inline
       - [x] Extend the shared derived-model path into visible-station row metadata and shared station-priority scoring for `MapView` tool panels and dense-label prioritization
       - [x] Finish the remaining map-side selector cleanup by centralizing pair-key normalization plus severity-based station/ellipse styling helpers used by `MapView`
-  - [ ] Phase 3 - parser modular split
-    - [~] Split parser directive-state management out of the current parser monolith
+  - [x] Phase 3 - parser modular split
+    - [x] Split parser directive-state management out of the current parser monolith
       - [x] Extract observation-mode normalization, directive transition snapshots, and no-effect warning synthesis into `src/engine/parseDirectiveState.ts`
       - [x] Extract core parser state-directive handling (`.UNITS/.SCALE/.MEASURED/.GRID/.COORD/.ORDER/.2D/.3D/.3REDUCE/.DELTA/.MAPMODE/.MAPSCALE/.DATA/.SEPARATOR`) into `src/engine/parseDirectiveState.ts`
       - [x] Add focused module regression coverage for directive-state normalization, transitions, and no-effect warnings
-    - [~] Split record-family parsing into stable modules by observation/control family
+    - [x] Split record-family parsing into stable modules by observation/control family
       - [x] Extract control/geodetic record handling (`C`, `P/PH`, `CH/EH`, `E`) into `src/engine/parseControlRecords.ts`
       - [x] Add focused parser regression coverage for control/geodetic record families
       - [x] Extract conventional primitive observation handling (`D`, `A`, `V`, `DV`) into `src/engine/parseConventionalObservationRecords.ts`
@@ -199,12 +199,12 @@
         - [x] Extract inline `SS` / `GS` / `G` / `G4` / `L` record handling into a dedicated parser module
         - [x] Rewire `parse.ts` to delegate those record families without changing parser behavior
         - [x] Add focused parser regression coverage for extracted sideshot/GNSS/leveling record handling
-      - [~] Extract traverse and direction-set families (`TB`, `T`, `TE`, `DB`, `DN`, `DM`, `DE`) into dedicated parser modules
+      - [x] Extract traverse and direction-set families (`TB`, `T`, `TE`, `DB`, `DN`, `DM`, `DE`) into dedicated parser modules
         - [x] Extract traverse-family handling (`TB`, `T`, `TE`) into `src/engine/parseTraverseRecords.ts`
         - [x] Add focused parser regression coverage for traverse-family handling
         - [x] Extract direction-set families (`DB`, `DN`, `DM`, `DE`) into `src/engine/parseDirectionSetRecords.ts`
         - [x] Add focused parser regression coverage for direction-set families
-    - [~] Split include expansion and include-scope state restoration into focused modules
+    - [x] Split include expansion and include-scope state restoration into focused modules
       - [x] Extract include expansion, path normalization, and include-file-map resolution into `src/engine/parseIncludes.ts`
       - [x] Add focused module regression coverage for include expansion and cycle detection
       - [x] Extract include-scope snapshot/restore orchestration out of `src/engine/parse.ts` into `src/engine/parseIncludeScope.ts`
