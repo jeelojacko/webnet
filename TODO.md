@@ -152,7 +152,7 @@
     - [x] Add focused module regression coverage for each extracted parser/solver seam
 
 - [ ] Architecture follow-up - phased implementation:
-  - [ ] Phase 1 - `App.tsx` decomposition
+  - [x] Phase 1 - `App.tsx` decomposition
     - [x] Extract run-comparison state/history into a dedicated hook
     - [x] Extract workspace/project state and workspace-artifact reset semantics into a dedicated hook
     - [x] Extract Project Options draft state and apply/cancel orchestration into dedicated hooks/modules
@@ -164,7 +164,11 @@
       - [x] Move text/XML save-picker + fallback download helpers out of `App.tsx`
       - [x] Move export-format dispatch for points/WebNet/listing/LandXML/QA bundles into a dedicated hook
       - [x] Add focused regression coverage for export dispatch and blocked-transform notice paths
-    - [ ] Extract remaining top-level orchestration helpers so `App.tsx` becomes a shell/composition layer
+    - [x] Batch complete - Project Options modal controller extraction:
+      - [x] Extract Project Options modal change/select/apply orchestration into `src/hooks/useProjectOptionsModalController.ts`
+      - [x] Rewire `App.tsx` to provide static modal context and consume the extracted controller hook
+      - [x] Add focused regression coverage for extracted project-options controller behavior
+    - [x] Extract remaining top-level orchestration helpers so `App.tsx` becomes a shell/composition layer
       - [x] Extract run-profile/output builder logic (`resolveProfileContext`, run diagnostics, WebNet text, listing text, LandXML wrapper) into a dedicated hook/module
         - [x] Extract listing/LandXML output wrapper composition into `src/engine/runOutputBuilders.ts`
         - [x] Extract `resolveProfileContext` and run-diagnostics composition out of `App.tsx`
