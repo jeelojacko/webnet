@@ -151,7 +151,7 @@
     - [x] Keep parse.ts as orchestration over parser handlers and adjust.ts as solve control over prepared services/builders
     - [x] Add focused module regression coverage for each extracted parser/solver seam
 
-- [ ] Architecture follow-up - phased implementation:
+- [x] Architecture follow-up - phased implementation:
   - [x] Phase 1 - `App.tsx` decomposition
     - [x] Extract run-comparison state/history into a dedicated hook
     - [x] Extract workspace/project state and workspace-artifact reset semantics into a dedicated hook
@@ -175,7 +175,7 @@
         - [x] Add focused regression coverage for extracted run-profile/run-diagnostics composition
         - [x] Extract WebNet text report builder out of `App.tsx` into `src/engine/runResultsTextBuilder.ts`
         - [x] Add focused regression coverage for extracted WebNet text report builder
-  - [ ] Phase 2 - shared derived-model cleanup
+  - [x] Phase 2 - shared derived-model cleanup
     - [x] Add shared QA derived-data model for report/map comparison workflows
     - [x] Expand shared derived models so report/map/listing/processing-summary consume normalized data instead of rebuilding view-specific arrays
       - [x] Add `src/engine/resultDerivedModels.ts` for shared observation sorting/grouping, data-check diff rows, traceability normalization, and statistical-summary fallback shaping
@@ -213,7 +213,7 @@
       - [x] Extract alias canonicalization, lost-station normalization, description reconciliation, directive-finalization, and final parse/log summary shaping into `src/engine/parsePostProcessing.ts`
       - [x] Keep parser fixture behavior stable while reducing the final `parse.ts` post-processing tail
       - [x] Add focused regression coverage for the extracted post-processing module
-  - [ ] Phase 4 - solver modular split
+  - [x] Phase 4 - solver modular split
     - [x] Split preprocessing into a dedicated module boundary
       - [x] Extract solve-parameter preparation, auto-held height detection, direction-set ID collection, and weighted-control constraint planning into `src/engine/adjustmentPreprocessing.ts`
       - [x] Extract shared control-constraint builders/correlation weighting into `src/engine/adjustmentConstraints.ts`
@@ -234,7 +234,7 @@
       - [x] Extract parse-state finalization and outward-facing `AdjustmentResult` payload assembly into `src/engine/adjustmentResultBuilder.ts`
       - [x] Keep run-mode/auto-sideshot/cluster gating behavior stable while reducing `buildResult()` responsibility in `src/engine/adjust.ts`
       - [x] Add focused regression coverage for the extracted result builder
-  - [ ] Next architecture follow-up
+  - [x] Next architecture follow-up
     - [x] Expand shared derived models so report/map/listing/processing-summary consume normalized data instead of rebuilding view-specific arrays
 
 - [x] Add post-adjust adjusted-points Transform support (rotation-only v1): persisted transform settings, Project Options -> Other Files -> Transform UI (rotation with pivot/scope/select-points popup + translation/scale placeholders), export-time validation, and dual-section adjusted-points export output (original + transform notes + rotated coordinates)
