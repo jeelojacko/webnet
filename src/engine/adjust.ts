@@ -37,6 +37,7 @@ import {
 } from './adjustmentStatisticsBuilders';
 import { buildChiSquareSummary } from './adjustmentStatisticalMath';
 import { buildWeakGeometryDiagnostics } from './adjustmentWeakGeometry';
+import { summarizeReductionUsage } from './reductionUsageSummary';
 import type {
   CoordinateConstraintRowPlacement,
   EquationRowInfo,
@@ -71,7 +72,6 @@ import type {
   CrsStatus,
   FactorComputationMethod,
   GnssVectorFrame,
-  ReductionUsageSummary,
   RunMode,
   RunModeCompatibilityDiagnostic,
 } from '../types';
@@ -85,50 +85,6 @@ const LEVEL_LOOP_DEFAULT_BASE_MM = 0;
 const LEVEL_LOOP_DEFAULT_PER_SQRT_KM_MM = 4;
 
 const makePairKey = (a: StationId, b: StationId): string => (a < b ? `${a}|${b}` : `${b}|${a}`);
-
-const createReductionUsageSummary = (): ReductionUsageSummary => ({
-  bearing: { grid: 0, measured: 0 },
-  angle: { grid: 0, measured: 0 },
-  direction: { grid: 0, measured: 0 },
-  distance: { ground: 0, grid: 0, ellipsoidal: 0 },
-  total: 0,
-});
-
-const summarizeReductionUsage = (observations: Observation[]): ReductionUsageSummary => {
-  const summary = createReductionUsageSummary();
-  observations.forEach((obs) => {
-    if (obs.type === 'bearing') {
-      const mode = obs.gridObsMode === 'measured' ? 'measured' : 'grid';
-      summary.bearing[mode] += 1;
-      summary.total += 1;
-      return;
-    }
-    if (obs.type === 'angle') {
-      const mode = obs.gridObsMode === 'grid' ? 'grid' : 'measured';
-      summary.angle[mode] += 1;
-      summary.total += 1;
-      return;
-    }
-    if (obs.type === 'direction' || obs.type === 'dir') {
-      const mode = obs.gridObsMode === 'grid' ? 'grid' : 'measured';
-      summary.direction[mode] += 1;
-      summary.total += 1;
-      return;
-    }
-    if (obs.type === 'dist') {
-      const kind: 'ground' | 'grid' | 'ellipsoidal' =
-        obs.distanceKind ??
-        (obs.gridDistanceMode === 'ellipsoidal'
-          ? 'ellipsoidal'
-          : obs.gridDistanceMode === 'grid'
-            ? 'grid'
-            : 'ground');
-      summary.distance[kind] += 1;
-      summary.total += 1;
-    }
-  });
-  return summary;
-};
 
 const cloneParsedResultValue = <T,>(value: T): T => {
   if (value == null || typeof value !== 'object') return value;

@@ -123,6 +123,10 @@
       - [x] Extract preanalysis weak-geometry median/severity/ranking helpers into a dedicated solver module
       - [x] Rewire `adjust.ts` to consume the extracted weak-geometry diagnostics builder
       - [x] Add focused regression coverage for station/pair cue severity and ranking behavior
+    - [x] Batch complete - reduction-usage summary extraction:
+      - [x] Extract parsed/used-in-solve reduction-usage summarization into a dedicated shared engine helper
+      - [x] Rewire `adjust.ts` and parse post-processing to consume the extracted summary helper
+      - [x] Add focused regression coverage for reduction-mode counting across parsed and filtered solve paths
     - [ ] Finish parser monolith extraction:
       - [x] Sigma/default-resolution helpers
       - [x] Alias-resolution and canonical-ID pipeline
@@ -131,7 +135,7 @@
     - [ ] Finish solver monolith extraction:
       - [x] Statistical test math and quantile helpers
       - [x] Weak-geometry classification and ranking
-      - [ ] Reduction-usage summarization
+      - [x] Reduction-usage summarization
       - [ ] Loop/setup/GPS diagnostic builders
       - [x] Cluster dual-pass orchestration
     - [ ] Keep parse.ts as orchestration over parser handlers and adjust.ts as solve control over prepared services/builders
