@@ -36,6 +36,7 @@ import {
   buildStatisticalSummary,
 } from './adjustmentStatisticsBuilders';
 import { buildChiSquareSummary } from './adjustmentStatisticalMath';
+import { buildWeakGeometryDiagnostics } from './adjustmentWeakGeometry';
 import type {
   CoordinateConstraintRowPlacement,
   EquationRowInfo,
@@ -82,16 +83,6 @@ const GPS_LOOP_BASE_TOLERANCE_M = 0.02;
 const GPS_LOOP_TOLERANCE_PPM = 50;
 const LEVEL_LOOP_DEFAULT_BASE_MM = 0;
 const LEVEL_LOOP_DEFAULT_PER_SQRT_KM_MM = 4;
-
-const medianOf = (values: number[]): number | undefined => {
-  const sorted = values
-    .filter((value) => Number.isFinite(value) && value > 0)
-    .sort((a, b) => a - b);
-  if (sorted.length === 0) return undefined;
-  const mid = Math.floor(sorted.length / 2);
-  if (sorted.length % 2 === 1) return sorted[mid];
-  return 0.5 * (sorted[mid - 1] + sorted[mid]);
-};
 
 const makePairKey = (a: StationId, b: StationId): string => (a < b ? `${a}|${b}` : `${b}|${a}`);
 
@@ -153,15 +144,6 @@ const cloneParsedResultValue = <T,>(value: T): T => {
       cloneParsedResultValue(entryValue),
     ]),
   ) as T;
-};
-
-const classifyWeakGeometrySeverity = (
-  relativeToMedian: number,
-  ellipseRatio?: number,
-): 'ok' | 'watch' | 'weak' => {
-  if (relativeToMedian >= 2.5 || (ellipseRatio != null && ellipseRatio >= 10)) return 'weak';
-  if (relativeToMedian >= 1.6 || (ellipseRatio != null && ellipseRatio >= 5)) return 'watch';
-  return 'ok';
 };
 
 interface EngineOptions {
@@ -5503,69 +5485,16 @@ export class LSAEngine {
       this.relativeCovariances = relativeCovariances;
 
       if (this.preanalysisMode) {
-        const stationMedian = medianOf(
-          stationCovariances.map(
-            (block) => block.ellipse?.semiMajor ?? Math.max(block.sigmaE, block.sigmaN),
-          ),
+        this.weakGeometryDiagnostics = buildWeakGeometryDiagnostics(
+          stationCovariances,
+          relativeCovariances,
         );
-        const relativeMedian = medianOf(
-          relativeCovariances.map(
-            (block) =>
-              block.sigmaDist ?? block.ellipse?.semiMajor ?? Math.max(block.sigmaE, block.sigmaN),
-          ),
+        const flaggedStations = this.weakGeometryDiagnostics.stationCues.filter(
+          (cue) => cue.severity !== 'ok',
         );
-        const stationCues: NonNullable<AdjustmentResult['weakGeometryDiagnostics']>['stationCues'] =
-          stationCovariances.map((block) => {
-            const horizontalMetric =
-              block.ellipse?.semiMajor ?? Math.max(block.sigmaE, block.sigmaN);
-            const relativeToMedian =
-              stationMedian && stationMedian > 0 ? horizontalMetric / stationMedian : 1;
-            const ellipseRatio =
-              block.ellipse != null
-                ? block.ellipse.semiMajor / Math.max(block.ellipse.semiMinor, 1e-12)
-                : undefined;
-            const severity = classifyWeakGeometrySeverity(relativeToMedian, ellipseRatio);
-            return {
-              stationId: block.stationId,
-              severity,
-              horizontalMetric,
-              verticalMetric: block.sigmaH,
-              relativeToMedian,
-              ellipseRatio,
-              note: `major=${horizontalMetric.toFixed(4)}m, medianRatio=${relativeToMedian.toFixed(2)}x${ellipseRatio != null ? `, shape=${ellipseRatio.toFixed(2)}x` : ''}`,
-            };
-          });
-        const relativeCues: NonNullable<
-          AdjustmentResult['weakGeometryDiagnostics']
-        >['relativeCues'] = relativeCovariances.map((block) => {
-          const distanceMetric =
-            block.sigmaDist ?? block.ellipse?.semiMajor ?? Math.max(block.sigmaE, block.sigmaN);
-          const relativeToMedian =
-            relativeMedian && relativeMedian > 0 ? distanceMetric / relativeMedian : 1;
-          const ellipseRatio =
-            block.ellipse != null
-              ? block.ellipse.semiMajor / Math.max(block.ellipse.semiMinor, 1e-12)
-              : undefined;
-          const severity = classifyWeakGeometrySeverity(relativeToMedian, ellipseRatio);
-          return {
-            from: block.from,
-            to: block.to,
-            severity,
-            distanceMetric,
-            relativeToMedian,
-            ellipseRatio,
-            note: `sigmaDist=${distanceMetric.toFixed(4)}m, medianRatio=${relativeToMedian.toFixed(2)}x${ellipseRatio != null ? `, shape=${ellipseRatio.toFixed(2)}x` : ''}`,
-          };
-        });
-        this.weakGeometryDiagnostics = {
-          enabled: true,
-          stationMedianHorizontal: stationMedian ?? 0,
-          relativeMedianDistance: relativeMedian,
-          stationCues,
-          relativeCues,
-        };
-        const flaggedStations = stationCues.filter((cue) => cue.severity !== 'ok');
-        const flaggedPairs = relativeCues.filter((cue) => cue.severity !== 'ok');
+        const flaggedPairs = this.weakGeometryDiagnostics.relativeCues.filter(
+          (cue) => cue.severity !== 'ok',
+        );
         this.log(
           `Preanalysis covariance blocks: stations=${stationCovariances.length}, connectedPairs=${relativeCovariances.length}`,
         );

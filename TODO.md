@@ -119,6 +119,10 @@
       - [x] Extract chi-square probability/quantile math into a dedicated solver helper module
       - [x] Rewire `adjust.ts` to consume the extracted chi-square summary builder instead of inlining the test math
       - [x] Add focused regression coverage for quantile inversion and chi-square summary shaping
+    - [x] Batch complete - weak-geometry diagnostics extraction:
+      - [x] Extract preanalysis weak-geometry median/severity/ranking helpers into a dedicated solver module
+      - [x] Rewire `adjust.ts` to consume the extracted weak-geometry diagnostics builder
+      - [x] Add focused regression coverage for station/pair cue severity and ranking behavior
     - [ ] Finish parser monolith extraction:
       - [x] Sigma/default-resolution helpers
       - [x] Alias-resolution and canonical-ID pipeline
@@ -126,7 +130,7 @@
       - [x] Directive command dispatch and handler registry
     - [ ] Finish solver monolith extraction:
       - [x] Statistical test math and quantile helpers
-      - [ ] Weak-geometry classification and ranking
+      - [x] Weak-geometry classification and ranking
       - [ ] Reduction-usage summarization
       - [ ] Loop/setup/GPS diagnostic builders
       - [x] Cluster dual-pass orchestration
