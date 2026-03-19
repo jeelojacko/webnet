@@ -28,7 +28,7 @@
   - [x] Add dense-map guards (viewport clipping, label suppression, active-selection overlays) and extend browser benchmark coverage
   - [x] Refine comparison/export UX: collapsible comparison panel, comparison reset on refresh, single export selector with points default, and bundled export descriptions
 
-- [ ] WebNet next-cycle plan - shell hardening, draft recovery, and faster QA reruns:
+- [x] WebNet next-cycle plan - shell hardening, draft recovery, and faster QA reruns:
   - [x] Phase 0 - backlog codification
     - [x] Add the full phased implementation plan to TODO before code changes
     - [x] Break each phase into explicit checklist items instead of summary-only bullets
@@ -56,7 +56,7 @@
       - [x] Add focused recovery-hook coverage for recover/discard/clear flows
       - [x] Add focused workspace-shell coverage for tab switching and empty-state behavior
       - [x] Add project-load replacement behavior coverage against persisted local draft state
-  - [ ] Phase 2 - ReportView decomposition and QA workspace UX
+  - [x] Phase 2 - ReportView decomposition and QA workspace UX
     - [x] Split ReportView into section components backed by a shared report-section registry
     - [x] Extract shared report table/filter primitives for load-more, filtering, and row selection behavior
     - [x] Batch complete - persistable workspace review-state extraction
@@ -81,7 +81,7 @@
       - [x] Remove duplicate suspect-navigation buttons from Run Compare
       - [x] Add hover-help tooltips to Run Compare labels and QA action buttons
       - [x] Update compare-panel regression coverage for collapsed/expanded toolbar behavior
-  - [ ] Phase 3 - scenario runtime and rerun performance
+  - [x] Phase 3 - scenario runtime and rerun performance
     - [x] Batch complete - nested scenario cache reuse and compare execution:
       - [x] Route nested blunder-detect and cluster dual-pass reruns through the shared parsed-state cache
       - [x] Add an explicit grouped comparison-scenario executor on top of the shared scenario service
