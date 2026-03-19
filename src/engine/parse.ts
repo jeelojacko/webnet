@@ -36,6 +36,11 @@ import {
 } from './defaults';
 import { normalizeGeoidModelId, parseGeoidInterpolationToken } from './geoid';
 import { parseCrsProjectionModelToken } from './geodesy';
+import {
+  cloneParseAliasRule,
+  createParseAliasPipeline,
+  type ParseAliasRule,
+} from './parseAliasPipeline';
 import type {
   AngleObservation,
   CoordInputClass,
@@ -755,28 +760,6 @@ export const parseInput = (
   existingInstruments: InstrumentLibrary = {},
   opts: Partial<ParseOptions> = {},
 ): ParseResult => {
-  interface AliasRuleBase {
-    sourceLine: number;
-  }
-  interface PrefixAliasRule extends AliasRuleBase {
-    kind: 'prefix';
-    from: string;
-    to: string;
-  }
-  interface SuffixAliasRule extends AliasRuleBase {
-    kind: 'suffix';
-    from: string;
-    to: string;
-  }
-  interface AdditiveAliasRule extends AliasRuleBase {
-    kind: 'additive';
-    offset: number;
-  }
-  type AliasRule = PrefixAliasRule | SuffixAliasRule | AdditiveAliasRule;
-  interface AliasResolutionResult {
-    canonicalId: StationId;
-    reference: string;
-  }
   type DirectionFace = 'face1' | 'face2';
   interface RawDirectionShot {
     to: StationId;
@@ -942,18 +925,12 @@ export const parseInput = (
   } = {};
   let faceMode: 'unknown' | 'face1' | 'face2' = 'unknown';
   let directionSetCount = 0;
-  let explicitAliases = new Map<StationId, StationId>();
-  let explicitAliasLines = new Map<StationId, number>();
-  let aliasRules: AliasRule[] = [];
-  const aliasCycleWarnings = new Set<string>();
-  const aliasTraceEntries: NonNullable<ParseOptions['aliasTrace']> = [];
   const descriptionTraceEntries: NonNullable<ParseOptions['descriptionTrace']> = [];
-  const aliasTraceSeen = new Set<string>();
   let lostStationIds = new Set<StationId>((state.lostStationIds ?? []).map((id) => `${id}`));
   const includeScopeStack: IncludeScopeSnapshot<
     GpsObservation,
     StationId,
-    AliasRule,
+    ParseAliasRule,
     RawDirectionShot
   >[] = [];
   const {
@@ -961,24 +938,14 @@ export const parseInput = (
     resolveAngularSigma,
     resolveLevelingSigma,
   } = createParseSigmaResolvers(state, logs);
+  let lineNum = 0;
+  const aliasPipeline = createParseAliasPipeline({
+    logs,
+    getCurrentLine: () => lineNum,
+    splitCommaTokens,
+  });
 
-  const preloadedClusterMerges = (state.clusterApprovedMerges ?? [])
-    .map((merge) => ({
-      aliasId: String(merge.aliasId ?? '').trim(),
-      canonicalId: String(merge.canonicalId ?? '').trim(),
-    }))
-    .filter(
-      (merge) =>
-        merge.aliasId.length > 0 &&
-        merge.canonicalId.length > 0 &&
-        merge.aliasId !== merge.canonicalId,
-    );
-  if (preloadedClusterMerges.length > 0) {
-    preloadedClusterMerges.forEach((merge) => {
-      explicitAliases.set(merge.aliasId, merge.canonicalId);
-    });
-    logs.push(`Cluster-approved alias merges preloaded: ${preloadedClusterMerges.length}`);
-  }
+  aliasPipeline.preloadClusterApprovedMerges(state.clusterApprovedMerges ?? []);
 
   const expanded = expandInputWithIncludes(input, opts, logs, {
     splitInlineCommentAndDescription,
@@ -988,7 +955,6 @@ export const parseInput = (
   const lines = expanded.lines;
   state.includeTrace = expanded.includeTrace;
   state.includeErrors = expanded.includeErrors;
-  let lineNum = 0;
   let currentSourceFile = state.sourceFile ?? '<input>';
   let obsId = 0;
   let lastGpsObservation: GpsObservation | undefined;
@@ -1192,138 +1158,6 @@ export const parseInput = (
       }
     }
     observations.push(obs);
-  };
-  const addExplicitAlias = (rawAlias: string, rawCanonical: string): boolean => {
-    const alias = rawAlias.trim();
-    const canonical = rawCanonical.trim();
-    if (!alias || !canonical) return false;
-    if (alias === canonical) {
-      logs.push(
-        `Warning: .ALIAS ${alias}=${canonical} ignored at line ${lineNum}; mapping is identity.`,
-      );
-      return false;
-    }
-    explicitAliases.set(alias, canonical);
-    explicitAliasLines.set(alias, lineNum);
-    return true;
-  };
-  const applyAliasRulesOnce = (id: StationId): { mappedId: StationId; steps: string[] } => {
-    let mapped = id;
-    const steps: string[] = [];
-    for (const rule of aliasRules) {
-      if (rule.kind === 'prefix') {
-        if (rule.from && mapped.startsWith(rule.from)) {
-          const prior = mapped;
-          mapped = `${rule.to}${mapped.slice(rule.from.length)}`;
-          steps.push(`PREFIX ${prior}->${mapped} (line ${rule.sourceLine})`);
-        }
-      } else if (rule.kind === 'suffix') {
-        if (rule.from && mapped.endsWith(rule.from)) {
-          const prior = mapped;
-          mapped = `${mapped.slice(0, mapped.length - rule.from.length)}${rule.to}`;
-          steps.push(`SUFFIX ${prior}->${mapped} (line ${rule.sourceLine})`);
-        }
-      } else if (/^[+-]?\d+$/.test(mapped)) {
-        const prior = mapped;
-        mapped = String(parseInt(mapped, 10) + rule.offset);
-        steps.push(`ADD ${prior}->${mapped} (line ${rule.sourceLine})`);
-      }
-    }
-    return { mappedId: mapped, steps };
-  };
-  const resolveAlias = (rawId: StationId): AliasResolutionResult => {
-    const base = rawId?.trim() ?? '';
-    if (!base) return { canonicalId: base, reference: 'direct' };
-    const resolveExplicitChain = (start: StationId): { id: StationId; steps: string[] } => {
-      let current = start;
-      const seen = new Set<string>();
-      const steps: string[] = [];
-      while (true) {
-        if (seen.has(current)) {
-          const cycleKey = [...seen, current].join('->');
-          if (!aliasCycleWarnings.has(cycleKey)) {
-            aliasCycleWarnings.add(cycleKey);
-            logs.push(
-              `Warning: .ALIAS explicit cycle encountered for "${base}" at line ${lineNum}; last stable id "${current}" retained.`,
-            );
-          }
-          return { id: current, steps };
-        }
-        seen.add(current);
-        const next = explicitAliases.get(current);
-        if (!next || next === current) return { id: current, steps };
-        const explicitLine = explicitAliasLines.get(current);
-        steps.push(
-          `EXPLICIT ${current}->${next}${explicitLine != null ? ` (line ${explicitLine})` : ''}`,
-        );
-        current = next;
-      }
-    };
-    const steps: string[] = [];
-    const firstExplicit = resolveExplicitChain(base);
-    steps.push(...firstExplicit.steps);
-    const firstRules = applyAliasRulesOnce(firstExplicit.id);
-    steps.push(...firstRules.steps);
-    const secondExplicit = resolveExplicitChain(firstRules.mappedId);
-    steps.push(...secondExplicit.steps);
-    if (secondExplicit.id !== firstRules.mappedId) {
-      const secondRules = applyAliasRulesOnce(secondExplicit.id);
-      steps.push(...secondRules.steps);
-      return {
-        canonicalId: secondRules.mappedId,
-        reference: steps.length ? steps.join(' | ') : 'direct',
-      };
-    }
-    return {
-      canonicalId: secondExplicit.id,
-      reference: steps.length ? steps.join(' | ') : 'direct',
-    };
-  };
-  const addAliasTrace = (
-    sourceId: StationId,
-    canonicalId: StationId,
-    context: NonNullable<ParseOptions['aliasTrace']>[number]['context'],
-    sourceLine?: number,
-    detail?: string,
-    reference?: string,
-  ): void => {
-    if (!sourceId || !canonicalId || sourceId === canonicalId) return;
-    const key = `${context}|${detail ?? ''}|${sourceLine ?? -1}|${sourceId}|${canonicalId}`;
-    if (aliasTraceSeen.has(key)) return;
-    aliasTraceSeen.add(key);
-    aliasTraceEntries.push({ sourceId, canonicalId, sourceLine, context, detail, reference });
-  };
-  const parseAliasPairs = (tokens: string[]): number => {
-    const flattened = splitCommaTokens(tokens, false);
-    let added = 0;
-    for (let i = 0; i < flattened.length; ) {
-      const token = flattened[i];
-      if (!token) {
-        i += 1;
-        continue;
-      }
-      if (token.includes('=')) {
-        const [lhs, rhs] = token.split('=');
-        if (lhs && rhs && addExplicitAlias(lhs, rhs)) added += 1;
-        i += 1;
-        continue;
-      }
-      if (token.includes('->')) {
-        const [lhs, rhs] = token.split('->');
-        if (lhs && rhs && addExplicitAlias(lhs, rhs)) added += 1;
-        i += 1;
-        continue;
-      }
-      if (i + 1 >= flattened.length) {
-        logs.push(
-          `Warning: dangling .ALIAS token "${token}" at line ${lineNum}; expected alias pair.`,
-        );
-        break;
-      }
-      if (addExplicitAlias(token, flattened[i + 1])) added += 1;
-      i += 2;
-    }
-    return added;
   };
   const isReliableFaceSource = (source: DirectionFaceSource): boolean =>
     source === 'metadata' ||
@@ -1759,6 +1593,7 @@ export const parseInput = (
     lineNum = entry.sourceLine;
     currentSourceFile = entry.sourceFile;
     if (entry.kind === 'include-enter') {
+      const aliasScopedState = aliasPipeline.getScopedState();
       includeScopeStack.push(
         createIncludeScopeSnapshot({
           state,
@@ -1766,11 +1601,11 @@ export const parseInput = (
           faceMode,
           directionSetCount,
           lastGpsObservation,
-          explicitAliases,
-          explicitAliasLines,
-          aliasRules,
+          explicitAliases: aliasScopedState.explicitAliases,
+          explicitAliasLines: aliasScopedState.explicitAliasLines,
+          aliasRules: aliasScopedState.aliasRules,
           lostStationIds,
-          cloneAliasRule: (rule) => ({ ...rule }),
+          cloneAliasRule: cloneParseAliasRule,
           cloneRawDirectionShot: (shot) => ({ ...shot }),
         }),
       );
@@ -1792,15 +1627,17 @@ export const parseInput = (
         traverseCtxTarget: traverseCtx,
         snapshot,
         normalizeObservationModeState,
-        cloneAliasRule: (rule) => ({ ...rule }),
+        cloneAliasRule: cloneParseAliasRule,
         cloneRawDirectionShot: (shot) => ({ ...shot }),
       });
       faceMode = restoredScope.faceMode;
       directionSetCount = restoredScope.directionSetCount;
       lastGpsObservation = restoredScope.lastGpsObservation;
-      explicitAliases = restoredScope.explicitAliases;
-      explicitAliasLines = restoredScope.explicitAliasLines;
-      aliasRules = restoredScope.aliasRules;
+      aliasPipeline.restoreScopedState({
+        explicitAliases: restoredScope.explicitAliases,
+        explicitAliasLines: restoredScope.explicitAliasLines,
+        aliasRules: restoredScope.aliasRules,
+      });
       lostStationIds = restoredScope.lostStationIds;
       logs.push(
         `Include scope exit: restored parent state at ${entry.sourceFile}:${entry.sourceLine} after ${entry.includeSourceFile}`,
@@ -2940,56 +2777,7 @@ export const parseInput = (
           `TS correlation set to ${enabled ? 'ON' : 'OFF'} (scope=${scope}, rho=${rho.toFixed(3)})`,
         );
       } else if (op === '.ALIAS') {
-        const aliasArgs = parts.slice(1);
-        if (!aliasArgs.length) {
-          logs.push(`Warning: .ALIAS missing arguments at line ${lineNum}`);
-          continue;
-        }
-        const mode = aliasArgs[0].toUpperCase();
-        if (mode === 'CLEAR' || mode === 'RESET' || mode === 'OFF') {
-          explicitAliases.clear();
-          aliasRules.length = 0;
-          logs.push('.ALIAS map cleared');
-        } else if (mode === 'PREFIX' || mode === 'PRE') {
-          const from = aliasArgs[1] ?? '';
-          const to = aliasArgs[2] ?? '';
-          if (!from || !to) {
-            logs.push(
-              `Warning: invalid .ALIAS PREFIX at line ${lineNum}; expected ".ALIAS PREFIX from to"`,
-            );
-          } else {
-            aliasRules.push({ kind: 'prefix', from, to, sourceLine: lineNum });
-            logs.push(`Alias prefix rule added: ${from} -> ${to}`);
-          }
-        } else if (mode === 'SUFFIX' || mode === 'SUF') {
-          const from = aliasArgs[1] ?? '';
-          const to = aliasArgs[2] ?? '';
-          if (!from || !to) {
-            logs.push(
-              `Warning: invalid .ALIAS SUFFIX at line ${lineNum}; expected ".ALIAS SUFFIX from to"`,
-            );
-          } else {
-            aliasRules.push({ kind: 'suffix', from, to, sourceLine: lineNum });
-            logs.push(`Alias suffix rule added: ${from} -> ${to}`);
-          }
-        } else if (mode === 'ADDITIVE' || mode === 'ADD') {
-          const offset = parseInt(aliasArgs[1] ?? '', 10);
-          if (!Number.isFinite(offset)) {
-            logs.push(
-              `Warning: invalid .ALIAS ADDITIVE at line ${lineNum}; expected integer offset value.`,
-            );
-          } else {
-            aliasRules.push({ kind: 'additive', offset, sourceLine: lineNum });
-            logs.push(`Alias additive rule added: +${offset}`);
-          }
-        } else {
-          const added = parseAliasPairs(aliasArgs);
-          if (added > 0) {
-            logs.push(`Alias explicit mappings added: ${added}`);
-          } else {
-            logs.push(`Warning: unrecognized .ALIAS syntax at line ${lineNum}`);
-          }
-        }
+        aliasPipeline.handleAliasDirective(parts.slice(1));
       } else if (
         op === '.COPYINPUT' ||
         op === '.ELLIPSE' ||
@@ -3853,35 +3641,24 @@ export const parseInput = (
     flushDirectionSet('EOF');
   }
 
-  state.aliasExplicitCount = explicitAliases.size;
-  state.aliasRuleCount = aliasRules.length;
-  state.aliasExplicitMappings = [...explicitAliases.entries()].map(([sourceId, canonicalId]) => ({
-    sourceId,
-    canonicalId,
-    sourceLine: explicitAliasLines.get(sourceId),
-  }));
-  state.aliasRuleSummaries = aliasRules.map((rule) => {
-    if (rule.kind === 'prefix') {
-      return { rule: `PREFIX ${rule.from} ${rule.to}`, sourceLine: rule.sourceLine };
-    }
-    if (rule.kind === 'suffix') {
-      return { rule: `SUFFIX ${rule.from} ${rule.to}`, sourceLine: rule.sourceLine };
-    }
-    return { rule: `ADDITIVE ${rule.offset}`, sourceLine: rule.sourceLine };
-  });
+  const aliasSummary = aliasPipeline.buildSummary();
+  state.aliasExplicitCount = aliasSummary.explicitAliasCount;
+  state.aliasRuleCount = aliasSummary.aliasRuleCount;
+  state.aliasExplicitMappings = aliasSummary.aliasExplicitMappings;
+  state.aliasRuleSummaries = aliasSummary.aliasRuleSummaries;
   const { unknowns } = finalizeParsePostProcessing({
     stations,
     observations,
     state,
     logs,
-    resolveAlias,
-    addAliasTrace,
+    resolveAlias: aliasPipeline.resolveAlias,
+    addAliasTrace: aliasPipeline.addAliasTrace,
     applyFixities,
     lostStationIds,
-    explicitAliasCount: explicitAliases.size,
-    aliasRuleCount: aliasRules.length,
+    explicitAliasCount: aliasSummary.explicitAliasCount,
+    aliasRuleCount: aliasSummary.aliasRuleCount,
     directionRejectDiagnostics,
-    aliasTraceEntries,
+    aliasTraceEntries: aliasPipeline.getAliasTraceEntries(),
     descriptionTraceEntries,
     orderExplicit,
     preanalysisMode,

@@ -103,9 +103,13 @@
       - [x] Extract parser sigma/default-resolution helpers into a dedicated module
       - [x] Extract solver cluster dual-pass orchestration into a dedicated module
       - [x] Add focused module regression coverage for the extracted parser/solver seams
+    - [x] Batch complete - parser alias pipeline extraction:
+      - [x] Extract alias-resolution and canonical-ID pipeline into a dedicated parser module
+      - [x] Rewire `parse.ts` and include-scope handling to consume the extracted alias pipeline
+      - [x] Add focused regression coverage for alias resolution, directive handling, and cluster-merge preload behavior
     - [ ] Finish parser monolith extraction:
       - [x] Sigma/default-resolution helpers
-      - [ ] Alias-resolution and canonical-ID pipeline
+      - [x] Alias-resolution and canonical-ID pipeline
       - [ ] Direction-set reduction and treatment logic
       - [ ] Directive command dispatch and handler registry
     - [ ] Finish solver monolith extraction:
