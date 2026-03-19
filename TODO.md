@@ -111,11 +111,15 @@
       - [x] Extract direction-set reduction and treatment logic into a dedicated parser module
       - [x] Rewire `parse.ts` to route direction-set flushing and diagnostics through the extracted module
       - [x] Add focused regression coverage for reduced/raw treatment decisions and reject diagnostics
+    - [x] Batch complete - directive dispatch registry extraction:
+      - [x] Extract non-core inline directive handling into a dedicated parser dispatch/registry module
+      - [x] Rewire `parse.ts` to dispatch parser directives through the registry instead of the inline command chain
+      - [x] Add focused regression coverage for registry dispatch, no-op compatibility directives, and `.END` termination
     - [ ] Finish parser monolith extraction:
       - [x] Sigma/default-resolution helpers
       - [x] Alias-resolution and canonical-ID pipeline
       - [x] Direction-set reduction and treatment logic
-      - [ ] Directive command dispatch and handler registry
+      - [x] Directive command dispatch and handler registry
     - [ ] Finish solver monolith extraction:
       - [ ] Statistical test math and quantile helpers
       - [ ] Weak-geometry classification and ranking
