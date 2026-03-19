@@ -1,4 +1,4 @@
-import { useDeferredValue, useEffect, useMemo, useState } from 'react';
+import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
 import type { Observation } from '../types';
 import {
@@ -8,19 +8,31 @@ import {
   type CollapsibleDetailSectionId,
 } from '../components/report/reportSectionRegistry';
 
-type ReportObservationTypeFilter = 'all' | Observation['type'];
-type ReportExclusionFilter = 'all' | 'included' | 'excluded';
+export type ReportEllipseMode = '1sigma' | '95';
+export type ReportObservationTypeFilter = 'all' | Observation['type'];
+export type ReportExclusionFilter = 'all' | 'included' | 'excluded';
 
 export type PinnedDetailSection = { id: CollapsibleDetailSectionId; label: string };
 
 interface UseReportViewStateArgs {
   result: unknown;
   excludedIds: Set<number>;
+  initialSnapshot?: ReportViewSnapshot;
+}
+
+export interface ReportViewSnapshot {
+  ellipseMode: ReportEllipseMode;
+  reportFilterQuery: string;
+  reportObservationTypeFilter: ReportObservationTypeFilter;
+  reportExclusionFilter: ReportExclusionFilter;
+  tableRowLimits: Record<string, number>;
+  pinnedDetailSections: PinnedDetailSection[];
+  collapsedDetailSections: Record<CollapsibleDetailSectionId, boolean>;
 }
 
 export interface ReportViewState {
-  ellipseMode: '1sigma' | '95';
-  setEllipseMode: Dispatch<SetStateAction<'1sigma' | '95'>>;
+  ellipseMode: ReportEllipseMode;
+  setEllipseMode: Dispatch<SetStateAction<ReportEllipseMode>>;
   ellipseConfidenceScale: number;
   reportFilterQuery: string;
   setReportFilterQuery: Dispatch<SetStateAction<string>>;
@@ -41,27 +53,90 @@ export interface ReportViewState {
   setAllDetailSectionsCollapsed: (_collapsed: boolean) => void;
   visibleRowsFor: <T>(_key: string, _rows: T[], _defaultSize?: number) => T[];
   showMoreRows: (_key: string, _step?: number) => void;
+  snapshot: ReportViewSnapshot;
+  restoreSnapshot: (_snapshot: ReportViewSnapshot) => void;
+  resetState: () => void;
 }
+
+export type ReportViewControls = Omit<
+  ReportViewState,
+  'snapshot' | 'restoreSnapshot' | 'resetState'
+>;
+
+const cloneCollapsedDetailSectionsState = (
+  source?: Partial<Record<CollapsibleDetailSectionId, boolean>>,
+): Record<CollapsibleDetailSectionId, boolean> => {
+  const next = createCollapsedDetailSectionsState();
+  if (!source) return next;
+  COLLAPSIBLE_DETAIL_SECTION_IDS.forEach((id) => {
+    next[id] = source[id] ?? false;
+  });
+  return next;
+};
+
+const clonePinnedDetailSections = (
+  sections?: readonly PinnedDetailSection[],
+): PinnedDetailSection[] => (sections ?? []).map((entry) => ({ ...entry }));
+
+export const createDefaultReportViewSnapshot = (): ReportViewSnapshot => ({
+  ellipseMode: '1sigma',
+  reportFilterQuery: '',
+  reportObservationTypeFilter: 'all',
+  reportExclusionFilter: 'all',
+  tableRowLimits: {},
+  pinnedDetailSections: [],
+  collapsedDetailSections: createCollapsedDetailSectionsState(),
+});
+
+const normalizeReportViewSnapshot = (
+  snapshot?: ReportViewSnapshot,
+): ReportViewSnapshot => {
+  const fallback = createDefaultReportViewSnapshot();
+  if (!snapshot) return fallback;
+  return {
+    ellipseMode: snapshot.ellipseMode === '95' ? '95' : '1sigma',
+    reportFilterQuery: snapshot.reportFilterQuery ?? '',
+    reportObservationTypeFilter: snapshot.reportObservationTypeFilter ?? 'all',
+    reportExclusionFilter: snapshot.reportExclusionFilter ?? 'all',
+    tableRowLimits: { ...(snapshot.tableRowLimits ?? {}) },
+    pinnedDetailSections: clonePinnedDetailSections(snapshot.pinnedDetailSections),
+    collapsedDetailSections: cloneCollapsedDetailSectionsState(snapshot.collapsedDetailSections),
+  };
+};
 
 export const useReportViewState = ({
   result,
   excludedIds,
+  initialSnapshot,
 }: UseReportViewStateArgs): ReportViewState => {
-  const [ellipseMode, setEllipseMode] = useState<'1sigma' | '95'>('1sigma');
+  const [ellipseMode, setEllipseMode] = useState<ReportEllipseMode>(
+    () => normalizeReportViewSnapshot(initialSnapshot).ellipseMode,
+  );
   const [collapsedDetailSections, setCollapsedDetailSections] = useState<
     Record<CollapsibleDetailSectionId, boolean>
-  >(createCollapsedDetailSectionsState);
-  const [reportFilterQuery, setReportFilterQuery] = useState('');
+  >(() => normalizeReportViewSnapshot(initialSnapshot).collapsedDetailSections);
+  const [reportFilterQuery, setReportFilterQuery] = useState(
+    () => normalizeReportViewSnapshot(initialSnapshot).reportFilterQuery,
+  );
   const [reportObservationTypeFilter, setReportObservationTypeFilter] =
-    useState<ReportObservationTypeFilter>('all');
+    useState<ReportObservationTypeFilter>(
+      () => normalizeReportViewSnapshot(initialSnapshot).reportObservationTypeFilter,
+    );
   const [reportExclusionFilter, setReportExclusionFilter] =
-    useState<ReportExclusionFilter>('all');
-  const [tableRowLimits, setTableRowLimits] = useState<Record<string, number>>({});
-  const [pinnedDetailSections, setPinnedDetailSections] = useState<PinnedDetailSection[]>([]);
+    useState<ReportExclusionFilter>(
+      () => normalizeReportViewSnapshot(initialSnapshot).reportExclusionFilter,
+    );
+  const [tableRowLimits, setTableRowLimits] = useState<Record<string, number>>(
+    () => normalizeReportViewSnapshot(initialSnapshot).tableRowLimits,
+  );
+  const [pinnedDetailSections, setPinnedDetailSections] = useState<PinnedDetailSection[]>(
+    () => normalizeReportViewSnapshot(initialSnapshot).pinnedDetailSections,
+  );
 
   const deferredReportFilterQuery = useDeferredValue(reportFilterQuery);
   const normalizedReportFilterQuery = deferredReportFilterQuery.trim().toLowerCase();
   const ellipseConfidenceScale = ellipseMode === '95' ? 2.4477 : 1;
+  const skipNextAutoWindowResetRef = useRef(false);
   const excludedIdsSignature = useMemo(
     () => Array.from(excludedIds).sort((left, right) => left - right).join(','),
     [excludedIds],
@@ -72,6 +147,10 @@ export const useReportViewState = ({
   );
 
   useEffect(() => {
+    if (skipNextAutoWindowResetRef.current) {
+      skipNextAutoWindowResetRef.current = false;
+      return;
+    }
     setTableRowLimits({});
   }, [
     excludedIdsSignature,
@@ -134,6 +213,43 @@ export const useReportViewState = ({
     }));
   };
 
+  const restoreSnapshot = (nextSnapshot: ReportViewSnapshot) => {
+    const normalizedSnapshot = normalizeReportViewSnapshot(nextSnapshot);
+    skipNextAutoWindowResetRef.current = true;
+    setEllipseMode(normalizedSnapshot.ellipseMode);
+    setReportFilterQuery(normalizedSnapshot.reportFilterQuery);
+    setReportObservationTypeFilter(normalizedSnapshot.reportObservationTypeFilter);
+    setReportExclusionFilter(normalizedSnapshot.reportExclusionFilter);
+    setTableRowLimits(normalizedSnapshot.tableRowLimits);
+    setPinnedDetailSections(normalizedSnapshot.pinnedDetailSections);
+    setCollapsedDetailSections(normalizedSnapshot.collapsedDetailSections);
+  };
+
+  const resetState = () => {
+    restoreSnapshot(createDefaultReportViewSnapshot());
+  };
+
+  const snapshot = useMemo<ReportViewSnapshot>(
+    () => ({
+      ellipseMode,
+      reportFilterQuery,
+      reportObservationTypeFilter,
+      reportExclusionFilter,
+      tableRowLimits: { ...tableRowLimits },
+      pinnedDetailSections: clonePinnedDetailSections(pinnedDetailSections),
+      collapsedDetailSections: cloneCollapsedDetailSectionsState(collapsedDetailSections),
+    }),
+    [
+      collapsedDetailSections,
+      ellipseMode,
+      pinnedDetailSections,
+      reportExclusionFilter,
+      reportFilterQuery,
+      reportObservationTypeFilter,
+      tableRowLimits,
+    ],
+  );
+
   return {
     ellipseMode,
     setEllipseMode,
@@ -157,5 +273,8 @@ export const useReportViewState = ({
     setAllDetailSectionsCollapsed,
     visibleRowsFor,
     showMoreRows,
+    snapshot,
+    restoreSnapshot,
+    resetState,
   };
 };

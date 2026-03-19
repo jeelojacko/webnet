@@ -59,12 +59,17 @@
   - [ ] Phase 2 - ReportView decomposition and QA workspace UX
     - [x] Split ReportView into section components backed by a shared report-section registry
     - [x] Extract shared report table/filter primitives for load-more, filtering, and row selection behavior
-    - [ ] Move report-local UI state into a dedicated hook/module:
+    - [x] Batch complete - persistable workspace review-state extraction
+      - [x] Hoist report view UI state out of `ReportView` so it survives tab switches
+      - [x] Fold report/map selection + pinned observation review context into the shared review-state module
+      - [x] Persist and restore report review snapshot data through browser draft recovery
+      - [x] Add focused hook/recovery regression coverage for restored review state
+    - [x] Move report-local UI state into a dedicated hook/module:
       - [x] Filters
       - [x] Load-more window sizes
       - [x] Collapsed and pinned sections
-      - [ ] Selected station/observation context
-    - [ ] Persist report/map review state through the browser recovery layer
+      - [x] Selected station/observation context
+    - [x] Persist report/map review state through the browser recovery layer
     - [ ] Add fast QA navigation actions for next/previous suspect, jump-to-input, pin selected observation, and focus filter
     - [ ] Add UI regression coverage proving report ordering/content/selection behavior remains stable after decomposition
   - [ ] Phase 3 - scenario runtime and rerun performance

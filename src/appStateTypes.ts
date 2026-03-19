@@ -33,7 +33,9 @@ import type {
   VerticalReductionMode,
   InstrumentLibrary,
   CustomLevelLoopTolerancePreset,
+  Observation,
 } from './types';
+import type { CollapsibleDetailSectionId } from './components/report/reportSectionRegistry';
 
 export type Units = 'm' | 'ft';
 export type UiTheme =
@@ -65,18 +67,40 @@ export type ClusterReviewDecision = {
   status: ClusterReviewStatus;
   canonicalId: string;
 };
+export type ReportEllipseMode = '1sigma' | '95';
+export type ReportObservationTypeFilter = 'all' | Observation['type'];
+export type ReportExclusionFilter = 'all' | 'included' | 'excluded';
+export type WorkspacePinnedDetailSection = {
+  id: CollapsibleDetailSectionId;
+  label: string;
+};
+export type ReportViewStateSnapshot = {
+  ellipseMode: ReportEllipseMode;
+  reportFilterQuery: string;
+  reportObservationTypeFilter: ReportObservationTypeFilter;
+  reportExclusionFilter: ReportExclusionFilter;
+  tableRowLimits: Record<string, number>;
+  pinnedDetailSections: WorkspacePinnedDetailSection[];
+  collapsedDetailSections: Record<CollapsibleDetailSectionId, boolean>;
+};
 export type WorkspaceSelectionState = {
   stationId: string | null;
   observationId: number | null;
   sourceLine: number | null;
   origin: 'report' | 'map' | 'suspect' | 'compare' | null;
 };
+export type WorkspaceReviewState = {
+  reportView: ReportViewStateSnapshot;
+  selection: WorkspaceSelectionState;
+  pinnedObservationIds: number[];
+};
 export type WorkspaceViewState = {
   activeTab: WorkspaceTabKey;
   splitPercent: number;
   isSidebarOpen: boolean;
-  selection: WorkspaceSelectionState;
-  pinnedObservationIds: number[];
+  review: WorkspaceReviewState;
+  selection?: WorkspaceSelectionState;
+  pinnedObservationIds?: number[];
 };
 export type WorkspaceComparisonViewState = {
   stationMovementThreshold: number;

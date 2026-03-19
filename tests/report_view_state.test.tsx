@@ -3,7 +3,10 @@
 import React, { act, useMemo } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { describe, expect, it } from 'vitest';
-import { useReportViewState } from '../src/hooks/useReportViewState';
+import {
+  createDefaultReportViewSnapshot,
+  useReportViewState,
+} from '../src/hooks/useReportViewState';
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -28,6 +31,7 @@ const HookHarness: React.FC<{
         {state.isSectionCollapsed('angles-ts') ? 'collapsed' : 'expanded'}
       </div>
       <div data-testid="pin-count">{state.pinnedDetailSections.length}</div>
+      <div data-testid="ellipse-mode">{state.ellipseMode}</div>
       <button onClick={() => state.setReportFilterQuery('  P100  ')}>set filter</button>
       <button onClick={() => state.showMoreRows('sample')}>show more</button>
       <button onClick={() => state.toggleDetailSection('angles-ts')}>toggle collapse</button>
@@ -36,6 +40,20 @@ const HookHarness: React.FC<{
       </button>
       <button onClick={state.clearPinnedDetailSections}>clear pins</button>
       <button onClick={state.clearFilters}>clear filters</button>
+      <button
+        onClick={() =>
+          state.restoreSnapshot({
+            ...createDefaultReportViewSnapshot(),
+            ellipseMode: '95',
+            reportFilterQuery: 'restored',
+            tableRowLimits: { sample: 140 },
+            pinnedDetailSections: [{ id: 'angles-ts', label: 'Angles (TS)' }],
+            collapsedDetailSections: { ...createDefaultReportViewSnapshot().collapsedDetailSections, 'angles-ts': true },
+          })
+        }
+      >
+        restore snapshot
+      </button>
     </div>
   );
 };
@@ -57,6 +75,8 @@ describe('useReportViewState', () => {
     const collapsedState = () =>
       container.querySelector('[data-testid="collapsed-state"]')?.textContent ?? '';
     const pinCount = () => container.querySelector('[data-testid="pin-count"]')?.textContent ?? '';
+    const ellipseMode = () =>
+      container.querySelector('[data-testid="ellipse-mode"]')?.textContent ?? '';
     const buttons = Array.from(container.querySelectorAll('button'));
 
     expect(visibleCount()).toBe('100');
@@ -98,6 +118,17 @@ describe('useReportViewState', () => {
 
     expect(pinCount()).toBe('0');
     expect(normalizedQuery()).toBe('');
+
+    await act(async () => {
+      buttons[6]?.click();
+      await Promise.resolve();
+    });
+
+    expect(ellipseMode()).toBe('95');
+    expect(normalizedQuery()).toBe('restored');
+    expect(visibleCount()).toBe('140');
+    expect(collapsedState()).toBe('collapsed');
+    expect(pinCount()).toBe('1');
 
     await act(async () => {
       root.unmount();

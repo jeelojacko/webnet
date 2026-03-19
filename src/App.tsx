@@ -48,8 +48,8 @@ import { useExportWorkflow } from './hooks/useExportWorkflow';
 import { useImportReviewWorkflow } from './hooks/useImportReviewWorkflow';
 import { useProjectFileWorkflow } from './hooks/useProjectFileWorkflow';
 import { useProjectOptionsState } from './hooks/useProjectOptionsState';
-import { useQaSelection } from './hooks/useQaSelection';
 import { useRunComparisonState } from './hooks/useRunComparisonState';
+import { createDefaultWorkspaceReviewState, useWorkspaceReviewState } from './hooks/useWorkspaceReviewState';
 import {
   decodeBase64ToUint8Array,
   encodeUint8ArrayToBase64,
@@ -70,7 +70,6 @@ import type {
   UiTheme,
   WorkspaceDraftSnapshot,
   WorkspaceTabKey,
-  WorkspaceViewState,
 } from './appStateTypes';
 import type {
   Instrument,
@@ -1240,24 +1239,6 @@ const App: React.FC<AppProps> = ({
   } = useRunComparisonState<RunSettingsSnapshot, RunDiagnostics>({
     buildSettingDiffs: buildPendingRunSettingDiffs,
   });
-  const qaDerivedResult = useMemo(() => (result ? buildQaDerivedResult(result) : null), [result]);
-  const {
-    selection,
-    selectedObservation,
-    selectedStation,
-    selectObservation,
-    selectStation,
-    clearSelection,
-    restoreSelection,
-    pinnedObservationIds,
-    pinnedObservations,
-    togglePinnedObservation,
-    restorePinnedObservationIds,
-    clearPinnedObservations,
-    selectNextSuspect,
-    selectPreviousSuspect,
-    hasSuspects,
-  } = useQaSelection(qaDerivedResult);
   const selectedDraftCrs = useMemo(
     () =>
       CANADA_CRS_CATALOG.find((row) => row.id === parseSettingsDraft.crsId) ??
@@ -1375,20 +1356,6 @@ const App: React.FC<AppProps> = ({
   }, [isSidebarOpen, pendingEditorJumpLine, setPendingEditorJumpLine]);
 
   useEffect(() => {
-    if (!qaDerivedResult) {
-      clearSelection();
-      return;
-    }
-    if (selection.observationId != null && !qaDerivedResult.observationById.has(selection.observationId)) {
-      clearSelection();
-      return;
-    }
-    if (selection.stationId != null && !qaDerivedResult.stationById.has(selection.stationId)) {
-      clearSelection();
-    }
-  }, [clearSelection, qaDerivedResult, selection.observationId, selection.stationId]);
-
-  useEffect(() => {
     if (!isSettingsModalOpen) return;
     const root = settingsModalContentRef.current;
     if (!root) return;
@@ -1484,73 +1451,6 @@ const App: React.FC<AppProps> = ({
     () => (runComparisonSummary ? buildRunComparisonText(runComparisonSummary) : ''),
     [runComparisonSummary],
   );
-  const workspaceDraftSnapshot = useMemo<WorkspaceDraftSnapshot>(
-    () => ({
-      input,
-      projectIncludeFiles,
-      settings: { ...settings },
-      parseSettings: { ...parseSettings },
-      exportFormat,
-      adjustedPointsExportSettings: cloneAdjustedPointsExportSettings(adjustedPointsExportSettings),
-      projectInstruments: cloneInstrumentLibrary(projectInstruments),
-      selectedInstrument,
-      levelLoopCustomPresets: levelLoopCustomPresets.map((preset) => ({ ...preset })),
-      geoidSourceDataBase64: encodeUint8ArrayToBase64(geoidSourceData),
-      geoidSourceDataLabel,
-      view: {
-        activeTab,
-        splitPercent,
-        isSidebarOpen,
-        selection,
-        pinnedObservationIds,
-      },
-      comparisonView: {
-        stationMovementThreshold: comparisonSelection.stationMovementThreshold,
-        residualDeltaThreshold: comparisonSelection.residualDeltaThreshold,
-      },
-    }),
-    [
-      activeTab,
-      adjustedPointsExportSettings,
-      comparisonSelection.residualDeltaThreshold,
-      comparisonSelection.stationMovementThreshold,
-      geoidSourceData,
-      geoidSourceDataLabel,
-      input,
-      isSidebarOpen,
-      levelLoopCustomPresets,
-      parseSettings,
-      pinnedObservationIds,
-      projectIncludeFiles,
-      projectInstruments,
-      selection,
-      selectedInstrument,
-      settings,
-      splitPercent,
-      exportFormat,
-    ],
-  );
-  const { handleExportResults } = useExportWorkflow({
-    result,
-    exportFormat,
-    units: settings.units,
-    adjustedPointsExportSettings,
-    currentComparisonText,
-    setImportNotice,
-    buildResultsText,
-    buildIndustryListingText,
-    buildLandXmlExportText,
-  });
-
-  function resetRunStateAfterImportedInput() {
-    clearWorkspaceArtifacts();
-    resetAdjustmentWorkflowState();
-    clearRunComparisonState();
-    clearSelection();
-    clearPinnedObservations();
-    resetImportReviewWorkflow();
-  }
-
   const handleInputChange = (value: string) => {
     setInput(value);
     if (importNotice) setImportNotice(null);
@@ -1597,6 +1497,91 @@ const App: React.FC<AppProps> = ({
     activateReportTab: () => setActiveTab('report'),
     recordRunSnapshot,
   });
+  const qaDerivedResult = useMemo(() => (result ? buildQaDerivedResult(result) : null), [result]);
+  const workspaceReviewState = useWorkspaceReviewState({
+    derivedResult: qaDerivedResult,
+    result,
+    excludedIds,
+  });
+  const {
+    selection,
+    selectedObservation,
+    selectedStation,
+    selectObservation,
+    selectStation,
+    clearSelection,
+    pinnedObservations,
+    togglePinnedObservation,
+    selectNextSuspect,
+    selectPreviousSuspect,
+    hasSuspects,
+    snapshot: workspaceReviewSnapshot,
+    restoreSnapshot: restoreWorkspaceReviewSnapshot,
+    resetState: resetWorkspaceReviewState,
+  } = workspaceReviewState;
+  const workspaceDraftSnapshot = useMemo<WorkspaceDraftSnapshot>(
+    () => ({
+      input,
+      projectIncludeFiles,
+      settings: { ...settings },
+      parseSettings: { ...parseSettings },
+      exportFormat,
+      adjustedPointsExportSettings: cloneAdjustedPointsExportSettings(adjustedPointsExportSettings),
+      projectInstruments: cloneInstrumentLibrary(projectInstruments),
+      selectedInstrument,
+      levelLoopCustomPresets: levelLoopCustomPresets.map((preset) => ({ ...preset })),
+      geoidSourceDataBase64: encodeUint8ArrayToBase64(geoidSourceData),
+      geoidSourceDataLabel,
+      view: {
+        activeTab,
+        splitPercent,
+        isSidebarOpen,
+        review: workspaceReviewSnapshot,
+      },
+      comparisonView: {
+        stationMovementThreshold: comparisonSelection.stationMovementThreshold,
+        residualDeltaThreshold: comparisonSelection.residualDeltaThreshold,
+      },
+    }),
+    [
+      activeTab,
+      adjustedPointsExportSettings,
+      comparisonSelection.residualDeltaThreshold,
+      comparisonSelection.stationMovementThreshold,
+      exportFormat,
+      geoidSourceData,
+      geoidSourceDataLabel,
+      input,
+      isSidebarOpen,
+      levelLoopCustomPresets,
+      parseSettings,
+      projectIncludeFiles,
+      projectInstruments,
+      selectedInstrument,
+      settings,
+      splitPercent,
+      workspaceReviewSnapshot,
+    ],
+  );
+  const { handleExportResults } = useExportWorkflow({
+    result,
+    exportFormat,
+    units: settings.units,
+    adjustedPointsExportSettings,
+    currentComparisonText,
+    setImportNotice,
+    buildResultsText,
+    buildIndustryListingText,
+    buildLandXmlExportText,
+  });
+
+  function resetRunStateAfterImportedInput() {
+    clearWorkspaceArtifacts();
+    resetAdjustmentWorkflowState();
+    clearRunComparisonState();
+    resetWorkspaceReviewState();
+    resetImportReviewWorkflow();
+  }
   const applyWorkspaceDraftSnapshot = (snapshot: WorkspaceDraftSnapshot) => {
     const recoveredGeoidBytes = decodeBase64ToUint8Array(snapshot.geoidSourceDataBase64);
     const clonedAdjustedPointsExport = cloneAdjustedPointsExportSettings(
@@ -1606,11 +1591,14 @@ const App: React.FC<AppProps> = ({
     const clonedLevelLoopPresets = snapshot.levelLoopCustomPresets.map((preset) => ({
       ...preset,
     }));
+    const defaultReviewState = createDefaultWorkspaceReviewState();
+    const legacySelection = snapshot.view.selection ?? defaultReviewState.selection;
+    const legacyPinnedObservationIds =
+      snapshot.view.pinnedObservationIds ?? defaultReviewState.pinnedObservationIds;
     clearWorkspaceArtifacts();
     resetAdjustmentWorkflowState();
     clearRunComparisonState();
-    clearSelection();
-    clearPinnedObservations();
+    resetWorkspaceReviewState();
     resetImportReviewWorkflow();
     setInput(snapshot.input);
     setProjectIncludeFiles({ ...snapshot.projectIncludeFiles });
@@ -1647,8 +1635,14 @@ const App: React.FC<AppProps> = ({
     setActiveTab(snapshot.view.activeTab);
     setSplitPercent(Math.max(20, Math.min(80, snapshot.view.splitPercent)));
     setIsSidebarOpen(snapshot.view.isSidebarOpen);
-    restoreSelection(snapshot.view.selection);
-    restorePinnedObservationIds(snapshot.view.pinnedObservationIds.slice());
+    restoreWorkspaceReviewSnapshot(
+      snapshot.view.review ??
+        ({
+          ...defaultReviewState,
+          selection: legacySelection,
+          pinnedObservationIds: legacyPinnedObservationIds,
+        }),
+    );
     setComparisonSelection((prev) => ({
       ...prev,
       baselineRunId: null,
@@ -2173,8 +2167,7 @@ const App: React.FC<AppProps> = ({
     resetImportReviewWorkflow();
     resetAdjustmentWorkflowState();
     clearRunComparisonState();
-    clearSelection();
-    clearPinnedObservations();
+    resetWorkspaceReviewState();
   };
 
   const handleClearCurrentDraft = React.useCallback(() => {
@@ -2572,6 +2565,7 @@ const App: React.FC<AppProps> = ({
                 <ReportView
                   result={result!}
                   units={settings.units}
+                  viewState={workspaceReviewState}
                   runDiagnostics={runDiagnostics}
                   excludedIds={excludedIds}
                   onToggleExclude={toggleExclude}

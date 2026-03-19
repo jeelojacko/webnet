@@ -40,7 +40,7 @@ import {
   type CollapsibleDetailSectionId,
 } from './report/reportSectionRegistry';
 import SolveProfileDiagnosticsSection from './report/SolveProfileDiagnosticsSection';
-import { useReportViewState } from '../hooks/useReportViewState';
+import { useReportViewState, type ReportViewControls } from '../hooks/useReportViewState';
 
 const FT_PER_M = 3.280839895;
 
@@ -146,6 +146,7 @@ const REPORT_STATIC_TOOLTIPS: Record<string, string> = {
 interface ReportViewProps {
   result: AdjustmentResult;
   units: 'm' | 'ft';
+  viewState?: ReportViewControls;
   runDiagnostics: {
     solveProfile:
       | 'webnet'
@@ -250,6 +251,7 @@ interface ReportViewProps {
 const ReportView: React.FC<ReportViewProps> = ({
   result,
   units,
+  viewState,
   runDiagnostics,
   excludedIds,
   onToggleExclude,
@@ -299,6 +301,10 @@ const ReportView: React.FC<ReportViewProps> = ({
       `total=${summary.total}`,
     ].join('; ');
   };
+  const localViewState = useReportViewState({
+    result,
+    excludedIds,
+  });
   const {
     ellipseMode,
     setEllipseMode,
@@ -322,10 +328,7 @@ const ReportView: React.FC<ReportViewProps> = ({
     setAllDetailSectionsCollapsed,
     visibleRowsFor,
     showMoreRows,
-  } = useReportViewState({
-    result,
-    excludedIds,
-  });
+  } = viewState ?? localViewState;
   const rowSelectionClass = useCallback(
     (selected: boolean) =>
       selected

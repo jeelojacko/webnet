@@ -4,11 +4,13 @@ import React, { act, useEffect, useMemo, useState } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { describe, expect, it } from 'vitest';
 import { useWorkspaceRecovery } from '../src/hooks/useWorkspaceRecovery';
+import { createDefaultReportViewSnapshot } from '../src/hooks/useReportViewState';
 import type { WorkspaceDraftSnapshot } from '../src/appStateTypes';
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
 const STORAGE_KEY = 'webnet.workspace-recovery.test';
+const defaultReportViewSnapshot = createDefaultReportViewSnapshot();
 
 const buildSnapshot = (overrides: Partial<WorkspaceDraftSnapshot> = {}): WorkspaceDraftSnapshot => ({
   input: 'INPUT',
@@ -134,13 +136,16 @@ const buildSnapshot = (overrides: Partial<WorkspaceDraftSnapshot> = {}): Workspa
     activeTab: 'report',
     splitPercent: 35,
     isSidebarOpen: true,
-    selection: {
-      stationId: null,
-      observationId: null,
-      sourceLine: null,
-      origin: null,
+    review: {
+      reportView: { ...defaultReportViewSnapshot },
+      selection: {
+        stationId: null,
+        observationId: null,
+        sourceLine: null,
+        origin: null,
+      },
+      pinnedObservationIds: [],
     },
-    pinnedObservationIds: [],
   },
   comparisonView: {
     stationMovementThreshold: 0.001,
@@ -333,13 +338,28 @@ describe('useWorkspaceRecovery', () => {
                   activeTab: 'map',
                   splitPercent: 42,
                   isSidebarOpen: false,
-                  selection: {
-                    stationId: 'P2',
-                    observationId: null,
-                    sourceLine: 12,
-                    origin: 'report',
+                  review: {
+                    reportView: {
+                      ...defaultReportViewSnapshot,
+                      ellipseMode: '95',
+                      reportFilterQuery: 'p2',
+                      reportObservationTypeFilter: 'dist',
+                      reportExclusionFilter: 'included',
+                      tableRowLimits: { sample: 250 },
+                      pinnedDetailSections: [{ id: 'angles-ts', label: 'Angles (TS)' }],
+                      collapsedDetailSections: {
+                        ...defaultReportViewSnapshot.collapsedDetailSections,
+                        'angles-ts': true,
+                      },
+                    },
+                    selection: {
+                      stationId: 'P2',
+                      observationId: null,
+                      sourceLine: 12,
+                      origin: 'report',
+                    },
+                    pinnedObservationIds: [7],
                   },
-                  pinnedObservationIds: [7],
                 },
               }),
             )
@@ -365,6 +385,7 @@ describe('useWorkspaceRecovery', () => {
     expect(replacedRaw).toContain('industry-style');
     expect(replacedRaw).toContain('loaded.dat');
     expect(replacedRaw).toContain('"activeTab":"map"');
+    expect(replacedRaw).toContain('"reportFilterQuery":"p2"');
     expect(replacedRaw).not.toContain('DRAFT INPUT');
 
     await act(async () => {
