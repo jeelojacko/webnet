@@ -2469,7 +2469,6 @@ const App: React.FC<AppProps> = ({
               runHistory={runHistory}
               comparisonSelection={comparisonSelection}
               comparisonSummary={runComparisonSummary}
-              canNavigateSuspects={hasSuspects}
               onSelectBaseline={(snapshotId) =>
                 setComparisonSelection((prev) => ({
                   ...prev,
@@ -2497,14 +2496,6 @@ const App: React.FC<AppProps> = ({
                   residualDeltaThreshold: value,
                 }))
               }
-              onSelectPreviousSuspect={() => {
-                selectPreviousSuspect();
-                setActiveTab('report');
-              }}
-              onSelectNextSuspect={() => {
-                selectNextSuspect();
-                setActiveTab('report');
-              }}
               onSelectStation={(stationId) => {
                 selectStation(stationId, 'compare');
                 setActiveTab('map');
@@ -2513,32 +2504,32 @@ const App: React.FC<AppProps> = ({
                 selectObservation(observationId, 'compare');
                 setActiveTab('report');
               }}
-            />
-          )}
-          {result && (
-            <WorkspaceReviewActions
-              canNavigateSuspects={hasSuspects}
-              canJumpToInput={selection.sourceLine != null}
-              canPinSelectedObservation={selectedObservation != null}
-              isSelectedObservationPinned={
-                selectedObservation != null &&
-                pinnedObservations.some((entry) => entry.id === selectedObservation.id)
+              reviewActionsContent={
+                <WorkspaceReviewActions
+                  canNavigateSuspects={hasSuspects}
+                  canJumpToInput={selection.sourceLine != null}
+                  canPinSelectedObservation={selectedObservation != null}
+                  isSelectedObservationPinned={
+                    selectedObservation != null &&
+                    pinnedObservations.some((entry) => entry.id === selectedObservation.id)
+                  }
+                  onSelectPreviousSuspect={() => {
+                    selectPreviousSuspect();
+                    setActiveTab('report');
+                  }}
+                  onSelectNextSuspect={() => {
+                    selectNextSuspect();
+                    setActiveTab('report');
+                  }}
+                  onJumpToInput={() => {
+                    if (selection.sourceLine != null) handleJumpToSourceLine(selection.sourceLine);
+                  }}
+                  onTogglePinSelectedObservation={() => {
+                    if (selectedObservation) togglePinnedObservation(selectedObservation.id);
+                  }}
+                  onFocusReportFilter={handleFocusReportFilter}
+                />
               }
-              onSelectPreviousSuspect={() => {
-                selectPreviousSuspect();
-                setActiveTab('report');
-              }}
-              onSelectNextSuspect={() => {
-                selectNextSuspect();
-                setActiveTab('report');
-              }}
-              onJumpToInput={() => {
-                if (selection.sourceLine != null) handleJumpToSourceLine(selection.sourceLine);
-              }}
-              onTogglePinSelectedObservation={() => {
-                if (selectedObservation) togglePinnedObservation(selectedObservation.id);
-              }}
-              onFocusReportFilter={handleFocusReportFilter}
             />
           )}
           {(selectedObservation || selectedStation || pinnedObservations.length > 0) && (

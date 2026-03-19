@@ -5,6 +5,7 @@ import { createRoot, type Root } from 'react-dom/client';
 import { describe, expect, it, vi } from 'vitest';
 
 import RunComparisonPanel from '../src/components/RunComparisonPanel';
+import WorkspaceReviewActions from '../src/components/WorkspaceReviewActions';
 import { LSAEngine } from '../src/engine/adjust';
 import {
   buildRunComparison,
@@ -65,6 +66,9 @@ describe('RunComparisonPanel', () => {
     const pinSpy = vi.fn();
     const prevSpy = vi.fn();
     const nextSpy = vi.fn();
+    const jumpSpy = vi.fn();
+    const focusFilterSpy = vi.fn();
+    const pinSelectedSpy = vi.fn();
 
     await act(async () => {
       root.render(
@@ -74,27 +78,44 @@ describe('RunComparisonPanel', () => {
           runHistory={[currentSnapshot, baselineSnapshot]}
           comparisonSelection={selection}
           comparisonSummary={summary}
-          canNavigateSuspects
           onSelectBaseline={baselineSpy}
           onTogglePinBaseline={pinSpy}
           onStationThresholdChange={() => {}}
           onResidualThresholdChange={() => {}}
-          onSelectPreviousSuspect={prevSpy}
-          onSelectNextSuspect={nextSpy}
           onSelectStation={stationSpy}
           onSelectObservation={observationSpy}
+          reviewActionsContent={
+            <WorkspaceReviewActions
+              canNavigateSuspects
+              canJumpToInput
+              canPinSelectedObservation
+              isSelectedObservationPinned={false}
+              onSelectPreviousSuspect={prevSpy}
+              onSelectNextSuspect={nextSpy}
+              onJumpToInput={jumpSpy}
+              onTogglePinSelectedObservation={pinSelectedSpy}
+              onFocusReportFilter={focusFilterSpy}
+            />
+          }
         />,
       );
     });
 
     expect(container.textContent).toContain('Run Compare');
     expect(container.textContent).not.toContain('Moved Stations');
+    expect(container.querySelector('[data-qa-review-action="prev-suspect"]')).toBeNull();
     const expandButton = Array.from(container.querySelectorAll('button')).find((button) =>
       button.textContent?.includes('Show compare'),
     ) as HTMLButtonElement;
+    expect(expandButton.title).toBe('Expand the comparison workspace and QA review actions.');
     await act(async () => {
       expandButton.click();
     });
+
+    expect(container.querySelectorAll('[data-qa-review-action="prev-suspect"]')).toHaveLength(1);
+    expect(container.querySelectorAll('[data-qa-review-action="next-suspect"]')).toHaveLength(1);
+    expect(container.textContent).toContain('Moved Stations');
+
     const stationButton = container.querySelector('[data-run-compare-station]') as HTMLButtonElement;
     const observationButton = container.querySelector(
       '[data-run-compare-observation]',
@@ -103,6 +124,78 @@ describe('RunComparisonPanel', () => {
       button.textContent?.includes('Pin baseline'),
     ) as HTMLButtonElement;
     const select = container.querySelector('select') as HTMLSelectElement;
+    const prevButton = container.querySelector(
+      '[data-qa-review-action="prev-suspect"]',
+    ) as HTMLButtonElement;
+    const nextButton = container.querySelector(
+      '[data-qa-review-action="next-suspect"]',
+    ) as HTMLButtonElement;
+    const focusFilterButton = container.querySelector(
+      '[data-qa-review-action="focus-filter"]',
+    ) as HTMLButtonElement;
+    const jumpInputButton = container.querySelector(
+      '[data-qa-review-action="jump-input"]',
+    ) as HTMLButtonElement;
+    const pinSelectedButton = container.querySelector(
+      '[data-qa-review-action="pin-selected"]',
+    ) as HTMLButtonElement;
+
+    const baselineLabel = Array.from(container.querySelectorAll('div')).find(
+      (node) => node.textContent === 'Baseline',
+    ) as HTMLDivElement;
+    const moveThresholdLabel = Array.from(container.querySelectorAll('div')).find(
+      (node) => node.textContent === 'Move threshold',
+    ) as HTMLDivElement;
+    const residualThresholdLabel = Array.from(container.querySelectorAll('div')).find(
+      (node) => node.textContent === 'Residual threshold',
+    ) as HTMLDivElement;
+    const summaryLabel = Array.from(container.querySelectorAll('div')).find(
+      (node) => node.textContent === 'Summary',
+    ) as HTMLDivElement;
+    const movedStationsLabel = Array.from(container.querySelectorAll('div')).find(
+      (node) => node.textContent === 'Moved Stations',
+    ) as HTMLDivElement;
+    const residualDeltasLabel = Array.from(container.querySelectorAll('div')).find(
+      (node) => node.textContent === 'Residual Deltas',
+    ) as HTMLDivElement;
+
+    expect(baselineLabel.title).toBe(
+      'Select which previous successful run to use as the comparison baseline.',
+    );
+    expect(select.title).toBe('Choose the baseline run used for move/residual comparisons.');
+    expect(moveThresholdLabel.title).toBe(
+      'Minimum station horizontal movement required before a station appears in the moved-stations review list.',
+    );
+    expect(residualThresholdLabel.title).toBe(
+      'Minimum absolute change in standardized residual before an observation appears in the residual-delta review list.',
+    );
+    expect(pinButton.title).toBe(
+      'Pin the current baseline so it stays selected while newer runs are added.',
+    );
+    expect(summaryLabel.title).toBe(
+      'High-level differences between the current run and the selected baseline.',
+    );
+    expect(movedStationsLabel.title).toBe(
+      'Stations whose horizontal movement exceeds the configured move threshold.',
+    );
+    expect(residualDeltasLabel.title).toBe(
+      'Observations whose absolute standardized-residual change exceeds the configured residual threshold.',
+    );
+    expect(prevButton.title).toBe(
+      'Select the previous suspect observation and return review focus to it.',
+    );
+    expect(nextButton.title).toBe(
+      'Select the next suspect observation and return review focus to it.',
+    );
+    expect(focusFilterButton.title).toBe(
+      'Open the report tab if needed and focus the report filter input.',
+    );
+    expect(jumpInputButton.title).toBe(
+      'Jump the input editor to the source line for the current selection.',
+    );
+    expect(pinSelectedButton.title).toBe(
+      'Pin or unpin the currently selected observation for quick return navigation.',
+    );
 
     await act(async () => {
       stationButton.click();
@@ -110,12 +203,11 @@ describe('RunComparisonPanel', () => {
       select.value = 'run-1';
       select.dispatchEvent(new Event('change', { bubbles: true }));
       pinButton.click();
-      Array.from(container.querySelectorAll('button'))
-        .find((button) => button.textContent?.includes('Prev suspect'))
-        ?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-      Array.from(container.querySelectorAll('button'))
-        .find((button) => button.textContent?.includes('Next suspect'))
-        ?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      prevButton.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      nextButton.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      focusFilterButton.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      jumpInputButton.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      pinSelectedButton.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     });
 
     expect(stationSpy).toHaveBeenCalled();
@@ -124,6 +216,19 @@ describe('RunComparisonPanel', () => {
     expect(pinSpy).toHaveBeenCalled();
     expect(prevSpy).toHaveBeenCalled();
     expect(nextSpy).toHaveBeenCalled();
+    expect(focusFilterSpy).toHaveBeenCalled();
+    expect(jumpSpy).toHaveBeenCalled();
+    expect(pinSelectedSpy).toHaveBeenCalled();
+
+    await act(async () => {
+      Array.from(container.querySelectorAll('button'))
+        .find((button) => button.textContent?.includes('Hide compare'))
+        ?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    });
+
+    expect(container.querySelector('[data-qa-review-action="prev-suspect"]')).toBeNull();
+    expect(container.querySelector('[data-qa-review-action="next-suspect"]')).toBeNull();
+    expect(container.textContent).not.toContain('Moved Stations');
 
     await act(async () => {
       root.unmount();

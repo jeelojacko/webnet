@@ -10,6 +10,7 @@ interface WorkspaceReviewActionsProps {
   onJumpToInput: () => void;
   onTogglePinSelectedObservation: () => void;
   onFocusReportFilter: () => void;
+  className?: string;
 }
 
 const actionClassName =
@@ -27,15 +28,22 @@ const WorkspaceReviewActions: React.FC<WorkspaceReviewActionsProps> = ({
   onJumpToInput,
   onTogglePinSelectedObservation,
   onFocusReportFilter,
+  className = '',
 }) => (
-  <div className="border-b border-slate-800 bg-slate-950/90 px-4 py-2 text-xs text-slate-300">
+  <div className={`text-xs text-slate-300 ${className}`.trim()}>
     <div className="flex flex-wrap items-center gap-2">
-      <span className="text-[11px] uppercase tracking-[0.2em] text-slate-500">QA Review</span>
+      <span
+        className="text-[11px] uppercase tracking-[0.2em] text-slate-500"
+        title="Quick review actions for stepping through suspects, jumping to the source input, pinning the active observation, or focusing the report filter."
+      >
+        QA Review
+      </span>
       <button
         type="button"
         data-qa-review-action="prev-suspect"
         onClick={onSelectPreviousSuspect}
         disabled={!canNavigateSuspects}
+        title="Select the previous suspect observation and return review focus to it."
         className={canNavigateSuspects ? actionClassName : disabledActionClassName}
       >
         Prev suspect
@@ -45,6 +53,7 @@ const WorkspaceReviewActions: React.FC<WorkspaceReviewActionsProps> = ({
         data-qa-review-action="next-suspect"
         onClick={onSelectNextSuspect}
         disabled={!canNavigateSuspects}
+        title="Select the next suspect observation and return review focus to it."
         className={canNavigateSuspects ? actionClassName : disabledActionClassName}
       >
         Next suspect
@@ -53,6 +62,7 @@ const WorkspaceReviewActions: React.FC<WorkspaceReviewActionsProps> = ({
         type="button"
         data-qa-review-action="focus-filter"
         onClick={onFocusReportFilter}
+        title="Open the report tab if needed and focus the report filter input."
         className={actionClassName}
       >
         Focus filter
@@ -62,6 +72,7 @@ const WorkspaceReviewActions: React.FC<WorkspaceReviewActionsProps> = ({
         data-qa-review-action="jump-input"
         onClick={onJumpToInput}
         disabled={!canJumpToInput}
+        title="Jump the input editor to the source line for the current selection."
         className={canJumpToInput ? actionClassName : disabledActionClassName}
       >
         Jump to input
@@ -71,6 +82,7 @@ const WorkspaceReviewActions: React.FC<WorkspaceReviewActionsProps> = ({
         data-qa-review-action="pin-selected"
         onClick={onTogglePinSelectedObservation}
         disabled={!canPinSelectedObservation}
+        title="Pin or unpin the currently selected observation for quick return navigation."
         className={canPinSelectedObservation ? actionClassName : disabledActionClassName}
       >
         {isSelectedObservationPinned ? 'Unpin selected' : 'Pin selected'}

@@ -76,6 +76,11 @@
       - [x] Add integration-style regression coverage for review actions plus stable ordering/selection behavior
     - [x] Add fast QA navigation actions for next/previous suspect, jump-to-input, pin selected observation, and focus filter
     - [x] Add UI regression coverage proving report ordering/content/selection behavior remains stable after decomposition
+    - [x] Batch complete - compare-panel QA action consolidation:
+      - [x] Move the shared QA review actions into the collapsible Run Compare section
+      - [x] Remove duplicate suspect-navigation buttons from Run Compare
+      - [x] Add hover-help tooltips to Run Compare labels and QA action buttons
+      - [x] Update compare-panel regression coverage for collapsed/expanded toolbar behavior
   - [ ] Phase 3 - scenario runtime and rerun performance
     - [ ] Introduce a parsed-model/scenario-run service shared by browser and CLI
     - [ ] Parse once per input/settings fingerprint and reuse parsed state for same-input reruns
