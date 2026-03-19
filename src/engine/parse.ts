@@ -19,6 +19,18 @@ import {
 import { expandInputWithIncludes } from './parseIncludes';
 import { finalizeParsePostProcessing } from './parsePostProcessing';
 import {
+  createParseSigmaResolvers,
+  defaultAzimuthSigmaSec,
+  defaultDirectionSigmaSec,
+  defaultDistanceSigma,
+  defaultElevDiffSigma,
+  defaultHorizontalAngleSigmaSec,
+  defaultZenithSigmaSec,
+  extractSigmaTokens,
+  parseSigmaToken,
+  type SigmaToken,
+} from './parseSigmaResolution';
+import {
   DEFAULT_QFIX_ANGULAR_SIGMA_SEC,
   DEFAULT_QFIX_LINEAR_SIGMA_M,
 } from './defaults';
@@ -378,15 +390,6 @@ const resolveStationConstraintMode = (
   return 'approximate';
 };
 
-type SigmaToken =
-  | { kind: 'default' }
-  | { kind: 'numeric'; value: number }
-  | { kind: 'fixed' }
-  | { kind: 'float' };
-
-const FIXED_SIGMA = 1e-9;
-const FLOAT_SIGMA = 1e9;
-
 const wrapToPi = (val: number): number => {
   let v = val;
   if (v > Math.PI) v -= 2 * Math.PI;
@@ -442,75 +445,6 @@ const azimuthFromTo = (
   let az = Math.atan2(dx, dy);
   if (az < 0) az += 2 * Math.PI;
   return { az, dist: Math.sqrt(dx * dx + dy * dy) };
-};
-
-const parseSigmaToken = (token?: string): SigmaToken | null => {
-  if (!token) return null;
-  if (token === '&' || token === '?') return { kind: 'default' };
-  if (token === '!') return { kind: 'fixed' };
-  if (token === '*') return { kind: 'float' };
-  const value = parseFloat(token);
-  if (!Number.isNaN(value)) return { kind: 'numeric', value };
-  return null;
-};
-
-const extractSigmaTokens = (
-  tokens: string[],
-  count: number,
-): { sigmas: SigmaToken[]; rest: string[] } => {
-  const sigmas: SigmaToken[] = [];
-  let idx = 0;
-  for (; idx < tokens.length && sigmas.length < count; idx += 1) {
-    const token = tokens[idx];
-    if (token.includes('/')) break;
-    const parsed = parseSigmaToken(token);
-    if (!parsed) break;
-    sigmas.push(parsed);
-  }
-  return { sigmas, rest: tokens.slice(idx) };
-};
-
-const resolveSigma = (
-  token: SigmaToken | undefined,
-  defaultSigma: number,
-  fixedSigma = FIXED_SIGMA,
-  floatSigma = FLOAT_SIGMA,
-): { sigma: number; source: SigmaSource } => {
-  if (!token || token.kind === 'default') return { sigma: defaultSigma, source: 'default' };
-  if (token.kind === 'numeric') return { sigma: token.value, source: 'explicit' };
-  if (token.kind === 'fixed') return { sigma: fixedSigma, source: 'fixed' };
-  return { sigma: floatSigma, source: 'float' };
-};
-
-const defaultDistanceSigma = (
-  inst: Instrument | undefined,
-  dist: number,
-  edmMode: ParseOptions['edmMode'],
-  fallback = 0,
-): number => {
-  if (!inst) return fallback;
-  const ppmTerm = inst.edm_ppm * 1e-6 * dist;
-  if (edmMode === 'propagated') {
-    return Math.sqrt(inst.edm_const * inst.edm_const + ppmTerm * ppmTerm);
-  }
-  return Math.abs(inst.edm_const) + Math.abs(ppmTerm);
-};
-
-const defaultHorizontalAngleSigmaSec = (inst: Instrument | undefined): number =>
-  inst?.hzPrecision_sec ?? 0;
-
-const defaultDirectionSigmaSec = (inst: Instrument | undefined): number =>
-  inst?.dirPrecision_sec ?? defaultHorizontalAngleSigmaSec(inst);
-
-const defaultAzimuthSigmaSec = (inst: Instrument | undefined): number =>
-  inst?.azBearingPrecision_sec ?? defaultDirectionSigmaSec(inst);
-
-const defaultZenithSigmaSec = (inst: Instrument | undefined): number => inst?.vaPrecision_sec ?? 0;
-
-const defaultElevDiffSigma = (inst: Instrument | undefined, spanMeters: number): number => {
-  if (!inst) return 0;
-  const ppmTerm = (inst.elevDiff_ppm ?? 0) * 1e-6 * Math.abs(spanMeters);
-  return Math.sqrt((inst.elevDiff_const_m ?? 0) ** 2 + ppmTerm ** 2);
 };
 
 const splitStationPairToken = (token: string, separator = '-'): string[] => {
@@ -1022,21 +956,11 @@ export const parseInput = (
     AliasRule,
     RawDirectionShot
   >[] = [];
-  const resolveLinearSigma = (
-    token: SigmaToken | undefined,
-    defaultSigma: number,
-  ): { sigma: number; source: SigmaSource } => {
-    const fixedM = Math.max(1e-12, state.qFixLinearSigmaM ?? DEFAULT_QFIX_LINEAR_SIGMA_M);
-    const fixedInputUnits = state.units === 'ft' ? fixedM * FT_PER_M : fixedM;
-    return resolveSigma(token, defaultSigma, fixedInputUnits, FLOAT_SIGMA);
-  };
-  const resolveAngularSigma = (
-    token: SigmaToken | undefined,
-    defaultSigma: number,
-  ): { sigma: number; source: SigmaSource } => {
-    const fixedSec = Math.max(1e-12, state.qFixAngularSigmaSec ?? DEFAULT_QFIX_ANGULAR_SIGMA_SEC);
-    return resolveSigma(token, defaultSigma, fixedSec, FLOAT_SIGMA);
-  };
+  const {
+    resolveLinearSigma,
+    resolveAngularSigma,
+    resolveLevelingSigma,
+  } = createParseSigmaResolvers(state, logs);
 
   const preloadedClusterMerges = (state.clusterApprovedMerges ?? [])
     .map((merge) => ({
@@ -1083,36 +1007,6 @@ export const parseInput = (
     (state.units === 'ft' ? 1 / FT_PER_M : 1) * (state.linearMultiplier ?? 1);
   const effectiveDistanceMode = (): 'slope' | 'horiz' =>
     state.threeReduceMode && state.deltaMode === 'slope' ? 'horiz' : state.deltaMode;
-  const levelWeightSigmaFromSpanMeters = (spanMeters: number): number => {
-    const levelWeightMmPerKm = state.levelWeight;
-    if (
-      levelWeightMmPerKm == null ||
-      !Number.isFinite(levelWeightMmPerKm) ||
-      levelWeightMmPerKm <= 0
-    ) {
-      return 0;
-    }
-    const spanKm = Math.abs(spanMeters) / 1000;
-    return (levelWeightMmPerKm * spanKm) / 1000;
-  };
-  const resolveLevelingSigma = (
-    token: SigmaToken | undefined,
-    inst: Instrument | undefined,
-    spanMeters: number,
-    contextCode: string,
-    sourceLine: number,
-  ): { sigma: number; source: SigmaSource } => {
-    const absSpanMeters = Math.abs(spanMeters);
-    const levelWeightSigma = levelWeightSigmaFromSpanMeters(absSpanMeters);
-    if (!token && levelWeightSigma > 0) {
-      logs.push(
-        `.LWEIGHT fallback applied for ${contextCode} at line ${sourceLine}: ${state.levelWeight} mm/km over ${(absSpanMeters / 1000).toFixed(4)} km`,
-      );
-    }
-    const instSigma = defaultElevDiffSigma(inst, absSpanMeters);
-    const defaultSigma = Math.sqrt(levelWeightSigma * levelWeightSigma + instSigma * instSigma);
-    return resolveLinearSigma(token, defaultSigma);
-  };
   const parseObservedLinearToken = (
     token: string | undefined,
     toMeters: number,
@@ -3249,12 +3143,12 @@ export const parseInput = (
           scoreDistanceCandidate,
           looksLikeNumericMeasurement,
           resolveLinearSigma: (token, defaultSigma) =>
-            resolveLinearSigma(token as SigmaToken | undefined, defaultSigma),
+            resolveLinearSigma(token, defaultSigma),
           resolveAngularSigma: (token, defaultSigma) =>
-            resolveAngularSigma(token as SigmaToken | undefined, defaultSigma),
+            resolveAngularSigma(token, defaultSigma),
           resolveLevelingSigma: (token, inst, spanMeters, contextCode, sourceLine) =>
             resolveLevelingSigma(
-              token as SigmaToken | undefined,
+              token,
               inst,
               spanMeters,
               contextCode,
@@ -3294,12 +3188,12 @@ export const parseInput = (
             effectiveDistanceMode,
             extractSigmaTokens,
             resolveLinearSigma: (token, defaultSigma) =>
-              resolveLinearSigma(token as SigmaToken | undefined, defaultSigma),
+              resolveLinearSigma(token, defaultSigma),
             resolveAngularSigma: (token, defaultSigma) =>
-              resolveAngularSigma(token as SigmaToken | undefined, defaultSigma),
+              resolveAngularSigma(token, defaultSigma),
             resolveLevelingSigma: (token, inst, spanMeters, contextCode, sourceLine) =>
               resolveLevelingSigma(
-                token as SigmaToken | undefined,
+                token,
                 inst,
                 spanMeters,
                 contextCode,
@@ -3342,12 +3236,12 @@ export const parseInput = (
               effectiveDistanceMode,
               extractSigmaTokens,
               resolveLinearSigma: (token, defaultSigma) =>
-                resolveLinearSigma(token as SigmaToken | undefined, defaultSigma),
+                resolveLinearSigma(token, defaultSigma),
               resolveAngularSigma: (token, defaultSigma) =>
-                resolveAngularSigma(token as SigmaToken | undefined, defaultSigma),
+                resolveAngularSigma(token, defaultSigma),
               resolveLevelingSigma: (token, inst, spanMeters, contextCode, sourceLine) =>
                 resolveLevelingSigma(
-                  token as SigmaToken | undefined,
+                  token,
                   inst,
                   spanMeters,
                   contextCode,

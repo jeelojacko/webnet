@@ -99,8 +99,12 @@
     - [x] Extend the large-project benchmark with rerun latency budgets
     - [x] Add regression/performance coverage for cached reruns and scenario execution parity
   - [ ] Phase 4 - remaining parser and solver core split
+    - [x] Batch complete - parser sigma helpers and cluster dual-pass extraction:
+      - [x] Extract parser sigma/default-resolution helpers into a dedicated module
+      - [x] Extract solver cluster dual-pass orchestration into a dedicated module
+      - [x] Add focused module regression coverage for the extracted parser/solver seams
     - [ ] Finish parser monolith extraction:
-      - [ ] Sigma/default-resolution helpers
+      - [x] Sigma/default-resolution helpers
       - [ ] Alias-resolution and canonical-ID pipeline
       - [ ] Direction-set reduction and treatment logic
       - [ ] Directive command dispatch and handler registry
@@ -109,7 +113,7 @@
       - [ ] Weak-geometry classification and ranking
       - [ ] Reduction-usage summarization
       - [ ] Loop/setup/GPS diagnostic builders
-      - [ ] Cluster dual-pass orchestration
+      - [x] Cluster dual-pass orchestration
     - [ ] Keep parse.ts as orchestration over parser handlers and adjust.ts as solve control over prepared services/builders
     - [ ] Add focused module regression coverage for each extracted parser/solver seam
 

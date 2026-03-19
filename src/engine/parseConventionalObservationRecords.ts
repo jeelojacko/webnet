@@ -1,4 +1,5 @@
 import { RAD_TO_DEG, SEC_TO_RAD } from './angles';
+import type { SigmaToken } from './parseSigmaResolution';
 import type {
   AngleObservation,
   DirObservation,
@@ -73,7 +74,7 @@ type HandleConventionalPrimitiveRecordArgs = {
   extractSigmaTokens: (
     _tokens: string[],
     _count: number,
-  ) => { sigmas: Array<unknown>; rest: string[] };
+  ) => { sigmas: SigmaToken[]; rest: string[] };
   extractHiHt: (_tokens: string[]) => { hi?: number; ht?: number; rest: string[] };
   parseObservedLinearToken: (_token: string | undefined, _toMeters: number) => ObservedParsedValue;
   parseObservedAngleToken: (
@@ -92,15 +93,15 @@ type HandleConventionalPrimitiveRecordArgs = {
   }) => number;
   looksLikeNumericMeasurement: (_token: string) => boolean;
   resolveLinearSigma: (
-    _token: unknown,
+    _token: SigmaToken | undefined,
     _defaultSigma: number,
   ) => { sigma: number; source: SigmaSource };
   resolveAngularSigma: (
-    _token: unknown,
+    _token: SigmaToken | undefined,
     _defaultSigma: number,
   ) => { sigma: number; source: SigmaSource };
   resolveLevelingSigma: (
-    _token: unknown,
+    _token: SigmaToken | undefined,
     _inst: Instrument | undefined,
     _spanMeters: number,
     _contextCode: string,
@@ -701,9 +702,9 @@ export const handleConventionalPrimitiveRecord = ({
     const instCode = state.currentInstrument ?? '';
     const inst = instCode ? instrumentLibrary[instCode] : undefined;
     const { sigmas } = extractSigmaTokens(parts.slice(6), 3);
-    let sigBear: unknown;
-    let sigDist: unknown;
-    let sigVert: unknown;
+    let sigBear: SigmaToken | undefined;
+    let sigDist: SigmaToken | undefined;
+    let sigVert: SigmaToken | undefined;
     if (sigmas.length === 1) {
       sigDist = sigmas[0];
     } else {

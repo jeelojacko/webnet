@@ -1,4 +1,5 @@
 import { SEC_TO_RAD } from './angles';
+import type { SigmaToken } from './parseSigmaResolution';
 import type {
   DirectionFaceSource,
   DirectionRejectDiagnostic,
@@ -64,17 +65,17 @@ type HandleDirectionSetRecordArgs = {
   extractSigmaTokens: (
     _tokens: string[],
     _count: number,
-  ) => { sigmas: Array<unknown>; rest: string[] };
+  ) => { sigmas: SigmaToken[]; rest: string[] };
   resolveLinearSigma: (
-    _token: unknown,
+    _token: SigmaToken | undefined,
     _defaultSigma: number,
   ) => { sigma: number; source: SigmaSource };
   resolveAngularSigma: (
-    _token: unknown,
+    _token: SigmaToken | undefined,
     _defaultSigma: number,
   ) => { sigma: number; source: SigmaSource };
   resolveLevelingSigma: (
-    _token: unknown,
+    _token: SigmaToken | undefined,
     _inst: Instrument | undefined,
     _spanMeters: number,
     _contextCode: string,

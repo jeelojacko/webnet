@@ -2,6 +2,7 @@ import { RAD_TO_DEG, DEG_TO_RAD } from './angles';
 import { geoidGridMetadataSummary, interpolateGeoidUndulation, loadGeoidGridModel } from './geoid';
 import { computeElevationFactor, computeGridFactors, inverseENToGeodetic } from './geodesy';
 import { getCrsDefinition, isGeodeticInsideAreaOfUse } from './crsCatalog';
+import { runClusterDualPassWorkflow } from './adjustmentClusterWorkflow';
 import type { GeoidGridModel } from './geoid';
 import {
   invertSPDFromCholesky,
@@ -46,8 +47,6 @@ import type {
 } from './scenarioRunModels';
 import type {
   AdjustmentResult,
-  ClusterApprovedMerge,
-  ClusterMergeOutcome,
   DatumSufficiencyReport,
   DirectionRejectDiagnostic,
   DistanceObservation,
@@ -3504,75 +3503,6 @@ export class LSAEngine {
     };
   }
 
-  private normalizeApprovedClusterMerges(merges?: ClusterApprovedMerge[]): ClusterApprovedMerge[] {
-    if (!merges || merges.length === 0) return [];
-    const seen = new Set<string>();
-    const cleaned = merges
-      .map((m) => ({
-        aliasId: String(m.aliasId ?? '').trim(),
-        canonicalId: String(m.canonicalId ?? '').trim(),
-      }))
-      .filter((m) => m.aliasId && m.canonicalId && m.aliasId !== m.canonicalId);
-    cleaned.sort(
-      (a, b) =>
-        a.canonicalId.localeCompare(b.canonicalId, undefined, { numeric: true }) ||
-        a.aliasId.localeCompare(b.aliasId, undefined, { numeric: true }),
-    );
-    return cleaned.filter((m) => {
-      const key = `${m.aliasId}|${m.canonicalId}`;
-      if (seen.has(key)) return false;
-      seen.add(key);
-      return true;
-    });
-  }
-
-  private buildClusterMergeOutcomes(
-    pass1Result: AdjustmentResult,
-    merges: ClusterApprovedMerge[],
-  ): ClusterMergeOutcome[] {
-    const is2D = (pass1Result.parseState?.coordMode ?? '3D') === '2D';
-    return merges
-      .map((merge) => {
-        const alias = pass1Result.stations[merge.aliasId];
-        const canonical = pass1Result.stations[merge.canonicalId];
-        if (!alias || !canonical) {
-          return {
-            aliasId: merge.aliasId,
-            canonicalId: merge.canonicalId,
-            missing: true,
-          };
-        }
-        const deltaE = alias.x - canonical.x;
-        const deltaN = alias.y - canonical.y;
-        const deltaH = is2D ? undefined : alias.h - canonical.h;
-        const horizontalDelta = Math.hypot(deltaE, deltaN);
-        const spatialDelta =
-          deltaH == null
-            ? horizontalDelta
-            : Math.sqrt(deltaE * deltaE + deltaN * deltaN + deltaH * deltaH);
-        return {
-          aliasId: merge.aliasId,
-          canonicalId: merge.canonicalId,
-          aliasE: alias.x,
-          aliasN: alias.y,
-          aliasH: is2D ? undefined : alias.h,
-          canonicalE: canonical.x,
-          canonicalN: canonical.y,
-          canonicalH: is2D ? undefined : canonical.h,
-          deltaE,
-          deltaN,
-          deltaH,
-          horizontalDelta,
-          spatialDelta,
-        };
-      })
-      .sort(
-        (a, b) =>
-          a.canonicalId.localeCompare(b.canonicalId, undefined, { numeric: true }) ||
-          a.aliasId.localeCompare(b.aliasId, undefined, { numeric: true }),
-      );
-  }
-
   private runDataCheckOnly(activeObservations: Observation[]): AdjustmentResult {
     this.runMode = 'data-check';
     this.iterations = 0;
@@ -3762,58 +3692,14 @@ export class LSAEngine {
     );
     this.parseOptions = runModeCompatibility.effectiveOptions;
     this.runModeCompatibilityDiagnostics = [...runModeCompatibility.diagnostics];
-
-    const passLabel = this.parseOptions?.clusterPassLabel ?? 'single';
-    const approvedMerges = this.normalizeApprovedClusterMerges(
-      this.parseOptions?.clusterApprovedMerges,
-    );
-    if (approvedMerges.length > 0 && passLabel !== 'pass2' && requestedRunMode === 'adjustment') {
-      const pass1Options: Partial<ParseOptions> = {
-        ...(this.parseOptions ?? {}),
-        clusterApprovedMerges: [],
-        clusterPassLabel: 'pass1',
-        clusterDualPassRan: false,
-        clusterApprovedMergeCount: 0,
-      };
-      const pass1Result = this.solveNestedScenario(pass1Options, this.overrides);
-
-      const pass2Options: Partial<ParseOptions> = {
-        ...(this.parseOptions ?? {}),
-        clusterApprovedMerges: approvedMerges,
-        clusterPassLabel: 'pass2',
-        clusterDualPassRan: true,
-        clusterApprovedMergeCount: approvedMerges.length,
-      };
-      const pass2Result = this.solveNestedScenario(pass2Options, this.overrides);
-      const mergeOutcomes = this.buildClusterMergeOutcomes(pass1Result, approvedMerges);
-
-      pass2Result.parseState = {
-        ...(pass2Result.parseState ?? ({} as ParseOptions)),
-        clusterPassLabel: 'pass2',
-        clusterDualPassRan: true,
-        clusterApprovedMergeCount: approvedMerges.length,
-      };
-
-      if (pass2Result.clusterDiagnostics) {
-        pass2Result.clusterDiagnostics.passMode = 'dual-pass';
-        pass2Result.clusterDiagnostics.pass1CandidateCount =
-          pass1Result.clusterDiagnostics?.candidateCount ?? 0;
-        pass2Result.clusterDiagnostics.approvedMergeCount = approvedMerges.length;
-        pass2Result.clusterDiagnostics.appliedMerges = approvedMerges;
-        pass2Result.clusterDiagnostics.mergeOutcomes = mergeOutcomes;
-      }
-
-      pass2Result.logs = [
-        `Cluster dual-pass: pass1 candidates=${pass1Result.clusterDiagnostics?.candidateCount ?? 0}, approved merges=${approvedMerges.length}`,
-        ...mergeOutcomes.slice(0, 20).map((row) => {
-          if (row.missing) {
-            return `  merge ${row.aliasId}->${row.canonicalId}: missing station data in pass1`;
-          }
-          return `  merge ${row.aliasId}->${row.canonicalId}: dE=${(row.deltaE ?? 0).toFixed(4)}m dN=${(row.deltaN ?? 0).toFixed(4)}m dH=${row.deltaH != null ? `${row.deltaH.toFixed(4)}m` : '-'} d2D=${(row.horizontalDelta ?? 0).toFixed(4)}m d3D=${row.spatialDelta != null ? `${row.spatialDelta.toFixed(4)}m` : '-'}`;
-        }),
-        ...pass2Result.logs,
-      ];
-      return pass2Result;
+    const clusterWorkflowResult = runClusterDualPassWorkflow({
+      requestedRunMode,
+      parseOptions: this.parseOptions,
+      solveScenario: (parseOptions, overrides) => this.solveNestedScenario(parseOptions, overrides),
+      overrides: this.overrides,
+    });
+    if (clusterWorkflowResult) {
+      return clusterWorkflowResult;
     }
 
     const parsed = this.parsedResult
