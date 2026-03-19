@@ -13,6 +13,7 @@ import {
   zeros,
 } from './matrix';
 import { parseInput } from './parse';
+import { getCachedParsedModel, recordScenarioSolve } from './scenarioParsedModelCache';
 import {
   applyCoordinateConstraintCorrelationWeights,
   buildCoordinateConstraints,
@@ -40,6 +41,9 @@ import type {
   RobustWeightSummary,
   SolveParameterIndex,
 } from './adjustmentSolveTypes';
+import type {
+  ScenarioRunRequest,
+} from './scenarioRunModels';
 import type {
   AdjustmentResult,
   ClusterApprovedMerge,
@@ -2046,6 +2050,35 @@ export class LSAEngine {
     this.logs.push(msg);
   }
 
+  private solveNestedScenario(
+    parseOptions: Partial<ParseOptions>,
+    overrides: Record<number, ObservationOverride> | undefined,
+    excludeIds = this.excludeIds,
+  ): AdjustmentResult {
+    const request: ScenarioRunRequest = {
+      input: this.input,
+      maxIterations: this.maxIterations,
+      convergenceThreshold: this.convergenceThreshold,
+      instrumentLibrary: this.instrumentLibrary,
+      excludeIds,
+      overrides,
+      parseOptions,
+      geoidSourceData: this.geoidSourceData,
+    };
+    recordScenarioSolve();
+    return new LSAEngine({
+      input: request.input,
+      maxIterations: request.maxIterations,
+      instrumentLibrary: request.instrumentLibrary,
+      convergenceThreshold: request.convergenceThreshold,
+      excludeIds: request.excludeIds,
+      overrides: request.overrides,
+      parseOptions: request.parseOptions,
+      geoidSourceData: request.geoidSourceData,
+      parsedResult: getCachedParsedModel(request),
+    }).solve();
+  }
+
   private resolveRunModeCompatibilityOptions(
     requestedRunMode: RunMode,
     options: Partial<ParseOptions>,
@@ -3666,17 +3699,7 @@ export class LSAEngine {
     let finalResult: AdjustmentResult | null = null;
 
     for (let cycle = 1; cycle <= maxCycles; cycle += 1) {
-      const cycleEngine = new LSAEngine({
-        input: this.input,
-        maxIterations: this.maxIterations,
-        instrumentLibrary: this.instrumentLibrary,
-        convergenceThreshold: this.convergenceThreshold,
-        excludeIds: this.excludeIds,
-        overrides: workingOverrides,
-        parseOptions: baseOptions,
-        geoidSourceData: this.geoidSourceData,
-      });
-      const solved = cycleEngine.solve();
+      const solved = this.solveNestedScenario(baseOptions, workingOverrides);
       finalResult = solved;
       const ranked = [...solved.observations]
         .filter((obs) => Number.isFinite(obs.stdRes))
@@ -3752,16 +3775,7 @@ export class LSAEngine {
         clusterDualPassRan: false,
         clusterApprovedMergeCount: 0,
       };
-      const pass1Engine = new LSAEngine({
-        input: this.input,
-        maxIterations: this.maxIterations,
-        instrumentLibrary: this.instrumentLibrary,
-        convergenceThreshold: this.convergenceThreshold,
-        excludeIds: this.excludeIds,
-        overrides: this.overrides,
-        parseOptions: pass1Options,
-      });
-      const pass1Result = pass1Engine.solve();
+      const pass1Result = this.solveNestedScenario(pass1Options, this.overrides);
 
       const pass2Options: Partial<ParseOptions> = {
         ...(this.parseOptions ?? {}),
@@ -3770,16 +3784,7 @@ export class LSAEngine {
         clusterDualPassRan: true,
         clusterApprovedMergeCount: approvedMerges.length,
       };
-      const pass2Engine = new LSAEngine({
-        input: this.input,
-        maxIterations: this.maxIterations,
-        instrumentLibrary: this.instrumentLibrary,
-        convergenceThreshold: this.convergenceThreshold,
-        excludeIds: this.excludeIds,
-        overrides: this.overrides,
-        parseOptions: pass2Options,
-      });
-      const pass2Result = pass2Engine.solve();
+      const pass2Result = this.solveNestedScenario(pass2Options, this.overrides);
       const mergeOutcomes = this.buildClusterMergeOutcomes(pass1Result, approvedMerges);
 
       pass2Result.parseState = {

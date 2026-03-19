@@ -82,6 +82,10 @@
       - [x] Add hover-help tooltips to Run Compare labels and QA action buttons
       - [x] Update compare-panel regression coverage for collapsed/expanded toolbar behavior
   - [ ] Phase 3 - scenario runtime and rerun performance
+    - [x] Batch complete - nested scenario cache reuse and compare execution:
+      - [x] Route nested blunder-detect and cluster dual-pass reruns through the shared parsed-state cache
+      - [x] Add an explicit grouped comparison-scenario executor on top of the shared scenario service
+      - [x] Add regression coverage for nested rerun cache hits and grouped comparison reuse
     - [x] Batch complete - shared scenario cache foundation:
       - [x] Add a shared parsed-model/scenario-run service under the solve path
       - [x] Reuse parsed state for unchanged-input reruns plus exclusion/what-if/auto-adjust scenario solves
@@ -89,7 +93,7 @@
       - [x] Extend benchmark/regression coverage for cached reruns and scenario cache reuse
     - [x] Introduce a parsed-model/scenario-run service shared by browser and CLI
     - [x] Parse once per input/settings fingerprint and reuse parsed state for same-input reruns
-    - [ ] Reuse parsed state for exclusion trials, suspect-impact analysis, auto-adjust cycles, and compare scenarios
+    - [x] Reuse parsed state for exclusion trials, suspect-impact analysis, auto-adjust cycles, and compare scenarios
     - [x] Replace repeated parse/setup work for unchanged-input reruns without changing worker protocol or CLI behavior
     - [x] Move scenario workflows off ad hoc engine re-instantiation paths onto the shared scenario executor contract
     - [x] Extend the large-project benchmark with rerun latency budgets

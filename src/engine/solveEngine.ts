@@ -2,8 +2,9 @@ import {
   getScenarioRunServiceStats,
   resetScenarioRunServiceCache,
   runAdjustmentScenario,
-  type ScenarioRunRequest,
+  runComparedAdjustmentScenarios,
 } from './scenarioRunService';
+import type { ScenarioRunRequest } from './scenarioRunModels';
 import type {
   AdjustmentResult,
   ClusterApprovedMerge,
@@ -15,7 +16,11 @@ export const solveEngine = (request: SolveEngineRequest): AdjustmentResult => {
   return runAdjustmentScenario(request);
 };
 
-export { getScenarioRunServiceStats, resetScenarioRunServiceCache };
+export {
+  getScenarioRunServiceStats,
+  resetScenarioRunServiceCache,
+  runComparedAdjustmentScenarios,
+};
 
 export const normalizeClusterApprovedMerges = (
   merges: ClusterApprovedMerge[],
