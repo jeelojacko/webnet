@@ -11,11 +11,11 @@ import WorkspaceChrome from './components/WorkspaceChrome';
 
 import { DEFAULT_INPUT } from './defaultInput';
 import { RAD_TO_DEG, dmsToRad } from './engine/angles';
-import { createDirectRunPipeline } from './engine/directRunPipeline';
 import {
   buildQaDerivedResult,
   buildRunComparisonText,
 } from './engine/qaWorkflow';
+import { runAdjustmentSession } from './engine/runSession';
 import { createRunProfileBuilders } from './engine/runProfileBuilders';
 import { createRunResultsTextBuilder } from './engine/runResultsTextBuilder';
 import { createRunOutputBuilders } from './engine/runOutputBuilders';
@@ -1440,13 +1440,6 @@ const App: React.FC<AppProps> = ({
     runDiagnostics,
     buildRunDiagnostics,
   });
-  const [runWithExclusionsDirect] = useState(() =>
-    createDirectRunPipeline({
-      defaultIndustryInstrumentCode: INDUSTRY_DEFAULT_INSTRUMENT_CODE,
-      defaultIndustryInstrument: INDUSTRY_DEFAULT_INSTRUMENT,
-      normalizeSolveProfile,
-    }),
-  );
   const [reportFilterFocusRequestKey, setReportFilterFocusRequestKey] = useState(0);
 
   const currentComparisonText = useMemo(
@@ -1490,7 +1483,7 @@ const App: React.FC<AppProps> = ({
     currentRunSettingsSnapshot,
     result,
     buildRunDiagnostics,
-    directRunner: runWithExclusionsDirect,
+    directRunner: runAdjustmentSession,
     setResult,
     setRunDiagnostics,
     setRunElapsedMs,

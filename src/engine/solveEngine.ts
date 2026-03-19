@@ -1,36 +1,21 @@
-import { LSAEngine } from './adjust';
+import {
+  getScenarioRunServiceStats,
+  resetScenarioRunServiceCache,
+  runAdjustmentScenario,
+  type ScenarioRunRequest,
+} from './scenarioRunService';
 import type {
   AdjustmentResult,
   ClusterApprovedMerge,
-  InstrumentLibrary,
-  ObservationOverride,
-  ParseOptions,
 } from '../types';
 
-export interface SolveEngineRequest {
-  input: string;
-  maxIterations: number;
-  convergenceThreshold?: number;
-  instrumentLibrary?: InstrumentLibrary;
-  excludeIds?: Set<number>;
-  overrides?: Record<number, ObservationOverride>;
-  parseOptions?: Partial<ParseOptions>;
-  geoidSourceData?: ArrayBuffer | Uint8Array;
-}
+export type SolveEngineRequest = ScenarioRunRequest;
 
 export const solveEngine = (request: SolveEngineRequest): AdjustmentResult => {
-  const engine = new LSAEngine({
-    input: request.input,
-    maxIterations: request.maxIterations,
-    convergenceThreshold: request.convergenceThreshold,
-    instrumentLibrary: request.instrumentLibrary,
-    excludeIds: request.excludeIds,
-    overrides: request.overrides,
-    parseOptions: request.parseOptions,
-    geoidSourceData: request.geoidSourceData,
-  });
-  return engine.solve();
+  return runAdjustmentScenario(request);
 };
+
+export { getScenarioRunServiceStats, resetScenarioRunServiceCache };
 
 export const normalizeClusterApprovedMerges = (
   merges: ClusterApprovedMerge[],

@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
 import { runAdjustmentSession } from '../src/engine/runSession';
+import {
+  getScenarioRunServiceStats,
+  resetScenarioRunServiceCache,
+} from '../src/engine/solveEngine';
 import { createRunSessionRequest } from './helpers/runSessionRequest';
 
 describe('runAdjustmentSession', () => {
@@ -36,5 +40,19 @@ describe('runAdjustmentSession', () => {
     expect(outcome.droppedClusterMerges).toBe(1);
     expect(outcome.effectiveExcludedIds).toEqual([]);
     expect(outcome.effectiveClusterApprovedMerges).toEqual([]);
+  });
+
+  it('reuses the parsed scenario for unchanged-input reruns', () => {
+    resetScenarioRunServiceCache();
+    const request = createRunSessionRequest();
+
+    runAdjustmentSession(request);
+    const afterFirstRun = getScenarioRunServiceStats();
+    runAdjustmentSession(request);
+    const afterSecondRun = getScenarioRunServiceStats();
+
+    expect(afterFirstRun.parseCacheMisses).toBe(1);
+    expect(afterSecondRun.parseCacheMisses).toBe(1);
+    expect(afterSecondRun.parseCacheHits).toBeGreaterThan(afterFirstRun.parseCacheHits);
   });
 });

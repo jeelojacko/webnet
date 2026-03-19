@@ -9,6 +9,10 @@ import MapView from '../src/components/MapView';
 import ReportView from '../src/components/ReportView';
 import { buildQaDerivedResult } from '../src/engine/qaWorkflow';
 import { runAdjustmentSession } from '../src/engine/runSession';
+import {
+  getScenarioRunServiceStats,
+  resetScenarioRunServiceCache,
+} from '../src/engine/solveEngine';
 import { createRunSessionRequest } from './helpers/runSessionRequest';
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
@@ -23,6 +27,7 @@ interface BrowserBenchmarkFixture {
   expectedObservationCount: number;
   reportWindowSize: number;
   solveBudgetMs: number;
+  rerunBudgetMs: number;
   renderBudgetMs: number;
 }
 
@@ -52,6 +57,7 @@ describe('browser large-project benchmark coverage', () => {
   it.each(benchmarkFixtures)(
     'keeps the large-project run-session solve and initial report/map render within guardrails for %s',
     async (fixture) => {
+      resetScenarioRunServiceCache();
       const input = buildBenchmarkInput(fixture);
       const request = createRunSessionRequest({
         input,
@@ -72,6 +78,16 @@ describe('browser large-project benchmark coverage', () => {
       expect(outcome.result.observations).toHaveLength(fixture.expectedObservationCount);
       expect(outcome.elapsedMs).toBeGreaterThanOrEqual(0);
       expect(solveDurationMs).toBeLessThan(fixture.solveBudgetMs);
+      expect(getScenarioRunServiceStats().parseCacheMisses).toBe(1);
+
+      const rerunStart = performance.now();
+      const rerunOutcome = runAdjustmentSession(request);
+      const rerunDurationMs = performance.now() - rerunStart;
+
+      expect(rerunOutcome.result.success).toBe(true);
+      expect(rerunOutcome.result.converged).toBe(true);
+      expect(rerunDurationMs).toBeLessThan(fixture.rerunBudgetMs);
+      expect(getScenarioRunServiceStats().parseCacheHits).toBeGreaterThanOrEqual(1);
 
       const container = document.createElement('div');
       document.body.appendChild(container);

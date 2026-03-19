@@ -82,13 +82,18 @@
       - [x] Add hover-help tooltips to Run Compare labels and QA action buttons
       - [x] Update compare-panel regression coverage for collapsed/expanded toolbar behavior
   - [ ] Phase 3 - scenario runtime and rerun performance
-    - [ ] Introduce a parsed-model/scenario-run service shared by browser and CLI
-    - [ ] Parse once per input/settings fingerprint and reuse parsed state for same-input reruns
+    - [x] Batch complete - shared scenario cache foundation:
+      - [x] Add a shared parsed-model/scenario-run service under the solve path
+      - [x] Reuse parsed state for unchanged-input reruns plus exclusion/what-if/auto-adjust scenario solves
+      - [x] Move the browser direct fallback onto the shared run-session executor path
+      - [x] Extend benchmark/regression coverage for cached reruns and scenario cache reuse
+    - [x] Introduce a parsed-model/scenario-run service shared by browser and CLI
+    - [x] Parse once per input/settings fingerprint and reuse parsed state for same-input reruns
     - [ ] Reuse parsed state for exclusion trials, suspect-impact analysis, auto-adjust cycles, and compare scenarios
-    - [ ] Replace repeated parse/setup work for unchanged-input reruns without changing worker protocol or CLI behavior
-    - [ ] Move scenario workflows off ad hoc engine re-instantiation paths onto the shared scenario executor contract
-    - [ ] Extend the large-project benchmark with rerun latency budgets
-    - [ ] Add regression/performance coverage for cached reruns and scenario execution parity
+    - [x] Replace repeated parse/setup work for unchanged-input reruns without changing worker protocol or CLI behavior
+    - [x] Move scenario workflows off ad hoc engine re-instantiation paths onto the shared scenario executor contract
+    - [x] Extend the large-project benchmark with rerun latency budgets
+    - [x] Add regression/performance coverage for cached reruns and scenario execution parity
   - [ ] Phase 4 - remaining parser and solver core split
     - [ ] Finish parser monolith extraction:
       - [ ] Sigma/default-resolution helpers

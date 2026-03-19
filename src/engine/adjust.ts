@@ -59,6 +59,7 @@ import type {
   Instrument,
   ObservationOverride,
   ParseOptions,
+  ParseResult,
   CoordSystemDiagnosticCode,
   CoordInputClass,
   CrsOffReason,
@@ -226,6 +227,22 @@ const summarizeReductionUsage = (observations: Observation[]): ReductionUsageSum
   return summary;
 };
 
+const cloneParsedResultValue = <T,>(value: T): T => {
+  if (value == null || typeof value !== 'object') return value;
+  if (Array.isArray(value)) {
+    return value.map((entry) => cloneParsedResultValue(entry)) as T;
+  }
+  if (value instanceof Uint8Array) {
+    return new Uint8Array(value) as T;
+  }
+  return Object.fromEntries(
+    Object.entries(value as Record<string, unknown>).map(([key, entryValue]) => [
+      key,
+      cloneParsedResultValue(entryValue),
+    ]),
+  ) as T;
+};
+
 const classifyWeakGeometrySeverity = (
   relativeToMedian: number,
   ellipseRatio?: number,
@@ -245,6 +262,7 @@ interface EngineOptions {
   options?: Partial<ParseOptions>;
   parseOptions?: Partial<ParseOptions>;
   geoidSourceData?: ArrayBuffer | Uint8Array;
+  parsedResult?: ParseResult;
 }
 export class LSAEngine {
   input: string;
@@ -262,6 +280,7 @@ export class LSAEngine {
   private Qxx: number[][] | null = null;
   private excludeIds?: Set<number>;
   private overrides?: Record<number, ObservationOverride>;
+  private parsedResult?: ParseResult;
   private maxCondition = 1e12;
   private maxStdRes = 10;
   private localTestCritical = 3.29;
@@ -2002,6 +2021,7 @@ export class LSAEngine {
     options,
     parseOptions,
     geoidSourceData,
+    parsedResult,
   }: EngineOptions) {
     this.input = input;
     this.maxIterations = maxIterations;
@@ -2019,6 +2039,7 @@ export class LSAEngine {
         : geoidSourceData instanceof ArrayBuffer
           ? new Uint8Array(geoidSourceData)
           : undefined;
+    this.parsedResult = parsedResult;
   }
 
   private log(msg: string) {
@@ -3790,7 +3811,9 @@ export class LSAEngine {
       return pass2Result;
     }
 
-    const parsed = parseInput(this.input, this.instrumentLibrary, this.parseOptions);
+    const parsed = this.parsedResult
+      ? cloneParsedResultValue(this.parsedResult)
+      : parseInput(this.input, this.instrumentLibrary, this.parseOptions);
     this.stations = parsed.stations;
     this.observations = parsed.observations;
     this.unknowns = parsed.unknowns;
