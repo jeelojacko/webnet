@@ -127,6 +127,11 @@
       - [x] Extract parsed/used-in-solve reduction-usage summarization into a dedicated shared engine helper
       - [x] Rewire `adjust.ts` and parse post-processing to consume the extracted summary helper
       - [x] Add focused regression coverage for reduction-mode counting across parsed and filtered solve paths
+    - [x] Batch complete - loop/setup/GPS diagnostic builder extraction:
+      - [x] Extract GPS and differential-level loop diagnostic builders into a dedicated solver module
+      - [x] Extract setup-summary and traverse-closure ranking builders into a dedicated solver module
+      - [x] Rewire `adjust.ts` to consume the extracted diagnostic builders without changing report/log payloads
+      - [x] Add focused regression coverage for extracted loop/setup/traverse diagnostic builders
     - [ ] Finish parser monolith extraction:
       - [x] Sigma/default-resolution helpers
       - [x] Alias-resolution and canonical-ID pipeline
@@ -136,7 +141,7 @@
       - [x] Statistical test math and quantile helpers
       - [x] Weak-geometry classification and ranking
       - [x] Reduction-usage summarization
-      - [ ] Loop/setup/GPS diagnostic builders
+      - [x] Loop/setup/GPS diagnostic builders
       - [x] Cluster dual-pass orchestration
     - [ ] Keep parse.ts as orchestration over parser handlers and adjust.ts as solve control over prepared services/builders
     - [ ] Add focused module regression coverage for each extracted parser/solver seam

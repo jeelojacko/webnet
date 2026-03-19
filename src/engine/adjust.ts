@@ -37,6 +37,11 @@ import {
 } from './adjustmentStatisticsBuilders';
 import { buildChiSquareSummary } from './adjustmentStatisticalMath';
 import { buildWeakGeometryDiagnostics } from './adjustmentWeakGeometry';
+import { buildGpsLoopDiagnostics, buildLevelingLoopDiagnostics } from './adjustmentLoopDiagnostics';
+import {
+  buildSetupDiagnostics,
+  buildTraverseDiagnostics,
+} from './adjustmentSetupTraverseDiagnostics';
 import { summarizeReductionUsage } from './reductionUsageSummary';
 import type {
   CoordinateConstraintRowPlacement,
@@ -56,7 +61,6 @@ import type {
   DirectionObservation,
   GpsObservation,
   LevelObservation,
-  LevelingLoopSegmentSuspectRow,
   Observation,
   Station,
   StationId,
@@ -817,555 +821,6 @@ export class LSAEngine {
         `GPS AddHiHt preprocessing: vectors=${vectorCount}, adjusted=${appliedCount} (+${positiveCount}/-${negativeCount}/neutral=${neutralCount}), defaultZero=${defaultZeroCount}, missingHeight=${missingHeightCount}, scale[min=${(this.parseState.gpsAddHiHtScaleMin ?? 1).toFixed(8)}, max=${(this.parseState.gpsAddHiHtScaleMax ?? 1).toFixed(8)}]`,
       );
     }
-  }
-
-  private computeGpsLoopDiagnostics(
-    gpsObservations: GpsObservation[],
-  ): NonNullable<AdjustmentResult['gpsLoopDiagnostics']> {
-    type LoopEdge = {
-      idx: number;
-      obsId: number;
-      from: StationId;
-      to: StationId;
-      dE: number;
-      dN: number;
-      distance: number;
-      sourceLine?: number;
-    };
-    type ParentInfo = {
-      parent?: StationId;
-      edgeIdx?: number;
-      dirFromParent?: 1 | -1;
-      depth: number;
-      component: number;
-    };
-    type AdjacencyRow = {
-      edgeIdx: number;
-      neighbor: StationId;
-      dir: 1 | -1;
-    };
-
-    const edges: LoopEdge[] = gpsObservations.map((obs, idx) => {
-      const vec = this.gpsObservedVector(obs);
-      return {
-        idx,
-        obsId: obs.id,
-        from: obs.from,
-        to: obs.to,
-        dE: vec.dE,
-        dN: vec.dN,
-        distance: Math.hypot(vec.dE, vec.dN),
-        sourceLine: obs.sourceLine,
-      };
-    });
-    const stations = [...new Set(edges.flatMap((edge) => [edge.from, edge.to]))].sort((a, b) =>
-      a.localeCompare(b, undefined, { numeric: true }),
-    );
-    const adjacency = new Map<StationId, AdjacencyRow[]>();
-    edges.forEach((edge) => {
-      const fromList = adjacency.get(edge.from) ?? [];
-      fromList.push({ edgeIdx: edge.idx, neighbor: edge.to, dir: 1 });
-      adjacency.set(edge.from, fromList);
-      const toList = adjacency.get(edge.to) ?? [];
-      toList.push({ edgeIdx: edge.idx, neighbor: edge.from, dir: -1 });
-      adjacency.set(edge.to, toList);
-    });
-    adjacency.forEach((rows) => {
-      rows.sort(
-        (a, b) =>
-          a.neighbor.localeCompare(b.neighbor, undefined, { numeric: true }) ||
-          a.edgeIdx - b.edgeIdx,
-      );
-    });
-
-    const parentInfo = new Map<StationId, ParentInfo>();
-    const treeEdgeIdx = new Set<number>();
-    let componentId = 0;
-
-    stations.forEach((start) => {
-      if (parentInfo.has(start)) return;
-      componentId += 1;
-      parentInfo.set(start, { depth: 0, component: componentId });
-      const queue: StationId[] = [start];
-      for (let q = 0; q < queue.length; q += 1) {
-        const current = queue[q];
-        const currentInfo = parentInfo.get(current);
-        if (!currentInfo) continue;
-        (adjacency.get(current) ?? []).forEach((row) => {
-          if (!parentInfo.has(row.neighbor)) {
-            parentInfo.set(row.neighbor, {
-              parent: current,
-              edgeIdx: row.edgeIdx,
-              dirFromParent: row.dir,
-              depth: currentInfo.depth + 1,
-              component: componentId,
-            });
-            treeEdgeIdx.add(row.edgeIdx);
-            queue.push(row.neighbor);
-          }
-        });
-      }
-    });
-
-    const buildPath = (
-      from: StationId,
-      to: StationId,
-    ): { stations: StationId[]; segments: { edgeIdx: number; dir: number }[] } | null => {
-      const fromInfo = parentInfo.get(from);
-      const toInfo = parentInfo.get(to);
-      if (!fromInfo || !toInfo || fromInfo.component !== toInfo.component) return null;
-
-      let a = from;
-      let b = to;
-      const upSegments: { edgeIdx: number; dir: number }[] = [];
-      const downSegments: { edgeIdx: number; dir: number }[] = [];
-
-      while ((parentInfo.get(a)?.depth ?? 0) > (parentInfo.get(b)?.depth ?? 0)) {
-        const info = parentInfo.get(a);
-        if (!info || info.parent == null || info.edgeIdx == null || info.dirFromParent == null)
-          return null;
-        upSegments.push({ edgeIdx: info.edgeIdx, dir: -info.dirFromParent });
-        a = info.parent;
-      }
-      while ((parentInfo.get(b)?.depth ?? 0) > (parentInfo.get(a)?.depth ?? 0)) {
-        const info = parentInfo.get(b);
-        if (!info || info.parent == null || info.edgeIdx == null || info.dirFromParent == null)
-          return null;
-        downSegments.push({ edgeIdx: info.edgeIdx, dir: info.dirFromParent });
-        b = info.parent;
-      }
-      while (a !== b) {
-        const infoA = parentInfo.get(a);
-        const infoB = parentInfo.get(b);
-        if (
-          !infoA ||
-          !infoB ||
-          infoA.parent == null ||
-          infoB.parent == null ||
-          infoA.edgeIdx == null ||
-          infoB.edgeIdx == null ||
-          infoA.dirFromParent == null ||
-          infoB.dirFromParent == null
-        ) {
-          return null;
-        }
-        upSegments.push({ edgeIdx: infoA.edgeIdx, dir: -infoA.dirFromParent });
-        downSegments.push({ edgeIdx: infoB.edgeIdx, dir: infoB.dirFromParent });
-        a = infoA.parent;
-        b = infoB.parent;
-      }
-
-      const segments = [...upSegments, ...downSegments.reverse()];
-      const stationPath: StationId[] = [from];
-      let cursor = from;
-      segments.forEach((seg) => {
-        const edge = edges[seg.edgeIdx];
-        if (!edge) return;
-        const next = seg.dir >= 0 ? edge.to : edge.from;
-        if (cursor === next) {
-          const alt = seg.dir >= 0 ? edge.from : edge.to;
-          stationPath.push(alt);
-          cursor = alt;
-          return;
-        }
-        stationPath.push(next);
-        cursor = next;
-      });
-      if (stationPath[stationPath.length - 1] !== to) stationPath.push(to);
-      return { stations: stationPath, segments };
-    };
-
-    const nonTreeEdges = edges
-      .filter((edge) => !treeEdgeIdx.has(edge.idx))
-      .sort((a, b) => {
-        const la = a.sourceLine ?? Number.MAX_SAFE_INTEGER;
-        const lb = b.sourceLine ?? Number.MAX_SAFE_INTEGER;
-        if (la !== lb) return la - lb;
-        if (a.obsId !== b.obsId) return a.obsId - b.obsId;
-        return a.idx - b.idx;
-      });
-
-    const loops = nonTreeEdges
-      .map((edge, idx) => {
-        const treePath = buildPath(edge.from, edge.to);
-        if (!treePath) return null;
-        let sumE = 0;
-        let sumN = 0;
-        const lineSet = new Set<number>();
-        treePath.segments.forEach((segment) => {
-          const segEdge = edges[segment.edgeIdx];
-          if (!segEdge) return;
-          sumE += segment.dir * segEdge.dE;
-          sumN += segment.dir * segEdge.dN;
-          if (segEdge.sourceLine != null) lineSet.add(segEdge.sourceLine);
-        });
-        const closureE = sumE - edge.dE;
-        const closureN = sumN - edge.dN;
-        const closureMag = Math.hypot(closureE, closureN);
-        const loopDistance =
-          treePath.segments.reduce((acc, seg) => {
-            const segEdge = edges[seg.edgeIdx];
-            if (!segEdge) return acc;
-            return acc + segEdge.distance;
-          }, 0) + edge.distance;
-        const closureRatio = closureMag > EPS ? loopDistance / closureMag : undefined;
-        const linearPpm = loopDistance > EPS ? (closureMag / loopDistance) * 1e6 : undefined;
-        const toleranceM = GPS_LOOP_BASE_TOLERANCE_M + GPS_LOOP_TOLERANCE_PPM * 1e-6 * loopDistance;
-        const pass = closureMag <= toleranceM + EPS;
-        const severity =
-          toleranceM > EPS ? closureMag / toleranceM : closureMag > EPS ? Infinity : 0;
-        if (edge.sourceLine != null) lineSet.add(edge.sourceLine);
-        return {
-          rank: 0,
-          key: `GL-${idx + 1}-${edge.from}`,
-          stationPath: [...treePath.stations, edge.from],
-          edgeCount: treePath.segments.length + 1,
-          sourceLines: [...lineSet].sort((a, b) => a - b),
-          closureE,
-          closureN,
-          closureMag,
-          loopDistance,
-          closureRatio,
-          linearPpm,
-          toleranceM,
-          severity,
-          pass,
-        };
-      })
-      .filter((loop): loop is NonNullable<typeof loop> => loop != null);
-    const rankedLoops = loops
-      .sort((a, b) => {
-        if (b.severity !== a.severity) return b.severity - a.severity;
-        if (b.closureMag !== a.closureMag) return b.closureMag - a.closureMag;
-        return a.key.localeCompare(b.key, undefined, { numeric: true });
-      })
-      .map((loop, idx) => ({ ...loop, rank: idx + 1 }));
-    const passCount = rankedLoops.filter((loop) => loop.pass).length;
-    const warnCount = rankedLoops.length - passCount;
-
-    return {
-      enabled: true,
-      vectorCount: edges.length,
-      loopCount: rankedLoops.length,
-      passCount,
-      warnCount,
-      thresholds: {
-        baseToleranceM: GPS_LOOP_BASE_TOLERANCE_M,
-        ppmTolerance: GPS_LOOP_TOLERANCE_PPM,
-      },
-      loops: rankedLoops,
-    };
-  }
-
-  private computeLevelingLoopDiagnostics(
-    levelingObservations: LevelObservation[],
-  ): NonNullable<AdjustmentResult['levelingLoopDiagnostics']> {
-    type LoopEdge = {
-      idx: number;
-      obsId: number;
-      from: StationId;
-      to: StationId;
-      dH: number;
-      lengthKm: number;
-      sourceLine?: number;
-    };
-    type ParentInfo = {
-      parent?: StationId;
-      edgeIdx?: number;
-      dirFromParent?: 1 | -1;
-      depth: number;
-      component: number;
-    };
-    type AdjacencyRow = {
-      edgeIdx: number;
-      neighbor: StationId;
-      dir: 1 | -1;
-    };
-
-    const edges: LoopEdge[] = levelingObservations.map((obs, idx) => ({
-      idx,
-      obsId: obs.id,
-      from: obs.from,
-      to: obs.to,
-      dH: obs.obs,
-      lengthKm: obs.lenKm,
-      sourceLine: obs.sourceLine,
-    }));
-    const totalLengthKm = edges.reduce((acc, edge) => acc + edge.lengthKm, 0);
-    const stations = [...new Set(edges.flatMap((edge) => [edge.from, edge.to]))].sort((a, b) =>
-      a.localeCompare(b, undefined, { numeric: true }),
-    );
-    const adjacency = new Map<StationId, AdjacencyRow[]>();
-    edges.forEach((edge) => {
-      const fromList = adjacency.get(edge.from) ?? [];
-      fromList.push({ edgeIdx: edge.idx, neighbor: edge.to, dir: 1 });
-      adjacency.set(edge.from, fromList);
-      const toList = adjacency.get(edge.to) ?? [];
-      toList.push({ edgeIdx: edge.idx, neighbor: edge.from, dir: -1 });
-      adjacency.set(edge.to, toList);
-    });
-    adjacency.forEach((rows) => {
-      rows.sort(
-        (a, b) =>
-          a.neighbor.localeCompare(b.neighbor, undefined, { numeric: true }) ||
-          a.edgeIdx - b.edgeIdx,
-      );
-    });
-
-    const parentInfo = new Map<StationId, ParentInfo>();
-    const treeEdgeIdx = new Set<number>();
-    let componentId = 0;
-
-    stations.forEach((start) => {
-      if (parentInfo.has(start)) return;
-      componentId += 1;
-      parentInfo.set(start, { depth: 0, component: componentId });
-      const queue: StationId[] = [start];
-      for (let q = 0; q < queue.length; q += 1) {
-        const current = queue[q];
-        const currentInfo = parentInfo.get(current);
-        if (!currentInfo) continue;
-        (adjacency.get(current) ?? []).forEach((row) => {
-          if (!parentInfo.has(row.neighbor)) {
-            parentInfo.set(row.neighbor, {
-              parent: current,
-              edgeIdx: row.edgeIdx,
-              dirFromParent: row.dir,
-              depth: currentInfo.depth + 1,
-              component: componentId,
-            });
-            treeEdgeIdx.add(row.edgeIdx);
-            queue.push(row.neighbor);
-          }
-        });
-      }
-    });
-
-    const buildPath = (
-      from: StationId,
-      to: StationId,
-    ): { stations: StationId[]; segments: { edgeIdx: number; dir: number }[] } | null => {
-      const fromInfo = parentInfo.get(from);
-      const toInfo = parentInfo.get(to);
-      if (!fromInfo || !toInfo || fromInfo.component !== toInfo.component) return null;
-
-      let a = from;
-      let b = to;
-      const upSegments: { edgeIdx: number; dir: number }[] = [];
-      const downSegments: { edgeIdx: number; dir: number }[] = [];
-
-      while ((parentInfo.get(a)?.depth ?? 0) > (parentInfo.get(b)?.depth ?? 0)) {
-        const info = parentInfo.get(a);
-        if (!info || info.parent == null || info.edgeIdx == null || info.dirFromParent == null)
-          return null;
-        upSegments.push({ edgeIdx: info.edgeIdx, dir: -info.dirFromParent });
-        a = info.parent;
-      }
-      while ((parentInfo.get(b)?.depth ?? 0) > (parentInfo.get(a)?.depth ?? 0)) {
-        const info = parentInfo.get(b);
-        if (!info || info.parent == null || info.edgeIdx == null || info.dirFromParent == null)
-          return null;
-        downSegments.push({ edgeIdx: info.edgeIdx, dir: info.dirFromParent });
-        b = info.parent;
-      }
-      while (a !== b) {
-        const infoA = parentInfo.get(a);
-        const infoB = parentInfo.get(b);
-        if (
-          !infoA ||
-          !infoB ||
-          infoA.parent == null ||
-          infoB.parent == null ||
-          infoA.edgeIdx == null ||
-          infoB.edgeIdx == null ||
-          infoA.dirFromParent == null ||
-          infoB.dirFromParent == null
-        ) {
-          return null;
-        }
-        upSegments.push({ edgeIdx: infoA.edgeIdx, dir: -infoA.dirFromParent });
-        downSegments.push({ edgeIdx: infoB.edgeIdx, dir: infoB.dirFromParent });
-        a = infoA.parent;
-        b = infoB.parent;
-      }
-
-      const segments = [...upSegments, ...downSegments.reverse()];
-      const stationPath: StationId[] = [from];
-      let cursor = from;
-      segments.forEach((seg) => {
-        const edge = edges[seg.edgeIdx];
-        if (!edge) return;
-        const next = seg.dir >= 0 ? edge.to : edge.from;
-        if (cursor === next) {
-          const alt = seg.dir >= 0 ? edge.from : edge.to;
-          stationPath.push(alt);
-          cursor = alt;
-          return;
-        }
-        stationPath.push(next);
-        cursor = next;
-      });
-      if (stationPath[stationPath.length - 1] !== to) stationPath.push(to);
-      return { stations: stationPath, segments };
-    };
-
-    const nonTreeEdges = edges
-      .filter((edge) => !treeEdgeIdx.has(edge.idx))
-      .sort((a, b) => {
-        const la = a.sourceLine ?? Number.MAX_SAFE_INTEGER;
-        const lb = b.sourceLine ?? Number.MAX_SAFE_INTEGER;
-        if (la !== lb) return la - lb;
-        if (a.obsId !== b.obsId) return a.obsId - b.obsId;
-        return a.idx - b.idx;
-      });
-
-    const loops = nonTreeEdges
-      .map((edge, idx) => {
-        const treePath = buildPath(edge.from, edge.to);
-        if (!treePath) return null;
-        let closure = 0;
-        const lineSet = new Set<number>();
-        const segments = treePath.segments
-          .map((segment) => {
-            const segEdge = edges[segment.edgeIdx];
-            if (!segEdge) return null;
-            const observedDh = segment.dir * segEdge.dH;
-            closure += observedDh;
-            if (segEdge.sourceLine != null) lineSet.add(segEdge.sourceLine);
-            return {
-              from: segment.dir >= 0 ? segEdge.from : segEdge.to,
-              to: segment.dir >= 0 ? segEdge.to : segEdge.from,
-              observedDh,
-              lengthKm: segEdge.lengthKm,
-              sourceLine: segEdge.sourceLine,
-              closureLeg: false,
-            };
-          })
-          .filter((segment): segment is NonNullable<typeof segment> => segment != null);
-        closure -= edge.dH;
-        if (edge.sourceLine != null) lineSet.add(edge.sourceLine);
-        segments.push({
-          from: edge.to,
-          to: edge.from,
-          observedDh: -edge.dH,
-          lengthKm: edge.lengthKm,
-          sourceLine: edge.sourceLine,
-          closureLeg: true,
-        });
-        const loopLengthKm =
-          treePath.segments.reduce((acc, segment) => {
-            const segEdge = edges[segment.edgeIdx];
-            if (!segEdge) return acc;
-            return acc + segEdge.lengthKm;
-          }, 0) + edge.lengthKm;
-        const absClosure = Math.abs(closure);
-        const toleranceMm =
-          this.levelLoopToleranceBaseMm +
-          this.levelLoopTolerancePerSqrtKmMm * Math.sqrt(Math.max(loopLengthKm, 0));
-        const toleranceM = toleranceMm / 1000;
-        const closurePerSqrtKmMm =
-          loopLengthKm > EPS ? (absClosure * 1000) / Math.sqrt(loopLengthKm) : absClosure * 1000;
-        const pass = absClosure <= toleranceM + EPS;
-        return {
-          rank: 0,
-          key: `LL-${idx + 1}-${edge.from}`,
-          stationPath: [...treePath.stations, edge.from],
-          edgeCount: treePath.segments.length + 1,
-          sourceLines: [...lineSet].sort((a, b) => a - b),
-          closure,
-          absClosure,
-          loopLengthKm,
-          toleranceMm,
-          toleranceM,
-          closurePerSqrtKmMm,
-          severity: toleranceMm > EPS ? (absClosure * 1000) / toleranceMm : closurePerSqrtKmMm,
-          pass,
-          segments,
-        };
-      })
-      .filter((loop): loop is NonNullable<typeof loop> => loop != null);
-
-    const rankedLoops = loops
-      .sort((a, b) => {
-        if (b.severity !== a.severity) return b.severity - a.severity;
-        if (b.absClosure !== a.absClosure) return b.absClosure - a.absClosure;
-        return a.key.localeCompare(b.key, undefined, { numeric: true });
-      })
-      .map((loop, idx) => ({ ...loop, rank: idx + 1 }));
-
-    const passCount = rankedLoops.filter((loop) => loop.pass).length;
-    const warnLoops = rankedLoops.filter((loop) => !loop.pass);
-    const warnCount = warnLoops.length;
-    const warnTotalLengthKm = warnLoops.reduce((acc, loop) => acc + loop.loopLengthKm, 0);
-    const suspectSegments = (() => {
-      const segmentMap = new Map<string, Omit<LevelingLoopSegmentSuspectRow, 'rank'>>();
-      warnLoops.forEach((loop) => {
-        loop.segments.forEach((segment) => {
-          const key =
-            segment.sourceLine != null
-              ? `L${segment.sourceLine}`
-              : `${segment.from}->${segment.to}-${segment.closureLeg ? 'closure' : 'traverse'}`;
-          const existing = segmentMap.get(key);
-          if (existing) {
-            existing.occurrenceCount += 1;
-            existing.warnLoopCount += 1;
-            existing.totalLengthKm += segment.lengthKm;
-            existing.maxAbsDh = Math.max(existing.maxAbsDh, Math.abs(segment.observedDh));
-            existing.suspectScore += loop.severity;
-            existing.closureLegCount += segment.closureLeg ? 1 : 0;
-            if (loop.severity > existing.worstLoopSeverity) {
-              existing.worstLoopSeverity = loop.severity;
-              existing.worstLoopKey = loop.key;
-            }
-            return;
-          }
-          segmentMap.set(key, {
-            key,
-            from: segment.from,
-            to: segment.to,
-            sourceLine: segment.sourceLine,
-            occurrenceCount: 1,
-            warnLoopCount: 1,
-            totalLengthKm: segment.lengthKm,
-            maxAbsDh: Math.abs(segment.observedDh),
-            suspectScore: loop.severity,
-            worstLoopKey: loop.key,
-            worstLoopSeverity: loop.severity,
-            closureLegCount: segment.closureLeg ? 1 : 0,
-          });
-        });
-      });
-      return [...segmentMap.values()]
-        .sort((a, b) => {
-          if (b.suspectScore !== a.suspectScore) return b.suspectScore - a.suspectScore;
-          if (b.warnLoopCount !== a.warnLoopCount) return b.warnLoopCount - a.warnLoopCount;
-          if (b.maxAbsDh !== a.maxAbsDh) return b.maxAbsDh - a.maxAbsDh;
-          const la = a.sourceLine ?? Number.MAX_SAFE_INTEGER;
-          const lb = b.sourceLine ?? Number.MAX_SAFE_INTEGER;
-          if (la !== lb) return la - lb;
-          return a.key.localeCompare(b.key, undefined, { numeric: true });
-        })
-        .map((segment, idx) => ({ ...segment, rank: idx + 1 }));
-    })();
-
-    return {
-      enabled: true,
-      observationCount: edges.length,
-      loopCount: rankedLoops.length,
-      passCount,
-      warnCount,
-      totalLengthKm,
-      warnTotalLengthKm,
-      thresholds: {
-        baseMm: this.levelLoopToleranceBaseMm,
-        perSqrtKmMm: this.levelLoopTolerancePerSqrtKmMm,
-      },
-      worstLoopKey: rankedLoops[0]?.key,
-      worstClosure: rankedLoops[0]?.absClosure,
-      worstClosurePerSqrtKmMm: rankedLoops[0]?.closurePerSqrtKmMm,
-      loops: rankedLoops,
-      suspectSegments,
-    };
   }
 
   private isTsCorrelationObservation(obs: Observation): boolean {
@@ -4066,7 +3521,13 @@ export class LSAEngine {
       const gpsNetworkRows = activeObservations.filter(
         (obs): obs is GpsObservation => obs.type === 'gps' && obs.gpsMode !== 'sideshot',
       );
-      this.gpsLoopDiagnostics = this.computeGpsLoopDiagnostics(gpsNetworkRows);
+      this.gpsLoopDiagnostics = buildGpsLoopDiagnostics({
+        gpsObservations: gpsNetworkRows,
+        observedVector: (obs) => this.gpsObservedVector(obs),
+        baseToleranceM: GPS_LOOP_BASE_TOLERANCE_M,
+        ppmTolerance: GPS_LOOP_TOLERANCE_PPM,
+        eps: EPS,
+      });
       this.log(
         `GPS loop check: vectors=${this.gpsLoopDiagnostics.vectorCount}, loops=${this.gpsLoopDiagnostics.loopCount}, pass=${this.gpsLoopDiagnostics.passCount}, warn=${this.gpsLoopDiagnostics.warnCount}, tolerance=${this.gpsLoopDiagnostics.thresholds.baseToleranceM.toFixed(3)}m+${this.gpsLoopDiagnostics.thresholds.ppmTolerance}ppm*dist`,
       );
@@ -4080,7 +3541,12 @@ export class LSAEngine {
       (obs): obs is LevelObservation => obs.type === 'lev',
     );
     if (levelingRows.length > 0) {
-      this.levelingLoopDiagnostics = this.computeLevelingLoopDiagnostics(levelingRows);
+      this.levelingLoopDiagnostics = buildLevelingLoopDiagnostics({
+        levelingObservations: levelingRows,
+        baseMm: this.levelLoopToleranceBaseMm,
+        perSqrtKmMm: this.levelLoopTolerancePerSqrtKmMm,
+        eps: EPS,
+      });
       this.log(
         `Leveling loop check: observations=${this.levelingLoopDiagnostics.observationCount}, loops=${this.levelingLoopDiagnostics.loopCount}, totalLength=${this.levelingLoopDiagnostics.totalLengthKm.toFixed(3)}km, tolerance=${this.levelingLoopDiagnostics.thresholds.baseMm.toFixed(3)}mm+${this.levelingLoopDiagnostics.thresholds.perSqrtKmMm.toFixed(3)}mm*sqrt(km)`,
       );
@@ -5779,311 +5245,59 @@ export class LSAEngine {
       }
     }
 
-    {
-      const setupMap = new Map<
-        StationId,
-        {
-          station: StationId;
-          directionSetIds: Set<string>;
-          directionObsCount: number;
-          angleObsCount: number;
-          distanceObsCount: number;
-          bearingObsCount: number;
-          zenithObsCount: number;
-          levelingObsCount: number;
-          gpsObsCount: number;
-          traverseDistance: number;
-          orientationRmsSum: number;
-          orientationSeSum: number;
-          orientationCount: number;
-          stdResCount: number;
-          stdResSumSq: number;
-          stdResMaxAbs: number;
-          localFailCount: number;
-          worstObsType?: string;
-          worstObsStations?: string;
-          worstObsLine?: number;
-        }
-      >();
-      const obsSetupStation = (obs: Observation): StationId | undefined => {
-        if (obs.type === 'direction' || obs.type === 'angle') return obs.at;
-        if (
-          obs.type === 'dist' ||
-          obs.type === 'bearing' ||
-          obs.type === 'zenith' ||
-          obs.type === 'lev' ||
-          obs.type === 'gps' ||
-          obs.type === 'dir'
-        ) {
-          return obs.from;
-        }
-        return undefined;
-      };
-      const obsStationsLabel = (obs: Observation): string => {
-        if (obs.type === 'angle') return `${obs.at}-${obs.from}-${obs.to}`;
-        if (obs.type === 'direction') return `${obs.at}-${obs.to}`;
-        if (
-          obs.type === 'dist' ||
-          obs.type === 'bearing' ||
-          obs.type === 'zenith' ||
-          obs.type === 'lev' ||
-          obs.type === 'gps' ||
-          obs.type === 'dir'
-        ) {
-          return `${obs.from}-${obs.to}`;
-        }
-        return '-';
-      };
-      const ensureSetup = (station: StationId) => {
-        const existing = setupMap.get(station);
-        if (existing) return existing;
-        const created = {
-          station,
-          directionSetIds: new Set<string>(),
-          directionObsCount: 0,
-          angleObsCount: 0,
-          distanceObsCount: 0,
-          bearingObsCount: 0,
-          zenithObsCount: 0,
-          levelingObsCount: 0,
-          gpsObsCount: 0,
-          traverseDistance: 0,
-          orientationRmsSum: 0,
-          orientationSeSum: 0,
-          orientationCount: 0,
-          stdResCount: 0,
-          stdResSumSq: 0,
-          stdResMaxAbs: 0,
-          localFailCount: 0,
-          worstObsType: undefined,
-          worstObsStations: undefined,
-          worstObsLine: undefined,
-        };
-        setupMap.set(station, created);
-        return created;
-      };
-      activeObservations.forEach((obs) => {
-        const setupId = obsSetupStation(obs);
-        if (!setupId) return;
-        const setup = ensureSetup(setupId);
-        if (obs.type === 'direction') {
-          setup.directionObsCount += 1;
-          setup.directionSetIds.add(String((obs as any).setId));
-        } else if (obs.type === 'angle') {
-          setup.angleObsCount += 1;
-        } else if (obs.type === 'dir') {
-          setup.directionObsCount += 1;
-        } else if (obs.type === 'dist') {
-          setup.distanceObsCount += 1;
-          const setTag = String((obs as any).setId ?? '').toUpperCase();
-          if (setTag === 'T' || setTag === 'TE') {
-            setup.traverseDistance += Math.abs(obs.obs);
-          }
-        } else if (obs.type === 'bearing') {
-          setup.bearingObsCount += 1;
-        } else if (obs.type === 'zenith') {
-          setup.zenithObsCount += 1;
-        } else if (obs.type === 'lev') {
-          setup.levelingObsCount += 1;
-        } else if (obs.type === 'gps') {
-          setup.gpsObsCount += 1;
-        }
-
-        const stdRes = obs.stdRes;
-        const absStdRes =
-          typeof stdRes === 'number' && Number.isFinite(stdRes) ? Math.abs(stdRes) : undefined;
-        if (absStdRes != null) {
-          setup.stdResCount += 1;
-          setup.stdResSumSq += absStdRes * absStdRes;
-          if (absStdRes > setup.stdResMaxAbs) {
-            setup.stdResMaxAbs = absStdRes;
-            setup.worstObsType = obs.type;
-            setup.worstObsStations = obsStationsLabel(obs);
-            setup.worstObsLine = obs.sourceLine;
-          }
-        }
-
-        const localComp = obs.localTestComponents;
-        if (localComp) {
-          if (!localComp.passE) setup.localFailCount += 1;
-          if (!localComp.passN) setup.localFailCount += 1;
-        } else if (obs.localTest && !obs.localTest.pass) {
-          setup.localFailCount += 1;
-        }
+    this.setupDiagnostics = buildSetupDiagnostics({
+      activeObservations,
+      directionSetDiagnostics: this.directionSetDiagnostics,
+    });
+    if (this.setupDiagnostics) {
+      this.logs.push('Setup summary:');
+      this.setupDiagnostics.forEach((s) => {
+        this.logs.push(
+          `  ${s.station}: dirSets=${s.directionSetCount}, dirObs=${s.directionObsCount}, ang=${s.angleObsCount}, dist=${s.distanceObsCount}, zen=${s.zenithObsCount}, lev=${s.levelingObsCount}, gps=${s.gpsObsCount}, travDist=${s.traverseDistance.toFixed(3)}m, orientRMS=${s.orientationRmsArcSec != null ? `${s.orientationRmsArcSec.toFixed(2)}"` : '-'}, orientSE=${s.orientationSeArcSec != null ? `${s.orientationSeArcSec.toFixed(2)}"` : '-'}, rms|t|=${s.rmsStdRes != null ? s.rmsStdRes.toFixed(2) : '-'}, max|t|=${s.maxStdRes != null ? s.maxStdRes.toFixed(2) : '-'}, localFail=${s.localFailCount}`,
+        );
       });
-      (this.directionSetDiagnostics ?? []).forEach((d) => {
-        const setup = ensureSetup(d.occupy);
-        if (d.residualRmsArcSec != null) setup.orientationRmsSum += d.residualRmsArcSec;
-        if (d.orientationSeArcSec != null) setup.orientationSeSum += d.orientationSeArcSec;
-        setup.orientationCount += 1;
-      });
-
-      if (setupMap.size > 0) {
-        this.setupDiagnostics = Array.from(setupMap.values())
-          .map((s) => ({
-            station: s.station,
-            directionSetCount: s.directionSetIds.size,
-            directionObsCount: s.directionObsCount,
-            angleObsCount: s.angleObsCount,
-            distanceObsCount: s.distanceObsCount,
-            bearingObsCount: s.bearingObsCount,
-            zenithObsCount: s.zenithObsCount,
-            levelingObsCount: s.levelingObsCount,
-            gpsObsCount: s.gpsObsCount,
-            traverseDistance: s.traverseDistance,
-            orientationRmsArcSec:
-              s.orientationCount > 0 ? s.orientationRmsSum / s.orientationCount : undefined,
-            orientationSeArcSec:
-              s.orientationCount > 0 ? s.orientationSeSum / s.orientationCount : undefined,
-            stdResCount: s.stdResCount,
-            rmsStdRes: s.stdResCount > 0 ? Math.sqrt(s.stdResSumSq / s.stdResCount) : undefined,
-            maxStdRes: s.stdResCount > 0 ? s.stdResMaxAbs : undefined,
-            localFailCount: s.localFailCount,
-            worstObsType: s.worstObsType,
-            worstObsStations: s.worstObsStations,
-            worstObsLine: s.worstObsLine,
-          }))
-          .sort((a, b) => a.station.localeCompare(b.station));
-        this.logs.push('Setup summary:');
-        this.setupDiagnostics.forEach((s) => {
-          this.logs.push(
-            `  ${s.station}: dirSets=${s.directionSetCount}, dirObs=${s.directionObsCount}, ang=${s.angleObsCount}, dist=${s.distanceObsCount}, zen=${s.zenithObsCount}, lev=${s.levelingObsCount}, gps=${s.gpsObsCount}, travDist=${s.traverseDistance.toFixed(3)}m, orientRMS=${s.orientationRmsArcSec != null ? `${s.orientationRmsArcSec.toFixed(2)}"` : '-'}, orientSE=${s.orientationSeArcSec != null ? `${s.orientationSeArcSec.toFixed(2)}"` : '-'}, rms|t|=${s.rmsStdRes != null ? s.rmsStdRes.toFixed(2) : '-'}, max|t|=${s.maxStdRes != null ? s.maxStdRes.toFixed(2) : '-'}, localFail=${s.localFailCount}`,
-          );
-        });
-      }
     }
 
     if (closureResiduals.length) {
       this.logs.push(...closureResiduals);
-      const netE = closureVectors.reduce((acc, v) => acc + v.dE, 0);
-      const netN = closureVectors.reduce((acc, v) => acc + v.dN, 0);
-      const thresholds = { ...this.traverseThresholds };
-      const netAngularMisclosureArcSec = Array.from(loopAngleArcSec.values()).reduce(
-        (acc, v) => acc + v,
-        0,
-      );
-      const netVerticalMisclosure = Array.from(loopVerticalMisclosure.values()).reduce(
-        (acc, v) => acc + v,
-        0,
-      );
-      if (closureVectors.length) {
-        const mag = Math.hypot(netE, netN);
-        const closureRatio = mag > 1e-12 ? totalTraverseDistance / mag : undefined;
-        const linearPpm =
-          totalTraverseDistance > 1e-12 ? (mag / totalTraverseDistance) * 1_000_000 : undefined;
-        const ratioPass = closureRatio != null ? closureRatio >= thresholds.minClosureRatio : false;
-        const ppmPass = linearPpm != null ? linearPpm <= thresholds.maxLinearPpm : false;
-        const angularPass =
-          loopAngleArcSec.size === 0 ||
-          Math.abs(netAngularMisclosureArcSec) <= thresholds.maxAngularArcSec;
-        const verticalPass =
-          loopVerticalMisclosure.size === 0 ||
-          Math.abs(netVerticalMisclosure) <= thresholds.maxVerticalMisclosure;
-
-        const setupTraverseDistance = new Map<string, number>();
-        (this.setupDiagnostics ?? []).forEach((s) => {
-          setupTraverseDistance.set(s.station, s.traverseDistance);
-        });
-        const loopKeys = new Set<string>([
-          ...Object.keys(loopVectors),
-          ...Array.from(loopAngleArcSec.keys()),
-          ...Array.from(loopVerticalMisclosure.keys()),
-        ]);
-        const defaultLoopDist = loopKeys.size > 0 ? totalTraverseDistance / loopKeys.size : 0;
-        const loops = Array.from(loopKeys)
-          .map((key) => {
-            const [from = '', to = ''] = key.split('->');
-            const vec = loopVectors[key] ?? { dE: 0, dN: 0 };
-            const loopMag = Math.hypot(vec.dE, vec.dN);
-            const traverseDistance = setupTraverseDistance.get(from) ?? defaultLoopDist;
-            const loopRatio = loopMag > 1e-12 ? traverseDistance / loopMag : undefined;
-            const loopPpm =
-              traverseDistance > 1e-12 ? (loopMag / traverseDistance) * 1_000_000 : undefined;
-            const loopAng = loopAngleArcSec.get(key);
-            const loopVert = loopVerticalMisclosure.get(key);
-            const ratioOk = loopRatio != null ? loopRatio >= thresholds.minClosureRatio : false;
-            const ppmOk = loopPpm != null ? loopPpm <= thresholds.maxLinearPpm : false;
-            const angOk = loopAng == null || Math.abs(loopAng) <= thresholds.maxAngularArcSec;
-            const vertOk =
-              loopVert == null || Math.abs(loopVert) <= thresholds.maxVerticalMisclosure;
-            let severity = 0;
-            if (!ratioOk && loopRatio != null) {
-              severity += (thresholds.minClosureRatio / Math.max(loopRatio, 1) - 1) * 70;
-            }
-            if (!ppmOk && loopPpm != null) {
-              severity += (loopPpm / thresholds.maxLinearPpm - 1) * 70;
-            }
-            if (!angOk && loopAng != null) {
-              severity += (Math.abs(loopAng) / thresholds.maxAngularArcSec - 1) * 35;
-            }
-            if (!vertOk && loopVert != null) {
-              severity += (Math.abs(loopVert) / thresholds.maxVerticalMisclosure - 1) * 35;
-            }
-            severity += Math.min(loopMag * 10, 25);
-            const pass = ratioOk && ppmOk && angOk && vertOk;
-            return {
-              key,
-              from,
-              to,
-              misclosureE: vec.dE,
-              misclosureN: vec.dN,
-              misclosureMag: loopMag,
-              traverseDistance,
-              closureRatio: loopRatio,
-              linearPpm: loopPpm,
-              angularMisclosureArcSec: loopAng,
-              verticalMisclosure: loopVert,
-              severity,
-              pass,
-            };
-          })
-          .sort((a, b) => {
-            if (b.severity !== a.severity) return b.severity - a.severity;
-            return b.misclosureMag - a.misclosureMag;
-          });
-
-        this.traverseDiagnostics = {
-          closureCount: closureVectors.length,
-          misclosureE: netE,
-          misclosureN: netN,
-          misclosureMag: mag,
-          totalTraverseDistance,
-          closureRatio,
-          linearPpm,
-          angularMisclosureArcSec:
-            loopAngleArcSec.size > 0 ? netAngularMisclosureArcSec : undefined,
-          verticalMisclosure: loopVerticalMisclosure.size > 0 ? netVerticalMisclosure : undefined,
-          thresholds,
-          passes: {
-            ratio: ratioPass,
-            linearPpm: ppmPass,
-            angular: angularPass,
-            vertical: verticalPass,
-            overall: ratioPass && ppmPass && angularPass && verticalPass,
-          },
-          loops,
-        };
+      this.traverseDiagnostics = buildTraverseDiagnostics({
+        closureVectors,
+        loopVectors,
+        loopAngleArcSec,
+        loopVerticalMisclosure,
+        totalTraverseDistance,
+        thresholds: { ...this.traverseThresholds },
+        setupDiagnostics: this.setupDiagnostics,
+        hasClosureObs,
+      });
+      if (this.traverseDiagnostics && this.traverseDiagnostics.closureCount > 0) {
+        const traverseDiagnostics = this.traverseDiagnostics;
         this.logs.push(
-          `Traverse misclosure vector: dE=${netE.toFixed(4)} m, dN=${netN.toFixed(4)} m, Mag=${mag.toFixed(4)} m`,
+          `Traverse misclosure vector: dE=${traverseDiagnostics.misclosureE.toFixed(4)} m, dN=${traverseDiagnostics.misclosureN.toFixed(4)} m, Mag=${traverseDiagnostics.misclosureMag.toFixed(4)} m`,
         );
         if (totalTraverseDistance > 0) {
           this.logs.push(`Traverse distance sum: ${totalTraverseDistance.toFixed(4)} m`);
         }
-        if (closureRatio != null) {
-          this.logs.push(`Traverse closure ratio: 1:${closureRatio.toFixed(0)}`);
+        if (traverseDiagnostics.closureRatio != null) {
+          this.logs.push(`Traverse closure ratio: 1:${traverseDiagnostics.closureRatio.toFixed(0)}`);
         }
-        if (linearPpm != null) {
-          this.logs.push(`Traverse linear misclosure: ${linearPpm.toFixed(1)} ppm`);
+        if (traverseDiagnostics.linearPpm != null) {
+          this.logs.push(`Traverse linear misclosure: ${traverseDiagnostics.linearPpm.toFixed(1)} ppm`);
         }
-        if (loopAngleArcSec.size > 0) {
-          this.logs.push(`Traverse angular misclosure: ${netAngularMisclosureArcSec.toFixed(2)}"`);
+        if (traverseDiagnostics.angularMisclosureArcSec != null) {
+          this.logs.push(
+            `Traverse angular misclosure: ${traverseDiagnostics.angularMisclosureArcSec.toFixed(2)}"`,
+          );
         }
-        if (loopVerticalMisclosure.size > 0) {
-          this.logs.push(`Traverse vertical misclosure: ${netVerticalMisclosure.toFixed(4)} m`);
+        if (traverseDiagnostics.verticalMisclosure != null) {
+          this.logs.push(
+            `Traverse vertical misclosure: ${traverseDiagnostics.verticalMisclosure.toFixed(4)} m`,
+          );
         }
-        if (loops.length > 0) {
+        const traverseLoops = traverseDiagnostics.loops ?? [];
+        if (traverseLoops.length > 0) {
           this.logs.push('Traverse closure loop ranking (worst first):');
-          loops.slice(0, 8).forEach((l) => {
+          traverseLoops.slice(0, 8).forEach((l) => {
             this.logs.push(
               `  ${l.key}: ratio=${l.closureRatio != null ? `1:${l.closureRatio.toFixed(0)}` : '-'}, ppm=${l.linearPpm != null ? l.linearPpm.toFixed(1) : '-'}, ang=${l.angularMisclosureArcSec != null ? `${l.angularMisclosureArcSec.toFixed(2)}"` : '-'}, dH=${l.verticalMisclosure != null ? `${l.verticalMisclosure.toFixed(4)}m` : '-'}, sev=${l.severity.toFixed(1)} ${l.pass ? 'PASS' : 'WARN'}`,
             );
@@ -6105,39 +5319,16 @@ export class LSAEngine {
         });
       }
     } else if (hasClosureObs) {
-      const thresholds = { ...this.traverseThresholds };
-      this.traverseDiagnostics = {
-        closureCount: 0,
-        misclosureE: 0,
-        misclosureN: 0,
-        misclosureMag: 0,
+      this.traverseDiagnostics = buildTraverseDiagnostics({
+        closureVectors,
+        loopVectors,
+        loopAngleArcSec,
+        loopVerticalMisclosure,
         totalTraverseDistance,
-        closureRatio: undefined,
-        linearPpm: undefined,
-        angularMisclosureArcSec:
-          loopAngleArcSec.size > 0
-            ? Array.from(loopAngleArcSec.values()).reduce((acc, v) => acc + v, 0)
-            : undefined,
-        verticalMisclosure:
-          loopVerticalMisclosure.size > 0
-            ? Array.from(loopVerticalMisclosure.values()).reduce((acc, v) => acc + v, 0)
-            : undefined,
-        thresholds,
-        passes: {
-          ratio: false,
-          linearPpm: false,
-          angular:
-            loopAngleArcSec.size === 0 ||
-            Math.abs(Array.from(loopAngleArcSec.values()).reduce((acc, v) => acc + v, 0)) <=
-              thresholds.maxAngularArcSec,
-          vertical:
-            loopVerticalMisclosure.size === 0 ||
-            Math.abs(Array.from(loopVerticalMisclosure.values()).reduce((acc, v) => acc + v, 0)) <=
-              thresholds.maxVerticalMisclosure,
-          overall: false,
-        },
-        loops: [],
-      };
+        thresholds: { ...this.traverseThresholds },
+        setupDiagnostics: this.setupDiagnostics,
+        hasClosureObs,
+      });
       this.logs.push('Traverse closure residual not computed (insufficient closure geometry).');
       if (totalTraverseDistance > 0) {
         this.logs.push(`Traverse distance sum: ${totalTraverseDistance.toFixed(4)} m`);
