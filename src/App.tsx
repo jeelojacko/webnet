@@ -1199,11 +1199,17 @@ const App: React.FC<AppProps> = ({
     handleApplyImportReview,
     importReviewDisplayedRows,
     importReviewMoveTargetGroups,
+    importReviewSnapshot,
+    restoreImportReviewWorkflow,
     resetImportReviewWorkflow,
   } = useImportReviewWorkflow({
     coordMode: parseSettings.coordMode,
+    currentInput: input,
+    currentIncludeFiles: projectIncludeFiles,
     faceNormalizationMode: parseSettings.faceNormalizationMode,
     fileInputRef,
+    parseSettings,
+    projectInstruments,
     setInput,
     setProjectIncludeFiles,
     setImportNotice,
@@ -1518,6 +1524,7 @@ const App: React.FC<AppProps> = ({
         stationMovementThreshold: comparisonSelection.stationMovementThreshold,
         residualDeltaThreshold: comparisonSelection.residualDeltaThreshold,
       },
+      importReview: importReviewSnapshot,
     }),
     [
       activeTab,
@@ -1527,6 +1534,7 @@ const App: React.FC<AppProps> = ({
       exportFormat,
       geoidSourceData,
       geoidSourceDataLabel,
+      importReviewSnapshot,
       input,
       isSidebarOpen,
       levelLoopCustomPresets,
@@ -1619,6 +1627,7 @@ const App: React.FC<AppProps> = ({
           pinnedObservationIds: legacyPinnedObservationIds,
         }),
     );
+    restoreImportReviewWorkflow(snapshot.importReview ?? null);
     setComparisonSelection((prev) => ({
       ...prev,
       baselineRunId: null,
@@ -2301,6 +2310,7 @@ const App: React.FC<AppProps> = ({
             groupComments={importReviewState.groupComments}
             rowTypeOverrides={importReviewState.rowTypeOverrides}
             preset={importReviewState.preset}
+            conflicts={importReviewState.conflicts}
             moveTargetGroups={importReviewMoveTargetGroups}
             onCompareFile={handleImportReviewCompareFile}
             onClearComparison={handleImportReviewClearComparison}

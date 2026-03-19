@@ -1,5 +1,68 @@
 # TODO - WebNet
 
+- [ ] add planned improvements to todo list in phased implementations before starting on imlementation
+  - [x] Phase 0 - backlog codification
+    - [x] Add the full phased implementation plan to TODO before code changes
+    - [x] Break each roadmap phase into explicit checklist items instead of summary-only bullets
+    - [x] Keep README.md and agents.md updates as a required closeout step after each completed batch
+  - [ ] Phase 1 - import and reconciliation workflow
+    - [x] Batch 1 - staged conflict scanning and crash-safe review recovery
+      - [x] Detect and surface exact station-ID collisions between the current editor content and the incoming import
+      - [x] Detect and surface coordinate conflicts for the same station ID in the staged import workspace
+      - [x] Detect and surface description conflicts for the same station ID in the staged import workspace
+      - [x] Detect and surface control-state conflicts for the same station ID in the staged import workspace
+      - [x] Detect and surface duplicate observation-family buckets by canonical endpoints against the current editor content
+      - [x] Persist staged import review/conflict state through browser-local draft recovery while the import modal is open
+      - [x] Add focused regression coverage for conflict detection, conflict rendering, and import-review snapshot restore
+    - [ ] Batch 2 - deterministic conflict resolution controls
+      - [ ] Support per-conflict `keep existing`
+      - [ ] Support per-conflict `replace with incoming`
+      - [ ] Support per-station `rename incoming station`
+      - [ ] Support per-conflict `keep both` with an explicit emitted comment marker in final text
+      - [ ] Apply conflict resolutions when writing reconciled text back into the editor instead of replacing the workspace blindly
+    - [ ] Batch 3 - multi-source reconciliation workspace
+      - [ ] Expand the current compare-file flow into a true multi-source reconciliation workspace instead of count-only comparison
+      - [ ] Keep reconciliation state browser-local and recoverable until the import session is applied or cancelled
+      - [ ] Add focused regression coverage for multi-source reconciliation, final emitted text shape, and crash recovery mid-review
+  - [ ] Phase 2 - persistent run artifacts and deliverables
+    - [ ] Batch 1 - saved run snapshot model and project/local persistence
+      - [ ] Add named saved run snapshots beyond the current in-memory compare history
+      - [ ] Store input/settings fingerprint, run summary, reopenable result payload, and lightweight label/notes metadata
+      - [ ] Limit saved snapshots to a bounded, user-managed list per workspace/project
+    - [ ] Batch 2 - saved runs UI and recovery wiring
+      - [ ] Add a small `Saved Runs` surface for restore, compare, rename, note editing, and delete actions
+      - [ ] Restore compare/report reopen state from a saved snapshot without rebuilding ad hoc view models
+      - [ ] Persist saved snapshot metadata through browser recovery and project load/save paths
+    - [ ] Batch 3 - browser-first export deliverables
+      - [ ] Add adjusted-points CSV export
+      - [ ] Add observations-and-residuals CSV export
+      - [ ] Add GeoJSON export for adjusted stations and connections
+      - [ ] Add focused regression coverage for saved runs, export selectors, and project-file migration if schema changes are required
+  - [ ] Phase 3 - heavy-job performance and background artifact work
+    - [ ] Batch 1 - unchanged-topology rerun planning cache
+      - [ ] Cache equation-planning metadata when topology is unchanged, not only parsed-model state
+      - [ ] Reuse that planning cache for exclusion, override, cluster-review, and saved-run compare reruns
+    - [ ] Batch 2 - worker-backed artifact generation
+      - [ ] Move QA bundle generation off the main thread through the existing worker path
+      - [ ] Move CSV, GeoJSON, and report-package generation off the main thread through the existing worker path
+      - [ ] Keep solve request shapes backward-compatible while extending worker artifact messages
+    - [ ] Batch 3 - performance budgets and imported-job benchmarks
+      - [ ] Extend the benchmark suite with imported dense TS/GNSS/leveling fixtures
+      - [ ] Add explicit budgets for initial solve, cached rerun, first render, and artifact-build latency
+      - [ ] Add focused regression coverage for worker artifact responsiveness and cache-hit paths
+  - [ ] Phase 4 - review and map/report UX polish
+    - [ ] Batch 1 - issue-driven review queue
+      - [ ] Add a shared review queue populated by import conflicts, suspect observations, cluster candidates, and saved-run diffs
+      - [ ] Make report and map selection follow that queue bidirectionally
+    - [ ] Batch 2 - dense-network imported-job review controls
+      - [ ] Add conflict-only filtering
+      - [ ] Add imported-group filtering
+      - [ ] Add adjusted-only review filtering
+      - [ ] Add faster map declutter toggles tuned for imported dense jobs
+    - [ ] Batch 3 - UX regression lock
+      - [ ] Preserve current report ordering and existing QA compare semantics while adding the new review queue controls
+      - [ ] Add integration coverage for report-map-editor queue navigation and dense-network rendering stability
+
 - [x] Scalability batch 1 - worker run pipeline foundation:
   - [x] Extract shared browser/CLI solve helpers into a pure run-session module
   - [x] Add typed worker protocol (`RunRequest` / `RunProgress` / `RunSuccess` / `RunFailure` / `RunCancel`) and browser worker entrypoint

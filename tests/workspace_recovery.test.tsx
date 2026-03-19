@@ -151,6 +151,7 @@ const buildSnapshot = (overrides: Partial<WorkspaceDraftSnapshot> = {}): Workspa
     stationMovementThreshold: 0.001,
     residualDeltaThreshold: 0.25,
   },
+  importReview: null,
   ...overrides,
 });
 
@@ -202,6 +203,88 @@ describe('useWorkspaceRecovery', () => {
 
     expect(container.querySelector('[data-pending]')?.textContent).toBe('no');
     expect(container.querySelector('[data-input]')?.textContent).toBe('RECOVERED INPUT');
+
+    await act(async () => {
+      root.unmount();
+    });
+    container.remove();
+  });
+
+  it('round-trips an open import-review snapshot through recovery storage', async () => {
+    window.localStorage.clear();
+    const savedSnapshot = buildSnapshot({
+      input: 'RECOVER IMPORT',
+      importReview: {
+        sourceName: 'imported.jxl',
+        notice: { title: 'Imported JobXML dataset', detailLines: ['detail'] },
+        dataset: {
+          importerId: 'jobxml',
+          formatLabel: 'JobXML',
+          summary: 'summary',
+          notice: { title: 'Imported JobXML dataset', detailLines: ['detail'] },
+          comments: [],
+          controlStations: [],
+          observations: [],
+          trace: [],
+        },
+        reviewModel: {
+          groups: [],
+          items: [],
+          warnings: [],
+          errors: [],
+        },
+        comparisonMode: 'non-mta-only',
+        excludedItemIds: [],
+        fixedItemIds: [],
+        groupLabels: {},
+        groupComments: {},
+        rowOverrides: {},
+        rowTypeOverrides: {},
+        preset: 'clean-webnet',
+        importFaceNormalizationMode: 'on',
+        force2DOutput: false,
+        nextSyntheticId: 1,
+        conflicts: [],
+      },
+    });
+    window.localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({
+        version: 1,
+        savedAt: '2026-03-18T12:00:00.000Z',
+        snapshot: savedSnapshot,
+      }),
+    );
+
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root: Root = createRoot(container);
+
+    const Harness = () => {
+      const [snapshot, setSnapshot] = useState(buildSnapshot());
+      const recovery = useWorkspaceRecovery({
+        storageKey: STORAGE_KEY,
+        snapshot,
+        onRecover: setSnapshot,
+      });
+
+      return (
+        <div>
+          <div data-import-source>{snapshot.importReview?.sourceName ?? '-'}</div>
+          <button data-recover onClick={recovery.recoverDraft} />
+        </div>
+      );
+    };
+
+    await act(async () => {
+      root.render(<Harness />);
+    });
+
+    await act(async () => {
+      (container.querySelector('[data-recover]') as HTMLButtonElement).click();
+    });
+
+    expect(container.querySelector('[data-import-source]')?.textContent).toBe('imported.jxl');
 
     await act(async () => {
       root.unmount();

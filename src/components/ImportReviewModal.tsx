@@ -1,6 +1,7 @@
 import React from 'react';
 import type { ImportedTraceEntry } from '../engine/importers';
 import { buildImportReviewComparisonKeyForItem } from '../engine/importReview';
+import type { ImportConflict } from '../engine/importConflictReview';
 import type {
   ImportReviewComparisonMode,
   ImportReviewComparisonSummary,
@@ -25,6 +26,7 @@ interface ImportReviewModalProps {
   groupComments: Record<string, string>;
   rowTypeOverrides: Record<string, ImportReviewRowTypeOverride>;
   preset: ImportReviewOutputPreset;
+  conflicts: ImportConflict[];
   moveTargetGroups: Array<{ key: string; label: string }>;
   onCompareFile: () => void;
   onClearComparison: () => void;
@@ -141,6 +143,7 @@ const ImportReviewModal: React.FC<ImportReviewModalProps> = ({
   groupComments,
   rowTypeOverrides,
   preset,
+  conflicts,
   moveTargetGroups,
   onCompareFile,
   onClearComparison,
@@ -189,6 +192,17 @@ const ImportReviewModal: React.FC<ImportReviewModalProps> = ({
     () => new Set((comparisonSummary?.rows ?? []).map((row) => row.key)),
     [comparisonSummary],
   );
+  const conflictItemIds = React.useMemo(() => {
+    const ids = new Set<string>();
+    conflicts.forEach((conflict) => {
+      conflict.relatedItems.forEach((itemRef) => {
+        reviewModel.items
+          .filter((item) => item.kind === itemRef.kind && item.index === itemRef.index)
+          .forEach((item) => ids.add(item.id));
+      });
+    });
+    return ids;
+  }, [conflicts, reviewModel.items]);
 
   const renderGroup = (group: ImportReviewGroup) => {
     const items = group.itemIds
@@ -294,12 +308,15 @@ const ImportReviewModal: React.FC<ImportReviewModalProps> = ({
                   const comparisonKey = buildImportReviewComparisonKeyForItem(item, comparisonMode);
                   const hasComparisonDiff =
                     comparisonKey != null && comparisonDiffKeys.has(comparisonKey);
+                  const hasConflict = conflictItemIds.has(item.id);
                   return (
                     <tr
                       key={item.id}
                       className={
                         excluded
                           ? 'bg-slate-950/40 text-slate-500'
+                          : hasConflict
+                            ? 'bg-rose-950/20'
                           : hasComparisonDiff
                             ? 'bg-amber-950/20'
                             : ''
@@ -312,6 +329,8 @@ const ImportReviewModal: React.FC<ImportReviewModalProps> = ({
                           className={`min-h-[54px] w-full resize-y border bg-slate-950 px-2 py-1 font-mono text-[11px] focus:outline-none ${
                             excluded
                               ? 'border-slate-800 text-slate-500'
+                              : hasConflict
+                                ? 'border-rose-700/70 text-slate-100 focus:border-rose-400'
                               : hasComparisonDiff
                                 ? 'border-amber-700/70 text-slate-100 focus:border-amber-400'
                                 : 'border-slate-700 text-slate-100 focus:border-cyan-400'
@@ -369,6 +388,11 @@ const ImportReviewModal: React.FC<ImportReviewModalProps> = ({
                       </td>
                       <td className="border-b border-slate-800 px-3 py-2 align-top">
                         <div className="flex min-w-[220px] flex-col gap-2">
+                          {hasConflict && (
+                            <div className="text-[10px] uppercase tracking-wide text-rose-300">
+                              Reconcile conflict
+                            </div>
+                          )}
                           <div className="flex flex-wrap gap-2">
                             {item.kind !== 'comment' && (
                               <button
@@ -585,6 +609,61 @@ const ImportReviewModal: React.FC<ImportReviewModalProps> = ({
         </div>
 
         <div className="flex-1 space-y-4 overflow-y-auto bg-slate-950 px-5 py-4">
+          {conflicts.length > 0 && (
+            <section className="border border-rose-800/60 bg-rose-950/20">
+              <div className="border-b border-rose-800/60 bg-rose-950/40 px-4 py-3">
+                <div className="text-sm font-semibold text-rose-100">Reconciliation Conflicts</div>
+                <div className="text-[11px] uppercase tracking-wide text-rose-200/80">
+                  Conflicts were detected between the current editor content and the incoming import.
+                </div>
+              </div>
+              <div className="max-h-72 overflow-y-auto">
+                <table className="min-w-full border-collapse text-xs">
+                  <thead className="bg-slate-950/80 text-slate-300">
+                    <tr>
+                      <th className="border-b border-slate-700 px-3 py-2 text-left font-semibold">
+                        Type
+                      </th>
+                      <th className="border-b border-slate-700 px-3 py-2 text-left font-semibold">
+                        Target
+                      </th>
+                      <th className="border-b border-slate-700 px-3 py-2 text-left font-semibold">
+                        Existing
+                      </th>
+                      <th className="border-b border-slate-700 px-3 py-2 text-left font-semibold">
+                        Incoming
+                      </th>
+                      <th className="border-b border-slate-700 px-3 py-2 text-left font-semibold">
+                        Source Line
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {conflicts.map((conflict) => (
+                      <tr key={conflict.id}>
+                        <td className="border-b border-slate-800 px-3 py-2 text-slate-200">
+                          <div className="font-semibold text-rose-100">{conflict.title}</div>
+                        </td>
+                        <td className="border-b border-slate-800 px-3 py-2 text-slate-300">
+                          {conflict.targetLabel}
+                        </td>
+                        <td className="border-b border-slate-800 px-3 py-2 text-slate-200">
+                          {conflict.existingSummary}
+                        </td>
+                        <td className="border-b border-slate-800 px-3 py-2 text-slate-200">
+                          {conflict.incomingSummary}
+                        </td>
+                        <td className="border-b border-slate-800 px-3 py-2 text-slate-300">
+                          {conflict.sourceLine != null ? conflict.sourceLine : '-'}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          )}
+
           {comparisonSummary && (
             <section className="border border-cyan-800/60 bg-cyan-950/20">
               <div className="border-b border-cyan-800/60 bg-cyan-950/40 px-4 py-3">

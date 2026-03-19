@@ -36,6 +36,20 @@ import type {
   Observation,
 } from './types';
 import type { CollapsibleDetailSectionId } from './components/report/reportSectionRegistry';
+import type {
+  ExternalImportAngleMode,
+  ImportedDataset,
+  ImportedInputNotice,
+} from './engine/importers';
+import type {
+  ImportConflict,
+} from './engine/importConflictReview';
+import type {
+  ImportReviewComparisonMode,
+  ImportReviewModel,
+  ImportReviewOutputPreset,
+  ImportReviewRowTypeOverride,
+} from './engine/importReview';
 
 export type Units = 'm' | 'ft';
 export type UiTheme =
@@ -106,6 +120,28 @@ export type WorkspaceComparisonViewState = {
   stationMovementThreshold: number;
   residualDeltaThreshold: number;
 };
+export type ImportReviewDraftSnapshot = {
+  sourceName: string;
+  notice: ImportedInputNotice;
+  dataset: ImportedDataset;
+  reviewModel: ImportReviewModel;
+  comparisonSourceName?: string;
+  comparisonNotice?: ImportedInputNotice;
+  comparisonDataset?: ImportedDataset;
+  comparisonMode: ImportReviewComparisonMode;
+  excludedItemIds: string[];
+  fixedItemIds: string[];
+  groupLabels: Record<string, string>;
+  groupComments: Record<string, string>;
+  rowOverrides: Record<string, string>;
+  rowTypeOverrides: Record<string, ImportReviewRowTypeOverride>;
+  preset: ImportReviewOutputPreset;
+  importFaceNormalizationMode: Extract<FaceNormalizationMode, 'on' | 'off'>;
+  importAngleMode?: ExternalImportAngleMode;
+  force2DOutput: boolean;
+  nextSyntheticId: number;
+  conflicts: ImportConflict[];
+};
 export type WorkspaceDraftSnapshot = {
   input: string;
   projectIncludeFiles: Record<string, string>;
@@ -120,6 +156,7 @@ export type WorkspaceDraftSnapshot = {
   geoidSourceDataLabel: string;
   view: WorkspaceViewState;
   comparisonView: WorkspaceComparisonViewState;
+  importReview?: ImportReviewDraftSnapshot | null;
 };
 export type WorkspaceRecoveryRecord = {
   version: 1;

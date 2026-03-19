@@ -115,6 +115,18 @@ describe('ImportReviewModal', () => {
         groupComments={{ control: 'CONTROL', 'setup:STN1:bs:BS1': 'SETUP STN1' }}
         rowTypeOverrides={{ 'observation:0': 'distance' }}
         preset="ts-direction-set"
+        conflicts={[
+          {
+            id: 'coordinate-conflict:STN1:0',
+            type: 'coordinate-conflict',
+            title: 'Coordinate values differ for the same station',
+            targetLabel: 'STN1',
+            existingSummary: 'ID STN1; E=5000.0000; N=1000.0000; H=100.0000',
+            incomingSummary: 'ID STN1; E=5001.0000; N=1002.0000; H=100.5000',
+            sourceLine: 12,
+            relatedItems: [{ kind: 'control', index: 0 }],
+          },
+        ]}
         moveTargetGroups={[{ key: 'setup:STN1:bs:BS1', label: 'Setup STN1 (BS BS1)' }]}
         onCompareFile={() => {}}
         onClearComparison={() => {}}
@@ -168,6 +180,8 @@ describe('ImportReviewModal', () => {
     expect(html).toContain('Import Diagnostics');
     expect(html).toContain('Unsupported measurement skipped.');
     expect(html).toContain('Compare / Reconcile');
+    expect(html).toContain('Reconciliation Conflicts');
+    expect(html).toContain('Coordinate values differ for the same station');
     expect(html).toContain('Compare Preset');
     expect(html).toContain('Non-MTA Only');
     expect(html).toContain('All Raw Rows');

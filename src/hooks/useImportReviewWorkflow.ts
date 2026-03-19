@@ -22,11 +22,16 @@ import {
   type ImportReviewRowTypeOverride,
 } from '../engine/importReview';
 import {
+  buildImportConflictSummary,
+  type ImportConflict,
+} from '../engine/importConflictReview';
+import {
   type ExternalImportAngleMode,
   type ImportedDataset,
   type ImportedInputNotice,
 } from '../engine/importers';
-import type { CoordMode, FaceNormalizationMode } from '../types';
+import type { ImportReviewDraftSnapshot, ParseSettings } from '../appStateTypes';
+import type { CoordMode, FaceNormalizationMode, InstrumentLibrary } from '../types';
 
 type FilePickerMode = 'replace' | 'compare';
 type ImportAnglePromptChoice = ExternalImportAngleMode;
@@ -60,6 +65,7 @@ export type ImportReviewState = {
   importAngleMode?: ImportAnglePromptChoice;
   force2DOutput: boolean;
   nextSyntheticId: number;
+  conflicts: ImportConflict[];
 };
 
 const IMPORT_ANGLE_PROMPT_FILE_RE = /\.(jxl|jobxml|htm|html)$/i;
@@ -87,8 +93,12 @@ const buildReducedAngleRowTypeOverrides = (
 
 interface UseImportReviewWorkflowArgs {
   coordMode: CoordMode;
+  currentInput: string;
+  currentIncludeFiles: Record<string, string>;
   faceNormalizationMode: FaceNormalizationMode;
   fileInputRef: RefObject<HTMLInputElement | null>;
+  parseSettings: ParseSettings;
+  projectInstruments: InstrumentLibrary;
   setInput: Dispatch<SetStateAction<string>>;
   setProjectIncludeFiles: Dispatch<SetStateAction<Record<string, string>>>;
   setImportNotice: Dispatch<SetStateAction<ImportedInputNotice | null>>;
@@ -97,8 +107,12 @@ interface UseImportReviewWorkflowArgs {
 
 export const useImportReviewWorkflow = ({
   coordMode,
+  currentInput,
+  currentIncludeFiles,
   faceNormalizationMode,
   fileInputRef,
+  parseSettings,
+  projectInstruments,
   setInput,
   setProjectIncludeFiles,
   setImportNotice,
@@ -108,6 +122,18 @@ export const useImportReviewWorkflow = ({
   const [pendingAnglePromptFile, setPendingAnglePromptFile] =
     useState<PendingAnglePromptFile | null>(null);
   const filePickerModeRef = useRef<FilePickerMode>('replace');
+
+  const buildImportConflicts = useCallback(
+    (dataset: ImportedDataset) =>
+      buildImportConflictSummary({
+        currentInput,
+        currentIncludeFiles,
+        parseSettings,
+        projectInstruments,
+        importedDataset: dataset,
+      }),
+    [currentIncludeFiles, currentInput, parseSettings, projectInstruments],
+  );
 
   const resetImportReviewWorkflow = useCallback(() => {
     setImportReviewState(null);
@@ -171,6 +197,7 @@ export const useImportReviewWorkflow = ({
 
           if (imported.detected && imported.dataset && imported.notice) {
             const reviewModel = buildImportReviewModel(imported.dataset);
+            const conflicts = buildImportConflicts(imported.dataset);
             const importedPromptedFile = requiresImportAngleModePrompt(file.name);
             const useReducedDirectionPreset = importedPromptedFile && angleMode === 'reduced';
             const useDirectionSetPreset =
@@ -204,6 +231,7 @@ export const useImportReviewWorkflow = ({
               importAngleMode: angleMode,
               force2DOutput: false,
               nextSyntheticId: 1,
+              conflicts,
             });
             return;
           }
@@ -213,7 +241,7 @@ export const useImportReviewWorkflow = ({
       };
       reader.readAsText(file);
     },
-    [applyImportedInput, faceNormalizationMode],
+    [applyImportedInput, buildImportConflicts, faceNormalizationMode],
   );
 
   const handleFileChange = useCallback(
@@ -334,6 +362,7 @@ export const useImportReviewWorkflow = ({
           prev.groupComments[group.key] ?? group.defaultComment,
         ]),
       );
+      const nextConflicts = buildImportConflicts(nextDataset);
       return {
         ...prev,
         dataset: nextDataset,
@@ -349,9 +378,10 @@ export const useImportReviewWorkflow = ({
         comparisonDataset: undefined,
         comparisonSummary: null,
         force2DOutput: true,
+        conflicts: nextConflicts,
       };
     });
-  }, []);
+  }, [buildImportConflicts]);
 
   const handleImportReviewSetGroupExcluded = useCallback((groupKey: string, excluded: boolean) => {
     setImportReviewState((prev) => {
@@ -605,6 +635,75 @@ export const useImportReviewWorkflow = ({
     );
   }, []);
 
+  const importReviewSnapshot = useMemo<ImportReviewDraftSnapshot | null>(() => {
+    if (!importReviewState) return null;
+    return {
+      sourceName: importReviewState.sourceName,
+      notice: importReviewState.notice,
+      dataset: importReviewState.dataset,
+      reviewModel: importReviewState.reviewModel,
+      comparisonSourceName: importReviewState.comparisonSourceName,
+      comparisonNotice: importReviewState.comparisonNotice,
+      comparisonDataset: importReviewState.comparisonDataset,
+      comparisonMode: importReviewState.comparisonMode,
+      excludedItemIds: [...importReviewState.excludedItemIds],
+      fixedItemIds: [...importReviewState.fixedItemIds],
+      groupLabels: { ...importReviewState.groupLabels },
+      groupComments: { ...importReviewState.groupComments },
+      rowOverrides: { ...importReviewState.rowOverrides },
+      rowTypeOverrides: { ...importReviewState.rowTypeOverrides },
+      preset: importReviewState.preset,
+      importFaceNormalizationMode: importReviewState.importFaceNormalizationMode,
+      importAngleMode: importReviewState.importAngleMode,
+      force2DOutput: importReviewState.force2DOutput,
+      nextSyntheticId: importReviewState.nextSyntheticId,
+      conflicts: importReviewState.conflicts,
+    };
+  }, [importReviewState]);
+
+  const restoreImportReviewWorkflow = useCallback((snapshot: ImportReviewDraftSnapshot | null) => {
+    if (!snapshot) {
+      setImportReviewState(null);
+      setPendingAnglePromptFile(null);
+      filePickerModeRef.current = 'replace';
+      return;
+    }
+    setImportReviewState({
+      sourceName: snapshot.sourceName,
+      notice: snapshot.notice,
+      dataset: snapshot.dataset,
+      reviewModel: snapshot.reviewModel,
+      comparisonSourceName: snapshot.comparisonSourceName,
+      comparisonNotice: snapshot.comparisonNotice,
+      comparisonDataset: snapshot.comparisonDataset,
+      comparisonSummary:
+        snapshot.comparisonDataset && snapshot.comparisonSourceName
+          ? buildImportReviewComparisonSummary(
+              snapshot.dataset,
+              snapshot.sourceName,
+              snapshot.comparisonDataset,
+              snapshot.comparisonSourceName,
+              snapshot.comparisonMode,
+            )
+          : null,
+      comparisonMode: snapshot.comparisonMode,
+      excludedItemIds: new Set(snapshot.excludedItemIds),
+      fixedItemIds: new Set(snapshot.fixedItemIds),
+      groupLabels: { ...snapshot.groupLabels },
+      groupComments: { ...snapshot.groupComments },
+      rowOverrides: { ...snapshot.rowOverrides },
+      rowTypeOverrides: { ...snapshot.rowTypeOverrides },
+      preset: snapshot.preset,
+      importFaceNormalizationMode: snapshot.importFaceNormalizationMode,
+      importAngleMode: snapshot.importAngleMode,
+      force2DOutput: snapshot.force2DOutput,
+      nextSyntheticId: snapshot.nextSyntheticId,
+      conflicts: snapshot.conflicts,
+    });
+    setPendingAnglePromptFile(null);
+    filePickerModeRef.current = 'replace';
+  }, []);
+
   const handleApplyImportReview = useCallback(() => {
     if (!importReviewState) return;
     const includedItemIds = new Set(
@@ -684,6 +783,8 @@ export const useImportReviewWorkflow = ({
     handleApplyImportReview,
     importReviewDisplayedRows,
     importReviewMoveTargetGroups,
+    importReviewSnapshot,
+    restoreImportReviewWorkflow,
     resetImportReviewWorkflow,
   };
 };
