@@ -70,8 +70,12 @@
       - [x] Collapsed and pinned sections
       - [x] Selected station/observation context
     - [x] Persist report/map review state through the browser recovery layer
-    - [ ] Add fast QA navigation actions for next/previous suspect, jump-to-input, pin selected observation, and focus filter
-    - [ ] Add UI regression coverage proving report ordering/content/selection behavior remains stable after decomposition
+    - [x] Batch complete - QA review quick actions and decomposition regression lock:
+      - [x] Add one-stop QA review actions for previous/next suspect, jump to input, pin selected observation, and focus report filter
+      - [x] Wire report filter focusing through the decomposed report modules without breaking tab-switch persistence
+      - [x] Add integration-style regression coverage for review actions plus stable ordering/selection behavior
+    - [x] Add fast QA navigation actions for next/previous suspect, jump-to-input, pin selected observation, and focus filter
+    - [x] Add UI regression coverage proving report ordering/content/selection behavior remains stable after decomposition
   - [ ] Phase 3 - scenario runtime and rerun performance
     - [ ] Introduce a parsed-model/scenario-run service shared by browser and CLI
     - [ ] Parse once per input/settings fingerprint and reuse parsed state for same-input reruns

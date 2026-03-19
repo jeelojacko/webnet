@@ -5,6 +5,7 @@ import { AlertTriangle, CheckCircle, Info } from 'lucide-react';
 import InputPane, { type InputPaneHandle } from './components/InputPane';
 import AppToolbar from './components/AppToolbar';
 import RunComparisonPanel from './components/RunComparisonPanel';
+import WorkspaceReviewActions from './components/WorkspaceReviewActions';
 import WorkspaceRecoveryBanner from './components/WorkspaceRecoveryBanner';
 import WorkspaceChrome from './components/WorkspaceChrome';
 
@@ -1446,6 +1447,7 @@ const App: React.FC<AppProps> = ({
       normalizeSolveProfile,
     }),
   );
+  const [reportFilterFocusRequestKey, setReportFilterFocusRequestKey] = useState(0);
 
   const currentComparisonText = useMemo(
     () => (runComparisonSummary ? buildRunComparisonText(runComparisonSummary) : ''),
@@ -1684,6 +1686,11 @@ const App: React.FC<AppProps> = ({
     if (!Number.isFinite(lineNumber) || lineNumber <= 0) return;
     if (!isSidebarOpen) setIsSidebarOpen(true);
     setPendingEditorJumpLine(Math.trunc(lineNumber));
+  };
+
+  const handleFocusReportFilter = () => {
+    setActiveTab('report');
+    setReportFilterFocusRequestKey((current) => current + 1);
   };
 
   const handleDraftUnitChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -2508,6 +2515,32 @@ const App: React.FC<AppProps> = ({
               }}
             />
           )}
+          {result && (
+            <WorkspaceReviewActions
+              canNavigateSuspects={hasSuspects}
+              canJumpToInput={selection.sourceLine != null}
+              canPinSelectedObservation={selectedObservation != null}
+              isSelectedObservationPinned={
+                selectedObservation != null &&
+                pinnedObservations.some((entry) => entry.id === selectedObservation.id)
+              }
+              onSelectPreviousSuspect={() => {
+                selectPreviousSuspect();
+                setActiveTab('report');
+              }}
+              onSelectNextSuspect={() => {
+                selectNextSuspect();
+                setActiveTab('report');
+              }}
+              onJumpToInput={() => {
+                if (selection.sourceLine != null) handleJumpToSourceLine(selection.sourceLine);
+              }}
+              onTogglePinSelectedObservation={() => {
+                if (selectedObservation) togglePinnedObservation(selectedObservation.id);
+              }}
+              onFocusReportFilter={handleFocusReportFilter}
+            />
+          )}
           {(selectedObservation || selectedStation || pinnedObservations.length > 0) && (
             <div className="border-b border-slate-800 bg-slate-950/90 px-4 py-2 text-xs text-slate-300">
               <div className="flex flex-wrap items-center gap-2">
@@ -2585,6 +2618,7 @@ const App: React.FC<AppProps> = ({
                   onApplyClusterMerges={applyClusterReviewMerges}
                   onResetClusterReview={resetClusterReview}
                   onClearClusterMerges={clearClusterApprovedMerges}
+                  focusFilterRequestKey={reportFilterFocusRequestKey}
                   selectedStationId={selection.stationId}
                   selectedObservationId={selection.observationId}
                   onSelectStation={(stationId) => selectStation(stationId, 'report')}

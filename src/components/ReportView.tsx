@@ -246,6 +246,7 @@ interface ReportViewProps {
   selectedObservationId?: number | null;
   onSelectStation?: (_stationId: string) => void;
   onSelectObservation?: (_observationId: number) => void;
+  focusFilterRequestKey?: number;
 }
 
 const ReportView: React.FC<ReportViewProps> = ({
@@ -275,6 +276,7 @@ const ReportView: React.FC<ReportViewProps> = ({
   selectedObservationId = null,
   onSelectStation,
   onSelectObservation,
+  focusFilterRequestKey = 0,
 }) => {
   const reportRootRef = useRef<HTMLDivElement | null>(null);
   const detailSectionHeaderRefs = useRef<
@@ -4149,6 +4151,7 @@ const ReportView: React.FC<ReportViewProps> = ({
         totalObservationCount={sortedObs.length}
         deferredReportFilterQuery={deferredReportFilterQuery}
         normalizedReportFilterQuery={normalizedReportFilterQuery}
+        focusRequestKey={focusFilterRequestKey}
       />
 
       <AdjustedCoordinatesSection
