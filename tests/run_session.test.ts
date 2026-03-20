@@ -52,7 +52,10 @@ describe('runAdjustmentSession', () => {
     const afterSecondRun = getScenarioRunServiceStats();
 
     expect(afterFirstRun.parseCacheMisses).toBe(1);
+    expect(afterFirstRun.planningCacheMisses).toBeGreaterThan(0);
     expect(afterSecondRun.parseCacheMisses).toBe(1);
     expect(afterSecondRun.parseCacheHits).toBeGreaterThan(afterFirstRun.parseCacheHits);
+    expect(afterSecondRun.planningCacheMisses).toBe(afterFirstRun.planningCacheMisses);
+    expect(afterSecondRun.planningCacheHits).toBeGreaterThan(afterFirstRun.planningCacheHits);
   });
 });

@@ -18,8 +18,11 @@ export interface ScenarioRunRequest {
 
 export interface ScenarioRunServiceStats {
   cachedScenarioCount: number;
+  cachedPlanningCount: number;
   parseCacheHits: number;
   parseCacheMisses: number;
+  planningCacheHits: number;
+  planningCacheMisses: number;
   solveCount: number;
 }
 

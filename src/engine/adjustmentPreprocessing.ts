@@ -1,5 +1,8 @@
 import type { Observation, StationId, StationMap } from '../types';
-import { buildCoordinateConstraints, summarizeCoordinateConstraints } from './adjustmentConstraints';
+import {
+  buildCoordinateConstraints,
+  summarizeCoordinateConstraints,
+} from './adjustmentConstraints';
 import type {
   ControlConstraintSummary,
   CoordinateConstraintEquation,
@@ -17,6 +20,61 @@ export interface SolvePreparationResult {
   dirParamMap: Record<string, number>;
   autoDroppedHeights: StationId[];
 }
+
+export const isObservationActiveForSolve = (
+  observation: Observation,
+  excludeIds: Set<number> | undefined,
+  is2D: boolean,
+): boolean => {
+  if (excludeIds?.has(observation.id)) return false;
+  if (observation.type === 'gps' && observation.gpsMode === 'sideshot') return false;
+  if (
+    typeof observation.calc === 'object' &&
+    (observation.calc as { sideshot?: boolean }).sideshot
+  ) {
+    return false;
+  }
+  if (is2D && (observation.type === 'lev' || observation.type === 'zenith')) return false;
+  return true;
+};
+
+export const collectActiveObservationsForSolve = (
+  observations: Observation[],
+  excludeIds: Set<number> | undefined,
+  is2D: boolean,
+): Observation[] =>
+  observations.filter((observation) => isObservationActiveForSolve(observation, excludeIds, is2D));
+
+export const applyAutoDroppedHeightHolds = (
+  stations: StationMap,
+  autoDroppedHeights: StationId[],
+): void => {
+  autoDroppedHeights.forEach((stationId) => {
+    const station = stations[stationId];
+    if (!station || station.fixedH) return;
+    station.fixedH = true;
+    station.fixed = !!station.fixedX && !!station.fixedY && !!station.fixedH;
+  });
+};
+
+export const cloneSolvePreparationResult = (
+  solvePreparation: SolvePreparationResult,
+): SolvePreparationResult => ({
+  directionSetIds: [...solvePreparation.directionSetIds],
+  paramIndex: Object.fromEntries(
+    Object.entries(solvePreparation.paramIndex).map(([stationId, entry]) => [
+      stationId,
+      { ...entry },
+    ]),
+  ),
+  stationParamCount: solvePreparation.stationParamCount,
+  constraints: solvePreparation.constraints.map((constraint) => ({ ...constraint })),
+  controlConstraints: { ...solvePreparation.controlConstraints },
+  numParams: solvePreparation.numParams,
+  numObsEquations: solvePreparation.numObsEquations,
+  dirParamMap: { ...solvePreparation.dirParamMap },
+  autoDroppedHeights: [...solvePreparation.autoDroppedHeights],
+});
 
 export const collectDirectionSetIds = (activeObservations: Observation[]): string[] =>
   Array.from(

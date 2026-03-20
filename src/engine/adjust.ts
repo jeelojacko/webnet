@@ -14,22 +14,27 @@ import {
   zeros,
 } from './matrix';
 import { parseInput } from './parse';
-import { getCachedParsedModel, recordScenarioSolve } from './scenarioParsedModelCache';
+import {
+  getCachedParsedModel,
+  getCachedSolvePreparation,
+  recordScenarioSolve,
+} from './scenarioParsedModelCache';
 import {
   applyCoordinateConstraintCorrelationWeights,
   buildCoordinateConstraints,
   coordinateConstraintWeightedSum,
 } from './adjustmentConstraints';
 import { assembleAdjustmentEquations } from './adjustmentEquationAssembly';
+import { applyAdjustmentCorrections, solveAdjustmentIteration } from './adjustmentIteration';
 import {
-  applyAdjustmentCorrections,
-  solveAdjustmentIteration,
-} from './adjustmentIteration';
-import { buildSolvePreparation } from './adjustmentPreprocessing';
-import {
-  buildAdjustmentResultPayload,
-  finalizeResultParseState,
-} from './adjustmentResultBuilder';
+  applyAutoDroppedHeightHolds,
+  buildSolvePreparation,
+  cloneSolvePreparationResult,
+  collectActiveObservationsForSolve,
+  isObservationActiveForSolve,
+} from './adjustmentPreprocessing';
+import type { SolvePreparationResult } from './adjustmentPreprocessing';
+import { buildAdjustmentResultPayload, finalizeResultParseState } from './adjustmentResultBuilder';
 import {
   buildObservationTypeSummary,
   buildResidualDiagnostics,
@@ -54,9 +59,7 @@ import type {
   RobustWeightSummary,
   SolveParameterIndex,
 } from './adjustmentSolveTypes';
-import type {
-  ScenarioRunRequest,
-} from './scenarioRunModels';
+import type { ScenarioRunRequest } from './scenarioRunModels';
 import type {
   AdjustmentResult,
   DatumSufficiencyReport,
@@ -94,7 +97,7 @@ const LEVEL_LOOP_DEFAULT_PER_SQRT_KM_MM = 4;
 
 const makePairKey = (a: StationId, b: StationId): string => (a < b ? `${a}|${b}` : `${b}|${a}`);
 
-const cloneParsedResultValue = <T,>(value: T): T => {
+const cloneParsedResultValue = <T>(value: T): T => {
   if (value == null || typeof value !== 'object') return value;
   if (Array.isArray(value)) {
     return value.map((entry) => cloneParsedResultValue(entry)) as T;
@@ -121,6 +124,7 @@ interface EngineOptions {
   parseOptions?: Partial<ParseOptions>;
   geoidSourceData?: ArrayBuffer | Uint8Array;
   parsedResult?: ParseResult;
+  solvePreparation?: SolvePreparationResult;
 }
 export class LSAEngine {
   input: string;
@@ -139,6 +143,7 @@ export class LSAEngine {
   private excludeIds?: Set<number>;
   private overrides?: Record<number, ObservationOverride>;
   private parsedResult?: ParseResult;
+  private solvePreparation?: SolvePreparationResult;
   private maxCondition = 1e12;
   private maxStdRes = 10;
   private localTestCritical = 3.29;
@@ -1331,6 +1336,7 @@ export class LSAEngine {
     parseOptions,
     geoidSourceData,
     parsedResult,
+    solvePreparation,
   }: EngineOptions) {
     this.input = input;
     this.maxIterations = maxIterations;
@@ -1349,6 +1355,7 @@ export class LSAEngine {
           ? new Uint8Array(geoidSourceData)
           : undefined;
     this.parsedResult = parsedResult;
+    this.solvePreparation = solvePreparation;
   }
 
   private log(msg: string) {
@@ -1371,6 +1378,7 @@ export class LSAEngine {
       geoidSourceData: this.geoidSourceData,
     };
     recordScenarioSolve();
+    const parsedResult = getCachedParsedModel(request);
     return new LSAEngine({
       input: request.input,
       maxIterations: request.maxIterations,
@@ -1380,7 +1388,8 @@ export class LSAEngine {
       overrides: request.overrides,
       parseOptions: request.parseOptions,
       geoidSourceData: request.geoidSourceData,
-      parsedResult: getCachedParsedModel(request),
+      parsedResult,
+      solvePreparation: getCachedSolvePreparation(request, parsedResult),
     }).solve();
   }
 
@@ -1630,11 +1639,7 @@ export class LSAEngine {
   }
 
   private collectActiveObservations(): Observation[] {
-    const active: Observation[] = [];
-    this.observations.forEach((obs) => {
-      if (this.isObservationActive(obs)) active.push(obs);
-    });
-    return active;
+    return collectActiveObservationsForSolve(this.observations, this.excludeIds, this.is2D);
   }
 
   private evaluateGridInputGate(activeObservations: Observation[]): {
@@ -2367,11 +2372,7 @@ export class LSAEngine {
   }
 
   private isObservationActive(obs: Observation): boolean {
-    if (this.excludeIds?.has(obs.id)) return false;
-    if (obs.type === 'gps' && obs.gpsMode === 'sideshot') return false;
-    if (typeof obs.calc === 'object' && (obs.calc as any)?.sideshot) return false;
-    if (this.is2D && (obs.type === 'lev' || obs.type === 'zenith')) return false;
-    return true;
+    return isObservationActiveForSolve(obs, this.excludeIds, this.is2D);
   }
 
   private computeSideshotResults(): AdjustmentResult['sideshots'] {
@@ -3515,12 +3516,13 @@ export class LSAEngine {
       }
     }
     this.logNetworkDiagnostics(activeObservations);
-    const solvePreparation = buildSolvePreparation(
-      this.stations,
-      this.unknowns,
-      activeObservations,
-      this.is2D,
-    );
+    const cachedSolvePreparation = this.solvePreparation;
+    const solvePreparation = cachedSolvePreparation
+      ? (() => {
+          applyAutoDroppedHeightHolds(this.stations, cachedSolvePreparation.autoDroppedHeights);
+          return cloneSolvePreparationResult(cachedSolvePreparation);
+        })()
+      : buildSolvePreparation(this.stations, this.unknowns, activeObservations, this.is2D);
     if (solvePreparation.autoDroppedHeights.length > 0) {
       this.log(
         `Auto-drop H for stations with no vertical observations: ${solvePreparation.autoDroppedHeights.join(', ')}`,
@@ -5202,10 +5204,14 @@ export class LSAEngine {
           this.logs.push(`Traverse distance sum: ${totalTraverseDistance.toFixed(4)} m`);
         }
         if (traverseDiagnostics.closureRatio != null) {
-          this.logs.push(`Traverse closure ratio: 1:${traverseDiagnostics.closureRatio.toFixed(0)}`);
+          this.logs.push(
+            `Traverse closure ratio: 1:${traverseDiagnostics.closureRatio.toFixed(0)}`,
+          );
         }
         if (traverseDiagnostics.linearPpm != null) {
-          this.logs.push(`Traverse linear misclosure: ${traverseDiagnostics.linearPpm.toFixed(1)} ppm`);
+          this.logs.push(
+            `Traverse linear misclosure: ${traverseDiagnostics.linearPpm.toFixed(1)} ppm`,
+          );
         }
         if (traverseDiagnostics.angularMisclosureArcSec != null) {
           this.logs.push(

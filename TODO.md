@@ -52,9 +52,10 @@
       - [x] Keep project save/load and browser recovery export-format persistence compatible when new selector values are introduced
       - [x] Add focused regression coverage for export workflow routing, export selector persistence, and project-file export-format round-trips
   - [ ] Phase 3 - heavy-job performance and background artifact work
-    - [ ] Batch 1 - unchanged-topology rerun planning cache
-      - [ ] Cache equation-planning metadata when topology is unchanged, not only parsed-model state
-      - [ ] Reuse that planning cache for exclusion, override, cluster-review, and saved-run compare reruns
+    - [x] Batch 1 - unchanged-topology rerun planning cache
+      - [x] Cache equation-planning metadata when topology is unchanged, not only parsed-model state
+      - [x] Reuse that planning cache for exclusion, override, cluster-review, and saved-run compare reruns
+      - [x] Expose planning-cache hit/miss coverage through the shared scenario-run stats and regression suites
     - [ ] Batch 2 - worker-backed artifact generation
       - [ ] Move QA bundle generation off the main thread through the existing worker path
       - [ ] Move CSV, GeoJSON, and report-package generation off the main thread through the existing worker path

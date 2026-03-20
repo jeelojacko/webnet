@@ -35,6 +35,8 @@ describe('scenario run service', () => {
     expect(excludedObservationId).toBeDefined();
     expect(getScenarioRunServiceStats().parseCacheMisses).toBe(1);
     expect(getScenarioRunServiceStats().parseCacheHits).toBe(0);
+    expect(getScenarioRunServiceStats().planningCacheMisses).toBe(1);
+    expect(getScenarioRunServiceStats().planningCacheHits).toBe(0);
 
     solveEngine({
       input,
@@ -49,6 +51,46 @@ describe('scenario run service', () => {
     const stats = getScenarioRunServiceStats();
     expect(stats.parseCacheMisses).toBe(1);
     expect(stats.parseCacheHits).toBe(1);
+    expect(stats.planningCacheMisses).toBe(2);
+    expect(stats.planningCacheHits).toBe(0);
+  });
+
+  it('reuses cached equation planning for override reruns when topology is unchanged', () => {
+    resetScenarioRunServiceCache();
+
+    const baseline = solveEngine({
+      input,
+      maxIterations: 8,
+      parseOptions: {
+        coordMode: '2D',
+        units: 'm',
+      },
+    });
+    const overrideObservationId = baseline.observations[0]?.id;
+
+    expect(overrideObservationId).toBeDefined();
+    expect(getScenarioRunServiceStats().planningCacheMisses).toBe(1);
+    expect(getScenarioRunServiceStats().planningCacheHits).toBe(0);
+
+    solveEngine({
+      input,
+      maxIterations: 8,
+      overrides: {
+        [overrideObservationId as number]: {
+          stdDev: 0.02,
+        },
+      },
+      parseOptions: {
+        coordMode: '2D',
+        units: 'm',
+      },
+    });
+
+    const stats = getScenarioRunServiceStats();
+    expect(stats.parseCacheMisses).toBe(1);
+    expect(stats.parseCacheHits).toBe(1);
+    expect(stats.planningCacheMisses).toBe(1);
+    expect(stats.planningCacheHits).toBe(1);
   });
 
   it('runs explicit comparison-scenario groups in order while reusing the parsed model', () => {
@@ -87,6 +129,8 @@ describe('scenario run service', () => {
     expect(stats.solveCount).toBe(2);
     expect(stats.parseCacheMisses).toBe(1);
     expect(stats.parseCacheHits).toBe(1);
+    expect(stats.planningCacheMisses).toBe(1);
+    expect(stats.planningCacheHits).toBe(1);
   });
 
   it('reuses cached parsed state across repeated cluster dual-pass reruns', () => {
@@ -121,8 +165,12 @@ describe('scenario run service', () => {
     expect(afterFirstRun.solveCount).toBe(3);
     expect(afterFirstRun.parseCacheMisses).toBe(3);
     expect(afterFirstRun.parseCacheHits).toBe(0);
+    expect(afterFirstRun.planningCacheMisses).toBe(3);
+    expect(afterFirstRun.planningCacheHits).toBe(0);
     expect(afterSecondRun.solveCount).toBe(6);
     expect(afterSecondRun.parseCacheMisses).toBe(3);
     expect(afterSecondRun.parseCacheHits).toBe(3);
+    expect(afterSecondRun.planningCacheMisses).toBe(3);
+    expect(afterSecondRun.planningCacheHits).toBe(3);
   });
 });

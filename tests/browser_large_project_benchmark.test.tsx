@@ -79,6 +79,7 @@ describe('browser large-project benchmark coverage', () => {
       expect(outcome.elapsedMs).toBeGreaterThanOrEqual(0);
       expect(solveDurationMs).toBeLessThan(fixture.solveBudgetMs);
       expect(getScenarioRunServiceStats().parseCacheMisses).toBe(1);
+      expect(getScenarioRunServiceStats().planningCacheMisses).toBe(1);
 
       const rerunStart = performance.now();
       const rerunOutcome = runAdjustmentSession(request);
@@ -88,6 +89,7 @@ describe('browser large-project benchmark coverage', () => {
       expect(rerunOutcome.result.converged).toBe(true);
       expect(rerunDurationMs).toBeLessThan(fixture.rerunBudgetMs);
       expect(getScenarioRunServiceStats().parseCacheHits).toBeGreaterThanOrEqual(1);
+      expect(getScenarioRunServiceStats().planningCacheHits).toBeGreaterThanOrEqual(1);
 
       const container = document.createElement('div');
       document.body.appendChild(container);
@@ -152,7 +154,9 @@ describe('browser large-project benchmark coverage', () => {
       expect(renderDurationMs).toBeLessThan(fixture.renderBudgetMs);
       expect(container.textContent).toContain('Adjusted Coordinates');
       expect(container.textContent).toContain('P001');
-      expect(container.querySelectorAll('[data-map-station]').length).toBe(fixture.expectedStationCount);
+      expect(container.querySelectorAll('[data-map-station]').length).toBe(
+        fixture.expectedStationCount,
+      );
       expect(container.querySelectorAll('[data-map-label]').length).toBeLessThan(
         fixture.expectedStationCount,
       );

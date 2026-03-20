@@ -1,6 +1,7 @@
 import { LSAEngine } from './adjust';
 import {
   getCachedParsedModel,
+  getCachedSolvePreparation,
   getScenarioRunServiceStats,
   recordScenarioSolve,
   resetScenarioRunServiceCache,
@@ -14,6 +15,7 @@ import type { AdjustmentResult } from '../types';
 
 export const runAdjustmentScenario = (request: ScenarioRunRequest): AdjustmentResult => {
   recordScenarioSolve();
+  const parsedResult = getCachedParsedModel(request);
   const engine = new LSAEngine({
     input: request.input,
     maxIterations: request.maxIterations,
@@ -23,7 +25,8 @@ export const runAdjustmentScenario = (request: ScenarioRunRequest): AdjustmentRe
     overrides: request.overrides,
     parseOptions: request.parseOptions,
     geoidSourceData: request.geoidSourceData,
-    parsedResult: getCachedParsedModel(request),
+    parsedResult,
+    solvePreparation: getCachedSolvePreparation(request, parsedResult),
   });
   return engine.solve();
 };
