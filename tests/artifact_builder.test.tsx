@@ -6,6 +6,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { useArtifactBuilder } from '../src/hooks/useArtifactBuilder';
 import type {
+  ArtifactProgressMessage,
   ArtifactRequestMessage,
   ArtifactSuccessMessage,
 } from '../src/engine/adjustmentWorkerProtocol';
@@ -90,6 +91,12 @@ describe('useArtifactBuilder', () => {
 
     await act(async () => {
       button.click();
+    });
+
+    expect(mounted.container.querySelector('#status')?.textContent).toBe('idle');
+    expect(directBuilder).not.toHaveBeenCalled();
+
+    await act(async () => {
       vi.runAllTimers();
     });
 
@@ -104,14 +111,16 @@ describe('useArtifactBuilder', () => {
     vi.useRealTimers();
   });
 
-  it('routes artifact builds through the worker message path when workers are available', async () => {
+  it('keeps worker-backed artifact builds pending through progress events until success arrives', async () => {
     class MockWorker {
-      listener: ((_: MessageEvent<ArtifactSuccessMessage>) => void) | null = null;
+      listener:
+        | ((_: MessageEvent<ArtifactProgressMessage | ArtifactSuccessMessage>) => void)
+        | null = null;
       postedMessages: ArtifactRequestMessage[] = [];
 
       addEventListener(
         _type: string,
-        listener: (_: MessageEvent<ArtifactSuccessMessage>) => void,
+        listener: (_: MessageEvent<ArtifactProgressMessage | ArtifactSuccessMessage>) => void,
       ) {
         this.listener = listener;
       }
@@ -120,12 +129,32 @@ describe('useArtifactBuilder', () => {
 
       postMessage(message: ArtifactRequestMessage) {
         this.postedMessages.push(message);
+      }
+
+      emitProgress(phase: ArtifactProgressMessage['phase']) {
+        const taskId = this.postedMessages[0]?.taskId;
+        if (!taskId) return;
+        const response: ArtifactProgressMessage = {
+          type: 'artifact-progress',
+          taskId,
+          phase,
+        };
+        this.listener?.({
+          data: response,
+        } as MessageEvent<ArtifactProgressMessage | ArtifactSuccessMessage>);
+      }
+
+      emitSuccess() {
+        const taskId = this.postedMessages[0]?.taskId;
+        if (!taskId) return;
         const response: ArtifactSuccessMessage = {
           type: 'artifact-success',
-          taskId: message.taskId,
+          taskId,
           payload: artifactResult,
         };
-        this.listener?.({ data: response } as MessageEvent<ArtifactSuccessMessage>);
+        this.listener?.({
+          data: response,
+        } as MessageEvent<ArtifactProgressMessage | ArtifactSuccessMessage>);
       }
 
       terminate() {}
@@ -159,6 +188,20 @@ describe('useArtifactBuilder', () => {
       }),
     );
     expect(directBuilder).not.toHaveBeenCalled();
+    expect(mounted.container.querySelector('#status')?.textContent).toBe('idle');
+
+    await act(async () => {
+      workerInstance.emitProgress('queued');
+      workerInstance.emitProgress('building');
+      workerInstance.emitProgress('finalizing');
+    });
+
+    expect(mounted.container.querySelector('#status')?.textContent).toBe('idle');
+
+    await act(async () => {
+      workerInstance.emitSuccess();
+    });
+
     expect(mounted.container.querySelector('#status')?.textContent).toBe(
       'webnet-results-2026-03-20.txt',
     );

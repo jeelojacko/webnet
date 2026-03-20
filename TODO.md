@@ -61,10 +61,13 @@
       - [x] Move CSV, GeoJSON, and report-package generation off the main thread through the existing worker path
       - [x] Keep solve request shapes backward-compatible while extending worker artifact messages
       - [x] Add focused regression coverage for worker-backed artifact routing plus direct-fallback parity
-    - [ ] Batch 3 - performance budgets and imported-job benchmarks
-      - [ ] Extend the benchmark suite with imported dense TS/GNSS/leveling fixtures
-      - [ ] Add explicit budgets for initial solve, cached rerun, first render, and artifact-build latency
-      - [ ] Add focused regression coverage for worker artifact responsiveness and cache-hit paths
+    - [x] Batch 3 - performance budgets and imported-job benchmarks
+      - [x] Extend the benchmark suite with imported dense TS/GNSS/leveling fixtures
+      - [x] Add explicit budgets for initial solve, cached rerun, first render, and artifact-build latency
+      - [x] Add focused regression coverage for worker artifact responsiveness and cache-hit paths
+      - [x] Add imported benchmark fixture profiles for a JobXML-style TS job, a GNSS loop-heavy job, and a differential-leveling job
+      - [x] Benchmark a heavy artifact export path alongside solve and render timing so worker-offloaded deliverables keep a bounded latency budget
+      - [x] Prove the worker artifact hook stays asynchronous through progress updates and that cached reruns still hit parse/planning caches on imported-style jobs
   - [ ] Phase 4 - review and map/report UX polish
     - [ ] Batch 1 - issue-driven review queue
       - [ ] Add a shared review queue populated by import conflicts, suspect observations, cluster candidates, and saved-run diffs

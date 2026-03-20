@@ -1,15 +1,41 @@
 [
   {
-    "id": "radial_bearing_distance_120",
-    "pointCount": 120,
-    "angleOffsetDeg": 7.5,
-    "radiusBaseM": 80,
-    "radiusStepM": 1.25,
-    "expectedStationCount": 121,
+    "id": "imported_jobxml_ts_dense",
+    "kind": "imported-ts",
+    "repeatCount": 20,
+    "expectedStationCount": 80,
     "expectedObservationCount": 240,
     "reportWindowSize": 100,
-    "solveBudgetMs": 5500,
-    "rerunBudgetMs": 5000,
-    "renderBudgetMs": 4000
+    "solveBudgetMs": 10000,
+    "rerunBudgetMs": 6500,
+    "renderBudgetMs": 4000,
+    "artifactBuildBudgetMs": 3000,
+    "artifactFormat": "bundle-qa-standard-with-landxml"
+  },
+  {
+    "id": "imported_gnss_loop_dense",
+    "kind": "imported-gnss",
+    "repeatCount": 24,
+    "expectedStationCount": 96,
+    "expectedObservationCount": 120,
+    "reportWindowSize": 100,
+    "solveBudgetMs": 4500,
+    "rerunBudgetMs": 3500,
+    "renderBudgetMs": 3000,
+    "artifactBuildBudgetMs": 2500,
+    "artifactFormat": "bundle-qa-standard-with-landxml"
+  },
+  {
+    "id": "imported_level_loop_dense",
+    "kind": "imported-leveling",
+    "repeatCount": 30,
+    "expectedStationCount": 120,
+    "expectedObservationCount": 150,
+    "reportWindowSize": 100,
+    "solveBudgetMs": 4500,
+    "rerunBudgetMs": 3500,
+    "renderBudgetMs": 3000,
+    "artifactBuildBudgetMs": 2500,
+    "artifactFormat": "bundle-qa-standard-with-landxml"
   }
 ]
