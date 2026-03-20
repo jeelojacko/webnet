@@ -307,6 +307,9 @@ const ImportReviewModal: React.FC<ImportReviewModalProps> = ({
                     Imported Data
                   </th>
                   <th className="border-b border-slate-700 px-3 py-2 text-left font-semibold">
+                    Source File
+                  </th>
+                  <th className="border-b border-slate-700 px-3 py-2 text-left font-semibold">
                     Source Type
                   </th>
                   <th className="border-b border-slate-700 px-3 py-2 text-left font-semibold">
@@ -363,6 +366,9 @@ const ImportReviewModal: React.FC<ImportReviewModalProps> = ({
                           }`}
                           spellCheck={false}
                         />
+                      </td>
+                      <td className="border-b border-slate-800 px-3 py-2 text-slate-300 align-top">
+                        {item.sourceName ?? '-'}
                       </td>
                       <td className="border-b border-slate-800 px-3 py-2 text-slate-300 align-top">
                         {item.sourceType}
@@ -551,7 +557,7 @@ const ImportReviewModal: React.FC<ImportReviewModalProps> = ({
                   onClick={onCompareFile}
                   className="border border-slate-600 bg-slate-950 px-3 py-2 text-[11px] uppercase tracking-wide text-slate-200 hover:border-cyan-400"
                 >
-                  Compare File
+                  Add Source File
                 </button>
                 {comparisonSummary && (
                   <button
@@ -559,7 +565,7 @@ const ImportReviewModal: React.FC<ImportReviewModalProps> = ({
                     onClick={onClearComparison}
                     className="border border-slate-600 bg-slate-950 px-3 py-2 text-[11px] uppercase tracking-wide text-slate-200 hover:border-cyan-400"
                   >
-                    Clear Compare
+                    Clear Added Sources
                   </button>
                 )}
               </div>
@@ -595,7 +601,7 @@ const ImportReviewModal: React.FC<ImportReviewModalProps> = ({
               {comparisonSummary && (
                 <div className="grid gap-2 text-left">
                   <div className="text-[11px] uppercase tracking-wide text-slate-400">
-                    Compare Preset
+                    Reconcile Preset
                   </div>
                   <div className="flex gap-2">
                     <button
@@ -690,6 +696,11 @@ const ImportReviewModal: React.FC<ImportReviewModalProps> = ({
                           {conflict.incomingSummary}
                         </td>
                         <td className="border-b border-slate-800 px-3 py-2 text-slate-300">
+                          {conflict.incomingSourceName && (
+                            <div className="mb-1 text-[10px] uppercase tracking-wide text-cyan-200/80">
+                              {conflict.incomingSourceName}
+                            </div>
+                          )}
                           <div>{conflict.sourceLine != null ? conflict.sourceLine : '-'}</div>
                           {conflict.existingSourceLines && conflict.existingSourceLines.length > 0 && (
                             <div className="mt-1 text-[10px] text-slate-500">
@@ -746,50 +757,43 @@ const ImportReviewModal: React.FC<ImportReviewModalProps> = ({
           {comparisonSummary && (
             <section className="border border-cyan-800/60 bg-cyan-950/20">
               <div className="border-b border-cyan-800/60 bg-cyan-950/40 px-4 py-3">
-                <div className="text-sm font-semibold text-cyan-100">Compare / Reconcile</div>
+                <div className="text-sm font-semibold text-cyan-100">
+                  Multi-Source Reconcile
+                </div>
                 <div className="text-[11px] uppercase tracking-wide text-cyan-200/80">
                   {comparisonMode === 'non-mta-only'
-                    ? 'Comparing non-MTA observations only so report exports and raw XML can be checked side by side'
+                    ? 'Comparing non-MTA observations only so imported field files can be reconciled side by side'
                     : 'Comparing all raw imported observations, including JobXML MTA rows'}
                 </div>
               </div>
-              <div className="grid gap-4 px-4 py-4 lg:grid-cols-2">
-                <div className="border border-slate-700 bg-slate-950/60 p-3 text-xs text-slate-200">
-                  <div className="text-[11px] uppercase tracking-wide text-slate-400">Primary</div>
-                  <div className="mt-1 font-semibold text-white">
-                    {comparisonSummary.primarySourceName}
-                  </div>
-                  <div className="mt-2 space-y-1">
-                    <div>Importer: {comparisonSummary.primaryImporterId}</div>
-                    <div>Points: {comparisonSummary.primaryTotals.controlStations}</div>
-                    <div>Raw Obs: {comparisonSummary.primaryTotals.observations}</div>
-                    <div>Compared Obs: {comparisonSummary.primaryTotals.comparedObservations}</div>
-                  </div>
-                </div>
-                <div className="border border-slate-700 bg-slate-950/60 p-3 text-xs text-slate-200">
-                  <div className="text-[11px] uppercase tracking-wide text-slate-400">
-                    Comparison
-                  </div>
-                  <div className="mt-1 font-semibold text-white">
-                    {comparisonSummary.comparisonSourceName}
-                  </div>
-                  <div className="mt-2 space-y-1">
-                    <div>Importer: {comparisonSummary.comparisonImporterId}</div>
-                    <div>Points: {comparisonSummary.comparisonTotals.controlStations}</div>
-                    <div>Raw Obs: {comparisonSummary.comparisonTotals.observations}</div>
-                    <div>
-                      Compared Obs: {comparisonSummary.comparisonTotals.comparedObservations}
+              <div
+                className={`grid gap-4 px-4 py-4 ${
+                  comparisonSummary.sources.length >= 3 ? 'lg:grid-cols-3' : 'lg:grid-cols-2'
+                }`}
+              >
+                {comparisonSummary.sources.map((source) => (
+                  <div
+                    key={source.key}
+                    className="border border-slate-700 bg-slate-950/60 p-3 text-xs text-slate-200"
+                  >
+                    <div className="text-[11px] uppercase tracking-wide text-slate-400">
+                      {source.isPrimary ? 'Primary Source' : 'Reconcile Source'}
+                    </div>
+                    <div className="mt-1 font-semibold text-white">{source.sourceName}</div>
+                    <div className="mt-2 space-y-1">
+                      <div>Importer: {source.importerId}</div>
+                      <div>Points: {source.totals.controlStations}</div>
+                      <div>Raw Obs: {source.totals.observations}</div>
+                      <div>Compared Obs: {source.totals.comparedObservations}</div>
                     </div>
                   </div>
-                </div>
+                ))}
               </div>
               <div className="border-t border-cyan-800/40 px-4 py-3 text-xs text-slate-300">
-                Compared delta:{' '}
-                {comparisonSummary.primaryTotals.comparedObservations -
-                  comparisonSummary.comparisonTotals.comparedObservations}
+                Source mismatch buckets: {comparisonSummary.rows.length}
                 <div className="mt-1 text-[11px] text-amber-200/80">
-                  Highlighted staged rows belong to setup/target/family buckets that differ between
-                  the two files.
+                  Highlighted staged rows belong to setup/target/family buckets that differ across
+                  the loaded source files.
                 </div>
               </div>
               {comparisonSummary.rows.length > 0 && (
@@ -806,14 +810,19 @@ const ImportReviewModal: React.FC<ImportReviewModalProps> = ({
                         <th className="border-b border-slate-700 px-3 py-2 text-left font-semibold">
                           Family
                         </th>
+                        {comparisonSummary.sources.map((source) => (
+                          <th
+                            key={`reconcile-source:${source.key}`}
+                            className="border-b border-slate-700 px-3 py-2 text-right font-semibold"
+                          >
+                            {source.sourceName}
+                          </th>
+                        ))}
                         <th className="border-b border-slate-700 px-3 py-2 text-right font-semibold">
-                          {comparisonSummary.primarySourceName}
+                          Spread
                         </th>
                         <th className="border-b border-slate-700 px-3 py-2 text-right font-semibold">
-                          {comparisonSummary.comparisonSourceName}
-                        </th>
-                        <th className="border-b border-slate-700 px-3 py-2 text-right font-semibold">
-                          Delta
+                          Present In
                         </th>
                       </tr>
                     </thead>
@@ -829,22 +838,23 @@ const ImportReviewModal: React.FC<ImportReviewModalProps> = ({
                           <td className="border-b border-slate-800 px-3 py-2 text-slate-300">
                             {row.family}
                           </td>
-                          <td className="border-b border-slate-800 px-3 py-2 text-right text-slate-200">
-                            {row.primaryCount}
-                          </td>
-                          <td className="border-b border-slate-800 px-3 py-2 text-right text-slate-200">
-                            {row.comparisonCount}
-                          </td>
+                          {row.countsBySource.map((count, index) => (
+                            <td
+                              key={`${row.key}:${comparisonSummary.sources[index]?.key ?? index}`}
+                              className="border-b border-slate-800 px-3 py-2 text-right text-slate-200"
+                            >
+                              {count}
+                            </td>
+                          ))}
                           <td
                             className={`border-b border-slate-800 px-3 py-2 text-right ${
-                              row.delta === 0
-                                ? 'text-slate-300'
-                                : row.delta > 0
-                                  ? 'text-amber-300'
-                                  : 'text-cyan-300'
+                              row.spread === 0 ? 'text-slate-300' : 'text-amber-300'
                             }`}
                           >
-                            {row.delta > 0 ? `+${row.delta}` : row.delta}
+                            {row.spread}
+                          </td>
+                          <td className="border-b border-slate-800 px-3 py-2 text-right text-cyan-200">
+                            {row.sourcePresenceCount}/{comparisonSummary.sources.length}
                           </td>
                         </tr>
                       ))}

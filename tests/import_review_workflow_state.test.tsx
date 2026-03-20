@@ -191,7 +191,9 @@ describe('useImportReviewWorkflow', () => {
       return (
         <div>
           <div data-source>{state.importReviewState?.sourceName ?? '-'}</div>
+          <div data-sources>{state.importReviewState?.sources.length ?? 0}</div>
           <div data-conflicts>{state.importReviewState?.conflicts.length ?? 0}</div>
+          <div data-compare-rows>{state.importReviewState?.comparisonSummary?.rows.length ?? 0}</div>
           <div data-resolution>{state.importReviewState?.conflictResolutions['control:0'] ?? '-'}</div>
           <div data-rename>{state.importReviewState?.conflictRenameValues['control:0'] ?? '-'}</div>
           <div data-snapshot>{state.importReviewSnapshot?.sourceName ?? '-'}</div>
@@ -200,6 +202,56 @@ describe('useImportReviewWorkflow', () => {
               state.restoreImportReviewWorkflow({
                 sourceName: 'imported.jxl',
                 notice: { title: 'Imported JobXML dataset', detailLines: ['detail'] },
+                sources: [
+                  {
+                    key: 'source:0',
+                    sourceName: 'imported.jxl',
+                    notice: { title: 'Imported JobXML dataset', detailLines: ['detail'] },
+                    dataset: {
+                      importerId: 'jobxml',
+                      formatLabel: 'JobXML',
+                      summary: 'summary',
+                      notice: { title: 'Imported JobXML dataset', detailLines: ['detail'] },
+                      comments: [],
+                      controlStations: [
+                        {
+                          kind: 'control-station',
+                          coordinateMode: 'local',
+                          stationId: 'P1',
+                          eastM: 101,
+                          northM: 201,
+                          heightM: 11,
+                        },
+                      ],
+                      observations: [
+                        {
+                          kind: 'distance',
+                          fromId: 'P1',
+                          toId: 'P2',
+                          distanceM: 12.3,
+                        },
+                      ],
+                      trace: [],
+                    },
+                    isPrimary: true,
+                  },
+                  {
+                    key: 'source:1',
+                    sourceName: 'imported.htm',
+                    notice: { title: 'Imported Survey Report', detailLines: ['detail'] },
+                    dataset: {
+                      importerId: 'trimble-survey-report',
+                      formatLabel: 'Survey Report',
+                      summary: 'summary',
+                      notice: { title: 'Imported Survey Report', detailLines: ['detail'] },
+                      comments: [],
+                      controlStations: [],
+                      observations: [],
+                      trace: [],
+                    },
+                    isPrimary: false,
+                  },
+                ],
                 dataset: {
                   importerId: 'jobxml',
                   formatLabel: 'JobXML',
@@ -253,6 +305,7 @@ describe('useImportReviewWorkflow', () => {
                 importFaceNormalizationMode: 'on',
                 force2DOutput: false,
                 nextSyntheticId: 1,
+                nextSourceId: 2,
                 conflicts: [
                   {
                     id: 'coordinate-conflict:P1:0',
@@ -287,7 +340,9 @@ describe('useImportReviewWorkflow', () => {
     });
 
     expect(container.querySelector('[data-source]')?.textContent).toBe('imported.jxl');
+    expect(container.querySelector('[data-sources]')?.textContent).toBe('2');
     expect(container.querySelector('[data-conflicts]')?.textContent).toBe('1');
+    expect(container.querySelector('[data-compare-rows]')?.textContent).toBe('1');
     expect(container.querySelector('[data-resolution]')?.textContent).toBe('rename-incoming');
     expect(container.querySelector('[data-rename]')?.textContent).toBe('P1_IMPORT');
     expect(container.querySelector('[data-snapshot]')?.textContent).toBe('imported.jxl');

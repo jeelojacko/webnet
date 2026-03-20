@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useRef, useState, type ChangeEvent, type Dispatch, type RefObject, type SetStateAction } from 'react';
 import {
+  appendImportReviewSource,
   buildImportReviewComparisonSummary,
   buildImportReviewDisplayTextMap,
   buildImportReviewModel,
@@ -19,6 +20,7 @@ import {
   type ImportReviewModel,
   type ImportReviewOutputPreset,
   type ImportReviewRowTypeOverride,
+  type ImportReviewWorkspaceSource,
 } from '../engine/importReview';
 import {
   buildImportConflictSummary,
@@ -49,11 +51,9 @@ export type PendingAnglePromptFile = {
 export type ImportReviewState = {
   sourceName: string;
   notice: ImportedInputNotice;
+  sources: ImportReviewWorkspaceSource[];
   dataset: ImportedDataset;
   reviewModel: ImportReviewModel;
-  comparisonSourceName?: string;
-  comparisonNotice?: ImportedInputNotice;
-  comparisonDataset?: ImportedDataset;
   comparisonSummary?: ImportReviewComparisonSummary | null;
   comparisonMode: ImportReviewComparisonMode;
   excludedItemIds: Set<string>;
@@ -67,6 +67,7 @@ export type ImportReviewState = {
   importAngleMode?: ImportAnglePromptChoice;
   force2DOutput: boolean;
   nextSyntheticId: number;
+  nextSourceId: number;
   conflicts: ImportConflict[];
   conflictResolutions: Record<string, ImportResolution>;
   conflictRenameValues: Record<string, string>;
@@ -129,6 +130,53 @@ const mergeConflictRenameValues = (
     if (previousRenameValues[key] != null) defaults[key] = previousRenameValues[key];
   });
   return defaults;
+};
+
+const buildImportReviewComparisonSummaryForSources = (
+  sources: ImportReviewWorkspaceSource[],
+  mode: ImportReviewComparisonMode,
+): ImportReviewComparisonSummary | null =>
+  sources.length > 1 ? buildImportReviewComparisonSummary(sources, mode) : null;
+
+const createImportReviewSource = (
+  key: string,
+  sourceName: string,
+  notice: ImportedInputNotice,
+  dataset: ImportedDataset,
+  isPrimary: boolean,
+): ImportReviewWorkspaceSource => ({
+  key,
+  sourceName,
+  notice,
+  dataset,
+  isPrimary,
+});
+
+const buildWorkspaceFromSources = (
+  sources: ImportReviewWorkspaceSource[],
+): { dataset: ImportedDataset; reviewModel: ImportReviewModel } => {
+  const emptyDataset: ImportedDataset = {
+    importerId: sources[0]?.dataset.importerId ?? 'workspace',
+    formatLabel: sources[0]?.dataset.formatLabel ?? 'Workspace',
+    summary: sources[0]?.dataset.summary ?? 'workspace',
+    notice: sources[0]?.dataset.notice ?? { title: 'Workspace', detailLines: [] },
+    comments: [],
+    controlStations: [],
+    observations: [],
+    trace: [],
+  };
+  const emptyModel: ImportReviewModel = {
+    groups: [],
+    items: [],
+    warnings: [],
+    errors: [],
+  };
+
+  return sources.reduce(
+    (workspace, source) =>
+      appendImportReviewSource(workspace.dataset, workspace.reviewModel, source),
+    { dataset: emptyDataset, reviewModel: emptyModel },
+  );
 };
 
 interface UseImportReviewWorkflowArgs {
@@ -217,22 +265,54 @@ export const useImportReviewWorkflow = ({
           );
           if (pickerMode === 'compare') {
             if (imported.detected && imported.dataset && imported.notice) {
-              const comparisonDataset = imported.dataset;
               setImportReviewState((prev) =>
                 prev
-                  ? {
-                      ...prev,
-                      comparisonSourceName: file.name,
-                      comparisonNotice: imported.notice,
-                      comparisonDataset,
-                      comparisonSummary: buildImportReviewComparisonSummary(
-                        prev.dataset,
-                        prev.sourceName,
-                        comparisonDataset,
+                  ? (() => {
+                      const nextSource = createImportReviewSource(
+                        `source:${prev.nextSourceId}`,
                         file.name,
-                        prev.comparisonMode,
-                      ),
-                    }
+                        imported.notice!,
+                        imported.dataset!,
+                        false,
+                      );
+                      const nextSources = [...prev.sources, nextSource];
+                      const nextWorkspace = appendImportReviewSource(
+                        prev.dataset,
+                        prev.reviewModel,
+                        nextSource,
+                      );
+                      const nextSourceModel = buildImportReviewModel(nextSource.dataset);
+                      const nextGroupLabels = { ...prev.groupLabels };
+                      const nextGroupComments = { ...prev.groupComments };
+                      nextSourceModel.groups.forEach((group) => {
+                        nextGroupLabels[`${nextSource.key}:${group.key}`] = group.label;
+                        nextGroupComments[`${nextSource.key}:${group.key}`] = group.defaultComment;
+                      });
+                      const nextConflicts = buildImportConflicts(nextWorkspace.dataset);
+                      return {
+                        ...prev,
+                        sources: nextSources,
+                        dataset: nextWorkspace.dataset,
+                        reviewModel: nextWorkspace.reviewModel,
+                        groupLabels: nextGroupLabels,
+                        groupComments: nextGroupComments,
+                        comparisonSummary: buildImportReviewComparisonSummaryForSources(
+                          nextSources,
+                          prev.comparisonMode,
+                        ),
+                        nextSourceId: prev.nextSourceId + 1,
+                        conflicts: nextConflicts,
+                        conflictResolutions: mergeConflictResolutionDefaults(
+                          nextConflicts,
+                          prev.conflictResolutions,
+                        ),
+                        conflictRenameValues: mergeConflictRenameValues(
+                          nextConflicts,
+                          prev.conflictRenameValues,
+                        ),
+                        resolutionValidationMessage: null,
+                      };
+                    })()
                   : prev,
               );
             }
@@ -240,28 +320,36 @@ export const useImportReviewWorkflow = ({
           }
 
           if (imported.detected && imported.dataset && imported.notice) {
-            const reviewModel = buildImportReviewModel(imported.dataset);
-            const conflicts = buildImportConflicts(imported.dataset);
+            const primarySource = createImportReviewSource(
+              'source:0',
+              file.name,
+              imported.notice!,
+              imported.dataset!,
+              true,
+            );
+            const workspace = buildWorkspaceFromSources([primarySource]);
+            const conflicts = buildImportConflicts(workspace.dataset);
             const importedPromptedFile = requiresImportAngleModePrompt(file.name);
             const useReducedDirectionPreset = importedPromptedFile && angleMode === 'reduced';
             const useDirectionSetPreset =
               importedPromptedFile && (angleMode === 'reduced' || faceMode != null);
             const rowTypeOverrides = useReducedDirectionPreset
-              ? buildReducedAngleRowTypeOverrides(reviewModel)
+              ? buildReducedAngleRowTypeOverrides(workspace.reviewModel)
               : {};
             const selectedFaceMode: ImportFacePromptChoice =
               faceMode ?? (faceNormalizationMode === 'off' ? 'off' : 'on');
             const groupComments = Object.fromEntries(
-              reviewModel.groups.map((group) => [group.key, group.defaultComment]),
+              workspace.reviewModel.groups.map((group) => [group.key, group.defaultComment]),
             );
             const groupLabels = Object.fromEntries(
-              reviewModel.groups.map((group) => [group.key, group.label]),
+              workspace.reviewModel.groups.map((group) => [group.key, group.label]),
             );
             setImportReviewState({
               sourceName: file.name,
               notice: imported.notice,
-              dataset: imported.dataset,
-              reviewModel,
+              sources: [primarySource],
+              dataset: workspace.dataset,
+              reviewModel: workspace.reviewModel,
               comparisonSummary: null,
               comparisonMode: 'non-mta-only',
               excludedItemIds: new Set(),
@@ -275,6 +363,7 @@ export const useImportReviewWorkflow = ({
               importAngleMode: angleMode,
               force2DOutput: false,
               nextSyntheticId: 1,
+              nextSourceId: 1,
               conflicts,
               conflictResolutions: buildImportConflictResolutionDefaults(conflicts),
               conflictRenameValues: buildDefaultConflictRenameValues(conflicts),
@@ -298,7 +387,7 @@ export const useImportReviewWorkflow = ({
       const pickerMode = filePickerModeRef.current;
       filePickerModeRef.current = 'replace';
       e.target.value = '';
-      if (pickerMode === 'replace' && requiresImportAngleModePrompt(file.name)) {
+      if (requiresImportAngleModePrompt(file.name)) {
         setPendingAnglePromptFile({
           file,
           pickerMode,
@@ -391,9 +480,12 @@ export const useImportReviewWorkflow = ({
   const handleImportReviewConvertSlopeZenithToHd2D = useCallback(() => {
     setImportReviewState((prev) => {
       if (!prev) return prev;
-      const nextDataset = convertImportedDatasetSlopeZenithToHd2D(prev.dataset);
-      const nextReviewModel = buildImportReviewModel(nextDataset);
-      const itemIds = new Set(nextReviewModel.items.map((item) => item.id));
+      const nextSources = prev.sources.map((source) => ({
+        ...source,
+        dataset: convertImportedDatasetSlopeZenithToHd2D(source.dataset),
+      }));
+      const nextWorkspace = buildWorkspaceFromSources(nextSources);
+      const itemIds = new Set(nextWorkspace.reviewModel.items.map((item) => item.id));
       const nextExcludedItemIds = new Set(
         [...prev.excludedItemIds].filter((itemId) => itemIds.has(itemId)),
       );
@@ -401,29 +493,33 @@ export const useImportReviewWorkflow = ({
         [...prev.fixedItemIds].filter((itemId) => itemIds.has(itemId)),
       );
       const nextGroupLabels = Object.fromEntries(
-        nextReviewModel.groups.map((group) => [group.key, prev.groupLabels[group.key] ?? group.label]),
+        nextWorkspace.reviewModel.groups.map((group) => [
+          group.key,
+          prev.groupLabels[group.key] ?? group.label,
+        ]),
       );
       const nextGroupComments = Object.fromEntries(
-        nextReviewModel.groups.map((group) => [
+        nextWorkspace.reviewModel.groups.map((group) => [
           group.key,
           prev.groupComments[group.key] ?? group.defaultComment,
         ]),
       );
-      const nextConflicts = buildImportConflicts(nextDataset);
+      const nextConflicts = buildImportConflicts(nextWorkspace.dataset);
       return {
         ...prev,
-        dataset: nextDataset,
-        reviewModel: nextReviewModel,
+        sources: nextSources,
+        dataset: nextWorkspace.dataset,
+        reviewModel: nextWorkspace.reviewModel,
         groupLabels: nextGroupLabels,
         groupComments: nextGroupComments,
         excludedItemIds: nextExcludedItemIds,
         fixedItemIds: nextFixedItemIds,
         rowOverrides: {},
         rowTypeOverrides: {},
-        comparisonSourceName: undefined,
-        comparisonNotice: undefined,
-        comparisonDataset: undefined,
-        comparisonSummary: null,
+        comparisonSummary: buildImportReviewComparisonSummaryForSources(
+          nextSources,
+          prev.comparisonMode,
+        ),
         force2DOutput: true,
         conflicts: nextConflicts,
         conflictResolutions: mergeConflictResolutionDefaults(
@@ -548,16 +644,7 @@ export const useImportReviewWorkflow = ({
       return {
         ...prev,
         comparisonMode: mode,
-        comparisonSummary:
-          prev.comparisonDataset && prev.comparisonSourceName
-            ? buildImportReviewComparisonSummary(
-                prev.dataset,
-                prev.sourceName,
-                prev.comparisonDataset,
-                prev.comparisonSourceName,
-                mode,
-              )
-            : prev.comparisonSummary,
+        comparisonSummary: buildImportReviewComparisonSummaryForSources(prev.sources, mode),
       };
     });
   }, []);
@@ -711,29 +798,62 @@ export const useImportReviewWorkflow = ({
   }, [triggerFileSelect]);
 
   const handleImportReviewClearComparison = useCallback(() => {
-    setImportReviewState((prev) =>
-      prev
-        ? {
-            ...prev,
-            comparisonSourceName: undefined,
-            comparisonNotice: undefined,
-            comparisonDataset: undefined,
-            comparisonSummary: null,
-          }
-        : prev,
-    );
-  }, []);
+    setImportReviewState((prev) => {
+      if (!prev) return prev;
+      const primarySources = prev.sources.filter((source) => source.isPrimary);
+      const nextWorkspace = buildWorkspaceFromSources(primarySources);
+      const nextItemIds = new Set(nextWorkspace.reviewModel.items.map((item) => item.id));
+      const nextExcludedItemIds = new Set(
+        [...prev.excludedItemIds].filter((itemId) => nextItemIds.has(itemId)),
+      );
+      const nextFixedItemIds = new Set(
+        [...prev.fixedItemIds].filter((itemId) => nextItemIds.has(itemId)),
+      );
+      const nextGroupLabels = Object.fromEntries(
+        nextWorkspace.reviewModel.groups.map((group) => [
+          group.key,
+          prev.groupLabels[group.key] ?? group.label,
+        ]),
+      );
+      const nextGroupComments = Object.fromEntries(
+        nextWorkspace.reviewModel.groups.map((group) => [
+          group.key,
+          prev.groupComments[group.key] ?? group.defaultComment,
+        ]),
+      );
+      const nextConflicts = buildImportConflicts(nextWorkspace.dataset);
+      return {
+        ...prev,
+        sources: primarySources,
+        dataset: nextWorkspace.dataset,
+        reviewModel: nextWorkspace.reviewModel,
+        excludedItemIds: nextExcludedItemIds,
+        fixedItemIds: nextFixedItemIds,
+        groupLabels: nextGroupLabels,
+        groupComments: nextGroupComments,
+        comparisonSummary: null,
+        conflicts: nextConflicts,
+        conflictResolutions: mergeConflictResolutionDefaults(
+          nextConflicts,
+          prev.conflictResolutions,
+        ),
+        conflictRenameValues: mergeConflictRenameValues(
+          nextConflicts,
+          prev.conflictRenameValues,
+        ),
+        resolutionValidationMessage: null,
+      };
+    });
+  }, [buildImportConflicts]);
 
   const importReviewSnapshot = useMemo<ImportReviewDraftSnapshot | null>(() => {
     if (!importReviewState) return null;
     return {
       sourceName: importReviewState.sourceName,
       notice: importReviewState.notice,
+      sources: importReviewState.sources,
       dataset: importReviewState.dataset,
       reviewModel: importReviewState.reviewModel,
-      comparisonSourceName: importReviewState.comparisonSourceName,
-      comparisonNotice: importReviewState.comparisonNotice,
-      comparisonDataset: importReviewState.comparisonDataset,
       comparisonMode: importReviewState.comparisonMode,
       excludedItemIds: [...importReviewState.excludedItemIds],
       fixedItemIds: [...importReviewState.fixedItemIds],
@@ -746,6 +866,7 @@ export const useImportReviewWorkflow = ({
       importAngleMode: importReviewState.importAngleMode,
       force2DOutput: importReviewState.force2DOutput,
       nextSyntheticId: importReviewState.nextSyntheticId,
+      nextSourceId: importReviewState.nextSourceId,
       conflicts: importReviewState.conflicts,
       conflictResolutions: { ...importReviewState.conflictResolutions },
       conflictRenameValues: { ...importReviewState.conflictRenameValues },
@@ -759,24 +880,46 @@ export const useImportReviewWorkflow = ({
       filePickerModeRef.current = 'replace';
       return;
     }
+    const legacySnapshot = snapshot as ImportReviewDraftSnapshot & {
+      comparisonSourceName?: string;
+      comparisonNotice?: ImportedInputNotice;
+      comparisonDataset?: ImportedDataset;
+      sources?: ImportReviewWorkspaceSource[];
+      nextSourceId?: number;
+    };
+    const restoredSources =
+      legacySnapshot.sources && legacySnapshot.sources.length > 0
+        ? legacySnapshot.sources
+        : [
+            createImportReviewSource(
+              'source:0',
+              snapshot.sourceName,
+              snapshot.notice,
+              snapshot.dataset,
+              true,
+            ),
+            ...(legacySnapshot.comparisonDataset && legacySnapshot.comparisonSourceName
+              ? [
+                  createImportReviewSource(
+                    'source:1',
+                    legacySnapshot.comparisonSourceName,
+                    legacySnapshot.comparisonNotice ?? legacySnapshot.comparisonDataset.notice,
+                    legacySnapshot.comparisonDataset,
+                    false,
+                  ),
+                ]
+              : []),
+          ];
     setImportReviewState({
       sourceName: snapshot.sourceName,
       notice: snapshot.notice,
+      sources: restoredSources,
       dataset: snapshot.dataset,
       reviewModel: snapshot.reviewModel,
-      comparisonSourceName: snapshot.comparisonSourceName,
-      comparisonNotice: snapshot.comparisonNotice,
-      comparisonDataset: snapshot.comparisonDataset,
-      comparisonSummary:
-        snapshot.comparisonDataset && snapshot.comparisonSourceName
-          ? buildImportReviewComparisonSummary(
-              snapshot.dataset,
-              snapshot.sourceName,
-              snapshot.comparisonDataset,
-              snapshot.comparisonSourceName,
-              snapshot.comparisonMode,
-            )
-          : null,
+      comparisonSummary: buildImportReviewComparisonSummaryForSources(
+        restoredSources,
+        snapshot.comparisonMode,
+      ),
       comparisonMode: snapshot.comparisonMode,
       excludedItemIds: new Set(snapshot.excludedItemIds),
       fixedItemIds: new Set(snapshot.fixedItemIds),
@@ -789,6 +932,7 @@ export const useImportReviewWorkflow = ({
       importAngleMode: snapshot.importAngleMode,
       force2DOutput: snapshot.force2DOutput,
       nextSyntheticId: snapshot.nextSyntheticId,
+      nextSourceId: legacySnapshot.nextSourceId ?? restoredSources.length,
       conflicts: snapshot.conflicts,
       conflictResolutions: mergeConflictResolutionDefaults(
         snapshot.conflicts,

@@ -832,35 +832,60 @@ describe('import review workflow', () => {
     };
 
     const summary = buildImportReviewComparisonSummary(
-      primary,
-      'sample.jxl',
-      comparison,
-      'sample.htm',
+      [
+        {
+          key: 'source:0',
+          sourceName: 'sample.jxl',
+          notice: primary.notice,
+          dataset: primary,
+          isPrimary: true,
+        },
+        {
+          key: 'source:1',
+          sourceName: 'sample.htm',
+          notice: comparison.notice,
+          dataset: comparison,
+          isPrimary: false,
+        },
+      ],
     );
 
     expect(summary.mode).toBe('non-mta-only');
-    expect(summary.primaryTotals.observations).toBe(3);
-    expect(summary.primaryTotals.comparedObservations).toBe(2);
-    expect(summary.comparisonTotals.comparedObservations).toBe(2);
+    expect(summary.sources).toHaveLength(2);
+    expect(summary.sources[0]?.totals.observations).toBe(3);
+    expect(summary.sources[0]?.totals.comparedObservations).toBe(2);
+    expect(summary.sources[1]?.totals.comparedObservations).toBe(2);
     expect(summary.rows).toHaveLength(0);
 
     const allRawSummary = buildImportReviewComparisonSummary(
-      primary,
-      'sample.jxl',
-      comparison,
-      'sample.htm',
+      [
+        {
+          key: 'source:0',
+          sourceName: 'sample.jxl',
+          notice: primary.notice,
+          dataset: primary,
+          isPrimary: true,
+        },
+        {
+          key: 'source:1',
+          sourceName: 'sample.htm',
+          notice: comparison.notice,
+          dataset: comparison,
+          isPrimary: false,
+        },
+      ],
       'all-raw',
     );
 
     expect(allRawSummary.mode).toBe('all-raw');
-    expect(allRawSummary.primaryTotals.comparedObservations).toBe(3);
-    expect(allRawSummary.comparisonTotals.comparedObservations).toBe(2);
+    expect(allRawSummary.sources[0]?.totals.comparedObservations).toBe(3);
+    expect(allRawSummary.sources[1]?.totals.comparedObservations).toBe(2);
     expect(allRawSummary.rows).toHaveLength(1);
     expect(allRawSummary.rows[0]).toMatchObject({
       key: '1|1000|2|M',
-      primaryCount: 2,
-      comparisonCount: 1,
-      delta: 1,
+      countsBySource: [2, 1],
+      spread: 1,
+      sourcePresenceCount: 2,
     });
   });
 
@@ -882,5 +907,71 @@ describe('import review workflow', () => {
     expect(buildImportReviewComparisonKeyForItem(rawItem!, 'non-mta-only')).toBe('1|1000|2|M');
     expect(buildImportReviewComparisonKeyForItem(mtaItem!, 'non-mta-only')).toBeNull();
     expect(buildImportReviewComparisonKeyForItem(mtaItem!, 'all-raw')).toBe('1|1000|2|M');
+  });
+
+  it('builds multi-source comparison spreads across more than two imported files', () => {
+    const sourceA: ImportedDataset = {
+      importerId: 'jobxml',
+      formatLabel: 'JobXML',
+      summary: 'A',
+      notice: { title: 'A', detailLines: [] },
+      comments: [],
+      controlStations: [],
+      observations: [
+        { kind: 'distance', fromId: '1', toId: '2', distanceM: 10 },
+        { kind: 'distance', fromId: '1', toId: '2', distanceM: 10.1 },
+      ],
+      trace: [],
+    };
+    const sourceB: ImportedDataset = {
+      importerId: 'survey-report',
+      formatLabel: 'Survey Report',
+      summary: 'B',
+      notice: { title: 'B', detailLines: [] },
+      comments: [],
+      controlStations: [],
+      observations: [{ kind: 'distance', fromId: '1', toId: '2', distanceM: 10 }],
+      trace: [],
+    };
+    const sourceC: ImportedDataset = {
+      importerId: 'fieldgenius',
+      formatLabel: 'Field',
+      summary: 'C',
+      notice: { title: 'C', detailLines: [] },
+      comments: [],
+      controlStations: [],
+      observations: [],
+      trace: [],
+    };
+
+    const summary = buildImportReviewComparisonSummary([
+      {
+        key: 'source:0',
+        sourceName: 'a.jxl',
+        notice: sourceA.notice,
+        dataset: sourceA,
+        isPrimary: true,
+      },
+      {
+        key: 'source:1',
+        sourceName: 'b.htm',
+        notice: sourceB.notice,
+        dataset: sourceB,
+      },
+      {
+        key: 'source:2',
+        sourceName: 'c.raw',
+        notice: sourceC.notice,
+        dataset: sourceC,
+      },
+    ]);
+
+    expect(summary.sources).toHaveLength(3);
+    expect(summary.rows[0]).toMatchObject({
+      key: '1||2|D',
+      countsBySource: [2, 1, 0],
+      spread: 2,
+      sourcePresenceCount: 2,
+    });
   });
 });

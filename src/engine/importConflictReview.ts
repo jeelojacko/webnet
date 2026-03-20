@@ -36,6 +36,7 @@ export interface ImportConflict {
   targetLabel: string;
   existingSummary: string;
   incomingSummary: string;
+  incomingSourceName?: string;
   sourceLine?: number;
   existingSourceLines?: number[];
   relatedItems: ImportConflictItemRef[];
@@ -309,6 +310,7 @@ export const buildImportConflictSummary = ({
       targetLabel: station.stationId,
       existingSummary: formatExistingStationSummary(station.stationId, existingStation, existingDescription),
       incomingSummary: formatIncomingStationSummary(station),
+      incomingSourceName: station.importSourceName,
       sourceLine: station.sourceLine,
       existingSourceLines: findExistingControlSourceLines(currentInput, station.stationId),
       relatedItems: [{ kind: 'control', index }],
@@ -332,6 +334,7 @@ export const buildImportConflictSummary = ({
         targetLabel: station.stationId,
         existingSummary: formatExistingStationSummary(station.stationId, existingStation, existingDescription),
         incomingSummary: formatIncomingStationSummary(station),
+        incomingSourceName: station.importSourceName,
         sourceLine: station.sourceLine,
         existingSourceLines: findExistingControlSourceLines(currentInput, station.stationId),
         relatedItems: [{ kind: 'control', index }],
@@ -351,6 +354,7 @@ export const buildImportConflictSummary = ({
         targetLabel: station.stationId,
         existingSummary: existingDescription,
         incomingSummary: station.description,
+        incomingSourceName: station.importSourceName,
         sourceLine: station.sourceLine,
         existingSourceLines: findExistingControlSourceLines(currentInput, station.stationId),
         relatedItems: [{ kind: 'control', index }],
@@ -368,6 +372,7 @@ export const buildImportConflictSummary = ({
         targetLabel: station.stationId,
         existingSummary: existingControlState,
         incomingSummary: incomingControlState,
+        incomingSourceName: station.importSourceName,
         sourceLine: station.sourceLine,
         existingSourceLines: findExistingControlSourceLines(currentInput, station.stationId),
         relatedItems: [{ kind: 'control', index }],
@@ -387,6 +392,7 @@ export const buildImportConflictSummary = ({
       targetLabel: key.split('|').slice(1).join(' -> '),
       existingSummary: `${existingCount} existing matching row${existingCount === 1 ? '' : 's'}`,
       incomingSummary: formatImportedObservationSummary(observation),
+      incomingSourceName: observation.importSourceName,
       sourceLine: observation.sourceLine,
       existingSourceLines: parsed.observations
         .filter((candidate) => buildExistingObservationConflictKey(candidate) === key)
@@ -584,6 +590,7 @@ export const buildResolvedImportText = ({
     preset,
     faceNormalizationMode,
     emitDirectionFaceHints: true,
+    emitSourceHeaders: true,
     coordMode,
     force2D,
     itemCommentLines,

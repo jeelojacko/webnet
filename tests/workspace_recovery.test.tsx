@@ -217,6 +217,40 @@ describe('useWorkspaceRecovery', () => {
       importReview: {
         sourceName: 'imported.jxl',
         notice: { title: 'Imported JobXML dataset', detailLines: ['detail'] },
+        sources: [
+          {
+            key: 'source:0',
+            sourceName: 'imported.jxl',
+            notice: { title: 'Imported JobXML dataset', detailLines: ['detail'] },
+            dataset: {
+              importerId: 'jobxml',
+              formatLabel: 'JobXML',
+              summary: 'summary',
+              notice: { title: 'Imported JobXML dataset', detailLines: ['detail'] },
+              comments: [],
+              controlStations: [],
+              observations: [],
+              trace: [],
+            },
+            isPrimary: true,
+          },
+          {
+            key: 'source:1',
+            sourceName: 'imported.htm',
+            notice: { title: 'Imported Survey Report', detailLines: ['detail'] },
+            dataset: {
+              importerId: 'trimble-survey-report',
+              formatLabel: 'Survey Report',
+              summary: 'summary',
+              notice: { title: 'Imported Survey Report', detailLines: ['detail'] },
+              comments: [],
+              controlStations: [],
+              observations: [],
+              trace: [],
+            },
+            isPrimary: false,
+          },
+        ],
         dataset: {
           importerId: 'jobxml',
           formatLabel: 'JobXML',
@@ -244,6 +278,7 @@ describe('useWorkspaceRecovery', () => {
         importFaceNormalizationMode: 'on',
         force2DOutput: false,
         nextSyntheticId: 1,
+        nextSourceId: 2,
         conflicts: [],
         conflictResolutions: {},
         conflictRenameValues: {},

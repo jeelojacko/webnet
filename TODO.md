@@ -5,7 +5,7 @@
     - [x] Add the full phased implementation plan to TODO before code changes
     - [x] Break each roadmap phase into explicit checklist items instead of summary-only bullets
     - [x] Keep README.md and agents.md updates as a required closeout step after each completed batch
-  - [ ] Phase 1 - import and reconciliation workflow
+  - [x] Phase 1 - import and reconciliation workflow
     - [x] Batch 1 - staged conflict scanning and crash-safe review recovery
       - [x] Detect and surface exact station-ID collisions between the current editor content and the incoming import
       - [x] Detect and surface coordinate conflicts for the same station ID in the staged import workspace
@@ -20,10 +20,13 @@
       - [x] Support per-station `rename incoming station`
       - [x] Support per-conflict `keep both` with an explicit emitted comment marker in final text
       - [x] Apply conflict resolutions when writing reconciled text back into the editor instead of replacing the workspace blindly
-    - [ ] Batch 3 - multi-source reconciliation workspace
-      - [ ] Expand the current compare-file flow into a true multi-source reconciliation workspace instead of count-only comparison
-      - [ ] Keep reconciliation state browser-local and recoverable until the import session is applied or cancelled
-      - [ ] Add focused regression coverage for multi-source reconciliation, final emitted text shape, and crash recovery mid-review
+    - [x] Batch 3 - multi-source reconciliation workspace
+      - [x] Expand the current compare-file flow into a true multi-source reconciliation workspace instead of count-only comparison
+      - [x] Keep reconciliation state browser-local and recoverable until the import session is applied or cancelled
+      - [x] Add focused regression coverage for multi-source reconciliation, final emitted text shape, and crash recovery mid-review
+      - [x] Track multiple imported reconcile sources inside a single staged import session with source-aware row/group metadata
+      - [x] Replace the two-file compare block with a source matrix that highlights mismatched setup-target-family buckets across all loaded sources
+      - [x] Emit deterministic source-separated imported text when multiple reconcile sources are committed into the editor
   - [ ] Phase 2 - persistent run artifacts and deliverables
     - [ ] Batch 1 - saved run snapshot model and project/local persistence
       - [ ] Add named saved run snapshots beyond the current in-memory compare history

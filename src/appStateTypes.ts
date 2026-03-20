@@ -50,6 +50,7 @@ import type {
   ImportReviewModel,
   ImportReviewOutputPreset,
   ImportReviewRowTypeOverride,
+  ImportReviewWorkspaceSource,
 } from './engine/importReview';
 
 export type Units = 'm' | 'ft';
@@ -124,6 +125,7 @@ export type WorkspaceComparisonViewState = {
 export type ImportReviewDraftSnapshot = {
   sourceName: string;
   notice: ImportedInputNotice;
+  sources?: ImportReviewWorkspaceSource[];
   dataset: ImportedDataset;
   reviewModel: ImportReviewModel;
   comparisonSourceName?: string;
@@ -141,6 +143,7 @@ export type ImportReviewDraftSnapshot = {
   importAngleMode?: ExternalImportAngleMode;
   force2DOutput: boolean;
   nextSyntheticId: number;
+  nextSourceId?: number;
   conflicts: ImportConflict[];
   conflictResolutions: Record<string, ImportResolution>;
   conflictRenameValues: Record<string, string>;

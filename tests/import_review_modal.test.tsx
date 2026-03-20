@@ -74,33 +74,49 @@ describe('ImportReviewModal', () => {
         reviewModel={reviewModel}
         comparisonSummary={{
           mode: 'non-mta-only',
-          primarySourceName: 'sample.jxl',
-          comparisonSourceName: 'sample.htm',
-          primaryImporterId: 'jobxml',
-          comparisonImporterId: 'trimble-survey-report',
-          primaryTotals: {
-            controlStations: 2,
-            observations: 5,
-            comparedObservations: 4,
-            warnings: 0,
-            errors: 0,
-          },
-          comparisonTotals: {
-            controlStations: 2,
-            observations: 4,
-            comparedObservations: 4,
-            warnings: 0,
-            errors: 0,
-          },
+          sources: [
+            {
+              key: 'source:0',
+              sourceName: 'sample.jxl',
+              notice: { title: 'primary', detailLines: [] },
+              importerId: 'jobxml',
+              formatLabel: 'JobXML',
+              isPrimary: true,
+              totals: {
+                controlStations: 2,
+                observations: 5,
+                comparedObservations: 4,
+                warnings: 0,
+                errors: 0,
+              },
+            },
+            {
+              key: 'source:1',
+              sourceName: 'sample.htm',
+              notice: { title: 'comparison', detailLines: [] },
+              importerId: 'trimble-survey-report',
+              formatLabel: 'Survey Report',
+              isPrimary: false,
+              totals: {
+                controlStations: 2,
+                observations: 4,
+                comparedObservations: 4,
+                warnings: 0,
+                errors: 0,
+              },
+            },
+          ],
           rows: [
             {
               key: 'STN1|BS1|P1|M',
               setupLabel: 'Setup STN1 (BS BS1)',
               targetLabel: 'P1',
               family: 'M',
-              primaryCount: 2,
-              comparisonCount: 1,
-              delta: 1,
+              countsBySource: [2, 1],
+              minCount: 1,
+              maxCount: 2,
+              spread: 1,
+              sourcePresenceCount: 2,
             },
           ],
         }}
@@ -126,6 +142,7 @@ describe('ImportReviewModal', () => {
             incomingSummary: 'ID STN1; E=5001.0000; N=1002.0000; H=100.5000',
             sourceLine: 12,
             existingSourceLines: [3],
+            incomingSourceName: 'sample.jxl',
             relatedItems: [{ kind: 'control', index: 0 }],
           },
         ]}
@@ -164,6 +181,7 @@ describe('ImportReviewModal', () => {
 
     expect(html).toContain('Import Review');
     expect(html).toContain('Imported Data');
+    expect(html).toContain('Source File');
     expect(html).toContain('Source Type');
     expect(html).toContain('Source Line');
     expect(html).toContain('Type');
@@ -186,7 +204,7 @@ describe('ImportReviewModal', () => {
     expect(html).toContain('Setup STN1');
     expect(html).toContain('Import Diagnostics');
     expect(html).toContain('Unsupported measurement skipped.');
-    expect(html).toContain('Compare / Reconcile');
+    expect(html).toContain('Multi-Source Reconcile');
     expect(html).toContain('Reconciliation Conflicts');
     expect(html).toContain('Coordinate values differ for the same station');
     expect(html).toContain('Replace With Incoming');
@@ -194,14 +212,17 @@ describe('ImportReviewModal', () => {
     expect(html).toContain('New Station ID');
     expect(html).toContain('STN1_IMPORT');
     expect(html).toContain('Existing: 3');
-    expect(html).toContain('Compare Preset');
+    expect(html).toContain('Reconcile Preset');
     expect(html).toContain('Non-MTA Only');
     expect(html).toContain('All Raw Rows');
     expect(html).toContain('sample.htm');
     expect(html).toContain('Compared Obs');
-    expect(html).toContain('Compared delta');
+    expect(html).toContain('Source mismatch buckets');
     expect(html).toContain('Highlight');
-    expect(html).toContain('Clear Compare');
+    expect(html).toContain('Clear Added Sources');
+    expect(html).toContain('Add Source File');
+    expect(html).toContain('Present In');
+    expect(html).toContain('Spread');
     expect(html).toContain('>DV<');
     expect(html).toContain('>DN<');
     expect(html).toContain('>DM<');

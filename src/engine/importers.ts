@@ -62,6 +62,8 @@ export interface ImportedRecordBase {
   sourceCode?: string;
   description?: string;
   note?: string;
+  importSourceKey?: string;
+  importSourceName?: string;
   sourceMeta?: ImportedSourceMetadata;
 }
 

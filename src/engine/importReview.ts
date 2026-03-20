@@ -3,6 +3,7 @@ import type {
   ImportedAngleObservationRecord,
   ImportedControlStationRecord,
   ImportedDataset,
+  ImportedInputNotice,
   ImportedMeasurementObservationRecord,
   ImportedObservationRecord,
   ImportedTraceEntry,
@@ -32,6 +33,8 @@ export interface ImportReviewItem {
   kind: ImportReviewItemKind;
   index: number;
   groupKey: string;
+  sourceKey?: string;
+  sourceName?: string;
   sourceType: string;
   sourceLine?: number;
   sourceCode?: string;
@@ -51,6 +54,8 @@ export interface ImportReviewGroup {
   kind: ImportReviewGroupKind;
   label: string;
   defaultComment: string;
+  sourceKey?: string;
+  sourceName?: string;
   synthetic?: boolean;
   manualOrder?: boolean;
   setupId?: string;
@@ -75,25 +80,40 @@ export interface ImportReviewComparisonTotals {
 
 export type ImportReviewComparisonMode = 'non-mta-only' | 'all-raw';
 
+export interface ImportReviewComparisonSourceSummary {
+  key: string;
+  sourceName: string;
+  notice: ImportedInputNotice;
+  importerId: string;
+  formatLabel: string;
+  isPrimary: boolean;
+  totals: ImportReviewComparisonTotals;
+}
+
 export interface ImportReviewComparisonRow {
   key: string;
   setupLabel: string;
   targetLabel: string;
   family: string;
-  primaryCount: number;
-  comparisonCount: number;
-  delta: number;
+  countsBySource: number[];
+  minCount: number;
+  maxCount: number;
+  spread: number;
+  sourcePresenceCount: number;
 }
 
 export interface ImportReviewComparisonSummary {
   mode: ImportReviewComparisonMode;
-  primarySourceName: string;
-  comparisonSourceName: string;
-  primaryImporterId: string;
-  comparisonImporterId: string;
-  primaryTotals: ImportReviewComparisonTotals;
-  comparisonTotals: ImportReviewComparisonTotals;
+  sources: ImportReviewComparisonSourceSummary[];
   rows: ImportReviewComparisonRow[];
+}
+
+export interface ImportReviewWorkspaceSource {
+  key: string;
+  sourceName: string;
+  notice: ImportedInputNotice;
+  dataset: ImportedDataset;
+  isPrimary: boolean;
 }
 
 export interface BuildImportReviewTextOptions {
@@ -107,6 +127,7 @@ export interface BuildImportReviewTextOptions {
   faceNormalizationMode?: FaceNormalizationMode;
   syntheticDirectionBacksightMode?: 'auto' | 'always' | 'never';
   emitDirectionFaceHints?: boolean;
+  emitSourceHeaders?: boolean;
   coordMode?: CoordMode;
   force2D?: boolean;
 }
@@ -760,11 +781,98 @@ export const buildImportReviewModel = (dataset: ImportedDataset): ImportReviewMo
   };
 };
 
+const cloneImportedRecordWithSource = <T extends ImportedControlStationRecord | ImportedObservationRecord>(
+  record: T,
+  sourceKey: string,
+  sourceName: string,
+): T =>
+  ({
+    ...record,
+    importSourceKey: sourceKey,
+    importSourceName: sourceName,
+  }) as T;
+
+const scopeImportReviewModel = (
+  model: ImportReviewModel,
+  sourceKey: string,
+  sourceName: string,
+  controlOffset: number,
+  observationOffset: number,
+): ImportReviewModel => ({
+  groups: model.groups.map((group) => ({
+    ...group,
+    key: `${sourceKey}:${group.key}`,
+    sourceKey,
+    sourceName,
+    itemIds: group.itemIds.map((itemId) => `${sourceKey}:${itemId}`),
+  })),
+  items: model.items.map((item) => ({
+    ...item,
+    id: `${sourceKey}:${item.id}`,
+    groupKey: `${sourceKey}:${item.groupKey}`,
+    sourceKey,
+    sourceName,
+    index:
+      item.kind === 'control'
+        ? item.index + controlOffset
+        : item.kind === 'observation'
+          ? item.index + observationOffset
+          : item.index,
+  })),
+  warnings: [...model.warnings],
+  errors: [...model.errors],
+});
+
+export const appendImportReviewSource = (
+  dataset: ImportedDataset,
+  model: ImportReviewModel,
+  source: ImportReviewWorkspaceSource,
+): { dataset: ImportedDataset; reviewModel: ImportReviewModel } => {
+  const controlOffset = dataset.controlStations.length;
+  const observationOffset = dataset.observations.length;
+  const scopedModel = scopeImportReviewModel(
+    buildImportReviewModel(source.dataset),
+    source.key,
+    source.sourceName,
+    controlOffset,
+    observationOffset,
+  );
+
+  return {
+    dataset: {
+      ...dataset,
+      comments: [...dataset.comments, ...source.dataset.comments],
+      controlStations: [
+        ...dataset.controlStations,
+        ...source.dataset.controlStations.map((station) =>
+          cloneImportedRecordWithSource(station, source.key, source.sourceName),
+        ),
+      ],
+      observations: [
+        ...dataset.observations,
+        ...source.dataset.observations.map((observation) =>
+          cloneImportedRecordWithSource(observation, source.key, source.sourceName),
+        ),
+      ],
+      trace: [...dataset.trace, ...source.dataset.trace],
+    },
+    reviewModel: {
+      groups: [...model.groups, ...scopedModel.groups],
+      items: [...model.items, ...scopedModel.items],
+      warnings: [...model.warnings, ...scopedModel.warnings],
+      errors: [...model.errors, ...scopedModel.errors],
+    },
+  };
+};
+
 export const buildImportReviewComparisonSummary = (
-  primaryDataset: ImportedDataset,
-  primarySourceName: string,
-  comparisonDataset: ImportedDataset,
-  comparisonSourceName: string,
+  sources: Array<{
+    key: string;
+    sourceName: string;
+    notice: ImportedInputNotice;
+    dataset: ImportedDataset;
+    isPrimary?: boolean;
+  }>,
   mode: ImportReviewComparisonMode = 'non-mta-only',
 ): ImportReviewComparisonSummary => {
   const makeTotals = (dataset: ImportedDataset): ImportReviewComparisonTotals => ({
@@ -779,10 +887,19 @@ export const buildImportReviewComparisonSummary = (
 
   const accumulate = (
     dataset: ImportedDataset,
-  ): Map<string, Omit<ImportReviewComparisonRow, 'primaryCount' | 'comparisonCount' | 'delta'>> => {
+  ): Map<
+    string,
+    Omit<
+      ImportReviewComparisonRow,
+      'countsBySource' | 'minCount' | 'maxCount' | 'spread' | 'sourcePresenceCount'
+    >
+  > => {
     const buckets = new Map<
       string,
-      Omit<ImportReviewComparisonRow, 'primaryCount' | 'comparisonCount' | 'delta'>
+      Omit<
+        ImportReviewComparisonRow,
+        'countsBySource' | 'minCount' | 'maxCount' | 'spread' | 'sourcePresenceCount'
+      >
     >();
     dataset.observations
       .filter((observation) => isObservationIncludedInComparison(observation, mode))
@@ -804,56 +921,62 @@ export const buildImportReviewComparisonSummary = (
     return buckets;
   };
 
-  const primaryCounts = new Map<string, number>();
-  primaryDataset.observations
-    .filter((observation) => isObservationIncludedInComparison(observation, mode))
-    .forEach((observation) => {
-      const key = [
-        deriveObservationSetupId(observation),
-        deriveObservationBacksightId(observation) ?? '',
-        deriveObservationTargetId(observation),
-        comparisonFamilyLabel(observation),
-      ].join('|');
-      primaryCounts.set(key, (primaryCounts.get(key) ?? 0) + 1);
-    });
+  const comparisonSources = sources.map((source) => ({
+    key: source.key,
+    sourceName: source.sourceName,
+    notice: source.notice,
+    importerId: source.dataset.importerId,
+    formatLabel: source.dataset.formatLabel,
+    isPrimary: source.isPrimary ?? false,
+    totals: makeTotals(source.dataset),
+  }));
 
-  const comparisonCounts = new Map<string, number>();
-  comparisonDataset.observations
-    .filter((observation) => isObservationIncludedInComparison(observation, mode))
-    .forEach((observation) => {
-      const key = [
-        deriveObservationSetupId(observation),
-        deriveObservationBacksightId(observation) ?? '',
-        deriveObservationTargetId(observation),
-        comparisonFamilyLabel(observation),
-      ].join('|');
-      comparisonCounts.set(key, (comparisonCounts.get(key) ?? 0) + 1);
-    });
+  const sourceCounts = sources.map((source) => {
+    const counts = new Map<string, number>();
+    source.dataset.observations
+      .filter((observation) => isObservationIncludedInComparison(observation, mode))
+      .forEach((observation) => {
+        const key = [
+          deriveObservationSetupId(observation),
+          deriveObservationBacksightId(observation) ?? '',
+          deriveObservationTargetId(observation),
+          comparisonFamilyLabel(observation),
+        ].join('|');
+        counts.set(key, (counts.get(key) ?? 0) + 1);
+      });
+    return counts;
+  });
 
-  const rowMeta = new Map([
-    ...accumulate(primaryDataset).entries(),
-    ...accumulate(comparisonDataset).entries(),
-  ]);
+  const rowMeta = new Map(
+    sources.flatMap((source) => [...accumulate(source.dataset).entries()]),
+  );
 
-  const rows = [...new Set([...primaryCounts.keys(), ...comparisonCounts.keys()])]
+  const allKeys = [...new Set(sourceCounts.flatMap((counts) => [...counts.keys()]))];
+
+  const rows = allKeys
     .map((key) => {
       const meta = rowMeta.get(key);
-      const primaryCount = primaryCounts.get(key) ?? 0;
-      const comparisonCount = comparisonCounts.get(key) ?? 0;
+      const countsBySource = sourceCounts.map((counts) => counts.get(key) ?? 0);
+      const minCount = Math.min(...countsBySource);
+      const maxCount = Math.max(...countsBySource);
       return {
         key,
         setupLabel: meta?.setupLabel ?? key,
         targetLabel: meta?.targetLabel ?? '',
         family: meta?.family ?? '',
-        primaryCount,
-        comparisonCount,
-        delta: primaryCount - comparisonCount,
+        countsBySource,
+        minCount,
+        maxCount,
+        spread: maxCount - minCount,
+        sourcePresenceCount: countsBySource.filter((value) => value > 0).length,
       };
     })
-    .filter((row) => row.delta !== 0)
+    .filter((row) => row.spread !== 0)
     .sort((left, right) => {
-      const magnitudeCompare = Math.abs(right.delta) - Math.abs(left.delta);
+      const magnitudeCompare = right.spread - left.spread;
       if (magnitudeCompare !== 0) return magnitudeCompare;
+      const sourceCompare = right.sourcePresenceCount - left.sourcePresenceCount;
+      if (sourceCompare !== 0) return sourceCompare;
       const setupCompare = compareImportTokens(left.setupLabel, right.setupLabel);
       if (setupCompare !== 0) return setupCompare;
       const targetCompare = compareImportTokens(left.targetLabel, right.targetLabel);
@@ -863,12 +986,7 @@ export const buildImportReviewComparisonSummary = (
 
   return {
     mode,
-    primarySourceName,
-    comparisonSourceName,
-    primaryImporterId: primaryDataset.importerId,
-    comparisonImporterId: comparisonDataset.importerId,
-    primaryTotals: makeTotals(primaryDataset),
-    comparisonTotals: makeTotals(comparisonDataset),
+    sources: comparisonSources,
     rows,
   };
 };
@@ -1531,6 +1649,12 @@ export const buildImportReviewText = (
   const lines: string[] = [];
   const itemLookup = new Map(model.items.map((item) => [item.id, item]));
   const preset = options.preset ?? 'clean-webnet';
+  const includedGroups = model.groups.filter((group) =>
+    group.itemIds.some((itemId) => options.includedItemIds.has(itemId)),
+  );
+  const uniqueSourceKeys = new Set(
+    includedGroups.map((group) => group.sourceKey).filter((value): value is string => Boolean(value)),
+  );
   const coordMode: CoordMode =
     options.force2D === true
       ? '2D'
@@ -1539,6 +1663,7 @@ export const buildImportReviewText = (
     currentDeltaMode: null as 'delta-h' | 'zenith' | null,
     currentGpsMode: null as 'network' | 'sideshot' | null,
   };
+  let lastSourceKey: string | null = null;
 
   if (coordMode === '2D') {
     lines.push('.2D');
@@ -1556,6 +1681,16 @@ export const buildImportReviewText = (
 
     const comment = options.groupComments?.[group.key]?.trim() ?? group.defaultComment;
     if (lines.length > 0) lines.push('');
+    if (
+      options.emitSourceHeaders === true &&
+      uniqueSourceKeys.size > 1 &&
+      group.sourceKey &&
+      group.sourceName &&
+      group.sourceKey !== lastSourceKey
+    ) {
+      lines.push(`# SOURCE ${group.sourceName}`);
+      lastSourceKey = group.sourceKey;
+    }
     if (comment) lines.push(`# ${comment}`);
 
     const isDirectionSetGroup =

@@ -320,4 +320,148 @@ describe('buildImportConflictSummary', () => {
     expect(keepBoth.text).toContain('# KEEP BOTH: imported station id already exists in editor for P1');
     expect(keepBoth.text).toContain('# KEEP BOTH: imported observation family already exists in editor for the same endpoints for P1 -> P2');
   });
+
+  it('emits source-separated text blocks for multi-source reconciliation workspaces', () => {
+    const importedDataset: ImportedDataset = {
+      importerId: 'workspace',
+      formatLabel: 'Workspace',
+      summary: 'summary',
+      notice: { title: 'Workspace', detailLines: [] },
+      comments: [],
+      controlStations: [
+        {
+          kind: 'control-station',
+          coordinateMode: 'local',
+          stationId: 'P1',
+          eastM: 100,
+          northM: 200,
+          heightM: 10,
+          importSourceKey: 'source:0',
+          importSourceName: 'primary.jxl',
+        },
+        {
+          kind: 'control-station',
+          coordinateMode: 'local',
+          stationId: 'P2',
+          eastM: 110,
+          northM: 210,
+          heightM: 11,
+          importSourceKey: 'source:1',
+          importSourceName: 'compare.htm',
+        },
+      ],
+      observations: [
+        {
+          kind: 'distance',
+          fromId: 'P1',
+          toId: 'P2',
+          distanceM: 12.3456,
+          importSourceKey: 'source:0',
+          importSourceName: 'primary.jxl',
+        },
+        {
+          kind: 'distance',
+          fromId: 'P2',
+          toId: 'P3',
+          distanceM: 9.8765,
+          importSourceKey: 'source:1',
+          importSourceName: 'compare.htm',
+        },
+      ],
+      trace: [],
+    };
+
+    const reviewModel: ImportReviewModel = {
+      groups: [
+        {
+          key: 'source:0:control',
+          kind: 'control',
+          label: 'Control',
+          defaultComment: 'CONTROL PRIMARY',
+          sourceKey: 'source:0',
+          sourceName: 'primary.jxl',
+          itemIds: ['source:0:control:0', 'source:0:observation:0'],
+        },
+        {
+          key: 'source:1:control',
+          kind: 'control',
+          label: 'Control',
+          defaultComment: 'CONTROL COMPARE',
+          sourceKey: 'source:1',
+          sourceName: 'compare.htm',
+          itemIds: ['source:1:control:1', 'source:1:observation:1'],
+        },
+      ],
+      items: [
+        {
+          id: 'source:0:control:0',
+          kind: 'control',
+          index: 0,
+          groupKey: 'source:0:control',
+          sourceKey: 'source:0',
+          sourceName: 'primary.jxl',
+          sourceType: 'Control Point',
+          stationId: 'P1',
+        },
+        {
+          id: 'source:0:observation:0',
+          kind: 'observation',
+          index: 0,
+          groupKey: 'source:0:control',
+          sourceKey: 'source:0',
+          sourceName: 'primary.jxl',
+          sourceType: 'Distance',
+          sourceObservationKind: 'distance',
+          setupId: 'P1',
+          targetId: 'P2',
+        },
+        {
+          id: 'source:1:control:1',
+          kind: 'control',
+          index: 1,
+          groupKey: 'source:1:control',
+          sourceKey: 'source:1',
+          sourceName: 'compare.htm',
+          sourceType: 'Control Point',
+          stationId: 'P2',
+        },
+        {
+          id: 'source:1:observation:1',
+          kind: 'observation',
+          index: 1,
+          groupKey: 'source:1:control',
+          sourceKey: 'source:1',
+          sourceName: 'compare.htm',
+          sourceType: 'Distance',
+          sourceObservationKind: 'distance',
+          setupId: 'P2',
+          targetId: 'P3',
+        },
+      ],
+      warnings: [],
+      errors: [],
+    };
+
+    const resolved = buildResolvedImportText({
+      currentInput: '',
+      currentIncludeFiles: {},
+      parseSettings,
+      projectInstruments: {},
+      importedDataset,
+      reviewModel,
+      includedItemIds: new Set(reviewModel.items.map((item) => item.id)),
+      coordMode: '3D',
+      force2D: false,
+      conflicts: [],
+      conflictResolutions: {},
+      conflictRenameValues: {},
+    });
+
+    expect(resolved.text).toContain('# SOURCE primary.jxl');
+    expect(resolved.text).toContain('# CONTROL PRIMARY');
+    expect(resolved.text).toContain('# SOURCE compare.htm');
+    expect(resolved.text).toContain('# CONTROL COMPARE');
+    expect(resolved.text).toContain('D P1 P2 12.3456');
+    expect(resolved.text).toContain('D P2 P3 9.8765');
+  });
 });
