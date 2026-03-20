@@ -507,6 +507,9 @@ export type GeoidSourceFormat = 'builtin' | 'gtx' | 'byn';
 export type GpsVectorMode = 'network' | 'sideshot';
 export type ProjectExportFormat =
   | 'points'
+  | 'points-csv'
+  | 'observations-csv'
+  | 'geojson'
   | 'webnet'
   | 'industry-style'
   | 'landxml'

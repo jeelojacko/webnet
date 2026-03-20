@@ -13,6 +13,7 @@ import {
   Settings,
   Square,
 } from 'lucide-react';
+import { EXPORT_FORMAT_OPTIONS } from '../engine/exportFormats';
 import type { ProjectExportFormat } from '../types';
 import type { RunPipelineState } from '../hooks/useAdjustmentRunner';
 
@@ -133,12 +134,11 @@ const AppToolbar: React.FC<AppToolbarProps> = ({
         title={exportTooltip}
         className="h-9 bg-slate-700 border border-slate-600 text-slate-100 text-xs rounded px-2"
       >
-        <option value="points">Export: points</option>
-        <option value="webnet">Export: WebNet</option>
-        <option value="industry-style">Export: industry-style</option>
-        <option value="landxml">Export: LandXML</option>
-        <option value="bundle-qa-standard">Export: QA bundle</option>
-        <option value="bundle-qa-standard-with-landxml">Export: QA bundle + LandXML</option>
+        {EXPORT_FORMAT_OPTIONS.map((option) => (
+          <option key={option.value} value={option.value}>
+            {`Export: ${option.optionLabel}`}
+          </option>
+        ))}
       </select>
       <button
         onClick={onExportResults}

@@ -185,6 +185,118 @@ describe('useExportWorkflow', () => {
     (window as Window & { showSaveFilePicker?: unknown }).showSaveFilePicker = previousPicker;
   });
 
+  it('forces first-class adjusted-points CSV export to comma-delimited csv output', async () => {
+    const writes: string[] = [];
+    const close = vi.fn(async () => undefined);
+    const previousPicker = (window as Window & { showSaveFilePicker?: unknown }).showSaveFilePicker;
+    const showSaveFilePicker = vi.fn(async () => ({
+      createWritable: async () => ({
+        write: async (content: string) => {
+          writes.push(content);
+        },
+        close,
+      }),
+    }));
+    (window as Window & { showSaveFilePicker?: unknown }).showSaveFilePicker = showSaveFilePicker;
+
+    const harness = renderExportHarness({
+      exportFormat: 'points-csv',
+      adjustedPointsExportSettings: cloneAdjustedPointsExportSettings({
+        ...DEFAULT_ADJUSTED_POINTS_EXPORT_SETTINGS,
+        format: 'text',
+        delimiter: 'tab',
+      }),
+    });
+
+    await harness.render();
+    await harness.clickExport();
+
+    expect(showSaveFilePicker).toHaveBeenCalledWith(
+      expect.objectContaining({
+        suggestedName: 'webnet-adjusted-points-2026-03-17.csv',
+      }),
+    );
+    expect(writes).toHaveLength(1);
+    expect(writes[0]?.split('\n')[0]).toContain(',');
+    expect(writes[0]?.split('\n')[0]).not.toContain('\t');
+    expect(close).toHaveBeenCalledTimes(1);
+
+    await harness.cleanup();
+    (window as Window & { showSaveFilePicker?: unknown }).showSaveFilePicker = previousPicker;
+  });
+
+  it('routes observations and residuals CSV export through the save picker', async () => {
+    const writes: string[] = [];
+    const close = vi.fn(async () => undefined);
+    const previousPicker = (window as Window & { showSaveFilePicker?: unknown }).showSaveFilePicker;
+    const showSaveFilePicker = vi.fn(async () => ({
+      createWritable: async () => ({
+        write: async (content: string) => {
+          writes.push(content);
+        },
+        close,
+      }),
+    }));
+    (window as Window & { showSaveFilePicker?: unknown }).showSaveFilePicker = showSaveFilePicker;
+
+    const harness = renderExportHarness({
+      exportFormat: 'observations-csv',
+    });
+
+    await harness.render();
+    await harness.clickExport();
+
+    expect(showSaveFilePicker).toHaveBeenCalledWith(
+      expect.objectContaining({
+        suggestedName: 'webnet-observations-residuals-2026-03-17.csv',
+      }),
+    );
+    expect(writes).toHaveLength(1);
+    expect(writes[0]).toContain('obsId,status,type,stations');
+    expect(close).toHaveBeenCalledTimes(1);
+
+    await harness.cleanup();
+    (window as Window & { showSaveFilePicker?: unknown }).showSaveFilePicker = previousPicker;
+  });
+
+  it('routes GeoJSON export through the save picker', async () => {
+    const writes: string[] = [];
+    const close = vi.fn(async () => undefined);
+    const previousPicker = (window as Window & { showSaveFilePicker?: unknown }).showSaveFilePicker;
+    const showSaveFilePicker = vi.fn(async () => ({
+      createWritable: async () => ({
+        write: async (content: string) => {
+          writes.push(content);
+        },
+        close,
+      }),
+    }));
+    (window as Window & { showSaveFilePicker?: unknown }).showSaveFilePicker = showSaveFilePicker;
+
+    const harness = renderExportHarness({
+      exportFormat: 'geojson',
+    });
+
+    await harness.render();
+    await harness.clickExport();
+
+    expect(showSaveFilePicker).toHaveBeenCalledWith(
+      expect.objectContaining({
+        suggestedName: 'webnet-network-2026-03-17.geojson',
+      }),
+    );
+    expect(writes).toHaveLength(1);
+    expect(JSON.parse(writes[0] ?? '{}')).toEqual(
+      expect.objectContaining({
+        type: 'FeatureCollection',
+      }),
+    );
+    expect(close).toHaveBeenCalledTimes(1);
+
+    await harness.cleanup();
+    (window as Window & { showSaveFilePicker?: unknown }).showSaveFilePicker = previousPicker;
+  });
+
   it('downloads QA bundle files and reports the bundle notice', async () => {
     const previousPicker = (window as Window & { showSaveFilePicker?: unknown }).showSaveFilePicker;
     (window as Window & { showSaveFilePicker?: unknown }).showSaveFilePicker = undefined;

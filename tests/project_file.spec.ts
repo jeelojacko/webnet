@@ -388,4 +388,28 @@ describe('project file serialization/parsing', () => {
     expect(parsed.project.includeFiles['field/set1.dat']).toContain('C A 0 0 0 ! !');
     expect(parsed.project.savedRuns).toEqual([]);
   });
+
+  it('round-trips newly added export selector values through project files', () => {
+    const text = serializeProjectFile({
+      input: '.2D',
+      includeFiles: {},
+      savedRuns: [],
+      ui: {
+        settings: defaults.settings,
+        parseSettings: defaults.parseSettings,
+        exportFormat: 'geojson',
+        adjustedPointsExport: DEFAULT_ADJUSTED_POINTS_EXPORT_SETTINGS,
+      },
+      project: {
+        projectInstruments: defaults.projectInstruments,
+        selectedInstrument: 'S9',
+        levelLoopCustomPresets: defaults.levelLoopCustomPresets,
+      },
+    });
+
+    const parsed = parseProjectFile(text, defaults);
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+    expect(parsed.project.ui.exportFormat).toBe('geojson');
+  });
 });

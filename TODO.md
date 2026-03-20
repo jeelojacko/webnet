@@ -27,7 +27,7 @@
       - [x] Track multiple imported reconcile sources inside a single staged import session with source-aware row/group metadata
       - [x] Replace the two-file compare block with a source matrix that highlights mismatched setup-target-family buckets across all loaded sources
       - [x] Emit deterministic source-separated imported text when multiple reconcile sources are committed into the editor
-  - [ ] Phase 2 - persistent run artifacts and deliverables
+  - [x] Phase 2 - persistent run artifacts and deliverables
     - [x] Batch 1 - saved run snapshot model and project/local persistence
       - [x] Add named saved run snapshots beyond the current in-memory compare history
       - [x] Store input/settings fingerprint, run summary, reopenable result payload, and lightweight label/notes metadata
@@ -44,11 +44,13 @@
       - [x] Add hook-level saved-run actions for rename, notes updates, delete, and restore target selection without breaking transient compare history
       - [x] Rehydrate active result diagnostics, review state, and compare baseline selection directly from a saved snapshot reopen action
       - [x] Add focused regression coverage for saved-run management UI, restore flows, and persisted metadata round-trips
-    - [ ] Batch 3 - browser-first export deliverables
-      - [ ] Add adjusted-points CSV export
-      - [ ] Add observations-and-residuals CSV export
-      - [ ] Add GeoJSON export for adjusted stations and connections
-      - [ ] Add focused regression coverage for saved runs, export selectors, and project-file migration if schema changes are required
+    - [x] Batch 3 - browser-first export deliverables
+      - [x] Add a first-class adjusted-points CSV export target in the main export selector without removing the existing configurable adjusted-points export path
+      - [x] Add an observations-and-residuals CSV export target with deterministic per-row observation metadata and QC fields
+      - [x] Add a GeoJSON export target for adjusted stations and connection geometry with stable feature metadata
+      - [x] Extend toolbar/project-options export selectors, labels, extensions, and descriptions for the new browser-first deliverables
+      - [x] Keep project save/load and browser recovery export-format persistence compatible when new selector values are introduced
+      - [x] Add focused regression coverage for export workflow routing, export selector persistence, and project-file export-format round-trips
   - [ ] Phase 3 - heavy-job performance and background artifact work
     - [ ] Batch 1 - unchanged-topology rerun planning cache
       - [ ] Cache equation-planning metadata when topology is unchanged, not only parsed-model state

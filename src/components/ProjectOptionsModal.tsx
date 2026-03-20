@@ -1,5 +1,6 @@
 // @ts-nocheck
 import React from 'react';
+import { EXPORT_FORMAT_OPTIONS } from '../engine/exportFormats';
 import type {
   CrsCatalogGroupFilter,
   ListingSortCoordinatesBy,
@@ -1444,12 +1445,11 @@ const ProjectOptionsModal: React.FC<ProjectOptionsModalProps> = ({ context }) =>
                         onChange={(e) => setExportFormat(e.target.value as ProjectExportFormat)}
                         className={optionInputClass}
                       >
-                        <option value="points">Adjusted Points</option>
-                        <option value="webnet">WebNet</option>
-                        <option value="industry-style">Industry Standard Output</option>
-                        <option value="landxml">LandXML</option>
-                        <option value="bundle-qa-standard">QA Bundle</option>
-                        <option value="bundle-qa-standard-with-landxml">QA Bundle + LandXML</option>
+                        {EXPORT_FORMAT_OPTIONS.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.optionLabel}
+                          </option>
+                        ))}
                       </select>
                     </SettingsRow>
                     <SettingsRow

@@ -347,7 +347,7 @@ describe('useProjectFileWorkflow', () => {
           preanalysisMode: true,
           geoidSourcePath: '',
         },
-        exportFormat: 'industry-style',
+        exportFormat: 'geojson',
         adjustedPointsExport: cloneAdjustedPointsExportSettings({
           ...DEFAULT_ADJUSTED_POINTS_EXPORT_SETTINGS,
           includeLostStations: false,
@@ -514,7 +514,7 @@ describe('useProjectFileWorkflow', () => {
     expect(container.querySelector('#input')?.textContent).toBe('LOADED NETWORK');
     expect(container.querySelector('#theme')?.textContent).toBe('gruvbox-light');
     expect(container.querySelector('#run-mode')?.textContent).toBe('preanalysis');
-    expect(container.querySelector('#export')?.textContent).toBe('industry-style');
+    expect(container.querySelector('#export')?.textContent).toBe('geojson');
     expect(container.querySelector('#instrument')?.textContent).toBe('T1');
     expect(container.querySelector('#include-count')?.textContent).toBe('1');
     expect(container.querySelector('#saved-runs')?.textContent).toBe('1');

@@ -1,8 +1,13 @@
 import { useCallback, type Dispatch, type SetStateAction } from 'react';
 import {
   buildAdjustedPointsExportText,
+  cloneAdjustedPointsExportSettings,
   validateAdjustedPointsTransform,
 } from '../engine/adjustedPointsExport';
+import {
+  buildNetworkGeoJsonText,
+  buildObservationsResidualsCsvText,
+} from '../engine/browserExports';
 import {
   buildExportBundleFiles,
   type ExportBundlePreset,
@@ -83,41 +88,96 @@ export const useExportWorkflow = ({
   buildIndustryListingText,
   buildLandXmlExportText,
 }: UseExportWorkflowArgs) => {
-  const handleExportAdjustedPoints = useCallback(async () => {
-    if (!result) return;
-    const transformValidation = validateAdjustedPointsTransform({
-      result,
-      settings: adjustedPointsExportSettings,
-    });
-    if (!transformValidation.valid) {
-      setImportNotice({
-        title: 'Adjusted Points Export Blocked',
-        detailLines: [
-          transformValidation.message,
-          'Open Project Options -> Other Files -> Transform and update transform settings.',
-        ],
+  const handleExportAdjustedPoints = useCallback(
+    async (options?: {
+      forceCsv?: boolean;
+      blockedTitle?: string;
+      suggestedName?: string;
+    }) => {
+      if (!result) return;
+      const effectiveSettings = options?.forceCsv
+        ? {
+            ...cloneAdjustedPointsExportSettings(adjustedPointsExportSettings),
+            format: 'csv' as const,
+            delimiter: 'comma' as const,
+          }
+        : adjustedPointsExportSettings;
+      const transformValidation = validateAdjustedPointsTransform({
+        result,
+        settings: effectiveSettings,
       });
-      return;
-    }
-    const text = buildAdjustedPointsExportText({
+      if (!transformValidation.valid) {
+        setImportNotice({
+          title: options?.blockedTitle ?? 'Adjusted Points Export Blocked',
+          detailLines: [
+            transformValidation.message,
+            'Open Project Options -> Other Files -> Transform and update transform settings.',
+          ],
+        });
+        return;
+      }
+      const text = buildAdjustedPointsExportText({
+        result,
+        units,
+        settings: effectiveSettings,
+      });
+      const extension = effectiveSettings.format === 'csv' ? 'csv' : 'txt';
+      const mimeType = effectiveSettings.format === 'csv' ? 'text/csv' : 'text/plain';
+      const suggestedName =
+        options?.suggestedName ??
+        `webnet-adjusted-points-${new Date().toISOString().slice(0, 10)}.${extension}`;
+      const saveStatus = await trySaveTextFile({
+        suggestedName,
+        text,
+        mimeType,
+        fileDescription: effectiveSettings.format === 'csv' ? 'CSV Files' : 'Text Files',
+        extensions: effectiveSettings.format === 'csv' ? ['.csv'] : ['.txt'],
+      });
+      if (saveStatus === 'fallback') {
+        downloadNamedTextFile(suggestedName, text, mimeType);
+      }
+    },
+    [adjustedPointsExportSettings, result, setImportNotice, units],
+  );
+
+  const handleExportObservationsResidualsCsv = useCallback(async () => {
+    if (!result) return;
+    const suggestedName = `webnet-observations-residuals-${new Date().toISOString().slice(0, 10)}.csv`;
+    const text = buildObservationsResidualsCsvText({
       result,
       units,
-      settings: adjustedPointsExportSettings,
     });
-    const extension = adjustedPointsExportSettings.format === 'csv' ? 'csv' : 'txt';
-    const mimeType = adjustedPointsExportSettings.format === 'csv' ? 'text/csv' : 'text/plain';
-    const suggestedName = `webnet-adjusted-points-${new Date().toISOString().slice(0, 10)}.${extension}`;
     const saveStatus = await trySaveTextFile({
       suggestedName,
       text,
-      mimeType,
-      fileDescription: adjustedPointsExportSettings.format === 'csv' ? 'CSV Files' : 'Text Files',
-      extensions: adjustedPointsExportSettings.format === 'csv' ? ['.csv'] : ['.txt'],
+      mimeType: 'text/csv',
+      fileDescription: 'CSV Files',
+      extensions: ['.csv'],
     });
     if (saveStatus === 'fallback') {
-      downloadNamedTextFile(suggestedName, text, mimeType);
+      downloadNamedTextFile(suggestedName, text, 'text/csv');
     }
-  }, [adjustedPointsExportSettings, result, setImportNotice, units]);
+  }, [result, units]);
+
+  const handleExportGeoJson = useCallback(async () => {
+    if (!result) return;
+    const suggestedName = `webnet-network-${new Date().toISOString().slice(0, 10)}.geojson`;
+    const text = buildNetworkGeoJsonText({
+      result,
+      units,
+      includeLostStations: adjustedPointsExportSettings.includeLostStations,
+    });
+    const saveStatus = await trySaveTextFile({
+      suggestedName,
+      text,
+      mimeType: 'application/geo+json',
+      fileDescription: 'GeoJSON Files',
+      extensions: ['.geojson', '.json'],
+    });
+    if (saveStatus === 'fallback') {
+      downloadNamedTextFile(suggestedName, text, 'application/geo+json');
+    }
+  }, [adjustedPointsExportSettings.includeLostStations, result, units]);
 
   const handleExportBundle = useCallback(
     (preset: ExportBundlePreset) => {
@@ -175,6 +235,22 @@ export const useExportWorkflow = ({
       await handleExportAdjustedPoints();
       return;
     }
+    if (exportFormat === 'points-csv') {
+      await handleExportAdjustedPoints({
+        forceCsv: true,
+        blockedTitle: 'Adjusted Points CSV Export Blocked',
+        suggestedName: `webnet-adjusted-points-${new Date().toISOString().slice(0, 10)}.csv`,
+      });
+      return;
+    }
+    if (exportFormat === 'observations-csv') {
+      await handleExportObservationsResidualsCsv();
+      return;
+    }
+    if (exportFormat === 'geojson') {
+      await handleExportGeoJson();
+      return;
+    }
     if (exportFormat === 'bundle-qa-standard') {
       handleExportBundle('qa-standard');
       return;
@@ -215,7 +291,9 @@ export const useExportWorkflow = ({
     buildResultsText,
     exportFormat,
     handleExportAdjustedPoints,
+    handleExportGeoJson,
     handleExportBundle,
+    handleExportObservationsResidualsCsv,
     result,
   ]);
 

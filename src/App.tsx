@@ -31,6 +31,7 @@ import {
   getAdjustedPointsExportStationIds,
   sanitizeAdjustedPointsExportSettings,
 } from './engine/adjustedPointsExport';
+import { getExportFormatMetadata } from './engine/exportFormats';
 import {
   DEFAULT_QFIX_ANGULAR_SIGMA_SEC,
   DEFAULT_QFIX_LINEAR_SIGMA_M,
@@ -356,50 +357,14 @@ const INDUSTRY_DEFAULT_INSTRUMENT: Instrument = createDefaultS9Instrument();
 
 type TabKey = WorkspaceTabKey;
 
-const getExportFormatTooltip = (format: ProjectExportFormat): string => {
-  switch (format) {
-    case 'points':
-      return 'Adjusted points using the current adjusted-points export settings.';
-    case 'webnet':
-      return 'Full WebNet text report.';
-    case 'industry-style':
-      return 'Industry-style listing output.';
-    case 'landxml':
-      return 'LandXML 1.2 export.';
-    case 'bundle-qa-standard':
-      return 'QA bundle containing WebNet report, industry listing, adjusted points, and comparison summary when available.';
-    case 'bundle-qa-standard-with-landxml':
-      return 'QA bundle containing WebNet report, industry listing, adjusted points, comparison summary when available, and LandXML.';
-    default:
-      return 'Export the current run output.';
-  }
-};
+const getExportFormatTooltip = (format: ProjectExportFormat): string =>
+  getExportFormatMetadata(format).tooltip;
 
-const getExportFormatExtension = (format: ProjectExportFormat): string => {
-  if (format === 'landxml') return '.xml';
-  if (format === 'points') return 'configured (.csv or .txt)';
-  if (format === 'bundle-qa-standard' || format === 'bundle-qa-standard-with-landxml') return 'multiple files';
-  return '.txt';
-};
+const getExportFormatExtension = (format: ProjectExportFormat): string =>
+  getExportFormatMetadata(format).extension;
 
-const getExportFormatLabel = (format: ProjectExportFormat): string => {
-  switch (format) {
-    case 'points':
-      return 'Adjusted points';
-    case 'webnet':
-      return 'WebNet text report';
-    case 'industry-style':
-      return 'Industry-style listing';
-    case 'landxml':
-      return 'LandXML 1.2';
-    case 'bundle-qa-standard':
-      return 'QA bundle';
-    case 'bundle-qa-standard-with-landxml':
-      return 'QA bundle + LandXML';
-    default:
-      return 'Export output';
-  }
-};
+const getExportFormatLabel = (format: ProjectExportFormat): string =>
+  getExportFormatMetadata(format).label;
 
 type ResolvedLevelLoopTolerancePreset = {
   id: string;

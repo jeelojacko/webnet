@@ -166,6 +166,9 @@ const sanitizeExportFormat = (
 ): ProjectExportFormat => {
   if (
     value === 'points' ||
+    value === 'points-csv' ||
+    value === 'observations-csv' ||
+    value === 'geojson' ||
     value === 'webnet' ||
     value === 'industry-style' ||
     value === 'landxml' ||
