@@ -1,21 +1,17 @@
 import { useCallback, type Dispatch, type SetStateAction } from 'react';
+import { validateAdjustedPointsTransform } from '../engine/adjustedPointsExport';
 import {
-  buildAdjustedPointsExportText,
-  cloneAdjustedPointsExportSettings,
-  validateAdjustedPointsTransform,
-} from '../engine/adjustedPointsExport';
-import {
-  buildNetworkGeoJsonText,
-  buildObservationsResidualsCsvText,
-} from '../engine/browserExports';
-import {
-  buildExportBundleFiles,
-  type ExportBundlePreset,
-} from '../engine/exportBundles';
+  buildExportArtifacts,
+  type BuildExportArtifactsRequest,
+  type BuildExportArtifactsResult,
+  type ExportArtifactFile,
+} from '../engine/exportArtifacts';
 import type { ImportedInputNotice } from '../engine/importers';
+import type { ParseSettings, RunDiagnostics, SettingsState } from '../appStateTypes';
 import type {
   AdjustmentResult,
   AdjustedPointsExportSettings,
+  CustomLevelLoopTolerancePreset,
   ProjectExportFormat,
 } from '../types';
 
@@ -36,14 +32,16 @@ const trySaveTextFile = async (params: {
   fileDescription: string;
   extensions: string[];
 }): Promise<'saved' | 'aborted' | 'fallback'> => {
-  const picker = (window as Window & {
-    showSaveFilePicker?: (_options: unknown) => Promise<{
-      createWritable: () => Promise<{
-        write: (_content: string) => Promise<void>;
-        close: () => Promise<void>;
+  const picker = (
+    window as Window & {
+      showSaveFilePicker?: (_options: unknown) => Promise<{
+        createWritable: () => Promise<{
+          write: (_content: string) => Promise<void>;
+          close: () => Promise<void>;
+        }>;
       }>;
-    }>;
-  }).showSaveFilePicker;
+    }
+  ).showSaveFilePicker;
   if (!picker) return 'fallback';
   try {
     const handle = await picker({
@@ -65,237 +63,159 @@ const trySaveTextFile = async (params: {
   }
 };
 
+const transformBlockedTitleByFormat: Partial<Record<ProjectExportFormat, string>> = {
+  points: 'Adjusted Points Export Blocked',
+  'points-csv': 'Adjusted Points CSV Export Blocked',
+  'bundle-qa-standard': 'QA Bundle Export Blocked',
+  'bundle-qa-standard-with-landxml': 'QA Bundle Export Blocked',
+};
+
 interface UseExportWorkflowArgs {
   result: AdjustmentResult | null;
   exportFormat: ProjectExportFormat;
   units: 'm' | 'ft';
+  settings: SettingsState;
+  parseSettings: ParseSettings;
+  runDiagnostics: RunDiagnostics | null;
   adjustedPointsExportSettings: AdjustedPointsExportSettings;
+  levelLoopCustomPresets: CustomLevelLoopTolerancePreset[];
   currentComparisonText: string;
   setImportNotice: Dispatch<SetStateAction<ImportedInputNotice | null>>;
-  buildResultsText: (_result: AdjustmentResult) => string;
-  buildIndustryListingText: (_result: AdjustmentResult) => string;
-  buildLandXmlExportText: (_result: AdjustmentResult) => string;
+  buildArtifacts?: (_request: BuildExportArtifactsRequest) => Promise<BuildExportArtifactsResult>;
 }
 
 export const useExportWorkflow = ({
   result,
   exportFormat,
   units,
+  settings,
+  parseSettings,
+  runDiagnostics,
   adjustedPointsExportSettings,
+  levelLoopCustomPresets,
   currentComparisonText,
   setImportNotice,
-  buildResultsText,
-  buildIndustryListingText,
-  buildLandXmlExportText,
+  buildArtifacts = async (request) => buildExportArtifacts(request),
 }: UseExportWorkflowArgs) => {
-  const handleExportAdjustedPoints = useCallback(
-    async (options?: {
-      forceCsv?: boolean;
-      blockedTitle?: string;
-      suggestedName?: string;
-    }) => {
-      if (!result) return;
-      const effectiveSettings = options?.forceCsv
-        ? {
-            ...cloneAdjustedPointsExportSettings(adjustedPointsExportSettings),
-            format: 'csv' as const,
-            delimiter: 'comma' as const,
+  const filePickerOptionsForArtifact = (
+    file: ExportArtifactFile,
+  ): { fileDescription: string; extensions: string[] } => {
+    const lowerName = file.name.toLowerCase();
+    if (lowerName.endsWith('.geojson') || file.mimeType === 'application/geo+json') {
+      return {
+        fileDescription: 'GeoJSON Files',
+        extensions: ['.geojson', '.json'],
+      };
+    }
+    if (lowerName.endsWith('.xml') || file.mimeType === 'application/xml') {
+      return {
+        fileDescription: 'LandXML Files',
+        extensions: ['.xml'],
+      };
+    }
+    if (lowerName.endsWith('.csv') || file.mimeType === 'text/csv') {
+      return {
+        fileDescription: 'CSV Files',
+        extensions: ['.csv'],
+      };
+    }
+    return {
+      fileDescription: 'Text Files',
+      extensions: ['.txt'],
+    };
+  };
+
+  const handleExportFormat = useCallback(
+    async (format: ProjectExportFormat) => {
+      if (!result || !runDiagnostics) return;
+      const requiresAdjustedPointsValidation =
+        format === 'points' ||
+        format === 'points-csv' ||
+        format === 'bundle-qa-standard' ||
+        format === 'bundle-qa-standard-with-landxml';
+      if (requiresAdjustedPointsValidation) {
+        const transformValidation = validateAdjustedPointsTransform({
+          result,
+          settings: adjustedPointsExportSettings,
+        });
+        if (!transformValidation.valid) {
+          setImportNotice({
+            title: transformBlockedTitleByFormat[format] ?? 'Export Blocked',
+            detailLines: [
+              transformValidation.message,
+              'Open Project Options -> Other Files -> Transform and update transform settings.',
+            ],
+          });
+          return;
+        }
+      }
+
+      try {
+        const artifactResult = await buildArtifacts({
+          exportFormat: format,
+          dateStamp: new Date().toISOString().slice(0, 10),
+          result,
+          units,
+          settings,
+          parseSettings,
+          runDiagnostics,
+          adjustedPointsExportSettings,
+          levelLoopCustomPresets,
+          currentComparisonText,
+        });
+        if (artifactResult.files.length === 0) return;
+        if (artifactResult.files.length > 1) {
+          artifactResult.files.forEach((file) =>
+            downloadNamedTextFile(file.name, file.text, file.mimeType),
+          );
+          if (artifactResult.noticeTitle) {
+            setImportNotice({
+              title: artifactResult.noticeTitle,
+              detailLines:
+                artifactResult.noticeLines ??
+                artifactResult.files.map((file) => `Downloaded ${file.name}`),
+            });
           }
-        : adjustedPointsExportSettings;
-      const transformValidation = validateAdjustedPointsTransform({
-        result,
-        settings: effectiveSettings,
-      });
-      if (!transformValidation.valid) {
-        setImportNotice({
-          title: options?.blockedTitle ?? 'Adjusted Points Export Blocked',
-          detailLines: [
-            transformValidation.message,
-            'Open Project Options -> Other Files -> Transform and update transform settings.',
-          ],
+          return;
+        }
+
+        const file = artifactResult.files[0];
+        const pickerOptions = filePickerOptionsForArtifact(file);
+        const saveStatus = await trySaveTextFile({
+          suggestedName: file.name,
+          text: file.text,
+          mimeType: file.mimeType,
+          fileDescription: pickerOptions.fileDescription,
+          extensions: pickerOptions.extensions,
         });
-        return;
-      }
-      const text = buildAdjustedPointsExportText({
-        result,
-        units,
-        settings: effectiveSettings,
-      });
-      const extension = effectiveSettings.format === 'csv' ? 'csv' : 'txt';
-      const mimeType = effectiveSettings.format === 'csv' ? 'text/csv' : 'text/plain';
-      const suggestedName =
-        options?.suggestedName ??
-        `webnet-adjusted-points-${new Date().toISOString().slice(0, 10)}.${extension}`;
-      const saveStatus = await trySaveTextFile({
-        suggestedName,
-        text,
-        mimeType,
-        fileDescription: effectiveSettings.format === 'csv' ? 'CSV Files' : 'Text Files',
-        extensions: effectiveSettings.format === 'csv' ? ['.csv'] : ['.txt'],
-      });
-      if (saveStatus === 'fallback') {
-        downloadNamedTextFile(suggestedName, text, mimeType);
-      }
-    },
-    [adjustedPointsExportSettings, result, setImportNotice, units],
-  );
-
-  const handleExportObservationsResidualsCsv = useCallback(async () => {
-    if (!result) return;
-    const suggestedName = `webnet-observations-residuals-${new Date().toISOString().slice(0, 10)}.csv`;
-    const text = buildObservationsResidualsCsvText({
-      result,
-      units,
-    });
-    const saveStatus = await trySaveTextFile({
-      suggestedName,
-      text,
-      mimeType: 'text/csv',
-      fileDescription: 'CSV Files',
-      extensions: ['.csv'],
-    });
-    if (saveStatus === 'fallback') {
-      downloadNamedTextFile(suggestedName, text, 'text/csv');
-    }
-  }, [result, units]);
-
-  const handleExportGeoJson = useCallback(async () => {
-    if (!result) return;
-    const suggestedName = `webnet-network-${new Date().toISOString().slice(0, 10)}.geojson`;
-    const text = buildNetworkGeoJsonText({
-      result,
-      units,
-      includeLostStations: adjustedPointsExportSettings.includeLostStations,
-    });
-    const saveStatus = await trySaveTextFile({
-      suggestedName,
-      text,
-      mimeType: 'application/geo+json',
-      fileDescription: 'GeoJSON Files',
-      extensions: ['.geojson', '.json'],
-    });
-    if (saveStatus === 'fallback') {
-      downloadNamedTextFile(suggestedName, text, 'application/geo+json');
-    }
-  }, [adjustedPointsExportSettings.includeLostStations, result, units]);
-
-  const handleExportBundle = useCallback(
-    (preset: ExportBundlePreset) => {
-      if (!result) return;
-      const transformValidation = validateAdjustedPointsTransform({
-        result,
-        settings: adjustedPointsExportSettings,
-      });
-      if (!transformValidation.valid) {
+        if (saveStatus === 'fallback') {
+          downloadNamedTextFile(file.name, file.text, file.mimeType);
+        }
+      } catch (error) {
         setImportNotice({
-          title: 'QA Bundle Export Blocked',
-          detailLines: [
-            transformValidation.message,
-            'Open Project Options -> Other Files -> Transform and update transform settings.',
-          ],
+          title: 'Export Failed',
+          detailLines: [error instanceof Error ? error.message : String(error)],
         });
-        return;
       }
-      const adjustedPointsText = buildAdjustedPointsExportText({
-        result,
-        units,
-        settings: adjustedPointsExportSettings,
-      });
-      const files = buildExportBundleFiles({
-        preset,
-        dateStamp: new Date().toISOString().slice(0, 10),
-        adjustedPointsExtension: adjustedPointsExportSettings.format === 'csv' ? 'csv' : 'txt',
-        webnetText: buildResultsText(result),
-        industryListingText: buildIndustryListingText(result),
-        adjustedPointsText,
-        comparisonText: currentComparisonText || null,
-        landXmlText: preset === 'qa-standard-with-landxml' ? buildLandXmlExportText(result) : null,
-      });
-      files.forEach((file) => downloadNamedTextFile(file.name, file.text, file.mimeType));
-      setImportNotice({
-        title: 'QA bundle exported',
-        detailLines: files.map((file) => `Downloaded ${file.name}`),
-      });
     },
     [
       adjustedPointsExportSettings,
-      buildIndustryListingText,
-      buildLandXmlExportText,
-      buildResultsText,
+      buildArtifacts,
       currentComparisonText,
+      levelLoopCustomPresets,
+      parseSettings,
       result,
+      runDiagnostics,
       setImportNotice,
+      settings,
       units,
     ],
   );
 
   const handleExportResults = useCallback(async () => {
     if (!result) return;
-    if (exportFormat === 'points') {
-      await handleExportAdjustedPoints();
-      return;
-    }
-    if (exportFormat === 'points-csv') {
-      await handleExportAdjustedPoints({
-        forceCsv: true,
-        blockedTitle: 'Adjusted Points CSV Export Blocked',
-        suggestedName: `webnet-adjusted-points-${new Date().toISOString().slice(0, 10)}.csv`,
-      });
-      return;
-    }
-    if (exportFormat === 'observations-csv') {
-      await handleExportObservationsResidualsCsv();
-      return;
-    }
-    if (exportFormat === 'geojson') {
-      await handleExportGeoJson();
-      return;
-    }
-    if (exportFormat === 'bundle-qa-standard') {
-      handleExportBundle('qa-standard');
-      return;
-    }
-    if (exportFormat === 'bundle-qa-standard-with-landxml') {
-      handleExportBundle('qa-standard-with-landxml');
-      return;
-    }
-
-    const isXmlExport = exportFormat === 'landxml';
-    const text =
-      exportFormat === 'industry-style'
-        ? buildIndustryListingText(result)
-        : isXmlExport
-          ? buildLandXmlExportText(result)
-          : buildResultsText(result);
-    const suggestedName = `${
-      exportFormat === 'industry-style'
-        ? 'industry-style-listing'
-        : isXmlExport
-          ? 'webnet-landxml'
-          : 'webnet-results'
-    }-${new Date().toISOString().slice(0, 10)}.${isXmlExport ? 'xml' : 'txt'}`;
-    const mimeType = isXmlExport ? 'application/xml' : 'text/plain';
-    const saveStatus = await trySaveTextFile({
-      suggestedName,
-      text,
-      mimeType,
-      fileDescription: isXmlExport ? 'LandXML Files' : 'Text Files',
-      extensions: isXmlExport ? ['.xml'] : ['.txt'],
-    });
-    if (saveStatus === 'fallback') {
-      downloadNamedTextFile(suggestedName, text, mimeType);
-    }
-  }, [
-    buildIndustryListingText,
-    buildLandXmlExportText,
-    buildResultsText,
-    exportFormat,
-    handleExportAdjustedPoints,
-    handleExportGeoJson,
-    handleExportBundle,
-    handleExportObservationsResidualsCsv,
-    result,
-  ]);
+    await handleExportFormat(exportFormat);
+  }, [exportFormat, handleExportFormat, result]);
 
   return {
     handleExportResults,

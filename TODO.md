@@ -56,10 +56,11 @@
       - [x] Cache equation-planning metadata when topology is unchanged, not only parsed-model state
       - [x] Reuse that planning cache for exclusion, override, cluster-review, and saved-run compare reruns
       - [x] Expose planning-cache hit/miss coverage through the shared scenario-run stats and regression suites
-    - [ ] Batch 2 - worker-backed artifact generation
-      - [ ] Move QA bundle generation off the main thread through the existing worker path
-      - [ ] Move CSV, GeoJSON, and report-package generation off the main thread through the existing worker path
-      - [ ] Keep solve request shapes backward-compatible while extending worker artifact messages
+    - [x] Batch 2 - worker-backed artifact generation
+      - [x] Move QA bundle generation off the main thread through the existing worker path
+      - [x] Move CSV, GeoJSON, and report-package generation off the main thread through the existing worker path
+      - [x] Keep solve request shapes backward-compatible while extending worker artifact messages
+      - [x] Add focused regression coverage for worker-backed artifact routing plus direct-fallback parity
     - [ ] Batch 3 - performance budgets and imported-job benchmarks
       - [ ] Extend the benchmark suite with imported dense TS/GNSS/leveling fixtures
       - [ ] Add explicit budgets for initial solve, cached rerun, first render, and artifact-build latency

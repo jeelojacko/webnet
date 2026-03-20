@@ -1,6 +1,8 @@
 import type { RunSessionOutcome, RunSessionRequest } from './runSession';
+import type { BuildExportArtifactsRequest, BuildExportArtifactsResult } from './exportArtifacts';
 
 export type RunPhase = 'queued' | 'solving' | 'finalizing';
+export type ArtifactPhase = 'queued' | 'building' | 'finalizing';
 
 export interface RunRequestMessage {
   type: 'run';
@@ -13,7 +15,16 @@ export interface RunCancelMessage {
   runId: string;
 }
 
-export type AdjustmentWorkerRequestMessage = RunRequestMessage | RunCancelMessage;
+export interface ArtifactRequestMessage {
+  type: 'artifact';
+  taskId: string;
+  payload: BuildExportArtifactsRequest;
+}
+
+export type AdjustmentWorkerRequestMessage =
+  | RunRequestMessage
+  | RunCancelMessage
+  | ArtifactRequestMessage;
 
 export interface RunProgressMessage {
   type: 'progress';
@@ -38,8 +49,29 @@ export interface RunCancelledMessage {
   runId: string;
 }
 
+export interface ArtifactProgressMessage {
+  type: 'artifact-progress';
+  taskId: string;
+  phase: ArtifactPhase;
+}
+
+export interface ArtifactSuccessMessage {
+  type: 'artifact-success';
+  taskId: string;
+  payload: BuildExportArtifactsResult;
+}
+
+export interface ArtifactFailureMessage {
+  type: 'artifact-failure';
+  taskId: string;
+  error: string;
+}
+
 export type AdjustmentWorkerResponseMessage =
   | RunProgressMessage
   | RunSuccessMessage
   | RunFailureMessage
-  | RunCancelledMessage;
+  | RunCancelledMessage
+  | ArtifactProgressMessage
+  | ArtifactSuccessMessage
+  | ArtifactFailureMessage;

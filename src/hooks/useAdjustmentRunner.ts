@@ -4,7 +4,11 @@ import type {
   AdjustmentWorkerResponseMessage,
   RunPhase,
 } from '../engine/adjustmentWorkerProtocol';
-import { runAdjustmentSession, type RunSessionOutcome, type RunSessionRequest } from '../engine/runSession';
+import {
+  runAdjustmentSession,
+  type RunSessionOutcome,
+  type RunSessionRequest,
+} from '../engine/runSession';
 
 export interface RunPipelineState {
   status: 'idle' | 'running' | 'cancelled' | 'failed';
@@ -45,6 +49,7 @@ export const useAdjustmentRunner = (
     const handleMessage = (event: MessageEvent<AdjustmentWorkerResponseMessage>) => {
       const message = event.data;
       if (!message) return;
+      if (!('runId' in message)) return;
       const pending = pendingRunsRef.current.get(message.runId);
       if (!pending) return;
 
@@ -103,53 +108,32 @@ export const useAdjustmentRunner = (
     };
   }, []);
 
-  const run = useCallback((request: RunSessionRequest) => {
-    const runId = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
-    setPipelineState({
-      status: 'running',
-      runId,
-      phase: 'queued',
-      error: null,
-      workerBacked: workerRef.current != null,
-    });
-    return new Promise<RunSessionOutcome>((resolve, reject) => {
-      pendingRunsRef.current.set(runId, { cancelled: false, resolve, reject });
-      if (workerRef.current) {
-        const message: AdjustmentWorkerRequestMessage = {
-          type: 'run',
-          runId,
-          payload: request,
-        };
-        workerRef.current.postMessage(message);
-        return;
-      }
-
-      setTimeout(() => {
-        const pending = pendingRunsRef.current.get(runId);
-        if (!pending || pending.cancelled) {
-          pendingRunsRef.current.delete(runId);
-          setPipelineState({
-            status: 'cancelled',
-            runId: null,
-            phase: null,
-            error: null,
-            workerBacked: false,
-          });
-          reject(new Error('Run cancelled'));
+  const run = useCallback(
+    (request: RunSessionRequest) => {
+      const runId = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+      setPipelineState({
+        status: 'running',
+        runId,
+        phase: 'queued',
+        error: null,
+        workerBacked: workerRef.current != null,
+      });
+      return new Promise<RunSessionOutcome>((resolve, reject) => {
+        pendingRunsRef.current.set(runId, { cancelled: false, resolve, reject });
+        if (workerRef.current) {
+          const message: AdjustmentWorkerRequestMessage = {
+            type: 'run',
+            runId,
+            payload: request,
+          };
+          workerRef.current.postMessage(message);
           return;
         }
-        try {
-          setPipelineState({
-            status: 'running',
-            runId,
-            phase: 'solving',
-            error: null,
-            workerBacked: false,
-          });
-          const outcome = (directRunner ?? runAdjustmentSession)(request);
-          const latest = pendingRunsRef.current.get(runId);
-          pendingRunsRef.current.delete(runId);
-          if (!latest || latest.cancelled) {
+
+        setTimeout(() => {
+          const pending = pendingRunsRef.current.get(runId);
+          if (!pending || pending.cancelled) {
+            pendingRunsRef.current.delete(runId);
             setPipelineState({
               status: 'cancelled',
               runId: null,
@@ -160,29 +144,53 @@ export const useAdjustmentRunner = (
             reject(new Error('Run cancelled'));
             return;
           }
-          setPipelineState({
-            status: 'idle',
-            runId: null,
-            phase: null,
-            error: null,
-            workerBacked: false,
-          });
-          resolve(outcome);
-        } catch (error) {
-          pendingRunsRef.current.delete(runId);
-          const message = error instanceof Error ? error.message : String(error);
-          setPipelineState({
-            status: 'failed',
-            runId: null,
-            phase: null,
-            error: message,
-            workerBacked: false,
-          });
-          reject(new Error(message));
-        }
-      }, 0);
-    });
-  }, [directRunner]);
+          try {
+            setPipelineState({
+              status: 'running',
+              runId,
+              phase: 'solving',
+              error: null,
+              workerBacked: false,
+            });
+            const outcome = (directRunner ?? runAdjustmentSession)(request);
+            const latest = pendingRunsRef.current.get(runId);
+            pendingRunsRef.current.delete(runId);
+            if (!latest || latest.cancelled) {
+              setPipelineState({
+                status: 'cancelled',
+                runId: null,
+                phase: null,
+                error: null,
+                workerBacked: false,
+              });
+              reject(new Error('Run cancelled'));
+              return;
+            }
+            setPipelineState({
+              status: 'idle',
+              runId: null,
+              phase: null,
+              error: null,
+              workerBacked: false,
+            });
+            resolve(outcome);
+          } catch (error) {
+            pendingRunsRef.current.delete(runId);
+            const message = error instanceof Error ? error.message : String(error);
+            setPipelineState({
+              status: 'failed',
+              runId: null,
+              phase: null,
+              error: message,
+              workerBacked: false,
+            });
+            reject(new Error(message));
+          }
+        }, 0);
+      });
+    },
+    [directRunner],
+  );
 
   const cancel = useCallback(() => {
     const activeRunId = pipelineState.runId;

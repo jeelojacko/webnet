@@ -20,7 +20,6 @@ import {
 } from './engine/qaWorkflow';
 import { runAdjustmentSession } from './engine/runSession';
 import { createRunProfileBuilders } from './engine/runProfileBuilders';
-import { createRunResultsTextBuilder } from './engine/runResultsTextBuilder';
 import { createRunOutputBuilders } from './engine/runOutputBuilders';
 import {
   ADJUSTED_POINTS_ALL_COLUMNS,
@@ -48,13 +47,17 @@ import {
 } from './engine/crsCatalog';
 import { type ImportedInputNotice } from './engine/importers';
 import { useAdjustmentWorkflow } from './hooks/useAdjustmentWorkflow';
+import { useArtifactBuilder } from './hooks/useArtifactBuilder';
 import { useExportWorkflow } from './hooks/useExportWorkflow';
 import { useImportReviewWorkflow } from './hooks/useImportReviewWorkflow';
 import { useProjectFileWorkflow } from './hooks/useProjectFileWorkflow';
 import { useProjectOptionsModalController } from './hooks/useProjectOptionsModalController';
 import { useProjectOptionsState } from './hooks/useProjectOptionsState';
 import { useRunComparisonState } from './hooks/useRunComparisonState';
-import { createDefaultWorkspaceReviewState, useWorkspaceReviewState } from './hooks/useWorkspaceReviewState';
+import {
+  createDefaultWorkspaceReviewState,
+  useWorkspaceReviewState,
+} from './hooks/useWorkspaceReviewState';
 import {
   decodeBase64ToUint8Array,
   encodeUint8ArrayToBase64,
@@ -348,7 +351,11 @@ const buildPendingRunSettingDiffs = (
     current.autoAdjustStdResThreshold,
     previous.autoAdjustStdResThreshold,
   );
-  pushDiff('Instrument', current.selectedInstrument || 'none', previous.selectedInstrument || 'none');
+  pushDiff(
+    'Instrument',
+    current.selectedInstrument || 'none',
+    previous.selectedInstrument || 'none',
+  );
   return diffs;
 };
 
@@ -1172,51 +1179,48 @@ const App: React.FC<AppProps> = ({
   } = useRunComparisonState<RunSettingsSnapshot, RunDiagnostics>({
     buildSettingDiffs: buildPendingRunSettingDiffs,
   });
-  const {
-    triggerProjectFileSelect,
-    handleSaveProject,
-    handleProjectFileChange,
-  } = useProjectFileWorkflow({
-    projectFileInputRef,
-    input,
-    projectIncludeFiles,
-    settings,
-    parseSettings,
-    exportFormat,
-    adjustedPointsExportSettings,
-    savedRunSnapshots,
-    projectInstruments,
-    selectedInstrument,
-    levelLoopCustomPresets,
-    setInput,
-    setProjectIncludeFiles,
-    setSettings,
-    setParseSettings,
-    setGeoidSourceData,
-    setGeoidSourceDataLabel,
-    setExportFormat,
-    setAdjustedPointsExportSettings,
-    setProjectInstruments,
-    setSelectedInstrument,
-    setLevelLoopCustomPresets,
-    setSettingsDraft,
-    setParseSettingsDraft,
-    setGeoidSourceDataDraft,
-    setGeoidSourceDataLabelDraft,
-    setProjectInstrumentsDraft,
-    setSelectedInstrumentDraft,
-    setLevelLoopCustomPresetsDraft,
-    setAdjustedPointsExportSettingsDraft,
-    setIsAdjustedPointsTransformSelectOpen,
-    setAdjustedPointsTransformSelectedDraft,
-    setImportNotice,
-    resetWorkspaceAfterProjectLoad: resetRunStateAfterImportedInput,
-    restoreSavedRunSnapshots,
-    normalizeUiTheme,
-    normalizeSolveProfile,
-    buildObservationModeFromGridFields,
-    cloneInstrumentLibrary,
-  });
+  const { triggerProjectFileSelect, handleSaveProject, handleProjectFileChange } =
+    useProjectFileWorkflow({
+      projectFileInputRef,
+      input,
+      projectIncludeFiles,
+      settings,
+      parseSettings,
+      exportFormat,
+      adjustedPointsExportSettings,
+      savedRunSnapshots,
+      projectInstruments,
+      selectedInstrument,
+      levelLoopCustomPresets,
+      setInput,
+      setProjectIncludeFiles,
+      setSettings,
+      setParseSettings,
+      setGeoidSourceData,
+      setGeoidSourceDataLabel,
+      setExportFormat,
+      setAdjustedPointsExportSettings,
+      setProjectInstruments,
+      setSelectedInstrument,
+      setLevelLoopCustomPresets,
+      setSettingsDraft,
+      setParseSettingsDraft,
+      setGeoidSourceDataDraft,
+      setGeoidSourceDataLabelDraft,
+      setProjectInstrumentsDraft,
+      setSelectedInstrumentDraft,
+      setLevelLoopCustomPresetsDraft,
+      setAdjustedPointsExportSettingsDraft,
+      setIsAdjustedPointsTransformSelectOpen,
+      setAdjustedPointsTransformSelectedDraft,
+      setImportNotice,
+      resetWorkspaceAfterProjectLoad: resetRunStateAfterImportedInput,
+      restoreSavedRunSnapshots,
+      normalizeUiTheme,
+      normalizeSolveProfile,
+      buildObservationModeFromGridFields,
+      cloneInstrumentLibrary,
+    });
   const selectedDraftCrs = useMemo(
     () =>
       CANADA_CRS_CATALOG.find((row) => row.id === parseSettingsDraft.crsId) ??
@@ -1289,7 +1293,12 @@ const App: React.FC<AppProps> = ({
       ...prev,
       crsId: filteredDraftCrsCatalog[0].id,
     }));
-  }, [crsCatalogGroupFilter, filteredDraftCrsCatalog, parseSettingsDraft.crsId, setParseSettingsDraft]);
+  }, [
+    crsCatalogGroupFilter,
+    filteredDraftCrsCatalog,
+    parseSettingsDraft.crsId,
+    setParseSettingsDraft,
+  ]);
 
   useEffect(() => {
     setProjectInstruments((prev) => {
@@ -1381,9 +1390,7 @@ const App: React.FC<AppProps> = ({
     isResizingRef.current = true;
   };
 
-  function normalizeSolveProfile(
-    profile: SolveProfile,
-  ): Exclude<SolveProfile, 'industry-parity'> {
+  function normalizeSolveProfile(profile: SolveProfile): Exclude<SolveProfile, 'industry-parity'> {
     return profile === 'industry-parity' ? 'industry-parity-current' : profile;
   }
 
@@ -1395,14 +1402,7 @@ const App: React.FC<AppProps> = ({
     normalizeSolveProfile,
   });
 
-  const { buildResultsText } = createRunResultsTextBuilder({
-    settings,
-    parseSettings,
-    runDiagnostics,
-    levelLoopCustomPresets,
-    buildRunDiagnostics,
-  });
-  const { buildIndustryListingText, buildLandXmlExportText } = createRunOutputBuilders({
+  const { buildIndustryListingText } = createRunOutputBuilders({
     settings,
     parseSettings,
     runDiagnostics,
@@ -1414,6 +1414,10 @@ const App: React.FC<AppProps> = ({
     () => (runComparisonSummary ? buildRunComparisonText(runComparisonSummary) : ''),
     [runComparisonSummary],
   );
+  const exportRunDiagnostics = result
+    ? (runDiagnostics ?? buildRunDiagnostics(parseSettings, result))
+    : null;
+  const { buildArtifacts } = useArtifactBuilder();
   const handleInputChange = (value: string) => {
     setInput(value);
     if (importNotice) setImportNotice(null);
@@ -1498,17 +1502,14 @@ const App: React.FC<AppProps> = ({
         reportView: {
           ...defaults.reportView,
           ...savedReview.reportView,
-          reportObservationTypeFilter:
-            savedReview.reportView
-              .reportObservationTypeFilter as WorkspaceReviewState['reportView']['reportObservationTypeFilter'],
+          reportObservationTypeFilter: savedReview.reportView
+            .reportObservationTypeFilter as WorkspaceReviewState['reportView']['reportObservationTypeFilter'],
           tableRowLimits: { ...savedReview.reportView.tableRowLimits },
-          pinnedDetailSections:
-            savedReview.reportView
-              .pinnedDetailSections as WorkspaceReviewState['reportView']['pinnedDetailSections'],
+          pinnedDetailSections: savedReview.reportView
+            .pinnedDetailSections as WorkspaceReviewState['reportView']['pinnedDetailSections'],
           collapsedDetailSections: {
             ...defaults.reportView.collapsedDetailSections,
-            ...(savedReview.reportView
-              .collapsedDetailSections as Partial<
+            ...(savedReview.reportView.collapsedDetailSections as Partial<
               WorkspaceReviewState['reportView']['collapsedDetailSections']
             >),
           },
@@ -1580,9 +1581,7 @@ const App: React.FC<AppProps> = ({
       setRunDiagnostics(restoredSnapshot.runDiagnostics);
       setRunElapsedMs(null);
       setPendingEditorJumpLine(null);
-      setLastRunInput(
-        restoredSnapshot.inputFingerprint === activeInputFingerprint ? input : null,
-      );
+      setLastRunInput(restoredSnapshot.inputFingerprint === activeInputFingerprint ? input : null);
       setLastRunSettingsSnapshot(restoredSnapshot.settingsSnapshot);
       restoreAdjustmentWorkflowState({
         result: restoredResult,
@@ -1632,12 +1631,14 @@ const App: React.FC<AppProps> = ({
     result,
     exportFormat,
     units: settings.units,
+    settings,
+    parseSettings,
+    runDiagnostics: exportRunDiagnostics,
     adjustedPointsExportSettings,
+    levelLoopCustomPresets,
     currentComparisonText,
     setImportNotice,
-    buildResultsText,
-    buildIndustryListingText,
-    buildLandXmlExportText,
+    buildArtifacts,
   });
 
   function resetRunStateAfterImportedInput() {
@@ -1702,12 +1703,11 @@ const App: React.FC<AppProps> = ({
     setSplitPercent(Math.max(20, Math.min(80, snapshot.view.splitPercent)));
     setIsSidebarOpen(snapshot.view.isSidebarOpen);
     restoreWorkspaceReviewSnapshot(
-      snapshot.view.review ??
-        ({
-          ...defaultReviewState,
-          selection: legacySelection,
-          pinnedObservationIds: legacyPinnedObservationIds,
-        }),
+      snapshot.view.review ?? {
+        ...defaultReviewState,
+        selection: legacySelection,
+        pinnedObservationIds: legacyPinnedObservationIds,
+      },
     );
     restoreImportReviewWorkflow(snapshot.importReview ?? null);
     setComparisonSelection((prev) => ({
@@ -1888,16 +1888,22 @@ const App: React.FC<AppProps> = ({
         />
       )}
 
-      <React.Suspense fallback={isSettingsModalOpen ? (
-        <div className="fixed inset-0 z-50 bg-slate-950/70 flex items-start justify-center p-4 md:p-10">
-          <div className="w-full max-w-5xl bg-slate-600 border border-slate-400 shadow-2xl text-slate-100">
-            <div className="flex items-center justify-between border-b border-slate-400 bg-slate-700 px-4 py-2">
-              <div className="text-sm font-semibold tracking-wide">Project Options</div>
+      <React.Suspense
+        fallback={
+          isSettingsModalOpen ? (
+            <div className="fixed inset-0 z-50 bg-slate-950/70 flex items-start justify-center p-4 md:p-10">
+              <div className="w-full max-w-5xl bg-slate-600 border border-slate-400 shadow-2xl text-slate-100">
+                <div className="flex items-center justify-between border-b border-slate-400 bg-slate-700 px-4 py-2">
+                  <div className="text-sm font-semibold tracking-wide">Project Options</div>
+                </div>
+                <div className="bg-slate-500 p-4 text-xs text-slate-200">
+                  Loading project options...
+                </div>
+              </div>
             </div>
-            <div className="bg-slate-500 p-4 text-xs text-slate-200">Loading project options...</div>
-          </div>
-        </div>
-      ) : null}>
+          ) : null
+        }
+      >
         <ProjectOptionsModal context={projectOptionsModalContext} />
       </React.Suspense>
 
@@ -2019,7 +2025,9 @@ const App: React.FC<AppProps> = ({
                 if (saveOutcome.status === 'already-saved') {
                   setImportNotice({
                     title: 'Run snapshot already saved',
-                    detailLines: [`${saveOutcome.snapshot.label} is already in the saved-run list.`],
+                    detailLines: [
+                      `${saveOutcome.snapshot.label} is already in the saved-run list.`,
+                    ],
                   });
                 }
               }}
@@ -2104,8 +2112,11 @@ const App: React.FC<AppProps> = ({
               <div className="flex flex-wrap items-center gap-2">
                 {selectedObservation && (
                   <span className="rounded border border-cyan-800 bg-cyan-950/30 px-2 py-1">
-                    Selected obs: {selectedObservation.type.toUpperCase()} {selectedObservation.stationsLabel}
-                    {selectedObservation.sourceLine != null ? ` @${selectedObservation.sourceLine}` : ''}
+                    Selected obs: {selectedObservation.type.toUpperCase()}{' '}
+                    {selectedObservation.stationsLabel}
+                    {selectedObservation.sourceLine != null
+                      ? ` @${selectedObservation.sourceLine}`
+                      : ''}
                   </span>
                 )}
                 {selectedStation && (
@@ -2242,8 +2253,7 @@ const App: React.FC<AppProps> = ({
                           geoidModelEnabled: runDiagnostics.geoidModelEnabled,
                           geoidModelId: runDiagnostics.geoidModelId,
                           geoidInterpolation: runDiagnostics.geoidInterpolation,
-                          geoidHeightConversionEnabled:
-                            runDiagnostics.geoidHeightConversionEnabled,
+                          geoidHeightConversionEnabled: runDiagnostics.geoidHeightConversionEnabled,
                           geoidOutputHeightDatum: runDiagnostics.geoidOutputHeightDatum,
                           geoidModelLoaded: runDiagnostics.geoidModelLoaded,
                           geoidModelMetadata: runDiagnostics.geoidModelMetadata,
@@ -2259,8 +2269,7 @@ const App: React.FC<AppProps> = ({
                           gpsAddHiHtNegativeCount: runDiagnostics.gpsAddHiHtNegativeCount,
                           gpsAddHiHtNeutralCount: runDiagnostics.gpsAddHiHtNeutralCount,
                           gpsAddHiHtDefaultZeroCount: runDiagnostics.gpsAddHiHtDefaultZeroCount,
-                          gpsAddHiHtMissingHeightCount:
-                            runDiagnostics.gpsAddHiHtMissingHeightCount,
+                          gpsAddHiHtMissingHeightCount: runDiagnostics.gpsAddHiHtMissingHeightCount,
                           gpsAddHiHtScaleMin: runDiagnostics.gpsAddHiHtScaleMin,
                           gpsAddHiHtScaleMax: runDiagnostics.gpsAddHiHtScaleMax,
                         }
@@ -2298,9 +2307,7 @@ const App: React.FC<AppProps> = ({
                   selectedStationId={selection.stationId}
                   selectedObservationId={selection.observationId}
                   onSelectStation={(stationId) => selectStation(stationId, 'map')}
-                  onSelectObservation={(observationId) =>
-                    selectObservation(observationId, 'map')
-                  }
+                  onSelectObservation={(observationId) => selectObservation(observationId, 'map')}
                 />
               </React.Suspense>
             }
@@ -2468,4 +2475,3 @@ const App: React.FC<AppProps> = ({
 };
 
 export default App;
-
