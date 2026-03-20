@@ -42,12 +42,33 @@ export interface RunSnapshot<TSettingsSnapshot = unknown, TRunDiagnostics = unkn
   id: string;
   createdAt: string;
   label: string;
+  inputFingerprint: string;
+  settingsFingerprint: string;
+  summary: RunSnapshotSummary;
   result: AdjustmentResult;
   runDiagnostics: TRunDiagnostics | null;
   settingsSnapshot: TSettingsSnapshot;
   excludedIds: number[];
   overrideIds: number[];
   approvedClusterMerges: ClusterApprovedMerge[];
+}
+
+export interface RunSnapshotSummary {
+  converged: boolean;
+  iterations: number;
+  seuw: number;
+  dof: number;
+  stationCount: number;
+  observationCount: number;
+  suspectObservationCount: number;
+  maxAbsStdRes: number;
+}
+
+export interface SavedRunSnapshot<TSettingsSnapshot = unknown, TRunDiagnostics = unknown>
+  extends RunSnapshot<TSettingsSnapshot, TRunDiagnostics> {
+  sourceRunId: string;
+  savedAt: string;
+  notes: string;
 }
 
 export interface ComparisonSelection {
@@ -94,6 +115,66 @@ export const DEFAULT_COMPARISON_SELECTION: ComparisonSelection = {
   stationMovementThreshold: 0.001,
   residualDeltaThreshold: 0.25,
 };
+
+const stableStringifyValue = (value: unknown): string => {
+  if (value == null) return 'null';
+  if (typeof value === 'number') return Number.isFinite(value) ? String(value) : 'null';
+  if (typeof value === 'boolean') return value ? 'true' : 'false';
+  if (typeof value === 'string') return JSON.stringify(value);
+  if (Array.isArray(value)) return `[${value.map((entry) => stableStringifyValue(entry)).join(',')}]`;
+  if (typeof value === 'object') {
+    const record = value as Record<string, unknown>;
+    return `{${Object.keys(record)
+      .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }))
+      .map((key) => `${JSON.stringify(key)}:${stableStringifyValue(record[key])}`)
+      .join(',')}}`;
+  }
+  return JSON.stringify(String(value));
+};
+
+const hashString = (value: string): string => {
+  let hash = 2166136261 >>> 0;
+  for (let index = 0; index < value.length; index += 1) {
+    hash ^= value.charCodeAt(index);
+    hash = Math.imul(hash, 16777619) >>> 0;
+  }
+  return hash.toString(16).padStart(8, '0');
+};
+
+export const buildValueFingerprint = (value: unknown): string =>
+  `fnv1a:${hashString(stableStringifyValue(value))}`;
+
+export const buildRunSnapshotSummary = (result: AdjustmentResult): RunSnapshotSummary => {
+  let maxAbsStdRes = 0;
+  let suspectObservationCount = 0;
+  result.observations.forEach((obs) => {
+    const absStdRes = Number.isFinite(obs.stdRes) ? Math.abs(obs.stdRes ?? 0) : 0;
+    if (absStdRes >= 2) suspectObservationCount += 1;
+    if (absStdRes > maxAbsStdRes) maxAbsStdRes = absStdRes;
+  });
+  return {
+    converged: result.converged,
+    iterations: result.iterations,
+    seuw: result.seuw,
+    dof: result.dof,
+    stationCount: Object.keys(result.stations ?? {}).length,
+    observationCount: result.observations.length,
+    suspectObservationCount,
+    maxAbsStdRes,
+  };
+};
+
+export const cloneSavedRunSnapshots = <TSettingsSnapshot, TRunDiagnostics>(
+  snapshots: Array<SavedRunSnapshot<TSettingsSnapshot, TRunDiagnostics>>,
+): Array<SavedRunSnapshot<TSettingsSnapshot, TRunDiagnostics>> =>
+  JSON.parse(JSON.stringify(snapshots)) as Array<SavedRunSnapshot<TSettingsSnapshot, TRunDiagnostics>>;
+
+export const pushSavedRunSnapshot = <TSettingsSnapshot, TRunDiagnostics>(
+  history: Array<SavedRunSnapshot<TSettingsSnapshot, TRunDiagnostics>>,
+  snapshot: SavedRunSnapshot<TSettingsSnapshot, TRunDiagnostics>,
+  limit = 10,
+): Array<SavedRunSnapshot<TSettingsSnapshot, TRunDiagnostics>> =>
+  [snapshot, ...history.filter((entry) => entry.id !== snapshot.id)].slice(0, limit);
 
 const normalizeStationIds = (obs: Observation): string[] => {
   if (obs.type === 'angle') return [obs.at, obs.from, obs.to];

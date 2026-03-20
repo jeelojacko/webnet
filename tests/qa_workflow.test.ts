@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { LSAEngine } from '../src/engine/adjust';
 import {
+  buildRunSnapshotSummary,
   buildQaDerivedResult,
   buildRunComparison,
   pushRunSnapshot,
@@ -43,6 +44,9 @@ describe('qaWorkflow helpers', () => {
         id: `run-${index}`,
         createdAt: `2026-03-17T00:00:0${index}.000Z`,
         label: `Run ${index}`,
+        inputFingerprint: `input-${index}`,
+        settingsFingerprint: `settings-${index}`,
+        summary: buildRunSnapshotSummary(baseResult),
         result: baseResult,
         runDiagnostics: null,
         settingsSnapshot: { run: index },
@@ -79,6 +83,9 @@ describe('qaWorkflow helpers', () => {
       id: 'baseline',
       createdAt: '2026-03-17T00:00:00.000Z',
       label: 'Run 01',
+      inputFingerprint: 'input-baseline',
+      settingsFingerprint: 'settings-baseline',
+      summary: buildRunSnapshotSummary(baseline),
       result: baseline,
       runDiagnostics: null,
       settingsSnapshot: { name: 'baseline' },
@@ -90,6 +97,9 @@ describe('qaWorkflow helpers', () => {
       id: 'current',
       createdAt: '2026-03-17T00:01:00.000Z',
       label: 'Run 02',
+      inputFingerprint: 'input-current',
+      settingsFingerprint: 'settings-current',
+      summary: buildRunSnapshotSummary(current),
       result: current,
       runDiagnostics: null,
       settingsSnapshot: { name: 'current' },

@@ -9,6 +9,7 @@ import type {
   ObservationOverride,
 } from '../types';
 import type { RunSessionOutcome, RunSessionRequest } from '../engine/runSession';
+import { buildValueFingerprint } from '../engine/qaWorkflow';
 
 type ClusterCandidate = NonNullable<AdjustmentResult['clusterDiagnostics']>['candidates'][number];
 
@@ -40,6 +41,7 @@ interface UseAdjustmentWorkflowArgs<TRunDiagnostics> {
     result: AdjustmentResult;
     runDiagnostics: TRunDiagnostics;
     settingsSnapshot: RunSettingsSnapshot;
+    inputFingerprint: string;
     excludedIds: number[];
     overrideIds: number[];
     approvedClusterMerges: ClusterApprovedMerge[];
@@ -182,6 +184,7 @@ export const useAdjustmentWorkflow = <TRunDiagnostics>({
         inputSnapshot: string;
         parseSettingsSnapshot: ParseSettings;
         settingsSnapshot: RunSettingsSnapshot;
+        inputFingerprint: string;
         overrideIds: number[];
         reviewContext?: RunReviewContext;
       },
@@ -239,6 +242,7 @@ export const useAdjustmentWorkflow = <TRunDiagnostics>({
         result: solved,
         runDiagnostics: runProfile,
         settingsSnapshot: context.settingsSnapshot,
+        inputFingerprint: context.inputFingerprint,
         excludedIds: outcome.effectiveExcludedIds,
         overrideIds: context.overrideIds,
         approvedClusterMerges: outcome.effectiveClusterApprovedMerges,
@@ -288,6 +292,10 @@ export const useAdjustmentWorkflow = <TRunDiagnostics>({
         inputSnapshot: input,
         parseSettingsSnapshot: { ...parseSettings },
         settingsSnapshot: currentRunSettingsSnapshot,
+        inputFingerprint: buildValueFingerprint({
+          input,
+          includeFiles: projectIncludeFiles,
+        }),
         overrideIds,
         reviewContext,
       };

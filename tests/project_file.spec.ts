@@ -5,7 +5,21 @@ import {
   sanitizeAdjustedPointsExportSettings,
 } from '../src/engine/adjustedPointsExport';
 import { parseProjectFile, serializeProjectFile } from '../src/engine/projectFile';
-import type { InstrumentLibrary } from '../src/types';
+import type { RunSettingsSnapshot } from '../src/appStateTypes';
+import type { AdjustmentResult, InstrumentLibrary } from '../src/types';
+
+const savedRunResult = {
+  success: true,
+  converged: true,
+  iterations: 2,
+  seuw: 1.05,
+  dof: 8,
+  stations: {
+    A: { x: 0, y: 0, h: 0, fixed: true },
+  },
+  observations: [],
+  logs: [],
+} as unknown as AdjustmentResult;
 
 const defaults = {
   settings: {
@@ -54,6 +68,37 @@ describe('project file serialization/parsing', () => {
       includeFiles: {
         'sub/job1.dat': 'C X 1 1 0',
       },
+      savedRuns: [
+        {
+          id: 'saved-run-1',
+          sourceRunId: 'run-2',
+          createdAt: '2026-03-20T10:00:00.000Z',
+          savedAt: '2026-03-20T10:05:00.000Z',
+          label: 'Saved Run 02',
+          notes: 'checkpoint',
+          inputFingerprint: 'fnv1a:input',
+          settingsFingerprint: 'fnv1a:settings',
+          summary: {
+            converged: true,
+            iterations: 2,
+            seuw: 1.05,
+            dof: 8,
+            stationCount: 1,
+            observationCount: 0,
+            suspectObservationCount: 0,
+            maxAbsStdRes: 0,
+          },
+          result: savedRunResult,
+          runDiagnostics: null,
+          settingsSnapshot: {
+            maxIterations: 15,
+            convergenceLimit: 0.1,
+          } as unknown as RunSettingsSnapshot,
+          excludedIds: [4],
+          overrideIds: [9],
+          approvedClusterMerges: [{ aliasId: 'P1', canonicalId: 'A' }],
+        },
+      ],
       ui: {
         settings: {
           maxIterations: 15,
@@ -106,6 +151,12 @@ describe('project file serialization/parsing', () => {
     expect(parsed.project.schemaVersion).toBe(3);
     expect(parsed.project.input).toContain('C A');
     expect(parsed.project.includeFiles['sub/job1.dat']).toContain('C X');
+    expect(parsed.project.savedRuns).toHaveLength(1);
+    expect(parsed.project.savedRuns[0]?.label).toBe('Saved Run 02');
+    expect(parsed.project.savedRuns[0]?.notes).toBe('checkpoint');
+    expect(parsed.project.savedRuns[0]?.approvedClusterMerges).toEqual([
+      { aliasId: 'P1', canonicalId: 'A' },
+    ]);
     expect(parsed.project.ui.exportFormat).toBe('industry-style');
     expect(parsed.project.ui.settings.convergenceLimit).toBe(0.1);
     expect(parsed.project.ui.adjustedPointsExport.columns).toEqual(['P', 'E', 'N', 'Z']);
@@ -166,6 +217,7 @@ describe('project file serialization/parsing', () => {
     if (!parsed.ok) return;
     expect(parsed.project.schemaVersion).toBe(1);
     expect(parsed.project.includeFiles).toEqual({});
+    expect(parsed.project.savedRuns).toEqual([]);
     expect(parsed.project.ui.settings.maxIterations).toBe(defaults.settings.maxIterations);
     expect(parsed.project.ui.settings.convergenceLimit).toBe(defaults.settings.convergenceLimit);
     expect(parsed.project.ui.parseSettings.parseCompatibilityMode).toBe('legacy');
@@ -209,6 +261,7 @@ describe('project file serialization/parsing', () => {
     if (!parsed.ok) return;
     expect(parsed.project.schemaVersion).toBe(2);
     expect(parsed.project.includeFiles).toEqual({});
+    expect(parsed.project.savedRuns).toEqual([]);
     expect(parsed.project.ui.parseSettings.parseCompatibilityMode).toBe('strict');
     expect(parsed.project.ui.parseSettings.parseModeMigrated).toBe(true);
     expect(parsed.project.ui.migration?.parseModeMigrated).toBe(true);
@@ -222,6 +275,14 @@ describe('project file serialization/parsing', () => {
         schemaVersion: 3,
         mainInput: '.2D',
         includeFiles: {},
+        savedRuns: [
+          {
+            id: 'saved-run-2',
+            label: 'Legacy Saved',
+            result: savedRunResult,
+            settingsSnapshot: { maxIterations: 7 },
+          },
+        ],
         ui: {
           settings: {},
           parseSettings: {},
@@ -252,6 +313,8 @@ describe('project file serialization/parsing', () => {
     expect(parsed.project.ui.adjustedPointsExport.transform.selectedStationIds).toEqual(['A', 'B']);
     expect(parsed.project.ui.adjustedPointsExport.transform.rotation.enabled).toBe(true);
     expect(parsed.project.ui.adjustedPointsExport.transform.rotation.angleDeg).toBe(20);
+    expect(parsed.project.savedRuns[0]?.settingsFingerprint).toContain('fnv1a:');
+    expect(parsed.project.savedRuns[0]?.summary.stationCount).toBe(1);
   });
 
   it('loads schema v3 include bundles using mainInput/includeFiles fields', () => {
@@ -263,6 +326,7 @@ describe('project file serialization/parsing', () => {
         includeFiles: {
           'field/set1.dat': 'C A 0 0 0 ! !',
         },
+        savedRuns: [],
         ui: {
           settings: {
             maxIterations: 7,
@@ -289,5 +353,6 @@ describe('project file serialization/parsing', () => {
     expect(parsed.project.schemaVersion).toBe(3);
     expect(parsed.project.input).toContain('.INCLUDE field/set1.dat');
     expect(parsed.project.includeFiles['field/set1.dat']).toContain('C A 0 0 0 ! !');
+    expect(parsed.project.savedRuns).toEqual([]);
   });
 });

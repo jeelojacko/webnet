@@ -8,6 +8,7 @@ import RunComparisonPanel from '../src/components/RunComparisonPanel';
 import WorkspaceReviewActions from '../src/components/WorkspaceReviewActions';
 import { LSAEngine } from '../src/engine/adjust';
 import {
+  buildRunSnapshotSummary,
   buildRunComparison,
   type ComparisonSelection,
   type RunSnapshot,
@@ -29,6 +30,9 @@ describe('RunComparisonPanel', () => {
       id: 'run-1',
       createdAt: '2026-03-17T00:00:00.000Z',
       label: 'Run 01',
+      inputFingerprint: 'input-run-1',
+      settingsFingerprint: 'settings-run-1',
+      summary: buildRunSnapshotSummary(baseline),
       result: baseline,
       runDiagnostics: null,
       settingsSnapshot: { tag: 'baseline' },
@@ -40,6 +44,9 @@ describe('RunComparisonPanel', () => {
       id: 'run-2',
       createdAt: '2026-03-17T00:01:00.000Z',
       label: 'Run 02',
+      inputFingerprint: 'input-run-2',
+      settingsFingerprint: 'settings-run-2',
+      summary: buildRunSnapshotSummary(current),
       result: current,
       runDiagnostics: null,
       settingsSnapshot: { tag: 'current' },
@@ -64,6 +71,7 @@ describe('RunComparisonPanel', () => {
     const observationSpy = vi.fn();
     const baselineSpy = vi.fn();
     const pinSpy = vi.fn();
+    const saveSpy = vi.fn();
     const prevSpy = vi.fn();
     const nextSpy = vi.fn();
     const jumpSpy = vi.fn();
@@ -76,8 +84,11 @@ describe('RunComparisonPanel', () => {
           currentSnapshot={currentSnapshot}
           baselineSnapshot={baselineSnapshot}
           runHistory={[currentSnapshot, baselineSnapshot]}
+          savedRunCount={1}
+          isCurrentSnapshotSaved={false}
           comparisonSelection={selection}
           comparisonSummary={summary}
+          onSaveCurrentSnapshot={saveSpy}
           onSelectBaseline={baselineSpy}
           onTogglePinBaseline={pinSpy}
           onStationThresholdChange={() => {}}
@@ -102,6 +113,7 @@ describe('RunComparisonPanel', () => {
     });
 
     expect(container.textContent).toContain('Run Compare');
+    expect(container.textContent).toContain('Saved runs 1');
     expect(container.textContent).not.toContain('Moved Stations');
     expect(container.querySelector('[data-qa-review-action="prev-suspect"]')).toBeNull();
     const expandButton = Array.from(container.querySelectorAll('button')).find((button) =>
@@ -122,6 +134,9 @@ describe('RunComparisonPanel', () => {
     ) as HTMLButtonElement;
     const pinButton = Array.from(container.querySelectorAll('button')).find((button) =>
       button.textContent?.includes('Pin baseline'),
+    ) as HTMLButtonElement;
+    const saveButton = Array.from(container.querySelectorAll('button')).find((button) =>
+      button.textContent?.includes('Save current run'),
     ) as HTMLButtonElement;
     const select = container.querySelector('select') as HTMLSelectElement;
     const prevButton = container.querySelector(
@@ -196,8 +211,12 @@ describe('RunComparisonPanel', () => {
     expect(pinSelectedButton.title).toBe(
       'Pin or unpin the currently selected observation for quick return navigation.',
     );
+    expect(saveButton.title).toBe(
+      'Store the current run as a persisted saved snapshot for this workspace or project file.',
+    );
 
     await act(async () => {
+      saveButton.click();
       stationButton.click();
       observationButton.click();
       select.value = 'run-1';
@@ -214,6 +233,7 @@ describe('RunComparisonPanel', () => {
     expect(observationSpy).toHaveBeenCalled();
     expect(baselineSpy).toHaveBeenCalledWith('run-1');
     expect(pinSpy).toHaveBeenCalled();
+    expect(saveSpy).toHaveBeenCalled();
     expect(prevSpy).toHaveBeenCalled();
     expect(nextSpy).toHaveBeenCalled();
     expect(focusFilterSpy).toHaveBeenCalled();

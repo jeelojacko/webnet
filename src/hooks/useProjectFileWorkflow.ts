@@ -5,7 +5,12 @@ import {
   cloneAdjustedPointsExportSettings,
   sanitizeAdjustedPointsExportSettings,
 } from '../engine/adjustedPointsExport';
-import type { ParseSettings, SettingsState, SolveProfile } from '../appStateTypes';
+import type {
+  ParseSettings,
+  PersistedSavedRunSnapshot,
+  SettingsState,
+  SolveProfile,
+} from '../appStateTypes';
 import type {
   AdjustedPointsExportSettings,
   CustomLevelLoopTolerancePreset,
@@ -47,6 +52,7 @@ interface UseProjectFileWorkflowArgs {
   parseSettings: ParseSettings;
   exportFormat: ProjectExportFormat;
   adjustedPointsExportSettings: AdjustedPointsExportSettings;
+  savedRunSnapshots: PersistedSavedRunSnapshot[];
   projectInstruments: InstrumentLibrary;
   selectedInstrument: string;
   levelLoopCustomPresets: CustomLevelLoopTolerancePreset[];
@@ -73,6 +79,7 @@ interface UseProjectFileWorkflowArgs {
   setAdjustedPointsTransformSelectedDraft: Dispatch<SetStateAction<string[]>>;
   setImportNotice: Dispatch<SetStateAction<ImportNotice | null>>;
   resetWorkspaceAfterProjectLoad: () => void;
+  restoreSavedRunSnapshots: (_snapshots: PersistedSavedRunSnapshot[]) => void;
   normalizeUiTheme: (_value: unknown) => SettingsState['uiTheme'];
   normalizeSolveProfile: (_profile: SolveProfile) => Exclude<SolveProfile, 'industry-parity'>;
   buildObservationModeFromGridFields: (_state: {
@@ -92,6 +99,7 @@ export const useProjectFileWorkflow = ({
   parseSettings,
   exportFormat,
   adjustedPointsExportSettings,
+  savedRunSnapshots,
   projectInstruments,
   selectedInstrument,
   levelLoopCustomPresets,
@@ -118,6 +126,7 @@ export const useProjectFileWorkflow = ({
   setAdjustedPointsTransformSelectedDraft,
   setImportNotice,
   resetWorkspaceAfterProjectLoad,
+  restoreSavedRunSnapshots,
   normalizeUiTheme,
   normalizeSolveProfile,
   buildObservationModeFromGridFields,
@@ -131,6 +140,7 @@ export const useProjectFileWorkflow = ({
     const projectText = serializeProjectFile({
       input,
       includeFiles: projectIncludeFiles,
+      savedRuns: savedRunSnapshots,
       ui: {
         settings: settings as unknown as Record<string, unknown>,
         parseSettings: parseSettings as unknown as Record<string, unknown>,
@@ -183,6 +193,7 @@ export const useProjectFileWorkflow = ({
     parseSettings,
     projectIncludeFiles,
     projectInstruments,
+    savedRunSnapshots,
     selectedInstrument,
     setImportNotice,
     settings,
@@ -293,6 +304,7 @@ export const useProjectFileWorkflow = ({
         setAdjustedPointsExportSettings(
           cloneAdjustedPointsExportSettings(loadedAdjustedPointsSettings),
         );
+        restoreSavedRunSnapshots(parsed.project.savedRuns);
         setProjectInstruments(cloneInstrumentLibrary(parsed.project.project.projectInstruments));
         setSelectedInstrument(parsed.project.project.selectedInstrument);
         setLevelLoopCustomPresets(
@@ -334,6 +346,7 @@ export const useProjectFileWorkflow = ({
       parseSettings,
       projectInstruments,
       resetWorkspaceAfterProjectLoad,
+      restoreSavedRunSnapshots,
       selectedInstrument,
       setAdjustedPointsExportSettings,
       setAdjustedPointsExportSettingsDraft,

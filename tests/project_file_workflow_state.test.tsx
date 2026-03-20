@@ -7,7 +7,13 @@ import { describe, expect, it, vi } from 'vitest';
 import { cloneAdjustedPointsExportSettings, DEFAULT_ADJUSTED_POINTS_EXPORT_SETTINGS } from '../src/engine/adjustedPointsExport';
 import { serializeProjectFile } from '../src/engine/projectFile';
 import { useProjectFileWorkflow } from '../src/hooks/useProjectFileWorkflow';
-import type { ParseSettings, SettingsState, SolveProfile } from '../src/appStateTypes';
+import type {
+  ParseSettings,
+  PersistedSavedRunSnapshot,
+  RunSettingsSnapshot,
+  SettingsState,
+  SolveProfile,
+} from '../src/appStateTypes';
 import type {
   AdjustedPointsExportSettings,
   CustomLevelLoopTolerancePreset,
@@ -174,6 +180,7 @@ describe('useProjectFileWorkflow', () => {
         useState<AdjustedPointsExportSettings>(() =>
           cloneAdjustedPointsExportSettings(DEFAULT_ADJUSTED_POINTS_EXPORT_SETTINGS),
         );
+      const [savedRunSnapshots, setSavedRunSnapshots] = useState<PersistedSavedRunSnapshot[]>([]);
       const [projectInstruments, setProjectInstruments] = useState<InstrumentLibrary>({
         S9: { code: 'S9' } as InstrumentLibrary['S9'],
       });
@@ -210,6 +217,7 @@ describe('useProjectFileWorkflow', () => {
         parseSettings,
         exportFormat,
         adjustedPointsExportSettings,
+        savedRunSnapshots,
         projectInstruments,
         selectedInstrument,
         levelLoopCustomPresets,
@@ -236,6 +244,7 @@ describe('useProjectFileWorkflow', () => {
         setAdjustedPointsTransformSelectedDraft,
         setImportNotice,
         resetWorkspaceAfterProjectLoad: () => undefined,
+        restoreSavedRunSnapshots: setSavedRunSnapshots,
         normalizeUiTheme,
         normalizeSolveProfile,
         buildObservationModeFromGridFields,
@@ -282,6 +291,47 @@ describe('useProjectFileWorkflow', () => {
     const loadedProjectText = serializeProjectFile({
       input: 'LOADED NETWORK',
       includeFiles: { 'child.dat': 'C P1 0 0 0' },
+      savedRuns: [
+        {
+          id: 'saved-run-1',
+          sourceRunId: 'run-9',
+          createdAt: '2026-03-20T08:00:00.000Z',
+          savedAt: '2026-03-20T08:05:00.000Z',
+          label: 'Saved Run 09',
+          notes: '',
+          inputFingerprint: 'fnv1a:abc',
+          settingsFingerprint: 'fnv1a:def',
+          summary: {
+            converged: true,
+            iterations: 1,
+            seuw: 1,
+            dof: 1,
+            stationCount: 1,
+            observationCount: 0,
+            suspectObservationCount: 0,
+            maxAbsStdRes: 0,
+          },
+          result: {
+            success: true,
+            converged: true,
+            iterations: 1,
+            seuw: 1,
+            dof: 1,
+            stations: {
+              P1: { x: 0, y: 0, h: 0, fixed: true },
+            },
+            observations: [],
+            logs: [],
+          },
+          runDiagnostics: null,
+          settingsSnapshot: {
+            solveProfile: 'industry-parity-current',
+          } as unknown as RunSettingsSnapshot,
+          excludedIds: [],
+          overrideIds: [],
+          approvedClusterMerges: [],
+        },
+      ],
       ui: {
         settings: {
           ...baseSettings,
@@ -344,6 +394,7 @@ describe('useProjectFileWorkflow', () => {
         useState<AdjustedPointsExportSettings>(() =>
           cloneAdjustedPointsExportSettings(DEFAULT_ADJUSTED_POINTS_EXPORT_SETTINGS),
         );
+      const [savedRunSnapshots, setSavedRunSnapshots] = useState<PersistedSavedRunSnapshot[]>([]);
       const [projectInstruments, setProjectInstruments] = useState<InstrumentLibrary>({
         S9: { code: 'S9' } as InstrumentLibrary['S9'],
       });
@@ -382,6 +433,7 @@ describe('useProjectFileWorkflow', () => {
         parseSettings,
         exportFormat,
         adjustedPointsExportSettings,
+        savedRunSnapshots,
         projectInstruments,
         selectedInstrument,
         levelLoopCustomPresets,
@@ -408,6 +460,7 @@ describe('useProjectFileWorkflow', () => {
         setAdjustedPointsTransformSelectedDraft,
         setImportNotice,
         resetWorkspaceAfterProjectLoad,
+        restoreSavedRunSnapshots: setSavedRunSnapshots,
         normalizeUiTheme,
         normalizeSolveProfile,
         buildObservationModeFromGridFields,
@@ -435,6 +488,7 @@ describe('useProjectFileWorkflow', () => {
           <div id="export">{exportFormat}</div>
           <div id="instrument">{selectedInstrument}</div>
           <div id="include-count">{Object.keys(projectIncludeFiles).length}</div>
+          <div id="saved-runs">{savedRunSnapshots.length}</div>
           <div id="draft-theme">{settingsDraft.uiTheme}</div>
           <div id="draft-run-mode">{parseSettingsDraft.runMode}</div>
           <div id="draft-open">{isAdjustedPointsTransformSelectOpen ? 'open' : 'closed'}</div>
@@ -461,6 +515,7 @@ describe('useProjectFileWorkflow', () => {
     expect(container.querySelector('#export')?.textContent).toBe('industry-style');
     expect(container.querySelector('#instrument')?.textContent).toBe('T1');
     expect(container.querySelector('#include-count')?.textContent).toBe('1');
+    expect(container.querySelector('#saved-runs')?.textContent).toBe('1');
     expect(container.querySelector('#draft-theme')?.textContent).toBe('gruvbox-light');
     expect(container.querySelector('#draft-run-mode')?.textContent).toBe('preanalysis');
     expect(container.querySelector('#draft-open')?.textContent).toBe('closed');

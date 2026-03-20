@@ -610,6 +610,7 @@ export interface WebNetProjectFileV3 {
   savedAt: string;
   mainInput: string;
   includeFiles: Record<string, string>;
+  savedRuns?: unknown[];
   ui: {
     settings: Record<string, unknown>;
     parseSettings: Record<string, unknown>;

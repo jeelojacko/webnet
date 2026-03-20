@@ -5,8 +5,11 @@ interface RunComparisonPanelProps<TSettingsSnapshot = unknown, TRunDiagnostics =
   currentSnapshot: RunSnapshot<TSettingsSnapshot, TRunDiagnostics>;
   baselineSnapshot: RunSnapshot<TSettingsSnapshot, TRunDiagnostics> | null;
   runHistory: Array<RunSnapshot<TSettingsSnapshot, TRunDiagnostics>>;
+  savedRunCount: number;
+  isCurrentSnapshotSaved: boolean;
   comparisonSelection: ComparisonSelection;
   comparisonSummary: RunComparisonSummary | null;
+  onSaveCurrentSnapshot: () => void;
   onSelectBaseline: (_snapshotId: string) => void;
   onTogglePinBaseline: () => void;
   onStationThresholdChange: (_value: number) => void;
@@ -20,8 +23,11 @@ const RunComparisonPanel = <TSettingsSnapshot, TRunDiagnostics>({
   currentSnapshot,
   baselineSnapshot,
   runHistory,
+  savedRunCount,
+  isCurrentSnapshotSaved,
   comparisonSelection,
   comparisonSummary,
+  onSaveCurrentSnapshot,
   onSelectBaseline,
   onTogglePinBaseline,
   onStationThresholdChange,
@@ -61,6 +67,26 @@ const RunComparisonPanel = <TSettingsSnapshot, TRunDiagnostics>({
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
+            <div className="rounded border border-slate-800 bg-slate-950/40 px-3 py-2 text-[11px] uppercase tracking-wide text-slate-400">
+              Saved runs {savedRunCount}
+            </div>
+            <button
+              type="button"
+              onClick={onSaveCurrentSnapshot}
+              disabled={isCurrentSnapshotSaved}
+              title={
+                isCurrentSnapshotSaved
+                  ? 'The current run is already stored in the saved-run snapshot list.'
+                  : 'Store the current run as a persisted saved snapshot for this workspace or project file.'
+              }
+              className={`rounded border px-3 py-2 text-xs uppercase tracking-wide ${
+                isCurrentSnapshotSaved
+                  ? 'border-slate-800 bg-slate-950/40 text-slate-600'
+                  : 'border-slate-700 bg-slate-950/60 text-slate-200 hover:border-cyan-400'
+              }`}
+            >
+              {isCurrentSnapshotSaved ? 'Saved' : 'Save current run'}
+            </button>
             <button
               type="button"
               onClick={() => setIsCollapsed((current) => !current)}

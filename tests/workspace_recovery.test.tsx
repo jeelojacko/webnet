@@ -5,7 +5,7 @@ import { createRoot, type Root } from 'react-dom/client';
 import { describe, expect, it } from 'vitest';
 import { useWorkspaceRecovery } from '../src/hooks/useWorkspaceRecovery';
 import { createDefaultReportViewSnapshot } from '../src/hooks/useReportViewState';
-import type { WorkspaceDraftSnapshot } from '../src/appStateTypes';
+import type { RunSettingsSnapshot, WorkspaceDraftSnapshot } from '../src/appStateTypes';
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -151,6 +151,7 @@ const buildSnapshot = (overrides: Partial<WorkspaceDraftSnapshot> = {}): Workspa
     stationMovementThreshold: 0.001,
     residualDeltaThreshold: 0.25,
   },
+  savedRunSnapshots: [],
   importReview: null,
   ...overrides,
 });
@@ -214,6 +215,47 @@ describe('useWorkspaceRecovery', () => {
     window.localStorage.clear();
     const savedSnapshot = buildSnapshot({
       input: 'RECOVER IMPORT',
+      savedRunSnapshots: [
+        {
+          id: 'saved-run-1',
+          sourceRunId: 'run-3',
+          createdAt: '2026-03-18T11:00:00.000Z',
+          savedAt: '2026-03-18T11:05:00.000Z',
+          label: 'Saved Run 03',
+          notes: 'checkpoint',
+          inputFingerprint: 'fnv1a:abc',
+          settingsFingerprint: 'fnv1a:def',
+          summary: {
+            converged: true,
+            iterations: 1,
+            seuw: 1,
+            dof: 1,
+            stationCount: 1,
+            observationCount: 0,
+            suspectObservationCount: 0,
+            maxAbsStdRes: 0,
+          },
+          result: {
+            success: true,
+            converged: true,
+            iterations: 1,
+            seuw: 1,
+            dof: 1,
+            stations: {
+              A: { x: 0, y: 0, h: 0, fixed: true },
+            },
+            observations: [],
+            logs: [],
+          },
+          runDiagnostics: null,
+          settingsSnapshot: {
+            solveProfile: 'industry-parity-current',
+          } as unknown as RunSettingsSnapshot,
+          excludedIds: [],
+          overrideIds: [],
+          approvedClusterMerges: [],
+        },
+      ],
       importReview: {
         sourceName: 'imported.jxl',
         notice: { title: 'Imported JobXML dataset', detailLines: ['detail'] },
@@ -308,6 +350,7 @@ describe('useWorkspaceRecovery', () => {
       return (
         <div>
           <div data-import-source>{snapshot.importReview?.sourceName ?? '-'}</div>
+          <div data-saved-runs>{snapshot.savedRunSnapshots.length}</div>
           <button data-recover onClick={recovery.recoverDraft} />
         </div>
       );
@@ -322,6 +365,7 @@ describe('useWorkspaceRecovery', () => {
     });
 
     expect(container.querySelector('[data-import-source]')?.textContent).toBe('imported.jxl');
+    expect(container.querySelector('[data-saved-runs]')?.textContent).toBe('1');
 
     await act(async () => {
       root.unmount();

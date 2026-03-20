@@ -38,9 +38,12 @@ describe('useRunComparisonState', () => {
     const Harness = () => {
       const {
         runHistory,
+        savedRunSnapshots,
         currentRunSnapshot,
         baselineRunSnapshot,
         comparisonSettingDiffs,
+        currentSavedRunSnapshot,
+        saveCurrentRunSnapshot,
         recordRunSnapshot,
       } = useRunComparisonState<string, { profile: string }>({
         buildSettingDiffs: (current, previous) =>
@@ -52,6 +55,7 @@ describe('useRunComparisonState', () => {
           result: createMockResult('A'),
           runDiagnostics: { profile: 'one' },
           settingsSnapshot: 'settings-a',
+          inputFingerprint: 'input-a',
           excludedIds: [],
           overrideIds: [],
           approvedClusterMerges: [],
@@ -60,17 +64,25 @@ describe('useRunComparisonState', () => {
           result: createMockResult('B'),
           runDiagnostics: { profile: 'two' },
           settingsSnapshot: 'settings-b',
+          inputFingerprint: 'input-b',
           excludedIds: [],
           overrideIds: [],
           approvedClusterMerges: [],
         });
       }, [recordRunSnapshot]);
 
+      useEffect(() => {
+        if (currentRunSnapshot?.label !== 'Run 02') return;
+        saveCurrentRunSnapshot();
+      }, [currentRunSnapshot, saveCurrentRunSnapshot]);
+
       return (
         <div>
           <div data-history-count>{runHistory.length}</div>
+          <div data-saved-count>{savedRunSnapshots.length}</div>
           <div data-current>{currentRunSnapshot?.label ?? '-'}</div>
           <div data-baseline>{baselineRunSnapshot?.label ?? '-'}</div>
+          <div data-current-saved>{currentSavedRunSnapshot?.label ?? '-'}</div>
           <div data-diff-count>{comparisonSettingDiffs.length}</div>
         </div>
       );
@@ -81,8 +93,10 @@ describe('useRunComparisonState', () => {
     });
 
     expect(container.querySelector('[data-history-count]')?.textContent).toBe('2');
+    expect(container.querySelector('[data-saved-count]')?.textContent).toBe('1');
     expect(container.querySelector('[data-current]')?.textContent).toBe('Run 02');
     expect(container.querySelector('[data-baseline]')?.textContent).toBe('Run 01');
+    expect(container.querySelector('[data-current-saved]')?.textContent).toBe('Saved Run 02');
     expect(container.querySelector('[data-diff-count]')?.textContent).toBe('1');
 
     await act(async () => {

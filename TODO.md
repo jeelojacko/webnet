@@ -28,10 +28,14 @@
       - [x] Replace the two-file compare block with a source matrix that highlights mismatched setup-target-family buckets across all loaded sources
       - [x] Emit deterministic source-separated imported text when multiple reconcile sources are committed into the editor
   - [ ] Phase 2 - persistent run artifacts and deliverables
-    - [ ] Batch 1 - saved run snapshot model and project/local persistence
-      - [ ] Add named saved run snapshots beyond the current in-memory compare history
-      - [ ] Store input/settings fingerprint, run summary, reopenable result payload, and lightweight label/notes metadata
-      - [ ] Limit saved snapshots to a bounded, user-managed list per workspace/project
+    - [x] Batch 1 - saved run snapshot model and project/local persistence
+      - [x] Add named saved run snapshots beyond the current in-memory compare history
+      - [x] Store input/settings fingerprint, run summary, reopenable result payload, and lightweight label/notes metadata
+      - [x] Limit saved snapshots to a bounded, user-managed list per workspace/project
+      - [x] Add a minimal manual `Save current run` path so saved snapshots can be created without waiting for the full saved-runs workspace UI
+      - [x] Persist saved snapshots through browser-local recovery state without restoring them into the active report/map result automatically
+      - [x] Persist saved snapshots through project save/load paths without breaking existing v1-v3 project-file compatibility
+      - [x] Add focused regression coverage for saved-run creation, persistence, and bounded-cap behavior
     - [ ] Batch 2 - saved runs UI and recovery wiring
       - [ ] Add a small `Saved Runs` surface for restore, compare, rename, note editing, and delete actions
       - [ ] Restore compare/report reopen state from a saved snapshot without rebuilding ad hoc view models

@@ -1,16 +1,24 @@
 import type {
   AdjustedPointsExportSettings,
+  AdjustmentResult,
+  ClusterApprovedMerge,
   CustomLevelLoopTolerancePreset,
   Instrument,
   InstrumentLibrary,
-  ProjectExportFormat,
   ParseCompatibilityMode,
+  ProjectExportFormat,
   WebNetProjectFileV3,
 } from '../types';
+import type { PersistedSavedRunSnapshot } from '../appStateTypes';
 import {
   DEFAULT_ADJUSTED_POINTS_EXPORT_SETTINGS,
   sanitizeAdjustedPointsExportSettings,
 } from './adjustedPointsExport';
+import {
+  buildRunSnapshotSummary,
+  buildValueFingerprint,
+  cloneSavedRunSnapshots,
+} from './qaWorkflow';
 
 export interface ProjectFileDefaults {
   settings: Record<string, unknown>;
@@ -26,6 +34,7 @@ export interface ParsedProjectPayload {
   schemaVersion?: 1 | 2 | 3;
   input: string;
   includeFiles: Record<string, string>;
+  savedRuns: PersistedSavedRunSnapshot[];
   ui: {
     settings: Record<string, unknown>;
     parseSettings: Record<string, unknown>;
@@ -182,6 +191,121 @@ const sanitizeIncludeFiles = (value: unknown): Record<string, string> => {
   return next;
 };
 
+const sanitizeNumberArray = (value: unknown): number[] => {
+  if (!Array.isArray(value)) return [];
+  return value.filter((entry): entry is number => typeof entry === 'number' && Number.isFinite(entry));
+};
+
+const sanitizeClusterApprovedMerges = (value: unknown): ClusterApprovedMerge[] => {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map((entry) => {
+      if (!isRecord(entry)) return null;
+      const aliasId = typeof entry.aliasId === 'string' ? entry.aliasId.trim() : '';
+      const canonicalId = typeof entry.canonicalId === 'string' ? entry.canonicalId.trim() : '';
+      if (!aliasId || !canonicalId || aliasId === canonicalId) return null;
+      return { aliasId, canonicalId };
+    })
+    .filter((entry): entry is ClusterApprovedMerge => entry != null)
+    .sort(
+      (a, b) =>
+        a.canonicalId.localeCompare(b.canonicalId, undefined, { numeric: true }) ||
+        a.aliasId.localeCompare(b.aliasId, undefined, { numeric: true }),
+    );
+};
+
+const sanitizeSavedRunSnapshots = (value: unknown): PersistedSavedRunSnapshot[] => {
+  if (!Array.isArray(value)) return [];
+  const rows: PersistedSavedRunSnapshot[] = [];
+  value.forEach((entry, index) => {
+    if (!isRecord(entry) || !isRecord(entry.result)) return;
+    const result = entry.result as unknown as AdjustmentResult;
+    const summaryFallback = buildRunSnapshotSummary(result);
+    const id =
+      typeof entry.id === 'string' && entry.id.trim() ? entry.id.trim() : `saved-run-${index + 1}`;
+    const sourceRunId =
+      typeof entry.sourceRunId === 'string' && entry.sourceRunId.trim()
+        ? entry.sourceRunId.trim()
+        : id;
+    const createdAt =
+      typeof entry.createdAt === 'string' && entry.createdAt.trim()
+        ? entry.createdAt.trim()
+        : new Date(0).toISOString();
+    const savedAt =
+      typeof entry.savedAt === 'string' && entry.savedAt.trim() ? entry.savedAt.trim() : createdAt;
+    const label =
+      typeof entry.label === 'string' && entry.label.trim()
+        ? entry.label.trim()
+        : `Saved Run ${String(index + 1).padStart(2, '0')}`;
+    const notes = typeof entry.notes === 'string' ? entry.notes : '';
+    const settingsSnapshot = isRecord(entry.settingsSnapshot)
+      ? (entry.settingsSnapshot as PersistedSavedRunSnapshot['settingsSnapshot'])
+      : ({} as PersistedSavedRunSnapshot['settingsSnapshot']);
+    const summarySource = isRecord(entry.summary) ? entry.summary : {};
+    rows.push({
+      id,
+      sourceRunId,
+      createdAt,
+      savedAt,
+      label,
+      notes,
+      inputFingerprint:
+        typeof entry.inputFingerprint === 'string' && entry.inputFingerprint.trim()
+          ? entry.inputFingerprint.trim()
+          : `legacy:${index + 1}`,
+      settingsFingerprint:
+        typeof entry.settingsFingerprint === 'string' && entry.settingsFingerprint.trim()
+          ? entry.settingsFingerprint.trim()
+          : buildValueFingerprint(settingsSnapshot),
+      summary: {
+        converged:
+          typeof summarySource.converged === 'boolean'
+            ? summarySource.converged
+            : summaryFallback.converged,
+        iterations:
+          typeof summarySource.iterations === 'number' && Number.isFinite(summarySource.iterations)
+            ? summarySource.iterations
+            : summaryFallback.iterations,
+        seuw:
+          typeof summarySource.seuw === 'number' && Number.isFinite(summarySource.seuw)
+            ? summarySource.seuw
+            : summaryFallback.seuw,
+        dof:
+          typeof summarySource.dof === 'number' && Number.isFinite(summarySource.dof)
+            ? summarySource.dof
+            : summaryFallback.dof,
+        stationCount:
+          typeof summarySource.stationCount === 'number' &&
+          Number.isFinite(summarySource.stationCount)
+            ? summarySource.stationCount
+            : summaryFallback.stationCount,
+        observationCount:
+          typeof summarySource.observationCount === 'number' &&
+          Number.isFinite(summarySource.observationCount)
+            ? summarySource.observationCount
+            : summaryFallback.observationCount,
+        suspectObservationCount:
+          typeof summarySource.suspectObservationCount === 'number' &&
+          Number.isFinite(summarySource.suspectObservationCount)
+            ? summarySource.suspectObservationCount
+            : summaryFallback.suspectObservationCount,
+        maxAbsStdRes:
+          typeof summarySource.maxAbsStdRes === 'number' &&
+          Number.isFinite(summarySource.maxAbsStdRes)
+            ? summarySource.maxAbsStdRes
+            : summaryFallback.maxAbsStdRes,
+      },
+      result,
+      runDiagnostics: (entry.runDiagnostics ?? null) as PersistedSavedRunSnapshot['runDiagnostics'],
+      settingsSnapshot,
+      excludedIds: sanitizeNumberArray(entry.excludedIds).sort((a, b) => a - b),
+      overrideIds: sanitizeNumberArray(entry.overrideIds).sort((a, b) => a - b),
+      approvedClusterMerges: sanitizeClusterApprovedMerges(entry.approvedClusterMerges),
+    });
+  });
+  return cloneSavedRunSnapshots(rows);
+};
+
 export const serializeProjectFile = (project: ParsedProjectPayload): string => {
   const nowIso = new Date().toISOString();
   const parseSettings = cloneRecord(project.ui.parseSettings);
@@ -201,6 +325,8 @@ export const serializeProjectFile = (project: ParsedProjectPayload): string => {
     savedAt: nowIso,
     mainInput: project.input,
     includeFiles: sanitizeIncludeFiles(project.includeFiles),
+    savedRuns:
+      project.savedRuns.length > 0 ? cloneSavedRunSnapshots(project.savedRuns) : undefined,
     ui: {
       settings: cloneRecord(project.ui.settings),
       parseSettings,
@@ -258,6 +384,7 @@ export const parseProjectFile = (
         ? parsed.input
         : '';
   const includeFiles = schemaVersion === 3 ? sanitizeIncludeFiles(parsed.includeFiles) : {};
+  const savedRuns = schemaVersion === 3 ? sanitizeSavedRunSnapshots(parsed.savedRuns) : [];
   const ui = isRecord(parsed.ui) ? parsed.ui : {};
   const project = isRecord(parsed.project) ? parsed.project : {};
   const parseSettingsRaw = isRecord(ui.parseSettings) ? ui.parseSettings : {};
@@ -314,6 +441,7 @@ export const parseProjectFile = (
       schemaVersion,
       input,
       includeFiles,
+      savedRuns,
       ui: {
         settings,
         parseSettings,

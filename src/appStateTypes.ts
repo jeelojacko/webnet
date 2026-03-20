@@ -52,6 +52,7 @@ import type {
   ImportReviewRowTypeOverride,
   ImportReviewWorkspaceSource,
 } from './engine/importReview';
+import type { SavedRunSnapshot } from './engine/qaWorkflow';
 
 export type Units = 'm' | 'ft';
 export type UiTheme =
@@ -162,6 +163,7 @@ export type WorkspaceDraftSnapshot = {
   geoidSourceDataLabel: string;
   view: WorkspaceViewState;
   comparisonView: WorkspaceComparisonViewState;
+  savedRunSnapshots: PersistedSavedRunSnapshot[];
   importReview?: ImportReviewDraftSnapshot | null;
 };
 export type WorkspaceRecoveryRecord = {
@@ -398,3 +400,5 @@ export type RunSettingsSnapshot = {
   autoAdjustStdResThreshold: number;
   selectedInstrument: string;
 };
+
+export type PersistedSavedRunSnapshot = SavedRunSnapshot<RunSettingsSnapshot, RunDiagnostics>;

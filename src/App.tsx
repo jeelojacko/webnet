@@ -14,6 +14,7 @@ import { RAD_TO_DEG, dmsToRad } from './engine/angles';
 import {
   buildQaDerivedResult,
   buildRunComparisonText,
+  cloneSavedRunSnapshots,
 } from './engine/qaWorkflow';
 import { runAdjustmentSession } from './engine/runSession';
 import { createRunProfileBuilders } from './engine/runProfileBuilders';
@@ -1122,49 +1123,6 @@ const App: React.FC<AppProps> = ({
   const settingsModalContentRef = useRef<HTMLDivElement | null>(null);
   const isResizingRef = useRef(false);
   const {
-    triggerProjectFileSelect,
-    handleSaveProject,
-    handleProjectFileChange,
-  } = useProjectFileWorkflow({
-    projectFileInputRef,
-    input,
-    projectIncludeFiles,
-    settings,
-    parseSettings,
-    exportFormat,
-    adjustedPointsExportSettings,
-    projectInstruments,
-    selectedInstrument,
-    levelLoopCustomPresets,
-    setInput,
-    setProjectIncludeFiles,
-    setSettings,
-    setParseSettings,
-    setGeoidSourceData,
-    setGeoidSourceDataLabel,
-    setExportFormat,
-    setAdjustedPointsExportSettings,
-    setProjectInstruments,
-    setSelectedInstrument,
-    setLevelLoopCustomPresets,
-    setSettingsDraft,
-    setParseSettingsDraft,
-    setGeoidSourceDataDraft,
-    setGeoidSourceDataLabelDraft,
-    setProjectInstrumentsDraft,
-    setSelectedInstrumentDraft,
-    setLevelLoopCustomPresetsDraft,
-    setAdjustedPointsExportSettingsDraft,
-    setIsAdjustedPointsTransformSelectOpen,
-    setAdjustedPointsTransformSelectedDraft,
-    setImportNotice,
-    resetWorkspaceAfterProjectLoad: resetRunStateAfterImportedInput,
-    normalizeUiTheme,
-    normalizeSolveProfile,
-    buildObservationModeFromGridFields,
-    cloneInstrumentLibrary,
-  });
-  const {
     importReviewState,
     pendingAnglePromptFile,
     triggerFileSelect,
@@ -1228,15 +1186,64 @@ const App: React.FC<AppProps> = ({
   );
   const {
     runHistory,
+    savedRunSnapshots,
     currentRunSnapshot,
+    currentSavedRunSnapshot,
     comparisonSelection,
     setComparisonSelection,
     baselineRunSnapshot,
     runComparisonSummary,
     clearRunComparisonState,
+    restoreSavedRunSnapshots,
+    saveCurrentRunSnapshot,
     recordRunSnapshot,
   } = useRunComparisonState<RunSettingsSnapshot, RunDiagnostics>({
     buildSettingDiffs: buildPendingRunSettingDiffs,
+  });
+  const {
+    triggerProjectFileSelect,
+    handleSaveProject,
+    handleProjectFileChange,
+  } = useProjectFileWorkflow({
+    projectFileInputRef,
+    input,
+    projectIncludeFiles,
+    settings,
+    parseSettings,
+    exportFormat,
+    adjustedPointsExportSettings,
+    savedRunSnapshots,
+    projectInstruments,
+    selectedInstrument,
+    levelLoopCustomPresets,
+    setInput,
+    setProjectIncludeFiles,
+    setSettings,
+    setParseSettings,
+    setGeoidSourceData,
+    setGeoidSourceDataLabel,
+    setExportFormat,
+    setAdjustedPointsExportSettings,
+    setProjectInstruments,
+    setSelectedInstrument,
+    setLevelLoopCustomPresets,
+    setSettingsDraft,
+    setParseSettingsDraft,
+    setGeoidSourceDataDraft,
+    setGeoidSourceDataLabelDraft,
+    setProjectInstrumentsDraft,
+    setSelectedInstrumentDraft,
+    setLevelLoopCustomPresetsDraft,
+    setAdjustedPointsExportSettingsDraft,
+    setIsAdjustedPointsTransformSelectOpen,
+    setAdjustedPointsTransformSelectedDraft,
+    setImportNotice,
+    resetWorkspaceAfterProjectLoad: resetRunStateAfterImportedInput,
+    restoreSavedRunSnapshots,
+    normalizeUiTheme,
+    normalizeSolveProfile,
+    buildObservationModeFromGridFields,
+    cloneInstrumentLibrary,
   });
   const selectedDraftCrs = useMemo(
     () =>
@@ -1526,6 +1533,7 @@ const App: React.FC<AppProps> = ({
         stationMovementThreshold: comparisonSelection.stationMovementThreshold,
         residualDeltaThreshold: comparisonSelection.residualDeltaThreshold,
       },
+      savedRunSnapshots: cloneSavedRunSnapshots(savedRunSnapshots),
       importReview: importReviewSnapshot,
     }),
     [
@@ -1543,6 +1551,7 @@ const App: React.FC<AppProps> = ({
       parseSettings,
       projectIncludeFiles,
       projectInstruments,
+      savedRunSnapshots,
       selectedInstrument,
       settings,
       splitPercent,
@@ -1586,6 +1595,7 @@ const App: React.FC<AppProps> = ({
     clearRunComparisonState();
     resetWorkspaceReviewState();
     resetImportReviewWorkflow();
+    restoreSavedRunSnapshots(snapshot.savedRunSnapshots ?? []);
     setInput(snapshot.input);
     setProjectIncludeFiles({ ...snapshot.projectIncludeFiles });
     setSettings({ ...snapshot.settings });
@@ -1917,8 +1927,29 @@ const App: React.FC<AppProps> = ({
               currentSnapshot={currentRunSnapshot}
               baselineSnapshot={baselineRunSnapshot}
               runHistory={runHistory}
+              savedRunCount={savedRunSnapshots.length}
+              isCurrentSnapshotSaved={currentSavedRunSnapshot != null}
               comparisonSelection={comparisonSelection}
               comparisonSummary={runComparisonSummary}
+              onSaveCurrentSnapshot={() => {
+                const saveOutcome = saveCurrentRunSnapshot();
+                if (saveOutcome.status === 'saved') {
+                  setImportNotice({
+                    title: 'Run snapshot saved',
+                    detailLines: [
+                      `Stored ${saveOutcome.snapshot.label}.`,
+                      'Saved run snapshots persist in browser recovery and project files.',
+                    ],
+                  });
+                  return;
+                }
+                if (saveOutcome.status === 'already-saved') {
+                  setImportNotice({
+                    title: 'Run snapshot already saved',
+                    detailLines: [`${saveOutcome.snapshot.label} is already in the saved-run list.`],
+                  });
+                }
+              }}
               onSelectBaseline={(snapshotId) =>
                 setComparisonSelection((prev) => ({
                   ...prev,
