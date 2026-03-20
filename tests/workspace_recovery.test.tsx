@@ -253,7 +253,9 @@ describe('useWorkspaceRecovery', () => {
           } as unknown as RunSettingsSnapshot,
           excludedIds: [],
           overrideIds: [],
+          overrides: {},
           approvedClusterMerges: [],
+          reopenState: null,
         },
       ],
       importReview: {

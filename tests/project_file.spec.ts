@@ -96,7 +96,37 @@ describe('project file serialization/parsing', () => {
           } as unknown as RunSettingsSnapshot,
           excludedIds: [4],
           overrideIds: [9],
+          overrides: {
+            9: { stdDev: 0.25 },
+          },
           approvedClusterMerges: [{ aliasId: 'P1', canonicalId: 'A' }],
+          reopenState: {
+            activeTab: 'map',
+            review: {
+              reportView: {
+                ellipseMode: '95',
+                reportFilterQuery: 'p1',
+                reportObservationTypeFilter: 'dist',
+                reportExclusionFilter: 'included',
+                tableRowLimits: { observations: 25 },
+                pinnedDetailSections: [{ id: 'angles-ts', label: 'Angles (TS)' }],
+                collapsedDetailSections: { 'angles-ts': true },
+              },
+              selection: {
+                stationId: 'P1',
+                observationId: 9,
+                sourceLine: 12,
+                origin: 'compare',
+              },
+              pinnedObservationIds: [9],
+            },
+            comparisonSelection: {
+              baselineRunId: 'saved-run-0',
+              pinnedBaselineRunId: null,
+              stationMovementThreshold: 0.01,
+              residualDeltaThreshold: 0.5,
+            },
+          },
         },
       ],
       ui: {
@@ -154,9 +184,12 @@ describe('project file serialization/parsing', () => {
     expect(parsed.project.savedRuns).toHaveLength(1);
     expect(parsed.project.savedRuns[0]?.label).toBe('Saved Run 02');
     expect(parsed.project.savedRuns[0]?.notes).toBe('checkpoint');
+    expect(parsed.project.savedRuns[0]?.overrides).toEqual({ 9: { stdDev: 0.25 } });
     expect(parsed.project.savedRuns[0]?.approvedClusterMerges).toEqual([
       { aliasId: 'P1', canonicalId: 'A' },
     ]);
+    expect(parsed.project.savedRuns[0]?.reopenState?.activeTab).toBe('map');
+    expect(parsed.project.savedRuns[0]?.reopenState?.review.selection.stationId).toBe('P1');
     expect(parsed.project.ui.exportFormat).toBe('industry-style');
     expect(parsed.project.ui.settings.convergenceLimit).toBe(0.1);
     expect(parsed.project.ui.adjustedPointsExport.columns).toEqual(['P', 'E', 'N', 'Z']);

@@ -1,6 +1,7 @@
-import { useCallback, useMemo, useRef, useState } from 'react';
-import type { ClusterApprovedMerge, AdjustmentResult } from '../types';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type { ClusterApprovedMerge, AdjustmentResult, ObservationOverride } from '../types';
 import {
+  buildComparisonCandidateSnapshots,
   buildRunSnapshotSummary,
   buildValueFingerprint,
   cloneSavedRunSnapshots,
@@ -11,6 +12,7 @@ import {
   type ComparisonSelection,
   type RunSnapshot,
   type SavedRunSnapshot,
+  type SavedRunWorkspaceState,
 } from '../engine/qaWorkflow';
 
 interface RecordRunSnapshotArgs<TSettingsSnapshot, TRunDiagnostics> {
@@ -20,12 +22,15 @@ interface RecordRunSnapshotArgs<TSettingsSnapshot, TRunDiagnostics> {
   inputFingerprint: string;
   excludedIds: number[];
   overrideIds: number[];
+  overrides: Record<number, ObservationOverride>;
   approvedClusterMerges: ClusterApprovedMerge[];
+  reopenState?: SavedRunWorkspaceState | null;
 }
 
 interface SaveCurrentRunSnapshotOptions {
   label?: string;
   notes?: string;
+  reopenState?: SavedRunWorkspaceState | null;
 }
 
 type SaveCurrentRunSnapshotResult<TSettingsSnapshot, TRunDiagnostics> =
@@ -59,6 +64,23 @@ const DEFAULT_COMPARISON_SELECTION: ComparisonSelection = {
   residualDeltaThreshold: 0.25,
 };
 
+const clonePlainValue = <T,>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
+
+const sanitizeComparisonSelection = (
+  selection: ComparisonSelection,
+  availableIds: Set<string>,
+): ComparisonSelection => ({
+  ...selection,
+  baselineRunId:
+    selection.baselineRunId && availableIds.has(selection.baselineRunId)
+      ? selection.baselineRunId
+      : null,
+  pinnedBaselineRunId:
+    selection.pinnedBaselineRunId && availableIds.has(selection.pinnedBaselineRunId)
+      ? selection.pinnedBaselineRunId
+      : null,
+});
+
 export const useRunComparisonState = <TSettingsSnapshot, TRunDiagnostics>({
   buildSettingDiffs,
   initialSavedRunSnapshots = [],
@@ -77,6 +99,7 @@ export const useRunComparisonState = <TSettingsSnapshot, TRunDiagnostics>({
     initialComparisonSelection,
   );
   const runSnapshotCounterRef = useRef(1);
+  const savedRunSnapshotsRef = useRef(savedRunSnapshots);
   const savedRunSnapshotCounterRef = useRef(
     Math.max(
       1,
@@ -89,15 +112,32 @@ export const useRunComparisonState = <TSettingsSnapshot, TRunDiagnostics>({
     ),
   );
 
+  const comparisonCandidates = useMemo(
+    () => buildComparisonCandidateSnapshots(runHistory, savedRunSnapshots, currentRunSnapshot),
+    [currentRunSnapshot, runHistory, savedRunSnapshots],
+  );
+  useEffect(() => {
+    savedRunSnapshotsRef.current = savedRunSnapshots;
+  }, [savedRunSnapshots]);
   const baselineRunSnapshot = useMemo(
-    () => resolveComparisonBaseline(runHistory, currentRunSnapshot, comparisonSelection),
-    [comparisonSelection, currentRunSnapshot, runHistory],
+    () =>
+      resolveComparisonBaseline(
+        runHistory,
+        savedRunSnapshots,
+        currentRunSnapshot,
+        comparisonSelection,
+      ),
+    [comparisonSelection, currentRunSnapshot, runHistory, savedRunSnapshots],
   );
   const currentSavedRunSnapshot = useMemo(
-    () =>
-      currentRunSnapshot
-        ? savedRunSnapshots.find((entry) => entry.sourceRunId === currentRunSnapshot.id) ?? null
-        : null,
+    () => {
+      if (!currentRunSnapshot) return null;
+      const byId = savedRunSnapshots.find((entry) => entry.id === currentRunSnapshot.id) ?? null;
+      if (byId) return byId;
+      return (
+        savedRunSnapshots.find((entry) => entry.sourceRunId === currentRunSnapshot.id) ?? null
+      );
+    },
     [currentRunSnapshot, savedRunSnapshots],
   );
 
@@ -137,7 +177,9 @@ export const useRunComparisonState = <TSettingsSnapshot, TRunDiagnostics>({
       inputFingerprint,
       excludedIds,
       overrideIds,
+      overrides,
       approvedClusterMerges,
+      reopenState = null,
     }: RecordRunSnapshotArgs<TSettingsSnapshot, TRunDiagnostics>) => {
       const nextSnapshot: RunSnapshot<TSettingsSnapshot, TRunDiagnostics> = {
         id: `run-${runSnapshotCounterRef.current}`,
@@ -151,7 +193,9 @@ export const useRunComparisonState = <TSettingsSnapshot, TRunDiagnostics>({
         settingsSnapshot,
         excludedIds: excludedIds.slice().sort((a, b) => a - b),
         overrideIds: overrideIds.slice().sort((a, b) => a - b),
+        overrides: clonePlainValue(overrides),
         approvedClusterMerges: approvedClusterMerges.map((merge) => ({ ...merge })),
+        reopenState: reopenState ? clonePlainValue(reopenState) : null,
       };
       runSnapshotCounterRef.current += 1;
       setCurrentRunSnapshot(nextSnapshot);
@@ -168,18 +212,29 @@ export const useRunComparisonState = <TSettingsSnapshot, TRunDiagnostics>({
               baselineRunId: nextHistory[1]?.id ?? null,
             };
           }
-          const availableIds = new Set(nextHistory.map((entry) => entry.id));
+          const availableIds = new Set(
+            buildComparisonCandidateSnapshots(
+              nextHistory,
+              savedRunSnapshotsRef.current,
+              nextSnapshot,
+            ).map(
+              (entry) => entry.id,
+            ),
+          );
+          const sanitizedSelection = sanitizeComparisonSelection(
+            currentSelection,
+            availableIds,
+          );
           return {
-            ...currentSelection,
+            ...sanitizedSelection,
             baselineRunId:
-              currentSelection.baselineRunId && !availableIds.has(currentSelection.baselineRunId)
-                ? nextHistory.find((entry) => entry.id !== nextSnapshot.id)?.id ?? null
-                : currentSelection.baselineRunId,
-            pinnedBaselineRunId:
-              currentSelection.pinnedBaselineRunId &&
-              !availableIds.has(currentSelection.pinnedBaselineRunId)
-                ? null
-                : currentSelection.pinnedBaselineRunId,
+              sanitizedSelection.baselineRunId ??
+              buildComparisonCandidateSnapshots(
+                nextHistory,
+                savedRunSnapshotsRef.current,
+                nextSnapshot,
+              )[0]?.id ??
+              null,
           };
         });
         return nextHistory;
@@ -191,7 +246,8 @@ export const useRunComparisonState = <TSettingsSnapshot, TRunDiagnostics>({
 
   const restoreSavedRunSnapshots = useCallback(
     (snapshots: Array<SavedRunSnapshot<TSettingsSnapshot, TRunDiagnostics>>) => {
-      setSavedRunSnapshots(cloneSavedRunSnapshots(snapshots));
+      const nextSnapshots = cloneSavedRunSnapshots(snapshots);
+      setSavedRunSnapshots(nextSnapshots);
       savedRunSnapshotCounterRef.current = Math.max(
         1,
         ...snapshots
@@ -201,17 +257,88 @@ export const useRunComparisonState = <TSettingsSnapshot, TRunDiagnostics>({
           })
           .filter((value) => Number.isFinite(value)),
       );
+      setComparisonSelection((prev) => {
+        const availableIds = new Set(
+          buildComparisonCandidateSnapshots(runHistory, nextSnapshots, currentRunSnapshot).map(
+            (entry) => entry.id,
+          ),
+        );
+        return sanitizeComparisonSelection(prev, availableIds);
+      });
     },
-    [setSavedRunSnapshots],
+    [currentRunSnapshot, runHistory, setComparisonSelection, setSavedRunSnapshots],
   );
 
   const clearSavedRunSnapshots = useCallback(() => {
     setSavedRunSnapshots([]);
-  }, [setSavedRunSnapshots]);
+    setComparisonSelection((prev) => {
+      const availableIds = new Set(
+        buildComparisonCandidateSnapshots(runHistory, [], currentRunSnapshot).map(
+          (entry) => entry.id,
+        ),
+      );
+      return sanitizeComparisonSelection(prev, availableIds);
+    });
+  }, [currentRunSnapshot, runHistory, setComparisonSelection, setSavedRunSnapshots]);
 
   const removeSavedRunSnapshot = useCallback((snapshotId: string) => {
-    setSavedRunSnapshots((prev) => prev.filter((entry) => entry.id !== snapshotId));
+    setSavedRunSnapshots((prev) => {
+      const nextSnapshots = prev.filter((entry) => entry.id !== snapshotId);
+      setComparisonSelection((currentSelection) => {
+        const availableIds = new Set(
+          buildComparisonCandidateSnapshots(runHistory, nextSnapshots, currentRunSnapshot).map(
+            (entry) => entry.id,
+          ),
+        );
+        return sanitizeComparisonSelection(currentSelection, availableIds);
+      });
+      return nextSnapshots;
+    });
+    setCurrentRunSnapshot((prev) => (prev?.id === snapshotId ? null : prev));
+  }, [currentRunSnapshot, runHistory, setComparisonSelection, setCurrentRunSnapshot, setSavedRunSnapshots]);
+
+  const renameSavedRunSnapshot = useCallback((snapshotId: string, label: string) => {
+    const nextLabel = label.trim();
+    if (!nextLabel) return;
+    setSavedRunSnapshots((prev) =>
+      prev.map((entry) => (entry.id === snapshotId ? { ...entry, label: nextLabel } : entry)),
+    );
+    setCurrentRunSnapshot((prev) => (prev?.id === snapshotId ? { ...prev, label: nextLabel } : prev));
+  }, [setCurrentRunSnapshot, setSavedRunSnapshots]);
+
+  const updateSavedRunSnapshotNotes = useCallback((snapshotId: string, notes: string) => {
+    setSavedRunSnapshots((prev) =>
+      prev.map((entry) => (entry.id === snapshotId ? { ...entry, notes } : entry)),
+    );
   }, [setSavedRunSnapshots]);
+
+  const restoreSavedRunSnapshot = useCallback((snapshotId: string) => {
+    const snapshot =
+      savedRunSnapshots.find((entry) => entry.id === snapshotId) ?? null;
+    if (!snapshot) return null;
+    const restoredSnapshot = clonePlainValue(snapshot) as RunSnapshot<
+      TSettingsSnapshot,
+      TRunDiagnostics
+    >;
+    setCurrentRunSnapshot(restoredSnapshot);
+    setComparisonSelection((prev) => {
+      const reopenSelection = snapshot.reopenState?.comparisonSelection ?? prev;
+      const availableIds = new Set(
+        buildComparisonCandidateSnapshots(runHistory, savedRunSnapshots, restoredSnapshot).map(
+          (entry) => entry.id,
+        ),
+      );
+      const sanitizedSelection = sanitizeComparisonSelection(reopenSelection, availableIds);
+      return {
+        ...sanitizedSelection,
+        baselineRunId:
+          sanitizedSelection.baselineRunId ??
+          buildComparisonCandidateSnapshots(runHistory, savedRunSnapshots, restoredSnapshot)[0]?.id ??
+          null,
+      };
+    });
+    return snapshot;
+  }, [runHistory, savedRunSnapshots, setComparisonSelection, setCurrentRunSnapshot]);
 
   const saveCurrentRunSnapshot = useCallback(
     (
@@ -220,7 +347,10 @@ export const useRunComparisonState = <TSettingsSnapshot, TRunDiagnostics>({
       if (!currentRunSnapshot) return { status: 'missing-current-run', snapshot: null };
 
       const existingSnapshot =
-        savedRunSnapshots.find((entry) => entry.sourceRunId === currentRunSnapshot.id) ?? null;
+        savedRunSnapshots.find(
+          (entry) =>
+            entry.id === currentRunSnapshot.id || entry.sourceRunId === currentRunSnapshot.id,
+        ) ?? null;
       if (existingSnapshot) {
         return {
           status: 'already-saved',
@@ -235,6 +365,14 @@ export const useRunComparisonState = <TSettingsSnapshot, TRunDiagnostics>({
         sourceRunId: currentRunSnapshot.id,
         savedAt: new Date().toISOString(),
         notes: options.notes?.trim() ?? '',
+        reopenState:
+          options.reopenState !== undefined
+            ? options.reopenState
+              ? clonePlainValue(options.reopenState)
+              : null
+            : currentRunSnapshot.reopenState
+              ? clonePlainValue(currentRunSnapshot.reopenState)
+              : null,
       };
       savedRunSnapshotCounterRef.current += 1;
       setSavedRunSnapshots((prev) =>
@@ -250,6 +388,7 @@ export const useRunComparisonState = <TSettingsSnapshot, TRunDiagnostics>({
 
   return {
     runHistory,
+    comparisonCandidates,
     savedRunSnapshots,
     currentRunSnapshot,
     currentSavedRunSnapshot,
@@ -262,6 +401,9 @@ export const useRunComparisonState = <TSettingsSnapshot, TRunDiagnostics>({
     restoreSavedRunSnapshots,
     clearSavedRunSnapshots,
     removeSavedRunSnapshot,
+    renameSavedRunSnapshot,
+    updateSavedRunSnapshotNotes,
+    restoreSavedRunSnapshot,
     saveCurrentRunSnapshot,
     recordRunSnapshot,
   };

@@ -38,7 +38,9 @@ describe('RunComparisonPanel', () => {
       settingsSnapshot: { tag: 'baseline' },
       excludedIds: [],
       overrideIds: [],
+      overrides: {},
       approvedClusterMerges: [],
+      reopenState: null,
     };
     const currentSnapshot: RunSnapshot<{ tag: string }, null> = {
       id: 'run-2',
@@ -52,7 +54,9 @@ describe('RunComparisonPanel', () => {
       settingsSnapshot: { tag: 'current' },
       excludedIds: [7],
       overrideIds: [9],
+      overrides: {},
       approvedClusterMerges: [],
+      reopenState: null,
     };
     const selection: ComparisonSelection = {
       baselineRunId: 'run-1',
@@ -63,6 +67,13 @@ describe('RunComparisonPanel', () => {
     const summary = buildRunComparison(currentSnapshot, baselineSnapshot, selection, [
       'Units: m -> ft',
     ]);
+    const savedSnapshot = {
+      ...baselineSnapshot,
+      id: 'saved-run-1',
+      sourceRunId: 'run-0',
+      savedAt: '2026-03-17T00:02:00.000Z',
+      notes: 'checkpoint',
+    };
 
     const container = document.createElement('div');
     document.body.appendChild(container);
@@ -72,6 +83,11 @@ describe('RunComparisonPanel', () => {
     const baselineSpy = vi.fn();
     const pinSpy = vi.fn();
     const saveSpy = vi.fn();
+    const restoreSpy = vi.fn();
+    const compareSavedSpy = vi.fn();
+    const renameSavedSpy = vi.fn();
+    const notesSavedSpy = vi.fn();
+    const deleteSavedSpy = vi.fn();
     const prevSpy = vi.fn();
     const nextSpy = vi.fn();
     const jumpSpy = vi.fn();
@@ -83,12 +99,18 @@ describe('RunComparisonPanel', () => {
         <RunComparisonPanel
           currentSnapshot={currentSnapshot}
           baselineSnapshot={baselineSnapshot}
-          runHistory={[currentSnapshot, baselineSnapshot]}
-          savedRunCount={1}
+          comparisonCandidates={[baselineSnapshot, savedSnapshot]}
+          savedRunSnapshots={[savedSnapshot]}
+          currentSavedRunId={null}
           isCurrentSnapshotSaved={false}
           comparisonSelection={selection}
           comparisonSummary={summary}
           onSaveCurrentSnapshot={saveSpy}
+          onRestoreSavedRun={restoreSpy}
+          onCompareWithSavedRun={compareSavedSpy}
+          onRenameSavedRun={renameSavedSpy}
+          onUpdateSavedRunNotes={notesSavedSpy}
+          onDeleteSavedRun={deleteSavedSpy}
           onSelectBaseline={baselineSpy}
           onTogglePinBaseline={pinSpy}
           onStationThresholdChange={() => {}}
@@ -114,6 +136,7 @@ describe('RunComparisonPanel', () => {
 
     expect(container.textContent).toContain('Run Compare');
     expect(container.textContent).toContain('Saved runs 1');
+    expect(container.textContent).toContain('Saved Runs');
     expect(container.textContent).not.toContain('Moved Stations');
     expect(container.querySelector('[data-qa-review-action="prev-suspect"]')).toBeNull();
     const expandButton = Array.from(container.querySelectorAll('button')).find((button) =>
@@ -137,6 +160,12 @@ describe('RunComparisonPanel', () => {
     ) as HTMLButtonElement;
     const saveButton = Array.from(container.querySelectorAll('button')).find((button) =>
       button.textContent?.includes('Save current run'),
+    ) as HTMLButtonElement;
+    const restoreButton = Array.from(container.querySelectorAll('button')).find((button) =>
+      button.textContent?.includes('Restore'),
+    ) as HTMLButtonElement;
+    const compareSavedButton = Array.from(container.querySelectorAll('button')).find((button) =>
+      button.textContent?.includes('Compare'),
     ) as HTMLButtonElement;
     const select = container.querySelector('select') as HTMLSelectElement;
     const prevButton = container.querySelector(
@@ -175,7 +204,7 @@ describe('RunComparisonPanel', () => {
     ) as HTMLDivElement;
 
     expect(baselineLabel.title).toBe(
-      'Select which previous successful run to use as the comparison baseline.',
+      'Select which previous successful run or saved snapshot to use as the comparison baseline.',
     );
     expect(select.title).toBe('Choose the baseline run used for move/residual comparisons.');
     expect(moveThresholdLabel.title).toBe(
@@ -217,6 +246,8 @@ describe('RunComparisonPanel', () => {
 
     await act(async () => {
       saveButton.click();
+      restoreButton.click();
+      compareSavedButton.click();
       stationButton.click();
       observationButton.click();
       select.value = 'run-1';
@@ -234,6 +265,8 @@ describe('RunComparisonPanel', () => {
     expect(baselineSpy).toHaveBeenCalledWith('run-1');
     expect(pinSpy).toHaveBeenCalled();
     expect(saveSpy).toHaveBeenCalled();
+    expect(restoreSpy).toHaveBeenCalledWith('saved-run-1');
+    expect(compareSavedSpy).toHaveBeenCalledWith('saved-run-1');
     expect(prevSpy).toHaveBeenCalled();
     expect(nextSpy).toHaveBeenCalled();
     expect(focusFilterSpy).toHaveBeenCalled();

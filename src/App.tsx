@@ -14,7 +14,9 @@ import { RAD_TO_DEG, dmsToRad } from './engine/angles';
 import {
   buildQaDerivedResult,
   buildRunComparisonText,
+  buildValueFingerprint,
   cloneSavedRunSnapshots,
+  type SavedRunReviewState,
 } from './engine/qaWorkflow';
 import { runAdjustmentSession } from './engine/runSession';
 import { createRunProfileBuilders } from './engine/runProfileBuilders';
@@ -71,6 +73,7 @@ import type {
   Units,
   UiTheme,
   WorkspaceDraftSnapshot,
+  WorkspaceReviewState,
   WorkspaceTabKey,
 } from './appStateTypes';
 import type {
@@ -1185,7 +1188,6 @@ const App: React.FC<AppProps> = ({
     [currentRunSettingsSnapshot, lastRunSettingsSnapshot],
   );
   const {
-    runHistory,
     savedRunSnapshots,
     currentRunSnapshot,
     currentSavedRunSnapshot,
@@ -1195,8 +1197,13 @@ const App: React.FC<AppProps> = ({
     runComparisonSummary,
     clearRunComparisonState,
     restoreSavedRunSnapshots,
+    removeSavedRunSnapshot,
+    renameSavedRunSnapshot,
+    updateSavedRunSnapshotNotes,
+    restoreSavedRunSnapshot,
     saveCurrentRunSnapshot,
     recordRunSnapshot,
+    comparisonCandidates,
   } = useRunComparisonState<RunSettingsSnapshot, RunDiagnostics>({
     buildSettingDiffs: buildPendingRunSettingDiffs,
   });
@@ -1467,6 +1474,7 @@ const App: React.FC<AppProps> = ({
     resetClusterReview,
     clearClusterApprovedMerges,
     resetAdjustmentWorkflowState,
+    restoreAdjustmentWorkflowState,
   } = useAdjustmentWorkflow<RunDiagnostics>({
     input,
     lastRunInput,
@@ -1510,6 +1518,42 @@ const App: React.FC<AppProps> = ({
     restoreSnapshot: restoreWorkspaceReviewSnapshot,
     resetState: resetWorkspaceReviewState,
   } = workspaceReviewState;
+  const buildSavedRunReopenState = React.useCallback(
+    () => ({
+      activeTab,
+      review: JSON.parse(JSON.stringify(workspaceReviewSnapshot)),
+      comparisonSelection: { ...comparisonSelection },
+    }),
+    [activeTab, comparisonSelection, workspaceReviewSnapshot],
+  );
+  const buildWorkspaceReviewStateFromSavedRun = React.useCallback(
+    (savedReview: SavedRunReviewState): WorkspaceReviewState => {
+      const defaults = createDefaultWorkspaceReviewState();
+      return {
+        reportView: {
+          ...defaults.reportView,
+          ...savedReview.reportView,
+          reportObservationTypeFilter:
+            savedReview.reportView
+              .reportObservationTypeFilter as WorkspaceReviewState['reportView']['reportObservationTypeFilter'],
+          tableRowLimits: { ...savedReview.reportView.tableRowLimits },
+          pinnedDetailSections:
+            savedReview.reportView
+              .pinnedDetailSections as WorkspaceReviewState['reportView']['pinnedDetailSections'],
+          collapsedDetailSections: {
+            ...defaults.reportView.collapsedDetailSections,
+            ...(savedReview.reportView
+              .collapsedDetailSections as Partial<
+              WorkspaceReviewState['reportView']['collapsedDetailSections']
+            >),
+          },
+        },
+        selection: { ...savedReview.selection },
+        pinnedObservationIds: savedReview.pinnedObservationIds.slice(),
+      };
+    },
+    [],
+  );
   const workspaceDraftSnapshot = useMemo<WorkspaceDraftSnapshot>(
     () => ({
       input,
@@ -1558,6 +1602,67 @@ const App: React.FC<AppProps> = ({
       workspaceReviewSnapshot,
     ],
   );
+  const handleRestoreSavedRun = React.useCallback(
+    (snapshotId: string) => {
+      const restoredSnapshot = restoreSavedRunSnapshot(snapshotId);
+      if (!restoredSnapshot) return;
+      const restoredResult = cloneSavedRunSnapshots([restoredSnapshot])[0].result;
+      const activeInputFingerprint = buildValueFingerprint({
+        input,
+        includeFiles: projectIncludeFiles,
+      });
+      setResult(restoredResult);
+      setRunDiagnostics(restoredSnapshot.runDiagnostics);
+      setRunElapsedMs(null);
+      setPendingEditorJumpLine(null);
+      setLastRunInput(
+        restoredSnapshot.inputFingerprint === activeInputFingerprint ? input : null,
+      );
+      setLastRunSettingsSnapshot(restoredSnapshot.settingsSnapshot);
+      restoreAdjustmentWorkflowState({
+        result: restoredResult,
+        excludedIds: restoredSnapshot.excludedIds,
+        overrides: restoredSnapshot.overrides,
+        approvedClusterMerges: restoredSnapshot.approvedClusterMerges,
+      });
+      restoreWorkspaceReviewSnapshot(
+        restoredSnapshot.reopenState
+          ? buildWorkspaceReviewStateFromSavedRun(restoredSnapshot.reopenState.review)
+          : createDefaultWorkspaceReviewState(),
+      );
+      setActiveTab(restoredSnapshot.reopenState?.activeTab ?? 'report');
+      setImportNotice({
+        title: 'Saved run restored',
+        detailLines:
+          restoredSnapshot.inputFingerprint === activeInputFingerprint
+            ? [
+                `Reopened ${restoredSnapshot.label}.`,
+                'Result, review state, and compare thresholds were restored from the saved snapshot.',
+              ]
+            : [
+                `Reopened ${restoredSnapshot.label}.`,
+                'Result and review state were restored, but the current editor input differs from the saved run fingerprint. Rerun before reusing exclusions or compare baselines for new edits.',
+              ],
+      });
+    },
+    [
+      input,
+      projectIncludeFiles,
+      restoreAdjustmentWorkflowState,
+      restoreSavedRunSnapshot,
+      buildWorkspaceReviewStateFromSavedRun,
+      restoreWorkspaceReviewSnapshot,
+      setActiveTab,
+      setImportNotice,
+      setLastRunInput,
+      setLastRunSettingsSnapshot,
+      setPendingEditorJumpLine,
+      setResult,
+      setRunDiagnostics,
+      setRunElapsedMs,
+    ],
+  );
+
   const { handleExportResults } = useExportWorkflow({
     result,
     exportFormat,
@@ -1922,17 +2027,20 @@ const App: React.FC<AppProps> = ({
         )}
 
         <div className="flex flex-col bg-slate-950 flex-1 min-w-0 overflow-hidden">
-          {result && currentRunSnapshot && (
+          {(currentRunSnapshot || savedRunSnapshots.length > 0) && (
             <RunComparisonPanel
               currentSnapshot={currentRunSnapshot}
               baselineSnapshot={baselineRunSnapshot}
-              runHistory={runHistory}
-              savedRunCount={savedRunSnapshots.length}
+              comparisonCandidates={comparisonCandidates}
+              savedRunSnapshots={savedRunSnapshots}
+              currentSavedRunId={currentSavedRunSnapshot?.id ?? null}
               isCurrentSnapshotSaved={currentSavedRunSnapshot != null}
               comparisonSelection={comparisonSelection}
               comparisonSummary={runComparisonSummary}
               onSaveCurrentSnapshot={() => {
-                const saveOutcome = saveCurrentRunSnapshot();
+                const saveOutcome = saveCurrentRunSnapshot({
+                  reopenState: buildSavedRunReopenState(),
+                });
                 if (saveOutcome.status === 'saved') {
                   setImportNotice({
                     title: 'Run snapshot saved',
@@ -1950,6 +2058,19 @@ const App: React.FC<AppProps> = ({
                   });
                 }
               }}
+              onRestoreSavedRun={handleRestoreSavedRun}
+              onCompareWithSavedRun={(snapshotId) =>
+                setComparisonSelection((prev) => ({
+                  ...prev,
+                  baselineRunId: snapshotId,
+                  pinnedBaselineRunId: null,
+                }))
+              }
+              onRenameSavedRun={(snapshotId, label) => renameSavedRunSnapshot(snapshotId, label)}
+              onUpdateSavedRunNotes={(snapshotId, notes) =>
+                updateSavedRunSnapshotNotes(snapshotId, notes)
+              }
+              onDeleteSavedRun={(snapshotId) => removeSavedRunSnapshot(snapshotId)}
               onSelectBaseline={(snapshotId) =>
                 setComparisonSelection((prev) => ({
                   ...prev,

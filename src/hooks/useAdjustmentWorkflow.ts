@@ -44,6 +44,7 @@ interface UseAdjustmentWorkflowArgs<TRunDiagnostics> {
     inputFingerprint: string;
     excludedIds: number[];
     overrideIds: number[];
+    overrides: Record<number, ObservationOverride>;
     approvedClusterMerges: ClusterApprovedMerge[];
   }) => void;
 }
@@ -124,6 +125,50 @@ const buildRejectedClusterProposals = (
     });
   });
   return rows.sort((a, b) => a.key.localeCompare(b.key, undefined, { numeric: true }));
+};
+
+const buildClusterReviewDecisionsFromState = (
+  result: AdjustmentResult,
+  approvedMerges: ClusterApprovedMerge[],
+): Record<string, ClusterReviewDecision> => {
+  const decisions: Record<string, ClusterReviewDecision> = {};
+  const approvedByAlias = new Map<string, string>();
+  approvedMerges.forEach((merge) => {
+    approvedByAlias.set(merge.aliasId, merge.canonicalId);
+  });
+  const rejectedKeys = new Map(
+    (result.clusterDiagnostics?.rejectedProposals ?? []).map((entry) => [entry.key, entry]),
+  );
+  (result.clusterDiagnostics?.candidates ?? []).forEach((candidate) => {
+    const rejected = rejectedKeys.get(candidate.key);
+    if (rejected) {
+      decisions[candidate.key] = {
+        status: 'reject',
+        canonicalId:
+          rejected.retainedId && candidate.stationIds.includes(rejected.retainedId)
+            ? rejected.retainedId
+            : candidate.representativeId,
+      };
+      return;
+    }
+    const approvedCanonicalId = candidate.stationIds.find(
+      (stationId) => approvedByAlias.get(stationId) != null,
+    );
+    const canonicalId =
+      candidate.stationIds.find(
+        (stationId) =>
+          candidate.stationIds.includes(stationId) &&
+          candidate.stationIds.some((memberId) => approvedByAlias.get(memberId) === stationId),
+      ) ?? approvedCanonicalId ?? candidate.representativeId;
+    const isApproved = candidate.stationIds.some(
+      (stationId) => approvedByAlias.get(stationId) === canonicalId,
+    );
+    decisions[candidate.key] = {
+      status: isApproved ? 'approve' : 'pending',
+      canonicalId,
+    };
+  });
+  return decisions;
 };
 
 export const useAdjustmentWorkflow = <TRunDiagnostics>({
@@ -245,6 +290,7 @@ export const useAdjustmentWorkflow = <TRunDiagnostics>({
         inputFingerprint: context.inputFingerprint,
         excludedIds: outcome.effectiveExcludedIds,
         overrideIds: context.overrideIds,
+        overrides,
         approvedClusterMerges: outcome.effectiveClusterApprovedMerges,
       });
     },
@@ -253,6 +299,7 @@ export const useAdjustmentWorkflow = <TRunDiagnostics>({
       buildRunDiagnostics,
       clusterReviewDecisions,
       recordRunSnapshot,
+      overrides,
       result?.clusterDiagnostics?.candidates,
       setLastRunInput,
       setLastRunSettingsSnapshot,
@@ -480,6 +527,28 @@ export const useAdjustmentWorkflow = <TRunDiagnostics>({
     setActiveClusterApprovedMerges([]);
   }, []);
 
+  const restoreAdjustmentWorkflowState = useCallback(
+    ({
+      result: snapshotResult,
+      excludedIds: nextExcludedIds,
+      overrides: nextOverrides,
+      approvedClusterMerges,
+    }: {
+      result: AdjustmentResult;
+      excludedIds: number[];
+      overrides: Record<number, ObservationOverride>;
+      approvedClusterMerges: ClusterApprovedMerge[];
+    }) => {
+      setExcludedIds(new Set(nextExcludedIds));
+      setOverrides({ ...nextOverrides });
+      setActiveClusterApprovedMerges(approvedClusterMerges.map((merge) => ({ ...merge })));
+      setClusterReviewDecisions(
+        buildClusterReviewDecisionsFromState(snapshotResult, approvedClusterMerges),
+      );
+    },
+    [],
+  );
+
   return {
     pipelineState,
     cancelAdjustment,
@@ -501,5 +570,6 @@ export const useAdjustmentWorkflow = <TRunDiagnostics>({
     resetClusterReview,
     clearClusterApprovedMerges,
     resetAdjustmentWorkflowState,
+    restoreAdjustmentWorkflowState,
   };
 };

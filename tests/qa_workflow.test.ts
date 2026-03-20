@@ -52,7 +52,9 @@ describe('qaWorkflow helpers', () => {
         settingsSnapshot: { run: index },
         excludedIds: [],
         overrideIds: [],
+        overrides: {},
         approvedClusterMerges: [],
+        reopenState: null,
       });
     }
 
@@ -91,7 +93,9 @@ describe('qaWorkflow helpers', () => {
       settingsSnapshot: { name: 'baseline' },
       excludedIds: [],
       overrideIds: [],
+      overrides: {},
       approvedClusterMerges: [],
+      reopenState: null,
     };
     const currentSnapshot: RunSnapshot<{ name: string }, null> = {
       id: 'current',
@@ -105,7 +109,9 @@ describe('qaWorkflow helpers', () => {
       settingsSnapshot: { name: 'current' },
       excludedIds: [1],
       overrideIds: [2],
+      overrides: {},
       approvedClusterMerges: [],
+      reopenState: null,
     };
 
     const summary = buildRunComparison(

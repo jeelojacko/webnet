@@ -5,6 +5,7 @@ import type {
   CustomLevelLoopTolerancePreset,
   Instrument,
   InstrumentLibrary,
+  ObservationOverride,
   ParseCompatibilityMode,
   ProjectExportFormat,
   WebNetProjectFileV3,
@@ -214,6 +215,146 @@ const sanitizeClusterApprovedMerges = (value: unknown): ClusterApprovedMerge[] =
     );
 };
 
+const sanitizeObservationOverrides = (value: unknown): Record<number, ObservationOverride> => {
+  if (!isRecord(value)) return {};
+  const next: Record<number, ObservationOverride> = {};
+  Object.entries(value).forEach(([rawObservationId, rawOverride]) => {
+    const observationId = Number.parseInt(rawObservationId, 10);
+    if (!Number.isFinite(observationId) || !isRecord(rawOverride)) return;
+    const nextOverride: ObservationOverride = {};
+    if (typeof rawOverride.stdDev === 'number' && Number.isFinite(rawOverride.stdDev)) {
+      nextOverride.stdDev = rawOverride.stdDev;
+    }
+    if (typeof rawOverride.obs === 'number' && Number.isFinite(rawOverride.obs)) {
+      nextOverride.obs = rawOverride.obs;
+    } else if (isRecord(rawOverride.obs)) {
+      const dE =
+        typeof rawOverride.obs.dE === 'number' && Number.isFinite(rawOverride.obs.dE)
+          ? rawOverride.obs.dE
+          : null;
+      const dN =
+        typeof rawOverride.obs.dN === 'number' && Number.isFinite(rawOverride.obs.dN)
+          ? rawOverride.obs.dN
+          : null;
+      if (dE != null && dN != null) {
+        nextOverride.obs = { dE, dN };
+      }
+    }
+    if (nextOverride.obs != null || nextOverride.stdDev != null) {
+      next[observationId] = nextOverride;
+    }
+  });
+  return next;
+};
+
+const sanitizeSavedRunWorkspaceState = (
+  value: unknown,
+): PersistedSavedRunSnapshot['reopenState'] => {
+  if (!isRecord(value) || !isRecord(value.review) || !isRecord(value.review.reportView)) {
+    return null;
+  }
+  const review = value.review;
+  const reportView = isRecord(review.reportView) ? review.reportView : {};
+  const selection = isRecord(review.selection) ? review.selection : {};
+  const comparisonSelection = isRecord(value.comparisonSelection) ? value.comparisonSelection : {};
+  const tableRowLimits: Record<string, number> = {};
+  if (isRecord(reportView.tableRowLimits)) {
+    Object.entries(reportView.tableRowLimits).forEach(([key, rawLimit]) => {
+      if (!key.trim() || typeof rawLimit !== 'number' || !Number.isFinite(rawLimit)) return;
+      tableRowLimits[key] = Math.max(0, Math.floor(rawLimit));
+    });
+  }
+  const pinnedDetailSections = Array.isArray(reportView.pinnedDetailSections)
+    ? reportView.pinnedDetailSections
+        .map((entry: unknown) => {
+          if (!isRecord(entry)) return null;
+          const id = typeof entry.id === 'string' ? entry.id.trim() : '';
+          const label = typeof entry.label === 'string' ? entry.label : '';
+          if (!id) return null;
+          return { id, label };
+        })
+        .filter((entry: { id: string; label: string } | null): entry is { id: string; label: string } => entry != null)
+    : [];
+  const collapsedDetailSections: Record<string, boolean> = {};
+  if (isRecord(reportView.collapsedDetailSections)) {
+    Object.entries(reportView.collapsedDetailSections).forEach(([key, rawCollapsed]) => {
+      if (!key.trim() || typeof rawCollapsed !== 'boolean') return;
+      collapsedDetailSections[key] = rawCollapsed;
+    });
+  }
+  const pinnedObservationIds = Array.isArray(review.pinnedObservationIds)
+    ? review.pinnedObservationIds.filter(
+        (entry): entry is number => typeof entry === 'number' && Number.isFinite(entry),
+      )
+    : [];
+  return {
+    activeTab:
+      value.activeTab === 'processing-summary' ||
+      value.activeTab === 'industry-output' ||
+      value.activeTab === 'map'
+        ? value.activeTab
+        : 'report',
+    review: {
+      reportView: {
+        ellipseMode: reportView.ellipseMode === '95' ? '95' : '1sigma',
+        reportFilterQuery:
+          typeof reportView.reportFilterQuery === 'string' ? reportView.reportFilterQuery : '',
+        reportObservationTypeFilter:
+          typeof reportView.reportObservationTypeFilter === 'string'
+            ? reportView.reportObservationTypeFilter
+            : 'all',
+        reportExclusionFilter:
+          reportView.reportExclusionFilter === 'included' ||
+          reportView.reportExclusionFilter === 'excluded'
+            ? reportView.reportExclusionFilter
+            : 'all',
+        tableRowLimits,
+        pinnedDetailSections,
+        collapsedDetailSections,
+      },
+      selection: {
+        stationId: typeof selection.stationId === 'string' ? selection.stationId : null,
+        observationId:
+          typeof selection.observationId === 'number' && Number.isFinite(selection.observationId)
+            ? selection.observationId
+            : null,
+        sourceLine:
+          typeof selection.sourceLine === 'number' && Number.isFinite(selection.sourceLine)
+            ? selection.sourceLine
+            : null,
+        origin:
+          selection.origin === 'report' ||
+          selection.origin === 'map' ||
+          selection.origin === 'suspect' ||
+          selection.origin === 'compare'
+            ? selection.origin
+            : null,
+      },
+      pinnedObservationIds,
+    },
+    comparisonSelection: {
+      baselineRunId:
+        typeof comparisonSelection.baselineRunId === 'string'
+          ? comparisonSelection.baselineRunId
+          : null,
+      pinnedBaselineRunId:
+        typeof comparisonSelection.pinnedBaselineRunId === 'string'
+          ? comparisonSelection.pinnedBaselineRunId
+          : null,
+      stationMovementThreshold:
+        typeof comparisonSelection.stationMovementThreshold === 'number' &&
+        Number.isFinite(comparisonSelection.stationMovementThreshold)
+          ? comparisonSelection.stationMovementThreshold
+          : 0.001,
+      residualDeltaThreshold:
+        typeof comparisonSelection.residualDeltaThreshold === 'number' &&
+        Number.isFinite(comparisonSelection.residualDeltaThreshold)
+          ? comparisonSelection.residualDeltaThreshold
+          : 0.25,
+    },
+  };
+};
+
 const sanitizeSavedRunSnapshots = (value: unknown): PersistedSavedRunSnapshot[] => {
   if (!Array.isArray(value)) return [];
   const rows: PersistedSavedRunSnapshot[] = [];
@@ -300,7 +441,9 @@ const sanitizeSavedRunSnapshots = (value: unknown): PersistedSavedRunSnapshot[] 
       settingsSnapshot,
       excludedIds: sanitizeNumberArray(entry.excludedIds).sort((a, b) => a - b),
       overrideIds: sanitizeNumberArray(entry.overrideIds).sort((a, b) => a - b),
+      overrides: sanitizeObservationOverrides(entry.overrides),
       approvedClusterMerges: sanitizeClusterApprovedMerges(entry.approvedClusterMerges),
+      reopenState: sanitizeSavedRunWorkspaceState(entry.reopenState),
     });
   });
   return cloneSavedRunSnapshots(rows);

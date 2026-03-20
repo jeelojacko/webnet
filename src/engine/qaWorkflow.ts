@@ -1,4 +1,9 @@
-import type { AdjustmentResult, ClusterApprovedMerge, Observation } from '../types';
+import type {
+  AdjustmentResult,
+  ClusterApprovedMerge,
+  Observation,
+  ObservationOverride,
+} from '../types';
 import { formatObservationStationsLabel } from './resultDerivedModels';
 
 export interface DerivedObservationRef {
@@ -50,7 +55,9 @@ export interface RunSnapshot<TSettingsSnapshot = unknown, TRunDiagnostics = unkn
   settingsSnapshot: TSettingsSnapshot;
   excludedIds: number[];
   overrideIds: number[];
+  overrides: Record<number, ObservationOverride>;
   approvedClusterMerges: ClusterApprovedMerge[];
+  reopenState: SavedRunWorkspaceState | null;
 }
 
 export interface RunSnapshotSummary {
@@ -69,6 +76,31 @@ export interface SavedRunSnapshot<TSettingsSnapshot = unknown, TRunDiagnostics =
   sourceRunId: string;
   savedAt: string;
   notes: string;
+}
+
+export interface SavedRunReviewState {
+  reportView: {
+    ellipseMode: '1sigma' | '95';
+    reportFilterQuery: string;
+    reportObservationTypeFilter: string;
+    reportExclusionFilter: 'all' | 'included' | 'excluded';
+    tableRowLimits: Record<string, number>;
+    pinnedDetailSections: Array<{ id: string; label: string }>;
+    collapsedDetailSections: Record<string, boolean>;
+  };
+  selection: {
+    stationId: string | null;
+    observationId: number | null;
+    sourceLine: number | null;
+    origin: 'report' | 'map' | 'suspect' | 'compare' | null;
+  };
+  pinnedObservationIds: number[];
+}
+
+export interface SavedRunWorkspaceState {
+  activeTab: 'report' | 'processing-summary' | 'industry-output' | 'map';
+  review: SavedRunReviewState;
+  comparisonSelection: ComparisonSelection;
 }
 
 export interface ComparisonSelection {
@@ -175,6 +207,34 @@ export const pushSavedRunSnapshot = <TSettingsSnapshot, TRunDiagnostics>(
   limit = 10,
 ): Array<SavedRunSnapshot<TSettingsSnapshot, TRunDiagnostics>> =>
   [snapshot, ...history.filter((entry) => entry.id !== snapshot.id)].slice(0, limit);
+
+const getSnapshotSourceIdentity = <TSettingsSnapshot, TRunDiagnostics>(
+  snapshot: RunSnapshot<TSettingsSnapshot, TRunDiagnostics>,
+): string =>
+  'sourceRunId' in snapshot && typeof snapshot.sourceRunId === 'string'
+    ? snapshot.sourceRunId
+    : snapshot.id;
+
+export const buildComparisonCandidateSnapshots = <TSettingsSnapshot, TRunDiagnostics>(
+  history: Array<RunSnapshot<TSettingsSnapshot, TRunDiagnostics>>,
+  savedSnapshots: Array<SavedRunSnapshot<TSettingsSnapshot, TRunDiagnostics>>,
+  currentSnapshot: RunSnapshot<TSettingsSnapshot, TRunDiagnostics> | null,
+): Array<RunSnapshot<TSettingsSnapshot, TRunDiagnostics>> => {
+  if (!currentSnapshot) return [];
+  const currentIdentity = getSnapshotSourceIdentity(currentSnapshot);
+  const seenIds = new Set<string>();
+  const seenSourceIdentities = new Set<string>([currentIdentity]);
+  const candidates: Array<RunSnapshot<TSettingsSnapshot, TRunDiagnostics>> = [];
+  [...history, ...savedSnapshots].forEach((entry) => {
+    if (entry.id === currentSnapshot.id || seenIds.has(entry.id)) return;
+    const sourceIdentity = getSnapshotSourceIdentity(entry);
+    if (seenSourceIdentities.has(sourceIdentity)) return;
+    seenIds.add(entry.id);
+    seenSourceIdentities.add(sourceIdentity);
+    candidates.push(entry);
+  });
+  return candidates;
+};
 
 const normalizeStationIds = (obs: Observation): string[] => {
   if (obs.type === 'angle') return [obs.at, obs.from, obs.to];
@@ -287,19 +347,17 @@ export const pushRunSnapshot = <TSettingsSnapshot, TRunDiagnostics>(
 
 export const resolveComparisonBaseline = <TSettingsSnapshot, TRunDiagnostics>(
   history: Array<RunSnapshot<TSettingsSnapshot, TRunDiagnostics>>,
+  savedSnapshots: Array<SavedRunSnapshot<TSettingsSnapshot, TRunDiagnostics>>,
   currentSnapshot: RunSnapshot<TSettingsSnapshot, TRunDiagnostics> | null,
   selection: ComparisonSelection,
 ): RunSnapshot<TSettingsSnapshot, TRunDiagnostics> | null => {
   if (!currentSnapshot) return null;
+  const candidates = buildComparisonCandidateSnapshots(history, savedSnapshots, currentSnapshot);
   const preferredId = selection.pinnedBaselineRunId ?? selection.baselineRunId;
   if (preferredId) {
-    return (
-      history.find(
-        (entry) => entry.id === preferredId && entry.id !== currentSnapshot.id,
-      ) ?? null
-    );
+    return candidates.find((entry) => entry.id === preferredId) ?? null;
   }
-  return history.find((entry) => entry.id !== currentSnapshot.id) ?? null;
+  return candidates[0] ?? null;
 };
 
 const formatDelta = (value: number): string => {

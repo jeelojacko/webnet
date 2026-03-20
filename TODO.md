@@ -36,10 +36,14 @@
       - [x] Persist saved snapshots through browser-local recovery state without restoring them into the active report/map result automatically
       - [x] Persist saved snapshots through project save/load paths without breaking existing v1-v3 project-file compatibility
       - [x] Add focused regression coverage for saved-run creation, persistence, and bounded-cap behavior
-    - [ ] Batch 2 - saved runs UI and recovery wiring
-      - [ ] Add a small `Saved Runs` surface for restore, compare, rename, note editing, and delete actions
-      - [ ] Restore compare/report reopen state from a saved snapshot without rebuilding ad hoc view models
-      - [ ] Persist saved snapshot metadata through browser recovery and project load/save paths
+    - [x] Batch 2 - saved runs UI and recovery wiring
+      - [x] Add a small `Saved Runs` surface for restore, compare, rename, note editing, and delete actions
+      - [x] Restore compare/report reopen state from a saved snapshot without rebuilding ad hoc view models
+      - [x] Persist saved snapshot metadata through browser recovery and project load/save paths
+      - [x] Extend saved snapshots with persisted workspace reopen metadata for report/map review state restoration
+      - [x] Add hook-level saved-run actions for rename, notes updates, delete, and restore target selection without breaking transient compare history
+      - [x] Rehydrate active result diagnostics, review state, and compare baseline selection directly from a saved snapshot reopen action
+      - [x] Add focused regression coverage for saved-run management UI, restore flows, and persisted metadata round-trips
     - [ ] Batch 3 - browser-first export deliverables
       - [ ] Add adjusted-points CSV export
       - [ ] Add observations-and-residuals CSV export
