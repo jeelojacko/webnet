@@ -102,6 +102,7 @@ export interface AdjustmentResultPayloadInput {
   controlConstraints?: AdjustmentResult['controlConstraints'];
   stationCovariances?: AdjustmentResult['stationCovariances'];
   relativeCovariances?: AdjustmentResult['relativeCovariances'];
+  precisionModels?: AdjustmentResult['precisionModels'];
   weakGeometryDiagnostics?: AdjustmentResult['weakGeometryDiagnostics'];
   chiSquare?: AdjustmentResult['chiSquare'];
   statisticalSummary?: AdjustmentResult['statisticalSummary'];
@@ -140,6 +141,7 @@ export const buildAdjustmentResultPayload = (
   controlConstraints: input.controlConstraints,
   stationCovariances: input.stationCovariances,
   relativeCovariances: input.relativeCovariances,
+  precisionModels: input.precisionModels,
   weakGeometryDiagnostics: input.weakGeometryDiagnostics,
   chiSquare: input.chiSquare,
   statisticalSummary: input.statisticalSummary,

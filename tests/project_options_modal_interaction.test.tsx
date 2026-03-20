@@ -306,7 +306,7 @@ describe('Project Options modal interactions', () => {
     const app = await mountApp('adjustment');
     try {
       const firstLimit = findInputForSettingsRow(app.container, 'Convergence Limit');
-      expect(firstLimit.value).toBe('0.01');
+      expect(firstLimit.value).toBe('0.001');
       await setInputValue(firstLimit, '0.1');
 
       await clickButtonByExactText(app.container, 'Apply');
@@ -342,7 +342,7 @@ describe('Project Options modal interactions', () => {
     const app = await mountApp('adjustment');
     try {
       const firstLimit = findInputForSettingsRow(app.container, 'Convergence Limit');
-      expect(firstLimit.value).toBe('0.01');
+      expect(firstLimit.value).toBe('0.001');
       await setInputValue(firstLimit, '0.2');
 
       await clickButtonByExactText(app.container, 'Cancel');
@@ -350,7 +350,7 @@ describe('Project Options modal interactions', () => {
       await clickProjectOptionsTab(app.container, 'adjustment');
 
       const reopenedLimit = findInputForSettingsRow(app.container, 'Convergence Limit');
-      expect(reopenedLimit.value).toBe('0.01');
+      expect(reopenedLimit.value).toBe('0.001');
     } finally {
       await app.cleanup();
     }

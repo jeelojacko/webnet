@@ -1375,6 +1375,20 @@ const ProjectOptionsModal: React.FC<ProjectOptionsModalProps> = ({ context }) =>
                       Industry-Style Listing Sort/Scope
                     </div>
                     <label className={optionLabelClass}>
+                      Precision Reporting Mode
+                      <select
+                        title={SETTINGS_TOOLTIPS.precisionReportingMode}
+                        value={settingsDraft.precisionReportingMode}
+                        onChange={(e) =>
+                          handleDraftSetting('precisionReportingMode', e.target.value)
+                        }
+                        className={`${optionInputClass} mt-1`}
+                      >
+                        <option value="industry-standard">Industry Standard</option>
+                        <option value="posterior-scaled">Posterior Scaled</option>
+                      </select>
+                    </label>
+                    <label className={optionLabelClass}>
                       Sort Coordinates By
                       <select
                         title={SETTINGS_TOOLTIPS.listingSortCoordinatesBy}

@@ -23,6 +23,7 @@ export const createRunOutputBuilders = ({
       {
         maxIterations: settings.maxIterations,
         convergenceLimit: settings.convergenceLimit,
+        precisionReportingMode: settings.precisionReportingMode,
         units: settings.units,
         listingShowLostStations: settings.listingShowLostStations,
         listingShowCoordinates: settings.listingShowCoordinates,
@@ -111,6 +112,7 @@ export const createRunOutputBuilders = ({
   const buildLandXmlExportText = (solved: AdjustmentResult) =>
     buildLandXmlText(solved, {
       units: settings.units,
+      precisionReportingMode: settings.precisionReportingMode,
       solveProfile: (runDiagnostics ?? buildRunDiagnostics(parseSettings, solved)).solveProfile,
       showLostStations: settings.listingShowLostStations,
       projectName: 'webnet-adjustment',

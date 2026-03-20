@@ -57,6 +57,43 @@
       }
     },
     {
+      "id": "industry_standard_reference_case",
+      "inputPath": "tests/fixtures/industry_standard_reference_case.dat",
+      "profile": "industry-parity",
+      "summary": {
+        "converged": true,
+        "iterations": 5,
+        "dof": 134,
+        "seuw": 1.0558405823,
+        "seuwTolerance": 0.001
+      },
+      "coordinates": {
+        "1000": {
+          "x": 0.9958,
+          "y": 2.0623,
+          "tol": 0.005
+        },
+        "1": {
+          "x": 2.3564569568,
+          "y": -2.4640472884,
+          "tol": 0.005
+        },
+        "9": {
+          "x": 101.4501743107,
+          "y": -1.3750521058,
+          "tol": 0.005
+        }
+      },
+      "residual": {
+        "maxStdRes": 3.908897963,
+        "tol": 0.05
+      },
+      "detailedReference": {
+        "expectedPath": "tests/fixtures/industry_standard_reference_case_expected.json",
+        "deviationBaselinePath": "tests/fixtures/industry_standard_reference_case_deviation_baseline.json"
+      }
+    },
+    {
       "id": "alias_phase4_mixed",
       "inputPath": "tests/fixtures/alias_phase4_mixed.dat",
       "profile": "webnet",

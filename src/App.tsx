@@ -261,6 +261,7 @@ const createRunSettingsSnapshot = (
 ): RunSettingsSnapshot => ({
   maxIterations: settings.maxIterations,
   convergenceLimit: settings.convergenceLimit,
+  precisionReportingMode: settings.precisionReportingMode,
   units: settings.units,
   solveProfile: parseSettings.solveProfile,
   runMode: parseSettings.runMode,
@@ -316,6 +317,11 @@ const buildPendingRunSettingDiffs = (
   pushDiff('CRS', current.crsId, previous.crsId);
   pushDiff('Max Iterations', current.maxIterations, previous.maxIterations);
   pushDiff('Convergence Limit', current.convergenceLimit, previous.convergenceLimit);
+  pushDiff(
+    'Precision Reporting',
+    current.precisionReportingMode,
+    previous.precisionReportingMode,
+  );
   pushDiff('Direction Sets', current.directionSetMode, previous.directionSetMode);
   pushDiff('Map Mode', current.mapMode, previous.mapMode);
   pushDiff('Map Scale', current.mapScaleFactor, previous.mapScaleFactor);
@@ -396,6 +402,8 @@ const SETTINGS_TOOLTIPS = {
   maxIterations: 'Maximum least-squares iterations before the run stops if convergence is slow.',
   convergenceLimit:
     'When the change in weighted standardized residual sum (vTPv) between iterations is below this value, the run is considered converged and iterations stop.',
+  precisionReportingMode:
+    'Choose whether reported station and relative precision uses industry-standard propagated covariance or posterior-scaled covariance. This changes reporting only and does not change adjusted coordinates.',
   coordMode:
     '2D adjusts horizontal coordinates only. 3D also adjusts heights and uses vertical observations.',
   runMode:
@@ -889,7 +897,8 @@ const App: React.FC<AppProps> = ({
   });
   const [settings, setSettings] = useState<SettingsState>({
     maxIterations: 10,
-    convergenceLimit: 0.01,
+    convergenceLimit: 0.001,
+    precisionReportingMode: 'industry-standard',
     units: 'm',
     uiTheme: DEFAULT_UI_THEME,
     mapShowLostStations: true,
@@ -2167,6 +2176,7 @@ const App: React.FC<AppProps> = ({
                 <ReportView
                   result={result!}
                   units={settings.units}
+                  precisionReportingMode={settings.precisionReportingMode}
                   viewState={workspaceReviewState}
                   runDiagnostics={runDiagnostics}
                   excludedIds={excludedIds}

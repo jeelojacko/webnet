@@ -1,9 +1,16 @@
-import type { AdjustmentResult, Observation, Station } from '../types';
+import { getRelativePrecisionRows, getStationPrecision } from './resultPrecision';
+import type {
+  AdjustmentResult,
+  Observation,
+  PrecisionReportingMode,
+  Station,
+} from '../types';
 
 const FT_PER_M = 3.280839895;
 
 export interface LandXmlExportSettings {
   units: 'm' | 'ft';
+  precisionReportingMode?: PrecisionReportingMode;
   solveProfile:
     | 'webnet'
     | 'industry-parity-current'
@@ -128,8 +135,10 @@ export const buildLandXmlText = (
   const applicationVersion = settings.applicationVersion ?? '0.0.0';
   const pointMap = new Map<string, ExportPoint>();
   const connectionMap = new Map<string, ExportConnection>();
+  const precisionReportingMode = settings.precisionReportingMode ?? 'industry-standard';
+  const relativePrecisionRows = getRelativePrecisionRows(res, precisionReportingMode);
   const relativePrecisionMap = new Map(
-    (res.relativePrecision ?? []).flatMap((row) => {
+    relativePrecisionRows.flatMap((row) => {
       const forward = [`${row.from}|${row.to}`, row] as const;
       const reverse = [`${row.to}|${row.from}`, row] as const;
       return [forward, reverse];
@@ -140,6 +149,7 @@ export const buildLandXmlText = (
     .filter(([, station]) => showLostStations || !station.lost)
     .sort(([a], [b]) => a.localeCompare(b, undefined, { numeric: true }))
     .forEach(([id, station]) => {
+      const precision = getStationPrecision(res, id, precisionReportingMode);
       pointMap.set(id, {
         id,
         northing: station.y * unitScale,
@@ -148,9 +158,9 @@ export const buildLandXmlText = (
         station,
         description: stationDescription(res, id),
         source: 'station',
-        sigmaN: station.sN != null ? station.sN * unitScale : undefined,
-        sigmaE: station.sE != null ? station.sE * unitScale : undefined,
-        sigmaH: station.sH != null ? station.sH * unitScale : undefined,
+        sigmaN: precision.sigmaN != null ? precision.sigmaN * unitScale : undefined,
+        sigmaE: precision.sigmaE != null ? precision.sigmaE * unitScale : undefined,
+        sigmaH: precision.sigmaH != null ? precision.sigmaH * unitScale : undefined,
       });
     });
 
@@ -266,6 +276,7 @@ export const buildLandXmlText = (
   if (points.length > 0) {
     lines.push('  <CgPoints>');
     points.forEach((point) => {
+      const precision = getStationPrecision(res, point.id, precisionReportingMode);
       lines.push(
         `    <CgPoint name="${xmlEscape(point.id)}" oID="${xmlEscape(point.id)}" desc="${xmlEscape(
           point.description ?? pointKind(point),
@@ -281,20 +292,20 @@ export const buildLandXmlText = (
         ['sigmaH', point.sigmaH != null ? formatNumber(point.sigmaH) : undefined],
         [
           'ellipseSemiMajor',
-          point.station?.errorEllipse?.semiMajor != null
-            ? formatNumber(point.station.errorEllipse.semiMajor * unitScale)
+          precision.ellipse?.semiMajor != null
+            ? formatNumber(precision.ellipse.semiMajor * unitScale)
             : undefined,
         ],
         [
           'ellipseSemiMinor',
-          point.station?.errorEllipse?.semiMinor != null
-            ? formatNumber(point.station.errorEllipse.semiMinor * unitScale)
+          precision.ellipse?.semiMinor != null
+            ? formatNumber(precision.ellipse.semiMinor * unitScale)
             : undefined,
         ],
         [
           'ellipseAzimuthDeg',
-          point.station?.errorEllipse?.theta != null
-            ? formatNumber(point.station.errorEllipse.theta)
+          precision.ellipse?.theta != null
+            ? formatNumber(precision.ellipse.theta)
             : undefined,
         ],
         ['azimuthSource', point.azimuthSource],

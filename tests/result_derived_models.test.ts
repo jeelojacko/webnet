@@ -51,6 +51,33 @@ describe('resultDerivedModels helpers', () => {
     expect(grouped.get('angle')).toHaveLength(1);
   });
 
+  it('breaks |StdRes| ties deterministically by stations and input order', () => {
+    const result = buildResult(
+      [
+        '.2D',
+        'C A 0 0 0 ! !',
+        'C B 100 0 0 ! !',
+        'C C 200 0 0 ! !',
+        'C P 60 40 0',
+        'D B-P 56.5685425 0.005',
+        'D A-P 72.1110255 0.005',
+        'A P-A-B 90-00-00 3',
+      ].join('\n'),
+    );
+
+    result.observations.forEach((obs) => {
+      obs.stdRes = 2;
+    });
+
+    const sorted = sortObservationsByStdRes(result.observations);
+
+    expect(sorted.map((obs) => obs.id)).toEqual([
+      result.observations[1]?.id,
+      result.observations[0]?.id,
+      result.observations[2]?.id,
+    ]);
+  });
+
   it('builds deterministic data-check rows and statistical-summary fallbacks', () => {
     const result = buildResult(
       [

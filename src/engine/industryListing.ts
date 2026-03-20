@@ -8,6 +8,12 @@ import {
   buildResultStatisticalSummaryModel,
   buildResultTraceabilityModel,
 } from './resultDerivedModels';
+import {
+  getIndustryReportedIterationCount,
+  getRelativePrecisionRows,
+  getStationPrecision,
+  toSurveyEllipseAzimuthDeg,
+} from './resultPrecision';
 import type {
   AdjustmentResult,
   CoordSystemDiagnosticCode,
@@ -23,6 +29,7 @@ import type {
   RunMode,
   SigmaSource,
   Station,
+  PrecisionReportingMode,
 } from '../types';
 
 const FT_PER_M = 3.280839895;
@@ -33,6 +40,7 @@ export type IndustryListingSortObservationsBy = 'input' | 'name' | 'residual';
 export interface IndustryListingSettings {
   maxIterations: number;
   convergenceLimit?: number;
+  precisionReportingMode?: PrecisionReportingMode;
   units: 'm' | 'ft';
   listingShowCoordinates: boolean;
   listingShowObservationsResiduals: boolean;
@@ -690,7 +698,7 @@ export const buildIndustryStyleListingText = (
   lines.push('Adjustment Statistical Summary');
   lines.push('==============================');
   lines.push('');
-  pushSettingRow('Iterations', `${res.iterations}`);
+  pushSettingRow('Iterations', `${getIndustryReportedIterationCount(res)}`);
   pushSettingRow('Number of Stations', `${stationEntriesInputOrder.length}`);
   pushSettingRow('Number of Observations', `${observationCount}`);
   pushSettingRow('Number of Unknowns', `${unknownCount}`);
@@ -853,6 +861,13 @@ export const buildIndustryStyleListingText = (
     if (cmp !== 0) return cmp;
     return compareObsByInput(a, b);
   };
+  const compareObsByStdRes = (a: Observation, b: Observation) => {
+    const stdResDelta = Math.abs(b.stdRes ?? 0) - Math.abs(a.stdRes ?? 0);
+    if (Math.abs(stdResDelta) > 1e-12) return stdResDelta;
+    const stationDelta = compareObsByStations(a, b);
+    if (stationDelta !== 0) return stationDelta;
+    return compareObsByInput(a, b);
+  };
   const listingObservations = [...observationsForListing]
     .filter((o) => Number.isFinite(o.stdRes))
     .filter((o) =>
@@ -863,9 +878,12 @@ export const buildIndustryStyleListingText = (
     .sort((a, b) => {
       if (settings.listingSortObservationsBy === 'input') return compareObsByInput(a, b);
       if (settings.listingSortObservationsBy === 'name') return compareObsByStations(a, b);
-      return Math.abs(b.stdRes ?? 0) - Math.abs(a.stdRes ?? 0);
+      return compareObsByStdRes(a, b);
     })
     .slice(0, Math.min(500, Math.max(1, settings.listingObservationLimit)));
+  const precisionReportingMode = settings.precisionReportingMode ?? 'industry-standard';
+  const relativePrecisionRows = getRelativePrecisionRows(res, precisionReportingMode);
+  const confidence95Scale = 2.4477;
   const autoSideshotObsIds = new Set(
     res.autoSideshotDiagnostics?.candidates.flatMap((c) => [c.angleObsId, c.distObsId]) ?? [],
   );
@@ -913,16 +931,19 @@ export const buildIndustryStyleListingText = (
   const relationshipPairs = [...relationshipPairMap.values()];
 
   const formatAngularResidualArcSec = (value: number | undefined): string =>
-    value != null ? `${(value * RAD_TO_DEG * 3600).toFixed(2)}"` : '-';
+    value != null ? `${(-value * RAD_TO_DEG * 3600).toFixed(2)}"` : '-';
   const formatAngularStdErrArcSec = (value: number): string =>
     `${(value * RAD_TO_DEG * 3600).toFixed(2)}"`;
   const formatLinear = (value: number | undefined): string =>
     value != null ? (value * unitScale).toFixed(4) : '-';
+  const formatResidualLinear = (value: number | undefined): string =>
+    value != null ? ((-value) * unitScale).toFixed(4) : '-';
   const formatEffectiveDistance = (value: number | undefined): string =>
     value != null && Number.isFinite(value) && value > 0 ? (value * unitScale).toFixed(4) : '-';
   const formatEllipseAzDm = (thetaDeg?: number): string => {
-    if (thetaDeg == null || !Number.isFinite(thetaDeg)) return '-';
-    let az = ((thetaDeg % 180) + 180) % 180;
+    const surveyAzimuth = toSurveyEllipseAzimuthDeg(thetaDeg);
+    if (surveyAzimuth == null) return '-';
+    let az = surveyAzimuth;
     let deg = Math.floor(az);
     let min = Math.round((az - deg) * 60);
     if (min >= 60) {
@@ -950,12 +971,13 @@ export const buildIndustryStyleListingText = (
   ): { varE: number; varN: number; covEN: number } | undefined => {
     const st = res.stations[id];
     if (!st) return undefined;
-    if (st.errorEllipse) {
-      const theta = st.errorEllipse.theta / RAD_TO_DEG;
+    const stationPrecision = getStationPrecision(res, id, precisionReportingMode);
+    if (stationPrecision.ellipse) {
+      const theta = stationPrecision.ellipse.theta / RAD_TO_DEG;
       const c = Math.cos(theta);
       const s = Math.sin(theta);
-      const a2 = st.errorEllipse.semiMajor * st.errorEllipse.semiMajor;
-      const b2 = st.errorEllipse.semiMinor * st.errorEllipse.semiMinor;
+      const a2 = stationPrecision.ellipse.semiMajor * stationPrecision.ellipse.semiMajor;
+      const b2 = stationPrecision.ellipse.semiMinor * stationPrecision.ellipse.semiMinor;
       return {
         varE: a2 * c * c + b2 * s * s,
         varN: a2 * s * s + b2 * c * c,
@@ -963,8 +985,8 @@ export const buildIndustryStyleListingText = (
       };
     }
     return {
-      varE: (st.sE ?? 0) ** 2,
-      varN: (st.sN ?? 0) ** 2,
+      varE: (stationPrecision.sigmaE ?? st.sE ?? 0) ** 2,
+      varN: (stationPrecision.sigmaN ?? st.sN ?? 0) ** 2,
       covEN: 0,
     };
   };
@@ -1012,8 +1034,8 @@ export const buildIndustryStyleListingText = (
   };
   const resolveRelativePair = (pair: RelationshipPair): RelativePairStats | undefined => {
     const matched =
-      res.relativePrecision?.find((r) => r.from === pair.from && r.to === pair.to) ??
-      res.relativePrecision?.find((r) => r.from === pair.to && r.to === pair.from);
+      relativePrecisionRows.find((r) => r.from === pair.from && r.to === pair.to) ??
+      relativePrecisionRows.find((r) => r.from === pair.to && r.to === pair.from);
     if (matched) {
       return {
         from: matched.from,
@@ -1038,13 +1060,17 @@ export const buildIndustryStyleListingText = (
       const to = rel?.to ?? pair.to;
       const distance = horizDistance(from, to);
       const sigmaAz95 =
-        rel?.sigmaAz != null ? (rel.sigmaAz * RAD_TO_DEG * 3600 * 1.96).toFixed(2) : '-';
+        rel?.sigmaAz != null
+          ? (rel.sigmaAz * RAD_TO_DEG * 3600 * confidence95Scale).toFixed(2)
+          : '-';
       const sigmaDist95 =
-        rel?.sigmaDist != null ? (rel.sigmaDist * unitScale * 1.96).toFixed(4) : '-';
+        rel?.sigmaDist != null
+          ? (rel.sigmaDist * unitScale * confidence95Scale).toFixed(4)
+          : '-';
       const ppm95 =
         rel?.sigmaDist != null && distance !== '-'
           ? (
-              (rel.sigmaDist * 1.96 * 1_000_000) /
+              (rel.sigmaDist * confidence95Scale * 1_000_000) /
               Math.max(1e-12, Math.abs(Number(distance) / unitScale))
             ).toFixed(4)
           : '-';
@@ -1181,7 +1207,7 @@ export const buildIndustryStyleListingText = (
         radToDmsStr(obs.obs),
         formatAngularResidualArcSec(obs.residual as number | undefined),
         formatEffectiveDistance(obs.effectiveDistance),
-        formatAngularStdErrArcSec(obs.stdDev),
+        formatAngularStdErrArcSec(obs.weightingStdDev ?? obs.stdDev),
         (obs.stdRes ?? 0).toFixed(2),
         obs.sourceLine != null ? `1:${obs.sourceLine}` : '-',
       ]);
@@ -1205,8 +1231,8 @@ export const buildIndustryStyleListingText = (
       .map((obs) => [
         `${obs.from}-${obs.to}${aliasRefsForLine(obs.sourceLine)}${autoSideshotSuffix(obs)}${prismSuffix(obs)}`,
         formatLinear(obs.obs),
-        formatLinear(obs.residual as number | undefined),
-        formatLinear(obs.stdDev),
+        formatResidualLinear(obs.residual as number | undefined),
+        formatLinear(obs.weightingStdDev ?? obs.stdDev),
         (obs.stdRes ?? 0).toFixed(2),
         obs.sourceLine != null ? `1:${obs.sourceLine}` : '-',
       ]);
@@ -1224,7 +1250,7 @@ export const buildIndustryStyleListingText = (
         radToDmsStr(obs.obs),
         formatAngularResidualArcSec(obs.residual as number | undefined),
         formatEffectiveDistance(obs.effectiveDistance),
-        formatAngularStdErrArcSec(obs.stdDev),
+        formatAngularStdErrArcSec(obs.weightingStdDev ?? obs.stdDev),
         (obs.stdRes ?? 0).toFixed(2),
         obs.sourceLine != null ? `1:${obs.sourceLine}` : '-',
       ]);
@@ -1508,7 +1534,6 @@ export const buildIndustryStyleListingText = (
   }
 
   if (settings.listingShowErrorPropagation) {
-    const ellipse95Scale = 2.4477;
     lines.push('');
     addCenteredHeading('Error Propagation');
 
@@ -1517,12 +1542,15 @@ export const buildIndustryStyleListingText = (
       `${isPreanalysis ? 'Predicted Station Coordinate Standard Deviations' : 'Station Coordinate Standard Deviations'} (${linearUnit})`,
     );
     lines.push('');
-    const stdRows = stationEntriesForListing.map(([id, st]) => [
-      id,
-      stationDescription(id) || '-',
-      ((st.sN ?? 0) * unitScale).toFixed(6),
-      ((st.sE ?? 0) * unitScale).toFixed(6),
-    ]);
+    const stdRows = stationEntriesForListing.map(([id]) => {
+      const precision = getStationPrecision(res, id, precisionReportingMode);
+      return [
+        id,
+        stationDescription(id) || '-',
+        ((precision.sigmaN ?? 0) * unitScale).toFixed(6),
+        ((precision.sigmaE ?? 0) * unitScale).toFixed(6),
+      ];
+    });
     renderTextTable(['Station', 'Description', 'N', 'E'], stdRows, [2, 3]);
 
     lines.push('');
@@ -1532,13 +1560,17 @@ export const buildIndustryStyleListingText = (
     lines.push('                            Confidence Region = 95%');
     lines.push('');
     const stationEllipseRows = stationEntriesForListing
-      .filter(([, st]) => st.errorEllipse != null)
-      .map(([id, st]) => [
-        id,
-        ((st.errorEllipse?.semiMajor ?? 0) * ellipse95Scale * unitScale).toFixed(6),
-        ((st.errorEllipse?.semiMinor ?? 0) * ellipse95Scale * unitScale).toFixed(6),
-        formatEllipseAzDm(st.errorEllipse?.theta),
-      ]);
+      .map(([id]) => {
+        const precision = getStationPrecision(res, id, precisionReportingMode);
+        if (!precision.ellipse) return null;
+        return [
+          id,
+          ((precision.ellipse.semiMajor ?? 0) * confidence95Scale * unitScale).toFixed(6),
+          ((precision.ellipse.semiMinor ?? 0) * confidence95Scale * unitScale).toFixed(6),
+          formatEllipseAzDm(precision.ellipse.theta),
+        ];
+      })
+      .filter((row): row is string[] => row != null);
     if (stationEllipseRows.length > 0) {
       lines.push('Station                 Semi-Major    Semi-Minor   Azimuth of');
       lines.push('                            Axis          Axis     Major Axis');
@@ -1562,8 +1594,8 @@ export const buildIndustryStyleListingText = (
       .map((row) => [
         row.from,
         row.to,
-        ((row.ellipse?.semiMajor ?? 0) * ellipse95Scale * unitScale).toFixed(6),
-        ((row.ellipse?.semiMinor ?? 0) * ellipse95Scale * unitScale).toFixed(6),
+        ((row.ellipse?.semiMajor ?? 0) * confidence95Scale * unitScale).toFixed(6),
+        ((row.ellipse?.semiMinor ?? 0) * confidence95Scale * unitScale).toFixed(6),
         formatEllipseAzDm(row.ellipse?.theta),
       ]);
     if (relativeEllipseRows.length > 0) {
@@ -1647,7 +1679,7 @@ export const buildIndustryStyleListingText = (
       });
     }
   }
-  if (res.autoSideshotDiagnostics?.enabled) {
+  if (res.autoSideshotDiagnostics?.enabled && res.autoSideshotDiagnostics.candidateCount > 0) {
     const sd = res.autoSideshotDiagnostics;
     lines.push('');
     lines.push('                         Auto Sideshot Candidates (M Records)');

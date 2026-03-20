@@ -25,6 +25,7 @@ const defaults = {
   settings: {
     maxIterations: 10,
     convergenceLimit: 0.01,
+    precisionReportingMode: 'industry-standard',
     units: 'm',
     listingShowLostStations: true,
   },
@@ -93,6 +94,7 @@ describe('project file serialization/parsing', () => {
           settingsSnapshot: {
             maxIterations: 15,
             convergenceLimit: 0.1,
+            precisionReportingMode: 'posterior-scaled',
           } as unknown as RunSettingsSnapshot,
           excludedIds: [4],
           overrideIds: [9],
@@ -133,6 +135,7 @@ describe('project file serialization/parsing', () => {
         settings: {
           maxIterations: 15,
           convergenceLimit: 0.1,
+          precisionReportingMode: 'posterior-scaled',
           units: 'ft',
           listingShowLostStations: false,
         },
@@ -190,8 +193,12 @@ describe('project file serialization/parsing', () => {
     ]);
     expect(parsed.project.savedRuns[0]?.reopenState?.activeTab).toBe('map');
     expect(parsed.project.savedRuns[0]?.reopenState?.review.selection.stationId).toBe('P1');
+    expect(parsed.project.savedRuns[0]?.settingsSnapshot.precisionReportingMode).toBe(
+      'posterior-scaled',
+    );
     expect(parsed.project.ui.exportFormat).toBe('industry-style');
     expect(parsed.project.ui.settings.convergenceLimit).toBe(0.1);
+    expect(parsed.project.ui.settings.precisionReportingMode).toBe('posterior-scaled');
     expect(parsed.project.ui.adjustedPointsExport.columns).toEqual(['P', 'E', 'N', 'Z']);
     expect(parsed.project.ui.adjustedPointsExport.transform.referenceStationId).toBe('A1');
     expect(parsed.project.ui.adjustedPointsExport.transform.scope).toBe('selected');

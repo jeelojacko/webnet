@@ -40,6 +40,22 @@ export interface StationCovarianceBlock {
   ellipse?: StationErrorEllipse;
 }
 
+export type PrecisionReportingMode = 'industry-standard' | 'posterior-scaled';
+
+export interface ResultPrecisionModel {
+  stationCovariances?: StationCovarianceBlock[];
+  relativeCovariances?: RelativeCovarianceBlock[];
+  relativePrecision?: {
+    from: StationId;
+    to: StationId;
+    sigmaN: number;
+    sigmaE: number;
+    sigmaDist?: number;
+    sigmaAz?: number;
+    ellipse?: StationErrorEllipse;
+  }[];
+}
+
 export interface RelativeCovarianceBlock {
   from: StationId;
   to: StationId;
@@ -166,6 +182,9 @@ interface ObservationBase {
   instCode: string;
   setId?: string;
   stdDev: number;
+  weightingStdDev?: number;
+  weightingStdDevE?: number;
+  weightingStdDevN?: number;
   planned?: boolean;
   sigmaSource?: SigmaSource;
   prismCorrectionM?: number;
@@ -1037,6 +1056,7 @@ export interface AdjustmentResult {
   controlConstraints?: { count: number; x: number; y: number; h: number; xyCorrelated?: number };
   stationCovariances?: StationCovarianceBlock[];
   relativeCovariances?: RelativeCovarianceBlock[];
+  precisionModels?: Record<PrecisionReportingMode, ResultPrecisionModel>;
   weakGeometryDiagnostics?: WeakGeometryDiagnostics;
   preanalysisImpactDiagnostics?: PreanalysisImpactDiagnostics;
   chiSquare?: {

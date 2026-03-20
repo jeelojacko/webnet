@@ -27,6 +27,7 @@ import type {
 const baseSettings: SettingsState = {
   maxIterations: 10,
   convergenceLimit: 0.01,
+  precisionReportingMode: 'industry-standard',
   units: 'm',
   uiTheme: 'gruvbox-dark',
   mapShowLostStations: true,
@@ -338,6 +339,7 @@ describe('useProjectFileWorkflow', () => {
         settings: {
           ...baseSettings,
           uiTheme: 'gruvbox-light',
+          precisionReportingMode: 'posterior-scaled',
           listingShowLostStations: false,
         },
         parseSettings: {
@@ -486,12 +488,14 @@ describe('useProjectFileWorkflow', () => {
           </button>
           <div id="input">{input}</div>
           <div id="theme">{settings.uiTheme}</div>
+          <div id="precision-mode">{settings.precisionReportingMode}</div>
           <div id="run-mode">{parseSettings.runMode}</div>
           <div id="export">{exportFormat}</div>
           <div id="instrument">{selectedInstrument}</div>
           <div id="include-count">{Object.keys(projectIncludeFiles).length}</div>
           <div id="saved-runs">{savedRunSnapshots.length}</div>
           <div id="draft-theme">{settingsDraft.uiTheme}</div>
+          <div id="draft-precision-mode">{settingsDraft.precisionReportingMode}</div>
           <div id="draft-run-mode">{parseSettingsDraft.runMode}</div>
           <div id="draft-open">{isAdjustedPointsTransformSelectOpen ? 'open' : 'closed'}</div>
           <div id="draft-selected">{adjustedPointsTransformSelectedDraft.length}</div>
@@ -513,12 +517,16 @@ describe('useProjectFileWorkflow', () => {
 
     expect(container.querySelector('#input')?.textContent).toBe('LOADED NETWORK');
     expect(container.querySelector('#theme')?.textContent).toBe('gruvbox-light');
+    expect(container.querySelector('#precision-mode')?.textContent).toBe('posterior-scaled');
     expect(container.querySelector('#run-mode')?.textContent).toBe('preanalysis');
     expect(container.querySelector('#export')?.textContent).toBe('geojson');
     expect(container.querySelector('#instrument')?.textContent).toBe('T1');
     expect(container.querySelector('#include-count')?.textContent).toBe('1');
     expect(container.querySelector('#saved-runs')?.textContent).toBe('1');
     expect(container.querySelector('#draft-theme')?.textContent).toBe('gruvbox-light');
+    expect(container.querySelector('#draft-precision-mode')?.textContent).toBe(
+      'posterior-scaled',
+    );
     expect(container.querySelector('#draft-run-mode')?.textContent).toBe('preanalysis');
     expect(container.querySelector('#draft-open')?.textContent).toBe('closed');
     expect(container.querySelector('#draft-selected')?.textContent).toBe('0');

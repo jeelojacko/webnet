@@ -220,6 +220,7 @@ export class LSAEngine {
   private relativePrecision?: AdjustmentResult['relativePrecision'];
   private stationCovariances?: AdjustmentResult['stationCovariances'];
   private relativeCovariances?: AdjustmentResult['relativeCovariances'];
+  private precisionModels?: AdjustmentResult['precisionModels'];
   private weakGeometryDiagnostics?: AdjustmentResult['weakGeometryDiagnostics'];
   private directionSetDiagnostics?: AdjustmentResult['directionSetDiagnostics'];
   private directionTargetDiagnostics?: AdjustmentResult['directionTargetDiagnostics'];
@@ -661,6 +662,27 @@ export class LSAEngine {
     }
 
     return Math.max(sigma, 1e-12);
+  }
+
+  private captureObservationWeightingStdDevs(observations: Observation[]): void {
+    observations.forEach((obs) => {
+      if (obs.type === 'gps') {
+        const cov = this.gpsCovariance(obs);
+        obs.weightingStdDev = undefined;
+        obs.weightingStdDevE = Math.sqrt(Math.max(cov.cEE, 0));
+        obs.weightingStdDevN = Math.sqrt(Math.max(cov.cNN, 0));
+        return;
+      }
+      if (obs.type === 'dist') {
+        obs.weightingStdDev = this.getObservedHorizontalDistanceIn2D(obs).sigmaDistance;
+        obs.weightingStdDevE = undefined;
+        obs.weightingStdDevN = undefined;
+        return;
+      }
+      obs.weightingStdDev = this.effectiveStdDev(obs);
+      obs.weightingStdDevE = undefined;
+      obs.weightingStdDevN = undefined;
+    });
   }
 
   private gpsCovariance(obs: Observation): { cEE: number; cNN: number; cEN: number } {
@@ -3157,8 +3179,10 @@ export class LSAEngine {
     this.chiSquare = undefined;
     this.statisticalSummary = undefined;
     this.typeSummary = undefined;
+    this.relativePrecision = undefined;
     this.stationCovariances = undefined;
     this.relativeCovariances = undefined;
+    this.precisionModels = undefined;
     this.weakGeometryDiagnostics = undefined;
     this.conditionWarned = false;
     this.clearCoordSystemDiagnostics();
@@ -4615,18 +4639,14 @@ export class LSAEngine {
     }
 
     this.typeSummary = buildObservationTypeSummary(activeObservations);
+    this.captureObservationWeightingStdDevs(activeObservations);
 
     if (hasQxx && this.Qxx) {
-      const precisionScaleSq =
+      const posteriorScaleSq =
         this.dof > 0 && Number.isFinite(this.seuw) && this.seuw > 0 ? this.seuw * this.seuw : 1;
       if (this.dof <= 0) {
         this.log('DOF <= 0: using a-priori variance factor 1.0 for point precision scaling.');
       }
-      const cov = (a?: number, b?: number): number => {
-        if (a == null || b == null) return 0;
-        if (!this.Qxx?.[a] || this.Qxx?.[a][b] == null) return 0;
-        return this.Qxx[a][b] * precisionScaleSq;
-      };
       const buildEllipse = (
         varE: number,
         varN: number,
@@ -4647,42 +4667,6 @@ export class LSAEngine {
           semiMinor,
         };
       };
-      const stationCovariances: NonNullable<AdjustmentResult['stationCovariances']> = [];
-      this.unknowns.forEach((id) => {
-        const idx = paramIndex[id];
-        if (!idx) return;
-        if (idx.x == null || idx.y == null) return;
-        if (!this.Qxx?.[idx.x] || !this.Qxx?.[idx.y]) return;
-        const varE = cov(idx.x, idx.x);
-        const varN = cov(idx.y, idx.y);
-        const covEN = cov(idx.x, idx.y);
-        const ellipseSummary = buildEllipse(varE, varN, covEN);
-        this.stations[id].errorEllipse = ellipseSummary.ellipse;
-        this.stations[id].sE = Math.sqrt(Math.abs(varE));
-        this.stations[id].sN = Math.sqrt(Math.abs(varN));
-        const stationBlock: NonNullable<AdjustmentResult['stationCovariances']>[number] = {
-          stationId: id,
-          cEE: varE,
-          cEN: covEN,
-          cNN: varN,
-          sigmaE: Math.sqrt(Math.abs(varE)),
-          sigmaN: Math.sqrt(Math.abs(varN)),
-          ellipse: ellipseSummary.ellipse,
-        };
-        if (!this.is2D && idx.h != null) {
-          const varH = cov(idx.h, idx.h);
-          const covEH = cov(idx.x, idx.h);
-          const covNH = cov(idx.y, idx.h);
-          this.stations[id].sH = Math.sqrt(Math.abs(varH));
-          stationBlock.cEH = covEH;
-          stationBlock.cNH = covNH;
-          stationBlock.cHH = varH;
-          stationBlock.sigmaH = Math.sqrt(Math.abs(varH));
-        }
-        stationCovariances.push(stationBlock);
-      });
-      this.stationCovariances = stationCovariances;
-
       const connectedPairTypes = new Map<string, Set<string>>();
       const addConnectedPair = (a: StationId, b: StationId, label: string): void => {
         if (!a || !b || a === b) return;
@@ -4706,135 +4690,213 @@ export class LSAEngine {
         }
       });
 
-      const relative: NonNullable<AdjustmentResult['relativePrecision']> = [];
-      for (let i = 0; i < this.unknowns.length; i += 1) {
-        for (let j = i + 1; j < this.unknowns.length; j += 1) {
-          const from = this.unknowns[i];
-          const to = this.unknowns[j];
+      const buildCovariance = (scaleSq: number) => (a?: number, b?: number): number => {
+        if (a == null || b == null) return 0;
+        if (!this.Qxx?.[a] || this.Qxx?.[a][b] == null) return 0;
+        return this.Qxx[a][b] * scaleSq;
+      };
+      const sortRelativeCovariances = (
+        rows: NonNullable<AdjustmentResult['relativeCovariances']>,
+      ) => {
+        rows.sort((a, b) => {
+          const cmpFrom = a.from.localeCompare(b.from, undefined, { numeric: true });
+          if (cmpFrom !== 0) return cmpFrom;
+          return a.to.localeCompare(b.to, undefined, { numeric: true });
+        });
+        return rows;
+      };
+      const buildPrecisionModel = (scaleSq: number): NonNullable<AdjustmentResult['precisionModels']>[keyof NonNullable<AdjustmentResult['precisionModels']>] => {
+        const cov = buildCovariance(scaleSq);
+        const stationCovariances: NonNullable<AdjustmentResult['stationCovariances']> = [];
+        this.unknowns.forEach((id) => {
+          const idx = paramIndex[id];
+          if (!idx || idx.x == null || idx.y == null) return;
+          if (!this.Qxx?.[idx.x] || !this.Qxx?.[idx.y]) return;
+          const varE = cov(idx.x, idx.x);
+          const varN = cov(idx.y, idx.y);
+          const covEN = cov(idx.x, idx.y);
+          const ellipseSummary = buildEllipse(varE, varN, covEN);
+          const stationBlock: NonNullable<AdjustmentResult['stationCovariances']>[number] = {
+            stationId: id,
+            cEE: varE,
+            cEN: covEN,
+            cNN: varN,
+            sigmaE: Math.sqrt(Math.abs(varE)),
+            sigmaN: Math.sqrt(Math.abs(varN)),
+            ellipse: ellipseSummary.ellipse,
+          };
+          if (!this.is2D && idx.h != null) {
+            const varH = cov(idx.h, idx.h);
+            stationBlock.cEH = cov(idx.x, idx.h);
+            stationBlock.cNH = cov(idx.y, idx.h);
+            stationBlock.cHH = varH;
+            stationBlock.sigmaH = Math.sqrt(Math.abs(varH));
+          }
+          stationCovariances.push(stationBlock);
+        });
+
+        const relativePrecision: NonNullable<AdjustmentResult['relativePrecision']> = [];
+        for (let i = 0; i < this.unknowns.length; i += 1) {
+          for (let j = i + 1; j < this.unknowns.length; j += 1) {
+            const from = this.unknowns[i];
+            const to = this.unknowns[j];
+            const fromStation = this.stations[from];
+            const toStation = this.stations[to];
+            const idxFrom = paramIndex[from];
+            const idxTo = paramIndex[to];
+            if (!fromStation || !toStation || (!idxFrom && !idxTo)) continue;
+
+            const dE = toStation.x - fromStation.x;
+            const dN = toStation.y - fromStation.y;
+            const dist = Math.hypot(dE, dN);
+            const varE =
+              cov(idxTo?.x, idxTo?.x) +
+              cov(idxFrom?.x, idxFrom?.x) -
+              2 * cov(idxFrom?.x, idxTo?.x);
+            const varN =
+              cov(idxTo?.y, idxTo?.y) +
+              cov(idxFrom?.y, idxFrom?.y) -
+              2 * cov(idxFrom?.y, idxTo?.y);
+            const covEN =
+              cov(idxTo?.x, idxTo?.y) -
+              cov(idxTo?.x, idxFrom?.y) -
+              cov(idxFrom?.x, idxTo?.y) +
+              cov(idxFrom?.x, idxFrom?.y);
+            const ellipseSummary = buildEllipse(varE, varN, covEN);
+
+            let sigmaDist: number | undefined;
+            let sigmaAz: number | undefined;
+            if (dist > 0) {
+              const inv = 1 / (dist * dist);
+              const varDist = inv * (dE * dE * varE + dN * dN * varN + 2 * dE * dN * covEN);
+              sigmaDist = Math.sqrt(Math.abs(varDist));
+              const varAz = (dN * dN * varE + dE * dE * varN - 2 * dE * dN * covEN) * inv * inv;
+              sigmaAz = Math.sqrt(Math.abs(varAz));
+            }
+
+            relativePrecision.push({
+              from,
+              to,
+              sigmaN: Math.sqrt(Math.abs(varN)),
+              sigmaE: Math.sqrt(Math.abs(varE)),
+              sigmaDist,
+              sigmaAz,
+              ellipse: ellipseSummary.ellipse,
+            });
+          }
+        }
+
+        const relativeCovariances: NonNullable<AdjustmentResult['relativeCovariances']> = [];
+        connectedPairTypes.forEach((types, key) => {
+          const [from, to] = key.split('|') as [StationId, StationId];
           const fromStation = this.stations[from];
           const toStation = this.stations[to];
           const idxFrom = paramIndex[from];
           const idxTo = paramIndex[to];
-          if (!fromStation || !toStation || (!idxFrom && !idxTo)) continue;
+          if (!fromStation || !toStation || (!idxFrom && !idxTo)) return;
 
           const dE = toStation.x - fromStation.x;
           const dN = toStation.y - fromStation.y;
           const dist = Math.hypot(dE, dN);
-
           const varE =
-            cov(idxTo?.x, idxTo?.x) + cov(idxFrom?.x, idxFrom?.x) - 2 * cov(idxFrom?.x, idxTo?.x);
+            cov(idxTo?.x, idxTo?.x) +
+            cov(idxFrom?.x, idxFrom?.x) -
+            2 * cov(idxFrom?.x, idxTo?.x);
           const varN =
-            cov(idxTo?.y, idxTo?.y) + cov(idxFrom?.y, idxFrom?.y) - 2 * cov(idxFrom?.y, idxTo?.y);
-          const covNE =
-            cov(idxTo?.y, idxTo?.x) +
-            cov(idxFrom?.y, idxFrom?.x) -
-            cov(idxFrom?.y, idxTo?.x) -
-            cov(idxTo?.y, idxFrom?.x);
-          const ellipseSummary = buildEllipse(varE, varN, covNE);
+            cov(idxTo?.y, idxTo?.y) +
+            cov(idxFrom?.y, idxFrom?.y) -
+            2 * cov(idxFrom?.y, idxTo?.y);
+          const covEN =
+            cov(idxTo?.x, idxTo?.y) -
+            cov(idxTo?.x, idxFrom?.y) -
+            cov(idxFrom?.x, idxTo?.y) +
+            cov(idxFrom?.x, idxFrom?.y);
+          const ellipseSummary = buildEllipse(varE, varN, covEN);
 
           let sigmaDist: number | undefined;
           let sigmaAz: number | undefined;
           if (dist > 0) {
             const inv = 1 / (dist * dist);
-            const varDist = inv * (dE * dE * varE + dN * dN * varN + 2 * dE * dN * covNE);
+            const varDist = inv * (dE * dE * varE + dN * dN * varN + 2 * dE * dN * covEN);
             sigmaDist = Math.sqrt(Math.abs(varDist));
-            const varAz = (dN * dN * varE + dE * dE * varN - 2 * dE * dN * covNE) * inv * inv;
+            const varAz = (dN * dN * varE + dE * dE * varN - 2 * dE * dN * covEN) * inv * inv;
             sigmaAz = Math.sqrt(Math.abs(varAz));
           }
 
-          relative.push({
+          const row: NonNullable<AdjustmentResult['relativeCovariances']>[number] = {
             from,
             to,
-            sigmaN: Math.sqrt(Math.abs(varN)),
+            connected: true,
+            connectionTypes: Array.from(types).sort(),
+            cEE: varE,
+            cEN: covEN,
+            cNN: varN,
             sigmaE: Math.sqrt(Math.abs(varE)),
+            sigmaN: Math.sqrt(Math.abs(varN)),
             sigmaDist,
             sigmaAz,
             ellipse: ellipseSummary.ellipse,
-          });
-        }
-      }
-      this.relativePrecision = relative;
+          };
 
-      const relativeCovariances: NonNullable<AdjustmentResult['relativeCovariances']> = [];
-      connectedPairTypes.forEach((types, key) => {
-        const [from, to] = key.split('|') as [StationId, StationId];
-        const fromStation = this.stations[from];
-        const toStation = this.stations[to];
-        const idxFrom = paramIndex[from];
-        const idxTo = paramIndex[to];
-        if (!fromStation || !toStation || (!idxFrom && !idxTo)) return;
+          if (!this.is2D) {
+            const varH =
+              cov(idxTo?.h, idxTo?.h) +
+              cov(idxFrom?.h, idxFrom?.h) -
+              2 * cov(idxFrom?.h, idxTo?.h);
+            row.cEH =
+              cov(idxTo?.x, idxTo?.h) -
+              cov(idxTo?.x, idxFrom?.h) -
+              cov(idxFrom?.x, idxTo?.h) +
+              cov(idxFrom?.x, idxFrom?.h);
+            row.cNH =
+              cov(idxTo?.y, idxTo?.h) -
+              cov(idxTo?.y, idxFrom?.h) -
+              cov(idxFrom?.y, idxTo?.h) +
+              cov(idxFrom?.y, idxFrom?.h);
+            row.cHH = varH;
+            row.sigmaH = Math.sqrt(Math.abs(varH));
+          }
 
-        const dE = toStation.x - fromStation.x;
-        const dN = toStation.y - fromStation.y;
-        const dist = Math.hypot(dE, dN);
-        const varE =
-          cov(idxTo?.x, idxTo?.x) + cov(idxFrom?.x, idxFrom?.x) - 2 * cov(idxFrom?.x, idxTo?.x);
-        const varN =
-          cov(idxTo?.y, idxTo?.y) + cov(idxFrom?.y, idxFrom?.y) - 2 * cov(idxFrom?.y, idxTo?.y);
-        const covEN =
-          cov(idxTo?.x, idxTo?.y) -
-          cov(idxTo?.x, idxFrom?.y) -
-          cov(idxFrom?.x, idxTo?.y) +
-          cov(idxFrom?.x, idxFrom?.y);
-        const ellipseSummary = buildEllipse(varE, varN, covEN);
+          relativeCovariances.push(row);
+        });
 
-        let sigmaDist: number | undefined;
-        let sigmaAz: number | undefined;
-        if (dist > 0) {
-          const inv = 1 / (dist * dist);
-          const varDist = inv * (dE * dE * varE + dN * dN * varN + 2 * dE * dN * covEN);
-          sigmaDist = Math.sqrt(Math.abs(varDist));
-          const varAz = (dN * dN * varE + dE * dE * varN - 2 * dE * dN * covEN) * inv * inv;
-          sigmaAz = Math.sqrt(Math.abs(varAz));
-        }
-
-        const row: NonNullable<AdjustmentResult['relativeCovariances']>[number] = {
-          from,
-          to,
-          connected: true,
-          connectionTypes: Array.from(types).sort(),
-          cEE: varE,
-          cEN: covEN,
-          cNN: varN,
-          sigmaE: Math.sqrt(Math.abs(varE)),
-          sigmaN: Math.sqrt(Math.abs(varN)),
-          sigmaDist,
-          sigmaAz,
-          ellipse: ellipseSummary.ellipse,
+        return {
+          stationCovariances,
+          relativePrecision,
+          relativeCovariances: sortRelativeCovariances(relativeCovariances),
         };
+      };
 
-        if (!this.is2D) {
-          const varH =
-            cov(idxTo?.h, idxTo?.h) + cov(idxFrom?.h, idxFrom?.h) - 2 * cov(idxFrom?.h, idxTo?.h);
-          const covEH =
-            cov(idxTo?.x, idxTo?.h) -
-            cov(idxTo?.x, idxFrom?.h) -
-            cov(idxFrom?.x, idxTo?.h) +
-            cov(idxFrom?.x, idxFrom?.h);
-          const covNH =
-            cov(idxTo?.y, idxTo?.h) -
-            cov(idxTo?.y, idxFrom?.h) -
-            cov(idxFrom?.y, idxTo?.h) +
-            cov(idxFrom?.y, idxFrom?.h);
-          row.cEH = covEH;
-          row.cNH = covNH;
-          row.cHH = varH;
-          row.sigmaH = Math.sqrt(Math.abs(varH));
-        }
-
-        relativeCovariances.push(row);
+      const industryStandardModel = buildPrecisionModel(1);
+      const posteriorScaledModel = buildPrecisionModel(posteriorScaleSq);
+      this.precisionModels = {
+        'industry-standard': industryStandardModel,
+        'posterior-scaled': posteriorScaledModel,
+      };
+      this.stationCovariances = industryStandardModel.stationCovariances;
+      this.relativePrecision = industryStandardModel.relativePrecision;
+      this.relativeCovariances = industryStandardModel.relativeCovariances;
+      this.unknowns.forEach((id) => {
+        const station = this.stations[id];
+        if (!station) return;
+        station.errorEllipse = undefined;
+        station.sN = undefined;
+        station.sE = undefined;
+        station.sH = undefined;
       });
-      relativeCovariances.sort((a, b) => {
-        const cmpFrom = a.from.localeCompare(b.from, undefined, { numeric: true });
-        if (cmpFrom !== 0) return cmpFrom;
-        return a.to.localeCompare(b.to, undefined, { numeric: true });
+      industryStandardModel.stationCovariances?.forEach((row) => {
+        const station = this.stations[row.stationId];
+        if (!station) return;
+        station.errorEllipse = row.ellipse;
+        station.sE = row.sigmaE;
+        station.sN = row.sigmaN;
+        station.sH = row.sigmaH;
       });
-      this.relativeCovariances = relativeCovariances;
 
       if (this.preanalysisMode) {
         this.weakGeometryDiagnostics = buildWeakGeometryDiagnostics(
-          stationCovariances,
-          relativeCovariances,
+          industryStandardModel.stationCovariances ?? [],
+          industryStandardModel.relativeCovariances ?? [],
         );
         const flaggedStations = this.weakGeometryDiagnostics.stationCues.filter(
           (cue) => cue.severity !== 'ok',
@@ -4843,7 +4905,7 @@ export class LSAEngine {
           (cue) => cue.severity !== 'ok',
         );
         this.log(
-          `Preanalysis covariance blocks: stations=${stationCovariances.length}, connectedPairs=${relativeCovariances.length}`,
+          `Preanalysis covariance blocks: stations=${industryStandardModel.stationCovariances?.length ?? 0}, connectedPairs=${industryStandardModel.relativeCovariances?.length ?? 0}`,
         );
         this.log(
           `Preanalysis weak geometry cues: stations=${flaggedStations.length}, connectedPairs=${flaggedPairs.length}`,
@@ -5373,6 +5435,7 @@ export class LSAEngine {
       controlConstraints: this.controlConstraints,
       stationCovariances: this.stationCovariances,
       relativeCovariances: this.relativeCovariances,
+      precisionModels: this.precisionModels,
       weakGeometryDiagnostics: this.weakGeometryDiagnostics,
       chiSquare: this.chiSquare,
       statisticalSummary: this.statisticalSummary,

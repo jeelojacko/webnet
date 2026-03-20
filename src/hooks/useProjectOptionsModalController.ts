@@ -139,6 +139,13 @@ export const useProjectOptionsModalController = ({
     applyProjectOptions,
   } = projectOptionsState;
 
+  const convergenceDefaultForProfile = (profile: SolveProfile): number => {
+    const normalized = normalizeSolveProfile(profile);
+    return normalized === 'industry-parity-current' || normalized === 'industry-parity-legacy'
+      ? 0.001
+      : 0.01;
+  };
+
   const handleDraftUnitChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setSettingsDraft((prev) => ({ ...prev, units: e.target.value as SettingsState['units'] }));
   };
@@ -150,7 +157,10 @@ export const useProjectOptionsModalController = ({
 
   const handleDraftConvergenceLimitChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const parsed = Number.parseFloat(e.target.value);
-    const val = Number.isFinite(parsed) && parsed > 0 ? parsed : 0.01;
+    const val =
+      Number.isFinite(parsed) && parsed > 0
+        ? parsed
+        : convergenceDefaultForProfile(parseSettingsDraft.solveProfile);
     setSettingsDraft((prev) => ({ ...prev, convergenceLimit: val }));
   };
 
@@ -165,6 +175,7 @@ export const useProjectOptionsModalController = ({
     setParseSettingsDraft((prev) => {
       const next = { ...prev, [key]: value };
       if (key === 'solveProfile') {
+        const previousProfile = normalizeSolveProfile(prev.solveProfile);
         const profile = normalizeSolveProfile(value as SolveProfile);
         next.solveProfile = profile;
         if (profile === 'industry-parity-current') {
@@ -178,6 +189,16 @@ export const useProjectOptionsModalController = ({
           next.faceNormalizationMode = 'auto';
         }
         next.normalize = next.faceNormalizationMode !== 'off';
+        setSettingsDraft((prevSettings) => {
+          const previousDefault = convergenceDefaultForProfile(previousProfile);
+          if (Math.abs(prevSettings.convergenceLimit - previousDefault) > 1e-12) {
+            return prevSettings;
+          }
+          return {
+            ...prevSettings,
+            convergenceLimit: convergenceDefaultForProfile(profile),
+          };
+        });
         return next;
       }
       if (key === 'runMode') {

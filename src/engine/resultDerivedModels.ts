@@ -95,10 +95,33 @@ export const buildObservationSearchText = (obs: Observation): string => {
   return '';
 };
 
+const compareObservationByStations = (a: Observation, b: Observation): number => {
+  const stationKey = (obs: Observation) =>
+    obs.type === 'angle'
+      ? `${obs.at}-${obs.from}-${obs.to}`
+      : obs.type === 'direction'
+        ? `${obs.at}-${obs.to}`
+        : 'from' in obs && 'to' in obs
+          ? `${obs.from}-${obs.to}`
+          : '';
+  const cmp = stationKey(a).localeCompare(stationKey(b), undefined, { numeric: true });
+  if (cmp !== 0) return cmp;
+  const aLine = a.sourceLine ?? Number.MAX_SAFE_INTEGER;
+  const bLine = b.sourceLine ?? Number.MAX_SAFE_INTEGER;
+  if (aLine !== bLine) return aLine - bLine;
+  return (a.id ?? 0) - (b.id ?? 0);
+};
+
 export const sortObservationsByStdRes = (observations: Observation[]): SortedObservation[] =>
   [...observations]
     .map((obs, index) => ({ ...obs, originalIndex: index }))
-    .sort((a, b) => Math.abs(b.stdRes || 0) - Math.abs(a.stdRes || 0));
+    .sort((a, b) => {
+      const stdResDelta = Math.abs(b.stdRes || 0) - Math.abs(a.stdRes || 0);
+      if (Math.abs(stdResDelta) > 1e-12) return stdResDelta;
+      const stationDelta = compareObservationByStations(a, b);
+      if (stationDelta !== 0) return stationDelta;
+      return a.originalIndex - b.originalIndex;
+    });
 
 export const groupSortedObservationsByType = <TObservation extends SortedObservation>(
   observations: TObservation[],

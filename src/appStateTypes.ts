@@ -25,6 +25,7 @@ import type {
   OrderMode,
   ParseCompatibilityDiagnostic,
   ParseCompatibilityMode,
+  PrecisionReportingMode,
   ProjectExportFormat,
   ReductionUsageSummary,
   RobustMode,
@@ -175,6 +176,7 @@ export type WorkspaceRecoveryRecord = {
 export type SettingsState = {
   maxIterations: number;
   convergenceLimit: number;
+  precisionReportingMode?: PrecisionReportingMode;
   units: Units;
   uiTheme: UiTheme;
   mapShowLostStations: boolean;
@@ -376,6 +378,7 @@ export type RunDiagnostics = {
 export type RunSettingsSnapshot = {
   maxIterations: number;
   convergenceLimit: number;
+  precisionReportingMode?: PrecisionReportingMode;
   units: Units;
   solveProfile: SolveProfile;
   runMode: RunMode;

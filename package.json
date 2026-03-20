@@ -13,6 +13,7 @@
     "test": "vitest",
     "test:run": "vitest run",
     "test:cov": "vitest run --coverage",
+    "parity:industry-reference": "vitest run tests/computational_parity_harness.test.ts",
     "adjust:cli": "tsx src/cli.ts",
     "corpus:legacy": "tsx src/legacyCorpusHarness.ts",
     "corpus:legacy:ci": "tsx src/legacyCorpusHarness.ts --ci",

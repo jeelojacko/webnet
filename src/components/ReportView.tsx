@@ -16,9 +16,17 @@ import type {
   RunMode,
   SigmaSource,
   Station,
+  PrecisionReportingMode,
 } from '../types';
 import { RAD_TO_DEG, radToDmsStr } from '../engine/angles';
 import { isLockedPreanalysisObservation } from '../engine/preanalysis';
+import {
+  getRelativeCovarianceRows,
+  getRelativePrecisionRows,
+  getStationCovarianceRows,
+  stationWithPrecision,
+  toSurveyEllipseAzimuthDeg,
+} from '../engine/resultPrecision';
 import {
   buildDataCheckDiffRows,
   buildObservationSearchText,
@@ -146,6 +154,7 @@ const REPORT_STATIC_TOOLTIPS: Record<string, string> = {
 interface ReportViewProps {
   result: AdjustmentResult;
   units: 'm' | 'ft';
+  precisionReportingMode?: PrecisionReportingMode;
   viewState?: ReportViewControls;
   runDiagnostics: {
     solveProfile:
@@ -277,6 +286,7 @@ const ReportView: React.FC<ReportViewProps> = ({
   onSelectStation,
   onSelectObservation,
   focusFilterRequestKey = 0,
+  precisionReportingMode = 'industry-standard',
 }) => {
   const reportRootRef = useRef<HTMLDivElement | null>(null);
   const detailSectionHeaderRefs = useRef<
@@ -551,24 +561,44 @@ const ReportView: React.FC<ReportViewProps> = ({
   );
   const stationDescription = (stationId: string): string =>
     reconciledDescriptions[stationId] ?? '-';
-  const stationCovariances = useMemo(() => result.stationCovariances ?? [], [result.stationCovariances]);
+  const stationCovariances = useMemo(
+    () => getStationCovarianceRows(result, precisionReportingMode),
+    [precisionReportingMode, result],
+  );
   const relativeCovariances = useMemo(
-    () => result.relativeCovariances ?? [],
-    [result.relativeCovariances],
+    () => getRelativeCovarianceRows(result, precisionReportingMode),
+    [precisionReportingMode, result],
+  );
+  const relativePrecisionRows = useMemo(
+    () => getRelativePrecisionRows(result, precisionReportingMode),
+    [precisionReportingMode, result],
   );
   const filteredStationRows = useMemo(
     () =>
-      Object.entries(result.stations).filter(([stationId, station]) =>
-        matchesReportQuery(
+      Object.entries(result.stations)
+        .map(([stationId, station]) => [
           stationId,
-          reconciledDescriptions[stationId],
-          station.fixed ? 'fixed' : 'adjusted',
-          station.x,
-          station.y,
-          station.h,
+          stationWithPrecision(
+            station,
+            {
+              sigmaN: stationCovariances.find((row) => row.stationId === stationId)?.sigmaN ?? station.sN,
+              sigmaE: stationCovariances.find((row) => row.stationId === stationId)?.sigmaE ?? station.sE,
+              sigmaH: stationCovariances.find((row) => row.stationId === stationId)?.sigmaH ?? station.sH,
+              ellipse: stationCovariances.find((row) => row.stationId === stationId)?.ellipse ?? station.errorEllipse,
+            },
+          ),
+        ] as [string, Station])
+        .filter(([stationId, station]) =>
+          matchesReportQuery(
+            stationId,
+            reconciledDescriptions[stationId],
+            station.fixed ? 'fixed' : 'adjusted',
+            station.x,
+            station.y,
+            station.h,
+          ),
         ),
-      ),
-    [matchesReportQuery, reconciledDescriptions, result.stations],
+    [matchesReportQuery, reconciledDescriptions, result.stations, stationCovariances],
   );
   const filteredStationCovariances = useMemo(
     () =>
@@ -592,11 +622,8 @@ const ReportView: React.FC<ReportViewProps> = ({
     [matchesReportQuery, relativeCovariances],
   );
   const filteredRelativePrecision = useMemo(
-    () =>
-      (result.relativePrecision ?? []).filter((rel) =>
-        matchesReportQuery(rel.from, rel.to, rel.sigmaDist, rel.sigmaAz),
-      ),
-    [matchesReportQuery, result.relativePrecision],
+    () => relativePrecisionRows.filter((rel) => matchesReportQuery(rel.from, rel.to, rel.sigmaDist, rel.sigmaAz)),
+    [matchesReportQuery, relativePrecisionRows],
   );
   const weakGeometryDiagnostics = result.weakGeometryDiagnostics;
   const preanalysisImpactDiagnostics = result.preanalysisImpactDiagnostics;
@@ -4513,7 +4540,9 @@ const ReportView: React.FC<ReportViewProps> = ({
                             : '-'}
                         </td>
                         <td className="py-1 px-3 text-right">
-                          {rel.ellipse ? rel.ellipse.theta.toFixed(2) : '-'}
+                          {rel.ellipse
+                            ? (toSurveyEllipseAzimuthDeg(rel.ellipse.theta) ?? 0).toFixed(2)
+                            : '-'}
                         </td>
                       </tr>
                       ),

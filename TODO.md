@@ -68,7 +68,35 @@
       - [x] Add imported benchmark fixture profiles for a JobXML-style TS job, a GNSS loop-heavy job, and a differential-leveling job
       - [x] Benchmark a heavy artifact export path alongside solve and render timing so worker-offloaded deliverables keep a bounded latency budget
       - [x] Prove the worker artifact hook stays asynchronous through progress updates and that cached reruns still hit parse/planning caches on imported-style jobs
-  - [ ] Phase 4 - review and map/report UX polish
+  - [ ] Phase 4 - industry-standard result parity
+    - [x] Batch 1 - reference fixture, diff harness, and rollback gates
+      - [x] Add a repo fixture set for the attached industry-standard reference case using generic fixture names
+      - [x] Add a parity harness inside the computational-parity test family for summary metrics, selected coordinates, selected observation StdErr rows, station sigmas, station/relative ellipses, and relative-confidence rows
+      - [x] Add a machine-readable deviation baseline so later parity batches can prove they improved or held the reference-case diff
+      - [x] Add a dedicated parity gate command in `package.json` so every later batch can rerun the reference diff directly
+      - [x] Keep the batch rule explicit in repo docs: update TODO/README/agents, run the full npm suite plus the parity gate, and revert parity changes that worsen the reference diff
+    - [x] Batch 2 - error propagation, ellipse, and relative-covariance parity
+      - [x] Change reported station sigmas and station/relative ellipse output to use unscaled propagated covariance by default
+      - [x] Add a persisted precision-reporting selector with `industry-standard` default and `posterior-scaled` override
+      - [x] Store dual precision models in the solve result payload so report/listing/export toggles do not require rerun
+      - [x] Convert station and relative ellipse azimuth reporting to the survey azimuth convention (north-based clockwise, modulo 180)
+      - [x] Apply the industry-standard 95% confidence scale consistently to relative azimuth, distance, ppm, and ellipse outputs
+      - [x] Keep project save/load, saved-run snapshots, and browser recovery compatible with the new precision-reporting state
+    - [ ] Batch 3 - observation sigma and stochastic-display parity
+      - [x] Add a per-observation weighting/effective sigma field to solved observation payloads
+      - [x] Use the weighting sigma in industry-style Angle/Distance StdErr output while keeping parsed/base sigma for traceability
+      - [x] Keep explicit sigma overrides unchanged in weighting/display unless a later reference diff proves a better rule
+      - [x] Make industry-style distance StdErr display follow the same weighting sigma path used by the solver
+      - [ ] Audit alternative geometry stages for displayed/weighted angle sigmas and keep only changes that improve the reference diff
+    - [ ] Batch 4 - solver-loop, residual, ordering, and formatting closeout
+      - [x] Set the industry-parity default convergence limit to `0.001` while keeping the WebNet-default profile threshold unchanged
+      - [x] Flip printed residual signs in industry-style observation tables without changing the solver math
+      - [x] Match the industry-style reported iteration count in listing output without changing the underlying solver loop
+      - [x] Make `|StdRes|` listing/report ordering deterministic by adding stable station/input tie-breaks
+      - [ ] Audit geometry-dependent weight recomputation order across iterations and keep only improvements proven by the reference diff
+      - [ ] Lock standardized-residual covariance behavior with focused parity coverage if the current implementation already matches
+      - [ ] Tighten remaining row inclusion/reverse-direction handling and final rounding policies for closer listing parity
+  - [ ] Phase 5 - review and map/report UX polish
     - [ ] Batch 1 - issue-driven review queue
       - [ ] Add a shared review queue populated by import conflicts, suspect observations, cluster candidates, and saved-run diffs
       - [ ] Make report and map selection follow that queue bidirectionally

@@ -1,4 +1,5 @@
 import React from 'react';
+import { toSurveyEllipseAzimuthDeg } from '../../engine/resultPrecision';
 import type { Station } from '../../types';
 
 interface AdjustedCoordinatesSectionProps {
@@ -144,7 +145,9 @@ const AdjustedCoordinatesSection: React.FC<AdjustedCoordinatesSectionProps> = ({
                     : '-'}
                 </td>
                 <td className="py-1 text-right text-xs text-slate-400">
-                  {station.errorEllipse ? station.errorEllipse.theta.toFixed(2) : '-'}
+                  {station.errorEllipse
+                    ? (toSurveyEllipseAzimuthDeg(station.errorEllipse.theta) ?? 0).toFixed(2)
+                    : '-'}
                 </td>
               </tr>
             ))}

@@ -106,6 +106,7 @@ export const buildExportArtifacts = (
       text: buildObservationsResidualsCsvText({
         result,
         units,
+        precisionReportingMode: settings.precisionReportingMode,
       }),
     });
   }
@@ -117,6 +118,7 @@ export const buildExportArtifacts = (
       text: buildNetworkGeoJsonText({
         result,
         units,
+        precisionReportingMode: settings.precisionReportingMode,
         includeLostStations: adjustedPointsExportSettings.includeLostStations,
       }),
     });

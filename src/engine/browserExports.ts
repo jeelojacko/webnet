@@ -1,6 +1,12 @@
 import { RAD_TO_DEG } from './angles';
 import { buildStationPairKey, formatObservationStationsLabel } from './resultDerivedModels';
-import type { AdjustmentResult, Observation, Station } from '../types';
+import { getRelativePrecisionRows, getStationPrecision } from './resultPrecision';
+import type {
+  AdjustmentResult,
+  Observation,
+  PrecisionReportingMode,
+  Station,
+} from '../types';
 
 const FT_PER_M = 3.280839895;
 
@@ -195,8 +201,8 @@ const buildObservationValueFields = (
       calculatedDeltaN: formatLinear(obs.calc?.dN, unitScale),
       residualDeltaE: formatLinear(obs.residual?.vE, unitScale),
       residualDeltaN: formatLinear(obs.residual?.vN, unitScale),
-      stdDevE: formatLinear(obs.stdDevE, unitScale),
-      stdDevN: formatLinear(obs.stdDevN, unitScale),
+      stdDevE: formatLinear(obs.weightingStdDevE ?? obs.stdDevE, unitScale),
+      stdDevN: formatLinear(obs.weightingStdDevN ?? obs.stdDevN, unitScale),
       corrEN: formatNumber(obs.corrEN, 6),
       redundancyE: formatNumber(
         typeof obs.redundancy === 'object' ? obs.redundancy.rE : null,
@@ -224,8 +230,8 @@ const buildObservationValueFields = (
       ? formatArcSeconds(scalarResidual)
       : formatLinear(scalarResidual, unitScale),
     stdDevValue: isAngular
-      ? formatArcSeconds(obs.stdDev)
-      : formatLinear(obs.stdDev, unitScale),
+      ? formatArcSeconds(obs.weightingStdDev ?? obs.stdDev)
+      : formatLinear(obs.weightingStdDev ?? obs.stdDev, unitScale),
     redundancyValue:
       typeof obs.redundancy === 'number' ? formatNumber(obs.redundancy, 3) : '',
     mdbValue: isAngular ? formatArcSeconds(obs.mdb) : formatLinear(obs.mdb, unitScale),
@@ -282,6 +288,7 @@ export const OBSERVATIONS_RESIDUALS_CSV_COLUMNS = [
 export const buildObservationsResidualsCsvText = (params: {
   result: AdjustmentResult;
   units: 'm' | 'ft';
+  precisionReportingMode?: PrecisionReportingMode;
 }): string => {
   const { result, units } = params;
   const unitScale = units === 'ft' ? FT_PER_M : 1;
@@ -319,9 +326,9 @@ export const buildObservationsResidualsCsvText = (params: {
           values.residualValue,
           values.residualDeltaE,
           values.residualDeltaN,
-          values.stdDevValue,
-          values.stdDevE,
-          values.stdDevN,
+      values.stdDevValue,
+      values.stdDevE,
+      values.stdDevN,
           values.corrEN,
           values.stdResValue,
           values.stdResE,
@@ -399,9 +406,10 @@ const isActiveObservation = (result: AdjustmentResult, obs: Observation): boolea
 export const buildNetworkGeoJsonText = (params: {
   result: AdjustmentResult;
   units: 'm' | 'ft';
+  precisionReportingMode?: PrecisionReportingMode;
   includeLostStations?: boolean;
 }): string => {
-  const { result, units, includeLostStations = true } = params;
+  const { result, units, precisionReportingMode = 'industry-standard', includeLostStations = true } = params;
   const unitScale = units === 'ft' ? FT_PER_M : 1;
   const descriptions = result.parseState?.reconciledDescriptions ?? {};
   const visibleStationIds = Object.entries(result.stations)
@@ -411,6 +419,7 @@ export const buildNetworkGeoJsonText = (params: {
   const visibleStationSet = new Set(visibleStationIds);
   const stationFeatures: GeoJsonFeature[] = visibleStationIds.map((stationId) => {
     const station = result.stations[stationId];
+    const precision = getStationPrecision(result, stationId, precisionReportingMode);
     return {
       type: 'Feature',
       id: `station:${stationId}`,
@@ -425,27 +434,27 @@ export const buildNetworkGeoJsonText = (params: {
         kind: buildStationKind(station),
         fixed: station.fixed,
         lost: station.lost === true,
-        sigmaN: station.sN != null ? Number(formatNumber(station.sN * unitScale, 4)) : null,
-        sigmaE: station.sE != null ? Number(formatNumber(station.sE * unitScale, 4)) : null,
-        sigmaH: station.sH != null ? Number(formatNumber(station.sH * unitScale, 4)) : null,
+        sigmaN: precision.sigmaN != null ? Number(formatNumber(precision.sigmaN * unitScale, 4)) : null,
+        sigmaE: precision.sigmaE != null ? Number(formatNumber(precision.sigmaE * unitScale, 4)) : null,
+        sigmaH: precision.sigmaH != null ? Number(formatNumber(precision.sigmaH * unitScale, 4)) : null,
         ellipseSemiMajor:
-          station.errorEllipse?.semiMajor != null
-            ? Number(formatNumber(station.errorEllipse.semiMajor * unitScale, 4))
+          precision.ellipse?.semiMajor != null
+            ? Number(formatNumber(precision.ellipse.semiMajor * unitScale, 4))
             : null,
         ellipseSemiMinor:
-          station.errorEllipse?.semiMinor != null
-            ? Number(formatNumber(station.errorEllipse.semiMinor * unitScale, 4))
+          precision.ellipse?.semiMinor != null
+            ? Number(formatNumber(precision.ellipse.semiMinor * unitScale, 4))
             : null,
         ellipseAzimuthDeg:
-          station.errorEllipse?.theta != null
-            ? Number(formatNumber(station.errorEllipse.theta, 4))
+          precision.ellipse?.theta != null
+            ? Number(formatNumber(precision.ellipse.theta, 4))
             : null,
       },
     };
   });
 
   const relativePrecisionMap = new Map(
-    (result.relativePrecision ?? []).flatMap((row) => {
+    getRelativePrecisionRows(result, precisionReportingMode).flatMap((row) => {
       const forward = [`${row.from}|${row.to}`, row] as const;
       const reverse = [`${row.to}|${row.from}`, row] as const;
       return [forward, reverse];
