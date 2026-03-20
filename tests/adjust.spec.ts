@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { LSAEngine } from '../src/engine/adjust';
-import { DEG_TO_RAD, SEC_TO_RAD } from '../src/engine/angles';
+import { DEG_TO_RAD, RAD_TO_DEG, SEC_TO_RAD } from '../src/engine/angles';
 import { isPreanalysisWhatIfCandidate } from '../src/engine/preanalysis';
 
 const fixture = readFileSync('tests/fixtures/simple.dat', 'utf-8');
@@ -1760,6 +1760,69 @@ describe('LSAEngine', () => {
 
     expect(sigmaDist).toBeCloseTo(expectedDist, 12);
     expect(sigmaZen).toBeCloseTo(expectedZen, 12);
+  });
+
+  it('uses initial approximate geometry for parity-profile angle centering sigmas', () => {
+    const input = readFileSync('tests/fixtures/industry_standard_reference_case.dat', 'utf-8');
+    const instrumentLibrary = {
+      __INDUSTRY_DEFAULT__: {
+        code: '__INDUSTRY_DEFAULT__',
+        desc: 'Industry Standard default instrument',
+        edm_const: 0.001,
+        edm_ppm: 1,
+        hzPrecision_sec: 0.5,
+        dirPrecision_sec: 0.5,
+        azBearingPrecision_sec: 0.5,
+        vaPrecision_sec: 0.5,
+        instCentr_m: 0.0005,
+        tgtCentr_m: 0,
+        vertCentr_m: 0,
+        elevDiff_const_m: 0,
+        elevDiff_ppm: 0,
+        gpsStd_xy: 0,
+        levStd_mmPerKm: 0,
+      },
+    };
+    const currentResult = new LSAEngine({
+      input,
+      maxIterations: 15,
+      convergenceThreshold: 0.001,
+      instrumentLibrary,
+      parseOptions: {
+        currentInstrument: '__INDUSTRY_DEFAULT__',
+        directionSetMode: 'raw',
+        robustMode: 'none',
+        tsCorrelationEnabled: false,
+        clusterDetectionEnabled: false,
+        geometryDependentSigmaReference: 'current',
+      },
+    }).solve();
+    const parityResult = new LSAEngine({
+      input,
+      maxIterations: 15,
+      convergenceThreshold: 0.001,
+      instrumentLibrary,
+      parseOptions: {
+        currentInstrument: '__INDUSTRY_DEFAULT__',
+        directionSetMode: 'raw',
+        robustMode: 'none',
+        tsCorrelationEnabled: false,
+        clusterDetectionEnabled: false,
+        geometryDependentSigmaReference: 'initial',
+      },
+    }).solve();
+
+    const currentAngle = currentResult.observations.find(
+      (obs) => obs.type === 'angle' && obs.at === '3' && obs.from === '4' && obs.to === '2000',
+    );
+    const parityAngle = parityResult.observations.find(
+      (obs) => obs.type === 'angle' && obs.at === '3' && obs.from === '4' && obs.to === '2000',
+    );
+
+    expect(currentAngle?.weightingStdDev).toBeDefined();
+    expect(parityAngle?.weightingStdDev).toBeDefined();
+    expect((currentAngle?.weightingStdDev ?? 0) * RAD_TO_DEG * 3600).toBeCloseTo(5.6498, 3);
+    expect((parityAngle?.weightingStdDev ?? 0) * RAD_TO_DEG * 3600).toBeCloseTo(5.21, 2);
   });
 
   it('captures prism correction source and magnitude metadata from fixture offsets', () => {

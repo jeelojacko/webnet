@@ -262,6 +262,13 @@ export class LSAEngine {
   private crsDatumFallbackUsed = false;
   private crsAreaOfUseStatus: 'inside' | 'outside' | 'unknown' = 'unknown';
   private crsOutOfAreaStationCount = 0;
+  private geometryDependentSigmaReference: 'current' | 'initial' = 'current';
+  private initialSigmaGeometryStations: StationMap = {};
+  private initialSigmaAzimuthCache = new Map<string, { az: number; dist: number }>();
+  private initialSigmaZenithCache = new Map<
+    string,
+    { z: number; dist: number; horiz: number; dh: number; crCorr: number }
+  >();
   private azimuthCache = new Map<string, { az: number; dist: number }>();
   private zenithCache = new Map<
     string,
@@ -574,12 +581,84 @@ export class LSAEngine {
     hi = 0,
     ht = 0,
   ): { horiz: number; slope: number; elev: number } {
-    const geom = this.getZenith(fromID, toID, hi, ht);
+    const geom = this.getSigmaGeometryZenith(fromID, toID, hi, ht);
     return {
       horiz: Math.max(geom.horiz, 0),
       slope: Math.max(geom.dist, 0),
       elev: geom.dh,
     };
+  }
+
+  private captureInitialSigmaGeometrySnapshot(): void {
+    if (this.geometryDependentSigmaReference !== 'initial') {
+      this.initialSigmaGeometryStations = {};
+      this.initialSigmaAzimuthCache.clear();
+      this.initialSigmaZenithCache.clear();
+      return;
+    }
+    this.initialSigmaGeometryStations = Object.fromEntries(
+      Object.entries(this.stations).map(([id, station]) => [
+        id,
+        {
+          ...station,
+          x: station.x,
+          y: station.y,
+          h: station.h,
+        },
+      ]),
+    );
+    this.initialSigmaAzimuthCache.clear();
+    this.initialSigmaZenithCache.clear();
+  }
+
+  private getSigmaGeometryAzimuth(
+    fromID: StationId,
+    toID: StationId,
+  ): { az: number; dist: number } {
+    if (this.geometryDependentSigmaReference !== 'initial') {
+      return this.getAzimuth(fromID, toID);
+    }
+    const cacheKey = `${fromID}|${toID}`;
+    const cached = this.initialSigmaAzimuthCache.get(cacheKey);
+    if (cached) return cached;
+    const s1 = this.initialSigmaGeometryStations[fromID];
+    const s2 = this.initialSigmaGeometryStations[toID];
+    if (!s1 || !s2) return { az: 0, dist: 0 };
+    const dx = s2.x - s1.x;
+    const dy = s2.y - s1.y;
+    let az = Math.atan2(dx, dy);
+    if (az < 0) az += 2 * Math.PI;
+    const result = { az, dist: Math.sqrt(dx * dx + dy * dy) };
+    this.initialSigmaAzimuthCache.set(cacheKey, result);
+    return result;
+  }
+
+  private getSigmaGeometryZenith(
+    fromID: StationId,
+    toID: StationId,
+    hi = 0,
+    ht = 0,
+  ): { z: number; dist: number; horiz: number; dh: number; crCorr: number } {
+    if (this.geometryDependentSigmaReference !== 'initial') {
+      return this.getZenith(fromID, toID, hi, ht);
+    }
+    const cacheKey = `${fromID}|${toID}|${hi}|${ht}`;
+    const cached = this.initialSigmaZenithCache.get(cacheKey);
+    if (cached) return cached;
+    const s1 = this.initialSigmaGeometryStations[fromID];
+    const s2 = this.initialSigmaGeometryStations[toID];
+    if (!s1 || !s2) return { z: 0, dist: 0, horiz: 0, dh: 0, crCorr: 0 };
+    const dx = s2.x - s1.x;
+    const dy = s2.y - s1.y;
+    const dh = s2.h + ht - (s1.h + hi);
+    const horiz = Math.sqrt(dx * dx + dy * dy);
+    const dist = Math.sqrt(horiz * horiz + dh * dh);
+    const zGeom = dist === 0 ? 0 : Math.acos(dh / dist);
+    const crCorr = this.curvatureRefractionAngle(horiz);
+    const z = Math.min(Math.PI, Math.max(0, zGeom + crCorr));
+    const result = { z, dist, horiz, dh, crCorr };
+    this.initialSigmaZenithCache.set(cacheKey, result);
+    return result;
   }
 
   private effectiveStdDev(obs: Observation): number {
@@ -614,29 +693,35 @@ export class LSAEngine {
     }
     if (obs.type === 'direction') {
       if (centerHoriz <= 0) return Math.max(sigma, 1e-12);
-      const az = this.getAzimuth(obs.at, obs.to);
+      const az = this.getSigmaGeometryAzimuth(obs.at, obs.to);
       const term = az.dist > 0 ? centerHoriz / az.dist : 0;
       return Math.max(Math.sqrt(sigma * sigma + term * term), 1e-12);
     }
     if (obs.type === 'bearing') {
       if (centerHoriz <= 0) return Math.max(sigma, 1e-12);
-      const az = this.getAzimuth(obs.from, obs.to);
+      const az = this.getSigmaGeometryAzimuth(obs.from, obs.to);
       const term = az.dist > 0 ? centerHoriz / az.dist : 0;
       return Math.max(Math.sqrt(sigma * sigma + term * term), 1e-12);
     }
     if (obs.type === 'dir') {
       if (centerHoriz <= 0) return Math.max(sigma, 1e-12);
-      const az = this.getAzimuth(obs.from, obs.to);
+      const az = this.getSigmaGeometryAzimuth(obs.from, obs.to);
       const term = az.dist > 0 ? centerHoriz / az.dist : 0;
       return Math.max(Math.sqrt(sigma * sigma + term * term), 1e-12);
     }
     if (obs.type === 'angle') {
       if (centerHoriz <= 0) return Math.max(sigma, 1e-12);
-      const azTo = this.getAzimuth(obs.at, obs.to);
-      const azFrom = this.getAzimuth(obs.at, obs.from);
+      const azTo = this.getSigmaGeometryAzimuth(obs.at, obs.to);
+      const azFrom = this.getSigmaGeometryAzimuth(obs.at, obs.from);
       const dTo = Math.max(azTo.dist, 1e-12);
       const dFrom = Math.max(azFrom.dist, 1e-12);
-      const angle = Number.isFinite(obs.obs) ? obs.obs : this.wrapToPi(azTo.az - azFrom.az);
+      const geometryAngle = this.wrapToPi(azTo.az - azFrom.az);
+      const angle =
+        this.geometryDependentSigmaReference === 'initial'
+          ? geometryAngle
+          : Number.isFinite(obs.obs)
+            ? obs.obs
+            : geometryAngle;
       const cross = Math.cos(angle);
       const termSq =
         (centerHoriz * centerHoriz) / (dTo * dTo) +
@@ -3106,8 +3191,13 @@ export class LSAEngine {
       parsed.parseState?.gpsLoopCheckEnabled ?? this.parseOptions?.gpsLoopCheckEnabled ?? false;
     this.gnssFrameConfirmed =
       parsed.parseState?.gnssFrameConfirmed ?? this.parseOptions?.gnssFrameConfirmed ?? false;
+    this.geometryDependentSigmaReference =
+      parsed.parseState?.geometryDependentSigmaReference ??
+      this.parseOptions?.geometryDependentSigmaReference ??
+      'current';
     this.parseState = parsed.parseState;
     if (this.parseState) {
+      this.parseState.geometryDependentSigmaReference = this.geometryDependentSigmaReference;
       this.parseState.runMode = this.runMode;
       this.parseState.preanalysisMode = this.preanalysisMode;
       this.parseState.runModeCompatibilityDiagnostics = [...this.runModeCompatibilityDiagnostics];
@@ -3185,6 +3275,9 @@ export class LSAEngine {
     this.precisionModels = undefined;
     this.weakGeometryDiagnostics = undefined;
     this.conditionWarned = false;
+    this.initialSigmaGeometryStations = {};
+    this.initialSigmaAzimuthCache.clear();
+    this.initialSigmaZenithCache.clear();
     this.clearCoordSystemDiagnostics();
     this.clearGeometryCache();
     if (this.coordSystemMode !== 'grid') {
@@ -3565,6 +3658,7 @@ export class LSAEngine {
     this.computeDirectionSetPrefit(activeObservations, directionSetIds);
     this.paramIndex = paramIndex;
     this.controlConstraints = controlConstraints;
+    this.captureInitialSigmaGeometrySnapshot();
     if (constraints.length) {
       this.log(
         `Weighted control constraints: ${constraints.length} (E=${this.controlConstraints.x}, N=${this.controlConstraints.y}, H=${this.controlConstraints.h}, corrXY=${this.controlConstraints.xyCorrelated ?? 0})`,

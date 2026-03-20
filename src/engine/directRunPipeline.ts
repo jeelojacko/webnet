@@ -146,6 +146,7 @@ export const createDirectRunPipeline = ({
       geoidSourceData:
         effectiveParse.geoidSourceFormat !== 'builtin' ? (request.geoidSourceData ?? undefined) : undefined,
       parseOptions: {
+        geometryDependentSigmaReference: effectiveParse.geometryDependentSigmaReference,
         runMode: effectiveParse.runMode,
         sourceFile: '<project-main>',
         includeFiles: request.projectIncludeFiles,

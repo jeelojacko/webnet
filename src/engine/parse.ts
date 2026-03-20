@@ -76,6 +76,7 @@ import type {
 } from '../types';
 
 const defaultParseOptions: ParseOptions = {
+  geometryDependentSigmaReference: 'current',
   runMode: 'adjustment',
   directiveAbbreviationMode: 'unique-prefix',
   unknownDirectivePolicy: 'legacy-warn',

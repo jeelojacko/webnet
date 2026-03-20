@@ -904,9 +904,21 @@ export const buildIndustryStyleListingText = (
   const relationshipPairMap = new Map<string, RelationshipPair>();
   const addRelationshipPair = (from?: string, to?: string) => {
     if (!from || !to || from === to) return;
+    const fromStation = res.stations[from];
+    const toStation = res.stations[to];
+    const oriented =
+      fromStation?.fixed === true && toStation?.fixed !== true
+        ? { from, to }
+        : toStation?.fixed === true && fromStation?.fixed !== true
+          ? { from: to, to: from }
+          : { from, to };
     const key = pairKey(from, to);
     if (!relationshipPairMap.has(key)) {
-      relationshipPairMap.set(key, { key, from, to });
+      relationshipPairMap.set(key, {
+        key,
+        from: oriented.from,
+        to: oriented.to,
+      });
     }
   };
   [...observationsForListing].sort(compareObsByInput).forEach((obs) => {
@@ -934,13 +946,32 @@ export const buildIndustryStyleListingText = (
     value != null ? `${(-value * RAD_TO_DEG * 3600).toFixed(2)}"` : '-';
   const formatAngularStdErrArcSec = (value: number): string =>
     `${(value * RAD_TO_DEG * 3600).toFixed(2)}"`;
+  const formatIndustryStdRes = (obs: Observation): string => {
+    if (typeof obs.residual !== 'number') return '-';
+    const sigma = obs.weightingStdDev ?? obs.stdDev;
+    if (!Number.isFinite(sigma) || sigma <= 0) return '-';
+    const value = Math.abs(obs.residual) / sigma;
+    const rounded = value.toFixed(1);
+    return value >= 3 ? `${rounded}*` : rounded;
+  };
   const formatLinear = (value: number | undefined): string =>
     value != null ? (value * unitScale).toFixed(4) : '-';
   const formatResidualLinear = (value: number | undefined): string =>
     value != null ? ((-value) * unitScale).toFixed(4) : '-';
   const formatEffectiveDistance = (value: number | undefined): string =>
     value != null && Number.isFinite(value) && value > 0 ? (value * unitScale).toFixed(4) : '-';
-  const formatEllipseAzDm = (thetaDeg?: number): string => {
+  const formatEllipseAzDm = (
+    thetaDeg?: number,
+    semiMajor?: number,
+    semiMinor?: number,
+  ): string => {
+    if (
+      Number.isFinite(semiMajor) &&
+      Number.isFinite(semiMinor) &&
+      Math.max(Math.abs(semiMajor ?? 0), Math.abs(semiMinor ?? 0)) <= 1e-12
+    ) {
+      return '0-00';
+    }
     const surveyAzimuth = toSurveyEllipseAzimuthDeg(thetaDeg);
     if (surveyAzimuth == null) return '-';
     let az = surveyAzimuth;
@@ -1085,8 +1116,7 @@ export const buildIndustryStyleListingText = (
         ellipse: rel?.ellipse,
       };
     })
-    .filter((row) => row.distance !== '-')
-    .sort((a, b) => compareStationIds(a.from, b.from) || compareStationIds(a.to, b.to));
+    .filter((row) => row.distance !== '-');
   const dataCheckDifferenceRows = observationsForListing
     .map((obs) => {
       const stations =
@@ -1204,11 +1234,11 @@ export const buildIndustryStyleListingText = (
       .filter((obs) => obs.type === 'angle')
       .map((obs) => [
         `${obs.at}-${obs.from}-${obs.to}${aliasRefsForLine(obs.sourceLine)}${autoSideshotSuffix(obs)}`,
-        radToDmsStr(obs.obs),
+        radToDmsStr((obs.calc as number | undefined) ?? obs.obs),
         formatAngularResidualArcSec(obs.residual as number | undefined),
         formatEffectiveDistance(obs.effectiveDistance),
         formatAngularStdErrArcSec(obs.weightingStdDev ?? obs.stdDev),
-        (obs.stdRes ?? 0).toFixed(2),
+        formatIndustryStdRes(obs),
         obs.sourceLine != null ? `1:${obs.sourceLine}` : '-',
       ]);
     renderAdjustedSection(
@@ -1216,9 +1246,9 @@ export const buildIndustryStyleListingText = (
       angleRows,
       [
         'Stations',
-        'Observed',
+        'Angle',
         'Residual',
-        `EffDist (${linearUnit})`,
+        'Distance',
         'StdErr',
         'StdRes',
         'File:Line',
@@ -1230,16 +1260,16 @@ export const buildIndustryStyleListingText = (
       .filter((obs) => obs.type === 'dist')
       .map((obs) => [
         `${obs.from}-${obs.to}${aliasRefsForLine(obs.sourceLine)}${autoSideshotSuffix(obs)}${prismSuffix(obs)}`,
-        formatLinear(obs.obs),
+        formatLinear((obs.calc as number | undefined) ?? obs.obs),
         formatResidualLinear(obs.residual as number | undefined),
         formatLinear(obs.weightingStdDev ?? obs.stdDev),
-        (obs.stdRes ?? 0).toFixed(2),
+        formatIndustryStdRes(obs),
         obs.sourceLine != null ? `1:${obs.sourceLine}` : '-',
       ]);
     renderAdjustedSection(
       `Adjusted Distance Observations (${linearUnit})`,
       distanceRows,
-      ['Stations', 'Observed', 'Residual', 'StdErr', 'StdRes', 'File:Line'],
+      ['Stations', 'Distance', 'Residual', 'StdErr', 'StdRes', 'File:Line'],
       [1, 2, 3, 4],
     );
 
@@ -1247,11 +1277,11 @@ export const buildIndustryStyleListingText = (
       .filter((obs) => obs.type === 'direction')
       .map((obs) => [
         `${obs.at}-${obs.to}${aliasRefsForLine(obs.sourceLine)}${autoSideshotSuffix(obs)}`,
-        radToDmsStr(obs.obs),
+        radToDmsStr((obs.calc as number | undefined) ?? obs.obs),
         formatAngularResidualArcSec(obs.residual as number | undefined),
         formatEffectiveDistance(obs.effectiveDistance),
         formatAngularStdErrArcSec(obs.weightingStdDev ?? obs.stdDev),
-        (obs.stdRes ?? 0).toFixed(2),
+        formatIndustryStdRes(obs),
         obs.sourceLine != null ? `1:${obs.sourceLine}` : '-',
       ]);
     renderAdjustedSection(
@@ -1259,9 +1289,9 @@ export const buildIndustryStyleListingText = (
       directionRows,
       [
         'Stations',
-        'Observed',
+        'Direction',
         'Residual',
-        `EffDist (${linearUnit})`,
+        'Distance',
         'StdErr',
         'StdRes',
         'File:Line',
@@ -1567,7 +1597,11 @@ export const buildIndustryStyleListingText = (
           id,
           ((precision.ellipse.semiMajor ?? 0) * confidence95Scale * unitScale).toFixed(6),
           ((precision.ellipse.semiMinor ?? 0) * confidence95Scale * unitScale).toFixed(6),
-          formatEllipseAzDm(precision.ellipse.theta),
+          formatEllipseAzDm(
+            precision.ellipse.theta,
+            precision.ellipse.semiMajor,
+            precision.ellipse.semiMinor,
+          ),
         ];
       })
       .filter((row): row is string[] => row != null);
@@ -1596,7 +1630,7 @@ export const buildIndustryStyleListingText = (
         row.to,
         ((row.ellipse?.semiMajor ?? 0) * confidence95Scale * unitScale).toFixed(6),
         ((row.ellipse?.semiMinor ?? 0) * confidence95Scale * unitScale).toFixed(6),
-        formatEllipseAzDm(row.ellipse?.theta),
+        formatEllipseAzDm(row.ellipse?.theta, row.ellipse?.semiMajor, row.ellipse?.semiMinor),
       ]);
     if (relativeEllipseRows.length > 0) {
       lines.push('Stations                Semi-Major    Semi-Minor   Azimuth of');

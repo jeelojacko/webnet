@@ -87,12 +87,13 @@
       - [x] Use the weighting sigma in industry-style Angle/Distance StdErr output while keeping parsed/base sigma for traceability
       - [x] Keep explicit sigma overrides unchanged in weighting/display unless a later reference diff proves a better rule
       - [x] Make industry-style distance StdErr display follow the same weighting sigma path used by the solver
-      - [ ] Audit alternative geometry stages for displayed/weighted angle sigmas and keep only changes that improve the reference diff
+      - [x] Audit alternative geometry stages for displayed/weighted angle sigmas and keep only changes that improve the reference diff
     - [ ] Batch 4 - solver-loop, residual, ordering, and formatting closeout
       - [x] Set the industry-parity default convergence limit to `0.001` while keeping the WebNet-default profile threshold unchanged
       - [x] Flip printed residual signs in industry-style observation tables without changing the solver math
       - [x] Match the industry-style reported iteration count in listing output without changing the underlying solver loop
       - [x] Make `|StdRes|` listing/report ordering deterministic by adding stable station/input tie-breaks
+      - [x] Print adjusted/computed values plus sigma-normalized displayed `StdRes` values in industry-style observation tables
       - [ ] Audit geometry-dependent weight recomputation order across iterations and keep only improvements proven by the reference diff
       - [ ] Lock standardized-residual covariance behavior with focused parity coverage if the current implementation already matches
       - [ ] Tighten remaining row inclusion/reverse-direction handling and final rounding policies for closer listing parity

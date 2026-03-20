@@ -39,6 +39,7 @@ type SolveProfile =
   | 'industry-parity';
 
 export interface RunSessionParseSettings {
+  geometryDependentSigmaReference?: ParseOptions['geometryDependentSigmaReference'];
   solveProfile: SolveProfile;
   coordMode: '2D' | '3D';
   coordSystemMode: 'local' | 'grid';
@@ -290,11 +291,15 @@ const resolveProfileContext = (
   const parityParse = parity
     ? {
         ...normalizedBase,
+        geometryDependentSigmaReference: 'initial' as const,
         robustMode: 'none' as RobustMode,
         tsCorrelationEnabled: false,
         tsCorrelationRho: 0,
       }
-    : { ...normalizedBase };
+    : {
+        ...normalizedBase,
+        geometryDependentSigmaReference: normalizedBase.geometryDependentSigmaReference ?? 'current',
+      };
   const effectiveParse =
     requestedRunMode === 'preanalysis'
       ? {
@@ -339,6 +344,7 @@ const buildParseOptions = (
   approvedClusterMerges: ClusterApprovedMerge[],
   currentInstrument?: string,
 ): Partial<ParseOptions> => ({
+  geometryDependentSigmaReference: effectiveParse.geometryDependentSigmaReference,
   runMode: effectiveParse.runMode,
   sourceFile: '<project-main>',
   includeFiles: request.projectIncludeFiles,

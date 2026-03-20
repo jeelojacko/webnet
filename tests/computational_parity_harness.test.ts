@@ -128,6 +128,7 @@ const solveFixture = (spec: ParityFixtureSpec): AdjustmentResult => {
             robustMode: 'none',
             tsCorrelationEnabled: false,
             clusterDetectionEnabled: false,
+            geometryDependentSigmaReference: 'initial',
           },
         }).solve()
       : new LSAEngine({

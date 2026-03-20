@@ -871,6 +871,7 @@ export interface GpsTopoCoordinateShot {
 }
 
 export interface ParseOptions {
+  geometryDependentSigmaReference?: 'current' | 'initial';
   runMode?: RunMode;
   runModeCompatibilityDiagnostics?: RunModeCompatibilityDiagnostic[];
   parseCompatibilityMode?: ParseCompatibilityMode;

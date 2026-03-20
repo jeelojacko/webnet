@@ -31,6 +31,7 @@ const solveStarParity = (input: string) =>
       directionSetMode: 'raw',
       robustMode: 'none',
       tsCorrelationEnabled: false,
+      geometryDependentSigmaReference: 'initial',
     },
   }).solve();
 
@@ -83,9 +84,9 @@ describe('TS parity harness (phase 1)', () => {
     expect(result.iterations).toBe(5);
     expect(result.dof).toBe(165);
     expect(result.typeSummary?.direction?.count ?? 0).toBe(18);
-    expect(result.seuw).toBeCloseTo(1.1284, 3);
+    expect(result.seuw).toBeCloseTo(1.1276, 3);
     expect(result.statisticalSummary?.totalCount ?? 0).toBe(196);
-    expect(result.statisticalSummary?.totalErrorFactorByDof ?? 0).toBeCloseTo(1.1284, 3);
+    expect(result.statisticalSummary?.totalErrorFactorByDof ?? 0).toBeCloseTo(1.1276, 3);
 
     const byGroup = new Map(
       (result.statisticalSummary?.byGroup ?? []).map((row) => [row.label, row]),

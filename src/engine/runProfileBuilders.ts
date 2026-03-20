@@ -74,12 +74,15 @@ export const createRunProfileBuilders = ({
     const parityParse = parity
       ? {
           ...normalizedBase,
+          geometryDependentSigmaReference: 'initial' as const,
           robustMode: 'none' as RobustMode,
           tsCorrelationEnabled: false,
           tsCorrelationRho: 0,
         }
       : {
           ...normalizedBase,
+          geometryDependentSigmaReference:
+            normalizedBase.geometryDependentSigmaReference ?? 'current',
         };
     const effectiveParse =
       requestedRunMode === 'preanalysis'

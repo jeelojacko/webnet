@@ -193,6 +193,7 @@ export type SettingsState = {
 };
 
 export type ParseSettings = {
+  geometryDependentSigmaReference?: 'current' | 'initial';
   solveProfile: SolveProfile;
   coordMode: CoordMode;
   coordSystemMode: CoordSystemMode;

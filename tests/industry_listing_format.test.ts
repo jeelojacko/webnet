@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 
 import { LSAEngine } from '../src/engine/adjust';
 import { buildIndustryStyleListingText } from '../src/engine/industryListing';
-import type { ParseOptions } from '../src/types';
+import type { InstrumentLibrary, ParseOptions } from '../src/types';
 
 const expectedHeadings = JSON.parse(
   readFileSync('tests/fixtures/industry_listing_phase5_expected_headings.json', 'utf-8'),
@@ -29,6 +29,79 @@ const parseOptions: Partial<ParseOptions> = {
   robustK: 1.5,
   directionSetMode: 'raw',
   clusterDetectionEnabled: false,
+};
+
+const INDUSTRY_FALLBACK_LIBRARY: InstrumentLibrary = {
+  __INDUSTRY_DEFAULT__: {
+    code: '__INDUSTRY_DEFAULT__',
+    desc: 'Industry Standard default instrument',
+    edm_const: 0.001,
+    edm_ppm: 1,
+    hzPrecision_sec: 0.5,
+    dirPrecision_sec: 0.5,
+    azBearingPrecision_sec: 0.5,
+    vaPrecision_sec: 0.5,
+    instCentr_m: 0.0005,
+    tgtCentr_m: 0,
+    vertCentr_m: 0,
+    elevDiff_const_m: 0,
+    elevDiff_ppm: 0,
+    gpsStd_xy: 0,
+    levStd_mmPerKm: 0,
+  },
+};
+
+const buildIndustryReferenceListing = (): string => {
+  const input = readFileSync('tests/fixtures/industry_standard_reference_case.dat', 'utf-8');
+  const result = new LSAEngine({
+    input,
+    maxIterations: 15,
+    convergenceThreshold: 0.001,
+    instrumentLibrary: INDUSTRY_FALLBACK_LIBRARY,
+    parseOptions: {
+      currentInstrument: '__INDUSTRY_DEFAULT__',
+      directionSetMode: 'raw',
+      robustMode: 'none',
+      tsCorrelationEnabled: false,
+      clusterDetectionEnabled: false,
+      geometryDependentSigmaReference: 'initial',
+    },
+  }).solve();
+
+  expect(result.success).toBe(true);
+
+  return buildIndustryStyleListingText(
+    result,
+    {
+      maxIterations: 15,
+      units: 'm',
+      precisionReportingMode: 'industry-standard',
+      listingShowCoordinates: true,
+      listingShowObservationsResiduals: true,
+      listingShowErrorPropagation: true,
+      listingShowProcessingNotes: false,
+      listingShowAzimuthsBearings: true,
+      listingSortCoordinatesBy: 'input',
+      listingSortObservationsBy: 'residual',
+      listingObservationLimit: 500,
+    },
+    {
+      coordMode: '2D',
+      order: 'EN',
+      angleUnits: 'dms',
+      angleStationOrder: 'atfromto',
+      deltaMode: 'slope',
+      refractionCoefficient: 0.13,
+    },
+    {
+      solveProfile: 'industry-parity',
+      angleCenteringModel: 'geometry-aware-correlated-rays',
+      defaultSigmaCount: 0,
+      defaultSigmaByType: '',
+      stochasticDefaultsSummary: 'inst=__INDUSTRY_DEFAULT__',
+      rotationAngleRad: 0,
+    },
+  );
 };
 
 describe('industry listing phase 5 formatting locks', () => {
@@ -101,7 +174,20 @@ describe('industry listing phase 5 formatting locks', () => {
 
     // Lock key relative-ellipse formatting and fixed-to-adjusted relationship rows.
     expect(listing).toMatch(/^\s*1\s+2\s+\d+\.\d{6}\s+\d+\.\d{6}\s+\d{1,3}-\d{2}\s*$/m);
-    expect(listing).toMatch(/^\s*1000\s+77\s+\d+\.\d{6}\s+\d+\.\d{6}\s+\d{1,3}-\d{2}\s*$/m);
+    expect(listing).toMatch(/^\s*77\s+1000\s+\d+\.\d{6}\s+\d+\.\d{6}\s+\d{1,3}-\d{2}\s*$/m);
+  });
+
+  it('prints adjusted values and normalized StdRes values in industry observation tables', () => {
+    const listing = buildIndustryReferenceListing();
+
+    expect(listing).toContain('Stations  Distance  Residual  StdErr  StdRes  File:Line');
+    expect(listing).toContain('2-200       4.2657    0.0037  0.0011    3.3*');
+  });
+
+  it('prints zero-size ellipse azimuths as 0-00', () => {
+    const listing = buildIndustryReferenceListing();
+
+    expect(listing).toContain('1000       235            0.000000     0.000000       0-00');
   });
 
   it('renders control-component traceability for fixed, free, and weighted control rows', () => {
@@ -187,7 +273,12 @@ describe('industry listing phase 5 formatting locks', () => {
       },
     );
 
-    expect(listing).toContain('EffDist (Meters)');
+    expect(listing).toContain(
+      'Stations  Angle        Residual  Distance  StdErr  StdRes  File:Line',
+    );
+    expect(listing).toContain(
+      'Stations  Direction    Residual  Distance  StdErr  StdRes  File:Line',
+    );
     expect(listing).toMatch(/^\s*O-BS-P\s+.+\s+.+\s+100\.0000\s+.+\s+.+\s+1:9\s*$/m);
     expect(listing).toMatch(/^\s*O-P\s+.+\s+.+\s+100\.0000\s+.+\s+.+\s+1:11\s*$/m);
   });
