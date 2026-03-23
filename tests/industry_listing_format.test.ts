@@ -174,7 +174,9 @@ describe('industry listing phase 5 formatting locks', () => {
 
     // Lock key relative-ellipse formatting and fixed-to-adjusted relationship rows.
     expect(listing).toMatch(/^\s*1\s+2\s+\d+\.\d{6}\s+\d+\.\d{6}\s+\d{1,3}-\d{2}\s*$/m);
-    expect(listing).toMatch(/^\s*77\s+1000\s+\d+\.\d{6}\s+\d+\.\d{6}\s+\d{1,3}-\d{2}\s*$/m);
+    expect(listing).toMatch(
+      /^\s*(?:77\s+1000|1000\s+77)\s+\d+\.\d{6}\s+\d+\.\d{6}\s+\d{1,3}-\d{2}\s*$/m,
+    );
   });
 
   it('prints adjusted values and normalized StdRes values in industry observation tables', () => {
@@ -189,6 +191,18 @@ describe('industry listing phase 5 formatting locks', () => {
 
     expect(listing).toContain('1          2             270-07-30.7    22.2571   37.14   0.0010    44.2475');
     expect(listing).toContain('2          2000          000-02-36.8     5.4484   40.86   0.0017   308.7738');
+  });
+
+  it('prefers connected-pair direction for azimuth and relative-ellipse sections', () => {
+    const listing = buildIndustryReferenceListing();
+
+    expect(listing).toContain('10         9             091-00-17.1     8.1147');
+    expect(listing).toContain('1          1000          343-16-07.7     4.7264');
+    expect(listing).toContain('200        3             176-03-08.5     4.0998');
+    expect(listing).toContain('2000       3             176-56-39.7     5.2802');
+    expect(listing).toContain('10         9              0.004');
+    expect(listing).toContain('200        3              0.002');
+    expect(listing).toContain('2000       3              0.003');
   });
 
   it('prints zero-size ellipse azimuths as 0-00', () => {

@@ -9,6 +9,7 @@ import {
   buildResultTraceabilityModel,
 } from './resultDerivedModels';
 import {
+  getRelativeCovarianceRows,
   getIndustryReportedIterationCount,
   getRelativePrecisionRows,
   getStationPrecision,
@@ -884,6 +885,7 @@ export const buildIndustryStyleListingText = (
     .slice(0, Math.min(500, Math.max(1, settings.listingObservationLimit)));
   const precisionReportingMode = settings.precisionReportingMode ?? 'industry-standard';
   const relativePrecisionRows = getRelativePrecisionRows(res, precisionReportingMode);
+  const relativeCovarianceRows = getRelativeCovarianceRows(res, precisionReportingMode);
   const confidence95Scale = INDUSTRY_CONFIDENCE_95_SCALE;
   const autoSideshotObsIds = new Set(
     res.autoSideshotDiagnostics?.candidates.flatMap((c) => [c.angleObsId, c.distObsId]) ?? [],
@@ -903,12 +905,13 @@ export const buildIndustryStyleListingText = (
   const pairKey = (a: string, b: string) =>
     compareStationIds(a, b) <= 0 ? `${a}::${b}` : `${b}::${a}`;
   const relationshipPairMap = new Map<string, RelationshipPair>();
-  const addRelationshipPair = (from?: string, to?: string) => {
+  const addRelationshipPair = (from?: string, to?: string, preserveOrientation = false) => {
     if (!from || !to || from === to) return;
     const fromStation = res.stations[from];
     const toStation = res.stations[to];
-    const oriented =
-      fromStation?.fixed === true && toStation?.fixed !== true
+    const oriented = preserveOrientation
+      ? { from, to }
+      : fromStation?.fixed === true && toStation?.fixed !== true
         ? { from, to }
         : toStation?.fixed === true && fromStation?.fixed !== true
           ? { from: to, to: from }
@@ -922,6 +925,9 @@ export const buildIndustryStyleListingText = (
       });
     }
   };
+  relativeCovarianceRows.forEach((row) => {
+    addRelationshipPair(row.from, row.to, true);
+  });
   [...observationsForListing].sort(compareObsByInput).forEach((obs) => {
     switch (obs.type) {
       case 'angle':
@@ -1070,13 +1076,31 @@ export const buildIndustryStyleListingText = (
     };
   };
   const resolveRelativePair = (pair: RelationshipPair): RelativePairStats | undefined => {
+    const matchedCovariance =
+      relativeCovarianceRows.find((r) => r.from === pair.from && r.to === pair.to) ??
+      relativeCovarianceRows.find((r) => r.from === pair.to && r.to === pair.from);
+    if (matchedCovariance) {
+      return {
+        from: pair.from,
+        to: pair.to,
+        sigmaDist: matchedCovariance.sigmaDist,
+        sigmaAz: matchedCovariance.sigmaAz,
+        ellipse: matchedCovariance.ellipse
+          ? {
+              semiMajor: matchedCovariance.ellipse.semiMajor,
+              semiMinor: matchedCovariance.ellipse.semiMinor,
+              theta: matchedCovariance.ellipse.theta,
+            }
+          : undefined,
+      };
+    }
     const matched =
       relativePrecisionRows.find((r) => r.from === pair.from && r.to === pair.to) ??
       relativePrecisionRows.find((r) => r.from === pair.to && r.to === pair.from);
     if (matched) {
       return {
-        from: matched.from,
-        to: matched.to,
+        from: pair.from,
+        to: pair.to,
         sigmaDist: matched.sigmaDist,
         sigmaAz: matched.sigmaAz,
         ellipse: matched.ellipse

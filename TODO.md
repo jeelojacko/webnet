@@ -95,9 +95,10 @@
       - [x] Make `|StdRes|` listing/report ordering deterministic by adding stable station/input tie-breaks
       - [x] Print adjusted/computed values plus sigma-normalized displayed `StdRes` values in industry-style observation tables
       - [x] Replace the truncated 95% confidence constant with the exact 2D industry-style scale and compute PPM from full adjusted distance instead of rounded display text
+      - [x] Prefer connected-pair direction in industry-style azimuth and relative-ellipse sections so reference-oriented rows like `10-9`, `200-3`, and `2000-3` stay aligned with connected covariance output
       - [ ] Audit geometry-dependent weight recomputation order across iterations and keep only improvements proven by the reference diff
       - [ ] Lock standardized-residual covariance behavior with focused parity coverage if the current implementation already matches
-      - [ ] Tighten remaining row inclusion/reverse-direction handling and final rounding policies for closer listing parity
+      - [ ] Tighten the remaining row inclusion and final rounding policies for closer listing parity
     - [ ] Batch 5 - error propagation precision closeout
       - [x] Expand the parity harness to lock the full error-propagation sections (all station sigmas, station ellipses, and relative ellipses)
       - [x] Add an error-propagation-focused machine-readable deviation summary alongside the broader reference diff
