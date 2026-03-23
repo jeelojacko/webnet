@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { parseInput } from '../src/engine/parse';
+import { SEC_TO_RAD } from '../src/engine/angles';
 
 describe('parse conventional observation record families', () => {
   it('parses D records with explicit instrument, sigma, and HI/HT', () => {
@@ -92,6 +93,19 @@ describe('parse conventional observation record families', () => {
       hi: 1.5,
       ht: 1.7,
     });
+  });
+
+  it('uses the exact face-2 weighting factor for turned-angle observations', () => {
+    const parsed = parseInput(['A AT-FROM-TO 200-00-00 4'].join('\n'));
+
+    expect(parsed.observations).toHaveLength(1);
+    expect(parsed.observations[0]).toMatchObject({
+      type: 'angle',
+      at: 'AT',
+      from: 'FROM',
+      to: 'TO',
+    });
+    expect(parsed.observations[0].stdDev).toBeCloseTo((4 / Math.SQRT2) * SEC_TO_RAD, 12);
   });
 
   it('parses B records as plan-rotated bearings', () => {

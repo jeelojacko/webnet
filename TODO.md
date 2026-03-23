@@ -96,6 +96,7 @@
       - [x] Print adjusted/computed values plus sigma-normalized displayed `StdRes` values in industry-style observation tables
       - [x] Replace the truncated 95% confidence constant with the exact 2D industry-style scale and compute PPM from full adjusted distance instead of rounded display text
       - [x] Prefer connected-pair direction in industry-style azimuth and relative-ellipse sections so reference-oriented rows like `10-9`, `200-3`, and `2000-3` stay aligned with connected covariance output
+      - [x] Use the exact `1 / sqrt(2)` face-2 weighting factor in angular record parsing instead of the rounded `0.707` constant
       - [ ] Audit geometry-dependent weight recomputation order across iterations and keep only improvements proven by the reference diff
       - [ ] Lock standardized-residual covariance behavior with focused parity coverage if the current implementation already matches
       - [ ] Tighten the remaining row inclusion and final rounding policies for closer listing parity
@@ -106,6 +107,7 @@
       - [x] Centralize relative covariance-from-endpoints construction
       - [x] Remove any non-display rounding or string conversion from the propagated-precision path
       - [x] Replace defensive `Math.abs` precision propagation with explicit tiny-negative clamping only
+      - [x] Treat sub-display floating-point noise as neutral in the industry-reference diff gate so retained parity improvements are not rejected by machine-epsilon drift
       - [ ] Test solver-order / reweight timing only if covariance-path cleanup does not materially reduce the remaining reference diff
   - [ ] Phase 5 - review and map/report UX polish
     - [ ] Batch 1 - issue-driven review queue

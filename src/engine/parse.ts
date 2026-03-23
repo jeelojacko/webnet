@@ -215,7 +215,7 @@ const defaultParseOptions: ParseOptions = {
 };
 
 const FT_PER_M = 3.280839895;
-const FACE2_WEIGHT = 0.707; // face-2 weighting factor per common spec
+const FACE2_WEIGHT = 1 / Math.SQRT2; // exact face-2 weighting factor
 const DEG_TO_RAD = Math.PI / 180;
 const AMODE_AUTO_MAX_DIR_RAD = 3 * DEG_TO_RAD;
 const AMODE_AUTO_MARGIN_RAD = 0.5 * DEG_TO_RAD;
