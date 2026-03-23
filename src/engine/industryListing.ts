@@ -12,6 +12,7 @@ import {
   getIndustryReportedIterationCount,
   getRelativePrecisionRows,
   getStationPrecision,
+  INDUSTRY_CONFIDENCE_95_SCALE,
   toSurveyEllipseAzimuthDeg,
 } from './resultPrecision';
 import type {
@@ -883,7 +884,7 @@ export const buildIndustryStyleListingText = (
     .slice(0, Math.min(500, Math.max(1, settings.listingObservationLimit)));
   const precisionReportingMode = settings.precisionReportingMode ?? 'industry-standard';
   const relativePrecisionRows = getRelativePrecisionRows(res, precisionReportingMode);
-  const confidence95Scale = 2.4477;
+  const confidence95Scale = INDUSTRY_CONFIDENCE_95_SCALE;
   const autoSideshotObsIds = new Set(
     res.autoSideshotDiagnostics?.candidates.flatMap((c) => [c.angleObsId, c.distObsId]) ?? [],
   );
@@ -991,11 +992,16 @@ export const buildIndustryStyleListingText = (
     const wrapped = az >= 0 ? az : az + 2 * Math.PI;
     return radToDmsStr(wrapped);
   };
-  const horizDistance = (from: string, to: string): string => {
+  const horizDistanceMeters = (from: string, to: string): number | undefined => {
     const a = res.stations[from];
     const b = res.stations[to];
-    if (!a || !b) return '-';
-    return (Math.hypot(b.x - a.x, b.y - a.y) * unitScale).toFixed(4);
+    if (!a || !b) return undefined;
+    return Math.hypot(b.x - a.x, b.y - a.y);
+  };
+  const horizDistance = (from: string, to: string): string => {
+    const distance = horizDistanceMeters(from, to);
+    if (distance == null) return '-';
+    return (distance * unitScale).toFixed(4);
   };
   const stationCovariance = (
     id: string,
@@ -1089,6 +1095,7 @@ export const buildIndustryStyleListingText = (
       const rel = resolveRelativePair(pair);
       const from = rel?.from ?? pair.from;
       const to = rel?.to ?? pair.to;
+      const distanceMeters = horizDistanceMeters(from, to);
       const distance = horizDistance(from, to);
       const sigmaAz95 =
         rel?.sigmaAz != null
@@ -1099,10 +1106,10 @@ export const buildIndustryStyleListingText = (
           ? (rel.sigmaDist * unitScale * confidence95Scale).toFixed(4)
           : '-';
       const ppm95 =
-        rel?.sigmaDist != null && distance !== '-'
+        rel?.sigmaDist != null && distanceMeters != null
           ? (
               (rel.sigmaDist * confidence95Scale * 1_000_000) /
-              Math.max(1e-12, Math.abs(Number(distance) / unitScale))
+              Math.max(1e-12, Math.abs(distanceMeters))
             ).toFixed(4)
           : '-';
       return {

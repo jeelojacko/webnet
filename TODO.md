@@ -94,6 +94,7 @@
       - [x] Match the industry-style reported iteration count in listing output without changing the underlying solver loop
       - [x] Make `|StdRes|` listing/report ordering deterministic by adding stable station/input tie-breaks
       - [x] Print adjusted/computed values plus sigma-normalized displayed `StdRes` values in industry-style observation tables
+      - [x] Replace the truncated 95% confidence constant with the exact 2D industry-style scale and compute PPM from full adjusted distance instead of rounded display text
       - [ ] Audit geometry-dependent weight recomputation order across iterations and keep only improvements proven by the reference diff
       - [ ] Lock standardized-residual covariance behavior with focused parity coverage if the current implementation already matches
       - [ ] Tighten remaining row inclusion/reverse-direction handling and final rounding policies for closer listing parity

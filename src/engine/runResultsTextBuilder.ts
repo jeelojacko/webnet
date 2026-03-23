@@ -1,6 +1,7 @@
 import { RAD_TO_DEG, radToDmsStr } from './angles';
 import { findLevelLoopTolerancePreset } from './levelLoopTolerance';
 import { buildResultTraceabilityModel } from './resultDerivedModels';
+import { INDUSTRY_CONFIDENCE_95_SCALE } from './resultPrecision';
 import type { ParseSettings, RunDiagnostics, SettingsState } from '../appStateTypes';
 import type { AdjustmentResult, CustomLevelLoopTolerancePreset, Observation } from '../types';
 
@@ -65,7 +66,7 @@ export const createRunResultsTextBuilder = ({
   const buildResultsText = (res: AdjustmentResult): string => {
     const lines: string[] = [];
     const now = new Date();
-    const ellipse95Scale = 2.4477;
+    const ellipse95Scale = INDUSTRY_CONFIDENCE_95_SCALE;
     const linearUnit = settings.units === 'ft' ? 'ft' : 'm';
     const unitScale = settings.units === 'ft' ? FT_PER_M : 1;
     const runDiag = runDiagnostics ?? buildRunDiagnostics(parseSettings, res);

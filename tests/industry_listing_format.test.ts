@@ -184,6 +184,13 @@ describe('industry listing phase 5 formatting locks', () => {
     expect(listing).toContain('2-200       4.2657    0.0037  0.0011    3.3*');
   });
 
+  it('computes PPM confidence from full adjusted distance while printing the exact 95 percent scale', () => {
+    const listing = buildIndustryReferenceListing();
+
+    expect(listing).toContain('1          2             270-07-30.7    22.2571   37.14   0.0010    44.2475');
+    expect(listing).toContain('2          2000          000-02-36.8     5.4484   40.86   0.0017   308.7738');
+  });
+
   it('prints zero-size ellipse azimuths as 0-00', () => {
     const listing = buildIndustryReferenceListing();
 

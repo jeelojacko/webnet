@@ -14,6 +14,9 @@ const emptyPrecisionModel: ResultPrecisionModel = {
   relativePrecision: [],
 };
 
+// Exact sqrt(chi-square(2 dof, 95%)) used by industry-style 95% ellipse/confidence sections.
+export const INDUSTRY_CONFIDENCE_95_SCALE = 2.447746830680816;
+
 export const resolvePrecisionModel = (
   result: AdjustmentResult,
   mode: PrecisionReportingMode,

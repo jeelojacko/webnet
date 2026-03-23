@@ -8,6 +8,7 @@ import {
   getIndustryReportedIterationCount,
   getRelativePrecisionRows,
   getStationPrecision,
+  INDUSTRY_CONFIDENCE_95_SCALE,
   toSurveyEllipseAzimuthDeg,
 } from '../src/engine/resultPrecision';
 import type {
@@ -275,7 +276,7 @@ const buildIndustryReferenceSnapshot = (
   result: AdjustmentResult,
   mode: PrecisionReportingMode = 'industry-standard',
 ): IndustryReferenceSnapshot => {
-  const confidence95Scale = 2.4477;
+  const confidence95Scale = INDUSTRY_CONFIDENCE_95_SCALE;
   const relativeConfidencePairs = [
     ['1-2', '1', '2'],
     ['1-1000', '1', '1000'],

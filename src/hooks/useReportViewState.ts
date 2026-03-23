@@ -1,5 +1,6 @@
 import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
+import { INDUSTRY_CONFIDENCE_95_SCALE } from '../engine/resultPrecision';
 import type { Observation } from '../types';
 import {
   COLLAPSIBLE_DETAIL_SECTION_IDS,
@@ -135,7 +136,7 @@ export const useReportViewState = ({
 
   const deferredReportFilterQuery = useDeferredValue(reportFilterQuery);
   const normalizedReportFilterQuery = deferredReportFilterQuery.trim().toLowerCase();
-  const ellipseConfidenceScale = ellipseMode === '95' ? 2.4477 : 1;
+  const ellipseConfidenceScale = ellipseMode === '95' ? INDUSTRY_CONFIDENCE_95_SCALE : 1;
   const skipNextAutoWindowResetRef = useRef(false);
   const excludedIdsSignature = useMemo(
     () => Array.from(excludedIds).sort((left, right) => left - right).join(','),

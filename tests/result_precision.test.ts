@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   getIndustryReportedIterationCount,
+  INDUSTRY_CONFIDENCE_95_SCALE,
   resolvePrecisionModel,
   toSurveyEllipseAzimuthDeg,
 } from '../src/engine/resultPrecision';
@@ -31,5 +32,9 @@ describe('result precision helpers', () => {
     expect(getIndustryReportedIterationCount({ converged: true, iterations: 5 })).toBe(4);
     expect(getIndustryReportedIterationCount({ converged: true, iterations: 1 })).toBe(1);
     expect(getIndustryReportedIterationCount({ converged: false, iterations: 5 })).toBe(5);
+  });
+
+  it('uses the exact 2D 95 percent confidence scale for industry-style ellipses', () => {
+    expect(INDUSTRY_CONFIDENCE_95_SCALE).toBeCloseTo(2.447746830680816, 15);
   });
 });
