@@ -5,6 +5,11 @@ import { describe, expect, it } from 'vitest';
 import { RAD_TO_DEG } from '../src/engine/angles';
 import { LSAEngine } from '../src/engine/adjust';
 import {
+  buildDistanceAzimuthPrecision,
+  buildHorizontalErrorEllipse,
+} from '../src/engine/precisionPropagation';
+import {
+  getRelativeCovarianceRows,
   getIndustryReportedIterationCount,
   getRelativePrecisionRows,
   getStationPrecision,
@@ -83,6 +88,19 @@ type IndustryReferenceDeviation = {
     { azimuthDeg: number; distanceM: number; azimuth95Sec: number; distance95M: number; ppm95: number }
   >;
   relativeEllipses95M: Record<string, { semiMajor: number; semiMinor: number; azimuthDeg: number }>;
+  errorPropagationSummary: {
+    stationSigmaNorthingMax: number;
+    stationSigmaEastingMax: number;
+    stationEllipseSemiMajorMax: number;
+    stationEllipseSemiMinorMax: number;
+    stationEllipseAzimuthDegMax: number;
+    relativeConfidenceAzimuth95SecMax: number;
+    relativeConfidenceDistance95MMax: number;
+    relativeConfidencePpm95Max: number;
+    relativeEllipseSemiMajorMax: number;
+    relativeEllipseSemiMinorMax: number;
+    relativeEllipseAzimuthDegMax: number;
+  };
 };
 
 const INDUSTRY_FALLBACK_LIBRARY: InstrumentLibrary = {
@@ -209,61 +227,55 @@ const relativePairStatsFor = (
     };
   }
 
-  const stationCovariance = (stationId: string) => {
-    const station = result.stations[stationId];
-    if (!station) return undefined;
-    const precision = getStationPrecision(result, stationId, mode);
-    if (precision.ellipse) {
-      const theta = precision.ellipse.theta / RAD_TO_DEG;
-      const c = Math.cos(theta);
-      const s = Math.sin(theta);
-      const a2 = precision.ellipse.semiMajor * precision.ellipse.semiMajor;
-      const b2 = precision.ellipse.semiMinor * precision.ellipse.semiMinor;
-      return {
-        varE: a2 * c * c + b2 * s * s,
-        varN: a2 * s * s + b2 * c * c,
-        covEN: (a2 - b2) * s * c,
-      };
-    }
+  const covarianceRow =
+    getRelativeCovarianceRows(result, mode).find((row) => row.from === from && row.to === to) ??
+    getRelativeCovarianceRows(result, mode).find((row) => row.from === to && row.to === from);
+  if (covarianceRow) {
+    const ellipse =
+      covarianceRow.ellipse ??
+      buildHorizontalErrorEllipse(covarianceRow.cEE, covarianceRow.cNN, covarianceRow.cEN).ellipse;
     return {
-      varE: (precision.sigmaE ?? station.sE ?? 0) ** 2,
-      varN: (precision.sigmaN ?? station.sN ?? 0) ** 2,
-      covEN: 0,
+      sigmaDist:
+        covarianceRow.sigmaDist ??
+        buildDistanceAzimuthPrecision(
+          (result.stations[to]?.x ?? 0) - (result.stations[from]?.x ?? 0),
+          (result.stations[to]?.y ?? 0) - (result.stations[from]?.y ?? 0),
+          covarianceRow,
+        ).sigmaDist,
+      sigmaAz:
+        covarianceRow.sigmaAz ??
+        buildDistanceAzimuthPrecision(
+          (result.stations[to]?.x ?? 0) - (result.stations[from]?.x ?? 0),
+          (result.stations[to]?.y ?? 0) - (result.stations[from]?.y ?? 0),
+          covarianceRow,
+        ).sigmaAz,
+      ellipse: {
+        semiMajor: ellipse.semiMajor,
+        semiMinor: ellipse.semiMinor,
+        theta: ellipse.theta,
+      },
     };
-  };
-
-  const fromPrecision = stationCovariance(from);
-  const toPrecision = stationCovariance(to);
-  if (!fromPrecision || !toPrecision) return undefined;
+  }
 
   const fromStation = result.stations[from];
   const toStation = result.stations[to];
   if (!fromStation || !toStation) return undefined;
 
-  const dE = toStation.x - fromStation.x;
-  const dN = toStation.y - fromStation.y;
-  const dist = Math.hypot(dE, dN);
-  const varE = toPrecision.varE + fromPrecision.varE;
-  const varN = toPrecision.varN + fromPrecision.varN;
-  const covEN = toPrecision.covEN + fromPrecision.covEN;
-  const term1 = (varE + varN) / 2;
-  const term2 = Math.sqrt(Math.max(0, ((varE - varN) / 2) ** 2 + covEN * covEN));
-  const semiMajor = Math.sqrt(Math.max(0, term1 + term2));
-  const semiMinor = Math.sqrt(Math.max(0, term1 - term2));
-  const theta = (0.5 * Math.atan2(2 * covEN, varE - varN) * RAD_TO_DEG + 360) % 360;
-  let sigmaDist: number | undefined;
-  let sigmaAz: number | undefined;
-  if (dist > 0) {
-    const inv = 1 / (dist * dist);
-    const varDist = inv * (dE * dE * varE + dN * dN * varN + 2 * dE * dN * covEN);
-    sigmaDist = Math.sqrt(Math.max(0, varDist));
-    const varAz = (dN * dN * varE + dE * dE * varN - 2 * dE * dN * covEN) * inv * inv;
-    sigmaAz = Math.sqrt(Math.max(0, varAz));
-  }
+  const fromPrecision = getStationPrecision(result, from, mode);
+  const toPrecision = getStationPrecision(result, to, mode);
+  const varE = (toPrecision.sigmaE ?? toStation.sE ?? 0) ** 2 + (fromPrecision.sigmaE ?? fromStation.sE ?? 0) ** 2;
+  const varN = (toPrecision.sigmaN ?? toStation.sN ?? 0) ** 2 + (fromPrecision.sigmaN ?? fromStation.sN ?? 0) ** 2;
+  const covEN = 0;
+  const ellipse = buildHorizontalErrorEllipse(varE, varN, covEN).ellipse;
+  const { sigmaDist, sigmaAz } = buildDistanceAzimuthPrecision(
+    toStation.x - fromStation.x,
+    toStation.y - fromStation.y,
+    { cEE: varE, cNN: varN, cEN: covEN },
+  );
   return {
     sigmaDist,
     sigmaAz,
-    ellipse: { semiMajor, semiMinor, theta },
+    ellipse: { semiMajor: ellipse.semiMajor, semiMinor: ellipse.semiMinor, theta: ellipse.theta },
   };
 };
 
@@ -272,153 +284,83 @@ const angleDiff = (actual: number, expected: number, modulo: number): number => 
   return Math.min(raw, modulo - raw);
 };
 
+const reportedEllipseAzimuthDeg = (
+  ellipse:
+    | {
+        semiMajor?: number;
+        semiMinor?: number;
+        theta?: number;
+      }
+    | undefined,
+): number => {
+  if (!ellipse) return 0;
+  if (Math.max(Math.abs(ellipse.semiMajor ?? 0), Math.abs(ellipse.semiMinor ?? 0)) <= 1e-12) {
+    return 0;
+  }
+  return toSurveyEllipseAzimuthDeg(ellipse.theta) ?? 0;
+};
+
 const buildIndustryReferenceSnapshot = (
   result: AdjustmentResult,
+  expected: IndustryReferenceExpected,
   mode: PrecisionReportingMode = 'industry-standard',
 ): IndustryReferenceSnapshot => {
   const confidence95Scale = INDUSTRY_CONFIDENCE_95_SCALE;
-  const relativeConfidencePairs = [
-    ['1-2', '1', '2'],
-    ['1-1000', '1', '1000'],
-    ['2-2000', '2', '2000'],
-    ['3-4', '3', '4'],
-    ['10-9', '10', '9'],
-    ['200-3', '200', '3'],
-    ['2000-3', '2000', '3'],
-  ] as const;
-
-  const relativeEllipsePairs = [
-    ['1-2', '1', '2'],
-    ['1-1000', '1', '1000'],
-    ['2-2000', '2', '2000'],
-    ['3-4', '3', '4'],
-    ['10-9', '10', '9'],
-    ['200-3', '200', '3'],
-    ['2000-3', '2000', '3'],
-  ] as const;
 
   return {
     summary: {
       iterations: getIndustryReportedIterationCount(result),
     },
-    coordinates: {
-      '1000': { northing: result.stations['1000']?.y ?? Number.NaN, easting: result.stations['1000']?.x ?? Number.NaN },
-      '1': { northing: result.stations['1']?.y ?? Number.NaN, easting: result.stations['1']?.x ?? Number.NaN },
-      '9': { northing: result.stations['9']?.y ?? Number.NaN, easting: result.stations['9']?.x ?? Number.NaN },
-    },
-    angleStdErrsSec: {
-      '1000-235-1':
-        requireFinite(firstAngleByLabel(result, '1000-235-1')?.weightingStdDev, '1000-235-1 sigma') *
-        RAD_TO_DEG *
-        3600,
-      '2-1-200':
-        requireFinite(firstAngleByLabel(result, '2-1-200')?.weightingStdDev, '2-1-200 sigma') *
-        RAD_TO_DEG *
-        3600,
-      '2-1-2000':
-        requireFinite(firstAngleByLabel(result, '2-1-2000')?.weightingStdDev, '2-1-2000 sigma') *
-        RAD_TO_DEG *
-        3600,
-      '3-4-200':
-        requireFinite(firstAngleByLabel(result, '3-4-200')?.weightingStdDev, '3-4-200 sigma') *
-        RAD_TO_DEG *
-        3600,
-      '3-4-2000':
-        requireFinite(firstAngleByLabel(result, '3-4-2000')?.weightingStdDev, '3-4-2000 sigma') *
-        RAD_TO_DEG *
-        3600,
-      '3-4-5':
-        requireFinite(firstAngleByLabel(result, '3-4-5')?.weightingStdDev, '3-4-5 sigma') *
-        RAD_TO_DEG *
-        3600,
-      '9-8-10':
-        requireFinite(firstAngleByLabel(result, '9-8-10')?.weightingStdDev, '9-8-10 sigma') *
-        RAD_TO_DEG *
-        3600,
-      '10-9-11':
-        requireFinite(firstAngleByLabel(result, '10-9-11')?.weightingStdDev, '10-9-11 sigma') *
-        RAD_TO_DEG *
-        3600,
-    },
-    distanceStdErrsM: {
-      '1000-235': requireFinite(firstDistanceByLabel(result, '1000-235')?.weightingStdDev, '1000-235 sigma'),
-      '1-1000': requireFinite(firstDistanceByLabel(result, '1-1000')?.weightingStdDev, '1-1000 sigma'),
-      '2-2000': requireFinite(firstDistanceByLabel(result, '2-2000')?.weightingStdDev, '2-2000 sigma'),
-      '3-4': requireFinite(firstDistanceByLabel(result, '3-4')?.weightingStdDev, '3-4 sigma'),
-      '10-9': requireFinite(firstDistanceByLabel(result, '10-9')?.weightingStdDev, '10-9 sigma'),
-    },
-    stationSigmasM: {
-      '1': {
-        northing: requireFinite(getStationPrecision(result, '1', mode).sigmaN, 'station 1 sigmaN'),
-        easting: requireFinite(getStationPrecision(result, '1', mode).sigmaE, 'station 1 sigmaE'),
-      },
-      '2': {
-        northing: requireFinite(getStationPrecision(result, '2', mode).sigmaN, 'station 2 sigmaN'),
-        easting: requireFinite(getStationPrecision(result, '2', mode).sigmaE, 'station 2 sigmaE'),
-      },
-      '2000': {
-        northing: requireFinite(
-          getStationPrecision(result, '2000', mode).sigmaN,
-          'station 2000 sigmaN',
-        ),
-        easting: requireFinite(
-          getStationPrecision(result, '2000', mode).sigmaE,
-          'station 2000 sigmaE',
-        ),
-      },
-    },
-    stationEllipses95M: {
-      '1': {
-        semiMajor:
-          requireFinite(
-            getStationPrecision(result, '1', mode).ellipse?.semiMajor,
-            'station 1 ellipse semiMajor',
-          ) * confidence95Scale,
-        semiMinor:
-          requireFinite(
-            getStationPrecision(result, '1', mode).ellipse?.semiMinor,
-            'station 1 ellipse semiMinor',
-          ) * confidence95Scale,
-        azimuthDeg: requireFinite(
-          toSurveyEllipseAzimuthDeg(getStationPrecision(result, '1', mode).ellipse?.theta),
-          'station 1 ellipse azimuth',
-        ),
-      },
-      '2': {
-        semiMajor:
-          requireFinite(
-            getStationPrecision(result, '2', mode).ellipse?.semiMajor,
-            'station 2 ellipse semiMajor',
-          ) * confidence95Scale,
-        semiMinor:
-          requireFinite(
-            getStationPrecision(result, '2', mode).ellipse?.semiMinor,
-            'station 2 ellipse semiMinor',
-          ) * confidence95Scale,
-        azimuthDeg: requireFinite(
-          toSurveyEllipseAzimuthDeg(getStationPrecision(result, '2', mode).ellipse?.theta),
-          'station 2 ellipse azimuth',
-        ),
-      },
-      '2000': {
-        semiMajor:
-          requireFinite(
-            getStationPrecision(result, '2000', mode).ellipse?.semiMajor,
-            'station 2000 ellipse semiMajor',
-          ) * confidence95Scale,
-        semiMinor:
-          requireFinite(
-            getStationPrecision(result, '2000', mode).ellipse?.semiMinor,
-            'station 2000 ellipse semiMinor',
-          ) * confidence95Scale,
-        azimuthDeg: requireFinite(
-          toSurveyEllipseAzimuthDeg(getStationPrecision(result, '2000', mode).ellipse?.theta),
-          'station 2000 ellipse azimuth',
-        ),
-      },
-    },
+    coordinates: Object.fromEntries(
+      Object.keys(expected.coordinates).map((stationId) => [
+        stationId,
+        {
+          northing: result.stations[stationId]?.y ?? Number.NaN,
+          easting: result.stations[stationId]?.x ?? Number.NaN,
+        },
+      ]),
+    ),
+    angleStdErrsSec: Object.fromEntries(
+      Object.keys(expected.angleStdErrsSec).map((key) => [
+        key,
+        requireFinite(firstAngleByLabel(result, key)?.weightingStdDev, `${key} sigma`) * RAD_TO_DEG * 3600,
+      ]),
+    ),
+    distanceStdErrsM: Object.fromEntries(
+      Object.keys(expected.distanceStdErrsM).map((key) => [
+        key,
+        requireFinite(firstDistanceByLabel(result, key)?.weightingStdDev, `${key} sigma`),
+      ]),
+    ),
+    stationSigmasM: Object.fromEntries(
+      Object.keys(expected.stationSigmasM).map((stationId) => {
+        const station = result.stations[stationId];
+        const precision = getStationPrecision(result, stationId, mode);
+        return [
+          stationId,
+          {
+            northing: requireFinite(precision.sigmaN ?? station?.sN ?? 0, `station ${stationId} sigmaN`),
+            easting: requireFinite(precision.sigmaE ?? station?.sE ?? 0, `station ${stationId} sigmaE`),
+          },
+        ];
+      }),
+    ),
+    stationEllipses95M: Object.fromEntries(
+      Object.keys(expected.stationEllipses95M).map((stationId) => {
+        const ellipse = getStationPrecision(result, stationId, mode).ellipse;
+        return [
+          stationId,
+          {
+            semiMajor: requireFinite(ellipse?.semiMajor ?? 0, `station ${stationId} ellipse semiMajor`) * confidence95Scale,
+            semiMinor: requireFinite(ellipse?.semiMinor ?? 0, `station ${stationId} ellipse semiMinor`) * confidence95Scale,
+            azimuthDeg: requireFinite(reportedEllipseAzimuthDeg(ellipse), `station ${stationId} ellipse azimuth`),
+          },
+        ];
+      }),
+    ),
     relativeConfidence95: Object.fromEntries(
-      relativeConfidencePairs.map(([key, from, to]) => {
+      Object.entries(expected.relativeConfidence95).map(([key, reference]) => {
+        const { from, to } = reference;
         const relative = relativePairStatsFor(result, mode, from, to);
         expect(relative, `missing relative precision for ${from}-${to}`).toBeDefined();
         const dist = distanceM(result, from, to);
@@ -443,24 +385,17 @@ const buildIndustryReferenceSnapshot = (
       }),
     ),
     relativeEllipses95M: Object.fromEntries(
-      relativeEllipsePairs.map(([key, from, to]) => {
+      Object.entries(expected.relativeEllipses95M).map(([key, reference]) => {
+        const { from, to } = reference;
         const relative = relativePairStatsFor(result, mode, from, to);
-        expect(relative?.ellipse, `missing relative ellipse for ${from}-${to}`).toBeDefined();
         return [
           key,
           {
             from,
             to,
-            semiMajor:
-              requireFinite(relative?.ellipse?.semiMajor, `${from}-${to} ellipse semiMajor`) *
-              confidence95Scale,
-            semiMinor:
-              requireFinite(relative?.ellipse?.semiMinor, `${from}-${to} ellipse semiMinor`) *
-              confidence95Scale,
-            azimuthDeg: requireFinite(
-              toSurveyEllipseAzimuthDeg(relative?.ellipse?.theta),
-              `${from}-${to} ellipse azimuth`,
-            ),
+            semiMajor: requireFinite(relative?.ellipse?.semiMajor ?? 0, `${from}-${to} ellipse semiMajor`) * confidence95Scale,
+            semiMinor: requireFinite(relative?.ellipse?.semiMinor ?? 0, `${from}-${to} ellipse semiMinor`) * confidence95Scale,
+            azimuthDeg: requireFinite(reportedEllipseAzimuthDeg(relative?.ellipse), `${from}-${to} ellipse azimuth`),
           },
         ];
       }),
@@ -537,6 +472,129 @@ const buildIndustryReferenceDeviation = (
       },
     ]),
   ),
+  errorPropagationSummary: {
+    stationSigmaNorthingMax: Math.max(
+      0,
+      ...Object.values(
+        Object.fromEntries(
+          Object.entries(expected.stationSigmasM).map(([stationId, row]) => [
+            stationId,
+            Math.abs(actual.stationSigmasM[stationId].northing - row.northing),
+          ]),
+        ),
+      ),
+    ),
+    stationSigmaEastingMax: Math.max(
+      0,
+      ...Object.values(
+        Object.fromEntries(
+          Object.entries(expected.stationSigmasM).map(([stationId, row]) => [
+            stationId,
+            Math.abs(actual.stationSigmasM[stationId].easting - row.easting),
+          ]),
+        ),
+      ),
+    ),
+    stationEllipseSemiMajorMax: Math.max(
+      0,
+      ...Object.values(
+        Object.fromEntries(
+          Object.entries(expected.stationEllipses95M).map(([stationId, row]) => [
+            stationId,
+            Math.abs(actual.stationEllipses95M[stationId].semiMajor - row.semiMajor),
+          ]),
+        ),
+      ),
+    ),
+    stationEllipseSemiMinorMax: Math.max(
+      0,
+      ...Object.values(
+        Object.fromEntries(
+          Object.entries(expected.stationEllipses95M).map(([stationId, row]) => [
+            stationId,
+            Math.abs(actual.stationEllipses95M[stationId].semiMinor - row.semiMinor),
+          ]),
+        ),
+      ),
+    ),
+    stationEllipseAzimuthDegMax: Math.max(
+      0,
+      ...Object.values(
+        Object.fromEntries(
+          Object.entries(expected.stationEllipses95M).map(([stationId, row]) => [
+            stationId,
+            angleDiff(actual.stationEllipses95M[stationId].azimuthDeg, row.azimuthDeg, 180),
+          ]),
+        ),
+      ),
+    ),
+    relativeConfidenceAzimuth95SecMax: Math.max(
+      0,
+      ...Object.values(
+        Object.fromEntries(
+          Object.entries(expected.relativeConfidence95).map(([key, row]) => [
+            key,
+            Math.abs(actual.relativeConfidence95[key].azimuth95Sec - row.azimuth95Sec),
+          ]),
+        ),
+      ),
+    ),
+    relativeConfidenceDistance95MMax: Math.max(
+      0,
+      ...Object.values(
+        Object.fromEntries(
+          Object.entries(expected.relativeConfidence95).map(([key, row]) => [
+            key,
+            Math.abs(actual.relativeConfidence95[key].distance95M - row.distance95M),
+          ]),
+        ),
+      ),
+    ),
+    relativeConfidencePpm95Max: Math.max(
+      0,
+      ...Object.values(
+        Object.fromEntries(
+          Object.entries(expected.relativeConfidence95).map(([key, row]) => [
+            key,
+            Math.abs(actual.relativeConfidence95[key].ppm95 - row.ppm95),
+          ]),
+        ),
+      ),
+    ),
+    relativeEllipseSemiMajorMax: Math.max(
+      0,
+      ...Object.values(
+        Object.fromEntries(
+          Object.entries(expected.relativeEllipses95M).map(([key, row]) => [
+            key,
+            Math.abs(actual.relativeEllipses95M[key].semiMajor - row.semiMajor),
+          ]),
+        ),
+      ),
+    ),
+    relativeEllipseSemiMinorMax: Math.max(
+      0,
+      ...Object.values(
+        Object.fromEntries(
+          Object.entries(expected.relativeEllipses95M).map(([key, row]) => [
+            key,
+            Math.abs(actual.relativeEllipses95M[key].semiMinor - row.semiMinor),
+          ]),
+        ),
+      ),
+    ),
+    relativeEllipseAzimuthDegMax: Math.max(
+      0,
+      ...Object.values(
+        Object.fromEntries(
+          Object.entries(expected.relativeEllipses95M).map(([key, row]) => [
+            key,
+            angleDiff(actual.relativeEllipses95M[key].azimuthDeg, row.azimuthDeg, 180),
+          ]),
+        ),
+      ),
+    ),
+  },
 });
 
 const assertIndustryReferenceDeviationWithinBaseline = (
@@ -575,6 +633,39 @@ const assertIndustryReferenceDeviationWithinBaseline = (
     expect(row.semiMinor).toBeLessThanOrEqual(baseline.relativeEllipses95M[key].semiMinor);
     expect(row.azimuthDeg).toBeLessThanOrEqual(baseline.relativeEllipses95M[key].azimuthDeg);
   });
+  expect(deviation.errorPropagationSummary.stationSigmaNorthingMax).toBeLessThanOrEqual(
+    baseline.errorPropagationSummary.stationSigmaNorthingMax,
+  );
+  expect(deviation.errorPropagationSummary.stationSigmaEastingMax).toBeLessThanOrEqual(
+    baseline.errorPropagationSummary.stationSigmaEastingMax,
+  );
+  expect(deviation.errorPropagationSummary.stationEllipseSemiMajorMax).toBeLessThanOrEqual(
+    baseline.errorPropagationSummary.stationEllipseSemiMajorMax,
+  );
+  expect(deviation.errorPropagationSummary.stationEllipseSemiMinorMax).toBeLessThanOrEqual(
+    baseline.errorPropagationSummary.stationEllipseSemiMinorMax,
+  );
+  expect(deviation.errorPropagationSummary.stationEllipseAzimuthDegMax).toBeLessThanOrEqual(
+    baseline.errorPropagationSummary.stationEllipseAzimuthDegMax,
+  );
+  expect(deviation.errorPropagationSummary.relativeConfidenceAzimuth95SecMax).toBeLessThanOrEqual(
+    baseline.errorPropagationSummary.relativeConfidenceAzimuth95SecMax,
+  );
+  expect(deviation.errorPropagationSummary.relativeConfidenceDistance95MMax).toBeLessThanOrEqual(
+    baseline.errorPropagationSummary.relativeConfidenceDistance95MMax,
+  );
+  expect(deviation.errorPropagationSummary.relativeConfidencePpm95Max).toBeLessThanOrEqual(
+    baseline.errorPropagationSummary.relativeConfidencePpm95Max,
+  );
+  expect(deviation.errorPropagationSummary.relativeEllipseSemiMajorMax).toBeLessThanOrEqual(
+    baseline.errorPropagationSummary.relativeEllipseSemiMajorMax,
+  );
+  expect(deviation.errorPropagationSummary.relativeEllipseSemiMinorMax).toBeLessThanOrEqual(
+    baseline.errorPropagationSummary.relativeEllipseSemiMinorMax,
+  );
+  expect(deviation.errorPropagationSummary.relativeEllipseAzimuthDegMax).toBeLessThanOrEqual(
+    baseline.errorPropagationSummary.relativeEllipseAzimuthDegMax,
+  );
 };
 
 describe('computational parity harness', () => {
@@ -627,7 +718,7 @@ describe('computational parity harness', () => {
           readFileSync(fixture.detailedReference!.deviationBaselinePath, 'utf-8'),
         ) as IndustryReferenceDeviation;
 
-        const actual = buildIndustryReferenceSnapshot(result);
+        const actual = buildIndustryReferenceSnapshot(result, expected);
         const deviation = buildIndustryReferenceDeviation(actual, expected);
         assertIndustryReferenceDeviationWithinBaseline(deviation, baseline);
       });

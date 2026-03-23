@@ -98,6 +98,14 @@
       - [ ] Audit geometry-dependent weight recomputation order across iterations and keep only improvements proven by the reference diff
       - [ ] Lock standardized-residual covariance behavior with focused parity coverage if the current implementation already matches
       - [ ] Tighten remaining row inclusion/reverse-direction handling and final rounding policies for closer listing parity
+    - [ ] Batch 5 - error propagation precision closeout
+      - [x] Expand the parity harness to lock the full error-propagation sections (all station sigmas, station ellipses, and relative ellipses)
+      - [x] Add an error-propagation-focused machine-readable deviation summary alongside the broader reference diff
+      - [x] Centralize shared covariance-to-ellipse decomposition
+      - [x] Centralize relative covariance-from-endpoints construction
+      - [x] Remove any non-display rounding or string conversion from the propagated-precision path
+      - [x] Replace defensive `Math.abs` precision propagation with explicit tiny-negative clamping only
+      - [ ] Test solver-order / reweight timing only if covariance-path cleanup does not materially reduce the remaining reference diff
   - [ ] Phase 5 - review and map/report UX polish
     - [ ] Batch 1 - issue-driven review queue
       - [ ] Add a shared review queue populated by import conflicts, suspect observations, cluster candidates, and saved-run diffs

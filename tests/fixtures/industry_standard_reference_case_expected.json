@@ -34,6 +34,14 @@
     "10-9": 0.0011
   },
   "stationSigmasM": {
+    "235": {
+      "northing": 0,
+      "easting": 0
+    },
+    "1000": {
+      "northing": 0,
+      "easting": 0
+    },
     "1": {
       "northing": 0.000387,
       "easting": 0.000263
@@ -42,12 +50,66 @@
       "northing": 0.001633,
       "easting": 0.000479
     },
+    "200": {
+      "northing": 0.001771,
+      "easting": 0.000507
+    },
     "2000": {
       "northing": 0.001771,
       "easting": 0.000541
+    },
+    "3": {
+      "northing": 0.001797,
+      "easting": 0.001162
+    },
+    "4": {
+      "northing": 0.002132,
+      "easting": 0.000516
+    },
+    "5": {
+      "northing": 0.003762,
+      "easting": 0.000921
+    },
+    "6": {
+      "northing": 0.011644,
+      "easting": 0.001387
+    },
+    "7": {
+      "northing": 0.019119,
+      "easting": 0.001111
+    },
+    "8": {
+      "northing": 0.027376,
+      "easting": 0.001476
+    },
+    "9": {
+      "northing": 0.029186,
+      "easting": 0.001331
+    },
+    "10": {
+      "northing": 0.0272,
+      "easting": 0.001363
+    },
+    "11": {
+      "northing": 0.026995,
+      "easting": 0.003399
+    },
+    "12": {
+      "northing": 0.025279,
+      "easting": 0.00272
     }
   },
   "stationEllipses95M": {
+    "235": {
+      "semiMajor": 0,
+      "semiMinor": 0,
+      "azimuthDeg": 0
+    },
+    "1000": {
+      "semiMajor": 0,
+      "semiMinor": 0,
+      "azimuthDeg": 0
+    },
     "1": {
       "semiMajor": 0.000971,
       "semiMinor": 0.000605,
@@ -58,10 +120,65 @@
       "semiMinor": 0.001078,
       "azimuthDeg": 173.15
     },
+    "200": {
+      "semiMajor": 0.004345,
+      "semiMinor": 0.001206,
+      "azimuthDeg": 3.9833333333333334
+    },
     "2000": {
       "semiMajor": 0.004363,
       "semiMinor": 0.001229,
       "azimuthDeg": 6.716666666666667
+    },
+    "3": {
+      "semiMajor": 0.00442,
+      "semiMinor": 0.00281,
+      "azimuthDeg": 172.71666666666667
+    },
+    "4": {
+      "semiMajor": 0.00522,
+      "semiMinor": 0.001257,
+      "azimuthDeg": 1.25
+    },
+    "5": {
+      "semiMajor": 0.00934,
+      "semiMinor": 0.001625,
+      "azimuthDeg": 9.783333333333333
+    },
+    "6": {
+      "semiMajor": 0.028641,
+      "semiMinor": 0.001903,
+      "azimuthDeg": 5.65
+    },
+    "7": {
+      "semiMajor": 0.046827,
+      "semiMinor": 0.002156,
+      "azimuthDeg": 2.033333333333333
+    },
+    "8": {
+      "semiMajor": 0.067063,
+      "semiMinor": 0.002401,
+      "azimuthDeg": 2.316666666666667
+    },
+    "9": {
+      "semiMajor": 0.071469,
+      "semiMinor": 0.002575,
+      "azimuthDeg": 1.6
+    },
+    "10": {
+      "semiMajor": 0.066607,
+      "semiMinor": 0.002733,
+      "azimuthDeg": 1.65
+    },
+    "11": {
+      "semiMajor": 0.066494,
+      "semiMinor": 0.00374,
+      "azimuthDeg": 173.56666666666666
+    },
+    "12": {
+      "semiMajor": 0.062121,
+      "semiMinor": 0.003734,
+      "azimuthDeg": 174.9
     }
   },
   "relativeConfidence95": {
@@ -144,6 +261,13 @@
       "semiMinor": 0.000605,
       "azimuthDeg": 163.26666666666668
     },
+    "2-200": {
+      "from": "2",
+      "to": "200",
+      "semiMajor": 0.001681,
+      "semiMinor": 0.000884,
+      "azimuthDeg": 0.05
+    },
     "2-2000": {
       "from": "2",
       "to": "2000",
@@ -158,6 +282,41 @@
       "semiMinor": 0.002381,
       "azimuthDeg": 176.03333333333333
     },
+    "3-5": {
+      "from": "3",
+      "to": "5",
+      "semiMajor": 0.009262,
+      "semiMinor": 0.000876,
+      "azimuthDeg": 174.3
+    },
+    "5-6": {
+      "from": "5",
+      "to": "6",
+      "semiMajor": 0.020095,
+      "semiMinor": 0.001062,
+      "azimuthDeg": 3.466666666666667
+    },
+    "6-7": {
+      "from": "6",
+      "to": "7",
+      "semiMajor": 0.018486,
+      "semiMinor": 0.000992,
+      "azimuthDeg": 176.4
+    },
+    "7-8": {
+      "from": "7",
+      "to": "8",
+      "semiMajor": 0.020347,
+      "semiMinor": 0.001062,
+      "azimuthDeg": 2.966666666666667
+    },
+    "8-9": {
+      "from": "8",
+      "to": "9",
+      "semiMajor": 0.004579,
+      "semiMinor": 0.000918,
+      "azimuthDeg": 170.96666666666667
+    },
     "10-9": {
       "from": "10",
       "to": "9",
@@ -165,12 +324,33 @@
       "semiMinor": 0.000918,
       "azimuthDeg": 1
     },
+    "10-11": {
+      "from": "10",
+      "to": "11",
+      "semiMajor": 0.009653,
+      "semiMinor": 0.00098,
+      "azimuthDeg": 86.88333333333334
+    },
+    "11-12": {
+      "from": "11",
+      "to": "12",
+      "semiMajor": 0.004797,
+      "semiMinor": 0.001377,
+      "azimuthDeg": 156.06666666666666
+    },
     "200-3": {
       "from": "200",
       "to": "3",
       "semiMajor": 0.002407,
       "semiMinor": 0.001656,
       "azimuthDeg": 95.78333333333333
+    },
+    "1000-235": {
+      "from": "1000",
+      "to": "235",
+      "semiMajor": 0,
+      "semiMinor": 0,
+      "azimuthDeg": 0
     },
     "2000-3": {
       "from": "2000",

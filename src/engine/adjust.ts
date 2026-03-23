@@ -51,6 +51,12 @@ import {
   buildSetupDiagnostics,
   buildTraverseDiagnostics,
 } from './adjustmentSetupTraverseDiagnostics';
+import {
+  buildDistanceAzimuthPrecision,
+  buildHorizontalErrorEllipse,
+  buildRelativeCovarianceFromEndpoints,
+  sqrtPrecisionComponent,
+} from './precisionPropagation';
 import { summarizeReductionUsage } from './reductionUsageSummary';
 import type {
   CoordinateConstraintRowPlacement,
@@ -4741,26 +4747,6 @@ export class LSAEngine {
       if (this.dof <= 0) {
         this.log('DOF <= 0: using a-priori variance factor 1.0 for point precision scaling.');
       }
-      const buildEllipse = (
-        varE: number,
-        varN: number,
-        covEN: number,
-      ): { ellipse: Station['errorEllipse']; semiMajor: number; semiMinor: number } => {
-        const term1 = (varE + varN) / 2;
-        const term2 = Math.sqrt(((varE - varN) / 2) ** 2 + covEN * covEN);
-        const semiMajor = Math.sqrt(Math.abs(term1 + term2));
-        const semiMinor = Math.sqrt(Math.abs(term1 - term2));
-        const theta = 0.5 * Math.atan2(2 * covEN, varE - varN);
-        return {
-          ellipse: {
-            semiMajor,
-            semiMinor,
-            theta: theta * RAD_TO_DEG,
-          },
-          semiMajor,
-          semiMinor,
-        };
-      };
       const connectedPairTypes = new Map<string, Set<string>>();
       const addConnectedPair = (a: StationId, b: StationId, label: string): void => {
         if (!a || !b || a === b) return;
@@ -4784,7 +4770,7 @@ export class LSAEngine {
         }
       });
 
-      const buildCovariance = (scaleSq: number) => (a?: number, b?: number): number => {
+      const buildCovariance = (scaleSq: number) => (a?: number | null, b?: number | null): number => {
         if (a == null || b == null) return 0;
         if (!this.Qxx?.[a] || this.Qxx?.[a][b] == null) return 0;
         return this.Qxx[a][b] * scaleSq;
@@ -4809,14 +4795,14 @@ export class LSAEngine {
           const varE = cov(idx.x, idx.x);
           const varN = cov(idx.y, idx.y);
           const covEN = cov(idx.x, idx.y);
-          const ellipseSummary = buildEllipse(varE, varN, covEN);
+          const ellipseSummary = buildHorizontalErrorEllipse(varE, varN, covEN);
           const stationBlock: NonNullable<AdjustmentResult['stationCovariances']>[number] = {
             stationId: id,
             cEE: varE,
             cEN: covEN,
             cNN: varN,
-            sigmaE: Math.sqrt(Math.abs(varE)),
-            sigmaN: Math.sqrt(Math.abs(varN)),
+            sigmaE: sqrtPrecisionComponent(varE, Math.abs(varE)),
+            sigmaN: sqrtPrecisionComponent(varN, Math.abs(varN)),
             ellipse: ellipseSummary.ellipse,
           };
           if (!this.is2D && idx.h != null) {
@@ -4824,7 +4810,7 @@ export class LSAEngine {
             stationBlock.cEH = cov(idx.x, idx.h);
             stationBlock.cNH = cov(idx.y, idx.h);
             stationBlock.cHH = varH;
-            stationBlock.sigmaH = Math.sqrt(Math.abs(varH));
+            stationBlock.sigmaH = sqrtPrecisionComponent(varH, Math.abs(varH));
           }
           stationCovariances.push(stationBlock);
         });
@@ -4842,37 +4828,19 @@ export class LSAEngine {
 
             const dE = toStation.x - fromStation.x;
             const dN = toStation.y - fromStation.y;
-            const dist = Math.hypot(dE, dN);
-            const varE =
-              cov(idxTo?.x, idxTo?.x) +
-              cov(idxFrom?.x, idxFrom?.x) -
-              2 * cov(idxFrom?.x, idxTo?.x);
-            const varN =
-              cov(idxTo?.y, idxTo?.y) +
-              cov(idxFrom?.y, idxFrom?.y) -
-              2 * cov(idxFrom?.y, idxTo?.y);
-            const covEN =
-              cov(idxTo?.x, idxTo?.y) -
-              cov(idxTo?.x, idxFrom?.y) -
-              cov(idxFrom?.x, idxTo?.y) +
-              cov(idxFrom?.x, idxFrom?.y);
-            const ellipseSummary = buildEllipse(varE, varN, covEN);
-
-            let sigmaDist: number | undefined;
-            let sigmaAz: number | undefined;
-            if (dist > 0) {
-              const inv = 1 / (dist * dist);
-              const varDist = inv * (dE * dE * varE + dN * dN * varN + 2 * dE * dN * covEN);
-              sigmaDist = Math.sqrt(Math.abs(varDist));
-              const varAz = (dN * dN * varE + dE * dE * varN - 2 * dE * dN * covEN) * inv * inv;
-              sigmaAz = Math.sqrt(Math.abs(varAz));
-            }
+            const horizontalCovariance = buildRelativeCovarianceFromEndpoints(cov, idxFrom, idxTo);
+            const ellipseSummary = buildHorizontalErrorEllipse(
+              horizontalCovariance.cEE,
+              horizontalCovariance.cNN,
+              horizontalCovariance.cEN,
+            );
+            const { sigmaDist, sigmaAz } = buildDistanceAzimuthPrecision(dE, dN, horizontalCovariance);
 
             relativePrecision.push({
               from,
               to,
-              sigmaN: Math.sqrt(Math.abs(varN)),
-              sigmaE: Math.sqrt(Math.abs(varE)),
+              sigmaN: sqrtPrecisionComponent(horizontalCovariance.cNN, Math.abs(horizontalCovariance.cNN)),
+              sigmaE: sqrtPrecisionComponent(horizontalCovariance.cEE, Math.abs(horizontalCovariance.cEE)),
               sigmaDist,
               sigmaAz,
               ellipse: ellipseSummary.ellipse,
@@ -4891,64 +4859,34 @@ export class LSAEngine {
 
           const dE = toStation.x - fromStation.x;
           const dN = toStation.y - fromStation.y;
-          const dist = Math.hypot(dE, dN);
-          const varE =
-            cov(idxTo?.x, idxTo?.x) +
-            cov(idxFrom?.x, idxFrom?.x) -
-            2 * cov(idxFrom?.x, idxTo?.x);
-          const varN =
-            cov(idxTo?.y, idxTo?.y) +
-            cov(idxFrom?.y, idxFrom?.y) -
-            2 * cov(idxFrom?.y, idxTo?.y);
-          const covEN =
-            cov(idxTo?.x, idxTo?.y) -
-            cov(idxTo?.x, idxFrom?.y) -
-            cov(idxFrom?.x, idxTo?.y) +
-            cov(idxFrom?.x, idxFrom?.y);
-          const ellipseSummary = buildEllipse(varE, varN, covEN);
-
-          let sigmaDist: number | undefined;
-          let sigmaAz: number | undefined;
-          if (dist > 0) {
-            const inv = 1 / (dist * dist);
-            const varDist = inv * (dE * dE * varE + dN * dN * varN + 2 * dE * dN * covEN);
-            sigmaDist = Math.sqrt(Math.abs(varDist));
-            const varAz = (dN * dN * varE + dE * dE * varN - 2 * dE * dN * covEN) * inv * inv;
-            sigmaAz = Math.sqrt(Math.abs(varAz));
-          }
+          const relativeCovariance = buildRelativeCovarianceFromEndpoints(cov, idxFrom, idxTo, !this.is2D);
+          const ellipseSummary = buildHorizontalErrorEllipse(
+            relativeCovariance.cEE,
+            relativeCovariance.cNN,
+            relativeCovariance.cEN,
+          );
+          const { sigmaDist, sigmaAz } = buildDistanceAzimuthPrecision(dE, dN, relativeCovariance);
 
           const row: NonNullable<AdjustmentResult['relativeCovariances']>[number] = {
             from,
             to,
             connected: true,
             connectionTypes: Array.from(types).sort(),
-            cEE: varE,
-            cEN: covEN,
-            cNN: varN,
-            sigmaE: Math.sqrt(Math.abs(varE)),
-            sigmaN: Math.sqrt(Math.abs(varN)),
+            cEE: relativeCovariance.cEE,
+            cEN: relativeCovariance.cEN,
+            cNN: relativeCovariance.cNN,
+            sigmaE: sqrtPrecisionComponent(relativeCovariance.cEE, Math.abs(relativeCovariance.cEE)),
+            sigmaN: sqrtPrecisionComponent(relativeCovariance.cNN, Math.abs(relativeCovariance.cNN)),
             sigmaDist,
             sigmaAz,
             ellipse: ellipseSummary.ellipse,
           };
 
           if (!this.is2D) {
-            const varH =
-              cov(idxTo?.h, idxTo?.h) +
-              cov(idxFrom?.h, idxFrom?.h) -
-              2 * cov(idxFrom?.h, idxTo?.h);
-            row.cEH =
-              cov(idxTo?.x, idxTo?.h) -
-              cov(idxTo?.x, idxFrom?.h) -
-              cov(idxFrom?.x, idxTo?.h) +
-              cov(idxFrom?.x, idxFrom?.h);
-            row.cNH =
-              cov(idxTo?.y, idxTo?.h) -
-              cov(idxTo?.y, idxFrom?.h) -
-              cov(idxFrom?.y, idxTo?.h) +
-              cov(idxFrom?.y, idxFrom?.h);
-            row.cHH = varH;
-            row.sigmaH = Math.sqrt(Math.abs(varH));
+            row.cEH = relativeCovariance.cEH;
+            row.cNH = relativeCovariance.cNH;
+            row.cHH = relativeCovariance.cHH;
+            row.sigmaH = sqrtPrecisionComponent(relativeCovariance.cHH ?? 0, Math.abs(relativeCovariance.cHH ?? 0));
           }
 
           relativeCovariances.push(row);
