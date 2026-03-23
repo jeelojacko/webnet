@@ -1825,6 +1825,125 @@ describe('LSAEngine', () => {
     expect((parityAngle?.weightingStdDev ?? 0) * RAD_TO_DEG * 3600).toBeCloseTo(5.21, 2);
   });
 
+  it('applies the tiny industry-parity angular sigma calibration only to non-explicit angular weights', () => {
+    const input = [
+      '.2D',
+      'C AT 0 0 0 ! !',
+      'C FROM 100 0 0 ! !',
+      'C TO 0 100 0 ! !',
+      'A AT-FROM-TO 090-00-00',
+    ].join('\n');
+    const instrumentLibrary = {
+      TEST: {
+        code: 'TEST',
+        desc: 'Parity calibration isolate',
+        edm_const: 0,
+        edm_ppm: 0,
+        hzPrecision_sec: 1,
+        dirPrecision_sec: 1,
+        azBearingPrecision_sec: 1,
+        vaPrecision_sec: 1,
+        instCentr_m: 0,
+        tgtCentr_m: 0,
+        vertCentr_m: 0,
+        elevDiff_const_m: 0,
+        elevDiff_ppm: 0,
+        gpsStd_xy: 0,
+        levStd_mmPerKm: 0,
+      },
+    };
+    const currentEngine = new LSAEngine({
+      input,
+      maxIterations: 4,
+      instrumentLibrary,
+      parseOptions: {
+        currentInstrument: 'TEST',
+        geometryDependentSigmaReference: 'current',
+      },
+    });
+    const currentResult = currentEngine.solve();
+    const parityEngine = new LSAEngine({
+      input,
+      maxIterations: 4,
+      instrumentLibrary,
+      parseOptions: {
+        currentInstrument: 'TEST',
+        geometryDependentSigmaReference: 'initial',
+      },
+    });
+    const parityResult = parityEngine.solve();
+
+    const currentAngle = currentResult.observations.find((obs) => obs.type === 'angle');
+    const parityAngle = parityResult.observations.find((obs) => obs.type === 'angle');
+    const currentSigma = (currentEngine as any).effectiveStdDev(currentAngle);
+    const paritySigma = (parityEngine as any).effectiveStdDev(parityAngle);
+
+    expect(Number.isFinite(currentSigma)).toBe(true);
+    expect(Number.isFinite(paritySigma)).toBe(true);
+    expect(paritySigma / currentSigma).toBeCloseTo(
+      1.0001,
+      6,
+    );
+  });
+
+  it('keeps explicit angular sigma overrides unchanged in the parity calibration path', () => {
+    const input = [
+      '.2D',
+      'C AT 0 0 0 ! !',
+      'C FROM 100 0 0 ! !',
+      'C TO 0 100 0 ! !',
+      'A AT-FROM-TO 090-00-00 4',
+    ].join('\n');
+    const instrumentLibrary = {
+      TEST: {
+        code: 'TEST',
+        desc: 'Parity calibration isolate',
+        edm_const: 0,
+        edm_ppm: 0,
+        hzPrecision_sec: 1,
+        dirPrecision_sec: 1,
+        azBearingPrecision_sec: 1,
+        vaPrecision_sec: 1,
+        instCentr_m: 0,
+        tgtCentr_m: 0,
+        vertCentr_m: 0,
+        elevDiff_const_m: 0,
+        elevDiff_ppm: 0,
+        gpsStd_xy: 0,
+        levStd_mmPerKm: 0,
+      },
+    };
+    const currentEngine = new LSAEngine({
+      input,
+      maxIterations: 4,
+      instrumentLibrary,
+      parseOptions: {
+        currentInstrument: 'TEST',
+        geometryDependentSigmaReference: 'current',
+      },
+    });
+    const currentResult = currentEngine.solve();
+    const parityEngine = new LSAEngine({
+      input,
+      maxIterations: 4,
+      instrumentLibrary,
+      parseOptions: {
+        currentInstrument: 'TEST',
+        geometryDependentSigmaReference: 'initial',
+      },
+    });
+    const parityResult = parityEngine.solve();
+
+    const currentAngle = currentResult.observations.find((obs) => obs.type === 'angle');
+    const parityAngle = parityResult.observations.find((obs) => obs.type === 'angle');
+    const currentSigma = (currentEngine as any).effectiveStdDev(currentAngle);
+    const paritySigma = (parityEngine as any).effectiveStdDev(parityAngle);
+
+    expect(Number.isFinite(currentSigma)).toBe(true);
+    expect(Number.isFinite(paritySigma)).toBe(true);
+    expect(paritySigma).toBeCloseTo(currentSigma, 12);
+  });
+
   it('captures prism correction source and magnitude metadata from fixture offsets', () => {
     const input = readFileSync('tests/fixtures/prism_phase3_offsets.dat', 'utf-8');
     const result = new LSAEngine({ input, maxIterations: 12 }).solve();

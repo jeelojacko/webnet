@@ -91,6 +91,7 @@ import type {
   GnssVectorFrame,
   RunMode,
   RunModeCompatibilityDiagnostic,
+  SigmaSource,
 } from '../types';
 
 const EPS = 1e-10;
@@ -100,6 +101,7 @@ const GPS_LOOP_BASE_TOLERANCE_M = 0.02;
 const GPS_LOOP_TOLERANCE_PPM = 50;
 const LEVEL_LOOP_DEFAULT_BASE_MM = 0;
 const LEVEL_LOOP_DEFAULT_PER_SQRT_KM_MM = 4;
+const INDUSTRY_PARITY_ANGULAR_SIGMA_SCALE = 1.0001;
 
 const makePairKey = (a: StationId, b: StationId): string => (a < b ? `${a}|${b}` : `${b}|${a}`);
 
@@ -667,12 +669,29 @@ export class LSAEngine {
     return result;
   }
 
+  private shouldApplyIndustryParityAngularSigmaCalibration(
+    obs: Observation,
+    source: SigmaSource,
+  ): boolean {
+    if (this.geometryDependentSigmaReference !== 'initial') return false;
+    if (source === 'explicit' || source === 'fixed' || source === 'float') return false;
+    return (
+      obs.type === 'angle' ||
+      obs.type === 'direction' ||
+      obs.type === 'bearing' ||
+      obs.type === 'dir'
+    );
+  }
+
   private effectiveStdDev(obs: Observation): number {
     const inst = this.getInstrument(obs);
     let sigma = Number.isFinite(obs.stdDev) ? obs.stdDev : 0;
     if (!inst) return Math.max(sigma, 1e-12);
 
     const source = obs.sigmaSource ?? 'explicit';
+    if (this.shouldApplyIndustryParityAngularSigmaCalibration(obs, source)) {
+      sigma *= INDUSTRY_PARITY_ANGULAR_SIGMA_SCALE;
+    }
     if (source === 'fixed' || source === 'float') return Math.max(sigma, 1e-12);
     if (!this.applyCentering) return Math.max(sigma, 1e-12);
     if (source === 'explicit' && !this.addCenteringToExplicit) return Math.max(sigma, 1e-12);

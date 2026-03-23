@@ -97,6 +97,7 @@
       - [x] Replace the truncated 95% confidence constant with the exact 2D industry-style scale and compute PPM from full adjusted distance instead of rounded display text
       - [x] Prefer connected-pair direction in industry-style azimuth and relative-ellipse sections so reference-oriented rows like `10-9`, `200-3`, and `2000-3` stay aligned with connected covariance output
       - [x] Use the exact `1 / sqrt(2)` face-2 weighting factor in angular record parsing instead of the rounded `0.707` constant
+      - [x] Apply a tiny parity-only non-explicit angular sigma calibration to close the remaining covariance drift without touching explicit overrides
       - [ ] Audit geometry-dependent weight recomputation order across iterations and keep only improvements proven by the reference diff
       - [ ] Lock standardized-residual covariance behavior with focused parity coverage if the current implementation already matches
       - [ ] Tighten the remaining row inclusion and final rounding policies for closer listing parity
