@@ -7,19 +7,24 @@ import { buildIndustryStyleListingText } from '../src/engine/industryListing';
 import { normalizeIndustryParityCaseText } from '../src/engine/industryParityText';
 import { ACTIVE_INDUSTRY_PARITY_CASE, INDUSTRY_PARITY_CASES } from '../src/industryParityCases';
 
-const buildActiveLevelingParityResult = () => {
-  const startup = ACTIVE_INDUSTRY_PARITY_CASE.startupDefaults;
+const buildCaseResult = (caseId: keyof typeof INDUSTRY_PARITY_CASES) => {
+  const startup = INDUSTRY_PARITY_CASES[caseId].startupDefaults;
   expect(startup).toBeDefined();
 
   return new LSAEngine({
     input: startup?.input ?? '',
     maxIterations: 15,
-    convergenceThreshold: 0.001,
+    convergenceThreshold: startup?.settingsPatch.convergenceLimit ?? 0.001,
     instrumentLibrary: startup?.projectInstruments,
     parseOptions: {
       currentInstrument: startup?.selectedInstrument,
+      coordSystemMode: startup?.parseSettingsPatch.coordSystemMode,
+      crsId: startup?.parseSettingsPatch.crsId,
       coordMode: startup?.parseSettingsPatch.coordMode ?? '3D',
       order: startup?.parseSettingsPatch.order ?? 'EN',
+      deltaMode: startup?.parseSettingsPatch.deltaMode ?? 'slope',
+      angleStationOrder: startup?.parseSettingsPatch.angleStationOrder ?? 'atfromto',
+      lonSign: startup?.parseSettingsPatch.lonSign ?? 'west-negative',
     },
   }).solve();
 };
@@ -52,25 +57,27 @@ describe('industry multi-case parity foundation', () => {
     expect(normalized).toContain('Project Units                       : Meters');
   });
 
-  it('solves the active leveling startup case as a height-only network with reference-like elevations', () => {
-    const result = buildActiveLevelingParityResult();
+  it('makes the traverse case the active startup default with the expected grid settings and instruments', () => {
+    expect(ACTIVE_INDUSTRY_PARITY_CASE.id).toBe('traverse');
+    expect(ACTIVE_INDUSTRY_PARITY_CASE.startupDefaults).toBeDefined();
 
-    if (!result.success) {
-      console.log(result.logs.join('\n'));
-    }
-
-    expect(result.success).toBe(true);
-    expect(result.converged).toBe(true);
-    expect(result.observations.filter((obs) => obs.type === 'lev')).toHaveLength(60);
-    expect(Math.abs((result.stations.GPS3?.h ?? Number.NaN) - 51.9278)).toBeLessThanOrEqual(
-      0.001,
-    );
-    expect(Math.abs((result.stations.GATE?.h ?? Number.NaN) - 48.4755)).toBeLessThanOrEqual(
-      0.001,
-    );
-    expect(Math.abs((result.stations.APOG?.h ?? Number.NaN) - 117.7601)).toBeLessThanOrEqual(
-      0.001,
-    );
+    const startup = ACTIVE_INDUSTRY_PARITY_CASE.startupDefaults!;
+    expect(startup.input).toContain('#Traverse Only');
+    expect(startup.input).toContain('#-------------------------------CONTROL----------------------------------#');
+    expect(startup.input).not.toContain('Project Option Settings');
+    expect(startup.settingsPatch.convergenceLimit).toBe(0.01);
+    expect(startup.parseSettingsPatch.coordMode).toBe('3D');
+    expect(startup.parseSettingsPatch.coordSystemMode).toBe('grid');
+    expect(startup.parseSettingsPatch.crsId).toBe('CA_NAD83_CSRS_NB_STEREO_DOUBLE');
+    expect(startup.parseSettingsPatch.order).toBe('NE');
+    expect(startup.parseSettingsPatch.lonSign).toBe('west-positive');
+    expect(startup.selectedInstrument).toBe('TRAV_DEFAULT');
+    expect(Object.keys(startup.projectInstruments).sort()).toEqual([
+      'S9',
+      'SX12',
+      'TRAV_DEFAULT',
+      'TS11',
+    ]);
   });
 
   it('keeps the copied leveling reference output available for future exact normalized text parity work', () => {
@@ -82,10 +89,10 @@ describe('industry multi-case parity foundation', () => {
   });
 
   it('matches the leveling reference listing exactly from project option settings to the file end', () => {
-    const startup = ACTIVE_INDUSTRY_PARITY_CASE.startupDefaults;
+    const startup = INDUSTRY_PARITY_CASES.leveling.startupDefaults;
     expect(startup).toBeDefined();
 
-    const result = buildActiveLevelingParityResult();
+    const result = buildCaseResult('leveling');
     expect(result.success).toBe(true);
 
     const listing = buildIndustryStyleListingText(

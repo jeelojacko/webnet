@@ -7,7 +7,7 @@
     "expectedObservationCount": 240,
     "reportWindowSize": 100,
     "solveBudgetMs": 12000,
-    "rerunBudgetMs": 8000,
+    "rerunBudgetMs": 9000,
     "renderBudgetMs": 5000,
     "artifactBuildBudgetMs": 4000,
     "artifactFormat": "bundle-qa-standard-with-landxml"

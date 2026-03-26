@@ -21,7 +21,7 @@ Current startup and workflow defaults include:
 - run profile defaults to industry-standard parity mode
 - cluster detection defaults to OFF
 - auto-adjust is available but operator-controlled
-- the seeded instrument library includes `S9` as the default-selected baseline
+- the active startup dataset is currently rotated to the traverse industry-parity case, including New Brunswick grid defaults and a preloaded traverse instrument library (`TRAV_DEFAULT`, `S9`, `SX12`, `TS11`)
 - the active startup dataset may be rotated to the current industry-parity working case during parity-sensitive batches
 - browser-local recovery restores workspace state but intentionally does not restore stale solve results without rerun
 
@@ -51,6 +51,7 @@ The parser supports a large inline-directive surface used for:
 - aliasing, description, and control-state behavior
 - GPS, CRS, geoid, and coordinate-system controls
 - run-mode, preanalysis, cluster, auto-adjust, and review-oriented toggles
+- traverse instrument scoping through `.INST <code>`, which flushes the active direction-set block and applies the selected instrument to subsequent traverse/direction-set observations
 
 See the parser modules and tests for the precise directive matrix. Keep this document at the feature-summary level rather than duplicating every parser token.
 
@@ -134,6 +135,7 @@ Current listing/report behavior includes:
 - connected-pair direction parity in relative sections
 - observation-table formatting for zero-size ellipse and displayed sigma corner cases
 - omission of processing-log lines from the industry-style listing output
+- industry-style adjusted-observation sections always emit the full solved set; the old adjusted-observation row-limit control is no longer exposed in Project Options
 
 ### Precision reporting
 Current results support dual precision-reporting models:
@@ -217,6 +219,7 @@ Parity-sensitive behavior remains an explicit project concern. Current parity-or
 - normalized exact-text parity helpers that ignore only volatile header values (software version, run date, project folder, and data-file path lines)
 - fixture-locked listing-format and error-propagation coverage
 - exact levelling-only industry-listing parity from `Project Option Settings` through the file end for the active leveling reference case
+- active traverse startup defaults and parser regression locks for `.INST`-scoped instrument selection across direction-set/traverse blocks
 - focused regression locks around angular stochastic behavior, centering geometry, displayed sigma behavior, and connected-pair precision rows
 
 When a change affects parser semantics, weighting, reduction, residual display, confidence formatting, or listing/report ordering, treat it as parity-sensitive and consult `docs/PARITY_WORKFLOW.md`.

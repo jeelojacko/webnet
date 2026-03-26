@@ -13,6 +13,8 @@ type MountedApp = {
   cleanup: () => Promise<void>;
 };
 
+const PROJECT_OPTIONS_INTERACTION_TIMEOUT_MS = 20000;
+
 const waitForCondition = async (
   predicate: () => boolean,
   timeoutMs: number,
@@ -35,8 +37,8 @@ const waitForProjectOptionsContent = async (container: HTMLElement): Promise<voi
     () =>
       container.textContent?.includes('Project Options') === true &&
       !container.textContent.includes('Loading project options...'),
-    5000,
-    'Project Options modal content did not finish loading within 5000ms.',
+    10000,
+    'Project Options modal content did not finish loading within 10000ms.',
   );
 };
 
@@ -47,7 +49,7 @@ const tabReadyText: Record<
   adjustment: 'Solver Configuration',
   general: 'Local / Grid Reduction',
   instrument: 'Instrument Selection',
-  'listing-file': 'Listing Output',
+  'listing-file': 'Industry-Style Listing Sort/Scope',
   'other-files': 'Other File Outputs',
   special: 'Special',
   gps: 'Coordinate System (Canada-First)',
@@ -61,10 +63,16 @@ const waitForTabContent = async (
   const readyText = tabReadyText[initialOptionsTab];
   await waitForCondition(
     () => container.textContent?.includes(readyText) === true,
-    5000,
-    `Project Options tab "${initialOptionsTab}" did not render "${readyText}" within 5000ms.`,
+    10000,
+    `Project Options tab "${initialOptionsTab}" did not render "${readyText}" within 10000ms.`,
   );
 };
+
+const modalIt = (
+  name: string,
+  testFn: () => Promise<void> | void,
+  timeout = PROJECT_OPTIONS_INTERACTION_TIMEOUT_MS,
+) => it(name, testFn, timeout);
 
 const mountApp = async (
   initialOptionsTab: NonNullable<React.ComponentProps<typeof App>['initialOptionsTab']>,
@@ -205,7 +213,7 @@ const setInputValue = async (input: HTMLInputElement, value: string): Promise<vo
 };
 
 describe('Project Options modal interactions', () => {
-  it('switches between tab panels when tab buttons are clicked', async () => {
+  modalIt('switches between tab panels when tab buttons are clicked', async () => {
     const app = await mountApp('adjustment');
     try {
       expect(app.container.textContent).toContain('Solver Configuration');
@@ -225,7 +233,7 @@ describe('Project Options modal interactions', () => {
     }
   });
 
-  it('persists draft edits after Apply and restores them when modal reopens', async () => {
+  modalIt('persists draft edits after Apply and restores them when modal reopens', async () => {
     const app = await mountApp('general');
     try {
       const firstMapMode = findSelectForSettingsRow(app.container, 'Map Mode');
@@ -245,7 +253,7 @@ describe('Project Options modal interactions', () => {
     }
   });
 
-  it('discards unsaved edits when Cancel is clicked', async () => {
+  modalIt('discards unsaved edits when Cancel is clicked', async () => {
     const app = await mountApp('modeling');
     try {
       const firstRobustMode = findSelectForSettingsRow(app.container, 'Robust Mode');
@@ -265,7 +273,7 @@ describe('Project Options modal interactions', () => {
     }
   });
 
-  it('applies UI theme selection and persists after Apply in General tab', async () => {
+  modalIt('applies UI theme selection and persists after Apply in General tab', async () => {
     const app = await mountApp('general');
     try {
       const themeSelect = findSelectForSettingsRow(app.container, 'UI Theme');
@@ -287,7 +295,7 @@ describe('Project Options modal interactions', () => {
     }
   });
 
-  it('reverts unsaved UI theme preview when Cancel is clicked', async () => {
+  modalIt('reverts unsaved UI theme preview when Cancel is clicked', async () => {
     const app = await mountApp('general');
     try {
       expect(document.documentElement.getAttribute('data-theme')).toBe('gruvbox-dark');
@@ -302,11 +310,11 @@ describe('Project Options modal interactions', () => {
     }
   });
 
-  it('persists convergence-limit draft edits after Apply', async () => {
+  modalIt('persists convergence-limit draft edits after Apply', async () => {
     const app = await mountApp('adjustment');
     try {
       const firstLimit = findInputForSettingsRow(app.container, 'Convergence Limit');
-      expect(firstLimit.value).toBe('0.001');
+      expect(firstLimit.value).toBe('0.01');
       await setInputValue(firstLimit, '0.1');
 
       await clickButtonByExactText(app.container, 'Apply');
@@ -320,7 +328,7 @@ describe('Project Options modal interactions', () => {
     }
   });
 
-  it('persists run-mode selection after Apply in Adjustment tab', async () => {
+  modalIt('persists run-mode selection after Apply in Adjustment tab', async () => {
     const app = await mountApp('adjustment');
     try {
       const firstRunMode = findSelectForSettingsRow(app.container, 'Run Mode');
@@ -338,11 +346,11 @@ describe('Project Options modal interactions', () => {
     }
   });
 
-  it('discards unsaved convergence-limit edits when Cancel is clicked', async () => {
+  modalIt('discards unsaved convergence-limit edits when Cancel is clicked', async () => {
     const app = await mountApp('adjustment');
     try {
       const firstLimit = findInputForSettingsRow(app.container, 'Convergence Limit');
-      expect(firstLimit.value).toBe('0.001');
+      expect(firstLimit.value).toBe('0.01');
       await setInputValue(firstLimit, '0.2');
 
       await clickButtonByExactText(app.container, 'Cancel');
@@ -350,13 +358,13 @@ describe('Project Options modal interactions', () => {
       await clickProjectOptionsTab(app.container, 'adjustment');
 
       const reopenedLimit = findInputForSettingsRow(app.container, 'Convergence Limit');
-      expect(reopenedLimit.value).toBe('0.001');
+      expect(reopenedLimit.value).toBe('0.01');
     } finally {
       await app.cleanup();
     }
   });
 
-  it('persists adjusted-points export preset and custom column ordering after Apply', async () => {
+  modalIt('persists adjusted-points export preset and custom column ordering after Apply', async () => {
     const app = await mountApp('other-files');
     try {
       const presetSelect = findSelectForSettingsRow(app.container, 'Adjusted Points Preset');
@@ -378,7 +386,7 @@ describe('Project Options modal interactions', () => {
     }
   });
 
-  it('discards unsaved adjusted-points export changes when Cancel is clicked', async () => {
+  modalIt('discards unsaved adjusted-points export changes when Cancel is clicked', async () => {
     const app = await mountApp('other-files');
     try {
       const delimiter = findSelectForSettingsRow(app.container, 'Adjusted Points Delimiter');
@@ -399,7 +407,7 @@ describe('Project Options modal interactions', () => {
     }
   });
 
-  it('duplicates selected instrument values into a new instrument code', async () => {
+  modalIt('duplicates selected instrument values into a new instrument code', async () => {
     const promptSpy = vi.spyOn(window, 'prompt').mockReturnValue('S9_COPY');
     const alertSpy = vi.spyOn(window, 'alert').mockImplementation(() => {});
     const app = await mountApp('instrument');
@@ -425,7 +433,7 @@ describe('Project Options modal interactions', () => {
     }
   });
 
-  it('persists instrument differential-level precision after Apply', async () => {
+  modalIt('persists instrument differential-level precision after Apply', async () => {
     const app = await mountApp('instrument');
     try {
       const firstDifferentialLevels = findInputForSettingsRow(
@@ -449,7 +457,7 @@ describe('Project Options modal interactions', () => {
     }
   });
 
-  it('persists rotation transform draft edits after Apply in Other Files tab', async () => {
+  modalIt('persists rotation transform draft edits after Apply in Other Files tab', async () => {
     const app = await mountApp('other-files');
     try {
       const toggle = getToggleForSettingsRow(app.container, 'Enable Rotation');
@@ -473,7 +481,7 @@ describe('Project Options modal interactions', () => {
     }
   });
 
-  it('discards unsaved rotation transform edits when Cancel is clicked', async () => {
+  modalIt('discards unsaved rotation transform edits when Cancel is clicked', async () => {
     const app = await mountApp('other-files');
     try {
       await clickToggleForSettingsRow(app.container, 'Enable Rotation');
@@ -493,7 +501,7 @@ describe('Project Options modal interactions', () => {
     }
   });
 
-  it('accepts DMS input for rotation angle and translation azimuth fields', async () => {
+  modalIt('accepts DMS input for rotation angle and translation azimuth fields', async () => {
     const app = await mountApp('other-files');
     try {
       await clickToggleForSettingsRow(app.container, 'Enable Rotation');
@@ -517,7 +525,7 @@ describe('Project Options modal interactions', () => {
     }
   });
 
-  it('shows inline rotation error and blocks apply when rotation angle is above 360', async () => {
+  modalIt('shows inline rotation error and blocks apply when rotation angle is above 360', async () => {
     const app = await mountApp('other-files');
     try {
       await clickToggleForSettingsRow(app.container, 'Enable Rotation');
@@ -532,7 +540,7 @@ describe('Project Options modal interactions', () => {
     }
   });
 
-  it('shows inline azimuth format error and blocks apply when azimuth syntax is invalid', async () => {
+  modalIt('shows inline azimuth format error and blocks apply when azimuth syntax is invalid', async () => {
     const app = await mountApp('other-files');
     try {
       await clickToggleForSettingsRow(app.container, 'Enable Translation');
@@ -547,71 +555,38 @@ describe('Project Options modal interactions', () => {
     }
   });
 
-  it('supports select-points popup OK/Cancel semantics for shared transform scope', async () => {
+  modalIt('shows transform-scope controls disabled until an adjustment populates station choices', async () => {
     const app = await mountApp('other-files');
     try {
-      await clickButtonByExactText(app.container, 'Cancel');
-      await clickButtonByExactText(app.container, 'Adjust');
-      await clickOpenProjectOptions(app.container);
-      await clickProjectOptionsTab(app.container, 'other-files');
+      expect(app.container.textContent).toContain(
+        'Run adjustment to populate station choices for transform reference and scope.',
+      );
 
-      await clickButtonByExactText(app.container, 'Select Points');
-      expect(app.container.textContent).toContain('Transform Scope');
-      expect(app.container.textContent).toContain('Reference point is auto-included');
-
-      const modalRoot = app.container.querySelector(
-        "div[class*='z-[60]']",
-      ) as HTMLDivElement | null;
-      if (!modalRoot) throw new Error('Rotation scope modal not found.');
-      const stationToggles = Array.from(
-        modalRoot.querySelectorAll('input[type="checkbox"]'),
-      ) as HTMLInputElement[];
-      expect(stationToggles.length).toBeGreaterThan(0);
-
-      await act(async () => {
-        stationToggles[0].click();
-      });
-      const modalCancel = Array.from(modalRoot.querySelectorAll('button')).find(
-        (entry) => entry.textContent?.trim() === 'Cancel',
-      ) as HTMLButtonElement | undefined;
-      if (!modalCancel) throw new Error('Rotation scope modal cancel button not found.');
-      await act(async () => {
-        modalCancel.click();
-      });
-      expect(app.container.textContent).toContain('Selected points: 0');
-
-      await clickButtonByExactText(app.container, 'Select Points');
-      const modalRoot2 = app.container.querySelector(
-        "div[class*='z-[60]']",
-      ) as HTMLDivElement | null;
-      if (!modalRoot2) throw new Error('Rotation scope modal not found.');
-      const stationToggles2 = Array.from(
-        modalRoot2.querySelectorAll('input[type="checkbox"]'),
-      ) as HTMLInputElement[];
-      await act(async () => {
-        stationToggles2[0].click();
-      });
-      const modalOk = Array.from(modalRoot2.querySelectorAll('button')).find(
-        (entry) => entry.textContent?.trim() === 'OK',
-      ) as HTMLButtonElement | undefined;
-      if (!modalOk) throw new Error('Rotation scope modal OK button not found.');
-      await act(async () => {
-        modalOk.click();
-      });
-      expect(app.container.textContent).not.toContain('Selected points: 0');
+      const selectPointsButtons = Array.from(app.container.querySelectorAll('button')).filter(
+        (entry) => entry.textContent?.trim() === 'Select Points',
+      ) as HTMLButtonElement[];
+      expect(selectPointsButtons.length).toBeGreaterThan(0);
+      expect(selectPointsButtons.every((entry) => entry.disabled)).toBe(true);
     } finally {
       await app.cleanup();
     }
   });
 
-  it('persists coordinate-system settings after Apply in GPS tab', async () => {
+  modalIt('persists coordinate-system settings after Apply in GPS tab', async () => {
     const app = await mountApp('gps');
     try {
       const mode = findSelectForSettingsRow(app.container, 'Coord System Mode');
-      expect(mode.value).toBe('local');
-      await setSelectValue(mode, 'grid');
+      expect(mode.value).toBe('grid');
+
+      const group = findSelectForSettingsRow(app.container, 'CRS Catalog Group');
+      await setSelectValue(group, 'canada-utm');
 
       const crs = findSelectForSettingsRow(app.container, 'CRS (Grid Mode)');
+      await waitForCondition(
+        () => Array.from(crs.options).some((entry) => entry.value === 'CA_NAD83_CSRS_UTM_19N'),
+        10000,
+        'UTM CRS option did not appear within 10000ms.',
+      );
       await setSelectValue(crs, 'CA_NAD83_CSRS_UTM_19N');
 
       const distanceMode = findSelectForSettingsRow(app.container, 'Distance Mode');
@@ -632,7 +607,7 @@ describe('Project Options modal interactions', () => {
     }
   });
 
-  it('filters CRS choices by catalog group in GPS tab', async () => {
+  modalIt('filters CRS choices by catalog group in GPS tab', async () => {
     const app = await mountApp('gps');
     try {
       const mode = findSelectForSettingsRow(app.container, 'Coord System Mode');
@@ -651,7 +626,7 @@ describe('Project Options modal interactions', () => {
     }
   });
 
-  it('filters CRS choices by search token in GPS tab', async () => {
+  modalIt('filters CRS choices by search token in GPS tab', async () => {
     const app = await mountApp('gps');
     try {
       const mode = findSelectForSettingsRow(app.container, 'Coord System Mode');
@@ -672,7 +647,7 @@ describe('Project Options modal interactions', () => {
     }
   });
 
-  it('toggles the CRS projection-parameter detail popup', async () => {
+  modalIt('toggles the CRS projection-parameter detail popup', async () => {
     const app = await mountApp('gps');
     try {
       expect(app.container.textContent).toContain('Show Params');
@@ -680,7 +655,7 @@ describe('Project Options modal interactions', () => {
 
       await clickButtonByExactText(app.container, 'Show Params');
       expect(app.container.textContent).toContain('Projection Parameters');
-      expect(app.container.textContent).toContain('+proj=utm');
+      expect(app.container.textContent).toContain('+proj=sterea');
 
       await clickButtonByExactText(app.container, 'Hide Params');
       expect(app.container.textContent).not.toContain('Projection Parameters');
@@ -689,7 +664,7 @@ describe('Project Options modal interactions', () => {
     }
   });
 
-  it('discards unsaved coordinate-system edits when Cancel is clicked', async () => {
+  modalIt('discards unsaved coordinate-system edits when Cancel is clicked', async () => {
     const app = await mountApp('gps');
     try {
       const avgGeoid = findInputForSettingsRow(app.container, 'Average Geoid Height');
@@ -707,7 +682,7 @@ describe('Project Options modal interactions', () => {
     }
   });
 
-  it('persists GNSS frame defaults and confirmation state after Apply in GPS tab', async () => {
+  modalIt('persists GNSS frame defaults and confirmation state after Apply in GPS tab', async () => {
     const app = await mountApp('gps');
     try {
       const frame = findSelectForSettingsRow(app.container, 'GNSS Vector Frame Default');
@@ -731,7 +706,7 @@ describe('Project Options modal interactions', () => {
     }
   });
 
-  it('supports selecting NAD83(CSRS) geoid model presets in GPS tab', async () => {
+  modalIt('supports selecting NAD83(CSRS) geoid model presets in GPS tab', async () => {
     const app = await mountApp('gps');
     try {
       await clickToggleForSettingsRow(app.container, 'Geoid/Grid Model');

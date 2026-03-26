@@ -177,6 +177,17 @@ describe('parseDirectiveRegistry', () => {
     expect(logs).toContain('END encountered; stopping parse');
   });
 
+  it('treats .INST as an instrument-selection directive and flushes the active set scope', () => {
+    const { dispatch, flushedReasons, logs, state } = createHarness();
+
+    const result = dispatch('.INST', ['.INST', 'SX12'], 27);
+
+    expect(result.handled).toBe(true);
+    expect(flushedReasons).toEqual(['.INST']);
+    expect(state.currentInstrument).toBe('SX12');
+    expect(logs).toContain('Current instrument set to SX12');
+  });
+
   it('delegates alias directives through the alias pipeline handler', () => {
     const { aliasDirectiveCalls, dispatch } = createHarness();
 

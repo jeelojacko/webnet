@@ -123,8 +123,8 @@
       - [x] Add focused parser, weighting, listing, and parity coverage for the levelling-only case
       - [x] Require normalized exact listing parity for the levelling output before moving on
     - [ ] Batch 8 - traverse-only parity
-      - [ ] Make the traverse case the startup default with its matching grid/project defaults from the reference output, including coordinate-system mode, CRS, longitude-sign convention, coordinate order, convergence limit, and instrument library
-      - [ ] Make `.INST <code>` reliably set the current instrument for the following traverse/direction-set block without breaking existing conventional parsing
+      - [x] Make the traverse case the startup default with its matching grid/project defaults from the reference output, including coordinate-system mode, CRS, longitude-sign convention, coordinate order, convergence limit, and instrument library
+      - [x] Make `.INST <code>` reliably set the current instrument for the following traverse/direction-set block without breaking existing conventional parsing
       - [ ] Close the remaining fixed-bearing orientation parity gap for a network constrained by one fixed point plus one fixed bearing
       - [ ] Match direction-set, distance, zenith, target-height, and set-scoped weighting behavior used by the traverse reference case
       - [ ] Add focused parity coverage for traverse parsing, `.INST` scoping, fixed-bearing handling, and normalized exact output diff
@@ -142,7 +142,7 @@
       - [ ] Keep the change only if levelling, traverse, GNSS, and combined parity all improve or remain neutral together
     - [ ] Batch 11 - parity closeout and workflow documentation
       - [ ] Document the four-case parity workflow and batch-default rotation rule in `docs/PARITY_WORKFLOW.md`
-      - [ ] Update `docs/CURRENT_BEHAVIOR.md` with the newly supported levelling hyphen-pair syntax, GNSS covariance-vector dialect, and expanded industry parity coverage
+      - [ ] Update `docs/CURRENT_BEHAVIOR.md` with the newly supported levelling hyphen-pair syntax, traverse `.INST` instrument scoping, GNSS covariance-vector dialect, and expanded industry parity coverage
       - [x] Keep `README.md` unchanged unless the user-facing startup/example workflow is intentionally documented there
       - [ ] Run and record the required validation matrix for each completed batch: focused tests, `npm run lint`, `npm run typecheck`, `npm run test`, `npm run build`, and `npm run parity:industry-reference`
   - [ ] Phase 5 - review and map/report UX polish

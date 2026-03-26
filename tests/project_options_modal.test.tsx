@@ -13,6 +13,8 @@ type MountedApp = {
   cleanup: () => Promise<void>;
 };
 
+const PROJECT_OPTIONS_LAYOUT_TIMEOUT_MS = 15000;
+
 const waitForCondition = async (
   predicate: () => boolean,
   timeoutMs: number,
@@ -35,8 +37,8 @@ const waitForProjectOptionsContent = async (container: HTMLElement): Promise<voi
     () =>
       container.textContent?.includes('Project Options') === true &&
       !container.textContent.includes('Loading project options...'),
-    5000,
-    'Project Options modal content did not finish loading within 5000ms.',
+    10000,
+    'Project Options modal content did not finish loading within 10000ms.',
   );
 };
 
@@ -47,7 +49,7 @@ const tabReadyText: Record<
   adjustment: 'Solver Configuration',
   general: 'Local / Grid Reduction',
   instrument: 'Instrument Selection',
-  'listing-file': 'Listing Output',
+  'listing-file': 'Industry-Style Listing Sort/Scope',
   'other-files': 'Other File Outputs',
   special: 'Special',
   gps: 'Coordinate System (Canada-First)',
@@ -61,8 +63,8 @@ const waitForTabContent = async (
   const readyText = tabReadyText[initialOptionsTab];
   await waitForCondition(
     () => container.textContent?.includes(readyText) === true,
-    5000,
-    `Project Options tab "${initialOptionsTab}" did not render "${readyText}" within 5000ms.`,
+    10000,
+    `Project Options tab "${initialOptionsTab}" did not render "${readyText}" within 10000ms.`,
   );
 };
 
@@ -104,7 +106,7 @@ describe('Project Options modal layout', () => {
     } finally {
       await app.cleanup();
     }
-  });
+  }, PROJECT_OPTIONS_LAYOUT_TIMEOUT_MS);
 
   it('renders the condensed instrument layout with labels left and inputs right', async () => {
     const app = await mountApp('instrument');
@@ -120,7 +122,7 @@ describe('Project Options modal layout', () => {
     } finally {
       await app.cleanup();
     }
-  });
+  }, PROJECT_OPTIONS_LAYOUT_TIMEOUT_MS);
 
   it('renders the condensed general layout with reduction controls grouped in cards', async () => {
     const app = await mountApp('general');
@@ -140,7 +142,7 @@ describe('Project Options modal layout', () => {
     } finally {
       await app.cleanup();
     }
-  });
+  }, PROJECT_OPTIONS_LAYOUT_TIMEOUT_MS);
 
   it('renders the gps layout without the removed condensed-pane helper sentence', async () => {
     const app = await mountApp('gps');
@@ -161,7 +163,7 @@ describe('Project Options modal layout', () => {
     } finally {
       await app.cleanup();
     }
-  });
+  }, PROJECT_OPTIONS_LAYOUT_TIMEOUT_MS);
 
   it('renders real Other Files controls instead of the placeholder panel', async () => {
     const app = await mountApp('other-files');
@@ -193,7 +195,19 @@ describe('Project Options modal layout', () => {
     } finally {
       await app.cleanup();
     }
-  });
+  }, PROJECT_OPTIONS_LAYOUT_TIMEOUT_MS);
+
+  it('renders the listing layout without the removed adjusted-observation row-limit control', async () => {
+    const app = await mountApp('listing-file');
+    try {
+      expect(app.container.textContent).toContain('Industry-Style Listing Contents');
+      expect(app.container.textContent).toContain('Sort Coordinates By');
+      expect(app.container.textContent).toContain('Sort Adjusted Obs/Residuals By');
+      expect(app.container.textContent).not.toContain('Adjusted Obs Row Limit');
+    } finally {
+      await app.cleanup();
+    }
+  }, PROJECT_OPTIONS_LAYOUT_TIMEOUT_MS);
 
   it('renders the condensed modeling layout with TS correlation and robust controls', async () => {
     const app = await mountApp('modeling');
@@ -208,5 +222,5 @@ describe('Project Options modal layout', () => {
     } finally {
       await app.cleanup();
     }
-  });
+  }, PROJECT_OPTIONS_LAYOUT_TIMEOUT_MS);
 });

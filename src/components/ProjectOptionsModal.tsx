@@ -1443,25 +1443,6 @@ const ProjectOptionsModal: React.FC<ProjectOptionsModalProps> = ({ context }) =>
                         <option value="residual">Residual Size</option>
                       </select>
                     </label>
-                    <label className={optionLabelClass}>
-                      Adjusted Obs Row Limit
-                      <input
-                        title={SETTINGS_TOOLTIPS.listingObservationLimit}
-                        type="number"
-                        min={1}
-                        max={500}
-                        step={1}
-                        value={settingsDraft.listingObservationLimit}
-                        onChange={(e) => {
-                          const parsed = Number.parseInt(e.target.value || '1', 10);
-                          const clamped = Number.isFinite(parsed)
-                            ? Math.max(1, Math.min(500, parsed))
-                            : 1;
-                          handleDraftSetting('listingObservationLimit', clamped);
-                        }}
-                        className={`${optionInputClass} mt-1`}
-                      />
-                    </label>
                   </div>
                 </div>
               )}

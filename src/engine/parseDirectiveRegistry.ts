@@ -1298,6 +1298,14 @@ const SPECIALIZED_DIRECTIVE_HANDLERS: Record<string, SpecializedDirectiveHandler
     }
     return handled(orderExplicit);
   },
+  '.INST': ({ parts, state, logs, orderExplicit, flushDirectionSet }) => {
+    flushDirectionSet('.INST');
+    if (parts[1]) {
+      state.currentInstrument = parts[1];
+      logs.push(`Current instrument set to ${state.currentInstrument}`);
+    }
+    return handled(orderExplicit);
+  },
   '.END': ({ logs, orderExplicit, flushDirectionSet }) => {
     flushDirectionSet('.END');
     logs.push('END encountered; stopping parse');

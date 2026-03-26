@@ -33,6 +33,36 @@ describe('parseInput', () => {
     expect(s9.tgtCentr_m).toBeCloseTo(0, 12);
   });
 
+  it('applies .INST instrument selection to subsequent direction-set observations', () => {
+    const parsed = parseInput(
+      [
+        'I TRAV_DEFAULT "Traverse Default" 0.001 1.5 1.414 1 0.00075 0.00075 0 1.5 1 1.414 0.0005 0.01524 0',
+        'I SX12 "SX12" 0.003 1.5 0.950079 6.064437 0.0015 0.0015 0 0 0.671807 1.414 0.0005 0.01524 0',
+        'I S9 "S9" 0.003 2 1.2357 3.28473 0.0015 0.0015 0 0 0.87377 0.707107 0.0005 0.01524 0',
+        '.INST SX12',
+        'DB 100',
+        'DM 101 0-0-0 25.0000 90-00-00',
+        'DE',
+        '.INST S9',
+        'DB 200',
+        'DM 201 0-0-0 30.0000 90-00-00',
+        'DE',
+      ].join('\n'),
+    );
+
+    const distanceObs = parsed.observations.filter(
+      (observation): observation is DistanceObservation => observation.type === 'dist',
+    );
+    const zenithObs = parsed.observations.filter((observation) => observation.type === 'zenith');
+
+    expect(distanceObs.map((observation) => observation.instCode)).toEqual(['SX12', 'S9']);
+    expect(zenithObs.map((observation) => observation.instCode)).toEqual(['SX12', 'S9']);
+    expect(parsed.logs.filter((entry) => entry.includes('Current instrument set to'))).toEqual([
+      'Current instrument set to SX12',
+      'Current instrument set to S9',
+    ]);
+  });
+
   it('parses observations', () => {
     expect(parsed.observations.length).toBeGreaterThan(0);
     const types = parsed.observations.reduce<Record<string, number>>((acc, o) => {

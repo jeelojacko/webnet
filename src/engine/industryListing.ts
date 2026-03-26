@@ -1105,8 +1105,7 @@ export const buildIndustryStyleListingText = (
       if (settings.listingSortObservationsBy === 'input') return compareObsByInput(a, b);
       if (settings.listingSortObservationsBy === 'name') return compareObsByStations(a, b);
       return compareObsByStdRes(a, b);
-    })
-    .slice(0, Math.min(500, Math.max(1, settings.listingObservationLimit)));
+    });
   const precisionReportingMode = settings.precisionReportingMode ?? 'industry-standard';
   const relativePrecisionRows = getRelativePrecisionRows(res, precisionReportingMode);
   const relativeCovarianceRows = getRelativeCovarianceRows(res, precisionReportingMode);
