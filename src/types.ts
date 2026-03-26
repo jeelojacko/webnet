@@ -138,6 +138,7 @@ export interface Station {
   y: number;
   h: number;
   lost?: boolean;
+  bootstrapApprox?: boolean;
   sx?: number;
   sy?: number;
   sh?: number;

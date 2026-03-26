@@ -337,6 +337,49 @@ describe('LSAEngine', () => {
     expect(result.stations.A.factorComputationMethod).toBe('inverseToGeodetic');
   });
 
+  it('does not let derived grid inverse lat-lon block projected jobs with auto-created stations', () => {
+    const input = [
+      '.2D',
+      '.UNITS METERS DD',
+      '.CRS GRID CA_NAD83_CSRS_NB_STEREO_DOUBLE',
+      'C A 2500000.0000 7500000.0000 0 ! !',
+      'B A-B 090.000000 !',
+      'D A-B 800.0000 0.005',
+    ].join('\n');
+    const result = new LSAEngine({ input, maxIterations: 8 }).solve();
+
+    expect(result.logs.some((line) => line.includes('Grid mode input class check failed'))).toBe(
+      false,
+    );
+    expect(result.success || result.converged || result.iterations > 0).toBe(true);
+    expect(result.stations.B.coordInputClass).toBe('unknown');
+    expect(Number.isFinite(result.stations.B.latDeg ?? Number.NaN)).toBe(true);
+    expect(Number.isFinite(result.stations.B.lonDeg ?? Number.NaN)).toBe(true);
+  });
+
+  it('bootstraps unknown direction-set setups from known targets and forward-seeds connected targets', () => {
+    const input = [
+      '.2D',
+      'C A 0 0 0 ! !',
+      'C B 100 0 0 ! !',
+      'DB S',
+      'DM A 0-0-0 70.710678 90-00-00',
+      'DM B 90-0-0 70.710678 90-00-00',
+      'DM P 135-0-0 100.000000 90-00-00',
+      'DE',
+    ].join('\n');
+    const result = new LSAEngine({ input, maxIterations: 8 }).solve();
+
+    expect(result.logs.some((line) => line.includes('Approximate traverse bootstrap'))).toBe(true);
+    expect(result.success || result.converged || result.iterations > 0).toBe(true);
+    expect(result.stations.S.bootstrapApprox).toBe(true);
+    expect(result.stations.P.bootstrapApprox).toBe(true);
+    expect(result.stations.S.x).toBeCloseTo(50, 3);
+    expect(result.stations.S.y).toBeCloseTo(-50, 3);
+    expect(result.stations.P.x).toBeCloseTo(150, 3);
+    expect(result.stations.P.y).toBeCloseTo(-50, 3);
+  });
+
   it('tracks parsed versus used-in-solve reduction usage summaries', () => {
     const input = [
       '.2D',

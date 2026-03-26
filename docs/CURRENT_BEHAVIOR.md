@@ -220,6 +220,9 @@ Parity-sensitive behavior remains an explicit project concern. Current parity-or
 - fixture-locked listing-format and error-propagation coverage
 - exact levelling-only industry-listing parity from `Project Option Settings` through the file end for the active leveling reference case
 - active traverse startup defaults and parser regression locks for `.INST`-scoped instrument selection across direction-set/traverse blocks
+- slot-preserving mixed sigma parsing for traverse direction-set `DM` rows, so tokens such as `& & 30` apply default direction and distance weighting while keeping only the zenith sigma explicit
+- pre-solve traverse bootstrapping that can resect unknown direction-set setups from known targets and forward-seed connected target coordinates before adjustment
+- grid-mode input gating that ignores CRS-derived inverse lat/lon on projected auto-created stations instead of treating them as original unknown-class geodetic input
 - focused regression locks around angular stochastic behavior, centering geometry, displayed sigma behavior, and connected-pair precision rows
 
 When a change affects parser semantics, weighting, reduction, residual display, confidence formatting, or listing/report ordering, treat it as parity-sensitive and consult `docs/PARITY_WORKFLOW.md`.

@@ -63,6 +63,35 @@ describe('parseInput', () => {
     ]);
   });
 
+  it('keeps DM sigma tokens aligned by measurement slot when defaults and explicit values are mixed', () => {
+    const parsed = parseInput(
+      [
+        'I TS1 "Traverse Test" 0.001 2 1.5 7.5 0.00075 0.00075 0 0',
+        '.INST TS1',
+        'C 104 0 0 0 ! ! !',
+        'C PEAT 10 10 10',
+        'DB 104',
+        'DM PEAT 301-35-57.6 30.1874 92-29-12.58 & & 30',
+        'DE',
+      ].join('\n'),
+    );
+
+    const direction = parsed.observations.find((observation) => observation.type === 'direction');
+    const distance = parsed.observations.find(
+      (observation): observation is DistanceObservation => observation.type === 'dist',
+    );
+    const zenith = parsed.observations.find((observation) => observation.type === 'zenith');
+
+    expect(direction?.sigmaSource).toBe('default');
+    expect(direction?.stdDev).toBeCloseTo((1.5 * Math.PI) / (180 * 3600), 12);
+
+    expect(distance?.sigmaSource).toBe('default');
+    expect(distance?.stdDev).toBeCloseTo(0.001 + 2e-6 * 30.1874, 12);
+
+    expect(zenith?.sigmaSource).toBe('explicit');
+    expect(zenith?.stdDev).toBeCloseTo((30 * Math.PI) / (180 * 3600), 12);
+  });
+
   it('parses observations', () => {
     expect(parsed.observations.length).toBeGreaterThan(0);
     const types = parsed.observations.reduce<Record<string, number>>((acc, o) => {

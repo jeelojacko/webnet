@@ -104,6 +104,80 @@ const LEVEL_LOOP_DEFAULT_PER_SQRT_KM_MM = 4;
 const INDUSTRY_PARITY_ANGULAR_SIGMA_SCALE = 1.0001;
 
 const makePairKey = (a: StationId, b: StationId): string => (a < b ? `${a}|${b}` : `${b}|${a}`);
+const makeDirectedPairKey = (from: StationId, to: StationId): string => `${from}|${to}`;
+
+const wrapToPi = (value: number): number => {
+  let out = value;
+  while (out <= -Math.PI) out += 2 * Math.PI;
+  while (out > Math.PI) out -= 2 * Math.PI;
+  return out;
+};
+
+const wrapTo2Pi = (value: number): number => {
+  let out = value % (2 * Math.PI);
+  if (out < 0) out += 2 * Math.PI;
+  return out;
+};
+
+const circularMean = (values: number[]): number | null => {
+  if (!values.length) return null;
+  let sumSin = 0;
+  let sumCos = 0;
+  values.forEach((value) => {
+    sumSin += Math.sin(value);
+    sumCos += Math.cos(value);
+  });
+  if (Math.abs(sumSin) < 1e-12 && Math.abs(sumCos) < 1e-12) {
+    return wrapTo2Pi(values[0] ?? 0);
+  }
+  return wrapTo2Pi(Math.atan2(sumSin, sumCos));
+};
+
+const azimuthFromCoords = (fromX: number, fromY: number, toX: number, toY: number): number =>
+  wrapTo2Pi(Math.atan2(toX - fromX, toY - fromY));
+
+const intersectDistanceCircles = (
+  ax: number,
+  ay: number,
+  radiusA: number,
+  bx: number,
+  by: number,
+  radiusB: number,
+): { x: number; y: number }[] => {
+  const dx = bx - ax;
+  const dy = by - ay;
+  const distance = Math.hypot(dx, dy);
+  if (!Number.isFinite(distance) || distance <= 1e-12) return [];
+  if (distance > radiusA + radiusB + 1e-6) return [];
+  if (distance < Math.abs(radiusA - radiusB) - 1e-6) return [];
+  const a = (radiusA * radiusA - radiusB * radiusB + distance * distance) / (2 * distance);
+  const hSq = radiusA * radiusA - a * a;
+  if (hSq < -1e-6) return [];
+  const h = Math.sqrt(Math.max(0, hSq));
+  const midX = ax + (a * dx) / distance;
+  const midY = ay + (a * dy) / distance;
+  const offsetX = (-dy * h) / distance;
+  const offsetY = (dx * h) / distance;
+  if (h <= 1e-9) {
+    return [{ x: midX, y: midY }];
+  }
+  return [
+    { x: midX + offsetX, y: midY + offsetY },
+    { x: midX - offsetX, y: midY - offsetY },
+  ];
+};
+
+type BootstrapDirectionSet = {
+  setId: string;
+  occupy: StationId;
+  directions: { to: StationId; obs: number }[];
+};
+
+type BootstrapPairMetrics = {
+  slopeDistance: number;
+  horizDistance: number;
+  zenith?: number;
+};
 
 const cloneParsedResultValue = <T>(value: T): T => {
   if (value == null || typeof value !== 'object') return value;
@@ -1774,6 +1848,248 @@ export class LSAEngine {
     return collectActiveObservationsForSolve(this.observations, this.excludeIds, this.is2D);
   }
 
+  private stationHasBootstrapableApprox(stationId: StationId): boolean {
+    const station = this.stations[stationId];
+    if (!station) return false;
+    if (!Number.isFinite(station.x) || !Number.isFinite(station.y)) return false;
+    if (station.coordInputClass && station.coordInputClass !== 'unknown') return true;
+    return station.bootstrapApprox === true;
+  }
+
+  private buildBootstrapPairMetrics(
+    activeObservations: Observation[],
+  ): Map<string, BootstrapPairMetrics> {
+    const zenithStats = new Map<string, { sum: number; count: number }>();
+    activeObservations.forEach((observation) => {
+      if (observation.type !== 'zenith') return;
+      const key = makeDirectedPairKey(observation.from, observation.to);
+      const entry = zenithStats.get(key) ?? { sum: 0, count: 0 };
+      entry.sum += observation.obs;
+      entry.count += 1;
+      zenithStats.set(key, entry);
+    });
+
+    const metrics = new Map<string, { slopeSum: number; horizSum: number; count: number }>();
+    activeObservations.forEach((observation) => {
+      if (observation.type !== 'dist') return;
+      const key = makeDirectedPairKey(observation.from, observation.to);
+      const zenithEntry = zenithStats.get(key);
+      const zenith =
+        zenithEntry && zenithEntry.count > 0 ? zenithEntry.sum / zenithEntry.count : undefined;
+      const slopeDistance = observation.obs;
+      const horizDistance =
+        observation.mode === 'slope' && Number.isFinite(zenith ?? Number.NaN)
+          ? Math.abs(slopeDistance * Math.sin(zenith as number))
+          : Math.abs(slopeDistance);
+      const entry = metrics.get(key) ?? { slopeSum: 0, horizSum: 0, count: 0 };
+      entry.slopeSum += slopeDistance;
+      entry.horizSum += horizDistance;
+      entry.count += 1;
+      metrics.set(key, entry);
+    });
+
+    return new Map(
+      [...metrics.entries()].map(([key, entry]) => {
+        const zenithEntry = zenithStats.get(key);
+        return [
+          key,
+          {
+            slopeDistance: entry.slopeSum / entry.count,
+            horizDistance: entry.horizSum / entry.count,
+            zenith:
+              zenithEntry && zenithEntry.count > 0 ? zenithEntry.sum / zenithEntry.count : undefined,
+          } satisfies BootstrapPairMetrics,
+        ];
+      }),
+    );
+  }
+
+  private applyBootstrapApproxStation(
+    stationId: StationId,
+    seed: { x: number; y: number; h?: number },
+  ): boolean {
+    const station = this.stations[stationId];
+    if (!station) return false;
+    const isInputControl = !!station.coordInputClass && station.coordInputClass !== 'unknown';
+    if (isInputControl) return false;
+    const nextX = Number.isFinite(seed.x) ? seed.x : station.x;
+    const nextY = Number.isFinite(seed.y) ? seed.y : station.y;
+    const nextH = Number.isFinite(seed.h ?? Number.NaN) ? (seed.h as number) : station.h;
+    const changed =
+      !station.bootstrapApprox ||
+      Math.hypot((station.x ?? 0) - nextX, (station.y ?? 0) - nextY) > 1e-6 ||
+      Math.abs((station.h ?? 0) - nextH) > 1e-6;
+    if (!changed) return false;
+    station.x = nextX;
+    station.y = nextY;
+    station.h = nextH;
+    station.bootstrapApprox = true;
+    if (this.coordSystemMode === 'grid') {
+      this.stationGeodetic(stationId);
+      this.stationFactorSnapshot(stationId);
+    }
+    return true;
+  }
+
+  private estimateBootstrapSetOrientation(
+    set: BootstrapDirectionSet,
+    pairMetrics: Map<string, BootstrapPairMetrics>,
+  ): number | null {
+    const occupy = this.stations[set.occupy];
+    if (!occupy || !this.stationHasBootstrapableApprox(set.occupy)) return null;
+    const orientations = set.directions
+      .filter((direction) => {
+        const target = this.stations[direction.to];
+        const pair = pairMetrics.get(makeDirectedPairKey(set.occupy, direction.to));
+        return (
+          target &&
+          this.stationHasBootstrapableApprox(direction.to) &&
+          Number.isFinite(pair?.horizDistance ?? Number.NaN) &&
+          (pair?.horizDistance ?? 0) > 1e-6
+        );
+      })
+      .map((direction) => {
+        const target = this.stations[direction.to] as Station;
+        const azimuth = azimuthFromCoords(occupy.x, occupy.y, target.x, target.y);
+        return wrapTo2Pi(azimuth - direction.obs);
+      });
+    return circularMean(orientations);
+  }
+
+  private tryBootstrapDirectionSetOccupy(
+    set: BootstrapDirectionSet,
+    pairMetrics: Map<string, BootstrapPairMetrics>,
+  ): { x: number; y: number; h?: number; orientation: number } | null {
+    const knownTargets = set.directions
+      .map((direction) => {
+        const target = this.stations[direction.to];
+        const metrics = pairMetrics.get(makeDirectedPairKey(set.occupy, direction.to));
+        if (!target || !metrics || !this.stationHasBootstrapableApprox(direction.to)) return null;
+        if (!Number.isFinite(metrics.horizDistance) || metrics.horizDistance <= 1e-6) return null;
+        return { direction, target, metrics };
+      })
+      .filter((entry): entry is NonNullable<typeof entry> => entry != null);
+    if (knownTargets.length < 2) return null;
+
+    let best:
+      | { x: number; y: number; h?: number; orientation: number; mismatch: number }
+      | undefined;
+
+    for (let i = 0; i < knownTargets.length - 1; i += 1) {
+      for (let j = i + 1; j < knownTargets.length; j += 1) {
+        const first = knownTargets[i];
+        const second = knownTargets[j];
+        const intersections = intersectDistanceCircles(
+          first.target.x,
+          first.target.y,
+          first.metrics.horizDistance,
+          second.target.x,
+          second.target.y,
+          second.metrics.horizDistance,
+        );
+        intersections.forEach((candidate) => {
+          const orientationValues = knownTargets.map((entry) => {
+            const azimuth = azimuthFromCoords(candidate.x, candidate.y, entry.target.x, entry.target.y);
+            return wrapTo2Pi(azimuth - entry.direction.obs);
+          });
+          const orientation = circularMean(orientationValues);
+          if (orientation == null) return;
+          const mismatch = knownTargets.reduce((total, entry) => {
+            const azimuth = azimuthFromCoords(candidate.x, candidate.y, entry.target.x, entry.target.y);
+            const predicted = wrapTo2Pi(orientation + entry.direction.obs);
+            return total + Math.abs(wrapToPi(azimuth - predicted));
+          }, 0);
+          const heightCandidates = knownTargets
+            .map((entry) =>
+              Number.isFinite(entry.metrics.zenith ?? Number.NaN)
+                ? entry.target.h - entry.metrics.slopeDistance * Math.cos(entry.metrics.zenith as number)
+                : undefined,
+            )
+            .filter((value): value is number => Number.isFinite(value));
+          const height =
+            heightCandidates.length > 0
+              ? heightCandidates.reduce((sum, value) => sum + value, 0) / heightCandidates.length
+              : undefined;
+          if (!best || mismatch < best.mismatch) {
+            best = { x: candidate.x, y: candidate.y, h: height, orientation, mismatch };
+          }
+        });
+      }
+    }
+
+    if (!best) return null;
+    return { x: best.x, y: best.y, h: best.h, orientation: best.orientation };
+  }
+
+  private bootstrapApproximateTraverseCoords(activeObservations: Observation[]): void {
+    const directionSets = new Map<string, BootstrapDirectionSet>();
+    activeObservations.forEach((observation) => {
+      if (observation.type !== 'direction' || !observation.setId) return;
+      const entry = directionSets.get(observation.setId) ?? {
+        setId: observation.setId,
+        occupy: observation.at,
+        directions: [],
+      };
+      entry.directions.push({ to: observation.to, obs: observation.obs });
+      directionSets.set(observation.setId, entry);
+    });
+    if (directionSets.size === 0) return;
+
+    const pairMetrics = this.buildBootstrapPairMetrics(activeObservations);
+    if (pairMetrics.size === 0) return;
+
+    let seededCount = 0;
+    let passCount = 0;
+    for (let pass = 0; pass < 8; pass += 1) {
+      let progress = false;
+      passCount = pass + 1;
+
+      directionSets.forEach((set) => {
+        if (this.stationHasBootstrapableApprox(set.occupy)) return;
+        const occupySeed = this.tryBootstrapDirectionSetOccupy(set, pairMetrics);
+        if (!occupySeed) return;
+        if (this.applyBootstrapApproxStation(set.occupy, occupySeed)) {
+          seededCount += 1;
+          progress = true;
+        }
+      });
+
+      directionSets.forEach((set) => {
+        if (!this.stationHasBootstrapableApprox(set.occupy)) return;
+        const occupy = this.stations[set.occupy];
+        if (!occupy) return;
+        const orientation = this.estimateBootstrapSetOrientation(set, pairMetrics);
+        if (orientation == null) return;
+        set.directions.forEach((direction) => {
+          if (this.stationHasBootstrapableApprox(direction.to)) return;
+          const metrics = pairMetrics.get(makeDirectedPairKey(set.occupy, direction.to));
+          if (!metrics || !Number.isFinite(metrics.horizDistance) || metrics.horizDistance <= 1e-6) {
+            return;
+          }
+          const azimuth = wrapTo2Pi(orientation + direction.obs);
+          const seedX = occupy.x + metrics.horizDistance * Math.sin(azimuth);
+          const seedY = occupy.y + metrics.horizDistance * Math.cos(azimuth);
+          const seedH =
+            Number.isFinite(metrics.zenith ?? Number.NaN)
+              ? occupy.h + metrics.slopeDistance * Math.cos(metrics.zenith as number)
+              : occupy.h;
+          if (this.applyBootstrapApproxStation(direction.to, { x: seedX, y: seedY, h: seedH })) {
+            seededCount += 1;
+            progress = true;
+          }
+        });
+      });
+
+      if (!progress) break;
+    }
+
+    if (seededCount > 0) {
+      this.log(
+        `Approximate traverse bootstrap: seeded ${seededCount} station(s) over ${passCount} pass(es).`,
+      );
+    }
+  }
+
   private evaluateGridInputGate(activeObservations: Observation[]): {
     blocked: boolean;
     reasons: string[];
@@ -1789,8 +2105,7 @@ export class LSAEngine {
         (station.fixedY ?? false) ||
         Number.isFinite(station.sx ?? Number.NaN) ||
         Number.isFinite(station.sy ?? Number.NaN) ||
-        Number.isFinite(station.latDeg ?? Number.NaN) ||
-        Number.isFinite(station.lonDeg ?? Number.NaN) ||
+        station.coordInputClass === 'geodetic' ||
         (station.coordInputClass != null && station.coordInputClass !== 'unknown');
       if (!hasControlLikeInput) return;
       classes.add(station.coordInputClass ?? 'unknown');
@@ -3508,6 +3823,7 @@ export class LSAEngine {
 
     this.updateGpsAddHiHtDiagnostics();
     const activeObservations = this.collectActiveObservations();
+    this.bootstrapApproximateTraverseCoords(activeObservations);
     if (this.parseState) {
       this.parseState.usedInSolveUsageSummary = summarizeReductionUsage(activeObservations);
       this.parseState.parsedUsageSummary =
