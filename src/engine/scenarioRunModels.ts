@@ -5,6 +5,14 @@ import type {
   ParseOptions,
 } from '../types';
 
+export interface SolveProgressEvent {
+  phase: 'start' | 'iteration' | 'complete';
+  iteration: number;
+  maxIterations: number;
+  elapsedMs: number;
+  converged: boolean;
+}
+
 export interface ScenarioRunRequest {
   input: string;
   maxIterations: number;
@@ -14,6 +22,7 @@ export interface ScenarioRunRequest {
   overrides?: Record<number, ObservationOverride>;
   parseOptions?: Partial<ParseOptions>;
   geoidSourceData?: ArrayBuffer | Uint8Array;
+  progressCallback?: (_event: SolveProgressEvent) => void;
 }
 
 export interface ScenarioRunServiceStats {

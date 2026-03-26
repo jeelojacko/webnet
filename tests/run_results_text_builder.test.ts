@@ -54,6 +54,7 @@ const baseParseSettings: ParseSettings = {
   autoAdjustMaxCycles: 3,
   autoAdjustMaxRemovalsPerCycle: 1,
   autoAdjustStdResThreshold: 4,
+  suspectImpactMode: 'auto',
   order: 'EN',
   angleUnits: 'dms',
   angleStationOrder: 'atfromto',
@@ -190,6 +191,7 @@ describe('createRunResultsTextBuilder', () => {
         autoAdjustMaxRemovalsPerCycle:
           profileContext.effectiveParse.autoAdjustMaxRemovalsPerCycle,
         autoAdjustStdResThreshold: profileContext.effectiveParse.autoAdjustStdResThreshold,
+        suspectImpactMode: profileContext.effectiveParse.suspectImpactMode,
         levelLoopToleranceBaseMm: profileContext.effectiveParse.levelLoopToleranceBaseMm,
         levelLoopTolerancePerSqrtKmMm:
           profileContext.effectiveParse.levelLoopTolerancePerSqrtKmMm,
@@ -246,6 +248,7 @@ describe('createRunResultsTextBuilder', () => {
     expect(report).toContain('--- Observations & Residuals ---');
     expect(report).toContain('--- Processing Log ---');
     expect(report).toContain('QFIX constants: linear=1.000000e-7 m, angular=1.000100e-3"');
+    expect(report).toContain('Solve timing (ms): total=');
 
     const normalizedPrefix = report
       .replace(/^# Generated: .*$/m, '# Generated: <normalized>')

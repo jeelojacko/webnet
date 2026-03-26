@@ -16,6 +16,12 @@ export interface RunPipelineState {
   phase: RunPhase | null;
   error: string | null;
   workerBacked: boolean;
+  elapsedMs: number | null;
+  detail: string | null;
+  solveIndex: number | null;
+  solveTotalHint: number | null;
+  iteration: number | null;
+  maxIterations: number | null;
 }
 
 type PendingRun = {
@@ -30,6 +36,12 @@ const INITIAL_STATE: RunPipelineState = {
   phase: null,
   error: null,
   workerBacked: false,
+  elapsedMs: null,
+  detail: null,
+  solveIndex: null,
+  solveTotalHint: null,
+  iteration: null,
+  maxIterations: null,
 };
 
 export const useAdjustmentRunner = (
@@ -60,6 +72,12 @@ export const useAdjustmentRunner = (
           phase: message.phase,
           error: null,
           workerBacked: true,
+          elapsedMs: message.elapsedMs ?? null,
+          detail: message.stageLabel ?? null,
+          solveIndex: message.solveIndex ?? null,
+          solveTotalHint: message.solveTotalHint ?? null,
+          iteration: message.iteration ?? null,
+          maxIterations: message.maxIterations ?? null,
         });
         return;
       }
@@ -73,6 +91,12 @@ export const useAdjustmentRunner = (
           phase: null,
           error: null,
           workerBacked: true,
+          elapsedMs: null,
+          detail: null,
+          solveIndex: null,
+          solveTotalHint: null,
+          iteration: null,
+          maxIterations: null,
         });
         pending.resolve(message.payload);
         return;
@@ -85,6 +109,12 @@ export const useAdjustmentRunner = (
           phase: null,
           error: null,
           workerBacked: true,
+          elapsedMs: null,
+          detail: null,
+          solveIndex: null,
+          solveTotalHint: null,
+          iteration: null,
+          maxIterations: null,
         });
         pending.reject(new Error('Run cancelled'));
         return;
@@ -96,6 +126,12 @@ export const useAdjustmentRunner = (
         phase: null,
         error: message.error,
         workerBacked: true,
+        elapsedMs: null,
+        detail: null,
+        solveIndex: null,
+        solveTotalHint: null,
+        iteration: null,
+        maxIterations: null,
       });
       pending.reject(new Error(message.error));
     };
@@ -117,6 +153,12 @@ export const useAdjustmentRunner = (
         phase: 'queued',
         error: null,
         workerBacked: workerRef.current != null,
+        elapsedMs: null,
+        detail: null,
+        solveIndex: null,
+        solveTotalHint: null,
+        iteration: null,
+        maxIterations: null,
       });
       return new Promise<RunSessionOutcome>((resolve, reject) => {
         pendingRunsRef.current.set(runId, { cancelled: false, resolve, reject });
@@ -140,6 +182,12 @@ export const useAdjustmentRunner = (
               phase: null,
               error: null,
               workerBacked: false,
+              elapsedMs: null,
+              detail: null,
+              solveIndex: null,
+              solveTotalHint: null,
+              iteration: null,
+              maxIterations: null,
             });
             reject(new Error('Run cancelled'));
             return;
@@ -151,6 +199,12 @@ export const useAdjustmentRunner = (
               phase: 'solving',
               error: null,
               workerBacked: false,
+              elapsedMs: null,
+              detail: null,
+              solveIndex: null,
+              solveTotalHint: null,
+              iteration: null,
+              maxIterations: null,
             });
             const outcome = (directRunner ?? runAdjustmentSession)(request);
             const latest = pendingRunsRef.current.get(runId);
@@ -162,6 +216,12 @@ export const useAdjustmentRunner = (
                 phase: null,
                 error: null,
                 workerBacked: false,
+                elapsedMs: null,
+                detail: null,
+                solveIndex: null,
+                solveTotalHint: null,
+                iteration: null,
+                maxIterations: null,
               });
               reject(new Error('Run cancelled'));
               return;
@@ -172,6 +232,12 @@ export const useAdjustmentRunner = (
               phase: null,
               error: null,
               workerBacked: false,
+              elapsedMs: null,
+              detail: null,
+              solveIndex: null,
+              solveTotalHint: null,
+              iteration: null,
+              maxIterations: null,
             });
             resolve(outcome);
           } catch (error) {
@@ -183,6 +249,12 @@ export const useAdjustmentRunner = (
               phase: null,
               error: message,
               workerBacked: false,
+              elapsedMs: null,
+              detail: null,
+              solveIndex: null,
+              solveTotalHint: null,
+              iteration: null,
+              maxIterations: null,
             });
             reject(new Error(message));
           }
@@ -212,6 +284,12 @@ export const useAdjustmentRunner = (
       phase: null,
       error: null,
       workerBacked: false,
+      elapsedMs: null,
+      detail: null,
+      solveIndex: null,
+      solveTotalHint: null,
+      iteration: null,
+      maxIterations: null,
     });
   }, [pipelineState.runId]);
 

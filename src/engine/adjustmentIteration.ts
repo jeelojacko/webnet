@@ -29,6 +29,7 @@ export const solveAdjustmentIteration = (
   let correction = zeros(numParams, 1);
   let qxx = zeros(numParams, numParams);
   let solvedP = P;
+  const shouldEstimateCondition = iterationNumber === 1;
 
   if (dependencies.robustMode === 'huber') {
     const baseWeights = dependencies.captureRobustWeightBase(P, rowInfo);
@@ -42,7 +43,9 @@ export const solveAdjustmentIteration = (
       solvedP = P;
       const ATP = multiply(AT, solvedP);
       const N = multiply(ATP, A);
-      dependencies.recordConditionEstimate(dependencies.estimateCondition(N));
+      if (shouldEstimateCondition) {
+        dependencies.recordConditionEstimate(dependencies.estimateCondition(N));
+      }
       const U = multiply(ATP, L);
       const normalSolution = dependencies.solveNormalEquations(N, U);
       correction = normalSolution.correction;
@@ -62,7 +65,9 @@ export const solveAdjustmentIteration = (
   } else {
     const ATP = multiply(AT, P);
     const N = multiply(ATP, A);
-    dependencies.recordConditionEstimate(dependencies.estimateCondition(N));
+    if (shouldEstimateCondition) {
+      dependencies.recordConditionEstimate(dependencies.estimateCondition(N));
+    }
     const U = multiply(ATP, L);
     const normalSolution = dependencies.solveNormalEquations(N, U);
     correction = normalSolution.correction;

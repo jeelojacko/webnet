@@ -27,6 +27,7 @@ export const runAdjustmentScenario = (request: ScenarioRunRequest): AdjustmentRe
     geoidSourceData: request.geoidSourceData,
     parsedResult,
     solvePreparation: getCachedSolvePreparation(request, parsedResult),
+    progressCallback: request.progressCallback,
   });
   return engine.solve();
 };

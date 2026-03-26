@@ -590,6 +590,8 @@ export const createDirectRunPipeline = ({
       }
     }
 
+    const elapsedMs = Date.now() - startMs;
+
     return {
       result: solved,
       effectiveExcludedIds: [...effectiveExclusions],
@@ -598,7 +600,12 @@ export const createDirectRunPipeline = ({
       droppedOverrides,
       droppedClusterMerges,
       inputChangedSinceLastRun,
-      elapsedMs: Date.now() - startMs,
+      elapsedMs,
+      profile: {
+        totalElapsedMs: elapsedMs,
+        solveInvocationCount: 1,
+        stages: [{ id: 'main-solve', label: 'Direct pipeline', durationMs: elapsedMs, solveCount: 1 }],
+      },
     };
   };
 };

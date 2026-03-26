@@ -11,6 +11,7 @@ import {
 } from './defaults';
 import { isPreanalysisWhatIfCandidate } from './preanalysis';
 import { normalizeClusterApprovedMerges, solveEngine } from './solveEngine';
+import type { SolveProgressEvent } from './scenarioRunModels';
 import type {
   AdjustmentResult,
   ClusterApprovedMerge,
@@ -28,6 +29,7 @@ import type {
   ParseOptions,
   RobustMode,
   RunMode,
+  SuspectImpactMode,
   TsCorrelationScope,
 } from '../types';
 
@@ -63,6 +65,7 @@ export interface RunSessionParseSettings {
   autoAdjustMaxCycles: number;
   autoAdjustMaxRemovalsPerCycle: number;
   autoAdjustStdResThreshold: number;
+  suspectImpactMode: SuspectImpactMode;
   order: ParseOptions['order'];
   angleUnits: 'dms' | 'dd';
   angleStationOrder: 'atfromto' | 'fromatto';
@@ -139,11 +142,46 @@ export interface RunSessionOutcome {
   droppedClusterMerges: number;
   inputChangedSinceLastRun: boolean;
   elapsedMs: number;
+  profile: RunSessionProfile;
 }
+
+type RunSessionStageId =
+  | 'main-solve'
+  | 'suspect-impact'
+  | 'preanalysis-impact'
+  | 'robust-compare'
+  | 'auto-adjust';
+
+export interface RunSessionStageProfile {
+  id: RunSessionStageId;
+  label: string;
+  durationMs: number;
+  solveCount: number;
+}
+
+export interface RunSessionProfile {
+  totalElapsedMs: number;
+  solveInvocationCount: number;
+  stages: RunSessionStageProfile[];
+}
+
+export interface RunSessionProgressUpdate {
+  phase: 'solving' | 'finalizing';
+  elapsedMs: number;
+  stageId: RunSessionStageId;
+  stageLabel: string;
+  solveIndex: number;
+  solveTotalHint: number;
+  iteration?: number;
+  maxIterations?: number;
+}
+
+export type RunSessionProgressCallback = (_event: RunSessionProgressUpdate) => void;
 
 const IMPACT_MAX_CANDIDATES = 8;
 const PREANALYSIS_IMPACT_MAX_CANDIDATES = 24;
 const AUTO_ADJUST_MIN_REDUNDANCY = 0.05;
+const SUSPECT_IMPACT_AUTO_SKIP_MAIN_SOLVE_MS = 5000;
 const INDUSTRY_DEFAULT_INSTRUMENT_CODE = 'S9';
 
 const createInstrument = (code: string, desc = ''): Instrument => ({
@@ -218,6 +256,34 @@ const rankedSuspects = (
     .slice(0, limit)
     .map((row, index) => ({ ...row, rank: index + 1 }));
 
+export const collectSuspectImpactCandidates = (base: AdjustmentResult): Observation[] =>
+  [...base.observations]
+    .filter((obs) => Number.isFinite(obs.stdRes))
+    .filter((obs) => hasLocalFailure(obs) || Math.abs(obs.stdRes ?? 0) >= 2)
+    .sort((a, b) => {
+      const aFail = hasLocalFailure(a) ? 1 : 0;
+      const bFail = hasLocalFailure(b) ? 1 : 0;
+      if (bFail !== aFail) return bFail - aFail;
+      return Math.abs(b.stdRes ?? 0) - Math.abs(a.stdRes ?? 0);
+    })
+    .slice(0, IMPACT_MAX_CANDIDATES);
+
+export const resolveSuspectImpactSkipReason = ({
+  mode,
+  mainSolveElapsedMs,
+  candidateCount,
+}: {
+  mode: SuspectImpactMode;
+  mainSolveElapsedMs: number;
+  candidateCount: number;
+}): string | null => {
+  if (candidateCount <= 0) return null;
+  if (mode === 'off') return 'disabled in Project Options.';
+  if (mode !== 'auto') return null;
+  if (mainSolveElapsedMs <= SUSPECT_IMPACT_AUTO_SKIP_MAIN_SOLVE_MS) return null;
+  return `auto-skip triggered because the main solve took ${(mainSolveElapsedMs / 1000).toFixed(1)} s (threshold ${(SUSPECT_IMPACT_AUTO_SKIP_MAIN_SOLVE_MS / 1000).toFixed(1)} s).`;
+};
+
 const maxUnknownCoordinateShift = (base: AdjustmentResult, alt: AdjustmentResult): number => {
   let maxShift = 0;
   Object.entries(base.stations).forEach(([id, station]) => {
@@ -284,6 +350,7 @@ const resolveProfileContext = (
     solveProfile,
     runMode: requestedRunMode,
     preanalysisMode: requestedRunMode === 'preanalysis',
+    suspectImpactMode: base.suspectImpactMode ?? 'auto',
     parseCompatibilityMode: base.parseCompatibilityMode ?? defaultParseCompatibilityMode,
     faceNormalizationMode: base.faceNormalizationMode ?? defaultFaceNormalizationMode,
   };
@@ -427,8 +494,15 @@ const buildParseOptions = (
   preferExternalInstruments: true,
 });
 
+type SolveInvocationMeta = {
+  stageId: RunSessionStageId;
+  stageLabel: string;
+  solveTotalHint: number;
+};
+
 const buildSuspectImpactDiagnostics = (
   base: AdjustmentResult,
+  candidates: Observation[],
   baseExclusions: Set<number>,
   overrideValues: Record<number, ObservationOverride>,
   approvedClusterMerges: ClusterApprovedMerge[],
@@ -437,19 +511,11 @@ const buildSuspectImpactDiagnostics = (
     _parseOverride?: Partial<RunSessionParseSettings>,
     _overrideValues?: Record<number, ObservationOverride>,
     _approvedClusterMerges?: ClusterApprovedMerge[],
+    _meta?: SolveInvocationMeta,
   ) => AdjustmentResult,
 ): NonNullable<AdjustmentResult['suspectImpactDiagnostics']> =>
-  [...base.observations]
-    .filter((obs) => Number.isFinite(obs.stdRes))
-    .filter((obs) => hasLocalFailure(obs) || Math.abs(obs.stdRes ?? 0) >= 2)
-    .sort((a, b) => {
-      const aFail = hasLocalFailure(a) ? 1 : 0;
-      const bFail = hasLocalFailure(b) ? 1 : 0;
-      if (bFail !== aFail) return bFail - aFail;
-      return Math.abs(b.stdRes ?? 0) - Math.abs(a.stdRes ?? 0);
-    })
-    .slice(0, IMPACT_MAX_CANDIDATES)
-    .map((obs) => {
+  candidates
+    .map((obs, index, candidateRows) => {
       const baseChiPass = base.chiSquare?.pass95;
       const baseMaxStd = maxAbsStdRes(base);
       const row: NonNullable<AdjustmentResult['suspectImpactDiagnostics']>[number] = {
@@ -465,7 +531,11 @@ const buildSuspectImpactDiagnostics = (
       try {
         const altExclusions = new Set(baseExclusions);
         altExclusions.add(obs.id);
-        const alt = solveCore(altExclusions, undefined, overrideValues, approvedClusterMerges);
+        const alt = solveCore(altExclusions, undefined, overrideValues, approvedClusterMerges, {
+          stageId: 'suspect-impact',
+          stageLabel: `Impact ${index + 1}/${candidateRows.length}`,
+          solveTotalHint: 1 + candidateRows.length,
+        });
         const altMaxStd = maxAbsStdRes(alt);
         const altChiPass = alt.chiSquare?.pass95;
         let chiDelta: typeof row.chiDelta = '-';
@@ -516,6 +586,7 @@ const buildPreanalysisImpactDiagnostics = (
     _parseOverride?: Partial<RunSessionParseSettings>,
     _overrideValues?: Record<number, ObservationOverride>,
     _approvedClusterMerges?: ClusterApprovedMerge[],
+    _meta?: SolveInvocationMeta,
   ) => AdjustmentResult,
 ): NonNullable<AdjustmentResult['preanalysisImpactDiagnostics']> => {
   const allPlannedRows = [...base.observations].filter(isPreanalysisWhatIfCandidate);
@@ -538,7 +609,7 @@ const buildPreanalysisImpactDiagnostics = (
   const baseWeakPairs = preanalysisWeakPairCount(base);
 
   const rows = plannedRows
-    .map((obs) => {
+    .map((obs, index, plannedCandidates) => {
       const plannedActive = !baseExclusions.has(obs.id);
       const action: 'add' | 'remove' = plannedActive ? 'remove' : 'add';
       const row: NonNullable<AdjustmentResult['preanalysisImpactDiagnostics']>['rows'][number] = {
@@ -554,7 +625,11 @@ const buildPreanalysisImpactDiagnostics = (
         const altExclusions = new Set(baseExclusions);
         if (plannedActive) altExclusions.add(obs.id);
         else altExclusions.delete(obs.id);
-        const alt = solveCore(altExclusions, undefined, overrideValues, approvedClusterMerges);
+        const alt = solveCore(altExclusions, undefined, overrideValues, approvedClusterMerges, {
+          stageId: 'preanalysis-impact',
+          stageLabel: `Preanalysis impact ${index + 1}/${plannedCandidates.length}`,
+          solveTotalHint: 1 + plannedCandidates.length,
+        });
         const altStationMajors = preanalysisStationMajors(alt);
         const altRelativeMetrics = preanalysisRelativeMetrics(alt);
         const altWorstStationMajor =
@@ -621,7 +696,10 @@ const buildPreanalysisImpactDiagnostics = (
   };
 };
 
-export const runAdjustmentSession = (request: RunSessionRequest): RunSessionOutcome => {
+export const runAdjustmentSession = (
+  request: RunSessionRequest,
+  onProgress?: RunSessionProgressCallback,
+): RunSessionOutcome => {
   const startedAt = Date.now();
   let effectiveExclusions = new Set(request.excludedIds);
   let effectiveOverrides = request.overrides;
@@ -643,11 +721,70 @@ export const runAdjustmentSession = (request: RunSessionRequest): RunSessionOutc
     effectiveClusterMerges = [];
   }
 
+  const stageLabelForProfile = (stageId: RunSessionStageId): string => {
+    switch (stageId) {
+      case 'main-solve':
+        return 'Main solve';
+      case 'suspect-impact':
+        return 'Suspect impact analysis';
+      case 'preanalysis-impact':
+        return 'Preanalysis impact analysis';
+      case 'robust-compare':
+        return 'Robust comparison';
+      case 'auto-adjust':
+        return 'Auto-adjust';
+      default:
+        return stageId;
+    }
+  };
+
+  const stageProfiles = new Map<RunSessionStageId, RunSessionStageProfile>();
+  let solveInvocationCount = 0;
+
+  const recordStageDuration = (stageId: RunSessionStageId, durationMs: number): void => {
+    const existing = stageProfiles.get(stageId);
+    if (existing) {
+      existing.durationMs += durationMs;
+      existing.solveCount += 1;
+      return;
+    }
+    stageProfiles.set(stageId, {
+      id: stageId,
+      label: stageLabelForProfile(stageId),
+      durationMs,
+      solveCount: 1,
+    });
+  };
+
+  const emitProgress = (
+    meta: SolveInvocationMeta,
+    solveIndex: number,
+    iteration?: number,
+    maxIterations?: number,
+    phase: RunSessionProgressUpdate['phase'] = 'solving',
+  ): void => {
+    onProgress?.({
+      phase,
+      elapsedMs: Date.now() - startedAt,
+      stageId: meta.stageId,
+      stageLabel: meta.stageLabel,
+      solveIndex,
+      solveTotalHint: Math.max(meta.solveTotalHint, solveIndex),
+      iteration,
+      maxIterations,
+    });
+  };
+
   const solveCore = (
     excludeSet: Set<number>,
     parseOverride?: Partial<RunSessionParseSettings>,
     overrideValues: Record<number, ObservationOverride> = effectiveOverrides,
     approvedClusterMerges: ClusterApprovedMerge[] = effectiveClusterMerges,
+    meta: SolveInvocationMeta = {
+      stageId: 'main-solve',
+      stageLabel: 'Main solve',
+      solveTotalHint: 1,
+    },
   ): AdjustmentResult => {
     const mergedParse = { ...request.parseSettings, ...parseOverride };
     const profileContext = resolveProfileContext(
@@ -658,7 +795,10 @@ export const runAdjustmentSession = (request: RunSessionRequest): RunSessionOutc
     const normalizedMerges = profileContext.effectiveParse.clusterDetectionEnabled
       ? normalizeClusterApprovedMerges(approvedClusterMerges)
       : [];
-    return solveEngine({
+    const solveIndex = solveInvocationCount + 1;
+    const stageStartedAt = Date.now();
+    emitProgress(meta, solveIndex, undefined, request.maxIterations);
+    const result = solveEngine({
       input: request.input,
       maxIterations: request.maxIterations,
       convergenceThreshold: request.convergenceLimit,
@@ -677,7 +817,19 @@ export const runAdjustmentSession = (request: RunSessionRequest): RunSessionOutc
         normalizedMerges,
         profileContext.currentInstrument,
       ),
+      progressCallback: (event: SolveProgressEvent) => {
+        if (event.phase === 'complete') return;
+        emitProgress(
+          meta,
+          solveIndex,
+          event.iteration > 0 ? event.iteration : undefined,
+          event.maxIterations,
+        );
+      },
     });
+    solveInvocationCount += 1;
+    recordStageDuration(meta.stageId, Date.now() - stageStartedAt);
+    return result;
   };
 
   const solveWithImpacts = (
@@ -685,7 +837,13 @@ export const runAdjustmentSession = (request: RunSessionRequest): RunSessionOutc
     overrideValues: Record<number, ObservationOverride> = effectiveOverrides,
     approvedClusterMerges: ClusterApprovedMerge[] = effectiveClusterMerges,
   ): AdjustmentResult => {
-    const solved = solveCore(excludeSet, undefined, overrideValues, approvedClusterMerges);
+    const mainSolveStartedAt = Date.now();
+    const solved = solveCore(excludeSet, undefined, overrideValues, approvedClusterMerges, {
+      stageId: 'main-solve',
+      stageLabel: 'Main solve',
+      solveTotalHint: 1,
+    });
+    const mainSolveElapsedMs = Date.now() - mainSolveStartedAt;
     const profileContext = resolveProfileContext(
       request.parseSettings,
       request.projectInstruments,
@@ -709,20 +867,40 @@ export const runAdjustmentSession = (request: RunSessionRequest): RunSessionOutc
       solved.robustComparison = { enabled: false, classicalTop: [], robustTop: [], overlapCount: 0 };
       return solved;
     }
-    solved.suspectImpactDiagnostics = buildSuspectImpactDiagnostics(
-      solved,
-      excludeSet,
-      overrideValues,
-      approvedClusterMerges,
-      solveCore,
-    );
+    const suspectImpactCandidates = collectSuspectImpactCandidates(solved);
+    const suspectImpactSkipReason = resolveSuspectImpactSkipReason({
+      mode: profileContext.effectiveParse.suspectImpactMode,
+      mainSolveElapsedMs,
+      candidateCount: suspectImpactCandidates.length,
+    });
+    if (suspectImpactSkipReason) {
+      solved.suspectImpactDiagnostics = undefined;
+      solved.logs.unshift(
+        `Suspect impact analysis skipped: ${suspectImpactSkipReason} Candidates=${suspectImpactCandidates.length}.`,
+      );
+    } else {
+      solved.suspectImpactDiagnostics = buildSuspectImpactDiagnostics(
+        solved,
+        suspectImpactCandidates,
+        excludeSet,
+        overrideValues,
+        approvedClusterMerges,
+        solveCore,
+      );
+    }
     solved.preanalysisImpactDiagnostics = undefined;
+    const suspectImpactCount = solved.suspectImpactDiagnostics?.length ?? 0;
     if (profileContext.effectiveParse.robustMode !== 'none') {
       const classical = solveCore(
         excludeSet,
         { robustMode: 'none' },
         overrideValues,
         approvedClusterMerges,
+        {
+          stageId: 'robust-compare',
+          stageLabel: 'Robust comparison',
+          solveTotalHint: 1 + suspectImpactCount + 1,
+        },
       );
       const classicalTop = rankedSuspects(classical, 10);
       const robustTop = rankedSuspects(solved, 10);
@@ -765,12 +943,27 @@ export const runAdjustmentSession = (request: RunSessionRequest): RunSessionOutc
       effectiveExclusions,
       autoAdjustConfig,
       (trialExclusions) =>
-        solveCore(trialExclusions, undefined, effectiveOverrides, effectiveClusterMerges),
+        solveCore(trialExclusions, undefined, effectiveOverrides, effectiveClusterMerges, {
+          stageId: 'auto-adjust',
+          stageLabel: 'Auto-adjust',
+          solveTotalHint: solveInvocationCount + 1,
+        }),
     );
     effectiveExclusions = autoAdjustSummary.finalExcludedIds;
   }
 
   const result = solveWithImpacts(effectiveExclusions, effectiveOverrides, effectiveClusterMerges);
+  emitProgress(
+    {
+      stageId: 'main-solve',
+      stageLabel: 'Finalizing result',
+      solveTotalHint: solveInvocationCount,
+    },
+    solveInvocationCount,
+    undefined,
+    undefined,
+    'finalizing',
+  );
   if (autoAdjustSummary?.enabled) {
     result.autoAdjustDiagnostics = {
       enabled: true,
@@ -793,6 +986,13 @@ export const runAdjustmentSession = (request: RunSessionRequest): RunSessionOutc
     }
   }
 
+  const elapsedMs = Date.now() - startedAt;
+  const profile: RunSessionProfile = {
+    totalElapsedMs: elapsedMs,
+    solveInvocationCount,
+    stages: [...stageProfiles.values()],
+  };
+
   return {
     result,
     effectiveExcludedIds: [...effectiveExclusions],
@@ -801,6 +1001,7 @@ export const runAdjustmentSession = (request: RunSessionRequest): RunSessionOutc
     droppedOverrides,
     droppedClusterMerges,
     inputChangedSinceLastRun,
-    elapsedMs: Date.now() - startedAt,
+    elapsedMs,
+    profile,
   };
 };

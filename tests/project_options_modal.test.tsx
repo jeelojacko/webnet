@@ -100,6 +100,7 @@ describe('Project Options modal layout', () => {
       expect(app.container.textContent).toContain('Geodetic Framework');
       expect(app.container.textContent).toContain('Leveling / Weighting');
       expect(app.container.textContent).toContain('Convergence Limit');
+      expect(app.container.textContent).toContain('Suspect Impact');
       expect(app.container.textContent).toContain('Level Loop Preset');
       expect(app.container.textContent).toContain('Saved Custom Presets');
       expect(app.container.textContent).toContain('Add Current');

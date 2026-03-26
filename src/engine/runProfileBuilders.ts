@@ -335,6 +335,7 @@ export const createRunProfileBuilders = ({
         parseState.autoAdjustMaxRemovalsPerCycle ?? base.autoAdjustMaxRemovalsPerCycle,
       autoAdjustStdResThreshold:
         parseState.autoAdjustStdResThreshold ?? base.autoAdjustStdResThreshold,
+      suspectImpactMode: parseState.suspectImpactMode ?? base.suspectImpactMode,
       directionSetMode: profileCtx.directionSetMode,
       mapMode: parse.mapMode,
       mapScaleFactor: parse.mapScaleFactor ?? 1,

@@ -339,6 +339,27 @@ const ProjectOptionsModal: React.FC<ProjectOptionsModalProps> = ({ context }) =>
                               }
                             />
                           </div>
+                          <label
+                            className="rounded border border-slate-400/60 bg-slate-700/20 px-2 py-2 flex flex-col gap-2 text-[11px] uppercase tracking-wide text-slate-200"
+                            title={SETTINGS_TOOLTIPS.suspectImpactMode}
+                          >
+                            <span>Suspect Impact</span>
+                            <select
+                              title={SETTINGS_TOOLTIPS.suspectImpactMode}
+                              value={parseSettingsDraft.suspectImpactMode}
+                              onChange={(e) =>
+                                handleDraftParseSetting(
+                                  'suspectImpactMode',
+                                  e.target.value as ParseSettings['suspectImpactMode'],
+                                )
+                              }
+                              className={optionInputClass}
+                            >
+                              <option value="auto">Auto (skip heavy jobs)</option>
+                              <option value="on">On</option>
+                              <option value="off">Off</option>
+                            </select>
+                          </label>
                         </div>
                         {parseSettingsDraft.runMode !== 'adjustment' && (
                           <div className="text-[11px] text-slate-300">

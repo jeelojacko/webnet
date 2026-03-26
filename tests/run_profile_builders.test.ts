@@ -42,6 +42,7 @@ const baseParseSettings: ParseSettings = {
   autoAdjustMaxCycles: 3,
   autoAdjustMaxRemovalsPerCycle: 1,
   autoAdjustStdResThreshold: 4,
+  suspectImpactMode: 'auto',
   order: 'EN',
   angleUnits: 'dms',
   angleStationOrder: 'atfromto',

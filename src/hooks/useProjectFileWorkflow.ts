@@ -268,6 +268,7 @@ export const useProjectFileWorkflow = ({
           solveProfile: profileForMode,
           runMode: normalizedRunMode,
           preanalysisMode: normalizedRunMode === 'preanalysis',
+          suspectImpactMode: loadedParseSettings.suspectImpactMode ?? 'auto',
           ...(loadedParseSettings.observationMode
             ? {
                 gridBearingMode: loadedParseSettings.observationMode.bearing,

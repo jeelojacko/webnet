@@ -30,6 +30,12 @@ export interface RunProgressMessage {
   type: 'progress';
   runId: string;
   phase: RunPhase;
+  elapsedMs?: number;
+  stageLabel?: string;
+  solveIndex?: number;
+  solveTotalHint?: number;
+  iteration?: number;
+  maxIterations?: number;
 }
 
 export interface RunSuccessMessage {

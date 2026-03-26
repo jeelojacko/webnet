@@ -20,6 +20,11 @@ const mockOutcome = {
   droppedClusterMerges: 0,
   inputChangedSinceLastRun: false,
   elapsedMs: 1,
+  profile: {
+    totalElapsedMs: 1,
+    solveInvocationCount: 1,
+    stages: [{ id: 'main-solve', label: 'Main solve', durationMs: 1, solveCount: 1 }],
+  },
 } as unknown as RunSessionOutcome;
 
 const mountHarness = async (
@@ -45,6 +50,11 @@ const mountHarness = async (
           Cancel
         </button>
         <div id="status">{`${pipelineState.status}:${pipelineState.phase ?? 'none'}`}</div>
+        <div id="detail">{`${pipelineState.detail ?? '-'}|${pipelineState.elapsedMs ?? '-'}|${
+          pipelineState.solveIndex ?? '-'
+        }/${pipelineState.solveTotalHint ?? '-'}|${pipelineState.iteration ?? '-'}|${
+          pipelineState.maxIterations ?? '-'
+        }`}</div>
       </div>
     );
   };
@@ -124,5 +134,67 @@ describe('useAdjustmentRunner', () => {
     if (workerDescriptor) Object.defineProperty(globalThis, 'Worker', workerDescriptor);
     else delete (globalThis as { Worker?: unknown }).Worker;
     vi.useRealTimers();
+  });
+
+  it('captures worker-backed progress detail and timing while a run is in progress', async () => {
+    const workerDescriptor = Object.getOwnPropertyDescriptor(globalThis, 'Worker');
+
+    class MockWorker {
+      onmessage: ((_event: MessageEvent) => void) | null = null;
+
+      addEventListener(type: string, listener: (_event: MessageEvent) => void) {
+        if (type === 'message') this.onmessage = listener;
+      }
+
+      removeEventListener(type: string, listener: (_event: MessageEvent) => void) {
+        if (type === 'message' && this.onmessage === listener) this.onmessage = null;
+      }
+
+      postMessage(message: unknown) {
+        const runId =
+          typeof message === 'object' &&
+          message != null &&
+          'runId' in message &&
+          typeof (message as { runId?: unknown }).runId === 'string'
+            ? ((message as { runId: string }).runId as string)
+            : 'worker-run';
+        this.onmessage?.({
+          data: {
+            type: 'progress',
+            runId,
+            phase: 'solving',
+            elapsedMs: 43210,
+            stageLabel: 'Impact 2/8',
+            solveIndex: 3,
+            solveTotalHint: 9,
+            iteration: 2,
+            maxIterations: 10,
+          },
+        } as MessageEvent);
+      }
+
+      terminate() {}
+    }
+
+    Object.defineProperty(globalThis, 'Worker', {
+      configurable: true,
+      value: MockWorker,
+    });
+
+    const mounted = await mountHarness(() => mockOutcome);
+    const runButton = mounted.container.querySelectorAll('button')[0] as HTMLButtonElement;
+
+    await act(async () => {
+      runButton.click();
+    });
+
+    expect(mounted.container.querySelector('#status')?.textContent).toBe('running:solving');
+    expect(mounted.container.querySelector('#detail')?.textContent).toBe(
+      'Impact 2/8|43210|3/9|2|10',
+    );
+
+    await mounted.cleanup();
+    if (workerDescriptor) Object.defineProperty(globalThis, 'Worker', workerDescriptor);
+    else delete (globalThis as { Worker?: unknown }).Worker;
   });
 });

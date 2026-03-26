@@ -94,6 +94,7 @@ export interface AdjustmentResultPayloadInput {
   stations: AdjustmentResult['stations'];
   observations: AdjustmentResult['observations'];
   logs: AdjustmentResult['logs'];
+  solveTimingProfile?: AdjustmentResult['solveTimingProfile'];
   seuw: number;
   dof: number;
   preanalysisMode?: boolean;
@@ -133,6 +134,7 @@ export const buildAdjustmentResultPayload = (
   stations: input.stations,
   observations: input.observations,
   logs: input.logs,
+  solveTimingProfile: input.solveTimingProfile,
   seuw: input.seuw,
   dof: input.dof,
   preanalysisMode: input.preanalysisMode,

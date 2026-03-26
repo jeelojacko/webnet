@@ -30,6 +30,7 @@ import type {
   ReductionUsageSummary,
   RobustMode,
   RunMode,
+  SuspectImpactMode,
   TsCorrelationScope,
   VerticalReductionMode,
   InstrumentLibrary,
@@ -217,6 +218,7 @@ export type ParseSettings = {
   autoAdjustMaxCycles: number;
   autoAdjustMaxRemovalsPerCycle: number;
   autoAdjustStdResThreshold: number;
+  suspectImpactMode: SuspectImpactMode;
   order: OrderMode;
   angleUnits: 'dms' | 'dd';
   angleStationOrder: 'atfromto' | 'fromatto';
@@ -279,6 +281,7 @@ export type RunDiagnostics = {
   autoAdjustMaxCycles: number;
   autoAdjustMaxRemovalsPerCycle: number;
   autoAdjustStdResThreshold: number;
+  suspectImpactMode: SuspectImpactMode;
   directionSetMode: 'reduced' | 'raw';
   mapMode: MapMode;
   mapScaleFactor: number;
@@ -405,6 +408,7 @@ export type RunSettingsSnapshot = {
   autoAdjustMaxCycles: number;
   autoAdjustMaxRemovalsPerCycle: number;
   autoAdjustStdResThreshold: number;
+  suspectImpactMode: SuspectImpactMode;
   selectedInstrument: string;
 };
 

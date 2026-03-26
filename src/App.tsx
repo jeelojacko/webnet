@@ -285,6 +285,7 @@ const createRunSettingsSnapshot = (
   autoAdjustMaxCycles: parseSettings.autoAdjustMaxCycles,
   autoAdjustMaxRemovalsPerCycle: parseSettings.autoAdjustMaxRemovalsPerCycle,
   autoAdjustStdResThreshold: parseSettings.autoAdjustStdResThreshold,
+  suspectImpactMode: parseSettings.suspectImpactMode,
   selectedInstrument,
 });
 
@@ -358,6 +359,7 @@ const buildPendingRunSettingDiffs = (
     current.autoAdjustStdResThreshold,
     previous.autoAdjustStdResThreshold,
   );
+  pushDiff('Suspect Impact', current.suspectImpactMode, previous.suspectImpactMode);
   pushDiff(
     'Instrument',
     current.selectedInstrument || 'none',
@@ -418,6 +420,8 @@ const SETTINGS_TOOLTIPS = {
     'Enable automatic candidate detection for non-redundant M-record sideshot-style observations. When OFF, legacy behavior is used and M-line auto-sideshot diagnostics are hidden.',
   autoAdjust:
     'Enable iterative auto-adjust cycles that automatically exclude top outlier candidates and re-solve until limits are reached. Inline .AUTOADJUST or /AUTOADJUST commands override this.',
+  suspectImpactMode:
+    'Controls the what-if suspect impact reruns after the main solve. AUTO skips them once the main solve is already heavy, ON always runs them, OFF disables them.',
   autoAdjustMaxCycles:
     'Maximum number of auto-adjust cycles. Each cycle can remove one or more observations and rerun the solve.',
   autoAdjustMaxRemovalsPerCycle:
@@ -947,6 +951,7 @@ const App: React.FC<AppProps> = ({
     autoAdjustMaxCycles: 3,
     autoAdjustMaxRemovalsPerCycle: 1,
     autoAdjustStdResThreshold: 4,
+    suspectImpactMode: 'auto',
     order: 'EN',
     angleUnits: 'dms',
     angleStationOrder: 'atfromto',

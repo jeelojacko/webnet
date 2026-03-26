@@ -413,6 +413,7 @@ export type AngleMode = 'auto' | 'angle' | 'dir';
 export type VerticalReductionMode = 'none' | 'curvref';
 export type TsCorrelationScope = 'setup' | 'set';
 export type RobustMode = 'none' | 'huber';
+export type SuspectImpactMode = 'auto' | 'on' | 'off';
 export type DirectionSetMode = 'reduced' | 'raw';
 export type ClusterLinkageMode = 'single' | 'complete';
 export type ClusterPassLabel = 'single' | 'pass1' | 'pass2';
@@ -1008,6 +1009,7 @@ export interface ParseOptions {
   autoAdjustMaxCycles?: number;
   autoAdjustMaxRemovalsPerCycle?: number;
   autoAdjustStdResThreshold?: number;
+  suspectImpactMode?: SuspectImpactMode;
   autoSideshotEnabled?: boolean;
   directionSetMode?: DirectionSetMode;
   clusterDetectionEnabled?: boolean;
@@ -1044,6 +1046,18 @@ export interface ParseOptions {
   vLevelNoneStdErrMeters?: number;
 }
 
+export interface AdjustmentSolveTimingProfile {
+  totalMs: number;
+  parseAndSetupMs: number;
+  equationAssemblyMs: number;
+  matrixFactorizationMs: number;
+  precisionAndDiagnosticsMs: number;
+  precisionPropagationMs: number;
+  reportDiagnosticsMs: number;
+  resultPackagingMs: number;
+  otherMs: number;
+}
+
 export interface AdjustmentResult {
   success: boolean;
   converged: boolean;
@@ -1051,6 +1065,7 @@ export interface AdjustmentResult {
   stations: StationMap;
   observations: Observation[];
   logs: string[];
+  solveTimingProfile?: AdjustmentSolveTimingProfile;
   seuw: number;
   dof: number;
   preanalysisMode?: boolean;

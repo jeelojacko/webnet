@@ -29,7 +29,20 @@ self.onmessage = (event: MessageEvent<AdjustmentWorkerRequestMessage>) => {
       if (cancelledRequestIds.has(runId)) return;
       try {
         postWorkerMessage({ type: 'progress', runId, phase: 'solving' });
-        const outcome = runAdjustmentSession(payload);
+        const outcome = runAdjustmentSession(payload, (progress) => {
+          if (cancelledRequestIds.has(runId)) return;
+          postWorkerMessage({
+            type: 'progress',
+            runId,
+            phase: progress.phase,
+            elapsedMs: progress.elapsedMs,
+            stageLabel: progress.stageLabel,
+            solveIndex: progress.solveIndex,
+            solveTotalHint: progress.solveTotalHint,
+            iteration: progress.iteration,
+            maxIterations: progress.maxIterations,
+          });
+        });
         if (cancelledRequestIds.has(runId)) return;
         postWorkerMessage({ type: 'progress', runId, phase: 'finalizing' });
         postWorkerMessage({ type: 'success', runId, payload: outcome });

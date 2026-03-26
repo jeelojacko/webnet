@@ -95,6 +95,7 @@ Current review behavior includes:
 - standardized residual tables with source-line traceability
 - residual diagnostic summaries by severity and family
 - what-if suspect impact scoring with one-click exclude and rerun flows
+- project-level suspect impact mode control (`AUTO` / `ON` / `OFF`); `AUTO` skips the extra re-solves once the main solve is already heavy
 - robust-vs-classical suspect comparison when robust mode is enabled
 - setup-level suspect metrics and ranking
 - traverse, GPS loop, direction-repeatability, and leveling suspect tables
@@ -108,6 +109,8 @@ Current workflow behavior includes:
 - revert-cluster-merge workflow
 - auto-adjust cycles with thresholds, limits, and deterministic tie-breaks
 - automatic sideshot candidate detection for eligible non-redundant measurements
+- worker status now exposes solve elapsed time, current stage, solve-count progress, and per-solve iteration progress while heavy runs are active
+- processing-summary diagnostics now include a per-run solve timing breakdown for setup, equation assembly, factorization, precision propagation, and report/packaging overhead
 
 ## Reporting and export behavior
 
@@ -196,7 +199,9 @@ Current workspace behavior includes:
 ### Performance and scalability
 Current delivered performance architecture includes:
 - worker-backed solve execution in the browser
+- worker solve status now reports elapsed time, active run-session stage, solve-count progress, and per-solve iteration progress in the toolbar so long traverse/parity jobs no longer look frozen
 - shared run-session orchestration for browser and CLI solve flows
+- shared run-session workflows may perform multiple full re-solves after the main adjustment for suspect-impact, preanalysis-impact, robust-comparison, or auto-adjust diagnostics; long traverse cases can therefore spend minutes in `Solving` even when a single engine solve is only tens of seconds
 - lazy-loaded heavy result views and modal bodies
 - local report state with filter and windowing behavior
 - dense-map review guards

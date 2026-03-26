@@ -346,6 +346,24 @@ describe('Project Options modal interactions', () => {
     }
   });
 
+  modalIt('persists suspect-impact mode after Apply in Adjustment tab', async () => {
+    const app = await mountApp('adjustment');
+    try {
+      const firstMode = findSelectForSettingsRow(app.container, 'Suspect Impact');
+      expect(firstMode.value).toBe('auto');
+      await setSelectValue(firstMode, 'off');
+
+      await clickButtonByExactText(app.container, 'Apply');
+      await clickOpenProjectOptions(app.container);
+      await clickProjectOptionsTab(app.container, 'adjustment');
+
+      const reopenedMode = findSelectForSettingsRow(app.container, 'Suspect Impact');
+      expect(reopenedMode.value).toBe('off');
+    } finally {
+      await app.cleanup();
+    }
+  });
+
   modalIt('discards unsaved convergence-limit edits when Cancel is clicked', async () => {
     const app = await mountApp('adjustment');
     try {

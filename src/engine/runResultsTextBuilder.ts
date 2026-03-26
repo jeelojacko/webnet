@@ -240,6 +240,12 @@ export const createRunResultsTextBuilder = ({
     lines.push(
       `Auto-adjust: ${runDiag.autoAdjustEnabled ? `ON (|t|>=${runDiag.autoAdjustStdResThreshold.toFixed(2)}, maxCycles=${runDiag.autoAdjustMaxCycles}, maxRemovalsPerCycle=${runDiag.autoAdjustMaxRemovalsPerCycle})` : 'OFF'}`,
     );
+    lines.push(`Suspect impact: ${runDiag.suspectImpactMode.toUpperCase()}`);
+    if (res.solveTimingProfile) {
+      lines.push(
+        `Solve timing (ms): total=${res.solveTimingProfile.totalMs.toFixed(1)}, setup=${res.solveTimingProfile.parseAndSetupMs.toFixed(1)}, assembly=${res.solveTimingProfile.equationAssemblyMs.toFixed(1)}, factor=${res.solveTimingProfile.matrixFactorizationMs.toFixed(1)}, precision=${res.solveTimingProfile.precisionPropagationMs.toFixed(1)}, report=${res.solveTimingProfile.reportDiagnosticsMs.toFixed(1)}, packaging=${res.solveTimingProfile.resultPackagingMs.toFixed(1)}, other=${res.solveTimingProfile.otherMs.toFixed(1)}`,
+      );
+    }
     lines.push(
       `industry default instrument fallback: ${runDiag.profileDefaultInstrumentFallback ? 'ON' : 'OFF'}`,
     );

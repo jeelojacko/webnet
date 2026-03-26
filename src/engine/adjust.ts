@@ -65,7 +65,7 @@ import type {
   RobustWeightSummary,
   SolveParameterIndex,
 } from './adjustmentSolveTypes';
-import type { ScenarioRunRequest } from './scenarioRunModels';
+import type { ScenarioRunRequest, SolveProgressEvent } from './scenarioRunModels';
 import type {
   AdjustmentResult,
   DatumSufficiencyReport,
@@ -207,6 +207,7 @@ interface EngineOptions {
   geoidSourceData?: ArrayBuffer | Uint8Array;
   parsedResult?: ParseResult;
   solvePreparation?: SolvePreparationResult;
+  progressCallback?: (_event: SolveProgressEvent) => void;
 }
 export class LSAEngine {
   input: string;
@@ -356,6 +357,17 @@ export class LSAEngine {
     string,
     { z: number; dist: number; horiz: number; dh: number; crCorr: number }
   >();
+  private progressCallback?: (_event: SolveProgressEvent) => void;
+  private solveStartedAt = 0;
+  private solveTiming = {
+    parseAndSetupMs: 0,
+    equationAssemblyMs: 0,
+    matrixFactorizationMs: 0,
+    precisionAndDiagnosticsMs: 0,
+    precisionPropagationMs: 0,
+    resultPackagingMs: 0,
+  };
+  private solveTimingLogged = false;
 
   private matrixIsFinite(m: number[][]): boolean {
     return m.every((row) => row.every((value) => Number.isFinite(value)));
@@ -1543,6 +1555,7 @@ export class LSAEngine {
     geoidSourceData,
     parsedResult,
     solvePreparation,
+    progressCallback,
   }: EngineOptions) {
     this.input = input;
     this.maxIterations = maxIterations;
@@ -1562,10 +1575,74 @@ export class LSAEngine {
           : undefined;
     this.parsedResult = parsedResult;
     this.solvePreparation = solvePreparation;
+    this.progressCallback = progressCallback;
   }
 
   private log(msg: string) {
     this.logs.push(msg);
+  }
+
+  private emitSolveProgress(phase: SolveProgressEvent['phase']): void {
+    if (!this.progressCallback) return;
+    this.progressCallback({
+      phase,
+      iteration: this.iterations,
+      maxIterations: this.maxIterations,
+      elapsedMs: Math.max(0, Date.now() - this.solveStartedAt),
+      converged: this.converged,
+    });
+  }
+
+  private resetSolveTiming(): void {
+    this.solveTiming = {
+      parseAndSetupMs: 0,
+      equationAssemblyMs: 0,
+      matrixFactorizationMs: 0,
+      precisionAndDiagnosticsMs: 0,
+      precisionPropagationMs: 0,
+      resultPackagingMs: 0,
+    };
+    this.solveTimingLogged = false;
+  }
+
+  private buildSolveTimingProfile(): NonNullable<AdjustmentResult['solveTimingProfile']> {
+    const totalMs = Math.max(0, Date.now() - this.solveStartedAt);
+    const reportDiagnosticsMs = Math.max(
+      0,
+      this.solveTiming.precisionAndDiagnosticsMs - this.solveTiming.precisionPropagationMs,
+    );
+    const classifiedMs =
+      this.solveTiming.parseAndSetupMs +
+      this.solveTiming.equationAssemblyMs +
+      this.solveTiming.matrixFactorizationMs +
+      this.solveTiming.precisionAndDiagnosticsMs +
+      this.solveTiming.resultPackagingMs;
+    return {
+      totalMs,
+      parseAndSetupMs: this.solveTiming.parseAndSetupMs,
+      equationAssemblyMs: this.solveTiming.equationAssemblyMs,
+      matrixFactorizationMs: this.solveTiming.matrixFactorizationMs,
+      precisionAndDiagnosticsMs: this.solveTiming.precisionAndDiagnosticsMs,
+      precisionPropagationMs: this.solveTiming.precisionPropagationMs,
+      reportDiagnosticsMs,
+      resultPackagingMs: this.solveTiming.resultPackagingMs,
+      otherMs: Math.max(0, totalMs - classifiedMs),
+    };
+  }
+
+  private logSolveTimingProfile(
+    profile: NonNullable<AdjustmentResult['solveTimingProfile']>,
+  ): void {
+    if (this.solveTimingLogged) return;
+    this.solveTimingLogged = true;
+    this.logs.push(
+      `Solve timing (ms): total=${profile.totalMs.toFixed(1)}, setup=${profile.parseAndSetupMs.toFixed(1)}, assembly=${profile.equationAssemblyMs.toFixed(1)}, factor=${profile.matrixFactorizationMs.toFixed(1)}, precision+diag=${profile.precisionAndDiagnosticsMs.toFixed(1)}, precision=${profile.precisionPropagationMs.toFixed(1)}, report=${profile.reportDiagnosticsMs.toFixed(1)}, packaging=${profile.resultPackagingMs.toFixed(1)}, other=${profile.otherMs.toFixed(1)}`,
+    );
+  }
+
+  private finishSolve(result: AdjustmentResult): AdjustmentResult {
+    this.emitSolveProgress('complete');
+    return result;
   }
 
   private solveNestedScenario(
@@ -1596,6 +1673,7 @@ export class LSAEngine {
       geoidSourceData: request.geoidSourceData,
       parsedResult,
       solvePreparation: getCachedSolvePreparation(request, parsedResult),
+      progressCallback: request.progressCallback,
     }).solve();
   }
 
@@ -3356,6 +3434,9 @@ export class LSAEngine {
   }
 
   solve(): AdjustmentResult {
+    this.solveStartedAt = Date.now();
+    this.resetSolveTiming();
+    this.emitSolveProgress('start');
     const requestedRunMode: RunMode =
       this.parseOptions?.runMode ??
       (this.parseOptions?.preanalysisMode ? 'preanalysis' : 'adjustment');
@@ -3375,6 +3456,12 @@ export class LSAEngine {
       return clusterWorkflowResult;
     }
 
+    let parseAndSetupStartedAt = Date.now();
+    const finishParseAndSetupTiming = () => {
+      if (parseAndSetupStartedAt <= 0) return;
+      this.solveTiming.parseAndSetupMs += Date.now() - parseAndSetupStartedAt;
+      parseAndSetupStartedAt = 0;
+    };
     const parsed = this.parsedResult
       ? cloneParsedResultValue(this.parsedResult)
       : parseInput(this.input, this.instrumentLibrary, this.parseOptions);
@@ -3408,6 +3495,7 @@ export class LSAEngine {
           `  include-error ${error.code} at ${error.sourceFile}:${error.line}${error.includePath ? ` (${error.includePath})` : ''}: ${error.message}`,
         );
       });
+      finishParseAndSetupTiming();
       return this.buildResult();
     }
     this.coordMode = parsed.parseState?.coordMode ?? this.parseOptions?.coordMode ?? '3D';
@@ -3849,15 +3937,16 @@ export class LSAEngine {
       }
       this.emitRunModeCompatibilityDiagnostics(this.runModeCompatibilityDiagnostics);
       this.converged = false;
-      return this.buildResult();
+      return this.finishSolve(this.buildResult());
     }
     if (this.runMode === 'blunder-detect') {
-      return this.runBlunderDetectWorkflow(this.runModeCompatibilityDiagnostics);
+      return this.finishSolve(this.runBlunderDetectWorkflow(this.runModeCompatibilityDiagnostics));
     }
 
     this.emitRunModeCompatibilityDiagnostics(this.runModeCompatibilityDiagnostics);
     if (this.runMode === 'data-check') {
-      return this.runDataCheckOnly(activeObservations);
+      finishParseAndSetupTiming();
+      return this.finishSolve(this.runDataCheckOnly(activeObservations));
     }
     const gridInputGate = this.evaluateGridInputGate(activeObservations);
     if (gridInputGate.blocked) {
@@ -3875,7 +3964,8 @@ export class LSAEngine {
       if (this.parseState) {
         this.parseState.datumSufficiencyReport = this.datumSufficiencyReport;
       }
-      return this.buildResult();
+      finishParseAndSetupTiming();
+      return this.finishSolve(this.buildResult());
     }
     this.datumSufficiencyReport = this.evaluateDatumSufficiency(activeObservations);
     if (this.datumSufficiencyReport.status === 'hard-fail') {
@@ -3887,7 +3977,8 @@ export class LSAEngine {
       if (this.parseState) {
         this.parseState.datumSufficiencyReport = this.datumSufficiencyReport;
       }
-      return this.buildResult();
+      finishParseAndSetupTiming();
+      return this.finishSolve(this.buildResult());
     }
     if (this.datumSufficiencyReport.status === 'soft-warn') {
       this.addCoordSystemDiagnostic('DATUM_SOFT_WARN');
@@ -3952,7 +4043,8 @@ export class LSAEngine {
       if (sideshotCount > 0) {
         this.log(`Sideshots (post-adjust): ${sideshotCount}`);
       }
-      return this.buildResult();
+      finishParseAndSetupTiming();
+      return this.finishSolve(this.buildResult());
     }
 
     const gpsSideshotCount = this.observations.filter(
@@ -4008,13 +4100,16 @@ export class LSAEngine {
     this.dof = numObsEquations - numParams;
     if (this.dof < 0) {
       this.log('Error: Redundancy < 0. Under-determined.');
-      return this.buildResult();
+      finishParseAndSetupTiming();
+      return this.finishSolve(this.buildResult());
     }
+    finishParseAndSetupTiming();
     let prevObjectiveBefore: number | null = null;
 
     for (let iter = 0; iter < this.maxIterations; iter++) {
       this.iterations += 1;
       this.clearGeometryCache();
+      const assemblyStartedAt = Date.now();
       const { A, L, P, rowInfo } = assembleAdjustmentEquations(
         {
           stations: this.stations,
@@ -4043,7 +4138,9 @@ export class LSAEngine {
         numParams,
         iter + 1,
       );
+      this.solveTiming.equationAssemblyMs += Date.now() - assemblyStartedAt;
 
+      const factorizationStartedAt = Date.now();
       try {
         const iterationResult = solveAdjustmentIteration(
           {
@@ -4064,6 +4161,7 @@ export class LSAEngine {
           rowInfo,
           iter + 1,
         );
+        this.solveTiming.matrixFactorizationMs += Date.now() - factorizationStartedAt;
         this.Qxx = iterationResult.qxx;
         const { correction, sumBefore, sumAfter, maxBefore, maxAfter } = iterationResult;
         const objectiveDeltaWithinIter = Math.abs(sumBefore - sumAfter);
@@ -4114,20 +4212,27 @@ export class LSAEngine {
             `Converged: relative iteration objective delta ${objectiveDeltaRelative.toExponential(6)} < limit ${this.convergenceThreshold.toExponential(6)}`,
           );
           this.converged = true;
+          this.emitSolveProgress('iteration');
           break;
         }
         prevObjectiveBefore = sumBefore;
+        this.emitSolveProgress('iteration');
       } catch (error) {
+        this.solveTiming.matrixFactorizationMs += Date.now() - factorizationStartedAt;
         const detail = error instanceof Error ? ` ${error.message}` : '';
         this.log(`Normal equation solve failed (singular or otherwise unstable).${detail}`);
+        const diagnosticsStartedAt = Date.now();
         this.calculateStatistics(this.paramIndex, false, activeObservations);
-        return this.buildResult();
+        this.solveTiming.precisionAndDiagnosticsMs += Date.now() - diagnosticsStartedAt;
+        return this.finishSolve(this.buildResult());
       }
     }
 
     if (!this.converged) this.log('Warning: Max iterations reached.');
+    const diagnosticsStartedAt = Date.now();
     this.calculateStatistics(this.paramIndex, !!this.Qxx, activeObservations);
-    return this.buildResult();
+    this.solveTiming.precisionAndDiagnosticsMs += Date.now() - diagnosticsStartedAt;
+    return this.finishSolve(this.buildResult());
   }
 
   private estimateCondition(N: number[][]): number {
@@ -5077,6 +5182,7 @@ export class LSAEngine {
     this.captureObservationWeightingStdDevs(activeObservations);
 
     if (hasQxx && this.Qxx) {
+      const precisionPropagationStartedAt = Date.now();
       const posteriorScaleSq =
         this.dof > 0 && Number.isFinite(this.seuw) && this.seuw > 0 ? this.seuw * this.seuw : 1;
       if (this.dof <= 0) {
@@ -5286,6 +5392,7 @@ export class LSAEngine {
           this.log(`  pair ${cue.from}-${cue.to}: ${cue.severity.toUpperCase()} ${cue.note}`);
         });
       }
+      this.solveTiming.precisionPropagationMs += Date.now() - precisionPropagationStartedAt;
     }
 
     const sideshots = this.computeSideshotResults();
@@ -5697,6 +5804,7 @@ export class LSAEngine {
   }
 
   private buildResult(): AdjustmentResult {
+    const resultPackagingStartedAt = Date.now();
     if (!this.sideshots) {
       this.sideshots = this.computeSideshotResults();
     }
@@ -5789,7 +5897,7 @@ export class LSAEngine {
       }
     }
     const success = includeErrorCount === 0 && (runMode === 'data-check' ? true : this.converged);
-    return buildAdjustmentResultPayload({
+    const result = buildAdjustmentResultPayload({
       success,
       converged: this.converged,
       iterations: this.iterations,
@@ -5825,5 +5933,10 @@ export class LSAEngine {
       clusterDiagnostics: this.clusterDiagnostics,
       directionRejectDiagnostics: this.directionRejectDiagnostics,
     });
+    this.solveTiming.resultPackagingMs += Date.now() - resultPackagingStartedAt;
+    const solveTimingProfile = this.buildSolveTimingProfile();
+    result.solveTimingProfile = solveTimingProfile;
+    this.logSolveTimingProfile(solveTimingProfile);
+    return result;
   }
 }

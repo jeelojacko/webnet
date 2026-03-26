@@ -77,4 +77,40 @@ describe('adjustmentIteration', () => {
     expect(directionOrientations.SET1).toBeCloseTo(0.1, 10);
     expect(maxCorrection).toBe(2);
   });
+
+  it('skips repeated condition estimation after the first outer iteration', () => {
+    const recordConditionEstimate = vi.fn();
+
+    solveAdjustmentIteration(
+      {
+        robustMode: 'none',
+        solveNormalEquations: () => ({
+          correction: [[0]],
+          qxx: [[1]],
+        }),
+        estimateCondition: () => 9,
+        recordConditionEstimate,
+        captureRobustWeightBase: () => ({ diagonal: [], correlatedPairs: [] }),
+        applyRobustWeightFactors: () => undefined,
+        computeRobustWeightSummary: () => ({
+          factors: [],
+          downweightedRows: 0,
+          minWeight: 1,
+          maxNorm: 0,
+          meanWeight: 1,
+          topRows: [],
+        }),
+        maxRobustWeightDelta: () => 0,
+        recordRobustDiagnostics: () => undefined,
+        weightedQuadratic: () => 0,
+      },
+      [[1]],
+      [[0]],
+      [[1]],
+      [null],
+      2,
+    );
+
+    expect(recordConditionEstimate).not.toHaveBeenCalled();
+  });
 });

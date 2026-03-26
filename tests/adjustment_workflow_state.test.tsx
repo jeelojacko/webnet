@@ -66,6 +66,7 @@ const baseParseSettings: ParseSettings = {
   autoAdjustMaxCycles: 3,
   autoAdjustMaxRemovalsPerCycle: 1,
   autoAdjustStdResThreshold: 4,
+  suspectImpactMode: 'auto',
   order: 'EN',
   angleUnits: 'dms',
   angleStationOrder: 'atfromto',
@@ -141,6 +142,7 @@ const baseRunSettingsSnapshot: RunSettingsSnapshot = {
   autoAdjustMaxCycles: 3,
   autoAdjustMaxRemovalsPerCycle: 1,
   autoAdjustStdResThreshold: 4,
+  suspectImpactMode: 'auto',
   selectedInstrument: 'S9',
 };
 
@@ -198,6 +200,11 @@ describe('useAdjustmentWorkflow', () => {
           droppedClusterMerges: 0,
           inputChangedSinceLastRun: false,
           elapsedMs: 12,
+          profile: {
+            totalElapsedMs: 12,
+            solveInvocationCount: 1,
+            stages: [{ id: 'main-solve', label: 'Main solve', durationMs: 12, solveCount: 1 }],
+          },
         }) as const,
     );
     const recordRunSnapshot = vi.fn();
