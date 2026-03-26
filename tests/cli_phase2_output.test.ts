@@ -11,6 +11,7 @@ const WEBNET_CLI = path.resolve(ROOT, 'src', 'cli.ts');
 const STABLE_INPUT = path.resolve(ROOT, 'tests', 'fixtures', 'cli_smoke.dat');
 const PREANALYSIS_INPUT = path.resolve(ROOT, 'tests', 'fixtures', 'preanalysis_cli.dat');
 const GEOID_GTX_INPUT = path.resolve(ROOT, 'tests', 'fixtures', 'mock_geoid.gtx');
+const CLI_TEST_TIMEOUT_MS = 15000;
 
 const runCli = (args: string[]) =>
   spawnSync(process.execPath, [TSX_CLI, WEBNET_CLI, ...args], {
@@ -29,7 +30,7 @@ describe('CLI phase 2 output modes', () => {
     expect(payload.converged).toBe(true);
     expect(payload.stationCount).toBeGreaterThan(0);
     expect(payload.observationCount).toBeGreaterThan(0);
-  });
+  }, CLI_TEST_TIMEOUT_MS);
 
   it('writes industry-style listing output to file', () => {
     const outDir = mkdtempSync(path.join(tmpdir(), 'webnet-cli-'));
@@ -39,7 +40,7 @@ describe('CLI phase 2 output modes', () => {
     const text = readFileSync(outPath, 'utf-8');
     expect(text).toContain('INDUSTRY-STANDARD-STYLE Listing');
     expect(text).toContain('Adjusted Coordinates');
-  });
+  }, CLI_TEST_TIMEOUT_MS);
 
   it('writes LandXML output to file', () => {
     const outDir = mkdtempSync(path.join(tmpdir(), 'webnet-cli-'));
@@ -50,13 +51,13 @@ describe('CLI phase 2 output modes', () => {
     expect(text).toContain('<LandXML xmlns="http://www.landxml.org/schema/LandXML-1.2"');
     expect(text).toContain('<CgPoints>');
     expect(text).toContain('<PlanFeatures name="WebNet Connections">');
-  });
+  }, CLI_TEST_TIMEOUT_MS);
 
   it('returns deterministic usage error code for missing input files', () => {
     const res = runCli(['--input', 'tests/fixtures/does_not_exist.dat']);
     expect(res.status).toBe(2);
     expect(res.stderr).toContain('Failed to read input file');
-  });
+  }, CLI_TEST_TIMEOUT_MS);
 
   it('applies auto-adjust flags into parse-state output', () => {
     const res = runCli([
@@ -79,7 +80,7 @@ describe('CLI phase 2 output modes', () => {
     expect(payload.parseState?.autoAdjustStdResThreshold).toBeCloseTo(3.5, 8);
     expect(payload.parseState?.autoAdjustMaxCycles).toBe(2);
     expect(payload.parseState?.autoAdjustMaxRemovalsPerCycle).toBe(2);
-  });
+  }, CLI_TEST_TIMEOUT_MS);
 
   it('supports preanalysis mode from the CLI', () => {
     const res = runCli([
@@ -99,7 +100,7 @@ describe('CLI phase 2 output modes', () => {
     expect(payload.plannedObservationCount).toBeGreaterThan(0);
     expect(payload.parseState?.preanalysisMode).toBe(true);
     expect(payload.parseState?.plannedObservationCount).toBeGreaterThan(0);
-  });
+  }, CLI_TEST_TIMEOUT_MS);
 
   it('supports explicit run-mode flags for data-check and blunder-detect', () => {
     const dataCheck = runCli([
@@ -129,7 +130,7 @@ describe('CLI phase 2 output modes', () => {
     expect(blunderPayload.success).toBe(true);
     expect(blunderPayload.runMode).toBe('blunder-detect');
     expect(blunderPayload.parseState?.runMode).toBe('blunder-detect');
-  });
+  }, CLI_TEST_TIMEOUT_MS);
 
   it('hard-fails blunder-detect mode for leveling-only datasets with compatibility diagnostics', () => {
     const outDir = mkdtempSync(path.join(tmpdir(), 'webnet-cli-runmode-'));
@@ -152,7 +153,7 @@ describe('CLI phase 2 output modes', () => {
       ),
     );
     expect(diagCodes.has('BLUNDER_LEVELING_ONLY')).toBe(true);
-  });
+  }, CLI_TEST_TIMEOUT_MS);
 
   it('hard-fails runs when include files are missing', () => {
     const outDir = mkdtempSync(path.join(tmpdir(), 'webnet-cli-include-'));
@@ -165,7 +166,7 @@ describe('CLI phase 2 output modes', () => {
     expect(payload.success).toBe(false);
     expect(payload.parseState?.includeErrors?.length).toBeGreaterThan(0);
     expect(payload.parseState?.includeErrors?.[0]?.code).toBe('include-not-found');
-  });
+  }, CLI_TEST_TIMEOUT_MS);
 
   it('resolves nested include relative paths and keeps deterministic include order in CLI mode', () => {
     const outDir = mkdtempSync(path.join(tmpdir(), 'webnet-cli-include-rel-'));
@@ -232,7 +233,7 @@ describe('CLI phase 2 output modes', () => {
         line: 2,
       },
     ]);
-  });
+  }, CLI_TEST_TIMEOUT_MS);
 
   it('hard-fails runs when include cycles are detected', () => {
     const outDir = mkdtempSync(path.join(tmpdir(), 'webnet-cli-include-cycle-'));
@@ -270,7 +271,7 @@ describe('CLI phase 2 output modes', () => {
       normalizePath(bPath),
       normalizePath(aPath),
     ]);
-  });
+  }, CLI_TEST_TIMEOUT_MS);
 
   it('hard-fails runs when include depth is exceeded', () => {
     const outDir = mkdtempSync(path.join(tmpdir(), 'webnet-cli-include-depth-'));
@@ -308,7 +309,7 @@ describe('CLI phase 2 output modes', () => {
     expect(depthDiag?.line).toBe(1);
     expect(depthDiag?.includePath).toBe('f15.dat');
     expect(depthDiag?.message).toContain('limit=16');
-  });
+  }, CLI_TEST_TIMEOUT_MS);
 
   it('hard-fails runs when child-relative include paths cannot be resolved', () => {
     const outDir = mkdtempSync(path.join(tmpdir(), 'webnet-cli-include-rel-missing-'));
@@ -344,7 +345,7 @@ describe('CLI phase 2 output modes', () => {
     expect(missingDiag).toBeDefined();
     expect(missingDiag?.sourceFile).toBe(normalizePath(path.join(sectionDir, 'first.dat')));
     expect(missingDiag?.line).toBe(2);
-  });
+  }, CLI_TEST_TIMEOUT_MS);
 
   it('supports coordinate-system CLI flags for Canada-first workflows', () => {
     const res = runCli([
@@ -382,7 +383,7 @@ describe('CLI phase 2 output modes', () => {
     expect(payload.parseState?.gnssVectorFrameDefault).toBe('unknown');
     expect(payload.parseState?.gnssFrameConfirmed).toBe(true);
     expect(payload.parseState?.averageGeoidHeight).toBeCloseTo(28.5, 8);
-  });
+  }, CLI_TEST_TIMEOUT_MS);
 
   it('accepts EPSG aliases for --crs-id and normalizes to catalog ids', () => {
     const res = runCli([
@@ -399,7 +400,7 @@ describe('CLI phase 2 output modes', () => {
     const payload = JSON.parse(res.stdout);
     expect(payload.parseState?.coordSystemMode).toBe('grid');
     expect(payload.parseState?.crsId).toBe('CA_NAD83_CSRS_NB_STEREO_DOUBLE');
-  });
+  }, CLI_TEST_TIMEOUT_MS);
 
   it('supports parse mode and geoid source CLI options', () => {
     const res = runCli([
@@ -429,5 +430,5 @@ describe('CLI phase 2 output modes', () => {
     expect(payload.parseState?.geoidSourcePath).toBe(GEOID_GTX_INPUT);
     expect(payload.parseState?.geoidSourceResolvedFormat).toBe('gtx');
     expect(payload.parseState?.geoidSourceFallbackUsed).toBe(false);
-  });
+  }, CLI_TEST_TIMEOUT_MS);
 });

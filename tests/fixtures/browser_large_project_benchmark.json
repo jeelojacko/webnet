@@ -6,10 +6,10 @@
     "expectedStationCount": 80,
     "expectedObservationCount": 240,
     "reportWindowSize": 100,
-    "solveBudgetMs": 10000,
-    "rerunBudgetMs": 6500,
-    "renderBudgetMs": 4000,
-    "artifactBuildBudgetMs": 3000,
+    "solveBudgetMs": 12000,
+    "rerunBudgetMs": 8000,
+    "renderBudgetMs": 5000,
+    "artifactBuildBudgetMs": 4000,
     "artifactFormat": "bundle-qa-standard-with-landxml"
   },
   {

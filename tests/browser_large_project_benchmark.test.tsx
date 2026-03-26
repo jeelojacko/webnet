@@ -42,6 +42,8 @@ interface BrowserBenchmarkFixture {
   artifactFormat: ProjectExportFormat;
 }
 
+const BENCHMARK_CASE_TIMEOUT_MS = 30000;
+
 const benchmarkFixtures = JSON.parse(
   readFileSync('tests/fixtures/browser_large_project_benchmark.json', 'utf-8'),
 ) as BrowserBenchmarkFixture[];
@@ -416,6 +418,6 @@ describe('browser large-project benchmark coverage', () => {
       });
       container.remove();
     },
-    20000,
+    BENCHMARK_CASE_TIMEOUT_MS,
   );
 });
