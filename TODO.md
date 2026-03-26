@@ -112,6 +112,7 @@
       - [ ] Test solver-order / reweight timing only if covariance-path cleanup does not materially reduce the remaining reference diff
     - [ ] Batch 6 - multi-case parity fixture and normalized text-diff foundation
       - [x] Keep `manual/` local-only and mirror the 4 source input/output pairs into committed fixture files under `tests/fixtures/` with generic industry-case naming
+      - [x] Add a committed exact-output regression lock for the parity-clean WebNet underground 2D reference case under `tests/fixtures/`
       - [x] Add a shared industry parity case registry with per-case input path, expected output path, header-normalization rules, startup-default settings patch, and selected instrument
       - [ ] Extend the parity harness so each case can assert both structured solve metrics and normalized exact text parity against its paired industry output
       - [x] Add text-normalization helpers that ignore volatile header values only for run date, software version, project folder, and source-file path lines

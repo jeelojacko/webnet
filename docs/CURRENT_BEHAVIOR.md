@@ -141,6 +141,7 @@ Current listing/report behavior includes:
 - observation-table formatting for zero-size ellipse and displayed sigma corner cases
 - omission of processing-log lines from the industry-style listing output
 - industry-style adjusted-observation sections always emit the full solved set; the old adjusted-observation row-limit control is no longer exposed in Project Options
+- fixture-backed parity locks now include a small WebNet underground 2D reference case whose industry-style listing must remain exact from `Project Option Settings` to the file end
 
 ### Precision reporting
 Current results support dual precision-reporting models:
