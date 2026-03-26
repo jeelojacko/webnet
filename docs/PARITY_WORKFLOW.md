@@ -36,6 +36,20 @@ Also run the narrowest relevant suites for the area changed. Examples:
 - precision-propagation tests for covariance/ellipse work
 - listing-format tests for textual formatting changes
 - computational parity harness tests for reference-case behavior
+- industry-example fixture tests and normalized text-diff tests when working on the levelling, traverse, GNSS, or combined manual reference cases
+
+## Multi-case industry example workflow
+When working on the mirrored industry example cases under `tests/fixtures/`:
+
+- keep `manual/` local-only and do not commit files there
+- mirror the local source input/output files into committed fixture paths under `tests/fixtures/`
+- normalize only these volatile header values before exact text diffing:
+  - software version
+  - run date
+  - project folder
+  - data-file path/list line
+- keep the active app startup dataset/settings aligned with the current parity batch so manual browser retests open directly into that case
+- do not mark a case complete until its focused parser/solver tests pass and its normalized reference diff no longer worsens
 
 ## Reference-diff rule
 The reference diff gate is the primary machine-readable guard for parity-sensitive work.

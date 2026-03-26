@@ -108,6 +108,52 @@ const collectVerticalSensitiveStations = (
   return hasVertical;
 };
 
+const collectHorizontalSensitiveStations = (activeObservations: Observation[]): Set<StationId> => {
+  const hasHorizontal = new Set<StationId>();
+  const mark = (stationId?: StationId) => {
+    if (stationId) hasHorizontal.add(stationId);
+  };
+  activeObservations.forEach((observation) => {
+    if (observation.type === 'lev' || observation.type === 'zenith') {
+      return;
+    }
+    if (observation.type === 'angle') {
+      mark(observation.at);
+      mark(observation.from);
+      mark(observation.to);
+      return;
+    }
+    if (observation.type === 'direction' || observation.type === 'dir') {
+      if (observation.type === 'direction') {
+        mark(observation.at);
+        mark(observation.to);
+      } else {
+        mark(observation.from);
+        mark(observation.to);
+      }
+      return;
+    }
+    mark((observation as Observation & { from?: StationId }).from);
+    mark((observation as Observation & { to?: StationId }).to);
+  });
+  return hasHorizontal;
+};
+
+const applyAutomaticHorizontalHolds = (
+  stations: StationMap,
+  unknowns: StationId[],
+  activeObservations: Observation[],
+): void => {
+  const hasHorizontal = collectHorizontalSensitiveStations(activeObservations);
+  unknowns.forEach((stationId) => {
+    const station = stations[stationId];
+    if (!station || hasHorizontal.has(stationId)) return;
+    if (!station.fixedX) station.fixedX = true;
+    if (!station.fixedY) station.fixedY = true;
+    station.fixed = !!station.fixedX && !!station.fixedY && !!station.fixedH;
+  });
+};
+
 export const applyAutomaticHeightHolds = (
   stations: StationMap,
   unknowns: StationId[],
@@ -165,6 +211,7 @@ export const buildSolvePreparation = (
   activeObservations: Observation[],
   is2D: boolean,
 ): SolvePreparationResult => {
+  applyAutomaticHorizontalHolds(stations, unknowns, activeObservations);
   const autoDroppedHeights = applyAutomaticHeightHolds(
     stations,
     unknowns,

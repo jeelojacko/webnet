@@ -1,0 +1,389 @@
+                  MicroSurvey STAR*NET-PRO Version 13.0.2.5829
+                       Run Date: Mon May  5 2025 08:48:11
+
+
+                   Summary of Files Used and Option Settings
+                   =========================================
+
+                         Project Folder and Data Files
+
+      Project Name       ALL_SESSIONS
+      Project Folder     C:\USERS\MFLEISCH\DOWNLOADS\STARNET (1)\STARNET
+      Data File List  1. ALL_Sessions.gps
+
+                            Project Option Settings
+
+      STAR*NET Run Mode                   : Adjust with Error Propagation
+      Type of Adjustment                  : 3D
+      Project Units                       : Meters; DMS
+      Coordinate System                   : NewBrunswick83
+      Geoid Height                        : 0.0000 (Default, Meters)
+      Vertical Deflection                 : N=-2.910 E=-1.460 (Seconds)
+      Longitude Sign Convention           : Positive West
+      Input/Output Coordinate Order       : North-East
+      Angle Data Station Order            : At-From-To
+      Distance/Vertical Data Type         : Slope/Zenith
+      Convergence Limit; Max Iterations   : 0.010000; 10
+      Default Coefficient of Refraction   : 0.070000
+      Create Coordinate File              : Yes
+      Create Geodetic Position File       : No
+      Create Ground Scale Coordinate File : No
+      Create Dump File                    : No
+      GPS Vector Standard Error Factors   : None
+      GPS Vector Centering (Meters)       : None
+      GPS Vector Transformations          : None
+
+                           Inline Option Usage Notes
+
+      GPS Vector Factor Default Modified by Inline Option
+
+                      Summary of Inconsistent Descriptions
+                      ====================================
+
+
+                           Number of Occurrences = 0
+
+Network Stations
+Point ID         Description                     File:Line                     
+
+Sideshots
+Point ID         Description                     File:Line                     
+
+                    Summary of Unadjusted Input Observations
+                    ========================================
+
+                    Number of Entered Stations (Meters) = 7
+
+Fixed Stations              N                 E          Elev   Description
+FRDN                7437047.5440      2487601.2110    117.9300
+
+Free Stations               N                 E          Elev   Description
+GPS1                7438438.7380      2488810.2410     64.8390
+GPS2                7438481.0580      2489236.2940     37.6750
+GPS3                7438971.1780      2489016.3080     16.7670
+GPS4                7438154.0670      2488813.5920     82.5990
+GPS5                7438251.1500      2489408.5300     44.6520
+GPS6                7438735.4190      2488974.8160     34.2790
+
+                Number of GPS Vector Observations (Meters) = 15
+
+From                           DeltaX        StdErrX       CorrelXY      HI
+To                             DeltaY        StdErrY       CorrelXZ      HT
+                               DeltaZ        StdErrZ       CorrelYZ
+
+(V27 PostProcessed 28-APR-2025 12:21:00.0 session_1_processed.asc)
+FRDN                         785.7010         0.0007        -0.8381   0.000
+GPS4                        1233.8307         0.0015         0.8054   0.000
+                             745.8148         0.0017        -0.9162
+
+(V28 PostProcessed 28-APR-2025 12:21:00.0 session_1_processed.asc)
+GPS4                         281.7671         0.0010        -0.8171   0.000
+GPS2                         412.3120         0.0021         0.8375   0.000
+                             195.6258         0.0022        -0.8915
+
+(V29 PostProcessed 28-APR-2025 11:59:30.0 session_1_processed.asc)
+GPS2                        -348.0912         0.0015        -0.8427   0.000
+GPS3                         248.9096         0.0034         0.8156   0.000
+                             325.5144         0.0035        -0.9317
+
+(V24 PostProcessed 28-APR-2025 11:47:00.0 session_2_processed.asc)
+FRDN                         719.3787         0.0015        -0.8609   0.000
+GPS3                        1895.0485         0.0032         0.8301   0.000
+                            1266.9577         0.0036        -0.9234
+
+(V25 PostProcessed 28-APR-2025 14:05:30.0 session_2_processed.asc)
+GPS3                         573.9513         0.0021        -0.5936   0.000
+GPS5                        -336.4067         0.0032         0.4628   0.000
+                            -480.1599         0.0038        -0.6478
+
+(V26 PostProcessed 28-APR-2025 14:05:30.0 session_2_processed.asc)
+GPS5                        -507.6288         0.0011        -0.8431   0.000
+GPS4                        -324.8080         0.0022         0.8271   0.000
+                             -40.9816         0.0025        -0.9140
+
+(V21 PostProcessed 28-APR-2025 14:05:30.0 session_3_asci_may3rd.asc)
+FRDN                        1293.3336         0.0024        -0.8419   0.000
+GPS5                        1558.6359         0.0047         0.8024   0.000
+                             786.7972         0.0051        -0.9233
+
+(V22 PostProcessed 28-APR-2025 15:59:30.0 session_3_asci_may3rd.asc)
+GPS5                        -597.1829         0.0012        -0.8090   0.000
+GPS1                        -127.1773         0.0025         0.7517   0.000
+                             144.2224         0.0027        -0.9428
+
+(V23 PostProcessed 28-APR-2025 15:59:30.0 session_3_asci_may3rd.asc)
+GPS1                          57.5596         0.0029        -0.8252   0.000
+GPS6                         280.5083         0.0061         0.7735   0.000
+                             184.5462         0.0061        -0.9071
+
+(V18 PostProcessed 28-APR-2025 15:59:30.0 session_4.asc)
+FRDN                         696.1460         0.0007        -0.8703   0.000
+GPS1                        1431.4659         0.0015         0.8102   0.000
+                             931.0100         0.0016        -0.9160
+
+(V19 PostProcessed 28-APR-2025 19:36:40.0 session_4.asc)
+GPS1                          57.5594         0.0033        -0.9252   0.000
+GPS6                         280.5039         0.0068         0.8298   0.000
+                             184.5496         0.0077        -0.9348
+
+(V20 PostProcessed 28-APR-2025 19:36:40.0 session_4.asc)
+GPS6                         313.7690         0.0014        -0.5748   0.000
+GPS2                         -65.8393         0.0025         0.0408   0.000
+                            -174.1093         0.0019        -0.2992
+
+(V60 PostProcessed 02-MAY-2025 13:36:00.0 session_6_export_v7.asc)
+FRDN                         753.6948         0.0038        -0.7193   0.000
+GPS6                        1711.9838         0.0075         0.5546   0.000
+                            1115.5418         0.0103        -0.8186
+
+(V61 PostProcessed 02-MAY-2025 13:48:30.0 session_6_export_v7.asc)
+GPS6                         313.7734         0.0031        -0.2614   0.000
+GPS2                         -65.8365         0.0035        -0.4781   0.000
+                            -174.1109         0.0034         0.3068
+
+(V62 PostProcessed 02-MAY-2025 13:57:30.0 session_6_export_v7.asc)
+GPS2                         225.8606         0.0055        -0.7528   0.000
+GPS5                         -87.5151         0.0091         0.5432   0.000
+                            -154.6210         0.0115        -0.7631
+
+                         Adjustment Statistical Summary
+                         ==============================
+
+                        Iterations              =      2
+
+                        Number of Stations      =      7
+
+                        Number of Observations  =     45
+                        Number of Unknowns      =     18
+                        Number of Redundant Obs =     27
+
+            Observation   Count   Sum Squares         Error
+                                    of StdRes        Factor
+             GPS Deltas      45        40.545         1.225
+
+                  Total      45        40.545         1.225
+
+                  The Chi-Square Test at 5.00% Level Passed
+                       Lower/Upper Bounds (0.735/1.265)
+
+                          Adjusted Station Information
+                          ============================
+
+                         Adjusted Coordinates (Meters)
+
+Station                   N              E          Elev   Description
+FRDN              7437047.5440   2487601.2110    117.9300
+GPS1              7438438.7334   2488810.2370     64.8732
+GPS2              7438481.0552   2489236.2880     37.7009
+GPS3              7438971.1706   2489016.3029     16.8087
+GPS4              7438154.0601   2488813.5863     82.6306
+GPS5              7438251.1418   2489408.5227     44.6921
+GPS6              7438735.4148   2488974.8105     34.3045
+
+               Adjusted Positions and Ellipsoid Heights (Meters)
+                     (Average Geoid Height = 0.000 Meters)
+
+Station              Latitude         Longitude       Ellip Ht
+FRDN             45-56-00.588500   66-39-35.564343    117.9300
+GPS1             45-56-45.725039   66-38-39.557739     64.8732
+GPS2             45-56-47.120489   66-38-19.779031     37.7009
+GPS3             45-57-02.983028   66-38-30.033953     16.8087
+GPS4             45-56-36.504495   66-38-39.378195     82.6306
+GPS5             45-56-39.683134   66-38-11.763501     44.6921
+GPS6             45-56-55.344353   66-38-31.941053     34.3045
+
+             Convergence Angles (DMS) and Grid Factors at Stations
+                (Grid Azimuth = Geodetic Azimuth - Convergence)
+        (Elevation Factor Includes a 0.00 Meter Geoid Height Correction)
+
+                    Convergence            ------- Factors -------
+Station                Angle            Scale  x  Elevation  =   Combined
+FRDN                -0-06-55.54    0.99985517    0.99998151    0.99983668
+GPS1                -0-06-15.15    0.99985393    0.99998983    0.99984376
+GPS2                -0-06-00.87    0.99985384    0.99999409    0.99984793
+GPS3                -0-06-08.28    0.99985350    0.99999736    0.99985087
+GPS4                -0-06-15.01    0.99985414    0.99998705    0.99984119
+GPS5                -0-05-55.07    0.99985399    0.99999299    0.99984699
+GPS6                -0-06-09.65    0.99985368    0.99999462    0.99984831
+Project Averages:   -0-06-14.22    0.99985404    0.99999107    0.99984510
+
+                      Adjusted Observations and Residuals
+                      ===================================
+
+                   Adjusted GPS Vector Observations (Meters)
+
+From              Component          Adj Value      Residual   StdErr StdRes File:Line
+To
+
+(V27 PostProcessed 28-APR-2025 12:21:00.0 session_1_processed.asc)
+FRDN               Delta-N           1109.0403       -0.0006   0.0005   1.2     1:16  
+GPS4               Delta-E           1210.2363        0.0002   0.0004   0.7 
+                   Delta-U            -35.5106       -0.0004   0.0023   0.2 
+                   Length            1641.9206
+
+(V28 PostProcessed 28-APR-2025 12:21:00.0 session_1_processed.asc)
+GPS4               Delta-N            327.7859       -0.0004   0.0007   0.6     1:21  
+GPS2               Delta-E            422.1360        0.0001   0.0005   0.2 
+                   Delta-U            -44.9521        0.0016   0.0030   0.5 
+                   Length             536.3423
+
+(V29 PostProcessed 28-APR-2025 11:59:30.0 session_1_processed.asc)
+GPS2               Delta-N            489.7625       -0.0005   0.0009   0.6     1:26  
+GPS3               Delta-E           -220.8571       -0.0003   0.0008   0.3 
+                   Delta-U            -20.9148        0.0023   0.0050   0.5 
+                   Length             537.6640
+
+(V24 PostProcessed 28-APR-2025 11:47:00.0 session_2_processed.asc)
+FRDN               Delta-N           1926.6005       -0.0003   0.0010   0.3     1:33  
+GPS3               Delta-E           1411.3078       -0.0000   0.0007   0.0 
+                   Delta-U           -101.5686       -0.0014   0.0049   0.3 
+                   Length            2390.3756
+
+(V25 PostProcessed 28-APR-2025 14:05:30.0 session_2_processed.asc)
+GPS3               Delta-N           -719.3787       -0.0040   0.0022   1.9     1:38  
+GPS5               Delta-E            393.5326       -0.0009   0.0015   0.6 
+                   Delta-U             27.8306       -0.0008   0.0047   0.2 
+                   Length             820.4560
+
+(V26 PostProcessed 28-APR-2025 14:05:30.0 session_2_processed.asc)
+GPS5               Delta-N            -98.1133        0.0008   0.0007   1.2     1:43  
+GPS4               Delta-E           -594.8140       -0.0002   0.0006   0.4 
+                   Delta-U             37.9101        0.0027   0.0034   0.8 
+                   Length             604.0423
+
+(V21 PostProcessed 28-APR-2025 14:05:30.0 session_3_asci_may3rd.asc)
+FRDN               Delta-N           1207.3201        0.0010   0.0014   0.7     1:50  
+GPS5               Delta-E           1805.0108       -0.0019   0.0012   1.6 
+                   Delta-U            -73.6073       -0.0065   0.0071   0.9 
+                   Length            2172.8102
+
+(V22 PostProcessed 28-APR-2025 15:59:30.0 session_3_asci_may3rd.asc)
+GPS5               Delta-N            186.5751       -0.0010   0.0007   1.4     1:55  
+GPS1               Delta-E           -598.6521        0.0003   0.0007   0.5 
+                   Delta-U             20.1503       -0.0058   0.0038   1.5 
+                   Length             627.3760
+
+(V23 PostProcessed 28-APR-2025 15:59:30.0 session_3_asci_may3rd.asc)
+GPS1               Delta-N            297.0009        0.0003   0.0020   0.1     1:60  
+GPS6               Delta-E            164.0449       -0.0024   0.0015   1.6 
+                   Delta-U            -30.5777       -0.0095   0.0088   1.1 
+                   Length             340.6689
+
+(V18 PostProcessed 28-APR-2025 15:59:30.0 session_4.asc)
+FRDN               Delta-N           1393.7243        0.0006   0.0005   1.2     1:67  
+GPS1               Delta-E           1206.3100       -0.0002   0.0003   0.5 
+                   Delta-U            -53.3232        0.0006   0.0023   0.3 
+                   Length            1844.0430
+
+(V19 PostProcessed 28-APR-2025 19:36:40.0 session_4.asc)
+GPS1               Delta-N            297.0009        0.0008   0.0021   0.4     1:72  
+GPS6               Delta-E            164.0449       -0.0005   0.0012   0.4 
+                   Delta-U            -30.5777       -0.0147   0.0105   1.4 
+                   Length             340.6689
+
+(V20 PostProcessed 28-APR-2025 19:36:40.0 session_4.asc)
+GPS6               Delta-N           -253.9084        0.0008   0.0020   0.4     1:77  
+GPS2               Delta-E            261.9513        0.0001   0.0011   0.1 
+                   Delta-U              3.3859       -0.0012   0.0026   0.5 
+                   Length             364.8280
+
+(V60 PostProcessed 02-MAY-2025 13:36:00.0 session_6_export_v7.asc)
+FRDN               Delta-N           1690.7505        0.0014   0.0043   0.3     1:84  
+GPS6               Delta-E           1370.2912        0.0035   0.0025   1.4 
+                   Delta-U            -83.9969        0.0105   0.0124   0.8 
+                   Length            2177.9327
+
+(V61 PostProcessed 02-MAY-2025 13:48:30.0 session_6_export_v7.asc)
+GPS6               Delta-N           -253.9084        0.0014   0.0043   0.3     1:89  
+GPS2               Delta-E            261.9513       -0.0051   0.0028   1.8 
+                   Delta-U              3.3859        0.0006   0.0027   0.2 
+                   Length             364.8280
+
+(V62 PostProcessed 02-MAY-2025 13:57:30.0 session_6_export_v7.asc)
+GPS2               Delta-N           -229.6281       -0.0096   0.0054   1.8     1:94  
+GPS5               Delta-E            172.6489        0.0055   0.0033   1.7 
+                   Delta-U              6.9848       -0.0277   0.0143   1.9 
+                   Length             287.3769
+
+           Adjusted Bearings (DMS) and Horizontal Distances (Meters)
+           =========================================================
+                 (Relative Confidence of Bearing is in Seconds)
+
+From       To          Grid Bearing   Grid Dist       95% RelConfidence
+                                      Grnd Dist     Brg    Dist       PPM
+FRDN       GPS1       N40-59-33.27E   1843.1364    0.11   0.0009    0.4719
+                                      1843.4310
+FRDN       GPS3       N36-20-22.54E   2388.0587    0.13   0.0016    0.6705
+                                      2388.4319
+FRDN       GPS4       N47-36-49.62E   1641.4116    0.12   0.0009    0.5326
+                                      1641.6760
+FRDN       GPS5       N56-20-16.66E   2171.4104    0.12   0.0011    0.4924
+                                      2171.7539
+FRDN       GPS6       N39-08-20.05E   2176.1625    0.23   0.0022    0.9955
+                                      2176.5054
+GPS1       GPS5       S72-35-28.52E    627.0058    0.40   0.0012    1.8952
+                                       627.1028
+GPS1       GPS6       N29-01-03.91E    339.2702    1.32   0.0023    6.7584
+                                       339.3225
+GPS2       GPS3       N24-10-21.43W    537.2212    0.56   0.0017    3.1917
+                                       537.3021
+GPS2       GPS4       S52-16-30.19W    534.4179    0.47   0.0013    2.4623
+                                       534.5010
+GPS2       GPS5       S36-50-16.51E    287.2716    1.13   0.0017    5.7735
+                                       287.3154
+GPS2       GPS6       N45-47-26.03W    364.7867    1.24   0.0025    6.9104
+                                       364.8421
+GPS3       GPS5       S28-34-42.10E    819.9255    0.41   0.0019    2.3557
+                                       820.0494
+GPS4       GPS5       N80-43-55.79E    602.8052    0.44   0.0010    1.7178
+                                       602.8992
+
+                               Error Propagation
+                               =================
+
+                Station Coordinate Standard Deviations (Meters)
+
+Station                     N             E             Elev
+FRDN                      0.000000      0.000000      0.000000
+GPS1                      0.000428      0.000305      0.002005
+GPS2                      0.000654      0.000494      0.002858
+GPS3                      0.000715      0.000536      0.003152
+GPS4                      0.000413      0.000322      0.001982
+GPS5                      0.000530      0.000437      0.002523
+GPS6                      0.001117      0.000704      0.003138
+
+                   Station Coordinate Error Ellipses (Meters)
+                            Confidence Region = 95%
+
+Station                 Semi-Major    Semi-Minor   Azimuth of       Elev
+                            Axis          Axis     Major Axis
+FRDN                      0.000000      0.000000       0-00       0.000000
+GPS1                      0.001058      0.000732     168-57       0.003930
+GPS2                      0.001604      0.001204       6-12       0.005602
+GPS3                      0.001749      0.001313     178-48       0.006178
+GPS4                      0.001012      0.000787     174-27       0.003885
+GPS5                      0.001318      0.001043     163-17       0.004945
+GPS6                      0.002772      0.001659     167-59       0.006151
+
+                        Relative Error Ellipses (Meters)
+                            Confidence Region = 95%
+
+Stations                Semi-Major    Semi-Minor   Azimuth of     Vertical
+From       To               Axis          Axis     Major Axis
+FRDN       GPS1           0.001058      0.000732     168-57       0.003930
+FRDN       GPS3           0.001749      0.001313     178-48       0.006178
+FRDN       GPS4           0.001012      0.000787     174-27       0.003885
+FRDN       GPS5           0.001318      0.001043     163-17       0.004945
+FRDN       GPS6           0.002772      0.001659     167-59       0.006151
+GPS1       GPS5           0.001339      0.001040     154-28       0.005141
+GPS1       GPS6           0.002719      0.001612     167-09       0.006564
+GPS2       GPS3           0.001771      0.001385     179-26       0.006564
+GPS2       GPS4           0.001448      0.001063      14-20       0.004959
+GPS2       GPS5           0.001806      0.001405       2-08       0.006175
+GPS2       GPS6           0.002859      0.001729     170-32       0.003431
+GPS3       GPS5           0.001998      0.001537     174-58       0.006292
+GPS4       GPS5           0.001292      0.001035     171-00       0.004841
+
+
+                           Elapsed Time = 00:00:00
+

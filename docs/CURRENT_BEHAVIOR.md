@@ -22,6 +22,7 @@ Current startup and workflow defaults include:
 - cluster detection defaults to OFF
 - auto-adjust is available but operator-controlled
 - the seeded instrument library includes `S9` as the default-selected baseline
+- the active startup dataset may be rotated to the current industry-parity working case during parity-sensitive batches
 - browser-local recovery restores workspace state but intentionally does not restore stale solve results without rerun
 
 ## Supported input model
@@ -34,6 +35,7 @@ At a high level, supported input behavior includes:
 - total-station distance, angle, direction, bearing, zenith, and mixed-measurement families
 - GNSS vector families with per-component sigma support and correlation support where applicable
 - differential leveling families and loop diagnostics
+- legacy and industry-style leveling pair syntax such as `L FROM-TO dH len [sigma]`
 - traverse families and closure diagnostics
 - direction-set families with reduction and quality diagnostics
 - field-style sideshot and GNSS-topo convenience records
@@ -210,6 +212,8 @@ Current CLI support includes:
 Parity-sensitive behavior remains an explicit project concern. Current parity-oriented workflow includes:
 - a computational parity harness across reference projects
 - an industry-reference diff gate
+- a committed four-case industry-example fixture set sourced from local `manual/` inputs/outputs and mirrored into `tests/fixtures/`
+- normalized exact-text parity helpers that ignore only volatile header values (software version, run date, project folder, and data-file path lines)
 - fixture-locked listing-format and error-propagation coverage
 - focused regression locks around angular stochastic behavior, centering geometry, displayed sigma behavior, and connected-pair precision rows
 

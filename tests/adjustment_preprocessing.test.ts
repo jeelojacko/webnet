@@ -66,11 +66,12 @@ describe('adjustmentPreprocessing', () => {
 
     expect(result.directionSetIds).toEqual(['SET-1']);
     expect(result.autoDroppedHeights).toEqual(['P2']);
+    expect(stations.P2.fixedX).toBe(true);
+    expect(stations.P2.fixedY).toBe(true);
     expect(stations.P2.fixedH).toBe(true);
-    expect(result.stationParamCount).toBe(5);
+    expect(result.stationParamCount).toBe(3);
     expect(result.paramIndex).toEqual({
       P1: { x: 0, y: 1, h: 2 },
-      P2: { x: 3, y: 4 },
     });
     expect(result.constraints).toHaveLength(2);
     expect(result.controlConstraints).toMatchObject({
@@ -80,8 +81,8 @@ describe('adjustmentPreprocessing', () => {
       h: 0,
       xyCorrelated: 0,
     });
-    expect(result.numParams).toBe(6);
+    expect(result.numParams).toBe(4);
     expect(result.numObsEquations).toBe(4);
-    expect(result.dirParamMap).toEqual({ 'SET-1': 5 });
+    expect(result.dirParamMap).toEqual({ 'SET-1': 3 });
   });
 });

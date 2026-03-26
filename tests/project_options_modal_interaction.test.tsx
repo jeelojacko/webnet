@@ -404,6 +404,10 @@ describe('Project Options modal interactions', () => {
     const alertSpy = vi.spyOn(window, 'alert').mockImplementation(() => {});
     const app = await mountApp('instrument');
     try {
+      const originalDescription = findInputForSettingsRow(
+        app.container,
+        'Instrument Description',
+      ).value;
       await clickButtonByExactText(app.container, 'Duplicate');
 
       const instrumentSelect = findSelectForSettingsRow(app.container, 'Instrument');
@@ -412,7 +416,7 @@ describe('Project Options modal interactions', () => {
       expect(instrumentSelect.value).toBe('S9_COPY');
 
       const description = findInputForSettingsRow(app.container, 'Instrument Description');
-      expect(description.value).toContain('industry standard S9');
+      expect(description.value).toBe(originalDescription);
       expect(alertSpy).not.toHaveBeenCalled();
     } finally {
       promptSpy.mockRestore();

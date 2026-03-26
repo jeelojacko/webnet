@@ -631,8 +631,25 @@ export const handleFieldObservationRecord = ({
       if (!dHParsed.valid) return;
       candidates.push({ instCode, from, to, explicitForm, valueStart, dHParsed });
     };
+    const pushHyphenLevelCandidate = (
+      instCode: string,
+      stationPairToken: string,
+      valueStart: number,
+      explicitForm: boolean,
+    ) => {
+      const separator = state.stationSeparator ?? '-';
+      const separatorIndex = stationPairToken.indexOf(separator);
+      if (separatorIndex <= 0 || separatorIndex >= stationPairToken.length - separator.length) {
+        return;
+      }
+      const from = stationPairToken.slice(0, separatorIndex).trim();
+      const to = stationPairToken.slice(separatorIndex + separator.length).trim();
+      pushLevelCandidate(instCode, from, to, valueStart, explicitForm);
+    };
     pushLevelCandidate(parts[1] ?? '', parts[2] ?? '', parts[3] ?? '', 4, true);
     pushLevelCandidate(state.currentInstrument ?? '', parts[1] ?? '', parts[2] ?? '', 3, false);
+    pushHyphenLevelCandidate(parts[1] ?? '', parts[2] ?? '', 3, true);
+    pushHyphenLevelCandidate(state.currentInstrument ?? '', parts[1] ?? '', 2, false);
     if (candidates.length === 0) {
       logs.push(`Invalid leveling observation at line ${lineNum}, skipping.`);
       return true;
@@ -701,18 +718,19 @@ export const handleFieldObservationRecord = ({
         : 0;
     const sigmaToken = parseSigmaToken(parts[chosen.valueStart + 2]) ?? undefined;
     const baseStd = state.levelWeight ?? 0;
-    if (!sigmaToken && state.levelWeight != null) {
+    const hasExplicitSigma = sigmaToken != null;
+    if (!hasExplicitSigma && state.levelWeight != null) {
       logs.push(`.LWEIGHT applied for leveling at line ${lineNum}: ${state.levelWeight} mm/km`);
     }
 
     const inst = instrumentLibrary[instCode];
     const levelResolved = resolveLinearSigma(sigmaToken, (baseStd * lenKm) / 1000.0);
     let sigma = levelResolved.sigma;
-    if (inst && inst.levStd_mmPerKm > 0) {
+    if (!hasExplicitSigma && inst && inst.levStd_mmPerKm > 0) {
       const lib = (inst.levStd_mmPerKm * lenKm) / 1000.0;
       sigma = Math.sqrt(sigma * sigma + lib * lib);
     }
-    if (inst) {
+    if (!hasExplicitSigma && inst) {
       const elevModel = defaultElevDiffSigma(inst, lenKm * 1000);
       sigma = Math.sqrt(sigma * sigma + elevModel * elevModel);
     }

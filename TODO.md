@@ -110,6 +110,41 @@
       - [x] Replace defensive `Math.abs` precision propagation with explicit tiny-negative clamping only
       - [x] Treat sub-display floating-point noise as neutral in the industry-reference diff gate so retained parity improvements are not rejected by machine-epsilon drift
       - [ ] Test solver-order / reweight timing only if covariance-path cleanup does not materially reduce the remaining reference diff
+    - [ ] Batch 6 - multi-case parity fixture and normalized text-diff foundation
+      - [x] Keep `manual/` local-only and mirror the 4 source input/output pairs into committed fixture files under `tests/fixtures/` with generic industry-case naming
+      - [x] Add a shared industry parity case registry with per-case input path, expected output path, header-normalization rules, startup-default settings patch, and selected instrument
+      - [ ] Extend the parity harness so each case can assert both structured solve metrics and normalized exact text parity against its paired industry output
+      - [x] Add text-normalization helpers that ignore volatile header values only for run date, software version, project folder, and source-file path lines
+      - [x] Define the active-batch startup-default contract: each parity batch updates the hard-coded startup input and default app settings to that case until the next batch starts
+    - [ ] Batch 7 - levelling-only parity
+      - [x] Support leveling records whose station pair is encoded as one hyphenated token (`FROM-TO`) followed by elevation difference, length, and optional explicit sigma
+      - [x] Preserve current explicit level sigma behavior and apply project/instrument default differential-level weighting when the record relies on default weighting
+      - [x] Match the levelling case’s project-default setup in app startup defaults, including the `0.001500 meters/km Elev. Diff.` instrument weighting
+      - [x] Add focused parser, weighting, listing, and parity coverage for the levelling-only case
+      - [ ] Require normalized exact listing parity for the levelling output before moving on
+    - [ ] Batch 8 - traverse-only parity
+      - [ ] Make the traverse case the startup default with its matching grid/project defaults from the reference output, including coordinate-system mode, CRS, longitude-sign convention, coordinate order, convergence limit, and instrument library
+      - [ ] Make `.INST <code>` reliably set the current instrument for the following traverse/direction-set block without breaking existing conventional parsing
+      - [ ] Close the remaining fixed-bearing orientation parity gap for a network constrained by one fixed point plus one fixed bearing
+      - [ ] Match direction-set, distance, zenith, target-height, and set-scoped weighting behavior used by the traverse reference case
+      - [ ] Add focused parity coverage for traverse parsing, `.INST` scoping, fixed-bearing handling, and normalized exact output diff
+    - [ ] Batch 9 - GNSS-only parity
+      - [ ] Make the GNSS case the startup default with its matching grid/project defaults from the reference output
+      - [ ] Add parser support for the industry GNSS covariance-vector dialect: `.GPS WEIGHT COVARIANCE`, `.GPS FACTOR <xy> VERT <z>`, and `G0/G1/G2/G3` record groups
+      - [ ] Map `G0/G1/G2/G3` groups into full GNSS vector observations with preserved file/session labels, component deltas, variances, and correlations
+      - [ ] Keep factor application, covariance ingestion, and reporting deterministic and parity-tested
+      - [ ] Add focused GNSS-only structured parity assertions plus normalized exact output diff
+    - [ ] Batch 10 - final combined parity
+      - [ ] Make the combined case the startup default with its matching project defaults from the reference output
+      - [ ] Integrate levelling, traverse, and GNSS fixes without regressing any previously locked single-domain case
+      - [ ] Resolve mixed-network interaction gaps only exposed in the combined case, including shared control handling, section ordering, and cross-family weighting/reporting interactions
+      - [ ] Add the combined case to the structured parity harness and normalized exact text-diff gate
+      - [ ] Keep the change only if levelling, traverse, GNSS, and combined parity all improve or remain neutral together
+    - [ ] Batch 11 - parity closeout and workflow documentation
+      - [ ] Document the four-case parity workflow and batch-default rotation rule in `docs/PARITY_WORKFLOW.md`
+      - [ ] Update `docs/CURRENT_BEHAVIOR.md` with the newly supported levelling hyphen-pair syntax, GNSS covariance-vector dialect, and expanded industry parity coverage
+      - [x] Keep `README.md` unchanged unless the user-facing startup/example workflow is intentionally documented there
+      - [ ] Run and record the required validation matrix for each completed batch: focused tests, `npm run lint`, `npm run typecheck`, `npm run test`, `npm run build`, and `npm run parity:industry-reference`
   - [ ] Phase 5 - review and map/report UX polish
     - [ ] Batch 1 - issue-driven review queue
       - [ ] Add a shared review queue populated by import conflicts, suspect observations, cluster candidates, and saved-run diffs

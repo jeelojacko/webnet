@@ -10,6 +10,7 @@ import WorkspaceRecoveryBanner from './components/WorkspaceRecoveryBanner';
 import WorkspaceChrome from './components/WorkspaceChrome';
 
 import { DEFAULT_INPUT } from './defaultInput';
+import { ACTIVE_INDUSTRY_PARITY_CASE } from './industryParityCases';
 import { RAD_TO_DEG, dmsToRad } from './engine/angles';
 import {
   buildQaDerivedResult,
@@ -387,6 +388,7 @@ type ResolvedLevelLoopTolerancePreset = {
 
 const IMPORT_FILE_ACCEPT = '.dat,.txt,.sum,.rpt,.xml,.jxl,.jobxml,.htm,.html,.rw5,.cr5,.raw,.dbx';
 const PROJECT_FILE_ACCEPT = '.wnproj,.wnproj.json,.json';
+const ACTIVE_PARITY_STARTUP_DEFAULTS = ACTIVE_INDUSTRY_PARITY_CASE.startupDefaults;
 
 const SETTINGS_TOOLTIPS = {
   solveProfile:
@@ -891,11 +893,11 @@ const App: React.FC<AppProps> = ({
     setActiveTab,
     clearWorkspaceArtifacts,
   } = useWorkspaceProjectState<ImportedInputNotice, RunDiagnostics, RunSettingsSnapshot, TabKey>({
-    initialInput: DEFAULT_INPUT,
+    initialInput: ACTIVE_PARITY_STARTUP_DEFAULTS?.input ?? DEFAULT_INPUT,
     initialExportFormat: 'points',
     initialActiveTab: 'report',
   });
-  const [settings, setSettings] = useState<SettingsState>({
+  const [settings, setSettings] = useState<SettingsState>(() => ({
     maxIterations: 10,
     convergenceLimit: 0.001,
     precisionReportingMode: 'industry-standard',
@@ -912,8 +914,9 @@ const App: React.FC<AppProps> = ({
     listingSortCoordinatesBy: 'name',
     listingSortObservationsBy: 'residual',
     listingObservationLimit: 60,
-  });
-  const [parseSettings, setParseSettings] = useState<ParseSettings>({
+    ...ACTIVE_PARITY_STARTUP_DEFAULTS?.settingsPatch,
+  }));
+  const [parseSettings, setParseSettings] = useState<ParseSettings>(() => ({
     solveProfile: 'industry-parity-current',
     coordMode: '3D',
     coordSystemMode: 'local',
@@ -990,12 +993,14 @@ const App: React.FC<AppProps> = ({
     robustK: 1.5,
     parseCompatibilityMode: 'strict',
     parseModeMigrated: true,
-  });
+    ...ACTIVE_PARITY_STARTUP_DEFAULTS?.parseSettingsPatch,
+  }));
   const [geoidSourceData, setGeoidSourceData] = useState<Uint8Array | null>(null);
   const [geoidSourceDataLabel, setGeoidSourceDataLabel] = useState('');
   const [projectInstruments, setProjectInstruments] = useState<InstrumentLibrary>(() => ({
     S9: createDefaultS9Instrument(),
-    ...parseInstrumentLibraryFromInput(DEFAULT_INPUT),
+    ...(ACTIVE_PARITY_STARTUP_DEFAULTS?.projectInstruments ?? {}),
+    ...parseInstrumentLibraryFromInput(ACTIVE_PARITY_STARTUP_DEFAULTS?.input ?? DEFAULT_INPUT),
   }));
   const [adjustedPointsExportSettings, setAdjustedPointsExportSettings] =
     useState<AdjustedPointsExportSettings>(() =>
@@ -1007,7 +1012,9 @@ const App: React.FC<AppProps> = ({
   const [levelLoopCustomPresets, setLevelLoopCustomPresets] = useState<
     CustomLevelLoopTolerancePreset[]
   >([]);
-  const [selectedInstrument, setSelectedInstrument] = useState('S9');
+  const [selectedInstrument, setSelectedInstrument] = useState(
+    ACTIVE_PARITY_STARTUP_DEFAULTS?.selectedInstrument ?? 'S9',
+  );
   const [splitPercent, setSplitPercent] = useState(35); // left pane width (%)
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const projectOptionsState = useProjectOptionsState({

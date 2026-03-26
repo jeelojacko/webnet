@@ -96,4 +96,51 @@ describe('parse field/GNSS/leveling record families', () => {
       expect(lev.sigmaSource).toBe('fixed');
     }
   });
+
+  it('parses hyphenated legacy L station pairs and applies selected-instrument leveling defaults when sigma is omitted', () => {
+    const parsed = parseInput(
+      ['C A 0 0 100 ! ! !', 'L A-B 0.9000 0.25', 'L B-C 1.1000 0.50'].join('\n'),
+      {
+        LEV_REF: {
+          code: 'LEV_REF',
+          desc: 'level default',
+          edm_const: 0,
+          edm_ppm: 0,
+          hzPrecision_sec: 0,
+          dirPrecision_sec: 0,
+          azBearingPrecision_sec: 0,
+          vaPrecision_sec: 0,
+          instCentr_m: 0,
+          tgtCentr_m: 0,
+          vertCentr_m: 0,
+          elevDiff_const_m: 0,
+          elevDiff_ppm: 0,
+          gpsStd_xy: 0,
+          levStd_mmPerKm: 1.5,
+        },
+      },
+      {
+        currentInstrument: 'LEV_REF',
+      },
+    );
+
+    const observations = parsed.observations.filter((obs) => obs.type === 'lev');
+    expect(observations).toHaveLength(2);
+
+    const first = observations[0];
+    const second = observations[1];
+    expect(first.type).toBe('lev');
+    expect(second.type).toBe('lev');
+    if (first.type === 'lev' && second.type === 'lev') {
+      expect(first.from).toBe('A');
+      expect(first.to).toBe('B');
+      expect(first.instCode).toBe('LEV_REF');
+      expect(first.lenKm).toBeCloseTo(0.25, 8);
+      expect(first.stdDev).toBeCloseTo(0.000375, 10);
+      expect(second.from).toBe('B');
+      expect(second.to).toBe('C');
+      expect(second.lenKm).toBeCloseTo(0.5, 8);
+      expect(second.stdDev).toBeCloseTo(0.00075, 10);
+    }
+  });
 });
