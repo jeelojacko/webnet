@@ -115,6 +115,7 @@ describe('Project Options modal layout', () => {
       expect(app.container.textContent).toContain('Instrument Description');
       expect(app.container.textContent).toContain('Duplicate');
       expect(app.container.textContent).toContain('Distance Constant');
+      expect(app.container.textContent).toContain('Differential Levels (mm/km)');
       expect(app.container.textContent).toContain('Centering Vertical');
     } finally {
       await app.cleanup();

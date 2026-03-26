@@ -1211,6 +1211,26 @@ const ProjectOptionsModal: React.FC<ProjectOptionsModalProps> = ({ context }) =>
                           />
                         </SettingsRow>
                         <SettingsRow
+                          label="Differential Levels (mm/km)"
+                          tooltip={SETTINGS_TOOLTIPS.instrumentDifferentialLevels}
+                        >
+                          <input
+                            title={SETTINGS_TOOLTIPS.instrumentDifferentialLevels}
+                            type="number"
+                            step={0.0001}
+                            disabled={parseSettingsDraft.coordMode === '2D'}
+                            value={selectedInstrumentMeta.levStd_mmPerKm}
+                            onChange={(e) =>
+                              handleInstrumentNumericFieldChange(
+                                selectedInstrumentMeta.code,
+                                'levStd_mmPerKm',
+                                e.target.value,
+                              )
+                            }
+                            className={`${optionInputClass} disabled:opacity-50 disabled:cursor-not-allowed`}
+                          />
+                        </SettingsRow>
+                        <SettingsRow
                           label={`Elev Diff Constant (${instrumentLinearUnit})`}
                           tooltip={SETTINGS_TOOLTIPS.instrumentElevDiffConstant}
                         >

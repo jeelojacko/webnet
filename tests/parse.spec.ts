@@ -53,7 +53,7 @@ describe('parseInput', () => {
     expect(lev).toBeDefined();
     expect(lev.lenKm).toBeCloseTo(0.1, 6); // 328.084 ft -> 0.1 km
     expect(lev.obs).toBeCloseTo(0.3048, 6); // 1 ft -> meters
-    expect(lev.stdDev).toBeCloseTo(0.00007, 6); // 0.7 mm/km * 0.1 km
+    expect(lev.stdDev).toBeCloseTo(0.000221359, 6); // 0.7 mm/km * sqrt(0.1 km)
     expect(levelOnly.logs.some((l) => l.includes('.LWEIGHT applied'))).toBe(true);
   });
 

@@ -425,6 +425,30 @@ describe('Project Options modal interactions', () => {
     }
   });
 
+  it('persists instrument differential-level precision after Apply', async () => {
+    const app = await mountApp('instrument');
+    try {
+      const firstDifferentialLevels = findInputForSettingsRow(
+        app.container,
+        'Differential Levels (mm/km)',
+      );
+      expect(Number.parseFloat(firstDifferentialLevels.value)).toBeCloseTo(1.5, 6);
+      await setInputValue(firstDifferentialLevels, '2.25');
+
+      await clickButtonByExactText(app.container, 'Apply');
+      await clickOpenProjectOptions(app.container);
+      await clickProjectOptionsTab(app.container, 'instrument');
+
+      const reopenedDifferentialLevels = findInputForSettingsRow(
+        app.container,
+        'Differential Levels (mm/km)',
+      );
+      expect(Number.parseFloat(reopenedDifferentialLevels.value)).toBeCloseTo(2.25, 6);
+    } finally {
+      await app.cleanup();
+    }
+  });
+
   it('persists rotation transform draft edits after Apply in Other Files tab', async () => {
     const app = await mountApp('other-files');
     try {

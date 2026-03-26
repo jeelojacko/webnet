@@ -105,6 +105,9 @@ export const createRunOutputBuilders = ({
         gpsAddHiHtMissingHeightCount: runDiag.gpsAddHiHtMissingHeightCount,
         gpsAddHiHtScaleMin: runDiag.gpsAddHiHtScaleMin,
         gpsAddHiHtScaleMax: runDiag.gpsAddHiHtScaleMax,
+        currentInstrumentCode: runDiag.currentInstrumentCode,
+        currentInstrumentDesc: runDiag.currentInstrumentDesc,
+        currentInstrumentLevStdMmPerKm: runDiag.currentInstrumentLevStdMmPerKm,
       },
     );
   };

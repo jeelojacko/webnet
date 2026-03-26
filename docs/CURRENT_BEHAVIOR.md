@@ -35,7 +35,7 @@ At a high level, supported input behavior includes:
 - total-station distance, angle, direction, bearing, zenith, and mixed-measurement families
 - GNSS vector families with per-component sigma support and correlation support where applicable
 - differential leveling families and loop diagnostics
-- legacy and industry-style leveling pair syntax such as `L FROM-TO dH len [sigma]`
+- legacy and industry-style leveling pair syntax such as `L FROM-TO dH len [sigma]`, with `len` read in the active project linear units and converted to kilometers internally
 - traverse families and closure diagnostics
 - direction-set families with reduction and quality diagnostics
 - field-style sideshot and GNSS-topo convenience records
@@ -73,6 +73,7 @@ Current stochastic behavior includes:
 - EDM additive and propagated handling
 - centering inflation and parity-sensitive geometry-aware centering behavior
 - leveling weight support, including fallback propagation into other leveling-producing paths
+- a forward-facing instrument setting for differential leveling precision in `mm/km`, separate from the project-level `.LWEIGHT` fallback
 - TS angular correlation support with diagnostics
 - robust Huber reweighting with iteration summaries
 - fixed-sigma override support and weighting-source traceability
@@ -215,6 +216,7 @@ Parity-sensitive behavior remains an explicit project concern. Current parity-or
 - a committed four-case industry-example fixture set sourced from local `manual/` inputs/outputs and mirrored into `tests/fixtures/`
 - normalized exact-text parity helpers that ignore only volatile header values (software version, run date, project folder, and data-file path lines)
 - fixture-locked listing-format and error-propagation coverage
+- exact levelling-only industry-listing parity from `Project Option Settings` through the file end for the active leveling reference case
 - focused regression locks around angular stochastic behavior, centering geometry, displayed sigma behavior, and connected-pair precision rows
 
 When a change affects parser semantics, weighting, reduction, residual display, confidence formatting, or listing/report ordering, treat it as parity-sensitive and consult `docs/PARITY_WORKFLOW.md`.

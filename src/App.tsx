@@ -557,6 +557,8 @@ const SETTINGS_TOOLTIPS = {
     'Horizontal target centering error used by centering-inflation modeling.',
   instrumentZenithSeconds:
     'Default zenith or vertical-angle precision, in arcseconds. Disabled in 2D mode.',
+  instrumentDifferentialLevels:
+    'Default differential-level precision for leveling observations, in millimeters per kilometer. Used before the project-level .LWEIGHT fallback. Disabled in 2D mode.',
   instrumentElevDiffConstant:
     'Elevation-difference constant term used for vertical precision modeling. Disabled in 2D mode.',
   instrumentElevDiffPpm:

@@ -393,7 +393,7 @@ const classifyObservationSummaryLabel = (
   if (obs.type === 'angle') return 'Angles';
   if (obs.type === 'dist') return 'Distances';
   if (obs.type === 'gps') return 'GPS';
-  if (obs.type === 'lev') return 'Leveling';
+  if (obs.type === 'lev') return 'Level Data';
   if (profile === 'ui') {
     if (obs.type === 'direction' || obs.type === 'dir' || obs.type === 'bearing')
       return 'Az/Bearings';

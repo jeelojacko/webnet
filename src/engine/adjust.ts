@@ -3899,14 +3899,14 @@ export class LSAEngine {
         rows: Array<{ v: number; sigma: number; groupLabel: string }>;
       }
     >();
-    const groupOrder = ['Angles', 'Directions', 'Distances', 'GPS', 'Leveling', 'Zenith'];
+    const groupOrder = ['Angles', 'Directions', 'Distances', 'GPS', 'Level Data', 'Zenith'];
     const summarizeGroup = (obs: Observation): string => {
       if (obs.type === 'angle') return 'Angles';
       if (obs.type === 'direction' || obs.type === 'dir' || obs.type === 'bearing')
         return 'Directions';
       if (obs.type === 'dist') return 'Distances';
       if (obs.type === 'gps') return 'GPS';
-      if (obs.type === 'lev') return 'Leveling';
+      if (obs.type === 'lev') return 'Level Data';
       if (obs.type === 'zenith') return 'Zenith';
       return 'Other';
     };
@@ -4809,12 +4809,14 @@ export class LSAEngine {
         const stationCovariances: NonNullable<AdjustmentResult['stationCovariances']> = [];
         this.unknowns.forEach((id) => {
           const idx = paramIndex[id];
-          if (!idx || idx.x == null || idx.y == null) return;
-          if (!this.Qxx?.[idx.x] || !this.Qxx?.[idx.y]) return;
-          const varE = cov(idx.x, idx.x);
-          const varN = cov(idx.y, idx.y);
-          const covEN = cov(idx.x, idx.y);
-          const ellipseSummary = buildHorizontalErrorEllipse(varE, varN, covEN);
+          if (!idx) return;
+          const hasHorizontal = idx.x != null && idx.y != null;
+          const varE = hasHorizontal ? cov(idx.x, idx.x) : 0;
+          const varN = hasHorizontal ? cov(idx.y, idx.y) : 0;
+          const covEN = hasHorizontal ? cov(idx.x, idx.y) : 0;
+          const ellipseSummary = hasHorizontal
+            ? buildHorizontalErrorEllipse(varE, varN, covEN)
+            : { ellipse: undefined };
           const stationBlock: NonNullable<AdjustmentResult['stationCovariances']>[number] = {
             stationId: id,
             cEE: varE,
@@ -4826,8 +4828,8 @@ export class LSAEngine {
           };
           if (!this.is2D && idx.h != null) {
             const varH = cov(idx.h, idx.h);
-            stationBlock.cEH = cov(idx.x, idx.h);
-            stationBlock.cNH = cov(idx.y, idx.h);
+            stationBlock.cEH = idx.x != null ? cov(idx.x, idx.h) : 0;
+            stationBlock.cNH = idx.y != null ? cov(idx.y, idx.h) : 0;
             stationBlock.cHH = varH;
             stationBlock.sigmaH = sqrtPrecisionComponent(varH, Math.abs(varH));
           }

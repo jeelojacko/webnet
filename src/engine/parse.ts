@@ -878,6 +878,7 @@ export const parseInput = (
   state.includeTrace = expanded.includeTrace;
   state.includeErrors = expanded.includeErrors;
   let currentSourceFile = state.sourceFile ?? '<input>';
+  let displayLineCount = 0;
   let obsId = 0;
   let lastGpsObservation: GpsObservation | undefined;
   const autoCreatedStations = new Set<StationId>();
@@ -1159,6 +1160,12 @@ export const parseInput = (
     if (entry.kind !== 'line') continue;
     const trimmed = entry.raw.trim();
     if (!trimmed) continue;
+    displayLineCount += 1;
+    if (currentSourceFile === (state.sourceFile ?? '<input>')) {
+      const displayLineBySourceLine = state.displayLineBySourceLine ?? {};
+      displayLineBySourceLine[lineNum] = displayLineCount;
+      state.displayLineBySourceLine = displayLineBySourceLine;
+    }
     const parsedInline = splitInlineCommentAndDescription(trimmed);
     const line = parsedInline.line;
     if (!line || line.startsWith('#')) continue;

@@ -133,7 +133,7 @@ export const handleFieldObservationRecord = ({
   defaultDistanceSigma,
   defaultDirectionSigmaSec,
   defaultZenithSigmaSec,
-  defaultElevDiffSigma,
+  defaultElevDiffSigma: _defaultElevDiffSigma,
   applyPlanRotation,
   wrapTo2Pi,
   pushObservation,
@@ -611,6 +611,10 @@ export const handleFieldObservationRecord = ({
 
   if (code === 'L') {
     const toMeters = linearToMetersFactor();
+    const differentialLevelSigmaFromKm = (mmPerRootKm: number | undefined, lenKm: number): number =>
+      mmPerRootKm != null && Number.isFinite(mmPerRootKm) && mmPerRootKm > 0 && lenKm > 0
+        ? (mmPerRootKm * Math.sqrt(lenKm)) / 1000
+        : 0;
     const candidates: Array<{
       instCode: string;
       from: string;
@@ -675,7 +679,7 @@ export const handleFieldObservationRecord = ({
     const best = scored[0];
     const tie = scored.length > 1 && scored[1].score === best.score;
     if (tie) {
-      const rewrite = 'Use explicit form: L <inst?> <from> <to> <dH> <lenKm> [sigma].';
+      const rewrite = 'Use explicit form: L <inst?> <from> <to> <dH> <length> [sigma].';
       if (compatibilityMode === 'strict') {
         addCompatibilityDiagnostic(
           'ROLE_AMBIGUITY',
@@ -714,25 +718,21 @@ export const handleFieldObservationRecord = ({
       Number.isFinite(lenRaw) && lenRaw > 0
         ? state.units === 'ft'
           ? lenRaw / ftPerM / 1000
-          : lenRaw
+          : lenRaw / 1000
         : 0;
     const sigmaToken = parseSigmaToken(parts[chosen.valueStart + 2]) ?? undefined;
-    const baseStd = state.levelWeight ?? 0;
+    const baseStd = differentialLevelSigmaFromKm(state.levelWeight, lenKm);
     const hasExplicitSigma = sigmaToken != null;
     if (!hasExplicitSigma && state.levelWeight != null) {
       logs.push(`.LWEIGHT applied for leveling at line ${lineNum}: ${state.levelWeight} mm/km`);
     }
 
     const inst = instrumentLibrary[instCode];
-    const levelResolved = resolveLinearSigma(sigmaToken, (baseStd * lenKm) / 1000.0);
+    const levelResolved = resolveLinearSigma(sigmaToken, baseStd);
     let sigma = levelResolved.sigma;
     if (!hasExplicitSigma && inst && inst.levStd_mmPerKm > 0) {
-      const lib = (inst.levStd_mmPerKm * lenKm) / 1000.0;
+      const lib = differentialLevelSigmaFromKm(inst.levStd_mmPerKm, lenKm);
       sigma = Math.sqrt(sigma * sigma + lib * lib);
-    }
-    if (!hasExplicitSigma && inst) {
-      const elevModel = defaultElevDiffSigma(inst, lenKm * 1000);
-      sigma = Math.sqrt(sigma * sigma + elevModel * elevModel);
     }
 
     const obs: LevelObservation = {

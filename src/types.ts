@@ -1030,6 +1030,7 @@ export interface ParseOptions {
   descriptionReconcileMode?: DescriptionReconcileMode;
   descriptionAppendDelimiter?: string;
   reconciledDescriptions?: Record<StationId, string>;
+  displayLineBySourceLine?: Record<number, number>;
   gpsTopoShots?: GpsTopoCoordinateShot[];
   plannedObservationCount?: number;
   stationSeparator?: string;

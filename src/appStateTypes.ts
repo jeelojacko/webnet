@@ -370,6 +370,9 @@ export type RunDiagnostics = {
   prismScope: 'global' | 'set';
   rotationAngleRad: number;
   profileDefaultInstrumentFallback: boolean;
+  currentInstrumentCode: string;
+  currentInstrumentDesc: string;
+  currentInstrumentLevStdMmPerKm: number;
   angleCenteringModel: 'geometry-aware-correlated-rays';
   defaultSigmaCount: number;
   defaultSigmaByType: string;

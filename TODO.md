@@ -121,7 +121,7 @@
       - [x] Preserve current explicit level sigma behavior and apply project/instrument default differential-level weighting when the record relies on default weighting
       - [x] Match the levelling case’s project-default setup in app startup defaults, including the `0.001500 meters/km Elev. Diff.` instrument weighting
       - [x] Add focused parser, weighting, listing, and parity coverage for the levelling-only case
-      - [ ] Require normalized exact listing parity for the levelling output before moving on
+      - [x] Require normalized exact listing parity for the levelling output before moving on
     - [ ] Batch 8 - traverse-only parity
       - [ ] Make the traverse case the startup default with its matching grid/project defaults from the reference output, including coordinate-system mode, CRS, longitude-sign convention, coordinate order, convergence limit, and instrument library
       - [ ] Make `.INST <code>` reliably set the current instrument for the following traverse/direction-set block without breaking existing conventional parsing
@@ -535,7 +535,7 @@
   - [x] Direction sets: solve raw circle readings with per-set orientation parameters (for unreduced circle readings)
   - [x] A records auto-classify as DIR (azimuth) vs turned angle using initial coords; DIR uses closest residual with optional 180° flip
   - [x] Sideshots: SS diverted from adjustment, compute post-adjust, disallow occupy/backsight, optional name checking (basic parse to dist + vert/zenith; excluded from adjustment; occupy/backsight validation added; cannot target fixed control)
-  - Leveling: L dH with distance or turns, std err or per-unit via .LWEIGHT (fallback applied; ft lengths converted to km), allow fixity/free
+  - Leveling: L dH with distance or turns, std err or per-unit via .LWEIGHT (legacy `L` lengths now use project linear units and convert to km internally; omitted-sigma parity path uses the industry-style `sqrt(km)` weighting for `L` rows), allow fixity/free
   - [x] Fixity/weights: support ! fixed per component, legacy \* fixed, numeric std errs per obs/component (coordinate free-marker semantics are now wired and traced in report/listing outputs, observation-weight traceability now surfaces explicit/default/fixed/float handling across report/listing outputs including mixed GNSS component sources, and directive-family semantics coverage is now fixture-locked through parser + report/listing regression tests)
     - [x] Phase 1: define coordinate-record free-marker semantics and precedence relative to `!`, legacy `*`, and numeric sigma tokens
     - [x] Phase 2: implement parser support + diagnostics so per-component `*` clears fixed/weighted control constraints on `C/P/CH/E/PH/EH` records, with regression coverage

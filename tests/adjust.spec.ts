@@ -956,8 +956,8 @@ describe('LSAEngine', () => {
     expect(loopDiag?.loopCount ?? 0).toBe(2);
     expect(loopDiag?.passCount ?? 0).toBe(0);
     expect(loopDiag?.warnCount ?? 0).toBe(2);
-    expect(loopDiag?.totalLengthKm ?? 0).toBeCloseTo(4.1, 8);
-    expect(loopDiag?.warnTotalLengthKm ?? 0).toBeCloseTo(5.2, 8);
+    expect(loopDiag?.totalLengthKm ?? 0).toBeCloseTo(0.0041, 8);
+    expect(loopDiag?.warnTotalLengthKm ?? 0).toBeCloseTo(0.0052, 8);
     expect(loopDiag?.thresholds.baseMm ?? 0).toBeCloseTo(0, 8);
     expect(loopDiag?.thresholds.perSqrtKmMm ?? 0).toBeCloseTo(4, 8);
     expect(loopDiag?.loops[0].rank ?? 0).toBe(1);
@@ -968,7 +968,7 @@ describe('LSAEngine', () => {
     expect(loopDiag?.loops[0].sourceLines ?? []).toContain(16);
     expect(loopDiag?.loops[0].absClosure ?? 0).toBeCloseTo(0.02, 8);
     expect(loopDiag?.loops[1].absClosure ?? 0).toBeCloseTo(0.01, 8);
-    expect(loopDiag?.loops[0].toleranceMm ?? 0).toBeCloseTo(6.928203, 5);
+    expect(loopDiag?.loops[0].toleranceMm ?? 0).toBeCloseTo(0.219089, 5);
     expect(loopDiag?.loops[0].pass ?? true).toBe(false);
     expect(loopDiag?.loops[1].pass ?? false).toBe(false);
     expect(loopDiag?.loops[0].segments.length ?? 0).toBeGreaterThan(0);
@@ -981,7 +981,7 @@ describe('LSAEngine', () => {
     expect(
       result.logs.some((line) =>
         line.includes(
-          'Leveling loop check: observations=5, loops=2, totalLength=4.100km, tolerance=0.000mm+4.000mm*sqrt(km)',
+          'Leveling loop check: observations=5, loops=2, totalLength=0.004km, tolerance=0.000mm+4.000mm*sqrt(km)',
         ),
       ),
     ).toBe(true);
