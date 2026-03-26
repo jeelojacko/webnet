@@ -169,6 +169,8 @@
   - [x] Add `Suspect Impact` project setting (`AUTO` / `ON` / `OFF`) and make `AUTO` skip the expensive what-if reruns once the main solve is already heavy
   - [x] Trim repeated per-iteration condition-estimate work so the main solve only records the normal-matrix condition on the first outer iteration
   - [x] Add main-solve timing breakdown profiling for setup, equation assembly, matrix factorization, and precision/report diagnostics
+  - [x] Defer full normal-equation covariance recovery until the final adjusted state instead of inverting `Qxx` on every outer iteration
+  - [x] Build the industry-standard precision model once per solve and derive posterior-scaled station/relative covariance rows by scaling instead of recomputing from raw `Qxx`
   - [x] Keep last successful result visible during rerun and surface run-phase status in the toolbar
   - [x] Add regression coverage for worker-path parity and in-flight UI behavior
 

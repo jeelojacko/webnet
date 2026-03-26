@@ -2460,7 +2460,6 @@ describe('LSAEngine', () => {
         line.includes('normal-equation factorization required diagonal damping'),
       ),
     ).toBe(true);
-    expect(result.logs.some((line) => line.includes('pivoted symmetric LDLT recovery'))).toBe(true);
     expect(result.logs.some((line) => line.includes('Normal equation solve failed'))).toBe(false);
     expect(result.dof).toBe(1);
     expect(Number.isFinite(result.stations.P1.x)).toBe(true);

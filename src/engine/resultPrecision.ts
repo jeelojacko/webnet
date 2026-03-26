@@ -14,13 +14,148 @@ const emptyPrecisionModel: ResultPrecisionModel = {
   relativePrecision: [],
 };
 
+const derivedPrecisionModelCache = new WeakMap<
+  AdjustmentResult,
+  Partial<Record<PrecisionReportingMode, ResultPrecisionModel>>
+>();
+
 // Exact sqrt(chi-square(2 dof, 95%)) used by industry-style 95% ellipse/confidence sections.
 export const INDUSTRY_CONFIDENCE_95_SCALE = 2.447746830680816;
+
+const scaleEllipse = (
+  ellipse: StationErrorEllipse | undefined,
+  linearScale: number,
+): StationErrorEllipse | undefined =>
+  ellipse
+    ? {
+        semiMajor: ellipse.semiMajor * linearScale,
+        semiMinor: ellipse.semiMinor * linearScale,
+        theta: ellipse.theta,
+      }
+    : undefined;
+
+export const scaleStationCovarianceRows = (
+  rows: StationCovarianceBlock[] | undefined,
+  scaleSq: number,
+): StationCovarianceBlock[] => {
+  if (!rows?.length) return [];
+  const linearScale = Math.sqrt(Math.max(scaleSq, 0));
+  return rows.map((row) => ({
+    ...row,
+    cEE: row.cEE * scaleSq,
+    cEN: row.cEN * scaleSq,
+    cEH: row.cEH != null ? row.cEH * scaleSq : undefined,
+    cNN: row.cNN * scaleSq,
+    cNH: row.cNH != null ? row.cNH * scaleSq : undefined,
+    cHH: row.cHH != null ? row.cHH * scaleSq : undefined,
+    sigmaE: row.sigmaE * linearScale,
+    sigmaN: row.sigmaN * linearScale,
+    sigmaH: row.sigmaH != null ? row.sigmaH * linearScale : undefined,
+    ellipse: scaleEllipse(row.ellipse, linearScale),
+  }));
+};
+
+export const scaleRelativeCovarianceRows = (
+  rows: RelativeCovarianceBlock[] | undefined,
+  scaleSq: number,
+): RelativeCovarianceBlock[] => {
+  if (!rows?.length) return [];
+  const linearScale = Math.sqrt(Math.max(scaleSq, 0));
+  return rows.map((row) => ({
+    ...row,
+    cEE: row.cEE * scaleSq,
+    cEN: row.cEN * scaleSq,
+    cEH: row.cEH != null ? row.cEH * scaleSq : undefined,
+    cNN: row.cNN * scaleSq,
+    cNH: row.cNH != null ? row.cNH * scaleSq : undefined,
+    cHH: row.cHH != null ? row.cHH * scaleSq : undefined,
+    sigmaE: row.sigmaE * linearScale,
+    sigmaN: row.sigmaN * linearScale,
+    sigmaH: row.sigmaH != null ? row.sigmaH * linearScale : undefined,
+    sigmaDist: row.sigmaDist != null ? row.sigmaDist * linearScale : undefined,
+    sigmaAz: row.sigmaAz != null ? row.sigmaAz * linearScale : undefined,
+    ellipse: scaleEllipse(row.ellipse, linearScale),
+  }));
+};
+
+export const scaleRelativePrecisionRows = (
+  rows: NonNullable<AdjustmentResult['relativePrecision']> | undefined,
+  scaleSq: number,
+): NonNullable<AdjustmentResult['relativePrecision']> => {
+  if (!rows?.length) return [];
+  const linearScale = Math.sqrt(Math.max(scaleSq, 0));
+  return rows.map((row) => ({
+    ...row,
+    sigmaE: row.sigmaE * linearScale,
+    sigmaN: row.sigmaN * linearScale,
+    sigmaDist: row.sigmaDist != null ? row.sigmaDist * linearScale : undefined,
+    sigmaAz: row.sigmaAz != null ? row.sigmaAz * linearScale : undefined,
+    ellipse: scaleEllipse(row.ellipse, linearScale),
+  }));
+};
+
+const resolvePosteriorScaleSq = (result: AdjustmentResult): number =>
+  result.dof > 0 && Number.isFinite(result.seuw) && result.seuw > 0 ? result.seuw * result.seuw : 1;
 
 export const resolvePrecisionModel = (
   result: AdjustmentResult,
   mode: PrecisionReportingMode,
-): ResultPrecisionModel => result.precisionModels?.[mode] ?? emptyPrecisionModel;
+): ResultPrecisionModel => {
+  const cached = derivedPrecisionModelCache.get(result)?.[mode];
+  if (cached) return cached;
+
+  const baseModel = result.precisionModels?.[mode];
+  const industryBase: ResultPrecisionModel =
+    result.precisionModels?.['industry-standard'] ?? {
+      stationCovariances: result.stationCovariances ?? [],
+      relativeCovariances: result.relativeCovariances ?? [],
+      relativePrecision: result.relativePrecision ?? [],
+    };
+
+  let resolved: ResultPrecisionModel;
+  if (mode === 'industry-standard') {
+    resolved = baseModel ?? industryBase;
+  } else if (baseModel) {
+    resolved = baseModel;
+  } else {
+    const scaleSq = resolvePosteriorScaleSq(result);
+    resolved = {};
+    resolved.stationCovariances = scaleStationCovarianceRows(industryBase.stationCovariances, scaleSq);
+    resolved.relativeCovariances = scaleRelativeCovarianceRows(
+      industryBase.relativeCovariances,
+      scaleSq,
+    );
+    resolved.relativePrecision = scaleRelativePrecisionRows(industryBase.relativePrecision, scaleSq);
+  }
+
+  if (mode === 'posterior-scaled') {
+    const scaleSq = resolvePosteriorScaleSq(result);
+    resolved = {
+      stationCovariances:
+        resolved.stationCovariances ??
+        scaleStationCovarianceRows(industryBase.stationCovariances, scaleSq),
+      relativeCovariances:
+        resolved.relativeCovariances ??
+        scaleRelativeCovarianceRows(industryBase.relativeCovariances, scaleSq),
+      relativePrecision:
+        resolved.relativePrecision ??
+        scaleRelativePrecisionRows(industryBase.relativePrecision, scaleSq),
+    };
+  }
+
+  if (
+    !resolved.stationCovariances &&
+    !resolved.relativeCovariances &&
+    !resolved.relativePrecision
+  ) {
+    resolved = emptyPrecisionModel;
+  }
+
+  const nextCache = derivedPrecisionModelCache.get(result) ?? {};
+  nextCache[mode] = resolved;
+  derivedPrecisionModelCache.set(result, nextCache);
+  return resolved;
+};
 
 export const getStationPrecision = (
   result: AdjustmentResult,

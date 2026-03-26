@@ -51,12 +51,17 @@ import {
   buildSetupDiagnostics,
   buildTraverseDiagnostics,
 } from './adjustmentSetupTraverseDiagnostics';
+import type { CoordinateConstraintEquation } from './adjustmentSolveTypes';
 import {
   buildDistanceAzimuthPrecision,
   buildHorizontalErrorEllipse,
   buildRelativeCovarianceFromEndpoints,
   sqrtPrecisionComponent,
 } from './precisionPropagation';
+import {
+  scaleRelativeCovarianceRows,
+  scaleStationCovarianceRows,
+} from './resultPrecision';
 import { summarizeReductionUsage } from './reductionUsageSummary';
 import type {
   CoordinateConstraintRowPlacement,
@@ -420,7 +425,8 @@ export class LSAEngine {
   private solveNormalEquations(
     N: number[][],
     U: number[][],
-  ): { correction: number[][]; qxx: number[][] } {
+    options?: { recoverCovariance?: boolean },
+  ): { correction: number[][]; qxx?: number[][] } {
     const scaled = this.scaleNormalMatrix(N);
     const scaledU = this.scaleNormalRhs(U, scaled.scale);
     const factorization = choleskyDecomposeWithDamping(scaled.scaled);
@@ -437,13 +443,21 @@ export class LSAEngine {
         'Normal matrix remained singular after diagonal damping; scaled correction contains non-finite values.',
       );
     }
+    const correction = this.unscaleNormalSolution(scaledCorrection, scaled.scale);
+    if (!this.matrixIsFinite(correction)) {
+      throw new Error(
+        'Normal matrix remained singular or numerically unstable after diagonal damping; correction contains non-finite values.',
+      );
+    }
+    if (!options?.recoverCovariance) {
+      return { correction };
+    }
     const scaledQxx = invertSPDFromCholesky(factorization.factor);
     if (!this.matrixIsFinite(scaledQxx)) {
       throw new Error(
         'Normal matrix remained singular after diagonal damping; damped covariance contains non-finite values.',
       );
     }
-    const correction = this.unscaleNormalSolution(scaledCorrection, scaled.scale);
     const qxx =
       factorization.damping > 0
         ? this.recoverUndampedInverse(
@@ -453,15 +467,56 @@ export class LSAEngine {
             'Normal-equation covariance recovery',
           )
         : this.unscaleNormalInverse(scaledQxx, scaled.scale);
-    if (!this.matrixIsFinite(correction) || !this.matrixIsFinite(qxx)) {
+    if (!this.matrixIsFinite(qxx)) {
       throw new Error(
-        'Normal matrix remained singular or numerically unstable after diagonal damping; correction or covariance contains non-finite values.',
+        'Normal matrix remained singular or numerically unstable after diagonal damping; covariance contains non-finite values.',
       );
     }
     return {
       correction,
       qxx,
     };
+  }
+
+  private recoverFinalNormalCovariance(
+    activeObservations: Observation[],
+    constraints: CoordinateConstraintEquation[],
+    numObsEquations: number,
+    numParams: number,
+    dirParamMap: Record<string, number>,
+  ): number[][] | null {
+    if (numParams <= 0 || numObsEquations <= 0) return null;
+    this.clearGeometryCache();
+    const { A, P } = assembleAdjustmentEquations(
+      {
+        stations: this.stations,
+        paramIndex: this.paramIndex,
+        is2D: this.is2D,
+        debug: false,
+        directionOrientations: this.directionOrientations,
+        dirParamMap,
+        effectiveStdDev: this.effectiveStdDev.bind(this),
+        correctedDistanceModel: this.correctedDistanceModel.bind(this),
+        getObservedHorizontalDistanceIn2D: this.getObservedHorizontalDistanceIn2D.bind(this),
+        getAzimuth: this.getAzimuth.bind(this),
+        measuredAngleCorrection: this.measuredAngleCorrection.bind(this),
+        modeledAzimuth: this.modeledAzimuth.bind(this),
+        wrapToPi: this.wrapToPi.bind(this),
+        gpsObservedVector: this.gpsObservedVector.bind(this),
+        gpsWeight: this.gpsWeight.bind(this),
+        getZenith: this.getZenith.bind(this),
+        curvatureRefractionAngle: this.curvatureRefractionAngle.bind(this),
+        applyTsCorrelationToWeightMatrix: this.applyTsCorrelationToWeightMatrix.bind(this),
+      },
+      activeObservations,
+      constraints,
+      numObsEquations,
+      numParams,
+    );
+    const AT = transpose(A);
+    const N = multiply(AT, P);
+    const normal = multiply(N, A);
+    return this.invertNormalMatrixForStats(normal);
   }
 
   private invertNormalMatrixForStats(N: number[][]): number[][] {
@@ -4162,7 +4217,7 @@ export class LSAEngine {
           iter + 1,
         );
         this.solveTiming.matrixFactorizationMs += Date.now() - factorizationStartedAt;
-        this.Qxx = iterationResult.qxx;
+        this.Qxx = iterationResult.qxx ?? null;
         const { correction, sumBefore, sumAfter, maxBefore, maxAfter } = iterationResult;
         const objectiveDeltaWithinIter = Math.abs(sumBefore - sumAfter);
         const objectiveDeltaBetweenIterations =
@@ -4229,6 +4284,15 @@ export class LSAEngine {
     }
 
     if (!this.converged) this.log('Warning: Max iterations reached.');
+    const covarianceStartedAt = Date.now();
+    this.Qxx = this.recoverFinalNormalCovariance(
+      activeObservations,
+      constraints,
+      numObsEquations,
+      numParams,
+      dirParamMap,
+    );
+    this.solveTiming.matrixFactorizationMs += Date.now() - covarianceStartedAt;
     const diagnosticsStartedAt = Date.now();
     this.calculateStatistics(this.paramIndex, !!this.Qxx, activeObservations);
     this.solveTiming.precisionAndDiagnosticsMs += Date.now() - diagnosticsStartedAt;
@@ -5343,7 +5407,16 @@ export class LSAEngine {
       };
 
       const industryStandardModel = buildPrecisionModel(1);
-      const posteriorScaledModel = buildPrecisionModel(posteriorScaleSq);
+      const posteriorScaledModel = {
+        stationCovariances: scaleStationCovarianceRows(
+          industryStandardModel.stationCovariances,
+          posteriorScaleSq,
+        ),
+        relativeCovariances: scaleRelativeCovarianceRows(
+          industryStandardModel.relativeCovariances,
+          posteriorScaleSq,
+        ),
+      };
       this.precisionModels = {
         'industry-standard': industryStandardModel,
         'posterior-scaled': posteriorScaledModel,

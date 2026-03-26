@@ -50,12 +50,16 @@ export interface ControlConstraintSummary {
 
 export interface SolveNormalResult {
   correction: number[][];
-  qxx: number[][];
+  qxx?: number[][];
 }
 
 export interface IterationSolveDependencies {
   robustMode: ParseOptions['robustMode'];
-  solveNormalEquations: (_N: number[][], _U: number[][]) => SolveNormalResult;
+  solveNormalEquations: (
+    _N: number[][],
+    _U: number[][],
+    _options?: { recoverCovariance?: boolean },
+  ) => SolveNormalResult;
   estimateCondition: (_N: number[][]) => number;
   recordConditionEstimate: (_conditionEstimate: number) => void;
   captureRobustWeightBase: (

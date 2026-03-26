@@ -8,7 +8,7 @@ import type {
 
 export interface AdjustmentIterationComputationResult {
   correction: number[][];
-  qxx: number[][];
+  qxx?: number[][];
   solvedP: number[][];
   sumBefore: number;
   sumAfter: number;
@@ -27,7 +27,7 @@ export const solveAdjustmentIteration = (
   const AT = transpose(A);
   const numParams = A[0]?.length ?? 0;
   let correction = zeros(numParams, 1);
-  let qxx = zeros(numParams, numParams);
+  let qxx: number[][] | undefined;
   let solvedP = P;
   const shouldEstimateCondition = iterationNumber === 1;
 
@@ -47,7 +47,9 @@ export const solveAdjustmentIteration = (
         dependencies.recordConditionEstimate(dependencies.estimateCondition(N));
       }
       const U = multiply(ATP, L);
-      const normalSolution = dependencies.solveNormalEquations(N, U);
+      const normalSolution = dependencies.solveNormalEquations(N, U, {
+        recoverCovariance: false,
+      });
       correction = normalSolution.correction;
       qxx = normalSolution.qxx;
       const AX = multiply(A, correction);
@@ -69,7 +71,9 @@ export const solveAdjustmentIteration = (
       dependencies.recordConditionEstimate(dependencies.estimateCondition(N));
     }
     const U = multiply(ATP, L);
-    const normalSolution = dependencies.solveNormalEquations(N, U);
+    const normalSolution = dependencies.solveNormalEquations(N, U, {
+      recoverCovariance: false,
+    });
     correction = normalSolution.correction;
     qxx = normalSolution.qxx;
   }

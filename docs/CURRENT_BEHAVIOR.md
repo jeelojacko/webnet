@@ -101,6 +101,8 @@ Current review behavior includes:
 - traverse, GPS loop, direction-repeatability, and leveling suspect tables
 - synchronized report/map selection and review actions
 - saved-run compare and baseline review workflows
+- heavy jobs now defer full normal-equation covariance recovery until the final adjusted state; intermediate outer iterations solve only for the correction vector
+- posterior-scaled precision reporting is now derived from the industry-standard precision model by deterministic scaling instead of rebuilding a second full precision model during solve
 
 ### Cluster and automatic review workflows
 Current workflow behavior includes:

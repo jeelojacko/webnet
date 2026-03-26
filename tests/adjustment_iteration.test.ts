@@ -9,13 +9,13 @@ import type { StationMap } from '../src/types';
 describe('adjustmentIteration', () => {
   it('solves a classical iteration step and reports objective metrics', () => {
     const recordConditionEstimate = vi.fn();
+    const solveNormalEquations = vi.fn(() => ({
+      correction: [[2]],
+    }));
     const result = solveAdjustmentIteration(
       {
         robustMode: 'none',
-        solveNormalEquations: () => ({
-          correction: [[2]],
-          qxx: [[0.25]],
-        }),
+        solveNormalEquations,
         estimateCondition: () => 5,
         recordConditionEstimate,
         captureRobustWeightBase: () => ({ diagonal: [], correlatedPairs: [] }),
@@ -40,8 +40,9 @@ describe('adjustmentIteration', () => {
     );
 
     expect(recordConditionEstimate).toHaveBeenCalledWith(5);
+    expect(solveNormalEquations).toHaveBeenCalledWith([[4]], [[8]], { recoverCovariance: false });
     expect(result.correction).toEqual([[2]]);
-    expect(result.qxx).toEqual([[0.25]]);
+    expect(result.qxx).toBeUndefined();
     expect(result.sumBefore).toBe(16);
     expect(result.sumAfter).toBe(0);
     expect(result.maxBefore).toBe(2);
@@ -80,14 +81,14 @@ describe('adjustmentIteration', () => {
 
   it('skips repeated condition estimation after the first outer iteration', () => {
     const recordConditionEstimate = vi.fn();
+    const solveNormalEquations = vi.fn(() => ({
+      correction: [[0]],
+    }));
 
     solveAdjustmentIteration(
       {
         robustMode: 'none',
-        solveNormalEquations: () => ({
-          correction: [[0]],
-          qxx: [[1]],
-        }),
+        solveNormalEquations,
         estimateCondition: () => 9,
         recordConditionEstimate,
         captureRobustWeightBase: () => ({ diagonal: [], correlatedPairs: [] }),
@@ -112,5 +113,6 @@ describe('adjustmentIteration', () => {
     );
 
     expect(recordConditionEstimate).not.toHaveBeenCalled();
+    expect(solveNormalEquations).toHaveBeenCalledWith([[1]], [[0]], { recoverCovariance: false });
   });
 });

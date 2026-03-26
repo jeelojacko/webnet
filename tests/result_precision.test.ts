@@ -4,6 +4,7 @@ import {
   getIndustryReportedIterationCount,
   INDUSTRY_CONFIDENCE_95_SCALE,
   resolvePrecisionModel,
+  scaleRelativePrecisionRows,
   toSurveyEllipseAzimuthDeg,
 } from '../src/engine/resultPrecision';
 import type { AdjustmentResult } from '../src/types';
@@ -36,5 +37,45 @@ describe('result precision helpers', () => {
 
   it('uses the exact 2D 95 percent confidence scale for industry-style ellipses', () => {
     expect(INDUSTRY_CONFIDENCE_95_SCALE).toBeCloseTo(2.447746830680816, 15);
+  });
+
+  it('derives posterior-scaled relative precision lazily from the industry-standard model', () => {
+    const result = {
+      seuw: 2,
+      dof: 5,
+      precisionModels: {
+        'industry-standard': {
+          stationCovariances: [],
+          relativeCovariances: [],
+          relativePrecision: [
+            {
+              from: 'A',
+              to: 'B',
+              sigmaN: 0.01,
+              sigmaE: 0.02,
+              sigmaDist: 0.03,
+              sigmaAz: 0.04,
+              ellipse: { semiMajor: 0.05, semiMinor: 0.02, theta: 30 },
+            },
+          ],
+        },
+        'posterior-scaled': {
+          stationCovariances: [],
+          relativeCovariances: [],
+        },
+      },
+      relativePrecision: undefined,
+      relativeCovariances: undefined,
+      stationCovariances: undefined,
+    } as unknown as AdjustmentResult;
+
+    const scaled = resolvePrecisionModel(result, 'posterior-scaled').relativePrecision ?? [];
+
+    expect(scaled).toEqual(
+      scaleRelativePrecisionRows(
+        result.precisionModels?.['industry-standard']?.relativePrecision,
+        4,
+      ),
+    );
   });
 });
