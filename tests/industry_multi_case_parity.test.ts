@@ -95,7 +95,7 @@ describe('industry multi-case parity foundation', () => {
   });
 
   it(
-    'matches the traverse startup zenith summary after curvature/refraction parity fixes',
+    'matches the traverse startup statistical summary within the current parity tolerances',
     () => {
       const withStartupDefaults = buildCaseResult('traverse');
       expect(withStartupDefaults.success).toBe(true);
@@ -103,16 +103,28 @@ describe('industry multi-case parity foundation', () => {
       const statisticalSummary = withStartupDefaults.statisticalSummary!;
 
       const directions = statisticalSummary.byGroup.find((row) => row.label === 'Directions');
+      const distances = statisticalSummary.byGroup.find((row) => row.label === 'Distances');
       const bearings = statisticalSummary.byGroup.find((row) => row.label === 'Az/Bearings');
-      const zenith = statisticalSummary.byGroup.find(
-        (row) => row.label === 'Zenith',
-      );
+      const zenith = statisticalSummary.byGroup.find((row) => row.label === 'Zenith');
       expect(directions?.count).toBe(451);
+      expect(distances?.count).toBe(451);
       expect(bearings?.count).toBe(1);
+      expect(directions?.sumSquares ?? Number.NaN).toBeCloseTo(248.927, 0);
+      expect(directions?.errorFactor ?? Number.NaN).toBeCloseTo(0.838, 2);
+      expect(distances?.sumSquares ?? Number.NaN).toBeCloseTo(96.93, 0);
+      expect(distances?.errorFactor ?? Number.NaN).toBeCloseTo(0.523, 2);
       expect(bearings?.sumSquares ?? Number.NaN).toBeCloseTo(0, 6);
       expect(zenith).toBeDefined();
       expect(zenith?.sumSquares ?? Number.NaN).toBeCloseTo(807.697, 0);
       expect(zenith?.errorFactor ?? Number.NaN).toBeCloseTo(1.51, 2);
+
+      const horizDistance = (fromId: string, toId: string) =>
+        Math.hypot(
+          (withStartupDefaults.stations[toId]?.x ?? 0) - (withStartupDefaults.stations[fromId]?.x ?? 0),
+          (withStartupDefaults.stations[toId]?.y ?? 0) - (withStartupDefaults.stations[fromId]?.y ?? 0),
+        );
+      expect(horizDistance('GPS5', 'GPS2')).toBeCloseTo(287.2716, 1);
+      expect(horizDistance('GPS5', '100')).toBeCloseTo(544.5315, 1);
     },
     120000,
   );

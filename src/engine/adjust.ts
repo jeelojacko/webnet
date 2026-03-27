@@ -2885,9 +2885,36 @@ export class LSAEngine {
   private correctedDistanceModel(
     obs: Observation & { type: 'dist' },
     calcDistRaw: number,
-  ): { calcDistance: number; mapScale: number; prismCorrection: number } {
+  ): {
+    calcDistance: number;
+    mapScale: number;
+    prismCorrection: number;
+    horizontalDerivativeFactor?: number;
+    verticalDerivativeFactor?: number;
+    useReducedSlopeDerivatives?: boolean;
+  } {
     const mapScale = this.distanceScaleForObservation(obs);
     const prismCorrection = this.prismCorrectionForObservation(obs);
+    if (
+      this.coordSystemMode === 'grid' &&
+      !this.is2D &&
+      obs.mode === 'slope' &&
+      Number.isFinite(mapScale) &&
+      mapScale > 0
+    ) {
+      const geom = this.centeringLineGeometry(obs.from, obs.to, obs.hi ?? 0, obs.ht ?? 0);
+      const groundHoriz = geom.horiz / mapScale;
+      const calcDistance = Math.sqrt(groundHoriz * groundHoriz + geom.elev * geom.elev) + prismCorrection;
+      const denom = Math.max(calcDistance - prismCorrection, 1e-12);
+      return {
+        calcDistance,
+        mapScale,
+        prismCorrection,
+        horizontalDerivativeFactor: 1 / (mapScale * mapScale * denom),
+        verticalDerivativeFactor: 1 / denom,
+        useReducedSlopeDerivatives: true,
+      };
+    }
     return {
       calcDistance: (calcDistRaw + prismCorrection) * mapScale,
       mapScale,
@@ -4857,10 +4884,18 @@ export class LSAEngine {
             rowInfo.push({ obs });
 
             const denom = calcDistRaw || 1;
-            const dD_dE2 = (dx / denom) * corrected.mapScale;
-            const dD_dN2 = (dy / denom) * corrected.mapScale;
+            const dD_dE2 = corrected.useReducedSlopeDerivatives
+              ? dx * (corrected.horizontalDerivativeFactor ?? 0)
+              : (dx / denom) * corrected.mapScale;
+            const dD_dN2 = corrected.useReducedSlopeDerivatives
+              ? dy * (corrected.horizontalDerivativeFactor ?? 0)
+              : (dy / denom) * corrected.mapScale;
             const dD_dH2 =
-              !this.is2D && obs.mode === 'slope' ? (dz / denom) * corrected.mapScale : 0;
+              !this.is2D && obs.mode === 'slope'
+                ? corrected.useReducedSlopeDerivatives
+                  ? dz * (corrected.verticalDerivativeFactor ?? 0)
+                  : (dz / denom) * corrected.mapScale
+                : 0;
 
             const fromIdx = this.paramIndex[obs.from];
             if (fromIdx?.x != null) A[row][fromIdx.x] = -dD_dE2;

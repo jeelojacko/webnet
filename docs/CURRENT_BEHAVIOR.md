@@ -73,6 +73,7 @@ Current stochastic behavior includes:
 - instrument-driven and explicit sigma support
 - EDM additive and propagated handling
 - centering inflation and parity-sensitive geometry-aware centering behavior
+- traverse parity grid slope distances now use a dedicated reduction path that applies the scale factor to the horizontal component before rebuilding the 3D slope length, while legacy/local paths retain the older derivative algebra to preserve established parity locks
 - leveling weight support, including fallback propagation into other leveling-producing paths
 - a forward-facing instrument setting for differential leveling precision in `mm/km`, separate from the project-level `.LWEIGHT` fallback
 - TS angular correlation support with diagnostics

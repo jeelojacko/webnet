@@ -19,6 +19,9 @@ interface DistanceModelResult {
   calcDistance: number;
   mapScale: number;
   prismCorrection: number;
+  horizontalDerivativeFactor?: number;
+  verticalDerivativeFactor?: number;
+  useReducedSlopeDerivatives?: boolean;
 }
 
 interface HorizontalDistanceObservation {
@@ -169,10 +172,18 @@ export const assembleAdjustmentEquations = (
       );
 
       const denom = calcDistRaw || 1;
-      const dD_dE = (dx / denom) * corrected.mapScale;
-      const dD_dN = (dy / denom) * corrected.mapScale;
+      const dD_dE = corrected.useReducedSlopeDerivatives
+        ? dx * (corrected.horizontalDerivativeFactor ?? 0)
+        : (dx / denom) * corrected.mapScale;
+      const dD_dN = corrected.useReducedSlopeDerivatives
+        ? dy * (corrected.horizontalDerivativeFactor ?? 0)
+        : (dy / denom) * corrected.mapScale;
       const dD_dH =
-        !dependencies.is2D && observation.mode === 'slope' ? (dz / denom) * corrected.mapScale : 0;
+        !dependencies.is2D && observation.mode === 'slope'
+          ? corrected.useReducedSlopeDerivatives
+            ? dz * (corrected.verticalDerivativeFactor ?? 0)
+            : (dz / denom) * corrected.mapScale
+          : 0;
       const fromIdx = dependencies.paramIndex[from];
       const toIdx = dependencies.paramIndex[to];
       if (fromIdx?.x != null) A[row][fromIdx.x] = -dD_dE;

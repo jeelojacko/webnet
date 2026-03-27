@@ -198,6 +198,45 @@ describe('LSAEngine', () => {
     );
   });
 
+  it('reduces grid slope distances by scaling only the horizontal component', () => {
+    const engine = new LSAEngine({
+      input: fixture,
+      maxIterations: 1,
+      parseOptions: {
+        coordSystemMode: 'grid',
+      },
+    });
+    (engine as any).stations = {
+      A: { x: 0, y: 0, h: 0, fixed: true, fixedX: true, fixedY: true, fixedH: true },
+      B: { x: 100, y: 0, h: 10, fixed: true, fixedX: true, fixedY: true, fixedH: true },
+    };
+    (engine as any).coordSystemMode = 'grid';
+    (engine as any).distanceScaleForObservation = () => 0.9996;
+    const dist = {
+      id: 1,
+      type: 'dist',
+      subtype: 'ts',
+      from: 'A',
+      to: 'B',
+      obs: Math.sqrt(100 * 100 + 10 * 10),
+      stdDev: 0.001,
+      mode: 'slope',
+    } as const;
+
+    const calcRaw = Math.sqrt(100 * 100 + 10 * 10);
+    const corrected = (engine as any).correctedDistanceModel(dist, calcRaw);
+    const expected = Math.sqrt((100 / 0.9996) ** 2 + 10 * 10);
+
+    expect(corrected.calcDistance).toBeCloseTo(expected, 9);
+    expect(corrected.mapScale).toBeCloseTo(0.9996, 12);
+    expect(corrected.horizontalDerivativeFactor).toBeCloseTo(
+      1 / (0.9996 * 0.9996 * expected),
+      12,
+    );
+    expect(corrected.verticalDerivativeFactor).toBeCloseTo(1 / expected, 12);
+    expect(corrected.useReducedSlopeDerivatives).toBe(true);
+  });
+
   it('applies .SCALE replacement only to measured grid-distance reductions', () => {
     const input = [
       '.2D',
