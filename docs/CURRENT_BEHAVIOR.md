@@ -21,7 +21,7 @@ Current startup and workflow defaults include:
 - run profile defaults to industry-standard parity mode
 - cluster detection defaults to OFF
 - auto-adjust is available but operator-controlled
-- the active startup dataset is currently rotated to the traverse industry-parity case, including New Brunswick grid defaults, traverse refraction `k=0.07`, and a preloaded traverse instrument library (`TRAV_DEFAULT`, `S9`, `SX12`, `TS11`)
+- the active startup dataset is currently rotated to the traverse industry-parity case, including NewBrunswick83 double-stereographic startup defaults, curvature/refraction-enabled zenith reduction with traverse refraction `k=0.07`, and a preloaded traverse instrument library (`TRAV_DEFAULT`, `S9`, `SX12`, `TS11`)
 - the active startup dataset may be rotated to the current industry-parity working case during parity-sensitive batches
 - browser-local recovery restores workspace state but intentionally does not restore stale solve results without rerun
 
@@ -231,6 +231,8 @@ Parity-sensitive behavior remains an explicit project concern. Current parity-or
 - slot-preserving mixed sigma parsing for traverse direction-set `DM` rows, so tokens such as `& & 30` apply default direction and distance weighting while keeping only the zenith sigma explicit
 - traverse direction-set reductions and paired `DM` distance/zenith rows now share one global observation-ID stream and preserve the active set ID, which keeps set-scoped diagnostics and review selection deterministic on the traverse parity case
 - derived grid lat/lon and projection factors for projected traverse stations are recomputed from the live adjusted coordinates unless the station came from explicit geodetic input, preventing stale factor reuse on the traverse parity case
+- the active traverse parity startup now uses a dedicated NewBrunswick83 double-stereographic parity CRS with industry-matching convergence/grid-factor evaluation instead of the earlier EPSG:2953-style scale contract
+- the active traverse parity startup now runs with curvature/refraction enabled (`verticalReduction='curvref'`, `k=0.07`) using the same coefficient convention as the industry reference output, which brings the traverse zenith summary into parity range
 - pre-solve traverse bootstrapping that can resect unknown direction-set setups from known targets and forward-seed connected target coordinates before adjustment
 - grid-mode input gating that ignores CRS-derived inverse lat/lon on projected auto-created stations instead of treating them as original unknown-class geodetic input
 - focused regression locks around angular stochastic behavior, centering geometry, displayed sigma behavior, and connected-pair precision rows

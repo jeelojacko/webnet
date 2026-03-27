@@ -128,8 +128,11 @@
       - [x] Make `.INST <code>` reliably set the current instrument for the following traverse/direction-set block without breaking existing conventional parsing
       - [x] Keep projected grid traverse jobs from false-failing the grid-input gate when CRS inverse diagnostics populate derived lat/lon on auto-created stations
       - [x] Recompute derived geodetic inverses/grid factors from live projected coordinates for non-geodetic traverse stations instead of reusing stale cached lat/lon
+      - [x] Carry the traverse reference case's curvature/refraction startup defaults into the active parity startup contract so zenith-family parity no longer runs on the old no-curvature fallback
+      - [x] Use a dedicated NewBrunswick83 parity CRS with industry-matching convergence/grid-factor evaluation instead of assuming the EPSG:2953 scale contract for the traverse startup case
       - [x] Add a pre-solve approximate-coordinate bootstrap for traverse direction sets so unknown setups can be resected from known targets and forward-seeded into connected observations
       - [x] Keep traverse direction-set reductions plus `DM`-derived distance/zenith rows on one global observation-ID stream with the active set ID preserved for parity-safe grouping and diagnostics
+      - [x] Match the traverse zenith-family curvature/refraction coefficient convention so `k=0.070000` reproduces the industry zenith summary instead of behaving like the older `1-k` correction
       - [ ] Close the remaining fixed-bearing orientation parity gap for a network constrained by one fixed point plus one fixed bearing
       - [ ] Match direction-set, distance, zenith, target-height, and set-scoped weighting behavior used by the traverse reference case
       - [x] Lock slot-preserving `DM` sigma parsing so `& & 30` keeps default direction and distance weighting while applying an explicit 30" zenith sigma

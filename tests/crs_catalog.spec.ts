@@ -21,6 +21,7 @@ describe('Canada CRS catalog (Phase 2 expansion)', () => {
     expect(CANADA_CRS_CATALOG.some((row) => row.id === 'CA_NAD83_CSRS_NB_STEREO_DOUBLE')).toBe(
       true,
     );
+    expect(CANADA_CRS_CATALOG.some((row) => row.id === 'CA_NAD83_NB83_STEREO_DOUBLE')).toBe(true);
     expect(CANADA_CRS_CATALOG.some((row) => row.id === 'CA_NAD83_CSRS_ON_MNR_LAMBERT')).toBe(true);
   });
 
@@ -73,14 +74,16 @@ describe('Canada CRS catalog (Phase 2 expansion)', () => {
     expect(inverse.lonDeg).toBeCloseTo(-66.64, 7);
   });
 
-  it('uses closed-form factor formulas for TM/stereographic and numeric fallback for other families', () => {
+  it('uses closed-form factor formulas for TM and numeric fallback for the parity NB83 projection', () => {
     const utm = computeGridFactors(46.72, -66.64, 'CA_NAD83_CSRS_UTM_20N');
     expect(utm).not.toBeNull();
     expect(utm?.source).toBe('projection-formula');
 
-    const nbStereo = computeGridFactors(46.72, -66.64, 'CA_NAD83_CSRS_NB_STEREO_DOUBLE');
-    expect(nbStereo).not.toBeNull();
-    expect(nbStereo?.source).toBe('projection-formula');
+    const nb83 = computeGridFactors(45.94603498341826, -66.64432272768907, 'CA_NAD83_NB83_STEREO_DOUBLE');
+    expect(nb83).not.toBeNull();
+    expect(nb83?.source).toBe('numerical-fallback');
+    expect((nb83?.gridScaleFactor ?? 0)).toBeCloseTo(0.99985393, 6);
+    expect((nb83?.convergenceAngleRad ?? 0) * (180 / Math.PI)).toBeCloseTo(-0.1042083333, 4);
 
     const lambert = computeGridFactors(50.0, -85.0, 'CA_NAD83_CSRS_ON_MNR_LAMBERT');
     expect(lambert).not.toBeNull();

@@ -405,6 +405,59 @@ const numericGridFactors = (
   return { convergenceAngleRad, gridScaleFactor };
 };
 
+const numericLocalGridFactors = (
+  latDeg: number,
+  lonDeg: number,
+  crsId?: string,
+): { convergenceAngleRad: number; gridScaleFactor: number } | null => {
+  const base = projectGrid(latDeg, lonDeg, crsId);
+  if (!base) return null;
+
+  const latRad = latDeg * DEG_TO_RAD;
+  const sinLat = Math.sin(latRad);
+  const cosLat = Math.cos(latRad);
+  if (!Number.isFinite(cosLat) || Math.abs(cosLat) < 1e-12) return null;
+
+  const meridianRadius =
+    WGS84_A * (1 - GRS80_E2) / Math.pow(1 - GRS80_E2 * sinLat * sinLat, 1.5);
+  const primeVerticalRadius = WGS84_A / Math.sqrt(1 - GRS80_E2 * sinLat * sinLat);
+  if (
+    !Number.isFinite(meridianRadius) ||
+    meridianRadius <= 0 ||
+    !Number.isFinite(primeVerticalRadius) ||
+    primeVerticalRadius <= 0
+  ) {
+    return null;
+  }
+
+  const probeMeters = 50;
+  const dLatDeg = (probeMeters / meridianRadius) * RAD_TO_DEG;
+  const dLonDeg = (probeMeters / (primeVerticalRadius * cosLat)) * RAD_TO_DEG;
+
+  const northProbe = projectGrid(latDeg + dLatDeg, lonDeg, crsId);
+  const eastProbe = projectGrid(latDeg, lonDeg + dLonDeg, crsId);
+  if (!northProbe || !eastProbe) return null;
+
+  const dE_n = northProbe.east - base.east;
+  const dN_n = northProbe.north - base.north;
+  const dE_e = eastProbe.east - base.east;
+  const dN_e = eastProbe.north - base.north;
+
+  const convergenceAngleRad = -Math.atan2(dE_n, dN_n);
+  const northScale = Math.hypot(dE_n, dN_n) / probeMeters;
+  const eastScale = Math.hypot(dE_e, dN_e) / probeMeters;
+  const gridScaleFactor = (northScale + eastScale) / 2;
+
+  if (!Number.isFinite(convergenceAngleRad) || !Number.isFinite(gridScaleFactor)) {
+    return null;
+  }
+
+  return {
+    convergenceAngleRad,
+    gridScaleFactor: Math.max(gridScaleFactor, 1e-9),
+  };
+};
+
 const resolveDatumOperation = (
   def?: CrsDefinition,
 ): {
@@ -455,6 +508,22 @@ export const computeGridFactors = (
   const def = getCrsDefinition(crsId);
   const datum = resolveDatumOperation(def);
   if (!def) return null;
+
+  if (def.factorStrategy === 'numeric-local') {
+    const numeric = numericLocalGridFactors(latDeg, lonDeg, crsId);
+    if (!numeric) return null;
+    return {
+      convergenceAngleRad: numeric.convergenceAngleRad,
+      gridScaleFactor: numeric.gridScaleFactor,
+      source: 'numerical-fallback',
+      datumOpId: datum.datumOpId,
+      warnings: [
+        ...datum.warnings,
+        `Projection factors for ${def.id} use the local numeric grid-factor path tuned to the legacy NewBrunswick83 contract.`,
+      ],
+      diagnostics: [...datum.diagnostics, 'FACTOR_APPROXIMATION_USED'],
+    };
+  }
 
   let formula: { convergenceAngleRad: number; gridScaleFactor: number } | null = null;
   if (

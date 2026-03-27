@@ -2899,7 +2899,7 @@ export class LSAEngine {
     if (!this.applyCurvatureRefraction) return 0;
     if (this.verticalReduction !== 'curvref') return 0;
     if (!Number.isFinite(horiz) || horiz <= 0) return 0;
-    return ((1 - this.refractionCoefficient) * horiz) / (2 * EARTH_RADIUS_M);
+    return ((1 - 2 * this.refractionCoefficient) * horiz) / (2 * EARTH_RADIUS_M);
   }
 
   private getZenith(

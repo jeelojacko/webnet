@@ -25,6 +25,9 @@ const buildCaseResult = (caseId: keyof typeof INDUSTRY_PARITY_CASES) => {
       deltaMode: startup?.parseSettingsPatch.deltaMode ?? 'slope',
       angleStationOrder: startup?.parseSettingsPatch.angleStationOrder ?? 'atfromto',
       lonSign: startup?.parseSettingsPatch.lonSign ?? 'west-negative',
+      applyCurvatureRefraction: startup?.parseSettingsPatch.applyCurvatureRefraction,
+      verticalReduction: startup?.parseSettingsPatch.verticalReduction,
+      refractionCoefficient: startup?.parseSettingsPatch.refractionCoefficient,
     },
   }).solve();
 };
@@ -68,9 +71,11 @@ describe('industry multi-case parity foundation', () => {
     expect(startup.settingsPatch.convergenceLimit).toBe(0.01);
     expect(startup.parseSettingsPatch.coordMode).toBe('3D');
     expect(startup.parseSettingsPatch.coordSystemMode).toBe('grid');
-    expect(startup.parseSettingsPatch.crsId).toBe('CA_NAD83_CSRS_NB_STEREO_DOUBLE');
+    expect(startup.parseSettingsPatch.crsId).toBe('CA_NAD83_NB83_STEREO_DOUBLE');
     expect(startup.parseSettingsPatch.order).toBe('NE');
     expect(startup.parseSettingsPatch.lonSign).toBe('west-positive');
+    expect(startup.parseSettingsPatch.applyCurvatureRefraction).toBe(true);
+    expect(startup.parseSettingsPatch.verticalReduction).toBe('curvref');
     expect(startup.parseSettingsPatch.refractionCoefficient).toBe(0.07);
     expect(startup.selectedInstrument).toBe('TRAV_DEFAULT');
     expect(Object.keys(startup.projectInstruments).sort()).toEqual([
@@ -88,6 +93,24 @@ describe('industry multi-case parity foundation', () => {
     expect(normalized).toContain('Adjusted Elevations and Error Propagation');
     expect(normalized).toContain('Adjusted Differential Level Observations');
   });
+
+  it(
+    'matches the traverse startup zenith summary after curvature/refraction parity fixes',
+    () => {
+      const withStartupDefaults = buildCaseResult('traverse');
+      expect(withStartupDefaults.success).toBe(true);
+      expect(withStartupDefaults.statisticalSummary).toBeDefined();
+      const statisticalSummary = withStartupDefaults.statisticalSummary!;
+
+      const zenith = statisticalSummary.byGroup.find(
+        (row) => row.label === 'Zenith',
+      );
+      expect(zenith).toBeDefined();
+      expect(zenith?.sumSquares ?? Number.NaN).toBeCloseTo(807.697, 0);
+      expect(zenith?.errorFactor ?? Number.NaN).toBeCloseTo(1.51, 2);
+    },
+    120000,
+  );
 
   it('matches the leveling reference listing exactly from project option settings to the file end', () => {
     const startup = INDUSTRY_PARITY_CASES.leveling.startupDefaults;
