@@ -912,14 +912,24 @@ export const buildIndustryStyleListingText = (
 
   const countByType = (type: Observation['type']) =>
     observationsForListing.filter((o) => o.type === type).length;
+  const measuredDirectionCount = countByType('direction') + countByType('dir');
+  const bearingCount = countByType('bearing');
+  const hasTraverseStyleAngularFamilies = measuredDirectionCount > 0 || bearingCount > 0;
   lines.push('');
   const angleUnitToken = (parseState?.angleUnits ?? parseSettings.angleUnits).toUpperCase();
   pushSettingRow(`Number of Angle Observations (${angleUnitToken})`, `${countByType('angle')}`);
   pushSettingRow(`Number of Distance Observations (${linearUnit})`, `${countByType('dist')}`);
   pushSettingRow(
-    `Number of Direction Observations (${angleUnitToken})`,
-    `${countByType('direction') + countByType('dir') + countByType('bearing')}`,
+    `${hasTraverseStyleAngularFamilies ? 'Number of Measured Direction Observations' : 'Number of Direction Observations'} (${angleUnitToken})`,
+    `${measuredDirectionCount}`,
   );
+  if (bearingCount > 0) {
+    const bearingLabel =
+      coordSystemMode === 'grid'
+        ? `Number of Grid Azimuth/Bearing Observations (${angleUnitToken})`
+        : `Number of Azimuth/Bearing Observations (${angleUnitToken})`;
+    pushSettingRow(bearingLabel, `${bearingCount}`);
+  }
   lines.push('');
   lines.push('Adjustment Statistical Summary');
   lines.push('==============================');
@@ -1188,6 +1198,16 @@ export const buildIndustryStyleListingText = (
     value != null ? (value * unitScale).toFixed(4) : '-';
   const formatResidualLinear = (value: number | undefined): string =>
     value != null ? ((-value) * unitScale).toFixed(4) : '-';
+  const formatAngularLinearResidual = (
+    residualRad: number | undefined,
+    effectiveDistanceM: number | undefined,
+  ): string =>
+    residualRad != null &&
+    Number.isFinite(residualRad) &&
+    effectiveDistanceM != null &&
+    Number.isFinite(effectiveDistanceM)
+      ? ((-residualRad) * effectiveDistanceM * unitScale).toFixed(4)
+      : '-';
   const formatEffectiveDistance = (value: number | undefined): string =>
     value != null && Number.isFinite(value) && value > 0 ? (value * unitScale).toFixed(4) : '-';
   const formatEllipseAzDm = (
@@ -1521,7 +1541,7 @@ export const buildIndustryStyleListingText = (
         obs.sourceLine != null ? `1:${obs.sourceLine}` : '-',
       ]);
     renderAdjustedSection(
-      `Adjusted Distance Observations (${linearUnit})`,
+      `${hasTraverseStyleAngularFamilies ? 'Adjusted Measured Distance Observations' : 'Adjusted Distance Observations'} (${linearUnit})`,
       distanceRows,
       ['Stations', 'Distance', 'Residual', 'StdErr', 'StdRes', 'File:Line'],
       [1, 2, 3, 4],
@@ -1533,13 +1553,16 @@ export const buildIndustryStyleListingText = (
         `${obs.at}-${obs.to}${aliasRefsForLine(obs.sourceLine)}${autoSideshotSuffix(obs)}`,
         radToDmsStr((obs.calc as number | undefined) ?? obs.obs),
         formatAngularResidualArcSec(obs.residual as number | undefined),
-        formatEffectiveDistance(obs.effectiveDistance),
+        formatAngularLinearResidual(
+          obs.residual as number | undefined,
+          obs.effectiveDistance,
+        ),
         formatAngularStdErrArcSec(obs.weightingStdDev ?? obs.stdDev),
         formatIndustryStdRes(obs),
         obs.sourceLine != null ? `1:${obs.sourceLine}` : '-',
       ]);
     renderAdjustedSection(
-      `Adjusted Direction Observations (${(parseState?.angleUnits ?? parseSettings.angleUnits).toUpperCase()})`,
+      `${hasTraverseStyleAngularFamilies ? 'Adjusted Measured Direction Observations' : 'Adjusted Direction Observations'} (${(parseState?.angleUnits ?? parseSettings.angleUnits).toUpperCase()})`,
       directionRows,
       [
         'Stations',

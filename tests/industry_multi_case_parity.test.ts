@@ -102,12 +102,72 @@ describe('industry multi-case parity foundation', () => {
       expect(withStartupDefaults.statisticalSummary).toBeDefined();
       const statisticalSummary = withStartupDefaults.statisticalSummary!;
 
+      const directions = statisticalSummary.byGroup.find((row) => row.label === 'Directions');
+      const bearings = statisticalSummary.byGroup.find((row) => row.label === 'Az/Bearings');
       const zenith = statisticalSummary.byGroup.find(
         (row) => row.label === 'Zenith',
       );
+      expect(directions?.count).toBe(451);
+      expect(bearings?.count).toBe(1);
+      expect(bearings?.sumSquares ?? Number.NaN).toBeCloseTo(0, 6);
       expect(zenith).toBeDefined();
       expect(zenith?.sumSquares ?? Number.NaN).toBeCloseTo(807.697, 0);
       expect(zenith?.errorFactor ?? Number.NaN).toBeCloseTo(1.51, 2);
+    },
+    120000,
+  );
+
+  it(
+    'keeps traverse bearings and measured observation headings separated in the industry listing',
+    () => {
+      const startup = INDUSTRY_PARITY_CASES.traverse.startupDefaults;
+      expect(startup).toBeDefined();
+
+      const result = buildCaseResult('traverse');
+      expect(result.success).toBe(true);
+
+      const listing = buildIndustryStyleListingText(
+        result,
+        {
+          maxIterations: 15,
+          convergenceLimit: startup?.settingsPatch.convergenceLimit,
+          precisionReportingMode: 'industry-standard',
+          units: 'm',
+          listingShowCoordinates: true,
+          listingShowObservationsResiduals: true,
+          listingShowErrorPropagation: true,
+          listingShowProcessingNotes: true,
+          listingShowAzimuthsBearings: true,
+          listingShowLostStations: true,
+          listingSortCoordinatesBy: 'input',
+          listingSortObservationsBy: 'residual',
+          listingObservationLimit: 9999,
+        },
+        {
+          coordMode: startup?.parseSettingsPatch.coordMode ?? '3D',
+          order: startup?.parseSettingsPatch.order ?? 'EN',
+          angleUnits: startup?.parseSettingsPatch.angleUnits ?? 'dms',
+          angleStationOrder: startup?.parseSettingsPatch.angleStationOrder ?? 'atfromto',
+          deltaMode: startup?.parseSettingsPatch.deltaMode ?? 'slope',
+          refractionCoefficient: startup?.parseSettingsPatch.refractionCoefficient ?? 0.13,
+        },
+        {
+          solveProfile: 'industry-parity',
+          angleCenteringModel: 'geometry-aware-correlated-rays',
+          defaultSigmaCount: 0,
+          defaultSigmaByType: '',
+          stochasticDefaultsSummary: '',
+          rotationAngleRad: 0,
+          currentInstrumentCode: startup?.selectedInstrument,
+          currentInstrumentDesc: startup?.projectInstruments[startup?.selectedInstrument ?? '']?.desc,
+        },
+      );
+
+      expect(listing).toContain('Number of Measured Direction Observations (DMS)');
+      expect(listing).toContain('Number of Grid Azimuth/Bearing Observations (DMS)');
+      expect(listing).toContain('Adjusted Measured Distance Observations (Meters)');
+      expect(listing).toContain('Adjusted Measured Direction Observations (DMS)');
+      expect(listing).not.toContain('Number of Direction Observations (DMS) : 452');
     },
     120000,
   );

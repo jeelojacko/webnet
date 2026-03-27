@@ -133,6 +133,8 @@
       - [x] Add a pre-solve approximate-coordinate bootstrap for traverse direction sets so unknown setups can be resected from known targets and forward-seeded into connected observations
       - [x] Keep traverse direction-set reductions plus `DM`-derived distance/zenith rows on one global observation-ID stream with the active set ID preserved for parity-safe grouping and diagnostics
       - [x] Match the traverse zenith-family curvature/refraction coefficient convention so `k=0.070000` reproduces the industry zenith summary instead of behaving like the older `1-k` correction
+      - [x] Separate traverse measured directions from grid azimuth/bearing counts in the industry-style listing and keep the fixed bearing in its own `Az/Bearings` statistical family
+      - [x] Use industry-style lateral residual distance in adjusted measured direction rows instead of printing the geometric shot length in that column
       - [ ] Close the remaining fixed-bearing orientation parity gap for a network constrained by one fixed point plus one fixed bearing
       - [ ] Match direction-set, distance, zenith, target-height, and set-scoped weighting behavior used by the traverse reference case
       - [x] Lock slot-preserving `DM` sigma parsing so `& & 30` keeps default direction and distance weighting while applying an explicit 30" zenith sigma

@@ -4386,11 +4386,11 @@ export class LSAEngine {
         rows: Array<{ v: number; sigma: number; groupLabel: string }>;
       }
     >();
-    const groupOrder = ['Angles', 'Directions', 'Distances', 'GPS', 'Level Data', 'Zenith'];
+    const groupOrder = ['Angles', 'Directions', 'Distances', 'Az/Bearings', 'GPS', 'Level Data', 'Zenith'];
     const summarizeGroup = (obs: Observation): string => {
       if (obs.type === 'angle') return 'Angles';
-      if (obs.type === 'direction' || obs.type === 'dir' || obs.type === 'bearing')
-        return 'Directions';
+      if (obs.type === 'direction' || obs.type === 'dir') return 'Directions';
+      if (obs.type === 'bearing') return 'Az/Bearings';
       if (obs.type === 'dist') return 'Distances';
       if (obs.type === 'gps') return 'GPS';
       if (obs.type === 'lev') return 'Level Data';

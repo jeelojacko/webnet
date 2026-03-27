@@ -259,7 +259,7 @@ describe('industry listing phase 5 formatting locks', () => {
     expect(listing).toMatch(/^\s*B\s+-\s+N=FIXED E=FIXED H=FIXED\s*$/m);
   });
 
-  it('renders effective-distance column values for adjusted angle/direction rows', () => {
+  it('renders effective distance for angles and lateral residual distance for directions', () => {
     const input = readFileSync('tests/fixtures/effective_distance_phase3.dat', 'utf-8');
     const result = new LSAEngine({ input, maxIterations: 10 }).solve();
     const listing = buildIndustryStyleListingText(
@@ -301,7 +301,7 @@ describe('industry listing phase 5 formatting locks', () => {
       'Stations  Direction    Residual  Distance  StdErr  StdRes  File:Line',
     );
     expect(listing).toMatch(/^\s*O-BS-P\s+.+\s+.+\s+100\.0000\s+.+\s+.+\s+1:9\s*$/m);
-    expect(listing).toMatch(/^\s*O-P\s+.+\s+.+\s+100\.0000\s+.+\s+.+\s+1:11\s*$/m);
+    expect(listing).toMatch(/^\s*O-P\s+.+\s+.+\s+0\.0000\s+.+\s+.+\s+1:11\s*$/m);
   });
 
   it('renders observation-weight traceability for mixed record families', () => {
