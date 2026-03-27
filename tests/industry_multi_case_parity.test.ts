@@ -183,6 +183,29 @@ describe('industry multi-case parity foundation', () => {
       expect(listing).toContain('Unused Stations');
       expect(listing).toContain('FRDN');
       expect(listing).toContain('BROD');
+      expect(listing).toContain('Number of Measured Distance Observations (Meters) = 451');
+      expect(listing).toContain(
+        'From       To            Distance   StdErr      HI      HT  Comb Grid  Type',
+      );
+      expect(listing).toContain('100       APOG            106.8333   0.0038');
+      expect(listing).toContain('Number of Zenith Observations (DMS) = 451');
+      expect(listing).toContain('From       To              Zenith      StdErr      HI      HT');
+      expect(listing).toContain('100       PEAT');
+      expect(listing).toContain('92-29-12.58');
+      expect(listing).toContain('30.00');
+      expect(listing).toContain('Number of Measured Direction Observations (DMS) = 451');
+      expect(listing).toContain('From       To            Direction      StdErr     t-T');
+      expect(listing).toContain('Set 1');
+      expect(listing).toContain('100');
+      expect(listing).toContain('APOG');
+      expect(listing).toContain('0-00-00.00');
+      expect(listing).toContain('4.16');
+      expect(listing).toContain('Number of Grid Azimuth/Bearing Observations (DMS) = 1');
+      expect(listing).toContain('From       To            Bearing       StdErr');
+      expect(listing).toContain('GPS5');
+      expect(listing).toContain('GPS2');
+      expect(listing).toContain('N36-50-16.60W');
+      expect(listing).toContain('FIXED');
       expect(listing).toContain('Adjusted Measured Distance Observations (Meters)');
       expect(listing).toContain('Adjusted Measured Direction Observations (DMS)');
       expect(listing).not.toContain('Active Project Instrument Defaults');

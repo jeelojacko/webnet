@@ -154,6 +154,51 @@ const centerIndustryLine = (text: string, width = 80): string => {
   return `${' '.repeat(leftPad)}${text}`;
 };
 
+const formatDmsHundredths = (rad?: number | null): string => {
+  if (rad == null || Number.isNaN(rad)) return '0-00-00.00';
+  let deg = ((rad * RAD_TO_DEG) % 360 + 360) % 360;
+  let d = Math.floor(deg);
+  const rem1 = (deg - d) * 60;
+  let m = Math.floor(rem1);
+  let s = (rem1 - m) * 60;
+  s = Math.round((s + Number.EPSILON) * 100) / 100;
+  if (s >= 60) {
+    s -= 60;
+    m += 1;
+  }
+  if (m >= 60) {
+    m -= 60;
+    d = (d + 1) % 360;
+  }
+  return `${d}-${m.toString().padStart(2, '0')}-${s.toFixed(2).padStart(5, '0')}`;
+};
+
+const formatQuadrantBearing = (rad?: number | null): string => {
+  if (rad == null || Number.isNaN(rad)) return '-';
+  const azDeg = ((rad * RAD_TO_DEG) % 360 + 360) % 360;
+  let prefix = 'N';
+  let suffix = 'E';
+  let bodyDeg = azDeg;
+  if (azDeg <= 90) {
+    prefix = 'N';
+    suffix = 'E';
+    bodyDeg = azDeg;
+  } else if (azDeg <= 180) {
+    prefix = 'S';
+    suffix = 'E';
+    bodyDeg = 180 - azDeg;
+  } else if (azDeg <= 270) {
+    prefix = 'S';
+    suffix = 'W';
+    bodyDeg = azDeg - 180;
+  } else {
+    prefix = 'N';
+    suffix = 'W';
+    bodyDeg = 360 - azDeg;
+  }
+  return `${prefix}${formatDmsHundredths((bodyDeg * Math.PI) / 180)}${suffix}`;
+};
+
 const formatLevelingOnlyFileLine = (
   parseState: AdjustmentResult['parseState'],
   sourceLine?: number,
@@ -1168,6 +1213,12 @@ export const buildIndustryStyleListingText = (
   lines.push('');
   const countByType = (type: Observation['type']) =>
     observationsForListing.filter((o) => o.type === type).length;
+  const compareObsByInput = (a: Observation, b: Observation) => {
+    const aLine = a.sourceLine ?? Number.MAX_SAFE_INTEGER;
+    const bLine = b.sourceLine ?? Number.MAX_SAFE_INTEGER;
+    if (aLine !== bLine) return aLine - bLine;
+    return (a.id ?? 0) - (b.id ?? 0);
+  };
   const measuredDirectionCount = countByType('direction') + countByType('dir');
   const bearingCount = countByType('bearing');
   const hasTraverseStyleAngularFamilies = measuredDirectionCount > 0 || bearingCount > 0;
@@ -1215,6 +1266,92 @@ export const buildIndustryStyleListingText = (
         `Number of Measured Distance Observations (${linearUnit}) = ${countByType('dist')}`,
       ),
     );
+    lines.push('');
+    lines.push('From       To            Distance   StdErr      HI      HT  Comb Grid  Type');
+    [...observationsForListing]
+      .filter((obs): obs is Observation & { type: 'dist' } => obs.type === 'dist')
+      .sort(compareObsByInput)
+      .forEach((obs) => {
+        const from = res.stations[obs.from];
+        const to = res.stations[obs.to];
+        const combinedFactor =
+          from && to ? ((from.combinedFactor ?? 1) + (to.combinedFactor ?? 1)) / 2 : 1;
+        const sigma = (obs.weightingStdDev ?? obs.stdDev) * unitScale;
+        lines.push(
+          `${obs.from.padEnd(10)}${obs.to.padEnd(14)}${(obs.obs * unitScale).toFixed(4).padStart(10)}${sigma.toFixed(4).padStart(9)}${((obs.hi ?? 0) * unitScale).toFixed(3).padStart(8)}${((obs.ht ?? 0) * unitScale).toFixed(3).padStart(8)}${combinedFactor.toFixed(7).padStart(11)}   ${(obs.mode ?? 'slope') === 'horiz' ? 'H' : 'S'}`,
+        );
+      });
+    lines.push('');
+    lines.push(
+      centerIndustryLine(
+        `Number of Zenith Observations (${angleUnitToken}) = ${countByType('zenith')}`,
+      ),
+    );
+    lines.push('');
+    lines.push('From       To              Zenith      StdErr      HI      HT');
+    [...observationsForListing]
+      .filter((obs): obs is Observation & { type: 'zenith' } => obs.type === 'zenith')
+      .sort(compareObsByInput)
+      .forEach((obs) => {
+        const sigmaArcSec = (obs.weightingStdDev ?? obs.stdDev) * RAD_TO_DEG * 3600;
+        lines.push(
+          `${obs.from.padEnd(10)}${obs.to.padEnd(14)}${formatDmsHundredths(obs.obs).padStart(14)}${sigmaArcSec.toFixed(2).padStart(11)}${((obs.hi ?? 0) * unitScale).toFixed(3).padStart(8)}${((obs.ht ?? 0) * unitScale).toFixed(3).padStart(8)}`,
+        );
+      });
+    lines.push('');
+    lines.push(
+      centerIndustryLine(
+        `Number of Measured Direction Observations (${angleUnitToken}) = ${measuredDirectionCount}`,
+      ),
+    );
+    lines.push('');
+    lines.push('From       To            Direction      StdErr     t-T');
+    const groupedDirections = new Map<string, Array<Observation & { type: 'direction' }>>();
+    [...observationsForListing]
+      .filter((obs): obs is Observation & { type: 'direction' } => obs.type === 'direction')
+      .sort(compareObsByInput)
+      .forEach((obs) => {
+        const key = String(obs.setId ?? 'UNKNOWN');
+        const group = groupedDirections.get(key) ?? [];
+        group.push(obs);
+        groupedDirections.set(key, group);
+      });
+    groupedDirections.forEach((group, setId) => {
+      lines.push('');
+      lines.push(`Set ${setId}`);
+      group.forEach((obs) => {
+        const sigmaArcSec = (obs.weightingStdDev ?? obs.stdDev) * RAD_TO_DEG * 3600;
+        lines.push(
+          `${obs.at.padEnd(10)}${obs.to.padEnd(14)}${formatDmsHundredths(obs.obs).padStart(14)}${sigmaArcSec.toFixed(2).padStart(11)}${'0.00'.padStart(8)}`,
+        );
+      });
+    });
+    if (bearingCount > 0) {
+      lines.push('');
+      lines.push(
+        centerIndustryLine(
+          `${
+            coordSystemMode === 'grid'
+              ? 'Number of Grid Azimuth/Bearing Observations'
+              : 'Number of Azimuth/Bearing Observations'
+          } (${angleUnitToken}) = ${bearingCount}`,
+        ),
+      );
+      lines.push('');
+      lines.push('From       To            Bearing       StdErr');
+      [...observationsForListing]
+        .filter((obs): obs is Observation & { type: 'bearing' } => obs.type === 'bearing')
+        .sort(compareObsByInput)
+        .forEach((obs) => {
+          const stdErr =
+            obs.sigmaSource === 'fixed'
+              ? 'FIXED'
+              : ((obs.weightingStdDev ?? obs.stdDev) * RAD_TO_DEG * 3600).toFixed(2);
+          lines.push(
+            `${obs.from.padEnd(10)}${obs.to.padEnd(11)}${formatQuadrantBearing(obs.obs).padStart(18)}${stdErr.padStart(10)}`,
+          );
+        });
+    }
   } else {
     pushSettingRow(
       `Number of Entered Stations (${linearUnit})`,
@@ -1238,8 +1375,16 @@ export const buildIndustryStyleListingText = (
     }
   }
   lines.push('');
-  lines.push('Adjustment Statistical Summary');
-  lines.push('==============================');
+  lines.push(
+    usesClassicParityLayout
+      ? centerIndustryLine('Adjustment Statistical Summary')
+      : 'Adjustment Statistical Summary',
+  );
+  lines.push(
+    usesClassicParityLayout
+      ? centerIndustryLine('==============================')
+      : '==============================',
+  );
   lines.push('');
   if (usesClassicParityLayout) {
     lines.push(
@@ -1405,12 +1550,6 @@ export const buildIndustryStyleListingText = (
     }
   }
 
-  const compareObsByInput = (a: Observation, b: Observation) => {
-    const aLine = a.sourceLine ?? Number.MAX_SAFE_INTEGER;
-    const bLine = b.sourceLine ?? Number.MAX_SAFE_INTEGER;
-    if (aLine !== bLine) return aLine - bLine;
-    return (a.id ?? 0) - (b.id ?? 0);
-  };
   const compareStationIds = (a: string, b: string) =>
     a.localeCompare(b, undefined, { numeric: true });
   const compareObsByStations = (a: Observation, b: Observation) => {

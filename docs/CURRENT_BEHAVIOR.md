@@ -239,6 +239,7 @@ Parity-sensitive behavior remains an explicit project concern. Current parity-or
 - traverse statistical summaries now keep fixed azimuth/bearing observations out of the measured-direction family, matching the industry-style `Az/Bearings` split on the traverse parity case
 - adjusted measured direction rows now print lateral residual distance in the `Distance` column, matching the industry traverse reference listing instead of showing the geometric line length
 - 3D traverse-style parity listings now use the compact industry settings/instrument block instead of the expanded WebNet diagnostics block, and their entered-station summary is driven from a parse-time snapshot of the original control coordinates so fixed/free/unused rows no longer drift with the solved station map
+- the active traverse parity listing now emits the raw unadjusted measured distance, zenith, measured-direction-by-set, and fixed-bearing tables before the adjustment statistical summary, which brings the main traverse observation sections into the same order and structure as the industry reference report
 - grid-mode input gating that ignores CRS-derived inverse lat/lon on projected auto-created stations instead of treating them as original unknown-class geodetic input
 - focused regression locks around angular stochastic behavior, centering geometry, displayed sigma behavior, and connected-pair precision rows
 
