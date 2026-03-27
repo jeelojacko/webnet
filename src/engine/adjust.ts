@@ -730,7 +730,10 @@ export class LSAEngine {
     hi = 0,
     ht = 0,
   ): { horiz: number; slope: number; elev: number } {
-    const geom = this.getSigmaGeometryZenith(fromID, toID, hi, ht);
+    // Distance/zenith modeling must track the live station geometry.
+    // The parity profile's "initial" geometry reference is only intended for
+    // angular centering/sigma behavior, not for the core distance model.
+    const geom = this.getZenith(fromID, toID, hi, ht);
     return {
       horiz: Math.max(geom.horiz, 0),
       slope: Math.max(geom.dist, 0),

@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { DEFAULT_INPUT } from '../../src/defaultInput';
 import { DEFAULT_CANADA_CRS_ID } from '../../src/engine/crsCatalog';
 import {
@@ -124,3 +125,107 @@ export const createRunSessionRequest = (
   approvedClusterMerges: [],
   ...overrides,
 });
+
+const extractTraverseStartupInput = (): string => {
+  const raw = readFileSync('tests/fixtures/industry_case_traverse_output.txt', 'utf-8');
+  const lines = raw.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
+  const traverseOnlyLine = lines.findIndex((line) => line.trim() === '#Traverse Only');
+  return (traverseOnlyLine > 0 ? lines.slice(Math.max(0, traverseOnlyLine - 1)) : lines)
+    .join('\n')
+    .trim();
+};
+
+const buildTraverseInstrumentLibrary = (): InstrumentLibrary => ({
+  S9: {
+    code: 'S9',
+    desc: 'corrections from isopropyl',
+    edm_const: 0.003,
+    edm_ppm: 2,
+    hzPrecision_sec: 1.2357,
+    dirPrecision_sec: 0.87377,
+    azBearingPrecision_sec: 0.707107,
+    vaPrecision_sec: 3.28473,
+    instCentr_m: 0.0015,
+    tgtCentr_m: 0.0015,
+    vertCentr_m: 0.0005,
+    elevDiff_const_m: 0.01524,
+    elevDiff_ppm: 0,
+    gpsStd_xy: 0,
+    levStd_mmPerKm: 0,
+  },
+  SX12: {
+    code: 'SX12',
+    desc: 'n/a',
+    edm_const: 0.003,
+    edm_ppm: 1.5,
+    hzPrecision_sec: 0.950079,
+    dirPrecision_sec: 0.671807,
+    azBearingPrecision_sec: 1.414,
+    vaPrecision_sec: 6.064437,
+    instCentr_m: 0.0015,
+    tgtCentr_m: 0.0015,
+    vertCentr_m: 0.0005,
+    elevDiff_const_m: 0.01524,
+    elevDiff_ppm: 0,
+    gpsStd_xy: 0,
+    levStd_mmPerKm: 0,
+  },
+  TS11: {
+    code: 'TS11',
+    desc: 'n/a',
+    edm_const: 0.002,
+    edm_ppm: 1.5,
+    hzPrecision_sec: 1.84146,
+    dirPrecision_sec: 1.302108,
+    azBearingPrecision_sec: 4,
+    vaPrecision_sec: 4.41756,
+    instCentr_m: 0.0015,
+    tgtCentr_m: 0.0015,
+    vertCentr_m: 0.0005,
+    elevDiff_const_m: 0.01524,
+    elevDiff_ppm: 0,
+    gpsStd_xy: 0,
+    levStd_mmPerKm: 0,
+  },
+  TRAV_DEFAULT: {
+    code: 'TRAV_DEFAULT',
+    desc: 'industry parity traverse project default',
+    edm_const: 0.001,
+    edm_ppm: 1.5,
+    hzPrecision_sec: 1.414,
+    dirPrecision_sec: 1,
+    azBearingPrecision_sec: 1.414,
+    vaPrecision_sec: 1,
+    instCentr_m: 0.00075,
+    tgtCentr_m: 0.00075,
+    vertCentr_m: 0.0005,
+    elevDiff_const_m: 0.01524,
+    elevDiff_ppm: 0,
+    gpsStd_xy: 0,
+    levStd_mmPerKm: 1.5,
+  },
+});
+
+export const createTraverseRunSessionRequest = (
+  overrides: Partial<RunSessionRequest> = {},
+): RunSessionRequest =>
+  createRunSessionRequest({
+    input: extractTraverseStartupInput(),
+    convergenceLimit: 0.01,
+    parseSettings: {
+      ...createRunSessionRequest().parseSettings,
+      coordMode: '3D',
+      coordSystemMode: 'grid',
+      crsId: 'CA_NAD83_NB83_STEREO_DOUBLE',
+      order: 'NE',
+      deltaMode: 'slope',
+      angleStationOrder: 'atfromto',
+      lonSign: 'west-positive',
+      applyCurvatureRefraction: true,
+      verticalReduction: 'curvref',
+      refractionCoefficient: 0.07,
+    },
+    projectInstruments: buildTraverseInstrumentLibrary(),
+    selectedInstrument: 'TRAV_DEFAULT',
+    ...overrides,
+  });

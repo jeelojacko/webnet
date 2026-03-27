@@ -9,7 +9,7 @@ import {
   getScenarioRunServiceStats,
   resetScenarioRunServiceCache,
 } from '../src/engine/solveEngine';
-import { createRunSessionRequest } from './helpers/runSessionRequest';
+import { createRunSessionRequest, createTraverseRunSessionRequest } from './helpers/runSessionRequest';
 
 describe('runAdjustmentSession', () => {
   it('solves the default mixed network through the shared run-session path', () => {
@@ -29,6 +29,31 @@ describe('runAdjustmentSession', () => {
     expect(outcome.result.solveTimingProfile?.precisionAndDiagnosticsMs).toBeGreaterThanOrEqual(0);
     expect(outcome.result.logs.some((line) => line.startsWith('Solve timing (ms):'))).toBe(true);
   });
+
+  it(
+    'keeps the traverse parity startup convergent through the shared run-session path',
+    () => {
+      const outcome = runAdjustmentSession(createTraverseRunSessionRequest());
+
+      expect(outcome.result.success).toBe(true);
+      expect(outcome.result.converged).toBe(true);
+      expect(outcome.result.iterations).toBeLessThanOrEqual(4);
+      const byGroup = outcome.result.statisticalSummary?.byGroup ?? [];
+      expect(byGroup.find((row) => row.label === 'Directions')?.sumSquares ?? Number.NaN).toBeCloseTo(
+        248.927,
+        0,
+      );
+      expect(byGroup.find((row) => row.label === 'Distances')?.sumSquares ?? Number.NaN).toBeCloseTo(
+        96.93,
+        0,
+      );
+      expect(byGroup.find((row) => row.label === 'Zenith')?.sumSquares ?? Number.NaN).toBeCloseTo(
+        807.697,
+        0,
+      );
+    },
+    120000,
+  );
 
   it('clears stale exclusions, overrides, and approved cluster merges when the input changed', () => {
     const outcome = runAdjustmentSession(

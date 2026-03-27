@@ -136,6 +136,7 @@
       - [x] Separate traverse measured directions from grid azimuth/bearing counts in the industry-style listing and keep the fixed bearing in its own `Az/Bearings` statistical family
       - [x] Use industry-style lateral residual distance in adjusted measured direction rows instead of printing the geometric shot length in that column
       - [x] Reduce grid-mode slope distances for the traverse parity path by applying the scale factor to the horizontal component before rebuilding the 3D slope length, while preserving the legacy derivative algebra for non-parity paths
+      - [x] Keep parity-profile initial geometry frozen only for angular sigma behavior; distance/zenith/live slope modeling in the shared run-session path must continue using current geometry so the browser traverse startup still converges
       - [ ] Close the remaining fixed-bearing orientation parity gap for a network constrained by one fixed point plus one fixed bearing
       - [ ] Match direction-set, distance, zenith, target-height, and set-scoped weighting behavior used by the traverse reference case
       - [x] Lock slot-preserving `DM` sigma parsing so `& & 30` keeps default direction and distance weighting while applying an explicit 30" zenith sigma
