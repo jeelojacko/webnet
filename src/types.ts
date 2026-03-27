@@ -872,6 +872,17 @@ export interface GpsTopoCoordinateShot {
   sourceLine: number;
 }
 
+export interface InputStationSnapshot {
+  stationId: StationId;
+  x: number;
+  y: number;
+  h: number;
+  coordInputClass?: CoordInputClass;
+  constraintModeX?: Station['constraintModeX'];
+  constraintModeY?: Station['constraintModeY'];
+  constraintModeH?: Station['constraintModeH'];
+}
+
 export interface ParseOptions {
   geometryDependentSigmaReference?: 'current' | 'initial';
   runMode?: RunMode;
@@ -1035,6 +1046,7 @@ export interface ParseOptions {
   reconciledDescriptions?: Record<StationId, string>;
   displayLineBySourceLine?: Record<number, number>;
   gpsTopoShots?: GpsTopoCoordinateShot[];
+  inputStationSnapshots?: InputStationSnapshot[];
   plannedObservationCount?: number;
   stationSeparator?: string;
   dataInputEnabled?: boolean;

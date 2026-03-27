@@ -135,6 +135,7 @@
       - [x] Match the traverse zenith-family curvature/refraction coefficient convention so `k=0.070000` reproduces the industry zenith summary instead of behaving like the older `1-k` correction
       - [x] Separate traverse measured directions from grid azimuth/bearing counts in the industry-style listing and keep the fixed bearing in its own `Az/Bearings` statistical family
       - [x] Use industry-style lateral residual distance in adjusted measured direction rows instead of printing the geometric shot length in that column
+      - [x] Use the compact industry settings/instrument block for 3D traverse-style parity listings and summarize entered control stations from the original input coordinates as fixed/free/unused instead of treating the whole solved station map as entered data
       - [x] Reduce grid-mode slope distances for the traverse parity path by applying the scale factor to the horizontal component before rebuilding the 3D slope length, while preserving the legacy derivative algebra for non-parity paths
       - [x] Keep parity-profile initial geometry frozen only for angular sigma behavior; distance/zenith/live slope modeling in the shared run-session path must continue using current geometry so the browser traverse startup still converges
       - [ ] Close the remaining fixed-bearing orientation parity gap for a network constrained by one fixed point plus one fixed bearing

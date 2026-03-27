@@ -430,6 +430,7 @@ export const createRunProfileBuilders = ({
       currentInstrumentCode: activeDefaultInst?.code ?? '',
       currentInstrumentDesc: activeDefaultInst?.desc ?? '',
       currentInstrumentLevStdMmPerKm: activeDefaultInst?.levStd_mmPerKm ?? 0,
+      projectInstrumentLibrary: projectInstruments,
       angleCenteringModel: 'geometry-aware-correlated-rays',
       defaultSigmaCount: defaultObs.length,
       defaultSigmaByType,

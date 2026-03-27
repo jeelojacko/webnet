@@ -108,6 +108,7 @@ export const createRunOutputBuilders = ({
         currentInstrumentCode: runDiag.currentInstrumentCode,
         currentInstrumentDesc: runDiag.currentInstrumentDesc,
         currentInstrumentLevStdMmPerKm: runDiag.currentInstrumentLevStdMmPerKm,
+        projectInstrumentLibrary: runDiag.projectInstrumentLibrary,
       },
     );
   };

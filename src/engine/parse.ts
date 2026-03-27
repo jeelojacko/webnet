@@ -1572,6 +1572,18 @@ export const parseInput = (
     defaultDescriptionReconcileMode: defaultParseOptions.descriptionReconcileMode ?? 'first',
     defaultDescriptionAppendDelimiter: defaultParseOptions.descriptionAppendDelimiter ?? ' | ',
   });
+  state.inputStationSnapshots = Object.entries(stations)
+    .filter(([, station]) => station.coordInputClass != null && station.coordInputClass !== 'unknown')
+    .map(([stationId, station]) => ({
+      stationId,
+      x: station.x,
+      y: station.y,
+      h: station.h,
+      coordInputClass: station.coordInputClass,
+      constraintModeX: station.constraintModeX,
+      constraintModeY: station.constraintModeY,
+      constraintModeH: station.constraintModeH,
+    }));
 
   return {
     stations,

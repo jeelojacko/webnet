@@ -141,7 +141,7 @@ describe('industry multi-case parity foundation', () => {
       const listing = buildIndustryStyleListingText(
         result,
         {
-          maxIterations: 15,
+          maxIterations: 10,
           convergenceLimit: startup?.settingsPatch.convergenceLimit,
           precisionReportingMode: 'industry-standard',
           units: 'm',
@@ -172,14 +172,88 @@ describe('industry multi-case parity foundation', () => {
           rotationAngleRad: 0,
           currentInstrumentCode: startup?.selectedInstrument,
           currentInstrumentDesc: startup?.projectInstruments[startup?.selectedInstrument ?? '']?.desc,
+          projectInstrumentLibrary: startup?.projectInstruments,
         },
       );
 
-      expect(listing).toContain('Number of Measured Direction Observations (DMS)');
-      expect(listing).toContain('Number of Grid Azimuth/Bearing Observations (DMS)');
+      expect(listing).toContain('Project Library Instrument S9');
+      expect(listing).toContain('Project Library Instrument SX12');
+      expect(listing).toContain('Project Library Instrument TS11');
+      expect(listing).toContain('Number of Entered Stations (Meters) = 7');
+      expect(listing).toContain('Unused Stations');
+      expect(listing).toContain('FRDN');
+      expect(listing).toContain('BROD');
       expect(listing).toContain('Adjusted Measured Distance Observations (Meters)');
       expect(listing).toContain('Adjusted Measured Direction Observations (DMS)');
-      expect(listing).not.toContain('Number of Direction Observations (DMS) : 452');
+      expect(listing).not.toContain('Active Project Instrument Defaults');
+    },
+    120000,
+  );
+
+  it(
+    'keeps the traverse top block aligned with the compact industry settings and entered-station summary',
+    () => {
+      const startup = INDUSTRY_PARITY_CASES.traverse.startupDefaults;
+      expect(startup).toBeDefined();
+
+      const result = buildCaseResult('traverse');
+      expect(result.success).toBe(true);
+
+      const listing = buildIndustryStyleListingText(
+        result,
+        {
+          maxIterations: 10,
+          convergenceLimit: startup?.settingsPatch.convergenceLimit,
+          precisionReportingMode: 'industry-standard',
+          units: 'm',
+          listingShowCoordinates: true,
+          listingShowObservationsResiduals: true,
+          listingShowErrorPropagation: true,
+          listingShowProcessingNotes: true,
+          listingShowAzimuthsBearings: true,
+          listingShowLostStations: true,
+          listingSortCoordinatesBy: 'input',
+          listingSortObservationsBy: 'residual',
+          listingObservationLimit: 9999,
+        },
+        {
+          coordMode: startup?.parseSettingsPatch.coordMode ?? '3D',
+          order: startup?.parseSettingsPatch.order ?? 'EN',
+          angleUnits: startup?.parseSettingsPatch.angleUnits ?? 'dms',
+          angleStationOrder: startup?.parseSettingsPatch.angleStationOrder ?? 'atfromto',
+          deltaMode: startup?.parseSettingsPatch.deltaMode ?? 'slope',
+          refractionCoefficient: startup?.parseSettingsPatch.refractionCoefficient ?? 0.13,
+        },
+        {
+          solveProfile: 'industry-parity',
+          angleCenteringModel: 'geometry-aware-correlated-rays',
+          defaultSigmaCount: 0,
+          defaultSigmaByType: '',
+          stochasticDefaultsSummary: '',
+          rotationAngleRad: 0,
+          currentInstrumentCode: startup?.selectedInstrument,
+          currentInstrumentDesc: startup?.projectInstruments[startup?.selectedInstrument ?? '']?.desc,
+          projectInstrumentLibrary: startup?.projectInstruments,
+        },
+      );
+
+      expect(listing).toContain('STAR*NET Run Mode                   : Adjust with Error Propagation');
+      expect(listing).toContain('Coordinate System                   : NewBrunswick83');
+      expect(listing).toContain('Create Coordinate File              : Yes');
+      expect(listing).toContain('                       Instrument Standard Error Settings');
+      expect(listing).toContain('Project Default Instrument');
+      expect(listing).toContain('Project Library Instrument S9');
+      expect(listing).toContain('Project Library Instrument SX12');
+      expect(listing).toContain('Project Library Instrument TS11');
+      expect(listing).toContain('                    Summary of Unadjusted Input Observations');
+      expect(listing).toContain('Number of Entered Stations (Meters) = 7');
+      expect(listing).toContain('GPS5                7438251.1419      2489408.5228     44.6935');
+      expect(listing).toContain('OOP                 7438438.7334      2488810.2371     64.8718');
+      expect(listing).toContain('GPS2                7438481.0553      2489236.2881     37.7045');
+      expect(listing).toContain('Unused Stations');
+      expect(listing).toContain('FRDN');
+      expect(listing).toContain('BROD');
+      expect(listing).not.toContain('Industry Standard Run Mode');
     },
     120000,
   );

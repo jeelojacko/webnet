@@ -26,6 +26,8 @@ import type {
   DirectiveTransition,
   GnssVectorFrame,
   GpsObservation,
+  Instrument,
+  InstrumentLibrary,
   LevelObservation,
   Observation,
   ReductionUsageSummary,
@@ -142,6 +144,7 @@ export interface IndustryListingRunDiagnostics {
   currentInstrumentCode?: string;
   currentInstrumentDesc?: string;
   currentInstrumentLevStdMmPerKm?: number;
+  projectInstrumentLibrary?: InstrumentLibrary;
 }
 
 const LEVELING_ONLY_VERTICAL_95_SCALE = 1.959963984540054;
@@ -166,6 +169,67 @@ const isLevelingOnlyObservationSet = (observations: Observation[]): boolean =>
 const usesIndustryParityLevelingLayout = (
   solveProfile: IndustryListingRunDiagnostics['solveProfile'],
 ): boolean => solveProfile !== 'webnet';
+
+const usesClassicParityReportLayout = (
+  solveProfile: IndustryListingRunDiagnostics['solveProfile'],
+  coordMode: '2D' | '3D',
+  projectInstrumentLibrary?: InstrumentLibrary,
+): boolean =>
+  solveProfile !== 'webnet' &&
+  coordMode === '3D' &&
+  projectInstrumentLibrary != null &&
+  Object.keys(projectInstrumentLibrary).length > 0;
+
+const formatClassicSettingRow = (label: string, value: string): string =>
+  `      ${label.padEnd(35)} : ${value}`;
+
+const formatClassicLinearUnit = (value: number, unitLabel: string): string =>
+  `${value.toFixed(6)} ${unitLabel}`;
+
+const formatClassicInstrumentRows = (
+  lines: string[],
+  heading: string,
+  instrument: Instrument,
+  includeDifferentialLevels: boolean,
+): void => {
+  lines.push(`      ${heading}`);
+  if (heading !== 'Project Default Instrument') {
+    lines.push(`        Note: ${instrument.desc || 'n/a'}`);
+  }
+  const pushRow = (label: string, value: string) => {
+    lines.push(`        ${label.padEnd(33)} :    ${value}`);
+  };
+  pushRow('Distances (Constant)', formatClassicLinearUnit(instrument.edm_const, 'Meters'));
+  pushRow('Distances (PPM)', instrument.edm_ppm.toFixed(6));
+  pushRow('Angles', `${instrument.hzPrecision_sec.toFixed(6)} Seconds`);
+  pushRow('Directions', `${instrument.dirPrecision_sec.toFixed(6)} Seconds`);
+  pushRow('Azimuths & Bearings', `${instrument.azBearingPrecision_sec.toFixed(6)} Seconds`);
+  pushRow('Zeniths', `${instrument.vaPrecision_sec.toFixed(6)} Seconds`);
+  pushRow(
+    'Elevation Differences (Constant)',
+    formatClassicLinearUnit(instrument.elevDiff_const_m, 'Meters'),
+  );
+  pushRow('Elevation Differences (PPM)', instrument.elevDiff_ppm.toFixed(6));
+  if (includeDifferentialLevels || instrument.levStd_mmPerKm > 0) {
+    pushRow(
+      'Differential Levels',
+      `${(instrument.levStd_mmPerKm / 1000).toFixed(6)} Meters / Km`,
+    );
+  }
+  pushRow(
+    'Centering Error Instrument',
+    formatClassicLinearUnit(instrument.instCentr_m, 'Meters'),
+  );
+  pushRow(
+    'Centering Error Target',
+    formatClassicLinearUnit(instrument.tgtCentr_m, 'Meters'),
+  );
+  pushRow(
+    'Centering Error Vertical',
+    formatClassicLinearUnit(instrument.vertCentr_m, 'Meters'),
+  );
+  lines.push('');
+};
 
 const buildLevelingOnlyIndustryListingText = (
   res: AdjustmentResult,
@@ -368,17 +432,17 @@ export const buildIndustryStyleListingText = (
   const unitScale = settings.units === 'ft' ? FT_PER_M : 1;
   const runDiag = runDiagnostics;
   const showLostStations = settings.listingShowLostStations ?? true;
-  const stationEntriesInputOrder = Object.entries(res.stations).filter(
+  let stationEntriesInputOrder = Object.entries(res.stations).filter(
     ([, st]) => showLostStations || !st.lost,
   );
-  const stationEntriesForListing =
+  let stationEntriesForListing =
     settings.listingSortCoordinatesBy === 'name'
       ? [...stationEntriesInputOrder].sort((a, b) =>
           a[0].localeCompare(b[0], undefined, { numeric: true }),
         )
       : stationEntriesInputOrder;
-  const fixedStations = stationEntriesInputOrder.filter(([, st]) => st.fixed).length;
-  const freeStations = stationEntriesInputOrder.length - fixedStations;
+  let fixedStations = stationEntriesInputOrder.filter(([, st]) => st.fixed).length;
+  let freeStations = stationEntriesInputOrder.length - fixedStations;
   const observationCount = res.observations.length;
   const unknownCount = Math.max(0, observationCount - res.dof);
   const parseState = res.parseState;
@@ -547,6 +611,99 @@ export const buildIndustryStyleListingText = (
   ) {
     return buildLevelingOnlyIndustryListingText(res, settings, parseSettings, runDiagnostics);
   }
+  const coordMode = parseState?.coordMode ?? parseSettings.coordMode;
+  const projectInstrumentLibrary = runDiag.projectInstrumentLibrary;
+  const usesClassicParityLayout = usesClassicParityReportLayout(
+    runDiagnostics.solveProfile,
+    coordMode,
+    projectInstrumentLibrary,
+  );
+  const enteredInputStationSnapshots =
+    parseState?.inputStationSnapshots?.filter(
+      (station) => showLostStations || !res.stations[station.stationId]?.lost,
+    ) ??
+    stationEntriesInputOrder
+      .filter(([, station]) => station.coordInputClass != null && station.coordInputClass !== 'unknown')
+      .map(([stationId, station]) => ({
+        stationId,
+        x: station.x,
+        y: station.y,
+        h: station.h,
+        coordInputClass: station.coordInputClass,
+        constraintModeX: station.constraintModeX,
+        constraintModeY: station.constraintModeY,
+        constraintModeH: station.constraintModeH,
+      }));
+  const observedStationIds = new Set<string>();
+  observationsForListing.forEach((obs) => {
+    observationStationIds(obs).forEach((stationId) => {
+      if (stationId) observedStationIds.add(stationId);
+    });
+  });
+  sideshotsForListing.forEach((row) => {
+    if (row.from) observedStationIds.add(row.from);
+    if (row.to) observedStationIds.add(row.to);
+  });
+  const stationHasActiveControlConstraint = (
+    station:
+      | Station
+      | {
+          constraintModeX?: Station['constraintModeX'];
+          constraintModeY?: Station['constraintModeY'];
+          constraintModeH?: Station['constraintModeH'];
+        },
+  ): boolean =>
+    station.constraintModeX === 'fixed' ||
+    station.constraintModeX === 'weighted' ||
+    station.constraintModeY === 'fixed' ||
+    station.constraintModeY === 'weighted' ||
+    station.constraintModeH === 'fixed' ||
+    station.constraintModeH === 'weighted';
+  const inputStationIsUsed = (
+    stationId: string,
+    station:
+      | Station
+      | {
+          constraintModeX?: Station['constraintModeX'];
+          constraintModeY?: Station['constraintModeY'];
+          constraintModeH?: Station['constraintModeH'];
+        },
+  ): boolean =>
+    observedStationIds.has(stationId) || stationHasActiveControlConstraint(station);
+  const usedEnteredStationSnapshots = enteredInputStationSnapshots.filter((station) =>
+    inputStationIsUsed(station.stationId, station),
+  );
+  const usedEnteredStationIdSet = new Set(
+    usedEnteredStationSnapshots.map((station) => station.stationId),
+  );
+  const unusedEnteredStationSnapshots = enteredInputStationSnapshots.filter(
+    (station) => !usedEnteredStationIdSet.has(station.stationId),
+  );
+  const fixedUsedEnteredStationSnapshots = usedEnteredStationSnapshots.filter((station) =>
+    stationHasActiveControlConstraint(station),
+  );
+  const freeUsedEnteredStationSnapshots = usedEnteredStationSnapshots.filter(
+    (station) =>
+      !fixedUsedEnteredStationSnapshots.some(
+        (fixedStation) => fixedStation.stationId === station.stationId,
+      ),
+  );
+  if (usesClassicParityLayout && unusedEnteredStationSnapshots.length > 0) {
+    const unusedStationIdSet = new Set(
+      unusedEnteredStationSnapshots.map((station) => station.stationId),
+    );
+    stationEntriesInputOrder = stationEntriesInputOrder.filter(
+      ([stationId]) => !unusedStationIdSet.has(stationId),
+    );
+    stationEntriesForListing =
+      settings.listingSortCoordinatesBy === 'name'
+        ? [...stationEntriesInputOrder].sort((a, b) =>
+            a[0].localeCompare(b[0], undefined, { numeric: true }),
+          )
+        : stationEntriesInputOrder;
+    fixedStations = fixedUsedEnteredStationSnapshots.length;
+    freeStations = freeUsedEnteredStationSnapshots.length;
+  }
   const formatReductionUsage = (summary?: ReductionUsageSummary): string => {
     if (!summary) return 'unavailable';
     return [
@@ -642,303 +799,473 @@ export const buildIndustryStyleListingText = (
   lines.push('');
   lines.push('Project Option Settings');
   lines.push('');
-  pushSettingRow(
-    'Industry Standard Run Mode',
-    runDiag.solveProfile === 'webnet' ? 'WebNet Default Profile' : 'Parity Profile (Classical)',
-  );
-  pushSettingRow('Run Mode', runMode.toUpperCase());
-  pushSettingRow('Run Purpose', runPurpose);
-  pushSettingRow('Type of Adjustment', parseState?.coordMode ?? parseSettings.coordMode);
-  pushSettingRow(
-    'Project Units',
-    `${linearUnit}; ${(parseState?.angleUnits ?? parseSettings.angleUnits).toUpperCase()}`,
-  );
-  pushSettingRow(
-    'Input/Output Coordinate Order',
-    (parseState?.order ?? parseSettings.order) === 'NE' ? 'North-East' : 'East-North',
-  );
-  pushSettingRow(
-    'Angle Data Station Order',
-    (parseState?.angleStationOrder ?? parseSettings.angleStationOrder) === 'atfromto'
-      ? 'At-From-To'
-      : 'From-At-To',
-  );
-  pushSettingRow(
-    'Distance/Vertical Data Type',
-    (parseState?.deltaMode ?? parseSettings.deltaMode) === 'horiz'
-      ? 'Hor Dist/DE'
-      : 'Slope Dist/Zenith',
-  );
-  pushSettingRow('Map Mode / Scale', `${mapMode.toUpperCase()} / ${mapScaleFactor.toFixed(8)}`);
-  pushSettingRow(
-    'Normalize',
-    `${faceNormalizationMode.toUpperCase()} (${normalize ? 'ON' : 'OFF'})`,
-  );
   const convergenceLimit =
     typeof settings.convergenceLimit === 'number' &&
     Number.isFinite(settings.convergenceLimit) &&
     settings.convergenceLimit > 0
       ? settings.convergenceLimit
       : 0.01;
-  pushSettingRow(
-    'Convergence Limit; Max Iterations',
-    `${convergenceLimit.toFixed(6)}; ${settings.maxIterations}`,
-  );
-  pushSettingRow(
-    'Default Coefficient of Refraction',
-    (parseState?.refractionCoefficient ?? parseSettings.refractionCoefficient).toFixed(6),
-  );
-  pushSettingRow(
-    'Prism Correction',
-    prismEnabled ? `ON (${prismOffset.toFixed(4)} m, scope=${prismScope})` : 'OFF',
-  );
-  pushSettingRow(
-    'Plan Rotation',
-    Math.abs(rotationAngleRad) > 1e-12
-      ? `ON (${(rotationAngleRad * RAD_TO_DEG).toFixed(6)} deg)`
-      : 'OFF',
-  );
-  pushSettingRow('Coordinate System Mode', `${coordSystemMode.toUpperCase()} (CRS=${crsId})`);
-  if (coordSystemMode === 'local') {
-    pushSettingRow(
-      'Local Datum Scheme',
-      `${localDatumScheme.toUpperCase()} (scale=${averageScaleFactor.toFixed(8)}, commonElev=${(commonElevation * unitScale).toFixed(4)} ${linearUnit})`,
+  if (usesClassicParityLayout) {
+    const coordSystemLabel =
+      crsId === 'CA_NAD83_NB83_STEREO_DOUBLE'
+        ? 'NewBrunswick83'
+        : crsLabel || crsId || 'Local';
+    lines.push(formatClassicSettingRow('STAR*NET Run Mode', 'Adjust with Error Propagation'));
+    lines.push(formatClassicSettingRow('Type of Adjustment', coordMode));
+    lines.push(
+      formatClassicSettingRow(
+        'Project Units',
+        `${linearUnit}; ${(parseState?.angleUnits ?? parseSettings.angleUnits).toUpperCase()}`,
+      ),
     );
+    lines.push(formatClassicSettingRow('Coordinate System', coordSystemLabel));
+    lines.push(
+      formatClassicSettingRow(
+        'Geoid Height',
+        `${(averageGeoidHeight * unitScale).toFixed(4)} (Default, ${linearUnit})`,
+      ),
+    );
+    lines.push(
+      formatClassicSettingRow(
+        'Longitude Sign Convention',
+        (parseState?.lonSign ?? 'west-negative') === 'west-positive'
+          ? 'Positive West'
+          : 'Negative West',
+      ),
+    );
+    lines.push(
+      formatClassicSettingRow(
+        'Input/Output Coordinate Order',
+        (parseState?.order ?? parseSettings.order) === 'NE' ? 'North-East' : 'East-North',
+      ),
+    );
+    lines.push(
+      formatClassicSettingRow(
+        'Angle Data Station Order',
+        (parseState?.angleStationOrder ?? parseSettings.angleStationOrder) === 'atfromto'
+          ? 'At-From-To'
+          : 'From-At-To',
+      ),
+    );
+    lines.push(
+      formatClassicSettingRow(
+        'Distance/Vertical Data Type',
+        (parseState?.deltaMode ?? parseSettings.deltaMode) === 'horiz'
+          ? 'Horizontal/DE'
+          : 'Slope/Zenith',
+      ),
+    );
+    lines.push(
+      formatClassicSettingRow(
+        'Convergence Limit; Max Iterations',
+        `${convergenceLimit.toFixed(6)}; ${settings.maxIterations}`,
+      ),
+    );
+    lines.push(
+      formatClassicSettingRow(
+        'Default Coefficient of Refraction',
+        (parseState?.refractionCoefficient ?? parseSettings.refractionCoefficient).toFixed(6),
+      ),
+    );
+    lines.push(formatClassicSettingRow('Create Coordinate File', 'Yes'));
+    lines.push(formatClassicSettingRow('Create Geodetic Position File', 'No'));
+    lines.push(formatClassicSettingRow('Create Ground Scale Coordinate File', 'No'));
+    lines.push(formatClassicSettingRow('Create Dump File', 'No'));
   } else {
     pushSettingRow(
-      'Directive Context (End of File)',
-      `bearing=${gridBearingMode.toUpperCase()}, distance=${gridDistanceMode.toUpperCase()}, angle=${gridAngleMode.toUpperCase()}, direction=${gridDirectionMode.toUpperCase()}`,
+      'Industry Standard Run Mode',
+      runDiag.solveProfile === 'webnet' ? 'WebNet Default Profile' : 'Parity Profile (Classical)',
+    );
+    pushSettingRow('Run Mode', runMode.toUpperCase());
+    pushSettingRow('Run Purpose', runPurpose);
+    pushSettingRow('Type of Adjustment', coordMode);
+    pushSettingRow(
+      'Project Units',
+      `${linearUnit}; ${(parseState?.angleUnits ?? parseSettings.angleUnits).toUpperCase()}`,
     );
     pushSettingRow(
-      '.SCALE Override Active',
-      scaleOverrideActive ? `YES (k=${averageScaleFactor.toFixed(8)})` : 'NO',
+      'Input/Output Coordinate Order',
+      (parseState?.order ?? parseSettings.order) === 'NE' ? 'North-East' : 'East-North',
     );
     pushSettingRow(
-      'GNSS Frame Default',
-      `${gnssVectorFrameDefault} (confirmed=${gnssFrameConfirmed ? 'YES' : 'NO'})`,
+      'Angle Data Station Order',
+      (parseState?.angleStationOrder ?? parseSettings.angleStationOrder) === 'atfromto'
+        ? 'At-From-To'
+        : 'From-At-To',
     );
-    pushSettingRow('Applied Reduction Modes (Parsed)', formatReductionUsage(parsedUsageSummary));
-    pushSettingRow('Applied Reduction Modes (Used)', formatReductionUsage(usedInSolveUsageSummary));
-    if (directiveTransitions.length > 0) {
-      pushSettingRow('Directive Transition Count', String(directiveTransitions.length));
-      directiveTransitions.slice(0, 20).forEach((transition) => {
+    pushSettingRow(
+      'Distance/Vertical Data Type',
+      (parseState?.deltaMode ?? parseSettings.deltaMode) === 'horiz'
+        ? 'Hor Dist/DE'
+        : 'Slope Dist/Zenith',
+    );
+    pushSettingRow('Map Mode / Scale', `${mapMode.toUpperCase()} / ${mapScaleFactor.toFixed(8)}`);
+    pushSettingRow(
+      'Normalize',
+      `${faceNormalizationMode.toUpperCase()} (${normalize ? 'ON' : 'OFF'})`,
+    );
+    pushSettingRow(
+      'Convergence Limit; Max Iterations',
+      `${convergenceLimit.toFixed(6)}; ${settings.maxIterations}`,
+    );
+    pushSettingRow(
+      'Default Coefficient of Refraction',
+      (parseState?.refractionCoefficient ?? parseSettings.refractionCoefficient).toFixed(6),
+    );
+    pushSettingRow(
+      'Prism Correction',
+      prismEnabled ? `ON (${prismOffset.toFixed(4)} m, scope=${prismScope})` : 'OFF',
+    );
+    pushSettingRow(
+      'Plan Rotation',
+      Math.abs(rotationAngleRad) > 1e-12
+        ? `ON (${(rotationAngleRad * RAD_TO_DEG).toFixed(6)} deg)`
+        : 'OFF',
+    );
+    pushSettingRow('Coordinate System Mode', `${coordSystemMode.toUpperCase()} (CRS=${crsId})`);
+    if (coordSystemMode === 'local') {
+      pushSettingRow(
+        'Local Datum Scheme',
+        `${localDatumScheme.toUpperCase()} (scale=${averageScaleFactor.toFixed(8)}, commonElev=${(commonElevation * unitScale).toFixed(4)} ${linearUnit})`,
+      );
+    } else {
+      pushSettingRow(
+        'Directive Context (End of File)',
+        `bearing=${gridBearingMode.toUpperCase()}, distance=${gridDistanceMode.toUpperCase()}, angle=${gridAngleMode.toUpperCase()}, direction=${gridDirectionMode.toUpperCase()}`,
+      );
+      pushSettingRow(
+        '.SCALE Override Active',
+        scaleOverrideActive ? `YES (k=${averageScaleFactor.toFixed(8)})` : 'NO',
+      );
+      pushSettingRow(
+        'GNSS Frame Default',
+        `${gnssVectorFrameDefault} (confirmed=${gnssFrameConfirmed ? 'YES' : 'NO'})`,
+      );
+      pushSettingRow('Applied Reduction Modes (Parsed)', formatReductionUsage(parsedUsageSummary));
+      pushSettingRow('Applied Reduction Modes (Used)', formatReductionUsage(usedInSolveUsageSummary));
+      if (directiveTransitions.length > 0) {
+        pushSettingRow('Directive Transition Count', String(directiveTransitions.length));
+        directiveTransitions.slice(0, 20).forEach((transition) => {
+          pushSettingRow(
+            'Directive Range',
+            `${transition.directive} line ${transition.effectiveFromLine}${transition.effectiveToLine != null ? `-${transition.effectiveToLine}` : '-EOF'} (obs=${transition.obsCountInRange})`,
+          );
+        });
+        if (directiveTransitions.length > 20) {
+          pushSettingRow('Directive Range Overflow', `+${directiveTransitions.length - 20} more`);
+        }
+      }
+      directiveNoEffectWarnings.forEach((warning) => {
         pushSettingRow(
-          'Directive Range',
-          `${transition.directive} line ${transition.effectiveFromLine}${transition.effectiveToLine != null ? `-${transition.effectiveToLine}` : '-EOF'} (obs=${transition.obsCountInRange})`,
+          'Directive No-Effect',
+          `${warning.directive} line ${warning.line} (${warning.reason})`,
         );
       });
-      if (directiveTransitions.length > 20) {
-        pushSettingRow('Directive Range Overflow', `+${directiveTransitions.length - 20} more`);
-      }
     }
-    directiveNoEffectWarnings.forEach((warning) => {
+    if (datumSufficiency) {
       pushSettingRow(
-        'Directive No-Effect',
-        `${warning.directive} line ${warning.line} (${warning.reason})`,
+        'Datum Sufficiency',
+        `${datumSufficiency.status.toUpperCase()}${datumSufficiency.reasons.length > 0 ? ` (${datumSufficiency.reasons.length} reason${datumSufficiency.reasons.length === 1 ? '' : 's'})` : ''}`,
       );
-    });
-  }
-  if (datumSufficiency) {
+      datumSufficiency.reasons.forEach((reason) => {
+        pushSettingRow('Datum Reason', reason);
+      });
+      datumSufficiency.suggestions.forEach((suggestion) => {
+        pushSettingRow('Datum Suggestion', suggestion);
+      });
+    }
     pushSettingRow(
-      'Datum Sufficiency',
-      `${datumSufficiency.status.toUpperCase()}${datumSufficiency.reasons.length > 0 ? ` (${datumSufficiency.reasons.length} reason${datumSufficiency.reasons.length === 1 ? '' : 's'})` : ''}`,
-    );
-    datumSufficiency.reasons.forEach((reason) => {
-      pushSettingRow('Datum Reason', reason);
-    });
-    datumSufficiency.suggestions.forEach((suggestion) => {
-      pushSettingRow('Datum Suggestion', suggestion);
-    });
-  }
-  pushSettingRow('Average Geoid Height', `${(averageGeoidHeight * unitScale).toFixed(4)} ${linearUnit}`);
-  pushSettingRow(
-    'CRS / Projection',
-    crsStatus === 'on'
-      ? `ON (${crsProjectionModel}, label="${crsLabel || 'unnamed'}")`
-      : `OFF${crsOffReason ? ` (${crsOffReason})` : ''}`,
-  );
-  pushSettingRow(
-    'CRS Grid-Ground Scale',
-    crsGridScaleEnabled ? `ON (${crsGridScaleFactor.toFixed(8)})` : 'OFF',
-  );
-  pushSettingRow(
-    'CRS Convergence',
-    crsConvergenceEnabled ? `ON (${(crsConvergenceAngleRad * RAD_TO_DEG).toFixed(6)} deg)` : 'OFF',
-  );
-  if (coordSystemMode === 'grid') {
-    pushSettingRow(
-      'CRS Datum Operation',
-      `${crsDatumOpId ?? '-'}${crsDatumFallbackUsed ? ' (fallback)' : ''}`,
+      'Average Geoid Height',
+      `${(averageGeoidHeight * unitScale).toFixed(4)} ${linearUnit}`,
     );
     pushSettingRow(
-      'CRS Area-of-Use Status',
-      `${crsAreaOfUseStatus.toUpperCase()}${crsAreaOfUseStatus === 'outside' ? ` (outside=${crsOutOfAreaStationCount})` : ''}`,
+      'CRS / Projection',
+      crsStatus === 'on'
+        ? `ON (${crsProjectionModel}, label="${crsLabel || 'unnamed'}")`
+        : `OFF${crsOffReason ? ` (${crsOffReason})` : ''}`,
     );
-  }
-  if (coordSystemDiagnostics.length > 0) {
-    pushSettingRow('CRS Diagnostics', coordSystemDiagnostics.join(', '));
-  }
-  if (coordSystemWarningMessages.length > 0) {
-    pushSettingRow('CRS Warning Count', String(coordSystemWarningMessages.length));
-  }
-  pushSettingRow(
-    'Geoid/Grid Model',
-    geoidModelEnabled
-      ? `ON (${geoidModelId}, ${geoidInterpolation.toUpperCase()}, loaded=${geoidModelLoaded ? 'YES' : 'NO'})`
-      : 'OFF',
-  );
-  if (geoidModelEnabled) {
     pushSettingRow(
-      'Geoid Metadata',
-      `${geoidModelMetadata || 'unavailable'}${geoidSampleUndulationM != null ? `; sampleN=${geoidSampleUndulationM.toFixed(4)} m` : ''}`,
+      'CRS Grid-Ground Scale',
+      crsGridScaleEnabled ? `ON (${crsGridScaleFactor.toFixed(8)})` : 'OFF',
     );
-  }
-  pushSettingRow(
-    'Geoid Height Conversion',
-    geoidHeightConversionEnabled
-      ? `ON (${geoidOutputHeightDatum.toUpperCase()}, converted=${geoidConvertedStationCount}, skipped=${geoidSkippedStationCount})`
-      : 'OFF',
-  );
-  pushSettingRow(
-    'GPS AddHiHt Defaults',
-    gpsAddHiHtEnabled
-      ? `ON (HI=${(gpsAddHiHtHiM * unitScale).toFixed(4)} ${linearUnit}, HT=${(gpsAddHiHtHtM * unitScale).toFixed(4)} ${linearUnit})`
-      : 'OFF',
-  );
-  if (gpsAddHiHtEnabled) {
     pushSettingRow(
-      'GPS AddHiHt Preprocess',
-      `vectors=${gpsAddHiHtVectorCount}, adjusted=${gpsAddHiHtAppliedCount} (+${gpsAddHiHtPositiveCount}/-${gpsAddHiHtNegativeCount}/neutral=${gpsAddHiHtNeutralCount}), defaultZero=${gpsAddHiHtDefaultZeroCount}, missingHeight=${gpsAddHiHtMissingHeightCount}, scale=[${gpsAddHiHtScaleMin.toFixed(8)}, ${gpsAddHiHtScaleMax.toFixed(8)}]`,
+      'CRS Convergence',
+      crsConvergenceEnabled ? `ON (${(crsConvergenceAngleRad * RAD_TO_DEG).toFixed(6)} deg)` : 'OFF',
     );
-  }
-  pushSettingRow(
-    'GPS Loop Check',
-    `${gpsLoopCheckEnabled ? 'ON' : 'OFF'}${gpsLoopDiagnostics?.enabled ? ` (vectors=${gpsLoopDiagnostics.vectorCount}, loops=${gpsLoopDiagnostics.loopCount}, pass=${gpsLoopDiagnostics.passCount}, warn=${gpsLoopDiagnostics.warnCount})` : ''}`,
-  );
-  pushSettingRow(
-    'Level Loop Tolerance',
-    `${getLevelLoopTolerancePresetLabel(levelLoopToleranceBaseMm, levelLoopTolerancePerSqrtKmMm)} (base=${levelLoopToleranceBaseMm.toFixed(2)} mm, k=${levelLoopTolerancePerSqrtKmMm.toFixed(2)} mm/sqrt(km))`,
-  );
-  pushSettingRow(
-    'GPS Rover Offsets',
-    gpsOffsetObservations.length > 0 ? `${gpsOffsetObservations.length} applied` : 'none',
-  );
-  pushSettingRow(
-    'Lost Stations',
-    lostStationIds.length > 0 ? `${lostStationIds.length} (${lostStationIds.join(', ')})` : 'none',
-  );
-  pushSettingRow(
-    'QFIX (Linear/Angular)',
-    `${(qFixLinearSigmaM * unitScale).toExponential(6)} ${linearUnit}; ${qFixAngularSigmaSec.toExponential(6)}"`,
-  );
-  pushSettingRow(
-    'Description Reconciliation',
-    `${descriptionReconcileMode.toUpperCase()}${descriptionReconcileMode === 'append' ? ` (delimiter="${descriptionAppendDelimiter}")` : ''}`,
-  );
-  if (descriptionScanSummary.length > 0) {
-    pushSettingRow(
-      'Description Scan',
-      `repeated=${traceabilityModel.descriptionRepeatedStationCount}, conflicts=${traceabilityModel.descriptionConflictCount}, stations=${descriptionScanSummary.length}`,
-    );
-  }
-  pushSettingRow('Show Lost Stations in Output', showLostStations ? 'ON' : 'OFF');
-  if (res.clusterDiagnostics?.enabled) {
-    pushSettingRow(
-      'Cluster Detection Mode',
-      `${res.clusterDiagnostics.passMode.toUpperCase()} / ${res.clusterDiagnostics.linkageMode.toUpperCase()} (${res.clusterDiagnostics.dimension}, tol=${(res.clusterDiagnostics.tolerance * unitScale).toFixed(4)} ${linearUnit}, merges=${res.clusterDiagnostics.approvedMergeCount ?? 0}, outcomes=${res.clusterDiagnostics.mergeOutcomes?.length ?? 0}, rejected=${res.clusterDiagnostics.rejectedProposals?.length ?? 0})`,
-    );
-  }
-  if (res.autoAdjustDiagnostics?.enabled) {
-    pushSettingRow(
-      'Auto-Adjust',
-      `ON (|t|>=${res.autoAdjustDiagnostics.threshold.toFixed(2)}, cycles=${res.autoAdjustDiagnostics.maxCycles}, maxRm/cycle=${res.autoAdjustDiagnostics.maxRemovalsPerCycle}, minRedund=${res.autoAdjustDiagnostics.minRedundancy.toFixed(2)}, stop=${res.autoAdjustDiagnostics.stopReason}, removed=${res.autoAdjustDiagnostics.removed.length})`,
-    );
-  }
-  if (autoSideshotEnabled && res.autoSideshotDiagnostics?.enabled) {
-    pushSettingRow(
-      'Auto Sideshot (M-lines)',
-      `ON (evaluated=${res.autoSideshotDiagnostics.evaluatedCount}, candidates=${res.autoSideshotDiagnostics.candidateCount}, excluded-control=${res.autoSideshotDiagnostics.excludedControlCount}, minRedund<${res.autoSideshotDiagnostics.threshold.toFixed(2)})`,
-    );
-  } else {
-    pushSettingRow('Auto Sideshot (M-lines)', 'OFF');
-  }
-  if ((parseState?.aliasExplicitCount ?? 0) > 0 || (parseState?.aliasRuleCount ?? 0) > 0) {
-    pushSettingRow(
-      'Alias Canonicalization',
-      `explicit=${parseState?.aliasExplicitCount ?? 0}, rules=${parseState?.aliasRuleCount ?? 0}, references=${aliasTrace.length}`,
-    );
-  }
-  lines.push('');
-  lines.push('Instrument Standard Error Settings');
-  lines.push('');
-  lines.push('Active Project Instrument Defaults');
-  const stochasticRows = parseStochasticDefaultsRows(runDiag.stochasticDefaultsSummary);
-  if (stochasticRows.length === 0) {
-    pushSettingRow('Defaults Summary', '-');
-  } else {
-    stochasticRows.forEach((row) => {
-      pushSettingRow(row.label, row.value);
-    });
-  }
-  pushSettingRow('Centering Model', runDiag.angleCenteringModel);
-  pushSettingRow(
-    'Default Sigma Usage',
-    `${runDiag.defaultSigmaCount} default-sigma obs${runDiag.defaultSigmaByType ? ` (${runDiag.defaultSigmaByType})` : ''}`,
-  );
-  if ((parseState?.aliasExplicitMappings?.length ?? 0) > 0) {
-    lines.push('Explicit Alias Mappings');
-    parseState?.aliasExplicitMappings?.forEach((m) => {
-      lines.push(
-        `${m.sourceId} -> ${m.canonicalId}${m.sourceLine != null ? ` (line ${m.sourceLine})` : ''}`,
+    if (coordSystemMode === 'grid') {
+      pushSettingRow(
+        'CRS Datum Operation',
+        `${crsDatumOpId ?? '-'}${crsDatumFallbackUsed ? ' (fallback)' : ''}`,
       );
-    });
-  }
-  if ((parseState?.aliasRuleSummaries?.length ?? 0) > 0) {
-    lines.push('Alias Rules');
-    parseState?.aliasRuleSummaries?.forEach((r) => {
-      lines.push(`${r.rule} (line ${r.sourceLine})`);
-    });
+      pushSettingRow(
+        'CRS Area-of-Use Status',
+        `${crsAreaOfUseStatus.toUpperCase()}${crsAreaOfUseStatus === 'outside' ? ` (outside=${crsOutOfAreaStationCount})` : ''}`,
+      );
+    }
+    if (coordSystemDiagnostics.length > 0) {
+      pushSettingRow('CRS Diagnostics', coordSystemDiagnostics.join(', '));
+    }
+    if (coordSystemWarningMessages.length > 0) {
+      pushSettingRow('CRS Warning Count', String(coordSystemWarningMessages.length));
+    }
+    pushSettingRow(
+      'Geoid/Grid Model',
+      geoidModelEnabled
+        ? `ON (${geoidModelId}, ${geoidInterpolation.toUpperCase()}, loaded=${geoidModelLoaded ? 'YES' : 'NO'})`
+        : 'OFF',
+    );
+    if (geoidModelEnabled) {
+      pushSettingRow(
+        'Geoid Metadata',
+        `${geoidModelMetadata || 'unavailable'}${geoidSampleUndulationM != null ? `; sampleN=${geoidSampleUndulationM.toFixed(4)} m` : ''}`,
+      );
+    }
+    pushSettingRow(
+      'Geoid Height Conversion',
+      geoidHeightConversionEnabled
+        ? `ON (${geoidOutputHeightDatum.toUpperCase()}, converted=${geoidConvertedStationCount}, skipped=${geoidSkippedStationCount})`
+        : 'OFF',
+    );
+    pushSettingRow(
+      'GPS AddHiHt Defaults',
+      gpsAddHiHtEnabled
+        ? `ON (HI=${(gpsAddHiHtHiM * unitScale).toFixed(4)} ${linearUnit}, HT=${(gpsAddHiHtHtM * unitScale).toFixed(4)} ${linearUnit})`
+        : 'OFF',
+    );
+    if (gpsAddHiHtEnabled) {
+      pushSettingRow(
+        'GPS AddHiHt Preprocess',
+        `vectors=${gpsAddHiHtVectorCount}, adjusted=${gpsAddHiHtAppliedCount} (+${gpsAddHiHtPositiveCount}/-${gpsAddHiHtNegativeCount}/neutral=${gpsAddHiHtNeutralCount}), defaultZero=${gpsAddHiHtDefaultZeroCount}, missingHeight=${gpsAddHiHtMissingHeightCount}, scale=[${gpsAddHiHtScaleMin.toFixed(8)}, ${gpsAddHiHtScaleMax.toFixed(8)}]`,
+      );
+    }
+    pushSettingRow(
+      'GPS Loop Check',
+      `${gpsLoopCheckEnabled ? 'ON' : 'OFF'}${gpsLoopDiagnostics?.enabled ? ` (vectors=${gpsLoopDiagnostics.vectorCount}, loops=${gpsLoopDiagnostics.loopCount}, pass=${gpsLoopDiagnostics.passCount}, warn=${gpsLoopDiagnostics.warnCount})` : ''}`,
+    );
+    pushSettingRow(
+      'Level Loop Tolerance',
+      `${getLevelLoopTolerancePresetLabel(levelLoopToleranceBaseMm, levelLoopTolerancePerSqrtKmMm)} (base=${levelLoopToleranceBaseMm.toFixed(2)} mm, k=${levelLoopTolerancePerSqrtKmMm.toFixed(2)} mm/sqrt(km))`,
+    );
+    pushSettingRow(
+      'GPS Rover Offsets',
+      gpsOffsetObservations.length > 0 ? `${gpsOffsetObservations.length} applied` : 'none',
+    );
+    pushSettingRow(
+      'Lost Stations',
+      lostStationIds.length > 0 ? `${lostStationIds.length} (${lostStationIds.join(', ')})` : 'none',
+    );
+    pushSettingRow(
+      'QFIX (Linear/Angular)',
+      `${(qFixLinearSigmaM * unitScale).toExponential(6)} ${linearUnit}; ${qFixAngularSigmaSec.toExponential(6)}"`,
+    );
+    pushSettingRow(
+      'Description Reconciliation',
+      `${descriptionReconcileMode.toUpperCase()}${descriptionReconcileMode === 'append' ? ` (delimiter="${descriptionAppendDelimiter}")` : ''}`,
+    );
+    if (descriptionScanSummary.length > 0) {
+      pushSettingRow(
+        'Description Scan',
+        `repeated=${traceabilityModel.descriptionRepeatedStationCount}, conflicts=${traceabilityModel.descriptionConflictCount}, stations=${descriptionScanSummary.length}`,
+      );
+    }
+    pushSettingRow('Show Lost Stations in Output', showLostStations ? 'ON' : 'OFF');
+    if (res.clusterDiagnostics?.enabled) {
+      pushSettingRow(
+        'Cluster Detection Mode',
+        `${res.clusterDiagnostics.passMode.toUpperCase()} / ${res.clusterDiagnostics.linkageMode.toUpperCase()} (${res.clusterDiagnostics.dimension}, tol=${(res.clusterDiagnostics.tolerance * unitScale).toFixed(4)} ${linearUnit}, merges=${res.clusterDiagnostics.approvedMergeCount ?? 0}, outcomes=${res.clusterDiagnostics.mergeOutcomes?.length ?? 0}, rejected=${res.clusterDiagnostics.rejectedProposals?.length ?? 0})`,
+      );
+    }
+    if (res.autoAdjustDiagnostics?.enabled) {
+      pushSettingRow(
+        'Auto-Adjust',
+        `ON (|t|>=${res.autoAdjustDiagnostics.threshold.toFixed(2)}, cycles=${res.autoAdjustDiagnostics.maxCycles}, maxRm/cycle=${res.autoAdjustDiagnostics.maxRemovalsPerCycle}, minRedund=${res.autoAdjustDiagnostics.minRedundancy.toFixed(2)}, stop=${res.autoAdjustDiagnostics.stopReason}, removed=${res.autoAdjustDiagnostics.removed.length})`,
+      );
+    }
+    if (autoSideshotEnabled && res.autoSideshotDiagnostics?.enabled) {
+      pushSettingRow(
+        'Auto Sideshot (M-lines)',
+        `ON (evaluated=${res.autoSideshotDiagnostics.evaluatedCount}, candidates=${res.autoSideshotDiagnostics.candidateCount}, excluded-control=${res.autoSideshotDiagnostics.excludedControlCount}, minRedund<${res.autoSideshotDiagnostics.threshold.toFixed(2)})`,
+      );
+    } else {
+      pushSettingRow('Auto Sideshot (M-lines)', 'OFF');
+    }
+    if ((parseState?.aliasExplicitCount ?? 0) > 0 || (parseState?.aliasRuleCount ?? 0) > 0) {
+      pushSettingRow(
+        'Alias Canonicalization',
+        `explicit=${parseState?.aliasExplicitCount ?? 0}, rules=${parseState?.aliasRuleCount ?? 0}, references=${aliasTrace.length}`,
+      );
+    }
   }
   lines.push('');
-  lines.push('Summary of Unadjusted Input Observations');
-  lines.push('========================================');
-  lines.push('');
-  pushSettingRow(
-    `Number of Entered Stations (${linearUnit})`,
-    `${stationEntriesInputOrder.length}`,
+  lines.push(
+    usesClassicParityLayout
+      ? centerIndustryLine('Instrument Standard Error Settings')
+      : 'Instrument Standard Error Settings',
   );
-  pushSettingRow('Fixed Stations', `${fixedStations}`);
-  pushSettingRow('Free Stations', `${freeStations}`);
-
+  lines.push('');
+  if (usesClassicParityLayout) {
+    const instrumentEntries = Object.entries(projectInstrumentLibrary ?? {});
+    const currentInstrumentCode =
+      runDiag.currentInstrumentCode && projectInstrumentLibrary?.[runDiag.currentInstrumentCode]
+        ? runDiag.currentInstrumentCode
+        : instrumentEntries[0]?.[0];
+    const defaultInstrument =
+      currentInstrumentCode != null ? projectInstrumentLibrary?.[currentInstrumentCode] : undefined;
+    if (defaultInstrument) {
+      formatClassicInstrumentRows(lines, 'Project Default Instrument', defaultInstrument, true);
+    }
+    instrumentEntries
+      .filter(([code]) => code !== currentInstrumentCode)
+      .forEach(([, instrument]) => {
+        formatClassicInstrumentRows(
+          lines,
+          `Project Library Instrument ${instrument.code}`,
+          instrument,
+          false,
+        );
+      });
+  } else {
+    lines.push('Active Project Instrument Defaults');
+    const stochasticRows = parseStochasticDefaultsRows(runDiag.stochasticDefaultsSummary);
+    if (stochasticRows.length === 0) {
+      pushSettingRow('Defaults Summary', '-');
+    } else {
+      stochasticRows.forEach((row) => {
+        pushSettingRow(row.label, row.value);
+      });
+    }
+    pushSettingRow('Centering Model', runDiag.angleCenteringModel);
+    pushSettingRow(
+      'Default Sigma Usage',
+      `${runDiag.defaultSigmaCount} default-sigma obs${runDiag.defaultSigmaByType ? ` (${runDiag.defaultSigmaByType})` : ''}`,
+    );
+    if ((parseState?.aliasExplicitMappings?.length ?? 0) > 0) {
+      lines.push('Explicit Alias Mappings');
+      parseState?.aliasExplicitMappings?.forEach((m) => {
+        lines.push(
+          `${m.sourceId} -> ${m.canonicalId}${m.sourceLine != null ? ` (line ${m.sourceLine})` : ''}`,
+        );
+      });
+    }
+    if ((parseState?.aliasRuleSummaries?.length ?? 0) > 0) {
+      lines.push('Alias Rules');
+      parseState?.aliasRuleSummaries?.forEach((r) => {
+        lines.push(`${r.rule} (line ${r.sourceLine})`);
+      });
+    }
+  }
+  lines.push('');
+  lines.push(
+    usesClassicParityLayout
+      ? centerIndustryLine('Summary of Unadjusted Input Observations')
+      : 'Summary of Unadjusted Input Observations',
+  );
+  lines.push(
+    usesClassicParityLayout
+      ? centerIndustryLine('========================================')
+      : '========================================',
+  );
+  lines.push('');
   const countByType = (type: Observation['type']) =>
     observationsForListing.filter((o) => o.type === type).length;
   const measuredDirectionCount = countByType('direction') + countByType('dir');
   const bearingCount = countByType('bearing');
   const hasTraverseStyleAngularFamilies = measuredDirectionCount > 0 || bearingCount > 0;
-  lines.push('');
   const angleUnitToken = (parseState?.angleUnits ?? parseSettings.angleUnits).toUpperCase();
-  pushSettingRow(`Number of Angle Observations (${angleUnitToken})`, `${countByType('angle')}`);
-  pushSettingRow(`Number of Distance Observations (${linearUnit})`, `${countByType('dist')}`);
-  pushSettingRow(
-    `${hasTraverseStyleAngularFamilies ? 'Number of Measured Direction Observations' : 'Number of Direction Observations'} (${angleUnitToken})`,
-    `${measuredDirectionCount}`,
-  );
-  if (bearingCount > 0) {
-    const bearingLabel =
-      coordSystemMode === 'grid'
-        ? `Number of Grid Azimuth/Bearing Observations (${angleUnitToken})`
-        : `Number of Azimuth/Bearing Observations (${angleUnitToken})`;
-    pushSettingRow(bearingLabel, `${bearingCount}`);
+  if (usesClassicParityLayout) {
+    lines.push(
+      centerIndustryLine(
+        `Number of Entered Stations (${linearUnit}) = ${enteredInputStationSnapshots.length}`,
+      ),
+    );
+    lines.push('');
+    const formatClassicStationSummaryRow = (station: {
+      stationId: string;
+      x: number;
+      y: number;
+      h: number;
+    }) => {
+      const formatCoord = (value: number) =>
+        (Math.round((value + Number.EPSILON) * 10000) / 10000).toFixed(4);
+      const north = formatCoord(station.y * unitScale).padStart(12);
+      const east = formatCoord(station.x * unitScale).padStart(18);
+      const height = formatCoord(station.h * unitScale).padStart(12);
+      const description = stationDescription(station.stationId);
+      return `${station.stationId.padEnd(20)}${north}${east}${height}${description ? `   ${description}` : ''}`.trimEnd();
+    };
+    lines.push(
+      'Fixed Stations              N                 E          Elev   Description',
+    );
+    fixedUsedEnteredStationSnapshots.forEach((station) =>
+      lines.push(formatClassicStationSummaryRow(station)),
+    );
+    lines.push('');
+    lines.push(
+      'Free Stations               N                 E          Elev   Description',
+    );
+    freeUsedEnteredStationSnapshots.forEach((station) =>
+      lines.push(formatClassicStationSummaryRow(station)),
+    );
+    lines.push('');
+    lines.push('Unused Stations');
+    unusedEnteredStationSnapshots.forEach((station) => lines.push(station.stationId));
+    lines.push('');
+    lines.push(
+      centerIndustryLine(
+        `Number of Measured Distance Observations (${linearUnit}) = ${countByType('dist')}`,
+      ),
+    );
+  } else {
+    pushSettingRow(
+      `Number of Entered Stations (${linearUnit})`,
+      `${stationEntriesInputOrder.length}`,
+    );
+    pushSettingRow('Fixed Stations', `${fixedStations}`);
+    pushSettingRow('Free Stations', `${freeStations}`);
+    lines.push('');
+    pushSettingRow(`Number of Angle Observations (${angleUnitToken})`, `${countByType('angle')}`);
+    pushSettingRow(`Number of Distance Observations (${linearUnit})`, `${countByType('dist')}`);
+    pushSettingRow(
+      `${hasTraverseStyleAngularFamilies ? 'Number of Measured Direction Observations' : 'Number of Direction Observations'} (${angleUnitToken})`,
+      `${measuredDirectionCount}`,
+    );
+    if (bearingCount > 0) {
+      const bearingLabel =
+        coordSystemMode === 'grid'
+          ? `Number of Grid Azimuth/Bearing Observations (${angleUnitToken})`
+          : `Number of Azimuth/Bearing Observations (${angleUnitToken})`;
+      pushSettingRow(bearingLabel, `${bearingCount}`);
+    }
   }
   lines.push('');
   lines.push('Adjustment Statistical Summary');
   lines.push('==============================');
   lines.push('');
-  pushSettingRow('Iterations', `${getIndustryReportedIterationCount(res)}`);
-  pushSettingRow('Number of Stations', `${stationEntriesInputOrder.length}`);
-  pushSettingRow('Number of Observations', `${observationCount}`);
-  pushSettingRow('Number of Unknowns', `${unknownCount}`);
-  pushSettingRow('Number of Redundant Obs', `${res.dof}`);
+  if (usesClassicParityLayout) {
+    lines.push(
+      `                        Iterations              = ${String(getIndustryReportedIterationCount(res)).padStart(6)}`,
+    );
+    lines.push('');
+    lines.push(
+      `                        Number of Stations      = ${String(stationEntriesInputOrder.length).padStart(6)}`,
+    );
+    lines.push('');
+    lines.push(
+      `                        Number of Observations  = ${String(observationCount).padStart(6)}`,
+    );
+    lines.push(
+      `                        Number of Unknowns      = ${String(unknownCount).padStart(6)}`,
+    );
+    lines.push(
+      `                        Number of Redundant Obs = ${String(res.dof).padStart(6)}`,
+    );
+  } else {
+    pushSettingRow('Iterations', `${getIndustryReportedIterationCount(res)}`);
+    pushSettingRow('Number of Stations', `${stationEntriesInputOrder.length}`);
+    pushSettingRow('Number of Observations', `${observationCount}`);
+    pushSettingRow('Number of Unknowns', `${unknownCount}`);
+    pushSettingRow('Number of Redundant Obs', `${res.dof}`);
+  }
   lines.push('');
   lines.push('Observation Statistics');
 
