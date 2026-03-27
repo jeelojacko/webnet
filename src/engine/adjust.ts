@@ -2548,7 +2548,9 @@ export class LSAEngine {
   private stationGeodetic(stationId: StationId): { latDeg: number; lonDeg: number } | null {
     const station = this.stations[stationId];
     if (!station) return null;
+    const hasExplicitGeodeticInput = station.coordInputClass === 'geodetic';
     if (
+      hasExplicitGeodeticInput &&
       Number.isFinite(station.latDeg ?? Number.NaN) &&
       Number.isFinite(station.lonDeg ?? Number.NaN)
     ) {

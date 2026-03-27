@@ -71,6 +71,7 @@ describe('industry multi-case parity foundation', () => {
     expect(startup.parseSettingsPatch.crsId).toBe('CA_NAD83_CSRS_NB_STEREO_DOUBLE');
     expect(startup.parseSettingsPatch.order).toBe('NE');
     expect(startup.parseSettingsPatch.lonSign).toBe('west-positive');
+    expect(startup.parseSettingsPatch.refractionCoefficient).toBe(0.07);
     expect(startup.selectedInstrument).toBe('TRAV_DEFAULT');
     expect(Object.keys(startup.projectInstruments).sort()).toEqual([
       'S9',

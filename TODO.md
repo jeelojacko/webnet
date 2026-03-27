@@ -127,7 +127,9 @@
       - [x] Make the traverse case the startup default with its matching grid/project defaults from the reference output, including coordinate-system mode, CRS, longitude-sign convention, coordinate order, convergence limit, and instrument library
       - [x] Make `.INST <code>` reliably set the current instrument for the following traverse/direction-set block without breaking existing conventional parsing
       - [x] Keep projected grid traverse jobs from false-failing the grid-input gate when CRS inverse diagnostics populate derived lat/lon on auto-created stations
+      - [x] Recompute derived geodetic inverses/grid factors from live projected coordinates for non-geodetic traverse stations instead of reusing stale cached lat/lon
       - [x] Add a pre-solve approximate-coordinate bootstrap for traverse direction sets so unknown setups can be resected from known targets and forward-seeded into connected observations
+      - [x] Keep traverse direction-set reductions plus `DM`-derived distance/zenith rows on one global observation-ID stream with the active set ID preserved for parity-safe grouping and diagnostics
       - [ ] Close the remaining fixed-bearing orientation parity gap for a network constrained by one fixed point plus one fixed bearing
       - [ ] Match direction-set, distance, zenith, target-height, and set-scoped weighting behavior used by the traverse reference case
       - [x] Lock slot-preserving `DM` sigma parsing so `& & 30` keeps default direction and distance weighting while applying an explicit 30" zenith sigma

@@ -246,6 +246,7 @@ export const INDUSTRY_PARITY_CASES: Record<IndustryParityCaseId, IndustryParityC
         deltaMode: 'slope',
         angleStationOrder: 'atfromto',
         lonSign: 'west-positive',
+        refractionCoefficient: 0.07,
       },
       projectInstruments: TRAVERSE_STARTUP_INSTRUMENTS,
       selectedInstrument: 'TRAV_DEFAULT',

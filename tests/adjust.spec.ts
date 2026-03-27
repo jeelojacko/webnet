@@ -355,6 +355,11 @@ describe('LSAEngine', () => {
     expect(result.stations.B.coordInputClass).toBe('unknown');
     expect(Number.isFinite(result.stations.B.latDeg ?? Number.NaN)).toBe(true);
     expect(Number.isFinite(result.stations.B.lonDeg ?? Number.NaN)).toBe(true);
+    expect(Math.abs((result.stations.B.lonDeg ?? 0) - (result.stations.A.lonDeg ?? 0))).toBeGreaterThan(
+      0.001,
+    );
+    expect((result.stations.B.gridScaleFactor ?? 0)).toBeGreaterThan(0.99);
+    expect((result.stations.B.gridScaleFactor ?? 0)).toBeLessThan(1.01);
   });
 
   it('bootstraps unknown direction-set setups from known targets and forward-seeds connected targets', () => {

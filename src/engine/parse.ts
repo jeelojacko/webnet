@@ -879,7 +879,7 @@ export const parseInput = (
   state.includeErrors = expanded.includeErrors;
   let currentSourceFile = state.sourceFile ?? '<input>';
   let displayLineCount = 0;
-  let obsId = 0;
+  const obsIdRef = { current: 0 };
   let lastGpsObservation: GpsObservation | undefined;
   const autoCreatedStations = new Set<StationId>();
   const rejectedAutoCreateTokens = new Set<string>();
@@ -1088,7 +1088,7 @@ export const parseInput = (
     compatibilityMode,
     getCurrentLine: () => lineNum,
     getCurrentSourceFile: () => currentSourceFile,
-    nextObservationId: () => obsId++,
+    obsIdRef,
     pushObservation,
     directionRejectDiagnostics,
     directionSetTreatmentDiagnostics,
@@ -1338,7 +1338,6 @@ export const parseInput = (
       ) {
         // handled by parseControlRecords.ts
       } else {
-        const conventionalObsIdRef = { current: obsId };
         const handledConventionalPrimitive = handleConventionalPrimitiveRecord({
           code,
           parts,
@@ -1347,7 +1346,7 @@ export const parseInput = (
           stations,
           instrumentLibrary,
           logs,
-          obsIdRef: conventionalObsIdRef,
+          obsIdRef,
           compatibilityMode,
           preanalysisMode,
           addCompatibilityDiagnostic,
@@ -1386,10 +1385,7 @@ export const parseInput = (
           amodeAutoMaxDirRad: AMODE_AUTO_MAX_DIR_RAD,
           amodeAutoMarginRad: AMODE_AUTO_MARGIN_RAD,
         });
-        if (handledConventionalPrimitive) {
-          obsId = conventionalObsIdRef.current;
-        } else {
-          const traverseObsIdRef = { current: obsId };
+        if (!handledConventionalPrimitive) {
           const faceModeRef = { current: faceMode };
           const handledTraverse = handleTraverseRecord({
             code,
@@ -1398,7 +1394,7 @@ export const parseInput = (
             state,
             instrumentLibrary,
             logs,
-            obsIdRef: traverseObsIdRef,
+            obsIdRef,
             traverseCtx,
             faceModeRef,
             parseAngleTokenRad,
@@ -1429,10 +1425,8 @@ export const parseInput = (
             face2Weight: FACE2_WEIGHT,
           });
           if (handledTraverse) {
-            obsId = traverseObsIdRef.current;
             faceMode = faceModeRef.current;
           } else {
-            const directionObsIdRef = { current: obsId };
             const directionSetCountRef = { current: directionSetCount };
             const handledDirectionSet = handleDirectionSetRecord({
               code,
@@ -1441,7 +1435,7 @@ export const parseInput = (
               state,
               instrumentLibrary,
               logs,
-              obsIdRef: directionObsIdRef,
+              obsIdRef,
               currentSourceFile,
               traverseCtx,
               directionSetCountRef,
@@ -1474,11 +1468,9 @@ export const parseInput = (
               flushDirectionSet,
             });
             if (handledDirectionSet) {
-              obsId = directionObsIdRef.current;
               directionSetCount = directionSetCountRef.current;
               if (code === 'DB') faceMode = 'unknown';
             } else {
-              const fieldObsIdRef = { current: obsId };
               const lastGpsObservationRef = { current: lastGpsObservation };
               const handledFieldObservation = handleFieldObservationRecord({
                 code,
@@ -1488,7 +1480,7 @@ export const parseInput = (
                 stations,
                 instrumentLibrary,
                 logs,
-                obsIdRef: fieldObsIdRef,
+                obsIdRef,
                 compatibilityMode,
                 lastGpsObservationRef,
                 addCompatibilityDiagnostic,
@@ -1526,7 +1518,6 @@ export const parseInput = (
                 traverseCtx,
               });
               if (handledFieldObservation) {
-                obsId = fieldObsIdRef.current;
                 lastGpsObservation = lastGpsObservationRef.current;
               } else {
                 logs.push(`Unrecognized code "${code}" at line ${lineNum}, skipping`);

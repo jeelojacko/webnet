@@ -32,7 +32,7 @@ const createHarness = (
   const observations: Observation[] = [];
   let currentLine = 100;
   let currentSourceFile = 'input.dat';
-  let nextId = 0;
+  const obsIdRef = { current: 0 };
   const directionRejectDiagnostics: DirectionRejectDiagnostic[] = [];
   const directionSetTreatmentDiagnostics: DirectionSetTreatmentDiagnostic[] = [];
   const workflow = createDirectionSetWorkflow({
@@ -41,7 +41,7 @@ const createHarness = (
     compatibilityMode,
     getCurrentLine: () => currentLine,
     getCurrentSourceFile: () => currentSourceFile,
-    nextObservationId: () => nextId++,
+    obsIdRef,
     pushObservation: (observation) => {
       observations.push(observation);
     },

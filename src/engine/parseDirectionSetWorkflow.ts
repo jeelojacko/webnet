@@ -40,7 +40,7 @@ interface CreateDirectionSetWorkflowArgs {
   compatibilityMode: ParseCompatibilityMode;
   getCurrentLine: () => number;
   getCurrentSourceFile: () => string;
-  nextObservationId: () => number;
+  obsIdRef: { current: number };
   pushObservation: (_observation: Observation) => void;
   directionRejectDiagnostics: DirectionRejectDiagnostic[];
   directionSetTreatmentDiagnostics: DirectionSetTreatmentDiagnostic[];
@@ -101,7 +101,7 @@ export const createDirectionSetWorkflow = ({
   compatibilityMode,
   getCurrentLine,
   getCurrentSourceFile,
-  nextObservationId,
+  obsIdRef,
   pushObservation,
   directionRejectDiagnostics,
   directionSetTreatmentDiagnostics,
@@ -272,7 +272,7 @@ export const createDirectionSetWorkflow = ({
           : undefined;
 
       pushObservation({
-        id: nextObservationId(),
+        id: obsIdRef.current++,
         type: 'direction',
         instCode,
         setId: bucketSetId,
@@ -320,7 +320,7 @@ export const createDirectionSetWorkflow = ({
           ? wrapTo2Pi(shot.obs - Math.PI)
           : wrapTo2Pi(shot.obs);
       pushObservation({
-        id: nextObservationId(),
+        id: obsIdRef.current++,
         type: 'direction',
         instCode,
         setId: bucketSetId,

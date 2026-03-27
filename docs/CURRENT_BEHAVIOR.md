@@ -21,7 +21,7 @@ Current startup and workflow defaults include:
 - run profile defaults to industry-standard parity mode
 - cluster detection defaults to OFF
 - auto-adjust is available but operator-controlled
-- the active startup dataset is currently rotated to the traverse industry-parity case, including New Brunswick grid defaults and a preloaded traverse instrument library (`TRAV_DEFAULT`, `S9`, `SX12`, `TS11`)
+- the active startup dataset is currently rotated to the traverse industry-parity case, including New Brunswick grid defaults, traverse refraction `k=0.07`, and a preloaded traverse instrument library (`TRAV_DEFAULT`, `S9`, `SX12`, `TS11`)
 - the active startup dataset may be rotated to the current industry-parity working case during parity-sensitive batches
 - browser-local recovery restores workspace state but intentionally does not restore stale solve results without rerun
 
@@ -229,6 +229,8 @@ Parity-sensitive behavior remains an explicit project concern. Current parity-or
 - exact levelling-only industry-listing parity from `Project Option Settings` through the file end for the active leveling reference case
 - active traverse startup defaults and parser regression locks for `.INST`-scoped instrument selection across direction-set/traverse blocks
 - slot-preserving mixed sigma parsing for traverse direction-set `DM` rows, so tokens such as `& & 30` apply default direction and distance weighting while keeping only the zenith sigma explicit
+- traverse direction-set reductions and paired `DM` distance/zenith rows now share one global observation-ID stream and preserve the active set ID, which keeps set-scoped diagnostics and review selection deterministic on the traverse parity case
+- derived grid lat/lon and projection factors for projected traverse stations are recomputed from the live adjusted coordinates unless the station came from explicit geodetic input, preventing stale factor reuse on the traverse parity case
 - pre-solve traverse bootstrapping that can resect unknown direction-set setups from known targets and forward-seed connected target coordinates before adjustment
 - grid-mode input gating that ignores CRS-derived inverse lat/lon on projected auto-created stations instead of treating them as original unknown-class geodetic input
 - focused regression locks around angular stochastic behavior, centering geometry, displayed sigma behavior, and connected-pair precision rows

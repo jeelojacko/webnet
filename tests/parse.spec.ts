@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { parseInput } from '../src/engine/parse';
+import { INDUSTRY_PARITY_CASES } from '../src/industryParityCases';
 import type { AngleObservation, DistanceObservation, LevelObservation } from '../src/types';
 
 const fixture = readFileSync('tests/fixtures/simple.dat', 'utf-8');
@@ -233,6 +234,27 @@ describe('parseInput', () => {
     expect(types.angle).toBeGreaterThan(0);
     expect(types.dist).toBeGreaterThan(0);
     expect(parsed.logs.some((l) => l.includes('Traverse start'))).toBe(true);
+  });
+
+  it('keeps traverse startup direction-set observations on one global ID stream and active set IDs', () => {
+    const startup = INDUSTRY_PARITY_CASES.traverse.startupDefaults!;
+    const parsed = parseInput(startup.input, {}, startup.parseSettingsPatch);
+    const observationIds = parsed.observations.map((observation) => observation.id);
+    const uniqueObservationIds = new Set(observationIds);
+
+    expect(uniqueObservationIds.size).toBe(observationIds.length);
+
+    const setScopedDistance = parsed.observations.find(
+      (observation) =>
+        observation.type === 'dist' &&
+        observation.setId != null &&
+        observation.setId !== 'DM' &&
+        'from' in observation &&
+        observation.from === '100' &&
+        observation.to === 'PEAT',
+    );
+    expect(setScopedDistance).toBeDefined();
+    expect(setScopedDistance?.setId).toBe('100#1');
   });
 
   it('auto-creates missing stations referenced by active observations', () => {
