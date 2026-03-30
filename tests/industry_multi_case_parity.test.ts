@@ -335,6 +335,102 @@ describe('industry multi-case parity foundation', () => {
   );
 
   it(
+    'keeps the later traverse listing sections on the industry-style station order, file-line numbering, and fixed-bearing layout',
+    () => {
+      const startup = INDUSTRY_PARITY_CASES.traverse.startupDefaults;
+      expect(startup).toBeDefined();
+
+      const result = buildCaseResult('traverse');
+      expect(result.success).toBe(true);
+
+      const listing = buildIndustryStyleListingText(
+        result,
+        {
+          maxIterations: 10,
+          convergenceLimit: startup?.settingsPatch.convergenceLimit,
+          precisionReportingMode: 'industry-standard',
+          units: 'm',
+          listingShowCoordinates: true,
+          listingShowObservationsResiduals: true,
+          listingShowErrorPropagation: true,
+          listingShowProcessingNotes: true,
+          listingShowAzimuthsBearings: true,
+          listingShowLostStations: true,
+          listingSortCoordinatesBy: 'input',
+          listingSortObservationsBy: 'residual',
+          listingObservationLimit: 9999,
+        },
+        {
+          coordMode: startup?.parseSettingsPatch.coordMode ?? '3D',
+          order: startup?.parseSettingsPatch.order ?? 'EN',
+          angleUnits: startup?.parseSettingsPatch.angleUnits ?? 'dms',
+          angleStationOrder: startup?.parseSettingsPatch.angleStationOrder ?? 'atfromto',
+          deltaMode: startup?.parseSettingsPatch.deltaMode ?? 'slope',
+          refractionCoefficient: startup?.parseSettingsPatch.refractionCoefficient ?? 0.13,
+        },
+        {
+          solveProfile: 'industry-parity',
+          angleCenteringModel: 'geometry-aware-correlated-rays',
+          defaultSigmaCount: 0,
+          defaultSigmaByType: '',
+          stochasticDefaultsSummary: '',
+          rotationAngleRad: 0,
+          currentInstrumentCode: startup?.selectedInstrument,
+          currentInstrumentDesc: startup?.projectInstruments[startup?.selectedInstrument ?? '']?.desc,
+          projectInstrumentLibrary: startup?.projectInstruments,
+        },
+      );
+
+      const convergenceSection = extractSection(
+        listing,
+        'Convergence Angles (DMS) and Grid Factors at Stations',
+        'Adjusted Measured Distance Observations (Meters)',
+      );
+      expect(convergenceSection).toContain(
+        'OOP                  -0-06-15.17    0.99985407    0.99998983    0.99984390',
+      );
+      expect(convergenceSection).toContain(
+        'GPS2                 -0-06-00.89    0.99985398    0.99999409    0.99984807',
+      );
+      expect(convergenceSection).toContain(
+        'APOG                 -0-06-15.04    0.99985428    0.99998704    0.99984133',
+      );
+
+      const adjustedDistanceSection = extractSection(
+        listing,
+        'Adjusted Measured Distance Observations (Meters)',
+        'Adjusted Zenith Observations (DMS)',
+      );
+      expect(adjustedDistanceSection).toContain('1:180');
+      expect(adjustedDistanceSection).toContain('1:1011');
+      expect(adjustedDistanceSection).not.toContain('1:147');
+
+      const adjustedBearingSection = extractSection(
+        listing,
+        'Adjusted Grid Azimuth/Bearing Observations (DMS)',
+        'Adjusted Bearings (DMS) and Horizontal Distances (Meters)',
+      );
+      expect(adjustedBearingSection).toContain(
+        'GPS5       GPS2       N36-50-16.60W    -0-00-00.00      -0.0000    FIXED   0.0      1:15',
+      );
+
+      const relationshipSection = extractSection(
+        listing,
+        'Adjusted Bearings (DMS) and Horizontal Distances (Meters)',
+        'Station Coordinate Error Ellipses (Meters)',
+      );
+      expect(relationshipSection).toContain(
+        '100        124         N30-42-40.57E     81.2553    5.60  0.0025   31.1297',
+      );
+      expect(relationshipSection).toContain(
+        '101        102         S28-48-29.69E     33.4146   11.04  0.0023   69.8674',
+      );
+      expect(relationshipSection).not.toContain('GPS5       GPS2        N36-50-16.60W');
+    },
+    120000,
+  );
+
+  it(
     'keeps the traverse top block aligned with the compact industry settings and entered-station summary',
     () => {
       const startup = INDUSTRY_PARITY_CASES.traverse.startupDefaults;

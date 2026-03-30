@@ -253,6 +253,42 @@ const formatClassicTraverseZenithSigmaArcSec = (sigmaArcSec: number): string =>
     ? '8.14'
     : sigmaArcSec.toFixed(2);
 
+const formatClassicTraverseSignedDms = (valueRad: number | undefined): string => {
+  if (valueRad == null || !Number.isFinite(valueRad)) return '-';
+  const isNegative = valueRad < 0 || Object.is(valueRad, -0);
+  const display = isNegative ? -valueRad : valueRad;
+  const prefix = isNegative ? '-' : '';
+  return `${prefix}${formatDmsHundredths(display)}`;
+};
+
+const formatClassicTraverseStdRes = (obs: Observation): string => {
+  const sigma = obs.weightingStdDev ?? obs.stdDev;
+  if (typeof obs.residual !== 'number' || !Number.isFinite(sigma) || sigma <= 0) return '-';
+  const value = Math.abs(obs.residual) / sigma;
+  return `${value >= 3 ? `${value.toFixed(1)}*` : value.toFixed(1)}`;
+};
+
+const formatClassicTraverseFileLine = (
+  parseState: AdjustmentResult['parseState'],
+  sourceLine?: number,
+): string => {
+  if (sourceLine == null) return '-';
+  void parseState;
+  return `1:${sourceLine}`;
+};
+
+const formatClassicTraverseConvergenceAngle = (valueRad: number | undefined): string => {
+  if (valueRad == null || !Number.isFinite(valueRad)) return '-';
+  const prefix = valueRad < 0 ? '-' : '';
+  return `${prefix}${formatDmsHundredths(Math.abs(valueRad))}`;
+};
+
+const formatClassicTraverseSetLabel = (setId: string | undefined, fallback: number): string => {
+  if (!setId) return String(fallback);
+  const match = setId.match(/(\d+)(?!.*\d)/);
+  return match?.[1] ?? setId;
+};
+
 const filterListingCoordSystemDiagnostics = (
   coordSystemMode: 'local' | 'grid',
   diagnostics: CoordSystemDiagnosticCode[],
@@ -825,6 +861,48 @@ export const buildIndustryStyleListingText = (
         (fixedStation) => fixedStation.stationId === station.stationId,
       ),
   );
+  const classicTraverseStationOrder: string[] = [];
+  const pushClassicTraverseStation = (stationId?: string) => {
+    if (!stationId) return;
+    if (classicTraverseStationOrder.includes(stationId)) return;
+    if (!res.stations[stationId]) return;
+    classicTraverseStationOrder.push(stationId);
+  };
+  usedEnteredStationSnapshots.forEach((station) => pushClassicTraverseStation(station.stationId));
+  [...observationsForListing]
+    .sort(
+      (a, b) =>
+        (a.sourceLine ?? Number.MAX_SAFE_INTEGER) - (b.sourceLine ?? Number.MAX_SAFE_INTEGER) ||
+        a.id - b.id,
+    )
+    .forEach((obs) => {
+    switch (obs.type) {
+      case 'angle':
+        pushClassicTraverseStation(obs.at);
+        pushClassicTraverseStation(obs.from);
+        pushClassicTraverseStation(obs.to);
+        break;
+      case 'direction':
+        pushClassicTraverseStation(obs.at);
+        pushClassicTraverseStation(obs.to);
+        break;
+      case 'dist':
+      case 'dir':
+      case 'bearing':
+      case 'gps':
+      case 'zenith':
+      case 'lev':
+        pushClassicTraverseStation(obs.from);
+        pushClassicTraverseStation(obs.to);
+        break;
+      default:
+        break;
+    }
+  });
+  sideshotsForListing.forEach((row) => {
+    pushClassicTraverseStation(row.from);
+    pushClassicTraverseStation(row.to);
+  });
   if (usesClassicParityLayout && unusedEnteredStationSnapshots.length > 0) {
     const unusedStationIdSet = new Set(
       unusedEnteredStationSnapshots.map((station) => station.stationId),
@@ -1628,22 +1706,71 @@ export const buildIndustryStyleListingText = (
         [3],
       );
 
-      const factorRows = stationEntriesForListing.map(([id, st]) => [
-        id,
-        ((st.convergenceAngleRad ?? 0) * RAD_TO_DEG).toFixed(8),
-        (st.gridScaleFactor ?? 1).toFixed(8),
-        (st.elevationFactor ?? 1).toFixed(8),
-        (st.combinedFactor ?? 1).toFixed(8),
-        (st.factorComputationSource ?? 'projection-formula').toUpperCase(),
-      ]);
-      lines.push('');
-      addCenteredHeading('Grid/Combined Factor Diagnostics');
-      lines.push('');
-      renderTextTable(
-        ['Station', 'Convergence (deg)', 'GridScale', 'ElevFactor', 'CombinedFactor', 'Source'],
-        factorRows,
-        [1, 2, 3, 4],
-      );
+      if (usesClassicParityLayout) {
+        const classicTraverseFactorEntries = classicTraverseStationOrder
+          .map((stationId) => [stationId, res.stations[stationId]] as const)
+          .filter((entry): entry is [string, Station] => entry[1] != null);
+        lines.push('');
+        lines.push(centerIndustryLine('Convergence Angles (DMS) and Grid Factors at Stations'));
+        lines.push(centerIndustryLine('(Grid Azimuth = Geodetic Azimuth - Convergence)'));
+        lines.push(
+          centerIndustryLine(
+            `(Elevation Factor Includes a ${(
+              commonElevation * unitScale
+            ).toFixed(2)} Meter Geoid Height Correction)`,
+          ),
+        );
+        lines.push('');
+        lines.push('                    Convergence            ------- Factors -------');
+        lines.push('Station                Angle            Scale  x  Elevation  =   Combined');
+        classicTraverseFactorEntries.forEach(([id, st]) => {
+          lines.push(
+            `${id.padEnd(20)}${formatClassicTraverseConvergenceAngle(st.convergenceAngleRad).padStart(12)}${(st.gridScaleFactor ?? 1).toFixed(8).padStart(14)}${(st.elevationFactor ?? 1).toFixed(8).padStart(14)}${(st.combinedFactor ?? 1).toFixed(8).padStart(14)}`,
+          );
+        });
+        if (classicTraverseFactorEntries.length > 0) {
+          const avgConvergence =
+            classicTraverseFactorEntries.reduce(
+              (sum, [, st]) => sum + (st.convergenceAngleRad ?? 0),
+              0,
+            ) / classicTraverseFactorEntries.length;
+          const avgGridScale =
+            classicTraverseFactorEntries.reduce(
+              (sum, [, st]) => sum + (st.gridScaleFactor ?? 1),
+              0,
+            ) / classicTraverseFactorEntries.length;
+          const avgElevation =
+            classicTraverseFactorEntries.reduce(
+              (sum, [, st]) => sum + (st.elevationFactor ?? 1),
+              0,
+            ) / classicTraverseFactorEntries.length;
+          const avgCombined =
+            classicTraverseFactorEntries.reduce(
+              (sum, [, st]) => sum + (st.combinedFactor ?? 1),
+              0,
+            ) / classicTraverseFactorEntries.length;
+          lines.push(
+            `${'Project Averages:'.padEnd(20)}${formatClassicTraverseConvergenceAngle(avgConvergence).padStart(12)}${avgGridScale.toFixed(8).padStart(14)}${avgElevation.toFixed(8).padStart(14)}${avgCombined.toFixed(8).padStart(14)}`,
+          );
+        }
+      } else {
+        const factorRows = stationEntriesForListing.map(([id, st]) => [
+          id,
+          ((st.convergenceAngleRad ?? 0) * RAD_TO_DEG).toFixed(8),
+          (st.gridScaleFactor ?? 1).toFixed(8),
+          (st.elevationFactor ?? 1).toFixed(8),
+          (st.combinedFactor ?? 1).toFixed(8),
+          (st.factorComputationSource ?? 'projection-formula').toUpperCase(),
+        ]);
+        lines.push('');
+        addCenteredHeading('Grid/Combined Factor Diagnostics');
+        lines.push('');
+        renderTextTable(
+          ['Station', 'Convergence (deg)', 'GridScale', 'ElevFactor', 'CombinedFactor', 'Source'],
+          factorRows,
+          [1, 2, 3, 4],
+        );
+      }
     }
   }
 
@@ -1707,6 +1834,10 @@ export const buildIndustryStyleListingText = (
     const toStation = res.stations[to];
     const oriented = preserveOrientation
       ? { from, to }
+      : usesClassicParityLayout
+        ? compareStationIds(from, to) <= 0
+          ? { from, to }
+          : { from: to, to: from }
       : fromStation?.fixed === true && toStation?.fixed !== true
         ? { from, to }
         : toStation?.fixed === true && fromStation?.fixed !== true
@@ -1721,9 +1852,11 @@ export const buildIndustryStyleListingText = (
       });
     }
   };
-  relativeCovarianceRows.forEach((row) => {
-    addRelationshipPair(row.from, row.to, true);
-  });
+  if (!usesClassicParityLayout) {
+    relativeCovarianceRows.forEach((row) => {
+      addRelationshipPair(row.from, row.to, true);
+    });
+  }
   [...observationsForListing].sort(compareObsByInput).forEach((obs) => {
     switch (obs.type) {
       case 'angle':
@@ -1954,6 +2087,11 @@ export const buildIndustryStyleListingText = (
       };
     })
     .filter((row) => row.distance !== '-');
+  if (usesClassicParityLayout) {
+    relationshipRows.sort(
+      (a, b) => compareStationIds(a.from, b.from) || compareStationIds(a.to, b.to),
+    );
+  }
   const dataCheckDifferenceRows = observationsForListing
     .map((obs) => {
       const stations =
@@ -2067,91 +2205,297 @@ export const buildIndustryStyleListingText = (
     settings.listingShowObservationsResiduals &&
     listingObservations.length > 0
   ) {
-    const angleRows = listingObservations
-      .filter((obs) => obs.type === 'angle')
-      .map((obs) => [
-        `${obs.at}-${obs.from}-${obs.to}${aliasRefsForLine(obs.sourceLine)}${autoSideshotSuffix(obs)}`,
-        radToDmsStr((obs.calc as number | undefined) ?? obs.obs),
-        formatAngularResidualArcSec(obs.residual as number | undefined),
-        formatEffectiveDistance(obs.effectiveDistance),
-        formatAngularStdErrArcSec(obs.weightingStdDev ?? obs.stdDev),
-        formatIndustryStdRes(obs),
-        obs.sourceLine != null ? `1:${obs.sourceLine}` : '-',
-      ]);
-    renderAdjustedSection(
-      `Adjusted Angle Observations (${(parseState?.angleUnits ?? parseSettings.angleUnits).toUpperCase()})`,
-      angleRows,
-      [
-        'Stations',
-        'Angle',
-        'Residual',
-        'Distance',
-        'StdErr',
-        'StdRes',
-        'File:Line',
-      ],
-      [5],
-    );
-
-    const distanceRows = listingObservations
-      .filter((obs) => obs.type === 'dist')
-      .map((obs) => [
-        `${obs.from}-${obs.to}${aliasRefsForLine(obs.sourceLine)}${autoSideshotSuffix(obs)}${prismSuffix(obs)}`,
-        formatLinear((obs.calc as number | undefined) ?? obs.obs),
-        formatResidualLinear(obs.residual as number | undefined),
-        formatLinear(obs.weightingStdDev ?? obs.stdDev),
-        formatIndustryStdRes(obs),
-        obs.sourceLine != null ? `1:${obs.sourceLine}` : '-',
-      ]);
-    renderAdjustedSection(
-      `${hasTraverseStyleAngularFamilies ? 'Adjusted Measured Distance Observations' : 'Adjusted Distance Observations'} (${linearUnit})`,
-      distanceRows,
-      ['Stations', 'Distance', 'Residual', 'StdErr', 'StdRes', 'File:Line'],
-      [1, 2, 3, 4],
-    );
-
-    const directionRows = listingObservations
-      .filter((obs) => obs.type === 'direction')
-      .map((obs) => [
-        `${obs.at}-${obs.to}${aliasRefsForLine(obs.sourceLine)}${autoSideshotSuffix(obs)}`,
-        radToDmsStr((obs.calc as number | undefined) ?? obs.obs),
-        formatAngularResidualArcSec(obs.residual as number | undefined),
-        formatAngularLinearResidual(
-          obs.residual as number | undefined,
-          obs.effectiveDistance,
-        ),
-        formatAngularStdErrArcSec(obs.weightingStdDev ?? obs.stdDev),
-        formatIndustryStdRes(obs),
-        obs.sourceLine != null ? `1:${obs.sourceLine}` : '-',
-      ]);
-    renderAdjustedSection(
-      `${hasTraverseStyleAngularFamilies ? 'Adjusted Measured Direction Observations' : 'Adjusted Direction Observations'} (${(parseState?.angleUnits ?? parseSettings.angleUnits).toUpperCase()})`,
-      directionRows,
-      [
-        'Stations',
-        'Direction',
-        'Residual',
-        'Distance',
-        'StdErr',
-        'StdRes',
-        'File:Line',
-      ],
-      [5],
-    );
-
-    if (relationshipRows.length > 0) {
-      lines.push('');
-      const azTitle = `Adjusted Azimuths (${(parseState?.angleUnits ?? parseSettings.angleUnits).toUpperCase()}) and Horizontal Distances (${linearUnit})`;
-      addCenteredHeading(azTitle);
-      lines.push('                 (Relative Confidence of Azimuth is in Seconds)');
-      lines.push('');
-      lines.push('From       To               Azimuth    Distance       95% RelConfidence');
-      lines.push('                                                    Azi    Dist       PPM');
-      relationshipRows.forEach((row) => {
+    if (usesClassicParityLayout) {
+      const angleUnitLabel = (parseState?.angleUnits ?? parseSettings.angleUnits).toUpperCase();
+      const classicSortByStdRes = (a: Observation, b: Observation) => {
+        const roundedStdRes = (obs: Observation) =>
+          Number((Math.abs(obs.stdRes ?? 0) + 1e-12).toFixed(1));
+        const roundedDelta = roundedStdRes(b) - roundedStdRes(a);
+        if (Math.abs(roundedDelta) > 1e-12) return roundedDelta;
+        const sourceDelta =
+          (a.sourceLine ?? Number.MAX_SAFE_INTEGER) - (b.sourceLine ?? Number.MAX_SAFE_INTEGER);
+        if (sourceDelta !== 0) return sourceDelta;
+        return compareObsByInput(a, b);
+      };
+      const renderClassicAdjustedDistanceSection = () => {
+        const rows = listingObservations
+          .filter((obs): obs is Observation & { type: 'dist' } => obs.type === 'dist')
+          .sort(classicSortByStdRes);
+        if (rows.length === 0) return;
+        lines.push('');
+        lines.push(centerIndustryLine(`Adjusted Measured Distance Observations (${linearUnit})`));
+        lines.push('');
         lines.push(
-          `${row.from.padEnd(10)} ${row.to.padEnd(10)} ${row.azimuth.padStart(14)} ${row.distance.padStart(10)} ${row.sigmaAz95.padStart(7)} ${row.sigmaDist95.padStart(8)} ${row.ppm95.padStart(10)}`,
+          '           From       To              Distance      Residual   StdErr StdRes File:Line',
         );
-      });
+        rows.forEach((obs) => {
+          const adjustedDistance = formatLinear((obs.calc as number | undefined) ?? obs.obs);
+          const residual = formatResidualLinear(obs.residual as number | undefined);
+          const sigma = formatLinear(obs.weightingStdDev ?? obs.stdDev);
+          const stdRes = formatClassicTraverseStdRes(obs);
+          const fileLine = formatClassicTraverseFileLine(parseState, obs.sourceLine);
+          lines.push(
+            `           ${obs.from.padEnd(11)}${obs.to.padEnd(15)}${adjustedDistance.padStart(10)}${residual.padStart(14)}${sigma.padStart(9)}${stdRes.padStart(6)}${fileLine.padStart(10)}`,
+          );
+        });
+      };
+      const renderClassicAdjustedZenithSection = () => {
+        const rows = listingObservations
+          .filter((obs): obs is Observation & { type: 'zenith' } => obs.type === 'zenith')
+          .sort(classicSortByStdRes);
+        if (rows.length === 0) return;
+        lines.push('');
+        lines.push(centerIndustryLine(`Adjusted Zenith Observations (${angleUnitLabel})`));
+        lines.push('');
+        lines.push(
+          '           From       To              Zenith        Residual     Distance   StdErr StdRes File:Line',
+        );
+        rows.forEach((obs) => {
+          const adjustedZenith = formatDmsHundredths((obs.calc as number | undefined) ?? obs.obs);
+          const residual = formatClassicTraverseSignedDms(
+            typeof obs.residual === 'number' ? -obs.residual : undefined,
+          );
+          const distance = formatAngularLinearResidual(
+            obs.residual as number | undefined,
+            obs.effectiveDistance,
+          );
+          const sigma = formatClassicTraverseZenithSigmaArcSec(
+            (obs.weightingStdDev ?? obs.stdDev) * RAD_TO_DEG * 3600,
+          );
+          const stdRes = formatClassicTraverseStdRes(obs);
+          const fileLine = formatClassicTraverseFileLine(parseState, obs.sourceLine);
+          lines.push(
+            `           ${obs.from.padEnd(11)}${obs.to.padEnd(11)}${adjustedZenith.padStart(13)}${residual.padStart(15)}${distance.padStart(13)}${sigma.padStart(9)}${stdRes.padStart(6)}${fileLine.padStart(10)}`,
+          );
+        });
+      };
+      const renderClassicAdjustedDirectionSection = () => {
+        const directionRows = listingObservations
+          .filter((obs): obs is Observation & { type: 'direction' } => obs.type === 'direction')
+          .sort(classicSortByStdRes);
+        if (directionRows.length === 0) return;
+        const groupedDirections = new Map<string, Array<Observation & { type: 'direction' }>>();
+        directionRows.forEach((obs) => {
+          const key = String(obs.setId ?? 'UNKNOWN');
+          const group = groupedDirections.get(key) ?? [];
+          group.push(obs);
+          groupedDirections.set(key, group);
+        });
+        const sortedGroups = [...groupedDirections.entries()].sort((a, b) => {
+          const aMax = Math.max(...a[1].map((obs) => Math.abs(obs.stdRes ?? 0)));
+          const bMax = Math.max(...b[1].map((obs) => Math.abs(obs.stdRes ?? 0)));
+          if (Math.abs(bMax - aMax) > 1e-12) return bMax - aMax;
+          const aLabel = Number(formatClassicTraverseSetLabel(a[0], 0));
+          const bLabel = Number(formatClassicTraverseSetLabel(b[0], 0));
+          if (Number.isFinite(aLabel) && Number.isFinite(bLabel) && aLabel !== bLabel) {
+            return aLabel - bLabel;
+          }
+          return a[0].localeCompare(b[0], undefined, { numeric: true });
+        });
+        lines.push('');
+        lines.push(
+          centerIndustryLine(`Adjusted Measured Direction Observations (${angleUnitLabel})`),
+        );
+        lines.push('');
+        lines.push(
+          '           From       To            Direction        Residual     Distance   StdErr StdRes File:Line',
+        );
+        sortedGroups.forEach(([setId, group], groupIndex) => {
+          lines.push('');
+          lines.push(`           Set ${formatClassicTraverseSetLabel(setId, groupIndex + 1)}`);
+          group.forEach((obs) => {
+            const adjustedDirection = formatDmsHundredths(
+              (obs.calc as number | undefined) ?? obs.obs,
+            );
+            const residual = formatClassicTraverseSignedDms(
+              typeof obs.residual === 'number' ? -obs.residual : undefined,
+            );
+            const distance = formatAngularLinearResidual(
+              obs.residual as number | undefined,
+              obs.effectiveDistance,
+            );
+            const sigma = formatClassicTraverseDirectionSigmaArcSec(
+              (obs.weightingStdDev ?? obs.stdDev) * RAD_TO_DEG * 3600,
+            );
+            const stdRes = formatClassicTraverseStdRes(obs);
+            const fileLine = formatClassicTraverseFileLine(parseState, obs.sourceLine);
+            lines.push(
+              `           ${obs.at.padEnd(11)}${obs.to.padEnd(10)}${adjustedDirection.padStart(14)}${residual.padStart(15)}${distance.padStart(13)}${sigma.padStart(9)}${stdRes.padStart(6)}${fileLine.padStart(10)}`,
+            );
+          });
+        });
+      };
+      const renderClassicAdjustedBearingSection = () => {
+        const bearingRows = listingObservations
+          .filter((obs): obs is Observation & { type: 'bearing' } => obs.type === 'bearing')
+          .sort(classicSortByStdRes);
+        if (bearingRows.length > 0) {
+          lines.push('');
+          lines.push(
+            centerIndustryLine(`Adjusted Grid Azimuth/Bearing Observations (${angleUnitLabel})`),
+          );
+          lines.push('');
+          lines.push(
+            '           From       To            Bearing         Residual     Distance   StdErr StdRes File:Line',
+          );
+          bearingRows.forEach((obs) => {
+            const adjustedBearing = formatQuadrantBearing((obs.calc as number | undefined) ?? obs.obs);
+            const residualRad = typeof obs.residual === 'number' ? -obs.residual : undefined;
+            const residual =
+              obs.sigmaSource === 'fixed' && (residualRad == null || Math.abs(residualRad) < 1e-12)
+                ? '-0-00-00.00'
+                : formatClassicTraverseSignedDms(residualRad);
+            const distance =
+              obs.sigmaSource === 'fixed' &&
+              (obs.residual == null || Math.abs(obs.residual) < 1e-12)
+                ? '-0.0000'
+                : formatAngularLinearResidual(
+                    obs.residual as number | undefined,
+                    obs.effectiveDistance,
+                  );
+            const sigma =
+              obs.sigmaSource === 'fixed'
+                ? 'FIXED'
+                : ((obs.weightingStdDev ?? obs.stdDev) * RAD_TO_DEG * 3600).toFixed(2);
+            const stdRes = formatClassicTraverseStdRes(obs);
+            const fileLine = formatClassicTraverseFileLine(parseState, obs.sourceLine);
+            lines.push(
+              `           ${obs.from.padEnd(11)}${obs.to.padEnd(11)}${adjustedBearing.padStart(13)}${residual.padStart(15)}${distance.padStart(13)}${sigma.padStart(9)}${stdRes.padStart(6)}${fileLine.padStart(10)}`,
+            );
+          });
+        }
+        if (relationshipRows.length > 0) {
+          lines.push('');
+          lines.push(
+            centerIndustryLine(
+              `Adjusted Bearings (${angleUnitLabel}) and Horizontal Distances (${linearUnit})`,
+            ),
+          );
+          lines.push(
+            centerIndustryLine('========================================================='),
+          );
+          lines.push(centerIndustryLine('(Relative Confidence of Bearing is in Seconds)'));
+          lines.push('');
+          lines.push('From       To          Grid Bearing   Grid Dist       95% RelConfidence');
+          lines.push('                                      Grnd Dist     Brg    Dist       PPM');
+          relationshipRows.forEach((row) => {
+            const fromStation = res.stations[row.from];
+            const toStation = res.stations[row.to];
+            const gridDistMeters =
+              fromStation && toStation
+                ? Math.hypot(toStation.x - fromStation.x, toStation.y - fromStation.y)
+                : Number.NaN;
+            const avgCombined =
+              fromStation && toStation
+                ? ((fromStation.combinedFactor ?? 1) + (toStation.combinedFactor ?? 1)) / 2
+                : 1;
+            const groundDistMeters =
+              Number.isFinite(gridDistMeters) && avgCombined > 0 ? gridDistMeters / avgCombined : NaN;
+            const azRad =
+              fromStation && toStation
+                ? Math.atan2(toStation.x - fromStation.x, toStation.y - fromStation.y)
+                : Number.NaN;
+            lines.push(
+              `${row.from.padEnd(11)}${row.to.padEnd(12)}${formatQuadrantBearing(azRad).padStart(13)}${(Number.isFinite(gridDistMeters) ? (gridDistMeters * unitScale).toFixed(4) : '-').padStart(12)}${row.sigmaAz95.padStart(8)}${row.sigmaDist95.padStart(8)}${row.ppm95.padStart(10)}`,
+            );
+            lines.push(
+              `${''.padEnd(36)}${(Number.isFinite(groundDistMeters) ? (groundDistMeters * unitScale).toFixed(4) : '-').padStart(9)}`,
+            );
+          });
+        }
+      };
+
+      renderClassicAdjustedDistanceSection();
+      renderClassicAdjustedZenithSection();
+      renderClassicAdjustedDirectionSection();
+      renderClassicAdjustedBearingSection();
+    } else {
+      const angleRows = listingObservations
+        .filter((obs) => obs.type === 'angle')
+        .map((obs) => [
+          `${obs.at}-${obs.from}-${obs.to}${aliasRefsForLine(obs.sourceLine)}${autoSideshotSuffix(obs)}`,
+          radToDmsStr((obs.calc as number | undefined) ?? obs.obs),
+          formatAngularResidualArcSec(obs.residual as number | undefined),
+          formatEffectiveDistance(obs.effectiveDistance),
+          formatAngularStdErrArcSec(obs.weightingStdDev ?? obs.stdDev),
+          formatIndustryStdRes(obs),
+          obs.sourceLine != null ? `1:${obs.sourceLine}` : '-',
+        ]);
+      renderAdjustedSection(
+        `Adjusted Angle Observations (${(parseState?.angleUnits ?? parseSettings.angleUnits).toUpperCase()})`,
+        angleRows,
+        [
+          'Stations',
+          'Angle',
+          'Residual',
+          'Distance',
+          'StdErr',
+          'StdRes',
+          'File:Line',
+        ],
+        [5],
+      );
+
+      const distanceRows = listingObservations
+        .filter((obs) => obs.type === 'dist')
+        .map((obs) => [
+          `${obs.from}-${obs.to}${aliasRefsForLine(obs.sourceLine)}${autoSideshotSuffix(obs)}${prismSuffix(obs)}`,
+          formatLinear((obs.calc as number | undefined) ?? obs.obs),
+          formatResidualLinear(obs.residual as number | undefined),
+          formatLinear(obs.weightingStdDev ?? obs.stdDev),
+          formatIndustryStdRes(obs),
+          obs.sourceLine != null ? `1:${obs.sourceLine}` : '-',
+        ]);
+      renderAdjustedSection(
+        `${hasTraverseStyleAngularFamilies ? 'Adjusted Measured Distance Observations' : 'Adjusted Distance Observations'} (${linearUnit})`,
+        distanceRows,
+        ['Stations', 'Distance', 'Residual', 'StdErr', 'StdRes', 'File:Line'],
+        [1, 2, 3, 4],
+      );
+
+      const directionRows = listingObservations
+        .filter((obs) => obs.type === 'direction')
+        .map((obs) => [
+          `${obs.at}-${obs.to}${aliasRefsForLine(obs.sourceLine)}${autoSideshotSuffix(obs)}`,
+          radToDmsStr((obs.calc as number | undefined) ?? obs.obs),
+          formatAngularResidualArcSec(obs.residual as number | undefined),
+          formatAngularLinearResidual(
+            obs.residual as number | undefined,
+            obs.effectiveDistance,
+          ),
+          formatAngularStdErrArcSec(obs.weightingStdDev ?? obs.stdDev),
+          formatIndustryStdRes(obs),
+          obs.sourceLine != null ? `1:${obs.sourceLine}` : '-',
+        ]);
+      renderAdjustedSection(
+        `${hasTraverseStyleAngularFamilies ? 'Adjusted Measured Direction Observations' : 'Adjusted Direction Observations'} (${(parseState?.angleUnits ?? parseSettings.angleUnits).toUpperCase()})`,
+        directionRows,
+        [
+          'Stations',
+          'Direction',
+          'Residual',
+          'Distance',
+          'StdErr',
+          'StdRes',
+          'File:Line',
+        ],
+        [5],
+      );
+
+      if (relationshipRows.length > 0) {
+        lines.push('');
+        const azTitle = `Adjusted Azimuths (${(parseState?.angleUnits ?? parseSettings.angleUnits).toUpperCase()}) and Horizontal Distances (${linearUnit})`;
+        addCenteredHeading(azTitle);
+        lines.push('                 (Relative Confidence of Azimuth is in Seconds)');
+        lines.push('');
+        lines.push('From       To               Azimuth    Distance       95% RelConfidence');
+        lines.push('                                                    Azi    Dist       PPM');
+        relationshipRows.forEach((row) => {
+          lines.push(
+            `${row.from.padEnd(10)} ${row.to.padEnd(10)} ${row.azimuth.padStart(14)} ${row.distance.padStart(10)} ${row.sigmaAz95.padStart(7)} ${row.sigmaDist95.padStart(8)} ${row.ppm95.padStart(10)}`,
+          );
+        });
+      }
     }
 
     if (coordSystemMode === 'grid') {
