@@ -1,6 +1,11 @@
 import { RAD_TO_DEG, DEG_TO_RAD } from './angles';
 import { geoidGridMetadataSummary, interpolateGeoidUndulation, loadGeoidGridModel } from './geoid';
-import { computeElevationFactor, computeGridFactors, inverseENToGeodetic } from './geodesy';
+import {
+  computeElevationFactor,
+  computeGridFactors,
+  inverseENToGeodetic,
+  projectGeodeticToEN,
+} from './geodesy';
 import { getCrsDefinition, isGeodeticInsideAreaOfUse } from './crsCatalog';
 import { runClusterDualPassWorkflow } from './adjustmentClusterWorkflow';
 import type { GeoidGridModel } from './geoid';
@@ -2775,6 +2780,118 @@ export class LSAEngine {
     return convTo - convFrom;
   }
 
+  private rawDistanceCombinedFactor(obs: Observation & { type: 'dist' }): number {
+    const fromF = this.stationFactorSnapshot(obs.from);
+    const toF = this.stationFactorSnapshot(obs.to);
+    const averageCombined = (fromF.combinedFactor + toF.combinedFactor) / 2;
+    if (this.coordSystemMode !== 'grid') return averageCombined;
+
+    const fromGeo = this.stationGeodetic(obs.from);
+    const toGeo = this.stationGeodetic(obs.to);
+    const fromStation = this.stations[obs.from];
+    const toStation = this.stations[obs.to];
+    if (!fromGeo || !toGeo || !fromStation || !toStation) return averageCombined;
+
+    const midpointFactors = computeGridFactors(
+      (fromGeo.latDeg + toGeo.latDeg) / 2,
+      (fromGeo.lonDeg + toGeo.lonDeg) / 2,
+      this.crsId,
+    );
+    if (!midpointFactors) return averageCombined;
+
+    const meanEllipsoidHeight =
+      (this.stationEllipsoidHeight(fromStation) + this.stationEllipsoidHeight(toStation)) / 2;
+    return midpointFactors.gridScaleFactor * computeElevationFactor(meanEllipsoidHeight);
+  }
+
+  private rawDirectionSetCorrection(obs: Observation & { type: 'direction' }): number {
+    if (this.coordSystemMode !== 'grid') return 0;
+    const fromStation = this.stations[obs.at];
+    const toStation = this.stations[obs.to];
+    const fromGeo = this.stationGeodetic(obs.at);
+    const toGeo = this.stationGeodetic(obs.to);
+    if (!fromStation || !toStation || !fromGeo || !toGeo) return 0;
+    const lat1 = fromGeo.latDeg * DEG_TO_RAD;
+    const lon1 = fromGeo.lonDeg * DEG_TO_RAD;
+    const lat2 = toGeo.latDeg * DEG_TO_RAD;
+    const lon2 = toGeo.lonDeg * DEG_TO_RAD;
+    const dLon = lon2 - lon1;
+    const y = Math.sin(dLon) * Math.cos(lat2);
+    const x =
+      Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLon);
+    const bearing = Math.atan2(y, x);
+    const hav =
+      Math.sin((lat2 - lat1) / 2) ** 2 +
+      Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLon / 2) ** 2;
+    const centralAngle = 2 * Math.asin(Math.min(1, Math.sqrt(Math.max(hav, 0))));
+    if (!Number.isFinite(centralAngle) || centralAngle <= 0) return 0;
+    const step = Math.min(centralAngle * 1e-2, 1e-6);
+    if (!Number.isFinite(step) || step <= 0) return 0;
+    const nearLat = Math.asin(
+      Math.sin(lat1) * Math.cos(step) + Math.cos(lat1) * Math.sin(step) * Math.cos(bearing),
+    );
+    const nearLon =
+      lon1 +
+      Math.atan2(
+        Math.sin(bearing) * Math.sin(step) * Math.cos(lat1),
+        Math.cos(step) - Math.sin(lat1) * Math.sin(nearLat),
+      );
+    const nearProjected = projectGeodeticToEN({
+      latDeg: nearLat * RAD_TO_DEG,
+      lonDeg: nearLon * RAD_TO_DEG,
+      originLatDeg: this.parseState?.originLatDeg ?? fromGeo.latDeg,
+      originLonDeg: this.parseState?.originLonDeg ?? fromGeo.lonDeg,
+      model: this.parseState?.crsProjectionModel ?? 'legacy-equirectangular',
+      coordSystemMode: this.coordSystemMode,
+      crsId: this.crsId,
+    });
+    const tangentAz = Math.atan2(
+      nearProjected.east - fromStation.x,
+      nearProjected.north - fromStation.y,
+    );
+    const chordAz = Math.atan2(toStation.x - fromStation.x, toStation.y - fromStation.y);
+    return this.wrapToPi(chordAz - tangentAz);
+  }
+
+  private captureRawTraverseDistanceFactorSnapshots(activeObservations: Observation[]): void {
+    if (!this.parseState) return;
+
+    const rawDistanceCombinedFactorByObsId: Record<number, number> = {};
+    activeObservations.forEach((obs) => {
+      if (obs.type !== 'dist') return;
+      rawDistanceCombinedFactorByObsId[obs.id] = this.rawDistanceCombinedFactor(obs);
+    });
+    this.parseState.rawDistanceCombinedFactorByObsId = rawDistanceCombinedFactorByObsId;
+  }
+
+  private captureRawTraverseDirectionCorrections(activeObservations: Observation[]): void {
+    if (!this.parseState) return;
+    const directionGroups = new Map<string, Observation[]>();
+    activeObservations
+      .filter((obs): obs is Observation & { type: 'direction' } => obs.type === 'direction')
+      .sort((a, b) => {
+        const aLine = a.sourceLine ?? Number.MAX_SAFE_INTEGER;
+        const bLine = b.sourceLine ?? Number.MAX_SAFE_INTEGER;
+        if (aLine !== bLine) return aLine - bLine;
+        return a.id - b.id;
+      })
+      .forEach((obs) => {
+        const group = directionGroups.get(obs.setId) ?? [];
+        group.push(obs);
+        directionGroups.set(obs.setId, group);
+      });
+
+    const rawDirectionSetCorrectionByObsId: Record<number, number> = {};
+    directionGroups.forEach((group) => {
+      group.forEach((obs) => {
+        rawDirectionSetCorrectionByObsId[obs.id] = this.rawDirectionSetCorrection(
+          obs as Observation & { type: 'direction' },
+        );
+      });
+    });
+    this.parseState.rawDirectionSetCorrectionByObsId = rawDirectionSetCorrectionByObsId;
+  }
+
   private modeledAzimuth(rawAz: number, atStationId?: StationId, applyConvergence = true): number {
     let az = rawAz;
     if (applyConvergence && atStationId) {
@@ -3999,6 +4116,7 @@ export class LSAEngine {
     this.updateGpsAddHiHtDiagnostics();
     const activeObservations = this.collectActiveObservations();
     this.bootstrapApproximateTraverseCoords(activeObservations);
+    this.captureRawTraverseDistanceFactorSnapshots(activeObservations);
     if (this.parseState) {
       this.parseState.usedInSolveUsageSummary = summarizeReductionUsage(activeObservations);
       this.parseState.parsedUsageSummary =
@@ -5926,6 +6044,7 @@ export class LSAEngine {
         this.stationFactorSnapshot(id);
       });
     }
+    this.captureRawTraverseDirectionCorrections(this.collectActiveObservations());
     this.parseState = finalizeResultParseState({
       parseState: this.parseState,
       coordSystemMode: this.coordSystemMode,

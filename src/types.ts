@@ -1047,6 +1047,8 @@ export interface ParseOptions {
   displayLineBySourceLine?: Record<number, number>;
   gpsTopoShots?: GpsTopoCoordinateShot[];
   inputStationSnapshots?: InputStationSnapshot[];
+  rawDistanceCombinedFactorByObsId?: Record<number, number>;
+  rawDirectionSetCorrectionByObsId?: Record<number, number>;
   plannedObservationCount?: number;
   stationSeparator?: string;
   dataInputEnabled?: boolean;

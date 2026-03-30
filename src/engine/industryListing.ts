@@ -173,6 +173,30 @@ const formatDmsHundredths = (rad?: number | null): string => {
   return `${d}-${m.toString().padStart(2, '0')}-${s.toFixed(2).padStart(5, '0')}`;
 };
 
+const truncateTowardZero = (value: number, decimals: number): number => {
+  const factor = 10 ** decimals;
+  return Math.trunc(value * factor) / factor;
+};
+
+const formatClassicTraverseCombinedFactor = (value: number): string =>
+  truncateTowardZero(value - 1e-7, 7).toFixed(7);
+
+const formatClassicTraverseArcSeconds = (value: number): string => {
+  const truncated = truncateTowardZero(value, 2);
+  if (truncated === 0) {
+    return value < 0 ? '-0.00' : '0.00';
+  }
+  return truncated.toFixed(2);
+};
+
+const filterListingCoordSystemDiagnostics = (
+  coordSystemMode: 'local' | 'grid',
+  diagnostics: CoordSystemDiagnosticCode[],
+): CoordSystemDiagnosticCode[] =>
+  coordSystemMode === 'grid'
+    ? diagnostics
+    : diagnostics.filter((code) => code !== 'GEOID_FALLBACK');
+
 const formatQuadrantBearing = (rad?: number | null): string => {
   if (rad == null || Number.isNaN(rad)) return '-';
   const azDeg = ((rad * RAD_TO_DEG) % 360 + 360) % 360;
@@ -527,10 +551,14 @@ export const buildIndustryStyleListingText = (
     parseState?.directiveTransitions ?? runDiag.directiveTransitions ?? [];
   const directiveNoEffectWarnings =
     parseState?.directiveNoEffectWarnings ?? runDiag.directiveNoEffectWarnings ?? [];
-  const coordSystemDiagnostics =
-    parseState?.coordSystemDiagnostics ?? runDiag.coordSystemDiagnostics ?? [];
+  const coordSystemDiagnostics = filterListingCoordSystemDiagnostics(
+    coordSystemMode,
+    parseState?.coordSystemDiagnostics ?? runDiag.coordSystemDiagnostics ?? [],
+  );
   const coordSystemWarningMessages =
-    parseState?.coordSystemWarningMessages ?? runDiag.coordSystemWarningMessages ?? [];
+    coordSystemDiagnostics.length > 0
+      ? (parseState?.coordSystemWarningMessages ?? runDiag.coordSystemWarningMessages ?? [])
+      : [];
   const datumSufficiency = parseState?.datumSufficiencyReport ?? runDiag.datumSufficiencyReport;
   const gnssVectorFrameDefault =
     parseState?.gnssVectorFrameDefault ?? runDiag.gnssVectorFrameDefault ?? 'gridNEU';
@@ -1275,10 +1303,11 @@ export const buildIndustryStyleListingText = (
         const from = res.stations[obs.from];
         const to = res.stations[obs.to];
         const combinedFactor =
-          from && to ? ((from.combinedFactor ?? 1) + (to.combinedFactor ?? 1)) / 2 : 1;
+          parseState?.rawDistanceCombinedFactorByObsId?.[obs.id] ??
+          (from && to ? ((from.combinedFactor ?? 1) + (to.combinedFactor ?? 1)) / 2 : 1);
         const sigma = (obs.weightingStdDev ?? obs.stdDev) * unitScale;
         lines.push(
-          `${obs.from.padEnd(10)}${obs.to.padEnd(14)}${(obs.obs * unitScale).toFixed(4).padStart(10)}${sigma.toFixed(4).padStart(9)}${((obs.hi ?? 0) * unitScale).toFixed(3).padStart(8)}${((obs.ht ?? 0) * unitScale).toFixed(3).padStart(8)}${combinedFactor.toFixed(7).padStart(11)}   ${(obs.mode ?? 'slope') === 'horiz' ? 'H' : 'S'}`,
+          `${obs.from.padEnd(11)}${obs.to.padEnd(12)}${(obs.obs * unitScale).toFixed(4).padStart(10)}${sigma.toFixed(4).padStart(9)}${((obs.hi ?? 0) * unitScale).toFixed(3).padStart(8)}${((obs.ht ?? 0) * unitScale).toFixed(3).padStart(8)}${formatClassicTraverseCombinedFactor(combinedFactor).padStart(11)}   ${(obs.mode ?? 'slope') === 'horiz' ? 'H' : 'S'}`,
         );
       });
     lines.push('');
@@ -1295,7 +1324,7 @@ export const buildIndustryStyleListingText = (
       .forEach((obs) => {
         const sigmaArcSec = (obs.weightingStdDev ?? obs.stdDev) * RAD_TO_DEG * 3600;
         lines.push(
-          `${obs.from.padEnd(10)}${obs.to.padEnd(14)}${formatDmsHundredths(obs.obs).padStart(14)}${sigmaArcSec.toFixed(2).padStart(11)}${((obs.hi ?? 0) * unitScale).toFixed(3).padStart(8)}${((obs.ht ?? 0) * unitScale).toFixed(3).padStart(8)}`,
+          `${obs.from.padEnd(11)}${obs.to.padEnd(11)}${formatDmsHundredths(obs.obs).padStart(13)}${sigmaArcSec.toFixed(2).padStart(10)}${((obs.hi ?? 0) * unitScale).toFixed(3).padStart(8)}${((obs.ht ?? 0) * unitScale).toFixed(3).padStart(8)}`,
         );
       });
     lines.push('');
@@ -1316,13 +1345,17 @@ export const buildIndustryStyleListingText = (
         group.push(obs);
         groupedDirections.set(key, group);
       });
-    groupedDirections.forEach((group, setId) => {
+    let rawDirectionSetNumber = 1;
+    groupedDirections.forEach((group) => {
       lines.push('');
-      lines.push(`Set ${setId}`);
+      lines.push(`Set ${rawDirectionSetNumber}`);
+      rawDirectionSetNumber += 1;
       group.forEach((obs) => {
         const sigmaArcSec = (obs.weightingStdDev ?? obs.stdDev) * RAD_TO_DEG * 3600;
+        const ttArcSec =
+          ((parseState?.rawDirectionSetCorrectionByObsId?.[obs.id] ?? 0) * RAD_TO_DEG * 3600);
         lines.push(
-          `${obs.at.padEnd(10)}${obs.to.padEnd(14)}${formatDmsHundredths(obs.obs).padStart(14)}${sigmaArcSec.toFixed(2).padStart(11)}${'0.00'.padStart(8)}`,
+          `${obs.at.padEnd(11)}${obs.to.padEnd(10)}${formatDmsHundredths(obs.obs).padStart(14)}${sigmaArcSec.toFixed(2).padStart(11)}${formatClassicTraverseArcSeconds(ttArcSec).padStart(8)}`,
         );
       });
     });
@@ -1348,7 +1381,7 @@ export const buildIndustryStyleListingText = (
               ? 'FIXED'
               : ((obs.weightingStdDev ?? obs.stdDev) * RAD_TO_DEG * 3600).toFixed(2);
           lines.push(
-            `${obs.from.padEnd(10)}${obs.to.padEnd(11)}${formatQuadrantBearing(obs.obs).padStart(18)}${stdErr.padStart(10)}`,
+            `${obs.from.padEnd(11)}${obs.to.padEnd(11)}${formatQuadrantBearing(obs.obs).padStart(13)}${stdErr.padStart(10)}`,
           );
         });
     }
