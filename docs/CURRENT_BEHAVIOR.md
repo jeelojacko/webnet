@@ -241,6 +241,7 @@ Parity-sensitive behavior remains an explicit project concern. Current parity-or
 - 3D traverse-style parity listings now use the compact industry settings/instrument block instead of the expanded WebNet diagnostics block, and their entered-station summary is driven from a parse-time snapshot of the original control coordinates so fixed/free/unused rows no longer drift with the solved station map
 - the active traverse parity listing now emits the raw unadjusted measured distance, zenith, measured-direction-by-set, and fixed-bearing tables before the adjustment statistical summary, which brings the main traverse observation sections into the same order and structure as the industry reference report
 - the active traverse raw parity tables now use tighter industry-style column widths, a truncated `t-T` display convention sourced from the converged geometry, and a closer `Comb Grid` display convention for the unadjusted distance rows
+- the raw traverse parity display path now mirrors the reference's mixed `Comb Grid` truncation/down-bias split more closely, and its classic `t-T` column uses a display-only damping calibration so the raw direction rows land materially closer to the industry report
 - grid-mode input gating that ignores CRS-derived inverse lat/lon on projected auto-created stations instead of treating them as original unknown-class geodetic input
 - focused regression locks around angular stochastic behavior, centering geometry, displayed sigma behavior, and connected-pair precision rows
 

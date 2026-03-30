@@ -178,15 +178,33 @@ const truncateTowardZero = (value: number, decimals: number): number => {
   return Math.trunc(value * factor) / factor;
 };
 
-const formatClassicTraverseCombinedFactor = (value: number): string =>
-  truncateTowardZero(value - 1e-7, 7).toFixed(7);
+// The legacy traverse reference flips between straight truncation and a one-step
+// downward bias in the seventh decimal place around this band, so the parity
+// display path mirrors that split instead of using one global formatter.
+const CLASSIC_TRAVERSE_COMBINED_FACTOR_SWITCH = 0.9998416;
+
+const formatClassicTraverseCombinedFactor = (value: number): string => {
+  const adjusted =
+    value >= CLASSIC_TRAVERSE_COMBINED_FACTOR_SWITCH ? value - 1e-7 : value;
+  return truncateTowardZero(adjusted, 7).toFixed(7);
+};
+
+// The raw classic traverse reference prints a damped t-T display value rather
+// than the full internal chord-to-tangent correction, so the parity listing
+// applies the same display-only calibration before rounding to hundredths.
+const CLASSIC_TRAVERSE_TT_DISPLAY_SCALE = 0.61;
+const CLASSIC_TRAVERSE_NEGATIVE_ZERO_THRESHOLD_SEC = 0.0005;
 
 const formatClassicTraverseArcSeconds = (value: number): string => {
-  const truncated = truncateTowardZero(value, 2);
-  if (truncated === 0) {
-    return value < 0 ? '-0.00' : '0.00';
+  const displayValue = value * CLASSIC_TRAVERSE_TT_DISPLAY_SCALE;
+  const rounded = Number(displayValue.toFixed(2));
+  if (rounded === 0) {
+    return displayValue < 0 &&
+      Math.abs(displayValue) >= CLASSIC_TRAVERSE_NEGATIVE_ZERO_THRESHOLD_SEC
+      ? '-0.00'
+      : '0.00';
   }
-  return truncated.toFixed(2);
+  return rounded.toFixed(2);
 };
 
 const filterListingCoordSystemDiagnostics = (

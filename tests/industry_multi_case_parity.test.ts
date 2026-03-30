@@ -203,6 +203,9 @@ describe('industry multi-case parity foundation', () => {
       expect(listing).toContain('Set 1');
       expect(listing).toContain('100        APOG          0-00-00.00       4.16    0.00');
       expect(listing).toContain('100        PEAT        301-35-57.60      14.53   -0.00');
+      expect(listing).toContain('101        PEAT          0-00-00.00      15.76    0.00');
+      expect(listing).toContain('102        APOG          0-00-00.00       5.79    0.01');
+      expect(listing).toContain('102        103         203-28-17.40       5.85   -0.01');
       expect(listing).toContain('103        104         130-00-58.95       2.56   -0.01');
       expect(listing).toContain('Number of Grid Azimuth/Bearing Observations (DMS) = 1');
       expect(listing).toContain('From       To            Bearing       StdErr');
