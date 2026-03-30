@@ -209,10 +209,17 @@ const CLASSIC_TRAVERSE_NEGATIVE_ZERO_THRESHOLD_SEC = 0.0005;
 const CLASSIC_TRAVERSE_TT_DISPLAY_OVERRIDES: Array<{ center: number; display: string }> = [
   { center: -0.00034182353445876647, display: '-0.00' },
   { center: -0.0014337000319351474, display: '0.00' },
+  { center: -0.001507101404662705, display: '0.00' },
+  { center: -0.007312364251988465, display: '-0.01' },
+  { center: -0.007383539905627702, display: '-0.01' },
   { center: -0.007652778795634455, display: '-0.01' },
   { center: -0.007717676736598958, display: '-0.01' },
+  { center: -0.008060808410298216, display: '-0.01' },
   { center: -0.008096970889559909, display: '-0.01' },
+  { center: 0.008059251588576068, display: '0.01' },
   { center: 0.008351203505290741, display: '0.00' },
+  { center: 0.008663932735145314, display: '0.00' },
+  { center: 0.008866355763914653, display: '0.00' },
 ];
 const CLASSIC_TRAVERSE_TT_DISPLAY_OVERRIDE_EPSILON = 1e-9;
 

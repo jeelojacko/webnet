@@ -142,6 +142,7 @@
       - [x] Close the raw traverse unadjusted exact diff so the classic parity listing now matches the industry reference line-for-line through the measured distance, zenith, and measured-direction sections
       - [x] Bring the later traverse listing closer to the reference by using first-occurrence station order in the convergence/factor block, true source-file line numbers in adjusted sections, and canonical observed-pair ordering in the adjusted bearing-distance relationship table
       - [x] Apply the classic traverse display-factor decomposition around the fixed anchor so adjusted coordinates and the bearing-distance relationship table use the closer industry-style horizontal scale in the parity listing
+      - [x] Model traverse zenith observations from the same ground-equivalent horizontal geometry used by grid-mode measured slope distances so the remaining adjusted-height drift in the parity case collapses to the reference
       - [x] Reduce grid-mode slope distances for the traverse parity path by applying the scale factor to the horizontal component before rebuilding the 3D slope length, while preserving the legacy derivative algebra for non-parity paths
       - [x] Keep parity-profile initial geometry frozen only for angular sigma behavior; distance/zenith/live slope modeling in the shared run-session path must continue using current geometry so the browser traverse startup still converges
       - [ ] Close the remaining fixed-bearing orientation parity gap for a network constrained by one fixed point plus one fixed bearing

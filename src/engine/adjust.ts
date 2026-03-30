@@ -509,7 +509,7 @@ export class LSAEngine {
         wrapToPi: this.wrapToPi.bind(this),
         gpsObservedVector: this.gpsObservedVector.bind(this),
         gpsWeight: this.gpsWeight.bind(this),
-        getZenith: this.getZenith.bind(this),
+        getModeledZenith: this.getModeledZenith.bind(this),
         curvatureRefractionAngle: this.curvatureRefractionAngle.bind(this),
         applyTsCorrelationToWeightMatrix: this.applyTsCorrelationToWeightMatrix.bind(this),
       },
@@ -704,7 +704,7 @@ export class LSAEngine {
         return;
       }
       if (obs.type === 'zenith') {
-        obs.obs = this.getZenith(obs.from, obs.to, obs.hi ?? 0, obs.ht ?? 0).z;
+        obs.obs = this.getModeledZenith(obs).z;
         return;
       }
       if (obs.type === 'lev') {
@@ -3049,6 +3049,34 @@ export class LSAEngine {
     return ((1 - 2 * this.refractionCoefficient) * horiz) / (2 * EARTH_RADIUS_M);
   }
 
+  private zenithScaleForObservation(obs: Observation & { type: 'zenith' }): number {
+    if (this.coordSystemMode === 'local') {
+      const legacyGridScale =
+        this.crsGridScaleEnabled &&
+        Number.isFinite(this.crsGridScaleFactor) &&
+        this.crsGridScaleFactor > 0
+          ? this.crsGridScaleFactor
+          : 1;
+      if (this.localDatumScheme === 'common-elevation') {
+        const from = this.stations[obs.from];
+        const to = this.stations[obs.to];
+        if (!from || !to) return 1;
+        const meanElevation =
+          (this.stationEllipsoidHeight(from) + this.stationEllipsoidHeight(to)) / 2;
+        const factor = (EARTH_RADIUS_M + this.commonElevation) / (EARTH_RADIUS_M + meanElevation);
+        const localFactor = Number.isFinite(factor) && factor > 0 ? factor : 1;
+        return localFactor * legacyGridScale;
+      }
+      return this.averageScaleFactor * legacyGridScale;
+    }
+    const fromF = this.stationFactorSnapshot(obs.from);
+    const toF = this.stationFactorSnapshot(obs.to);
+    if (this.scaleOverrideActive) {
+      return this.averageScaleFactor;
+    }
+    return (fromF.combinedFactor + toF.combinedFactor) / 2;
+  }
+
   private getZenith(
     fromID: StationId,
     toID: StationId,
@@ -3074,6 +3102,23 @@ export class LSAEngine {
     return result;
   }
 
+  private getModeledZenith(
+    obs: Observation & { type: 'zenith' },
+  ): { z: number; dist: number; horiz: number; dh: number; crCorr: number; horizontalScale: number } {
+    const raw = this.getZenith(obs.from, obs.to, obs.hi ?? 0, obs.ht ?? 0);
+    const horizontalScale =
+      this.coordSystemMode === 'grid' && !this.is2D ? this.zenithScaleForObservation(obs) : 1;
+    if (!Number.isFinite(horizontalScale) || horizontalScale <= 0 || Math.abs(horizontalScale - 1) <= 1e-12) {
+      return { ...raw, horizontalScale: 1 };
+    }
+    const horiz = raw.horiz / horizontalScale;
+    const dist = Math.sqrt(horiz * horiz + raw.dh * raw.dh);
+    const zGeom = dist === 0 ? 0 : Math.acos(raw.dh / dist);
+    const crCorr = this.curvatureRefractionAngle(horiz);
+    const z = Math.min(Math.PI, Math.max(0, zGeom + crCorr));
+    return { z, dist, horiz, dh: raw.dh, crCorr, horizontalScale };
+  }
+
   private effectiveDistanceForAngularObservation(obs: Observation): number | undefined {
     if (obs.type === 'angle') {
       const rayFrom = this.getAzimuth(obs.at, obs.from).dist;
@@ -3094,7 +3139,7 @@ export class LSAEngine {
       return Number.isFinite(dist) && dist > 0 ? dist : undefined;
     }
     if (obs.type === 'zenith') {
-      const geom = this.getZenith(obs.from, obs.to, obs.hi ?? 0, obs.ht ?? 0).dist;
+      const geom = this.getModeledZenith(obs).dist;
       return Number.isFinite(geom) && geom > 0 ? geom : undefined;
     }
     return undefined;
@@ -3530,7 +3575,7 @@ export class LSAEngine {
         return;
       }
       if (obs.type === 'zenith') {
-        const geom = this.getZenith(obs.from, obs.to, obs.hi ?? 0, obs.ht ?? 0);
+        const geom = this.getModeledZenith(obs);
         const calc = geom.z;
         const residual = ((obs.obs - calc + Math.PI) % (2 * Math.PI)) - Math.PI;
         obs.calc = calc;
@@ -4332,7 +4377,7 @@ export class LSAEngine {
           wrapToPi: this.wrapToPi.bind(this),
           gpsObservedVector: this.gpsObservedVector.bind(this),
           gpsWeight: this.gpsWeight.bind(this),
-          getZenith: this.getZenith.bind(this),
+          getModeledZenith: this.getModeledZenith.bind(this),
           curvatureRefractionAngle: this.curvatureRefractionAngle.bind(this),
           applyTsCorrelationToWeightMatrix: this.applyTsCorrelationToWeightMatrix.bind(this),
           logObsDebug: this.logObsDebug.bind(this),
@@ -4788,7 +4833,7 @@ export class LSAEngine {
         directionStats.set(setId, stat);
       } else if (obs.type === 'zenith') {
         obs.effectiveDistance = this.effectiveDistanceForAngularObservation(obs);
-        const zv = this.getZenith(obs.from, obs.to, obs.hi ?? 0, obs.ht ?? 0).z;
+        const zv = this.getModeledZenith(obs).z;
         let v = obs.obs - zv;
         if (v > Math.PI) v -= 2 * Math.PI;
         if (v < -Math.PI) v += 2 * Math.PI;
@@ -5208,7 +5253,7 @@ export class LSAEngine {
           }
 
           if (obs.type === 'zenith') {
-            const zv = this.getZenith(obs.from, obs.to, obs.hi ?? 0, obs.ht ?? 0);
+            const zv = this.getModeledZenith(obs);
             const calc = zv.z;
             let v = obs.obs - calc;
             if (v > Math.PI) v -= 2 * Math.PI;
@@ -5220,13 +5265,16 @@ export class LSAEngine {
               Math.max(1 - (zv.dist === 0 ? 0 : (zv.dh / zv.dist) ** 2), 1e-12),
             );
             const common = zv.dist === 0 ? 0 : 1 / (zv.dist * zv.dist * zv.dist * denom);
+            const horizontalScale = zv.horizontalScale ?? 1;
             const dx = this.stations[obs.to].x - this.stations[obs.from].x;
             const dy = this.stations[obs.to].y - this.stations[obs.from].y;
-            const dZ_dEGeom = zv.dh * dx * common;
-            const dZ_dNGeom = zv.dh * dy * common;
+            const dZ_dEGeom = zv.dh * dx * common / (horizontalScale * horizontalScale);
+            const dZ_dNGeom = zv.dh * dy * common / (horizontalScale * horizontalScale);
             const dC_dHoriz = this.curvatureRefractionAngle(1);
-            const dHoriz_dE = zv.horiz > 0 ? dx / zv.horiz : 0;
-            const dHoriz_dN = zv.horiz > 0 ? dy / zv.horiz : 0;
+            const dHoriz_dE =
+              zv.horiz > 0 ? dx / (zv.horiz * horizontalScale * horizontalScale) : 0;
+            const dHoriz_dN =
+              zv.horiz > 0 ? dy / (zv.horiz * horizontalScale * horizontalScale) : 0;
             const dZ_dE = dZ_dEGeom + dC_dHoriz * dHoriz_dE;
             const dZ_dN = dZ_dNGeom + dC_dHoriz * dHoriz_dN;
             const dZ_dH = -(zv.horiz * zv.horiz) * common;

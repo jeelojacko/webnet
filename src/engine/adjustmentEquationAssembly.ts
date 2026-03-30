@@ -36,6 +36,7 @@ interface ZenithGeometry {
   horiz: number;
   dh: number;
   crCorr: number;
+  horizontalScale?: number;
 }
 
 export interface AdjustmentEquationAssemblyDependencies {
@@ -63,12 +64,7 @@ export interface AdjustmentEquationAssemblyDependencies {
   wrapToPi: (_value: number) => number;
   gpsObservedVector: (_observation: GpsObservation) => { dE: number; dN: number; scale: number };
   gpsWeight: (_observation: Observation) => { wEE: number; wNN: number; wEN: number };
-  getZenith: (
-    _fromId: StationId,
-    _toId: StationId,
-    _hi: number,
-    _ht: number,
-  ) => ZenithGeometry;
+  getModeledZenith: (_observation: Observation & { type: 'zenith' }) => ZenithGeometry;
   curvatureRefractionAngle: (_horiz: number) => number;
   applyTsCorrelationToWeightMatrix: (_P: number[][], _rowInfo: EquationRowInfo[]) => void;
   logObsDebug?: (_iteration: number, _label: string, _details: string) => void;
@@ -364,12 +360,7 @@ export const assembleAdjustmentEquations = (
       const fromStation = dependencies.stations[observation.from];
       const toStation = dependencies.stations[observation.to];
       if (!fromStation || !toStation) return;
-      const zenith = dependencies.getZenith(
-        observation.from,
-        observation.to,
-        observation.hi ?? 0,
-        observation.ht ?? 0,
-      );
+      const zenith = dependencies.getModeledZenith(observation);
       const residual = dependencies.wrapToPi(observation.obs - zenith.z);
       L[row][0] = residual;
       rowInfo.push({ obs: observation });
@@ -382,13 +373,16 @@ export const assembleAdjustmentEquations = (
       );
       const denom = Math.sqrt(Math.max(1 - (zenith.dist === 0 ? 0 : (zenith.dh / zenith.dist) ** 2), 1e-12));
       const common = zenith.dist === 0 ? 0 : 1 / (zenith.dist * zenith.dist * zenith.dist * denom);
+      const horizontalScale = zenith.horizontalScale ?? 1;
       const dx = toStation.x - fromStation.x;
       const dy = toStation.y - fromStation.y;
-      const dZ_dEGeom = zenith.dh * dx * common;
-      const dZ_dNGeom = zenith.dh * dy * common;
+      const dZ_dEGeom = zenith.dh * dx * common / (horizontalScale * horizontalScale);
+      const dZ_dNGeom = zenith.dh * dy * common / (horizontalScale * horizontalScale);
       const dC_dHoriz = dependencies.curvatureRefractionAngle(1);
-      const dHoriz_dE = zenith.horiz > 0 ? dx / zenith.horiz : 0;
-      const dHoriz_dN = zenith.horiz > 0 ? dy / zenith.horiz : 0;
+      const dHoriz_dE =
+        zenith.horiz > 0 ? dx / (zenith.horiz * horizontalScale * horizontalScale) : 0;
+      const dHoriz_dN =
+        zenith.horiz > 0 ? dy / (zenith.horiz * horizontalScale * horizontalScale) : 0;
       const dZ_dE = dZ_dEGeom + dC_dHoriz * dHoriz_dE;
       const dZ_dN = dZ_dNGeom + dC_dHoriz * dHoriz_dN;
       const dZ_dH = -(zenith.horiz * zenith.horiz) * common;
