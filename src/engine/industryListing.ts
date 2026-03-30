@@ -903,6 +903,47 @@ export const buildIndustryStyleListingText = (
     pushClassicTraverseStation(row.from);
     pushClassicTraverseStation(row.to);
   });
+  const classicTraverseDisplayAnchorId =
+    fixedUsedEnteredStationSnapshots[0]?.stationId ?? classicTraverseStationOrder[0];
+  const classicTraverseDisplayAnchor = classicTraverseDisplayAnchorId
+    ? res.stations[classicTraverseDisplayAnchorId]
+    : undefined;
+  const classicTraverseCoordinateDisplayScale =
+    usesClassicParityLayout &&
+    coordSystemMode === 'grid' &&
+    classicTraverseDisplayAnchor &&
+    Number.isFinite(classicTraverseDisplayAnchor.gridScaleFactor ?? Number.NaN) &&
+    (classicTraverseDisplayAnchor.gridScaleFactor ?? 1) > 0 &&
+    Number.isFinite(classicTraverseDisplayAnchor.elevationFactor ?? Number.NaN) &&
+    (classicTraverseDisplayAnchor.elevationFactor ?? 1) > 0
+      ? 1 /
+        (Math.sqrt(classicTraverseDisplayAnchor.gridScaleFactor ?? 1) *
+          (classicTraverseDisplayAnchor.elevationFactor ?? 1))
+      : 1;
+  const classicTraverseDisplayPoint = (
+    stationId: string,
+  ): { x: number; y: number; h: number } | undefined => {
+    const station = res.stations[stationId];
+    if (!station) return undefined;
+    if (
+      !usesClassicParityLayout ||
+      coordSystemMode !== 'grid' ||
+      !classicTraverseDisplayAnchor ||
+      !Number.isFinite(classicTraverseCoordinateDisplayScale) ||
+      classicTraverseCoordinateDisplayScale <= 0
+    ) {
+      return { x: station.x, y: station.y, h: station.h };
+    }
+    return {
+      x:
+        classicTraverseDisplayAnchor.x +
+        (station.x - classicTraverseDisplayAnchor.x) * classicTraverseCoordinateDisplayScale,
+      y:
+        classicTraverseDisplayAnchor.y +
+        (station.y - classicTraverseDisplayAnchor.y) * classicTraverseCoordinateDisplayScale,
+      h: station.h,
+    };
+  };
   if (usesClassicParityLayout && unusedEnteredStationSnapshots.length > 0) {
     const unusedStationIdSet = new Set(
       unusedEnteredStationSnapshots.map((station) => station.stationId),
@@ -1670,13 +1711,33 @@ export const buildIndustryStyleListingText = (
     lines.push('');
     addCenteredHeading(`Adjusted Coordinates (${linearUnit})`);
     lines.push('');
-    const coordRows = stationEntriesForListing.map(([id, st]) => [
-      id,
-      stationDescription(id) || '-',
-      (st.y * unitScale).toFixed(4),
-      (st.x * unitScale).toFixed(4),
-    ]);
-    renderTextTable(['Station', 'Description', 'N', 'E'], coordRows, [2, 3]);
+    if (usesClassicParityLayout && coordSystemMode === 'grid') {
+      lines.push('Station                   N              E          Elev   Description');
+      const classicCoordinateStationEntries =
+        classicTraverseStationOrder.length > 0
+          ? classicTraverseStationOrder
+              .map((stationId) => [stationId, res.stations[stationId]] as const)
+              .filter((entry): entry is [string, Station] => entry[1] != null)
+          : stationEntriesForListing;
+      classicCoordinateStationEntries.forEach(([id, st]) => {
+        const displayPoint = classicTraverseDisplayPoint(id);
+        const northing = ((displayPoint?.y ?? st.y) * unitScale).toFixed(4);
+        const easting = ((displayPoint?.x ?? st.x) * unitScale).toFixed(4);
+        const elevation = (st.h * unitScale).toFixed(4);
+        const description = stationDescription(id);
+        lines.push(
+          `${id.padEnd(18)}${northing.padStart(15)}${easting.padStart(15)}${elevation.padStart(12)}${description ? `   ${description}` : ''}`,
+        );
+      });
+    } else {
+      const coordRows = stationEntriesForListing.map(([id, st]) => [
+        id,
+        stationDescription(id) || '-',
+        (st.y * unitScale).toFixed(4),
+        (st.x * unitScale).toFixed(4),
+      ]);
+      renderTextTable(['Station', 'Description', 'N', 'E'], coordRows, [2, 3]);
+    }
 
     const controlStatusRows = stationEntriesForListing
       .map(([id, st]) => [id, stationDescription(id) || '-', summarizeControlComponentStatus(st)] as const)
@@ -1930,16 +1991,16 @@ export const buildIndustryStyleListingText = (
     return `${deg}-${min.toString().padStart(2, '0')}`;
   };
   const pairAzimuthDms = (from: string, to: string): string => {
-    const a = res.stations[from];
-    const b = res.stations[to];
+    const a = classicTraverseDisplayPoint(from);
+    const b = classicTraverseDisplayPoint(to);
     if (!a || !b) return '-';
     const az = Math.atan2(b.x - a.x, b.y - a.y);
     const wrapped = az >= 0 ? az : az + 2 * Math.PI;
     return radToDmsStr(wrapped);
   };
   const horizDistanceMeters = (from: string, to: string): number | undefined => {
-    const a = res.stations[from];
-    const b = res.stations[to];
+    const a = classicTraverseDisplayPoint(from);
+    const b = classicTraverseDisplayPoint(to);
     if (!a || !b) return undefined;
     return Math.hypot(b.x - a.x, b.y - a.y);
   };
@@ -2379,15 +2440,17 @@ export const buildIndustryStyleListingText = (
           lines.push('From       To          Grid Bearing   Grid Dist       95% RelConfidence');
           lines.push('                                      Grnd Dist     Brg    Dist       PPM');
           relationshipRows.forEach((row) => {
-            const fromStation = res.stations[row.from];
-            const toStation = res.stations[row.to];
+            const fromStation = classicTraverseDisplayPoint(row.from);
+            const toStation = classicTraverseDisplayPoint(row.to);
             const gridDistMeters =
               fromStation && toStation
                 ? Math.hypot(toStation.x - fromStation.x, toStation.y - fromStation.y)
                 : Number.NaN;
             const avgCombined =
-              fromStation && toStation
-                ? ((fromStation.combinedFactor ?? 1) + (toStation.combinedFactor ?? 1)) / 2
+              res.stations[row.from] && res.stations[row.to]
+                ? (((res.stations[row.from]?.combinedFactor ?? 1) +
+                    (res.stations[row.to]?.combinedFactor ?? 1)) /
+                    2)
                 : 1;
             const groundDistMeters =
               Number.isFinite(gridDistMeters) && avgCombined > 0 ? gridDistMeters / avgCombined : NaN;

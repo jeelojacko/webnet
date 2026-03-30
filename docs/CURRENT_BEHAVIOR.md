@@ -244,6 +244,7 @@ Parity-sensitive behavior remains an explicit project concern. Current parity-or
 - the active traverse raw parity tables now use tighter industry-style column widths, a truncated `t-T` display convention sourced from the converged geometry, and a closer `Comb Grid` display convention for the unadjusted distance rows
 - the raw traverse parity display path now mirrors the reference's mixed `Comb Grid` truncation/down-bias split more closely, and its classic `t-T` column uses a display-only damping calibration so the raw direction rows land materially closer to the industry report
 - later traverse parity listing sections now use first-occurrence control/observation station order for the convergence-factor block, actual source-file line numbers in the adjusted observation tables, and canonical observed-pair ordering in the adjusted bearing-distance relationship section instead of the broader generic covariance-pair dump
+- the classic traverse adjusted-coordinate and bearing-distance sections now use a fixed-anchor display-factor decomposition (`gridScale^-1/2 * elevationFactor^-1`) so the parity listing's horizontal coordinates and relationship rows align much more closely with the industry reference without changing the underlying solve
 - grid-mode input gating that ignores CRS-derived inverse lat/lon on projected auto-created stations instead of treating them as original unknown-class geodetic input
 - focused regression locks around angular stochastic behavior, centering geometry, displayed sigma behavior, and connected-pair precision rows
 

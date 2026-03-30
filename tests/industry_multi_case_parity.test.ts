@@ -414,16 +414,28 @@ describe('industry multi-case parity foundation', () => {
         'GPS5       GPS2       N36-50-16.60W    -0-00-00.00      -0.0000    FIXED   0.0      1:15',
       );
 
+      const adjustedCoordinateSection = extractSection(
+        listing,
+        'Adjusted Coordinates (Meters)',
+        'Adjusted Measured Distance Observations (Meters)',
+      );
+      expect(adjustedCoordinateSection).toContain(
+        '100                  7438248.0383   2488864.0009     76.4615',
+      );
+      expect(adjustedCoordinateSection).toContain(
+        'PEAT                 7438221.9756   2488879.1643     75.1572',
+      );
+
       const relationshipSection = extractSection(
         listing,
         'Adjusted Bearings (DMS) and Horizontal Distances (Meters)',
         'Station Coordinate Error Ellipses (Meters)',
       );
       expect(relationshipSection).toContain(
-        '100        124         N30-42-40.57E     81.2553    5.60  0.0025   31.1297',
+        '100        124         N30-42-40.57E     81.2618    5.60  0.0025   31.1272',
       );
       expect(relationshipSection).toContain(
-        '101        102         S28-48-29.69E     33.4146   11.04  0.0023   69.8674',
+        '101        102         S28-48-29.69E     33.4173   11.04  0.0023   69.8618',
       );
       expect(relationshipSection).not.toContain('GPS5       GPS2        N36-50-16.60W');
     },
