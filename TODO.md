@@ -139,6 +139,7 @@
       - [x] Add the traverse reference report's raw unadjusted distance, zenith, measured-direction-by-set, and fixed-bearing tables ahead of the statistical summary so the listing structure now matches the industry report through the main observation sections
       - [x] Tighten the raw traverse row formatting so the classic parity listing uses industry-style column widths, truncated `t-T` display, and closer `Comb Grid` rounding in the unadjusted observation tables
       - [x] Reduce the remaining raw traverse listing drift by splitting the classic `Comb Grid` display convention into the same mixed truncation/down-bias bands used by the reference and by damping the raw `t-T` display toward the industry report's classical output
+      - [x] Close the raw traverse unadjusted exact diff so the classic parity listing now matches the industry reference line-for-line through the measured distance, zenith, and measured-direction sections
       - [x] Reduce grid-mode slope distances for the traverse parity path by applying the scale factor to the horizontal component before rebuilding the 3D slope length, while preserving the legacy derivative algebra for non-parity paths
       - [x] Keep parity-profile initial geometry frozen only for angular sigma behavior; distance/zenith/live slope modeling in the shared run-session path must continue using current geometry so the browser traverse startup still converges
       - [ ] Close the remaining fixed-bearing orientation parity gap for a network constrained by one fixed point plus one fixed bearing

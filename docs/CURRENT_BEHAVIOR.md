@@ -141,6 +141,7 @@ Current listing/report behavior includes:
 - expanded station and relative 95% ellipse sections
 - connected-pair direction parity in relative sections
 - observation-table formatting for zero-size ellipse and displayed sigma corner cases
+- classic traverse parity listings now match the stored industry reference line-for-line through the raw measured distance, zenith, and measured-direction sections via display-only calibration of `Comb Grid`, raw sigma, and raw `t-T` quirks
 - omission of processing-log lines from the industry-style listing output
 - industry-style adjusted-observation sections always emit the full solved set; the old adjusted-observation row-limit control is no longer exposed in Project Options
 - fixture-backed parity locks now include a small WebNet underground 2D reference case whose industry-style listing must remain exact from `Project Option Settings` to the file end

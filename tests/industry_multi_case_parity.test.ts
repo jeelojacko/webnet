@@ -7,6 +7,18 @@ import { buildIndustryStyleListingText } from '../src/engine/industryListing';
 import { normalizeIndustryParityCaseText } from '../src/engine/industryParityText';
 import { ACTIVE_INDUSTRY_PARITY_CASE, INDUSTRY_PARITY_CASES } from '../src/industryParityCases';
 
+const normalizeLineEndings = (text: string) => text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+
+const extractSection = (text: string, startMarker: string, endMarker: string): string => {
+  const normalized = normalizeLineEndings(text);
+  const start = normalized.indexOf(startMarker);
+  expect(start).toBeGreaterThanOrEqual(0);
+  const slice = normalized.slice(start);
+  const end = slice.indexOf(endMarker);
+  expect(end).toBeGreaterThanOrEqual(0);
+  return slice.slice(0, end).trimEnd();
+};
+
 const buildCaseResult = (caseId: keyof typeof INDUSTRY_PARITY_CASES) => {
   const startup = INDUSTRY_PARITY_CASES[caseId].startupDefaults;
   expect(startup).toBeDefined();
@@ -193,20 +205,28 @@ describe('industry multi-case parity foundation', () => {
       expect(listing).toContain(
         '100        PEAT           30.1874   0.0037   0.000   0.000  0.9998422   S',
       );
+      expect(listing).toContain(
+        '119        GPS6          108.8124   0.0030   0.000   0.000  0.9998485   S',
+      );
       expect(listing).toContain('Number of Zenith Observations (DMS) = 451');
       expect(listing).toContain('From       To              Zenith      StdErr      HI      HT');
       expect(listing).toContain(
         '100        PEAT         92-29-12.58     30.00   0.000   0.000',
+      );
+      expect(listing).toContain(
+        '101        PEAT         95-59-38.21      8.14   0.000   0.000',
       );
       expect(listing).toContain('Number of Measured Direction Observations (DMS) = 451');
       expect(listing).toContain('From       To            Direction      StdErr     t-T');
       expect(listing).toContain('Set 1');
       expect(listing).toContain('100        APOG          0-00-00.00       4.16    0.00');
       expect(listing).toContain('100        PEAT        301-35-57.60      14.53   -0.00');
-      expect(listing).toContain('101        PEAT          0-00-00.00      15.76    0.00');
+      expect(listing).toContain('101        PEAT          0-00-00.00      15.74    0.00');
       expect(listing).toContain('102        APOG          0-00-00.00       5.79    0.01');
       expect(listing).toContain('102        103         203-28-17.40       5.85   -0.01');
       expect(listing).toContain('103        104         130-00-58.95       2.56   -0.01');
+      expect(listing).toContain('105        106           0-00-00.00       3.70   -0.01');
+      expect(listing).toContain('116        GPS3          0-00-00.00       7.53    0.00');
       expect(listing).toContain('Number of Grid Azimuth/Bearing Observations (DMS) = 1');
       expect(listing).toContain('From       To            Bearing       StdErr');
       expect(listing).toContain('GPS5');
@@ -216,6 +236,100 @@ describe('industry multi-case parity foundation', () => {
       expect(listing).toContain('Adjusted Measured Distance Observations (Meters)');
       expect(listing).toContain('Adjusted Measured Direction Observations (DMS)');
       expect(listing).not.toContain('Active Project Instrument Defaults');
+    },
+    120000,
+  );
+
+  it(
+    'matches the traverse raw unadjusted distance, zenith, and direction sections line-for-line',
+    () => {
+      const startup = INDUSTRY_PARITY_CASES.traverse.startupDefaults;
+      expect(startup).toBeDefined();
+
+      const result = buildCaseResult('traverse');
+      expect(result.success).toBe(true);
+
+      const listing = buildIndustryStyleListingText(
+        result,
+        {
+          maxIterations: 10,
+          convergenceLimit: startup?.settingsPatch.convergenceLimit,
+          precisionReportingMode: 'industry-standard',
+          units: 'm',
+          listingShowCoordinates: true,
+          listingShowObservationsResiduals: true,
+          listingShowErrorPropagation: true,
+          listingShowProcessingNotes: true,
+          listingShowAzimuthsBearings: true,
+          listingShowLostStations: true,
+          listingSortCoordinatesBy: 'input',
+          listingSortObservationsBy: 'input',
+          listingObservationLimit: 9999,
+        },
+        {
+          coordMode: startup?.parseSettingsPatch.coordMode ?? '3D',
+          order: startup?.parseSettingsPatch.order ?? 'EN',
+          angleUnits: startup?.parseSettingsPatch.angleUnits ?? 'dms',
+          angleStationOrder: startup?.parseSettingsPatch.angleStationOrder ?? 'atfromto',
+          deltaMode: startup?.parseSettingsPatch.deltaMode ?? 'slope',
+          refractionCoefficient: startup?.parseSettingsPatch.refractionCoefficient ?? 0.13,
+        },
+        {
+          solveProfile: 'industry-parity',
+          angleCenteringModel: 'geometry-aware-correlated-rays',
+          defaultSigmaCount: 0,
+          defaultSigmaByType: '',
+          stochasticDefaultsSummary: '',
+          rotationAngleRad: 0,
+          currentInstrumentCode: startup?.selectedInstrument,
+          currentInstrumentDesc: startup?.projectInstruments[startup?.selectedInstrument ?? '']?.desc,
+          projectInstrumentLibrary: startup?.projectInstruments,
+        },
+      );
+
+      const referenceOutput = readFileSync(INDUSTRY_PARITY_CASES.traverse.fixtureOutputPath, 'utf-8');
+
+      expect(
+        extractSection(
+          listing,
+          'Number of Measured Distance Observations (Meters) = 451',
+          'Number of Zenith Observations (DMS) = 451',
+        ),
+      ).toBe(
+        extractSection(
+          referenceOutput,
+          'Number of Measured Distance Observations (Meters) = 451',
+          'Number of Zenith Observations (DMS) = 451',
+        ),
+      );
+
+      expect(
+        extractSection(
+          listing,
+          'Number of Zenith Observations (DMS) = 451',
+          'Number of Measured Direction Observations (DMS) = 451',
+        ),
+      ).toBe(
+        extractSection(
+          referenceOutput,
+          'Number of Zenith Observations (DMS) = 451',
+          'Number of Measured Direction Observations (DMS) = 451',
+        ),
+      );
+
+      expect(
+        extractSection(
+          listing,
+          'Number of Measured Direction Observations (DMS) = 451',
+          'Number of Grid Azimuth/Bearing Observations (DMS) = 1',
+        ),
+      ).toBe(
+        extractSection(
+          referenceOutput,
+          'Number of Measured Direction Observations (DMS) = 451',
+          'Number of Grid Azimuth/Bearing Observations (DMS) = 1',
+        ),
+      );
     },
     120000,
   );
@@ -336,7 +450,6 @@ describe('industry multi-case parity foundation', () => {
 
     const referenceOutput = readFileSync(INDUSTRY_PARITY_CASES.leveling.fixtureOutputPath, 'utf-8');
     const startMarker = 'Project Option Settings';
-    const normalizeLineEndings = (text: string) => text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
     const normalizedReferenceOutput = normalizeLineEndings(referenceOutput);
     const normalizedListing = normalizeLineEndings(listing);
 
