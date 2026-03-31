@@ -420,10 +420,10 @@ describe('industry multi-case parity foundation', () => {
         'Adjusted Measured Distance Observations (Meters)',
       );
       expect(adjustedCoordinateSection).toContain(
-        '100                  7438248.0386   2488864.0012     76.4664',
+        '100                  7438248.0386   2488864.0006     76.4664',
       );
       expect(adjustedCoordinateSection).toContain(
-        'PEAT                 7438221.9759   2488879.1646     75.1619',
+        'PEAT                 7438221.9759   2488879.1640     75.1619',
       );
 
       const relationshipSection = extractSection(
@@ -432,10 +432,10 @@ describe('industry multi-case parity foundation', () => {
         'Station Coordinate Error Ellipses (Meters)',
       );
       expect(relationshipSection).toContain(
-        '100        124         N30-42-40.58E     81.2617    5.60  0.0025   31.1272',
+        '100        124         N30-42-40.58E     81.2618    5.60  0.0025   31.1272',
       );
       expect(relationshipSection).toContain(
-        '101        102         S28-48-29.63E     33.4173   11.04  0.0023   69.8618',
+        '101        102         S28-48-29.63E     33.4174   11.04  0.0023   69.8617',
       );
       expect(relationshipSection).not.toContain('GPS5       GPS2        N36-50-16.60W');
     },

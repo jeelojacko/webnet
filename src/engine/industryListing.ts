@@ -915,17 +915,43 @@ export const buildIndustryStyleListingText = (
   const classicTraverseDisplayAnchor = classicTraverseDisplayAnchorId
     ? res.stations[classicTraverseDisplayAnchorId]
     : undefined;
+  // The classic traverse reference appears to display ground-style coordinates from the fixed
+  // anchor using project-average grid/elevation factors rather than the anchor station factors.
+  const classicTraverseDisplayScaleEntries = classicTraverseStationOrder
+    .map((stationId) => res.stations[stationId])
+    .filter(
+      (station): station is Station =>
+        station != null &&
+        Number.isFinite(station.gridScaleFactor ?? Number.NaN) &&
+        (station.gridScaleFactor ?? 1) > 0 &&
+        Number.isFinite(station.elevationFactor ?? Number.NaN) &&
+        (station.elevationFactor ?? 1) > 0,
+    );
+  const classicTraverseAverageGridScale =
+    classicTraverseDisplayScaleEntries.length > 0
+      ? classicTraverseDisplayScaleEntries.reduce(
+          (sum, station) => sum + (station.gridScaleFactor ?? 1),
+          0,
+        ) / classicTraverseDisplayScaleEntries.length
+      : classicTraverseDisplayAnchor?.gridScaleFactor;
+  const classicTraverseAverageElevationFactor =
+    classicTraverseDisplayScaleEntries.length > 0
+      ? classicTraverseDisplayScaleEntries.reduce(
+          (sum, station) => sum + (station.elevationFactor ?? 1),
+          0,
+        ) / classicTraverseDisplayScaleEntries.length
+      : classicTraverseDisplayAnchor?.elevationFactor;
   const classicTraverseCoordinateDisplayScale =
     usesClassicParityLayout &&
     coordSystemMode === 'grid' &&
     classicTraverseDisplayAnchor &&
-    Number.isFinite(classicTraverseDisplayAnchor.gridScaleFactor ?? Number.NaN) &&
-    (classicTraverseDisplayAnchor.gridScaleFactor ?? 1) > 0 &&
-    Number.isFinite(classicTraverseDisplayAnchor.elevationFactor ?? Number.NaN) &&
-    (classicTraverseDisplayAnchor.elevationFactor ?? 1) > 0
+    Number.isFinite(classicTraverseAverageGridScale ?? Number.NaN) &&
+    (classicTraverseAverageGridScale ?? 1) > 0 &&
+    Number.isFinite(classicTraverseAverageElevationFactor ?? Number.NaN) &&
+    (classicTraverseAverageElevationFactor ?? 1) > 0
       ? 1 /
-        (Math.sqrt(classicTraverseDisplayAnchor.gridScaleFactor ?? 1) *
-          (classicTraverseDisplayAnchor.elevationFactor ?? 1))
+        (Math.sqrt(classicTraverseAverageGridScale ?? 1) *
+          (classicTraverseAverageElevationFactor ?? 1))
       : 1;
   const classicTraverseDisplayPoint = (
     stationId: string,
