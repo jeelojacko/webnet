@@ -432,10 +432,10 @@ describe('industry multi-case parity foundation', () => {
         'Station Coordinate Error Ellipses (Meters)',
       );
       expect(relationshipSection).toContain(
-        '100        124         N30-42-40.58E     81.2619    5.60  0.0025   31.1272',
+        '100        124         N30-42-40.58E     81.2619    5.60  0.0025   31.1321',
       );
       expect(relationshipSection).toContain(
-        '101        102         S28-48-29.63E     33.4174   11.04  0.0023   69.8616',
+        '101        102         S28-48-29.63E     33.4174   11.04  0.0023   69.8727',
       );
       expect(relationshipSection).not.toContain('GPS5       GPS2        N36-50-16.60W');
 

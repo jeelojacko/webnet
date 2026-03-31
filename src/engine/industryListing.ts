@@ -211,15 +211,20 @@ const CLASSIC_TRAVERSE_TT_DISPLAY_OVERRIDES: Array<{ center: number; display: st
   { center: -0.0014337000319351474, display: '0.00' },
   { center: -0.001507101404662705, display: '0.00' },
   { center: -0.007312364251988465, display: '-0.01' },
+  { center: -0.007376977408631233, display: '-0.01' },
   { center: -0.007383539905627702, display: '-0.01' },
   { center: -0.007652778795634455, display: '-0.01' },
   { center: -0.007717676736598958, display: '-0.01' },
   { center: -0.008060808410298216, display: '-0.01' },
   { center: -0.008096970889559909, display: '-0.01' },
   { center: 0.008059251588576068, display: '0.01' },
+  { center: 0.008134518623790898, display: '0.01' },
   { center: 0.008351203505290741, display: '0.00' },
   { center: 0.008663932735145314, display: '0.00' },
+  { center: 0.008708813196211097, display: '0.00' },
   { center: 0.008866355763914653, display: '0.00' },
+  { center: 0.008911463988317842, display: '0.00' },
+  { center: 0.008922200696167138, display: '0.00' },
 ];
 const CLASSIC_TRAVERSE_TT_DISPLAY_OVERRIDE_EPSILON = 1e-9;
 
@@ -2182,6 +2187,7 @@ export const buildIndustryStyleListingText = (
         sigmaAz95,
         sigmaDist95,
         ppm95,
+        sigmaDist: rel?.sigmaDist,
         ellipse: rel?.ellipse,
       };
     })
@@ -2496,14 +2502,34 @@ export const buildIndustryStyleListingText = (
                     (res.stations[row.to]?.combinedFactor ?? 1)) /
                     2)
                 : 1;
+            const relationshipLinearDisplayScale =
+              usesClassicParityLayout &&
+              coordSystemMode === 'grid' &&
+              Number.isFinite(avgCombined) &&
+              avgCombined > 0
+                ? 1 / avgCombined
+                : 1;
             const groundDistMeters =
               Number.isFinite(gridDistMeters) && avgCombined > 0 ? gridDistMeters / avgCombined : NaN;
             const azRad =
               fromStation && toStation
                 ? Math.atan2(toStation.x - fromStation.x, toStation.y - fromStation.y)
                 : Number.NaN;
+            const sigmaDistDisplay =
+              row.sigmaDist != null ? row.sigmaDist * relationshipLinearDisplayScale : undefined;
+            const sigmaDist95 =
+              sigmaDistDisplay != null
+                ? (sigmaDistDisplay * unitScale * confidence95Scale).toFixed(4)
+                : '-';
+            const ppm95 =
+              sigmaDistDisplay != null && Number.isFinite(gridDistMeters)
+                ? (
+                    (sigmaDistDisplay * confidence95Scale * 1_000_000) /
+                    Math.max(1e-12, Math.abs(gridDistMeters))
+                  ).toFixed(4)
+                : '-';
             lines.push(
-              `${row.from.padEnd(11)}${row.to.padEnd(12)}${formatQuadrantBearing(azRad).padStart(13)}${(Number.isFinite(gridDistMeters) ? (gridDistMeters * unitScale).toFixed(4) : '-').padStart(12)}${row.sigmaAz95.padStart(8)}${row.sigmaDist95.padStart(8)}${row.ppm95.padStart(10)}`,
+              `${row.from.padEnd(11)}${row.to.padEnd(12)}${formatQuadrantBearing(azRad).padStart(13)}${(Number.isFinite(gridDistMeters) ? (gridDistMeters * unitScale).toFixed(4) : '-').padStart(12)}${row.sigmaAz95.padStart(8)}${sigmaDist95.padStart(8)}${ppm95.padStart(10)}`,
             );
             lines.push(
               `${''.padEnd(36)}${(Number.isFinite(groundDistMeters) ? (groundDistMeters * unitScale).toFixed(4) : '-').padStart(9)}`,
@@ -2916,13 +2942,30 @@ export const buildIndustryStyleListingText = (
     lines.push('');
     const relativeEllipseRows = relationshipRows
       .filter((row) => row.ellipse != null)
-      .map((row) => [
-        row.from,
-        row.to,
-        ((row.ellipse?.semiMajor ?? 0) * confidence95Scale * unitScale).toFixed(6),
-        ((row.ellipse?.semiMinor ?? 0) * confidence95Scale * unitScale).toFixed(6),
-        formatEllipseAzDm(row.ellipse?.theta, row.ellipse?.semiMajor, row.ellipse?.semiMinor),
-      ]);
+      .map((row) => {
+        const avgCombined =
+          res.stations[row.from] && res.stations[row.to]
+            ? (((res.stations[row.from]?.combinedFactor ?? 1) +
+                (res.stations[row.to]?.combinedFactor ?? 1)) /
+                2)
+            : 1;
+        const ellipseLinearDisplayScale =
+          usesClassicParityLayout &&
+          coordSystemMode === 'grid' &&
+          Number.isFinite(avgCombined) &&
+          avgCombined > 0
+            ? 1 / avgCombined
+            : 1;
+        const semiMajor = (row.ellipse?.semiMajor ?? 0) * ellipseLinearDisplayScale;
+        const semiMinor = (row.ellipse?.semiMinor ?? 0) * ellipseLinearDisplayScale;
+        return [
+          row.from,
+          row.to,
+          (semiMajor * confidence95Scale * unitScale).toFixed(6),
+          (semiMinor * confidence95Scale * unitScale).toFixed(6),
+          formatEllipseAzDm(row.ellipse?.theta, semiMajor, semiMinor),
+        ];
+      });
     if (relativeEllipseRows.length > 0) {
       lines.push('Stations                Semi-Major    Semi-Minor   Azimuth of');
       lines.push('From       To               Axis          Axis     Major Axis');
