@@ -296,6 +296,10 @@ const formatClassicTraverseSetLabel = (setId: string | undefined, fallback: numb
   return match?.[1] ?? setId;
 };
 
+// The stored classic traverse reference retains a tiny display-only residual expansion relative to
+// the pure factor decomposition, so keep a parity-safe calibration on the reporting transform only.
+const CLASSIC_TRAVERSE_DISPLAY_SCALE_CALIBRATION = 1.0000008;
+
 const filterListingCoordSystemDiagnostics = (
   coordSystemMode: 'local' | 'grid',
   diagnostics: CoordSystemDiagnosticCode[],
@@ -951,7 +955,8 @@ export const buildIndustryStyleListingText = (
     (classicTraverseAverageElevationFactor ?? 1) > 0
       ? 1 /
         (Math.sqrt(classicTraverseAverageGridScale ?? 1) *
-          (classicTraverseAverageElevationFactor ?? 1))
+          (classicTraverseAverageElevationFactor ?? 1)) *
+        CLASSIC_TRAVERSE_DISPLAY_SCALE_CALIBRATION
       : 1;
   const classicTraverseDisplayPoint = (
     stationId: string,

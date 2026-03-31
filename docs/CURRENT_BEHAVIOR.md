@@ -142,6 +142,7 @@ Current listing/report behavior includes:
 - connected-pair direction parity in relative sections
 - observation-table formatting for zero-size ellipse and displayed sigma corner cases
 - classic traverse parity listings now match the stored industry reference line-for-line through the raw measured distance, zenith, and measured-direction sections via display-only calibration of `Comb Grid`, raw sigma, and raw `t-T` quirks
+- classic traverse adjusted coordinates and relationship distances now keep a tiny retained display-scale calibration on top of the factor-decomposition path so the later parity listing stays aligned with the stored industry output
 - classic traverse adjusted direction sets now stay in source/input order, and the industry-parity traverse listing no longer appends the WebNet-only grid-vs-ground diagnostics block after the adjusted bearing-distance relationship section
 - omission of processing-log lines from the industry-style listing output
 - industry-style adjusted-observation sections always emit the full solved set; the old adjusted-observation row-limit control is no longer exposed in Project Options
