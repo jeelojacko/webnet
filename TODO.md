@@ -124,7 +124,9 @@
       - [x] Add focused parser, weighting, listing, and parity coverage for the levelling-only case
       - [x] Require normalized exact listing parity for the levelling output before moving on
     - [ ] Batch 8 - traverse-only parity
-      - [ ] Current scope: tighten the remaining classic traverse relationship-row bearing / relative-confidence drift without regressing the exact underground parity lock
+      - [ ] Current scope: tighten the remaining classic traverse relationship-row bearing / relative-confidence drift without losing the underground regression guard while we pivot that small case toward the actual industry output
+      - [x] Mirror the local underground industry output into a committed fixture and use it as a secondary structured comparator while tracing the remaining fixed-bearing orientation / connected-covariance seam on traverse
+      - [x] Apply the tiny classic traverse display-rotation calibration around the displayed network centroid so fixed-bearing-style relationship rows move closer to the stored industry bearings without disturbing the underground exact lock
       - [x] Restore the classic traverse relative-ellipse vertical 95% column using connected-pair vertical sigma and one-dimensional confidence scaling
       - [x] Make the traverse case the startup default with its matching grid/project defaults from the reference output, including coordinate-system mode, CRS, longitude-sign convention, coordinate order, convergence limit, and instrument library
       - [x] Make `.INST <code>` reliably set the current instrument for the following traverse/direction-set block without breaking existing conventional parsing

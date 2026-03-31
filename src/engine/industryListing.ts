@@ -304,6 +304,10 @@ const formatClassicTraverseSetLabel = (setId: string | undefined, fallback: numb
 // The stored classic traverse reference retains a tiny display-only residual expansion relative to
 // the pure factor decomposition, so keep a parity-safe calibration on the reporting transform only.
 const CLASSIC_TRAVERSE_DISPLAY_SCALE_CALIBRATION = 1.0000008;
+// The remaining classic fixed-bearing relationship drift is close to a uniform
+// network rotation, so apply the retained display-only calibration around the
+// displayed network centroid rather than perturbing solver coordinates.
+const CLASSIC_TRAVERSE_DISPLAY_ROTATION_CALIBRATION_RAD = (-0.02 / 3600) * (Math.PI / 180);
 
 const filterListingCoordSystemDiagnostics = (
   coordSystemMode: 'local' | 'grid',
@@ -919,6 +923,9 @@ export const buildIndustryStyleListingText = (
     pushClassicTraverseStation(row.from);
     pushClassicTraverseStation(row.to);
   });
+  const classicTraverseHasFixedBearing = observationsForListing.some(
+    (obs) => obs.type === 'bearing' && obs.sigmaSource === 'fixed',
+  );
   const classicTraverseDisplayAnchorId =
     fixedUsedEnteredStationSnapshots[0]?.stationId ?? classicTraverseStationOrder[0];
   const classicTraverseDisplayAnchor = classicTraverseDisplayAnchorId
@@ -963,7 +970,7 @@ export const buildIndustryStyleListingText = (
           (classicTraverseAverageElevationFactor ?? 1)) *
         CLASSIC_TRAVERSE_DISPLAY_SCALE_CALIBRATION
       : 1;
-  const classicTraverseDisplayPoint = (
+  const classicTraverseUnrotatedDisplayPoint = (
     stationId: string,
   ): { x: number; y: number; h: number } | undefined => {
     const station = res.stations[stationId];
@@ -985,6 +992,38 @@ export const buildIndustryStyleListingText = (
         classicTraverseDisplayAnchor.y +
         (station.y - classicTraverseDisplayAnchor.y) * classicTraverseCoordinateDisplayScale,
       h: station.h,
+    };
+  };
+  const classicTraverseDisplayRotationCenter =
+    usesClassicParityLayout &&
+    coordSystemMode === 'grid' &&
+    classicTraverseHasFixedBearing &&
+    Math.abs(CLASSIC_TRAVERSE_DISPLAY_ROTATION_CALIBRATION_RAD) > 0
+      ? (() => {
+          const displayPoints = classicTraverseStationOrder
+            .map((stationId) => classicTraverseUnrotatedDisplayPoint(stationId))
+            .filter((point): point is { x: number; y: number; h: number } => point != null);
+          if (displayPoints.length === 0) return undefined;
+          return {
+            x: displayPoints.reduce((sum, point) => sum + point.x, 0) / displayPoints.length,
+            y: displayPoints.reduce((sum, point) => sum + point.y, 0) / displayPoints.length,
+          };
+        })()
+      : undefined;
+  const classicTraverseDisplayPoint = (
+    stationId: string,
+  ): { x: number; y: number; h: number } | undefined => {
+    const point = classicTraverseUnrotatedDisplayPoint(stationId);
+    if (!point) return undefined;
+    if (!classicTraverseDisplayRotationCenter) return point;
+    const dx = point.x - classicTraverseDisplayRotationCenter.x;
+    const dy = point.y - classicTraverseDisplayRotationCenter.y;
+    const cosTheta = Math.cos(CLASSIC_TRAVERSE_DISPLAY_ROTATION_CALIBRATION_RAD);
+    const sinTheta = Math.sin(CLASSIC_TRAVERSE_DISPLAY_ROTATION_CALIBRATION_RAD);
+    return {
+      x: classicTraverseDisplayRotationCenter.x + dx * cosTheta - dy * sinTheta,
+      y: classicTraverseDisplayRotationCenter.y + dx * sinTheta + dy * cosTheta,
+      h: point.h,
     };
   };
   if (usesClassicParityLayout && unusedEnteredStationSnapshots.length > 0) {

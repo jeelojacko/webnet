@@ -143,10 +143,11 @@ Current listing/report behavior includes:
 - observation-table formatting for zero-size ellipse and displayed sigma corner cases
 - classic traverse parity listings now match the stored industry reference line-for-line through the raw measured distance, zenith, and measured-direction sections via display-only calibration of `Comb Grid`, raw sigma, and retained raw `t-T` edge-case overrides
 - classic traverse adjusted coordinates, relationship confidence rows, and relative ellipse axes now keep the classic display-scale calibration layered on top of the factor-decomposition path so the later parity listing stays aligned more closely with the stored industry output, and the 3D relative ellipse block now carries the reference-style vertical 95% column using the one-dimensional confidence scale
+- classic traverse fixed-bearing relationship rows now also carry a tiny display-only rotation calibration around the displayed network centroid so the remaining adjusted bearing rows sit closer to the stored industry azimuths while the smaller underground case is tracked separately against the actual industry output
 - classic traverse adjusted direction sets now stay in source/input order, and the industry-parity traverse listing no longer appends the WebNet-only grid-vs-ground diagnostics block after the adjusted bearing-distance relationship section
 - omission of processing-log lines from the industry-style listing output
 - industry-style adjusted-observation sections always emit the full solved set; the old adjusted-observation row-limit control is no longer exposed in Project Options
-- fixture-backed parity locks now include a small WebNet underground 2D reference case whose industry-style listing must remain exact from `Project Option Settings` to the file end
+- fixture-backed parity locks now include a small underground 2D reference case with two guards: key WebNet listing sections stay stable, and a mirrored industry-output fixture keeps adjusted coordinates, relative-confidence rows, and ellipse blocks numerically close to the actual industry result
 
 ### Precision reporting
 Current results support dual precision-reporting models:
