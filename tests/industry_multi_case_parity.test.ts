@@ -438,6 +438,26 @@ describe('industry multi-case parity foundation', () => {
         '101        102         S28-48-29.63E     33.4174   11.04  0.0023   69.8617',
       );
       expect(relationshipSection).not.toContain('GPS5       GPS2        N36-50-16.60W');
+
+      const adjustedDirectionSection = extractSection(
+        listing,
+        'Adjusted Measured Direction Observations (DMS)',
+        'Adjusted Grid Azimuth/Bearing Observations (DMS)',
+      );
+      expect(adjustedDirectionSection.indexOf('Set 18')).toBeGreaterThanOrEqual(0);
+      expect(adjustedDirectionSection.indexOf('Set 19')).toBeGreaterThan(
+        adjustedDirectionSection.indexOf('Set 18'),
+      );
+      expect(adjustedDirectionSection.indexOf('Set 24')).toBeGreaterThan(
+        adjustedDirectionSection.indexOf('Set 19'),
+      );
+      expect(adjustedDirectionSection).toContain(
+        '103        102         359-59-50.33    -0-00-09.67      -0.0035     5.85   1.7     1:150',
+      );
+      expect(adjustedDirectionSection).toContain(
+        '104        105         176-00-47.18    -0-00-05.42      -0.0035     3.42   1.6     1:197',
+      );
+      expect(listing).not.toContain('Grid vs Ground Distance Diagnostics');
     },
     120000,
   );

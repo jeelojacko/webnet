@@ -2311,6 +2311,12 @@ export const buildIndustryStyleListingText = (
         if (sourceDelta !== 0) return sourceDelta;
         return compareObsByInput(a, b);
       };
+      const classicSortByInputOrder = (a: Observation, b: Observation) => {
+        const sourceDelta =
+          (a.sourceLine ?? Number.MAX_SAFE_INTEGER) - (b.sourceLine ?? Number.MAX_SAFE_INTEGER);
+        if (sourceDelta !== 0) return sourceDelta;
+        return compareObsByInput(a, b);
+      };
       const renderClassicAdjustedDistanceSection = () => {
         const rows = listingObservations
           .filter((obs): obs is Observation & { type: 'dist' } => obs.type === 'dist')
@@ -2366,7 +2372,7 @@ export const buildIndustryStyleListingText = (
       const renderClassicAdjustedDirectionSection = () => {
         const directionRows = listingObservations
           .filter((obs): obs is Observation & { type: 'direction' } => obs.type === 'direction')
-          .sort(classicSortByStdRes);
+          .sort(classicSortByInputOrder);
         if (directionRows.length === 0) return;
         const groupedDirections = new Map<string, Array<Observation & { type: 'direction' }>>();
         directionRows.forEach((obs) => {
@@ -2376,9 +2382,9 @@ export const buildIndustryStyleListingText = (
           groupedDirections.set(key, group);
         });
         const sortedGroups = [...groupedDirections.entries()].sort((a, b) => {
-          const aMax = Math.max(...a[1].map((obs) => Math.abs(obs.stdRes ?? 0)));
-          const bMax = Math.max(...b[1].map((obs) => Math.abs(obs.stdRes ?? 0)));
-          if (Math.abs(bMax - aMax) > 1e-12) return bMax - aMax;
+          const aSource = Math.min(...a[1].map((obs) => obs.sourceLine ?? Number.MAX_SAFE_INTEGER));
+          const bSource = Math.min(...b[1].map((obs) => obs.sourceLine ?? Number.MAX_SAFE_INTEGER));
+          if (aSource !== bSource) return aSource - bSource;
           const aLabel = Number(formatClassicTraverseSetLabel(a[0], 0));
           const bLabel = Number(formatClassicTraverseSetLabel(b[0], 0));
           if (Number.isFinite(aLabel) && Number.isFinite(bLabel) && aLabel !== bLabel) {
@@ -2397,7 +2403,7 @@ export const buildIndustryStyleListingText = (
         sortedGroups.forEach(([setId, group], groupIndex) => {
           lines.push('');
           lines.push(`           Set ${formatClassicTraverseSetLabel(setId, groupIndex + 1)}`);
-          group.forEach((obs) => {
+          group.sort(classicSortByInputOrder).forEach((obs) => {
             const adjustedDirection = formatDmsHundredths(
               (obs.calc as number | undefined) ?? obs.obs,
             );
@@ -2594,7 +2600,7 @@ export const buildIndustryStyleListingText = (
       }
     }
 
-    if (coordSystemMode === 'grid') {
+    if (coordSystemMode === 'grid' && !usesClassicParityLayout) {
       const gridDistanceRows = listingObservations
         .filter((obs): obs is Observation & { type: 'dist' } => obs.type === 'dist')
         .map((obs) => {
