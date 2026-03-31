@@ -147,7 +147,7 @@ export interface IndustryListingRunDiagnostics {
   projectInstrumentLibrary?: InstrumentLibrary;
 }
 
-const LEVELING_ONLY_VERTICAL_95_SCALE = 1.959963984540054;
+const ONE_DIMENSIONAL_CONFIDENCE_95_SCALE = 1.959963984540054;
 
 const centerIndustryLine = (text: string, width = 80): string => {
   const leftPad = Math.max(0, Math.floor((width - text.length) / 2));
@@ -571,7 +571,7 @@ const buildLevelingOnlyIndustryListingText = (
       settings.precisionReportingMode ?? 'industry-standard',
     );
     const sigmaH = precision.sigmaH ?? station.sH ?? 0;
-    const ci95 = sigmaH * LEVELING_ONLY_VERTICAL_95_SCALE;
+    const ci95 = sigmaH * ONE_DIMENSIONAL_CONFIDENCE_95_SCALE;
     lines.push(
       `${stationId.padEnd(22)}${station.h.toFixed(4).padStart(8)}${sigmaH.toFixed(6).padStart(14)}${ci95.toFixed(6).padStart(14)}`,
     );
@@ -2081,6 +2081,7 @@ export const buildIndustryStyleListingText = (
     to: string;
     sigmaDist?: number;
     sigmaAz?: number;
+    sigmaH?: number;
     ellipse?: { semiMajor: number; semiMinor: number; theta: number };
   };
   const fallbackRelativePair = (from: string, to: string): RelativePairStats | undefined => {
@@ -2128,6 +2129,7 @@ export const buildIndustryStyleListingText = (
         to: pair.to,
         sigmaDist: matchedCovariance.sigmaDist,
         sigmaAz: matchedCovariance.sigmaAz,
+        sigmaH: matchedCovariance.sigmaH,
         ellipse: matchedCovariance.ellipse
           ? {
               semiMajor: matchedCovariance.ellipse.semiMajor,
@@ -2188,6 +2190,7 @@ export const buildIndustryStyleListingText = (
         sigmaDist95,
         ppm95,
         sigmaDist: rel?.sigmaDist,
+        sigmaH: rel?.sigmaH,
         ellipse: rel?.ellipse,
       };
     })
@@ -2964,14 +2967,28 @@ export const buildIndustryStyleListingText = (
           (semiMajor * confidence95Scale * unitScale).toFixed(6),
           (semiMinor * confidence95Scale * unitScale).toFixed(6),
           formatEllipseAzDm(row.ellipse?.theta, semiMajor, semiMinor),
+          row.sigmaH != null
+            ? (row.sigmaH * ONE_DIMENSIONAL_CONFIDENCE_95_SCALE * unitScale).toFixed(6)
+            : '-',
         ];
       });
     if (relativeEllipseRows.length > 0) {
-      lines.push('Stations                Semi-Major    Semi-Minor   Azimuth of');
-      lines.push('From       To               Axis          Axis     Major Axis');
+      const includeRelativeVertical =
+        coordMode === '3D' && relativeEllipseRows.some((row) => row[5] !== '-');
+      lines.push(
+        includeRelativeVertical
+          ? 'Stations                Semi-Major    Semi-Minor   Azimuth of     Vertical'
+          : 'Stations                Semi-Major    Semi-Minor   Azimuth of',
+      );
+      lines.push(
+        includeRelativeVertical
+          ? 'From       To               Axis          Axis     Major Axis'
+          : 'From       To               Axis          Axis     Major Axis',
+      );
       relativeEllipseRows.forEach((row) => {
+        const base = `${row[0].padEnd(10)} ${row[1].padEnd(10)} ${row[2].padStart(12)} ${row[3].padStart(12)} ${row[4].padStart(10)}`;
         lines.push(
-          `${row[0].padEnd(10)} ${row[1].padEnd(10)} ${row[2].padStart(12)} ${row[3].padStart(12)} ${row[4].padStart(10)}`,
+          includeRelativeVertical ? `${base} ${row[5].padStart(12)}` : base,
         );
       });
     } else {

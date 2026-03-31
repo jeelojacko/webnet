@@ -439,6 +439,17 @@ describe('industry multi-case parity foundation', () => {
       );
       expect(relationshipSection).not.toContain('GPS5       GPS2        N36-50-16.60W');
 
+      expect(listing).toContain('Relative Error Ellipses (Meters)');
+      expect(listing).toContain(
+        'Stations                Semi-Major    Semi-Minor   Azimuth of     Vertical',
+      );
+      expect(listing).toContain(
+        '100        124            0.002535     0.002199      38-02     0.001534',
+      );
+      expect(listing).toContain(
+        '116        GPS3           0.002917     0.002829      99-44     0.001526',
+      );
+
       const adjustedDirectionSection = extractSection(
         listing,
         'Adjusted Measured Direction Observations (DMS)',

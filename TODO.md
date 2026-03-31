@@ -125,6 +125,7 @@
       - [x] Require normalized exact listing parity for the levelling output before moving on
     - [ ] Batch 8 - traverse-only parity
       - [ ] Current scope: tighten the remaining classic traverse relationship-row bearing / relative-confidence drift without regressing the exact underground parity lock
+      - [x] Restore the classic traverse relative-ellipse vertical 95% column using connected-pair vertical sigma and one-dimensional confidence scaling
       - [x] Make the traverse case the startup default with its matching grid/project defaults from the reference output, including coordinate-system mode, CRS, longitude-sign convention, coordinate order, convergence limit, and instrument library
       - [x] Make `.INST <code>` reliably set the current instrument for the following traverse/direction-set block without breaking existing conventional parsing
       - [x] Keep projected grid traverse jobs from false-failing the grid-input gate when CRS inverse diagnostics populate derived lat/lon on auto-created stations
