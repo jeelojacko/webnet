@@ -33,7 +33,6 @@ import type {
   Observation,
   ReductionUsageSummary,
   RunMode,
-  SigmaSource,
   Station,
   PrecisionReportingMode,
 } from '../types';
@@ -172,6 +171,26 @@ const formatDmsHundredths = (rad?: number | null): string => {
     d = (d + 1) % 360;
   }
   return `${d}-${m.toString().padStart(2, '0')}-${s.toFixed(2).padStart(5, '0')}`;
+};
+
+const formatSignedDmsMicros = (degValue?: number | null): string => {
+  if (degValue == null || !Number.isFinite(degValue)) return '-';
+  const sign = degValue < 0 || Object.is(degValue, -0) ? '-' : '';
+  const absDeg = Math.abs(degValue);
+  let d = Math.floor(absDeg);
+  const rem1 = (absDeg - d) * 60;
+  let m = Math.floor(rem1);
+  let s = (rem1 - m) * 60;
+  s = Math.round((s + Number.EPSILON) * 1_000_000) / 1_000_000;
+  if (s >= 60) {
+    s -= 60;
+    m += 1;
+  }
+  if (m >= 60) {
+    m -= 60;
+    d += 1;
+  }
+  return `${sign}${d.toString().padStart(3, '0')}-${m.toString().padStart(2, '0')}-${s.toFixed(6).padStart(9, '0')}`;
 };
 
 const truncateTowardZero = (value: number, decimals: number): number => {
@@ -1828,27 +1847,6 @@ export const buildIndustryStyleListingText = (
     }
     return parts.length > 0 ? parts.join(' ') : null;
   };
-  const sigmaSourceLabel = (source?: SigmaSource): string => {
-    switch (source ?? 'explicit') {
-      case 'default':
-        return 'DEFAULT';
-      case 'fixed':
-        return 'FIXED';
-      case 'float':
-        return 'FLOAT';
-      default:
-        return 'EXPLICIT';
-    }
-  };
-  const summarizeObservationWeight = (obs: Observation): string => {
-    if (obs.type === 'gps') {
-      const east = sigmaSourceLabel(obs.sigmaSourceE ?? obs.sigmaSource);
-      const north = sigmaSourceLabel(obs.sigmaSourceN ?? obs.sigmaSource);
-      return east === north ? east : `E=${east} N=${north}`;
-    }
-    return sigmaSourceLabel(obs.sigmaSource);
-  };
-
   if (settings.listingShowCoordinates) {
     lines.push('');
     addCenteredHeading(`Adjusted Coordinates (${linearUnit})`);
@@ -1895,8 +1893,8 @@ export const buildIndustryStyleListingText = (
     if (coordSystemMode === 'grid') {
       const geodeticRows = stationEntriesForListing.map(([id, st]) => [
         id,
-        Number.isFinite(st.latDeg ?? Number.NaN) ? (st.latDeg as number).toFixed(9) : '-',
-        Number.isFinite(st.lonDeg ?? Number.NaN) ? (st.lonDeg as number).toFixed(9) : '-',
+        formatSignedDmsMicros(st.latDeg),
+        formatSignedDmsMicros(st.lonDeg),
         (st.h * unitScale).toFixed(4),
         st.heightType === 'orthometric' ? 'ORTHO' : 'ELLIP',
       ]);
@@ -1904,7 +1902,7 @@ export const buildIndustryStyleListingText = (
       addCenteredHeading('Geodetic Position Summary');
       lines.push('');
       renderTextTable(
-        ['Station', 'Lat (deg)', 'Lon (deg)', `Height (${linearUnit})`, 'HeightType'],
+        ['Station', 'Latitude (DMS)', 'Longitude (DMS)', `Height (${linearUnit})`, 'HeightType'],
         geodeticRows,
         [3],
       );
@@ -2634,7 +2632,7 @@ export const buildIndustryStyleListingText = (
               `${row.from.padEnd(11)}${row.to.padEnd(12)}${formatQuadrantBearing(azRad).padStart(13)}${(Number.isFinite(gridDistMeters) ? (gridDistMeters * unitScale).toFixed(4) : '-').padStart(12)}${row.sigmaAz95.padStart(8)}${sigmaDist95.padStart(8)}${ppm95.padStart(10)}`,
             );
             lines.push(
-              `${''.padEnd(36)}${(Number.isFinite(groundDistMeters) ? (groundDistMeters * unitScale).toFixed(4) : '-').padStart(9)}`,
+              `${''.padEnd(36)}${(Number.isFinite(groundDistMeters) ? (groundDistMeters * unitScale).toFixed(4) : '-').padStart(12)}`,
             );
           });
         }
@@ -2766,28 +2764,6 @@ export const buildIndustryStyleListingText = (
         [2, 3, 4, 5],
       );
     }
-
-    const weightingRows = listingObservations.map((obs) => [
-      obs.type.toUpperCase(),
-      obs.type === 'angle'
-        ? `${obs.at}-${obs.from}-${obs.to}${aliasRefsForLine(obs.sourceLine)}${autoSideshotSuffix(obs)}`
-        : obs.type === 'direction'
-          ? `${obs.at}-${obs.to}${aliasRefsForLine(obs.sourceLine)}${autoSideshotSuffix(obs)}`
-          : 'from' in obs && 'to' in obs
-            ? `${obs.from}-${obs.to}${aliasRefsForLine(obs.sourceLine)}${autoSideshotSuffix(obs)}${prismSuffix(obs)}`
-            : '-',
-      summarizeObservationWeight(obs),
-      obs.sourceLine != null ? `1:${obs.sourceLine}` : '-',
-    ]);
-    renderAdjustedSection(
-      'Observation Weighting Traceability',
-      weightingRows,
-      ['Type', 'Stations', 'Weight', 'File:Line'],
-      [],
-      [
-        'Weight shows whether each observation used explicit, default, fixed, or float sigma handling.',
-      ],
-    );
   }
   const renderSideshotListingSection = (title: string, rows: typeof sideshotsForListing) => {
     if (rows.length === 0) return;
@@ -2993,14 +2969,24 @@ export const buildIndustryStyleListingText = (
     lines.push('');
     const stdRows = stationEntriesForListing.map(([id]) => {
       const precision = getStationPrecision(res, id, precisionReportingMode);
-      return [
+      const row = [
         id,
         stationDescription(id) || '-',
         ((precision.sigmaN ?? 0) * unitScale).toFixed(6),
         ((precision.sigmaE ?? 0) * unitScale).toFixed(6),
       ];
+      if (coordMode === '3D') {
+        row.push(((precision.sigmaH ?? 0) * unitScale).toFixed(6));
+      }
+      return row;
     });
-    renderTextTable(['Station', 'Description', 'N', 'E'], stdRows, [2, 3]);
+    renderTextTable(
+      coordMode === '3D'
+        ? ['Station', 'Description', 'N', 'E', 'Elev']
+        : ['Station', 'Description', 'N', 'E'],
+      stdRows,
+      coordMode === '3D' ? [2, 3, 4] : [2, 3],
+    );
 
     lines.push('');
     lines.push(
@@ -3012,7 +2998,7 @@ export const buildIndustryStyleListingText = (
       .map(([id]) => {
         const precision = getStationPrecision(res, id, precisionReportingMode);
         if (!precision.ellipse) return null;
-        return [
+        const row = [
           id,
           ((precision.ellipse.semiMajor ?? 0) * confidence95Scale * unitScale).toFixed(6),
           ((precision.ellipse.semiMinor ?? 0) * confidence95Scale * unitScale).toFixed(6),
@@ -3022,15 +3008,26 @@ export const buildIndustryStyleListingText = (
             precision.ellipse.semiMinor,
           ),
         ];
+        if (coordMode === '3D') {
+          row.push(((precision.sigmaH ?? 0) * ONE_DIMENSIONAL_CONFIDENCE_95_SCALE * unitScale).toFixed(6));
+        }
+        return row;
       })
       .filter((row): row is string[] => row != null);
     if (stationEllipseRows.length > 0) {
-      lines.push('Station                 Semi-Major    Semi-Minor   Azimuth of');
-      lines.push('                            Axis          Axis     Major Axis');
+      lines.push(
+        coordMode === '3D'
+          ? 'Station                 Semi-Major    Semi-Minor   Azimuth of       Elev'
+          : 'Station                 Semi-Major    Semi-Minor   Azimuth of',
+      );
+      lines.push(
+        coordMode === '3D'
+          ? '                            Axis          Axis     Major Axis'
+          : '                            Axis          Axis     Major Axis',
+      );
       stationEllipseRows.forEach((row) => {
-        lines.push(
-          `${row[0].padEnd(22)} ${row[1].padStart(12)} ${row[2].padStart(12)} ${row[3].padStart(10)}`,
-        );
+        const base = `${row[0].padEnd(22)} ${row[1].padStart(12)} ${row[2].padStart(12)} ${row[3].padStart(10)}`;
+        lines.push(coordMode === '3D' ? `${base} ${row[4].padStart(12)}` : base);
       });
     } else {
       lines.push('(none)');

@@ -157,6 +157,7 @@ describe('industry listing phase 5 formatting locks', () => {
     });
 
     expect(listing).not.toContain('Processing Notes');
+    expect(listing).not.toContain('Observation Weighting Traceability');
     expect(listing).toContain(
       'From       To               Azimuth    Distance       95% RelConfidence',
     );
@@ -304,16 +305,20 @@ describe('industry listing phase 5 formatting locks', () => {
     expect(listing).toMatch(/^\s*O-P\s+.+\s+.+\s+0\.0000\s+.+\s+.+\s+1:11\s*$/m);
   });
 
-  it('renders observation-weight traceability for mixed record families', () => {
+  it('formats grid geodetic rows in DMS and adds vertical precision columns for 3D listings', () => {
     const input = [
-      '.2D',
-      'C A 0 0 0 ! !',
-      'C B 100 0 0 ! !',
-      'C P 40 30 0',
-      'D A-P 50 !',
-      'A P-A-B 90-00-00 *',
-      'B B-P 306.8699',
-      'G GPS1 A P 40 30 ! *',
+      '.3D',
+      '.UNITS METERS DD',
+      '.CRS GRID CA_NAD83_CSRS_NB_STEREO_DOUBLE',
+      'C A 2500000.0000 7500000.0000 100.0000 ! ! !',
+      'C B 2500100.0000 7500000.0000 100.0000 ! ! !',
+      'C P 2500050.0000 7500040.0000 102.0000',
+      'B A-P 51.3401917459 1.0',
+      'D A-P 64.06246951 0.005',
+      'Z A-P 88.21008939 5.0',
+      'B B-P 308.6598082541 1.0',
+      'D B-P 64.06246951 0.005',
+      'Z B-P 88.21008939 5.0',
     ].join('\n');
     const result = new LSAEngine({ input, maxIterations: 10 }).solve();
     const listing = buildIndustryStyleListingText(
@@ -348,11 +353,15 @@ describe('industry listing phase 5 formatting locks', () => {
       },
     );
 
-    expect(listing).toContain('Observation Weighting Traceability');
-    expect(listing).toMatch(/^\s*DIST\s+A-P\s+FIXED\s+1:5\s*$/m);
-    expect(listing).toMatch(/^\s*ANGLE\s+P-A-B\s+FLOAT\s+1:6\s*$/m);
-    expect(listing).toMatch(/^\s*BEARING\s+B-P\s+DEFAULT\s+1:7\s*$/m);
-    expect(listing).toMatch(/^\s*GPS\s+A-P\s+E=FIXED N=FLOAT\s+1:8\s*$/m);
+    expect(listing).not.toContain('Observation Weighting Traceability');
+    expect(listing).toContain('Geodetic Position Summary');
+    expect(listing).toContain('Latitude (DMS)');
+    expect(listing).toContain('Longitude (DMS)');
+    expect(listing).toMatch(/^\s*A\s+0\d{2}-\d{2}-\d{2}\.\d{6}\s+-0\d{2}-\d{2}-\d{2}\.\d{6}\s+100\.0000\s+\S+\s*$/m);
+    expect(listing).toContain('Station Coordinate Standard Deviations (Meters)');
+    expect(listing).toMatch(/Station\s+Description\s+N\s+E\s+Elev/);
+    expect(listing).toContain('Station Coordinate Error Ellipses (Meters)');
+    expect(listing).toContain('Azimuth of       Elev');
   });
 
   it('keeps centerInflation details on a single instrument-settings row', () => {

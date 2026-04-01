@@ -159,6 +159,7 @@
       - [ ] Close the remaining fixed-bearing orientation parity gap for a network constrained by one fixed point plus one fixed bearing
       - [ ] Match direction-set, distance, zenith, target-height, and set-scoped weighting behavior used by the traverse reference case
       - [x] Lock slot-preserving `DM` sigma parsing so `& & 30` keeps default direction and distance weighting while applying an explicit 30" zenith sigma
+      - [x] Remove the WebNet-only observation-weighting traceability section from the industry listing, tighten the classic traverse ground/grid distance alignment, switch geodetic summary rows to fixed DMS formatting, and add the 3D vertical precision column to station standard-deviation and ellipse sections
       - [ ] Add focused parity coverage for traverse parsing, `.INST` scoping, fixed-bearing handling, and normalized exact output diff
     - [ ] Batch 9 - GNSS-only parity
       - [ ] Make the GNSS case the startup default with its matching grid/project defaults from the reference output

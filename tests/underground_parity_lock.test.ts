@@ -170,7 +170,7 @@ describe('underground parity lock', () => {
       extractSection(
         listing,
         'Adjusted Azimuths (DMS) and Horizontal Distances (Meters)',
-        'Observation Weighting Traceability',
+        'Error Propagation',
       ),
     );
     const expectedAzimuthRows = parseAzimuthRows(
