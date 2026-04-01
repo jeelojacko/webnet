@@ -150,6 +150,7 @@
       - [x] Apply the classic traverse display-factor decomposition around the fixed anchor so adjusted coordinates and the bearing-distance relationship table use the closer industry-style horizontal scale in the parity listing
       - [x] Tighten the remaining traverse adjusted-coordinate and relationship-distance drift by using project-average grid/elevation factors for the classic ground-style display transform instead of the single anchor-station factors
       - [x] Apply the tiny retained classic traverse display-scale calibration so adjusted coordinates and relationship distances stay aligned with the stored industry output after the factor-decomposition cleanup
+      - [x] Refine the classic traverse display basis to average only the entered traverse/control framework before applying the remaining tiny adjusted-coordinate and fixed-bearing residual calibration
       - [x] Keep the classic adjusted-direction sets in source/input order and suppress the WebNet-only grid/ground diagnostics block so the later traverse parity listing stays aligned with the industry report structure
       - [x] Model traverse zenith observations from the same ground-equivalent horizontal geometry used by grid-mode measured slope distances so the remaining adjusted-height drift in the parity case collapses to the reference
       - [x] Reduce grid-mode slope distances for the traverse parity path by applying the scale factor to the horizontal component before rebuilding the 3D slope length, while preserving the legacy derivative algebra for non-parity paths

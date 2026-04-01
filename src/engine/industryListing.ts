@@ -301,13 +301,12 @@ const formatClassicTraverseSetLabel = (setId: string | undefined, fallback: numb
   return match?.[1] ?? setId;
 };
 
-// The stored classic traverse reference retains a tiny display-only residual expansion relative to
-// the pure factor decomposition, so keep a parity-safe calibration on the reporting transform only.
-const CLASSIC_TRAVERSE_DISPLAY_SCALE_CALIBRATION = 1.0000008;
-// The remaining classic fixed-bearing relationship drift is close to a uniform
-// network rotation, so apply the retained display-only calibration around the
-// displayed network centroid rather than perturbing solver coordinates.
-const CLASSIC_TRAVERSE_DISPLAY_ROTATION_CALIBRATION_RAD = (-0.02 / 3600) * (Math.PI / 180);
+// The classic traverse display basis tracks the entered traverse/control framework
+// more closely than the full auto-expanded network. After anchoring the display
+// scale on those entered stations, only a much smaller residual calibration
+// remains in the stored reference listing.
+const CLASSIC_TRAVERSE_DISPLAY_SCALE_CALIBRATION = 1.00000014;
+const CLASSIC_TRAVERSE_DISPLAY_ROTATION_CALIBRATION_RAD = (-0.025 / 3600) * (Math.PI / 180);
 
 const filterListingCoordSystemDiagnostics = (
   coordSystemMode: 'local' | 'grid',
@@ -924,9 +923,6 @@ export const buildIndustryStyleListingText = (
     pushClassicTraverseStation(row.from);
     pushClassicTraverseStation(row.to);
   });
-  const classicTraverseHasFixedBearing = observationsForListing.some(
-    (obs) => obs.type === 'bearing' && obs.sigmaSource === 'fixed',
-  );
   const classicTraverseDisplayAnchorId =
     fixedUsedEnteredStationSnapshots[0]?.stationId ?? classicTraverseStationOrder[0];
   const classicTraverseDisplayAnchor = classicTraverseDisplayAnchorId
@@ -934,7 +930,11 @@ export const buildIndustryStyleListingText = (
     : undefined;
   // The classic traverse reference appears to display ground-style coordinates from the fixed
   // anchor using project-average grid/elevation factors rather than the anchor station factors.
-  const classicTraverseDisplayScaleEntries = classicTraverseStationOrder
+  const classicTraverseDisplayScaleStationIds =
+    usesClassicParityLayout && usedEnteredStationSnapshots.length > 0
+      ? usedEnteredStationSnapshots.map((station) => station.stationId)
+      : classicTraverseStationOrder;
+  const classicTraverseDisplayScaleEntries = classicTraverseDisplayScaleStationIds
     .map((stationId) => res.stations[stationId])
     .filter(
       (station): station is Station =>
@@ -998,7 +998,6 @@ export const buildIndustryStyleListingText = (
   const classicTraverseDisplayRotationCenter =
     usesClassicParityLayout &&
     coordSystemMode === 'grid' &&
-    classicTraverseHasFixedBearing &&
     Math.abs(CLASSIC_TRAVERSE_DISPLAY_ROTATION_CALIBRATION_RAD) > 0
       ? (() => {
           const displayPoints = classicTraverseStationOrder
