@@ -474,6 +474,45 @@ describe('industry multi-case parity foundation', () => {
   );
 
   it(
+    'keeps the traverse raw fixed-bearing solve exact and the connected covariance rows near the reference',
+    () => {
+      const result = buildCaseResult('traverse');
+      expect(result.success).toBe(true);
+
+      const from = result.stations.GPS5;
+      const to = result.stations.GPS2;
+      expect(from).toBeDefined();
+      expect(to).toBeDefined();
+
+      let rawAzimuthRad = Math.atan2((to?.x ?? 0) - (from?.x ?? 0), (to?.y ?? 0) - (from?.y ?? 0));
+      if (rawAzimuthRad < 0) rawAzimuthRad += 2 * Math.PI;
+      const fixedBearingRad = (323 + 9 / 60 + 43.4014 / 3600) * (Math.PI / 180);
+      const fixedBearingResidualSec = ((rawAzimuthRad - fixedBearingRad) * 180 * 3600) / Math.PI;
+      expect(Math.abs(fixedBearingResidualSec)).toBeLessThan(1e-4);
+
+      const row = result.relativeCovariances?.find(
+        (candidate) => candidate.from === '100' && candidate.to === '124',
+      );
+      expect(row).toBeDefined();
+
+      const confidence95Scale = Math.sqrt(5.991464547107979);
+      const oneDimensional95Scale = 1.959963984540054;
+      const sigmaAz95Sec = (((row?.sigmaAz ?? 0) * 180) / Math.PI) * 3600 * confidence95Scale;
+      const sigmaDist95 = (row?.sigmaDist ?? 0) * confidence95Scale;
+      const ellipseMajor95 = (row?.ellipse?.semiMajor ?? 0) * confidence95Scale;
+      const ellipseMinor95 = (row?.ellipse?.semiMinor ?? 0) * confidence95Scale;
+      const sigmaH95 = (row?.sigmaH ?? 0) * oneDimensional95Scale;
+
+      expect(sigmaAz95Sec).toBeCloseTo(5.6, 2);
+      expect(sigmaDist95).toBeCloseTo(0.0025, 4);
+      expect(ellipseMajor95).toBeCloseTo(0.002535, 6);
+      expect(ellipseMinor95).toBeCloseTo(0.002199, 6);
+      expect(sigmaH95).toBeCloseTo(0.001534, 6);
+    },
+    120000,
+  );
+
+  it(
     'keeps the traverse top block aligned with the compact industry settings and entered-station summary',
     () => {
       const startup = INDUSTRY_PARITY_CASES.traverse.startupDefaults;
