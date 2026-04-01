@@ -3,7 +3,10 @@ import {
   DEFAULT_QFIX_ANGULAR_SIGMA_SEC,
   DEFAULT_QFIX_LINEAR_SIGMA_M,
 } from './defaults';
-import { computeClassicTraverseLegacyDisplayGridFactors } from './geodesy';
+import {
+  computeClassicTraverseLegacyDisplayGridFactors,
+  inverseClassicTraverseDisplayGeodetic,
+} from './geodesy';
 import { getLevelLoopTolerancePresetLabel } from './levelLoopTolerance';
 import {
   buildResultStatisticalSummaryModel,
@@ -173,10 +176,11 @@ const formatDmsHundredths = (rad?: number | null): string => {
   return `${d}-${m.toString().padStart(2, '0')}-${s.toFixed(2).padStart(5, '0')}`;
 };
 
-const formatSignedDmsMicros = (degValue?: number | null): string => {
+const formatSignedDmsMicros = (degValue?: number | null, signMultiplier = 1): string => {
   if (degValue == null || !Number.isFinite(degValue)) return '-';
-  const sign = degValue < 0 || Object.is(degValue, -0) ? '-' : '';
-  const absDeg = Math.abs(degValue);
+  const displayDeg = degValue * signMultiplier;
+  const sign = displayDeg < 0 || Object.is(displayDeg, -0) ? '-' : '';
+  const absDeg = Math.abs(displayDeg);
   let d = Math.floor(absDeg);
   const rem1 = (absDeg - d) * 60;
   let m = Math.floor(rem1);
@@ -1105,6 +1109,17 @@ export const buildIndustryStyleListingText = (
       h: point.h,
     };
   };
+  const classicTraverseDisplayGeodetic = (stationId: string): { latDeg: number; lonDeg: number } | null => {
+    if (coordSystemMode !== 'grid' || crsId !== 'CA_NAD83_NB83_STEREO_DOUBLE') return null;
+    const displayPoint = classicTraverseDisplayPoint(stationId);
+    if (!displayPoint) return null;
+    const displayGeodetic = inverseClassicTraverseDisplayGeodetic(displayPoint.x, displayPoint.y);
+    if (!displayGeodetic) return null;
+    return {
+      latDeg: displayGeodetic.latDeg,
+      lonDeg: displayGeodetic.lonDeg,
+    };
+  };
   if (usesClassicParityLayout && unusedEnteredStationSnapshots.length > 0) {
     const unusedStationIdSet = new Set(
       unusedEnteredStationSnapshots.map((station) => station.stationId),
@@ -1891,13 +1906,19 @@ export const buildIndustryStyleListingText = (
     }
 
     if (coordSystemMode === 'grid') {
-      const geodeticRows = stationEntriesForListing.map(([id, st]) => [
-        id,
-        formatSignedDmsMicros(st.latDeg),
-        formatSignedDmsMicros(st.lonDeg),
-        (st.h * unitScale).toFixed(4),
-        st.heightType === 'orthometric' ? 'ORTHO' : 'ELLIP',
-      ]);
+      const longitudeSignMultiplier =
+        (parseState?.lonSign ?? 'west-negative') === 'west-positive' ? -1 : 1;
+      const geodeticRows = stationEntriesForListing.map(([id, st]) => {
+        const displayPoint = usesClassicParityLayout ? classicTraverseDisplayPoint(id) : undefined;
+        const displayGeodetic = usesClassicParityLayout ? classicTraverseDisplayGeodetic(id) : null;
+        return [
+          id,
+          formatSignedDmsMicros(displayGeodetic?.latDeg ?? st.latDeg),
+          formatSignedDmsMicros(displayGeodetic?.lonDeg ?? st.lonDeg, longitudeSignMultiplier),
+          ((displayPoint?.h ?? st.h) * unitScale).toFixed(4),
+          st.heightType === 'orthometric' ? 'ORTHO' : 'ELLIP',
+        ];
+      });
       lines.push('');
       addCenteredHeading('Geodetic Position Summary');
       lines.push('');

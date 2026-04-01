@@ -426,6 +426,17 @@ describe('industry multi-case parity foundation', () => {
         'PEAT                 7438221.9759   2488879.1638     75.1619',
       );
 
+      const geodeticSummarySection = extractSection(
+        listing,
+        'Geodetic Position Summary',
+        'Convergence Angles (DMS) and Grid Factors at Stations',
+      );
+      expect(geodeticSummarySection).toContain('Longitude (DMS)');
+      expect(geodeticSummarySection).toContain(
+        'OOP      045-56-45.725022  066-38-39.557772          64.8821  ELLIP',
+      );
+      expect(geodeticSummarySection).not.toContain('-066-38-39.557772');
+
       const relationshipSection = extractSection(
         listing,
         'Adjusted Bearings (DMS) and Horizontal Distances (Meters)',

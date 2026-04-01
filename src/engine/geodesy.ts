@@ -487,6 +487,7 @@ const numericLocalGridFactors = (
 // tiny residual factor/convergence deltas instead of hard-coded constants.
 const CLASSIC_TRAVERSE_LEGACY_DISPLAY_NB83_PROJ4 =
   '+proj=sterea +lat_0=46.5 +lon_0=-66.5000096185 +k=0.99982986015 +x_0=2500000 +y_0=7500000 +ellps=GRS80 +units=m +no_defs +type=crs';
+const CLASSIC_TRAVERSE_GEODETIC_DISPLAY_CRS_ID = 'CA_NAD83_CSRS_NB_STEREO_DOUBLE';
 
 export const computeClassicTraverseLegacyDisplayGridFactors = (
   latDeg: number,
@@ -499,6 +500,35 @@ export const computeClassicTraverseLegacyDisplayGridFactors = (
       CLASSIC_TRAVERSE_LEGACY_DISPLAY_NB83_PROJ4,
     ),
   );
+
+// The stored traverse reference keeps the legacy NB83 adjusted coordinate
+// layout, but the paired geodetic rows invert those displayed coordinates
+// through the CSRS double-stereographic definition. Keep that display-only
+// geodetic contract isolated from the solve CRS.
+export const inverseClassicTraverseDisplayGeodetic = (
+  east: number,
+  north: number,
+):
+  | {
+      latDeg: number;
+      lonDeg: number;
+      crsId: string;
+      datumOpId: string;
+      warnings: string[];
+      diagnostics: CoordSystemDiagnosticCode[];
+    }
+  | null => {
+  const inv = inverseGrid(east, north, CLASSIC_TRAVERSE_GEODETIC_DISPLAY_CRS_ID);
+  if ('failureReason' in inv) return null;
+  return {
+    latDeg: inv.latDeg,
+    lonDeg: inv.lonDeg,
+    crsId: CLASSIC_TRAVERSE_GEODETIC_DISPLAY_CRS_ID,
+    datumOpId: inv.datumOpId,
+    warnings: inv.warnings,
+    diagnostics: inv.diagnostics,
+  };
+};
 
 const resolveDatumOperation = (
   def?: CrsDefinition,

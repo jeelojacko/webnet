@@ -9,6 +9,7 @@ import {
 import {
   computeClassicTraverseLegacyDisplayGridFactors,
   computeGridFactors,
+  inverseClassicTraverseDisplayGeodetic,
   inverseENToGeodetic,
   projectGeodeticToEN,
 } from '../src/engine/geodesy';
@@ -112,5 +113,14 @@ describe('Canada CRS catalog (Phase 2 expansion)', () => {
 
     expect(gridPpmDelta).toBeCloseTo(-0.14, 2);
     expect(convergenceSecDelta).toBeCloseTo(0.025, 3);
+  });
+
+  it('exposes the classic traverse geodetic display inverse used by the NB83 parity listing', () => {
+    const displayInverse = inverseClassicTraverseDisplayGeodetic(2488810.236, 7438438.733);
+
+    expect(displayInverse).not.toBeNull();
+    expect(displayInverse?.crsId).toBe('CA_NAD83_CSRS_NB_STEREO_DOUBLE');
+    expect(displayInverse?.latDeg ?? Number.NaN).toBeCloseTo(45.9460347294, 7);
+    expect(displayInverse?.lonDeg ?? Number.NaN).toBeCloseTo(-66.6443216077, 7);
   });
 });
