@@ -447,6 +447,109 @@ const SPECIALIZED_DIRECTIVE_HANDLERS: Record<string, SpecializedDirectiveHandler
     parseLinearMetersToken,
   }) => {
     const modeToken = (parts[1] || '').toUpperCase();
+    if (modeToken === 'WEIGHT' || modeToken === 'WEIGHTS') {
+      const weightToken = (parts[2] || '').trim().toUpperCase();
+      if (weightToken === 'COVARIANCE' || weightToken === 'COV') {
+        state.gpsWeightingMode = 'covariance';
+        logs.push('GPS weighting mode set to COVARIANCE');
+      } else if (
+        weightToken === 'STANDARD' ||
+        weightToken === 'STDERR' ||
+        weightToken === 'SIGMA' ||
+        weightToken === 'OFF' ||
+        weightToken === 'DEFAULT'
+      ) {
+        state.gpsWeightingMode = 'standard';
+        logs.push('GPS weighting mode set to STANDARD');
+      } else {
+        logs.push(
+          `Warning: invalid .GPS WEIGHT option at line ${lineNum}; expected COVARIANCE or STANDARD.`,
+        );
+      }
+      return handled(orderExplicit);
+    }
+
+    if (modeToken === 'FACTOR') {
+      const factorToken = parts[2];
+      const factor = Number.parseFloat(factorToken || '');
+      if (!Number.isFinite(factor) || factor <= 0) {
+        logs.push(
+          `Warning: invalid .GPS FACTOR option at line ${lineNum}; expected positive horizontal factor and optional VERT factor.`,
+        );
+        return handled(orderExplicit);
+      }
+      let verticalFactor = factor;
+      const vertIndex = parts.findIndex((token, idx) => idx >= 3 && token.toUpperCase() === 'VERT');
+      if (vertIndex >= 0) {
+        const parsedVertical = Number.parseFloat(parts[vertIndex + 1] || '');
+        if (!Number.isFinite(parsedVertical) || parsedVertical <= 0) {
+          logs.push(
+            `Warning: invalid .GPS FACTOR VERT value at line ${lineNum}; expected positive number.`,
+          );
+          return handled(orderExplicit);
+        }
+        verticalFactor = parsedVertical;
+      }
+      state.gpsVectorFactorHorizontal = factor;
+      state.gpsVectorFactorVertical = verticalFactor;
+      logs.push(
+        `GPS vector factors set to horizontal=${factor.toFixed(6)}, vertical=${verticalFactor.toFixed(6)}`,
+      );
+      return handled(orderExplicit);
+    }
+
+    if (
+      modeToken === 'VDEF' ||
+      modeToken === 'VERTICALDEFLECTION' ||
+      modeToken === 'VERTDEF' ||
+      modeToken === 'DEFLECTION'
+    ) {
+      const arg1 = (parts[2] || '').trim().toUpperCase();
+      if (!arg1 || arg1 === 'OFF' || arg1 === 'NONE' || arg1 === 'RESET') {
+        state.verticalDeflectionNorthSec = 0;
+        state.verticalDeflectionEastSec = 0;
+        logs.push('GPS vertical deflection set to OFF');
+        return handled(orderExplicit);
+      }
+      let northSec: number | null = null;
+      let eastSec: number | null = null;
+      for (let i = 2; i < parts.length; i += 1) {
+        const token = (parts[i] || '').trim().toUpperCase();
+        if (token === 'N' || token === 'NORTH') {
+          const parsed = Number.parseFloat(parts[i + 1] || '');
+          if (Number.isFinite(parsed)) northSec = parsed;
+          i += 1;
+          continue;
+        }
+        if (token === 'E' || token === 'EAST') {
+          const parsed = Number.parseFloat(parts[i + 1] || '');
+          if (Number.isFinite(parsed)) eastSec = parsed;
+          i += 1;
+          continue;
+        }
+      }
+      if (northSec == null && eastSec == null && parts[2] && parts[3]) {
+        const parsedNorth = Number.parseFloat(parts[2]);
+        const parsedEast = Number.parseFloat(parts[3]);
+        if (Number.isFinite(parsedNorth) && Number.isFinite(parsedEast)) {
+          northSec = parsedNorth;
+          eastSec = parsedEast;
+        }
+      }
+      if (northSec == null || eastSec == null) {
+        logs.push(
+          `Warning: invalid .GPS VDEF option at line ${lineNum}; expected ".GPS VDEF <north_sec> <east_sec>" or labeled N/E values.`,
+        );
+        return handled(orderExplicit);
+      }
+      state.verticalDeflectionNorthSec = northSec;
+      state.verticalDeflectionEastSec = eastSec;
+      logs.push(
+        `GPS vertical deflection set to N=${northSec.toFixed(3)}", E=${eastSec.toFixed(3)}"`,
+      );
+      return handled(orderExplicit);
+    }
+
     if (modeToken === 'CHECK' || modeToken === 'LOOPCHECK' || modeToken === 'LOOPS') {
       const arg1 = (parts[2] || '').trim().toUpperCase();
       if (!arg1 || arg1 === 'ON' || arg1 === 'TRUE') {

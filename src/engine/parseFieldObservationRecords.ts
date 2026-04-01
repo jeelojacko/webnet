@@ -19,6 +19,23 @@ type ObservedParsedValue = {
   valid: boolean;
 };
 
+type PendingGpsCovarianceObservation = {
+  label?: string;
+  sourceLine: number;
+  from: string;
+  to: string;
+  dX: number;
+  dY: number;
+  dZ: number;
+  cXX?: number;
+  cYY?: number;
+  cZZ?: number;
+};
+
+export type GpsCovarianceState = {
+  pending?: PendingGpsCovarianceObservation;
+};
+
 type HandleFieldObservationRecordArgs = {
   code: string;
   parts: string[];
@@ -30,6 +47,7 @@ type HandleFieldObservationRecordArgs = {
   obsIdRef: { current: number };
   compatibilityMode: ParseCompatibilityMode;
   lastGpsObservationRef: { current: GpsObservation | undefined };
+  gpsCovarianceStateRef: GpsCovarianceState;
   addCompatibilityDiagnostic: (
     _code: 'ROLE_AMBIGUITY',
     _line: number,
@@ -115,6 +133,7 @@ export const handleFieldObservationRecord = ({
   obsIdRef,
   compatibilityMode,
   lastGpsObservationRef,
+  gpsCovarianceStateRef,
   addCompatibilityDiagnostic,
   rejectNumericStationTokens,
   parseSsStationTokens,
@@ -140,6 +159,13 @@ export const handleFieldObservationRecord = ({
   ftPerM,
   traverseCtx,
 }: HandleFieldObservationRecordArgs): boolean => {
+  const resetPendingGpsCovariance = (): void => {
+    gpsCovarianceStateRef.pending = undefined;
+  };
+
+  const currentGpsVectorHorizontalFactor = Math.max(state.gpsVectorFactorHorizontal ?? 1, 1e-12);
+  const currentGpsVectorVerticalFactor = Math.max(state.gpsVectorFactorVertical ?? 1, 1e-12);
+
   if (code === 'SS') {
     const stationTokens = parseSsStationTokens(parts, state.stationSeparator ?? '-');
     if (!stationTokens) {
@@ -410,6 +436,153 @@ export const handleFieldObservationRecord = ({
       sourceLine: lineNum,
     };
     state.gpsTopoShots?.push(shot);
+    return true;
+  }
+
+  if (code === 'G0') {
+    const label = parts.slice(1).join(' ').trim().replace(/^'+/, '');
+    if (gpsCovarianceStateRef.pending) {
+      logs.push(
+        `Warning: GNSS covariance vector block at line ${gpsCovarianceStateRef.pending.sourceLine} was incomplete before G0 line ${lineNum}; pending block discarded.`,
+      );
+      resetPendingGpsCovariance();
+    }
+    gpsCovarianceStateRef.pending = {
+      label,
+      sourceLine: lineNum,
+      from: '',
+      to: '',
+      dX: 0,
+      dY: 0,
+      dZ: 0,
+    };
+    return true;
+  }
+
+  if (code === 'G1') {
+    const pairToken = parts[1] ?? '';
+    const [from, to] = pairToken.split('-', 2);
+    const dX = Number.parseFloat(parts[2] || '');
+    const dY = Number.parseFloat(parts[3] || '');
+    const dZ = Number.parseFloat(parts[4] || '');
+    if (!from || !to || !Number.isFinite(dX) || !Number.isFinite(dY) || !Number.isFinite(dZ)) {
+      logs.push(`Invalid GNSS covariance vector (G1) at line ${lineNum}, skipping.`);
+      resetPendingGpsCovariance();
+      return true;
+    }
+    const pending = gpsCovarianceStateRef.pending ?? {
+      sourceLine: lineNum,
+      from: '',
+      to: '',
+      dX: 0,
+      dY: 0,
+      dZ: 0,
+    };
+    gpsCovarianceStateRef.pending = {
+      ...pending,
+      sourceLine: lineNum,
+      from,
+      to,
+      dX,
+      dY,
+      dZ,
+    };
+    return true;
+  }
+
+  if (code === 'G2') {
+    const pending = gpsCovarianceStateRef.pending;
+    if (!pending || !pending.from || !pending.to) {
+      logs.push(`Warning: GNSS covariance row (G2) at line ${lineNum} has no active G1 vector; ignored.`);
+      return true;
+    }
+    const cXX = Number.parseFloat(parts[1] || '');
+    const cYY = Number.parseFloat(parts[2] || '');
+    const cZZ = Number.parseFloat(parts[3] || '');
+    if (!Number.isFinite(cXX) || !Number.isFinite(cYY) || !Number.isFinite(cZZ)) {
+      logs.push(`Invalid GNSS covariance diagonal (G2) at line ${lineNum}, skipping pending block.`);
+      resetPendingGpsCovariance();
+      return true;
+    }
+    gpsCovarianceStateRef.pending = {
+      ...pending,
+      dX: pending.dX,
+      dY: pending.dY,
+      dZ: pending.dZ,
+      label: pending.label,
+      sourceLine: pending.sourceLine,
+      from: pending.from,
+      to: pending.to,
+    };
+    gpsCovarianceStateRef.pending.cXX = cXX;
+    gpsCovarianceStateRef.pending.cYY = cYY;
+    gpsCovarianceStateRef.pending.cZZ = cZZ;
+    return true;
+  }
+
+  if (code === 'G3') {
+    const pending = gpsCovarianceStateRef.pending;
+    if (!pending || !pending.from || !pending.to) {
+      logs.push(`Warning: GNSS covariance row (G3) at line ${lineNum} has no active G1 vector; ignored.`);
+      return true;
+    }
+    const cXY = Number.parseFloat(parts[1] || '');
+    const cXZ = Number.parseFloat(parts[2] || '');
+    const cYZ = Number.parseFloat(parts[3] || '');
+    if (
+      !Number.isFinite(pending.cXX) ||
+      !Number.isFinite(pending.cYY) ||
+      !Number.isFinite(pending.cZZ) ||
+      !Number.isFinite(cXY) ||
+      !Number.isFinite(cXZ) ||
+      !Number.isFinite(cYZ)
+    ) {
+      logs.push(`Invalid GNSS covariance block ending at line ${lineNum}, skipping pending vector.`);
+      resetPendingGpsCovariance();
+      return true;
+    }
+    const horizontalFactorSquared = currentGpsVectorHorizontalFactor * currentGpsVectorHorizontalFactor;
+    const verticalFactorSquared = currentGpsVectorVerticalFactor * currentGpsVectorVerticalFactor;
+    const obs: GpsObservation = {
+      id: obsIdRef.current++,
+      type: 'gps',
+      gpsMode: state.gpsVectorMode ?? 'network',
+      gpsWeightingMode: 'covariance',
+      gnssVectorFrame: 'ecefDelta',
+      gnssFrameConfirmed: state.gnssFrameConfirmed ?? false,
+      gpsVectorLabel: pending.label,
+      gpsVectorHorizontalFactor: currentGpsVectorHorizontalFactor,
+      gpsVectorVerticalFactor: currentGpsVectorVerticalFactor,
+      instCode: '',
+      from: pending.from,
+      to: pending.to,
+      obs: {
+        dE: pending.dX,
+        dN: pending.dY,
+        dU: pending.dZ,
+      },
+      stdDev: Math.sqrt(
+        Math.max(
+          0,
+          (pending.cXX ?? 0) * horizontalFactorSquared +
+            (pending.cYY ?? 0) * horizontalFactorSquared +
+            (pending.cZZ ?? 0) * verticalFactorSquared,
+        ) / 3,
+      ),
+      sigmaSource: 'explicit',
+      gpsCovariance3d: {
+        cXX: (pending.cXX ?? 0) * horizontalFactorSquared,
+        cYY: (pending.cYY ?? 0) * horizontalFactorSquared,
+        cZZ: (pending.cZZ ?? 0) * verticalFactorSquared,
+        cXY: cXY * horizontalFactorSquared,
+        cXZ: cXZ * currentGpsVectorHorizontalFactor * currentGpsVectorVerticalFactor,
+        cYZ: cYZ * currentGpsVectorHorizontalFactor * currentGpsVectorVerticalFactor,
+      },
+      sourceLine: pending.sourceLine,
+    };
+    pushObservation(obs);
+    lastGpsObservationRef.current = obs;
+    resetPendingGpsCovariance();
     return true;
   }
 

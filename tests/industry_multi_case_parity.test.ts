@@ -125,6 +125,8 @@ describe('industry multi-case parity foundation', () => {
     expect(startup.parseSettingsPatch.crsId).toBe('CA_NAD83_NB83_STEREO_DOUBLE');
     expect(startup.parseSettingsPatch.order).toBe('NE');
     expect(startup.parseSettingsPatch.lonSign).toBe('west-positive');
+    expect(startup.parseSettingsPatch.verticalDeflectionNorthSec).toBeCloseTo(-2.91, 6);
+    expect(startup.parseSettingsPatch.verticalDeflectionEastSec).toBeCloseTo(-1.46, 6);
     expect(startup.parseSettingsPatch.applyCurvatureRefraction).toBe(true);
     expect(startup.parseSettingsPatch.verticalReduction).toBe('curvref');
     expect(startup.parseSettingsPatch.refractionCoefficient).toBe(0.07);

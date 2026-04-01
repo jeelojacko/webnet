@@ -241,8 +241,8 @@ export const buildObservationTypeSummary = (
       return;
     }
     if (obs.type === 'gps') {
-      const residual = obs.residual as { vE: number; vN: number };
-      addSummary(obs.type, Math.hypot(residual.vE, residual.vN), stdRes, 'm');
+      const residual = obs.residual as { vE: number; vN: number; vU?: number };
+      addSummary(obs.type, Math.hypot(residual.vE, residual.vN, residual.vU ?? 0), stdRes, 'm');
     }
   });
 

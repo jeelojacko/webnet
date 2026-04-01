@@ -24,7 +24,7 @@ export interface CoordinateConstraintRowPlacement {
   constraint: CoordinateConstraintEquation;
 }
 
-export type EquationRowInfo = { obs: Observation; component?: 'E' | 'N' } | null;
+export type EquationRowInfo = { obs: Observation; component?: 'E' | 'N' | 'U' } | null;
 
 export type RobustWeightMatrixBase = {
   diagonal: number[];

@@ -148,6 +148,14 @@ export const createRunProfileBuilders = ({
         'gridNEU',
       gnssFrameConfirmed:
         parseState.gnssFrameConfirmed ?? profileCtx.effectiveParse.gnssFrameConfirmed ?? false,
+      verticalDeflectionNorthSec:
+        parseState.verticalDeflectionNorthSec ??
+        profileCtx.effectiveParse.verticalDeflectionNorthSec ??
+        0,
+      verticalDeflectionEastSec:
+        parseState.verticalDeflectionEastSec ??
+        profileCtx.effectiveParse.verticalDeflectionEastSec ??
+        0,
       observationMode: parseState.observationMode ??
         profileCtx.effectiveParse.observationMode ?? {
           bearing:
@@ -368,6 +376,8 @@ export const createRunProfileBuilders = ({
       averageGeoidHeight: parse.averageGeoidHeight,
       gnssVectorFrameDefault: parse.gnssVectorFrameDefault ?? 'gridNEU',
       gnssFrameConfirmed: parse.gnssFrameConfirmed ?? false,
+      verticalDeflectionNorthSec: parse.verticalDeflectionNorthSec ?? 0,
+      verticalDeflectionEastSec: parse.verticalDeflectionEastSec ?? 0,
       observationMode: parse.observationMode,
       gridBearingMode: parse.gridBearingMode,
       gridDistanceMode: parse.gridDistanceMode,

@@ -106,12 +106,42 @@ import type {
 
 const EPS = 1e-10;
 const EARTH_RADIUS_M = 6378137;
+const WGS84_A = 6378137;
+const WGS84_F = 1 / 298.257223563;
+const WGS84_E2 = WGS84_F * (2 - WGS84_F);
 const GPS_ADDHIHT_SCALE_TOL = 1e-9;
 const GPS_LOOP_BASE_TOLERANCE_M = 0.02;
 const GPS_LOOP_TOLERANCE_PPM = 50;
 const LEVEL_LOOP_DEFAULT_BASE_MM = 0;
 const LEVEL_LOOP_DEFAULT_PER_SQRT_KM_MM = 4;
 const INDUSTRY_PARITY_ANGULAR_SIGMA_SCALE = 1.0001;
+
+type GpsSolveVector = {
+  dE: number;
+  dN: number;
+  dU?: number;
+  scale: number;
+};
+
+type GpsCovariance = {
+  cEE: number;
+  cNN: number;
+  cEN: number;
+  cUU?: number;
+  cEU?: number;
+  cNU?: number;
+};
+
+type GpsVectorComponents = {
+  dE: number;
+  dN: number;
+  dU?: number;
+};
+
+type GpsVectorDerivatives = {
+  from: { x?: GpsVectorComponents; y?: GpsVectorComponents; h?: GpsVectorComponents };
+  to: { x?: GpsVectorComponents; y?: GpsVectorComponents; h?: GpsVectorComponents };
+};
 
 const makePairKey = (a: StationId, b: StationId): string => (a < b ? `${a}|${b}` : `${b}|${a}`);
 const makeDirectedPairKey = (from: StationId, to: StationId): string => `${from}|${to}`;
@@ -508,6 +538,8 @@ export class LSAEngine {
         modeledAzimuth: this.modeledAzimuth.bind(this),
         wrapToPi: this.wrapToPi.bind(this),
         gpsObservedVector: this.gpsObservedVector.bind(this),
+        gpsModeledVector: this.gpsModeledVector.bind(this),
+        gpsModeledVectorDerivatives: this.gpsModeledVectorDerivatives.bind(this),
         gpsWeight: this.gpsWeight.bind(this),
         getModeledZenith: this.getModeledZenith.bind(this),
         curvatureRefractionAngle: this.curvatureRefractionAngle.bind(this),
@@ -640,15 +672,16 @@ export class LSAEngine {
     };
   }
 
-  private plannedGpsRawVector(obs: GpsObservation): { dE: number; dN: number } {
+  private plannedGpsRawVector(obs: GpsObservation): { dE: number; dN: number; dU?: number } {
     const from = this.stations[obs.from];
     const to = this.stations[obs.to];
-    if (!from || !to) return { dE: 0, dN: 0 };
+    if (!from || !to) return { dE: 0, dN: 0, dU: 0 };
     const offset = this.gpsRoverOffsetVector(obs);
     const dE = to.x - from.x - offset.dE;
     const dN = to.y - from.y - offset.dN;
+    const dU = !this.is2D ? to.h - from.h - offset.dH : undefined;
     const horizGround = Math.hypot(dE, dN);
-    if (horizGround <= 1e-12) return { dE, dN };
+    if (horizGround <= 1e-12) return { dE, dN, dU };
 
     const hi = Number.isFinite(obs.gpsAntennaHiM ?? Number.NaN) ? (obs.gpsAntennaHiM as number) : 0;
     const ht = Number.isFinite(obs.gpsAntennaHtM ?? Number.NaN) ? (obs.gpsAntennaHtM as number) : 0;
@@ -657,12 +690,12 @@ export class LSAEngine {
     const rawHorizSq =
       horizGround * horizGround + deltaGround * deltaGround - deltaAntenna * deltaAntenna;
     if (!Number.isFinite(rawHorizSq) || rawHorizSq <= 1e-12) {
-      return { dE, dN };
+      return { dE, dN, dU };
     }
     const rawHoriz = Math.sqrt(rawHorizSq);
     const scale = rawHoriz / horizGround;
-    if (!Number.isFinite(scale) || scale <= 0) return { dE, dN };
-    return { dE: dE * scale, dN: dN * scale };
+    if (!Number.isFinite(scale) || scale <= 0) return { dE, dN, dU };
+    return { dE: dE * scale, dN: dN * scale, dU };
   }
 
   private populatePreanalysisObservations(): void {
@@ -923,6 +956,229 @@ export class LSAEngine {
     return Math.max(sigma, 1e-12);
   }
 
+  private gpsComponentCount(obs: GpsObservation): number {
+    return !this.is2D && Number.isFinite(obs.obs.dU ?? Number.NaN) ? 3 : 2;
+  }
+
+  private gpsUsesLocalSolveFrame(frame: GnssVectorFrame): boolean {
+    return frame === 'enuLocal' || frame === 'llhBaseline' || frame === 'ecefDelta';
+  }
+
+  private geodeticToEcef(
+    latDeg: number,
+    lonDeg: number,
+    heightM = 0,
+  ): { x: number; y: number; z: number } {
+    const lat = latDeg * DEG_TO_RAD;
+    const lon = lonDeg * DEG_TO_RAD;
+    const sinLat = Math.sin(lat);
+    const cosLat = Math.cos(lat);
+    const sinLon = Math.sin(lon);
+    const cosLon = Math.cos(lon);
+    const n = WGS84_A / Math.sqrt(1 - WGS84_E2 * sinLat * sinLat);
+    return {
+      x: (n + heightM) * cosLat * cosLon,
+      y: (n + heightM) * cosLat * sinLon,
+      z: (n * (1 - WGS84_E2) + heightM) * sinLat,
+    };
+  }
+
+  private ecefDeltaToLocalEnu(
+    dX: number,
+    dY: number,
+    dZ: number,
+    latDeg: number,
+    lonDeg: number,
+  ): Required<Pick<GpsVectorComponents, 'dE' | 'dN' | 'dU'>> {
+    const lat = latDeg * DEG_TO_RAD;
+    const lon = lonDeg * DEG_TO_RAD;
+    const sinLat = Math.sin(lat);
+    const cosLat = Math.cos(lat);
+    const sinLon = Math.sin(lon);
+    const cosLon = Math.cos(lon);
+    return {
+      dE: -sinLon * dX + cosLon * dY,
+      dN: -sinLat * cosLon * dX - sinLat * sinLon * dY + cosLat * dZ,
+      dU: cosLat * cosLon * dX + cosLat * sinLon * dY + sinLat * dZ,
+    };
+  }
+
+  private stationGeodeticFromCoordinates(
+    stationId: StationId,
+    x: number,
+    y: number,
+  ): { latDeg: number; lonDeg: number } | null {
+    const station = this.stations[stationId];
+    if (!station) return null;
+    const hasExplicitGeodeticInput = station.coordInputClass === 'geodetic';
+    if (
+      hasExplicitGeodeticInput &&
+      Number.isFinite(station.latDeg ?? Number.NaN) &&
+      Number.isFinite(station.lonDeg ?? Number.NaN)
+    ) {
+      return { latDeg: station.latDeg as number, lonDeg: station.lonDeg as number };
+    }
+    if (this.coordSystemMode !== 'grid') return null;
+    const inv = inverseENToGeodetic({
+      east: x,
+      north: y,
+      originLatDeg: this.parseState?.originLatDeg,
+      originLonDeg: this.parseState?.originLonDeg,
+      model: this.parseState?.crsProjectionModel ?? 'legacy-equirectangular',
+      coordSystemMode: this.coordSystemMode,
+      crsId: this.crsId,
+    });
+    return 'failureReason' in inv ? null : { latDeg: inv.latDeg, lonDeg: inv.lonDeg };
+  }
+
+  private stationEllipsoidHeightFromValues(
+    station: Station,
+    h: number,
+    latDeg?: number,
+    lonDeg?: number,
+  ): number {
+    if (station.heightType === 'ellipsoid') return h;
+    if (this.activeGeoidModel && Number.isFinite(latDeg) && Number.isFinite(lonDeg)) {
+      const undulation = interpolateGeoidUndulation(
+        this.activeGeoidModel,
+        latDeg as number,
+        lonDeg as number,
+        this.geoidInterpolation ?? 'bilinear',
+      );
+      if (Number.isFinite(undulation ?? Number.NaN)) {
+        return h + (undulation as number);
+      }
+    }
+    if (Number.isFinite(this.averageGeoidHeight) && Math.abs(this.averageGeoidHeight) > 0) {
+      return h + this.averageGeoidHeight;
+    }
+    return h;
+  }
+
+  private applyGpsVerticalDeflection(
+    vector: Required<Pick<GpsSolveVector, 'dE' | 'dN' | 'dU'>>,
+  ): Required<Pick<GpsSolveVector, 'dE' | 'dN' | 'dU'>> {
+    const northSec = this.parseState?.verticalDeflectionNorthSec ?? 0;
+    const eastSec = this.parseState?.verticalDeflectionEastSec ?? 0;
+    const xi = (northSec / 3600) * DEG_TO_RAD;
+    const eta = (eastSec / 3600) * DEG_TO_RAD;
+    if ((!Number.isFinite(xi) || Math.abs(xi) <= 1e-16) && (!Number.isFinite(eta) || Math.abs(eta) <= 1e-16)) {
+      return vector;
+    }
+    return {
+      dE: vector.dE - eta * vector.dU,
+      dN: vector.dN - xi * vector.dU,
+      dU: vector.dU + eta * vector.dE + xi * vector.dN,
+    };
+  }
+
+  private rotateGpsHorizontalToGrid(
+    dE: number,
+    dN: number,
+    stationId: StationId,
+  ): { dE: number; dN: number } {
+    if (this.coordSystemMode !== 'grid') return { dE, dN };
+    const convergence = this.stationFactorSnapshot(stationId).convergenceAngleRad;
+    if (!Number.isFinite(convergence) || Math.abs(convergence) <= 1e-16) return { dE, dN };
+    const cosGamma = Math.cos(convergence);
+    const sinGamma = Math.sin(convergence);
+    return {
+      dE: dE * cosGamma + dN * sinGamma,
+      dN: dN * cosGamma - dE * sinGamma,
+    };
+  }
+
+  private multiplyMatrix3(a: number[][], b: number[][]): number[][] {
+    return a.map((row) =>
+      b[0].map(
+        (_value, col) => row[0] * b[0][col] + row[1] * b[1][col] + row[2] * b[2][col],
+      ),
+    );
+  }
+
+  private transposeMatrix3(matrix: number[][]): number[][] {
+    return [
+      [matrix[0][0], matrix[1][0], matrix[2][0]],
+      [matrix[0][1], matrix[1][1], matrix[2][1]],
+      [matrix[0][2], matrix[1][2], matrix[2][2]],
+    ];
+  }
+
+  private transformSymmetricCovariance3(transform: number[][], covariance: number[][]): number[][] {
+    return this.multiplyMatrix3(
+      this.multiplyMatrix3(transform, covariance),
+      this.transposeMatrix3(transform),
+    );
+  }
+
+  private transformGpsCovarianceToSolveFrame(obs: GpsObservation): GpsCovariance | null {
+    const frame: GnssVectorFrame =
+      obs.gnssVectorFrame ?? this.parseState?.gnssVectorFrameDefault ?? 'gridNEU';
+    const componentCount = this.gpsComponentCount(obs);
+    if (componentCount < 3 || !obs.gpsCovariance3d) return null;
+    const { cXX, cYY, cZZ, cXY, cXZ, cYZ } = obs.gpsCovariance3d;
+    let cEE = cXX;
+    let cNN = cYY;
+    let cUU = cZZ;
+    let cEN = cXY;
+    let cEU = cXZ;
+    let cNU = cYZ;
+
+    if (frame === 'ecefDelta') {
+      const geo = this.stationGeodetic(obs.from) ?? this.stationGeodetic(obs.to);
+      if (!geo) return null;
+      const lat = geo.latDeg * DEG_TO_RAD;
+      const lon = geo.lonDeg * DEG_TO_RAD;
+      const sinLat = Math.sin(lat);
+      const cosLat = Math.cos(lat);
+      const sinLon = Math.sin(lon);
+      const cosLon = Math.cos(lon);
+      const r = [
+        [-sinLon, cosLon, 0],
+        [-sinLat * cosLon, -sinLat * sinLon, cosLat],
+        [cosLat * cosLon, cosLat * sinLon, sinLat],
+      ];
+      const q = [
+        [cXX, cXY, cXZ],
+        [cXY, cYY, cYZ],
+        [cXZ, cYZ, cZZ],
+      ];
+      const transformed = this.transformSymmetricCovariance3(r, q);
+      cEE = transformed[0][0];
+      cEN = transformed[0][1];
+      cEU = transformed[0][2];
+      cNN = transformed[1][1];
+      cNU = transformed[1][2];
+      cUU = transformed[2][2];
+    }
+
+    const northSec = this.parseState?.verticalDeflectionNorthSec ?? 0;
+    const eastSec = this.parseState?.verticalDeflectionEastSec ?? 0;
+    const xi = (northSec / 3600) * DEG_TO_RAD;
+    const eta = (eastSec / 3600) * DEG_TO_RAD;
+    if (Math.abs(xi) > 1e-16 || Math.abs(eta) > 1e-16) {
+      const d = [
+        [1, 0, -eta],
+        [0, 1, -xi],
+        [eta, xi, 1],
+      ];
+      const q = [
+        [cEE, cEN, cEU],
+        [cEN, cNN, cNU],
+        [cEU, cNU, cUU],
+      ];
+      const transformed = this.transformSymmetricCovariance3(d, q);
+      cEE = transformed[0][0];
+      cEN = transformed[0][1];
+      cEU = transformed[0][2];
+      cNN = transformed[1][1];
+      cNU = transformed[1][2];
+      cUU = transformed[2][2];
+    }
+
+    return { cEE, cNN, cEN, cUU, cEU, cNU };
+  }
+
   private captureObservationWeightingStdDevs(observations: Observation[]): void {
     observations.forEach((obs) => {
       if (obs.type === 'gps') {
@@ -944,26 +1200,84 @@ export class LSAEngine {
     });
   }
 
-  private gpsCovariance(obs: Observation): { cEE: number; cNN: number; cEN: number } {
+  private gpsCovariance(obs: Observation): GpsCovariance {
     if (obs.type !== 'gps') {
       const s = Math.max(obs.stdDev || 0, 1e-12);
-      return { cEE: s * s, cNN: s * s, cEN: 0 };
+      return { cEE: s * s, cNN: s * s, cEN: 0, cUU: s * s, cEU: 0, cNU: 0 };
     }
     const gps = obs;
+    const transformed = this.transformGpsCovarianceToSolveFrame(gps);
+    if (transformed) return transformed;
     const vector = this.gpsObservedVector(gps);
     const varianceScale = Math.max(vector.scale * vector.scale, 1e-12);
     const sE = Math.max(gps.stdDevE ?? gps.stdDev ?? 0, 1e-12);
     const sN = Math.max(gps.stdDevN ?? gps.stdDev ?? 0, 1e-12);
-    const corr = Math.max(-0.999, Math.min(0.999, gps.corrEN ?? 0));
+    const sU = Math.max(gps.stdDevU ?? gps.stdDev ?? 0, 1e-12);
+    const corrEN = Math.max(-0.999, Math.min(0.999, gps.corrEN ?? 0));
+    const corrEU = Math.max(-0.999, Math.min(0.999, gps.corrEU ?? 0));
+    const corrNU = Math.max(-0.999, Math.min(0.999, gps.corrNU ?? 0));
     return {
       cEE: sE * sE * varianceScale,
       cNN: sN * sN * varianceScale,
-      cEN: corr * sE * sN * varianceScale,
+      cEN: corrEN * sE * sN * varianceScale,
+      cUU: sU * sU * varianceScale,
+      cEU: corrEU * sE * sU * varianceScale,
+      cNU: corrNU * sN * sU * varianceScale,
     };
   }
 
-  private gpsWeight(obs: Observation): { wEE: number; wNN: number; wEN: number } {
+  private gpsWeight(obs: Observation): {
+    wEE: number;
+    wNN: number;
+    wEN: number;
+    wUU?: number;
+    wEU?: number;
+    wNU?: number;
+  } {
     const cov = this.gpsCovariance(obs);
+    const hasVertical =
+      !this.is2D &&
+      Number.isFinite(cov.cUU ?? Number.NaN) &&
+      Number.isFinite(cov.cEU ?? Number.NaN) &&
+      Number.isFinite(cov.cNU ?? Number.NaN);
+    if (hasVertical) {
+      const matrix = [
+        [cov.cEE, cov.cEN, cov.cEU ?? 0],
+        [cov.cEN, cov.cNN, cov.cNU ?? 0],
+        [cov.cEU ?? 0, cov.cNU ?? 0, cov.cUU ?? 0],
+      ];
+      const det =
+        matrix[0][0] * (matrix[1][1] * matrix[2][2] - matrix[1][2] * matrix[2][1]) -
+        matrix[0][1] * (matrix[1][0] * matrix[2][2] - matrix[1][2] * matrix[2][0]) +
+        matrix[0][2] * (matrix[1][0] * matrix[2][1] - matrix[1][1] * matrix[2][0]);
+      if (Number.isFinite(det) && Math.abs(det) > 1e-24) {
+        const inv = [
+          [
+            (matrix[1][1] * matrix[2][2] - matrix[1][2] * matrix[2][1]) / det,
+            (matrix[0][2] * matrix[2][1] - matrix[0][1] * matrix[2][2]) / det,
+            (matrix[0][1] * matrix[1][2] - matrix[0][2] * matrix[1][1]) / det,
+          ],
+          [
+            (matrix[1][2] * matrix[2][0] - matrix[1][0] * matrix[2][2]) / det,
+            (matrix[0][0] * matrix[2][2] - matrix[0][2] * matrix[2][0]) / det,
+            (matrix[0][2] * matrix[1][0] - matrix[0][0] * matrix[1][2]) / det,
+          ],
+          [
+            (matrix[1][0] * matrix[2][1] - matrix[1][1] * matrix[2][0]) / det,
+            (matrix[0][1] * matrix[2][0] - matrix[0][0] * matrix[2][1]) / det,
+            (matrix[0][0] * matrix[1][1] - matrix[0][1] * matrix[1][0]) / det,
+          ],
+        ];
+        return {
+          wEE: inv[0][0],
+          wNN: inv[1][1],
+          wEN: inv[0][1],
+          wUU: inv[2][2],
+          wEU: inv[0][2],
+          wNU: inv[1][2],
+        };
+      }
+    }
     const det = cov.cEE * cov.cNN - cov.cEN * cov.cEN;
     if (!Number.isFinite(det) || det <= 1e-24) {
       return {
@@ -979,30 +1293,47 @@ export class LSAEngine {
     };
   }
 
-  private gpsObservedVector(obs: GpsObservation): { dE: number; dN: number; scale: number } {
+  private gpsObservedVector(obs: GpsObservation): GpsSolveVector {
+    const includeVertical = !this.is2D && Number.isFinite(obs.obs.dU ?? Number.NaN);
     const rawE = Number.isFinite(obs.obs.dE) ? obs.obs.dE : 0;
     const rawN = Number.isFinite(obs.obs.dN) ? obs.obs.dN : 0;
+    const rawU = includeVertical ? (obs.obs.dU as number) : 0;
     const frame: GnssVectorFrame =
       obs.gnssVectorFrame ?? this.parseState?.gnssVectorFrameDefault ?? 'gridNEU';
     let frameE = rawE;
     let frameN = rawN;
+    let frameU = rawU;
     const frameDistance = Math.hypot(rawE, rawN);
 
     if (frame === 'enuLocal' || frame === 'llhBaseline') {
-      const convergence = this.stationFactorSnapshot(obs.from).convergenceAngleRad;
-      const azLocal = Math.atan2(rawE, rawN);
-      const azGrid = azLocal + convergence;
-      frameE = frameDistance * Math.sin(azGrid);
-      frameN = frameDistance * Math.cos(azGrid);
+      const deflected = this.applyGpsVerticalDeflection({ dE: rawE, dN: rawN, dU: rawU });
+      frameE = deflected.dE;
+      frameN = deflected.dN;
+      frameU = deflected.dU;
       if (frameDistance > 200000) {
         this.addCoordSystemWarning(
           `GNSS frame sanity check: ${obs.from}-${obs.to} declared ${frame} with unusually long horizontal span ${frameDistance.toFixed(3)}m.`,
         );
       }
     } else if (frame === 'ecefDelta') {
-      this.addCoordSystemWarning(
-        `GNSS frame ${frame} currently uses raw dE/dN proxy for ${obs.from}-${obs.to}; verify imported frame metadata.`,
-      );
+      const geo = this.stationGeodetic(obs.from) ?? this.stationGeodetic(obs.to);
+      if (geo) {
+        const { dE: enuE, dN: enuN, dU: enuU } = this.ecefDeltaToLocalEnu(
+          rawE,
+          rawN,
+          rawU,
+          geo.latDeg,
+          geo.lonDeg,
+        );
+        const deflected = this.applyGpsVerticalDeflection({ dE: enuE, dN: enuN, dU: enuU });
+        frameE = deflected.dE;
+        frameN = deflected.dN;
+        frameU = deflected.dU;
+      } else {
+        this.addCoordSystemWarning(
+          `GNSS frame ${frame} could not resolve geodetic orientation for ${obs.from}-${obs.to}; using raw component proxy.`,
+        );
+      }
       if (frameDistance < 0.001 || frameDistance > 1_000_000) {
         this.addCoordSystemWarning(
           `GNSS frame sanity check: ${obs.from}-${obs.to} ${frame} vector magnitude ${frameDistance.toFixed(6)}m looks inconsistent.`,
@@ -1018,12 +1349,22 @@ export class LSAEngine {
     const offset = this.gpsRoverOffsetVector(obs);
     const horizRaw = Math.hypot(frameE, frameN);
     if (horizRaw <= 1e-12) {
-      return { dE: offset.dE, dN: offset.dN, scale: 1 };
+      return {
+        dE: offset.dE,
+        dN: offset.dN,
+        dU: includeVertical ? frameU + offset.dH : undefined,
+        scale: 1,
+      };
     }
 
     const hasAntennaMeta = obs.gpsAntennaHiM != null || obs.gpsAntennaHtM != null;
     if (!hasAntennaMeta) {
-      return { dE: frameE + offset.dE, dN: frameN + offset.dN, scale: 1 };
+      return {
+        dE: frameE + offset.dE,
+        dN: frameN + offset.dN,
+        dU: includeVertical ? frameU + offset.dH : undefined,
+        scale: 1,
+      };
     }
 
     const hi = Number.isFinite(obs.gpsAntennaHiM ?? Number.NaN) ? (obs.gpsAntennaHiM as number) : 0;
@@ -1040,17 +1381,173 @@ export class LSAEngine {
     const slope = Math.hypot(horizRaw, deltaAntenna);
     const horizCorrectedSq = slope * slope - deltaGround * deltaGround;
     if (!Number.isFinite(horizCorrectedSq) || horizCorrectedSq <= 0) {
-      return { dE: frameE + offset.dE, dN: frameN + offset.dN, scale: 1 };
+      return {
+        dE: frameE + offset.dE,
+        dN: frameN + offset.dN,
+        dU: includeVertical ? frameU + offset.dH : undefined,
+        scale: 1,
+      };
     }
     const horizCorrected = Math.sqrt(horizCorrectedSq);
     if (!Number.isFinite(horizCorrected) || horizCorrected <= 1e-12) {
-      return { dE: frameE + offset.dE, dN: frameN + offset.dN, scale: 1 };
+      return {
+        dE: frameE + offset.dE,
+        dN: frameN + offset.dN,
+        dU: includeVertical ? frameU + offset.dH : undefined,
+        scale: 1,
+      };
     }
     const scale = horizCorrected / horizRaw;
     if (!Number.isFinite(scale) || scale <= 0) {
-      return { dE: frameE + offset.dE, dN: frameN + offset.dN, scale: 1 };
+      return {
+        dE: frameE + offset.dE,
+        dN: frameN + offset.dN,
+        dU: includeVertical ? frameU + offset.dH : undefined,
+        scale: 1,
+      };
     }
-    return { dE: frameE * scale + offset.dE, dN: frameN * scale + offset.dN, scale };
+    return {
+      dE: frameE * scale + offset.dE,
+      dN: frameN * scale + offset.dN,
+      dU: includeVertical ? frameU + offset.dH : undefined,
+      scale,
+    };
+  }
+
+  private gpsModeledVectorFromStationValues(
+    obs: GpsObservation,
+    fromValues: { x: number; y: number; h: number },
+    toValues: { x: number; y: number; h: number },
+  ): GpsVectorComponents {
+    const includeVertical = !this.is2D && Number.isFinite(obs.obs.dU ?? Number.NaN);
+    const frame: GnssVectorFrame =
+      obs.gnssVectorFrame ?? this.parseState?.gnssVectorFrameDefault ?? 'gridNEU';
+
+    if (!this.gpsUsesLocalSolveFrame(frame)) {
+      return {
+        dE: toValues.x - fromValues.x,
+        dN: toValues.y - fromValues.y,
+        dU: includeVertical ? toValues.h - fromValues.h : undefined,
+      };
+    }
+
+    if (this.coordSystemMode !== 'grid') {
+      return {
+        dE: toValues.x - fromValues.x,
+        dN: toValues.y - fromValues.y,
+        dU: includeVertical ? toValues.h - fromValues.h : undefined,
+      };
+    }
+
+    const fromGeo = this.stationGeodeticFromCoordinates(obs.from, fromValues.x, fromValues.y);
+    const toGeo = this.stationGeodeticFromCoordinates(obs.to, toValues.x, toValues.y);
+    if (!fromGeo || !toGeo) {
+      return {
+        dE: toValues.x - fromValues.x,
+        dN: toValues.y - fromValues.y,
+        dU: includeVertical ? toValues.h - fromValues.h : undefined,
+      };
+    }
+
+    const fromStation = this.stations[obs.from];
+    const toStation = this.stations[obs.to];
+    if (!fromStation || !toStation) {
+      return {
+        dE: toValues.x - fromValues.x,
+        dN: toValues.y - fromValues.y,
+        dU: includeVertical ? toValues.h - fromValues.h : undefined,
+      };
+    }
+
+    const fromEllipsoidHeight = this.stationEllipsoidHeightFromValues(
+      fromStation,
+      fromValues.h,
+      fromGeo.latDeg,
+      fromGeo.lonDeg,
+    );
+    const toEllipsoidHeight = this.stationEllipsoidHeightFromValues(
+      toStation,
+      toValues.h,
+      toGeo.latDeg,
+      toGeo.lonDeg,
+    );
+    const fromEcef = this.geodeticToEcef(fromGeo.latDeg, fromGeo.lonDeg, fromEllipsoidHeight);
+    const toEcef = this.geodeticToEcef(toGeo.latDeg, toGeo.lonDeg, toEllipsoidHeight);
+    const local = this.ecefDeltaToLocalEnu(
+      toEcef.x - fromEcef.x,
+      toEcef.y - fromEcef.y,
+      toEcef.z - fromEcef.z,
+      fromGeo.latDeg,
+      fromGeo.lonDeg,
+    );
+    const deflected = this.applyGpsVerticalDeflection(local);
+    return {
+      dE: deflected.dE,
+      dN: deflected.dN,
+      dU: includeVertical ? deflected.dU : undefined,
+    };
+  }
+
+  private gpsModeledVector(obs: GpsObservation): GpsSolveVector {
+    const fromStation = this.stations[obs.from];
+    const toStation = this.stations[obs.to];
+    if (!fromStation || !toStation) return { dE: 0, dN: 0, dU: 0, scale: 1 };
+    const modeled = this.gpsModeledVectorFromStationValues(
+      obs,
+      { x: fromStation.x, y: fromStation.y, h: fromStation.h },
+      { x: toStation.x, y: toStation.y, h: toStation.h },
+    );
+    return { ...modeled, scale: 1 };
+  }
+
+  private gpsModeledVectorDerivatives(obs: GpsObservation): GpsVectorDerivatives {
+    const fromStation = this.stations[obs.from];
+    const toStation = this.stations[obs.to];
+    const empty: GpsVectorDerivatives = { from: {}, to: {} };
+    if (!fromStation || !toStation) return empty;
+
+    const delta = 1e-4;
+    const differentiate = (
+      endpoint: 'from' | 'to',
+      component: 'x' | 'y' | 'h',
+    ): GpsVectorComponents | undefined => {
+      if (component === 'h' && this.is2D) return undefined;
+      const fromBase = { x: fromStation.x, y: fromStation.y, h: fromStation.h };
+      const toBase = { x: toStation.x, y: toStation.y, h: toStation.h };
+      const fromPlus = { ...fromBase };
+      const fromMinus = { ...fromBase };
+      const toPlus = { ...toBase };
+      const toMinus = { ...toBase };
+      if (endpoint === 'from') {
+        fromPlus[component] += delta;
+        fromMinus[component] -= delta;
+      } else {
+        toPlus[component] += delta;
+        toMinus[component] -= delta;
+      }
+      const plus = this.gpsModeledVectorFromStationValues(obs, fromPlus, toPlus);
+      const minus = this.gpsModeledVectorFromStationValues(obs, fromMinus, toMinus);
+      return {
+        dE: (plus.dE - minus.dE) / (2 * delta),
+        dN: (plus.dN - minus.dN) / (2 * delta),
+        dU:
+          !this.is2D &&
+          Number.isFinite(plus.dU ?? Number.NaN) &&
+          Number.isFinite(minus.dU ?? Number.NaN)
+            ? ((plus.dU as number) - (minus.dU as number)) / (2 * delta)
+            : undefined,
+      };
+    };
+
+    empty.from.x = differentiate('from', 'x');
+    empty.from.y = differentiate('from', 'y');
+    empty.to.x = differentiate('to', 'x');
+    empty.to.y = differentiate('to', 'y');
+    if (!this.is2D) {
+      empty.from.h = differentiate('from', 'h');
+      empty.to.h = differentiate('to', 'h');
+    }
+    return empty;
   }
 
   private updateGpsAddHiHtDiagnostics(): void {
@@ -1301,7 +1798,12 @@ export class LSAEngine {
   private rowSigma(info: NonNullable<EquationRowInfo>): number {
     if (info.obs.type === 'gps') {
       const cov = this.gpsCovariance(info.obs);
-      const variance = info.component === 'N' ? cov.cNN : cov.cEE;
+      const variance =
+        info.component === 'N'
+          ? cov.cNN
+          : info.component === 'U'
+            ? (cov.cUU ?? cov.cNN)
+            : cov.cEE;
       return Math.sqrt(Math.max(variance, 1e-24));
     }
     return Math.max(this.effectiveStdDev(info.obs), 1e-12);
@@ -3585,17 +4087,38 @@ export class LSAEngine {
         return;
       }
       if (obs.type === 'gps') {
-        const s1 = this.stations[obs.from];
-        const s2 = this.stations[obs.to];
-        if (!s1 || !s2) return;
-        const calc = { dE: s2.x - s1.x, dN: s2.y - s1.y };
-        const residual = { vE: obs.obs.dE - calc.dE, vN: obs.obs.dN - calc.dN };
+        const corrected = this.gpsObservedVector(obs);
+        const calc = this.gpsModeledVector(obs);
+        const residual = {
+          vE: corrected.dE - calc.dE,
+          vN: corrected.dN - calc.dN,
+          vU:
+            !this.is2D &&
+            Number.isFinite(corrected.dU ?? Number.NaN) &&
+            Number.isFinite(calc.dU ?? Number.NaN)
+              ? (corrected.dU as number) - (calc.dU as number)
+              : undefined,
+        };
         obs.calc = calc;
         obs.residual = residual;
-        const sigmaE = Math.max(obs.stdDevE ?? obs.stdDev ?? 1, 1e-12);
-        const sigmaN = Math.max(obs.stdDevN ?? obs.stdDev ?? 1, 1e-12);
-        obs.stdRes = Math.hypot(residual.vE / sigmaE, residual.vN / sigmaN);
-        ranked.push({ obsId: obs.id, type: obs.type, diff: Math.hypot(residual.vE, residual.vN) });
+        const cov = this.gpsCovariance(obs);
+        const sigmaE = Math.sqrt(Math.max(cov.cEE, 1e-12));
+        const sigmaN = Math.sqrt(Math.max(cov.cNN, 1e-12));
+        const sigmaU = Math.sqrt(Math.max(cov.cUU ?? 1e-12, 1e-12));
+        obs.stdRes = Math.sqrt(
+          (residual.vE / sigmaE) ** 2 +
+            (residual.vN / sigmaN) ** 2 +
+            ((residual.vU ?? 0) / sigmaU) ** 2,
+        );
+        ranked.push({
+          obsId: obs.id,
+          type: obs.type,
+          diff: Math.sqrt(
+            residual.vE * residual.vE +
+              residual.vN * residual.vN +
+              (residual.vU ?? 0) * (residual.vU ?? 0),
+          ),
+        });
       }
     });
 
@@ -4376,6 +4899,8 @@ export class LSAEngine {
           modeledAzimuth: this.modeledAzimuth.bind(this),
           wrapToPi: this.wrapToPi.bind(this),
           gpsObservedVector: this.gpsObservedVector.bind(this),
+          gpsModeledVector: this.gpsModeledVector.bind(this),
+          gpsModeledVectorDerivatives: this.gpsModeledVectorDerivatives.bind(this),
           gpsWeight: this.gpsWeight.bind(this),
           getModeledZenith: this.getModeledZenith.bind(this),
           curvatureRefractionAngle: this.curvatureRefractionAngle.bind(this),
@@ -4670,18 +5195,26 @@ export class LSAEngine {
         addObservationContribution(obs, q);
         collectTsCorrelationRow(obs, v, sigma);
       } else if (obs.type === 'gps') {
-        const s1 = this.stations[obs.from];
-        const s2 = this.stations[obs.to];
-        if (!s1 || !s2) return;
         const corrected = this.gpsObservedVector(obs);
-        const calc_dE = s2.x - s1.x;
-        const calc_dN = s2.y - s1.y;
-        const vE = corrected.dE - calc_dE;
-        const vN = corrected.dN - calc_dN;
-        obs.calc = { dE: calc_dE, dN: calc_dN };
-        obs.residual = { vE, vN };
+        const calc = this.gpsModeledVector(obs);
+        const vE = corrected.dE - calc.dE;
+        const vN = corrected.dN - calc.dN;
+        const vU =
+          !this.is2D &&
+          Number.isFinite(corrected.dU ?? Number.NaN) &&
+          Number.isFinite(calc.dU ?? Number.NaN)
+            ? (corrected.dU as number) - (calc.dU as number)
+            : undefined;
+        obs.calc = calc;
+        obs.residual = { vE, vN, vU };
         const w = this.gpsWeight(obs);
-        const quad = w.wEE * vE * vE + 2 * w.wEN * vE * vN + w.wNN * vN * vN;
+        const quad =
+          w.wEE * vE * vE +
+          2 * w.wEN * vE * vN +
+          w.wNN * vN * vN +
+          ((vU != null && w.wUU != null ? w.wUU * vU * vU : 0) +
+            (vU != null && w.wEU != null ? 2 * w.wEU * vE * vU : 0) +
+            (vU != null && w.wNU != null ? 2 * w.wNU * vN * vU : 0));
         obs.stdRes = Math.sqrt(Math.max(quad, 0));
         vtpv += quad;
         addObservationContribution(obs, quad);
@@ -5019,7 +5552,16 @@ export class LSAEngine {
       });
       const numParams = stationParamCount + directionSetIds.length;
       const numObsEquations =
-        activeObservations.reduce((acc, o) => acc + (o.type === 'gps' ? 2 : 1), 0) +
+        activeObservations.reduce(
+          (acc, o) =>
+            acc +
+            (o.type === 'gps' && !this.is2D && Number.isFinite(o.obs.dU ?? Number.NaN)
+              ? 3
+              : o.type === 'gps'
+                ? 2
+                : 1),
+          0,
+        ) +
         constraints.length;
 
       if (numParams > 0 && numObsEquations > 0) {
@@ -5125,6 +5667,7 @@ export class LSAEngine {
             const corrected = this.gpsObservedVector(obs);
             const calc_dE = s2.x - s1.x;
             const calc_dN = s2.y - s1.y;
+            const calc_dU = !this.is2D ? s2.h - s1.h : undefined;
             const vE = corrected.dE - calc_dE;
             const vN = corrected.dN - calc_dN;
             L[row][0] = vE;
@@ -5143,6 +5686,24 @@ export class LSAEngine {
             rowInfo.push({ obs, component: 'N' });
             if (fromIdx?.y != null) A[row + 1][fromIdx.y] = -1.0;
             if (toIdx?.y != null) A[row + 1][toIdx.y] = 1.0;
+
+            if (
+              !this.is2D &&
+              Number.isFinite(corrected.dU ?? Number.NaN) &&
+              Number.isFinite(calc_dU ?? Number.NaN)
+            ) {
+              L[row + 2][0] = (corrected.dU as number) - (calc_dU as number);
+              rowInfo.push({ obs, component: 'U' });
+              if (fromIdx?.h != null) A[row + 2][fromIdx.h] = -1.0;
+              if (toIdx?.h != null) A[row + 2][toIdx.h] = 1.0;
+              P[row][row + 2] = w.wEU ?? 0;
+              P[row + 2][row] = w.wEU ?? 0;
+              P[row + 1][row + 2] = w.wNU ?? 0;
+              P[row + 2][row + 1] = w.wNU ?? 0;
+              P[row + 2][row + 2] = w.wUU ?? 0;
+              row += 3;
+              return;
+            }
 
             row += 2;
             return;
@@ -5330,7 +5891,7 @@ export class LSAEngine {
                 r: number[];
                 mdb: number[];
                 pass: boolean[];
-                comps: ('E' | 'N' | undefined)[];
+                comps: ('E' | 'N' | 'U' | undefined)[];
               }
             >();
             const s0 = this.seuw || 1;
@@ -5341,7 +5902,12 @@ export class LSAEngine {
               let qll = sigma > 0 ? sigma * sigma : 0;
               if (info.obs.type === 'gps') {
                 const cov = this.gpsCovariance(info.obs);
-                qll = info.component === 'N' ? cov.cNN : cov.cEE;
+                qll =
+                  info.component === 'N'
+                    ? cov.cNN
+                    : info.component === 'U'
+                      ? (cov.cUU ?? cov.cNN)
+                      : cov.cEE;
               }
               let diag = 0;
               for (let j = 0; j < numParams; j += 1) {
@@ -5391,6 +5957,14 @@ export class LSAEngine {
                 obs.localTest = { critical: this.localTestCritical, pass: passE && passN };
                 obs.localTestComponents = { passE, passN };
                 obs.mdbComponents = { mE, mN };
+              } else if (obs.type === 'gps' && entry.t.length > 2) {
+                obs.stdRes = Math.max(...entry.t.map((value) => Math.abs(value)));
+                obs.redundancy = Math.min(...entry.r);
+                obs.localTest = {
+                  critical: this.localTestCritical,
+                  pass: entry.pass.every(Boolean),
+                };
+                obs.mdb = Math.min(...entry.mdb.filter((value) => Number.isFinite(value)));
               } else {
                 obs.stdRes = Math.abs(entry.t[0]);
                 obs.redundancy = entry.r[0];

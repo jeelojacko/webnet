@@ -20,6 +20,8 @@ const parseSettings: ParseSettings = {
   averageGeoidHeight: 0,
   gnssVectorFrameDefault: 'gridNEU',
   gnssFrameConfirmed: false,
+  verticalDeflectionNorthSec: 0,
+  verticalDeflectionEastSec: 0,
   observationMode: {
     bearing: 'grid',
     distance: 'measured',

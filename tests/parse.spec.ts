@@ -1336,6 +1336,61 @@ describe('parseInput', () => {
     );
   });
 
+  it('parses GPS vertical deflection state from .GPS VDEF', () => {
+    const parsed = parseInput(
+      [
+        '.GPS VDEF N -2.910 E -1.460',
+        'C A 0 0 0 !',
+        'C B 100 0 0',
+        'G GPS1 A B 100 0 0.01',
+      ].join('\n'),
+    );
+
+    expect(parsed.parseState.verticalDeflectionNorthSec ?? 0).toBeCloseTo(-2.91, 10);
+    expect(parsed.parseState.verticalDeflectionEastSec ?? 0).toBeCloseTo(-1.46, 10);
+    expect(parsed.logs.some((line) => line.includes('GPS vertical deflection set to N=-2.910"'))).toBe(
+      true,
+    );
+  });
+
+  it('parses G0/G1/G2/G3 GNSS covariance-vector blocks with inline GPS factors', () => {
+    const parsed = parseInput(
+      [
+        '.GPS WEIGHT COVARIANCE',
+        '.GPS FACTOR 2.6 VERT 2',
+        'C A 500000 0 100 ! ! !',
+        'C B 500100 100 90',
+        "G0 'session_a.asc",
+        'G1 A-B 57.559600 280.508300 184.546200',
+        'G2 1.8006862774E-06 8.9217319328E-06 9.4458864623E-06',
+        'G3 -3.5520472466E-06 3.5240054785E-06 -8.6638065113E-06',
+      ].join('\n'),
+    );
+
+    const gps = parsed.observations.find((obs) => obs.type === 'gps');
+    expect(gps?.type).toBe('gps');
+    if (gps?.type === 'gps') {
+      expect(gps.gpsWeightingMode).toBe('covariance');
+      expect(gps.gnssVectorFrame).toBe('ecefDelta');
+      expect(gps.gpsVectorLabel).toBe('session_a.asc');
+      expect(gps.gpsVectorHorizontalFactor ?? 0).toBeCloseTo(2.6, 10);
+      expect(gps.gpsVectorVerticalFactor ?? 0).toBeCloseTo(2, 10);
+      expect(gps.obs.dE).toBeCloseTo(57.5596, 10);
+      expect(gps.obs.dN).toBeCloseTo(280.5083, 10);
+      expect(gps.obs.dU ?? 0).toBeCloseTo(184.5462, 10);
+      expect(gps.gpsCovariance3d?.cXX ?? 0).toBeCloseTo(1.8006862774e-6 * 2.6 * 2.6, 16);
+      expect(gps.gpsCovariance3d?.cYY ?? 0).toBeCloseTo(8.9217319328e-6 * 2.6 * 2.6, 16);
+      expect(gps.gpsCovariance3d?.cZZ ?? 0).toBeCloseTo(9.4458864623e-6 * 2 * 2, 16);
+      expect(gps.gpsCovariance3d?.cXY ?? 0).toBeCloseTo(-3.5520472466e-6 * 2.6 * 2.6, 16);
+      expect(gps.gpsCovariance3d?.cXZ ?? 0).toBeCloseTo(3.5240054785e-6 * 2.6 * 2, 16);
+      expect(gps.gpsCovariance3d?.cYZ ?? 0).toBeCloseTo(-8.6638065113e-6 * 2.6 * 2, 16);
+      expect(gps.sourceLine).toBe(6);
+    }
+    expect(parsed.parseState.gpsWeightingMode).toBe('covariance');
+    expect(parsed.parseState.gpsVectorFactorHorizontal ?? 0).toBeCloseTo(2.6, 10);
+    expect(parsed.parseState.gpsVectorFactorVertical ?? 0).toBeCloseTo(2, 10);
+  });
+
   it('parses .GPS AddHiHt state with defaults and tags G observations', () => {
     const base = parseInput(['C A 0 0 0 !', 'C B 100 0 0', 'G GPS1 A B 100 0 0.01'].join('\n'));
     const baseGps = base.observations.find((o) => o.type === 'gps');

@@ -280,8 +280,12 @@ export interface DirObservation extends ObservationBase {
 export interface GpsObservation extends ObservationBase {
   type: 'gps';
   gpsMode?: GpsVectorMode;
+  gpsWeightingMode?: GpsWeightingMode;
   gnssVectorFrame?: GnssVectorFrame;
   gnssFrameConfirmed?: boolean;
+  gpsVectorLabel?: string;
+  gpsVectorHorizontalFactor?: number;
+  gpsVectorVerticalFactor?: number;
   gpsAntennaHiM?: number;
   gpsAntennaHtM?: number;
   gpsOffsetAzimuthRad?: number;
@@ -293,14 +297,26 @@ export interface GpsObservation extends ObservationBase {
   gpsOffsetSourceLine?: number;
   from: StationId;
   to: StationId;
-  obs: { dE: number; dN: number };
+  obs: { dE: number; dN: number; dU?: number };
   stdDevE?: number;
   stdDevN?: number;
+  stdDevU?: number;
   sigmaSourceE?: SigmaSource;
   sigmaSourceN?: SigmaSource;
+  sigmaSourceU?: SigmaSource;
   corrEN?: number;
-  calc?: { dE: number; dN: number };
-  residual?: { vE: number; vN: number };
+  corrEU?: number;
+  corrNU?: number;
+  gpsCovariance3d?: {
+    cXX: number;
+    cYY: number;
+    cZZ: number;
+    cXY: number;
+    cXZ: number;
+    cYZ: number;
+  };
+  calc?: { dE: number; dN: number; dU?: number };
+  residual?: { vE: number; vN: number; vU?: number };
   stdRes?: number;
 }
 
@@ -526,6 +542,7 @@ export type GeoidInterpolationMethod = 'bilinear' | 'nearest';
 export type GeoidHeightDatum = 'orthometric' | 'ellipsoid';
 export type GeoidSourceFormat = 'builtin' | 'gtx' | 'byn';
 export type GpsVectorMode = 'network' | 'sideshot';
+export type GpsWeightingMode = 'standard' | 'covariance';
 export type ProjectExportFormat =
   | 'points'
   | 'points-csv'
@@ -979,8 +996,13 @@ export interface ParseOptions {
   geoidConvertedStationCount?: number;
   geoidSkippedStationCount?: number;
   gpsVectorMode?: GpsVectorMode;
+  gpsWeightingMode?: GpsWeightingMode;
+  gpsVectorFactorHorizontal?: number;
+  gpsVectorFactorVertical?: number;
   gnssVectorFrameDefault?: GnssVectorFrame;
   gnssFrameConfirmed?: boolean;
+  verticalDeflectionNorthSec?: number;
+  verticalDeflectionEastSec?: number;
   gpsAddHiHtEnabled?: boolean;
   gpsAddHiHtHiM?: number;
   gpsAddHiHtHtM?: number;

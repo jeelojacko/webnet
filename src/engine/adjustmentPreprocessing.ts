@@ -100,6 +100,11 @@ const collectVerticalSensitiveStations = (
       mark(observation.to);
       return;
     }
+    if (observation.type === 'gps' && Number.isFinite(observation.obs.dU ?? Number.NaN)) {
+      mark(observation.from);
+      mark(observation.to);
+      return;
+    }
     if (observation.type === 'dist' && observation.mode === 'slope') {
       mark(observation.from);
       mark(observation.to);
@@ -225,7 +230,13 @@ export const buildSolvePreparation = (
   const numParams = stationParamCount + directionSetIds.length;
   const numObsEquations =
     activeObservations.reduce(
-      (count, observation) => count + (observation.type === 'gps' ? 2 : 1),
+      (count, observation) =>
+        count +
+        (observation.type === 'gps' && !is2D && Number.isFinite(observation.obs.dU ?? Number.NaN)
+          ? 3
+          : observation.type === 'gps'
+            ? 2
+            : 1),
       0,
     ) + constraints.length;
   const dirParamMap: Record<string, number> = {};

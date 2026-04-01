@@ -287,6 +287,8 @@ export const useProjectFileWorkflow = ({
           parseModeMigrated: defaultMigratedFlag,
           geoidSourceFormat: loadedParseSettings.geoidSourceFormat ?? 'builtin',
           geoidSourcePath: loadedParseSettings.geoidSourcePath ?? '',
+          verticalDeflectionNorthSec: loadedParseSettings.verticalDeflectionNorthSec ?? 0,
+          verticalDeflectionEastSec: loadedParseSettings.verticalDeflectionEastSec ?? 0,
         };
         const loadedAdjustedPointsSettings = sanitizeAdjustedPointsExportSettings(
           parsed.project.ui.adjustedPointsExport,

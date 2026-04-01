@@ -4,6 +4,7 @@ import { handleConventionalPrimitiveRecord } from './parseConventionalObservatio
 import { handleControlRecord } from './parseControlRecords';
 import { handleDirectionSetRecord } from './parseDirectionSetRecords';
 import { handleFieldObservationRecord } from './parseFieldObservationRecords';
+import type { GpsCovarianceState } from './parseFieldObservationRecords';
 import { dispatchParseDirective } from './parseDirectiveRegistry';
 import {
   createDirectionSetWorkflow,
@@ -143,8 +144,13 @@ const defaultParseOptions: ParseOptions = {
   geoidConvertedStationCount: 0,
   geoidSkippedStationCount: 0,
   gpsVectorMode: 'network',
+  gpsWeightingMode: 'standard',
+  gpsVectorFactorHorizontal: 1,
+  gpsVectorFactorVertical: 1,
   gnssVectorFrameDefault: 'gridNEU',
   gnssFrameConfirmed: false,
+  verticalDeflectionNorthSec: 0,
+  verticalDeflectionEastSec: 0,
   gpsTopoShots: [],
   gpsAddHiHtEnabled: false,
   gpsAddHiHtHiM: 0,
@@ -881,6 +887,7 @@ export const parseInput = (
   let displayLineCount = 0;
   const obsIdRef = { current: 0 };
   let lastGpsObservation: GpsObservation | undefined;
+  const gpsCovarianceStateRef: GpsCovarianceState = {};
   const autoCreatedStations = new Set<StationId>();
   const rejectedAutoCreateTokens = new Set<string>();
   const preanalysisMode = state.preanalysisMode === true;
@@ -1166,7 +1173,8 @@ export const parseInput = (
       displayLineBySourceLine[lineNum] = displayLineCount;
       state.displayLineBySourceLine = displayLineBySourceLine;
     }
-    const parsedInline = splitInlineCommentAndDescription(trimmed);
+    const parsedInline =
+      /^G0(?:\s|$)/i.test(trimmed) ? { line: trimmed } : splitInlineCommentAndDescription(trimmed);
     const line = parsedInline.line;
     if (!line || line.startsWith('#')) continue;
 
@@ -1483,6 +1491,7 @@ export const parseInput = (
                 obsIdRef,
                 compatibilityMode,
                 lastGpsObservationRef,
+                gpsCovarianceStateRef,
                 addCompatibilityDiagnostic,
                 rejectNumericStationTokens,
                 parseSsStationTokens,

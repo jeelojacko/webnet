@@ -513,6 +513,10 @@ const SETTINGS_TOOLTIPS = {
     'Default GPS antenna HI value used by .GPS AddHiHt when enabled. Value uses current linear units.',
   gpsAddHiHtHt:
     'Default GPS antenna HT value used by .GPS AddHiHt when enabled. Value uses current linear units.',
+  verticalDeflectionNorthSec:
+    'North component of vertical deflection in arcseconds. Applied when transforming GNSS vectors from ellipsoidal/geocentric frames into local/grid NEU.',
+  verticalDeflectionEastSec:
+    'East component of vertical deflection in arcseconds. Applied when transforming GNSS vectors from ellipsoidal/geocentric frames into local/grid NEU.',
   normalize:
     'Legacy normalize toggle mirror. Use Face Normalization Mode for explicit ON/OFF/AUTO behavior.',
   faceNormalizationMode:
@@ -933,6 +937,8 @@ const App: React.FC<AppProps> = ({
     averageGeoidHeight: 0,
     gnssVectorFrameDefault: 'gridNEU',
     gnssFrameConfirmed: false,
+    verticalDeflectionNorthSec: 0,
+    verticalDeflectionEastSec: 0,
     observationMode: {
       bearing: 'grid',
       distance: 'measured',

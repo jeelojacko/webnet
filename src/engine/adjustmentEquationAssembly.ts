@@ -62,8 +62,24 @@ export interface AdjustmentEquationAssemblyDependencies {
     _applyConvergence?: boolean,
   ) => number;
   wrapToPi: (_value: number) => number;
-  gpsObservedVector: (_observation: GpsObservation) => { dE: number; dN: number; scale: number };
-  gpsWeight: (_observation: Observation) => { wEE: number; wNN: number; wEN: number };
+  gpsObservedVector: (
+    _observation: GpsObservation,
+  ) => { dE: number; dN: number; dU?: number; scale: number };
+  gpsModeledVector: (
+    _observation: GpsObservation,
+  ) => { dE: number; dN: number; dU?: number; scale: number };
+  gpsModeledVectorDerivatives: (_observation: GpsObservation) => {
+    from: { x?: { dE: number; dN: number; dU?: number }; y?: { dE: number; dN: number; dU?: number }; h?: { dE: number; dN: number; dU?: number } };
+    to: { x?: { dE: number; dN: number; dU?: number }; y?: { dE: number; dN: number; dU?: number }; h?: { dE: number; dN: number; dU?: number } };
+  };
+  gpsWeight: (_observation: Observation) => {
+    wEE: number;
+    wNN: number;
+    wEN: number;
+    wUU?: number;
+    wEU?: number;
+    wNU?: number;
+  };
   getModeledZenith: (_observation: Observation & { type: 'zenith' }) => ZenithGeometry;
   curvatureRefractionAngle: (_horiz: number) => number;
   applyTsCorrelationToWeightMatrix: (_P: number[][], _rowInfo: EquationRowInfo[]) => void;
@@ -239,25 +255,55 @@ export const assembleAdjustmentEquations = (
       const toStation = dependencies.stations[observation.to];
       if (!fromStation || !toStation) return;
       const corrected = dependencies.gpsObservedVector(observation);
-      const calc_dE = toStation.x - fromStation.x;
-      const calc_dN = toStation.y - fromStation.y;
-      const vE = corrected.dE - calc_dE;
-      const vN = corrected.dN - calc_dN;
+      const modeled = dependencies.gpsModeledVector(observation);
+      const jacobian = dependencies.gpsModeledVectorDerivatives(observation);
+      const vE = corrected.dE - modeled.dE;
+      const vN = corrected.dN - modeled.dN;
       L[row][0] = vE;
       rowInfo.push({ obs: observation, component: 'E' });
       const fromIdx = dependencies.paramIndex[observation.from];
       const toIdx = dependencies.paramIndex[observation.to];
-      if (fromIdx?.x != null) A[row][fromIdx.x] = -1;
-      if (toIdx?.x != null) A[row][toIdx.x] = 1;
       const weight = dependencies.gpsWeight(observation);
+      if (fromIdx?.x != null) A[row][fromIdx.x] = jacobian.from.x?.dE ?? -1;
+      if (fromIdx?.y != null) A[row][fromIdx.y] = jacobian.from.y?.dE ?? 0;
+      if (!dependencies.is2D && fromIdx?.h != null) A[row][fromIdx.h] = jacobian.from.h?.dE ?? 0;
+      if (toIdx?.x != null) A[row][toIdx.x] = jacobian.to.x?.dE ?? 1;
+      if (toIdx?.y != null) A[row][toIdx.y] = jacobian.to.y?.dE ?? 0;
+      if (!dependencies.is2D && toIdx?.h != null) A[row][toIdx.h] = jacobian.to.h?.dE ?? 0;
       P[row][row] = weight.wEE;
       P[row][row + 1] = weight.wEN;
       P[row + 1][row] = weight.wEN;
       P[row + 1][row + 1] = weight.wNN;
       L[row + 1][0] = vN;
       rowInfo.push({ obs: observation, component: 'N' });
-      if (fromIdx?.y != null) A[row + 1][fromIdx.y] = -1;
-      if (toIdx?.y != null) A[row + 1][toIdx.y] = 1;
+      if (fromIdx?.x != null) A[row + 1][fromIdx.x] = jacobian.from.x?.dN ?? 0;
+      if (fromIdx?.y != null) A[row + 1][fromIdx.y] = jacobian.from.y?.dN ?? -1;
+      if (!dependencies.is2D && fromIdx?.h != null) A[row + 1][fromIdx.h] = jacobian.from.h?.dN ?? 0;
+      if (toIdx?.x != null) A[row + 1][toIdx.x] = jacobian.to.x?.dN ?? 0;
+      if (toIdx?.y != null) A[row + 1][toIdx.y] = jacobian.to.y?.dN ?? 1;
+      if (!dependencies.is2D && toIdx?.h != null) A[row + 1][toIdx.h] = jacobian.to.h?.dN ?? 0;
+      if (
+        !dependencies.is2D &&
+        Number.isFinite(corrected.dU ?? Number.NaN) &&
+        Number.isFinite(modeled.dU ?? Number.NaN)
+      ) {
+        const vU = (corrected.dU as number) - (modeled.dU as number);
+        L[row + 2][0] = vU;
+        rowInfo.push({ obs: observation, component: 'U' });
+        if (fromIdx?.x != null) A[row + 2][fromIdx.x] = jacobian.from.x?.dU ?? 0;
+        if (fromIdx?.y != null) A[row + 2][fromIdx.y] = jacobian.from.y?.dU ?? 0;
+        if (fromIdx?.h != null) A[row + 2][fromIdx.h] = jacobian.from.h?.dU ?? -1;
+        if (toIdx?.x != null) A[row + 2][toIdx.x] = jacobian.to.x?.dU ?? 0;
+        if (toIdx?.y != null) A[row + 2][toIdx.y] = jacobian.to.y?.dU ?? 0;
+        if (toIdx?.h != null) A[row + 2][toIdx.h] = jacobian.to.h?.dU ?? 1;
+        P[row][row + 2] = weight.wEU ?? 0;
+        P[row + 2][row] = weight.wEU ?? 0;
+        P[row + 1][row + 2] = weight.wNU ?? 0;
+        P[row + 2][row + 1] = weight.wNU ?? 0;
+        P[row + 2][row + 2] = weight.wUU ?? 0;
+        row += 3;
+        return;
+      }
       row += 2;
       return;
     }

@@ -159,14 +159,18 @@
       - [x] Reduce grid-mode slope distances for the traverse parity path by applying the scale factor to the horizontal component before rebuilding the 3D slope length, while preserving the legacy derivative algebra for non-parity paths
       - [x] Keep parity-profile initial geometry frozen only for angular sigma behavior; distance/zenith/live slope modeling in the shared run-session path must continue using current geometry so the browser traverse startup still converges
     - [ ] Batch 9 - GNSS-only parity startup rotation
-      - [ ] Current scope: make the GNSS-only industry case the active startup default, matching the GNSS reference input text and supported project-option settings from the top of the reference output without regressing the retained leveling and traverse parity locks
+      - [ ] Current scope: keep closing the GNSS-only parity gap now that the missing vertical-deflection setting, covariance-vector dialect (`.GPS WEIGHT COVARIANCE`, `.GPS FACTOR`, `G0/G1/G2/G3`), and local-topocentric covariance-vector solve path are in place, while preserving the retained leveling and traverse locks
       - [x] Make the GNSS-only case the active startup default, loading the committed GNSS input fixture into the editor and matching the supported grid/project defaults from the reference output
       - [x] Update the active-startup regression contract so the app now expects the GNSS case, while retaining dedicated leveling and traverse parity fixtures and tests for their own workflows
+      - [x] Add parser/state support for GNSS vertical deflection and carry it through project-option/listing output
+      - [x] Add parser support for the industry GNSS covariance-vector dialect with deterministic `G0/G1/G2/G3` grouping and `.GPS FACTOR <xy> VERT <z>` handling
+      - [x] Extend the GNSS solver/listing path to use local-topocentric 3D covariance-vector adjustment output (`Delta-N`, `Delta-E`, `Delta-U`, covariance-derived sigmas/std-residuals, and adjusted geodetic rows) for the GNSS parity case
+      - [ ] Tighten the remaining GNSS coordinate/geodetic drift from the current decimeter-level seam toward the industry reference
       - [ ] Close the remaining fixed-bearing orientation parity gap for a network constrained by one fixed point plus one fixed bearing
       - [ ] Match direction-set, distance, zenith, target-height, and set-scoped weighting behavior used by the traverse reference case
       - [x] Lock slot-preserving `DM` sigma parsing so `& & 30` keeps default direction and distance weighting while applying an explicit 30" zenith sigma
       - [x] Remove the WebNet-only observation-weighting traceability section from the industry listing, tighten the classic traverse ground/grid distance alignment, switch geodetic summary rows to fixed DMS formatting, and add the 3D vertical precision column to station standard-deviation and ellipse sections
-      - [ ] Add focused parity coverage for traverse parsing, `.INST` scoping, fixed-bearing handling, and normalized exact output diff
+      - [x] Add focused GNSS parser/solver/listing coverage for covariance-vector parsing, vertical deflection, local-topocentric modeled vectors, and the new GNSS listing sections
     - [ ] Batch 9 - GNSS-only parity
       - [ ] Make the GNSS case the startup default with its matching grid/project defaults from the reference output
       - [ ] Add parser support for the industry GNSS covariance-vector dialect: `.GPS WEIGHT COVARIANCE`, `.GPS FACTOR <xy> VERT <z>`, and `G0/G1/G2/G3` record groups

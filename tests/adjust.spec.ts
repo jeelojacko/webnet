@@ -722,6 +722,44 @@ describe('LSAEngine', () => {
     expect(result.dof).toBeGreaterThanOrEqual(0);
   });
 
+  it('models covariance GNSS vectors in the local topocentric frame for the GNSS parity fixture', () => {
+    const input = readFileSync('tests/fixtures/industry_case_gnss_input.txt', 'utf-8');
+    const result = new LSAEngine({
+      input,
+      maxIterations: 15,
+      convergenceThreshold: 0.01,
+      parseOptions: {
+        coordMode: '3D',
+        coordSystemMode: 'grid',
+        crsId: 'CA_NAD83_NB83_STEREO_DOUBLE',
+        order: 'NE',
+        deltaMode: 'slope',
+        angleStationOrder: 'atfromto',
+        lonSign: 'west-positive',
+        applyCurvatureRefraction: true,
+        verticalReduction: 'curvref',
+        refractionCoefficient: 0.07,
+        verticalDeflectionNorthSec: -2.91,
+        verticalDeflectionEastSec: -1.46,
+      },
+    }).solve();
+
+    expect(Math.abs((result.stations.GPS1?.y ?? 0) - 7438438.7334)).toBeLessThan(0.15);
+    expect(Math.abs((result.stations.GPS1?.x ?? 0) - 2488810.2370)).toBeLessThan(0.15);
+    expect(Math.abs((result.stations.GPS2?.y ?? 0) - 7438481.0552)).toBeLessThan(0.15);
+    expect(Math.abs((result.stations.GPS2?.x ?? 0) - 2489236.2880)).toBeLessThan(0.15);
+
+    const firstVector = result.observations.find(
+      (obs) => obs.type === 'gps' && obs.from === 'FRDN' && obs.to === 'GPS4',
+    );
+    expect(firstVector?.type).toBe('gps');
+    if (firstVector?.type === 'gps') {
+      expect(firstVector.calc?.dN ?? 0).toBeCloseTo(1109.0403, 3);
+      expect(firstVector.calc?.dE ?? 0).toBeCloseTo(1210.2363, 3);
+      expect(firstVector.calc?.dU ?? 0).toBeCloseTo(-35.5106, 1);
+    }
+  });
+
   it('preserves parsed GPS vector mode tags on solved observations', () => {
     const input = [
       '.GPS SIDESHOT',

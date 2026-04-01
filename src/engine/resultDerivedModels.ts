@@ -165,11 +165,12 @@ const describeDataCheckDifference = (
     return { magnitude: linear, label: `${linear.toFixed(4)}${linearUnitSuffix}` };
   }
   if (obs.type === 'gps' && obs.residual && typeof obs.residual === 'object') {
-    const residual = obs.residual as { vE?: number; vN?: number };
+    const residual = obs.residual as { vE?: number; vN?: number; vU?: number };
     const vE = Number.isFinite(residual.vE as number) ? (residual.vE as number) : Number.NaN;
     const vN = Number.isFinite(residual.vN as number) ? (residual.vN as number) : Number.NaN;
+    const vU = Number.isFinite(residual.vU as number) ? (residual.vU as number) : 0;
     if (!Number.isFinite(vE) || !Number.isFinite(vN)) return null;
-    const linear = Math.hypot(vE, vN) * unitScale;
+    const linear = Math.hypot(vE, vN, vU) * unitScale;
     return { magnitude: linear, label: `${linear.toFixed(4)}${linearUnitSuffix}` };
   }
   return null;

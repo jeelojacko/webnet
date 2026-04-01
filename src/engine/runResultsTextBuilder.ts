@@ -179,15 +179,18 @@ export const createRunResultsTextBuilder = ({
               };
             }
             if (obs.type === 'gps' && obs.residual && typeof obs.residual === 'object') {
-              const residual = obs.residual as { vE?: number; vN?: number };
+              const residual = obs.residual as { vE?: number; vN?: number; vU?: number };
               const vE = Number.isFinite(residual.vE as number)
                 ? (residual.vE as number)
                 : Number.NaN;
               const vN = Number.isFinite(residual.vN as number)
                 ? (residual.vN as number)
                 : Number.NaN;
+              const vU = Number.isFinite(residual.vU as number)
+                ? (residual.vU as number)
+                : 0;
               if (!Number.isFinite(vE) || !Number.isFinite(vN)) return null;
-              const diff = Math.hypot(vE, vN) * unitScale;
+              const diff = Math.hypot(vE, vN, vU) * unitScale;
               return {
                 obs,
                 stations: `${obs.from}-${obs.to}`,

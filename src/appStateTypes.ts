@@ -205,6 +205,8 @@ export type ParseSettings = {
   averageGeoidHeight: number;
   gnssVectorFrameDefault: GnssVectorFrame;
   gnssFrameConfirmed: boolean;
+  verticalDeflectionNorthSec: number;
+  verticalDeflectionEastSec: number;
   observationMode?: ObservationModeSettings;
   gridBearingMode: GridObservationMode;
   gridDistanceMode: GridDistanceInputMode;
@@ -314,6 +316,8 @@ export type RunDiagnostics = {
   averageGeoidHeight: number;
   gnssVectorFrameDefault: GnssVectorFrame;
   gnssFrameConfirmed: boolean;
+  verticalDeflectionNorthSec: number;
+  verticalDeflectionEastSec: number;
   observationMode: ObservationModeSettings;
   gridBearingMode: GridObservationMode;
   gridDistanceMode: GridDistanceInputMode;

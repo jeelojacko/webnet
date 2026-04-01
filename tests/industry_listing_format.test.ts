@@ -1180,4 +1180,75 @@ describe('industry listing phase 5 formatting locks', () => {
     expect(listing).toContain('1:6');
     expect(listing).toContain('2.0000');
   });
+
+  it('renders GNSS vertical deflection and vector sections for the GNSS parity fixture', () => {
+    const input = readFileSync('tests/fixtures/industry_case_gnss_input.txt', 'utf-8');
+    const result = new LSAEngine({
+      input,
+      maxIterations: 15,
+      convergenceThreshold: 0.01,
+      parseOptions: {
+        coordMode: '3D',
+        coordSystemMode: 'grid',
+        crsId: 'CA_NAD83_NB83_STEREO_DOUBLE',
+        order: 'NE',
+        deltaMode: 'slope',
+        angleStationOrder: 'atfromto',
+        lonSign: 'west-positive',
+        applyCurvatureRefraction: true,
+        verticalReduction: 'curvref',
+        refractionCoefficient: 0.07,
+        verticalDeflectionNorthSec: -2.91,
+        verticalDeflectionEastSec: -1.46,
+      },
+    }).solve();
+
+    const listing = buildIndustryStyleListingText(
+      result,
+      {
+        maxIterations: 15,
+        units: 'm',
+        precisionReportingMode: 'industry-standard',
+        listingShowCoordinates: true,
+        listingShowObservationsResiduals: true,
+        listingShowErrorPropagation: true,
+        listingShowProcessingNotes: false,
+        listingShowAzimuthsBearings: true,
+        listingShowLostStations: true,
+        listingSortCoordinatesBy: 'input',
+        listingSortObservationsBy: 'input',
+        listingObservationLimit: 9999,
+      },
+      {
+        coordMode: '3D',
+        order: 'NE',
+        angleUnits: 'dms',
+        angleStationOrder: 'atfromto',
+        deltaMode: 'slope',
+        refractionCoefficient: 0.07,
+      },
+      {
+        solveProfile: 'industry-parity',
+        angleCenteringModel: 'geometry-aware-correlated-rays',
+        defaultSigmaCount: 0,
+        defaultSigmaByType: '',
+        stochasticDefaultsSummary: '',
+        rotationAngleRad: 0,
+        coordSystemMode: 'grid',
+        crsId: 'CA_NAD83_NB83_STEREO_DOUBLE',
+        gnssVectorFrameDefault: 'gridNEU',
+        gnssFrameConfirmed: false,
+        verticalDeflectionNorthSec: -2.91,
+        verticalDeflectionEastSec: -1.46,
+      },
+    );
+
+    expect(listing).toContain('Vertical Deflection');
+    expect(listing).toContain('N=-2.910 E=-1.460 (Seconds)');
+    expect(listing).toContain('Number of GPS Vector Observations (Meters) = 15');
+    expect(listing).toContain('Adjusted GPS Vector Observations (Meters)');
+    expect(listing).toContain('Delta-N');
+    expect(listing).toContain('Delta-E');
+    expect(listing).toContain('Delta-U');
+  });
 });

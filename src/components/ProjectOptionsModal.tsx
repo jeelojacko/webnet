@@ -2698,6 +2698,46 @@ const ProjectOptionsModal: React.FC<ProjectOptionsModalProps> = ({ context }) =>
                       />
                     </SettingsRow>
                     <SettingsRow
+                      label='Vertical Deflection N (")'
+                      tooltip={SETTINGS_TOOLTIPS.verticalDeflectionNorthSec}
+                    >
+                      <input
+                        title={SETTINGS_TOOLTIPS.verticalDeflectionNorthSec}
+                        type="number"
+                        step={0.001}
+                        value={parseSettingsDraft.verticalDeflectionNorthSec}
+                        onChange={(e) =>
+                          handleDraftParseSetting(
+                            'verticalDeflectionNorthSec',
+                            Number.isFinite(Number.parseFloat(e.target.value))
+                              ? Number.parseFloat(e.target.value)
+                              : 0,
+                          )
+                        }
+                        className={optionInputClass}
+                      />
+                    </SettingsRow>
+                    <SettingsRow
+                      label='Vertical Deflection E (")'
+                      tooltip={SETTINGS_TOOLTIPS.verticalDeflectionEastSec}
+                    >
+                      <input
+                        title={SETTINGS_TOOLTIPS.verticalDeflectionEastSec}
+                        type="number"
+                        step={0.001}
+                        value={parseSettingsDraft.verticalDeflectionEastSec}
+                        onChange={(e) =>
+                          handleDraftParseSetting(
+                            'verticalDeflectionEastSec',
+                            Number.isFinite(Number.parseFloat(e.target.value))
+                              ? Number.parseFloat(e.target.value)
+                              : 0,
+                          )
+                        }
+                        className={optionInputClass}
+                      />
+                    </SettingsRow>
+                    <SettingsRow
                       label="GNSS Vector Frame Default"
                       tooltip={SETTINGS_TOOLTIPS.gnssVectorFrameDefault}
                     >

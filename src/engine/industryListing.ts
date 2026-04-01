@@ -94,6 +94,8 @@ export interface IndustryListingRunDiagnostics {
   averageGeoidHeight?: number;
   gnssVectorFrameDefault?: GnssVectorFrame;
   gnssFrameConfirmed?: boolean;
+  verticalDeflectionNorthSec?: number;
+  verticalDeflectionEastSec?: number;
   datumSufficiencyReport?: DatumSufficiencyReport;
   parsedUsageSummary?: ReductionUsageSummary;
   usedInSolveUsageSummary?: ReductionUsageSummary;
@@ -1259,6 +1261,12 @@ export const buildIndustryStyleListingText = (
     );
     lines.push(
       formatClassicSettingRow(
+        'Vertical Deflection',
+        `N=${(runDiag.verticalDeflectionNorthSec ?? 0).toFixed(3)} E=${(runDiag.verticalDeflectionEastSec ?? 0).toFixed(3)} (Seconds)`,
+      ),
+    );
+    lines.push(
+      formatClassicSettingRow(
         'Longitude Sign Convention',
         (parseState?.lonSign ?? 'west-negative') === 'west-positive'
           ? 'Positive West'
@@ -1314,6 +1322,10 @@ export const buildIndustryStyleListingText = (
     pushSettingRow(
       'Project Units',
       `${linearUnit}; ${(parseState?.angleUnits ?? parseSettings.angleUnits).toUpperCase()}`,
+    );
+    pushSettingRow(
+      'Vertical Deflection',
+      `N=${(runDiag.verticalDeflectionNorthSec ?? 0).toFixed(3)} E=${(runDiag.verticalDeflectionEastSec ?? 0).toFixed(3)} (Seconds)`,
     );
     pushSettingRow(
       'Input/Output Coordinate Order',
@@ -1608,8 +1620,40 @@ export const buildIndustryStyleListingText = (
   };
   const measuredDirectionCount = countByType('direction') + countByType('dir');
   const bearingCount = countByType('bearing');
+  const gpsObservationRows = observationsForListing.filter(
+    (obs): obs is GpsObservation => obs.type === 'gps',
+  );
   const hasTraverseStyleAngularFamilies = measuredDirectionCount > 0 || bearingCount > 0;
   const angleUnitToken = (parseState?.angleUnits ?? parseSettings.angleUnits).toUpperCase();
+  const gpsCovarianceDisplay = (obs: GpsObservation) => {
+    if (obs.gpsCovariance3d) {
+      const sigmaX = Math.sqrt(Math.max(obs.gpsCovariance3d.cXX, 0));
+      const sigmaY = Math.sqrt(Math.max(obs.gpsCovariance3d.cYY, 0));
+      const sigmaZ = Math.sqrt(Math.max(obs.gpsCovariance3d.cZZ, 0));
+      const corrXY =
+        sigmaX > 0 && sigmaY > 0 ? obs.gpsCovariance3d.cXY / (sigmaX * sigmaY) : 0;
+      const corrXZ =
+        sigmaX > 0 && sigmaZ > 0 ? obs.gpsCovariance3d.cXZ / (sigmaX * sigmaZ) : 0;
+      const corrYZ =
+        sigmaY > 0 && sigmaZ > 0 ? obs.gpsCovariance3d.cYZ / (sigmaY * sigmaZ) : 0;
+      return { sigmaX, sigmaY, sigmaZ, corrXY, corrXZ, corrYZ };
+    }
+    const sigmaX = Math.max(obs.stdDevE ?? obs.stdDev ?? 0, 0);
+    const sigmaY = Math.max(obs.stdDevN ?? obs.stdDev ?? 0, 0);
+    const sigmaZ = Math.max(obs.stdDevU ?? obs.stdDev ?? 0, 0);
+    return {
+      sigmaX,
+      sigmaY,
+      sigmaZ,
+      corrXY: obs.corrEN ?? 0,
+      corrXZ: obs.corrEU ?? 0,
+      corrYZ: obs.corrNU ?? 0,
+    };
+  };
+  const formatGpsComponentStdRes = (residual: number | undefined, sigma: number | undefined): string =>
+    residual != null && sigma != null && Number.isFinite(sigma) && sigma > 0
+      ? (Math.abs(residual) / sigma).toFixed(1)
+      : '-';
   if (usesClassicParityLayout) {
     lines.push(
       centerIndustryLine(
@@ -1765,6 +1809,32 @@ export const buildIndustryStyleListingText = (
           : `Number of Azimuth/Bearing Observations (${angleUnitToken})`;
       pushSettingRow(bearingLabel, `${bearingCount}`);
     }
+    if (gpsObservationRows.length > 0) {
+      lines.push('');
+      lines.push(`Number of GPS Vector Observations (${linearUnit}) = ${gpsObservationRows.length}`);
+      lines.push('');
+      lines.push('From                           DeltaX        StdErrX       CorrelXY      HI');
+      lines.push('To                             DeltaY        StdErrY       CorrelXZ      HT');
+      lines.push('                               DeltaZ        StdErrZ       CorrelYZ');
+      gpsObservationRows.sort(compareObsByInput).forEach((obs) => {
+        const display = gpsCovarianceDisplay(obs);
+        const hi = ((obs.gpsAntennaHiM ?? 0) * unitScale).toFixed(3);
+        const ht = ((obs.gpsAntennaHtM ?? 0) * unitScale).toFixed(3);
+        lines.push('');
+        lines.push(`(${(obs.gpsVectorLabel ?? `${obs.from}-${obs.to}`).trim()})`);
+        lines.push(
+          `${obs.from.padEnd(28)}${(obs.obs.dE * unitScale).toFixed(4).padStart(12)}${(display.sigmaX * unitScale).toFixed(4).padStart(15)}${display.corrXY.toFixed(4).padStart(15)}${hi.padStart(8)}`,
+        );
+        lines.push(
+          `${obs.to.padEnd(28)}${(obs.obs.dN * unitScale).toFixed(4).padStart(12)}${(display.sigmaY * unitScale).toFixed(4).padStart(15)}${display.corrXZ.toFixed(4).padStart(15)}${ht.padStart(8)}`,
+        );
+        if (Number.isFinite(obs.obs.dU ?? Number.NaN)) {
+          lines.push(
+            `${''.padEnd(28)}${(((obs.obs.dU as number) * unitScale)).toFixed(4).padStart(12)}${(display.sigmaZ * unitScale).toFixed(4).padStart(15)}${display.corrYZ.toFixed(4).padStart(15)}`,
+          );
+        }
+      });
+    }
   }
   lines.push('');
   lines.push(
@@ -1885,13 +1955,24 @@ export const buildIndustryStyleListingText = (
         );
       });
     } else {
-      const coordRows = stationEntriesForListing.map(([id, st]) => [
-        id,
-        stationDescription(id) || '-',
-        (st.y * unitScale).toFixed(4),
-        (st.x * unitScale).toFixed(4),
-      ]);
-      renderTextTable(['Station', 'Description', 'N', 'E'], coordRows, [2, 3]);
+      const coordRows = stationEntriesForListing.map(([id, st]) =>
+        (parseState?.coordMode ?? parseSettings.coordMode) === '3D'
+          ? [
+              id,
+              stationDescription(id) || '-',
+              (st.y * unitScale).toFixed(4),
+              (st.x * unitScale).toFixed(4),
+              (st.h * unitScale).toFixed(4),
+            ]
+          : [id, stationDescription(id) || '-', (st.y * unitScale).toFixed(4), (st.x * unitScale).toFixed(4)],
+      );
+      renderTextTable(
+        (parseState?.coordMode ?? parseSettings.coordMode) === '3D'
+          ? ['Station', 'Description', 'N', 'E', 'Elev']
+          : ['Station', 'Description', 'N', 'E'],
+        coordRows,
+        (parseState?.coordMode ?? parseSettings.coordMode) === '3D' ? [2, 3, 4] : [2, 3],
+      );
     }
 
     const controlStatusRows = stationEntriesForListing
@@ -2356,11 +2437,12 @@ export const buildIndustryStyleListingText = (
         };
       }
       if (obs.type === 'gps' && obs.residual && typeof obs.residual === 'object') {
-        const residual = obs.residual as { vE?: number; vN?: number };
+        const residual = obs.residual as { vE?: number; vN?: number; vU?: number };
         const vE = Number.isFinite(residual.vE as number) ? (residual.vE as number) : Number.NaN;
         const vN = Number.isFinite(residual.vN as number) ? (residual.vN as number) : Number.NaN;
+        const vU = Number.isFinite(residual.vU as number) ? (residual.vU as number) : 0;
         if (!Number.isFinite(vE) || !Number.isFinite(vN)) return null;
-        const diffMag = Math.hypot(vE, vN) * unitScale;
+        const diffMag = Math.hypot(vE, vN, vU) * unitScale;
         return {
           obs,
           stations,
@@ -2735,6 +2817,53 @@ export const buildIndustryStyleListingText = (
         ],
         [5],
       );
+
+      if (gpsObservationRows.length > 0) {
+        lines.push('');
+        addCenteredHeading(`Adjusted GPS Vector Observations (${linearUnit})`);
+        lines.push('');
+        lines.push('From              Component          Adj Value      Residual   StdErr StdRes File:Line');
+        lines.push('To');
+        gpsObservationRows
+          .filter((obs) => listingObservations.some((candidate) => candidate.id === obs.id))
+          .sort(compareObsByInput)
+          .forEach((obs) => {
+            const residual = obs.residual as { vE?: number; vN?: number; vU?: number } | undefined;
+            const calc = obs.calc as { dE?: number; dN?: number; dU?: number } | undefined;
+            const sigmaN =
+              Number.isFinite(obs.weightingStdDevN ?? Number.NaN) &&
+              Number.isFinite((obs.residual as { vN?: number } | undefined)?.vN ?? Number.NaN)
+                ? (obs.weightingStdDevN as number)
+                : Math.sqrt(Math.max(gpsCovarianceDisplay(obs).sigmaY ** 2, 0));
+            const sigmaE =
+              Number.isFinite(obs.weightingStdDevE ?? Number.NaN) &&
+              Number.isFinite((obs.residual as { vE?: number } | undefined)?.vE ?? Number.NaN)
+                ? (obs.weightingStdDevE as number)
+                : Math.sqrt(Math.max(gpsCovarianceDisplay(obs).sigmaX ** 2, 0));
+            const sigmaU = gpsCovarianceDisplay(obs).sigmaZ;
+            lines.push('');
+            lines.push(`(${(obs.gpsVectorLabel ?? `${obs.from}-${obs.to}`).trim()})`);
+            lines.push(
+              `${obs.from.padEnd(18)}${'Delta-N'.padEnd(18)}${formatLinear(calc?.dN).padStart(12)}${formatResidualLinear(residual?.vN).padStart(13)}${formatLinear(sigmaN).padStart(9)}${formatGpsComponentStdRes(residual?.vN, sigmaN).padStart(7)} ${(obs.sourceLine != null ? `1:${obs.sourceLine}` : '-').padStart(8)}`,
+            );
+            lines.push(
+              `${obs.to.padEnd(18)}${'Delta-E'.padEnd(18)}${formatLinear(calc?.dE).padStart(12)}${formatResidualLinear(residual?.vE).padStart(13)}${formatLinear(sigmaE).padStart(9)}${formatGpsComponentStdRes(residual?.vE, sigmaE).padStart(7)}`,
+            );
+            if (Number.isFinite(calc?.dU ?? Number.NaN)) {
+              lines.push(
+                `${''.padEnd(18)}${'Delta-U'.padEnd(18)}${formatLinear(calc?.dU).padStart(12)}${formatResidualLinear(residual?.vU).padStart(13)}${formatLinear(sigmaU).padStart(9)}${formatGpsComponentStdRes(residual?.vU, sigmaU).padStart(7)}`,
+              );
+            }
+            const length = Math.sqrt(
+              (calc?.dE ?? 0) * (calc?.dE ?? 0) +
+                (calc?.dN ?? 0) * (calc?.dN ?? 0) +
+                ((calc?.dU ?? 0) * (calc?.dU ?? 0)),
+            );
+            lines.push(
+              `${''.padEnd(18)}${'Length'.padEnd(18)}${(length * unitScale).toFixed(4).padStart(12)}`,
+            );
+          });
+      }
 
       if (relationshipRows.length > 0) {
         lines.push('');

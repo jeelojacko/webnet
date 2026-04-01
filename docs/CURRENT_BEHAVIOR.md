@@ -21,7 +21,7 @@ Current startup and workflow defaults include:
 - run profile defaults to industry-standard parity mode
 - cluster detection defaults to OFF
 - auto-adjust is available but operator-controlled
-- the active startup dataset is currently rotated to the GNSS-only industry-parity case, including NewBrunswick83 grid startup defaults, positive-west longitude convention, slope/zenith reduction with refraction `k=0.07`, and the committed GNSS covariance input fixture loaded directly into the editor
+- the active startup dataset is currently rotated to the GNSS-only industry-parity case, including NewBrunswick83 grid startup defaults, positive-west longitude convention, vertical deflection `N=-2.910" E=-1.460"`, slope/zenith reduction with refraction `k=0.07`, and the committed GNSS covariance input fixture loaded directly into the editor
 - the active startup dataset may be rotated to the current industry-parity working case during parity-sensitive batches
 - browser-local recovery restores workspace state but intentionally does not restore stale solve results without rerun
 
@@ -34,6 +34,7 @@ At a high level, supported input behavior includes:
 - control and coordinate records with component fixity and standard errors
 - total-station distance, angle, direction, bearing, zenith, and mixed-measurement families
 - GNSS vector families with per-component sigma support and correlation support where applicable
+- industry-style GNSS covariance-vector blocks using `.GPS WEIGHT COVARIANCE`, `.GPS FACTOR <xy> VERT <z>`, and deterministic `G0/G1/G2/G3` grouping
 - differential leveling families and loop diagnostics
 - legacy and industry-style leveling pair syntax such as `L FROM-TO dH len [sigma]`, with `len` read in the active project linear units and converted to kilometers internally
 - traverse families and closure diagnostics
@@ -183,6 +184,10 @@ Current GNSS behavior includes:
 - rover-offset support
 - loop-closure diagnostics independent of residual analysis
 - GNSS-topo support for post-adjust coordinate-style output rows
+- project/default vertical deflection state for GNSS vector modeling and listing output
+- covariance-vector GNSS observations can be transformed from ECEF delta into local topocentric `Delta-N/E/U` for solve/listing output, with covariance carried through the same frame path
+- industry-style listings now surface GNSS vertical deflection plus unadjusted and adjusted GNSS vector sections for covariance-vector jobs
+- the GNSS parity fixture is materially closer after the local-topocentric covariance-vector solve change, but exact GNSS text parity is not closed yet; a small coordinate/geodetic seam remains
 
 ## Import and interoperability behavior
 Current import behavior includes:

@@ -62,6 +62,8 @@ describe('adjustmentEquationAssembly', () => {
         modeledAzimuth: (rawAz) => rawAz,
         wrapToPi: (value) => value,
         gpsObservedVector: () => ({ dE: 0, dN: 0, scale: 1 }),
+        gpsModeledVector: () => ({ dE: 0, dN: 0, scale: 1 }),
+        gpsModeledVectorDerivatives: () => ({ from: {}, to: {} }),
         gpsWeight: () => ({ wEE: 1, wNN: 1, wEN: 0 }),
         getModeledZenith: () => ({
           z: 0,
