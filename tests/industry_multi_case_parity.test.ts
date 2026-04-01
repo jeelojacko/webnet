@@ -110,13 +110,14 @@ describe('industry multi-case parity foundation', () => {
     expect(normalized).toContain('Project Units                       : Meters');
   });
 
-  it('makes the traverse case the active startup default with the expected grid settings and instruments', () => {
-    expect(ACTIVE_INDUSTRY_PARITY_CASE.id).toBe('traverse');
+  it('makes the GNSS case the active startup default with the expected grid settings and input text', () => {
+    expect(ACTIVE_INDUSTRY_PARITY_CASE.id).toBe('gnss');
     expect(ACTIVE_INDUSTRY_PARITY_CASE.startupDefaults).toBeDefined();
 
     const startup = ACTIVE_INDUSTRY_PARITY_CASE.startupDefaults!;
-    expect(startup.input).toContain('#Traverse Only');
-    expect(startup.input).toContain('#-------------------------------CONTROL----------------------------------#');
+    expect(startup.input).toContain('# Made by Maryn');
+    expect(startup.input).toContain('.GPS WEIGHT COVARIANCE');
+    expect(startup.input).toContain("G0 'V27 PostProcessed 28-APR-2025 12:21:00.0 session_1_processed.asc");
     expect(startup.input).not.toContain('Project Option Settings');
     expect(startup.settingsPatch.convergenceLimit).toBe(0.01);
     expect(startup.parseSettingsPatch.coordMode).toBe('3D');
@@ -127,13 +128,8 @@ describe('industry multi-case parity foundation', () => {
     expect(startup.parseSettingsPatch.applyCurvatureRefraction).toBe(true);
     expect(startup.parseSettingsPatch.verticalReduction).toBe('curvref');
     expect(startup.parseSettingsPatch.refractionCoefficient).toBe(0.07);
-    expect(startup.selectedInstrument).toBe('TRAV_DEFAULT');
-    expect(Object.keys(startup.projectInstruments).sort()).toEqual([
-      'S9',
-      'SX12',
-      'TRAV_DEFAULT',
-      'TS11',
-    ]);
+    expect(startup.selectedInstrument).toBe('');
+    expect(Object.keys(startup.projectInstruments)).toEqual([]);
   });
 
   it('keeps the copied leveling reference output available for future exact normalized text parity work', () => {

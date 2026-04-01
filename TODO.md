@@ -158,6 +158,10 @@
       - [x] Model traverse zenith observations from the same ground-equivalent horizontal geometry used by grid-mode measured slope distances so the remaining adjusted-height drift in the parity case collapses to the reference
       - [x] Reduce grid-mode slope distances for the traverse parity path by applying the scale factor to the horizontal component before rebuilding the 3D slope length, while preserving the legacy derivative algebra for non-parity paths
       - [x] Keep parity-profile initial geometry frozen only for angular sigma behavior; distance/zenith/live slope modeling in the shared run-session path must continue using current geometry so the browser traverse startup still converges
+    - [ ] Batch 9 - GNSS-only parity startup rotation
+      - [ ] Current scope: make the GNSS-only industry case the active startup default, matching the GNSS reference input text and supported project-option settings from the top of the reference output without regressing the retained leveling and traverse parity locks
+      - [x] Make the GNSS-only case the active startup default, loading the committed GNSS input fixture into the editor and matching the supported grid/project defaults from the reference output
+      - [x] Update the active-startup regression contract so the app now expects the GNSS case, while retaining dedicated leveling and traverse parity fixtures and tests for their own workflows
       - [ ] Close the remaining fixed-bearing orientation parity gap for a network constrained by one fixed point plus one fixed bearing
       - [ ] Match direction-set, distance, zenith, target-height, and set-scoped weighting behavior used by the traverse reference case
       - [x] Lock slot-preserving `DM` sigma parsing so `& & 30` keeps default direction and distance weighting while applying an explicit 30" zenith sigma

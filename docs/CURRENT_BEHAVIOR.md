@@ -21,7 +21,7 @@ Current startup and workflow defaults include:
 - run profile defaults to industry-standard parity mode
 - cluster detection defaults to OFF
 - auto-adjust is available but operator-controlled
-- the active startup dataset is currently rotated to the traverse industry-parity case, including NewBrunswick83 double-stereographic startup defaults, curvature/refraction-enabled zenith reduction with traverse refraction `k=0.07`, and a preloaded traverse instrument library (`TRAV_DEFAULT`, `S9`, `SX12`, `TS11`)
+- the active startup dataset is currently rotated to the GNSS-only industry-parity case, including NewBrunswick83 grid startup defaults, positive-west longitude convention, slope/zenith reduction with refraction `k=0.07`, and the committed GNSS covariance input fixture loaded directly into the editor
 - the active startup dataset may be rotated to the current industry-parity working case during parity-sensitive batches
 - browser-local recovery restores workspace state but intentionally does not restore stale solve results without rerun
 

@@ -1,5 +1,6 @@
 import type { ParseSettings, SettingsState } from './appStateTypes';
 import type { InstrumentLibrary } from './types';
+import gnssFixtureInputRaw from '../tests/fixtures/industry_case_gnss_input.txt?raw';
 import traverseFixtureRaw from '../tests/fixtures/industry_case_traverse_output.txt?raw';
 
 export type IndustryParityCaseId = 'leveling' | 'traverse' | 'gnss' | 'combined';
@@ -130,6 +131,7 @@ const extractReferenceInputDataSection = (raw: string): string => {
 };
 
 const TRAVERSE_STARTUP_INPUT = extractReferenceInputDataSection(traverseFixtureRaw);
+const GNSS_STARTUP_INPUT = gnssFixtureInputRaw.replace(/\r\n/g, '\n').replace(/\r/g, '\n').trim();
 
 const TRAVERSE_STARTUP_INSTRUMENTS: InstrumentLibrary = {
   TRAV_DEFAULT: {
@@ -202,6 +204,8 @@ const TRAVERSE_STARTUP_INSTRUMENTS: InstrumentLibrary = {
   },
 };
 
+const GNSS_STARTUP_INSTRUMENTS: InstrumentLibrary = {};
+
 const DEFAULT_NORMALIZATION_RULES: IndustryParityHeaderNormalizationRule[] = [
   'softwareVersion',
   'runDate',
@@ -259,6 +263,26 @@ export const INDUSTRY_PARITY_CASES: Record<IndustryParityCaseId, IndustryParityC
     fixtureInputPath: 'tests/fixtures/industry_case_gnss_input.txt',
     fixtureOutputPath: 'tests/fixtures/industry_case_gnss_output.txt',
     normalizationRules: DEFAULT_NORMALIZATION_RULES,
+    startupDefaults: {
+      input: GNSS_STARTUP_INPUT,
+      settingsPatch: {
+        convergenceLimit: 0.01,
+      },
+      parseSettingsPatch: {
+        coordMode: '3D',
+        coordSystemMode: 'grid',
+        crsId: 'CA_NAD83_NB83_STEREO_DOUBLE',
+        order: 'NE',
+        deltaMode: 'slope',
+        angleStationOrder: 'atfromto',
+        lonSign: 'west-positive',
+        applyCurvatureRefraction: true,
+        verticalReduction: 'curvref',
+        refractionCoefficient: 0.07,
+      },
+      projectInstruments: GNSS_STARTUP_INSTRUMENTS,
+      selectedInstrument: '',
+    },
   },
   combined: {
     id: 'combined',
@@ -268,6 +292,6 @@ export const INDUSTRY_PARITY_CASES: Record<IndustryParityCaseId, IndustryParityC
   },
 };
 
-export const ACTIVE_INDUSTRY_PARITY_CASE_ID: IndustryParityCaseId = 'traverse';
+export const ACTIVE_INDUSTRY_PARITY_CASE_ID: IndustryParityCaseId = 'gnss';
 export const ACTIVE_INDUSTRY_PARITY_CASE =
   INDUSTRY_PARITY_CASES[ACTIVE_INDUSTRY_PARITY_CASE_ID];
