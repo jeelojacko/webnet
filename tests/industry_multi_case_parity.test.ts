@@ -19,6 +19,44 @@ const extractSection = (text: string, startMarker: string, endMarker: string): s
   return slice.slice(0, end).trimEnd();
 };
 
+const dmsToDecimalDegrees = (dms: string): number => {
+  const [degToken, minToken, secToken] = dms.split('-');
+  const deg = Number.parseFloat(degToken);
+  const minutes = Number.parseFloat(minToken);
+  const seconds = Number.parseFloat(secToken);
+  return deg + minutes / 60 + seconds / 3600;
+};
+
+const extractGeodeticRows = (
+  text: string,
+  startMarker: string,
+  endMarker: string,
+): Map<string, { latitudeDms: string; longitudeDms: string; height: number }> => {
+  const section = extractSection(text, startMarker, endMarker);
+  const rows = new Map<string, { latitudeDms: string; longitudeDms: string; height: number }>();
+  normalizeLineEndings(section)
+    .split('\n')
+    .slice(4)
+    .forEach((line) => {
+      const parts = line.trim().split(/\s+/);
+      if (parts.length < 4) return;
+      const stationId = parts[0];
+      const latitudeDms = parts[1];
+      const longitudeDms = parts[2];
+      const height = Number.parseFloat(parts[3]);
+      if (
+        !stationId ||
+        !latitudeDms.includes('-') ||
+        !longitudeDms.includes('-') ||
+        !Number.isFinite(height)
+      ) {
+        return;
+      }
+      rows.set(stationId, { latitudeDms, longitudeDms, height });
+    });
+  return rows;
+};
+
 const buildCaseResult = (caseId: keyof typeof INDUSTRY_PARITY_CASES) => {
   const startup = INDUSTRY_PARITY_CASES[caseId].startupDefaults;
   expect(startup).toBeDefined();
@@ -520,6 +558,95 @@ describe('industry multi-case parity foundation', () => {
       expect(ellipseMajor95).toBeCloseTo(0.002535, 6);
       expect(ellipseMinor95).toBeCloseTo(0.002199, 6);
       expect(sigmaH95).toBeCloseTo(0.001534, 6);
+    },
+    120000,
+  );
+
+  it(
+    'keeps the traverse adjusted geodetic rows within sub-millimeter equivalent of the stored reference',
+    () => {
+      const startup = INDUSTRY_PARITY_CASES.traverse.startupDefaults;
+      expect(startup).toBeDefined();
+
+      const result = buildCaseResult('traverse');
+      expect(result.success).toBe(true);
+
+      const listing = buildIndustryStyleListingText(
+        result,
+        {
+          maxIterations: 10,
+          convergenceLimit: startup?.settingsPatch.convergenceLimit,
+          precisionReportingMode: 'industry-standard',
+          units: 'm',
+          listingShowCoordinates: true,
+          listingShowObservationsResiduals: true,
+          listingShowErrorPropagation: true,
+          listingShowProcessingNotes: true,
+          listingShowAzimuthsBearings: true,
+          listingShowLostStations: true,
+          listingSortCoordinatesBy: 'input',
+          listingSortObservationsBy: 'residual',
+          listingObservationLimit: 9999,
+        },
+        {
+          coordMode: startup?.parseSettingsPatch.coordMode ?? '3D',
+          order: startup?.parseSettingsPatch.order ?? 'EN',
+          angleUnits: startup?.parseSettingsPatch.angleUnits ?? 'dms',
+          angleStationOrder: startup?.parseSettingsPatch.angleStationOrder ?? 'atfromto',
+          deltaMode: startup?.parseSettingsPatch.deltaMode ?? 'slope',
+          refractionCoefficient: startup?.parseSettingsPatch.refractionCoefficient ?? 0.13,
+        },
+        {
+          solveProfile: 'industry-parity',
+          angleCenteringModel: 'geometry-aware-correlated-rays',
+          defaultSigmaCount: 0,
+          defaultSigmaByType: '',
+          stochasticDefaultsSummary: '',
+          rotationAngleRad: 0,
+          currentInstrumentCode: startup?.selectedInstrument,
+          currentInstrumentDesc: startup?.projectInstruments[startup?.selectedInstrument ?? '']?.desc,
+          projectInstrumentLibrary: startup?.projectInstruments,
+        },
+      );
+
+      const currentRows = extractGeodeticRows(
+        listing,
+        'Geodetic Position Summary',
+        'Convergence Angles (DMS) and Grid Factors at Stations',
+      );
+      const expectedRows = extractGeodeticRows(
+        readFileSync(INDUSTRY_PARITY_CASES.traverse.fixtureOutputPath, 'utf-8'),
+        'Adjusted Positions and Ellipsoid Heights (Meters)',
+        'Convergence Angles (DMS) and Grid Factors at Stations',
+      );
+
+      expect(currentRows.size).toBe(expectedRows.size);
+
+      let maxHorizontalDifferenceM = 0;
+      currentRows.forEach((current, stationId) => {
+        const expected = expectedRows.get(stationId);
+        expect(expected, `missing expected geodetic row for ${stationId}`).toBeDefined();
+        if (!expected) return;
+
+        const currentLatitudeDeg = dmsToDecimalDegrees(current.latitudeDms);
+        const currentLongitudeDeg = dmsToDecimalDegrees(current.longitudeDms);
+        const expectedLatitudeDeg = dmsToDecimalDegrees(expected.latitudeDms);
+        const expectedLongitudeDeg = dmsToDecimalDegrees(expected.longitudeDms);
+        const averageLatitudeRad = ((currentLatitudeDeg + expectedLatitudeDeg) / 2) * (Math.PI / 180);
+        const northDifferenceM = (currentLatitudeDeg - expectedLatitudeDeg) * 111132.92;
+        const eastDifferenceM =
+          (currentLongitudeDeg - expectedLongitudeDeg) *
+          111412.84 *
+          Math.cos(averageLatitudeRad);
+        const horizontalDifferenceM = Math.hypot(northDifferenceM, eastDifferenceM);
+
+        maxHorizontalDifferenceM = Math.max(maxHorizontalDifferenceM, horizontalDifferenceM);
+        expect(current.height).toBeCloseTo(expected.height, 4);
+      });
+
+      expect(maxHorizontalDifferenceM).toBeLessThan(0.001);
+      expect(listing).toContain('OOP      045-56-45.725022  066-38-39.557772');
+      expect(listing).not.toContain('OOP      045-56-45.725022  -066-38-39.557772');
     },
     120000,
   );
