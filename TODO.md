@@ -124,7 +124,7 @@
       - [x] Add focused parser, weighting, listing, and parity coverage for the levelling-only case
       - [x] Require normalized exact listing parity for the levelling output before moving on
     - [ ] Batch 8 - traverse-only parity
-      - [ ] Current scope: tighten the remaining classic traverse relationship-row bearing / relative-confidence drift without losing the underground regression guard while we pivot that small case toward the actual industry output
+      - [ ] Current scope: replace the remaining naked classic traverse NB83 display scale/rotation residuals with an explicit legacy display-contract derivation without disturbing the raw traverse exact sections or the underground guard
       - [x] Add a focused traverse parity guard that proves the raw fixed-bearing solve already stays exact and that representative connected covariance rows still match the reference confidence values before changing more classic display math
       - [x] Zero-pad classic quadrant-bearing degrees below 10 in the adjusted traverse bearing-distance section so rows like `109-GPS2` match the stored industry formatting without touching solver output
       - [x] Mirror the local underground industry output into a committed fixture and use it as a secondary structured comparator while tracing the remaining fixed-bearing orientation / connected-covariance seam on traverse
@@ -151,6 +151,7 @@
       - [x] Tighten the remaining traverse adjusted-coordinate and relationship-distance drift by using project-average grid/elevation factors for the classic ground-style display transform instead of the single anchor-station factors
       - [x] Apply the tiny retained classic traverse display-scale calibration so adjusted coordinates and relationship distances stay aligned with the stored industry output after the factor-decomposition cleanup
       - [x] Refine the classic traverse display basis to average only the entered traverse/control framework before applying the remaining tiny adjusted-coordinate and fixed-bearing residual calibration
+      - [x] Replace the remaining naked classic traverse NB83 display scale/rotation residuals with a legacy-display-contract factor/convergence derivation so the later adjusted sections keep the same parity without another hardcoded listing-only tweak
       - [x] Keep the classic adjusted-direction sets in source/input order and suppress the WebNet-only grid/ground diagnostics block so the later traverse parity listing stays aligned with the industry report structure
       - [x] Model traverse zenith observations from the same ground-equivalent horizontal geometry used by grid-mode measured slope distances so the remaining adjusted-height drift in the parity case collapses to the reference
       - [x] Reduce grid-mode slope distances for the traverse parity path by applying the scale factor to the horizontal component before rebuilding the 3D slope length, while preserving the legacy derivative algebra for non-parity paths

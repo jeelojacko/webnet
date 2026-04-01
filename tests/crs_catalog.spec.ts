@@ -7,6 +7,7 @@ import {
   resolveCrsDefinition,
 } from '../src/engine/crsCatalog';
 import {
+  computeClassicTraverseLegacyDisplayGridFactors,
   computeGridFactors,
   inverseENToGeodetic,
   projectGeodeticToEN,
@@ -89,5 +90,27 @@ describe('Canada CRS catalog (Phase 2 expansion)', () => {
     expect(lambert).not.toBeNull();
     expect(lambert?.source).toBe('numerical-fallback');
     expect(lambert?.diagnostics.includes('FACTOR_APPROXIMATION_USED')).toBe(true);
+  });
+
+  it('exposes the legacy NB83 display contract used to derive the tiny traverse listing residuals', () => {
+    const latDeg = 45.94603498341826;
+    const lonDeg = -66.64432272768907;
+
+    const parityNb83 = computeGridFactors(latDeg, lonDeg, 'CA_NAD83_NB83_STEREO_DOUBLE');
+    const legacyDisplay = computeClassicTraverseLegacyDisplayGridFactors(latDeg, lonDeg);
+
+    expect(parityNb83).not.toBeNull();
+    expect(legacyDisplay).not.toBeNull();
+
+    const gridPpmDelta =
+      ((legacyDisplay?.gridScaleFactor ?? 0) - (parityNb83?.gridScaleFactor ?? 0)) * 1e6;
+    const convergenceSecDelta =
+      (((legacyDisplay?.convergenceAngleRad ?? 0) - (parityNb83?.convergenceAngleRad ?? 0)) *
+        180 *
+        3600) /
+      Math.PI;
+
+    expect(gridPpmDelta).toBeCloseTo(-0.14, 2);
+    expect(convergenceSecDelta).toBeCloseTo(0.025, 3);
   });
 });

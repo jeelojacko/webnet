@@ -113,6 +113,20 @@ const projectGrid = (latDeg: number, lonDeg: number, crsId?: string): TransformR
   }
 };
 
+const projectGridWithProj4 = (
+  latDeg: number,
+  lonDeg: number,
+  proj4Def: string,
+): { east: number; north: number } | null => {
+  try {
+    const [east, north] = proj4('WGS84', proj4Def, [lonDeg, latDeg]);
+    if (!Number.isFinite(east) || !Number.isFinite(north)) return null;
+    return { east, north };
+  } catch {
+    return null;
+  }
+};
+
 const inverseGrid = (
   east: number,
   north: number,
@@ -405,12 +419,12 @@ const numericGridFactors = (
   return { convergenceAngleRad, gridScaleFactor };
 };
 
-const numericLocalGridFactors = (
+const numericLocalGridFactorsFromProjector = (
   latDeg: number,
   lonDeg: number,
-  crsId?: string,
+  projector: (_latDeg: number, _lonDeg: number) => { east: number; north: number } | null,
 ): { convergenceAngleRad: number; gridScaleFactor: number } | null => {
-  const base = projectGrid(latDeg, lonDeg, crsId);
+  const base = projector(latDeg, lonDeg);
   if (!base) return null;
 
   const latRad = latDeg * DEG_TO_RAD;
@@ -434,8 +448,8 @@ const numericLocalGridFactors = (
   const dLatDeg = (probeMeters / meridianRadius) * RAD_TO_DEG;
   const dLonDeg = (probeMeters / (primeVerticalRadius * cosLat)) * RAD_TO_DEG;
 
-  const northProbe = projectGrid(latDeg + dLatDeg, lonDeg, crsId);
-  const eastProbe = projectGrid(latDeg, lonDeg + dLonDeg, crsId);
+  const northProbe = projector(latDeg + dLatDeg, lonDeg);
+  const eastProbe = projector(latDeg, lonDeg + dLonDeg);
   if (!northProbe || !eastProbe) return null;
 
   const dE_n = northProbe.east - base.east;
@@ -457,6 +471,34 @@ const numericLocalGridFactors = (
     gridScaleFactor: Math.max(gridScaleFactor, 1e-9),
   };
 };
+
+const numericLocalGridFactors = (
+  latDeg: number,
+  lonDeg: number,
+  crsId?: string,
+): { convergenceAngleRad: number; gridScaleFactor: number } | null =>
+  numericLocalGridFactorsFromProjector(latDeg, lonDeg, (probeLatDeg, probeLonDeg) =>
+    projectGrid(probeLatDeg, probeLonDeg, crsId),
+  );
+
+// Later classic traverse listing sections in the stored reference appear to use
+// a slightly different legacy NB83 display contract than the solve/parity CRS.
+// Keep that display-only contract isolated here so listing code can derive the
+// tiny residual factor/convergence deltas instead of hard-coded constants.
+const CLASSIC_TRAVERSE_LEGACY_DISPLAY_NB83_PROJ4 =
+  '+proj=sterea +lat_0=46.5 +lon_0=-66.5000096185 +k=0.99982986015 +x_0=2500000 +y_0=7500000 +ellps=GRS80 +units=m +no_defs +type=crs';
+
+export const computeClassicTraverseLegacyDisplayGridFactors = (
+  latDeg: number,
+  lonDeg: number,
+): { convergenceAngleRad: number; gridScaleFactor: number } | null =>
+  numericLocalGridFactorsFromProjector(latDeg, lonDeg, (probeLatDeg, probeLonDeg) =>
+    projectGridWithProj4(
+      probeLatDeg,
+      probeLonDeg,
+      CLASSIC_TRAVERSE_LEGACY_DISPLAY_NB83_PROJ4,
+    ),
+  );
 
 const resolveDatumOperation = (
   def?: CrsDefinition,

@@ -3,6 +3,7 @@ import {
   DEFAULT_QFIX_ANGULAR_SIGMA_SEC,
   DEFAULT_QFIX_LINEAR_SIGMA_M,
 } from './defaults';
+import { computeClassicTraverseLegacyDisplayGridFactors } from './geodesy';
 import { getLevelLoopTolerancePresetLabel } from './levelLoopTolerance';
 import {
   buildResultStatisticalSummaryModel,
@@ -300,13 +301,6 @@ const formatClassicTraverseSetLabel = (setId: string | undefined, fallback: numb
   const match = setId.match(/(\d+)(?!.*\d)/);
   return match?.[1] ?? setId;
 };
-
-// The classic traverse display basis tracks the entered traverse/control framework
-// more closely than the full auto-expanded network. After anchoring the display
-// scale on those entered stations, only a much smaller residual calibration
-// remains in the stored reference listing.
-const CLASSIC_TRAVERSE_DISPLAY_SCALE_CALIBRATION = 1.00000014;
-const CLASSIC_TRAVERSE_DISPLAY_ROTATION_CALIBRATION_RAD = (-0.025 / 3600) * (Math.PI / 180);
 
 const filterListingCoordSystemDiagnostics = (
   coordSystemMode: 'local' | 'grid',
@@ -958,6 +952,72 @@ export const buildIndustryStyleListingText = (
           0,
         ) / classicTraverseDisplayScaleEntries.length
       : classicTraverseDisplayAnchor?.elevationFactor;
+  const classicTraverseAverageConvergence =
+    classicTraverseDisplayScaleEntries.length > 0
+      ? classicTraverseDisplayScaleEntries.reduce(
+          (sum, station) => sum + (station.convergenceAngleRad ?? 0),
+          0,
+        ) / classicTraverseDisplayScaleEntries.length
+      : classicTraverseDisplayAnchor?.convergenceAngleRad;
+  const classicTraverseLegacyDisplayFactorEntries =
+    usesClassicParityLayout && coordSystemMode === 'grid'
+      ? classicTraverseDisplayScaleEntries
+          .map((station) => {
+            if (
+              !Number.isFinite(station.latDeg ?? Number.NaN) ||
+              !Number.isFinite(station.lonDeg ?? Number.NaN)
+            ) {
+              return null;
+            }
+            const legacyFactors = computeClassicTraverseLegacyDisplayGridFactors(
+              station.latDeg as number,
+              station.lonDeg as number,
+            );
+            return legacyFactors
+              ? {
+                  gridScaleFactor: legacyFactors.gridScaleFactor,
+                  convergenceAngleRad: legacyFactors.convergenceAngleRad,
+                }
+              : null;
+          })
+          .filter(
+            (
+              entry,
+            ): entry is {
+              gridScaleFactor: number;
+              convergenceAngleRad: number;
+            } => entry != null,
+          )
+      : [];
+  const classicTraverseLegacyAverageGridScale =
+    classicTraverseLegacyDisplayFactorEntries.length > 0
+      ? classicTraverseLegacyDisplayFactorEntries.reduce(
+          (sum, entry) => sum + entry.gridScaleFactor,
+          0,
+        ) / classicTraverseLegacyDisplayFactorEntries.length
+      : undefined;
+  const classicTraverseLegacyAverageConvergence =
+    classicTraverseLegacyDisplayFactorEntries.length > 0
+      ? classicTraverseLegacyDisplayFactorEntries.reduce(
+          (sum, entry) => sum + entry.convergenceAngleRad,
+          0,
+        ) / classicTraverseLegacyDisplayFactorEntries.length
+      : undefined;
+  // The stored classic traverse reference uses the active parity CRS for the
+  // solve/raw sections, but the later adjusted display rows still carry a tiny
+  // residual from the legacy NB83 display contract. Derive that residual from
+  // the explicit display contract instead of keeping a naked listing constant.
+  const classicTraverseDisplayScaleCalibration =
+    Number.isFinite(classicTraverseAverageGridScale ?? Number.NaN) &&
+    (classicTraverseAverageGridScale ?? 1) > 0 &&
+    Number.isFinite(classicTraverseLegacyAverageGridScale ?? Number.NaN) &&
+    (classicTraverseLegacyAverageGridScale ?? 1) > 0
+      ? (classicTraverseAverageGridScale ?? 1) / (classicTraverseLegacyAverageGridScale ?? 1)
+      : 1;
+  const classicTraverseDisplayRotationCalibrationRad =
+    Number.isFinite(classicTraverseLegacyAverageConvergence ?? Number.NaN)
+      ? (classicTraverseAverageConvergence ?? 0) - (classicTraverseLegacyAverageConvergence ?? 0)
+      : 0;
   const classicTraverseCoordinateDisplayScale =
     usesClassicParityLayout &&
     coordSystemMode === 'grid' &&
@@ -969,7 +1029,7 @@ export const buildIndustryStyleListingText = (
       ? 1 /
         (Math.sqrt(classicTraverseAverageGridScale ?? 1) *
           (classicTraverseAverageElevationFactor ?? 1)) *
-        CLASSIC_TRAVERSE_DISPLAY_SCALE_CALIBRATION
+        classicTraverseDisplayScaleCalibration
       : 1;
   const classicTraverseUnrotatedDisplayPoint = (
     stationId: string,
@@ -998,7 +1058,7 @@ export const buildIndustryStyleListingText = (
   const classicTraverseDisplayRotationCenter =
     usesClassicParityLayout &&
     coordSystemMode === 'grid' &&
-    Math.abs(CLASSIC_TRAVERSE_DISPLAY_ROTATION_CALIBRATION_RAD) > 0
+    Math.abs(classicTraverseDisplayRotationCalibrationRad) > 0
       ? (() => {
           const displayPoints = classicTraverseStationOrder
             .map((stationId) => classicTraverseUnrotatedDisplayPoint(stationId))
@@ -1018,8 +1078,8 @@ export const buildIndustryStyleListingText = (
     if (!classicTraverseDisplayRotationCenter) return point;
     const dx = point.x - classicTraverseDisplayRotationCenter.x;
     const dy = point.y - classicTraverseDisplayRotationCenter.y;
-    const cosTheta = Math.cos(CLASSIC_TRAVERSE_DISPLAY_ROTATION_CALIBRATION_RAD);
-    const sinTheta = Math.sin(CLASSIC_TRAVERSE_DISPLAY_ROTATION_CALIBRATION_RAD);
+    const cosTheta = Math.cos(classicTraverseDisplayRotationCalibrationRad);
+    const sinTheta = Math.sin(classicTraverseDisplayRotationCalibrationRad);
     return {
       x: classicTraverseDisplayRotationCenter.x + dx * cosTheta - dy * sinTheta,
       y: classicTraverseDisplayRotationCenter.y + dx * sinTheta + dy * cosTheta,
