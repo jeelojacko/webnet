@@ -437,6 +437,7 @@ describe('industry multi-case parity foundation', () => {
       expect(relationshipSection).toContain(
         '101        102         S28-48-29.61E     33.4174   11.04  0.0023   69.8727',
       );
+      expect(relationshipSection).toContain('109        GPS2        S09-35-23.56E');
       expect(relationshipSection).not.toContain('GPS5       GPS2        N36-50-16.60W');
 
       expect(listing).toContain('Relative Error Ellipses (Meters)');

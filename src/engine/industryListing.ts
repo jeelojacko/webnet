@@ -340,7 +340,8 @@ const formatQuadrantBearing = (rad?: number | null): string => {
     suffix = 'W';
     bodyDeg = 360 - azDeg;
   }
-  return `${prefix}${formatDmsHundredths((bodyDeg * Math.PI) / 180)}${suffix}`;
+  const [deg, min, sec] = formatDmsHundredths((bodyDeg * Math.PI) / 180).split('-');
+  return `${prefix}${deg.padStart(2, '0')}-${min}-${sec}${suffix}`;
 };
 
 const formatLevelingOnlyFileLine = (
