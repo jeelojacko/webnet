@@ -245,7 +245,7 @@ export const INDUSTRY_PARITY_CASES: Record<IndustryParityCaseId, IndustryParityC
       parseSettingsPatch: {
         coordMode: '3D',
         coordSystemMode: 'grid',
-        crsId: 'CA_NAD83_NB83_STEREO_DOUBLE',
+        crsId: 'CA_NAD83_CSRS_NB_STEREO_DOUBLE',
         order: 'NE',
         deltaMode: 'slope',
         angleStationOrder: 'atfromto',

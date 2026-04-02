@@ -216,7 +216,7 @@ export const createTraverseRunSessionRequest = (
       ...createRunSessionRequest().parseSettings,
       coordMode: '3D',
       coordSystemMode: 'grid',
-      crsId: 'CA_NAD83_NB83_STEREO_DOUBLE',
+      crsId: 'CA_NAD83_CSRS_NB_STEREO_DOUBLE',
       order: 'NE',
       deltaMode: 'slope',
       angleStationOrder: 'atfromto',

@@ -487,7 +487,17 @@ const numericLocalGridFactors = (
 // tiny residual factor/convergence deltas instead of hard-coded constants.
 const CLASSIC_TRAVERSE_LEGACY_DISPLAY_NB83_PROJ4 =
   '+proj=sterea +lat_0=46.5 +lon_0=-66.5000096185 +k=0.99982986015 +x_0=2500000 +y_0=7500000 +ellps=GRS80 +units=m +no_defs +type=crs';
+const CLASSIC_TRAVERSE_CSRS_DISPLAY_NB_PROJ4 =
+  '+proj=sterea +lat_0=46.5 +lon_0=-66.5 +k=0.999912 +x_0=2500000 +y_0=7500000 +ellps=GRS80 +units=m +no_defs +type=crs';
 const CLASSIC_TRAVERSE_GEODETIC_DISPLAY_CRS_ID = 'CA_NAD83_CSRS_NB_STEREO_DOUBLE';
+
+export const computeClassicTraverseCsrsDisplayGridFactors = (
+  latDeg: number,
+  lonDeg: number,
+): { convergenceAngleRad: number; gridScaleFactor: number } | null =>
+  numericLocalGridFactorsFromProjector(latDeg, lonDeg, (probeLatDeg, probeLonDeg) =>
+    projectGridWithProj4(probeLatDeg, probeLonDeg, CLASSIC_TRAVERSE_CSRS_DISPLAY_NB_PROJ4),
+  );
 
 export const computeClassicTraverseLegacyDisplayGridFactors = (
   latDeg: number,

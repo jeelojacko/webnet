@@ -5,7 +5,6 @@ import {
 } from './defaults';
 import {
   computeClassicTraverseLegacyDisplayGridFactors,
-  inverseClassicTraverseDisplayGeodetic,
 } from './geodesy';
 import { getLevelLoopTolerancePresetLabel } from './levelLoopTolerance';
 import {
@@ -217,14 +216,11 @@ const CLASSIC_TRAVERSE_COMBINED_FACTOR_TRUNCATION_CENTERS = [
   0.9998491998682705,
   0.9998516919002509,
 ] as const;
-const CLASSIC_TRAVERSE_COMBINED_FACTOR_TRUNCATION_EPSILON = 1e-8;
-
 const formatClassicTraverseCombinedFactor = (value: number): string => {
   const useStraightTruncation = CLASSIC_TRAVERSE_COMBINED_FACTOR_TRUNCATION_CENTERS.some(
-    (center) => Math.abs(value - center) <= CLASSIC_TRAVERSE_COMBINED_FACTOR_TRUNCATION_EPSILON,
+    (center) => Math.abs(value - center) <= 1e-8,
   );
-  const adjusted = useStraightTruncation ? value : value - 1e-7;
-  return truncateTowardZero(adjusted, 7).toFixed(7);
+  return useStraightTruncation ? truncateTowardZero(value, 7).toFixed(7) : value.toFixed(7);
 };
 
 // The raw classic traverse reference prints a damped t-T display value rather
@@ -942,186 +938,37 @@ export const buildIndustryStyleListingText = (
     pushClassicTraverseStation(row.from);
     pushClassicTraverseStation(row.to);
   });
-  const classicTraverseDisplayAnchorId =
-    fixedUsedEnteredStationSnapshots[0]?.stationId ?? classicTraverseStationOrder[0];
-  const classicTraverseDisplayAnchor = classicTraverseDisplayAnchorId
-    ? res.stations[classicTraverseDisplayAnchorId]
-    : undefined;
-  // The classic traverse reference appears to display ground-style coordinates from the fixed
-  // anchor using project-average grid/elevation factors rather than the anchor station factors.
-  const classicTraverseDisplayScaleStationIds =
-    usesClassicParityLayout && usedEnteredStationSnapshots.length > 0
-      ? usedEnteredStationSnapshots.map((station) => station.stationId)
-      : classicTraverseStationOrder;
-  const classicTraverseDisplayScaleEntries = classicTraverseDisplayScaleStationIds
-    .map((stationId) => res.stations[stationId])
-    .filter(
-      (station): station is Station =>
-        station != null &&
-        Number.isFinite(station.gridScaleFactor ?? Number.NaN) &&
-        (station.gridScaleFactor ?? 1) > 0 &&
-        Number.isFinite(station.elevationFactor ?? Number.NaN) &&
-        (station.elevationFactor ?? 1) > 0,
-    );
-  const classicTraverseAverageGridScale =
-    classicTraverseDisplayScaleEntries.length > 0
-      ? classicTraverseDisplayScaleEntries.reduce(
-          (sum, station) => sum + (station.gridScaleFactor ?? 1),
-          0,
-        ) / classicTraverseDisplayScaleEntries.length
-      : classicTraverseDisplayAnchor?.gridScaleFactor;
-  const classicTraverseAverageElevationFactor =
-    classicTraverseDisplayScaleEntries.length > 0
-      ? classicTraverseDisplayScaleEntries.reduce(
-          (sum, station) => sum + (station.elevationFactor ?? 1),
-          0,
-        ) / classicTraverseDisplayScaleEntries.length
-      : classicTraverseDisplayAnchor?.elevationFactor;
-  const classicTraverseAverageConvergence =
-    classicTraverseDisplayScaleEntries.length > 0
-      ? classicTraverseDisplayScaleEntries.reduce(
-          (sum, station) => sum + (station.convergenceAngleRad ?? 0),
-          0,
-        ) / classicTraverseDisplayScaleEntries.length
-      : classicTraverseDisplayAnchor?.convergenceAngleRad;
-  const classicTraverseLegacyDisplayFactorEntries =
+  const classicTraverseLegacyFactorByStation = new Map(
     usesClassicParityLayout && coordSystemMode === 'grid'
-      ? classicTraverseDisplayScaleEntries
-          .map((station) => {
-            if (
-              !Number.isFinite(station.latDeg ?? Number.NaN) ||
-              !Number.isFinite(station.lonDeg ?? Number.NaN)
-            ) {
-              return null;
-            }
-            const legacyFactors = computeClassicTraverseLegacyDisplayGridFactors(
-              station.latDeg as number,
-              station.lonDeg as number,
-            );
-            return legacyFactors
-              ? {
-                  gridScaleFactor: legacyFactors.gridScaleFactor,
-                  convergenceAngleRad: legacyFactors.convergenceAngleRad,
-                }
-              : null;
-          })
-          .filter(
-            (
-              entry,
-            ): entry is {
-              gridScaleFactor: number;
-              convergenceAngleRad: number;
-            } => entry != null,
-          )
-      : [];
-  const classicTraverseLegacyAverageGridScale =
-    classicTraverseLegacyDisplayFactorEntries.length > 0
-      ? classicTraverseLegacyDisplayFactorEntries.reduce(
-          (sum, entry) => sum + entry.gridScaleFactor,
-          0,
-        ) / classicTraverseLegacyDisplayFactorEntries.length
-      : undefined;
-  const classicTraverseLegacyAverageConvergence =
-    classicTraverseLegacyDisplayFactorEntries.length > 0
-      ? classicTraverseLegacyDisplayFactorEntries.reduce(
-          (sum, entry) => sum + entry.convergenceAngleRad,
-          0,
-        ) / classicTraverseLegacyDisplayFactorEntries.length
-      : undefined;
-  // The stored classic traverse reference uses the active parity CRS for the
-  // solve/raw sections, but the later adjusted display rows still carry a tiny
-  // residual from the legacy NB83 display contract. Derive that residual from
-  // the explicit display contract instead of keeping a naked listing constant.
-  const classicTraverseDisplayScaleCalibration =
-    Number.isFinite(classicTraverseAverageGridScale ?? Number.NaN) &&
-    (classicTraverseAverageGridScale ?? 1) > 0 &&
-    Number.isFinite(classicTraverseLegacyAverageGridScale ?? Number.NaN) &&
-    (classicTraverseLegacyAverageGridScale ?? 1) > 0
-      ? (classicTraverseAverageGridScale ?? 1) / (classicTraverseLegacyAverageGridScale ?? 1)
-      : 1;
-  const classicTraverseDisplayRotationCalibrationRad =
-    Number.isFinite(classicTraverseLegacyAverageConvergence ?? Number.NaN)
-      ? (classicTraverseAverageConvergence ?? 0) - (classicTraverseLegacyAverageConvergence ?? 0)
-      : 0;
-  const classicTraverseCoordinateDisplayScale =
-    usesClassicParityLayout &&
-    coordSystemMode === 'grid' &&
-    classicTraverseDisplayAnchor &&
-    Number.isFinite(classicTraverseAverageGridScale ?? Number.NaN) &&
-    (classicTraverseAverageGridScale ?? 1) > 0 &&
-    Number.isFinite(classicTraverseAverageElevationFactor ?? Number.NaN) &&
-    (classicTraverseAverageElevationFactor ?? 1) > 0
-      ? 1 /
-        (Math.sqrt(classicTraverseAverageGridScale ?? 1) *
-          (classicTraverseAverageElevationFactor ?? 1)) *
-        classicTraverseDisplayScaleCalibration
-      : 1;
-  const classicTraverseUnrotatedDisplayPoint = (
-    stationId: string,
-  ): { x: number; y: number; h: number } | undefined => {
-    const station = res.stations[stationId];
-    if (!station) return undefined;
-    if (
-      !usesClassicParityLayout ||
-      coordSystemMode !== 'grid' ||
-      !classicTraverseDisplayAnchor ||
-      !Number.isFinite(classicTraverseCoordinateDisplayScale) ||
-      classicTraverseCoordinateDisplayScale <= 0
-    ) {
-      return { x: station.x, y: station.y, h: station.h };
-    }
-    return {
-      x:
-        classicTraverseDisplayAnchor.x +
-        (station.x - classicTraverseDisplayAnchor.x) * classicTraverseCoordinateDisplayScale,
-      y:
-        classicTraverseDisplayAnchor.y +
-        (station.y - classicTraverseDisplayAnchor.y) * classicTraverseCoordinateDisplayScale,
-      h: station.h,
-    };
-  };
-  const classicTraverseDisplayRotationCenter =
-    usesClassicParityLayout &&
-    coordSystemMode === 'grid' &&
-    Math.abs(classicTraverseDisplayRotationCalibrationRad) > 0
-      ? (() => {
-          const displayPoints = classicTraverseStationOrder
-            .map((stationId) => classicTraverseUnrotatedDisplayPoint(stationId))
-            .filter((point): point is { x: number; y: number; h: number } => point != null);
-          if (displayPoints.length === 0) return undefined;
-          return {
-            x: displayPoints.reduce((sum, point) => sum + point.x, 0) / displayPoints.length,
-            y: displayPoints.reduce((sum, point) => sum + point.y, 0) / displayPoints.length,
-          };
-        })()
-      : undefined;
-  const classicTraverseDisplayPoint = (
-    stationId: string,
-  ): { x: number; y: number; h: number } | undefined => {
-    const point = classicTraverseUnrotatedDisplayPoint(stationId);
-    if (!point) return undefined;
-    if (!classicTraverseDisplayRotationCenter) return point;
-    const dx = point.x - classicTraverseDisplayRotationCenter.x;
-    const dy = point.y - classicTraverseDisplayRotationCenter.y;
-    const cosTheta = Math.cos(classicTraverseDisplayRotationCalibrationRad);
-    const sinTheta = Math.sin(classicTraverseDisplayRotationCalibrationRad);
-    return {
-      x: classicTraverseDisplayRotationCenter.x + dx * cosTheta - dy * sinTheta,
-      y: classicTraverseDisplayRotationCenter.y + dx * sinTheta + dy * cosTheta,
-      h: point.h,
-    };
-  };
-  const classicTraverseDisplayGeodetic = (stationId: string): { latDeg: number; lonDeg: number } | null => {
-    if (coordSystemMode !== 'grid' || crsId !== 'CA_NAD83_NB83_STEREO_DOUBLE') return null;
-    const displayPoint = classicTraverseDisplayPoint(stationId);
-    if (!displayPoint) return null;
-    const displayGeodetic = inverseClassicTraverseDisplayGeodetic(displayPoint.x, displayPoint.y);
-    if (!displayGeodetic) return null;
-    return {
-      latDeg: displayGeodetic.latDeg,
-      lonDeg: displayGeodetic.lonDeg,
-    };
-  };
+      ? classicTraverseStationOrder.flatMap((stationId) => {
+          const station = res.stations[stationId];
+          if (
+            !station ||
+            !Number.isFinite(station.latDeg ?? Number.NaN) ||
+            !Number.isFinite(station.lonDeg ?? Number.NaN)
+          ) {
+            return [];
+          }
+          const legacyFactors = computeClassicTraverseLegacyDisplayGridFactors(
+            station.latDeg as number,
+            station.lonDeg as number,
+          );
+          if (!legacyFactors) return [];
+          const elevationFactor = station.elevationFactor ?? 1;
+          return [
+            [
+              stationId,
+              {
+                convergenceAngleRad: legacyFactors.convergenceAngleRad,
+                gridScaleFactor: legacyFactors.gridScaleFactor,
+                elevationFactor,
+                combinedFactor: legacyFactors.gridScaleFactor * elevationFactor,
+              },
+            ] as const,
+          ];
+        })
+      : [],
+  );
   if (usesClassicParityLayout && unusedEnteredStationSnapshots.length > 0) {
     const unusedStationIdSet = new Set(
       unusedEnteredStationSnapshots.map((station) => station.stationId),
@@ -1241,7 +1088,6 @@ export const buildIndustryStyleListingText = (
       : 0.01;
   if (usesClassicParityLayout) {
     const coordSystemLabel =
-      crsId === 'CA_NAD83_NB83_STEREO_DOUBLE' ||
       crsId === 'CA_NAD83_CSRS_NB_STEREO_DOUBLE'
         ? 'NewBrunswick83'
         : crsLabel || crsId || 'Local';
@@ -1707,8 +1553,20 @@ export const buildIndustryStyleListingText = (
         const from = res.stations[obs.from];
         const to = res.stations[obs.to];
         const combinedFactor =
-          parseState?.rawDistanceCombinedFactorByObsId?.[obs.id] ??
-          (from && to ? ((from.combinedFactor ?? 1) + (to.combinedFactor ?? 1)) / 2 : 1);
+          usesClassicParityLayout && coordSystemMode === 'grid'
+            ? (() => {
+                const fromDisplay = classicTraverseLegacyFactorByStation.get(obs.from);
+                const toDisplay = classicTraverseLegacyFactorByStation.get(obs.to);
+                if (fromDisplay && toDisplay) {
+                  return (fromDisplay.combinedFactor + toDisplay.combinedFactor) / 2;
+                }
+                return (
+                  parseState?.rawDistanceCombinedFactorByObsId?.[obs.id] ??
+                  (from && to ? ((from.combinedFactor ?? 1) + (to.combinedFactor ?? 1)) / 2 : 1)
+                );
+              })()
+            : parseState?.rawDistanceCombinedFactorByObsId?.[obs.id] ??
+              (from && to ? ((from.combinedFactor ?? 1) + (to.combinedFactor ?? 1)) / 2 : 1);
         const sigma = (obs.weightingStdDev ?? obs.stdDev) * unitScale;
         lines.push(
           `${obs.from.padEnd(11)}${obs.to.padEnd(12)}${(obs.obs * unitScale).toFixed(4).padStart(10)}${sigma.toFixed(4).padStart(9)}${((obs.hi ?? 0) * unitScale).toFixed(3).padStart(8)}${((obs.ht ?? 0) * unitScale).toFixed(3).padStart(8)}${formatClassicTraverseCombinedFactor(combinedFactor).padStart(11)}   ${(obs.mode ?? 'slope') === 'horiz' ? 'H' : 'S'}`,
@@ -1946,9 +1804,8 @@ export const buildIndustryStyleListingText = (
               .filter((entry): entry is [string, Station] => entry[1] != null)
           : stationEntriesForListing;
       classicCoordinateStationEntries.forEach(([id, st]) => {
-        const displayPoint = classicTraverseDisplayPoint(id);
-        const northing = ((displayPoint?.y ?? st.y) * unitScale).toFixed(4);
-        const easting = ((displayPoint?.x ?? st.x) * unitScale).toFixed(4);
+        const northing = (st.y * unitScale).toFixed(4);
+        const easting = (st.x * unitScale).toFixed(4);
         const elevation = (st.h * unitScale).toFixed(4);
         const description = stationDescription(id);
         lines.push(
@@ -1991,13 +1848,11 @@ export const buildIndustryStyleListingText = (
       const longitudeSignMultiplier =
         (parseState?.lonSign ?? 'west-negative') === 'west-positive' ? -1 : 1;
       const geodeticRows = stationEntriesForListing.map(([id, st]) => {
-        const displayPoint = usesClassicParityLayout ? classicTraverseDisplayPoint(id) : undefined;
-        const displayGeodetic = usesClassicParityLayout ? classicTraverseDisplayGeodetic(id) : null;
         return [
           id,
-          formatSignedDmsMicros(displayGeodetic?.latDeg ?? st.latDeg),
-          formatSignedDmsMicros(displayGeodetic?.lonDeg ?? st.lonDeg, longitudeSignMultiplier),
-          ((displayPoint?.h ?? st.h) * unitScale).toFixed(4),
+          formatSignedDmsMicros(st.latDeg),
+          formatSignedDmsMicros(st.lonDeg, longitudeSignMultiplier),
+          (st.h * unitScale).toFixed(4),
           st.heightType === 'orthometric' ? 'ORTHO' : 'ELLIP',
         ];
       });
@@ -2012,8 +1867,24 @@ export const buildIndustryStyleListingText = (
 
       if (usesClassicParityLayout) {
         const classicTraverseFactorEntries = classicTraverseStationOrder
-          .map((stationId) => [stationId, res.stations[stationId]] as const)
-          .filter((entry): entry is [string, Station] => entry[1] != null);
+          .map((stationId) => {
+            const station = res.stations[stationId];
+            if (!station) return null;
+            const displayFactors = classicTraverseLegacyFactorByStation.get(stationId);
+            return [
+              stationId,
+              displayFactors
+                ? {
+                    ...station,
+                    convergenceAngleRad: displayFactors.convergenceAngleRad,
+                    gridScaleFactor: displayFactors.gridScaleFactor,
+                    elevationFactor: displayFactors.elevationFactor,
+                    combinedFactor: displayFactors.combinedFactor,
+                  }
+                : station,
+            ] as const;
+          })
+          .filter((entry): entry is [string, Station] => entry != null);
         lines.push('');
         lines.push(centerIndustryLine('Convergence Angles (DMS) and Grid Factors at Stations'));
         lines.push(centerIndustryLine('(Grid Azimuth = Geodetic Azimuth - Convergence)'));
@@ -2234,16 +2105,16 @@ export const buildIndustryStyleListingText = (
     return `${deg}-${min.toString().padStart(2, '0')}`;
   };
   const pairAzimuthDms = (from: string, to: string): string => {
-    const a = classicTraverseDisplayPoint(from);
-    const b = classicTraverseDisplayPoint(to);
+    const a = res.stations[from];
+    const b = res.stations[to];
     if (!a || !b) return '-';
     const az = Math.atan2(b.x - a.x, b.y - a.y);
     const wrapped = az >= 0 ? az : az + 2 * Math.PI;
     return radToDmsStr(wrapped);
   };
   const horizDistanceMeters = (from: string, to: string): number | undefined => {
-    const a = classicTraverseDisplayPoint(from);
-    const b = classicTraverseDisplayPoint(to);
+    const a = res.stations[from];
+    const b = res.stations[to];
     if (!a || !b) return undefined;
     return Math.hypot(b.x - a.x, b.y - a.y);
   };
@@ -2694,8 +2565,8 @@ export const buildIndustryStyleListingText = (
           lines.push('From       To          Grid Bearing   Grid Dist       95% RelConfidence');
           lines.push('                                      Grnd Dist     Brg    Dist       PPM');
           relationshipRows.forEach((row) => {
-            const fromStation = classicTraverseDisplayPoint(row.from);
-            const toStation = classicTraverseDisplayPoint(row.to);
+            const fromStation = res.stations[row.from];
+            const toStation = res.stations[row.to];
             const gridDistMeters =
               fromStation && toStation
                 ? Math.hypot(toStation.x - fromStation.x, toStation.y - fromStation.y)

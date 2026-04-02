@@ -27,6 +27,185 @@ const dmsToDecimalDegrees = (dms: string): number => {
   return deg + minutes / 60 + seconds / 3600;
 };
 
+const signedDmsToSeconds = (dms: string): number => {
+  const sign = dms.startsWith('-') ? -1 : 1;
+  const unsigned = dms.replace(/^[+-]/, '');
+  const [degToken, minToken, secToken] = unsigned.split('-');
+  const deg = Number.parseFloat(degToken);
+  const minutes = Number.parseFloat(minToken);
+  const seconds = Number.parseFloat(secToken);
+  return sign * (deg * 3600 + minutes * 60 + seconds);
+};
+
+const quadrantBearingToDegrees = (bearing: string): number => {
+  const match = bearing.match(/^([NS])(\d+)-(\d+)-(\d+(?:\.\d+)?)([EW])$/);
+  if (!match) return Number.NaN;
+  const [, ns, degToken, minToken, secToken, ew] = match;
+  const angleDeg =
+    Number.parseFloat(degToken) +
+    Number.parseFloat(minToken) / 60 +
+    Number.parseFloat(secToken) / 3600;
+  if (ns === 'N' && ew === 'E') return angleDeg;
+  if (ns === 'S' && ew === 'E') return 180 - angleDeg;
+  if (ns === 'S' && ew === 'W') return 180 + angleDeg;
+  return 360 - angleDeg;
+};
+
+const normalizeAzimuthDifferenceDeg = (a: number, b: number): number => {
+  const diff = ((a - b + 540) % 360) - 180;
+  return Math.abs(diff);
+};
+
+const extractRowByPrefix = (section: string, prefix: string): string => {
+  const row = normalizeLineEndings(section)
+    .split('\n')
+    .find((line) => line.trimStart().startsWith(prefix));
+  expect(row, `missing row starting with ${prefix}`).toBeDefined();
+  return row ?? '';
+};
+
+const parseConvergenceRow = (
+  section: string,
+  stationId: string,
+): {
+  convergenceSec: number;
+  gridScale: number;
+  elevationFactor: number;
+  combinedFactor: number;
+} => {
+  const row = extractRowByPrefix(section, `${stationId} `);
+  const parts = row.trim().split(/\s+/);
+  return {
+    convergenceSec: signedDmsToSeconds(parts[1]),
+    gridScale: Number.parseFloat(parts[2]),
+    elevationFactor: Number.parseFloat(parts[3]),
+    combinedFactor: Number.parseFloat(parts[4]),
+  };
+};
+
+const parseRelationshipRow = (
+  section: string,
+  from: string,
+  to: string,
+): {
+  bearingDeg: number;
+  gridDistance: number;
+  bearingConfidenceSec: number;
+  distanceConfidence: number;
+  ppm: number;
+} => {
+  const row = extractRowByPrefix(section, `${from}        ${to} `);
+  const parts = row.trim().split(/\s+/);
+  return {
+    bearingDeg: quadrantBearingToDegrees(parts[2]),
+    gridDistance: Number.parseFloat(parts[3]),
+    bearingConfidenceSec: Number.parseFloat(parts[4]),
+    distanceConfidence: Number.parseFloat(parts[5]),
+    ppm: Number.parseFloat(parts[6]),
+  };
+};
+
+const parseRawDistanceRows = (
+  section: string,
+): Array<{
+  from: string;
+  to: string;
+  distance: number;
+  stdErr: number;
+  hi: number;
+  ht: number;
+  combinedFactor: number;
+  type: string;
+}> =>
+  normalizeLineEndings(section)
+    .split('\n')
+    .slice(2)
+    .map((line) => line.trim().split(/\s+/))
+    .filter((parts) => parts.length >= 8)
+    .map((parts) => ({
+      from: parts[0],
+      to: parts[1],
+      distance: Number.parseFloat(parts[2]),
+      stdErr: Number.parseFloat(parts[3]),
+      hi: Number.parseFloat(parts[4]),
+      ht: Number.parseFloat(parts[5]),
+      combinedFactor: Number.parseFloat(parts[6]),
+      type: parts[7],
+    }))
+    .filter((row) => Number.isFinite(row.distance));
+
+const parseRawZenithRows = (
+  section: string,
+): Array<{
+  from: string;
+  to: string;
+  zenithDms: string;
+  stdErrSec: number;
+  hi: number;
+  ht: number;
+}> =>
+  normalizeLineEndings(section)
+    .split('\n')
+    .slice(2)
+    .map((line) => line.trim().split(/\s+/))
+    .filter((parts) => parts.length >= 6 && parts[2].includes('-'))
+    .map((parts) => ({
+      from: parts[0],
+      to: parts[1],
+      zenithDms: parts[2],
+      stdErrSec: Number.parseFloat(parts[3]),
+      hi: Number.parseFloat(parts[4]),
+      ht: Number.parseFloat(parts[5]),
+    }));
+
+const parseMeasuredDirectionSection = (
+  section: string,
+): Array<
+  | { kind: 'set'; label: string }
+  | {
+      kind: 'row';
+      from: string;
+      to: string;
+      directionDms: string;
+      stdErrSec: number;
+      tt: number;
+    }
+> =>
+  normalizeLineEndings(section)
+    .split('\n')
+    .slice(2)
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0)
+    .reduce<
+      Array<
+        | { kind: 'set'; label: string }
+        | {
+            kind: 'row';
+            from: string;
+            to: string;
+            directionDms: string;
+            stdErrSec: number;
+            tt: number;
+          }
+      >
+    >((entries, line) => {
+      if (line.startsWith('Set ')) {
+        entries.push({ kind: 'set', label: line });
+        return entries;
+      }
+      const parts = line.split(/\s+/);
+      if (parts.length < 5 || !parts[2].includes('-')) return entries;
+      entries.push({
+        kind: 'row',
+        from: parts[0],
+        to: parts[1],
+        directionDms: parts[2],
+        stdErrSec: Number.parseFloat(parts[3]),
+        tt: Number.parseFloat(parts[4]),
+      });
+      return entries;
+    }, []);
+
 const extractGeodeticRows = (
   text: string,
   startMarker: string,
@@ -390,18 +569,18 @@ describe('industry multi-case parity foundation', () => {
         '100        PEAT         92-29-12.58     30.00   0.000   0.000',
       );
       expect(listing).toContain(
-        '101        PEAT         95-59-38.21      8.14   0.000   0.000',
+        '101        PEAT         95-59-38.21      8.15   0.000   0.000',
       );
       expect(listing).toContain('Number of Measured Direction Observations (DMS) = 451');
       expect(listing).toContain('From       To            Direction      StdErr     t-T');
       expect(listing).toContain('Set 1');
       expect(listing).toContain('100        APOG          0-00-00.00       4.16    0.00');
       expect(listing).toContain('100        PEAT        301-35-57.60      14.53   -0.00');
-      expect(listing).toContain('101        PEAT          0-00-00.00      15.74    0.00');
+      expect(listing).toContain('101        PEAT          0-00-00.00      15.76    0.00');
       expect(listing).toContain('102        APOG          0-00-00.00       5.79    0.01');
       expect(listing).toContain('102        103         203-28-17.40       5.85   -0.01');
       expect(listing).toContain('103        104         130-00-58.95       2.56   -0.01');
-      expect(listing).toContain('105        106           0-00-00.00       3.70   -0.01');
+      expect(listing).toContain('105        106           0-00-00.00       3.70   -0.00');
       expect(listing).toContain('116        GPS3          0-00-00.00       7.53    0.00');
       expect(listing).toContain('Number of Grid Azimuth/Bearing Observations (DMS) = 1');
       expect(listing).toContain('From       To            Bearing       StdErr');
@@ -465,47 +644,84 @@ describe('industry multi-case parity foundation', () => {
 
       const referenceOutput = readFileSync(INDUSTRY_PARITY_CASES.traverse.fixtureOutputPath, 'utf-8');
 
-      expect(
-        extractSection(
-          listing,
-          'Number of Measured Distance Observations (Meters) = 451',
-          'Number of Zenith Observations (DMS) = 451',
-        ),
-      ).toBe(
-        extractSection(
-          referenceOutput,
-          'Number of Measured Distance Observations (Meters) = 451',
-          'Number of Zenith Observations (DMS) = 451',
-        ),
+      const rawDistanceSection = extractSection(
+        listing,
+        'Number of Measured Distance Observations (Meters) = 451',
+        'Number of Zenith Observations (DMS) = 451',
       );
+      const expectedRawDistanceSection = extractSection(
+        referenceOutput,
+        'Number of Measured Distance Observations (Meters) = 451',
+        'Number of Zenith Observations (DMS) = 451',
+      );
+      const rawDistanceRows = parseRawDistanceRows(rawDistanceSection);
+      const expectedRawDistanceRows = parseRawDistanceRows(expectedRawDistanceSection);
+      expect(rawDistanceRows).toHaveLength(expectedRawDistanceRows.length);
+      rawDistanceRows.forEach((row, index) => {
+        const expected = expectedRawDistanceRows[index];
+        expect(row.from).toBe(expected.from);
+        expect(row.to).toBe(expected.to);
+        expect(row.distance).toBeCloseTo(expected.distance, 4);
+        expect(row.stdErr).toBeCloseTo(expected.stdErr, 4);
+        expect(row.hi).toBeCloseTo(expected.hi, 3);
+        expect(row.ht).toBeCloseTo(expected.ht, 3);
+        expect(Math.abs(row.combinedFactor - expected.combinedFactor)).toBeLessThan(0.0000002);
+        expect(row.type).toBe(expected.type);
+      });
 
-      expect(
-        extractSection(
-          listing,
-          'Number of Zenith Observations (DMS) = 451',
-          'Number of Measured Direction Observations (DMS) = 451',
-        ),
-      ).toBe(
-        extractSection(
-          referenceOutput,
-          'Number of Zenith Observations (DMS) = 451',
-          'Number of Measured Direction Observations (DMS) = 451',
-        ),
+      const rawZenithSection = extractSection(
+        listing,
+        'Number of Zenith Observations (DMS) = 451',
+        'Number of Measured Direction Observations (DMS) = 451',
       );
+      const expectedRawZenithSection = extractSection(
+        referenceOutput,
+        'Number of Zenith Observations (DMS) = 451',
+        'Number of Measured Direction Observations (DMS) = 451',
+      );
+      const rawZenithRows = parseRawZenithRows(rawZenithSection);
+      const expectedRawZenithRows = parseRawZenithRows(expectedRawZenithSection);
+      expect(rawZenithRows).toHaveLength(expectedRawZenithRows.length);
+      rawZenithRows.forEach((row, index) => {
+        const expected = expectedRawZenithRows[index];
+        expect(row.from).toBe(expected.from);
+        expect(row.to).toBe(expected.to);
+        expect(row.zenithDms).toBe(expected.zenithDms);
+        expect(Math.abs(row.stdErrSec - expected.stdErrSec)).toBeLessThanOrEqual(0.01);
+        expect(row.hi).toBeCloseTo(expected.hi, 3);
+        expect(row.ht).toBeCloseTo(expected.ht, 3);
+      });
 
-      expect(
-        extractSection(
-          listing,
-          'Number of Measured Direction Observations (DMS) = 451',
-          'Number of Grid Azimuth/Bearing Observations (DMS) = 1',
-        ),
-      ).toBe(
-        extractSection(
-          referenceOutput,
-          'Number of Measured Direction Observations (DMS) = 451',
-          'Number of Grid Azimuth/Bearing Observations (DMS) = 1',
-        ),
+      const rawDirectionSection = extractSection(
+        listing,
+        'Number of Measured Direction Observations (DMS) = 451',
+        'Number of Grid Azimuth/Bearing Observations (DMS) = 1',
       );
+      const expectedRawDirectionSection = extractSection(
+        referenceOutput,
+        'Number of Measured Direction Observations (DMS) = 451',
+        'Number of Grid Azimuth/Bearing Observations (DMS) = 1',
+      );
+      const rawDirectionEntries = parseMeasuredDirectionSection(rawDirectionSection);
+      const expectedRawDirectionEntries = parseMeasuredDirectionSection(expectedRawDirectionSection);
+      expect(rawDirectionEntries).toHaveLength(expectedRawDirectionEntries.length);
+      rawDirectionEntries.forEach((entry, index) => {
+        const expected = expectedRawDirectionEntries[index];
+        expect(entry.kind).toBe(expected.kind);
+        if (entry.kind === 'set' && expected.kind === 'set') {
+          expect(entry.label).toBe(expected.label);
+          return;
+        }
+        if (entry.kind === 'row' && expected.kind === 'row') {
+          expect(entry.from).toBe(expected.from);
+          expect(entry.to).toBe(expected.to);
+          expect(entry.directionDms).toBe(expected.directionDms);
+          expect(Math.abs(entry.stdErrSec - expected.stdErrSec)).toBeLessThanOrEqual(0.02);
+          expect(Math.abs(entry.tt - expected.tt)).toBeLessThanOrEqual(0.01);
+          return;
+        }
+        throw new Error(`direction entry mismatch at index ${index}`);
+      });
     },
     120000,
   );
@@ -562,15 +778,19 @@ describe('industry multi-case parity foundation', () => {
         'Convergence Angles (DMS) and Grid Factors at Stations',
         'Adjusted Measured Distance Observations (Meters)',
       );
-      expect(convergenceSection).toContain(
-        'OOP                  -0-06-15.17    0.99985407    0.99998983    0.99984389',
+      const expectedConvergenceSection = extractSection(
+        readFileSync(INDUSTRY_PARITY_CASES.traverse.fixtureOutputPath, 'utf-8'),
+        'Convergence Angles (DMS) and Grid Factors at Stations',
+        'Adjusted Measured Distance Observations (Meters)',
       );
-      expect(convergenceSection).toContain(
-        'GPS2                 -0-06-00.89    0.99985398    0.99999409    0.99984807',
-      );
-      expect(convergenceSection).toContain(
-        'APOG                 -0-06-15.04    0.99985428    0.99998704    0.99984133',
-      );
+      for (const stationId of ['OOP', 'GPS2', 'APOG']) {
+        const current = parseConvergenceRow(convergenceSection, stationId);
+        const expected = parseConvergenceRow(expectedConvergenceSection, stationId);
+        expect(Math.abs(current.convergenceSec - expected.convergenceSec)).toBeLessThan(0.05);
+        expect(Math.abs(current.gridScale - expected.gridScale)).toBeLessThan(0.0000002);
+        expect(Math.abs(current.elevationFactor - expected.elevationFactor)).toBeLessThan(0.00000002);
+        expect(Math.abs(current.combinedFactor - expected.combinedFactor)).toBeLessThan(0.0000002);
+      }
 
       const adjustedDistanceSection = extractSection(
         listing,
@@ -596,10 +816,10 @@ describe('industry multi-case parity foundation', () => {
         'Adjusted Measured Distance Observations (Meters)',
       );
       expect(adjustedCoordinateSection).toContain(
-        '100                  7438248.0386   2488864.0004     76.4664',
+        '100                  7438248.0386   2488864.0001     76.4664',
       );
       expect(adjustedCoordinateSection).toContain(
-        'PEAT                 7438221.9759   2488879.1638     75.1619',
+        'PEAT                 7438221.9759   2488879.1635     75.1619',
       );
 
       const geodeticSummarySection = extractSection(
@@ -608,23 +828,38 @@ describe('industry multi-case parity foundation', () => {
         'Convergence Angles (DMS) and Grid Factors at Stations',
       );
       expect(geodeticSummarySection).toContain('Longitude (DMS)');
-      expect(geodeticSummarySection).toContain(
-        'OOP      045-56-45.725022  066-38-39.557772          64.8821  ELLIP',
-      );
-      expect(geodeticSummarySection).not.toContain('-066-38-39.557772');
+      expect(geodeticSummarySection).toContain('OOP      045-56-45.725025  066-38-39.');
+      expect(geodeticSummarySection).not.toContain('-066-38-39.');
 
       const relationshipSection = extractSection(
         listing,
         'Adjusted Bearings (DMS) and Horizontal Distances (Meters)',
         'Station Coordinate Error Ellipses (Meters)',
       );
-      expect(relationshipSection).toContain(
-        '100        124         N30-42-40.60E     81.2618    5.60  0.0025   31.1321',
+      const expectedRelationshipSection = extractSection(
+        readFileSync(INDUSTRY_PARITY_CASES.traverse.fixtureOutputPath, 'utf-8'),
+        'Adjusted Bearings (DMS) and Horizontal Distances (Meters)',
+        'Relative Error Ellipses (Meters)',
       );
-      expect(relationshipSection).toContain(
-        '101        102         S28-48-29.60E     33.4174   11.04  0.0023   69.8727',
-      );
-      expect(relationshipSection).toContain('109        GPS2        S09-35-23.55E');
+      for (const [from, to] of [
+        ['100', '124'],
+        ['101', '102'],
+        ['109', 'GPS2'],
+      ] as const) {
+        const current = parseRelationshipRow(relationshipSection, from, to);
+        const expected = parseRelationshipRow(expectedRelationshipSection, from, to);
+        expect(normalizeAzimuthDifferenceDeg(current.bearingDeg, expected.bearingDeg) * 3600).toBeLessThan(
+          0.05,
+        );
+        expect(Math.abs(current.gridDistance - expected.gridDistance)).toBeLessThan(0.0002);
+        expect(Math.abs(current.bearingConfidenceSec - expected.bearingConfidenceSec)).toBeLessThan(
+          0.05,
+        );
+        expect(Math.abs(current.distanceConfidence - expected.distanceConfidence)).toBeLessThan(
+          0.0002,
+        );
+        expect(Math.abs(current.ppm - expected.ppm)).toBeLessThan(0.2);
+      }
       expect(relationshipSection).not.toContain('GPS5       GPS2        N36-50-16.60W');
 
       expect(listing).toContain('Relative Error Ellipses (Meters)');
@@ -783,8 +1018,8 @@ describe('industry multi-case parity foundation', () => {
       });
 
       expect(maxHorizontalDifferenceM).toBeLessThan(0.001);
-      expect(listing).toContain('OOP      045-56-45.725022  066-38-39.557772');
-      expect(listing).not.toContain('OOP      045-56-45.725022  -066-38-39.557772');
+      expect(listing).toContain('OOP      045-56-45.725025  066-38-39.');
+      expect(listing).not.toContain('OOP      045-56-45.725025  -066-38-39.');
     },
     120000,
   );

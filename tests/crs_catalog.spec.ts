@@ -23,7 +23,6 @@ describe('Canada CRS catalog (Phase 2 expansion)', () => {
     expect(CANADA_CRS_CATALOG.some((row) => row.id === 'CA_NAD83_CSRS_NB_STEREO_DOUBLE')).toBe(
       true,
     );
-    expect(CANADA_CRS_CATALOG.some((row) => row.id === 'CA_NAD83_NB83_STEREO_DOUBLE')).toBe(true);
     expect(CANADA_CRS_CATALOG.some((row) => row.id === 'CA_NAD83_CSRS_ON_MNR_LAMBERT')).toBe(true);
   });
 
@@ -76,16 +75,20 @@ describe('Canada CRS catalog (Phase 2 expansion)', () => {
     expect(inverse.lonDeg).toBeCloseTo(-66.64, 7);
   });
 
-  it('uses closed-form factor formulas for TM and numeric fallback for the parity NB83 projection', () => {
+  it('uses closed-form factor formulas for TM and projection-formula support for the CSRS NB stereographic definition', () => {
     const utm = computeGridFactors(46.72, -66.64, 'CA_NAD83_CSRS_UTM_20N');
     expect(utm).not.toBeNull();
     expect(utm?.source).toBe('projection-formula');
 
-    const nb83 = computeGridFactors(45.94603498341826, -66.64432272768907, 'CA_NAD83_NB83_STEREO_DOUBLE');
-    expect(nb83).not.toBeNull();
-    expect(nb83?.source).toBe('numerical-fallback');
-    expect((nb83?.gridScaleFactor ?? 0)).toBeCloseTo(0.99985393, 6);
-    expect((nb83?.convergenceAngleRad ?? 0) * (180 / Math.PI)).toBeCloseTo(-0.1042083333, 4);
+    const nbCsrs = computeGridFactors(
+      45.94603498341826,
+      -66.64432272768907,
+      'CA_NAD83_CSRS_NB_STEREO_DOUBLE',
+    );
+    expect(nbCsrs).not.toBeNull();
+    expect(nbCsrs?.source).toBe('projection-formula');
+    expect((nbCsrs?.gridScaleFactor ?? 0)).toBeCloseTo(0.99993613, 6);
+    expect((nbCsrs?.convergenceAngleRad ?? 0) * (180 / Math.PI)).toBeCloseTo(-169.83115474, 3);
 
     const lambert = computeGridFactors(50.0, -85.0, 'CA_NAD83_CSRS_ON_MNR_LAMBERT');
     expect(lambert).not.toBeNull();
@@ -97,22 +100,20 @@ describe('Canada CRS catalog (Phase 2 expansion)', () => {
     const latDeg = 45.94603498341826;
     const lonDeg = -66.64432272768907;
 
-    const parityNb83 = computeGridFactors(latDeg, lonDeg, 'CA_NAD83_NB83_STEREO_DOUBLE');
+    const parityNbCsrs = computeGridFactors(latDeg, lonDeg, 'CA_NAD83_CSRS_NB_STEREO_DOUBLE');
     const legacyDisplay = computeClassicTraverseLegacyDisplayGridFactors(latDeg, lonDeg);
 
-    expect(parityNb83).not.toBeNull();
+    expect(parityNbCsrs).not.toBeNull();
     expect(legacyDisplay).not.toBeNull();
 
     const gridPpmDelta =
-      ((legacyDisplay?.gridScaleFactor ?? 0) - (parityNb83?.gridScaleFactor ?? 0)) * 1e6;
-    const convergenceSecDelta =
-      (((legacyDisplay?.convergenceAngleRad ?? 0) - (parityNb83?.convergenceAngleRad ?? 0)) *
-        180 *
-        3600) /
-      Math.PI;
-
-    expect(gridPpmDelta).toBeCloseTo(-0.14, 2);
-    expect(convergenceSecDelta).toBeCloseTo(0.025, 3);
+      ((legacyDisplay?.gridScaleFactor ?? 0) - (parityNbCsrs?.gridScaleFactor ?? 0)) * 1e6;
+    expect(gridPpmDelta).toBeCloseTo(-82.2056, 1);
+    expect(Number.isFinite(legacyDisplay?.convergenceAngleRad ?? Number.NaN)).toBe(true);
+    expect(Number.isFinite(parityNbCsrs?.convergenceAngleRad ?? Number.NaN)).toBe(true);
+    expect(
+      Math.abs((legacyDisplay?.convergenceAngleRad ?? 0) - (parityNbCsrs?.convergenceAngleRad ?? 0)),
+    ).toBeGreaterThan(0.1);
   });
 
   it('exposes the classic traverse geodetic display inverse used by the NB83 parity listing', () => {

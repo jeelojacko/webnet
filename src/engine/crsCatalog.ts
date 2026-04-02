@@ -170,32 +170,6 @@ const CANADA_MTM_CATALOG: CrsDefinition[] = MTM_ZONE_METADATA.map((row) => build
 
 const CANADA_PROVINCIAL_CATALOG: CrsDefinition[] = [
   {
-    id: 'CA_NAD83_NB83_STEREO_DOUBLE',
-    label: 'New Brunswick 83 Double Stereographic',
-    catalogGroup: 'canada-provincial',
-    region: 'canada',
-    datum: 'NAD83',
-    projectionFamily: 'oblique-stereographic',
-    linearUnit: 'm',
-    axisOrder: 'E,N',
-    areaOfUse: 'New Brunswick',
-    areaOfUseBounds: { minLatDeg: 44.5, maxLatDeg: 48.2, minLonDeg: -69.2, maxLonDeg: -63.5 },
-    proj4:
-      '+proj=sterea +lat_0=46.5 +lon_0=-66.5 +k=0.99983 +x_0=2500000 +y_0=7500000 +ellps=GRS80 +units=m +no_defs +type=crs',
-    projParams: parseProj4Parameters(
-      '+proj=sterea +lat_0=46.5 +lon_0=-66.5 +k=0.99983 +x_0=2500000 +y_0=7500000 +ellps=GRS80 +units=m +no_defs +type=crs',
-    ),
-    projectionParams: {
-      lat0Deg: 46.5,
-      lon0Deg: -66.5,
-      k0: 0.99983,
-      falseEastingM: 2500000,
-      falseNorthingM: 7500000,
-    },
-    factorStrategy: 'numeric-local',
-    supportedDatumOps: CANADA_DATUM_OPS,
-  },
-  {
     id: 'CA_NAD83_CSRS_NB_STEREO_DOUBLE',
     label: 'New Brunswick Stereographic Double Projection',
     catalogGroup: 'canada-provincial',
