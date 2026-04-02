@@ -1190,7 +1190,7 @@ describe('industry listing phase 5 formatting locks', () => {
       parseOptions: {
         coordMode: '3D',
         coordSystemMode: 'grid',
-        crsId: 'CA_NAD83_NB83_STEREO_DOUBLE',
+        crsId: 'CA_NAD83_CSRS_NB_STEREO_DOUBLE',
         order: 'NE',
         deltaMode: 'slope',
         angleStationOrder: 'atfromto',
@@ -1235,7 +1235,7 @@ describe('industry listing phase 5 formatting locks', () => {
         stochasticDefaultsSummary: '',
         rotationAngleRad: 0,
         coordSystemMode: 'grid',
-        crsId: 'CA_NAD83_NB83_STEREO_DOUBLE',
+        crsId: 'CA_NAD83_CSRS_NB_STEREO_DOUBLE',
         gnssVectorFrameDefault: 'gridNEU',
         gnssFrameConfirmed: false,
         verticalDeflectionNorthSec: -2.91,
@@ -1245,6 +1245,7 @@ describe('industry listing phase 5 formatting locks', () => {
 
     expect(listing).toContain('Vertical Deflection');
     expect(listing).toContain('N=-2.910 E=-1.460 (Seconds)');
+    expect(listing).toContain('Coordinate System Mode                : GRID (CRS=CA_NAD83_CSRS_NB_STEREO_DOUBLE)');
     expect(listing).toContain('Number of GPS Vector Observations (Meters) = 15');
     expect(listing).toContain('Adjusted GPS Vector Observations (Meters)');
     expect(listing).toContain('Delta-N');

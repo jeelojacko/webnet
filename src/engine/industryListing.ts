@@ -1241,7 +1241,8 @@ export const buildIndustryStyleListingText = (
       : 0.01;
   if (usesClassicParityLayout) {
     const coordSystemLabel =
-      crsId === 'CA_NAD83_NB83_STEREO_DOUBLE'
+      crsId === 'CA_NAD83_NB83_STEREO_DOUBLE' ||
+      crsId === 'CA_NAD83_CSRS_NB_STEREO_DOUBLE'
         ? 'NewBrunswick83'
         : crsLabel || crsId || 'Local';
     lines.push(formatClassicSettingRow('STAR*NET Run Mode', 'Adjust with Error Propagation'));

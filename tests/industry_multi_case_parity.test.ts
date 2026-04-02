@@ -57,6 +57,31 @@ const extractGeodeticRows = (
   return rows;
 };
 
+const extractCoordinateRows = (
+  text: string,
+  startMarker: string,
+  endMarker: string,
+): Map<string, { northing: number; easting: number; elevation: number }> => {
+  const section = extractSection(text, startMarker, endMarker);
+  const rows = new Map<string, { northing: number; easting: number; elevation: number }>();
+  normalizeLineEndings(section)
+    .split('\n')
+    .forEach((line) => {
+      const trimmed = line.trim();
+      if (!trimmed) return;
+      const stationMatch = trimmed.match(/^([A-Za-z0-9_-]+)/);
+      if (!stationMatch) return;
+      const numericTokens = trimmed.match(/-?\d+\.\d+/g);
+      if (!numericTokens || numericTokens.length < 3) return;
+      rows.set(stationMatch[1], {
+        northing: Number.parseFloat(numericTokens[0]),
+        easting: Number.parseFloat(numericTokens[1]),
+        elevation: Number.parseFloat(numericTokens[2]),
+      });
+    });
+  return rows;
+};
+
 const buildCaseResult = (caseId: keyof typeof INDUSTRY_PARITY_CASES) => {
   const startup = INDUSTRY_PARITY_CASES[caseId].startupDefaults;
   expect(startup).toBeDefined();
@@ -78,6 +103,8 @@ const buildCaseResult = (caseId: keyof typeof INDUSTRY_PARITY_CASES) => {
       applyCurvatureRefraction: startup?.parseSettingsPatch.applyCurvatureRefraction,
       verticalReduction: startup?.parseSettingsPatch.verticalReduction,
       refractionCoefficient: startup?.parseSettingsPatch.refractionCoefficient,
+      verticalDeflectionNorthSec: startup?.parseSettingsPatch.verticalDeflectionNorthSec,
+      verticalDeflectionEastSec: startup?.parseSettingsPatch.verticalDeflectionEastSec,
     },
   }).solve();
 };
@@ -122,7 +149,7 @@ describe('industry multi-case parity foundation', () => {
     expect(startup.settingsPatch.convergenceLimit).toBe(0.01);
     expect(startup.parseSettingsPatch.coordMode).toBe('3D');
     expect(startup.parseSettingsPatch.coordSystemMode).toBe('grid');
-    expect(startup.parseSettingsPatch.crsId).toBe('CA_NAD83_NB83_STEREO_DOUBLE');
+    expect(startup.parseSettingsPatch.crsId).toBe('CA_NAD83_CSRS_NB_STEREO_DOUBLE');
     expect(startup.parseSettingsPatch.order).toBe('NE');
     expect(startup.parseSettingsPatch.lonSign).toBe('west-positive');
     expect(startup.parseSettingsPatch.verticalDeflectionNorthSec).toBeCloseTo(-2.91, 6);
@@ -141,6 +168,119 @@ describe('industry multi-case parity foundation', () => {
     expect(normalized).toContain('Adjusted Elevations and Error Propagation');
     expect(normalized).toContain('Adjusted Differential Level Observations');
   });
+
+  it(
+    'keeps the GNSS coordinate and geodetic rows aligned with the stored industry reference under the CSRS NB contract',
+    () => {
+      const startup = INDUSTRY_PARITY_CASES.gnss.startupDefaults;
+      expect(startup).toBeDefined();
+
+      const result = buildCaseResult('gnss');
+      expect(result.success).toBe(true);
+
+      const listing = buildIndustryStyleListingText(
+        result,
+        {
+          maxIterations: 10,
+          convergenceLimit: startup?.settingsPatch.convergenceLimit,
+          precisionReportingMode: 'industry-standard',
+          units: 'm',
+          listingShowCoordinates: true,
+          listingShowObservationsResiduals: true,
+          listingShowErrorPropagation: true,
+          listingShowProcessingNotes: true,
+          listingShowAzimuthsBearings: true,
+          listingShowLostStations: true,
+          listingSortCoordinatesBy: 'input',
+          listingSortObservationsBy: 'residual',
+          listingObservationLimit: 9999,
+        },
+        {
+          coordMode: startup?.parseSettingsPatch.coordMode ?? '3D',
+          order: startup?.parseSettingsPatch.order ?? 'EN',
+          angleUnits: startup?.parseSettingsPatch.angleUnits ?? 'dms',
+          angleStationOrder: startup?.parseSettingsPatch.angleStationOrder ?? 'atfromto',
+          deltaMode: startup?.parseSettingsPatch.deltaMode ?? 'slope',
+          refractionCoefficient: startup?.parseSettingsPatch.refractionCoefficient ?? 0.13,
+        },
+        {
+          solveProfile: 'industry-parity',
+          angleCenteringModel: 'geometry-aware-correlated-rays',
+          defaultSigmaCount: 0,
+          defaultSigmaByType: '',
+          stochasticDefaultsSummary: '',
+          rotationAngleRad: 0,
+          currentInstrumentCode: startup?.selectedInstrument,
+          currentInstrumentDesc: startup?.projectInstruments[startup?.selectedInstrument ?? '']?.desc,
+          projectInstrumentLibrary: startup?.projectInstruments,
+        },
+      );
+
+      const currentCoordinateRows = extractCoordinateRows(
+        listing,
+        'Adjusted Coordinates (Meters)',
+        'Control Component Status',
+      );
+      const expectedCoordinateRows = extractCoordinateRows(
+        readFileSync(INDUSTRY_PARITY_CASES.gnss.fixtureOutputPath, 'utf-8'),
+        'Adjusted Coordinates (Meters)',
+        'Adjusted Positions and Ellipsoid Heights (Meters)',
+      );
+      expect(currentCoordinateRows.size).toBe(expectedCoordinateRows.size);
+
+      currentCoordinateRows.forEach((current, stationId) => {
+        const expected = expectedCoordinateRows.get(stationId);
+        expect(expected, `missing expected coordinate row for ${stationId}`).toBeDefined();
+        if (!expected) return;
+        expect(Math.abs(current.northing - expected.northing)).toBeLessThan(0.001);
+        expect(Math.abs(current.easting - expected.easting)).toBeLessThan(0.001);
+        expect(Math.abs(current.elevation - expected.elevation)).toBeLessThan(0.005);
+      });
+
+      const currentGeodeticRows = extractGeodeticRows(
+        listing,
+        'Geodetic Position Summary',
+        'Grid/Combined Factor Diagnostics',
+      );
+      const expectedGeodeticRows = extractGeodeticRows(
+        readFileSync(INDUSTRY_PARITY_CASES.gnss.fixtureOutputPath, 'utf-8'),
+        'Adjusted Positions and Ellipsoid Heights (Meters)',
+        'Convergence Angles (DMS) and Grid Factors at Stations',
+      );
+      expect(currentGeodeticRows.size).toBe(expectedGeodeticRows.size);
+
+      let maxHorizontalDifferenceM = 0;
+      currentGeodeticRows.forEach((current, stationId) => {
+        const expected = expectedGeodeticRows.get(stationId);
+        expect(expected, `missing expected geodetic row for ${stationId}`).toBeDefined();
+        if (!expected) return;
+
+        const currentLatitudeDeg = dmsToDecimalDegrees(current.latitudeDms);
+        const currentLongitudeDeg = dmsToDecimalDegrees(current.longitudeDms);
+        const expectedLatitudeDeg = dmsToDecimalDegrees(expected.latitudeDms);
+        const expectedLongitudeDeg = dmsToDecimalDegrees(expected.longitudeDms);
+        const averageLatitudeRad = ((currentLatitudeDeg + expectedLatitudeDeg) / 2) * (Math.PI / 180);
+        const northDifferenceM = (currentLatitudeDeg - expectedLatitudeDeg) * 111132.92;
+        const eastDifferenceM =
+          (currentLongitudeDeg - expectedLongitudeDeg) *
+          111412.84 *
+          Math.cos(averageLatitudeRad);
+        maxHorizontalDifferenceM = Math.max(
+          maxHorizontalDifferenceM,
+          Math.hypot(northDifferenceM, eastDifferenceM),
+        );
+        expect(Math.abs(current.height - expected.height)).toBeLessThan(0.005);
+      });
+
+      expect(maxHorizontalDifferenceM).toBeLessThan(0.002);
+      expect(listing).toContain(
+        'Coordinate System Mode                : GRID (CRS=CA_NAD83_CSRS_NB_STEREO_DOUBLE)',
+      );
+      expect(listing).toContain('GPS1     045-56-45.725038  066-38-39.557738');
+      expect(listing).not.toContain('GPS1     045-56-45.725038  -066-38-39.557738');
+    },
+    120000,
+  );
 
   it(
     'matches the traverse startup statistical summary within the current parity tolerances',

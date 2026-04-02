@@ -21,7 +21,7 @@ Current startup and workflow defaults include:
 - run profile defaults to industry-standard parity mode
 - cluster detection defaults to OFF
 - auto-adjust is available but operator-controlled
-- the active startup dataset is currently rotated to the GNSS-only industry-parity case, including NewBrunswick83 grid startup defaults, positive-west longitude convention, vertical deflection `N=-2.910" E=-1.460"`, slope/zenith reduction with refraction `k=0.07`, and the committed GNSS covariance input fixture loaded directly into the editor
+- the active startup dataset is currently rotated to the GNSS-only industry-parity case, including New Brunswick grid startup defaults under the industry `NewBrunswick83` label, the CSRS double-stereographic solve/display contract that matches the stored GNSS coordinates, positive-west longitude convention, vertical deflection `N=-2.910" E=-1.460"`, slope/zenith reduction with refraction `k=0.07`, and the committed GNSS covariance input fixture loaded directly into the editor
 - the active startup dataset may be rotated to the current industry-parity working case during parity-sensitive batches
 - browser-local recovery restores workspace state but intentionally does not restore stale solve results without rerun
 
@@ -187,7 +187,7 @@ Current GNSS behavior includes:
 - project/default vertical deflection state for GNSS vector modeling and listing output
 - covariance-vector GNSS observations can be transformed from ECEF delta into local topocentric `Delta-N/E/U` for solve/listing output, with covariance carried through the same frame path
 - industry-style listings now surface GNSS vertical deflection plus unadjusted and adjusted GNSS vector sections for covariance-vector jobs
-- the GNSS parity fixture is materially closer after the local-topocentric covariance-vector solve change, but exact GNSS text parity is not closed yet; a small coordinate/geodetic seam remains
+- the GNSS parity fixture now uses the CSRS New Brunswick double-stereographic contract beneath the industry `NewBrunswick83` label, which closes the earlier decimeter-scale adjusted-coordinate/geodetic drift without changing the retained traverse startup contract
 
 ## Import and interoperability behavior
 Current import behavior includes:
