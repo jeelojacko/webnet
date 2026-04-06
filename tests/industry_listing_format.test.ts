@@ -1245,7 +1245,10 @@ describe('industry listing phase 5 formatting locks', () => {
 
     expect(listing).toContain('Vertical Deflection');
     expect(listing).toContain('N=-2.910 E=-1.460 (Seconds)');
-    expect(listing).toContain('Coordinate System Mode                : GRID (CRS=CA_NAD83_CSRS_NB_STEREO_DOUBLE)');
+    expect(listing).toContain('Project Folder and Data Files');
+    expect(listing).toContain('Coordinate System                   : NewBrunswick83');
+    expect(listing).toContain('GPS Vector Standard Error Factors   : None');
+    expect(listing).not.toContain('Instrument Standard Error Settings');
     expect(listing).toContain('Inline Option Usage Notes');
     expect(listing).toContain('GPS Vector Factor Default Modified by Inline Option');
     expect(listing).toContain('Summary of Inconsistent Descriptions');
@@ -1262,11 +1265,12 @@ describe('industry listing phase 5 formatting locks', () => {
     expect(listing).toContain('Adjusted Bearings (DMS) and Horizontal Distances (Meters)');
     expect(listing).toContain('Grnd Dist');
     expect(listing).toContain('1843.4310');
+    expect(listing).toContain('FRDN       GPS1       N40-59-33.27E   1843.1364    0.11   0.0009');
     expect(listing).toContain('Station                   N              E          Elev');
     expect(listing).not.toContain('Control Component Status');
     expect(listing).toContain('Station                     N             E             Elev');
-    expect(listing).toContain('FRDN                            785.7010         0.0007        -0.8381   0.000');
-    expect(listing).toContain('GPS4                           1233.8307         0.0015         0.8054   0.000');
+    expect(listing).toContain('FRDN                    785.7010         0.0007        -0.8381   0.000');
+    expect(listing).toContain('GPS4                   1233.8307         0.0015         0.8054   0.000');
     expect(listing).toContain('GPS Deltas      45                 40.853         1.230');
     expect(listing).toContain('Total           45                 40.853         1.230');
     expect(listing).toContain('Delta-U               -35.5106      -0.0004   0.0023    0.2');

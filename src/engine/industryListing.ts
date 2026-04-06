@@ -160,6 +160,32 @@ const centerIndustryLine = (text: string, width = 80): string => {
   return `${' '.repeat(leftPad)}${text}`;
 };
 
+const pathTokenLeaf = (token?: string): string => {
+  const value = token?.trim() ?? '';
+  if (!value) return '';
+  const parts = value.split(/[\\/]+/).filter((part) => part.length > 0);
+  return parts[parts.length - 1] ?? value;
+};
+
+const pathTokenParent = (token?: string): string => {
+  const value = token?.trim() ?? '';
+  if (!value) return '';
+  const parts = value.split(/[\\/]+/).filter((part) => part.length > 0);
+  if (parts.length <= 1) return value;
+  return parts.slice(0, -1).join('\\');
+};
+
+const pathTokenStem = (token?: string): string => {
+  const leaf = pathTokenLeaf(token);
+  if (!leaf) return '';
+  return leaf.replace(/\.[^.]+$/, '') || leaf;
+};
+
+const isConcretePathToken = (token?: string): boolean => {
+  const value = token?.trim() ?? '';
+  return value.length > 0 && !/^<.*>$/.test(value);
+};
+
 const formatDmsHundredths = (rad?: number | null): string => {
   if (rad == null || Number.isNaN(rad)) return '0-00-00.00';
   let deg = ((rad * RAD_TO_DEG) % 360 + 360) % 360;
@@ -851,6 +877,41 @@ export const buildIndustryStyleListingText = (
     coordMode,
     projectInstrumentLibrary,
   );
+  const gpsObservationRows = observationsForListing.filter(
+    (obs): obs is GpsObservation => obs.type === 'gps',
+  );
+  const isGnssOnlyListing =
+    gpsObservationRows.length > 0 &&
+    observationsForListing.length > 0 &&
+    observationsForListing.every((obs) => obs.type === 'gps');
+  const usesCompactGnssParityLayout =
+    runDiagnostics.solveProfile !== 'webnet' && isGnssOnlyListing && !usesClassicParityLayout;
+  const hasInlineGpsFactorOverride = observationsForListing.some((obs) => {
+    if (obs.type !== 'gps') return false;
+    const horizontalFactor = obs.gpsVectorHorizontalFactor ?? 1;
+    const verticalFactor = obs.gpsVectorVerticalFactor ?? 1;
+    return Math.abs(horizontalFactor - 1) > 1e-12 || Math.abs(verticalFactor - 1) > 1e-12;
+  });
+  const projectSourceFiles = Array.from(
+    new Set(
+      [
+        parseState?.sourceFile,
+        ...observationsForListing.map((obs) => obs.sourceFile),
+      ].filter((token): token is string => isConcretePathToken(token)),
+    ),
+  );
+  const projectName = projectSourceFiles.length > 0 ? pathTokenStem(projectSourceFiles[0]) : '';
+  const projectFolder = projectSourceFiles.length > 0 ? pathTokenParent(projectSourceFiles[0]) : '';
+  const gpsVectorFactorHorizontal = parseState?.gpsVectorFactorHorizontal ?? 1;
+  const gpsVectorFactorVertical = parseState?.gpsVectorFactorVertical ?? 1;
+  const gpsVectorFactorSummary =
+    hasInlineGpsFactorOverride ||
+    (Math.abs(gpsVectorFactorHorizontal - 1) <= 1e-12 &&
+      Math.abs(gpsVectorFactorVertical - 1) <= 1e-12)
+      ? 'None'
+      : Math.abs(gpsVectorFactorHorizontal - gpsVectorFactorVertical) <= 1e-12
+        ? gpsVectorFactorHorizontal.toFixed(4)
+        : `H=${gpsVectorFactorHorizontal.toFixed(4)} V=${gpsVectorFactorVertical.toFixed(4)}`;
   const enteredInputStationSnapshots =
     parseState?.inputStationSnapshots?.filter(
       (station) => showLostStations || !res.stations[station.stationId]?.lost,
@@ -1128,7 +1189,29 @@ export const buildIndustryStyleListingText = (
   lines.push('Summary of Files Used and Option Settings');
   lines.push('=========================================');
   lines.push('');
-  lines.push('Project Option Settings');
+  if (runDiagnostics.solveProfile !== 'webnet') {
+    lines.push(centerIndustryLine('Project Folder and Data Files'));
+    lines.push('');
+    if (projectName) {
+      lines.push(`      ${'Project Name'.padEnd(18)} ${projectName}`);
+    }
+    if (projectFolder) {
+      lines.push(`      ${'Project Folder'.padEnd(18)} ${projectFolder}`);
+    }
+    projectSourceFiles.forEach((sourceFile, index) => {
+      lines.push(
+        `      ${(index === 0 ? 'Data File List' : '').padEnd(18)} ${index + 1}. ${pathTokenLeaf(sourceFile)}`,
+      );
+    });
+    if (projectName || projectFolder || projectSourceFiles.length > 0) {
+      lines.push('');
+    }
+  }
+  lines.push(
+    runDiagnostics.solveProfile !== 'webnet'
+      ? centerIndustryLine('Project Option Settings')
+      : 'Project Option Settings',
+  );
   lines.push('');
   const convergenceLimit =
     typeof settings.convergenceLimit === 'number' &&
@@ -1136,7 +1219,7 @@ export const buildIndustryStyleListingText = (
     settings.convergenceLimit > 0
       ? settings.convergenceLimit
       : 0.01;
-  if (usesClassicParityLayout) {
+  if (usesClassicParityLayout || usesCompactGnssParityLayout) {
     const coordSystemLabel =
       crsId === 'CA_NAD83_CSRS_NB_STEREO_DOUBLE'
         ? 'NewBrunswick83'
@@ -1208,6 +1291,13 @@ export const buildIndustryStyleListingText = (
     lines.push(formatClassicSettingRow('Create Geodetic Position File', 'No'));
     lines.push(formatClassicSettingRow('Create Ground Scale Coordinate File', 'No'));
     lines.push(formatClassicSettingRow('Create Dump File', 'No'));
+    if (gpsObservationRows.length > 0) {
+      lines.push(
+        formatClassicSettingRow('GPS Vector Standard Error Factors', gpsVectorFactorSummary),
+      );
+      lines.push(formatClassicSettingRow('GPS Vector Centering (Meters)', 'None'));
+      lines.push(formatClassicSettingRow('GPS Vector Transformations', 'None'));
+    }
   } else {
     pushSettingRow(
       'Industry Standard Run Mode',
@@ -1437,88 +1527,84 @@ export const buildIndustryStyleListingText = (
       );
     }
   }
-  lines.push('');
-  lines.push(
-    usesClassicParityLayout
-      ? centerIndustryLine('Instrument Standard Error Settings')
-      : 'Instrument Standard Error Settings',
-  );
-  lines.push('');
-  if (usesClassicParityLayout) {
-    const instrumentEntries = Object.entries(projectInstrumentLibrary ?? {});
-    const currentInstrumentCode =
-      runDiag.currentInstrumentCode && projectInstrumentLibrary?.[runDiag.currentInstrumentCode]
-        ? runDiag.currentInstrumentCode
-        : instrumentEntries[0]?.[0];
-    const defaultInstrument =
-      currentInstrumentCode != null ? projectInstrumentLibrary?.[currentInstrumentCode] : undefined;
-    if (defaultInstrument) {
-      formatClassicInstrumentRows(lines, 'Project Default Instrument', defaultInstrument, true);
-    }
-    instrumentEntries
-      .filter(([code]) => code !== currentInstrumentCode)
-      .forEach(([, instrument]) => {
-        formatClassicInstrumentRows(
-          lines,
-          `Project Library Instrument ${instrument.code}`,
-          instrument,
-          false,
-        );
-      });
-  } else {
-    lines.push('Active Project Instrument Defaults');
-    const stochasticRows = parseStochasticDefaultsRows(runDiag.stochasticDefaultsSummary);
-    if (stochasticRows.length === 0) {
-      pushSettingRow('Defaults Summary', '-');
-    } else {
-      stochasticRows.forEach((row) => {
-        pushSettingRow(row.label, row.value);
-      });
-    }
-    pushSettingRow('Centering Model', runDiag.angleCenteringModel);
-    pushSettingRow(
-      'Default Sigma Usage',
-      `${runDiag.defaultSigmaCount} default-sigma obs${runDiag.defaultSigmaByType ? ` (${runDiag.defaultSigmaByType})` : ''}`,
+  if (!usesCompactGnssParityLayout) {
+    lines.push('');
+    lines.push(
+      usesClassicParityLayout
+        ? centerIndustryLine('Instrument Standard Error Settings')
+        : 'Instrument Standard Error Settings',
     );
-    if ((parseState?.aliasExplicitMappings?.length ?? 0) > 0) {
-      lines.push('Explicit Alias Mappings');
-      parseState?.aliasExplicitMappings?.forEach((m) => {
-        lines.push(
-          `${m.sourceId} -> ${m.canonicalId}${m.sourceLine != null ? ` (line ${m.sourceLine})` : ''}`,
-        );
-      });
-    }
-    if ((parseState?.aliasRuleSummaries?.length ?? 0) > 0) {
-      lines.push('Alias Rules');
-      parseState?.aliasRuleSummaries?.forEach((r) => {
-        lines.push(`${r.rule} (line ${r.sourceLine})`);
-      });
+    lines.push('');
+    if (usesClassicParityLayout) {
+      const instrumentEntries = Object.entries(projectInstrumentLibrary ?? {});
+      const currentInstrumentCode =
+        runDiag.currentInstrumentCode && projectInstrumentLibrary?.[runDiag.currentInstrumentCode]
+          ? runDiag.currentInstrumentCode
+          : instrumentEntries[0]?.[0];
+      const defaultInstrument =
+        currentInstrumentCode != null ? projectInstrumentLibrary?.[currentInstrumentCode] : undefined;
+      if (defaultInstrument) {
+        formatClassicInstrumentRows(lines, 'Project Default Instrument', defaultInstrument, true);
+      }
+      instrumentEntries
+        .filter(([code]) => code !== currentInstrumentCode)
+        .forEach(([, instrument]) => {
+          formatClassicInstrumentRows(
+            lines,
+            `Project Library Instrument ${instrument.code}`,
+            instrument,
+            false,
+          );
+        });
+    } else {
+      lines.push('Active Project Instrument Defaults');
+      const stochasticRows = parseStochasticDefaultsRows(runDiag.stochasticDefaultsSummary);
+      if (stochasticRows.length === 0) {
+        pushSettingRow('Defaults Summary', '-');
+      } else {
+        stochasticRows.forEach((row) => {
+          pushSettingRow(row.label, row.value);
+        });
+      }
+      pushSettingRow('Centering Model', runDiag.angleCenteringModel);
+      pushSettingRow(
+        'Default Sigma Usage',
+        `${runDiag.defaultSigmaCount} default-sigma obs${runDiag.defaultSigmaByType ? ` (${runDiag.defaultSigmaByType})` : ''}`,
+      );
+      if ((parseState?.aliasExplicitMappings?.length ?? 0) > 0) {
+        lines.push('Explicit Alias Mappings');
+        parseState?.aliasExplicitMappings?.forEach((m) => {
+          lines.push(
+            `${m.sourceId} -> ${m.canonicalId}${m.sourceLine != null ? ` (line ${m.sourceLine})` : ''}`,
+          );
+        });
+      }
+      if ((parseState?.aliasRuleSummaries?.length ?? 0) > 0) {
+        lines.push('Alias Rules');
+        parseState?.aliasRuleSummaries?.forEach((r) => {
+          lines.push(`${r.rule} (line ${r.sourceLine})`);
+        });
+      }
     }
   }
   if (!usesClassicParityLayout) {
-    const hasInlineGpsFactorOverride = observationsForListing.some((obs) => {
-      if (obs.type !== 'gps') return false;
-      const horizontalFactor = obs.gpsVectorHorizontalFactor ?? 1;
-      const verticalFactor = obs.gpsVectorVerticalFactor ?? 1;
-      return Math.abs(horizontalFactor - 1) > 1e-12 || Math.abs(verticalFactor - 1) > 1e-12;
-    });
     if (hasInlineGpsFactorOverride || directiveTransitions.length > 0 || directiveNoEffectWarnings.length > 0) {
-    lines.push('');
-    lines.push(centerIndustryLine('Inline Option Usage Notes'));
-    lines.push('');
-    if (hasInlineGpsFactorOverride) {
-      lines.push('      GPS Vector Factor Default Modified by Inline Option');
-    }
-    directiveNoEffectWarnings.forEach((warning) => {
-      lines.push(
-        `      ${warning.directive} line ${warning.line} had no effect (${warning.reason})`,
-      );
-    });
-    directiveTransitions.forEach((transition) => {
-      lines.push(
-        `      ${transition.directive} line ${transition.effectiveFromLine}${transition.effectiveToLine != null ? `-${transition.effectiveToLine}` : '-EOF'} (obs=${transition.obsCountInRange})`,
-      );
-    });
+      lines.push('');
+      lines.push(centerIndustryLine('Inline Option Usage Notes'));
+      lines.push('');
+      if (hasInlineGpsFactorOverride) {
+        lines.push('      GPS Vector Factor Default Modified by Inline Option');
+      }
+      directiveNoEffectWarnings.forEach((warning) => {
+        lines.push(
+          `      ${warning.directive} line ${warning.line} had no effect (${warning.reason})`,
+        );
+      });
+      directiveTransitions.forEach((transition) => {
+        lines.push(
+          `      ${transition.directive} line ${transition.effectiveFromLine}${transition.effectiveToLine != null ? `-${transition.effectiveToLine}` : '-EOF'} (obs=${transition.obsCountInRange})`,
+        );
+      });
     }
     lines.push('');
     lines.push(centerIndustryLine('Summary of Inconsistent Descriptions'));
@@ -1538,12 +1624,12 @@ export const buildIndustryStyleListingText = (
   }
   lines.push('');
   lines.push(
-    usesClassicParityLayout
+    usesClassicParityLayout || usesCompactGnssParityLayout
       ? centerIndustryLine('Summary of Unadjusted Input Observations')
       : 'Summary of Unadjusted Input Observations',
   );
   lines.push(
-    usesClassicParityLayout
+    usesClassicParityLayout || usesCompactGnssParityLayout
       ? centerIndustryLine('========================================')
       : '========================================',
   );
@@ -1558,13 +1644,6 @@ export const buildIndustryStyleListingText = (
   };
   const measuredDirectionCount = countByType('direction') + countByType('dir');
   const bearingCount = countByType('bearing');
-  const gpsObservationRows = observationsForListing.filter(
-    (obs): obs is GpsObservation => obs.type === 'gps',
-  );
-  const isGnssOnlyListing =
-    gpsObservationRows.length > 0 &&
-    observationsForListing.length > 0 &&
-    observationsForListing.every((obs) => obs.type === 'gps');
   const hasStationDescriptions = stationEntriesForListing.some(
     ([id]) => stationDescription(id).trim().length > 0,
   );
@@ -1778,7 +1857,63 @@ export const buildIndustryStyleListingText = (
   };
   const formatGpsStdResValue = (value: number | undefined): string =>
     value != null && Number.isFinite(value) ? Math.abs(value).toFixed(1) : '-';
-  if (usesClassicParityLayout) {
+  if (usesCompactGnssParityLayout) {
+    lines.push(
+      centerIndustryLine(
+        `Number of Entered Stations (${linearUnit}) = ${enteredInputStationSnapshots.length}`,
+      ),
+    );
+    lines.push('');
+    const formatClassicStationSummaryRow = (station: {
+      stationId: string;
+      x: number;
+      y: number;
+      h: number;
+    }) => {
+      const formatCoord = (value: number) =>
+        (Math.round((value + Number.EPSILON) * 10000) / 10000).toFixed(4);
+      const north = formatCoord(station.y * unitScale).padStart(12);
+      const east = formatCoord(station.x * unitScale).padStart(18);
+      const height = formatCoord(station.h * unitScale).padStart(12);
+      const description = stationDescription(station.stationId);
+      return `${station.stationId.padEnd(20)}${north}${east}${height}${description ? `   ${description}` : ''}`.trimEnd();
+    };
+    lines.push('Fixed Stations              N                 E          Elev   Description');
+    fixedUsedEnteredStationSnapshots.forEach((station) =>
+      lines.push(formatClassicStationSummaryRow(station)),
+    );
+    lines.push('');
+    lines.push('Free Stations               N                 E          Elev   Description');
+    freeUsedEnteredStationSnapshots.forEach((station) =>
+      lines.push(formatClassicStationSummaryRow(station)),
+    );
+    lines.push('');
+    lines.push(
+      centerIndustryLine(
+        `Number of GPS Vector Observations (${linearUnit}) = ${gpsObservationRows.length}`,
+      ),
+    );
+    lines.push('');
+    lines.push('From                           DeltaX        StdErrX       CorrelXY      HI');
+    lines.push('To                             DeltaY        StdErrY       CorrelXZ      HT');
+    lines.push('                               DeltaZ        StdErrZ       CorrelYZ');
+    gpsObservationRows.sort(compareObsByInput).forEach((obs) => {
+      const display = gpsInputCovarianceDisplay(obs);
+      const hi = ((obs.gpsAntennaHiM ?? 0) * unitScale).toFixed(3);
+      const ht = ((obs.gpsAntennaHtM ?? 0) * unitScale).toFixed(3);
+      lines.push('');
+      lines.push(`(${(obs.gpsVectorLabel ?? `${obs.from}-${obs.to}`).trim()})`);
+      lines.push(
+        `${obs.from.padEnd(20)}${(obs.obs.dE * unitScale).toFixed(4).padStart(12)}${(display.sigmaX * unitScale).toFixed(4).padStart(15)}${display.corrXY.toFixed(4).padStart(15)}${hi.padStart(8)}`,
+      );
+      lines.push(
+        `${obs.to.padEnd(20)}${(obs.obs.dN * unitScale).toFixed(4).padStart(12)}${(display.sigmaY * unitScale).toFixed(4).padStart(15)}${display.corrXZ.toFixed(4).padStart(15)}${ht.padStart(8)}`,
+      );
+      lines.push(
+        `${''.padEnd(20)}${((obs.obs.dU ?? 0) * unitScale).toFixed(4).padStart(12)}${(display.sigmaZ * unitScale).toFixed(4).padStart(15)}${display.corrYZ.toFixed(4).padStart(15)}`,
+      );
+    });
+  } else if (usesClassicParityLayout) {
     lines.push(
       centerIndustryLine(
         `Number of Entered Stations (${linearUnit}) = ${enteredInputStationSnapshots.length}`,
@@ -3129,10 +3264,17 @@ export const buildIndustryStyleListingText = (
       if (relationshipRows.length > 0) {
         lines.push('');
         const isGridBearingSection = coordSystemMode === 'grid';
+        const useCompactGnssRelationshipLayout =
+          usesCompactGnssParityLayout && isGridBearingSection;
         const azTitle = isGridBearingSection
           ? `Adjusted Bearings (${(parseState?.angleUnits ?? parseSettings.angleUnits).toUpperCase()}) and Horizontal Distances (${linearUnit})`
           : `Adjusted Azimuths (${(parseState?.angleUnits ?? parseSettings.angleUnits).toUpperCase()}) and Horizontal Distances (${linearUnit})`;
-        addCenteredHeading(azTitle);
+        if (useCompactGnssRelationshipLayout) {
+          lines.push(centerIndustryLine(azTitle));
+          lines.push(centerIndustryLine('========================================================='));
+        } else {
+          addCenteredHeading(azTitle);
+        }
         lines.push(
           isGridBearingSection
             ? '                 (Relative Confidence of Bearing is in Seconds)'
@@ -3172,10 +3314,12 @@ export const buildIndustryStyleListingText = (
                   ).toFixed(4)
                 : '-';
             lines.push(
-              `${row.from.padEnd(11)}${row.to.padEnd(12)}${formatQuadrantBearing(azRad).padStart(13)}${(Number.isFinite(gridDistMeters) ? (gridDistMeters * unitScale).toFixed(4) : '-').padStart(12)}${row.sigmaAz95.padStart(8)}${sigmaDist95.padStart(8)}${ppm95.padStart(10)}`,
+              useCompactGnssRelationshipLayout
+                ? `${row.from.padEnd(11)}${row.to.padEnd(11)}${formatQuadrantBearing(azRad).padStart(13)}${(Number.isFinite(gridDistMeters) ? (gridDistMeters * unitScale).toFixed(4) : '-').padStart(12)}${row.sigmaAz95.padStart(8)}${sigmaDist95.padStart(9)}${ppm95.padStart(10)}`
+                : `${row.from.padEnd(11)}${row.to.padEnd(12)}${formatQuadrantBearing(azRad).padStart(13)}${(Number.isFinite(gridDistMeters) ? (gridDistMeters * unitScale).toFixed(4) : '-').padStart(12)}${row.sigmaAz95.padStart(8)}${sigmaDist95.padStart(8)}${ppm95.padStart(10)}`,
             );
             lines.push(
-              `${''.padEnd(36)}${(Number.isFinite(groundDistMeters) ? (groundDistMeters * unitScale).toFixed(4) : '-').padStart(12)}`,
+              `${''.padEnd(useCompactGnssRelationshipLayout ? 35 : 36)}${(Number.isFinite(groundDistMeters) ? (groundDistMeters * unitScale).toFixed(4) : '-').padStart(12)}`,
             );
           });
         } else {

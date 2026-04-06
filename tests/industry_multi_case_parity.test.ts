@@ -568,9 +568,10 @@ describe('industry multi-case parity foundation', () => {
       });
 
       expect(maxHorizontalDifferenceM).toBeLessThan(0.002);
-      expect(listing).toContain(
-        'Coordinate System Mode                : GRID (CRS=CA_NAD83_CSRS_NB_STEREO_DOUBLE)',
-      );
+      expect(listing).toContain('Project Folder and Data Files');
+      expect(listing).toContain('Coordinate System                   : NewBrunswick83');
+      expect(listing).toContain('GPS Vector Standard Error Factors   : None');
+      expect(listing).not.toContain('Instrument Standard Error Settings');
       expect(listing).toContain('Adjusted Station Information');
       expect(listing).toContain('Adjusted Positions and Ellipsoid Heights (Meters)');
       expect(listing).toContain('GPS1     45-56-45.725039  66-38-39.557739');
