@@ -317,6 +317,8 @@ export interface GpsObservation extends ObservationBase {
   };
   calc?: { dE: number; dN: number; dU?: number };
   residual?: { vE: number; vN: number; vU?: number };
+  componentStdRes?: { tE?: number; tN?: number; tU?: number };
+  componentResidualStdErr?: { sE?: number; sN?: number; sU?: number };
   stdRes?: number;
 }
 

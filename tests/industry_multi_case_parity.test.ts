@@ -90,15 +90,23 @@ const parseRelationshipRow = (
 ): {
   bearingDeg: number;
   gridDistance: number;
+  groundDistance?: number;
   bearingConfidenceSec: number;
   distanceConfidence: number;
   ppm: number;
 } => {
-  const row = extractRowByPrefix(section, `${from}        ${to} `);
+  const lines = normalizeLineEndings(section).split('\n');
+  const rowPattern = new RegExp(`^\\s*${from}\\s+${to}\\s+`);
+  const rowIndex = lines.findIndex((line) => rowPattern.test(line));
+  expect(rowIndex, `missing row starting with ${from} ${to}`).toBeGreaterThanOrEqual(0);
+  const row = lines[rowIndex] ?? '';
   const parts = row.trim().split(/\s+/);
+  const nextLine = lines[rowIndex + 1] ?? '';
+  const groundDistanceMatch = nextLine.trim().match(/^-?\d+\.\d+/);
   return {
     bearingDeg: quadrantBearingToDegrees(parts[2]),
     gridDistance: Number.parseFloat(parts[3]),
+    groundDistance: groundDistanceMatch ? Number.parseFloat(groundDistanceMatch[0]) : undefined,
     bearingConfidenceSec: Number.parseFloat(parts[4]),
     distanceConfidence: Number.parseFloat(parts[5]),
     ppm: Number.parseFloat(parts[6]),
@@ -506,7 +514,7 @@ describe('industry multi-case parity foundation', () => {
       const currentCoordinateRows = extractCoordinateRows(
         listing,
         'Adjusted Coordinates (Meters)',
-        'Control Component Status',
+        'Adjusted Positions and Ellipsoid Heights (Meters)',
       );
       const expectedCoordinateRows = extractCoordinateRows(
         readFileSync(INDUSTRY_PARITY_CASES.gnss.fixtureOutputPath, 'utf-8'),
@@ -521,13 +529,13 @@ describe('industry multi-case parity foundation', () => {
         if (!expected) return;
         expect(Math.abs(current.northing - expected.northing)).toBeLessThan(0.001);
         expect(Math.abs(current.easting - expected.easting)).toBeLessThan(0.001);
-        expect(Math.abs(current.elevation - expected.elevation)).toBeLessThan(0.005);
+        expect(Math.abs(current.elevation - expected.elevation)).toBeLessThan(0.001);
       });
 
       const currentGeodeticRows = extractGeodeticRows(
         listing,
-        'Geodetic Position Summary',
-        'Grid/Combined Factor Diagnostics',
+        'Adjusted Positions and Ellipsoid Heights (Meters)',
+        'Convergence Angles (DMS) and Grid Factors at Stations',
       );
       const expectedGeodeticRows = extractGeodeticRows(
         readFileSync(INDUSTRY_PARITY_CASES.gnss.fixtureOutputPath, 'utf-8'),
@@ -556,15 +564,61 @@ describe('industry multi-case parity foundation', () => {
           maxHorizontalDifferenceM,
           Math.hypot(northDifferenceM, eastDifferenceM),
         );
-        expect(Math.abs(current.height - expected.height)).toBeLessThan(0.005);
+        expect(Math.abs(current.height - expected.height)).toBeLessThan(0.001);
       });
 
       expect(maxHorizontalDifferenceM).toBeLessThan(0.002);
       expect(listing).toContain(
         'Coordinate System Mode                : GRID (CRS=CA_NAD83_CSRS_NB_STEREO_DOUBLE)',
       );
-      expect(listing).toContain('GPS1     045-56-45.725038  066-38-39.557738');
-      expect(listing).not.toContain('GPS1     045-56-45.725038  -066-38-39.557738');
+      expect(listing).toContain('Adjusted Station Information');
+      expect(listing).toContain('Adjusted Positions and Ellipsoid Heights (Meters)');
+      expect(listing).toContain('GPS1     45-56-45.725039  66-38-39.557739');
+      expect(listing).not.toContain('GPS1     45-56-45.725039  -66-38-39.557739');
+
+      const convergenceSection = extractSection(
+        listing,
+        'Convergence Angles (DMS) and Grid Factors at Stations',
+        'Adjusted Observations and Residuals',
+      );
+      const expectedConvergenceSection = extractSection(
+        readFileSync(INDUSTRY_PARITY_CASES.gnss.fixtureOutputPath, 'utf-8'),
+        'Convergence Angles (DMS) and Grid Factors at Stations',
+        'Adjusted Observations and Residuals',
+      );
+      for (const stationId of ['GPS1', 'GPS4', 'GPS6']) {
+        const current = parseConvergenceRow(convergenceSection, stationId);
+        const expected = parseConvergenceRow(expectedConvergenceSection, stationId);
+        expect(Math.abs(current.convergenceSec - expected.convergenceSec)).toBeLessThan(0.05);
+        expect(Math.abs(current.gridScale - expected.gridScale)).toBeLessThan(0.0000002);
+        expect(Math.abs(current.elevationFactor - expected.elevationFactor)).toBeLessThan(0.00000002);
+        expect(Math.abs(current.combinedFactor - expected.combinedFactor)).toBeLessThan(0.0000002);
+      }
+
+      const relationshipSection = extractSection(
+        listing,
+        'Adjusted Bearings (DMS) and Horizontal Distances (Meters)',
+        'Error Propagation',
+      );
+      const expectedRelationshipSection = extractSection(
+        readFileSync(INDUSTRY_PARITY_CASES.gnss.fixtureOutputPath, 'utf-8'),
+        'Adjusted Bearings (DMS) and Horizontal Distances (Meters)',
+        'Error Propagation',
+      );
+      for (const [from, to] of [
+        ['FRDN', 'GPS1'],
+        ['GPS2', 'GPS6'],
+        ['GPS4', 'GPS5'],
+      ] as const) {
+        const current = parseRelationshipRow(relationshipSection, from, to);
+        const expected = parseRelationshipRow(expectedRelationshipSection, from, to);
+        expect(normalizeAzimuthDifferenceDeg(current.bearingDeg, expected.bearingDeg) * 3600).toBeLessThan(0.1);
+        expect(Math.abs(current.gridDistance - expected.gridDistance)).toBeLessThan(0.0002);
+        expect(Math.abs((current.groundDistance ?? 0) - (expected.groundDistance ?? 0))).toBeLessThan(0.0002);
+        expect(Math.abs(current.bearingConfidenceSec - expected.bearingConfidenceSec)).toBeLessThan(0.05);
+        expect(Math.abs(current.distanceConfidence - expected.distanceConfidence)).toBeLessThan(0.0002);
+        expect(Math.abs(current.ppm - expected.ppm)).toBeLessThan(0.2);
+      }
     },
     120000,
   );
@@ -638,8 +692,10 @@ describe('industry multi-case parity foundation', () => {
     const expectedGpsRow = parseObservationStatisticRow(expectedStats, 'GPS Deltas');
 
     expect(currentGpsRow.count).toBe(expectedGpsRow.count);
-    expect(currentGpsRow.sumSquares).toBeGreaterThan(40);
-    expect(currentGpsRow.errorFactor).toBeGreaterThan(1);
+    expect(currentGpsRow.sumSquares).toBeCloseTo(40.853, 3);
+    expect(currentGpsRow.errorFactor).toBeCloseTo(1.23, 3);
+    expect(Math.abs(currentGpsRow.sumSquares - expectedGpsRow.sumSquares)).toBeLessThan(0.35);
+    expect(Math.abs(currentGpsRow.errorFactor - expectedGpsRow.errorFactor)).toBeLessThan(0.01);
   });
 
   it(
@@ -692,7 +748,7 @@ describe('industry multi-case parity foundation', () => {
       const currentRows = extractAdjustedGpsVectorRows(
         listing,
         'Adjusted GPS Vector Observations (Meters)',
-        'Adjusted Azimuths (DMS) and Horizontal Distances (Meters)',
+        'Adjusted Bearings (DMS) and Horizontal Distances (Meters)',
       );
       const expectedRows = extractAdjustedGpsVectorRows(
         readFileSync(INDUSTRY_PARITY_CASES.gnss.fixtureOutputPath, 'utf-8'),

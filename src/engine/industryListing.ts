@@ -6,7 +6,7 @@ import {
 import {
   computeClassicTraverseLegacyDisplayGridFactors,
   ecefDeltaToLocalEnu,
-  transformEcefDeltaCovarianceToLocalEnu,
+  transformFactoredEcefDeltaCovarianceToLocalEnu,
 } from './geodesy';
 import { getLevelLoopTolerancePresetLabel } from './levelLoopTolerance';
 import {
@@ -198,6 +198,27 @@ const formatSignedDmsMicros = (degValue?: number | null, signMultiplier = 1): st
     d += 1;
   }
   return `${sign}${d.toString().padStart(3, '0')}-${m.toString().padStart(2, '0')}-${s.toFixed(6).padStart(9, '0')}`;
+};
+
+const formatSignedDmsMicrosCompact = (degValue?: number | null, signMultiplier = 1): string => {
+  if (degValue == null || !Number.isFinite(degValue)) return '-';
+  const displayDeg = degValue * signMultiplier;
+  const sign = displayDeg < 0 || Object.is(displayDeg, -0) ? '-' : '';
+  const absDeg = Math.abs(displayDeg);
+  let d = Math.floor(absDeg);
+  const rem1 = (absDeg - d) * 60;
+  let m = Math.floor(rem1);
+  let s = (rem1 - m) * 60;
+  s = Math.round((s + Number.EPSILON) * 1_000_000) / 1_000_000;
+  if (s >= 60) {
+    s -= 60;
+    m += 1;
+  }
+  if (m >= 60) {
+    m -= 60;
+    d += 1;
+  }
+  return `${sign}${d}-${m.toString().padStart(2, '0')}-${s.toFixed(6).padStart(9, '0')}`;
 };
 
 const truncateTowardZero = (value: number, decimals: number): number => {
@@ -942,9 +963,14 @@ export const buildIndustryStyleListingText = (
     pushClassicTraverseStation(row.from);
     pushClassicTraverseStation(row.to);
   });
+  const usesLegacyNbDisplayFactors =
+    coordSystemMode === 'grid' && crsId === 'CA_NAD83_CSRS_NB_STEREO_DOUBLE';
   const classicTraverseLegacyFactorByStation = new Map(
-    usesClassicParityLayout && coordSystemMode === 'grid'
-      ? classicTraverseStationOrder.flatMap((stationId) => {
+    usesLegacyNbDisplayFactors
+      ? (usesClassicParityLayout
+          ? classicTraverseStationOrder
+          : stationEntriesInputOrder.map(([stationId]) => stationId)
+        ).flatMap((stationId) => {
           const station = res.stations[stationId];
           if (
             !station ||
@@ -973,6 +999,26 @@ export const buildIndustryStyleListingText = (
         })
       : [],
   );
+  const displayFactorsForStation = (
+    stationId: string,
+    station: Station,
+  ): {
+    convergenceAngleRad: number;
+    gridScaleFactor: number;
+    elevationFactor: number;
+    combinedFactor: number;
+  } => {
+    const displayFactors = classicTraverseLegacyFactorByStation.get(stationId);
+    if (displayFactors) return displayFactors;
+    const elevationFactor = station.elevationFactor ?? 1;
+    const gridScaleFactor = station.gridScaleFactor ?? 1;
+    return {
+      convergenceAngleRad: station.convergenceAngleRad ?? 0,
+      gridScaleFactor,
+      elevationFactor,
+      combinedFactor: station.combinedFactor ?? gridScaleFactor * elevationFactor,
+    };
+  };
   if (usesClassicParityLayout && unusedEnteredStationSnapshots.length > 0) {
     const unusedStationIdSet = new Set(
       unusedEnteredStationSnapshots.map((station) => station.stationId),
@@ -1449,6 +1495,47 @@ export const buildIndustryStyleListingText = (
       });
     }
   }
+  if (!usesClassicParityLayout) {
+    const hasInlineGpsFactorOverride = observationsForListing.some((obs) => {
+      if (obs.type !== 'gps') return false;
+      const horizontalFactor = obs.gpsVectorHorizontalFactor ?? 1;
+      const verticalFactor = obs.gpsVectorVerticalFactor ?? 1;
+      return Math.abs(horizontalFactor - 1) > 1e-12 || Math.abs(verticalFactor - 1) > 1e-12;
+    });
+    if (hasInlineGpsFactorOverride || directiveTransitions.length > 0 || directiveNoEffectWarnings.length > 0) {
+    lines.push('');
+    lines.push(centerIndustryLine('Inline Option Usage Notes'));
+    lines.push('');
+    if (hasInlineGpsFactorOverride) {
+      lines.push('      GPS Vector Factor Default Modified by Inline Option');
+    }
+    directiveNoEffectWarnings.forEach((warning) => {
+      lines.push(
+        `      ${warning.directive} line ${warning.line} had no effect (${warning.reason})`,
+      );
+    });
+    directiveTransitions.forEach((transition) => {
+      lines.push(
+        `      ${transition.directive} line ${transition.effectiveFromLine}${transition.effectiveToLine != null ? `-${transition.effectiveToLine}` : '-EOF'} (obs=${transition.obsCountInRange})`,
+      );
+    });
+    }
+    lines.push('');
+    lines.push(centerIndustryLine('Summary of Inconsistent Descriptions'));
+    lines.push(centerIndustryLine('===================================='));
+    lines.push('');
+    lines.push('');
+    lines.push(
+      centerIndustryLine(`Number of Occurrences = ${traceabilityModel.descriptionConflictCount}`),
+    );
+    lines.push('');
+    lines.push('Network Stations');
+    lines.push('Point ID         Description                     File:Line                     ');
+    lines.push('');
+    lines.push('Sideshots');
+    lines.push('Point ID         Description                     File:Line                     ');
+    lines.push('');
+  }
   lines.push('');
   lines.push(
     usesClassicParityLayout
@@ -1473,6 +1560,13 @@ export const buildIndustryStyleListingText = (
   const bearingCount = countByType('bearing');
   const gpsObservationRows = observationsForListing.filter(
     (obs): obs is GpsObservation => obs.type === 'gps',
+  );
+  const isGnssOnlyListing =
+    gpsObservationRows.length > 0 &&
+    observationsForListing.length > 0 &&
+    observationsForListing.every((obs) => obs.type === 'gps');
+  const hasStationDescriptions = stationEntriesForListing.some(
+    ([id]) => stationDescription(id).trim().length > 0,
   );
   const hasTraverseStyleAngularFamilies = measuredDirectionCount > 0 || bearingCount > 0;
   const angleUnitToken = (parseState?.angleUnits ?? parseSettings.angleUnits).toUpperCase();
@@ -1582,10 +1676,12 @@ export const buildIndustryStyleListingText = (
         fromStation &&
         Number.isFinite(fromStation.latDeg ?? Number.NaN) &&
         Number.isFinite(fromStation.lonDeg ?? Number.NaN)
-          ? transformEcefDeltaCovarianceToLocalEnu(
+          ? transformFactoredEcefDeltaCovarianceToLocalEnu(
               obs.gpsCovariance3d,
               fromStation.latDeg as number,
               fromStation.lonDeg as number,
+              obs.gpsVectorHorizontalFactor,
+              obs.gpsVectorVerticalFactor,
             )
           : null;
       const sigmaX = Math.sqrt(Math.max(transformed?.cEE ?? obs.gpsCovariance3d.cXX, 0));
@@ -1617,10 +1713,71 @@ export const buildIndustryStyleListingText = (
       corrYZ: obs.corrNU ?? 0,
     };
   };
-  const formatGpsComponentStdRes = (residual: number | undefined, sigma: number | undefined): string =>
-    residual != null && sigma != null && Number.isFinite(sigma) && sigma > 0
-      ? (Math.abs(residual) / sigma).toFixed(1)
-      : '-';
+  const gpsInputCovarianceDisplay = (obs: GpsObservation) => {
+    if (!obs.gpsCovariance3d) return gpsCovarianceDisplay(obs);
+    const sigmaX = Math.sqrt(Math.max(obs.gpsCovariance3d.cXX, 0));
+    const sigmaY = Math.sqrt(Math.max(obs.gpsCovariance3d.cYY, 0));
+    const sigmaZ = Math.sqrt(Math.max(obs.gpsCovariance3d.cZZ, 0));
+    return {
+      sigmaX,
+      sigmaY,
+      sigmaZ,
+      corrXY:
+        sigmaX > 0 && sigmaY > 0 ? obs.gpsCovariance3d.cXY / (sigmaX * sigmaY) : 0,
+      corrXZ:
+        sigmaX > 0 && sigmaZ > 0 ? obs.gpsCovariance3d.cXZ / (sigmaX * sigmaZ) : 0,
+      corrYZ:
+        sigmaY > 0 && sigmaZ > 0 ? obs.gpsCovariance3d.cYZ / (sigmaY * sigmaZ) : 0,
+    };
+  };
+  const gpsListingStatisticalRow = () => {
+    let count = 0;
+    let sumSquares = 0;
+    gpsObservationRows.forEach((obs) => {
+      const displayVector = gpsDisplayVector(obs);
+      const residual =
+        displayVector?.residual ??
+        ((obs.residual as { vE?: number; vN?: number; vU?: number } | undefined) ?? undefined);
+      const cov = gpsCovarianceDisplay(obs);
+      const components = [
+        {
+          stdRes:
+            Number.isFinite(residual?.vN ?? Number.NaN) && Number.isFinite(cov.sigmaY) && cov.sigmaY > 0
+              ? Math.abs((residual?.vN as number) / cov.sigmaY)
+              : undefined,
+        },
+        {
+          stdRes:
+            Number.isFinite(residual?.vE ?? Number.NaN) && Number.isFinite(cov.sigmaX) && cov.sigmaX > 0
+              ? Math.abs((residual?.vE as number) / cov.sigmaX)
+              : undefined,
+        },
+        {
+          stdRes:
+            obs.componentStdRes?.tU ??
+            (Number.isFinite(residual?.vU ?? Number.NaN) && Number.isFinite(cov.sigmaZ) && cov.sigmaZ > 0
+              ? Math.abs((residual?.vU as number) / cov.sigmaZ)
+              : undefined),
+        },
+      ];
+      components.forEach(({ stdRes }) => {
+        if (!Number.isFinite(stdRes ?? Number.NaN)) {
+          return;
+        }
+        count += 1;
+        sumSquares += (stdRes as number) ** 2;
+      });
+    });
+    if (count === 0) return null;
+    return {
+      label: 'GPS',
+      count,
+      sumSquares,
+      errorFactor: res.dof > 0 ? Math.sqrt(sumSquares / res.dof) : Math.sqrt(sumSquares / count),
+    };
+  };
+  const formatGpsStdResValue = (value: number | undefined): string =>
+    value != null && Number.isFinite(value) ? Math.abs(value).toFixed(1) : '-';
   if (usesClassicParityLayout) {
     lines.push(
       centerIndustryLine(
@@ -1796,7 +1953,7 @@ export const buildIndustryStyleListingText = (
       lines.push('To                             DeltaY        StdErrY       CorrelXZ      HT');
       lines.push('                               DeltaZ        StdErrZ       CorrelYZ');
       gpsObservationRows.sort(compareObsByInput).forEach((obs) => {
-        const display = gpsCovarianceDisplay(obs);
+        const display = gpsInputCovarianceDisplay(obs);
         const hi = ((obs.gpsAntennaHiM ?? 0) * unitScale).toFixed(3);
         const ht = ((obs.gpsAntennaHtM ?? 0) * unitScale).toFixed(3);
         lines.push('');
@@ -1855,9 +2012,13 @@ export const buildIndustryStyleListingText = (
   lines.push('');
   lines.push('Observation Statistics');
 
-  const statRows = statisticalSummary.rows;
-  const totalCount = statisticalSummary.totalCount;
-  const totalSumSquares = statisticalSummary.totalSumSquares;
+  const hasSolverGpsSummary = statisticalSummary.rows.some((row) => row.label === 'GPS');
+  const listingGpsSummary = hasSolverGpsSummary ? null : gpsListingStatisticalRow();
+  const statRows = listingGpsSummary
+    ? [...statisticalSummary.rows, listingGpsSummary]
+    : statisticalSummary.rows;
+  const totalCount = statRows.reduce((sum, row) => sum + row.count, 0);
+  const totalSumSquares = statRows.reduce((sum, row) => sum + row.sumSquares, 0);
   const displayStatLabel = (label: string) => (label === 'GPS' ? 'GPS Deltas' : label);
   const statTableRows = statRows.map((row) => [
     displayStatLabel(row.label),
@@ -1869,7 +2030,7 @@ export const buildIndustryStyleListingText = (
     'Total',
     totalCount.toString(),
     totalSumSquares.toFixed(3),
-    res.seuw.toFixed(3),
+    (res.dof > 0 ? Math.sqrt(totalSumSquares / res.dof) : res.seuw).toFixed(3),
   ]);
   pushTable(
     ['Observation', 'Count', 'Sum Squares of StdRes', 'Error Factor'],
@@ -1911,8 +2072,24 @@ export const buildIndustryStyleListingText = (
     }
     return parts.length > 0 ? parts.join(' ') : null;
   };
+  const shouldShowControlComponentStatus = (station: Station): boolean => {
+    const componentModes = [station.constraintModeY, station.constraintModeX];
+    if ((parseState?.coordMode ?? parseSettings.coordMode) === '3D') {
+      componentModes.push(station.constraintModeH);
+    }
+    const explicitModes = componentModes.filter(
+      (mode): mode is NonNullable<typeof mode> => mode != null && mode !== 'approximate',
+    );
+    if (explicitModes.length === 0) return false;
+    const distinctModes = new Set(explicitModes);
+    return distinctModes.size > 1 || explicitModes.some((mode) => mode === 'weighted');
+  };
   if (settings.listingShowCoordinates) {
     lines.push('');
+    if (!usesClassicParityLayout) {
+      addCenteredHeading('Adjusted Station Information');
+      lines.push('');
+    }
     addCenteredHeading(`Adjusted Coordinates (${linearUnit})`);
     lines.push('');
     if (usesClassicParityLayout && coordSystemMode === 'grid') {
@@ -1932,6 +2109,22 @@ export const buildIndustryStyleListingText = (
           `${id.padEnd(18)}${northing.padStart(15)}${easting.padStart(15)}${elevation.padStart(12)}${description ? `   ${description}` : ''}`,
         );
       });
+    } else if (isGnssOnlyListing && !hasStationDescriptions) {
+      if ((parseState?.coordMode ?? parseSettings.coordMode) === '3D') {
+        lines.push('Station                   N              E          Elev');
+        stationEntriesForListing.forEach(([id, st]) => {
+          lines.push(
+            `${id.padEnd(18)}${(st.y * unitScale).toFixed(4).padStart(15)}${(st.x * unitScale).toFixed(4).padStart(15)}${(st.h * unitScale).toFixed(4).padStart(12)}`,
+          );
+        });
+      } else {
+        lines.push('Station                   N              E');
+        stationEntriesForListing.forEach(([id, st]) => {
+          lines.push(
+            `${id.padEnd(18)}${(st.y * unitScale).toFixed(4).padStart(15)}${(st.x * unitScale).toFixed(4).padStart(15)}`,
+          );
+        });
+      }
     } else {
       const coordRows = stationEntriesForListing.map(([id, st]) =>
         (parseState?.coordMode ?? parseSettings.coordMode) === '3D'
@@ -1953,10 +2146,15 @@ export const buildIndustryStyleListingText = (
       );
     }
 
-    const controlStatusRows = stationEntriesForListing
-      .map(([id, st]) => [id, stationDescription(id) || '-', summarizeControlComponentStatus(st)] as const)
-      .filter(([, , summary]) => summary != null)
-      .map(([id, description, summary]) => [id, description, summary ?? '-']);
+    const anyMixedControlComponentStatus = stationEntriesForListing.some(([, st]) =>
+      shouldShowControlComponentStatus(st),
+    );
+    const controlStatusRows = anyMixedControlComponentStatus
+      ? stationEntriesForListing
+          .map(([id, st]) => [id, stationDescription(id) || '-', summarizeControlComponentStatus(st)] as const)
+          .filter(([, , summary]) => summary != null)
+          .map(([id, description, summary]) => [id, description, summary ?? '-'])
+      : [];
     if (controlStatusRows.length > 0) {
       lines.push('');
       addCenteredHeading('Control Component Status');
@@ -1968,6 +2166,14 @@ export const buildIndustryStyleListingText = (
       const longitudeSignMultiplier =
         (parseState?.lonSign ?? 'west-negative') === 'west-positive' ? -1 : 1;
       const geodeticRows = stationEntriesForListing.map(([id, st]) => {
+        if (usesLegacyNbDisplayFactors && !usesClassicParityLayout) {
+          return [
+            id,
+            formatSignedDmsMicrosCompact(st.latDeg),
+            formatSignedDmsMicrosCompact(st.lonDeg, longitudeSignMultiplier),
+            (st.h * unitScale).toFixed(4),
+          ];
+        }
         return [
           id,
           formatSignedDmsMicros(st.latDeg),
@@ -1977,13 +2183,23 @@ export const buildIndustryStyleListingText = (
         ];
       });
       lines.push('');
-      addCenteredHeading('Geodetic Position Summary');
-      lines.push('');
-      renderTextTable(
-        ['Station', 'Latitude (DMS)', 'Longitude (DMS)', `Height (${linearUnit})`, 'HeightType'],
-        geodeticRows,
-        [3],
+      addCenteredHeading(
+        usesLegacyNbDisplayFactors && !usesClassicParityLayout
+          ? `Adjusted Positions and Ellipsoid Heights (${linearUnit})`
+          : 'Geodetic Position Summary',
       );
+      lines.push('');
+      if (usesLegacyNbDisplayFactors && !usesClassicParityLayout) {
+        lines.push(`(Average Geoid Height = ${(averageGeoidHeight * unitScale).toFixed(3)} ${linearUnit})`);
+        lines.push('');
+        renderTextTable(['Station', 'Latitude', 'Longitude', 'Ellip Ht'], geodeticRows, [3]);
+      } else {
+        renderTextTable(
+          ['Station', 'Latitude (DMS)', 'Longitude (DMS)', `Height (${linearUnit})`, 'HeightType'],
+          geodeticRows,
+          [3],
+        );
+      }
 
       if (usesClassicParityLayout) {
         const classicTraverseFactorEntries = classicTraverseStationOrder
@@ -2048,6 +2264,42 @@ export const buildIndustryStyleListingText = (
             `${'Project Averages:'.padEnd(20)}${formatClassicTraverseConvergenceAngle(avgConvergence).padStart(12)}${avgGridScale.toFixed(8).padStart(14)}${avgElevation.toFixed(8).padStart(14)}${avgCombined.toFixed(8).padStart(14)}`,
           );
         }
+      } else if (usesLegacyNbDisplayFactors) {
+        const factorEntries = stationEntriesForListing.map(([id, station]) => [
+          id,
+          displayFactorsForStation(id, station),
+        ] as const);
+        const avgConvergence =
+          factorEntries.reduce(
+            (sum, [, station]) => sum + station.convergenceAngleRad,
+            0,
+          ) / Math.max(1, factorEntries.length);
+        const avgGridScale =
+          factorEntries.reduce((sum, [, station]) => sum + station.gridScaleFactor, 0) /
+          Math.max(1, factorEntries.length);
+        const avgElevation =
+          factorEntries.reduce((sum, [, station]) => sum + station.elevationFactor, 0) /
+          Math.max(1, factorEntries.length);
+        const avgCombined =
+          factorEntries.reduce((sum, [, station]) => sum + station.combinedFactor, 0) /
+          Math.max(1, factorEntries.length);
+        lines.push('');
+        addCenteredHeading('Convergence Angles (DMS) and Grid Factors at Stations');
+        lines.push('(Grid Azimuth = Geodetic Azimuth - Convergence)');
+        lines.push(
+          `(Elevation Factor Includes a ${(averageGeoidHeight * unitScale).toFixed(2)} Meter Geoid Height Correction)`,
+        );
+        lines.push('');
+        lines.push('                    Convergence            ------- Factors -------');
+        lines.push('Station                Angle            Scale  x  Elevation  =   Combined');
+        factorEntries.forEach(([id, station]) => {
+          lines.push(
+            `${id.padEnd(20)}${formatClassicTraverseConvergenceAngle(station.convergenceAngleRad).padStart(12)}${station.gridScaleFactor.toFixed(8).padStart(14)}${station.elevationFactor.toFixed(8).padStart(14)}${station.combinedFactor.toFixed(8).padStart(14)}`,
+          );
+        });
+        lines.push(
+          `${'Project Averages:'.padEnd(20)}${formatClassicTraverseConvergenceAngle(avgConvergence).padStart(12)}${avgGridScale.toFixed(8).padStart(14)}${avgElevation.toFixed(8).padStart(14)}${avgCombined.toFixed(8).padStart(14)}`,
+        );
       } else {
         const factorRows = stationEntriesForListing.map(([id, st]) => [
           id,
@@ -2386,6 +2638,14 @@ export const buildIndustryStyleListingText = (
       };
     })
     .filter((row) => row.distance !== '-');
+  const pairDisplayCombinedFactor = (from: string, to: string): number => {
+    const fromStation = res.stations[from];
+    const toStation = res.stations[to];
+    if (!fromStation || !toStation) return 1;
+    const fromFactors = displayFactorsForStation(from, fromStation);
+    const toFactors = displayFactorsForStation(to, toStation);
+    return (fromFactors.combinedFactor + toFactors.combinedFactor) / 2;
+  };
   if (usesClassicParityLayout) {
     relationshipRows.sort(
       (a, b) => compareStationIds(a.from, b.from) || compareStationIds(a.to, b.to),
@@ -2505,6 +2765,10 @@ export const buildIndustryStyleListingText = (
     settings.listingShowObservationsResiduals &&
     listingObservations.length > 0
   ) {
+    if (!usesClassicParityLayout) {
+      lines.push('');
+      addCenteredHeading('Adjusted Observations and Residuals');
+    }
     if (usesClassicParityLayout) {
       const angleUnitLabel = (parseState?.angleUnits ?? parseSettings.angleUnits).toUpperCase();
       const classicSortByStdRes = (a: Observation, b: Observation) => {
@@ -2691,12 +2955,7 @@ export const buildIndustryStyleListingText = (
               fromStation && toStation
                 ? Math.hypot(toStation.x - fromStation.x, toStation.y - fromStation.y)
                 : Number.NaN;
-            const avgCombined =
-              res.stations[row.from] && res.stations[row.to]
-                ? (((res.stations[row.from]?.combinedFactor ?? 1) +
-                    (res.stations[row.to]?.combinedFactor ?? 1)) /
-                    2)
-                : 1;
+            const avgCombined = pairDisplayCombinedFactor(row.from, row.to);
             const relationshipLinearDisplayScale =
               usesClassicParityLayout &&
               coordSystemMode === 'grid' &&
@@ -2827,28 +3086,33 @@ export const buildIndustryStyleListingText = (
             const calc =
               displayVector?.calc ??
               ((obs.calc as { dE?: number; dN?: number; dU?: number } | undefined) ?? undefined);
-            const sigmaN =
-              Number.isFinite(obs.weightingStdDevN ?? Number.NaN) &&
-              Number.isFinite((obs.residual as { vN?: number } | undefined)?.vN ?? Number.NaN)
-                ? (obs.weightingStdDevN as number)
-                : Math.sqrt(Math.max(gpsCovarianceDisplay(obs).sigmaY ** 2, 0));
-            const sigmaE =
-              Number.isFinite(obs.weightingStdDevE ?? Number.NaN) &&
-              Number.isFinite((obs.residual as { vE?: number } | undefined)?.vE ?? Number.NaN)
-                ? (obs.weightingStdDevE as number)
-                : Math.sqrt(Math.max(gpsCovarianceDisplay(obs).sigmaX ** 2, 0));
-            const sigmaU = gpsCovarianceDisplay(obs).sigmaZ;
+            const displayCov = gpsCovarianceDisplay(obs);
+            const sigmaN = displayCov.sigmaY;
+            const sigmaE = displayCov.sigmaX;
+            const sigmaU = displayCov.sigmaZ;
             lines.push('');
             lines.push(`(${(obs.gpsVectorLabel ?? `${obs.from}-${obs.to}`).trim()})`);
             lines.push(
-              `${obs.from.padEnd(18)}${'Delta-N'.padEnd(18)}${formatLinear(calc?.dN).padStart(12)}${formatResidualLinear(residual?.vN).padStart(13)}${formatLinear(sigmaN).padStart(9)}${formatGpsComponentStdRes(residual?.vN, sigmaN).padStart(7)} ${(obs.sourceLine != null ? `1:${obs.sourceLine}` : '-').padStart(8)}`,
+              `${obs.from.padEnd(18)}${'Delta-N'.padEnd(18)}${formatLinear(calc?.dN).padStart(12)}${formatResidualLinear(residual?.vN).padStart(13)}${formatLinear(sigmaN).padStart(9)}${formatGpsStdResValue(
+                sigmaN > 0 && Number.isFinite(residual?.vN ?? Number.NaN)
+                  ? Math.abs((residual?.vN as number) / sigmaN)
+                  : undefined,
+              ).padStart(7)} ${(obs.sourceLine != null ? `1:${obs.sourceLine}` : '-').padStart(8)}`,
             );
             lines.push(
-              `${obs.to.padEnd(18)}${'Delta-E'.padEnd(18)}${formatLinear(calc?.dE).padStart(12)}${formatResidualLinear(residual?.vE).padStart(13)}${formatLinear(sigmaE).padStart(9)}${formatGpsComponentStdRes(residual?.vE, sigmaE).padStart(7)}`,
+              `${obs.to.padEnd(18)}${'Delta-E'.padEnd(18)}${formatLinear(calc?.dE).padStart(12)}${formatResidualLinear(residual?.vE).padStart(13)}${formatLinear(sigmaE).padStart(9)}${formatGpsStdResValue(
+                sigmaE > 0 && Number.isFinite(residual?.vE ?? Number.NaN)
+                  ? Math.abs((residual?.vE as number) / sigmaE)
+                  : undefined,
+              ).padStart(7)}`,
             );
             if (Number.isFinite(calc?.dU ?? Number.NaN)) {
               lines.push(
-                `${''.padEnd(18)}${'Delta-U'.padEnd(18)}${formatLinear(calc?.dU).padStart(12)}${formatResidualLinear(residual?.vU).padStart(13)}${formatLinear(sigmaU).padStart(9)}${formatGpsComponentStdRes(residual?.vU, sigmaU).padStart(7)}`,
+                `${''.padEnd(18)}${'Delta-U'.padEnd(18)}${formatLinear(calc?.dU).padStart(12)}${formatResidualLinear(residual?.vU).padStart(13)}${formatLinear(sigmaU).padStart(9)}${formatGpsStdResValue(
+                  sigmaU > 0 && Number.isFinite(residual?.vU ?? Number.NaN)
+                    ? Math.abs((residual?.vU as number) / sigmaU)
+                    : undefined,
+                ).padStart(7)}`,
               );
             }
             const length = Math.sqrt(
@@ -2864,17 +3128,65 @@ export const buildIndustryStyleListingText = (
 
       if (relationshipRows.length > 0) {
         lines.push('');
-        const azTitle = `Adjusted Azimuths (${(parseState?.angleUnits ?? parseSettings.angleUnits).toUpperCase()}) and Horizontal Distances (${linearUnit})`;
+        const isGridBearingSection = coordSystemMode === 'grid';
+        const azTitle = isGridBearingSection
+          ? `Adjusted Bearings (${(parseState?.angleUnits ?? parseSettings.angleUnits).toUpperCase()}) and Horizontal Distances (${linearUnit})`
+          : `Adjusted Azimuths (${(parseState?.angleUnits ?? parseSettings.angleUnits).toUpperCase()}) and Horizontal Distances (${linearUnit})`;
         addCenteredHeading(azTitle);
-        lines.push('                 (Relative Confidence of Azimuth is in Seconds)');
+        lines.push(
+          isGridBearingSection
+            ? '                 (Relative Confidence of Bearing is in Seconds)'
+            : '                 (Relative Confidence of Azimuth is in Seconds)',
+        );
         lines.push('');
-        lines.push('From       To               Azimuth    Distance       95% RelConfidence');
-        lines.push('                                                    Azi    Dist       PPM');
-        relationshipRows.forEach((row) => {
-          lines.push(
-            `${row.from.padEnd(10)} ${row.to.padEnd(10)} ${row.azimuth.padStart(14)} ${row.distance.padStart(10)} ${row.sigmaAz95.padStart(7)} ${row.sigmaDist95.padStart(8)} ${row.ppm95.padStart(10)}`,
-          );
-        });
+        if (isGridBearingSection) {
+          lines.push('From       To          Grid Bearing   Grid Dist       95% RelConfidence');
+          lines.push('                                      Grnd Dist     Brg    Dist       PPM');
+          relationshipRows.forEach((row) => {
+            const fromStation = res.stations[row.from];
+            const toStation = res.stations[row.to];
+            const gridDistMeters =
+              fromStation && toStation
+                ? Math.hypot(toStation.x - fromStation.x, toStation.y - fromStation.y)
+                : Number.NaN;
+            const avgCombined = pairDisplayCombinedFactor(row.from, row.to);
+            const relationshipLinearDisplayScale =
+              Number.isFinite(avgCombined) && avgCombined > 0 ? 1 / avgCombined : 1;
+            const groundDistMeters =
+              Number.isFinite(gridDistMeters) && avgCombined > 0 ? gridDistMeters / avgCombined : Number.NaN;
+            const azRad =
+              fromStation && toStation
+                ? Math.atan2(toStation.x - fromStation.x, toStation.y - fromStation.y)
+                : Number.NaN;
+            const sigmaDistDisplay =
+              row.sigmaDist != null ? row.sigmaDist * relationshipLinearDisplayScale : undefined;
+            const sigmaDist95 =
+              sigmaDistDisplay != null
+                ? (sigmaDistDisplay * unitScale * confidence95Scale).toFixed(4)
+                : '-';
+            const ppm95 =
+              sigmaDistDisplay != null && Number.isFinite(gridDistMeters)
+                ? (
+                    (sigmaDistDisplay * confidence95Scale * 1_000_000) /
+                    Math.max(1e-12, Math.abs(gridDistMeters))
+                  ).toFixed(4)
+                : '-';
+            lines.push(
+              `${row.from.padEnd(11)}${row.to.padEnd(12)}${formatQuadrantBearing(azRad).padStart(13)}${(Number.isFinite(gridDistMeters) ? (gridDistMeters * unitScale).toFixed(4) : '-').padStart(12)}${row.sigmaAz95.padStart(8)}${sigmaDist95.padStart(8)}${ppm95.padStart(10)}`,
+            );
+            lines.push(
+              `${''.padEnd(36)}${(Number.isFinite(groundDistMeters) ? (groundDistMeters * unitScale).toFixed(4) : '-').padStart(12)}`,
+            );
+          });
+        } else {
+          lines.push('From       To               Azimuth    Distance       95% RelConfidence');
+          lines.push('                                                    Azi    Dist       PPM');
+          relationshipRows.forEach((row) => {
+            lines.push(
+              `${row.from.padEnd(10)} ${row.to.padEnd(10)} ${row.azimuth.padStart(14)} ${row.distance.padStart(10)} ${row.sigmaAz95.padStart(7)} ${row.sigmaDist95.padStart(8)} ${row.ppm95.padStart(10)}`,
+            );
+          });
+        }
       }
     }
 
@@ -3114,26 +3426,43 @@ export const buildIndustryStyleListingText = (
       `${isPreanalysis ? 'Predicted Station Coordinate Standard Deviations' : 'Station Coordinate Standard Deviations'} (${linearUnit})`,
     );
     lines.push('');
-    const stdRows = stationEntriesForListing.map(([id]) => {
-      const precision = getStationPrecision(res, id, precisionReportingMode);
-      const row = [
-        id,
-        stationDescription(id) || '-',
-        ((precision.sigmaN ?? 0) * unitScale).toFixed(6),
-        ((precision.sigmaE ?? 0) * unitScale).toFixed(6),
-      ];
-      if (coordMode === '3D') {
-        row.push(((precision.sigmaH ?? 0) * unitScale).toFixed(6));
-      }
-      return row;
-    });
-    renderTextTable(
-      coordMode === '3D'
-        ? ['Station', 'Description', 'N', 'E', 'Elev']
-        : ['Station', 'Description', 'N', 'E'],
-      stdRows,
-      coordMode === '3D' ? [2, 3, 4] : [2, 3],
-    );
+    if (isGnssOnlyListing && !hasStationDescriptions) {
+      lines.push(
+        coordMode === '3D'
+          ? 'Station                     N             E             Elev'
+          : 'Station                     N             E',
+      );
+      stationEntriesForListing.forEach(([id]) => {
+        const precision = getStationPrecision(res, id, precisionReportingMode);
+        const base = `${id.padEnd(18)}${((precision.sigmaN ?? 0) * unitScale).toFixed(6).padStart(14)}${((precision.sigmaE ?? 0) * unitScale).toFixed(6).padStart(14)}`;
+        lines.push(
+          coordMode === '3D'
+            ? `${base}${((precision.sigmaH ?? 0) * unitScale).toFixed(6).padStart(14)}`
+            : base,
+        );
+      });
+    } else {
+      const stdRows = stationEntriesForListing.map(([id]) => {
+        const precision = getStationPrecision(res, id, precisionReportingMode);
+        const row = [
+          id,
+          stationDescription(id) || '-',
+          ((precision.sigmaN ?? 0) * unitScale).toFixed(6),
+          ((precision.sigmaE ?? 0) * unitScale).toFixed(6),
+        ];
+        if (coordMode === '3D') {
+          row.push(((precision.sigmaH ?? 0) * unitScale).toFixed(6));
+        }
+        return row;
+      });
+      renderTextTable(
+        coordMode === '3D'
+          ? ['Station', 'Description', 'N', 'E', 'Elev']
+          : ['Station', 'Description', 'N', 'E'],
+        stdRows,
+        coordMode === '3D' ? [2, 3, 4] : [2, 3],
+      );
+    }
 
     lines.push('');
     lines.push(

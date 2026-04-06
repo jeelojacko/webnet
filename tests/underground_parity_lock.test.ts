@@ -149,7 +149,11 @@ describe('underground parity lock', () => {
     const industryOutput = readFileSync(UNDERGROUND_INDUSTRY_OUTPUT_PATH, 'utf-8');
 
     const actualCoordinates = parseCoordinateRows(
-      extractSection(listing, 'Adjusted Coordinates (Meters)', 'Control Component Status'),
+      extractSection(
+        listing,
+        'Adjusted Coordinates (Meters)',
+        'Adjusted Observations and Residuals',
+      ),
     );
     const expectedCoordinates = parseCoordinateRows(
       extractSection(

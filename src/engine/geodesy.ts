@@ -133,6 +133,84 @@ export const transformEcefDeltaCovarianceToLocalEnu = (
   };
 };
 
+const normalizeGnssVectorFactor = (factor?: number): number =>
+  Number.isFinite(factor) && (factor as number) > 0 ? (factor as number) : 1;
+
+const applyGnssVectorFactorsToLocalCovariance = (
+  covariance: {
+    cEE: number;
+    cNN: number;
+    cUU: number;
+    cEN: number;
+    cEU: number;
+    cNU: number;
+  },
+  horizontalFactor?: number,
+  verticalFactor?: number,
+): {
+  cEE: number;
+  cNN: number;
+  cUU: number;
+  cEN: number;
+  cEU: number;
+  cNU: number;
+} => {
+  const h = normalizeGnssVectorFactor(horizontalFactor);
+  const v = normalizeGnssVectorFactor(verticalFactor);
+  const hh = h * h;
+  const vv = v * v;
+  const hv = h * v;
+  return {
+    cEE: covariance.cEE * hh,
+    cNN: covariance.cNN * hh,
+    cUU: covariance.cUU * vv,
+    cEN: covariance.cEN * hh,
+    cEU: covariance.cEU * hv,
+    cNU: covariance.cNU * hv,
+  };
+};
+
+export const transformFactoredEcefDeltaCovarianceToLocalEnu = (
+  covariance: {
+    cXX: number;
+    cYY: number;
+    cZZ: number;
+    cXY: number;
+    cXZ: number;
+    cYZ: number;
+  },
+  latDeg: number,
+  lonDeg: number,
+  horizontalFactor?: number,
+  verticalFactor?: number,
+): {
+  cEE: number;
+  cNN: number;
+  cUU: number;
+  cEN: number;
+  cEU: number;
+  cNU: number;
+} => {
+  const h = normalizeGnssVectorFactor(horizontalFactor);
+  const v = normalizeGnssVectorFactor(verticalFactor);
+  const hh = h * h;
+  const vv = v * v;
+  const hv = h * v;
+  const rawCovariance = {
+    cXX: covariance.cXX / hh,
+    cYY: covariance.cYY / hh,
+    cZZ: covariance.cZZ / vv,
+    cXY: covariance.cXY / hh,
+    cXZ: covariance.cXZ / hv,
+    cYZ: covariance.cYZ / hv,
+  };
+  return applyGnssVectorFactorsToLocalCovariance(
+    transformEcefDeltaCovarianceToLocalEnu(rawCovariance, latDeg, lonDeg),
+    h,
+    v,
+  );
+};
+
 const projectLocalEquirectangular = (
   latDeg: number,
   lonDeg: number,

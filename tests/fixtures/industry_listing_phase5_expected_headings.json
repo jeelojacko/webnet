@@ -1,6 +1,7 @@
 [
+  "Adjusted Station Information",
   "Adjusted Coordinates (Meters)",
-  "Control Component Status",
+  "Adjusted Observations and Residuals",
   "Adjusted Angle Observations (DMS)",
   "Adjusted Measured Distance Observations (Meters)",
   "Adjusted Measured Direction Observations (DMS)",

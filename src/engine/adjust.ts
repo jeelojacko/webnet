@@ -3,6 +3,7 @@ import { geoidGridMetadataSummary, interpolateGeoidUndulation, loadGeoidGridMode
 import {
   computeElevationFactor,
   computeGridFactors,
+  transformFactoredEcefDeltaCovarianceToLocalEnu,
   inverseENToGeodetic,
   projectGeodeticToEN,
 } from './geodesy';
@@ -1111,6 +1112,52 @@ export class LSAEngine {
     );
   }
 
+  private invertMatrix3(matrix: number[][]): number[][] | null {
+    const det =
+      matrix[0][0] * (matrix[1][1] * matrix[2][2] - matrix[1][2] * matrix[2][1]) -
+      matrix[0][1] * (matrix[1][0] * matrix[2][2] - matrix[1][2] * matrix[2][0]) +
+      matrix[0][2] * (matrix[1][0] * matrix[2][1] - matrix[1][1] * matrix[2][0]);
+    if (!Number.isFinite(det) || Math.abs(det) <= 1e-24) return null;
+    return [
+      [
+        (matrix[1][1] * matrix[2][2] - matrix[1][2] * matrix[2][1]) / det,
+        (matrix[0][2] * matrix[2][1] - matrix[0][1] * matrix[2][2]) / det,
+        (matrix[0][1] * matrix[1][2] - matrix[0][2] * matrix[1][1]) / det,
+      ],
+      [
+        (matrix[1][2] * matrix[2][0] - matrix[1][0] * matrix[2][2]) / det,
+        (matrix[0][0] * matrix[2][2] - matrix[0][2] * matrix[2][0]) / det,
+        (matrix[0][2] * matrix[1][0] - matrix[0][0] * matrix[1][2]) / det,
+      ],
+      [
+        (matrix[1][0] * matrix[2][1] - matrix[1][1] * matrix[2][0]) / det,
+        (matrix[0][1] * matrix[2][0] - matrix[0][0] * matrix[2][1]) / det,
+        (matrix[0][0] * matrix[1][1] - matrix[0][1] * matrix[1][0]) / det,
+      ],
+    ];
+  }
+
+  private gpsDisplayResidualTransform(
+    obs: GpsObservation,
+    _fromStation?: Station,
+  ): number[][] | null {
+    const frame: GnssVectorFrame =
+      obs.gnssVectorFrame ?? this.parseState?.gnssVectorFrameDefault ?? 'gridNEU';
+    const northSec = this.parseState?.verticalDeflectionNorthSec ?? 0;
+    const eastSec = this.parseState?.verticalDeflectionEastSec ?? 0;
+    const xi = (northSec / 3600) * DEG_TO_RAD;
+    const eta = (eastSec / 3600) * DEG_TO_RAD;
+    const needsDeflectionUndo = this.gpsUsesLocalSolveFrame(frame) && (Math.abs(xi) > 1e-16 || Math.abs(eta) > 1e-16);
+    const deflectionInverse = needsDeflectionUndo
+      ? this.invertMatrix3([
+          [1, 0, -eta],
+          [0, 1, -xi],
+          [eta, xi, 1],
+        ])
+      : null;
+    return this.gpsUsesLocalSolveFrame(frame) ? deflectionInverse : null;
+  }
+
   private transformGpsCovarianceToSolveFrame(obs: GpsObservation): GpsCovariance | null {
     const frame: GnssVectorFrame =
       obs.gnssVectorFrame ?? this.parseState?.gnssVectorFrameDefault ?? 'gridNEU';
@@ -1127,29 +1174,19 @@ export class LSAEngine {
     if (frame === 'ecefDelta') {
       const geo = this.stationGeodetic(obs.from) ?? this.stationGeodetic(obs.to);
       if (!geo) return null;
-      const lat = geo.latDeg * DEG_TO_RAD;
-      const lon = geo.lonDeg * DEG_TO_RAD;
-      const sinLat = Math.sin(lat);
-      const cosLat = Math.cos(lat);
-      const sinLon = Math.sin(lon);
-      const cosLon = Math.cos(lon);
-      const r = [
-        [-sinLon, cosLon, 0],
-        [-sinLat * cosLon, -sinLat * sinLon, cosLat],
-        [cosLat * cosLon, cosLat * sinLon, sinLat],
-      ];
-      const q = [
-        [cXX, cXY, cXZ],
-        [cXY, cYY, cYZ],
-        [cXZ, cYZ, cZZ],
-      ];
-      const transformed = this.transformSymmetricCovariance3(r, q);
-      cEE = transformed[0][0];
-      cEN = transformed[0][1];
-      cEU = transformed[0][2];
-      cNN = transformed[1][1];
-      cNU = transformed[1][2];
-      cUU = transformed[2][2];
+      const transformed = transformFactoredEcefDeltaCovarianceToLocalEnu(
+        obs.gpsCovariance3d,
+        geo.latDeg,
+        geo.lonDeg,
+        obs.gpsVectorHorizontalFactor,
+        obs.gpsVectorVerticalFactor,
+      );
+      cEE = transformed.cEE;
+      cEN = transformed.cEN;
+      cEU = transformed.cEU;
+      cNN = transformed.cNN;
+      cNU = transformed.cNU;
+      cUU = transformed.cUU;
     }
 
     const northSec = this.parseState?.verticalDeflectionNorthSec ?? 0;
@@ -5896,6 +5933,7 @@ export class LSAEngine {
                 mdb: number[];
                 pass: boolean[];
                 comps: ('E' | 'N' | 'U' | undefined)[];
+                rows: number[];
               }
             >();
             const s0 = this.seuw || 1;
@@ -5932,18 +5970,103 @@ export class LSAEngine {
                 mdb: [],
                 pass: [],
                 comps: [],
+                rows: [],
               };
               entry.t.push(t);
               entry.r.push(r);
               entry.mdb.push(mdb);
               entry.pass.push(pass);
               entry.comps.push(info.component);
+              entry.rows.push(i);
               rowStats.set(info.obs.id, entry);
             }
 
             activeObservations.forEach((obs) => {
               const entry = rowStats.get(obs.id);
               if (!entry) return;
+              if (obs.type === 'gps') {
+                const gpsObs = obs as GpsObservation;
+                const componentOrder = entry.comps.filter(
+                  (component): component is 'E' | 'N' | 'U' => component != null,
+                );
+                const componentIndex = new Map(componentOrder.map((component, index) => [component, index]));
+                const cov = this.gpsCovariance(gpsObs);
+                const solveQll = componentOrder.map((rowComponent) =>
+                  componentOrder.map((colComponent) => {
+                    if (rowComponent === 'E' && colComponent === 'E') return cov.cEE;
+                    if (rowComponent === 'N' && colComponent === 'N') return cov.cNN;
+                    if (rowComponent === 'U' && colComponent === 'U') return cov.cUU ?? cov.cNN;
+                    if (
+                      (rowComponent === 'E' && colComponent === 'N') ||
+                      (rowComponent === 'N' && colComponent === 'E')
+                    ) {
+                      return cov.cEN;
+                    }
+                    if (
+                      (rowComponent === 'E' && colComponent === 'U') ||
+                      (rowComponent === 'U' && colComponent === 'E')
+                    ) {
+                      return cov.cEU ?? 0;
+                    }
+                    return cov.cNU ?? 0;
+                  }),
+                );
+                const solveQvv = solveQll.map((solveRow, rowIndex) =>
+                  solveRow.map((qllValue, colIndex) => {
+                    let aqxxat = 0;
+                    for (let paramIndex = 0; paramIndex < numParams; paramIndex += 1) {
+                      aqxxat += B[entry.rows[rowIndex]][paramIndex] * A[entry.rows[colIndex]][paramIndex];
+                    }
+                    return Math.max(qllValue - aqxxat, 0);
+                  }),
+                );
+                const solveResidualVector = componentOrder.map((component) =>
+                  component === 'N'
+                    ? (gpsObs.residual?.vN ?? 0)
+                    : component === 'U'
+                      ? (gpsObs.residual?.vU ?? 0)
+                      : (gpsObs.residual?.vE ?? 0),
+                );
+                const displayTransform = this.gpsDisplayResidualTransform(
+                  gpsObs,
+                  this.stations[gpsObs.from],
+                );
+                const toDisplayVector = (values: number[]) => {
+                  if (!displayTransform || values.length !== 3) return values;
+                  return displayTransform.map(
+                    (transformRow) =>
+                      transformRow[0] * values[0] + transformRow[1] * values[1] + transformRow[2] * values[2],
+                  );
+                };
+                const toDisplayCovariance = (covariance: number[][]) => {
+                  if (!displayTransform || covariance.length !== 3) return covariance;
+                  return this.transformSymmetricCovariance3(displayTransform, covariance);
+                };
+                const displayResidualVector = toDisplayVector(solveResidualVector);
+                const displayQvv = toDisplayCovariance(solveQvv);
+                const residualStdErr = (component: 'E' | 'N' | 'U'): number | undefined => {
+                  const index = componentIndex.get(component);
+                  if (index == null) return undefined;
+                  return this.seuw * Math.sqrt(Math.max(displayQvv[index]?.[index] ?? 0, 0));
+                };
+                const componentStdRes = (component: 'E' | 'N' | 'U'): number | undefined => {
+                  const index = componentIndex.get(component);
+                  if (index == null) return undefined;
+                  const sigma = residualStdErr(component);
+                  if (!Number.isFinite(sigma) || (sigma ?? 0) <= 0) return undefined;
+                  return Math.abs(displayResidualVector[index] ?? 0) / (sigma as number);
+                };
+                gpsObs.componentResidualStdErr = {
+                  sE: residualStdErr('E'),
+                  sN: residualStdErr('N'),
+                  sU: residualStdErr('U'),
+                };
+                gpsObs.componentStdRes = {
+                  tE: componentStdRes('E'),
+                  tN: componentStdRes('N'),
+                  tU: componentStdRes('U'),
+                };
+              }
               if (entry.t.length === 2 && entry.comps.includes('E') && entry.comps.includes('N')) {
                 const idxE = entry.comps.indexOf('E');
                 const idxN = entry.comps.indexOf('N');
