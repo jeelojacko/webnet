@@ -209,7 +209,7 @@ describe('industry listing phase 5 formatting locks', () => {
   it('prints zero-size ellipse azimuths as 0-00', () => {
     const listing = buildIndustryReferenceListing();
 
-    expect(listing).toContain('1000       235            0.000000     0.000000       0-00');
+    expect(listing).toMatch(/1000\s+235\s+0\.000000\s+0\.000000\s+0-00/);
   });
 
   it('renders control-component traceability for fixed, free, and weighted control rows', () => {

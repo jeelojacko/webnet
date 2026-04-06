@@ -635,6 +635,61 @@ describe('industry multi-case parity foundation', () => {
     120000,
   );
 
+  it('keeps the fixed GNSS control station visible as a zero ellipse row in the precision section', () => {
+    const startup = INDUSTRY_PARITY_CASES.gnss.startupDefaults;
+    expect(startup).toBeDefined();
+
+    const result = buildCaseResult('gnss');
+    expect(result.success).toBe(true);
+
+    const listing = buildIndustryStyleListingText(
+      result,
+      {
+        maxIterations: 10,
+        convergenceLimit: startup?.settingsPatch.convergenceLimit,
+        precisionReportingMode: 'industry-standard',
+        units: 'm',
+        listingShowCoordinates: true,
+        listingShowObservationsResiduals: true,
+        listingShowErrorPropagation: true,
+        listingShowProcessingNotes: true,
+        listingShowAzimuthsBearings: true,
+        listingShowLostStations: true,
+        listingSortCoordinatesBy: 'input',
+        listingSortObservationsBy: 'residual',
+        listingObservationLimit: 9999,
+      },
+      {
+        coordMode: startup?.parseSettingsPatch.coordMode ?? '3D',
+        order: startup?.parseSettingsPatch.order ?? 'EN',
+        angleUnits: startup?.parseSettingsPatch.angleUnits ?? 'dms',
+        angleStationOrder: startup?.parseSettingsPatch.angleStationOrder ?? 'atfromto',
+        deltaMode: startup?.parseSettingsPatch.deltaMode ?? 'slope',
+        refractionCoefficient: startup?.parseSettingsPatch.refractionCoefficient ?? 0.13,
+      },
+      {
+        solveProfile: 'industry-parity',
+        angleCenteringModel: 'geometry-aware-correlated-rays',
+        defaultSigmaCount: 0,
+        defaultSigmaByType: '',
+        stochasticDefaultsSummary: '',
+        rotationAngleRad: 0,
+        currentInstrumentCode: startup?.selectedInstrument,
+        currentInstrumentDesc: startup?.projectInstruments[startup?.selectedInstrument ?? '']?.desc,
+        projectInstrumentLibrary: startup?.projectInstruments,
+      },
+    );
+
+    const stationEllipseSection = extractSection(
+      listing,
+      'Station Coordinate Error Ellipses (Meters)',
+      'Relative Error Ellipses (Meters)',
+    );
+    expect(stationEllipseSection).toContain(
+      'FRDN                      0.000000      0.000000       0-00       0.000000',
+    );
+  });
+
   it(
     'matches the traverse startup statistical summary within the current parity tolerances',
     () => {
@@ -1041,10 +1096,10 @@ describe('industry multi-case parity foundation', () => {
         'Stations                Semi-Major    Semi-Minor   Azimuth of     Vertical',
       );
       expect(listing).toContain(
-        '100        124            0.002535     0.002199      38-02     0.001534',
+        '100        124            0.002535      0.002199      38-02       0.001534',
       );
       expect(listing).toContain(
-        '116        GPS3           0.002917     0.002829      99-44     0.001526',
+        '116        GPS3           0.002917      0.002829      99-44       0.001526',
       );
 
       const adjustedDirectionSection = extractSection(

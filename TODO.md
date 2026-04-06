@@ -161,6 +161,8 @@
     - [ ] Batch 9 - GNSS-only parity startup rotation
       - [ ] Current scope: keep closing the GNSS-only parity gap now that the missing vertical-deflection setting, covariance-vector dialect (`.GPS WEIGHT COVARIANCE`, `.GPS FACTOR`, `G0/G1/G2/G3`), and local-topocentric covariance-vector solve path are in place, while preserving the retained leveling and traverse locks; retire the old `CA_NAD83_NB83_STEREO_DOUBLE` catalog CRS now that both the GNSS and traverse parity paths can run on the CSRS double-stereographic contract while keeping the legacy display-only calibration isolated
       - [ ] Trace the remaining GNSS adjusted-vector/listing drift, with the current focus on the adjusted vector display frame (`Delta-N/E/U`) and the covariance-derived vertical/component `StdErr` rows rather than on coordinate/geodetic startup defaults
+      - [ ] Investigate whether the remaining GNSS station/relative precision drift comes from noisy finite-difference modeled-vector derivatives in the covariance propagation path rather than from listing-only formatting
+      - [x] Keep the fixed GNSS control station visible as an explicit zero ellipse row and align GNSS station/relative ellipse field widths with the stored industry precision-section formatting
       - [x] Make the GNSS-only case the active startup default, loading the committed GNSS input fixture into the editor and matching the supported grid/project defaults from the reference output
       - [x] Update the active-startup regression contract so the app now expects the GNSS case, while retaining dedicated leveling and traverse parity fixtures and tests for their own workflows
       - [x] Add parser/state support for GNSS vertical deflection and carry it through project-option/listing output

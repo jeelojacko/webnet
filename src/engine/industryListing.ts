@@ -3142,16 +3142,24 @@ export const buildIndustryStyleListingText = (
     const stationEllipseRows = stationEntriesForListing
       .map(([id]) => {
         const precision = getStationPrecision(res, id, precisionReportingMode);
-        if (!precision.ellipse) return null;
+        const station = res.stations[id];
+        const hasZeroPrecisionRow =
+          station?.fixed &&
+          (precision.sigmaN == null || Math.abs(precision.sigmaN) <= 1e-15) &&
+          (precision.sigmaE == null || Math.abs(precision.sigmaE) <= 1e-15) &&
+          (coordMode !== '3D' || precision.sigmaH == null || Math.abs(precision.sigmaH) <= 1e-15);
+        if (!precision.ellipse && !hasZeroPrecisionRow) return null;
         const row = [
           id,
-          ((precision.ellipse.semiMajor ?? 0) * confidence95Scale * unitScale).toFixed(6),
-          ((precision.ellipse.semiMinor ?? 0) * confidence95Scale * unitScale).toFixed(6),
-          formatEllipseAzDm(
-            precision.ellipse.theta,
-            precision.ellipse.semiMajor,
-            precision.ellipse.semiMinor,
-          ),
+          ((precision.ellipse?.semiMajor ?? 0) * confidence95Scale * unitScale).toFixed(6),
+          ((precision.ellipse?.semiMinor ?? 0) * confidence95Scale * unitScale).toFixed(6),
+          hasZeroPrecisionRow
+            ? '0-00'
+            : formatEllipseAzDm(
+                precision.ellipse?.theta,
+                precision.ellipse?.semiMajor,
+                precision.ellipse?.semiMinor,
+              ),
         ];
         if (coordMode === '3D') {
           row.push(((precision.sigmaH ?? 0) * ONE_DIMENSIONAL_CONFIDENCE_95_SCALE * unitScale).toFixed(6));
@@ -3171,8 +3179,8 @@ export const buildIndustryStyleListingText = (
           : '                            Axis          Axis     Major Axis',
       );
       stationEllipseRows.forEach((row) => {
-        const base = `${row[0].padEnd(22)} ${row[1].padStart(12)} ${row[2].padStart(12)} ${row[3].padStart(10)}`;
-        lines.push(coordMode === '3D' ? `${base} ${row[4].padStart(12)}` : base);
+        const base = `${row[0].padEnd(20)} ${row[1].padStart(13)} ${row[2].padStart(13)} ${row[3].padStart(10)}`;
+        lines.push(coordMode === '3D' ? `${base} ${row[4].padStart(14)}` : base);
       });
     } else {
       lines.push('(none)');
@@ -3227,9 +3235,9 @@ export const buildIndustryStyleListingText = (
           : 'From       To               Axis          Axis     Major Axis',
       );
       relativeEllipseRows.forEach((row) => {
-        const base = `${row[0].padEnd(10)} ${row[1].padEnd(10)} ${row[2].padStart(12)} ${row[3].padStart(12)} ${row[4].padStart(10)}`;
+        const base = `${row[0].padEnd(10)} ${row[1].padEnd(9)} ${row[2].padStart(13)} ${row[3].padStart(13)} ${row[4].padStart(10)}`;
         lines.push(
-          includeRelativeVertical ? `${base} ${row[5].padStart(12)}` : base,
+          includeRelativeVertical ? `${base} ${row[5].padStart(14)}` : base,
         );
       });
     } else {
