@@ -5123,10 +5123,14 @@ export class LSAEngine {
       weightedByGroup.set(label, init);
       return init;
     };
+    const observationEquationCount = (obs: Observation): number => {
+      if (obs.type !== 'gps') return 1;
+      return this.gpsComponentCount(obs);
+    };
     const addObservationContribution = (obs: Observation, contribution: number) => {
       const label = summarizeGroup(obs);
       const row = ensureGroup(label);
-      row.count += 1;
+      row.count += observationEquationCount(obs);
       row.sumSquares += contribution;
     };
     const addGroupContribution = (label: string, contribution: number) => {

@@ -649,7 +649,9 @@ export const buildIndustryStyleListingText = (
       : stationEntriesInputOrder;
   let fixedStations = stationEntriesInputOrder.filter(([, st]) => st.fixed).length;
   let freeStations = stationEntriesInputOrder.length - fixedStations;
-  const observationCount = res.observations.length;
+  const statisticalSummary = buildResultStatisticalSummaryModel(res, 'listing');
+  const observationCount =
+    statisticalSummary.totalCount > 0 ? statisticalSummary.totalCount : res.observations.length;
   const unknownCount = Math.max(0, observationCount - res.dof);
   const parseState = res.parseState;
   const autoSideshotEnabled = parseState?.autoSideshotEnabled ?? true;
@@ -1853,12 +1855,12 @@ export const buildIndustryStyleListingText = (
   lines.push('');
   lines.push('Observation Statistics');
 
-  const statisticalSummary = buildResultStatisticalSummaryModel(res, 'listing');
   const statRows = statisticalSummary.rows;
   const totalCount = statisticalSummary.totalCount;
   const totalSumSquares = statisticalSummary.totalSumSquares;
+  const displayStatLabel = (label: string) => (label === 'GPS' ? 'GPS Deltas' : label);
   const statTableRows = statRows.map((row) => [
-    row.label,
+    displayStatLabel(row.label),
     row.count.toString(),
     row.sumSquares.toFixed(3),
     row.errorFactor.toFixed(3),

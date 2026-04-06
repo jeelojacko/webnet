@@ -105,6 +105,29 @@ const parseRelationshipRow = (
   };
 };
 
+const parseObservationStatisticRow = (
+  section: string,
+  label: string,
+): {
+  count: number;
+  sumSquares: number;
+  errorFactor: number;
+} => {
+  const row = normalizeLineEndings(section)
+    .split('\n')
+    .find((line) => line.trimStart().startsWith(label));
+  expect(row, `missing observation statistics row for ${label}`).toBeDefined();
+  const trimmed = (row ?? '').trim();
+  const suffix = trimmed.slice(label.length).trim();
+  const parts = suffix.split(/\s+/);
+  expect(parts.length).toBeGreaterThanOrEqual(3);
+  return {
+    count: Number.parseInt(parts[0], 10),
+    sumSquares: Number.parseFloat(parts[1]),
+    errorFactor: Number.parseFloat(parts[2]),
+  };
+};
+
 const parseRawDistanceRows = (
   section: string,
 ): Array<{
@@ -545,6 +568,79 @@ describe('industry multi-case parity foundation', () => {
     },
     120000,
   );
+
+  it('keeps the GNSS adjustment statistical summary aligned with the industry equation-count contract', () => {
+    const startup = INDUSTRY_PARITY_CASES.gnss.startupDefaults;
+    expect(startup).toBeDefined();
+
+    const result = buildCaseResult('gnss');
+    expect(result.success).toBe(true);
+    expect(result.statisticalSummary?.totalCount).toBe(45);
+
+    const gpsSummary = result.statisticalSummary?.byGroup.find((row) => row.label === 'GPS');
+    expect(gpsSummary?.count).toBe(45);
+    expect(gpsSummary?.sumSquares ?? Number.NaN).toBeGreaterThan(40);
+    expect(gpsSummary?.errorFactor ?? Number.NaN).toBeGreaterThan(1);
+
+    const listing = buildIndustryStyleListingText(
+      result,
+      {
+        maxIterations: 10,
+        convergenceLimit: startup?.settingsPatch.convergenceLimit,
+        precisionReportingMode: 'industry-standard',
+        units: 'm',
+        listingShowCoordinates: true,
+        listingShowObservationsResiduals: true,
+        listingShowErrorPropagation: true,
+        listingShowProcessingNotes: true,
+        listingShowAzimuthsBearings: true,
+        listingShowLostStations: true,
+        listingSortCoordinatesBy: 'input',
+        listingSortObservationsBy: 'residual',
+        listingObservationLimit: 9999,
+      },
+      {
+        coordMode: startup?.parseSettingsPatch.coordMode ?? '3D',
+        order: startup?.parseSettingsPatch.order ?? 'EN',
+        angleUnits: startup?.parseSettingsPatch.angleUnits ?? 'dms',
+        angleStationOrder: startup?.parseSettingsPatch.angleStationOrder ?? 'atfromto',
+        deltaMode: startup?.parseSettingsPatch.deltaMode ?? 'slope',
+        refractionCoefficient: startup?.parseSettingsPatch.refractionCoefficient ?? 0.13,
+      },
+      {
+        solveProfile: 'industry-parity',
+        angleCenteringModel: 'geometry-aware-correlated-rays',
+        defaultSigmaCount: 0,
+        defaultSigmaByType: '',
+        stochasticDefaultsSummary: '',
+        rotationAngleRad: 0,
+        currentInstrumentCode: startup?.selectedInstrument,
+        currentInstrumentDesc: startup?.projectInstruments[startup?.selectedInstrument ?? '']?.desc,
+        projectInstrumentLibrary: startup?.projectInstruments,
+      },
+    );
+
+    expect(listing).toContain('Number of Observations                : 45');
+    expect(listing).toContain('Number of Unknowns                    : 18');
+    expect(listing).toContain('Number of Redundant Obs               : 27');
+
+    const currentStats = extractSection(
+      listing,
+      'Adjustment Statistical Summary',
+      'The Chi-Square Test at 5.00% Level',
+    );
+    const expectedStats = extractSection(
+      readFileSync(INDUSTRY_PARITY_CASES.gnss.fixtureOutputPath, 'utf-8'),
+      'Adjustment Statistical Summary',
+      'The Chi-Square Test at 5.00% Level',
+    );
+    const currentGpsRow = parseObservationStatisticRow(currentStats, 'GPS Deltas');
+    const expectedGpsRow = parseObservationStatisticRow(expectedStats, 'GPS Deltas');
+
+    expect(currentGpsRow.count).toBe(expectedGpsRow.count);
+    expect(currentGpsRow.sumSquares).toBeGreaterThan(40);
+    expect(currentGpsRow.errorFactor).toBeGreaterThan(1);
+  });
 
   it(
     'keeps the GNSS adjusted vector rows on the local-topocentric display frame used by the stored reference',

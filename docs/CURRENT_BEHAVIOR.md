@@ -190,6 +190,7 @@ Current GNSS behavior includes:
 - the GNSS parity fixture now uses the CSRS New Brunswick double-stereographic contract beneath the industry `NewBrunswick83` label, which closes the earlier decimeter-scale adjusted-coordinate/geodetic drift
 - covariance-vector GNSS adjusted listing rows now display their adjusted `Delta-N/E/U` values in the non-deflected local-topocentric frame used by the stored industry reference, while ECEF covariance display sigmas/correlations are transformed into that same local frame before printing component `StdErr` rows
 - GNSS precision sections keep fixed control stations visible as explicit zero ellipse rows, and the station/relative ellipse blocks now use the same fixed-width field layout as the stored industry output
+- GNSS adjustment statistical summaries/listings now count covariance-vector observations by scalar equations (`GPS Deltas`) for observation/unknown totals, matching the industry `45`-equation contract for the parity fixture even though the solve still stores `15` GNSS vector records internally
 
 ## Import and interoperability behavior
 Current import behavior includes:

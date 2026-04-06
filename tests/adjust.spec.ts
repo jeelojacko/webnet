@@ -748,6 +748,12 @@ describe('LSAEngine', () => {
     expect(Math.abs((result.stations.GPS1?.x ?? 0) - 2488810.2370)).toBeLessThan(0.005);
     expect(Math.abs((result.stations.GPS2?.y ?? 0) - 7438481.0552)).toBeLessThan(0.005);
     expect(Math.abs((result.stations.GPS2?.x ?? 0) - 2489236.2880)).toBeLessThan(0.005);
+    expect(result.statisticalSummary?.totalCount).toBe(45);
+
+    const gpsSummary = result.statisticalSummary?.byGroup.find((row) => row.label === 'GPS');
+    expect(gpsSummary?.count).toBe(45);
+    expect(gpsSummary?.sumSquares ?? Number.NaN).toBeGreaterThan(40);
+    expect(gpsSummary?.errorFactor ?? Number.NaN).toBeGreaterThan(1);
 
     const firstVector = result.observations.find(
       (obs) => obs.type === 'gps' && obs.from === 'FRDN' && obs.to === 'GPS4',
