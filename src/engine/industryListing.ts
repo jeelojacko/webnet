@@ -5,6 +5,8 @@ import {
 } from './defaults';
 import {
   computeClassicTraverseLegacyDisplayGridFactors,
+  ecefDeltaToLocalEnu,
+  transformEcefDeltaCovarianceToLocalEnu,
 } from './geodesy';
 import { getLevelLoopTolerancePresetLabel } from './levelLoopTolerance';
 import {
@@ -1472,17 +1474,133 @@ export const buildIndustryStyleListingText = (
   );
   const hasTraverseStyleAngularFamilies = measuredDirectionCount > 0 || bearingCount > 0;
   const angleUnitToken = (parseState?.angleUnits ?? parseSettings.angleUnits).toUpperCase();
+  const stationEllipsoidHeightForGnssDisplay = (station: Station): number =>
+    Number.isFinite(station.ellipsoidHeightUsed ?? Number.NaN)
+      ? (station.ellipsoidHeightUsed as number)
+      : station.h;
+  const geodeticToEcefForGnssDisplay = (
+    latDeg: number,
+    lonDeg: number,
+    heightM: number,
+  ): { x: number; y: number; z: number } => {
+    const lat = (latDeg * Math.PI) / 180;
+    const lon = (lonDeg * Math.PI) / 180;
+    const sinLat = Math.sin(lat);
+    const cosLat = Math.cos(lat);
+    const sinLon = Math.sin(lon);
+    const cosLon = Math.cos(lon);
+    const a = 6378137;
+    const f = 1 / 298.257223563;
+    const e2 = f * (2 - f);
+    const n = a / Math.sqrt(1 - e2 * sinLat * sinLat);
+    return {
+      x: (n + heightM) * cosLat * cosLon,
+      y: (n + heightM) * cosLat * sinLon,
+      z: (n * (1 - e2) + heightM) * sinLat,
+    };
+  };
+  const gpsDisplayVector = (
+    obs: GpsObservation,
+  ):
+    | {
+        calc: { dE: number; dN: number; dU?: number };
+        residual: { vE: number; vN: number; vU?: number };
+      }
+    | undefined => {
+    if (obs.gpsOffsetDistanceM != null || obs.gpsAntennaHiM != null || obs.gpsAntennaHtM != null) {
+      return undefined;
+    }
+    const frame: GnssVectorFrame = obs.gnssVectorFrame ?? gnssVectorFrameDefault;
+    if (frame !== 'ecefDelta' && frame !== 'enuLocal' && frame !== 'llhBaseline') {
+      return undefined;
+    }
+    const fromStation = res.stations[obs.from];
+    const toStation = res.stations[obs.to];
+    if (
+      !fromStation ||
+      !toStation ||
+      !Number.isFinite(fromStation.latDeg ?? Number.NaN) ||
+      !Number.isFinite(fromStation.lonDeg ?? Number.NaN) ||
+      !Number.isFinite(toStation.latDeg ?? Number.NaN) ||
+      !Number.isFinite(toStation.lonDeg ?? Number.NaN)
+    ) {
+      return undefined;
+    }
+    const observed =
+      frame === 'ecefDelta'
+        ? ecefDeltaToLocalEnu(
+            obs.obs.dE,
+            obs.obs.dN,
+            obs.obs.dU ?? 0,
+            fromStation.latDeg as number,
+            fromStation.lonDeg as number,
+          )
+        : {
+            east: obs.obs.dE,
+            north: obs.obs.dN,
+            up: obs.obs.dU ?? 0,
+          };
+    const fromEcef = geodeticToEcefForGnssDisplay(
+      fromStation.latDeg as number,
+      fromStation.lonDeg as number,
+      stationEllipsoidHeightForGnssDisplay(fromStation),
+    );
+    const toEcef = geodeticToEcefForGnssDisplay(
+      toStation.latDeg as number,
+      toStation.lonDeg as number,
+      stationEllipsoidHeightForGnssDisplay(toStation),
+    );
+    const adjusted = ecefDeltaToLocalEnu(
+      toEcef.x - fromEcef.x,
+      toEcef.y - fromEcef.y,
+      toEcef.z - fromEcef.z,
+      fromStation.latDeg as number,
+      fromStation.lonDeg as number,
+    );
+    const includeVertical = Number.isFinite(obs.obs.dU ?? Number.NaN);
+    return {
+      calc: {
+        dE: adjusted.east,
+        dN: adjusted.north,
+        dU: includeVertical ? adjusted.up : undefined,
+      },
+      residual: {
+        vE: observed.east - adjusted.east,
+        vN: observed.north - adjusted.north,
+        vU: includeVertical ? observed.up - adjusted.up : undefined,
+      },
+    };
+  };
   const gpsCovarianceDisplay = (obs: GpsObservation) => {
     if (obs.gpsCovariance3d) {
-      const sigmaX = Math.sqrt(Math.max(obs.gpsCovariance3d.cXX, 0));
-      const sigmaY = Math.sqrt(Math.max(obs.gpsCovariance3d.cYY, 0));
-      const sigmaZ = Math.sqrt(Math.max(obs.gpsCovariance3d.cZZ, 0));
+      const frame: GnssVectorFrame = obs.gnssVectorFrame ?? gnssVectorFrameDefault;
+      const fromStation = res.stations[obs.from];
+      const transformed =
+        frame === 'ecefDelta' &&
+        fromStation &&
+        Number.isFinite(fromStation.latDeg ?? Number.NaN) &&
+        Number.isFinite(fromStation.lonDeg ?? Number.NaN)
+          ? transformEcefDeltaCovarianceToLocalEnu(
+              obs.gpsCovariance3d,
+              fromStation.latDeg as number,
+              fromStation.lonDeg as number,
+            )
+          : null;
+      const sigmaX = Math.sqrt(Math.max(transformed?.cEE ?? obs.gpsCovariance3d.cXX, 0));
+      const sigmaY = Math.sqrt(Math.max(transformed?.cNN ?? obs.gpsCovariance3d.cYY, 0));
+      const sigmaZ = Math.sqrt(Math.max(transformed?.cUU ?? obs.gpsCovariance3d.cZZ, 0));
       const corrXY =
-        sigmaX > 0 && sigmaY > 0 ? obs.gpsCovariance3d.cXY / (sigmaX * sigmaY) : 0;
+        sigmaX > 0 && sigmaY > 0
+          ? (transformed?.cEN ?? obs.gpsCovariance3d.cXY) / (sigmaX * sigmaY)
+          : 0;
       const corrXZ =
-        sigmaX > 0 && sigmaZ > 0 ? obs.gpsCovariance3d.cXZ / (sigmaX * sigmaZ) : 0;
+        sigmaX > 0 && sigmaZ > 0
+          ? (transformed?.cEU ?? obs.gpsCovariance3d.cXZ) / (sigmaX * sigmaZ)
+          : 0;
       const corrYZ =
-        sigmaY > 0 && sigmaZ > 0 ? obs.gpsCovariance3d.cYZ / (sigmaY * sigmaZ) : 0;
+        sigmaY > 0 && sigmaZ > 0
+          ? (transformed?.cNU ?? obs.gpsCovariance3d.cYZ) / (sigmaY * sigmaZ)
+          : 0;
       return { sigmaX, sigmaY, sigmaZ, corrXY, corrXZ, corrYZ };
     }
     const sigmaX = Math.max(obs.stdDevE ?? obs.stdDev ?? 0, 0);
@@ -2700,8 +2818,13 @@ export const buildIndustryStyleListingText = (
           .filter((obs) => listingObservations.some((candidate) => candidate.id === obs.id))
           .sort(compareObsByInput)
           .forEach((obs) => {
-            const residual = obs.residual as { vE?: number; vN?: number; vU?: number } | undefined;
-            const calc = obs.calc as { dE?: number; dN?: number; dU?: number } | undefined;
+            const displayVector = gpsDisplayVector(obs);
+            const residual =
+              displayVector?.residual ??
+              ((obs.residual as { vE?: number; vN?: number; vU?: number } | undefined) ?? undefined);
+            const calc =
+              displayVector?.calc ??
+              ((obs.calc as { dE?: number; dN?: number; dU?: number } | undefined) ?? undefined);
             const sigmaN =
               Number.isFinite(obs.weightingStdDevN ?? Number.NaN) &&
               Number.isFinite((obs.residual as { vN?: number } | undefined)?.vN ?? Number.NaN)

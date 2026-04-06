@@ -160,6 +160,7 @@
       - [x] Keep parity-profile initial geometry frozen only for angular sigma behavior; distance/zenith/live slope modeling in the shared run-session path must continue using current geometry so the browser traverse startup still converges
     - [ ] Batch 9 - GNSS-only parity startup rotation
       - [ ] Current scope: keep closing the GNSS-only parity gap now that the missing vertical-deflection setting, covariance-vector dialect (`.GPS WEIGHT COVARIANCE`, `.GPS FACTOR`, `G0/G1/G2/G3`), and local-topocentric covariance-vector solve path are in place, while preserving the retained leveling and traverse locks; retire the old `CA_NAD83_NB83_STEREO_DOUBLE` catalog CRS now that both the GNSS and traverse parity paths can run on the CSRS double-stereographic contract while keeping the legacy display-only calibration isolated
+      - [ ] Trace the remaining GNSS adjusted-vector/listing drift, with the current focus on the adjusted vector display frame (`Delta-N/E/U`) and the covariance-derived vertical/component `StdErr` rows rather than on coordinate/geodetic startup defaults
       - [x] Make the GNSS-only case the active startup default, loading the committed GNSS input fixture into the editor and matching the supported grid/project defaults from the reference output
       - [x] Update the active-startup regression contract so the app now expects the GNSS case, while retaining dedicated leveling and traverse parity fixtures and tests for their own workflows
       - [x] Add parser/state support for GNSS vertical deflection and carry it through project-option/listing output
@@ -168,6 +169,7 @@
       - [x] Tighten the remaining GNSS coordinate/geodetic drift by switching the GNSS parity startup and listing contract to the CSRS New Brunswick double-stereographic definition that matches the stored industry coordinates while preserving the printed `NewBrunswick83` label
       - [x] Remove the obsolete `CA_NAD83_NB83_STEREO_DOUBLE` catalog CRS and move retained parity startup/test contracts onto `CA_NAD83_CSRS_NB_STEREO_DOUBLE`, leaving only the display-only legacy NB formula helper for classic traverse listing calibration
       - [x] Remove the residual classic traverse adjusted-coordinate/geodetic/relationship display rescaling path so those rows stay on the solved CSRS coordinates, while keeping the separate convergence-factor table on the isolated legacy display helper
+      - [x] Move covariance-vector GNSS adjusted listing rows onto the same non-deflected local-topocentric display frame used by the stored industry reference, and transform ECEF covariance display sigmas/correlations into that local frame for the adjusted vector section
       - [ ] Close the remaining fixed-bearing orientation parity gap for a network constrained by one fixed point plus one fixed bearing
       - [ ] Match direction-set, distance, zenith, target-height, and set-scoped weighting behavior used by the traverse reference case
       - [x] Lock slot-preserving `DM` sigma parsing so `& & 30` keeps default direction and distance weighting while applying an explicit 30" zenith sigma

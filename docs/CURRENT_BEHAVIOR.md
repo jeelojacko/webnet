@@ -188,6 +188,7 @@ Current GNSS behavior includes:
 - covariance-vector GNSS observations can be transformed from ECEF delta into local topocentric `Delta-N/E/U` for solve/listing output, with covariance carried through the same frame path
 - industry-style listings now surface GNSS vertical deflection plus unadjusted and adjusted GNSS vector sections for covariance-vector jobs
 - the GNSS parity fixture now uses the CSRS New Brunswick double-stereographic contract beneath the industry `NewBrunswick83` label, which closes the earlier decimeter-scale adjusted-coordinate/geodetic drift
+- covariance-vector GNSS adjusted listing rows now display their adjusted `Delta-N/E/U` values in the non-deflected local-topocentric frame used by the stored industry reference, while ECEF covariance display sigmas/correlations are transformed into that same local frame before printing component `StdErr` rows
 
 ## Import and interoperability behavior
 Current import behavior includes:

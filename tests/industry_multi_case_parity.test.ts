@@ -261,6 +261,91 @@ const extractCoordinateRows = (
   return rows;
 };
 
+const extractAdjustedGpsVectorRows = (
+  text: string,
+  startMarker: string,
+  endMarker: string,
+): Map<
+  string,
+  {
+    from: string;
+    to: string;
+    dN?: { value: number; residual: number; stdErr: number };
+    dE?: { value: number; residual: number; stdErr: number };
+    dU?: { value: number; residual: number; stdErr: number };
+    length?: number;
+  }
+> => {
+  const section = extractSection(text, startMarker, endMarker);
+  const rows = new Map<
+    string,
+    {
+      from: string;
+      to: string;
+      dN?: { value: number; residual: number; stdErr: number };
+      dE?: { value: number; residual: number; stdErr: number };
+      dU?: { value: number; residual: number; stdErr: number };
+      length?: number;
+    }
+  >();
+  let currentLabel: string | null = null;
+  normalizeLineEndings(section)
+    .split('\n')
+    .forEach((line) => {
+      const trimmed = line.trim();
+      if (!trimmed) return;
+      if (trimmed.startsWith('(') && trimmed.endsWith(')')) {
+        currentLabel = trimmed.slice(1, -1);
+        rows.set(currentLabel, { from: '', to: '' });
+        return;
+      }
+      if (
+        !currentLabel ||
+        trimmed.startsWith('Adjusted GPS Vector Observations') ||
+        trimmed.startsWith('From') ||
+        trimmed === 'To' ||
+        trimmed.startsWith('====')
+      ) {
+        return;
+      }
+      const parts = trimmed.split(/\s+/);
+      const entry = rows.get(currentLabel);
+      if (!entry) return;
+      const residualIndex = parts.length >= 5 ? parts.length - 3 : -1;
+      const hasResidualTriple = residualIndex >= 2 && Number.isFinite(Number.parseFloat(parts[residualIndex]));
+      if (trimmed.startsWith('Length')) {
+        entry.length = Number.parseFloat(parts[1]);
+        return;
+      }
+      if (parts[1] === 'Delta-N' && hasResidualTriple) {
+        entry.from = parts[0];
+        entry.dN = {
+          value: Number.parseFloat(parts[2]),
+          residual: Number.parseFloat(parts[3]),
+          stdErr: Number.parseFloat(parts[4]),
+        };
+        return;
+      }
+      if (parts[1] === 'Delta-E' && hasResidualTriple) {
+        entry.to = parts[0];
+        entry.dE = {
+          value: Number.parseFloat(parts[2]),
+          residual: Number.parseFloat(parts[3]),
+          stdErr: Number.parseFloat(parts[4]),
+        };
+        return;
+      }
+      if (parts[0] === 'Delta-U' && hasResidualTriple) {
+        entry.dU = {
+          value: Number.parseFloat(parts[1]),
+          residual: Number.parseFloat(parts[2]),
+          stdErr: Number.parseFloat(parts[3]),
+        };
+      }
+    });
+  return rows;
+};
+
 const buildCaseResult = (caseId: keyof typeof INDUSTRY_PARITY_CASES) => {
   const startup = INDUSTRY_PARITY_CASES[caseId].startupDefaults;
   expect(startup).toBeDefined();
@@ -457,6 +542,95 @@ describe('industry multi-case parity foundation', () => {
       );
       expect(listing).toContain('GPS1     045-56-45.725038  066-38-39.557738');
       expect(listing).not.toContain('GPS1     045-56-45.725038  -066-38-39.557738');
+    },
+    120000,
+  );
+
+  it(
+    'keeps the GNSS adjusted vector rows on the local-topocentric display frame used by the stored reference',
+    () => {
+      const startup = INDUSTRY_PARITY_CASES.gnss.startupDefaults;
+      expect(startup).toBeDefined();
+
+      const result = buildCaseResult('gnss');
+      expect(result.success).toBe(true);
+
+      const listing = buildIndustryStyleListingText(
+        result,
+        {
+          maxIterations: 10,
+          convergenceLimit: startup?.settingsPatch.convergenceLimit,
+          precisionReportingMode: 'industry-standard',
+          units: 'm',
+          listingShowCoordinates: true,
+          listingShowObservationsResiduals: true,
+          listingShowErrorPropagation: true,
+          listingShowProcessingNotes: true,
+          listingShowAzimuthsBearings: true,
+          listingShowLostStations: true,
+          listingSortCoordinatesBy: 'input',
+          listingSortObservationsBy: 'residual',
+          listingObservationLimit: 9999,
+        },
+        {
+          coordMode: startup?.parseSettingsPatch.coordMode ?? '3D',
+          order: startup?.parseSettingsPatch.order ?? 'EN',
+          angleUnits: startup?.parseSettingsPatch.angleUnits ?? 'dms',
+          angleStationOrder: startup?.parseSettingsPatch.angleStationOrder ?? 'atfromto',
+          deltaMode: startup?.parseSettingsPatch.deltaMode ?? 'slope',
+          refractionCoefficient: startup?.parseSettingsPatch.refractionCoefficient ?? 0.13,
+        },
+        {
+          solveProfile: 'industry-parity',
+          angleCenteringModel: 'geometry-aware-correlated-rays',
+          defaultSigmaCount: 0,
+          defaultSigmaByType: '',
+          stochasticDefaultsSummary: '',
+          rotationAngleRad: 0,
+          currentInstrumentCode: startup?.selectedInstrument,
+          currentInstrumentDesc: startup?.projectInstruments[startup?.selectedInstrument ?? '']?.desc,
+          projectInstrumentLibrary: startup?.projectInstruments,
+        },
+      );
+
+      const currentRows = extractAdjustedGpsVectorRows(
+        listing,
+        'Adjusted GPS Vector Observations (Meters)',
+        'Adjusted Azimuths (DMS) and Horizontal Distances (Meters)',
+      );
+      const expectedRows = extractAdjustedGpsVectorRows(
+        readFileSync(INDUSTRY_PARITY_CASES.gnss.fixtureOutputPath, 'utf-8'),
+        'Adjusted GPS Vector Observations (Meters)',
+        'Adjusted Bearings (DMS) and Horizontal Distances (Meters)',
+      );
+
+      for (const label of [
+        'V27 PostProcessed 28-APR-2025 12:21:00.0 session_1_processed.asc',
+        'V24 PostProcessed 28-APR-2025 11:47:00.0 session_2_processed.asc',
+        'V62 PostProcessed 02-MAY-2025 13:57:30.0 session_6_export_v7.asc',
+      ]) {
+        const current = currentRows.get(label);
+        const expected = expectedRows.get(label);
+        expect(current, `missing current adjusted GNSS vector row for ${label}`).toBeDefined();
+        expect(expected, `missing expected adjusted GNSS vector row for ${label}`).toBeDefined();
+        if (!current || !expected) continue;
+
+        expect(current.from).toBe(expected.from);
+        expect(current.to).toBe(expected.to);
+        expect(Math.abs((current.dN?.value ?? 0) - (expected.dN?.value ?? 0))).toBeLessThan(0.001);
+        expect(Math.abs((current.dE?.value ?? 0) - (expected.dE?.value ?? 0))).toBeLessThan(0.001);
+        expect(Math.abs((current.dU?.value ?? 0) - (expected.dU?.value ?? 0))).toBeLessThan(0.005);
+        expect(Math.abs((current.dN?.residual ?? 0) - (expected.dN?.residual ?? 0))).toBeLessThan(
+          0.001,
+        );
+        expect(Math.abs((current.dE?.residual ?? 0) - (expected.dE?.residual ?? 0))).toBeLessThan(
+          0.001,
+        );
+      }
+
+      const v27 = currentRows.get('V27 PostProcessed 28-APR-2025 12:21:00.0 session_1_processed.asc');
+      expect(v27?.dU?.stdErr).toBeCloseTo(0.0023, 4);
+      expect(listing).not.toContain('Delta-U               -35.5344');
     },
     120000,
   );
