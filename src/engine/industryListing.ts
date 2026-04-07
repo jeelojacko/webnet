@@ -2714,6 +2714,18 @@ export const buildIndustryStyleListingText = (
     sigmaH?: number;
     ellipse?: { semiMajor: number; semiMinor: number; theta: number };
   };
+  const blendHorizontalCovariance = (
+    primary: { cEE: number; cEN: number; cNN: number },
+    secondary: { cEE: number; cEN: number; cNN: number },
+    weight: number,
+    preservePrimaryCorrelation = false,
+  ): { cEE: number; cEN: number; cNN: number } => ({
+    cEE: primary.cEE * (1 - weight) + secondary.cEE * weight,
+    cEN: preservePrimaryCorrelation
+      ? primary.cEN
+      : primary.cEN * (1 - weight) + secondary.cEN * weight,
+    cNN: primary.cNN * (1 - weight) + secondary.cNN * weight,
+  });
   const fallbackRelativePair = (from: string, to: string): RelativePairStats | undefined => {
     const fromSt = res.stations[from];
     const toSt = res.stations[to];
@@ -2784,69 +2796,96 @@ export const buildIndustryStyleListingText = (
       return undefined;
     }
     const directToNetworkRatio = (directPrecision.sigmaDist as number) / (networkPrecision.sigmaDist as number);
+    const fromStationCovariance = stationCovariance(pair.from);
+    const toStationCovariance = stationCovariance(pair.to);
+    const fallbackHorizontalCovariance =
+      fromStationCovariance && toStationCovariance
+        ? {
+            cEE: fromStationCovariance.varE + toStationCovariance.varE,
+            cEN: fromStationCovariance.covEN + toStationCovariance.covEN,
+            cNN: fromStationCovariance.varN + toStationCovariance.varN,
+          }
+        : undefined;
+    const fallbackPrecision =
+      fallbackHorizontalCovariance != null
+        ? buildDistanceAzimuthPrecision(dE, dN, fallbackHorizontalCovariance)
+        : undefined;
+    const fallbackToNetworkRatio =
+      fallbackPrecision != null &&
+      Number.isFinite(fallbackPrecision.sigmaDist ?? Number.NaN) &&
+      (fallbackPrecision.sigmaDist ?? 0) > 0
+        ? (fallbackPrecision.sigmaDist as number) / (networkPrecision.sigmaDist as number)
+        : undefined;
     let blendedHorizontalCovariance:
       | { cEE: number; cEN: number; cNN: number }
       | undefined;
     if (directToNetworkRatio > 1.02 && directToNetworkRatio < 1.4) {
       const blendWeight = Math.max(0, Math.min(1, (1.4 - directToNetworkRatio) / 0.38));
       if (blendWeight > 0) {
-        blendedHorizontalCovariance = {
-          cEE:
-            matchedCovariance.cEE * (1 - blendWeight) +
-            directHorizontalCovariance.cEE * blendWeight,
-          cEN:
-            matchedCovariance.cEN * (1 - blendWeight) +
-            directHorizontalCovariance.cEN * blendWeight,
-          cNN:
-            matchedCovariance.cNN * (1 - blendWeight) +
-            directHorizontalCovariance.cNN * blendWeight,
-        };
+        blendedHorizontalCovariance = blendHorizontalCovariance(
+          matchedCovariance,
+          directHorizontalCovariance,
+          blendWeight,
+        );
       }
     }
     if (!blendedHorizontalCovariance && directToNetworkRatio >= 1.4) {
-      const fromStationCovariance = stationCovariance(pair.from);
-      const toStationCovariance = stationCovariance(pair.to);
-      if (fromStationCovariance && toStationCovariance) {
-        const fallbackHorizontalCovariance = {
-          cEE: fromStationCovariance.varE + toStationCovariance.varE,
-          cEN: fromStationCovariance.covEN + toStationCovariance.covEN,
-          cNN: fromStationCovariance.varN + toStationCovariance.varN,
-        };
-        const fallbackPrecision = buildDistanceAzimuthPrecision(dE, dN, fallbackHorizontalCovariance);
-        if (
-          Number.isFinite(fallbackPrecision.sigmaDist ?? Number.NaN) &&
-          (fallbackPrecision.sigmaDist ?? 0) > 0
-        ) {
-          const fallbackToNetworkRatio =
-            (fallbackPrecision.sigmaDist as number) / (networkPrecision.sigmaDist as number);
-          if (fallbackToNetworkRatio > 1.03 && fallbackToNetworkRatio <= 1.25) {
-            const blendWeight = Math.max(
-              0,
-              Math.min(0.65, (fallbackToNetworkRatio - 1.03) / 0.28),
-            );
-            if (blendWeight > 0) {
-              blendedHorizontalCovariance = {
-                cEE:
-                  matchedCovariance.cEE * (1 - blendWeight) +
-                  fallbackHorizontalCovariance.cEE * blendWeight,
-                cEN:
-                  matchedCovariance.cEN * (1 - blendWeight) +
-                  fallbackHorizontalCovariance.cEN * blendWeight,
-                cNN:
-                  matchedCovariance.cNN * (1 - blendWeight) +
-                  fallbackHorizontalCovariance.cNN * blendWeight,
-              };
-            }
-          }
+      if (
+        fallbackHorizontalCovariance &&
+        fallbackToNetworkRatio != null &&
+        fallbackToNetworkRatio > 1.03 &&
+        fallbackToNetworkRatio <= 1.25
+      ) {
+        const blendWeight = Math.max(
+          0,
+          Math.min(0.65, (fallbackToNetworkRatio - 1.03) / 0.28),
+        );
+        if (blendWeight > 0) {
+          blendedHorizontalCovariance = blendHorizontalCovariance(
+            matchedCovariance,
+            fallbackHorizontalCovariance,
+            blendWeight,
+          );
         }
       }
     }
     if (!blendedHorizontalCovariance) return undefined;
     const blendedPrecision = buildDistanceAzimuthPrecision(dE, dN, blendedHorizontalCovariance);
+    let ellipseHorizontalCovariance = blendedHorizontalCovariance;
+    if (
+      fallbackHorizontalCovariance &&
+      (fromFixedLinked || toFixedLinked) &&
+      !(fromFixedLinked && toFixedLinked)
+    ) {
+      if (directToNetworkRatio > 1.02 && directToNetworkRatio < 1.4) {
+        ellipseHorizontalCovariance = blendHorizontalCovariance(
+          matchedCovariance,
+          fallbackHorizontalCovariance,
+          0.25,
+          true,
+        );
+      } else if (
+        directToNetworkRatio >= 1.4 &&
+        fallbackToNetworkRatio != null &&
+        fallbackToNetworkRatio > 1.03 &&
+        fallbackToNetworkRatio <= 1.25
+      ) {
+        const ellipseBlendWeight = Math.max(
+          0.25,
+          Math.min(0.5, ((fallbackToNetworkRatio - 1.03) / 0.28) * 0.75),
+        );
+        ellipseHorizontalCovariance = blendHorizontalCovariance(
+          matchedCovariance,
+          fallbackHorizontalCovariance,
+          ellipseBlendWeight,
+          true,
+        );
+      }
+    }
     const ellipseSummary = buildHorizontalErrorEllipse(
-      blendedHorizontalCovariance.cEE,
-      blendedHorizontalCovariance.cNN,
-      blendedHorizontalCovariance.cEN,
+      ellipseHorizontalCovariance.cEE,
+      ellipseHorizontalCovariance.cNN,
+      ellipseHorizontalCovariance.cEN,
     );
     return {
       from: pair.from,

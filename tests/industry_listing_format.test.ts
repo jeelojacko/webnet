@@ -1277,6 +1277,8 @@ describe('industry listing phase 5 formatting locks', () => {
     expect(listing).toContain('GPS Deltas      45                 40.853         1.230');
     expect(listing).toContain('Total           45                 40.853         1.230');
     expect(listing).toContain('Delta-U               -35.5106      -0.0004   0.0023    0.2');
-    expect(listing).toContain('GPS2       GPS5           0.001826      0.001437     178-18       0.006176');
+    expect(listing).toContain('GPS2       GPS3           0.001736      0.001347     178-59       0.006569');
+    expect(listing).toContain('GPS2       GPS4           0.001395      0.001037      13-04       0.004960');
+    expect(listing).toContain('GPS2       GPS5           0.001789      0.001406       1-02       0.006176');
   });
 });
