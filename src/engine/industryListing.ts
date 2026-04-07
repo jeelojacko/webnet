@@ -432,9 +432,11 @@ const usesClassicParityReportLayout = (
   solveProfile: IndustryListingRunDiagnostics['solveProfile'],
   coordMode: '2D' | '3D',
   projectInstrumentLibrary?: InstrumentLibrary,
+  isGnssOnlyListing = false,
 ): boolean =>
   solveProfile !== 'webnet' &&
   coordMode === '3D' &&
+  !isGnssOnlyListing &&
   projectInstrumentLibrary != null &&
   Object.keys(projectInstrumentLibrary).length > 0;
 
@@ -877,11 +879,6 @@ export const buildIndustryStyleListingText = (
   }
   const coordMode = parseState?.coordMode ?? parseSettings.coordMode;
   const projectInstrumentLibrary = runDiag.projectInstrumentLibrary;
-  const usesClassicParityLayout = usesClassicParityReportLayout(
-    runDiagnostics.solveProfile,
-    coordMode,
-    projectInstrumentLibrary,
-  );
   const gpsObservationRows = observationsForListing.filter(
     (obs): obs is GpsObservation => obs.type === 'gps',
   );
@@ -889,6 +886,12 @@ export const buildIndustryStyleListingText = (
     gpsObservationRows.length > 0 &&
     observationsForListing.length > 0 &&
     observationsForListing.every((obs) => obs.type === 'gps');
+  const usesClassicParityLayout = usesClassicParityReportLayout(
+    runDiagnostics.solveProfile,
+    coordMode,
+    projectInstrumentLibrary,
+    isGnssOnlyListing,
+  );
   const usesCompactGnssParityLayout =
     runDiagnostics.solveProfile !== 'webnet' && isGnssOnlyListing && !usesClassicParityLayout;
   const hasInlineGpsFactorOverride = observationsForListing.some((obs) => {
@@ -1224,6 +1227,10 @@ export const buildIndustryStyleListingText = (
     settings.convergenceLimit > 0
       ? settings.convergenceLimit
       : 0.01;
+  const displayVerticalDeflectionNorthSec =
+    parseState?.verticalDeflectionNorthSec ?? runDiag.verticalDeflectionNorthSec ?? 0;
+  const displayVerticalDeflectionEastSec =
+    parseState?.verticalDeflectionEastSec ?? runDiag.verticalDeflectionEastSec ?? 0;
   if (usesClassicParityLayout || usesCompactGnssParityLayout) {
     const coordSystemLabel =
       crsId === 'CA_NAD83_CSRS_NB_STEREO_DOUBLE'
@@ -1247,7 +1254,7 @@ export const buildIndustryStyleListingText = (
     lines.push(
       formatClassicSettingRow(
         'Vertical Deflection',
-        `N=${(runDiag.verticalDeflectionNorthSec ?? 0).toFixed(3)} E=${(runDiag.verticalDeflectionEastSec ?? 0).toFixed(3)} (Seconds)`,
+        `N=${displayVerticalDeflectionNorthSec.toFixed(3)} E=${displayVerticalDeflectionEastSec.toFixed(3)} (Seconds)`,
       ),
     );
     lines.push(
@@ -1317,7 +1324,7 @@ export const buildIndustryStyleListingText = (
     );
     pushSettingRow(
       'Vertical Deflection',
-      `N=${(runDiag.verticalDeflectionNorthSec ?? 0).toFixed(3)} E=${(runDiag.verticalDeflectionEastSec ?? 0).toFixed(3)} (Seconds)`,
+      `N=${displayVerticalDeflectionNorthSec.toFixed(3)} E=${displayVerticalDeflectionEastSec.toFixed(3)} (Seconds)`,
     );
     pushSettingRow(
       'Input/Output Coordinate Order',
@@ -2644,6 +2651,7 @@ export const buildIndustryStyleListingText = (
     thetaDeg?: number,
     semiMajor?: number,
     semiMinor?: number,
+    convergenceCorrectionDeg = 0,
   ): string => {
     if (
       Number.isFinite(semiMajor) &&
@@ -2654,7 +2662,7 @@ export const buildIndustryStyleListingText = (
     }
     const surveyAzimuth = toSurveyEllipseAzimuthDeg(thetaDeg);
     if (surveyAzimuth == null) return '-';
-    let az = surveyAzimuth;
+    let az = ((surveyAzimuth + convergenceCorrectionDeg) % 180 + 180) % 180;
     let deg = Math.floor(az);
     let min = Math.round((az - deg) * 60);
     if (min >= 60) {
@@ -3102,16 +3110,19 @@ export const buildIndustryStyleListingText = (
     }
   }
 
-  if (
+  const shouldRenderAdjustedObservationSections =
+    !isPreanalysis && settings.listingShowObservationsResiduals && listingObservations.length > 0;
+  const shouldRenderAdjustedGnssVectorSection =
     !isPreanalysis &&
-    settings.listingShowObservationsResiduals &&
-    listingObservations.length > 0
-  ) {
+    gpsObservationRows.length > 0 &&
+    (settings.listingShowObservationsResiduals || usesCompactGnssParityLayout);
+
+  if (shouldRenderAdjustedObservationSections || shouldRenderAdjustedGnssVectorSection) {
     if (!usesClassicParityLayout) {
       lines.push('');
       addCenteredHeading('Adjusted Observations and Residuals');
     }
-    if (usesClassicParityLayout) {
+    if (usesClassicParityLayout && shouldRenderAdjustedObservationSections) {
       const angleUnitLabel = (parseState?.angleUnits ?? parseSettings.angleUnits).toUpperCase();
       const classicSortByStdRes = (a: Observation, b: Observation) => {
         const roundedStdRes = (obs: Observation) =>
@@ -3338,80 +3349,82 @@ export const buildIndustryStyleListingText = (
       renderClassicAdjustedZenithSection();
       renderClassicAdjustedDirectionSection();
       renderClassicAdjustedBearingSection();
-    } else {
-      const angleRows = listingObservations
-        .filter((obs) => obs.type === 'angle')
-        .map((obs) => [
-          `${obs.at}-${obs.from}-${obs.to}${aliasRefsForLine(obs.sourceLine)}${autoSideshotSuffix(obs)}`,
-          radToDmsStr((obs.calc as number | undefined) ?? obs.obs),
-          formatAngularResidualArcSec(obs.residual as number | undefined),
-          formatEffectiveDistance(obs.effectiveDistance),
-          formatAngularStdErrArcSec(obs.weightingStdDev ?? obs.stdDev),
-          formatIndustryStdRes(obs),
-          obs.sourceLine != null ? `1:${obs.sourceLine}` : '-',
-        ]);
-      renderAdjustedSection(
-        `Adjusted Angle Observations (${(parseState?.angleUnits ?? parseSettings.angleUnits).toUpperCase()})`,
-        angleRows,
-        [
-          'Stations',
-          'Angle',
-          'Residual',
-          'Distance',
-          'StdErr',
-          'StdRes',
-          'File:Line',
-        ],
-        [5],
-      );
+    } else if (!usesClassicParityLayout) {
+      if (shouldRenderAdjustedObservationSections) {
+        const angleRows = listingObservations
+          .filter((obs) => obs.type === 'angle')
+          .map((obs) => [
+            `${obs.at}-${obs.from}-${obs.to}${aliasRefsForLine(obs.sourceLine)}${autoSideshotSuffix(obs)}`,
+            radToDmsStr((obs.calc as number | undefined) ?? obs.obs),
+            formatAngularResidualArcSec(obs.residual as number | undefined),
+            formatEffectiveDistance(obs.effectiveDistance),
+            formatAngularStdErrArcSec(obs.weightingStdDev ?? obs.stdDev),
+            formatIndustryStdRes(obs),
+            obs.sourceLine != null ? `1:${obs.sourceLine}` : '-',
+          ]);
+        renderAdjustedSection(
+          `Adjusted Angle Observations (${(parseState?.angleUnits ?? parseSettings.angleUnits).toUpperCase()})`,
+          angleRows,
+          [
+            'Stations',
+            'Angle',
+            'Residual',
+            'Distance',
+            'StdErr',
+            'StdRes',
+            'File:Line',
+          ],
+          [5],
+        );
 
-      const distanceRows = listingObservations
-        .filter((obs) => obs.type === 'dist')
-        .map((obs) => [
-          `${obs.from}-${obs.to}${aliasRefsForLine(obs.sourceLine)}${autoSideshotSuffix(obs)}${prismSuffix(obs)}`,
-          formatLinear((obs.calc as number | undefined) ?? obs.obs),
-          formatResidualLinear(obs.residual as number | undefined),
-          formatLinear(obs.weightingStdDev ?? obs.stdDev),
-          formatIndustryStdRes(obs),
-          obs.sourceLine != null ? `1:${obs.sourceLine}` : '-',
-        ]);
-      renderAdjustedSection(
-        `${hasTraverseStyleAngularFamilies ? 'Adjusted Measured Distance Observations' : 'Adjusted Distance Observations'} (${linearUnit})`,
-        distanceRows,
-        ['Stations', 'Distance', 'Residual', 'StdErr', 'StdRes', 'File:Line'],
-        [1, 2, 3, 4],
-      );
+        const distanceRows = listingObservations
+          .filter((obs) => obs.type === 'dist')
+          .map((obs) => [
+            `${obs.from}-${obs.to}${aliasRefsForLine(obs.sourceLine)}${autoSideshotSuffix(obs)}${prismSuffix(obs)}`,
+            formatLinear((obs.calc as number | undefined) ?? obs.obs),
+            formatResidualLinear(obs.residual as number | undefined),
+            formatLinear(obs.weightingStdDev ?? obs.stdDev),
+            formatIndustryStdRes(obs),
+            obs.sourceLine != null ? `1:${obs.sourceLine}` : '-',
+          ]);
+        renderAdjustedSection(
+          `${hasTraverseStyleAngularFamilies ? 'Adjusted Measured Distance Observations' : 'Adjusted Distance Observations'} (${linearUnit})`,
+          distanceRows,
+          ['Stations', 'Distance', 'Residual', 'StdErr', 'StdRes', 'File:Line'],
+          [1, 2, 3, 4],
+        );
 
-      const directionRows = listingObservations
-        .filter((obs) => obs.type === 'direction')
-        .map((obs) => [
-          `${obs.at}-${obs.to}${aliasRefsForLine(obs.sourceLine)}${autoSideshotSuffix(obs)}`,
-          radToDmsStr((obs.calc as number | undefined) ?? obs.obs),
-          formatAngularResidualArcSec(obs.residual as number | undefined),
-          formatAngularLinearResidual(
-            obs.residual as number | undefined,
-            obs.effectiveDistance,
-          ),
-          formatAngularStdErrArcSec(obs.weightingStdDev ?? obs.stdDev),
-          formatIndustryStdRes(obs),
-          obs.sourceLine != null ? `1:${obs.sourceLine}` : '-',
-        ]);
-      renderAdjustedSection(
-        `${hasTraverseStyleAngularFamilies ? 'Adjusted Measured Direction Observations' : 'Adjusted Direction Observations'} (${(parseState?.angleUnits ?? parseSettings.angleUnits).toUpperCase()})`,
-        directionRows,
-        [
-          'Stations',
-          'Direction',
-          'Residual',
-          'Distance',
-          'StdErr',
-          'StdRes',
-          'File:Line',
-        ],
-        [5],
-      );
+        const directionRows = listingObservations
+          .filter((obs) => obs.type === 'direction')
+          .map((obs) => [
+            `${obs.at}-${obs.to}${aliasRefsForLine(obs.sourceLine)}${autoSideshotSuffix(obs)}`,
+            radToDmsStr((obs.calc as number | undefined) ?? obs.obs),
+            formatAngularResidualArcSec(obs.residual as number | undefined),
+            formatAngularLinearResidual(
+              obs.residual as number | undefined,
+              obs.effectiveDistance,
+            ),
+            formatAngularStdErrArcSec(obs.weightingStdDev ?? obs.stdDev),
+            formatIndustryStdRes(obs),
+            obs.sourceLine != null ? `1:${obs.sourceLine}` : '-',
+          ]);
+        renderAdjustedSection(
+          `${hasTraverseStyleAngularFamilies ? 'Adjusted Measured Direction Observations' : 'Adjusted Direction Observations'} (${(parseState?.angleUnits ?? parseSettings.angleUnits).toUpperCase()})`,
+          directionRows,
+          [
+            'Stations',
+            'Direction',
+            'Residual',
+            'Distance',
+            'StdErr',
+            'StdRes',
+            'File:Line',
+          ],
+          [5],
+        );
+      }
 
-      if (gpsObservationRows.length > 0) {
+      if (shouldRenderAdjustedGnssVectorSection) {
         lines.push('');
         addCenteredHeading(`Adjusted GPS Vector Observations (${linearUnit})`);
         lines.push('');
@@ -3468,7 +3481,7 @@ export const buildIndustryStyleListingText = (
           });
       }
 
-      if (relationshipRows.length > 0) {
+      if (shouldRenderAdjustedObservationSections && relationshipRows.length > 0) {
         lines.push('');
         const isGridBearingSection = coordSystemMode === 'grid';
         const useCompactGnssRelationshipLayout =
@@ -3841,6 +3854,10 @@ export const buildIndustryStyleListingText = (
                 precision.ellipse?.theta,
                 precision.ellipse?.semiMajor,
                 precision.ellipse?.semiMinor,
+                usesCompactGnssParityLayout && gpsDirectFixedLinkedStations.has(id)
+                  ? displayFactorsForStation(id, station ?? res.stations[id]).convergenceAngleRad *
+                    RAD_TO_DEG
+                  : 0,
               ),
         ];
         if (coordMode === '3D') {
@@ -3892,12 +3909,21 @@ export const buildIndustryStyleListingText = (
             : 1;
         const semiMajor = (row.ellipse?.semiMajor ?? 0) * ellipseLinearDisplayScale;
         const semiMinor = (row.ellipse?.semiMinor ?? 0) * ellipseLinearDisplayScale;
+        const ellipseAzimuthCorrectionDeg =
+          usesCompactGnssParityLayout &&
+          ((res.stations[row.from]?.fixed === true && gpsDirectFixedLinkedStations.has(row.to)) ||
+            (res.stations[row.to]?.fixed === true && gpsDirectFixedLinkedStations.has(row.from)))
+            ? ((displayFactorsForStation(row.from, res.stations[row.from]).convergenceAngleRad +
+                displayFactorsForStation(row.to, res.stations[row.to]).convergenceAngleRad) *
+                RAD_TO_DEG) /
+              2
+            : 0;
         return [
           row.from,
           row.to,
           (semiMajor * confidence95Scale * unitScale).toFixed(6),
           (semiMinor * confidence95Scale * unitScale).toFixed(6),
-          formatEllipseAzDm(row.ellipse?.theta, semiMajor, semiMinor),
+          formatEllipseAzDm(row.ellipse?.theta, semiMajor, semiMinor, ellipseAzimuthCorrectionDeg),
           row.sigmaH != null
             ? (row.sigmaH * ONE_DIMENSIONAL_CONFIDENCE_95_SCALE * unitScale).toFixed(6)
             : '-',
