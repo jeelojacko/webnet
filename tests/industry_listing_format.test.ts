@@ -1266,6 +1266,9 @@ describe('industry listing phase 5 formatting locks', () => {
     expect(listing).toContain('Grnd Dist');
     expect(listing).toContain('1843.4310');
     expect(listing).toContain('FRDN       GPS1       N40-59-33.27E   1843.1364    0.11   0.0009');
+    expect(listing).toContain('GPS2       GPS3       N24-10-21.39W    537.2212    0.55   0.0017');
+    expect(listing).toContain('GPS2       GPS4       S52-16-30.16W    534.4179    0.43   0.0013');
+    expect(listing).toContain('GPS2       GPS5       S36-50-16.52E    287.2716    1.13   0.0017');
     expect(listing).toContain('Station                   N              E          Elev');
     expect(listing).not.toContain('Control Component Status');
     expect(listing).toContain('Station                     N             E             Elev');
@@ -1274,5 +1277,6 @@ describe('industry listing phase 5 formatting locks', () => {
     expect(listing).toContain('GPS Deltas      45                 40.853         1.230');
     expect(listing).toContain('Total           45                 40.853         1.230');
     expect(listing).toContain('Delta-U               -35.5106      -0.0004   0.0023    0.2');
+    expect(listing).toContain('GPS2       GPS5           0.001826      0.001437     178-18       0.006176');
   });
 });

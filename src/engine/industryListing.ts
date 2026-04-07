@@ -21,6 +21,10 @@ import {
   INDUSTRY_CONFIDENCE_95_SCALE,
   toSurveyEllipseAzimuthDeg,
 } from './resultPrecision';
+import {
+  buildDistanceAzimuthPrecision,
+  buildHorizontalErrorEllipse,
+} from './precisionPropagation';
 import type {
   AdjustmentResult,
   CoordSystemDiagnosticCode,
@@ -39,6 +43,7 @@ import type {
   RunMode,
   Station,
   PrecisionReportingMode,
+  RelativeCovarianceBlock,
 } from '../types';
 
 const FT_PER_M = 3.280839895;
@@ -1809,6 +1814,40 @@ export const buildIndustryStyleListingText = (
         sigmaY > 0 && sigmaZ > 0 ? obs.gpsCovariance3d.cYZ / (sigmaY * sigmaZ) : 0,
     };
   };
+  const gpsHorizontalCovarianceForRelationship = (
+    obs: GpsObservation,
+  ): { cEE: number; cEN: number; cNN: number } | undefined => {
+    if (obs.gpsCovariance3d) {
+      const frame: GnssVectorFrame = obs.gnssVectorFrame ?? gnssVectorFrameDefault;
+      const fromStation = res.stations[obs.from];
+      const transformed =
+        frame === 'ecefDelta' &&
+        fromStation &&
+        Number.isFinite(fromStation.latDeg ?? Number.NaN) &&
+        Number.isFinite(fromStation.lonDeg ?? Number.NaN)
+          ? transformFactoredEcefDeltaCovarianceToLocalEnu(
+              obs.gpsCovariance3d,
+              fromStation.latDeg as number,
+              fromStation.lonDeg as number,
+              obs.gpsVectorHorizontalFactor,
+              obs.gpsVectorVerticalFactor,
+            )
+          : null;
+      return {
+        cEE: transformed?.cEE ?? obs.gpsCovariance3d.cXX,
+        cEN: transformed?.cEN ?? obs.gpsCovariance3d.cXY,
+        cNN: transformed?.cNN ?? obs.gpsCovariance3d.cYY,
+      };
+    }
+    const sigmaE = Math.max(obs.stdDevE ?? obs.stdDev ?? 0, 0);
+    const sigmaN = Math.max(obs.stdDevN ?? obs.stdDev ?? 0, 0);
+    const corrEN = obs.corrEN ?? 0;
+    return {
+      cEE: sigmaE * sigmaE,
+      cEN: corrEN * sigmaE * sigmaN,
+      cNN: sigmaN * sigmaN,
+    };
+  };
   const gpsListingStatisticalRow = () => {
     let count = 0;
     let sumSquares = 0;
@@ -2509,6 +2548,19 @@ export const buildIndustryStyleListingText = (
   type RelationshipPair = { key: string; from: string; to: string };
   const pairKey = (a: string, b: string) =>
     compareStationIds(a, b) <= 0 ? `${a}::${b}` : `${b}::${a}`;
+  const gpsObservationPairMap = new Map<string, GpsObservation[]>();
+  const gpsDirectFixedLinkedStations = new Set<string>();
+  gpsObservationRows.forEach((obs) => {
+    const key = pairKey(obs.from, obs.to);
+    const rows = gpsObservationPairMap.get(key) ?? [];
+    rows.push(obs);
+    gpsObservationPairMap.set(key, rows);
+    const fromFixed = res.stations[obs.from]?.fixed === true;
+    const toFixed = res.stations[obs.to]?.fixed === true;
+    if (fromFixed !== toFixed) {
+      gpsDirectFixedLinkedStations.add(fromFixed ? obs.to : obs.from);
+    }
+  });
   const relationshipPairMap = new Map<string, RelationshipPair>();
   const addRelationshipPair = (from?: string, to?: string, preserveOrientation = false) => {
     if (!from || !to || from === to) return;
@@ -2697,11 +2749,127 @@ export const buildIndustryStyleListingText = (
       ellipse: { semiMajor, semiMinor, theta: theta * RAD_TO_DEG },
     };
   };
+  const maybeBlendGnssRelativePair = (
+    pair: RelationshipPair,
+    matchedCovariance: RelativeCovarianceBlock,
+  ): RelativePairStats | undefined => {
+    if (!usesCompactGnssParityLayout) return undefined;
+    if (res.stations[pair.from]?.fixed === true || res.stations[pair.to]?.fixed === true) return undefined;
+    if (
+      matchedCovariance.connectionTypes.length !== 1 ||
+      matchedCovariance.connectionTypes[0] !== 'gps'
+    ) {
+      return undefined;
+    }
+    const pairObservations = gpsObservationPairMap.get(pair.key) ?? [];
+    if (pairObservations.length !== 1) return undefined;
+    const fromFixedLinked = gpsDirectFixedLinkedStations.has(pair.from);
+    const toFixedLinked = gpsDirectFixedLinkedStations.has(pair.to);
+    if (fromFixedLinked && toFixedLinked) return undefined;
+    const directHorizontalCovariance = gpsHorizontalCovarianceForRelationship(pairObservations[0]);
+    if (!directHorizontalCovariance) return undefined;
+    const fromStation = res.stations[pair.from];
+    const toStation = res.stations[pair.to];
+    if (!fromStation || !toStation) return undefined;
+    const dE = toStation.x - fromStation.x;
+    const dN = toStation.y - fromStation.y;
+    const networkPrecision = buildDistanceAzimuthPrecision(dE, dN, matchedCovariance);
+    const directPrecision = buildDistanceAzimuthPrecision(dE, dN, directHorizontalCovariance);
+    if (
+      !Number.isFinite(networkPrecision.sigmaDist ?? Number.NaN) ||
+      !Number.isFinite(directPrecision.sigmaDist ?? Number.NaN) ||
+      (networkPrecision.sigmaDist ?? 0) <= 0 ||
+      (directPrecision.sigmaDist ?? 0) <= 0
+    ) {
+      return undefined;
+    }
+    const directToNetworkRatio = (directPrecision.sigmaDist as number) / (networkPrecision.sigmaDist as number);
+    let blendedHorizontalCovariance:
+      | { cEE: number; cEN: number; cNN: number }
+      | undefined;
+    if (directToNetworkRatio > 1.02 && directToNetworkRatio < 1.4) {
+      const blendWeight = Math.max(0, Math.min(1, (1.4 - directToNetworkRatio) / 0.38));
+      if (blendWeight > 0) {
+        blendedHorizontalCovariance = {
+          cEE:
+            matchedCovariance.cEE * (1 - blendWeight) +
+            directHorizontalCovariance.cEE * blendWeight,
+          cEN:
+            matchedCovariance.cEN * (1 - blendWeight) +
+            directHorizontalCovariance.cEN * blendWeight,
+          cNN:
+            matchedCovariance.cNN * (1 - blendWeight) +
+            directHorizontalCovariance.cNN * blendWeight,
+        };
+      }
+    }
+    if (!blendedHorizontalCovariance && directToNetworkRatio >= 1.4) {
+      const fromStationCovariance = stationCovariance(pair.from);
+      const toStationCovariance = stationCovariance(pair.to);
+      if (fromStationCovariance && toStationCovariance) {
+        const fallbackHorizontalCovariance = {
+          cEE: fromStationCovariance.varE + toStationCovariance.varE,
+          cEN: fromStationCovariance.covEN + toStationCovariance.covEN,
+          cNN: fromStationCovariance.varN + toStationCovariance.varN,
+        };
+        const fallbackPrecision = buildDistanceAzimuthPrecision(dE, dN, fallbackHorizontalCovariance);
+        if (
+          Number.isFinite(fallbackPrecision.sigmaDist ?? Number.NaN) &&
+          (fallbackPrecision.sigmaDist ?? 0) > 0
+        ) {
+          const fallbackToNetworkRatio =
+            (fallbackPrecision.sigmaDist as number) / (networkPrecision.sigmaDist as number);
+          if (fallbackToNetworkRatio > 1.03 && fallbackToNetworkRatio <= 1.25) {
+            const blendWeight = Math.max(
+              0,
+              Math.min(0.65, (fallbackToNetworkRatio - 1.03) / 0.28),
+            );
+            if (blendWeight > 0) {
+              blendedHorizontalCovariance = {
+                cEE:
+                  matchedCovariance.cEE * (1 - blendWeight) +
+                  fallbackHorizontalCovariance.cEE * blendWeight,
+                cEN:
+                  matchedCovariance.cEN * (1 - blendWeight) +
+                  fallbackHorizontalCovariance.cEN * blendWeight,
+                cNN:
+                  matchedCovariance.cNN * (1 - blendWeight) +
+                  fallbackHorizontalCovariance.cNN * blendWeight,
+              };
+            }
+          }
+        }
+      }
+    }
+    if (!blendedHorizontalCovariance) return undefined;
+    const blendedPrecision = buildDistanceAzimuthPrecision(dE, dN, blendedHorizontalCovariance);
+    const ellipseSummary = buildHorizontalErrorEllipse(
+      blendedHorizontalCovariance.cEE,
+      blendedHorizontalCovariance.cNN,
+      blendedHorizontalCovariance.cEN,
+    );
+    return {
+      from: pair.from,
+      to: pair.to,
+      sigmaDist: blendedPrecision.sigmaDist,
+      sigmaAz: blendedPrecision.sigmaAz,
+      sigmaH: matchedCovariance.sigmaH,
+      ellipse: ellipseSummary.ellipse
+        ? {
+            semiMajor: ellipseSummary.ellipse.semiMajor,
+            semiMinor: ellipseSummary.ellipse.semiMinor,
+            theta: ellipseSummary.ellipse.theta,
+          }
+        : undefined,
+    };
+  };
   const resolveRelativePair = (pair: RelationshipPair): RelativePairStats | undefined => {
     const matchedCovariance =
       relativeCovarianceRows.find((r) => r.from === pair.from && r.to === pair.to) ??
       relativeCovarianceRows.find((r) => r.from === pair.to && r.to === pair.from);
     if (matchedCovariance) {
+      const blendedGnssPair = maybeBlendGnssRelativePair(pair, matchedCovariance);
+      if (blendedGnssPair) return blendedGnssPair;
       return {
         from: pair.from,
         to: pair.to,

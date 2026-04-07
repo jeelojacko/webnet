@@ -103,6 +103,7 @@
       - [ ] Tighten the remaining row inclusion and final rounding policies for closer listing parity
       - [x] Tighten GNSS/listing parity by matching the industry blank-description station/error-propagation layout for the GNSS-only case, hiding the extra control-component block unless mixed control states require it, and adding the missing GNSS wrapper/empty sections (`Inline Option Usage Notes`, `Summary of Inconsistent Descriptions`, `Network Stations`, `Sideshots`) from the stored reference listing
       - [x] Tighten the remaining GNSS top-block/listing parity by adding the industry-style file-summary and compact option rows, switching GNSS-only unadjusted summaries back to the reference-style fixed/free station + vector-table layout, and using the compact adjusted bearing-distance heading/spacing contract without reopening solver behavior
+      - [x] Trace the remaining GNSS adjusted bearing-distance confidence drift by comparing the relationship-row precision path against the stored reference and keep only the GNSS-only connected-covariance display blends that improve the weak `GPS2-*` relationship and relative-ellipse rows without regressing traverse or underground listings
     - [ ] Batch 5 - error propagation precision closeout
       - [x] Expand the parity harness to lock the full error-propagation sections (all station sigmas, station ellipses, and relative ellipses)
       - [x] Add an error-propagation-focused machine-readable deviation summary alongside the broader reference diff
