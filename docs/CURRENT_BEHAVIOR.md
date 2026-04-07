@@ -21,7 +21,7 @@ Current startup and workflow defaults include:
 - run profile defaults to industry-standard parity mode
 - cluster detection defaults to OFF
 - auto-adjust is available but operator-controlled
-- the active startup dataset is currently rotated to the GNSS-only industry-parity case, including New Brunswick grid startup defaults under the industry `NewBrunswick83` label, the CSRS double-stereographic solve/display contract that matches the stored GNSS coordinates, positive-west longitude convention, vertical deflection `N=-2.910" E=-1.460"`, slope/zenith reduction with refraction `k=0.07`, and the committed GNSS covariance input fixture loaded directly into the editor
+- the active startup dataset is currently rotated to the combined industry-parity case, including the committed mixed traverse/GNSS fixture loaded directly into the editor, the matching project default plus `S9`/`SX12`/`TS11` total-station instrument library from the reference output, and the New Brunswick grid startup defaults under the industry `NewBrunswick83` label with the CSRS double-stereographic solve/display contract, positive-west longitude convention, vertical deflection `N=-2.910" E=-1.460"`, and slope/zenith reduction with refraction `k=0.07`
 - the active startup dataset may be rotated to the current industry-parity working case during parity-sensitive batches
 - browser-local recovery restores workspace state but intentionally does not restore stale solve results without rerun
 

@@ -201,7 +201,7 @@
       - [ ] Keep factor application, covariance ingestion, and reporting deterministic and parity-tested
       - [ ] Add focused GNSS-only structured parity assertions plus normalized exact output diff
     - [ ] Batch 10 - final combined parity
-      - [ ] Make the combined case the startup default with its matching project defaults from the reference output
+      - [x] Make the combined case the startup default with its matching project defaults from the reference output
       - [ ] Integrate levelling, traverse, and GNSS fixes without regressing any previously locked single-domain case
       - [ ] Resolve mixed-network interaction gaps only exposed in the combined case, including shared control handling, section ordering, and cross-family weighting/reporting interactions
       - [ ] Add the combined case to the structured parity harness and normalized exact text-diff gate

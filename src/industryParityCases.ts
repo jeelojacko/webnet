@@ -1,5 +1,6 @@
 import type { ParseSettings, SettingsState } from './appStateTypes';
 import type { InstrumentLibrary } from './types';
+import combinedFixtureInputRaw from '../tests/fixtures/industry_case_combined_input.txt?raw';
 import gnssFixtureInputRaw from '../tests/fixtures/industry_case_gnss_input.txt?raw';
 import traverseFixtureRaw from '../tests/fixtures/industry_case_traverse_output.txt?raw';
 
@@ -131,6 +132,10 @@ const extractReferenceInputDataSection = (raw: string): string => {
 };
 
 const TRAVERSE_STARTUP_INPUT = extractReferenceInputDataSection(traverseFixtureRaw);
+const COMBINED_STARTUP_INPUT = combinedFixtureInputRaw
+  .replace(/\r\n/g, '\n')
+  .replace(/\r/g, '\n')
+  .trim();
 const GNSS_STARTUP_INPUT = gnssFixtureInputRaw.replace(/\r\n/g, '\n').replace(/\r/g, '\n').trim();
 
 const TRAVERSE_STARTUP_INSTRUMENTS: InstrumentLibrary = {
@@ -293,9 +298,31 @@ export const INDUSTRY_PARITY_CASES: Record<IndustryParityCaseId, IndustryParityC
     fixtureInputPath: 'tests/fixtures/industry_case_combined_input.txt',
     fixtureOutputPath: 'tests/fixtures/industry_case_combined_output.txt',
     normalizationRules: DEFAULT_NORMALIZATION_RULES,
+    startupDefaults: {
+      input: COMBINED_STARTUP_INPUT,
+      settingsPatch: {
+        convergenceLimit: 0.01,
+      },
+      parseSettingsPatch: {
+        coordMode: '3D',
+        coordSystemMode: 'grid',
+        crsId: 'CA_NAD83_CSRS_NB_STEREO_DOUBLE',
+        order: 'NE',
+        deltaMode: 'slope',
+        angleStationOrder: 'atfromto',
+        lonSign: 'west-positive',
+        verticalDeflectionNorthSec: -2.91,
+        verticalDeflectionEastSec: -1.46,
+        applyCurvatureRefraction: true,
+        verticalReduction: 'curvref',
+        refractionCoefficient: 0.07,
+      },
+      projectInstruments: TRAVERSE_STARTUP_INSTRUMENTS,
+      selectedInstrument: 'TRAV_DEFAULT',
+    },
   },
 };
 
-export const ACTIVE_INDUSTRY_PARITY_CASE_ID: IndustryParityCaseId = 'gnss';
+export const ACTIVE_INDUSTRY_PARITY_CASE_ID: IndustryParityCaseId = 'combined';
 export const ACTIVE_INDUSTRY_PARITY_CASE =
   INDUSTRY_PARITY_CASES[ACTIVE_INDUSTRY_PARITY_CASE_ID];
