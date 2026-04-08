@@ -207,6 +207,7 @@ Current GNSS behavior includes:
 - GNSS adjustment statistical summaries/listings now count covariance-vector observations by scalar equations (`GPS Deltas`) for observation/unknown totals, matching the industry `45`-equation contract for the parity fixture even though the solve still stores `15` GNSS vector records internally
 - the GNSS solve/listing parity gap is now much smaller: the local-frame `.GPS FACTOR` fix collapses the remaining station-height drift to roughly `0.00005 m` worst-case against the stored reference and moves the listing summary from the earlier `42.709 / 1.258` down to `40.853 / 1.230` versus the stored industry `40.545 / 1.225`; the remaining delta appears concentrated in the last GNSS summary/precision statistics rather than in solved station geometry
 - mixed conventional/leveling jobs now keep access to the selected project default instrument for default-weighted `L` records even after later inline `.INST` changes, so differential-level `mm/km` weighting still applies when the active TS instrument has no level model
+- differential-level observations no longer add `vertCentr_m` into the solve weighting sigma, which brings the mixed combined-case `Level Data`, `Zeniths`, `GPS Deltas`, and total statistical-summary rows back into near-reference agreement while preserving the leveling-only exact listing lock
 
 ## Import and interoperability behavior
 Current import behavior includes:

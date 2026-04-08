@@ -950,8 +950,7 @@ export class LSAEngine {
       return Math.max(Math.sqrt(sigma * sigma + term * term), 1e-12);
     }
     if (obs.type === 'lev') {
-      if (centerVert <= 0) return Math.max(sigma, 1e-12);
-      return Math.max(Math.sqrt(sigma * sigma + centerVert * centerVert), 1e-12);
+      return Math.max(sigma, 1e-12);
     }
 
     return Math.max(sigma, 1e-12);

@@ -1604,17 +1604,19 @@ describe('industry multi-case parity foundation', () => {
         'Statistical Summary',
         'Adjusted Coordinates (Meters)',
       );
+      const zeniths = parseObservationStatisticRow(statisticalSummary, 'Zenith');
       const levelData = parseObservationStatisticRow(statisticalSummary, 'Level Data');
       const gpsDeltas = parseObservationStatisticRow(statisticalSummary, 'GPS Deltas');
       const total = parseObservationStatisticRow(statisticalSummary, 'Total');
+      expect(zeniths.count).toBe(506);
+      expect(zeniths.sumSquares).toBeCloseTo(693.125, 0);
       expect(levelData.count).toBe(60);
-      expect(levelData.sumSquares).toBeLessThan(60);
-      expect(Math.abs(levelData.sumSquares - 51.57)).toBeLessThan(7);
+      expect(levelData.sumSquares).toBeCloseTo(51.57, 0);
       expect(gpsDeltas.count).toBe(36);
       expect(gpsDeltas.sumSquares).toBeCloseTo(30.608, 0);
       expect(gpsDeltas.errorFactor).toBeCloseTo(1.027, 1);
       expect(total.count).toBe(1615);
-      expect(total.sumSquares).toBeLessThan(1260);
+      expect(total.sumSquares).toBeCloseTo(1250.713, 0);
     },
     120000,
   );

@@ -1226,6 +1226,49 @@ describe('LSAEngine', () => {
     ).toBe(true);
   });
 
+  it('does not inflate differential-level weighting sigma with vertical centering', () => {
+    const input = [
+      'C A 0 0 100 ! ! !',
+      'C B 0 0 100',
+      'L A-B 0.9000 250',
+      'L A-B 0.8990 250',
+    ].join('\n');
+    const instrumentLibrary = {
+      LEV: {
+        code: 'LEV',
+        desc: 'level',
+        edm_const: 0,
+        edm_ppm: 0,
+        hzPrecision_sec: 0,
+        dirPrecision_sec: 0,
+        azBearingPrecision_sec: 0,
+        vaPrecision_sec: 0,
+        instCentr_m: 0,
+        tgtCentr_m: 0,
+        vertCentr_m: 0.01,
+        elevDiff_const_m: 0,
+        elevDiff_ppm: 0,
+        gpsStd_xy: 0,
+        levStd_mmPerKm: 1.5,
+      },
+    };
+    const result = new LSAEngine({
+      input,
+      maxIterations: 8,
+      instrumentLibrary,
+      parseOptions: {
+        currentInstrument: 'LEV',
+        projectDefaultInstrument: 'LEV',
+      },
+    }).solve();
+    const lev = result.observations.find((obs) => obs.type === 'lev');
+    expect(lev?.type).toBe('lev');
+    if (lev?.type === 'lev') {
+      expect(lev.stdDev).toBeCloseTo(0.00075, 10);
+      expect(lev.weightingStdDev).toBeCloseTo(0.00075, 10);
+    }
+  });
+
   it('solves M ATFROMTO turned-angle + horizontal-distance shots at measured ranges', () => {
     const input = [
       '.UNITS Meters DMS',
