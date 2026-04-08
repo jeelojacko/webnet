@@ -91,14 +91,104 @@ describe('adjustmentEquationAssembly', () => {
     );
 
     expect(result.L[0][0]).toBe(2);
-    expect(result.A[0][0]).toBe(1);
-    expect(result.A[0][1]).toBe(0);
+    expect(result.A?.[0][0]).toBe(1);
+    expect(result.A?.[0][1]).toBe(0);
+    expect(result.sparseRows[0]).toEqual([{ index: 0, value: 1 }]);
     expect(result.P[0][0]).toBe(4);
 
     expect(result.L[1][0]).toBe(1);
-    expect(result.A[1][0]).toBe(1);
+    expect(result.A?.[1][0]).toBe(1);
+    expect(result.sparseRows[1]).toEqual([{ index: 0, value: 1 }]);
     expect(result.P[1][1]).toBe(16);
     expect(result.rowInfo).toEqual([{ obs: observation }, null]);
     expect(applyTsCorrelationToWeightMatrix).toHaveBeenCalledTimes(1);
+  });
+
+  it('can omit dense A while still emitting sorted sparse design rows', () => {
+    const stations: StationMap = {
+      A: {
+        x: 0,
+        y: 0,
+        h: 0,
+        fixed: true,
+        fixedX: true,
+        fixedY: true,
+        fixedH: true,
+      },
+      B: {
+        x: 10,
+        y: 0,
+        h: 0,
+        fixed: false,
+        fixedX: false,
+        fixedY: false,
+        fixedH: true,
+      },
+    };
+    const observation: DistanceObservation = {
+      id: 1,
+      type: 'dist',
+      subtype: 'ts',
+      from: 'A',
+      to: 'B',
+      obs: 12,
+      mode: 'horiz',
+      instCode: 'S9',
+      stdDev: 0.5,
+    };
+
+    const result = assembleAdjustmentEquations(
+      {
+        stations,
+        paramIndex: { A: { x: 1 }, B: { x: 0 } },
+        is2D: true,
+        debug: false,
+        directionOrientations: {},
+        dirParamMap: {},
+        effectiveStdDev: () => 0.5,
+        correctedDistanceModel: (_obs, calcDistRaw) => ({
+          calcDistance: calcDistRaw,
+          mapScale: 1,
+          prismCorrection: 0,
+        }),
+        getObservedHorizontalDistanceIn2D: () => ({
+          observedDistance: 12,
+          sigmaDistance: 0.5,
+          usedZenith: false,
+        }),
+        getAzimuth: () => ({ az: 0, dist: 10 }),
+        measuredAngleCorrection: () => 0,
+        modeledAzimuth: (rawAz) => rawAz,
+        wrapToPi: (value) => value,
+        gpsObservedVector: () => ({ dE: 0, dN: 0, scale: 1 }),
+        gpsModeledVector: () => ({ dE: 0, dN: 0, scale: 1 }),
+        gpsModeledVectorDerivatives: () => ({ from: {}, to: {} }),
+        gpsWeight: () => ({ wEE: 1, wNN: 1, wEN: 0 }),
+        getModeledZenith: () => ({
+          z: 0,
+          dist: 1,
+          horiz: 1,
+          dh: 0,
+          crCorr: 0,
+          horizontalScale: 1,
+        }),
+        curvatureRefractionAngle: () => 0,
+        applyTsCorrelationToWeightMatrix: vi.fn(),
+      },
+      [observation],
+      [],
+      1,
+      2,
+      undefined,
+      { includeDenseA: false },
+    );
+
+    expect(result.A).toBeUndefined();
+    expect(result.sparseRows).toEqual([
+      [
+        { index: 0, value: 1 },
+        { index: 1, value: -1 },
+      ],
+    ]);
   });
 });

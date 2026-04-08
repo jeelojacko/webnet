@@ -68,6 +68,10 @@
       - [x] Add imported benchmark fixture profiles for a JobXML-style TS job, a GNSS loop-heavy job, and a differential-leveling job
       - [x] Benchmark a heavy artifact export path alongside solve and render timing so worker-offloaded deliverables keep a bounded latency budget
       - [x] Prove the worker artifact hook stays asynchronous through progress updates and that cached reruns still hit parse/planning caches on imported-style jobs
+    - [x] Batch 4 - sparse design-matrix assembly on solve path
+      - [x] Emit sparse design rows directly from shared equation assembly
+      - [x] Skip dense design-matrix allocation in iterative solve and covariance recovery when those paths only need sparse rows
+      - [x] Keep only changes that hold parity and at least match the current benchmark timing
   - [ ] Phase 4 - industry-standard result parity
     - [x] Batch 1 - reference fixture, diff harness, and rollback gates
       - [x] Add a repo fixture set for the attached industry-standard reference case using generic fixture names

@@ -1,5 +1,6 @@
 import { RAD_TO_DEG } from './angles';
 import { zeros } from './matrix';
+import type { SparseMatrixRows } from './matrix';
 import { applyCoordinateConstraintCorrelationWeights } from './adjustmentConstraints';
 import type {
   CoordinateConstraintEquation,
@@ -87,24 +88,29 @@ export interface AdjustmentEquationAssemblyDependencies {
 }
 
 export interface AdjustmentEquationAssemblyResult {
-  A: number[][];
+  A?: number[][];
   L: number[][];
   P: number[][];
   rowInfo: EquationRowInfo[];
+  sparseRows: SparseMatrixRows;
+}
+
+interface AdjustmentEquationAssemblyOptions {
+  includeDenseA?: boolean;
 }
 
 const setAzimuthDerivativeColumns = (
-  A: number[][],
+  assignCoefficient: (_row: number, _column: number | undefined, _value: number) => void,
   row: number,
   toIdx: SolveParameterIndex[StationId] | undefined,
   fromIdx: SolveParameterIndex[StationId] | undefined,
   dAz_dE_To: number,
   dAz_dN_To: number,
 ) => {
-  if (toIdx?.x != null) A[row][toIdx.x] = dAz_dE_To;
-  if (toIdx?.y != null) A[row][toIdx.y] = dAz_dN_To;
-  if (fromIdx?.x != null) A[row][fromIdx.x] = -dAz_dE_To;
-  if (fromIdx?.y != null) A[row][fromIdx.y] = -dAz_dN_To;
+  assignCoefficient(row, toIdx?.x, dAz_dE_To);
+  assignCoefficient(row, toIdx?.y, dAz_dN_To);
+  assignCoefficient(row, fromIdx?.x, -dAz_dE_To);
+  assignCoefficient(row, fromIdx?.y, -dAz_dN_To);
 };
 
 const logDistanceDebug = (
@@ -144,11 +150,33 @@ export const assembleAdjustmentEquations = (
   numObsEquations: number,
   numParams: number,
   iterationNumber?: number,
+  options?: AdjustmentEquationAssemblyOptions,
 ): AdjustmentEquationAssemblyResult => {
-  const A = zeros(numObsEquations, numParams);
+  const includeDenseA = options?.includeDenseA ?? true;
+  const A = includeDenseA ? zeros(numObsEquations, numParams) : undefined;
   const L = zeros(numObsEquations, 1);
   const P = zeros(numObsEquations, numObsEquations);
   const rowInfo: EquationRowInfo[] = [];
+  const sparseRows: SparseMatrixRows = Array.from({ length: numObsEquations }, () => []);
+  const assignCoefficient = (targetRow: number, column: number | undefined, value: number) => {
+    if (column == null) return;
+    if (A) {
+      A[targetRow][column] = value;
+    }
+    const entries = sparseRows[targetRow];
+    const existingIndex = entries.findIndex((entry) => entry.index === column);
+    if (value === 0) {
+      if (existingIndex >= 0) {
+        entries.splice(existingIndex, 1);
+      }
+      return;
+    }
+    if (existingIndex >= 0) {
+      entries[existingIndex].value = value;
+      return;
+    }
+    entries.push({ index: column, value });
+  };
   let row = 0;
 
   activeObservations.forEach((observation) => {
@@ -198,12 +226,12 @@ export const assembleAdjustmentEquations = (
           : 0;
       const fromIdx = dependencies.paramIndex[from];
       const toIdx = dependencies.paramIndex[to];
-      if (fromIdx?.x != null) A[row][fromIdx.x] = -dD_dE;
-      if (fromIdx?.y != null) A[row][fromIdx.y] = -dD_dN;
-      if (!dependencies.is2D && fromIdx?.h != null) A[row][fromIdx.h] = -dD_dH;
-      if (toIdx?.x != null) A[row][toIdx.x] = dD_dE;
-      if (toIdx?.y != null) A[row][toIdx.y] = dD_dN;
-      if (!dependencies.is2D && toIdx?.h != null) A[row][toIdx.h] = dD_dH;
+      assignCoefficient(row, fromIdx?.x, -dD_dE);
+      assignCoefficient(row, fromIdx?.y, -dD_dN);
+      if (!dependencies.is2D) assignCoefficient(row, fromIdx?.h, -dD_dH);
+      assignCoefficient(row, toIdx?.x, dD_dE);
+      assignCoefficient(row, toIdx?.y, dD_dN);
+      if (!dependencies.is2D) assignCoefficient(row, toIdx?.h, dD_dH);
       P[row][row] = 1 / (observed2dDistance.sigmaDistance * observed2dDistance.sigmaDistance);
       row += 1;
       return;
@@ -239,12 +267,12 @@ export const assembleAdjustmentEquations = (
       const toIdx = dependencies.paramIndex[to];
       const fromIdx = dependencies.paramIndex[from];
       const atIdx = dependencies.paramIndex[at];
-      if (toIdx?.x != null) A[row][toIdx.x] = dAzTo_dE_To;
-      if (toIdx?.y != null) A[row][toIdx.y] = dAzTo_dN_To;
-      if (fromIdx?.x != null) A[row][fromIdx.x] = -dAzFrom_dE_From;
-      if (fromIdx?.y != null) A[row][fromIdx.y] = -dAzFrom_dN_From;
-      if (atIdx?.x != null) A[row][atIdx.x] = -dAzTo_dE_To + dAzFrom_dE_From;
-      if (atIdx?.y != null) A[row][atIdx.y] = -dAzTo_dN_To + dAzFrom_dN_From;
+      assignCoefficient(row, toIdx?.x, dAzTo_dE_To);
+      assignCoefficient(row, toIdx?.y, dAzTo_dN_To);
+      assignCoefficient(row, fromIdx?.x, -dAzFrom_dE_From);
+      assignCoefficient(row, fromIdx?.y, -dAzFrom_dN_From);
+      assignCoefficient(row, atIdx?.x, -dAzTo_dE_To + dAzFrom_dE_From);
+      assignCoefficient(row, atIdx?.y, -dAzTo_dN_To + dAzFrom_dN_From);
       P[row][row] = 1 / (sigmaUsed * sigmaUsed);
       row += 1;
       return;
@@ -264,24 +292,24 @@ export const assembleAdjustmentEquations = (
       const fromIdx = dependencies.paramIndex[observation.from];
       const toIdx = dependencies.paramIndex[observation.to];
       const weight = dependencies.gpsWeight(observation);
-      if (fromIdx?.x != null) A[row][fromIdx.x] = jacobian.from.x?.dE ?? -1;
-      if (fromIdx?.y != null) A[row][fromIdx.y] = jacobian.from.y?.dE ?? 0;
-      if (!dependencies.is2D && fromIdx?.h != null) A[row][fromIdx.h] = jacobian.from.h?.dE ?? 0;
-      if (toIdx?.x != null) A[row][toIdx.x] = jacobian.to.x?.dE ?? 1;
-      if (toIdx?.y != null) A[row][toIdx.y] = jacobian.to.y?.dE ?? 0;
-      if (!dependencies.is2D && toIdx?.h != null) A[row][toIdx.h] = jacobian.to.h?.dE ?? 0;
+      assignCoefficient(row, fromIdx?.x, jacobian.from.x?.dE ?? -1);
+      assignCoefficient(row, fromIdx?.y, jacobian.from.y?.dE ?? 0);
+      if (!dependencies.is2D) assignCoefficient(row, fromIdx?.h, jacobian.from.h?.dE ?? 0);
+      assignCoefficient(row, toIdx?.x, jacobian.to.x?.dE ?? 1);
+      assignCoefficient(row, toIdx?.y, jacobian.to.y?.dE ?? 0);
+      if (!dependencies.is2D) assignCoefficient(row, toIdx?.h, jacobian.to.h?.dE ?? 0);
       P[row][row] = weight.wEE;
       P[row][row + 1] = weight.wEN;
       P[row + 1][row] = weight.wEN;
       P[row + 1][row + 1] = weight.wNN;
       L[row + 1][0] = vN;
       rowInfo.push({ obs: observation, component: 'N' });
-      if (fromIdx?.x != null) A[row + 1][fromIdx.x] = jacobian.from.x?.dN ?? 0;
-      if (fromIdx?.y != null) A[row + 1][fromIdx.y] = jacobian.from.y?.dN ?? -1;
-      if (!dependencies.is2D && fromIdx?.h != null) A[row + 1][fromIdx.h] = jacobian.from.h?.dN ?? 0;
-      if (toIdx?.x != null) A[row + 1][toIdx.x] = jacobian.to.x?.dN ?? 0;
-      if (toIdx?.y != null) A[row + 1][toIdx.y] = jacobian.to.y?.dN ?? 1;
-      if (!dependencies.is2D && toIdx?.h != null) A[row + 1][toIdx.h] = jacobian.to.h?.dN ?? 0;
+      assignCoefficient(row + 1, fromIdx?.x, jacobian.from.x?.dN ?? 0);
+      assignCoefficient(row + 1, fromIdx?.y, jacobian.from.y?.dN ?? -1);
+      if (!dependencies.is2D) assignCoefficient(row + 1, fromIdx?.h, jacobian.from.h?.dN ?? 0);
+      assignCoefficient(row + 1, toIdx?.x, jacobian.to.x?.dN ?? 0);
+      assignCoefficient(row + 1, toIdx?.y, jacobian.to.y?.dN ?? 1);
+      if (!dependencies.is2D) assignCoefficient(row + 1, toIdx?.h, jacobian.to.h?.dN ?? 0);
       if (
         !dependencies.is2D &&
         Number.isFinite(corrected.dU ?? Number.NaN) &&
@@ -290,12 +318,12 @@ export const assembleAdjustmentEquations = (
         const vU = (corrected.dU as number) - (modeled.dU as number);
         L[row + 2][0] = vU;
         rowInfo.push({ obs: observation, component: 'U' });
-        if (fromIdx?.x != null) A[row + 2][fromIdx.x] = jacobian.from.x?.dU ?? 0;
-        if (fromIdx?.y != null) A[row + 2][fromIdx.y] = jacobian.from.y?.dU ?? 0;
-        if (fromIdx?.h != null) A[row + 2][fromIdx.h] = jacobian.from.h?.dU ?? -1;
-        if (toIdx?.x != null) A[row + 2][toIdx.x] = jacobian.to.x?.dU ?? 0;
-        if (toIdx?.y != null) A[row + 2][toIdx.y] = jacobian.to.y?.dU ?? 0;
-        if (toIdx?.h != null) A[row + 2][toIdx.h] = jacobian.to.h?.dU ?? 1;
+        assignCoefficient(row + 2, fromIdx?.x, jacobian.from.x?.dU ?? 0);
+        assignCoefficient(row + 2, fromIdx?.y, jacobian.from.y?.dU ?? 0);
+        assignCoefficient(row + 2, fromIdx?.h, jacobian.from.h?.dU ?? -1);
+        assignCoefficient(row + 2, toIdx?.x, jacobian.to.x?.dU ?? 0);
+        assignCoefficient(row + 2, toIdx?.y, jacobian.to.y?.dU ?? 0);
+        assignCoefficient(row + 2, toIdx?.h, jacobian.to.h?.dU ?? 1);
         P[row][row + 2] = weight.wEU ?? 0;
         P[row + 2][row] = weight.wEU ?? 0;
         P[row + 1][row + 2] = weight.wNU ?? 0;
@@ -317,8 +345,8 @@ export const assembleAdjustmentEquations = (
       rowInfo.push({ obs: observation });
       const fromIdx = dependencies.paramIndex[observation.from];
       const toIdx = dependencies.paramIndex[observation.to];
-      if (fromIdx?.h != null) A[row][fromIdx.h] = -1;
-      if (toIdx?.h != null) A[row][toIdx.h] = 1;
+      assignCoefficient(row, fromIdx?.h, -1);
+      assignCoefficient(row, toIdx?.h, 1);
       const sigma = dependencies.effectiveStdDev(observation);
       P[row][row] = 1 / (sigma * sigma);
       row += 1;
@@ -357,7 +385,7 @@ export const assembleAdjustmentEquations = (
       const dAz_dE_To = Math.cos(azimuth.az) / (azimuth.dist || 1);
       const dAz_dN_To = -Math.sin(azimuth.az) / (azimuth.dist || 1);
       setAzimuthDerivativeColumns(
-        A,
+        assignCoefficient,
         row,
         dependencies.paramIndex[observation.to],
         dependencies.paramIndex[observation.from],
@@ -391,12 +419,12 @@ export const assembleAdjustmentEquations = (
       const dAz_dN_To = -Math.sin(azimuth.az) / (azimuth.dist || 1);
       const toIdx = dependencies.paramIndex[observation.to];
       const atIdx = dependencies.paramIndex[observation.at];
-      if (toIdx?.x != null) A[row][toIdx.x] = dAz_dE_To;
-      if (toIdx?.y != null) A[row][toIdx.y] = dAz_dN_To;
-      if (atIdx?.x != null) A[row][atIdx.x] = -dAz_dE_To;
-      if (atIdx?.y != null) A[row][atIdx.y] = -dAz_dN_To;
+      assignCoefficient(row, toIdx?.x, dAz_dE_To);
+      assignCoefficient(row, toIdx?.y, dAz_dN_To);
+      assignCoefficient(row, atIdx?.x, -dAz_dE_To);
+      assignCoefficient(row, atIdx?.y, -dAz_dN_To);
       const dirIdx = dependencies.dirParamMap[observation.setId];
-      if (dirIdx != null) A[row][dirIdx] = 1;
+      assignCoefficient(row, dirIdx, 1);
       P[row][row] = 1 / (sigmaUsed * sigmaUsed);
       row += 1;
       return;
@@ -434,12 +462,12 @@ export const assembleAdjustmentEquations = (
       const dZ_dH = -(zenith.horiz * zenith.horiz) * common;
       const toIdx = dependencies.paramIndex[observation.to];
       const fromIdx = dependencies.paramIndex[observation.from];
-      if (toIdx?.x != null) A[row][toIdx.x] = dZ_dE;
-      if (toIdx?.y != null) A[row][toIdx.y] = dZ_dN;
-      if (toIdx?.h != null) A[row][toIdx.h] = dZ_dH;
-      if (fromIdx?.x != null) A[row][fromIdx.x] = -dZ_dE;
-      if (fromIdx?.y != null) A[row][fromIdx.y] = -dZ_dN;
-      if (fromIdx?.h != null) A[row][fromIdx.h] = -dZ_dH;
+      assignCoefficient(row, toIdx?.x, dZ_dE);
+      assignCoefficient(row, toIdx?.y, dZ_dN);
+      assignCoefficient(row, toIdx?.h, dZ_dH);
+      assignCoefficient(row, fromIdx?.x, -dZ_dE);
+      assignCoefficient(row, fromIdx?.y, -dZ_dN);
+      assignCoefficient(row, fromIdx?.h, -dZ_dH);
       P[row][row] = 1 / (sigmaUsed * sigmaUsed);
       row += 1;
     }
@@ -452,7 +480,7 @@ export const assembleAdjustmentEquations = (
     const current =
       constraint.component === 'x' ? station.x : constraint.component === 'y' ? station.y : station.h;
     L[row][0] = constraint.target - current;
-    A[row][constraint.index] = 1;
+    assignCoefficient(row, constraint.index, 1);
     P[row][row] = 1 / (constraint.sigma * constraint.sigma);
     rowInfo.push(null);
     constraintPlacements.push({ row, constraint });
@@ -461,5 +489,6 @@ export const assembleAdjustmentEquations = (
 
   applyCoordinateConstraintCorrelationWeights(P, constraintPlacements);
   dependencies.applyTsCorrelationToWeightMatrix(P, rowInfo);
-  return { A, L, P, rowInfo };
+  sparseRows.forEach((entries) => entries.sort((left, right) => left.index - right.index));
+  return { A, L, P, rowInfo, sparseRows };
 };

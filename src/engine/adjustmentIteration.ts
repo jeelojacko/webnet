@@ -4,6 +4,7 @@ import {
   multiplySparseRowsByDenseMatrix,
   zeros,
 } from './matrix';
+import type { SparseMatrixRows } from './matrix';
 import type { StationMap } from '../types';
 import type {
   EquationRowInfo,
@@ -28,9 +29,13 @@ export const solveAdjustmentIteration = (
   P: number[][],
   rowInfo: EquationRowInfo[],
   iterationNumber: number,
+  options?: {
+    sparseRows?: SparseMatrixRows;
+    numParams?: number;
+  },
 ): AdjustmentIterationComputationResult => {
-  const sparseRows = denseRowsToSparseRows(A);
-  const numParams = A[0]?.length ?? 0;
+  const sparseRows = options?.sparseRows ?? denseRowsToSparseRows(A);
+  const numParams = options?.numParams ?? A[0]?.length ?? 0;
   let correction = zeros(numParams, 1);
   let qxx: number[][] | undefined;
   let solvedP = P;

@@ -525,7 +525,7 @@ export class LSAEngine {
   ): number[][] | null {
     if (numParams <= 0 || numObsEquations <= 0) return null;
     this.clearGeometryCache();
-    const { A, P } = assembleAdjustmentEquations(
+    const { P, sparseRows } = assembleAdjustmentEquations(
       {
         stations: this.stations,
         paramIndex: this.paramIndex,
@@ -552,9 +552,15 @@ export class LSAEngine {
       constraints,
       numObsEquations,
       numParams,
+      undefined,
+      { includeDenseA: false },
     );
-    const sparseRows = denseRowsToSparseRows(A);
-    const { normal } = accumulateNormalEquationsFromSparseRows(sparseRows, zeros(A.length, 1), P, numParams);
+    const { normal } = accumulateNormalEquationsFromSparseRows(
+      sparseRows,
+      zeros(numObsEquations, 1),
+      P,
+      numParams,
+    );
     return this.invertNormalMatrixForStats(normal);
   }
 
@@ -4910,7 +4916,7 @@ export class LSAEngine {
       this.iterations += 1;
       this.clearGeometryCache();
       const assemblyStartedAt = Date.now();
-      const { A, L, P, rowInfo } = assembleAdjustmentEquations(
+      const { A, L, P, rowInfo, sparseRows } = assembleAdjustmentEquations(
         {
           stations: this.stations,
           paramIndex: this.paramIndex,
@@ -4939,6 +4945,7 @@ export class LSAEngine {
         numObsEquations,
         numParams,
         iter + 1,
+        { includeDenseA: false },
       );
       this.solveTiming.equationAssemblyMs += Date.now() - assemblyStartedAt;
 
@@ -4957,11 +4964,12 @@ export class LSAEngine {
             recordRobustDiagnostics: this.recordRobustDiagnostics.bind(this),
             weightedQuadratic: this.weightedQuadratic.bind(this),
           },
-          A,
+          A ?? [],
           L,
           P,
           rowInfo,
           iter + 1,
+          { sparseRows, numParams },
         );
         this.solveTiming.matrixFactorizationMs += Date.now() - factorizationStartedAt;
         this.Qxx = iterationResult.qxx ?? null;

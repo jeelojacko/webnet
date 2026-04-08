@@ -115,4 +115,45 @@ describe('adjustmentIteration', () => {
     expect(recordConditionEstimate).not.toHaveBeenCalled();
     expect(solveNormalEquations).toHaveBeenCalledWith([[1]], [[0]], { recoverCovariance: false });
   });
+
+  it('can solve from provided sparse rows without a dense design matrix', () => {
+    const solveNormalEquations = vi.fn(() => ({
+      correction: [[2]],
+    }));
+
+    const result = solveAdjustmentIteration(
+      {
+        robustMode: 'none',
+        solveNormalEquations,
+        estimateCondition: () => 0,
+        recordConditionEstimate: () => undefined,
+        captureRobustWeightBase: () => ({ diagonal: [], correlatedPairs: [] }),
+        applyRobustWeightFactors: () => undefined,
+        computeRobustWeightSummary: () => ({
+          factors: [],
+          downweightedRows: 0,
+          minWeight: 1,
+          maxNorm: 0,
+          meanWeight: 1,
+          topRows: [],
+        }),
+        maxRobustWeightDelta: () => 0,
+        recordRobustDiagnostics: () => undefined,
+        weightedQuadratic: (P, v) => P[0][0] * v[0][0] * v[0][0],
+      },
+      [],
+      [[2]],
+      [[4]],
+      [null],
+      2,
+      {
+        numParams: 1,
+        sparseRows: [[{ index: 0, value: 1 }]],
+      },
+    );
+
+    expect(solveNormalEquations).toHaveBeenCalledWith([[4]], [[8]], { recoverCovariance: false });
+    expect(result.correction).toEqual([[2]]);
+    expect(result.sumAfter).toBe(0);
+  });
 });
