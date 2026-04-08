@@ -1,4 +1,9 @@
-import { multiply, transpose, zeros } from './matrix';
+import {
+  accumulateNormalEquationsFromSparseRows,
+  denseRowsToSparseRows,
+  multiplySparseRowsByDenseMatrix,
+  zeros,
+} from './matrix';
 import type { StationMap } from '../types';
 import type {
   EquationRowInfo,
@@ -24,7 +29,7 @@ export const solveAdjustmentIteration = (
   rowInfo: EquationRowInfo[],
   iterationNumber: number,
 ): AdjustmentIterationComputationResult => {
-  const AT = transpose(A);
+  const sparseRows = denseRowsToSparseRows(A);
   const numParams = A[0]?.length ?? 0;
   let correction = zeros(numParams, 1);
   let qxx: number[][] | undefined;
@@ -41,18 +46,21 @@ export const solveAdjustmentIteration = (
     for (let inner = 0; inner < maxInnerIterations; inner += 1) {
       dependencies.applyRobustWeightFactors(P, baseWeights, factors);
       solvedP = P;
-      const ATP = multiply(AT, solvedP);
-      const N = multiply(ATP, A);
+      const { normal: N, rhs: U } = accumulateNormalEquationsFromSparseRows(
+        sparseRows,
+        L,
+        solvedP,
+        numParams,
+      );
       if (shouldEstimateCondition) {
         dependencies.recordConditionEstimate(dependencies.estimateCondition(N));
       }
-      const U = multiply(ATP, L);
       const normalSolution = dependencies.solveNormalEquations(N, U, {
         recoverCovariance: false,
       });
       correction = normalSolution.correction;
       qxx = normalSolution.qxx;
-      const AX = multiply(A, correction);
+      const AX = multiplySparseRowsByDenseMatrix(sparseRows, correction);
       const residuals = AX.map((rowValue, index) => rowValue[0] - L[index][0]);
       finalSummary = dependencies.computeRobustWeightSummary(residuals, rowInfo);
       finalWeightDelta = dependencies.maxRobustWeightDelta(factors, finalSummary.factors);
@@ -65,12 +73,15 @@ export const solveAdjustmentIteration = (
       dependencies.recordRobustDiagnostics(iterationNumber, finalSummary, finalWeightDelta);
     }
   } else {
-    const ATP = multiply(AT, P);
-    const N = multiply(ATP, A);
+    const { normal: N, rhs: U } = accumulateNormalEquationsFromSparseRows(
+      sparseRows,
+      L,
+      P,
+      numParams,
+    );
     if (shouldEstimateCondition) {
       dependencies.recordConditionEstimate(dependencies.estimateCondition(N));
     }
-    const U = multiply(ATP, L);
     const normalSolution = dependencies.solveNormalEquations(N, U, {
       recoverCovariance: false,
     });
@@ -78,7 +89,7 @@ export const solveAdjustmentIteration = (
     qxx = normalSolution.qxx;
   }
 
-  const AX = multiply(A, correction);
+  const AX = multiplySparseRowsByDenseMatrix(sparseRows, correction);
   const Vnew = zeros(L.length, 1);
   let maxBefore = 0;
   let maxAfter = 0;

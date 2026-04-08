@@ -102,6 +102,99 @@ const handled = (
   ...overrides,
 });
 
+const compareDirectiveStationIds = (a: string, b: string): number =>
+  a.localeCompare(b, undefined, { numeric: true });
+
+const directivePairKey = (from: string, to: string): string =>
+  compareDirectiveStationIds(from, to) <= 0 ? `${from}::${to}` : `${to}::${from}`;
+
+const dedupeDirectiveStationIds = (tokens: string[]): string[] => {
+  const seen = new Set<string>();
+  const stationIds: string[] = [];
+  tokens.forEach((token) => {
+    const trimmed = token.trim();
+    if (!trimmed || seen.has(trimmed)) return;
+    seen.add(trimmed);
+    stationIds.push(trimmed);
+  });
+  return stationIds;
+};
+
+const expandDirectiveConnectionPairs = (
+  stationIds: string[],
+): Array<{ from: StationId; to: StationId }> => {
+  const pairs: Array<{ from: StationId; to: StationId }> = [];
+  for (let i = 0; i < stationIds.length; i += 1) {
+    for (let j = i + 1; j < stationIds.length; j += 1) {
+      pairs.push({
+        from: stationIds[i] as StationId,
+        to: stationIds[j] as StationId,
+      });
+    }
+  }
+  return pairs;
+};
+
+const parseRelativeLineDirectivePairs = (
+  tokens: string[],
+): {
+  stationIds?: string[];
+  pairs: Array<{ from: StationId; to: StationId }>;
+  warnings: string[];
+} => {
+  const cleaned = dedupeDirectiveStationIds(tokens);
+  const warnings: string[] = [];
+  if (cleaned.length === 0) {
+    return { pairs: [], warnings };
+  }
+
+  const firstTokenUpper = cleaned[0].toUpperCase();
+  if (firstTokenUpper === '/CON' || firstTokenUpper === 'CON') {
+    const stationIds = dedupeDirectiveStationIds(cleaned.slice(1));
+    return {
+      stationIds,
+      pairs: expandDirectiveConnectionPairs(stationIds),
+      warnings,
+    };
+  }
+
+  const pairs: Array<{ from: StationId; to: StationId }> = [];
+  const seen = new Set<string>();
+  const pushPair = (fromToken: string, toToken: string) => {
+    const from = fromToken.trim();
+    const to = toToken.trim();
+    if (!from || !to || from === to) return;
+    const key = directivePairKey(from, to);
+    if (seen.has(key)) return;
+    seen.add(key);
+    pairs.push({ from: from as StationId, to: to as StationId });
+  };
+
+  const sequentialTokens: string[] = [];
+  cleaned.forEach((token) => {
+    if (token.startsWith('/')) {
+      warnings.push(`unsupported option "${token}"`);
+      return;
+    }
+    const explicitPairMatch = token.match(/^(.+?)(?::|\/|->)(.+)$/);
+    if (explicitPairMatch) {
+      pushPair(explicitPairMatch[1], explicitPairMatch[2]);
+      return;
+    }
+    sequentialTokens.push(token);
+  });
+
+  for (let i = 0; i < sequentialTokens.length; i += 2) {
+    if (!sequentialTokens[i + 1]) {
+      warnings.push(`unmatched station token "${sequentialTokens[i]}"`);
+      break;
+    }
+    pushPair(sequentialTokens[i], sequentialTokens[i + 1]);
+  }
+
+  return { pairs, warnings };
+};
+
 const SPECIALIZED_DIRECTIVE_HANDLERS: Record<string, SpecializedDirectiveHandler> = {
   '.CRS': ({
     parts,
@@ -1356,29 +1449,48 @@ const SPECIALIZED_DIRECTIVE_HANDLERS: Record<string, SpecializedDirectiveHandler
     }
     return handled(orderExplicit);
   },
-  '.ELLIPSE': ({ op, logs, lineNum, orderExplicit, compatibilityAcceptedNoOps }) => {
-    if (!compatibilityAcceptedNoOps.has(op)) {
-      compatibilityAcceptedNoOps.add(op);
+  '.ELLIPSE': ({ parts, state, logs, lineNum, orderExplicit, splitCommaTokens }) => {
+    const stationIds = dedupeDirectiveStationIds(
+      splitCommaTokens(parts.slice(1), true).filter((token) => !token.trim().startsWith('/')),
+    );
+    state.ellipseStationIds = stationIds as StationId[];
+    if (stationIds.length === 0) {
+      logs.push(`Warning: .ELLIPSE at line ${lineNum} did not select any stations.`);
+    } else {
+      logs.push(`Error ellipse output limited to ${stationIds.length} station(s).`);
+    }
+    return handled(orderExplicit);
+  },
+  '.RELATIVE': ({ parts, state, logs, lineNum, orderExplicit, splitCommaTokens }) => {
+    const parsed = parseRelativeLineDirectivePairs(splitCommaTokens(parts.slice(1), true));
+    state.relativeLinePairs = parsed.pairs;
+    parsed.warnings.forEach((warning) =>
+      logs.push(`Warning: .RELATIVE at line ${lineNum} ${warning}.`),
+    );
+    if (parsed.pairs.length === 0) {
+      logs.push(`Warning: .RELATIVE at line ${lineNum} did not select any station pairs.`);
+    } else {
       logs.push(
-        `Compatibility: ${op} accepted at line ${lineNum} but behavior is not yet applied in this version.`,
+        `Relative line output selected ${parsed.pairs.length} pair(s)${
+          parsed.stationIds ? ` from ${parsed.stationIds.length} station(s)` : ''
+        }.`,
       );
     }
     return handled(orderExplicit);
   },
-  '.RELATIVE': ({ op, logs, lineNum, orderExplicit, compatibilityAcceptedNoOps }) => {
-    if (!compatibilityAcceptedNoOps.has(op)) {
-      compatibilityAcceptedNoOps.add(op);
+  '.PTOLERANCE': ({ parts, state, logs, lineNum, orderExplicit, splitCommaTokens }) => {
+    const parsed = parseRelativeLineDirectivePairs(splitCommaTokens(parts.slice(1), true));
+    state.positionalTolerancePairs = parsed.pairs;
+    parsed.warnings.forEach((warning) =>
+      logs.push(`Warning: .PTOLERANCE at line ${lineNum} ${warning}.`),
+    );
+    if (parsed.pairs.length === 0) {
+      logs.push(`Warning: .PTOLERANCE at line ${lineNum} did not select any station pairs.`);
+    } else {
       logs.push(
-        `Compatibility: ${op} accepted at line ${lineNum} but behavior is not yet applied in this version.`,
-      );
-    }
-    return handled(orderExplicit);
-  },
-  '.PTOLERANCE': ({ op, logs, lineNum, orderExplicit, compatibilityAcceptedNoOps }) => {
-    if (!compatibilityAcceptedNoOps.has(op)) {
-      compatibilityAcceptedNoOps.add(op);
-      logs.push(
-        `Compatibility: ${op} accepted at line ${lineNum} but behavior is not yet applied in this version.`,
+        `Positional tolerance checking selected ${parsed.pairs.length} pair(s)${
+          parsed.stationIds ? ` from ${parsed.stationIds.length} station(s)` : ''
+        }.`,
       );
     }
     return handled(orderExplicit);

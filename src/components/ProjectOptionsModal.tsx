@@ -2142,6 +2142,96 @@ const ProjectOptionsModal: React.FC<ProjectOptionsModalProps> = ({ context }) =>
                       direction-set processing with industry default instrument fallback.
                     </div>
                   </SettingsCard>
+                  <SettingsCard
+                    title="Positional Tolerance"
+                    tooltip="Project-level settings used by .PTOL selections for pass/fail line checks."
+                  >
+                    <div className="space-y-3">
+                      <div
+                        className="rounded border border-slate-400/60 bg-slate-700/20 px-2 py-2 flex items-center justify-between gap-2"
+                        title="Enable positional tolerance checks for the station pairs selected by .PTOL directives."
+                      >
+                        <span className="text-[11px] uppercase tracking-wide text-slate-200">
+                          Enable PTOL Checks
+                        </span>
+                        <SettingsToggle
+                          title="Enable positional tolerance checks for the station pairs selected by .PTOL directives."
+                          checked={parseSettingsDraft.positionalToleranceEnabled ?? false}
+                          onChange={(checked) =>
+                            handleDraftParseSetting('positionalToleranceEnabled', checked)
+                          }
+                        />
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <label className={optionLabelClass}>
+                          Constant (mm)
+                          <input
+                            title="Constant allowance added to each positional tolerance check."
+                            type="number"
+                            min={0}
+                            step={0.1}
+                            value={parseSettingsDraft.positionalToleranceConstantMm ?? 0}
+                            disabled={!parseSettingsDraft.positionalToleranceEnabled}
+                            onChange={(e) =>
+                              handleDraftParseSetting(
+                                'positionalToleranceConstantMm',
+                                Number.isFinite(parseFloat(e.target.value))
+                                  ? Math.max(0, parseFloat(e.target.value))
+                                  : 0,
+                              )
+                            }
+                            className={`${optionInputClass} mt-1 disabled:opacity-50 disabled:cursor-not-allowed`}
+                          />
+                        </label>
+                        <label className={optionLabelClass}>
+                          PPM
+                          <input
+                            title="PPM allowance added in proportion to the tested line length."
+                            type="number"
+                            min={0}
+                            step={0.1}
+                            value={parseSettingsDraft.positionalTolerancePpm ?? 0}
+                            disabled={!parseSettingsDraft.positionalToleranceEnabled}
+                            onChange={(e) =>
+                              handleDraftParseSetting(
+                                'positionalTolerancePpm',
+                                Number.isFinite(parseFloat(e.target.value))
+                                  ? Math.max(0, parseFloat(e.target.value))
+                                  : 0,
+                              )
+                            }
+                            className={`${optionInputClass} mt-1 disabled:opacity-50 disabled:cursor-not-allowed`}
+                          />
+                        </label>
+                        <label className={optionLabelClass}>
+                          Confidence (%)
+                          <input
+                            title="Confidence region used when converting the relative ellipse semi-major axis into the PTOL check value."
+                            type="number"
+                            min={1}
+                            max={99.999}
+                            step={0.1}
+                            value={parseSettingsDraft.positionalToleranceConfidencePercent ?? 95}
+                            disabled={!parseSettingsDraft.positionalToleranceEnabled}
+                            onChange={(e) =>
+                              handleDraftParseSetting(
+                                'positionalToleranceConfidencePercent',
+                                Number.isFinite(parseFloat(e.target.value))
+                                  ? Math.max(1, Math.min(99.999, parseFloat(e.target.value)))
+                                  : 95,
+                              )
+                            }
+                            className={`${optionInputClass} mt-1 disabled:opacity-50 disabled:cursor-not-allowed`}
+                          />
+                        </label>
+                      </div>
+                      <div className="rounded-md border border-slate-400/60 bg-slate-700/20 px-3 py-2 text-[11px] text-slate-200 leading-relaxed">
+                        `.PTOL /CON` selects which station pairs to check. These project
+                        settings define the allowable tolerance and confidence region used by
+                        the listing pass/fail report.
+                      </div>
+                    </div>
+                  </SettingsCard>
                 </div>
               )}
 

@@ -61,6 +61,8 @@ export interface RelativeCovarianceBlock {
   to: StationId;
   connected: boolean;
   connectionTypes: string[];
+  selectedByRelativeDirective?: boolean;
+  selectedByPositionalToleranceDirective?: boolean;
   cEE: number;
   cEN: number;
   cEH?: number;
@@ -1039,6 +1041,13 @@ export interface ParseOptions {
   prismEnabled?: boolean;
   prismOffset?: number;
   prismScope?: 'global' | 'set';
+  positionalToleranceEnabled?: boolean;
+  positionalToleranceConstantMm?: number;
+  positionalTolerancePpm?: number;
+  positionalToleranceConfidencePercent?: number;
+  ellipseStationIds?: StationId[];
+  relativeLinePairs?: Array<{ from: StationId; to: StationId }>;
+  positionalTolerancePairs?: Array<{ from: StationId; to: StationId }>;
   rotationAngleRad?: number;
   lostStationIds?: StationId[];
   autoAdjustEnabled?: boolean;

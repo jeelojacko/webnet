@@ -103,6 +103,10 @@ export interface RunSessionParseSettings {
   gpsAddHiHtHtM: number;
   qFixLinearSigmaM: number;
   qFixAngularSigmaSec: number;
+  positionalToleranceEnabled?: boolean;
+  positionalToleranceConstantMm?: number;
+  positionalTolerancePpm?: number;
+  positionalToleranceConfidencePercent?: number;
   prismEnabled: boolean;
   prismOffset: number;
   prismScope: 'global' | 'set';
@@ -476,6 +480,10 @@ const buildParseOptions = (
   gpsAddHiHtHtM: effectiveParse.gpsAddHiHtHtM,
   qFixLinearSigmaM: effectiveParse.qFixLinearSigmaM ?? DEFAULT_QFIX_LINEAR_SIGMA_M,
   qFixAngularSigmaSec: effectiveParse.qFixAngularSigmaSec ?? DEFAULT_QFIX_ANGULAR_SIGMA_SEC,
+  positionalToleranceEnabled: effectiveParse.positionalToleranceEnabled,
+  positionalToleranceConstantMm: effectiveParse.positionalToleranceConstantMm,
+  positionalTolerancePpm: effectiveParse.positionalTolerancePpm,
+  positionalToleranceConfidencePercent: effectiveParse.positionalToleranceConfidencePercent,
   descriptionReconcileMode: effectiveParse.descriptionReconcileMode,
   descriptionAppendDelimiter: effectiveParse.descriptionAppendDelimiter,
   lonSign: effectiveParse.lonSign,

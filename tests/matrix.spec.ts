@@ -1,16 +1,20 @@
 import { describe, expect, it } from 'vitest';
 import {
+  accumulateNormalEquationsFromSparseRows,
   choleskyDecompose,
   choleskyDecomposeWithDamping,
+  denseRowsToSparseRows,
   inv,
   invertSymmetricLDLT,
   invertSymmetricLDLTWithInfo,
   invertSPDCholesky,
   ldltDecomposeSymmetric,
   multiply,
+  multiplySparseRowsByDenseMatrix,
   solveSPDCholesky,
   solveSymmetricLDLT,
   solveSPDWithDamping,
+  symmetricQuadraticForm,
   transpose,
   zeros,
 } from '../src/engine/matrix';
@@ -50,6 +54,70 @@ describe('matrix helpers', () => {
       [2, 5],
       [3, 6],
     ]);
+  });
+
+  it('converts dense rows into sparse entries and multiplies them by a dense matrix', () => {
+    const rows = denseRowsToSparseRows([
+      [0, 2, 0, -1],
+      [3, 0, 0, 0],
+    ]);
+
+    expect(rows).toEqual([
+      [
+        { index: 1, value: 2 },
+        { index: 3, value: -1 },
+      ],
+      [{ index: 0, value: 3 }],
+    ]);
+
+    expect(
+      multiplySparseRowsByDenseMatrix(rows, [
+        [1, 2],
+        [3, 4],
+        [5, 6],
+        [7, 8],
+      ]),
+    ).toEqual([
+      [-1, 0],
+      [3, 6],
+    ]);
+  });
+
+  it('accumulates symmetric normal equations directly from sparse rows and weights', () => {
+    const rows = denseRowsToSparseRows([
+      [1, 0, 2],
+      [0, -1, 1],
+    ]);
+
+    const { normal, rhs } = accumulateNormalEquationsFromSparseRows(
+      rows,
+      [[3], [5]],
+      [
+        [4, 1],
+        [1, 9],
+      ],
+      3,
+    );
+
+    expect(normal).toEqual([
+      [4, -1, 9],
+      [-1, 9, -11],
+      [9, -11, 29],
+    ]);
+    expect(rhs).toEqual([[17], [-48], [82]]);
+  });
+
+  it('evaluates a symmetric quadratic form using only the upper triangle', () => {
+    expect(
+      symmetricQuadraticForm(
+        [
+          [4, 1, 0],
+          [1, 3, -2],
+          [0, -2, 5],
+        ],
+        [[2], [-1], [3]],
+      ),
+    ).toBeCloseTo(72);
   });
 
   it('inverts a simple 2x2', () => {

@@ -377,7 +377,10 @@ const extractAdjustedGpsVectorRows = (
   return rows;
 };
 
-const buildCaseResult = (caseId: keyof typeof INDUSTRY_PARITY_CASES) => {
+const buildCaseResult = (
+  caseId: keyof typeof INDUSTRY_PARITY_CASES,
+  parseOptionOverrides: Record<string, unknown> = {},
+) => {
   const startup = INDUSTRY_PARITY_CASES[caseId].startupDefaults;
   expect(startup).toBeDefined();
 
@@ -400,6 +403,7 @@ const buildCaseResult = (caseId: keyof typeof INDUSTRY_PARITY_CASES) => {
       refractionCoefficient: startup?.parseSettingsPatch.refractionCoefficient,
       verticalDeflectionNorthSec: startup?.parseSettingsPatch.verticalDeflectionNorthSec,
       verticalDeflectionEastSec: startup?.parseSettingsPatch.verticalDeflectionEastSec,
+      ...parseOptionOverrides,
     },
   }).solve();
 };
@@ -1617,6 +1621,164 @@ describe('industry multi-case parity foundation', () => {
       expect(gpsDeltas.errorFactor).toBeCloseTo(1.027, 1);
       expect(total.count).toBe(1615);
       expect(total.sumSquares).toBeCloseTo(1250.713, 0);
+
+      const adjustedGpsVectorSection = extractSection(
+        listing,
+        'Adjusted GPS Vector Observations (Meters)',
+        'Adjusted Bearings (DMS) and Horizontal Distances (Meters)',
+      );
+      const normalizedAdjustedGpsVectorSection = adjustedGpsVectorSection.replace(/\s+/g, ' ').trim();
+      expect(normalizedAdjustedGpsVectorSection).toContain(
+        '(V27 PostProcessed 28-APR-2025 12:21:00.0 session_1_processed.asc)',
+      );
+      expect(normalizedAdjustedGpsVectorSection).toContain(
+        'FRDN Delta-N 1109.0406 -0.0003 0.0005 0.7 1:1804',
+      );
+      expect(normalizedAdjustedGpsVectorSection).toContain(
+        'Delta-U -35.5079 0.0023 0.0035 0.7',
+      );
+      expect(normalizedAdjustedGpsVectorSection).toContain(
+        'GPS6 Delta-N -253.9073 0.0019 0.0040 0.5 1:1863',
+      );
+
+      const relationshipSection = extractSection(
+        listing,
+        'Adjusted Bearings (DMS) and Horizontal Distances (Meters)',
+        'Station Coordinate Error Ellipses (Meters)',
+      );
+      const normalizedRelationshipSection = relationshipSection.replace(/\s+/g, ' ').trim();
+      expect(normalizedRelationshipSection).toContain('APOG BROD N13-55-59.45E 841.8814');
+      expect(normalizedRelationshipSection).toMatch(
+        /(?:PITA TIMS|TIMS PITA)\s+(?:N49-03-55\.15W|S49-03-55\.14E)\s+285\.463[89]/,
+      );
+
+      const stationEllipseSection = extractSection(
+        listing,
+        'Station Coordinate Error Ellipses (Meters)',
+        'Relative Error Ellipses (Meters)',
+      );
+      expect(stationEllipseSection).toContain(
+        'FRDN                      0.000000      0.000000       0-00       0.000000',
+      );
+      expect(stationEllipseSection.replace(/\s+/g, ' ').trim()).toContain(
+        'APOG 0.001009 0.000805',
+      );
+      expect(stationEllipseSection).not.toContain('GPS2');
+      expect(stationEllipseSection).not.toContain('100                       ');
+
+      const relativeEllipseSection = extractSection(
+        listing,
+        'Relative Error Ellipses (Meters)',
+        'Cluster Detection Candidates',
+      );
+      const normalizedRelativeEllipseSection = relativeEllipseSection.replace(/\s+/g, ' ').trim();
+      expect(normalizedRelativeEllipseSection).toContain(
+        'APOG BROD 0.001639 0.001298',
+      );
+      expect(normalizedRelativeEllipseSection).toMatch(
+        /(?:PITA TIMS|TIMS PITA)\s+0\.003678\s+0\.00320[67]/,
+      );
+      const selectedRelativeStations = new Set([
+        'APOG',
+        'BROD',
+        'OOP',
+        'FM1',
+        'GATE',
+        'TIMS',
+        'PEAT',
+        'POT',
+        'PITA',
+      ]);
+      const relativeEllipseRowCount = normalizeLineEndings(relativeEllipseSection)
+        .split('\n')
+        .map((line) => line.trim().split(/\s+/))
+        .filter(
+          (parts) =>
+            parts.length >= 6 &&
+            selectedRelativeStations.has(parts[0]) &&
+            selectedRelativeStations.has(parts[1]) &&
+            /^\d+\.\d+$/.test(parts[2]),
+        ).length;
+      expect(relativeEllipseRowCount).toBe(36);
+    },
+    120000,
+  );
+
+  it(
+    'renders positional tolerance checks for .PTOL-selected combined-case pairs when project settings enable them',
+    () => {
+      const startup = INDUSTRY_PARITY_CASES.combined.startupDefaults;
+      expect(startup).toBeDefined();
+
+      const result = buildCaseResult('combined', {
+        positionalToleranceEnabled: true,
+        positionalToleranceConstantMm: 0,
+        positionalTolerancePpm: 0,
+        positionalToleranceConfidencePercent: 95,
+      });
+      expect(result.success).toBe(true);
+
+      const listing = buildIndustryStyleListingText(
+        result,
+        {
+          maxIterations: 10,
+          convergenceLimit: startup?.settingsPatch.convergenceLimit,
+          precisionReportingMode: 'industry-standard',
+          units: 'm',
+          listingShowCoordinates: true,
+          listingShowObservationsResiduals: true,
+          listingShowErrorPropagation: true,
+          listingShowProcessingNotes: true,
+          listingShowAzimuthsBearings: true,
+          listingShowLostStations: true,
+          listingSortCoordinatesBy: 'input',
+          listingSortObservationsBy: 'residual',
+          listingObservationLimit: 9999,
+        },
+        {
+          coordMode: startup?.parseSettingsPatch.coordMode ?? '3D',
+          order: startup?.parseSettingsPatch.order ?? 'EN',
+          angleUnits: startup?.parseSettingsPatch.angleUnits ?? 'dms',
+          angleStationOrder: startup?.parseSettingsPatch.angleStationOrder ?? 'atfromto',
+          deltaMode: startup?.parseSettingsPatch.deltaMode ?? 'slope',
+          refractionCoefficient: startup?.parseSettingsPatch.refractionCoefficient ?? 0.13,
+          positionalToleranceEnabled: true,
+          positionalToleranceConstantMm: 0,
+          positionalTolerancePpm: 0,
+          positionalToleranceConfidencePercent: 95,
+        },
+        {
+          solveProfile: 'industry-parity',
+          angleCenteringModel: 'geometry-aware-correlated-rays',
+          defaultSigmaCount: 0,
+          defaultSigmaByType: '',
+          stochasticDefaultsSummary: '',
+          rotationAngleRad: 0,
+          currentInstrumentCode: startup?.selectedInstrument,
+          currentInstrumentDesc: startup?.projectInstruments[startup?.selectedInstrument ?? '']?.desc,
+          currentInstrumentLevStdMmPerKm:
+            startup?.projectInstruments[startup?.selectedInstrument ?? '']?.levStd_mmPerKm,
+          verticalDeflectionNorthSec: startup?.parseSettingsPatch.verticalDeflectionNorthSec ?? 0,
+          verticalDeflectionEastSec: startup?.parseSettingsPatch.verticalDeflectionEastSec ?? 0,
+          projectInstrumentLibrary: startup?.projectInstruments,
+        },
+      );
+
+      const positionalToleranceSection = extractSection(
+        listing,
+        'Positional Tolerance Checks (Meters)',
+        'Cluster Detection Candidates',
+      );
+      expect(positionalToleranceSection).toContain('Tolerance = 0.000000 Meters + 0.000 PPM');
+      expect(positionalToleranceSection).toContain('Confidence Region = 95.00%');
+      expect(positionalToleranceSection).toContain('APOG       BROD');
+      expect(positionalToleranceSection).toMatch(/(?:PITA|TIMS)\s+(?:PITA|TIMS)\s+285\.4639/);
+      const positionalToleranceRowCount = normalizeLineEndings(positionalToleranceSection)
+        .split('\n')
+        .filter((line) => /^\s*[A-Za-z0-9_-]+\s+[A-Za-z0-9_-]+\s+\d+\.\d+.*\s(?:PASS|FAIL)\s*$/.test(line))
+        .length;
+      expect(positionalToleranceRowCount).toBe(36);
+      expect(positionalToleranceSection).toContain('FAIL');
     },
     120000,
   );

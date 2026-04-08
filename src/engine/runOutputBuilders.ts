@@ -44,6 +44,10 @@ export const createRunOutputBuilders = ({
         refractionCoefficient: parseSettings.refractionCoefficient,
         descriptionReconcileMode: parseSettings.descriptionReconcileMode,
         descriptionAppendDelimiter: parseSettings.descriptionAppendDelimiter,
+        positionalToleranceEnabled: parseSettings.positionalToleranceEnabled,
+        positionalToleranceConstantMm: parseSettings.positionalToleranceConstantMm,
+        positionalTolerancePpm: parseSettings.positionalTolerancePpm,
+        positionalToleranceConfidencePercent: parseSettings.positionalToleranceConfidencePercent,
       },
       {
         solveProfile: runDiag.solveProfile,

@@ -259,6 +259,10 @@ export type ParseSettings = {
   prismEnabled: boolean;
   prismOffset: number;
   prismScope: 'global' | 'set';
+  positionalToleranceEnabled?: boolean;
+  positionalToleranceConstantMm?: number;
+  positionalTolerancePpm?: number;
+  positionalToleranceConfidencePercent?: number;
   directionSetMode?: 'reduced' | 'raw';
   descriptionReconcileMode: 'first' | 'append';
   descriptionAppendDelimiter: string;

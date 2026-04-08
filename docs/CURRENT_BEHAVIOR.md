@@ -195,6 +195,7 @@ Current GNSS behavior includes:
 - the unadjusted GNSS covariance-vector listing block preserves the source-frame `DeltaX/DeltaY/DeltaZ` covariance sigmas/correlations from the imported `G0/G1/G2/G3` records, while the adjusted GNSS vector section stays in the local-topocentric `Delta-N/E/U` display contract
 - the GNSS parity fixture now uses the CSRS New Brunswick double-stereographic contract beneath the industry `NewBrunswick83` label, which closes the earlier decimeter-scale adjusted-coordinate/geodetic drift
 - covariance-vector GNSS adjusted listing rows now display their adjusted `Delta-N/E/U` values in the non-deflected local-topocentric frame used by the stored industry reference, while covariance imported through `.GPS FACTOR <xy> VERT <z>` is first unscaled back to raw ECEF, rotated into local topocentric ENU, and then refactored in that local frame before the solve and adjusted-row `StdErr` display paths use it
+- mixed/classic industry listings now print the adjusted GNSS covariance-vector block in the same place as the stored combined reference, so `Adjusted GPS Vector Observations` appears between the adjusted bearing-observation table and the relative bearing-distance section instead of being skipped on classic mixed runs
 - GNSS/NewBrunswick grid listings now use the same legacy display-factor contract in the convergence/grid-factor block and in the adjusted bearing-distance section, including the printed `Grnd Dist` continuation row and project-average factor line that the stored industry output shows
 - the GNSS-only adjusted bearing-distance section now follows the compact industry heading/spacing contract instead of the broader generic parity table layout, which closes the remaining visible indentation drift in the `Grnd Dist` continuation rows even though small confidence-value deltas remain
 - GNSS-only connected relative-confidence rows now use a narrow display-only blend for weakly anchored single-vector free/free pairs: when the direct GNSS vector covariance sits only modestly above the propagated pair covariance, the bearing-distance row blends toward that direct covariance, and when the direct vector is much weaker but the endpoint-independent fallback is only modestly looser, that row blends toward the fallback instead; the paired relative-ellipse row now uses its own display-only covariance for the one-fixed-linked seam, preserving propagated `cEN` orientation while blending only endpoint variances where that moves the remaining `GPS2-*` rows closer to the stored reference without changing solver coordinates or station sigmas
@@ -208,6 +209,8 @@ Current GNSS behavior includes:
 - the GNSS solve/listing parity gap is now much smaller: the local-frame `.GPS FACTOR` fix collapses the remaining station-height drift to roughly `0.00005 m` worst-case against the stored reference and moves the listing summary from the earlier `42.709 / 1.258` down to `40.853 / 1.230` versus the stored industry `40.545 / 1.225`; the remaining delta appears concentrated in the last GNSS summary/precision statistics rather than in solved station geometry
 - mixed conventional/leveling jobs now keep access to the selected project default instrument for default-weighted `L` records even after later inline `.INST` changes, so differential-level `mm/km` weighting still applies when the active TS instrument has no level model
 - differential-level observations no longer add `vertCentr_m` into the solve weighting sigma, which brings the mixed combined-case `Level Data`, `Zeniths`, `GPS Deltas`, and total statistical-summary rows back into near-reference agreement while preserving the leveling-only exact listing lock
+- industry-style directive selections for `.ELLIPSE`, `.REL /CON`, and `.PTOL /CON` are now functional instead of compatibility no-ops: station ellipse sections honor the selected station list while retaining fixed zero-control rows, relative bearing-distance and relative-ellipse sections expand the requested exhaustive pairwise station connections even when those pairs were not directly observed, and enabled positional-tolerance project settings now drive a dedicated pass/fail listing section for `.PTOL`-selected pairs
+- project options now expose positional-tolerance checking controls (enable, constant mm, PPM, confidence percent) in the `Special` tab, and those settings flow through shared run-session/direct solve paths into the listing/report output
 
 ## Import and interoperability behavior
 Current import behavior includes:
@@ -242,6 +245,7 @@ Current delivered performance architecture includes:
 - dense-map review guards
 - benchmark coverage for large browser projects and imported-job workflows
 - asynchronous worker-backed artifact generation for heavy export flows
+- the adjustment core now bypasses generic dense `AᵀP`/`AᵀPA` matrix products in its main solve and covariance/statistics paths, instead accumulating normal equations from sparse equation rows and using sparse row-matrix multiplies where `A*x` style products are still needed; this keeps parity behavior unchanged while materially improving the dense imported-project benchmark path
 
 ## CLI and batch behavior
 Current CLI support includes:
@@ -279,6 +283,7 @@ Parity-sensitive behavior remains an explicit project concern. Current parity-or
 - traverse zenith observations in grid mode now use the same ground-equivalent horizontal geometry as the paired measured slope-distance model, which removes the earlier few-millimetre adjusted-height bias in the traverse parity case
 - grid-mode input gating that ignores CRS-derived inverse lat/lon on projected auto-created stations instead of treating them as original unknown-class geodetic input
 - focused regression locks around angular stochastic behavior, centering geometry, displayed sigma behavior, and connected-pair precision rows
+- combined-case parity coverage now also locks the stored `.ELLIPSE` station subset, the `.REL /CON` exhaustive relative rows, and the new `.PTOL` pass/fail section when project settings enable positional-tolerance checking
 
 When a change affects parser semantics, weighting, reduction, residual display, confidence formatting, or listing/report ordering, treat it as parity-sensitive and consult `docs/PARITY_WORKFLOW.md`.
 

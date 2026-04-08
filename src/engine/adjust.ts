@@ -11,12 +11,14 @@ import { getCrsDefinition, isGeodeticInsideAreaOfUse } from './crsCatalog';
 import { runClusterDualPassWorkflow } from './adjustmentClusterWorkflow';
 import type { GeoidGridModel } from './geoid';
 import {
+  accumulateNormalEquationsFromSparseRows,
+  denseRowsToSparseRows,
   invertSPDFromCholesky,
   choleskyDecomposeWithDamping,
   invertSymmetricLDLTWithInfo,
-  multiply,
+  multiplySparseRowsByDenseMatrix,
   solveSPDFromCholesky,
-  transpose,
+  symmetricQuadraticForm,
   zeros,
 } from './matrix';
 import { parseInput } from './parse';
@@ -551,9 +553,8 @@ export class LSAEngine {
       numObsEquations,
       numParams,
     );
-    const AT = transpose(A);
-    const N = multiply(AT, P);
-    const normal = multiply(N, A);
+    const sparseRows = denseRowsToSparseRows(A);
+    const { normal } = accumulateNormalEquationsFromSparseRows(sparseRows, zeros(A.length, 1), P, numParams);
     return this.invertNormalMatrixForStats(normal);
   }
 
@@ -1802,17 +1803,7 @@ export class LSAEngine {
   }
 
   private weightedQuadratic(P: number[][], v: number[][]): number {
-    let sum = 0;
-    for (let i = 0; i < v.length; i += 1) {
-      const vi = v[i][0];
-      if (vi === 0) continue;
-      for (let j = 0; j < v.length; j += 1) {
-        const pj = P[i][j];
-        if (pj === 0) continue;
-        sum += vi * pj * v[j][0];
-      }
-    }
-    return sum;
+    return symmetricQuadraticForm(P, v);
   }
 
   private observationStations(obs: Observation): string {
@@ -5920,10 +5911,15 @@ export class LSAEngine {
 
         if (!this.preanalysisMode) {
           try {
-            const AT = transpose(A);
-            const N = multiply(multiply(AT, P), A);
+            const sparseRows = denseRowsToSparseRows(A);
+            const { normal: N } = accumulateNormalEquationsFromSparseRows(
+              sparseRows,
+              zeros(A.length, 1),
+              P,
+              numParams,
+            );
             const QxxStats = this.invertNormalMatrixForStats(N);
-            const B = multiply(A, QxxStats);
+            const B = multiplySparseRowsByDenseMatrix(sparseRows, QxxStats);
             const rowStats = new Map<
               number,
               {
@@ -5951,8 +5947,10 @@ export class LSAEngine {
                       : cov.cEE;
               }
               let diag = 0;
-              for (let j = 0; j < numParams; j += 1) {
-                diag += B[i][j] * A[i][j];
+              const sparseRow = sparseRows[i] ?? [];
+              for (let j = 0; j < sparseRow.length; j += 1) {
+                const entry = sparseRow[j];
+                diag += B[i][entry.index] * entry.value;
               }
               const qvv = Math.max(qll - diag, 1e-20);
               const t = L[i][0] / (s0 * Math.sqrt(qvv));
@@ -6013,8 +6011,11 @@ export class LSAEngine {
                 const solveQvv = solveQll.map((solveRow, rowIndex) =>
                   solveRow.map((qllValue, colIndex) => {
                     let aqxxat = 0;
-                    for (let paramIndex = 0; paramIndex < numParams; paramIndex += 1) {
-                      aqxxat += B[entry.rows[rowIndex]][paramIndex] * A[entry.rows[colIndex]][paramIndex];
+                    const sparseColRow = sparseRows[entry.rows[colIndex]] ?? [];
+                    for (let paramEntryIndex = 0; paramEntryIndex < sparseColRow.length; paramEntryIndex += 1) {
+                      const paramEntry = sparseColRow[paramEntryIndex];
+                      aqxxat +=
+                        B[entry.rows[rowIndex]][paramEntry.index] * paramEntry.value;
                     }
                     return Math.max(qllValue - aqxxat, 0);
                   }),
@@ -6196,6 +6197,43 @@ export class LSAEngine {
         });
         return rows;
       };
+      const requestedRelativePairs = new Map<
+        string,
+        {
+          from: StationId;
+          to: StationId;
+          rel: boolean;
+          ptol: boolean;
+        }
+      >();
+      const requestedPairKey = (from: StationId, to: StationId): string => {
+        const canonical = makePairKey(from, to);
+        const [first, second] = canonical.split('|') as [StationId, StationId];
+        return `${first}::${second}`;
+      };
+      const registerRequestedPairs = (
+        pairs: Array<{ from: StationId; to: StationId }> | undefined,
+        kind: 'rel' | 'ptol',
+      ) => {
+        pairs?.forEach((pair) => {
+          if (!pair?.from || !pair?.to || pair.from === pair.to) return;
+          const key = requestedPairKey(pair.from, pair.to);
+          const existing = requestedRelativePairs.get(key);
+          if (existing) {
+            existing.rel ||= kind === 'rel';
+            existing.ptol ||= kind === 'ptol';
+            return;
+          }
+          requestedRelativePairs.set(key, {
+            from: pair.from,
+            to: pair.to,
+            rel: kind === 'rel',
+            ptol: kind === 'ptol',
+          });
+        });
+      };
+      registerRequestedPairs(this.parseState?.relativeLinePairs, 'rel');
+      registerRequestedPairs(this.parseState?.positionalTolerancePairs, 'ptol');
       const buildPrecisionModel = (scaleSq: number): NonNullable<AdjustmentResult['precisionModels']>[keyof NonNullable<AdjustmentResult['precisionModels']>] => {
         const cov = buildCovariance(scaleSq);
         const stationCovariances: NonNullable<AdjustmentResult['stationCovariances']> = [];
@@ -6227,6 +6265,56 @@ export class LSAEngine {
           }
           stationCovariances.push(stationBlock);
         });
+
+        const buildRelativeCovarianceRow = (
+          from: StationId,
+          to: StationId,
+          relativeCovariance: ReturnType<typeof buildRelativeCovarianceFromEndpoints>,
+          connected: boolean,
+          connectionTypes: string[],
+          selectedByRelativeDirective: boolean,
+          selectedByPositionalToleranceDirective: boolean,
+        ): NonNullable<AdjustmentResult['relativeCovariances']>[number] => {
+          const fromStation = this.stations[from];
+          const toStation = this.stations[to];
+          const dE = (toStation?.x ?? 0) - (fromStation?.x ?? 0);
+          const dN = (toStation?.y ?? 0) - (fromStation?.y ?? 0);
+          const ellipseSummary = buildHorizontalErrorEllipse(
+            relativeCovariance.cEE,
+            relativeCovariance.cNN,
+            relativeCovariance.cEN,
+          );
+          const { sigmaDist, sigmaAz } = buildDistanceAzimuthPrecision(dE, dN, relativeCovariance);
+
+          const row: NonNullable<AdjustmentResult['relativeCovariances']>[number] = {
+            from,
+            to,
+            connected,
+            connectionTypes,
+            selectedByRelativeDirective,
+            selectedByPositionalToleranceDirective,
+            cEE: relativeCovariance.cEE,
+            cEN: relativeCovariance.cEN,
+            cNN: relativeCovariance.cNN,
+            sigmaE: sqrtPrecisionComponent(relativeCovariance.cEE, Math.abs(relativeCovariance.cEE)),
+            sigmaN: sqrtPrecisionComponent(relativeCovariance.cNN, Math.abs(relativeCovariance.cNN)),
+            sigmaDist,
+            sigmaAz,
+            ellipse: ellipseSummary.ellipse,
+          };
+
+          if (!this.is2D) {
+            row.cEH = relativeCovariance.cEH;
+            row.cNH = relativeCovariance.cNH;
+            row.cHH = relativeCovariance.cHH;
+            row.sigmaH = sqrtPrecisionComponent(
+              relativeCovariance.cHH ?? 0,
+              Math.abs(relativeCovariance.cHH ?? 0),
+            );
+          }
+
+          return row;
+        };
 
         const relativePrecision: NonNullable<AdjustmentResult['relativePrecision']> = [];
         for (let i = 0; i < this.unknowns.length; i += 1) {
@@ -6264,45 +6352,49 @@ export class LSAEngine {
         const relativeCovariances: NonNullable<AdjustmentResult['relativeCovariances']> = [];
         connectedPairTypes.forEach((types, key) => {
           const [from, to] = key.split('|') as [StationId, StationId];
-          const fromStation = this.stations[from];
-          const toStation = this.stations[to];
           const idxFrom = paramIndex[from];
           const idxTo = paramIndex[to];
-          if (!fromStation || !toStation || (!idxFrom && !idxTo)) return;
+          if ((!this.stations[from] || !this.stations[to]) || (!idxFrom && !idxTo)) return;
 
-          const dE = toStation.x - fromStation.x;
-          const dN = toStation.y - fromStation.y;
+          const requested = requestedRelativePairs.get(requestedPairKey(from, to));
           const relativeCovariance = buildRelativeCovarianceFromEndpoints(cov, idxFrom, idxTo, !this.is2D);
-          const ellipseSummary = buildHorizontalErrorEllipse(
-            relativeCovariance.cEE,
-            relativeCovariance.cNN,
-            relativeCovariance.cEN,
+          relativeCovariances.push(
+            buildRelativeCovarianceRow(
+              from,
+              to,
+              relativeCovariance,
+              true,
+              Array.from(types).sort(),
+              requested?.rel ?? false,
+              requested?.ptol ?? false,
+            ),
           );
-          const { sigmaDist, sigmaAz } = buildDistanceAzimuthPrecision(dE, dN, relativeCovariance);
+        });
 
-          const row: NonNullable<AdjustmentResult['relativeCovariances']>[number] = {
-            from,
-            to,
-            connected: true,
-            connectionTypes: Array.from(types).sort(),
-            cEE: relativeCovariance.cEE,
-            cEN: relativeCovariance.cEN,
-            cNN: relativeCovariance.cNN,
-            sigmaE: sqrtPrecisionComponent(relativeCovariance.cEE, Math.abs(relativeCovariance.cEE)),
-            sigmaN: sqrtPrecisionComponent(relativeCovariance.cNN, Math.abs(relativeCovariance.cNN)),
-            sigmaDist,
-            sigmaAz,
-            ellipse: ellipseSummary.ellipse,
-          };
-
-          if (!this.is2D) {
-            row.cEH = relativeCovariance.cEH;
-            row.cNH = relativeCovariance.cNH;
-            row.cHH = relativeCovariance.cHH;
-            row.sigmaH = sqrtPrecisionComponent(relativeCovariance.cHH ?? 0, Math.abs(relativeCovariance.cHH ?? 0));
-          }
-
-          relativeCovariances.push(row);
+        requestedRelativePairs.forEach((requested, key) => {
+          if (connectedPairTypes.has(key.replace('::', '|'))) return;
+          const fromStation = this.stations[requested.from];
+          const toStation = this.stations[requested.to];
+          const idxFrom = paramIndex[requested.from];
+          const idxTo = paramIndex[requested.to];
+          if (!fromStation || !toStation || (!idxFrom && !idxTo)) return;
+          const relativeCovariance = buildRelativeCovarianceFromEndpoints(
+            cov,
+            idxFrom,
+            idxTo,
+            !this.is2D,
+          );
+          relativeCovariances.push(
+            buildRelativeCovarianceRow(
+              requested.from,
+              requested.to,
+              relativeCovariance,
+              false,
+              [],
+              requested.rel,
+              requested.ptol,
+            ),
+          );
         });
 
         return {

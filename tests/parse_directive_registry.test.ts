@@ -153,14 +153,42 @@ describe('parseDirectiveRegistry', () => {
     expect(transitions).toEqual(['.SCALE']);
   });
 
-  it('deduplicates compatibility no-op directives while still treating them as handled', () => {
+  it('keeps copyinput as a deduplicated compatibility no-op directive', () => {
     const { compatibilityAcceptedNoOps, dispatch, logs } = createHarness();
 
-    expect(dispatch('.ELLIPSE', ['.ELLIPSE'], 20).handled).toBe(true);
-    expect(dispatch('.ELLIPSE', ['.ELLIPSE'], 21).handled).toBe(true);
+    expect(dispatch('.COPYINPUT', ['.COPYINPUT'], 20).handled).toBe(true);
+    expect(dispatch('.COPYINPUT', ['.COPYINPUT'], 21).handled).toBe(true);
 
-    expect(compatibilityAcceptedNoOps.has('.ELLIPSE')).toBe(true);
-    expect(logs.filter((entry) => entry.includes('Compatibility: .ELLIPSE accepted'))).toHaveLength(1);
+    expect(compatibilityAcceptedNoOps.has('.COPYINPUT')).toBe(true);
+    expect(logs.filter((entry) => entry.includes('Compatibility: .COPYINPUT accepted'))).toHaveLength(1);
+  });
+
+  it('stores functional ellipse, relative-line, and positional-tolerance selections', () => {
+    const { dispatch, logs, state } = createHarness();
+
+    expect(dispatch('.ELLIPSE', ['.ELLIPSE', 'FM1', 'OOP', 'APOG', 'FM1'], 30).handled).toBe(
+      true,
+    );
+    expect(
+      dispatch('.RELATIVE', ['.RELATIVE', '/CON', 'APOG', 'BROD', 'OOP', 'FM1'], 31).handled,
+    ).toBe(true);
+    expect(
+      dispatch('.PTOLERANCE', ['.PTOLERANCE', '/CON', 'APOG', 'BROD', 'OOP', 'FM1'], 32).handled,
+    ).toBe(true);
+
+    expect(state.ellipseStationIds).toEqual(['FM1', 'OOP', 'APOG']);
+    expect(state.relativeLinePairs).toEqual([
+      { from: 'APOG', to: 'BROD' },
+      { from: 'APOG', to: 'OOP' },
+      { from: 'APOG', to: 'FM1' },
+      { from: 'BROD', to: 'OOP' },
+      { from: 'BROD', to: 'FM1' },
+      { from: 'OOP', to: 'FM1' },
+    ]);
+    expect(state.positionalTolerancePairs).toEqual(state.relativeLinePairs);
+    expect(logs).toContain('Error ellipse output limited to 3 station(s).');
+    expect(logs).toContain('Relative line output selected 6 pair(s) from 4 station(s).');
+    expect(logs).toContain('Positional tolerance checking selected 6 pair(s) from 4 station(s).');
   });
 
   it('returns stopParse for .END and flushes any active direction set through the callback', () => {

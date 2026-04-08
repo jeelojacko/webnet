@@ -109,6 +109,17 @@ const cloneScopedParseState = (state: ParseOptions): Partial<ParseOptions> => ({
   prismEnabled: state.prismEnabled,
   prismOffset: state.prismOffset,
   prismScope: state.prismScope,
+  positionalToleranceEnabled: state.positionalToleranceEnabled,
+  positionalToleranceConstantMm: state.positionalToleranceConstantMm,
+  positionalTolerancePpm: state.positionalTolerancePpm,
+  positionalToleranceConfidencePercent: state.positionalToleranceConfidencePercent,
+  ellipseStationIds: state.ellipseStationIds ? [...state.ellipseStationIds] : undefined,
+  relativeLinePairs: state.relativeLinePairs
+    ? state.relativeLinePairs.map((pair) => ({ ...pair }))
+    : undefined,
+  positionalTolerancePairs: state.positionalTolerancePairs
+    ? state.positionalTolerancePairs.map((pair) => ({ ...pair }))
+    : undefined,
   rotationAngleRad: state.rotationAngleRad,
   autoAdjustEnabled: state.autoAdjustEnabled,
   autoAdjustMaxCycles: state.autoAdjustMaxCycles,

@@ -76,6 +76,10 @@ export interface IndustryListingParseSettings {
   refractionCoefficient: number;
   descriptionReconcileMode?: 'first' | 'append';
   descriptionAppendDelimiter?: string;
+  positionalToleranceEnabled?: boolean;
+  positionalToleranceConstantMm?: number;
+  positionalTolerancePpm?: number;
+  positionalToleranceConfidencePercent?: number;
 }
 
 export interface IndustryListingRunDiagnostics {
@@ -1903,6 +1907,63 @@ export const buildIndustryStyleListingText = (
   };
   const formatGpsStdResValue = (value: number | undefined): string =>
     value != null && Number.isFinite(value) ? Math.abs(value).toFixed(1) : '-';
+  const renderAdjustedGnssVectorSection = () => {
+    if (!shouldRenderAdjustedGnssVectorSection) return;
+    lines.push('');
+    addCenteredHeading(`Adjusted GPS Vector Observations (${linearUnit})`);
+    lines.push('');
+    lines.push('From              Component          Adj Value      Residual   StdErr StdRes File:Line');
+    lines.push('To');
+    gpsObservationRows
+      .filter((obs) => listingObservations.some((candidate) => candidate.id === obs.id))
+      .sort(compareObsByInput)
+      .forEach((obs) => {
+        const displayVector = gpsDisplayVector(obs);
+        const residual =
+          displayVector?.residual ??
+          ((obs.residual as { vE?: number; vN?: number; vU?: number } | undefined) ?? undefined);
+        const calc =
+          displayVector?.calc ??
+          ((obs.calc as { dE?: number; dN?: number; dU?: number } | undefined) ?? undefined);
+        const displayCov = gpsCovarianceDisplay(obs);
+        const sigmaN = displayCov.sigmaY;
+        const sigmaE = displayCov.sigmaX;
+        const sigmaU = displayCov.sigmaZ;
+        lines.push('');
+        lines.push(`(${(obs.gpsVectorLabel ?? `${obs.from}-${obs.to}`).trim()})`);
+        lines.push(
+          `${obs.from.padEnd(18)}${'Delta-N'.padEnd(18)}${formatLinear(calc?.dN).padStart(12)}${formatResidualLinear(residual?.vN).padStart(13)}${formatLinear(sigmaN).padStart(9)}${formatGpsStdResValue(
+            sigmaN > 0 && Number.isFinite(residual?.vN ?? Number.NaN)
+              ? Math.abs((residual?.vN as number) / sigmaN)
+              : undefined,
+          ).padStart(7)} ${(obs.sourceLine != null ? `1:${obs.sourceLine}` : '-').padStart(8)}`,
+        );
+        lines.push(
+          `${obs.to.padEnd(18)}${'Delta-E'.padEnd(18)}${formatLinear(calc?.dE).padStart(12)}${formatResidualLinear(residual?.vE).padStart(13)}${formatLinear(sigmaE).padStart(9)}${formatGpsStdResValue(
+            sigmaE > 0 && Number.isFinite(residual?.vE ?? Number.NaN)
+              ? Math.abs((residual?.vE as number) / sigmaE)
+              : undefined,
+          ).padStart(7)}`,
+        );
+        if (Number.isFinite(calc?.dU ?? Number.NaN)) {
+          lines.push(
+            `${''.padEnd(18)}${'Delta-U'.padEnd(18)}${formatLinear(calc?.dU).padStart(12)}${formatResidualLinear(residual?.vU).padStart(13)}${formatLinear(sigmaU).padStart(9)}${formatGpsStdResValue(
+              sigmaU > 0 && Number.isFinite(residual?.vU ?? Number.NaN)
+                ? Math.abs((residual?.vU as number) / sigmaU)
+                : undefined,
+            ).padStart(7)}`,
+          );
+        }
+        const length = Math.sqrt(
+          (calc?.dE ?? 0) * (calc?.dE ?? 0) +
+            (calc?.dN ?? 0) * (calc?.dN ?? 0) +
+            ((calc?.dU ?? 0) * (calc?.dU ?? 0)),
+        );
+        lines.push(
+          `${''.padEnd(18)}${'Length'.padEnd(18)}${(length * unitScale).toFixed(4).padStart(12)}`,
+        );
+      });
+  };
   if (usesCompactGnssParityLayout) {
     lines.push(
       centerIndustryLine(
@@ -2555,6 +2616,48 @@ export const buildIndustryStyleListingText = (
   type RelationshipPair = { key: string; from: string; to: string };
   const pairKey = (a: string, b: string) =>
     compareStationIds(a, b) <= 0 ? `${a}::${b}` : `${b}::${a}`;
+  const stationIdLookup = new Map<string, string>(
+    Object.keys(res.stations).map((stationId) => [stationId.toUpperCase(), stationId]),
+  );
+  const resolveSelectedStationId = (token?: string): string | null => {
+    const trimmed = token?.trim();
+    if (!trimmed) return null;
+    return stationIdLookup.get(trimmed.toUpperCase()) ?? null;
+  };
+  const resolveSelectedPairs = (
+    pairs: Array<{ from: string; to: string }> | undefined,
+  ): RelationshipPair[] => {
+    const selected = new Map<string, RelationshipPair>();
+    pairs?.forEach((pair) => {
+      const from = resolveSelectedStationId(pair.from);
+      const to = resolveSelectedStationId(pair.to);
+      if (!from || !to || from === to) return;
+      const key = pairKey(from, to);
+      if (selected.has(key)) return;
+      selected.set(key, { key, from, to });
+    });
+    return [...selected.values()];
+  };
+  const selectedEllipseStationIds = new Set(
+    (res.parseState?.ellipseStationIds ?? [])
+      .map((token) => resolveSelectedStationId(token))
+      .filter((stationId): stationId is string => stationId != null),
+  );
+  const selectedRelativePairs = resolveSelectedPairs(res.parseState?.relativeLinePairs);
+  const selectedPositionalTolerancePairs = resolveSelectedPairs(res.parseState?.positionalTolerancePairs);
+  const positionalToleranceEnabled =
+    res.parseState?.positionalToleranceEnabled ?? parseSettings.positionalToleranceEnabled ?? false;
+  const positionalToleranceConstantMm =
+    res.parseState?.positionalToleranceConstantMm ?? parseSettings.positionalToleranceConstantMm ?? 0;
+  const positionalTolerancePpm =
+    res.parseState?.positionalTolerancePpm ?? parseSettings.positionalTolerancePpm ?? 0;
+  const positionalToleranceConfidencePercent =
+    res.parseState?.positionalToleranceConfidencePercent ??
+    parseSettings.positionalToleranceConfidencePercent ??
+    95;
+  const positionalToleranceConfidenceScale = Math.sqrt(
+    Math.max(0, -2 * Math.log(Math.max(1e-12, 1 - positionalToleranceConfidencePercent / 100))),
+  );
   const gpsObservationPairMap = new Map<string, GpsObservation[]>();
   const gpsDirectFixedLinkedStations = new Set<string>();
   gpsObservationRows.forEach((obs) => {
@@ -2595,6 +2698,7 @@ export const buildIndustryStyleListingText = (
   };
   if (!usesClassicParityLayout) {
     relativeCovarianceRows.forEach((row) => {
+      if (!row.connected && !row.selectedByRelativeDirective) return;
       addRelationshipPair(row.from, row.to, true);
     });
   }
@@ -2616,6 +2720,9 @@ export const buildIndustryStyleListingText = (
       default:
         break;
     }
+  });
+  selectedRelativePairs.forEach((pair) => {
+    addRelationshipPair(pair.from, pair.to, true);
   });
   const relationshipPairs = [...relationshipPairMap.values()];
 
@@ -2988,6 +3095,37 @@ export const buildIndustryStyleListingText = (
       };
     })
     .filter((row) => row.distance !== '-');
+  const positionalToleranceRows = positionalToleranceEnabled
+    ? selectedPositionalTolerancePairs
+        .map((pair) => {
+          const rel = resolveRelativePair(pair);
+          const distanceMeters = horizDistanceMeters(pair.from, pair.to);
+          if (!rel?.ellipse || distanceMeters == null || !Number.isFinite(distanceMeters)) return null;
+          const toleranceMeters =
+            positionalToleranceConstantMm / 1000 + (Math.abs(distanceMeters) * positionalTolerancePpm) / 1_000_000;
+          const checkMeters = rel.ellipse.semiMajor * positionalToleranceConfidenceScale;
+          return {
+            from: pair.from,
+            to: pair.to,
+            distanceMeters,
+            toleranceMeters,
+            checkMeters,
+            passes: checkMeters <= toleranceMeters + 1e-12,
+          };
+        })
+        .filter(
+          (
+            row,
+          ): row is {
+            from: string;
+            to: string;
+            distanceMeters: number;
+            toleranceMeters: number;
+            checkMeters: number;
+            passes: boolean;
+          } => row != null,
+        )
+    : [];
   const pairDisplayCombinedFactor = (from: string, to: string): number => {
     const fromStation = res.stations[from];
     const toStation = res.stations[to];
@@ -3287,6 +3425,7 @@ export const buildIndustryStyleListingText = (
             );
           });
         }
+        renderAdjustedGnssVectorSection();
         if (relationshipRows.length > 0) {
           lines.push('');
           lines.push(
@@ -3424,62 +3563,7 @@ export const buildIndustryStyleListingText = (
         );
       }
 
-      if (shouldRenderAdjustedGnssVectorSection) {
-        lines.push('');
-        addCenteredHeading(`Adjusted GPS Vector Observations (${linearUnit})`);
-        lines.push('');
-        lines.push('From              Component          Adj Value      Residual   StdErr StdRes File:Line');
-        lines.push('To');
-        gpsObservationRows
-          .filter((obs) => listingObservations.some((candidate) => candidate.id === obs.id))
-          .sort(compareObsByInput)
-          .forEach((obs) => {
-            const displayVector = gpsDisplayVector(obs);
-            const residual =
-              displayVector?.residual ??
-              ((obs.residual as { vE?: number; vN?: number; vU?: number } | undefined) ?? undefined);
-            const calc =
-              displayVector?.calc ??
-              ((obs.calc as { dE?: number; dN?: number; dU?: number } | undefined) ?? undefined);
-            const displayCov = gpsCovarianceDisplay(obs);
-            const sigmaN = displayCov.sigmaY;
-            const sigmaE = displayCov.sigmaX;
-            const sigmaU = displayCov.sigmaZ;
-            lines.push('');
-            lines.push(`(${(obs.gpsVectorLabel ?? `${obs.from}-${obs.to}`).trim()})`);
-            lines.push(
-              `${obs.from.padEnd(18)}${'Delta-N'.padEnd(18)}${formatLinear(calc?.dN).padStart(12)}${formatResidualLinear(residual?.vN).padStart(13)}${formatLinear(sigmaN).padStart(9)}${formatGpsStdResValue(
-                sigmaN > 0 && Number.isFinite(residual?.vN ?? Number.NaN)
-                  ? Math.abs((residual?.vN as number) / sigmaN)
-                  : undefined,
-              ).padStart(7)} ${(obs.sourceLine != null ? `1:${obs.sourceLine}` : '-').padStart(8)}`,
-            );
-            lines.push(
-              `${obs.to.padEnd(18)}${'Delta-E'.padEnd(18)}${formatLinear(calc?.dE).padStart(12)}${formatResidualLinear(residual?.vE).padStart(13)}${formatLinear(sigmaE).padStart(9)}${formatGpsStdResValue(
-                sigmaE > 0 && Number.isFinite(residual?.vE ?? Number.NaN)
-                  ? Math.abs((residual?.vE as number) / sigmaE)
-                  : undefined,
-              ).padStart(7)}`,
-            );
-            if (Number.isFinite(calc?.dU ?? Number.NaN)) {
-              lines.push(
-                `${''.padEnd(18)}${'Delta-U'.padEnd(18)}${formatLinear(calc?.dU).padStart(12)}${formatResidualLinear(residual?.vU).padStart(13)}${formatLinear(sigmaU).padStart(9)}${formatGpsStdResValue(
-                  sigmaU > 0 && Number.isFinite(residual?.vU ?? Number.NaN)
-                    ? Math.abs((residual?.vU as number) / sigmaU)
-                    : undefined,
-                ).padStart(7)}`,
-              );
-            }
-            const length = Math.sqrt(
-              (calc?.dE ?? 0) * (calc?.dE ?? 0) +
-                (calc?.dN ?? 0) * (calc?.dN ?? 0) +
-                ((calc?.dU ?? 0) * (calc?.dU ?? 0)),
-            );
-            lines.push(
-              `${''.padEnd(18)}${'Length'.padEnd(18)}${(length * unitScale).toFixed(4).padStart(12)}`,
-            );
-          });
-      }
+      renderAdjustedGnssVectorSection();
 
       if (shouldRenderAdjustedObservationSections && relationshipRows.length > 0) {
         lines.push('');
@@ -3843,6 +3927,13 @@ export const buildIndustryStyleListingText = (
           (precision.sigmaN == null || Math.abs(precision.sigmaN) <= 1e-15) &&
           (precision.sigmaE == null || Math.abs(precision.sigmaE) <= 1e-15) &&
           (coordMode !== '3D' || precision.sigmaH == null || Math.abs(precision.sigmaH) <= 1e-15);
+        if (
+          selectedEllipseStationIds.size > 0 &&
+          !selectedEllipseStationIds.has(id) &&
+          !hasZeroPrecisionRow
+        ) {
+          return null;
+        }
         if (!precision.ellipse && !hasZeroPrecisionRow) return null;
         const row = [
           id,
@@ -3950,6 +4041,37 @@ export const buildIndustryStyleListingText = (
       });
     } else {
       lines.push('(none)');
+    }
+
+    if (positionalToleranceEnabled) {
+      lines.push('');
+      lines.push(`Positional Tolerance Checks (${linearUnit})`);
+      lines.push(
+        `    Tolerance = ${(positionalToleranceConstantMm / 1000 * unitScale).toFixed(6)} ${linearUnit} + ${positionalTolerancePpm.toFixed(3)} PPM`,
+      );
+      lines.push(`    Confidence Region = ${positionalToleranceConfidencePercent.toFixed(2)}%`);
+      lines.push('');
+      if (positionalToleranceRows.length > 0) {
+        lines.push(
+          'Stations                   Distance     Allowable    Check Value   Status',
+        );
+        lines.push(
+          'From       To',
+        );
+        positionalToleranceRows.forEach((row) => {
+          lines.push(
+            `${row.from.padEnd(10)} ${row.to.padEnd(9)} ${(
+              row.distanceMeters * unitScale
+            ).toFixed(4).padStart(12)} ${(row.toleranceMeters * unitScale)
+              .toFixed(6)
+              .padStart(13)} ${(row.checkMeters * unitScale)
+              .toFixed(6)
+              .padStart(13)} ${row.passes ? 'PASS' : 'FAIL'}`,
+          );
+        });
+      } else {
+        lines.push('(none)');
+      }
     }
 
     if (isPreanalysis && res.weakGeometryDiagnostics) {
