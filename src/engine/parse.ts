@@ -160,6 +160,7 @@ const defaultParseOptions: ParseOptions = {
   levelLoopTolerancePerSqrtKmMm: 4,
   lonSign: 'west-negative',
   currentInstrument: undefined,
+  projectDefaultInstrument: undefined,
   edmMode: 'additive',
   applyCentering: true,
   addCenteringToExplicit: false,
@@ -707,6 +708,8 @@ export const parseInput = (
   const directionRejectDiagnostics: DirectionRejectDiagnostic[] = [];
   const directionSetTreatmentDiagnostics: DirectionSetTreatmentDiagnostic[] = [];
   const state: ParseOptions = { ...defaultParseOptions, ...opts };
+  state.projectDefaultInstrument =
+    opts.projectDefaultInstrument ?? opts.currentInstrument ?? state.projectDefaultInstrument;
   const hasExplicitFaceNormalizationMode = Object.prototype.hasOwnProperty.call(
     opts,
     'faceNormalizationMode',

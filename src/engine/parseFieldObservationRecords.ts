@@ -901,10 +901,21 @@ export const handleFieldObservationRecord = ({
     }
 
     const inst = instrumentLibrary[instCode];
+    const projectDefaultInst = state.projectDefaultInstrument
+      ? instrumentLibrary[state.projectDefaultInstrument]
+      : undefined;
     const levelResolved = resolveLinearSigma(sigmaToken, baseStd);
     let sigma = levelResolved.sigma;
     if (!hasExplicitSigma && inst && inst.levStd_mmPerKm > 0) {
       const lib = differentialLevelSigmaFromKm(inst.levStd_mmPerKm, lenKm);
+      sigma = Math.sqrt(sigma * sigma + lib * lib);
+    } else if (
+      !hasExplicitSigma &&
+      (!inst || !(inst.levStd_mmPerKm > 0)) &&
+      projectDefaultInst &&
+      projectDefaultInst.levStd_mmPerKm > 0
+    ) {
+      const lib = differentialLevelSigmaFromKm(projectDefaultInst.levStd_mmPerKm, lenKm);
       sigma = Math.sqrt(sigma * sigma + lib * lib);
     }
 

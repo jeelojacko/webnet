@@ -143,4 +143,56 @@ describe('parse field/GNSS/leveling record families', () => {
       expect(second.stdDev).toBeCloseTo(0.0010606601717798212, 10);
     }
   });
+
+  it('falls back to the project-default leveling model when the active inline instrument has no level weighting', () => {
+    const parsed = parseInput(
+      ['.INST S9', 'C A 0 0 100 ! ! !', 'C B 0 0 100', 'L A-B 0.9000 250'].join('\n'),
+      {
+        LEV_REF: {
+          code: 'LEV_REF',
+          desc: 'level default',
+          edm_const: 0,
+          edm_ppm: 0,
+          hzPrecision_sec: 0,
+          dirPrecision_sec: 0,
+          azBearingPrecision_sec: 0,
+          vaPrecision_sec: 0,
+          instCentr_m: 0,
+          tgtCentr_m: 0,
+          vertCentr_m: 0,
+          elevDiff_const_m: 0,
+          elevDiff_ppm: 0,
+          gpsStd_xy: 0,
+          levStd_mmPerKm: 1.5,
+        },
+        S9: {
+          code: 'S9',
+          desc: 'ts only',
+          edm_const: 0.003,
+          edm_ppm: 2,
+          hzPrecision_sec: 1,
+          dirPrecision_sec: 1,
+          azBearingPrecision_sec: 1,
+          vaPrecision_sec: 1,
+          instCentr_m: 0.0015,
+          tgtCentr_m: 0.0015,
+          vertCentr_m: 0.0005,
+          elevDiff_const_m: 0,
+          elevDiff_ppm: 0,
+          gpsStd_xy: 0,
+          levStd_mmPerKm: 0,
+        },
+      },
+      {
+        currentInstrument: 'LEV_REF',
+      },
+    );
+
+    const lev = parsed.observations.find((obs) => obs.type === 'lev');
+    expect(lev?.type).toBe('lev');
+    if (lev?.type === 'lev') {
+      expect(lev.instCode).toBe('S9');
+      expect(lev.stdDev).toBeCloseTo(0.00075, 10);
+    }
+  });
 });

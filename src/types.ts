@@ -1023,6 +1023,7 @@ export interface ParseOptions {
   gpsOffsetObservationCount?: number;
   lonSign?: LonSign;
   currentInstrument?: string;
+  projectDefaultInstrument?: string;
   edmMode?: 'additive' | 'propagated';
   applyCentering?: boolean;
   addCenteringToExplicit?: boolean;
