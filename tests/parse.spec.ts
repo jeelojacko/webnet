@@ -34,6 +34,33 @@ describe('parseInput', () => {
     expect(s9.tgtCentr_m).toBeCloseTo(0, 12);
   });
 
+  it('upgrades auto-created bearing endpoints to the later explicit grid coordinate class', () => {
+    const parsed = parseInput(
+      ['B GPS5-GPS2 323-9-42.23 6.74', 'C GPS2 100 200 10', 'C GPS5 300 400 20'].join('\n'),
+      {},
+      {
+        coordMode: '3D',
+        coordSystemMode: 'grid',
+        crsId: 'CA_NAD83_CSRS_NB_STEREO_DOUBLE',
+        order: 'NE',
+      },
+    );
+
+    expect(parsed.stations.GPS2.coordInputClass).toBe('grid');
+    expect(parsed.stations.GPS5.coordInputClass).toBe('grid');
+    expect(parsed.stations.GPS2.x).toBeCloseTo(200, 12);
+    expect(parsed.stations.GPS2.y).toBeCloseTo(100, 12);
+    expect(parsed.stations.GPS5.x).toBeCloseTo(400, 12);
+    expect(parsed.stations.GPS5.y).toBeCloseTo(300, 12);
+    expect(
+      parsed.logs.some(
+        (line) =>
+          line.includes('station GPS2 has mixed coordinate classes') ||
+          line.includes('station GPS5 has mixed coordinate classes'),
+      ),
+    ).toBe(false);
+  });
+
   it('applies .INST instrument selection to subsequent direction-set observations', () => {
     const parsed = parseInput(
       [

@@ -202,6 +202,7 @@
       - [ ] Add focused GNSS-only structured parity assertions plus normalized exact output diff
     - [ ] Batch 10 - final combined parity
       - [x] Make the combined case the startup default with its matching project defaults from the reference output
+      - [ ] Current scope: diff the final combined industry case against the committed reference output, close the first mixed-network listing/statistics seams that remain after the single-domain parity batches, and keep the retained levelling/traverse/GNSS locks neutral or improved
       - [ ] Integrate levelling, traverse, and GNSS fixes without regressing any previously locked single-domain case
       - [ ] Resolve mixed-network interaction gaps only exposed in the combined case, including shared control handling, section ordering, and cross-family weighting/reporting interactions
       - [ ] Add the combined case to the structured parity harness and normalized exact text-diff gate

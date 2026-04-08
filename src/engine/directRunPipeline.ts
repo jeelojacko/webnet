@@ -160,6 +160,8 @@ export const createDirectRunPipeline = ({
         averageGeoidHeight: effectiveParse.averageGeoidHeight,
         gnssVectorFrameDefault: effectiveParse.gnssVectorFrameDefault,
         gnssFrameConfirmed: effectiveParse.gnssFrameConfirmed,
+        verticalDeflectionNorthSec: effectiveParse.verticalDeflectionNorthSec,
+        verticalDeflectionEastSec: effectiveParse.verticalDeflectionEastSec,
         observationMode: {
           bearing: effectiveParse.gridBearingMode,
           distance: effectiveParse.gridDistanceMode,

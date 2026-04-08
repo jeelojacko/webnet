@@ -1050,6 +1050,11 @@ export const parseInput = (
       station.coordInputClass = incomingClass;
       return;
     }
+    if (incomingClass === 'unknown') return;
+    if (existingClass === 'unknown') {
+      station.coordInputClass = incomingClass;
+      return;
+    }
     if (existingClass === incomingClass) return;
     station.coordInputClass = 'unknown';
     logs.push(

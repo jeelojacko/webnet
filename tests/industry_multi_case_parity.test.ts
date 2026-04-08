@@ -1535,4 +1535,80 @@ describe('industry multi-case parity foundation', () => {
       normalizedListing.slice(normalizedListing.indexOf(startMarker)),
     );
   });
+
+  it(
+    'keeps the combined parity case convergent with the expected mixed-network default instrument and vertical deflection display',
+    () => {
+      const startup = INDUSTRY_PARITY_CASES.combined.startupDefaults;
+      expect(startup).toBeDefined();
+
+      const result = buildCaseResult('combined');
+      expect(result.success).toBe(true);
+      expect(result.converged).toBe(true);
+      expect(
+        result.logs.some((line) => line.includes('mixed coordinate classes')),
+      ).toBe(false);
+
+      const listing = buildIndustryStyleListingText(
+        result,
+        {
+          maxIterations: 10,
+          convergenceLimit: startup?.settingsPatch.convergenceLimit,
+          precisionReportingMode: 'industry-standard',
+          units: 'm',
+          listingShowCoordinates: true,
+          listingShowObservationsResiduals: true,
+          listingShowErrorPropagation: true,
+          listingShowProcessingNotes: true,
+          listingShowAzimuthsBearings: true,
+          listingShowLostStations: true,
+          listingSortCoordinatesBy: 'input',
+          listingSortObservationsBy: 'residual',
+          listingObservationLimit: 9999,
+        },
+        {
+          coordMode: startup?.parseSettingsPatch.coordMode ?? '3D',
+          order: startup?.parseSettingsPatch.order ?? 'EN',
+          angleUnits: startup?.parseSettingsPatch.angleUnits ?? 'dms',
+          angleStationOrder: startup?.parseSettingsPatch.angleStationOrder ?? 'atfromto',
+          deltaMode: startup?.parseSettingsPatch.deltaMode ?? 'slope',
+          refractionCoefficient: startup?.parseSettingsPatch.refractionCoefficient ?? 0.13,
+        },
+        {
+          solveProfile: 'industry-parity',
+          angleCenteringModel: 'geometry-aware-correlated-rays',
+          defaultSigmaCount: 0,
+          defaultSigmaByType: '',
+          stochasticDefaultsSummary: '',
+          rotationAngleRad: 0,
+          currentInstrumentCode: startup?.selectedInstrument,
+          currentInstrumentDesc: startup?.projectInstruments[startup?.selectedInstrument ?? '']?.desc,
+          currentInstrumentLevStdMmPerKm:
+            startup?.projectInstruments[startup?.selectedInstrument ?? '']?.levStd_mmPerKm,
+          verticalDeflectionNorthSec: startup?.parseSettingsPatch.verticalDeflectionNorthSec ?? 0,
+          verticalDeflectionEastSec: startup?.parseSettingsPatch.verticalDeflectionEastSec ?? 0,
+          projectInstrumentLibrary: startup?.projectInstruments,
+        },
+      );
+
+      expect(listing).toContain(
+        'Vertical Deflection                 : N=-2.910 E=-1.460 (Seconds)',
+      );
+      expect(listing).toContain('Project Default Instrument');
+      expect(listing).toContain('Distances (Constant)              :    0.001000 Meters');
+      expect(listing).toContain('Directions                        :    1.000000 Seconds');
+      expect(listing).toContain('Differential Levels               :    0.001500 Meters / Km');
+
+      const statisticalSummary = extractSection(
+        listing,
+        'Statistical Summary',
+        'Adjusted Coordinates (Meters)',
+      );
+      const gpsDeltas = parseObservationStatisticRow(statisticalSummary, 'GPS Deltas');
+      expect(gpsDeltas.count).toBe(36);
+      expect(gpsDeltas.sumSquares).toBeCloseTo(30.608, 0);
+      expect(gpsDeltas.errorFactor).toBeCloseTo(1.027, 1);
+    },
+    120000,
+  );
 });

@@ -32,6 +32,7 @@ The current parser supports the main control, geodetic, conventional, field, GNS
 
 At a high level, supported input behavior includes:
 - control and coordinate records with component fixity and standard errors
+- auto-created placeholder stations from early observations now upgrade to the later explicit `C`/`P`/`PH` coordinate input class instead of staying permanently `unknown`
 - total-station distance, angle, direction, bearing, zenith, and mixed-measurement families
 - GNSS vector families with per-component sigma support and correlation support where applicable
 - industry-style GNSS covariance-vector blocks using `.GPS WEIGHT COVARIANCE`, `.GPS FACTOR <xy> VERT <z>`, and deterministic `G0/G1/G2/G3` grouping
@@ -188,6 +189,7 @@ Current GNSS behavior includes:
 - loop-closure diagnostics independent of residual analysis
 - GNSS-topo support for post-adjust coordinate-style output rows
 - project/default vertical deflection state for GNSS vector modeling and listing output
+- shared run-session and browser parity solve paths now preserve configured vertical deflection values into the engine parse state instead of dropping them before solve/listing generation
 - covariance-vector GNSS observations can be transformed from ECEF delta into local topocentric `Delta-N/E/U` for solve/listing output, with covariance carried through the same frame path
 - industry-style listings now surface GNSS vertical deflection plus unadjusted and adjusted GNSS vector sections for covariance-vector jobs
 - the unadjusted GNSS covariance-vector listing block preserves the source-frame `DeltaX/DeltaY/DeltaZ` covariance sigmas/correlations from the imported `G0/G1/G2/G3` records, while the adjusted GNSS vector section stays in the local-topocentric `Delta-N/E/U` display contract

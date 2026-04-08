@@ -51,6 +51,14 @@ describe('runAdjustmentSession', () => {
         807.697,
         0,
       );
+      expect(outcome.result.parseState?.verticalDeflectionNorthSec ?? Number.NaN).toBeCloseTo(
+        -2.91,
+        6,
+      );
+      expect(outcome.result.parseState?.verticalDeflectionEastSec ?? Number.NaN).toBeCloseTo(
+        -1.46,
+        6,
+      );
     },
     120000,
   );

@@ -200,4 +200,45 @@ describe('createRunProfileBuilders', () => {
     expect(diagnostics.usedInSolveUsageSummary).toBe('solve summary');
     expect(diagnostics.stochasticDefaultsSummary).toContain('inst=T1');
   });
+
+  it('keeps project default instrument diagnostics pinned to the selected instrument', () => {
+    const projectInstruments: InstrumentLibrary = {
+      T1: {
+        ...s9Instrument,
+        code: 'T1',
+        desc: 'Test Instrument',
+        edm_const: 0.001,
+        edm_ppm: 1.5,
+      },
+      S9: {
+        ...s9Instrument,
+        code: 'S9',
+        desc: 'Inline Instrument',
+        edm_const: 0.003,
+        edm_ppm: 2,
+      },
+    };
+    const { buildRunDiagnostics } = createRunProfileBuilders({
+      projectInstruments,
+      selectedInstrument: 'T1',
+      defaultIndustryInstrumentCode: 'S9',
+      defaultIndustryInstrument: s9Instrument,
+      normalizeSolveProfile,
+    });
+
+    const solved = {
+      parseState: {
+        ...baseParseSettings,
+        currentInstrument: 'S9',
+      },
+      observations: [],
+    } as unknown as AdjustmentResult;
+
+    const diagnostics = buildRunDiagnostics(baseParseSettings, solved);
+
+    expect(diagnostics.currentInstrumentCode).toBe('T1');
+    expect(diagnostics.currentInstrumentDesc).toBe('Test Instrument');
+    expect(diagnostics.stochasticDefaultsSummary).toContain('inst=T1');
+    expect(diagnostics.stochasticDefaultsSummary).toContain('0.0010m+1.500ppm');
+  });
 });

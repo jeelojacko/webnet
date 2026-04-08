@@ -323,10 +323,9 @@ export const createRunProfileBuilders = ({
       .filter((type) => (byType.get(type) ?? 0) > 0)
       .map((type) => `${type}=${byType.get(type)}`)
       .join(', ');
-    const activeDefaultInst =
-      parse.currentInstrument && profileCtx.effectiveInstrumentLibrary[parse.currentInstrument]
-        ? profileCtx.effectiveInstrumentLibrary[parse.currentInstrument]
-        : undefined;
+    const activeDefaultInst = profileCtx.currentInstrument
+      ? profileCtx.effectiveInstrumentLibrary[profileCtx.currentInstrument]
+      : undefined;
     const stochasticDefaultsSummary = activeDefaultInst
       ? `inst=${activeDefaultInst.code} dist=${activeDefaultInst.edm_const.toFixed(4)}m+${activeDefaultInst.edm_ppm.toFixed(3)}ppm hz=${activeDefaultInst.hzPrecision_sec.toFixed(3)}" va=${activeDefaultInst.vaPrecision_sec.toFixed(3)}" centering=${activeDefaultInst.instCentr_m.toFixed(5)}/${activeDefaultInst.tgtCentr_m.toFixed(5)}m edm=${parse.edmMode} centerInflation=${parse.applyCentering ? `ON(explicit=${parse.addCenteringToExplicit ? 'ON' : 'OFF'})` : 'OFF'}`
       : `inst=none dist=0+0ppm hz=0" va=0" centering=0/0m edm=${parse.edmMode} centerInflation=${parse.applyCentering ? `ON(explicit=${parse.addCenteringToExplicit ? 'ON' : 'OFF'})` : 'OFF'}`;

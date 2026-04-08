@@ -48,6 +48,8 @@ export const createRunSessionRequest = (
     averageGeoidHeight: 0,
     gnssVectorFrameDefault: 'gridNEU',
     gnssFrameConfirmed: false,
+    verticalDeflectionNorthSec: 0,
+    verticalDeflectionEastSec: 0,
     observationMode: {
       bearing: 'grid',
       distance: 'measured',
@@ -221,6 +223,8 @@ export const createTraverseRunSessionRequest = (
       deltaMode: 'slope',
       angleStationOrder: 'atfromto',
       lonSign: 'west-positive',
+      verticalDeflectionNorthSec: -2.91,
+      verticalDeflectionEastSec: -1.46,
       applyCurvatureRefraction: true,
       verticalReduction: 'curvref',
       refractionCoefficient: 0.07,
