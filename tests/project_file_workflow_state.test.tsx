@@ -44,7 +44,7 @@ const baseSettings: SettingsState = {
 };
 
 const baseParseSettings: ParseSettings = {
-  solveProfile: 'industry-parity-current',
+  solveProfile: 'industry-parity',
   coordMode: '3D',
   coordSystemMode: 'local',
   crsId: 'LOCAL',
@@ -140,10 +140,7 @@ const normalizeUiTheme = (value: unknown): SettingsState['uiTheme'] => {
   return 'gruvbox-dark';
 };
 
-const normalizeSolveProfile = (
-  profile: SolveProfile,
-): Exclude<SolveProfile, 'industry-parity'> =>
-  profile === 'industry-parity' ? 'industry-parity-current' : profile;
+const normalizeSolveProfile = (_profile: SolveProfile): SolveProfile => 'industry-parity';
 
 const buildObservationModeFromGridFields = (state: {
   gridBearingMode: ParseSettings['gridBearingMode'];
@@ -329,7 +326,7 @@ describe('useProjectFileWorkflow', () => {
           },
           runDiagnostics: null,
           settingsSnapshot: {
-            solveProfile: 'industry-parity-current',
+            solveProfile: 'industry-parity',
           } as unknown as RunSettingsSnapshot,
           excludedIds: [],
           overrideIds: [],
@@ -520,7 +517,7 @@ describe('useProjectFileWorkflow', () => {
 
     expect(container.querySelector('#input')?.textContent).toBe('LOADED NETWORK');
     expect(container.querySelector('#theme')?.textContent).toBe('gruvbox-light');
-    expect(container.querySelector('#precision-mode')?.textContent).toBe('posterior-scaled');
+    expect(container.querySelector('#precision-mode')?.textContent).toBe('industry-standard');
     expect(container.querySelector('#run-mode')?.textContent).toBe('preanalysis');
     expect(container.querySelector('#export')?.textContent).toBe('geojson');
     expect(container.querySelector('#instrument')?.textContent).toBe('T1');
@@ -528,7 +525,7 @@ describe('useProjectFileWorkflow', () => {
     expect(container.querySelector('#saved-runs')?.textContent).toBe('1');
     expect(container.querySelector('#draft-theme')?.textContent).toBe('gruvbox-light');
     expect(container.querySelector('#draft-precision-mode')?.textContent).toBe(
-      'posterior-scaled',
+      'industry-standard',
     );
     expect(container.querySelector('#draft-run-mode')?.textContent).toBe('preanalysis');
     expect(container.querySelector('#draft-open')?.textContent).toBe('closed');

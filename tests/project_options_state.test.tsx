@@ -30,7 +30,7 @@ const baseSettings: SettingsState = {
 };
 
 const baseParseSettings: ParseSettings = {
-  solveProfile: 'industry-parity-current',
+  solveProfile: 'industry-parity',
   coordMode: '3D',
   coordSystemMode: 'local',
   crsId: 'LOCAL',

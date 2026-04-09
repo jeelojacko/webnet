@@ -1444,7 +1444,7 @@ describe('industry listing phase 5 formatting locks', () => {
         refractionCoefficient: 0.07,
       },
       {
-        solveProfile: 'industry-parity-current',
+        solveProfile: 'industry-parity',
         angleCenteringModel: 'geometry-aware-correlated-rays',
         defaultSigmaCount: 0,
         defaultSigmaByType: '',
@@ -1515,7 +1515,7 @@ describe('industry listing phase 5 formatting locks', () => {
         refractionCoefficient: 0.07,
       },
       {
-        solveProfile: 'industry-parity-current',
+        solveProfile: 'industry-parity',
         angleCenteringModel: 'geometry-aware-correlated-rays',
         defaultSigmaCount: 0,
         defaultSigmaByType: '',

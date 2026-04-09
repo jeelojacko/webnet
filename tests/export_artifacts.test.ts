@@ -54,8 +54,7 @@ describe('buildExportArtifacts', () => {
       selectedInstrument: request.selectedInstrument,
       defaultIndustryInstrumentCode: 'S9',
       defaultIndustryInstrument: request.projectInstruments.S9,
-      normalizeSolveProfile: (profile) =>
-        profile === 'industry-parity' ? 'industry-parity-current' : profile,
+      normalizeSolveProfile: () => 'industry-parity',
     });
     const runDiagnostics = buildRunDiagnostics(
       request.parseSettings as ParseSettings,

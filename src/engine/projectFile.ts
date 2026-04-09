@@ -6,7 +6,6 @@ import type {
   Instrument,
   InstrumentLibrary,
   ObservationOverride,
-  ParseCompatibilityMode,
   ProjectExportFormat,
   WebNetProjectFileV3,
 } from '../types';
@@ -178,11 +177,6 @@ const sanitizeExportFormat = (
     return value;
   }
   return fallback;
-};
-
-const sanitizeParseCompatibilityMode = (value: unknown): ParseCompatibilityMode | undefined => {
-  if (value === 'legacy' || value === 'strict') return value;
-  return undefined;
 };
 
 const sanitizeIncludeFiles = (value: unknown): Record<string, string> => {
@@ -383,7 +377,13 @@ const sanitizeSavedRunSnapshots = (value: unknown): PersistedSavedRunSnapshot[] 
         : `Saved Run ${String(index + 1).padStart(2, '0')}`;
     const notes = typeof entry.notes === 'string' ? entry.notes : '';
     const settingsSnapshot = isRecord(entry.settingsSnapshot)
-      ? (entry.settingsSnapshot as PersistedSavedRunSnapshot['settingsSnapshot'])
+      ? ({
+          ...(entry.settingsSnapshot as PersistedSavedRunSnapshot['settingsSnapshot']),
+          precisionReportingMode: 'industry-standard',
+          solveProfile: 'industry-parity',
+          parseCompatibilityMode: 'strict',
+          parseModeMigrated: true,
+        } as PersistedSavedRunSnapshot['settingsSnapshot'])
       : ({} as PersistedSavedRunSnapshot['settingsSnapshot']);
     const summarySource = isRecord(entry.summary) ? entry.summary : {};
     rows.push({
@@ -455,16 +455,11 @@ const sanitizeSavedRunSnapshots = (value: unknown): PersistedSavedRunSnapshot[] 
 export const serializeProjectFile = (project: ParsedProjectPayload): string => {
   const nowIso = new Date().toISOString();
   const parseSettings = cloneRecord(project.ui.parseSettings);
-  const modeFromSettings = sanitizeParseCompatibilityMode(parseSettings.parseCompatibilityMode);
-  const migratedFromSettings =
-    typeof parseSettings.parseModeMigrated === 'boolean'
-      ? parseSettings.parseModeMigrated
-      : undefined;
-  const parseModeMigrated = migratedFromSettings ?? modeFromSettings === 'strict';
-  const parseCompatibilityMode: ParseCompatibilityMode =
-    modeFromSettings ?? (parseModeMigrated ? 'strict' : 'legacy');
-  parseSettings.parseCompatibilityMode = parseCompatibilityMode;
-  parseSettings.parseModeMigrated = parseModeMigrated;
+  parseSettings.solveProfile = 'industry-parity';
+  parseSettings.parseCompatibilityMode = 'strict';
+  parseSettings.parseModeMigrated = true;
+  const settings = cloneRecord(project.ui.settings);
+  settings.precisionReportingMode = 'industry-standard';
   const payload: WebNetProjectFileV3 = {
     kind: 'webnet-project',
     schemaVersion: 3,
@@ -474,7 +469,7 @@ export const serializeProjectFile = (project: ParsedProjectPayload): string => {
     savedRuns:
       project.savedRuns.length > 0 ? cloneSavedRunSnapshots(project.savedRuns) : undefined,
     ui: {
-      settings: cloneRecord(project.ui.settings),
+      settings,
       parseSettings,
       exportFormat: project.ui.exportFormat,
       adjustedPointsExport: sanitizeAdjustedPointsExportSettings(
@@ -482,8 +477,8 @@ export const serializeProjectFile = (project: ParsedProjectPayload): string => {
         DEFAULT_ADJUSTED_POINTS_EXPORT_SETTINGS,
       ),
       migration: {
-        parseModeMigrated,
-        migratedAt: parseModeMigrated ? nowIso : undefined,
+        parseModeMigrated: true,
+        migratedAt: nowIso,
       },
     },
     project: {
@@ -547,22 +542,10 @@ export const parseProjectFile = (
     typeof uiMigration.migratedAt === 'string' && uiMigration.migratedAt.trim().length > 0
       ? uiMigration.migratedAt.trim()
       : undefined;
-  const migrationFlagFromUi =
-    typeof uiMigration.parseModeMigrated === 'boolean' ? uiMigration.parseModeMigrated : undefined;
-  const modeFromRaw = sanitizeParseCompatibilityMode(parseSettingsRaw.parseCompatibilityMode);
-  const migratedFromRaw =
-    typeof parseSettingsRaw.parseModeMigrated === 'boolean'
-      ? parseSettingsRaw.parseModeMigrated
-      : undefined;
-
-  if (schemaVersion === 1) {
-    parseSettings.parseCompatibilityMode = 'legacy';
-    parseSettings.parseModeMigrated = false;
-  } else {
-    const parseModeMigrated = migratedFromRaw ?? migrationFlagFromUi ?? false;
-    parseSettings.parseModeMigrated = parseModeMigrated;
-    parseSettings.parseCompatibilityMode = modeFromRaw ?? (parseModeMigrated ? 'strict' : 'legacy');
-  }
+  parseSettings.solveProfile = 'industry-parity';
+  parseSettings.parseCompatibilityMode = 'strict';
+  parseSettings.parseModeMigrated = true;
+  settings.precisionReportingMode = 'industry-standard';
 
   const projectInstruments = sanitizeInstrumentLibrary(
     project.projectInstruments,
@@ -594,7 +577,7 @@ export const parseProjectFile = (
         exportFormat,
         adjustedPointsExport,
         migration: {
-          parseModeMigrated: Boolean(parseSettings.parseModeMigrated),
+          parseModeMigrated: true,
           migratedAt,
         },
       },

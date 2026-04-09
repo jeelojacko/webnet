@@ -394,7 +394,7 @@ const ACTIVE_PARITY_STARTUP_DEFAULTS = ACTIVE_INDUSTRY_PARITY_CASE.startupDefaul
 
 const SETTINGS_TOOLTIPS = {
   solveProfile:
-    'Run profile mapping for parser strictness + face treatment. Current parity = strict + normalization ON, legacy parity = strict + normalization OFF, legacy-compat = legacy + normalization AUTO.',
+    'The live workflow runs in industry parity mode with strict parsing and face normalization enabled.',
   parseCompatibilityMode:
     'Parser compatibility mode. LEGACY keeps grammar-first parsing with controlled compatibility fallbacks; STRICT enforces deterministic grammar-only parsing and rejects ambiguous lines.',
   parseModeMigration:
@@ -407,7 +407,7 @@ const SETTINGS_TOOLTIPS = {
   convergenceLimit:
     'When the change in weighted standardized residual sum (vTPv) between iterations is below this value, the run is considered converged and iterations stop.',
   precisionReportingMode:
-    'Choose whether reported station and relative precision uses industry-standard propagated covariance or posterior-scaled covariance. This changes reporting only and does not change adjusted coordinates.',
+    'Reported station and relative precision always uses the industry-standard propagated covariance model.',
   coordMode:
     '2D adjusts horizontal coordinates only. 3D also adjusts heights and uses vertical observations.',
   runMode:
@@ -927,7 +927,7 @@ const App: React.FC<AppProps> = ({
     ...ACTIVE_PARITY_STARTUP_DEFAULTS?.settingsPatch,
   }));
   const [parseSettings, setParseSettings] = useState<ParseSettings>(() => ({
-    solveProfile: 'industry-parity-current',
+    solveProfile: 'industry-parity',
     coordMode: '3D',
     coordSystemMode: 'local',
     crsId: DEFAULT_CANADA_CRS_ID,
@@ -1423,8 +1423,8 @@ const App: React.FC<AppProps> = ({
     isResizingRef.current = true;
   };
 
-  function normalizeSolveProfile(profile: SolveProfile): Exclude<SolveProfile, 'industry-parity'> {
-    return profile === 'industry-parity' ? 'industry-parity-current' : profile;
+  function normalizeSolveProfile(_profile: SolveProfile): SolveProfile {
+    return 'industry-parity';
   }
 
   const { buildRunDiagnostics } = createRunProfileBuilders({
@@ -2200,7 +2200,7 @@ const App: React.FC<AppProps> = ({
                 <ReportView
                   result={result!}
                   units={settings.units}
-                  precisionReportingMode={settings.precisionReportingMode}
+                    precisionReportingMode="industry-standard"
                   viewState={workspaceReviewState}
                   runDiagnostics={runDiagnostics}
                   excludedIds={excludedIds}

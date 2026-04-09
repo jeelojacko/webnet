@@ -10,7 +10,7 @@ import { useImportReviewWorkflow } from '../src/hooks/useImportReviewWorkflow';
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
 const parseSettings: ParseSettings = {
-  solveProfile: 'industry-parity-current',
+  solveProfile: 'industry-parity',
   coordMode: '3D',
   coordSystemMode: 'local',
   crsId: 'LOCAL',

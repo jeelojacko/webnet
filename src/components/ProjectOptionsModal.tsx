@@ -6,7 +6,6 @@ import type {
   ListingSortCoordinatesBy,
   ListingSortObservationsBy,
   ParseSettings,
-  SolveProfile,
 } from '../appStateTypes';
 import type {
   AdjustedPointsColumnId,
@@ -27,7 +26,6 @@ import type {
   LocalDatumScheme,
   MapMode,
   OrderMode,
-  ParseCompatibilityMode,
   ProjectExportFormat,
   RobustMode,
   RunMode,
@@ -115,8 +113,6 @@ const ProjectOptionsModal: React.FC<ProjectOptionsModalProps> = ({ context }) =>
     instrumentLinearUnit,
     isSettingsModalOpen,
     levelLoopCustomPresetsDraft,
-    migrateDraftParseModeToStrict,
-    normalizeSolveProfile,
     normalizeUiTheme,
     openAdjustedPointsTransformSelectModal,
     optionInputClass,
@@ -200,61 +196,11 @@ const ProjectOptionsModal: React.FC<ProjectOptionsModalProps> = ({ context }) =>
                       tooltip={PROJECT_OPTION_SECTION_TOOLTIPS['Adjustment Solution']}
                     >
                       <SettingsRow label="Run Profile" tooltip={SETTINGS_TOOLTIPS.solveProfile}>
-                        <select
-                          title={SETTINGS_TOOLTIPS.solveProfile}
-                          value={parseSettingsDraft.solveProfile}
-                          onChange={(e) =>
-                            handleDraftParseSetting('solveProfile', e.target.value as SolveProfile)
-                          }
-                          className={optionInputClass}
-                        >
-                          <option value="webnet">WebNet</option>
-                          <option value="industry-parity-current">Industry Parity (Current)</option>
-                          <option value="industry-parity-legacy">Industry Parity (Legacy)</option>
-                          <option value="legacy-compat">Legacy Compatibility</option>
-                        </select>
-                      </SettingsRow>
-                      <SettingsRow
-                        label="Parse Mode"
-                        tooltip={SETTINGS_TOOLTIPS.parseCompatibilityMode}
-                      >
-                        <select
-                          title={SETTINGS_TOOLTIPS.parseCompatibilityMode}
-                          value={parseSettingsDraft.parseCompatibilityMode}
-                          onChange={(e) =>
-                            handleDraftParseSetting(
-                              'parseCompatibilityMode',
-                              e.target.value as ParseCompatibilityMode,
-                            )
-                          }
-                          className={optionInputClass}
-                        >
-                          <option value="legacy">Legacy (compatibility)</option>
-                          <option value="strict">Strict (deterministic)</option>
-                        </select>
+                        <div className="text-xs text-slate-100">Industry Parity</div>
                       </SettingsRow>
                       <div className="rounded-md border border-slate-400/70 bg-slate-700/20 px-3 py-2 text-xs text-slate-200 space-y-2">
-                        <div>
-                          Migration status:{' '}
-                          {parseSettingsDraft.parseModeMigrated ? 'Migrated' : 'Legacy project'}
-                        </div>
-                        {!parseSettingsDraft.parseModeMigrated && (
-                          <button
-                            type="button"
-                            title={SETTINGS_TOOLTIPS.parseModeMigration}
-                            onClick={migrateDraftParseModeToStrict}
-                            className="rounded border border-emerald-400/80 bg-emerald-700/30 px-2 py-1 text-[11px] uppercase tracking-wide text-emerald-100 hover:bg-emerald-700/45"
-                          >
-                            Migrate To Strict
-                          </button>
-                        )}
-                        {normalizeSolveProfile(parseSettingsDraft.solveProfile) !== 'webnet' &&
-                          parseSettingsDraft.parseCompatibilityMode === 'legacy' && (
-                            <div className="text-amber-200">
-                              Industry-compatible profile is running in legacy parse mode. Strict
-                              mode is recommended for deterministic parser behavior.
-                            </div>
-                          )}
+                        <div>Parser mode: Strict</div>
+                        <div>Legacy profiles and parse-mode switching are no longer exposed.</div>
                       </div>
                       <SettingsRow label="Coordinate Mode" tooltip={SETTINGS_TOOLTIPS.coordMode}>
                         <select
@@ -1417,17 +1363,7 @@ const ProjectOptionsModal: React.FC<ProjectOptionsModalProps> = ({ context }) =>
                     </div>
                     <label className={optionLabelClass}>
                       Precision Reporting Mode
-                      <select
-                        title={SETTINGS_TOOLTIPS.precisionReportingMode}
-                        value={settingsDraft.precisionReportingMode}
-                        onChange={(e) =>
-                          handleDraftSetting('precisionReportingMode', e.target.value)
-                        }
-                        className={`${optionInputClass} mt-1`}
-                      >
-                        <option value="industry-standard">Industry Standard</option>
-                        <option value="posterior-scaled">Posterior Scaled</option>
-                      </select>
+                      <div className={`${optionInputClass} mt-1 flex items-center`}>Industry Standard</div>
                     </label>
                     <label className={optionLabelClass}>
                       Sort Coordinates By

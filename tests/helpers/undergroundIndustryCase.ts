@@ -31,7 +31,7 @@ export const undergroundSettings: SettingsState = {
 };
 
 export const undergroundParseSettings: ParseSettings = {
-  solveProfile: 'industry-parity-current',
+  solveProfile: 'industry-parity',
   coordMode: '2D',
   coordSystemMode: 'local',
   crsId: 'CA_NAD83_CSRS_NB_STEREO_DOUBLE',
@@ -134,10 +134,7 @@ export const undergroundProjectInstruments: InstrumentLibrary = {
   S9: s9Instrument,
 };
 
-const normalizeSolveProfile = (
-  profile: SolveProfile,
-): Exclude<SolveProfile, 'industry-parity'> =>
-  profile === 'industry-parity' ? 'industry-parity-current' : profile;
+const normalizeSolveProfile = (_profile: SolveProfile): SolveProfile => 'industry-parity';
 
 const buildEngineParseOptions = (
   effectiveParse: ParseSettings,

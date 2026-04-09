@@ -38,7 +38,7 @@ Usage:
 
 Options:
   --input, -i <path>            Input adjustment file (required)
-  --profile <webnet|industry-parity-current|industry-parity-legacy|legacy-compat|industry-parity>
+  --profile <industry-parity>
   --max-iterations <n>
   --output <summary|json|listing|landxml>
   --out <path>                  Write output payload to file instead of stdout
@@ -102,8 +102,7 @@ const parseFaceNormalizationModeArg = (value: string): ParseOptions['faceNormali
   return undefined;
 };
 
-const normalizeSolveProfile = (profile: SolveProfile): Exclude<SolveProfile, 'industry-parity'> =>
-  profile === 'industry-parity' ? 'industry-parity-current' : profile;
+const normalizeSolveProfile = (_profile: SolveProfile): SolveProfile => 'industry-parity';
 
 const parseGeoidSourceFormatArg = (value: string): ParseOptions['geoidSourceFormat'] => {
   const token = value.trim().toLowerCase();
@@ -120,7 +119,7 @@ const parseGeoidInterpolationArg = (value: string): ParseOptions['geoidInterpola
 const parseArgs = (argv: string[]): CliConfig => {
   const config: CliConfig = {
     inputPath: '',
-    profile: 'webnet',
+    profile: 'industry-parity',
     maxIterations: 10,
     outputFormat: 'summary',
     parseOptions: {},
@@ -435,34 +434,22 @@ const parseArgs = (argv: string[]): CliConfig => {
   }
 
   config.profile = normalizeSolveProfile(config.profile);
-  const parity = config.profile !== 'webnet';
+  const parity = true;
   if (parity) {
     config.parseOptions.directionSetMode = 'raw';
     config.parseOptions.robustMode = 'none';
     config.parseOptions.tsCorrelationEnabled = false;
     config.parseOptions.tsCorrelationRho = 0;
-    config.parseOptions.directionFaceReliabilityFromCluster = config.profile === 'legacy-compat';
+    config.parseOptions.directionFaceReliabilityFromCluster = false;
   }
-  if (!config.parseOptions.parseCompatibilityMode) {
-    config.parseOptions.parseCompatibilityMode =
-      config.profile === 'legacy-compat' ? 'legacy' : parity ? 'strict' : 'legacy';
-  }
+  config.parseOptions.parseCompatibilityMode = 'strict';
   if (!config.parseOptions.faceNormalizationMode) {
-    config.parseOptions.faceNormalizationMode =
-      config.profile === 'industry-parity-current'
-        ? 'on'
-        : config.profile === 'industry-parity-legacy'
-          ? 'off'
-          : config.profile === 'legacy-compat'
-            ? 'auto'
-            : 'on';
+    config.parseOptions.faceNormalizationMode = 'on';
   }
   if (typeof config.parseOptions.normalize !== 'boolean') {
     config.parseOptions.normalize = config.parseOptions.faceNormalizationMode !== 'off';
   }
-  if (typeof config.parseOptions.parseModeMigrated !== 'boolean') {
-    config.parseOptions.parseModeMigrated = config.parseOptions.parseCompatibilityMode === 'strict';
-  }
+  config.parseOptions.parseModeMigrated = true;
   if (!config.parseOptions.runMode) {
     config.parseOptions.runMode = config.parseOptions.preanalysisMode
       ? 'preanalysis'

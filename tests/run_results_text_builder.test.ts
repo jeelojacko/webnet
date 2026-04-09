@@ -26,7 +26,7 @@ const baseSettings: SettingsState = {
 };
 
 const baseParseSettings: ParseSettings = {
-  solveProfile: 'industry-parity-current',
+  solveProfile: 'industry-parity',
   coordMode: '3D',
   coordSystemMode: 'local',
   crsId: 'EPSG:26920',
@@ -125,10 +125,7 @@ const s9Instrument: Instrument = {
   levStd_mmPerKm: 0,
 };
 
-const normalizeSolveProfile = (
-  profile: SolveProfile,
-): Exclude<SolveProfile, 'industry-parity'> =>
-  profile === 'industry-parity' ? 'industry-parity-current' : profile;
+const normalizeSolveProfile = (_profile: SolveProfile): SolveProfile => 'industry-parity';
 
 afterEach(() => {
   vi.useRealTimers();
@@ -260,7 +257,7 @@ describe('createRunResultsTextBuilder', () => {
     expect(normalizedPrefix[0]).toBe('# WebNet Adjustment Results');
     expect(normalizedPrefix[1]).toBe('# Generated: <normalized>');
     expect(normalizedPrefix[2]).toBe('# Linear units: m');
-    expect(normalizedPrefix[3]).toContain('profile=industry-parity-current');
+    expect(normalizedPrefix[3]).toContain('profile=industry-parity');
     expect(normalizedPrefix[3]).toContain('dirSets=raw');
     expect(normalizedPrefix[4]).toContain('profileFallback=ON');
     expect(normalizedPrefix[6]).toBe('--- Solve Profile Diagnostics ---');

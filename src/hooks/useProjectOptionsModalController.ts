@@ -47,9 +47,7 @@ type UseProjectOptionsModalControllerArgs = {
   settingsModalContentRef: RefObject<HTMLDivElement | null>;
   adjustedPointsDragRef: MutableRefObject<AdjustedPointsColumnId | null>;
   runDiagnostics: RunDiagnostics | null;
-  normalizeSolveProfile: (
-    _profile: SolveProfile,
-  ) => Exclude<SolveProfile, 'industry-parity'>;
+  normalizeSolveProfile: (_profile: SolveProfile) => SolveProfile;
   normalizeUiTheme: (_value: unknown) => UiTheme;
   buildObservationModeFromGridFields: (_state: {
     gridBearingMode: ParseSettings['gridBearingMode'];
@@ -139,12 +137,7 @@ export const useProjectOptionsModalController = ({
     applyProjectOptions,
   } = projectOptionsState;
 
-  const convergenceDefaultForProfile = (profile: SolveProfile): number => {
-    const normalized = normalizeSolveProfile(profile);
-    return normalized === 'industry-parity-current' || normalized === 'industry-parity-legacy'
-      ? 0.001
-      : 0.01;
-  };
+  const convergenceDefaultForProfile = (_profile: SolveProfile): number => 0.001;
 
   const handleDraftUnitChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setSettingsDraft((prev) => ({ ...prev, units: e.target.value as SettingsState['units'] }));
@@ -178,17 +171,10 @@ export const useProjectOptionsModalController = ({
         const previousProfile = normalizeSolveProfile(prev.solveProfile);
         const profile = normalizeSolveProfile(value as SolveProfile);
         next.solveProfile = profile;
-        if (profile === 'industry-parity-current') {
-          next.parseCompatibilityMode = 'strict';
-          next.faceNormalizationMode = 'on';
-        } else if (profile === 'industry-parity-legacy') {
-          next.parseCompatibilityMode = 'strict';
-          next.faceNormalizationMode = 'off';
-        } else if (profile === 'legacy-compat') {
-          next.parseCompatibilityMode = 'legacy';
-          next.faceNormalizationMode = 'auto';
-        }
-        next.normalize = next.faceNormalizationMode !== 'off';
+        next.parseCompatibilityMode = 'strict';
+        next.faceNormalizationMode = 'on';
+        next.parseModeMigrated = true;
+        next.normalize = true;
         setSettingsDraft((prevSettings) => {
           const previousDefault = convergenceDefaultForProfile(previousProfile);
           if (Math.abs(prevSettings.convergenceLimit - previousDefault) > 1e-12) {
@@ -638,7 +624,7 @@ export const useProjectOptionsModalController = ({
     setSelectedInstrumentDraft(code);
   };
 
-  const parityProfileActive = normalizeSolveProfile(parseSettingsDraft.solveProfile) !== 'webnet';
+  const parityProfileActive = true;
   const selectedInstrumentMeta = selectedInstrumentDraft
     ? projectInstrumentsDraft[selectedInstrumentDraft]
     : undefined;

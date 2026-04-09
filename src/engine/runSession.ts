@@ -327,10 +327,7 @@ const preanalysisWeakStationCount = (res: AdjustmentResult): number =>
 const preanalysisWeakPairCount = (res: AdjustmentResult): number =>
   (res.weakGeometryDiagnostics?.relativeCues ?? []).filter((cue) => cue.severity !== 'ok').length;
 
-const normalizeSolveProfile = (
-  profile: SolveProfile,
-): Exclude<SolveProfile, 'industry-parity'> =>
-  profile === 'industry-parity' ? 'industry-parity-current' : profile;
+const normalizeSolveProfile = (_profile: SolveProfile): SolveProfile => 'industry-parity';
 
 const resolveProfileContext = (
   base: RunSessionParseSettings,

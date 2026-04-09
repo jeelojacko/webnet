@@ -41,7 +41,7 @@ const baseSettings: SettingsState = {
 };
 
 const baseParseSettings: ParseSettings = {
-  solveProfile: 'industry-parity-current',
+  solveProfile: 'industry-parity',
   coordMode: '3D',
   coordSystemMode: 'local',
   crsId: 'LOCAL',
@@ -155,12 +155,7 @@ const normalizeUiTheme = (value: unknown): SettingsState['uiTheme'] => {
   return 'gruvbox-dark';
 };
 
-const normalizeSolveProfile = (
-  profile: SolveProfile,
-): Exclude<SolveProfile, 'industry-parity'> => {
-  if (profile === 'industry-parity') return 'industry-parity-current';
-  return profile;
-};
+const normalizeSolveProfile = (_profile: SolveProfile): SolveProfile => 'industry-parity';
 
 const createCustomLevelLoopTolerancePreset = (
   seed?: Partial<Omit<CustomLevelLoopTolerancePreset, 'id'>>,
@@ -322,8 +317,8 @@ describe('useProjectOptionsModalController', () => {
 
     await click('legacy-profile');
     expect(container.querySelector('[data-parse-mode]')?.textContent).toBe('strict');
-    expect(container.querySelector('[data-face-mode]')?.textContent).toBe('off');
-    expect(container.querySelector('[data-normalize]')?.textContent).toBe('false');
+    expect(container.querySelector('[data-face-mode]')?.textContent).toBe('on');
+    expect(container.querySelector('[data-normalize]')?.textContent).toBe('true');
 
     await click('preanalysis-mode');
     expect(container.querySelector('[data-run-mode]')?.textContent).toBe('preanalysis');

@@ -38,7 +38,7 @@ const baseSettings: SettingsState = {
 };
 
 const baseParseSettings: ParseSettings = {
-  solveProfile: 'industry-parity-current',
+  solveProfile: 'industry-parity',
   coordMode: '3D',
   coordSystemMode: 'local',
   crsId: 'LOCAL',
@@ -123,7 +123,7 @@ const baseRunSettingsSnapshot: RunSettingsSnapshot = {
   maxIterations: 10,
   convergenceLimit: 0.01,
   units: 'm',
-  solveProfile: 'industry-parity-current',
+  solveProfile: 'industry-parity',
   runMode: 'adjustment',
   coordMode: '3D',
   coordSystemMode: 'local',

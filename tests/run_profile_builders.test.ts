@@ -14,7 +14,7 @@ import type {
 } from '../src/types';
 
 const baseParseSettings: ParseSettings = {
-  solveProfile: 'industry-parity-current',
+  solveProfile: 'industry-parity',
   coordMode: '3D',
   coordSystemMode: 'local',
   crsId: 'LOCAL',
@@ -113,10 +113,7 @@ const s9Instrument: Instrument = {
   levStd_mmPerKm: 0,
 };
 
-const normalizeSolveProfile = (
-  profile: SolveProfile,
-): Exclude<SolveProfile, 'industry-parity'> =>
-  profile === 'industry-parity' ? 'industry-parity-current' : profile;
+const normalizeSolveProfile = (_profile: SolveProfile): SolveProfile => 'industry-parity';
 
 describe('createRunProfileBuilders', () => {
   it('applies parity defaults and fallback instrument selection in profile context', () => {

@@ -14,10 +14,8 @@ import type {
 import type {
   AdjustedPointsExportSettings,
   CustomLevelLoopTolerancePreset,
-  FaceNormalizationMode,
   InstrumentLibrary,
   ObservationModeSettings,
-  ParseCompatibilityMode,
   ProjectExportFormat,
   RunMode,
 } from '../types';
@@ -81,7 +79,7 @@ interface UseProjectFileWorkflowArgs {
   resetWorkspaceAfterProjectLoad: () => void;
   restoreSavedRunSnapshots: (_snapshots: PersistedSavedRunSnapshot[]) => void;
   normalizeUiTheme: (_value: unknown) => SettingsState['uiTheme'];
-  normalizeSolveProfile: (_profile: SolveProfile) => Exclude<SolveProfile, 'industry-parity'>;
+  normalizeSolveProfile: (_profile: SolveProfile) => SolveProfile;
   buildObservationModeFromGridFields: (_state: {
     gridBearingMode: ParseSettings['gridBearingMode'];
     gridDistanceMode: ParseSettings['gridDistanceMode'];
@@ -226,39 +224,13 @@ export const useProjectFileWorkflow = ({
         const loadedSettings = parsed.project.ui.settings as unknown as SettingsState;
         const normalizedLoadedSettings: SettingsState = {
           ...loadedSettings,
+          precisionReportingMode: 'industry-standard',
           uiTheme: normalizeUiTheme(loadedSettings?.uiTheme),
         };
         const loadedParseSettings = parsed.project.ui.parseSettings as unknown as ParseSettings;
-        const projectSchemaVersion = parsed.project.schemaVersion;
         const profileForMode = normalizeSolveProfile(
-          (loadedParseSettings.solveProfile ?? 'webnet') as SolveProfile,
+          (loadedParseSettings.solveProfile ?? 'industry-parity') as SolveProfile,
         );
-        const migrationFlag = parsed.project.ui.migration?.parseModeMigrated === true;
-        const defaultCompatibilityMode: ParseCompatibilityMode =
-          projectSchemaVersion === 1
-            ? 'legacy'
-            : (loadedParseSettings.parseCompatibilityMode ??
-              (migrationFlag
-                ? 'strict'
-                : profileForMode === 'industry-parity-current' ||
-                    profileForMode === 'industry-parity-legacy'
-                  ? 'strict'
-                  : 'legacy'));
-        const defaultFaceNormalizationMode: FaceNormalizationMode =
-          loadedParseSettings.faceNormalizationMode ??
-          (profileForMode === 'industry-parity-current'
-            ? 'on'
-            : profileForMode === 'industry-parity-legacy'
-              ? 'off'
-              : profileForMode === 'legacy-compat'
-                ? 'auto'
-                : loadedParseSettings.normalize
-                  ? 'on'
-                  : 'off');
-        const defaultMigratedFlag =
-          projectSchemaVersion === 1
-            ? false
-            : (loadedParseSettings.parseModeMigrated ?? migrationFlag);
         const normalizedRunMode: RunMode =
           loadedParseSettings.preanalysisMode === true
             ? 'preanalysis'
@@ -280,11 +252,10 @@ export const useProjectFileWorkflow = ({
           observationMode:
             loadedParseSettings.observationMode ??
             buildObservationModeFromGridFields(loadedParseSettings),
-          parseCompatibilityMode:
-            loadedParseSettings.parseCompatibilityMode ?? defaultCompatibilityMode,
-          faceNormalizationMode: defaultFaceNormalizationMode,
-          normalize: defaultFaceNormalizationMode !== 'off',
-          parseModeMigrated: defaultMigratedFlag,
+          parseCompatibilityMode: 'strict',
+          faceNormalizationMode: 'on',
+          normalize: true,
+          parseModeMigrated: true,
           geoidSourceFormat: loadedParseSettings.geoidSourceFormat ?? 'builtin',
           geoidSourcePath: loadedParseSettings.geoidSourcePath ?? '',
           verticalDeflectionNorthSec: loadedParseSettings.verticalDeflectionNorthSec ?? 0,

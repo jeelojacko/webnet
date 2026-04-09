@@ -18,7 +18,7 @@ Core delivered outcomes include:
 
 ## Current defaults and operator-facing posture
 Current startup and workflow defaults include:
-- run profile defaults to industry-standard parity mode
+- run profile defaults to strict industry parity mode
 - cluster detection defaults to OFF
 - auto-adjust is available but operator-controlled
 - the active startup dataset is currently rotated to the combined industry-parity case, including the committed mixed traverse/GNSS fixture loaded directly into the editor, the matching project default plus `S9`/`SX12`/`TS11` total-station instrument library from the reference output, and the New Brunswick grid startup defaults under the industry `NewBrunswick83` label with the CSRS double-stereographic solve/display contract, positive-west longitude convention, vertical deflection `N=-2.910" E=-1.460"`, and slope/zenith reduction with refraction `k=0.07`
@@ -106,7 +106,7 @@ Current review behavior includes:
 - synchronized report/map selection and review actions
 - saved-run compare and baseline review workflows
 - heavy jobs now defer full normal-equation covariance recovery until the final adjusted state; intermediate outer iterations solve only for the correction vector
-- posterior-scaled precision reporting is now derived from the industry-standard precision model by deterministic scaling instead of rebuilding a second full precision model during solve
+- industry-standard propagated precision is the only live precision-reporting mode exposed in the app and project workflow
 
 ### Cluster and automatic review workflows
 Current workflow behavior includes:
@@ -158,10 +158,9 @@ Current listing/report behavior includes:
 - fixture-backed parity locks now include a small underground 2D reference case with two guards: key WebNet listing sections stay stable, and a mirrored industry-output fixture keeps adjusted coordinates, relative-confidence rows, and ellipse blocks numerically close to the actual industry result
 
 ### Precision reporting
-Current results support dual precision-reporting models:
-- industry-style outputs default to unscaled propagated precision
-- a persisted selector can switch to posterior-scaled reporting without rerun
-- that selector persists through saved runs, browser recovery, and project save/load
+Current results use one live precision-reporting model:
+- industry-style outputs use unscaled propagated precision
+- older project/saved-run payloads that carried legacy precision/profile selections are normalized back to the strict industry-parity defaults on load/save
 
 ## Coordinate-system and GPS behavior
 
@@ -205,7 +204,7 @@ Current GNSS behavior includes:
 - GNSS precision sections keep fixed control stations visible as explicit zero ellipse rows, and the station/relative ellipse blocks now use the same fixed-width field layout as the stored industry output
 - GNSS-only compact precision sections now also apply the legacy convergence-angle display correction to direct-fixed-linked station ellipse azimuths and their matching fixed-linked relative ellipse rows, which closes most of the remaining `FRDN-*` azimuth drift without changing the propagated covariance magnitudes underneath
 - GNSS-only compact industry listings now keep the unadjusted GPS input block and the adjusted GPS vector block visible even when the generic adjusted-observations toggle is off, so the GNSS vector sections continue to match the stored industry output contract independently of the broader residual-table setting
-- GNSS-only app runs that use the live `industry-parity-current` profile now still take the compact GNSS listing path even when the project/default instrument library is populated, instead of falling back to the broader classic listing branch that hid the GPS vector sections behind zero-count conventional headings
+- GNSS-only app runs in the live strict industry-parity profile still take the compact GNSS listing path even when the project/default instrument library is populated, instead of falling back to the broader classic listing branch that hid the GPS vector sections behind zero-count conventional headings
 - the industry listing header now prefers the solved result's parse-state vertical deflection over any stale external diagnostics snapshot, so live GNSS output panes show the actual run's `N/E` deflection values instead of falling back to `0.000 / 0.000` when diagnostics lag behind
 - GNSS adjustment statistical summaries/listings now count covariance-vector observations by scalar equations (`GPS Deltas`) for observation/unknown totals, matching the industry `45`-equation contract for the parity fixture even though the solve still stores `15` GNSS vector records internally
 - the GNSS solve/listing parity gap is now much smaller: the local-frame `.GPS FACTOR` fix collapses the remaining station-height drift to roughly `0.00005 m` worst-case against the stored reference and moves the listing summary from the earlier `42.709 / 1.258` down to `40.853 / 1.230` versus the stored industry `40.545 / 1.225`; the remaining delta appears concentrated in the last GNSS summary/precision statistics rather than in solved station geometry

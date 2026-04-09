@@ -108,7 +108,7 @@ const maxUnknownCoordinateShift = (base: AdjustmentResult, alt: AdjustmentResult
 interface CreateDirectRunPipelineArgs {
   defaultIndustryInstrumentCode: string;
   defaultIndustryInstrument: Instrument;
-  normalizeSolveProfile: (_profile: SolveProfile) => Exclude<SolveProfile, 'industry-parity'>;
+    normalizeSolveProfile: (_profile: SolveProfile) => SolveProfile;
 }
 
 export const createDirectRunPipeline = ({

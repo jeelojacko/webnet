@@ -38,7 +38,7 @@ export const createRunSessionRequest = (
   convergenceLimit: 0.01,
   units: 'm',
   parseSettings: {
-    solveProfile: 'industry-parity-current',
+    solveProfile: 'industry-parity',
     coordMode: '3D',
     coordSystemMode: 'local',
     crsId: DEFAULT_CANADA_CRS_ID,

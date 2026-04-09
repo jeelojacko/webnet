@@ -35,9 +35,7 @@ interface CreateRunProfileBuildersArgs {
   selectedInstrument: string;
   defaultIndustryInstrumentCode: string;
   defaultIndustryInstrument: Instrument;
-  normalizeSolveProfile: (
-    _profile: SolveProfile,
-  ) => Exclude<SolveProfile, 'industry-parity'>;
+  normalizeSolveProfile: (_profile: SolveProfile) => SolveProfile;
 }
 
 export const createRunProfileBuilders = ({

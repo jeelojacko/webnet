@@ -33,7 +33,7 @@ const buildSnapshot = (overrides: Partial<WorkspaceDraftSnapshot> = {}): Workspa
     listingObservationLimit: 60,
   },
   parseSettings: {
-    solveProfile: 'industry-parity-current',
+    solveProfile: 'industry-parity',
     coordMode: '3D',
     coordSystemMode: 'local',
     crsId: 'LOCAL',
@@ -252,7 +252,7 @@ describe('useWorkspaceRecovery', () => {
           },
           runDiagnostics: null,
           settingsSnapshot: {
-            solveProfile: 'industry-parity-current',
+            solveProfile: 'industry-parity',
           } as unknown as RunSettingsSnapshot,
           excludedIds: [],
           overrideIds: [],
