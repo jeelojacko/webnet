@@ -58,9 +58,6 @@ interface ProcessingSummaryViewProps {
     crsDatumFallbackUsed?: boolean;
     crsAreaOfUseStatus?: 'inside' | 'outside' | 'unknown';
     crsOutOfAreaStationCount?: number;
-    crsTransformEnabled?: boolean;
-    crsProjectionModel?: 'legacy-equirectangular' | 'local-enu';
-    crsLabel?: string;
     crsGridScaleEnabled?: boolean;
     crsGridScaleFactor?: number;
     crsConvergenceEnabled?: boolean;

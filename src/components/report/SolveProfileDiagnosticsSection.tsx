@@ -38,9 +38,6 @@ interface SolveProfileDiagnosticsSectionProps {
     robustMode: 'none' | 'huber';
     robustK: number;
     rotationAngleRad: number;
-    crsTransformEnabled: boolean;
-    crsProjectionModel: 'legacy-equirectangular' | 'local-enu';
-    crsLabel: string;
     crsGridScaleEnabled: boolean;
     crsGridScaleFactor: number;
     crsConvergenceEnabled: boolean;
