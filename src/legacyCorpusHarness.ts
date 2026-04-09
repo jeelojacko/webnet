@@ -176,7 +176,6 @@ const buildSourceFileMap = (
 
 export const collectUnknownInlineDirectiveCandidates = (
   sourceFiles: Map<string, string>,
-  abbreviationMode: ParseOptions['directiveAbbreviationMode'] = 'unique-prefix',
 ): UnknownInlineDirectiveCandidate[] => {
   const candidates: UnknownInlineDirectiveCandidate[] = [];
   for (const [sourceFile, content] of sourceFiles.entries()) {
@@ -187,7 +186,7 @@ export const collectUnknownInlineDirectiveCandidates = (
         return;
       }
       const token = line.split(/\s+/)[0] ?? '';
-      const normalized = normalizeInlineDirective(token, abbreviationMode);
+      const normalized = normalizeInlineDirective(token);
       if (normalized.unknown || normalized.ambiguous) {
         candidates.push({
           sourceFile: normalizePath(sourceFile),
@@ -426,10 +425,7 @@ const runProjectChecks = (project: LegacyCorpusProject): ProjectCheckResult => {
   const parseSuccess = parseSucceeded(parseState);
   const runSuccess = result.success;
   const sourceFiles = buildSourceFileMap(inputPath, input, includeCache);
-  const unknownInlineCandidates = collectUnknownInlineDirectiveCandidates(
-    sourceFiles,
-    parseOptions.directiveAbbreviationMode ?? 'unique-prefix',
-  );
+  const unknownInlineCandidates = collectUnknownInlineDirectiveCandidates(sourceFiles);
   const silentDirectiveDrops = findSilentDirectiveDrops(
     unknownInlineCandidates,
     parseState?.parseCompatibilityDiagnostics ?? [],

@@ -1,15 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
 import { expandInputWithIncludes } from '../src/engine/parseIncludes';
-import type { ParseOptions } from '../src/types';
 
 const helpers = {
   splitInlineCommentAndDescription: (line: string) => ({ line: line.trim() }),
   splitWhitespaceTokens: (line: string) => line.trim().split(/\s+/).filter(Boolean),
-  normalizeInlineDirective: (
-    token: string,
-    _mode: ParseOptions['directiveAbbreviationMode'],
-  ) => ({ op: token.trim().toUpperCase() }),
+  normalizeInlineDirective: (token: string) => ({ op: token.trim().toUpperCase() }),
 };
 
 describe('expandInputWithIncludes', () => {

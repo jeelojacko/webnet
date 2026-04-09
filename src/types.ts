@@ -916,8 +916,6 @@ export interface ParseOptions {
   directionFaceClusterSeparationToleranceDeg?: number;
   directionFaceClusterConfidenceMin?: number;
   directionSetTreatmentDiagnostics?: DirectionSetTreatmentDiagnostic[];
-  directiveAbbreviationMode?: 'off' | 'unique-prefix';
-  unknownDirectivePolicy?: 'legacy-warn' | 'strict-error';
   parseCompatibilityDiagnostics?: ParseCompatibilityDiagnostic[];
   ambiguousCount?: number;
   legacyFallbackCount?: number;

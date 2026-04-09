@@ -17,10 +17,7 @@ export type ParseInputLineEntry =
 interface ExpandDirectiveHelpers {
   splitInlineCommentAndDescription: (_line: string) => { line: string; description?: string };
   splitWhitespaceTokens: (_line: string) => string[];
-  normalizeInlineDirective: (
-    _token: string,
-    _mode: ParseOptions['directiveAbbreviationMode'],
-  ) => { op?: string };
+  normalizeInlineDirective: (_token: string) => { op?: string };
 }
 
 const normalizePathToken = (value: string): string => value.replace(/\\/g, '/');
@@ -106,10 +103,7 @@ export const expandInputWithIncludes = (
       const inline = parsedInline.line;
       if (inline && (inline.startsWith('.') || inline.startsWith('/'))) {
         const parts = helpers.splitWhitespaceTokens(inline);
-        const normalized = helpers.normalizeInlineDirective(
-          parts[0] ?? '',
-          opts.directiveAbbreviationMode ?? 'unique-prefix',
-        );
+        const normalized = helpers.normalizeInlineDirective(parts[0] ?? '');
         if (normalized.op === '.INCLUDE') {
           const includePath = parts.slice(1).join(' ').trim();
           if (!includePath) {

@@ -79,8 +79,6 @@ import type {
 const defaultParseOptions: ParseOptions = {
   geometryDependentSigmaReference: 'current',
   runMode: 'adjustment',
-  directiveAbbreviationMode: 'unique-prefix',
-  unknownDirectivePolicy: 'legacy-warn',
   units: 'm',
   coordMode: '3D',
   coordSystemMode: 'local',
@@ -677,7 +675,6 @@ type NormalizedInlineDirective = {
 
 export const normalizeInlineDirective = (
   rawDirectiveToken: string,
-  abbreviationMode: ParseOptions['directiveAbbreviationMode'] = 'unique-prefix',
 ): NormalizedInlineDirective => {
   if (!rawDirectiveToken) return { unknown: true };
   const token = rawDirectiveToken
@@ -691,7 +688,6 @@ export const normalizeInlineDirective = (
   if (INLINE_CANONICAL_OPS.includes(token as (typeof INLINE_CANONICAL_OPS)[number])) {
     return { op: `.${token}` };
   }
-  if (abbreviationMode !== 'unique-prefix') return { unknown: true };
   const prefixed = INLINE_CANONICAL_OPS.filter((name) => name.startsWith(token));
   if (prefixed.length === 1) return { op: `.${prefixed[0]}` };
   if (prefixed.length > 1) {
@@ -901,8 +897,7 @@ export const parseInput = (
   const autoCreatedStations = new Set<StationId>();
   const rejectedAutoCreateTokens = new Set<string>();
   const preanalysisMode = state.preanalysisMode === true;
-  const strictDirectivePolicy =
-    compatibilityMode === 'strict' || state.unknownDirectivePolicy === 'strict-error';
+  const strictDirectivePolicy = compatibilityMode === 'strict';
   const compatibilityAcceptedNoOps = new Set<string>(
     state.compatibilityAcceptedNoOpDirectives ?? [],
   );
@@ -1196,10 +1191,7 @@ export const parseInput = (
     // Inline options
     if (line.startsWith('.') || line.startsWith('/')) {
       const parts = splitWhitespaceTokens(line);
-      const normalizedDirective = normalizeInlineDirective(
-        parts[0] ?? '',
-        state.directiveAbbreviationMode ?? 'unique-prefix',
-      );
+      const normalizedDirective = normalizeInlineDirective(parts[0] ?? '');
       if (normalizedDirective.ambiguous) {
         const candidates = normalizedDirective.candidates?.join(', ') ?? '';
         addCompatibilityDiagnostic(

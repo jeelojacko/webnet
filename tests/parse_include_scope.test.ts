@@ -19,8 +19,6 @@ type AliasRule = {
 
 const baseState: ParseOptions = {
   runMode: 'adjustment',
-  directiveAbbreviationMode: 'unique-prefix',
-  unknownDirectivePolicy: 'legacy-warn',
   units: 'm',
   coordMode: '3D',
   coordSystemMode: 'local',

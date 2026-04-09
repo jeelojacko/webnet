@@ -341,6 +341,30 @@ describe('parseInput', () => {
     expect(strict.parseState.rewriteSuggestionCount).toBeGreaterThan(0);
   });
 
+  it('applies strict-vs-legacy unknown-inline handling without legacy policy overrides', () => {
+    const source = ['.ZZZZ', 'C A 0 0 0 ! !'].join('\n');
+    const legacy = parseInput(source, {}, { parseCompatibilityMode: 'legacy' });
+    const strict = parseInput(source, {}, { parseCompatibilityMode: 'strict' });
+
+    expect(legacy.parseState.strictRejectCount).toBe(0);
+    expect(
+      legacy.parseState.parseCompatibilityDiagnostics?.some(
+        (diag) => diag.code === 'STRICT_REJECTED' && diag.severity === 'warning',
+      ),
+    ).toBe(true);
+    expect(legacy.logs.some((line) => line.includes('unknown inline option ".ZZZZ"'))).toBe(true);
+
+    expect(strict.parseState.strictRejectCount).toBeGreaterThan(0);
+    expect(
+      strict.parseState.parseCompatibilityDiagnostics?.some(
+        (diag) =>
+          diag.code === 'STRICT_REJECTED' &&
+          diag.severity === 'error' &&
+          diag.message.includes('unknown inline option ".ZZZZ"'),
+      ),
+    ).toBe(true);
+  });
+
   it('parses 2D M records with angle/dist sigmas and no vertical observation', () => {
     const parsed = parseInput(
       readFileSync('tests/fixtures/triangulation_trilateration_2d.dat', 'utf-8'),
