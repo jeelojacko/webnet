@@ -719,6 +719,11 @@ describe('LSAEngine', () => {
     expect(gps?.stdDevN).toBeDefined();
     expect(gps?.corrEN).toBeCloseTo(0.25, 8);
     expect(gps?.stdRes).toBeDefined();
+    expect(gps?.componentResidualStdErr?.sE).toBeDefined();
+    expect(gps?.componentResidualStdErr?.sN).toBeDefined();
+    expect(gps?.localTestComponents).toBeDefined();
+    expect(gps?.stdResComponents?.tE).toBeDefined();
+    expect(gps?.stdResComponents?.tN).toBeDefined();
     expect(result.dof).toBeGreaterThanOrEqual(0);
   });
 

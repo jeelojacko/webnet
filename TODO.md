@@ -72,6 +72,10 @@
       - [x] Emit sparse design rows directly from shared equation assembly
       - [x] Skip dense design-matrix allocation in iterative solve and covariance recovery when those paths only need sparse rows
       - [x] Keep only changes that hold parity and at least match the current benchmark timing
+    - [x] Batch 5 - standardized-residual diagnostics assembly reuse
+      - [x] Replace the duplicated diagnostics-only design-matrix assembly with the shared equation assembler
+      - [x] Reuse sparse design rows directly in standardized-residual covariance math
+      - [x] Keep only changes that preserve diagnostics output and benchmark timing
   - [ ] Phase 4 - industry-standard result parity
     - [x] Batch 1 - reference fixture, diff harness, and rollback gates
       - [x] Add a repo fixture set for the attached industry-standard reference case using generic fixture names

@@ -12,7 +12,6 @@ import { runClusterDualPassWorkflow } from './adjustmentClusterWorkflow';
 import type { GeoidGridModel } from './geoid';
 import {
   accumulateNormalEquationsFromSparseRows,
-  denseRowsToSparseRows,
   invertSPDFromCholesky,
   choleskyDecomposeWithDamping,
   invertSymmetricLDLTWithInfo,
@@ -27,11 +26,7 @@ import {
   getCachedSolvePreparation,
   recordScenarioSolve,
 } from './scenarioParsedModelCache';
-import {
-  applyCoordinateConstraintCorrelationWeights,
-  buildCoordinateConstraints,
-  coordinateConstraintWeightedSum,
-} from './adjustmentConstraints';
+import { buildCoordinateConstraints, coordinateConstraintWeightedSum } from './adjustmentConstraints';
 import { assembleAdjustmentEquations } from './adjustmentEquationAssembly';
 import { applyAdjustmentCorrections, solveAdjustmentIteration } from './adjustmentIteration';
 import {
@@ -72,7 +67,6 @@ import {
 } from './resultPrecision';
 import { summarizeReductionUsage } from './reductionUsageSummary';
 import type {
-  CoordinateConstraintRowPlacement,
   EquationRowInfo,
   RobustWeightMatrixBase,
   RobustWeightSummary,
@@ -5604,312 +5598,38 @@ export class LSAEngine {
         constraints.length;
 
       if (numParams > 0 && numObsEquations > 0) {
-        const A = zeros(numObsEquations, numParams);
-        const P = zeros(numObsEquations, numObsEquations);
-        const L = zeros(numObsEquations, 1);
-        const rowInfo: EquationRowInfo[] = [];
-        let row = 0;
+        const { L, P, rowInfo, sparseRows } = assembleAdjustmentEquations(
+          {
+            stations: this.stations,
+            paramIndex: this.paramIndex,
+            is2D: this.is2D,
+            debug: false,
+            directionOrientations: this.directionOrientations,
+            dirParamMap,
+            effectiveStdDev: this.effectiveStdDev.bind(this),
+            correctedDistanceModel: this.correctedDistanceModel.bind(this),
+            getObservedHorizontalDistanceIn2D: this.getObservedHorizontalDistanceIn2D.bind(this),
+            getAzimuth: this.getAzimuth.bind(this),
+            measuredAngleCorrection: this.measuredAngleCorrection.bind(this),
+            modeledAzimuth: this.modeledAzimuth.bind(this),
+            wrapToPi: this.wrapToPi.bind(this),
+            gpsObservedVector: this.gpsObservedVector.bind(this),
+            gpsModeledVector: this.gpsModeledVector.bind(this),
+            gpsModeledVectorDerivatives: this.gpsModeledVectorDerivatives.bind(this),
+            gpsWeight: this.gpsWeight.bind(this),
+            getModeledZenith: this.getModeledZenith.bind(this),
+            curvatureRefractionAngle: this.curvatureRefractionAngle.bind(this),
+            applyTsCorrelationToWeightMatrix: (weightMatrix, weightRowInfo) =>
+              this.applyTsCorrelationToWeightMatrix(weightMatrix, weightRowInfo, true),
+          },
+          activeObservations,
+          constraints,
+          numObsEquations,
+          numParams,
+          undefined,
+          { includeDenseA: false },
+        );
 
-        activeObservations.forEach((obs) => {
-          if (obs.type === 'dist') {
-            const s1 = this.stations[obs.from];
-            const s2 = this.stations[obs.to];
-            if (!s1 || !s2) return;
-            const dx = s2.x - s1.x;
-            const dy = s2.y - s1.y;
-            const dz = s2.h + (obs.ht ?? 0) - (s1.h + (obs.hi ?? 0));
-            const horiz = Math.sqrt(dx * dx + dy * dy);
-            const calcDistRaw = this.is2D
-              ? horiz
-              : obs.mode === 'slope'
-                ? Math.sqrt(horiz * horiz + dz * dz)
-                : horiz;
-            const corrected = this.correctedDistanceModel(obs, calcDistRaw);
-            const calcDist = corrected.calcDistance;
-            const v = obs.obs - calcDist;
-            L[row][0] = v;
-            rowInfo.push({ obs });
-
-            const denom = calcDistRaw || 1;
-            const dD_dE2 = corrected.useReducedSlopeDerivatives
-              ? dx * (corrected.horizontalDerivativeFactor ?? 0)
-              : (dx / denom) * corrected.mapScale;
-            const dD_dN2 = corrected.useReducedSlopeDerivatives
-              ? dy * (corrected.horizontalDerivativeFactor ?? 0)
-              : (dy / denom) * corrected.mapScale;
-            const dD_dH2 =
-              !this.is2D && obs.mode === 'slope'
-                ? corrected.useReducedSlopeDerivatives
-                  ? dz * (corrected.verticalDerivativeFactor ?? 0)
-                  : (dz / denom) * corrected.mapScale
-                : 0;
-
-            const fromIdx = this.paramIndex[obs.from];
-            if (fromIdx?.x != null) A[row][fromIdx.x] = -dD_dE2;
-            if (fromIdx?.y != null) A[row][fromIdx.y] = -dD_dN2;
-            if (!this.is2D && fromIdx?.h != null) A[row][fromIdx.h] = -dD_dH2;
-            const toIdx = this.paramIndex[obs.to];
-            if (toIdx?.x != null) A[row][toIdx.x] = dD_dE2;
-            if (toIdx?.y != null) A[row][toIdx.y] = dD_dN2;
-            if (!this.is2D && toIdx?.h != null) A[row][toIdx.h] = dD_dH2;
-
-            const sigma = this.effectiveStdDev(obs);
-            P[row][row] = 1.0 / (sigma * sigma);
-            row += 1;
-            return;
-          }
-
-          if (obs.type === 'angle') {
-            const azTo = this.getAzimuth(obs.at, obs.to);
-            const azFrom = this.getAzimuth(obs.at, obs.from);
-            let calcAngle = azTo.az - azFrom.az;
-            if (obs.gridObsMode !== 'grid') {
-              calcAngle += this.measuredAngleCorrection(obs.at, obs.from, obs.to);
-            }
-            if (calcAngle < 0) calcAngle += 2 * Math.PI;
-            let diff = obs.obs - calcAngle;
-            diff = this.wrapToPi(diff);
-            L[row][0] = diff;
-            rowInfo.push({ obs });
-
-            const dAzTo_dE_To = Math.cos(azTo.az) / (azTo.dist || 1);
-            const dAzTo_dN_To = -Math.sin(azTo.az) / (azTo.dist || 1);
-            const dAzFrom_dE_From = Math.cos(azFrom.az) / (azFrom.dist || 1);
-            const dAzFrom_dN_From = -Math.sin(azFrom.az) / (azFrom.dist || 1);
-
-            const toIdx = this.paramIndex[obs.to];
-            if (toIdx?.x != null) A[row][toIdx.x] = dAzTo_dE_To;
-            if (toIdx?.y != null) A[row][toIdx.y] = dAzTo_dN_To;
-            const fromIdx = this.paramIndex[obs.from];
-            if (fromIdx?.x != null) A[row][fromIdx.x] = -dAzFrom_dE_From;
-            if (fromIdx?.y != null) A[row][fromIdx.y] = -dAzFrom_dN_From;
-            const atIdx = this.paramIndex[obs.at];
-            if (atIdx?.x != null || atIdx?.y != null) {
-              const dAzTo_dE_At = -dAzTo_dE_To;
-              const dAzTo_dN_At = -dAzTo_dN_To;
-              const dAzFrom_dE_At = -dAzFrom_dE_From;
-              const dAzFrom_dN_At = -dAzFrom_dN_From;
-              if (atIdx?.x != null) A[row][atIdx.x] = dAzTo_dE_At - dAzFrom_dE_At;
-              if (atIdx?.y != null) A[row][atIdx.y] = dAzTo_dN_At - dAzFrom_dN_At;
-            }
-
-            const sigma = this.effectiveStdDev(obs);
-            P[row][row] = 1.0 / (sigma * sigma);
-            row += 1;
-            return;
-          }
-
-          if (obs.type === 'gps') {
-            const s1 = this.stations[obs.from];
-            const s2 = this.stations[obs.to];
-            if (!s1 || !s2) return;
-            const corrected = this.gpsObservedVector(obs);
-            const calc_dE = s2.x - s1.x;
-            const calc_dN = s2.y - s1.y;
-            const calc_dU = !this.is2D ? s2.h - s1.h : undefined;
-            const vE = corrected.dE - calc_dE;
-            const vN = corrected.dN - calc_dN;
-            L[row][0] = vE;
-            rowInfo.push({ obs, component: 'E' });
-            const fromIdx = this.paramIndex[obs.from];
-            const toIdx = this.paramIndex[obs.to];
-            if (fromIdx?.x != null) A[row][fromIdx.x] = -1.0;
-            if (toIdx?.x != null) A[row][toIdx.x] = 1.0;
-            const w = this.gpsWeight(obs);
-            P[row][row] = w.wEE;
-            P[row][row + 1] = w.wEN;
-            P[row + 1][row] = w.wEN;
-            P[row + 1][row + 1] = w.wNN;
-
-            L[row + 1][0] = vN;
-            rowInfo.push({ obs, component: 'N' });
-            if (fromIdx?.y != null) A[row + 1][fromIdx.y] = -1.0;
-            if (toIdx?.y != null) A[row + 1][toIdx.y] = 1.0;
-
-            if (
-              !this.is2D &&
-              Number.isFinite(corrected.dU ?? Number.NaN) &&
-              Number.isFinite(calc_dU ?? Number.NaN)
-            ) {
-              L[row + 2][0] = (corrected.dU as number) - (calc_dU as number);
-              rowInfo.push({ obs, component: 'U' });
-              if (fromIdx?.h != null) A[row + 2][fromIdx.h] = -1.0;
-              if (toIdx?.h != null) A[row + 2][toIdx.h] = 1.0;
-              P[row][row + 2] = w.wEU ?? 0;
-              P[row + 2][row] = w.wEU ?? 0;
-              P[row + 1][row + 2] = w.wNU ?? 0;
-              P[row + 2][row + 1] = w.wNU ?? 0;
-              P[row + 2][row + 2] = w.wUU ?? 0;
-              row += 3;
-              return;
-            }
-
-            row += 2;
-            return;
-          }
-
-          if (obs.type === 'lev') {
-            const s1 = this.stations[obs.from];
-            const s2 = this.stations[obs.to];
-            if (!s1 || !s2) return;
-            const calc_dH = s2.h - s1.h;
-            const v = obs.obs - calc_dH;
-            L[row][0] = v;
-            rowInfo.push({ obs });
-            const fromIdx = this.paramIndex[obs.from];
-            const toIdx = this.paramIndex[obs.to];
-            if (fromIdx?.h != null) A[row][fromIdx.h] = -1.0;
-            if (toIdx?.h != null) A[row][toIdx.h] = 1.0;
-            const sigma = this.effectiveStdDev(obs);
-            P[row][row] = 1.0 / (sigma * sigma);
-            row += 1;
-            return;
-          }
-
-          if (obs.type === 'bearing') {
-            const az = this.getAzimuth(obs.from, obs.to);
-            const calc = this.modeledAzimuth(az.az, obs.from, obs.gridObsMode !== 'grid');
-            let v = obs.obs - calc;
-            if (v > Math.PI) v -= 2 * Math.PI;
-            if (v < -Math.PI) v += 2 * Math.PI;
-            L[row][0] = v;
-            rowInfo.push({ obs });
-
-            const dAz_dE_To = Math.cos(az.az) / (az.dist || 1);
-            const dAz_dN_To = -Math.sin(az.az) / (az.dist || 1);
-            const toIdx = this.paramIndex[obs.to];
-            const fromIdx = this.paramIndex[obs.from];
-            if (toIdx?.x != null) A[row][toIdx.x] = dAz_dE_To;
-            if (toIdx?.y != null) A[row][toIdx.y] = dAz_dN_To;
-            if (fromIdx?.x != null) A[row][fromIdx.x] = -dAz_dE_To;
-            if (fromIdx?.y != null) A[row][fromIdx.y] = -dAz_dN_To;
-
-            const sigma = this.effectiveStdDev(obs);
-            P[row][row] = 1.0 / (sigma * sigma);
-            row += 1;
-            return;
-          }
-
-          if (obs.type === 'dir') {
-            const az = this.getAzimuth(obs.from, obs.to);
-            const calc = this.modeledAzimuth(az.az, obs.from, obs.gridObsMode !== 'grid');
-            let v0 = obs.obs - calc;
-            if (v0 > Math.PI) v0 -= 2 * Math.PI;
-            if (v0 < -Math.PI) v0 += 2 * Math.PI;
-            let v = v0;
-            if (obs.flip180) {
-              let v1 = obs.obs + Math.PI - calc;
-              if (v1 > Math.PI) v1 -= 2 * Math.PI;
-              if (v1 < -Math.PI) v1 += 2 * Math.PI;
-              if (Math.abs(v1) < Math.abs(v0)) v = v1;
-            }
-            L[row][0] = v;
-            rowInfo.push({ obs });
-
-            const dAz_dE_To = Math.cos(az.az) / (az.dist || 1);
-            const dAz_dN_To = -Math.sin(az.az) / (az.dist || 1);
-            const toIdx = this.paramIndex[obs.to];
-            const fromIdx = this.paramIndex[obs.from];
-            if (toIdx?.x != null) A[row][toIdx.x] = dAz_dE_To;
-            if (toIdx?.y != null) A[row][toIdx.y] = dAz_dN_To;
-            if (fromIdx?.x != null) A[row][fromIdx.x] = -dAz_dE_To;
-            if (fromIdx?.y != null) A[row][fromIdx.y] = -dAz_dN_To;
-
-            const sigma = this.effectiveStdDev(obs);
-            P[row][row] = 1.0 / (sigma * sigma);
-            row += 1;
-            return;
-          }
-
-          if (obs.type === 'direction') {
-            const dir = obs as any;
-            const az = this.getAzimuth(dir.at, dir.to);
-            const orientation = this.directionOrientations[dir.setId] ?? 0;
-            let calc = orientation + this.modeledAzimuth(az.az, dir.at, dir.gridObsMode !== 'grid');
-            calc %= 2 * Math.PI;
-            if (calc < 0) calc += 2 * Math.PI;
-            let v = dir.obs - calc;
-            if (v > Math.PI) v -= 2 * Math.PI;
-            if (v < -Math.PI) v += 2 * Math.PI;
-            L[row][0] = v;
-            rowInfo.push({ obs });
-
-            const dAz_dE_To = Math.cos(az.az) / (az.dist || 1);
-            const dAz_dN_To = -Math.sin(az.az) / (az.dist || 1);
-            const toIdx = this.paramIndex[dir.to];
-            const atIdx = this.paramIndex[dir.at];
-            if (toIdx?.x != null) A[row][toIdx.x] = dAz_dE_To;
-            if (toIdx?.y != null) A[row][toIdx.y] = dAz_dN_To;
-            if (atIdx?.x != null) A[row][atIdx.x] = -dAz_dE_To;
-            if (atIdx?.y != null) A[row][atIdx.y] = -dAz_dN_To;
-
-            const dirIdx = dirParamMap[dir.setId];
-            if (dirIdx != null) A[row][dirIdx] = 1;
-
-            const sigma = this.effectiveStdDev(dir);
-            P[row][row] = 1.0 / (sigma * sigma);
-            row += 1;
-            return;
-          }
-
-          if (obs.type === 'zenith') {
-            const zv = this.getModeledZenith(obs);
-            const calc = zv.z;
-            let v = obs.obs - calc;
-            if (v > Math.PI) v -= 2 * Math.PI;
-            if (v < -Math.PI) v += 2 * Math.PI;
-            L[row][0] = v;
-            rowInfo.push({ obs });
-
-            const denom = Math.sqrt(
-              Math.max(1 - (zv.dist === 0 ? 0 : (zv.dh / zv.dist) ** 2), 1e-12),
-            );
-            const common = zv.dist === 0 ? 0 : 1 / (zv.dist * zv.dist * zv.dist * denom);
-            const horizontalScale = zv.horizontalScale ?? 1;
-            const dx = this.stations[obs.to].x - this.stations[obs.from].x;
-            const dy = this.stations[obs.to].y - this.stations[obs.from].y;
-            const dZ_dEGeom = zv.dh * dx * common / (horizontalScale * horizontalScale);
-            const dZ_dNGeom = zv.dh * dy * common / (horizontalScale * horizontalScale);
-            const dC_dHoriz = this.curvatureRefractionAngle(1);
-            const dHoriz_dE =
-              zv.horiz > 0 ? dx / (zv.horiz * horizontalScale * horizontalScale) : 0;
-            const dHoriz_dN =
-              zv.horiz > 0 ? dy / (zv.horiz * horizontalScale * horizontalScale) : 0;
-            const dZ_dE = dZ_dEGeom + dC_dHoriz * dHoriz_dE;
-            const dZ_dN = dZ_dNGeom + dC_dHoriz * dHoriz_dN;
-            const dZ_dH = -(zv.horiz * zv.horiz) * common;
-
-            const toIdx = this.paramIndex[obs.to];
-            const fromIdx = this.paramIndex[obs.from];
-            if (toIdx?.x != null) A[row][toIdx.x] = dZ_dE;
-            if (toIdx?.y != null) A[row][toIdx.y] = dZ_dN;
-            if (toIdx?.h != null) A[row][toIdx.h] = dZ_dH;
-            if (fromIdx?.x != null) A[row][fromIdx.x] = -dZ_dE;
-            if (fromIdx?.y != null) A[row][fromIdx.y] = -dZ_dN;
-            if (fromIdx?.h != null) A[row][fromIdx.h] = -dZ_dH;
-
-            const sigma = this.effectiveStdDev(obs);
-            P[row][row] = 1.0 / (sigma * sigma);
-            row += 1;
-          }
-        });
-
-        const constraintPlacements: CoordinateConstraintRowPlacement[] = [];
-        constraints.forEach((constraint) => {
-          const st = this.stations[constraint.stationId];
-          if (!st) return;
-          const current =
-            constraint.component === 'x' ? st.x : constraint.component === 'y' ? st.y : st.h;
-          L[row][0] = constraint.target - current;
-          A[row][constraint.index] = 1;
-          P[row][row] = 1.0 / (constraint.sigma * constraint.sigma);
-          rowInfo.push(null);
-          constraintPlacements.push({ row, constraint });
-          row += 1;
-        });
-        applyCoordinateConstraintCorrelationWeights(P, constraintPlacements);
-
-        this.applyTsCorrelationToWeightMatrix(P, rowInfo, true);
         if (!this.preanalysisMode && this.robustMode === 'huber') {
           const baseWeights = this.captureRobustWeightBase(P, rowInfo);
           const residuals = L.map((row) => -row[0]);
@@ -5919,10 +5639,9 @@ export class LSAEngine {
 
         if (!this.preanalysisMode) {
           try {
-            const sparseRows = denseRowsToSparseRows(A);
             const { normal: N } = accumulateNormalEquationsFromSparseRows(
               sparseRows,
-              zeros(A.length, 1),
+              zeros(numObsEquations, 1),
               P,
               numParams,
             );
