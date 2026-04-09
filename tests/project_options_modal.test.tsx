@@ -158,6 +158,9 @@ describe('Project Options modal layout', () => {
       expect(app.container.textContent).toContain('Advanced CRS/GPS/Height');
       expect(app.container.textContent).toContain('GPS Loop Check');
       expect(app.container.textContent).toContain('Geoid/Grid Model');
+      expect(app.container.textContent).not.toContain('CRS Transforms (Legacy)');
+      expect(app.container.textContent).not.toContain('Projection Model (Legacy)');
+      expect(app.container.textContent).not.toContain('CRS Label (Legacy)');
       expect(app.container.textContent).not.toContain(
         'The GPS pane is intentionally condensed: labels stay on the left, controls stay on the right, and disable rules mirror the parser defaults already in the engine.',
       );

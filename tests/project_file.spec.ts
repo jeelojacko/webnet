@@ -419,4 +419,41 @@ describe('project file serialization/parsing', () => {
     if (!parsed.ok) return;
     expect(parsed.project.ui.exportFormat).toBe('geojson');
   });
+
+  it('normalizes retired legacy CRS transform fields on save and load', () => {
+    const text = serializeProjectFile({
+      input: '.2D',
+      includeFiles: {},
+      savedRuns: [],
+      ui: {
+        settings: defaults.settings,
+        parseSettings: {
+          ...defaults.parseSettings,
+          crsTransformEnabled: true,
+          crsProjectionModel: 'local-enu',
+          crsLabel: 'Legacy Grid',
+        },
+        exportFormat: 'webnet',
+        adjustedPointsExport: DEFAULT_ADJUSTED_POINTS_EXPORT_SETTINGS,
+      },
+      project: {
+        projectInstruments: defaults.projectInstruments,
+        selectedInstrument: 'S9',
+        levelLoopCustomPresets: defaults.levelLoopCustomPresets,
+      },
+    });
+
+    expect(text).toContain('"crsTransformEnabled": false');
+    expect(text).toContain('"crsProjectionModel": "legacy-equirectangular"');
+    expect(text).toContain('"crsLabel": ""');
+    expect(text).not.toContain('"crsProjectionModel": "local-enu"');
+    expect(text).not.toContain('"crsLabel": "Legacy Grid"');
+
+    const parsed = parseProjectFile(text, defaults);
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+    expect(parsed.project.ui.parseSettings.crsTransformEnabled).toBe(false);
+    expect(parsed.project.ui.parseSettings.crsProjectionModel).toBe('legacy-equirectangular');
+    expect(parsed.project.ui.parseSettings.crsLabel).toBe('');
+  });
 });

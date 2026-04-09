@@ -347,6 +347,9 @@ describe('useProjectFileWorkflow', () => {
           solveProfile: 'industry-parity' as SolveProfile,
           runMode: 'preanalysis',
           preanalysisMode: true,
+          crsTransformEnabled: true,
+          crsProjectionModel: 'local-enu',
+          crsLabel: 'Legacy Grid',
           geoidSourcePath: '',
         },
         exportFormat: 'geojson',
@@ -497,6 +500,12 @@ describe('useProjectFileWorkflow', () => {
           <div id="draft-theme">{settingsDraft.uiTheme}</div>
           <div id="draft-precision-mode">{settingsDraft.precisionReportingMode}</div>
           <div id="draft-run-mode">{parseSettingsDraft.runMode}</div>
+          <div id="crs-transform">{parseSettings.crsTransformEnabled ? 'on' : 'off'}</div>
+          <div id="crs-model">{parseSettings.crsProjectionModel}</div>
+          <div id="crs-label">{parseSettings.crsLabel || '-'}</div>
+          <div id="draft-crs-transform">{parseSettingsDraft.crsTransformEnabled ? 'on' : 'off'}</div>
+          <div id="draft-crs-model">{parseSettingsDraft.crsProjectionModel}</div>
+          <div id="draft-crs-label">{parseSettingsDraft.crsLabel || '-'}</div>
           <div id="draft-open">{isAdjustedPointsTransformSelectOpen ? 'open' : 'closed'}</div>
           <div id="draft-selected">{adjustedPointsTransformSelectedDraft.length}</div>
           <div id="notice">{importNotice?.title ?? '-'}</div>
@@ -528,6 +537,14 @@ describe('useProjectFileWorkflow', () => {
       'industry-standard',
     );
     expect(container.querySelector('#draft-run-mode')?.textContent).toBe('preanalysis');
+    expect(container.querySelector('#crs-transform')?.textContent).toBe('off');
+    expect(container.querySelector('#crs-model')?.textContent).toBe('legacy-equirectangular');
+    expect(container.querySelector('#crs-label')?.textContent).toBe('-');
+    expect(container.querySelector('#draft-crs-transform')?.textContent).toBe('off');
+    expect(container.querySelector('#draft-crs-model')?.textContent).toBe(
+      'legacy-equirectangular',
+    );
+    expect(container.querySelector('#draft-crs-label')?.textContent).toBe('-');
     expect(container.querySelector('#draft-open')?.textContent).toBe('closed');
     expect(container.querySelector('#draft-selected')?.textContent).toBe('0');
     expect(container.querySelector('#notice')?.textContent).toBe('Project loaded');

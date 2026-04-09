@@ -14,7 +14,6 @@ import type {
   AngleMode,
   CoordMode,
   CoordSystemMode,
-  CrsProjectionModel,
   DeltaMode,
   FaceNormalizationMode,
   GeoidHeightDatum,
@@ -2534,50 +2533,10 @@ const ProjectOptionsModal: React.FC<ProjectOptionsModalProps> = ({ context }) =>
                     title="Advanced CRS/GPS/Height"
                     tooltip={PROJECT_OPTION_SECTION_TOOLTIPS['GPS Loop Check']}
                   >
-                    <SettingsRow
-                      label="CRS Transforms (Legacy)"
-                      tooltip={SETTINGS_TOOLTIPS.crsTransformEnabled}
-                      className="md:grid-cols-[minmax(0,1fr)_auto]"
-                    >
-                      <SettingsToggle
-                        title={SETTINGS_TOOLTIPS.crsTransformEnabled}
-                        checked={parseSettingsDraft.crsTransformEnabled}
-                        onChange={(checked) =>
-                          handleDraftParseSetting('crsTransformEnabled', checked)
-                        }
-                      />
-                    </SettingsRow>
-                    <SettingsRow
-                      label="Projection Model (Legacy)"
-                      tooltip={SETTINGS_TOOLTIPS.crsProjectionModel}
-                    >
-                      <select
-                        title={SETTINGS_TOOLTIPS.crsProjectionModel}
-                        value={parseSettingsDraft.crsProjectionModel}
-                        disabled={!parseSettingsDraft.crsTransformEnabled}
-                        onChange={(e) =>
-                          handleDraftParseSetting(
-                            'crsProjectionModel',
-                            e.target.value as CrsProjectionModel,
-                          )
-                        }
-                        className={`${optionInputClass} disabled:opacity-50 disabled:cursor-not-allowed`}
-                      >
-                        <option value="legacy-equirectangular">
-                          LEGACY Local (Equirectangular)
-                        </option>
-                        <option value="local-enu">Local ENU (Tangent Plane)</option>
-                      </select>
-                    </SettingsRow>
-                    <SettingsRow label="CRS Label (Legacy)" tooltip={SETTINGS_TOOLTIPS.crsLabel}>
-                      <input
-                        title={SETTINGS_TOOLTIPS.crsLabel}
-                        type="text"
-                        value={parseSettingsDraft.crsLabel}
-                        onChange={(e) => handleDraftParseSetting('crsLabel', e.target.value)}
-                        className={optionInputClass}
-                      />
-                    </SettingsRow>
+                    <p className="text-xs leading-5 text-slate-500 dark:text-slate-400">
+                      Legacy CRS transform controls are retired. Use the Canada-first coordinate
+                      system settings above for active grid and datum workflows.
+                    </p>
                     <SettingsRow
                       label="Grid-Ground Scale Override"
                       tooltip={SETTINGS_TOOLTIPS.crsGridScaleEnabled}

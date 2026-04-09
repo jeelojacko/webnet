@@ -161,6 +161,7 @@ Current listing/report behavior includes:
 Current results use one live precision-reporting model:
 - industry-style outputs use unscaled propagated precision
 - older project/saved-run payloads that carried legacy precision/profile selections are normalized back to the strict industry-parity defaults on load/save
+- older project payloads that carried the retired legacy CRS-transform UI fields are normalized back to `crsTransformEnabled=false`, `crsProjectionModel=legacy-equirectangular`, and a blank `crsLabel` on load/save
 
 ## Coordinate-system and GPS behavior
 

@@ -61,6 +61,15 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
 
 const cloneRecord = (value: Record<string, unknown>): Record<string, unknown> => ({ ...value });
 
+const normalizeRetiredParseSettings = (parseSettings: Record<string, unknown>): void => {
+  parseSettings.solveProfile = 'industry-parity';
+  parseSettings.parseCompatibilityMode = 'strict';
+  parseSettings.parseModeMigrated = true;
+  parseSettings.crsTransformEnabled = false;
+  parseSettings.crsProjectionModel = 'legacy-equirectangular';
+  parseSettings.crsLabel = '';
+};
+
 const cloneInstruments = (library: InstrumentLibrary): InstrumentLibrary => {
   const next: InstrumentLibrary = {};
   Object.entries(library).forEach(([code, inst]) => {
@@ -455,9 +464,7 @@ const sanitizeSavedRunSnapshots = (value: unknown): PersistedSavedRunSnapshot[] 
 export const serializeProjectFile = (project: ParsedProjectPayload): string => {
   const nowIso = new Date().toISOString();
   const parseSettings = cloneRecord(project.ui.parseSettings);
-  parseSettings.solveProfile = 'industry-parity';
-  parseSettings.parseCompatibilityMode = 'strict';
-  parseSettings.parseModeMigrated = true;
+  normalizeRetiredParseSettings(parseSettings);
   const settings = cloneRecord(project.ui.settings);
   settings.precisionReportingMode = 'industry-standard';
   const payload: WebNetProjectFileV3 = {
@@ -542,9 +549,7 @@ export const parseProjectFile = (
     typeof uiMigration.migratedAt === 'string' && uiMigration.migratedAt.trim().length > 0
       ? uiMigration.migratedAt.trim()
       : undefined;
-  parseSettings.solveProfile = 'industry-parity';
-  parseSettings.parseCompatibilityMode = 'strict';
-  parseSettings.parseModeMigrated = true;
+  normalizeRetiredParseSettings(parseSettings);
   settings.precisionReportingMode = 'industry-standard';
 
   const projectInstruments = sanitizeInstrumentLibrary(
