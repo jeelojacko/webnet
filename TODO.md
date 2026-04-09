@@ -76,6 +76,9 @@
       - [x] Replace the duplicated diagnostics-only design-matrix assembly with the shared equation assembler
       - [x] Reuse sparse design rows directly in standardized-residual covariance math
       - [x] Keep only changes that preserve diagnostics output and benchmark timing
+    - [x] Batch 6 - matrix-helper allocation trims
+      - [x] Reduce hot-path zero-matrix allocation overhead in shared matrix helpers
+      - [x] Keep only changes that preserve results and at least match the current large-project benchmark timing
   - [ ] Phase 4 - industry-standard result parity
     - [x] Batch 1 - reference fixture, diff harness, and rollback gates
       - [x] Add a repo fixture set for the attached industry-standard reference case using generic fixture names

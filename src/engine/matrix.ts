@@ -22,8 +22,13 @@ export interface InvertSymmetricLDLTResult {
   twoByTwoPivotCount: number;
 }
 
-export const zeros = (rows: number, cols: number): Matrix =>
-  Array.from({ length: rows }, () => Array.from({ length: cols }, () => 0));
+export const zeros = (rows: number, cols: number): Matrix => {
+  const result = new Array<number[]>(rows);
+  for (let row = 0; row < rows; row += 1) {
+    result[row] = new Array<number>(cols).fill(0);
+  }
+  return result;
+};
 
 export const denseRowsToSparseRows = (m: Matrix, zeroTolerance = 0): SparseMatrixRows =>
   m.map((row) => {

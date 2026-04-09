@@ -157,14 +157,23 @@ export const assembleAdjustmentEquations = (
   const L = zeros(numObsEquations, 1);
   const P = zeros(numObsEquations, numObsEquations);
   const rowInfo: EquationRowInfo[] = [];
-  const sparseRows: SparseMatrixRows = Array.from({ length: numObsEquations }, () => []);
+  const sparseRows: SparseMatrixRows = new Array<SparseMatrixRows[number]>(numObsEquations);
+  for (let rowIndex = 0; rowIndex < numObsEquations; rowIndex += 1) {
+    sparseRows[rowIndex] = [];
+  }
   const assignCoefficient = (targetRow: number, column: number | undefined, value: number) => {
     if (column == null) return;
     if (A) {
       A[targetRow][column] = value;
     }
     const entries = sparseRows[targetRow];
-    const existingIndex = entries.findIndex((entry) => entry.index === column);
+    let existingIndex = -1;
+    for (let entryIndex = 0; entryIndex < entries.length; entryIndex += 1) {
+      if (entries[entryIndex].index === column) {
+        existingIndex = entryIndex;
+        break;
+      }
+    }
     if (value === 0) {
       if (existingIndex >= 0) {
         entries.splice(existingIndex, 1);
