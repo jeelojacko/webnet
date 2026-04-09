@@ -150,6 +150,7 @@
       - [x] Tighten remaining TS sideshot parity to the sub-millimeter / low-millimeter level by using the occupied station's reduction basis and curvature/refraction-aware zenith inversion for post-adjusted SS coordinates
       - [x] Start legacy-settings cleanup by collapsing the live workflow to strict `industry-parity`, removing the posterior-scaled precision selector, and normalizing old project/profile aliases on load/save without breaking backward compatibility
       - [x] Continue legacy-settings cleanup by removing the live legacy CRS transform controls and normalizing old project CRS-transform fields back to the current Canada-first CRS workflow on load/save
+      - [x] Continue legacy-settings cleanup by removing the retired legacy CRS-transform block from the WebNet processing summary and report diagnostics while keeping the parity-backed industry listing unchanged
       - [x] Invert classic traverse displayed NB83 coordinates through the CSRS double-stereographic geodetic display contract and honor positive-west longitude formatting in the adjusted geodetic summary
       - [x] Add a focused traverse parity guard that proves the raw fixed-bearing solve already stays exact and that representative connected covariance rows still match the reference confidence values before changing more classic display math
       - [x] Zero-pad classic quadrant-bearing degrees below 10 in the adjusted traverse bearing-distance section so rows like `109-GPS2` match the stored industry formatting without touching solver output

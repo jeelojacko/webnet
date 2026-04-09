@@ -162,6 +162,7 @@ Current results use one live precision-reporting model:
 - industry-style outputs use unscaled propagated precision
 - older project/saved-run payloads that carried legacy precision/profile selections are normalized back to the strict industry-parity defaults on load/save
 - older project payloads that carried the retired legacy CRS-transform UI fields are normalized back to `crsTransformEnabled=false`, `crsProjectionModel=legacy-equirectangular`, and a blank `crsLabel` on load/save
+- the WebNet processing summary and report diagnostics no longer show the retired legacy `CRS / Projection` block; active grid-scale and convergence diagnostics still remain in those outputs
 
 ## Coordinate-system and GPS behavior
 

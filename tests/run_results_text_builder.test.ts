@@ -248,6 +248,7 @@ describe('createRunResultsTextBuilder', () => {
     expect(report).toContain('--- Processing Log ---');
     expect(report).toContain('QFIX constants: linear=1.000000e-7 m, angular=1.000100e-3"');
     expect(report).toContain('Solve timing (ms): total=');
+    expect(report).not.toContain('CRS transforms:');
 
     const normalizedPrefix = report
       .replace(/^# Generated: .*$/m, '# Generated: <normalized>')

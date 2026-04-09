@@ -352,13 +352,6 @@ const ProcessingSummaryView: React.FC<ProcessingSummaryViewProps> = ({
         `Average Geoid Height Fallback: ${((runDiagnostics.averageGeoidHeight ?? 0) * unitScale).toFixed(4)}${linearUnit}`,
       );
       lines.push(
-        `CRS / Projection: ${
-          (runDiagnostics.crsStatus ?? (runDiagnostics.crsTransformEnabled ? 'on' : 'off')) === 'on'
-            ? `ON (${runDiagnostics.crsProjectionModel ?? 'legacy-equirectangular'}, label="${runDiagnostics.crsLabel || 'unnamed'}")`
-            : `OFF${runDiagnostics.crsOffReason ? ` (${runDiagnostics.crsOffReason})` : ''}`
-        }`,
-      );
-      lines.push(
         `CRS Grid-Ground Scale: ${runDiagnostics.crsGridScaleEnabled ? `ON (${(runDiagnostics.crsGridScaleFactor ?? 1).toFixed(8)})` : 'OFF'}`,
       );
       lines.push(

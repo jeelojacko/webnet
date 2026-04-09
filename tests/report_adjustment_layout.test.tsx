@@ -179,4 +179,45 @@ describe('ReportView adjustment-layout sections', () => {
     expect(html).toContain('>LOCAL<');
     expect(html).not.toContain('LOCAL (CA_NAD83_CSRS_UTM_20N)');
   });
+
+  it('suppresses the retired CRS projection block while keeping active grid diagnostics', () => {
+    const result = new LSAEngine({ input: baseInput, maxIterations: 8 }).solve();
+    const html = renderToStaticMarkup(
+      <ReportView
+        result={result}
+        units="m"
+        runDiagnostics={{
+          ...baseRunDiagnostics,
+          coordSystemMode: 'grid',
+          crsGridScaleEnabled: true,
+          crsGridScaleFactor: 0.99987654,
+          crsConvergenceEnabled: true,
+          crsConvergenceAngleRad: 0.001,
+          crsTransformEnabled: true,
+          crsProjectionModel: 'local-enu',
+          crsLabel: 'Legacy Grid',
+        } as any}
+        excludedIds={new Set<number>()}
+        onToggleExclude={() => {}}
+        onApplyImpactExclude={() => {}}
+        onApplyPreanalysisAction={() => {}}
+        onReRun={() => {}}
+        onClearExclusions={() => {}}
+        overrides={{}}
+        onOverride={() => {}}
+        onResetOverrides={() => {}}
+        clusterReviewDecisions={{}}
+        activeClusterApprovedMerges={[]}
+        onClusterDecisionStatus={() => {}}
+        onClusterCanonicalSelection={() => {}}
+        onApplyClusterMerges={() => {}}
+        onResetClusterReview={() => {}}
+        onClearClusterMerges={() => {}}
+      />,
+    );
+
+    expect(html).not.toContain('CRS / Projection');
+    expect(html).toContain('CRS Grid Scale');
+    expect(html).toContain('CRS Convergence');
+  });
 });

@@ -117,7 +117,6 @@ const REPORT_STATIC_TOOLTIPS: Record<string, string> = {
     'Face normalization mode for direction observations: ON/OFF/AUTO with explicit policy handling.',
   'A-Mode': 'Interpretation mode for A records during parsing and solve row construction.',
   'Plan Rotation': 'Cumulative plan rotation applied to azimuth-bearing style observations.',
-  'CRS / Projection': 'CRS transform state and projection model used for geodetic positions.',
   'CRS Grid Scale': 'Whether CRS grid-ground scale correction was enabled and the factor used.',
   'CRS Convergence':
     'Whether CRS convergence correction was enabled and the convergence angle used.',

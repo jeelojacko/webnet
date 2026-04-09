@@ -284,9 +284,6 @@ export const createRunResultsTextBuilder = ({
       `Average geoid height fallback: ${(runDiag.averageGeoidHeight * unitScale).toFixed(4)} ${linearUnit}`,
     );
     lines.push(
-      `CRS transforms: ${runDiag.crsTransformEnabled ? `ON (${runDiag.crsProjectionModel}, label="${runDiag.crsLabel || 'unnamed'}")` : 'OFF'}`,
-    );
-    lines.push(
       `CRS grid-ground scale: ${runDiag.crsGridScaleEnabled ? `ON (factor=${runDiag.crsGridScaleFactor.toFixed(8)})` : 'OFF'}`,
     );
     lines.push(

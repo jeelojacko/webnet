@@ -324,19 +324,6 @@ const SolveProfileDiagnosticsSection: React.FC<SolveProfileDiagnosticsSectionPro
               </div>
             </div>
           ) : null}
-          {runCoordSystemMode === 'grid' || runDiagnostics.crsTransformEnabled ? (
-            <div>
-              <div className="text-slate-500" title={reportStaticTooltips['CRS / Projection']}>
-                CRS / Projection
-              </div>
-              <div>
-                {(runDiagnostics.crsStatus ?? (runDiagnostics.crsTransformEnabled ? 'on' : 'off')) ===
-                'on'
-                  ? `ON (${runDiagnostics.crsProjectionModel}, label="${runDiagnostics.crsLabel || 'unnamed'}")`
-                  : `OFF${runDiagnostics.crsOffReason ? ` (${runDiagnostics.crsOffReason})` : ''}`}
-              </div>
-            </div>
-          ) : null}
           {runDiagnostics.crsGridScaleEnabled ? (
             <div>
               <div className="text-slate-500" title={reportStaticTooltips['CRS Grid Scale']}>

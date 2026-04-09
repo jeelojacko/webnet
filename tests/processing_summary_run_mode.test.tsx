@@ -60,4 +60,44 @@ describe('ProcessingSummaryView run-mode sections', () => {
     expect(html).toContain('LOG-LINE-1');
     expect(html).toContain('LOG-LINE-45');
   });
+
+  it('suppresses the retired CRS projection line while retaining active CRS diagnostics', () => {
+    const result = new LSAEngine({
+      input,
+      maxIterations: 6,
+      parseOptions: { runMode: 'adjustment', coordMode: '2D' },
+    }).solve();
+    const html = renderToStaticMarkup(
+      <ProcessingSummaryView
+        result={result}
+        units="m"
+        runElapsedMs={null}
+        runDiagnostics={{
+          solveProfile: 'industry-parity',
+          runMode: 'adjustment',
+          directionSetMode: 'reduced',
+          profileDefaultInstrumentFallback: false,
+          rotationAngleRad: 0,
+          coordSystemMode: 'grid',
+          crsId: 'CA_NAD83_CSRS_UTM_20N',
+          localDatumScheme: 'average-scale',
+          averageScaleFactor: 1,
+          scaleOverrideActive: false,
+          commonElevation: 0,
+          averageGeoidHeight: 0,
+          crsTransformEnabled: true,
+          crsProjectionModel: 'local-enu',
+          crsLabel: 'Legacy Grid',
+          crsGridScaleEnabled: true,
+          crsGridScaleFactor: 0.99987654,
+          crsConvergenceEnabled: true,
+          crsConvergenceAngleRad: 0.001,
+        }}
+      />,
+    );
+
+    expect(html).not.toContain('CRS / Projection');
+    expect(html).toContain('CRS Grid-Ground Scale');
+    expect(html).toContain('CRS Convergence');
+  });
 });
