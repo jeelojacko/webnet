@@ -137,7 +137,6 @@ const baseState: ParseOptions = {
   linearMultiplier: 1,
   elevationInputMode: 'orthometric',
   projectElevationMeters: 0,
-  vLevelMode: 'off',
   clusterDetectionEnabled: true,
   clusterLinkageMode: 'single',
   clusterTolerance2D: 0.03,

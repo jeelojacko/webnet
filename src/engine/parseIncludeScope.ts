@@ -135,8 +135,6 @@ const cloneScopedParseState = (state: ParseOptions): Partial<ParseOptions> => ({
   linearMultiplier: state.linearMultiplier,
   elevationInputMode: state.elevationInputMode,
   projectElevationMeters: state.projectElevationMeters,
-  vLevelMode: state.vLevelMode,
-  vLevelNoneStdErrMeters: state.vLevelNoneStdErrMeters,
   clusterDetectionEnabled: state.clusterDetectionEnabled,
   clusterLinkageMode: state.clusterLinkageMode,
   clusterTolerance2D: state.clusterTolerance2D,

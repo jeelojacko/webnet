@@ -1088,8 +1088,6 @@ export interface ParseOptions {
   linearMultiplier?: number;
   elevationInputMode?: 'orthometric' | 'ellipsoid';
   projectElevationMeters?: number;
-  vLevelMode?: 'off' | 'feet' | 'miles' | 'meters' | 'kilometers' | 'turns' | 'none';
-  vLevelNoneStdErrMeters?: number;
 }
 
 export interface AdjustmentSolveTimingProfile {

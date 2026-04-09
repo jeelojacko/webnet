@@ -154,6 +154,7 @@
       - [x] Continue legacy-settings cleanup by dropping the retired CRS-transform fields from the WebNet report and processing-summary prop contracts while leaving engine/listing diagnostics intact
       - [x] Continue legacy-settings cleanup by dropping the retired CRS-transform trio from the shared WebNet run-diagnostics contract while letting the parity-backed industry listing source that detail from parse state when needed
       - [x] Continue legacy-settings cleanup by dropping the retired parser-compatibility knobs for directive-abbreviation mode and unknown-directive policy, while keeping the strict-vs-legacy parse behavior unchanged
+      - [x] Continue legacy-settings cleanup by removing the dead `.VLEVEL` parse-state fields while keeping the directive accepted as a compatibility no-op
       - [x] Invert classic traverse displayed NB83 coordinates through the CSRS double-stereographic geodetic display contract and honor positive-west longitude formatting in the adjusted geodetic summary
       - [x] Add a focused traverse parity guard that proves the raw fixed-bearing solve already stays exact and that representative connected covariance rows still match the reference confidence values before changing more classic display math
       - [x] Zero-pad classic quadrant-bearing degrees below 10 in the adjusted traverse bearing-distance section so rows like `109-GPS2` match the stored industry formatting without touching solver output

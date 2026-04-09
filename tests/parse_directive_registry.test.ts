@@ -224,4 +224,16 @@ describe('parseDirectiveRegistry', () => {
     expect(result.handled).toBe(true);
     expect(aliasDirectiveCalls).toEqual([['P1=A1', 'P2=A2']]);
   });
+
+  it('keeps .VLEVEL as a compatibility no-op that only logs the selected mode', () => {
+    const { dispatch, logs, state } = createHarness();
+
+    expect(dispatch('.VLEVEL', ['.VLEVEL', 'NONE=0.005'], 34).handled).toBe(true);
+    expect(dispatch('.VLEVEL', ['.VLEVEL', 'KM'], 35).handled).toBe(true);
+
+    expect(logs).toContain('VLEVEL compatibility mode set to NONE (sigma=0.005000 m)');
+    expect(logs).toContain('VLEVEL compatibility mode set to KILOMETERS');
+    expect('vLevelMode' in state).toBe(false);
+    expect('vLevelNoneStdErrMeters' in state).toBe(false);
+  });
 });

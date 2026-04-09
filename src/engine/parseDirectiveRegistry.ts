@@ -1068,45 +1068,35 @@ const SPECIALIZED_DIRECTIVE_HANDLERS: Record<string, SpecializedDirectiveHandler
   '.VLEVEL': ({ parts, lineNum, state, logs, orderExplicit, parseLinearMetersToken }) => {
     const token = (parts[1] || '').toUpperCase();
     if (!token || token === 'OFF') {
-      state.vLevelMode = 'off';
-      state.vLevelNoneStdErrMeters = undefined;
       logs.push('VLEVEL compatibility mode set to OFF');
       return handled(orderExplicit);
     }
     if (token.startsWith('NONE')) {
-      state.vLevelMode = 'none';
       const eqIdx = token.indexOf('=');
       const noneValueToken = eqIdx >= 0 ? token.slice(eqIdx + 1) : (parts[2] ?? '');
       const parsed = parseLinearMetersToken(noneValueToken, state.units);
-      state.vLevelNoneStdErrMeters =
-        Number.isFinite(parsed ?? Number.NaN) && parsed != null ? parsed : undefined;
       logs.push(
-        `VLEVEL compatibility mode set to NONE${state.vLevelNoneStdErrMeters != null ? ` (sigma=${state.vLevelNoneStdErrMeters.toFixed(6)} m)` : ''}`,
+        `VLEVEL compatibility mode set to NONE${Number.isFinite(parsed ?? Number.NaN) && parsed != null ? ` (sigma=${parsed.toFixed(6)} m)` : ''}`,
       );
       return handled(orderExplicit);
     }
     if (token === 'FEET' || token === 'FOOT' || token === 'FT') {
-      state.vLevelMode = 'feet';
       logs.push('VLEVEL compatibility mode set to FEET');
       return handled(orderExplicit);
     }
     if (token === 'MILES' || token === 'MI') {
-      state.vLevelMode = 'miles';
       logs.push('VLEVEL compatibility mode set to MILES');
       return handled(orderExplicit);
     }
     if (token === 'METERS' || token === 'METER' || token === 'M') {
-      state.vLevelMode = 'meters';
       logs.push('VLEVEL compatibility mode set to METERS');
       return handled(orderExplicit);
     }
     if (token === 'KILOMETERS' || token === 'KILOMETER' || token === 'KM') {
-      state.vLevelMode = 'kilometers';
       logs.push('VLEVEL compatibility mode set to KILOMETERS');
       return handled(orderExplicit);
     }
     if (token === 'TURNS' || token === 'TURN') {
-      state.vLevelMode = 'turns';
       logs.push('VLEVEL compatibility mode set to TURNS');
       return handled(orderExplicit);
     }
