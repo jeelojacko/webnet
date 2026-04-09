@@ -216,13 +216,6 @@ export const createRunProfileBuilders = ({
       prismOffset: parseState.prismOffset ?? profileCtx.effectiveParse.prismOffset ?? 0,
       prismScope: parseState.prismScope ?? profileCtx.effectiveParse.prismScope ?? 'global',
       rotationAngleRad: parseState.rotationAngleRad ?? 0,
-      crsTransformEnabled:
-        parseState.crsTransformEnabled ?? profileCtx.effectiveParse.crsTransformEnabled ?? false,
-      crsProjectionModel:
-        parseState.crsProjectionModel ??
-        profileCtx.effectiveParse.crsProjectionModel ??
-        'legacy-equirectangular',
-      crsLabel: parseState.crsLabel ?? profileCtx.effectiveParse.crsLabel ?? '',
       crsGridScaleEnabled:
         parseState.crsGridScaleEnabled ?? profileCtx.effectiveParse.crsGridScaleEnabled ?? false,
       crsGridScaleFactor:
@@ -383,7 +376,11 @@ export const createRunProfileBuilders = ({
       datumSufficiencyReport: parse.datumSufficiencyReport,
       coordSystemDiagnostics: parse.coordSystemDiagnostics ?? [],
       coordSystemWarningMessages: parse.coordSystemWarningMessages ?? [],
-      crsStatus: parse.crsStatus ?? (parse.crsTransformEnabled ? 'on' : 'off'),
+      crsStatus:
+        parse.crsStatus ??
+        ((parseState.crsTransformEnabled ?? profileCtx.effectiveParse.crsTransformEnabled ?? false)
+          ? 'on'
+          : 'off'),
       crsOffReason: parse.crsOffReason,
       crsDatumOpId: parse.crsDatumOpId,
       crsDatumFallbackUsed: parse.crsDatumFallbackUsed ?? false,
@@ -393,9 +390,6 @@ export const createRunProfileBuilders = ({
       usedInSolveUsageSummary: parse.usedInSolveUsageSummary,
       directiveTransitions: parse.directiveTransitions ?? [],
       directiveNoEffectWarnings: parse.directiveNoEffectWarnings ?? [],
-      crsTransformEnabled: parse.crsTransformEnabled,
-      crsProjectionModel: parse.crsProjectionModel,
-      crsLabel: parse.crsLabel,
       crsGridScaleEnabled: parse.crsGridScaleEnabled,
       crsGridScaleFactor: parse.crsGridScaleFactor,
       crsConvergenceEnabled: parse.crsConvergenceEnabled,

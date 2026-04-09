@@ -164,6 +164,7 @@ Current results use one live precision-reporting model:
 - older project payloads that carried the retired legacy CRS-transform UI fields are normalized back to `crsTransformEnabled=false`, `crsProjectionModel=legacy-equirectangular`, and a blank `crsLabel` on load/save
 - the WebNet processing summary and report diagnostics no longer show the retired legacy `CRS / Projection` block; active grid-scale and convergence diagnostics still remain in those outputs
 - the WebNet report and processing-summary component prop contracts no longer carry the retired CRS-transform fields; those values remain only in engine/listing diagnostics where the parity-backed industry listing still uses them
+- the shared WebNet `RunDiagnostics` contract no longer carries the retired CRS-transform trio; the parity-backed industry listing continues to source those values from parse state when it still needs to display them
 
 ## Coordinate-system and GPS behavior
 

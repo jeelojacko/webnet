@@ -196,6 +196,9 @@ describe('createRunProfileBuilders', () => {
     expect(diagnostics.parsedUsageSummary).toBe('parsed summary');
     expect(diagnostics.usedInSolveUsageSummary).toBe('solve summary');
     expect(diagnostics.stochasticDefaultsSummary).toContain('inst=T1');
+    expect('crsTransformEnabled' in diagnostics).toBe(false);
+    expect('crsProjectionModel' in diagnostics).toBe(false);
+    expect('crsLabel' in diagnostics).toBe(false);
   });
 
   it('keeps project default instrument diagnostics pinned to the selected instrument', () => {

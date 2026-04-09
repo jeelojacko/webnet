@@ -340,9 +340,6 @@ export type RunDiagnostics = {
   crsDatumFallbackUsed: boolean;
   crsAreaOfUseStatus: 'inside' | 'outside' | 'unknown';
   crsOutOfAreaStationCount: number;
-  crsTransformEnabled: boolean;
-  crsProjectionModel: CrsProjectionModel;
-  crsLabel: string;
   crsGridScaleEnabled: boolean;
   crsGridScaleFactor: number;
   crsConvergenceEnabled: boolean;
