@@ -1704,6 +1704,39 @@ describe('industry multi-case parity foundation', () => {
     120000,
   );
 
+  it('keeps the combined TS sideshot coordinates aligned with the stored industry reference', () => {
+    const result = buildCaseResult('combined');
+    expect(result.success).toBe(true);
+    expect(result.converged).toBe(true);
+
+    const expectedRows = [
+      { sourceLine: 498, to: 'Chimney', northing: 7438679.1305, easting: 2489065.9085, height: 53.8799 },
+      { sourceLine: 507, to: 'Chimney', northing: 7438679.1316, easting: 2489065.9068, height: 53.8781 },
+      { sourceLine: 516, to: 'Chimney', northing: 7438679.1310, easting: 2489065.9083, height: 53.8784 },
+      { sourceLine: 526, to: 'Meridian', northing: 7438484.5882, easting: 2489095.4001, height: 49.7369 },
+      { sourceLine: 533, to: 'Meridian', northing: 7438484.5880, easting: 2489095.3999, height: 49.7369 },
+      { sourceLine: 540, to: 'Meridian', northing: 7438484.5889, easting: 2489095.4000, height: 49.7367 },
+      { sourceLine: 547, to: 'Meridian', northing: 7438484.5879, easting: 2489095.4000, height: 49.7367 },
+      { sourceLine: 574, to: 'Meridian', northing: 7438484.5872, easting: 2489095.3997, height: 49.7367 },
+      { sourceLine: 575, to: 'Meridian', northing: 7438484.5877, easting: 2489095.4004, height: 49.7368 },
+      { sourceLine: 576, to: 'Meridian', northing: 7438484.5868, easting: 2489095.3990, height: 49.7371 },
+      { sourceLine: 611, to: 'Chimney', northing: 7438679.1444, easting: 2489065.9139, height: 54.2852 },
+      { sourceLine: 619, to: 'Chimney', northing: 7438679.1463, easting: 2489065.9122, height: 54.2970 },
+      { sourceLine: 627, to: 'Chimney', northing: 7438679.1439, easting: 2489065.9152, height: 54.2937 },
+    ];
+
+    expectedRows.forEach((expected) => {
+      const row = (result.sideshots ?? []).find(
+        (candidate) => candidate.mode !== 'gps' && candidate.sourceLine === expected.sourceLine,
+      );
+      expect(row, `missing sideshot row for line ${expected.sourceLine}`).toBeDefined();
+      expect(row?.to).toBe(expected.to);
+      expect(Math.abs((row?.northing ?? 0) - expected.northing)).toBeLessThan(0.01);
+      expect(Math.abs((row?.easting ?? 0) - expected.easting)).toBeLessThan(0.01);
+      expect(Math.abs((row?.height ?? 0) - expected.height)).toBeLessThan(0.01);
+    });
+  });
+
   it(
     'renders positional tolerance checks for .PTOL-selected combined-case pairs when project settings enable them',
     () => {

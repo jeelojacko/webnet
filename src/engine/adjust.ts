@@ -3761,7 +3761,7 @@ export class LSAEngine {
       let setupAzimuth: number | undefined;
       if (hasSetupHz && backsightId && backsightSt) {
         const bs = this.getAzimuth(from, backsightId).az;
-        setupAzimuth = this.modeledAzimuth(bs + (setupHz as number), from);
+        setupAzimuth = wrapTo2Pi(bs + (setupHz as number));
       }
       const hasAzimuth = hasExplicitAz || setupAzimuth != null || hasTargetAz;
       const azimuth = hasExplicitAz
@@ -3769,7 +3769,7 @@ export class LSAEngine {
         : setupAzimuth != null
           ? setupAzimuth
           : hasTargetAz
-            ? this.modeledAzimuth(this.getAzimuth(from, to).az, from)
+            ? this.getAzimuth(from, to).az
             : undefined;
       let sigmaAz = hasExplicitAz ? (explicitSigmaAz ?? 0) : 0;
       if (!hasExplicitAz && setupAzimuth != null && backsightId && backsightSt) {
