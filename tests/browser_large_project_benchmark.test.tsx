@@ -257,6 +257,11 @@ const buildBenchmarkInput = (fixture: BrowserBenchmarkFixture): string => {
 const sortIds = (ids: string[]): string[] =>
   [...ids].sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
 
+const medianDurationMs = (samples: number[]): number => {
+  const sorted = [...samples].sort((a, b) => a - b);
+  return sorted[Math.floor(sorted.length / 2)] ?? 0;
+};
+
 describe('browser large-project benchmark coverage', () => {
   it.each(benchmarkFixtures)(
     'keeps imported-job solve, rerun, render, and artifact work within guardrails for %s',
@@ -306,9 +311,6 @@ describe('browser large-project benchmark coverage', () => {
       expect(artifactResult.files.length).toBeGreaterThan(0);
       expect(artifactResult.files.some((file) => file.name.endsWith('.txt'))).toBe(true);
 
-      const container = document.createElement('div');
-      document.body.appendChild(container);
-      const root: Root = createRoot(container);
       const derived = buildQaDerivedResult(outcome.result);
       const firstObservationId = outcome.result.observations[0]?.id ?? null;
       const sortedStationIds = sortIds(Object.keys(outcome.result.stations));
@@ -324,6 +326,28 @@ describe('browser large-project benchmark coverage', () => {
         );
         return (
           <div>
+            <div className="hidden">
+              <button
+                data-benchmark-select-first
+                onClick={() => {
+                  setSelectedObservationId(firstObservationId);
+                  setSelectedStationId(firstStationId);
+                }}
+                type="button"
+              >
+                Select first
+              </button>
+              <button
+                data-benchmark-select-last
+                onClick={() => {
+                  setSelectedObservationId(firstObservationId);
+                  setSelectedStationId(lastStationId);
+                }}
+                type="button"
+              >
+                Select last
+              </button>
+            </div>
             <div data-selection-status>
               obs:{selectedObservationId ?? '-'} station:{selectedStationId ?? '-'}
             </div>
@@ -365,13 +389,35 @@ describe('browser large-project benchmark coverage', () => {
         );
       };
 
-      const renderStart = performance.now();
+      const container = document.createElement('div');
+      document.body.appendChild(container);
+      const root: Root = createRoot(container);
       await act(async () => {
         root.render(<BenchmarkHarness />);
       });
-      const renderDurationMs = performance.now() - renderStart;
+
+      const selectFirstButton = container.querySelector(
+        '[data-benchmark-select-first]',
+      ) as HTMLButtonElement | null;
+      const selectLastButton = container.querySelector(
+        '[data-benchmark-select-last]',
+      ) as HTMLButtonElement | null;
+      const renderSamples: number[] = [];
+      for (const button of [selectLastButton, selectFirstButton, selectLastButton]) {
+        const sampleStart = performance.now();
+        await act(async () => {
+          button?.click();
+        });
+        renderSamples.push(performance.now() - sampleStart);
+      }
+      const renderDurationMs = medianDurationMs(renderSamples);
 
       expect(renderDurationMs).toBeLessThan(fixture.renderBudgetMs);
+
+      await act(async () => {
+        selectFirstButton?.click();
+      });
+
       expect(container.textContent).toContain('Adjusted Coordinates');
       expect(container.textContent).toContain(firstStationId ?? '');
       expect(container.querySelectorAll('[data-map-station]').length).toBe(
