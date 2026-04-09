@@ -3708,7 +3708,9 @@ export class LSAEngine {
 
       const mode = obs.mode ?? 'slope';
       const distSigma = this.effectiveStdDev(obs);
-      let horizDistance = obs.obs;
+      const prismCorrection = this.prismCorrectionForObservation(obs);
+      const observedDistance = Math.max(obs.obs - prismCorrection, 0);
+      let horizDistance = observedDistance;
       let sigmaHoriz = distSigma;
       let deltaH: number | undefined;
       let sigmaDh = 0;
@@ -3716,19 +3718,24 @@ export class LSAEngine {
       if (mode === 'slope') {
         const zen = vertical && vertical.type === 'zenith' ? vertical : undefined;
         if (zen) {
-          const z = zen.obs;
+          let zGeom = zen.obs;
+          for (let iteration = 0; iteration < 3; iteration += 1) {
+            const trialHoriz = observedDistance * Math.sin(zGeom);
+            const crCorr = this.curvatureRefractionAngle(trialHoriz);
+            zGeom = Math.min(Math.PI, Math.max(0, zen.obs - crCorr));
+          }
           const sigmaZ = this.effectiveStdDev(zen);
-          horizDistance = obs.obs * Math.sin(z);
-          deltaH = obs.obs * Math.cos(z);
+          horizDistance = observedDistance * Math.sin(zGeom);
+          deltaH = observedDistance * Math.cos(zGeom);
           sigmaHoriz = Math.sqrt(
-            (Math.sin(z) * distSigma) ** 2 + (obs.obs * Math.cos(z) * sigmaZ) ** 2,
+            (Math.sin(zGeom) * distSigma) ** 2 + (observedDistance * Math.cos(zGeom) * sigmaZ) ** 2,
           );
           sigmaDh = Math.sqrt(
-            (Math.cos(z) * distSigma) ** 2 + (obs.obs * Math.sin(z) * sigmaZ) ** 2,
+            (Math.cos(zGeom) * distSigma) ** 2 + (observedDistance * Math.sin(zGeom) * sigmaZ) ** 2,
           );
         }
       } else {
-        horizDistance = obs.obs;
+        horizDistance = observedDistance;
         sigmaHoriz = distSigma;
         const lev = vertical && vertical.type === 'lev' ? vertical : undefined;
         if (lev) {
@@ -3737,11 +3744,19 @@ export class LSAEngine {
         }
       }
 
-      let horizScale = 1;
-      if (this.mapMode !== 'off') {
-        horizScale *= this.mapScaleFactor;
-      }
-      if (this.crsGridScaleEnabled) {
+      let horizScale = this.mapDistanceScaleForObservation(obs);
+      if (this.coordSystemMode === 'grid') {
+        const fromFactors = this.stationFactorSnapshot(from);
+        const distMode = obs.gridDistanceMode ?? 'measured';
+        const distanceKind =
+          obs.distanceKind ??
+          (distMode === 'ellipsoidal' ? 'ellipsoidal' : distMode === 'grid' ? 'grid' : 'ground');
+        if (distanceKind === 'ellipsoidal') {
+          horizScale *= fromFactors.gridScaleFactor;
+        } else if (distanceKind === 'ground') {
+          horizScale *= this.scaleOverrideActive ? this.averageScaleFactor : fromFactors.combinedFactor;
+        }
+      } else if (this.crsGridScaleEnabled) {
         horizScale *= this.crsGridScaleFactor;
       }
       if (horizScale !== 1) {

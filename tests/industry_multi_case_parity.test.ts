@@ -1731,9 +1731,9 @@ describe('industry multi-case parity foundation', () => {
       );
       expect(row, `missing sideshot row for line ${expected.sourceLine}`).toBeDefined();
       expect(row?.to).toBe(expected.to);
-      expect(Math.abs((row?.northing ?? 0) - expected.northing)).toBeLessThan(0.01);
-      expect(Math.abs((row?.easting ?? 0) - expected.easting)).toBeLessThan(0.01);
-      expect(Math.abs((row?.height ?? 0) - expected.height)).toBeLessThan(0.01);
+      expect(Math.abs((row?.northing ?? 0) - expected.northing)).toBeLessThan(0.001);
+      expect(Math.abs((row?.easting ?? 0) - expected.easting)).toBeLessThan(0.001);
+      expect(Math.abs((row?.height ?? 0) - expected.height)).toBeLessThan(0.001);
     });
   });
 
