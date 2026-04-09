@@ -3716,7 +3716,38 @@ export const buildIndustryStyleListingText = (
       [6, 7, 8, 9, 10, 11, 12, 13],
     );
   };
-  renderSideshotListingSection('Post-Adjusted Sideshots (TS)', tsSideshotsForListing);
+  const resolvedTsSideshotsForListing = tsSideshotsForListing.filter(
+    (row) => row.northing != null && row.easting != null,
+  );
+  const unresolvedTsSideshotsForListing = tsSideshotsForListing.filter(
+    (row) => row.northing == null || row.easting == null,
+  );
+  if (resolvedTsSideshotsForListing.length > 0) {
+    lines.push('');
+    addCenteredHeading('Sideshot Coordinates Computed After Adjustment');
+    lines.push('');
+    const sideshotCoordinateRows = resolvedTsSideshotsForListing.map((row) => {
+      const description = stationDescription(row.to);
+      if (coordMode === '3D') {
+        return [
+          row.to,
+          (row.northing! * unitScale).toFixed(4),
+          (row.easting! * unitScale).toFixed(4),
+          row.height != null ? (row.height * unitScale).toFixed(4) : '-',
+          description,
+        ];
+      }
+      return [row.to, (row.northing! * unitScale).toFixed(4), (row.easting! * unitScale).toFixed(4), description];
+    });
+    renderTextTable(
+      coordMode === '3D'
+        ? ['Station', 'N', 'E', 'Elev', 'Description']
+        : ['Station', 'N', 'E', 'Description'],
+      sideshotCoordinateRows,
+      coordMode === '3D' ? [1, 2, 3] : [1, 2],
+    );
+  }
+  renderSideshotListingSection('Post-Adjusted Sideshots (TS)', unresolvedTsSideshotsForListing);
   renderSideshotListingSection('Post-Adjusted GPS Sideshot Vectors', gpsVectorSideshotsForListing);
   renderSideshotListingSection(
     'Post-Adjusted GNSS Topo Coordinates (GS)',

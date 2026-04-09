@@ -448,6 +448,48 @@ describe('industry listing phase 5 formatting locks', () => {
     expect(listing).not.toContain('Post-Adjusted Sideshots (TS)');
   });
 
+  it('renders the classic sideshot coordinates section for TS sideshots', () => {
+    const input = readFileSync('tests/fixtures/sideshot_postadjust_known.dat', 'utf-8');
+    const result = new LSAEngine({ input, maxIterations: 10 }).solve();
+    const listing = buildIndustryStyleListingText(
+      result,
+      {
+        maxIterations: 10,
+        units: 'm',
+        listingShowCoordinates: true,
+        listingShowObservationsResiduals: true,
+        listingShowErrorPropagation: true,
+        listingShowProcessingNotes: false,
+        listingShowAzimuthsBearings: true,
+        listingShowLostStations: true,
+        listingSortCoordinatesBy: 'input',
+        listingSortObservationsBy: 'input',
+        listingObservationLimit: 200,
+      },
+      {
+        coordMode: '3D',
+        order: 'EN',
+        angleUnits: 'dd',
+        angleStationOrder: 'atfromto',
+        deltaMode: 'horiz',
+        refractionCoefficient: 0.13,
+      },
+      {
+        solveProfile: 'industry-parity',
+        angleCenteringModel: 'geometry-aware-correlated-rays',
+        defaultSigmaCount: 0,
+        defaultSigmaByType: '',
+        stochasticDefaultsSummary: 'inst=S9',
+        rotationAngleRad: 0,
+      },
+    );
+
+    expect(listing).toContain('Sideshot Coordinates Computed After Adjustment');
+    expect(listing).toMatch(/^\s*Station\s+N\s+E\s+Elev\s+Description\s*$/m);
+    expect(listing).toMatch(/^\s*SH\s+0\.0000\s+10\.0000\s+0\.0000\s*$/m);
+    expect(listing).not.toContain('Post-Adjusted Sideshots (TS)');
+  });
+
   it('renders auto-adjust diagnostics section when present', () => {
     const input = readFileSync('public/examples/industry-input.txt', 'utf-8');
     const engine = new LSAEngine({

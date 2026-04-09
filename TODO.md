@@ -145,6 +145,7 @@
       - [x] Require normalized exact listing parity for the levelling output before moving on
     - [ ] Batch 8 - traverse-only parity
       - [ ] Current scope: trace the remaining classic traverse display seams without disturbing the raw traverse exact sections or the underground guard, including the adjusted geodetic-position display contract for NewBrunswick83 listings
+      - [x] Add the classic industry `Sideshot Coordinates Computed After Adjustment` section for post-adjusted TS sideshots
       - [x] Invert classic traverse displayed NB83 coordinates through the CSRS double-stereographic geodetic display contract and honor positive-west longitude formatting in the adjusted geodetic summary
       - [x] Add a focused traverse parity guard that proves the raw fixed-bearing solve already stays exact and that representative connected covariance rows still match the reference confidence values before changing more classic display math
       - [x] Zero-pad classic quadrant-bearing degrees below 10 in the adjusted traverse bearing-distance section so rows like `109-GPS2` match the stored industry formatting without touching solver output
