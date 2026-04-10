@@ -174,8 +174,11 @@ describe('Project Options modal layout', () => {
     try {
       expect(app.container.textContent).toContain('Other File Outputs');
       expect(app.container.textContent).toContain('Project Files');
-      expect(app.container.textContent).toContain('Open Project');
-      expect(app.container.textContent).toContain('Save Project');
+      expect(app.container.textContent).toContain('Create Local Project');
+      expect(app.container.textContent).toContain('Import Portable');
+      expect(app.container.textContent).toContain('Save Local Project');
+      expect(app.container.textContent).toContain('Export Portable');
+      expect(app.container.textContent).toContain('Export Bundle');
       expect(app.container.textContent).toContain('Adjusted Points Export');
       expect(app.container.textContent).toContain('Transform');
       expect(app.container.textContent).toContain('Reference Point');

@@ -121,7 +121,28 @@
       - [x] Narrow the classic-parity listing gate so live `industry-parity-current` GNSS-only runs in the app still use the compact GNSS vector listing path even when a default instrument library is loaded
       - [x] Make the listing header prefer the solved parse-state vertical deflection over stale external run diagnostics so the industry output pane reports the actual GNSS run deflection values
       - [ ] Trace the remaining GNSS relative-ellipse drift outside the `GPS2-*` seam, with the current focus narrowed to the remaining covariance-magnitude gap in `GPS2`, `GPS3`, `GPS1-GPS6`, and `GPS3-GPS5` after the fixed-linked azimuth display correction
-    - [ ] Batch 5 - error propagation precision closeout
+  - [x] Phase 5 - browser-native project storage and multi-file workspace
+    - [x] Batch 1 - OPFS/IndexedDB storage foundation
+      - [x] Add a `ProjectStorage` abstraction with OPFS-primary and IndexedDB fallback backends plus a small IndexedDB recent-project catalog
+      - [x] Add storage-availability and persistence-status detection (`navigator.storage.getDirectory` / `persist`) and surface it in the project workflow
+      - [x] Add focused adapter coverage for OPFS happy path, IndexedDB fallback, and storage-status detection
+    - [x] Batch 2 - v4 manifest and legacy migration
+      - [x] Introduce manifest-first `webnet-project` schema v4 with stable source-file IDs, `mainFileId`, project metadata, and lightweight file-workspace UI state
+      - [x] Preserve v1-v3 `.wnproj` loading by migrating legacy payloads into the v4 in-memory shape before use
+      - [x] Keep phase-1 v4 manifest scope to sources/settings/UI state only; do not move saved-run payloads, reports, or caches into named-project autosave storage
+      - [x] Add focused v1-v4 project-file migration and flattened portable snapshot coverage
+    - [x] Batch 3 - named-project session and autosave wiring
+      - [x] Add a project-session model that tracks the active named project, active source file, source-text cache, and dirty state while preserving the existing single editor
+      - [x] Materialize solve/export input from the named-project main file plus enabled non-main source members so the engine still receives `mainInput + includeFiles`
+      - [x] Add debounced autosave for named projects with separate manifest/file dirty tracking while leaving untitled browser draft recovery as a separate safety net
+      - [x] Add focused workflow coverage for create/open/autosave/add blank file/add imported file/rename/reorder/enable-disable/remove/switch active file
+    - [x] Batch 4 - project workflow UI and portable import/export
+      - [x] Add a project-files surface for create/open recent/delete plus active-project/source-file management inside the existing project workflow
+      - [x] Keep `.wnproj` compatibility export/import as a flattened portable snapshot on top of the manifest model
+      - [x] Add zipped manifest-plus-sources export/import for cross-browser backup/share workflows
+      - [x] Document the zip dependency reason in batch closeout because native browser storage APIs do not provide ZIP packaging
+      - [x] Add compatibility/bundle round-trip coverage plus recovery tests proving named-project autosave stays separate from untitled local draft recovery
+  - [ ] Batch 5 - error propagation precision closeout
       - [x] Expand the parity harness to lock the full error-propagation sections (all station sigmas, station ellipses, and relative ellipses)
       - [x] Add an error-propagation-focused machine-readable deviation summary alongside the broader reference diff
       - [x] Centralize shared covariance-to-ellipse decomposition

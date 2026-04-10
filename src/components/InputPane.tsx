@@ -6,6 +6,8 @@ import { INPUT_PANE_CONTEXT_MENU_ORDER } from './inputPaneContextMenu';
 interface InputPaneProps {
   input: string;
   onChange: (_value: string) => void;
+  projectName?: string | null;
+  activeFileName?: string | null;
   importNotice?: {
     title: string;
     detailLines: string[];
@@ -133,7 +135,7 @@ const renderHighlightedLine = (line: string, lineIndex: number): React.ReactNode
 };
 
 const InputPane = React.forwardRef<InputPaneHandle, InputPaneProps>(
-  ({ input, onChange, importNotice = null, onClearImportNotice }, ref) => {
+  ({ input, onChange, projectName = null, activeFileName = null, importNotice = null, onClearImportNotice }, ref) => {
   const lineCount = input.split('\n').length;
   const lines = Array.from({ length: lineCount }, (_, i) => i + 1);
   const textareaRef = React.useRef<HTMLTextAreaElement>(null);
@@ -465,7 +467,15 @@ const InputPane = React.forwardRef<InputPaneHandle, InputPaneProps>(
   return (
     <div className="border-r border-slate-700 flex flex-col min-w-[260px] flex-none h-full">
       <div className="bg-slate-800 px-4 py-2 text-xs font-semibold text-slate-400 flex justify-between items-center">
-        <span>INPUT DATA (.dat / imported reports)</span> <FileText size={14} />
+        <div className="min-w-0">
+          <div>INPUT DATA (.dat / imported reports)</div>
+          {(projectName || activeFileName) && (
+            <div className="truncate text-[10px] font-normal uppercase tracking-wide text-slate-500">
+              {[projectName, activeFileName].filter(Boolean).join(' / ')}
+            </div>
+          )}
+        </div>
+        <FileText size={14} />
       </div>
       {importNotice && (
         <div className="border-b border-cyan-900/60 bg-cyan-950/30 px-4 py-3 text-[11px] text-cyan-100">

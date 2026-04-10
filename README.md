@@ -63,8 +63,9 @@
 
   ### Project and import workflows
 
-  - Browser project save/load
-  - Include-bundle project support
+  - Local browser projects backed by OPFS when available, with IndexedDB project catalog fallback
+  - Multi-file project workspaces with main source plus managed include members
+  - Portable `.wnproj` snapshot export/import and zipped manifest-plus-sources bundle export/import
   - Staged import review and reconciliation workflow
   - Supported external importers for selected survey/job data formats
 

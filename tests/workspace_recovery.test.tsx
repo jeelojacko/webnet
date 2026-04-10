@@ -562,4 +562,62 @@ describe('useWorkspaceRecovery', () => {
     });
     container.remove();
   });
+
+  it('disables browser draft recovery while a named local project is open', async () => {
+    window.localStorage.clear();
+    window.localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({
+        version: 1,
+        savedAt: '2026-04-10T12:00:00.000Z',
+        snapshot: buildSnapshot({ input: 'STORED DRAFT' }),
+      }),
+    );
+
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root: Root = createRoot(container);
+
+    const Harness = () => {
+      const [disabled, setDisabled] = useState(true);
+      const snapshot = useMemo(
+        () => buildSnapshot({ input: disabled ? 'NAMED PROJECT' : 'UNTITLED WORKSPACE' }),
+        [disabled],
+      );
+      const recovery = useWorkspaceRecovery({
+        storageKey: STORAGE_KEY,
+        snapshot,
+        onRecover: () => undefined,
+        disabled,
+      });
+
+      return (
+        <div>
+          <div data-has>{recovery.hasStoredDraft ? 'yes' : 'no'}</div>
+          <div data-pending>{recovery.pendingRecovery ? 'yes' : 'no'}</div>
+          <button data-enable onClick={() => setDisabled(false)} />
+        </div>
+      );
+    };
+
+    await act(async () => {
+      root.render(<Harness />);
+    });
+
+    expect(container.querySelector('[data-has]')?.textContent).toBe('no');
+    expect(container.querySelector('[data-pending]')?.textContent).toBe('no');
+    expect(window.localStorage.getItem(STORAGE_KEY)).toContain('STORED DRAFT');
+
+    await act(async () => {
+      (container.querySelector('[data-enable]') as HTMLButtonElement).click();
+    });
+
+    expect(container.querySelector('[data-has]')?.textContent).toBe('yes');
+    expect(container.querySelector('[data-pending]')?.textContent).toBe('yes');
+
+    await act(async () => {
+      root.unmount();
+    });
+    container.remove();
+  });
 });

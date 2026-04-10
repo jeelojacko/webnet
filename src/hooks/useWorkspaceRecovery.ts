@@ -46,12 +46,14 @@ interface UseWorkspaceRecoveryArgs {
   snapshot: WorkspaceDraftSnapshot;
   onRecover: (_snapshot: WorkspaceDraftSnapshot) => void;
   storageKey?: string;
+  disabled?: boolean;
 }
 
 export const useWorkspaceRecovery = ({
   snapshot,
   onRecover,
   storageKey = DEFAULT_STORAGE_KEY,
+  disabled = false,
 }: UseWorkspaceRecoveryArgs) => {
   const [pendingRecovery, setPendingRecovery] = useState<WorkspaceRecoveryRecord | null>(null);
   const [persistEnabled, setPersistEnabled] = useState(false);
@@ -62,6 +64,14 @@ export const useWorkspaceRecovery = ({
   const serializedSnapshot = useMemo(() => JSON.stringify(snapshot), [snapshot]);
 
   useEffect(() => {
+    if (disabled) {
+      setPendingRecovery(null);
+      setPersistEnabled(false);
+      setIsInitialized(true);
+      setHasStoredDraft(false);
+      lastSavedSnapshotRef.current = null;
+      return;
+    }
     if (!canUseLocalStorage()) {
       setPersistEnabled(true);
       setIsInitialized(true);
@@ -78,10 +88,10 @@ export const useWorkspaceRecovery = ({
       setHasStoredDraft(false);
     }
     setIsInitialized(true);
-  }, [storageKey]);
+  }, [disabled, storageKey]);
 
   useEffect(() => {
-    if (!isInitialized || !persistEnabled || !canUseLocalStorage()) return;
+    if (disabled || !isInitialized || !persistEnabled || !canUseLocalStorage()) return;
     if (serializedSnapshot === lastSavedSnapshotRef.current) return;
     const record: WorkspaceRecoveryRecord = {
       version: 1,
@@ -91,7 +101,7 @@ export const useWorkspaceRecovery = ({
     window.localStorage.setItem(storageKey, JSON.stringify(record));
     lastSavedSnapshotRef.current = serializedSnapshot;
     setHasStoredDraft(true);
-  }, [isInitialized, persistEnabled, serializedSnapshot, snapshot, storageKey]);
+  }, [disabled, isInitialized, persistEnabled, serializedSnapshot, snapshot, storageKey]);
 
   const recoverDraft = useCallback(() => {
     if (!pendingRecovery) return;

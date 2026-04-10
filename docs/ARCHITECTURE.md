@@ -28,6 +28,7 @@ Primary app-facing state and workflow orchestration live in the app shell plus h
 - `src/hooks/useImportReviewWorkflow.ts`
 - `src/hooks/useAdjustmentWorkflow.ts`
 - `src/hooks/useProjectFileWorkflow.ts`
+- `src/hooks/useWorkspaceRecovery.ts`
 - `src/hooks/useExportWorkflow.ts`
 - `src/hooks/useReportViewState.ts`
 - `src/hooks/useWorkspaceReviewState.ts`
@@ -38,6 +39,7 @@ These modules coordinate:
 - worker-backed run orchestration
 - import-review modal state
 - save/load and local recovery
+- named-project storage, manifest, and portable import/export workflows
 - export dispatch
 - report/map shared review state
 - saved runs and compare workflows
@@ -65,6 +67,9 @@ Representative modules include:
 - `runResultsTextBuilder.ts`
 - `runOutputBuilders.ts`
 - `resultDerivedModels.ts`
+- `projectWorkspace.ts`
+- `projectStorage.ts`
+- `projectBundle.ts`
 
 ### Parser decomposition
 Parser responsibilities are now split across focused modules. The main parser delegates to extracted families and state helpers such as:
@@ -138,7 +143,8 @@ The user edits main input text, include-file bundles, project settings, parser s
 
 Those browser-facing artifacts are stored in workspace state and can also be:
 - recovered from local draft state
-- saved into project files
+- saved into named local browser projects backed by a manifest + source-file workspace
+- exported/imported as flattened portable `.wnproj` snapshots or zipped manifest bundles
 - restored from saved run snapshots for compare workflows
 
 ### 2. Optional external import review

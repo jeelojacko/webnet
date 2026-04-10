@@ -126,14 +126,14 @@ const AppToolbar: React.FC<AppToolbarProps> = ({
         </button>
         <button
           onClick={onOpenProjectFile}
-          title="Open project file"
+          title="Open local project workspace or portable project import"
           className="p-2 bg-slate-700 hover:bg-slate-600 rounded text-slate-300 transition-colors"
         >
           <FolderOpen size={18} />
         </button>
         <button
           onClick={onSaveProject}
-          title="Save project file"
+          title="Save the current local browser project"
           className="p-2 bg-slate-700 hover:bg-slate-600 rounded text-slate-300 transition-colors"
         >
           <Save size={18} />

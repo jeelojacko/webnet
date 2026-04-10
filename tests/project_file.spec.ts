@@ -181,7 +181,7 @@ describe('project file serialization/parsing', () => {
     const parsed = parseProjectFile(text, defaults);
     expect(parsed.ok).toBe(true);
     if (!parsed.ok) return;
-    expect(parsed.project.schemaVersion).toBe(3);
+    expect(parsed.project.schemaVersion).toBe(4);
     expect(parsed.project.input).toContain('C A');
     expect(parsed.project.includeFiles['sub/job1.dat']).toContain('C X');
     expect(parsed.project.savedRuns).toHaveLength(1);

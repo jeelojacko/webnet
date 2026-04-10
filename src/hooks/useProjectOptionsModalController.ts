@@ -26,6 +26,8 @@ import type {
   ProjectExportFormat,
   RunMode,
 } from '../types';
+import type { ProjectIndexRow, ProjectStorageStatus } from '../engine/projectWorkspace';
+import type { ProjectWorkspaceFileView } from './useProjectFileWorkflow';
 
 type ProjectOptionsStateValue = ReturnType<typeof useProjectOptionsState>;
 
@@ -41,8 +43,38 @@ type UseProjectOptionsModalControllerArgs = {
   selectedCrsProj4Params: Array<{ key: string; value: string }>;
   exportFormat: ProjectExportFormat;
   setExportFormat: Dispatch<SetStateAction<ProjectExportFormat>>;
+  storageStatus?: ProjectStorageStatus | null;
+  recentProjects?: ProjectIndexRow[];
+  projectSession?: {
+    manifest: {
+      name: string;
+    };
+    indexRow: {
+      backend: string;
+      updatedAt: string;
+    };
+    autosaveState: string;
+    lastAutosavedAt?: string | null;
+  } | null;
+  activeProjectFileViews?: ProjectWorkspaceFileView[];
+  currentProjectFile?: {
+    id: string;
+    name: string;
+  } | null;
   handleSaveProject: () => void;
   triggerProjectFileSelect: () => void;
+  triggerProjectSourceFileSelect?: () => void;
+  createLocalProjectFromCurrentWorkspace?: () => void;
+  openProjectById?: (_projectId: string) => void;
+  deleteLocalProject?: (_projectId: string) => void;
+  exportPortableProject?: () => void;
+  exportProjectBundle?: () => void;
+  createBlankProjectFile?: () => void;
+  switchActiveProjectFile?: (_fileId: string) => void;
+  renameProjectFile?: (_fileId: string) => void;
+  toggleProjectFileEnabled?: (_fileId: string) => void;
+  moveProjectFile?: (_fileId: string, _direction: 'up' | 'down') => void;
+  removeProjectFile?: (_fileId: string) => void;
   geoidSourceFileInputRef: RefObject<HTMLInputElement | null>;
   settingsModalContentRef: RefObject<HTMLDivElement | null>;
   adjustedPointsDragRef: MutableRefObject<AdjustedPointsColumnId | null>;
@@ -83,8 +115,25 @@ export const useProjectOptionsModalController = ({
   selectedCrsProj4Params,
   exportFormat,
   setExportFormat,
+  storageStatus = null,
+  recentProjects = [],
+  projectSession = null,
+  activeProjectFileViews = [],
+  currentProjectFile = null,
   handleSaveProject,
   triggerProjectFileSelect,
+  triggerProjectSourceFileSelect = () => undefined,
+  createLocalProjectFromCurrentWorkspace = () => undefined,
+  openProjectById = () => undefined,
+  deleteLocalProject = () => undefined,
+  exportPortableProject = () => undefined,
+  exportProjectBundle = () => undefined,
+  createBlankProjectFile = () => undefined,
+  switchActiveProjectFile = () => undefined,
+  renameProjectFile = () => undefined,
+  toggleProjectFileEnabled = () => undefined,
+  moveProjectFile = () => undefined,
+  removeProjectFile = () => undefined,
   geoidSourceFileInputRef,
   settingsModalContentRef,
   adjustedPointsDragRef,
@@ -668,6 +717,11 @@ export const useProjectOptionsModalController = ({
     displayLinear,
     duplicateSelectedInstrument,
     exportFormat,
+    storageStatus,
+    recentProjects,
+    projectSession,
+    activeProjectFileViews,
+    currentProjectFile,
     filteredDraftCrsCatalog,
     geoidSourceDataDraft,
     geoidSourceDataLabelDraft,
@@ -698,6 +752,18 @@ export const useProjectOptionsModalController = ({
     handleLevelLoopCustomPresetFieldChange,
     handleLevelLoopPresetChange,
     handleSaveProject,
+    triggerProjectSourceFileSelect,
+    createLocalProjectFromCurrentWorkspace,
+    openProjectById,
+    deleteLocalProject,
+    exportPortableProject,
+    exportProjectBundle,
+    createBlankProjectFile,
+    switchActiveProjectFile,
+    renameProjectFile,
+    toggleProjectFileEnabled,
+    moveProjectFile,
+    removeProjectFile,
     instrumentLinearUnit,
     isSettingsModalOpen,
     levelLoopCustomPresetsDraft,

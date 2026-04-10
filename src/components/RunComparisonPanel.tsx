@@ -197,7 +197,7 @@ const RunComparisonPanel = <TSettingsSnapshot, TRunDiagnostics>({
               {currentSnapshot && comparisonSummary
                 ? `${comparisonSummary.movedStations.length} moved stations, ${comparisonSummary.residualChanges.length} residual deltas`
                 : savedRunSnapshots.length > 0
-                  ? 'Saved runs remain available through browser recovery and project files.'
+                  ? 'Saved runs remain available through browser recovery and portable project exports.'
                   : 'No saved runs yet. Save the current run after a solve to persist it.'}
             </div>
           </div>

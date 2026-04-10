@@ -170,6 +170,7 @@ describe('useProjectFileWorkflow', () => {
 
     const Harness = () => {
       const projectFileInputRef = useRef<HTMLInputElement | null>(null);
+      const projectSourceFileInputRef = useRef<HTMLInputElement | null>(null);
       const [input, setInput] = useState('NETWORK');
       const [projectIncludeFiles, setProjectIncludeFiles] = useState<Record<string, string>>({});
       const [settings, setSettings] = useState(baseSettings);
@@ -210,8 +211,9 @@ describe('useProjectFileWorkflow', () => {
         null,
       );
 
-      const { handleSaveProject } = useProjectFileWorkflow({
+      const { exportPortableProject } = useProjectFileWorkflow({
         projectFileInputRef,
+        projectSourceFileInputRef,
         input,
         projectIncludeFiles,
         settings,
@@ -254,8 +256,8 @@ describe('useProjectFileWorkflow', () => {
 
       return (
         <div>
-          <button type="button" onClick={() => void handleSaveProject()}>
-            save
+          <button type="button" onClick={() => void exportPortableProject()}>
+            export
           </button>
           <div id="notice">{importNotice?.title ?? '-'}</div>
         </div>
@@ -276,7 +278,7 @@ describe('useProjectFileWorkflow', () => {
     const firstWriteArg = write.mock.calls[0]?.[0] as string | undefined;
     expect(String(firstWriteArg ?? '')).toContain('"kind": "webnet-project"');
     expect(close).toHaveBeenCalledTimes(1);
-    expect(container.querySelector('#notice')?.textContent).toBe('Project saved');
+    expect(container.querySelector('#notice')?.textContent).toBe('Portable project exported');
 
     await act(async () => {
       root.unmount();
@@ -388,6 +390,7 @@ describe('useProjectFileWorkflow', () => {
 
     const Harness = () => {
       const projectFileInputRef = useRef<HTMLInputElement | null>(null);
+      const projectSourceFileInputRef = useRef<HTMLInputElement | null>(null);
       const [input, setInput] = useState('ORIGINAL');
       const [projectIncludeFiles, setProjectIncludeFiles] = useState<Record<string, string>>({});
       const [settings, setSettings] = useState(baseSettings);
@@ -434,6 +437,7 @@ describe('useProjectFileWorkflow', () => {
 
       const { handleProjectFileChange } = useProjectFileWorkflow({
         projectFileInputRef,
+        projectSourceFileInputRef,
         input,
         projectIncludeFiles,
         settings,
@@ -547,7 +551,7 @@ describe('useProjectFileWorkflow', () => {
     expect(container.querySelector('#draft-crs-label')?.textContent).toBe('-');
     expect(container.querySelector('#draft-open')?.textContent).toBe('closed');
     expect(container.querySelector('#draft-selected')?.textContent).toBe('0');
-    expect(container.querySelector('#notice')?.textContent).toBe('Project loaded');
+    expect(container.querySelector('#notice')?.textContent).toBe('Portable project loaded');
     expect(container.querySelector('#geoid-label')?.textContent).toBe('-');
     expect(container.querySelector('#draft-geoid')?.textContent).toBe('-');
     expect(resetWorkspaceAfterProjectLoad).toHaveBeenCalledTimes(1);

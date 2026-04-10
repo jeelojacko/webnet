@@ -7,13 +7,20 @@ import type {
   InstrumentLibrary,
   ObservationOverride,
   ProjectExportFormat,
-  WebNetProjectFileV3,
 } from '../types';
 import type { PersistedSavedRunSnapshot } from '../appStateTypes';
 import {
   DEFAULT_ADJUSTED_POINTS_EXPORT_SETTINGS,
   sanitizeAdjustedPointsExportSettings,
 } from './adjustedPointsExport';
+import {
+  buildProjectFileStoragePath,
+  createManifestFromFlatProject,
+  createPortableProjectFile,
+  createProjectFileId,
+  type ProjectManifestFileEntry,
+  type WebNetPortableProjectFileV4,
+} from './projectWorkspace';
 import {
   buildRunSnapshotSummary,
   buildValueFingerprint,
@@ -31,7 +38,7 @@ export interface ProjectFileDefaults {
 }
 
 export interface ParsedProjectPayload {
-  schemaVersion?: 1 | 2 | 3;
+  schemaVersion?: 1 | 2 | 3 | 4;
   input: string;
   includeFiles: Record<string, string>;
   savedRuns: PersistedSavedRunSnapshot[];
@@ -49,6 +56,15 @@ export interface ParsedProjectPayload {
     projectInstruments: InstrumentLibrary;
     selectedInstrument: string;
     levelLoopCustomPresets: CustomLevelLoopTolerancePreset[];
+  };
+  workspace?: {
+    projectId: string;
+    name: string;
+    createdAt: string;
+    updatedAt: string;
+    mainFileId: string;
+    activeFileId?: string;
+    files: ProjectManifestFileEntry[];
   };
 }
 
@@ -189,6 +205,70 @@ const sanitizeExportFormat = (
 };
 
 const sanitizeIncludeFiles = (value: unknown): Record<string, string> => {
+  if (!isRecord(value)) return {};
+  const next: Record<string, string> = {};
+  Object.entries(value).forEach(([key, raw]) => {
+    if (!key.trim() || typeof raw !== 'string') return;
+    next[key] = raw;
+  });
+  return next;
+};
+
+const sanitizePortableProjectFiles = (
+  candidate: unknown,
+  fileContents: Record<string, string>,
+): ProjectManifestFileEntry[] => {
+  if (!Array.isArray(candidate)) return [];
+  const rows: ProjectManifestFileEntry[] = [];
+  candidate.forEach((entry, index) => {
+    if (!isRecord(entry)) return;
+    const id =
+      typeof entry.id === 'string' && entry.id.trim().length > 0
+        ? entry.id.trim()
+        : createProjectFileId();
+    const name =
+      typeof entry.name === 'string' && entry.name.trim().length > 0
+        ? entry.name.trim()
+        : `file-${index + 1}.dat`;
+    const kind =
+      entry.kind === 'main' ||
+      entry.kind === 'include' ||
+      entry.kind === 'import' ||
+      entry.kind === 'control'
+        ? entry.kind
+        : index === 0
+          ? 'main'
+          : 'include';
+    const order =
+      typeof entry.order === 'number' && Number.isFinite(entry.order) ? Math.floor(entry.order) : index;
+    const text = fileContents[id] ?? '';
+    rows.push({
+      id,
+      name,
+      kind,
+      path:
+        typeof entry.path === 'string' && entry.path.trim().length > 0
+          ? entry.path.trim()
+          : buildProjectFileStoragePath(id, name),
+      enabled: typeof entry.enabled === 'boolean' ? entry.enabled : true,
+      order,
+      size:
+        typeof entry.size === 'number' && Number.isFinite(entry.size) ? Math.max(0, entry.size) : text.length,
+      modifiedAt:
+        typeof entry.modifiedAt === 'string' && entry.modifiedAt.trim().length > 0
+          ? entry.modifiedAt.trim()
+          : undefined,
+    });
+  });
+  return rows.sort(
+    (a, b) =>
+      a.order - b.order ||
+      a.name.localeCompare(b.name, undefined, { numeric: true }) ||
+      a.id.localeCompare(b.id, undefined, { numeric: true }),
+  );
+};
+
+const sanitizePortableFileContents = (value: unknown): Record<string, string> => {
   if (!isRecord(value)) return {};
   const next: Record<string, string> = {};
   Object.entries(value).forEach(([key, raw]) => {
@@ -467,14 +547,13 @@ export const serializeProjectFile = (project: ParsedProjectPayload): string => {
   normalizeRetiredParseSettings(parseSettings);
   const settings = cloneRecord(project.ui.settings);
   settings.precisionReportingMode = 'industry-standard';
-  const payload: WebNetProjectFileV3 = {
-    kind: 'webnet-project',
-    schemaVersion: 3,
-    savedAt: nowIso,
-    mainInput: project.input,
+  const manifestSeed = createManifestFromFlatProject({
+    projectId: project.workspace?.projectId,
+    name: project.workspace?.name ?? `WebNet Project ${nowIso.slice(0, 10)}`,
+    createdAt: project.workspace?.createdAt ?? nowIso,
+    updatedAt: nowIso,
+    input: project.input,
     includeFiles: sanitizeIncludeFiles(project.includeFiles),
-    savedRuns:
-      project.savedRuns.length > 0 ? cloneSavedRunSnapshots(project.savedRuns) : undefined,
     ui: {
       settings,
       parseSettings,
@@ -495,7 +574,36 @@ export const serializeProjectFile = (project: ParsedProjectPayload): string => {
         ...preset,
       })),
     },
-  };
+    preferredActiveFileId: project.workspace?.activeFileId,
+  });
+  const portableSourceTexts =
+    project.workspace?.files && project.workspace.files.length > 0
+      ? Object.fromEntries(
+          project.workspace.files.map((file) => [
+            file.id,
+            file.id === project.workspace?.mainFileId
+              ? project.input
+              : project.includeFiles[file.name] ?? manifestSeed.sourceTexts[file.id] ?? '',
+          ]),
+        )
+      : manifestSeed.sourceTexts;
+  const payload: WebNetPortableProjectFileV4 = createPortableProjectFile({
+    manifest: {
+      ...manifestSeed.manifest,
+      files: project.workspace?.files?.map((file) => ({ ...file })) ?? manifestSeed.manifest.files,
+      mainFileId: project.workspace?.mainFileId ?? manifestSeed.manifest.mainFileId,
+      workspace:
+        project.workspace?.activeFileId != null
+          ? {
+              ...(manifestSeed.manifest.workspace ?? {}),
+              activeFileId: project.workspace.activeFileId,
+            }
+          : manifestSeed.manifest.workspace,
+    },
+    sourceTexts: portableSourceTexts,
+    savedRuns:
+      project.savedRuns.length > 0 ? cloneSavedRunSnapshots(project.savedRuns) : undefined,
+  });
   return JSON.stringify(payload, null, 2);
 };
 
@@ -517,22 +625,48 @@ export const parseProjectFile = (
     errors.push('Project file kind is invalid (expected "webnet-project").');
   }
   const schemaVersionRaw = parsed.schemaVersion;
-  const schemaVersion: 1 | 2 | 3 = schemaVersionRaw === 3 ? 3 : schemaVersionRaw === 2 ? 2 : 1;
-  if (schemaVersionRaw !== 1 && schemaVersionRaw !== 2 && schemaVersionRaw !== 3) {
-    errors.push('Project file schemaVersion is unsupported (expected 1, 2, or 3).');
+  const schemaVersion: 1 | 2 | 3 | 4 =
+    schemaVersionRaw === 4 ? 4 : schemaVersionRaw === 3 ? 3 : schemaVersionRaw === 2 ? 2 : 1;
+  if (schemaVersionRaw !== 1 && schemaVersionRaw !== 2 && schemaVersionRaw !== 3 && schemaVersionRaw !== 4) {
+    errors.push('Project file schemaVersion is unsupported (expected 1, 2, 3, or 4).');
   }
   if (errors.length > 0) return { ok: false, errors };
 
+  const fileContents = schemaVersion === 4 ? sanitizePortableFileContents(parsed.fileContents) : {};
+  const workspaceFiles =
+    schemaVersion === 4 ? sanitizePortableProjectFiles(parsed.files, fileContents) : [];
+  const workspaceMainFile =
+    schemaVersion === 4
+      ? workspaceFiles.find((file) => file.id === parsed.mainFileId) ??
+        workspaceFiles.find((file) => file.kind === 'main') ??
+        workspaceFiles[0]
+      : null;
   const input =
-    schemaVersion === 3
-      ? typeof parsed.mainInput === 'string'
-        ? parsed.mainInput
-        : ''
-      : typeof parsed.input === 'string'
-        ? parsed.input
-        : '';
-  const includeFiles = schemaVersion === 3 ? sanitizeIncludeFiles(parsed.includeFiles) : {};
-  const savedRuns = schemaVersion === 3 ? sanitizeSavedRunSnapshots(parsed.savedRuns) : [];
+    schemaVersion === 4
+      ? workspaceMainFile
+        ? fileContents[workspaceMainFile.id] ?? ''
+        : typeof parsed.mainInput === 'string'
+          ? parsed.mainInput
+          : ''
+      : schemaVersion === 3
+        ? typeof parsed.mainInput === 'string'
+          ? parsed.mainInput
+          : ''
+        : typeof parsed.input === 'string'
+          ? parsed.input
+          : '';
+  const includeFiles =
+    schemaVersion === 4
+      ? Object.fromEntries(
+          workspaceFiles
+            .filter((file) => !workspaceMainFile || file.id !== workspaceMainFile.id)
+            .map((file) => [file.name, fileContents[file.id] ?? '']),
+        )
+      : schemaVersion === 3
+        ? sanitizeIncludeFiles(parsed.includeFiles)
+        : {};
+  const savedRuns =
+    schemaVersion === 4 || schemaVersion === 3 ? sanitizeSavedRunSnapshots(parsed.savedRuns) : [];
   const ui = isRecord(parsed.ui) ? parsed.ui : {};
   const project = isRecord(parsed.project) ? parsed.project : {};
   const parseSettingsRaw = isRecord(ui.parseSettings) ? ui.parseSettings : {};
@@ -591,6 +725,33 @@ export const parseProjectFile = (
         selectedInstrument,
         levelLoopCustomPresets,
       },
+      workspace:
+        schemaVersion === 4
+          ? {
+              projectId:
+                typeof parsed.projectId === 'string' && parsed.projectId.trim().length > 0
+                  ? parsed.projectId.trim()
+                  : createProjectFileId(),
+              name:
+                typeof parsed.name === 'string' && parsed.name.trim().length > 0
+                  ? parsed.name.trim()
+                  : 'Imported Project',
+              createdAt:
+                typeof parsed.createdAt === 'string' && parsed.createdAt.trim().length > 0
+                  ? parsed.createdAt.trim()
+                  : new Date(0).toISOString(),
+              updatedAt:
+                typeof parsed.updatedAt === 'string' && parsed.updatedAt.trim().length > 0
+                  ? parsed.updatedAt.trim()
+                  : new Date(0).toISOString(),
+              mainFileId: workspaceMainFile?.id ?? '',
+              activeFileId:
+                isRecord(parsed.workspace) && typeof parsed.workspace.activeFileId === 'string'
+                  ? parsed.workspace.activeFileId
+                  : workspaceMainFile?.id,
+              files: workspaceFiles,
+            }
+          : undefined,
     },
   };
 };
