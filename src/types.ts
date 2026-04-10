@@ -924,6 +924,12 @@ export interface ParseOptions {
   parseModeMigrated?: boolean;
   sourceFile?: string;
   includeFiles?: Record<string, string>;
+  projectRunFiles?: Array<{
+    fileId: string;
+    name: string;
+    order: number;
+    content: string;
+  }>;
   includeResolver?: ParseIncludeResolver;
   includeMaxDepth?: number;
   includeStack?: string[];

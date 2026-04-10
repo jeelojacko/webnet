@@ -8,6 +8,7 @@ import type {
   InstrumentLibrary,
   ObservationOverride,
 } from '../types';
+import type { ProjectRunFile } from '../engine/projectWorkspace';
 import type { RunSessionOutcome, RunSessionRequest } from '../engine/runSession';
 import { buildValueFingerprint } from '../engine/qaWorkflow';
 
@@ -26,6 +27,7 @@ interface UseAdjustmentWorkflowArgs<TRunDiagnostics> {
   projectInstruments: InstrumentLibrary;
   selectedInstrument: string;
   projectIncludeFiles: Record<string, string>;
+  projectRunFiles?: ProjectRunFile[];
   geoidSourceData: Uint8Array | null;
   currentRunSettingsSnapshot: RunSettingsSnapshot;
   result: AdjustmentResult | null;
@@ -179,6 +181,7 @@ export const useAdjustmentWorkflow = <TRunDiagnostics>({
   projectInstruments,
   selectedInstrument,
   projectIncludeFiles,
+  projectRunFiles,
   geoidSourceData,
   currentRunSettingsSnapshot,
   result,
@@ -330,6 +333,7 @@ export const useAdjustmentWorkflow = <TRunDiagnostics>({
         ),
         selectedInstrument,
         projectIncludeFiles: { ...projectIncludeFiles },
+        projectRunFiles: projectRunFiles?.map((file) => ({ ...file })),
         geoidSourceData,
         excludedIds: [...excludeSet],
         overrides: { ...overrides },
@@ -341,6 +345,7 @@ export const useAdjustmentWorkflow = <TRunDiagnostics>({
         settingsSnapshot: currentRunSettingsSnapshot,
         inputFingerprint: buildValueFingerprint({
           input,
+          runFiles: projectRunFiles,
           includeFiles: projectIncludeFiles,
         }),
         overrideIds,
@@ -364,6 +369,7 @@ export const useAdjustmentWorkflow = <TRunDiagnostics>({
       parseSettings,
       projectIncludeFiles,
       projectInstruments,
+      projectRunFiles,
       runAdjustment,
       selectedInstrument,
       settings.convergenceLimit,

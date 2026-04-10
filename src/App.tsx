@@ -1176,8 +1176,10 @@ const App: React.FC<AppProps> = ({
     activeProjectFileViews,
     currentProjectFile,
     projectSourceAccept,
-    effectiveSolveInput,
-    effectiveSolveIncludeFiles,
+    effectiveRunInput,
+    effectiveProjectRunFiles,
+    projectRunValidation,
+    effectiveRunIncludeFiles,
     currentEditorIncludeFiles,
     triggerProjectFileSelect,
     triggerProjectSourceFileSelect,
@@ -1192,10 +1194,16 @@ const App: React.FC<AppProps> = ({
     exportPortableProject,
     exportProjectBundle,
     createBlankProjectFile,
+    duplicateProjectFile,
+    openFileTab,
+    closeFileTab,
     switchActiveProjectFile,
     renameProjectFile,
     toggleProjectFileEnabled,
+    setProjectFileEnabled,
+    reorderProjectFiles,
     moveProjectFile,
+    deleteProjectFile,
     removeProjectFile,
   } =
     useProjectFileWorkflow({
@@ -1525,13 +1533,14 @@ const App: React.FC<AppProps> = ({
     resetAdjustmentWorkflowState,
     restoreAdjustmentWorkflowState,
   } = useAdjustmentWorkflow<RunDiagnostics>({
-    input: effectiveSolveInput,
+    input: effectiveRunInput,
     lastRunInput,
     settings,
     parseSettings,
     projectInstruments,
     selectedInstrument,
-    projectIncludeFiles: effectiveSolveIncludeFiles,
+    projectIncludeFiles: effectiveRunIncludeFiles,
+    projectRunFiles: effectiveProjectRunFiles,
     geoidSourceData,
     currentRunSettingsSnapshot,
     result,
@@ -1545,6 +1554,16 @@ const App: React.FC<AppProps> = ({
     activateReportTab: () => setActiveTab('report'),
     recordRunSnapshot,
   });
+  const handleValidatedRun = React.useCallback(() => {
+    if (!projectRunValidation.ok) {
+      setImportNotice({
+        title: 'Run blocked',
+        detailLines: projectRunValidation.errors,
+      });
+      return;
+    }
+    handleRun();
+  }, [handleRun, projectRunValidation, setImportNotice]);
   const qaDerivedResult = useMemo(() => (result ? buildQaDerivedResult(result) : null), [result]);
   const workspaceReviewState = useWorkspaceReviewState({
     derivedResult: qaDerivedResult,
@@ -1654,15 +1673,16 @@ const App: React.FC<AppProps> = ({
       if (!restoredSnapshot) return;
       const restoredResult = cloneSavedRunSnapshots([restoredSnapshot])[0].result;
       const activeInputFingerprint = buildValueFingerprint({
-        input: effectiveSolveInput,
-        includeFiles: effectiveSolveIncludeFiles,
+        input: effectiveRunInput,
+        runFiles: effectiveProjectRunFiles,
+        includeFiles: effectiveRunIncludeFiles,
       });
       setResult(restoredResult);
       setRunDiagnostics(restoredSnapshot.runDiagnostics);
       setRunElapsedMs(null);
       setPendingEditorJumpLine(null);
       setLastRunInput(
-        restoredSnapshot.inputFingerprint === activeInputFingerprint ? effectiveSolveInput : null,
+        restoredSnapshot.inputFingerprint === activeInputFingerprint ? effectiveRunInput : null,
       );
       setLastRunSettingsSnapshot(restoredSnapshot.settingsSnapshot);
       restoreAdjustmentWorkflowState({
@@ -1692,8 +1712,9 @@ const App: React.FC<AppProps> = ({
       });
     },
     [
-      effectiveSolveIncludeFiles,
-      effectiveSolveInput,
+      effectiveProjectRunFiles,
+      effectiveRunIncludeFiles,
+      effectiveRunInput,
       restoreAdjustmentWorkflowState,
       restoreSavedRunSnapshot,
       buildWorkspaceReviewStateFromSavedRun,
@@ -1984,7 +2005,7 @@ const App: React.FC<AppProps> = ({
         pipelineState={pipelineState}
         runPhaseLabel={runPhaseLabel}
         onCancelRun={cancelAdjustment}
-        onRun={handleRun}
+        onRun={handleValidatedRun}
         onResetToLastRun={handleResetToLastRun}
       />
       {pendingRecovery && (
@@ -2095,6 +2116,19 @@ const App: React.FC<AppProps> = ({
                 onChange={handleInputChange}
                 projectName={projectSession?.manifest.name ?? null}
                 activeFileName={currentProjectFile?.name ?? null}
+                projectFiles={activeProjectFileViews}
+                projectRunValidation={projectRunValidation}
+                onOpenFileTab={openFileTab}
+                onCloseFileTab={closeFileTab}
+                onFocusProjectFile={switchActiveProjectFile}
+                onCreateBlankProjectFile={() => {
+                  void createBlankProjectFile();
+                }}
+                onDuplicateProjectFile={duplicateProjectFile}
+                onRenameProjectFile={renameProjectFile}
+                onDeleteProjectFile={deleteProjectFile}
+                onSetProjectFileEnabled={setProjectFileEnabled}
+                onReorderProjectFiles={reorderProjectFiles}
                 importNotice={importNotice}
                 onClearImportNotice={() => setImportNotice(null)}
               />
@@ -2283,7 +2317,7 @@ const App: React.FC<AppProps> = ({
                   onToggleExclude={toggleExclude}
                   onApplyImpactExclude={applyImpactExclusion}
                   onApplyPreanalysisAction={applyPreanalysisPlanningAction}
-                  onReRun={handleRun}
+                  onReRun={handleValidatedRun}
                   onClearExclusions={clearExclusions}
                   onJumpToSourceLine={handleJumpToSourceLine}
                   pendingRunSettingDiffs={pendingRunSettingDiffs}

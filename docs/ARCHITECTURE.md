@@ -39,7 +39,7 @@ These modules coordinate:
 - worker-backed run orchestration
 - import-review modal state
 - save/load and local recovery
-- named-project storage, manifest, and portable import/export workflows
+- named-project storage, manifest, checked/open/focused file workspace state, and portable import/export workflows
 - export dispatch
 - report/map shared review state
 - saved runs and compare workflows
@@ -139,13 +139,20 @@ The UI should treat solve results as the source of truth and avoid duplicating e
 ## Data flow
 
 ### 1. Input and settings
-The user edits main input text, include-file bundles, project settings, parser settings, instrument data, and export preferences.
+The user edits untitled input text or a named-project source-file workspace, along with project settings, parser settings, instrument data, and export preferences.
 
 Those browser-facing artifacts are stored in workspace state and can also be:
 - recovered from local draft state
 - saved into named local browser projects backed by a manifest + source-file workspace
 - exported/imported as flattened portable `.wnproj` snapshots or zipped manifest bundles
 - restored from saved run snapshots for compare workflows
+
+Named-project source-file workspaces now distinguish:
+- checked project files for run assembly
+- open editor tabs
+- one focused editor tab that drives the visible textarea
+
+For the detailed ordered checked-file run contract, see `docs/run-semantics.md`.
 
 ### 2. Optional external import review
 If an external file is imported, the importer registry normalizes the source into staged rows and groups. The staged import-review workflow allows:

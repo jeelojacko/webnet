@@ -4,6 +4,7 @@ import {
   runAutoAdjustCycles,
   type AutoAdjustConfig,
 } from './autoAdjust';
+import type { ProjectRunFile } from './projectWorkspace';
 import {
   DEFAULT_QFIX_ANGULAR_SIGMA_SEC,
   DEFAULT_QFIX_LINEAR_SIGMA_M,
@@ -133,6 +134,7 @@ export interface RunSessionRequest {
   projectInstruments: InstrumentLibrary;
   selectedInstrument: string;
   projectIncludeFiles: Record<string, string>;
+  projectRunFiles?: ProjectRunFile[];
   geoidSourceData: Uint8Array | null;
   excludedIds: number[];
   overrides: Record<number, ObservationOverride>;
@@ -416,8 +418,9 @@ const buildParseOptions = (
 ): Partial<ParseOptions> => ({
   geometryDependentSigmaReference: effectiveParse.geometryDependentSigmaReference,
   runMode: effectiveParse.runMode,
-  sourceFile: '<project-main>',
+  sourceFile: request.projectRunFiles?.[0]?.name ?? '<project-main>',
   includeFiles: request.projectIncludeFiles,
+  projectRunFiles: request.projectRunFiles?.map((file) => ({ ...file })),
   units: request.units,
   coordMode: effectiveParse.coordMode,
   coordSystemMode: effectiveParse.coordSystemMode,

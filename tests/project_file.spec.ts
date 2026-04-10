@@ -181,9 +181,11 @@ describe('project file serialization/parsing', () => {
     const parsed = parseProjectFile(text, defaults);
     expect(parsed.ok).toBe(true);
     if (!parsed.ok) return;
-    expect(parsed.project.schemaVersion).toBe(4);
+    expect(parsed.project.schemaVersion).toBe(5);
     expect(parsed.project.input).toContain('C A');
     expect(parsed.project.includeFiles['sub/job1.dat']).toContain('C X');
+    expect(parsed.project.workspace?.focusedFileId).toBeTruthy();
+    expect(parsed.project.workspace?.openFileIds.length).toBeGreaterThan(0);
     expect(parsed.project.savedRuns).toHaveLength(1);
     expect(parsed.project.savedRuns[0]?.label).toBe('Saved Run 02');
     expect(parsed.project.savedRuns[0]?.notes).toBe('checkpoint');
@@ -255,7 +257,7 @@ describe('project file serialization/parsing', () => {
     );
     expect(parsed.ok).toBe(true);
     if (!parsed.ok) return;
-    expect(parsed.project.schemaVersion).toBe(1);
+    expect(parsed.project.schemaVersion).toBe(5);
     expect(parsed.project.includeFiles).toEqual({});
     expect(parsed.project.savedRuns).toEqual([]);
     expect(parsed.project.ui.settings.maxIterations).toBe(defaults.settings.maxIterations);
@@ -299,7 +301,7 @@ describe('project file serialization/parsing', () => {
     );
     expect(parsed.ok).toBe(true);
     if (!parsed.ok) return;
-    expect(parsed.project.schemaVersion).toBe(2);
+    expect(parsed.project.schemaVersion).toBe(5);
     expect(parsed.project.includeFiles).toEqual({});
     expect(parsed.project.savedRuns).toEqual([]);
     expect(parsed.project.ui.parseSettings.parseCompatibilityMode).toBe('strict');
@@ -390,7 +392,7 @@ describe('project file serialization/parsing', () => {
     );
     expect(parsed.ok).toBe(true);
     if (!parsed.ok) return;
-    expect(parsed.project.schemaVersion).toBe(3);
+    expect(parsed.project.schemaVersion).toBe(5);
     expect(parsed.project.input).toContain('.INCLUDE field/set1.dat');
     expect(parsed.project.includeFiles['field/set1.dat']).toContain('C A 0 0 0 ! !');
     expect(parsed.project.savedRuns).toEqual([]);

@@ -1,8 +1,8 @@
 import { strFromU8, strToU8, unzipSync, zipSync } from 'fflate';
-import type { WebNetProjectManifestV4 } from './projectWorkspace';
+import type { WebNetProjectManifestV5 } from './projectWorkspace';
 
 export interface ParsedProjectBundle {
-  manifest: WebNetProjectManifestV4;
+  manifest: WebNetProjectManifestV5;
   sourceTexts: Record<string, string>;
 }
 
@@ -25,7 +25,7 @@ export const parseProjectBundleBytes = (bytes: Uint8Array): ParsedProjectBundle 
   if (!manifestBytes) {
     throw new Error('Project bundle is missing project.wnproj.');
   }
-  const manifest = JSON.parse(strFromU8(manifestBytes)) as WebNetProjectManifestV4;
+  const manifest = JSON.parse(strFromU8(manifestBytes)) as WebNetProjectManifestV5;
   const sourceTexts = Object.fromEntries(
     manifest.files.map((file) => {
       const entryBytes = archive[file.path];

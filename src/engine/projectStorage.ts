@@ -1,4 +1,10 @@
-import type { ProjectIndexRow, ProjectStorageBackend, ProjectStorageStatus, ProjectSessionState, WebNetProjectManifestV4 } from './projectWorkspace';
+import type {
+  ProjectIndexRow,
+  ProjectStorageBackend,
+  ProjectStorageStatus,
+  ProjectSessionState,
+  WebNetProjectManifestV5,
+} from './projectWorkspace';
 import { createSessionFromManifest } from './projectWorkspace';
 
 const PROJECT_DB_NAME = 'webnet.project-storage.v1';
@@ -15,18 +21,18 @@ type ProjectFileRecord = {
 
 type ProjectManifestRecord = {
   projectId: string;
-  manifest: WebNetProjectManifestV4;
+  manifest: WebNetProjectManifestV5;
 };
 
 type CreateStoredProjectArgs = {
   indexRow: ProjectIndexRow;
-  manifest: WebNetProjectManifestV4;
+  manifest: WebNetProjectManifestV5;
   sourceTexts: Record<string, string>;
 };
 
 type SaveStoredProjectArgs = {
   indexRow: ProjectIndexRow;
-  manifest: WebNetProjectManifestV4;
+  manifest: WebNetProjectManifestV5;
   sourceTexts: Record<string, string>;
   dirtyFileIds?: string[];
 };
@@ -218,7 +224,7 @@ const readOpfsProject = async (
   if (!root) return null;
   try {
     const manifestText = await readTextFileFromOpfs(root, `${getProjectRootPath(indexRow.id)}/project.wnproj`);
-    const manifest = JSON.parse(manifestText) as WebNetProjectManifestV4;
+    const manifest = JSON.parse(manifestText) as WebNetProjectManifestV5;
     const sourceTexts = Object.fromEntries(
       await Promise.all(
         manifest.files.map(async (file) => [file.id, await readTextFileFromOpfs(root, `${getProjectRootPath(indexRow.id)}/${file.path}`)]),
@@ -417,7 +423,7 @@ export const buildProjectIndexRow = ({
   name,
   backend,
   rootKey: backend === 'opfs' ? getProjectRootPath(id) : id,
-  schemaVersion: 4,
+  schemaVersion: 5,
   createdAt,
   updatedAt,
   lastOpenedAt: updatedAt,

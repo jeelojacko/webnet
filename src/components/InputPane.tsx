@@ -1,13 +1,26 @@
 import React from 'react';
-import { FileText } from 'lucide-react';
+import { FileText, Files, Plus, X } from 'lucide-react';
 import { blockCommentSelection, blockUncommentSelection } from './commentToggle';
 import { INPUT_PANE_CONTEXT_MENU_ORDER } from './inputPaneContextMenu';
+import type { ProjectRunValidation, ProjectWorkspaceFileView } from '../hooks/useProjectFileWorkflow';
 
 interface InputPaneProps {
   input: string;
   onChange: (_value: string) => void;
   projectName?: string | null;
   activeFileName?: string | null;
+  projectFiles?: ProjectWorkspaceFileView[];
+  projectRunValidation?: ProjectRunValidation | null;
+  onOpenProjectFiles?: () => void;
+  onOpenFileTab?: (_fileId: string) => void;
+  onCloseFileTab?: (_fileId: string) => void;
+  onFocusProjectFile?: (_fileId: string) => void;
+  onCreateBlankProjectFile?: () => void;
+  onDuplicateProjectFile?: (_fileId: string) => void;
+  onRenameProjectFile?: (_fileId: string, _name: string) => void;
+  onDeleteProjectFile?: (_fileId: string) => void;
+  onSetProjectFileEnabled?: (_fileId: string, _enabled: boolean) => void;
+  onReorderProjectFiles?: (_fileIdsInOrder: string[]) => void;
   importNotice?: {
     title: string;
     detailLines: string[];
@@ -25,6 +38,12 @@ type ContextMenuState = {
   hasSelection: boolean;
   canBlockComment: boolean;
   canBlockUncomment: boolean;
+};
+
+type FileMenuState = {
+  fileId: string;
+  x: number;
+  y: number;
 };
 
 const INPUT_EDITOR_BASE_TOKEN_CLASS = 'text-slate-300';
@@ -63,6 +82,21 @@ const INPUT_EDITOR_OBS_TOKEN_CLASS: Record<string, string> = {
 const isWhitespaceToken = (token: string): boolean => /^\s+$/.test(token);
 
 const tokenizeWithWhitespace = (value: string): string[] => value.match(/(\s+|[^\s]+)/g) ?? [];
+
+const reorderFileIds = (
+  fileIds: string[],
+  draggedFileId: string,
+  targetFileId: string,
+): string[] => {
+  if (draggedFileId === targetFileId) return fileIds;
+  const next = [...fileIds];
+  const draggedIndex = next.indexOf(draggedFileId);
+  const targetIndex = next.indexOf(targetFileId);
+  if (draggedIndex < 0 || targetIndex < 0) return fileIds;
+  const [moved] = next.splice(draggedIndex, 1);
+  next.splice(targetIndex, 0, moved);
+  return next;
+};
 
 const findUnquotedHashIndex = (line: string): number => {
   let quote: '"' | "'" | null = null;
@@ -135,16 +169,77 @@ const renderHighlightedLine = (line: string, lineIndex: number): React.ReactNode
 };
 
 const InputPane = React.forwardRef<InputPaneHandle, InputPaneProps>(
-  ({ input, onChange, projectName = null, activeFileName = null, importNotice = null, onClearImportNotice }, ref) => {
+  (
+    {
+      input,
+      onChange,
+      projectName = null,
+      activeFileName = null,
+      projectFiles = [],
+      projectRunValidation = null,
+      onOpenFileTab,
+      onCloseFileTab,
+      onFocusProjectFile,
+      onCreateBlankProjectFile,
+      onDuplicateProjectFile,
+      onRenameProjectFile,
+      onDeleteProjectFile,
+      onSetProjectFileEnabled,
+      onReorderProjectFiles,
+      importNotice = null,
+      onClearImportNotice,
+    },
+    ref,
+  ) => {
   const lineCount = input.split('\n').length;
   const lines = Array.from({ length: lineCount }, (_, i) => i + 1);
   const textareaRef = React.useRef<HTMLTextAreaElement>(null);
   const numbersRef = React.useRef<HTMLDivElement>(null);
   const highlightRef = React.useRef<HTMLPreElement>(null);
   const editorWrapRef = React.useRef<HTMLDivElement>(null);
+  const projectFilesButtonRef = React.useRef<HTMLButtonElement>(null);
   const [contextMenu, setContextMenu] = React.useState<ContextMenuState | null>(null);
+  const [isProjectFilesOpen, setIsProjectFilesOpen] = React.useState(false);
+  const [fileMenu, setFileMenu] = React.useState<FileMenuState | null>(null);
+  const [renamingFileId, setRenamingFileId] = React.useState<string | null>(null);
+  const [renameDraft, setRenameDraft] = React.useState('');
+  const [draggedFileId, setDraggedFileId] = React.useState<string | null>(null);
   const [jumpHighlightLine, setJumpHighlightLine] = React.useState<number | null>(null);
   const jumpHighlightTimeoutRef = React.useRef<number | null>(null);
+  const openProjectFiles = React.useCallback(() => {
+    setIsProjectFilesOpen((current) => !current);
+  }, []);
+  const sortedProjectFiles = React.useMemo(
+    () => [...projectFiles].sort((a, b) => a.order - b.order || a.name.localeCompare(b.name)),
+    [projectFiles],
+  );
+  const openTabs = React.useMemo(
+    () => sortedProjectFiles.filter((file) => file.isOpenInTab),
+    [sortedProjectFiles],
+  );
+  const beginRename = React.useCallback(
+    (fileId: string) => {
+      const target = sortedProjectFiles.find((file) => file.id === fileId);
+      if (!target) return;
+      setRenamingFileId(fileId);
+      setRenameDraft(target.name);
+      setFileMenu(null);
+    },
+    [sortedProjectFiles],
+  );
+  const commitRename = React.useCallback(() => {
+    if (!renamingFileId) return;
+    const nextName = renameDraft.trim();
+    if (nextName) {
+      onRenameProjectFile?.(renamingFileId, nextName);
+    }
+    setRenamingFileId(null);
+    setRenameDraft('');
+  }, [onRenameProjectFile, renameDraft, renamingFileId]);
+  const cancelRename = React.useCallback(() => {
+    setRenamingFileId(null);
+    setRenameDraft('');
+  }, []);
   const highlightedInput = React.useMemo(() => {
     const editorLines = input.split('\n');
     return editorLines.map((line, lineIndex) => (
@@ -464,19 +559,200 @@ const InputPane = React.forwardRef<InputPaneHandle, InputPaneProps>(
     };
   }, [contextMenu]);
 
+  React.useEffect(() => {
+    if (!isProjectFilesOpen && !fileMenu) return;
+    const close = () => {
+      setFileMenu(null);
+      setIsProjectFilesOpen(false);
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        close();
+        cancelRename();
+      }
+    };
+    window.addEventListener('pointerdown', close);
+    window.addEventListener('resize', close);
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      window.removeEventListener('pointerdown', close);
+      window.removeEventListener('resize', close);
+      document.removeEventListener('keydown', onKeyDown);
+    };
+  }, [cancelRename, fileMenu, isProjectFilesOpen]);
+
   return (
     <div className="border-r border-slate-700 flex flex-col min-w-[260px] flex-none h-full">
-      <div className="bg-slate-800 px-4 py-2 text-xs font-semibold text-slate-400 flex justify-between items-center">
-        <div className="min-w-0">
-          <div>INPUT DATA (.dat / imported reports)</div>
-          {(projectName || activeFileName) && (
-            <div className="truncate text-[10px] font-normal uppercase tracking-wide text-slate-500">
-              {[projectName, activeFileName].filter(Boolean).join(' / ')}
-            </div>
-          )}
+      <div className="relative bg-slate-800 px-4 py-2 text-xs font-semibold text-slate-400">
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <div>INPUT DATA (.dat / imported reports)</div>
+            {(projectName || activeFileName) && (
+              <div className="truncate text-[10px] font-normal uppercase tracking-wide text-slate-500">
+                {[projectName, activeFileName].filter(Boolean).join(' / ')}
+              </div>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            {projectFiles.length > 0 && (
+              <button
+                ref={projectFilesButtonRef}
+                type="button"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  openProjectFiles();
+                }}
+                className="inline-flex items-center gap-1 rounded border border-slate-600 px-2 py-1 text-[10px] uppercase tracking-wide text-slate-300 hover:border-slate-500 hover:text-white"
+              >
+                <Files size={12} />
+                Project Files
+              </button>
+            )}
+            <FileText size={14} />
+          </div>
         </div>
-        <FileText size={14} />
+        {projectRunValidation && !projectRunValidation.ok && (
+          <div className="mt-2 text-[10px] font-normal uppercase tracking-wide text-amber-300">
+            {projectRunValidation.errors[0]}
+          </div>
+        )}
+        {isProjectFilesOpen && projectFiles.length > 0 && (
+          <div
+            className="absolute right-4 top-full z-30 mt-2 w-96 rounded border border-slate-600 bg-slate-900 shadow-xl"
+            onPointerDown={(event) => event.stopPropagation()}
+            onContextMenu={(event) => event.preventDefault()}
+          >
+            <div className="flex items-center justify-between border-b border-slate-700 px-3 py-2">
+              <div className="text-[10px] uppercase tracking-wide text-slate-400">
+                Checked files run together in list order
+              </div>
+              <button
+                type="button"
+                onClick={() => onCreateBlankProjectFile?.()}
+                className="inline-flex items-center gap-1 rounded border border-slate-600 px-2 py-1 text-[10px] uppercase tracking-wide text-slate-300 hover:border-slate-500 hover:text-white"
+              >
+                <Plus size={12} />
+                New File
+              </button>
+            </div>
+            <div className="max-h-80 overflow-y-auto p-2">
+              {sortedProjectFiles.map((file) => (
+                <div
+                  key={file.id}
+                  draggable
+                  onDragStart={() => setDraggedFileId(file.id)}
+                  onDragEnd={() => setDraggedFileId(null)}
+                  onDragOver={(event) => event.preventDefault()}
+                  onDrop={(event) => {
+                    event.preventDefault();
+                    if (!draggedFileId || draggedFileId === file.id) return;
+                    onReorderProjectFiles?.(
+                      reorderFileIds(
+                        sortedProjectFiles.map((entry) => entry.id),
+                        draggedFileId,
+                        file.id,
+                      ),
+                    );
+                    setDraggedFileId(null);
+                  }}
+                  onDoubleClick={() => onOpenFileTab?.(file.id)}
+                  onContextMenu={(event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    const bounds = editorWrapRef.current?.getBoundingClientRect();
+                    setFileMenu({
+                      fileId: file.id,
+                      x: bounds ? event.clientX - bounds.left : event.clientX,
+                      y: bounds ? event.clientY - bounds.top : event.clientY,
+                    });
+                    setIsProjectFilesOpen(true);
+                  }}
+                  className={`mb-1 flex items-center gap-2 rounded border px-2 py-2 text-xs ${
+                    file.isFocusedTab
+                      ? 'border-blue-500/70 bg-blue-500/10'
+                      : 'border-slate-700 bg-slate-950/70 hover:border-slate-600'
+                  }`}
+                >
+                  <div className="cursor-grab text-slate-500">::</div>
+                  <input
+                    type="checkbox"
+                    checked={file.isCheckedForRun}
+                    onChange={(event) => onSetProjectFileEnabled?.(file.id, event.target.checked)}
+                    className="h-3.5 w-3.5 rounded border-slate-600 bg-slate-900"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => onFocusProjectFile?.(file.id)}
+                    className="min-w-0 flex-1 text-left"
+                  >
+                    {renamingFileId === file.id ? (
+                      <input
+                        autoFocus
+                        value={renameDraft}
+                        onChange={(event) => setRenameDraft(event.target.value)}
+                        onBlur={commitRename}
+                        onKeyDown={(event) => {
+                          if (event.key === 'Enter') commitRename();
+                          if (event.key === 'Escape') cancelRename();
+                        }}
+                        onClick={(event) => event.stopPropagation()}
+                        className="w-full rounded border border-slate-600 bg-slate-900 px-2 py-1 text-xs text-slate-100"
+                      />
+                    ) : (
+                      <div
+                        onDoubleClick={(event) => {
+                          event.stopPropagation();
+                          beginRename(file.id);
+                        }}
+                        className="truncate text-slate-200"
+                      >
+                        {file.name}
+                      </div>
+                    )}
+                    <div className="mt-1 text-[10px] uppercase tracking-wide text-slate-500">
+                      {file.kind}
+                      {file.isOpenInTab ? ' / open' : ''}
+                      {file.isFocusedTab ? ' / focused' : ''}
+                    </div>
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
+      {openTabs.length > 0 && (
+        <div className="border-b border-slate-700 bg-slate-900/80 px-2 py-1">
+          <div className="flex gap-1 overflow-x-auto">
+            {openTabs.map((file) => (
+              <div
+                key={file.id}
+                className={`flex items-center gap-1 rounded-t border px-2 py-1 text-[11px] ${
+                  file.isFocusedTab
+                    ? 'border-slate-500 bg-slate-800 text-slate-100'
+                    : 'border-slate-700 bg-slate-950 text-slate-400'
+                }`}
+              >
+                <button
+                  type="button"
+                  onClick={() => onFocusProjectFile?.(file.id)}
+                  className="truncate"
+                >
+                  {file.name}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onCloseFileTab?.(file.id)}
+                  className="text-slate-500 hover:text-white"
+                  aria-label={`Close ${file.name}`}
+                >
+                  <X size={11} />
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
       {importNotice && (
         <div className="border-b border-cyan-900/60 bg-cyan-950/30 px-4 py-3 text-[11px] text-cyan-100">
           <div className="flex items-start justify-between gap-3">
@@ -609,6 +885,40 @@ const InputPane = React.forwardRef<InputPaneHandle, InputPaneProps>(
                 </button>
               ),
             )}
+          </div>
+        ) : null}
+        {fileMenu ? (
+          <div
+            className="absolute z-30 min-w-40 rounded border border-slate-600 bg-slate-800 shadow-lg"
+            style={{ left: fileMenu.x, top: fileMenu.y }}
+            onPointerDown={(event) => event.stopPropagation()}
+            onContextMenu={(event) => event.preventDefault()}
+          >
+            {[
+              { id: 'open', label: 'Open' },
+              { id: 'rename', label: 'Rename' },
+              { id: 'duplicate', label: 'Duplicate' },
+              { id: 'close', label: 'Close Tab' },
+              { id: 'delete', label: 'Delete' },
+            ].map((action) => (
+              <button
+                key={action.id}
+                type="button"
+                className="w-full px-3 py-2 text-left text-xs text-slate-200 hover:bg-slate-700"
+                onPointerDown={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  if (action.id === 'open') onOpenFileTab?.(fileMenu.fileId);
+                  if (action.id === 'rename') beginRename(fileMenu.fileId);
+                  if (action.id === 'duplicate') onDuplicateProjectFile?.(fileMenu.fileId);
+                  if (action.id === 'close') onCloseFileTab?.(fileMenu.fileId);
+                  if (action.id === 'delete') onDeleteProjectFile?.(fileMenu.fileId);
+                  setFileMenu(null);
+                }}
+              >
+                {action.label}
+              </button>
+            ))}
           </div>
         ) : null}
       </div>

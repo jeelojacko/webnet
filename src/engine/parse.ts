@@ -21,7 +21,7 @@ import {
   gridDistanceModeToReductionDistanceKind,
   normalizeObservationModeState,
 } from './parseDirectiveState';
-import { expandInputWithIncludes } from './parseIncludes';
+import { expandInputWithIncludes, expandProjectRunFilesWithIncludes } from './parseIncludes';
 import { finalizeParsePostProcessing } from './parsePostProcessing';
 import {
   createParseSigmaResolvers,
@@ -222,6 +222,155 @@ const defaultParseOptions: ParseOptions = {
   preferExternalInstruments: false,
   directiveTransitions: [],
   directiveNoEffectWarnings: [],
+};
+
+const cloneParseOptionValue = <T>(value: T): T => {
+  if (Array.isArray(value) || (typeof value === 'object' && value != null)) {
+    return JSON.parse(JSON.stringify(value)) as T;
+  }
+  return value;
+};
+
+const PROJECT_FILE_RESET_KEYS: Array<keyof ParseOptions> = [
+  'geometryDependentSigmaReference',
+  'runMode',
+  'parseCompatibilityMode',
+  'faceNormalizationMode',
+  'directionFaceReliabilityFromCluster',
+  'directionFaceZenithWindowDeg',
+  'directionFaceClusterSeparationDeg',
+  'directionFaceClusterSeparationToleranceDeg',
+  'directionFaceClusterConfidenceMin',
+  'parseModeMigrated',
+  'units',
+  'coordMode',
+  'coordSystemMode',
+  'crsId',
+  'localDatumScheme',
+  'averageScaleFactor',
+  'scaleOverrideActive',
+  'commonElevation',
+  'averageGeoidHeight',
+  'reductionContext',
+  'observationMode',
+  'gridBearingMode',
+  'gridDistanceMode',
+  'gridAngleMode',
+  'gridDirectionMode',
+  'preanalysisMode',
+  'order',
+  'angleUnits',
+  'angleStationOrder',
+  'deltaMode',
+  'mapMode',
+  'mapScaleFactor',
+  'normalize',
+  'applyCurvatureRefraction',
+  'refractionCoefficient',
+  'verticalReduction',
+  'originLatDeg',
+  'originLonDeg',
+  'crsTransformEnabled',
+  'crsProjectionModel',
+  'crsLabel',
+  'crsGridScaleEnabled',
+  'crsGridScaleFactor',
+  'crsConvergenceEnabled',
+  'crsConvergenceAngleRad',
+  'geoidModelEnabled',
+  'geoidModelId',
+  'geoidSourceFormat',
+  'geoidSourcePath',
+  'geoidSourceResolvedFormat',
+  'geoidSourceFallbackUsed',
+  'geoidInterpolation',
+  'geoidHeightConversionEnabled',
+  'geoidOutputHeightDatum',
+  'geoidModelLoaded',
+  'geoidModelMetadata',
+  'geoidSampleUndulationM',
+  'gpsVectorMode',
+  'gpsWeightingMode',
+  'gpsVectorFactorHorizontal',
+  'gpsVectorFactorVertical',
+  'gnssVectorFrameDefault',
+  'gnssFrameConfirmed',
+  'verticalDeflectionNorthSec',
+  'verticalDeflectionEastSec',
+  'gpsAddHiHtEnabled',
+  'gpsAddHiHtHiM',
+  'gpsAddHiHtHtM',
+  'gpsLoopCheckEnabled',
+  'levelLoopToleranceBaseMm',
+  'levelLoopTolerancePerSqrtKmMm',
+  'lonSign',
+  'currentInstrument',
+  'projectDefaultInstrument',
+  'edmMode',
+  'applyCentering',
+  'addCenteringToExplicit',
+  'debug',
+  'angleMode',
+  'tsCorrelationEnabled',
+  'tsCorrelationRho',
+  'tsCorrelationScope',
+  'robustMode',
+  'robustK',
+  'qFixLinearSigmaM',
+  'qFixAngularSigmaSec',
+  'prismEnabled',
+  'prismOffset',
+  'prismScope',
+  'positionalToleranceEnabled',
+  'positionalToleranceConstantMm',
+  'positionalTolerancePpm',
+  'positionalToleranceConfidencePercent',
+  'ellipseStationIds',
+  'relativeLinePairs',
+  'positionalTolerancePairs',
+  'rotationAngleRad',
+  'lostStationIds',
+  'autoAdjustEnabled',
+  'autoAdjustMaxCycles',
+  'autoAdjustMaxRemovalsPerCycle',
+  'autoAdjustStdResThreshold',
+  'suspectImpactMode',
+  'autoSideshotEnabled',
+  'directionSetMode',
+  'clusterDetectionEnabled',
+  'clusterLinkageMode',
+  'clusterTolerance2D',
+  'clusterTolerance3D',
+  'clusterApprovedMerges',
+  'clusterPassLabel',
+  'clusterDualPassRan',
+  'clusterApprovedMergeCount',
+  'preferExternalInstruments',
+  'descriptionReconcileMode',
+  'descriptionAppendDelimiter',
+  'compatibilityAcceptedNoOpDirectives',
+  'stationSeparator',
+  'dataInputEnabled',
+  'threeReduceMode',
+  'linearMultiplier',
+  'elevationInputMode',
+  'projectElevationMeters',
+];
+
+const buildProjectFileResetState = (state: ParseOptions): Partial<ParseOptions> =>
+  Object.fromEntries(
+    PROJECT_FILE_RESET_KEYS.map((key) => [key, cloneParseOptionValue(state[key])]),
+  ) as Partial<ParseOptions>;
+
+const resetParseStateToProjectDefaults = (
+  state: ParseOptions,
+  defaults: Partial<ParseOptions>,
+): void => {
+  PROJECT_FILE_RESET_KEYS.forEach((key) => {
+    ((state as unknown) as Record<string, unknown>)[key as string] = cloneParseOptionValue(
+      defaults[key],
+    );
+  });
 };
 
 const FT_PER_M = 3.280839895;
@@ -759,6 +908,7 @@ export const parseInput = (
   normalizeObservationModeState(state);
   state.plannedObservationCount = 0;
   state.gpsTopoShots = [];
+  const projectFileResetState = buildProjectFileResetState(state);
   const directiveTransitions: DirectiveTransition[] = [];
   const directiveNoEffectWarnings: DirectiveNoEffectWarning[] = [];
   const addCompatibilityDiagnostic = (
@@ -879,11 +1029,18 @@ export const parseInput = (
 
   aliasPipeline.preloadClusterApprovedMerges(state.clusterApprovedMerges ?? []);
 
-  const expanded = expandInputWithIncludes(input, opts, logs, {
-    splitInlineCommentAndDescription,
-    splitWhitespaceTokens,
-    normalizeInlineDirective,
-  });
+  const expanded =
+    opts.projectRunFiles && opts.projectRunFiles.length > 0
+      ? expandProjectRunFilesWithIncludes(opts.projectRunFiles, opts, logs, {
+          splitInlineCommentAndDescription,
+          splitWhitespaceTokens,
+          normalizeInlineDirective,
+        })
+      : expandInputWithIncludes(input, opts, logs, {
+          splitInlineCommentAndDescription,
+          splitWhitespaceTokens,
+          normalizeInlineDirective,
+        });
   const lines = expanded.lines;
   state.includeTrace = expanded.includeTrace;
   state.includeErrors = expanded.includeErrors;
@@ -1120,6 +1277,26 @@ export const parseInput = (
   for (const entry of lines) {
     lineNum = entry.sourceLine;
     currentSourceFile = entry.sourceFile;
+    if (entry.kind === 'project-file-enter') {
+      if (traverseCtx.dirSetId) {
+        flushDirectionSet('project file boundary');
+      }
+      resetParseStateToProjectDefaults(state, projectFileResetState);
+      traverseCtx.occupy = undefined;
+      traverseCtx.backsight = undefined;
+      traverseCtx.backsightRefAngle = undefined;
+      traverseCtx.dirSetId = undefined;
+      traverseCtx.dirInstCode = undefined;
+      traverseCtx.dirRawShots = undefined;
+      faceMode = 'unknown';
+      directionSetCount = 0;
+      lastGpsObservation = undefined;
+      lostStationIds = new Set<StationId>((state.lostStationIds ?? []).map((id) => `${id}`));
+      logs.push(
+        `Project file boundary: loaded ${entry.sourceFile} (${entry.projectFileIndex + 1}/${entry.projectFileCount}) with parser defaults reset to the project-level starting state.`,
+      );
+      continue;
+    }
     if (entry.kind === 'include-enter') {
       const aliasScopedState = aliasPipeline.getScopedState();
       includeScopeStack.push(

@@ -142,6 +142,15 @@
       - [x] Add zipped manifest-plus-sources export/import for cross-browser backup/share workflows
       - [x] Document the zip dependency reason in batch closeout because native browser storage APIs do not provide ZIP packaging
       - [x] Add compatibility/bundle round-trip coverage plus recovery tests proving named-project autosave stays separate from untitled local draft recovery
+    - [x] Batch 5 - v5 ordered multi-file run workflow
+      - [x] Add a generalized `docs/run-semantics.md` contract for checked-file run order, per-file resets, alias carry-forward, `.INCLUDE` coexistence, and duplicate include handling
+      - [x] Bump the manifest/portable schema to v5, adopt the new file-kind/workspace model, and migrate v1-v4 projects without losing file order or enabled state
+      - [x] Replace the current main-input-plus-includes solve assembly with an ordered checked-file run plan that feeds one shared adjustment
+      - [x] Reset parser defaults at each checked project-file boundary while preserving alias definitions and accumulated network state across files
+      - [x] Add workflow actions for checked files, tabs, duplicate/rename/delete/reorder, and zero-checked-file validation
+      - [x] Add a minimal checked-file UI, editor tabs, and an Input Data header `Project Files` popover with rename/duplicate/context-menu/reorder controls
+      - [x] Keep portable export/import, bundle export/import, and named-project autosave aligned with the new checked/open/focused file state
+      - [x] Add focused migration/workflow/parser/UI regression coverage, then run lint/typecheck/test/build plus the industry-reference parity gate
   - [ ] Batch 5 - error propagation precision closeout
       - [x] Expand the parity harness to lock the full error-propagation sections (all station sigmas, station ellipses, and relative ellipses)
       - [x] Add an error-propagation-focused machine-readable deviation summary alongside the broader reference diff

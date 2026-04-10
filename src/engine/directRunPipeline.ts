@@ -148,8 +148,9 @@ export const createDirectRunPipeline = ({
       parseOptions: {
         geometryDependentSigmaReference: effectiveParse.geometryDependentSigmaReference,
         runMode: effectiveParse.runMode,
-        sourceFile: '<project-main>',
+        sourceFile: request.projectRunFiles?.[0]?.name ?? '<project-main>',
         includeFiles: request.projectIncludeFiles,
+        projectRunFiles: request.projectRunFiles?.map((file) => ({ ...file })),
         units: request.units,
         coordMode: effectiveParse.coordMode,
         coordSystemMode: effectiveParse.coordSystemMode,

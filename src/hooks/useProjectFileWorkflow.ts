@@ -25,15 +25,19 @@ import {
 } from '../engine/projectBundle';
 import {
   buildProjectEditorIncludeFiles,
-  buildProjectSolveIncludeFiles,
-  buildProjectSolveInput,
+  buildProjectLegacyIncludeFiles,
+  buildProjectLegacySolveInput,
+  buildProjectRunFiles,
   cloneProjectSessionState,
   createManifestFromFlatProject,
   createProjectManifest,
   createProjectId,
   createManifestEntry,
-  getProjectActiveFile,
+  getProjectFocusedFile,
+  normalizeWorkspaceState,
   type ProjectIndexRow,
+  type ProjectManifestWorkspaceState,
+  type ProjectRunFile,
   type ProjectSessionState,
   type ProjectStorageStatus,
   type ProjectSourceFileKind,
@@ -171,10 +175,19 @@ export interface ProjectWorkspaceFileView {
   id: string;
   name: string;
   kind: ProjectSourceFileKind;
-  enabled: boolean;
   order: number;
-  isMain: boolean;
+  isCheckedForRun: boolean;
+  isOpenInTab: boolean;
+  isFocusedTab: boolean;
+  enabled: boolean;
   isActive: boolean;
+  isMain: boolean;
+}
+
+export interface ProjectRunValidation {
+  ok: boolean;
+  errors: string[];
+  warnings: string[];
 }
 
 interface UseProjectFileWorkflowArgs {
@@ -227,6 +240,37 @@ interface UseProjectFileWorkflowArgs {
 
 const appendUniqueId = (ids: string[], value: string): string[] =>
   ids.includes(value) ? ids : [...ids, value];
+
+const removeFileId = (ids: string[], value: string): string[] => ids.filter((id) => id !== value);
+
+const buildCombinedRunInput = (runFiles: ProjectRunFile[]): string =>
+  runFiles.map((file) => file.content).join('\n');
+
+const buildFileNameCopy = (baseName: string, existingNames: Set<string>): string => {
+  const dotIndex = baseName.lastIndexOf('.');
+  const stem = dotIndex > 0 ? baseName.slice(0, dotIndex) : baseName;
+  const ext = dotIndex > 0 ? baseName.slice(dotIndex) : '';
+  let candidate = `${stem} copy${ext}`;
+  let counter = 2;
+  while (existingNames.has(candidate)) {
+    candidate = `${stem} copy ${counter}${ext}`;
+    counter += 1;
+  }
+  return candidate;
+};
+
+const normalizeSessionWorkspace = (
+  current: ProjectSessionState,
+): ProjectManifestWorkspaceState => normalizeWorkspaceState(current.manifest.files, current.manifest.workspace);
+
+const resolveNextFocusedFileId = (
+  openFileIds: string[],
+  removedFileId: string,
+  preferredFileIds: string[],
+): string | undefined => {
+  const remaining = openFileIds.filter((fileId) => fileId !== removedFileId);
+  return preferredFileIds.find((fileId) => remaining.includes(fileId)) ?? remaining[0];
+};
 
 export const useProjectFileWorkflow = ({
   projectFileInputRef,
@@ -351,8 +395,13 @@ export const useProjectFileWorkflow = ({
       const nextInput =
         nextSession != null
           ? nextSession.sourceTexts[
-              getProjectActiveFile(nextSession.manifest)?.id ?? nextSession.manifest.mainFileId
-            ] ?? buildProjectSolveInput(nextSession.manifest, nextSession.sourceTexts)
+              getProjectFocusedFile(nextSession.manifest)?.id ??
+                normalizeWorkspaceState(
+                  nextSession.manifest.files,
+                  nextSession.manifest.workspace,
+                ).mainFileId ??
+                ''
+            ] ?? buildProjectLegacySolveInput(nextSession.manifest, nextSession.sourceTexts)
           : parsed.input;
 
       setInput(nextInput);
@@ -361,7 +410,7 @@ export const useProjectFileWorkflow = ({
           ? buildProjectEditorIncludeFiles(
               nextSession.manifest,
               nextSession.sourceTexts,
-              getProjectActiveFile(nextSession.manifest)?.id,
+              getProjectFocusedFile(nextSession.manifest)?.id,
             )
           : { ...(parsed.includeFiles ?? {}) },
       );
@@ -430,12 +479,16 @@ export const useProjectFileWorkflow = ({
 
   const buildPortablePayload = useCallback(
     (): ParsedProjectPayload => ({
-      schemaVersion: projectSession ? 4 : 3,
+      schemaVersion: 5,
       input: projectSession
-        ? buildProjectSolveInput(projectSession.manifest, projectSession.sourceTexts)
+        ? projectSession.sourceTexts[getProjectFocusedFile(projectSession.manifest)?.id ?? ''] ?? ''
         : input,
       includeFiles: projectSession
-        ? buildProjectSolveIncludeFiles(projectSession.manifest, projectSession.sourceTexts)
+        ? buildProjectEditorIncludeFiles(
+            projectSession.manifest,
+            projectSession.sourceTexts,
+            getProjectFocusedFile(projectSession.manifest)?.id,
+          )
         : projectIncludeFiles,
       savedRuns: savedRunSnapshots,
       ui: {
@@ -455,9 +508,19 @@ export const useProjectFileWorkflow = ({
             name: projectSession.manifest.name,
             createdAt: projectSession.manifest.createdAt,
             updatedAt: projectSession.manifest.updatedAt,
-            mainFileId: projectSession.manifest.mainFileId,
-            activeFileId: projectSession.manifest.workspace?.activeFileId,
             files: projectSession.manifest.files.map((file) => ({ ...file })),
+            openFileIds: normalizeWorkspaceState(
+              projectSession.manifest.files,
+              projectSession.manifest.workspace,
+            ).openFileIds,
+            focusedFileId: normalizeWorkspaceState(
+              projectSession.manifest.files,
+              projectSession.manifest.workspace,
+            ).focusedFileId,
+            mainFileId: normalizeWorkspaceState(
+              projectSession.manifest.files,
+              projectSession.manifest.workspace,
+            ).mainFileId,
           }
         : undefined,
     }),
@@ -476,10 +539,24 @@ export const useProjectFileWorkflow = ({
     ],
   );
 
+  const effectiveProjectRunFiles = useMemo(
+    () =>
+      projectSession
+        ? buildProjectRunFiles(projectSession.manifest, projectSession.sourceTexts)
+        : [],
+    [projectSession],
+  );
+
+  const effectiveRunInput = useMemo(
+    () =>
+      projectSession ? buildCombinedRunInput(effectiveProjectRunFiles) : input,
+    [effectiveProjectRunFiles, input, projectSession],
+  );
+
   const effectiveSolveInput = useMemo(
     () =>
       projectSession
-        ? buildProjectSolveInput(projectSession.manifest, projectSession.sourceTexts)
+        ? buildProjectLegacySolveInput(projectSession.manifest, projectSession.sourceTexts)
         : input,
     [input, projectSession],
   );
@@ -487,34 +564,46 @@ export const useProjectFileWorkflow = ({
   const effectiveSolveIncludeFiles = useMemo(
     () =>
       projectSession
-        ? buildProjectSolveIncludeFiles(projectSession.manifest, projectSession.sourceTexts)
+        ? buildProjectLegacyIncludeFiles(projectSession.manifest, projectSession.sourceTexts)
+        : projectIncludeFiles,
+    [projectIncludeFiles, projectSession],
+  );
+
+  const effectiveRunIncludeFiles = useMemo(
+    () =>
+      projectSession
+        ? buildProjectEditorIncludeFiles(projectSession.manifest, projectSession.sourceTexts)
         : projectIncludeFiles,
     [projectIncludeFiles, projectSession],
   );
 
   const activeProjectFileViews = useMemo<ProjectWorkspaceFileView[]>(
-    () =>
-      projectSession
-        ? projectSession.manifest.files
-            .map((file) => ({
-              id: file.id,
-              name: file.name,
-              kind: file.kind,
-              enabled: file.enabled,
-              order: file.order,
-              isMain: file.id === projectSession.manifest.mainFileId,
-              isActive:
-                file.id ===
-                (projectSession.manifest.workspace?.activeFileId ??
-                  projectSession.manifest.mainFileId),
-            }))
-            .sort(
-              (a, b) =>
-                a.order - b.order ||
-                a.name.localeCompare(b.name, undefined, { numeric: true }) ||
-                a.id.localeCompare(b.id, undefined, { numeric: true }),
-            )
-        : [],
+    () => {
+      if (!projectSession) return [];
+      const workspace = normalizeWorkspaceState(
+        projectSession.manifest.files,
+        projectSession.manifest.workspace,
+      );
+      return projectSession.manifest.files
+        .map((file) => ({
+          id: file.id,
+          name: file.name,
+          kind: file.kind,
+          order: file.order,
+          isCheckedForRun: file.enabled,
+          isOpenInTab: workspace.openFileIds.includes(file.id),
+          isFocusedTab: file.id === workspace.focusedFileId,
+          enabled: file.enabled,
+          isActive: file.id === workspace.focusedFileId,
+          isMain: file.id === workspace.mainFileId,
+        }))
+        .sort(
+          (a, b) =>
+            a.order - b.order ||
+            a.name.localeCompare(b.name, undefined, { numeric: true }) ||
+            a.id.localeCompare(b.id, undefined, { numeric: true }),
+        );
+    },
     [projectSession],
   );
 
@@ -527,11 +616,11 @@ export const useProjectFileWorkflow = ({
         if (!current) return current;
         const next = updater(cloneProjectSessionState(current));
         if (options?.syncEditor !== false) {
-          const activeFile = getProjectActiveFile(next.manifest);
-          if (activeFile) {
-            setInput(next.sourceTexts[activeFile.id] ?? '');
+          const focusedFile = getProjectFocusedFile(next.manifest);
+          if (focusedFile) {
+            setInput(next.sourceTexts[focusedFile.id] ?? '');
             setProjectIncludeFiles(
-              buildProjectEditorIncludeFiles(next.manifest, next.sourceTexts, activeFile.id),
+              buildProjectEditorIncludeFiles(next.manifest, next.sourceTexts, focusedFile.id),
             );
           }
         }
@@ -545,25 +634,25 @@ export const useProjectFileWorkflow = ({
     (value: string) => {
       setInput(value);
       if (!projectSession) return;
-      const activeFile = getProjectActiveFile(projectSession.manifest);
-      if (!activeFile) return;
+      const focusedFile = getProjectFocusedFile(projectSession.manifest);
+      if (!focusedFile) return;
       updateProjectSession(
         (current) => {
-          const currentText = current.sourceTexts[activeFile.id] ?? '';
+          const currentText = current.sourceTexts[focusedFile.id] ?? '';
           if (currentText === value) return current;
           const nowIso = new Date().toISOString();
           current.sourceTexts = {
             ...current.sourceTexts,
-            [activeFile.id]: value,
+            [focusedFile.id]: value,
           };
           current.manifest.files = current.manifest.files.map((file) =>
-            file.id === activeFile.id
-              ? { ...file, size: value.length, modifiedAt: nowIso }
+            file.id === focusedFile.id
+              ? { ...file, size: value.length, updatedAt: nowIso, modifiedAt: nowIso }
               : file,
           );
           current.manifest.updatedAt = nowIso;
           current.indexRow = touchProjectIndexRow(current.indexRow, nowIso);
-          current.dirtyFileIds = appendUniqueId(current.dirtyFileIds, activeFile.id);
+          current.dirtyFileIds = appendUniqueId(current.dirtyFileIds, focusedFile.id);
           current.manifestDirty = true;
           current.autosaveState = 'idle';
           current.lastAutosaveError = null;
@@ -703,6 +792,42 @@ export const useProjectFileWorkflow = ({
     updateProjectSession,
   ]);
 
+  const buildParsedPayloadFromSession = useCallback(
+    (session: ProjectSessionState): ParsedProjectPayload => {
+      const workspace = normalizeWorkspaceState(session.manifest.files, session.manifest.workspace);
+      const focusedFile = getProjectFocusedFile(session.manifest);
+      return {
+        schemaVersion: 5,
+        input: focusedFile ? session.sourceTexts[focusedFile.id] ?? '' : '',
+        includeFiles: buildProjectEditorIncludeFiles(
+          session.manifest,
+          session.sourceTexts,
+          focusedFile?.id,
+        ),
+        savedRuns: [],
+        ui: {
+          settings: session.manifest.ui.settings,
+          parseSettings: session.manifest.ui.parseSettings,
+          exportFormat: session.manifest.ui.exportFormat,
+          adjustedPointsExport: session.manifest.ui.adjustedPointsExport,
+          migration: session.manifest.ui.migration,
+        },
+        project: session.manifest.project,
+        workspace: {
+          projectId: session.manifest.projectId,
+          name: session.manifest.name,
+          createdAt: session.manifest.createdAt,
+          updatedAt: session.manifest.updatedAt,
+          files: session.manifest.files.map((file) => ({ ...file })),
+          openFileIds: [...workspace.openFileIds],
+          focusedFileId: workspace.focusedFileId,
+          mainFileId: workspace.mainFileId,
+        },
+      };
+    },
+    [],
+  );
+
   const createLocalProjectFromCurrentWorkspace = useCallback(async () => {
     if (!canUseNamedProjectStorage) {
       setImportNotice({
@@ -810,29 +935,7 @@ export const useProjectFileWorkflow = ({
         });
         return;
       }
-      const parsedPayload: ParsedProjectPayload = {
-        schemaVersion: 4,
-        input: buildProjectSolveInput(session.manifest, session.sourceTexts),
-        includeFiles: buildProjectSolveIncludeFiles(session.manifest, session.sourceTexts),
-        savedRuns: [],
-        ui: {
-          settings: session.manifest.ui.settings,
-          parseSettings: session.manifest.ui.parseSettings,
-          exportFormat: session.manifest.ui.exportFormat,
-          adjustedPointsExport: session.manifest.ui.adjustedPointsExport,
-          migration: session.manifest.ui.migration,
-        },
-        project: session.manifest.project,
-        workspace: {
-          projectId: session.manifest.projectId,
-          name: session.manifest.name,
-          createdAt: session.manifest.createdAt,
-          updatedAt: session.manifest.updatedAt,
-          mainFileId: session.manifest.mainFileId,
-          activeFileId: session.manifest.workspace?.activeFileId,
-          files: session.manifest.files.map((file) => ({ ...file })),
-        },
-      };
+      const parsedPayload = buildParsedPayloadFromSession(session);
       applyLoadedProjectPayload(parsedPayload, session, []);
       setProjectSession(session);
       await requestPersistentStorage();
@@ -844,7 +947,7 @@ export const useProjectFileWorkflow = ({
         ],
       });
     },
-    [applyLoadedProjectPayload, setImportNotice, storage],
+    [applyLoadedProjectPayload, buildParsedPayloadFromSession, setImportNotice, storage],
   );
 
   const deleteLocalProject = useCallback(
@@ -976,7 +1079,6 @@ export const useProjectFileWorkflow = ({
                 createdAt,
                 updatedAt,
                 files: parsed.workspace.files,
-                mainFileId: parsed.workspace.mainFileId,
                 ui: {
                   settings: parsed.ui.settings,
                   parseSettings: parsed.ui.parseSettings,
@@ -986,13 +1088,15 @@ export const useProjectFileWorkflow = ({
                 },
                 project: parsed.project,
                 workspace: {
-                  activeFileId: parsed.workspace.activeFileId,
+                  openFileIds: parsed.workspace.openFileIds,
+                  focusedFileId: parsed.workspace.focusedFileId,
+                  mainFileId: parsed.workspace.mainFileId,
                 },
               }),
               sourceTexts: Object.fromEntries(
                 parsed.workspace.files.map((file) => [
                   file.id,
-                  file.id === parsed.workspace?.mainFileId
+                  file.id === parsed.workspace?.focusedFileId
                     ? parsed.input
                     : parsed.includeFiles[file.name] ?? '',
                 ]),
@@ -1015,7 +1119,7 @@ export const useProjectFileWorkflow = ({
                 migration: parsed.ui.migration,
               },
               project: parsed.project,
-              preferredActiveFileId: parsed.workspace?.activeFileId,
+              preferredFocusedFileId: parsed.workspace?.focusedFileId,
             });
       const backend = storageStatus?.preferredBackend ?? 'indexeddb';
       const session = await storage.createProject({
@@ -1060,23 +1164,22 @@ export const useProjectFileWorkflow = ({
         updatedAt,
       };
       if (!canUseNamedProjectStorage) {
-        const parsedPayload: ParsedProjectPayload = {
-          schemaVersion: 4,
-          input: buildProjectSolveInput(manifest, parsedBundle.sourceTexts),
-          includeFiles: buildProjectSolveIncludeFiles(manifest, parsedBundle.sourceTexts),
-          savedRuns: [],
-          ui: manifest.ui,
-          project: manifest.project,
-          workspace: {
-            projectId: manifest.projectId,
+        const parsedPayload = buildParsedPayloadFromSession({
+          indexRow: buildProjectIndexRow({
+            id: manifest.projectId,
             name: manifest.name,
+            backend: storageStatus?.preferredBackend ?? 'indexeddb',
             createdAt: manifest.createdAt,
-            updatedAt: manifest.updatedAt,
-            mainFileId: manifest.mainFileId,
-            activeFileId: manifest.workspace?.activeFileId,
-            files: manifest.files.map((file) => ({ ...file })),
-          },
-        };
+            updatedAt,
+          }),
+          manifest,
+          sourceTexts: parsedBundle.sourceTexts,
+          dirtyFileIds: [],
+          manifestDirty: false,
+          autosaveState: 'idle',
+          lastAutosavedAt: null,
+          lastAutosaveError: null,
+        });
         applyLoadedProjectPayload(parsedPayload, null, []);
         setProjectSession(null);
         setImportNotice({
@@ -1100,23 +1203,7 @@ export const useProjectFileWorkflow = ({
         manifest,
         sourceTexts: parsedBundle.sourceTexts,
       });
-      const parsedPayload: ParsedProjectPayload = {
-        schemaVersion: 4,
-        input: buildProjectSolveInput(manifest, parsedBundle.sourceTexts),
-        includeFiles: buildProjectSolveIncludeFiles(manifest, parsedBundle.sourceTexts),
-        savedRuns: [],
-        ui: manifest.ui,
-        project: manifest.project,
-        workspace: {
-          projectId: manifest.projectId,
-          name: manifest.name,
-          createdAt: manifest.createdAt,
-          updatedAt: manifest.updatedAt,
-          mainFileId: manifest.mainFileId,
-          activeFileId: manifest.workspace?.activeFileId,
-          files: manifest.files.map((file) => ({ ...file })),
-        },
-      };
+      const parsedPayload = buildParsedPayloadFromSession(session);
       applyLoadedProjectPayload(parsedPayload, session, []);
       setProjectSession(session);
       await requestPersistentStorage();
@@ -1128,6 +1215,7 @@ export const useProjectFileWorkflow = ({
     },
     [
       applyLoadedProjectPayload,
+      buildParsedPayloadFromSession,
       canUseNamedProjectStorage,
       refreshStorageContext,
       setImportNotice,
@@ -1201,12 +1289,20 @@ export const useProjectFileWorkflow = ({
           }
           const entry = createManifestEntry({
             name: file.name,
-            kind: 'include',
+            kind: 'dat',
             order: current.manifest.files.length,
             text,
+            createdAt: nowIso,
+            updatedAt: nowIso,
             modifiedAt: nowIso,
           });
+          const workspace = normalizeSessionWorkspace(current);
           current.manifest.files = [...current.manifest.files, entry];
+          current.manifest.workspace = normalizeWorkspaceState(current.manifest.files, {
+            ...workspace,
+            openFileIds: appendUniqueId(workspace.openFileIds, entry.id),
+            focusedFileId: entry.id,
+          });
           current.manifest.updatedAt = nowIso;
           current.indexRow = touchProjectIndexRow(current.indexRow, nowIso);
           current.sourceTexts = {
@@ -1231,64 +1327,16 @@ export const useProjectFileWorkflow = ({
     [projectSession, setImportNotice, updateProjectSession],
   );
 
-  const createBlankProjectFile = useCallback(() => {
-    if (!projectSession) {
-      setImportNotice({
-        title: 'No local project',
-        detailLines: ['Create or open a local project before adding source files.'],
-      });
-      return;
-    }
-    const name = window.prompt(
-      'New source file name',
-      `section-${projectSession.manifest.files.length}.dat`,
-    )?.trim();
-    if (!name) return;
-    try {
-      updateProjectSession((current) => {
-        if (current.manifest.files.some((file) => file.name === name)) {
-          throw new Error(`A project source file named "${name}" already exists.`);
-        }
-        const nowIso = new Date().toISOString();
-        const entry = createManifestEntry({
-          name,
-          kind: 'include',
-          order: current.manifest.files.length,
-          text: '',
-          modifiedAt: nowIso,
-        });
-        current.manifest.files = [...current.manifest.files, entry];
-        current.manifest.workspace = {
-          ...(current.manifest.workspace ?? {}),
-          activeFileId: entry.id,
-        };
-        current.manifest.updatedAt = nowIso;
-        current.indexRow = touchProjectIndexRow(current.indexRow, nowIso);
-        current.sourceTexts = { ...current.sourceTexts, [entry.id]: '' };
-        current.dirtyFileIds = appendUniqueId(current.dirtyFileIds, entry.id);
-        current.manifestDirty = true;
-        return current;
-      });
-      setImportNotice({
-        title: 'Blank source file created',
-        detailLines: [`Created ${name}.`],
-      });
-    } catch (error) {
-      setImportNotice({
-        title: 'Blank source file failed',
-        detailLines: [error instanceof Error ? error.message : String(error)],
-      });
-    }
-  }, [projectSession, setImportNotice, updateProjectSession]);
-
-  const switchActiveProjectFile = useCallback(
+  const openFileTab = useCallback(
     (fileId: string) => {
       updateProjectSession((current) => {
         if (!current.manifest.files.some((file) => file.id === fileId)) return current;
         const nowIso = new Date().toISOString();
+        const workspace = normalizeSessionWorkspace(current);
         current.manifest.workspace = {
-          ...(current.manifest.workspace ?? {}),
-          activeFileId: fileId,
+          ...workspace,
+          openFileIds: appendUniqueId(workspace.openFileIds, fileId),
+          focusedFileId: fileId,
         };
         current.manifest.updatedAt = nowIso;
         current.indexRow = touchProjectIndexRow(current.indexRow, nowIso);
@@ -1299,12 +1347,160 @@ export const useProjectFileWorkflow = ({
     [updateProjectSession],
   );
 
-  const renameProjectFile = useCallback(
+  const focusFileTab = useCallback(
     (fileId: string) => {
+      openFileTab(fileId);
+    },
+    [openFileTab],
+  );
+
+  const closeFileTab = useCallback(
+    (fileId: string) => {
+      updateProjectSession((current) => {
+        const workspace = normalizeSessionWorkspace(current);
+        if (!workspace.openFileIds.includes(fileId)) return current;
+        const removedIndex = workspace.openFileIds.indexOf(fileId);
+        const preferredNeighbors = [
+          workspace.openFileIds[removedIndex + 1],
+          workspace.openFileIds[removedIndex - 1],
+        ].filter((value): value is string => Boolean(value));
+        const nextFocusedFileId =
+          workspace.focusedFileId === fileId
+            ? resolveNextFocusedFileId(workspace.openFileIds, fileId, preferredNeighbors)
+            : workspace.focusedFileId;
+        const nowIso = new Date().toISOString();
+        current.manifest.workspace = {
+          ...workspace,
+          openFileIds: removeFileId(workspace.openFileIds, fileId),
+          focusedFileId: nextFocusedFileId,
+        };
+        current.manifest.updatedAt = nowIso;
+        current.indexRow = touchProjectIndexRow(current.indexRow, nowIso);
+        current.manifestDirty = true;
+        return current;
+      });
+    },
+    [updateProjectSession],
+  );
+
+  const createBlankProjectFile = useCallback(
+    (options?: { name?: string; kind?: ProjectSourceFileKind }) => {
+      if (!projectSession) {
+        setImportNotice({
+          title: 'No local project',
+          detailLines: ['Create or open a local project before adding source files.'],
+        });
+        return '';
+      }
+      const suggestedName =
+        options?.name ?? `section-${projectSession.manifest.files.length + 1}.dat`;
+      const name =
+        options?.name ?? window.prompt('New source file name', suggestedName)?.trim() ?? '';
+      if (!name) return '';
+      let createdFileId = '';
+      try {
+        updateProjectSession((current) => {
+          if (current.manifest.files.some((file) => file.name === name)) {
+            throw new Error(`A project source file named "${name}" already exists.`);
+          }
+          const nowIso = new Date().toISOString();
+          const entry = createManifestEntry({
+            name,
+            kind: options?.kind ?? 'dat',
+            order: current.manifest.files.length,
+            enabled: false,
+            text: '',
+            createdAt: nowIso,
+            updatedAt: nowIso,
+            modifiedAt: nowIso,
+          });
+          createdFileId = entry.id;
+          const workspace = normalizeSessionWorkspace(current);
+          current.manifest.files = [...current.manifest.files, entry];
+          current.manifest.workspace = normalizeWorkspaceState(
+            current.manifest.files,
+            {
+              ...workspace,
+              openFileIds: appendUniqueId(workspace.openFileIds, entry.id),
+              focusedFileId: entry.id,
+            },
+          );
+          current.manifest.updatedAt = nowIso;
+          current.indexRow = touchProjectIndexRow(current.indexRow, nowIso);
+          current.sourceTexts = { ...current.sourceTexts, [entry.id]: '' };
+          current.dirtyFileIds = appendUniqueId(current.dirtyFileIds, entry.id);
+          current.manifestDirty = true;
+          return current;
+        });
+        setImportNotice({
+          title: 'Blank source file created',
+          detailLines: [`Created ${name}.`],
+        });
+      } catch (error) {
+        setImportNotice({
+          title: 'Blank source file failed',
+          detailLines: [error instanceof Error ? error.message : String(error)],
+        });
+      }
+      return createdFileId;
+    },
+    [projectSession, setImportNotice, updateProjectSession],
+  );
+
+  const duplicateProjectFile = useCallback(
+    (fileId: string) => {
+      if (!projectSession) return '';
+      const target = projectSession.manifest.files.find((file) => file.id === fileId);
+      if (!target) return '';
+      let duplicatedFileId = '';
+      updateProjectSession((current) => {
+        const targetFile = current.manifest.files.find((file) => file.id === fileId);
+        if (!targetFile) return current;
+        const nowIso = new Date().toISOString();
+        const nextName = buildFileNameCopy(
+          targetFile.name,
+          new Set(current.manifest.files.map((file) => file.name)),
+        );
+        const entry = createManifestEntry({
+          name: nextName,
+          kind: targetFile.kind,
+          order: current.manifest.files.length,
+          enabled: false,
+          text: current.sourceTexts[targetFile.id] ?? '',
+          createdAt: nowIso,
+          updatedAt: nowIso,
+          modifiedAt: nowIso,
+        });
+        duplicatedFileId = entry.id;
+        const workspace = normalizeSessionWorkspace(current);
+        current.manifest.files = [...current.manifest.files, entry];
+        current.manifest.workspace = normalizeWorkspaceState(current.manifest.files, {
+          ...workspace,
+          openFileIds: appendUniqueId(workspace.openFileIds, entry.id),
+          focusedFileId: entry.id,
+        });
+        current.sourceTexts = {
+          ...current.sourceTexts,
+          [entry.id]: current.sourceTexts[targetFile.id] ?? '',
+        };
+        current.manifest.updatedAt = nowIso;
+        current.indexRow = touchProjectIndexRow(current.indexRow, nowIso);
+        current.dirtyFileIds = appendUniqueId(current.dirtyFileIds, entry.id);
+        current.manifestDirty = true;
+        return current;
+      });
+      return duplicatedFileId;
+    },
+    [projectSession, updateProjectSession],
+  );
+
+  const renameProjectFile = useCallback(
+    (fileId: string, requestedName?: string) => {
       if (!projectSession) return;
       const target = projectSession.manifest.files.find((file) => file.id === fileId);
       if (!target) return;
-      const nextName = window.prompt('Rename source file', target.name)?.trim();
+      const nextName =
+        requestedName ?? window.prompt('Rename source file', target.name)?.trim() ?? '';
       if (!nextName || nextName === target.name) return;
       try {
         updateProjectSession((current) => {
@@ -1313,7 +1509,15 @@ export const useProjectFileWorkflow = ({
           }
           const nowIso = new Date().toISOString();
           current.manifest.files = current.manifest.files.map((file) =>
-            file.id === fileId ? { ...file, name: nextName, modifiedAt: nowIso } : file,
+            file.id === fileId
+              ? {
+                  ...file,
+                  name: nextName,
+                  path: file.path,
+                  updatedAt: nowIso,
+                  modifiedAt: nowIso,
+                }
+              : file,
           );
           current.manifest.updatedAt = nowIso;
           current.indexRow = touchProjectIndexRow(current.indexRow, nowIso);
@@ -1330,14 +1534,41 @@ export const useProjectFileWorkflow = ({
     [projectSession, setImportNotice, updateProjectSession],
   );
 
-  const toggleProjectFileEnabled = useCallback(
-    (fileId: string) => {
+  const setProjectFileEnabled = useCallback(
+    (fileId: string, enabled: boolean) => {
       updateProjectSession((current) => {
-        if (fileId === current.manifest.mainFileId) return current;
+        if (!current.manifest.files.some((file) => file.id === fileId)) return current;
         const nowIso = new Date().toISOString();
         current.manifest.files = current.manifest.files.map((file) =>
-          file.id === fileId ? { ...file, enabled: !file.enabled, modifiedAt: nowIso } : file,
+          file.id === fileId ? { ...file, enabled, updatedAt: nowIso, modifiedAt: nowIso } : file,
         );
+        current.manifest.updatedAt = nowIso;
+        current.indexRow = touchProjectIndexRow(current.indexRow, nowIso);
+        current.manifestDirty = true;
+        return current;
+      });
+    },
+    [updateProjectSession],
+  );
+
+  const reorderProjectFiles = useCallback(
+    (fileIdsInOrder: string[]) => {
+      updateProjectSession((current) => {
+        const sorted = [...current.manifest.files].sort((a, b) => a.order - b.order);
+        const byId = new Map(sorted.map((file) => [file.id, file]));
+        const requested = fileIdsInOrder
+          .map((fileId) => byId.get(fileId))
+          .filter((file): file is NonNullable<typeof file> => file != null);
+        if (requested.length === 0) return current;
+        const remaining = sorted.filter((file) => !fileIdsInOrder.includes(file.id));
+        const nextFiles = [...requested, ...remaining];
+        const nowIso = new Date().toISOString();
+        current.manifest.files = nextFiles.map((file, order) => ({
+          ...file,
+          order,
+          updatedAt: fileIdsInOrder.includes(file.id) ? nowIso : file.updatedAt,
+          modifiedAt: fileIdsInOrder.includes(file.id) ? nowIso : file.modifiedAt,
+        }));
         current.manifest.updatedAt = nowIso;
         current.indexRow = touchProjectIndexRow(current.indexRow, nowIso);
         current.manifestDirty = true;
@@ -1349,57 +1580,53 @@ export const useProjectFileWorkflow = ({
 
   const moveProjectFile = useCallback(
     (fileId: string, direction: 'up' | 'down') => {
-      updateProjectSession((current) => {
-        const sorted = [...current.manifest.files].sort((a, b) => a.order - b.order);
-        const index = sorted.findIndex((file) => file.id === fileId);
-        if (index < 0) return current;
-        const targetIndex = direction === 'up' ? index - 1 : index + 1;
-        if (targetIndex < 0 || targetIndex >= sorted.length) return current;
-        const [moved] = sorted.splice(index, 1);
-        sorted.splice(targetIndex, 0, moved);
-        const nowIso = new Date().toISOString();
-        current.manifest.files = sorted.map((file, order) => ({
-          ...file,
-          order,
-          modifiedAt: file.id === fileId ? nowIso : file.modifiedAt,
-        }));
-        current.manifest.updatedAt = nowIso;
-        current.indexRow = touchProjectIndexRow(current.indexRow, nowIso);
-        current.manifestDirty = true;
-        return current;
-      });
+      if (!projectSession) return;
+      const sorted = [...projectSession.manifest.files].sort((a, b) => a.order - b.order);
+      const index = sorted.findIndex((file) => file.id === fileId);
+      if (index < 0) return;
+      const targetIndex = direction === 'up' ? index - 1 : index + 1;
+      if (targetIndex < 0 || targetIndex >= sorted.length) return;
+      const nextIds = sorted.map((file) => file.id);
+      const [moved] = nextIds.splice(index, 1);
+      nextIds.splice(targetIndex, 0, moved);
+      reorderProjectFiles(nextIds);
     },
-    [updateProjectSession],
+    [projectSession, reorderProjectFiles],
   );
 
-  const removeProjectFile = useCallback(
+  const deleteProjectFile = useCallback(
     (fileId: string) => {
       if (!projectSession) return;
       const target = projectSession.manifest.files.find((file) => file.id === fileId);
       if (!target) return;
-      if (target.id === projectSession.manifest.mainFileId) {
-        setImportNotice({
-          title: 'Main file preserved',
-          detailLines: [
-            'Phase 1 keeps the current main file in place; remove other source members instead.',
-          ],
-        });
-        return;
-      }
       const accepted = window.confirm(
-        `Remove source file "${target.name}" from the current local project?`,
+        `Delete source file "${target.name}" from the current local project?`,
       );
       if (!accepted) return;
       updateProjectSession((current) => {
         const nowIso = new Date().toISOString();
-        const nextFiles = current.manifest.files.filter((file) => file.id !== fileId);
-        current.manifest.files = nextFiles.map((file, order) => ({ ...file, order }));
-        if (current.manifest.workspace?.activeFileId === fileId) {
-          current.manifest.workspace = {
-            ...(current.manifest.workspace ?? {}),
-            activeFileId: current.manifest.mainFileId,
-          };
-        }
+        const sorted = [...current.manifest.files].sort((a, b) => a.order - b.order);
+        const removedIndex = sorted.findIndex((file) => file.id === fileId);
+        if (removedIndex < 0) return current;
+        const preferredNeighbors = [
+          sorted[removedIndex + 1]?.id,
+          sorted[removedIndex - 1]?.id,
+        ].filter((value): value is string => Boolean(value));
+        const nextFiles = sorted.filter((file) => file.id !== fileId).map((file, order) => ({
+          ...file,
+          order,
+        }));
+        const workspace = normalizeWorkspaceState(nextFiles, current.manifest.workspace);
+        const nextFocusedFileId =
+          workspace.focusedFileId === fileId
+            ? resolveNextFocusedFileId(workspace.openFileIds, fileId, preferredNeighbors)
+            : workspace.focusedFileId;
+        current.manifest.files = nextFiles;
+        current.manifest.workspace = normalizeWorkspaceState(nextFiles, {
+          ...workspace,
+          openFileIds: removeFileId(workspace.openFileIds, fileId),
+          focusedFileId: nextFocusedFileId,
+        });
         const nextSourceTexts = { ...current.sourceTexts };
         delete nextSourceTexts[fileId];
         current.sourceTexts = nextSourceTexts;
@@ -1410,8 +1637,10 @@ export const useProjectFileWorkflow = ({
         return current;
       });
     },
-    [projectSession, setImportNotice, updateProjectSession],
+    [projectSession, updateProjectSession],
   );
+
+  const removeProjectFile = deleteProjectFile;
 
   const openProjectWorkspace = useCallback(async () => {
     if (recentProjects.length > 0) {
@@ -1422,8 +1651,26 @@ export const useProjectFileWorkflow = ({
   }, [openProjectById, recentProjects, triggerProjectFileSelect]);
 
   const currentProjectFile = projectSession
-    ? getProjectActiveFile(projectSession.manifest)
+    ? getProjectFocusedFile(projectSession.manifest)
     : null;
+
+  const projectRunValidation = useMemo<ProjectRunValidation>(
+    () =>
+      projectSession
+        ? effectiveProjectRunFiles.length > 0
+          ? { ok: true, errors: [], warnings: [] }
+          : {
+              ok: false,
+              errors: ['Select at least one checked project file before running the adjustment.'],
+              warnings: [],
+            }
+        : { ok: true, errors: [], warnings: [] },
+    [effectiveProjectRunFiles.length, projectSession],
+  );
+
+  const getOrderedRunFiles = useCallback(() => effectiveProjectRunFiles, [effectiveProjectRunFiles]);
+
+  const validateRunSet = useCallback(() => projectRunValidation, [projectRunValidation]);
 
   return {
     storageStatus,
@@ -1432,8 +1679,14 @@ export const useProjectFileWorkflow = ({
     activeProjectFileViews,
     currentProjectFile,
     projectSourceAccept: PROJECT_SOURCE_ACCEPT,
+    effectiveRunInput,
+    effectiveProjectRunFiles,
+    projectRunValidation,
+    getOrderedRunFiles,
+    validateRunSet,
     effectiveSolveInput,
     effectiveSolveIncludeFiles,
+    effectiveRunIncludeFiles,
     currentEditorIncludeFiles:
       projectSession && currentProjectFile
         ? buildProjectEditorIncludeFiles(
@@ -1454,11 +1707,22 @@ export const useProjectFileWorkflow = ({
     deleteLocalProject,
     exportPortableProject,
     exportProjectBundle,
+    openFileTab,
+    closeFileTab,
+    focusFileTab,
     createBlankProjectFile,
-    switchActiveProjectFile,
+    duplicateProjectFile,
+    switchActiveProjectFile: focusFileTab,
     renameProjectFile,
-    toggleProjectFileEnabled,
+    toggleProjectFileEnabled: (fileId: string) => {
+      const target = projectSession?.manifest.files.find((file) => file.id === fileId);
+      if (!target) return;
+      setProjectFileEnabled(fileId, !target.enabled);
+    },
+    setProjectFileEnabled,
+    reorderProjectFiles,
     moveProjectFile,
+    deleteProjectFile,
     removeProjectFile,
   };
 };

@@ -38,6 +38,7 @@
   - `docs/PARITY_WORKFLOW.md` — parity-specific validation and regression workflow
   - `docs/IMPORT_WORKFLOW.md` — external import and staged review workflow
   - `docs/INLINE_OPTION_APPLICATION_MATRIX.md` — inline option application matrix
+  - `docs/run-semantics.md` — ordered multi-file run rules for checked project files
   - `TODO.md` — active roadmap and implementation checklist
   - `AGENTS.md` — repository instructions for Codex/automation workflows
 
@@ -64,7 +65,7 @@
   ### Project and import workflows
 
   - Local browser projects backed by OPFS when available, with IndexedDB project catalog fallback
-  - Multi-file project workspaces with main source plus managed include members
+  - Multi-file project workspaces with checked run files, editor tabs, and ordered project-file execution
   - Portable `.wnproj` snapshot export/import and zipped manifest-plus-sources bundle export/import
   - Staged import review and reconciliation workflow
   - Supported external importers for selected survey/job data formats

@@ -1565,10 +1565,15 @@ const ProjectOptionsModal: React.FC<ProjectOptionsModalProps> = ({ context }) =>
                             {projectSession.autosaveState}
                           </div>
                           <div>
-                            Active file: {currentProjectFile?.name ?? '-'}
+                            Focused tab: {currentProjectFile?.name ?? '-'}
                           </div>
                           <div>
                             Last saved: {projectSession.lastAutosavedAt ?? projectSession.indexRow.updatedAt}
+                          </div>
+                          <div className="text-slate-300">
+                            Day-to-day file selection, tabs, rename, duplicate, and drag reorder now
+                            live under the <span className="font-semibold text-slate-100">Project Files</span>{' '}
+                            button in the Input Data header.
                           </div>
                         </div>
                       ) : (
@@ -1580,7 +1585,7 @@ const ProjectOptionsModal: React.FC<ProjectOptionsModalProps> = ({ context }) =>
                       {activeProjectFileViews.length > 0 && (
                         <div className="space-y-2">
                           <div className="text-[11px] uppercase tracking-wide text-slate-300">
-                            Source Files
+                            Project File Summary
                           </div>
                           <div className="space-y-2">
                             {activeProjectFileViews.map((file, index) => (
@@ -1595,9 +1600,9 @@ const ProjectOptionsModal: React.FC<ProjectOptionsModalProps> = ({ context }) =>
                                     </div>
                                     <div className="text-slate-300">
                                       {file.kind}
-                                      {file.isMain ? ' / main' : ''}
-                                      {file.isActive ? ' / active editor' : ''}
-                                      {file.enabled ? '' : ' / disabled'}
+                                      {file.isFocusedTab ? ' / focused tab' : ''}
+                                      {file.isOpenInTab ? ' / open tab' : ''}
+                                      {file.isCheckedForRun ? ' / checked for run' : ' / unchecked'}
                                     </div>
                                   </div>
                                   <div className="flex flex-wrap gap-2">

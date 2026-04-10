@@ -27,6 +27,17 @@ Current startup and workflow defaults include:
 
 ## Supported input model
 
+### Named-project multi-file runs
+Current named-project behavior includes:
+- checked project files define the run set
+- open tabs define the editor workspace
+- one focused tab drives the visible editor text
+- checked project files run in manifest order as one shared adjustment
+- parser defaults reset at each checked project-file boundary while alias definitions and accumulated network state carry forward across files
+- `.INCLUDE` remains valid inside checked project files, and duplicate project-file includes are warned and skipped
+
+For the exact ordered run contract, see `docs/run-semantics.md`.
+
 ### Supported record families
 The current parser supports the main control, geodetic, conventional, field, GNSS, traverse, direction-set, and leveling families used by the app, including support for mixed observation sets and source-line traceability.
 

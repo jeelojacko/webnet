@@ -16,10 +16,14 @@ import {
 import {
   buildProjectFileStoragePath,
   createManifestFromFlatProject,
+  createProjectManifest,
   createPortableProjectFile,
   createProjectFileId,
+  normalizeProjectFileKind,
+  normalizeWorkspaceState,
   type ProjectManifestFileEntry,
-  type WebNetPortableProjectFileV4,
+  type ProjectManifestWorkspaceState,
+  type WebNetPortableProjectFileV5,
 } from './projectWorkspace';
 import {
   buildRunSnapshotSummary,
@@ -38,7 +42,7 @@ export interface ProjectFileDefaults {
 }
 
 export interface ParsedProjectPayload {
-  schemaVersion?: 1 | 2 | 3 | 4;
+  schemaVersion?: 5;
   input: string;
   includeFiles: Record<string, string>;
   savedRuns: PersistedSavedRunSnapshot[];
@@ -62,9 +66,10 @@ export interface ParsedProjectPayload {
     name: string;
     createdAt: string;
     updatedAt: string;
-    mainFileId: string;
-    activeFileId?: string;
     files: ProjectManifestFileEntry[];
+    openFileIds: string[];
+    focusedFileId?: string;
+    mainFileId?: string;
   };
 }
 
@@ -230,15 +235,7 @@ const sanitizePortableProjectFiles = (
       typeof entry.name === 'string' && entry.name.trim().length > 0
         ? entry.name.trim()
         : `file-${index + 1}.dat`;
-    const kind =
-      entry.kind === 'main' ||
-      entry.kind === 'include' ||
-      entry.kind === 'import' ||
-      entry.kind === 'control'
-        ? entry.kind
-        : index === 0
-          ? 'main'
-          : 'include';
+    const kind = normalizeProjectFileKind(entry.kind, index === 0 ? 'dat' : 'other');
     const order =
       typeof entry.order === 'number' && Number.isFinite(entry.order) ? Math.floor(entry.order) : index;
     const text = fileContents[id] ?? '';
@@ -252,6 +249,14 @@ const sanitizePortableProjectFiles = (
           : buildProjectFileStoragePath(id, name),
       enabled: typeof entry.enabled === 'boolean' ? entry.enabled : true,
       order,
+      createdAt:
+        typeof entry.createdAt === 'string' && entry.createdAt.trim().length > 0
+          ? entry.createdAt.trim()
+          : undefined,
+      updatedAt:
+        typeof entry.updatedAt === 'string' && entry.updatedAt.trim().length > 0
+          ? entry.updatedAt.trim()
+          : undefined,
       size:
         typeof entry.size === 'number' && Number.isFinite(entry.size) ? Math.max(0, entry.size) : text.length,
       modifiedAt:
@@ -276,6 +281,30 @@ const sanitizePortableFileContents = (value: unknown): Record<string, string> =>
     next[key] = raw;
   });
   return next;
+};
+
+const sanitizeWorkspaceState = (
+  candidate: unknown,
+  files: ProjectManifestFileEntry[],
+  legacyMainFileId?: string,
+  legacyFocusedFileId?: string,
+): ProjectManifestWorkspaceState => {
+  const rawWorkspace = isRecord(candidate) ? candidate : {};
+  const openFileIds = Array.isArray(rawWorkspace.openFileIds)
+    ? rawWorkspace.openFileIds.filter((entry): entry is string => typeof entry === 'string')
+    : [];
+  const focusedFileId =
+    typeof rawWorkspace.focusedFileId === 'string'
+      ? rawWorkspace.focusedFileId
+      : legacyFocusedFileId;
+  const mainFileId =
+    typeof rawWorkspace.mainFileId === 'string' ? rawWorkspace.mainFileId : legacyMainFileId;
+  return normalizeWorkspaceState(files, {
+    openFileIds,
+    focusedFileId,
+    mainFileId,
+    fileListCollapsed: rawWorkspace.fileListCollapsed === true,
+  });
 };
 
 const sanitizeNumberArray = (value: unknown): number[] => {
@@ -574,32 +603,35 @@ export const serializeProjectFile = (project: ParsedProjectPayload): string => {
         ...preset,
       })),
     },
-    preferredActiveFileId: project.workspace?.activeFileId,
+    preferredFocusedFileId: project.workspace?.focusedFileId,
   });
+  const manifest =
+    project.workspace?.files && project.workspace.files.length > 0
+      ? createProjectManifest({
+          projectId: project.workspace.projectId,
+          name: project.workspace.name,
+          createdAt: project.workspace.createdAt,
+          updatedAt: nowIso,
+          files: project.workspace.files,
+          ui: manifestSeed.manifest.ui,
+          project: manifestSeed.manifest.project,
+          workspace: sanitizeWorkspaceState(project.workspace, project.workspace.files, project.workspace.mainFileId, project.workspace.focusedFileId),
+        })
+      : manifestSeed.manifest;
+  const focusedFileId = manifest.workspace?.focusedFileId;
   const portableSourceTexts =
     project.workspace?.files && project.workspace.files.length > 0
       ? Object.fromEntries(
           project.workspace.files.map((file) => [
             file.id,
-            file.id === project.workspace?.mainFileId
+            file.id === focusedFileId
               ? project.input
               : project.includeFiles[file.name] ?? manifestSeed.sourceTexts[file.id] ?? '',
           ]),
         )
       : manifestSeed.sourceTexts;
-  const payload: WebNetPortableProjectFileV4 = createPortableProjectFile({
-    manifest: {
-      ...manifestSeed.manifest,
-      files: project.workspace?.files?.map((file) => ({ ...file })) ?? manifestSeed.manifest.files,
-      mainFileId: project.workspace?.mainFileId ?? manifestSeed.manifest.mainFileId,
-      workspace:
-        project.workspace?.activeFileId != null
-          ? {
-              ...(manifestSeed.manifest.workspace ?? {}),
-              activeFileId: project.workspace.activeFileId,
-            }
-          : manifestSeed.manifest.workspace,
-    },
+  const payload: WebNetPortableProjectFileV5 = createPortableProjectFile({
+    manifest,
     sourceTexts: portableSourceTexts,
     savedRuns:
       project.savedRuns.length > 0 ? cloneSavedRunSnapshots(project.savedRuns) : undefined,
@@ -625,30 +657,55 @@ export const parseProjectFile = (
     errors.push('Project file kind is invalid (expected "webnet-project").');
   }
   const schemaVersionRaw = parsed.schemaVersion;
-  const schemaVersion: 1 | 2 | 3 | 4 =
-    schemaVersionRaw === 4 ? 4 : schemaVersionRaw === 3 ? 3 : schemaVersionRaw === 2 ? 2 : 1;
-  if (schemaVersionRaw !== 1 && schemaVersionRaw !== 2 && schemaVersionRaw !== 3 && schemaVersionRaw !== 4) {
-    errors.push('Project file schemaVersion is unsupported (expected 1, 2, 3, or 4).');
+  const rawSchemaVersion: 1 | 2 | 3 | 4 | 5 =
+    schemaVersionRaw === 5
+      ? 5
+      : schemaVersionRaw === 4
+        ? 4
+        : schemaVersionRaw === 3
+          ? 3
+          : schemaVersionRaw === 2
+            ? 2
+            : 1;
+  if (
+    schemaVersionRaw !== 1 &&
+    schemaVersionRaw !== 2 &&
+    schemaVersionRaw !== 3 &&
+    schemaVersionRaw !== 4 &&
+    schemaVersionRaw !== 5
+  ) {
+    errors.push('Project file schemaVersion is unsupported (expected 1, 2, 3, 4, or 5).');
   }
   if (errors.length > 0) return { ok: false, errors };
 
-  const fileContents = schemaVersion === 4 ? sanitizePortableFileContents(parsed.fileContents) : {};
+  const fileContents = rawSchemaVersion >= 4 ? sanitizePortableFileContents(parsed.fileContents) : {};
   const workspaceFiles =
-    schemaVersion === 4 ? sanitizePortableProjectFiles(parsed.files, fileContents) : [];
-  const workspaceMainFile =
-    schemaVersion === 4
-      ? workspaceFiles.find((file) => file.id === parsed.mainFileId) ??
-        workspaceFiles.find((file) => file.kind === 'main') ??
+    rawSchemaVersion >= 4 ? sanitizePortableProjectFiles(parsed.files, fileContents) : [];
+  const workspaceState =
+    rawSchemaVersion >= 4
+      ? sanitizeWorkspaceState(
+          parsed.workspace,
+          workspaceFiles,
+          typeof parsed.mainFileId === 'string' ? parsed.mainFileId : undefined,
+          isRecord(parsed.workspace) && typeof parsed.workspace.activeFileId === 'string'
+            ? parsed.workspace.activeFileId
+            : undefined,
+        )
+      : undefined;
+  const focusedWorkspaceFile =
+    rawSchemaVersion >= 4
+      ? workspaceFiles.find((file) => file.id === workspaceState?.focusedFileId) ??
+        workspaceFiles.find((file) => file.id === workspaceState?.mainFileId) ??
         workspaceFiles[0]
       : null;
   const input =
-    schemaVersion === 4
-      ? workspaceMainFile
-        ? fileContents[workspaceMainFile.id] ?? ''
+    rawSchemaVersion >= 4
+      ? focusedWorkspaceFile
+        ? fileContents[focusedWorkspaceFile.id] ?? ''
         : typeof parsed.mainInput === 'string'
           ? parsed.mainInput
           : ''
-      : schemaVersion === 3
+      : rawSchemaVersion === 3
         ? typeof parsed.mainInput === 'string'
           ? parsed.mainInput
           : ''
@@ -656,17 +713,17 @@ export const parseProjectFile = (
           ? parsed.input
           : '';
   const includeFiles =
-    schemaVersion === 4
+    rawSchemaVersion >= 4
       ? Object.fromEntries(
           workspaceFiles
-            .filter((file) => !workspaceMainFile || file.id !== workspaceMainFile.id)
+            .filter((file) => !focusedWorkspaceFile || file.id !== focusedWorkspaceFile.id)
             .map((file) => [file.name, fileContents[file.id] ?? '']),
         )
-      : schemaVersion === 3
+      : rawSchemaVersion === 3
         ? sanitizeIncludeFiles(parsed.includeFiles)
         : {};
   const savedRuns =
-    schemaVersion === 4 || schemaVersion === 3 ? sanitizeSavedRunSnapshots(parsed.savedRuns) : [];
+    rawSchemaVersion >= 3 ? sanitizeSavedRunSnapshots(parsed.savedRuns) : [];
   const ui = isRecord(parsed.ui) ? parsed.ui : {};
   const project = isRecord(parsed.project) ? parsed.project : {};
   const parseSettingsRaw = isRecord(ui.parseSettings) ? ui.parseSettings : {};
@@ -706,7 +763,7 @@ export const parseProjectFile = (
   return {
     ok: true,
     project: {
-      schemaVersion,
+      schemaVersion: 5,
       input,
       includeFiles,
       savedRuns,
@@ -726,7 +783,7 @@ export const parseProjectFile = (
         levelLoopCustomPresets,
       },
       workspace:
-        schemaVersion === 4
+        rawSchemaVersion >= 4
           ? {
               projectId:
                 typeof parsed.projectId === 'string' && parsed.projectId.trim().length > 0
@@ -744,12 +801,10 @@ export const parseProjectFile = (
                 typeof parsed.updatedAt === 'string' && parsed.updatedAt.trim().length > 0
                   ? parsed.updatedAt.trim()
                   : new Date(0).toISOString(),
-              mainFileId: workspaceMainFile?.id ?? '',
-              activeFileId:
-                isRecord(parsed.workspace) && typeof parsed.workspace.activeFileId === 'string'
-                  ? parsed.workspace.activeFileId
-                  : workspaceMainFile?.id,
               files: workspaceFiles,
+              openFileIds: workspaceState?.openFileIds ?? [],
+              focusedFileId: workspaceState?.focusedFileId,
+              mainFileId: workspaceState?.mainFileId,
             }
           : undefined,
     },
