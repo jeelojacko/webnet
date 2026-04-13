@@ -513,6 +513,7 @@ export const useProjectFileWorkflow = ({
             getProjectFocusedFile(projectSession.manifest)?.id,
           )
         : projectIncludeFiles,
+      workspaceFileContents: projectSession ? { ...projectSession.sourceTexts } : undefined,
       savedRuns: savedRunSnapshots,
       ui: {
         settings: settings as unknown as Record<string, unknown>,
@@ -1132,7 +1133,9 @@ export const useProjectFileWorkflow = ({
                   file.id,
                   file.id === parsed.workspace?.focusedFileId
                     ? parsed.input
-                    : parsed.includeFiles[file.name] ?? '',
+                    : parsed.workspaceFileContents?.[file.id] ??
+                      parsed.includeFiles[file.name] ??
+                      '',
                 ]),
               ),
             }

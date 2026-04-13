@@ -45,6 +45,7 @@ export interface ParsedProjectPayload {
   schemaVersion?: 5;
   input: string;
   includeFiles: Record<string, string>;
+  workspaceFileContents?: Record<string, string>;
   savedRuns: PersistedSavedRunSnapshot[];
   ui: {
     settings: Record<string, unknown>;
@@ -626,7 +627,10 @@ export const serializeProjectFile = (project: ParsedProjectPayload): string => {
             file.id,
             file.id === focusedFileId
               ? project.input
-              : project.includeFiles[file.name] ?? manifestSeed.sourceTexts[file.id] ?? '',
+              : project.workspaceFileContents?.[file.id] ??
+                project.includeFiles[file.name] ??
+                manifestSeed.sourceTexts[file.id] ??
+                '',
           ]),
         )
       : manifestSeed.sourceTexts;
@@ -766,6 +770,10 @@ export const parseProjectFile = (
       schemaVersion: 5,
       input,
       includeFiles,
+      workspaceFileContents:
+        rawSchemaVersion >= 4
+          ? Object.fromEntries(workspaceFiles.map((file) => [file.id, fileContents[file.id] ?? '']))
+          : undefined,
       savedRuns,
       ui: {
         settings,

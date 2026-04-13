@@ -166,6 +166,9 @@
       - [x] Refresh `Recent Local Projects` ordering metadata when an existing local project is reopened
       - [x] Keep workspace/persistence docs aligned with the current v5 manifest wording
       - [x] Add focused storage regression coverage for local-project reopen recency
+    - [x] Batch 9 - stable workspace file-content mapping
+      - [x] Preserve workspace file contents by stable file ID during portable project round-trips instead of rebuilding them only through file-name maps
+      - [x] Add focused regression coverage for loading a non-main focused workspace file with multiple open tabs
   - [ ] Batch 5 - error propagation precision closeout
       - [x] Expand the parity harness to lock the full error-propagation sections (all station sigmas, station ellipses, and relative ellipses)
       - [x] Add an error-propagation-focused machine-readable deviation summary alongside the broader reference diff

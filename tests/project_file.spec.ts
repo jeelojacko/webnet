@@ -214,6 +214,86 @@ describe('project file serialization/parsing', () => {
     expect(parsed.project.project.levelLoopCustomPresets).toHaveLength(1);
   });
 
+  it('preserves workspace file contents by file id when a non-main file is focused', () => {
+    const text = serializeProjectFile({
+      input: 'FOCUSED CHILD CONTENT',
+      includeFiles: {
+        'main.dat': 'MAIN CONTENT',
+        'notes.txt': 'NOTES CONTENT',
+      },
+      workspaceFileContents: {
+        'file-main': 'MAIN CONTENT',
+        'file-child': 'FOCUSED CHILD CONTENT',
+        'file-notes': 'NOTES CONTENT',
+      },
+      savedRuns: [],
+      ui: {
+        settings: defaults.settings,
+        parseSettings: defaults.parseSettings,
+        exportFormat: 'webnet',
+        adjustedPointsExport: defaults.adjustedPointsExport,
+      },
+      project: {
+        projectInstruments: defaults.projectInstruments,
+        selectedInstrument: defaults.selectedInstrument,
+        levelLoopCustomPresets: defaults.levelLoopCustomPresets,
+      },
+      workspace: {
+        projectId: 'project-1',
+        name: 'Workspace Roundtrip',
+        createdAt: '2026-04-13T10:00:00.000Z',
+        updatedAt: '2026-04-13T10:05:00.000Z',
+        files: [
+          {
+            id: 'file-main',
+            name: 'main.dat',
+            kind: 'dat',
+            path: 'data/file-main-main.dat',
+            enabled: true,
+            order: 0,
+          },
+          {
+            id: 'file-child',
+            name: 'child.dat',
+            kind: 'dat',
+            path: 'data/file-child-child.dat',
+            enabled: true,
+            order: 1,
+          },
+          {
+            id: 'file-notes',
+            name: 'notes.txt',
+            kind: 'notes',
+            path: 'data/file-notes-notes.txt',
+            enabled: false,
+            order: 2,
+          },
+        ],
+        openFileIds: ['file-main', 'file-child'],
+        focusedFileId: 'file-child',
+        mainFileId: 'file-main',
+      },
+    });
+
+    const parsed = parseProjectFile(text, defaults);
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+
+    expect(parsed.project.input).toBe('FOCUSED CHILD CONTENT');
+    expect(parsed.project.includeFiles).toEqual({
+      'main.dat': 'MAIN CONTENT',
+      'notes.txt': 'NOTES CONTENT',
+    });
+    expect(parsed.project.workspace?.openFileIds).toEqual(['file-main', 'file-child']);
+    expect(parsed.project.workspace?.focusedFileId).toBe('file-child');
+    expect(parsed.project.workspace?.mainFileId).toBe('file-main');
+    expect(parsed.project.workspaceFileContents).toEqual({
+      'file-main': 'MAIN CONTENT',
+      'file-child': 'FOCUSED CHILD CONTENT',
+      'file-notes': 'NOTES CONTENT',
+    });
+  });
+
   it('rejects unknown project kind/schema versions', () => {
     const parsed = parseProjectFile(
       JSON.stringify({
