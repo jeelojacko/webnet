@@ -2127,7 +2127,14 @@ const App: React.FC<AppProps> = ({
                 projectFiles={activeProjectFileViews}
                 projectRunValidation={projectRunValidation}
                 onOpenProjectFiles={() => {
+                  if (projectSession) {
+                    handleOpenProjectWorkspacePanel();
+                    return;
+                  }
                   void createLocalProjectFromCurrentWorkspace();
+                }}
+                onAddProjectSourceFile={() => {
+                  void triggerProjectSourceFileSelect();
                 }}
                 onOpenFileTab={openFileTab}
                 onCloseFileTab={closeFileTab}

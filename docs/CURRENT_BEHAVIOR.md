@@ -38,6 +38,7 @@ Current named-project behavior includes:
 - parser defaults reset at each checked project-file boundary while alias definitions and accumulated network state carry forward across files
 - `.INCLUDE` remains valid inside checked project files, and duplicate project-file includes are warned and skipped
 - open editor tabs preserve their own tab-strip order even if the underlying project-file manifest order is rearranged for run sequencing
+- the Input Data `Project Files` popover now exposes quick `Add Source`, `New File`, per-file `Open`/`Edit`/`Duplicate`/`Remove`, and a direct `Project Options` jump so common project-file actions no longer depend on the right-click menu or toolbar detour
 
 For the exact ordered run contract, see `docs/run-semantics.md`.
 

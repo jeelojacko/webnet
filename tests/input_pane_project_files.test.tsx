@@ -229,6 +229,124 @@ describe('InputPane project files UI', () => {
     container.remove();
   });
 
+  it('exposes quick project-file actions from the popover without using the context menu', async () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root: Root = createRoot(container);
+    const onOpenProjectFiles = vi.fn();
+    const onAddProjectSourceFile = vi.fn();
+    const onOpenFileTab = vi.fn();
+    const onFocusProjectFile = vi.fn();
+    const onDuplicateProjectFile = vi.fn();
+    const onDeleteProjectFile = vi.fn();
+
+    await act(async () => {
+      root.render(
+        <InputPane
+          input="C A 0 0 0 ! !"
+          onChange={() => undefined}
+          projectFiles={[
+            {
+              id: 'file-1',
+              name: 'main.dat',
+              kind: 'dat',
+              order: 0,
+              tabOrder: 0,
+              isCheckedForRun: true,
+              isOpenInTab: true,
+              isFocusedTab: true,
+              enabled: true,
+              isActive: true,
+              isMain: true,
+            },
+            {
+              id: 'file-2',
+              name: 'notes.txt',
+              kind: 'notes',
+              order: 1,
+              tabOrder: null,
+              isCheckedForRun: false,
+              isOpenInTab: false,
+              isFocusedTab: false,
+              enabled: false,
+              isActive: false,
+              isMain: false,
+            },
+          ]}
+          onOpenProjectFiles={onOpenProjectFiles}
+          onAddProjectSourceFile={onAddProjectSourceFile}
+          onOpenFileTab={onOpenFileTab}
+          onFocusProjectFile={onFocusProjectFile}
+          onDuplicateProjectFile={onDuplicateProjectFile}
+          onDeleteProjectFile={onDeleteProjectFile}
+        />,
+      );
+    });
+
+    const button = Array.from(container.querySelectorAll('button')).find((node) =>
+      node.textContent?.includes('Project Files'),
+    ) as HTMLButtonElement | undefined;
+    expect(button).toBeDefined();
+
+    await act(async () => {
+      button?.click();
+    });
+
+    expect(container.textContent).toContain('1 checked / 1 open');
+
+    const addSourceButton = container.querySelector(
+      'button[aria-label="Open notes.txt"]',
+    ) as HTMLButtonElement | null;
+    expect(addSourceButton).not.toBeNull();
+
+    await act(async () => {
+      (
+        Array.from(container.querySelectorAll('button')).find((node) =>
+          node.textContent?.includes('Add Source'),
+        ) as HTMLButtonElement | undefined
+      )?.click();
+    });
+    expect(onAddProjectSourceFile).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      addSourceButton?.click();
+    });
+    expect(onOpenFileTab).toHaveBeenCalledWith('file-2');
+
+    await act(async () => {
+      (container.querySelector('button[aria-label="Edit notes.txt"]') as HTMLButtonElement | null)?.click();
+    });
+    expect(onFocusProjectFile).toHaveBeenCalledWith('file-2');
+
+    await act(async () => {
+      (
+        container.querySelector('button[aria-label="Duplicate notes.txt"]') as HTMLButtonElement | null
+      )?.click();
+    });
+    expect(onDuplicateProjectFile).toHaveBeenCalledWith('file-2');
+
+    await act(async () => {
+      (
+        container.querySelector('button[aria-label="Remove notes.txt"]') as HTMLButtonElement | null
+      )?.click();
+    });
+    expect(onDeleteProjectFile).toHaveBeenCalledWith('file-2');
+
+    await act(async () => {
+      (
+        Array.from(container.querySelectorAll('button')).find((node) =>
+          node.textContent?.includes('Project Options'),
+        ) as HTMLButtonElement | undefined
+      )?.click();
+    });
+    expect(onOpenProjectFiles).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      root.unmount();
+    });
+    container.remove();
+  });
+
   it('keeps open tab order stable when project file list order changes', async () => {
     const container = document.createElement('div');
     document.body.appendChild(container);

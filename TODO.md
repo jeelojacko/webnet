@@ -185,6 +185,10 @@
       - [x] Route plain `.dat` imports into the current project as new source files instead of replacing the focused editor text
       - [x] Support multi-select source import so several `.dat` files append into one project in one action
       - [x] Add focused regression coverage for autosave delay and multi-file source import naming
+    - [x] Batch 13 - project-files quick actions
+      - [x] Add quick source-import and project-management entry points directly inside the Input Data `Project Files` popover
+      - [x] Expose the most common per-file actions in the popover rows so duplicate/remove/open-edit no longer depend on the right-click menu
+      - [x] Add focused UI regression coverage for the new quick-action controls
   - [ ] Batch 5 - error propagation precision closeout
       - [x] Expand the parity harness to lock the full error-propagation sections (all station sigmas, station ellipses, and relative ellipses)
       - [x] Add an error-propagation-focused machine-readable deviation summary alongside the broader reference diff

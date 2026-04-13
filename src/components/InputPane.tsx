@@ -12,6 +12,7 @@ interface InputPaneProps {
   projectFiles?: ProjectWorkspaceFileView[];
   projectRunValidation?: ProjectRunValidation | null;
   onOpenProjectFiles?: () => void;
+  onAddProjectSourceFile?: () => void;
   onOpenFileTab?: (_fileId: string) => void;
   onCloseFileTab?: (_fileId: string) => void;
   onFocusProjectFile?: (_fileId: string) => void;
@@ -187,6 +188,7 @@ const InputPane = React.forwardRef<InputPaneHandle, InputPaneProps>(
       projectFiles = [],
       projectRunValidation = null,
       onOpenProjectFiles,
+      onAddProjectSourceFile,
       onOpenFileTab,
       onCloseFileTab,
       onFocusProjectFile,
@@ -232,6 +234,10 @@ const InputPane = React.forwardRef<InputPaneHandle, InputPaneProps>(
             (a.tabOrder ?? Number.MAX_SAFE_INTEGER) - (b.tabOrder ?? Number.MAX_SAFE_INTEGER) ||
             a.name.localeCompare(b.name),
         ),
+    [projectFiles],
+  );
+  const checkedProjectFileCount = React.useMemo(
+    () => projectFiles.filter((file) => file.enabled).length,
     [projectFiles],
   );
   const beginRename = React.useCallback(
@@ -642,17 +648,32 @@ const InputPane = React.forwardRef<InputPaneHandle, InputPaneProps>(
             onContextMenu={(event) => event.preventDefault()}
           >
             <div className="flex items-center justify-between border-b border-slate-700 px-3 py-2">
-              <div className="text-[10px] uppercase tracking-wide text-slate-400">
-                Checked files run together in list order
+              <div className="space-y-1">
+                <div className="text-[10px] uppercase tracking-wide text-slate-400">
+                  Checked files run together in list order
+                </div>
+                <div className="text-[10px] uppercase tracking-wide text-slate-500">
+                  {checkedProjectFileCount} checked / {openTabs.length} open
+                </div>
               </div>
-              <button
-                type="button"
-                onClick={() => onCreateBlankProjectFile?.()}
-                className="inline-flex items-center gap-1 rounded border border-slate-600 px-2 py-1 text-[10px] uppercase tracking-wide text-slate-300 hover:border-slate-500 hover:text-white"
-              >
-                <Plus size={12} />
-                New File
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => onAddProjectSourceFile?.()}
+                  className="inline-flex items-center gap-1 rounded border border-slate-600 px-2 py-1 text-[10px] uppercase tracking-wide text-slate-300 hover:border-slate-500 hover:text-white"
+                >
+                  <Plus size={12} />
+                  Add Source
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onCreateBlankProjectFile?.()}
+                  className="inline-flex items-center gap-1 rounded border border-slate-600 px-2 py-1 text-[10px] uppercase tracking-wide text-slate-300 hover:border-slate-500 hover:text-white"
+                >
+                  <Plus size={12} />
+                  New File
+                </button>
+              </div>
             </div>
             <div className="max-h-80 overflow-y-auto p-2">
               {sortedProjectFiles.map((file) => (
@@ -709,11 +730,7 @@ const InputPane = React.forwardRef<InputPaneHandle, InputPaneProps>(
                     aria-label={`Include ${file.name} in run`}
                     className="h-3.5 w-3.5 rounded border-slate-600 bg-slate-900"
                   />
-                  <button
-                    type="button"
-                    onClick={() => onFocusProjectFile?.(file.id)}
-                    className="min-w-0 flex-1 text-left"
-                  >
+                  <div className="min-w-0 flex-1">
                     {renamingFileId === file.id ? (
                       <input
                         autoFocus
@@ -728,15 +745,21 @@ const InputPane = React.forwardRef<InputPaneHandle, InputPaneProps>(
                         className="w-full rounded border border-slate-600 bg-slate-900 px-2 py-1 text-xs text-slate-100"
                       />
                     ) : (
-                      <div
-                        onDoubleClick={(event) => {
-                          event.stopPropagation();
-                          beginRename(file.id);
-                        }}
-                        className="truncate text-slate-200"
+                      <button
+                        type="button"
+                        onClick={() => onFocusProjectFile?.(file.id)}
+                        className="w-full text-left"
                       >
-                        {file.name}
-                      </div>
+                        <div
+                          onDoubleClick={(event) => {
+                            event.stopPropagation();
+                            beginRename(file.id);
+                          }}
+                          className="truncate text-slate-200"
+                        >
+                          {file.name}
+                        </div>
+                      </button>
                     )}
                     <div className="mt-1 flex flex-wrap gap-1 text-[10px] uppercase tracking-wide">
                       {buildProjectFileStatusChips(file).map((chip) => (
@@ -756,9 +779,73 @@ const InputPane = React.forwardRef<InputPaneHandle, InputPaneProps>(
                         </span>
                       ))}
                     </div>
-                  </button>
+                    <div className="mt-2 flex flex-wrap gap-1 text-[10px] uppercase tracking-wide">
+                      {!file.isOpenInTab && (
+                        <button
+                          type="button"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            onOpenFileTab?.(file.id);
+                          }}
+                          className="rounded border border-slate-700 bg-slate-900/70 px-1.5 py-0.5 text-slate-300 hover:border-slate-500 hover:text-white"
+                          aria-label={`Open ${file.name}`}
+                        >
+                          Open
+                        </button>
+                      )}
+                      {!file.isActive && (
+                        <button
+                          type="button"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            onFocusProjectFile?.(file.id);
+                          }}
+                          className="rounded border border-blue-500/40 bg-blue-500/10 px-1.5 py-0.5 text-blue-200 hover:border-blue-400/60 hover:text-white"
+                          aria-label={`Edit ${file.name}`}
+                        >
+                          Edit
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          onDuplicateProjectFile?.(file.id);
+                        }}
+                        className="rounded border border-slate-700 bg-slate-900/70 px-1.5 py-0.5 text-slate-300 hover:border-slate-500 hover:text-white"
+                        aria-label={`Duplicate ${file.name}`}
+                      >
+                        Duplicate
+                      </button>
+                      {!file.isMain && (
+                        <button
+                          type="button"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            onDeleteProjectFile?.(file.id);
+                          }}
+                          className="rounded border border-rose-500/30 bg-rose-500/10 px-1.5 py-0.5 text-rose-200 hover:border-rose-400/60 hover:text-white"
+                          aria-label={`Remove ${file.name}`}
+                        >
+                          Remove
+                        </button>
+                      )}
+                    </div>
+                  </div>
                 </div>
               ))}
+            </div>
+            <div className="flex items-center justify-between border-t border-slate-700 px-3 py-2">
+              <div className="text-[10px] uppercase tracking-wide text-slate-500">
+                Right-click still shows full file menu
+              </div>
+              <button
+                type="button"
+                onClick={() => onOpenProjectFiles?.()}
+                className="rounded border border-slate-600 px-2 py-1 text-[10px] uppercase tracking-wide text-slate-300 hover:border-slate-500 hover:text-white"
+              >
+                Project Options
+              </button>
             </div>
           </div>
         )}
