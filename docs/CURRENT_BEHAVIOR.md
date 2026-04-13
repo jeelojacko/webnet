@@ -254,6 +254,7 @@ Current workspace behavior includes:
 - local project reopen flows work across both IndexedDB-backed and OPFS-backed named projects, and reopening refreshes recent-project ordering by last-opened time
 - manifest-first `webnet-project` v5 storage with stable source-file IDs, one main editor file, managed non-main source members, and project-scoped autosave for sources/settings/UI state
 - portable v5 workspace round-trips keep file contents tied to stable source-file IDs so non-main focused tabs restore the correct editor content and companion files on load/import
+- stale autosave completions do not overwrite newer project-file checked/open/focused edits; newer live workspace state stays authoritative until its own save completes
 - portable `.wnproj` export/import as flattened snapshots plus zipped manifest-plus-sources bundle export/import for backup/share workflows
 - browser-local recovery for untitled workspaces only, keeping named-project autosave separate from local draft recovery
 - saved-run snapshots with restore, compare, rename, note, and delete flows

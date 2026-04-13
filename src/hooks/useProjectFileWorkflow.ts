@@ -282,6 +282,41 @@ const resolveNextFocusedFileId = (
   return preferredFileIds.find((fileId) => remaining.includes(fileId)) ?? remaining[0];
 };
 
+export const applyPersistedProjectSession = ({
+  current,
+  saved,
+  requestedManifestUpdatedAt,
+  completedAt,
+}: {
+  current: ProjectSessionState | null;
+  saved: ProjectSessionState;
+  requestedManifestUpdatedAt: string;
+  completedAt: string;
+}): ProjectSessionState | null => {
+  if (!current || current.indexRow.id !== saved.indexRow.id) return current;
+  const staleSaveCompleted =
+    current.manifest.updatedAt !== requestedManifestUpdatedAt ||
+    current.manifestDirty ||
+    current.dirtyFileIds.length > 0;
+  if (staleSaveCompleted) {
+    return {
+      ...current,
+      indexRow: saved.indexRow,
+      autosaveState: 'idle',
+      lastAutosavedAt: completedAt,
+      lastAutosaveError: null,
+    };
+  }
+  return {
+    ...saved,
+    dirtyFileIds: [],
+    manifestDirty: false,
+    autosaveState: 'idle',
+    lastAutosavedAt: completedAt,
+    lastAutosaveError: null,
+  };
+};
+
 export const useProjectFileWorkflow = ({
   projectFileInputRef,
   projectSourceFileInputRef,
@@ -695,16 +730,14 @@ export const useProjectFileWorkflow = ({
   const persistProjectNow = useCallback(
     async (session: ProjectSessionState) => {
       const saved = await storage.saveProject(buildSavedSessionForStorage(session));
+      const completedAt = new Date().toISOString();
       setProjectSession((current) => {
-        if (!current || current.indexRow.id !== session.indexRow.id) return current;
-        return {
-          ...saved,
-          dirtyFileIds: [],
-          manifestDirty: false,
-          autosaveState: 'idle',
-          lastAutosavedAt: new Date().toISOString(),
-          lastAutosaveError: null,
-        };
+        return applyPersistedProjectSession({
+          current,
+          saved,
+          requestedManifestUpdatedAt: session.manifest.updatedAt,
+          completedAt,
+        });
       });
       upsertRecentProjectRow(saved.indexRow);
     },

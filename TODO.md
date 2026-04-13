@@ -169,6 +169,9 @@
     - [x] Batch 9 - stable workspace file-content mapping
       - [x] Preserve workspace file contents by stable file ID during portable project round-trips instead of rebuilding them only through file-name maps
       - [x] Add focused regression coverage for loading a non-main focused workspace file with multiple open tabs
+    - [x] Batch 10 - autosave race hardening
+      - [x] Prevent stale autosave completions from overwriting newer project-file checked/open/focused state
+      - [x] Add focused regression coverage for rapid project-file toggles across overlapping autosave saves
   - [ ] Batch 5 - error propagation precision closeout
       - [x] Expand the parity harness to lock the full error-propagation sections (all station sigmas, station ellipses, and relative ellipses)
       - [x] Add an error-propagation-focused machine-readable deviation summary alongside the broader reference diff
