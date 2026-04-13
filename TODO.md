@@ -162,6 +162,10 @@
       - [x] Make the toolbar open-project action open the Project Options workspace tab instead of auto-opening the most recent local project
       - [x] Keep the project workspace modal copy aligned with the current v5 manifest schema
       - [x] Add focused UI regression coverage for the toolbar open-project entry path
+    - [x] Batch 8 - recent project reopen freshness
+      - [x] Refresh `Recent Local Projects` ordering metadata when an existing local project is reopened
+      - [x] Keep workspace/persistence docs aligned with the current v5 manifest wording
+      - [x] Add focused storage regression coverage for local-project reopen recency
   - [ ] Batch 5 - error propagation precision closeout
       - [x] Expand the parity harness to lock the full error-propagation sections (all station sigmas, station ellipses, and relative ellipses)
       - [x] Add an error-propagation-focused machine-readable deviation summary alongside the broader reference diff

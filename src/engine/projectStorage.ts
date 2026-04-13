@@ -67,6 +67,11 @@ const sortProjectRows = (rows: ProjectIndexRow[]): ProjectIndexRow[] =>
       a.id.localeCompare(b.id, undefined, { numeric: true }),
   );
 
+const markProjectIndexRowOpened = (row: ProjectIndexRow, openedAt: string): ProjectIndexRow => ({
+  ...row,
+  lastOpenedAt: openedAt,
+});
+
 const openProjectDatabase = (): Promise<IDBDatabase> =>
   new Promise((resolve, reject) => {
     if (!hasWindowIndexedDb()) {
@@ -320,15 +325,20 @@ const createIndexedDbStorage = (): ProjectStorage => ({
       )) as ProjectManifestRecord | undefined;
       await transactionDone(transaction);
       if (!indexRow) return null;
+      const openedAt = new Date().toISOString();
+      const openedIndexRow = markProjectIndexRowOpened(indexRow, openedAt);
+      const indexUpdateTransaction = db.transaction(PROJECT_INDEX_STORE, 'readwrite');
+      indexUpdateTransaction.objectStore(PROJECT_INDEX_STORE).put(openedIndexRow);
+      await transactionDone(indexUpdateTransaction);
       if (indexRow.backend === 'opfs') {
-        const session = await readOpfsProject(indexRow);
+        const session = await readOpfsProject(openedIndexRow);
         if (!session) return null;
         return session;
       }
       if (!manifestRecord) return null;
       const sourceTexts = await readAllProjectFilesFromDb(db, projectId);
       return createSessionFromManifest({
-        indexRow,
+        indexRow: openedIndexRow,
         manifest: manifestRecord.manifest,
         sourceTexts,
       });
