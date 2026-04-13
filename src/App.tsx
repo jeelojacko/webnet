@@ -1184,6 +1184,7 @@ const App: React.FC<AppProps> = ({
     currentEditorIncludeFiles,
     triggerProjectFileSelect,
     triggerProjectSourceFileSelect,
+    importProjectSourceFiles,
     handleSaveProject,
     handleEditorInputChange,
     handleProjectFileChange,
@@ -1302,6 +1303,7 @@ const App: React.FC<AppProps> = ({
     currentIncludeFiles: currentEditorIncludeFiles,
     faceNormalizationMode: parseSettings.faceNormalizationMode,
     fileInputRef,
+    importProjectSourceFiles,
     parseSettings,
     projectInstruments,
     setInput: setEditorInput,
@@ -1967,6 +1969,7 @@ const App: React.FC<AppProps> = ({
         type="file"
         accept={IMPORT_FILE_ACCEPT}
         className="hidden"
+        multiple
         onChange={handleFileChange}
       />
       <input
@@ -1981,6 +1984,7 @@ const App: React.FC<AppProps> = ({
         type="file"
         accept={projectSourceAccept}
         className="hidden"
+        multiple
         onChange={handleProjectSourceFileChange}
       />
       <AppToolbar

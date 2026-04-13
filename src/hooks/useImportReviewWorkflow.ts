@@ -185,6 +185,7 @@ interface UseImportReviewWorkflowArgs {
   currentIncludeFiles: Record<string, string>;
   faceNormalizationMode: FaceNormalizationMode;
   fileInputRef: RefObject<HTMLInputElement | null>;
+  importProjectSourceFiles?: (_files: File[]) => Promise<boolean>;
   parseSettings: ParseSettings;
   projectInstruments: InstrumentLibrary;
   setInput: Dispatch<SetStateAction<string>>;
@@ -199,6 +200,7 @@ export const useImportReviewWorkflow = ({
   currentIncludeFiles,
   faceNormalizationMode,
   fileInputRef,
+  importProjectSourceFiles,
   parseSettings,
   projectInstruments,
   setInput,
@@ -381,12 +383,21 @@ export const useImportReviewWorkflow = ({
   );
 
   const handleFileChange = useCallback(
-    (e: ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0];
+    async (e: ChangeEvent<HTMLInputElement>) => {
+      const files = Array.from(e.target.files ?? []);
+      const file = files[0];
       if (!file) return;
       const pickerMode = filePickerModeRef.current;
       filePickerModeRef.current = 'replace';
       e.target.value = '';
+      if (
+        pickerMode === 'replace' &&
+        importProjectSourceFiles &&
+        files.every((entry) => /\.dat$/i.test(entry.name))
+      ) {
+        const handled = await importProjectSourceFiles(files);
+        if (handled) return;
+      }
       if (requiresImportAngleModePrompt(file.name)) {
         setPendingAnglePromptFile({
           file,
@@ -398,7 +409,7 @@ export const useImportReviewWorkflow = ({
       }
       processImportedFileSelection(file, pickerMode);
     },
-    [faceNormalizationMode, processImportedFileSelection],
+    [faceNormalizationMode, importProjectSourceFiles, processImportedFileSelection],
   );
 
   const triggerFileSelect = useCallback(

@@ -170,6 +170,74 @@ describe('useImportReviewWorkflow', () => {
     container.remove();
   });
 
+  it('routes plain dat imports to project source-file append when a project handler exists', async () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root: Root = createRoot(container);
+    const fileInputRef = { current: null as HTMLInputElement | null };
+    const setInput = vi.fn();
+    const importProjectSourceFiles = vi.fn(async () => true);
+
+    const Harness = () => {
+      const state = useImportReviewWorkflow({
+        coordMode: '3D',
+        currentInput: 'ORIGINAL',
+        currentIncludeFiles: {},
+        faceNormalizationMode: 'on',
+        fileInputRef,
+        importProjectSourceFiles,
+        parseSettings,
+        projectInstruments: {},
+        setInput,
+        setProjectIncludeFiles: () => undefined,
+        setImportNotice: () => undefined,
+        resetWorkspaceForImportedInput: () => undefined,
+      });
+
+      return (
+        <button
+          onClick={() =>
+            void state.handleFileChange({
+              target: {
+                files: [
+                  new File(['A'], 'traverse.dat', { type: 'text/plain' }),
+                  new File(['B'], 'control.dat', { type: 'text/plain' }),
+                ],
+                value: '',
+              },
+            } as never)
+          }
+        >
+          choose
+        </button>
+      );
+    };
+
+    await act(async () => {
+      root.render(<Harness />);
+    });
+
+    const button = container.querySelector('button') as HTMLButtonElement;
+    await act(async () => {
+      button.click();
+    });
+
+    expect(importProjectSourceFiles).toHaveBeenCalledTimes(1);
+    const importedFiles = (
+      importProjectSourceFiles.mock.calls as unknown as Array<[File[]]>
+    )[0]?.[0];
+    expect(importedFiles?.map((file) => file.name)).toEqual([
+      'traverse.dat',
+      'control.dat',
+    ]);
+    expect(setInput).not.toHaveBeenCalled();
+
+    await act(async () => {
+      root.unmount();
+    });
+    container.remove();
+  });
+
   it('restores a saved import-review snapshot', async () => {
     const container = document.createElement('div');
     document.body.appendChild(container);

@@ -256,6 +256,8 @@ Current workspace behavior includes:
 - portable v5 workspace round-trips keep file contents tied to stable source-file IDs so non-main focused tabs restore the correct editor content and companion files on load/import
 - stale autosave completions do not overwrite newer project-file checked/open/focused edits; newer live workspace state stays authoritative until its own save completes
 - project-files popup shows explicit `main`/`open`/`active`/unchecked markers and limits drag-reorder starts to the grip handle so checkbox toggles stay more stable under quick edits
+- named-project autosave waits one minute after the latest dirty edit before persisting, instead of re-saving on sub-second edit churn
+- plain `.dat` imports in a named project append as new source files, strip the `.dat` suffix from the imported file label, and support multi-select append in one action
 - portable `.wnproj` export/import as flattened snapshots plus zipped manifest-plus-sources bundle export/import for backup/share workflows
 - browser-local recovery for untitled workspaces only, keeping named-project autosave separate from local draft recovery
 - saved-run snapshots with restore, compare, rename, note, and delete flows

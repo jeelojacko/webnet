@@ -76,6 +76,7 @@ const PROJECT_IMPORT_FILE_TYPES = [
 
 const PROJECT_SOURCE_ACCEPT =
   '.dat,.txt,.sum,.rpt,.xml,.jxl,.jobxml,.htm,.html,.rw5,.cr5,.raw,.dbx,.json';
+const PROJECT_AUTOSAVE_DELAY_MS = 60_000;
 
 const readFileAsText = (file: File): Promise<string> =>
   new Promise((resolve, reject) => {
@@ -267,6 +268,16 @@ const buildFileNameCopy = (baseName: string, existingNames: Set<string>): string
     counter += 1;
   }
   return candidate;
+};
+
+const getImportedProjectSourceName = (fileName: string): string => {
+  const trimmed = fileName.trim();
+  if (!trimmed) return 'file';
+  if (/\.dat$/i.test(trimmed)) {
+    const stem = trimmed.replace(/\.dat$/i, '').trim();
+    return stem || 'file';
+  }
+  return trimmed;
 };
 
 const normalizeSessionWorkspace = (
@@ -769,7 +780,7 @@ export const useProjectFileWorkflow = ({
           );
         }
       })();
-    }, 500);
+    }, PROJECT_AUTOSAVE_DELAY_MS);
     return () => {
       if (autosaveTimerRef.current != null) {
         window.clearTimeout(autosaveTimerRef.current);
@@ -1344,57 +1355,90 @@ export const useProjectFileWorkflow = ({
     ],
   );
 
-  const handleProjectSourceFileChange = useCallback(
-    async (e: ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0];
-      if (!file) return;
-      e.target.value = '';
-      if (!projectSession) return;
+  const importProjectSourceFiles = useCallback(
+    async (files: File[]): Promise<boolean> => {
+      if (!projectSession || files.length === 0) return false;
       try {
-        const text = await readFileAsText(file);
+        const loadedFiles = await Promise.all(
+          files.map(async (file) => ({
+            file,
+            text: await readFileAsText(file),
+          })),
+        );
         updateProjectSession((current) => {
           const nowIso = new Date().toISOString();
-          if (current.manifest.files.some((entry) => entry.name === file.name)) {
-            throw new Error(`A project source file named "${file.name}" already exists.`);
-          }
-          const entry = createManifestEntry({
-            name: file.name,
-            kind: 'dat',
-            order: current.manifest.files.length,
-            text,
-            createdAt: nowIso,
-            updatedAt: nowIso,
-            modifiedAt: nowIso,
-          });
           const workspace = normalizeSessionWorkspace(current);
-          current.manifest.files = [...current.manifest.files, entry];
+          const existingNames = new Set(current.manifest.files.map((entry) => entry.name));
+          const appendedEntries = loadedFiles.map(({ file, text }, index) => {
+            const requestedName = getImportedProjectSourceName(file.name);
+            const nextName = existingNames.has(requestedName)
+              ? buildFileNameCopy(requestedName, existingNames)
+              : requestedName;
+            existingNames.add(nextName);
+            return createManifestEntry({
+              name: nextName,
+              kind: 'dat',
+              order: current.manifest.files.length + index,
+              text,
+              createdAt: nowIso,
+              updatedAt: nowIso,
+              modifiedAt: nowIso,
+            });
+          });
+          current.manifest.files = [...current.manifest.files, ...appendedEntries];
           current.manifest.workspace = normalizeWorkspaceState(current.manifest.files, {
             ...workspace,
-            openFileIds: appendUniqueId(workspace.openFileIds, entry.id),
-            focusedFileId: entry.id,
+            openFileIds: appendedEntries.reduce(
+              (ids, entry) => appendUniqueId(ids, entry.id),
+              workspace.openFileIds,
+            ),
+            focusedFileId: appendedEntries[appendedEntries.length - 1]?.id ?? workspace.focusedFileId,
           });
           current.manifest.updatedAt = nowIso;
           current.indexRow = touchProjectIndexRow(current.indexRow, nowIso);
-          current.sourceTexts = {
-            ...current.sourceTexts,
-            [entry.id]: text,
-          };
-          current.dirtyFileIds = appendUniqueId(current.dirtyFileIds, entry.id);
+          current.sourceTexts = appendedEntries.reduce<Record<string, string>>(
+            (sourceTexts, entry, index) => {
+              sourceTexts[entry.id] = loadedFiles[index]?.text ?? '';
+              return sourceTexts;
+            },
+            { ...current.sourceTexts },
+          );
+          current.dirtyFileIds = appendedEntries.reduce(
+            (ids, entry) => appendUniqueId(ids, entry.id),
+            current.dirtyFileIds,
+          );
           current.manifestDirty = true;
+          current.autosaveState = 'idle';
+          current.lastAutosaveError = null;
           return current;
         });
         setImportNotice({
           title: 'Project source file added',
-          detailLines: [`Added ${file.name}.`],
+          detailLines:
+            loadedFiles.length === 1
+              ? [`Added ${getImportedProjectSourceName(loadedFiles[0]?.file.name ?? 'file')}.`]
+              : [`Added ${loadedFiles.length} source files to the current project.`],
         });
+        return true;
       } catch (error) {
         setImportNotice({
           title: 'Project source file failed',
           detailLines: [error instanceof Error ? error.message : String(error)],
         });
+        return false;
       }
     },
     [projectSession, setImportNotice, updateProjectSession],
+  );
+
+  const handleProjectSourceFileChange = useCallback(
+    async (e: ChangeEvent<HTMLInputElement>) => {
+      const files = Array.from(e.target.files ?? []);
+      if (files.length === 0) return;
+      e.target.value = '';
+      await importProjectSourceFiles(files);
+    },
+    [importProjectSourceFiles],
   );
 
   const openFileTab = useCallback(
@@ -1771,6 +1815,7 @@ export const useProjectFileWorkflow = ({
         : projectIncludeFiles,
     triggerProjectFileSelect,
     triggerProjectSourceFileSelect,
+    importProjectSourceFiles,
     openProjectWorkspace,
     handleSaveProject,
     handleEditorInputChange,

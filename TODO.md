@@ -176,6 +176,11 @@
       - [x] Reduce checkbox/reorder churn by avoiding unnecessary editor/include-file resync when focused text does not change
       - [x] Make project-files popup active/open/main state more explicit and less drag-prone
       - [x] Add focused regression coverage for marker rendering and checkbox-only interactions
+    - [x] Batch 12 - source import and autosave timing
+      - [x] Debounce named-project autosave to one minute after the latest dirty edit instead of half-second churn
+      - [x] Route plain `.dat` imports into the current project as new source files instead of replacing the focused editor text
+      - [x] Support multi-select source import so several `.dat` files append into one project in one action
+      - [x] Add focused regression coverage for autosave delay and multi-file source import naming
   - [ ] Batch 5 - error propagation precision closeout
       - [x] Expand the parity harness to lock the full error-propagation sections (all station sigmas, station ellipses, and relative ellipses)
       - [x] Add an error-propagation-focused machine-readable deviation summary alongside the broader reference diff
