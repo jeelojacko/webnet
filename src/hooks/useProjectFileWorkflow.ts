@@ -1593,7 +1593,7 @@ export const useProjectFileWorkflow = ({
           current.indexRow = touchProjectIndexRow(current.indexRow, nowIso);
           current.manifestDirty = true;
           return current;
-        });
+        }, { syncEditor: false });
       } catch (error) {
         setImportNotice({
           title: 'Rename failed',
@@ -1615,8 +1615,10 @@ export const useProjectFileWorkflow = ({
         current.manifest.updatedAt = nowIso;
         current.indexRow = touchProjectIndexRow(current.indexRow, nowIso);
         current.manifestDirty = true;
+        current.autosaveState = 'idle';
+        current.lastAutosaveError = null;
         return current;
-      });
+      }, { syncEditor: false });
     },
     [updateProjectSession],
   );
@@ -1642,8 +1644,10 @@ export const useProjectFileWorkflow = ({
         current.manifest.updatedAt = nowIso;
         current.indexRow = touchProjectIndexRow(current.indexRow, nowIso);
         current.manifestDirty = true;
+        current.autosaveState = 'idle';
+        current.lastAutosaveError = null;
         return current;
-      });
+      }, { syncEditor: false });
     },
     [updateProjectSession],
   );

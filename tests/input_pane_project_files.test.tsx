@@ -101,6 +101,87 @@ describe('InputPane project files UI', () => {
     container.remove();
   });
 
+  it('shows explicit file-state markers and keeps checkbox clicks scoped to enable state', async () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root: Root = createRoot(container);
+    const onSetProjectFileEnabled = vi.fn();
+    const onFocusProjectFile = vi.fn();
+    const onOpenFileTab = vi.fn();
+
+    await act(async () => {
+      root.render(
+        <InputPane
+          input="C A 0 0 0 ! !"
+          onChange={() => undefined}
+          projectFiles={[
+            {
+              id: 'file-1',
+              name: 'main.dat',
+              kind: 'dat',
+              order: 0,
+              tabOrder: 0,
+              isCheckedForRun: true,
+              isOpenInTab: true,
+              isFocusedTab: true,
+              enabled: true,
+              isActive: true,
+              isMain: true,
+            },
+            {
+              id: 'file-2',
+              name: 'notes.txt',
+              kind: 'notes',
+              order: 1,
+              tabOrder: null,
+              isCheckedForRun: false,
+              isOpenInTab: false,
+              isFocusedTab: false,
+              enabled: false,
+              isActive: false,
+              isMain: false,
+            },
+          ]}
+          onSetProjectFileEnabled={onSetProjectFileEnabled}
+          onFocusProjectFile={onFocusProjectFile}
+          onOpenFileTab={onOpenFileTab}
+        />,
+      );
+    });
+
+    const button = Array.from(container.querySelectorAll('button')).find((node) =>
+      node.textContent?.includes('Project Files'),
+    ) as HTMLButtonElement | undefined;
+    expect(button).toBeDefined();
+
+    await act(async () => {
+      button?.click();
+    });
+
+    expect(container.textContent).toContain('main');
+    expect(container.textContent).toContain('open');
+    expect(container.textContent).toContain('active');
+    expect(container.textContent).toContain('unchecked');
+
+    const checkbox = container.querySelector(
+      'input[aria-label="Include notes.txt in run"]',
+    ) as HTMLInputElement | null;
+    expect(checkbox?.checked).toBe(false);
+
+    await act(async () => {
+      checkbox?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    });
+
+    expect(onSetProjectFileEnabled).toHaveBeenCalledWith('file-2', true);
+    expect(onFocusProjectFile).not.toHaveBeenCalled();
+    expect(onOpenFileTab).not.toHaveBeenCalled();
+
+    await act(async () => {
+      root.unmount();
+    });
+    container.remove();
+  });
+
   it('renders open file tabs and closes a tab without deleting the file', async () => {
     const container = document.createElement('div');
     document.body.appendChild(container);

@@ -1,5 +1,5 @@
 import React from 'react';
-import { FileText, Files, Plus, X } from 'lucide-react';
+import { FileText, Files, GripVertical, Plus, X } from 'lucide-react';
 import { blockCommentSelection, blockUncommentSelection } from './commentToggle';
 import { INPUT_PANE_CONTEXT_MENU_ORDER } from './inputPaneContextMenu';
 import type { ProjectRunValidation, ProjectWorkspaceFileView } from '../hooks/useProjectFileWorkflow';
@@ -44,6 +44,15 @@ type FileMenuState = {
   fileId: string;
   x: number;
   y: number;
+};
+
+const buildProjectFileStatusChips = (file: ProjectWorkspaceFileView): string[] => {
+  const chips: string[] = [file.kind];
+  if (!file.enabled) chips.push('unchecked');
+  if (file.isMain) chips.push('main');
+  if (file.isOpenInTab) chips.push('open');
+  if (file.isActive) chips.push('active');
+  return chips;
 };
 
 const INPUT_EDITOR_BASE_TOKEN_CLASS = 'text-slate-300';
@@ -649,9 +658,6 @@ const InputPane = React.forwardRef<InputPaneHandle, InputPaneProps>(
               {sortedProjectFiles.map((file) => (
                 <div
                   key={file.id}
-                  draggable
-                  onDragStart={() => setDraggedFileId(file.id)}
-                  onDragEnd={() => setDraggedFileId(null)}
                   onDragOver={(event) => event.preventDefault()}
                   onDrop={(event) => {
                     event.preventDefault();
@@ -678,16 +684,29 @@ const InputPane = React.forwardRef<InputPaneHandle, InputPaneProps>(
                     setIsProjectFilesOpen(true);
                   }}
                   className={`mb-1 flex items-center gap-2 rounded border px-2 py-2 text-xs ${
-                    file.isFocusedTab
-                      ? 'border-blue-500/70 bg-blue-500/10'
+                    file.isActive
+                      ? 'border-blue-500/70 bg-blue-500/10 shadow-[0_0_0_1px_rgba(59,130,246,0.14)]'
                       : 'border-slate-700 bg-slate-950/70 hover:border-slate-600'
                   }`}
                 >
-                  <div className="cursor-grab text-slate-500">::</div>
+                  <button
+                    type="button"
+                    draggable
+                    onDragStart={() => setDraggedFileId(file.id)}
+                    onDragEnd={() => setDraggedFileId(null)}
+                    onClick={(event) => event.preventDefault()}
+                    className="cursor-grab rounded p-1 text-slate-500 hover:text-slate-300"
+                    aria-label={`Reorder ${file.name}`}
+                    title={`Reorder ${file.name}`}
+                  >
+                    <GripVertical size={12} />
+                  </button>
                   <input
                     type="checkbox"
                     checked={file.isCheckedForRun}
                     onChange={(event) => onSetProjectFileEnabled?.(file.id, event.target.checked)}
+                    onClick={(event) => event.stopPropagation()}
+                    aria-label={`Include ${file.name} in run`}
                     className="h-3.5 w-3.5 rounded border-slate-600 bg-slate-900"
                   />
                   <button
@@ -719,10 +738,23 @@ const InputPane = React.forwardRef<InputPaneHandle, InputPaneProps>(
                         {file.name}
                       </div>
                     )}
-                    <div className="mt-1 text-[10px] uppercase tracking-wide text-slate-500">
-                      {file.kind}
-                      {file.isOpenInTab ? ' / open' : ''}
-                      {file.isFocusedTab ? ' / focused' : ''}
+                    <div className="mt-1 flex flex-wrap gap-1 text-[10px] uppercase tracking-wide">
+                      {buildProjectFileStatusChips(file).map((chip) => (
+                        <span
+                          key={`${file.id}-${chip}`}
+                          className={`rounded border px-1.5 py-0.5 ${
+                            chip === 'active'
+                              ? 'border-blue-500/60 bg-blue-500/15 text-blue-200'
+                              : chip === 'main'
+                                ? 'border-emerald-500/50 bg-emerald-500/10 text-emerald-200'
+                                : chip === 'unchecked'
+                                  ? 'border-amber-500/40 bg-amber-500/10 text-amber-200'
+                                  : 'border-slate-700 bg-slate-900/70 text-slate-500'
+                          }`}
+                        >
+                          {chip}
+                        </span>
+                      ))}
                     </div>
                   </button>
                 </div>

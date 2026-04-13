@@ -172,6 +172,10 @@
     - [x] Batch 10 - autosave race hardening
       - [x] Prevent stale autosave completions from overwriting newer project-file checked/open/focused state
       - [x] Add focused regression coverage for rapid project-file toggles across overlapping autosave saves
+    - [x] Batch 11 - project-files marker responsiveness
+      - [x] Reduce checkbox/reorder churn by avoiding unnecessary editor/include-file resync when focused text does not change
+      - [x] Make project-files popup active/open/main state more explicit and less drag-prone
+      - [x] Add focused regression coverage for marker rendering and checkbox-only interactions
   - [ ] Batch 5 - error propagation precision closeout
       - [x] Expand the parity harness to lock the full error-propagation sections (all station sigmas, station ellipses, and relative ellipses)
       - [x] Add an error-propagation-focused machine-readable deviation summary alongside the broader reference diff
