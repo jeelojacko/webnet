@@ -66,6 +66,7 @@
 
   - Local browser projects backed by OPFS when available, with IndexedDB project catalog fallback
   - Multi-file project workspaces with checked run files, editor tabs, and ordered project-file execution
+  - Input Data `Project Files` workflow that can bootstrap a named project from the current workspace and manage checked/open tabs directly from the editor header
   - Portable `.wnproj` snapshot export/import and zipped manifest-plus-sources bundle export/import
   - Staged import review and reconciliation workflow
   - Supported external importers for selected survey/job data formats

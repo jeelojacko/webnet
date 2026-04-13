@@ -176,6 +176,7 @@ export interface ProjectWorkspaceFileView {
   name: string;
   kind: ProjectSourceFileKind;
   order: number;
+  tabOrder: number | null;
   isCheckedForRun: boolean;
   isOpenInTab: boolean;
   isFocusedTab: boolean;
@@ -245,6 +246,15 @@ const removeFileId = (ids: string[], value: string): string[] => ids.filter((id)
 
 const buildCombinedRunInput = (runFiles: ProjectRunFile[]): string =>
   runFiles.map((file) => file.content).join('\n');
+
+const sortRecentProjectRows = (rows: ProjectIndexRow[]): ProjectIndexRow[] =>
+  [...rows].sort(
+    (a, b) =>
+      b.lastOpenedAt.localeCompare(a.lastOpenedAt) ||
+      b.updatedAt.localeCompare(a.updatedAt) ||
+      a.name.localeCompare(b.name, undefined, { numeric: true }) ||
+      a.id.localeCompare(b.id, undefined, { numeric: true }),
+  );
 
 const buildFileNameCopy = (baseName: string, existingNames: Set<string>): string => {
   const dotIndex = baseName.lastIndexOf('.');
@@ -320,6 +330,19 @@ export const useProjectFileWorkflow = ({
   const [recentProjects, setRecentProjects] = useState<ProjectIndexRow[]>([]);
   const [storageStatus, setStorageStatus] = useState<ProjectStorageStatus | null>(null);
   const canUseNamedProjectStorage = Boolean(storageStatus?.hasIndexedDb);
+
+  const upsertRecentProjectRow = useCallback((row: ProjectIndexRow) => {
+    setRecentProjects((current) =>
+      sortRecentProjectRows([
+        row,
+        ...current.filter((entry) => entry.id !== row.id),
+      ]),
+    );
+  }, []);
+
+  const removeRecentProjectRow = useCallback((projectId: string) => {
+    setRecentProjects((current) => current.filter((entry) => entry.id !== projectId));
+  }, []);
 
   const refreshStorageContext = useCallback(async () => {
     const status = await storage.getStatus();
@@ -586,6 +609,10 @@ export const useProjectFileWorkflow = ({
       );
       return projectSession.manifest.files
         .map((file) => ({
+          tabOrder:
+            workspace.openFileIds.indexOf(file.id) >= 0
+              ? workspace.openFileIds.indexOf(file.id)
+              : null,
           id: file.id,
           name: file.name,
           kind: file.kind,
@@ -678,9 +705,9 @@ export const useProjectFileWorkflow = ({
           lastAutosaveError: null,
         };
       });
-      await refreshStorageContext();
+      upsertRecentProjectRow(saved.indexRow);
     },
-    [refreshStorageContext, storage],
+    [storage, upsertRecentProjectRow],
   );
 
   useEffect(() => {
@@ -938,6 +965,7 @@ export const useProjectFileWorkflow = ({
       const parsedPayload = buildParsedPayloadFromSession(session);
       applyLoadedProjectPayload(parsedPayload, session, []);
       setProjectSession(session);
+      upsertRecentProjectRow(session.indexRow);
       await requestPersistentStorage();
       setImportNotice({
         title: 'Local project opened',
@@ -947,7 +975,13 @@ export const useProjectFileWorkflow = ({
         ],
       });
     },
-    [applyLoadedProjectPayload, buildParsedPayloadFromSession, setImportNotice, storage],
+    [
+      applyLoadedProjectPayload,
+      buildParsedPayloadFromSession,
+      setImportNotice,
+      storage,
+      upsertRecentProjectRow,
+    ],
   );
 
   const deleteLocalProject = useCallback(
@@ -961,13 +995,13 @@ export const useProjectFileWorkflow = ({
       if (projectSession?.indexRow.id === projectId) {
         setProjectSession(null);
       }
-      await refreshStorageContext();
+      removeRecentProjectRow(projectId);
       setImportNotice({
         title: 'Local project deleted',
         detailLines: [`Deleted ${existing?.name ?? projectId}.`],
       });
     },
-    [projectSession?.indexRow.id, recentProjects, refreshStorageContext, setImportNotice, storage],
+    [projectSession?.indexRow.id, recentProjects, removeRecentProjectRow, setImportNotice, storage],
   );
 
   const triggerProjectFileSelect = useCallback(() => {

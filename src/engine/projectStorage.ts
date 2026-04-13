@@ -319,12 +319,13 @@ const createIndexedDbStorage = (): ProjectStorage => ({
         manifestStore.get(projectId),
       )) as ProjectManifestRecord | undefined;
       await transactionDone(transaction);
-      if (!indexRow || !manifestRecord) return null;
+      if (!indexRow) return null;
       if (indexRow.backend === 'opfs') {
         const session = await readOpfsProject(indexRow);
         if (!session) return null;
         return session;
       }
+      if (!manifestRecord) return null;
       const sourceTexts = await readAllProjectFilesFromDb(db, projectId);
       return createSessionFromManifest({
         indexRow,
@@ -341,6 +342,9 @@ const createIndexedDbStorage = (): ProjectStorage => ({
     }
     const db = await openProjectDatabase();
     try {
+      const indexTransaction = db.transaction(PROJECT_INDEX_STORE, 'readwrite');
+      indexTransaction.objectStore(PROJECT_INDEX_STORE).put(indexRow);
+      await transactionDone(indexTransaction);
       if (indexRow.backend === 'opfs') {
         const root = await getOpfsDirectoryHandle();
         if (!root) throw new Error('OPFS is not available.');
@@ -353,8 +357,7 @@ const createIndexedDbStorage = (): ProjectStorage => ({
           await writeTextFileToOpfs(root, `${projectRoot}/${file.path}`, sourceTexts[file.id] ?? '');
         }
       } else {
-        const transaction = db.transaction([PROJECT_INDEX_STORE, PROJECT_MANIFEST_STORE], 'readwrite');
-        transaction.objectStore(PROJECT_INDEX_STORE).put(indexRow);
+        const transaction = db.transaction(PROJECT_MANIFEST_STORE, 'readwrite');
         transaction.objectStore(PROJECT_MANIFEST_STORE).put({
           projectId: manifest.projectId,
           manifest,

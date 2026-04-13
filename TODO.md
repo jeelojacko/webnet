@@ -151,6 +151,13 @@
       - [x] Add a minimal checked-file UI, editor tabs, and an Input Data header `Project Files` popover with rename/duplicate/context-menu/reorder controls
       - [x] Keep portable export/import, bundle export/import, and named-project autosave aligned with the new checked/open/focused file state
       - [x] Add focused migration/workflow/parser/UI regression coverage, then run lint/typecheck/test/build plus the industry-reference parity gate
+    - [x] Batch 6 - project-files workflow polish
+      - [x] Keep the Input Data `Project Files` entry point visible even before a named project exists
+      - [x] Make the first `Project Files` action create a named project from the current workspace instead of hiding the workflow behind Project Options
+      - [x] Fix named-project open flows so existing local projects reopen reliably across supported storage backends
+      - [x] Keep open editor tabs stable when project-file manifest order changes
+      - [x] Reduce project-files workflow churn from unnecessary recent-project refreshes during autosave-heavy editing
+      - [x] Add focused regression coverage for the new project-files entry behavior, storage reopen path, and stable tab ordering
   - [ ] Batch 5 - error propagation precision closeout
       - [x] Expand the parity harness to lock the full error-propagation sections (all station sigmas, station ellipses, and relative ellipses)
       - [x] Add an error-propagation-focused machine-readable deviation summary alongside the broader reference diff

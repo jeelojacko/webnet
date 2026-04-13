@@ -2118,6 +2118,9 @@ const App: React.FC<AppProps> = ({
                 activeFileName={currentProjectFile?.name ?? null}
                 projectFiles={activeProjectFileViews}
                 projectRunValidation={projectRunValidation}
+                onOpenProjectFiles={() => {
+                  void createLocalProjectFromCurrentWorkspace();
+                }}
                 onOpenFileTab={openFileTab}
                 onCloseFileTab={closeFileTab}
                 onFocusProjectFile={switchActiveProjectFile}

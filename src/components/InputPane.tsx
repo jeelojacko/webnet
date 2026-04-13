@@ -177,6 +177,7 @@ const InputPane = React.forwardRef<InputPaneHandle, InputPaneProps>(
       activeFileName = null,
       projectFiles = [],
       projectRunValidation = null,
+      onOpenProjectFiles,
       onOpenFileTab,
       onCloseFileTab,
       onFocusProjectFile,
@@ -214,8 +215,15 @@ const InputPane = React.forwardRef<InputPaneHandle, InputPaneProps>(
     [projectFiles],
   );
   const openTabs = React.useMemo(
-    () => sortedProjectFiles.filter((file) => file.isOpenInTab),
-    [sortedProjectFiles],
+    () =>
+      projectFiles
+        .filter((file) => file.isOpenInTab)
+        .sort(
+          (a, b) =>
+            (a.tabOrder ?? Number.MAX_SAFE_INTEGER) - (b.tabOrder ?? Number.MAX_SAFE_INTEGER) ||
+            a.name.localeCompare(b.name),
+        ),
+    [projectFiles],
   );
   const beginRename = React.useCallback(
     (fileId: string) => {
@@ -594,20 +602,22 @@ const InputPane = React.forwardRef<InputPaneHandle, InputPaneProps>(
             )}
           </div>
           <div className="flex items-center gap-2">
-            {projectFiles.length > 0 && (
-              <button
-                ref={projectFilesButtonRef}
-                type="button"
-                onClick={(event) => {
-                  event.stopPropagation();
-                  openProjectFiles();
-                }}
-                className="inline-flex items-center gap-1 rounded border border-slate-600 px-2 py-1 text-[10px] uppercase tracking-wide text-slate-300 hover:border-slate-500 hover:text-white"
-              >
-                <Files size={12} />
-                Project Files
-              </button>
-            )}
+            <button
+              ref={projectFilesButtonRef}
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation();
+                if (projectFiles.length === 0) {
+                  onOpenProjectFiles?.();
+                  return;
+                }
+                openProjectFiles();
+              }}
+              className="inline-flex items-center gap-1 rounded border border-slate-600 px-2 py-1 text-[10px] uppercase tracking-wide text-slate-300 hover:border-slate-500 hover:text-white"
+            >
+              <Files size={12} />
+              Project Files
+            </button>
             <FileText size={14} />
           </div>
         </div>

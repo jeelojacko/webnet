@@ -10,6 +10,40 @@ import InputPane from '../src/components/InputPane';
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
 describe('InputPane project files UI', () => {
+  it('keeps the project files button available before a named project exists', async () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root: Root = createRoot(container);
+    const onOpenProjectFiles = vi.fn();
+
+    await act(async () => {
+      root.render(
+        <InputPane
+          input="C A 0 0 0 ! !"
+          onChange={() => undefined}
+          projectFiles={[]}
+          onOpenProjectFiles={onOpenProjectFiles}
+        />,
+      );
+    });
+
+    const button = Array.from(container.querySelectorAll('button')).find((node) =>
+      node.textContent?.includes('Project Files'),
+    ) as HTMLButtonElement | undefined;
+    expect(button).toBeDefined();
+
+    await act(async () => {
+      button?.click();
+    });
+
+    expect(onOpenProjectFiles).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      root.unmount();
+    });
+    container.remove();
+  });
+
   it('opens the project files popover and toggles run participation', async () => {
     const container = document.createElement('div');
     document.body.appendChild(container);
@@ -27,6 +61,7 @@ describe('InputPane project files UI', () => {
               name: 'alpha.dat',
               kind: 'dat',
               order: 0,
+              tabOrder: 0,
               isCheckedForRun: true,
               isOpenInTab: true,
               isFocusedTab: true,
@@ -83,6 +118,7 @@ describe('InputPane project files UI', () => {
               name: 'alpha.dat',
               kind: 'dat',
               order: 0,
+              tabOrder: 0,
               isCheckedForRun: true,
               isOpenInTab: true,
               isFocusedTab: true,
@@ -105,6 +141,62 @@ describe('InputPane project files UI', () => {
     });
 
     expect(onCloseFileTab).toHaveBeenCalledWith('file-1');
+
+    await act(async () => {
+      root.unmount();
+    });
+    container.remove();
+  });
+
+  it('keeps open tab order stable when project file list order changes', async () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root: Root = createRoot(container);
+
+    await act(async () => {
+      root.render(
+        <InputPane
+          input="C A 0 0 0 ! !"
+          onChange={() => undefined}
+          projectFiles={[
+            {
+              id: 'file-2',
+              name: 'beta.dat',
+              kind: 'dat',
+              order: 0,
+              tabOrder: 1,
+              isCheckedForRun: true,
+              isOpenInTab: true,
+              isFocusedTab: false,
+              enabled: true,
+              isActive: false,
+              isMain: false,
+            },
+            {
+              id: 'file-1',
+              name: 'alpha.dat',
+              kind: 'dat',
+              order: 1,
+              tabOrder: 0,
+              isCheckedForRun: true,
+              isOpenInTab: true,
+              isFocusedTab: true,
+              enabled: true,
+              isActive: true,
+              isMain: true,
+            },
+          ]}
+        />,
+      );
+    });
+
+    const closeButtons = Array.from(
+      container.querySelectorAll('button[aria-label^="Close "]'),
+    ) as HTMLButtonElement[];
+    expect(closeButtons.map((button) => button.getAttribute('aria-label'))).toEqual([
+      'Close alpha.dat',
+      'Close beta.dat',
+    ]);
 
     await act(async () => {
       root.unmount();

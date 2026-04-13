@@ -29,12 +29,14 @@ Current startup and workflow defaults include:
 
 ### Named-project multi-file runs
 Current named-project behavior includes:
+- the Input Data `Project Files` button remains available even before a named project exists and can bootstrap a named local project from the current untitled workspace
 - checked project files define the run set
 - open tabs define the editor workspace
 - one focused tab drives the visible editor text
 - checked project files run in manifest order as one shared adjustment
 - parser defaults reset at each checked project-file boundary while alias definitions and accumulated network state carry forward across files
 - `.INCLUDE` remains valid inside checked project files, and duplicate project-file includes are warned and skipped
+- open editor tabs preserve their own tab-strip order even if the underlying project-file manifest order is rearranged for run sequencing
 
 For the exact ordered run contract, see `docs/run-semantics.md`.
 
@@ -248,6 +250,7 @@ For detailed import behavior, see `docs/IMPORT_WORKFLOW.md`.
 ### Persistence and saved work
 Current workspace behavior includes:
 - named local browser projects backed by OPFS when available, with IndexedDB used for the recent-project catalog and as the file-content fallback store
+- local project reopen flows work across both IndexedDB-backed and OPFS-backed named projects
 - manifest-first `webnet-project` v4 storage with stable source-file IDs, one main editor file, managed non-main source members, and project-scoped autosave for sources/settings/UI state
 - portable `.wnproj` export/import as flattened snapshots plus zipped manifest-plus-sources bundle export/import for backup/share workflows
 - browser-local recovery for untitled workspaces only, keeping named-project autosave separate from local draft recovery
