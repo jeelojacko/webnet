@@ -158,6 +158,10 @@
       - [x] Keep open editor tabs stable when project-file manifest order changes
       - [x] Reduce project-files workflow churn from unnecessary recent-project refreshes during autosave-heavy editing
       - [x] Add focused regression coverage for the new project-files entry behavior, storage reopen path, and stable tab ordering
+    - [x] Batch 7 - project access entry polish
+      - [x] Make the toolbar open-project action open the Project Options workspace tab instead of auto-opening the most recent local project
+      - [x] Keep the project workspace modal copy aligned with the current v5 manifest schema
+      - [x] Add focused UI regression coverage for the toolbar open-project entry path
   - [ ] Batch 5 - error propagation precision closeout
       - [x] Expand the parity harness to lock the full error-propagation sections (all station sigmas, station ellipses, and relative ellipses)
       - [x] Add an error-propagation-focused machine-readable deviation summary alongside the broader reference diff

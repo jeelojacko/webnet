@@ -151,6 +151,16 @@ const clickOpenProjectOptions = async (container: HTMLElement): Promise<void> =>
   });
 };
 
+const clickOpenProjectWorkspace = async (container: HTMLElement): Promise<void> => {
+  const openButton = container.querySelector(
+    'button[title="Open local project workspace or portable project import"]',
+  ) as HTMLButtonElement | null;
+  if (!openButton) throw new Error('Project workspace launcher button not found.');
+  await act(async () => {
+    openButton.click();
+  });
+};
+
 const findSelectForSettingsRow = (container: HTMLElement, rowLabel: string): HTMLSelectElement => {
   const row = Array.from(container.querySelectorAll('label')).find((entry) =>
     entry.textContent?.includes(rowLabel),
@@ -213,6 +223,34 @@ const setInputValue = async (input: HTMLInputElement, value: string): Promise<vo
 };
 
 describe('Project Options modal interactions', () => {
+  modalIt('opens the project workspace tab from the toolbar folder button', async () => {
+    document.documentElement.setAttribute('data-theme', 'gruvbox-dark');
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root: Root = createRoot(container);
+
+    try {
+      await act(async () => {
+        root.render(<App initialSettingsModalOpen={false} />);
+      });
+
+      expect(container.textContent).not.toContain('Local Project Workspace');
+
+      await clickOpenProjectWorkspace(container);
+      await waitForProjectOptionsContent(container);
+      await waitForTabContent(container, 'other-files');
+
+      expect(container.textContent).toContain('Manifest schema');
+      expect(container.textContent).toContain('Create Local Project');
+      expect(container.textContent).toContain('Recent Local Projects');
+    } finally {
+      await act(async () => {
+        root.unmount();
+      });
+      container.remove();
+    }
+  });
+
   modalIt('switches between tab panels when tab buttons are clicked', async () => {
     const app = await mountApp('adjustment');
     try {

@@ -30,6 +30,7 @@ Current startup and workflow defaults include:
 ### Named-project multi-file runs
 Current named-project behavior includes:
 - the Input Data `Project Files` button remains available even before a named project exists and can bootstrap a named local project from the current untitled workspace
+- the toolbar folder/open-project entry opens the Project Options workspace tab directly so local project create/open actions always land in the same `Other Files` workflow surface
 - checked project files define the run set
 - open tabs define the editor workspace
 - one focused tab drives the visible editor text

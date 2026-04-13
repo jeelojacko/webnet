@@ -1498,7 +1498,7 @@ const ProjectOptionsModal: React.FC<ProjectOptionsModalProps> = ({ context }) =>
                               ? 'available'
                               : 'unavailable'}
                         </div>
-                        <div>Manifest schema: <span className="font-semibold">webnet-project v4</span></div>
+                        <div>Manifest schema: <span className="font-semibold">webnet-project v5</span></div>
                       </div>
                       <div className="flex flex-wrap gap-2">
                         <button

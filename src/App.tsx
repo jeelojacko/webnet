@@ -1103,6 +1103,7 @@ const App: React.FC<AppProps> = ({
   const {
     isSettingsModalOpen,
     activeOptionsTab,
+    setActiveOptionsTab,
     settingsDraft,
     setSettingsDraft,
     parseSettingsDraft,
@@ -1183,7 +1184,6 @@ const App: React.FC<AppProps> = ({
     currentEditorIncludeFiles,
     triggerProjectFileSelect,
     triggerProjectSourceFileSelect,
-    openProjectWorkspace,
     handleSaveProject,
     handleEditorInputChange,
     handleProjectFileChange,
@@ -1861,6 +1861,10 @@ const App: React.FC<AppProps> = ({
     setActiveTab('report');
     setReportFilterFocusRequestKey((current) => current + 1);
   };
+  const handleOpenProjectWorkspacePanel = React.useCallback(() => {
+    openProjectOptions();
+    setActiveOptionsTab('other-files');
+  }, [openProjectOptions, setActiveOptionsTab]);
   const optionInputClass =
     'w-full bg-slate-700 text-xs border border-slate-500 text-white rounded px-2 py-1 outline-none focus:border-blue-400';
   const optionLabelClass = 'text-[11px] text-slate-300 uppercase tracking-wide';
@@ -1984,7 +1988,7 @@ const App: React.FC<AppProps> = ({
         onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
         onOpenProjectOptions={openProjectOptions}
         onOpenImportFile={() => triggerFileSelect()}
-        onOpenProjectFile={openProjectWorkspace}
+        onOpenProjectFile={handleOpenProjectWorkspacePanel}
         onSaveProject={handleSaveProject}
         exportFormat={exportFormat}
         onExportFormatChange={setExportFormat}
