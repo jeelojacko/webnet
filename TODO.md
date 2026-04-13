@@ -79,6 +79,10 @@
     - [x] Batch 6 - matrix-helper allocation trims
       - [x] Reduce hot-path zero-matrix allocation overhead in shared matrix helpers
       - [x] Keep only changes that preserve results and at least match the current large-project benchmark timing
+    - [x] Batch 7 - production bundle chunking
+      - [x] Split the main Vite entry bundle into stable vendor and WebNet engine/workflow chunks so the production build clears the large-chunk warning without changing runtime behavior
+      - [x] Keep lazy-loaded report/map/project/import modal chunks aligned with the new shared chunk boundaries instead of forcing a monolithic shared app bundle
+      - [x] Validate the production build output after chunking and keep the chunking rules maintainable in `vite.config.js`
   - [ ] Phase 4 - industry-standard result parity
     - [x] Batch 1 - reference fixture, diff harness, and rollback gates
       - [x] Add a repo fixture set for the attached industry-standard reference case using generic fixture names
