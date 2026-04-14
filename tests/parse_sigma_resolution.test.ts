@@ -20,6 +20,14 @@ describe('parseSigmaResolution', () => {
     const extracted = extractSigmaTokens(['0.25', '!', '1.5/1.7', 'tail'], 3);
     expect(extracted.sigmas).toEqual([{ kind: 'numeric', value: 0.25 }, { kind: 'fixed' }]);
     expect(extracted.rest).toEqual(['1.5/1.7', 'tail']);
+
+    const packed = extractSigmaTokens(['&&*', 'tail'], 3);
+    expect(packed.sigmas).toEqual([
+      { kind: 'default' },
+      { kind: 'default' },
+      { kind: 'float' },
+    ]);
+    expect(packed.rest).toEqual(['tail']);
   });
 
   it('resolves default, fixed, float, and additive-vs-propagated distance sigmas', () => {

@@ -57,6 +57,39 @@ export interface ImportedSourceMetadata {
   setupType?: string;
 }
 
+export interface ImportedJobXmlExtras {
+  stationRecordRef?: string;
+  backBearingRecordRef?: string;
+  targetRecordRef?: string;
+  atmosphereRecordRef?: string;
+  round?: number;
+  observationOrder?: number;
+  directionSetId?: string;
+  isDirectReading?: boolean;
+  isMta?: boolean;
+  isBacksight?: boolean;
+  rawHorizontalCircleDeg?: number;
+  reducedAngleDeg?: number;
+  backsightCircleDeg?: number;
+  backsightFace1CircleDeg?: number;
+  backsightFace2CircleDeg?: number;
+  rawVerticalCircleDeg?: number;
+  rawEdmDistanceM?: number;
+  correctedSlopeDistanceM?: number;
+  prismConstantM?: number;
+  ppm?: number;
+  pointCode?: string;
+  targetCode?: string;
+  observationHiM?: number;
+  setupHiM?: number;
+  effectiveHiM?: number;
+  hiSource?: 'observation' | 'setup';
+  observationHtM?: number;
+  targetHtM?: number;
+  effectiveHtM?: number;
+  htSource?: 'observation' | 'target';
+}
+
 export interface ImportedRecordBase {
   sourceLine?: number;
   sourceCode?: string;
@@ -65,6 +98,7 @@ export interface ImportedRecordBase {
   importSourceKey?: string;
   importSourceName?: string;
   sourceMeta?: ImportedSourceMetadata;
+  jobXml?: ImportedJobXmlExtras;
 }
 
 export interface ImportedControlStationRecord extends ImportedRecordBase {
@@ -831,6 +865,7 @@ interface JobXmlSetupContext {
   backsightRecordRef?: string;
   hiM?: number;
   setupType?: string;
+  atmosphereRef?: string;
 }
 
 interface JobXmlBacksightContext {
@@ -844,6 +879,12 @@ interface JobXmlBacksightContext {
 interface JobXmlTargetContext {
   stationId?: string;
   htM?: number;
+  prismConstantM?: number;
+  code?: string;
+}
+
+interface JobXmlAtmosphereContext {
+  ppm?: number;
 }
 
 const registerJobXmlPointReference = (
@@ -906,6 +947,38 @@ const resolveJobXmlPointFromBlock = (
 const normalizeAngleDeg = (value: number): number => {
   const wrapped = ((value % 360) + 360) % 360;
   return wrapped === 360 ? 0 : wrapped;
+};
+
+type JobXmlRoundEvent = {
+  index: number;
+  kind: 'start' | 'end' | 'reset';
+  round?: number;
+};
+
+const collectJobXmlRoundEvents = (input: string): JobXmlRoundEvent[] =>
+  [
+    ...matchXmlBlocks(input, 'StartRoundRecord').map(({ block, index }) => ({
+      index,
+      kind: 'start' as const,
+      round: extractXmlNumber(block, ['Round']),
+    })),
+    ...matchXmlBlocks(input, 'EndRoundRecord').map(({ index }) => ({
+      index,
+      kind: 'end' as const,
+    })),
+    ...matchXmlBlocks(input, 'StationRecord').map(({ index }) => ({
+      index,
+      kind: 'reset' as const,
+    })),
+  ].sort((left, right) => left.index - right.index);
+
+const correctJobXmlSlopeDistance = (
+  rawDistanceM: number | undefined,
+  ppm: number | undefined,
+  prismConstantM: number | undefined,
+): number | undefined => {
+  if (rawDistanceM == null) return undefined;
+  return rawDistanceM * (1 + (ppm ?? 0) / 1_000_000) + (prismConstantM ?? 0);
 };
 
 const computeLocalAzimuthDeg = (
@@ -1169,10 +1242,12 @@ const parseJobXml = (
   const setupContexts = new Map<string, JobXmlSetupContext>();
   const backsightContexts = new Map<string, JobXmlBacksightContext>();
   const targetContexts = new Map<string, JobXmlTargetContext>();
+  const atmosphereContexts = new Map<string, JobXmlAtmosphereContext>();
   const observations: ImportedObservationRecord[] = [];
   const pointBlocks = matchXmlBlocks(input, 'PointRecord');
   const reducedPointBlocks = matchXmlBlocks(input, 'Point');
   const measurementBlocks: { block: string; index: number }[] = [];
+  const roundEvents = collectJobXmlRoundEvents(input);
   const fileLabel = sourceLeaf(sourceName);
 
   pointBlocks.forEach(({ block }) => {
@@ -1193,6 +1268,14 @@ const parseJobXml = (
       registerJobXmlPointReference(pointRefLookup, rawName, stationId);
       registerJobXmlPointReference(pointRefLookup, xmlId, stationId);
     }
+  });
+
+  matchXmlBlocks(input, 'AtmosphereRecord').forEach(({ block }) => {
+    const xmlId = extractXmlAttribute(block, ['ID', 'Id']);
+    if (!xmlId) return;
+    atmosphereContexts.set(xmlId, {
+      ppm: extractXmlNumber(block, ['PPM']),
+    });
   });
 
   pointBlocks.forEach(({ block, index }) => {
@@ -1418,6 +1501,7 @@ const parseJobXml = (
       'InstHeight',
     ]);
     const backsightRecordRef = extractXmlText(block, ['BackBearingID', 'BackBearingRecordID']);
+    const atmosphereRef = extractXmlText(block, ['AtmosphereID']);
     const setupType = collapseWhitespace(extractXmlText(block, ['StationType']) ?? '');
     const backsightId = resolveJobXmlPointFromBlock(
       block,
@@ -1426,7 +1510,14 @@ const parseJobXml = (
       pointRefLookup,
       stationMap,
     );
-    setupContexts.set(xmlId, { occupyId, backsightId, backsightRecordRef, hiM, setupType });
+    setupContexts.set(xmlId, {
+      occupyId,
+      backsightId,
+      backsightRecordRef,
+      hiM,
+      setupType,
+      atmosphereRef,
+    });
   });
 
   matchXmlBlocks(input, 'BackBearingRecord').forEach(({ block }) => {
@@ -1490,11 +1581,24 @@ const parseJobXml = (
       stationMap,
     );
     const htM = extractXmlNumber(block, ['TargetHeight', 'PrismHeight', 'RodHeight', 'HT']);
-    targetContexts.set(xmlId, { stationId, htM });
+    const prismConstantM = extractXmlNumber(block, ['PrismConstant']);
+    const code = stationId ? stationMap.get(stationId)?.description : undefined;
+    targetContexts.set(xmlId, { stationId, htM, prismConstantM, code });
     if (stationId) registerJobXmlPointReference(pointRefLookup, xmlId, stationId);
   });
 
+  let currentRound: number | undefined;
+  let roundEventCursor = 0;
+  let runningObservationOrder = 0;
+
   measurementBlocks.forEach(({ block, index }) => {
+    while (roundEventCursor < roundEvents.length && roundEvents[roundEventCursor]!.index < index) {
+      const event = roundEvents[roundEventCursor]!;
+      if (event.kind === 'start') currentRound = event.round ?? currentRound;
+      else currentRound = undefined;
+      roundEventCursor += 1;
+    }
+
     const sourceLine = resolveSourceLine(index);
     const isDeleted = /<Deleted>\s*true\s*<\/Deleted>/i.test(block);
     if (isDeleted) return;
@@ -1506,6 +1610,8 @@ const parseJobXml = (
     const targetRecordRef = extractXmlText(block, ['TargetID', 'TargetRecordID']);
     const method = collapseWhitespace(extractXmlText(block, ['Method']) ?? '').toUpperCase();
     const classification = collapseWhitespace(extractXmlText(block, ['Classification']) ?? '');
+    const description = extractXmlText(block, ['Code', 'Description', 'Descriptor', 'FeatureCode']);
+    const isDirectReading = method === 'DIRECTREADING';
     const isMta = method === 'MEANTURNEDANGLE' || hasXmlTag(block, ['MTA']);
 
     const setupContext = stationRecordRef ? setupContexts.get(stationRecordRef) : undefined;
@@ -1519,7 +1625,18 @@ const parseJobXml = (
         stationMap,
       );
 
-    const targetContext = targetRecordRef ? targetContexts.get(targetRecordRef) : undefined;
+    const descriptionCode = description?.trim() || undefined;
+    const existingTargetContext = targetRecordRef ? targetContexts.get(targetRecordRef) : undefined;
+    const targetContext =
+      targetRecordRef && descriptionCode
+        ? {
+            ...existingTargetContext,
+            code: descriptionCode,
+          }
+        : existingTargetContext;
+    if (targetRecordRef && targetContext) {
+      targetContexts.set(targetRecordRef, targetContext);
+    }
     const targetId =
       targetContext?.stationId ??
       resolveJobXmlPointFromBlock(
@@ -1546,12 +1663,21 @@ const parseJobXml = (
         stationMap,
       );
 
-    const hiM =
-      extractXmlNumber(block, ['InstrumentHeight', 'TheodoliteHeight', 'HI', 'IH', 'InstHeight']) ??
-      setupContext?.hiM;
-    const htM =
-      extractXmlNumber(block, ['TargetHeight', 'PrismHeight', 'RodHeight', 'HT']) ??
-      targetContext?.htM;
+    const observationHiM = extractXmlNumber(block, [
+      'InstrumentHeight',
+      'TheodoliteHeight',
+      'HI',
+      'IH',
+      'InstHeight',
+    ]);
+    const observationHtM = extractXmlNumber(block, [
+      'TargetHeight',
+      'PrismHeight',
+      'RodHeight',
+      'HT',
+    ]);
+    const hiM = observationHiM ?? setupContext?.hiM;
+    const htM = observationHtM ?? targetContext?.htM;
     const circleBlock = extractXmlBlock(block, ['Circle']);
     const mtaBlock = extractXmlBlock(block, ['MTA']);
     const measurementDataBlock = mtaBlock ?? circleBlock ?? block;
@@ -1563,18 +1689,21 @@ const parseJobXml = (
       face: normalizedFace || undefined,
       setupType: setupContext?.setupType || undefined,
     };
-    const horizontalCircleDeg = extractXmlNumber(measurementDataBlock, ['HorizontalCircle', 'Hz']);
+    const rawHorizontalCircleDeg = extractXmlNumber(measurementDataBlock, [
+      'HorizontalCircle',
+      'Hz',
+    ]);
     const explicitAngleDeg =
       extractXmlNumber(block, ['HorizontalAngle', 'TurnedAngle']) ??
-      (isMta ? horizontalCircleDeg : undefined);
+      (isMta ? rawHorizontalCircleDeg : undefined);
     const explicitBearingDeg = extractXmlNumber(block, ['Azimuth', 'Bearing']);
-    const distanceM = extractXmlNumber(measurementDataBlock, [
+    const rawEdmDistanceM = extractXmlNumber(measurementDataBlock, [
       'EDMDistance',
       'SlopeDistance',
       'Distance',
       'HorizontalDistance',
     ]);
-    const zenithDeg = extractXmlNumber(measurementDataBlock, [
+    const rawVerticalCircleDeg = extractXmlNumber(measurementDataBlock, [
       'VerticalCircle',
       'ZenithAngle',
       'Zenith',
@@ -1585,27 +1714,78 @@ const parseJobXml = (
       'DeltaH',
     ]);
     const backsightCircleDeg = pickJobXmlBacksightCircleDeg(backsightContext, faceText);
+    const reducedAngleDeg =
+      rawHorizontalCircleDeg != null && backsightCircleDeg != null
+        ? normalizeAngleDeg(rawHorizontalCircleDeg - backsightCircleDeg)
+        : undefined;
+    const ppm = setupContext?.atmosphereRef
+      ? atmosphereContexts.get(setupContext.atmosphereRef)?.ppm
+      : undefined;
+    const prismConstantM = targetContext?.prismConstantM;
+    const correctedSlopeDistanceM = correctJobXmlSlopeDistance(rawEdmDistanceM, ppm, prismConstantM);
+    const distanceM = correctedSlopeDistanceM ?? rawEdmDistanceM;
+    const zenithDeg = rawVerticalCircleDeg;
+    const observationOrder = isDirectReading ? runningObservationOrder++ : undefined;
+    const hiSource: ImportedJobXmlExtras['hiSource'] =
+      observationHiM != null ? 'observation' : setupContext?.hiM != null ? 'setup' : undefined;
+    const htSource: ImportedJobXmlExtras['htSource'] =
+      observationHtM != null ? 'observation' : targetContext?.htM != null ? 'target' : undefined;
+    const jobXml: ImportedJobXmlExtras = {
+      stationRecordRef,
+      backBearingRecordRef: resolvedBackBearingRef,
+      targetRecordRef,
+      atmosphereRecordRef: setupContext?.atmosphereRef,
+      round: currentRound,
+      observationOrder,
+      directionSetId:
+        observationOrder != null
+          ? `${stationRecordRef ?? occupyId ?? 'UNKNOWN'}::${resolvedBackBearingRef ?? backsightId ?? ''}::${currentRound ?? 0}`
+          : undefined,
+      isDirectReading,
+      isMta,
+      isBacksight: classification.toUpperCase() === 'BACKSIGHT',
+      rawHorizontalCircleDeg,
+      reducedAngleDeg,
+      backsightCircleDeg,
+      backsightFace1CircleDeg: backsightContext?.face1HorizontalCircleDeg,
+      backsightFace2CircleDeg: backsightContext?.face2HorizontalCircleDeg,
+      rawVerticalCircleDeg,
+      rawEdmDistanceM,
+      correctedSlopeDistanceM,
+      prismConstantM,
+      ppm,
+      pointCode: descriptionCode,
+      targetCode: targetContext?.code,
+      observationHiM,
+      setupHiM: setupContext?.hiM,
+      effectiveHiM: hiM,
+      hiSource,
+      observationHtM,
+      targetHtM: targetContext?.htM,
+      effectiveHtM: htM,
+      htSource,
+    };
 
     const derivedAngleDeg =
       explicitAngleDeg != null
         ? normalizeAngleDeg(explicitAngleDeg)
-        : horizontalCircleDeg != null
+        : rawHorizontalCircleDeg != null
           ? angleMode === 'raw'
-            ? normalizeAngleDeg(horizontalCircleDeg)
+            ? normalizeAngleDeg(rawHorizontalCircleDeg)
             : backsightCircleDeg != null
-              ? normalizeAngleDeg(horizontalCircleDeg - backsightCircleDeg)
+              ? normalizeAngleDeg(rawHorizontalCircleDeg - backsightCircleDeg)
               : undefined
           : undefined;
     const derivedBearingDeg =
       explicitBearingDeg != null
         ? normalizeAngleDeg(explicitBearingDeg)
-        : isMta && horizontalCircleDeg != null && backsightContext?.bearingDeg != null
-          ? normalizeAngleDeg(backsightContext.bearingDeg + horizontalCircleDeg)
-          : horizontalCircleDeg != null &&
+        : isMta && rawHorizontalCircleDeg != null && backsightContext?.bearingDeg != null
+          ? normalizeAngleDeg(backsightContext.bearingDeg + rawHorizontalCircleDeg)
+          : rawHorizontalCircleDeg != null &&
               backsightCircleDeg != null &&
               backsightContext?.bearingDeg != null
             ? normalizeAngleDeg(
-                backsightContext.bearingDeg - backsightCircleDeg + horizontalCircleDeg,
+                backsightContext.bearingDeg - backsightCircleDeg + rawHorizontalCircleDeg,
               )
             : undefined;
 
@@ -1654,10 +1834,12 @@ const parseJobXml = (
           verticalValue: zenithDeg ?? deltaHM,
           hiM,
           htM,
+          description: descriptionCode || targetContext?.code,
           sourceLine,
           sourceCode: 'PointRecord',
           note: 'converted to M',
           sourceMeta,
+          jobXml,
         });
       } else {
         observations.push({
@@ -1666,10 +1848,12 @@ const parseJobXml = (
           fromId: backsightId,
           toId: targetId,
           angleDeg: derivedAngleDeg,
+          description: descriptionCode || targetContext?.code,
           sourceLine,
           sourceCode: 'PointRecord',
           note: 'converted to A',
           sourceMeta,
+          jobXml,
         });
         if (zenithDeg != null || deltaHM != null) {
           observations.push({
@@ -1680,10 +1864,12 @@ const parseJobXml = (
             verticalValue: zenithDeg ?? deltaHM ?? 0,
             hiM,
             htM,
+            description: descriptionCode || targetContext?.code,
             sourceLine,
             sourceCode: 'PointRecord',
             note: 'converted to V',
             sourceMeta,
+            jobXml,
           });
         }
       }
@@ -1696,10 +1882,12 @@ const parseJobXml = (
         fromId: occupyId,
         toId: targetId,
         bearingDeg: derivedBearingDeg,
+        description: descriptionCode || targetContext?.code,
         sourceLine,
         sourceCode: 'PointRecord',
         note: 'converted to B',
         sourceMeta,
+        jobXml,
       });
       if (distanceM != null && (zenithDeg != null || deltaHM != null)) {
         observations.push({
@@ -1711,10 +1899,12 @@ const parseJobXml = (
           verticalValue: zenithDeg ?? deltaHM ?? 0,
           hiM,
           htM,
+          description: descriptionCode || targetContext?.code,
           sourceLine,
           sourceCode: 'PointRecord',
           note: 'converted to DV',
           sourceMeta,
+          jobXml,
         });
       } else if (distanceM != null) {
         observations.push({
@@ -1724,10 +1914,12 @@ const parseJobXml = (
           distanceM,
           hiM,
           htM,
+          description: descriptionCode || targetContext?.code,
           sourceLine,
           sourceCode: 'PointRecord',
           note: 'converted to D',
           sourceMeta,
+          jobXml,
         });
       } else if (zenithDeg != null || deltaHM != null) {
         observations.push({
@@ -1738,10 +1930,12 @@ const parseJobXml = (
           verticalValue: zenithDeg ?? deltaHM ?? 0,
           hiM,
           htM,
+          description: descriptionCode || targetContext?.code,
           sourceLine,
           sourceCode: 'PointRecord',
           note: 'converted to V',
           sourceMeta,
+          jobXml,
         });
       }
       return;
@@ -1761,10 +1955,12 @@ const parseJobXml = (
           : {}),
         hiM,
         htM,
+        description: descriptionCode || targetContext?.code,
         sourceLine,
         sourceCode: 'PointRecord',
         note: zenithDeg != null || deltaHM != null ? 'converted to DV' : 'converted to D',
         sourceMeta,
+        jobXml,
       } as ImportedDistanceObservationRecord | ImportedDistanceVerticalObservationRecord);
       trace.push({
         level: 'warning',

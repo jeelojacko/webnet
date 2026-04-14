@@ -175,6 +175,8 @@ describe('ImportReviewModal', () => {
         onRemoveGroup={() => {}}
         onRemoveRow={() => {}}
         onCancel={() => {}}
+        onImportAsNewFile={() => {}}
+        onImportAssociatedProjectSettings={() => {}}
         onImport={() => {}}
       />,
     );
@@ -190,6 +192,7 @@ describe('ImportReviewModal', () => {
     expect(html).toContain('Actions');
     expect(html).toContain('Output Style');
     expect(html).toContain('TS Direction Set');
+    expect(html).toContain('Industry Style');
     expect(html).toContain('Add Empty Setup');
     expect(html).toContain('Setup Label');
     expect(html).toContain('Exclude Setup');
@@ -221,10 +224,12 @@ describe('ImportReviewModal', () => {
     expect(html).toContain('Highlight');
     expect(html).toContain('Clear Added Sources');
     expect(html).toContain('Add Source File');
+    expect(html).toContain('Import Associated Project Settings');
     expect(html).toContain('Present In');
     expect(html).toContain('Spread');
     expect(html).toContain('>DV<');
     expect(html).toContain('>DN<');
     expect(html).toContain('>DM<');
+    expect(html).toContain('Import As New File');
   });
 });

@@ -214,6 +214,8 @@ type BootstrapPairMetrics = {
   slopeDistance: number;
   horizDistance: number;
   zenith?: number;
+  hi?: number;
+  ht?: number;
 };
 
 const cloneParsedResultValue = <T>(value: T): T => {
@@ -2539,7 +2541,18 @@ export class LSAEngine {
       zenithStats.set(key, entry);
     });
 
-    const metrics = new Map<string, { slopeSum: number; horizSum: number; count: number }>();
+    const metrics = new Map<
+      string,
+      {
+        slopeSum: number;
+        horizSum: number;
+        hiSum: number;
+        hiCount: number;
+        htSum: number;
+        htCount: number;
+        count: number;
+      }
+    >();
     activeObservations.forEach((observation) => {
       if (observation.type !== 'dist') return;
       const key = makeDirectedPairKey(observation.from, observation.to);
@@ -2551,9 +2564,25 @@ export class LSAEngine {
         observation.mode === 'slope' && Number.isFinite(zenith ?? Number.NaN)
           ? Math.abs(slopeDistance * Math.sin(zenith as number))
           : Math.abs(slopeDistance);
-      const entry = metrics.get(key) ?? { slopeSum: 0, horizSum: 0, count: 0 };
+      const entry = metrics.get(key) ?? {
+        slopeSum: 0,
+        horizSum: 0,
+        hiSum: 0,
+        hiCount: 0,
+        htSum: 0,
+        htCount: 0,
+        count: 0,
+      };
       entry.slopeSum += slopeDistance;
       entry.horizSum += horizDistance;
+      if (Number.isFinite(observation.hi ?? Number.NaN)) {
+        entry.hiSum += observation.hi as number;
+        entry.hiCount += 1;
+      }
+      if (Number.isFinite(observation.ht ?? Number.NaN)) {
+        entry.htSum += observation.ht as number;
+        entry.htCount += 1;
+      }
       entry.count += 1;
       metrics.set(key, entry);
     });
@@ -2568,6 +2597,8 @@ export class LSAEngine {
             horizDistance: entry.horizSum / entry.count,
             zenith:
               zenithEntry && zenithEntry.count > 0 ? zenithEntry.sum / zenithEntry.count : undefined,
+            hi: entry.hiCount > 0 ? entry.hiSum / entry.hiCount : undefined,
+            ht: entry.htCount > 0 ? entry.htSum / entry.htCount : undefined,
           } satisfies BootstrapPairMetrics,
         ];
       }),
@@ -2582,9 +2613,28 @@ export class LSAEngine {
     if (!station) return false;
     const isInputControl = !!station.coordInputClass && station.coordInputClass !== 'unknown';
     if (isInputControl) return false;
-    const nextX = Number.isFinite(seed.x) ? seed.x : station.x;
-    const nextY = Number.isFinite(seed.y) ? seed.y : station.y;
-    const nextH = Number.isFinite(seed.h ?? Number.NaN) ? (seed.h as number) : station.h;
+    const preserveX =
+      (station.fixedX ?? false) ||
+      Number.isFinite(station.constraintX ?? Number.NaN) ||
+      station.constraintModeX === 'fixed' ||
+      station.constraintModeX === 'weighted';
+    const preserveY =
+      (station.fixedY ?? false) ||
+      Number.isFinite(station.constraintY ?? Number.NaN) ||
+      station.constraintModeY === 'fixed' ||
+      station.constraintModeY === 'weighted';
+    const preserveH =
+      (station.fixedH ?? false) ||
+      Number.isFinite(station.constraintH ?? Number.NaN) ||
+      station.constraintModeH === 'fixed' ||
+      station.constraintModeH === 'weighted';
+    const nextX = preserveX ? station.x : Number.isFinite(seed.x) ? seed.x : station.x;
+    const nextY = preserveY ? station.y : Number.isFinite(seed.y) ? seed.y : station.y;
+    const nextH = preserveH
+      ? station.h
+      : Number.isFinite(seed.h ?? Number.NaN)
+        ? (seed.h as number)
+        : station.h;
     const changed =
       !station.bootstrapApprox ||
       Math.hypot((station.x ?? 0) - nextX, (station.y ?? 0) - nextY) > 1e-6 ||
@@ -2707,12 +2757,62 @@ export class LSAEngine {
 
     const pairMetrics = this.buildBootstrapPairMetrics(activeObservations);
     if (pairMetrics.size === 0) return;
+    const bearings = activeObservations.filter(
+      (observation): observation is Observation & { type: 'bearing' } => observation.type === 'bearing',
+    );
 
     let seededCount = 0;
     let passCount = 0;
     for (let pass = 0; pass < 8; pass += 1) {
       let progress = false;
       passCount = pass + 1;
+
+      bearings.forEach((bearing) => {
+        const metrics = pairMetrics.get(makeDirectedPairKey(bearing.from, bearing.to));
+        if (!metrics || !Number.isFinite(metrics.horizDistance) || metrics.horizDistance <= 1e-6) {
+          return;
+        }
+        const fromKnown = this.stationHasBootstrapableApprox(bearing.from);
+        const toKnown = this.stationHasBootstrapableApprox(bearing.to);
+        if (fromKnown === toKnown) return;
+
+        if (!fromKnown) {
+          const target = this.stations[bearing.to];
+          if (!target) return;
+          const seedX = target.x - metrics.horizDistance * Math.sin(bearing.obs);
+          const seedY = target.y - metrics.horizDistance * Math.cos(bearing.obs);
+          const deltaH =
+            Number.isFinite(metrics.zenith ?? Number.NaN)
+              ? (metrics.hi ?? 0) + metrics.slopeDistance * Math.cos(metrics.zenith as number) - (metrics.ht ?? 0)
+              : undefined;
+          const seedH =
+            Number.isFinite(deltaH ?? Number.NaN) && Number.isFinite(target.h ?? Number.NaN)
+              ? target.h - (deltaH as number)
+              : target.h;
+          if (this.applyBootstrapApproxStation(bearing.from, { x: seedX, y: seedY, h: seedH })) {
+            seededCount += 1;
+            progress = true;
+          }
+          return;
+        }
+
+        const fromStation = this.stations[bearing.from];
+        if (!fromStation) return;
+        const seedX = fromStation.x + metrics.horizDistance * Math.sin(bearing.obs);
+        const seedY = fromStation.y + metrics.horizDistance * Math.cos(bearing.obs);
+        const deltaH =
+          Number.isFinite(metrics.zenith ?? Number.NaN)
+            ? (metrics.hi ?? 0) + metrics.slopeDistance * Math.cos(metrics.zenith as number) - (metrics.ht ?? 0)
+            : undefined;
+        const seedH =
+          Number.isFinite(deltaH ?? Number.NaN) && Number.isFinite(fromStation.h ?? Number.NaN)
+            ? fromStation.h + (deltaH as number)
+            : fromStation.h;
+        if (this.applyBootstrapApproxStation(bearing.to, { x: seedX, y: seedY, h: seedH })) {
+          seededCount += 1;
+          progress = true;
+        }
+      });
 
       directionSets.forEach((set) => {
         if (this.stationHasBootstrapableApprox(set.occupy)) return;

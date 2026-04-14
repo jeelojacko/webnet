@@ -186,7 +186,7 @@ describe('Phase 2 external importers', () => {
       htM: 1.692,
     });
     expect(measurementObs?.[2].angleDeg).toBeCloseTo(286.85797317135, 8);
-    expect(measurementObs?.[2].distanceM).toBeCloseTo(22.25735, 8);
+    expect(measurementObs?.[2].distanceM).toBeCloseTo(22.22295, 8);
     expect(measurementObs?.[2].verticalMode).toBe('zenith');
     expect(measurementObs?.[2].verticalValue).toBeCloseTo(89.9556732, 8);
 
@@ -199,7 +199,7 @@ describe('Phase 2 external importers', () => {
       htM: 1.8,
     });
     expect(measurementObs?.[5].angleDeg).toBeCloseTo(6.72612497135, 8);
-    expect(measurementObs?.[5].distanceM).toBeCloseTo(100, 8);
+    expect(measurementObs?.[5].distanceM).toBeCloseTo(99.9656, 8);
 
     expect(imported.text).toContain('M 1-1000-1000');
     expect(imported.text).toContain('M 1-1000-2');

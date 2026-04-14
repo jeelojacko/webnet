@@ -1133,6 +1133,7 @@ const App: React.FC<AppProps> = ({
     openProjectOptions,
   } = projectOptionsState;
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const importReviewSettingsFileInputRef = useRef<HTMLInputElement | null>(null);
   const projectFileInputRef = useRef<HTMLInputElement | null>(null);
   const projectSourceFileInputRef = useRef<HTMLInputElement | null>(null);
   const geoidSourceFileInputRef = useRef<HTMLInputElement | null>(null);
@@ -1177,6 +1178,7 @@ const App: React.FC<AppProps> = ({
     activeProjectFileViews,
     currentProjectFile,
     projectSourceAccept,
+    associatedProjectSettingsAccept,
     effectiveRunInput,
     effectiveProjectRunFiles,
     projectRunValidation,
@@ -1185,6 +1187,9 @@ const App: React.FC<AppProps> = ({
     triggerProjectFileSelect,
     triggerProjectSourceFileSelect,
     importProjectSourceFiles,
+    importGeneratedProjectSourceFile,
+    prepareAssociatedProjectSettingsImport,
+    applyPreparedAssociatedProjectSettings,
     handleSaveProject,
     handleEditorInputChange,
     handleProjectFileChange,
@@ -1261,9 +1266,12 @@ const App: React.FC<AppProps> = ({
     importReviewState,
     pendingAnglePromptFile,
     triggerFileSelect,
+    triggerImportReviewSettingsFileSelect,
     handleFileChange,
+    handleImportReviewSettingsFileChange,
     handleImportAnglePromptSetAngleMode,
     handleImportAnglePromptSetFaceMode,
+    handleImportAnglePromptSetImportStyle,
     handleImportAnglePromptAccept,
     handleImportAnglePromptCancel,
     handleImportReviewToggleExclude,
@@ -1292,6 +1300,7 @@ const App: React.FC<AppProps> = ({
     handleImportReviewCompareFile,
     handleImportReviewClearComparison,
     handleApplyImportReview,
+    handleApplyImportReviewAsNewFile,
     importReviewDisplayedRows,
     importReviewMoveTargetGroups,
     importReviewSnapshot,
@@ -1303,7 +1312,11 @@ const App: React.FC<AppProps> = ({
     currentIncludeFiles: currentEditorIncludeFiles,
     faceNormalizationMode: parseSettings.faceNormalizationMode,
     fileInputRef,
+    settingsFileInputRef: importReviewSettingsFileInputRef,
     importProjectSourceFiles,
+    importGeneratedProjectSourceFile,
+    prepareAssociatedProjectSettingsImport,
+    applyPreparedAssociatedProjectSettings,
     parseSettings,
     projectInstruments,
     setInput: setEditorInput,
@@ -1987,6 +2000,13 @@ const App: React.FC<AppProps> = ({
         multiple
         onChange={handleProjectSourceFileChange}
       />
+      <input
+        ref={importReviewSettingsFileInputRef}
+        type="file"
+        accept={associatedProjectSettingsAccept}
+        className="hidden"
+        onChange={handleImportReviewSettingsFileChange}
+      />
       <AppToolbar
         isSidebarOpen={isSidebarOpen}
         onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
@@ -2479,20 +2499,69 @@ const App: React.FC<AppProps> = ({
           <div className="w-full max-w-md border border-slate-500 bg-slate-900 shadow-2xl">
             <div className="border-b border-slate-700 bg-slate-800 px-5 py-4">
               <div className="text-[11px] uppercase tracking-[0.24em] text-cyan-300">
-                Import Angle Mode
+                Import Settings
               </div>
               <div className="mt-1 text-lg font-semibold text-white">
-                Choose Horizontal-Angle Handling
+                Choose JXL Import Handling
               </div>
               <div className="mt-1 text-xs text-slate-400">{pendingAnglePromptFile.file.name}</div>
             </div>
             <div className="space-y-3 px-5 py-4 text-sm text-slate-200">
               <div>
+                <div className="text-[11px] uppercase tracking-[0.22em] text-cyan-300">
+                  Import Style
+                </div>
+                <div className="mt-2 space-y-3">
+                  <div>
+                    <button
+                      type="button"
+                      onClick={() => handleImportAnglePromptSetImportStyle('generic')}
+                      className={`w-full border px-3 py-3 text-left text-xs uppercase tracking-wide ${
+                        pendingAnglePromptFile.importStyle === 'generic'
+                          ? 'border-cyan-500 bg-cyan-900/40 text-cyan-100'
+                          : 'border-slate-600 bg-slate-950 text-slate-100 hover:border-cyan-400'
+                      }`}
+                    >
+                      Generic
+                    </button>
+                    <div className="mt-1 text-xs text-slate-400">
+                      Keep current WebNet-style grouped import flow and serializer behavior.
+                    </div>
+                  </div>
+                  <div>
+                    <button
+                      type="button"
+                      onClick={() => handleImportAnglePromptSetImportStyle('industry-style')}
+                      className={`w-full border px-3 py-3 text-left text-xs uppercase tracking-wide ${
+                        pendingAnglePromptFile.importStyle === 'industry-style'
+                          ? 'border-cyan-500 bg-cyan-900/40 text-cyan-100'
+                          : 'border-slate-600 bg-slate-950 text-slate-100 hover:border-cyan-400'
+                      }`}
+                    >
+                      Industry Style
+                    </button>
+                    <div className="mt-1 text-xs text-slate-400">
+                      Preserve raw JobXML fieldbook HZ, zenith, corrected slope distance, and
+                      round-based `DB/DM/DE` blocks.
+                    </div>
+                  </div>
+                </div>
+                {pendingAnglePromptFile.importStyle === 'industry-style' && (
+                  <div className="mt-2 text-xs text-amber-300">
+                    Industry Style is fixed mode: raw fieldbook order, raw circles, and no
+                    face-split prompt options.
+                  </div>
+                )}
+              </div>
+              <div>
                 <button
                   type="button"
                   onClick={() => handleImportAnglePromptSetAngleMode('raw')}
+                  disabled={pendingAnglePromptFile.importStyle === 'industry-style'}
                   className={`w-full border px-3 py-3 text-left text-xs uppercase tracking-wide ${
-                    pendingAnglePromptFile.angleMode === 'raw'
+                    pendingAnglePromptFile.importStyle === 'industry-style'
+                      ? 'cursor-not-allowed border-slate-800 bg-slate-950 text-slate-500'
+                      : pendingAnglePromptFile.angleMode === 'raw'
                       ? 'border-cyan-500 bg-cyan-900/40 text-cyan-100'
                       : 'border-slate-600 bg-slate-950 text-slate-100 hover:border-cyan-400'
                   }`}
@@ -2507,8 +2576,11 @@ const App: React.FC<AppProps> = ({
                 <button
                   type="button"
                   onClick={() => handleImportAnglePromptSetAngleMode('reduced')}
+                  disabled={pendingAnglePromptFile.importStyle === 'industry-style'}
                   className={`w-full border px-3 py-3 text-left text-xs uppercase tracking-wide ${
-                    pendingAnglePromptFile.angleMode === 'reduced'
+                    pendingAnglePromptFile.importStyle === 'industry-style'
+                      ? 'cursor-not-allowed border-slate-800 bg-slate-950 text-slate-500'
+                      : pendingAnglePromptFile.angleMode === 'reduced'
                       ? 'border-cyan-500 bg-cyan-900/40 text-cyan-100'
                       : 'border-slate-600 bg-slate-950 text-slate-100 hover:border-cyan-400'
                   }`}
@@ -2528,8 +2600,11 @@ const App: React.FC<AppProps> = ({
                     <button
                       type="button"
                       onClick={() => handleImportAnglePromptSetFaceMode('on')}
+                      disabled={pendingAnglePromptFile.importStyle === 'industry-style'}
                       className={`w-full border px-3 py-3 text-left text-xs uppercase tracking-wide ${
-                        pendingAnglePromptFile.faceMode === 'on'
+                        pendingAnglePromptFile.importStyle === 'industry-style'
+                          ? 'cursor-not-allowed border-slate-800 bg-slate-950 text-slate-500'
+                          : pendingAnglePromptFile.faceMode === 'on'
                           ? 'border-cyan-500 bg-cyan-900/40 text-cyan-100'
                           : 'border-slate-600 bg-slate-950 text-slate-100 hover:border-cyan-400'
                       }`}
@@ -2544,8 +2619,11 @@ const App: React.FC<AppProps> = ({
                     <button
                       type="button"
                       onClick={() => handleImportAnglePromptSetFaceMode('off')}
+                      disabled={pendingAnglePromptFile.importStyle === 'industry-style'}
                       className={`w-full border px-3 py-3 text-left text-xs uppercase tracking-wide ${
-                        pendingAnglePromptFile.faceMode === 'off'
+                        pendingAnglePromptFile.importStyle === 'industry-style'
+                          ? 'cursor-not-allowed border-slate-800 bg-slate-950 text-slate-500'
+                          : pendingAnglePromptFile.faceMode === 'off'
                           ? 'border-cyan-500 bg-cyan-900/40 text-cyan-100'
                           : 'border-slate-600 bg-slate-950 text-slate-100 hover:border-cyan-400'
                       }`}
@@ -2625,6 +2703,25 @@ const App: React.FC<AppProps> = ({
             onRemoveGroup={handleImportReviewRemoveGroup}
             onRemoveRow={handleImportReviewRemoveRow}
             onCancel={handleCancelImportReview}
+            onImportAsNewFile={handleApplyImportReviewAsNewFile}
+            onImportAssociatedProjectSettings={triggerImportReviewSettingsFileSelect}
+            pendingAssociatedSettingsSourceName={
+              importReviewState.stagedAssociatedSettings?.sourceName ?? null
+            }
+            pendingAssociatedSettingsSummary={
+              importReviewState.stagedAssociatedSettings
+                ? [
+                    importReviewState.stagedAssociatedSettings.appliedDomains.length > 0
+                      ? `Applied: ${importReviewState.stagedAssociatedSettings.appliedDomains.join(', ')}.`
+                      : null,
+                    importReviewState.stagedAssociatedSettings.ignoredDomains.length > 0
+                      ? `Ignored: ${importReviewState.stagedAssociatedSettings.ignoredDomains.join(', ')}.`
+                      : null,
+                  ]
+                    .filter(Boolean)
+                    .join(' ')
+                : null
+            }
             onImport={handleApplyImportReview}
           />
         </React.Suspense>

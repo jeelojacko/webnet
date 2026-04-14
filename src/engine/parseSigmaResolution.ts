@@ -42,6 +42,12 @@ export const parseSigmaToken = (token?: string): SigmaToken | null => {
   return null;
 };
 
+const expandPackedSigmaToken = (token: string): string[] | null => {
+  if (token.length <= 1) return null;
+  if (!/^[&?!*]+$/.test(token)) return null;
+  return token.split('');
+};
+
 export const extractSigmaTokens = (
   tokens: string[],
   count: number,
@@ -51,6 +57,21 @@ export const extractSigmaTokens = (
   for (; idx < tokens.length && sigmas.length < count; idx += 1) {
     const token = tokens[idx];
     if (token.includes('/')) break;
+    const expanded = expandPackedSigmaToken(token);
+    if (expanded) {
+      const remaining = count - sigmas.length;
+      expanded.slice(0, remaining).forEach((expandedToken) => {
+        const parsed = parseSigmaToken(expandedToken);
+        if (parsed) sigmas.push(parsed);
+      });
+      if (expanded.length > remaining) {
+        return {
+          sigmas,
+          rest: [expanded.slice(remaining).join(''), ...tokens.slice(idx + 1)],
+        };
+      }
+      continue;
+    }
     const parsed = parseSigmaToken(token);
     if (!parsed) break;
     sigmas.push(parsed);

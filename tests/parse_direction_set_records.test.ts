@@ -38,4 +38,34 @@ describe('parse direction-set record families', () => {
       rawCount: 1,
     });
   });
+
+  it('keeps weighted DM zenith rows, normalizes face2, and skips float zenith rows in raw mode', () => {
+    const parsed = parseInput(
+      [
+        'DB AT BS',
+        'DM TO 10-00-00 5 95 0.02 0.03 0.04',
+        'DM TO 190-00-00 5 265 0.02 0.03 0.04',
+        'DM TO 30-00-00 5 92 &&* 0.03',
+        'DE',
+      ].join('\n'),
+      {},
+      {
+        directionSetMode: 'raw',
+        faceNormalizationMode: 'auto',
+        parseCompatibilityMode: 'strict',
+      },
+    );
+
+    const directions = parsed.observations.filter((obs) => obs.type === 'direction');
+    const zeniths = parsed.observations.filter((obs) => obs.type === 'zenith');
+
+    expect(directions).toHaveLength(3);
+    expect(zeniths).toHaveLength(2);
+    expect(zeniths[0]).toMatchObject({
+      from: 'AT',
+      to: 'TO',
+    });
+    expect((zeniths[0] as { obs: number }).obs).toBeCloseTo((95 * Math.PI) / 180, 10);
+    expect((zeniths[1] as { obs: number }).obs).toBeCloseTo((95 * Math.PI) / 180, 10);
+  });
 });

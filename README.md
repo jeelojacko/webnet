@@ -69,6 +69,8 @@
   - Input Data `Project Files` workflow that can bootstrap a named project from the current workspace and manage checked/open tabs directly from the editor header
   - Portable `.wnproj` snapshot export/import and zipped manifest-plus-sources bundle export/import
   - Staged import review and reconciliation workflow
+  - Import-review actions for replacing editor text, appending reviewed imports as new project `.dat` files, and staging associated project settings until final import apply
+  - Opt-in JobXML `Industry Style` import shaping for raw direction-set fidelity during staged review
   - Supported external importers for selected survey/job data formats
 
   ## Examples

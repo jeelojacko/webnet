@@ -137,6 +137,16 @@ const extractTraverseStartupInput = (): string => {
     .trim();
 };
 
+const extractColdstreamInput = (): string => {
+  const sourceA = readFileSync('tests/fixtures/coldstream_case_source_a.dat', 'utf-8')
+    .replace(/\r\n/g, '\n')
+    .trim();
+  const sourceB = readFileSync('tests/fixtures/coldstream_case_source_b.dat', 'utf-8')
+    .replace(/\r\n/g, '\n')
+    .trim();
+  return `${sourceA}\n\n${sourceB}\n`;
+};
+
 const buildTraverseInstrumentLibrary = (): InstrumentLibrary => ({
   S9: {
     code: 'S9',
@@ -231,5 +241,47 @@ export const createTraverseRunSessionRequest = (
     },
     projectInstruments: buildTraverseInstrumentLibrary(),
     selectedInstrument: 'TRAV_DEFAULT',
+    ...overrides,
+  });
+
+export const createColdstreamRunSessionRequest = (
+  overrides: Partial<RunSessionRequest> = {},
+): RunSessionRequest =>
+  createRunSessionRequest({
+    input: extractColdstreamInput(),
+    parseSettings: {
+      ...createRunSessionRequest().parseSettings,
+      coordMode: '3D',
+      coordSystemMode: 'grid',
+      crsId: 'CA_NAD83_CSRS_UTM_11N',
+      order: 'NE',
+      deltaMode: 'slope',
+      applyCurvatureRefraction: true,
+      verticalReduction: 'curvref',
+      refractionCoefficient: 0.07,
+      qFixLinearSigmaM: 1e-7,
+      qFixAngularSigmaSec: 1.0001e-3,
+    },
+    projectInstruments: {
+      ...buildTraverseInstrumentLibrary(),
+      IMPORTED: {
+        code: 'IMPORTED',
+        desc: 'Imported project instrument (coldstream fixture)',
+        edm_const: 0.002,
+        edm_ppm: 0.002,
+        hzPrecision_sec: 2,
+        dirPrecision_sec: 2.8,
+        azBearingPrecision_sec: 2.8,
+        vaPrecision_sec: 2.8,
+        instCentr_m: 0.001,
+        tgtCentr_m: 0.001,
+        vertCentr_m: 0.001,
+        elevDiff_const_m: 0.0152400305,
+        elevDiff_ppm: 0,
+        gpsStd_xy: 0,
+        levStd_mmPerKm: 0.075978541827,
+      },
+    },
+    selectedInstrument: 'IMPORTED',
     ...overrides,
   });

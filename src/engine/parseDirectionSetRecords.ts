@@ -17,6 +17,11 @@ type RawDirectionShotLike = {
   obs: number;
   stdDev: number;
   sigmaSource: SigmaSource;
+  zenithObs?: number;
+  zenithStdDev?: number;
+  zenithSigmaSource?: SigmaSource;
+  hi?: number;
+  ht?: number;
   sourceLine: number;
   face: DirectionFace;
   faceSource: DirectionFaceSource;
@@ -66,6 +71,7 @@ type HandleDirectionSetRecordArgs = {
     _tokens: string[],
     _count: number,
   ) => { sigmas: SigmaToken[]; rest: string[] };
+  extractHiHt: (_tokens: string[]) => { hi?: number; ht?: number; rest: string[] };
   resolveLinearSigma: (
     _token: SigmaToken | undefined,
     _defaultSigma: number,
@@ -93,6 +99,15 @@ type HandleDirectionSetRecordArgs = {
   flushDirectionSet: (_reason: string) => void;
 };
 
+const wrapTo2Pi = (val: number): number => {
+  let out = val % (2 * Math.PI);
+  if (out < 0) out += 2 * Math.PI;
+  return out;
+};
+
+const normalizeZenithForFace = (obs: number, face: DirectionFace): number =>
+  face === 'face2' ? wrapTo2Pi(2 * Math.PI - obs) : wrapTo2Pi(obs);
+
 export const handleDirectionSetRecord = ({
   code,
   parts,
@@ -114,6 +129,7 @@ export const handleDirectionSetRecord = ({
   linearToMetersFactor,
   effectiveDistanceMode,
   extractSigmaTokens,
+  extractHiHt,
   resolveLinearSigma,
   resolveAngularSigma,
   resolveLevelingSigma,
@@ -198,7 +214,8 @@ export const handleDirectionSetRecord = ({
       return true;
     }
     const sigmaCount = code === 'DM' ? 3 : 1;
-    const { sigmas } = extractSigmaTokens(tailTokens, sigmaCount);
+    const { sigmas, rest } = extractSigmaTokens(tailTokens, sigmaCount);
+    const { hi, ht } = extractHiHt(rest);
 
     const inst = traverseCtx.dirInstCode ? instrumentLibrary[traverseCtx.dirInstCode] : undefined;
     const dirResolved = resolveAngularSigma(sigmas[0], defaultDirectionSigmaSec(inst));
@@ -227,6 +244,29 @@ export const handleDirectionSetRecord = ({
       faceSource,
       reliableFace: isReliableFaceSource(faceSource),
     };
+    if (code === 'DM' && vert && state.deltaMode !== 'horiz') {
+      if (!state.threeReduceMode) {
+        const zenResolved = resolveAngularSigma(sigmas[2], defaultZenithSigmaSec(inst));
+        if (zenResolved.source !== 'float') {
+          pushObservation({
+            id: obsIdRef.current++,
+            type: 'zenith',
+            instCode: traverseCtx.dirInstCode ?? '',
+            setId: traverseCtx.dirSetId,
+            from: traverseCtx.occupy,
+            to,
+            obs: normalizeZenithForFace((vertParsed as { value: number }).value, thisFace),
+            planned: Boolean(vertParsed?.planned),
+            stdDev: zenResolved.sigma * SEC_TO_RAD,
+            sigmaSource: zenResolved.source,
+            hi: hi != null ? hi * toMeters : undefined,
+            ht: ht != null ? ht * toMeters : undefined,
+          });
+        }
+      } else {
+        logs.push(`3REDUCE active at line ${lineNum}: DM zenith component excluded from equations.`);
+      }
+    }
     const existing = traverseCtx.dirRawShots ?? [];
     existing.push(raw);
     traverseCtx.dirRawShots = existing;
@@ -253,6 +293,8 @@ export const handleDirectionSetRecord = ({
         planned: distParsed.planned,
         stdDev: distResolved.sigma * toMeters,
         sigmaSource: distResolved.source,
+        hi: hi != null ? hi * toMeters : undefined,
+        ht: ht != null ? ht * toMeters : undefined,
         mode: effectiveDistanceMode(),
       });
       if (vert) {
@@ -271,22 +313,6 @@ export const handleDirectionSetRecord = ({
             stdDev: dhResolved.sigma * toMeters,
             sigmaSource: dhResolved.source,
           });
-        } else if (!state.threeReduceMode) {
-          const zenResolved = resolveAngularSigma(sigmas[2], defaultZenithSigmaSec(inst));
-          pushObservation({
-            id: obsIdRef.current++,
-            type: 'zenith',
-            instCode: traverseCtx.dirInstCode ?? '',
-            setId: traverseCtx.dirSetId,
-            from: traverseCtx.occupy,
-            to,
-            obs: (vertParsed as { value: number }).value,
-            planned: Boolean(vertParsed?.planned),
-            stdDev: zenResolved.sigma * SEC_TO_RAD,
-            sigmaSource: zenResolved.source,
-          });
-        } else {
-          logs.push(`3REDUCE active at line ${lineNum}: DM zenith component excluded from equations.`);
         }
       }
     }

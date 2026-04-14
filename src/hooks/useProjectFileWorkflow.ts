@@ -42,6 +42,7 @@ import {
   type ProjectStorageStatus,
   type ProjectSourceFileKind,
 } from '../engine/projectWorkspace';
+import { CANADA_CRS_CATALOG, DEFAULT_CANADA_CRS_ID } from '../engine/crsCatalog';
 import {
   buildProjectIndexRow,
   buildSavedSessionForStorage,
@@ -76,6 +77,7 @@ const PROJECT_IMPORT_FILE_TYPES = [
 
 const PROJECT_SOURCE_ACCEPT =
   '.dat,.txt,.sum,.rpt,.xml,.jxl,.jobxml,.htm,.html,.rw5,.cr5,.raw,.dbx,.json';
+const ASSOCIATED_PROJECT_SETTINGS_ACCEPT = '.wnproj,.wnproj.json,.json,.snproj';
 const PROJECT_AUTOSAVE_DELAY_MS = 60_000;
 
 const readFileAsText = (file: File): Promise<string> =>
@@ -170,6 +172,20 @@ const writeBinaryDownload = async (name: string, bytes: Uint8Array) => {
 interface ImportNotice {
   title: string;
   detailLines: string[];
+}
+
+export interface PreparedAssociatedProjectSettingsImport {
+  sourceName: string;
+  payload: ParsedProjectPayload;
+  appliedDomains: string[];
+  ignoredDomains: string[];
+}
+
+interface ApplyPreparedAssociatedProjectSettingsOptions {
+  successTitle?: string;
+  failureTitle?: string;
+  successDetailPrefix?: string[];
+  failureDetailPrefix?: string[];
 }
 
 export interface ProjectWorkspaceFileView {
@@ -278,6 +294,261 @@ const getImportedProjectSourceName = (fileName: string): string => {
     return stem || 'file';
   }
   return trimmed;
+};
+
+const buildImportedReviewFileName = (sourceName: string): string => {
+  const trimmed = sourceName.trim();
+  if (!trimmed) return 'imported.dat';
+  if (/\.[^.]+$/.test(trimmed)) return trimmed.replace(/\.[^.]+$/, '.dat');
+  return `${trimmed}.dat`;
+};
+
+const parseSnprojSections = (rawText: string): Map<string, Map<string, string>> => {
+  const sections = new Map<string, Map<string, string>>();
+  let currentSection = '';
+  rawText.split(/\r?\n/).forEach((rawLine) => {
+    const line = rawLine.trim();
+    if (!line || line.startsWith('#')) return;
+    const sectionMatch = line.match(/^\[(.+)\]$/);
+    if (sectionMatch) {
+      currentSection = sectionMatch[1]!.trim().toUpperCase();
+      if (!sections.has(currentSection)) sections.set(currentSection, new Map());
+      return;
+    }
+    const pairMatch = line.match(/^([A-Za-z0-9_./-]+)\s*(?:=|\s)\s*(.+)$/);
+    if (!pairMatch || !currentSection) return;
+    sections.get(currentSection)?.set(pairMatch[1]!.trim().toUpperCase(), pairMatch[2]!.trim());
+  });
+  return sections;
+};
+
+const parseSnprojNumber = (value: string | undefined): number | undefined => {
+  if (!value) return undefined;
+  const numeric = Number.parseFloat(value);
+  return Number.isFinite(numeric) ? numeric : undefined;
+};
+
+const parseSnprojBoolean = (value: string | undefined): boolean | undefined => {
+  if (!value) return undefined;
+  const trimmed = value.trim().toUpperCase();
+  if (trimmed === '1' || trimmed === 'Y' || trimmed === 'YES' || trimmed === 'TRUE') return true;
+  if (trimmed === '0' || trimmed === 'N' || trimmed === 'NO' || trimmed === 'FALSE') return false;
+  return undefined;
+};
+
+const normalizeCrsLookupToken = (value: string): string =>
+  value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+
+const resolveSnprojCrsId = (rawName: string | undefined): string | undefined => {
+  const token = rawName?.trim();
+  if (!token) return undefined;
+  const normalized = normalizeCrsLookupToken(token);
+  const utmMatch = normalized.match(/UTM(?:83)?CSRS?(\d{1,2})N/);
+  if (utmMatch) return `CA_NAD83_CSRS_UTM_${utmMatch[1]!.padStart(2, '0')}N`;
+  const mtmMatch = normalized.match(/MTM(\d{1,2})/);
+  if (mtmMatch) return `CA_NAD83_CSRS_MTM_${mtmMatch[1]!.padStart(2, '0')}`;
+  const matched = CANADA_CRS_CATALOG.find((row) => {
+    const idToken = normalizeCrsLookupToken(row.id);
+    const labelToken = normalizeCrsLookupToken(row.label);
+    return normalized === idToken || normalized === labelToken || normalized.includes(idToken);
+  });
+  return matched?.id;
+};
+
+const buildSnprojAssociatedSettingsPayload = ({
+  rawText,
+  sourceName,
+  settings,
+  parseSettings,
+  exportFormat: _exportFormat,
+  adjustedPointsExportSettings,
+  projectInstruments,
+  selectedInstrument,
+  levelLoopCustomPresets,
+}: {
+  rawText: string;
+  sourceName: string;
+  settings: SettingsState;
+  parseSettings: ParseSettings;
+  exportFormat: ProjectExportFormat;
+  adjustedPointsExportSettings: AdjustedPointsExportSettings;
+  projectInstruments: InstrumentLibrary;
+  selectedInstrument: string;
+  levelLoopCustomPresets: CustomLevelLoopTolerancePreset[];
+}): PreparedAssociatedProjectSettingsImport => {
+  const sections = parseSnprojSections(rawText);
+  const adjustment = sections.get('ADJUSTMENT') ?? new Map<string, string>();
+  const listing = sections.get('LISTING') ?? new Map<string, string>();
+  const instrument = sections.get('INSTRUMENT') ?? new Map<string, string>();
+
+  const nextSettings: SettingsState = {
+    ...settings,
+    convergenceLimit:
+      parseSnprojNumber(adjustment.get('CONVERGE_LIMIT')) ?? settings.convergenceLimit,
+    maxIterations:
+      parseSnprojNumber(adjustment.get('MAXIMUM_ITERATIONS')) ?? settings.maxIterations,
+    listingShowCoordinates:
+      parseSnprojBoolean(listing.get('LIST_COORDINATES')) ?? settings.listingShowCoordinates,
+    listingShowObservationsResiduals:
+      parseSnprojBoolean(listing.get('LIST_ADJ_OBS_RESIDUALS')) ??
+      settings.listingShowObservationsResiduals,
+    listingShowErrorPropagation:
+      parseSnprojBoolean(listing.get('LIST_STANDARD_DEVIATIONS')) ??
+      settings.listingShowErrorPropagation,
+    listingShowAzimuthsBearings:
+      parseSnprojBoolean(listing.get('LIST_BEARING')) ?? settings.listingShowAzimuthsBearings,
+  };
+
+  const nextParseSettings: ParseSettings = {
+    ...parseSettings,
+    coordMode:
+      adjustment.get('ADJUSTMENT_TYPE')?.trim().toUpperCase() === '2D'
+        ? '2D'
+        : adjustment.get('ADJUSTMENT_TYPE')?.trim().toUpperCase() === '3D'
+          ? '3D'
+          : parseSettings.coordMode,
+    coordSystemMode:
+      resolveSnprojCrsId(adjustment.get('COORDINATE_SYSTEM_NAME')) != null ||
+      adjustment.get('LOCAL_OR_GRID_ADJUSTMENT')?.trim() === '1'
+        ? 'grid'
+        : adjustment.get('LOCAL_OR_GRID_ADJUSTMENT')?.trim() === '0'
+          ? 'local'
+          : parseSettings.coordSystemMode,
+    crsId:
+      resolveSnprojCrsId(adjustment.get('COORDINATE_SYSTEM_NAME')) ??
+      parseSettings.crsId ??
+      DEFAULT_CANADA_CRS_ID,
+    order:
+      adjustment.get('COORDINATE_ORDER')?.trim().toUpperCase() === 'NE'
+        ? 'NE'
+        : adjustment.get('COORDINATE_ORDER')?.trim().toUpperCase() === 'EN'
+          ? 'EN'
+          : parseSettings.order,
+    deltaMode:
+      adjustment.get('3D_INPUT_MODE')?.trim().toUpperCase().includes('SLOPE')
+        ? 'slope'
+        : adjustment.get('3D_INPUT_MODE')?.trim()
+              .toUpperCase()
+              .includes('HORIZONTAL')
+          ? 'horiz'
+          : parseSettings.deltaMode,
+    applyCurvatureRefraction:
+      parseSnprojNumber(adjustment.get('INDEX_OF_REFRACTION')) != null
+        ? true
+        : parseSettings.applyCurvatureRefraction,
+    refractionCoefficient:
+      parseSnprojNumber(adjustment.get('INDEX_OF_REFRACTION')) ??
+      parseSettings.refractionCoefficient,
+    verticalReduction:
+      adjustment.get('ADJUSTMENT_TYPE')?.trim().toUpperCase() === '3D' &&
+      adjustment.get('3D_INPUT_MODE')?.trim().toUpperCase().includes('ZENITH') &&
+      parseSnprojNumber(adjustment.get('INDEX_OF_REFRACTION')) != null
+        ? 'curvref'
+        : parseSettings.verticalReduction,
+    qFixLinearSigmaM:
+      parseSnprojNumber(adjustment.get('FIXED_LINEAR_STD_ERR')) ??
+      parseSettings.qFixLinearSigmaM,
+    qFixAngularSigmaSec:
+      parseSnprojNumber(adjustment.get('FIXED_ANGULAR_STD_ERR')) ??
+      parseSettings.qFixAngularSigmaSec,
+    averageGeoidHeight:
+      parseSnprojNumber(adjustment.get('GEOID_HEIGHT')) ?? parseSettings.averageGeoidHeight,
+    verticalDeflectionNorthSec:
+      parseSnprojNumber(adjustment.get('VERT_DEFL_NORTH')) ??
+      parseSettings.verticalDeflectionNorthSec,
+    verticalDeflectionEastSec:
+      parseSnprojNumber(adjustment.get('VERT_DEFL_EAST')) ??
+      parseSettings.verticalDeflectionEastSec,
+  };
+
+  const importedInstrumentCode = 'IMPORTED';
+  const importedInstrument = {
+    ...(projectInstruments[selectedInstrument] ?? projectInstruments[importedInstrumentCode] ?? {
+      code: importedInstrumentCode,
+      desc: 'Imported project instrument',
+      edm_const: 0,
+      edm_ppm: 0,
+      hzPrecision_sec: 0,
+      dirPrecision_sec: 0,
+      azBearingPrecision_sec: 0,
+      vaPrecision_sec: 0,
+      instCentr_m: 0,
+      tgtCentr_m: 0,
+      vertCentr_m: 0,
+      elevDiff_const_m: 0,
+      elevDiff_ppm: 0,
+      gpsStd_xy: 0,
+      levStd_mmPerKm: 0,
+    }),
+    code: importedInstrumentCode,
+    desc: `Imported project instrument (${sourceName})`,
+    edm_const: parseSnprojNumber(instrument.get('DISTANCE_STD_ERR')) ??
+      (projectInstruments[selectedInstrument]?.edm_const ?? 0),
+    edm_ppm:
+      parseSnprojNumber(instrument.get('EDM_PPM')) ??
+      (projectInstruments[selectedInstrument]?.edm_ppm ?? 0),
+    hzPrecision_sec:
+      parseSnprojNumber(instrument.get('ANGLE_STD_ERR')) ??
+      (projectInstruments[selectedInstrument]?.hzPrecision_sec ?? 0),
+    dirPrecision_sec:
+      parseSnprojNumber(instrument.get('DIRECTION_STD_ERR')) ??
+      (projectInstruments[selectedInstrument]?.dirPrecision_sec ?? 0),
+    azBearingPrecision_sec:
+      parseSnprojNumber(instrument.get('AZIMUTH_STD_ERR')) ??
+      (projectInstruments[selectedInstrument]?.azBearingPrecision_sec ?? 0),
+    vaPrecision_sec:
+      parseSnprojNumber(instrument.get('ZENITH_STD_ERR')) ??
+      (projectInstruments[selectedInstrument]?.vaPrecision_sec ?? 0),
+    instCentr_m:
+      parseSnprojNumber(instrument.get('INSTRUMENT_CENTERING_ERROR')) ??
+      (projectInstruments[selectedInstrument]?.instCentr_m ?? 0),
+    tgtCentr_m:
+      parseSnprojNumber(instrument.get('TARGET_CENTERING_ERROR')) ??
+      (projectInstruments[selectedInstrument]?.tgtCentr_m ?? 0),
+    vertCentr_m:
+      parseSnprojNumber(instrument.get('VERTICAL_CENTERING_ERROR')) ??
+      (projectInstruments[selectedInstrument]?.vertCentr_m ?? 0),
+    elevDiff_const_m:
+      parseSnprojNumber(instrument.get('DELTA_ELEV_STD_ERR')) ??
+      (projectInstruments[selectedInstrument]?.elevDiff_const_m ?? 0),
+    elevDiff_ppm:
+      parseSnprojNumber(instrument.get('DELTA_ELEV_PPM')) ??
+      (projectInstruments[selectedInstrument]?.elevDiff_ppm ?? 0),
+    levStd_mmPerKm:
+      parseSnprojNumber(instrument.get('LEVEL_STD_ERR')) ??
+      (projectInstruments[selectedInstrument]?.levStd_mmPerKm ?? 0),
+  };
+
+  return {
+    sourceName,
+    payload: {
+      schemaVersion: 5,
+      input: '',
+      includeFiles: {},
+      savedRuns: [],
+      ui: {
+        settings: nextSettings as unknown as Record<string, unknown>,
+        parseSettings: nextParseSettings as unknown as Record<string, unknown>,
+        exportFormat: 'industry-style',
+        adjustedPointsExport: cloneAdjustedPointsExportSettings(adjustedPointsExportSettings),
+      },
+      project: {
+        projectInstruments: {
+          ...projectInstruments,
+          [importedInstrumentCode]: importedInstrument,
+        },
+        selectedInstrument: importedInstrumentCode,
+        levelLoopCustomPresets: levelLoopCustomPresets.map((preset) => ({ ...preset })),
+      },
+    },
+    appliedDomains: [
+      'project settings',
+      'parse settings',
+      'industry listing options',
+      'instrument defaults',
+    ],
+    ignoredDomains: ['data file list', 'plot settings', 'unsupported industry-only options'],
+  };
 };
 
 const normalizeSessionWorkspace = (
@@ -405,12 +676,8 @@ export const useProjectFileWorkflow = ({
     void refreshStorageContext();
   }, [refreshStorageContext]);
 
-  const applyLoadedProjectPayload = useCallback(
-    (
-      parsed: ParsedProjectPayload,
-      nextSession: ProjectSessionState | null,
-      savedRuns: PersistedSavedRunSnapshot[],
-    ) => {
+  const normalizeImportedProjectPayload = useCallback(
+    (parsed: ParsedProjectPayload) => {
       const loadedSettings = parsed.ui.settings as unknown as SettingsState;
       const normalizedLoadedSettings: SettingsState = {
         ...loadedSettings,
@@ -461,6 +728,33 @@ export const useProjectFileWorkflow = ({
           includeLostStations: normalizedLoadedSettings.listingShowLostStations,
         },
       );
+      return {
+        normalizedLoadedSettings,
+        normalizedLoadedParseSettings,
+        loadedAdjustedPointsSettings,
+        exportFormat: parsed.ui.exportFormat,
+        projectInstruments: cloneInstrumentLibrary(parsed.project.projectInstruments),
+        selectedInstrument: parsed.project.selectedInstrument,
+        levelLoopCustomPresets: parsed.project.levelLoopCustomPresets.map((preset) => ({
+          ...preset,
+        })),
+      };
+    },
+    [
+      buildObservationModeFromGridFields,
+      cloneInstrumentLibrary,
+      normalizeSolveProfile,
+      normalizeUiTheme,
+    ],
+  );
+
+  const applyLoadedProjectPayload = useCallback(
+    (
+      parsed: ParsedProjectPayload,
+      nextSession: ProjectSessionState | null,
+      savedRuns: PersistedSavedRunSnapshot[],
+    ) => {
+      const normalized = normalizeImportedProjectPayload(parsed);
       const nextInput =
         nextSession != null
           ? nextSession.sourceTexts[
@@ -483,43 +777,35 @@ export const useProjectFileWorkflow = ({
             )
           : { ...(parsed.includeFiles ?? {}) },
       );
-      setSettings(normalizedLoadedSettings);
-      setParseSettings(normalizedLoadedParseSettings);
+      setSettings(normalized.normalizedLoadedSettings);
+      setParseSettings(normalized.normalizedLoadedParseSettings);
       setGeoidSourceData(null);
       setGeoidSourceDataLabel('');
-      setExportFormat(parsed.ui.exportFormat);
-      setAdjustedPointsExportSettings(
-        cloneAdjustedPointsExportSettings(loadedAdjustedPointsSettings),
-      );
+      setExportFormat(normalized.exportFormat);
+      setAdjustedPointsExportSettings(cloneAdjustedPointsExportSettings(normalized.loadedAdjustedPointsSettings));
       restoreSavedRunSnapshots(savedRuns);
-      setProjectInstruments(cloneInstrumentLibrary(parsed.project.projectInstruments));
-      setSelectedInstrument(parsed.project.selectedInstrument);
-      setLevelLoopCustomPresets(
-        parsed.project.levelLoopCustomPresets.map((preset) => ({ ...preset })),
-      );
+      setProjectInstruments(normalized.projectInstruments);
+      setSelectedInstrument(normalized.selectedInstrument);
+      setLevelLoopCustomPresets(normalized.levelLoopCustomPresets);
 
-      setSettingsDraft(normalizedLoadedSettings);
-      setParseSettingsDraft(normalizedLoadedParseSettings);
+      setSettingsDraft(normalized.normalizedLoadedSettings);
+      setParseSettingsDraft(normalized.normalizedLoadedParseSettings);
       setGeoidSourceDataDraft(null);
       setGeoidSourceDataLabelDraft('');
-      setProjectInstrumentsDraft(cloneInstrumentLibrary(parsed.project.projectInstruments));
-      setSelectedInstrumentDraft(parsed.project.selectedInstrument);
+      setProjectInstrumentsDraft(cloneInstrumentLibrary(normalized.projectInstruments));
+      setSelectedInstrumentDraft(normalized.selectedInstrument);
       setLevelLoopCustomPresetsDraft(
-        parsed.project.levelLoopCustomPresets.map((preset) => ({ ...preset })),
+        normalized.levelLoopCustomPresets.map((preset) => ({ ...preset })),
       );
-      setAdjustedPointsExportSettingsDraft(
-        cloneAdjustedPointsExportSettings(loadedAdjustedPointsSettings),
-      );
+      setAdjustedPointsExportSettingsDraft(cloneAdjustedPointsExportSettings(normalized.loadedAdjustedPointsSettings));
       setIsAdjustedPointsTransformSelectOpen(false);
       setAdjustedPointsTransformSelectedDraft([]);
 
       resetWorkspaceAfterProjectLoad();
     },
     [
-      buildObservationModeFromGridFields,
       cloneInstrumentLibrary,
-      normalizeSolveProfile,
-      normalizeUiTheme,
+      normalizeImportedProjectPayload,
       resetWorkspaceAfterProjectLoad,
       restoreSavedRunSnapshots,
       setAdjustedPointsExportSettings,
@@ -900,7 +1186,7 @@ export const useProjectFileWorkflow = ({
     [],
   );
 
-  const createLocalProjectFromCurrentWorkspace = useCallback(async () => {
+  const createLocalProjectFromCurrentWorkspace = useCallback(async (): Promise<ProjectSessionState | null> => {
     if (!canUseNamedProjectStorage) {
       setImportNotice({
         title: 'Local project storage unavailable',
@@ -909,11 +1195,11 @@ export const useProjectFileWorkflow = ({
           'Use portable project export/import for this session instead.',
         ],
       });
-      return;
+      return null;
     }
     const suggestedName = `WebNet Project ${new Date().toISOString().slice(0, 10)}`;
     const name = window.prompt('Project name', suggestedName)?.trim();
-    if (!name) return;
+    if (!name) return null;
     const createdAt = new Date().toISOString();
     const seed = createManifestFromFlatProject({
       projectId: createProjectId(),
@@ -967,6 +1253,14 @@ export const useProjectFileWorkflow = ({
         'Named projects now autosave sources and settings to browser project storage.',
       ],
     });
+    return {
+      ...session,
+      dirtyFileIds: [],
+      manifestDirty: false,
+      autosaveState: 'idle',
+      lastAutosavedAt: createdAt,
+      lastAutosaveError: null,
+    };
   }, [
     adjustedPointsExportSettings,
     canUseNamedProjectStorage,
@@ -1431,6 +1725,275 @@ export const useProjectFileWorkflow = ({
     [projectSession, setImportNotice, updateProjectSession],
   );
 
+  const importGeneratedProjectSourceFile = useCallback(
+    async ({ sourceName, text }: { sourceName: string; text: string }): Promise<boolean> => {
+      if (!text.trim()) {
+        setImportNotice({
+          title: 'Project source file failed',
+          detailLines: ['Imported review output was empty after reconciliation.'],
+        });
+        return false;
+      }
+      let ensuredSession = projectSession;
+      if (!ensuredSession) {
+        ensuredSession = await createLocalProjectFromCurrentWorkspace();
+        if (!ensuredSession) return false;
+      }
+      const requestedName = buildImportedReviewFileName(sourceName);
+      let finalName = requestedName;
+      let nextInputText = text;
+      let nextIncludeFiles: Record<string, string> = {};
+      setProjectSession((current) => {
+        const base = cloneProjectSessionState(current ?? ensuredSession!);
+        const nowIso = new Date().toISOString();
+        const workspace = normalizeSessionWorkspace(base);
+        const existingNames = new Set(base.manifest.files.map((entry) => entry.name));
+        finalName = existingNames.has(requestedName)
+          ? buildFileNameCopy(requestedName, existingNames)
+          : requestedName;
+        const entry = createManifestEntry({
+          name: finalName,
+          kind: 'dat',
+          order: base.manifest.files.length,
+          enabled: true,
+          text,
+          createdAt: nowIso,
+          updatedAt: nowIso,
+          modifiedAt: nowIso,
+        });
+        base.manifest.files = [...base.manifest.files, entry];
+        base.manifest.workspace = normalizeWorkspaceState(base.manifest.files, {
+          ...workspace,
+          openFileIds: appendUniqueId(workspace.openFileIds, entry.id),
+          focusedFileId: entry.id,
+        });
+        base.manifest.updatedAt = nowIso;
+        base.indexRow = touchProjectIndexRow(base.indexRow, nowIso);
+        base.sourceTexts = {
+          ...base.sourceTexts,
+          [entry.id]: text,
+        };
+        base.dirtyFileIds = appendUniqueId(base.dirtyFileIds, entry.id);
+        base.manifestDirty = true;
+        base.autosaveState = 'idle';
+        base.lastAutosaveError = null;
+        nextInputText = base.sourceTexts[entry.id] ?? text;
+        nextIncludeFiles = buildProjectEditorIncludeFiles(base.manifest, base.sourceTexts, entry.id);
+        return base;
+      });
+      setInput(nextInputText);
+      setProjectIncludeFiles(nextIncludeFiles);
+      setImportNotice({
+        title: 'Project source file added',
+        detailLines: [`Added ${finalName}.`],
+      });
+      return true;
+    },
+    [
+      createLocalProjectFromCurrentWorkspace,
+      projectSession,
+      setInput,
+      setImportNotice,
+      setProjectIncludeFiles,
+    ],
+  );
+
+  const prepareAssociatedProjectSettingsImport = useCallback(
+    async (file: File): Promise<PreparedAssociatedProjectSettingsImport | null> => {
+      try {
+        const rawText = await readFileAsText(file);
+        const lowerName = file.name.toLowerCase();
+        if (lowerName.endsWith('.snproj')) {
+          return buildSnprojAssociatedSettingsPayload({
+            rawText,
+            sourceName: file.name,
+            settings,
+            parseSettings,
+            exportFormat,
+            adjustedPointsExportSettings,
+            projectInstruments,
+            selectedInstrument,
+            levelLoopCustomPresets,
+          });
+        }
+        const parsed = parseProjectFile(rawText, {
+          settings: settings as unknown as Record<string, unknown>,
+          parseSettings: parseSettings as unknown as Record<string, unknown>,
+          exportFormat,
+          adjustedPointsExport: adjustedPointsExportSettings,
+          projectInstruments,
+          selectedInstrument,
+          levelLoopCustomPresets,
+        });
+        if (!parsed.ok) {
+          setImportNotice({
+            title: 'Associated settings import failed',
+            detailLines: parsed.errors,
+          });
+          return null;
+        }
+        return {
+          sourceName: file.name,
+          payload: parsed.project,
+          appliedDomains: [
+            'project settings',
+            'parse settings',
+            'adjusted-points export',
+            'instrument library',
+          ],
+          ignoredDomains: [],
+        };
+      } catch (error) {
+        setImportNotice({
+          title: 'Associated settings import failed',
+          detailLines: [error instanceof Error ? error.message : String(error)],
+        });
+        return null;
+      }
+    },
+    [
+      adjustedPointsExportSettings,
+      exportFormat,
+      levelLoopCustomPresets,
+      parseSettings,
+      projectInstruments,
+      selectedInstrument,
+      setImportNotice,
+      settings,
+    ],
+  );
+
+  const applyPreparedAssociatedProjectSettings = useCallback(
+    async (
+      prepared: PreparedAssociatedProjectSettingsImport,
+      options: ApplyPreparedAssociatedProjectSettingsOptions = {},
+    ): Promise<boolean> => {
+      try {
+        const normalized = normalizeImportedProjectPayload(prepared.payload);
+        setSettings(normalized.normalizedLoadedSettings);
+        setParseSettings(normalized.normalizedLoadedParseSettings);
+        setGeoidSourceData(null);
+        setGeoidSourceDataLabel('');
+        setExportFormat(normalized.exportFormat);
+        setAdjustedPointsExportSettings(
+          cloneAdjustedPointsExportSettings(normalized.loadedAdjustedPointsSettings),
+        );
+        setProjectInstruments(cloneInstrumentLibrary(normalized.projectInstruments));
+        setSelectedInstrument(normalized.selectedInstrument);
+        setLevelLoopCustomPresets(
+          normalized.levelLoopCustomPresets.map((preset) => ({ ...preset })),
+        );
+
+        setSettingsDraft(normalized.normalizedLoadedSettings);
+        setParseSettingsDraft(normalized.normalizedLoadedParseSettings);
+        setGeoidSourceDataDraft(null);
+        setGeoidSourceDataLabelDraft('');
+        setProjectInstrumentsDraft(cloneInstrumentLibrary(normalized.projectInstruments));
+        setSelectedInstrumentDraft(normalized.selectedInstrument);
+        setLevelLoopCustomPresetsDraft(
+          normalized.levelLoopCustomPresets.map((preset) => ({ ...preset })),
+        );
+        setAdjustedPointsExportSettingsDraft(
+          cloneAdjustedPointsExportSettings(normalized.loadedAdjustedPointsSettings),
+        );
+        setIsAdjustedPointsTransformSelectOpen(false);
+        setAdjustedPointsTransformSelectedDraft([]);
+
+        if (projectSession) {
+          updateProjectSession(
+            (current) => {
+              const nowIso = new Date().toISOString();
+              current.manifest.ui.settings =
+                normalized.normalizedLoadedSettings as unknown as Record<string, unknown>;
+              current.manifest.ui.parseSettings =
+                normalized.normalizedLoadedParseSettings as unknown as Record<string, unknown>;
+              current.manifest.ui.exportFormat = normalized.exportFormat;
+              current.manifest.ui.adjustedPointsExport = cloneAdjustedPointsExportSettings(
+                normalized.loadedAdjustedPointsSettings,
+              );
+              current.manifest.project.projectInstruments = cloneInstrumentLibrary(
+                normalized.projectInstruments,
+              );
+              current.manifest.project.selectedInstrument = normalized.selectedInstrument;
+              current.manifest.project.levelLoopCustomPresets =
+                normalized.levelLoopCustomPresets.map((preset) => ({ ...preset }));
+              current.manifest.updatedAt = nowIso;
+              current.indexRow = touchProjectIndexRow(current.indexRow, nowIso);
+              current.manifestDirty = true;
+              current.autosaveState = 'idle';
+              current.lastAutosaveError = null;
+              return current;
+            },
+            { syncEditor: false },
+          );
+        }
+
+        resetWorkspaceAfterProjectLoad();
+        const detailLines = [
+          ...(options.successDetailPrefix ?? []),
+          `Applied settings from ${prepared.sourceName}.`,
+          `Applied: ${prepared.appliedDomains.join(', ') || 'recognized project settings'}.`,
+        ];
+        if (prepared.ignoredDomains.length > 0) {
+          detailLines.push(`Ignored: ${prepared.ignoredDomains.join(', ')}.`);
+        }
+        setImportNotice({
+          title: options.successTitle ?? 'Associated settings imported',
+          detailLines,
+        });
+        return true;
+      } catch (error) {
+        setImportNotice({
+          title: options.failureTitle ?? 'Associated settings import failed',
+          detailLines: [
+            ...(options.failureDetailPrefix ?? []),
+            error instanceof Error ? error.message : String(error),
+          ],
+        });
+        return false;
+      }
+    },
+    [
+      cloneInstrumentLibrary,
+      normalizeImportedProjectPayload,
+      projectSession,
+      resetWorkspaceAfterProjectLoad,
+      setAdjustedPointsExportSettings,
+      setAdjustedPointsExportSettingsDraft,
+      setAdjustedPointsTransformSelectedDraft,
+      setExportFormat,
+      setGeoidSourceData,
+      setGeoidSourceDataDraft,
+      setGeoidSourceDataLabel,
+      setGeoidSourceDataLabelDraft,
+      setImportNotice,
+      setIsAdjustedPointsTransformSelectOpen,
+      setLevelLoopCustomPresets,
+      setLevelLoopCustomPresetsDraft,
+      setParseSettings,
+      setParseSettingsDraft,
+      setProjectInstruments,
+      setProjectInstrumentsDraft,
+      setSelectedInstrument,
+      setSelectedInstrumentDraft,
+      setSettings,
+      setSettingsDraft,
+      updateProjectSession,
+    ],
+  );
+
+  const importAssociatedProjectSettingsFile = useCallback(
+    async (file: File): Promise<boolean> => {
+      const prepared = await prepareAssociatedProjectSettingsImport(file);
+      if (!prepared) return false;
+      return applyPreparedAssociatedProjectSettings(prepared);
+    },
+    [
+      applyPreparedAssociatedProjectSettings,
+      prepareAssociatedProjectSettingsImport,
+    ],
+  );
+
   const handleProjectSourceFileChange = useCallback(
     async (e: ChangeEvent<HTMLInputElement>) => {
       const files = Array.from(e.target.files ?? []);
@@ -1797,6 +2360,7 @@ export const useProjectFileWorkflow = ({
     activeProjectFileViews,
     currentProjectFile,
     projectSourceAccept: PROJECT_SOURCE_ACCEPT,
+    associatedProjectSettingsAccept: ASSOCIATED_PROJECT_SETTINGS_ACCEPT,
     effectiveRunInput,
     effectiveProjectRunFiles,
     projectRunValidation,
@@ -1816,6 +2380,10 @@ export const useProjectFileWorkflow = ({
     triggerProjectFileSelect,
     triggerProjectSourceFileSelect,
     importProjectSourceFiles,
+    importGeneratedProjectSourceFile,
+    prepareAssociatedProjectSettingsImport,
+    applyPreparedAssociatedProjectSettings,
+    importAssociatedProjectSettingsFile,
     openProjectWorkspace,
     handleSaveProject,
     handleEditorInputChange,

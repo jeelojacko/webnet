@@ -240,9 +240,12 @@ Current import behavior includes:
 - first-party importers for OPUS/OPUS-RS, JobXML, industry-style survey-report HTML, FieldGenius raw, Carlson/TDS RW5-style raw, and DBX text/XML exports
 - staged import-review modal before editor mutation
 - setup-aware grouping and output-style presets
+- opt-in JobXML `Industry Style` review output that locks the prompt into a fixed raw-fieldbook mode, defaults staged review to exclude `MTA` rows, preserves raw horizontal-circle values, corrected slope distances, raw zenith values, JobXML point codes, and exact HI/HT provenance, and emits round-grouped `DB/DN/DM/DE` blocks for direct-reading direction-set imports while leaving the generic WebNet and TS-direction-set presets unchanged
 - angle-mode and 2D conversion controls during import review
 - richer compare and reconcile workflows across multiple external sources
 - conflict detection against the current editor and deterministic conflict-resolution choices
+- staged-review apply actions for replacing editor text, importing the resolved text as a new project `.dat` file, and importing associated `.wnproj*` / `.snproj` settings into the current workspace without replacing the project file manifest
+- associated `.wnproj*` / `.snproj` selection during staged import review now stages a prepared settings payload instead of applying immediately; the staged settings survive review-draft restore, show pending status in the modal, and apply only after the reviewed text import succeeds
 - persistence of import-review and reconciliation state through local draft recovery
 
 For detailed import behavior, see `docs/IMPORT_WORKFLOW.md`.
@@ -295,11 +298,16 @@ Parity-sensitive behavior remains an explicit project concern. Current parity-or
 - exact levelling-only industry-listing parity from `Project Option Settings` through the file end for the active leveling reference case
 - active traverse startup defaults and parser regression locks for `.INST`-scoped instrument selection across direction-set/traverse blocks
 - slot-preserving mixed sigma parsing for traverse direction-set `DM` rows, so tokens such as `& & 30` apply default direction and distance weighting while keeping only the zenith sigma explicit
+- compact STAR*NET shorthand tokens are accepted in the same slot-preserving parser path, so packed markers such as `!!*` and `&&*` expand across control and sigma slots without changing the older spaced-token behavior
 - traverse direction-set reductions and paired `DM` distance/zenith rows now share one global observation-ID stream and preserve the active set ID, which keeps set-scoped diagnostics and review selection deterministic on the traverse parity case
 - derived grid lat/lon and projection factors for projected traverse stations are recomputed from the live adjusted coordinates unless the station came from explicit geodetic input, preventing stale factor reuse on the traverse parity case
 - the active traverse parity startup now uses the CSRS New Brunswick double-stereographic CRS under the industry `NewBrunswick83` label, with the retained classic listing calibration derived from an isolated display-only legacy NB formula instead of a second catalog CRS
 - the active traverse parity startup now runs with curvature/refraction enabled (`verticalReduction='curvref'`, `k=0.07`) using the same coefficient convention as the industry reference output, which brings the traverse zenith summary into parity range
 - pre-solve traverse bootstrapping that can resect unknown direction-set setups from known targets and forward-seed connected target coordinates before adjustment
+- traverse bootstrap seeding now preserves fixed or weighted control components on partially constrained stations, so imported `E`-only fixed-height control can still seed XY without overwriting the constrained height
+- raw-mode imported direction sets keep strict unresolved mixed-face rejection for reduced handling, but they now fall back to legacy face-split raw emission instead of hard-failing when the active parity path explicitly requests raw direction rows
+- weighted raw `DM` zenith rows now normalize face-2 readings to the face-1 equivalent before solve, while float zenith rows remain excluded from the equation set; this closes the committed Coldstream imported-file parity case against the industry reference counts and coordinate output
+- the committed Coldstream two-file + `.snproj` run-session regression now matches the reference imported parity case with `40` stations, `1048` total scalar observations, `411` directions, `409` distances, `1` az/bearing, `227` zeniths, and SEUW near `0.5334`
 - traverse statistical summaries now keep fixed azimuth/bearing observations out of the measured-direction family, matching the industry-style `Az/Bearings` split on the traverse parity case
 - adjusted measured direction rows now print lateral residual distance in the `Distance` column, matching the industry traverse reference listing instead of showing the geometric line length
 - 3D traverse-style parity listings now use the compact industry settings/instrument block instead of the expanded WebNet diagnostics block, and their entered-station summary is driven from a parse-time snapshot of the original control coordinates so fixed/free/unused rows no longer drift with the solved station map

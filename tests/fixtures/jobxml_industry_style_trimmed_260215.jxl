@@ -1,0 +1,447 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<JOBFile jobName="260215 TRAVERSE" version="6.27">
+  <FieldBook>
+    <AtmosphereRecord ID="0000002f">
+      <PPM>-2.9002174499703</PPM>
+    </AtmosphereRecord>
+
+    <StationRecord ID="00000030">
+      <StationName>300</StationName>
+      <TheodoliteHeight>1.7023212101114</TheodoliteHeight>
+      <AtmosphereID>0000002f</AtmosphereID>
+      <StationType>StationSetup</StationType>
+    </StationRecord>
+
+    <BackBearingRecord ID="00000034">
+      <StationRecordID>00000030</StationRecordID>
+      <Station>300</Station>
+      <BackSight>101</BackSight>
+      <Face1HorizontalCircle>0</Face1HorizontalCircle>
+      <Face2HorizontalCircle>180.0029331</Face2HorizontalCircle>
+      <OrientationCorrection>-0.00146655</OrientationCorrection>
+    </BackBearingRecord>
+
+    <BackBearingRecord ID="00000043">
+      <StationRecordID>00000030</StationRecordID>
+      <Station>300</Station>
+      <BackSight>101</BackSight>
+      <Face1HorizontalCircle>0</Face1HorizontalCircle>
+      <Face2HorizontalCircle>180.0025965</Face2HorizontalCircle>
+      <OrientationCorrection>-0.00129825</OrientationCorrection>
+    </BackBearingRecord>
+
+    <BackBearingRecord ID="00000089">
+      <StationRecordID>00000030</StationRecordID>
+      <Station>300</Station>
+      <BackSight>101</BackSight>
+      <Face1HorizontalCircle>0</Face1HorizontalCircle>
+      <Face2HorizontalCircle>180.0024579</Face2HorizontalCircle>
+      <OrientationCorrection>-0.00122895</OrientationCorrection>
+    </BackBearingRecord>
+
+    <TargetRecord ID="00000035">
+      <PrismConstant>-0.0344</PrismConstant>
+      <TargetHeight>0.12</TargetHeight>
+    </TargetRecord>
+
+    <TargetRecord ID="0000004e">
+      <PrismConstant>-0.0169</PrismConstant>
+      <TargetHeight>0.178</TargetHeight>
+    </TargetRecord>
+
+    <TargetRecord ID="00000059">
+      <PrismConstant>-0.0169</PrismConstant>
+      <TargetHeight>0</TargetHeight>
+    </TargetRecord>
+
+    <PointRecord ID="00000036">
+      <Name>101</Name>
+      <Code>RS1</Code>
+      <Method>DirectReading</Method>
+      <Classification>BackSight</Classification>
+      <Circle>
+        <HorizontalCircle>0</HorizontalCircle>
+        <VerticalCircle>81.3160935</VerticalCircle>
+        <EDMDistance>42.22885</EDMDistance>
+        <Face>Face1</Face>
+      </Circle>
+      <StationID>00000030</StationID>
+      <BackBearingID>00000034</BackBearingID>
+      <TargetID>00000035</TargetID>
+    </PointRecord>
+
+    <PointRecord ID="0000003b">
+      <Name>101</Name>
+      <Code>RS1</Code>
+      <Method>DirectReading</Method>
+      <Classification>BackSight</Classification>
+      <Circle>
+        <HorizontalCircle>180.0029331</HorizontalCircle>
+        <VerticalCircle>278.6832117</VerticalCircle>
+        <EDMDistance>42.22812</EDMDistance>
+        <Face>Face2</Face>
+      </Circle>
+      <StationID>00000030</StationID>
+      <BackBearingID>00000034</BackBearingID>
+      <TargetID>00000035</TargetID>
+    </PointRecord>
+
+    <PointRecord ID="00000040">
+      <Name>101</Name>
+      <Code>RS1</Code>
+      <Method>MeanTurnedAngle</Method>
+      <Classification>MTA</Classification>
+      <MTA>
+        <HorizontalCircle>0</HorizontalCircle>
+        <VerticalCircle>81.3164409</VerticalCircle>
+        <EDMDistance>42.228485</EDMDistance>
+      </MTA>
+      <StationID>00000030</StationID>
+      <BackBearingID>00000034</BackBearingID>
+      <TargetID>00000035</TargetID>
+    </PointRecord>
+
+    <StartRoundRecord ID="00000065">
+      <Round>1</Round>
+    </StartRoundRecord>
+
+    <PointRecord ID="00000044">
+      <Name>101</Name>
+      <Code>RS1</Code>
+      <Method>DirectReading</Method>
+      <Classification>BackSight</Classification>
+      <Circle>
+        <HorizontalCircle>0</HorizontalCircle>
+        <VerticalCircle>81.3157587</VerticalCircle>
+        <EDMDistance>42.22852</EDMDistance>
+        <Face>Face1</Face>
+      </Circle>
+      <StationID>00000030</StationID>
+      <BackBearingID>00000043</BackBearingID>
+      <TargetID>00000035</TargetID>
+    </PointRecord>
+
+    <PointRecord ID="00000049">
+      <Name>101</Name>
+      <Code>RS1</Code>
+      <Method>DirectReading</Method>
+      <Classification>BackSight</Classification>
+      <Circle>
+        <HorizontalCircle>180.0025965</HorizontalCircle>
+        <VerticalCircle>278.6832432</VerticalCircle>
+        <EDMDistance>42.22891</EDMDistance>
+        <Face>Face2</Face>
+      </Circle>
+      <StationID>00000030</StationID>
+      <BackBearingID>00000043</BackBearingID>
+      <TargetID>00000035</TargetID>
+    </PointRecord>
+
+    <PointRecord ID="0000004f">
+      <Name>102</Name>
+      <Code>TH CN</Code>
+      <Method>DirectReading</Method>
+      <Classification>Normal</Classification>
+      <Circle>
+        <HorizontalCircle>260.6505192</HorizontalCircle>
+        <VerticalCircle>90.9680796</VerticalCircle>
+        <EDMDistance>154.81087</EDMDistance>
+        <Face>Face1</Face>
+      </Circle>
+      <StationID>00000030</StationID>
+      <BackBearingID>00000043</BackBearingID>
+      <TargetID>0000004e</TargetID>
+    </PointRecord>
+
+    <PointRecord ID="00000054">
+      <Name>102</Name>
+      <Code>TH CN</Code>
+      <Method>DirectReading</Method>
+      <Classification>Normal</Classification>
+      <Circle>
+        <HorizontalCircle>80.6509701</HorizontalCircle>
+        <VerticalCircle>269.0309043</VerticalCircle>
+        <EDMDistance>154.81006</EDMDistance>
+        <Face>Face2</Face>
+      </Circle>
+      <StationID>00000030</StationID>
+      <BackBearingID>00000043</BackBearingID>
+      <TargetID>0000004e</TargetID>
+    </PointRecord>
+
+    <PointRecord ID="0000005a">
+      <Name>200</Name>
+      <Code>BP LP</Code>
+      <Method>DirectReading</Method>
+      <Classification>Normal</Classification>
+      <Circle>
+        <HorizontalCircle>251.9276373</HorizontalCircle>
+        <VerticalCircle>90.9499617</VerticalCircle>
+        <EDMDistance>63.08548</EDMDistance>
+        <Face>Face1</Face>
+      </Circle>
+      <StationID>00000030</StationID>
+      <BackBearingID>00000043</BackBearingID>
+      <TargetID>00000059</TargetID>
+    </PointRecord>
+
+    <PointRecord ID="0000005f">
+      <Name>200</Name>
+      <Code>BP LP</Code>
+      <Method>DirectReading</Method>
+      <Classification>Normal</Classification>
+      <Circle>
+        <HorizontalCircle>71.9282925</HorizontalCircle>
+        <VerticalCircle>269.0485434</VerticalCircle>
+        <EDMDistance>63.08331</EDMDistance>
+        <Face>Face2</Face>
+      </Circle>
+      <StationID>00000030</StationID>
+      <BackBearingID>00000043</BackBearingID>
+      <TargetID>00000059</TargetID>
+    </PointRecord>
+
+    <StartRoundRecord ID="00000066">
+      <Round>2</Round>
+    </StartRoundRecord>
+
+    <PointRecord ID="00000067">
+      <Name>200</Name>
+      <Code>BP LP</Code>
+      <Method>DirectReading</Method>
+      <Classification>Normal</Classification>
+      <Circle>
+        <HorizontalCircle>251.9275734</HorizontalCircle>
+        <VerticalCircle>90.9499671</VerticalCircle>
+        <EDMDistance>63.08501</EDMDistance>
+        <Face>Face1</Face>
+      </Circle>
+      <StationID>00000030</StationID>
+      <BackBearingID>00000043</BackBearingID>
+      <TargetID>00000059</TargetID>
+    </PointRecord>
+
+    <PointRecord ID="0000006c">
+      <Name>200</Name>
+      <Code>BP LP</Code>
+      <Method>DirectReading</Method>
+      <Classification>Normal</Classification>
+      <Circle>
+        <HorizontalCircle>71.9283708</HorizontalCircle>
+        <VerticalCircle>269.048466</VerticalCircle>
+        <EDMDistance>63.08412</EDMDistance>
+        <Face>Face2</Face>
+      </Circle>
+      <StationID>00000030</StationID>
+      <BackBearingID>00000043</BackBearingID>
+      <TargetID>00000059</TargetID>
+    </PointRecord>
+
+    <PointRecord ID="00000072">
+      <Name>102</Name>
+      <Code>TH CN</Code>
+      <Method>DirectReading</Method>
+      <Classification>Normal</Classification>
+      <Circle>
+        <HorizontalCircle>260.6513238</HorizontalCircle>
+        <VerticalCircle>90.9673668</VerticalCircle>
+        <EDMDistance>154.81135</EDMDistance>
+        <Face>Face1</Face>
+      </Circle>
+      <StationID>00000030</StationID>
+      <BackBearingID>00000043</BackBearingID>
+      <TargetID>0000004e</TargetID>
+    </PointRecord>
+
+    <PointRecord ID="00000077">
+      <Name>102</Name>
+      <Code>TH CN</Code>
+      <Method>DirectReading</Method>
+      <Classification>Normal</Classification>
+      <Circle>
+        <HorizontalCircle>80.6516433</HorizontalCircle>
+        <VerticalCircle>269.031159</VerticalCircle>
+        <EDMDistance>154.81232</EDMDistance>
+        <Face>Face2</Face>
+      </Circle>
+      <StationID>00000030</StationID>
+      <BackBearingID>00000043</BackBearingID>
+      <TargetID>0000004e</TargetID>
+    </PointRecord>
+
+    <PointRecord ID="0000007d">
+      <Name>101</Name>
+      <Code>RS1</Code>
+      <Method>DirectReading</Method>
+      <Classification>BackSight</Classification>
+      <Circle>
+        <HorizontalCircle>0</HorizontalCircle>
+        <VerticalCircle>81.316062</VerticalCircle>
+        <EDMDistance>42.22912</EDMDistance>
+        <Face>Face1</Face>
+      </Circle>
+      <StationID>00000030</StationID>
+      <BackBearingID>00000043</BackBearingID>
+      <TargetID>00000035</TargetID>
+    </PointRecord>
+
+    <PointRecord ID="00000082">
+      <Name>101</Name>
+      <Code>RS1</Code>
+      <Method>DirectReading</Method>
+      <Classification>BackSight</Classification>
+      <Circle>
+        <HorizontalCircle>180.0023778</HorizontalCircle>
+        <VerticalCircle>278.6835591</VerticalCircle>
+        <EDMDistance>42.22915</EDMDistance>
+        <Face>Face2</Face>
+      </Circle>
+      <StationID>00000030</StationID>
+      <BackBearingID>00000043</BackBearingID>
+      <TargetID>00000035</TargetID>
+    </PointRecord>
+
+    <StartRoundRecord ID="00000083">
+      <Round>3</Round>
+    </StartRoundRecord>
+
+    <PointRecord ID="0000008a">
+      <Name>101</Name>
+      <Code>RS1</Code>
+      <Method>DirectReading</Method>
+      <Classification>BackSight</Classification>
+      <Circle>
+        <HorizontalCircle>0</HorizontalCircle>
+        <VerticalCircle>81.3164508</VerticalCircle>
+        <EDMDistance>42.22816</EDMDistance>
+        <Face>Face1</Face>
+      </Circle>
+      <StationID>00000030</StationID>
+      <BackBearingID>00000089</BackBearingID>
+      <TargetID>00000035</TargetID>
+    </PointRecord>
+
+    <PointRecord ID="0000008f">
+      <Name>101</Name>
+      <Code>RS1</Code>
+      <Method>DirectReading</Method>
+      <Classification>BackSight</Classification>
+      <Circle>
+        <HorizontalCircle>180.0024579</HorizontalCircle>
+        <VerticalCircle>278.6835222</VerticalCircle>
+        <EDMDistance>42.22955</EDMDistance>
+        <Face>Face2</Face>
+      </Circle>
+      <StationID>00000030</StationID>
+      <BackBearingID>00000089</BackBearingID>
+      <TargetID>00000035</TargetID>
+    </PointRecord>
+
+    <PointRecord ID="00000094">
+      <Name>102</Name>
+      <Code>TH CN</Code>
+      <Method>DirectReading</Method>
+      <Classification>Normal</Classification>
+      <Circle>
+        <HorizontalCircle>260.6503212</HorizontalCircle>
+        <VerticalCircle>90.9678033</VerticalCircle>
+        <EDMDistance>154.81119</EDMDistance>
+        <Face>Face1</Face>
+      </Circle>
+      <StationID>00000030</StationID>
+      <BackBearingID>00000089</BackBearingID>
+      <TargetID>0000004e</TargetID>
+    </PointRecord>
+
+    <PointRecord ID="00000099">
+      <Name>102</Name>
+      <Code>TH CN</Code>
+      <Method>DirectReading</Method>
+      <Classification>Normal</Classification>
+      <Circle>
+        <HorizontalCircle>80.6507604</HorizontalCircle>
+        <VerticalCircle>269.0308449</VerticalCircle>
+        <EDMDistance>154.81039</EDMDistance>
+        <Face>Face2</Face>
+      </Circle>
+      <StationID>00000030</StationID>
+      <BackBearingID>00000089</BackBearingID>
+      <TargetID>0000004e</TargetID>
+    </PointRecord>
+
+    <PointRecord ID="0000009f">
+      <Name>200</Name>
+      <Code>BP LP</Code>
+      <Method>DirectReading</Method>
+      <Classification>Normal</Classification>
+      <Circle>
+        <HorizontalCircle>251.9263611</HorizontalCircle>
+        <VerticalCircle>90.9503415</VerticalCircle>
+        <EDMDistance>63.08629</EDMDistance>
+        <Face>Face1</Face>
+      </Circle>
+      <StationID>00000030</StationID>
+      <BackBearingID>00000089</BackBearingID>
+      <TargetID>00000059</TargetID>
+    </PointRecord>
+
+    <PointRecord ID="000000a4">
+      <Name>200</Name>
+      <Code>BP LP</Code>
+      <Method>DirectReading</Method>
+      <Classification>Normal</Classification>
+      <Circle>
+        <HorizontalCircle>71.9274348</HorizontalCircle>
+        <VerticalCircle>269.0485533</VerticalCircle>
+        <EDMDistance>63.08474</EDMDistance>
+        <Face>Face2</Face>
+      </Circle>
+      <StationID>00000030</StationID>
+      <BackBearingID>00000089</BackBearingID>
+      <TargetID>00000059</TargetID>
+    </PointRecord>
+  </FieldBook>
+
+  <Reductions>
+    <Point>
+      <ID>0000002b</ID>
+      <Name>300</Name>
+      <Code>TH CN</Code>
+      <Grid>
+        <North>2000</North>
+        <East>2000</East>
+        <Elevation>100</Elevation>
+      </Grid>
+    </Point>
+    <Point>
+      <ID>00000040</ID>
+      <Name>101</Name>
+      <Code>RS1</Code>
+      <Grid>
+        <North>2041.7102857069</North>
+        <East>2000</East>
+        <Elevation>107.95276456186</Elevation>
+      </Grid>
+    </Point>
+    <Point>
+      <ID>000000b1</ID>
+      <Name>102</Name>
+      <Code>TH CN</Code>
+      <Grid>
+        <North>1974.8541978451</North>
+        <East>1847.2847859837</East>
+        <Elevation>98.909796569311</Elevation>
+      </Grid>
+    </Point>
+    <Point>
+      <ID>000000b5</ID>
+      <Name>200</Name>
+      <Code>BP LP</Code>
+      <Grid>
+        <North>1980.4366269054</North>
+        <East>1940.0523571397</East>
+        <Elevation>100.65607033434</Elevation>
+      </Grid>
+    </Point>
+  </Reductions>
+</JOBFile>

@@ -9,7 +9,11 @@ import {
   getScenarioRunServiceStats,
   resetScenarioRunServiceCache,
 } from '../src/engine/solveEngine';
-import { createRunSessionRequest, createTraverseRunSessionRequest } from './helpers/runSessionRequest';
+import {
+  createColdstreamRunSessionRequest,
+  createRunSessionRequest,
+  createTraverseRunSessionRequest,
+} from './helpers/runSessionRequest';
 
 describe('runAdjustmentSession', () => {
   it('solves the default mixed network through the shared run-session path', () => {
@@ -59,6 +63,41 @@ describe('runAdjustmentSession', () => {
         -1.46,
         6,
       );
+    },
+    120000,
+  );
+
+  it(
+    'matches the Coldstream imported-file parity case through the shared run-session path',
+    () => {
+      const outcome = runAdjustmentSession(createColdstreamRunSessionRequest());
+
+      expect(outcome.result.success).toBe(true);
+      expect(outcome.result.converged).toBe(true);
+      expect(outcome.result.iterations).toBe(5);
+      expect(outcome.result.seuw).toBeCloseTo(0.5334038439, 6);
+
+      const byGroup = outcome.result.statisticalSummary?.byGroup ?? [];
+      expect(byGroup.find((row) => row.label === 'Directions')?.count).toBe(411);
+      expect(byGroup.find((row) => row.label === 'Distances')?.count).toBe(409);
+      expect(byGroup.find((row) => row.label === 'Az/Bearings')?.count).toBe(1);
+      expect(byGroup.find((row) => row.label === 'Zenith')?.count).toBe(227);
+
+      expect(outcome.result.statisticalSummary?.totalCount).toBe(1048);
+      expect(Object.keys(outcome.result.stations)).toHaveLength(40);
+
+      expect(outcome.result.stations['101']?.y).toBeCloseTo(5566424.5729, 4);
+      expect(outcome.result.stations['101']?.x).toBeCloseTo(338887.5802, 4);
+      expect(outcome.result.stations['101']?.h).toBeCloseTo(397.0340, 4);
+      expect(outcome.result.stations['102']?.y).toBeCloseTo(5566523.2517, 4);
+      expect(outcome.result.stations['102']?.x).toBeCloseTo(338768.3745, 4);
+      expect(outcome.result.stations['102']?.h).toBeCloseTo(395.9435, 4);
+      expect(outcome.result.stations['1001']?.y).toBeCloseTo(5566451.9510, 4);
+      expect(outcome.result.stations['1001']?.x).toBeCloseTo(338919.0400, 4);
+      expect(outcome.result.stations['1001']?.h).toBeCloseTo(404.9865, 4);
+      expect(outcome.result.stations['2005']?.y).toBeCloseTo(5566326.1627, 3);
+      expect(outcome.result.stations['2005']?.x).toBeCloseTo(338911.9584, 3);
+      expect(outcome.result.stations['2005']?.h).toBeCloseTo(395.5840, 4);
     },
     120000,
   );

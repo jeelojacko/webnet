@@ -188,10 +188,11 @@ export const createDirectionSetWorkflow = ({
   };
 
   const combineSigmaSources = (shots: RawDirectionShot[]): SigmaSource => {
-    if (!shots.length) return 'default';
-    if (shots.some((shot) => shot.sigmaSource === 'fixed')) return 'fixed';
-    if (shots.every((shot) => shot.sigmaSource === 'float')) return 'float';
-    if (shots.every((shot) => shot.sigmaSource === 'default')) return 'default';
+    const sources = shots.map((shot) => shot.sigmaSource);
+    if (!sources.length) return 'default';
+    if (sources.some((source) => source === 'fixed')) return 'fixed';
+    if (sources.every((source) => source === 'float')) return 'float';
+    if (sources.every((source) => source === 'default')) return 'default';
     return 'explicit';
   };
 
@@ -398,7 +399,12 @@ export const createDirectionSetWorkflow = ({
 
     let policyOutcome: DirectionSetPolicyOutcome = 'accepted';
     if (treatmentDecision === 'unresolved') {
-      policyOutcome = compatibilityMode === 'strict' ? 'strict-reject' : 'legacy-fallback';
+      policyOutcome =
+        state.directionSetMode === 'raw'
+          ? 'legacy-fallback'
+          : compatibilityMode === 'strict'
+            ? 'strict-reject'
+            : 'legacy-fallback';
       if (policyOutcome === 'strict-reject') {
         const detail = `Direction set ${setId} @ ${occupy}: unresolved mixed-face observations in strict mode (${mode.toUpperCase()})`;
         logs.push(`Error: ${detail}`);

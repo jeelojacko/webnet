@@ -16,7 +16,11 @@ import type { CoordMode, FaceNormalizationMode } from '../types';
 
 export type ImportReviewItemKind = 'control' | 'observation' | 'comment';
 export type ImportReviewGroupKind = 'control' | 'setup' | 'resection' | 'gps';
-export type ImportReviewOutputPreset = 'clean-webnet' | 'field-grouped' | 'ts-direction-set';
+export type ImportReviewOutputPreset =
+  | 'clean-webnet'
+  | 'field-grouped'
+  | 'ts-direction-set'
+  | 'industry-style';
 export type ImportReviewRowTypeOverride =
   | 'auto'
   | 'measurement'
@@ -147,6 +151,7 @@ const prettifyToken = (value: string): string =>
     .replace(/\b\w/g, (char) => char.toUpperCase());
 
 const formatLinear = (value: number): string => value.toFixed(4);
+const formatLinear3 = (value: number): string => value.toFixed(3);
 
 const formatAngleDms = (valueDeg: number): string => radToDmsStr(valueDeg * DEG_TO_RAD);
 const formatFromToToken = (fromId: string, toId: string): string => `${fromId}-${toId}`;
@@ -334,10 +339,85 @@ const deriveSourceType = (
   return prettifyToken(record.kind);
 };
 
+const isIndustryStyleMeasurement = (
+  observation: ImportedObservationRecord,
+): observation is ImportedMeasurementObservationRecord =>
+  observation.kind === 'measurement' &&
+  observation.jobXml?.isDirectReading === true &&
+  observation.jobXml?.isMta !== true &&
+  observation.jobXml?.rawHorizontalCircleDeg != null &&
+  observation.jobXml?.observationOrder != null;
+
+const getIndustryStyleObservationCode = (
+  observation: ImportedMeasurementObservationRecord,
+): string | undefined =>
+  observation.description?.trim() ||
+  observation.jobXml?.pointCode?.trim() ||
+  observation.jobXml?.targetCode?.trim() ||
+  undefined;
+
+const getIndustryStyleHiHt = (
+  observation: ImportedMeasurementObservationRecord,
+): { hiM?: number; htM?: number } => ({
+  hiM: observation.jobXml?.effectiveHiM ?? observation.hiM,
+  htM: observation.jobXml?.effectiveHtM ?? observation.htM,
+});
+
+const normalizeIndustryStyleDirectionAngleDeg = (
+  observation: ImportedMeasurementObservationRecord,
+): number => {
+  const rawHzDeg = observation.jobXml?.rawHorizontalCircleDeg ?? observation.angleDeg;
+  let face = normalizeDirectionFace(observation.sourceMeta?.face);
+  if (face === 'unresolved') {
+    face =
+      observation.verticalMode === 'zenith' && observation.verticalValue != null
+        ? inferDirectionFaceFromZenithDeg(observation.verticalValue)
+        : 'unresolved';
+  }
+  return normalizeDirectionAngleDeg(face === 'face2' ? rawHzDeg - 180 : rawHzDeg);
+};
+
+const meanIndustryStyleDirectionAngleDeg = (
+  observations: ImportedMeasurementObservationRecord[],
+): number | undefined => {
+  if (observations.length === 0) return undefined;
+  const components = observations.map((observation) => {
+    const radians = normalizeIndustryStyleDirectionAngleDeg(observation) * DEG_TO_RAD;
+    return { sin: Math.sin(radians), cos: Math.cos(radians) };
+  });
+  const sumSin = components.reduce((acc, value) => acc + value.sin, 0);
+  const sumCos = components.reduce((acc, value) => acc + value.cos, 0);
+  if (!Number.isFinite(sumSin) || !Number.isFinite(sumCos)) return undefined;
+  return normalizeDirectionAngleDeg(Math.atan2(sumSin, sumCos) * RAD_TO_DEG);
+};
+
+const serializeIndustryStyleMeasurement = (
+  observation: ImportedMeasurementObservationRecord,
+): string => {
+  const rawHzDeg = observation.jobXml?.rawHorizontalCircleDeg ?? observation.angleDeg;
+  const distanceM = observation.jobXml?.correctedSlopeDistanceM ?? observation.distanceM;
+  const rawVerticalDeg =
+    observation.jobXml?.rawVerticalCircleDeg ??
+    (observation.verticalMode === 'zenith' ? observation.verticalValue : undefined);
+  const { hiM, htM } = getIndustryStyleHiHt(observation);
+  const tokens = ['DM', observation.toId, formatAngleDms(rawHzDeg), formatLinear(distanceM)];
+  if (rawVerticalDeg != null) tokens.push(formatAngleDms(rawVerticalDeg));
+  if (hiM != null || htM != null) {
+    tokens.push(`${formatLinear3(hiM ?? 0)}/${formatLinear3(htM ?? 0)}`);
+  }
+  const description = getIndustryStyleObservationCode(observation);
+  if (description) tokens.push(`'${description}`);
+  return tokens.join(' ');
+};
+
 const serializeObservationPreview = (
   observation: ImportedObservationRecord,
   preset: ImportReviewOutputPreset,
 ): string => {
+  if (preset === 'industry-style' && isIndustryStyleMeasurement(observation)) {
+    return serializeIndustryStyleMeasurement(observation);
+  }
+
   const isResection =
     (observation.kind === 'measurement' || observation.kind === 'angle') &&
     isResectionSetupType(observation.sourceMeta?.setupType);
@@ -1250,6 +1330,9 @@ const serializeObservationForImport = (
   if (rowTypeOverride === 'measurement') {
     return serializeImportedObservationRecord(observation);
   }
+  if (preset === 'industry-style' && isIndustryStyleMeasurement(observation)) {
+    return [serializeIndustryStyleMeasurement(observation)];
+  }
   if (preset === 'ts-direction-set') {
     return serializeTsDirectionSetRecord(observation);
   }
@@ -1341,6 +1424,7 @@ export const buildImportReviewDisplayTextMap = (
   force2D = false,
 ): Record<string, string> => {
   const output: Record<string, string> = {};
+  const controlOrder = preset === 'industry-style' ? 'NE' : 'EN';
   model.items.forEach((item) => {
     const override = rowOverrides[item.id];
     if (override != null) {
@@ -1356,6 +1440,7 @@ export const buildImportReviewDisplayTextMap = (
         dataset.controlStations[item.index],
         coordMode,
         force2D,
+        controlOrder,
       );
       return;
     }
@@ -1431,6 +1516,142 @@ const isDirectionSetObservationItem = (
   }
   if (rowTypeOverride !== 'auto') return false;
   return preset === 'ts-direction-set' && (group.kind === 'resection' || group.kind === 'setup');
+};
+
+const buildIndustryStyleDirectionSetLines = (
+  dataset: ImportedDataset,
+  items: ImportReviewItem[],
+  group: ImportReviewGroup,
+  rowOverrides: Record<string, string> | undefined,
+  fixedItemIds: Set<string> | undefined,
+  coordMode: CoordMode,
+): string[] | null => {
+  type IndustryStyleEntry = {
+    observation: ImportedMeasurementObservationRecord;
+    line: string;
+  };
+  type IndustryStyleSegment = {
+    directionSetId: string;
+    entries: IndustryStyleEntry[];
+    carryOrientationToNext: boolean;
+  };
+  const prefixLines: string[] = [];
+  const segments: IndustryStyleSegment[] = [];
+  let currentSegment: IndustryStyleSegment | null = null;
+
+  for (const item of items) {
+    const overrideLines = splitOverrideLines(rowOverrides?.[item.id]);
+    if (item.kind === 'comment') {
+      prefixLines.push(
+        ...(overrideLines.length > 0 ? overrideLines : [item.defaultText ?? '# COMMENT']),
+      );
+      continue;
+    }
+    if (item.kind !== 'observation') continue;
+
+    const observation = dataset.observations[item.index];
+    if (!isIndustryStyleMeasurement(observation)) continue;
+
+    const serializedLines = applyFixedTokensToLines(
+      overrideLines.length > 0 ? overrideLines : [serializeIndustryStyleMeasurement(observation)],
+      fixedItemIds?.has(item.id) ?? false,
+      coordMode,
+    );
+    const dataLine = serializedLines.find(
+      (line) => line.trim().length > 0 && !line.startsWith('#') && !line.startsWith('.'),
+    );
+    if (!dataLine) continue;
+
+    const directionSetId =
+      observation.jobXml?.directionSetId ??
+      `${group.setupId ?? observation.atId}::${observation.jobXml?.round ?? 0}`;
+    if (!currentSegment || currentSegment.directionSetId !== directionSetId) {
+      currentSegment = {
+        directionSetId,
+        entries: [],
+        carryOrientationToNext: false,
+      };
+      segments.push(currentSegment);
+    }
+    currentSegment.entries.push({
+      observation,
+      line: dataLine,
+    });
+  }
+
+  if (segments.length === 0) return null;
+
+  const isBacksightEntry = (entry: IndustryStyleEntry): boolean =>
+    entry.observation.jobXml?.isBacksight === true || entry.observation.toId === group.backsightId;
+
+  const findLeadingBacksightEntries = (entries: IndustryStyleEntry[]): IndustryStyleEntry[] => {
+    const leading: IndustryStyleEntry[] = [];
+    for (const entry of entries) {
+      if (!isBacksightEntry(entry)) break;
+      leading.push(entry);
+    }
+    return leading;
+  };
+
+  segments.forEach((segment) => {
+    segment.entries.sort(
+      (left, right) =>
+        (left.observation.jobXml?.observationOrder ?? Number.MAX_SAFE_INTEGER) -
+        (right.observation.jobXml?.observationOrder ?? Number.MAX_SAFE_INTEGER),
+    );
+  });
+
+  const omittedSegments = new Set<number>();
+  for (let index = 0; index < segments.length; index += 1) {
+    const segment = segments[index]!;
+    const leadingBacksightEntries = findLeadingBacksightEntries(segment.entries);
+    const backsightOnly =
+      segment.entries.length > 0 && leadingBacksightEntries.length === segment.entries.length;
+    if (!backsightOnly) continue;
+    const hasPreviousProduction = segments
+      .slice(0, index)
+      .some((candidate) => findLeadingBacksightEntries(candidate.entries).length < candidate.entries.length);
+    const nextProductionIndex = segments.findIndex(
+      (candidate, candidateIndex) =>
+        candidateIndex > index &&
+        findLeadingBacksightEntries(candidate.entries).length < candidate.entries.length,
+    );
+    if (hasPreviousProduction && nextProductionIndex > index) {
+      segments[nextProductionIndex]!.carryOrientationToNext = true;
+      omittedSegments.add(index);
+      continue;
+    }
+    omittedSegments.add(index);
+  }
+
+  const lines = [...prefixLines];
+  let emittedBlockCount = 0;
+  segments.forEach((segment, index) => {
+    if (omittedSegments.has(index)) return;
+    const leadingBacksightEntries = findLeadingBacksightEntries(segment.entries);
+    const emitDn =
+      segment.carryOrientationToNext &&
+      Boolean(group.backsightId) &&
+      leadingBacksightEntries.length > 0 &&
+      leadingBacksightEntries.length < segment.entries.length;
+    const dnAngleDeg = emitDn
+      ? meanIndustryStyleDirectionAngleDeg(
+          leadingBacksightEntries.map((entry) => entry.observation),
+        )
+      : undefined;
+    const emitEntries =
+      emitDn && dnAngleDeg != null ? segment.entries.slice(leadingBacksightEntries.length) : segment.entries;
+    if (emitEntries.length === 0 && dnAngleDeg == null) return;
+    if (emittedBlockCount > 0) lines.push('');
+    lines.push(`DB ${group.setupId ?? ''}`.trimEnd());
+    if (emitDn && dnAngleDeg != null && group.backsightId) {
+      lines.push(`DN ${group.backsightId} ${formatAngleDms(dnAngleDeg)}`);
+    }
+    emitEntries.forEach((entry) => lines.push(entry.line));
+    lines.push('DE');
+    emittedBlockCount += 1;
+  });
+  return emittedBlockCount > 0 ? lines : null;
 };
 
 const resolveDirectionFaceBucket = (
@@ -1659,6 +1880,7 @@ export const buildImportReviewText = (
     options.force2D === true
       ? '2D'
       : (options.coordMode ?? (preset === 'ts-direction-set' ? '2D' : '3D'));
+  const controlOrder = preset === 'industry-style' ? 'NE' : 'EN';
   const state = {
     currentDeltaMode: null as 'delta-h' | 'zenith' | null,
     currentGpsMode: null as 'network' | 'sideshot' | null,
@@ -1669,7 +1891,7 @@ export const buildImportReviewText = (
     lines.push('.2D');
   }
   lines.push('.UNITS M');
-  lines.push('.ORDER EN');
+  lines.push(`.ORDER ${controlOrder}`);
 
   model.groups.forEach((group) => {
     const includedItems = group.itemIds
@@ -1696,7 +1918,8 @@ export const buildImportReviewText = (
     const isDirectionSetGroup =
       Boolean(group.backsightId) &&
       includedItems.some((item) => item.kind === 'observation') &&
-      ((preset === 'ts-direction-set' && (group.kind === 'resection' || group.kind === 'setup')) ||
+      (((preset === 'ts-direction-set' || preset === 'industry-style') &&
+        (group.kind === 'resection' || group.kind === 'setup')) ||
         includedItems.some((item) =>
           isDirectionSetRowType(options.rowTypeOverrides?.[item.id] ?? 'auto'),
         ));
@@ -1706,6 +1929,21 @@ export const buildImportReviewText = (
       (preset === 'field-grouped' || preset === 'ts-direction-set') && group.kind !== 'control'
         ? orderFieldGroupedItems(includedItems, group)
         : includedItems;
+
+    if (preset === 'industry-style' && isDirectionSetGroup) {
+      const industryStyleLines = buildIndustryStyleDirectionSetLines(
+        dataset,
+        includedItems,
+        group,
+        options.rowOverrides,
+        options.fixedItemIds,
+        coordMode,
+      );
+      if (industryStyleLines) {
+        industryStyleLines.forEach((line) => lines.push(line));
+        return;
+      }
+    }
 
     if (isDirectionSetGroup) {
       const faceAwareLines = buildFaceAwareDirectionSetLines(
@@ -1793,6 +2031,7 @@ export const buildImportReviewText = (
             dataset.controlStations[item.index],
             coordMode,
             options.force2D === true,
+            controlOrder,
           );
           lines.push(
             options.fixedItemIds?.has(item.id)

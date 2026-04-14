@@ -25,6 +25,7 @@ export const serializeImportedControlStationRecord = (
   station: ImportedControlStationRecord,
   _coordMode: '2D' | '3D' = '3D',
   stripHeight = false,
+  orderMode: 'EN' | 'NE' = 'EN',
 ): string => {
   if (station.coordinateMode === 'geodetic') {
     const includeHeight = !stripHeight;
@@ -59,11 +60,14 @@ export const serializeImportedControlStationRecord = (
   }
 
   const includeHeight = !stripHeight;
+  const coordinateTokens =
+    orderMode === 'NE'
+      ? [formatNumber(station.northM ?? 0, 4), formatNumber(station.eastM ?? 0, 4)]
+      : [formatNumber(station.eastM ?? 0, 4), formatNumber(station.northM ?? 0, 4)];
   const tokens = [
     'C',
     station.stationId,
-    formatNumber(station.eastM ?? 0, 4),
-    formatNumber(station.northM ?? 0, 4),
+    ...coordinateTokens,
   ];
   if (includeHeight) {
     tokens.push(formatNumber(station.heightM ?? 0, 4));
@@ -75,8 +79,9 @@ export const serializeImportedControlStationRecord = (
     station.corrEN != null
   ) {
     tokens.push(
-      formatNumber(station.sigmaEastM ?? 0, 4),
-      formatNumber(station.sigmaNorthM ?? 0, 4),
+      ...(orderMode === 'NE'
+        ? [formatNumber(station.sigmaNorthM ?? 0, 4), formatNumber(station.sigmaEastM ?? 0, 4)]
+        : [formatNumber(station.sigmaEastM ?? 0, 4), formatNumber(station.sigmaNorthM ?? 0, 4)]),
     );
     if (includeHeight) {
       tokens.push(formatNumber(station.sigmaHeightM ?? 0, 4));

@@ -210,6 +210,50 @@ describe('parseDirectionSetWorkflow', () => {
     expect(logs.some((entry) => entry.includes('Error: Direction set SET3 @ STA3: unresolved mixed-face observations in strict mode'))).toBe(true);
   });
 
+  it('falls back to raw face buckets for unresolved mixed-face sets in strict raw mode', () => {
+    const { observations, directionRejectDiagnostics, directionSetTreatmentDiagnostics, workflow } =
+      createHarness(
+        createState({
+          faceNormalizationMode: 'auto',
+          directionSetMode: 'raw',
+          directionFaceReliabilityFromCluster: false,
+        }),
+        'strict',
+      );
+
+    workflow.reduceDirectionShots('SET3R', 'STA3', '', [
+      {
+        to: 'P1',
+        obs: 0.5,
+        stdDev: 0.001,
+        sigmaSource: 'explicit',
+        sourceLine: 30,
+        face: 'face1',
+        faceSource: 'metadata',
+        reliableFace: true,
+      },
+      {
+        to: 'P2',
+        obs: 2.5,
+        stdDev: 0.001,
+        sigmaSource: 'explicit',
+        sourceLine: 31,
+        face: 'face2',
+        faceSource: 'fallback',
+        reliableFace: false,
+      },
+    ]);
+
+    expect(directionRejectDiagnostics).toHaveLength(0);
+    expect(observations).toHaveLength(2);
+    expect(observations.map((observation) => observation.setId)).toEqual(['SET3R:F1', 'SET3R:F2']);
+    expect(directionSetTreatmentDiagnostics[0]).toMatchObject({
+      setId: 'SET3R',
+      treatmentDecision: 'split',
+      policyOutcome: 'legacy-fallback',
+    });
+  });
+
   it('flushes empty sets into no-shot diagnostics and clears traverse context', () => {
     const { directionRejectDiagnostics, workflow, setLine, setSourceFile } = createHarness(createState({
       faceNormalizationMode: 'on',

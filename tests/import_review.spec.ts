@@ -82,10 +82,10 @@ describe('import review workflow', () => {
     expect(text).toContain('.ORDER EN');
     expect(text).toContain('# CONTROL');
     expect(text).toContain('# SETUP 1');
-    expect(text).toContain('M 1-1000-1000 000-00-00.0 4.7265 090-00-36.0 1.6500/1.5500');
-    expect(text).toContain('M 1-1000-1000 000-00-00.0 4.7265 090-00-54.0 1.6500/1.5500');
+    expect(text).toContain('M 1-1000-1000 000-00-00.0 4.6921 090-00-36.0 1.6500/1.5500');
+    expect(text).toContain('M 1-1000-1000 000-00-00.0 4.6921 090-00-54.0 1.6500/1.5500');
     expect(text).toContain('C 1000 0.9957 2.0628 0.0000');
-    expect(text).toContain('M 1-1000-2 286-51-24.7 22.2574 089-57-23.8 1.6500/1.6920');
+    expect(text).toContain('M 1-1000-2 286-51-24.7 22.2230 089-57-23.8 1.6500/1.6920');
     expect(text).not.toContain('CHK1');
     expect(text).not.toContain('source line');
     expect(text).not.toContain('# Import Trace');
@@ -105,7 +105,7 @@ describe('import review workflow', () => {
     );
 
     const targetItem = reviewModel.items.find(
-      (item) => displayedRows[item.id] === 'DM 235 090-52-21.0 17.4322',
+      (item) => displayedRows[item.id] === 'DM 235 090-52-21.0 17.3978',
     );
     expect(targetItem).toBeDefined();
 
@@ -131,7 +131,7 @@ describe('import review workflow', () => {
     expect(text).toContain('# RESECTION');
     expect(text).toContain('DB 1000');
     expect(text).not.toContain('DN 077 000-00-00');
-    expect(text).toContain('DM 077 000-00-00.0 3.8984');
+    expect(text).toContain('DM 077 000-00-00.0 3.8640');
     expect(text).toContain('DM 235 090-52-25.5 17.4323');
     expect(text).toContain('DE');
   });
@@ -533,7 +533,7 @@ describe('import review workflow', () => {
     expect(text).toContain('# TARGET CHK1');
     expect(text).toContain('# AVERAGE SET');
     expect(text).toContain('# CUSTOM SETUP 1');
-    expect(text.match(/M 1-1000-2 286-51-24.7 22.2574 089-57-23.8 1.6500\/1.6920/g)).toHaveLength(
+    expect(text.match(/M 1-1000-2 286-51-24.7 22.2230 089-57-23.8 1.6500\/1.6920/g)).toHaveLength(
       2,
     );
   });
@@ -570,8 +570,8 @@ describe('import review workflow', () => {
     });
 
     expect(text).toContain('# CUSTOM SETUP 1');
-    expect(text).toContain('DM 2 286-51-24.7 22.2574');
-    expect(text).toContain('DM 1000 000-00-00.0 4.7265');
+    expect(text).toContain('DM 2 286-51-24.7 22.2230');
+    expect(text).toContain('DM 1000 000-00-00.0 4.6921');
   });
 
   it('formats imported zenith values as DMS and supports manual row ordering within a setup group', () => {
@@ -599,9 +599,9 @@ describe('import review workflow', () => {
       preset: 'ts-direction-set',
     });
 
-    expect(text).toContain('DM 1000 000-00-00.0 4.7265');
-    expect(text.indexOf('DM 2 286-51-24.7 22.2574')).toBeLessThan(
-      text.indexOf('DM 2 106-51-21.9 22.2576'),
+    expect(text).toContain('DM 1000 000-00-00.0 4.6921');
+    expect(text.indexOf('DM 2 286-51-24.7 22.2230')).toBeLessThan(
+      text.indexOf('DM 2 106-51-21.9 22.2232'),
     );
   });
 
@@ -638,11 +638,11 @@ describe('import review workflow', () => {
     });
 
     expect(distanceText).toContain('C 1 2.3460 -2.4303 0.0000 ! !');
-    expect(distanceText).toContain('D 1 2 22.2574 !');
-    expect(distanceText).not.toContain('DV 1 2 22.2574');
-    expect(distanceText).not.toContain('M 1-1000-2 286-51-24.7 22.2574');
+    expect(distanceText).toContain('D 1 2 22.2230 !');
+    expect(distanceText).not.toContain('DV 1 2 22.2230');
+    expect(distanceText).not.toContain('M 1-1000-2 286-51-24.7 22.2230');
 
-    expect(distanceVerticalText).toContain('DV 1 2 22.2574 089-57-23.8 ! !');
+    expect(distanceVerticalText).toContain('DV 1 2 22.2230 089-57-23.8 ! !');
   });
 
   it('emits family-appropriate fixed markers for control, TS, vertical, bearing, and GNSS import rows', () => {
@@ -763,7 +763,7 @@ describe('import review workflow', () => {
     expect(text).toContain('DB 1');
     expect(text).toContain('DN 1000 000-00-00');
     expect(text).toContain('DN 1000 000-00-00.0');
-    expect(text).toContain('DM 2 286-51-24.7 22.2574 089-57-23.8');
+    expect(text).toContain('DM 2 286-51-24.7 22.2230 089-57-23.8');
     expect(text).toContain('DE');
   });
 

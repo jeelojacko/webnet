@@ -27,6 +27,22 @@
       - [x] Track multiple imported reconcile sources inside a single staged import session with source-aware row/group metadata
       - [x] Replace the two-file compare block with a source matrix that highlights mismatched setup-target-family buckets across all loaded sources
       - [x] Emit deterministic source-separated imported text when multiple reconcile sources are committed into the editor
+    - [x] Batch 4 - JobXML industry-style import fidelity
+      - [x] Add committed trimmed JobXML and reference direction-set fixtures for the `260215 TRAVERSE` comparison path
+      - [x] Preserve JobXML raw fieldbook metadata on imported observations without changing the generic serializer contract
+      - [x] Parse JobXML atmosphere, prism, round, and ordered direct-reading context needed for fidelity export
+      - [x] Add an opt-in JXL `Industry Style` import mode in the prompt and review workflow
+      - [x] Emit round-grouped `DB/DM/DE` import-review output using raw HZ, corrected slope distance, raw vertical, and HI/HT while leaving generic presets unchanged
+      - [x] Add focused importer and import-review regression coverage for the new opt-in path and existing generic fallback behavior
+    - [ ] Batch 5 - JobXML industry-style workflow closeout
+      - [x] Lock the JXL `Industry Style` prompt as a fixed raw-fieldbook mode and default review exclusion of MTA rows
+      - [x] Preserve exact JobXML code/description plus HI/HT provenance so industry-style DM comments and height tokens use source fidelity values
+      - [x] Tighten industry-style direction-set grouping to suppress standalone backsight-only blocks and emit `DN` orientation rows where needed
+      - [x] Add staged-review actions for `Import as New File` and associated project-settings import with project-workspace integration
+      - [x] Add focused regression coverage for the locked prompt, DM fidelity, grouping parity, project-file import destination, and associated settings import
+      - [x] Stage associated `.wnproj*` / `.snproj` settings inside import review until the operator commits the reviewed import
+      - [x] Persist staged associated-settings payloads through import-review draft restore and show pending-settings status in the modal
+      - [x] Apply staged associated settings only after reviewed text import succeeds for both replace-editor and new-project-file actions
   - [x] Phase 2 - persistent run artifacts and deliverables
     - [x] Batch 1 - saved run snapshot model and project/local persistence
       - [x] Add named saved run snapshots beyond the current in-memory compare history
@@ -124,6 +140,11 @@
       - [x] Keep the compact GNSS industry listing's unadjusted GPS input block and adjusted GPS vector block visible even when the generic adjusted-observations toggle is off, so those GNSS vector sections still match the stored industry output contract
       - [x] Narrow the classic-parity listing gate so live `industry-parity-current` GNSS-only runs in the app still use the compact GNSS vector listing path even when a default instrument library is loaded
       - [x] Make the listing header prefer the solved parse-state vertical deflection over stale external run diagnostics so the industry output pane reports the actual GNSS run deflection values
+      - [x] Add the committed Coldstream 3rd Dimension traverse fixtures and shared run-session regression for the two-file + `.snproj` imported parity case
+      - [x] Support compact STAR*NET control/sigma shorthand tokens such as `!!*` and `&&*` without changing existing spaced-token behavior
+      - [x] Keep strict unresolved mixed-face rejection for reduced direction-set handling, but allow raw-mode fallback split emission for the imported parity path
+      - [x] Normalize weighted raw `DM` face-2 zenith readings, skip float zenith equations, and preserve fixed-height-only control during bootstrap seeding so the Coldstream parity case converges with the imported settings
+      - [x] Map imported `.snproj` refraction, fixed-control sigma, and leveling-default settings needed by the Coldstream parity fixture
       - [ ] Trace the remaining GNSS relative-ellipse drift outside the `GPS2-*` seam, with the current focus narrowed to the remaining covariance-magnitude gap in `GPS2`, `GPS3`, `GPS1-GPS6`, and `GPS3-GPS5` after the fixed-linked azimuth display correction
   - [x] Phase 5 - browser-native project storage and multi-file workspace
     - [x] Batch 1 - OPFS/IndexedDB storage foundation

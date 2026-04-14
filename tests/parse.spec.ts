@@ -233,6 +233,18 @@ describe('parseInput', () => {
     expect(a.constraintModeY).toBe('free');
   });
 
+  it('expands packed control fixity markers across components', () => {
+    const parsed = parseInput(['.3D', 'C A 1000 2000 50 0.010 0.020 0.030 !!*'].join('\n'));
+    const a = parsed.stations.A;
+
+    expect(a.fixedX).toBe(true);
+    expect(a.fixedY).toBe(true);
+    expect(a.fixedH ?? false).toBe(false);
+    expect(a.constraintModeX).toBe('fixed');
+    expect(a.constraintModeY).toBe('fixed');
+    expect(a.constraintModeH).toBe('free');
+  });
+
   it('parses configurable level-loop tolerance settings', () => {
     const parsed = parseInput(['.LEVELTOL BASE 1.5 K 6.0', 'C A 0 0 0 ! ! !'].join('\n'));
     expect(parsed.parseState.levelLoopToleranceBaseMm).toBeCloseTo(1.5, 8);

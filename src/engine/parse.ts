@@ -446,7 +446,13 @@ const parseFixityTokens = (
   hasFreeMarkers: boolean;
   legacyStarFixed: boolean;
 } => {
-  const raw = tokens.filter((t) => t === '!' || t === '*');
+  const raw = tokens.flatMap((token) =>
+    token === '!' || token === '*'
+      ? [token]
+      : /^[!*]+$/.test(token)
+        ? token.split('')
+        : [],
+  );
   if (!raw.length) {
     return {
       componentModes: new Array(componentCount).fill('inherit'),
@@ -1639,6 +1645,7 @@ export const parseInput = (
               linearToMetersFactor,
               effectiveDistanceMode,
               extractSigmaTokens,
+              extractHiHt,
               resolveLinearSigma: (token, defaultSigma) =>
                 resolveLinearSigma(token, defaultSigma),
               resolveAngularSigma: (token, defaultSigma) =>

@@ -56,6 +56,10 @@ interface ImportReviewModalProps {
   onRemoveGroup: (_groupKey: string) => void;
   onRemoveRow: (_itemId: string) => void;
   onCancel: () => void;
+  onImportAsNewFile: () => void;
+  onImportAssociatedProjectSettings: () => void;
+  pendingAssociatedSettingsSourceName?: string | null;
+  pendingAssociatedSettingsSummary?: string | null;
   onImport: () => void;
 }
 
@@ -75,6 +79,12 @@ const PRESET_OPTIONS: { value: ImportReviewOutputPreset; label: string; descript
     label: 'TS Direction Set',
     description:
       'Shape angle/measurement groups into DB/DN/DM/DE-style setup blocks where possible.',
+  },
+  {
+    value: 'industry-style',
+    label: 'Industry Style',
+    description:
+      'For JobXML direct readings, preserve raw HZ/zenith/distance ingredients into round-grouped DB/DM/DE blocks.',
   },
 ];
 
@@ -194,6 +204,10 @@ const ImportReviewModal: React.FC<ImportReviewModalProps> = ({
   onRemoveGroup,
   onRemoveRow,
   onCancel,
+  onImportAsNewFile,
+  onImportAssociatedProjectSettings,
+  pendingAssociatedSettingsSourceName,
+  pendingAssociatedSettingsSummary,
   onImport,
 }) => {
   const itemLookup = React.useMemo(
@@ -569,6 +583,23 @@ const ImportReviewModal: React.FC<ImportReviewModalProps> = ({
                   </button>
                 )}
               </div>
+              <button
+                type="button"
+                onClick={onImportAssociatedProjectSettings}
+                className="border border-slate-600 bg-slate-950 px-3 py-2 text-[11px] uppercase tracking-wide text-slate-200 hover:border-cyan-400"
+              >
+                Import Associated Project Settings
+              </button>
+              {pendingAssociatedSettingsSourceName && (
+                <div className="text-left text-[11px] text-emerald-300">
+                  Pending settings: {pendingAssociatedSettingsSourceName}
+                  {pendingAssociatedSettingsSummary ? (
+                    <div className="mt-1 text-[10px] text-slate-400">
+                      {pendingAssociatedSettingsSummary}
+                    </div>
+                  ) : null}
+                </div>
+              )}
               <div className="grid gap-2 text-left text-[11px] uppercase tracking-wide text-slate-400">
                 <label className="flex items-center gap-2">
                   <input
@@ -925,6 +956,13 @@ const ImportReviewModal: React.FC<ImportReviewModalProps> = ({
             className="border border-cyan-400 bg-cyan-900 px-4 py-2 text-xs uppercase tracking-wide text-cyan-100 hover:bg-cyan-800"
           >
             Import Selected Rows
+          </button>
+          <button
+            type="button"
+            onClick={onImportAsNewFile}
+            className="border border-emerald-400 bg-emerald-900 px-4 py-2 text-xs uppercase tracking-wide text-emerald-100 hover:bg-emerald-800"
+          >
+            Import As New File
           </button>
         </div>
       </div>

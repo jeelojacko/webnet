@@ -54,6 +54,7 @@ import type {
   ImportReviewRowTypeOverride,
   ImportReviewWorkspaceSource,
 } from './engine/importReview';
+import type { PreparedAssociatedProjectSettingsImport } from './hooks/useProjectFileWorkflow';
 import type { SavedRunSnapshot } from './engine/qaWorkflow';
 
 export type Units = 'm' | 'ft';
@@ -144,6 +145,8 @@ export type ImportReviewDraftSnapshot = {
   preset: ImportReviewOutputPreset;
   importFaceNormalizationMode: Extract<FaceNormalizationMode, 'on' | 'off'>;
   importAngleMode?: ExternalImportAngleMode;
+  importStyle?: 'generic' | 'industry-style';
+  stagedAssociatedSettings?: PreparedAssociatedProjectSettingsImport | null;
   force2DOutput: boolean;
   nextSyntheticId: number;
   nextSourceId?: number;
