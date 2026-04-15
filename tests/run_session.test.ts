@@ -5,6 +5,7 @@ import {
   resolveSuspectImpactSkipReason,
   runAdjustmentSession,
 } from '../src/engine/runSession';
+import { INDUSTRY_CONFIDENCE_95_SCALE } from '../src/engine/resultPrecision';
 import {
   getScenarioRunServiceStats,
   resetScenarioRunServiceCache,
@@ -106,6 +107,44 @@ describe('runAdjustmentSession', () => {
         ),
       ).toBeLessThan(0.03);
       expect(outcome.result.stations['109']?.h ?? Number.NaN).toBeCloseTo(392.9076, 2);
+      expect(outcome.result.stations['2002']?.sN ?? Number.NaN).toBeCloseTo(0.006522, 3);
+      expect(outcome.result.stations['2002']?.sE ?? Number.NaN).toBeCloseTo(0.003076, 3);
+      expect(outcome.result.stations['2002']?.sH ?? Number.NaN).toBeCloseTo(0.002458, 3);
+      expect(outcome.result.stations['2014']?.sN ?? Number.NaN).toBeCloseTo(0.005545, 3);
+      expect(outcome.result.stations['2014']?.sE ?? Number.NaN).toBeCloseTo(0.003965, 3);
+      expect(outcome.result.stations['2014']?.sH ?? Number.NaN).toBeCloseTo(0.002424, 3);
+      expect(outcome.result.stations['108']?.sN ?? Number.NaN).toBeCloseTo(81.182639, 0);
+      expect(outcome.result.stations['108']?.sE ?? Number.NaN).toBeCloseTo(8.064201, 0);
+      expect(outcome.result.stations['108']?.sH ?? Number.NaN).toBeCloseTo(20948.789919, -1);
+      expect(outcome.result.stations['109']?.sN ?? Number.NaN).toBeCloseTo(155.645823, 0);
+      expect(outcome.result.stations['109']?.sE ?? Number.NaN).toBeCloseTo(78.126288, 0);
+      expect(outcome.result.stations['109']?.sH ?? Number.NaN).toBeCloseTo(28475.734696, -1);
+      expect(
+        Math.abs(
+          (outcome.result.stations['108']?.errorEllipse?.semiMajor ?? Number.NaN) *
+            INDUSTRY_CONFIDENCE_95_SCALE -
+            199.692524,
+        ),
+      ).toBeLessThan(1);
+      expect(
+        Math.abs(
+          (outcome.result.stations['109']?.errorEllipse?.semiMajor ?? Number.NaN) *
+            INDUSTRY_CONFIDENCE_95_SCALE -
+            426.282958,
+        ),
+      ).toBeLessThan(1);
+      const weakPair108 = (outcome.result.relativeCovariances ?? []).find(
+        (row) => row.from === '106' && row.to === '108',
+      );
+      const weakPair109 = (outcome.result.relativeCovariances ?? []).find(
+        (row) => row.from === '107' && row.to === '109',
+      );
+      expect(
+        Math.abs((weakPair108?.sigmaDist ?? Number.NaN) * INDUSTRY_CONFIDENCE_95_SCALE - 199.692524),
+      ).toBeLessThan(1);
+      expect(
+        Math.abs((weakPair109?.sigmaDist ?? Number.NaN) * INDUSTRY_CONFIDENCE_95_SCALE - 426.282957),
+      ).toBeLessThan(1);
       expect(outcome.result.stations['1001']?.y).toBeCloseTo(5566451.9510, 4);
       expect(outcome.result.stations['1001']?.x).toBeCloseTo(338919.0400, 4);
       expect(outcome.result.stations['1001']?.h).toBeCloseTo(404.9865, 4);

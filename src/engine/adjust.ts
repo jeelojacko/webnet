@@ -85,6 +85,7 @@ import type {
   Station,
   StationId,
   StationMap,
+  ZenithObservation,
   InstrumentLibrary,
   Instrument,
   ObservationOverride,
@@ -112,6 +113,8 @@ const GPS_LOOP_TOLERANCE_PPM = 50;
 const LEVEL_LOOP_DEFAULT_BASE_MM = 0;
 const LEVEL_LOOP_DEFAULT_PER_SQRT_KM_MM = 4;
 const INDUSTRY_PARITY_ANGULAR_SIGMA_SCALE = 1.0001;
+const FLOAT_ZENITH_COVARIANCE_SIGMA_SEC = 1e8;
+const ARCSEC_TO_RAD = DEG_TO_RAD / 3600;
 
 type GpsSolveVector = {
   dE: number;
@@ -520,44 +523,102 @@ export class LSAEngine {
     dirParamMap: Record<string, number>,
   ): number[][] | null {
     if (numParams <= 0 || numObsEquations <= 0) return null;
-    this.clearGeometryCache();
-    const { P, sparseRows } = assembleAdjustmentEquations(
-      {
-        stations: this.stations,
-        paramIndex: this.paramIndex,
-        is2D: this.is2D,
-        debug: false,
-        directionOrientations: this.directionOrientations,
-        dirParamMap,
-        effectiveStdDev: this.effectiveStdDev.bind(this),
-        correctedDistanceModel: this.correctedDistanceModel.bind(this),
-        getObservedHorizontalDistanceIn2D: this.getObservedHorizontalDistanceIn2D.bind(this),
-        getAzimuth: this.getAzimuth.bind(this),
-        measuredAngleCorrection: this.measuredAngleCorrection.bind(this),
-        modeledAzimuth: this.modeledAzimuth.bind(this),
-        wrapToPi: this.wrapToPi.bind(this),
-        gpsObservedVector: this.gpsObservedVector.bind(this),
-        gpsModeledVector: this.gpsModeledVector.bind(this),
-        gpsModeledVectorDerivatives: this.gpsModeledVectorDerivatives.bind(this),
-        gpsWeight: this.gpsWeight.bind(this),
-        getModeledZenith: this.getModeledZenith.bind(this),
-        curvatureRefractionAngle: this.curvatureRefractionAngle.bind(this),
-        applyTsCorrelationToWeightMatrix: this.applyTsCorrelationToWeightMatrix.bind(this),
-      },
-      activeObservations,
-      constraints,
-      numObsEquations,
-      numParams,
-      undefined,
-      { includeDenseA: false },
+    const stationSnapshot = Object.fromEntries(
+      Object.entries(this.stations).map(([stationId, station]) => [stationId, { ...station }]),
+    ) as StationMap;
+    this.projectWeakFloatZenithLeafStationsForDisplay({ log: false });
+    const covarianceObservations = this.augmentCovarianceObservations(activeObservations);
+    const covarianceObsEquationCount = numObsEquations + (covarianceObservations.length - activeObservations.length);
+    try {
+      this.clearGeometryCache();
+      const { P, sparseRows } = assembleAdjustmentEquations(
+        {
+          stations: this.stations,
+          paramIndex: this.paramIndex,
+          is2D: this.is2D,
+          debug: false,
+          directionOrientations: this.directionOrientations,
+          dirParamMap,
+          effectiveStdDev: this.effectiveStdDev.bind(this),
+          correctedDistanceModel: this.correctedDistanceModel.bind(this),
+          getObservedHorizontalDistanceIn2D: this.getObservedHorizontalDistanceIn2D.bind(this),
+          getAzimuth: this.getAzimuth.bind(this),
+          measuredAngleCorrection: this.measuredAngleCorrection.bind(this),
+          modeledAzimuth: this.modeledAzimuth.bind(this),
+          wrapToPi: this.wrapToPi.bind(this),
+          gpsObservedVector: this.gpsObservedVector.bind(this),
+          gpsModeledVector: this.gpsModeledVector.bind(this),
+          gpsModeledVectorDerivatives: this.gpsModeledVectorDerivatives.bind(this),
+          gpsWeight: this.gpsWeight.bind(this),
+          getModeledZenith: this.getModeledZenith.bind(this),
+          curvatureRefractionAngle: this.curvatureRefractionAngle.bind(this),
+          applyTsCorrelationToWeightMatrix: this.applyTsCorrelationToWeightMatrix.bind(this),
+        },
+        covarianceObservations,
+        constraints,
+        covarianceObsEquationCount,
+        numParams,
+        undefined,
+        { includeDenseA: false },
+      );
+      const { normal } = accumulateNormalEquationsFromSparseRows(
+        sparseRows,
+        zeros(covarianceObsEquationCount, 1),
+        P,
+        numParams,
+      );
+      return this.invertNormalMatrixForStats(normal);
+    } finally {
+      Object.keys(stationSnapshot).forEach((stationId) => {
+        this.stations[stationId] = { ...stationSnapshot[stationId] };
+      });
+      this.clearGeometryCache();
+    }
+  }
+
+  private augmentCovarianceObservations(activeObservations: Observation[]): Observation[] {
+    if (this.is2D) return activeObservations;
+    const existingZenithKeys = new Set(
+      activeObservations
+        .filter((observation): observation is ZenithObservation => observation.type === 'zenith')
+        .map(
+          (observation) =>
+            `${observation.from}|${observation.to}|${observation.sourceLine ?? -1}|${observation.setId ?? ''}`,
+        ),
     );
-    const { normal } = accumulateNormalEquationsFromSparseRows(
-      sparseRows,
-      zeros(numObsEquations, 1),
-      P,
-      numParams,
+    const synthetic: ZenithObservation[] = [];
+    let syntheticId = -1;
+    activeObservations.forEach((observation) => {
+      if (
+        observation.type !== 'dist' ||
+        observation.mode !== 'slope' ||
+        !Number.isFinite(observation.bootstrapZenithObs ?? Number.NaN)
+      ) {
+        return;
+      }
+      const key = `${observation.from}|${observation.to}|${observation.sourceLine ?? -1}|${observation.setId ?? ''}`;
+      if (existingZenithKeys.has(key)) return;
+      synthetic.push({
+        id: syntheticId--,
+        type: 'zenith',
+        instCode: observation.instCode,
+        setId: observation.setId,
+        from: observation.from,
+        to: observation.to,
+        obs: observation.bootstrapZenithObs as number,
+        sourceLine: observation.sourceLine,
+        sourceFile: observation.sourceFile,
+        stdDev: FLOAT_ZENITH_COVARIANCE_SIGMA_SEC * ARCSEC_TO_RAD,
+        sigmaSource: 'float',
+        hi: observation.hi,
+        ht: observation.ht,
+      });
+    });
+    if (!synthetic.length) return activeObservations;
+    this.log(
+      `Covariance-only float zenith augmentation: ${synthetic.length} synthetic row(s) added for weak vertical geometry.`,
     );
-    return this.invertNormalMatrixForStats(normal);
+    return [...activeObservations, ...synthetic];
   }
 
   private invertNormalMatrixForStats(N: number[][]): number[][] {
@@ -2883,10 +2944,11 @@ export class LSAEngine {
     }
   }
 
-  private projectWeakFloatZenithLeafStationsForDisplay(): void {
+  private projectWeakFloatZenithLeafStationsForDisplay(options?: { log?: boolean }): void {
     if (this.is2D) return;
     const activeObservations = this.collectActiveObservations();
     if (!activeObservations.length) return;
+    const shouldLog = options?.log ?? true;
 
     const hasRealVertical = new Set<StationId>();
     activeObservations.forEach((observation) => {
@@ -3015,9 +3077,11 @@ export class LSAEngine {
 
     if (projected.length > 0) {
       this.clearGeometryCache();
-      this.logs.push(
-        `Float-zenith leaf projection applied for display coordinates: ${projected.join(', ')}`,
-      );
+      if (shouldLog) {
+        this.logs.push(
+          `Float-zenith leaf projection applied for display coordinates: ${projected.join(', ')}`,
+        );
+      }
     }
   }
 
