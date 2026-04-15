@@ -120,6 +120,10 @@
       - [x] Make industry-style distance StdErr display follow the same weighting sigma path used by the solver
       - [x] Audit alternative geometry stages for displayed/weighted angle sigmas and keep only changes that improve the reference diff
     - [ ] Batch 4 - solver-loop, residual, ordering, and formatting closeout
+      - [x] Batch 4A - Coldstream float-zenith leaf parity cleanup
+        - [x] Investigate remaining Coldstream adjusted-coordinate outliers at `108` and `109` after mixed-face/raw-direction fixes
+        - [x] Fix imported parity output so weak float-zenith leaf stations no longer drift in adjusted coordinate/bearing display
+        - [x] Add focused shared-run-session regression coverage for the remaining Coldstream outlier stations
       - [x] Set the industry-parity default convergence limit to `0.001` while keeping the WebNet-default profile threshold unchanged
       - [x] Flip printed residual signs in industry-style observation tables without changing the solver math
       - [x] Match the industry-style reported iteration count in listing output without changing the underlying solver loop

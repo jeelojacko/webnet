@@ -26,6 +26,7 @@ type RawDirectionShotLike = {
   face: DirectionFace;
   faceSource: DirectionFaceSource;
   reliableFace: boolean;
+  isOrientationReference?: boolean;
 };
 
 type ObservedParsedValue = {
@@ -243,6 +244,7 @@ export const handleDirectionSetRecord = ({
       face: thisFace,
       faceSource,
       reliableFace: isReliableFaceSource(faceSource),
+      isOrientationReference: code === 'DN',
     };
     if (code === 'DM' && vert && state.deltaMode !== 'horiz') {
       if (!state.threeReduceMode) {
@@ -295,6 +297,10 @@ export const handleDirectionSetRecord = ({
         sigmaSource: distResolved.source,
         hi: hi != null ? hi * toMeters : undefined,
         ht: ht != null ? ht * toMeters : undefined,
+        bootstrapZenithObs:
+          code === 'DM' && state.deltaMode !== 'horiz' && zenithCandidate != null
+            ? normalizeZenithForFace(zenithCandidate, thisFace)
+            : undefined,
         mode: effectiveDistanceMode(),
       });
       if (vert) {

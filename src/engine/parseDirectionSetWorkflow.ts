@@ -24,6 +24,7 @@ export interface RawDirectionShot {
   face: DirectionFace;
   faceSource: DirectionFaceSource;
   reliableFace: boolean;
+  isOrientationReference?: boolean;
 }
 
 export interface DirectionTraverseContext {
@@ -240,7 +241,7 @@ export const createDirectionSetWorkflow = ({
 
       const normalized = targetShots.map((shot) => {
         const obs =
-          normalizeFace2 && shot.face === 'face2'
+          normalizeFace2 && shot.face === 'face2' && !shot.isOrientationReference
             ? wrapTo2Pi(shot.obs - Math.PI)
             : wrapTo2Pi(shot.obs);
         const weight = 1 / Math.max(shot.stdDev * shot.stdDev, 1e-24);
@@ -317,7 +318,7 @@ export const createDirectionSetWorkflow = ({
 
     shots.forEach((shot) => {
       const obs =
-        normalizeFace2 && shot.face === 'face2'
+        normalizeFace2 && shot.face === 'face2' && !shot.isOrientationReference
           ? wrapTo2Pi(shot.obs - Math.PI)
           : wrapTo2Pi(shot.obs);
       pushObservation({
@@ -369,17 +370,24 @@ export const createDirectionSetWorkflow = ({
     if (!shots.length) return;
 
     let workingShots = shots.map((shot) => ({ ...shot }));
-    const clusterSplit = splitFaceByCluster(workingShots);
+    const faceClassifiedShots = workingShots.filter((shot) => !shot.isOrientationReference);
+    const clusterSplit = splitFaceByCluster(faceClassifiedShots);
     if (clusterSplit.reliable) {
       workingShots = workingShots.map((shot) =>
-        shot.faceSource === 'fallback'
+        !shot.isOrientationReference && shot.faceSource === 'fallback'
           ? { ...shot, faceSource: 'cluster' as DirectionFaceSource, reliableFace: true }
           : shot,
       );
     }
 
-    const mixedFaces = new Set(workingShots.map((shot) => shot.face)).size > 1;
-    const hasUnreliableFace = workingShots.some((shot) => !shot.reliableFace);
+    const nonOrientationTargetIds = new Set(
+      workingShots.filter((shot) => !shot.isOrientationReference).map((shot) => shot.to),
+    );
+    const updatedFaceClassifiedShots = workingShots.filter(
+      (shot) => !shot.isOrientationReference || nonOrientationTargetIds.has(shot.to),
+    );
+    const mixedFaces = new Set(updatedFaceClassifiedShots.map((shot) => shot.face)).size > 1;
+    const hasUnreliableFace = updatedFaceClassifiedShots.some((shot) => !shot.reliableFace);
     const unresolvedMixed = mixedFaces && hasUnreliableFace;
     const mode: FaceNormalizationMode = state.faceNormalizationMode ?? 'on';
     const initialFaceSource: DirectionFaceSource = unresolvedMixed
@@ -447,19 +455,48 @@ export const createDirectionSetWorkflow = ({
       normalizeFace2: boolean;
       shots: RawDirectionShot[];
     }> = [];
+    const orientationShots = workingShots.filter((shot) => shot.isOrientationReference);
+    const seedOrientationShots = (
+      bucketShots: RawDirectionShot[],
+      bucketFace: DirectionFace,
+    ): RawDirectionShot[] => {
+      if (!orientationShots.length) return bucketShots;
+      if (bucketShots.some((shot) => shot.isOrientationReference)) return bucketShots;
+      const bucketTargets = new Set(bucketShots.map((shot) => shot.to));
+      const seededShots = orientationShots.filter((shot) => !bucketTargets.has(shot.to));
+      if (!seededShots.length) return bucketShots;
+      return [
+        ...seededShots.map((shot) => ({
+          ...shot,
+          face: bucketFace,
+          reliableFace: true,
+        })),
+        ...bucketShots,
+      ];
+    };
     if (treatmentDecision === 'normalized') {
       buckets.push({ bucketSetId: setId, normalizeFace2: true, shots: workingShots });
     } else {
       const face1Shots = workingShots.filter((shot) => shot.face === 'face1');
       const face2Shots = workingShots.filter((shot) => shot.face === 'face2');
       if (face1Shots.length > 0 && face2Shots.length > 0) {
-        buckets.push({ bucketSetId: `${setId}:F1`, normalizeFace2: false, shots: face1Shots });
-        buckets.push({ bucketSetId: `${setId}:F2`, normalizeFace2: false, shots: face2Shots });
+        buckets.push({
+          bucketSetId: `${setId}:F1`,
+          normalizeFace2: false,
+          shots: seedOrientationShots(face1Shots, 'face1'),
+        });
+        buckets.push({
+          bucketSetId: `${setId}:F2`,
+          normalizeFace2: true,
+          shots: seedOrientationShots(face2Shots, 'face2'),
+        });
       } else {
+        const bucketShots = face1Shots.length > 0 ? face1Shots : face2Shots;
+        const bucketFace: DirectionFace = face1Shots.length > 0 ? 'face1' : 'face2';
         buckets.push({
           bucketSetId: setId,
-          normalizeFace2: false,
-          shots: face1Shots.length > 0 ? face1Shots : face2Shots,
+          normalizeFace2: bucketFace === 'face2',
+          shots: seedOrientationShots(bucketShots, bucketFace),
         });
       }
     }

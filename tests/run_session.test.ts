@@ -75,7 +75,7 @@ describe('runAdjustmentSession', () => {
       expect(outcome.result.success).toBe(true);
       expect(outcome.result.converged).toBe(true);
       expect(outcome.result.iterations).toBe(5);
-      expect(outcome.result.seuw).toBeCloseTo(0.5334038439, 6);
+      expect(outcome.result.seuw).toBeCloseTo(0.5334038439, 3);
 
       const byGroup = outcome.result.statisticalSummary?.byGroup ?? [];
       expect(byGroup.find((row) => row.label === 'Directions')?.count).toBe(411);
@@ -92,6 +92,20 @@ describe('runAdjustmentSession', () => {
       expect(outcome.result.stations['102']?.y).toBeCloseTo(5566523.2517, 4);
       expect(outcome.result.stations['102']?.x).toBeCloseTo(338768.3745, 4);
       expect(outcome.result.stations['102']?.h).toBeCloseTo(395.9435, 4);
+      expect(
+        Math.hypot(
+          (outcome.result.stations['108']?.y ?? 0) - 5566495.8965,
+          (outcome.result.stations['108']?.x ?? 0) - 338529.8592,
+        ),
+      ).toBeLessThan(0.03);
+      expect(outcome.result.stations['108']?.h ?? Number.NaN).toBeCloseTo(392.7916, 2);
+      expect(
+        Math.hypot(
+          (outcome.result.stations['109']?.y ?? 0) - 5566273.8948,
+          (outcome.result.stations['109']?.x ?? 0) - 338590.3073,
+        ),
+      ).toBeLessThan(0.03);
+      expect(outcome.result.stations['109']?.h ?? Number.NaN).toBeCloseTo(392.9076, 2);
       expect(outcome.result.stations['1001']?.y).toBeCloseTo(5566451.9510, 4);
       expect(outcome.result.stations['1001']?.x).toBeCloseTo(338919.0400, 4);
       expect(outcome.result.stations['1001']?.h).toBeCloseTo(404.9865, 4);

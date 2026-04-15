@@ -227,6 +227,7 @@ export interface DistanceObservation extends ObservationBase {
   obs: number;
   hi?: number;
   ht?: number;
+  bootstrapZenithObs?: number;
   mode?: 'slope' | 'horiz';
   prismCorrectionM?: number;
   prismScope?: 'global' | 'set';

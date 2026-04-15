@@ -254,6 +254,60 @@ describe('parseDirectionSetWorkflow', () => {
     });
   });
 
+  it('seeds split raw face buckets with DN orientation shots and normalizes face2 rows', () => {
+    const { observations, workflow } = createHarness(
+      createState({
+        faceNormalizationMode: 'auto',
+        directionSetMode: 'raw',
+        directionFaceReliabilityFromCluster: false,
+      }),
+      'strict',
+    );
+
+    workflow.reduceDirectionShots('SET4', 'STA4', '', [
+      {
+        to: 'BS',
+        obs: 6.2,
+        stdDev: 0.001,
+        sigmaSource: 'explicit',
+        sourceLine: 40,
+        face: 'face2',
+        faceSource: 'fallback',
+        reliableFace: false,
+        isOrientationReference: true,
+      },
+      {
+        to: 'P1',
+        obs: 2.0,
+        stdDev: 0.001,
+        sigmaSource: 'explicit',
+        sourceLine: 41,
+        face: 'face1',
+        faceSource: 'metadata',
+        reliableFace: true,
+      },
+      {
+        to: 'P1',
+        obs: 2.0 + Math.PI,
+        stdDev: 0.001,
+        sigmaSource: 'explicit',
+        sourceLine: 42,
+        face: 'face2',
+        faceSource: 'fallback',
+        reliableFace: false,
+      },
+    ]);
+
+    const setF1 = observations.filter((observation) => observation.setId === 'SET4:F1');
+    const setF2 = observations.filter((observation) => observation.setId === 'SET4:F2');
+
+    expect(setF1.map((observation) => observation.to)).toContain('BS');
+    expect(setF2.map((observation) => observation.to)).toContain('BS');
+    expect(
+      setF2.find((observation) => observation.to === 'P1' && observation.type === 'direction')?.obs,
+    ).toBeCloseTo(2.0, 10);
+  });
+
   it('flushes empty sets into no-shot diagnostics and clears traverse context', () => {
     const { directionRejectDiagnostics, workflow, setLine, setSourceFile } = createHarness(createState({
       faceNormalizationMode: 'on',
