@@ -9,9 +9,22 @@ import type {
 } from './generateSyntheticCanadianNetwork';
 
 export type SyntheticObservationNoiseMode = 'noise-free' | 'noisy';
+export interface SyntheticObservationGenerationOptions {
+  includeBearings?: boolean;
+  includeAngles?: boolean;
+  includeDirections?: boolean;
+}
+export interface SyntheticObservationInputRenderOptions {
+  observationOrder?: 'default' | 'reverse';
+  directionSetupOrder?: 'default' | 'reverse';
+}
 
 export interface SyntheticObservationJob {
   input: string;
+  headerLines: string[];
+  stationLines: string[];
+  plainObservationLines: string[];
+  directionSetBlocks: string[][];
   approximateStations: Array<{
     id: string;
     easting: number;
@@ -40,6 +53,15 @@ const azimuthDeg = (from: TrueStation, to: TrueStation): number => {
   const az = Math.atan2(to.easting - from.easting, to.northing - from.northing) * RAD_TO_DEG;
   return az >= 0 ? az : az + 360;
 };
+
+const wrap360 = (value: number): number => {
+  let wrapped = value % 360;
+  if (wrapped < 0) wrapped += 360;
+  return wrapped;
+};
+
+const turnedAngleDeg = (at: TrueStation, from: TrueStation, to: TrueStation): number =>
+  wrap360(azimuthDeg(at, to) - azimuthDeg(at, from));
 
 const geodeticFromProjected = (
   network: SyntheticCanadianNetwork,
@@ -113,6 +135,37 @@ const findStation = (network: SyntheticCanadianNetwork, id: string): TrueStation
 
 const hiHtToken = (hi = 1.5, ht = 1.7): string => `${hi.toFixed(4)}/${ht.toFixed(4)}`;
 
+const angleTripletsForTemplate = (network: SyntheticCanadianNetwork): Array<[string, string, string]> => {
+  switch (network.template) {
+    case 'braced-quadrilateral':
+      return [
+        ['C', 'A', 'D'],
+        ['D', 'C', 'B'],
+        ['D', 'C', 'L'],
+      ];
+    case 'short-traverse':
+      return [
+        ['C', 'A', 'D'],
+        ['D', 'C', 'B'],
+        ['L', 'D', 'B'],
+      ];
+    case 'loop':
+      return [
+        ['C', 'A', 'B'],
+        ['D', 'C', 'E'],
+        ['E', 'D', 'B'],
+      ];
+    case 'mixed-3d':
+      return [
+        ['C', 'A', 'D'],
+        ['D', 'B', 'L'],
+        ['L', 'C', 'E'],
+      ];
+    default:
+      return [];
+  }
+};
+
 const edgesForTemplate = (network: SyntheticCanadianNetwork): Array<[string, string]> => {
   switch (network.template) {
     case 'braced-quadrilateral':
@@ -163,6 +216,123 @@ const edgesForTemplate = (network: SyntheticCanadianNetwork): Array<[string, str
   }
 };
 
+const directionSetConfigsForTemplate = (
+  network: SyntheticCanadianNetwork,
+): Array<{ occupy: string; backsight: string; targets: string[] }> => {
+  switch (network.template) {
+    case 'braced-quadrilateral':
+      return [
+        { occupy: 'C', backsight: 'A', targets: ['D', 'L'] },
+        { occupy: 'D', backsight: 'B', targets: ['C', 'L'] },
+      ];
+    case 'short-traverse':
+      return [
+        { occupy: 'C', backsight: 'A', targets: ['D'] },
+        { occupy: 'D', backsight: 'B', targets: ['C', 'L'] },
+      ];
+    case 'loop':
+      return [
+        { occupy: 'C', backsight: 'A', targets: ['B', 'D'] },
+        { occupy: 'D', backsight: 'C', targets: ['E', 'L'] },
+      ];
+    case 'mixed-3d':
+      return [
+        { occupy: 'C', backsight: 'A', targets: ['B', 'D', 'L'] },
+        { occupy: 'D', backsight: 'B', targets: ['C', 'E', 'L'] },
+      ];
+    default:
+      return [];
+  }
+};
+
+export const renderSyntheticObservationJob = (
+  job: Pick<
+    SyntheticObservationJob,
+    'headerLines' | 'stationLines' | 'plainObservationLines' | 'directionSetBlocks'
+  >,
+  options: SyntheticObservationInputRenderOptions = {},
+): string => {
+  const observationOrder = options.observationOrder ?? 'default';
+  const directionSetupOrder = options.directionSetupOrder ?? 'default';
+  const plainObservationLines =
+    observationOrder === 'reverse'
+      ? [...job.plainObservationLines].reverse()
+      : [...job.plainObservationLines];
+  const directionSetBlocks =
+    directionSetupOrder === 'reverse'
+      ? [...job.directionSetBlocks].reverse()
+      : [...job.directionSetBlocks];
+  return [
+    ...job.headerLines,
+    ...job.stationLines,
+    ...plainObservationLines,
+    ...directionSetBlocks.flat(),
+  ].join('\n');
+};
+
+const renameStationToken = (token: string, mapping: Record<string, string>): string =>
+  mapping[token] ?? token;
+
+const renamePairToken = (token: string, mapping: Record<string, string>): string =>
+  token
+    .split('-')
+    .map((part) => renameStationToken(part, mapping))
+    .join('-');
+
+const renameSyntheticObservationLine = (line: string, mapping: Record<string, string>): string => {
+  const parts = line.split(' ');
+  const code = parts[0];
+  if (code == null) return line;
+  if (code === 'C' && parts[1]) {
+    parts[1] = renameStationToken(parts[1], mapping);
+    return parts.join(' ');
+  }
+  if ((code === 'D' || code === 'B' || code === 'V' || code === 'DV' || code === 'A') && parts[1]) {
+    parts[1] = renamePairToken(parts[1], mapping);
+    return parts.join(' ');
+  }
+  if (code === 'DB') {
+    if (parts[1]) parts[1] = renameStationToken(parts[1], mapping);
+    if (parts[2]) parts[2] = renameStationToken(parts[2], mapping);
+    return parts.join(' ');
+  }
+  if ((code === 'DN' || code === 'DM') && parts[1]) {
+    parts[1] = renameStationToken(parts[1], mapping);
+    return parts.join(' ');
+  }
+  return line;
+};
+
+export const renameSyntheticObservationJob = (
+  job: SyntheticObservationJob,
+  mapping: Record<string, string>,
+): SyntheticObservationJob => {
+  const stationLines = job.stationLines.map((line) => renameSyntheticObservationLine(line, mapping));
+  const plainObservationLines = job.plainObservationLines.map((line) =>
+    renameSyntheticObservationLine(line, mapping),
+  );
+  const directionSetBlocks = job.directionSetBlocks.map((block) =>
+    block.map((line) => renameSyntheticObservationLine(line, mapping)),
+  );
+  const approximateStations = job.approximateStations.map((station) => ({
+    ...station,
+    id: renameStationToken(station.id, mapping),
+  }));
+  return {
+    ...job,
+    stationLines,
+    plainObservationLines,
+    directionSetBlocks,
+    approximateStations,
+    input: renderSyntheticObservationJob({
+      headerLines: job.headerLines,
+      stationLines,
+      plainObservationLines,
+      directionSetBlocks,
+    }),
+  };
+};
+
 export const generateSyntheticObservations = ({
   network,
   mode = 'noise-free',
@@ -171,6 +341,9 @@ export const generateSyntheticObservations = ({
   zenithSigmaSec = 2.0,
   defaultHiM = 1.5,
   defaultHtM = 1.7,
+  includeBearings = true,
+  includeAngles = false,
+  includeDirections = false,
 }: {
   network: SyntheticCanadianNetwork;
   mode?: SyntheticObservationNoiseMode;
@@ -179,7 +352,7 @@ export const generateSyntheticObservations = ({
   zenithSigmaSec?: number;
   defaultHiM?: number;
   defaultHtM?: number;
-}): SyntheticObservationJob => {
+} & SyntheticObservationGenerationOptions): SyntheticObservationJob => {
   const random = createMulberry32(network.seed ^ 0x9e3779b9);
   const measurementNoise = (sigma: number): number =>
     mode === 'noisy' ? gaussianNoise(random) * sigma : 0;
@@ -229,13 +402,53 @@ export const generateSyntheticObservations = ({
       measurementNoise(zenithSigmaSec / 3600);
     return `DV ${fromId}-${toId} ${distanceValue.toFixed(4)} ${zenithValue.toFixed(8)} ${distanceSigmaM.toFixed(4)} ${zenithSigmaSec.toFixed(2)} ${hiHtToken(defaultHiM, defaultHtM)}`;
   };
+  const angle = (atId: string, fromId: string, toId: string): string => {
+    const at = findStation(network, atId);
+    const from = findStation(network, fromId);
+    const to = findStation(network, toId);
+    const value = turnedAngleDeg(at, from, to) + measurementNoise(bearingSigmaSec / 3600);
+    return `A ${atId}-${fromId}-${toId} ${value.toFixed(8)} ${bearingSigmaSec.toFixed(2)}`;
+  };
+  const directionSetBlock = (occupyId: string, backsightId: string, targetIds: string[]): string[] => {
+    const occupy = findStation(network, occupyId);
+    const backsight = findStation(network, backsightId);
+    const backsightReading = measurementNoise(bearingSigmaSec / 3600);
+    const lines = [
+      `DB ${occupyId} ${backsightId}`,
+      `DN ${backsightId} ${wrap360(backsightReading).toFixed(8)} ${bearingSigmaSec.toFixed(2)}`,
+    ];
+    targetIds.forEach((targetId) => {
+      const target = findStation(network, targetId);
+      const directionValue =
+        wrap360(azimuthDeg(occupy, target) - azimuthDeg(occupy, backsight)) +
+        measurementNoise(bearingSigmaSec / 3600);
+      const distanceValue =
+        distanceMeters(occupy, target, defaultHiM, defaultHtM, network.coordMode) +
+        measurementNoise(distanceSigmaM);
+      if (network.coordMode === '3D') {
+        const zenithValue =
+          zenithDeg(network, occupy, target, defaultHiM, defaultHtM) +
+          measurementNoise(zenithSigmaSec / 3600);
+        lines.push(
+          `DM ${targetId} ${directionValue.toFixed(8)} ${distanceValue.toFixed(4)} ${zenithValue.toFixed(8)} ${bearingSigmaSec.toFixed(2)} ${distanceSigmaM.toFixed(4)} ${zenithSigmaSec.toFixed(2)} ${hiHtToken(defaultHiM, defaultHtM)}`,
+        );
+      } else {
+        lines.push(
+          `DM ${targetId} ${directionValue.toFixed(8)} ${distanceValue.toFixed(4)} 90.00000000 ${bearingSigmaSec.toFixed(2)} ${distanceSigmaM.toFixed(4)} ${zenithSigmaSec.toFixed(2)} ${hiHtToken(defaultHiM, defaultHtM)}`,
+        );
+      }
+    });
+    lines.push('DE');
+    return lines;
+  };
 
-  const lines = [
+  const headerLines = [
     network.coordMode === '3D' ? '.3D' : '.2D',
     '.UNITS METERS DD',
     '.ORDER EN',
     `.CRS GRID ${network.crsId}`,
   ];
+  const stationLines: string[] = [];
   const approximateStations = network.stations.map((station) => {
     const approx = perturbApproximation(station);
     const fixedSuffix =
@@ -244,7 +457,7 @@ export const generateSyntheticObservations = ({
           ? ' ! ! !'
           : ' ! !'
         : '';
-    lines.push(
+    stationLines.push(
       `C ${station.id} ${approx.easting.toFixed(4)} ${approx.northing.toFixed(4)} ${approx.elevation.toFixed(3)}${fixedSuffix}`,
     );
     return {
@@ -260,17 +473,40 @@ export const generateSyntheticObservations = ({
     throw new Error(`Synthetic observation generator has no edge list for template ${network.template}`);
   }
 
+  const plainObservationLines: string[] = [];
   edges.forEach(([fromId, toId]) => {
     if (network.coordMode === '3D') {
-      lines.push(distanceAndZenith(fromId, toId));
+      plainObservationLines.push(distanceAndZenith(fromId, toId));
     } else {
-      lines.push(dist(fromId, toId));
+      plainObservationLines.push(dist(fromId, toId));
     }
-    lines.push(bearing(fromId, toId));
+    if (includeBearings) {
+      plainObservationLines.push(bearing(fromId, toId));
+    }
+  });
+  if (includeAngles) {
+    angleTripletsForTemplate(network).forEach(([atId, fromId, toId]) => {
+      plainObservationLines.push(angle(atId, fromId, toId));
+    });
+  }
+  const directionSetBlocks = includeDirections
+    ? directionSetConfigsForTemplate(network).map((config) =>
+        directionSetBlock(config.occupy, config.backsight, config.targets),
+      )
+    : [];
+  const input = renderSyntheticObservationJob({
+    headerLines,
+    stationLines,
+    plainObservationLines,
+    directionSetBlocks,
   });
 
   return {
-    input: lines.join('\n'),
+    input,
+    headerLines,
+    stationLines,
+    plainObservationLines,
+    directionSetBlocks,
     approximateStations,
   };
 };

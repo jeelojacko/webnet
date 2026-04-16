@@ -8,8 +8,11 @@ import {
 import { inverseENToGeodetic, projectGeodeticToEN } from '../src/engine/geodesy';
 import { getCrsDefinition } from '../src/engine/crsCatalog';
 import {
+  buildSyntheticCrsGroupedSummary,
+  formatSyntheticCrsMarkdownSummary,
   runRepresentativeCanadianSyntheticCrsBatch,
   runSyntheticCrsAdjustmentTest,
+  runSyntheticCrsEdgeJobs,
   runSyntheticCrsMonteCarlo,
 } from '../src/engine/runSyntheticCrsAdjustmentTest';
 
@@ -190,5 +193,156 @@ describe('Canadian CRS synthetic adjustment smoke harness', () => {
         );
       }
     });
+  });
+
+  it('recovers truth when synthetic jobs include angle and direction-set observations', () => {
+    const angleRun = runSyntheticCrsAdjustmentTest({
+      crsId: 'CA_NAD83_CSRS_UTM_10N',
+      seed: 7101,
+      template: 'short-traverse',
+      observationOptions: {
+        includeAngles: true,
+      },
+    });
+    expect(angleRun.result.success, 'angle-backed synthetic run failed').toBe(true);
+    expect(angleRun.result.observations.some((obs) => obs.type === 'angle')).toBe(true);
+    expect(angleRun.metrics.maxHorizontalErrorM).toBeLessThan(0.03);
+
+    const directionRun = runSyntheticCrsAdjustmentTest({
+      crsId: 'CA_NAD83_CSRS_MTM_08',
+      seed: 7102,
+      template: 'loop',
+      observationOptions: {
+        includeDirections: true,
+      },
+    });
+    expect(directionRun.result.success, 'direction-backed synthetic run failed').toBe(true);
+    expect(directionRun.result.observations.some((obs) => obs.type === 'direction')).toBe(true);
+    expect(directionRun.metrics.maxHorizontalErrorM).toBeLessThan(0.03);
+  });
+
+  it('keeps equivalent solutions under observation reorder, setup reorder, and point renaming variants', () => {
+    const baseline = runSyntheticCrsAdjustmentTest({
+      crsId: 'CA_NAD83_CSRS_MTM_08',
+      seed: 7201,
+      template: 'loop',
+      observationOptions: {
+        includeAngles: true,
+        includeDirections: true,
+      },
+    });
+    const reorderedObservations = runSyntheticCrsAdjustmentTest({
+      crsId: 'CA_NAD83_CSRS_MTM_08',
+      seed: 7201,
+      template: 'loop',
+      observationOptions: {
+        includeAngles: true,
+        includeDirections: true,
+      },
+      inputVariant: {
+        observationOrder: 'reverse',
+      },
+    });
+    const reorderedSetups = runSyntheticCrsAdjustmentTest({
+      crsId: 'CA_NAD83_CSRS_MTM_08',
+      seed: 7201,
+      template: 'loop',
+      observationOptions: {
+        includeAngles: true,
+        includeDirections: true,
+      },
+      inputVariant: {
+        directionSetupOrder: 'reverse',
+      },
+    });
+    const renamed = runSyntheticCrsAdjustmentTest({
+      crsId: 'CA_NAD83_CSRS_MTM_08',
+      seed: 7201,
+      template: 'loop',
+      observationOptions: {
+        includeAngles: true,
+        includeDirections: true,
+      },
+      inputVariant: {
+        renamePrefix: 'R',
+      },
+    });
+
+    [baseline, reorderedObservations, reorderedSetups, renamed].forEach((run) => {
+      expect(run.result.success, `${run.crsId} invariance variant failed`).toBe(true);
+    });
+
+    expect(reorderedObservations.metrics.maxHorizontalErrorM).toBeCloseTo(
+      baseline.metrics.maxHorizontalErrorM,
+      6,
+    );
+    expect(reorderedSetups.metrics.maxHorizontalErrorM).toBeCloseTo(
+      baseline.metrics.maxHorizontalErrorM,
+      6,
+    );
+    expect(renamed.metrics.maxHorizontalErrorM).toBeCloseTo(baseline.metrics.maxHorizontalErrorM, 6);
+    expect(reorderedObservations.metrics.residualRms).toBeCloseTo(baseline.metrics.residualRms, 6);
+    expect(reorderedSetups.metrics.residualRms).toBeCloseTo(baseline.metrics.residualRms, 6);
+    expect(renamed.metrics.residualRms).toBeCloseTo(baseline.metrics.residualRms, 6);
+  });
+
+  it('solves representative edge-of-area jobs near CRS bounds', () => {
+    const edgeRuns = [
+      ...runSyntheticCrsEdgeJobs({
+        crsId: 'CA_NAD83_CSRS_UTM_10N',
+        template: 'short-traverse',
+        seed: 7301,
+      }),
+      ...runSyntheticCrsEdgeJobs({
+        crsId: 'CA_NAD83_CSRS_NB_STEREO_DOUBLE',
+        template: 'mixed-3d',
+        seed: 7302,
+      }),
+    ];
+
+    expect(edgeRuns.length).toBeGreaterThanOrEqual(6);
+    edgeRuns.forEach((run) => {
+      expect(run.result.success, `${run.crsId} ${run.placement} edge run failed`).toBe(true);
+      expect(run.metrics.maxHorizontalErrorM, `${run.crsId} ${run.placement} horizontal drift`).toBeLessThan(
+        0.05,
+      );
+      if (run.template === 'mixed-3d') {
+        expect(run.metrics.maxVerticalErrorM, `${run.crsId} ${run.placement} vertical drift`).toBeLessThan(
+          0.08,
+        );
+      }
+    });
+  });
+
+  it('builds grouped markdown and machine summaries for synthetic CRS runs', () => {
+    const runs = [
+      runSyntheticCrsAdjustmentTest({
+        crsId: 'CA_NAD83_CSRS_UTM_10N',
+        seed: 7401,
+        template: 'short-traverse',
+      }),
+      runSyntheticCrsAdjustmentTest({
+        crsId: 'CA_NAD83_CSRS_MTM_08',
+        seed: 7402,
+        template: 'loop',
+        observationOptions: { includeDirections: true },
+      }),
+      runSyntheticCrsAdjustmentTest({
+        crsId: 'CA_NAD83_CSRS_AB_3TM_117W',
+        seed: 7403,
+        template: 'mixed-3d',
+      }),
+    ];
+
+    const summary = buildSyntheticCrsGroupedSummary(runs);
+    const markdown = formatSyntheticCrsMarkdownSummary(runs);
+
+    expect(summary.groups.map((group) => group.family)).toEqual(['UTM', 'MTM', 'PROVINCIAL']);
+    expect(summary.groups[0]?.rows[0]?.crsId).toBe('CA_NAD83_CSRS_UTM_10N');
+    expect(markdown).toContain('# Canadian Synthetic CRS Summary');
+    expect(markdown).toContain('## UTM');
+    expect(markdown).toContain('## MTM');
+    expect(markdown).toContain('## PROVINCIAL');
+    expect(markdown).toContain('CA_NAD83_CSRS_AB_3TM_117W');
   });
 });

@@ -790,27 +790,27 @@
       - [x] Add independent forward/inverse CRS round-trip tests that compare WebNet transform behavior against external `proj4`-driven projection results instead of only WebNet's own helpers
       - [x] Add catalog-driven sanity checks for axis-order handling, area-of-use bounds, and projected/geodetic round-trip tolerances
       - [x] Keep transform-validation layer isolated from the synthetic network generator and solver-under-test path
-    - [ ] Batch 3 - synthetic network and observation generation
+    - [x] Batch 3 - synthetic network and observation generation
       - [x] Add projected-coordinate truth-network generators for traverse, braced traverse, loop, weak leaf, and tied side-point templates
-      - [ ] Add synthetic observation generation for directions/angles, slope distances, zeniths, optional bearings, and control coordinates
+      - [x] Add synthetic observation generation for directions/angles, slope distances, zeniths, optional bearings, and control coordinates
       - [x] Support both noise-free and noisy generation modes with deterministic seeds and realistic metadata such as HI/HT and standard-error sets
       - [x] Keep generator output modular so synthetic jobs can be reused by tests, reports, and future CLI/CI harness entrypoints
       - [x] Batch 3A - add a dedicated mixed-3D template that emits `DV` slope+zenith rows so HI/HT stays shared between the paired distance and zenith observations in grid-mode CRS tests
-    - [ ] Batch 4 - end-to-end Canadian UTM harness
+    - [x] Batch 4 - end-to-end Canadian UTM harness
       - [x] Add noise-free end-to-end synthetic adjustment tests across Canadian UTM coverage with CRS active during solve
       - [x] Add comparison metrics for horizontal/vertical error, residual RMS, SEUW, covariance sanity, and ellipse sanity
-      - [ ] Add invariance checks for observation reordering, setup reordering, and point renaming
+      - [x] Add invariance checks for observation reordering, setup reordering, and point renaming
       - [x] Add machine-readable per-run summary output for UTM harness runs
       - [x] Batch 4A - pin Canadian UTM harness rows to explicit current EPSG realization codes instead of leaving legacy-app placeholder aliases in the synthetic catalog
-    - [ ] Batch 5 - MTM and provincial expansion
+    - [x] Batch 5 - MTM and provincial expansion
       - [x] Expand synthetic harness coverage across Canadian MTM zones with SCoPQ alias notes where relevant
       - [x] Add provincial-system synthetic tests starting with New Brunswick stereographic and Alberta 3TM families, then other supported provincial projected CRSs
-      - [ ] Add edge-of-area jobs near west/east/north/south bounds where applicable
+      - [x] Add edge-of-area jobs near west/east/north/south bounds where applicable
       - [x] Add noisy Monte Carlo coverage with statistical tolerances and weak-versus-tied precision assertions
       - [x] Batch 5A - add Alberta 3TM realization-backed CRS rows plus focused catalog/harness regression coverage
     - [ ] Batch 6 - CI, docs, and closeout
       - [x] Wire harness runs into the normal validation workflow with clear failure categorization for CRS definition, transform path, generator, solver, or covariance/reporting faults
-      - [ ] Add markdown and machine-readable summary artifacts grouped by CRS family
+      - [x] Add markdown and machine-readable summary artifacts grouped by CRS family
       - [x] Update docs for new harness architecture, validation commands, and supported Canadian CRS coverage status
       - [ ] Keep parity workflow isolated so synthetic CRS harness complements, but does not replace, industry-reference regression coverage
 
