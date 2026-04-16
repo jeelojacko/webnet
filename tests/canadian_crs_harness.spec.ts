@@ -7,11 +7,15 @@ import {
 } from '../src/engine/canadianCrsTestCatalog';
 import { inverseENToGeodetic, projectGeodeticToEN } from '../src/engine/geodesy';
 import { getCrsDefinition } from '../src/engine/crsCatalog';
-import { runSyntheticCrsAdjustmentTest } from '../src/engine/runSyntheticCrsAdjustmentTest';
+import {
+  runRepresentativeCanadianSyntheticCrsBatch,
+  runSyntheticCrsAdjustmentTest,
+  runSyntheticCrsMonteCarlo,
+} from '../src/engine/runSyntheticCrsAdjustmentTest';
 
 describe('Canadian CRS synthetic harness catalog', () => {
   it('keeps required metadata and deterministic ordering for every Canadian test CRS', () => {
-    expect(CANADIAN_CRS_TEST_CATALOG.length).toBeGreaterThan(20);
+    expect(CANADIAN_CRS_TEST_CATALOG.length).toBeGreaterThan(24);
     expect(CANADIAN_CRS_TEST_CATALOG[0]?.family).toBe('UTM');
     const ids = new Set<string>();
     CANADIAN_CRS_TEST_CATALOG.forEach((row) => {
@@ -25,6 +29,14 @@ describe('Canadian CRS synthetic harness catalog', () => {
       expect(row.areaOfUse.westLon).toBeLessThan(row.areaOfUse.eastLon);
       expect(row.areaOfUse.southLat).toBeLessThan(row.areaOfUse.northLat);
     });
+    expect(CANADIAN_CRS_TEST_CATALOG.some((row) => row.id === 'CA_NAD83_CSRS_AB_3TM_111W')).toBe(
+      true,
+    );
+    expect(
+      CANADIAN_CRS_TEST_CATALOG.filter((row) => row.family === 'UTM').every(
+        (row) => row.status === 'current' && String(row.code ?? '').startsWith('228'),
+      ),
+    ).toBe(true);
   });
 
   it('formats a report with provenance and projection metadata', () => {
@@ -78,11 +90,12 @@ describe('Canadian CRS transform validation', () => {
 
 describe('Canadian CRS synthetic adjustment smoke harness', () => {
   it('recovers projected truth across the current Canada-first CRS support surface', () => {
-    CANADIAN_CRS_TEST_CATALOG.forEach((row, index) => {
-      const synthetic = runSyntheticCrsAdjustmentTest({
-        crsId: row.webnetCrsId,
-        seed: 4100 + index,
-      });
+    runRepresentativeCanadianSyntheticCrsBatch().forEach((synthetic) => {
+      const row = CANADIAN_CRS_TEST_CATALOG.find((entry) => entry.webnetCrsId === synthetic.crsId);
+      expect(row).toBeDefined();
+      if (!row) {
+        throw new Error(`Missing Canadian CRS test row for ${synthetic.crsId}`);
+      }
       expect(synthetic.result.success, `${row.id} failed solve\n${synthetic.result.logs.join('\n')}`).toBe(true);
       expect(
         synthetic.metrics.maxHorizontalErrorM,
@@ -93,10 +106,15 @@ describe('Canadian CRS synthetic adjustment smoke harness', () => {
         `${row.id} RMS horizontal error too large for seed ${synthetic.seed}`,
       ).toBeLessThan(0.01);
       expect(
+        synthetic.metrics.maxVerticalErrorM,
+        `${row.id} max vertical error too large for seed ${synthetic.seed}`,
+      ).toBeLessThan(synthetic.template === 'mixed-3d' ? 0.03 : 1e-9);
+      expect(
         synthetic.metrics.residualRms,
         `${row.id} residual RMS too large for seed ${synthetic.seed}`,
       ).toBeLessThan(0.01);
       if (
+        synthetic.template !== 'mixed-3d' &&
         synthetic.metrics.leafHorizontalSigmaM != null &&
         synthetic.metrics.mainAverageHorizontalSigmaM != null
       ) {
@@ -104,6 +122,72 @@ describe('Canadian CRS synthetic adjustment smoke harness', () => {
           synthetic.metrics.leafHorizontalSigmaM,
           `${row.id} weak leaf precision did not stay weaker than tied main points`,
         ).toBeGreaterThanOrEqual(synthetic.metrics.mainAverageHorizontalSigmaM);
+      }
+    });
+  });
+
+  it('recovers mixed 3D truth with slope and zenith observations on representative CRS families', () => {
+    const cases = [
+      { crsId: 'CA_NAD83_CSRS_UTM_10N', seed: 5201 },
+      { crsId: 'CA_NAD83_CSRS_MTM_08', seed: 5202 },
+      { crsId: 'CA_NAD83_CSRS_NB_STEREO_DOUBLE', seed: 5203 },
+      { crsId: 'CA_NAD83_CSRS_AB_3TM_117W', seed: 5204 },
+    ];
+    cases.forEach((testCase) => {
+      const run = runSyntheticCrsAdjustmentTest({
+        crsId: testCase.crsId,
+        seed: testCase.seed,
+        template: 'mixed-3d',
+      });
+      expect(run.result.success, `${testCase.crsId} mixed-3d failed`).toBe(true);
+      expect(run.metrics.maxHorizontalErrorM, `${testCase.crsId} 3D horizontal drift`).toBeLessThan(
+        0.03,
+      );
+      expect(run.metrics.maxVerticalErrorM, `${testCase.crsId} 3D vertical drift`).toBeLessThan(0.05);
+      expect(run.result.observations.some((obs) => obs.type === 'zenith')).toBe(true);
+    });
+  });
+
+  it('keeps noisy Monte Carlo results statistically centered on truth for representative families', () => {
+    const summaries = [
+      runSyntheticCrsMonteCarlo({
+        crsId: 'CA_NAD83_CSRS_UTM_10N',
+        template: 'short-traverse',
+        seeds: [6101, 6102, 6103, 6104, 6105],
+      }),
+      runSyntheticCrsMonteCarlo({
+        crsId: 'CA_NAD83_CSRS_MTM_08',
+        template: 'loop',
+        seeds: [6201, 6202, 6203, 6204, 6205],
+      }),
+      runSyntheticCrsMonteCarlo({
+        crsId: 'CA_NAD83_CSRS_NB_STEREO_DOUBLE',
+        template: 'mixed-3d',
+        seeds: [6301, 6302, 6303, 6304, 6305],
+      }),
+      runSyntheticCrsMonteCarlo({
+        crsId: 'CA_NAD83_CSRS_AB_3TM_117W',
+        template: 'mixed-3d',
+        seeds: [6401, 6402, 6403, 6404, 6405],
+      }),
+    ];
+    summaries.forEach((summary) => {
+      expect(summary.meanRmsHorizontalErrorM, `${summary.crsId} mean noisy horizontal RMS`).toBeLessThan(
+        0.05,
+      );
+      expect(summary.maxHorizontalErrorM, `${summary.crsId} worst noisy horizontal error`).toBeLessThan(
+        0.12,
+      );
+      expect(summary.meanResidualRms, `${summary.crsId} mean residual RMS`).toBeLessThan(0.05);
+      expect(summary.meanSeuw, `${summary.crsId} mean SEUW unrealistic`).toBeGreaterThan(0.05);
+      expect(summary.meanSeuw, `${summary.crsId} mean SEUW unrealistic`).toBeLessThan(10);
+      if (summary.template === 'mixed-3d') {
+        expect(summary.meanRmsVerticalErrorM, `${summary.crsId} mean noisy vertical RMS`).toBeLessThan(
+          0.08,
+        );
+        expect(summary.maxVerticalErrorM, `${summary.crsId} worst noisy vertical error`).toBeLessThan(
+          0.15,
+        );
       }
     });
   });

@@ -54,7 +54,7 @@ const ONTARIO_MNR_URL = 'https://data.ontario.ca/en/dataset/ontario-radar-digita
 const BC_ALBERS_URL =
   'https://clss.nrcan.gc.ca/data-donnees/sgb-maps-dag-carte/carte-index-map/Metadata-Map-of-Canada-Lands-British-Columbia.html';
 const ALBERTA_RESOURCE_URL =
-  'https://www.alberta.ca/land-system-database-users-manual-features';
+  'https://www.alberta.ca/system/files/custom_downloaded_images/ep-sample-id-card-ascm.pdf';
 
 const toAreaOfUse = (bounds: CrsAreaOfUseBounds): CanadianCrsTestConfig['areaOfUse'] => ({
   westLon: bounds.minLonDeg,
@@ -118,22 +118,22 @@ const baseFromDefinition = (
 
 const buildUtmRow = (def: CrsDefinition): CanadianCrsTestConfig =>
   baseFromDefinition(def, {
-    authority: 'CUSTOM',
-    code: undefined,
+    authority: def.epsgCode ? 'EPSG' : 'CUSTOM',
+    code: def.epsgCode ? Number(def.epsgCode) : undefined,
     family: 'UTM',
     provinceOrRegion: 'Canada',
-    datumRealization: 'NAD83(CSRS) realization to be pinned per authority-backed zone entry',
-    status: 'legacy-app-alias',
+    datumRealization: def.datumRealization ?? 'NAD83(CSRS)v8',
+    status: def.validityStatus ?? 'current',
     sourceNotes: [
-      'Current WebNet app alias keeps UTM projection parameters but is not yet pinned to one current EPSG realization code per zone.',
-      'Synthetic harness keeps this alias explicit so later batches can swap to audited current EPSG realization entries without changing harness shape.',
+      'Current WebNet UTM rows are pinned to explicit EPSG v8 realization codes while preserving stable internal ids.',
+      'EPSG notes that the older “NAD83(CSRS) 2010 / UTM zone XXN Canada” naming is ambiguous across v6/v7/v8 and should not be treated as one unversioned CRS.',
     ],
     sourceProvenance: [
       {
         authority: 'EPSG',
         title: 'EPSG Geodetic Parameter Registry',
         organization: 'IOGP EPSG',
-        reference: `UTM zone alias for ${def.id}`,
+        reference: def.epsgCode ? `EPSG:${def.epsgCode}` : `UTM zone alias for ${def.id}`,
         url: EPSG_HOME_URL,
       },
       {
@@ -152,8 +152,8 @@ const buildMtmRow = (def: CrsDefinition): CanadianCrsTestConfig =>
     code: def.epsgCode ? Number(def.epsgCode) : undefined,
     family: 'MTM',
     provinceOrRegion: 'Quebec / Eastern Canada',
-    datumRealization: 'NAD83(CSRS)',
-    status: def.epsgCode ? 'current' : 'legacy-app-alias',
+    datumRealization: def.datumRealization ?? 'NAD83(CSRS)',
+    status: def.validityStatus ?? (def.epsgCode ? 'current' : 'legacy-app-alias'),
     sourceNotes: [
       'MTM coverage carries Quebec/SCoPQ relevance and stays separate from UTM family tests.',
       'Later batches should attach explicit SCoPQ alias rows where provincial naming differs from the EPSG title.',
@@ -192,23 +192,29 @@ const buildProvincialRow = (def: CrsDefinition): CanadianCrsTestConfig => {
       ? 'NB Stereographic Double Projection official usage guidance'
       : def.id === 'CA_NAD83_CSRS_PEI_STEREOGRAPHIC'
         ? 'PEI spatial referencing regulations for stereographic double projection'
-        : def.id === 'CA_NAD83_CSRS_ON_MNR_LAMBERT'
+      : def.id === 'CA_NAD83_CSRS_ON_MNR_LAMBERT'
           ? 'Ontario MNR Lambert data publication guidance'
-          : def.id === 'CA_NAD83_CSRS_BC_ALBERS'
+        : def.id === 'CA_NAD83_CSRS_BC_ALBERS'
             ? 'NRCan Canada Lands metadata citing EPSG:3153'
-            : 'Alberta provincial resource mapping guidance for 10TM';
+            : def.id.startsWith('CA_NAD83_CSRS_AB_3TM_')
+              ? 'Alberta Surveying and Mapping Division 3TM reference guidance'
+              : 'Alberta provincial resource mapping guidance for 10TM';
   return baseFromDefinition(def, {
     authority: def.epsgCode ? 'EPSG' : 'CUSTOM',
     code: def.epsgCode ? Number(def.epsgCode) : undefined,
     family: 'PROVINCIAL',
     provinceOrRegion: def.areaOfUse,
-    datumRealization: 'NAD83(CSRS)',
-    status: def.epsgCode ? 'current' : 'legacy-app-alias',
+    datumRealization: def.datumRealization ?? 'NAD83(CSRS)',
+    status: def.validityStatus ?? (def.epsgCode ? 'current' : 'legacy-app-alias'),
     sourceNotes:
-      def.id === 'CA_NAD83_CSRS_AB_10TM_RESOURCE'
+      def.id.startsWith('CA_NAD83_CSRS_AB_3TM_')
         ? [
-            'Current WebNet provincial Alberta coverage is 10TM resource mapping, not Alberta 3TM yet.',
-            'Alberta 3TM authority-backed additions belong to later harness batches once CRS support is added to the app catalog.',
+            'Alberta 3TM urban survey rows are now part of the harness and use explicit EPSG v7 realization codes.',
+            'These rows complement, not replace, Alberta 10TM resource mapping coverage.',
+          ]
+        : def.id === 'CA_NAD83_CSRS_AB_10TM_RESOURCE'
+        ? [
+            'Alberta 10TM remains part of the provincial harness because WebNet already supports it for broader resource-mapping coverage.',
           ]
         : ['Provincial source captured so harness provenance stays auditable alongside EPSG metadata.'],
     sourceProvenance: [

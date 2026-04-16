@@ -1,4 +1,5 @@
 export type CrsCatalogGroup = 'global' | 'canada-utm' | 'canada-mtm' | 'canada-provincial';
+export type CrsValidityStatus = 'current' | 'superseded' | 'legacy-app-alias';
 
 export interface CrsAreaOfUseBounds {
   minLatDeg: number;
@@ -23,6 +24,7 @@ export interface CrsDefinition {
   catalogGroup: CrsCatalogGroup;
   region: 'canada' | 'global';
   datum: string;
+  datumRealization?: string;
   projectionFamily:
     | 'utm'
     | 'mtm'
@@ -36,6 +38,8 @@ export interface CrsDefinition {
   areaOfUseBounds?: CrsAreaOfUseBounds;
   zoneNumber?: number;
   epsgCode?: string;
+  authorityAliases?: string[];
+  validityStatus?: CrsValidityStatus;
   proj4: string;
   projParams: CrsProjectionParam[];
   projectionParams?: {
@@ -83,16 +87,19 @@ const buildAreaOfUseBoundsForUtm = (zoneNumber: number): CrsAreaOfUseBounds => {
 
 const buildCanadaUtm = (zoneNumber: number): CrsDefinition => ({
   id: `CA_NAD83_CSRS_UTM_${String(zoneNumber).padStart(2, '0')}N`,
-  label: `Canada NAD83(CSRS) / UTM Zone ${zoneNumber}N`,
+  label: `Canada NAD83(CSRS)v8 / UTM Zone ${zoneNumber}N`,
   catalogGroup: 'canada-utm',
   region: 'canada',
   datum: 'NAD83(CSRS)',
+  datumRealization: 'NAD83(CSRS)v8',
   projectionFamily: 'utm',
   linearUnit: 'm',
   axisOrder: 'E,N',
   areaOfUse: `Canada UTM Zone ${zoneNumber}N`,
   areaOfUseBounds: buildAreaOfUseBoundsForUtm(zoneNumber),
   zoneNumber: zoneNumber,
+  epsgCode: String(22800 + zoneNumber),
+  validityStatus: 'current',
   proj4: `+proj=utm +zone=${zoneNumber} +ellps=GRS80 +units=m +no_defs +type=crs`,
   projParams: parseProj4Parameters(
     `+proj=utm +zone=${zoneNumber} +ellps=GRS80 +units=m +no_defs +type=crs`,
@@ -136,6 +143,7 @@ const buildCanadaMtm = (row: {
   catalogGroup: 'canada-mtm',
   region: 'canada',
   datum: 'NAD83(CSRS)',
+  datumRealization: 'NAD83(CSRS)',
   projectionFamily: 'mtm',
   linearUnit: 'm',
   axisOrder: 'E,N',
@@ -148,6 +156,7 @@ const buildCanadaMtm = (row: {
   },
   zoneNumber: row.zoneNumber,
   epsgCode: row.epsgCode,
+  validityStatus: 'current',
   proj4: `+proj=tmerc +lat_0=0 +lon_0=${row.lon0Deg} +k=0.9999 +x_0=304800 +y_0=0 +ellps=GRS80 +units=m +no_defs +type=crs`,
   projParams: parseProj4Parameters(
     `+proj=tmerc +lat_0=0 +lon_0=${row.lon0Deg} +k=0.9999 +x_0=304800 +y_0=0 +ellps=GRS80 +units=m +no_defs +type=crs`,
@@ -175,12 +184,14 @@ const CANADA_PROVINCIAL_CATALOG: CrsDefinition[] = [
     catalogGroup: 'canada-provincial',
     region: 'canada',
     datum: 'NAD83(CSRS)',
+    datumRealization: 'NAD83(CSRS)',
     projectionFamily: 'oblique-stereographic',
     linearUnit: 'm',
     axisOrder: 'E,N',
     areaOfUse: 'New Brunswick',
     areaOfUseBounds: { minLatDeg: 44.5, maxLatDeg: 48.2, minLonDeg: -69.2, maxLonDeg: -63.5 },
     epsgCode: '2953',
+    validityStatus: 'current',
     proj4:
       '+proj=sterea +lat_0=46.5 +lon_0=-66.5 +k=0.999912 +x_0=2500000 +y_0=7500000 +ellps=GRS80 +units=m +no_defs +type=crs',
     projParams: parseProj4Parameters(
@@ -201,12 +212,14 @@ const CANADA_PROVINCIAL_CATALOG: CrsDefinition[] = [
     catalogGroup: 'canada-provincial',
     region: 'canada',
     datum: 'NAD83(CSRS)',
+    datumRealization: 'NAD83(CSRS)',
     projectionFamily: 'oblique-stereographic',
     linearUnit: 'm',
     axisOrder: 'E,N',
     areaOfUse: 'Prince Edward Island',
     areaOfUseBounds: { minLatDeg: 45.8, maxLatDeg: 47.2, minLonDeg: -64.6, maxLonDeg: -61.8 },
     epsgCode: '2954',
+    validityStatus: 'current',
     proj4:
       '+proj=sterea +lat_0=47.25 +lon_0=-63 +k=0.999912 +x_0=400000 +y_0=800000 +ellps=GRS80 +units=m +no_defs +type=crs',
     projParams: parseProj4Parameters(
@@ -227,12 +240,14 @@ const CANADA_PROVINCIAL_CATALOG: CrsDefinition[] = [
     catalogGroup: 'canada-provincial',
     region: 'canada',
     datum: 'NAD83(CSRS)',
+    datumRealization: 'NAD83(CSRS)',
     projectionFamily: 'lambert-conformal-conic',
     linearUnit: 'm',
     axisOrder: 'E,N',
     areaOfUse: 'Ontario',
     areaOfUseBounds: { minLatDeg: 41.5, maxLatDeg: 57.5, minLonDeg: -95, maxLonDeg: -74 },
     epsgCode: '3162',
+    validityStatus: 'current',
     proj4:
       '+proj=lcc +lat_0=0 +lon_0=-85 +lat_1=44.5 +lat_2=53.5 +x_0=930000 +y_0=6430000 +ellps=GRS80 +units=m +no_defs +type=crs',
     projParams: parseProj4Parameters(
@@ -254,12 +269,14 @@ const CANADA_PROVINCIAL_CATALOG: CrsDefinition[] = [
     catalogGroup: 'canada-provincial',
     region: 'canada',
     datum: 'NAD83(CSRS)',
+    datumRealization: 'NAD83(CSRS)',
     projectionFamily: 'albers-equal-area',
     linearUnit: 'm',
     axisOrder: 'E,N',
     areaOfUse: 'British Columbia',
     areaOfUseBounds: { minLatDeg: 48.2, maxLatDeg: 60.2, minLonDeg: -139.5, maxLonDeg: -114 },
     epsgCode: '3153',
+    validityStatus: 'current',
     proj4:
       '+proj=aea +lat_0=45 +lon_0=-126 +lat_1=50 +lat_2=58.5 +x_0=1000000 +y_0=0 +ellps=GRS80 +units=m +no_defs +type=crs',
     projParams: parseProj4Parameters(
@@ -281,12 +298,14 @@ const CANADA_PROVINCIAL_CATALOG: CrsDefinition[] = [
     catalogGroup: 'canada-provincial',
     region: 'canada',
     datum: 'NAD83(CSRS)',
+    datumRealization: 'NAD83(CSRS)',
     projectionFamily: 'transverse-mercator',
     linearUnit: 'm',
     axisOrder: 'E,N',
     areaOfUse: 'Alberta',
     areaOfUseBounds: { minLatDeg: 48.9, maxLatDeg: 60.1, minLonDeg: -120.2, maxLonDeg: -109.8 },
     epsgCode: '3403',
+    validityStatus: 'current',
     proj4:
       '+proj=tmerc +lat_0=0 +lon_0=-115 +k=0.9992 +x_0=0 +y_0=0 +ellps=GRS80 +units=m +no_defs +type=crs',
     projParams: parseProj4Parameters(
@@ -296,6 +315,118 @@ const CANADA_PROVINCIAL_CATALOG: CrsDefinition[] = [
       lat0Deg: 0,
       lon0Deg: -115,
       k0: 0.9992,
+      falseEastingM: 0,
+      falseNorthingM: 0,
+    },
+    supportedDatumOps: CANADA_DATUM_OPS,
+  },
+  {
+    id: 'CA_NAD83_CSRS_AB_3TM_111W',
+    label: 'Alberta 3TM Ref Merid 111W',
+    catalogGroup: 'canada-provincial',
+    region: 'canada',
+    datum: 'NAD83(CSRS)',
+    datumRealization: 'NAD83(CSRS)v7',
+    projectionFamily: 'transverse-mercator',
+    linearUnit: 'm',
+    axisOrder: 'E,N',
+    areaOfUse: 'Alberta east of 112°30′W',
+    areaOfUseBounds: { minLatDeg: 48.99, maxLatDeg: 60, minLonDeg: -112.5, maxLonDeg: -109.98 },
+    epsgCode: '22762',
+    validityStatus: 'current',
+    proj4:
+      '+proj=tmerc +lat_0=0 +lon_0=-111 +k=0.9999 +x_0=0 +y_0=0 +ellps=GRS80 +units=m +no_defs +type=crs',
+    projParams: parseProj4Parameters(
+      '+proj=tmerc +lat_0=0 +lon_0=-111 +k=0.9999 +x_0=0 +y_0=0 +ellps=GRS80 +units=m +no_defs +type=crs',
+    ),
+    projectionParams: {
+      lat0Deg: 0,
+      lon0Deg: -111,
+      k0: 0.9999,
+      falseEastingM: 0,
+      falseNorthingM: 0,
+    },
+    supportedDatumOps: CANADA_DATUM_OPS,
+  },
+  {
+    id: 'CA_NAD83_CSRS_AB_3TM_114W',
+    label: 'Alberta 3TM Ref Merid 114W',
+    catalogGroup: 'canada-provincial',
+    region: 'canada',
+    datum: 'NAD83(CSRS)',
+    datumRealization: 'NAD83(CSRS)v7',
+    projectionFamily: 'transverse-mercator',
+    linearUnit: 'm',
+    axisOrder: 'E,N',
+    areaOfUse: 'Alberta between 115°30′W and 112°30′W',
+    areaOfUseBounds: { minLatDeg: 48.99, maxLatDeg: 60, minLonDeg: -115.5, maxLonDeg: -112.5 },
+    epsgCode: '22763',
+    validityStatus: 'current',
+    proj4:
+      '+proj=tmerc +lat_0=0 +lon_0=-114 +k=0.9999 +x_0=0 +y_0=0 +ellps=GRS80 +units=m +no_defs +type=crs',
+    projParams: parseProj4Parameters(
+      '+proj=tmerc +lat_0=0 +lon_0=-114 +k=0.9999 +x_0=0 +y_0=0 +ellps=GRS80 +units=m +no_defs +type=crs',
+    ),
+    projectionParams: {
+      lat0Deg: 0,
+      lon0Deg: -114,
+      k0: 0.9999,
+      falseEastingM: 0,
+      falseNorthingM: 0,
+    },
+    supportedDatumOps: CANADA_DATUM_OPS,
+  },
+  {
+    id: 'CA_NAD83_CSRS_AB_3TM_117W',
+    label: 'Alberta 3TM Ref Merid 117W',
+    catalogGroup: 'canada-provincial',
+    region: 'canada',
+    datum: 'NAD83(CSRS)',
+    datumRealization: 'NAD83(CSRS)v7',
+    projectionFamily: 'transverse-mercator',
+    linearUnit: 'm',
+    axisOrder: 'E,N',
+    areaOfUse: 'Alberta between 118°30′W and 115°30′W',
+    areaOfUseBounds: { minLatDeg: 50.77, maxLatDeg: 60, minLonDeg: -118.5, maxLonDeg: -115.5 },
+    epsgCode: '22764',
+    validityStatus: 'current',
+    proj4:
+      '+proj=tmerc +lat_0=0 +lon_0=-117 +k=0.9999 +x_0=0 +y_0=0 +ellps=GRS80 +units=m +no_defs +type=crs',
+    projParams: parseProj4Parameters(
+      '+proj=tmerc +lat_0=0 +lon_0=-117 +k=0.9999 +x_0=0 +y_0=0 +ellps=GRS80 +units=m +no_defs +type=crs',
+    ),
+    projectionParams: {
+      lat0Deg: 0,
+      lon0Deg: -117,
+      k0: 0.9999,
+      falseEastingM: 0,
+      falseNorthingM: 0,
+    },
+    supportedDatumOps: CANADA_DATUM_OPS,
+  },
+  {
+    id: 'CA_NAD83_CSRS_AB_3TM_120W',
+    label: 'Alberta 3TM Ref Merid 120W',
+    catalogGroup: 'canada-provincial',
+    region: 'canada',
+    datum: 'NAD83(CSRS)',
+    datumRealization: 'NAD83(CSRS)v7',
+    projectionFamily: 'transverse-mercator',
+    linearUnit: 'm',
+    axisOrder: 'E,N',
+    areaOfUse: 'Alberta west of 118°30′W',
+    areaOfUseBounds: { minLatDeg: 52.88, maxLatDeg: 60, minLonDeg: -120, maxLonDeg: -118.5 },
+    epsgCode: '22765',
+    validityStatus: 'current',
+    proj4:
+      '+proj=tmerc +lat_0=0 +lon_0=-120 +k=0.9999 +x_0=0 +y_0=0 +ellps=GRS80 +units=m +no_defs +type=crs',
+    projParams: parseProj4Parameters(
+      '+proj=tmerc +lat_0=0 +lon_0=-120 +k=0.9999 +x_0=0 +y_0=0 +ellps=GRS80 +units=m +no_defs +type=crs',
+    ),
+    projectionParams: {
+      lat0Deg: 0,
+      lon0Deg: -120,
+      k0: 0.9999,
       falseEastingM: 0,
       falseNorthingM: 0,
     },
@@ -319,6 +450,13 @@ for (const row of CANADA_CRS_CATALOG) {
     BY_ID.set(`EPSG:${row.epsgCode}`.toUpperCase(), row);
     BY_ID.set(row.epsgCode.toUpperCase(), row);
   }
+  row.authorityAliases?.forEach((alias) => {
+    BY_ID.set(alias.toUpperCase(), row);
+    const normalized = alias.toUpperCase().startsWith('EPSG:') ? alias.slice(5) : undefined;
+    if (normalized) {
+      BY_ID.set(normalized.toUpperCase(), row);
+    }
+  });
 }
 
 export const getCrsDefinition = (id?: string): CrsDefinition | undefined => {

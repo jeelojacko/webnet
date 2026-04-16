@@ -190,12 +190,13 @@ Current coordinate-system behavior includes:
 - Local/Grid mode state
 - CRS directives and optional labels, scale, and convergence inputs
 - Canada-first CRS catalog support including NAD83(CSRS) UTM, MTM, and key provincial entries
-- a synthetic Canadian CRS validation harness foundation that now audits the current Canada-first CRS support surface through catalog metadata checks, external `proj4` round-trip comparisons, and small projected end-to-end adjustment smoke tests
+- a synthetic Canadian CRS validation harness that now pins Canadian UTM rows to explicit current EPSG realization codes, includes Alberta 3TM realization-backed provincial rows, audits the current Canada-first CRS support surface through catalog metadata checks and external `proj4` round-trip comparisons, and runs deterministic projected end-to-end synthetic adjustment smoke tests plus representative noisy Monte Carlo checks across UTM, MTM, and province-specific Canadian CRSs
 - CRS-ID normalization accepting canonical IDs and EPSG aliases
 - projection-family-aware factor computation with numerical fallback diagnostics
 - reduction-context-driven measured/grid behavior
 - pre-solve gates for incompatible local/grid/geodetic mixes and unconfirmed GNSS frames
 - datum hard-fail and soft-warn diagnostics where appropriate
+- synthetic 3D CRS harness jobs now use paired `DV` slope+zenith records for grid-mode shots so shared HI/HT metadata stays attached to both observation components instead of relying on standalone `V` rows that do not carry HI/HT through the current parser contract
 
 ### Geoid and grid behavior
 Current geoid behavior includes:

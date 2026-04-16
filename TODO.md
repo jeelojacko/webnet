@@ -791,24 +791,27 @@
       - [x] Add catalog-driven sanity checks for axis-order handling, area-of-use bounds, and projected/geodetic round-trip tolerances
       - [x] Keep transform-validation layer isolated from the synthetic network generator and solver-under-test path
     - [ ] Batch 3 - synthetic network and observation generation
-      - [ ] Add projected-coordinate truth-network generators for traverse, braced traverse, loop, weak leaf, and tied side-point templates
+      - [x] Add projected-coordinate truth-network generators for traverse, braced traverse, loop, weak leaf, and tied side-point templates
       - [ ] Add synthetic observation generation for directions/angles, slope distances, zeniths, optional bearings, and control coordinates
-      - [ ] Support both noise-free and noisy generation modes with deterministic seeds and realistic metadata such as HI/HT and standard-error sets
-      - [ ] Keep generator output modular so synthetic jobs can be reused by tests, reports, and future CLI/CI harness entrypoints
+      - [x] Support both noise-free and noisy generation modes with deterministic seeds and realistic metadata such as HI/HT and standard-error sets
+      - [x] Keep generator output modular so synthetic jobs can be reused by tests, reports, and future CLI/CI harness entrypoints
+      - [x] Batch 3A - add a dedicated mixed-3D template that emits `DV` slope+zenith rows so HI/HT stays shared between the paired distance and zenith observations in grid-mode CRS tests
     - [ ] Batch 4 - end-to-end Canadian UTM harness
-      - [ ] Add noise-free end-to-end synthetic adjustment tests across Canadian UTM coverage with CRS active during solve
-      - [ ] Add comparison metrics for horizontal/vertical error, residual RMS, SEUW, covariance sanity, and ellipse sanity
+      - [x] Add noise-free end-to-end synthetic adjustment tests across Canadian UTM coverage with CRS active during solve
+      - [x] Add comparison metrics for horizontal/vertical error, residual RMS, SEUW, covariance sanity, and ellipse sanity
       - [ ] Add invariance checks for observation reordering, setup reordering, and point renaming
-      - [ ] Add machine-readable per-run summary output for UTM harness runs
+      - [x] Add machine-readable per-run summary output for UTM harness runs
+      - [x] Batch 4A - pin Canadian UTM harness rows to explicit current EPSG realization codes instead of leaving legacy-app placeholder aliases in the synthetic catalog
     - [ ] Batch 5 - MTM and provincial expansion
-      - [ ] Expand synthetic harness coverage across Canadian MTM zones with SCoPQ alias notes where relevant
-      - [ ] Add provincial-system synthetic tests starting with New Brunswick stereographic and Alberta 3TM families, then other supported provincial projected CRSs
+      - [x] Expand synthetic harness coverage across Canadian MTM zones with SCoPQ alias notes where relevant
+      - [x] Add provincial-system synthetic tests starting with New Brunswick stereographic and Alberta 3TM families, then other supported provincial projected CRSs
       - [ ] Add edge-of-area jobs near west/east/north/south bounds where applicable
-      - [ ] Add noisy Monte Carlo coverage with statistical tolerances and weak-versus-tied precision assertions
+      - [x] Add noisy Monte Carlo coverage with statistical tolerances and weak-versus-tied precision assertions
+      - [x] Batch 5A - add Alberta 3TM realization-backed CRS rows plus focused catalog/harness regression coverage
     - [ ] Batch 6 - CI, docs, and closeout
-      - [ ] Wire harness runs into the normal validation workflow with clear failure categorization for CRS definition, transform path, generator, solver, or covariance/reporting faults
+      - [x] Wire harness runs into the normal validation workflow with clear failure categorization for CRS definition, transform path, generator, solver, or covariance/reporting faults
       - [ ] Add markdown and machine-readable summary artifacts grouped by CRS family
-      - [ ] Update docs for new harness architecture, validation commands, and supported Canadian CRS coverage status
+      - [x] Update docs for new harness architecture, validation commands, and supported Canadian CRS coverage status
       - [ ] Keep parity workflow isolated so synthetic CRS harness complements, but does not replace, industry-reference regression coverage
 
 - [x] Industry Standard v6-v14 parity gaps (prioritized from release notes; missing in WebNet today):

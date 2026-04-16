@@ -12,6 +12,8 @@ import {
 export interface SyntheticCrsAdjustmentMetrics {
   maxHorizontalErrorM: number;
   rmsHorizontalErrorM: number;
+  maxVerticalErrorM: number;
+  rmsVerticalErrorM: number;
   residualRms: number;
   seuw: number;
   leafHorizontalSigmaM?: number;
@@ -25,6 +27,18 @@ export interface SyntheticCrsAdjustmentRunResult {
   input: string;
   metrics: SyntheticCrsAdjustmentMetrics;
   result: ReturnType<LSAEngine['solve']>;
+}
+
+export interface SyntheticCrsMonteCarloSummary {
+  crsId: string;
+  template: SyntheticCanadianNetworkTemplate;
+  runCount: number;
+  meanRmsHorizontalErrorM: number;
+  maxHorizontalErrorM: number;
+  meanRmsVerticalErrorM: number;
+  maxVerticalErrorM: number;
+  meanResidualRms: number;
+  meanSeuw: number;
 }
 
 const horizontalSigma = (sigmaE?: number, sigmaN?: number): number | undefined => {
@@ -55,7 +69,7 @@ export const runSyntheticCrsAdjustmentTest = ({
     input: job.input,
     maxIterations: 15,
     parseOptions: {
-      coordMode: '2D',
+      coordMode: network.coordMode,
       coordSystemMode: 'grid',
       crsId: config.webnetCrsId,
       gridDistanceMode: 'grid',
@@ -63,7 +77,7 @@ export const runSyntheticCrsAdjustmentTest = ({
     },
   });
   const result = engine.solve();
-  const errors = network.stations
+  const horizontalErrors = network.stations
     .filter((station) => station.role !== 'fixed')
     .map((station) => {
       const adjusted = result.stations[station.id];
@@ -72,10 +86,29 @@ export const runSyntheticCrsAdjustmentTest = ({
       }
       return Math.hypot(adjusted.x - station.easting, adjusted.y - station.northing);
     });
-  const maxHorizontalErrorM = errors.length > 0 ? Math.max(...errors) : 0;
+  const verticalErrors =
+    network.coordMode === '3D'
+      ? network.stations
+          .filter((station) => station.role !== 'fixed')
+          .map((station) => {
+            const adjusted = result.stations[station.id];
+            if (!adjusted) {
+              throw new Error(`Adjusted station missing for ${config.id}: ${station.id}`);
+            }
+            return Math.abs(adjusted.h - station.elevation);
+          })
+      : [];
+  const maxHorizontalErrorM = horizontalErrors.length > 0 ? Math.max(...horizontalErrors) : 0;
   const rmsHorizontalErrorM =
-    errors.length > 0
-      ? Math.sqrt(errors.reduce((sum, value) => sum + value * value, 0) / errors.length)
+    horizontalErrors.length > 0
+      ? Math.sqrt(
+          horizontalErrors.reduce((sum, value) => sum + value * value, 0) / horizontalErrors.length,
+        )
+      : 0;
+  const maxVerticalErrorM = verticalErrors.length > 0 ? Math.max(...verticalErrors) : 0;
+  const rmsVerticalErrorM =
+    verticalErrors.length > 0
+      ? Math.sqrt(verticalErrors.reduce((sum, value) => sum + value * value, 0) / verticalErrors.length)
       : 0;
   const residualValues = result.observations
     .map((obs) => (typeof obs.residual === 'number' ? obs.residual : undefined))
@@ -107,6 +140,8 @@ export const runSyntheticCrsAdjustmentTest = ({
     metrics: {
       maxHorizontalErrorM,
       rmsHorizontalErrorM,
+      maxVerticalErrorM,
+      rmsVerticalErrorM,
       residualRms,
       seuw: result.seuw,
       leafHorizontalSigmaM: leafSigma,
@@ -123,6 +158,50 @@ export const runRepresentativeCanadianSyntheticCrsBatch = (
     runSyntheticCrsAdjustmentTest({
       crsId: row.webnetCrsId,
       seed: 1000 + index,
+      template:
+        row.id.startsWith('CA_NAD83_CSRS_AB_3TM_')
+          ? 'mixed-3d'
+          : row.family === 'UTM'
+            ? index % 2 === 0
+              ? 'short-traverse'
+              : 'braced-quadrilateral'
+            : row.family === 'MTM'
+              ? 'loop'
+              : row.id === 'CA_NAD83_CSRS_NB_STEREO_DOUBLE'
+                ? 'mixed-3d'
+                : 'braced-quadrilateral',
       mode,
     }),
   );
+
+export const runSyntheticCrsMonteCarlo = ({
+  crsId,
+  template,
+  seeds,
+}: {
+  crsId: string;
+  template: SyntheticCanadianNetworkTemplate;
+  seeds: number[];
+}): SyntheticCrsMonteCarloSummary => {
+  const runs = seeds.map((seed) =>
+    runSyntheticCrsAdjustmentTest({
+      crsId,
+      seed,
+      template,
+      mode: 'noisy',
+    }),
+  );
+  return {
+    crsId,
+    template,
+    runCount: runs.length,
+    meanRmsHorizontalErrorM:
+      runs.reduce((sum, run) => sum + run.metrics.rmsHorizontalErrorM, 0) / runs.length,
+    maxHorizontalErrorM: Math.max(...runs.map((run) => run.metrics.maxHorizontalErrorM)),
+    meanRmsVerticalErrorM:
+      runs.reduce((sum, run) => sum + run.metrics.rmsVerticalErrorM, 0) / runs.length,
+    maxVerticalErrorM: Math.max(...runs.map((run) => run.metrics.maxVerticalErrorM)),
+    meanResidualRms: runs.reduce((sum, run) => sum + run.metrics.residualRms, 0) / runs.length,
+    meanSeuw: runs.reduce((sum, run) => sum + run.metrics.seuw, 0) / runs.length,
+  };
+};

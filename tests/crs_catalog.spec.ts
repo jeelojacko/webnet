@@ -24,16 +24,21 @@ describe('Canada CRS catalog (Phase 2 expansion)', () => {
       true,
     );
     expect(CANADA_CRS_CATALOG.some((row) => row.id === 'CA_NAD83_CSRS_ON_MNR_LAMBERT')).toBe(true);
+    expect(CANADA_CRS_CATALOG.some((row) => row.id === 'CA_NAD83_CSRS_AB_3TM_117W')).toBe(true);
   });
 
   it('resolves CRS by canonical id and EPSG aliases', () => {
     const byId = getCrsDefinition('CA_NAD83_CSRS_NB_STEREO_DOUBLE');
     const byEpsgToken = getCrsDefinition('EPSG:2953');
     const byEpsgNumeric = getCrsDefinition('2953');
+    const byUtmV8 = getCrsDefinition('EPSG:22810');
+    const byAb3tm = getCrsDefinition('EPSG:22764');
 
     expect(byId?.id).toBe('CA_NAD83_CSRS_NB_STEREO_DOUBLE');
     expect(byEpsgToken?.id).toBe('CA_NAD83_CSRS_NB_STEREO_DOUBLE');
     expect(byEpsgNumeric?.id).toBe('CA_NAD83_CSRS_NB_STEREO_DOUBLE');
+    expect(byUtmV8?.id).toBe('CA_NAD83_CSRS_UTM_10N');
+    expect(byAb3tm?.id).toBe('CA_NAD83_CSRS_AB_3TM_117W');
   });
 
   it('exposes projection parameters, datum-op support metadata, and area-of-use bounds', () => {
