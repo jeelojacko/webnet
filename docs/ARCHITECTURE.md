@@ -243,6 +243,7 @@ Use this routing guide when deciding where a change belongs:
 - New report/listing/export section -> result builder or selector modules under `src/engine/`, then UI rendering under `src/components/`
 - New operator workflow or modal behavior -> hooks plus focused component modules
 - New regression contract -> `tests/` with focused fixture-backed coverage
+- Canadian CRS synthetic harness foundation -> `src/engine/canadianCrsTestCatalog.ts`, `src/engine/generateSyntheticCanadianNetwork.ts`, `src/engine/generateSyntheticObservations.ts`, `src/engine/runSyntheticCrsAdjustmentTest.ts`, and `tests/canadian_crs_harness.spec.ts`
 
 ## Related docs
 - `docs/CURRENT_BEHAVIOR.md`

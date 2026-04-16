@@ -30,6 +30,12 @@
   npm run build
   ```
 
+  Optional Canadian CRS harness catalog report:
+
+  ```bash
+  npm run crs:report:canada
+  ```
+
   ## Documentation
 
   - `docs/USER_GUIDE.md` — main user-facing guide

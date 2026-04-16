@@ -190,6 +190,7 @@ Current coordinate-system behavior includes:
 - Local/Grid mode state
 - CRS directives and optional labels, scale, and convergence inputs
 - Canada-first CRS catalog support including NAD83(CSRS) UTM, MTM, and key provincial entries
+- a synthetic Canadian CRS validation harness foundation that now audits the current Canada-first CRS support surface through catalog metadata checks, external `proj4` round-trip comparisons, and small projected end-to-end adjustment smoke tests
 - CRS-ID normalization accepting canonical IDs and EPSG aliases
 - projection-family-aware factor computation with numerical fallback diagnostics
 - reduction-context-driven measured/grid behavior
