@@ -30,6 +30,13 @@
   npm run build
   ```
 
+  Parity and synthetic CRS gates remain separate:
+
+  ```bash
+  npm run parity:industry-reference
+  npm run harness:crs:synthetic
+  ```
+
   Optional Canadian CRS harness catalog report:
 
   ```bash

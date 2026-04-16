@@ -23,6 +23,15 @@ If uncertain, treat the change as parity-sensitive.
 
 ## Required validation for parity-sensitive work
 
+## Separation from Synthetic CRS Harness
+The synthetic Canadian CRS harness is complementary validation for CRS definitions, transform behavior, and synthetic adjustment stability. It is not a replacement for industry-reference parity regression.
+
+Keep these gates separate:
+- `npm run harness:crs:synthetic` validates Canada-first CRS synthetic coverage.
+- `npm run parity:industry-reference` validates industry-reference parity behavior.
+
+For parity-sensitive work, always run the parity gate even if synthetic CRS harness results are fully green.
+
 ### Minimum validation
 Run:
 - `npm run lint`

@@ -778,7 +778,7 @@
   - [x] Phase 15: expand direction reduction diagnostics (raw max residual, face-pair delta, per-face spreads), and add structured direction reject diagnostics (line/set/record/expected-vs-actual face) in report/export
   - [x] Phase 16: add residual-quality diagnostics summary (|t| bins, local-test fail totals, redundancy weakness counts, worst-observation trace, and by-type screening table) in report/export
   - [x] Phase 17: improve 2D triangulation/trilateration compatibility by parsing 2D `M` lines with angle/dist sigma tokens (no forced vertical token) and auto-creating missing non-sideshot stations referenced in observations
-  - [ ] Phase 18 - automated Canadian CRS synthetic adjustment harness
+  - [x] Phase 18 - automated Canadian CRS synthetic adjustment harness
     - [x] Batch 1 - authority-backed catalog foundation
       - [x] Add a dedicated machine-readable Canadian CRS test catalog for synthetic harness coverage
       - [x] Record authority code, name, family, datum/realization, projection method, axis order, units, area-of-use bounds, provenance, and current/superseded status per CRS
@@ -808,11 +808,11 @@
       - [x] Add edge-of-area jobs near west/east/north/south bounds where applicable
       - [x] Add noisy Monte Carlo coverage with statistical tolerances and weak-versus-tied precision assertions
       - [x] Batch 5A - add Alberta 3TM realization-backed CRS rows plus focused catalog/harness regression coverage
-    - [ ] Batch 6 - CI, docs, and closeout
+    - [x] Batch 6 - CI, docs, and closeout
       - [x] Wire harness runs into the normal validation workflow with clear failure categorization for CRS definition, transform path, generator, solver, or covariance/reporting faults
       - [x] Add markdown and machine-readable summary artifacts grouped by CRS family
       - [x] Update docs for new harness architecture, validation commands, and supported Canadian CRS coverage status
-      - [ ] Keep parity workflow isolated so synthetic CRS harness complements, but does not replace, industry-reference regression coverage
+      - [x] Keep parity workflow isolated so synthetic CRS harness complements, but does not replace, industry-reference regression coverage
 
 - [x] Industry Standard v6-v14 parity gaps (prioritized from release notes; missing in WebNet today):
   - [x] Conventional surveying improvements (highest impact -> lowest):

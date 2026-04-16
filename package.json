@@ -13,6 +13,7 @@
     "test": "node scripts/runVitest.mjs",
     "test:run": "node scripts/runVitest.mjs run",
     "test:cov": "node scripts/runVitest.mjs run --coverage",
+    "harness:crs:synthetic": "node scripts/runVitest.mjs run tests/canadian_crs_harness.spec.ts",
     "parity:industry-reference": "node scripts/runVitest.mjs run tests/computational_parity_harness.test.ts",
     "adjust:cli": "tsx src/cli.ts",
     "crs:report:canada": "tsx scripts/reportCanadianCrsCatalog.ts",

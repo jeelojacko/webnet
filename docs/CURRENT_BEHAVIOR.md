@@ -294,6 +294,7 @@ Current CLI support includes:
 Parity-sensitive behavior remains an explicit project concern. Current parity-oriented workflow includes:
 - a computational parity harness across reference projects
 - an industry-reference diff gate
+- a dedicated synthetic Canadian CRS harness gate that remains separate from the industry-reference parity gate (`harness:crs:synthetic` vs `parity:industry-reference`)
 - a committed four-case industry-example fixture set sourced from local `manual/` inputs/outputs and mirrored into `tests/fixtures/`
 - normalized exact-text parity helpers that ignore only volatile header values (software version, run date, project folder, and data-file path lines)
 - fixture-locked listing-format and error-propagation coverage

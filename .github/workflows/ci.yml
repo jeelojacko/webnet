@@ -23,6 +23,10 @@ jobs:
         run: npm run lint
       - name: Test
         run: npm run test:run
+      - name: Synthetic CRS Harness Gate
+        run: npm run harness:crs:synthetic
+      - name: Industry Parity Reference Gate
+        run: npm run parity:industry-reference
       - name: Build
         run: npm run build
       - name: CLI Smoke JSON
