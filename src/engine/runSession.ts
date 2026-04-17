@@ -186,7 +186,7 @@ export interface RunSessionProgressUpdate {
 
 export type RunSessionProgressCallback = (_event: RunSessionProgressUpdate) => void;
 
-const IMPACT_MAX_CANDIDATES = 8;
+const IMPACT_MAX_CANDIDATES = 3;
 const PREANALYSIS_IMPACT_MAX_CANDIDATES = 24;
 const AUTO_ADJUST_MIN_REDUNDANCY = 0.05;
 const SUSPECT_IMPACT_AUTO_SKIP_MAIN_SOLVE_MS = 5000;

@@ -21,7 +21,7 @@ import type {
 } from '../types';
 import type { RunSessionOutcome, RunSessionRequest } from './runSession';
 
-const IMPACT_MAX_CANDIDATES = 8;
+const IMPACT_MAX_CANDIDATES = 3;
 const PREANALYSIS_IMPACT_MAX_CANDIDATES = 24;
 const AUTO_ADJUST_MIN_REDUNDANCY = 0.05;
 

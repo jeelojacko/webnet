@@ -10,6 +10,7 @@ import {
   DEFAULT_QFIX_LINEAR_SIGMA_M,
 } from '../src/engine/defaults';
 import { buildIndustryStyleListingText } from '../src/engine/industryListing';
+import type { ReportViewControls } from '../src/hooks/useReportViewState';
 
 const buildRunDiagnostics = (result: ReturnType<LSAEngine['solve']>) => ({
   solveProfile: 'industry-parity' as const,
@@ -78,6 +79,34 @@ const buildRunDiagnostics = (result: ReturnType<LSAEngine['solve']>) => ({
   stochasticDefaultsSummary: 'inst=S9',
 });
 
+const createReportViewState = (
+  collapsedSections: Record<string, boolean> = {},
+): ReportViewControls =>
+  ({
+    ellipseMode: '1sigma',
+    setEllipseMode: () => {},
+    ellipseConfidenceScale: 1,
+    reportFilterQuery: '',
+    setReportFilterQuery: () => {},
+    reportObservationTypeFilter: 'all',
+    setReportObservationTypeFilter: () => {},
+    reportExclusionFilter: 'all',
+    setReportExclusionFilter: () => {},
+    clearFilters: () => {},
+    deferredReportFilterQuery: '',
+    normalizedReportFilterQuery: '',
+    pinnedDetailSections: [],
+    clearPinnedDetailSections: () => {},
+    isDetailSectionPinned: () => false,
+    togglePinnedDetailSection: () => {},
+    isSectionCollapsed: (id) => collapsedSections[id] ?? false,
+    toggleDetailSection: () => {},
+    allDetailSectionsCollapsed: false,
+    setAllDetailSectionsCollapsed: () => {},
+    visibleRowsFor: (_key, rows) => rows,
+    showMoreRows: () => {},
+  }) as ReportViewControls;
+
 describe('inline option profile outputs', () => {
   it('surfaces directive state in both listing and report solve-profile outputs', () => {
     const input = readFileSync('tests/fixtures/inline_option_phase3_profile.dat', 'utf-8');
@@ -128,6 +157,7 @@ describe('inline option profile outputs', () => {
       <ReportView
         result={result}
         units="ft"
+        viewState={createReportViewState({ 'solve-profile-diagnostics': false })}
         runDiagnostics={runDiagnostics}
         excludedIds={new Set<number>()}
         onToggleExclude={() => {}}

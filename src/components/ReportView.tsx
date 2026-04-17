@@ -4163,6 +4163,9 @@ const ReportView: React.FC<ReportViewProps> = ({
 
       <ReportFilterPanel
         isPreanalysis={isPreanalysis}
+        sectionId="report-filters"
+        collapsed={isSectionCollapsed('report-filters')}
+        onToggleCollapse={toggleDetailSection}
         reportFilterQuery={reportFilterQuery}
         onReportFilterQueryChange={setReportFilterQuery}
         reportObservationTypeFilter={reportObservationTypeFilter}

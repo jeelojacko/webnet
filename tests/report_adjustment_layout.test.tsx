@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 
 import ReportView from '../src/components/ReportView';
 import { LSAEngine } from '../src/engine/adjust';
+import type { ReportViewControls } from '../src/hooks/useReportViewState';
 
 const baseInput = [
   '.2D',
@@ -66,11 +67,43 @@ const baseRunDiagnostics = {
   stochasticDefaultsSummary: '',
 } as const;
 
-const renderReport = (result: ReturnType<LSAEngine['solve']>) =>
+const createReportViewState = (
+  collapsedSections: Record<string, boolean> = {},
+): ReportViewControls =>
+  ({
+    ellipseMode: '1sigma',
+    setEllipseMode: () => {},
+    ellipseConfidenceScale: 1,
+    reportFilterQuery: '',
+    setReportFilterQuery: () => {},
+    reportObservationTypeFilter: 'all',
+    setReportObservationTypeFilter: () => {},
+    reportExclusionFilter: 'all',
+    setReportExclusionFilter: () => {},
+    clearFilters: () => {},
+    deferredReportFilterQuery: '',
+    normalizedReportFilterQuery: '',
+    pinnedDetailSections: [],
+    clearPinnedDetailSections: () => {},
+    isDetailSectionPinned: () => false,
+    togglePinnedDetailSection: () => {},
+    isSectionCollapsed: (id) => collapsedSections[id] ?? false,
+    toggleDetailSection: () => {},
+    allDetailSectionsCollapsed: false,
+    setAllDetailSectionsCollapsed: () => {},
+    visibleRowsFor: (_key, rows) => rows,
+    showMoreRows: () => {},
+  }) as ReportViewControls;
+
+const renderReport = (
+  result: ReturnType<LSAEngine['solve']>,
+  viewState?: ReportViewControls,
+) =>
   renderToStaticMarkup(
     <ReportView
       result={result}
       units="m"
+      viewState={viewState}
       runDiagnostics={baseRunDiagnostics as any}
       excludedIds={new Set<number>()}
       onToggleExclude={() => {}}
@@ -171,7 +204,10 @@ describe('ReportView adjustment-layout sections', () => {
       suspectSegments: [],
     } as any;
 
-    const html = renderReport(result);
+    const html = renderReport(
+      result,
+      createReportViewState({ 'solve-profile-diagnostics': false }),
+    );
     expect(html).not.toContain('Auto Sideshot Candidates (M Records)');
     expect(html).not.toContain('TS Correlation Diagnostics');
     expect(html).not.toContain('Leveling Loop Diagnostics');
@@ -186,6 +222,7 @@ describe('ReportView adjustment-layout sections', () => {
       <ReportView
         result={result}
         units="m"
+        viewState={createReportViewState({ 'solve-profile-diagnostics': false })}
         runDiagnostics={{
           ...baseRunDiagnostics,
           coordSystemMode: 'grid',

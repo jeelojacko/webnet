@@ -126,6 +126,12 @@ const setNativeValue = (element: HTMLInputElement | HTMLSelectElement, value: st
 describe('ReportView filtering and windowing', () => {
   it('filters hidden observation rows by text, type, and exclusion status', async () => {
     const mounted = await mountReport();
+    const expandFiltersButton = mounted.container.querySelector(
+      'button[aria-label="Expand report filters panel"]',
+    ) as HTMLButtonElement;
+    await act(async () => {
+      expandFiltersButton.click();
+    });
     const textFilter = mounted.container.querySelector(
       'input[aria-label="Report filter text"]',
     ) as HTMLInputElement;
@@ -172,6 +178,12 @@ describe('ReportView filtering and windowing', () => {
 
   it('expands observation and coordinate tables with show more actions', async () => {
     const mounted = await mountReport();
+    const expandFiltersButton = mounted.container.querySelector(
+      'button[aria-label="Expand report filters panel"]',
+    ) as HTMLButtonElement;
+    await act(async () => {
+      expandFiltersButton.click();
+    });
     const observationShowMore = mounted.container.querySelector(
       '[data-report-load-more="observations-distances-ts"]',
     ) as HTMLButtonElement;

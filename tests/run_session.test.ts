@@ -232,6 +232,20 @@ describe('runAdjustmentSession', () => {
     expect(candidates.map((obs) => obs.id)).toEqual([2, 3, 1]);
   });
 
+  it('limits suspect-impact candidates to the top three observations', () => {
+    const candidates = collectSuspectImpactCandidates({
+      observations: [
+        { id: 1, type: 'dist', from: 'A', to: 'B', sigma: 1, stdRes: 2.1, localTest: { pass: true, threshold: 3.29 } },
+        { id: 2, type: 'dist', from: 'A', to: 'C', sigma: 1, stdRes: 2.2, localTest: { pass: true, threshold: 3.29 } },
+        { id: 3, type: 'dist', from: 'A', to: 'D', sigma: 1, stdRes: 2.3, localTest: { pass: true, threshold: 3.29 } },
+        { id: 4, type: 'dist', from: 'A', to: 'E', sigma: 1, stdRes: 5.4, localTest: { pass: true, threshold: 3.29 } },
+      ],
+    } as never);
+
+    expect(candidates).toHaveLength(3);
+    expect(candidates.map((obs) => obs.id)).toEqual([4, 3, 2]);
+  });
+
   it('auto-skips suspect-impact reruns only after a heavy main solve', () => {
     expect(
       resolveSuspectImpactSkipReason({

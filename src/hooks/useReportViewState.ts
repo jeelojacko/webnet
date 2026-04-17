@@ -70,7 +70,7 @@ const cloneCollapsedDetailSectionsState = (
   const next = createCollapsedDetailSectionsState();
   if (!source) return next;
   COLLAPSIBLE_DETAIL_SECTION_IDS.forEach((id) => {
-    next[id] = source[id] ?? false;
+    next[id] = source[id] ?? next[id];
   });
   return next;
 };

@@ -19,6 +19,7 @@ export const OBSERVATION_FILTER_OPTIONS: Array<{
 ];
 
 export const COLLAPSIBLE_DETAIL_SECTION_IDS = [
+  'report-filters',
   'suspect-impact-analysis',
   'solve-profile-diagnostics',
   'auto-adjust-diagnostics',
@@ -66,7 +67,7 @@ export const createCollapsedDetailSectionsState = (): Record<
 > => {
   const next = {} as Record<CollapsibleDetailSectionId, boolean>;
   COLLAPSIBLE_DETAIL_SECTION_IDS.forEach((id) => {
-    next[id] = false;
+    next[id] = id === 'report-filters' || id === 'solve-profile-diagnostics';
   });
   return next;
 };

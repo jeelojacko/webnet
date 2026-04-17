@@ -134,19 +134,21 @@ describe('RunComparisonPanel', () => {
       );
     });
 
-    expect(container.textContent).toContain('Run Compare');
-    expect(container.textContent).toContain('Saved runs 1');
-    expect(container.textContent).toContain('Saved Runs');
+    expect(container.textContent).toContain('Run Comparison');
+    expect(container.textContent).not.toContain('Saved runs 1');
+    expect(container.textContent).not.toContain('Saved Runs');
     expect(container.textContent).not.toContain('Moved Stations');
     expect(container.querySelector('[data-qa-review-action="prev-suspect"]')).toBeNull();
-    const expandButton = Array.from(container.querySelectorAll('button')).find((button) =>
-      button.textContent?.includes('Show compare'),
+    const expandButton = container.querySelector(
+      'button[aria-label="Expand run comparison panel"]',
     ) as HTMLButtonElement;
     expect(expandButton.title).toBe('Expand the comparison workspace and QA review actions.');
     await act(async () => {
       expandButton.click();
     });
 
+    expect(container.textContent).toContain('Saved runs 1');
+    expect(container.textContent).toContain('Saved Runs');
     expect(container.querySelectorAll('[data-qa-review-action="prev-suspect"]')).toHaveLength(1);
     expect(container.querySelectorAll('[data-qa-review-action="next-suspect"]')).toHaveLength(1);
     expect(container.textContent).toContain('Moved Stations');
@@ -274,8 +276,8 @@ describe('RunComparisonPanel', () => {
     expect(pinSelectedSpy).toHaveBeenCalled();
 
     await act(async () => {
-      Array.from(container.querySelectorAll('button'))
-        .find((button) => button.textContent?.includes('Hide compare'))
+      container
+        .querySelector('button[aria-label="Collapse run comparison panel"]')
         ?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     });
 
