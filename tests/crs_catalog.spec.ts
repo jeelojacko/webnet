@@ -23,6 +23,9 @@ describe('Canada CRS catalog (Phase 2 expansion)', () => {
     expect(CANADA_CRS_CATALOG.some((row) => row.id === 'CA_NAD83_CSRS_NB_STEREO_DOUBLE')).toBe(
       true,
     );
+    expect(CANADA_CRS_CATALOG.some((row) => row.id === 'CA_NAD83_CSRS_QC_LAMBERT')).toBe(true);
+    expect(CANADA_CRS_CATALOG.some((row) => row.id === 'CA_NAD83_CSRS_NS_MTM_2010_4')).toBe(true);
+    expect(CANADA_CRS_CATALOG.some((row) => row.id === 'CA_NAD83_CSRS_NS_MTM_2010_5')).toBe(true);
     expect(CANADA_CRS_CATALOG.some((row) => row.id === 'CA_NAD83_CSRS_ON_MNR_LAMBERT')).toBe(true);
     expect(CANADA_CRS_CATALOG.some((row) => row.id === 'CA_NAD83_CSRS_AB_3TM_117W')).toBe(true);
   });
@@ -33,12 +36,18 @@ describe('Canada CRS catalog (Phase 2 expansion)', () => {
     const byEpsgNumeric = getCrsDefinition('2953');
     const byUtmV8 = getCrsDefinition('EPSG:22810');
     const byAb3tm = getCrsDefinition('EPSG:22764');
+    const byQcLambert = getCrsDefinition('EPSG:3799');
+    const byNsMtm4 = getCrsDefinition('8082');
+    const byNsMtm5 = getCrsDefinition('EPSG:8083');
 
     expect(byId?.id).toBe('CA_NAD83_CSRS_NB_STEREO_DOUBLE');
     expect(byEpsgToken?.id).toBe('CA_NAD83_CSRS_NB_STEREO_DOUBLE');
     expect(byEpsgNumeric?.id).toBe('CA_NAD83_CSRS_NB_STEREO_DOUBLE');
     expect(byUtmV8?.id).toBe('CA_NAD83_CSRS_UTM_10N');
     expect(byAb3tm?.id).toBe('CA_NAD83_CSRS_AB_3TM_117W');
+    expect(byQcLambert?.id).toBe('CA_NAD83_CSRS_QC_LAMBERT');
+    expect(byNsMtm4?.id).toBe('CA_NAD83_CSRS_NS_MTM_2010_4');
+    expect(byNsMtm5?.id).toBe('CA_NAD83_CSRS_NS_MTM_2010_5');
   });
 
   it('exposes projection parameters, datum-op support metadata, and area-of-use bounds', () => {

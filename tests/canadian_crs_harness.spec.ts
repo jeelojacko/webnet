@@ -35,10 +35,24 @@ describe('Canadian CRS synthetic harness catalog', () => {
     expect(CANADIAN_CRS_TEST_CATALOG.some((row) => row.id === 'CA_NAD83_CSRS_AB_3TM_111W')).toBe(
       true,
     );
+    expect(CANADIAN_CRS_TEST_CATALOG.some((row) => row.id === 'CA_NAD83_CSRS_QC_LAMBERT')).toBe(
+      true,
+    );
+    expect(
+      CANADIAN_CRS_TEST_CATALOG.some((row) => row.id === 'CA_NAD83_CSRS_NS_MTM_2010_4'),
+    ).toBe(true);
+    expect(
+      CANADIAN_CRS_TEST_CATALOG.some((row) => row.id === 'CA_NAD83_CSRS_NS_MTM_2010_5'),
+    ).toBe(true);
     expect(
       CANADIAN_CRS_TEST_CATALOG.filter((row) => row.family === 'UTM').every(
         (row) => row.status === 'current' && String(row.code ?? '').startsWith('228'),
       ),
+    ).toBe(true);
+    const qcLambert = CANADIAN_CRS_TEST_CATALOG.find((row) => row.id === 'CA_NAD83_CSRS_QC_LAMBERT');
+    expect(qcLambert?.code).toBe(3799);
+    expect(
+      qcLambert?.sourceProvenance.some((source) => source.reference.includes('EPSG:3799')),
     ).toBe(true);
   });
 

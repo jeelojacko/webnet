@@ -47,6 +47,9 @@ const EPSG_HOME_URL = 'https://epsg.org/';
 const NRCAN_GEOSPATIAL_REFERENCE_URL =
   'https://natural-resources.canada.ca/earth-sciences/geodesy/geodetic-reference-systems/9050';
 const QUEBEC_SCOPQ_URL = 'https://www.quebec.ca/gouvernement/ministere/ressources-naturelles';
+const QUEBEC_EPSG_CODES_URL = 'https://www.mrnf.gouv.qc.ca/wp-content/uploads/CO_codes_epsg_quebec.pdf';
+const NOVA_SCOTIA_CRS_URL =
+  'https://geonova.novascotia.ca/sites/default/files/resource-library/NSCRS%20Technical%20Support%200004%20Projections%2029Feb2016.pdf';
 const NEW_BRUNSWICK_PROJECTION_URL = 'https://www.snb.ca/geonb1/e/apps/geoNB-CTS-E.asp';
 const PEI_SPATIAL_REFERENCE_URL =
   'https://www.princeedwardisland.ca/sites/default/files/legislation/l02-2-1-land_survey_act_spatial_referencing_regulations.pdf';
@@ -178,7 +181,11 @@ const buildMtmRow = (def: CrsDefinition): CanadianCrsTestConfig =>
 
 const buildProvincialRow = (def: CrsDefinition): CanadianCrsTestConfig => {
   const provinceUrl =
-    def.id === 'CA_NAD83_CSRS_NB_STEREO_DOUBLE'
+    def.id === 'CA_NAD83_CSRS_QC_LAMBERT'
+      ? QUEBEC_EPSG_CODES_URL
+      : def.id === 'CA_NAD83_CSRS_NS_MTM_2010_4' || def.id === 'CA_NAD83_CSRS_NS_MTM_2010_5'
+        ? NOVA_SCOTIA_CRS_URL
+      : def.id === 'CA_NAD83_CSRS_NB_STEREO_DOUBLE'
       ? NEW_BRUNSWICK_PROJECTION_URL
       : def.id === 'CA_NAD83_CSRS_PEI_STEREOGRAPHIC'
         ? PEI_SPATIAL_REFERENCE_URL
@@ -188,7 +195,11 @@ const buildProvincialRow = (def: CrsDefinition): CanadianCrsTestConfig => {
             ? BC_ALBERS_URL
             : ALBERTA_RESOURCE_URL;
   const provinceReference =
-    def.id === 'CA_NAD83_CSRS_NB_STEREO_DOUBLE'
+    def.id === 'CA_NAD83_CSRS_QC_LAMBERT'
+      ? 'Quebec EPSG projected-code guidance for MTQ Lambert workflows'
+      : def.id === 'CA_NAD83_CSRS_NS_MTM_2010_4' || def.id === 'CA_NAD83_CSRS_NS_MTM_2010_5'
+        ? 'Nova Scotia coordinate reference system MTM 2010 zone guidance'
+      : def.id === 'CA_NAD83_CSRS_NB_STEREO_DOUBLE'
       ? 'NB Stereographic Double Projection official usage guidance'
       : def.id === 'CA_NAD83_CSRS_PEI_STEREOGRAPHIC'
         ? 'PEI spatial referencing regulations for stereographic double projection'
@@ -207,7 +218,17 @@ const buildProvincialRow = (def: CrsDefinition): CanadianCrsTestConfig => {
     datumRealization: def.datumRealization ?? 'NAD83(CSRS)',
     status: def.validityStatus ?? (def.epsgCode ? 'current' : 'legacy-app-alias'),
     sourceNotes:
-      def.id.startsWith('CA_NAD83_CSRS_AB_3TM_')
+      def.id === 'CA_NAD83_CSRS_QC_LAMBERT'
+        ? [
+            'Quebec MTQ Lambert (EPSG:3799) is tracked as a provincial projected workflow independent from MTM zone rows.',
+            'EPSG:6622 remains a separate realization-specific Quebec Lambert code and is tracked as a compatibility candidate, not an alias, until workflow requirements justify adding it.',
+          ]
+        : def.id === 'CA_NAD83_CSRS_NS_MTM_2010_4' || def.id === 'CA_NAD83_CSRS_NS_MTM_2010_5'
+          ? [
+              'Nova Scotia MTM 2010 coverage uses EPSG v6 CRS rows with province-specific false eastings.',
+              'These rows complement, not replace, the existing Canada-wide MTM catalog family.',
+            ]
+          : def.id.startsWith('CA_NAD83_CSRS_AB_3TM_')
         ? [
             'Alberta 3TM urban survey rows are now part of the harness and use explicit EPSG v7 realization codes.',
             'These rows complement, not replace, Alberta 10TM resource mapping coverage.',

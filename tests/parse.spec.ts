@@ -895,6 +895,16 @@ describe('parseInput', () => {
     const viaEpsgAlias = parseInput(['.CRS GRID EPSG:2953', 'C A 0 0 0 ! !'].join('\n'));
     expect(viaEpsgAlias.parseState.coordSystemMode).toBe('grid');
     expect(viaEpsgAlias.parseState.crsId).toBe('CA_NAD83_CSRS_NB_STEREO_DOUBLE');
+
+    const viaPriorityOneCanonical = parseInput(
+      ['.CRS GRID CA_NAD83_CSRS_QC_LAMBERT', 'C A 0 0 0 ! !'].join('\n'),
+    );
+    expect(viaPriorityOneCanonical.parseState.coordSystemMode).toBe('grid');
+    expect(viaPriorityOneCanonical.parseState.crsId).toBe('CA_NAD83_CSRS_QC_LAMBERT');
+
+    const viaPriorityOneEpsg = parseInput(['.CRS GRID EPSG:8082', 'C A 0 0 0 ! !'].join('\n'));
+    expect(viaPriorityOneEpsg.parseState.coordSystemMode).toBe('grid');
+    expect(viaPriorityOneEpsg.parseState.crsId).toBe('CA_NAD83_CSRS_NS_MTM_2010_4');
   });
 
   it('parses optional CRS scale/convergence directives with explicit OFF support', () => {

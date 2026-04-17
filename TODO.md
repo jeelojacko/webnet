@@ -813,6 +813,41 @@
       - [x] Add markdown and machine-readable summary artifacts grouped by CRS family
       - [x] Update docs for new harness architecture, validation commands, and supported Canadian CRS coverage status
       - [x] Keep parity workflow isolated so synthetic CRS harness complements, but does not replace, industry-reference regression coverage
+  - [ ] Phase 19 - Canadian CRS coverage expansion (post-Phase-18)
+    - [ ] Batch 1 - authority shortlist and ID contract (priority order lock)
+      - [x] Confirm the next provincial/territorial expansion set against EPSG + provincial authority docs before coding
+      - [x] Lock proposed internal CRS IDs and mapped authority codes for each candidate row
+      - [x] Keep all additions NAD83(CSRS)-first unless a province requires a different operational realization
+      - [x] Priority 1 shortlist confirmed (authority-backed):
+        - [x] `CA_NAD83_CSRS_QC_LAMBERT` -> EPSG `3799` (`NAD83(CSRS) / MTQ Lambert`) as primary implementation target; keep EPSG `6622` (`NAD83(CSRS)v2 / Quebec Lambert`) tracked as a compatibility alias candidate if user workflows require the explicit realization-specific code
+        - [x] `CA_NAD83_CSRS_NS_MTM_2010_4` -> EPSG `8082` (`NAD83(CSRS)v6 / MTM NS 2010 zone 4`)
+        - [x] `CA_NAD83_CSRS_NS_MTM_2010_5` -> EPSG `8083` (`NAD83(CSRS)v6 / MTM NS 2010 zone 5`)
+      - [x] Priority-1 candidate corrections from the initial draft:
+        - [x] Replace draft `CA_NAD83_CSRS_NS_STEREOGRAPHIC` with Nova Scotia MTM 2010 zone-based targets (`8082`, `8083`) because the authority-backed NS operational CSRS projected targets in EPSG are MTM-zone based
+        - [x] Remove draft `CA_NAD83_CSRS_NL_LAMBERT` from Priority 1 until an authority-backed NL Lambert projected CSRS target is confirmed; Newfoundland and Labrador operational coverage currently relies on already-supported UTM/MTM zones in the catalog
+      - [ ] Priority 2 candidates (next provincial coverage wave):
+        - [ ] `CA_NAD83_CSRS_SK_ATS` (Saskatchewan ATS-style provincial projected workflow)
+        - [ ] `CA_NAD83_CSRS_MB_3TM` (Manitoba provincial 3TM-style workflow where used operationally)
+        - [ ] `CA_NAD83_CSRS_NU_STEREOGRAPHIC` (Nunavut territorial projected workflow if required by operations)
+      - [ ] Priority 3 candidates (specialized or lower-frequency provincial/territorial workflows):
+        - [ ] `CA_NAD83_CSRS_YT_TM` (Yukon territorial projected workflow)
+        - [ ] `CA_NAD83_CSRS_NT_TM` (Northwest Territories projected workflow)
+        - [ ] `CA_NAD83_CSRS_QC_MUNICIPAL_LCC` (Quebec municipal/regional LCC-style workflow if maintained as distinct contract)
+    - [ ] Batch 2 - catalog and parser/CLI support for Priority 1
+      - [x] Add CRS catalog entries, alias normalization, and EPSG lookup mapping for Priority 1 rows
+      - [x] Add focused catalog tests for metadata completeness, deterministic ordering, and provenance
+      - [x] Add parse/CLI CRS-id acceptance tests (canonical id + EPSG alias where defined)
+    - [ ] Batch 3 - synthetic harness expansion for Priority 1
+      - [ ] Extend synthetic harness catalog and area-of-use edge jobs for new Priority 1 rows
+      - [ ] Add noise-free + noisy harness coverage with current metric thresholds and perfect-mode export checks
+      - [ ] Keep grouped markdown/json artifact generation deterministic for all new CRS rows
+    - [ ] Batch 4 - Priority 2 implementation and harness
+      - [ ] Implement Priority 2 catalog rows with the same parser/CLI + harness validation gates as Priority 1
+      - [ ] Add focused docs for any provincial naming/alias differences from EPSG titles
+    - [ ] Batch 5 - Priority 3 decision gate and closeout
+      - [ ] Implement only Priority 3 rows that are justified by active user workflows or interoperability requirements
+      - [ ] Document deferred candidates with explicit rationale when not implemented
+      - [ ] Re-run full validation matrix and refresh Canadian CRS coverage docs/summary counts
 
 - [x] Industry Standard v6-v14 parity gaps (prioritized from release notes; missing in WebNet today):
   - [x] Conventional surveying improvements (highest impact -> lowest):

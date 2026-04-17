@@ -676,7 +676,7 @@ describe('Project Options modal interactions', () => {
       const optionValues = Array.from(crs.options).map((entry) => entry.value);
       expect(optionValues).toContain('CA_NAD83_CSRS_NB_STEREO_DOUBLE');
       expect(optionValues.some((value) => value.includes('_UTM_'))).toBe(false);
-      expect(optionValues.some((value) => value.includes('_MTM_'))).toBe(false);
+      expect(optionValues.some((value) => value.startsWith('CA_NAD83_CSRS_MTM_'))).toBe(false);
     } finally {
       await app.cleanup();
     }

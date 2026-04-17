@@ -400,6 +400,21 @@ describe('CLI phase 2 output modes', () => {
     const payload = JSON.parse(res.stdout);
     expect(payload.parseState?.coordSystemMode).toBe('grid');
     expect(payload.parseState?.crsId).toBe('CA_NAD83_CSRS_NB_STEREO_DOUBLE');
+
+    const priorityOne = runCli([
+      '--input',
+      STABLE_INPUT,
+      '--output',
+      'json',
+      '--coord-system-mode',
+      'grid',
+      '--crs-id',
+      'EPSG:3799',
+    ]);
+    expect(priorityOne.status).toBe(0);
+    const priorityOnePayload = JSON.parse(priorityOne.stdout);
+    expect(priorityOnePayload.parseState?.coordSystemMode).toBe('grid');
+    expect(priorityOnePayload.parseState?.crsId).toBe('CA_NAD83_CSRS_QC_LAMBERT');
   }, CLI_TEST_TIMEOUT_MS);
 
   it('supports parse mode and geoid source CLI options', () => {
