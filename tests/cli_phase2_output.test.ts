@@ -30,7 +30,7 @@ describe('CLI phase 2 output modes', () => {
     expect(payload.converged).toBe(true);
     expect(payload.stationCount).toBeGreaterThan(0);
     expect(payload.observationCount).toBeGreaterThan(0);
-  }, CLI_TEST_TIMEOUT_MS);
+  }, 60000);
 
   it('writes industry-style listing output to file', () => {
     const outDir = mkdtempSync(path.join(tmpdir(), 'webnet-cli-'));
@@ -40,7 +40,7 @@ describe('CLI phase 2 output modes', () => {
     const text = readFileSync(outPath, 'utf-8');
     expect(text).toContain('INDUSTRY-STANDARD-STYLE Listing');
     expect(text).toContain('Adjusted Coordinates');
-  }, CLI_TEST_TIMEOUT_MS);
+  }, 60000);
 
   it('writes LandXML output to file', () => {
     const outDir = mkdtempSync(path.join(tmpdir(), 'webnet-cli-'));
@@ -505,7 +505,99 @@ describe('CLI phase 2 output modes', () => {
     const priorityThreeQcPayload = JSON.parse(priorityThreeQc.stdout);
     expect(priorityThreeQcPayload.parseState?.coordSystemMode).toBe('grid');
     expect(priorityThreeQcPayload.parseState?.crsId).toBe('CA_NAD83_CSRS_QC_MUNICIPAL_LCC');
-  }, CLI_TEST_TIMEOUT_MS);
+
+    const priorityFourAbForest = runCli([
+      '--input',
+      STABLE_INPUT,
+      '--output',
+      'json',
+      '--coord-system-mode',
+      'grid',
+      '--crs-id',
+      'EPSG:3402',
+    ]);
+    expect(priorityFourAbForest.status).toBe(0);
+    const priorityFourAbForestPayload = JSON.parse(priorityFourAbForest.stdout);
+    expect(priorityFourAbForestPayload.parseState?.coordSystemMode).toBe('grid');
+    expect(priorityFourAbForestPayload.parseState?.crsId).toBe('CA_NAD83_CSRS_AB_10TM_FOREST');
+
+    const priorityFourYtAlbers = runCli([
+      '--input',
+      STABLE_INPUT,
+      '--output',
+      'json',
+      '--coord-system-mode',
+      'grid',
+      '--crs-id',
+      'EPSG:3579',
+    ]);
+    expect(priorityFourYtAlbers.status).toBe(0);
+    const priorityFourYtAlbersPayload = JSON.parse(priorityFourYtAlbers.stdout);
+    expect(priorityFourYtAlbersPayload.parseState?.coordSystemMode).toBe('grid');
+    expect(priorityFourYtAlbersPayload.parseState?.crsId).toBe('CA_NAD83_CSRS_YT_ALBERS');
+
+    const priorityFourNtLambert = runCli([
+      '--input',
+      STABLE_INPUT,
+      '--output',
+      'json',
+      '--coord-system-mode',
+      'grid',
+      '--crs-id',
+      'EPSG:3581',
+    ]);
+    expect(priorityFourNtLambert.status).toBe(0);
+    const priorityFourNtLambertPayload = JSON.parse(priorityFourNtLambert.stdout);
+    expect(priorityFourNtLambertPayload.parseState?.coordSystemMode).toBe('grid');
+    expect(priorityFourNtLambertPayload.parseState?.crsId).toBe('CA_NAD83_CSRS_NT_LAMBERT');
+
+    const priorityFourCaAtlas = runCli([
+      '--input',
+      STABLE_INPUT,
+      '--output',
+      'json',
+      '--coord-system-mode',
+      'grid',
+      '--crs-id',
+      'EPSG:3979',
+    ]);
+    expect(priorityFourCaAtlas.status).toBe(0);
+    const priorityFourCaAtlasPayload = JSON.parse(priorityFourCaAtlas.stdout);
+    expect(priorityFourCaAtlasPayload.parseState?.coordSystemMode).toBe('grid');
+    expect(priorityFourCaAtlasPayload.parseState?.crsId).toBe('CA_NAD83_CSRS_CA_ATLAS_LAMBERT');
+
+    const priorityFourOnTeranet = runCli([
+      '--input',
+      STABLE_INPUT,
+      '--output',
+      'json',
+      '--coord-system-mode',
+      'grid',
+      '--crs-id',
+      'EPSG:5321',
+    ]);
+    expect(priorityFourOnTeranet.status).toBe(0);
+    const priorityFourOnTeranetPayload = JSON.parse(priorityFourOnTeranet.stdout);
+    expect(priorityFourOnTeranetPayload.parseState?.coordSystemMode).toBe('grid');
+    expect(priorityFourOnTeranetPayload.parseState?.crsId).toBe('CA_NAD83_CSRS_ON_TERANET_LAMBERT');
+
+    const priorityFourArctic = runCli([
+      '--input',
+      STABLE_INPUT,
+      '--output',
+      'json',
+      '--run-mode',
+      'data-check',
+      '--coord-system-mode',
+      'grid',
+      '--crs-id',
+      'EPSG:6103',
+    ]);
+    expect(priorityFourArctic.status).toBe(0);
+    const priorityFourArcticPayload = JSON.parse(priorityFourArctic.stdout);
+    expect(priorityFourArcticPayload.parseState?.coordSystemMode).toBe('grid');
+    expect(priorityFourArcticPayload.parseState?.crsId).toBe('CA_NAD83_CSRS_ARCTIC_LCC_3_29');
+  }, 60000);
 
   it('supports parse mode and geoid source CLI options', () => {
     const res = runCli([

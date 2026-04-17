@@ -939,6 +939,40 @@ describe('parseInput', () => {
     const viaPriorityThreeQc = parseInput(['.CRS GRID EPSG:6622', 'C A 0 0 0 ! !'].join('\n'));
     expect(viaPriorityThreeQc.parseState.coordSystemMode).toBe('grid');
     expect(viaPriorityThreeQc.parseState.crsId).toBe('CA_NAD83_CSRS_QC_MUNICIPAL_LCC');
+
+    const viaPriorityFourAbForest = parseInput(
+      ['.CRS GRID CA_NAD83_CSRS_AB_10TM_FOREST', 'C A 0 0 0 ! !'].join('\n'),
+    );
+    expect(viaPriorityFourAbForest.parseState.coordSystemMode).toBe('grid');
+    expect(viaPriorityFourAbForest.parseState.crsId).toBe('CA_NAD83_CSRS_AB_10TM_FOREST');
+
+    const viaPriorityFourYtAlbers = parseInput(
+      ['.CRS GRID CA_NAD83_CSRS_YT_ALBERS', 'C A 0 0 0 ! !'].join('\n'),
+    );
+    expect(viaPriorityFourYtAlbers.parseState.coordSystemMode).toBe('grid');
+    expect(viaPriorityFourYtAlbers.parseState.crsId).toBe('CA_NAD83_CSRS_YT_ALBERS');
+
+    const viaPriorityFourNtLambert = parseInput(
+      ['.CRS GRID CA_NAD83_CSRS_NT_LAMBERT', 'C A 0 0 0 ! !'].join('\n'),
+    );
+    expect(viaPriorityFourNtLambert.parseState.coordSystemMode).toBe('grid');
+    expect(viaPriorityFourNtLambert.parseState.crsId).toBe('CA_NAD83_CSRS_NT_LAMBERT');
+
+    const viaPriorityFourCanadaAtlas = parseInput(
+      ['.CRS GRID EPSG:3979', 'C A 0 0 0 ! !'].join('\n'),
+    );
+    expect(viaPriorityFourCanadaAtlas.parseState.coordSystemMode).toBe('grid');
+    expect(viaPriorityFourCanadaAtlas.parseState.crsId).toBe('CA_NAD83_CSRS_CA_ATLAS_LAMBERT');
+
+    const viaPriorityFourOnTeranet = parseInput(
+      ['.CRS GRID EPSG:5321', 'C A 0 0 0 ! !'].join('\n'),
+    );
+    expect(viaPriorityFourOnTeranet.parseState.coordSystemMode).toBe('grid');
+    expect(viaPriorityFourOnTeranet.parseState.crsId).toBe('CA_NAD83_CSRS_ON_TERANET_LAMBERT');
+
+    const viaPriorityFourArctic = parseInput(['.CRS GRID EPSG:6103', 'C A 0 0 0 ! !'].join('\n'));
+    expect(viaPriorityFourArctic.parseState.coordSystemMode).toBe('grid');
+    expect(viaPriorityFourArctic.parseState.crsId).toBe('CA_NAD83_CSRS_ARCTIC_LCC_3_29');
   });
 
   it('parses optional CRS scale/convergence directives with explicit OFF support', () => {

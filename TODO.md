@@ -833,6 +833,13 @@
         - [x] `CA_NAD83_CSRS_YT_TM` (Yukon territorial projected workflow)
         - [x] `CA_NAD83_CSRS_NT_TM` (Northwest Territories projected workflow)
         - [x] `CA_NAD83_CSRS_QC_MUNICIPAL_LCC` (Quebec municipal/regional LCC-style workflow if maintained as distinct contract)
+      - [ ] Priority 4 candidates (remaining CSRS-only coverage from cleaned EPSG audit):
+        - [x] `CA_NAD83_CSRS_AB_10TM_FOREST` -> EPSG `3402` (`NAD83(CSRS) / Alberta 10-TM (Forest)`)
+        - [x] `CA_NAD83_CSRS_YT_ALBERS` -> EPSG `3579` (`NAD83(CSRS) / Yukon Albers`)
+        - [x] `CA_NAD83_CSRS_NT_LAMBERT` -> EPSG `3581` (`NAD83(CSRS) / NWT Lambert`)
+        - [x] `CA_NAD83_CSRS_CA_ATLAS_LAMBERT` -> EPSG `3979` (`NAD83(CSRS) / Canada Atlas Lambert`)
+        - [x] `CA_NAD83_CSRS_ON_TERANET_LAMBERT` -> EPSG `5321` (`NAD83(CSRS) / Teranet Ontario Lambert`)
+        - [x] `CA_NAD83_CSRS_ARCTIC_LCC_3_29` -> EPSG `6103` (`NAD83(CSRS) / EPSG Arctic zone 3-29`)
     - [ ] Batch 2 - catalog and parser/CLI support for Priority 1
       - [x] Add CRS catalog entries, alias normalization, and EPSG lookup mapping for Priority 1 rows
       - [x] Add focused catalog tests for metadata completeness, deterministic ordering, and provenance
@@ -850,6 +857,10 @@
       - [x] Implement only Priority 3 rows that are justified by active user workflows or interoperability requirements
       - [x] Document deferred candidates with explicit rationale when not implemented
       - [ ] Re-run full validation matrix and refresh Canadian CRS coverage docs/summary counts
+    - [ ] Batch 6 - Priority 4 CSRS clean-list implementation and harness
+      - [x] Implement all 6 remaining CSRS-only rows from the cleaned EPSG list with canonical IDs and EPSG alias normalization
+      - [x] Add parser/CLI acceptance tests and CRS catalog resolver tests for all 6 rows
+      - [x] Add synthetic harness coverage (catalog presence, noisy Monte Carlo bounds, edge-of-area jobs, perfect-mode checks)
 
 - [x] Industry Standard v6-v14 parity gaps (prioritized from release notes; missing in WebNet today):
   - [x] Conventional surveying improvements (highest impact -> lowest):

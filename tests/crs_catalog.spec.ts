@@ -34,6 +34,12 @@ describe('Canada CRS catalog (Phase 2 expansion)', () => {
     expect(CANADA_CRS_CATALOG.some((row) => row.id === 'CA_NAD83_CSRS_QC_MUNICIPAL_LCC')).toBe(true);
     expect(CANADA_CRS_CATALOG.some((row) => row.id === 'CA_NAD83_CSRS_ON_MNR_LAMBERT')).toBe(true);
     expect(CANADA_CRS_CATALOG.some((row) => row.id === 'CA_NAD83_CSRS_AB_3TM_117W')).toBe(true);
+    expect(CANADA_CRS_CATALOG.some((row) => row.id === 'CA_NAD83_CSRS_AB_10TM_FOREST')).toBe(true);
+    expect(CANADA_CRS_CATALOG.some((row) => row.id === 'CA_NAD83_CSRS_YT_ALBERS')).toBe(true);
+    expect(CANADA_CRS_CATALOG.some((row) => row.id === 'CA_NAD83_CSRS_NT_LAMBERT')).toBe(true);
+    expect(CANADA_CRS_CATALOG.some((row) => row.id === 'CA_NAD83_CSRS_CA_ATLAS_LAMBERT')).toBe(true);
+    expect(CANADA_CRS_CATALOG.some((row) => row.id === 'CA_NAD83_CSRS_ON_TERANET_LAMBERT')).toBe(true);
+    expect(CANADA_CRS_CATALOG.some((row) => row.id === 'CA_NAD83_CSRS_ARCTIC_LCC_3_29')).toBe(true);
   });
 
   it('resolves CRS by canonical id and EPSG aliases', () => {
@@ -51,6 +57,12 @@ describe('Canada CRS catalog (Phase 2 expansion)', () => {
     const byYt = getCrsDefinition('CA_NAD83_CSRS_YT_TM');
     const byNt = getCrsDefinition('CA_NAD83_CSRS_NT_TM');
     const byQcMunicipal = getCrsDefinition('EPSG:6622');
+    const byAbForest = getCrsDefinition('EPSG:3402');
+    const byYtAlbers = getCrsDefinition('EPSG:3579');
+    const byNtLambert = getCrsDefinition('EPSG:3581');
+    const byCaAtlas = getCrsDefinition('EPSG:3979');
+    const byOnTeranet = getCrsDefinition('EPSG:5321');
+    const byArctic = getCrsDefinition('EPSG:6103');
 
     expect(byId?.id).toBe('CA_NAD83_CSRS_NB_STEREO_DOUBLE');
     expect(byEpsgToken?.id).toBe('CA_NAD83_CSRS_NB_STEREO_DOUBLE');
@@ -66,6 +78,12 @@ describe('Canada CRS catalog (Phase 2 expansion)', () => {
     expect(byYt?.id).toBe('CA_NAD83_CSRS_YT_TM');
     expect(byNt?.id).toBe('CA_NAD83_CSRS_NT_TM');
     expect(byQcMunicipal?.id).toBe('CA_NAD83_CSRS_QC_MUNICIPAL_LCC');
+    expect(byAbForest?.id).toBe('CA_NAD83_CSRS_AB_10TM_FOREST');
+    expect(byYtAlbers?.id).toBe('CA_NAD83_CSRS_YT_ALBERS');
+    expect(byNtLambert?.id).toBe('CA_NAD83_CSRS_NT_LAMBERT');
+    expect(byCaAtlas?.id).toBe('CA_NAD83_CSRS_CA_ATLAS_LAMBERT');
+    expect(byOnTeranet?.id).toBe('CA_NAD83_CSRS_ON_TERANET_LAMBERT');
+    expect(byArctic?.id).toBe('CA_NAD83_CSRS_ARCTIC_LCC_3_29');
   });
 
   it('exposes projection parameters, datum-op support metadata, and area-of-use bounds', () => {

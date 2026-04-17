@@ -54,6 +54,20 @@ describe('Canadian CRS synthetic harness catalog', () => {
     expect(CANADIAN_CRS_TEST_CATALOG.some((row) => row.id === 'CA_NAD83_CSRS_QC_MUNICIPAL_LCC')).toBe(
       true,
     );
+    expect(CANADIAN_CRS_TEST_CATALOG.some((row) => row.id === 'CA_NAD83_CSRS_AB_10TM_FOREST')).toBe(
+      true,
+    );
+    expect(CANADIAN_CRS_TEST_CATALOG.some((row) => row.id === 'CA_NAD83_CSRS_YT_ALBERS')).toBe(true);
+    expect(CANADIAN_CRS_TEST_CATALOG.some((row) => row.id === 'CA_NAD83_CSRS_NT_LAMBERT')).toBe(true);
+    expect(CANADIAN_CRS_TEST_CATALOG.some((row) => row.id === 'CA_NAD83_CSRS_CA_ATLAS_LAMBERT')).toBe(
+      true,
+    );
+    expect(
+      CANADIAN_CRS_TEST_CATALOG.some((row) => row.id === 'CA_NAD83_CSRS_ON_TERANET_LAMBERT'),
+    ).toBe(true);
+    expect(
+      CANADIAN_CRS_TEST_CATALOG.some((row) => row.id === 'CA_NAD83_CSRS_ARCTIC_LCC_3_29'),
+    ).toBe(true);
     expect(
       CANADIAN_CRS_TEST_CATALOG.filter((row) => row.family === 'UTM').every(
         (row) => row.status === 'current' && String(row.code ?? '').startsWith('228'),
@@ -312,6 +326,52 @@ describe('Canadian CRS synthetic adjustment smoke harness', () => {
     });
   });
 
+  it('keeps noisy Monte Carlo results bounded for Priority 4 CRS rows', () => {
+    const summaries = [
+      runSyntheticCrsMonteCarlo({
+        crsId: 'CA_NAD83_CSRS_AB_10TM_FOREST',
+        template: 'short-traverse',
+        seeds: [6991, 6992, 6993, 6994, 6995],
+      }),
+      runSyntheticCrsMonteCarlo({
+        crsId: 'CA_NAD83_CSRS_YT_ALBERS',
+        template: 'loop',
+        seeds: [7001, 7002, 7003, 7004, 7005],
+      }),
+      runSyntheticCrsMonteCarlo({
+        crsId: 'CA_NAD83_CSRS_NT_LAMBERT',
+        template: 'loop',
+        seeds: [7011, 7012, 7013, 7014, 7015],
+      }),
+      runSyntheticCrsMonteCarlo({
+        crsId: 'CA_NAD83_CSRS_CA_ATLAS_LAMBERT',
+        template: 'short-traverse',
+        seeds: [7021, 7022, 7023, 7024, 7025],
+      }),
+      runSyntheticCrsMonteCarlo({
+        crsId: 'CA_NAD83_CSRS_ON_TERANET_LAMBERT',
+        template: 'short-traverse',
+        seeds: [7031, 7032, 7033, 7034, 7035],
+      }),
+      runSyntheticCrsMonteCarlo({
+        crsId: 'CA_NAD83_CSRS_ARCTIC_LCC_3_29',
+        template: 'short-traverse',
+        seeds: [7041, 7042, 7043, 7044, 7045],
+      }),
+    ];
+    summaries.forEach((summary) => {
+      expect(summary.meanRmsHorizontalErrorM, `${summary.crsId} mean noisy horizontal RMS`).toBeLessThan(
+        0.05,
+      );
+      expect(summary.maxHorizontalErrorM, `${summary.crsId} worst noisy horizontal error`).toBeLessThan(
+        0.12,
+      );
+      expect(summary.meanResidualRms, `${summary.crsId} mean residual RMS`).toBeLessThan(0.05);
+      expect(summary.meanSeuw, `${summary.crsId} mean SEUW unrealistic`).toBeGreaterThan(0.05);
+      expect(summary.meanSeuw, `${summary.crsId} mean SEUW unrealistic`).toBeLessThan(10);
+    });
+  });
+
   it('recovers truth when synthetic jobs include angle and direction-set observations', () => {
     const angleRun = runSyntheticCrsAdjustmentTest({
       crsId: 'CA_NAD83_CSRS_UTM_10N',
@@ -512,6 +572,48 @@ describe('Canadian CRS synthetic adjustment smoke harness', () => {
     });
   });
 
+  it('solves Priority 4 edge-of-area jobs near CRS bounds', () => {
+    const edgeRuns = [
+      ...runSyntheticCrsEdgeJobs({
+        crsId: 'CA_NAD83_CSRS_AB_10TM_FOREST',
+        template: 'short-traverse',
+        seed: 7381,
+      }),
+      ...runSyntheticCrsEdgeJobs({
+        crsId: 'CA_NAD83_CSRS_YT_ALBERS',
+        template: 'loop',
+        seed: 7382,
+      }),
+      ...runSyntheticCrsEdgeJobs({
+        crsId: 'CA_NAD83_CSRS_NT_LAMBERT',
+        template: 'loop',
+        seed: 7383,
+      }),
+      ...runSyntheticCrsEdgeJobs({
+        crsId: 'CA_NAD83_CSRS_CA_ATLAS_LAMBERT',
+        template: 'short-traverse',
+        seed: 7384,
+      }),
+      ...runSyntheticCrsEdgeJobs({
+        crsId: 'CA_NAD83_CSRS_ON_TERANET_LAMBERT',
+        template: 'short-traverse',
+        seed: 7385,
+      }),
+      ...runSyntheticCrsEdgeJobs({
+        crsId: 'CA_NAD83_CSRS_ARCTIC_LCC_3_29',
+        template: 'short-traverse',
+        seed: 7386,
+      }),
+    ];
+    expect(edgeRuns.length).toBe(24);
+    edgeRuns.forEach((run) => {
+      expect(run.result.success, `${run.crsId} ${run.placement} edge run failed`).toBe(true);
+      expect(run.metrics.maxHorizontalErrorM, `${run.crsId} ${run.placement} horizontal drift`).toBeLessThan(
+        0.05,
+      );
+    });
+  });
+
   it('builds grouped markdown and machine summaries for synthetic CRS runs', () => {
     const runs = [
       runSyntheticCrsAdjustmentTest({
@@ -654,6 +756,64 @@ describe('Canadian CRS synthetic adjustment smoke harness', () => {
       runSyntheticCrsAdjustmentTest({
         crsId: 'CA_NAD83_CSRS_QC_MUNICIPAL_LCC',
         seed: 9224,
+        template: 'short-traverse',
+        mode: 'noise-free',
+        observationOptions: { precisionMode: 'perfect' },
+      }),
+    ];
+    runs.forEach((run) => {
+      expect(run.result.success, `${run.crsId} perfect mode failed`).toBe(true);
+      expect(run.metrics.maxHorizontalErrorM, `${run.crsId} perfect horizontal drift`).toBeLessThan(
+        1e-8,
+      );
+      expect(run.metrics.rmsHorizontalErrorM, `${run.crsId} perfect RMS horizontal drift`).toBeLessThan(
+        1e-8,
+      );
+      expect(run.metrics.residualRms, `${run.crsId} perfect residual RMS`).toBeLessThan(1e-8);
+      expect(run.metrics.seuw, `${run.crsId} perfect SEUW`).toBeLessThan(1e-2);
+    });
+  });
+
+  it('supports perfect precision mode for Priority 4 CRS rows', () => {
+    const runs = [
+      runSyntheticCrsAdjustmentTest({
+        crsId: 'CA_NAD83_CSRS_AB_10TM_FOREST',
+        seed: 9231,
+        template: 'short-traverse',
+        mode: 'noise-free',
+        observationOptions: { precisionMode: 'perfect' },
+      }),
+      runSyntheticCrsAdjustmentTest({
+        crsId: 'CA_NAD83_CSRS_YT_ALBERS',
+        seed: 9232,
+        template: 'loop',
+        mode: 'noise-free',
+        observationOptions: { precisionMode: 'perfect' },
+      }),
+      runSyntheticCrsAdjustmentTest({
+        crsId: 'CA_NAD83_CSRS_NT_LAMBERT',
+        seed: 9233,
+        template: 'loop',
+        mode: 'noise-free',
+        observationOptions: { precisionMode: 'perfect' },
+      }),
+      runSyntheticCrsAdjustmentTest({
+        crsId: 'CA_NAD83_CSRS_CA_ATLAS_LAMBERT',
+        seed: 9234,
+        template: 'short-traverse',
+        mode: 'noise-free',
+        observationOptions: { precisionMode: 'perfect' },
+      }),
+      runSyntheticCrsAdjustmentTest({
+        crsId: 'CA_NAD83_CSRS_ON_TERANET_LAMBERT',
+        seed: 9235,
+        template: 'short-traverse',
+        mode: 'noise-free',
+        observationOptions: { precisionMode: 'perfect' },
+      }),
+      runSyntheticCrsAdjustmentTest({
+        crsId: 'CA_NAD83_CSRS_ARCTIC_LCC_3_29',
+        seed: 9236,
         template: 'short-traverse',
         mode: 'noise-free',
         observationOptions: { precisionMode: 'perfect' },
