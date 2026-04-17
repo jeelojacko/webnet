@@ -62,6 +62,8 @@ const SASKATCHEWAN_RESOURCE_URL =
   'https://training.saskatchewan.ca/EnergyAndResources/Files/Notices/2022/MRO%20177-22.pdf';
 const MANITOBA_RESOURCE_URL =
   'https://www.gov.mb.ca/sd/research-data-and-maps/geomanitoba/geospatial-data-acquisition/index.html';
+const NUNAVUT_RESOURCE_URL =
+  'https://clss.nrcan-rncan.gc.ca/data-donnees/sgb-maps-dag-carte/carte-index-map/Metadata-Map-of-Canada-Lands-Nunavut.html';
 const YUKON_RESOURCE_URL = 'https://yukon.ca/en/map-services';
 const NWT_RESOURCE_URL = 'https://www.nwtgeoscience.ca/metadata.htm';
 
@@ -212,6 +214,8 @@ const buildProvincialRow = (def: CrsDefinition): CanadianCrsTestConfig => {
             ? SASKATCHEWAN_RESOURCE_URL
             : def.id === 'CA_NAD83_CSRS_MB_3TM'
               ? MANITOBA_RESOURCE_URL
+              : def.id === 'CA_NAD83_CSRS_NU_STEREOGRAPHIC'
+                ? NUNAVUT_RESOURCE_URL
               : def.id === 'CA_NAD83_CSRS_YT_TM'
                   ? YUKON_RESOURCE_URL
                   : def.id === 'CA_NAD83_CSRS_NT_TM'
@@ -234,6 +238,8 @@ const buildProvincialRow = (def: CrsDefinition): CanadianCrsTestConfig => {
             ? 'Saskatchewan operational UTM Extended Zone 13N guidance (ATS-style workflow alias)'
         : def.id === 'CA_NAD83_CSRS_MB_3TM'
             ? 'Manitoba GeoManitoba operational geospatial workflow guidance (3TM-style alias)'
+          : def.id === 'CA_NAD83_CSRS_NU_STEREOGRAPHIC'
+            ? 'NRCan Canada Lands Nunavut metadata usage guidance (EPSG:3977 LCC operational reference)'
             : def.id === 'CA_NAD83_CSRS_YT_TM'
               ? 'Yukon territorial mapping guidance (TM-style projected alias)'
               : def.id === 'CA_NAD83_CSRS_NT_TM'
@@ -275,6 +281,11 @@ const buildProvincialRow = (def: CrsDefinition): CanadianCrsTestConfig => {
         ? [
             'Manitoba 3TM is modeled as an operational naming alias to a NAD83(CSRS) 3-degree TM (MTM zone 17 style) projection contract.',
             'EPSG does not publish a distinct NAD83(CSRS) Manitoba 3TM title; this row keeps provincial naming available without replacing existing MTM zone rows.',
+          ]
+        : def.id === 'CA_NAD83_CSRS_NU_STEREOGRAPHIC'
+        ? [
+            'Nunavut projected workflow is mapped to EPSG:3977 (Canada Atlas Lambert) per NRCan metadata usage guidance.',
+            'This remains an operational alias row so Nunavut naming stays explicit while projection constants remain EPSG-traceable.',
           ]
         : def.id === 'CA_NAD83_CSRS_YT_TM'
         ? [

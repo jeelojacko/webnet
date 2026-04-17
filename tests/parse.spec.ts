@@ -918,6 +918,12 @@ describe('parseInput', () => {
     expect(viaPriorityTwoMb.parseState.coordSystemMode).toBe('grid');
     expect(viaPriorityTwoMb.parseState.crsId).toBe('CA_NAD83_CSRS_MB_3TM');
 
+    const viaPriorityThreeNu = parseInput(
+      ['.CRS GRID CA_NAD83_CSRS_NU_STEREOGRAPHIC', 'C A 0 0 0 ! !'].join('\n'),
+    );
+    expect(viaPriorityThreeNu.parseState.coordSystemMode).toBe('grid');
+    expect(viaPriorityThreeNu.parseState.crsId).toBe('CA_NAD83_CSRS_NU_STEREOGRAPHIC');
+
     const viaPriorityThreeYt = parseInput(
       ['.CRS GRID CA_NAD83_CSRS_YT_TM', 'C A 0 0 0 ! !'].join('\n'),
     );

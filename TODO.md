@@ -828,7 +828,7 @@
       - [ ] Priority 2 candidates (next provincial coverage wave):
         - [x] `CA_NAD83_CSRS_SK_ATS` (Saskatchewan ATS-style provincial projected workflow)
         - [x] `CA_NAD83_CSRS_MB_3TM` (Manitoba provincial 3TM-style workflow where used operationally)
-        - [ ] `CA_NAD83_CSRS_NU_STEREOGRAPHIC` deferred (no direct EPSG row; Nunavut coverage currently through existing NAD83(CSRS) UTM rows)
+        - [x] `CA_NAD83_CSRS_NU_STEREOGRAPHIC` (Nunavut projected workflow alias mapped to EPSG:3977 per NRCan metadata usage guidance)
       - [ ] Priority 3 candidates (specialized or lower-frequency provincial/territorial workflows):
         - [x] `CA_NAD83_CSRS_YT_TM` (Yukon territorial projected workflow)
         - [x] `CA_NAD83_CSRS_NT_TM` (Northwest Territories projected workflow)
@@ -844,7 +844,7 @@
     - [ ] Batch 4 - Priority 2 implementation and harness
       - [x] Implement Priority 2 catalog rows with the same parser/CLI + harness validation gates as Priority 1
       - [x] Implement `CA_NAD83_CSRS_SK_ATS` and `CA_NAD83_CSRS_MB_3TM` as provincial workflow aliases with parser/CLI + harness validation gates
-      - [x] Confirmed no dedicated authority-backed NAD83(CSRS) Nunavut stereographic EPSG row exists; deferred `CA_NAD83_CSRS_NU_STEREOGRAPHIC` and rely on existing NAD83(CSRS) UTM coverage for Nunavut for now
+      - [x] Added `CA_NAD83_CSRS_NU_STEREOGRAPHIC` as a Nunavut projected workflow alias mapped to EPSG:3977 (Canada Atlas Lambert) with parser/CLI + harness validation gates
       - [x] Add focused docs for provincial naming/alias differences from EPSG titles (SK ATS and MB 3TM aliases)
     - [ ] Batch 5 - Priority 3 decision gate and closeout
       - [x] Implement only Priority 3 rows that are justified by active user workflows or interoperability requirements

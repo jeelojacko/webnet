@@ -446,6 +446,21 @@ describe('CLI phase 2 output modes', () => {
     expect(priorityTwoMbPayload.parseState?.coordSystemMode).toBe('grid');
     expect(priorityTwoMbPayload.parseState?.crsId).toBe('CA_NAD83_CSRS_MB_3TM');
 
+    const priorityThreeNu = runCli([
+      '--input',
+      STABLE_INPUT,
+      '--output',
+      'json',
+      '--coord-system-mode',
+      'grid',
+      '--crs-id',
+      'CA_NAD83_CSRS_NU_STEREOGRAPHIC',
+    ]);
+    expect(priorityThreeNu.status).toBe(0);
+    const priorityThreeNuPayload = JSON.parse(priorityThreeNu.stdout);
+    expect(priorityThreeNuPayload.parseState?.coordSystemMode).toBe('grid');
+    expect(priorityThreeNuPayload.parseState?.crsId).toBe('CA_NAD83_CSRS_NU_STEREOGRAPHIC');
+
     const priorityThreeYt = runCli([
       '--input',
       STABLE_INPUT,

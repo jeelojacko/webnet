@@ -28,6 +28,7 @@ describe('Canada CRS catalog (Phase 2 expansion)', () => {
     expect(CANADA_CRS_CATALOG.some((row) => row.id === 'CA_NAD83_CSRS_NS_MTM_2010_5')).toBe(true);
     expect(CANADA_CRS_CATALOG.some((row) => row.id === 'CA_NAD83_CSRS_SK_ATS')).toBe(true);
     expect(CANADA_CRS_CATALOG.some((row) => row.id === 'CA_NAD83_CSRS_MB_3TM')).toBe(true);
+    expect(CANADA_CRS_CATALOG.some((row) => row.id === 'CA_NAD83_CSRS_NU_STEREOGRAPHIC')).toBe(true);
     expect(CANADA_CRS_CATALOG.some((row) => row.id === 'CA_NAD83_CSRS_YT_TM')).toBe(true);
     expect(CANADA_CRS_CATALOG.some((row) => row.id === 'CA_NAD83_CSRS_NT_TM')).toBe(true);
     expect(CANADA_CRS_CATALOG.some((row) => row.id === 'CA_NAD83_CSRS_QC_MUNICIPAL_LCC')).toBe(true);
@@ -46,6 +47,7 @@ describe('Canada CRS catalog (Phase 2 expansion)', () => {
     const byNsMtm5 = getCrsDefinition('EPSG:8083');
     const bySkAts = getCrsDefinition('CA_NAD83_CSRS_SK_ATS');
     const byMb3tm = getCrsDefinition('CA_NAD83_CSRS_MB_3TM');
+    const byNu = getCrsDefinition('CA_NAD83_CSRS_NU_STEREOGRAPHIC');
     const byYt = getCrsDefinition('CA_NAD83_CSRS_YT_TM');
     const byNt = getCrsDefinition('CA_NAD83_CSRS_NT_TM');
     const byQcMunicipal = getCrsDefinition('EPSG:6622');
@@ -60,6 +62,7 @@ describe('Canada CRS catalog (Phase 2 expansion)', () => {
     expect(byNsMtm5?.id).toBe('CA_NAD83_CSRS_NS_MTM_2010_5');
     expect(bySkAts?.id).toBe('CA_NAD83_CSRS_SK_ATS');
     expect(byMb3tm?.id).toBe('CA_NAD83_CSRS_MB_3TM');
+    expect(byNu?.id).toBe('CA_NAD83_CSRS_NU_STEREOGRAPHIC');
     expect(byYt?.id).toBe('CA_NAD83_CSRS_YT_TM');
     expect(byNt?.id).toBe('CA_NAD83_CSRS_NT_TM');
     expect(byQcMunicipal?.id).toBe('CA_NAD83_CSRS_QC_MUNICIPAL_LCC');

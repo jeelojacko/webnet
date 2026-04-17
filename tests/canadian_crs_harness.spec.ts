@@ -46,6 +46,9 @@ describe('Canadian CRS synthetic harness catalog', () => {
     ).toBe(true);
     expect(CANADIAN_CRS_TEST_CATALOG.some((row) => row.id === 'CA_NAD83_CSRS_SK_ATS')).toBe(true);
     expect(CANADIAN_CRS_TEST_CATALOG.some((row) => row.id === 'CA_NAD83_CSRS_MB_3TM')).toBe(true);
+    expect(CANADIAN_CRS_TEST_CATALOG.some((row) => row.id === 'CA_NAD83_CSRS_NU_STEREOGRAPHIC')).toBe(
+      true,
+    );
     expect(CANADIAN_CRS_TEST_CATALOG.some((row) => row.id === 'CA_NAD83_CSRS_YT_TM')).toBe(true);
     expect(CANADIAN_CRS_TEST_CATALOG.some((row) => row.id === 'CA_NAD83_CSRS_NT_TM')).toBe(true);
     expect(CANADIAN_CRS_TEST_CATALOG.some((row) => row.id === 'CA_NAD83_CSRS_QC_MUNICIPAL_LCC')).toBe(
@@ -276,6 +279,11 @@ describe('Canadian CRS synthetic adjustment smoke harness', () => {
   it('keeps noisy Monte Carlo results bounded for Priority 3 CRS rows', () => {
     const summaries = [
       runSyntheticCrsMonteCarlo({
+        crsId: 'CA_NAD83_CSRS_NU_STEREOGRAPHIC',
+        template: 'short-traverse',
+        seeds: [6951, 6952, 6953, 6954, 6955],
+      }),
+      runSyntheticCrsMonteCarlo({
         crsId: 'CA_NAD83_CSRS_YT_TM',
         template: 'loop',
         seeds: [6961, 6962, 6963, 6964, 6965],
@@ -475,6 +483,11 @@ describe('Canadian CRS synthetic adjustment smoke harness', () => {
   it('solves Priority 3 edge-of-area jobs near CRS bounds', () => {
     const edgeRuns = [
       ...runSyntheticCrsEdgeJobs({
+        crsId: 'CA_NAD83_CSRS_NU_STEREOGRAPHIC',
+        template: 'short-traverse',
+        seed: 7371,
+      }),
+      ...runSyntheticCrsEdgeJobs({
         crsId: 'CA_NAD83_CSRS_YT_TM',
         template: 'loop',
         seed: 7372,
@@ -490,7 +503,7 @@ describe('Canadian CRS synthetic adjustment smoke harness', () => {
         seed: 7374,
       }),
     ];
-    expect(edgeRuns.length).toBe(12);
+    expect(edgeRuns.length).toBe(16);
     edgeRuns.forEach((run) => {
       expect(run.result.success, `${run.crsId} ${run.placement} edge run failed`).toBe(true);
       expect(run.metrics.maxHorizontalErrorM, `${run.crsId} ${run.placement} horizontal drift`).toBeLessThan(
@@ -618,22 +631,29 @@ describe('Canadian CRS synthetic adjustment smoke harness', () => {
   it('supports perfect precision mode for Priority 3 CRS rows', () => {
     const runs = [
       runSyntheticCrsAdjustmentTest({
-        crsId: 'CA_NAD83_CSRS_YT_TM',
+        crsId: 'CA_NAD83_CSRS_NU_STEREOGRAPHIC',
         seed: 9221,
-        template: 'loop',
+        template: 'short-traverse',
         mode: 'noise-free',
         observationOptions: { precisionMode: 'perfect' },
       }),
       runSyntheticCrsAdjustmentTest({
-        crsId: 'CA_NAD83_CSRS_NT_TM',
+        crsId: 'CA_NAD83_CSRS_YT_TM',
         seed: 9222,
         template: 'loop',
         mode: 'noise-free',
         observationOptions: { precisionMode: 'perfect' },
       }),
       runSyntheticCrsAdjustmentTest({
-        crsId: 'CA_NAD83_CSRS_QC_MUNICIPAL_LCC',
+        crsId: 'CA_NAD83_CSRS_NT_TM',
         seed: 9223,
+        template: 'loop',
+        mode: 'noise-free',
+        observationOptions: { precisionMode: 'perfect' },
+      }),
+      runSyntheticCrsAdjustmentTest({
+        crsId: 'CA_NAD83_CSRS_QC_MUNICIPAL_LCC',
+        seed: 9224,
         template: 'short-traverse',
         mode: 'noise-free',
         observationOptions: { precisionMode: 'perfect' },
