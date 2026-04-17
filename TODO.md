@@ -838,9 +838,9 @@
       - [x] Add focused catalog tests for metadata completeness, deterministic ordering, and provenance
       - [x] Add parse/CLI CRS-id acceptance tests (canonical id + EPSG alias where defined)
     - [ ] Batch 3 - synthetic harness expansion for Priority 1
-      - [ ] Extend synthetic harness catalog and area-of-use edge jobs for new Priority 1 rows
-      - [ ] Add noise-free + noisy harness coverage with current metric thresholds and perfect-mode export checks
-      - [ ] Keep grouped markdown/json artifact generation deterministic for all new CRS rows
+      - [x] Extend synthetic harness catalog and area-of-use edge jobs for new Priority 1 rows
+      - [x] Add noise-free + noisy harness coverage with current metric thresholds and perfect-mode export checks
+      - [x] Keep grouped markdown/json artifact generation deterministic for all new CRS rows
     - [ ] Batch 4 - Priority 2 implementation and harness
       - [ ] Implement Priority 2 catalog rows with the same parser/CLI + harness validation gates as Priority 1
       - [ ] Add focused docs for any provincial naming/alias differences from EPSG titles

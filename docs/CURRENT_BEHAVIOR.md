@@ -192,6 +192,7 @@ Current coordinate-system behavior includes:
 - Canada-first CRS catalog support including NAD83(CSRS) UTM, MTM, and key provincial entries
 - Priority 1 post-Phase-18 provincial expansion now includes Quebec MTQ Lambert (`CA_NAD83_CSRS_QC_LAMBERT`, EPSG:3799) plus Nova Scotia MTM 2010 zones 4/5 (`CA_NAD83_CSRS_NS_MTM_2010_4`, EPSG:8082 and `CA_NAD83_CSRS_NS_MTM_2010_5`, EPSG:8083), with canonical-id and EPSG-ID normalization through parser and CLI paths
 - a synthetic Canadian CRS validation harness that now pins Canadian UTM rows to explicit current EPSG realization codes, includes Alberta 3TM realization-backed provincial rows, audits the current Canada-first CRS support surface through catalog metadata checks and external `proj4` round-trip comparisons, and runs deterministic projected end-to-end synthetic adjustment smoke tests plus representative noisy Monte Carlo checks across UTM, MTM, and province-specific Canadian CRSs
+- the synthetic harness now explicitly includes Priority 1 post-Phase-18 CRS stress checks (Quebec MTQ Lambert plus Nova Scotia MTM 2010 zones 4/5) for edge-of-area jobs, noisy Monte Carlo bounds, perfect-mode near-zero drift assertions, and grouped markdown/machine-summary ordering
 - CRS-ID normalization accepting canonical IDs and EPSG aliases
 - projection-family-aware factor computation with numerical fallback diagnostics
 - reduction-context-driven measured/grid behavior
