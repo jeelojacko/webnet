@@ -58,6 +58,12 @@ const BC_ALBERS_URL =
   'https://clss.nrcan.gc.ca/data-donnees/sgb-maps-dag-carte/carte-index-map/Metadata-Map-of-Canada-Lands-British-Columbia.html';
 const ALBERTA_RESOURCE_URL =
   'https://www.alberta.ca/system/files/custom_downloaded_images/ep-sample-id-card-ascm.pdf';
+const SASKATCHEWAN_RESOURCE_URL =
+  'https://training.saskatchewan.ca/EnergyAndResources/Files/Notices/2022/MRO%20177-22.pdf';
+const MANITOBA_RESOURCE_URL =
+  'https://www.gov.mb.ca/sd/research-data-and-maps/geomanitoba/geospatial-data-acquisition/index.html';
+const YUKON_RESOURCE_URL = 'https://yukon.ca/en/map-services';
+const NWT_RESOURCE_URL = 'https://www.nwtgeoscience.ca/metadata.htm';
 
 const toAreaOfUse = (bounds: CrsAreaOfUseBounds): CanadianCrsTestConfig['areaOfUse'] => ({
   westLon: bounds.minLonDeg,
@@ -166,7 +172,18 @@ const buildMtmRow = (def: CrsDefinition): CanadianCrsTestConfig =>
         authority: 'EPSG',
         title: 'EPSG Geodetic Parameter Registry',
         organization: 'IOGP EPSG',
-        reference: def.epsgCode ? `EPSG:${def.epsgCode}` : def.id,
+        reference:
+          def.id === 'CA_NAD83_CSRS_SK_ATS'
+            ? 'Alias maps to EPSG:22813 (NAD83(CSRS)v8 / UTM zone 13N)'
+            : def.id === 'CA_NAD83_CSRS_MB_3TM'
+              ? 'Alias maps to EPSG:26897 (NAD83(CSRS) / MTM zone 17)'
+              : def.id === 'CA_NAD83_CSRS_YT_TM'
+                  ? 'Alias maps to EPSG:22808 (NAD83(CSRS)v8 / UTM zone 8N)'
+                  : def.id === 'CA_NAD83_CSRS_NT_TM'
+                    ? 'Alias maps to EPSG:22810 (NAD83(CSRS)v8 / UTM zone 10N)'
+              : def.epsgCode
+                ? `EPSG:${def.epsgCode}`
+                : def.id,
         url: EPSG_HOME_URL,
       },
       {
@@ -189,9 +206,17 @@ const buildProvincialRow = (def: CrsDefinition): CanadianCrsTestConfig => {
       ? NEW_BRUNSWICK_PROJECTION_URL
       : def.id === 'CA_NAD83_CSRS_PEI_STEREOGRAPHIC'
         ? PEI_SPATIAL_REFERENCE_URL
-        : def.id === 'CA_NAD83_CSRS_ON_MNR_LAMBERT'
+      : def.id === 'CA_NAD83_CSRS_ON_MNR_LAMBERT'
           ? ONTARIO_MNR_URL
-          : def.id === 'CA_NAD83_CSRS_BC_ALBERS'
+          : def.id === 'CA_NAD83_CSRS_SK_ATS'
+            ? SASKATCHEWAN_RESOURCE_URL
+            : def.id === 'CA_NAD83_CSRS_MB_3TM'
+              ? MANITOBA_RESOURCE_URL
+              : def.id === 'CA_NAD83_CSRS_YT_TM'
+                  ? YUKON_RESOURCE_URL
+                  : def.id === 'CA_NAD83_CSRS_NT_TM'
+                    ? NWT_RESOURCE_URL
+            : def.id === 'CA_NAD83_CSRS_BC_ALBERS'
             ? BC_ALBERS_URL
             : ALBERTA_RESOURCE_URL;
   const provinceReference =
@@ -205,6 +230,14 @@ const buildProvincialRow = (def: CrsDefinition): CanadianCrsTestConfig => {
         ? 'PEI spatial referencing regulations for stereographic double projection'
       : def.id === 'CA_NAD83_CSRS_ON_MNR_LAMBERT'
           ? 'Ontario MNR Lambert data publication guidance'
+        : def.id === 'CA_NAD83_CSRS_SK_ATS'
+            ? 'Saskatchewan operational UTM Extended Zone 13N guidance (ATS-style workflow alias)'
+        : def.id === 'CA_NAD83_CSRS_MB_3TM'
+            ? 'Manitoba GeoManitoba operational geospatial workflow guidance (3TM-style alias)'
+            : def.id === 'CA_NAD83_CSRS_YT_TM'
+              ? 'Yukon territorial mapping guidance (TM-style projected alias)'
+              : def.id === 'CA_NAD83_CSRS_NT_TM'
+                ? 'NWT territorial mapping guidance (TM-style projected alias)'
         : def.id === 'CA_NAD83_CSRS_BC_ALBERS'
             ? 'NRCan Canada Lands metadata citing EPSG:3153'
             : def.id.startsWith('CA_NAD83_CSRS_AB_3TM_')
@@ -232,6 +265,31 @@ const buildProvincialRow = (def: CrsDefinition): CanadianCrsTestConfig => {
         ? [
             'Alberta 3TM urban survey rows are now part of the harness and use explicit EPSG v7 realization codes.',
             'These rows complement, not replace, Alberta 10TM resource mapping coverage.',
+          ]
+        : def.id === 'CA_NAD83_CSRS_SK_ATS'
+        ? [
+            'Saskatchewan ATS is modeled as an operational naming alias to the current NAD83(CSRS)v8 UTM zone 13 projection constants.',
+            'EPSG does not publish a separate NAD83(CSRS) ATS projected CRS title; this row preserves provincial workflow naming while keeping the canonical UTM implementation stable.',
+          ]
+        : def.id === 'CA_NAD83_CSRS_MB_3TM'
+        ? [
+            'Manitoba 3TM is modeled as an operational naming alias to a NAD83(CSRS) 3-degree TM (MTM zone 17 style) projection contract.',
+            'EPSG does not publish a distinct NAD83(CSRS) Manitoba 3TM title; this row keeps provincial naming available without replacing existing MTM zone rows.',
+          ]
+        : def.id === 'CA_NAD83_CSRS_YT_TM'
+        ? [
+            'Yukon TM is modeled as an operational alias to a NAD83(CSRS)v8 UTM-zone transverse-Mercator contract.',
+            'The alias preserves territorial naming while leaving canonical UTM rows unchanged.',
+          ]
+        : def.id === 'CA_NAD83_CSRS_NT_TM'
+        ? [
+            'NWT TM is modeled as an operational alias to a NAD83(CSRS)v8 UTM-zone transverse-Mercator contract.',
+            'The alias preserves territorial naming while leaving canonical UTM rows unchanged.',
+          ]
+        : def.id === 'CA_NAD83_CSRS_QC_MUNICIPAL_LCC'
+        ? [
+            'Quebec municipal LCC coverage is mapped to EPSG:6622 (NAD83(CSRS)v2 / Quebec Lambert) as an explicit compatibility workflow row.',
+            'This row is kept separate from EPSG:3799 so realization-specific municipal interoperability contracts remain explicit.',
           ]
         : def.id === 'CA_NAD83_CSRS_AB_10TM_RESOURCE'
         ? [

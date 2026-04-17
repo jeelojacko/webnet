@@ -826,13 +826,13 @@
         - [x] Replace draft `CA_NAD83_CSRS_NS_STEREOGRAPHIC` with Nova Scotia MTM 2010 zone-based targets (`8082`, `8083`) because the authority-backed NS operational CSRS projected targets in EPSG are MTM-zone based
         - [x] Remove draft `CA_NAD83_CSRS_NL_LAMBERT` from Priority 1 until an authority-backed NL Lambert projected CSRS target is confirmed; Newfoundland and Labrador operational coverage currently relies on already-supported UTM/MTM zones in the catalog
       - [ ] Priority 2 candidates (next provincial coverage wave):
-        - [ ] `CA_NAD83_CSRS_SK_ATS` (Saskatchewan ATS-style provincial projected workflow)
-        - [ ] `CA_NAD83_CSRS_MB_3TM` (Manitoba provincial 3TM-style workflow where used operationally)
-        - [ ] `CA_NAD83_CSRS_NU_STEREOGRAPHIC` (Nunavut territorial projected workflow if required by operations)
+        - [x] `CA_NAD83_CSRS_SK_ATS` (Saskatchewan ATS-style provincial projected workflow)
+        - [x] `CA_NAD83_CSRS_MB_3TM` (Manitoba provincial 3TM-style workflow where used operationally)
+        - [ ] `CA_NAD83_CSRS_NU_STEREOGRAPHIC` deferred (no direct EPSG row; Nunavut coverage currently through existing NAD83(CSRS) UTM rows)
       - [ ] Priority 3 candidates (specialized or lower-frequency provincial/territorial workflows):
-        - [ ] `CA_NAD83_CSRS_YT_TM` (Yukon territorial projected workflow)
-        - [ ] `CA_NAD83_CSRS_NT_TM` (Northwest Territories projected workflow)
-        - [ ] `CA_NAD83_CSRS_QC_MUNICIPAL_LCC` (Quebec municipal/regional LCC-style workflow if maintained as distinct contract)
+        - [x] `CA_NAD83_CSRS_YT_TM` (Yukon territorial projected workflow)
+        - [x] `CA_NAD83_CSRS_NT_TM` (Northwest Territories projected workflow)
+        - [x] `CA_NAD83_CSRS_QC_MUNICIPAL_LCC` (Quebec municipal/regional LCC-style workflow if maintained as distinct contract)
     - [ ] Batch 2 - catalog and parser/CLI support for Priority 1
       - [x] Add CRS catalog entries, alias normalization, and EPSG lookup mapping for Priority 1 rows
       - [x] Add focused catalog tests for metadata completeness, deterministic ordering, and provenance
@@ -842,11 +842,13 @@
       - [x] Add noise-free + noisy harness coverage with current metric thresholds and perfect-mode export checks
       - [x] Keep grouped markdown/json artifact generation deterministic for all new CRS rows
     - [ ] Batch 4 - Priority 2 implementation and harness
-      - [ ] Implement Priority 2 catalog rows with the same parser/CLI + harness validation gates as Priority 1
-      - [ ] Add focused docs for any provincial naming/alias differences from EPSG titles
+      - [x] Implement Priority 2 catalog rows with the same parser/CLI + harness validation gates as Priority 1
+      - [x] Implement `CA_NAD83_CSRS_SK_ATS` and `CA_NAD83_CSRS_MB_3TM` as provincial workflow aliases with parser/CLI + harness validation gates
+      - [x] Confirmed no dedicated authority-backed NAD83(CSRS) Nunavut stereographic EPSG row exists; deferred `CA_NAD83_CSRS_NU_STEREOGRAPHIC` and rely on existing NAD83(CSRS) UTM coverage for Nunavut for now
+      - [x] Add focused docs for provincial naming/alias differences from EPSG titles (SK ATS and MB 3TM aliases)
     - [ ] Batch 5 - Priority 3 decision gate and closeout
-      - [ ] Implement only Priority 3 rows that are justified by active user workflows or interoperability requirements
-      - [ ] Document deferred candidates with explicit rationale when not implemented
+      - [x] Implement only Priority 3 rows that are justified by active user workflows or interoperability requirements
+      - [x] Document deferred candidates with explicit rationale when not implemented
       - [ ] Re-run full validation matrix and refresh Canadian CRS coverage docs/summary counts
 
 - [x] Industry Standard v6-v14 parity gaps (prioritized from release notes; missing in WebNet today):

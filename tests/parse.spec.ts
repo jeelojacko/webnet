@@ -905,6 +905,34 @@ describe('parseInput', () => {
     const viaPriorityOneEpsg = parseInput(['.CRS GRID EPSG:8082', 'C A 0 0 0 ! !'].join('\n'));
     expect(viaPriorityOneEpsg.parseState.coordSystemMode).toBe('grid');
     expect(viaPriorityOneEpsg.parseState.crsId).toBe('CA_NAD83_CSRS_NS_MTM_2010_4');
+
+    const viaPriorityTwoSk = parseInput(
+      ['.CRS GRID CA_NAD83_CSRS_SK_ATS', 'C A 0 0 0 ! !'].join('\n'),
+    );
+    expect(viaPriorityTwoSk.parseState.coordSystemMode).toBe('grid');
+    expect(viaPriorityTwoSk.parseState.crsId).toBe('CA_NAD83_CSRS_SK_ATS');
+
+    const viaPriorityTwoMb = parseInput(
+      ['.CRS GRID CA_NAD83_CSRS_MB_3TM', 'C A 0 0 0 ! !'].join('\n'),
+    );
+    expect(viaPriorityTwoMb.parseState.coordSystemMode).toBe('grid');
+    expect(viaPriorityTwoMb.parseState.crsId).toBe('CA_NAD83_CSRS_MB_3TM');
+
+    const viaPriorityThreeYt = parseInput(
+      ['.CRS GRID CA_NAD83_CSRS_YT_TM', 'C A 0 0 0 ! !'].join('\n'),
+    );
+    expect(viaPriorityThreeYt.parseState.coordSystemMode).toBe('grid');
+    expect(viaPriorityThreeYt.parseState.crsId).toBe('CA_NAD83_CSRS_YT_TM');
+
+    const viaPriorityThreeNt = parseInput(
+      ['.CRS GRID CA_NAD83_CSRS_NT_TM', 'C A 0 0 0 ! !'].join('\n'),
+    );
+    expect(viaPriorityThreeNt.parseState.coordSystemMode).toBe('grid');
+    expect(viaPriorityThreeNt.parseState.crsId).toBe('CA_NAD83_CSRS_NT_TM');
+
+    const viaPriorityThreeQc = parseInput(['.CRS GRID EPSG:6622', 'C A 0 0 0 ! !'].join('\n'));
+    expect(viaPriorityThreeQc.parseState.coordSystemMode).toBe('grid');
+    expect(viaPriorityThreeQc.parseState.crsId).toBe('CA_NAD83_CSRS_QC_MUNICIPAL_LCC');
   });
 
   it('parses optional CRS scale/convergence directives with explicit OFF support', () => {

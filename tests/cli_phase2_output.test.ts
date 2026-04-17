@@ -415,6 +415,81 @@ describe('CLI phase 2 output modes', () => {
     const priorityOnePayload = JSON.parse(priorityOne.stdout);
     expect(priorityOnePayload.parseState?.coordSystemMode).toBe('grid');
     expect(priorityOnePayload.parseState?.crsId).toBe('CA_NAD83_CSRS_QC_LAMBERT');
+
+    const priorityTwoSk = runCli([
+      '--input',
+      STABLE_INPUT,
+      '--output',
+      'json',
+      '--coord-system-mode',
+      'grid',
+      '--crs-id',
+      'CA_NAD83_CSRS_SK_ATS',
+    ]);
+    expect(priorityTwoSk.status).toBe(0);
+    const priorityTwoSkPayload = JSON.parse(priorityTwoSk.stdout);
+    expect(priorityTwoSkPayload.parseState?.coordSystemMode).toBe('grid');
+    expect(priorityTwoSkPayload.parseState?.crsId).toBe('CA_NAD83_CSRS_SK_ATS');
+
+    const priorityTwoMb = runCli([
+      '--input',
+      STABLE_INPUT,
+      '--output',
+      'json',
+      '--coord-system-mode',
+      'grid',
+      '--crs-id',
+      'CA_NAD83_CSRS_MB_3TM',
+    ]);
+    expect(priorityTwoMb.status).toBe(0);
+    const priorityTwoMbPayload = JSON.parse(priorityTwoMb.stdout);
+    expect(priorityTwoMbPayload.parseState?.coordSystemMode).toBe('grid');
+    expect(priorityTwoMbPayload.parseState?.crsId).toBe('CA_NAD83_CSRS_MB_3TM');
+
+    const priorityThreeYt = runCli([
+      '--input',
+      STABLE_INPUT,
+      '--output',
+      'json',
+      '--coord-system-mode',
+      'grid',
+      '--crs-id',
+      'CA_NAD83_CSRS_YT_TM',
+    ]);
+    expect(priorityThreeYt.status).toBe(0);
+    const priorityThreeYtPayload = JSON.parse(priorityThreeYt.stdout);
+    expect(priorityThreeYtPayload.parseState?.coordSystemMode).toBe('grid');
+    expect(priorityThreeYtPayload.parseState?.crsId).toBe('CA_NAD83_CSRS_YT_TM');
+
+    const priorityThreeNt = runCli([
+      '--input',
+      STABLE_INPUT,
+      '--output',
+      'json',
+      '--coord-system-mode',
+      'grid',
+      '--crs-id',
+      'CA_NAD83_CSRS_NT_TM',
+    ]);
+    expect(priorityThreeNt.status).toBe(0);
+    const priorityThreeNtPayload = JSON.parse(priorityThreeNt.stdout);
+    expect(priorityThreeNtPayload.parseState?.coordSystemMode).toBe('grid');
+    expect(priorityThreeNtPayload.parseState?.crsId).toBe('CA_NAD83_CSRS_NT_TM');
+
+    const priorityThreeQc = runCli([
+      '--input',
+      STABLE_INPUT,
+      '--output',
+      'json',
+      '--coord-system-mode',
+      'grid',
+      '--crs-id',
+      'EPSG:6622',
+    ]);
+    expect(priorityThreeQc.status).toBe(0);
+    const priorityThreeQcPayload = JSON.parse(priorityThreeQc.stdout);
+    expect(priorityThreeQcPayload.parseState?.coordSystemMode).toBe('grid');
+    expect(priorityThreeQcPayload.parseState?.crsId).toBe('CA_NAD83_CSRS_QC_MUNICIPAL_LCC');
   }, CLI_TEST_TIMEOUT_MS);
 
   it('supports parse mode and geoid source CLI options', () => {
