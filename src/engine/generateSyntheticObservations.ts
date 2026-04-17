@@ -9,10 +9,12 @@ import type {
 } from './generateSyntheticCanadianNetwork';
 
 export type SyntheticObservationNoiseMode = 'noise-free' | 'noisy';
+export type SyntheticObservationPrecisionMode = 'standard' | 'perfect';
 export interface SyntheticObservationGenerationOptions {
   includeBearings?: boolean;
   includeAngles?: boolean;
   includeDirections?: boolean;
+  precisionMode?: SyntheticObservationPrecisionMode;
 }
 export interface SyntheticObservationInputRenderOptions {
   observationOrder?: 'default' | 'reverse';
@@ -134,6 +136,25 @@ const findStation = (network: SyntheticCanadianNetwork, id: string): TrueStation
 };
 
 const hiHtToken = (hi = 1.5, ht = 1.7): string => `${hi.toFixed(4)}/${ht.toFixed(4)}`;
+
+const precisionDigits = (precisionMode: SyntheticObservationPrecisionMode) =>
+  precisionMode === 'perfect'
+    ? {
+        stationEN: 10,
+        stationH: 6,
+        distance: 12,
+        angle: 12,
+        sigmaDistance: 6,
+        sigmaAngle: 4,
+      }
+    : {
+        stationEN: 4,
+        stationH: 3,
+        distance: 4,
+        angle: 8,
+        sigmaDistance: 4,
+        sigmaAngle: 2,
+      };
 
 const angleTripletsForTemplate = (network: SyntheticCanadianNetwork): Array<[string, string, string]> => {
   switch (network.template) {
@@ -344,6 +365,7 @@ export const generateSyntheticObservations = ({
   includeBearings = true,
   includeAngles = false,
   includeDirections = false,
+  precisionMode = 'standard',
 }: {
   network: SyntheticCanadianNetwork;
   mode?: SyntheticObservationNoiseMode;
@@ -353,6 +375,7 @@ export const generateSyntheticObservations = ({
   defaultHiM?: number;
   defaultHtM?: number;
 } & SyntheticObservationGenerationOptions): SyntheticObservationJob => {
+  const digits = precisionDigits(precisionMode);
   const random = createMulberry32(network.seed ^ 0x9e3779b9);
   const measurementNoise = (sigma: number): number =>
     mode === 'noisy' ? gaussianNoise(random) * sigma : 0;
@@ -382,14 +405,14 @@ export const generateSyntheticObservations = ({
       distanceMeters(from, to, defaultHiM, defaultHtM, network.coordMode) +
       measurementNoise(distanceSigmaM);
     return network.coordMode === '3D'
-      ? `D ${fromId}-${toId} ${value.toFixed(4)} ${distanceSigmaM.toFixed(4)} ${hiHtToken(defaultHiM, defaultHtM)}`
-      : `D ${fromId}-${toId} ${value.toFixed(4)} ${distanceSigmaM.toFixed(4)}`;
+      ? `D ${fromId}-${toId} ${value.toFixed(digits.distance)} ${distanceSigmaM.toFixed(digits.sigmaDistance)} ${hiHtToken(defaultHiM, defaultHtM)}`
+      : `D ${fromId}-${toId} ${value.toFixed(digits.distance)} ${distanceSigmaM.toFixed(digits.sigmaDistance)}`;
   };
   const bearing = (fromId: string, toId: string): string => {
     const from = findStation(network, fromId);
     const to = findStation(network, toId);
     const value = azimuthDeg(from, to) + measurementNoise(bearingSigmaSec / 3600);
-    return `B ${fromId}-${toId} ${value.toFixed(8)} ${bearingSigmaSec.toFixed(2)}`;
+    return `B ${fromId}-${toId} ${value.toFixed(digits.angle)} ${bearingSigmaSec.toFixed(digits.sigmaAngle)}`;
   };
   const distanceAndZenith = (fromId: string, toId: string): string => {
     const from = findStation(network, fromId);
@@ -400,14 +423,14 @@ export const generateSyntheticObservations = ({
     const zenithValue =
       zenithDeg(network, from, to, defaultHiM, defaultHtM) +
       measurementNoise(zenithSigmaSec / 3600);
-    return `DV ${fromId}-${toId} ${distanceValue.toFixed(4)} ${zenithValue.toFixed(8)} ${distanceSigmaM.toFixed(4)} ${zenithSigmaSec.toFixed(2)} ${hiHtToken(defaultHiM, defaultHtM)}`;
+    return `DV ${fromId}-${toId} ${distanceValue.toFixed(digits.distance)} ${zenithValue.toFixed(digits.angle)} ${distanceSigmaM.toFixed(digits.sigmaDistance)} ${zenithSigmaSec.toFixed(digits.sigmaAngle)} ${hiHtToken(defaultHiM, defaultHtM)}`;
   };
   const angle = (atId: string, fromId: string, toId: string): string => {
     const at = findStation(network, atId);
     const from = findStation(network, fromId);
     const to = findStation(network, toId);
     const value = turnedAngleDeg(at, from, to) + measurementNoise(bearingSigmaSec / 3600);
-    return `A ${atId}-${fromId}-${toId} ${value.toFixed(8)} ${bearingSigmaSec.toFixed(2)}`;
+    return `A ${atId}-${fromId}-${toId} ${value.toFixed(digits.angle)} ${bearingSigmaSec.toFixed(digits.sigmaAngle)}`;
   };
   const directionSetBlock = (occupyId: string, backsightId: string, targetIds: string[]): string[] => {
     const occupy = findStation(network, occupyId);
@@ -415,7 +438,7 @@ export const generateSyntheticObservations = ({
     const backsightReading = measurementNoise(bearingSigmaSec / 3600);
     const lines = [
       `DB ${occupyId} ${backsightId}`,
-      `DN ${backsightId} ${wrap360(backsightReading).toFixed(8)} ${bearingSigmaSec.toFixed(2)}`,
+      `DN ${backsightId} ${wrap360(backsightReading).toFixed(digits.angle)} ${bearingSigmaSec.toFixed(digits.sigmaAngle)}`,
     ];
     targetIds.forEach((targetId) => {
       const target = findStation(network, targetId);
@@ -430,11 +453,11 @@ export const generateSyntheticObservations = ({
           zenithDeg(network, occupy, target, defaultHiM, defaultHtM) +
           measurementNoise(zenithSigmaSec / 3600);
         lines.push(
-          `DM ${targetId} ${directionValue.toFixed(8)} ${distanceValue.toFixed(4)} ${zenithValue.toFixed(8)} ${bearingSigmaSec.toFixed(2)} ${distanceSigmaM.toFixed(4)} ${zenithSigmaSec.toFixed(2)} ${hiHtToken(defaultHiM, defaultHtM)}`,
+          `DM ${targetId} ${directionValue.toFixed(digits.angle)} ${distanceValue.toFixed(digits.distance)} ${zenithValue.toFixed(digits.angle)} ${bearingSigmaSec.toFixed(digits.sigmaAngle)} ${distanceSigmaM.toFixed(digits.sigmaDistance)} ${zenithSigmaSec.toFixed(digits.sigmaAngle)} ${hiHtToken(defaultHiM, defaultHtM)}`,
         );
       } else {
         lines.push(
-          `DM ${targetId} ${directionValue.toFixed(8)} ${distanceValue.toFixed(4)} 90.00000000 ${bearingSigmaSec.toFixed(2)} ${distanceSigmaM.toFixed(4)} ${zenithSigmaSec.toFixed(2)} ${hiHtToken(defaultHiM, defaultHtM)}`,
+          `DM ${targetId} ${directionValue.toFixed(digits.angle)} ${distanceValue.toFixed(digits.distance)} ${90 .toFixed(digits.angle)} ${bearingSigmaSec.toFixed(digits.sigmaAngle)} ${distanceSigmaM.toFixed(digits.sigmaDistance)} ${zenithSigmaSec.toFixed(digits.sigmaAngle)} ${hiHtToken(defaultHiM, defaultHtM)}`,
         );
       }
     });
@@ -458,7 +481,7 @@ export const generateSyntheticObservations = ({
           : ' ! !'
         : '';
     stationLines.push(
-      `C ${station.id} ${approx.easting.toFixed(4)} ${approx.northing.toFixed(4)} ${approx.elevation.toFixed(3)}${fixedSuffix}`,
+      `C ${station.id} ${approx.easting.toFixed(digits.stationEN)} ${approx.northing.toFixed(digits.stationEN)} ${approx.elevation.toFixed(digits.stationH)}${fixedSuffix}`,
     );
     return {
       id: station.id,

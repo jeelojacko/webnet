@@ -17,6 +17,8 @@
     "parity:industry-reference": "node scripts/runVitest.mjs run tests/computational_parity_harness.test.ts",
     "adjust:cli": "tsx src/cli.ts",
     "crs:report:canada": "tsx scripts/reportCanadianCrsCatalog.ts",
+    "crs:report:synthetic": "tsx scripts/generateSyntheticCrsReports.ts",
+    "crs:report:synthetic:perfect": "tsx scripts/generateSyntheticCrsReports.ts --perfect",
     "corpus:legacy": "tsx src/legacyCorpusHarness.ts",
     "corpus:legacy:ci": "tsx src/legacyCorpusHarness.ts --ci",
     "corpus:legacy:baseline": "tsx src/legacyCorpusHarness.ts --write-baseline tests/fixtures/legacy_compatibility_corpus_phase1_baseline.json",

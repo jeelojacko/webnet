@@ -345,4 +345,21 @@ describe('Canadian CRS synthetic adjustment smoke harness', () => {
     expect(markdown).toContain('## PROVINCIAL');
     expect(markdown).toContain('CA_NAD83_CSRS_AB_3TM_117W');
   });
+
+  it('supports perfect precision mode for near-zero noise-free residual and coordinate drift', () => {
+    const run = runSyntheticCrsAdjustmentTest({
+      crsId: 'CA_NAD83_CSRS_UTM_10N',
+      seed: 9101,
+      template: 'short-traverse',
+      mode: 'noise-free',
+      observationOptions: {
+        precisionMode: 'perfect',
+      },
+    });
+    expect(run.result.success).toBe(true);
+    expect(run.metrics.maxHorizontalErrorM).toBeLessThan(1e-8);
+    expect(run.metrics.rmsHorizontalErrorM).toBeLessThan(1e-8);
+    expect(run.metrics.residualRms).toBeLessThan(1e-8);
+    expect(run.metrics.seuw).toBeLessThan(1e-2);
+  });
 });
