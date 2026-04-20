@@ -2658,8 +2658,6 @@ const App: React.FC<AppProps> = ({
                   derivedResult={qaDerivedResult}
                   selectedStationId={selection.stationId}
                   selectedObservationId={selection.observationId}
-                  declutterPreset={mapDeclutterPreset}
-                  onDeclutterPresetChange={setMapDeclutterPreset}
                   onSelectStation={(stationId) => selectStation(stationId, 'map')}
                   onSelectObservation={(observationId) => selectObservation(observationId, 'map')}
                 />

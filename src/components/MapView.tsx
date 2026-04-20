@@ -54,8 +54,6 @@ interface MapViewProps {
   derivedResult?: DerivedQaResult | null;
   selectedStationId?: string | null;
   selectedObservationId?: number | null;
-  declutterPreset?: 'standard' | 'dense-review';
-  onDeclutterPresetChange?: (_preset: 'standard' | 'dense-review') => void;
   onSelectStation?: (_stationId: string) => void;
   onSelectObservation?: (_observationId: number) => void;
 }
@@ -130,8 +128,6 @@ const MapView: React.FC<MapViewProps> = ({
   derivedResult = null,
   selectedStationId = null,
   selectedObservationId = null,
-  declutterPreset = 'standard',
-  onDeclutterPresetChange,
   onSelectStation,
   onSelectObservation,
 }) => {
@@ -163,8 +159,8 @@ const MapView: React.FC<MapViewProps> = ({
   const [angleFromInput, setAngleFromInput] = useState('');
   const [angleToInput, setAngleToInput] = useState('');
   const [showTransformedCoordinates, setShowTransformedCoordinates] = useState(false);
-  const [showLabels, setShowLabels] = useState(declutterPreset !== 'dense-review');
-  const [hideMinorGeometry, setHideMinorGeometry] = useState(declutterPreset === 'dense-review');
+  const [showLabels, setShowLabels] = useState(true);
+  const [hideMinorGeometry, setHideMinorGeometry] = useState(false);
   const [focusSelection, setFocusSelection] = useState(false);
   const [viewportWidth, setViewportWidth] = useState<number>(
     typeof window !== 'undefined' ? window.innerWidth : 1280,
@@ -292,12 +288,6 @@ const MapView: React.FC<MapViewProps> = ({
     (value: string): string | null => resolveStationIdToken(stationIdLookup, value),
     [stationIdLookup],
   );
-
-  useEffect(() => {
-    setShowLabels(declutterPreset !== 'dense-review');
-    setHideMinorGeometry(declutterPreset === 'dense-review');
-    setFocusSelection(false);
-  }, [declutterPreset]);
 
   useEffect(() => {
     if (typeof window === 'undefined' || viewportWidthOverride != null) return;
@@ -703,8 +693,8 @@ const MapView: React.FC<MapViewProps> = ({
     if (!showLabels) return new Set<string>();
     if (visiblePoints2d.length === 0) return new Set<string>();
     const next = new Set<string>();
-    const pointThreshold = declutterPreset === 'dense-review' ? 55 : DENSE_LABEL_POINT_THRESHOLD;
-    const edgeThreshold = declutterPreset === 'dense-review' ? 120 : DENSE_LABEL_EDGE_THRESHOLD;
+    const pointThreshold = DENSE_LABEL_POINT_THRESHOLD;
+    const edgeThreshold = DENSE_LABEL_EDGE_THRESHOLD;
     const denseView =
       visiblePoints2d.length > pointThreshold || visibleMapLines2d.length > edgeThreshold;
     if (!denseView) {
@@ -739,7 +729,6 @@ const MapView: React.FC<MapViewProps> = ({
     });
     return next;
   }, [
-    declutterPreset,
     selectedStationId,
     showLabels,
     stationSeverity,
@@ -1009,31 +998,6 @@ const MapView: React.FC<MapViewProps> = ({
           {unitScale.toFixed(4)} factor)
         </span>
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 rounded border border-slate-700/80 bg-slate-900/70 px-2 py-1">
-            <span className="text-[11px] uppercase tracking-wide text-slate-400">Declutter</span>
-            <button
-              type="button"
-              onClick={() => onDeclutterPresetChange?.('standard')}
-              className={`rounded px-2 py-0.5 text-[11px] ${
-                declutterPreset === 'standard'
-                  ? 'bg-cyan-900/60 text-cyan-100'
-                  : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
-              }`}
-            >
-              Standard
-            </button>
-            <button
-              type="button"
-              onClick={() => onDeclutterPresetChange?.('dense-review')}
-              className={`rounded px-2 py-0.5 text-[11px] ${
-                declutterPreset === 'dense-review'
-                  ? 'bg-cyan-900/60 text-cyan-100'
-                  : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
-              }`}
-            >
-              Dense review
-            </button>
-          </div>
           {effectiveMode === '2d' && mapDensitySummary.dense && (
             <span className="text-[11px] text-slate-500">
               Dense view: labels {mapDensitySummary.labelTotal}/{filteredVisiblePoints2d.length}
