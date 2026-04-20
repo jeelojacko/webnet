@@ -111,6 +111,7 @@ Current numerical behavior includes:
 
 ### Residual, suspect, and review workflows
 Current review behavior includes:
+- explicit run-state freshness strip (`Ready`, `Dirty`, `Running`, `Result stale`, `Reviewing`) plus blocking-reason badges near the main run workflow
 - standardized residual tables with source-line traceability
 - residual diagnostic summaries by severity and family
 - what-if suspect impact scoring with one-click exclude and rerun flows
@@ -119,6 +120,9 @@ Current review behavior includes:
 - setup-level suspect metrics and ranking
 - traverse, GPS loop, direction-repeatability, and leveling suspect tables
 - synchronized report/map selection and review actions
+- shared issue-driven review queue across import conflicts, suspect observations, cluster candidates, and compare diffs, with deterministic ordering and queue-to-report/map/source-line navigation
+- queue filtering by severity/source/unresolved/imported-group and next-unresolved navigation
+- safety confirmations for high-risk review/import actions, with explicit action scope in confirmation copy and inline disabled-reason hints on unavailable controls
 - saved-run compare and baseline review workflows
 - heavy jobs now defer full normal-equation covariance recovery until the final adjusted state; intermediate outer iterations solve only for the correction vector
 - industry-standard propagated precision is the only live precision-reporting mode exposed in the app and project workflow
@@ -281,7 +285,7 @@ Current delivered performance architecture includes:
 - shared run-session workflows may perform multiple full re-solves after the main adjustment for suspect-impact, preanalysis-impact, robust-comparison, or auto-adjust diagnostics; long traverse cases can therefore spend minutes in `Solving` even when a single engine solve is only tens of seconds
 - lazy-loaded heavy result views and modal bodies
 - local report state with filter and windowing behavior
-- dense-map review guards
+- dense-map review guards, including a persisted `standard` vs `dense-review` declutter preset and quick toggles for labels/minor geometry/non-selected focus
 - benchmark coverage for large browser projects and imported-job workflows
 - asynchronous worker-backed artifact generation for heavy export flows
 - the adjustment core now bypasses generic dense `AᵀP`/`AᵀPA` matrix products in its main solve and covariance/statistics paths, instead accumulating normal equations from sparse equation rows and using sparse row-matrix multiplies where `A*x` style products are still needed; this keeps parity behavior unchanged while materially improving the dense imported-project benchmark path

@@ -8,6 +8,7 @@ interface ReportToolbarProps {
   onResetOverrides: () => void;
   showClusterMergeRevert: boolean;
   clusterAppliedMergeCount: number;
+  clusterRevertDisabledReason?: string;
   onClearClusterMerges: () => void;
   unitScale: number;
   units: 'm' | 'ft';
@@ -21,6 +22,7 @@ const ReportToolbar: React.FC<ReportToolbarProps> = ({
   onResetOverrides,
   showClusterMergeRevert,
   clusterAppliedMergeCount,
+  clusterRevertDisabledReason,
   onClearClusterMerges,
   unitScale,
   units,
@@ -49,6 +51,7 @@ const ReportToolbar: React.FC<ReportToolbarProps> = ({
         <button
           onClick={onClearClusterMerges}
           disabled={clusterAppliedMergeCount === 0}
+          title={clusterAppliedMergeCount === 0 ? clusterRevertDisabledReason : 'Revert cluster merges and rerun'}
           className={`px-3 py-1 rounded ${
             clusterAppliedMergeCount === 0
               ? 'bg-slate-800 text-slate-600 cursor-not-allowed'

@@ -16,6 +16,7 @@ import RunComparisonPanel from './components/RunComparisonPanel';
 import WorkspaceReviewActions from './components/WorkspaceReviewActions';
 import WorkspaceRecoveryBanner from './components/WorkspaceRecoveryBanner';
 import WorkspaceChrome from './components/WorkspaceChrome';
+import ReviewQueuePanel from './components/ReviewQueuePanel';
 
 import { DEFAULT_INPUT } from './defaultInput';
 import { ACTIVE_INDUSTRY_PARITY_CASE } from './industryParityCases';
@@ -27,6 +28,13 @@ import {
   cloneSavedRunSnapshots,
   type SavedRunReviewState,
 } from './engine/qaWorkflow';
+import { confirmActionGuard } from './engine/actionGuards';
+import {
+  buildReviewQueue,
+  type ReviewQueueItem,
+  type ReviewQueueSeverity,
+  type ReviewQueueSourceType,
+} from './engine/reviewQueue';
 import { runAdjustmentSession } from './engine/runSession';
 import { createRunProfileBuilders } from './engine/runProfileBuilders';
 import { createRunOutputBuilders } from './engine/runOutputBuilders';
@@ -1043,6 +1051,18 @@ const App: React.FC<AppProps> = ({
   );
   const [splitPercent, setSplitPercent] = useState(35); // left pane width (%)
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [mapDeclutterPreset, setMapDeclutterPreset] = useState<'standard' | 'dense-review'>(
+    'standard',
+  );
+  const [reviewQueueSeverityFilter, setReviewQueueSeverityFilter] = useState<
+    'all' | ReviewQueueSeverity
+  >('all');
+  const [reviewQueueSourceFilter, setReviewQueueSourceFilter] = useState<
+    'all' | ReviewQueueSourceType
+  >('all');
+  const [reviewQueueUnresolvedOnly, setReviewQueueUnresolvedOnly] = useState(false);
+  const [reviewQueueImportedGroupFilter, setReviewQueueImportedGroupFilter] = useState('all');
+  const [selectedReviewQueueItemId, setSelectedReviewQueueItemId] = useState<string | null>(null);
   const projectOptionsState = useProjectOptionsState({
     initialSettingsModalOpen,
     initialOptionsTab,
@@ -1601,13 +1621,45 @@ const App: React.FC<AppProps> = ({
     restoreSnapshot: restoreWorkspaceReviewSnapshot,
     resetState: resetWorkspaceReviewState,
   } = workspaceReviewState;
+  const blockingReasons = useMemo(() => {
+    const reasons: string[] = [];
+    if (!projectRunValidation.ok) reasons.push('Select at least one checked project file');
+    if (pendingRunSettingDiffs.length > 0) {
+      reasons.push(`${pendingRunSettingDiffs.length} setting change(s) pending rerun`);
+    }
+    if (pipelineState.status === 'running') reasons.push('Run in progress');
+    return reasons;
+  }, [pendingRunSettingDiffs.length, pipelineState.status, projectRunValidation.ok]);
+  const runFreshness = useMemo(() => {
+    if (pipelineState.status === 'running') return 'running' as const;
+    if (selection.observationId != null || selection.stationId != null) return 'reviewing' as const;
+    if (result && lastRunInput !== effectiveRunInput) return 'result-stale' as const;
+    if (pendingRunSettingDiffs.length > 0) return 'dirty-needs-rerun' as const;
+    return 'ready' as const;
+  }, [
+    effectiveRunInput,
+    lastRunInput,
+    pendingRunSettingDiffs.length,
+    pipelineState.status,
+    result,
+    selection.observationId,
+    selection.stationId,
+  ]);
+  const persistedWorkspaceReviewSnapshot = useMemo(
+    () => ({
+      ...workspaceReviewSnapshot,
+      runFreshness,
+      blockingReasons: blockingReasons.slice(),
+    }),
+    [blockingReasons, runFreshness, workspaceReviewSnapshot],
+  );
   const buildSavedRunReopenState = React.useCallback(
     () => ({
       activeTab,
-      review: JSON.parse(JSON.stringify(workspaceReviewSnapshot)),
+      review: JSON.parse(JSON.stringify(persistedWorkspaceReviewSnapshot)),
       comparisonSelection: { ...comparisonSelection },
     }),
-    [activeTab, comparisonSelection, workspaceReviewSnapshot],
+    [activeTab, comparisonSelection, persistedWorkspaceReviewSnapshot],
   );
   const buildWorkspaceReviewStateFromSavedRun = React.useCallback(
     (savedReview: SavedRunReviewState): WorkspaceReviewState => {
@@ -1630,6 +1682,8 @@ const App: React.FC<AppProps> = ({
         },
         selection: { ...savedReview.selection },
         pinnedObservationIds: savedReview.pinnedObservationIds.slice(),
+        runFreshness: 'ready',
+        blockingReasons: [],
       };
     },
     [],
@@ -1651,7 +1705,8 @@ const App: React.FC<AppProps> = ({
         activeTab,
         splitPercent,
         isSidebarOpen,
-        review: workspaceReviewSnapshot,
+        mapDeclutterPreset,
+        review: persistedWorkspaceReviewSnapshot,
       },
       comparisonView: {
         stationMovementThreshold: comparisonSelection.stationMovementThreshold,
@@ -1679,7 +1734,8 @@ const App: React.FC<AppProps> = ({
       selectedInstrument,
       settings,
       splitPercent,
-      workspaceReviewSnapshot,
+      persistedWorkspaceReviewSnapshot,
+      mapDeclutterPreset,
     ],
   );
   const handleRestoreSavedRun = React.useCallback(
@@ -1820,6 +1876,7 @@ const App: React.FC<AppProps> = ({
     setActiveTab(snapshot.view.activeTab);
     setSplitPercent(Math.max(20, Math.min(80, snapshot.view.splitPercent)));
     setIsSidebarOpen(snapshot.view.isSidebarOpen);
+    setMapDeclutterPreset(snapshot.view.mapDeclutterPreset ?? 'standard');
     restoreWorkspaceReviewSnapshot(
       snapshot.view.review ?? {
         ...defaultReviewState,
@@ -1866,16 +1923,110 @@ const App: React.FC<AppProps> = ({
     return null;
   }, [pipelineState.phase, pipelineState.status]);
 
-  const handleJumpToSourceLine = (lineNumber: number) => {
-    if (!Number.isFinite(lineNumber) || lineNumber <= 0) return;
-    if (!isSidebarOpen) setIsSidebarOpen(true);
-    setPendingEditorJumpLine(Math.trunc(lineNumber));
-  };
+  const reviewQueueItems = useMemo(
+    () =>
+      buildReviewQueue({
+        result,
+        excludedIds,
+        clusterReviewDecisions,
+        comparisonSummary: runComparisonSummary,
+        importConflicts: importReviewState?.conflicts ?? [],
+        conflictResolutions: importReviewState?.conflictResolutions ?? {},
+        conflictRenameValues: importReviewState?.conflictRenameValues ?? {},
+      }),
+    [
+      clusterReviewDecisions,
+      excludedIds,
+      importReviewState?.conflictRenameValues,
+      importReviewState?.conflictResolutions,
+      importReviewState?.conflicts,
+      result,
+      runComparisonSummary,
+    ],
+  );
+  const reviewQueueImportedGroupOptions = useMemo(
+    () =>
+      [...new Set(reviewQueueItems.map((item) => item.sourceGroup).filter((group) => group !== 'workspace'))]
+        .sort((left, right) => left.localeCompare(right, undefined, { numeric: true })),
+    [reviewQueueItems],
+  );
+  const filteredReviewQueueItems = useMemo(
+    () =>
+      reviewQueueItems.filter((item) => {
+        if (reviewQueueSeverityFilter !== 'all' && item.severity !== reviewQueueSeverityFilter) {
+          return false;
+        }
+        if (reviewQueueSourceFilter !== 'all' && item.sourceType !== reviewQueueSourceFilter) {
+          return false;
+        }
+        if (reviewQueueUnresolvedOnly && item.resolved) return false;
+        if (reviewQueueImportedGroupFilter !== 'all' && item.sourceGroup !== reviewQueueImportedGroupFilter) {
+          return false;
+        }
+        return true;
+      }),
+    [
+      reviewQueueImportedGroupFilter,
+      reviewQueueSeverityFilter,
+      reviewQueueSourceFilter,
+      reviewQueueUnresolvedOnly,
+      reviewQueueItems,
+    ],
+  );
+
+  const handleJumpToSourceLine = useCallback(
+    (lineNumber: number) => {
+      if (!Number.isFinite(lineNumber) || lineNumber <= 0) return;
+      setIsSidebarOpen(true);
+      setPendingEditorJumpLine(Math.trunc(lineNumber));
+    },
+    [setIsSidebarOpen, setPendingEditorJumpLine],
+  );
 
   const handleFocusReportFilter = () => {
     setActiveTab('report');
     setReportFilterFocusRequestKey((current) => current + 1);
   };
+  const handleSelectReviewQueueItem = useCallback(
+    (item: ReviewQueueItem) => {
+      setSelectedReviewQueueItemId(item.id);
+      if (item.target.kind === 'observation') {
+        selectObservation(item.target.observationId, 'queue');
+        setActiveTab(item.preferredTab === 'map' ? 'map' : 'report');
+        if (item.target.sourceLine != null) handleJumpToSourceLine(item.target.sourceLine);
+        return;
+      }
+      if (item.target.kind === 'station') {
+        selectStation(item.target.stationId, 'queue');
+        setActiveTab(item.preferredTab === 'report' ? 'report' : 'map');
+        if (item.target.sourceLine != null) handleJumpToSourceLine(item.target.sourceLine);
+        return;
+      }
+      handleJumpToSourceLine(item.target.sourceLine);
+      setActiveTab('report');
+    },
+    [handleJumpToSourceLine, selectObservation, selectStation, setActiveTab],
+  );
+  const handleNextUnresolvedQueueItem = useCallback(() => {
+    const unresolved = filteredReviewQueueItems.filter((item) => !item.resolved);
+    if (unresolved.length === 0) return;
+    const currentIndex = unresolved.findIndex((item) => item.id === selectedReviewQueueItemId);
+    const next = unresolved[currentIndex < 0 ? 0 : (currentIndex + 1) % unresolved.length];
+    handleSelectReviewQueueItem(next);
+  }, [filteredReviewQueueItems, handleSelectReviewQueueItem, selectedReviewQueueItemId]);
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      const tag = target?.tagName?.toLowerCase() ?? '';
+      if (tag === 'input' || tag === 'textarea' || target?.isContentEditable) return;
+      if (event.altKey && event.key.toLowerCase() === 'n') {
+        event.preventDefault();
+        handleNextUnresolvedQueueItem();
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [handleNextUnresolvedQueueItem]);
   const handleOpenProjectWorkspacePanel = React.useCallback(() => {
     openProjectOptions();
     setActiveOptionsTab('other-files');
@@ -2032,6 +2183,7 @@ const App: React.FC<AppProps> = ({
         }}
         pipelineState={pipelineState}
         runPhaseLabel={runPhaseLabel}
+        pendingRunSettingDiffs={pendingRunSettingDiffs}
         onCancelRun={cancelAdjustment}
         onRun={handleValidatedRun}
         onResetToLastRun={handleResetToLastRun}
@@ -2288,6 +2440,27 @@ const App: React.FC<AppProps> = ({
               }
             />
           )}
+          <ReviewQueuePanel
+            items={filteredReviewQueueItems}
+            selectedItemId={selectedReviewQueueItemId}
+            severityFilter={reviewQueueSeverityFilter}
+            sourceFilter={reviewQueueSourceFilter}
+            unresolvedOnly={reviewQueueUnresolvedOnly}
+            importedGroupFilter={reviewQueueImportedGroupFilter}
+            importedGroupOptions={reviewQueueImportedGroupOptions}
+            onSeverityFilterChange={setReviewQueueSeverityFilter}
+            onSourceFilterChange={setReviewQueueSourceFilter}
+            onUnresolvedOnlyChange={setReviewQueueUnresolvedOnly}
+            onImportedGroupFilterChange={setReviewQueueImportedGroupFilter}
+            onSelectItem={handleSelectReviewQueueItem}
+            onNextUnresolved={handleNextUnresolvedQueueItem}
+            onClearFilters={() => {
+              setReviewQueueSeverityFilter('all');
+              setReviewQueueSourceFilter('all');
+              setReviewQueueUnresolvedOnly(false);
+              setReviewQueueImportedGroupFilter('all');
+            }}
+          />
           {(selectedObservation || selectedStation || pinnedObservations.length > 0) && (
             <div className="border-b border-slate-800 bg-slate-950/90 px-4 py-2 text-xs text-slate-300">
               <div className="flex flex-wrap items-center gap-2">
@@ -2485,6 +2658,8 @@ const App: React.FC<AppProps> = ({
                   derivedResult={qaDerivedResult}
                   selectedStationId={selection.stationId}
                   selectedObservationId={selection.observationId}
+                  declutterPreset={mapDeclutterPreset}
+                  onDeclutterPresetChange={setMapDeclutterPreset}
                   onSelectStation={(stationId) => selectStation(stationId, 'map')}
                   onSelectObservation={(observationId) => selectObservation(observationId, 'map')}
                 />
@@ -2703,7 +2878,18 @@ const App: React.FC<AppProps> = ({
             onRemoveGroup={handleImportReviewRemoveGroup}
             onRemoveRow={handleImportReviewRemoveRow}
             onCancel={handleCancelImportReview}
-            onImportAsNewFile={handleApplyImportReviewAsNewFile}
+            onImportAsNewFile={() => {
+              const selectedCount =
+                importReviewState.reviewModel.items.length - importReviewState.excludedItemIds.size;
+              const confirmed = confirmActionGuard({
+                action: 'import-new-file',
+                scope: `${selectedCount} selected row(s) from ${importReviewState.sourceName}`,
+                detail:
+                  'This keeps current editor text and appends reviewed rows as a new project source file.',
+              });
+              if (!confirmed) return;
+              void handleApplyImportReviewAsNewFile();
+            }}
             onImportAssociatedProjectSettings={triggerImportReviewSettingsFileSelect}
             pendingAssociatedSettingsSourceName={
               importReviewState.stagedAssociatedSettings?.sourceName ?? null
@@ -2722,7 +2908,18 @@ const App: React.FC<AppProps> = ({
                     .join(' ')
                 : null
             }
-            onImport={handleApplyImportReview}
+            onImport={() => {
+              const selectedCount =
+                importReviewState.reviewModel.items.length - importReviewState.excludedItemIds.size;
+              const confirmed = confirmActionGuard({
+                action: 'import-apply',
+                scope: `${selectedCount} selected row(s) from ${importReviewState.sourceName}`,
+                detail:
+                  'This replaces current editor/import target text with the reviewed import output.',
+              });
+              if (!confirmed) return;
+              handleApplyImportReview();
+            }}
           />
         </React.Suspense>
       )}

@@ -37,6 +37,7 @@ interface AppToolbarProps {
   onTogglePinSelectedObservation: () => void;
   pipelineState: RunPipelineState;
   runPhaseLabel: string | null;
+  pendingRunSettingDiffs: string[];
   onCancelRun: () => void;
   onRun: () => void;
   onResetToLastRun: () => void;
@@ -62,6 +63,7 @@ const AppToolbar: React.FC<AppToolbarProps> = ({
   onTogglePinSelectedObservation,
   pipelineState,
   runPhaseLabel,
+  pendingRunSettingDiffs,
   onCancelRun,
   onRun,
   onResetToLastRun,
@@ -202,6 +204,15 @@ const AppToolbar: React.FC<AppToolbarProps> = ({
           >
             <Play size={16} /> <span>Adjust</span>
           </button>
+        )}
+        {pendingRunSettingDiffs.length > 0 && pipelineState.status !== 'running' && (
+          <div
+            className="max-w-[320px] rounded border border-amber-700/70 bg-amber-950/25 px-2 py-1 text-[10px] text-amber-200"
+            title={pendingRunSettingDiffs.join('\n')}
+          >
+            {pendingRunSettingDiffs.length} setting change
+            {pendingRunSettingDiffs.length === 1 ? '' : 's'} since last run
+          </div>
         )}
         <button
           onClick={onResetToLastRun}

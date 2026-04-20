@@ -23,6 +23,8 @@ export const createDefaultWorkspaceReviewState = (): WorkspaceReviewState => ({
     origin: null,
   },
   pinnedObservationIds: [],
+  runFreshness: 'ready',
+  blockingReasons: [],
 });
 
 export const useWorkspaceReviewState = ({
@@ -92,6 +94,8 @@ export const useWorkspaceReviewState = ({
     reportView: report.snapshot,
     selection,
     pinnedObservationIds: pinnedObservationIds.slice(),
+    runFreshness: 'ready',
+    blockingReasons: [],
   };
 
   return {

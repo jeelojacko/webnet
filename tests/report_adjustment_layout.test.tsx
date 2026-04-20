@@ -80,6 +80,12 @@ const createReportViewState = (
     setReportObservationTypeFilter: () => {},
     reportExclusionFilter: 'all',
     setReportExclusionFilter: () => {},
+    reviewConflictOnly: false,
+    setReviewConflictOnly: () => {},
+    reviewAdjustedOnly: false,
+    setReviewAdjustedOnly: () => {},
+    reviewImportedGroupFilter: 'all',
+    setReviewImportedGroupFilter: () => {},
     clearFilters: () => {},
     deferredReportFilterQuery: '',
     normalizedReportFilterQuery: '',
@@ -172,6 +178,7 @@ describe('ReportView adjustment-layout sections', () => {
     expect(html).toMatch(/style="order:-170"[\s\S]*Residual Diagnostics/);
     expect(html).toMatch(/style="order:-160"[\s\S]*Setup Diagnostics/);
     expect(html).toMatch(/style="order:-140"[\s\S]*Suspect Impact Analysis \(what-if exclusion\)/);
+    expect(html).not.toContain('StdDev (override)');
     expect(html).not.toContain('Outlier Analysis (&gt; 2 sigma)');
     expect(html).not.toContain('Top Suspects (ranked)');
     expect(html).not.toContain('Setup Suspects (ranked)');

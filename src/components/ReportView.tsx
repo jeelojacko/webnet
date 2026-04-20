@@ -35,6 +35,7 @@ import {
   sortObservationsByStdRes,
   type SortedObservation,
 } from '../engine/resultDerivedModels';
+import { confirmActionGuard } from '../engine/actionGuards';
 import AdjustedCoordinatesSection from './report/AdjustedCoordinatesSection';
 import CollapsibleSectionHeader from './report/CollapsibleSectionHeader';
 import ObservationTableSection from './report/ObservationTableSection';
@@ -266,7 +267,7 @@ const ReportView: React.FC<ReportViewProps> = ({
   onReRun,
   onClearExclusions,
   overrides: _overrides,
-  onOverride,
+  onOverride: _onOverride,
   onResetOverrides,
   clusterReviewDecisions,
   activeClusterApprovedMerges,
@@ -323,6 +324,12 @@ const ReportView: React.FC<ReportViewProps> = ({
     setReportObservationTypeFilter,
     reportExclusionFilter,
     setReportExclusionFilter,
+    reviewConflictOnly,
+    setReviewConflictOnly,
+    reviewAdjustedOnly,
+    setReviewAdjustedOnly,
+    reviewImportedGroupFilter,
+    setReviewImportedGroupFilter,
     clearFilters,
     deferredReportFilterQuery,
     normalizedReportFilterQuery,
@@ -378,9 +385,38 @@ const ReportView: React.FC<ReportViewProps> = ({
           return false;
         if (reportExclusionFilter === 'included' && excludedIds.has(obs.id)) return false;
         if (reportExclusionFilter === 'excluded' && !excludedIds.has(obs.id)) return false;
+        if (
+          reviewImportedGroupFilter !== 'all' &&
+          (reviewImportedGroupFilter === '__none__'
+            ? Boolean(obs.sourceFile)
+            : (obs.sourceFile ?? '') !== reviewImportedGroupFilter)
+        ) {
+          return false;
+        }
+        if (reviewAdjustedOnly && (obs.calc == null || obs.residual == null)) return false;
+        if (reviewConflictOnly) {
+          const absStdRes = Math.abs(obs.stdRes ?? 0);
+          const localFailed = obs.localTest?.pass === false;
+          if (absStdRes < 2 && !localFailed) return false;
+        }
         return matchesReportQuery(obs.type, obs.sourceLine, buildObservationSearchText(obs));
       }),
-    [excludedIds, matchesReportQuery, reportExclusionFilter, reportObservationTypeFilter, sortedObs],
+    [
+      excludedIds,
+      matchesReportQuery,
+      reportExclusionFilter,
+      reportObservationTypeFilter,
+      reviewAdjustedOnly,
+      reviewConflictOnly,
+      reviewImportedGroupFilter,
+      sortedObs,
+    ],
+  );
+  const importedGroupOptions = useMemo(
+    () =>
+      [...new Set(sortedObs.map((obs) => obs.sourceFile).filter((value): value is string => Boolean(value)))]
+        .sort((left, right) => left.localeCompare(right, undefined, { numeric: true })),
+    [sortedObs],
   );
   const observationsByType = useMemo(
     () => groupSortedObservationsByType(filteredSortedObs),
@@ -956,7 +992,7 @@ const ReportView: React.FC<ReportViewProps> = ({
 
     if (tips[upper]) return tips[upper];
     if (upper.startsWith('STDDEV'))
-      return 'Editable standard deviation (weight) override for this observation.';
+      return 'Standard deviation value for this metric in current display units.';
     if (upper.startsWith('BASE |T|'))
       return 'Original standardized residual before what-if exclusion.';
     if (upper.startsWith('DSEUW'))
@@ -1154,7 +1190,6 @@ const ReportView: React.FC<ReportViewProps> = ({
         selectedObservationId={selectedObservationId}
         onSelectObservation={onSelectObservation}
         onToggleExclude={onToggleExclude}
-        onOverride={onOverride}
         rowSelectionClass={rowSelectionClass}
         visibleRowsFor={visibleRowsFor}
         showMoreRows={showMoreRows}
@@ -1174,7 +1209,11 @@ const ReportView: React.FC<ReportViewProps> = ({
     );
   };
 
-  const showClusterMergeRevert = clusterDiagnostics?.enabled === true;
+  const showClusterMergeRevert = true;
+  const clusterRevertDisabledReason =
+    clusterDiagnostics?.enabled === true
+      ? 'No applied cluster merges to revert in this run.'
+      : 'Cluster detection is disabled for this run profile.';
   const showTsCorrelationDiagnosticsSection =
     result.tsCorrelationDiagnostics?.enabled === true &&
     (result.tsCorrelationDiagnostics?.equationCount ?? 0) > 0;
@@ -1195,6 +1234,7 @@ const ReportView: React.FC<ReportViewProps> = ({
         onResetOverrides={onResetOverrides}
         showClusterMergeRevert={showClusterMergeRevert}
         clusterAppliedMergeCount={clusterAppliedMerges.length}
+        clusterRevertDisabledReason={clusterRevertDisabledReason}
         onClearClusterMerges={onClearClusterMerges}
         unitScale={unitScale}
         units={units}
@@ -1292,7 +1332,16 @@ const ReportView: React.FC<ReportViewProps> = ({
                       </td>
                       <td className="py-1 px-3 text-right">
                         <button
-                          onClick={() => onApplyImpactExclude(d.obsId)}
+                          onClick={() => {
+                            const confirmed = confirmActionGuard({
+                              action: 'exclude-rerun',
+                              scope: `${d.type.toUpperCase()} ${d.stations} (line ${d.sourceLine ?? '-'})`,
+                              detail:
+                                'This marks the observation excluded and immediately reruns the adjustment.',
+                            });
+                            if (!confirmed) return;
+                            onApplyImpactExclude(d.obsId);
+                          }}
                           disabled={alreadyExcluded || d.status !== 'ok'}
                           className={`px-2 py-0.5 rounded border text-[10px] ${
                             alreadyExcluded || d.status !== 'ok'
@@ -2004,7 +2053,16 @@ const ReportView: React.FC<ReportViewProps> = ({
             <div className="overflow-x-auto w-full">
               <div className="flex items-center gap-2 px-3 py-2 border-b border-slate-800 text-xs bg-slate-900/20">
                 <button
-                  onClick={onApplyClusterMerges}
+                  onClick={() => {
+                    const confirmed = confirmActionGuard({
+                      action: 'cluster-apply',
+                      scope: `${clusterReviewStats.plannedMerges} approved merge(s)`,
+                      detail:
+                        'This rewrites aliases to canonical IDs for approved candidates and reruns the adjustment.',
+                    });
+                    if (!confirmed) return;
+                    onApplyClusterMerges();
+                  }}
                   disabled={clusterReviewStats.plannedMerges === 0}
                   className={`px-3 py-1 rounded border ${
                     clusterReviewStats.plannedMerges === 0
@@ -2022,7 +2080,16 @@ const ReportView: React.FC<ReportViewProps> = ({
                 </button>
                 {clusterAppliedMerges.length > 0 && (
                   <button
-                    onClick={onClearClusterMerges}
+                    onClick={() => {
+                      const confirmed = confirmActionGuard({
+                        action: 'cluster-revert',
+                        scope: `${clusterAppliedMerges.length} applied merge(s)`,
+                        detail:
+                          'This clears applied merge decisions and reruns without cluster merge aliases.',
+                      });
+                      if (!confirmed) return;
+                      onClearClusterMerges();
+                    }}
                     className="px-3 py-1 rounded border border-amber-600 text-amber-300 hover:bg-amber-900/30"
                   >
                     Clear Applied Merges + Re-run
@@ -4172,6 +4239,13 @@ const ReportView: React.FC<ReportViewProps> = ({
         onReportObservationTypeFilterChange={setReportObservationTypeFilter}
         reportExclusionFilter={reportExclusionFilter}
         onReportExclusionFilterChange={setReportExclusionFilter}
+        reviewConflictOnly={reviewConflictOnly}
+        onReviewConflictOnlyChange={setReviewConflictOnly}
+        reviewAdjustedOnly={reviewAdjustedOnly}
+        onReviewAdjustedOnlyChange={setReviewAdjustedOnly}
+        reviewImportedGroupFilter={reviewImportedGroupFilter}
+        onReviewImportedGroupFilterChange={setReviewImportedGroupFilter}
+        importedGroupOptions={importedGroupOptions}
         onClearFilters={clearFilters}
         filteredObservationCount={filteredSortedObs.length}
         totalObservationCount={sortedObs.length}

@@ -17,10 +17,6 @@ interface ObservationTableSectionProps {
   selectedObservationId: number | null;
   onSelectObservation?: (_observationId: number) => void;
   onToggleExclude: (_observationId: number) => void;
-  onOverride: (
-    _observationId: number,
-    _payload: { obs?: number | { dE: number; dN: number }; stdDev?: number },
-  ) => void;
   rowSelectionClass: (_selected: boolean) => string;
   visibleRowsFor: <T>(_key: string, _rows: T[], _defaultSize?: number) => T[];
   showMoreRows: (_key: string, _step?: number) => void;
@@ -47,7 +43,6 @@ const ObservationTableSection: React.FC<ObservationTableSectionProps> = ({
   selectedObservationId,
   onSelectObservation,
   onToggleExclude,
-  onOverride,
   rowSelectionClass,
   visibleRowsFor,
   showMoreRows,
@@ -113,8 +108,7 @@ const ObservationTableSection: React.FC<ObservationTableSectionProps> = ({
                 <th className="py-2 text-right">Redund</th>
                 <th className="py-2 text-right">Local</th>
                 <th className="py-2 text-right">MDB</th>
-                <th className="py-2 text-right">Weight</th>
-                <th className="py-2 text-right px-4">StdDev (override)</th>
+                <th className="py-2 text-right px-4">Weight</th>
               </tr>
             </thead>
             <tbody className="text-slate-300">
@@ -131,16 +125,6 @@ const ObservationTableSection: React.FC<ObservationTableSectionProps> = ({
                 let localStr = '-';
                 let mdbStr = '-';
                 let effectiveDistanceStr = '-';
-                let stdDevVal = obs.stdDev * unitScale;
-                const sigmaSource = obs.sigmaSource || 'explicit';
-                const sigmaPlaceholder =
-                  sigmaSource === 'default'
-                    ? 'auto'
-                    : sigmaSource === 'fixed'
-                      ? 'fixed'
-                      : sigmaSource === 'float'
-                        ? 'float'
-                        : '';
                 const angular = isAngularType(obs.type);
 
                 if (obs.type === 'angle') {
@@ -151,7 +135,6 @@ const ObservationTableSection: React.FC<ObservationTableSectionProps> = ({
                     obs.residual != null
                       ? `${((obs.residual as number) * RAD_TO_DEG * 3600).toFixed(2)}"`
                       : '-';
-                  stdDevVal = obs.stdDev * RAD_TO_DEG * 3600;
                 } else if (obs.type === 'direction') {
                   const reductionLabel =
                     obs.rawCount != null
@@ -164,7 +147,6 @@ const ObservationTableSection: React.FC<ObservationTableSectionProps> = ({
                     obs.residual != null
                       ? `${((obs.residual as number) * RAD_TO_DEG * 3600).toFixed(2)}"`
                       : '-';
-                  stdDevVal = obs.stdDev * RAD_TO_DEG * 3600;
                 } else if (obs.type === 'dist') {
                   stationsLabel = `${obs.from}-${obs.to}`;
                   obsStr = (obs.obs * unitScale).toFixed(4);
@@ -202,13 +184,7 @@ const ObservationTableSection: React.FC<ObservationTableSectionProps> = ({
                     obs.residual != null
                       ? `${((obs.residual as number) * RAD_TO_DEG * 3600).toFixed(2)}"`
                       : '-';
-                  stdDevVal = obs.stdDev * RAD_TO_DEG * 3600;
                 }
-
-                const stdDevDisplay =
-                  sigmaSource === 'default' || sigmaSource === 'fixed' || sigmaSource === 'float'
-                    ? ''
-                    : stdDevVal.toFixed(4);
 
                 if (obs.stdResComponents) {
                   stdResStr = `${obs.stdResComponents.tE.toFixed(2)}/${obs.stdResComponents.tN.toFixed(2)}`;
@@ -297,24 +273,6 @@ const ObservationTableSection: React.FC<ObservationTableSectionProps> = ({
                     <td className="py-1 text-right font-mono text-slate-500">{mdbStr}</td>
                     <td className="py-1 text-right font-mono text-slate-400">
                       {observationWeightLabel(obs)}
-                    </td>
-                    <td className="py-1 px-4 text-right font-mono text-slate-400">
-                      <input
-                        type="number"
-                        className="bg-slate-800 border border-slate-700 rounded px-1 w-20 text-right text-xs"
-                        defaultValue={stdDevDisplay}
-                        placeholder={sigmaPlaceholder}
-                        onBlur={(event) =>
-                          onOverride(obs.id, {
-                            stdDev:
-                              event.target.value.trim() === ''
-                                ? undefined
-                                : angular
-                                  ? parseFloat(event.target.value) / (RAD_TO_DEG * 3600)
-                                  : parseFloat(event.target.value) / unitScale,
-                          })
-                        }
-                      />
                     </td>
                   </tr>
                 );

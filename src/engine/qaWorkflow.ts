@@ -92,7 +92,7 @@ export interface SavedRunReviewState {
     stationId: string | null;
     observationId: number | null;
     sourceLine: number | null;
-    origin: 'report' | 'map' | 'suspect' | 'compare' | null;
+    origin: 'report' | 'map' | 'suspect' | 'compare' | 'queue' | null;
   };
   pinnedObservationIds: number[];
 }

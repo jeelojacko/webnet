@@ -148,6 +148,8 @@ const buildSnapshot = (overrides: Partial<WorkspaceDraftSnapshot> = {}): Workspa
         origin: null,
       },
       pinnedObservationIds: [],
+      runFreshness: 'ready',
+      blockingReasons: [],
     },
   },
   comparisonView: {
@@ -528,6 +530,8 @@ describe('useWorkspaceRecovery', () => {
                       origin: 'report',
                     },
                     pinnedObservationIds: [7],
+                    runFreshness: 'reviewing',
+                    blockingReasons: ['1 setting change(s) pending rerun'],
                   },
                 },
               }),

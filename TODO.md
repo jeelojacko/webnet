@@ -341,18 +341,23 @@
       - [ ] Update `docs/CURRENT_BEHAVIOR.md` with the newly supported levelling hyphen-pair syntax, traverse `.INST` instrument scoping, GNSS covariance-vector dialect, and expanded industry parity coverage
       - [x] Keep `README.md` unchanged unless the user-facing startup/example workflow is intentionally documented there
       - [ ] Run and record the required validation matrix for each completed batch: focused tests, `npm run lint`, `npm run typecheck`, `npm run test`, `npm run build`, and `npm run parity:industry-reference`
-  - [ ] Phase 5 - review and map/report UX polish
-    - [ ] Batch 1 - issue-driven review queue
-      - [ ] Add a shared review queue populated by import conflicts, suspect observations, cluster candidates, and saved-run diffs
-      - [ ] Make report and map selection follow that queue bidirectionally
-    - [ ] Batch 2 - dense-network imported-job review controls
-      - [ ] Add conflict-only filtering
-      - [ ] Add imported-group filtering
-      - [ ] Add adjusted-only review filtering
-      - [ ] Add faster map declutter toggles tuned for imported dense jobs
-    - [ ] Batch 3 - UX regression lock
-      - [ ] Preserve current report ordering and existing QA compare semantics while adding the new review queue controls
-      - [ ] Add integration coverage for report-map-editor queue navigation and dense-network rendering stability
+  - [x] Phase 5 - review and map/report UX polish
+    - [x] Batch 1 - guided run-state and action safety
+      - [x] Add explicit run-state strip with `Ready`, `Dirty (needs rerun)`, `Running`, `Result stale`, and `Reviewing`
+      - [x] Add shared action guards with exact-scope confirmations for high-risk review/import actions
+      - [x] Add inline disabled-reason hints and last-changed-settings warnings near run actions
+    - [x] Batch 2 - issue-driven review queue
+      - [x] Add a shared review queue populated by import conflicts, suspect observations, cluster candidates, and saved-run diffs
+      - [x] Make queue selection drive synchronized report/map/editor source-line navigation
+      - [x] Add queue filters (severity/source/unresolved/imported-group) plus next-unresolved navigation
+    - [x] Batch 3 - dense-network imported-job review controls
+      - [x] Add conflict-only filtering
+      - [x] Add imported-group filtering
+      - [x] Add adjusted-only review filtering
+      - [x] Add faster map declutter toggles tuned for imported dense jobs with preset support
+    - [x] Batch 4 - UX regression lock and coverage
+      - [x] Preserve current report ordering and existing QA compare semantics while adding the new review queue controls
+      - [x] Add focused coverage for guards, queue derivation/ordering, and filter persistence/rehydration
 
 - [x] Scalability batch 1 - worker run pipeline foundation:
   - [x] Extract shared browser/CLI solve helpers into a pure run-session module

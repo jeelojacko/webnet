@@ -54,6 +54,8 @@ interface MapViewProps {
   derivedResult?: DerivedQaResult | null;
   selectedStationId?: string | null;
   selectedObservationId?: number | null;
+  declutterPreset?: 'standard' | 'dense-review';
+  onDeclutterPresetChange?: (_preset: 'standard' | 'dense-review') => void;
   onSelectStation?: (_stationId: string) => void;
   onSelectObservation?: (_observationId: number) => void;
 }
@@ -128,6 +130,8 @@ const MapView: React.FC<MapViewProps> = ({
   derivedResult = null,
   selectedStationId = null,
   selectedObservationId = null,
+  declutterPreset = 'standard',
+  onDeclutterPresetChange,
   onSelectStation,
   onSelectObservation,
 }) => {
@@ -159,6 +163,9 @@ const MapView: React.FC<MapViewProps> = ({
   const [angleFromInput, setAngleFromInput] = useState('');
   const [angleToInput, setAngleToInput] = useState('');
   const [showTransformedCoordinates, setShowTransformedCoordinates] = useState(false);
+  const [showLabels, setShowLabels] = useState(declutterPreset !== 'dense-review');
+  const [hideMinorGeometry, setHideMinorGeometry] = useState(declutterPreset === 'dense-review');
+  const [focusSelection, setFocusSelection] = useState(false);
   const [viewportWidth, setViewportWidth] = useState<number>(
     typeof window !== 'undefined' ? window.innerWidth : 1280,
   );
@@ -285,6 +292,12 @@ const MapView: React.FC<MapViewProps> = ({
     (value: string): string | null => resolveStationIdToken(stationIdLookup, value),
     [stationIdLookup],
   );
+
+  useEffect(() => {
+    setShowLabels(declutterPreset !== 'dense-review');
+    setHideMinorGeometry(declutterPreset === 'dense-review');
+    setFocusSelection(false);
+  }, [declutterPreset]);
 
   useEffect(() => {
     if (typeof window === 'undefined' || viewportWidthOverride != null) return;
@@ -687,11 +700,13 @@ const MapView: React.FC<MapViewProps> = ({
   }, [projectedPoints2d, selectedStationId, viewportBounds2d]);
 
   const visiblePointLabels2d = useMemo(() => {
+    if (!showLabels) return new Set<string>();
     if (visiblePoints2d.length === 0) return new Set<string>();
     const next = new Set<string>();
+    const pointThreshold = declutterPreset === 'dense-review' ? 55 : DENSE_LABEL_POINT_THRESHOLD;
+    const edgeThreshold = declutterPreset === 'dense-review' ? 120 : DENSE_LABEL_EDGE_THRESHOLD;
     const denseView =
-      visiblePoints2d.length > DENSE_LABEL_POINT_THRESHOLD ||
-      visibleMapLines2d.length > DENSE_LABEL_EDGE_THRESHOLD;
+      visiblePoints2d.length > pointThreshold || visibleMapLines2d.length > edgeThreshold;
     if (!denseView) {
       visiblePoints2d.forEach((point) => next.add(point.id));
       return next;
@@ -723,12 +738,52 @@ const MapView: React.FC<MapViewProps> = ({
       }
     });
     return next;
-  }, [selectedStationId, stationSeverity, visibleMapLines2d.length, visiblePoints2d]);
+  }, [
+    declutterPreset,
+    selectedStationId,
+    showLabels,
+    stationSeverity,
+    visibleMapLines2d.length,
+    visiblePoints2d,
+  ]);
+
+  const filteredVisibleMapLines2d = useMemo(() => {
+    if (!hideMinorGeometry && !focusSelection) return visibleMapLines2d;
+    return visibleMapLines2d.filter((line) => {
+      const isSelected =
+        line.observationId === selectedObservationId ||
+        (selectedObservationPairKey != null && line.pairKey === selectedObservationPairKey);
+      const [fromId, toId] = line.key.split(':');
+      const touchesSelectedStation =
+        selectedStationId != null && (fromId === selectedStationId || toId === selectedStationId);
+      if (isSelected || touchesSelectedStation) return true;
+      if (focusSelection) return false;
+      return !hideMinorGeometry || line.observationId % 2 === 0;
+    });
+  }, [
+    focusSelection,
+    hideMinorGeometry,
+    selectedObservationId,
+    selectedObservationPairKey,
+    selectedStationId,
+    visibleMapLines2d,
+  ]);
+
+  const filteredVisiblePoints2d = useMemo(() => {
+    if (!focusSelection || !selectedStationId) return visiblePoints2d;
+    const connectedIds = new Set<string>([selectedStationId]);
+    filteredVisibleMapLines2d.forEach((line) => {
+      const [fromId, toId] = line.key.split(':');
+      if (fromId === selectedStationId) connectedIds.add(toId);
+      if (toId === selectedStationId) connectedIds.add(fromId);
+    });
+    return visiblePoints2d.filter((point) => connectedIds.has(point.id));
+  }, [filteredVisibleMapLines2d, focusSelection, selectedStationId, visiblePoints2d]);
 
   const mapDensitySummary = useMemo(() => {
     const labelTotal = visiblePointLabels2d.size;
-    const labelSuppressed = visiblePoints2d.length - labelTotal;
-    const lineSuppressed = projectedMapLines2d.length - visibleMapLines2d.length;
+    const labelSuppressed = filteredVisiblePoints2d.length - labelTotal;
+    const lineSuppressed = projectedMapLines2d.length - filteredVisibleMapLines2d.length;
     return {
       dense:
         labelSuppressed > 0 || lineSuppressed > 0 || visibleMapLines2d.length > DENSE_LABEL_EDGE_THRESHOLD,
@@ -736,7 +791,13 @@ const MapView: React.FC<MapViewProps> = ({
       labelSuppressed,
       lineSuppressed,
     };
-  }, [projectedMapLines2d.length, visibleMapLines2d.length, visiblePointLabels2d.size, visiblePoints2d.length]);
+  }, [
+    filteredVisibleMapLines2d.length,
+    filteredVisiblePoints2d.length,
+    projectedMapLines2d.length,
+    visibleMapLines2d.length,
+    visiblePointLabels2d.size,
+  ]);
 
   const transformedPoints2d = useMemo(() => {
     if (!transformedOverlayActive) {
@@ -948,9 +1009,34 @@ const MapView: React.FC<MapViewProps> = ({
           {unitScale.toFixed(4)} factor)
         </span>
         <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 rounded border border-slate-700/80 bg-slate-900/70 px-2 py-1">
+            <span className="text-[11px] uppercase tracking-wide text-slate-400">Declutter</span>
+            <button
+              type="button"
+              onClick={() => onDeclutterPresetChange?.('standard')}
+              className={`rounded px-2 py-0.5 text-[11px] ${
+                declutterPreset === 'standard'
+                  ? 'bg-cyan-900/60 text-cyan-100'
+                  : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+              }`}
+            >
+              Standard
+            </button>
+            <button
+              type="button"
+              onClick={() => onDeclutterPresetChange?.('dense-review')}
+              className={`rounded px-2 py-0.5 text-[11px] ${
+                declutterPreset === 'dense-review'
+                  ? 'bg-cyan-900/60 text-cyan-100'
+                  : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+              }`}
+            >
+              Dense review
+            </button>
+          </div>
           {effectiveMode === '2d' && mapDensitySummary.dense && (
             <span className="text-[11px] text-slate-500">
-              Dense view: labels {mapDensitySummary.labelTotal}/{visiblePoints2d.length}
+              Dense view: labels {mapDensitySummary.labelTotal}/{filteredVisiblePoints2d.length}
               {mapDensitySummary.lineSuppressed > 0
                 ? `, clipped links ${mapDensitySummary.lineSuppressed}`
                 : ''}
@@ -964,6 +1050,37 @@ const MapView: React.FC<MapViewProps> = ({
           </span>
         </div>
       </div>
+      {effectiveMode === '2d' && (
+        <div className="mb-2 flex flex-wrap items-center gap-3 rounded border border-slate-700/80 bg-slate-900/75 px-3 py-2 text-[11px] text-slate-200">
+          <label className="inline-flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={showLabels}
+              onChange={(event) => setShowLabels(event.target.checked)}
+              className="h-3.5 w-3.5 rounded border-slate-500 bg-slate-950 text-cyan-400 focus:ring-cyan-500"
+            />
+            <span className="uppercase tracking-wide">Show labels</span>
+          </label>
+          <label className="inline-flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={hideMinorGeometry}
+              onChange={(event) => setHideMinorGeometry(event.target.checked)}
+              className="h-3.5 w-3.5 rounded border-slate-500 bg-slate-950 text-cyan-400 focus:ring-cyan-500"
+            />
+            <span className="uppercase tracking-wide">Hide minor geometry</span>
+          </label>
+          <label className="inline-flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={focusSelection}
+              onChange={(event) => setFocusSelection(event.target.checked)}
+              className="h-3.5 w-3.5 rounded border-slate-500 bg-slate-950 text-cyan-400 focus:ring-cyan-500"
+            />
+            <span className="uppercase tracking-wide">Focus selection</span>
+          </label>
+        </div>
+      )}
       {showTransformToggle && (
         <div className="mb-2 flex flex-wrap items-center gap-3 rounded border border-slate-700/80 bg-slate-900/75 px-3 py-2 text-[11px] text-slate-200">
           <label className="inline-flex items-center gap-2">
@@ -1373,7 +1490,7 @@ const MapView: React.FC<MapViewProps> = ({
                 transform={`translate(${view2d.panX} ${view2d.panY}) scale(${view2d.zoom})`}
                 opacity={originalGeometryOpacity}
               >
-                {visibleMapLines2d
+                {filteredVisibleMapLines2d
                   .filter(
                     (line) =>
                       line.observationId !== selectedObservationId &&
@@ -1396,7 +1513,7 @@ const MapView: React.FC<MapViewProps> = ({
                     />
                   ))}
 
-                {visiblePoints2d.map((point) => {
+                {filteredVisiblePoints2d.map((point) => {
                   const ellipsoid = point.ellipsoid;
                   const ellScale = units === 'ft' ? 0.0328084 : 1;
                   return (
@@ -1444,7 +1561,7 @@ const MapView: React.FC<MapViewProps> = ({
               </g>
 
               <g transform={`translate(${view2d.panX} ${view2d.panY}) scale(${view2d.zoom})`}>
-                {visibleMapLines2d
+                {filteredVisibleMapLines2d
                   .filter(
                     (line) =>
                       line.observationId === selectedObservationId ||
@@ -1468,7 +1585,7 @@ const MapView: React.FC<MapViewProps> = ({
                   ))}
 
                 {selectedStationId &&
-                  visiblePoints2d
+                  filteredVisiblePoints2d
                     .filter((point) => point.id === selectedStationId)
                     .map((point) => (
                       <circle

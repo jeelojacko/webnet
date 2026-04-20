@@ -26,6 +26,9 @@ export interface ReportViewSnapshot {
   reportFilterQuery: string;
   reportObservationTypeFilter: ReportObservationTypeFilter;
   reportExclusionFilter: ReportExclusionFilter;
+  reviewConflictOnly: boolean;
+  reviewAdjustedOnly: boolean;
+  reviewImportedGroupFilter: string;
   tableRowLimits: Record<string, number>;
   pinnedDetailSections: PinnedDetailSection[];
   collapsedDetailSections: Record<CollapsibleDetailSectionId, boolean>;
@@ -41,6 +44,12 @@ export interface ReportViewState {
   setReportObservationTypeFilter: Dispatch<SetStateAction<ReportObservationTypeFilter>>;
   reportExclusionFilter: ReportExclusionFilter;
   setReportExclusionFilter: Dispatch<SetStateAction<ReportExclusionFilter>>;
+  reviewConflictOnly: boolean;
+  setReviewConflictOnly: Dispatch<SetStateAction<boolean>>;
+  reviewAdjustedOnly: boolean;
+  setReviewAdjustedOnly: Dispatch<SetStateAction<boolean>>;
+  reviewImportedGroupFilter: string;
+  setReviewImportedGroupFilter: Dispatch<SetStateAction<string>>;
   clearFilters: () => void;
   deferredReportFilterQuery: string;
   normalizedReportFilterQuery: string;
@@ -84,6 +93,9 @@ export const createDefaultReportViewSnapshot = (): ReportViewSnapshot => ({
   reportFilterQuery: '',
   reportObservationTypeFilter: 'all',
   reportExclusionFilter: 'all',
+  reviewConflictOnly: false,
+  reviewAdjustedOnly: false,
+  reviewImportedGroupFilter: 'all',
   tableRowLimits: {},
   pinnedDetailSections: [],
   collapsedDetailSections: createCollapsedDetailSectionsState(),
@@ -99,6 +111,9 @@ const normalizeReportViewSnapshot = (
     reportFilterQuery: snapshot.reportFilterQuery ?? '',
     reportObservationTypeFilter: snapshot.reportObservationTypeFilter ?? 'all',
     reportExclusionFilter: snapshot.reportExclusionFilter ?? 'all',
+    reviewConflictOnly: snapshot.reviewConflictOnly === true,
+    reviewAdjustedOnly: snapshot.reviewAdjustedOnly === true,
+    reviewImportedGroupFilter: snapshot.reviewImportedGroupFilter ?? 'all',
     tableRowLimits: { ...(snapshot.tableRowLimits ?? {}) },
     pinnedDetailSections: clonePinnedDetailSections(snapshot.pinnedDetailSections),
     collapsedDetailSections: cloneCollapsedDetailSectionsState(snapshot.collapsedDetailSections),
@@ -127,6 +142,15 @@ export const useReportViewState = ({
     useState<ReportExclusionFilter>(
       () => normalizeReportViewSnapshot(initialSnapshot).reportExclusionFilter,
     );
+  const [reviewConflictOnly, setReviewConflictOnly] = useState(
+    () => normalizeReportViewSnapshot(initialSnapshot).reviewConflictOnly,
+  );
+  const [reviewAdjustedOnly, setReviewAdjustedOnly] = useState(
+    () => normalizeReportViewSnapshot(initialSnapshot).reviewAdjustedOnly,
+  );
+  const [reviewImportedGroupFilter, setReviewImportedGroupFilter] = useState(
+    () => normalizeReportViewSnapshot(initialSnapshot).reviewImportedGroupFilter,
+  );
   const [tableRowLimits, setTableRowLimits] = useState<Record<string, number>>(
     () => normalizeReportViewSnapshot(initialSnapshot).tableRowLimits,
   );
@@ -158,6 +182,9 @@ export const useReportViewState = ({
     normalizedReportFilterQuery,
     reportExclusionFilter,
     reportObservationTypeFilter,
+    reviewConflictOnly,
+    reviewAdjustedOnly,
+    reviewImportedGroupFilter,
     result,
   ]);
 
@@ -165,6 +192,9 @@ export const useReportViewState = ({
     setReportFilterQuery('');
     setReportObservationTypeFilter('all');
     setReportExclusionFilter('all');
+    setReviewConflictOnly(false);
+    setReviewAdjustedOnly(false);
+    setReviewImportedGroupFilter('all');
   };
 
   const isDetailSectionPinned = (id: CollapsibleDetailSectionId): boolean =>
@@ -221,6 +251,9 @@ export const useReportViewState = ({
     setReportFilterQuery(normalizedSnapshot.reportFilterQuery);
     setReportObservationTypeFilter(normalizedSnapshot.reportObservationTypeFilter);
     setReportExclusionFilter(normalizedSnapshot.reportExclusionFilter);
+    setReviewConflictOnly(normalizedSnapshot.reviewConflictOnly);
+    setReviewAdjustedOnly(normalizedSnapshot.reviewAdjustedOnly);
+    setReviewImportedGroupFilter(normalizedSnapshot.reviewImportedGroupFilter);
     setTableRowLimits(normalizedSnapshot.tableRowLimits);
     setPinnedDetailSections(normalizedSnapshot.pinnedDetailSections);
     setCollapsedDetailSections(normalizedSnapshot.collapsedDetailSections);
@@ -236,6 +269,9 @@ export const useReportViewState = ({
       reportFilterQuery,
       reportObservationTypeFilter,
       reportExclusionFilter,
+      reviewConflictOnly,
+      reviewAdjustedOnly,
+      reviewImportedGroupFilter,
       tableRowLimits: { ...tableRowLimits },
       pinnedDetailSections: clonePinnedDetailSections(pinnedDetailSections),
       collapsedDetailSections: cloneCollapsedDetailSectionsState(collapsedDetailSections),
@@ -247,6 +283,9 @@ export const useReportViewState = ({
       reportExclusionFilter,
       reportFilterQuery,
       reportObservationTypeFilter,
+      reviewAdjustedOnly,
+      reviewConflictOnly,
+      reviewImportedGroupFilter,
       tableRowLimits,
     ],
   );
@@ -261,6 +300,12 @@ export const useReportViewState = ({
     setReportObservationTypeFilter,
     reportExclusionFilter,
     setReportExclusionFilter,
+    reviewConflictOnly,
+    setReviewConflictOnly,
+    reviewAdjustedOnly,
+    setReviewAdjustedOnly,
+    reviewImportedGroupFilter,
+    setReviewImportedGroupFilter,
     clearFilters,
     deferredReportFilterQuery,
     normalizedReportFilterQuery,

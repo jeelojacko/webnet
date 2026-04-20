@@ -99,6 +99,9 @@ export type ReportViewStateSnapshot = {
   reportFilterQuery: string;
   reportObservationTypeFilter: ReportObservationTypeFilter;
   reportExclusionFilter: ReportExclusionFilter;
+  reviewConflictOnly: boolean;
+  reviewAdjustedOnly: boolean;
+  reviewImportedGroupFilter: string;
   tableRowLimits: Record<string, number>;
   pinnedDetailSections: WorkspacePinnedDetailSection[];
   collapsedDetailSections: Record<CollapsibleDetailSectionId, boolean>;
@@ -107,17 +110,26 @@ export type WorkspaceSelectionState = {
   stationId: string | null;
   observationId: number | null;
   sourceLine: number | null;
-  origin: 'report' | 'map' | 'suspect' | 'compare' | null;
+  origin: 'report' | 'map' | 'suspect' | 'compare' | 'queue' | null;
 };
+export type RunFreshness =
+  | 'ready'
+  | 'dirty-needs-rerun'
+  | 'running'
+  | 'result-stale'
+  | 'reviewing';
 export type WorkspaceReviewState = {
   reportView: ReportViewStateSnapshot;
   selection: WorkspaceSelectionState;
   pinnedObservationIds: number[];
+  runFreshness: RunFreshness;
+  blockingReasons: string[];
 };
 export type WorkspaceViewState = {
   activeTab: WorkspaceTabKey;
   splitPercent: number;
   isSidebarOpen: boolean;
+  mapDeclutterPreset?: 'standard' | 'dense-review';
   review: WorkspaceReviewState;
   selection?: WorkspaceSelectionState;
   pinnedObservationIds?: number[];
