@@ -1171,6 +1171,16 @@ describe('parseInput', () => {
     );
     expect(viaUsMeWestFtEpsgAlias.parseState.coordSystemMode).toBe('grid');
     expect(viaUsMeWestFtEpsgAlias.parseState.crsId).toBe('US_NAD83_2011_SPCS_ME_WEST_FTUS');
+
+    const viaUsMdCanonical = parseInput(['.CRS GRID US_NAD83_2011_SPCS_MD', 'C A 0 0 0 ! !'].join('\n'));
+    expect(viaUsMdCanonical.parseState.coordSystemMode).toBe('grid');
+    expect(viaUsMdCanonical.parseState.crsId).toBe('US_NAD83_2011_SPCS_MD');
+
+    const viaUsMaMainlandFtEpsgAlias = parseInput(
+      ['.CRS GRID EPSG:6492', 'C A 0 0 0 ! !'].join('\n'),
+    );
+    expect(viaUsMaMainlandFtEpsgAlias.parseState.coordSystemMode).toBe('grid');
+    expect(viaUsMaMainlandFtEpsgAlias.parseState.crsId).toBe('US_NAD83_2011_SPCS_MA_MAINLAND_FTUS');
   });
 
   it('parses optional CRS scale/convergence directives with explicit OFF support', () => {

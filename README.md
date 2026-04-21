@@ -9,7 +9,7 @@
   - Mixed-observation least-squares adjustment for conventional, GNSS, and leveling data
   - Browser UI for editing, solving, QA review, map/ellipse inspection, and exports
   - Industry-style reporting, listing output, and parity-focused validation workflows
-- CRS workflows with Canada-first NAD83(CSRS) coverage plus USA NAD83(2011) State Plane zones (meter + ftUS), including NY East/Central/West, CA Zones 1-6, PA North/South, TX North/North Central/Central/South Central/South, CT, DE, FL East/North/West, GA East/West, NC statewide, AL East/West, TN statewide, KY North/Single Zone/South, KS North/South, LA North/South, ME East/West, RI, SD North/South, VT, VA North/South, WA North/South, WV North/South, WI North/Central/South, WY East/East Central/West Central/West, UT North/Central/South, and CO North/Central/South
+- CRS workflows with Canada-first NAD83(CSRS) coverage plus USA NAD83(2011) State Plane zones (meter + ftUS), including NY East/Central/West, CA Zones 1-6, PA North/South, TX North/North Central/Central/South Central/South, CT, DE, FL East/North/West, GA East/West, NC statewide, AL East/West, TN statewide, KY North/Single Zone/South, KS North/South, LA North/South, ME East/West, MD, MA Island/Mainland, RI, SD North/South, VT, VA North/South, WA North/South, WV North/South, WI North/Central/South, WY East/East Central/West Central/West, UT North/Central/South, and CO North/Central/South
   - External import pipeline for supported survey/job data sources
   - CLI support for batch runs and automated validation workflows
 
