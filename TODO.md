@@ -984,6 +984,13 @@
       - [x] Keep canonical ID + EPSG alias normalization deterministic for new rows
       - [x] Extend focused parser/CLI/catalog/UI filter coverage for new rows
       - [x] Run required validation matrix and update docs coverage summary
+    - [x] Batch 22 - New Jersey, Nevada, and New Mexico rollout
+      - [x] Add New Jersey meter + ftUS CRS rows
+      - [x] Add Nevada East/Central/West meter + ftUS CRS rows
+      - [x] Add New Mexico East/Central/West meter + ftUS CRS rows
+      - [x] Keep canonical ID + EPSG alias normalization deterministic for new rows
+      - [x] Extend focused parser/CLI/catalog/UI filter coverage for new rows
+      - [x] Run required validation matrix and update docs coverage summary
 
 - [x] Industry Standard v6-v14 parity gaps (prioritized from release notes; missing in WebNet today):
   - [x] Conventional surveying improvements (highest impact -> lowest):

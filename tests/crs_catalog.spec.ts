@@ -195,6 +195,20 @@ describe('Canada CRS catalog (Phase 2 expansion)', () => {
     expect(CRS_CATALOG.some((row) => row.id === 'US_NAD83_2011_SPCS_MO_CENTRAL')).toBe(true);
     expect(CRS_CATALOG.some((row) => row.id === 'US_NAD83_2011_SPCS_MO_EAST')).toBe(true);
     expect(CRS_CATALOG.some((row) => row.id === 'US_NAD83_2011_SPCS_MO_WEST')).toBe(true);
+    expect(CRS_CATALOG.some((row) => row.id === 'US_NAD83_2011_SPCS_NV_CENTRAL')).toBe(true);
+    expect(CRS_CATALOG.some((row) => row.id === 'US_NAD83_2011_SPCS_NV_CENTRAL_FTUS')).toBe(true);
+    expect(CRS_CATALOG.some((row) => row.id === 'US_NAD83_2011_SPCS_NV_EAST')).toBe(true);
+    expect(CRS_CATALOG.some((row) => row.id === 'US_NAD83_2011_SPCS_NV_EAST_FTUS')).toBe(true);
+    expect(CRS_CATALOG.some((row) => row.id === 'US_NAD83_2011_SPCS_NV_WEST')).toBe(true);
+    expect(CRS_CATALOG.some((row) => row.id === 'US_NAD83_2011_SPCS_NV_WEST_FTUS')).toBe(true);
+    expect(CRS_CATALOG.some((row) => row.id === 'US_NAD83_2011_SPCS_NJ')).toBe(true);
+    expect(CRS_CATALOG.some((row) => row.id === 'US_NAD83_2011_SPCS_NJ_FTUS')).toBe(true);
+    expect(CRS_CATALOG.some((row) => row.id === 'US_NAD83_2011_SPCS_NM_CENTRAL')).toBe(true);
+    expect(CRS_CATALOG.some((row) => row.id === 'US_NAD83_2011_SPCS_NM_CENTRAL_FTUS')).toBe(true);
+    expect(CRS_CATALOG.some((row) => row.id === 'US_NAD83_2011_SPCS_NM_EAST')).toBe(true);
+    expect(CRS_CATALOG.some((row) => row.id === 'US_NAD83_2011_SPCS_NM_EAST_FTUS')).toBe(true);
+    expect(CRS_CATALOG.some((row) => row.id === 'US_NAD83_2011_SPCS_NM_WEST')).toBe(true);
+    expect(CRS_CATALOG.some((row) => row.id === 'US_NAD83_2011_SPCS_NM_WEST_FTUS')).toBe(true);
   });
 
   it('resolves CRS by canonical id and EPSG aliases', () => {
@@ -364,6 +378,20 @@ describe('Canada CRS catalog (Phase 2 expansion)', () => {
     const byUsMoCentral = getCrsDefinition('6511');
     const byUsMoEast = getCrsDefinition('EPSG:6512');
     const byUsMoWest = getCrsDefinition('6513');
+    const byUsNvCentral = getCrsDefinition('EPSG:6518');
+    const byUsNvCentralFt = getCrsDefinition('6519');
+    const byUsNvEast = getCrsDefinition('EPSG:6520');
+    const byUsNvEastFt = getCrsDefinition('6521');
+    const byUsNvWest = getCrsDefinition('EPSG:6522');
+    const byUsNvWestFt = getCrsDefinition('6523');
+    const byUsNj = getCrsDefinition('EPSG:6526');
+    const byUsNjFt = getCrsDefinition('6527');
+    const byUsNmCentral = getCrsDefinition('EPSG:6528');
+    const byUsNmCentralFt = getCrsDefinition('6529');
+    const byUsNmEast = getCrsDefinition('EPSG:6530');
+    const byUsNmEastFt = getCrsDefinition('6531');
+    const byUsNmWest = getCrsDefinition('EPSG:6532');
+    const byUsNmWestFt = getCrsDefinition('6533');
 
     expect(byId?.id).toBe('CA_NAD83_CSRS_NB_STEREO_DOUBLE');
     expect(byEpsgToken?.id).toBe('CA_NAD83_CSRS_NB_STEREO_DOUBLE');
@@ -531,6 +559,20 @@ describe('Canada CRS catalog (Phase 2 expansion)', () => {
     expect(byUsMoCentral?.id).toBe('US_NAD83_2011_SPCS_MO_CENTRAL');
     expect(byUsMoEast?.id).toBe('US_NAD83_2011_SPCS_MO_EAST');
     expect(byUsMoWest?.id).toBe('US_NAD83_2011_SPCS_MO_WEST');
+    expect(byUsNvCentral?.id).toBe('US_NAD83_2011_SPCS_NV_CENTRAL');
+    expect(byUsNvCentralFt?.id).toBe('US_NAD83_2011_SPCS_NV_CENTRAL_FTUS');
+    expect(byUsNvEast?.id).toBe('US_NAD83_2011_SPCS_NV_EAST');
+    expect(byUsNvEastFt?.id).toBe('US_NAD83_2011_SPCS_NV_EAST_FTUS');
+    expect(byUsNvWest?.id).toBe('US_NAD83_2011_SPCS_NV_WEST');
+    expect(byUsNvWestFt?.id).toBe('US_NAD83_2011_SPCS_NV_WEST_FTUS');
+    expect(byUsNj?.id).toBe('US_NAD83_2011_SPCS_NJ');
+    expect(byUsNjFt?.id).toBe('US_NAD83_2011_SPCS_NJ_FTUS');
+    expect(byUsNmCentral?.id).toBe('US_NAD83_2011_SPCS_NM_CENTRAL');
+    expect(byUsNmCentralFt?.id).toBe('US_NAD83_2011_SPCS_NM_CENTRAL_FTUS');
+    expect(byUsNmEast?.id).toBe('US_NAD83_2011_SPCS_NM_EAST');
+    expect(byUsNmEastFt?.id).toBe('US_NAD83_2011_SPCS_NM_EAST_FTUS');
+    expect(byUsNmWest?.id).toBe('US_NAD83_2011_SPCS_NM_WEST');
+    expect(byUsNmWestFt?.id).toBe('US_NAD83_2011_SPCS_NM_WEST_FTUS');
   });
 
   it('exposes projection parameters, datum-op support metadata, and area-of-use bounds', () => {

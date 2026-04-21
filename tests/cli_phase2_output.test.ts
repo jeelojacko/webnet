@@ -1229,6 +1229,36 @@ describe('CLI phase 2 output modes', () => {
     const usMoWestPayload = JSON.parse(usMoWest.stdout);
     expect(usMoWestPayload.parseState?.coordSystemMode).toBe('grid');
     expect(usMoWestPayload.parseState?.crsId).toBe('US_NAD83_2011_SPCS_MO_WEST');
+
+    const usNvCentral = runCli([
+      '--input',
+      STABLE_INPUT,
+      '--output',
+      'json',
+      '--coord-system-mode',
+      'grid',
+      '--crs-id',
+      'US_NAD83_2011_SPCS_NV_CENTRAL',
+    ]);
+    expect(usNvCentral.status).toBe(0);
+    const usNvCentralPayload = JSON.parse(usNvCentral.stdout);
+    expect(usNvCentralPayload.parseState?.coordSystemMode).toBe('grid');
+    expect(usNvCentralPayload.parseState?.crsId).toBe('US_NAD83_2011_SPCS_NV_CENTRAL');
+
+    const usNmWestFt = runCli([
+      '--input',
+      STABLE_INPUT,
+      '--output',
+      'json',
+      '--coord-system-mode',
+      'grid',
+      '--crs-id',
+      'EPSG:6533',
+    ]);
+    expect(usNmWestFt.status).toBe(0);
+    const usNmWestFtPayload = JSON.parse(usNmWestFt.stdout);
+    expect(usNmWestFtPayload.parseState?.coordSystemMode).toBe('grid');
+    expect(usNmWestFtPayload.parseState?.crsId).toBe('US_NAD83_2011_SPCS_NM_WEST_FTUS');
   }, 90000);
 
   it('supports parse mode and geoid source CLI options', () => {
