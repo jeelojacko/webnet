@@ -747,6 +747,10 @@ describe('Project Options modal interactions', () => {
       expect(optionValues).toContain('US_NAD83_2011_SPCS_NM_EAST');
       expect(optionValues).toContain('US_NAD83_2011_SPCS_NM_CENTRAL');
       expect(optionValues).toContain('US_NAD83_2011_SPCS_NM_WEST');
+      expect(optionValues).toContain('US_NAD83_2011_SPCS_NE');
+      expect(optionValues).toContain('US_NAD83_2011_SPCS_NH');
+      expect(optionValues).toContain('US_NAD83_2011_SPCS_OH_NORTH');
+      expect(optionValues).toContain('US_NAD83_2011_SPCS_OH_SOUTH');
       expect(optionValues.some((value) => value.endsWith('_FTUS'))).toBe(false);
       expect(optionValues.some((value) => value.startsWith('CA_NAD83_CSRS_'))).toBe(false);
     } finally {
@@ -800,6 +804,10 @@ describe('Project Options modal interactions', () => {
       expect(optionValues).toContain('US_NAD83_2011_SPCS_NM_EAST_FTUS');
       expect(optionValues).toContain('US_NAD83_2011_SPCS_NM_CENTRAL_FTUS');
       expect(optionValues).toContain('US_NAD83_2011_SPCS_NM_WEST_FTUS');
+      expect(optionValues).toContain('US_NAD83_2011_SPCS_NE_FTUS');
+      expect(optionValues).toContain('US_NAD83_2011_SPCS_NH_FTUS');
+      expect(optionValues).toContain('US_NAD83_2011_SPCS_OH_NORTH_FTUS');
+      expect(optionValues).toContain('US_NAD83_2011_SPCS_OH_SOUTH_FTUS');
       expect(optionValues.some((value) => value.endsWith('_FTUS'))).toBe(true);
       expect(optionValues.some((value) => /^US_NAD83_2011_SPCS_/.test(value) && !value.endsWith('_FTUS'))).toBe(false);
     } finally {

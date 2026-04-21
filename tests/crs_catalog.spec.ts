@@ -209,6 +209,14 @@ describe('Canada CRS catalog (Phase 2 expansion)', () => {
     expect(CRS_CATALOG.some((row) => row.id === 'US_NAD83_2011_SPCS_NM_EAST_FTUS')).toBe(true);
     expect(CRS_CATALOG.some((row) => row.id === 'US_NAD83_2011_SPCS_NM_WEST')).toBe(true);
     expect(CRS_CATALOG.some((row) => row.id === 'US_NAD83_2011_SPCS_NM_WEST_FTUS')).toBe(true);
+    expect(CRS_CATALOG.some((row) => row.id === 'US_NAD83_2011_SPCS_NE')).toBe(true);
+    expect(CRS_CATALOG.some((row) => row.id === 'US_NAD83_2011_SPCS_NE_FTUS')).toBe(true);
+    expect(CRS_CATALOG.some((row) => row.id === 'US_NAD83_2011_SPCS_NH')).toBe(true);
+    expect(CRS_CATALOG.some((row) => row.id === 'US_NAD83_2011_SPCS_NH_FTUS')).toBe(true);
+    expect(CRS_CATALOG.some((row) => row.id === 'US_NAD83_2011_SPCS_OH_NORTH')).toBe(true);
+    expect(CRS_CATALOG.some((row) => row.id === 'US_NAD83_2011_SPCS_OH_NORTH_FTUS')).toBe(true);
+    expect(CRS_CATALOG.some((row) => row.id === 'US_NAD83_2011_SPCS_OH_SOUTH')).toBe(true);
+    expect(CRS_CATALOG.some((row) => row.id === 'US_NAD83_2011_SPCS_OH_SOUTH_FTUS')).toBe(true);
   });
 
   it('resolves CRS by canonical id and EPSG aliases', () => {
@@ -392,6 +400,14 @@ describe('Canada CRS catalog (Phase 2 expansion)', () => {
     const byUsNmEastFt = getCrsDefinition('6531');
     const byUsNmWest = getCrsDefinition('EPSG:6532');
     const byUsNmWestFt = getCrsDefinition('6533');
+    const byUsNe = getCrsDefinition('EPSG:6516');
+    const byUsNeFt = getCrsDefinition('6517');
+    const byUsNh = getCrsDefinition('EPSG:6524');
+    const byUsNhFt = getCrsDefinition('6525');
+    const byUsOhNorth = getCrsDefinition('EPSG:6548');
+    const byUsOhNorthFt = getCrsDefinition('6549');
+    const byUsOhSouth = getCrsDefinition('EPSG:6550');
+    const byUsOhSouthFt = getCrsDefinition('6551');
 
     expect(byId?.id).toBe('CA_NAD83_CSRS_NB_STEREO_DOUBLE');
     expect(byEpsgToken?.id).toBe('CA_NAD83_CSRS_NB_STEREO_DOUBLE');
@@ -573,6 +589,14 @@ describe('Canada CRS catalog (Phase 2 expansion)', () => {
     expect(byUsNmEastFt?.id).toBe('US_NAD83_2011_SPCS_NM_EAST_FTUS');
     expect(byUsNmWest?.id).toBe('US_NAD83_2011_SPCS_NM_WEST');
     expect(byUsNmWestFt?.id).toBe('US_NAD83_2011_SPCS_NM_WEST_FTUS');
+    expect(byUsNe?.id).toBe('US_NAD83_2011_SPCS_NE');
+    expect(byUsNeFt?.id).toBe('US_NAD83_2011_SPCS_NE_FTUS');
+    expect(byUsNh?.id).toBe('US_NAD83_2011_SPCS_NH');
+    expect(byUsNhFt?.id).toBe('US_NAD83_2011_SPCS_NH_FTUS');
+    expect(byUsOhNorth?.id).toBe('US_NAD83_2011_SPCS_OH_NORTH');
+    expect(byUsOhNorthFt?.id).toBe('US_NAD83_2011_SPCS_OH_NORTH_FTUS');
+    expect(byUsOhSouth?.id).toBe('US_NAD83_2011_SPCS_OH_SOUTH');
+    expect(byUsOhSouthFt?.id).toBe('US_NAD83_2011_SPCS_OH_SOUTH_FTUS');
   });
 
   it('exposes projection parameters, datum-op support metadata, and area-of-use bounds', () => {
