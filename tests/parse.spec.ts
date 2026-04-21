@@ -1135,6 +1135,42 @@ describe('parseInput', () => {
     const viaUsDeFtEpsgAlias = parseInput(['.CRS GRID EPSG:6436', 'C A 0 0 0 ! !'].join('\n'));
     expect(viaUsDeFtEpsgAlias.parseState.coordSystemMode).toBe('grid');
     expect(viaUsDeFtEpsgAlias.parseState.crsId).toBe('US_NAD83_2011_SPCS_DE_FTUS');
+
+    const viaUsKsNorthCanonical = parseInput(
+      ['.CRS GRID US_NAD83_2011_SPCS_KS_NORTH', 'C A 0 0 0 ! !'].join('\n'),
+    );
+    expect(viaUsKsNorthCanonical.parseState.coordSystemMode).toBe('grid');
+    expect(viaUsKsNorthCanonical.parseState.crsId).toBe('US_NAD83_2011_SPCS_KS_NORTH');
+
+    const viaUsKsSouthFtEpsgAlias = parseInput(
+      ['.CRS GRID EPSG:6469', 'C A 0 0 0 ! !'].join('\n'),
+    );
+    expect(viaUsKsSouthFtEpsgAlias.parseState.coordSystemMode).toBe('grid');
+    expect(viaUsKsSouthFtEpsgAlias.parseState.crsId).toBe('US_NAD83_2011_SPCS_KS_SOUTH_FTUS');
+
+    const viaUsLaNorthCanonical = parseInput(
+      ['.CRS GRID US_NAD83_2011_SPCS_LA_NORTH', 'C A 0 0 0 ! !'].join('\n'),
+    );
+    expect(viaUsLaNorthCanonical.parseState.coordSystemMode).toBe('grid');
+    expect(viaUsLaNorthCanonical.parseState.crsId).toBe('US_NAD83_2011_SPCS_LA_NORTH');
+
+    const viaUsLaSouthFtEpsgAlias = parseInput(
+      ['.CRS GRID EPSG:6479', 'C A 0 0 0 ! !'].join('\n'),
+    );
+    expect(viaUsLaSouthFtEpsgAlias.parseState.coordSystemMode).toBe('grid');
+    expect(viaUsLaSouthFtEpsgAlias.parseState.crsId).toBe('US_NAD83_2011_SPCS_LA_SOUTH_FTUS');
+
+    const viaUsMeEastCanonical = parseInput(
+      ['.CRS GRID US_NAD83_2011_SPCS_ME_EAST', 'C A 0 0 0 ! !'].join('\n'),
+    );
+    expect(viaUsMeEastCanonical.parseState.coordSystemMode).toBe('grid');
+    expect(viaUsMeEastCanonical.parseState.crsId).toBe('US_NAD83_2011_SPCS_ME_EAST');
+
+    const viaUsMeWestFtEpsgAlias = parseInput(
+      ['.CRS GRID EPSG:6486', 'C A 0 0 0 ! !'].join('\n'),
+    );
+    expect(viaUsMeWestFtEpsgAlias.parseState.coordSystemMode).toBe('grid');
+    expect(viaUsMeWestFtEpsgAlias.parseState.crsId).toBe('US_NAD83_2011_SPCS_ME_WEST_FTUS');
   });
 
   it('parses optional CRS scale/convergence directives with explicit OFF support', () => {
