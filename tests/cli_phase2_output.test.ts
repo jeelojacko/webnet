@@ -1139,6 +1139,36 @@ describe('CLI phase 2 output modes', () => {
     const usMaMainlandFtPayload = JSON.parse(usMaMainlandFt.stdout);
     expect(usMaMainlandFtPayload.parseState?.coordSystemMode).toBe('grid');
     expect(usMaMainlandFtPayload.parseState?.crsId).toBe('US_NAD83_2011_SPCS_MA_MAINLAND_FTUS');
+
+    const usMnCentral = runCli([
+      '--input',
+      STABLE_INPUT,
+      '--output',
+      'json',
+      '--coord-system-mode',
+      'grid',
+      '--crs-id',
+      'US_NAD83_2011_SPCS_MN_CENTRAL',
+    ]);
+    expect(usMnCentral.status).toBe(0);
+    const usMnCentralPayload = JSON.parse(usMnCentral.stdout);
+    expect(usMnCentralPayload.parseState?.coordSystemMode).toBe('grid');
+    expect(usMnCentralPayload.parseState?.crsId).toBe('US_NAD83_2011_SPCS_MN_CENTRAL');
+
+    const usMnSouthFt = runCli([
+      '--input',
+      STABLE_INPUT,
+      '--output',
+      'json',
+      '--coord-system-mode',
+      'grid',
+      '--crs-id',
+      'EPSG:6505',
+    ]);
+    expect(usMnSouthFt.status).toBe(0);
+    const usMnSouthFtPayload = JSON.parse(usMnSouthFt.stdout);
+    expect(usMnSouthFtPayload.parseState?.coordSystemMode).toBe('grid');
+    expect(usMnSouthFtPayload.parseState?.crsId).toBe('US_NAD83_2011_SPCS_MN_SOUTH_FTUS');
   }, 90000);
 
   it('supports parse mode and geoid source CLI options', () => {
