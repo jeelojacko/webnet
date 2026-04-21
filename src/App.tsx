@@ -58,9 +58,8 @@ import {
   findLevelLoopTolerancePreset,
 } from './engine/levelLoopTolerance';
 import {
-  CANADA_CRS_CATALOG,
+  CRS_CATALOG,
   DEFAULT_CANADA_CRS_ID,
-  type CrsCatalogGroup,
 } from './engine/crsCatalog';
 import { type ImportedInputNotice } from './engine/importers';
 import { useAdjustmentWorkflow } from './hooks/useAdjustmentWorkflow';
@@ -849,10 +848,15 @@ const CRS_CATALOG_GROUP_OPTIONS: Array<{
     label: 'Canada Provincial',
     description: 'Priority provincial CRS entries.',
   },
+  {
+    id: 'us-spcs',
+    label: 'USA State Plane',
+    description: 'NAD83(2011) State Plane entries (meter and ftUS).',
+  },
 ];
 
 const resolveCatalogGroupFromCrsId = (crsId?: string): CrsCatalogGroupFilter => {
-  const selected = CANADA_CRS_CATALOG.find((row) => row.id === (crsId ?? '').trim());
+  const selected = CRS_CATALOG.find((row) => row.id === (crsId ?? '').trim());
   return selected?.catalogGroup ?? 'all';
 };
 
@@ -1346,28 +1350,35 @@ const App: React.FC<AppProps> = ({
   });
   const selectedDraftCrs = useMemo(
     () =>
-      CANADA_CRS_CATALOG.find((row) => row.id === parseSettingsDraft.crsId) ??
-      CANADA_CRS_CATALOG.find((row) => row.id === DEFAULT_CANADA_CRS_ID) ??
-      CANADA_CRS_CATALOG[0],
+      CRS_CATALOG.find((row) => row.id === parseSettingsDraft.crsId) ??
+      CRS_CATALOG.find((row) => row.id === DEFAULT_CANADA_CRS_ID) ??
+      CRS_CATALOG[0],
     [parseSettingsDraft.crsId],
   );
   const crsCatalogGroupCounts = useMemo(() => {
     const counts: Record<CrsCatalogGroupFilter, number> = {
-      all: CANADA_CRS_CATALOG.length,
+      all: CRS_CATALOG.length,
       global: 0,
       'canada-utm': 0,
       'canada-mtm': 0,
       'canada-provincial': 0,
+      'us-spcs': 0,
     };
-    CANADA_CRS_CATALOG.forEach((row) => {
+    CRS_CATALOG.forEach((row) => {
       counts[row.catalogGroup] += 1;
     });
     return counts;
   }, []);
   const filteredDraftCrsCatalog = useMemo(() => {
-    if (crsCatalogGroupFilter === 'all') return CANADA_CRS_CATALOG;
-    return CANADA_CRS_CATALOG.filter((row) => row.catalogGroup === crsCatalogGroupFilter);
-  }, [crsCatalogGroupFilter]);
+    const byGroup =
+      crsCatalogGroupFilter === 'all'
+        ? CRS_CATALOG
+        : CRS_CATALOG.filter((row) => row.catalogGroup === crsCatalogGroupFilter);
+    const preferredSpcsLinearUnit = settingsDraft.units === 'ft' ? 'us-ft' : 'm';
+    return byGroup.filter(
+      (row) => row.catalogGroup !== 'us-spcs' || row.linearUnit === preferredSpcsLinearUnit,
+    );
+  }, [crsCatalogGroupFilter, settingsDraft.units]);
   const searchedDraftCrsCatalog = useMemo(() => {
     const token = crsSearchQuery.trim().toUpperCase();
     if (!token) return filteredDraftCrsCatalog;
@@ -1409,15 +1420,27 @@ const App: React.FC<AppProps> = ({
   }, [result, adjustedPointsExportSettingsDraft]);
 
   useEffect(() => {
-    if (crsCatalogGroupFilter === 'all') return;
     if (filteredDraftCrsCatalog.length === 0) return;
     if (filteredDraftCrsCatalog.some((row) => row.id === parseSettingsDraft.crsId)) return;
+    const selected = CRS_CATALOG.find((row) => row.id === parseSettingsDraft.crsId);
+    const fallbackCompanionId =
+      selected?.catalogGroup === 'us-spcs'
+        ? selected.linearUnit === 'us-ft'
+          ? selected.id.replace(/_FTUS$/, '')
+          : `${selected.id}_FTUS`
+        : null;
+    if (fallbackCompanionId && filteredDraftCrsCatalog.some((row) => row.id === fallbackCompanionId)) {
+      setParseSettingsDraft((prev) => ({
+        ...prev,
+        crsId: fallbackCompanionId,
+      }));
+      return;
+    }
     setParseSettingsDraft((prev) => ({
       ...prev,
       crsId: filteredDraftCrsCatalog[0].id,
     }));
   }, [
-    crsCatalogGroupFilter,
     filteredDraftCrsCatalog,
     parseSettingsDraft.crsId,
     setParseSettingsDraft,

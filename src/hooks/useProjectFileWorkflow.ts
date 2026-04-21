@@ -42,7 +42,7 @@ import {
   type ProjectStorageStatus,
   type ProjectSourceFileKind,
 } from '../engine/projectWorkspace';
-import { CANADA_CRS_CATALOG, DEFAULT_CANADA_CRS_ID } from '../engine/crsCatalog';
+import { CRS_CATALOG, DEFAULT_CANADA_CRS_ID } from '../engine/crsCatalog';
 import {
   buildProjectIndexRow,
   buildSavedSessionForStorage,
@@ -347,7 +347,7 @@ const resolveSnprojCrsId = (rawName: string | undefined): string | undefined => 
   if (utmMatch) return `CA_NAD83_CSRS_UTM_${utmMatch[1]!.padStart(2, '0')}N`;
   const mtmMatch = normalized.match(/MTM(\d{1,2})/);
   if (mtmMatch) return `CA_NAD83_CSRS_MTM_${mtmMatch[1]!.padStart(2, '0')}`;
-  const matched = CANADA_CRS_CATALOG.find((row) => {
+  const matched = CRS_CATALOG.find((row) => {
     const idToken = normalizeCrsLookupToken(row.id);
     const labelToken = normalizeCrsLookupToken(row.label);
     return normalized === idToken || normalized === labelToken || normalized.includes(idToken);

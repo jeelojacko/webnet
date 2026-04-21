@@ -973,6 +973,168 @@ describe('parseInput', () => {
     const viaPriorityFourArctic = parseInput(['.CRS GRID EPSG:6103', 'C A 0 0 0 ! !'].join('\n'));
     expect(viaPriorityFourArctic.parseState.coordSystemMode).toBe('grid');
     expect(viaPriorityFourArctic.parseState.crsId).toBe('CA_NAD83_CSRS_ARCTIC_LCC_3_29');
+
+    const viaUsSpcsCanonical = parseInput(
+      ['.CRS GRID US_NAD83_2011_SPCS_NY_EAST', 'C A 0 0 0 ! !'].join('\n'),
+    );
+    expect(viaUsSpcsCanonical.parseState.coordSystemMode).toBe('grid');
+    expect(viaUsSpcsCanonical.parseState.crsId).toBe('US_NAD83_2011_SPCS_NY_EAST');
+
+    const viaUsSpcsEpsgAlias = parseInput(['.CRS GRID EPSG:6419', 'C A 0 0 0 ! !'].join('\n'));
+    expect(viaUsSpcsEpsgAlias.parseState.coordSystemMode).toBe('grid');
+    expect(viaUsSpcsEpsgAlias.parseState.crsId).toBe('US_NAD83_2011_SPCS_CA_ZONE_3');
+
+    const viaUsSpcsFtCanonical = parseInput(
+      ['.CRS GRID US_NAD83_2011_SPCS_NY_EAST_FTUS', 'C A 0 0 0 ! !'].join('\n'),
+    );
+    expect(viaUsSpcsFtCanonical.parseState.coordSystemMode).toBe('grid');
+    expect(viaUsSpcsFtCanonical.parseState.crsId).toBe('US_NAD83_2011_SPCS_NY_EAST_FTUS');
+
+    const viaUsSpcsFtEpsgAlias = parseInput(['.CRS GRID EPSG:6565', 'C A 0 0 0 ! !'].join('\n'));
+    expect(viaUsSpcsFtEpsgAlias.parseState.coordSystemMode).toBe('grid');
+    expect(viaUsSpcsFtEpsgAlias.parseState.crsId).toBe('US_NAD83_2011_SPCS_PA_SOUTH_FTUS');
+
+    const viaUsCa6Canonical = parseInput(
+      ['.CRS GRID US_NAD83_2011_SPCS_CA_ZONE_6', 'C A 0 0 0 ! !'].join('\n'),
+    );
+    expect(viaUsCa6Canonical.parseState.coordSystemMode).toBe('grid');
+    expect(viaUsCa6Canonical.parseState.crsId).toBe('US_NAD83_2011_SPCS_CA_ZONE_6');
+
+    const viaUsCa6FtEpsgAlias = parseInput(['.CRS GRID EPSG:6426', 'C A 0 0 0 ! !'].join('\n'));
+    expect(viaUsCa6FtEpsgAlias.parseState.coordSystemMode).toBe('grid');
+    expect(viaUsCa6FtEpsgAlias.parseState.crsId).toBe('US_NAD83_2011_SPCS_CA_ZONE_6_FTUS');
+
+    const viaUsTxNorthCentralCanonical = parseInput(
+      ['.CRS GRID US_NAD83_2011_SPCS_TX_NORTH_CENTRAL', 'C A 0 0 0 ! !'].join('\n'),
+    );
+    expect(viaUsTxNorthCentralCanonical.parseState.coordSystemMode).toBe('grid');
+    expect(viaUsTxNorthCentralCanonical.parseState.crsId).toBe(
+      'US_NAD83_2011_SPCS_TX_NORTH_CENTRAL',
+    );
+
+    const viaUsTxSouthCentralFtEpsgAlias = parseInput(
+      ['.CRS GRID EPSG:6588', 'C A 0 0 0 ! !'].join('\n'),
+    );
+    expect(viaUsTxSouthCentralFtEpsgAlias.parseState.coordSystemMode).toBe('grid');
+    expect(viaUsTxSouthCentralFtEpsgAlias.parseState.crsId).toBe(
+      'US_NAD83_2011_SPCS_TX_SOUTH_CENTRAL_FTUS',
+    );
+
+    const viaUsFlNorthCanonical = parseInput(
+      ['.CRS GRID US_NAD83_2011_SPCS_FL_NORTH', 'C A 0 0 0 ! !'].join('\n'),
+    );
+    expect(viaUsFlNorthCanonical.parseState.coordSystemMode).toBe('grid');
+    expect(viaUsFlNorthCanonical.parseState.crsId).toBe('US_NAD83_2011_SPCS_FL_NORTH');
+
+    const viaUsFlEastFtEpsgAlias = parseInput(
+      ['.CRS GRID EPSG:6438', 'C A 0 0 0 ! !'].join('\n'),
+    );
+    expect(viaUsFlEastFtEpsgAlias.parseState.coordSystemMode).toBe('grid');
+    expect(viaUsFlEastFtEpsgAlias.parseState.crsId).toBe('US_NAD83_2011_SPCS_FL_EAST_FTUS');
+
+    const viaUsGaEastCanonical = parseInput(
+      ['.CRS GRID US_NAD83_2011_SPCS_GA_EAST', 'C A 0 0 0 ! !'].join('\n'),
+    );
+    expect(viaUsGaEastCanonical.parseState.coordSystemMode).toBe('grid');
+    expect(viaUsGaEastCanonical.parseState.crsId).toBe('US_NAD83_2011_SPCS_GA_EAST');
+
+    const viaUsGaWestFtEpsgAlias = parseInput(
+      ['.CRS GRID EPSG:6447', 'C A 0 0 0 ! !'].join('\n'),
+    );
+    expect(viaUsGaWestFtEpsgAlias.parseState.coordSystemMode).toBe('grid');
+    expect(viaUsGaWestFtEpsgAlias.parseState.crsId).toBe('US_NAD83_2011_SPCS_GA_WEST_FTUS');
+
+    const viaUsNcCanonical = parseInput(['.CRS GRID US_NAD83_2011_SPCS_NC', 'C A 0 0 0 ! !'].join('\n'));
+    expect(viaUsNcCanonical.parseState.coordSystemMode).toBe('grid');
+    expect(viaUsNcCanonical.parseState.crsId).toBe('US_NAD83_2011_SPCS_NC');
+
+    const viaUsAlWestFtEpsgAlias = parseInput(
+      ['.CRS GRID EPSG:9749', 'C A 0 0 0 ! !'].join('\n'),
+    );
+    expect(viaUsAlWestFtEpsgAlias.parseState.coordSystemMode).toBe('grid');
+    expect(viaUsAlWestFtEpsgAlias.parseState.crsId).toBe('US_NAD83_2011_SPCS_AL_WEST_FTUS');
+
+    const viaUsTnCanonical = parseInput(
+      ['.CRS GRID US_NAD83_2011_SPCS_TN', 'C A 0 0 0 ! !'].join('\n'),
+    );
+    expect(viaUsTnCanonical.parseState.coordSystemMode).toBe('grid');
+    expect(viaUsTnCanonical.parseState.crsId).toBe('US_NAD83_2011_SPCS_TN');
+
+    const viaUsKySouthFtEpsgAlias = parseInput(
+      ['.CRS GRID EPSG:6475', 'C A 0 0 0 ! !'].join('\n'),
+    );
+    expect(viaUsKySouthFtEpsgAlias.parseState.coordSystemMode).toBe('grid');
+    expect(viaUsKySouthFtEpsgAlias.parseState.crsId).toBe('US_NAD83_2011_SPCS_KY_SOUTH_FTUS');
+
+    const viaUsRiCanonical = parseInput(
+      ['.CRS GRID US_NAD83_2011_SPCS_RI', 'C A 0 0 0 ! !'].join('\n'),
+    );
+    expect(viaUsRiCanonical.parseState.coordSystemMode).toBe('grid');
+    expect(viaUsRiCanonical.parseState.crsId).toBe('US_NAD83_2011_SPCS_RI');
+
+    const viaUsSdSouthFtEpsgAlias = parseInput(
+      ['.CRS GRID EPSG:6574', 'C A 0 0 0 ! !'].join('\n'),
+    );
+    expect(viaUsSdSouthFtEpsgAlias.parseState.coordSystemMode).toBe('grid');
+    expect(viaUsSdSouthFtEpsgAlias.parseState.crsId).toBe('US_NAD83_2011_SPCS_SD_SOUTH_FTUS');
+
+    const viaUsVtCanonical = parseInput(
+      ['.CRS GRID US_NAD83_2011_SPCS_VT', 'C A 0 0 0 ! !'].join('\n'),
+    );
+    expect(viaUsVtCanonical.parseState.coordSystemMode).toBe('grid');
+    expect(viaUsVtCanonical.parseState.crsId).toBe('US_NAD83_2011_SPCS_VT');
+
+    const viaUsWaSouthFtEpsgAlias = parseInput(
+      ['.CRS GRID EPSG:6599', 'C A 0 0 0 ! !'].join('\n'),
+    );
+    expect(viaUsWaSouthFtEpsgAlias.parseState.coordSystemMode).toBe('grid');
+    expect(viaUsWaSouthFtEpsgAlias.parseState.crsId).toBe('US_NAD83_2011_SPCS_WA_SOUTH_FTUS');
+
+    const viaUsWvNorthCanonical = parseInput(
+      ['.CRS GRID US_NAD83_2011_SPCS_WV_NORTH', 'C A 0 0 0 ! !'].join('\n'),
+    );
+    expect(viaUsWvNorthCanonical.parseState.coordSystemMode).toBe('grid');
+    expect(viaUsWvNorthCanonical.parseState.crsId).toBe('US_NAD83_2011_SPCS_WV_NORTH');
+
+    const viaUsWyWestCentralFtEpsgAlias = parseInput(
+      ['.CRS GRID EPSG:6618', 'C A 0 0 0 ! !'].join('\n'),
+    );
+    expect(viaUsWyWestCentralFtEpsgAlias.parseState.coordSystemMode).toBe('grid');
+    expect(viaUsWyWestCentralFtEpsgAlias.parseState.crsId).toBe(
+      'US_NAD83_2011_SPCS_WY_WEST_CENTRAL_FTUS',
+    );
+
+    const viaUsUtNorthCanonical = parseInput(
+      ['.CRS GRID US_NAD83_2011_SPCS_UT_NORTH', 'C A 0 0 0 ! !'].join('\n'),
+    );
+    expect(viaUsUtNorthCanonical.parseState.coordSystemMode).toBe('grid');
+    expect(viaUsUtNorthCanonical.parseState.crsId).toBe('US_NAD83_2011_SPCS_UT_NORTH');
+
+    const viaUsUtSouthFtEpsgAlias = parseInput(
+      ['.CRS GRID EPSG:6627', 'C A 0 0 0 ! !'].join('\n'),
+    );
+    expect(viaUsUtSouthFtEpsgAlias.parseState.coordSystemMode).toBe('grid');
+    expect(viaUsUtSouthFtEpsgAlias.parseState.crsId).toBe('US_NAD83_2011_SPCS_UT_SOUTH_FTUS');
+
+    const viaUsCoNorthCanonical = parseInput(
+      ['.CRS GRID US_NAD83_2011_SPCS_CO_NORTH', 'C A 0 0 0 ! !'].join('\n'),
+    );
+    expect(viaUsCoNorthCanonical.parseState.coordSystemMode).toBe('grid');
+    expect(viaUsCoNorthCanonical.parseState.crsId).toBe('US_NAD83_2011_SPCS_CO_NORTH');
+
+    const viaUsCoSouthFtEpsgAlias = parseInput(
+      ['.CRS GRID EPSG:6432', 'C A 0 0 0 ! !'].join('\n'),
+    );
+    expect(viaUsCoSouthFtEpsgAlias.parseState.coordSystemMode).toBe('grid');
+    expect(viaUsCoSouthFtEpsgAlias.parseState.crsId).toBe('US_NAD83_2011_SPCS_CO_SOUTH_FTUS');
+
+    const viaUsCtCanonical = parseInput(['.CRS GRID US_NAD83_2011_SPCS_CT', 'C A 0 0 0 ! !'].join('\n'));
+    expect(viaUsCtCanonical.parseState.coordSystemMode).toBe('grid');
+    expect(viaUsCtCanonical.parseState.crsId).toBe('US_NAD83_2011_SPCS_CT');
+
+    const viaUsDeFtEpsgAlias = parseInput(['.CRS GRID EPSG:6436', 'C A 0 0 0 ! !'].join('\n'));
+    expect(viaUsDeFtEpsgAlias.parseState.coordSystemMode).toBe('grid');
+    expect(viaUsDeFtEpsgAlias.parseState.crsId).toBe('US_NAD83_2011_SPCS_DE_FTUS');
   });
 
   it('parses optional CRS scale/convergence directives with explicit OFF support', () => {

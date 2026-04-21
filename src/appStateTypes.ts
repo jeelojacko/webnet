@@ -81,7 +81,13 @@ export type ProjectOptionsTab =
   | 'gps'
   | 'modeling';
 export type WorkspaceTabKey = 'report' | 'processing-summary' | 'industry-output' | 'map';
-export type CrsCatalogGroupFilter = 'all' | 'global' | 'canada-utm' | 'canada-mtm' | 'canada-provincial';
+export type CrsCatalogGroupFilter =
+  | 'all'
+  | 'global'
+  | 'canada-utm'
+  | 'canada-mtm'
+  | 'canada-provincial'
+  | 'us-spcs';
 export type ClusterReviewStatus = 'pending' | 'approve' | 'reject';
 export type ClusterReviewDecision = {
   status: ClusterReviewStatus;

@@ -682,6 +682,77 @@ describe('Project Options modal interactions', () => {
     }
   });
 
+  modalIt('shows USA State Plane rows when CRS catalog group is set to us-spcs', async () => {
+    const app = await mountApp('gps');
+    try {
+      const mode = findSelectForSettingsRow(app.container, 'Coord System Mode');
+      await setSelectValue(mode, 'grid');
+
+      const group = findSelectForSettingsRow(app.container, 'CRS Catalog Group');
+      await setSelectValue(group, 'us-spcs');
+
+      const crs = findSelectForSettingsRow(app.container, 'CRS (Grid Mode)');
+      const optionValues = Array.from(crs.options).map((entry) => entry.value);
+      expect(optionValues).toContain('US_NAD83_2011_SPCS_NY_EAST');
+      expect(optionValues).toContain('US_NAD83_2011_SPCS_PA_SOUTH');
+      expect(optionValues).toContain('US_NAD83_2011_SPCS_CA_ZONE_6');
+      expect(optionValues).toContain('US_NAD83_2011_SPCS_TX_NORTH');
+      expect(optionValues).toContain('US_NAD83_2011_SPCS_TX_SOUTH_CENTRAL');
+      expect(optionValues).toContain('US_NAD83_2011_SPCS_FL_EAST');
+      expect(optionValues).toContain('US_NAD83_2011_SPCS_FL_WEST');
+      expect(optionValues).toContain('US_NAD83_2011_SPCS_GA_EAST');
+      expect(optionValues).toContain('US_NAD83_2011_SPCS_GA_WEST');
+      expect(optionValues).toContain('US_NAD83_2011_SPCS_NC');
+      expect(optionValues).toContain('US_NAD83_2011_SPCS_AL_WEST');
+      expect(optionValues).toContain('US_NAD83_2011_SPCS_TN');
+      expect(optionValues).toContain('US_NAD83_2011_SPCS_KY_SINGLE_ZONE');
+      expect(optionValues).toContain('US_NAD83_2011_SPCS_RI');
+      expect(optionValues).toContain('US_NAD83_2011_SPCS_SD_NORTH');
+      expect(optionValues).toContain('US_NAD83_2011_SPCS_VT');
+      expect(optionValues).toContain('US_NAD83_2011_SPCS_WA_NORTH');
+      expect(optionValues).toContain('US_NAD83_2011_SPCS_WV_NORTH');
+      expect(optionValues).toContain('US_NAD83_2011_SPCS_WY_WEST_CENTRAL');
+      expect(optionValues).toContain('US_NAD83_2011_SPCS_UT_NORTH');
+      expect(optionValues).toContain('US_NAD83_2011_SPCS_UT_SOUTH');
+      expect(optionValues).toContain('US_NAD83_2011_SPCS_CO_NORTH');
+      expect(optionValues).toContain('US_NAD83_2011_SPCS_CO_SOUTH');
+      expect(optionValues).toContain('US_NAD83_2011_SPCS_CT');
+      expect(optionValues).toContain('US_NAD83_2011_SPCS_DE');
+      expect(optionValues.some((value) => value.endsWith('_FTUS'))).toBe(false);
+      expect(optionValues.some((value) => value.startsWith('CA_NAD83_CSRS_'))).toBe(false);
+    } finally {
+      await app.cleanup();
+    }
+  });
+
+  modalIt('shows only ftUS USA State Plane rows when project units are feet', async () => {
+    const app = await mountApp('gps');
+    try {
+      await clickProjectOptionsTab(app.container, 'adjustment');
+      const units = findSelectForSettingsRow(app.container, 'Units');
+      await setSelectValue(units, 'ft');
+      await clickProjectOptionsTab(app.container, 'gps');
+
+      const mode = findSelectForSettingsRow(app.container, 'Coord System Mode');
+      await setSelectValue(mode, 'grid');
+      const group = findSelectForSettingsRow(app.container, 'CRS Catalog Group');
+      await setSelectValue(group, 'us-spcs');
+
+      const crs = findSelectForSettingsRow(app.container, 'CRS (Grid Mode)');
+      const optionValues = Array.from(crs.options).map((entry) => entry.value);
+      expect(optionValues).toContain('US_NAD83_2011_SPCS_NY_EAST_FTUS');
+      expect(optionValues).toContain('US_NAD83_2011_SPCS_PA_SOUTH_FTUS');
+      expect(optionValues).toContain('US_NAD83_2011_SPCS_UT_SOUTH_FTUS');
+      expect(optionValues).toContain('US_NAD83_2011_SPCS_CO_SOUTH_FTUS');
+      expect(optionValues).toContain('US_NAD83_2011_SPCS_CT_FTUS');
+      expect(optionValues).toContain('US_NAD83_2011_SPCS_DE_FTUS');
+      expect(optionValues.some((value) => value.endsWith('_FTUS'))).toBe(true);
+      expect(optionValues.some((value) => /^US_NAD83_2011_SPCS_/.test(value) && !value.endsWith('_FTUS'))).toBe(false);
+    } finally {
+      await app.cleanup();
+    }
+  });
+
   modalIt('filters CRS choices by search token in GPS tab', async () => {
     const app = await mountApp('gps');
     try {

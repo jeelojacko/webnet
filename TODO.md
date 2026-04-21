@@ -858,14 +858,95 @@
       - [x] Implement `CA_NAD83_CSRS_SK_ATS` and `CA_NAD83_CSRS_MB_3TM` as provincial workflow aliases with parser/CLI + harness validation gates
       - [x] Added `CA_NAD83_CSRS_NU_STEREOGRAPHIC` as a Nunavut projected workflow alias mapped to EPSG:3977 (Canada Atlas Lambert) with parser/CLI + harness validation gates
       - [x] Add focused docs for provincial naming/alias differences from EPSG titles (SK ATS and MB 3TM aliases)
-    - [ ] Batch 5 - Priority 3 decision gate and closeout
+    - [x] Batch 5 - Priority 3 decision gate and closeout
       - [x] Implement only Priority 3 rows that are justified by active user workflows or interoperability requirements
       - [x] Document deferred candidates with explicit rationale when not implemented
-      - [ ] Re-run full validation matrix and refresh Canadian CRS coverage docs/summary counts
+      - [x] Re-run full validation matrix and refresh Canadian CRS coverage docs/summary counts
     - [ ] Batch 6 - Priority 4 CSRS clean-list implementation and harness
       - [x] Implement all 6 remaining CSRS-only rows from the cleaned EPSG list with canonical IDs and EPSG alias normalization
       - [x] Add parser/CLI acceptance tests and CRS catalog resolver tests for all 6 rows
       - [x] Add synthetic harness coverage (catalog presence, noisy Monte Carlo bounds, edge-of-area jobs, perfect-mode checks)
+  - [ ] Phase 20 - USA State Plane CRS expansion
+    - [x] Batch 1 - authority-backed foundation and Priority 1 state set
+      - [x] Lock USA State Plane ID contract and EPSG alias normalization rules
+      - [x] Add first Priority 1 meter-based NAD83(2011) State Plane set to CRS catalog
+      - [x] Add focused parser/CLI acceptance tests for canonical IDs and EPSG aliases
+      - [x] Add catalog/group-filter coverage for USA State Plane entries
+      - [x] Run required validation matrix and update docs coverage summary
+    - [x] Batch 2 - unit-paired zone expansion for active states
+      - [x] Add ftUS companion CRS rows for existing New York and California meter zones
+      - [x] Add Pennsylvania North/South meter + ftUS CRS rows
+      - [x] Keep canonical ID + EPSG alias normalization deterministic for all new rows
+      - [x] Extend focused parser/CLI/catalog coverage for newly added rows
+      - [x] Run required validation matrix and update docs coverage summary
+    - [x] Batch 3 - California full zone closeout
+      - [x] Add California zones 4-6 meter + ftUS CRS rows
+      - [x] Keep canonical ID + EPSG alias normalization deterministic for newly added zones
+      - [x] Extend focused parser/CLI/catalog/UI filter coverage for new zones
+      - [x] Run required validation matrix and update docs coverage summary
+    - [x] Batch 4 - Texas zone rollout
+      - [x] Add Texas North/North Central/Central/South Central/South meter + ftUS CRS rows
+      - [x] Keep canonical ID + EPSG alias normalization deterministic for new Texas zones
+      - [x] Extend focused parser/CLI/catalog/UI filter coverage for Texas zones
+      - [x] Run required validation matrix and update docs coverage summary
+    - [x] Batch 5 - Florida zone rollout
+      - [x] Add Florida East/North/West meter + ftUS CRS rows
+      - [x] Keep canonical ID + EPSG alias normalization deterministic for new Florida zones
+      - [x] Extend focused parser/CLI/catalog/UI filter coverage for Florida zones
+      - [x] Run required validation matrix and update docs coverage summary
+    - [x] Batch 6 - Georgia zone rollout
+      - [x] Add Georgia East/West meter + ftUS CRS rows
+      - [x] Keep canonical ID + EPSG alias normalization deterministic for new Georgia zones
+      - [x] Extend focused parser/CLI/catalog/UI filter coverage for Georgia zones
+      - [x] Run required validation matrix and update docs coverage summary
+    - [x] Batch 7 - North Carolina and Alabama rollout
+      - [x] Add North Carolina statewide meter + ftUS CRS rows
+      - [x] Add Alabama East/West meter + ftUS CRS rows
+      - [x] Keep canonical ID + EPSG alias normalization deterministic for new rows
+      - [x] Extend focused parser/CLI/catalog/UI filter coverage for new rows
+      - [x] Run required validation matrix and update docs coverage summary
+    - [x] Batch 8 - Tennessee and Kentucky rollout
+      - [x] Add Tennessee statewide meter + ftUS CRS rows
+      - [x] Add Kentucky North/Single Zone/South meter + ftUS CRS rows
+      - [x] Keep canonical ID + EPSG alias normalization deterministic for new rows
+      - [x] Extend focused parser/CLI/catalog/UI filter coverage for new rows
+      - [x] Run required validation matrix and update docs coverage summary
+    - [x] Batch 9 - Rhode Island and South Dakota rollout
+      - [x] Add Rhode Island meter + ftUS CRS rows
+      - [x] Add South Dakota North/South meter + ftUS CRS rows
+      - [x] Keep canonical ID + EPSG alias normalization deterministic for new rows
+      - [x] Extend focused parser/CLI/catalog/UI filter coverage for new rows
+      - [x] Run required validation matrix and update docs coverage summary
+    - [x] Batch 10 - Vermont, Virginia, and Washington rollout
+      - [x] Add Vermont meter + ftUS CRS rows
+      - [x] Add Virginia North/South meter + ftUS CRS rows
+      - [x] Add Washington North/South meter + ftUS CRS rows
+      - [x] Keep canonical ID + EPSG alias normalization deterministic for new rows
+      - [x] Extend focused parser/CLI/catalog/UI filter coverage for new rows
+      - [x] Run required validation matrix and update docs coverage summary
+    - [x] Batch 11 - West Virginia, Wisconsin, and Wyoming rollout
+      - [x] Add West Virginia North/South meter + ftUS CRS rows
+      - [x] Add Wisconsin North/Central/South meter + ftUS CRS rows
+      - [x] Add Wyoming East/East Central/West Central/West meter + ftUS CRS rows
+      - [x] Keep canonical ID + EPSG alias normalization deterministic for new rows
+      - [x] Extend focused parser/CLI/catalog/UI filter coverage for new rows
+      - [x] Run required validation matrix and update docs coverage summary
+    - [x] Batch 12 - Utah zone rollout
+      - [x] Add Utah North/Central/South meter + ftUS CRS rows
+      - [x] Keep canonical ID + EPSG alias normalization deterministic for new rows
+      - [x] Extend focused parser/CLI/catalog/UI filter coverage for new rows
+      - [x] Run required validation matrix and update docs coverage summary
+    - [x] Batch 13 - Colorado zone rollout
+      - [x] Add Colorado North/Central/South meter + ftUS CRS rows
+      - [x] Keep canonical ID + EPSG alias normalization deterministic for new rows
+      - [x] Extend focused parser/CLI/catalog/UI filter coverage for new rows
+      - [x] Run required validation matrix and update docs coverage summary
+    - [x] Batch 14 - Connecticut and Delaware rollout + unit-aware SPCS filtering
+      - [x] Add Connecticut and Delaware meter + ftUS CRS rows
+      - [x] Hide `us-spcs` ftUS rows when project units are meters and hide meter rows when project units are feet
+      - [x] Keep canonical ID + EPSG alias normalization deterministic for new rows and filtered selection behavior
+      - [x] Extend focused parser/CLI/catalog/UI filter coverage for new rows and unit-aware filtering
+      - [x] Run required validation matrix and update docs coverage summary
 
 - [x] Industry Standard v6-v14 parity gaps (prioritized from release notes; missing in WebNet today):
   - [x] Conventional surveying improvements (highest impact -> lowest):

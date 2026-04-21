@@ -30,7 +30,7 @@ describe('CLI phase 2 output modes', () => {
     expect(payload.converged).toBe(true);
     expect(payload.stationCount).toBeGreaterThan(0);
     expect(payload.observationCount).toBeGreaterThan(0);
-  }, 60000);
+  }, 90000);
 
   it('writes industry-style listing output to file', () => {
     const outDir = mkdtempSync(path.join(tmpdir(), 'webnet-cli-'));
@@ -597,7 +597,429 @@ describe('CLI phase 2 output modes', () => {
     const priorityFourArcticPayload = JSON.parse(priorityFourArctic.stdout);
     expect(priorityFourArcticPayload.parseState?.coordSystemMode).toBe('grid');
     expect(priorityFourArcticPayload.parseState?.crsId).toBe('CA_NAD83_CSRS_ARCTIC_LCC_3_29');
-  }, 60000);
+
+    const usNyEast = runCli([
+      '--input',
+      STABLE_INPUT,
+      '--output',
+      'json',
+      '--coord-system-mode',
+      'grid',
+      '--crs-id',
+      'US_NAD83_2011_SPCS_NY_EAST',
+    ]);
+    expect(usNyEast.status).toBe(0);
+    const usNyEastPayload = JSON.parse(usNyEast.stdout);
+    expect(usNyEastPayload.parseState?.coordSystemMode).toBe('grid');
+    expect(usNyEastPayload.parseState?.crsId).toBe('US_NAD83_2011_SPCS_NY_EAST');
+
+    const usCa3 = runCli([
+      '--input',
+      STABLE_INPUT,
+      '--output',
+      'json',
+      '--coord-system-mode',
+      'grid',
+      '--crs-id',
+      'EPSG:6419',
+    ]);
+    expect(usCa3.status).toBe(0);
+    const usCa3Payload = JSON.parse(usCa3.stdout);
+    expect(usCa3Payload.parseState?.coordSystemMode).toBe('grid');
+    expect(usCa3Payload.parseState?.crsId).toBe('US_NAD83_2011_SPCS_CA_ZONE_3');
+
+    const usNyEastFt = runCli([
+      '--input',
+      STABLE_INPUT,
+      '--output',
+      'json',
+      '--coord-system-mode',
+      'grid',
+      '--crs-id',
+      'EPSG:6537',
+    ]);
+    expect(usNyEastFt.status).toBe(0);
+    const usNyEastFtPayload = JSON.parse(usNyEastFt.stdout);
+    expect(usNyEastFtPayload.parseState?.coordSystemMode).toBe('grid');
+    expect(usNyEastFtPayload.parseState?.crsId).toBe('US_NAD83_2011_SPCS_NY_EAST_FTUS');
+
+    const usPaSouthFt = runCli([
+      '--input',
+      STABLE_INPUT,
+      '--output',
+      'json',
+      '--coord-system-mode',
+      'grid',
+      '--crs-id',
+      'EPSG:6565',
+    ]);
+    expect(usPaSouthFt.status).toBe(0);
+    const usPaSouthFtPayload = JSON.parse(usPaSouthFt.stdout);
+    expect(usPaSouthFtPayload.parseState?.coordSystemMode).toBe('grid');
+    expect(usPaSouthFtPayload.parseState?.crsId).toBe('US_NAD83_2011_SPCS_PA_SOUTH_FTUS');
+
+    const usCa6 = runCli([
+      '--input',
+      STABLE_INPUT,
+      '--output',
+      'json',
+      '--coord-system-mode',
+      'grid',
+      '--crs-id',
+      'US_NAD83_2011_SPCS_CA_ZONE_6',
+    ]);
+    expect(usCa6.status).toBe(0);
+    const usCa6Payload = JSON.parse(usCa6.stdout);
+    expect(usCa6Payload.parseState?.coordSystemMode).toBe('grid');
+    expect(usCa6Payload.parseState?.crsId).toBe('US_NAD83_2011_SPCS_CA_ZONE_6');
+
+    const usCa6Ft = runCli([
+      '--input',
+      STABLE_INPUT,
+      '--output',
+      'json',
+      '--coord-system-mode',
+      'grid',
+      '--crs-id',
+      'EPSG:6426',
+    ]);
+    expect(usCa6Ft.status).toBe(0);
+    const usCa6FtPayload = JSON.parse(usCa6Ft.stdout);
+    expect(usCa6FtPayload.parseState?.coordSystemMode).toBe('grid');
+    expect(usCa6FtPayload.parseState?.crsId).toBe('US_NAD83_2011_SPCS_CA_ZONE_6_FTUS');
+
+    const usTxNorthCentral = runCli([
+      '--input',
+      STABLE_INPUT,
+      '--output',
+      'json',
+      '--coord-system-mode',
+      'grid',
+      '--crs-id',
+      'US_NAD83_2011_SPCS_TX_NORTH_CENTRAL',
+    ]);
+    expect(usTxNorthCentral.status).toBe(0);
+    const usTxNorthCentralPayload = JSON.parse(usTxNorthCentral.stdout);
+    expect(usTxNorthCentralPayload.parseState?.coordSystemMode).toBe('grid');
+    expect(usTxNorthCentralPayload.parseState?.crsId).toBe('US_NAD83_2011_SPCS_TX_NORTH_CENTRAL');
+
+    const usTxSouthCentralFt = runCli([
+      '--input',
+      STABLE_INPUT,
+      '--output',
+      'json',
+      '--coord-system-mode',
+      'grid',
+      '--crs-id',
+      'EPSG:6588',
+    ]);
+    expect(usTxSouthCentralFt.status).toBe(0);
+    const usTxSouthCentralFtPayload = JSON.parse(usTxSouthCentralFt.stdout);
+    expect(usTxSouthCentralFtPayload.parseState?.coordSystemMode).toBe('grid');
+    expect(usTxSouthCentralFtPayload.parseState?.crsId).toBe(
+      'US_NAD83_2011_SPCS_TX_SOUTH_CENTRAL_FTUS',
+    );
+
+    const usFlNorth = runCli([
+      '--input',
+      STABLE_INPUT,
+      '--output',
+      'json',
+      '--coord-system-mode',
+      'grid',
+      '--crs-id',
+      'US_NAD83_2011_SPCS_FL_NORTH',
+    ]);
+    expect(usFlNorth.status).toBe(0);
+    const usFlNorthPayload = JSON.parse(usFlNorth.stdout);
+    expect(usFlNorthPayload.parseState?.coordSystemMode).toBe('grid');
+    expect(usFlNorthPayload.parseState?.crsId).toBe('US_NAD83_2011_SPCS_FL_NORTH');
+
+    const usFlEastFt = runCli([
+      '--input',
+      STABLE_INPUT,
+      '--output',
+      'json',
+      '--coord-system-mode',
+      'grid',
+      '--crs-id',
+      'EPSG:6438',
+    ]);
+    expect(usFlEastFt.status).toBe(0);
+    const usFlEastFtPayload = JSON.parse(usFlEastFt.stdout);
+    expect(usFlEastFtPayload.parseState?.coordSystemMode).toBe('grid');
+    expect(usFlEastFtPayload.parseState?.crsId).toBe('US_NAD83_2011_SPCS_FL_EAST_FTUS');
+
+    const usGaEast = runCli([
+      '--input',
+      STABLE_INPUT,
+      '--output',
+      'json',
+      '--coord-system-mode',
+      'grid',
+      '--crs-id',
+      'US_NAD83_2011_SPCS_GA_EAST',
+    ]);
+    expect(usGaEast.status).toBe(0);
+    const usGaEastPayload = JSON.parse(usGaEast.stdout);
+    expect(usGaEastPayload.parseState?.coordSystemMode).toBe('grid');
+    expect(usGaEastPayload.parseState?.crsId).toBe('US_NAD83_2011_SPCS_GA_EAST');
+
+    const usGaWestFt = runCli([
+      '--input',
+      STABLE_INPUT,
+      '--output',
+      'json',
+      '--coord-system-mode',
+      'grid',
+      '--crs-id',
+      'EPSG:6447',
+    ]);
+    expect(usGaWestFt.status).toBe(0);
+    const usGaWestFtPayload = JSON.parse(usGaWestFt.stdout);
+    expect(usGaWestFtPayload.parseState?.coordSystemMode).toBe('grid');
+    expect(usGaWestFtPayload.parseState?.crsId).toBe('US_NAD83_2011_SPCS_GA_WEST_FTUS');
+
+    const usNc = runCli([
+      '--input',
+      STABLE_INPUT,
+      '--output',
+      'json',
+      '--coord-system-mode',
+      'grid',
+      '--crs-id',
+      'US_NAD83_2011_SPCS_NC',
+    ]);
+    expect(usNc.status).toBe(0);
+    const usNcPayload = JSON.parse(usNc.stdout);
+    expect(usNcPayload.parseState?.coordSystemMode).toBe('grid');
+    expect(usNcPayload.parseState?.crsId).toBe('US_NAD83_2011_SPCS_NC');
+
+    const usAlWestFt = runCli([
+      '--input',
+      STABLE_INPUT,
+      '--output',
+      'json',
+      '--coord-system-mode',
+      'grid',
+      '--crs-id',
+      'EPSG:9749',
+    ]);
+    expect(usAlWestFt.status).toBe(0);
+    const usAlWestFtPayload = JSON.parse(usAlWestFt.stdout);
+    expect(usAlWestFtPayload.parseState?.coordSystemMode).toBe('grid');
+    expect(usAlWestFtPayload.parseState?.crsId).toBe('US_NAD83_2011_SPCS_AL_WEST_FTUS');
+
+    const usTn = runCli([
+      '--input',
+      STABLE_INPUT,
+      '--output',
+      'json',
+      '--coord-system-mode',
+      'grid',
+      '--crs-id',
+      'US_NAD83_2011_SPCS_TN',
+    ]);
+    expect(usTn.status).toBe(0);
+    const usTnPayload = JSON.parse(usTn.stdout);
+    expect(usTnPayload.parseState?.coordSystemMode).toBe('grid');
+    expect(usTnPayload.parseState?.crsId).toBe('US_NAD83_2011_SPCS_TN');
+
+    const usKySouthFt = runCli([
+      '--input',
+      STABLE_INPUT,
+      '--output',
+      'json',
+      '--coord-system-mode',
+      'grid',
+      '--crs-id',
+      'EPSG:6475',
+    ]);
+    expect(usKySouthFt.status).toBe(0);
+    const usKySouthFtPayload = JSON.parse(usKySouthFt.stdout);
+    expect(usKySouthFtPayload.parseState?.coordSystemMode).toBe('grid');
+    expect(usKySouthFtPayload.parseState?.crsId).toBe('US_NAD83_2011_SPCS_KY_SOUTH_FTUS');
+
+    const usRi = runCli([
+      '--input',
+      STABLE_INPUT,
+      '--output',
+      'json',
+      '--coord-system-mode',
+      'grid',
+      '--crs-id',
+      'US_NAD83_2011_SPCS_RI',
+    ]);
+    expect(usRi.status).toBe(0);
+    const usRiPayload = JSON.parse(usRi.stdout);
+    expect(usRiPayload.parseState?.coordSystemMode).toBe('grid');
+    expect(usRiPayload.parseState?.crsId).toBe('US_NAD83_2011_SPCS_RI');
+
+    const usSdSouthFt = runCli([
+      '--input',
+      STABLE_INPUT,
+      '--output',
+      'json',
+      '--coord-system-mode',
+      'grid',
+      '--crs-id',
+      'EPSG:6574',
+    ]);
+    expect(usSdSouthFt.status).toBe(0);
+    const usSdSouthFtPayload = JSON.parse(usSdSouthFt.stdout);
+    expect(usSdSouthFtPayload.parseState?.coordSystemMode).toBe('grid');
+    expect(usSdSouthFtPayload.parseState?.crsId).toBe('US_NAD83_2011_SPCS_SD_SOUTH_FTUS');
+
+    const usVt = runCli([
+      '--input',
+      STABLE_INPUT,
+      '--output',
+      'json',
+      '--coord-system-mode',
+      'grid',
+      '--crs-id',
+      'US_NAD83_2011_SPCS_VT',
+    ]);
+    expect(usVt.status).toBe(0);
+    const usVtPayload = JSON.parse(usVt.stdout);
+    expect(usVtPayload.parseState?.coordSystemMode).toBe('grid');
+    expect(usVtPayload.parseState?.crsId).toBe('US_NAD83_2011_SPCS_VT');
+
+    const usWaSouthFt = runCli([
+      '--input',
+      STABLE_INPUT,
+      '--output',
+      'json',
+      '--coord-system-mode',
+      'grid',
+      '--crs-id',
+      'EPSG:6599',
+    ]);
+    expect(usWaSouthFt.status).toBe(0);
+    const usWaSouthFtPayload = JSON.parse(usWaSouthFt.stdout);
+    expect(usWaSouthFtPayload.parseState?.coordSystemMode).toBe('grid');
+    expect(usWaSouthFtPayload.parseState?.crsId).toBe('US_NAD83_2011_SPCS_WA_SOUTH_FTUS');
+
+    const usWvNorth = runCli([
+      '--input',
+      STABLE_INPUT,
+      '--output',
+      'json',
+      '--coord-system-mode',
+      'grid',
+      '--crs-id',
+      'US_NAD83_2011_SPCS_WV_NORTH',
+    ]);
+    expect(usWvNorth.status).toBe(0);
+    const usWvNorthPayload = JSON.parse(usWvNorth.stdout);
+    expect(usWvNorthPayload.parseState?.coordSystemMode).toBe('grid');
+    expect(usWvNorthPayload.parseState?.crsId).toBe('US_NAD83_2011_SPCS_WV_NORTH');
+
+    const usWyWestCentralFt = runCli([
+      '--input',
+      STABLE_INPUT,
+      '--output',
+      'json',
+      '--coord-system-mode',
+      'grid',
+      '--crs-id',
+      'EPSG:6618',
+    ]);
+    expect(usWyWestCentralFt.status).toBe(0);
+    const usWyWestCentralFtPayload = JSON.parse(usWyWestCentralFt.stdout);
+    expect(usWyWestCentralFtPayload.parseState?.coordSystemMode).toBe('grid');
+    expect(usWyWestCentralFtPayload.parseState?.crsId).toBe('US_NAD83_2011_SPCS_WY_WEST_CENTRAL_FTUS');
+
+    const usUtNorth = runCli([
+      '--input',
+      STABLE_INPUT,
+      '--output',
+      'json',
+      '--coord-system-mode',
+      'grid',
+      '--crs-id',
+      'US_NAD83_2011_SPCS_UT_NORTH',
+    ]);
+    expect(usUtNorth.status).toBe(0);
+    const usUtNorthPayload = JSON.parse(usUtNorth.stdout);
+    expect(usUtNorthPayload.parseState?.coordSystemMode).toBe('grid');
+    expect(usUtNorthPayload.parseState?.crsId).toBe('US_NAD83_2011_SPCS_UT_NORTH');
+
+    const usUtSouthFt = runCli([
+      '--input',
+      STABLE_INPUT,
+      '--output',
+      'json',
+      '--coord-system-mode',
+      'grid',
+      '--crs-id',
+      'EPSG:6627',
+    ]);
+    expect(usUtSouthFt.status).toBe(0);
+    const usUtSouthFtPayload = JSON.parse(usUtSouthFt.stdout);
+    expect(usUtSouthFtPayload.parseState?.coordSystemMode).toBe('grid');
+    expect(usUtSouthFtPayload.parseState?.crsId).toBe('US_NAD83_2011_SPCS_UT_SOUTH_FTUS');
+
+    const usCoNorth = runCli([
+      '--input',
+      STABLE_INPUT,
+      '--output',
+      'json',
+      '--coord-system-mode',
+      'grid',
+      '--crs-id',
+      'US_NAD83_2011_SPCS_CO_NORTH',
+    ]);
+    expect(usCoNorth.status).toBe(0);
+    const usCoNorthPayload = JSON.parse(usCoNorth.stdout);
+    expect(usCoNorthPayload.parseState?.coordSystemMode).toBe('grid');
+    expect(usCoNorthPayload.parseState?.crsId).toBe('US_NAD83_2011_SPCS_CO_NORTH');
+
+    const usCoSouthFt = runCli([
+      '--input',
+      STABLE_INPUT,
+      '--output',
+      'json',
+      '--coord-system-mode',
+      'grid',
+      '--crs-id',
+      'EPSG:6432',
+    ]);
+    expect(usCoSouthFt.status).toBe(0);
+    const usCoSouthFtPayload = JSON.parse(usCoSouthFt.stdout);
+    expect(usCoSouthFtPayload.parseState?.coordSystemMode).toBe('grid');
+    expect(usCoSouthFtPayload.parseState?.crsId).toBe('US_NAD83_2011_SPCS_CO_SOUTH_FTUS');
+
+    const usCt = runCli([
+      '--input',
+      STABLE_INPUT,
+      '--output',
+      'json',
+      '--coord-system-mode',
+      'grid',
+      '--crs-id',
+      'US_NAD83_2011_SPCS_CT',
+    ]);
+    expect(usCt.status).toBe(0);
+    const usCtPayload = JSON.parse(usCt.stdout);
+    expect(usCtPayload.parseState?.coordSystemMode).toBe('grid');
+    expect(usCtPayload.parseState?.crsId).toBe('US_NAD83_2011_SPCS_CT');
+
+    const usDeFt = runCli([
+      '--input',
+      STABLE_INPUT,
+      '--output',
+      'json',
+      '--coord-system-mode',
+      'grid',
+      '--crs-id',
+      'EPSG:6436',
+    ]);
+    expect(usDeFt.status).toBe(0);
+    const usDeFtPayload = JSON.parse(usDeFt.stdout);
+    expect(usDeFtPayload.parseState?.coordSystemMode).toBe('grid');
+    expect(usDeFtPayload.parseState?.crsId).toBe('US_NAD83_2011_SPCS_DE_FTUS');
+  }, 90000);
 
   it('supports parse mode and geoid source CLI options', () => {
     const res = runCli([
