@@ -1031,6 +1031,17 @@
       - [x] Keep canonical ID + EPSG alias normalization deterministic for new rows
       - [x] Extend focused parser/CLI/catalog/UI filter coverage for new rows
       - [x] Run required validation matrix and update docs coverage summary
+    - [x] Batch 30 - remaining NAD83(2011) SPCS closeout
+      - [x] Add Arizona East/Central/West ft CRS rows
+      - [x] Add Michigan North/Central/South ft CRS rows
+      - [x] Add Montana meter + ft CRS rows
+      - [x] Add New York Long Island meter + ftUS CRS rows
+      - [x] Add North Dakota North/South ft CRS rows
+      - [x] Add Puerto Rico and Virgin Islands meter CRS row
+      - [x] Add South Carolina meter + ft CRS rows
+      - [x] Keep canonical ID + EPSG alias normalization deterministic for new rows
+      - [x] Extend focused parser/CLI/catalog/UI filter coverage for new rows
+      - [x] Run required validation matrix and update docs coverage summary
 
 - [x] Industry Standard v6-v14 parity gaps (prioritized from release notes; missing in WebNet today):
   - [x] Conventional surveying improvements (highest impact -> lowest):

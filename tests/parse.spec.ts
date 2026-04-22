@@ -1313,6 +1313,18 @@ describe('parseInput', () => {
     );
     expect(viaUsOrSouthFtEpsgAlias.parseState.coordSystemMode).toBe('grid');
     expect(viaUsOrSouthFtEpsgAlias.parseState.crsId).toBe('US_NAD83_2011_SPCS_OR_SOUTH_FTUS');
+
+    const viaUsNyLongIslandCanonical = parseInput(
+      ['.CRS GRID US_NAD83_2011_SPCS_NY_LONG_ISLAND', 'C A 0 0 0 ! !'].join('\n'),
+    );
+    expect(viaUsNyLongIslandCanonical.parseState.coordSystemMode).toBe('grid');
+    expect(viaUsNyLongIslandCanonical.parseState.crsId).toBe('US_NAD83_2011_SPCS_NY_LONG_ISLAND');
+
+    const viaUsScFtEpsgAlias = parseInput(
+      ['.CRS GRID EPSG:6570', 'C A 0 0 0 ! !'].join('\n'),
+    );
+    expect(viaUsScFtEpsgAlias.parseState.coordSystemMode).toBe('grid');
+    expect(viaUsScFtEpsgAlias.parseState.crsId).toBe('US_NAD83_2011_SPCS_SC_FTUS');
   });
 
   it('parses optional CRS scale/convergence directives with explicit OFF support', () => {

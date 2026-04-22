@@ -1469,6 +1469,36 @@ describe('CLI phase 2 output modes', () => {
     const usOrSouthFtPayload = JSON.parse(usOrSouthFt.stdout);
     expect(usOrSouthFtPayload.parseState?.coordSystemMode).toBe('grid');
     expect(usOrSouthFtPayload.parseState?.crsId).toBe('US_NAD83_2011_SPCS_OR_SOUTH_FTUS');
+
+    const usNyLongIsland = runCli([
+      '--input',
+      STABLE_INPUT,
+      '--output',
+      'json',
+      '--coord-system-mode',
+      'grid',
+      '--crs-id',
+      'US_NAD83_2011_SPCS_NY_LONG_ISLAND',
+    ]);
+    expect(usNyLongIsland.status).toBe(0);
+    const usNyLongIslandPayload = JSON.parse(usNyLongIsland.stdout);
+    expect(usNyLongIslandPayload.parseState?.coordSystemMode).toBe('grid');
+    expect(usNyLongIslandPayload.parseState?.crsId).toBe('US_NAD83_2011_SPCS_NY_LONG_ISLAND');
+
+    const usScFt = runCli([
+      '--input',
+      STABLE_INPUT,
+      '--output',
+      'json',
+      '--coord-system-mode',
+      'grid',
+      '--crs-id',
+      'EPSG:6570',
+    ]);
+    expect(usScFt.status).toBe(0);
+    const usScFtPayload = JSON.parse(usScFt.stdout);
+    expect(usScFtPayload.parseState?.coordSystemMode).toBe('grid');
+    expect(usScFtPayload.parseState?.crsId).toBe('US_NAD83_2011_SPCS_SC_FTUS');
   }, 120000);
 
   it('supports parse mode and geoid source CLI options', () => {
