@@ -1409,6 +1409,36 @@ describe('CLI phase 2 output modes', () => {
     const usNdSouthPayload = JSON.parse(usNdSouth.stdout);
     expect(usNdSouthPayload.parseState?.coordSystemMode).toBe('grid');
     expect(usNdSouthPayload.parseState?.crsId).toBe('US_NAD83_2011_SPCS_ND_SOUTH');
+
+    const usAzCentral = runCli([
+      '--input',
+      STABLE_INPUT,
+      '--output',
+      'json',
+      '--coord-system-mode',
+      'grid',
+      '--crs-id',
+      'US_NAD83_2011_SPCS_AZ_CENTRAL',
+    ]);
+    expect(usAzCentral.status).toBe(0);
+    const usAzCentralPayload = JSON.parse(usAzCentral.stdout);
+    expect(usAzCentralPayload.parseState?.coordSystemMode).toBe('grid');
+    expect(usAzCentralPayload.parseState?.crsId).toBe('US_NAD83_2011_SPCS_AZ_CENTRAL');
+
+    const usAzWest = runCli([
+      '--input',
+      STABLE_INPUT,
+      '--output',
+      'json',
+      '--coord-system-mode',
+      'grid',
+      '--crs-id',
+      'EPSG:6408',
+    ]);
+    expect(usAzWest.status).toBe(0);
+    const usAzWestPayload = JSON.parse(usAzWest.stdout);
+    expect(usAzWestPayload.parseState?.coordSystemMode).toBe('grid');
+    expect(usAzWestPayload.parseState?.crsId).toBe('US_NAD83_2011_SPCS_AZ_WEST');
   }, 120000);
 
   it('supports parse mode and geoid source CLI options', () => {
