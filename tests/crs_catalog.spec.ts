@@ -235,6 +235,16 @@ describe('Canada CRS catalog (Phase 2 expansion)', () => {
     expect(CRS_CATALOG.some((row) => row.id === 'US_NAD83_2011_SPCS_OK_NORTH_FTUS')).toBe(true);
     expect(CRS_CATALOG.some((row) => row.id === 'US_NAD83_2011_SPCS_OK_SOUTH')).toBe(true);
     expect(CRS_CATALOG.some((row) => row.id === 'US_NAD83_2011_SPCS_OK_SOUTH_FTUS')).toBe(true);
+    expect(CRS_CATALOG.some((row) => row.id === 'US_NAD83_2011_SPCS_AK_ZONE_1')).toBe(true);
+    expect(CRS_CATALOG.some((row) => row.id === 'US_NAD83_2011_SPCS_AK_ZONE_2')).toBe(true);
+    expect(CRS_CATALOG.some((row) => row.id === 'US_NAD83_2011_SPCS_AK_ZONE_3')).toBe(true);
+    expect(CRS_CATALOG.some((row) => row.id === 'US_NAD83_2011_SPCS_AK_ZONE_4')).toBe(true);
+    expect(CRS_CATALOG.some((row) => row.id === 'US_NAD83_2011_SPCS_AK_ZONE_5')).toBe(true);
+    expect(CRS_CATALOG.some((row) => row.id === 'US_NAD83_2011_SPCS_AK_ZONE_6')).toBe(true);
+    expect(CRS_CATALOG.some((row) => row.id === 'US_NAD83_2011_SPCS_AK_ZONE_7')).toBe(true);
+    expect(CRS_CATALOG.some((row) => row.id === 'US_NAD83_2011_SPCS_AK_ZONE_8')).toBe(true);
+    expect(CRS_CATALOG.some((row) => row.id === 'US_NAD83_2011_SPCS_AK_ZONE_9')).toBe(true);
+    expect(CRS_CATALOG.some((row) => row.id === 'US_NAD83_2011_SPCS_AK_ZONE_10')).toBe(true);
   });
 
   it('resolves CRS by canonical id and EPSG aliases', () => {
@@ -444,6 +454,16 @@ describe('Canada CRS catalog (Phase 2 expansion)', () => {
     const byUsOkNorthFt = getCrsDefinition('6553');
     const byUsOkSouth = getCrsDefinition('EPSG:6554');
     const byUsOkSouthFt = getCrsDefinition('6555');
+    const byUsAkZone1 = getCrsDefinition('EPSG:6394');
+    const byUsAkZone2 = getCrsDefinition('6395');
+    const byUsAkZone3 = getCrsDefinition('EPSG:6396');
+    const byUsAkZone4 = getCrsDefinition('6397');
+    const byUsAkZone5 = getCrsDefinition('EPSG:6398');
+    const byUsAkZone6 = getCrsDefinition('6399');
+    const byUsAkZone7 = getCrsDefinition('EPSG:6400');
+    const byUsAkZone8 = getCrsDefinition('6401');
+    const byUsAkZone9 = getCrsDefinition('EPSG:6402');
+    const byUsAkZone10 = getCrsDefinition('6403');
 
     expect(byId?.id).toBe('CA_NAD83_CSRS_NB_STEREO_DOUBLE');
     expect(byEpsgToken?.id).toBe('CA_NAD83_CSRS_NB_STEREO_DOUBLE');
@@ -651,6 +671,16 @@ describe('Canada CRS catalog (Phase 2 expansion)', () => {
     expect(byUsOkNorthFt?.id).toBe('US_NAD83_2011_SPCS_OK_NORTH_FTUS');
     expect(byUsOkSouth?.id).toBe('US_NAD83_2011_SPCS_OK_SOUTH');
     expect(byUsOkSouthFt?.id).toBe('US_NAD83_2011_SPCS_OK_SOUTH_FTUS');
+    expect(byUsAkZone1?.id).toBe('US_NAD83_2011_SPCS_AK_ZONE_1');
+    expect(byUsAkZone2?.id).toBe('US_NAD83_2011_SPCS_AK_ZONE_2');
+    expect(byUsAkZone3?.id).toBe('US_NAD83_2011_SPCS_AK_ZONE_3');
+    expect(byUsAkZone4?.id).toBe('US_NAD83_2011_SPCS_AK_ZONE_4');
+    expect(byUsAkZone5?.id).toBe('US_NAD83_2011_SPCS_AK_ZONE_5');
+    expect(byUsAkZone6?.id).toBe('US_NAD83_2011_SPCS_AK_ZONE_6');
+    expect(byUsAkZone7?.id).toBe('US_NAD83_2011_SPCS_AK_ZONE_7');
+    expect(byUsAkZone8?.id).toBe('US_NAD83_2011_SPCS_AK_ZONE_8');
+    expect(byUsAkZone9?.id).toBe('US_NAD83_2011_SPCS_AK_ZONE_9');
+    expect(byUsAkZone10?.id).toBe('US_NAD83_2011_SPCS_AK_ZONE_10');
   });
 
   it('exposes projection parameters, datum-op support metadata, and area-of-use bounds', () => {

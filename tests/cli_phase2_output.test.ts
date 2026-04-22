@@ -1349,6 +1349,36 @@ describe('CLI phase 2 output modes', () => {
     const usOkSouthFtPayload = JSON.parse(usOkSouthFt.stdout);
     expect(usOkSouthFtPayload.parseState?.coordSystemMode).toBe('grid');
     expect(usOkSouthFtPayload.parseState?.crsId).toBe('US_NAD83_2011_SPCS_OK_SOUTH_FTUS');
+
+    const usAkZone1 = runCli([
+      '--input',
+      STABLE_INPUT,
+      '--output',
+      'json',
+      '--coord-system-mode',
+      'grid',
+      '--crs-id',
+      'US_NAD83_2011_SPCS_AK_ZONE_1',
+    ]);
+    expect(usAkZone1.status).toBe(0);
+    const usAkZone1Payload = JSON.parse(usAkZone1.stdout);
+    expect(usAkZone1Payload.parseState?.coordSystemMode).toBe('grid');
+    expect(usAkZone1Payload.parseState?.crsId).toBe('US_NAD83_2011_SPCS_AK_ZONE_1');
+
+    const usAkZone10 = runCli([
+      '--input',
+      STABLE_INPUT,
+      '--output',
+      'json',
+      '--coord-system-mode',
+      'grid',
+      '--crs-id',
+      'EPSG:6403',
+    ]);
+    expect(usAkZone10.status).toBe(0);
+    const usAkZone10Payload = JSON.parse(usAkZone10.stdout);
+    expect(usAkZone10Payload.parseState?.coordSystemMode).toBe('grid');
+    expect(usAkZone10Payload.parseState?.crsId).toBe('US_NAD83_2011_SPCS_AK_ZONE_10');
   }, 120000);
 
   it('supports parse mode and geoid source CLI options', () => {
