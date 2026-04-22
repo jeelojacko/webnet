@@ -998,6 +998,12 @@
       - [x] Keep canonical ID + EPSG alias normalization deterministic for new rows
       - [x] Extend focused parser/CLI/catalog/UI filter coverage for new rows
       - [x] Run required validation matrix and update docs coverage summary
+    - [x] Batch 24 - Idaho and Iowa zone rollout
+      - [x] Add Idaho East/Central/West meter + ftUS CRS rows
+      - [x] Add Iowa North/South meter + ftUS CRS rows
+      - [x] Keep canonical ID + EPSG alias normalization deterministic for new rows
+      - [x] Extend focused parser/CLI/catalog/UI filter coverage for new rows
+      - [x] Run required validation matrix and update docs coverage summary
 
 - [x] Industry Standard v6-v14 parity gaps (prioritized from release notes; missing in WebNet today):
   - [x] Conventional surveying improvements (highest impact -> lowest):

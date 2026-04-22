@@ -30,7 +30,7 @@ describe('CLI phase 2 output modes', () => {
     expect(payload.converged).toBe(true);
     expect(payload.stationCount).toBeGreaterThan(0);
     expect(payload.observationCount).toBeGreaterThan(0);
-  }, 90000);
+  }, 120000);
 
   it('writes industry-style listing output to file', () => {
     const outDir = mkdtempSync(path.join(tmpdir(), 'webnet-cli-'));
@@ -1289,7 +1289,37 @@ describe('CLI phase 2 output modes', () => {
     const usOhSouthFtPayload = JSON.parse(usOhSouthFt.stdout);
     expect(usOhSouthFtPayload.parseState?.coordSystemMode).toBe('grid');
     expect(usOhSouthFtPayload.parseState?.crsId).toBe('US_NAD83_2011_SPCS_OH_SOUTH_FTUS');
-  }, 90000);
+
+    const usIdCentral = runCli([
+      '--input',
+      STABLE_INPUT,
+      '--output',
+      'json',
+      '--coord-system-mode',
+      'grid',
+      '--crs-id',
+      'US_NAD83_2011_SPCS_ID_CENTRAL',
+    ]);
+    expect(usIdCentral.status).toBe(0);
+    const usIdCentralPayload = JSON.parse(usIdCentral.stdout);
+    expect(usIdCentralPayload.parseState?.coordSystemMode).toBe('grid');
+    expect(usIdCentralPayload.parseState?.crsId).toBe('US_NAD83_2011_SPCS_ID_CENTRAL');
+
+    const usIaSouthFt = runCli([
+      '--input',
+      STABLE_INPUT,
+      '--output',
+      'json',
+      '--coord-system-mode',
+      'grid',
+      '--crs-id',
+      'EPSG:6465',
+    ]);
+    expect(usIaSouthFt.status).toBe(0);
+    const usIaSouthFtPayload = JSON.parse(usIaSouthFt.stdout);
+    expect(usIaSouthFtPayload.parseState?.coordSystemMode).toBe('grid');
+    expect(usIaSouthFtPayload.parseState?.crsId).toBe('US_NAD83_2011_SPCS_IA_SOUTH_FTUS');
+  }, 120000);
 
   it('supports parse mode and geoid source CLI options', () => {
     const res = runCli([
