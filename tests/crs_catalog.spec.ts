@@ -253,6 +253,10 @@ describe('Canada CRS catalog (Phase 2 expansion)', () => {
     expect(CRS_CATALOG.some((row) => row.id === 'US_NAD83_2011_SPCS_AZ_EAST')).toBe(true);
     expect(CRS_CATALOG.some((row) => row.id === 'US_NAD83_2011_SPCS_AZ_CENTRAL')).toBe(true);
     expect(CRS_CATALOG.some((row) => row.id === 'US_NAD83_2011_SPCS_AZ_WEST')).toBe(true);
+    expect(CRS_CATALOG.some((row) => row.id === 'US_NAD83_2011_SPCS_OR_NORTH')).toBe(true);
+    expect(CRS_CATALOG.some((row) => row.id === 'US_NAD83_2011_SPCS_OR_NORTH_FTUS')).toBe(true);
+    expect(CRS_CATALOG.some((row) => row.id === 'US_NAD83_2011_SPCS_OR_SOUTH')).toBe(true);
+    expect(CRS_CATALOG.some((row) => row.id === 'US_NAD83_2011_SPCS_OR_SOUTH_FTUS')).toBe(true);
   });
 
   it('resolves CRS by canonical id and EPSG aliases', () => {
@@ -480,6 +484,10 @@ describe('Canada CRS catalog (Phase 2 expansion)', () => {
     const byUsAzEast = getCrsDefinition('EPSG:6406');
     const byUsAzCentral = getCrsDefinition('6404');
     const byUsAzWest = getCrsDefinition('EPSG:6408');
+    const byUsOrNorth = getCrsDefinition('EPSG:6558');
+    const byUsOrNorthFt = getCrsDefinition('6559');
+    const byUsOrSouth = getCrsDefinition('EPSG:6560');
+    const byUsOrSouthFt = getCrsDefinition('6561');
 
     expect(byId?.id).toBe('CA_NAD83_CSRS_NB_STEREO_DOUBLE');
     expect(byEpsgToken?.id).toBe('CA_NAD83_CSRS_NB_STEREO_DOUBLE');
@@ -705,6 +713,10 @@ describe('Canada CRS catalog (Phase 2 expansion)', () => {
     expect(byUsAzEast?.id).toBe('US_NAD83_2011_SPCS_AZ_EAST');
     expect(byUsAzCentral?.id).toBe('US_NAD83_2011_SPCS_AZ_CENTRAL');
     expect(byUsAzWest?.id).toBe('US_NAD83_2011_SPCS_AZ_WEST');
+    expect(byUsOrNorth?.id).toBe('US_NAD83_2011_SPCS_OR_NORTH');
+    expect(byUsOrNorthFt?.id).toBe('US_NAD83_2011_SPCS_OR_NORTH_FTUS');
+    expect(byUsOrSouth?.id).toBe('US_NAD83_2011_SPCS_OR_SOUTH');
+    expect(byUsOrSouthFt?.id).toBe('US_NAD83_2011_SPCS_OR_SOUTH_FTUS');
   });
 
   it('exposes projection parameters, datum-op support metadata, and area-of-use bounds', () => {
