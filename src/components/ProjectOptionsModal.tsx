@@ -1,3 +1,4 @@
+
 // @ts-nocheck
 import React from 'react';
 import { EXPORT_FORMAT_OPTIONS } from '../engine/exportFormats';
@@ -55,10 +56,8 @@ const ProjectOptionsModal: React.FC<ProjectOptionsModalProps> = ({ context }) =>
     SettingsCard,
     SettingsRow,
     SettingsToggle,
-    activeLevelLoopPreset,
     activeLevelLoopPresetId,
     activeOptionsTab,
-    addLevelLoopCustomPreset,
     addNewInstrument,
     adjustedPointsDraftStationIds,
     adjustedPointsExportSettingsDraft,
@@ -111,7 +110,6 @@ const ProjectOptionsModal: React.FC<ProjectOptionsModalProps> = ({ context }) =>
     handleInstrumentFieldChange,
     handleInstrumentLinearFieldChange,
     handleInstrumentNumericFieldChange,
-    handleLevelLoopCustomPresetFieldChange,
     handleLevelLoopPresetChange,
     handleSaveProject,
     triggerProjectSourceFileSelect,
@@ -136,7 +134,6 @@ const ProjectOptionsModal: React.FC<ProjectOptionsModalProps> = ({ context }) =>
     parityProfileActive,
     parseSettingsDraft,
     projectInstrumentsDraft,
-    removeLevelLoopCustomPreset,
     searchedDraftCrsCatalog,
     selectedInstrumentDraft,
     selectedInstrumentMeta,
@@ -161,15 +158,15 @@ const ProjectOptionsModal: React.FC<ProjectOptionsModalProps> = ({ context }) =>
 
   return (
         <div
-          className="fixed inset-0 z-50 bg-slate-950/70 flex items-start justify-center p-4 md:p-10"
+          className="fixed inset-0 z-50 bg-slate-950/85 flex items-start justify-center p-2 md:p-6"
           onClick={closeProjectOptions}
         >
           <div
-            className="w-full max-w-5xl bg-slate-600 border border-slate-400 shadow-2xl text-slate-100"
+            className="w-full max-w-5xl bg-slate-800 border border-slate-600 shadow-2xl text-slate-100"
             onClick={(e) => e.stopPropagation()}
             ref={settingsModalContentRef}
           >
-            <div className="flex items-center justify-between border-b border-slate-400 bg-slate-700 px-4 py-2">
+            <div className="flex items-center justify-between border-b border-slate-600 bg-slate-900 px-3 py-1.5">
               <div
                 className="text-sm font-semibold tracking-wide"
                 title="Industry-style project options for solver defaults, parser behavior, output controls, GPS settings, and stochastic modeling."
@@ -179,22 +176,22 @@ const ProjectOptionsModal: React.FC<ProjectOptionsModalProps> = ({ context }) =>
               <button
                 type="button"
                 onClick={closeProjectOptions}
-                className="text-xs px-2 py-1 border border-slate-300 bg-slate-500 hover:bg-slate-400"
+                className="text-xs px-2 py-1 border border-slate-600 bg-slate-500 hover:bg-slate-400"
                 title="Close Project Options without applying draft changes."
               >
                 X
               </button>
             </div>
-            <div className="flex flex-wrap gap-1 border-b border-slate-400 bg-slate-500 px-2 pt-2">
+            <div className="flex flex-wrap gap-1 border-b border-slate-600 bg-slate-800 px-2 pt-1.5">
               {PROJECT_OPTION_TABS.map((tab) => (
                 <button
                   key={tab.id}
                   type="button"
                   onClick={() => setActiveOptionsTab(tab.id)}
-                  className={`px-3 py-1 text-xs border border-slate-300 ${
+                  className={`px-2.5 py-1 text-[11px] border border-slate-600 ${
                     activeOptionsTab === tab.id
-                      ? 'bg-slate-700 text-white'
-                      : 'bg-slate-400 text-slate-900 hover:bg-slate-300'
+                      ? 'bg-slate-950 text-slate-50'
+                      : 'bg-slate-700 text-slate-200 hover:bg-slate-600'
                   }`}
                   title={PROJECT_OPTION_TAB_TOOLTIPS[tab.id]}
                 >
@@ -203,7 +200,7 @@ const ProjectOptionsModal: React.FC<ProjectOptionsModalProps> = ({ context }) =>
               ))}
             </div>
 
-            <div className="bg-slate-500 p-4 max-h-[70vh] overflow-auto">
+            <div className="bg-slate-900 p-3 max-h-[74vh] overflow-auto">
               {activeOptionsTab === 'adjustment' && (
                 <div className="space-y-4">
                   <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
@@ -214,10 +211,6 @@ const ProjectOptionsModal: React.FC<ProjectOptionsModalProps> = ({ context }) =>
                       <SettingsRow label="Run Profile" tooltip={SETTINGS_TOOLTIPS.solveProfile}>
                         <div className="text-xs text-slate-100">Industry Parity</div>
                       </SettingsRow>
-                      <div className="rounded-md border border-slate-400/70 bg-slate-700/20 px-3 py-2 text-xs text-slate-200 space-y-2">
-                        <div>Parser mode: Strict</div>
-                        <div>Legacy profiles and parse-mode switching are no longer exposed.</div>
-                      </div>
                       <SettingsRow label="Coordinate Mode" tooltip={SETTINGS_TOOLTIPS.coordMode}>
                         <select
                           title={SETTINGS_TOOLTIPS.coordMode}
@@ -234,7 +227,9 @@ const ProjectOptionsModal: React.FC<ProjectOptionsModalProps> = ({ context }) =>
                       <div className="rounded-md border border-slate-400/70 bg-slate-700/20 p-3 space-y-3">
                         <div className="text-[11px] uppercase tracking-wide text-slate-200">
                           Automated Adjustment Actions
-                        </div>
+      
+
+                  </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                           <label
                             className="rounded border border-slate-400/60 bg-slate-700/20 px-2 py-2 flex flex-col gap-2 text-[11px] uppercase tracking-wide text-slate-200"
@@ -351,7 +346,7 @@ const ProjectOptionsModal: React.FC<ProjectOptionsModalProps> = ({ context }) =>
                                   : 4,
                               )
                             }
-                            className={`${optionInputClass} mt-1 disabled:opacity-50 disabled:cursor-not-allowed`}
+                            className={`${optionInputClass} mt-1 disabled:opacity-100 disabled:cursor-not-allowed`}
                           />
                         </label>
                         <label className={optionLabelClass}>
@@ -375,7 +370,7 @@ const ProjectOptionsModal: React.FC<ProjectOptionsModalProps> = ({ context }) =>
                                   : 3,
                               )
                             }
-                            className={`${optionInputClass} mt-1 disabled:opacity-50 disabled:cursor-not-allowed`}
+                            className={`${optionInputClass} mt-1 disabled:opacity-100 disabled:cursor-not-allowed`}
                           />
                         </label>
                         <label className={optionLabelClass}>
@@ -399,7 +394,7 @@ const ProjectOptionsModal: React.FC<ProjectOptionsModalProps> = ({ context }) =>
                                   : 1,
                               )
                             }
-                            className={`${optionInputClass} mt-1 disabled:opacity-50 disabled:cursor-not-allowed`}
+                            className={`${optionInputClass} mt-1 disabled:opacity-100 disabled:cursor-not-allowed`}
                           />
                         </label>
                       </div>
@@ -579,234 +574,474 @@ const ProjectOptionsModal: React.FC<ProjectOptionsModalProps> = ({ context }) =>
                         </label>
                       </div>
                     </SettingsCard>
-                  </div>
-
-                  <SettingsCard
-                    title="Leveling / Weighting"
-                    tooltip={PROJECT_OPTION_SECTION_TOOLTIPS['Weighting Helpers']}
-                  >
-                    <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1.15fr)_minmax(320px,0.85fr)] gap-4">
-                      <div className="space-y-3">
-                        <SettingsRow
-                          label=".LWEIGHT (mm/km)"
-                          tooltip={SETTINGS_TOOLTIPS.levelWeight}
+                    <SettingsCard
+                      title="Coordinate System (Canada-First)"
+                      tooltip={PROJECT_OPTION_SECTION_TOOLTIPS['CRS / Geodetic Setup']}
+                    >
+                      <SettingsRow
+                        label="Coord System Mode"
+                        tooltip={SETTINGS_TOOLTIPS.coordSystemMode}
+                      >
+                        <select
+                          title={SETTINGS_TOOLTIPS.coordSystemMode}
+                          value={parseSettingsDraft.coordSystemMode}
+                          onChange={(e) =>
+                            handleDraftParseSetting(
+                              'coordSystemMode',
+                              e.target.value as CoordSystemMode,
+                            )
+                          }
+                          className={optionInputClass}
                         >
-                          <input
-                            title={SETTINGS_TOOLTIPS.levelWeight}
-                            type="number"
-                            min={0}
-                            step={0.1}
-                            value={parseSettingsDraft.levelWeight ?? ''}
-                            onChange={(e) =>
-                              handleDraftParseSetting(
-                                'levelWeight',
-                                e.target.value === '' ? undefined : parseFloat(e.target.value),
-                              )
-                            }
-                            className={optionInputClass}
-                          />
-                        </SettingsRow>
-                        <SettingsRow
-                          label="Level Loop Preset"
-                          tooltip={SETTINGS_TOOLTIPS.levelLoopTolerancePreset}
+                          <option value="local">LOCAL</option>
+                          <option value="grid">GRID</option>
+                        </select>
+                      </SettingsRow>
+                      <SettingsRow label="CRS (Grid Mode)" tooltip={SETTINGS_TOOLTIPS.crsId}>
+                        <select
+                          title={SETTINGS_TOOLTIPS.crsId}
+                          value={parseSettingsDraft.crsId}
+                          disabled={parseSettingsDraft.coordSystemMode !== 'grid'}
+                          onChange={(e) => handleDraftParseSetting('crsId', e.target.value)}
+                          className={`${optionInputClass} disabled:opacity-100 disabled:cursor-not-allowed`}
                         >
-                          <select
-                            title={SETTINGS_TOOLTIPS.levelLoopTolerancePreset}
-                            value={activeLevelLoopPresetId}
-                            onChange={(e) => handleLevelLoopPresetChange(e.target.value)}
-                            className={optionInputClass}
-                          >
-                            {LEVEL_LOOP_TOLERANCE_PRESETS.map((preset) => (
-                              <option key={preset.id} value={preset.id}>
-                                {preset.label} ({preset.baseMm.toFixed(1)} +{' '}
-                                {preset.perSqrtKmMm.toFixed(1)}*sqrt(km))
+                          {visibleDraftCrsCatalog.map((crs) => (
+                            <option key={crs.id} value={crs.id}>
+                              {crs.id} - {crs.label}
+                            </option>
+                          ))}
+                        </select>
+                      </SettingsRow>
+                      <SettingsRow
+                        label="CRS Catalog Group"
+                        tooltip={SETTINGS_TOOLTIPS.crsCatalogGroup}
+                      >
+                        <select
+                          title={SETTINGS_TOOLTIPS.crsCatalogGroup}
+                          value={crsCatalogGroupFilter}
+                          onChange={(e) =>
+                            setCrsCatalogGroupFilter(e.target.value as CrsCatalogGroupFilter)
+                          }
+                          className={optionInputClass}
+                        >
+                          {CRS_CATALOG_GROUP_OPTIONS.map((group) => {
+                            const count = crsCatalogGroupCounts[group.id] ?? 0;
+                            const disabled = group.id !== 'all' && count === 0;
+                            return (
+                              <option key={group.id} value={group.id} disabled={disabled}>
+                                {group.label} ({count})
                               </option>
-                            ))}
-                            {levelLoopCustomPresetsDraft.length > 0 && (
-                              <optgroup label="Saved Custom Presets">
-                                {levelLoopCustomPresetsDraft.map((preset) => (
-                                  <option key={preset.id} value={preset.id}>
-                                    {preset.name} ({preset.baseMm.toFixed(1)} +{' '}
-                                    {preset.perSqrtKmMm.toFixed(1)}*sqrt(km))
-                                  </option>
-                                ))}
-                              </optgroup>
-                            )}
-                            <option value="custom">Custom</option>
-                          </select>
-                        </SettingsRow>
-                        <div className="rounded-md border border-slate-400/60 bg-slate-700/20 px-3 py-2 text-[11px] text-slate-200 leading-relaxed">
-                          <div className="font-semibold text-slate-100">
-                            {activeLevelLoopPreset.label}
-                          </div>
-                          <div>{activeLevelLoopPreset.description}</div>
+                            );
+                          })}
+                        </select>
+                      </SettingsRow>
+                      <SettingsRow label="CRS Search">
+                        <input
+                          type="text"
+                          value={crsSearchQuery}
+                          onChange={(e) => setCrsSearchQuery(e.target.value)}
+                          placeholder="Filter by ID, label, or EPSG"
+                          className={optionInputClass}
+                        />
+                      </SettingsRow>
+                      <SettingsRow label="CRS (Grid Mode)" tooltip={SETTINGS_TOOLTIPS.crsId}>
+                        <select
+                          title={SETTINGS_TOOLTIPS.crsId}
+                          value={parseSettingsDraft.crsId}
+                          disabled={parseSettingsDraft.coordSystemMode !== 'grid'}
+                          onChange={(e) => handleDraftParseSetting('crsId', e.target.value)}
+                          className={`${optionInputClass} disabled:opacity-100 disabled:cursor-not-allowed`}
+                        >
+                          {visibleDraftCrsCatalog.map((crs) => (
+                            <option key={crs.id} value={crs.id}>
+                              {crs.id} - {crs.label}
+                            </option>
+                          ))}
+                        </select>
+                      </SettingsRow>
+                      {filteredDraftCrsCatalog.length === 0 && (
+                        <div className="rounded border border-amber-300/50 bg-amber-900/20 px-2 py-1 text-[10px] text-amber-100">
+                          No CRS entries are loaded for this catalog group yet.
                         </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                          <label className={optionLabelClass}>
-                            Level Loop Base Tol (mm)
-                            <input
-                              title={SETTINGS_TOOLTIPS.levelLoopToleranceBase}
-                              type="number"
-                              min={0}
-                              step={0.1}
-                              value={parseSettingsDraft.levelLoopToleranceBaseMm}
-                              onChange={(e) =>
-                                handleDraftParseSetting(
-                                  'levelLoopToleranceBaseMm',
-                                  Number.isFinite(parseFloat(e.target.value))
-                                    ? Math.max(0, parseFloat(e.target.value))
-                                    : 0,
-                                )
-                              }
-                              className={`${optionInputClass} mt-1`}
-                            />
-                          </label>
-                          <label className={optionLabelClass}>
-                            Level Loop K (mm/sqrt(km))
-                            <input
-                              title={SETTINGS_TOOLTIPS.levelLoopToleranceK}
-                              type="number"
-                              min={0}
-                              step={0.1}
-                              value={parseSettingsDraft.levelLoopTolerancePerSqrtKmMm}
-                              onChange={(e) =>
-                                handleDraftParseSetting(
-                                  'levelLoopTolerancePerSqrtKmMm',
-                                  Number.isFinite(parseFloat(e.target.value))
-                                    ? Math.max(0, parseFloat(e.target.value))
-                                    : 4,
-                                )
-                              }
-                              className={`${optionInputClass} mt-1`}
-                            />
-                          </label>
+                      )}
+                      {filteredDraftCrsCatalog.length > 0 && searchedDraftCrsCatalog.length === 0 && (
+                        <div className="rounded border border-amber-300/50 bg-amber-900/20 px-2 py-1 text-[10px] text-amber-100">
+                          Search filter returned no CRS rows in this catalog group.
                         </div>
-                        <div className="text-[11px] text-slate-300 leading-relaxed">
-                          Loop tolerance is evaluated as{' '}
-                          <span className="font-semibold">base + k * sqrt(km)</span>. Built-in
-                          presets are instant shortcuts; saved custom presets let you keep
-                          office-specific standards in the project options.
-                        </div>
-                      </div>
-
-                      <div className="rounded-md border border-slate-400/70 bg-slate-700/20 p-3 space-y-3">
-                        <div className="flex items-center justify-between gap-3">
-                          <div className="text-[11px] uppercase tracking-wide text-slate-200">
-                            Saved Custom Presets
-                          </div>
+                      )}
+                      <div className="rounded-md border border-slate-400/60 bg-slate-700/20 px-3 py-2 text-[11px] text-slate-200 leading-relaxed space-y-1">
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="uppercase tracking-wide text-slate-100">CRS Details</div>
                           <button
                             type="button"
-                            onClick={addLevelLoopCustomPreset}
-                            className="px-3 py-1 text-[11px] border border-slate-300 bg-slate-600 hover:bg-slate-500 text-slate-100"
-                            title="Save the current Base and K values as a reusable named custom preset."
+                            title={SETTINGS_TOOLTIPS.crsProjectionParameters}
+                            onClick={() => setShowCrsProjectionParams((prev) => !prev)}
+                            className="inline-flex items-center gap-1 rounded border border-slate-600/60 bg-slate-700/30 px-2 py-0.5 text-[10px] uppercase tracking-wide text-slate-100 hover:bg-slate-600/40"
                           >
-                            Add Current
+                            <Info className="h-3.5 w-3.5" />
+                            {showCrsProjectionParams ? 'Hide Params' : 'Show Params'}
                           </button>
                         </div>
-                        {levelLoopCustomPresetsDraft.length === 0 ? (
-                          <div className="text-[11px] text-slate-300 leading-relaxed">
-                            No custom presets saved yet. Use{' '}
-                            <span className="font-semibold">Add Current</span> to capture the active
-                            Base and K values with a reusable name.
-                          </div>
-                        ) : (
-                          <div className="space-y-3">
-                            {levelLoopCustomPresetsDraft.map((preset) => (
-                              <div
-                                key={preset.id}
-                                className={`rounded-md border p-3 space-y-3 ${
-                                  activeLevelLoopPresetId === preset.id
-                                    ? 'border-blue-300 bg-blue-950/20'
-                                    : 'border-slate-400/70 bg-slate-600/30'
-                                }`}
-                              >
-                                <label className={optionLabelClass}>
-                                  Preset Name
-                                  <input
-                                    type="text"
-                                    value={preset.name}
-                                    onChange={(e) =>
-                                      handleLevelLoopCustomPresetFieldChange(
-                                        preset.id,
-                                        'name',
-                                        e.target.value,
-                                      )
-                                    }
-                                    className={`${optionInputClass} mt-1`}
-                                  />
-                                </label>
-                                <div className="grid grid-cols-2 gap-3">
-                                  <label className={optionLabelClass}>
-                                    Base (mm)
-                                    <input
-                                      type="number"
-                                      min={0}
-                                      step={0.1}
-                                      value={preset.baseMm}
-                                      onChange={(e) =>
-                                        handleLevelLoopCustomPresetFieldChange(
-                                          preset.id,
-                                          'baseMm',
-                                          e.target.value,
-                                        )
-                                      }
-                                      className={`${optionInputClass} mt-1`}
-                                    />
-                                  </label>
-                                  <label className={optionLabelClass}>
-                                    K (mm/sqrt(km))
-                                    <input
-                                      type="number"
-                                      min={0}
-                                      step={0.1}
-                                      value={preset.perSqrtKmMm}
-                                      onChange={(e) =>
-                                        handleLevelLoopCustomPresetFieldChange(
-                                          preset.id,
-                                          'perSqrtKmMm',
-                                          e.target.value,
-                                        )
-                                      }
-                                      className={`${optionInputClass} mt-1`}
-                                    />
-                                  </label>
-                                </div>
-                                <div className="flex items-center justify-between gap-2">
-                                  <div className="text-[11px] text-slate-300">
-                                    {preset.baseMm.toFixed(1)} + {preset.perSqrtKmMm.toFixed(1)}
-                                    *sqrt(km)
-                                  </div>
-                                  <div className="flex items-center gap-2">
-                                    <button
-                                      type="button"
-                                      onClick={() => handleLevelLoopPresetChange(preset.id)}
-                                      className="px-3 py-1 text-[11px] border border-slate-300 bg-slate-600 hover:bg-slate-500 text-slate-100"
-                                      title="Apply this saved custom preset to the active level-loop tolerance."
-                                    >
-                                      Use
-                                    </button>
-                                    <button
-                                      type="button"
-                                      onClick={() => removeLevelLoopCustomPreset(preset.id)}
-                                      className="px-3 py-1 text-[11px] border border-rose-300/70 bg-rose-950/30 hover:bg-rose-900/40 text-rose-100"
-                                      title="Delete this saved custom preset from the draft project settings."
-                                    >
-                                      Delete
-                                    </button>
-                                  </div>
-                                </div>
-                              </div>
-                            ))}
+                        <div>ID: {selectedDraftCrs?.id ?? parseSettingsDraft.crsId}</div>
+                        <div>EPSG: {selectedDraftCrs?.epsgCode ?? '-'}</div>
+                        <div>
+                          Catalog Group:{' '}
+                          {selectedDraftCrs?.catalogGroup
+                            ?.replace('canada-', 'Canada ')
+                            .replace('global', 'Global')
+                            .toUpperCase() ?? '-'}
+                        </div>
+                        <div>Datum: {selectedDraftCrs?.datum ?? '-'}</div>
+                        <div>
+                          Projection:{' '}
+                          {selectedDraftCrs?.projectionFamily?.toUpperCase().replaceAll('-', ' ') ??
+                            '-'}
+                          {selectedDraftCrs?.zoneNumber != null
+                            ? ` (zone ${selectedDraftCrs.zoneNumber})`
+                            : ''}
+                        </div>
+                        <div>
+                          Axis/Unit: {selectedDraftCrs?.axisOrder ?? '-'} /{' '}
+                          {selectedDraftCrs?.linearUnit ?? '-'}
+                        </div>
+                        <div>Area of Use: {selectedDraftCrs?.areaOfUse ?? '-'}</div>
+                        <div>
+                          Datum Op: {selectedDraftCrs?.supportedDatumOps.primary ?? '-'}
+                          {selectedDraftCrs?.supportedDatumOps.fallbacks?.length
+                            ? ` (fallbacks=${selectedDraftCrs.supportedDatumOps.fallbacks.length})`
+                            : ''}
+                        </div>
+                        <div>
+                          Area Bounds:{' '}
+                          {selectedDraftCrs?.areaOfUseBounds
+                            ? `lat ${selectedDraftCrs.areaOfUseBounds.minLatDeg.toFixed(3)}..${selectedDraftCrs.areaOfUseBounds.maxLatDeg.toFixed(3)}, lon ${selectedDraftCrs.areaOfUseBounds.minLonDeg.toFixed(3)}..${selectedDraftCrs.areaOfUseBounds.maxLonDeg.toFixed(3)}`
+                            : '-'}
+                        </div>
+                        {showCrsProjectionParams && (
+                          <div className="mt-2 space-y-2 rounded border border-slate-600/40 bg-slate-800/30 p-2">
+                            <div className="uppercase tracking-wide text-slate-100">
+                              Projection Parameters
+                            </div>
+                            <div className="break-all rounded bg-slate-900/50 px-2 py-1 font-mono text-[10px] leading-relaxed text-slate-100">
+                              {selectedDraftCrs?.proj4 ?? '-'}
+                            </div>
+                            <div className="grid grid-cols-2 gap-x-3 gap-y-1 font-mono text-[10px] text-slate-100">
+                              {selectedCrsProj4Params.map((row) => (
+                                <React.Fragment key={row.key}>
+                                  <span className="text-slate-300">{row.key}</span>
+                                  <span className="break-all">{row.value}</span>
+                                </React.Fragment>
+                              ))}
+                            </div>
                           </div>
                         )}
                       </div>
-                    </div>
-                  </SettingsCard>
+                      {parseSettingsDraft.coordSystemMode === 'grid' &&
+                        runDiagnostics?.crsAreaOfUseStatus === 'outside' && (
+                          <div className="rounded border border-amber-300/60 bg-amber-900/30 px-2 py-1 text-[10px] text-amber-100">
+                            Area-of-use warning: last run flagged{' '}
+                            {runDiagnostics.crsOutOfAreaStationCount} station(s) outside CRS bounds
+                            (warning-only).
+                          </div>
+                        )}
+                      {runDiagnostics?.datumSufficiencyReport &&
+                        runDiagnostics.datumSufficiencyReport.status !== 'ok' && (
+                          <div
+                            className={`rounded px-2 py-1 text-[10px] ${
+                              runDiagnostics.datumSufficiencyReport.status === 'hard-fail'
+                                ? 'border border-red-300/70 bg-red-900/35 text-red-100'
+                                : 'border border-amber-300/60 bg-amber-900/30 text-amber-100'
+                            }`}
+                          >
+                            Datum sufficiency (
+                            {runDiagnostics.datumSufficiencyReport.status.toUpperCase()}
+                            ):{' '}
+                            {runDiagnostics.datumSufficiencyReport.reasons[0] ??
+                              'review run diagnostics'}
+                            .
+                          </div>
+                        )}
+                      <SettingsRow
+                        label="Local Datum Scheme"
+                        tooltip={SETTINGS_TOOLTIPS.localDatumScheme}
+                      >
+                        <select
+                          title={SETTINGS_TOOLTIPS.localDatumScheme}
+                          value={parseSettingsDraft.localDatumScheme}
+                          disabled={parseSettingsDraft.coordSystemMode !== 'local'}
+                          onChange={(e) =>
+                            handleDraftParseSetting(
+                              'localDatumScheme',
+                              e.target.value as LocalDatumScheme,
+                            )
+                          }
+                          className={`${optionInputClass} disabled:opacity-100 disabled:cursor-not-allowed`}
+                        >
+                          <option value="average-scale">Average Scale Factor</option>
+                          <option value="common-elevation">Common Elevation</option>
+                        </select>
+                      </SettingsRow>
+                      <SettingsRow
+                        label="Average Scale Factor"
+                        tooltip={SETTINGS_TOOLTIPS.averageScaleFactor}
+                      >
+                        <input
+                          title={SETTINGS_TOOLTIPS.averageScaleFactor}
+                          type="number"
+                          min={0.000001}
+                          step={0.00000001}
+                          value={parseSettingsDraft.averageScaleFactor}
+                          disabled={
+                            parseSettingsDraft.coordSystemMode !== 'local' ||
+                            parseSettingsDraft.localDatumScheme !== 'average-scale'
+                          }
+                          onChange={(e) => {
+                            const parsed = Number.parseFloat(e.target.value);
+                            handleDraftParseSetting(
+                              'averageScaleFactor',
+                              Number.isFinite(parsed) && parsed > 0 ? parsed : 1,
+                            );
+                          }}
+                          className={`${optionInputClass} disabled:opacity-100 disabled:cursor-not-allowed`}
+                        />
+                      </SettingsRow>
+                      <SettingsRow
+                        label={`Common Elevation (${settingsDraft.units === 'ft' ? 'ft' : 'm'})`}
+                        tooltip={SETTINGS_TOOLTIPS.commonElevation}
+                      >
+                        <input
+                          title={SETTINGS_TOOLTIPS.commonElevation}
+                          type="number"
+                          step={0.001}
+                          value={
+                            settingsDraft.units === 'ft'
+                              ? parseSettingsDraft.commonElevation * FT_PER_M
+                              : parseSettingsDraft.commonElevation
+                          }
+                          disabled={
+                            parseSettingsDraft.coordSystemMode !== 'local' ||
+                            parseSettingsDraft.localDatumScheme !== 'common-elevation'
+                          }
+                          onChange={(e) => {
+                            const parsed = Number.parseFloat(e.target.value);
+                            const meters = Number.isFinite(parsed)
+                              ? settingsDraft.units === 'ft'
+                                ? parsed * M_PER_FT
+                                : parsed
+                              : 0;
+                            handleDraftParseSetting('commonElevation', meters);
+                          }}
+                          className={`${optionInputClass} disabled:opacity-100 disabled:cursor-not-allowed`}
+                        />
+                      </SettingsRow>
+                      <SettingsRow
+                        label={`Average Geoid Height (${settingsDraft.units === 'ft' ? 'ft' : 'm'})`}
+                        tooltip={SETTINGS_TOOLTIPS.averageGeoidHeight}
+                      >
+                        <input
+                          title={SETTINGS_TOOLTIPS.averageGeoidHeight}
+                          type="number"
+                          step={0.001}
+                          value={
+                            settingsDraft.units === 'ft'
+                              ? parseSettingsDraft.averageGeoidHeight * FT_PER_M
+                              : parseSettingsDraft.averageGeoidHeight
+                          }
+                          onChange={(e) => {
+                            const parsed = Number.parseFloat(e.target.value);
+                            const meters = Number.isFinite(parsed)
+                              ? settingsDraft.units === 'ft'
+                                ? parsed * M_PER_FT
+                                : parsed
+                              : 0;
+                            handleDraftParseSetting('averageGeoidHeight', meters);
+                          }}
+                          className={optionInputClass}
+                        />
+                      </SettingsRow>
+                      <div className="rounded-md border border-slate-400/60 bg-slate-700/20 px-3 py-2 text-[11px] text-slate-200 leading-relaxed space-y-2">
+                        <div className="uppercase tracking-wide text-slate-100">
+                          Observation Input Mode (.MEASURED / .GRID)
+                        </div>
+                        <div className="grid gap-2">
+                          <SettingsRow
+                            label="Bearing/Azimuth Mode"
+                            tooltip={SETTINGS_TOOLTIPS.gridBearingMode}
+                          >
+                            <select
+                              title={SETTINGS_TOOLTIPS.gridBearingMode}
+                              value={parseSettingsDraft.gridBearingMode}
+                              disabled={parseSettingsDraft.coordSystemMode !== 'grid'}
+                              onChange={(e) =>
+                                handleDraftParseSetting(
+                                  'gridBearingMode',
+                                  e.target.value as GridObservationMode,
+                                )
+                              }
+                              className={`${optionInputClass} disabled:opacity-100 disabled:cursor-not-allowed`}
+                            >
+                              <option value="measured">MEASURED</option>
+                              <option value="grid">GRID</option>
+                            </select>
+                          </SettingsRow>
+                          <SettingsRow
+                            label="Distance Mode"
+                            tooltip={SETTINGS_TOOLTIPS.gridDistanceMode}
+                          >
+                            <select
+                              title={SETTINGS_TOOLTIPS.gridDistanceMode}
+                              value={parseSettingsDraft.gridDistanceMode}
+                              disabled={parseSettingsDraft.coordSystemMode !== 'grid'}
+                              onChange={(e) =>
+                                handleDraftParseSetting(
+                                  'gridDistanceMode',
+                                  e.target.value as GridDistanceInputMode,
+                                )
+                              }
+                              className={`${optionInputClass} disabled:opacity-100 disabled:cursor-not-allowed`}
+                            >
+                              <option value="measured">MEASURED (Ground)</option>
+                              <option value="grid">GRID</option>
+                              <option value="ellipsoidal">ELLIPSOIDAL</option>
+                            </select>
+                          </SettingsRow>
+                          <SettingsRow label="Angle Mode" tooltip={SETTINGS_TOOLTIPS.gridAngleMode}>
+                            <select
+                              title={SETTINGS_TOOLTIPS.gridAngleMode}
+                              value={parseSettingsDraft.gridAngleMode}
+                              disabled={parseSettingsDraft.coordSystemMode !== 'grid'}
+                              onChange={(e) =>
+                                handleDraftParseSetting(
+                                  'gridAngleMode',
+                                  e.target.value as GridObservationMode,
+                                )
+                              }
+                              className={`${optionInputClass} disabled:opacity-100 disabled:cursor-not-allowed`}
+                            >
+                              <option value="measured">MEASURED</option>
+                              <option value="grid">GRID</option>
+                            </select>
+                          </SettingsRow>
+                          <SettingsRow
+                            label="Direction Mode"
+                            tooltip={SETTINGS_TOOLTIPS.gridDirectionMode}
+                          >
+                            <select
+                              title={SETTINGS_TOOLTIPS.gridDirectionMode}
+                              value={parseSettingsDraft.gridDirectionMode}
+                              disabled={parseSettingsDraft.coordSystemMode !== 'grid'}
+                              onChange={(e) =>
+                                handleDraftParseSetting(
+                                  'gridDirectionMode',
+                                  e.target.value as GridObservationMode,
+                                )
+                              }
+                              className={`${optionInputClass} disabled:opacity-100 disabled:cursor-not-allowed`}
+                            >
+                              <option value="measured">MEASURED</option>
+                              <option value="grid">GRID</option>
+                            </select>
+                          </SettingsRow>
+                        </div>
+                      </div>
+                    </SettingsCard>
+                  </div>
                 </div>
               )}
 
               {activeOptionsTab === 'general' && (
                 <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+                  <SettingsCard
+                    title="Leveling / Weighting"
+                    tooltip={PROJECT_OPTION_SECTION_TOOLTIPS['Weighting Helpers']}
+                  >
+                    <SettingsRow
+                      label=".LWEIGHT (mm/km)"
+                      tooltip={SETTINGS_TOOLTIPS.levelWeight}
+                    >
+                      <input
+                        title={SETTINGS_TOOLTIPS.levelWeight}
+                        type="number"
+                        min={0}
+                        step={0.1}
+                        value={parseSettingsDraft.levelWeight ?? ''}
+                        onChange={(e) =>
+                          handleDraftParseSetting(
+                            'levelWeight',
+                            e.target.value === '' ? undefined : parseFloat(e.target.value),
+                          )
+                        }
+                        className={optionInputClass}
+                      />
+                    </SettingsRow>
+                    <SettingsRow
+                      label="Level Loop Preset"
+                      tooltip={SETTINGS_TOOLTIPS.levelLoopTolerancePreset}
+                    >
+                      <select
+                        title={SETTINGS_TOOLTIPS.levelLoopTolerancePreset}
+                        value={activeLevelLoopPresetId}
+                        onChange={(e) => handleLevelLoopPresetChange(e.target.value)}
+                        className={optionInputClass}
+                      >
+                        {LEVEL_LOOP_TOLERANCE_PRESETS.map((preset) => (
+                          <option key={preset.id} value={preset.id}>
+                            {preset.label}
+                          </option>
+                        ))}
+                        {levelLoopCustomPresetsDraft.length > 0 && (
+                          <optgroup label="Saved Custom Presets">
+                            {levelLoopCustomPresetsDraft.map((preset) => (
+                              <option key={preset.id} value={preset.id}>
+                                {preset.name}
+                              </option>
+                            ))}
+                          </optgroup>
+                        )}
+                        <option value="custom">Custom</option>
+                      </select>
+                    </SettingsRow>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      <label className={optionLabelClass}>
+                        Base Tol (mm)
+                        <input
+                          title={SETTINGS_TOOLTIPS.levelLoopToleranceBase}
+                          type="number"
+                          min={0}
+                          step={0.1}
+                          value={parseSettingsDraft.levelLoopToleranceBaseMm}
+                          onChange={(e) =>
+                            handleDraftParseSetting(
+                              'levelLoopToleranceBaseMm',
+                              Number.isFinite(parseFloat(e.target.value))
+                                ? Math.max(0, parseFloat(e.target.value))
+                                : 0,
+                            )
+                          }
+                          className={`${optionInputClass} mt-1`}
+                        />
+                      </label>
+                      <label className={optionLabelClass}>
+                        K (mm/sqrt(km))
+                        <input
+                          title={SETTINGS_TOOLTIPS.levelLoopToleranceK}
+                          type="number"
+                          min={0}
+                          step={0.1}
+                          value={parseSettingsDraft.levelLoopTolerancePerSqrtKmMm}
+                          onChange={(e) =>
+                            handleDraftParseSetting(
+                              'levelLoopTolerancePerSqrtKmMm',
+                              Number.isFinite(parseFloat(e.target.value))
+                                ? Math.max(0, parseFloat(e.target.value))
+                                : 4,
+                            )
+                          }
+                          className={`${optionInputClass} mt-1`}
+                        />
+                      </label>
+                    </div>
+                  </SettingsCard>
                   <SettingsCard
                     title="Local / Grid Reduction"
                     tooltip={PROJECT_OPTION_SECTION_TOOLTIPS['Local/Grid Reduction']}
@@ -853,6 +1088,7 @@ const ProjectOptionsModal: React.FC<ProjectOptionsModalProps> = ({ context }) =>
                       >
                         <option value="gruvbox-dark">Gruvbox Dark</option>
                         <option value="gruvbox-light">Gruvbox Light</option>
+                        <option value="vscode-dark">VSCode Dark</option>
                         <option value="catppuccin-mocha">Catppuccin Mocha</option>
                         <option value="catppuccin-latte">Catppuccin Latte</option>
                       </select>
@@ -989,7 +1225,7 @@ const ProjectOptionsModal: React.FC<ProjectOptionsModalProps> = ({ context }) =>
                         <button
                           type="button"
                           onClick={addNewInstrument}
-                          className="px-3 py-1 text-[11px] border border-slate-300 bg-slate-600 hover:bg-slate-500 text-slate-100"
+                          className="px-3 py-1 text-[11px] border border-slate-600 bg-slate-600 hover:bg-slate-500 text-slate-100"
                           title={SETTINGS_TOOLTIPS.newInstrument}
                         >
                           New
@@ -998,7 +1234,7 @@ const ProjectOptionsModal: React.FC<ProjectOptionsModalProps> = ({ context }) =>
                           type="button"
                           onClick={duplicateSelectedInstrument}
                           disabled={!selectedInstrumentMeta}
-                          className="px-3 py-1 text-[11px] border border-slate-300 bg-slate-600 hover:bg-slate-500 text-slate-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="px-3 py-1 text-[11px] border border-slate-600 bg-slate-600 hover:bg-slate-500 text-slate-100 disabled:opacity-100 disabled:cursor-not-allowed"
                           title={SETTINGS_TOOLTIPS.duplicateInstrument}
                         >
                           Duplicate
@@ -1190,7 +1426,7 @@ const ProjectOptionsModal: React.FC<ProjectOptionsModalProps> = ({ context }) =>
                                 e.target.value,
                               )
                             }
-                            className={`${optionInputClass} disabled:opacity-50 disabled:cursor-not-allowed`}
+                            className={`${optionInputClass} disabled:opacity-100 disabled:cursor-not-allowed`}
                           />
                         </SettingsRow>
                         <SettingsRow
@@ -1210,7 +1446,7 @@ const ProjectOptionsModal: React.FC<ProjectOptionsModalProps> = ({ context }) =>
                                 e.target.value,
                               )
                             }
-                            className={`${optionInputClass} disabled:opacity-50 disabled:cursor-not-allowed`}
+                            className={`${optionInputClass} disabled:opacity-100 disabled:cursor-not-allowed`}
                           />
                         </SettingsRow>
                         <SettingsRow
@@ -1231,7 +1467,7 @@ const ProjectOptionsModal: React.FC<ProjectOptionsModalProps> = ({ context }) =>
                                 settingsDraft.units,
                               )
                             }
-                            className={`${optionInputClass} disabled:opacity-50 disabled:cursor-not-allowed`}
+                            className={`${optionInputClass} disabled:opacity-100 disabled:cursor-not-allowed`}
                           />
                         </SettingsRow>
                         <SettingsRow
@@ -1251,7 +1487,7 @@ const ProjectOptionsModal: React.FC<ProjectOptionsModalProps> = ({ context }) =>
                                 e.target.value,
                               )
                             }
-                            className={`${optionInputClass} disabled:opacity-50 disabled:cursor-not-allowed`}
+                            className={`${optionInputClass} disabled:opacity-100 disabled:cursor-not-allowed`}
                           />
                         </SettingsRow>
                         <SettingsRow
@@ -1272,7 +1508,7 @@ const ProjectOptionsModal: React.FC<ProjectOptionsModalProps> = ({ context }) =>
                                 settingsDraft.units,
                               )
                             }
-                            className={`${optionInputClass} disabled:opacity-50 disabled:cursor-not-allowed`}
+                            className={`${optionInputClass} disabled:opacity-100 disabled:cursor-not-allowed`}
                           />
                         </SettingsRow>
                       </SettingsCard>
@@ -1301,7 +1537,7 @@ const ProjectOptionsModal: React.FC<ProjectOptionsModalProps> = ({ context }) =>
                       <input
                         title={SETTINGS_TOOLTIPS.listingShowCoordinates}
                         type="checkbox"
-                        className="accent-blue-400"
+                        className="accent-blue-500"
                         checked={settingsDraft.listingShowCoordinates}
                         onChange={(e) =>
                           handleDraftSetting('listingShowCoordinates', e.target.checked)
@@ -1313,7 +1549,7 @@ const ProjectOptionsModal: React.FC<ProjectOptionsModalProps> = ({ context }) =>
                       <input
                         title={SETTINGS_TOOLTIPS.listingShowObservationsResiduals}
                         type="checkbox"
-                        className="accent-blue-400"
+                        className="accent-blue-500"
                         checked={settingsDraft.listingShowObservationsResiduals}
                         onChange={(e) =>
                           handleDraftSetting('listingShowObservationsResiduals', e.target.checked)
@@ -1325,7 +1561,7 @@ const ProjectOptionsModal: React.FC<ProjectOptionsModalProps> = ({ context }) =>
                       <input
                         title={SETTINGS_TOOLTIPS.listingShowErrorPropagation}
                         type="checkbox"
-                        className="accent-blue-400"
+                        className="accent-blue-500"
                         checked={settingsDraft.listingShowErrorPropagation}
                         onChange={(e) =>
                           handleDraftSetting('listingShowErrorPropagation', e.target.checked)
@@ -1337,7 +1573,7 @@ const ProjectOptionsModal: React.FC<ProjectOptionsModalProps> = ({ context }) =>
                       <input
                         title={SETTINGS_TOOLTIPS.listingShowProcessingNotes}
                         type="checkbox"
-                        className="accent-blue-400"
+                        className="accent-blue-500"
                         checked={settingsDraft.listingShowProcessingNotes}
                         onChange={(e) =>
                           handleDraftSetting('listingShowProcessingNotes', e.target.checked)
@@ -1349,7 +1585,7 @@ const ProjectOptionsModal: React.FC<ProjectOptionsModalProps> = ({ context }) =>
                       <input
                         title={SETTINGS_TOOLTIPS.listingShowLostStations}
                         type="checkbox"
-                        className="accent-blue-400"
+                        className="accent-blue-500"
                         checked={settingsDraft.listingShowLostStations}
                         onChange={(e) =>
                           handleDraftSetting('listingShowLostStations', e.target.checked)
@@ -1361,7 +1597,7 @@ const ProjectOptionsModal: React.FC<ProjectOptionsModalProps> = ({ context }) =>
                       <input
                         title={SETTINGS_TOOLTIPS.listingShowAzimuthsBearings}
                         type="checkbox"
-                        className="accent-blue-400"
+                        className="accent-blue-500"
                         checked={settingsDraft.listingShowAzimuthsBearings}
                         onChange={(e) =>
                           handleDraftSetting('listingShowAzimuthsBearings', e.target.checked)
@@ -1420,12 +1656,13 @@ const ProjectOptionsModal: React.FC<ProjectOptionsModalProps> = ({ context }) =>
                 </div>
               )}
 
-              {activeOptionsTab === 'other-files' && (
+              {(activeOptionsTab === 'other-files' || activeOptionsTab === 'project-files') && (
                 <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-                  <SettingsCard
-                    title="Other File Outputs"
-                    tooltip={PROJECT_OPTION_SECTION_TOOLTIPS['Other File Outputs']}
-                  >
+                  {activeOptionsTab === 'other-files' && (
+                    <SettingsCard
+                      title="Other File Outputs"
+                      tooltip={PROJECT_OPTION_SECTION_TOOLTIPS['Other File Outputs']}
+                    >
                     <SettingsRow label="Export Format" tooltip={SETTINGS_TOOLTIPS.exportFormat}>
                       <select
                         title={getExportFormatTooltip(exportFormat)}
@@ -1467,11 +1704,13 @@ const ProjectOptionsModal: React.FC<ProjectOptionsModalProps> = ({ context }) =>
                         {getExportFormatTooltip(exportFormat)}
                       </div>
                     </SettingsRow>
-                  </SettingsCard>
-                  <SettingsCard
-                    title="Project Files"
-                    tooltip={PROJECT_OPTION_SECTION_TOOLTIPS['Project Files']}
-                  >
+                    </SettingsCard>
+                  )}
+                  {activeOptionsTab === 'project-files' && (
+                    <SettingsCard
+                      title="Project Files"
+                      tooltip={PROJECT_OPTION_SECTION_TOOLTIPS['Project Files']}
+                    >
                     <div className="space-y-3">
                       <div className="text-xs text-slate-200 leading-relaxed">
                         Local browser projects store a manifest plus source files. Portable exports
@@ -1542,7 +1781,7 @@ const ProjectOptionsModal: React.FC<ProjectOptionsModalProps> = ({ context }) =>
                           type="button"
                           onClick={triggerProjectSourceFileSelect}
                           disabled={!projectSession}
-                          className="rounded border border-slate-400 bg-slate-700 px-3 py-1 text-xs text-slate-100 hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="rounded border border-slate-400 bg-slate-700 px-3 py-1 text-xs text-slate-100 hover:bg-slate-600 disabled:opacity-100 disabled:cursor-not-allowed"
                         >
                           Add Source File
                         </button>
@@ -1550,7 +1789,7 @@ const ProjectOptionsModal: React.FC<ProjectOptionsModalProps> = ({ context }) =>
                           type="button"
                           onClick={createBlankProjectFile}
                           disabled={!projectSession}
-                          className="rounded border border-slate-400 bg-slate-700 px-3 py-1 text-xs text-slate-100 hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="rounded border border-slate-400 bg-slate-700 px-3 py-1 text-xs text-slate-100 hover:bg-slate-600 disabled:opacity-100 disabled:cursor-not-allowed"
                         >
                           New Blank File
                         </button>
@@ -1635,7 +1874,7 @@ const ProjectOptionsModal: React.FC<ProjectOptionsModalProps> = ({ context }) =>
                                       type="button"
                                       onClick={() => moveProjectFile(file.id, 'up')}
                                       disabled={index === 0}
-                                      className="rounded border border-slate-400 bg-slate-700 px-2 py-1 text-[11px] text-slate-100 hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                                      className="rounded border border-slate-400 bg-slate-700 px-2 py-1 text-[11px] text-slate-100 hover:bg-slate-600 disabled:opacity-100 disabled:cursor-not-allowed"
                                     >
                                       Up
                                     </button>
@@ -1643,7 +1882,7 @@ const ProjectOptionsModal: React.FC<ProjectOptionsModalProps> = ({ context }) =>
                                       type="button"
                                       onClick={() => moveProjectFile(file.id, 'down')}
                                       disabled={index === activeProjectFileViews.length - 1}
-                                      className="rounded border border-slate-400 bg-slate-700 px-2 py-1 text-[11px] text-slate-100 hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                                      className="rounded border border-slate-400 bg-slate-700 px-2 py-1 text-[11px] text-slate-100 hover:bg-slate-600 disabled:opacity-100 disabled:cursor-not-allowed"
                                     >
                                       Down
                                     </button>
@@ -1706,12 +1945,15 @@ const ProjectOptionsModal: React.FC<ProjectOptionsModalProps> = ({ context }) =>
                         )}
                       </div>
                     </div>
-                  </SettingsCard>
-                  <SettingsCard
-                    title="Adjusted Points Export"
-                    tooltip={PROJECT_OPTION_SECTION_TOOLTIPS['Adjusted Points Export']}
-                    className="xl:col-span-2"
-                  >
+                    </SettingsCard>
+                  )}
+                  {activeOptionsTab === 'other-files' && (
+                    <>
+                      <SettingsCard
+                        title="Adjusted Points Export"
+                        tooltip={PROJECT_OPTION_SECTION_TOOLTIPS['Adjusted Points Export']}
+                        className="xl:col-span-2"
+                      >
                     <div className="grid grid-cols-1 xl:grid-cols-3 gap-3">
                       <div className="space-y-3">
                         <SettingsRow
@@ -1810,7 +2052,7 @@ const ProjectOptionsModal: React.FC<ProjectOptionsModalProps> = ({ context }) =>
                                 key={`adj-col-${columnId}`}
                                 className={`flex items-center gap-2 rounded border px-2 py-1 text-xs ${
                                   checked
-                                    ? 'border-blue-400/70 bg-blue-900/20 text-blue-100'
+                                    ? 'border-blue-500/70 bg-blue-900/20 text-blue-100'
                                     : 'border-slate-500 bg-slate-700/30 text-slate-200'
                                 }`}
                               >
@@ -1851,7 +2093,7 @@ const ProjectOptionsModal: React.FC<ProjectOptionsModalProps> = ({ context }) =>
                                   title={`Move ${columnId} left`}
                                   disabled={index === 0}
                                   onClick={() => handleAdjustedPointsMoveColumn(columnId, 'left')}
-                                  className="rounded border border-slate-500 px-1 py-0.5 disabled:opacity-40"
+                                  className="rounded border border-slate-500 px-1 py-0.5 disabled:opacity-100"
                                 >
                                   {'<'}
                                 </button>
@@ -1862,7 +2104,7 @@ const ProjectOptionsModal: React.FC<ProjectOptionsModalProps> = ({ context }) =>
                                     index === adjustedPointsExportSettingsDraft.columns.length - 1
                                   }
                                   onClick={() => handleAdjustedPointsMoveColumn(columnId, 'right')}
-                                  className="rounded border border-slate-500 px-1 py-0.5 disabled:opacity-40"
+                                  className="rounded border border-slate-500 px-1 py-0.5 disabled:opacity-100"
                                 >
                                   {'>'}
                                 </button>
@@ -1882,8 +2124,8 @@ const ProjectOptionsModal: React.FC<ProjectOptionsModalProps> = ({ context }) =>
                     className="xl:col-span-2"
                   >
                     <div className="space-y-3">
-                      <div className="rounded-md border border-cyan-500/50 bg-cyan-900/10 p-3 space-y-3">
-                        <div className="text-[11px] uppercase tracking-wide text-cyan-200">
+                      <div className="rounded-md border border-blue-500/50 bg-blue-900/10 p-3 space-y-3">
+                        <div className="text-[11px] uppercase tracking-wide text-blue-200">
                           Shared Controls
                         </div>
                         <SettingsRow
@@ -1900,7 +2142,7 @@ const ProjectOptionsModal: React.FC<ProjectOptionsModalProps> = ({ context }) =>
                                 e.target.value,
                               )
                             }
-                            className={`${optionInputClass} disabled:opacity-50 disabled:cursor-not-allowed`}
+                            className={`${optionInputClass} disabled:opacity-100 disabled:cursor-not-allowed`}
                           >
                             <option value="">Select reference station</option>
                             {adjustedPointsDraftStationIds.map((stationId) => (
@@ -1921,9 +2163,9 @@ const ProjectOptionsModal: React.FC<ProjectOptionsModalProps> = ({ context }) =>
                               disabled={adjustedPointsDraftStationIds.length === 0}
                               className={`rounded border px-2 py-1 text-xs uppercase tracking-wide ${
                                 adjustedPointsExportSettingsDraft.transform.scope === 'all'
-                                  ? 'border-cyan-400 bg-cyan-800/40 text-cyan-100'
+                                  ? 'border-blue-500 bg-blue-800/40 text-blue-100'
                                   : 'border-slate-500 bg-slate-700 text-slate-100 hover:bg-slate-600'
-                              } disabled:opacity-50 disabled:cursor-not-allowed`}
+                              } disabled:opacity-100 disabled:cursor-not-allowed`}
                             >
                               All Points
                             </button>
@@ -1938,16 +2180,16 @@ const ProjectOptionsModal: React.FC<ProjectOptionsModalProps> = ({ context }) =>
                               disabled={adjustedPointsDraftStationIds.length === 0}
                               className={`rounded border px-2 py-1 text-xs uppercase tracking-wide ${
                                 adjustedPointsExportSettingsDraft.transform.scope === 'selected'
-                                  ? 'border-cyan-400 bg-cyan-800/40 text-cyan-100'
+                                  ? 'border-blue-500 bg-blue-800/40 text-blue-100'
                                   : 'border-slate-500 bg-slate-700 text-slate-100 hover:bg-slate-600'
-                              } disabled:opacity-50 disabled:cursor-not-allowed`}
+                              } disabled:opacity-100 disabled:cursor-not-allowed`}
                             >
                               Select Points
                             </button>
                           </div>
                         </SettingsRow>
                         {adjustedPointsExportSettingsDraft.transform.scope === 'selected' && (
-                          <div className="rounded border border-cyan-400/40 bg-slate-800/60 px-3 py-2 text-[11px] text-slate-200 space-y-2">
+                          <div className="rounded border border-blue-500/40 bg-slate-800/60 px-3 py-2 text-[11px] text-slate-200 space-y-2">
                             <div>
                               Selected points: {adjustedPointsTransformSelectedInSetCount}
                               {' | '}Reference point auto-included in transform scope.
@@ -1956,20 +2198,20 @@ const ProjectOptionsModal: React.FC<ProjectOptionsModalProps> = ({ context }) =>
                               type="button"
                               onClick={openAdjustedPointsTransformSelectModal}
                               disabled={adjustedPointsDraftStationIds.length === 0}
-                              className="rounded border border-cyan-400/70 bg-cyan-900/40 px-2 py-1 text-xs uppercase tracking-wide text-cyan-100 hover:bg-cyan-800/60 disabled:opacity-50 disabled:cursor-not-allowed"
+                              className="rounded border border-blue-500/70 bg-blue-900/40 px-2 py-1 text-xs uppercase tracking-wide text-blue-100 hover:bg-blue-800/60 disabled:opacity-100 disabled:cursor-not-allowed"
                             >
                               Select Points
                             </button>
                           </div>
                         )}
-                        <div className="rounded border border-cyan-500/30 bg-slate-800/60 px-3 py-2 text-[11px] text-slate-200 leading-relaxed">
+                        <div className="rounded border border-blue-500/30 bg-slate-800/60 px-3 py-2 text-[11px] text-slate-200 leading-relaxed">
                           Shared reference and scope apply to all transform actions. Active order
                           is Scale to Rotate to Translate.
                         </div>
                       </div>
                       <div className="grid grid-cols-1 xl:grid-cols-3 gap-3">
-                        <div className="rounded-md border border-cyan-500/50 bg-cyan-900/10 p-3 space-y-3">
-                          <div className="text-[11px] uppercase tracking-wide text-cyan-200">
+                        <div className="rounded-md border border-blue-500/50 bg-blue-900/10 p-3 space-y-3">
+                          <div className="text-[11px] uppercase tracking-wide text-blue-200">
                             Rotation
                           </div>
                           <SettingsRow
@@ -1997,7 +2239,7 @@ const ProjectOptionsModal: React.FC<ProjectOptionsModalProps> = ({ context }) =>
                               onChange={(e) =>
                                 handleDraftAdjustedPointsRotationAngleInput(e.target.value)
                               }
-                              className={`${optionInputClass} disabled:opacity-50 disabled:cursor-not-allowed`}
+                              className={`${optionInputClass} disabled:opacity-100 disabled:cursor-not-allowed`}
                               placeholder="ddd-mm-ss.s or decimal"
                             />
                           </SettingsRow>
@@ -2007,13 +2249,13 @@ const ProjectOptionsModal: React.FC<ProjectOptionsModalProps> = ({ context }) =>
                               {adjustedPointsRotationAngleError}
                             </div>
                             )}
-                          <div className="rounded border border-cyan-500/30 bg-slate-800/60 px-3 py-2 text-[11px] text-slate-200 leading-relaxed">
+                          <div className="rounded border border-blue-500/30 bg-slate-800/60 px-3 py-2 text-[11px] text-slate-200 leading-relaxed">
                             Positive angle rotates counterclockwise about the shared reference
                             point.
                           </div>
                         </div>
-                        <div className="rounded-md border border-cyan-500/50 bg-cyan-900/10 p-3 space-y-3">
-                          <div className="text-[11px] uppercase tracking-wide text-cyan-200">
+                        <div className="rounded-md border border-blue-500/50 bg-blue-900/10 p-3 space-y-3">
+                          <div className="text-[11px] uppercase tracking-wide text-blue-200">
                             Translation
                           </div>
                           <SettingsRow
@@ -2045,7 +2287,7 @@ const ProjectOptionsModal: React.FC<ProjectOptionsModalProps> = ({ context }) =>
                                   e.target.value as 'direction-distance' | 'anchor-coordinate',
                                 )
                               }
-                              className={`${optionInputClass} disabled:opacity-50 disabled:cursor-not-allowed`}
+                              className={`${optionInputClass} disabled:opacity-100 disabled:cursor-not-allowed`}
                             >
                               <option value="direction-distance">Direction + Distance</option>
                               <option value="anchor-coordinate">Reference -&gt; New E/N</option>
@@ -2072,7 +2314,7 @@ const ProjectOptionsModal: React.FC<ProjectOptionsModalProps> = ({ context }) =>
                                       e.target.value,
                                     )
                                   }
-                                  className={`${optionInputClass} disabled:opacity-50 disabled:cursor-not-allowed`}
+                                  className={`${optionInputClass} disabled:opacity-100 disabled:cursor-not-allowed`}
                                   placeholder="ddd-mm-ss.s or decimal"
                                 />
                               </SettingsRow>
@@ -2099,7 +2341,7 @@ const ProjectOptionsModal: React.FC<ProjectOptionsModalProps> = ({ context }) =>
                                       Number.isFinite(parsed) ? parsed : 0,
                                     );
                                   }}
-                                  className={`${optionInputClass} disabled:opacity-50 disabled:cursor-not-allowed`}
+                                  className={`${optionInputClass} disabled:opacity-100 disabled:cursor-not-allowed`}
                                 />
                               </SettingsRow>
                             </>
@@ -2122,7 +2364,7 @@ const ProjectOptionsModal: React.FC<ProjectOptionsModalProps> = ({ context }) =>
                                       Number.isFinite(parsed) ? parsed : 0,
                                     );
                                   }}
-                                  className={`${optionInputClass} disabled:opacity-50 disabled:cursor-not-allowed`}
+                                  className={`${optionInputClass} disabled:opacity-100 disabled:cursor-not-allowed`}
                                 />
                               </SettingsRow>
                               <SettingsRow label={`New Northing (${settingsDraft.units})`}>
@@ -2142,18 +2384,18 @@ const ProjectOptionsModal: React.FC<ProjectOptionsModalProps> = ({ context }) =>
                                       Number.isFinite(parsed) ? parsed : 0,
                                     );
                                   }}
-                                  className={`${optionInputClass} disabled:opacity-50 disabled:cursor-not-allowed`}
+                                  className={`${optionInputClass} disabled:opacity-100 disabled:cursor-not-allowed`}
                                 />
                               </SettingsRow>
                             </>
                           )}
-                          <div className="rounded border border-cyan-500/30 bg-slate-800/60 px-3 py-2 text-[11px] text-slate-200 leading-relaxed">
+                          <div className="rounded border border-blue-500/30 bg-slate-800/60 px-3 py-2 text-[11px] text-slate-200 leading-relaxed">
                             Azimuth convention is surveying style: 0 north, 90 east, 180 south, 270
                             west.
                           </div>
                         </div>
-                        <div className="rounded-md border border-cyan-500/50 bg-cyan-900/10 p-3 space-y-3">
-                          <div className="text-[11px] uppercase tracking-wide text-cyan-200">
+                        <div className="rounded-md border border-blue-500/50 bg-blue-900/10 p-3 space-y-3">
+                          <div className="text-[11px] uppercase tracking-wide text-blue-200">
                             Scale
                           </div>
                           <SettingsRow
@@ -2186,10 +2428,10 @@ const ProjectOptionsModal: React.FC<ProjectOptionsModalProps> = ({ context }) =>
                                   Number.isFinite(parsed) ? parsed : 1,
                                 );
                               }}
-                              className={`${optionInputClass} disabled:opacity-50 disabled:cursor-not-allowed`}
+                              className={`${optionInputClass} disabled:opacity-100 disabled:cursor-not-allowed`}
                             />
                           </SettingsRow>
-                          <div className="rounded border border-cyan-500/30 bg-slate-800/60 px-3 py-2 text-[11px] text-slate-200 leading-relaxed">
+                          <div className="rounded border border-blue-500/30 bg-slate-800/60 px-3 py-2 text-[11px] text-slate-200 leading-relaxed">
                             Scale applies to N/E only and keeps the shared reference point fixed.
                           </div>
                         </div>
@@ -2230,6 +2472,8 @@ const ProjectOptionsModal: React.FC<ProjectOptionsModalProps> = ({ context }) =>
                       tab. This tab is for high-level export target and shared output behavior.
                     </div>
                   </SettingsCard>
+                    </>
+                  )}
                 </div>
               )}
 
@@ -2287,18 +2531,69 @@ const ProjectOptionsModal: React.FC<ProjectOptionsModalProps> = ({ context }) =>
                             e.target.value.length > 0 ? e.target.value : ' | ',
                           )
                         }
-                        className={`${optionInputClass} disabled:opacity-50 disabled:cursor-not-allowed`}
+                        className={`${optionInputClass} disabled:opacity-100 disabled:cursor-not-allowed`}
                       />
                     </SettingsRow>
                   </SettingsCard>
                   <SettingsCard
-                    title="Profile Note"
-                    tooltip="Run-profile constraints and interpretation notes for parity mode."
+                    title="TS Correlation"
+                    tooltip={PROJECT_OPTION_SECTION_TOOLTIPS['TS Correlation']}
+                    disabled={parityProfileActive}
                   >
-                    <div className="text-xs text-slate-200 leading-relaxed">
-                      Industry Standard parity profile forces classical solving and raw
-                      direction-set processing with industry default instrument fallback.
-                    </div>
+                    <SettingsRow
+                      label="Enable Correlation"
+                      tooltip={SETTINGS_TOOLTIPS.tsCorrelation}
+                      className="md:grid-cols-[minmax(0,1fr)_auto]"
+                    >
+                      <SettingsToggle
+                        title={SETTINGS_TOOLTIPS.tsCorrelation}
+                        checked={parseSettingsDraft.tsCorrelationEnabled}
+                        disabled={parityProfileActive}
+                        onChange={(checked) =>
+                          handleDraftParseSetting('tsCorrelationEnabled', checked)
+                        }
+                      />
+                    </SettingsRow>
+                    <SettingsRow
+                      label="Correlation Scope"
+                      tooltip={SETTINGS_TOOLTIPS.tsCorrelationScope}
+                    >
+                      <select
+                        title={SETTINGS_TOOLTIPS.tsCorrelationScope}
+                        value={parseSettingsDraft.tsCorrelationScope}
+                        disabled={parityProfileActive || parseSettingsDraft.preanalysisMode}
+                        onChange={(e) =>
+                          handleDraftParseSetting(
+                            'tsCorrelationScope',
+                            e.target.value as TsCorrelationScope,
+                          )
+                        }
+                        className={`${optionInputClass} disabled:opacity-100 disabled:cursor-not-allowed`}
+                      >
+                        <option value="set">SET</option>
+                        <option value="setup">SETUP</option>
+                      </select>
+                    </SettingsRow>
+                    <SettingsRow label="Correlation ρ" tooltip={SETTINGS_TOOLTIPS.tsCorrelationRho}>
+                      <input
+                        title={SETTINGS_TOOLTIPS.tsCorrelationRho}
+                        type="number"
+                        min={0}
+                        max={0.95}
+                        step={0.01}
+                        value={parseSettingsDraft.tsCorrelationRho}
+                        disabled={parityProfileActive || parseSettingsDraft.preanalysisMode}
+                        onChange={(e) =>
+                          handleDraftParseSetting(
+                            'tsCorrelationRho',
+                            Number.isFinite(parseFloat(e.target.value))
+                              ? Math.max(0, Math.min(0.95, parseFloat(e.target.value)))
+                              : 0.25,
+                          )
+                        }
+                        className={`${optionInputClass} disabled:opacity-100 disabled:cursor-not-allowed`}
+                      />
+                    </SettingsRow>
                   </SettingsCard>
                   <SettingsCard
                     title="Positional Tolerance"
@@ -2338,7 +2633,7 @@ const ProjectOptionsModal: React.FC<ProjectOptionsModalProps> = ({ context }) =>
                                   : 0,
                               )
                             }
-                            className={`${optionInputClass} mt-1 disabled:opacity-50 disabled:cursor-not-allowed`}
+                            className={`${optionInputClass} mt-1 disabled:opacity-100 disabled:cursor-not-allowed`}
                           />
                         </label>
                         <label className={optionLabelClass}>
@@ -2358,7 +2653,7 @@ const ProjectOptionsModal: React.FC<ProjectOptionsModalProps> = ({ context }) =>
                                   : 0,
                               )
                             }
-                            className={`${optionInputClass} mt-1 disabled:opacity-50 disabled:cursor-not-allowed`}
+                            className={`${optionInputClass} mt-1 disabled:opacity-100 disabled:cursor-not-allowed`}
                           />
                         </label>
                         <label className={optionLabelClass}>
@@ -2379,7 +2674,7 @@ const ProjectOptionsModal: React.FC<ProjectOptionsModalProps> = ({ context }) =>
                                   : 95,
                               )
                             }
-                            className={`${optionInputClass} mt-1 disabled:opacity-50 disabled:cursor-not-allowed`}
+                            className={`${optionInputClass} mt-1 disabled:opacity-100 disabled:cursor-not-allowed`}
                           />
                         </label>
                       </div>
@@ -2390,376 +2685,55 @@ const ProjectOptionsModal: React.FC<ProjectOptionsModalProps> = ({ context }) =>
                       </div>
                     </div>
                   </SettingsCard>
+                  <SettingsCard
+                    title="Robust Model"
+                    tooltip={PROJECT_OPTION_SECTION_TOOLTIPS['Robust Model']}
+                    disabled={parityProfileActive}
+                  >
+                    <SettingsRow label="Robust Mode" tooltip={SETTINGS_TOOLTIPS.robustMode}>
+                      <select
+                        title={SETTINGS_TOOLTIPS.robustMode}
+                        value={parseSettingsDraft.robustMode}
+                        onChange={(e) =>
+                          handleDraftParseSetting('robustMode', e.target.value as RobustMode)
+                        }
+                        disabled={parityProfileActive}
+                        className={`${optionInputClass} disabled:opacity-100 disabled:cursor-not-allowed`}
+                      >
+                        <option value="none">OFF</option>
+                        <option value="huber">Huber</option>
+                      </select>
+                    </SettingsRow>
+                    <SettingsRow label="Robust k" tooltip={SETTINGS_TOOLTIPS.robustK}>
+                      <input
+                        title={SETTINGS_TOOLTIPS.robustK}
+                        type="number"
+                        min={0.5}
+                        max={10}
+                        step={0.1}
+                        value={parseSettingsDraft.robustK}
+                        onChange={(e) =>
+                          handleDraftParseSetting(
+                            'robustK',
+                            Number.isFinite(parseFloat(e.target.value))
+                              ? Math.max(0.5, Math.min(10, parseFloat(e.target.value)))
+                              : 1.5,
+                          )
+                        }
+                        disabled={parityProfileActive}
+                        className={`${optionInputClass} disabled:opacity-100 disabled:cursor-not-allowed`}
+                      />
+                    </SettingsRow>
+                  </SettingsCard>
                 </div>
               )}
 
               {activeOptionsTab === 'gps' && (
                 <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
                   <SettingsCard
-                    title="Coordinate System (Canada-First)"
-                    tooltip={PROJECT_OPTION_SECTION_TOOLTIPS['CRS / Geodetic Setup']}
-                  >
-                    <SettingsRow
-                      label="Coord System Mode"
-                      tooltip={SETTINGS_TOOLTIPS.coordSystemMode}
-                    >
-                      <select
-                        title={SETTINGS_TOOLTIPS.coordSystemMode}
-                        value={parseSettingsDraft.coordSystemMode}
-                        onChange={(e) =>
-                          handleDraftParseSetting(
-                            'coordSystemMode',
-                            e.target.value as CoordSystemMode,
-                          )
-                        }
-                        className={optionInputClass}
-                      >
-                        <option value="local">LOCAL</option>
-                        <option value="grid">GRID</option>
-                      </select>
-                    </SettingsRow>
-                    <SettingsRow
-                      label="CRS Catalog Group"
-                      tooltip={SETTINGS_TOOLTIPS.crsCatalogGroup}
-                    >
-                      <select
-                        title={SETTINGS_TOOLTIPS.crsCatalogGroup}
-                        value={crsCatalogGroupFilter}
-                        onChange={(e) =>
-                          setCrsCatalogGroupFilter(e.target.value as CrsCatalogGroupFilter)
-                        }
-                        className={optionInputClass}
-                      >
-                        {CRS_CATALOG_GROUP_OPTIONS.map((group) => {
-                          const count = crsCatalogGroupCounts[group.id] ?? 0;
-                          const disabled = group.id !== 'all' && count === 0;
-                          return (
-                            <option key={group.id} value={group.id} disabled={disabled}>
-                              {group.label} ({count})
-                            </option>
-                          );
-                        })}
-                      </select>
-                    </SettingsRow>
-                    <SettingsRow label="CRS Search">
-                      <input
-                        type="text"
-                        value={crsSearchQuery}
-                        onChange={(e) => setCrsSearchQuery(e.target.value)}
-                        placeholder="Filter by ID, label, or EPSG"
-                        className={optionInputClass}
-                      />
-                    </SettingsRow>
-                    <SettingsRow label="CRS (Grid Mode)" tooltip={SETTINGS_TOOLTIPS.crsId}>
-                      <select
-                        title={SETTINGS_TOOLTIPS.crsId}
-                        value={parseSettingsDraft.crsId}
-                        disabled={parseSettingsDraft.coordSystemMode !== 'grid'}
-                        onChange={(e) => handleDraftParseSetting('crsId', e.target.value)}
-                        className={`${optionInputClass} disabled:opacity-50 disabled:cursor-not-allowed`}
-                      >
-                        {visibleDraftCrsCatalog.map((crs) => (
-                          <option key={crs.id} value={crs.id}>
-                            {crs.id} - {crs.label}
-                          </option>
-                        ))}
-                      </select>
-                    </SettingsRow>
-                    {filteredDraftCrsCatalog.length === 0 && (
-                      <div className="rounded border border-amber-300/50 bg-amber-900/20 px-2 py-1 text-[10px] text-amber-100">
-                        No CRS entries are loaded for this catalog group yet.
-                      </div>
-                    )}
-                    {filteredDraftCrsCatalog.length > 0 && searchedDraftCrsCatalog.length === 0 && (
-                      <div className="rounded border border-amber-300/50 bg-amber-900/20 px-2 py-1 text-[10px] text-amber-100">
-                        Search filter returned no CRS rows in this catalog group.
-                      </div>
-                    )}
-                    <div className="rounded-md border border-slate-400/60 bg-slate-700/20 px-3 py-2 text-[11px] text-slate-200 leading-relaxed space-y-1">
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="uppercase tracking-wide text-slate-100">CRS Details</div>
-                        <button
-                          type="button"
-                          title={SETTINGS_TOOLTIPS.crsProjectionParameters}
-                          onClick={() => setShowCrsProjectionParams((prev) => !prev)}
-                          className="inline-flex items-center gap-1 rounded border border-slate-300/60 bg-slate-700/30 px-2 py-0.5 text-[10px] uppercase tracking-wide text-slate-100 hover:bg-slate-600/40"
-                        >
-                          <Info className="h-3.5 w-3.5" />
-                          {showCrsProjectionParams ? 'Hide Params' : 'Show Params'}
-                        </button>
-                      </div>
-                      <div>ID: {selectedDraftCrs?.id ?? parseSettingsDraft.crsId}</div>
-                      <div>EPSG: {selectedDraftCrs?.epsgCode ?? '-'}</div>
-                      <div>
-                        Catalog Group:{' '}
-                        {selectedDraftCrs?.catalogGroup
-                          ?.replace('canada-', 'Canada ')
-                          .replace('global', 'Global')
-                          .toUpperCase() ?? '-'}
-                      </div>
-                      <div>Datum: {selectedDraftCrs?.datum ?? '-'}</div>
-                      <div>
-                        Projection:{' '}
-                        {selectedDraftCrs?.projectionFamily?.toUpperCase().replaceAll('-', ' ') ??
-                          '-'}
-                        {selectedDraftCrs?.zoneNumber != null
-                          ? ` (zone ${selectedDraftCrs.zoneNumber})`
-                          : ''}
-                      </div>
-                      <div>
-                        Axis/Unit: {selectedDraftCrs?.axisOrder ?? '-'} /{' '}
-                        {selectedDraftCrs?.linearUnit ?? '-'}
-                      </div>
-                      <div>Area of Use: {selectedDraftCrs?.areaOfUse ?? '-'}</div>
-                      <div>
-                        Datum Op: {selectedDraftCrs?.supportedDatumOps.primary ?? '-'}
-                        {selectedDraftCrs?.supportedDatumOps.fallbacks?.length
-                          ? ` (fallbacks=${selectedDraftCrs.supportedDatumOps.fallbacks.length})`
-                          : ''}
-                      </div>
-                      <div>
-                        Area Bounds:{' '}
-                        {selectedDraftCrs?.areaOfUseBounds
-                          ? `lat ${selectedDraftCrs.areaOfUseBounds.minLatDeg.toFixed(3)}..${selectedDraftCrs.areaOfUseBounds.maxLatDeg.toFixed(3)}, lon ${selectedDraftCrs.areaOfUseBounds.minLonDeg.toFixed(3)}..${selectedDraftCrs.areaOfUseBounds.maxLonDeg.toFixed(3)}`
-                          : '-'}
-                      </div>
-                      {showCrsProjectionParams && (
-                        <div className="mt-2 space-y-2 rounded border border-slate-300/40 bg-slate-800/30 p-2">
-                          <div className="uppercase tracking-wide text-slate-100">
-                            Projection Parameters
-                          </div>
-                          <div className="break-all rounded bg-slate-900/50 px-2 py-1 font-mono text-[10px] leading-relaxed text-slate-100">
-                            {selectedDraftCrs?.proj4 ?? '-'}
-                          </div>
-                          <div className="grid grid-cols-2 gap-x-3 gap-y-1 font-mono text-[10px] text-slate-100">
-                            {selectedCrsProj4Params.map((row) => (
-                              <React.Fragment key={row.key}>
-                                <span className="text-slate-300">{row.key}</span>
-                                <span className="break-all">{row.value}</span>
-                              </React.Fragment>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                    {parseSettingsDraft.coordSystemMode === 'grid' &&
-                      runDiagnostics?.crsAreaOfUseStatus === 'outside' && (
-                        <div className="rounded border border-amber-300/60 bg-amber-900/30 px-2 py-1 text-[10px] text-amber-100">
-                          Area-of-use warning: last run flagged{' '}
-                          {runDiagnostics.crsOutOfAreaStationCount} station(s) outside CRS bounds
-                          (warning-only).
-                        </div>
-                      )}
-                    {runDiagnostics?.datumSufficiencyReport &&
-                      runDiagnostics.datumSufficiencyReport.status !== 'ok' && (
-                        <div
-                          className={`rounded px-2 py-1 text-[10px] ${
-                            runDiagnostics.datumSufficiencyReport.status === 'hard-fail'
-                              ? 'border border-red-300/70 bg-red-900/35 text-red-100'
-                              : 'border border-amber-300/60 bg-amber-900/30 text-amber-100'
-                          }`}
-                        >
-                          Datum sufficiency (
-                          {runDiagnostics.datumSufficiencyReport.status.toUpperCase()}
-                          ):{' '}
-                          {runDiagnostics.datumSufficiencyReport.reasons[0] ??
-                            'review run diagnostics'}
-                          .
-                        </div>
-                      )}
-                    <SettingsRow
-                      label="Local Datum Scheme"
-                      tooltip={SETTINGS_TOOLTIPS.localDatumScheme}
-                    >
-                      <select
-                        title={SETTINGS_TOOLTIPS.localDatumScheme}
-                        value={parseSettingsDraft.localDatumScheme}
-                        disabled={parseSettingsDraft.coordSystemMode !== 'local'}
-                        onChange={(e) =>
-                          handleDraftParseSetting(
-                            'localDatumScheme',
-                            e.target.value as LocalDatumScheme,
-                          )
-                        }
-                        className={`${optionInputClass} disabled:opacity-50 disabled:cursor-not-allowed`}
-                      >
-                        <option value="average-scale">Average Scale Factor</option>
-                        <option value="common-elevation">Common Elevation</option>
-                      </select>
-                    </SettingsRow>
-                    <SettingsRow
-                      label="Average Scale Factor"
-                      tooltip={SETTINGS_TOOLTIPS.averageScaleFactor}
-                    >
-                      <input
-                        title={SETTINGS_TOOLTIPS.averageScaleFactor}
-                        type="number"
-                        min={0.000001}
-                        step={0.00000001}
-                        value={parseSettingsDraft.averageScaleFactor}
-                        disabled={
-                          parseSettingsDraft.coordSystemMode !== 'local' ||
-                          parseSettingsDraft.localDatumScheme !== 'average-scale'
-                        }
-                        onChange={(e) => {
-                          const parsed = Number.parseFloat(e.target.value);
-                          handleDraftParseSetting(
-                            'averageScaleFactor',
-                            Number.isFinite(parsed) && parsed > 0 ? parsed : 1,
-                          );
-                        }}
-                        className={`${optionInputClass} disabled:opacity-50 disabled:cursor-not-allowed`}
-                      />
-                    </SettingsRow>
-                    <SettingsRow
-                      label={`Common Elevation (${settingsDraft.units === 'ft' ? 'ft' : 'm'})`}
-                      tooltip={SETTINGS_TOOLTIPS.commonElevation}
-                    >
-                      <input
-                        title={SETTINGS_TOOLTIPS.commonElevation}
-                        type="number"
-                        step={0.001}
-                        value={
-                          settingsDraft.units === 'ft'
-                            ? parseSettingsDraft.commonElevation * FT_PER_M
-                            : parseSettingsDraft.commonElevation
-                        }
-                        disabled={
-                          parseSettingsDraft.coordSystemMode !== 'local' ||
-                          parseSettingsDraft.localDatumScheme !== 'common-elevation'
-                        }
-                        onChange={(e) => {
-                          const parsed = Number.parseFloat(e.target.value);
-                          const meters = Number.isFinite(parsed)
-                            ? settingsDraft.units === 'ft'
-                              ? parsed * M_PER_FT
-                              : parsed
-                            : 0;
-                          handleDraftParseSetting('commonElevation', meters);
-                        }}
-                        className={`${optionInputClass} disabled:opacity-50 disabled:cursor-not-allowed`}
-                      />
-                    </SettingsRow>
-                    <SettingsRow
-                      label={`Average Geoid Height (${settingsDraft.units === 'ft' ? 'ft' : 'm'})`}
-                      tooltip={SETTINGS_TOOLTIPS.averageGeoidHeight}
-                    >
-                      <input
-                        title={SETTINGS_TOOLTIPS.averageGeoidHeight}
-                        type="number"
-                        step={0.001}
-                        value={
-                          settingsDraft.units === 'ft'
-                            ? parseSettingsDraft.averageGeoidHeight * FT_PER_M
-                            : parseSettingsDraft.averageGeoidHeight
-                        }
-                        onChange={(e) => {
-                          const parsed = Number.parseFloat(e.target.value);
-                          const meters = Number.isFinite(parsed)
-                            ? settingsDraft.units === 'ft'
-                              ? parsed * M_PER_FT
-                              : parsed
-                            : 0;
-                          handleDraftParseSetting('averageGeoidHeight', meters);
-                        }}
-                        className={optionInputClass}
-                      />
-                    </SettingsRow>
-                    <div className="rounded-md border border-slate-400/60 bg-slate-700/20 px-3 py-2 text-[11px] text-slate-200 leading-relaxed space-y-2">
-                      <div className="uppercase tracking-wide text-slate-100">
-                        Observation Input Mode (.MEASURED / .GRID)
-                      </div>
-                      <div className="grid gap-2">
-                        <SettingsRow
-                          label="Bearing/Azimuth Mode"
-                          tooltip={SETTINGS_TOOLTIPS.gridBearingMode}
-                        >
-                          <select
-                            title={SETTINGS_TOOLTIPS.gridBearingMode}
-                            value={parseSettingsDraft.gridBearingMode}
-                            disabled={parseSettingsDraft.coordSystemMode !== 'grid'}
-                            onChange={(e) =>
-                              handleDraftParseSetting(
-                                'gridBearingMode',
-                                e.target.value as GridObservationMode,
-                              )
-                            }
-                            className={`${optionInputClass} disabled:opacity-50 disabled:cursor-not-allowed`}
-                          >
-                            <option value="measured">MEASURED</option>
-                            <option value="grid">GRID</option>
-                          </select>
-                        </SettingsRow>
-                        <SettingsRow
-                          label="Distance Mode"
-                          tooltip={SETTINGS_TOOLTIPS.gridDistanceMode}
-                        >
-                          <select
-                            title={SETTINGS_TOOLTIPS.gridDistanceMode}
-                            value={parseSettingsDraft.gridDistanceMode}
-                            disabled={parseSettingsDraft.coordSystemMode !== 'grid'}
-                            onChange={(e) =>
-                              handleDraftParseSetting(
-                                'gridDistanceMode',
-                                e.target.value as GridDistanceInputMode,
-                              )
-                            }
-                            className={`${optionInputClass} disabled:opacity-50 disabled:cursor-not-allowed`}
-                          >
-                            <option value="measured">MEASURED (Ground)</option>
-                            <option value="grid">GRID</option>
-                            <option value="ellipsoidal">ELLIPSOIDAL</option>
-                          </select>
-                        </SettingsRow>
-                        <SettingsRow label="Angle Mode" tooltip={SETTINGS_TOOLTIPS.gridAngleMode}>
-                          <select
-                            title={SETTINGS_TOOLTIPS.gridAngleMode}
-                            value={parseSettingsDraft.gridAngleMode}
-                            disabled={parseSettingsDraft.coordSystemMode !== 'grid'}
-                            onChange={(e) =>
-                              handleDraftParseSetting(
-                                'gridAngleMode',
-                                e.target.value as GridObservationMode,
-                              )
-                            }
-                            className={`${optionInputClass} disabled:opacity-50 disabled:cursor-not-allowed`}
-                          >
-                            <option value="measured">MEASURED</option>
-                            <option value="grid">GRID</option>
-                          </select>
-                        </SettingsRow>
-                        <SettingsRow
-                          label="Direction Mode"
-                          tooltip={SETTINGS_TOOLTIPS.gridDirectionMode}
-                        >
-                          <select
-                            title={SETTINGS_TOOLTIPS.gridDirectionMode}
-                            value={parseSettingsDraft.gridDirectionMode}
-                            disabled={parseSettingsDraft.coordSystemMode !== 'grid'}
-                            onChange={(e) =>
-                              handleDraftParseSetting(
-                                'gridDirectionMode',
-                                e.target.value as GridObservationMode,
-                              )
-                            }
-                            className={`${optionInputClass} disabled:opacity-50 disabled:cursor-not-allowed`}
-                          >
-                            <option value="measured">MEASURED</option>
-                            <option value="grid">GRID</option>
-                          </select>
-                        </SettingsRow>
-                      </div>
-                    </div>
-                  </SettingsCard>
-
-                  <SettingsCard
                     title="Advanced CRS/GPS/Height"
                     tooltip={PROJECT_OPTION_SECTION_TOOLTIPS['GPS Loop Check']}
                   >
-                    <p className="text-xs leading-5 text-slate-500 dark:text-slate-400">
-                      Legacy CRS transform controls are retired. Use the Canada-first coordinate
-                      system settings above for active grid and datum workflows.
-                    </p>
                     <SettingsRow
                       label="Grid-Ground Scale Override"
                       tooltip={SETTINGS_TOOLTIPS.crsGridScaleEnabled}
@@ -2791,7 +2765,7 @@ const ProjectOptionsModal: React.FC<ProjectOptionsModalProps> = ({ context }) =>
                             Number.isFinite(parsed) && parsed > 0 ? parsed : 1,
                           );
                         }}
-                        className={`${optionInputClass} disabled:opacity-50 disabled:cursor-not-allowed`}
+                        className={`${optionInputClass} disabled:opacity-100 disabled:cursor-not-allowed`}
                       />
                     </SettingsRow>
                     <SettingsRow
@@ -2824,7 +2798,7 @@ const ProjectOptionsModal: React.FC<ProjectOptionsModalProps> = ({ context }) =>
                             Number.isFinite(parsed) ? parsed / RAD_TO_DEG : 0,
                           );
                         }}
-                        className={`${optionInputClass} disabled:opacity-50 disabled:cursor-not-allowed`}
+                        className={`${optionInputClass} disabled:opacity-100 disabled:cursor-not-allowed`}
                       />
                     </SettingsRow>
                     <SettingsRow
@@ -2876,7 +2850,7 @@ const ProjectOptionsModal: React.FC<ProjectOptionsModalProps> = ({ context }) =>
                             : 0;
                           handleDraftParseSetting('gpsAddHiHtHiM', meters);
                         }}
-                        className={`${optionInputClass} disabled:opacity-50 disabled:cursor-not-allowed`}
+                        className={`${optionInputClass} disabled:opacity-100 disabled:cursor-not-allowed`}
                       />
                     </SettingsRow>
                     <SettingsRow
@@ -2902,7 +2876,7 @@ const ProjectOptionsModal: React.FC<ProjectOptionsModalProps> = ({ context }) =>
                             : 0;
                           handleDraftParseSetting('gpsAddHiHtHtM', meters);
                         }}
-                        className={`${optionInputClass} disabled:opacity-50 disabled:cursor-not-allowed`}
+                        className={`${optionInputClass} disabled:opacity-100 disabled:cursor-not-allowed`}
                       />
                     </SettingsRow>
                     <SettingsRow
@@ -3010,7 +2984,7 @@ const ProjectOptionsModal: React.FC<ProjectOptionsModalProps> = ({ context }) =>
                               (e.target.value || 'NGS-DEMO').toUpperCase(),
                             )
                           }
-                          className={`${optionInputClass} disabled:opacity-50 disabled:cursor-not-allowed`}
+                          className={`${optionInputClass} disabled:opacity-100 disabled:cursor-not-allowed`}
                         />
                         <datalist id="builtin-geoid-model-options">
                           {BUILTIN_GEOID_MODEL_OPTIONS.map((row) => (
@@ -3039,7 +3013,7 @@ const ProjectOptionsModal: React.FC<ProjectOptionsModalProps> = ({ context }) =>
                             e.target.value as GeoidSourceFormat,
                           )
                         }
-                        className={`${optionInputClass} disabled:opacity-50 disabled:cursor-not-allowed`}
+                        className={`${optionInputClass} disabled:opacity-100 disabled:cursor-not-allowed`}
                       >
                         <option value="builtin">BUILTIN</option>
                         <option value="gtx">GTX</option>
@@ -3060,7 +3034,7 @@ const ProjectOptionsModal: React.FC<ProjectOptionsModalProps> = ({ context }) =>
                         }
                         onChange={(e) => handleDraftParseSetting('geoidSourcePath', e.target.value)}
                         placeholder="C:\\path\\model.gtx or /path/model.byn"
-                        className={`${optionInputClass} disabled:opacity-50 disabled:cursor-not-allowed`}
+                        className={`${optionInputClass} disabled:opacity-100 disabled:cursor-not-allowed`}
                       />
                     </SettingsRow>
                     <SettingsRow
@@ -3077,7 +3051,7 @@ const ProjectOptionsModal: React.FC<ProjectOptionsModalProps> = ({ context }) =>
                               parseSettingsDraft.geoidSourceFormat === 'builtin'
                             }
                             onClick={handleGeoidSourceFilePick}
-                            className="rounded border border-slate-400/70 bg-slate-700/30 px-2 py-1 text-xs text-slate-100 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-700/45"
+                            className="rounded border border-slate-400/70 bg-slate-700/30 px-2 py-1 text-xs text-slate-100 disabled:opacity-100 disabled:cursor-not-allowed hover:bg-slate-700/45"
                           >
                             Load GTX/BYN File
                           </button>
@@ -3089,7 +3063,7 @@ const ProjectOptionsModal: React.FC<ProjectOptionsModalProps> = ({ context }) =>
                               geoidSourceDataDraft == null
                             }
                             onClick={clearDraftGeoidSourceData}
-                            className="rounded border border-slate-500/70 bg-slate-700/20 px-2 py-1 text-xs text-slate-200 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-700/35"
+                            className="rounded border border-slate-500/70 bg-slate-700/20 px-2 py-1 text-xs text-slate-200 disabled:opacity-100 disabled:cursor-not-allowed hover:bg-slate-700/35"
                           >
                             Clear File Bytes
                           </button>
@@ -3122,7 +3096,7 @@ const ProjectOptionsModal: React.FC<ProjectOptionsModalProps> = ({ context }) =>
                             e.target.value as GeoidInterpolationMethod,
                           )
                         }
-                        className={`${optionInputClass} disabled:opacity-50 disabled:cursor-not-allowed`}
+                        className={`${optionInputClass} disabled:opacity-100 disabled:cursor-not-allowed`}
                       >
                         <option value="bilinear">BILINEAR</option>
                         <option value="nearest">NEAREST</option>
@@ -3159,133 +3133,23 @@ const ProjectOptionsModal: React.FC<ProjectOptionsModalProps> = ({ context }) =>
                             e.target.value as GeoidHeightDatum,
                           )
                         }
-                        className={`${optionInputClass} disabled:opacity-50 disabled:cursor-not-allowed`}
+                        className={`${optionInputClass} disabled:opacity-100 disabled:cursor-not-allowed`}
                       >
                         <option value="orthometric">ORTHOMETRIC</option>
                         <option value="ellipsoid">ELLIPSOID</option>
                       </select>
                     </SettingsRow>
-                    <div className="rounded-md border border-slate-400/60 bg-slate-700/20 px-3 py-2 text-[11px] text-slate-200 leading-relaxed space-y-2">
-                      <div>
-                        Canada-first grid workflows use the Coordinate System settings in the left
-                        card. Advanced overrides here are optional compatibility controls and remain
-                        <strong> OFF</strong> unless explicitly enabled.
-                      </div>
-                    </div>
                   </SettingsCard>
                 </div>
               )}
 
-              {activeOptionsTab === 'modeling' && (
-                <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-                  <SettingsCard
-                    title="TS Correlation"
-                    tooltip={PROJECT_OPTION_SECTION_TOOLTIPS['TS Correlation']}
-                  >
-                    <SettingsRow
-                      label="Enable Correlation"
-                      tooltip={SETTINGS_TOOLTIPS.tsCorrelation}
-                      className="md:grid-cols-[minmax(0,1fr)_auto]"
-                    >
-                      <SettingsToggle
-                        title={SETTINGS_TOOLTIPS.tsCorrelation}
-                        checked={parseSettingsDraft.tsCorrelationEnabled}
-                        disabled={parityProfileActive}
-                        onChange={(checked) =>
-                          handleDraftParseSetting('tsCorrelationEnabled', checked)
-                        }
-                      />
-                    </SettingsRow>
-                    <SettingsRow
-                      label="Correlation Scope"
-                      tooltip={SETTINGS_TOOLTIPS.tsCorrelationScope}
-                    >
-                      <select
-                        title={SETTINGS_TOOLTIPS.tsCorrelationScope}
-                        value={parseSettingsDraft.tsCorrelationScope}
-                        disabled={parityProfileActive || parseSettingsDraft.preanalysisMode}
-                        onChange={(e) =>
-                          handleDraftParseSetting(
-                            'tsCorrelationScope',
-                            e.target.value as TsCorrelationScope,
-                          )
-                        }
-                        className={`${optionInputClass} disabled:opacity-50 disabled:cursor-not-allowed`}
-                      >
-                        <option value="set">SET</option>
-                        <option value="setup">SETUP</option>
-                      </select>
-                    </SettingsRow>
-                    <SettingsRow label="Correlation ρ" tooltip={SETTINGS_TOOLTIPS.tsCorrelationRho}>
-                      <input
-                        title={SETTINGS_TOOLTIPS.tsCorrelationRho}
-                        type="number"
-                        min={0}
-                        max={0.95}
-                        step={0.01}
-                        value={parseSettingsDraft.tsCorrelationRho}
-                        disabled={parityProfileActive || parseSettingsDraft.preanalysisMode}
-                        onChange={(e) =>
-                          handleDraftParseSetting(
-                            'tsCorrelationRho',
-                            Number.isFinite(parseFloat(e.target.value))
-                              ? Math.max(0, Math.min(0.95, parseFloat(e.target.value)))
-                              : 0.25,
-                          )
-                        }
-                        className={`${optionInputClass} disabled:opacity-50 disabled:cursor-not-allowed`}
-                      />
-                    </SettingsRow>
-                  </SettingsCard>
-
-                  <SettingsCard
-                    title="Robust Model"
-                    tooltip={PROJECT_OPTION_SECTION_TOOLTIPS['Robust Model']}
-                  >
-                    <SettingsRow label="Robust Mode" tooltip={SETTINGS_TOOLTIPS.robustMode}>
-                      <select
-                        title={SETTINGS_TOOLTIPS.robustMode}
-                        value={parseSettingsDraft.robustMode}
-                        onChange={(e) =>
-                          handleDraftParseSetting('robustMode', e.target.value as RobustMode)
-                        }
-                        disabled={parityProfileActive}
-                        className={`${optionInputClass} disabled:opacity-50 disabled:cursor-not-allowed`}
-                      >
-                        <option value="none">OFF</option>
-                        <option value="huber">Huber</option>
-                      </select>
-                    </SettingsRow>
-                    <SettingsRow label="Robust k" tooltip={SETTINGS_TOOLTIPS.robustK}>
-                      <input
-                        title={SETTINGS_TOOLTIPS.robustK}
-                        type="number"
-                        min={0.5}
-                        max={10}
-                        step={0.1}
-                        value={parseSettingsDraft.robustK}
-                        onChange={(e) =>
-                          handleDraftParseSetting(
-                            'robustK',
-                            Number.isFinite(parseFloat(e.target.value))
-                              ? Math.max(0.5, Math.min(10, parseFloat(e.target.value)))
-                              : 1.5,
-                          )
-                        }
-                        disabled={parityProfileActive}
-                        className={`${optionInputClass} disabled:opacity-50 disabled:cursor-not-allowed`}
-                      />
-                    </SettingsRow>
-                  </SettingsCard>
-                </div>
-              )}
             </div>
 
             <div className="flex items-center justify-end gap-2 border-t border-slate-400 bg-slate-600 px-4 py-3">
               <button
                 type="button"
                 onClick={closeProjectOptions}
-                className="px-4 py-1 text-xs border border-slate-300 bg-slate-500 hover:bg-slate-400"
+                className="px-4 py-1 text-xs border border-slate-600 bg-slate-500 hover:bg-slate-400"
                 title="Close Project Options and discard any unsaved draft changes."
               >
                 Cancel
@@ -3305,3 +3169,6 @@ const ProjectOptionsModal: React.FC<ProjectOptionsModalProps> = ({ context }) =>
 };
 
 export default ProjectOptionsModal;
+
+
+

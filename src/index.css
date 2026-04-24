@@ -281,6 +281,74 @@
   --theme-rose-950: 252 237 234;
 }
 
+:root[data-theme='vscode-dark'] {
+  color-scheme: dark;
+
+  --theme-slate-100: 212 212 212;
+  --theme-slate-200: 197 200 198;
+  --theme-slate-300: 172 178 186;
+  --theme-slate-400: 138 146 158;
+  --theme-slate-500: 113 121 133;
+  --theme-slate-600: 73 80 92;
+  --theme-slate-700: 45 50 58;
+  --theme-slate-800: 37 41 49;
+  --theme-slate-900: 30 33 40;
+  --theme-slate-950: 24 26 31;
+
+  --theme-blue-100: 206 145 120;
+  --theme-blue-300: 86 156 214;
+  --theme-blue-400: 79 193 255;
+  --theme-blue-500: 38 166 154;
+  --theme-blue-600: 27 123 215;
+  --theme-blue-900: 39 43 51;
+  --theme-blue-950: 30 33 40;
+
+  --theme-green-400: 106 153 85;
+  --theme-green-500: 78 201 176;
+  --theme-green-600: 22 198 12;
+  --theme-green-700: 54 123 42;
+  --theme-green-900: 27 48 24;
+
+  --theme-red-100: 244 71 71;
+  --theme-red-300: 244 71 71;
+  --theme-red-400: 224 108 117;
+  --theme-red-500: 220 80 80;
+  --theme-red-900: 101 34 34;
+
+  --theme-amber-100: 255 214 102;
+  --theme-amber-200: 224 175 104;
+  --theme-amber-300: 220 168 86;
+  --theme-amber-400: 204 167 108;
+  --theme-amber-500: 208 168 96;
+  --theme-amber-600: 176 142 82;
+  --theme-amber-700: 148 119 68;
+  --theme-amber-800: 116 92 52;
+  --theme-amber-900: 88 69 40;
+  --theme-amber-950: 61 47 27;
+
+  --theme-cyan-100: 156 220 254;
+  --theme-cyan-200: 77 208 225;
+  --theme-cyan-300: 78 201 176;
+  --theme-cyan-400: 86 156 214;
+  --theme-cyan-500: 38 166 154;
+  --theme-cyan-700: 28 116 106;
+  --theme-cyan-800: 24 93 85;
+  --theme-cyan-900: 20 70 64;
+  --theme-cyan-950: 14 49 45;
+
+  --theme-emerald-100: 156 220 254;
+  --theme-emerald-400: 106 153 85;
+  --theme-emerald-700: 54 123 42;
+
+  --theme-rose-100: 197 134 192;
+  --theme-rose-200: 181 140 219;
+  --theme-rose-300: 220 80 80;
+  --theme-rose-500: 189 99 197;
+  --theme-rose-800: 131 77 145;
+  --theme-rose-900: 96 56 106;
+  --theme-rose-950: 67 39 74;
+}
+
 body {
   margin: 0;
   min-width: 320px;
@@ -291,4 +359,12 @@ body {
 
 #root {
   min-height: 100vh;
+}
+
+.settings-row:has(:disabled) {
+  color: rgb(var(--theme-slate-500));
+}
+
+.settings-row:has(:disabled) > span {
+  color: rgb(var(--theme-slate-500));
 }

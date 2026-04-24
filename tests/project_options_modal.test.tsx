@@ -46,14 +46,14 @@ const tabReadyText: Record<
   NonNullable<React.ComponentProps<typeof App>['initialOptionsTab']>,
   string
 > = {
+  'project-files': 'Project Files',
   adjustment: 'Solver Configuration',
   general: 'Local / Grid Reduction',
   instrument: 'Instrument Selection',
   'listing-file': 'Industry-Style Listing Sort/Scope',
   'other-files': 'Other File Outputs',
   special: 'Special',
-  gps: 'Coordinate System (Canada-First)',
-  modeling: 'TS Correlation',
+  gps: 'Advanced CRS/GPS/Height',
 };
 
 const waitForTabContent = async (
@@ -98,12 +98,11 @@ describe('Project Options modal layout', () => {
       expect(app.container.textContent).toContain('Project Options');
       expect(app.container.textContent).toContain('Solver Configuration');
       expect(app.container.textContent).toContain('Geodetic Framework');
-      expect(app.container.textContent).toContain('Leveling / Weighting');
+      expect(app.container.textContent).toContain('Coordinate System (Canada-First)');
       expect(app.container.textContent).toContain('Convergence Limit');
       expect(app.container.textContent).toContain('Suspect Impact');
-      expect(app.container.textContent).toContain('Level Loop Preset');
-      expect(app.container.textContent).toContain('Saved Custom Presets');
-      expect(app.container.textContent).toContain('Add Current');
+      expect(app.container.textContent).toContain('Coord System Mode');
+      expect(app.container.textContent).not.toContain('Parser mode: Strict');
     } finally {
       await app.cleanup();
     }
@@ -140,6 +139,8 @@ describe('Project Options modal layout', () => {
       expect(app.container.textContent).toContain('Vertical Reduction');
       expect(app.container.textContent).toContain('Curvature / Refraction');
       expect(app.container.textContent).toContain('Vertical Reduction Mode');
+      expect(app.container.textContent).toContain('Leveling / Weighting');
+      expect(app.container.textContent).toContain('Level Loop Preset');
     } finally {
       await app.cleanup();
     }
@@ -148,19 +149,14 @@ describe('Project Options modal layout', () => {
   it('renders the gps layout without the removed condensed-pane helper sentence', async () => {
     const app = await mountApp('gps');
     try {
-      expect(app.container.textContent).toContain('Coordinate System (Canada-First)');
-      expect(app.container.textContent).toContain('Coord System Mode');
-      expect(app.container.textContent).toContain('CRS Catalog Group');
-      expect(app.container.textContent).toContain('CRS (Grid Mode)');
-      expect(app.container.textContent).toContain('Average Geoid Height');
-      expect(app.container.textContent).toContain('Show Params');
-      expect(app.container.textContent).toContain('Observation Input Mode (.MEASURED / .GRID)');
       expect(app.container.textContent).toContain('Advanced CRS/GPS/Height');
       expect(app.container.textContent).toContain('GPS Loop Check');
       expect(app.container.textContent).toContain('Geoid/Grid Model');
+      expect(app.container.textContent).not.toContain('Coordinate System (Canada-First)');
       expect(app.container.textContent).not.toContain('CRS Transforms (Legacy)');
       expect(app.container.textContent).not.toContain('Projection Model (Legacy)');
       expect(app.container.textContent).not.toContain('CRS Label (Legacy)');
+      expect(app.container.textContent).not.toContain('Legacy CRS transform controls are retired');
       expect(app.container.textContent).not.toContain(
         'The GPS pane is intentionally condensed: labels stay on the left, controls stay on the right, and disable rules mirror the parser defaults already in the engine.',
       );
@@ -173,12 +169,7 @@ describe('Project Options modal layout', () => {
     const app = await mountApp('other-files');
     try {
       expect(app.container.textContent).toContain('Other File Outputs');
-      expect(app.container.textContent).toContain('Project Files');
-      expect(app.container.textContent).toContain('Create Local Project');
-      expect(app.container.textContent).toContain('Import Portable');
-      expect(app.container.textContent).toContain('Save Local Project');
-      expect(app.container.textContent).toContain('Export Portable');
-      expect(app.container.textContent).toContain('Export Bundle');
+      expect(app.container.textContent).not.toContain('Project File Summary');
       expect(app.container.textContent).toContain('Adjusted Points Export');
       expect(app.container.textContent).toContain('Transform');
       expect(app.container.textContent).toContain('Reference Point');
@@ -204,6 +195,21 @@ describe('Project Options modal layout', () => {
     }
   }, PROJECT_OPTIONS_LAYOUT_TIMEOUT_MS);
 
+  it('renders Project Files as its own first tab panel', async () => {
+    const app = await mountApp('project-files');
+    try {
+      expect(app.container.textContent).toContain('Project Files');
+      expect(app.container.textContent).toContain('Create Local Project');
+      expect(app.container.textContent).toContain('Import Portable');
+      expect(app.container.textContent).toContain('Save Local Project');
+      expect(app.container.textContent).toContain('Export Portable');
+      expect(app.container.textContent).toContain('Export Bundle');
+      expect(app.container.textContent).not.toContain('Adjusted Points Export');
+    } finally {
+      await app.cleanup();
+    }
+  }, PROJECT_OPTIONS_LAYOUT_TIMEOUT_MS);
+
   it('renders the listing layout without the removed adjusted-observation row-limit control', async () => {
     const app = await mountApp('listing-file');
     try {
@@ -216,8 +222,8 @@ describe('Project Options modal layout', () => {
     }
   }, PROJECT_OPTIONS_LAYOUT_TIMEOUT_MS);
 
-  it('renders the condensed modeling layout with TS correlation and robust controls', async () => {
-    const app = await mountApp('modeling');
+  it('renders TS correlation and robust controls in Special tab', async () => {
+    const app = await mountApp('special');
     try {
       expect(app.container.textContent).toContain('TS Correlation');
       expect(app.container.textContent).toContain('Enable Correlation');

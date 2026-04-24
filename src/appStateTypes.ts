@@ -61,6 +61,7 @@ export type Units = 'm' | 'ft';
 export type UiTheme =
   | 'gruvbox-dark'
   | 'gruvbox-light'
+  | 'vscode-dark'
   | 'catppuccin-mocha'
   | 'catppuccin-latte';
 export type ListingSortCoordinatesBy = 'input' | 'name';
@@ -72,14 +73,14 @@ export type SolveProfile =
   | 'legacy-compat'
   | 'industry-parity';
 export type ProjectOptionsTab =
+  | 'project-files'
   | 'adjustment'
   | 'general'
   | 'instrument'
   | 'listing-file'
   | 'other-files'
   | 'special'
-  | 'gps'
-  | 'modeling';
+  | 'gps';
 export type WorkspaceTabKey = 'report' | 'processing-summary' | 'industry-output' | 'map';
 export type CrsCatalogGroupFilter =
   | 'all'

@@ -46,14 +46,14 @@ const tabReadyText: Record<
   NonNullable<React.ComponentProps<typeof App>['initialOptionsTab']>,
   string
 > = {
+  'project-files': 'Project Files',
   adjustment: 'Solver Configuration',
   general: 'Local / Grid Reduction',
   instrument: 'Instrument Selection',
   'listing-file': 'Industry-Style Listing Sort/Scope',
   'other-files': 'Other File Outputs',
   special: 'Special',
-  gps: 'Coordinate System (Canada-First)',
-  modeling: 'TS Correlation',
+  gps: 'Advanced CRS/GPS/Height',
 };
 
 const waitForTabContent = async (
@@ -120,6 +120,7 @@ const clickProjectOptionsTab = async (
     NonNullable<React.ComponentProps<typeof App>['initialOptionsTab']>,
     string
   > = {
+    'project-files': 'Project Files',
     adjustment: 'Adjustment',
     general: 'General',
     instrument: 'Instrument',
@@ -127,7 +128,6 @@ const clickProjectOptionsTab = async (
     'other-files': 'Other Files',
     special: 'Special',
     gps: 'GPS',
-    modeling: 'Modeling',
   };
   await clickButtonByExactText(container, labelByTab[tab]);
   await waitForTabContent(container, tab);
@@ -238,7 +238,7 @@ describe('Project Options modal interactions', () => {
 
       await clickOpenProjectWorkspace(container);
       await waitForProjectOptionsContent(container);
-      await waitForTabContent(container, 'other-files');
+      await waitForTabContent(container, 'project-files');
 
       expect(container.textContent).toContain('Manifest schema');
       expect(container.textContent).toContain('Create Local Project');
@@ -257,7 +257,7 @@ describe('Project Options modal interactions', () => {
       expect(app.container.textContent).toContain('Solver Configuration');
       expect(app.container.textContent).not.toContain('TS Correlation');
 
-      await clickProjectOptionsTab(app.container, 'modeling');
+      await clickProjectOptionsTab(app.container, 'special');
       expect(app.container.textContent).toContain('TS Correlation');
       expect(app.container.textContent).toContain('Robust Model');
       expect(app.container.textContent).not.toContain('Solver Configuration');
@@ -292,7 +292,7 @@ describe('Project Options modal interactions', () => {
   });
 
   modalIt('discards unsaved edits when Cancel is clicked', async () => {
-    const app = await mountApp('modeling');
+    const app = await mountApp('special');
     try {
       const firstRobustMode = findSelectForSettingsRow(app.container, 'Robust Mode');
       expect(firstRobustMode.value).toBe('none');
@@ -302,7 +302,7 @@ describe('Project Options modal interactions', () => {
       expect(app.container.textContent).not.toContain('Robust Model');
 
       await clickOpenProjectOptions(app.container);
-      await clickProjectOptionsTab(app.container, 'modeling');
+      await clickProjectOptionsTab(app.container, 'special');
 
       const reopenedRobustMode = findSelectForSettingsRow(app.container, 'Robust Mode');
       expect(reopenedRobustMode.value).toBe('none');
@@ -628,293 +628,26 @@ describe('Project Options modal interactions', () => {
     }
   });
 
-  modalIt('persists coordinate-system settings after Apply in GPS tab', async () => {
-    const app = await mountApp('gps');
+  modalIt('persists coordinate-system settings after Apply in Adjustment tab', async () => {
+    const app = await mountApp('adjustment');
     try {
       const mode = findSelectForSettingsRow(app.container, 'Coord System Mode');
       expect(mode.value).toBe('grid');
-
-      const group = findSelectForSettingsRow(app.container, 'CRS Catalog Group');
-      await setSelectValue(group, 'canada-utm');
-
-      const crs = findSelectForSettingsRow(app.container, 'CRS (Grid Mode)');
-      await waitForCondition(
-        () => Array.from(crs.options).some((entry) => entry.value === 'CA_NAD83_CSRS_UTM_19N'),
-        10000,
-        'UTM CRS option did not appear within 10000ms.',
-      );
-      await setSelectValue(crs, 'CA_NAD83_CSRS_UTM_19N');
-
-      const distanceMode = findSelectForSettingsRow(app.container, 'Distance Mode');
-      await setSelectValue(distanceMode, 'ellipsoidal');
+      await setSelectValue(mode, 'local');
 
       await clickButtonByExactText(app.container, 'Apply');
       await clickOpenProjectOptions(app.container);
-      await clickProjectOptionsTab(app.container, 'gps');
+      await clickProjectOptionsTab(app.container, 'adjustment');
 
       const reopenedMode = findSelectForSettingsRow(app.container, 'Coord System Mode');
-      const reopenedCrs = findSelectForSettingsRow(app.container, 'CRS (Grid Mode)');
-      const reopenedDistanceMode = findSelectForSettingsRow(app.container, 'Distance Mode');
-      expect(reopenedMode.value).toBe('grid');
-      expect(reopenedCrs.value).toBe('CA_NAD83_CSRS_UTM_19N');
-      expect(reopenedDistanceMode.value).toBe('ellipsoidal');
-    } finally {
-      await app.cleanup();
-    }
-  });
-
-  modalIt('filters CRS choices by catalog group in GPS tab', async () => {
-    const app = await mountApp('gps');
-    try {
-      const mode = findSelectForSettingsRow(app.container, 'Coord System Mode');
-      await setSelectValue(mode, 'grid');
-
-      const group = findSelectForSettingsRow(app.container, 'CRS Catalog Group');
-      await setSelectValue(group, 'canada-provincial');
-
-      const crs = findSelectForSettingsRow(app.container, 'CRS (Grid Mode)');
-      const optionValues = Array.from(crs.options).map((entry) => entry.value);
-      expect(optionValues).toContain('CA_NAD83_CSRS_NB_STEREO_DOUBLE');
-      expect(optionValues.some((value) => value.includes('_UTM_'))).toBe(false);
-      expect(optionValues.some((value) => value.startsWith('CA_NAD83_CSRS_MTM_'))).toBe(false);
-    } finally {
-      await app.cleanup();
-    }
-  });
-
-  modalIt('shows USA State Plane rows when CRS catalog group is set to us-spcs', async () => {
-    const app = await mountApp('gps');
-    try {
-      const mode = findSelectForSettingsRow(app.container, 'Coord System Mode');
-      await setSelectValue(mode, 'grid');
-
-      const group = findSelectForSettingsRow(app.container, 'CRS Catalog Group');
-      await setSelectValue(group, 'us-spcs');
-
-      const crs = findSelectForSettingsRow(app.container, 'CRS (Grid Mode)');
-      const optionValues = Array.from(crs.options).map((entry) => entry.value);
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_NY_EAST');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_PA_SOUTH');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_CA_ZONE_6');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_TX_NORTH');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_TX_SOUTH_CENTRAL');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_FL_EAST');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_FL_WEST');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_GA_EAST');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_GA_WEST');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_NC');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_AL_WEST');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_TN');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_KY_SINGLE_ZONE');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_RI');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_SD_NORTH');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_VT');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_WA_NORTH');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_WV_NORTH');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_WY_WEST_CENTRAL');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_UT_NORTH');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_UT_SOUTH');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_CO_NORTH');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_CO_SOUTH');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_CT');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_DE');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_KS_NORTH');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_KS_SOUTH');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_LA_NORTH');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_LA_SOUTH');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_ME_EAST');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_ME_WEST');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_MD');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_MA_ISLAND');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_MA_MAINLAND');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_MN_NORTH');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_MN_CENTRAL');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_MN_SOUTH');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_IL_EAST');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_IL_WEST');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_IN_EAST');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_IN_WEST');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_MS_EAST');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_MS_TM');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_MS_WEST');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_MO_EAST');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_MO_CENTRAL');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_MO_WEST');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_NV_EAST');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_NV_CENTRAL');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_NV_WEST');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_NJ');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_NM_EAST');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_NM_CENTRAL');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_NM_WEST');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_NE');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_NH');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_OH_NORTH');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_OH_SOUTH');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_ID_EAST');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_ID_CENTRAL');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_ID_WEST');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_IA_NORTH');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_IA_SOUTH');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_AR_NORTH');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_AR_SOUTH');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_OK_NORTH');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_OK_SOUTH');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_AK_ZONE_1');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_AK_ZONE_10');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_MI_NORTH');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_MI_CENTRAL');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_MI_SOUTH');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_ND_NORTH');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_ND_SOUTH');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_AZ_EAST');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_AZ_CENTRAL');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_AZ_WEST');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_OR_NORTH');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_OR_SOUTH');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_MT');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_NY_LONG_ISLAND');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_PR_VI');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_SC');
-      expect(optionValues.some((value) => value.endsWith('_FTUS'))).toBe(false);
-      expect(optionValues.some((value) => value.startsWith('CA_NAD83_CSRS_'))).toBe(false);
-    } finally {
-      await app.cleanup();
-    }
-  });
-
-  modalIt('shows only ftUS USA State Plane rows when project units are feet', async () => {
-    const app = await mountApp('gps');
-    try {
-      await clickProjectOptionsTab(app.container, 'adjustment');
-      const units = findSelectForSettingsRow(app.container, 'Units');
-      await setSelectValue(units, 'ft');
-      await clickProjectOptionsTab(app.container, 'gps');
-
-      const mode = findSelectForSettingsRow(app.container, 'Coord System Mode');
-      await setSelectValue(mode, 'grid');
-      const group = findSelectForSettingsRow(app.container, 'CRS Catalog Group');
-      await setSelectValue(group, 'us-spcs');
-
-      const crs = findSelectForSettingsRow(app.container, 'CRS (Grid Mode)');
-      const optionValues = Array.from(crs.options).map((entry) => entry.value);
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_NY_EAST_FTUS');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_PA_SOUTH_FTUS');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_UT_SOUTH_FTUS');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_CO_SOUTH_FTUS');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_CT_FTUS');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_DE_FTUS');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_KS_NORTH_FTUS');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_KS_SOUTH_FTUS');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_LA_NORTH_FTUS');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_LA_SOUTH_FTUS');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_ME_EAST_FTUS');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_ME_WEST_FTUS');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_MD_FTUS');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_MA_ISLAND_FTUS');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_MA_MAINLAND_FTUS');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_MN_NORTH_FTUS');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_MN_CENTRAL_FTUS');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_MN_SOUTH_FTUS');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_IL_EAST_FTUS');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_IL_WEST_FTUS');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_IN_EAST_FTUS');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_IN_WEST_FTUS');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_MS_EAST_FTUS');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_MS_WEST_FTUS');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_NV_EAST_FTUS');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_NV_CENTRAL_FTUS');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_NV_WEST_FTUS');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_NJ_FTUS');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_NM_EAST_FTUS');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_NM_CENTRAL_FTUS');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_NM_WEST_FTUS');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_NE_FTUS');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_NH_FTUS');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_OH_NORTH_FTUS');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_OH_SOUTH_FTUS');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_ID_EAST_FTUS');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_ID_CENTRAL_FTUS');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_ID_WEST_FTUS');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_IA_NORTH_FTUS');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_IA_SOUTH_FTUS');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_AR_NORTH_FTUS');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_AR_SOUTH_FTUS');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_OK_NORTH_FTUS');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_OK_SOUTH_FTUS');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_OR_NORTH_FTUS');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_OR_SOUTH_FTUS');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_AZ_EAST_FTUS');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_AZ_CENTRAL_FTUS');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_AZ_WEST_FTUS');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_MI_NORTH_FTUS');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_MI_CENTRAL_FTUS');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_MI_SOUTH_FTUS');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_MT_FTUS');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_NY_LONG_ISLAND_FTUS');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_ND_NORTH_FTUS');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_ND_SOUTH_FTUS');
-      expect(optionValues).toContain('US_NAD83_2011_SPCS_SC_FTUS');
-      expect(optionValues).not.toContain('US_NAD83_2011_SPCS_AK_ZONE_1');
-      expect(optionValues).not.toContain('US_NAD83_2011_SPCS_AK_ZONE_10');
-      expect(optionValues).not.toContain('US_NAD83_2011_SPCS_MI_NORTH');
-      expect(optionValues).not.toContain('US_NAD83_2011_SPCS_MI_CENTRAL');
-      expect(optionValues).not.toContain('US_NAD83_2011_SPCS_MI_SOUTH');
-      expect(optionValues).not.toContain('US_NAD83_2011_SPCS_ND_NORTH');
-      expect(optionValues).not.toContain('US_NAD83_2011_SPCS_ND_SOUTH');
-      expect(optionValues).not.toContain('US_NAD83_2011_SPCS_AZ_EAST');
-      expect(optionValues).not.toContain('US_NAD83_2011_SPCS_AZ_CENTRAL');
-      expect(optionValues).not.toContain('US_NAD83_2011_SPCS_AZ_WEST');
-      expect(optionValues).not.toContain('US_NAD83_2011_SPCS_OR_NORTH');
-      expect(optionValues).not.toContain('US_NAD83_2011_SPCS_OR_SOUTH');
-      expect(optionValues).not.toContain('US_NAD83_2011_SPCS_PR_VI');
-      expect(optionValues.some((value) => value.endsWith('_FTUS'))).toBe(true);
-      expect(optionValues.some((value) => /^US_NAD83_2011_SPCS_/.test(value) && !value.endsWith('_FTUS'))).toBe(false);
-    } finally {
-      await app.cleanup();
-    }
-  });
-
-  modalIt('filters CRS choices by search token in GPS tab', async () => {
-    const app = await mountApp('gps');
-    try {
-      const mode = findSelectForSettingsRow(app.container, 'Coord System Mode');
-      await setSelectValue(mode, 'grid');
-
-      const group = findSelectForSettingsRow(app.container, 'CRS Catalog Group');
-      await setSelectValue(group, 'canada-provincial');
-
-      const search = findInputForSettingsRow(app.container, 'CRS Search');
-      await setInputValue(search, 'new brunswick');
-
-      const crs = findSelectForSettingsRow(app.container, 'CRS (Grid Mode)');
-      const optionValues = Array.from(crs.options).map((entry) => entry.value);
-      expect(optionValues).toContain('CA_NAD83_CSRS_NB_STEREO_DOUBLE');
-      expect(optionValues).not.toContain('CA_NAD83_CSRS_PEI_STEREOGRAPHIC');
-    } finally {
-      await app.cleanup();
-    }
-  });
-
-  modalIt('toggles the CRS projection-parameter detail popup', async () => {
-    const app = await mountApp('gps');
-    try {
-      expect(app.container.textContent).toContain('Show Params');
-      expect(app.container.textContent).not.toContain('Projection Parameters');
-
-      await clickButtonByExactText(app.container, 'Show Params');
-      expect(app.container.textContent).toContain('Projection Parameters');
-      expect(app.container.textContent).toContain('+proj=sterea');
-
-      await clickButtonByExactText(app.container, 'Hide Params');
-      expect(app.container.textContent).not.toContain('Projection Parameters');
+      expect(reopenedMode.value).toBe('local');
     } finally {
       await app.cleanup();
     }
   });
 
   modalIt('discards unsaved coordinate-system edits when Cancel is clicked', async () => {
-    const app = await mountApp('gps');
+    const app = await mountApp('adjustment');
     try {
       const avgGeoid = findInputForSettingsRow(app.container, 'Average Geoid Height');
       expect(avgGeoid.value).toBe('0');
@@ -922,7 +655,7 @@ describe('Project Options modal interactions', () => {
 
       await clickButtonByExactText(app.container, 'Cancel');
       await clickOpenProjectOptions(app.container);
-      await clickProjectOptionsTab(app.container, 'gps');
+      await clickProjectOptionsTab(app.container, 'adjustment');
 
       const reopenedAvgGeoid = findInputForSettingsRow(app.container, 'Average Geoid Height');
       expect(reopenedAvgGeoid.value).toBe('0');

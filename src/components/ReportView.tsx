@@ -833,8 +833,8 @@ const ReportView: React.FC<ReportViewProps> = ({
             sectionId,
             label: title,
             className:
-              'px-3 py-2 text-xs uppercase tracking-wider border-b border-slate-800 bg-slate-900/40',
-            labelClassName: 'text-slate-400',
+              'px-3 py-2 text-xs uppercase tracking-wider border-b border-slate-700 bg-slate-800/75',
+            labelClassName: 'text-slate-100',
           })
         ) : (
           <div className="px-3 py-2 text-xs text-slate-400 uppercase tracking-wider border-b border-slate-800 bg-slate-900/40">
@@ -844,7 +844,7 @@ const ReportView: React.FC<ReportViewProps> = ({
         {!collapsed && <div className="overflow-x-auto w-full">
           <table className="w-full text-left border-collapse text-xs">
             <thead>
-              <tr className="text-slate-500 border-b border-slate-800">
+              <tr className="text-slate-200 border-b border-slate-700">
                 <th className="py-2 px-3 font-semibold">From</th>
                 <th className="py-2 px-3 font-semibold">To</th>
                 <th className="py-2 px-3 font-semibold text-right">Line</th>
@@ -1284,12 +1284,12 @@ const ReportView: React.FC<ReportViewProps> = ({
               label: 'Suspect Impact Analysis (what-if exclusion)',
               className:
                 'px-4 py-2 border-b border-slate-800 bg-slate-900/60 text-xs uppercase tracking-wider',
-              labelClassName: 'text-slate-400',
+              labelClassName: 'text-slate-100',
             })}
             {!isSectionCollapsed('suspect-impact-analysis') && (
               <table className="w-full text-left text-xs">
               <thead>
-                <tr className="text-slate-500 border-b border-slate-800/60">
+                <tr className="text-slate-200 border-b border-slate-700/80">
                   <th className="py-2 px-3">#</th>
                   <th className="py-2">Type</th>
                   <th className="py-2">Stations</th>
@@ -1660,7 +1660,7 @@ const ReportView: React.FC<ReportViewProps> = ({
           </div>
           <table className="w-full text-left text-xs">
             <thead>
-              <tr className="text-slate-500 border-b border-slate-800/60">
+              <tr className="text-slate-200 border-b border-slate-700/80">
                 <th className="py-2 px-3">#</th>
                 <th className="py-2">Type</th>
                 <th className="py-2">Stations</th>
@@ -1762,7 +1762,7 @@ const ReportView: React.FC<ReportViewProps> = ({
             </div>
             <table className="w-full text-left text-xs">
               <thead>
-                <tr className="text-slate-500 border-b border-slate-800/60">
+                <tr className="text-slate-200 border-b border-slate-700/80">
                   <th className="py-2 px-3">#</th>
                   <th className="py-2">Action</th>
                   <th className="py-2">Type</th>
@@ -1873,7 +1873,7 @@ const ReportView: React.FC<ReportViewProps> = ({
           <div className="overflow-x-auto w-full">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
-                <tr className="text-slate-500 border-b border-slate-800">
+                <tr className="text-slate-200 border-b border-slate-700">
                   <th className="py-2 px-3 font-semibold">Context</th>
                   <th className="py-2 px-3 font-semibold">Detail</th>
                   <th className="py-2 px-3 font-semibold text-right">Line</th>
@@ -1940,7 +1940,7 @@ const ReportView: React.FC<ReportViewProps> = ({
           <div className="overflow-x-auto w-full">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
-                <tr className="text-slate-500 border-b border-slate-800">
+                <tr className="text-slate-200 border-b border-slate-700">
                   <th className="py-2 px-3 font-semibold">Station</th>
                   <th className="py-2 px-3 font-semibold text-right">Records</th>
                   <th className="py-2 px-3 font-semibold text-right">Unique</th>
@@ -2098,7 +2098,7 @@ const ReportView: React.FC<ReportViewProps> = ({
               </div>
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
-                  <tr className="text-slate-500 border-b border-slate-800">
+                  <tr className="text-slate-200 border-b border-slate-700">
                     <th className="py-2 px-3 font-semibold">Key</th>
                     <th className="py-2 px-3 font-semibold">Representative</th>
                     <th className="py-2 px-3 font-semibold">Action</th>
@@ -2189,7 +2189,7 @@ const ReportView: React.FC<ReportViewProps> = ({
               <div className="overflow-x-auto w-full">
                 <table className="w-full text-left border-collapse text-xs">
                   <thead>
-                    <tr className="text-slate-500 border-b border-slate-800">
+                    <tr className="text-slate-200 border-b border-slate-700">
                       <th className="py-2 px-3 font-semibold">Alias</th>
                       <th className="py-2 px-3 font-semibold">Canonical</th>
                     </tr>
@@ -2217,7 +2217,7 @@ const ReportView: React.FC<ReportViewProps> = ({
               <div className="overflow-x-auto w-full">
                 <table className="w-full text-left border-collapse text-xs">
                   <thead>
-                    <tr className="text-slate-500 border-b border-slate-800">
+                    <tr className="text-slate-200 border-b border-slate-700">
                       <th className="py-2 px-3 font-semibold">Alias</th>
                       <th className="py-2 px-3 font-semibold">Canonical</th>
                       <th className="py-2 px-3 font-semibold text-right">dE ({units})</th>
@@ -2271,7 +2271,7 @@ const ReportView: React.FC<ReportViewProps> = ({
               <div className="overflow-x-auto w-full">
                 <table className="w-full text-left border-collapse text-xs">
                   <thead>
-                    <tr className="text-slate-500 border-b border-slate-800">
+                    <tr className="text-slate-200 border-b border-slate-700">
                       <th className="py-2 px-3 font-semibold">Key</th>
                       <th className="py-2 px-3 font-semibold">Representative</th>
                       <th className="py-2 px-3 font-semibold text-right">Members</th>
@@ -2308,8 +2308,8 @@ const ReportView: React.FC<ReportViewProps> = ({
             sectionId: 'auto-adjust-diagnostics',
             label: 'Auto-Adjust Diagnostics',
             className:
-              'px-3 py-2 text-xs uppercase tracking-wider border-b border-slate-800 bg-slate-900/40',
-            labelClassName: 'text-slate-400',
+              'px-3 py-2 text-xs uppercase tracking-wider border-b border-slate-700 bg-slate-800/75',
+            labelClassName: 'text-slate-100',
           })}
           {!isSectionCollapsed('auto-adjust-diagnostics') && (
             <>
@@ -2342,7 +2342,7 @@ const ReportView: React.FC<ReportViewProps> = ({
               <div className="overflow-x-auto w-full border-b border-slate-800">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
-                <tr className="text-slate-500 border-b border-slate-800">
+                <tr className="text-slate-200 border-b border-slate-700">
                   <th className="py-2 px-3 font-semibold text-right">Cycle</th>
                   <th className="py-2 px-3 font-semibold text-right">SEUW</th>
                   <th className="py-2 px-3 font-semibold text-right">Max |t|</th>
@@ -2367,7 +2367,7 @@ const ReportView: React.FC<ReportViewProps> = ({
                 <div className="overflow-x-auto w-full">
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
-                  <tr className="text-slate-500 border-b border-slate-800">
+                  <tr className="text-slate-200 border-b border-slate-700">
                     <th className="py-2 px-3 font-semibold text-right">Obs ID</th>
                     <th className="py-2 px-3 font-semibold">Type</th>
                     <th className="py-2 px-3 font-semibold">Stations</th>
@@ -2409,8 +2409,8 @@ const ReportView: React.FC<ReportViewProps> = ({
             sectionId: 'auto-sideshot-candidates',
             label: 'Auto Sideshot Candidates (M Records)',
             className:
-              'px-3 py-2 text-xs uppercase tracking-wider border-b border-slate-800 bg-slate-900/40',
-            labelClassName: 'text-slate-400',
+              'px-3 py-2 text-xs uppercase tracking-wider border-b border-slate-700 bg-slate-800/75',
+            labelClassName: 'text-slate-100',
           })}
           {!isSectionCollapsed('auto-sideshot-candidates') && (
             <>
@@ -2435,7 +2435,7 @@ const ReportView: React.FC<ReportViewProps> = ({
               <div className="overflow-x-auto w-full">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
-                <tr className="text-slate-500 border-b border-slate-800">
+                <tr className="text-slate-200 border-b border-slate-700">
                   <th className="py-2 px-3 font-semibold text-right">Line</th>
                   <th className="py-2 px-3 font-semibold">Occupy</th>
                   <th className="py-2 px-3 font-semibold">Backsight</th>
@@ -2493,8 +2493,8 @@ const ReportView: React.FC<ReportViewProps> = ({
             sectionId: 'residual-diagnostics',
             label: 'Residual Diagnostics',
             className:
-              'px-3 py-2 text-xs uppercase tracking-wider border-b border-slate-800 bg-slate-900/40',
-            labelClassName: 'text-slate-400',
+              'px-3 py-2 text-xs uppercase tracking-wider border-b border-slate-700 bg-slate-800/75',
+            labelClassName: 'text-slate-100',
           })}
           {!isSectionCollapsed('residual-diagnostics') && (
             <>
@@ -2565,7 +2565,7 @@ const ReportView: React.FC<ReportViewProps> = ({
                 <div className="overflow-x-auto w-full border-t border-slate-800">
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
-                  <tr className="text-slate-500 border-b border-slate-800">
+                  <tr className="text-slate-200 border-b border-slate-700">
                     <th className="py-2 px-3 font-semibold">Type</th>
                     <th className="py-2 px-3 font-semibold text-right">Count</th>
                     <th className="py-2 px-3 font-semibold text-right">With StdRes</th>
@@ -2618,8 +2618,8 @@ const ReportView: React.FC<ReportViewProps> = ({
             sectionId: 'robust-diagnostics',
             label: 'Robust Diagnostics',
             className:
-              'px-3 py-2 text-xs uppercase tracking-wider border-b border-slate-800 bg-slate-900/40',
-            labelClassName: 'text-slate-400',
+              'px-3 py-2 text-xs uppercase tracking-wider border-b border-slate-700 bg-slate-800/75',
+            labelClassName: 'text-slate-100',
           })}
           {!isSectionCollapsed('robust-diagnostics') && (
             <>
@@ -2655,7 +2655,7 @@ const ReportView: React.FC<ReportViewProps> = ({
                 <div className="overflow-x-auto w-full border-t border-slate-800">
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
-                  <tr className="text-slate-500 border-b border-slate-800">
+                  <tr className="text-slate-200 border-b border-slate-700">
                     <th className="py-2 px-3 font-semibold">Iter</th>
                     <th className="py-2 px-3 font-semibold text-right">Downweighted</th>
                     <th className="py-2 px-3 font-semibold text-right">Mean Weight</th>
@@ -2686,7 +2686,7 @@ const ReportView: React.FC<ReportViewProps> = ({
                 <div className="overflow-x-auto w-full border-t border-slate-800">
                 <table className="w-full text-left border-collapse text-xs">
                   <thead>
-                    <tr className="text-slate-500 border-b border-slate-800">
+                    <tr className="text-slate-200 border-b border-slate-700">
                       <th className="py-2 px-3 font-semibold">#</th>
                       <th className="py-2 px-3 font-semibold">Type</th>
                       <th className="py-2 px-3 font-semibold">Stations</th>
@@ -2726,8 +2726,8 @@ const ReportView: React.FC<ReportViewProps> = ({
             sectionId: 'robust-vs-classical-suspects',
             label: 'Robust vs Classical Suspects (Top 10)',
             className:
-              'px-3 py-2 text-xs uppercase tracking-wider border-b border-slate-800 bg-slate-900/40',
-            labelClassName: 'text-slate-400',
+              'px-3 py-2 text-xs uppercase tracking-wider border-b border-slate-700 bg-slate-800/75',
+            labelClassName: 'text-slate-100',
           })}
           {!isSectionCollapsed('robust-vs-classical-suspects') && (
             <>
@@ -2745,7 +2745,7 @@ const ReportView: React.FC<ReportViewProps> = ({
               </div>
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
-                  <tr className="text-slate-500 border-b border-slate-800">
+                  <tr className="text-slate-200 border-b border-slate-700">
                     <th className="py-2 px-3 font-semibold">#</th>
                     <th className="py-2 px-3 font-semibold">Type</th>
                     <th className="py-2 px-3 font-semibold">Stations</th>
@@ -2776,7 +2776,7 @@ const ReportView: React.FC<ReportViewProps> = ({
               </div>
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
-                  <tr className="text-slate-500 border-b border-slate-800">
+                  <tr className="text-slate-200 border-b border-slate-700">
                     <th className="py-2 px-3 font-semibold">#</th>
                     <th className="py-2 px-3 font-semibold">Type</th>
                     <th className="py-2 px-3 font-semibold">Stations</th>
@@ -2813,8 +2813,8 @@ const ReportView: React.FC<ReportViewProps> = ({
             sectionId: 'ts-correlation-diagnostics',
             label: 'TS Correlation Diagnostics',
             className:
-              'px-3 py-2 text-xs uppercase tracking-wider border-b border-slate-800 bg-slate-900/40',
-            labelClassName: 'text-slate-400',
+              'px-3 py-2 text-xs uppercase tracking-wider border-b border-slate-700 bg-slate-800/75',
+            labelClassName: 'text-slate-100',
           })}
           {!isSectionCollapsed('ts-correlation-diagnostics') && (
             <>
@@ -2861,7 +2861,7 @@ const ReportView: React.FC<ReportViewProps> = ({
                 <div className="overflow-x-auto w-full border-t border-slate-800">
                 <table className="w-full text-left border-collapse text-xs">
                   <thead>
-                    <tr className="text-slate-500 border-b border-slate-800">
+                    <tr className="text-slate-200 border-b border-slate-700">
                       <th className="py-2 px-3 font-semibold">#</th>
                       <th className="py-2 px-3 font-semibold">Key</th>
                       <th className="py-2 px-3 font-semibold">Setup</th>
@@ -2902,8 +2902,8 @@ const ReportView: React.FC<ReportViewProps> = ({
             sectionId: 'traverse-diagnostics',
             label: 'Traverse Diagnostics',
             className:
-              'px-3 py-2 text-xs uppercase tracking-wider border-b border-slate-800 bg-slate-900/40',
-            labelClassName: 'text-slate-400',
+              'px-3 py-2 text-xs uppercase tracking-wider border-b border-slate-700 bg-slate-800/75',
+            labelClassName: 'text-slate-100',
           })}
           {!isSectionCollapsed('traverse-diagnostics') && (
             <>
@@ -2993,7 +2993,7 @@ const ReportView: React.FC<ReportViewProps> = ({
                 <div className="overflow-x-auto w-full border-t border-slate-800">
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
-                  <tr className="text-slate-500 border-b border-slate-800">
+                  <tr className="text-slate-200 border-b border-slate-700">
                     <th className="py-2 px-3 font-semibold">#</th>
                     <th className="py-2 px-3 font-semibold">Loop</th>
                     <th className="py-2 px-3 font-semibold text-right">Mag ({units})</th>
@@ -3057,13 +3057,13 @@ const ReportView: React.FC<ReportViewProps> = ({
             label: 'Traverse Closure Suspects',
             className:
               'px-4 py-2 border-b border-slate-800 bg-slate-900/60 text-xs uppercase tracking-wider',
-            labelClassName: 'text-slate-400',
+            labelClassName: 'text-slate-100',
           })}
           {!isSectionCollapsed('traverse-closure-suspects') && (
             <>
               <table className="w-full text-left text-xs">
                 <thead>
-                  <tr className="text-slate-500 border-b border-slate-800/60">
+                  <tr className="text-slate-200 border-b border-slate-700/80">
                     <th className="py-2 px-3">#</th>
                     <th className="py-2">Loop</th>
                     <th className="py-2 text-right">Ratio</th>
@@ -3125,8 +3125,8 @@ const ReportView: React.FC<ReportViewProps> = ({
             sectionId: 'gps-loop-diagnostics',
             label: 'GPS Loop Diagnostics',
             className:
-              'px-3 py-2 text-xs uppercase tracking-wider border-b border-slate-800 bg-slate-900/40',
-            labelClassName: 'text-slate-400',
+              'px-3 py-2 text-xs uppercase tracking-wider border-b border-slate-700 bg-slate-800/75',
+            labelClassName: 'text-slate-100',
           })}
           {!isSectionCollapsed('gps-loop-diagnostics') && (
             <>
@@ -3167,7 +3167,7 @@ const ReportView: React.FC<ReportViewProps> = ({
                 <div className="overflow-x-auto w-full border-t border-slate-800">
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
-                  <tr className="text-slate-500 border-b border-slate-800">
+                  <tr className="text-slate-200 border-b border-slate-700">
                     <th className="py-2 px-3 font-semibold">#</th>
                     <th className="py-2 px-3 font-semibold">Loop</th>
                     <th className="py-2 px-3 font-semibold">Path</th>
@@ -3229,8 +3229,8 @@ const ReportView: React.FC<ReportViewProps> = ({
             sectionId: 'leveling-loop-diagnostics',
             label: 'Leveling Loop Diagnostics',
             className:
-              'px-3 py-2 text-xs uppercase tracking-wider border-b border-slate-800 bg-slate-900/40',
-            labelClassName: 'text-slate-400',
+              'px-3 py-2 text-xs uppercase tracking-wider border-b border-slate-700 bg-slate-800/75',
+            labelClassName: 'text-slate-100',
           })}
           {!isSectionCollapsed('leveling-loop-diagnostics') && (
             <>
@@ -3297,7 +3297,7 @@ const ReportView: React.FC<ReportViewProps> = ({
                 <div className="overflow-x-auto w-full border-t border-slate-800">
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
-                  <tr className="text-slate-500 border-b border-slate-800">
+                  <tr className="text-slate-200 border-b border-slate-700">
                     <th className="py-2 px-3 font-semibold">#</th>
                     <th className="py-2 px-3 font-semibold">Loop</th>
                     <th className="py-2 px-3 font-semibold">Path</th>
@@ -3343,7 +3343,7 @@ const ReportView: React.FC<ReportViewProps> = ({
                 <div className="overflow-x-auto w-full border-t border-slate-800">
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
-                  <tr className="text-slate-500 border-b border-slate-800">
+                  <tr className="text-slate-200 border-b border-slate-700">
                     <th className="py-2 px-3 font-semibold">Loop</th>
                     <th className="py-2 px-3 font-semibold text-right">Seg</th>
                     <th className="py-2 px-3 font-semibold">From</th>
@@ -3399,13 +3399,13 @@ const ReportView: React.FC<ReportViewProps> = ({
             label: 'Leveling Loop Suspects (ranked)',
             className:
               'px-4 py-2 border-b border-slate-800 bg-slate-900/60 text-xs uppercase tracking-wider',
-            labelClassName: 'text-slate-400',
+            labelClassName: 'text-slate-100',
           })}
           {!isSectionCollapsed('leveling-loop-suspects') && (
             <>
               <table className="w-full text-left text-xs">
                 <thead>
-                  <tr className="text-slate-500 border-b border-slate-800/60">
+                  <tr className="text-slate-200 border-b border-slate-700/80">
                     <th className="py-2 px-3">#</th>
                     <th className="py-2">Loop</th>
                     <th className="py-2">Path</th>
@@ -3455,12 +3455,12 @@ const ReportView: React.FC<ReportViewProps> = ({
             label: 'Leveling Segment Suspects',
             className:
               'px-4 py-2 border-b border-slate-800 bg-slate-900/60 text-xs uppercase tracking-wider',
-            labelClassName: 'text-slate-400',
+            labelClassName: 'text-slate-100',
           })}
           {!isSectionCollapsed('leveling-segment-suspects') && (
             <table className="w-full text-left text-xs">
             <thead>
-              <tr className="text-slate-500 border-b border-slate-800/60">
+              <tr className="text-slate-200 border-b border-slate-700/80">
                 <th className="py-2 px-3">#</th>
                 <th className="py-2">Segment</th>
                 <th className="py-2 text-right">Line</th>
@@ -3506,13 +3506,13 @@ const ReportView: React.FC<ReportViewProps> = ({
             label: 'GPS Loop Suspects (ranked)',
             className:
               'px-4 py-2 border-b border-slate-800 bg-slate-900/60 text-xs uppercase tracking-wider',
-            labelClassName: 'text-slate-400',
+            labelClassName: 'text-slate-100',
           })}
           {!isSectionCollapsed('gps-loop-suspects') && (
             <>
               <table className="w-full text-left text-xs">
                 <thead>
-                  <tr className="text-slate-500 border-b border-slate-800/60">
+                  <tr className="text-slate-200 border-b border-slate-700/80">
                     <th className="py-2 px-3">#</th>
                     <th className="py-2">Loop</th>
                     <th className="py-2 text-right">Mag ({units})</th>
@@ -3568,14 +3568,14 @@ const ReportView: React.FC<ReportViewProps> = ({
               sectionId: 'direction-set-diagnostics',
               label: 'Direction Set Diagnostics',
               className:
-                'px-3 py-2 text-xs uppercase tracking-wider border-b border-slate-800 bg-slate-900/40',
-              labelClassName: 'text-slate-400',
+                'px-3 py-2 text-xs uppercase tracking-wider border-b border-slate-700 bg-slate-800/75',
+              labelClassName: 'text-slate-100',
             })}
             {!isSectionCollapsed('direction-set-diagnostics') && (
               <div className="overflow-x-auto w-full">
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
-                  <tr className="text-slate-500 border-b border-slate-800">
+                  <tr className="text-slate-200 border-b border-slate-700">
                     <th className="py-2 px-3 font-semibold">Set</th>
                     <th className="py-2 px-3 font-semibold">Occupy</th>
                     <th className="py-2 px-3 font-semibold text-right">Readings</th>
@@ -3660,14 +3660,14 @@ const ReportView: React.FC<ReportViewProps> = ({
               sectionId: 'direction-target-repeatability',
               label: 'Direction Target Repeatability (ranked)',
               className:
-                'px-3 py-2 text-xs uppercase tracking-wider border-b border-slate-800 bg-slate-900/40',
-              labelClassName: 'text-slate-400',
+                'px-3 py-2 text-xs uppercase tracking-wider border-b border-slate-700 bg-slate-800/75',
+              labelClassName: 'text-slate-100',
             })}
             {!isSectionCollapsed('direction-target-repeatability') && (
               <div className="overflow-x-auto w-full">
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
-                  <tr className="text-slate-500 border-b border-slate-800">
+                  <tr className="text-slate-200 border-b border-slate-700">
                     <th className="py-2 px-3 font-semibold">#</th>
                     <th className="py-2 px-3 font-semibold">Set</th>
                     <th className="py-2 px-3 font-semibold">Occupy</th>
@@ -3755,14 +3755,14 @@ const ReportView: React.FC<ReportViewProps> = ({
             sectionId: 'direction-face-treatment-diagnostics',
             label: 'Direction Face Treatment Diagnostics',
             className:
-              'px-3 py-2 text-xs uppercase tracking-wider border-b border-slate-800 bg-slate-900/40',
-            labelClassName: 'text-slate-400',
+              'px-3 py-2 text-xs uppercase tracking-wider border-b border-slate-700 bg-slate-800/75',
+            labelClassName: 'text-slate-100',
           })}
           {!isSectionCollapsed('direction-face-treatment-diagnostics') && (
             <div className="overflow-x-auto w-full">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
-                <tr className="text-slate-500 border-b border-slate-800">
+                <tr className="text-slate-200 border-b border-slate-700">
                   <th className="py-2 px-3 font-semibold">#</th>
                   <th className="py-2 px-3 font-semibold">Set</th>
                   <th className="py-2 px-3 font-semibold">Occupy</th>
@@ -3808,14 +3808,14 @@ const ReportView: React.FC<ReportViewProps> = ({
             sectionId: 'direction-reject-diagnostics',
             label: 'Direction Reject Diagnostics',
             className:
-              'px-3 py-2 text-xs uppercase tracking-wider border-b border-slate-800 bg-slate-900/40',
-            labelClassName: 'text-slate-400',
+              'px-3 py-2 text-xs uppercase tracking-wider border-b border-slate-700 bg-slate-800/75',
+            labelClassName: 'text-slate-100',
           })}
           {!isSectionCollapsed('direction-reject-diagnostics') && (
             <div className="overflow-x-auto w-full">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
-                <tr className="text-slate-500 border-b border-slate-800">
+                <tr className="text-slate-200 border-b border-slate-700">
                   <th className="py-2 px-3 font-semibold">#</th>
                   <th className="py-2 px-3 font-semibold">Set</th>
                   <th className="py-2 px-3 font-semibold">Occupy</th>
@@ -3872,12 +3872,12 @@ const ReportView: React.FC<ReportViewProps> = ({
             label: 'Direction Target Suspects (top)',
             className:
               'px-4 py-2 border-b border-slate-800 bg-slate-900/60 text-xs uppercase tracking-wider',
-            labelClassName: 'text-slate-400',
+            labelClassName: 'text-slate-100',
           })}
           {!isSectionCollapsed('direction-target-suspects-top') && (
             <table className="w-full text-left text-xs">
             <thead>
-              <tr className="text-slate-500 border-b border-slate-800/60">
+              <tr className="text-slate-200 border-b border-slate-700/80">
                 <th className="py-2 px-3">#</th>
                 <th className="py-2">Set</th>
                 <th className="py-2">Stations</th>
@@ -3924,14 +3924,14 @@ const ReportView: React.FC<ReportViewProps> = ({
               sectionId: 'direction-repeatability-multi-set',
               label: 'Direction Repeatability By Occupy-Target (multi-set)',
               className:
-                'px-3 py-2 text-xs uppercase tracking-wider border-b border-slate-800 bg-slate-900/40',
-              labelClassName: 'text-slate-400',
+                'px-3 py-2 text-xs uppercase tracking-wider border-b border-slate-700 bg-slate-800/75',
+              labelClassName: 'text-slate-100',
             })}
             {!isSectionCollapsed('direction-repeatability-multi-set') && (
               <div className="overflow-x-auto w-full">
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
-                  <tr className="text-slate-500 border-b border-slate-800">
+                  <tr className="text-slate-200 border-b border-slate-700">
                     <th className="py-2 px-3 font-semibold">#</th>
                     <th className="py-2 px-3 font-semibold">Occupy</th>
                     <th className="py-2 px-3 font-semibold">Target</th>
@@ -4012,12 +4012,12 @@ const ReportView: React.FC<ReportViewProps> = ({
             label: 'Direction Repeatability Suspects (top)',
             className:
               'px-4 py-2 border-b border-slate-800 bg-slate-900/60 text-xs uppercase tracking-wider',
-            labelClassName: 'text-slate-400',
+            labelClassName: 'text-slate-100',
           })}
           {!isSectionCollapsed('direction-repeatability-suspects-top') && (
             <table className="w-full text-left text-xs">
             <thead>
-              <tr className="text-slate-500 border-b border-slate-800/60">
+              <tr className="text-slate-200 border-b border-slate-700/80">
                 <th className="py-2 px-3">#</th>
                 <th className="py-2">Stations</th>
                 <th className="py-2 text-right">Sets</th>
@@ -4071,14 +4071,14 @@ const ReportView: React.FC<ReportViewProps> = ({
             sectionId: 'setup-diagnostics',
             label: 'Setup Diagnostics',
             className:
-              'px-3 py-2 text-xs uppercase tracking-wider border-b border-slate-800 bg-slate-900/40',
-            labelClassName: 'text-slate-400',
+              'px-3 py-2 text-xs uppercase tracking-wider border-b border-slate-700 bg-slate-800/75',
+            labelClassName: 'text-slate-100',
           })}
           {!isSectionCollapsed('setup-diagnostics') && (
             <div className="overflow-x-auto w-full">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
-                <tr className="text-slate-500 border-b border-slate-800">
+                <tr className="text-slate-200 border-b border-slate-700">
                   <th className="py-2 px-3 font-semibold">Setup</th>
                   <th className="py-2 px-3 font-semibold text-right">Dir Sets</th>
                   <th className="py-2 px-3 font-semibold text-right">Dir Obs</th>
@@ -4165,13 +4165,13 @@ const ReportView: React.FC<ReportViewProps> = ({
             sectionId: 'gps-rover-offsets',
             label: 'GPS Rover Offsets',
             className:
-              'px-3 py-2 text-xs uppercase tracking-wider border-b border-slate-800 bg-slate-900/40',
-            labelClassName: 'text-slate-400',
+              'px-3 py-2 text-xs uppercase tracking-wider border-b border-slate-700 bg-slate-800/75',
+            labelClassName: 'text-slate-100',
           })}
           {!isSectionCollapsed('gps-rover-offsets') && <div className="overflow-x-auto w-full">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
-                <tr className="text-slate-500 border-b border-slate-800">
+                <tr className="text-slate-200 border-b border-slate-700">
                   <th className="py-2 px-3 font-semibold">From</th>
                   <th className="py-2 px-3 font-semibold">To</th>
                   <th className="py-2 px-3 font-semibold text-right">G Line</th>
@@ -4284,7 +4284,7 @@ const ReportView: React.FC<ReportViewProps> = ({
           <div className="overflow-x-auto w-full">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
-                <tr className="text-slate-500 border-b border-slate-800">
+                <tr className="text-slate-200 border-b border-slate-700">
                   <th className="py-2 px-3 font-semibold">Station</th>
                   <th className="py-2 px-3 font-semibold text-right">CEE</th>
                   <th className="py-2 px-3 font-semibold text-right">CEN</th>
@@ -4339,7 +4339,7 @@ const ReportView: React.FC<ReportViewProps> = ({
           <div className="overflow-x-auto w-full">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
-                <tr className="text-slate-500 border-b border-slate-800">
+                <tr className="text-slate-200 border-b border-slate-700">
                   <th className="py-2 px-3 font-semibold">From</th>
                   <th className="py-2 px-3 font-semibold">To</th>
                   <th className="py-2 px-3 font-semibold">Types</th>
@@ -4442,7 +4442,7 @@ const ReportView: React.FC<ReportViewProps> = ({
           <div className="overflow-x-auto w-full">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
-                <tr className="text-slate-500 border-b border-slate-800">
+                <tr className="text-slate-200 border-b border-slate-700">
                   <th className="py-2 px-3 font-semibold">Scope</th>
                   <th className="py-2 px-3 font-semibold">ID</th>
                   <th className="py-2 px-3 font-semibold">Severity</th>
@@ -4514,14 +4514,14 @@ const ReportView: React.FC<ReportViewProps> = ({
               {renderCollapsibleSectionHeader({
                 sectionId: 'per-type-summary',
                 label: 'Per-Type Summary',
-                className: 'px-3 py-2 text-xs uppercase tracking-wider border-b border-slate-800',
-                labelClassName: 'text-slate-400',
+                className: 'px-3 py-2 text-xs uppercase tracking-wider border-b border-slate-700 bg-slate-800/75',
+                labelClassName: 'text-slate-100',
               })}
               {!isSectionCollapsed('per-type-summary') && (
                 <div className="overflow-x-auto w-full">
                 <table className="w-full text-left border-collapse text-xs">
                   <thead>
-                    <tr className="text-slate-500 border-b border-slate-800">
+                    <tr className="text-slate-200 border-b border-slate-700">
                       <th className="py-2 px-3 font-semibold">Type</th>
                       <th className="py-2 px-3 font-semibold text-right">Count</th>
                       <th className="py-2 px-3 font-semibold text-right">RMS</th>
@@ -4556,14 +4556,14 @@ const ReportView: React.FC<ReportViewProps> = ({
               {renderCollapsibleSectionHeader({
                 sectionId: 'relative-precision-unknowns',
                 label: 'Relative Precision (Unknowns)',
-                className: 'px-3 py-2 text-xs uppercase tracking-wider border-b border-slate-800',
-                labelClassName: 'text-slate-400',
+                className: 'px-3 py-2 text-xs uppercase tracking-wider border-b border-slate-700 bg-slate-800/75',
+                labelClassName: 'text-slate-100',
               })}
               {!isSectionCollapsed('relative-precision-unknowns') && (
                 <div className="overflow-x-auto w-full">
                 <table className="w-full text-left border-collapse text-xs">
                   <thead>
-                    <tr className="text-slate-500 border-b border-slate-800">
+                    <tr className="text-slate-200 border-b border-slate-700">
                       <th className="py-2 px-3 font-semibold">From</th>
                       <th className="py-2 px-3 font-semibold">To</th>
                       <th className="py-2 px-3 font-semibold text-right">σN</th>
@@ -4653,3 +4653,4 @@ const ReportView: React.FC<ReportViewProps> = ({
 };
 
 export default ReportView;
+

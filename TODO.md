@@ -1,5 +1,7 @@
 # TODO - WebNet
 
+- [x] Project Options UI refresh (April 2026): make `Project Files` the first tab, keep `Other Files` export-focused, move Coordinate System controls into `Adjustment`, move Leveling/Weighting into `General`, merge stochastic modeling controls into `Special`, remove legacy-removal copy, and tighten modal density/layout spacing.
+
 - [ ] add planned improvements to todo list in phased implementations before starting on imlementation
   - [x] Phase 0 - backlog codification
     - [x] Add the full phased implementation plan to TODO before code changes

@@ -265,6 +265,7 @@ const DEFAULT_UI_THEME: UiTheme = 'gruvbox-dark';
 
 const normalizeUiTheme = (value: unknown): UiTheme => {
   if (value === 'gruvbox-light') return 'gruvbox-light';
+  if (value === 'vscode-dark') return 'vscode-dark';
   if (value === 'catppuccin-mocha') return 'catppuccin-mocha';
   if (value === 'catppuccin-latte') return 'catppuccin-latte';
   return 'gruvbox-dark';
@@ -643,20 +644,20 @@ const BUILTIN_GEOID_MODEL_OPTIONS: Array<{ id: string; label: string }> = [
 ];
 
 const PROJECT_OPTION_TAB_TOOLTIPS: Record<ProjectOptionsTab, string> = {
+  'project-files':
+    'Manage local browser projects, project source files, and portable project import/export workflows.',
   adjustment:
-    'Core adjustment controls: run profile, coordinate mode, preanalysis, auto-adjust, QFIX, and primary parser defaults.',
+    'Core adjustment controls: solver behavior, coordinate mode, geodetic framework, and coordinate-system selection.',
   general:
-    'General reduction and modeling defaults such as map mode, normalization, and vertical reduction behavior.',
+    'General reduction and weighting defaults such as map mode, normalization, vertical reduction behavior, and level-loop tolerance controls.',
   instrument:
     'Project instrument library editor for EDM, angular, centering, and vertical precision parameters.',
   'listing-file':
     'Controls which sections appear in industry-style listing/export output and how listing rows are sorted.',
   'other-files': 'Export format and auxiliary output-file controls.',
   special:
-    'Special parsing and interpretation controls such as A-record mode and description reconciliation.',
-  gps: 'CRS/geodetic settings, GPS loop checks, geoid/grid options, and GPS AddHiHt defaults.',
-  modeling:
-    'Advanced stochastic-model controls such as TS angular correlation and robust adjustment settings.',
+    'Special parsing, interpretation, and stochastic controls including A-record mode, description reconciliation, TS correlation, robust settings, and positional tolerance.',
+  gps: 'Advanced CRS/GPS/height overrides, geoid/grid options, and GPS preprocessing defaults.',
 };
 
 const PROJECT_OPTION_SECTION_TOOLTIPS: Record<string, string> = {
@@ -695,6 +696,7 @@ const PROJECT_OPTION_SECTION_TOOLTIPS: Record<string, string> = {
 };
 
 const PROJECT_OPTION_TABS: Array<{ id: ProjectOptionsTab; label: string }> = [
+  { id: 'project-files', label: 'Project Files' },
   { id: 'adjustment', label: 'Adjustment' },
   { id: 'general', label: 'General' },
   { id: 'instrument', label: 'Instrument' },
@@ -702,7 +704,6 @@ const PROJECT_OPTION_TABS: Array<{ id: ProjectOptionsTab; label: string }> = [
   { id: 'other-files', label: 'Other Files' },
   { id: 'special', label: 'Special' },
   { id: 'gps', label: 'GPS' },
-  { id: 'modeling', label: 'Modeling' },
 ];
 
 type SettingsCardProps = {
@@ -710,14 +711,28 @@ type SettingsCardProps = {
   tooltip: string;
   children: React.ReactNode;
   className?: string;
+  disabled?: boolean;
 };
 
-const SettingsCard: React.FC<SettingsCardProps> = ({ title, tooltip, children, className }) => (
+const SettingsCard: React.FC<SettingsCardProps> = ({
+  title,
+  tooltip,
+  children,
+  className,
+  disabled = false,
+}) => (
   <div
-    className={`rounded-md border border-slate-400 bg-slate-600/40 p-3 space-y-3 ${className ?? ''}`}
+    aria-disabled={disabled}
+    className={`rounded-md border p-2.5 space-y-2 ${
+      disabled
+        ? 'border-slate-700 bg-slate-950/45'
+        : 'border-slate-600 bg-slate-900/55'
+    } ${className ?? ''}`}
   >
     <div
-      className="text-xs uppercase tracking-wider text-slate-100 border-b border-slate-400/60 pb-2"
+      className={`text-[11px] uppercase tracking-wide border-b pb-1.5 ${
+        disabled ? 'text-slate-500 border-slate-700' : 'text-slate-50 border-slate-600'
+      }`}
       title={tooltip}
     >
       {title}
@@ -735,7 +750,7 @@ type SettingsRowProps = {
 
 const SettingsRow: React.FC<SettingsRowProps> = ({ label, tooltip, children, className }) => (
   <label
-    className={`grid gap-2 md:grid-cols-[minmax(0,1fr)_minmax(190px,240px)] md:items-center text-[11px] uppercase tracking-wide text-slate-200 ${className ?? ''}`}
+    className={`settings-row grid gap-1 md:grid-cols-[minmax(0,1fr)_minmax(150px,210px)] md:items-center text-[10px] uppercase tracking-wide text-slate-100 ${className ?? ''}`}
     title={tooltip}
   >
     <span>{label}</span>
@@ -761,7 +776,7 @@ const SettingsToggle: React.FC<SettingsToggleProps> = ({ checked, disabled, titl
         disabled={disabled}
         onChange={(e) => onChange(e.target.checked)}
       />
-      <span className="absolute inset-0 rounded-full bg-slate-400 transition-colors peer-checked:bg-blue-500 peer-disabled:cursor-not-allowed peer-disabled:opacity-50" />
+      <span className="absolute inset-0 rounded-full bg-slate-600 transition-colors peer-checked:bg-blue-500 peer-disabled:cursor-not-allowed peer-disabled:bg-slate-800" />
       <span className="absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white transition-transform peer-checked:translate-x-5 peer-disabled:opacity-80" />
     </span>
     <span className={`${disabled ? 'text-slate-400' : 'text-slate-100'}`}>
@@ -2052,11 +2067,11 @@ const App: React.FC<AppProps> = ({
   }, [handleNextUnresolvedQueueItem]);
   const handleOpenProjectWorkspacePanel = React.useCallback(() => {
     openProjectOptions();
-    setActiveOptionsTab('other-files');
+    setActiveOptionsTab('project-files');
   }, [openProjectOptions, setActiveOptionsTab]);
   const optionInputClass =
-    'w-full bg-slate-700 text-xs border border-slate-500 text-white rounded px-2 py-1 outline-none focus:border-blue-400';
-  const optionLabelClass = 'text-[11px] text-slate-300 uppercase tracking-wide';
+    'w-full bg-slate-800 text-[11px] border border-slate-600 text-slate-100 rounded px-1.5 py-1 outline-none focus:border-blue-500 disabled:bg-slate-900 disabled:border-slate-800 disabled:text-slate-500 disabled:opacity-100';
+  const optionLabelClass = 'text-[10px] text-slate-300 uppercase tracking-wide';
   const projectOptionsStaticContext = {
     ADJUSTED_POINTS_ALL_COLUMNS,
     ADJUSTED_POINTS_PRESET_COLUMNS,

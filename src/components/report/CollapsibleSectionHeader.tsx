@@ -42,7 +42,7 @@ const CollapsibleSectionHeader: React.FC<CollapsibleSectionHeaderProps> = ({
         {label}
         {pinned ? <span className="ml-2 text-[10px] text-amber-300">Pinned</span> : null}
       </span>
-      <span className="text-[10px] text-slate-500 uppercase tracking-wide">
+      <span className="text-[10px] text-slate-300 uppercase tracking-wide">
         {collapsed ? 'Show' : 'Hide'}
       </span>
     </button>
@@ -52,7 +52,7 @@ const CollapsibleSectionHeader: React.FC<CollapsibleSectionHeaderProps> = ({
       className={`rounded border px-2 py-1 text-[10px] uppercase tracking-wide ${
         pinned
           ? 'border-amber-500/60 bg-amber-900/30 text-amber-200'
-          : 'border-slate-600 text-slate-400 hover:bg-slate-800'
+          : 'border-slate-500 text-slate-200 hover:bg-slate-800'
       }`}
       title={pinned ? `Unpin ${label}` : `Pin ${label}`}
     >
