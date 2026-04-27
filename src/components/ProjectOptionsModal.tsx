@@ -1648,8 +1648,10 @@ const ProjectOptionsModal: React.FC<ProjectOptionsModalProps> = ({ context }) =>
                         className={`${optionInputClass} mt-1`}
                       >
                         <option value="input">Input Order</option>
-                        <option value="name">Name</option>
-                        <option value="residual">Residual Size</option>
+                        <option value="name">Point Name</option>
+                        <option value="residual">Residual</option>
+                        <option value="stdError">Std Error</option>
+                        <option value="stdResidual">Std Residual</option>
                       </select>
                     </label>
                   </div>

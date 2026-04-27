@@ -29,7 +29,7 @@ const buildSnapshot = (overrides: Partial<WorkspaceDraftSnapshot> = {}): Workspa
     listingShowProcessingNotes: true,
     listingShowAzimuthsBearings: true,
     listingSortCoordinatesBy: 'name',
-    listingSortObservationsBy: 'residual',
+    listingSortObservationsBy: 'stdResidual',
     listingObservationLimit: 60,
   },
   parseSettings: {
@@ -625,3 +625,4 @@ describe('useWorkspaceRecovery', () => {
     container.remove();
   });
 });
+

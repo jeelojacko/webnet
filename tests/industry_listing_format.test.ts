@@ -82,7 +82,7 @@ const buildIndustryReferenceListing = (): string => {
       listingShowProcessingNotes: false,
       listingShowAzimuthsBearings: true,
       listingSortCoordinatesBy: 'input',
-      listingSortObservationsBy: 'residual',
+      listingSortObservationsBy: 'stdResidual',
       listingObservationLimit: 500,
     },
     {
@@ -127,7 +127,7 @@ describe('industry listing phase 5 formatting locks', () => {
         listingShowProcessingNotes: false,
         listingShowAzimuthsBearings: true,
         listingSortCoordinatesBy: 'name',
-        listingSortObservationsBy: 'residual',
+        listingSortObservationsBy: 'stdResidual',
         listingObservationLimit: 500,
       },
       {
@@ -533,7 +533,7 @@ describe('industry listing phase 5 formatting locks', () => {
         listingShowProcessingNotes: false,
         listingShowAzimuthsBearings: true,
         listingSortCoordinatesBy: 'name',
-        listingSortObservationsBy: 'residual',
+        listingSortObservationsBy: 'stdResidual',
         listingObservationLimit: 500,
       },
       {
@@ -606,7 +606,7 @@ describe('industry listing phase 5 formatting locks', () => {
         listingShowProcessingNotes: false,
         listingShowAzimuthsBearings: true,
         listingSortCoordinatesBy: 'name',
-        listingSortObservationsBy: 'residual',
+        listingSortObservationsBy: 'stdResidual',
         listingObservationLimit: 500,
       },
       {
@@ -656,7 +656,7 @@ describe('industry listing phase 5 formatting locks', () => {
         listingShowProcessingNotes: false,
         listingShowAzimuthsBearings: true,
         listingSortCoordinatesBy: 'name',
-        listingSortObservationsBy: 'residual',
+        listingSortObservationsBy: 'stdResidual',
         listingObservationLimit: 500,
       },
       {
@@ -1432,7 +1432,7 @@ describe('industry listing phase 5 formatting locks', () => {
         listingShowAzimuthsBearings: true,
         listingShowLostStations: true,
         listingSortCoordinatesBy: 'name',
-        listingSortObservationsBy: 'residual',
+        listingSortObservationsBy: 'stdResidual',
         listingObservationLimit: 60,
       },
       {
@@ -1503,7 +1503,7 @@ describe('industry listing phase 5 formatting locks', () => {
         listingShowAzimuthsBearings: true,
         listingShowLostStations: true,
         listingSortCoordinatesBy: 'name',
-        listingSortObservationsBy: 'residual',
+        listingSortObservationsBy: 'stdResidual',
         listingObservationLimit: 60,
       },
       {
@@ -1535,3 +1535,4 @@ describe('industry listing phase 5 formatting locks', () => {
     expect(listing).not.toContain('Vertical Deflection                 : N=0.000 E=0.000 (Seconds)');
   });
 });
+

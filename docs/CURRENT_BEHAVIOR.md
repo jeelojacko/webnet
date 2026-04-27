@@ -158,6 +158,7 @@ Current listing/report behavior includes:
 - solve-profile diagnostics near the summary surface
 - deterministic section ordering and tie-break rules
 - padded, readability-focused listing tables
+- the Industry Standard Output tab now supports a right-click menu with `Go to section` (auto-detected heading jump list) and `Sort by` shortcuts that update persisted listing sort settings (`Point Name`, `Input Order`, `Residual`, `Std Error`, `Std Residual`)
 - adjusted-observation grouping by observation family
 - expanded station and relative 95% ellipse sections
 - connected-pair direction parity in relative sections
@@ -288,8 +289,13 @@ Current delivered performance architecture includes:
 - shared run-session orchestration for browser and CLI solve flows
 - shared run-session workflows may perform multiple full re-solves after the main adjustment for suspect-impact, preanalysis-impact, robust-comparison, or auto-adjust diagnostics; long traverse cases can therefore spend minutes in `Solving` even when a single engine solve is only tens of seconds
 - lazy-loaded heavy result views and modal bodies
+- one-time idle prewarm of lazy report/map/processing/listing tabs after the first successful solve to reduce first-switch loading stalls
 - local report state with filter and windowing behavior
 - dense-map review guards, including a persisted `standard` vs `dense-review` declutter preset and quick toggles for labels/minor geometry/non-selected focus
+- 2D map rendering now uses a hybrid pipeline: canvas-backed non-selected dense geometry plus SVG overlays for selection, labels, and tools, so large networks reduce SVG remount pressure during navigation
+- dense 2D interaction automatically enters a temporary simplify mode while panning/zooming (reduced labels + suppressed non-selected ellipses), then restores full detail after interaction settles
+- after wheel/pan stop, 2D map rendering performs an automatic crisp settle redraw (full device-pixel-ratio pass) so users do not need an extra pan/zoom nudge to clear blur
+- map-review navigation state (pan/zoom/camera/tool toggles) now persists through report/map tab switches for the active solve result
 - benchmark coverage for large browser projects and imported-job workflows
 - asynchronous worker-backed artifact generation for heavy export flows
 - the adjustment core now bypasses generic dense `AᵀP`/`AᵀPA` matrix products in its main solve and covariance/statistics paths, instead accumulating normal equations from sparse equation rows and using sparse row-matrix multiplies where `A*x` style products are still needed; this keeps parity behavior unchanged while materially improving the dense imported-project benchmark path

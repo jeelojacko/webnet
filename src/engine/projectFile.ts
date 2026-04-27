@@ -13,6 +13,7 @@ import {
   DEFAULT_ADJUSTED_POINTS_EXPORT_SETTINGS,
   sanitizeAdjustedPointsExportSettings,
 } from './adjustedPointsExport';
+import { normalizeListingSortObservationsBy } from '../listingSortObservations';
 import {
   buildProjectFileStoragePath,
   createManifestFromFlatProject,
@@ -55,6 +56,7 @@ export interface ParsedProjectPayload {
     migration?: {
       parseModeMigrated: boolean;
       migratedAt?: string;
+      listingSortModeVersion?: number;
     };
   };
   project: {
@@ -577,6 +579,9 @@ export const serializeProjectFile = (project: ParsedProjectPayload): string => {
   normalizeRetiredParseSettings(parseSettings);
   const settings = cloneRecord(project.ui.settings);
   settings.precisionReportingMode = 'industry-standard';
+  settings.listingSortObservationsBy = normalizeListingSortObservationsBy(
+    settings.listingSortObservationsBy,
+  );
   const manifestSeed = createManifestFromFlatProject({
     projectId: project.workspace?.projectId,
     name: project.workspace?.name ?? `WebNet Project ${nowIso.slice(0, 10)}`,
@@ -595,6 +600,7 @@ export const serializeProjectFile = (project: ParsedProjectPayload): string => {
       migration: {
         parseModeMigrated: true,
         migratedAt: nowIso,
+        listingSortModeVersion: 2,
       },
     },
     project: {
@@ -744,8 +750,17 @@ export const parseProjectFile = (
     typeof uiMigration.migratedAt === 'string' && uiMigration.migratedAt.trim().length > 0
       ? uiMigration.migratedAt.trim()
       : undefined;
+  const listingSortModeVersion =
+    typeof uiMigration.listingSortModeVersion === 'number' &&
+    Number.isFinite(uiMigration.listingSortModeVersion)
+      ? Math.max(1, Math.floor(uiMigration.listingSortModeVersion))
+      : 1;
   normalizeRetiredParseSettings(parseSettings);
   settings.precisionReportingMode = 'industry-standard';
+  settings.listingSortObservationsBy = normalizeListingSortObservationsBy(
+    settings.listingSortObservationsBy,
+    { legacyResidualMeansStdResidual: listingSortModeVersion < 2 },
+  );
 
   const projectInstruments = sanitizeInstrumentLibrary(
     project.projectInstruments,
@@ -783,6 +798,7 @@ export const parseProjectFile = (
         migration: {
           parseModeMigrated: true,
           migratedAt,
+          listingSortModeVersion,
         },
       },
       project: {

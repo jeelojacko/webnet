@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { startTransition, useCallback } from 'react';
 import { Activity, FileText, Map as MapIcon, Minimize2 } from 'lucide-react';
 import type { WorkspaceTabKey } from '../appStateTypes';
 
@@ -36,6 +36,15 @@ const WorkspaceChrome: React.FC<WorkspaceChromeProps> = ({
   industryOutputContent,
   mapContent,
 }) => {
+  const handleTabClick = useCallback(
+    (tab: WorkspaceTabKey) => {
+      startTransition(() => {
+        onActiveTabChange(tab);
+      });
+    },
+    [onActiveTabChange],
+  );
+
   const renderActiveTab = () => {
     switch (activeTab) {
       case 'report':
@@ -58,7 +67,7 @@ const WorkspaceChrome: React.FC<WorkspaceChromeProps> = ({
           {TAB_CONFIG.map(({ id, label, icon: Icon }) => (
             <button
               key={id}
-              onClick={() => onActiveTabChange(id)}
+              onClick={() => handleTabClick(id)}
               className={`px-6 py-3 text-sm font-medium flex items-center space-x-2 border-b-2 transition-colors ${
                 activeTab === id
                   ? 'border-blue-500 text-white bg-slate-800'

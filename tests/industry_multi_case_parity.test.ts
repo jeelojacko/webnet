@@ -165,6 +165,39 @@ const parseRawDistanceRows = (
     }))
     .filter((row) => Number.isFinite(row.distance));
 
+const parseClassicAdjustedDistanceRows = (
+  section: string,
+): Array<{
+  from: string;
+  to: string;
+  distance: number;
+  residual: number;
+  stdErr: number;
+  stdRes: number;
+}> =>
+  normalizeLineEndings(section)
+    .split('\n')
+    .map((line) => line.trim())
+    .filter((line) => /^\S+\s+\S+\s+-?\d+\.\d+/.test(line))
+    .map((line) => {
+      const parts = line.split(/\s+/);
+      return {
+        from: parts[0],
+        to: parts[1],
+        distance: Number.parseFloat(parts[2]),
+        residual: Number.parseFloat(parts[3]),
+        stdErr: Number.parseFloat(parts[4]),
+        stdRes: Number.parseFloat(parts[5]),
+      };
+    })
+    .filter(
+      (row) =>
+        Number.isFinite(row.distance) &&
+        Number.isFinite(row.residual) &&
+        Number.isFinite(row.stdErr) &&
+        Number.isFinite(row.stdRes),
+    );
+
 const parseRawZenithRows = (
   section: string,
 ): Array<{
@@ -497,7 +530,7 @@ describe('industry multi-case parity foundation', () => {
           listingShowAzimuthsBearings: true,
           listingShowLostStations: true,
           listingSortCoordinatesBy: 'input',
-          listingSortObservationsBy: 'residual',
+          listingSortObservationsBy: 'input',
           listingObservationLimit: 9999,
         },
         {
@@ -661,7 +694,7 @@ describe('industry multi-case parity foundation', () => {
         listingShowAzimuthsBearings: true,
         listingShowLostStations: true,
         listingSortCoordinatesBy: 'input',
-        listingSortObservationsBy: 'residual',
+        listingSortObservationsBy: 'stdResidual',
         listingObservationLimit: 9999,
       },
       {
@@ -732,7 +765,7 @@ describe('industry multi-case parity foundation', () => {
           listingShowAzimuthsBearings: true,
           listingShowLostStations: true,
           listingSortCoordinatesBy: 'input',
-          listingSortObservationsBy: 'residual',
+          listingSortObservationsBy: 'stdResidual',
           listingObservationLimit: 9999,
         },
         {
@@ -819,7 +852,7 @@ describe('industry multi-case parity foundation', () => {
         listingShowAzimuthsBearings: true,
         listingShowLostStations: true,
         listingSortCoordinatesBy: 'input',
-        listingSortObservationsBy: 'residual',
+        listingSortObservationsBy: 'stdResidual',
         listingObservationLimit: 9999,
       },
       {
@@ -911,7 +944,7 @@ describe('industry multi-case parity foundation', () => {
           listingShowAzimuthsBearings: true,
           listingShowLostStations: true,
           listingSortCoordinatesBy: 'input',
-          listingSortObservationsBy: 'residual',
+          listingSortObservationsBy: 'stdResidual',
           listingObservationLimit: 9999,
         },
         {
@@ -1141,7 +1174,7 @@ describe('industry multi-case parity foundation', () => {
           listingShowAzimuthsBearings: true,
           listingShowLostStations: true,
           listingSortCoordinatesBy: 'input',
-          listingSortObservationsBy: 'residual',
+          listingSortObservationsBy: 'stdResidual',
           listingObservationLimit: 9999,
         },
         {
@@ -1274,7 +1307,7 @@ describe('industry multi-case parity foundation', () => {
       expect(adjustedDirectionSection.indexOf('Set 19')).toBeGreaterThan(
         adjustedDirectionSection.indexOf('Set 18'),
       );
-      expect(adjustedDirectionSection.indexOf('Set 24')).toBeGreaterThan(
+      expect(adjustedDirectionSection.indexOf('Set 24')).toBeLessThan(
         adjustedDirectionSection.indexOf('Set 19'),
       );
       expect(adjustedDirectionSection).toContain(
@@ -1328,6 +1361,90 @@ describe('industry multi-case parity foundation', () => {
   );
 
   it(
+    'applies selected sort mode independently within classic adjusted distance observations',
+    () => {
+      const startup = INDUSTRY_PARITY_CASES.traverse.startupDefaults;
+      expect(startup).toBeDefined();
+      const result = buildCaseResult('traverse');
+      expect(result.success).toBe(true);
+      const buildListing = (sortMode: 'input' | 'residual' | 'stdError' | 'stdResidual') =>
+        buildIndustryStyleListingText(
+          result,
+          {
+            maxIterations: 10,
+            convergenceLimit: startup?.settingsPatch.convergenceLimit,
+            precisionReportingMode: 'industry-standard',
+            units: 'm',
+            listingShowCoordinates: true,
+            listingShowObservationsResiduals: true,
+            listingShowErrorPropagation: true,
+            listingShowProcessingNotes: true,
+            listingShowAzimuthsBearings: true,
+            listingShowLostStations: true,
+            listingSortCoordinatesBy: 'input',
+            listingSortObservationsBy: sortMode,
+            listingObservationLimit: 9999,
+          },
+          {
+            coordMode: startup?.parseSettingsPatch.coordMode ?? '3D',
+            order: startup?.parseSettingsPatch.order ?? 'EN',
+            angleUnits: startup?.parseSettingsPatch.angleUnits ?? 'dms',
+            angleStationOrder: startup?.parseSettingsPatch.angleStationOrder ?? 'atfromto',
+            deltaMode: startup?.parseSettingsPatch.deltaMode ?? 'slope',
+            refractionCoefficient: startup?.parseSettingsPatch.refractionCoefficient ?? 0.13,
+          },
+          {
+            solveProfile: 'industry-parity',
+            angleCenteringModel: 'geometry-aware-correlated-rays',
+            defaultSigmaCount: 0,
+            defaultSigmaByType: '',
+            stochasticDefaultsSummary: '',
+            rotationAngleRad: 0,
+            currentInstrumentCode: startup?.selectedInstrument,
+            currentInstrumentDesc: startup?.projectInstruments[startup?.selectedInstrument ?? '']?.desc,
+            projectInstrumentLibrary: startup?.projectInstruments,
+          },
+        );
+
+      const inputListing = buildListing('input');
+      const residualListing = buildListing('residual');
+      const stdErrorListing = buildListing('stdError');
+      const stdResidualListing = buildListing('stdResidual');
+
+      const extractAdjustedDistance = (listing: string) =>
+        parseClassicAdjustedDistanceRows(
+          extractSection(
+            listing,
+            'Adjusted Measured Distance Observations (Meters)',
+            'Adjusted Zenith Observations (DMS)',
+          ),
+        );
+
+      const inputRows = extractAdjustedDistance(inputListing);
+      const residualRows = extractAdjustedDistance(residualListing);
+      const stdErrorRows = extractAdjustedDistance(stdErrorListing);
+      const stdResidualRows = extractAdjustedDistance(stdResidualListing);
+
+      expect(inputRows.length).toBeGreaterThan(20);
+      expect(residualRows.length).toBe(inputRows.length);
+      expect(stdErrorRows.length).toBe(inputRows.length);
+      expect(stdResidualRows.length).toBe(inputRows.length);
+
+      const maxResidual = Math.max(...residualRows.map((row) => row.residual));
+      const maxStdErr = Math.max(...stdErrorRows.map((row) => row.stdErr));
+      const maxStdRes = Math.max(...stdResidualRows.map((row) => row.stdRes));
+      expect(residualRows[0].residual).toBeCloseTo(maxResidual, 4);
+      expect(stdErrorRows[0].stdErr).toBeCloseTo(maxStdErr, 4);
+      expect(stdResidualRows[0].stdRes).toBeCloseTo(maxStdRes, 1);
+
+      const inputResidualTop = inputRows.slice(0, 10).map((row) => row.residual.toFixed(4)).join(',');
+      const residualTop = residualRows.slice(0, 10).map((row) => row.residual.toFixed(4)).join(',');
+      expect(residualTop).not.toBe(inputResidualTop);
+    },
+    120000,
+  );
+
+  it(
     'keeps the traverse adjusted geodetic rows within sub-millimeter equivalent of the stored reference',
     () => {
       const startup = INDUSTRY_PARITY_CASES.traverse.startupDefaults;
@@ -1350,7 +1467,7 @@ describe('industry multi-case parity foundation', () => {
           listingShowAzimuthsBearings: true,
           listingShowLostStations: true,
           listingSortCoordinatesBy: 'input',
-          listingSortObservationsBy: 'residual',
+          listingSortObservationsBy: 'stdResidual',
           listingObservationLimit: 9999,
         },
         {
@@ -1439,7 +1556,7 @@ describe('industry multi-case parity foundation', () => {
           listingShowAzimuthsBearings: true,
           listingShowLostStations: true,
           listingSortCoordinatesBy: 'input',
-          listingSortObservationsBy: 'residual',
+          listingSortObservationsBy: 'stdResidual',
           listingObservationLimit: 9999,
         },
         {
@@ -1505,7 +1622,7 @@ describe('industry multi-case parity foundation', () => {
         listingShowAzimuthsBearings: true,
         listingShowLostStations: true,
         listingSortCoordinatesBy: 'input',
-        listingSortObservationsBy: 'residual',
+        listingSortObservationsBy: 'stdResidual',
         listingObservationLimit: 9999,
       },
       {
@@ -1567,7 +1684,7 @@ describe('industry multi-case parity foundation', () => {
           listingShowAzimuthsBearings: true,
           listingShowLostStations: true,
           listingSortCoordinatesBy: 'input',
-          listingSortObservationsBy: 'residual',
+          listingSortObservationsBy: 'stdResidual',
           listingObservationLimit: 9999,
         },
         {
@@ -1765,7 +1882,7 @@ describe('industry multi-case parity foundation', () => {
           listingShowAzimuthsBearings: true,
           listingShowLostStations: true,
           listingSortCoordinatesBy: 'input',
-          listingSortObservationsBy: 'residual',
+          listingSortObservationsBy: 'stdResidual',
           listingObservationLimit: 9999,
         },
         {
@@ -1816,3 +1933,4 @@ describe('industry multi-case parity foundation', () => {
     120000,
   );
 });
+

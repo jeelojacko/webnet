@@ -31,7 +31,7 @@ describe('industry listing preanalysis output', () => {
         listingShowProcessingNotes: false,
         listingShowAzimuthsBearings: true,
         listingSortCoordinatesBy: 'name',
-        listingSortObservationsBy: 'residual',
+        listingSortObservationsBy: 'stdResidual',
         listingObservationLimit: 200,
       },
       {
@@ -61,3 +61,4 @@ describe('industry listing preanalysis output', () => {
     expect(listing).not.toContain('Adjusted Angle Observations');
   });
 });
+

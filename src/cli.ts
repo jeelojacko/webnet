@@ -577,7 +577,7 @@ const run = (): number => {
               listingShowAzimuthsBearings: true,
               listingShowLostStations: true,
               listingSortCoordinatesBy: 'name',
-              listingSortObservationsBy: 'residual',
+              listingSortObservationsBy: 'stdResidual',
               listingObservationLimit: 500,
             },
             {

@@ -203,8 +203,9 @@ const InputPane = React.forwardRef<InputPaneHandle, InputPaneProps>(
     },
     ref,
   ) => {
-  const lineCount = input.split('\n').length;
-  const lines = Array.from({ length: lineCount }, (_, i) => i + 1);
+  const editorLines = React.useMemo(() => input.split('\n'), [input]);
+  const lineCount = editorLines.length;
+  const lines = React.useMemo(() => Array.from({ length: lineCount }, (_, i) => i + 1), [lineCount]);
   const textareaRef = React.useRef<HTMLTextAreaElement>(null);
   const numbersRef = React.useRef<HTMLDivElement>(null);
   const highlightRef = React.useRef<HTMLPreElement>(null);
@@ -264,14 +265,13 @@ const InputPane = React.forwardRef<InputPaneHandle, InputPaneProps>(
     setRenameDraft('');
   }, []);
   const highlightedInput = React.useMemo(() => {
-    const editorLines = input.split('\n');
     return editorLines.map((line, lineIndex) => (
       <React.Fragment key={`input-line-${lineIndex}`}>
         {renderHighlightedLine(line, lineIndex)}
         {lineIndex < editorLines.length - 1 ? '\n' : null}
       </React.Fragment>
     ));
-  }, [input]);
+  }, [editorLines]);
 
   const handleScroll = React.useCallback(() => {
     if (textareaRef.current && numbersRef.current) {
@@ -288,7 +288,7 @@ const InputPane = React.forwardRef<InputPaneHandle, InputPaneProps>(
     (lineNumber: number) => {
       const textarea = textareaRef.current;
       if (!textarea) return;
-      const linesForSelection = input.split('\n');
+      const linesForSelection = editorLines;
       const clampedLine = Math.min(Math.max(Math.trunc(lineNumber), 1), linesForSelection.length);
       let start = 0;
       for (let i = 0; i < clampedLine - 1; i += 1) {
@@ -312,7 +312,7 @@ const InputPane = React.forwardRef<InputPaneHandle, InputPaneProps>(
         jumpHighlightTimeoutRef.current = null;
       }, 1600);
     },
-    [handleScroll, input],
+    [editorLines, handleScroll],
   );
 
   React.useImperativeHandle(

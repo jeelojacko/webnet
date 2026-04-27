@@ -41,8 +41,29 @@ const VIEWPORT_CLIP_MARGIN_PX = 80;
 const DENSE_LABEL_POINT_THRESHOLD = 90;
 const DENSE_LABEL_EDGE_THRESHOLD = 180;
 const LABEL_GRID_PX = 48;
+const INTERACTION_SETTLE_MS = 90;
+const INTERACTION_DENSE_POINT_THRESHOLD = 180;
+const INTERACTION_DENSE_LINE_THRESHOLD = 360;
+const POINT_HIT_RADIUS_PX = 10;
+const LINE_HIT_RADIUS_PX = 8;
 
 type ToolPanel = 'none' | 'points' | 'inverse' | 'angles';
+type MapInteractionPhase = 'idle' | 'interacting' | 'settling';
+
+export interface MapViewSnapshot {
+  view2d: { zoom: number; panX: number; panY: number };
+  camera3d: Map3DCamera | null;
+  activeTool: ToolPanel;
+  inverseFromInput: string;
+  inverseToInput: string;
+  anglePivotInput: string;
+  angleFromInput: string;
+  angleToInput: string;
+  showTransformedCoordinates: boolean;
+  showLabels: boolean;
+  hideMinorGeometry: boolean;
+  focusSelection: boolean;
+}
 
 interface MapViewProps {
   result: AdjustmentResult;
@@ -56,6 +77,8 @@ interface MapViewProps {
   selectedObservationId?: number | null;
   onSelectStation?: (_stationId: string) => void;
   onSelectObservation?: (_observationId: number) => void;
+  snapshot?: MapViewSnapshot | null;
+  onSnapshotChange?: (_snapshot: MapViewSnapshot) => void;
 }
 
 type DragMode = 'none' | 'pan2d' | 'orbit3d' | 'pan3d';
@@ -117,6 +140,29 @@ const intersectsViewportBounds = (
 };
 
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
+const view2dEquals = (
+  left: { zoom: number; panX: number; panY: number },
+  right: { zoom: number; panX: number; panY: number },
+) => left.zoom === right.zoom && left.panX === right.panX && left.panY === right.panY;
+const pointToSegmentDistancePx = (
+  px: number,
+  py: number,
+  x1: number,
+  y1: number,
+  x2: number,
+  y2: number,
+) => {
+  const dx = x2 - x1;
+  const dy = y2 - y1;
+  const lenSq = dx * dx + dy * dy;
+  if (lenSq <= 1e-12) {
+    return Math.hypot(px - x1, py - y1);
+  }
+  const t = clamp(((px - x1) * dx + (py - y1) * dy) / lenSq, 0, 1);
+  const cx = x1 + dx * t;
+  const cy = y1 + dy * t;
+  return Math.hypot(px - cx, py - cy);
+};
 
 const MapView: React.FC<MapViewProps> = ({
   result,
@@ -130,11 +176,14 @@ const MapView: React.FC<MapViewProps> = ({
   selectedObservationId = null,
   onSelectStation,
   onSelectObservation,
+  snapshot = null,
+  onSnapshotChange,
 }) => {
   const unitScale = units === 'ft' ? FT_PER_M : 1;
   const isPreanalysis = result.preanalysisMode === true;
   const { stations, observations } = result;
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const svgRef = useRef<SVGSVGElement | null>(null);
   const contextMenuRef = useRef<HTMLDivElement | null>(null);
   const dragRef = useRef<{ active: boolean; mode: DragMode; lastX: number; lastY: number }>({
@@ -144,24 +193,36 @@ const MapView: React.FC<MapViewProps> = ({
     lastY: 0,
   });
   const middleClickRef = useRef(0);
-  const [view2d, setView2d] = useState({ zoom: 1, panX: 0, panY: 0 });
-  const [camera3d, setCamera3d] = useState<Map3DCamera | null>(null);
+  const [view2d, setView2d] = useState(
+    () => snapshot?.view2d ?? { zoom: 1, panX: 0, panY: 0 },
+  );
+  const pendingView2dRef = useRef(view2d);
+  const view2dFrameRef = useRef<number | null>(null);
+  const settleTimerRef = useRef<ReturnType<typeof globalThis.setTimeout> | null>(null);
+  const settleFrameRef = useRef<number | null>(null);
+  const [interactionPhase, setInteractionPhase] = useState<MapInteractionPhase>('idle');
+  const [camera3d, setCamera3d] = useState<Map3DCamera | null>(() => snapshot?.camera3d ?? null);
   const [isDragging, setIsDragging] = useState(false);
   const [contextMenu, setContextMenu] = useState<{ open: boolean; x: number; y: number }>({
     open: false,
     x: 0,
     y: 0,
   });
-  const [activeTool, setActiveTool] = useState<ToolPanel>('none');
-  const [inverseFromInput, setInverseFromInput] = useState('');
-  const [inverseToInput, setInverseToInput] = useState('');
-  const [anglePivotInput, setAnglePivotInput] = useState('');
-  const [angleFromInput, setAngleFromInput] = useState('');
-  const [angleToInput, setAngleToInput] = useState('');
-  const [showTransformedCoordinates, setShowTransformedCoordinates] = useState(false);
-  const [showLabels, setShowLabels] = useState(true);
-  const [hideMinorGeometry, setHideMinorGeometry] = useState(false);
-  const [focusSelection, setFocusSelection] = useState(false);
+  const [activeTool, setActiveTool] = useState<ToolPanel>(() => snapshot?.activeTool ?? 'none');
+  const [inverseFromInput, setInverseFromInput] = useState(() => snapshot?.inverseFromInput ?? '');
+  const [inverseToInput, setInverseToInput] = useState(() => snapshot?.inverseToInput ?? '');
+  const [anglePivotInput, setAnglePivotInput] = useState(() => snapshot?.anglePivotInput ?? '');
+  const [angleFromInput, setAngleFromInput] = useState(() => snapshot?.angleFromInput ?? '');
+  const [angleToInput, setAngleToInput] = useState(() => snapshot?.angleToInput ?? '');
+  const [showTransformedCoordinates, setShowTransformedCoordinates] = useState(
+    () => snapshot?.showTransformedCoordinates ?? false,
+  );
+  const [showLabels, setShowLabels] = useState(() => snapshot?.showLabels ?? true);
+  const [hideMinorGeometry, setHideMinorGeometry] = useState(
+    () => snapshot?.hideMinorGeometry ?? false,
+  );
+  const [focusSelection, setFocusSelection] = useState(() => snapshot?.focusSelection ?? false);
+  const skipNextAutoResetRef = useRef(snapshot != null);
   const [viewportWidth, setViewportWidth] = useState<number>(
     typeof window !== 'undefined' ? window.innerWidth : 1280,
   );
@@ -363,6 +424,69 @@ const MapView: React.FC<MapViewProps> = ({
   const transformedOverlayActive =
     showTransformedCoordinates && transformedOverlayConfig.available && effectiveMode === '2d';
 
+  const clearInteractionSettle = useCallback(() => {
+    if (settleTimerRef.current != null) {
+      globalThis.clearTimeout(settleTimerRef.current);
+      settleTimerRef.current = null;
+    }
+    if (settleFrameRef.current != null) {
+      cancelAnimationFrame(settleFrameRef.current);
+      settleFrameRef.current = null;
+    }
+  }, []);
+
+  const scheduleView2dCommit = useCallback(() => {
+    if (view2dFrameRef.current != null) return;
+    view2dFrameRef.current = requestAnimationFrame(() => {
+      view2dFrameRef.current = null;
+      const next = pendingView2dRef.current;
+      setView2d((prev) => (view2dEquals(prev, next) ? prev : next));
+    });
+  }, []);
+
+  const queueView2dUpdate = useCallback(
+    (
+      updater: (_current: { zoom: number; panX: number; panY: number }) => {
+        zoom: number;
+        panX: number;
+        panY: number;
+      },
+    ) => {
+      const next = updater(pendingView2dRef.current);
+      pendingView2dRef.current = next;
+      scheduleView2dCommit();
+    },
+    [scheduleView2dCommit],
+  );
+
+  const markInteracting = useCallback(() => {
+    if (effectiveMode !== '2d') return;
+    clearInteractionSettle();
+    setInteractionPhase('interacting');
+    settleTimerRef.current = globalThis.setTimeout(() => {
+      settleTimerRef.current = null;
+      setInteractionPhase('settling');
+      settleFrameRef.current = requestAnimationFrame(() => {
+        settleFrameRef.current = null;
+        setInteractionPhase('idle');
+      });
+    }, INTERACTION_SETTLE_MS);
+  }, [clearInteractionSettle, effectiveMode]);
+
+  useEffect(() => {
+    pendingView2dRef.current = view2d;
+  }, [view2d]);
+
+  useEffect(
+    () => () => {
+      if (view2dFrameRef.current != null) {
+        cancelAnimationFrame(view2dFrameRef.current);
+      }
+      clearInteractionSettle();
+    },
+    [clearInteractionSettle],
+  );
+
   useEffect(() => {
     if (!transformedOverlayConfig.available || effectiveMode !== '2d') {
       setShowTransformedCoordinates(false);
@@ -370,20 +494,75 @@ const MapView: React.FC<MapViewProps> = ({
   }, [effectiveMode, transformedOverlayConfig.available]);
 
   const reset2dView = useCallback(() => {
-    setView2d({ zoom: 1, panX: 0, panY: 0 });
-  }, []);
+    const reset = { zoom: 1, panX: 0, panY: 0 };
+    pendingView2dRef.current = reset;
+    setView2d(reset);
+    clearInteractionSettle();
+    setInteractionPhase('idle');
+  }, [clearInteractionSettle]);
 
   const reset3dView = useCallback(() => {
     setCamera3d(createDefaultMap3DCamera(scene3d));
   }, [scene3d]);
 
   useEffect(() => {
+    if (!onSnapshotChange) return;
+    onSnapshotChange({
+      view2d,
+      camera3d,
+      activeTool,
+      inverseFromInput,
+      inverseToInput,
+      anglePivotInput,
+      angleFromInput,
+      angleToInput,
+      showTransformedCoordinates,
+      showLabels,
+      hideMinorGeometry,
+      focusSelection,
+    });
+  }, [
+    activeTool,
+    angleFromInput,
+    anglePivotInput,
+    angleToInput,
+    camera3d,
+    focusSelection,
+    hideMinorGeometry,
+    inverseFromInput,
+    inverseToInput,
+    onSnapshotChange,
+    showLabels,
+    showTransformedCoordinates,
+    view2d,
+  ]);
+
+  useEffect(() => {
     if (effectiveMode === '3d') {
+      clearInteractionSettle();
+      setInteractionPhase('idle');
+      if (skipNextAutoResetRef.current) {
+        skipNextAutoResetRef.current = false;
+        return;
+      }
       reset3dView();
       return;
     }
+    if (skipNextAutoResetRef.current) {
+      skipNextAutoResetRef.current = false;
+      return;
+    }
     reset2dView();
-  }, [effectiveMode, reset2dView, reset3dView, bbox.minX, bbox.minY, bbox.width, bbox.height]);
+  }, [
+    bbox.height,
+    bbox.minX,
+    bbox.minY,
+    bbox.width,
+    clearInteractionSettle,
+    effectiveMode,
+    reset2dView,
+    reset3dView,
+  ]);
 
   const projection2d = useMemo(() => {
     const safeWidth = Math.max(1e-9, bbox.width);
@@ -432,7 +611,8 @@ const MapView: React.FC<MapViewProps> = ({
       dragRef.current.lastX = next.x;
       dragRef.current.lastY = next.y;
       if (dragRef.current.mode === 'pan2d') {
-        setView2d((prev) => ({ ...prev, panX: prev.panX + dx, panY: prev.panY + dy }));
+        markInteracting();
+        queueView2dUpdate((prev) => ({ ...prev, panX: prev.panX + dx, panY: prev.panY + dy }));
         return;
       }
       if (effectiveMode !== '3d') return;
@@ -459,7 +639,7 @@ const MapView: React.FC<MapViewProps> = ({
         });
       }
     },
-    [toSvgCoords, effectiveMode, camera3d?.distance],
+    [toSvgCoords, effectiveMode, camera3d?.distance, markInteracting, queueView2dUpdate],
   );
 
   useEffect(() => {
@@ -497,7 +677,8 @@ const MapView: React.FC<MapViewProps> = ({
     }
     const anchor = toSvgCoords(event.clientX, event.clientY);
     if (!anchor) return;
-    setView2d((prev) => {
+    markInteracting();
+    queueView2dUpdate((prev) => {
       const factor = Math.exp(-event.deltaY * 0.0015);
       const nextZoom = clamp(prev.zoom * factor, MIN_ZOOM, MAX_ZOOM);
       if (nextZoom === prev.zoom) return prev;
@@ -689,9 +870,20 @@ const MapView: React.FC<MapViewProps> = ({
     });
   }, [projectedPoints2d, selectedStationId, viewportBounds2d]);
 
+  const interactionDenseMode =
+    effectiveMode === '2d' &&
+    interactionPhase === 'interacting' &&
+    (visiblePoints2d.length > INTERACTION_DENSE_POINT_THRESHOLD ||
+      visibleMapLines2d.length > INTERACTION_DENSE_LINE_THRESHOLD);
+
   const visiblePointLabels2d = useMemo(() => {
     if (!showLabels) return new Set<string>();
     if (visiblePoints2d.length === 0) return new Set<string>();
+    if (interactionDenseMode) {
+      const selectedOnly = new Set<string>();
+      if (selectedStationId) selectedOnly.add(selectedStationId);
+      return selectedOnly;
+    }
     const next = new Set<string>();
     const pointThreshold = DENSE_LABEL_POINT_THRESHOLD;
     const edgeThreshold = DENSE_LABEL_EDGE_THRESHOLD;
@@ -732,6 +924,7 @@ const MapView: React.FC<MapViewProps> = ({
     selectedStationId,
     showLabels,
     stationSeverity,
+    interactionDenseMode,
     visibleMapLines2d.length,
     visiblePoints2d,
   ]);
@@ -768,6 +961,121 @@ const MapView: React.FC<MapViewProps> = ({
     });
     return visiblePoints2d.filter((point) => connectedIds.has(point.id));
   }, [filteredVisibleMapLines2d, focusSelection, selectedStationId, visiblePoints2d]);
+
+  const unselectedCanvasLines2d = useMemo(() => {
+    const base = filteredVisibleMapLines2d.filter(
+      (line) =>
+        line.observationId !== selectedObservationId &&
+        (selectedObservationPairKey == null || line.pairKey !== selectedObservationPairKey),
+    );
+    if (!interactionDenseMode) return base;
+    return base.filter((line, index) => {
+      const [fromId, toId] = line.key.split(':');
+      const touchesSelectedStation =
+        selectedStationId != null && (fromId === selectedStationId || toId === selectedStationId);
+      return touchesSelectedStation || index % 2 === 0;
+    });
+  }, [
+    filteredVisibleMapLines2d,
+    interactionDenseMode,
+    selectedObservationId,
+    selectedObservationPairKey,
+    selectedStationId,
+  ]);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas || effectiveMode !== '2d') return;
+    const isJsdom =
+      typeof navigator !== 'undefined' && typeof navigator.userAgent === 'string'
+        ? /jsdom/i.test(navigator.userAgent)
+        : false;
+    const allowJsdomCanvas =
+      typeof globalThis !== 'undefined' &&
+      (globalThis as { __WEBNET_ENABLE_CANVAS_RENDER_TEST__?: boolean })
+        .__WEBNET_ENABLE_CANVAS_RENDER_TEST__ === true;
+    if (isJsdom && !allowJsdomCanvas) return;
+    let context: CanvasRenderingContext2D | null = null;
+    try {
+      context = canvas.getContext('2d');
+    } catch {
+      context = null;
+    }
+    if (!context) return;
+    const fullPixelRatio =
+      typeof window !== 'undefined' && Number.isFinite(window.devicePixelRatio)
+        ? Math.max(1, window.devicePixelRatio)
+        : 1;
+    const pixelRatio = interactionPhase === 'interacting' ? 1 : fullPixelRatio;
+    const targetWidth = Math.max(1, Math.round(VIEW_W * pixelRatio));
+    const targetHeight = Math.max(1, Math.round(VIEW_H * pixelRatio));
+    if (canvas.width !== targetWidth) canvas.width = targetWidth;
+    if (canvas.height !== targetHeight) canvas.height = targetHeight;
+    context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+    context.clearRect(0, 0, VIEW_W, VIEW_H);
+    context.save();
+    context.translate(view2d.panX, view2d.panY);
+    context.scale(view2d.zoom, view2d.zoom);
+    context.globalAlpha = originalGeometryOpacity;
+    context.lineCap = 'round';
+    context.lineJoin = 'round';
+    context.strokeStyle = '#475569';
+    context.lineWidth = lineWidth2d;
+    context.globalAlpha = 0.6 * originalGeometryOpacity;
+    unselectedCanvasLines2d.forEach((line) => {
+      context.beginPath();
+      context.moveTo(line.x1, line.y1);
+      context.lineTo(line.x2, line.y2);
+      context.stroke();
+    });
+    const ellScale = units === 'ft' ? 0.0328084 : 1;
+    filteredVisiblePoints2d.forEach((point) => {
+      const ellipsoid = point.ellipsoid;
+      if (!interactionDenseMode && ellipsoid) {
+        context.save();
+        context.translate(point.x, point.y);
+        context.rotate((ellipsoid.thetaDeg * Math.PI) / 180);
+        context.strokeStyle = ellipseStroke(point.id);
+        context.lineWidth = ellipseStroke2d;
+        context.globalAlpha = 0.6 * originalGeometryOpacity;
+        context.beginPath();
+        context.ellipse(
+          0,
+          0,
+          ellipsoid.semiMajor * 100 * ellScale * projection2d.scale,
+          ellipsoid.semiMinor * 100 * ellScale * projection2d.scale,
+          0,
+          0,
+          Math.PI * 2,
+        );
+        context.stroke();
+        context.restore();
+      }
+      context.beginPath();
+      context.globalAlpha = originalGeometryOpacity;
+      context.fillStyle = stationFill(point.id, point.fixed);
+      context.arc(point.x, point.y, pointRadius2d, 0, Math.PI * 2);
+      context.fill();
+    });
+    context.restore();
+  }, [
+    effectiveMode,
+    ellipseStroke,
+    ellipseStroke2d,
+    filteredVisiblePoints2d,
+    interactionDenseMode,
+    interactionPhase,
+    lineWidth2d,
+    originalGeometryOpacity,
+    pointRadius2d,
+    projection2d.scale,
+    stationFill,
+    units,
+    unselectedCanvasLines2d,
+    view2d.panX,
+    view2d.panY,
+    view2d.zoom,
+  ]);
 
   const mapDensitySummary = useMemo(() => {
     const labelTotal = visiblePointLabels2d.size;
@@ -989,6 +1297,46 @@ const MapView: React.FC<MapViewProps> = ({
 
   const closeTool = () => setActiveTool('none');
 
+  const handleSvgClick = (event: React.MouseEvent<SVGSVGElement>) => {
+    if (effectiveMode !== '2d') return;
+    const target = event.target as HTMLElement | null;
+    if (target?.closest('[data-map-observation],[data-map-station]')) return;
+    const pointer = toSvgCoords(event.clientX, event.clientY);
+    if (!pointer) return;
+    let nearestPointId: string | null = null;
+    let nearestPointDistance = Number.POSITIVE_INFINITY;
+    filteredVisiblePoints2d.forEach((point) => {
+      const distance = Math.hypot(pointer.x - point.screenX, pointer.y - point.screenY);
+      if (distance <= POINT_HIT_RADIUS_PX && distance < nearestPointDistance) {
+        nearestPointDistance = distance;
+        nearestPointId = point.id;
+      }
+    });
+    if (nearestPointId) {
+      onSelectStation?.(nearestPointId);
+      return;
+    }
+    let nearestLineObservationId: number | null = null;
+    let nearestLineDistance = Number.POSITIVE_INFINITY;
+    filteredVisibleMapLines2d.forEach((line) => {
+      const distance = pointToSegmentDistancePx(
+        pointer.x,
+        pointer.y,
+        line.screenX1,
+        line.screenY1,
+        line.screenX2,
+        line.screenY2,
+      );
+      if (distance <= LINE_HIT_RADIUS_PX && distance < nearestLineDistance) {
+        nearestLineDistance = distance;
+        nearestLineObservationId = line.observationId;
+      }
+    });
+    if (nearestLineObservationId != null) {
+      onSelectObservation?.(nearestLineObservationId);
+    }
+  };
+
   return (
     <div className="h-full p-4 flex flex-col min-h-0">
       <div className="flex items-center justify-between mb-3 text-xs text-slate-400 shrink-0">
@@ -1089,8 +1437,16 @@ const MapView: React.FC<MapViewProps> = ({
       )}
       <div
         ref={containerRef}
+        data-map-interaction-phase={interactionPhase}
         className="bg-slate-900 border border-slate-800 rounded overflow-hidden flex-1 min-h-0 relative"
       >
+        {effectiveMode === '2d' && (
+          <canvas
+            ref={canvasRef}
+            data-testid="map-base-canvas"
+            className="absolute inset-0 h-full w-full pointer-events-none"
+          />
+        )}
         {effectiveMode === '3d' && (
           <div className="absolute right-2 top-2 z-10 rounded border border-slate-700/80 bg-slate-900/85 p-1">
             <div className="grid grid-cols-2 gap-1 text-[10px]">
@@ -1427,8 +1783,11 @@ const MapView: React.FC<MapViewProps> = ({
         <svg
           ref={svgRef}
           viewBox={`0 0 ${VIEW_W} ${VIEW_H}`}
+          preserveAspectRatio="none"
+          shapeRendering={interactionPhase === 'interacting' ? 'optimizeSpeed' : 'geometricPrecision'}
           className={`w-full h-full select-none ${isDragging ? 'cursor-grabbing' : effectiveMode === '3d' ? 'cursor-grab' : 'cursor-default'}`}
           onWheel={handleWheel}
+          onClick={handleSvgClick}
           onMouseDown={handleMouseDown}
           onMouseUp={handleMouseUp}
           onMouseLeave={stopDrag}
@@ -1454,74 +1813,23 @@ const MapView: React.FC<MapViewProps> = ({
                 transform={`translate(${view2d.panX} ${view2d.panY}) scale(${view2d.zoom})`}
                 opacity={originalGeometryOpacity}
               >
-                {filteredVisibleMapLines2d
-                  .filter(
-                    (line) =>
-                      line.observationId !== selectedObservationId &&
-                      (selectedObservationPairKey == null || line.pairKey !== selectedObservationPairKey),
-                  )
-                  .map((line) => (
-                    <line
-                      key={line.key}
-                      data-map-observation={line.observationId}
-                      x1={line.x1}
-                      y1={line.y1}
-                      x2={line.x2}
-                      y2={line.y2}
-                      stroke="#475569"
-                      strokeWidth={lineWidth2d}
-                      markerEnd="url(#arrow)"
-                      opacity={0.6}
-                      onClick={() => onSelectObservation?.(line.observationId)}
-                      className={onSelectObservation ? 'cursor-pointer' : undefined}
-                    />
+                {filteredVisiblePoints2d
+                  .filter((point) => visiblePointLabels2d.has(point.id))
+                  .map((point) => (
+                    <text
+                      key={`label-${point.id}`}
+                      data-map-label={point.id}
+                      x={point.x + labelOffset2d}
+                      y={point.y - labelOffset2d}
+                      fontSize={labelFont2d}
+                      fill="#e2e8f0"
+                      stroke="#020617"
+                      strokeWidth={labelStroke2d}
+                      paintOrder="stroke"
+                    >
+                      {point.id}
+                    </text>
                   ))}
-
-                {filteredVisiblePoints2d.map((point) => {
-                  const ellipsoid = point.ellipsoid;
-                  const ellScale = units === 'ft' ? 0.0328084 : 1;
-                  return (
-                    <g key={point.id}>
-                      {ellipsoid && (
-                        <ellipse
-                          cx={point.x}
-                          cy={point.y}
-                          rx={ellipsoid.semiMajor * 100 * ellScale * projection2d.scale}
-                          ry={ellipsoid.semiMinor * 100 * ellScale * projection2d.scale}
-                          transform={`rotate(${ellipsoid.thetaDeg}, ${point.x}, ${point.y})`}
-                          fill="none"
-                          stroke={ellipseStroke(point.id)}
-                          strokeWidth={ellipseStroke2d}
-                          opacity={0.6}
-                        />
-                      )}
-                      <circle
-                        data-map-station={point.id}
-                        cx={point.x}
-                        cy={point.y}
-                        r={pointRadius2d}
-                        fill={stationFill(point.id, point.fixed)}
-                        stroke="none"
-                        onClick={() => onSelectStation?.(point.id)}
-                        className={onSelectStation ? 'cursor-pointer' : undefined}
-                      />
-                      {visiblePointLabels2d.has(point.id) && (
-                        <text
-                          data-map-label={point.id}
-                          x={point.x + labelOffset2d}
-                          y={point.y - labelOffset2d}
-                          fontSize={labelFont2d}
-                          fill="#e2e8f0"
-                          stroke="#020617"
-                          strokeWidth={labelStroke2d}
-                          paintOrder="stroke"
-                        >
-                          {point.id}
-                        </text>
-                      )}
-                    </g>
-                  );
-                })}
               </g>
 
               <g transform={`translate(${view2d.panX} ${view2d.panY}) scale(${view2d.zoom})`}>

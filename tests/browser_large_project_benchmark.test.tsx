@@ -420,9 +420,7 @@ describe('browser large-project benchmark coverage', () => {
 
       expect(container.textContent).toContain('Adjusted Coordinates');
       expect(container.textContent).toContain(firstStationId ?? '');
-      expect(container.querySelectorAll('[data-map-station]').length).toBe(
-        fixture.expectedStationCount,
-      );
+      expect(container.querySelector('[data-testid="map-base-canvas"]')).not.toBeNull();
       expect(container.querySelectorAll('[data-map-label]').length).toBeLessThanOrEqual(
         fixture.expectedStationCount,
       );
@@ -456,7 +454,7 @@ describe('browser large-project benchmark coverage', () => {
       expect(container.querySelector('[data-selection-status]')?.textContent).toContain(
         `obs:${firstObservationId}`,
       );
-      expect(container.querySelector(`[data-map-station="${firstStationId}"]`)).not.toBeNull();
+      expect(container.querySelector(`[data-map-station-selection="${firstStationId}"]`)).not.toBeNull();
 
       await act(async () => {
         root.unmount();

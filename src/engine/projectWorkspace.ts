@@ -59,6 +59,7 @@ export interface ProjectManifestUiPayload {
   migration?: {
     parseModeMigrated: boolean;
     migratedAt?: string;
+    listingSortModeVersion?: number;
   };
 }
 

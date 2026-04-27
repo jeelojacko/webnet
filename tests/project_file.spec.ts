@@ -28,6 +28,7 @@ const defaults = {
     precisionReportingMode: 'industry-standard',
     units: 'm',
     listingShowLostStations: true,
+    listingSortObservationsBy: 'stdResidual',
   },
   parseSettings: {
     solveProfile: 'industry-parity',
@@ -537,5 +538,102 @@ describe('project file serialization/parsing', () => {
     expect(parsed.project.ui.parseSettings.crsTransformEnabled).toBe(false);
     expect(parsed.project.ui.parseSettings.crsProjectionModel).toBe('legacy-equirectangular');
     expect(parsed.project.ui.parseSettings.crsLabel).toBe('');
+  });
+
+  it('maps legacy residual sort mode to stdResidual when migration flag is missing', () => {
+    const parsed = parseProjectFile(
+      JSON.stringify({
+        kind: 'webnet-project',
+        schemaVersion: 5,
+        projectId: 'legacy-sort-1',
+        name: 'Legacy Sort',
+        createdAt: '2026-04-20T10:00:00.000Z',
+        updatedAt: '2026-04-20T10:00:00.000Z',
+        files: [
+          {
+            id: 'file-main',
+            name: 'main.dat',
+            kind: 'dat',
+            path: 'data/file-main-main.dat',
+            enabled: true,
+            order: 0,
+          },
+        ],
+        fileContents: {
+          'file-main': '.2D',
+        },
+        ui: {
+          settings: {
+            ...defaults.settings,
+            listingSortObservationsBy: 'residual',
+          },
+          parseSettings: defaults.parseSettings,
+          exportFormat: 'industry-style',
+          adjustedPointsExport: defaults.adjustedPointsExport,
+          migration: {
+            parseModeMigrated: true,
+          },
+        },
+        project: {
+          projectInstruments: defaults.projectInstruments,
+          selectedInstrument: defaults.selectedInstrument,
+          levelLoopCustomPresets: defaults.levelLoopCustomPresets,
+        },
+      }),
+      defaults,
+    );
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+    expect(parsed.project.ui.settings.listingSortObservationsBy).toBe('stdResidual');
+    expect(parsed.project.ui.migration?.listingSortModeVersion).toBe(1);
+  });
+
+  it('preserves raw residual sort mode when migration flag is v2', () => {
+    const parsed = parseProjectFile(
+      JSON.stringify({
+        kind: 'webnet-project',
+        schemaVersion: 5,
+        projectId: 'new-sort-1',
+        name: 'New Sort',
+        createdAt: '2026-04-20T10:00:00.000Z',
+        updatedAt: '2026-04-20T10:00:00.000Z',
+        files: [
+          {
+            id: 'file-main',
+            name: 'main.dat',
+            kind: 'dat',
+            path: 'data/file-main-main.dat',
+            enabled: true,
+            order: 0,
+          },
+        ],
+        fileContents: {
+          'file-main': '.2D',
+        },
+        ui: {
+          settings: {
+            ...defaults.settings,
+            listingSortObservationsBy: 'residual',
+          },
+          parseSettings: defaults.parseSettings,
+          exportFormat: 'industry-style',
+          adjustedPointsExport: defaults.adjustedPointsExport,
+          migration: {
+            parseModeMigrated: true,
+            listingSortModeVersion: 2,
+          },
+        },
+        project: {
+          projectInstruments: defaults.projectInstruments,
+          selectedInstrument: defaults.selectedInstrument,
+          levelLoopCustomPresets: defaults.levelLoopCustomPresets,
+        },
+      }),
+      defaults,
+    );
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+    expect(parsed.project.ui.settings.listingSortObservationsBy).toBe('residual');
+    expect(parsed.project.ui.migration?.listingSortModeVersion).toBe(2);
   });
 });

@@ -641,6 +641,7 @@ export interface WebNetProjectFileV2 {
     migration?: {
       parseModeMigrated?: boolean;
       migratedAt?: string;
+      listingSortModeVersion?: number;
     };
   };
   project: {
@@ -665,6 +666,7 @@ export interface WebNetProjectFileV3 {
     migration?: {
       parseModeMigrated?: boolean;
       migratedAt?: string;
+      listingSortModeVersion?: number;
     };
   };
   project: {

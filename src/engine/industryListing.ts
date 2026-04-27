@@ -49,7 +49,12 @@ import type {
 const FT_PER_M = 3.280839895;
 
 export type IndustryListingSortCoordinatesBy = 'input' | 'name';
-export type IndustryListingSortObservationsBy = 'input' | 'name' | 'residual';
+export type IndustryListingSortObservationsBy =
+  | 'input'
+  | 'name'
+  | 'residual'
+  | 'stdError'
+  | 'stdResidual';
 
 export interface IndustryListingSettings {
   maxIterations: number;
@@ -161,6 +166,134 @@ export interface IndustryListingRunDiagnostics {
   currentInstrumentLevStdMmPerKm?: number;
   projectInstrumentLibrary?: InstrumentLibrary;
 }
+
+const observationStationSortKey = (obs: Observation): string =>
+  obs.type === 'angle'
+    ? `${obs.at}-${obs.from}-${obs.to}`
+    : obs.type === 'direction'
+      ? `${obs.at}-${obs.to}`
+      : `${obs.from}-${obs.to}`;
+
+export const compareIndustryObservationsByInput = (a: Observation, b: Observation): number => {
+  const aLine = a.sourceLine ?? Number.MAX_SAFE_INTEGER;
+  const bLine = b.sourceLine ?? Number.MAX_SAFE_INTEGER;
+  if (aLine !== bLine) return aLine - bLine;
+  return (a.id ?? 0) - (b.id ?? 0);
+};
+
+export const compareIndustryObservationsByStations = (a: Observation, b: Observation): number => {
+  const cmp = observationStationSortKey(a).localeCompare(observationStationSortKey(b), undefined, {
+    numeric: true,
+  });
+  if (cmp !== 0) return cmp;
+  return compareIndustryObservationsByInput(a, b);
+};
+
+export const getIndustryObservationResidualSortMagnitude = (obs: Observation): number => {
+  if (obs.type === 'gps') {
+    const gpsResidual = obs.residual as { vE?: number; vN?: number; vU?: number } | undefined;
+    if (!gpsResidual || !Number.isFinite(gpsResidual.vE) || !Number.isFinite(gpsResidual.vN)) {
+      return Number.NEGATIVE_INFINITY;
+    }
+    const vU = Number.isFinite(gpsResidual.vU) ? (gpsResidual.vU as number) : 0;
+    return Math.hypot(gpsResidual.vE as number, gpsResidual.vN as number, vU);
+  }
+  if (typeof obs.residual !== 'number' || !Number.isFinite(obs.residual)) {
+    return Number.NEGATIVE_INFINITY;
+  }
+  if (
+    obs.type === 'angle' ||
+    obs.type === 'direction' ||
+    obs.type === 'bearing' ||
+    obs.type === 'dir' ||
+    obs.type === 'zenith'
+  ) {
+    return -obs.residual * RAD_TO_DEG * 3600;
+  }
+  return -obs.residual;
+};
+
+export const getIndustryObservationStdErrorSortMagnitude = (obs: Observation): number => {
+  if (obs.type === 'gps') {
+    const stdDevU = Number.isFinite(obs.stdDevU) ? (obs.stdDevU as number) : 0;
+    const sigmaE = Number.isFinite(obs.weightingStdDevE)
+      ? (obs.weightingStdDevE as number)
+      : Number.isFinite(obs.stdDevE)
+        ? (obs.stdDevE as number)
+        : Number.isFinite(obs.weightingStdDev)
+          ? (obs.weightingStdDev as number)
+          : Number.isFinite(obs.stdDev)
+            ? (obs.stdDev as number)
+            : Number.NaN;
+    const sigmaN = Number.isFinite(obs.weightingStdDevN)
+      ? (obs.weightingStdDevN as number)
+      : Number.isFinite(obs.stdDevN)
+        ? (obs.stdDevN as number)
+        : Number.isFinite(obs.weightingStdDev)
+          ? (obs.weightingStdDev as number)
+          : Number.isFinite(obs.stdDev)
+            ? (obs.stdDev as number)
+            : Number.NaN;
+    if (!Number.isFinite(sigmaE) || !Number.isFinite(sigmaN)) return Number.NEGATIVE_INFINITY;
+    return Math.hypot(sigmaE, sigmaN, stdDevU);
+  }
+  const sigma = Number.isFinite(obs.weightingStdDev)
+    ? (obs.weightingStdDev as number)
+    : Number.isFinite(obs.stdDev)
+      ? (obs.stdDev as number)
+      : Number.NaN;
+  if (!Number.isFinite(sigma)) return Number.NEGATIVE_INFINITY;
+  if (
+    obs.type === 'angle' ||
+    obs.type === 'direction' ||
+    obs.type === 'bearing' ||
+    obs.type === 'dir' ||
+    obs.type === 'zenith'
+  ) {
+    return sigma * RAD_TO_DEG * 3600;
+  }
+  return sigma;
+};
+
+export const sortIndustryListingObservations = (
+  observations: Observation[],
+  mode: IndustryListingSortObservationsBy,
+): Observation[] => {
+  const compareByStdRes = (a: Observation, b: Observation) => {
+    const aStdRes = Number.isFinite(a.stdRes) ? Math.abs(a.stdRes as number) : Number.NEGATIVE_INFINITY;
+    const bStdRes = Number.isFinite(b.stdRes) ? Math.abs(b.stdRes as number) : Number.NEGATIVE_INFINITY;
+    const stdResDelta = bStdRes - aStdRes;
+    if (Math.abs(stdResDelta) > 1e-12) return stdResDelta;
+    const stationDelta = compareIndustryObservationsByStations(a, b);
+    if (stationDelta !== 0) return stationDelta;
+    return compareIndustryObservationsByInput(a, b);
+  };
+  const compareByResidualMagnitude = (a: Observation, b: Observation) => {
+    const delta =
+      getIndustryObservationResidualSortMagnitude(b) -
+      getIndustryObservationResidualSortMagnitude(a);
+    if (Math.abs(delta) > 1e-12) return delta;
+    const stationDelta = compareIndustryObservationsByStations(a, b);
+    if (stationDelta !== 0) return stationDelta;
+    return compareIndustryObservationsByInput(a, b);
+  };
+  const compareByStdErrorMagnitude = (a: Observation, b: Observation) => {
+    const delta =
+      getIndustryObservationStdErrorSortMagnitude(b) -
+      getIndustryObservationStdErrorSortMagnitude(a);
+    if (Math.abs(delta) > 1e-12) return delta;
+    const stationDelta = compareIndustryObservationsByStations(a, b);
+    if (stationDelta !== 0) return stationDelta;
+    return compareIndustryObservationsByInput(a, b);
+  };
+  return [...observations].sort((a, b) => {
+    if (mode === 'input') return compareIndustryObservationsByInput(a, b);
+    if (mode === 'name') return compareIndustryObservationsByStations(a, b);
+    if (mode === 'residual') return compareByResidualMagnitude(a, b);
+    if (mode === 'stdError') return compareByStdErrorMagnitude(a, b);
+    return compareByStdRes(a, b);
+  });
+};
 
 const ONE_DIMENSIONAL_CONFIDENCE_95_SCALE = 1.959963984540054;
 
@@ -2565,36 +2698,17 @@ export const buildIndustryStyleListingText = (
 
   const compareStationIds = (a: string, b: string) =>
     a.localeCompare(b, undefined, { numeric: true });
-  const compareObsByStations = (a: Observation, b: Observation) => {
-    const stationKey = (obs: Observation) =>
-      obs.type === 'angle'
-        ? `${obs.at}-${obs.from}-${obs.to}`
-        : obs.type === 'direction'
-          ? `${obs.at}-${obs.to}`
-          : `${obs.from}-${obs.to}`;
-    const cmp = stationKey(a).localeCompare(stationKey(b), undefined, { numeric: true });
-    if (cmp !== 0) return cmp;
-    return compareObsByInput(a, b);
-  };
-  const compareObsByStdRes = (a: Observation, b: Observation) => {
-    const stdResDelta = Math.abs(b.stdRes ?? 0) - Math.abs(a.stdRes ?? 0);
-    if (Math.abs(stdResDelta) > 1e-12) return stdResDelta;
-    const stationDelta = compareObsByStations(a, b);
-    if (stationDelta !== 0) return stationDelta;
-    return compareObsByInput(a, b);
-  };
   const listingObservations = [...observationsForListing]
     .filter((o) => Number.isFinite(o.stdRes))
     .filter((o) =>
       settings.listingShowAzimuthsBearings
         ? true
         : !(o.type === 'direction' || o.type === 'dir' || o.type === 'bearing'),
-    )
-    .sort((a, b) => {
-      if (settings.listingSortObservationsBy === 'input') return compareObsByInput(a, b);
-      if (settings.listingSortObservationsBy === 'name') return compareObsByStations(a, b);
-      return compareObsByStdRes(a, b);
-    });
+    );
+  const sortedListingObservations = sortIndustryListingObservations(
+    listingObservations,
+    settings.listingSortObservationsBy,
+  );
   const precisionReportingMode = settings.precisionReportingMode ?? 'industry-standard';
   const relativePrecisionRows = getRelativePrecisionRows(res, precisionReportingMode);
   const relativeCovarianceRows = getRelativeCovarianceRows(res, precisionReportingMode);
@@ -3249,7 +3363,9 @@ export const buildIndustryStyleListingText = (
   }
 
   const shouldRenderAdjustedObservationSections =
-    !isPreanalysis && settings.listingShowObservationsResiduals && listingObservations.length > 0;
+    !isPreanalysis &&
+    settings.listingShowObservationsResiduals &&
+    sortedListingObservations.length > 0;
   const shouldRenderAdjustedGnssVectorSection =
     !isPreanalysis &&
     gpsObservationRows.length > 0 &&
@@ -3262,26 +3378,17 @@ export const buildIndustryStyleListingText = (
     }
     if (usesClassicParityLayout && shouldRenderAdjustedObservationSections) {
       const angleUnitLabel = (parseState?.angleUnits ?? parseSettings.angleUnits).toUpperCase();
-      const classicSortByStdRes = (a: Observation, b: Observation) => {
-        const roundedStdRes = (obs: Observation) =>
-          Number((Math.abs(obs.stdRes ?? 0) + 1e-12).toFixed(1));
-        const roundedDelta = roundedStdRes(b) - roundedStdRes(a);
-        if (Math.abs(roundedDelta) > 1e-12) return roundedDelta;
-        const sourceDelta =
-          (a.sourceLine ?? Number.MAX_SAFE_INTEGER) - (b.sourceLine ?? Number.MAX_SAFE_INTEGER);
-        if (sourceDelta !== 0) return sourceDelta;
-        return compareObsByInput(a, b);
-      };
-      const classicSortByInputOrder = (a: Observation, b: Observation) => {
-        const sourceDelta =
-          (a.sourceLine ?? Number.MAX_SAFE_INTEGER) - (b.sourceLine ?? Number.MAX_SAFE_INTEGER);
-        if (sourceDelta !== 0) return sourceDelta;
-        return compareObsByInput(a, b);
-      };
+      const classicSortBySelectedMode = <T extends Observation>(rows: T[]): T[] =>
+        sortIndustryListingObservations(
+          rows as Observation[],
+          settings.listingSortObservationsBy,
+        ) as T[];
       const renderClassicAdjustedDistanceSection = () => {
-        const rows = listingObservations
-          .filter((obs): obs is Observation & { type: 'dist' } => obs.type === 'dist')
-          .sort(classicSortByStdRes);
+        const rows = classicSortBySelectedMode(
+          sortedListingObservations.filter(
+            (obs): obs is Observation & { type: 'dist' } => obs.type === 'dist',
+          ),
+        );
         if (rows.length === 0) return;
         lines.push('');
         lines.push(centerIndustryLine(`Adjusted Measured Distance Observations (${linearUnit})`));
@@ -3301,9 +3408,11 @@ export const buildIndustryStyleListingText = (
         });
       };
       const renderClassicAdjustedZenithSection = () => {
-        const rows = listingObservations
-          .filter((obs): obs is Observation & { type: 'zenith' } => obs.type === 'zenith')
-          .sort(classicSortByStdRes);
+        const rows = classicSortBySelectedMode(
+          sortedListingObservations.filter(
+            (obs): obs is Observation & { type: 'zenith' } => obs.type === 'zenith',
+          ),
+        );
         if (rows.length === 0) return;
         lines.push('');
         lines.push(centerIndustryLine(`Adjusted Zenith Observations (${angleUnitLabel})`));
@@ -3331,9 +3440,11 @@ export const buildIndustryStyleListingText = (
         });
       };
       const renderClassicAdjustedDirectionSection = () => {
-        const directionRows = listingObservations
-          .filter((obs): obs is Observation & { type: 'direction' } => obs.type === 'direction')
-          .sort(classicSortByInputOrder);
+        const directionRows = classicSortBySelectedMode(
+          sortedListingObservations.filter(
+            (obs): obs is Observation & { type: 'direction' } => obs.type === 'direction',
+          ),
+        );
         if (directionRows.length === 0) return;
         const groupedDirections = new Map<string, Array<Observation & { type: 'direction' }>>();
         directionRows.forEach((obs) => {
@@ -3342,17 +3453,10 @@ export const buildIndustryStyleListingText = (
           group.push(obs);
           groupedDirections.set(key, group);
         });
-        const sortedGroups = [...groupedDirections.entries()].sort((a, b) => {
-          const aSource = Math.min(...a[1].map((obs) => obs.sourceLine ?? Number.MAX_SAFE_INTEGER));
-          const bSource = Math.min(...b[1].map((obs) => obs.sourceLine ?? Number.MAX_SAFE_INTEGER));
-          if (aSource !== bSource) return aSource - bSource;
-          const aLabel = Number(formatClassicTraverseSetLabel(a[0], 0));
-          const bLabel = Number(formatClassicTraverseSetLabel(b[0], 0));
-          if (Number.isFinite(aLabel) && Number.isFinite(bLabel) && aLabel !== bLabel) {
-            return aLabel - bLabel;
-          }
-          return a[0].localeCompare(b[0], undefined, { numeric: true });
-        });
+        const groupedRows = [...groupedDirections.entries()].map(
+          ([setId, group]) =>
+            [setId, classicSortBySelectedMode(group) as Array<Observation & { type: 'direction' }>] as const,
+        );
         lines.push('');
         lines.push(
           centerIndustryLine(`Adjusted Measured Direction Observations (${angleUnitLabel})`),
@@ -3361,10 +3465,10 @@ export const buildIndustryStyleListingText = (
         lines.push(
           '           From       To            Direction        Residual     Distance   StdErr StdRes File:Line',
         );
-        sortedGroups.forEach(([setId, group], groupIndex) => {
+        groupedRows.forEach(([setId, group], groupIndex) => {
           lines.push('');
           lines.push(`           Set ${formatClassicTraverseSetLabel(setId, groupIndex + 1)}`);
-          group.sort(classicSortByInputOrder).forEach((obs) => {
+          group.forEach((obs) => {
             const adjustedDirection = formatDmsHundredths(
               (obs.calc as number | undefined) ?? obs.obs,
             );
@@ -3387,9 +3491,11 @@ export const buildIndustryStyleListingText = (
         });
       };
       const renderClassicAdjustedBearingSection = () => {
-        const bearingRows = listingObservations
-          .filter((obs): obs is Observation & { type: 'bearing' } => obs.type === 'bearing')
-          .sort(classicSortByStdRes);
+        const bearingRows = classicSortBySelectedMode(
+          sortedListingObservations.filter(
+            (obs): obs is Observation & { type: 'bearing' } => obs.type === 'bearing',
+          ),
+        );
         if (bearingRows.length > 0) {
           lines.push('');
           lines.push(
@@ -3490,7 +3596,7 @@ export const buildIndustryStyleListingText = (
       renderClassicAdjustedBearingSection();
     } else if (!usesClassicParityLayout) {
       if (shouldRenderAdjustedObservationSections) {
-        const angleRows = listingObservations
+        const angleRows = sortedListingObservations
           .filter((obs) => obs.type === 'angle')
           .map((obs) => [
             `${obs.at}-${obs.from}-${obs.to}${aliasRefsForLine(obs.sourceLine)}${autoSideshotSuffix(obs)}`,
@@ -3516,7 +3622,7 @@ export const buildIndustryStyleListingText = (
           [5],
         );
 
-        const distanceRows = listingObservations
+        const distanceRows = sortedListingObservations
           .filter((obs) => obs.type === 'dist')
           .map((obs) => [
             `${obs.from}-${obs.to}${aliasRefsForLine(obs.sourceLine)}${autoSideshotSuffix(obs)}${prismSuffix(obs)}`,
@@ -3533,7 +3639,7 @@ export const buildIndustryStyleListingText = (
           [1, 2, 3, 4],
         );
 
-        const directionRows = listingObservations
+        const directionRows = sortedListingObservations
           .filter((obs) => obs.type === 'direction')
           .map((obs) => [
             `${obs.at}-${obs.to}${aliasRefsForLine(obs.sourceLine)}${autoSideshotSuffix(obs)}`,
@@ -3639,7 +3745,7 @@ export const buildIndustryStyleListingText = (
     }
 
     if (coordSystemMode === 'grid' && !usesClassicParityLayout) {
-      const gridDistanceRows = listingObservations
+      const gridDistanceRows = sortedListingObservations
         .filter((obs): obs is Observation & { type: 'dist' } => obs.type === 'dist')
         .map((obs) => {
           const from = res.stations[obs.from];

@@ -1,5 +1,9 @@
 # TODO - WebNet
 
+- [x] Industry output pane navigation/sort batch (April 2026): add right-click `Go to section` and `Sort by` submenus in Industry Standard Output, support auto-detected section jump targets, add new observation sort modes (`Residual`, `Std Error`, `Std Residual`) with legacy `residual` migration mapping, and lock UI/listing-sort coverage.
+
+- [x] UI navigation smoothness batch (April 2026): gate/cached industry listing generation to industry tab, transition tab switches, one-time lazy-tab prewarm after first solve, persist map navigation state across tab remounts, and add focused UI perf/regression coverage.
+
 - [x] Project Options UI refresh (April 2026): make `Project Files` the first tab, keep `Other Files` export-focused, move Coordinate System controls into `Adjustment`, move Leveling/Weighting into `General`, merge stochastic modeling controls into `Special`, remove legacy-removal copy, and tighten modal density/layout spacing.
 
 - [ ] add planned improvements to todo list in phased implementations before starting on imlementation

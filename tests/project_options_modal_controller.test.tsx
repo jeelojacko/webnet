@@ -36,7 +36,7 @@ const baseSettings: SettingsState = {
   listingShowProcessingNotes: true,
   listingShowAzimuthsBearings: true,
   listingSortCoordinatesBy: 'name',
-  listingSortObservationsBy: 'residual',
+  listingSortObservationsBy: 'stdResidual',
   listingObservationLimit: 60,
 };
 
@@ -661,3 +661,4 @@ describe('useProjectOptionsModalController', () => {
     container.remove();
   });
 });
+

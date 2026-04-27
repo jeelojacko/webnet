@@ -37,6 +37,8 @@ import type {
   CustomLevelLoopTolerancePreset,
   Observation,
 } from './types';
+import type { ListingSortObservationsBy } from './listingSortObservations';
+export type { ListingSortObservationsBy } from './listingSortObservations';
 import type { CollapsibleDetailSectionId } from './components/report/reportSectionRegistry';
 import type {
   ExternalImportAngleMode,
@@ -65,7 +67,6 @@ export type UiTheme =
   | 'catppuccin-mocha'
   | 'catppuccin-latte';
 export type ListingSortCoordinatesBy = 'input' | 'name';
-export type ListingSortObservationsBy = 'input' | 'name' | 'residual';
 export type SolveProfile =
   | 'webnet'
   | 'industry-parity-current'
@@ -174,6 +175,7 @@ export type ImportReviewDraftSnapshot = {
   conflictRenameValues: Record<string, string>;
 };
 export type WorkspaceDraftSnapshot = {
+  listingSortModeVersion?: number;
   input: string;
   projectIncludeFiles: Record<string, string>;
   settings: SettingsState;

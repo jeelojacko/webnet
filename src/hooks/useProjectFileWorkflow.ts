@@ -19,6 +19,7 @@ import {
   cloneAdjustedPointsExportSettings,
   sanitizeAdjustedPointsExportSettings,
 } from '../engine/adjustedPointsExport';
+import { normalizeListingSortObservationsBy } from '../listingSortObservations';
 import {
   buildProjectBundleBytes,
   parseProjectBundleBytes,
@@ -679,10 +680,18 @@ export const useProjectFileWorkflow = ({
   const normalizeImportedProjectPayload = useCallback(
     (parsed: ParsedProjectPayload) => {
       const loadedSettings = parsed.ui.settings as unknown as SettingsState;
+      const listingSortModeVersion =
+        typeof parsed.ui.migration?.listingSortModeVersion === 'number'
+          ? parsed.ui.migration.listingSortModeVersion
+          : 1;
       const normalizedLoadedSettings: SettingsState = {
         ...loadedSettings,
         precisionReportingMode: 'industry-standard',
         uiTheme: normalizeUiTheme(loadedSettings?.uiTheme),
+        listingSortObservationsBy: normalizeListingSortObservationsBy(
+          loadedSettings?.listingSortObservationsBy,
+          { legacyResidualMeansStdResidual: listingSortModeVersion < 2 },
+        ),
       };
       const loadedParseSettings = parsed.ui.parseSettings as unknown as ParseSettings;
       const profileForMode = normalizeSolveProfile(
@@ -1121,6 +1130,7 @@ export const useProjectFileWorkflow = ({
           migration: {
             parseModeMigrated: true,
             migratedAt: nowIso,
+            listingSortModeVersion: 2,
           },
         };
         current.manifest.project = {
@@ -1216,6 +1226,7 @@ export const useProjectFileWorkflow = ({
         migration: {
           parseModeMigrated: true,
           migratedAt: createdAt,
+          listingSortModeVersion: 2,
         },
       },
       project: {
@@ -1394,6 +1405,7 @@ export const useProjectFileWorkflow = ({
               migration: {
                 parseModeMigrated: true,
                 migratedAt: new Date().toISOString(),
+                listingSortModeVersion: 2,
               },
             },
             project: {

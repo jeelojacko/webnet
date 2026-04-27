@@ -26,7 +26,7 @@ export const undergroundSettings: SettingsState = {
   listingShowProcessingNotes: true,
   listingShowAzimuthsBearings: true,
   listingSortCoordinatesBy: 'input',
-  listingSortObservationsBy: 'residual',
+  listingSortObservationsBy: 'stdResidual',
   listingObservationLimit: 9999,
 };
 
@@ -264,3 +264,4 @@ export const buildUndergroundCase = (): {
   );
   return { result, listing };
 };
+

@@ -17,6 +17,7 @@ import WorkspaceReviewActions from './components/WorkspaceReviewActions';
 import WorkspaceRecoveryBanner from './components/WorkspaceRecoveryBanner';
 import WorkspaceChrome from './components/WorkspaceChrome';
 import ReviewQueuePanel from './components/ReviewQueuePanel';
+import type { MapViewSnapshot } from './components/MapView';
 
 import { DEFAULT_INPUT } from './defaultInput';
 import { ACTIVE_INDUSTRY_PARITY_CASE } from './industryParityCases';
@@ -75,6 +76,10 @@ import {
   useWorkspaceReviewState,
 } from './hooks/useWorkspaceReviewState';
 import {
+  DEFAULT_LISTING_SORT_OBSERVATIONS_BY,
+  normalizeListingSortObservationsBy,
+} from './listingSortObservations';
+import {
   decodeBase64ToUint8Array,
   encodeUint8ArrayToBase64,
   useWorkspaceRecovery,
@@ -129,12 +134,19 @@ import type {
   RunMode,
 } from './types';
 
-const ImportReviewModal = React.lazy(() => import('./components/ImportReviewModal'));
-const ReportView = React.lazy(() => import('./components/ReportView'));
-const MapView = React.lazy(() => import('./components/MapView'));
-const ProcessingSummaryView = React.lazy(() => import('./components/ProcessingSummaryView'));
-const IndustryOutputView = React.lazy(() => import('./components/IndustryOutputView'));
-const ProjectOptionsModal = React.lazy(() => import('./components/ProjectOptionsModal'));
+const loadImportReviewModal = () => import('./components/ImportReviewModal');
+const loadReportView = () => import('./components/ReportView');
+const loadMapView = () => import('./components/MapView');
+const loadProcessingSummaryView = () => import('./components/ProcessingSummaryView');
+const loadIndustryOutputView = () => import('./components/IndustryOutputView');
+const loadProjectOptionsModal = () => import('./components/ProjectOptionsModal');
+
+const ImportReviewModal = React.lazy(loadImportReviewModal);
+const ReportView = React.lazy(loadReportView);
+const MapView = React.lazy(loadMapView);
+const ProcessingSummaryView = React.lazy(loadProcessingSummaryView);
+const IndustryOutputView = React.lazy(loadIndustryOutputView);
+const ProjectOptionsModal = React.lazy(loadProjectOptionsModal);
 
 const FT_PER_M = 3.280839895;
 const M_PER_FT = 1 / FT_PER_M;
@@ -408,6 +420,51 @@ const IMPORT_FILE_ACCEPT = '.dat,.txt,.sum,.rpt,.xml,.jxl,.jobxml,.htm,.html,.rw
 const PROJECT_FILE_ACCEPT = '.wnproj,.wnproj.json,.json';
 const ACTIVE_PARITY_STARTUP_DEFAULTS = ACTIVE_INDUSTRY_PARITY_CASE.startupDefaults;
 
+interface IndustryListingCacheEntry {
+  result: object | null;
+  key: string;
+  text: string;
+}
+
+const buildIndustryListingCacheKey = (params: {
+  settings: Pick<
+    SettingsState,
+    | 'maxIterations'
+    | 'convergenceLimit'
+    | 'units'
+    | 'listingShowLostStations'
+    | 'listingShowCoordinates'
+    | 'listingShowObservationsResiduals'
+    | 'listingShowErrorPropagation'
+    | 'listingShowProcessingNotes'
+    | 'listingShowAzimuthsBearings'
+    | 'listingSortCoordinatesBy'
+    | 'listingSortObservationsBy'
+    | 'listingObservationLimit'
+  >;
+  parseSettings: Pick<
+    ParseSettings,
+    | 'coordMode'
+    | 'order'
+    | 'angleUnits'
+    | 'angleStationOrder'
+    | 'deltaMode'
+    | 'refractionCoefficient'
+    | 'descriptionReconcileMode'
+    | 'descriptionAppendDelimiter'
+    | 'positionalToleranceEnabled'
+    | 'positionalToleranceConstantMm'
+    | 'positionalTolerancePpm'
+    | 'positionalToleranceConfidencePercent'
+  >;
+  runDiagnostics: RunDiagnostics | null;
+}): string =>
+  buildValueFingerprint({
+    settings: params.settings,
+    parseSettings: params.parseSettings,
+    runDiagnosticsKey: params.runDiagnostics ? buildValueFingerprint(params.runDiagnostics) : 'auto',
+  });
+
 const SETTINGS_TOOLTIPS = {
   solveProfile:
     'The live workflow runs in industry parity mode with strict parsing and face normalization enabled.',
@@ -607,7 +664,7 @@ const SETTINGS_TOOLTIPS = {
   listingSortCoordinatesBy:
     'Sort coordinate/error-propagation station tables by original input station order or by station name.',
   listingSortObservationsBy:
-    'Sort adjusted-observation listing rows by input line order, station name, or residual size.',
+    'Sort adjusted-observation listing rows by input order, station name, residual magnitude, effective standard error, or standardized residual magnitude.',
   listingObservationLimit:
     'Maximum number of adjusted-observation rows written in industry-style output (1-500).',
   exportFormat:
@@ -943,25 +1000,33 @@ const App: React.FC<AppProps> = ({
     initialExportFormat: 'points',
     initialActiveTab: 'report',
   });
-  const [settings, setSettings] = useState<SettingsState>(() => ({
-    maxIterations: 10,
-    convergenceLimit: 0.001,
-    precisionReportingMode: 'industry-standard',
-    units: 'm',
-    uiTheme: DEFAULT_UI_THEME,
-    mapShowLostStations: true,
-    map3dEnabled: false,
-    listingShowLostStations: true,
-    listingShowCoordinates: true,
-    listingShowObservationsResiduals: true,
-    listingShowErrorPropagation: true,
-    listingShowProcessingNotes: true,
-    listingShowAzimuthsBearings: true,
-    listingSortCoordinatesBy: 'name',
-    listingSortObservationsBy: 'residual',
-    listingObservationLimit: 60,
-    ...ACTIVE_PARITY_STARTUP_DEFAULTS?.settingsPatch,
-  }));
+  const [settings, setSettings] = useState<SettingsState>(() => {
+    const seed: SettingsState = {
+      maxIterations: 10,
+      convergenceLimit: 0.001,
+      precisionReportingMode: 'industry-standard',
+      units: 'm',
+      uiTheme: DEFAULT_UI_THEME,
+      mapShowLostStations: true,
+      map3dEnabled: false,
+      listingShowLostStations: true,
+      listingShowCoordinates: true,
+      listingShowObservationsResiduals: true,
+      listingShowErrorPropagation: true,
+      listingShowProcessingNotes: true,
+      listingShowAzimuthsBearings: true,
+      listingSortCoordinatesBy: 'name',
+      listingSortObservationsBy: DEFAULT_LISTING_SORT_OBSERVATIONS_BY,
+      listingObservationLimit: 60,
+      ...ACTIVE_PARITY_STARTUP_DEFAULTS?.settingsPatch,
+    };
+    return {
+      ...seed,
+      listingSortObservationsBy: normalizeListingSortObservationsBy(seed.listingSortObservationsBy, {
+        legacyResidualMeansStdResidual: true,
+      }),
+    };
+  });
   const [parseSettings, setParseSettings] = useState<ParseSettings>(() => ({
     solveProfile: 'industry-parity',
     coordMode: '3D',
@@ -1073,6 +1138,7 @@ const App: React.FC<AppProps> = ({
   const [mapDeclutterPreset, setMapDeclutterPreset] = useState<'standard' | 'dense-review'>(
     'standard',
   );
+  const [mapViewSnapshot, setMapViewSnapshot] = useState<MapViewSnapshot | null>(null);
   const [reviewQueueSeverityFilter, setReviewQueueSeverityFilter] = useState<
     'all' | ReviewQueueSeverity
   >('all');
@@ -1082,6 +1148,10 @@ const App: React.FC<AppProps> = ({
   const [reviewQueueUnresolvedOnly, setReviewQueueUnresolvedOnly] = useState(false);
   const [reviewQueueImportedGroupFilter, setReviewQueueImportedGroupFilter] = useState('all');
   const [selectedReviewQueueItemId, setSelectedReviewQueueItemId] = useState<string | null>(null);
+  useEffect(() => {
+    setMapViewSnapshot(null);
+  }, [result]);
+
   const projectOptionsState = useProjectOptionsState({
     initialSettingsModalOpen,
     initialOptionsTab,
@@ -1563,18 +1633,153 @@ const App: React.FC<AppProps> = ({
     normalizeSolveProfile,
   });
 
-  const { buildIndustryListingText } = createRunOutputBuilders({
-    settings,
-    parseSettings,
-    runDiagnostics,
-    buildRunDiagnostics,
+  const { buildIndustryListingText } = useMemo(
+    () =>
+      createRunOutputBuilders({
+        settings,
+        parseSettings,
+        runDiagnostics,
+        buildRunDiagnostics,
+      }),
+    [buildRunDiagnostics, parseSettings, runDiagnostics, settings],
+  );
+  const [industryListingCache, setIndustryListingCache] = useState<IndustryListingCacheEntry>({
+    result: null,
+    key: '',
+    text: '',
   });
+  const [tabsPrewarmed, setTabsPrewarmed] = useState(false);
   const [reportFilterFocusRequestKey, setReportFilterFocusRequestKey] = useState(0);
+
+  const industryListingKey = useMemo(
+    () =>
+      result
+        ? buildIndustryListingCacheKey({
+            settings: {
+              maxIterations: settings.maxIterations,
+              convergenceLimit: settings.convergenceLimit,
+              units: settings.units,
+              listingShowLostStations: settings.listingShowLostStations,
+              listingShowCoordinates: settings.listingShowCoordinates,
+              listingShowObservationsResiduals: settings.listingShowObservationsResiduals,
+              listingShowErrorPropagation: settings.listingShowErrorPropagation,
+              listingShowProcessingNotes: settings.listingShowProcessingNotes,
+              listingShowAzimuthsBearings: settings.listingShowAzimuthsBearings,
+              listingSortCoordinatesBy: settings.listingSortCoordinatesBy,
+              listingSortObservationsBy: settings.listingSortObservationsBy,
+              listingObservationLimit: settings.listingObservationLimit,
+            },
+            parseSettings: {
+              coordMode: parseSettings.coordMode,
+              order: parseSettings.order,
+              angleUnits: parseSettings.angleUnits,
+              angleStationOrder: parseSettings.angleStationOrder,
+              deltaMode: parseSettings.deltaMode,
+              refractionCoefficient: parseSettings.refractionCoefficient,
+              descriptionReconcileMode: parseSettings.descriptionReconcileMode,
+              descriptionAppendDelimiter: parseSettings.descriptionAppendDelimiter,
+              positionalToleranceEnabled: parseSettings.positionalToleranceEnabled,
+              positionalToleranceConstantMm: parseSettings.positionalToleranceConstantMm,
+              positionalTolerancePpm: parseSettings.positionalTolerancePpm,
+              positionalToleranceConfidencePercent: parseSettings.positionalToleranceConfidencePercent,
+            },
+            runDiagnostics,
+          })
+        : '',
+    [
+      parseSettings.angleStationOrder,
+      parseSettings.angleUnits,
+      parseSettings.coordMode,
+      parseSettings.deltaMode,
+      parseSettings.descriptionAppendDelimiter,
+      parseSettings.descriptionReconcileMode,
+      parseSettings.order,
+      parseSettings.positionalToleranceConfidencePercent,
+      parseSettings.positionalToleranceConstantMm,
+      parseSettings.positionalToleranceEnabled,
+      parseSettings.positionalTolerancePpm,
+      parseSettings.refractionCoefficient,
+      result,
+      runDiagnostics,
+      settings.convergenceLimit,
+      settings.listingObservationLimit,
+      settings.listingShowAzimuthsBearings,
+      settings.listingShowCoordinates,
+      settings.listingShowErrorPropagation,
+      settings.listingShowLostStations,
+      settings.listingShowObservationsResiduals,
+      settings.listingShowProcessingNotes,
+      settings.listingSortCoordinatesBy,
+      settings.listingSortObservationsBy,
+      settings.maxIterations,
+      settings.units,
+    ],
+  );
+
+  const industryOutputText =
+    activeTab === 'industry-output' &&
+    result &&
+    industryListingCache.result === result &&
+    industryListingCache.key === industryListingKey
+      ? industryListingCache.text
+      : '';
+
+  const handleIndustryListingSortChange = useCallback(
+    (nextSort: ListingSortObservationsBy) => {
+      setSettings((prev) => ({
+        ...prev,
+        listingSortObservationsBy: nextSort,
+      }));
+      setSettingsDraft((prev) => ({
+        ...prev,
+        listingSortObservationsBy: nextSort,
+      }));
+    },
+    [setSettingsDraft],
+  );
+
+  useEffect(() => {
+    if (activeTab !== 'industry-output' || !result) return;
+    setIndustryListingCache((prev) => {
+      if (prev.result === result && prev.key === industryListingKey) return prev;
+      return {
+        result,
+        key: industryListingKey,
+        text: buildIndustryListingText(result),
+      };
+    });
+  }, [activeTab, buildIndustryListingText, industryListingKey, result]);
+
+  useEffect(() => {
+    if (!result || tabsPrewarmed) return;
+    setTabsPrewarmed(true);
+    const prewarmTabs = () => {
+      void loadReportView();
+      void loadProcessingSummaryView();
+      void loadIndustryOutputView();
+      void loadMapView();
+    };
+    if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+      const idleWindow = window as Window & {
+        requestIdleCallback: (_cb: (_deadline: { didTimeout: boolean; timeRemaining: () => number }) => void) => number;
+        cancelIdleCallback?: (_id: number) => void;
+      };
+      const idleId = idleWindow.requestIdleCallback(() => {
+        prewarmTabs();
+      });
+      return () => idleWindow.cancelIdleCallback?.(idleId);
+    }
+    const timeoutId = globalThis.setTimeout(prewarmTabs, 0);
+    return () => globalThis.clearTimeout(timeoutId);
+  }, [result, tabsPrewarmed]);
 
   const currentComparisonText = useMemo(
     () => (runComparisonSummary ? buildRunComparisonText(runComparisonSummary) : ''),
     [runComparisonSummary],
   );
+  const activateReportTab = useCallback(() => {
+    setActiveTab('report');
+  }, [setActiveTab]);
   const exportRunDiagnostics = result
     ? (runDiagnostics ?? buildRunDiagnostics(parseSettings, result))
     : null;
@@ -1624,7 +1829,7 @@ const App: React.FC<AppProps> = ({
     setRunElapsedMs,
     setLastRunInput,
     setLastRunSettingsSnapshot,
-    activateReportTab: () => setActiveTab('report'),
+    activateReportTab,
     recordRunSnapshot,
   });
   const handleValidatedRun = React.useCallback(() => {
@@ -1659,6 +1864,36 @@ const App: React.FC<AppProps> = ({
     restoreSnapshot: restoreWorkspaceReviewSnapshot,
     resetState: resetWorkspaceReviewState,
   } = workspaceReviewState;
+  const handleWorkspaceTabChange = useCallback(
+    (tab: TabKey) => {
+      setActiveTab(tab);
+    },
+    [setActiveTab],
+  );
+  const handleReportStationSelection = useCallback(
+    (stationId: string) => {
+      selectStation(stationId, 'report');
+    },
+    [selectStation],
+  );
+  const handleReportObservationSelection = useCallback(
+    (observationId: number) => {
+      selectObservation(observationId, 'report');
+    },
+    [selectObservation],
+  );
+  const handleMapStationSelection = useCallback(
+    (stationId: string) => {
+      selectStation(stationId, 'map');
+    },
+    [selectStation],
+  );
+  const handleMapObservationSelection = useCallback(
+    (observationId: number) => {
+      selectObservation(observationId, 'map');
+    },
+    [selectObservation],
+  );
   const blockingReasons = useMemo(() => {
     const reasons: string[] = [];
     if (!projectRunValidation.ok) reasons.push('Select at least one checked project file');
@@ -1728,6 +1963,7 @@ const App: React.FC<AppProps> = ({
   );
   const workspaceDraftSnapshot = useMemo<WorkspaceDraftSnapshot>(
     () => ({
+      listingSortModeVersion: 2,
       input,
       projectIncludeFiles,
       settings: { ...settings },
@@ -1881,8 +2117,17 @@ const App: React.FC<AppProps> = ({
     restoreSavedRunSnapshots(snapshot.savedRunSnapshots ?? []);
     setInput(snapshot.input);
     setProjectIncludeFiles({ ...snapshot.projectIncludeFiles });
-    setSettings({ ...snapshot.settings });
-    setSettingsDraft({ ...snapshot.settings });
+    const legacySortMode =
+      typeof snapshot.listingSortModeVersion !== 'number' || snapshot.listingSortModeVersion < 2;
+    const normalizedSnapshotSettings: SettingsState = {
+      ...snapshot.settings,
+      listingSortObservationsBy: normalizeListingSortObservationsBy(
+        snapshot.settings.listingSortObservationsBy,
+        { legacyResidualMeansStdResidual: legacySortMode },
+      ),
+    };
+    setSettings(normalizedSnapshotSettings);
+    setSettingsDraft(normalizedSnapshotSettings);
     setParseSettings({ ...snapshot.parseSettings });
     setParseSettingsDraft({ ...snapshot.parseSettings });
     setGeoidSourceData(recoveredGeoidBytes);
@@ -2544,7 +2789,7 @@ const App: React.FC<AppProps> = ({
           )}
           <WorkspaceChrome
             activeTab={activeTab}
-            onActiveTabChange={setActiveTab}
+            onActiveTabChange={handleWorkspaceTabChange}
             isSidebarOpen={isSidebarOpen}
             onShowInput={() => setIsSidebarOpen(true)}
             hasResult={Boolean(result)}
@@ -2583,10 +2828,8 @@ const App: React.FC<AppProps> = ({
                   focusFilterRequestKey={reportFilterFocusRequestKey}
                   selectedStationId={selection.stationId}
                   selectedObservationId={selection.observationId}
-                  onSelectStation={(stationId) => selectStation(stationId, 'report')}
-                  onSelectObservation={(observationId) =>
-                    selectObservation(observationId, 'report')
-                  }
+                  onSelectStation={handleReportStationSelection}
+                  onSelectObservation={handleReportObservationSelection}
                 />
               </React.Suspense>
             }
@@ -2676,7 +2919,12 @@ const App: React.FC<AppProps> = ({
                   </div>
                 }
               >
-                <IndustryOutputView text={result ? buildIndustryListingText(result) : ''} />
+                <IndustryOutputView
+                  text={industryOutputText}
+                  listingSortObservationsBy={settings.listingSortObservationsBy}
+                  onChangeListingSortObservationsBy={handleIndustryListingSortChange}
+                  onJumpToSourceLine={handleJumpToSourceLine}
+                />
               </React.Suspense>
             }
             mapContent={
@@ -2696,8 +2944,10 @@ const App: React.FC<AppProps> = ({
                   derivedResult={qaDerivedResult}
                   selectedStationId={selection.stationId}
                   selectedObservationId={selection.observationId}
-                  onSelectStation={(stationId) => selectStation(stationId, 'map')}
-                  onSelectObservation={(observationId) => selectObservation(observationId, 'map')}
+                  onSelectStation={handleMapStationSelection}
+                  onSelectObservation={handleMapObservationSelection}
+                  snapshot={mapViewSnapshot}
+                  onSnapshotChange={setMapViewSnapshot}
                 />
               </React.Suspense>
             }
