@@ -575,7 +575,7 @@ const ProjectOptionsModal: React.FC<ProjectOptionsModalProps> = ({ context }) =>
                       </div>
                     </SettingsCard>
                     <SettingsCard
-                      title="Coordinate System (Canada-First)"
+                      title="Coordinate System"
                       tooltip={PROJECT_OPTION_SECTION_TOOLTIPS['CRS / Geodetic Setup']}
                     >
                       <SettingsRow
@@ -595,21 +595,6 @@ const ProjectOptionsModal: React.FC<ProjectOptionsModalProps> = ({ context }) =>
                         >
                           <option value="local">LOCAL</option>
                           <option value="grid">GRID</option>
-                        </select>
-                      </SettingsRow>
-                      <SettingsRow label="CRS (Grid Mode)" tooltip={SETTINGS_TOOLTIPS.crsId}>
-                        <select
-                          title={SETTINGS_TOOLTIPS.crsId}
-                          value={parseSettingsDraft.crsId}
-                          disabled={parseSettingsDraft.coordSystemMode !== 'grid'}
-                          onChange={(e) => handleDraftParseSetting('crsId', e.target.value)}
-                          className={`${optionInputClass} disabled:opacity-100 disabled:cursor-not-allowed`}
-                        >
-                          {visibleDraftCrsCatalog.map((crs) => (
-                            <option key={crs.id} value={crs.id}>
-                              {crs.id} - {crs.label}
-                            </option>
-                          ))}
                         </select>
                       </SettingsRow>
                       <SettingsRow

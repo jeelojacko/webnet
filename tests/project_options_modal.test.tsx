@@ -98,10 +98,11 @@ describe('Project Options modal layout', () => {
       expect(app.container.textContent).toContain('Project Options');
       expect(app.container.textContent).toContain('Solver Configuration');
       expect(app.container.textContent).toContain('Geodetic Framework');
-      expect(app.container.textContent).toContain('Coordinate System (Canada-First)');
+      expect(app.container.textContent).toContain('Coordinate System');
       expect(app.container.textContent).toContain('Convergence Limit');
       expect(app.container.textContent).toContain('Suspect Impact');
       expect(app.container.textContent).toContain('Coord System Mode');
+      expect((app.container.textContent?.match(/CRS \(Grid Mode\)/g) ?? []).length).toBe(1);
       expect(app.container.textContent).not.toContain('Parser mode: Strict');
     } finally {
       await app.cleanup();
