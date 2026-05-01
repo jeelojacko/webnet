@@ -1,10 +1,16 @@
 import type { ParseSettings, SettingsState } from './appStateTypes';
 import type { InstrumentLibrary } from './types';
+import campDesignPreanalysisTraverseOnlyRaw from '../tests/fixtures/camp_design_preanalysis_traverse_only.dat?raw';
 import combinedFixtureInputRaw from '../tests/fixtures/industry_case_combined_input.txt?raw';
 import gnssFixtureInputRaw from '../tests/fixtures/industry_case_gnss_input.txt?raw';
 import traverseFixtureRaw from '../tests/fixtures/industry_case_traverse_output.txt?raw';
 
-export type IndustryParityCaseId = 'leveling' | 'traverse' | 'gnss' | 'combined';
+export type IndustryParityCaseId =
+  | 'leveling'
+  | 'traverse'
+  | 'gnss'
+  | 'combined'
+  | 'campDesignPreanalysis';
 
 export type IndustryParityHeaderNormalizationRule =
   | 'softwareVersion'
@@ -137,6 +143,10 @@ const COMBINED_STARTUP_INPUT = combinedFixtureInputRaw
   .replace(/\r/g, '\n')
   .trim();
 const GNSS_STARTUP_INPUT = gnssFixtureInputRaw.replace(/\r\n/g, '\n').replace(/\r/g, '\n').trim();
+const CAMP_DESIGN_PREANALYSIS_STARTUP_INPUT = campDesignPreanalysisTraverseOnlyRaw
+  .replace(/\r\n/g, '\n')
+  .replace(/\r/g, '\n')
+  .trim();
 
 const TRAVERSE_STARTUP_INSTRUMENTS: InstrumentLibrary = {
   TRAV_DEFAULT: {
@@ -210,6 +220,59 @@ const TRAVERSE_STARTUP_INSTRUMENTS: InstrumentLibrary = {
 };
 
 const GNSS_STARTUP_INSTRUMENTS: InstrumentLibrary = {};
+const CAMP_DESIGN_PREANALYSIS_STARTUP_INSTRUMENTS: InstrumentLibrary = {
+  CAMP_DEFAULT: {
+    code: 'CAMP_DEFAULT',
+    desc: 'camp design preanalysis project default',
+    edm_const: 0.001,
+    edm_ppm: 1.5,
+    hzPrecision_sec: 1.414,
+    dirPrecision_sec: 1.0,
+    azBearingPrecision_sec: 1.414,
+    vaPrecision_sec: 1.0,
+    instCentr_m: 0.00075,
+    tgtCentr_m: 0.00075,
+    vertCentr_m: 0.0005,
+    elevDiff_const_m: 0.01524,
+    elevDiff_ppm: 0,
+    gpsStd_xy: 0,
+    levStd_mmPerKm: 1.5,
+  },
+  S9: {
+    code: 'S9',
+    desc: 'camp design library instrument',
+    edm_const: 0.0008,
+    edm_ppm: 1.0,
+    hzPrecision_sec: 0.707106781,
+    dirPrecision_sec: 0.5,
+    azBearingPrecision_sec: 0.707106781,
+    vaPrecision_sec: 0.5,
+    instCentr_m: 0.00075,
+    tgtCentr_m: 0.00075,
+    vertCentr_m: 0.0005,
+    elevDiff_const_m: 0.01524,
+    elevDiff_ppm: 0,
+    gpsStd_xy: 0,
+    levStd_mmPerKm: 0,
+  },
+  SX12: {
+    code: 'SX12',
+    desc: 'n/a',
+    edm_const: 0.001,
+    edm_ppm: 1.5,
+    hzPrecision_sec: 1.414,
+    dirPrecision_sec: 1.0,
+    azBearingPrecision_sec: 1.414,
+    vaPrecision_sec: 1.0,
+    instCentr_m: 0.00075,
+    tgtCentr_m: 0.00075,
+    vertCentr_m: 0.0005,
+    elevDiff_const_m: 0.01524,
+    elevDiff_ppm: 0,
+    gpsStd_xy: 0,
+    levStd_mmPerKm: 0,
+  },
+};
 
 const DEFAULT_NORMALIZATION_RULES: IndustryParityHeaderNormalizationRule[] = [
   'softwareVersion',
@@ -293,6 +356,37 @@ export const INDUSTRY_PARITY_CASES: Record<IndustryParityCaseId, IndustryParityC
       selectedInstrument: '',
     },
   },
+  campDesignPreanalysis: {
+    id: 'campDesignPreanalysis',
+    fixtureInputPath: 'tests/fixtures/camp_design_preanalysis_traverse_only.dat',
+    fixtureOutputPath: 'tests/fixtures/camp_design_preanalysis_output.lst',
+    normalizationRules: DEFAULT_NORMALIZATION_RULES,
+    startupDefaults: {
+      input: CAMP_DESIGN_PREANALYSIS_STARTUP_INPUT,
+      settingsPatch: {
+        convergenceLimit: 0.01,
+        maxIterations: 10,
+      },
+      parseSettingsPatch: {
+        coordMode: '3D',
+        coordSystemMode: 'grid',
+        crsId: 'CA_NAD83_CSRS_UTM_19N',
+        order: 'EN',
+        deltaMode: 'slope',
+        angleStationOrder: 'atfromto',
+        runMode: 'preanalysis',
+        preanalysisMode: true,
+        lonSign: 'west-positive',
+        applyCurvatureRefraction: true,
+        verticalReduction: 'curvref',
+        refractionCoefficient: 0.07,
+        qFixLinearSigmaM: 1e-7,
+        qFixAngularSigmaSec: 0.0010001,
+      },
+      projectInstruments: CAMP_DESIGN_PREANALYSIS_STARTUP_INSTRUMENTS,
+      selectedInstrument: 'CAMP_DEFAULT',
+    },
+  },
   combined: {
     id: 'combined',
     fixtureInputPath: 'tests/fixtures/industry_case_combined_input.txt',
@@ -323,6 +417,6 @@ export const INDUSTRY_PARITY_CASES: Record<IndustryParityCaseId, IndustryParityC
   },
 };
 
-export const ACTIVE_INDUSTRY_PARITY_CASE_ID: IndustryParityCaseId = 'combined';
+export const ACTIVE_INDUSTRY_PARITY_CASE_ID: IndustryParityCaseId = 'campDesignPreanalysis';
 export const ACTIVE_INDUSTRY_PARITY_CASE =
   INDUSTRY_PARITY_CASES[ACTIVE_INDUSTRY_PARITY_CASE_ID];

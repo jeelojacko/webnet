@@ -18,6 +18,7 @@ export type DirectionFace = 'face1' | 'face2';
 export interface RawDirectionShot {
   to: StationId;
   obs: number;
+  planned?: boolean;
   stdDev: number;
   sigmaSource: SigmaSource;
   sourceLine: number;
@@ -281,6 +282,7 @@ export const createDirectionSetWorkflow = ({
         at: occupy,
         to,
         obs: reducedObs,
+        planned: targetShots.some((shot) => shot.planned === true),
         stdDev: reducedSigma,
         sigmaSource: combineSigmaSources(targetShots),
         sourceLine: Math.min(...targetShots.map((shot) => shot.sourceLine)),
@@ -329,6 +331,7 @@ export const createDirectionSetWorkflow = ({
         at: occupy,
         to: shot.to,
         obs,
+        planned: shot.planned === true,
         stdDev: shot.stdDev,
         sigmaSource: shot.sigmaSource,
         sourceLine: shot.sourceLine,

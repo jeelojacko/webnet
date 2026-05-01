@@ -22,7 +22,6 @@ type HandleControlRecordArgs = {
   state: ParseOptions;
   stations: StationMap;
   logs: string[];
-  isNumericToken: (_token: string) => boolean;
   parseFixityTokens: (_tokens: string[], _componentCount: number) => FixityParseResult;
   parseConstraintCorrToken: (_value: number | undefined) => number | undefined;
   applyFixities: (
@@ -66,6 +65,56 @@ const createEmptyStation = (): StationMap[string] =>
     fixedH: false,
   }) as StationMap[string];
 
+const parseNumericSlot = (
+  token: string | undefined,
+): number | undefined => {
+  if (token == null) return undefined;
+  const trimmed = token.trim();
+  if (!trimmed || trimmed === '!' || trimmed === '*') return undefined;
+  const value = Number.parseFloat(trimmed);
+  return Number.isFinite(value) ? value : undefined;
+};
+
+const hasFixityMarker = (token: string | undefined): boolean =>
+  token === '!' || token === '*' || /^[!*]+$/.test(token ?? '');
+
+const shouldSkipLegacyPlanarHeightPlaceholder = (constraintTokens: string[]): boolean =>
+  constraintTokens.length >= 2 &&
+  parseNumericSlot(constraintTokens[0]) != null &&
+  hasFixityMarker(constraintTokens[1]) &&
+  constraintTokens.slice(1).every((token) => hasFixityMarker(token));
+
+const parseControlFixityTail = (
+  tailTokens: string[],
+  componentCount: number,
+  parseFixityTokens: (_tokens: string[], _componentCount: number) => FixityParseResult,
+): FixityParseResult => {
+  if (tailTokens.length < componentCount) {
+    return parseFixityTokens(tailTokens, componentCount);
+  }
+  const sigmaSlots = tailTokens.slice(0, componentCount);
+  const trailingFixities = parseFixityTokens(tailTokens.slice(componentCount), componentCount);
+  const componentModes = [...trailingFixities.componentModes];
+  let positionalMarkerSeen = false;
+  if (tailTokens.length >= componentCount) {
+    sigmaSlots.forEach((token, index) => {
+      if (token === '!') {
+        componentModes[index] = 'fixed';
+        positionalMarkerSeen = true;
+      } else if (token === '*') {
+        componentModes[index] = 'free';
+        positionalMarkerSeen = true;
+      }
+    });
+  }
+  return {
+    componentModes,
+    fixities: componentModes.map((mode) => mode === 'fixed'),
+    hasFreeMarkers: componentModes.includes('free'),
+    legacyStarFixed: positionalMarkerSeen ? false : trailingFixities.legacyStarFixed,
+  };
+};
+
 const logFixityWarnings = (
   logs: string[],
   lineNum: number,
@@ -90,7 +139,6 @@ export const handleControlRecord = ({
   state,
   stations,
   logs,
-  isNumericToken,
   parseFixityTokens,
   parseConstraintCorrToken,
   applyFixities,
@@ -105,15 +153,20 @@ export const handleControlRecord = ({
   if (code === 'C') {
     const id = parts[1];
     const tokens = parts.slice(2);
-    const numeric = tokens.filter(isNumericToken).map((p) => Number.parseFloat(p));
     const is3D = state.coordMode === '3D';
     const coordCount = is3D ? 3 : 2;
-    const coords = numeric.slice(0, coordCount);
-    const stds = numeric.slice(coordCount);
+    const coordTokens = tokens.slice(0, coordCount);
+    const rawConstraintTokens = tokens.slice(coordCount);
+    const constraintTokens =
+      !is3D && shouldSkipLegacyPlanarHeightPlaceholder(rawConstraintTokens)
+        ? rawConstraintTokens.slice(1)
+        : rawConstraintTokens;
+    const sigmaTokens = constraintTokens.slice(0, coordCount);
+    const coords = coordTokens.map((token) => Number.parseFloat(token));
     const north = state.order === 'NE' ? (coords[0] ?? 0) : (coords[1] ?? 0);
     const east = state.order === 'NE' ? (coords[1] ?? 0) : (coords[0] ?? 0);
     const h = is3D ? (coords[2] ?? 0) : 0;
-    const fixityState = parseFixityTokens(tokens, coordCount);
+    const fixityState = parseControlFixityTail(constraintTokens, coordCount, parseFixityTokens);
     logFixityWarnings(logs, lineNum, fixityState);
 
     const fixN = state.order === 'NE' ? fixityState.fixities[0] : fixityState.fixities[1];
@@ -145,10 +198,12 @@ export const handleControlRecord = ({
     if (modeN !== 'inherit') clearStationConstraintComponent(station, 'y');
     if (is3D && modeH !== 'inherit') clearStationConstraintComponent(station, 'h');
 
-    const seN = state.order === 'NE' ? stds[0] : stds[1];
-    const seE = state.order === 'NE' ? stds[1] : stds[0];
-    const seH = is3D ? stds[2] : undefined;
-    const corrXY = parseConstraintCorrToken(stds[is3D ? 3 : 2]);
+    const seN =
+      state.order === 'NE' ? parseNumericSlot(sigmaTokens[0]) : parseNumericSlot(sigmaTokens[1]);
+    const seE =
+      state.order === 'NE' ? parseNumericSlot(sigmaTokens[1]) : parseNumericSlot(sigmaTokens[0]);
+    const seH = is3D ? parseNumericSlot(sigmaTokens[2]) : undefined;
+    const corrXY = parseConstraintCorrToken(parseNumericSlot(constraintTokens[coordCount]));
     if (modeE !== 'free' && !station.fixedX && seE) {
       station.sx = seE * toMeters;
       station.constraintX = station.x;
@@ -201,18 +256,24 @@ export const handleControlRecord = ({
     if (state.lonSign === 'west-positive') {
       lonDeg = -lonDeg;
     }
-    const tokens = parts.slice(2);
-    const restNumeric = parts
-      .slice(4)
-      .filter(isNumericToken)
-      .map((p) => Number.parseFloat(p));
+    const valueTokens = parts.slice(4);
     const coordCount = state.coordMode === '3D' ? 3 : 2;
-    const elev = state.coordMode === '3D' ? (restNumeric[0] ?? 0) : 0;
-    const seN = state.coordMode === '3D' ? (restNumeric[1] ?? 0) : (restNumeric[0] ?? 0);
-    const seE = state.coordMode === '3D' ? (restNumeric[2] ?? 0) : (restNumeric[1] ?? 0);
-    const seH = state.coordMode === '3D' ? (restNumeric[3] ?? 0) : 0;
-    const corrXY = parseConstraintCorrToken(restNumeric[state.coordMode === '3D' ? 4 : 2]);
-    const fixityState = parseFixityTokens(tokens, coordCount);
+    const elev = state.coordMode === '3D' ? (parseNumericSlot(valueTokens[0]) ?? 0) : 0;
+    const constraintTokens = state.coordMode === '3D' ? valueTokens.slice(1) : valueTokens;
+    const sigmaTokens = constraintTokens.slice(0, coordCount);
+    const seN =
+      state.coordMode === '3D'
+        ? (parseNumericSlot(sigmaTokens[0]) ?? 0)
+        : (parseNumericSlot(sigmaTokens[0]) ?? 0);
+    const seE =
+      state.coordMode === '3D'
+        ? (parseNumericSlot(sigmaTokens[1]) ?? 0)
+        : (parseNumericSlot(sigmaTokens[1]) ?? 0);
+    const seH = state.coordMode === '3D' ? (parseNumericSlot(sigmaTokens[2]) ?? 0) : 0;
+    const corrXY = parseConstraintCorrToken(
+      parseNumericSlot(constraintTokens[coordCount]),
+    );
+    const fixityState = parseControlFixityTail(constraintTokens, coordCount, parseFixityTokens);
     logFixityWarnings(logs, lineNum, fixityState);
     const modeN = fixityState.componentModes[0];
     const modeE = fixityState.componentModes[1];
@@ -317,15 +378,20 @@ export const handleControlRecord = ({
   if (code === 'CH' || code === 'EH') {
     const id = parts[1];
     const tokens = parts.slice(2);
-    const numeric = tokens.filter(isNumericToken).map((p) => Number.parseFloat(p));
     const is3D = state.coordMode === '3D';
     const coordCount = is3D ? 3 : 2;
-    const coords = numeric.slice(0, coordCount);
-    const stds = numeric.slice(coordCount);
+    const coordTokens = tokens.slice(0, coordCount);
+    const rawConstraintTokens = tokens.slice(coordCount);
+    const constraintTokens =
+      !is3D && shouldSkipLegacyPlanarHeightPlaceholder(rawConstraintTokens)
+        ? rawConstraintTokens.slice(1)
+        : rawConstraintTokens;
+    const sigmaTokens = constraintTokens.slice(0, coordCount);
+    const coords = coordTokens.map((token) => Number.parseFloat(token));
     const north = state.order === 'NE' ? (coords[0] ?? 0) : (coords[1] ?? 0);
     const east = state.order === 'NE' ? (coords[1] ?? 0) : (coords[0] ?? 0);
     const h = is3D ? (coords[2] ?? 0) : (coords[0] ?? 0);
-    const fixityState = parseFixityTokens(tokens, coordCount);
+    const fixityState = parseControlFixityTail(constraintTokens, coordCount, parseFixityTokens);
     logFixityWarnings(logs, lineNum, fixityState);
     const toMeters = linearToMetersFactor();
     const station = stations[id] ?? createEmptyStation();
@@ -351,10 +417,12 @@ export const handleControlRecord = ({
     if (modeN !== 'inherit') clearStationConstraintComponent(station, 'y');
     if (is3D && modeH !== 'inherit') clearStationConstraintComponent(station, 'h');
 
-    const seN = state.order === 'NE' ? stds[0] : stds[1];
-    const seE = state.order === 'NE' ? stds[1] : stds[0];
-    const seH = is3D ? stds[2] : undefined;
-    const corrXY = parseConstraintCorrToken(stds[is3D ? 3 : 2]);
+    const seN =
+      state.order === 'NE' ? parseNumericSlot(sigmaTokens[0]) : parseNumericSlot(sigmaTokens[1]);
+    const seE =
+      state.order === 'NE' ? parseNumericSlot(sigmaTokens[1]) : parseNumericSlot(sigmaTokens[0]);
+    const seH = is3D ? parseNumericSlot(sigmaTokens[2]) : undefined;
+    const corrXY = parseConstraintCorrToken(parseNumericSlot(constraintTokens[coordCount]));
     if (modeE !== 'free' && !station.fixedX && seE) {
       station.sx = seE * toMeters;
       station.constraintX = station.x;
@@ -403,10 +471,10 @@ export const handleControlRecord = ({
   if (code === 'E') {
     const id = parts[1];
     const tokens = parts.slice(2);
-    const numeric = tokens.filter(isNumericToken).map((p) => Number.parseFloat(p));
-    const elev = numeric[0] ?? 0;
-    const stdErr = numeric[1] ?? 0;
-    const fixityState = parseFixityTokens(tokens, 1);
+    const elev = parseNumericSlot(tokens[0]) ?? 0;
+    const constraintTokens = tokens.slice(1);
+    const stdErr = parseNumericSlot(constraintTokens[0]) ?? 0;
+    const fixityState = parseFixityTokens(constraintTokens, 1);
     logFixityWarnings(logs, lineNum, fixityState);
     const fixH = fixityState.fixities[0] ?? false;
     const modeH = fixityState.componentModes[0];

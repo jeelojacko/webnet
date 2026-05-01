@@ -580,6 +580,25 @@ const usesClassicParityReportLayout = (
 const formatClassicSettingRow = (label: string, value: string): string =>
   `      ${label.padEnd(35)} : ${value}`;
 
+const formatClassicRunModeLabel = (runMode: RunMode): string => {
+  if (runMode === 'preanalysis') return 'Preanalysis';
+  if (runMode === 'data-check') return 'Data Check';
+  if (runMode === 'blunder-detect') return 'Blunder Detect';
+  return 'Adjust with Error Propagation';
+};
+
+const formatClassicCoordinateSystemLabel = (
+  crsId: string,
+  crsLabel: string,
+): string => {
+  if (crsId === 'CA_NAD83_CSRS_NB_STEREO_DOUBLE') return 'NewBrunswick83';
+  const canadaUtmMatch = crsId.match(/^CA_NAD83_CSRS_UTM_(\d{2})N$/);
+  if (canadaUtmMatch) return `UTM83-${canadaUtmMatch[1]}`;
+  const canadaMtmMatch = crsId.match(/^CA_NAD83_CSRS_MTM_(\d{2})$/);
+  if (canadaMtmMatch) return `MTM83-${canadaMtmMatch[1]}`;
+  return crsLabel || crsId || 'Local';
+};
+
 const formatClassicLinearUnit = (value: number, unitLabel: string): string =>
   `${value.toFixed(6)} ${unitLabel}`;
 
@@ -1029,6 +1048,7 @@ export const buildIndustryStyleListingText = (
     projectInstrumentLibrary,
     isGnssOnlyListing,
   );
+  const useClassicPreanalysisListing = usesClassicParityLayout && isPreanalysis;
   const usesCompactGnssParityLayout =
     runDiagnostics.solveProfile !== 'webnet' && isGnssOnlyListing && !usesClassicParityLayout;
   const hasInlineGpsFactorOverride = observationsForListing.some((obs) => {
@@ -1098,6 +1118,27 @@ export const buildIndustryStyleListingText = (
     station.constraintModeY === 'weighted' ||
     station.constraintModeH === 'fixed' ||
     station.constraintModeH === 'weighted';
+  const stationHasWeightedControlConstraint = (
+    station:
+      | Station
+      | {
+          constraintModeX?: Station['constraintModeX'];
+          constraintModeY?: Station['constraintModeY'];
+          constraintModeH?: Station['constraintModeH'];
+        },
+  ): boolean =>
+    station.constraintModeX === 'weighted' ||
+    station.constraintModeY === 'weighted' ||
+    station.constraintModeH === 'weighted';
+  const stationHasOnlyFixedControlConstraint = (
+    station:
+      | Station
+      | {
+          constraintModeX?: Station['constraintModeX'];
+          constraintModeY?: Station['constraintModeY'];
+          constraintModeH?: Station['constraintModeH'];
+        },
+  ): boolean => stationHasActiveControlConstraint(station) && !stationHasWeightedControlConstraint(station);
   const inputStationIsUsed = (
     stationId: string,
     station:
@@ -1119,12 +1160,20 @@ export const buildIndustryStyleListingText = (
     (station) => !usedEnteredStationIdSet.has(station.stationId),
   );
   const fixedUsedEnteredStationSnapshots = usedEnteredStationSnapshots.filter((station) =>
-    stationHasActiveControlConstraint(station),
+    useClassicPreanalysisListing
+      ? stationHasOnlyFixedControlConstraint(station)
+      : stationHasActiveControlConstraint(station),
   );
+  const partiallyFixedUsedEnteredStationSnapshots = useClassicPreanalysisListing
+    ? usedEnteredStationSnapshots.filter((station) => stationHasWeightedControlConstraint(station))
+    : [];
   const freeUsedEnteredStationSnapshots = usedEnteredStationSnapshots.filter(
     (station) =>
       !fixedUsedEnteredStationSnapshots.some(
         (fixedStation) => fixedStation.stationId === station.stationId,
+      ) &&
+      !partiallyFixedUsedEnteredStationSnapshots.some(
+        (partialStation) => partialStation.stationId === station.stationId,
       ),
   );
   const classicTraverseStationOrder: string[] = [];
@@ -1369,11 +1418,8 @@ export const buildIndustryStyleListingText = (
   const displayVerticalDeflectionEastSec =
     parseState?.verticalDeflectionEastSec ?? runDiag.verticalDeflectionEastSec ?? 0;
   if (usesClassicParityLayout || usesCompactGnssParityLayout) {
-    const coordSystemLabel =
-      crsId === 'CA_NAD83_CSRS_NB_STEREO_DOUBLE'
-        ? 'NewBrunswick83'
-        : crsLabel || crsId || 'Local';
-    lines.push(formatClassicSettingRow('STAR*NET Run Mode', 'Adjust with Error Propagation'));
+    const coordSystemLabel = formatClassicCoordinateSystemLabel(crsId, crsLabel);
+    lines.push(formatClassicSettingRow('STAR*NET Run Mode', formatClassicRunModeLabel(runMode)));
     lines.push(formatClassicSettingRow('Type of Adjustment', coordMode));
     lines.push(
       formatClassicSettingRow(
@@ -1388,12 +1434,17 @@ export const buildIndustryStyleListingText = (
         `${(averageGeoidHeight * unitScale).toFixed(4)} (Default, ${linearUnit})`,
       ),
     );
-    lines.push(
-      formatClassicSettingRow(
-        'Vertical Deflection',
-        `N=${displayVerticalDeflectionNorthSec.toFixed(3)} E=${displayVerticalDeflectionEastSec.toFixed(3)} (Seconds)`,
-      ),
-    );
+    if (
+      Math.abs(displayVerticalDeflectionNorthSec) > 1e-12 ||
+      Math.abs(displayVerticalDeflectionEastSec) > 1e-12
+    ) {
+      lines.push(
+        formatClassicSettingRow(
+          'Vertical Deflection',
+          `N=${displayVerticalDeflectionNorthSec.toFixed(3)} E=${displayVerticalDeflectionEastSec.toFixed(3)} (Seconds)`,
+        ),
+      );
+    }
     lines.push(
       formatClassicSettingRow(
         'Longitude Sign Convention',
@@ -1736,7 +1787,7 @@ export const buildIndustryStyleListingText = (
       }
     }
   }
-  if (!usesClassicParityLayout) {
+  if (!usesClassicParityLayout || useClassicPreanalysisListing) {
     if (hasInlineGpsFactorOverride || directiveTransitions.length > 0 || directiveNoEffectWarnings.length > 0) {
       lines.push('');
       lines.push(centerIndustryLine('Inline Option Usage Notes'));
@@ -2160,6 +2211,7 @@ export const buildIndustryStyleListingText = (
       ),
     );
     lines.push('');
+    const classicOrder = parseState?.order ?? parseSettings.order;
     const formatClassicStationSummaryRow = (station: {
       stationId: string;
       x: number;
@@ -2168,21 +2220,73 @@ export const buildIndustryStyleListingText = (
     }) => {
       const formatCoord = (value: number) =>
         (Math.round((value + Number.EPSILON) * 10000) / 10000).toFixed(4);
-      const north = formatCoord(station.y * unitScale).padStart(12);
-      const east = formatCoord(station.x * unitScale).padStart(18);
+      const first = formatCoord(
+        (classicOrder === 'NE' ? station.y : station.x) * unitScale,
+      ).padStart(18);
+      const second = formatCoord(
+        (classicOrder === 'NE' ? station.x : station.y) * unitScale,
+      ).padStart(18);
       const height = formatCoord(station.h * unitScale).padStart(12);
       const description = stationDescription(station.stationId);
-      return `${station.stationId.padEnd(20)}${north}${east}${height}${description ? `   ${description}` : ''}`.trimEnd();
+      return `${station.stationId.padEnd(20)}${first}${second}${height}${description ? `   ${description}` : ''}`.trimEnd();
     };
+    const formatClassicStationConstraintStdErrRow = (stationId: string) => {
+      const station = res.stations[stationId];
+      if (!station) return '';
+      const firstSigma =
+        classicOrder === 'NE'
+          ? station.sy != null
+            ? (station.sy * unitScale).toFixed(4)
+            : station.constraintModeY === 'fixed'
+              ? 'FIXED'
+              : '-'
+          : station.sx != null
+            ? (station.sx * unitScale).toFixed(4)
+            : station.constraintModeX === 'fixed'
+              ? 'FIXED'
+              : '-';
+      const secondSigma =
+        classicOrder === 'NE'
+          ? station.sx != null
+            ? (station.sx * unitScale).toFixed(4)
+            : station.constraintModeX === 'fixed'
+              ? 'FIXED'
+              : '-'
+          : station.sy != null
+            ? (station.sy * unitScale).toFixed(4)
+            : station.constraintModeY === 'fixed'
+              ? 'FIXED'
+              : '-';
+      const heightSigma =
+        station.sh != null
+          ? (station.sh * unitScale).toFixed(4)
+          : station.constraintModeH === 'fixed'
+            ? 'FIXED'
+            : '-';
+      return `${''.padEnd(20)}${firstSigma.padStart(18)}${secondSigma.padStart(18)}${heightSigma.padStart(12)}`;
+    };
+    const firstCoordLabel = classicOrder === 'NE' ? 'N' : 'E';
+    const secondCoordLabel = classicOrder === 'NE' ? 'E' : 'N';
     lines.push(
-      'Fixed Stations              N                 E          Elev   Description',
+      `Fixed Stations              ${firstCoordLabel}                 ${secondCoordLabel}          Elev   Description`,
     );
     fixedUsedEnteredStationSnapshots.forEach((station) =>
       lines.push(formatClassicStationSummaryRow(station)),
     );
     lines.push('');
     lines.push(
-      'Free Stations               N                 E          Elev   Description',
+      `Partially Fixed             ${firstCoordLabel}                 ${secondCoordLabel}          Elev   Description`,
+    );
+    lines.push(
+      `${''.padEnd(20)}${'StdErr'.padStart(18)}${'StdErr'.padStart(18)}${'StdErr'.padStart(12)}`,
+    );
+    partiallyFixedUsedEnteredStationSnapshots.forEach((station) => {
+      lines.push(formatClassicStationSummaryRow(station));
+      lines.push(formatClassicStationConstraintStdErrRow(station.stationId));
+    });
+    lines.push('');
+    lines.push(
+      `Free Stations               ${firstCoordLabel}                 ${secondCoordLabel}          Elev   Description`,
     );
     freeUsedEnteredStationSnapshots.forEach((station) =>
       lines.push(formatClassicStationSummaryRow(station)),
@@ -2347,85 +2451,87 @@ export const buildIndustryStyleListingText = (
       });
     }
   }
-  lines.push('');
-  lines.push(
-    usesClassicParityLayout
-      ? centerIndustryLine('Adjustment Statistical Summary')
-      : 'Adjustment Statistical Summary',
-  );
-  lines.push(
-    usesClassicParityLayout
-      ? centerIndustryLine('==============================')
-      : '==============================',
-  );
-  lines.push('');
-  if (usesClassicParityLayout) {
-    lines.push(
-      `                        Iterations              = ${String(getIndustryReportedIterationCount(res)).padStart(6)}`,
-    );
+  if (!useClassicPreanalysisListing) {
     lines.push('');
     lines.push(
-      `                        Number of Stations      = ${String(stationEntriesInputOrder.length).padStart(6)}`,
+      usesClassicParityLayout
+        ? centerIndustryLine('Adjustment Statistical Summary')
+        : 'Adjustment Statistical Summary',
+    );
+    lines.push(
+      usesClassicParityLayout
+        ? centerIndustryLine('==============================')
+        : '==============================',
     );
     lines.push('');
-    lines.push(
-      `                        Number of Observations  = ${String(observationCount).padStart(6)}`,
-    );
-    lines.push(
-      `                        Number of Unknowns      = ${String(unknownCount).padStart(6)}`,
-    );
-    lines.push(
-      `                        Number of Redundant Obs = ${String(res.dof).padStart(6)}`,
-    );
-  } else {
-    pushSettingRow('Iterations', `${getIndustryReportedIterationCount(res)}`);
-    pushSettingRow('Number of Stations', `${stationEntriesInputOrder.length}`);
-    pushSettingRow('Number of Observations', `${observationCount}`);
-    pushSettingRow('Number of Unknowns', `${unknownCount}`);
-    pushSettingRow('Number of Redundant Obs', `${res.dof}`);
-  }
-  lines.push('');
-  lines.push('Observation Statistics');
+    if (usesClassicParityLayout) {
+      lines.push(
+        `                        Iterations              = ${String(getIndustryReportedIterationCount(res)).padStart(6)}`,
+      );
+      lines.push('');
+      lines.push(
+        `                        Number of Stations      = ${String(stationEntriesInputOrder.length).padStart(6)}`,
+      );
+      lines.push('');
+      lines.push(
+        `                        Number of Observations  = ${String(observationCount).padStart(6)}`,
+      );
+      lines.push(
+        `                        Number of Unknowns      = ${String(unknownCount).padStart(6)}`,
+      );
+      lines.push(
+        `                        Number of Redundant Obs = ${String(res.dof).padStart(6)}`,
+      );
+    } else {
+      pushSettingRow('Iterations', `${getIndustryReportedIterationCount(res)}`);
+      pushSettingRow('Number of Stations', `${stationEntriesInputOrder.length}`);
+      pushSettingRow('Number of Observations', `${observationCount}`);
+      pushSettingRow('Number of Unknowns', `${unknownCount}`);
+      pushSettingRow('Number of Redundant Obs', `${res.dof}`);
+    }
+    lines.push('');
+    lines.push('Observation Statistics');
 
-  const hasSolverGpsSummary = statisticalSummary.rows.some((row) => row.label === 'GPS');
-  const listingGpsSummary = hasSolverGpsSummary ? null : gpsListingStatisticalRow();
-  const statRows = listingGpsSummary
-    ? [...statisticalSummary.rows, listingGpsSummary]
-    : statisticalSummary.rows;
-  const totalCount = statRows.reduce((sum, row) => sum + row.count, 0);
-  const totalSumSquares = statRows.reduce((sum, row) => sum + row.sumSquares, 0);
-  const displayStatLabel = (label: string) => (label === 'GPS' ? 'GPS Deltas' : label);
-  const statTableRows = statRows.map((row) => [
-    displayStatLabel(row.label),
-    row.count.toString(),
-    row.sumSquares.toFixed(3),
-    row.errorFactor.toFixed(3),
-  ]);
-  statTableRows.push([
-    'Total',
-    totalCount.toString(),
-    totalSumSquares.toFixed(3),
-    (res.dof > 0 ? Math.sqrt(totalSumSquares / res.dof) : res.seuw).toFixed(3),
-  ]);
-  pushTable(
-    ['Observation', 'Count', 'Sum Squares of StdRes', 'Error Factor'],
-    statTableRows,
-    [1, 2, 3],
-  );
-  lines.push('');
-  if (res.chiSquare) {
-    const errorLower = Math.sqrt(res.chiSquare.varianceFactorLower);
-    const errorUpper = Math.sqrt(res.chiSquare.varianceFactorUpper);
-    lines.push(
-      `The Chi-Square Test at 5.00% Level ${res.chiSquare.pass95 ? 'Passed' : 'Failed'}`,
-    );
-    lines.push(
-      `Lower/Upper Bounds (${errorLower.toFixed(3)}/${errorUpper.toFixed(3)})`,
-    );
-    lines.push(
-      `Variance Factor Bounds (${res.chiSquare.varianceFactorLower.toFixed(3)}/${res.chiSquare.varianceFactorUpper.toFixed(3)})`,
+    const hasSolverGpsSummary = statisticalSummary.rows.some((row) => row.label === 'GPS');
+    const listingGpsSummary = hasSolverGpsSummary ? null : gpsListingStatisticalRow();
+    const statRows = listingGpsSummary
+      ? [...statisticalSummary.rows, listingGpsSummary]
+      : statisticalSummary.rows;
+    const totalCount = statRows.reduce((sum, row) => sum + row.count, 0);
+    const totalSumSquares = statRows.reduce((sum, row) => sum + row.sumSquares, 0);
+    const displayStatLabel = (label: string) => (label === 'GPS' ? 'GPS Deltas' : label);
+    const statTableRows = statRows.map((row) => [
+      displayStatLabel(row.label),
+      row.count.toString(),
+      row.sumSquares.toFixed(3),
+      row.errorFactor.toFixed(3),
+    ]);
+    statTableRows.push([
+      'Total',
+      totalCount.toString(),
+      totalSumSquares.toFixed(3),
+      (res.dof > 0 ? Math.sqrt(totalSumSquares / res.dof) : res.seuw).toFixed(3),
+    ]);
+    pushTable(
+      ['Observation', 'Count', 'Sum Squares of StdRes', 'Error Factor'],
+      statTableRows,
+      [1, 2, 3],
     );
     lines.push('');
+    if (res.chiSquare) {
+      const errorLower = Math.sqrt(res.chiSquare.varianceFactorLower);
+      const errorUpper = Math.sqrt(res.chiSquare.varianceFactorUpper);
+      lines.push(
+        `The Chi-Square Test at 5.00% Level ${res.chiSquare.pass95 ? 'Passed' : 'Failed'}`,
+      );
+      lines.push(
+        `Lower/Upper Bounds (${errorLower.toFixed(3)}/${errorUpper.toFixed(3)})`,
+      );
+      lines.push(
+        `Variance Factor Bounds (${res.chiSquare.varianceFactorLower.toFixed(3)}/${res.chiSquare.varianceFactorUpper.toFixed(3)})`,
+      );
+      lines.push('');
+    }
   }
   const addCenteredHeading = (title: string, underline = '=') => {
     lines.push(title);
@@ -2459,7 +2565,7 @@ export const buildIndustryStyleListingText = (
     const distinctModes = new Set(explicitModes);
     return distinctModes.size > 1 || explicitModes.some((mode) => mode === 'weighted');
   };
-  if (settings.listingShowCoordinates) {
+  if (settings.listingShowCoordinates && !useClassicPreanalysisListing) {
     lines.push('');
     if (!usesClassicParityLayout) {
       addCenteredHeading('Adjusted Station Information');
@@ -4008,10 +4114,43 @@ export const buildIndustryStyleListingText = (
 
     lines.push('');
     lines.push(
-      `${isPreanalysis ? 'Predicted Station Coordinate Standard Deviations' : 'Station Coordinate Standard Deviations'} (${linearUnit})`,
+      `${useClassicPreanalysisListing || !isPreanalysis ? 'Station Coordinate Standard Deviations' : 'Predicted Station Coordinate Standard Deviations'} (${linearUnit})`,
     );
     lines.push('');
-    if (isGnssOnlyListing && !hasStationDescriptions) {
+    if (useClassicPreanalysisListing) {
+      const firstCoordLabel = (parseState?.order ?? parseSettings.order) === 'NE' ? 'N' : 'E';
+      const secondCoordLabel = (parseState?.order ?? parseSettings.order) === 'NE' ? 'E' : 'N';
+      lines.push(
+        coordMode === '3D'
+          ? `Station                     ${firstCoordLabel}             ${secondCoordLabel}             Elev`
+          : `Station                     ${firstCoordLabel}             ${secondCoordLabel}`,
+      );
+      const classicPrecisionStationEntries =
+        classicTraverseStationOrder.length > 0
+          ? classicTraverseStationOrder
+              .map((stationId) => [stationId, res.stations[stationId]] as const)
+              .filter((entry): entry is [string, Station] => entry[1] != null)
+          : stationEntriesForListing;
+      classicPrecisionStationEntries.forEach(([id]) => {
+        const precision = getStationPrecision(res, id, precisionReportingMode);
+        const firstSigmaValue =
+          (((parseState?.order ?? parseSettings.order) === 'NE'
+            ? precision.sigmaN
+            : precision.sigmaE) ?? 0) * unitScale;
+        const secondSigmaValue =
+          (((parseState?.order ?? parseSettings.order) === 'NE'
+            ? precision.sigmaE
+            : precision.sigmaN) ?? 0) * unitScale;
+        const firstSigma = firstSigmaValue.toFixed(6).padStart(14);
+        const secondSigma = secondSigmaValue.toFixed(6).padStart(14);
+        const base = `${id.padEnd(18)}${firstSigma}${secondSigma}`;
+        lines.push(
+          coordMode === '3D'
+            ? `${base}${((precision.sigmaH ?? 0) * unitScale).toFixed(6).padStart(14)}`
+            : base,
+        );
+      });
+    } else if (isGnssOnlyListing && !hasStationDescriptions) {
       lines.push(
         coordMode === '3D'
           ? 'Station                     N             E             Elev'
@@ -4051,7 +4190,7 @@ export const buildIndustryStyleListingText = (
 
     lines.push('');
     lines.push(
-      `${isPreanalysis ? 'Predicted Station Coordinate Error Ellipses' : 'Station Coordinate Error Ellipses'} (${linearUnit})`,
+      `${useClassicPreanalysisListing || !isPreanalysis ? 'Station Coordinate Error Ellipses' : 'Predicted Station Coordinate Error Ellipses'} (${linearUnit})`,
     );
     lines.push('                            Confidence Region = 95%');
     lines.push('');
@@ -4115,7 +4254,7 @@ export const buildIndustryStyleListingText = (
 
     lines.push('');
     lines.push(
-      `${isPreanalysis ? 'Predicted Relative Error Ellipses' : 'Relative Error Ellipses'} (${linearUnit})`,
+      `${useClassicPreanalysisListing || !isPreanalysis ? 'Relative Error Ellipses' : 'Predicted Relative Error Ellipses'} (${linearUnit})`,
     );
     lines.push('                            Confidence Region = 95%');
     lines.push('');
@@ -4211,7 +4350,7 @@ export const buildIndustryStyleListingText = (
       }
     }
 
-    if (isPreanalysis && res.weakGeometryDiagnostics) {
+    if (isPreanalysis && !useClassicPreanalysisListing && res.weakGeometryDiagnostics) {
       const flaggedStations = res.weakGeometryDiagnostics.stationCues.filter(
         (cue) => cue.severity !== 'ok',
       );

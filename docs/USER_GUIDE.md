@@ -1,192 +1,447 @@
 # WebNet User Guide
 
-WebNet is a browser-based least-squares adjustment network similar to industry-standard. It supports mixed 2D/3D observations including total station data (angles, distances), leveling data, and GNSS baselines.
+WebNet is a browser-based least-squares adjustment app for survey networks. It is designed to help you load or type survey observations, solve the network, review residuals and precision, and export deliverables without leaving the browser.
 
-## Getting Started
+If you are new to WebNet, follow this guide in order:
 
-1.  **Launch the App**: Open the WebNet application in your browser.
-2.  **Input Data**: You can either paste your data directly into the editor on the left or use the "Open" button to load a `.dat` file.
-3.  **Run Adjustment**: Click the "Run Adjustment" button (play icon) to process the network.
-4.  **Export Results**: Use the export button (download icon) to save a text report of the results.
-5.  **Reset**: The refresh button restores the input to its last run state and clears exclusions/overrides.
-6.  **View Results**:
-    - **Report Tab**: detailed adjustment report, coordinates, and residuals.
-    - **Map Tab**: Visual representation of the network with error ellipses.
+1. Install and launch the app.
+2. Learn the main screen.
+3. Run one small manual example.
+4. Run the full mixed total station + GNSS + leveling tutorial.
 
-## Example Datasets
+## 1. What WebNet Does
 
-WebNet includes ready-to-run TS examples in `public/examples/`:
+WebNet solves least-squares adjustment problems for mixed survey observations. In practical terms, that means it combines:
 
-- `preanalysis_network_plan.dat` (planned `?` observations for predicted-precision / what-if review)
-- `ts_d_distances.dat` (distance-only, `D`)
-- `ts_a_angles.dat` (angle-only, `A`)
-- `ts_b_bearings.dat` (bearing-only, `B`)
-- `ts_rotation_plan.dat` (plan rotation `.ROTATION` on azimuth-bearing style observations)
-- `ts_v_verticals_delta.dat` (`V` with `.DELTA ON`, dH workflow)
-- `ts_dv_distance_vertical.dat` (`DV`)
-- `ts_m_measurements.dat` (`M`)
-- `ts_bm_bearing_measurements.dat` (`BM`)
-- `ts_traverse_tb_t_te.dat` (traverse `TB/T/TE`)
-- `ts_direction_sets_db_dn_dm_de.dat` (direction sets `DB/DN/DM/DE`)
-- `ts_sideshots_ss.dat` (sideshots `SS` with legacy, `AZ=`, and setup-angle `HZ=` usage)
-- `ts_triangulation_trilateration_2d.dat` (industry-standard-style combined triangulation/trilateration 2D sample)
-- `ts_all_combined.dat` (all TS-related record families together)
+- total station measurements
+- GNSS vectors
+- differential leveling
+- fixed or weighted control
 
-## Data Format
+The adjustment finds the best-fit station coordinates for the whole network while reporting:
 
-WebNet parses a format compatible with industry-standard adjustment software. Lines starting with `#` are comments.
+- adjusted coordinates
+- residuals
+- statistical checks
+- station precision / ellipses
+- relative precision between stations
 
-### Global Options
+## 2. Install and Start WebNet
 
-Directives that control parsing behavior:
+### Prerequisites
 
-- `.UNITS [M|FT]`: Set distance units (default: M).
-- `.COORD [2D|3D]`: Set coordinate mode (default: 3D).
-- `.ORDER [NE|EN]`: Set coordinate order (default: EN).
-- `.DELTA [ON|OFF]`: Toggles `ON` (Horizontal Dist + dH) or `OFF` (Slope Dist + Zenith). Default: OFF (Slope).
-- `.MAPMODE [ON|OFF|ANGLECALC]`: Controls map-reduction mode (default: OFF).
-- `.MAPSCALE [factor]`: Grid scale factor used when map mode is active (default: 1.0).
-- `.CRS [OFF|ON [LEGACY|ENU]|LEGACY|ENU|LABEL <text>|SCALE <factor|ON [factor]|OFF>|CONVERGENCE <angle|ON [angle]|OFF>]`: CRS/geodetic transform state for `P/PH` projection workflows plus optional grid-ground scale and azimuth-convergence corrections. Defaults are OFF (legacy behavior retained unless explicitly enabled).
-- `.GEOID [OFF|ON [model]|MODEL <id>|INTERP <BILINEAR|NEAREST>]`: Optional geoid/grid model pipeline controls (default OFF). Phase 1 adds model loading/validation/interpolation diagnostics only; no automatic height conversion is applied yet.
-- `.CURVREF [ON|OFF|k]`: Enables/disables curvature-refraction corrections for vertical reduction; numeric value sets `k` and enables it.
-- `.REFRACTION [k]`: Sets refraction coefficient `k` (default: 0.13).
-- `.VRED [NONE|CURVREF]`: Vertical reduction mode for zenith handling (default: NONE).
-- `.LWEIGHT [val]`: Sets default leveling weight (mm/km).
-- `.NORMALIZE [ON|OFF]`: Enforce face-order checks on traverses/directions (default: ON).
-- `.LONSIGN [WESTNEG|WESTPOS]`: Longitude sign convention (default: WESTNEG).
-- `.I [InstCode]`: Sets the current instrument for subsequent TS observations (optional).
-- `.EDM [ADDITIVE|PROPAGATED]`: Distance sigma mode (default: ADDITIVE).
-- `.CENTERING [ON|OFF]`: Apply centering inflation from the instrument (default: ON).
-- `.ADDC [ON|OFF]`: Add centering to explicit sigmas (default: OFF).
-- `.DEBUG [ON|OFF]`: Enable per-observation debug logging (default: OFF). Logs both w in degrees/radians, normalized residuals, and a per-iteration step check (`wnew ≈ w − A·dx`).
-- `.AMODE [AUTO|ANGLE|DIR]`: Controls interpretation of `A` records. `AUTO` uses strict heuristics; `ANGLE` forces turned-angle interpretation; `DIR` forces azimuth/direction interpretation.
-- `.TSCORR [ON|OFF|SET|SETUP|rho]`: Enables TS angular correlation blocks with optional scope (`SET` or `SETUP`) and correlation coefficient `rho` (0..0.95).
-- `.ROBUST [OFF|HUBER [k]]`: Enables robust reweighting during iteration (Huber mode). Typical `k` is about 1.5.
+- Install the current Node.js LTS release.
+- Confirm `npm` is available in your terminal.
 
-### Preanalysis / Network Planning
+### Local setup
 
-- Enable `Preanalysis` in Project Options -> Adjustment, or run the CLI with `npm run adjust:cli -- --input <file> --coord-mode 2D --preanalysis on`.
-- Planned observations use `?` in place of measured values. For common `D` and `A` planning rows, the measured-value token may also be omitted entirely. WebNet derives those values from the current approximate geometry and computes predicted covariance with `sigma0^2 = 1`.
-- Residual-based QA is intentionally suppressed in this mode. Instead, the report focuses on predicted station precision, connected-pair relative precision, weak-geometry cues, and a what-if table for removing or re-adding planned observations before rerunning.
+1. Clone or download the repository.
+2. Open a terminal in the repository root.
+3. Install dependencies:
 
-### Stations
+```bash
+npm install
+```
 
-- **Structure**: `C StationID [North] [East] [Elev] [! ! !]` (Order depends on `.ORDER`)
-  - Optional trailing numeric token after coordinate standard errors can be used for XY/EN correlation on weighted control (`corrEN` / `corrXY`, range `-0.999 .. 0.999`).
-  - `!`: Fixes the component (use `! !` for 2D, `! ! !` for 3D).
-  - `*`: Free marker when used per-component (e.g. `! * !`).
-  - `*` (lone token): legacy compatibility mode treats it as fixed-all and logs a warning; prefer `!`.
-- **Weighted Control**: If coordinate/elevation standard errors are provided on control records (and the component is not fixed), WebNet treats them as weighted coordinate constraints in the adjustment.
-- **Correlated Control**: When both horizontal sigmas are present, an optional trailing correlation token applies correlated XY/EN control weighting.
-- **Example**: `C MASTER 5000.000 5000.000 100.000 !`
-- **Auto H Hold**: In 3D mode, if a station has no vertical-sensitive observations (no zenith, leveling, or slope distances), its height is held fixed automatically to avoid singular matrices.
+4. Start the development server:
 
-### Observations
+```bash
+npm run dev
+```
 
-#### Instrument Library
+5. Open the local URL shown in the terminal.
+Usually this is `http://localhost:5173`.
 
-- **Instrument (I)**: `I Code Desc-with-dashes edm_const(m) edm_ppm hz_precision(") va_precision(") inst_centr(m) tgt_centr(m) [gps_xy_std(m)] [lev_std(mm/km)]`
-  - Example: `I TS1 Trimble-S9 0.001 1 1 1 0.003 0.003`
-  - If `.I TS1` is set, subsequent `D/A/V/DV/M/BM/DB` records use TS1 uncertainties unless explicitly overridden.
-  - Standard error tokens after observations can be `&` (default), `!` (fixed), `*` (float/zero weight), or numeric.
+### What successful startup looks like
 
-#### Total Station
+You should see:
 
-- **Angle (A)**: `A [At]-[From]-[To] Angle [StdErr]` or `A [At] [From] [To] Angle [StdErr]`
-  - WebNet may auto-classify `A` records as **DIR** (azimuth) if the initial coordinates indicate the observation is a direction rather than a turned angle. DIR residuals use the closest of `obs` or `obs+180°`.
-- **Distance (D)**: `D [At]-[To] Dist [StdErr]` (Effect depends on `.DELTA`)
-- **Vertical (V)**: `V [At]-[To] Zenith/dH [StdErr]` (Effect depends on `.DELTA`)
-- **Measure (M)**: `M [At]-[From]-[To] Angle Dist Zenith [StdAng] [StdDist] [StdZen]`
-  - Combined Angle, Distance, and Vertical.
-  - In `.2D`, `M` can be entered as angle+distance with sigma tokens after distance (no required zenith token).
-- **Bearing/Measurement (BM)**: `BM [At]-[To] Bearing Dist Vertical`
-  - **DIR (azimuth)**: internally treated as a bearing observation without a backsight term; appears in the report as “Directions (Azimuth)”.
+- the WebNet app shell in the browser
+- a left-side input editor
+- a top toolbar with `Project Options` and `Adjust`
+- import/open, save, reset, and export controls in the toolbar
 
-#### Leveling
+If the app does not open, jump to [Troubleshooting](#7-troubleshooting-and-common-mistakes).
 
-- **Level (L)**: `L [From]-[To] dH [Dist/Turns]`
+## 3. First Launch and UI Orientation
 
-#### Global Positioning (GNSS)
+Use these labels as your mental map:
 
-- **G Record**: `G [Inst] [From] [To] dE dN [Std] [StdN] [CorrEN]`
-  - If one sigma value is provided, it is used for both E and N.
-  - Optional `CorrEN` applies EN covariance in the adjustment (`-0.999 .. 0.999`).
+- `Project Options`: where you set adjustment, coordinate-system, weighting, and export settings.
+- `Adjust`: runs the least-squares solve.
+- `Project Files`: opens the checked-file project workspace. Use this later when one job is split across multiple source files.
+- `Adjustment Report`: the main review tab for coordinates, residuals, and precision.
+- `Processing Summary`: quick health summary, counts, timing, and diagnostics.
+- `Industry Standard Output`: formatted listing output for review and parity-style reporting.
+- `Map & Ellipses`: network geometry, station inspection, and ellipse review.
 
-### OPUS Import
+Toolbar actions you will use most:
 
-- Loading an NGS OPUS/OPUS-RS text report converts it into a WebNet `P` or `PH` control record automatically, depending on whether ellipsoid height is available.
-- Imported north/east/height sigmas are carried into weighted control constraints, and optional imported EN correlation is preserved when present in the report-derived covariance summary.
-- After import, the input pane shows a short banner summarizing the imported report type, station ID, target WebNet control record (`P` or `PH`), reference frame, and whether covariance included EN correlation.
+- import/open data button: load a `.dat` file or supported import source
+- project/open button: open a local browser project or portable project
+- export dropdown + export button: choose output format and export results after a run
+- reset button: restore the last-run input state and clear active result changes
 
-### Traverses and Directions
+Recommended path for new users:
 
-Structured data collection methods:
+- start with one file in the input editor
+- use `Project Options` only for the settings you need
+- press `Adjust`
+- review `Adjustment Report` first
+- move to `Processing Summary`, `Industry Standard Output`, and `Map & Ellipses` after the first successful run
 
-- **Traverse**:
+## 4. First Adjustment From a Small Manual Example
 
-  ```text
-  TB StartPoint BacksightPoint
-  T  NextPoint Angle Dist Zenith
-  T  NextPoint Angle Dist Zenith
-  TE EndPoint
-  ```
+This first example is intentionally small. It teaches the basic loop:
 
-- **Direction Sets**:
+- enter control
+- add observations
+- run the solve
+- inspect coordinates and residuals
+- recover from a mistake
 
-  ```text
-  DB [InstCode] Occupy [Backsight]
-  DN Target Angle
-  DM Target Angle Dist Zenith
-  DE
-  ```
+### Paste this into the input editor
 
-  Notes:
-  - `DN`/`DM` angles are ingested as raw circle readings; with `.NORMALIZE ON`, WebNet reduces face-paired shots by target to set means (with reduced sigmas) and still solves a per-set orientation parameter.
-  - If no per-line std dev is provided, angle uncertainty defaults to the instrument angle std (if `DB` supplies an instrument code), otherwise 5".
+```text
+.2D
+.ORDER EN
+.AMODE ANGLE
 
-- **Sideshots (SS)**:
-  - Legacy/basic: `SS From To Dist [Vertical] [StdDist]`
-  - With explicit azimuth: `SS From To AZ=DDD-MM-SS.s Dist [Vertical] [StdAz] [StdDist] [StdVert]`
-  - With setup angle from backsight: `SS From To HZ=DDD-MM-SS.s Dist [Vertical] [StdHz] [StdDist] [StdVert]` (also accepts `HA=` or `ANG=`).
-  - `AZ=` or `@` are absolute azimuth tokens; `HZ=`/`HA=`/`ANG=` are setup-based horizontal angles relative to the current backsight.
-  - Sideshots are excluded from the adjustment but reported in the post-adjust section; explicit azimuth or setup-based angle allows coordinate computation even if the target station has no approximate coordinates.
+C C1 5000.000 5000.000 ! !
+C C2 5200.000 5015.000 ! !
+C U1 5111.000 5092.000
 
-## Interpreting Results
+D C1-U1 144.274 0.004
+D C2-U1 118.097 0.004
+A U1-C1-C2 260-46-30.0 2.0
+```
 
-- **Adjusted Coordinates**: Final X, Y, Z (or N, E, H) values.
-- **Point Precision**: σN/σE/σH per station and 1σ/95% ellipses with azimuth.
-- **Statistical Tests**: Chi-Square test on the variance factor (Standard Error of Unit Weight).
-- **Residuals**: Difference between observed and calculated values. Large residuals may indicate blunders.
-- **Error Ellipses**: Confidence regions for station positions.
-- **Standardized Residuals**: Reported using full residual covariance (Qvv) so values are comparable across types.
-- **Redundancy Numbers**: Per-observation checkability (0 = weak, 1 = strong).
-- **Global Chi-Square Test**: Flags when input sigmas are inconsistent (p-value at 95%).
-- **Chi-Square Bounds & Variance Factor**: Report includes the 95% acceptance interval and variance-factor acceptance range.
-- **Condition Diagnostics**: Normal-matrix condition estimate is reported and warned when the network appears ill-conditioned.
-- **Per-Type Summary**: RMS, max residual, max standardized residual, and counts >3σ/>4σ by observation type.
-- **Local Test + MDB**: Each observation includes local-test pass/fail and Minimal Detectable Bias (MDB) for blunder screening.
-- **Relative Precision**: σΔN/σΔE, σdistance, σbearing, and relative ellipses between unknown points.
-- **Source-Line Traceability**: Residual rows include source line numbers from the input file.
-- **Missing Station Auto-Create**: If a non-sideshot observation references a station without prior `C/P/E` record, WebNet auto-creates it with default approximate coordinates `(0,0,0)` and logs the event. Explicit `C` approximations are still recommended for robust convergence.
-- **Processing Log**: Includes per-direction-set residual summaries (mean/RMS/max in arcseconds) to help spot bad sets.
-- **Prefit Summary**: Initial direction-set residual summaries (before adjustment) can reveal inconsistent sets early.
-- **Direction Set Diagnostics**: Report table includes raw vs reduced counts, F1/F2 balance, per-set orientation, residual RMS/max, plus reduction-quality cues (face-pair delta and raw-max residual statistics).
-- **Direction Target Repeatability**: Ranked per-target direction diagnostics show raw spread, raw-max residual, face-pair delta, per-face spread, residual/std-residual behavior, local-test/MDB cues, and suspect score for blunder screening.
-- **Direction Reject Diagnostics**: Rejected direction shots (for example mixed-face rejects with `.NORMALIZE OFF`) are listed with source line, set, record type, expected/actual face, and reason to speed up data cleanup.
-- **Residual Diagnostics**: A global screening summary reports `|t|` bins (`>2σ`, `>3σ`, `>4σ`), local-test fail totals, weak redundancy counts (`r<0.2` / `r<0.1`), and worst-observation traceability.
-- **Residual Diagnostics (By Type)**: Per-type rows show count, computed StdRes count, local-test fails, `>3σ` count, max `|t|`, and mean/min redundancy for fast blunder triage by observation family.
-- **Direction Repeatability Trends**: Multi-set occupy-target summaries show cross-set residual range/RMS, spread trends, face-balance counts, and ranked suspects to detect unstable repeated observations.
-- **Suspect Impact Analysis**: WebNet runs what-if exclusion trials for top suspect observations and reports expected impact (`dSEUW`, `dMax|t|`, chi-square status change, max unknown-point coordinate shift, and score). You can apply an exclusion directly from this table and re-run.
-- **Header Tooltips**: Hover over report column headers (and key summary labels like SEUW/Chi-Square) to see concise definitions of statistical fields.
-- **Settings Tooltips**: Hover any item in the Settings dropdown to see what each mode/option changes before rerunning.
-- **TS Correlation Diagnostics**: When `.TSCORR` is enabled, the report/export/log include group counts, correlated equation pairs, and per-group off-diagonal weight diagnostics so you can audit the stochastic model.
-- **Robust Diagnostics**: When robust mode is enabled, WebNet reports per-iteration downweight counts/weight stats and the top downweighted observations.
-- **Robust vs Classical Suspects**: A side-by-side top-suspect comparison helps show how ranking changes under robust reweighting.
-- **Setup Diagnostics**: Per-setup observation mix/orientation metrics plus setup-level residual quality (`RMS |t|`, `Max |t|`, local-test fail count, worst observation + line) are reported for TS troubleshooting and blunder isolation.
-- **Setup Suspects**: A ranked setup table highlights the most suspect occupy stations first (failed local tests, then highest standardized residual behavior).
-- **Traverse Diagnostics**: Misclosure vector, traverse distance sum, and closure ratio are reported when closure geometry is available.
-- **Traverse QA Metrics**: Traverse diagnostics now include linear ppm, angular misclosure, vertical misclosure, threshold checks, and overall pass/warn status.
-- **Traverse Loop Ranking**: Per-loop closure rows are ranked by severity and listed with ratio/ppm/angular/vertical cues to quickly isolate weak closure legs.
-- **Map/Vertical Reduction**: When map mode is active, horizontal distances apply the configured map scale; with `.VRED CURVREF` and `.CURVREF ON`, zenith calculations include curvature/refraction correction.
-- **Post-Adjusted Sideshots**: SS observations are excluded from adjustment but reported in a dedicated section with computed HD/dH, coordinate outputs, and propagated σ values. Azimuth source is labeled (`target`, `explicit`, or `setup`). If azimuth cannot be derived, the note column explains why.
-- **Preanalysis What-If Planning**: In preanalysis mode, the report adds a planning table that estimates how removing or re-adding each planned observation changes worst/median station ellipse size, worst connected-pair distance sigma, and weak-geometry counts.
+### What this example contains
+
+- `C` lines define stations
+- `C1` and `C2` are fixed control
+- `U1` is an unknown point with approximate coordinates
+- `D` lines add distances
+- `A` adds a turned angle at `U1`
+
+### Run it
+
+1. Leave `Project Options` at their defaults for this first example.
+2. Press `Adjust`.
+3. Open `Adjustment Report`.
+
+### What to look for
+
+In `Adjustment Report`, confirm:
+
+- `U1` has adjusted coordinates
+- the run converged
+- the residuals are small
+- the network has a valid statistical summary
+
+In `Processing Summary`, confirm:
+
+- the station and observation counts look correct
+- there are no major warnings
+
+### Practice recovering from a mistake
+
+Now intentionally break one line:
+
+```text
+D C1-U1 BADVALUE 0.004
+```
+
+Press `Adjust` again.
+
+You should see a parse/modeling problem in the run output. Restore the distance to `144.274` and rerun. This is the fastest way to learn where WebNet reports input problems.
+
+## 5. Full Mixed-Data Tutorial on a Projected Grid
+
+This is the recommended first real walkthrough.
+
+Dataset:
+- [public/examples/mixed_grid_tutorial.dat](../public/examples/mixed_grid_tutorial.dat)
+
+Purpose:
+- combines total station, GNSS, and differential leveling
+- uses a Canada-first projected grid CRS
+- is small enough to understand and stable enough to reproduce
+
+### Step 1: Open the tutorial dataset
+
+1. Use the toolbar import/open data button.
+2. Open `public/examples/mixed_grid_tutorial.dat`.
+3. Confirm the file loads into the input editor.
+
+This dataset is the recommended starting point for new users. Keep `industry_demo.dat` for later exploration, not for your first end-to-end walkthrough.
+
+### Step 2: Read the top of the file before running it
+
+At the top of the file you will see:
+
+- `.3D`
+- `.UNITS M`
+- `.ORDER EN`
+- `.CRS GRID CA_NAD83_CSRS_NB_STEREO_DOUBLE`
+- `.GRID`
+
+These are the key beginner takeaways:
+
+- the project is a 3D adjustment
+- distances are in meters
+- coordinates are entered as Easting, Northing, Height
+- the job is using a projected grid CRS
+- the TS observation modes are being treated as grid-based for this example
+
+### Step 3: Confirm the project settings
+
+Open `Project Options`, then confirm:
+
+- the adjustment is 3D
+- the coordinate system is a projected grid workflow
+- the default profile remains the current industry-parity default unless you are intentionally testing another profile
+
+You do not need to change anything for this tutorial. The file already carries the important directives. This step is only to show you where the live settings are checked.
+
+### Step 4: Understand the observation blocks
+
+This sample contains three observation families:
+
+- total station `M` records
+- GNSS `G` records
+- leveling `L` records
+
+How they work together:
+
+- total station observations provide angles, slope distances, and zeniths to the unknown station
+- GNSS vectors strengthen the horizontal position of the unknown station
+- leveling observations strengthen the height solution and closure checks
+
+This is the core lesson of a mixed adjustment: different observation families contribute different strengths, and WebNet solves them together in one least-squares run.
+
+### Step 5: Run the full adjustment
+
+1. Press `Adjust`.
+2. Wait for the run to finish.
+
+Expected result for this sample:
+
+- convergence in a few iterations
+- one unknown station (`U1`) adjusted from mixed observations
+- result tabs populated across the workspace
+
+### Step 6: Review the results in the right order
+
+#### Adjustment Report
+
+Start here.
+
+Check:
+
+- adjusted coordinates for `U1`
+- the observation table for TS, GNSS, and leveling rows
+- station precision / ellipse output
+- relative precision sections if you want pair-based review
+
+#### Processing Summary
+
+Use this tab for quick health screening.
+
+Check:
+
+- convergence status
+- station and observation counts
+- SEUW / chi-square summary
+- warning badges or diagnostics
+
+#### Industry Standard Output
+
+Use this when you want a formatted listing-style review.
+
+Check:
+
+- control and observation sections
+- adjusted coordinate block
+- residual sections
+- precision sections
+
+Tip:
+- this tab supports section navigation and sort tools, but new users should first read it in its default order
+
+#### Map & Ellipses
+
+Use this for visual review.
+
+Check:
+
+- control vs unknown geometry
+- network shape
+- ellipse orientation and relative magnitude
+
+### Step 7: Export deliverables
+
+After a successful run:
+
+1. Use the export dropdown in the toolbar to choose an output.
+2. Press the export button.
+
+Common beginner export targets:
+
+- adjusted points
+- observations/residuals CSV
+- GeoJSON
+- text/listing output
+
+If you are not sure which export to use, start with adjusted points and the standard text/listing outputs.
+
+### Step 8: Optional next step with Project Files
+
+Once the single-file tutorial makes sense, repeat the workflow using `Project Files` so one project can be split into:
+
+- control/source files
+- total station files
+- GNSS files
+- leveling files
+
+This is the better long-term workflow for larger jobs, but it is not required for your first successful adjustment.
+
+## 6. Reading Results and Diagnosing the Network
+
+You do not need every advanced metric on day one. Focus on these:
+
+### Adjusted coordinates
+
+These are the final best-fit station coordinates after WebNet combines all active observations and control.
+
+### Residuals
+
+Residuals show the difference between the measured value and the adjusted/computed value.
+
+Practical reading:
+
+- small residuals usually mean the observation agrees well with the rest of the network
+- large residuals deserve review
+- a single large residual is often easier to diagnose than a global SEUW problem
+
+### Standardized residuals
+
+Standardized residuals help you compare misfit across observation families. A large standardized residual matters more than a large raw residual on its own.
+
+### SEUW / chi-square
+
+Use these as overall health checks, not as the only decision tool.
+
+Practical reading:
+
+- a SEUW near `1` usually means your observation sigmas and the solved misfit are in reasonable agreement
+- a much larger value means the network is rougher than the stochastic model expects
+- a much smaller value can mean the sigmas are too loose
+
+### Station precision and error ellipses
+
+These tell you how well each station is determined.
+
+Practical reading:
+
+- smaller ellipses usually mean stronger geometry
+- stretched ellipses usually mean weaker geometry in one direction
+- height precision may behave very differently from horizontal precision
+
+### Relative precision
+
+Relative precision is often more useful than stand-alone station precision when you care about the relationship between two points in the same survey.
+
+### Why TS, GNSS, and leveling can disagree differently
+
+- TS issues often show up as angular or distance residual patterns
+- GNSS issues often show up as vector disagreement or horizontal precision problems
+- leveling issues often show up as height residuals or loop-closure problems
+
+## 7. Troubleshooting and Common Mistakes
+
+### The app does not start
+
+Check:
+
+- Node.js is installed
+- `npm install` finished successfully
+- you started the app from the repo root with `npm run dev`
+- you opened the local URL shown by Vite
+
+### The file loads, but the run fails immediately
+
+Check:
+
+- spelling mistakes in directives
+- missing numeric values
+- bad station IDs
+- observation records that do not match the active mode or order
+
+### I see parse errors after pressing Adjust
+
+Open the run output and fix the first real input problem first. A single bad line often causes several follow-on warnings.
+
+### The network is underconstrained
+
+Typical symptoms:
+
+- warnings about weak datum control
+- very poor precision
+- unstable coordinates
+- solve failures or ill-conditioning
+
+Fixes:
+
+- add more fixed or weighted control
+- add stronger geometry
+- avoid relying on one weak observation family
+
+### The grid/CRS setup looks wrong
+
+Typical symptoms:
+
+- unexpected coordinate drift
+- strange scale/convergence behavior
+- TS distances not agreeing with the projected-grid workflow you expected
+
+For projected-grid jobs, confirm:
+
+- the correct CRS ID is active
+- the file or project is using the intended observation mode for grid vs measured values
+- `Project Options` agree with the workflow you meant to run
+
+The tutorial dataset uses `.CRS GRID ...` together with `.GRID` on purpose. That combination is a good reference when you are learning the projected-grid workflow.
+
+### Residuals or statistical tests look bad
+
+Check:
+
+- observation typos
+- incorrect control
+- wrong CRS/grid interpretation
+- unrealistic sigmas
+- one family overpowering the others with overly tight weighting
+
+Use `Processing Summary` first, then inspect the detailed rows in `Adjustment Report`.
+
+### Older local sample files behave differently from the guide
+
+Do not assume every older sample file is the best onboarding path.
+
+Recommended files for this guide:
+
+- `public/examples/mixed_grid_tutorial.dat`
+- `public/examples/preanalysis_network_plan.dat`
+- `public/examples/nb double stereo.dat`
+
+Treat `industry_demo.dat` as a broader legacy/general example, not the primary beginner walkthrough.
+
+## 8. Where To Go Next
+
+After you finish this guide:
+
+- use `Project Files` for multi-file jobs
+- read [IMPORT_WORKFLOW.md](IMPORT_WORKFLOW.md) for staged external import/reconciliation
+- read [CURRENT_BEHAVIOR.md](CURRENT_BEHAVIOR.md) for the maintained feature inventory
+- read [PARITY_WORKFLOW.md](PARITY_WORKFLOW.md) only if you are working on parity-sensitive validation or development workflows

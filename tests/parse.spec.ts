@@ -729,6 +729,29 @@ describe('parseInput', () => {
     expect(parsed.observations.every((obs) => obs.planned === true)).toBe(true);
   });
 
+  it('treats missing DB/DM direction-set values as planned rows in preanalysis mode', () => {
+    const parsed = parseInput(
+      [
+        '.2D',
+        'C A 0 0 0 ! !',
+        'C B 100 0 0 ! !',
+        'C P 60 40 0',
+        'DB A B',
+        'DM P',
+        'DE',
+      ].join('\n'),
+      {},
+      { preanalysisMode: true, coordMode: '2D' },
+    );
+
+    expect(parsed.parseState.preanalysisMode).toBe(true);
+    expect(parsed.parseState.plannedObservationCount).toBe(3);
+    expect(parsed.observations.filter((obs) => obs.type === 'direction')).toHaveLength(1);
+    expect(parsed.observations.filter((obs) => obs.type === 'dist')).toHaveLength(1);
+    expect(parsed.observations.filter((obs) => obs.type === 'zenith')).toHaveLength(1);
+    expect(parsed.observations.every((obs) => obs.planned === true)).toBe(true);
+  });
+
   it('keeps CRS transforms disabled by default and parses .CRS state directives', () => {
     const base = parseInput(
       ['.UNITS METERS DD', 'P ORG 40 105 0 ! !', 'P TGT 41 106 0'].join('\n'),

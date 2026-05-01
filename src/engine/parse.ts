@@ -1519,7 +1519,6 @@ export const parseInput = (
           state,
           stations,
           logs,
-          isNumericToken,
           parseFixityTokens,
           parseConstraintCorrToken,
           applyFixities,

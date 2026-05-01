@@ -402,6 +402,18 @@ const buildSnprojAssociatedSettingsPayload = ({
 
   const nextParseSettings: ParseSettings = {
     ...parseSettings,
+    runMode:
+      rawText.toUpperCase().includes('STAR*NET RUN MODE                   : PREANALYSIS') ||
+      adjustment.get('RUN_MODE')?.trim().toUpperCase() === 'PREANALYSIS' ||
+      adjustment.get('ADJUSTMENT_RUN_MODE')?.trim().toUpperCase() === 'PREANALYSIS'
+        ? 'preanalysis'
+        : parseSettings.runMode,
+    preanalysisMode:
+      rawText.toUpperCase().includes('STAR*NET RUN MODE                   : PREANALYSIS') ||
+      adjustment.get('RUN_MODE')?.trim().toUpperCase() === 'PREANALYSIS' ||
+      adjustment.get('ADJUSTMENT_RUN_MODE')?.trim().toUpperCase() === 'PREANALYSIS'
+        ? true
+        : parseSettings.preanalysisMode,
     coordMode:
       adjustment.get('ADJUSTMENT_TYPE')?.trim().toUpperCase() === '2D'
         ? '2D'

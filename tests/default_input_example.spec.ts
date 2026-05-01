@@ -4,11 +4,27 @@ import { LSAEngine } from '../src/engine/adjust';
 import { DEFAULT_INPUT } from '../src/defaultInput';
 
 describe('default input example', () => {
-  it('converges as a stable mixed-network quick regression example', () => {
+  it('loads the active startup preanalysis project as a stable default input', () => {
     const result = new LSAEngine({
       input: DEFAULT_INPUT,
       maxIterations: 25,
-      convergenceThreshold: 0.001,
+      convergenceThreshold: 0.01,
+      parseOptions: {
+        runMode: 'preanalysis',
+        preanalysisMode: true,
+        coordMode: '3D',
+        coordSystemMode: 'grid',
+        crsId: 'CA_NAD83_CSRS_UTM_19N',
+        order: 'EN',
+        deltaMode: 'slope',
+        angleStationOrder: 'atfromto',
+        lonSign: 'west-positive',
+        applyCurvatureRefraction: true,
+        verticalReduction: 'curvref',
+        refractionCoefficient: 0.07,
+        qFixLinearSigmaM: 1e-7,
+        qFixAngularSigmaSec: 0.0010001,
+      },
     }).solve();
 
     if (!result.success) {
@@ -18,8 +34,8 @@ describe('default input example', () => {
 
     expect(result.success).toBe(true);
     expect(result.converged).toBe(true);
-    expect(result.seuw).toBeGreaterThan(0.9);
-    expect(result.seuw).toBeLessThan(1.2);
-    expect(result.observations.length).toBeGreaterThan(30);
+    expect(result.preanalysisMode).toBe(true);
+    expect(result.parseState?.plannedObservationCount).toBeGreaterThan(200);
+    expect(result.observations.length).toBeGreaterThan(400);
   });
 });

@@ -27,6 +27,38 @@ describe('parse control record families', () => {
     });
   });
 
+  it('keeps C-record sigma slots aligned when only the height component is fixed', () => {
+    const parsed = parseInput(['.3D', 'C GPS4 682590.839 5090466.658 83 0.005 0.005 !'].join('\n'));
+
+    expect(parsed.stations.GPS4).toMatchObject({
+      x: 682590.839,
+      y: 5090466.658,
+      h: 83,
+      sx: 0.005,
+      sy: 0.005,
+      fixedX: false,
+      fixedY: false,
+      fixedH: true,
+      constraintModeX: 'weighted',
+      constraintModeY: 'weighted',
+      constraintModeH: 'fixed',
+    });
+  });
+
+  it('keeps legacy 2D dummy-height control rows fully fixed when fixity markers follow the placeholder', () => {
+    const parsed = parseInput(['.2D', 'C OCC 1000 2000 0 !'].join('\n'));
+
+    expect(parsed.stations.OCC).toMatchObject({
+      x: 1000,
+      y: 2000,
+      fixed: true,
+      fixedX: true,
+      fixedY: true,
+      constraintModeX: 'fixed',
+      constraintModeY: 'fixed',
+    });
+  });
+
   it('parses P and PH records with projected EN coordinates and preserved height type', () => {
     const parsed = parseInput(
       ['.3D', 'P A 45 63 100 0.01 0.02 0.03', 'PH B 45.0001 63.0001 110 0.02 0.03 0.04'].join(

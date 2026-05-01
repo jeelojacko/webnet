@@ -2189,6 +2189,7 @@ describe('useProjectFileWorkflow', () => {
 
     const snprojText = [
       '[Adjustment]',
+      'RUN_MODE=PREANALYSIS',
       'ADJUSTMENT_TYPE=3D',
       'LOCAL_OR_GRID_ADJUSTMENT=1',
       'COORDINATE_SYSTEM_NAME=Canada NAD83(CSRS) / MTM Zone 10',
@@ -2375,6 +2376,8 @@ describe('useProjectFileWorkflow', () => {
           <div id="file-names">{activeProjectFileViews.map((file) => file.name).join('|')}</div>
           <div id="active-file">{currentProjectFile?.name ?? '-'}</div>
           <div id="coord-mode">{parseSettings.coordMode}</div>
+          <div id="run-mode">{parseSettings.runMode}</div>
+          <div id="preanalysis">{parseSettings.preanalysisMode ? 'on' : 'off'}</div>
           <div id="coord-system">{parseSettings.coordSystemMode}</div>
           <div id="order">{parseSettings.order}</div>
           <div id="delta-mode">{parseSettings.deltaMode}</div>
@@ -2424,6 +2427,8 @@ describe('useProjectFileWorkflow', () => {
       expect(container.querySelector('#file-names')?.textContent).toBe('main.dat');
       expect(container.querySelector('#active-file')?.textContent).toBe('main.dat');
       expect(container.querySelector('#coord-mode')?.textContent).toBe('3D');
+      expect(container.querySelector('#run-mode')?.textContent).toBe('preanalysis');
+      expect(container.querySelector('#preanalysis')?.textContent).toBe('on');
       expect(container.querySelector('#coord-system')?.textContent).toBe('grid');
       expect(container.querySelector('#order')?.textContent).toBe('NE');
       expect(container.querySelector('#delta-mode')?.textContent).toBe('slope');

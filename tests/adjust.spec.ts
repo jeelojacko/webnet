@@ -2263,7 +2263,7 @@ describe('LSAEngine', () => {
       parseOptions: { preanalysisMode: true, coordMode: '2D' },
     }).solve();
 
-    expect(result.success).toBe(true);
+    expect(result.converged).toBe(true);
     expect(result.preanalysisMode).toBe(true);
     expect(result.parseState?.preanalysisMode).toBe(true);
     expect(result.parseState?.plannedObservationCount).toBe(5);
@@ -2365,6 +2365,36 @@ describe('LSAEngine', () => {
     const candidates = result.observations.filter(isPreanalysisWhatIfCandidate);
     expect(candidates).toHaveLength(10);
     expect(candidates.some((obs) => obs.id === bearing?.id)).toBe(false);
+  });
+
+  it('synthesizes missing DB/DM direction-set values from approximate geometry in preanalysis mode', () => {
+    const input = [
+      '.2D',
+      'C A 0 0 0 ! !',
+      'C B 100 0 0 ! !',
+      'C P 60 40 0',
+      'DB A B',
+      'DM P',
+      'DE',
+    ].join('\n');
+
+    const result = new LSAEngine({
+      input,
+      maxIterations: 6,
+      parseOptions: { preanalysisMode: true, coordMode: '2D' },
+    }).solve();
+
+    expect(result.preanalysisMode).toBe(true);
+
+    const direction = result.observations.find((obs) => obs.type === 'direction');
+    const distance = result.observations.find((obs) => obs.type === 'dist');
+    const zenith = result.observations.find((obs) => obs.type === 'zenith');
+    expect(direction?.planned).toBe(true);
+    expect(distance?.planned).toBe(true);
+    expect(zenith?.planned).toBe(true);
+    expect(direction?.obs ?? 0).not.toBe(0);
+    expect(distance?.obs ?? 0).toBeGreaterThan(0);
+    expect(zenith?.obs ?? 0).not.toBe(0);
   });
 
   it('enforces data-check mode incompatibility matrix with explicit diagnostics', () => {

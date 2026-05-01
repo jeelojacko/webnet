@@ -1,5 +1,14 @@
 # TODO - WebNet
 
+- [x] Camp Design preanalysis listing-parity batch (May 2026): diff the current industry-style preanalysis listing against `Camp_Design.lst`, remove adjustment-only sections that should not appear in preanalysis, align the included section set/order/headers with the Camp reference, and lock the structure with focused regression coverage.
+
+- [x] Camp Design preanalysis control-covariance parity batch (May 2026): preserve component slot alignment in control-record sigma/fixity parsing so mixed weighted/fixed control like `GPS4 0.005 0.005 !` stays weighted in horizontal and fixed in height, then recheck the preanalysis error-propagation parity baseline.
+- [x] Camp Design preanalysis model-alignment batch (May 2026): switch the startup default input to `Traverse_Only.dat`, audit how planned pre-analysis observations are parsed/synthesized/weighted/reported, and align the solve plus industry-style output with the actual Camp Design pre-analysis contract.
+- [x] Camp Design exact preanalysis parity tightening batch (April 2026): switch the pre-analysis parity fixture to the real `Traverse_Only.dat` reference input, measure the remaining listing diffs against `Camp_Design.lst`, and lock exact parity wherever the current pre-analysis output contract already matches.
+- [x] Camp Design preanalysis startup/parity batch (April 2026): bundle the current combined startup project as a portable example, switch the app startup defaults to the Camp Design pre-analysis case, import `.snproj` pre-analysis mode correctly, and add focused pre-analysis parity coverage against the provided Camp Design reference listing.
+
+- [x] Beginner documentation overhaul batch (April 2026): refresh onboarding docs for survey users, add a reproducible Canada-first mixed TS/GNSS/leveling tutorial example, rewrite the main user guide into an install-to-adjustment workflow, and realign README/example references with the current app UI.
+
 - [x] Industry output pane navigation/sort batch (April 2026): add right-click `Go to section` and `Sort by` submenus in Industry Standard Output, support auto-detected section jump targets, add new observation sort modes (`Residual`, `Std Error`, `Std Residual`) with legacy `residual` migration mapping, and lock UI/listing-sort coverage.
 
 - [x] UI navigation smoothness batch (April 2026): gate/cached industry listing generation to industry tab, transition tab switches, one-time lazy-tab prewarm after first solve, persist map navigation state across tab remounts, and add focused UI perf/regression coverage.

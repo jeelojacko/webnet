@@ -6,6 +6,22 @@ import { describe, expect, it, vi } from 'vitest';
 
 const buildIndustryListingTextSpy = vi.fn(() => 'MOCK INDUSTRY OUTPUT');
 
+vi.mock('../src/industryParityCases', async () => {
+  const actual = await vi.importActual<typeof import('../src/industryParityCases')>(
+    '../src/industryParityCases',
+  );
+  return {
+    ...actual,
+    ACTIVE_INDUSTRY_PARITY_CASE: {
+      id: 'test-default',
+      fixtureInputPath: '',
+      fixtureOutputPath: '',
+      normalizationRules: [],
+      startupDefaults: undefined,
+    },
+  };
+});
+
 vi.mock('../src/engine/runOutputBuilders', async () => {
   const actual = await vi.importActual<typeof import('../src/engine/runOutputBuilders')>(
     '../src/engine/runOutputBuilders',

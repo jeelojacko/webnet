@@ -6,6 +6,7 @@ import {
   DEFAULT_QFIX_LINEAR_SIGMA_M,
   DEFAULT_S9_INSTRUMENT_CENTERING_HORIZ_M,
 } from '../../src/engine/defaults';
+import { ACTIVE_INDUSTRY_PARITY_CASE } from '../../src/industryParityCases';
 import type { InstrumentLibrary } from '../../src/types';
 import type { RunSessionRequest } from '../../src/engine/runSession';
 
@@ -127,6 +128,28 @@ export const createRunSessionRequest = (
   approvedClusterMerges: [],
   ...overrides,
 });
+
+export const createActiveStartupRunSessionRequest = (
+  overrides: Partial<RunSessionRequest> = {},
+): RunSessionRequest => {
+  const startup = ACTIVE_INDUSTRY_PARITY_CASE.startupDefaults;
+  const base = createRunSessionRequest();
+  const overrideParseSettings = overrides.parseSettings ?? {};
+  return createRunSessionRequest({
+    ...overrides,
+    input: overrides.input ?? startup?.input ?? base.input,
+    maxIterations: overrides.maxIterations ?? startup?.settingsPatch.maxIterations ?? base.maxIterations,
+    convergenceLimit:
+      overrides.convergenceLimit ?? startup?.settingsPatch.convergenceLimit ?? base.convergenceLimit,
+    parseSettings: {
+      ...base.parseSettings,
+      ...startup?.parseSettingsPatch,
+      ...overrideParseSettings,
+    },
+    projectInstruments: overrides.projectInstruments ?? startup?.projectInstruments ?? base.projectInstruments,
+    selectedInstrument: overrides.selectedInstrument ?? startup?.selectedInstrument ?? base.selectedInstrument,
+  });
+};
 
 const extractTraverseStartupInput = (): string => {
   const raw = readFileSync('tests/fixtures/industry_case_traverse_output.txt', 'utf-8');

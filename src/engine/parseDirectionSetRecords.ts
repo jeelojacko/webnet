@@ -17,6 +17,7 @@ type RawDirectionShotLike = {
   obs: number;
   stdDev: number;
   sigmaSource: SigmaSource;
+  planned?: boolean;
   zenithObs?: number;
   zenithStdDev?: number;
   zenithSigmaSource?: SigmaSource;
@@ -204,13 +205,18 @@ export const handleDirectionSetRecord = ({
     }
     const strippedFaceHints = stripDirectionFaceHints(tailTokens);
     tailTokens = strippedFaceHints.tokens;
+    const wantsPlannedZenith =
+      code === 'DM' && state.preanalysisMode === true && state.deltaMode !== 'horiz';
     const vertParsed =
-      code === 'DM' && vert
+      code === 'DM' && (vert != null || wantsPlannedZenith)
         ? state.deltaMode === 'horiz'
           ? parseObservedLinearToken(vert, toMeters)
           : parseObservedAngleToken(vert, 'dd')
         : null;
-    if ((distParsed && !distParsed.valid) || (vert && vertParsed && !vertParsed.valid)) {
+    if (
+      (distParsed && !distParsed.valid) ||
+      ((vert != null || wantsPlannedZenith) && vertParsed && !vertParsed.valid)
+    ) {
       logs.push(`Invalid direction-measure record at line ${lineNum}, skipping ${code}.`);
       return true;
     }
@@ -238,6 +244,7 @@ export const handleDirectionSetRecord = ({
     const raw: RawDirectionShotLike = {
       to,
       obs: angRad,
+      planned: angParsed.planned,
       stdDev: stdAng * SEC_TO_RAD,
       sigmaSource: dirResolved.source,
       sourceLine: lineNum,
@@ -246,7 +253,7 @@ export const handleDirectionSetRecord = ({
       reliableFace: isReliableFaceSource(faceSource),
       isOrientationReference: code === 'DN',
     };
-    if (code === 'DM' && vert && state.deltaMode !== 'horiz') {
+    if (code === 'DM' && vertParsed && state.deltaMode !== 'horiz') {
       if (!state.threeReduceMode) {
         const zenResolved = resolveAngularSigma(sigmas[2], defaultZenithSigmaSec(inst));
         if (zenResolved.source !== 'float') {

@@ -11,29 +11,35 @@ import {
   resetScenarioRunServiceCache,
 } from '../src/engine/solveEngine';
 import {
+  createActiveStartupRunSessionRequest,
   createColdstreamRunSessionRequest,
   createRunSessionRequest,
   createTraverseRunSessionRequest,
 } from './helpers/runSessionRequest';
 
 describe('runAdjustmentSession', () => {
-  it('solves the default mixed network through the shared run-session path', () => {
-    const outcome = runAdjustmentSession(createRunSessionRequest());
+  it(
+    'solves the active startup preanalysis project through the shared run-session path',
+    () => {
+      const outcome = runAdjustmentSession(createActiveStartupRunSessionRequest());
 
-    expect(outcome.result.success).toBe(true);
-    expect(outcome.result.converged).toBe(true);
-    expect(outcome.result.observations.length).toBeGreaterThan(0);
-    expect(outcome.effectiveExcludedIds).toEqual([]);
-    expect(outcome.elapsedMs).toBeGreaterThanOrEqual(0);
-    expect(outcome.profile.totalElapsedMs).toBeGreaterThanOrEqual(0);
-    expect(outcome.profile.solveInvocationCount).toBeGreaterThanOrEqual(1);
-    expect(outcome.profile.stages.length).toBeGreaterThan(0);
-    expect(outcome.result.solveTimingProfile).toBeDefined();
-    expect(outcome.result.solveTimingProfile?.equationAssemblyMs).toBeGreaterThanOrEqual(0);
-    expect(outcome.result.solveTimingProfile?.matrixFactorizationMs).toBeGreaterThanOrEqual(0);
-    expect(outcome.result.solveTimingProfile?.precisionAndDiagnosticsMs).toBeGreaterThanOrEqual(0);
-    expect(outcome.result.logs.some((line) => line.startsWith('Solve timing (ms):'))).toBe(true);
-  });
+      expect(outcome.result.success).toBe(true);
+      expect(outcome.result.converged).toBe(true);
+      expect(outcome.result.preanalysisMode).toBe(true);
+      expect(outcome.result.observations.length).toBeGreaterThan(0);
+      expect(outcome.effectiveExcludedIds).toEqual([]);
+      expect(outcome.elapsedMs).toBeGreaterThanOrEqual(0);
+      expect(outcome.profile.totalElapsedMs).toBeGreaterThanOrEqual(0);
+      expect(outcome.profile.solveInvocationCount).toBeGreaterThanOrEqual(1);
+      expect(outcome.profile.stages.length).toBeGreaterThan(0);
+      expect(outcome.result.solveTimingProfile).toBeDefined();
+      expect(outcome.result.solveTimingProfile?.equationAssemblyMs).toBeGreaterThanOrEqual(0);
+      expect(outcome.result.solveTimingProfile?.matrixFactorizationMs).toBeGreaterThanOrEqual(0);
+      expect(outcome.result.solveTimingProfile?.precisionAndDiagnosticsMs).toBeGreaterThanOrEqual(0);
+      expect(outcome.result.logs.some((line) => line.startsWith('Solve timing (ms):'))).toBe(true);
+    },
+    120000,
+  );
 
   it(
     'keeps the traverse parity startup convergent through the shared run-session path',

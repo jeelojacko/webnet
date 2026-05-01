@@ -786,11 +786,7 @@ export class LSAEngine {
         return;
       }
       if (obs.type === 'direction') {
-        obs.obs = this.modeledAzimuth(
-          this.getAzimuth(obs.at, obs.to).az,
-          obs.at,
-          obs.gridObsMode !== 'grid',
-        );
+        obs.obs = this.getAzimuth(obs.at, obs.to).az;
         return;
       }
       if (obs.type === 'bearing' || obs.type === 'dir') {
@@ -5334,6 +5330,19 @@ export class LSAEngine {
                 `Check sign convention and angle/zenith units (radians vs degrees).`,
             );
           }
+        }
+
+        if (this.preanalysisMode) {
+          this.converged = true;
+          this.log(`Iter ${iter + 1}: Max Corr = 0.0000`);
+          this.log(
+            `Iter ${iter + 1}: preanalysis geometry held at approximate coordinates; covariance assembled from the current planning geometry.`,
+          );
+          this.log(
+            'Converged: preanalysis uses the approximate-geometry covariance build without iterative coordinate updates.',
+          );
+          this.emitSolveProgress('iteration');
+          break;
         }
 
         const maxCorrection = applyAdjustmentCorrections(

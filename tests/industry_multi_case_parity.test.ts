@@ -19,6 +19,28 @@ const extractSection = (text: string, startMarker: string, endMarker: string): s
   return slice.slice(0, end).trimEnd();
 };
 
+const extractSectionToEnd = (text: string, startMarker: string): string => {
+  const normalized = normalizeLineEndings(text);
+  const start = normalized.indexOf(startMarker);
+  expect(start).toBeGreaterThanOrEqual(0);
+  return normalized.slice(start).trimEnd();
+};
+
+const extractFixedRowTableSection = (
+  text: string,
+  startSubstring: string,
+  rowCount: number,
+): string => {
+  const lines = normalizeLineEndings(text).split('\n');
+  const startIndex = lines.findIndex((line) => line.includes(startSubstring));
+  expect(startIndex).toBeGreaterThanOrEqual(0);
+  const headerIndex = lines.findIndex((line, index) => index > startIndex && line.trim().startsWith('From'));
+  expect(headerIndex).toBeGreaterThanOrEqual(0);
+  const sectionEnd = headerIndex + 1 + rowCount;
+  expect(lines.length).toBeGreaterThanOrEqual(sectionEnd);
+  return lines.slice(startIndex, sectionEnd).join('\n').trimEnd();
+};
+
 const dmsToDecimalDegrees = (dms: string): number => {
   const [degToken, minToken, secToken] = dms.split('-');
   const deg = Number.parseFloat(degToken);
@@ -113,6 +135,58 @@ const parseRelationshipRow = (
   };
 };
 
+const parseStationEllipseRows = (
+  section: string,
+): Array<{ stationId: string; major: number; minor: number; azimuthToken: string; stdPos: number }> =>
+  normalizeLineEndings(section)
+    .split('\n')
+    .map((line) => line.trim())
+    .filter((line) => /^\S+\s+-?\d+\.\d+\s+-?\d+\.\d+\s+\S+\s+-?\d+\.\d+/.test(line))
+    .map((line) => {
+      const parts = line.split(/\s+/);
+      return {
+        stationId: parts[0],
+        major: Number.parseFloat(parts[1]),
+        minor: Number.parseFloat(parts[2]),
+        azimuthToken: parts[3],
+        stdPos: Number.parseFloat(parts[4]),
+      };
+    })
+    .filter(
+      (row) =>
+        Number.isFinite(row.major) && Number.isFinite(row.minor) && Number.isFinite(row.stdPos),
+    );
+
+const parseRelativeEllipseRows = (
+  section: string,
+): Array<{
+  from: string;
+  to: string;
+  major: number;
+  minor: number;
+  azimuthToken: string;
+  stdPos: number;
+}> =>
+  normalizeLineEndings(section)
+    .split('\n')
+    .map((line) => line.trim())
+    .filter((line) => /^\S+\s+\S+\s+-?\d+\.\d+\s+-?\d+\.\d+\s+\S+\s+-?\d+\.\d+/.test(line))
+    .map((line) => {
+      const parts = line.split(/\s+/);
+      return {
+        from: parts[0],
+        to: parts[1],
+        major: Number.parseFloat(parts[2]),
+        minor: Number.parseFloat(parts[3]),
+        azimuthToken: parts[4],
+        stdPos: Number.parseFloat(parts[5]),
+      };
+    })
+    .filter(
+      (row) =>
+        Number.isFinite(row.major) && Number.isFinite(row.minor) && Number.isFinite(row.stdPos),
+    );
+
 const parseObservationStatisticRow = (
   section: string,
   label: string,
@@ -150,9 +224,13 @@ const parseRawDistanceRows = (
 }> =>
   normalizeLineEndings(section)
     .split('\n')
-    .slice(2)
-    .map((line) => line.trim().split(/\s+/))
-    .filter((parts) => parts.length >= 8)
+    .map((line) => line.trim())
+    .filter((line) =>
+      /^\S+\s+\S+\s+-?\d+\.\d+\s+-?\d+\.\d+\s+-?\d+\.\d+\s+-?\d+\.\d+\s+\d+\.\d+\s+\S+$/.test(
+        line,
+      ),
+    )
+    .map((line) => line.split(/\s+/))
     .map((parts) => ({
       from: parts[0],
       to: parts[1],
@@ -258,7 +336,12 @@ const parseMeasuredDirectionSection = (
         return entries;
       }
       const parts = line.split(/\s+/);
-      if (parts.length < 5 || !parts[2].includes('-')) return entries;
+      if (
+        parts.length !== 5 ||
+        !/^\S+\s+\S+\s+\d{1,3}-\d{2}-\d{2}(?:\.\d+)?\s+-?\d+\.\d+\s+-?\d+\.\d+$/.test(line)
+      ) {
+        return entries;
+      }
       entries.push({
         kind: 'row',
         from: parts[0],
@@ -269,6 +352,46 @@ const parseMeasuredDirectionSection = (
       });
       return entries;
     }, []);
+
+const collectMeasuredDirectionRows = (
+  text: string,
+  startSubstring: string,
+  rowCount: number,
+): Array<{
+  from: string;
+  to: string;
+  directionDms: string;
+  stdErrSec: number;
+  tt: number;
+}> => {
+  const lines = normalizeLineEndings(text).split('\n');
+  const startIndex = lines.findIndex((line) => line.includes(startSubstring));
+  expect(startIndex).toBeGreaterThanOrEqual(0);
+  const rows: Array<{
+    from: string;
+    to: string;
+    directionDms: string;
+    stdErrSec: number;
+    tt: number;
+  }> = [];
+  for (let index = startIndex + 1; index < lines.length && rows.length < rowCount; index += 1) {
+    const line = lines[index]?.trim() ?? '';
+    if (
+      /^\S+\s+\S+\s+\d{1,3}-\d{2}-\d{2}(?:\.\d+)?\s+-?\d+\.\d+\s+-?\d+\.\d+$/.test(line)
+    ) {
+      const parts = line.split(/\s+/);
+      rows.push({
+        from: parts[0],
+        to: parts[1],
+        directionDms: parts[2],
+        stdErrSec: Number.parseFloat(parts[3]),
+        tt: Number.parseFloat(parts[4]),
+      });
+    }
+  }
+  expect(rows).toHaveLength(rowCount);
+  return rows;
+};
 
 const extractGeodeticRows = (
   text: string,
@@ -419,11 +542,13 @@ const buildCaseResult = (
 
   return new LSAEngine({
     input: startup?.input ?? '',
-    maxIterations: 15,
+    maxIterations: startup?.settingsPatch.maxIterations ?? 15,
     convergenceThreshold: startup?.settingsPatch.convergenceLimit ?? 0.001,
     instrumentLibrary: startup?.projectInstruments,
     parseOptions: {
       currentInstrument: startup?.selectedInstrument,
+      runMode: startup?.parseSettingsPatch.runMode,
+      preanalysisMode: startup?.parseSettingsPatch.preanalysisMode,
       coordSystemMode: startup?.parseSettingsPatch.coordSystemMode,
       crsId: startup?.parseSettingsPatch.crsId,
       coordMode: startup?.parseSettingsPatch.coordMode ?? '3D',
@@ -469,34 +594,29 @@ describe('industry multi-case parity foundation', () => {
     expect(normalized).toContain('Project Units                       : Meters');
   });
 
-  it('makes the combined case the active startup default with the expected grid settings, instruments, and input text', () => {
-    expect(ACTIVE_INDUSTRY_PARITY_CASE.id).toBe('combined');
+  it('makes the camp design preanalysis case the active startup default with the expected grid settings, instruments, and input text', () => {
+    expect(ACTIVE_INDUSTRY_PARITY_CASE.id).toBe('campDesignPreanalysis');
     expect(ACTIVE_INDUSTRY_PARITY_CASE.startupDefaults).toBeDefined();
 
     const startup = ACTIVE_INDUSTRY_PARITY_CASE.startupDefaults!;
-    expect(startup.input).toContain('#Traverse Only');
-    expect(startup.input).toContain('.INST\tSX12');
-    expect(startup.input).toContain('.GPS WEIGHT COVARIANCE');
-    expect(startup.input).toContain("G0 'V27 PostProcessed 28-APR-2025 12:21:00.0 session_1_processed.asc");
+    expect(startup.input).toContain('# 2025 Suvery Design Pre-Analysis');
+    expect(startup.input).toContain('B GPS2-GPS5 N60-29-49.36W !');
+    expect(startup.input).toContain('DB 128');
     expect(startup.input).not.toContain('Project Option Settings');
     expect(startup.settingsPatch.convergenceLimit).toBe(0.01);
+    expect(startup.settingsPatch.maxIterations).toBe(10);
     expect(startup.parseSettingsPatch.coordMode).toBe('3D');
     expect(startup.parseSettingsPatch.coordSystemMode).toBe('grid');
-    expect(startup.parseSettingsPatch.crsId).toBe('CA_NAD83_CSRS_NB_STEREO_DOUBLE');
-    expect(startup.parseSettingsPatch.order).toBe('NE');
+    expect(startup.parseSettingsPatch.crsId).toBe('CA_NAD83_CSRS_UTM_19N');
+    expect(startup.parseSettingsPatch.order).toBe('EN');
+    expect(startup.parseSettingsPatch.runMode).toBe('preanalysis');
+    expect(startup.parseSettingsPatch.preanalysisMode).toBe(true);
     expect(startup.parseSettingsPatch.lonSign).toBe('west-positive');
-    expect(startup.parseSettingsPatch.verticalDeflectionNorthSec).toBeCloseTo(-2.91, 6);
-    expect(startup.parseSettingsPatch.verticalDeflectionEastSec).toBeCloseTo(-1.46, 6);
     expect(startup.parseSettingsPatch.applyCurvatureRefraction).toBe(true);
     expect(startup.parseSettingsPatch.verticalReduction).toBe('curvref');
     expect(startup.parseSettingsPatch.refractionCoefficient).toBe(0.07);
-    expect(startup.selectedInstrument).toBe('TRAV_DEFAULT');
-    expect(Object.keys(startup.projectInstruments)).toEqual([
-      'TRAV_DEFAULT',
-      'S9',
-      'SX12',
-      'TS11',
-    ]);
+    expect(startup.selectedInstrument).toBe('CAMP_DEFAULT');
+    expect(Object.keys(startup.projectInstruments)).toEqual(['CAMP_DEFAULT', 'S9', 'SX12']);
   });
 
   it('keeps the copied leveling reference output available for future exact normalized text parity work', () => {
@@ -1590,9 +1710,9 @@ describe('industry multi-case parity foundation', () => {
       expect(listing).toContain('Project Library Instrument TS11');
       expect(listing).toContain('                    Summary of Unadjusted Input Observations');
       expect(listing).toContain('Number of Entered Stations (Meters) = 7');
-      expect(listing).toContain('GPS5                7438251.1419      2489408.5228     44.6935');
-      expect(listing).toContain('OOP                 7438438.7334      2488810.2371     64.8718');
-      expect(listing).toContain('GPS2                7438481.0553      2489236.2881     37.7045');
+      expect(listing).toMatch(/GPS5\s+7438251\.1419\s+2489408\.5228\s+44\.6935/);
+      expect(listing).toMatch(/OOP\s+7438438\.7334\s+2488810\.2371\s+64\.8718/);
+      expect(listing).toMatch(/GPS2\s+7438481\.0553\s+2489236\.2881\s+37\.7045/);
       expect(listing).toContain('Unused Stations');
       expect(listing).toContain('FRDN');
       expect(listing).toContain('BROD');
@@ -1656,6 +1776,190 @@ describe('industry multi-case parity foundation', () => {
       normalizedListing.slice(normalizedListing.indexOf(startMarker)),
     );
   });
+
+  it('keeps the camp design preanalysis listing aligned with the stored Traverse_Only reference across the overlapping preanalysis sections', () => {
+    const startup = INDUSTRY_PARITY_CASES.campDesignPreanalysis.startupDefaults;
+    expect(startup).toBeDefined();
+
+    const result = buildCaseResult('campDesignPreanalysis');
+    expect(result.success).toBe(true);
+    expect(result.converged).toBe(true);
+    expect(result.preanalysisMode).toBe(true);
+    expect(result.parseState?.runMode).toBe('preanalysis');
+
+    const listing = buildIndustryStyleListingText(
+      result,
+      {
+        maxIterations: startup?.settingsPatch.maxIterations ?? 10,
+        convergenceLimit: startup?.settingsPatch.convergenceLimit,
+        precisionReportingMode: 'industry-standard',
+        units: 'm',
+        listingShowCoordinates: true,
+        listingShowObservationsResiduals: true,
+        listingShowErrorPropagation: true,
+        listingShowProcessingNotes: true,
+        listingShowAzimuthsBearings: true,
+        listingShowLostStations: true,
+        listingSortCoordinatesBy: 'input',
+        listingSortObservationsBy: 'stdResidual',
+        listingObservationLimit: 9999,
+      },
+      {
+        coordMode: startup?.parseSettingsPatch.coordMode ?? '3D',
+        order: startup?.parseSettingsPatch.order ?? 'EN',
+        angleUnits: startup?.parseSettingsPatch.angleUnits ?? 'dms',
+        angleStationOrder: startup?.parseSettingsPatch.angleStationOrder ?? 'atfromto',
+        deltaMode: startup?.parseSettingsPatch.deltaMode ?? 'slope',
+        refractionCoefficient: startup?.parseSettingsPatch.refractionCoefficient ?? 0.13,
+      },
+      {
+        solveProfile: 'industry-parity',
+        angleCenteringModel: 'geometry-aware-correlated-rays',
+        defaultSigmaCount: 0,
+        defaultSigmaByType: '',
+        stochasticDefaultsSummary: '',
+        rotationAngleRad: 0,
+        currentInstrumentCode: startup?.selectedInstrument,
+        currentInstrumentDesc: startup?.projectInstruments[startup?.selectedInstrument ?? '']?.desc,
+        currentInstrumentLevStdMmPerKm:
+          startup?.projectInstruments[startup?.selectedInstrument ?? '']?.levStd_mmPerKm,
+        verticalDeflectionNorthSec: startup?.parseSettingsPatch.verticalDeflectionNorthSec ?? 0,
+        verticalDeflectionEastSec: startup?.parseSettingsPatch.verticalDeflectionEastSec ?? 0,
+        projectInstrumentLibrary: startup?.projectInstruments,
+      },
+    );
+
+    const referenceOutput = readFileSync(
+      INDUSTRY_PARITY_CASES.campDesignPreanalysis.fixtureOutputPath,
+      'utf-8',
+    );
+    expect(readFileSync(INDUSTRY_PARITY_CASES.campDesignPreanalysis.fixtureInputPath, 'utf-8')).toContain(
+      '#Traverse Only',
+    );
+    expect(listing).toContain('STAR*NET Run Mode                   : Preanalysis');
+    expect(listing).toContain('Coordinate System                   : UTM83-19');
+    expect(listing).toContain('Longitude Sign Convention           : Positive West');
+    expect(listing).toContain('Input/Output Coordinate Order       : East-North');
+    expect(listing).toContain('Project Default Instrument');
+    expect(listing).toContain('Project Library Instrument S9');
+    expect(listing).toContain('Project Library Instrument SX12');
+
+    const referenceDistanceSection = extractFixedRowTableSection(
+      referenceOutput,
+      'Measured Distance Observations (Meters)',
+      244,
+    );
+    const currentDistanceSection = extractFixedRowTableSection(
+      listing,
+      'Measured Distance Observations (Meters)',
+      244,
+    );
+    const referenceDistanceRows = parseRawDistanceRows(referenceDistanceSection);
+    const currentDistanceRows = parseRawDistanceRows(currentDistanceSection);
+    expect(currentDistanceRows).toHaveLength(referenceDistanceRows.length);
+    const groupDistanceRows = (rows: ReturnType<typeof parseRawDistanceRows>) =>
+      rows.reduce<Record<string, ReturnType<typeof parseRawDistanceRows>>>((acc, row) => {
+        const key = [row.from, row.to].sort().join('\t');
+        (acc[key] ??= []).push(row);
+        return acc;
+      }, {});
+    const referenceDistanceGroups = groupDistanceRows(referenceDistanceRows);
+    const currentDistanceGroups = groupDistanceRows(currentDistanceRows);
+    expect(Object.keys(currentDistanceGroups)).toEqual(Object.keys(referenceDistanceGroups));
+    Object.entries(referenceDistanceGroups).forEach(([key, expectedRows]) => {
+      const currentRows = currentDistanceGroups[key];
+      expect(currentRows, `missing current distance group ${key}`).toBeDefined();
+      expectedRows.forEach((expected) => {
+        const match = currentRows.find(
+          (row) =>
+            Math.abs(row.distance - expected.distance) <= 0.002 &&
+            Math.abs(row.stdErr - expected.stdErr) <= 0.0002 &&
+            Math.abs(row.hi - expected.hi) <= 0.001 &&
+            Math.abs(row.ht - expected.ht) <= 0.001 &&
+            Math.abs(row.combinedFactor - expected.combinedFactor) <= 0.000001 &&
+            row.type === expected.type,
+        );
+        expect(match, `missing matching distance row in group ${key}`).toBeDefined();
+      });
+    });
+
+    const referenceDirectionRows = collectMeasuredDirectionRows(
+      referenceOutput,
+      'Measured Direction Observations (DMS)',
+      244,
+    );
+    const currentDirectionRows = collectMeasuredDirectionRows(
+      listing,
+      'Measured Direction Observations (DMS)',
+      244,
+    );
+    expect(currentDirectionRows).toHaveLength(referenceDirectionRows.length);
+    referenceDirectionRows.forEach((expected, index) => {
+      const current = currentDirectionRows[index];
+      expect(current).toBeDefined();
+      expect(current?.from).toBe(expected.from);
+      expect(current?.to).toBe(expected.to);
+      expect(current?.directionDms).toBe(expected.directionDms);
+      expect(Math.abs((current?.stdErrSec ?? 0) - expected.stdErrSec)).toBeLessThanOrEqual(0.02);
+      expect(Math.abs((current?.tt ?? 0) - expected.tt)).toBeLessThanOrEqual(0.05);
+    });
+
+    const referenceStationEllipseSection = extractSection(
+      referenceOutput,
+      'Station Coordinate Error Ellipses (Meters)',
+      'Relative Error Ellipses (Meters)',
+    );
+    const currentStationEllipseSection = extractSection(
+      listing,
+      'Station Coordinate Error Ellipses (Meters)',
+      'Relative Error Ellipses (Meters)',
+    );
+    const referenceStationEllipseRows = parseStationEllipseRows(referenceStationEllipseSection);
+    const currentStationEllipseRows = parseStationEllipseRows(currentStationEllipseSection);
+    expect(currentStationEllipseRows).toHaveLength(referenceStationEllipseRows.length);
+    const referenceStationEllipseMap = new Map(
+      referenceStationEllipseRows.map((row) => [row.stationId, row] as const),
+    );
+    currentStationEllipseRows.forEach((row) => {
+      const expected = referenceStationEllipseMap.get(row.stationId);
+      expect(expected, `missing reference station ellipse row ${row.stationId}`).toBeDefined();
+      expect(Math.abs(row.major - (expected?.major ?? 0))).toBeLessThanOrEqual(0.05);
+      expect(Math.abs(row.minor - (expected?.minor ?? 0))).toBeLessThanOrEqual(0.05);
+    });
+
+    const referenceRelativeEllipseSection = extractSection(
+      referenceOutput,
+      'Relative Error Ellipses (Meters)',
+      'End of File',
+    );
+    const currentRelativeEllipseSection = extractSectionToEnd(
+      listing,
+      'Relative Error Ellipses (Meters)',
+    );
+    const referenceRelativeEllipseRows = parseRelativeEllipseRows(referenceRelativeEllipseSection);
+    const currentRelativeEllipseRows = parseRelativeEllipseRows(currentRelativeEllipseSection);
+    const referenceRelativeEllipseMap = new Map(
+      referenceRelativeEllipseRows.map((row) => [`${row.from}\t${row.to}`, row] as const),
+    );
+    const currentRelativeEllipseMap = new Map(
+      currentRelativeEllipseRows.map((row) => [`${row.from}\t${row.to}`, row] as const),
+    );
+    ([
+      ['GPS2', 'GPS5'],
+      ['109', '114'],
+      ['129', 'PITA'],
+      ['119', '120'],
+    ] as const).forEach(([from, to]) => {
+      const key: `${string}\t${string}` = `${from}\t${to}`;
+      const current = currentRelativeEllipseMap.get(key);
+      const expected = referenceRelativeEllipseMap.get(key);
+      expect(current, `missing current relative ellipse row ${from}-${to}`).toBeDefined();
+      expect(expected, `missing reference relative ellipse row ${from}-${to}`).toBeDefined();
+      expect(Math.abs((current?.major ?? 0) - (expected?.major ?? 0))).toBeLessThanOrEqual(0.05);
+      expect(Math.abs((current?.minor ?? 0) - (expected?.minor ?? 0))).toBeLessThanOrEqual(0.05);
+    });
+
+  }, 120000);
 
   it(
     'keeps the combined parity case convergent with the expected mixed-network default instrument and vertical deflection display',
