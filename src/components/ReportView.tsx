@@ -300,6 +300,7 @@ const ReportView: React.FC<ReportViewProps> = ({
     (isPreanalysis ? 'preanalysis' : 'adjustment');
   const isDataCheck = runMode === 'data-check';
   const isBlunderDetect = runMode === 'blunder-detect';
+  const isSpecialRunMode = isDataCheck || isBlunderDetect;
   const formatReductionUsage = (summary?: ReductionUsageSummary): string => {
     if (!summary) return 'unavailable';
     return [
@@ -378,6 +379,22 @@ const ReportView: React.FC<ReportViewProps> = ({
     () => sortObservationsByStdRes(result.observations),
     [result.observations],
   );
+  const maxAbsStdRes = sortedObs.reduce(
+    (max, obs) => Math.max(max, Math.abs(obs.stdRes ?? 0)),
+    0,
+  );
+  const directionSetCount = useMemo(
+    () =>
+      new Set(
+        result.observations
+          .filter(
+            (obs): obs is SortedObservation & { type: 'direction'; setId: string } =>
+              obs.type === 'direction' && typeof obs.setId === 'string' && obs.setId.trim() !== '',
+          )
+          .map((obs) => obs.setId),
+      ).size,
+    [result.observations],
+  );
   const filteredSortedObs = useMemo(
     () =>
       sortedObs.filter((obs) => {
@@ -440,6 +457,10 @@ const ReportView: React.FC<ReportViewProps> = ({
         ? result.logs.filter((line) => line.startsWith('Blunder cycle ')).slice(0, 15)
         : [],
     [isBlunderDetect, result.logs],
+  );
+  const blunderFlaggedCount = useMemo(
+    () => result.observations.filter((obs) => Math.abs(obs.stdRes ?? 0) >= 3).length,
+    [result.observations],
   );
   const topDirectionTargetSuspects = useMemo(
     () =>
@@ -1218,10 +1239,12 @@ const ReportView: React.FC<ReportViewProps> = ({
     result.tsCorrelationDiagnostics?.enabled === true &&
     (result.tsCorrelationDiagnostics?.equationCount ?? 0) > 0;
   const showAutoSideshotDiagnosticsSection =
+    !isSpecialRunMode &&
     autoSideshotDiagnostics?.enabled === true &&
     (autoSideshotDiagnostics?.candidates.length ?? 0) > 0;
   const showLevelingLoopDiagnosticsSection =
     !isPreanalysis &&
+    !isDataCheck &&
     (levelingLoopDiagnostics?.enabled ?? false) &&
     (levelingLoopDiagnostics?.loops.length ?? 0) > 0;
   return (
@@ -1273,6 +1296,7 @@ const ReportView: React.FC<ReportViewProps> = ({
       />
 
       {!isPreanalysis &&
+        !isSpecialRunMode &&
         result.suspectImpactDiagnostics &&
         result.suspectImpactDiagnostics.length > 0 && (
           <div
@@ -1365,7 +1389,8 @@ const ReportView: React.FC<ReportViewProps> = ({
           </div>
         )}
 
-      <div className="mb-8 border-b border-slate-800 pb-6" style={{ order: -210 }}>
+      {!isSpecialRunMode && (
+        <div className="mb-8 border-b border-slate-800 pb-6" style={{ order: -210 }}>
         <h2
           className="text-xl font-bold text-slate-100 mb-4"
           title={REPORT_STATIC_TOOLTIPS['Adjustment Summary']}
@@ -1487,16 +1512,37 @@ const ReportView: React.FC<ReportViewProps> = ({
             </div>
           </div>
         </div>
-      </div>
+        </div>
+      )}
 
       {isDataCheck && (
-        <div className="mb-6 border border-sky-700/40 rounded bg-sky-950/20">
+        <div className="mb-6 border border-sky-700/40 rounded bg-sky-950/20" style={{ order: -210 }}>
           <div className="px-3 py-2 text-xs text-sky-200 uppercase tracking-wider border-b border-sky-800/40">
             Data Check Only: Differences from Observations
           </div>
           <div className="px-3 py-2 text-xs text-slate-300">
             Approximate-geometry check only. No least-squares adjustment statistics are produced in
             this mode.
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 px-3 pb-3 text-xs text-slate-300">
+            <div className="rounded border border-sky-900/40 bg-slate-950/20 px-3 py-2">
+              <div className="text-slate-500">Status</div>
+              <div className={result.success ? 'text-sky-200 font-semibold' : 'text-amber-300 font-semibold'}>
+                {result.success ? 'CHECK COMPLETED' : 'CHECK WARNING'}
+              </div>
+            </div>
+            <div className="rounded border border-sky-900/40 bg-slate-950/20 px-3 py-2">
+              <div className="text-slate-500">Observations Checked</div>
+              <div>{result.observations.length}</div>
+            </div>
+            <div className="rounded border border-sky-900/40 bg-slate-950/20 px-3 py-2">
+              <div className="text-slate-500">Direction Sets</div>
+              <div>{directionSetCount}</div>
+            </div>
+            <div className="rounded border border-sky-900/40 bg-slate-950/20 px-3 py-2">
+              <div className="text-slate-500">Max |t|</div>
+              <div>{maxAbsStdRes.toFixed(2)}</div>
+            </div>
           </div>
           <div className="overflow-auto px-3 pb-3">
             <table className="w-full text-xs">
@@ -1537,13 +1583,36 @@ const ReportView: React.FC<ReportViewProps> = ({
       )}
 
       {isBlunderDetect && (
-        <div className="mb-6 border border-amber-700/40 rounded bg-amber-950/20">
+        <div
+          className="mb-6 border border-amber-700/40 rounded bg-amber-950/20"
+          style={{ order: -210 }}
+        >
           <div className="px-3 py-2 text-xs text-amber-200 uppercase tracking-wider border-b border-amber-800/40">
             Blunder Detect Mode
           </div>
           <div className="px-3 py-2 text-xs text-slate-300">
             Iterative deweighting diagnostics run. This is screening support and not a replacement
             for full adjustment QA.
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 px-3 pb-3 text-xs text-slate-300">
+            <div className="rounded border border-amber-900/40 bg-slate-950/20 px-3 py-2">
+              <div className="text-slate-500">Status</div>
+              <div className={result.success ? 'text-amber-200 font-semibold' : 'text-red-300 font-semibold'}>
+                {result.success ? 'DIAGNOSTIC SOLVE COMPLETED' : 'DIAGNOSTIC WARNING'}
+              </div>
+            </div>
+            <div className="rounded border border-amber-900/40 bg-slate-950/20 px-3 py-2">
+              <div className="text-slate-500">Deweight Cycles</div>
+              <div>{blunderCycleLines.length}</div>
+            </div>
+            <div className="rounded border border-amber-900/40 bg-slate-950/20 px-3 py-2">
+              <div className="text-slate-500">Remaining |t| &gt;= 3</div>
+              <div>{blunderFlaggedCount}</div>
+            </div>
+            <div className="rounded border border-amber-900/40 bg-slate-950/20 px-3 py-2">
+              <div className="text-slate-500">Max |t|</div>
+              <div>{maxAbsStdRes.toFixed(2)}</div>
+            </div>
           </div>
           {blunderCycleLines.length > 0 && (
             <div className="px-3 pb-3">
@@ -1985,7 +2054,10 @@ const ReportView: React.FC<ReportViewProps> = ({
       )}
 
       {clusterDiagnostics?.enabled && (
-        <div className="mb-6 border border-slate-800 rounded overflow-hidden">
+        <div
+          className="mb-6 border border-slate-800 rounded overflow-hidden"
+          style={{ order: -208 }}
+        >
           <div className="px-3 py-2 text-xs text-slate-400 uppercase tracking-wider border-b border-slate-800 bg-slate-900/40">
             Cluster Detection Candidates
           </div>
@@ -2302,8 +2374,11 @@ const ReportView: React.FC<ReportViewProps> = ({
         </div>
       )}
 
-      {autoAdjustDiagnostics?.enabled && (
-        <div className="mb-6 border border-slate-800 rounded overflow-hidden">
+      {!isSpecialRunMode && autoAdjustDiagnostics?.enabled && (
+        <div
+          className="mb-6 border border-slate-800 rounded overflow-hidden"
+          style={{ order: -207 }}
+        >
           {renderCollapsibleSectionHeader({
             sectionId: 'auto-adjust-diagnostics',
             label: 'Auto-Adjust Diagnostics',
@@ -2484,7 +2559,7 @@ const ReportView: React.FC<ReportViewProps> = ({
         </div>
       )}
 
-      {!isPreanalysis && result.residualDiagnostics && (
+      {!isPreanalysis && !isDataCheck && result.residualDiagnostics && (
         <div
           className="mb-6 border border-slate-800 rounded overflow-hidden"
           style={{ order: -170 }}
@@ -2612,7 +2687,7 @@ const ReportView: React.FC<ReportViewProps> = ({
         </div>
       )}
 
-      {result.robustDiagnostics && (
+      {!isSpecialRunMode && result.robustDiagnostics && (
         <div className="mb-6 border border-slate-800 rounded overflow-hidden">
           {renderCollapsibleSectionHeader({
             sectionId: 'robust-diagnostics',
@@ -2720,7 +2795,7 @@ const ReportView: React.FC<ReportViewProps> = ({
         </div>
       )}
 
-      {!isPreanalysis && result.robustComparison?.enabled && (
+      {!isPreanalysis && !isSpecialRunMode && result.robustComparison?.enabled && (
         <div className="mb-6 border border-slate-800 rounded overflow-hidden">
           {renderCollapsibleSectionHeader({
             sectionId: 'robust-vs-classical-suspects',
@@ -2896,7 +2971,7 @@ const ReportView: React.FC<ReportViewProps> = ({
         </div>
       )}
 
-      {!isPreanalysis && result.traverseDiagnostics && (
+      {!isPreanalysis && !isDataCheck && result.traverseDiagnostics && (
         <div className="mb-6 border border-slate-800 rounded overflow-hidden">
           {renderCollapsibleSectionHeader({
             sectionId: 'traverse-diagnostics',
@@ -3050,7 +3125,7 @@ const ReportView: React.FC<ReportViewProps> = ({
         </div>
       )}
 
-      {!isPreanalysis && traverseLoopSuspects.length > 0 && (
+      {!isPreanalysis && !isDataCheck && traverseLoopSuspects.length > 0 && (
         <div className="mb-6 border border-slate-800 rounded overflow-hidden">
           {renderCollapsibleSectionHeader({
             sectionId: 'traverse-closure-suspects',
@@ -3119,7 +3194,7 @@ const ReportView: React.FC<ReportViewProps> = ({
         </div>
       )}
 
-      {gpsLoopDiagnostics?.enabled && (
+      {!isDataCheck && gpsLoopDiagnostics?.enabled && (
         <div className="mb-6 border border-slate-800 rounded overflow-hidden">
           {renderCollapsibleSectionHeader({
             sectionId: 'gps-loop-diagnostics',
@@ -3392,7 +3467,7 @@ const ReportView: React.FC<ReportViewProps> = ({
         </div>
       )}
 
-      {!isPreanalysis && levelingLoopSuspects.length > 0 && (
+      {!isPreanalysis && !isDataCheck && levelingLoopSuspects.length > 0 && (
         <div className="mb-6 border border-slate-800 rounded overflow-hidden">
           {renderCollapsibleSectionHeader({
             sectionId: 'leveling-loop-suspects',
@@ -3448,7 +3523,7 @@ const ReportView: React.FC<ReportViewProps> = ({
         </div>
       )}
 
-      {!isPreanalysis && levelingSegmentSuspects.length > 0 && (
+      {!isPreanalysis && !isDataCheck && levelingSegmentSuspects.length > 0 && (
         <div className="mb-6 border border-slate-800 rounded overflow-hidden">
           {renderCollapsibleSectionHeader({
             sectionId: 'leveling-segment-suspects',
@@ -3561,6 +3636,7 @@ const ReportView: React.FC<ReportViewProps> = ({
       )}
 
       {!isPreanalysis &&
+        !isDataCheck &&
         result.directionSetDiagnostics &&
         result.directionSetDiagnostics.length > 0 && (
           <div className="mb-6 border border-slate-800 rounded overflow-hidden">
@@ -3653,6 +3729,7 @@ const ReportView: React.FC<ReportViewProps> = ({
         )}
 
       {!isPreanalysis &&
+        !isDataCheck &&
         result.directionTargetDiagnostics &&
         result.directionTargetDiagnostics.length > 0 && (
           <div className="mb-6 border border-slate-800 rounded overflow-hidden">
@@ -3865,7 +3942,7 @@ const ReportView: React.FC<ReportViewProps> = ({
         </div>
       )}
 
-      {!isPreanalysis && topDirectionTargetSuspects.length > 0 && (
+      {!isPreanalysis && !isDataCheck && topDirectionTargetSuspects.length > 0 && (
         <div className="mb-8 border border-slate-800 rounded overflow-hidden">
           {renderCollapsibleSectionHeader({
             sectionId: 'direction-target-suspects-top',
@@ -3917,6 +3994,7 @@ const ReportView: React.FC<ReportViewProps> = ({
       )}
 
       {!isPreanalysis &&
+        !isDataCheck &&
         result.directionRepeatabilityDiagnostics &&
         result.directionRepeatabilityDiagnostics.length > 0 && (
           <div className="mb-6 border border-slate-800 rounded overflow-hidden">
@@ -4005,7 +4083,7 @@ const ReportView: React.FC<ReportViewProps> = ({
           </div>
         )}
 
-      {!isPreanalysis && topDirectionRepeatabilitySuspects.length > 0 && (
+      {!isPreanalysis && !isDataCheck && topDirectionRepeatabilitySuspects.length > 0 && (
         <div className="mb-8 border border-slate-800 rounded overflow-hidden">
           {renderCollapsibleSectionHeader({
             sectionId: 'direction-repeatability-suspects-top',
@@ -4061,6 +4139,7 @@ const ReportView: React.FC<ReportViewProps> = ({
       )}
 
       {!isPreanalysis &&
+        !isDataCheck &&
         result.setupDiagnostics &&
         result.setupDiagnostics.length > 0 && (
         <div
@@ -4139,7 +4218,7 @@ const ReportView: React.FC<ReportViewProps> = ({
         </div>
       )}
 
-      {(tsSideshots.length > 0 || gpsSideshots.length > 0) && (
+      {!isDataCheck && (tsSideshots.length > 0 || gpsSideshots.length > 0) && (
         <>
           {renderSideshotSection(
             'Post-Adjusted Sideshots (TS)',
@@ -4159,7 +4238,7 @@ const ReportView: React.FC<ReportViewProps> = ({
         </>
       )}
 
-      {gpsOffsetObservations.length > 0 && (
+      {!isDataCheck && gpsOffsetObservations.length > 0 && (
         <div className="mb-8 border border-slate-800 rounded overflow-hidden">
           {renderCollapsibleSectionHeader({
             sectionId: 'gps-rover-offsets',
@@ -4228,7 +4307,7 @@ const ReportView: React.FC<ReportViewProps> = ({
         </div>
         )}
 
-      <ReportFilterPanel
+      {!isDataCheck && <ReportFilterPanel
         isPreanalysis={isPreanalysis}
         sectionId="report-filters"
         collapsed={isSectionCollapsed('report-filters')}
@@ -4252,9 +4331,9 @@ const ReportView: React.FC<ReportViewProps> = ({
         deferredReportFilterQuery={deferredReportFilterQuery}
         normalizedReportFilterQuery={normalizedReportFilterQuery}
         focusRequestKey={focusFilterRequestKey}
-      />
+      />}
 
-      <AdjustedCoordinatesSection
+      {!isDataCheck && <AdjustedCoordinatesSection
         isPreanalysis={isPreanalysis}
         units={units}
         ellipseMode={ellipseMode}
@@ -4271,7 +4350,7 @@ const ReportView: React.FC<ReportViewProps> = ({
         unitScale={unitScale}
         visibleRowsFor={visibleRowsFor}
         renderLoadMoreFooter={renderLoadMoreFooter}
-      />
+      />}
 
       {isPreanalysis && filteredStationCovariances.length > 0 && (
         <div className="mb-4 border border-slate-800 rounded">
@@ -4492,7 +4571,7 @@ const ReportView: React.FC<ReportViewProps> = ({
         </div>
       )}
 
-      {!isPreanalysis && (
+      {!isPreanalysis && !isDataCheck && (
         <div className="mb-8" style={{ order: -180 }}>
           <h3 className="text-blue-400 font-bold mb-3 text-base uppercase tracking-wider">
             Observations & Residuals

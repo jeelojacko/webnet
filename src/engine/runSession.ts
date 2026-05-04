@@ -798,7 +798,7 @@ export const runAdjustmentSession = (
       solveTotalHint: 1,
     },
   ): AdjustmentResult => {
-    const mergedParse = { ...request.parseSettings, ...parseOverride };
+    const mergedParse = { ...request.parseSettings, ...parseOverride, autoAdjustEnabled: false };
     const profileContext = resolveProfileContext(
       mergedParse,
       request.projectInstruments,
@@ -977,6 +977,13 @@ export const runAdjustmentSession = (
     'finalizing',
   );
   if (autoAdjustSummary?.enabled) {
+    if (result.parseState) {
+      result.parseState.autoAdjustEnabled = autoAdjustConfig.enabled;
+      result.parseState.autoAdjustMaxCycles = autoAdjustSummary.config.maxCycles;
+      result.parseState.autoAdjustMaxRemovalsPerCycle =
+        autoAdjustSummary.config.maxRemovalsPerCycle;
+      result.parseState.autoAdjustStdResThreshold = autoAdjustSummary.config.stdResThreshold;
+    }
     result.autoAdjustDiagnostics = {
       enabled: true,
       threshold: autoAdjustSummary.config.stdResThreshold,

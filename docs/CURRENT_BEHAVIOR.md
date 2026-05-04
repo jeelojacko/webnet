@@ -133,6 +133,7 @@ Current workflow behavior includes:
 - dual-pass solving when approved merges are applied
 - revert-cluster-merge workflow
 - auto-adjust cycles with thresholds, limits, and deterministic tie-breaks
+- auto-adjust now follows the same iterative exclusion contract in both direct engine solves and shared browser/CLI run-session solves, with diagnostics preserved on the final result payload
 - automatic sideshot candidate detection for eligible non-redundant measurements
 - worker status now exposes solve elapsed time, current stage, solve-count progress, and per-solve iteration progress while heavy runs are active
 - processing-summary diagnostics now include a per-run solve timing breakdown for setup, equation assembly, factorization, precision propagation, and report/packaging overhead
@@ -155,6 +156,8 @@ Current output surfaces include:
 ### Listing and report expectations
 Current listing/report behavior includes:
 - summary-first report ordering
+- `Data Check` and `Blunder Detect` runs now promote their mode-specific summary block to the top of the WebNet report and suppress the generic `Adjustment Summary` banner there
+- when cluster detection or auto-adjust diagnostics are active in a normal adjustment run, those workflow sections are promoted above solve-profile, adjusted-coordinate, and lower-priority review tables so operator action items stay at the top
 - solve-profile diagnostics near the summary surface
 - deterministic section ordering and tie-break rules
 - padded, readability-focused listing tables
@@ -170,6 +173,8 @@ Current listing/report behavior includes:
 - classic traverse adjusted direction sets now stay in source/input order, and the industry-parity traverse listing no longer appends the WebNet-only grid-vs-ground diagnostics block after the adjusted bearing-distance relationship section
 - non-classic industry listings now include the higher-level `Adjusted Station Information` and `Adjusted Observations and Residuals` wrapper sections, preserving deterministic heading order while moving the structure closer to the stored industry outputs
 - industry-style listings now render classic post-adjusted TS sideshots with the compact `Sideshot Coordinates Computed After Adjustment` section used by the stored industry combined output, while leaving the dedicated GPS sideshot sections in place for GNSS-specific rows
+- `Data Check` report mode now suppresses adjustment-derived sections that do not apply there, including adjusted-coordinate, residual-diagnostics, and observation-residual review tables
+- `Data Check` direction rows now use approximate set orientation when geometry support is adequate, and they fall back to reduced-direction internal consistency metrics when the involved coordinates are only weak bootstrap approximations; this avoids false giant direction mismatches on otherwise coherent reduced field sets
 - TS sideshot post-adjust coordinates now stay on the solved projected/grid azimuth basis for setup- and target-derived bearings, and they use occupied-station reduction factors plus curvature/refraction-aware zenith inversion so the combined-case `Chimney` and `Meridian` rows stay within low-millimeter parity of the stored industry output
 - GNSS-oriented non-classic listings now also emit the stored-reference wrapper/empty sections ahead of the unadjusted summary (`Inline Option Usage Notes`, `Summary of Inconsistent Descriptions`, `Network Stations`, and `Sideshots`) so the top block more closely matches the industry file structure even when those sections are empty
 - GNSS-only parity listings now also use a compact industry-style top block: they emit the `Project Folder and Data Files` wrapper, classic option rows (`Coordinate System`, `GPS Vector Standard Error Factors`, `GPS Vector Centering`, `GPS Vector Transformations`), suppress the generic instrument-default section, and restore the compact fixed/free-station plus GNSS vector unadjusted summary layout from the stored reference

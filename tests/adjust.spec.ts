@@ -2435,6 +2435,63 @@ describe('LSAEngine', () => {
     expect(result.logs.some((line) => line.includes('[DATACHECK_DISALLOWS_ROBUST]'))).toBe(true);
   });
 
+  it('keeps data-check on the approximate-geometry path instead of a full adjustment solve', () => {
+    const input = [
+      '.2D',
+      'C A 0 0 0 ! !',
+      'C B 100 0 0 ! !',
+      'C U 50 40 0',
+      'D A-U 64.031 0.003',
+      'D B-U 64.031 0.003',
+      'A U-A-B 97-00-00.0 1.0',
+    ].join('\n');
+
+    const result = new LSAEngine({
+      input,
+      maxIterations: 8,
+      parseOptions: { runMode: 'data-check', coordMode: '2D' },
+    }).solve();
+
+    expect(result.success).toBe(true);
+    expect(result.parseState?.runMode).toBe('data-check');
+    expect(result.iterations).toBe(0);
+    expect(result.dof).toBe(0);
+    expect(result.seuw).toBe(0);
+    expect(result.logs.some((line) => line.includes('no least-squares adjustment'))).toBe(true);
+    expect(
+      result.observations.some(
+        (obs) => obs.residual != null && Number.isFinite(Math.abs((obs.stdRes ?? 0) as number)),
+      ),
+    ).toBe(true);
+  });
+
+  it('uses reduced-direction internal consistency in data-check when direction geometry is only bootstrap approximate', () => {
+    const input = readFileSync('tests/fixtures/industry_case_combined_input.txt', 'utf-8');
+
+    const result = new LSAEngine({
+      input,
+      maxIterations: 8,
+      parseOptions: { runMode: 'data-check', coordMode: '3D' },
+    }).solve();
+
+    const directionRows = result.observations.filter((obs) => obs.type === 'direction');
+    expect(directionRows.length).toBeGreaterThan(100);
+
+    const maxDirectionResidualArcSec = directionRows.reduce(
+      (max, obs) => Math.max(max, Math.abs((obs.residual ?? 0) * RAD_TO_DEG * 3600)),
+      0,
+    );
+    expect(maxDirectionResidualArcSec).toBeLessThan(5);
+
+    const bootstrapReducedRows = directionRows.filter(
+      (obs) =>
+        (obs.rawCount ?? 0) > 0 &&
+        Math.abs(obs.obs - (obs.calc ?? Number.NaN)) < 1e-12 &&
+        (obs.stdRes == null || !Number.isFinite(obs.stdRes)),
+    );
+    expect(bootstrapReducedRows.length).toBeGreaterThan(20);
+  });
+
   it('enforces blunder-detect mode overrides with explicit diagnostics', () => {
     const input = [
       '.2D',
@@ -2470,6 +2527,68 @@ describe('LSAEngine', () => {
     expect(diagCodes.has('BLUNDER_SKIPS_CLUSTER')).toBe(true);
     expect(result.logs.some((line) => line.includes('[BLUNDER_DISALLOWS_AUTOADJUST]'))).toBe(true);
     expect(result.logs.some((line) => line.includes('[BLUNDER_DISALLOWS_ROBUST]'))).toBe(true);
+  });
+
+  it('reruns blunder-detect as iterative deweighting without removing observations', () => {
+    const input = [
+      '.2D',
+      'C A 0 0 0 ! !',
+      'C B 100 0 0 ! !',
+      'C C 100 100 0',
+      'D A-C 141.421 0.005',
+      'D B-C 100.000 0.005',
+      'A C-A-B 95-00-00 5',
+    ].join('\n');
+
+    const result = new LSAEngine({
+      input,
+      maxIterations: 8,
+      parseOptions: { runMode: 'blunder-detect', coordMode: '2D' },
+    }).solve();
+
+    const cycleLines = result.logs.filter((line) => line.startsWith('Blunder cycle '));
+    expect(result.parseState?.runMode).toBe('blunder-detect');
+    expect(cycleLines.length).toBeGreaterThan(1);
+    expect(cycleLines.some((line) => line.includes('deweight obs'))).toBe(true);
+    expect(cycleLines.some((line) => line.includes('newSigma='))).toBe(true);
+    expect(result.observations).toHaveLength(3);
+    expect(result.observations.map((obs) => obs.id)).toEqual([0, 1, 2]);
+  });
+
+  it('runs auto-adjust cycles in direct engine solves and reports removed observations', () => {
+    const input = [
+      '.2D',
+      'C A 0 0 0 ! !',
+      'C B 100 0 0 ! !',
+      'C C 0 100 0 ! !',
+      'C D 100 100 0',
+      'D A-D 141.421 0.005',
+      'D B-D 110.000 0.005',
+      'D C-D 100.000 0.005',
+      'A D-A-B 95-00-00 5',
+      'A D-C-B 90-00-00 5',
+    ].join('\n');
+
+    const result = new LSAEngine({
+      input,
+      maxIterations: 8,
+      parseOptions: {
+        runMode: 'adjustment',
+        coordMode: '2D',
+        autoAdjustEnabled: true,
+        autoAdjustStdResThreshold: 1.5,
+        autoAdjustMaxCycles: 3,
+        autoAdjustMaxRemovalsPerCycle: 1,
+      },
+    }).solve();
+
+    expect(result.success).toBe(true);
+    expect(result.parseState?.autoAdjustEnabled).toBe(true);
+    expect(result.autoAdjustDiagnostics?.enabled).toBe(true);
+    expect(result.autoAdjustDiagnostics?.cycles.length).toBeGreaterThan(1);
+    expect(result.autoAdjustDiagnostics?.removed).toHaveLength(1);
+    expect(result.autoAdjustDiagnostics?.removed[0]?.obsId).toBe(3);
+    expect(result.logs.some((line) => line.startsWith('Auto-adjust cycle 1:'))).toBe(true);
   });
 
   it('hard-fails blunder-detect mode for leveling-only datasets with compatibility diagnostics', () => {

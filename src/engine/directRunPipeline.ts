@@ -123,7 +123,7 @@ export const createDirectRunPipeline = ({
     overrideValues: Record<number, ObservationOverride> = request.overrides,
     approvedClusterMerges: ClusterApprovedMerge[] = request.approvedClusterMerges,
   ): AdjustmentResult => {
-    const mergedParse = { ...request.parseSettings, ...parseOverride };
+    const mergedParse = { ...request.parseSettings, ...parseOverride, autoAdjustEnabled: false };
     const { resolveProfileContext } = createRunProfileBuilders({
       projectInstruments: request.projectInstruments,
       selectedInstrument: request.selectedInstrument,
@@ -576,6 +576,13 @@ export const createDirectRunPipeline = ({
       effectiveClusterMerges,
     );
     if (autoAdjustSummary?.enabled) {
+      if (solved.parseState) {
+        solved.parseState.autoAdjustEnabled = autoAdjustConfig.enabled;
+        solved.parseState.autoAdjustMaxCycles = autoAdjustSummary.config.maxCycles;
+        solved.parseState.autoAdjustMaxRemovalsPerCycle =
+          autoAdjustSummary.config.maxRemovalsPerCycle;
+        solved.parseState.autoAdjustStdResThreshold = autoAdjustSummary.config.stdResThreshold;
+      }
       solved.autoAdjustDiagnostics = {
         enabled: true,
         threshold: autoAdjustSummary.config.stdResThreshold,

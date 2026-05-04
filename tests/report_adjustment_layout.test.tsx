@@ -264,4 +264,49 @@ describe('ReportView adjustment-layout sections', () => {
     expect(html).toContain('CRS Grid Scale');
     expect(html).toContain('CRS Convergence');
   });
+
+  it('moves active cluster and auto-adjust workflow sections ahead of lower-priority report blocks', () => {
+    const result = new LSAEngine({ input: baseInput, maxIterations: 8 }).solve();
+    result.clusterDiagnostics = {
+      enabled: true,
+      passMode: 'dual-pass',
+      linkageMode: 'single',
+      dimension: '2D',
+      tolerance: 0.05,
+      pairCount: 2,
+      candidateCount: 1,
+      approvedMergeCount: 0,
+      candidates: [
+        {
+          key: 'cluster-1',
+          representativeId: 'C',
+          stationIds: ['C', 'C_AUX'],
+          memberCount: 2,
+          maxSeparation: 0.01,
+          meanSeparation: 0.01,
+          hasFixed: false,
+          hasUnknown: true,
+        },
+      ],
+      mergeOutcomes: [],
+      rejectedProposals: [],
+      appliedMerges: [],
+    } as any;
+    result.autoAdjustDiagnostics = {
+      enabled: true,
+      threshold: 3,
+      maxCycles: 4,
+      maxRemovalsPerCycle: 1,
+      minRedundancy: 0.1,
+      stopReason: 'no-candidates',
+      cycles: [{ cycle: 1, seuw: 1.1, maxAbsStdRes: 3.2, removals: [] }],
+      removed: [],
+    } as any;
+
+    const html = renderReport(result);
+    expect(html).toMatch(/style="order:-208"[\s\S]*Cluster Detection Candidates/);
+    expect(html).toMatch(/style="order:-207"[\s\S]*Auto-Adjust Diagnostics/);
+    expect(html).toMatch(/style="order:-200"[\s\S]*Solve Profile Diagnostics/);
+    expect(html).toMatch(/style="order:-190"[\s\S]*Adjusted Coordinates/);
+  });
 });

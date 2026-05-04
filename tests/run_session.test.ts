@@ -185,6 +185,46 @@ describe('runAdjustmentSession', () => {
     expect(outcome.effectiveClusterApprovedMerges).toEqual([]);
   });
 
+  it('keeps shared run-session auto-adjust iterative exclusions aligned with direct engine behavior', () => {
+    const input = [
+      '.2D',
+      'C A 0 0 0 ! !',
+      'C B 100 0 0 ! !',
+      'C C 0 100 0 ! !',
+      'C D 100 100 0',
+      'D A-D 141.421 0.005',
+      'D B-D 110.000 0.005',
+      'D C-D 100.000 0.005',
+      'A D-A-B 95-00-00 5',
+      'A D-C-B 90-00-00 5',
+    ].join('\n');
+
+    const outcome = runAdjustmentSession(
+      createRunSessionRequest({
+        input,
+        maxIterations: 8,
+        parseSettings: {
+          ...createRunSessionRequest().parseSettings,
+          coordMode: '2D',
+          runMode: 'adjustment',
+          suspectImpactMode: 'off',
+          autoAdjustEnabled: true,
+          autoAdjustStdResThreshold: 1.5,
+          autoAdjustMaxCycles: 3,
+          autoAdjustMaxRemovalsPerCycle: 1,
+        },
+      }),
+    );
+
+    expect(outcome.result.success).toBe(true);
+    expect(outcome.effectiveExcludedIds).toEqual([3]);
+    expect(outcome.result.parseState?.autoAdjustEnabled).toBe(true);
+    expect(outcome.result.autoAdjustDiagnostics?.enabled).toBe(true);
+    expect(outcome.result.autoAdjustDiagnostics?.removed).toHaveLength(1);
+    expect(outcome.result.autoAdjustDiagnostics?.removed[0]?.obsId).toBe(3);
+    expect(outcome.result.logs.some((line) => line.startsWith('Auto-adjust cycle 1:'))).toBe(true);
+  });
+
   it('reuses the parsed scenario for unchanged-input reruns', () => {
     resetScenarioRunServiceCache();
     const request = createRunSessionRequest();

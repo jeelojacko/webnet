@@ -9,6 +9,7 @@ import {
 } from './geodesy';
 import { getCrsDefinition, isGeodeticInsideAreaOfUse } from './crsCatalog';
 import { runClusterDualPassWorkflow } from './adjustmentClusterWorkflow';
+import { formatAutoAdjustLogLines, runAutoAdjustCycles, type AutoAdjustConfig } from './autoAdjust';
 import type { GeoidGridModel } from './geoid';
 import {
   accumulateNormalEquationsFromSparseRows,
@@ -4378,6 +4379,26 @@ export class LSAEngine {
       'Data Check Only mode: reporting approximate-geometry differences from observations (no least-squares adjustment).',
     );
 
+    const dataCheckDirectionOrientations = new Map<string, number>();
+    const directionOrientationSums = new Map<string, { sumSin: number; sumCos: number }>();
+    activeObservations.forEach((obs) => {
+      if (obs.type !== 'direction' || typeof obs.setId !== 'string' || obs.setId.trim() === '') return;
+      if (!this.stations[obs.at] || !this.stations[obs.to]) return;
+      const az = this.modeledAzimuth(
+        this.getAzimuth(obs.at, obs.to).az,
+        obs.at,
+        obs.gridObsMode !== 'grid',
+      );
+      const diff = this.wrapToPi(obs.obs - az);
+      const entry = directionOrientationSums.get(obs.setId) ?? { sumSin: 0, sumCos: 0 };
+      entry.sumSin += Math.sin(diff);
+      entry.sumCos += Math.cos(diff);
+      directionOrientationSums.set(obs.setId, entry);
+    });
+    directionOrientationSums.forEach((entry, setId) => {
+      dataCheckDirectionOrientations.set(setId, Math.atan2(entry.sumSin, entry.sumCos));
+    });
+
     const ranked: Array<{ obsId: number; type: Observation['type']; diff: number }> = [];
     activeObservations.forEach((obs) => {
       if (obs.type === 'dist') {
@@ -4419,8 +4440,41 @@ export class LSAEngine {
         return;
       }
       if (obs.type === 'direction') {
-        const calc = this.getAzimuth(obs.at, obs.to).az;
-        const residual = ((obs.obs - calc + Math.PI) % (2 * Math.PI)) - Math.PI;
+        const occupyStation = this.stations[obs.at];
+        const targetStation = this.stations[obs.to];
+        const weakApprox =
+          occupyStation?.bootstrapApprox === true || targetStation?.bootstrapApprox === true;
+        if (weakApprox) {
+          const internalResidualCandidates = [
+            obs.rawMaxResidual,
+            obs.rawSpread,
+            obs.facePairDelta,
+          ].filter((value): value is number => Number.isFinite(value));
+          if (internalResidualCandidates.length > 0) {
+            const residual = internalResidualCandidates.reduce(
+              (max, value) => (Math.abs(value) > Math.abs(max) ? value : max),
+              0,
+            );
+            obs.calc = obs.obs;
+            obs.residual = residual;
+            obs.stdRes = undefined;
+            ranked.push({ obsId: obs.id, type: obs.type, diff: Math.abs(residual) });
+            return;
+          }
+        }
+        const az = this.modeledAzimuth(
+          this.getAzimuth(obs.at, obs.to).az,
+          obs.at,
+          obs.gridObsMode !== 'grid',
+        );
+        const orientation =
+          typeof obs.setId === 'string' && obs.setId.trim() !== ''
+            ? (dataCheckDirectionOrientations.get(obs.setId) ?? 0)
+            : 0;
+        let calc = az + orientation;
+        calc %= 2 * Math.PI;
+        if (calc < 0) calc += 2 * Math.PI;
+        const residual = this.wrapToPi(obs.obs - calc);
         obs.calc = calc;
         obs.residual = residual;
         obs.stdRes = obs.stdDev > 0 ? residual / obs.stdDev : 0;
@@ -4565,6 +4619,59 @@ export class LSAEngine {
         ...cycleLogs,
         ...finalResult.logs,
       ],
+    };
+  }
+
+  private runAutoAdjustWorkflow(): AdjustmentResult {
+    const requestedConfig: AutoAdjustConfig = {
+      enabled: this.parseOptions?.autoAdjustEnabled === true,
+      maxCycles: this.parseOptions?.autoAdjustMaxCycles ?? 3,
+      maxRemovalsPerCycle: this.parseOptions?.autoAdjustMaxRemovalsPerCycle ?? 1,
+      stdResThreshold: this.parseOptions?.autoAdjustStdResThreshold ?? 4,
+      minRedundancy: 0.05,
+    };
+    const baseOptions: Partial<ParseOptions> = {
+      ...(this.parseOptions ?? {}),
+      autoAdjustEnabled: false,
+    };
+    const initialExcludedIds = new Set(this.excludeIds ?? []);
+    const summary = runAutoAdjustCycles(initialExcludedIds, requestedConfig, (trialExclusions) =>
+      this.solveNestedScenario(baseOptions, this.overrides, trialExclusions),
+    );
+    const finalResult = this.solveNestedScenario(
+      baseOptions,
+      this.overrides,
+      summary.finalExcludedIds,
+    );
+    const mergedParseState = finalResult.parseState
+      ? ({
+          ...finalResult.parseState,
+          autoAdjustEnabled: requestedConfig.enabled,
+          autoAdjustMaxCycles: summary.config.maxCycles,
+          autoAdjustMaxRemovalsPerCycle: summary.config.maxRemovalsPerCycle,
+          autoAdjustStdResThreshold: summary.config.stdResThreshold,
+        } as ParseOptions)
+      : undefined;
+    const autoAdjustDiagnostics = {
+      enabled: true,
+      threshold: summary.config.stdResThreshold,
+      maxCycles: summary.config.maxCycles,
+      maxRemovalsPerCycle: summary.config.maxRemovalsPerCycle,
+      minRedundancy: summary.config.minRedundancy ?? 0.05,
+      stopReason: summary.stopReason,
+      cycles: summary.cycles.map((cycle) => ({
+        cycle: cycle.cycle,
+        seuw: cycle.seuw,
+        maxAbsStdRes: cycle.maxAbsStdRes,
+        removals: [...cycle.removals],
+      })),
+      removed: summary.cycles.flatMap((cycle) => cycle.removals),
+    };
+    return {
+      ...finalResult,
+      parseState: mergedParseState,
+      autoAdjustDiagnostics,
+      logs: [...formatAutoAdjustLogLines(summary), ...finalResult.logs],
     };
   }
 
@@ -5083,6 +5190,10 @@ export class LSAEngine {
     if (this.runMode === 'data-check') {
       finishParseAndSetupTiming();
       return this.finishSolve(this.runDataCheckOnly(activeObservations));
+    }
+    if (this.runMode === 'adjustment' && (this.parseOptions?.autoAdjustEnabled ?? false)) {
+      finishParseAndSetupTiming();
+      return this.finishSolve(this.runAutoAdjustWorkflow());
     }
     const gridInputGate = this.evaluateGridInputGate(activeObservations);
     if (gridInputGate.blocked) {

@@ -1,5 +1,11 @@
 # TODO - WebNet
 
+- [x] Special-mode report + data-check direction-set batch (May 2026): move mode-relevant report sections to the top for `Data Check` / `Blunder Detect`, hide adjustment-only report sections that do not apply in those modes, and make `Data Check` compare reduced direction sets against approximate set orientation instead of raw azimuth so mixed-face direction data does not show false giant residuals.
+
+- [x] Adjustment report workflow-priority batch (May 2026): when cluster detection or auto-adjust diagnostics are active, move those workflow-action sections to the top of normal adjustment reports so operators see the active review/removal workflow before lower-priority summary tables.
+
+- [x] Run-mode audit/correction batch (May 2026): audit `Data Check`, `Blunder Detect`, and `Auto-Adjust`; fix any mismatched behavior with minimal solver/session changes; add focused regression coverage proving data-check skips full adjustment, blunder-detect deweights iteratively without removing rows, and auto-adjust iteratively excludes poor-fitting observations across direct-engine and shared run-session paths.
+
 - [x] Camp Design preanalysis project-metadata/page-break parity batch (May 2026): carry the Camp startup case as a named virtual run file/project so the classic listing can emit the expected `Project Folder` / `Data File List` metadata, and restore the Camp-style page breaks in preanalysis output.
 
 - [x] Camp Design preanalysis weighting/header parity batch (May 2026): align the Camp startup instrument defaults with `camp_design.snproj`, stop listing unused project-library instruments in the classic preanalysis header, and re-baseline the remaining Camp raw-observation/error-propagation parity gaps.

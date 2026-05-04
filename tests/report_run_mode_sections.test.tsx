@@ -50,6 +50,11 @@ describe('ReportView run-mode sections', () => {
     const html = renderReport(result);
     expect(html).toContain('Data Check Only: Differences from Observations');
     expect(html).toContain('Approximate-geometry check only');
+    expect(html).toContain('Observations Checked');
+    expect(html).not.toContain('Adjustment Summary');
+    expect(html).not.toContain('Residual Diagnostics');
+    expect(html).not.toContain('Adjusted Coordinates');
+    expect(html).not.toContain('Observations &amp; Residuals');
   });
 
   it('renders blunder-detect warning section when run mode is blunder-detect', () => {
@@ -62,5 +67,8 @@ describe('ReportView run-mode sections', () => {
     const html = renderReport(result);
     expect(html).toContain('Blunder Detect Mode');
     expect(html).toContain('not a replacement for full adjustment QA');
+    expect(html).toContain('Deweight Cycles');
+    expect(html).toContain('Remaining |t| &gt;= 3');
+    expect(html).not.toContain('Adjustment Summary');
   });
 });
