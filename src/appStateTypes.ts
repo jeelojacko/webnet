@@ -406,6 +406,9 @@ export type RunDiagnostics = {
   currentInstrumentDesc: string;
   currentInstrumentLevStdMmPerKm: number;
   projectInstrumentLibrary?: InstrumentLibrary;
+  projectName?: string;
+  projectFolder?: string;
+  projectSourceFiles?: string[];
   angleCenteringModel: 'geometry-aware-correlated-rays';
   defaultSigmaCount: number;
   defaultSigmaByType: string;

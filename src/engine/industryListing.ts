@@ -165,6 +165,9 @@ export interface IndustryListingRunDiagnostics {
   currentInstrumentDesc?: string;
   currentInstrumentLevStdMmPerKm?: number;
   projectInstrumentLibrary?: InstrumentLibrary;
+  projectName?: string;
+  projectFolder?: string;
+  projectSourceFiles?: string[];
 }
 
 const observationStationSortKey = (obs: Observation): string =>
@@ -1038,6 +1041,11 @@ export const buildIndustryStyleListingText = (
   const gpsObservationRows = observationsForListing.filter(
     (obs): obs is GpsObservation => obs.type === 'gps',
   );
+  const usedInstrumentCodes = new Set(
+    observationsForListing
+      .map((obs) => obs.instCode?.trim())
+      .filter((code): code is string => Boolean(code)),
+  );
   const isGnssOnlyListing =
     gpsObservationRows.length > 0 &&
     observationsForListing.length > 0 &&
@@ -1057,7 +1065,7 @@ export const buildIndustryStyleListingText = (
     const verticalFactor = obs.gpsVectorVerticalFactor ?? 1;
     return Math.abs(horizontalFactor - 1) > 1e-12 || Math.abs(verticalFactor - 1) > 1e-12;
   });
-  const projectSourceFiles = Array.from(
+  const parsedProjectSourceFiles = Array.from(
     new Set(
       [
         parseState?.sourceFile,
@@ -1065,8 +1073,20 @@ export const buildIndustryStyleListingText = (
       ].filter((token): token is string => isConcretePathToken(token)),
     ),
   );
-  const projectName = projectSourceFiles.length > 0 ? pathTokenStem(projectSourceFiles[0]) : '';
-  const projectFolder = projectSourceFiles.length > 0 ? pathTokenParent(projectSourceFiles[0]) : '';
+  const projectSourceFiles =
+    runDiag.projectSourceFiles && runDiag.projectSourceFiles.length > 0
+      ? Array.from(
+          new Set(
+            runDiag.projectSourceFiles.filter((token): token is string => isConcretePathToken(token)),
+          ),
+        )
+      : parsedProjectSourceFiles;
+  const projectName =
+    runDiag.projectName?.trim() ||
+    (projectSourceFiles.length > 0 ? pathTokenStem(projectSourceFiles[0]) : '');
+  const projectFolder =
+    runDiag.projectFolder?.trim() ||
+    (projectSourceFiles.length > 0 ? pathTokenParent(projectSourceFiles[0]) : '');
   const gpsVectorFactorHorizontal = parseState?.gpsVectorFactorHorizontal ?? 1;
   const gpsVectorFactorVertical = parseState?.gpsVectorFactorVertical ?? 1;
   const gpsVectorFactorSummary =
@@ -1377,11 +1397,23 @@ export const buildIndustryStyleListingText = (
     return rows.length > 0 ? rows : [{ label: 'Defaults Summary', value: clean }];
   };
 
-  lines.push('INDUSTRY-STANDARD-STYLE Listing (WebNet Emulation)');
-  lines.push(`Run Date: ${now.toLocaleString()}`);
+  if (usesClassicParityLayout || usesCompactGnssParityLayout) {
+    lines.push(centerIndustryLine(`Run Date: ${now.toLocaleString()}`));
+  } else {
+    lines.push('INDUSTRY-STANDARD-STYLE Listing (WebNet Emulation)');
+    lines.push(`Run Date: ${now.toLocaleString()}`);
+  }
   lines.push('');
-  lines.push('Summary of Files Used and Option Settings');
-  lines.push('=========================================');
+  lines.push(
+    runDiagnostics.solveProfile !== 'webnet'
+      ? centerIndustryLine('Summary of Files Used and Option Settings')
+      : 'Summary of Files Used and Option Settings',
+  );
+  lines.push(
+    runDiagnostics.solveProfile !== 'webnet'
+      ? centerIndustryLine('=========================================')
+      : '=========================================',
+  );
   lines.push('');
   if (runDiagnostics.solveProfile !== 'webnet') {
     lines.push(centerIndustryLine('Project Folder and Data Files'));
@@ -1747,7 +1779,9 @@ export const buildIndustryStyleListingText = (
         formatClassicInstrumentRows(lines, 'Project Default Instrument', defaultInstrument, true);
       }
       instrumentEntries
-        .filter(([code]) => code !== currentInstrumentCode)
+        .filter(
+          ([code]) => code !== currentInstrumentCode && usedInstrumentCodes.has(code),
+        )
         .forEach(([, instrument]) => {
           formatClassicInstrumentRows(
             lines,
@@ -1786,6 +1820,9 @@ export const buildIndustryStyleListingText = (
         });
       }
     }
+    if (useClassicPreanalysisListing) {
+      lines.push('\f');
+    }
   }
   if (!usesClassicParityLayout || useClassicPreanalysisListing) {
     if (hasInlineGpsFactorOverride || directiveTransitions.length > 0 || directiveNoEffectWarnings.length > 0) {
@@ -1820,7 +1857,7 @@ export const buildIndustryStyleListingText = (
     lines.push('');
     lines.push('Sideshots');
     lines.push('Point ID         Description                     File:Line                     ');
-    lines.push('');
+    lines.push(useClassicPreanalysisListing ? '\f' : '');
   }
   lines.push('');
   lines.push(
@@ -2220,15 +2257,11 @@ export const buildIndustryStyleListingText = (
     }) => {
       const formatCoord = (value: number) =>
         (Math.round((value + Number.EPSILON) * 10000) / 10000).toFixed(4);
-      const first = formatCoord(
-        (classicOrder === 'NE' ? station.y : station.x) * unitScale,
-      ).padStart(18);
-      const second = formatCoord(
-        (classicOrder === 'NE' ? station.x : station.y) * unitScale,
-      ).padStart(18);
-      const height = formatCoord(station.h * unitScale).padStart(12);
+      const first = formatCoord((classicOrder === 'NE' ? station.y : station.x) * unitScale);
+      const second = formatCoord((classicOrder === 'NE' ? station.x : station.y) * unitScale);
+      const height = formatCoord(station.h * unitScale);
       const description = stationDescription(station.stationId);
-      return `${station.stationId.padEnd(20)}${first}${second}${height}${description ? `   ${description}` : ''}`.trimEnd();
+      return `${station.stationId.padEnd(22)}${first}${second.padStart(17)}${height.padStart(12)}${description ? `   ${description}` : ''}`.trimEnd();
     };
     const formatClassicStationConstraintStdErrRow = (stationId: string) => {
       const station = res.stations[stationId];
@@ -2263,7 +2296,7 @@ export const buildIndustryStyleListingText = (
           : station.constraintModeH === 'fixed'
             ? 'FIXED'
             : '-';
-      return `${''.padEnd(20)}${firstSigma.padStart(18)}${secondSigma.padStart(18)}${heightSigma.padStart(12)}`;
+      return `${''.padEnd(22)}${firstSigma.padStart(11)}${secondSigma.padStart(17)}${heightSigma.padStart(12)}`;
     };
     const firstCoordLabel = classicOrder === 'NE' ? 'N' : 'E';
     const secondCoordLabel = classicOrder === 'NE' ? 'E' : 'N';
@@ -2278,7 +2311,7 @@ export const buildIndustryStyleListingText = (
       `Partially Fixed             ${firstCoordLabel}                 ${secondCoordLabel}          Elev   Description`,
     );
     lines.push(
-      `${''.padEnd(20)}${'StdErr'.padStart(18)}${'StdErr'.padStart(18)}${'StdErr'.padStart(12)}`,
+      `${''.padEnd(22)}${'StdErr'.padStart(11)}${'StdErr'.padStart(17)}${'StdErr'.padStart(12)}`,
     );
     partiallyFixedUsedEnteredStationSnapshots.forEach((station) => {
       lines.push(formatClassicStationSummaryRow(station));

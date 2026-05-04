@@ -547,6 +547,11 @@ const buildCaseResult = (
     instrumentLibrary: startup?.projectInstruments,
     parseOptions: {
       currentInstrument: startup?.selectedInstrument,
+      sourceFile: startup?.projectRunFiles?.[0]?.name,
+      projectRunFiles: startup?.projectRunFiles?.map((file) => ({
+        ...file,
+        content: startup?.input ?? '',
+      })),
       runMode: startup?.parseSettingsPatch.runMode,
       preanalysisMode: startup?.parseSettingsPatch.preanalysisMode,
       coordSystemMode: startup?.parseSettingsPatch.coordSystemMode,
@@ -598,9 +603,11 @@ describe('industry multi-case parity foundation', () => {
     expect(ACTIVE_INDUSTRY_PARITY_CASE.id).toBe('campDesignPreanalysis');
     expect(ACTIVE_INDUSTRY_PARITY_CASE.startupDefaults).toBeDefined();
 
-    const startup = ACTIVE_INDUSTRY_PARITY_CASE.startupDefaults!;
-    expect(startup.input).toContain('# 2025 Suvery Design Pre-Analysis');
-    expect(startup.input).toContain('B GPS2-GPS5 N60-29-49.36W !');
+      const startup = ACTIVE_INDUSTRY_PARITY_CASE.startupDefaults!;
+      expect(startup.input).toContain('# 2025 Suvery Design Pre-Analysis');
+      expect(startup.input).toContain('B GPS2-GPS5 N60-29-49.36W !');
+      expect(startup.projectName).toBe('CAMP_DESIGN');
+      expect(startup.projectRunFiles?.[0]?.name).toContain('Traverse_Only.dat');
     expect(startup.input).toContain('DB 128');
     expect(startup.input).not.toContain('Project Option Settings');
     expect(startup.settingsPatch.convergenceLimit).toBe(0.01);
@@ -1838,11 +1845,13 @@ describe('industry multi-case parity foundation', () => {
     );
     expect(listing).toContain('STAR*NET Run Mode                   : Preanalysis');
     expect(listing).toContain('Coordinate System                   : UTM83-19');
-    expect(listing).toContain('Longitude Sign Convention           : Positive West');
-    expect(listing).toContain('Input/Output Coordinate Order       : East-North');
-    expect(listing).toContain('Project Default Instrument');
-    expect(listing).toContain('Project Library Instrument S9');
-    expect(listing).toContain('Project Library Instrument SX12');
+      expect(listing).toContain('Longitude Sign Convention           : Positive West');
+      expect(listing).toContain('Input/Output Coordinate Order       : East-North');
+      expect(listing).toContain('Data File List     1. Traverse_Only.dat');
+      expect(listing).toContain('Project Default Instrument');
+      expect(listing).toContain('Project Library Instrument SX12');
+      expect(listing).not.toContain('Project Library Instrument S9');
+      expect(listing).toContain('\f');
 
     const referenceDistanceSection = extractFixedRowTableSection(
       referenceOutput,

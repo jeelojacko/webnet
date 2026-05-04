@@ -85,6 +85,7 @@ import {
   useWorkspaceRecovery,
 } from './hooks/useWorkspaceRecovery';
 import { useWorkspaceProjectState } from './hooks/useWorkspaceProjectState';
+import type { ProjectRunFile } from './engine/projectWorkspace';
 import type {
   CrsCatalogGroupFilter,
   ListingSortCoordinatesBy,
@@ -101,6 +102,7 @@ import type {
   WorkspaceReviewState,
   WorkspaceTabKey,
 } from './appStateTypes';
+import type { AdjustmentResult } from './types';
 import type {
   Instrument,
   InstrumentLibrary,
@@ -1363,6 +1365,22 @@ const App: React.FC<AppProps> = ({
       buildObservationModeFromGridFields,
       cloneInstrumentLibrary,
     });
+  const startupProjectRunFiles = useMemo<ProjectRunFile[]>(
+    () =>
+      projectSession == null
+        ? (ACTIVE_PARITY_STARTUP_DEFAULTS?.projectRunFiles ?? []).map((file, index) => ({
+            fileId: file.fileId,
+            name: file.name,
+            order: file.order ?? index,
+            content: input,
+          }))
+        : [],
+    [input, projectSession],
+  );
+  const activeProjectRunFiles = useMemo<ProjectRunFile[]>(
+    () => (effectiveProjectRunFiles.length > 0 ? effectiveProjectRunFiles : startupProjectRunFiles),
+    [effectiveProjectRunFiles, startupProjectRunFiles],
+  );
   const setEditorInput: Dispatch<SetStateAction<string>> = useCallback(
     (value) => {
       const nextValue = typeof value === 'function' ? value(input) : value;
@@ -1632,6 +1650,28 @@ const App: React.FC<AppProps> = ({
     defaultIndustryInstrument: INDUSTRY_DEFAULT_INSTRUMENT,
     normalizeSolveProfile,
   });
+  const buildRunDiagnosticsWithProjectMetadata = useCallback(
+    (base: ParseSettings, solved?: AdjustmentResult): RunDiagnostics => {
+      const next = buildRunDiagnostics(base, solved);
+      const projectName = projectSession?.manifest.name ?? ACTIVE_PARITY_STARTUP_DEFAULTS?.projectName;
+      const projectSourceFiles =
+        activeProjectRunFiles.length > 0 ? activeProjectRunFiles.map((file) => file.name) : next.projectSourceFiles;
+      const projectFolder =
+        activeProjectRunFiles.length > 0
+          ? activeProjectRunFiles[0]?.name.replace(/[\\/][^\\/]+$/, '')
+          : next.projectFolder;
+      if (!projectName && (!projectSourceFiles || projectSourceFiles.length === 0) && !projectFolder) {
+        return next;
+      }
+      return {
+        ...next,
+        projectName: projectName ?? next.projectName,
+        projectFolder: projectFolder ?? next.projectFolder,
+        projectSourceFiles: projectSourceFiles ?? next.projectSourceFiles,
+      };
+    },
+    [activeProjectRunFiles, buildRunDiagnostics, projectSession],
+  );
 
   const { buildIndustryListingText } = useMemo(
     () =>
@@ -1639,9 +1679,9 @@ const App: React.FC<AppProps> = ({
         settings,
         parseSettings,
         runDiagnostics,
-        buildRunDiagnostics,
+        buildRunDiagnostics: buildRunDiagnosticsWithProjectMetadata,
       }),
-    [buildRunDiagnostics, parseSettings, runDiagnostics, settings],
+    [buildRunDiagnosticsWithProjectMetadata, parseSettings, runDiagnostics, settings],
   );
   const [industryListingCache, setIndustryListingCache] = useState<IndustryListingCacheEntry>({
     result: null,
@@ -1781,7 +1821,7 @@ const App: React.FC<AppProps> = ({
     setActiveTab('report');
   }, [setActiveTab]);
   const exportRunDiagnostics = result
-    ? (runDiagnostics ?? buildRunDiagnostics(parseSettings, result))
+    ? (runDiagnostics ?? buildRunDiagnosticsWithProjectMetadata(parseSettings, result))
     : null;
   const { buildArtifacts } = useArtifactBuilder();
   const handleInputChange = (value: string) => {
@@ -1818,11 +1858,11 @@ const App: React.FC<AppProps> = ({
     projectInstruments,
     selectedInstrument,
     projectIncludeFiles: effectiveRunIncludeFiles,
-    projectRunFiles: effectiveProjectRunFiles,
+    projectRunFiles: activeProjectRunFiles,
     geoidSourceData,
     currentRunSettingsSnapshot,
     result,
-    buildRunDiagnostics,
+    buildRunDiagnostics: buildRunDiagnosticsWithProjectMetadata,
     directRunner: runAdjustmentSession,
     setResult,
     setRunDiagnostics,
@@ -2019,7 +2059,7 @@ const App: React.FC<AppProps> = ({
       const restoredResult = cloneSavedRunSnapshots([restoredSnapshot])[0].result;
       const activeInputFingerprint = buildValueFingerprint({
         input: effectiveRunInput,
-        runFiles: effectiveProjectRunFiles,
+        runFiles: activeProjectRunFiles,
         includeFiles: effectiveRunIncludeFiles,
       });
       setResult(restoredResult);
@@ -2056,11 +2096,11 @@ const App: React.FC<AppProps> = ({
               ],
       });
     },
-    [
-      effectiveProjectRunFiles,
-      effectiveRunIncludeFiles,
-      effectiveRunInput,
-      restoreAdjustmentWorkflowState,
+      [
+        activeProjectRunFiles,
+        effectiveRunIncludeFiles,
+        effectiveRunInput,
+        restoreAdjustmentWorkflowState,
       restoreSavedRunSnapshot,
       buildWorkspaceReviewStateFromSavedRun,
       restoreWorkspaceReviewSnapshot,

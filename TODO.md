@@ -1,5 +1,9 @@
 # TODO - WebNet
 
+- [x] Camp Design preanalysis project-metadata/page-break parity batch (May 2026): carry the Camp startup case as a named virtual run file/project so the classic listing can emit the expected `Project Folder` / `Data File List` metadata, and restore the Camp-style page breaks in preanalysis output.
+
+- [x] Camp Design preanalysis weighting/header parity batch (May 2026): align the Camp startup instrument defaults with `camp_design.snproj`, stop listing unused project-library instruments in the classic preanalysis header, and re-baseline the remaining Camp raw-observation/error-propagation parity gaps.
+
 - [x] Camp Design preanalysis listing-parity batch (May 2026): diff the current industry-style preanalysis listing against `Camp_Design.lst`, remove adjustment-only sections that should not appear in preanalysis, align the included section set/order/headers with the Camp reference, and lock the structure with focused regression coverage.
 
 - [x] Camp Design preanalysis control-covariance parity batch (May 2026): preserve component slot alignment in control-record sigma/fixity parsing so mixed weighted/fixed control like `GPS4 0.005 0.005 !` stays weighted in horizontal and fixed in height, then recheck the preanalysis error-propagation parity baseline.

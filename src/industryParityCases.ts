@@ -1,4 +1,5 @@
 import type { ParseSettings, SettingsState } from './appStateTypes';
+import type { ProjectRunFile } from './engine/projectWorkspace';
 import type { InstrumentLibrary } from './types';
 import campDesignPreanalysisTraverseOnlyRaw from '../tests/fixtures/camp_design_preanalysis_traverse_only.dat?raw';
 import combinedFixtureInputRaw from '../tests/fixtures/industry_case_combined_input.txt?raw';
@@ -24,6 +25,8 @@ export interface IndustryParityStartupDefaults {
   parseSettingsPatch: Partial<ParseSettings>;
   projectInstruments: InstrumentLibrary;
   selectedInstrument: string;
+  projectName?: string;
+  projectRunFiles?: Array<Pick<ProjectRunFile, 'fileId' | 'name' | 'order'>>;
 }
 
 export interface IndustryParityCaseDefinition {
@@ -363,6 +366,14 @@ export const INDUSTRY_PARITY_CASES: Record<IndustryParityCaseId, IndustryParityC
     normalizationRules: DEFAULT_NORMALIZATION_RULES,
     startupDefaults: {
       input: CAMP_DESIGN_PREANALYSIS_STARTUP_INPUT,
+      projectName: 'CAMP_DESIGN',
+      projectRunFiles: [
+        {
+          fileId: 'camp-design-traverse-only',
+          name: 'C:\\USERS\\...\\STARNET\\PRE-ANALYSIS\\Traverse_Only.dat',
+          order: 0,
+        },
+      ],
       settingsPatch: {
         convergenceLimit: 0.01,
         maxIterations: 10,
