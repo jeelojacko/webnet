@@ -1,8 +1,6 @@
 import type { RunSessionOutcome, RunSessionRequest } from './runSession';
-import type { BuildExportArtifactsRequest, BuildExportArtifactsResult } from './exportArtifacts';
 
 export type RunPhase = 'queued' | 'solving' | 'finalizing';
-export type ArtifactPhase = 'queued' | 'building' | 'finalizing';
 
 export interface RunRequestMessage {
   type: 'run';
@@ -15,16 +13,7 @@ export interface RunCancelMessage {
   runId: string;
 }
 
-export interface ArtifactRequestMessage {
-  type: 'artifact';
-  taskId: string;
-  payload: BuildExportArtifactsRequest;
-}
-
-export type AdjustmentWorkerRequestMessage =
-  | RunRequestMessage
-  | RunCancelMessage
-  | ArtifactRequestMessage;
+export type AdjustmentWorkerRequestMessage = RunRequestMessage | RunCancelMessage;
 
 export interface RunProgressMessage {
   type: 'progress';
@@ -55,29 +44,29 @@ export interface RunCancelledMessage {
   runId: string;
 }
 
-export interface ArtifactProgressMessage {
-  type: 'artifact-progress';
-  taskId: string;
-  phase: ArtifactPhase;
-}
-
-export interface ArtifactSuccessMessage {
-  type: 'artifact-success';
-  taskId: string;
-  payload: BuildExportArtifactsResult;
-}
-
-export interface ArtifactFailureMessage {
-  type: 'artifact-failure';
-  taskId: string;
-  error: string;
-}
-
 export type AdjustmentWorkerResponseMessage =
   | RunProgressMessage
   | RunSuccessMessage
   | RunFailureMessage
-  | RunCancelledMessage
-  | ArtifactProgressMessage
-  | ArtifactSuccessMessage
-  | ArtifactFailureMessage;
+  | RunCancelledMessage;
+
+const isObjectRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value != null;
+
+export const isAdjustmentWorkerResponseMessage = (
+  value: unknown,
+): value is AdjustmentWorkerResponseMessage => {
+  if (!isObjectRecord(value) || typeof value.type !== 'string') return false;
+  switch (value.type) {
+    case 'progress':
+      return typeof value.runId === 'string' && value.phase !== undefined;
+    case 'success':
+      return typeof value.runId === 'string' && 'payload' in value;
+    case 'failure':
+      return typeof value.runId === 'string' && typeof value.error === 'string';
+    case 'cancelled':
+      return typeof value.runId === 'string';
+    default:
+      return false;
+  }
+};

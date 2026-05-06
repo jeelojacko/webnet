@@ -2,10 +2,19 @@ import type {
   AdjustmentWorkerRequestMessage,
   AdjustmentWorkerResponseMessage,
 } from '../engine/adjustmentWorkerProtocol';
-import { buildExportArtifacts } from '../engine/exportArtifacts';
-import { runAdjustmentSession } from '../engine/runSession';
+import type { runAdjustmentSession as RunAdjustmentSessionFn } from '../engine/runSession';
 
 const cancelledRequestIds = new Set<string>();
+let runAdjustmentSessionPromise: Promise<typeof RunAdjustmentSessionFn> | null = null;
+
+const loadRunAdjustmentSession = (): Promise<typeof RunAdjustmentSessionFn> => {
+  if (!runAdjustmentSessionPromise) {
+    runAdjustmentSessionPromise = import('../engine/runSession').then(
+      (module) => module.runAdjustmentSession,
+    );
+  }
+  return runAdjustmentSessionPromise;
+};
 
 const postWorkerMessage = (message: AdjustmentWorkerResponseMessage) => {
   self.postMessage(message);
@@ -29,23 +38,37 @@ self.onmessage = (event: MessageEvent<AdjustmentWorkerRequestMessage>) => {
       if (cancelledRequestIds.has(runId)) return;
       try {
         postWorkerMessage({ type: 'progress', runId, phase: 'solving' });
-        const outcome = runAdjustmentSession(payload, (progress) => {
-          if (cancelledRequestIds.has(runId)) return;
-          postWorkerMessage({
-            type: 'progress',
-            runId,
-            phase: progress.phase,
-            elapsedMs: progress.elapsedMs,
-            stageLabel: progress.stageLabel,
-            solveIndex: progress.solveIndex,
-            solveTotalHint: progress.solveTotalHint,
-            iteration: progress.iteration,
-            maxIterations: progress.maxIterations,
+        void loadRunAdjustmentSession()
+          .then((runAdjustmentSession) => {
+            const outcome = runAdjustmentSession(payload, (progress) => {
+              if (cancelledRequestIds.has(runId)) return;
+              postWorkerMessage({
+                type: 'progress',
+                runId,
+                phase: progress.phase,
+                elapsedMs: progress.elapsedMs,
+                stageLabel: progress.stageLabel,
+                solveIndex: progress.solveIndex,
+                solveTotalHint: progress.solveTotalHint,
+                iteration: progress.iteration,
+                maxIterations: progress.maxIterations,
+              });
+            });
+            if (cancelledRequestIds.has(runId)) return;
+            postWorkerMessage({ type: 'progress', runId, phase: 'finalizing' });
+            postWorkerMessage({ type: 'success', runId, payload: outcome });
+          })
+          .catch((error) => {
+            if (cancelledRequestIds.has(runId)) return;
+            postWorkerMessage({
+              type: 'failure',
+              runId,
+              error: error instanceof Error ? error.message : String(error),
+            });
+          })
+          .finally(() => {
+            cancelledRequestIds.delete(runId);
           });
-        });
-        if (cancelledRequestIds.has(runId)) return;
-        postWorkerMessage({ type: 'progress', runId, phase: 'finalizing' });
-        postWorkerMessage({ type: 'success', runId, payload: outcome });
       } catch (error) {
         if (cancelledRequestIds.has(runId)) return;
         postWorkerMessage({
@@ -53,32 +76,8 @@ self.onmessage = (event: MessageEvent<AdjustmentWorkerRequestMessage>) => {
           runId,
           error: error instanceof Error ? error.message : String(error),
         });
-      } finally {
-        cancelledRequestIds.delete(runId);
       }
     }, 0);
     return;
   }
-
-  const { taskId, payload } = message;
-  postWorkerMessage({ type: 'artifact-progress', taskId, phase: 'queued' });
-  setTimeout(() => {
-    if (cancelledRequestIds.has(taskId)) return;
-    try {
-      postWorkerMessage({ type: 'artifact-progress', taskId, phase: 'building' });
-      const outcome = buildExportArtifacts(payload);
-      if (cancelledRequestIds.has(taskId)) return;
-      postWorkerMessage({ type: 'artifact-progress', taskId, phase: 'finalizing' });
-      postWorkerMessage({ type: 'artifact-success', taskId, payload: outcome });
-    } catch (error) {
-      if (cancelledRequestIds.has(taskId)) return;
-      postWorkerMessage({
-        type: 'artifact-failure',
-        taskId,
-        error: error instanceof Error ? error.message : String(error),
-      });
-    } finally {
-      cancelledRequestIds.delete(taskId);
-    }
-  }, 0);
 };

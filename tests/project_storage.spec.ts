@@ -90,7 +90,44 @@ const installIndexedDbMock = (stores: FakeIdbStores) => {
                     : name === 'projectManifest'
                       ? stores.projectManifest
                       : stores.projectFile;
+                const buildProjectFileIndex = () => ({
+                  getAll: (projectId: string) =>
+                    createFakeRequest(
+                      () =>
+                        Array.from(stores.projectFile.values()).filter(
+                          (record) =>
+                            (record as { projectId?: string }).projectId === projectId,
+                        ),
+                      () => {
+                        transaction.oncomplete?.(new Event('complete') as never);
+                      },
+                    ),
+                  getAllKeys: (projectId: string) =>
+                    createFakeRequest(
+                      () =>
+                        Array.from(stores.projectFile.values())
+                          .filter(
+                            (record) =>
+                              (record as { projectId?: string }).projectId === projectId,
+                          )
+                          .map((record) => {
+                            const fileRecord = record as { projectId: string; fileId: string };
+                            return [fileRecord.projectId, fileRecord.fileId];
+                          }),
+                      () => {
+                        transaction.oncomplete?.(new Event('complete') as never);
+                      },
+                    ),
+                });
                 return {
+                  indexNames: {
+                    contains: (indexName: string) => indexName === 'byProjectId',
+                  },
+                  index: (indexName: string) => {
+                    if (indexName !== 'byProjectId') throw new Error(`Unexpected index ${indexName}`);
+                    return buildProjectFileIndex();
+                  },
+                  createIndex: () => buildProjectFileIndex(),
                   get: (key: string) =>
                     createFakeRequest(() => store.get(key), () => {
                       transaction.oncomplete?.(new Event('complete') as never);

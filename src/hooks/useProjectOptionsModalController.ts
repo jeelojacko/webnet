@@ -9,6 +9,7 @@ import { useProjectOptionsState } from './useProjectOptionsState';
 import type {
   CrsCatalogGroupFilter,
   ParseSettings,
+  ProjectOptionsTab,
   RunDiagnostics,
   SettingsState,
   SolveProfile,
@@ -26,8 +27,65 @@ import type {
   ProjectExportFormat,
   RunMode,
 } from '../types';
+import type { CrsDefinition, CrsProjectionParam } from '../engine/crsCatalog';
 import type { ProjectIndexRow, ProjectStorageStatus } from '../engine/projectWorkspace';
 import type { ProjectWorkspaceFileView } from './useProjectFileWorkflow';
+
+type SettingsCardProps = {
+  title: string;
+  tooltip: string;
+  children: React.ReactNode;
+  className?: string;
+  disabled?: boolean;
+};
+
+type SettingsRowProps = {
+  label: string;
+  tooltip?: string;
+  children: React.ReactNode;
+  className?: string;
+};
+
+type SettingsToggleProps = {
+  checked: boolean;
+  disabled?: boolean;
+  title: string;
+  onChange: (_checked: boolean) => void;
+};
+
+type ProjectOptionTabOption = { id: ProjectOptionsTab; label: string };
+type BuiltinGeoidModelOption = { id: string; label: string };
+type CrsCatalogGroupOption = { id: string; label: string };
+
+export type ProjectOptionsModalStaticContext = {
+  ADJUSTED_POINTS_ALL_COLUMNS: AdjustedPointsColumnId[];
+  ADJUSTED_POINTS_PRESET_COLUMNS: Partial<Record<AdjustedPointsPresetId, AdjustedPointsColumnId[]>>;
+  BUILTIN_GEOID_MODEL_OPTIONS: BuiltinGeoidModelOption[];
+  CRS_CATALOG_GROUP_OPTIONS: CrsCatalogGroupOption[];
+  DEFAULT_QFIX_ANGULAR_SIGMA_SEC: number;
+  DEFAULT_QFIX_LINEAR_SIGMA_M: number;
+  FT_PER_M: number;
+  Info: React.ComponentType<Record<string, unknown>>;
+  LEVEL_LOOP_TOLERANCE_PRESETS: typeof LEVEL_LOOP_TOLERANCE_PRESETS;
+  M_PER_FT: number;
+  PROJECT_OPTION_SECTION_TOOLTIPS: Record<string, string>;
+  PROJECT_OPTION_TABS: ProjectOptionTabOption[];
+  PROJECT_OPTION_TAB_TOOLTIPS: Record<string, string>;
+  RAD_TO_DEG: number;
+  SETTINGS_TOOLTIPS: Record<string, string>;
+  SettingsCard: React.ComponentType<SettingsCardProps>;
+  SettingsRow: React.ComponentType<SettingsRowProps>;
+  SettingsToggle: React.ComponentType<SettingsToggleProps>;
+  getExportFormatExtension: (_format: ProjectExportFormat) => string;
+  getExportFormatLabel: (_format: ProjectExportFormat) => string;
+  getExportFormatTooltip: (_format: ProjectExportFormat) => string;
+  normalizeUiTheme: (_value: unknown) => UiTheme;
+  optionInputClass: string;
+  optionLabelClass: string;
+};
+
+type ProjectOptionsModalStaticContextInput = Partial<ProjectOptionsModalStaticContext> &
+  Pick<ProjectOptionsModalStaticContext, 'FT_PER_M'>;
 
 type ProjectOptionsStateValue = ReturnType<typeof useProjectOptionsState>;
 
@@ -36,11 +94,11 @@ type UseProjectOptionsModalControllerArgs = {
   adjustedPointsDraftStationIds: string[];
   adjustedPointsTransformDraftValidationMessage: string | null;
   crsCatalogGroupCounts: Record<string, number>;
-  filteredDraftCrsCatalog: unknown[];
-  searchedDraftCrsCatalog: unknown[];
-  visibleDraftCrsCatalog: unknown[];
-  selectedDraftCrs?: unknown;
-  selectedCrsProj4Params: Array<{ key: string; value: string }>;
+  filteredDraftCrsCatalog: CrsDefinition[];
+  searchedDraftCrsCatalog: CrsDefinition[];
+  visibleDraftCrsCatalog: CrsDefinition[];
+  selectedDraftCrs?: CrsDefinition;
+  selectedCrsProj4Params: CrsProjectionParam[];
   exportFormat: ProjectExportFormat;
   setExportFormat: Dispatch<SetStateAction<ProjectExportFormat>>;
   storageStatus?: ProjectStorageStatus | null;
@@ -100,7 +158,7 @@ type UseProjectOptionsModalControllerArgs = {
     label: string;
     description: string;
   };
-  staticContext: Record<string, unknown>;
+  staticContext: ProjectOptionsModalStaticContextInput;
 };
 
 export const useProjectOptionsModalController = ({
@@ -146,6 +204,34 @@ export const useProjectOptionsModalController = ({
   resolveLevelLoopTolerancePreset,
   staticContext,
 }: UseProjectOptionsModalControllerArgs) => {
+  const resolvedStaticContext: ProjectOptionsModalStaticContext = {
+    ADJUSTED_POINTS_ALL_COLUMNS: staticContext.ADJUSTED_POINTS_ALL_COLUMNS ?? [],
+    ADJUSTED_POINTS_PRESET_COLUMNS: staticContext.ADJUSTED_POINTS_PRESET_COLUMNS ?? {},
+    BUILTIN_GEOID_MODEL_OPTIONS: staticContext.BUILTIN_GEOID_MODEL_OPTIONS ?? [],
+    CRS_CATALOG_GROUP_OPTIONS: staticContext.CRS_CATALOG_GROUP_OPTIONS ?? [],
+    DEFAULT_QFIX_ANGULAR_SIGMA_SEC: staticContext.DEFAULT_QFIX_ANGULAR_SIGMA_SEC ?? 0,
+    DEFAULT_QFIX_LINEAR_SIGMA_M: staticContext.DEFAULT_QFIX_LINEAR_SIGMA_M ?? 0,
+    FT_PER_M: staticContext.FT_PER_M,
+    Info: staticContext.Info ?? (() => null),
+    LEVEL_LOOP_TOLERANCE_PRESETS:
+      staticContext.LEVEL_LOOP_TOLERANCE_PRESETS ?? LEVEL_LOOP_TOLERANCE_PRESETS,
+    M_PER_FT: staticContext.M_PER_FT ?? 0,
+    PROJECT_OPTION_SECTION_TOOLTIPS: staticContext.PROJECT_OPTION_SECTION_TOOLTIPS ?? {},
+    PROJECT_OPTION_TABS: staticContext.PROJECT_OPTION_TABS ?? [],
+    PROJECT_OPTION_TAB_TOOLTIPS: staticContext.PROJECT_OPTION_TAB_TOOLTIPS ?? {},
+    RAD_TO_DEG: staticContext.RAD_TO_DEG ?? 0,
+    SETTINGS_TOOLTIPS: staticContext.SETTINGS_TOOLTIPS ?? {},
+    SettingsCard: staticContext.SettingsCard ?? (() => null),
+    SettingsRow: staticContext.SettingsRow ?? (() => null),
+    SettingsToggle: staticContext.SettingsToggle ?? (() => null),
+    getExportFormatExtension: staticContext.getExportFormatExtension ?? (() => ''),
+    getExportFormatLabel: staticContext.getExportFormatLabel ?? (() => ''),
+    getExportFormatTooltip: staticContext.getExportFormatTooltip ?? (() => ''),
+    normalizeUiTheme: staticContext.normalizeUiTheme ?? normalizeUiTheme,
+    optionInputClass: staticContext.optionInputClass ?? '',
+    optionLabelClass: staticContext.optionLabelClass ?? '',
+  };
+
   const {
     isSettingsModalOpen,
     activeOptionsTab,
@@ -623,7 +709,7 @@ export const useProjectOptionsModalController = ({
     const displayValue = Number.isFinite(parsed) ? parsed : 0;
     const metricValue =
       units === 'ft'
-        ? displayValue / ((staticContext.FT_PER_M as number | undefined) ?? 3.280839895)
+        ? displayValue / (resolvedStaticContext.FT_PER_M ?? 3.280839895)
         : displayValue;
     handleInstrumentFieldChange(code, key, metricValue);
   };
@@ -686,14 +772,14 @@ export const useProjectOptionsModalController = ({
   const instrumentLinearUnit = settingsDraft.units === 'ft' ? 'FeetUS' : 'Meters';
   const displayLinear = (meters: number): number =>
     settingsDraft.units === 'ft'
-      ? meters * ((staticContext.FT_PER_M as number | undefined) ?? 3.280839895)
+      ? meters * (resolvedStaticContext.FT_PER_M ?? 3.280839895)
       : meters;
   const adjustedPointsTransformSelectedInSetCount = adjustedPointsExportSettingsDraft.transform.selectedStationIds.filter(
     (id) => adjustedPointsDraftStationIds.includes(id),
   ).length;
 
   const projectOptionsModalContext = {
-    ...staticContext,
+    ...resolvedStaticContext,
     activeLevelLoopPreset,
     activeLevelLoopPresetId,
     activeOptionsTab,
@@ -801,3 +887,7 @@ export const useProjectOptionsModalController = ({
     projectOptionsModalContext,
   };
 };
+
+export type ProjectOptionsModalContext = ReturnType<
+  typeof useProjectOptionsModalController
+>['projectOptionsModalContext'];

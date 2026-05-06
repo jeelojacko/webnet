@@ -1,4 +1,5 @@
 import type { AdjustmentResult, Observation, StationId } from '../types';
+import { getObservationSetId } from './observationMetadata';
 
 const obsSetupStation = (obs: Observation): StationId | undefined => {
   if (obs.type === 'direction' || obs.type === 'angle') return obs.at;
@@ -99,14 +100,15 @@ export const buildSetupDiagnostics = ({
     const setup = ensureSetup(setupId);
     if (obs.type === 'direction') {
       setup.directionObsCount += 1;
-      setup.directionSetIds.add(String((obs as any).setId));
+      const setId = getObservationSetId(obs);
+      if (setId) setup.directionSetIds.add(setId);
     } else if (obs.type === 'angle') {
       setup.angleObsCount += 1;
     } else if (obs.type === 'dir') {
       setup.directionObsCount += 1;
     } else if (obs.type === 'dist') {
       setup.distanceObsCount += 1;
-      const setTag = String((obs as any).setId ?? '').toUpperCase();
+      const setTag = String(getObservationSetId(obs) ?? '').toUpperCase();
       if (setTag === 'T' || setTag === 'TE') {
         setup.traverseDistance += Math.abs(obs.obs);
       }

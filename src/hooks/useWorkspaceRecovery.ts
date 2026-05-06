@@ -1,10 +1,22 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { WorkspaceDraftSnapshot, WorkspaceRecoveryRecord } from '../appStateTypes';
 
 const DEFAULT_STORAGE_KEY = 'webnet.workspace-recovery.v1';
+const PERSIST_DELAY_MS = 250;
 
 const canUseLocalStorage = (): boolean =>
   typeof window !== 'undefined' && typeof window.localStorage !== 'undefined';
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value != null;
+
+const isWorkspaceDraftSnapshot = (value: unknown): value is WorkspaceDraftSnapshot =>
+  isRecord(value) &&
+  typeof value.input === 'string' &&
+  isRecord(value.projectIncludeFiles) &&
+  isRecord(value.settings) &&
+  isRecord(value.parseSettings) &&
+  Array.isArray(value.savedRunSnapshots);
 
 export const encodeUint8ArrayToBase64 = (bytes: Uint8Array | null): string | null => {
   if (!bytes || bytes.length === 0) return null;
@@ -35,7 +47,14 @@ const parseRecoveryRecord = (raw: string | null): WorkspaceRecoveryRecord | null
   if (!raw) return null;
   try {
     const parsed = JSON.parse(raw) as WorkspaceRecoveryRecord | null;
-    if (!parsed || parsed.version !== 1 || !parsed.snapshot) return null;
+    if (
+      !parsed ||
+      parsed.version !== 1 ||
+      typeof parsed.savedAt !== 'string' ||
+      !isWorkspaceDraftSnapshot(parsed.snapshot)
+    ) {
+      return null;
+    }
     return parsed;
   } catch {
     return null;
@@ -59,9 +78,9 @@ export const useWorkspaceRecovery = ({
   const [persistEnabled, setPersistEnabled] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
   const [hasStoredDraft, setHasStoredDraft] = useState(false);
+  const [persistError, setPersistError] = useState<string | null>(null);
   const lastSavedSnapshotRef = useRef<string | null>(null);
-
-  const serializedSnapshot = useMemo(() => JSON.stringify(snapshot), [snapshot]);
+  const pendingPersistTimerRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (disabled) {
@@ -69,6 +88,7 @@ export const useWorkspaceRecovery = ({
       setPersistEnabled(false);
       setIsInitialized(true);
       setHasStoredDraft(false);
+      setPersistError(null);
       lastSavedSnapshotRef.current = null;
       return;
     }
@@ -76,32 +96,54 @@ export const useWorkspaceRecovery = ({
       setPersistEnabled(true);
       setIsInitialized(true);
       setHasStoredDraft(false);
+      setPersistError(null);
       return;
     }
     const record = parseRecoveryRecord(window.localStorage.getItem(storageKey));
     if (record) {
       setPendingRecovery(record);
       setHasStoredDraft(true);
+      setPersistError(null);
       lastSavedSnapshotRef.current = JSON.stringify(record.snapshot);
     } else {
       setPersistEnabled(true);
       setHasStoredDraft(false);
+      setPersistError(null);
     }
     setIsInitialized(true);
   }, [disabled, storageKey]);
 
   useEffect(() => {
     if (disabled || !isInitialized || !persistEnabled || !canUseLocalStorage()) return;
-    if (serializedSnapshot === lastSavedSnapshotRef.current) return;
-    const record: WorkspaceRecoveryRecord = {
-      version: 1,
-      savedAt: new Date().toISOString(),
-      snapshot,
+    if (pendingPersistTimerRef.current != null) {
+      window.clearTimeout(pendingPersistTimerRef.current);
+    }
+    pendingPersistTimerRef.current = window.setTimeout(() => {
+      try {
+        const serializedSnapshot = JSON.stringify(snapshot);
+        if (serializedSnapshot === lastSavedSnapshotRef.current) return;
+        const record: WorkspaceRecoveryRecord = {
+          version: 1,
+          savedAt: new Date().toISOString(),
+          snapshot,
+        };
+        window.localStorage.setItem(storageKey, JSON.stringify(record));
+        lastSavedSnapshotRef.current = serializedSnapshot;
+        setHasStoredDraft(true);
+        setPersistError(null);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        setPersistEnabled(false);
+        setPersistError(message);
+      }
+    }, PERSIST_DELAY_MS);
+    return () => {
+      if (pendingPersistTimerRef.current != null) {
+        window.clearTimeout(pendingPersistTimerRef.current);
+        pendingPersistTimerRef.current = null;
+      }
     };
-    window.localStorage.setItem(storageKey, JSON.stringify(record));
-    lastSavedSnapshotRef.current = serializedSnapshot;
-    setHasStoredDraft(true);
-  }, [disabled, isInitialized, persistEnabled, serializedSnapshot, snapshot, storageKey]);
+  }, [disabled, isInitialized, persistEnabled, snapshot, storageKey]);
 
   const recoverDraft = useCallback(() => {
     if (!pendingRecovery) return;
@@ -116,25 +158,28 @@ export const useWorkspaceRecovery = ({
     if (canUseLocalStorage()) {
       window.localStorage.removeItem(storageKey);
     }
-    lastSavedSnapshotRef.current = serializedSnapshot;
+    lastSavedSnapshotRef.current = JSON.stringify(snapshot);
     setPendingRecovery(null);
     setPersistEnabled(true);
     setHasStoredDraft(false);
-  }, [serializedSnapshot, storageKey]);
+    setPersistError(null);
+  }, [snapshot, storageKey]);
 
   const clearCurrentDraft = useCallback(() => {
     if (canUseLocalStorage()) {
       window.localStorage.removeItem(storageKey);
     }
-    lastSavedSnapshotRef.current = serializedSnapshot;
+    lastSavedSnapshotRef.current = JSON.stringify(snapshot);
     setPendingRecovery(null);
     setPersistEnabled(true);
     setHasStoredDraft(false);
-  }, [serializedSnapshot, storageKey]);
+    setPersistError(null);
+  }, [snapshot, storageKey]);
 
   return {
     pendingRecovery,
     hasStoredDraft,
+    persistError,
     recoverDraft,
     discardRecoveredDraft,
     clearCurrentDraft,

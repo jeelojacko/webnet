@@ -5,6 +5,7 @@ import type {
   ProjectExportFormat,
 } from '../types';
 import type { PersistedSavedRunSnapshot } from '../appStateTypes';
+import { createStableRuntimeId } from './id';
 
 export const WEBNET_PROJECT_SCHEMA_VERSION = 5;
 
@@ -151,14 +152,10 @@ const toValidFileIdSet = (files: ProjectManifestFileEntry[]): Set<string> =>
   new Set(files.map((file) => file.id));
 
 export const createProjectId = (): string =>
-  typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
-    ? crypto.randomUUID()
-    : `project-${Date.now()}-${Math.random().toString(16).slice(2, 10)}`;
+  createStableRuntimeId('project');
 
 export const createProjectFileId = (): string =>
-  typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
-    ? crypto.randomUUID()
-    : `file-${Date.now()}-${Math.random().toString(16).slice(2, 10)}`;
+  createStableRuntimeId('file');
 
 export const sanitizeProjectFileStorageName = (value: string): string => {
   const normalized = normalizeSourcePath(value);

@@ -93,6 +93,7 @@ const BUILTIN_GEOID_MODEL_ALIASES: Record<string, string> = {
 
 const modelCache = new Map<string, GeoidGridModel>();
 const externalModelCache = new Map<string, GeoidGridModel>();
+const MAX_EXTERNAL_GRID_BYTES = 64 * 1024 * 1024;
 
 const parsePositiveInt = (token: string | undefined): number | null => {
   if (!token) return null;
@@ -147,26 +148,12 @@ const sourceDataToBytes = (sourceData?: ArrayBuffer | Uint8Array | null): Uint8A
   return null;
 };
 
-const readBinaryFromPathSync = (path: string): { bytes?: Uint8Array; warning?: string } => {
-  const trimmed = path.trim();
-  if (!trimmed) return { warning: 'empty external geoid/grid source path.' };
-  try {
-    const loader = new Function(
-      'return typeof process !== "undefined" && process.versions && process.versions.node && typeof require !== "undefined" ? require("node:fs") : null;',
-    ) as () => { readFileSync: (_path: string) => Uint8Array } | null;
-    const fs = loader();
-    if (!fs) {
-      return {
-        warning:
-          'external geoid/grid source path was supplied but file loading is unavailable in this runtime.',
-      };
-    }
-    const bytes = fs.readFileSync(trimmed);
-    return { bytes: bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes) };
-  } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    return { warning: `failed to read external geoid/grid source "${trimmed}": ${message}` };
+const validateExternalSourceBytes = (bytes: Uint8Array): string | null => {
+  if (bytes.byteLength === 0) return 'external geoid/grid source is empty.';
+  if (bytes.byteLength > MAX_EXTERNAL_GRID_BYTES) {
+    return `external geoid/grid source exceeds ${MAX_EXTERNAL_GRID_BYTES} bytes.`;
   }
+  return null;
 };
 
 export const parseGeoidInterpolationToken = (token?: string): GeoidInterpolationMethod | null => {
@@ -576,9 +563,8 @@ export const loadGeoidGridModel = ({
   let bytes = sourceDataToBytes(sourceData);
   let sourceWarning: string | undefined;
   if (!bytes && sourcePath.trim()) {
-    const loaded = readBinaryFromPathSync(sourcePath);
-    bytes = loaded.bytes ?? null;
-    sourceWarning = loaded.warning;
+    sourceWarning =
+      'external geoid/grid source path was supplied without source bytes; browser/runtime file loading is not available in this code path.';
   }
   if (!bytes) {
     const fallback = loadBuiltinGeoidGridModel(normalizedId);
@@ -588,6 +574,17 @@ export const loadGeoidGridModel = ({
       warning:
         sourceWarning ??
         `external geoid/grid source (${sourceFormat.toUpperCase()}) was requested but no binary source data is available.`,
+      resolvedFormat: fallback.model ? 'builtin' : sourceFormat,
+      fallbackUsed: Boolean(fallback.model),
+    };
+  }
+  const bytesWarning = validateExternalSourceBytes(bytes);
+  if (bytesWarning) {
+    const fallback = loadBuiltinGeoidGridModel(normalizedId);
+    return {
+      model: fallback.model,
+      fromCache: fallback.fromCache,
+      warning: bytesWarning,
       resolvedFormat: fallback.model ? 'builtin' : sourceFormat,
       fallbackUsed: Boolean(fallback.model),
     };

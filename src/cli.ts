@@ -1,6 +1,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
+import { pathToFileURL } from 'node:url';
 
 import { solveEngine } from './engine/solveEngine';
 import type { ParseOptions } from './types';
@@ -22,7 +23,7 @@ const EXIT_OK = 0;
 const EXIT_SOLVE_FAILED = 1;
 const EXIT_USAGE_ERROR = 2;
 
-interface CliConfig {
+export interface CliConfig {
   inputPath: string;
   profile: SolveProfile;
   maxIterations: number;
@@ -116,7 +117,7 @@ const parseGeoidInterpolationArg = (value: string): ParseOptions['geoidInterpola
   return undefined;
 };
 
-const parseArgs = (argv: string[]): CliConfig => {
+export const parseArgs = (argv: string[]): CliConfig => {
   const config: CliConfig = {
     inputPath: '',
     profile: 'industry-parity',
@@ -673,4 +674,12 @@ const run = (): number => {
   return result.success ? EXIT_OK : EXIT_SOLVE_FAILED;
 };
 
-process.exit(run());
+const isDirectCliEntry = (() => {
+  const entryArg = process.argv[1];
+  if (!entryArg) return false;
+  return import.meta.url === pathToFileURL(entryArg).href;
+})();
+
+if (isDirectCliEntry) {
+  process.exit(run());
+}

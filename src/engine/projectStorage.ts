@@ -8,10 +8,11 @@ import type {
 import { createSessionFromManifest } from './projectWorkspace';
 
 const PROJECT_DB_NAME = 'webnet.project-storage.v1';
-const PROJECT_DB_VERSION = 1;
+const PROJECT_DB_VERSION = 2;
 const PROJECT_INDEX_STORE = 'projectIndex';
 const PROJECT_MANIFEST_STORE = 'projectManifest';
 const PROJECT_FILE_STORE = 'projectFile';
+const PROJECT_FILE_BY_PROJECT_INDEX = 'byProjectId';
 
 type ProjectFileRecord = {
   projectId: string;
@@ -88,7 +89,14 @@ const openProjectDatabase = (): Promise<IDBDatabase> =>
         db.createObjectStore(PROJECT_MANIFEST_STORE, { keyPath: 'projectId' });
       }
       if (!db.objectStoreNames.contains(PROJECT_FILE_STORE)) {
-        db.createObjectStore(PROJECT_FILE_STORE, { keyPath: ['projectId', 'fileId'] });
+        const store = db.createObjectStore(PROJECT_FILE_STORE, { keyPath: ['projectId', 'fileId'] });
+        store.createIndex(PROJECT_FILE_BY_PROJECT_INDEX, 'projectId', { unique: false });
+      } else {
+        const transaction = request.transaction;
+        const store = transaction?.objectStore(PROJECT_FILE_STORE);
+        if (store && !store.indexNames.contains(PROJECT_FILE_BY_PROJECT_INDEX)) {
+          store.createIndex(PROJECT_FILE_BY_PROJECT_INDEX, 'projectId', { unique: false });
+        }
       }
     };
     request.onsuccess = () => resolve(request.result);
@@ -114,7 +122,15 @@ const readAllProjectFilesFromDb = async (
 ): Promise<Record<string, string>> => {
   const transaction = db.transaction(PROJECT_FILE_STORE, 'readonly');
   const store = transaction.objectStore(PROJECT_FILE_STORE);
-  const allRecords = (await requestToPromise(store.getAll())) as ProjectFileRecord[];
+  const index =
+    typeof store.index === 'function' &&
+    typeof store.indexNames?.contains === 'function' &&
+    store.indexNames.contains(PROJECT_FILE_BY_PROJECT_INDEX)
+      ? store.index(PROJECT_FILE_BY_PROJECT_INDEX)
+      : null;
+  const allRecords = index
+    ? ((await requestToPromise(index.getAll(projectId))) as ProjectFileRecord[])
+    : ((await requestToPromise(store.getAll())) as ProjectFileRecord[]);
   await transactionDone(transaction);
   return Object.fromEntries(
     allRecords
@@ -146,10 +162,18 @@ const writeAllProjectFilesToDb = async (
 const deleteProjectFilesFromDb = async (db: IDBDatabase, projectId: string): Promise<void> => {
   const transaction = db.transaction(PROJECT_FILE_STORE, 'readwrite');
   const store = transaction.objectStore(PROJECT_FILE_STORE);
-  const allRecords = (await requestToPromise(store.getAll())) as ProjectFileRecord[];
-  allRecords
-    .filter((record) => record.projectId === projectId)
-    .forEach((record) => store.delete([record.projectId, record.fileId]));
+  const index =
+    typeof store.index === 'function' &&
+    typeof store.indexNames?.contains === 'function' &&
+    store.indexNames.contains(PROJECT_FILE_BY_PROJECT_INDEX)
+      ? store.index(PROJECT_FILE_BY_PROJECT_INDEX)
+      : null;
+  const targetKeys = index
+    ? ((await requestToPromise(index.getAllKeys(projectId))) as Array<string | [string, string]>)
+    : ((await requestToPromise(store.getAll())) as ProjectFileRecord[])
+        .filter((record) => record.projectId === projectId)
+        .map((record) => [record.projectId, record.fileId] as [string, string]);
+  targetKeys.forEach((key) => store.delete(key));
   await transactionDone(transaction);
 };
 

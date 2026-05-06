@@ -1,5 +1,4 @@
 
-// @ts-nocheck
 import React from 'react';
 import { EXPORT_FORMAT_OPTIONS } from '../engine/exportFormats';
 import type {
@@ -8,6 +7,7 @@ import type {
   ListingSortObservationsBy,
   ParseSettings,
 } from '../appStateTypes';
+import type { ProjectOptionsModalContext } from '../hooks/useProjectOptionsModalController';
 import type {
   AdjustedPointsColumnId,
   AdjustedPointsExportSettings,
@@ -34,7 +34,7 @@ import type {
 } from '../types';
 
 type ProjectOptionsModalProps = {
-  context: any;
+  context: ProjectOptionsModalContext;
 };
 
 const ProjectOptionsModal: React.FC<ProjectOptionsModalProps> = ({ context }) => {
@@ -152,7 +152,7 @@ const ProjectOptionsModal: React.FC<ProjectOptionsModalProps> = ({ context }) =>
     selectedDraftCrs,
     triggerProjectFileSelect,
     visibleDraftCrsCatalog,
-  } = context as any;
+  } = context;
 
   if (!isSettingsModalOpen) return null;
 

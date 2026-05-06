@@ -2,7 +2,7 @@
 
 import React, { act, useEffect, useMemo, useState } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { useWorkspaceRecovery } from '../src/hooks/useWorkspaceRecovery';
 import { createDefaultReportViewSnapshot } from '../src/hooks/useReportViewState';
 import type { RunSettingsSnapshot, WorkspaceDraftSnapshot } from '../src/appStateTypes';
@@ -422,6 +422,7 @@ describe('useWorkspaceRecovery', () => {
   });
 
   it('clears the current draft and only re-saves after the snapshot changes', async () => {
+    vi.useFakeTimers();
     window.localStorage.clear();
 
     const container = document.createElement('div');
@@ -452,6 +453,9 @@ describe('useWorkspaceRecovery', () => {
     await act(async () => {
       root.render(<Harness />);
     });
+    await act(async () => {
+      await vi.runAllTimersAsync();
+    });
 
     expect(window.localStorage.getItem(STORAGE_KEY)).not.toBeNull();
 
@@ -463,6 +467,7 @@ describe('useWorkspaceRecovery', () => {
 
     await act(async () => {
       (container.querySelector('[data-change]') as HTMLButtonElement).click();
+      await vi.runAllTimersAsync();
     });
 
     const rawAfterChange = window.localStorage.getItem(STORAGE_KEY);
@@ -473,9 +478,11 @@ describe('useWorkspaceRecovery', () => {
       root.unmount();
     });
     container.remove();
+    vi.useRealTimers();
   });
 
   it('replaces the persisted draft snapshot when a project-style load swaps the workspace state', async () => {
+    vi.useFakeTimers();
     window.localStorage.clear();
 
     const container = document.createElement('div');
@@ -544,6 +551,9 @@ describe('useWorkspaceRecovery', () => {
     await act(async () => {
       root.render(<Harness />);
     });
+    await act(async () => {
+      await vi.runAllTimersAsync();
+    });
 
     const initialRaw = window.localStorage.getItem(STORAGE_KEY);
     expect(initialRaw).toContain('DRAFT INPUT');
@@ -551,6 +561,7 @@ describe('useWorkspaceRecovery', () => {
 
     await act(async () => {
       (container.querySelector('[data-load-project]') as HTMLButtonElement).click();
+      await vi.runAllTimersAsync();
     });
 
     const replacedRaw = window.localStorage.getItem(STORAGE_KEY);
@@ -565,6 +576,7 @@ describe('useWorkspaceRecovery', () => {
       root.unmount();
     });
     container.remove();
+    vi.useRealTimers();
   });
 
   it('disables browser draft recovery while a named local project is open', async () => {
@@ -623,6 +635,46 @@ describe('useWorkspaceRecovery', () => {
       root.unmount();
     });
     container.remove();
+  });
+
+  it('surfaces a non-fatal persistence error when localStorage write fails', async () => {
+    vi.useFakeTimers();
+    window.localStorage.clear();
+    const setItemSpy = vi
+      .spyOn(Storage.prototype, 'setItem')
+      .mockImplementation(() => {
+        throw new DOMException('Quota exceeded', 'QuotaExceededError');
+      });
+
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root: Root = createRoot(container);
+
+    const Harness = () => {
+      const recovery = useWorkspaceRecovery({
+        storageKey: STORAGE_KEY,
+        snapshot: buildSnapshot({ input: 'FAIL WRITE' }),
+        onRecover: () => undefined,
+      });
+      return <div data-error>{recovery.persistError ?? '-'}</div>;
+    };
+
+    await act(async () => {
+      root.render(<Harness />);
+    });
+    await act(async () => {
+      await vi.runAllTimersAsync();
+      await Promise.resolve();
+    });
+
+    expect(container.querySelector('[data-error]')?.textContent).toContain('Quota exceeded');
+
+    await act(async () => {
+      root.unmount();
+    });
+    container.remove();
+    setItemSpy.mockRestore();
+    vi.useRealTimers();
   });
 });
 

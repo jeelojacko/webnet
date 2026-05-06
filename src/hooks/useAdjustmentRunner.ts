@@ -4,11 +4,13 @@ import type {
   AdjustmentWorkerResponseMessage,
   RunPhase,
 } from '../engine/adjustmentWorkerProtocol';
+import { isAdjustmentWorkerResponseMessage } from '../engine/adjustmentWorkerProtocol';
 import {
   runAdjustmentSession,
   type RunSessionOutcome,
   type RunSessionRequest,
 } from '../engine/runSession';
+import { createStableRuntimeId } from '../engine/id';
 
 export interface RunPipelineState {
   status: 'idle' | 'running' | 'cancelled' | 'failed';
@@ -60,7 +62,7 @@ export const useAdjustmentRunner = (
 
     const handleMessage = (event: MessageEvent<AdjustmentWorkerResponseMessage>) => {
       const message = event.data;
-      if (!message) return;
+      if (!isAdjustmentWorkerResponseMessage(message)) return;
       if (!('runId' in message)) return;
       const pending = pendingRunsRef.current.get(message.runId);
       if (!pending) return;
@@ -146,7 +148,7 @@ export const useAdjustmentRunner = (
 
   const run = useCallback(
     (request: RunSessionRequest) => {
-      const runId = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+      const runId = createStableRuntimeId('run');
       setPipelineState({
         status: 'running',
         runId,

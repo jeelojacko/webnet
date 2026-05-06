@@ -151,6 +151,20 @@ describe('useAdjustmentRunner', () => {
       }
 
       postMessage(message: unknown) {
+        this.onmessage?.({
+          data: {
+            type: 'artifact-progress',
+            taskId: 'wrong-task',
+            phase: 'queued',
+          },
+        } as MessageEvent);
+        this.onmessage?.({
+          data: {
+            type: 'progress',
+            runId: 123,
+            phase: 'solving',
+          },
+        } as MessageEvent);
         const runId =
           typeof message === 'object' &&
           message != null &&

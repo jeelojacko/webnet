@@ -112,6 +112,30 @@ describe('geoid grid pipeline', () => {
     expect(loaded.warning).toContain('failed to parse GTX geoid/grid source');
   });
 
+  it('falls back to built-in model when external source bytes exceed the hard limit', () => {
+    const loaded = loadGeoidGridModel({
+      modelId: 'NGS-DEMO',
+      sourceFormat: 'gtx',
+      sourceData: new Uint8Array(64 * 1024 * 1024 + 1),
+    });
+    expect(loaded.model?.id).toBe('NGS-DEMO');
+    expect(loaded.resolvedFormat).toBe('builtin');
+    expect(loaded.fallbackUsed).toBe(true);
+    expect(loaded.warning).toContain('exceeds');
+  });
+
+  it('falls back to built-in model when runtime only has a source path without bytes', () => {
+    const loaded = loadGeoidGridModel({
+      modelId: 'NGS-DEMO',
+      sourceFormat: 'gtx',
+      sourcePath: FIXTURE_GTX,
+    });
+    expect(loaded.model?.id).toBe('NGS-DEMO');
+    expect(loaded.resolvedFormat).toBe('builtin');
+    expect(loaded.fallbackUsed).toBe(true);
+    expect(loaded.warning).toContain('without source bytes');
+  });
+
   it('supports NAD83(CSRS) built-in model aliases for Canada-first workflows', () => {
     expect(normalizeGeoidModelId('CGG2013A')).toBe('NAD83-CSRS-DEMO');
     const loaded = loadBuiltinGeoidGridModel('NAD83-CSRS');

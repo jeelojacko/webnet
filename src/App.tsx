@@ -70,6 +70,7 @@ import { useExportWorkflow } from './hooks/useExportWorkflow';
 import { useImportReviewWorkflow } from './hooks/useImportReviewWorkflow';
 import { useProjectFileWorkflow } from './hooks/useProjectFileWorkflow';
 import { useProjectOptionsModalController } from './hooks/useProjectOptionsModalController';
+import { createStableRuntimeId } from './engine/id';
 import { useProjectOptionsState } from './hooks/useProjectOptionsState';
 import { useRunComparisonState } from './hooks/useRunComparisonState';
 import {
@@ -848,7 +849,7 @@ const SettingsToggle: React.FC<SettingsToggleProps> = ({ checked, disabled, titl
 const createCustomLevelLoopTolerancePreset = (
   seed?: Partial<Omit<CustomLevelLoopTolerancePreset, 'id'>>,
 ): CustomLevelLoopTolerancePreset => ({
-  id: `lvl-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+  id: createStableRuntimeId('lvl'),
   name: seed?.name?.trim() || 'Custom Preset',
   baseMm: seed?.baseMm ?? 0,
   perSqrtKmMm: seed?.perSqrtKmMm ?? 4,

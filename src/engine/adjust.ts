@@ -38,6 +38,10 @@ import {
   isObservationActiveForSolve,
 } from './adjustmentPreprocessing';
 import type { SolvePreparationResult } from './adjustmentPreprocessing';
+import {
+  getObservationSetId,
+  getObservationSideshotCalcMeta,
+} from './observationMetadata';
 import { buildAdjustmentResultPayload, finalizeResultParseState } from './adjustmentResultBuilder';
 import {
   buildObservationTypeSummary,
@@ -1722,7 +1726,7 @@ export class LSAEngine {
   ): { key: string; station: StationId; setId?: string } | null {
     if (!this.tsCorrelationEnabled || !this.isTsCorrelationObservation(obs)) return null;
     const station = obs.type === 'angle' || obs.type === 'direction' ? obs.at : obs.from;
-    const setId = (obs as any).setId != null ? String((obs as any).setId) : undefined;
+    const setId = getObservationSetId(obs);
     const key = this.tsCorrelationScope === 'setup' ? station : `${station}|${setId ?? obs.type}`;
     return { key, station, setId };
   }
@@ -2046,28 +2050,28 @@ export class LSAEngine {
 
     activeObservations.forEach((obs) => {
       if (obs.type !== 'direction') return;
-      const dir = obs as any;
-      if (!this.stations[dir.at] || !this.stations[dir.to]) return;
+      if (!this.stations[obs.at] || !this.stations[obs.to]) return;
       const az = this.modeledAzimuth(
-        this.getAzimuth(dir.at, dir.to).az,
-        dir.at,
-        dir.gridObsMode !== 'grid',
+        this.getAzimuth(obs.at, obs.to).az,
+        obs.at,
+        obs.gridObsMode !== 'grid',
       );
-      const diff = ((dir.obs - az + Math.PI) % (2 * Math.PI)) - Math.PI;
-      const entry = groups.get(dir.setId) ?? {
+      const setId = getObservationSetId(obs) ?? 'unknown';
+      const diff = ((obs.obs - az + Math.PI) % (2 * Math.PI)) - Math.PI;
+      const entry = groups.get(setId) ?? {
         count: 0,
         sumSin: 0,
         sumCos: 0,
-        occupy: dir.at,
+        occupy: obs.at,
       };
       entry.count += 1;
       entry.sumSin += Math.sin(diff);
       entry.sumCos += Math.cos(diff);
-      entry.occupy = dir.at ?? entry.occupy;
-      groups.set(dir.setId, entry);
-      const arr = diffsBySet.get(dir.setId) ?? [];
+      entry.occupy = obs.at ?? entry.occupy;
+      groups.set(setId, entry);
+      const arr = diffsBySet.get(setId) ?? [];
       arr.push(diff);
-      diffsBySet.set(dir.setId, arr);
+      diffsBySet.set(setId, arr);
     });
 
     if (!groups.size) return;
@@ -2120,14 +2124,14 @@ export class LSAEngine {
 
     activeObservations.forEach((obs) => {
       if (obs.type === 'direction') {
-        const dir = obs as any;
-        mark(dir.at);
-        mark(dir.to);
-        directionAt.add(dir.at);
-        const set = directionTargets.get(dir.to) ?? new Set<StationId>();
-        set.add(dir.at);
-        directionTargets.set(dir.to, set);
-        directionSetCounts.set(dir.setId, (directionSetCounts.get(dir.setId) ?? 0) + 1);
+        const setId = getObservationSetId(obs) ?? 'unknown';
+        mark(obs.at);
+        mark(obs.to);
+        directionAt.add(obs.at);
+        const set = directionTargets.get(obs.to) ?? new Set<StationId>();
+        set.add(obs.at);
+        directionTargets.set(obs.to, set);
+        directionSetCounts.set(setId, (directionSetCounts.get(setId) ?? 0) + 1);
         return;
       }
 
@@ -4002,8 +4006,7 @@ export class LSAEngine {
   }
 
   private computeSideshotResults(): AdjustmentResult['sideshots'] {
-    const isSideshot = (obs: Observation): boolean =>
-      typeof obs.calc === 'object' && (obs.calc as any)?.sideshot === true;
+    const isSideshot = (obs: Observation): boolean => getObservationSideshotCalcMeta(obs) != null;
     const isGpsSideshot = (obs: Observation): obs is Observation & { type: 'gps' } =>
       obs.type === 'gps' && obs.gpsMode === 'sideshot';
     const verticalByKey = new Map<string, Observation>();
@@ -4025,8 +4028,7 @@ export class LSAEngine {
       const vertical = verticalByKey.get(key);
       const fromSt = this.stations[from];
       const toSt = this.stations[to];
-      const calcMeta =
-        typeof obs.calc === 'object' && (obs.calc as any)?.sideshot ? (obs.calc as any) : undefined;
+      const calcMeta = getObservationSideshotCalcMeta(obs);
       if (!fromSt) return;
 
       const mode = obs.mode ?? 'slope';
@@ -5417,9 +5419,7 @@ export class LSAEngine {
     }
     if (this.is2D) {
       const skippedVertical = this.observations.filter(
-        (o) =>
-          (o.type === 'lev' || o.type === 'zenith') &&
-          !(typeof o.calc === 'object' && (o.calc as any)?.sideshot),
+        (o) => (o.type === 'lev' || o.type === 'zenith') && !getObservationSideshotCalcMeta(o),
       ).length;
       if (skippedVertical > 0) {
         this.log(`2D mode: skipped ${skippedVertical} vertical observations (lev/zenith).`);
@@ -5669,7 +5669,7 @@ export class LSAEngine {
     const loopAngleArcSec = new Map<string, number>();
     const loopVerticalMisclosure = new Map<string, number>();
     const hasClosureObs = this.observations.some(
-      (o) => (o as any).setId && String((o as any).setId).toUpperCase() === 'TE',
+      (o) => String(getObservationSetId(o) ?? '').toUpperCase() === 'TE',
     );
     const coordClosureVectors: { from: StationId; to: StationId; dE: number; dN: number }[] = [];
     let totalTraverseDistance = 0;
@@ -5776,7 +5776,7 @@ export class LSAEngine {
         const q = (v * v) / (sigma * sigma);
         vtpv += q;
         addObservationContribution(obs, q);
-        const setTag = String((obs as any).setId ?? '').toUpperCase();
+        const setTag = String(getObservationSetId(obs) ?? '').toUpperCase();
         if (setTag === 'T' || setTag === 'TE') {
           totalTraverseDistance += Math.abs(obs.obs);
         }
@@ -5882,29 +5882,28 @@ export class LSAEngine {
         collectTsCorrelationRow(obs, v, sigma);
       } else if (obs.type === 'direction') {
         obs.effectiveDistance = this.effectiveDistanceForAngularObservation(obs);
-        const dir = obs as any;
         const az = this.modeledAzimuth(
-          this.getAzimuth(dir.at, dir.to).az,
-          dir.at,
-          dir.gridObsMode !== 'grid',
+          this.getAzimuth(obs.at, obs.to).az,
+          obs.at,
+          obs.gridObsMode !== 'grid',
         );
-        const orientation = this.directionOrientations[dir.setId] ?? 0;
+        const setId = getObservationSetId(obs) ?? 'unknown';
+        const orientation = this.directionOrientations[setId] ?? 0;
         let calc = orientation + az;
         calc %= 2 * Math.PI;
         if (calc < 0) calc += 2 * Math.PI;
-        let v = dir.obs - calc;
+        let v = obs.obs - calc;
         if (v > Math.PI) v -= 2 * Math.PI;
         if (v < -Math.PI) v += 2 * Math.PI;
-        dir.calc = calc;
-        dir.residual = v;
-        const sigma = this.effectiveStdDev(dir);
-        dir.stdRes = Math.abs(v) / sigma;
+        obs.calc = calc;
+        obs.residual = v;
+        const sigma = this.effectiveStdDev(obs);
+        obs.stdRes = Math.abs(v) / sigma;
         const q = (v * v) / (sigma * sigma);
         vtpv += q;
-        addObservationContribution(dir, q);
-        collectTsCorrelationRow(dir, v, sigma);
+        addObservationContribution(obs, q);
+        collectTsCorrelationRow(obs, v, sigma);
 
-        const setId = String(dir.setId ?? 'unknown');
         const stat = directionStats.get(setId) ?? {
           count: 0,
           rawCount: 0,
@@ -5922,20 +5921,20 @@ export class LSAEngine {
           rawMaxResidualSum: 0,
           rawMaxResidualMax: 0,
           targetIds: new Set<StationId>(),
-          occupy: dir.at,
+          occupy: obs.at,
           orientation,
         };
         const arcsec = v * RAD_TO_DEG * 3600;
-        const rawCount = typeof dir.rawCount === 'number' && dir.rawCount > 0 ? dir.rawCount : 1;
+        const rawCount = typeof obs.rawCount === 'number' && obs.rawCount > 0 ? obs.rawCount : 1;
         const face1Count =
-          typeof dir.rawFace1Count === 'number'
-            ? dir.rawFace1Count
-            : dir.obs >= Math.PI
+          typeof obs.rawFace1Count === 'number'
+            ? obs.rawFace1Count
+            : obs.obs >= Math.PI
               ? 0
               : rawCount;
         const face2Count =
-          typeof dir.rawFace2Count === 'number'
-            ? dir.rawFace2Count
+          typeof obs.rawFace2Count === 'number'
+            ? obs.rawFace2Count
             : Math.max(0, rawCount - face1Count);
         stat.count += 1;
         stat.rawCount += rawCount;
@@ -5947,8 +5946,8 @@ export class LSAEngine {
         stat.sumSq += arcsec * arcsec;
         stat.maxAbs = Math.max(stat.maxAbs, Math.abs(arcsec));
         const pairDeltaArcSec =
-          typeof dir.facePairDelta === 'number'
-            ? Math.abs(dir.facePairDelta) * RAD_TO_DEG * 3600
+          typeof obs.facePairDelta === 'number'
+            ? Math.abs(obs.facePairDelta) * RAD_TO_DEG * 3600
             : undefined;
         if (pairDeltaArcSec != null && Number.isFinite(pairDeltaArcSec)) {
           stat.pairDeltaCount += 1;
@@ -5956,18 +5955,18 @@ export class LSAEngine {
           stat.pairDeltaMax = Math.max(stat.pairDeltaMax, pairDeltaArcSec);
         }
         const rawMaxResidualArcSec =
-          typeof dir.rawMaxResidual === 'number'
-            ? Math.abs(dir.rawMaxResidual) * RAD_TO_DEG * 3600
+          typeof obs.rawMaxResidual === 'number'
+            ? Math.abs(obs.rawMaxResidual) * RAD_TO_DEG * 3600
             : undefined;
         if (rawMaxResidualArcSec != null && Number.isFinite(rawMaxResidualArcSec)) {
           stat.rawMaxResidualCount += 1;
           stat.rawMaxResidualSum += rawMaxResidualArcSec;
           stat.rawMaxResidualMax = Math.max(stat.rawMaxResidualMax, rawMaxResidualArcSec);
         }
-        if (typeof dir.to === 'string' && dir.to.trim().length > 0) {
-          stat.targetIds.add(dir.to);
+        if (typeof obs.to === 'string' && obs.to.trim().length > 0) {
+          stat.targetIds.add(obs.to);
         }
-        stat.occupy = dir.at ?? stat.occupy;
+        stat.occupy = obs.at ?? stat.occupy;
         stat.orientation = orientation;
         directionStats.set(setId, stat);
       } else if (obs.type === 'zenith') {
@@ -6149,7 +6148,8 @@ export class LSAEngine {
         new Set(
           activeObservations
             .filter((o) => o.type === 'direction')
-            .map((o) => (o as any).setId as string),
+            .map((o) => getObservationSetId(o))
+            .filter((setId): setId is string => typeof setId === 'string'),
         ),
       );
       const dirParamMap: Record<string, number> = {};

@@ -1,4 +1,5 @@
 import type { AdjustmentResult, Observation, Station, StationId, StationMap } from '../types';
+import { getObservationSetId } from './observationMetadata';
 
 const stationSeparation = (a: Station, b: Station, dimension: '2D' | '3D'): number => {
   const dE = b.x - a.x;
@@ -27,14 +28,14 @@ export const buildAutoSideshotDiagnostics = ({
   observations.forEach((obs) => {
     const sourceLine = obs.sourceLine;
     if (sourceLine == null) return;
-    if (obs.type === 'angle' && String((obs as any).setId ?? '') === '') {
+    if (obs.type === 'angle' && !getObservationSetId(obs)) {
       const row = byLine.get(sourceLine) ?? {};
       row.angle = obs;
       byLine.set(sourceLine, row);
     } else if (
       obs.type === 'dist' &&
       obs.subtype === 'ts' &&
-      String((obs as any).setId ?? '') === ''
+      !getObservationSetId(obs)
     ) {
       const row = byLine.get(sourceLine) ?? {};
       row.dist = obs;

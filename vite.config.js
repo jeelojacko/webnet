@@ -95,6 +95,9 @@ const resolveChunkName = (id) => {
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
+  worker: {
+    format: 'es',
+  },
   build: {
     chunkSizeWarningLimit: 800,
     rollupOptions: {

@@ -9,7 +9,7 @@ import type {
   ArtifactProgressMessage,
   ArtifactRequestMessage,
   ArtifactSuccessMessage,
-} from '../src/engine/adjustmentWorkerProtocol';
+} from '../src/engine/artifactWorkerProtocol';
 import type {
   BuildExportArtifactsRequest,
   BuildExportArtifactsResult,
@@ -129,6 +129,20 @@ describe('useArtifactBuilder', () => {
 
       postMessage(message: ArtifactRequestMessage) {
         this.postedMessages.push(message);
+        this.listener?.({
+          data: {
+            type: 'progress',
+            runId: 'wrong-run',
+            phase: 'queued',
+          },
+        } as unknown as MessageEvent<ArtifactProgressMessage | ArtifactSuccessMessage>);
+        this.listener?.({
+          data: {
+            type: 'artifact-progress',
+            taskId: 123,
+            phase: 'queued',
+          },
+        } as unknown as MessageEvent<ArtifactProgressMessage | ArtifactSuccessMessage>);
       }
 
       emitProgress(phase: ArtifactProgressMessage['phase']) {

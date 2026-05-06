@@ -1,5 +1,10 @@
 # TODO - WebNet
 
+- [x] Worker lazy-load split batch (May 2026): move heavy solve/export modules behind worker-side dynamic imports so worker entry bundles shrink further without changing solve/export behavior.
+- [x] Dependency hardening + worker bundle reduction batch (May 2026): clear `npm install`/audit dependency warnings with safe direct upgrades and transitive overrides, split artifact export work out of the adjustment worker to reduce the solve-worker production bundle, and keep worker/export behavior covered with focused regression checks.
+- [x] Security, robustness, and optimization batch (May 2026): remove dynamic geoid runtime loading, harden worker/storage/persistence surfaces, replace high-value weak typing and ad hoc IDs with shared typed helpers, optimize IndexedDB single-project file access, and trim redundant CLI process-spawn coverage while preserving parity and user-visible behavior.
+- [x] Build warning cleanup batch (May 2026): eliminate remaining production build warnings by keeping worker/app chunking warning-free and refreshing stale Browserslist data without changing runtime behavior.
+
 - [x] Project coordinate-system settings save/open batch (May 2026): audit project-file and local-project save/open persistence for CRS/grid/geoid settings, restore browser-loaded geoid/grid source state through save/load, stop stale CRS group filters from overwriting reopened provincial/grid CRS selections, and add focused round-trip regression coverage for coordinate-system parse settings.
 
 - [x] Special-mode report + data-check direction-set batch (May 2026): move mode-relevant report sections to the top for `Data Check` / `Blunder Detect`, hide adjustment-only report sections that do not apply in those modes, and make `Data Check` compare reduced direction sets against approximate set orientation instead of raw azimuth so mixed-face direction data does not show false giant residuals.
