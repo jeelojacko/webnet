@@ -33,6 +33,23 @@ const defaults = {
   parseSettings: {
     solveProfile: 'industry-parity',
     coordMode: '3D',
+    coordSystemMode: 'local',
+    crsId: 'LOCAL',
+    localDatumScheme: 'average-scale',
+    averageScaleFactor: 1,
+    commonElevation: 0,
+    averageGeoidHeight: 0,
+    gridBearingMode: 'measured',
+    gridDistanceMode: 'measured',
+    gridAngleMode: 'measured',
+    gridDirectionMode: 'measured',
+    geoidModelEnabled: false,
+    geoidModelId: 'NGS-DEMO',
+    geoidSourceFormat: 'builtin',
+    geoidSourcePath: '',
+    geoidInterpolation: 'bilinear',
+    geoidHeightConversionEnabled: false,
+    geoidOutputHeightDatum: 'orthometric',
     order: 'EN',
     angleUnits: 'dms',
     parseCompatibilityMode: 'strict',
@@ -501,6 +518,69 @@ describe('project file serialization/parsing', () => {
     expect(parsed.ok).toBe(true);
     if (!parsed.ok) return;
     expect(parsed.project.ui.exportFormat).toBe('geojson');
+  });
+
+  it('round-trips coordinate-system parse settings and browser geoid source state', () => {
+    const text = serializeProjectFile({
+      input: '.2D',
+      includeFiles: {},
+      savedRuns: [],
+      ui: {
+        settings: defaults.settings,
+        parseSettings: {
+          ...defaults.parseSettings,
+          coordSystemMode: 'grid',
+          crsId: 'CA_NAD83_CSRS_UTM_20N',
+          localDatumScheme: 'average-elevation',
+          averageScaleFactor: 0.99991234,
+          commonElevation: 125.5,
+          averageGeoidHeight: -31.25,
+          gridBearingMode: 'grid',
+          gridDistanceMode: 'ellipsoidal',
+          gridAngleMode: 'grid',
+          gridDirectionMode: 'grid',
+          geoidModelEnabled: true,
+          geoidModelId: 'CGVD2013A',
+          geoidSourceFormat: 'gtx',
+          geoidSourcePath: 'geoids/cgvd2013a.gtx',
+          geoidInterpolation: 'nearest',
+          geoidHeightConversionEnabled: true,
+          geoidOutputHeightDatum: 'ellipsoid',
+        },
+        exportFormat: 'webnet',
+        adjustedPointsExport: DEFAULT_ADJUSTED_POINTS_EXPORT_SETTINGS,
+        geoidSourceDataBase64: 'AQIDBA==',
+        geoidSourceDataLabel: 'cgvd2013a.gtx',
+      },
+      project: {
+        projectInstruments: defaults.projectInstruments,
+        selectedInstrument: 'S9',
+        levelLoopCustomPresets: defaults.levelLoopCustomPresets,
+      },
+    });
+
+    const parsed = parseProjectFile(text, defaults);
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+    expect(parsed.project.ui.parseSettings.coordSystemMode).toBe('grid');
+    expect(parsed.project.ui.parseSettings.crsId).toBe('CA_NAD83_CSRS_UTM_20N');
+    expect(parsed.project.ui.parseSettings.localDatumScheme).toBe('average-elevation');
+    expect(parsed.project.ui.parseSettings.averageScaleFactor).toBe(0.99991234);
+    expect(parsed.project.ui.parseSettings.commonElevation).toBe(125.5);
+    expect(parsed.project.ui.parseSettings.averageGeoidHeight).toBe(-31.25);
+    expect(parsed.project.ui.parseSettings.gridBearingMode).toBe('grid');
+    expect(parsed.project.ui.parseSettings.gridDistanceMode).toBe('ellipsoidal');
+    expect(parsed.project.ui.parseSettings.gridAngleMode).toBe('grid');
+    expect(parsed.project.ui.parseSettings.gridDirectionMode).toBe('grid');
+    expect(parsed.project.ui.parseSettings.geoidModelEnabled).toBe(true);
+    expect(parsed.project.ui.parseSettings.geoidModelId).toBe('CGVD2013A');
+    expect(parsed.project.ui.parseSettings.geoidSourceFormat).toBe('gtx');
+    expect(parsed.project.ui.parseSettings.geoidSourcePath).toBe('geoids/cgvd2013a.gtx');
+    expect(parsed.project.ui.parseSettings.geoidInterpolation).toBe('nearest');
+    expect(parsed.project.ui.parseSettings.geoidHeightConversionEnabled).toBe(true);
+    expect(parsed.project.ui.parseSettings.geoidOutputHeightDatum).toBe('ellipsoid');
+    expect(parsed.project.ui.geoidSourceDataBase64).toBe('AQIDBA==');
+    expect(parsed.project.ui.geoidSourceDataLabel).toBe('cgvd2013a.gtx');
   });
 
   it('normalizes retired legacy CRS transform fields on save and load', () => {

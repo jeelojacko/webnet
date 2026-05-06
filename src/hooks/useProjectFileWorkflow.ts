@@ -9,6 +9,7 @@ import {
   type RefObject,
   type SetStateAction,
 } from 'react';
+import { decodeBase64ToUint8Array, encodeUint8ArrayToBase64 } from './useWorkspaceRecovery';
 import {
   parseProjectFile,
   serializeProjectFile,
@@ -216,6 +217,8 @@ interface UseProjectFileWorkflowArgs {
   projectIncludeFiles: Record<string, string>;
   settings: SettingsState;
   parseSettings: ParseSettings;
+  geoidSourceData?: Uint8Array | null;
+  geoidSourceDataLabel?: string;
   exportFormat: ProjectExportFormat;
   adjustedPointsExportSettings: AdjustedPointsExportSettings;
   savedRunSnapshots: PersistedSavedRunSnapshot[];
@@ -619,6 +622,8 @@ export const useProjectFileWorkflow = ({
   projectIncludeFiles,
   settings,
   parseSettings,
+  geoidSourceData = null,
+  geoidSourceDataLabel = '',
   exportFormat,
   adjustedPointsExportSettings,
   savedRunSnapshots,
@@ -713,23 +718,27 @@ export const useProjectFileWorkflow = ({
         loadedParseSettings.preanalysisMode === true
           ? 'preanalysis'
           : (loadedParseSettings.runMode ?? 'adjustment');
+      const normalizedObservationMode = buildObservationModeFromGridFields({
+        gridBearingMode:
+          loadedParseSettings.gridBearingMode ?? loadedParseSettings.observationMode?.bearing,
+        gridDistanceMode:
+          loadedParseSettings.gridDistanceMode ?? loadedParseSettings.observationMode?.distance,
+        gridAngleMode:
+          loadedParseSettings.gridAngleMode ?? loadedParseSettings.observationMode?.angle,
+        gridDirectionMode:
+          loadedParseSettings.gridDirectionMode ?? loadedParseSettings.observationMode?.direction,
+      });
       const normalizedLoadedParseSettings: ParseSettings = {
         ...loadedParseSettings,
         solveProfile: profileForMode,
         runMode: normalizedRunMode,
         preanalysisMode: normalizedRunMode === 'preanalysis',
         suspectImpactMode: loadedParseSettings.suspectImpactMode ?? 'auto',
-        ...(loadedParseSettings.observationMode
-          ? {
-              gridBearingMode: loadedParseSettings.observationMode.bearing,
-              gridDistanceMode: loadedParseSettings.observationMode.distance,
-              gridAngleMode: loadedParseSettings.observationMode.angle,
-              gridDirectionMode: loadedParseSettings.observationMode.direction,
-            }
-          : {}),
-        observationMode:
-          loadedParseSettings.observationMode ??
-          buildObservationModeFromGridFields(loadedParseSettings),
+        gridBearingMode: normalizedObservationMode.bearing,
+        gridDistanceMode: normalizedObservationMode.distance,
+        gridAngleMode: normalizedObservationMode.angle,
+        gridDirectionMode: normalizedObservationMode.direction,
+        observationMode: normalizedObservationMode,
         parseCompatibilityMode: 'strict',
         faceNormalizationMode: 'on',
         normalize: true,
@@ -753,6 +762,8 @@ export const useProjectFileWorkflow = ({
         normalizedLoadedSettings,
         normalizedLoadedParseSettings,
         loadedAdjustedPointsSettings,
+        geoidSourceData: decodeBase64ToUint8Array(parsed.ui.geoidSourceDataBase64),
+        geoidSourceDataLabel: parsed.ui.geoidSourceDataLabel ?? '',
         exportFormat: parsed.ui.exportFormat,
         projectInstruments: cloneInstrumentLibrary(parsed.project.projectInstruments),
         selectedInstrument: parsed.project.selectedInstrument,
@@ -800,10 +811,12 @@ export const useProjectFileWorkflow = ({
       );
       setSettings(normalized.normalizedLoadedSettings);
       setParseSettings(normalized.normalizedLoadedParseSettings);
-      setGeoidSourceData(null);
-      setGeoidSourceDataLabel('');
+      setGeoidSourceData(normalized.geoidSourceData);
+      setGeoidSourceDataLabel(normalized.geoidSourceDataLabel);
       setExportFormat(normalized.exportFormat);
-      setAdjustedPointsExportSettings(cloneAdjustedPointsExportSettings(normalized.loadedAdjustedPointsSettings));
+      setAdjustedPointsExportSettings(
+        cloneAdjustedPointsExportSettings(normalized.loadedAdjustedPointsSettings),
+      );
       restoreSavedRunSnapshots(savedRuns);
       setProjectInstruments(normalized.projectInstruments);
       setSelectedInstrument(normalized.selectedInstrument);
@@ -811,8 +824,8 @@ export const useProjectFileWorkflow = ({
 
       setSettingsDraft(normalized.normalizedLoadedSettings);
       setParseSettingsDraft(normalized.normalizedLoadedParseSettings);
-      setGeoidSourceDataDraft(null);
-      setGeoidSourceDataLabelDraft('');
+      setGeoidSourceDataDraft(normalized.geoidSourceData);
+      setGeoidSourceDataLabelDraft(normalized.geoidSourceDataLabel);
       setProjectInstrumentsDraft(cloneInstrumentLibrary(normalized.projectInstruments));
       setSelectedInstrumentDraft(normalized.selectedInstrument);
       setLevelLoopCustomPresetsDraft(
@@ -873,6 +886,8 @@ export const useProjectFileWorkflow = ({
         parseSettings: parseSettings as unknown as Record<string, unknown>,
         exportFormat,
         adjustedPointsExport: adjustedPointsExportSettings,
+        geoidSourceDataBase64: encodeUint8ArrayToBase64(geoidSourceData),
+        geoidSourceDataLabel,
       },
       project: {
         projectInstruments,
@@ -904,6 +919,8 @@ export const useProjectFileWorkflow = ({
     [
       adjustedPointsExportSettings,
       exportFormat,
+      geoidSourceData,
+      geoidSourceDataLabel,
       input,
       levelLoopCustomPresets,
       parseSettings,
@@ -1101,6 +1118,8 @@ export const useProjectFileWorkflow = ({
       JSON.stringify({
         settings,
         parseSettings,
+        geoidSourceDataBase64: encodeUint8ArrayToBase64(geoidSourceData),
+        geoidSourceDataLabel,
         exportFormat,
         adjustedPointsExportSettings,
         projectInstruments,
@@ -1110,6 +1129,8 @@ export const useProjectFileWorkflow = ({
     [
       adjustedPointsExportSettings,
       exportFormat,
+      geoidSourceData,
+      geoidSourceDataLabel,
       levelLoopCustomPresets,
       parseSettings,
       projectInstruments,
@@ -1123,6 +1144,8 @@ export const useProjectFileWorkflow = ({
     const currentShape = JSON.stringify({
       settings: projectSession.manifest.ui.settings,
       parseSettings: projectSession.manifest.ui.parseSettings,
+      geoidSourceDataBase64: projectSession.manifest.ui.geoidSourceDataBase64 ?? null,
+      geoidSourceDataLabel: projectSession.manifest.ui.geoidSourceDataLabel ?? '',
       exportFormat: projectSession.manifest.ui.exportFormat,
       adjustedPointsExportSettings: projectSession.manifest.ui.adjustedPointsExport,
       projectInstruments: projectSession.manifest.project.projectInstruments,
@@ -1137,6 +1160,8 @@ export const useProjectFileWorkflow = ({
           ...current.manifest.ui,
           settings: settings as unknown as Record<string, unknown>,
           parseSettings: parseSettings as unknown as Record<string, unknown>,
+          geoidSourceDataBase64: encodeUint8ArrayToBase64(geoidSourceData),
+          geoidSourceDataLabel,
           exportFormat,
           adjustedPointsExport: cloneAdjustedPointsExportSettings(adjustedPointsExportSettings),
           migration: {
@@ -1162,6 +1187,8 @@ export const useProjectFileWorkflow = ({
     adjustedPointsExportSettings,
     cloneInstrumentLibrary,
     exportFormat,
+    geoidSourceData,
+    geoidSourceDataLabel,
     levelLoopCustomPresets,
     parseSettings,
     projectInstruments,
@@ -1188,6 +1215,8 @@ export const useProjectFileWorkflow = ({
         ui: {
           settings: session.manifest.ui.settings,
           parseSettings: session.manifest.ui.parseSettings,
+          geoidSourceDataBase64: session.manifest.ui.geoidSourceDataBase64 ?? null,
+          geoidSourceDataLabel: session.manifest.ui.geoidSourceDataLabel ?? '',
           exportFormat: session.manifest.ui.exportFormat,
           adjustedPointsExport: session.manifest.ui.adjustedPointsExport,
           migration: session.manifest.ui.migration,
@@ -1233,6 +1262,8 @@ export const useProjectFileWorkflow = ({
       ui: {
         settings: settings as unknown as Record<string, unknown>,
         parseSettings: parseSettings as unknown as Record<string, unknown>,
+        geoidSourceDataBase64: encodeUint8ArrayToBase64(geoidSourceData),
+        geoidSourceDataLabel,
         exportFormat,
         adjustedPointsExport: cloneAdjustedPointsExportSettings(adjustedPointsExportSettings),
         migration: {
@@ -1289,6 +1320,8 @@ export const useProjectFileWorkflow = ({
     canUseNamedProjectStorage,
     cloneInstrumentLibrary,
     exportFormat,
+    geoidSourceData,
+    geoidSourceDataLabel,
     input,
     levelLoopCustomPresets,
     parseSettings,
@@ -1410,6 +1443,8 @@ export const useProjectFileWorkflow = ({
             ui: {
               settings: settings as unknown as Record<string, unknown>,
               parseSettings: parseSettings as unknown as Record<string, unknown>,
+              geoidSourceDataBase64: encodeUint8ArrayToBase64(geoidSourceData),
+              geoidSourceDataLabel,
               exportFormat,
               adjustedPointsExport: cloneAdjustedPointsExportSettings(
                 adjustedPointsExportSettings,
@@ -1440,6 +1475,8 @@ export const useProjectFileWorkflow = ({
     adjustedPointsExportSettings,
     cloneInstrumentLibrary,
     exportFormat,
+    geoidSourceData,
+    geoidSourceDataLabel,
     input,
     levelLoopCustomPresets,
     parseSettings,
@@ -1513,6 +1550,8 @@ export const useProjectFileWorkflow = ({
               ui: {
                 settings: parsed.ui.settings,
                 parseSettings: parsed.ui.parseSettings,
+                geoidSourceDataBase64: parsed.ui.geoidSourceDataBase64 ?? null,
+                geoidSourceDataLabel: parsed.ui.geoidSourceDataLabel ?? '',
                 exportFormat: parsed.ui.exportFormat,
                 adjustedPointsExport: parsed.ui.adjustedPointsExport,
                 migration: parsed.ui.migration,
@@ -1896,8 +1935,14 @@ export const useProjectFileWorkflow = ({
         const normalized = normalizeImportedProjectPayload(prepared.payload);
         setSettings(normalized.normalizedLoadedSettings);
         setParseSettings(normalized.normalizedLoadedParseSettings);
-        setGeoidSourceData(null);
-        setGeoidSourceDataLabel('');
+        setGeoidSourceData(
+          prepared.payload.ui.geoidSourceDataBase64 != null ? normalized.geoidSourceData : geoidSourceData,
+        );
+        setGeoidSourceDataLabel(
+          prepared.payload.ui.geoidSourceDataLabel != null
+            ? normalized.geoidSourceDataLabel
+            : geoidSourceDataLabel,
+        );
         setExportFormat(normalized.exportFormat);
         setAdjustedPointsExportSettings(
           cloneAdjustedPointsExportSettings(normalized.loadedAdjustedPointsSettings),
@@ -1910,8 +1955,14 @@ export const useProjectFileWorkflow = ({
 
         setSettingsDraft(normalized.normalizedLoadedSettings);
         setParseSettingsDraft(normalized.normalizedLoadedParseSettings);
-        setGeoidSourceDataDraft(null);
-        setGeoidSourceDataLabelDraft('');
+        setGeoidSourceDataDraft(
+          prepared.payload.ui.geoidSourceDataBase64 != null ? normalized.geoidSourceData : geoidSourceData,
+        );
+        setGeoidSourceDataLabelDraft(
+          prepared.payload.ui.geoidSourceDataLabel != null
+            ? normalized.geoidSourceDataLabel
+            : geoidSourceDataLabel,
+        );
         setProjectInstrumentsDraft(cloneInstrumentLibrary(normalized.projectInstruments));
         setSelectedInstrumentDraft(normalized.selectedInstrument);
         setLevelLoopCustomPresetsDraft(
@@ -1931,6 +1982,12 @@ export const useProjectFileWorkflow = ({
                 normalized.normalizedLoadedSettings as unknown as Record<string, unknown>;
               current.manifest.ui.parseSettings =
                 normalized.normalizedLoadedParseSettings as unknown as Record<string, unknown>;
+              if (prepared.payload.ui.geoidSourceDataBase64 != null) {
+                current.manifest.ui.geoidSourceDataBase64 = prepared.payload.ui.geoidSourceDataBase64;
+              }
+              if (prepared.payload.ui.geoidSourceDataLabel != null) {
+                current.manifest.ui.geoidSourceDataLabel = prepared.payload.ui.geoidSourceDataLabel;
+              }
               current.manifest.ui.exportFormat = normalized.exportFormat;
               current.manifest.ui.adjustedPointsExport = cloneAdjustedPointsExportSettings(
                 normalized.loadedAdjustedPointsSettings,
@@ -1990,6 +2047,8 @@ export const useProjectFileWorkflow = ({
       setGeoidSourceDataDraft,
       setGeoidSourceDataLabel,
       setGeoidSourceDataLabelDraft,
+      geoidSourceData,
+      geoidSourceDataLabel,
       setImportNotice,
       setIsAdjustedPointsTransformSelectOpen,
       setLevelLoopCustomPresets,

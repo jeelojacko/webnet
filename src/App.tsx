@@ -65,6 +65,7 @@ import {
 import { type ImportedInputNotice } from './engine/importers';
 import { useAdjustmentWorkflow } from './hooks/useAdjustmentWorkflow';
 import { useArtifactBuilder } from './hooks/useArtifactBuilder';
+import { resolveDraftCrsSelection } from './crsDraftSelection';
 import { useExportWorkflow } from './hooks/useExportWorkflow';
 import { useImportReviewWorkflow } from './hooks/useImportReviewWorkflow';
 import { useProjectFileWorkflow } from './hooks/useProjectFileWorkflow';
@@ -1330,6 +1331,8 @@ const App: React.FC<AppProps> = ({
       projectIncludeFiles,
       settings,
       parseSettings,
+      geoidSourceData,
+      geoidSourceDataLabel,
       exportFormat,
       adjustedPointsExportSettings,
       savedRunSnapshots,
@@ -1523,29 +1526,27 @@ const App: React.FC<AppProps> = ({
   }, [result, adjustedPointsExportSettingsDraft]);
 
   useEffect(() => {
-    if (filteredDraftCrsCatalog.length === 0) return;
-    if (filteredDraftCrsCatalog.some((row) => row.id === parseSettingsDraft.crsId)) return;
-    const selected = CRS_CATALOG.find((row) => row.id === parseSettingsDraft.crsId);
-    const fallbackCompanionId =
-      selected?.catalogGroup === 'us-spcs'
-        ? selected.linearUnit === 'us-ft'
-          ? selected.id.replace(/_FTUS$/, '')
-          : `${selected.id}_FTUS`
-        : null;
-    if (fallbackCompanionId && filteredDraftCrsCatalog.some((row) => row.id === fallbackCompanionId)) {
-      setParseSettingsDraft((prev) => ({
-        ...prev,
-        crsId: fallbackCompanionId,
-      }));
+    const resolution = resolveDraftCrsSelection({
+      crsId: parseSettingsDraft.crsId,
+      crsCatalogGroupFilter,
+      filteredDraftCrsCatalog,
+    });
+    if (!resolution) return;
+    if (resolution.nextCatalogGroupFilter) {
+      setCrsCatalogGroupFilter(resolution.nextCatalogGroupFilter);
       return;
     }
-    setParseSettingsDraft((prev) => ({
-      ...prev,
-      crsId: filteredDraftCrsCatalog[0].id,
-    }));
+    if (resolution.nextCrsId) {
+      setParseSettingsDraft((prev) => ({
+        ...prev,
+        crsId: resolution.nextCrsId ?? prev.crsId,
+      }));
+    }
   }, [
+    crsCatalogGroupFilter,
     filteredDraftCrsCatalog,
     parseSettingsDraft.crsId,
+    setCrsCatalogGroupFilter,
     setParseSettingsDraft,
   ]);
 

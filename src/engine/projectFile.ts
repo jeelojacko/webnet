@@ -53,6 +53,8 @@ export interface ParsedProjectPayload {
     parseSettings: Record<string, unknown>;
     exportFormat: ProjectExportFormat;
     adjustedPointsExport: AdjustedPointsExportSettings;
+    geoidSourceDataBase64?: string | null;
+    geoidSourceDataLabel?: string;
     migration?: {
       parseModeMigrated: boolean;
       migratedAt?: string;
@@ -597,6 +599,15 @@ export const serializeProjectFile = (project: ParsedProjectPayload): string => {
         project.ui.adjustedPointsExport,
         DEFAULT_ADJUSTED_POINTS_EXPORT_SETTINGS,
       ),
+      geoidSourceDataBase64:
+        typeof project.ui.geoidSourceDataBase64 === 'string' &&
+        project.ui.geoidSourceDataBase64.trim().length > 0
+          ? project.ui.geoidSourceDataBase64.trim()
+          : null,
+      geoidSourceDataLabel:
+        typeof project.ui.geoidSourceDataLabel === 'string'
+          ? project.ui.geoidSourceDataLabel
+          : '',
       migration: {
         parseModeMigrated: true,
         migratedAt: nowIso,
@@ -745,6 +756,12 @@ export const parseProjectFile = (
     ui.adjustedPointsExport,
     defaults.adjustedPointsExport,
   );
+  const geoidSourceDataBase64 =
+    typeof ui.geoidSourceDataBase64 === 'string' && ui.geoidSourceDataBase64.trim().length > 0
+      ? ui.geoidSourceDataBase64.trim()
+      : null;
+  const geoidSourceDataLabel =
+    typeof ui.geoidSourceDataLabel === 'string' ? ui.geoidSourceDataLabel : '';
   const uiMigration = isRecord(ui.migration) ? ui.migration : {};
   const migratedAt =
     typeof uiMigration.migratedAt === 'string' && uiMigration.migratedAt.trim().length > 0
@@ -795,6 +812,8 @@ export const parseProjectFile = (
         parseSettings,
         exportFormat,
         adjustedPointsExport,
+        geoidSourceDataBase64,
+        geoidSourceDataLabel,
         migration: {
           parseModeMigrated: true,
           migratedAt,

@@ -2459,13 +2459,16 @@ describe('LSAEngine', () => {
     expect(result.seuw).toBe(0);
     expect(result.logs.some((line) => line.includes('no least-squares adjustment'))).toBe(true);
     expect(
+      result.logs.some((line) => line.includes('Data Check provisional approximation: running bounded coordinate fit')),
+    ).toBe(true);
+    expect(
       result.observations.some(
         (obs) => obs.residual != null && Number.isFinite(Math.abs((obs.stdRes ?? 0) as number)),
       ),
     ).toBe(true);
   });
 
-  it('uses reduced-direction internal consistency in data-check when direction geometry is only bootstrap approximate', () => {
+  it('runs the provisional data-check stage and falls back to reduced-direction consistency when geometry remains weak', () => {
     const input = readFileSync('tests/fixtures/industry_case_combined_input.txt', 'utf-8');
 
     const result = new LSAEngine({
@@ -2482,14 +2485,17 @@ describe('LSAEngine', () => {
       0,
     );
     expect(maxDirectionResidualArcSec).toBeLessThan(5);
+    expect(
+      result.logs.some((line) => line.includes('Data Check provisional approximation: updated')),
+    ).toBe(true);
 
-    const bootstrapReducedRows = directionRows.filter(
+    const fallbackRows = directionRows.filter(
       (obs) =>
         (obs.rawCount ?? 0) > 0 &&
         Math.abs(obs.obs - (obs.calc ?? Number.NaN)) < 1e-12 &&
         (obs.stdRes == null || !Number.isFinite(obs.stdRes)),
     );
-    expect(bootstrapReducedRows.length).toBeGreaterThan(20);
+    expect(fallbackRows.length).toBeGreaterThan(20);
   });
 
   it('enforces blunder-detect mode overrides with explicit diagnostics', () => {

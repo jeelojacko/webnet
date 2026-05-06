@@ -56,6 +56,8 @@ export interface ProjectManifestUiPayload {
   parseSettings: Record<string, unknown>;
   exportFormat: ProjectExportFormat;
   adjustedPointsExport: AdjustedPointsExportSettings;
+  geoidSourceDataBase64?: string | null;
+  geoidSourceDataLabel?: string;
   migration?: {
     parseModeMigrated: boolean;
     migratedAt?: string;
@@ -140,6 +142,8 @@ const cloneUiPayload = (payload: ProjectManifestUiPayload): ProjectManifestUiPay
   parseSettings: { ...payload.parseSettings },
   exportFormat: payload.exportFormat,
   adjustedPointsExport: JSON.parse(JSON.stringify(payload.adjustedPointsExport)),
+  geoidSourceDataBase64: payload.geoidSourceDataBase64 ?? null,
+  geoidSourceDataLabel: payload.geoidSourceDataLabel ?? '',
   migration: payload.migration ? { ...payload.migration } : undefined,
 });
 

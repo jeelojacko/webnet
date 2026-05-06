@@ -1159,8 +1159,10 @@ describe('useProjectFileWorkflow', () => {
       const [projectIncludeFiles, setProjectIncludeFiles] = useState<Record<string, string>>({});
       const [settings, setSettings] = useState(baseSettings);
       const [parseSettings, setParseSettings] = useState(baseParseSettings);
-      const [_geoidSourceData, setGeoidSourceData] = useState<Uint8Array | null>(null);
-      const [_geoidSourceDataLabel, setGeoidSourceDataLabel] = useState('');
+      const [geoidSourceData, setGeoidSourceData] = useState<Uint8Array | null>(
+        new Uint8Array([1, 2, 3, 4]),
+      );
+      const [geoidSourceDataLabel, setGeoidSourceDataLabel] = useState('local-grid.gtx');
       const [exportFormat, setExportFormat] = useState<ProjectExportFormat>('points');
       const [adjustedPointsExportSettings, setAdjustedPointsExportSettings] =
         useState<AdjustedPointsExportSettings>(() =>
@@ -1202,6 +1204,8 @@ describe('useProjectFileWorkflow', () => {
         projectIncludeFiles,
         settings,
         parseSettings,
+        geoidSourceData,
+        geoidSourceDataLabel,
         exportFormat,
         adjustedPointsExportSettings,
         savedRunSnapshots,
@@ -1261,6 +1265,8 @@ describe('useProjectFileWorkflow', () => {
     expect(write).toHaveBeenCalledTimes(1);
     const firstWriteArg = write.mock.calls[0]?.[0] as string | undefined;
     expect(String(firstWriteArg ?? '')).toContain('"kind": "webnet-project"');
+    expect(String(firstWriteArg ?? '')).toContain('"geoidSourceDataBase64": "AQIDBA=="');
+    expect(String(firstWriteArg ?? '')).toContain('"geoidSourceDataLabel": "local-grid.gtx"');
     expect(close).toHaveBeenCalledTimes(1);
     expect(container.querySelector('#notice')?.textContent).toBe('Portable project exported');
 
@@ -1333,16 +1339,33 @@ describe('useProjectFileWorkflow', () => {
           solveProfile: 'industry-parity' as SolveProfile,
           runMode: 'preanalysis',
           preanalysisMode: true,
+          coordSystemMode: 'grid',
+          crsId: 'CA_NAD83_CSRS_UTM_20N',
+          localDatumScheme: 'average-elevation',
+          averageScaleFactor: 0.99981234,
+          commonElevation: 112.75,
+          gridBearingMode: 'grid',
+          gridDistanceMode: 'ellipsoidal',
+          gridAngleMode: 'grid',
+          gridDirectionMode: 'grid',
+          geoidModelEnabled: true,
+          geoidModelId: 'CGVD2013A',
+          geoidSourceFormat: 'gtx',
+          geoidInterpolation: 'nearest',
+          geoidHeightConversionEnabled: true,
+          geoidOutputHeightDatum: 'ellipsoid',
           crsTransformEnabled: true,
           crsProjectionModel: 'local-enu',
           crsLabel: 'Legacy Grid',
-          geoidSourcePath: '',
+          geoidSourcePath: 'geoids/cgvd2013a.gtx',
         },
         exportFormat: 'geojson',
         adjustedPointsExport: cloneAdjustedPointsExportSettings({
           ...DEFAULT_ADJUSTED_POINTS_EXPORT_SETTINGS,
           includeLostStations: false,
         }),
+        geoidSourceDataBase64: 'AQID',
+        geoidSourceDataLabel: 'cgvd2013a.gtx',
       },
       project: {
         projectInstruments: {
@@ -1379,7 +1402,7 @@ describe('useProjectFileWorkflow', () => {
       const [projectIncludeFiles, setProjectIncludeFiles] = useState<Record<string, string>>({});
       const [settings, setSettings] = useState(baseSettings);
       const [parseSettings, setParseSettings] = useState(baseParseSettings);
-      const [_geoidSourceData, setGeoidSourceData] = useState<Uint8Array | null>(
+      const [geoidSourceData, setGeoidSourceData] = useState<Uint8Array | null>(
         new Uint8Array([1]),
       );
       const [geoidSourceDataLabel, setGeoidSourceDataLabel] = useState('old');
@@ -1398,7 +1421,7 @@ describe('useProjectFileWorkflow', () => {
       >([]);
       const [settingsDraft, setSettingsDraft] = useState(baseSettings);
       const [parseSettingsDraft, setParseSettingsDraft] = useState(baseParseSettings);
-      const [_geoidSourceDataDraft, setGeoidSourceDataDraft] = useState<Uint8Array | null>(
+      const [geoidSourceDataDraft, setGeoidSourceDataDraft] = useState<Uint8Array | null>(
         new Uint8Array([2]),
       );
       const [geoidSourceDataLabelDraft, setGeoidSourceDataLabelDraft] = useState('draft');
@@ -1481,6 +1504,18 @@ describe('useProjectFileWorkflow', () => {
           <div id="theme">{settings.uiTheme}</div>
           <div id="precision-mode">{settings.precisionReportingMode}</div>
           <div id="run-mode">{parseSettings.runMode}</div>
+          <div id="coord-system">{parseSettings.coordSystemMode}</div>
+          <div id="crs-id">{parseSettings.crsId}</div>
+          <div id="avg-scale">{parseSettings.averageScaleFactor}</div>
+          <div id="common-elev">{parseSettings.commonElevation}</div>
+          <div id="grid-distance">{parseSettings.gridDistanceMode}</div>
+          <div id="grid-angle">{parseSettings.gridAngleMode}</div>
+          <div id="grid-direction">{parseSettings.gridDirectionMode}</div>
+          <div id="geoid-model">{parseSettings.geoidModelEnabled ? 'on' : 'off'}</div>
+          <div id="geoid-format">{parseSettings.geoidSourceFormat}</div>
+          <div id="geoid-path">{parseSettings.geoidSourcePath || '-'}</div>
+          <div id="geoid-interp">{parseSettings.geoidInterpolation}</div>
+          <div id="geoid-height-datum">{parseSettings.geoidOutputHeightDatum}</div>
           <div id="export">{exportFormat}</div>
           <div id="instrument">{selectedInstrument}</div>
           <div id="include-count">{Object.keys(projectIncludeFiles).length}</div>
@@ -1488,6 +1523,8 @@ describe('useProjectFileWorkflow', () => {
           <div id="draft-theme">{settingsDraft.uiTheme}</div>
           <div id="draft-precision-mode">{settingsDraft.precisionReportingMode}</div>
           <div id="draft-run-mode">{parseSettingsDraft.runMode}</div>
+          <div id="draft-coord-system">{parseSettingsDraft.coordSystemMode}</div>
+          <div id="draft-crs-id">{parseSettingsDraft.crsId}</div>
           <div id="crs-transform">{parseSettings.crsTransformEnabled ? 'on' : 'off'}</div>
           <div id="crs-model">{parseSettings.crsProjectionModel}</div>
           <div id="crs-label">{parseSettings.crsLabel || '-'}</div>
@@ -1499,6 +1536,8 @@ describe('useProjectFileWorkflow', () => {
           <div id="notice">{importNotice?.title ?? '-'}</div>
           <div id="geoid-label">{geoidSourceDataLabel || '-'}</div>
           <div id="draft-geoid">{geoidSourceDataLabelDraft || '-'}</div>
+          <div id="geoid-bytes">{geoidSourceData?.length ?? 0}</div>
+          <div id="draft-geoid-bytes">{geoidSourceDataDraft?.length ?? 0}</div>
         </div>
       );
     };
@@ -1516,6 +1555,18 @@ describe('useProjectFileWorkflow', () => {
     expect(container.querySelector('#theme')?.textContent).toBe('gruvbox-light');
     expect(container.querySelector('#precision-mode')?.textContent).toBe('industry-standard');
     expect(container.querySelector('#run-mode')?.textContent).toBe('preanalysis');
+    expect(container.querySelector('#coord-system')?.textContent).toBe('grid');
+    expect(container.querySelector('#crs-id')?.textContent).toBe('CA_NAD83_CSRS_UTM_20N');
+    expect(container.querySelector('#avg-scale')?.textContent).toBe('0.99981234');
+    expect(container.querySelector('#common-elev')?.textContent).toBe('112.75');
+    expect(container.querySelector('#grid-distance')?.textContent).toBe('ellipsoidal');
+    expect(container.querySelector('#grid-angle')?.textContent).toBe('grid');
+    expect(container.querySelector('#grid-direction')?.textContent).toBe('grid');
+    expect(container.querySelector('#geoid-model')?.textContent).toBe('on');
+    expect(container.querySelector('#geoid-format')?.textContent).toBe('gtx');
+    expect(container.querySelector('#geoid-path')?.textContent).toBe('geoids/cgvd2013a.gtx');
+    expect(container.querySelector('#geoid-interp')?.textContent).toBe('nearest');
+    expect(container.querySelector('#geoid-height-datum')?.textContent).toBe('ellipsoid');
     expect(container.querySelector('#export')?.textContent).toBe('geojson');
     expect(container.querySelector('#instrument')?.textContent).toBe('T1');
     expect(container.querySelector('#include-count')?.textContent).toBe('1');
@@ -1525,6 +1576,8 @@ describe('useProjectFileWorkflow', () => {
       'industry-standard',
     );
     expect(container.querySelector('#draft-run-mode')?.textContent).toBe('preanalysis');
+    expect(container.querySelector('#draft-coord-system')?.textContent).toBe('grid');
+    expect(container.querySelector('#draft-crs-id')?.textContent).toBe('CA_NAD83_CSRS_UTM_20N');
     expect(container.querySelector('#crs-transform')?.textContent).toBe('off');
     expect(container.querySelector('#crs-model')?.textContent).toBe('legacy-equirectangular');
     expect(container.querySelector('#crs-label')?.textContent).toBe('-');
@@ -1536,8 +1589,10 @@ describe('useProjectFileWorkflow', () => {
     expect(container.querySelector('#draft-open')?.textContent).toBe('closed');
     expect(container.querySelector('#draft-selected')?.textContent).toBe('0');
     expect(container.querySelector('#notice')?.textContent).toBe('Portable project loaded');
-    expect(container.querySelector('#geoid-label')?.textContent).toBe('-');
-    expect(container.querySelector('#draft-geoid')?.textContent).toBe('-');
+    expect(container.querySelector('#geoid-label')?.textContent).toBe('cgvd2013a.gtx');
+    expect(container.querySelector('#draft-geoid')?.textContent).toBe('cgvd2013a.gtx');
+    expect(container.querySelector('#geoid-bytes')?.textContent).toBe('3');
+    expect(container.querySelector('#draft-geoid-bytes')?.textContent).toBe('3');
     expect(resetWorkspaceAfterProjectLoad).toHaveBeenCalledTimes(1);
 
     await act(async () => {

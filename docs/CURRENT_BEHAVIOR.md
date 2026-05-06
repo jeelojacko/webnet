@@ -174,7 +174,7 @@ Current listing/report behavior includes:
 - non-classic industry listings now include the higher-level `Adjusted Station Information` and `Adjusted Observations and Residuals` wrapper sections, preserving deterministic heading order while moving the structure closer to the stored industry outputs
 - industry-style listings now render classic post-adjusted TS sideshots with the compact `Sideshot Coordinates Computed After Adjustment` section used by the stored industry combined output, while leaving the dedicated GPS sideshot sections in place for GNSS-specific rows
 - `Data Check` report mode now suppresses adjustment-derived sections that do not apply there, including adjusted-coordinate, residual-diagnostics, and observation-residual review tables
-- `Data Check` direction rows now use approximate set orientation when geometry support is adequate, and they fall back to reduced-direction internal consistency metrics when the involved coordinates are only weak bootstrap approximations; this avoids false giant direction mismatches on otherwise coherent reduced field sets
+- `Data Check` now runs a bounded provisional coordinate-fit stage before computing final inverse-difference rows; direction rows reuse that provisional geometry only when it lands within a tight trust window, and otherwise fall back to reduced-direction internal consistency metrics so weak provisional geometry does not show false giant direction mismatches on coherent reduced field sets
 - TS sideshot post-adjust coordinates now stay on the solved projected/grid azimuth basis for setup- and target-derived bearings, and they use occupied-station reduction factors plus curvature/refraction-aware zenith inversion so the combined-case `Chimney` and `Meridian` rows stay within low-millimeter parity of the stored industry output
 - GNSS-oriented non-classic listings now also emit the stored-reference wrapper/empty sections ahead of the unadjusted summary (`Inline Option Usage Notes`, `Summary of Inconsistent Descriptions`, `Network Stations`, and `Sideshots`) so the top block more closely matches the industry file structure even when those sections are empty
 - GNSS-only parity listings now also use a compact industry-style top block: they emit the `Project Folder and Data Files` wrapper, classic option rows (`Coordinate System`, `GPS Vector Standard Error Factors`, `GPS Vector Centering`, `GPS Vector Transformations`), suppress the generic instrument-default section, and restore the compact fixed/free-station plus GNSS vector unadjusted summary layout from the stored reference
@@ -220,6 +220,7 @@ Current coordinate-system behavior includes:
 Current geoid behavior includes:
 - optional geoid model controls and height-datum conversion controls
 - external GTX/BYN loading through parser/CLI and browser workflows
+- project save/open round-trips for browser-loaded geoid/grid sources, including portable project export/import and named local project reopen
 - deterministic fallback diagnostics
 - Canada-first preset support for common workflows
 
@@ -277,6 +278,8 @@ Current workspace behavior includes:
 - named local browser projects backed by OPFS when available, with IndexedDB used for the recent-project catalog and as the file-content fallback store
 - local project reopen flows work across both IndexedDB-backed and OPFS-backed named projects, and reopening refreshes recent-project ordering by last-opened time
 - manifest-first `webnet-project` v5 storage with stable source-file IDs, one main editor file, managed non-main source members, and project-scoped autosave for sources/settings/UI state
+- coordinate-system parse settings now reopen from both portable and named local projects with explicit grid-mode fields taking precedence over legacy `observationMode` when both are present
+- reopening a project with a saved provincial or other non-visible CRS now retargets the CRS catalog filter to that CRS's catalog group instead of silently replacing the loaded CRS with the first entry from a stale filter group
 - portable v5 workspace round-trips keep file contents tied to stable source-file IDs so non-main focused tabs restore the correct editor content and companion files on load/import
 - stale autosave completions do not overwrite newer project-file checked/open/focused edits; newer live workspace state stays authoritative until its own save completes
 - project-files popup shows explicit `main`/`open`/`active`/unchecked markers and limits drag-reorder starts to the grip handle so checkbox toggles stay more stable under quick edits

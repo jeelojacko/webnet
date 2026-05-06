@@ -116,6 +116,7 @@ const LEVEL_LOOP_DEFAULT_PER_SQRT_KM_MM = 4;
 const INDUSTRY_PARITY_ANGULAR_SIGMA_SCALE = 1.0001;
 const FLOAT_ZENITH_COVARIANCE_SIGMA_SEC = 1e8;
 const ARCSEC_TO_RAD = DEG_TO_RAD / 3600;
+const DATA_CHECK_PROVISIONAL_DIRECTION_TRUST_MAX_RAD = (5 / 60) * DEG_TO_RAD;
 
 type GpsSolveVector = {
   dE: number;
@@ -4369,6 +4370,105 @@ export class LSAEngine {
     return undefined;
   }
 
+  private applyDataCheckProvisionalApproximation(): {
+    attempted: boolean;
+    updatedStationCount: number;
+    iterations: number;
+    converged: boolean;
+    directionCalcByObsId: Map<number, number>;
+  } {
+    if (this.unknowns.length === 0) {
+      return {
+        attempted: false,
+        updatedStationCount: 0,
+        iterations: 0,
+        converged: false,
+        directionCalcByObsId: new Map<number, number>(),
+      };
+    }
+
+    const provisionalIterations = Math.max(2, Math.min(this.maxIterations, 4));
+    this.log(
+      `Data Check provisional approximation: running bounded coordinate fit (maxIterations=${provisionalIterations}) to refine approximate geometry before inverse comparisons.`,
+    );
+
+    const provisionalParseOptions = {
+      ...(this.parseOptions ?? {}),
+      runMode: 'adjustment',
+      preanalysisMode: false,
+      robustMode: 'none',
+      autoAdjustEnabled: false,
+      autoSideshotEnabled: false,
+      clusterDetectionEnabled: false,
+    } as ParseOptions;
+
+    const provisionalResult = new LSAEngine({
+      input: this.input,
+      maxIterations: provisionalIterations,
+      convergenceThreshold: this.convergenceThreshold,
+      instrumentLibrary: this.instrumentLibrary,
+      excludeIds: this.excludeIds,
+      overrides: this.overrides,
+      parseOptions: provisionalParseOptions,
+      geoidSourceData: this.geoidSourceData,
+    }).solve();
+    const directionCalcByObsId = new Map<number, number>();
+    provisionalResult.observations.forEach((obs) => {
+      if (
+        obs.type !== 'direction' ||
+        !Number.isFinite(obs.calc ?? Number.NaN) ||
+        !Number.isFinite(obs.residual ?? Number.NaN) ||
+        Math.abs(obs.residual ?? 0) > DATA_CHECK_PROVISIONAL_DIRECTION_TRUST_MAX_RAD
+      ) {
+        return;
+      }
+      directionCalcByObsId.set(obs.id, obs.calc as number);
+    });
+
+    let updatedStationCount = 0;
+    Object.entries(this.stations).forEach(([stationId, station]) => {
+      const provisionalStation = provisionalResult.stations[stationId];
+      if (!provisionalStation) return;
+      const nextX = provisionalStation.x;
+      const nextY = provisionalStation.y;
+      const nextH = provisionalStation.h;
+      if (
+        !Number.isFinite(nextX) ||
+        !Number.isFinite(nextY) ||
+        (!this.is2D && !Number.isFinite(nextH))
+      ) {
+        return;
+      }
+      const changed =
+        Math.abs(station.x - nextX) > 1e-9 ||
+        Math.abs(station.y - nextY) > 1e-9 ||
+        Math.abs((station.h ?? 0) - (nextH ?? 0)) > 1e-9 ||
+        station.bootstrapApprox === true;
+      if (!changed) return;
+      station.x = nextX;
+      station.y = nextY;
+      station.h = nextH;
+      station.bootstrapApprox = false;
+      if (this.coordSystemMode === 'grid') {
+        this.stationGeodetic(stationId as StationId);
+        this.stationFactorSnapshot(stationId as StationId);
+      }
+      updatedStationCount += 1;
+    });
+
+    this.log(
+      `Data Check provisional approximation: updated ${updatedStationCount} station(s); provisionalIterations=${provisionalResult.iterations}, converged=${provisionalResult.converged ? 'YES' : 'NO'}.`,
+    );
+
+    return {
+      attempted: true,
+      updatedStationCount,
+      iterations: provisionalResult.iterations,
+      converged: provisionalResult.converged,
+      directionCalcByObsId,
+    };
+  }
+
   private runDataCheckOnly(activeObservations: Observation[]): AdjustmentResult {
     this.runMode = 'data-check';
     this.iterations = 0;
@@ -4378,6 +4478,8 @@ export class LSAEngine {
     this.log(
       'Data Check Only mode: reporting approximate-geometry differences from observations (no least-squares adjustment).',
     );
+
+    const provisionalApproximation = this.applyDataCheckProvisionalApproximation();
 
     const dataCheckDirectionOrientations = new Map<string, number>();
     const directionOrientationSums = new Map<string, { sumSin: number; sumCos: number }>();
@@ -4440,27 +4542,38 @@ export class LSAEngine {
         return;
       }
       if (obs.type === 'direction') {
+        const provisionalCalc = provisionalApproximation.directionCalcByObsId.get(obs.id);
+        if (Number.isFinite(provisionalCalc ?? Number.NaN)) {
+          const calc = provisionalCalc as number;
+          const residual = this.wrapToPi(obs.obs - calc);
+          obs.calc = calc;
+          obs.residual = residual;
+          obs.stdRes = obs.stdDev > 0 ? residual / obs.stdDev : 0;
+          ranked.push({ obsId: obs.id, type: obs.type, diff: Math.abs(residual) });
+          return;
+        }
         const occupyStation = this.stations[obs.at];
         const targetStation = this.stations[obs.to];
         const weakApprox =
           occupyStation?.bootstrapApprox === true || targetStation?.bootstrapApprox === true;
-        if (weakApprox) {
-          const internalResidualCandidates = [
-            obs.rawMaxResidual,
-            obs.rawSpread,
-            obs.facePairDelta,
-          ].filter((value): value is number => Number.isFinite(value));
-          if (internalResidualCandidates.length > 0) {
-            const residual = internalResidualCandidates.reduce(
-              (max, value) => (Math.abs(value) > Math.abs(max) ? value : max),
-              0,
-            );
-            obs.calc = obs.obs;
-            obs.residual = residual;
-            obs.stdRes = undefined;
-            ranked.push({ obsId: obs.id, type: obs.type, diff: Math.abs(residual) });
-            return;
-          }
+        const internalResidualCandidates = [
+          obs.rawMaxResidual,
+          obs.rawSpread,
+          obs.facePairDelta,
+        ].filter((value): value is number => Number.isFinite(value));
+        if (
+          internalResidualCandidates.length > 0 &&
+          (weakApprox || provisionalApproximation.attempted)
+        ) {
+          const residual = internalResidualCandidates.reduce(
+            (max, value) => (Math.abs(value) > Math.abs(max) ? value : max),
+            0,
+          );
+          obs.calc = obs.obs;
+          obs.residual = residual;
+          obs.stdRes = undefined;
+          ranked.push({ obsId: obs.id, type: obs.type, diff: Math.abs(residual) });
+          return;
         }
         const az = this.modeledAzimuth(
           this.getAzimuth(obs.at, obs.to).az,

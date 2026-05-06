@@ -1,8 +1,12 @@
 # TODO - WebNet
 
+- [x] Project coordinate-system settings save/open batch (May 2026): audit project-file and local-project save/open persistence for CRS/grid/geoid settings, restore browser-loaded geoid/grid source state through save/load, stop stale CRS group filters from overwriting reopened provincial/grid CRS selections, and add focused round-trip regression coverage for coordinate-system parse settings.
+
 - [x] Special-mode report + data-check direction-set batch (May 2026): move mode-relevant report sections to the top for `Data Check` / `Blunder Detect`, hide adjustment-only report sections that do not apply in those modes, and make `Data Check` compare reduced direction sets against approximate set orientation instead of raw azimuth so mixed-face direction data does not show false giant residuals.
 
 - [x] Adjustment report workflow-priority batch (May 2026): when cluster detection or auto-adjust diagnostics are active, move those workflow-action sections to the top of normal adjustment reports so operators see the active review/removal workflow before lower-priority summary tables.
+
+- [x] Data Check provisional-approximation batch (May 2026): add a bounded provisional coordinate-fit stage ahead of Data Check inverse comparisons so weak bootstrap geometry can be refined before observation-difference reporting, while retaining the reduced-direction internal-consistency fallback only when the provisional fit still cannot supply trustworthy geometry.
 
 - [x] Run-mode audit/correction batch (May 2026): audit `Data Check`, `Blunder Detect`, and `Auto-Adjust`; fix any mismatched behavior with minimal solver/session changes; add focused regression coverage proving data-check skips full adjustment, blunder-detect deweights iteratively without removing rows, and auto-adjust iteratively excludes poor-fitting observations across direct-engine and shared run-session paths.
 
