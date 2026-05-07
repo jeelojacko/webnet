@@ -29,9 +29,7 @@ import {
   ADJUSTED_POINTS_ALL_COLUMNS,
   ADJUSTED_POINTS_PRESET_COLUMNS,
   DEFAULT_ADJUSTED_POINTS_EXPORT_SETTINGS,
-  validateAdjustedPointsTransform,
   cloneAdjustedPointsExportSettings,
-  getAdjustedPointsExportStationIds,
   sanitizeAdjustedPointsExportSettings,
 } from './engine/adjustedPointsExport';
 import {
@@ -51,23 +49,20 @@ import { useAdjustmentWorkflow } from './hooks/useAdjustmentWorkflow';
 import { useArtifactBuilder } from './hooks/useArtifactBuilder';
 import { resolveDraftCrsSelection } from './crsDraftSelection';
 import { useExportWorkflow } from './hooks/useExportWorkflow';
-import { useImportReviewWorkflow } from './hooks/useImportReviewWorkflow';
 import { useAppIndustryOutput } from './hooks/useAppIndustryOutput';
 import { useAppProjectOptionsModal } from './hooks/useAppProjectOptionsModal';
+import { useAppProjectImportWorkspace } from './hooks/useAppProjectImportWorkspace';
 import { useAppRunComparisonPanel } from './hooks/useAppRunComparisonPanel';
 import { useAppReviewQueue } from './hooks/useAppReviewQueue';
 import { useAppRunWorkspaceReview } from './hooks/useAppRunWorkspaceReview';
 import { useAppWorkspaceDraft } from './hooks/useAppWorkspaceDraft';
-import { useProjectFileWorkflow } from './hooks/useProjectFileWorkflow';
 import { createStableRuntimeId } from './engine/id';
 import { useProjectOptionsState } from './hooks/useProjectOptionsState';
-import { useRunComparisonState } from './hooks/useRunComparisonState';
 import {
   DEFAULT_LISTING_SORT_OBSERVATIONS_BY,
   normalizeListingSortObservationsBy,
 } from './listingSortObservations';
 import { useWorkspaceProjectState } from './hooks/useWorkspaceProjectState';
-import type { ProjectRunFile } from './engine/projectWorkspace';
 import {
   ACTIVE_PARITY_STARTUP_DEFAULTS,
   IMPORT_FILE_ACCEPT,
@@ -78,11 +73,9 @@ import {
   INDUSTRY_DEFAULT_INSTRUMENT_CODE,
   DEFAULT_UI_THEME,
   buildObservationModeFromGridFields,
-  buildPendingRunSettingDiffs,
   cloneInstrumentLibrary,
   createDefaultS9Instrument,
   createInstrument,
-  createRunSettingsSnapshot,
   getExportFormatLabel,
   getExportFormatTooltip,
   normalizeUiTheme,
@@ -102,7 +95,6 @@ import type {
   SolveProfile,
   Units,
   UiTheme,
-  WorkspaceDraftSnapshot,
   WorkspaceTabKey,
 } from './appStateTypes';
 import type { AdjustmentResult } from './types';
@@ -492,16 +484,10 @@ const App: React.FC<AppProps> = ({
   const layoutRef = useRef<HTMLDivElement | null>(null);
   const settingsModalContentRef = useRef<HTMLDivElement | null>(null);
   const isResizingRef = useRef(false);
-  const parsedInputInstruments = useMemo(() => parseInstrumentLibraryFromInput(input), [input]);
-  const currentRunSettingsSnapshot = useMemo(
-    () => createRunSettingsSnapshot(settings, parseSettings, selectedInstrument),
-    [parseSettings, selectedInstrument, settings],
-  );
-  const pendingRunSettingDiffs = useMemo(
-    () => buildPendingRunSettingDiffs(currentRunSettingsSnapshot, lastRunSettingsSnapshot),
-    [currentRunSettingsSnapshot, lastRunSettingsSnapshot],
-  );
   const {
+    parsedInputInstruments,
+    currentRunSettingsSnapshot,
+    pendingRunSettingDiffs,
     savedRunSnapshots,
     currentRunSnapshot,
     currentSavedRunSnapshot,
@@ -518,10 +504,6 @@ const App: React.FC<AppProps> = ({
     saveCurrentRunSnapshot,
     recordRunSnapshot,
     comparisonCandidates,
-  } = useRunComparisonState<RunSettingsSnapshot, RunDiagnostics>({
-    buildSettingDiffs: buildPendingRunSettingDiffs,
-  });
-  const {
     storageStatus,
     recentProjects,
     projectSession,
@@ -530,18 +512,11 @@ const App: React.FC<AppProps> = ({
     projectSourceAccept,
     associatedProjectSettingsAccept,
     effectiveRunInput,
-    effectiveProjectRunFiles,
     projectRunValidation,
     effectiveRunIncludeFiles,
-    currentEditorIncludeFiles,
     triggerProjectFileSelect,
     triggerProjectSourceFileSelect,
-    importProjectSourceFiles,
-    importGeneratedProjectSourceFile,
-    prepareAssociatedProjectSettingsImport,
-    applyPreparedAssociatedProjectSettings,
     handleSaveProject,
-    handleEditorInputChange,
     handleProjectFileChange,
     handleProjectSourceFileChange,
     createLocalProjectFromCurrentWorkspace,
@@ -561,76 +536,8 @@ const App: React.FC<AppProps> = ({
     moveProjectFile,
     deleteProjectFile,
     removeProjectFile,
-  } =
-    useProjectFileWorkflow({
-      projectFileInputRef,
-      projectSourceFileInputRef,
-      input,
-      projectIncludeFiles,
-      settings,
-      parseSettings,
-      geoidSourceData,
-      geoidSourceDataLabel,
-      exportFormat,
-      adjustedPointsExportSettings,
-      savedRunSnapshots,
-      projectInstruments,
-      selectedInstrument,
-      levelLoopCustomPresets,
-      setInput,
-      setProjectIncludeFiles,
-      setSettings,
-      setParseSettings,
-      setGeoidSourceData,
-      setGeoidSourceDataLabel,
-      setExportFormat,
-      setAdjustedPointsExportSettings,
-      setProjectInstruments,
-      setSelectedInstrument,
-      setLevelLoopCustomPresets,
-      setSettingsDraft,
-      setParseSettingsDraft,
-      setGeoidSourceDataDraft,
-      setGeoidSourceDataLabelDraft,
-      setProjectInstrumentsDraft,
-      setSelectedInstrumentDraft,
-      setLevelLoopCustomPresetsDraft,
-      setAdjustedPointsExportSettingsDraft,
-      setIsAdjustedPointsTransformSelectOpen,
-      setAdjustedPointsTransformSelectedDraft,
-      setImportNotice,
-      resetWorkspaceAfterProjectLoad: resetRunStateAfterImportedInput,
-      restoreSavedRunSnapshots,
-      normalizeUiTheme,
-      normalizeSolveProfile,
-      buildObservationModeFromGridFields,
-      cloneInstrumentLibrary,
-    });
-  const startupProjectRunFiles = useMemo<ProjectRunFile[]>(
-    () =>
-      projectSession == null
-        ? (ACTIVE_PARITY_STARTUP_DEFAULTS?.projectRunFiles ?? []).map((file, index) => ({
-            fileId: file.fileId,
-            name: file.name,
-            order: file.order ?? index,
-            content: input,
-          }))
-        : [],
-    [input, projectSession],
-  );
-  const activeProjectRunFiles = useMemo<ProjectRunFile[]>(
-    () => (effectiveProjectRunFiles.length > 0 ? effectiveProjectRunFiles : startupProjectRunFiles),
-    [effectiveProjectRunFiles, startupProjectRunFiles],
-  );
-  const setEditorInput: Dispatch<SetStateAction<string>> = useCallback(
-    (value) => {
-      const nextValue = typeof value === 'function' ? value(input) : value;
-      handleEditorInputChange(nextValue);
-      if (importNotice) setImportNotice(null);
-    },
-    [handleEditorInputChange, importNotice, input, setImportNotice],
-  );
-  const {
+    activeProjectRunFiles,
+    setEditorInput,
     importReviewState,
     pendingAnglePromptFile,
     triggerFileSelect,
@@ -672,31 +579,59 @@ const App: React.FC<AppProps> = ({
     importReviewDisplayedRows,
     importReviewMoveTargetGroups,
     importReviewSnapshot,
-    restoreImportReviewWorkflow: restoreImportReviewWorkflowBase,
+    restoreImportReviewWorkflow,
     resetImportReviewWorkflow,
-  } = useImportReviewWorkflow({
+    adjustedPointsDraftStationIds,
+    adjustedPointsTransformDraftValidationMessage,
+  } = useAppProjectImportWorkspace({
+    input,
+    importNotice,
+    projectIncludeFiles,
+    settings,
+    parseSettings,
+    geoidSourceData,
+    geoidSourceDataLabel,
+    exportFormat,
+    adjustedPointsExportSettings,
+    adjustedPointsExportSettingsDraft,
+    projectInstruments,
+    selectedInstrument,
+    levelLoopCustomPresets,
+    lastRunSettingsSnapshot,
+    result,
+    resetRunStateAfterImportedInput,
+    setInput,
+    setProjectIncludeFiles,
+    setSettings,
+    setParseSettings,
+    setGeoidSourceData,
+    setGeoidSourceDataLabel,
+    setExportFormat,
+    setAdjustedPointsExportSettings,
+    setProjectInstruments,
+    setSelectedInstrument,
+    setLevelLoopCustomPresets,
+    setSettingsDraft,
+    setParseSettingsDraft,
+    setGeoidSourceDataDraft,
+    setGeoidSourceDataLabelDraft,
+    setProjectInstrumentsDraft,
+    setSelectedInstrumentDraft,
+    setLevelLoopCustomPresetsDraft,
+    setAdjustedPointsExportSettingsDraft,
+    setIsAdjustedPointsTransformSelectOpen,
+    setAdjustedPointsTransformSelectedDraft,
+    setImportNotice,
+    normalizeUiTheme,
+    normalizeSolveProfile,
+    buildObservationModeFromGridFields,
     coordMode: parseSettings.coordMode,
-    currentInput: input,
-    currentIncludeFiles: currentEditorIncludeFiles,
     faceNormalizationMode: parseSettings.faceNormalizationMode,
     fileInputRef,
-    settingsFileInputRef: importReviewSettingsFileInputRef,
-    importProjectSourceFiles,
-    importGeneratedProjectSourceFile,
-    prepareAssociatedProjectSettingsImport,
-    applyPreparedAssociatedProjectSettings,
-    parseSettings,
-    projectInstruments,
-    setInput: setEditorInput,
-    setProjectIncludeFiles,
-    setImportNotice,
-    resetWorkspaceForImportedInput: resetRunStateAfterImportedInput,
+    importReviewSettingsFileInputRef,
+    projectFileInputRef,
+    projectSourceFileInputRef,
   });
-  const restoreImportReviewWorkflow = useCallback(
-    (snapshot: WorkspaceDraftSnapshot['importReview'] | undefined) =>
-      restoreImportReviewWorkflowBase(snapshot ?? null),
-    [restoreImportReviewWorkflowBase],
-  );
   const selectedDraftCrs = useMemo(
     () =>
       CRS_CATALOG.find((row) => row.id === parseSettingsDraft.crsId) ??
@@ -747,27 +682,6 @@ const App: React.FC<AppProps> = ({
     () => selectedDraftCrs?.projParams ?? parseProj4Parameters(selectedDraftCrs?.proj4 ?? ''),
     [selectedDraftCrs],
   );
-  const adjustedPointsDraftStationIds = useMemo(() => {
-    if (!result) return [] as string[];
-    return getAdjustedPointsExportStationIds(
-      result,
-      adjustedPointsExportSettingsDraft.includeLostStations,
-    );
-  }, [result, adjustedPointsExportSettingsDraft.includeLostStations]);
-  const adjustedPointsTransformDraftValidationMessage = useMemo(() => {
-    const transform = adjustedPointsExportSettingsDraft.transform;
-    const anyEnabled =
-      transform.rotation.enabled || transform.translation.enabled || transform.scale.enabled;
-    if (!anyEnabled) return null;
-    if (!result) return 'Run adjustment before exporting transformed coordinates.';
-    const validation = validateAdjustedPointsTransform({
-      result,
-      settings: adjustedPointsExportSettingsDraft,
-    });
-    if (validation.valid) return null;
-    return validation.message;
-  }, [result, adjustedPointsExportSettingsDraft]);
-
   useEffect(() => {
     const resolution = resolveDraftCrsSelection({
       crsId: parseSettingsDraft.crsId,
@@ -946,7 +860,7 @@ const App: React.FC<AppProps> = ({
     : null;
   const { buildArtifacts } = useArtifactBuilder();
   const handleInputChange = (value: string) => {
-    handleEditorInputChange(value);
+    setEditorInput(value);
     if (importNotice) setImportNotice(null);
   };
 
@@ -1104,7 +1018,7 @@ const App: React.FC<AppProps> = ({
     resetImportReviewWorkflow,
     restoreSavedRunSnapshots,
     restoreWorkspaceReviewSnapshot,
-    restoreImportReviewWorkflow,
+    restoreImportReviewWorkflow: (snapshot) => restoreImportReviewWorkflow(snapshot ?? null),
     setInput,
     setProjectIncludeFiles,
     setSettings,
@@ -1240,7 +1154,7 @@ const App: React.FC<AppProps> = ({
     handleCompareSelectObservation,
   } = useAppRunComparisonPanel({
     lastRunInput,
-    handleEditorInputChange,
+    handleEditorInputChange: setEditorInput,
     clearWorkspaceArtifacts,
     resetImportReviewWorkflow,
     resetAdjustmentWorkflowState,

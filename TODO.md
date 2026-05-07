@@ -12,6 +12,7 @@
     - [x] Current slice - extract App industry-output, review-queue, and project-options modal orchestration hooks
     - [x] Current slice - extract App workspace draft/recovery orchestration hook
     - [x] Current slice - extract App run-comparison and workspace-reset orchestration hook
+    - [x] Current slice - extract App project/import/workspace orchestration hook around project-file and import-review workflows
     - [ ] Extract App orchestration hook and keep `App.tsx` as composition shell
   - [x] Batch 2 - heavy UI surfaces
     - [x] Split `ReportView.tsx` config/sections into focused modules
@@ -21,6 +22,7 @@
   - [ ] Batch 3 - listing/importer monoliths
     - [x] Current slice - extract `industryListing.ts` shared formatters/sort helpers
     - [x] Current slice - extract `industryListing.ts` leveling-only section builder
+    - [x] Current slice - extract `industryListing.ts` top/settings/project-metadata, adjusted-observation, and error-propagation section builders
     - [ ] Split `industryListing.ts` into formatting and section-builder seams
     - [ ] Split `importers.ts` into importer-family modules plus shared helpers
   - [ ] Batch 4 - solver-core decomposition
