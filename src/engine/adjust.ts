@@ -15,7 +15,6 @@ import {
   accumulateNormalEquationsFromSparseRows,
   invertSPDFromCholesky,
   choleskyDecomposeWithDamping,
-  invertSymmetricLDLTWithInfo,
   multiplySparseRowsByDenseMatrix,
   solveSPDFromCholesky,
   symmetricQuadraticForm,
@@ -30,6 +29,29 @@ import {
 import { buildCoordinateConstraints, coordinateConstraintWeightedSum } from './adjustmentConstraints';
 import { assembleAdjustmentEquations } from './adjustmentEquationAssembly';
 import { applyAdjustmentCorrections, solveAdjustmentIteration } from './adjustmentIteration';
+import {
+  azimuthFromCoords,
+  circularMean,
+  intersectDistanceCircles,
+  makeDirectedPairKey,
+  makePairKey,
+  wrapTo2Pi,
+  wrapToPi,
+} from './adjustMath';
+import {
+  ecefDeltaToLocalEnu,
+  geodeticToEcef,
+  invertMatrix3,
+  transformSymmetricCovariance3,
+} from './adjustGpsMath';
+import {
+  matrixIsFinite,
+  recoverUndampedInverse,
+  scaleNormalMatrix,
+  scaleNormalRhs,
+  unscaleNormalInverse,
+  unscaleNormalSolution,
+} from './adjustNormalMatrixHelpers';
 import {
   applyAutoDroppedHeightHolds,
   buildSolvePreparation,
@@ -109,9 +131,6 @@ import type {
 
 const EPS = 1e-10;
 const EARTH_RADIUS_M = 6378137;
-const WGS84_A = 6378137;
-const WGS84_F = 1 / 298.257223563;
-const WGS84_E2 = WGS84_F * (2 - WGS84_F);
 const GPS_ADDHIHT_SCALE_TOL = 1e-9;
 const GPS_LOOP_BASE_TOLERANCE_M = 0.02;
 const GPS_LOOP_TOLERANCE_PPM = 50;
@@ -147,70 +166,6 @@ type GpsVectorComponents = {
 type GpsVectorDerivatives = {
   from: { x?: GpsVectorComponents; y?: GpsVectorComponents; h?: GpsVectorComponents };
   to: { x?: GpsVectorComponents; y?: GpsVectorComponents; h?: GpsVectorComponents };
-};
-
-const makePairKey = (a: StationId, b: StationId): string => (a < b ? `${a}|${b}` : `${b}|${a}`);
-const makeDirectedPairKey = (from: StationId, to: StationId): string => `${from}|${to}`;
-
-const wrapToPi = (value: number): number => {
-  let out = value;
-  while (out <= -Math.PI) out += 2 * Math.PI;
-  while (out > Math.PI) out -= 2 * Math.PI;
-  return out;
-};
-
-const wrapTo2Pi = (value: number): number => {
-  let out = value % (2 * Math.PI);
-  if (out < 0) out += 2 * Math.PI;
-  return out;
-};
-
-const circularMean = (values: number[]): number | null => {
-  if (!values.length) return null;
-  let sumSin = 0;
-  let sumCos = 0;
-  values.forEach((value) => {
-    sumSin += Math.sin(value);
-    sumCos += Math.cos(value);
-  });
-  if (Math.abs(sumSin) < 1e-12 && Math.abs(sumCos) < 1e-12) {
-    return wrapTo2Pi(values[0] ?? 0);
-  }
-  return wrapTo2Pi(Math.atan2(sumSin, sumCos));
-};
-
-const azimuthFromCoords = (fromX: number, fromY: number, toX: number, toY: number): number =>
-  wrapTo2Pi(Math.atan2(toX - fromX, toY - fromY));
-
-const intersectDistanceCircles = (
-  ax: number,
-  ay: number,
-  radiusA: number,
-  bx: number,
-  by: number,
-  radiusB: number,
-): { x: number; y: number }[] => {
-  const dx = bx - ax;
-  const dy = by - ay;
-  const distance = Math.hypot(dx, dy);
-  if (!Number.isFinite(distance) || distance <= 1e-12) return [];
-  if (distance > radiusA + radiusB + 1e-6) return [];
-  if (distance < Math.abs(radiusA - radiusB) - 1e-6) return [];
-  const a = (radiusA * radiusA - radiusB * radiusB + distance * distance) / (2 * distance);
-  const hSq = radiusA * radiusA - a * a;
-  if (hSq < -1e-6) return [];
-  const h = Math.sqrt(Math.max(0, hSq));
-  const midX = ax + (a * dx) / distance;
-  const midY = ay + (a * dy) / distance;
-  const offsetX = (-dy * h) / distance;
-  const offsetY = (dx * h) / distance;
-  if (h <= 1e-9) {
-    return [{ x: midX, y: midY }];
-  }
-  return [
-    { x: midX + offsetX, y: midY + offsetY },
-    { x: midX - offsetX, y: midY - offsetY },
-  ];
 };
 
 type BootstrapDirectionSet = {
@@ -417,61 +372,13 @@ export class LSAEngine {
   };
   private solveTimingLogged = false;
 
-  private matrixIsFinite(m: number[][]): boolean {
-    return m.every((row) => row.every((value) => Number.isFinite(value)));
-  }
-
-  private scaleNormalMatrix(N: number[][]): { scaled: number[][]; scale: number[] } {
-    const scale = N.map((row, i) => {
-      const diag = Math.abs(row[i] ?? 0);
-      return diag > 1e-30 && Number.isFinite(diag) ? 1 / Math.sqrt(diag) : 1;
-    });
-    const scaled = N.map((row, i) => row.map((value, j) => value * scale[i] * scale[j]));
-    return { scaled, scale };
-  }
-
-  private scaleNormalRhs(U: number[][], scale: number[]): number[][] {
-    return U.map((row, i) => row.map((value) => value * scale[i]));
-  }
-
-  private unscaleNormalSolution(solution: number[][], scale: number[]): number[][] {
-    return solution.map((row, i) => row.map((value) => value * scale[i]));
-  }
-
-  private unscaleNormalInverse(inverse: number[][], scale: number[]): number[][] {
-    return inverse.map((row, i) => row.map((value, j) => value * scale[i] * scale[j]));
-  }
-
-  private recoverUndampedInverse(
-    scaledN: number[][],
-    scale: number[],
-    fallbackInverse: number[][],
-    context: string,
-  ): number[][] {
-    try {
-      const recovery = invertSymmetricLDLTWithInfo(scaledN);
-      const pivotSuffix =
-        recovery.twoByTwoPivotCount > 0 ? ` (2x2 pivot blocks=${recovery.twoByTwoPivotCount})` : '';
-      this.log(
-        `Warning: ${context} used pivoted symmetric LDLT recovery on the scaled undamped normal matrix to avoid damping bias in covariance output${pivotSuffix}.`,
-      );
-      return this.unscaleNormalInverse(recovery.inverse, scale);
-    } catch (error) {
-      const detail = error instanceof Error ? ` ${error.message}` : '';
-      this.log(
-        `Warning: ${context} could not recover the undamped covariance after regularization; using damped covariance instead.${detail}`,
-      );
-      return this.unscaleNormalInverse(fallbackInverse, scale);
-    }
-  }
-
   private solveNormalEquations(
     N: number[][],
     U: number[][],
     options?: { recoverCovariance?: boolean },
   ): { correction: number[][]; qxx?: number[][] } {
-    const scaled = this.scaleNormalMatrix(N);
-    const scaledU = this.scaleNormalRhs(U, scaled.scale);
+    const scaled = scaleNormalMatrix(N);
+    const scaledU = scaleNormalRhs(U, scaled.scale);
     const factorization = choleskyDecomposeWithDamping(scaled.scaled);
     if (factorization.damping > 0) {
       this.log(
@@ -481,13 +388,13 @@ export class LSAEngine {
       );
     }
     const scaledCorrection = solveSPDFromCholesky(factorization.factor, scaledU);
-    if (!this.matrixIsFinite(scaledCorrection)) {
+    if (!matrixIsFinite(scaledCorrection)) {
       throw new Error(
         'Normal matrix remained singular after diagonal damping; scaled correction contains non-finite values.',
       );
     }
-    const correction = this.unscaleNormalSolution(scaledCorrection, scaled.scale);
-    if (!this.matrixIsFinite(correction)) {
+    const correction = unscaleNormalSolution(scaledCorrection, scaled.scale);
+    if (!matrixIsFinite(correction)) {
       throw new Error(
         'Normal matrix remained singular or numerically unstable after diagonal damping; correction contains non-finite values.',
       );
@@ -496,21 +403,22 @@ export class LSAEngine {
       return { correction };
     }
     const scaledQxx = invertSPDFromCholesky(factorization.factor);
-    if (!this.matrixIsFinite(scaledQxx)) {
+    if (!matrixIsFinite(scaledQxx)) {
       throw new Error(
         'Normal matrix remained singular after diagonal damping; damped covariance contains non-finite values.',
       );
     }
     const qxx =
       factorization.damping > 0
-        ? this.recoverUndampedInverse(
+        ? recoverUndampedInverse(
             scaled.scaled,
             scaled.scale,
             scaledQxx,
             'Normal-equation covariance recovery',
+            this.log.bind(this),
           )
-        : this.unscaleNormalInverse(scaledQxx, scaled.scale);
-    if (!this.matrixIsFinite(qxx)) {
+        : unscaleNormalInverse(scaledQxx, scaled.scale);
+    if (!matrixIsFinite(qxx)) {
       throw new Error(
         'Normal matrix remained singular or numerically unstable after diagonal damping; covariance contains non-finite values.',
       );
@@ -628,7 +536,7 @@ export class LSAEngine {
   }
 
   private invertNormalMatrixForStats(N: number[][]): number[][] {
-    const scaled = this.scaleNormalMatrix(N);
+    const scaled = scaleNormalMatrix(N);
     const factorization = choleskyDecomposeWithDamping(scaled.scaled);
     if (factorization.damping > 0) {
       this.log(
@@ -640,14 +548,15 @@ export class LSAEngine {
     const scaledQxx = invertSPDFromCholesky(factorization.factor);
     const qxx =
       factorization.damping > 0
-        ? this.recoverUndampedInverse(
+        ? recoverUndampedInverse(
             scaled.scaled,
             scaled.scale,
             scaledQxx,
             'Standardized-residual covariance recovery',
+            this.log.bind(this),
           )
-        : this.unscaleNormalInverse(scaledQxx, scaled.scale);
-    if (!this.matrixIsFinite(qxx)) {
+        : unscaleNormalInverse(scaledQxx, scaled.scale);
+    if (!matrixIsFinite(qxx)) {
       throw new Error('Non-finite covariance values encountered after regularization.');
     }
     return qxx;
@@ -1030,45 +939,6 @@ export class LSAEngine {
     return frame === 'enuLocal' || frame === 'llhBaseline' || frame === 'ecefDelta';
   }
 
-  private geodeticToEcef(
-    latDeg: number,
-    lonDeg: number,
-    heightM = 0,
-  ): { x: number; y: number; z: number } {
-    const lat = latDeg * DEG_TO_RAD;
-    const lon = lonDeg * DEG_TO_RAD;
-    const sinLat = Math.sin(lat);
-    const cosLat = Math.cos(lat);
-    const sinLon = Math.sin(lon);
-    const cosLon = Math.cos(lon);
-    const n = WGS84_A / Math.sqrt(1 - WGS84_E2 * sinLat * sinLat);
-    return {
-      x: (n + heightM) * cosLat * cosLon,
-      y: (n + heightM) * cosLat * sinLon,
-      z: (n * (1 - WGS84_E2) + heightM) * sinLat,
-    };
-  }
-
-  private ecefDeltaToLocalEnu(
-    dX: number,
-    dY: number,
-    dZ: number,
-    latDeg: number,
-    lonDeg: number,
-  ): Required<Pick<GpsVectorComponents, 'dE' | 'dN' | 'dU'>> {
-    const lat = latDeg * DEG_TO_RAD;
-    const lon = lonDeg * DEG_TO_RAD;
-    const sinLat = Math.sin(lat);
-    const cosLat = Math.cos(lat);
-    const sinLon = Math.sin(lon);
-    const cosLon = Math.cos(lon);
-    return {
-      dE: -sinLon * dX + cosLon * dY,
-      dN: -sinLat * cosLon * dX - sinLat * sinLon * dY + cosLat * dZ,
-      dU: cosLat * cosLon * dX + cosLat * sinLon * dY + sinLat * dZ,
-    };
-  }
-
   private stationGeodeticFromCoordinates(
     stationId: StationId,
     x: number,
@@ -1154,54 +1024,6 @@ export class LSAEngine {
     };
   }
 
-  private multiplyMatrix3(a: number[][], b: number[][]): number[][] {
-    return a.map((row) =>
-      b[0].map(
-        (_value, col) => row[0] * b[0][col] + row[1] * b[1][col] + row[2] * b[2][col],
-      ),
-    );
-  }
-
-  private transposeMatrix3(matrix: number[][]): number[][] {
-    return [
-      [matrix[0][0], matrix[1][0], matrix[2][0]],
-      [matrix[0][1], matrix[1][1], matrix[2][1]],
-      [matrix[0][2], matrix[1][2], matrix[2][2]],
-    ];
-  }
-
-  private transformSymmetricCovariance3(transform: number[][], covariance: number[][]): number[][] {
-    return this.multiplyMatrix3(
-      this.multiplyMatrix3(transform, covariance),
-      this.transposeMatrix3(transform),
-    );
-  }
-
-  private invertMatrix3(matrix: number[][]): number[][] | null {
-    const det =
-      matrix[0][0] * (matrix[1][1] * matrix[2][2] - matrix[1][2] * matrix[2][1]) -
-      matrix[0][1] * (matrix[1][0] * matrix[2][2] - matrix[1][2] * matrix[2][0]) +
-      matrix[0][2] * (matrix[1][0] * matrix[2][1] - matrix[1][1] * matrix[2][0]);
-    if (!Number.isFinite(det) || Math.abs(det) <= 1e-24) return null;
-    return [
-      [
-        (matrix[1][1] * matrix[2][2] - matrix[1][2] * matrix[2][1]) / det,
-        (matrix[0][2] * matrix[2][1] - matrix[0][1] * matrix[2][2]) / det,
-        (matrix[0][1] * matrix[1][2] - matrix[0][2] * matrix[1][1]) / det,
-      ],
-      [
-        (matrix[1][2] * matrix[2][0] - matrix[1][0] * matrix[2][2]) / det,
-        (matrix[0][0] * matrix[2][2] - matrix[0][2] * matrix[2][0]) / det,
-        (matrix[0][2] * matrix[1][0] - matrix[0][0] * matrix[1][2]) / det,
-      ],
-      [
-        (matrix[1][0] * matrix[2][1] - matrix[1][1] * matrix[2][0]) / det,
-        (matrix[0][1] * matrix[2][0] - matrix[0][0] * matrix[2][1]) / det,
-        (matrix[0][0] * matrix[1][1] - matrix[0][1] * matrix[1][0]) / det,
-      ],
-    ];
-  }
-
   private gpsDisplayResidualTransform(
     obs: GpsObservation,
     _fromStation?: Station,
@@ -1214,7 +1036,7 @@ export class LSAEngine {
     const eta = (eastSec / 3600) * DEG_TO_RAD;
     const needsDeflectionUndo = this.gpsUsesLocalSolveFrame(frame) && (Math.abs(xi) > 1e-16 || Math.abs(eta) > 1e-16);
     const deflectionInverse = needsDeflectionUndo
-      ? this.invertMatrix3([
+      ? invertMatrix3([
           [1, 0, -eta],
           [0, 1, -xi],
           [eta, xi, 1],
@@ -1269,7 +1091,7 @@ export class LSAEngine {
         [cEN, cNN, cNU],
         [cEU, cNU, cUU],
       ];
-      const transformed = this.transformSymmetricCovariance3(d, q);
+      const transformed = transformSymmetricCovariance3(d, q);
       cEE = transformed[0][0];
       cEN = transformed[0][1];
       cEU = transformed[0][2];
@@ -1420,7 +1242,7 @@ export class LSAEngine {
     } else if (frame === 'ecefDelta') {
       const geo = this.stationGeodetic(obs.from) ?? this.stationGeodetic(obs.to);
       if (geo) {
-        const { dE: enuE, dN: enuN, dU: enuU } = this.ecefDeltaToLocalEnu(
+        const { dE: enuE, dN: enuN, dU: enuU } = ecefDeltaToLocalEnu(
           rawE,
           rawN,
           rawU,
@@ -1573,9 +1395,9 @@ export class LSAEngine {
       toGeo.latDeg,
       toGeo.lonDeg,
     );
-    const fromEcef = this.geodeticToEcef(fromGeo.latDeg, fromGeo.lonDeg, fromEllipsoidHeight);
-    const toEcef = this.geodeticToEcef(toGeo.latDeg, toGeo.lonDeg, toEllipsoidHeight);
-    const local = this.ecefDeltaToLocalEnu(
+    const fromEcef = geodeticToEcef(fromGeo.latDeg, fromGeo.lonDeg, fromEllipsoidHeight);
+    const toEcef = geodeticToEcef(toGeo.latDeg, toGeo.lonDeg, toEllipsoidHeight);
+    const local = ecefDeltaToLocalEnu(
       toEcef.x - fromEcef.x,
       toEcef.y - fromEcef.y,
       toEcef.z - fromEcef.z,
@@ -6340,7 +6162,7 @@ export class LSAEngine {
                 };
                 const toDisplayCovariance = (covariance: number[][]) => {
                   if (!displayTransform || covariance.length !== 3) return covariance;
-                  return this.transformSymmetricCovariance3(displayTransform, covariance);
+                  return transformSymmetricCovariance3(displayTransform, covariance);
                 };
                 const displayResidualVector = toDisplayVector(solveResidualVector);
                 const displayQvv = toDisplayCovariance(solveQvv);

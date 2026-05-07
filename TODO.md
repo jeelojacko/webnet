@@ -14,6 +14,7 @@
     - [x] Current slice - extract App run-comparison and workspace-reset orchestration hook
     - [x] Current slice - extract App project/import/workspace orchestration hook around project-file and import-review workflows
     - [ ] Extract App orchestration hook and keep `App.tsx` as composition shell
+    - [x] Current slice - extract remaining App run/workspace orchestration hook
   - [x] Batch 2 - heavy UI surfaces
     - [x] Split `ReportView.tsx` config/sections into focused modules
       - [x] Extract report formatters, sideshot section, header-tooltip resolver, residual/robust/TS-correlation diagnostics, traverse/GPS/leveling loop diagnostics, and direction diagnostics into `src/components/report/*`
@@ -25,8 +26,10 @@
     - [x] Current slice - extract `industryListing.ts` top/settings/project-metadata, adjusted-observation, and error-propagation section builders
     - [ ] Split `industryListing.ts` into formatting and section-builder seams
     - [ ] Split `importers.ts` into importer-family modules plus shared helpers
+    - [x] Current slice - extract importer families and shared importer helpers
   - [ ] Batch 4 - solver-core decomposition
     - [ ] Extract private `adjust.ts` helpers into focused engine modules without changing solve flow
+    - [x] Current slice - extract adjust math, GPS, covariance, and diagnostics helpers
 
 - [x] Worker lazy-load split batch (May 2026): move heavy solve/export modules behind worker-side dynamic imports so worker entry bundles shrink further without changing solve/export behavior.
 - [x] Dependency hardening + worker bundle reduction batch (May 2026): clear `npm install`/audit dependency warnings with safe direct upgrades and transitive overrides, split artifact export work out of the adjustment worker to reduce the solve-worker production bundle, and keep worker/export behavior covered with focused regression checks.

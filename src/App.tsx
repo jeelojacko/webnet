@@ -23,8 +23,6 @@ import { DEFAULT_INPUT } from './defaultInput';
 import { RAD_TO_DEG, dmsToRad } from './engine/angles';
 import { buildRunComparisonText } from './engine/qaWorkflow';
 import { confirmActionGuard } from './engine/actionGuards';
-import { runAdjustmentSession } from './engine/runSession';
-import { createRunProfileBuilders } from './engine/runProfileBuilders';
 import {
   ADJUSTED_POINTS_ALL_COLUMNS,
   ADJUSTED_POINTS_PRESET_COLUMNS,
@@ -45,9 +43,9 @@ import {
   DEFAULT_CANADA_CRS_ID,
 } from './engine/crsCatalog';
 import { type ImportedInputNotice } from './engine/importers';
-import { useAdjustmentWorkflow } from './hooks/useAdjustmentWorkflow';
 import { useArtifactBuilder } from './hooks/useArtifactBuilder';
 import { resolveDraftCrsSelection } from './crsDraftSelection';
+import { useAppRunWorkflowShell } from './hooks/useAppRunWorkflowShell';
 import { useExportWorkflow } from './hooks/useExportWorkflow';
 import { useAppIndustryOutput } from './hooks/useAppIndustryOutput';
 import { useAppProjectOptionsModal } from './hooks/useAppProjectOptionsModal';
@@ -800,37 +798,60 @@ const App: React.FC<AppProps> = ({
   function normalizeSolveProfile(_profile: SolveProfile): SolveProfile {
     return 'industry-parity';
   }
+  const activateReportTab = useCallback(() => {
+    setActiveTab('report');
+  }, [setActiveTab]);
 
-  const { buildRunDiagnostics } = createRunProfileBuilders({
+  const {
+    buildRunDiagnosticsWithProjectMetadata,
+    exportRunDiagnostics,
+    pipelineState,
+    cancelAdjustment,
+    excludedIds,
+    overrides,
+    clusterReviewDecisions,
+    activeClusterApprovedMerges,
+    applyImpactExclusion,
+    applyPreanalysisPlanningAction,
+    toggleExclude,
+    clearExclusions,
+    handleOverride,
+    resetOverrides,
+    handleClusterDecisionStatus,
+    handleClusterCanonicalSelection,
+    applyClusterReviewMerges,
+    resetClusterReview,
+    clearClusterApprovedMerges,
+    resetAdjustmentWorkflowState,
+    restoreAdjustmentWorkflowState,
+    handleValidatedRun,
+  } = useAppRunWorkflowShell({
     projectInstruments,
     selectedInstrument,
     defaultIndustryInstrumentCode: INDUSTRY_DEFAULT_INSTRUMENT_CODE,
     defaultIndustryInstrument: INDUSTRY_DEFAULT_INSTRUMENT,
     normalizeSolveProfile,
+    projectSession,
+    activeProjectRunFiles,
+    result,
+    runDiagnostics,
+    settings,
+    parseSettings,
+    effectiveRunInput,
+    lastRunInput,
+    effectiveRunIncludeFiles,
+    geoidSourceData,
+    currentRunSettingsSnapshot,
+    setResult,
+    setRunDiagnostics,
+    setRunElapsedMs,
+    setLastRunInput,
+    setLastRunSettingsSnapshot,
+    activateReportTab,
+    recordRunSnapshot,
+    projectRunValidation,
+    setImportNotice,
   });
-  const buildRunDiagnosticsWithProjectMetadata = useCallback(
-    (base: ParseSettings, solved?: AdjustmentResult): RunDiagnostics => {
-      const next = buildRunDiagnostics(base, solved);
-      const projectName = projectSession?.manifest.name ?? ACTIVE_PARITY_STARTUP_DEFAULTS?.projectName;
-      const projectSourceFiles =
-        activeProjectRunFiles.length > 0 ? activeProjectRunFiles.map((file) => file.name) : next.projectSourceFiles;
-      const projectFolder =
-        activeProjectRunFiles.length > 0
-          ? activeProjectRunFiles[0]?.name.replace(/[\\/][^\\/]+$/, '')
-          : next.projectFolder;
-      if (!projectName && (!projectSourceFiles || projectSourceFiles.length === 0) && !projectFolder) {
-        return next;
-      }
-      return {
-        ...next,
-        projectName: projectName ?? next.projectName,
-        projectFolder: projectFolder ?? next.projectFolder,
-        projectSourceFiles: projectSourceFiles ?? next.projectSourceFiles,
-      };
-    },
-    [activeProjectRunFiles, buildRunDiagnostics, projectSession],
-  );
-
   const { industryOutputText, handleIndustryListingSortChange } = useAppIndustryOutput({
     activeTab,
     result,
@@ -852,71 +873,11 @@ const App: React.FC<AppProps> = ({
     () => (runComparisonSummary ? buildRunComparisonText(runComparisonSummary) : ''),
     [runComparisonSummary],
   );
-  const activateReportTab = useCallback(() => {
-    setActiveTab('report');
-  }, [setActiveTab]);
-  const exportRunDiagnostics = result
-    ? (runDiagnostics ?? buildRunDiagnosticsWithProjectMetadata(parseSettings, result))
-    : null;
   const { buildArtifacts } = useArtifactBuilder();
   const handleInputChange = (value: string) => {
     setEditorInput(value);
     if (importNotice) setImportNotice(null);
   };
-
-  const {
-    pipelineState,
-    cancelAdjustment,
-    excludedIds,
-    overrides,
-    clusterReviewDecisions,
-    activeClusterApprovedMerges,
-    handleRun,
-    applyImpactExclusion,
-    applyPreanalysisPlanningAction,
-    toggleExclude,
-    clearExclusions,
-    handleOverride,
-    resetOverrides,
-    handleClusterDecisionStatus,
-    handleClusterCanonicalSelection,
-    applyClusterReviewMerges,
-    resetClusterReview,
-    clearClusterApprovedMerges,
-    resetAdjustmentWorkflowState,
-    restoreAdjustmentWorkflowState,
-  } = useAdjustmentWorkflow<RunDiagnostics>({
-    input: effectiveRunInput,
-    lastRunInput,
-    settings,
-    parseSettings,
-    projectInstruments,
-    selectedInstrument,
-    projectIncludeFiles: effectiveRunIncludeFiles,
-    projectRunFiles: activeProjectRunFiles,
-    geoidSourceData,
-    currentRunSettingsSnapshot,
-    result,
-    buildRunDiagnostics: buildRunDiagnosticsWithProjectMetadata,
-    directRunner: runAdjustmentSession,
-    setResult,
-    setRunDiagnostics,
-    setRunElapsedMs,
-    setLastRunInput,
-    setLastRunSettingsSnapshot,
-    activateReportTab,
-    recordRunSnapshot,
-  });
-  const handleValidatedRun = React.useCallback(() => {
-    if (!projectRunValidation.ok) {
-      setImportNotice({
-        title: 'Run blocked',
-        detailLines: projectRunValidation.errors,
-      });
-      return;
-    }
-    handleRun();
-  }, [handleRun, projectRunValidation, setImportNotice]);
   const appRunWorkspaceReview = useAppRunWorkspaceReview({
     result,
     excludedIds,
