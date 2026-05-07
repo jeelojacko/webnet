@@ -54,6 +54,7 @@ import { useExportWorkflow } from './hooks/useExportWorkflow';
 import { useImportReviewWorkflow } from './hooks/useImportReviewWorkflow';
 import { useAppIndustryOutput } from './hooks/useAppIndustryOutput';
 import { useAppProjectOptionsModal } from './hooks/useAppProjectOptionsModal';
+import { useAppRunComparisonPanel } from './hooks/useAppRunComparisonPanel';
 import { useAppReviewQueue } from './hooks/useAppReviewQueue';
 import { useAppRunWorkspaceReview } from './hooks/useAppRunWorkspaceReview';
 import { useAppWorkspaceDraft } from './hooks/useAppWorkspaceDraft';
@@ -1222,23 +1223,44 @@ const App: React.FC<AppProps> = ({
     createCustomLevelLoopTolerancePreset,
     resolveLevelLoopTolerancePreset,
   });
-
-  const handleResetToLastRun = () => {
-    if (lastRunInput != null) handleEditorInputChange(lastRunInput);
-    clearWorkspaceArtifacts();
-    resetImportReviewWorkflow();
-    resetAdjustmentWorkflowState();
-    clearRunComparisonState();
-    resetWorkspaceReviewState();
-  };
-
-  const handleClearCurrentDraft = React.useCallback(() => {
-    clearCurrentDraft();
-    setImportNotice({
-      title: 'Local draft cleared',
-      detailLines: ['Browser-local draft recovery data was cleared for the current workspace.'],
-    });
-  }, [clearCurrentDraft, setImportNotice]);
+  const {
+    showRunComparisonPanel,
+    handleResetToLastRun,
+    handleClearCurrentDraft,
+    handleSaveCurrentSnapshot,
+    handleCompareWithSavedRun,
+    handleRenameSavedRun,
+    handleUpdateSavedRunNotes,
+    handleDeleteSavedRun,
+    handleSelectBaseline,
+    handleTogglePinBaseline,
+    handleStationThresholdChange,
+    handleResidualThresholdChange,
+    handleCompareSelectStation,
+    handleCompareSelectObservation,
+  } = useAppRunComparisonPanel({
+    lastRunInput,
+    handleEditorInputChange,
+    clearWorkspaceArtifacts,
+    resetImportReviewWorkflow,
+    resetAdjustmentWorkflowState,
+    clearRunComparisonState,
+    resetWorkspaceReviewState,
+    clearCurrentDraft,
+    setImportNotice,
+    currentRunSnapshot,
+    savedRunSnapshots,
+    saveCurrentRunSnapshot,
+    buildSavedRunReopenState,
+    setComparisonSelection,
+    renameSavedRunSnapshot,
+    updateSavedRunSnapshotNotes,
+    removeSavedRunSnapshot,
+    baselineRunSnapshot,
+    selectStation,
+    selectObservation,
+    setActiveTab,
+  });
 
   return (
     <div className="fixed inset-0 flex flex-col bg-slate-900 text-slate-100 font-sans overflow-hidden">
@@ -1445,7 +1467,7 @@ const App: React.FC<AppProps> = ({
         )}
 
         <div className="flex flex-col bg-slate-950 flex-1 min-w-0 overflow-hidden">
-          {(currentRunSnapshot || savedRunSnapshots.length > 0) && (
+          {showRunComparisonPanel && (
             <RunComparisonPanel
               currentSnapshot={currentRunSnapshot}
               baselineSnapshot={baselineRunSnapshot}
@@ -1455,77 +1477,18 @@ const App: React.FC<AppProps> = ({
               isCurrentSnapshotSaved={currentSavedRunSnapshot != null}
               comparisonSelection={comparisonSelection}
               comparisonSummary={runComparisonSummary}
-              onSaveCurrentSnapshot={() => {
-                const saveOutcome = saveCurrentRunSnapshot({
-                  reopenState: buildSavedRunReopenState(),
-                });
-                if (saveOutcome.status === 'saved') {
-                  setImportNotice({
-                    title: 'Run snapshot saved',
-                    detailLines: [
-                      `Stored ${saveOutcome.snapshot.label}.`,
-                      'Saved run snapshots persist in browser recovery and portable project exports.',
-                    ],
-                  });
-                  return;
-                }
-                if (saveOutcome.status === 'already-saved') {
-                  setImportNotice({
-                    title: 'Run snapshot already saved',
-                    detailLines: [
-                      `${saveOutcome.snapshot.label} is already in the saved-run list.`,
-                    ],
-                  });
-                }
-              }}
+              onSaveCurrentSnapshot={handleSaveCurrentSnapshot}
               onRestoreSavedRun={handleRestoreSavedRun}
-              onCompareWithSavedRun={(snapshotId) =>
-                setComparisonSelection((prev) => ({
-                  ...prev,
-                  baselineRunId: snapshotId,
-                  pinnedBaselineRunId: null,
-                }))
-              }
-              onRenameSavedRun={(snapshotId, label) => renameSavedRunSnapshot(snapshotId, label)}
-              onUpdateSavedRunNotes={(snapshotId, notes) =>
-                updateSavedRunSnapshotNotes(snapshotId, notes)
-              }
-              onDeleteSavedRun={(snapshotId) => removeSavedRunSnapshot(snapshotId)}
-              onSelectBaseline={(snapshotId) =>
-                setComparisonSelection((prev) => ({
-                  ...prev,
-                  baselineRunId: snapshotId || null,
-                }))
-              }
-              onTogglePinBaseline={() =>
-                setComparisonSelection((prev) => ({
-                  ...prev,
-                  pinnedBaselineRunId:
-                    baselineRunSnapshot && prev.pinnedBaselineRunId !== baselineRunSnapshot.id
-                      ? baselineRunSnapshot.id
-                      : null,
-                }))
-              }
-              onStationThresholdChange={(value) =>
-                setComparisonSelection((prev) => ({
-                  ...prev,
-                  stationMovementThreshold: value,
-                }))
-              }
-              onResidualThresholdChange={(value) =>
-                setComparisonSelection((prev) => ({
-                  ...prev,
-                  residualDeltaThreshold: value,
-                }))
-              }
-              onSelectStation={(stationId) => {
-                selectStation(stationId, 'compare');
-                setActiveTab('map');
-              }}
-              onSelectObservation={(observationId) => {
-                selectObservation(observationId, 'compare');
-                setActiveTab('report');
-              }}
+              onCompareWithSavedRun={handleCompareWithSavedRun}
+              onRenameSavedRun={handleRenameSavedRun}
+              onUpdateSavedRunNotes={handleUpdateSavedRunNotes}
+              onDeleteSavedRun={handleDeleteSavedRun}
+              onSelectBaseline={handleSelectBaseline}
+              onTogglePinBaseline={handleTogglePinBaseline}
+              onStationThresholdChange={handleStationThresholdChange}
+              onResidualThresholdChange={handleResidualThresholdChange}
+              onSelectStation={handleCompareSelectStation}
+              onSelectObservation={handleCompareSelectObservation}
               reviewActionsContent={
                 <WorkspaceReviewActions
                   canNavigateSuspects={hasSuspects}

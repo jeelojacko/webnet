@@ -11,6 +11,7 @@
     - [x] Move shared project-options shell controls into `src/components/projectOptions/SettingsControls.tsx`
     - [x] Current slice - extract App industry-output, review-queue, and project-options modal orchestration hooks
     - [x] Current slice - extract App workspace draft/recovery orchestration hook
+    - [x] Current slice - extract App run-comparison and workspace-reset orchestration hook
     - [ ] Extract App orchestration hook and keep `App.tsx` as composition shell
   - [x] Batch 2 - heavy UI surfaces
     - [x] Split `ReportView.tsx` config/sections into focused modules
@@ -19,6 +20,7 @@
       - [x] Extract `adjustment`, `general`, `instrument`, `listing-file`, `project-files`, `special`, `gps`, and `other-files` tab panels into dedicated components
   - [ ] Batch 3 - listing/importer monoliths
     - [x] Current slice - extract `industryListing.ts` shared formatters/sort helpers
+    - [x] Current slice - extract `industryListing.ts` leveling-only section builder
     - [ ] Split `industryListing.ts` into formatting and section-builder seams
     - [ ] Split `importers.ts` into importer-family modules plus shared helpers
   - [ ] Batch 4 - solver-core decomposition
