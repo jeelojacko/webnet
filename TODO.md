@@ -1,5 +1,29 @@
 # TODO - WebNet
 
+- [ ] Big-file refactor batch (May 2026): split code-heavy monoliths into smaller seams with no behavior drift.
+  - [x] Batch 0 - baseline lock + extraction guards
+    - [x] Record current big-file scope and target caps in planning
+    - [x] Add focused characterization coverage for extracted App helpers before broader refactors
+    - [x] Freeze App/project-options helper contracts while moving pure helpers and config out of `App.tsx`
+  - [ ] Batch 1 - app shell shrink
+    - [x] Move pure App helper logic into `src/app/appHelpers.ts`
+    - [x] Move project-options/static app config into `src/app/appConfig.ts`
+    - [x] Move shared project-options shell controls into `src/components/projectOptions/SettingsControls.tsx`
+    - [x] Current slice - extract App industry-output, review-queue, and project-options modal orchestration hooks
+    - [x] Current slice - extract App workspace draft/recovery orchestration hook
+    - [ ] Extract App orchestration hook and keep `App.tsx` as composition shell
+  - [x] Batch 2 - heavy UI surfaces
+    - [x] Split `ReportView.tsx` config/sections into focused modules
+      - [x] Extract report formatters, sideshot section, header-tooltip resolver, residual/robust/TS-correlation diagnostics, traverse/GPS/leveling loop diagnostics, and direction diagnostics into `src/components/report/*`
+    - [x] Split `ProjectOptionsModal.tsx` tabs and repeated controls into focused modules
+      - [x] Extract `adjustment`, `general`, `instrument`, `listing-file`, `project-files`, `special`, `gps`, and `other-files` tab panels into dedicated components
+  - [ ] Batch 3 - listing/importer monoliths
+    - [x] Current slice - extract `industryListing.ts` shared formatters/sort helpers
+    - [ ] Split `industryListing.ts` into formatting and section-builder seams
+    - [ ] Split `importers.ts` into importer-family modules plus shared helpers
+  - [ ] Batch 4 - solver-core decomposition
+    - [ ] Extract private `adjust.ts` helpers into focused engine modules without changing solve flow
+
 - [x] Worker lazy-load split batch (May 2026): move heavy solve/export modules behind worker-side dynamic imports so worker entry bundles shrink further without changing solve/export behavior.
 - [x] Dependency hardening + worker bundle reduction batch (May 2026): clear `npm install`/audit dependency warnings with safe direct upgrades and transitive overrides, split artifact export work out of the adjustment worker to reduce the solve-worker production bundle, and keep worker/export behavior covered with focused regression checks.
 - [x] Security, robustness, and optimization batch (May 2026): remove dynamic geoid runtime loading, harden worker/storage/persistence surfaces, replace high-value weak typing and ad hoc IDs with shared typed helpers, optimize IndexedDB single-project file access, and trim redundant CLI process-spawn coverage while preserving parity and user-visible behavior.
