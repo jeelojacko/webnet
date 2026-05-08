@@ -12,7 +12,7 @@ import {
   sanitizeStationId,
   sourceLeaf,
   takeLeadingLines,
-} from '../importers';
+} from './shared';
 
 const FIELDGENIUS_RECORD_CODES = new Set([
   'OC',

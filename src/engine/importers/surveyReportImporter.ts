@@ -17,7 +17,7 @@ import {
   sanitizeStationId,
   sourceLeaf,
   tableRowPairsToMap,
-} from '../importers';
+} from './shared';
 
 interface SurveyReportSetupContext {
   occupyId?: string;

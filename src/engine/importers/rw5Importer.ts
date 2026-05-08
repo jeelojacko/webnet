@@ -8,14 +8,14 @@ import type {
 import {
   appendImportedObservationBundle,
   buildTraceDetailLine,
+  choosePreferredStation,
   parseDmsAngleDegrees,
   parseQuadrantBearingDegrees,
-  choosePreferredStation,
   plural,
   sanitizeStationId,
   sourceLeaf,
   takeLeadingLines,
-} from '../importers';
+} from './shared';
 import { detectFieldGeniusRaw } from './fieldGeniusImporter';
 
 const RW5_RECORD_CODES = new Set([

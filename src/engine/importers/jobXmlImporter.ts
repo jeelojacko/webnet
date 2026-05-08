@@ -12,7 +12,9 @@ import type {
   ImportedTraceEntry,
 } from '../importers';
 import {
+  buildTraceDetailLine,
   buildLineNumberResolver,
+  choosePreferredStation,
   collapseWhitespace,
   decodeXmlEntities,
   extractXmlAttribute,
@@ -24,7 +26,7 @@ import {
   plural,
   sanitizeStationId,
   sourceLeaf,
-} from '../importers';
+} from './shared';
 
 interface JobXmlSetupContext {
   occupyId?: string;
@@ -168,36 +170,6 @@ const computeLocalAzimuthDeg = (
   const deltaNorth = toStation.northM - fromStation.northM;
   if (Math.abs(deltaEast) < 1e-12 && Math.abs(deltaNorth) < 1e-12) return undefined;
   return normalizeAngleDeg(Math.atan2(deltaEast, deltaNorth) * RAD_TO_DEG);
-};
-
-const choosePreferredStation = (
-  existing: ImportedControlStationRecord | undefined,
-  candidate: ImportedControlStationRecord,
-): ImportedControlStationRecord => {
-  if (!existing) return candidate;
-  if (existing.coordinateMode !== candidate.coordinateMode) {
-    return candidate.coordinateMode === 'geodetic' ? candidate : existing;
-  }
-  const existingScore =
-    Number(existing.heightM != null) +
-    Number(existing.sigmaEastM != null || existing.sigmaNorthM != null) +
-    Number(existing.description != null);
-  const candidateScore =
-    Number(candidate.heightM != null) +
-    Number(candidate.sigmaEastM != null || candidate.sigmaNorthM != null) +
-    Number(candidate.description != null);
-  return candidateScore >= existingScore ? candidate : existing;
-};
-
-const buildTraceDetailLine = (trace: ImportedTraceEntry[]): string | null => {
-  const warnings = trace.filter((entry) => entry.level === 'warning').length;
-  const errors = trace.filter((entry) => entry.level === 'error').length;
-  if (warnings === 0 && errors === 0) return null;
-  const parts: string[] = [];
-  if (warnings > 0) parts.push(`Warnings: ${warnings}`);
-  if (errors > 0) parts.push(`Errors: ${errors}`);
-  parts.push('unsupported content left in comment form for traceability.');
-  return parts.join('. ');
 };
 
 const pickJobXmlBacksightCircleDeg = (

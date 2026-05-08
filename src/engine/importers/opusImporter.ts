@@ -9,7 +9,7 @@ import {
   parseHeightLine,
   parseLatitudeLine,
   parseLongitudeLine,
-} from '../importers';
+} from './shared';
 
 export const detectOpusReport = (input: string): boolean => {
   const upper = input.toUpperCase();

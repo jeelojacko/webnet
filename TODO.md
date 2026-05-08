@@ -24,6 +24,7 @@
     - [x] Current slice - extract `industryListing.ts` shared formatters/sort helpers
     - [x] Current slice - extract `industryListing.ts` leveling-only section builder
     - [x] Current slice - extract `industryListing.ts` top/settings/project-metadata, adjusted-observation, and error-propagation section builders
+    - [x] Current slice - move shared importer runtime helpers into `src/engine/importers/shared.ts` so importer-family modules no longer pin the importer shell into the lazy import chunk
     - [ ] Split `industryListing.ts` into formatting and section-builder seams
     - [ ] Split `importers.ts` into importer-family modules plus shared helpers
     - [x] Current slice - extract importer families and shared importer helpers

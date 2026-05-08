@@ -18,7 +18,7 @@ import {
   plural,
   sanitizeStationId,
   sourceLeaf,
-} from '../importers';
+} from './shared';
 
 interface DbxSetupContext {
   occupyId?: string;
