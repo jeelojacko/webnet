@@ -1,5 +1,6 @@
 import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { ListingSortObservationsBy } from '../listingSortObservations';
+import { noteUiPerfStage, noteUiTabReady } from '../hooks/useUiPerfMonitor';
 
 interface IndustryOutputViewProps {
   text: string;
@@ -107,6 +108,12 @@ const IndustryOutputView: React.FC<IndustryOutputViewProps> = ({
   } | null>(null);
   const lines = useMemo(() => text.split('\n'), [text]);
   const sections = useMemo(() => extractSectionTargets(text), [text]);
+
+  useEffect(() => {
+    if (text.length === 0) return;
+    noteUiPerfStage('industryOutputReady');
+    noteUiTabReady('industry-output');
+  }, [text]);
   const sectionByLine = useMemo(() => {
     const next: Record<number, SectionTarget> = {};
     sections.forEach((section) => {

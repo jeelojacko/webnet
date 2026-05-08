@@ -1,6 +1,6 @@
 import type { Observation } from '../../types';
 
-export const REPORT_TABLE_WINDOW_SIZE = 100;
+export const REPORT_TABLE_WINDOW_SIZE = 25;
 export const REPORT_DIAGNOSTIC_WINDOW_SIZE = 50;
 
 export const OBSERVATION_FILTER_OPTIONS: Array<{
@@ -57,9 +57,49 @@ export const COLLAPSIBLE_DETAIL_SECTION_IDS = [
   'gps-vectors',
   'distances-ts',
   'leveling-dh',
+  'processing-log',
 ] as const;
 
 export type CollapsibleDetailSectionId = (typeof COLLAPSIBLE_DETAIL_SECTION_IDS)[number];
+
+const DEFAULT_COLLAPSED_DETAIL_SECTION_IDS = new Set<CollapsibleDetailSectionId>([
+  'report-filters',
+  'solve-profile-diagnostics',
+  'residual-diagnostics',
+  'robust-diagnostics',
+  'robust-vs-classical-suspects',
+  'ts-correlation-diagnostics',
+  'traverse-diagnostics',
+  'traverse-closure-suspects',
+  'gps-loop-diagnostics',
+  'leveling-loop-diagnostics',
+  'leveling-loop-suspects',
+  'leveling-segment-suspects',
+  'gps-loop-suspects',
+  'direction-set-diagnostics',
+  'direction-target-repeatability',
+  'direction-face-treatment-diagnostics',
+  'direction-reject-diagnostics',
+  'direction-target-suspects-top',
+  'direction-repeatability-multi-set',
+  'direction-repeatability-suspects-top',
+  'setup-diagnostics',
+  'post-adjusted-sideshots-ts',
+  'post-adjusted-gps-sideshot-vectors',
+  'post-adjusted-gnss-topo-coordinates',
+  'gps-rover-offsets',
+  'per-type-summary',
+  'relative-precision-unknowns',
+  'angles-ts',
+  'directions-db-dn',
+  'bearings-azimuths',
+  'directions-azimuth',
+  'zenith-vertical-angles',
+  'gps-vectors',
+  'distances-ts',
+  'leveling-dh',
+  'processing-log',
+]);
 
 export const createCollapsedDetailSectionsState = (): Record<
   CollapsibleDetailSectionId,
@@ -67,7 +107,7 @@ export const createCollapsedDetailSectionsState = (): Record<
 > => {
   const next = {} as Record<CollapsibleDetailSectionId, boolean>;
   COLLAPSIBLE_DETAIL_SECTION_IDS.forEach((id) => {
-    next[id] = id === 'report-filters' || id === 'solve-profile-diagnostics';
+    next[id] = DEFAULT_COLLAPSED_DETAIL_SECTION_IDS.has(id);
   });
   return next;
 };

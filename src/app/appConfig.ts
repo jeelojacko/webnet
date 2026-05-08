@@ -179,7 +179,7 @@ export const SETTINGS_TOOLTIPS = {
   instrumentZenithSeconds:
     'Default zenith or vertical-angle precision, in arcseconds. Disabled in 2D mode.',
   instrumentDifferentialLevels:
-    'Default differential-level precision for leveling observations, in millimeters per kilometer. Used before the project-level .LWEIGHT fallback. Disabled in 2D mode.',
+    'Default differential-level precision for leveling observations, in millimeters per kilometer. Used only when no inline or project-level .LWEIGHT value is active. Disabled in 2D mode.',
   instrumentElevDiffConstant:
     'Elevation-difference constant term used for vertical precision modeling. Disabled in 2D mode.',
   instrumentElevDiffPpm:

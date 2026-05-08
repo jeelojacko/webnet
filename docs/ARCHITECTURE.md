@@ -43,6 +43,7 @@ These modules coordinate:
 - export dispatch
 - report/map shared review state
 - saved runs and compare workflows
+- post-solve hydration timing, deferred QA-derived review state, and staged heavy-tab warmup
 
 ### Engine core
 The engine is centered under `src/engine/`.
@@ -199,6 +200,12 @@ The UI renders those shaped models through:
 - export selector flows
 - local workspace recovery
 
+After a successful run, the app shell now follows a two-phase handoff:
+- the urgent phase commits the core result, active tab, and minimal run metadata so the report surface becomes interactive first
+- a deferred phase computes QA-derived review/map models, warms heavy tabs sequentially, and lets `Processing Summary`, `Industry Standard Output`, and `Map` mount progressively on idle or first open
+
+In dev builds, app-side UI timing helpers record worker-success, result-commit, deferred-build, tab-ready, and first-tab-click milestones without changing engine or parity-sensitive output contracts.
+
 ## Boundary rules
 
 ### Parser boundary
@@ -229,9 +236,13 @@ Current performance-oriented architecture includes:
 - worker-backed browser run execution
 - shared run-session orchestration between browser and CLI paths
 - lazy-loaded heavy result views and modals
+- staged, cancellable post-solve heavy-tab prewarm instead of eager multi-tab remounts
+- deferred QA-derived review/map model construction after the urgent result commit path
 - memoized report-derived arrays and maps
+- cached processing-summary text generation keyed by result identity plus narrow diagnostics inputs
 - table windowing and load-more behavior for heavy sections
 - dense-map guards for label suppression and clipped geometry
+- dev-only UI performance instrumentation for post-solve responsiveness and browser long-task visibility
 - parse and importer hot-path optimizations
 - benchmark coverage for large browser workloads and imported-job flows
 

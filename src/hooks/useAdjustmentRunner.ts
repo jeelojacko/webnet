@@ -11,6 +11,7 @@ import {
   type RunSessionRequest,
 } from '../engine/runSession';
 import { createStableRuntimeId } from '../engine/id';
+import { beginUiPerfRun, noteUiPerfStage } from './useUiPerfMonitor';
 
 export interface RunPipelineState {
   status: 'idle' | 'running' | 'cancelled' | 'failed';
@@ -87,6 +88,7 @@ export const useAdjustmentRunner = (
       pendingRunsRef.current.delete(message.runId);
 
       if (message.type === 'success') {
+        noteUiPerfStage('workerSuccessReceived');
         setPipelineState({
           status: 'idle',
           runId: null,
@@ -149,6 +151,7 @@ export const useAdjustmentRunner = (
   const run = useCallback(
     (request: RunSessionRequest) => {
       const runId = createStableRuntimeId('run');
+      beginUiPerfRun();
       setPipelineState({
         status: 'running',
         runId,

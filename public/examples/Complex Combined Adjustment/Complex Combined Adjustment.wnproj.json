@@ -86,6 +86,7 @@
       "applyCurvatureRefraction": true,
       "refractionCoefficient": 0.07,
       "verticalReduction": "curvref",
+	  "levelWeight": 1.5,
       "levelLoopToleranceBaseMm": 0,
       "levelLoopTolerancePerSqrtKmMm": 4,
       "crsTransformEnabled": false,

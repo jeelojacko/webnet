@@ -1,4 +1,12 @@
-import { useCallback, useMemo, type Dispatch, type SetStateAction } from 'react';
+import {
+  startTransition,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  type Dispatch,
+  type SetStateAction,
+} from 'react';
 import {
   buildValueFingerprint,
   cloneSavedRunSnapshots,
@@ -20,6 +28,7 @@ import {
   useWorkspaceReviewState,
 } from './useWorkspaceReviewState';
 import type { ProjectRunFile } from '../engine/projectWorkspace';
+import { measureUiPerfBlock } from './useUiPerfMonitor';
 
 interface PipelineStateLike {
   status: 'idle' | 'running' | 'failed' | 'cancelled';
@@ -83,12 +92,38 @@ export const useAppRunWorkspaceReview = ({
   setImportNotice,
   setActiveTab,
 }: UseAppRunWorkspaceReviewArgs) => {
-  const qaDerivedResult: DerivedQaResult | null = useMemo(
-    () => (result ? buildQaDerivedResult(result) : null),
-    [result],
-  );
+  const [qaDerivedResult, setQaDerivedResult] = useState<DerivedQaResult | null>(null);
+  const [qaDerivedReady, setQaDerivedReady] = useState(false);
+
+  useEffect(() => {
+    if (!result) {
+      setQaDerivedResult(null);
+      setQaDerivedReady(false);
+      return undefined;
+    }
+    setQaDerivedResult(null);
+    setQaDerivedReady(false);
+    let cancelled = false;
+    const handle = globalThis.setTimeout(() => {
+      if (cancelled) return;
+      const nextDerived = measureUiPerfBlock('buildQaDerivedResult', () =>
+        buildQaDerivedResult(result),
+      );
+      startTransition(() => {
+        if (cancelled) return;
+        setQaDerivedResult(nextDerived);
+        setQaDerivedReady(true);
+      });
+    }, 0);
+    return () => {
+      cancelled = true;
+      globalThis.clearTimeout(handle);
+    };
+  }, [result]);
+
   const workspaceReviewState = useWorkspaceReviewState({
     derivedResult: qaDerivedResult,
+    derivedResultReady: qaDerivedReady,
     result,
     excludedIds,
   });

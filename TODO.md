@@ -64,6 +64,25 @@
 
 - [x] UI navigation smoothness batch (April 2026): gate/cached industry listing generation to industry tab, transition tab switches, one-time lazy-tab prewarm after first solve, persist map navigation state across tab remounts, and add focused UI perf/regression coverage.
 
+- [x] Report progressive-disclosure batch (May 2026): keep heavyweight late-report sections collapsed by default, reduce initial row windows, and add explicit `Show all` controls so solved reports feel lighter on first open.
+  - [x] Collapse `Processing Log` by default and avoid rendering its rows until opened
+  - [x] Default-collapse late detail sections from residual diagnostics downward, including observation-family tables and lower-priority diagnostics
+  - [x] Reduce the default report row window from 100 to 25 and add `Show all` beside `Show more`
+  - [x] Update focused report state/windowing/operator tests for the new progressive-disclosure contract
+
+- [x] Post-adjustment UI responsiveness batch (May 2026): reduce main-thread blocking after worker solve completion so toolbar, tabs, and review controls stay responsive immediately after a run.
+  - [x] Add app-side post-solve timing instrumentation for worker-success handoff, result commit, deferred QA-model build, tab-ready milestones, and first tab-click latency
+  - [x] Defer non-critical post-solve state work out of the urgent result handoff path and keep QA-derived review models lazy/progressive
+  - [x] Replace eager multi-tab prewarm with staged/cancellable lazy-tab prewarm and progressive heavy-tab hydration
+  - [x] Trim expensive report/map/processing-summary recomputation on first post-run interaction without changing solve/report behavior
+  - [x] Extend UI responsiveness tests and browser benchmark guardrails for post-solve clickability
+
+- [x] Level-weight precedence batch (May 2026): make leveling sigma selection use fallback priority instead of additive stacking.
+  - [x] Prove inline `.LWEIGHT` overrides project `General -> .LWEIGHT` and instrument differential-level defaults
+  - [x] Make project `General -> .LWEIGHT` override instrument differential-level defaults for both `L` and non-`L` leveling-producing records
+  - [x] Keep instrument differential-level setting as last-resort fallback only when no project or inline `.LWEIGHT` is active
+  - [x] Verify the `public/examples/Complex Combined Adjustment` project keeps `levelWeight: 1.5` in the project settings payload
+
 - [x] Project Options UI refresh (April 2026): make `Project Files` the first tab, keep `Other Files` export-focused, move Coordinate System controls into `Adjustment`, move Leveling/Weighting into `General`, merge stochastic modeling controls into `Special`, remove legacy-removal copy, and tighten modal density/layout spacing.
 
 - [ ] add planned improvements to todo list in phased implementations before starting on imlementation

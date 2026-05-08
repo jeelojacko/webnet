@@ -20,6 +20,7 @@ interface ObservationTableSectionProps {
   rowSelectionClass: (_selected: boolean) => string;
   visibleRowsFor: <T>(_key: string, _rows: T[], _defaultSize?: number) => T[];
   showMoreRows: (_key: string, _step?: number) => void;
+  showAllRows: (_key: string, _totalCount: number) => void;
   renderSourceLineLink: (_line: number | null | undefined) => React.ReactNode;
   isSectionCollapsed: (_sectionId: CollapsibleDetailSectionId) => boolean;
   isDetailSectionPinned: (_sectionId: CollapsibleDetailSectionId) => boolean;
@@ -46,6 +47,7 @@ const ObservationTableSection: React.FC<ObservationTableSectionProps> = ({
   rowSelectionClass,
   visibleRowsFor,
   showMoreRows,
+  showAllRows,
   renderSourceLineLink,
   isSectionCollapsed,
   isDetailSectionPinned,
@@ -285,6 +287,7 @@ const ObservationTableSection: React.FC<ObservationTableSectionProps> = ({
               shownCount={visibleObsList.length}
               totalCount={obsList.length}
               onShowMore={showMoreRows}
+              onShowAll={showAllRows}
               step={REPORT_TABLE_WINDOW_SIZE}
             />
           ) : null}

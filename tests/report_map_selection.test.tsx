@@ -41,6 +41,40 @@ const setSvgRect = (svg: SVGSVGElement) => {
   });
 };
 
+const ensureSectionExpanded = async (container: HTMLElement, label: string) => {
+  const button = Array.from(container.querySelectorAll('button[aria-expanded]')).find((entry) =>
+    entry.textContent?.includes(label),
+  ) as HTMLButtonElement | undefined;
+  if (!button) throw new Error(`Section toggle "${label}" not found.`);
+  if (button.getAttribute('aria-expanded') === 'true') return;
+  await act(async () => {
+    button.click();
+  });
+};
+
+const observationSectionLabel = (type: string): string => {
+  switch (type) {
+    case 'angle':
+      return 'Angles (TS)';
+    case 'direction':
+      return 'Directions (DB/DN)';
+    case 'dist':
+      return 'Distances (TS)';
+    case 'bearing':
+      return 'Bearings/Azimuths';
+    case 'dir':
+      return 'Directions (Azimuth)';
+    case 'zenith':
+      return 'Zenith/Vertical Angles';
+    case 'gps':
+      return 'GPS Vectors';
+    case 'lev':
+      return 'Leveling dH';
+    default:
+      throw new Error(`Unsupported observation type: ${type}`);
+  }
+};
+
 const projectStation2d = (stations: Record<string, { x: number; y: number }>, stationId: string) => {
   const rows = Object.values(stations);
   const xs = rows.map((station) => station.x);
@@ -119,19 +153,20 @@ describe('report and map selection wiring', () => {
       );
     });
 
+    const svg = container.querySelector('svg') as SVGSVGElement | null;
+    if (!svg) throw new Error('Expected map svg');
+    const lineObservation = result.observations.find((obs) => obs.id === observationId);
+    if (!lineObservation) throw new Error('Expected selected line observation');
+    await ensureSectionExpanded(container, observationSectionLabel(lineObservation.type));
     const stationRow = container.querySelector(
       '[data-report-station-row="P"]',
     ) as HTMLTableRowElement;
     const observationRow = container.querySelector(
       `[data-report-observation-row="${observationId}"]`,
     ) as HTMLTableRowElement;
-    const svg = container.querySelector('svg') as SVGSVGElement | null;
-    if (!svg) throw new Error('Expected map svg');
     setSvgRect(svg);
     const stationPoint = projectStation2d(result.stations, 'P');
-    const lineObservation = result.observations.find((obs) => obs.id === observationId);
     if (
-      !lineObservation ||
       !('from' in lineObservation) ||
       !('to' in lineObservation) ||
       !result.stations[lineObservation.from] ||

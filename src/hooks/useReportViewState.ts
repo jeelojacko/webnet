@@ -63,6 +63,7 @@ export interface ReportViewState {
   setAllDetailSectionsCollapsed: (_collapsed: boolean) => void;
   visibleRowsFor: <T>(_key: string, _rows: T[], _defaultSize?: number) => T[];
   showMoreRows: (_key: string, _step?: number) => void;
+  showAllRows: (_key: string, _totalCount: number) => void;
   snapshot: ReportViewSnapshot;
   restoreSnapshot: (_snapshot: ReportViewSnapshot) => void;
   resetState: () => void;
@@ -244,6 +245,13 @@ export const useReportViewState = ({
     }));
   };
 
+  const showAllRows = (key: string, totalCount: number) => {
+    setTableRowLimits((prev) => ({
+      ...prev,
+      [key]: totalCount,
+    }));
+  };
+
   const restoreSnapshot = (nextSnapshot: ReportViewSnapshot) => {
     const normalizedSnapshot = normalizeReportViewSnapshot(nextSnapshot);
     skipNextAutoWindowResetRef.current = true;
@@ -319,6 +327,7 @@ export const useReportViewState = ({
     setAllDetailSectionsCollapsed,
     visibleRowsFor,
     showMoreRows,
+    showAllRows,
     snapshot,
     restoreSnapshot,
     resetState,

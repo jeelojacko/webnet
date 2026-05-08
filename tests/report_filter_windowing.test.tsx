@@ -123,6 +123,16 @@ const setNativeValue = (element: HTMLInputElement | HTMLSelectElement, value: st
   descriptor?.set?.call(element, value);
 };
 
+const clickSectionToggle = async (container: HTMLElement, label: string) => {
+  const button = Array.from(container.querySelectorAll('button[aria-expanded]')).find((entry) =>
+    entry.textContent?.includes(label),
+  ) as HTMLButtonElement | undefined;
+  if (!button) throw new Error(`Section toggle "${label}" not found.`);
+  await act(async () => {
+    button.click();
+  });
+};
+
 describe('ReportView filtering and windowing', () => {
   it('filters hidden observation rows by text, type, and exclusion status', async () => {
     const mounted = await mountReport();
@@ -161,6 +171,7 @@ describe('ReportView filtering and windowing', () => {
       typeFilter.dispatchEvent(new Event('change', { bubbles: true }));
       await Promise.resolve();
     });
+    await clickSectionToggle(mounted.container, 'Angles (TS)');
     expect(mounted.container.textContent).toContain('9000');
     expect(mounted.container.textContent).not.toContain('5000');
 
@@ -170,6 +181,7 @@ describe('ReportView filtering and windowing', () => {
       exclusionFilter.dispatchEvent(new Event('change', { bubbles: true }));
       await Promise.resolve();
     });
+    await clickSectionToggle(mounted.container, 'Distances (TS)');
     expect(mounted.container.textContent).toContain('5100');
     expect(mounted.container.textContent).not.toContain('5000');
 
@@ -178,17 +190,15 @@ describe('ReportView filtering and windowing', () => {
 
   it('expands observation and coordinate tables with show more actions', async () => {
     const mounted = await mountReport();
-    const expandFiltersButton = mounted.container.querySelector(
-      'button[aria-label="Expand report filters panel"]',
-    ) as HTMLButtonElement;
-    await act(async () => {
-      expandFiltersButton.click();
-    });
+    await clickSectionToggle(mounted.container, 'Distances (TS)');
     const observationShowMore = mounted.container.querySelector(
       '[data-report-load-more="observations-distances-ts"]',
     ) as HTMLButtonElement;
     const coordinateShowMore = mounted.container.querySelector(
       '[data-report-load-more="adjusted-coordinates"]',
+    ) as HTMLButtonElement;
+    const observationShowAll = mounted.container.querySelector(
+      '[data-report-show-all="observations-distances-ts"]',
     ) as HTMLButtonElement;
 
     expect(mounted.container.textContent).not.toContain('5100');
@@ -197,11 +207,22 @@ describe('ReportView filtering and windowing', () => {
     await act(async () => {
       observationShowMore.click();
     });
-    expect(mounted.container.textContent).toContain('5100');
+    expect(mounted.container.textContent).toContain('5025');
+    expect(mounted.container.textContent).not.toContain('5100');
 
     await act(async () => {
       coordinateShowMore.click();
     });
+    expect(mounted.container.textContent).toContain('P025');
+    expect(mounted.container.textContent).not.toContain('P100');
+
+    await act(async () => {
+      observationShowAll.click();
+      coordinateShowMore.click();
+      coordinateShowMore.click();
+      coordinateShowMore.click();
+    });
+    expect(mounted.container.textContent).toContain('5100');
     expect(mounted.container.textContent).toContain('P100');
 
     await mounted.cleanup();

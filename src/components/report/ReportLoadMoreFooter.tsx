@@ -5,6 +5,7 @@ interface ReportLoadMoreFooterProps {
   shownCount: number;
   totalCount: number;
   onShowMore: (_rowKey: string, _step?: number) => void;
+  onShowAll: (_rowKey: string, _totalCount: number) => void;
   step?: number;
 }
 
@@ -13,6 +14,7 @@ const ReportLoadMoreFooter: React.FC<ReportLoadMoreFooterProps> = ({
   shownCount,
   totalCount,
   onShowMore,
+  onShowAll,
   step,
 }) => {
   if (totalCount <= shownCount) return null;
@@ -22,14 +24,24 @@ const ReportLoadMoreFooter: React.FC<ReportLoadMoreFooterProps> = ({
       <span>
         Showing {shownCount} of {totalCount} rows
       </span>
-      <button
-        type="button"
-        onClick={() => onShowMore(rowKey, step)}
-        className="px-3 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-100"
-        data-report-load-more={rowKey}
-      >
-        Show more
-      </button>
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          onClick={() => onShowMore(rowKey, step)}
+          className="px-3 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-100"
+          data-report-load-more={rowKey}
+        >
+          Show more
+        </button>
+        <button
+          type="button"
+          onClick={() => onShowAll(rowKey, totalCount)}
+          className="px-3 py-1 rounded border border-slate-700 bg-slate-900 hover:bg-slate-800 text-slate-100"
+          data-report-show-all={rowKey}
+        >
+          Show all
+        </button>
+      </div>
     </div>
   );
 };

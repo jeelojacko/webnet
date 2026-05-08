@@ -9,6 +9,7 @@
     "solveBudgetMs": 12000,
     "rerunBudgetMs": 10000,
     "renderBudgetMs": 5000,
+    "qaDerivedBuildBudgetMs": 2000,
     "artifactBuildBudgetMs": 4000,
     "artifactFormat": "bundle-qa-standard-with-landxml"
   },
@@ -22,6 +23,7 @@
     "solveBudgetMs": 4500,
     "rerunBudgetMs": 3500,
     "renderBudgetMs": 3000,
+    "qaDerivedBuildBudgetMs": 1500,
     "artifactBuildBudgetMs": 2500,
     "artifactFormat": "bundle-qa-standard-with-landxml"
   },
@@ -35,6 +37,7 @@
     "solveBudgetMs": 4500,
     "rerunBudgetMs": 3500,
     "renderBudgetMs": 3000,
+    "qaDerivedBuildBudgetMs": 1500,
     "artifactBuildBudgetMs": 2500,
     "artifactFormat": "bundle-qa-standard-with-landxml"
   }

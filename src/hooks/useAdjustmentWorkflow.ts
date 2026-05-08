@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { startTransition, useCallback, useEffect, useState } from 'react';
 import { useAdjustmentRunner } from './useAdjustmentRunner';
 import type { ClusterReviewDecision, ParseSettings, RunSettingsSnapshot, SettingsState } from '../appStateTypes';
 import type {
@@ -11,6 +11,7 @@ import type {
 import type { ProjectRunFile } from '../engine/projectWorkspace';
 import type { RunSessionOutcome, RunSessionRequest } from '../engine/runSession';
 import { buildValueFingerprint } from '../engine/qaWorkflow';
+import { noteUiPerfStage } from './useUiPerfMonitor';
 
 type ClusterCandidate = NonNullable<AdjustmentResult['clusterDiagnostics']>['candidates'][number];
 
@@ -237,6 +238,7 @@ export const useAdjustmentWorkflow = <TRunDiagnostics>({
         reviewContext?: RunReviewContext;
       },
     ) => {
+      noteUiPerfStage('applyRunOutcomeStart');
       const solved = outcome.result;
       if (solved.clusterDiagnostics?.enabled) {
         const contextCandidates =
@@ -281,9 +283,6 @@ export const useAdjustmentWorkflow = <TRunDiagnostics>({
       setLastRunInput(context.inputSnapshot);
       setLastRunSettingsSnapshot(context.settingsSnapshot);
       setExcludedIds(new Set(outcome.effectiveExcludedIds));
-      setActiveClusterApprovedMerges(outcome.effectiveClusterApprovedMerges);
-      setRunDiagnostics(runProfile);
-      setRunElapsedMs(outcome.elapsedMs);
       setResult(solved);
       activateReportTab();
       recordRunSnapshot({
@@ -296,6 +295,12 @@ export const useAdjustmentWorkflow = <TRunDiagnostics>({
         overrides,
         approvedClusterMerges: outcome.effectiveClusterApprovedMerges,
       });
+      startTransition(() => {
+        setActiveClusterApprovedMerges(outcome.effectiveClusterApprovedMerges);
+        setRunDiagnostics(runProfile);
+        setRunElapsedMs(outcome.elapsedMs);
+      });
+      noteUiPerfStage('applyRunOutcomeComplete');
     },
     [
       activateReportTab,

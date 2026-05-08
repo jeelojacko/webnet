@@ -9,6 +9,7 @@ import { useQaSelection } from './useQaSelection';
 
 interface UseWorkspaceReviewStateArgs {
   derivedResult: DerivedQaResult | null;
+  derivedResultReady: boolean;
   result: unknown;
   excludedIds: Set<number>;
   initialSnapshot?: WorkspaceReviewState;
@@ -29,6 +30,7 @@ export const createDefaultWorkspaceReviewState = (): WorkspaceReviewState => ({
 
 export const useWorkspaceReviewState = ({
   derivedResult,
+  derivedResultReady,
   result,
   excludedIds,
   initialSnapshot,
@@ -53,11 +55,12 @@ export const useWorkspaceReviewState = ({
   } = qa;
 
   useEffect(() => {
-    if (!derivedResult) {
+    if (!result) {
       clearSelection();
       clearPinnedObservations();
       return;
     }
+    if (!derivedResultReady || !derivedResult) return;
     if (selection.observationId != null && !derivedResult.observationById.has(selection.observationId)) {
       clearSelection();
       return;
@@ -65,15 +68,23 @@ export const useWorkspaceReviewState = ({
     if (selection.stationId != null && !derivedResult.stationById.has(selection.stationId)) {
       clearSelection();
     }
-  }, [clearPinnedObservations, clearSelection, derivedResult, selection.observationId, selection.stationId]);
+  }, [
+    clearPinnedObservations,
+    clearSelection,
+    derivedResult,
+    derivedResultReady,
+    result,
+    selection.observationId,
+    selection.stationId,
+  ]);
 
   useEffect(() => {
-    if (!derivedResult || pinnedObservationIds.length === 0) return;
+    if (!derivedResultReady || !derivedResult || pinnedObservationIds.length === 0) return;
     const nextPinnedIds = pinnedObservationIds.filter((id) => derivedResult.observationById.has(id));
     if (nextPinnedIds.length !== pinnedObservationIds.length) {
       restorePinnedObservationIds(nextPinnedIds);
     }
-  }, [derivedResult, pinnedObservationIds, restorePinnedObservationIds]);
+  }, [derivedResult, derivedResultReady, pinnedObservationIds, restorePinnedObservationIds]);
 
   const restoreSnapshot = useCallback(
     (snapshot: WorkspaceReviewState) => {

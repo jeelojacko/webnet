@@ -1274,6 +1274,118 @@ describe('LSAEngine', () => {
     }
   });
 
+  it('keeps combined-case leveling weights active when project levelWeight is set and S9 is the selected instrument', () => {
+    const input = readFileSync('tests/fixtures/industry_case_combined_input.txt', 'utf-8')
+      .replace(/\r\n/g, '\n')
+      .replace(/\r/g, '\n')
+      .trim();
+    const instrumentLibrary = {
+      TRAV_DEFAULT: {
+        code: 'TRAV_DEFAULT',
+        desc: 'industry parity traverse project default',
+        edm_const: 0.001,
+        edm_ppm: 1.5,
+        hzPrecision_sec: 1.414,
+        dirPrecision_sec: 1.0,
+        azBearingPrecision_sec: 1.414,
+        vaPrecision_sec: 1.0,
+        instCentr_m: 0.00075,
+        tgtCentr_m: 0.00075,
+        vertCentr_m: 0.0005,
+        elevDiff_const_m: 0.01524,
+        elevDiff_ppm: 0,
+        gpsStd_xy: 0,
+        levStd_mmPerKm: 1.5,
+      },
+      S9: {
+        code: 'S9',
+        desc: 'corrections from isopropyl',
+        edm_const: 0.003,
+        edm_ppm: 2.0,
+        hzPrecision_sec: 1.2357,
+        dirPrecision_sec: 0.87377,
+        azBearingPrecision_sec: 0.707107,
+        vaPrecision_sec: 3.28473,
+        instCentr_m: 0.0015,
+        tgtCentr_m: 0.0015,
+        vertCentr_m: 0.0005,
+        elevDiff_const_m: 0.01524,
+        elevDiff_ppm: 0,
+        gpsStd_xy: 0,
+        levStd_mmPerKm: 0,
+      },
+      SX12: {
+        code: 'SX12',
+        desc: 'n/a',
+        edm_const: 0.003,
+        edm_ppm: 1.5,
+        hzPrecision_sec: 0.950079,
+        dirPrecision_sec: 0.671807,
+        azBearingPrecision_sec: 1.414,
+        vaPrecision_sec: 6.064437,
+        instCentr_m: 0.0015,
+        tgtCentr_m: 0.0015,
+        vertCentr_m: 0.0005,
+        elevDiff_const_m: 0.01524,
+        elevDiff_ppm: 0,
+        gpsStd_xy: 0,
+        levStd_mmPerKm: 0,
+      },
+      TS11: {
+        code: 'TS11',
+        desc: 'n/a',
+        edm_const: 0.002,
+        edm_ppm: 1.5,
+        hzPrecision_sec: 1.84146,
+        dirPrecision_sec: 1.302108,
+        azBearingPrecision_sec: 4.0,
+        vaPrecision_sec: 4.41756,
+        instCentr_m: 0.0015,
+        tgtCentr_m: 0.0015,
+        vertCentr_m: 0.0005,
+        elevDiff_const_m: 0.01524,
+        elevDiff_ppm: 0,
+        gpsStd_xy: 0,
+        levStd_mmPerKm: 0,
+      },
+    };
+
+    const result = new LSAEngine({
+      input,
+      maxIterations: 10,
+      convergenceThreshold: 0.01,
+      instrumentLibrary,
+      parseOptions: {
+        currentInstrument: 'S9',
+        projectDefaultInstrument: 'S9',
+        coordSystemMode: 'grid',
+        crsId: 'CA_NAD83_CSRS_NB_STEREO_DOUBLE',
+        coordMode: '3D',
+        order: 'NE',
+        deltaMode: 'slope',
+        angleStationOrder: 'atfromto',
+        lonSign: 'west-positive',
+        levelWeight: 1.5,
+        applyCurvatureRefraction: true,
+        verticalReduction: 'curvref',
+        refractionCoefficient: 0.07,
+        verticalDeflectionNorthSec: -2.91,
+        verticalDeflectionEastSec: -1.46,
+      },
+    }).solve();
+
+    expect(result.success).toBe(true);
+    expect(result.converged).toBe(true);
+    expect(result.seuw).toBeLessThan(2);
+
+    const levelRows = result.observations.filter((obs) => obs.type === 'lev');
+    expect(levelRows).toHaveLength(60);
+    expect(levelRows.every((obs) => (obs.weightingStdDev ?? 0) > 0)).toBe(true);
+    const levelSumSquares = levelRows.reduce((sum, obs) => sum + ((obs.stdRes ?? 0) ** 2), 0);
+    expect(levelSumSquares).toBeGreaterThan(1);
+    expect(levelSumSquares).toBeLessThan(100);
+  });
+
   it('solves M ATFROMTO turned-angle + horizontal-distance shots at measured ranges', () => {
     const input = [
       '.UNITS Meters DMS',

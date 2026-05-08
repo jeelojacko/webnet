@@ -19,6 +19,16 @@ const baseInput = [
   'A C-A-B 90-00-00 3',
 ].join('\n');
 
+const clickSectionToggle = async (container: HTMLElement, label: string) => {
+  const button = Array.from(container.querySelectorAll('button[aria-expanded]')).find((entry) =>
+    entry.textContent?.includes(label),
+  ) as HTMLButtonElement | undefined;
+  if (!button) throw new Error(`Section toggle "${label}" not found.`);
+  await act(async () => {
+    button.click();
+  });
+};
+
 describe('ReportView operator workflows', () => {
   it('shows pending rerun diffs, emits source-line callbacks, and supports pinned sections', async () => {
     const container = document.createElement('div');
@@ -60,6 +70,8 @@ describe('ReportView operator workflows', () => {
 
     expect(container.textContent).toContain('Pending rerun settings diff');
     expect(container.textContent).toContain('Units: m -> ft');
+
+    await clickSectionToggle(container, 'Distances (TS)');
 
     const jumpButton = container.querySelector(
       'button[title="Jump to line 5 in the input editor"]',
@@ -191,6 +203,10 @@ describe('ReportView operator workflows', () => {
         />,
       );
     });
+
+    await clickSectionToggle(container, 'Angles (TS)');
+    await clickSectionToggle(container, 'Distances (TS)');
+    await clickSectionToggle(container, 'GPS Vectors');
 
     expect(container.textContent).toContain('Weight');
     expect(container.textContent).toContain('FIXED');

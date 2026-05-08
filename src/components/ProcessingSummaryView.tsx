@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import type {
   AdjustmentResult,
   CoordSystemDiagnosticCode,
@@ -16,6 +16,7 @@ import {
   buildResultStatisticalSummaryModel,
   buildResultTraceabilityModel,
 } from '../engine/resultDerivedModels';
+import { noteUiPerfStage, noteUiTabReady } from '../hooks/useUiPerfMonitor';
 
 interface ProcessingSummaryViewProps {
   result: AdjustmentResult;
@@ -101,6 +102,7 @@ const elapsedStr = (ms: number | null): string => {
 
 const padRight = (value: string, width: number) => value.padEnd(width, ' ');
 const padLeft = (value: string, width: number) => value.padStart(width, ' ');
+const processingSummaryTextCache = new WeakMap<AdjustmentResult, Map<string, string>>();
 
 const ProcessingSummaryView: React.FC<ProcessingSummaryViewProps> = ({
   result,
@@ -108,7 +110,28 @@ const ProcessingSummaryView: React.FC<ProcessingSummaryViewProps> = ({
   runElapsedMs,
   runDiagnostics,
 }) => {
+  useEffect(() => {
+    noteUiPerfStage('processingSummaryReady');
+    noteUiTabReady('processing-summary');
+  }, [result]);
+
   const text = useMemo(() => {
+    const cacheKey = JSON.stringify({
+      units,
+      runElapsedMs: runElapsedMs ?? null,
+      runMode:
+        result.parseState?.runMode ??
+        runDiagnostics?.runMode ??
+        (result.preanalysisMode ? 'preanalysis' : 'adjustment'),
+      solveProfile: runDiagnostics?.solveProfile ?? null,
+      directionSetMode: runDiagnostics?.directionSetMode ?? null,
+      rotationAngleRad: runDiagnostics?.rotationAngleRad ?? null,
+      coordSystemMode: runDiagnostics?.coordSystemMode ?? null,
+      crsId: runDiagnostics?.crsId ?? null,
+    });
+    const cachedByKey = processingSummaryTextCache.get(result);
+    const cachedText = cachedByKey?.get(cacheKey);
+    if (cachedText != null) return cachedText;
     const unitScale = units === 'ft' ? FT_PER_M : 1;
     const linearUnit = units === 'ft' ? 'ft' : 'm';
     const runMode: RunMode =
@@ -560,7 +583,11 @@ const ProcessingSummaryView: React.FC<ProcessingSummaryViewProps> = ({
     lines.push('');
     lines.push(`Processing Notes (${result.logs.length}):`);
     result.logs.forEach((line) => lines.push(line));
-    return lines.join('\n');
+    const rendered = lines.join('\n');
+    const nextCache = cachedByKey ?? new Map<string, string>();
+    nextCache.set(cacheKey, rendered);
+    processingSummaryTextCache.set(result, nextCache);
+    return rendered;
   }, [result, units, runElapsedMs, runDiagnostics]);
 
   return (

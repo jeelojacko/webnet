@@ -3,6 +3,7 @@ import { createRunOutputBuilders } from '../engine/runOutputBuilders';
 import { buildIndustryListingCacheKey } from '../app/appHelpers';
 import type { ListingSortObservationsBy, ParseSettings, RunDiagnostics, SettingsState } from '../appStateTypes';
 import type { AdjustmentResult } from '../types';
+import { measureUiPerfBlock } from './useUiPerfMonitor';
 
 interface IndustryListingCacheEntry {
   result: object | null;
@@ -19,7 +20,6 @@ interface UseAppIndustryOutputArgs {
   setSettings: Dispatch<SetStateAction<SettingsState>>;
   setSettingsDraft: Dispatch<SetStateAction<SettingsState>>;
   buildRunDiagnostics: (_base: ParseSettings, _solved?: AdjustmentResult) => RunDiagnostics;
-  prewarmTabs: () => void;
 }
 
 export const useAppIndustryOutput = ({
@@ -31,7 +31,6 @@ export const useAppIndustryOutput = ({
   setSettings,
   setSettingsDraft,
   buildRunDiagnostics,
-  prewarmTabs,
 }: UseAppIndustryOutputArgs) => {
   const { buildIndustryListingText } = useMemo(
     () =>
@@ -48,7 +47,6 @@ export const useAppIndustryOutput = ({
     key: '',
     text: '',
   });
-  const [tabsPrewarmed, setTabsPrewarmed] = useState(false);
 
   const industryListingKey = useMemo(
     () =>
@@ -145,29 +143,10 @@ export const useAppIndustryOutput = ({
       return {
         result,
         key: industryListingKey,
-        text: buildIndustryListingText(result),
+        text: measureUiPerfBlock('buildIndustryListingText', () => buildIndustryListingText(result)),
       };
     });
   }, [activeTab, buildIndustryListingText, industryListingKey, result]);
-
-  useEffect(() => {
-    if (!result || tabsPrewarmed) return;
-    setTabsPrewarmed(true);
-    if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
-      const idleWindow = window as Window & {
-        requestIdleCallback: (
-          _cb: (_deadline: { didTimeout: boolean; timeRemaining: () => number }) => void,
-        ) => number;
-        cancelIdleCallback?: (_id: number) => void;
-      };
-      const idleId = idleWindow.requestIdleCallback(() => {
-        prewarmTabs();
-      });
-      return () => idleWindow.cancelIdleCallback?.(idleId);
-    }
-    const timeoutId = globalThis.setTimeout(prewarmTabs, 0);
-    return () => globalThis.clearTimeout(timeoutId);
-  }, [prewarmTabs, result, tabsPrewarmed]);
 
   return {
     industryOutputText,

@@ -8,6 +8,7 @@ import { describe, expect, it } from 'vitest';
 import type { ParseSettings, SettingsState } from '../src/appStateTypes';
 import MapView from '../src/components/MapView';
 import ReportView from '../src/components/ReportView';
+import { REPORT_TABLE_WINDOW_SIZE } from '../src/components/report/reportSectionRegistry';
 import { buildExportArtifacts } from '../src/engine/exportArtifacts';
 import { importExternalInput } from '../src/engine/importers';
 import {
@@ -38,6 +39,7 @@ interface BrowserBenchmarkFixture {
   solveBudgetMs: number;
   rerunBudgetMs: number;
   renderBudgetMs: number;
+  qaDerivedBuildBudgetMs: number;
   artifactBuildBudgetMs: number;
   artifactFormat: ProjectExportFormat;
 }
@@ -262,6 +264,63 @@ const medianDurationMs = (samples: number[]): number => {
   return sorted[Math.floor(sorted.length / 2)] ?? 0;
 };
 
+const ensureSectionExpanded = async (container: HTMLElement, label: string) => {
+  const button = Array.from(container.querySelectorAll('button[aria-expanded]')).find((entry) =>
+    entry.textContent?.includes(label),
+  ) as HTMLButtonElement | undefined;
+  if (!button) throw new Error(`Section toggle "${label}" not found.`);
+  if (button.getAttribute('aria-expanded') === 'true') return;
+  await act(async () => {
+    button.click();
+  });
+};
+
+const observationSectionLabel = (type: string): string => {
+  switch (type) {
+    case 'angle':
+      return 'Angles (TS)';
+    case 'direction':
+      return 'Directions (DB/DN)';
+    case 'dist':
+      return 'Distances (TS)';
+    case 'bearing':
+      return 'Bearings/Azimuths';
+    case 'dir':
+      return 'Directions (Azimuth)';
+    case 'zenith':
+      return 'Zenith/Vertical Angles';
+    case 'gps':
+      return 'GPS Vectors';
+    case 'lev':
+      return 'Leveling dH';
+    default:
+      throw new Error(`Unsupported observation type: ${type}`);
+  }
+};
+
+const observationSectionKey = (type: string): string => {
+  switch (type) {
+    case 'angle':
+      return 'observations-angles-ts';
+    case 'direction':
+      return 'observations-directions-db-dn';
+    case 'dist':
+      return 'observations-distances-ts';
+    case 'bearing':
+      return 'observations-bearings-azimuths';
+    case 'dir':
+      return 'observations-directions-azimuth';
+    case 'zenith':
+      return 'observations-zenith-vertical-angles';
+    case 'gps':
+      return 'observations-gps-vectors';
+    case 'lev':
+      return 'observations-leveling-dh';
+    default:
+      throw new Error(`Unsupported observation type: ${type}`);
+  }
+};
+
 describe('browser large-project benchmark coverage', () => {
   it.each(benchmarkFixtures)(
     'keeps imported-job solve, rerun, render, and artifact work within guardrails for %s',
@@ -311,7 +370,10 @@ describe('browser large-project benchmark coverage', () => {
       expect(artifactResult.files.length).toBeGreaterThan(0);
       expect(artifactResult.files.some((file) => file.name.endsWith('.txt'))).toBe(true);
 
+      const qaDerivedStart = performance.now();
       const derived = buildQaDerivedResult(outcome.result);
+      const qaDerivedBuildDurationMs = performance.now() - qaDerivedStart;
+      expect(qaDerivedBuildDurationMs).toBeLessThan(fixture.qaDerivedBuildBudgetMs);
       const firstObservationId = outcome.result.observations[0]?.id ?? null;
       const sortedStationIds = sortIds(Object.keys(outcome.result.stations));
       const firstStationId = sortedStationIds[0] ?? null;
@@ -417,6 +479,17 @@ describe('browser large-project benchmark coverage', () => {
       await act(async () => {
         selectFirstButton?.click();
       });
+      const firstObservation = outcome.result.observations.find((obs) => obs.id === firstObservationId);
+      if (!firstObservation) {
+        throw new Error('Expected first observation in benchmark fixture.');
+      }
+      await ensureSectionExpanded(container, observationSectionLabel(firstObservation.type));
+      const observationShowAllButton = container.querySelector(
+        `[data-report-show-all="${observationSectionKey(firstObservation.type)}"]`,
+      ) as HTMLButtonElement | null;
+      await act(async () => {
+        observationShowAllButton?.click();
+      });
 
       expect(container.textContent).toContain('Adjusted Coordinates');
       expect(container.textContent).toContain(firstStationId ?? '');
@@ -428,6 +501,9 @@ describe('browser large-project benchmark coverage', () => {
       const showMoreButton = container.querySelector(
         '[data-report-load-more="adjusted-coordinates"]',
       ) as HTMLButtonElement | null;
+      const showAllCoordinatesButton = container.querySelector(
+        '[data-report-show-all="adjusted-coordinates"]',
+      ) as HTMLButtonElement | null;
       const firstObservationRow = container.querySelector(
         `[data-report-observation-row="${firstObservationId}"]`,
       ) as HTMLTableRowElement | null;
@@ -437,14 +513,15 @@ describe('browser large-project benchmark coverage', () => {
       );
       const coordinateSection = coordinateHeading?.parentElement?.parentElement ?? null;
       const expectedInitialRowCount =
-        fixture.expectedStationCount > fixture.reportWindowSize
-          ? fixture.reportWindowSize
+        fixture.expectedStationCount > REPORT_TABLE_WINDOW_SIZE
+          ? REPORT_TABLE_WINDOW_SIZE
           : fixture.expectedStationCount;
       expect(coordinateSection?.querySelectorAll('tbody tr').length).toBe(expectedInitialRowCount);
 
       await act(async () => {
         firstObservationRow?.click();
         showMoreButton?.click();
+        showAllCoordinatesButton?.click();
       });
 
       expect(coordinateSection?.querySelectorAll('tbody tr').length).toBe(

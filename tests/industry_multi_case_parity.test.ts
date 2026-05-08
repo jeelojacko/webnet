@@ -561,6 +561,7 @@ const buildCaseResult = (
       deltaMode: startup?.parseSettingsPatch.deltaMode ?? 'slope',
       angleStationOrder: startup?.parseSettingsPatch.angleStationOrder ?? 'atfromto',
       lonSign: startup?.parseSettingsPatch.lonSign ?? 'west-negative',
+      levelWeight: startup?.parseSettingsPatch.levelWeight,
       applyCurvatureRefraction: startup?.parseSettingsPatch.applyCurvatureRefraction,
       verticalReduction: startup?.parseSettingsPatch.verticalReduction,
       refractionCoefficient: startup?.parseSettingsPatch.refractionCoefficient,

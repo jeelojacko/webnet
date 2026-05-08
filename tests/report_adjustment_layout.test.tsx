@@ -99,6 +99,7 @@ const createReportViewState = (
     setAllDetailSectionsCollapsed: () => {},
     visibleRowsFor: (_key, rows) => rows,
     showMoreRows: () => {},
+    showAllRows: () => {},
   }) as ReportViewControls;
 
 const renderReport = (

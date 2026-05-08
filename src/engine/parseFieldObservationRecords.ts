@@ -896,7 +896,7 @@ export const handleFieldObservationRecord = ({
     const sigmaToken = parseSigmaToken(parts[chosen.valueStart + 2]) ?? undefined;
     const baseStd = differentialLevelSigmaFromKm(state.levelWeight, lenKm);
     const hasExplicitSigma = sigmaToken != null;
-    if (!hasExplicitSigma && state.levelWeight != null) {
+    if (!hasExplicitSigma && baseStd > 0) {
       logs.push(`.LWEIGHT applied for leveling at line ${lineNum}: ${state.levelWeight} mm/km`);
     }
 
@@ -904,20 +904,15 @@ export const handleFieldObservationRecord = ({
     const projectDefaultInst = state.projectDefaultInstrument
       ? instrumentLibrary[state.projectDefaultInstrument]
       : undefined;
-    const levelResolved = resolveLinearSigma(sigmaToken, baseStd);
-    let sigma = levelResolved.sigma;
-    if (!hasExplicitSigma && inst && inst.levStd_mmPerKm > 0) {
-      const lib = differentialLevelSigmaFromKm(inst.levStd_mmPerKm, lenKm);
-      sigma = Math.sqrt(sigma * sigma + lib * lib);
-    } else if (
-      !hasExplicitSigma &&
-      (!inst || !(inst.levStd_mmPerKm > 0)) &&
-      projectDefaultInst &&
-      projectDefaultInst.levStd_mmPerKm > 0
-    ) {
-      const lib = differentialLevelSigmaFromKm(projectDefaultInst.levStd_mmPerKm, lenKm);
-      sigma = Math.sqrt(sigma * sigma + lib * lib);
-    }
+    const instrumentFallbackStd =
+      inst && inst.levStd_mmPerKm > 0
+        ? differentialLevelSigmaFromKm(inst.levStd_mmPerKm, lenKm)
+        : projectDefaultInst && projectDefaultInst.levStd_mmPerKm > 0
+          ? differentialLevelSigmaFromKm(projectDefaultInst.levStd_mmPerKm, lenKm)
+          : 0;
+    const fallbackStd = baseStd > 0 ? baseStd : instrumentFallbackStd;
+    const levelResolved = resolveLinearSigma(sigmaToken, fallbackStd);
+    const sigma = levelResolved.sigma;
 
     const obs: LevelObservation = {
       id: obsIdRef.current++,

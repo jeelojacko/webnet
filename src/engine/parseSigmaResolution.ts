@@ -175,7 +175,7 @@ export const createParseSigmaResolvers = (
       );
     }
     const instSigma = defaultElevDiffSigma(inst, absSpanMeters);
-    const defaultSigma = Math.sqrt(levelWeightSigma * levelWeightSigma + instSigma * instSigma);
+    const defaultSigma = levelWeightSigma > 0 ? levelWeightSigma : instSigma;
     return resolveLinearSigma(token, defaultSigma);
   };
 

@@ -93,7 +93,7 @@ Current stochastic behavior includes:
 - traverse parity grid slope distances now use a dedicated reduction path that applies the scale factor to the horizontal component before rebuilding the 3D slope length, while legacy/local paths retain the older derivative algebra to preserve established parity locks
 - parity-profile `initial` sigma geometry is now limited to angular centering behavior; shared browser/run-session distance and zenith modeling continues to use live geometry so the traverse startup case matches the direct engine path
 - leveling weight support, including fallback propagation into other leveling-producing paths
-- a forward-facing instrument setting for differential leveling precision in `mm/km`, separate from the project-level `.LWEIGHT` fallback
+- leveling-weight precedence is deterministic: explicit inline sigma token first, then active inline/project `.LWEIGHT`, then the instrument differential-level `mm/km` model as a fallback
 - TS angular correlation support with diagnostics
 - robust Huber reweighting with iteration summaries
 - fixed-sigma override support and weighting-source traceability
@@ -156,6 +156,8 @@ Current output surfaces include:
 ### Listing and report expectations
 Current listing/report behavior includes:
 - summary-first report ordering
+- the WebNet report now uses stronger progressive disclosure for heavy late-report sections: `Residual Diagnostics` downward, including lower-priority diagnostics, observation-family residual tables, and the final `Processing Log`, start collapsed and do not render their inner table/log content until opened
+- report table windowing now defaults to 25 rows per section instead of 100, and windowed sections expose both `Show more` and `Show all`
 - `Data Check` and `Blunder Detect` runs now promote their mode-specific summary block to the top of the WebNet report and suppress the generic `Adjustment Summary` banner there
 - when cluster detection or auto-adjust diagnostics are active in a normal adjustment run, those workflow sections are promoted above solve-profile, adjusted-coordinate, and lower-priority review tables so operator action items stay at the top
 - solve-profile diagnostics near the summary surface
@@ -297,13 +299,18 @@ Current delivered performance architecture includes:
 - shared run-session orchestration for browser and CLI solve flows
 - shared run-session workflows may perform multiple full re-solves after the main adjustment for suspect-impact, preanalysis-impact, robust-comparison, or auto-adjust diagnostics; long traverse cases can therefore spend minutes in `Solving` even when a single engine solve is only tens of seconds
 - lazy-loaded heavy result views and modal bodies
-- one-time idle prewarm of lazy report/map/processing/listing tabs after the first successful solve to reduce first-switch loading stalls
+- the first successful solve now keeps the report tab hot immediately, while `Processing Summary`, `Industry Standard Output`, and `Map` hydrate progressively on idle or first open instead of all mounting in one eager burst
+- heavy-tab prewarm is now staged and cancellable: only one deferred tab preload runs at a time, and pointer/keyboard/wheel interaction cancels the remaining queue so first post-solve clicks stay responsive
+- QA-derived review/map models are no longer built synchronously in the urgent result handoff path; the app commits the core result first, then computes the QA-derived model in deferred transition-backed state
 - local report state with filter and windowing behavior
+- processing-summary text generation is now cached by result identity plus a narrow diagnostics key so unrelated rerenders do not rebuild the full summary text block
+- map view now skips fallback observation-link rebuilding when a QA-derived result is already available, reducing duplicate first-open selector work
 - dense-map review guards, including a persisted `standard` vs `dense-review` declutter preset and quick toggles for labels/minor geometry/non-selected focus
 - 2D map rendering now uses a hybrid pipeline: canvas-backed non-selected dense geometry plus SVG overlays for selection, labels, and tools, so large networks reduce SVG remount pressure during navigation
 - dense 2D interaction automatically enters a temporary simplify mode while panning/zooming (reduced labels + suppressed non-selected ellipses), then restores full detail after interaction settles
 - after wheel/pan stop, 2D map rendering performs an automatic crisp settle redraw (full device-pixel-ratio pass) so users do not need an extra pan/zoom nudge to clear blur
 - map-review navigation state (pan/zoom/camera/tool toggles) now persists through report/map tab switches for the active solve result
+- dev builds now capture app-side post-solve UI timing snapshots in memory/global debug state, including worker-success handoff, urgent result commit, deferred QA-model build, tab-ready milestones, first tab-click latency, hydration states, and optional browser long-task entries
 - benchmark coverage for large browser projects and imported-job workflows
 - asynchronous worker-backed artifact generation for heavy export flows
 - the adjustment core now bypasses generic dense `AᵀP`/`AᵀPA` matrix products in its main solve and covariance/statistics paths, instead accumulating normal equations from sparse equation rows and using sparse row-matrix multiplies where `A*x` style products are still needed; this keeps parity behavior unchanged while materially improving the dense imported-project benchmark path

@@ -5,6 +5,39 @@ import { describe, expect, it } from 'vitest';
 
 import ReportView from '../src/components/ReportView';
 import { LSAEngine } from '../src/engine/adjust';
+import type { ReportViewControls } from '../src/hooks/useReportViewState';
+
+const expandedViewState = {
+  ellipseMode: '1sigma',
+  setEllipseMode: () => {},
+  ellipseConfidenceScale: 1,
+  reportFilterQuery: '',
+  setReportFilterQuery: () => {},
+  reportObservationTypeFilter: 'all',
+  setReportObservationTypeFilter: () => {},
+  reportExclusionFilter: 'all',
+  setReportExclusionFilter: () => {},
+  reviewConflictOnly: false,
+  setReviewConflictOnly: () => {},
+  reviewAdjustedOnly: false,
+  setReviewAdjustedOnly: () => {},
+  reviewImportedGroupFilter: 'all',
+  setReviewImportedGroupFilter: () => {},
+  clearFilters: () => {},
+  deferredReportFilterQuery: '',
+  normalizedReportFilterQuery: '',
+  pinnedDetailSections: [],
+  clearPinnedDetailSections: () => {},
+  isDetailSectionPinned: () => false,
+  togglePinnedDetailSection: () => {},
+  isSectionCollapsed: () => false,
+  toggleDetailSection: () => {},
+  allDetailSectionsCollapsed: false,
+  setAllDetailSectionsCollapsed: () => {},
+  visibleRowsFor: (_key, rows) => rows,
+  showMoreRows: () => {},
+  showAllRows: () => {},
+} as ReportViewControls;
 
 describe('ReportView GPS sideshot sections', () => {
   it('renders dedicated GPS sideshot section for mixed GPS NETWORK/SIDESHOT datasets', () => {
@@ -15,6 +48,7 @@ describe('ReportView GPS sideshot sections', () => {
       <ReportView
         result={result}
         units="m"
+        viewState={expandedViewState}
         runDiagnostics={null}
         excludedIds={new Set<number>()}
         onToggleExclude={() => {}}
@@ -49,6 +83,7 @@ describe('ReportView GPS sideshot sections', () => {
       <ReportView
         result={result}
         units="m"
+        viewState={expandedViewState}
         runDiagnostics={null}
         excludedIds={new Set<number>()}
         onToggleExclude={() => {}}
@@ -94,6 +129,7 @@ describe('ReportView GPS sideshot sections', () => {
       <ReportView
         result={result}
         units="m"
+        viewState={expandedViewState}
         runDiagnostics={null}
         excludedIds={new Set<number>()}
         onToggleExclude={() => {}}

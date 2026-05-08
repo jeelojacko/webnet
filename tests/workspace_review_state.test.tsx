@@ -30,6 +30,7 @@ const WorkspaceReviewHarness: React.FC<{ enabled: boolean }> = ({ enabled }) => 
   const observationId = result?.observations.find((obs) => obs.type === 'dist')?.id ?? null;
   const reviewState = useWorkspaceReviewState({
     derivedResult,
+    derivedResultReady: true,
     result,
     excludedIds: new Set<number>(),
   });
@@ -119,7 +120,7 @@ describe('useWorkspaceReviewState', () => {
     });
 
     expect(query()).toBe('p100');
-    expect(visibleCount()).toBe('150');
+    expect(visibleCount()).toBe('50');
     expect(selectedObservation()).not.toBe('-');
     expect(pinnedObservationCount()).toBe('1');
 

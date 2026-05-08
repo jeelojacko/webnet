@@ -1,6 +1,7 @@
 import React, { startTransition, useCallback } from 'react';
 import { Activity, FileText, Map as MapIcon, Minimize2 } from 'lucide-react';
 import type { WorkspaceTabKey } from '../appStateTypes';
+import { noteUiTabClickStart } from '../hooks/useUiPerfMonitor';
 
 interface WorkspaceChromeProps {
   activeTab: WorkspaceTabKey;
@@ -38,6 +39,7 @@ const WorkspaceChrome: React.FC<WorkspaceChromeProps> = ({
 }) => {
   const handleTabClick = useCallback(
     (tab: WorkspaceTabKey) => {
+      noteUiTabClickStart(tab);
       startTransition(() => {
         onActiveTabChange(tab);
       });

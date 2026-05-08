@@ -111,6 +111,7 @@ const createReportViewState = (
     setAllDetailSectionsCollapsed: () => {},
     visibleRowsFor: (_key, rows) => rows,
     showMoreRows: () => {},
+    showAllRows: () => {},
   }) as ReportViewControls;
 
 describe('inline option profile outputs', () => {

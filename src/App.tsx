@@ -3,6 +3,7 @@
 import React, {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -54,6 +55,7 @@ import { useAppRunComparisonPanel } from './hooks/useAppRunComparisonPanel';
 import { useAppReviewQueue } from './hooks/useAppReviewQueue';
 import { useAppRunWorkspaceReview } from './hooks/useAppRunWorkspaceReview';
 import { useAppWorkspaceDraft } from './hooks/useAppWorkspaceDraft';
+import { useHeavyTabHydration, useSequentialTabPrewarm } from './hooks/useHeavyTabHydration';
 import { createStableRuntimeId } from './engine/id';
 import { useProjectOptionsState } from './hooks/useProjectOptionsState';
 import {
@@ -61,6 +63,10 @@ import {
   normalizeListingSortObservationsBy,
 } from './listingSortObservations';
 import { useWorkspaceProjectState } from './hooks/useWorkspaceProjectState';
+import {
+  noteUiPerfStage,
+  useUiLongTaskObserver,
+} from './hooks/useUiPerfMonitor';
 import {
   ACTIVE_PARITY_STARTUP_DEFAULTS,
   IMPORT_FILE_ACCEPT,
@@ -240,6 +246,13 @@ const App: React.FC<AppProps> = ({
     initialExportFormat: 'points',
     initialActiveTab: 'report',
   });
+  useUiLongTaskObserver();
+
+  useLayoutEffect(() => {
+    if (!result) return;
+    noteUiPerfStage('resultCommitComplete');
+  }, [result]);
+
   const [settings, setSettings] = useState<SettingsState>(() => {
     const seed: SettingsState = {
       maxIterations: 10,
@@ -852,6 +865,12 @@ const App: React.FC<AppProps> = ({
     projectRunValidation,
     setImportNotice,
   });
+  const heavyTabPreloaders = useMemo(
+    () => [loadProcessingSummaryView, loadIndustryOutputView, loadMapView],
+    [],
+  );
+  useSequentialTabPrewarm(result, heavyTabPreloaders);
+  const { canRenderTab } = useHeavyTabHydration(result, activeTab);
   const { industryOutputText, handleIndustryListingSortChange } = useAppIndustryOutput({
     activeTab,
     result,
@@ -861,17 +880,75 @@ const App: React.FC<AppProps> = ({
     setSettings,
     setSettingsDraft,
     buildRunDiagnostics: buildRunDiagnosticsWithProjectMetadata,
-    prewarmTabs: () => {
-      void loadReportView();
-      void loadProcessingSummaryView();
-      void loadIndustryOutputView();
-      void loadMapView();
-    },
   });
 
   const currentComparisonText = useMemo(
     () => (runComparisonSummary ? buildRunComparisonText(runComparisonSummary) : ''),
     [runComparisonSummary],
+  );
+  const processingSummaryDiagnostics = useMemo(
+    () =>
+      runDiagnostics
+        ? {
+            solveProfile: runDiagnostics.solveProfile,
+            directionSetMode: runDiagnostics.directionSetMode,
+            profileDefaultInstrumentFallback: runDiagnostics.profileDefaultInstrumentFallback,
+            rotationAngleRad: runDiagnostics.rotationAngleRad,
+            coordSystemMode: runDiagnostics.coordSystemMode,
+            crsId: runDiagnostics.crsId,
+            localDatumScheme: runDiagnostics.localDatumScheme,
+            averageScaleFactor: runDiagnostics.averageScaleFactor,
+            scaleOverrideActive: runDiagnostics.scaleOverrideActive,
+            commonElevation: runDiagnostics.commonElevation,
+            averageGeoidHeight: runDiagnostics.averageGeoidHeight,
+            gnssVectorFrameDefault: runDiagnostics.gnssVectorFrameDefault,
+            gnssFrameConfirmed: runDiagnostics.gnssFrameConfirmed,
+            gridBearingMode: runDiagnostics.gridBearingMode,
+            gridDistanceMode: runDiagnostics.gridDistanceMode,
+            gridAngleMode: runDiagnostics.gridAngleMode,
+            gridDirectionMode: runDiagnostics.gridDirectionMode,
+            datumSufficiencyReport: runDiagnostics.datumSufficiencyReport,
+            parsedUsageSummary: runDiagnostics.parsedUsageSummary,
+            usedInSolveUsageSummary: runDiagnostics.usedInSolveUsageSummary,
+            directiveTransitions: runDiagnostics.directiveTransitions,
+            directiveNoEffectWarnings: runDiagnostics.directiveNoEffectWarnings,
+            coordSystemDiagnostics: runDiagnostics.coordSystemDiagnostics,
+            coordSystemWarningMessages: runDiagnostics.coordSystemWarningMessages,
+            crsStatus: runDiagnostics.crsStatus,
+            crsOffReason: runDiagnostics.crsOffReason,
+            crsDatumOpId: runDiagnostics.crsDatumOpId,
+            crsDatumFallbackUsed: runDiagnostics.crsDatumFallbackUsed,
+            crsAreaOfUseStatus: runDiagnostics.crsAreaOfUseStatus,
+            crsOutOfAreaStationCount: runDiagnostics.crsOutOfAreaStationCount,
+            crsGridScaleEnabled: runDiagnostics.crsGridScaleEnabled,
+            crsGridScaleFactor: runDiagnostics.crsGridScaleFactor,
+            crsConvergenceEnabled: runDiagnostics.crsConvergenceEnabled,
+            crsConvergenceAngleRad: runDiagnostics.crsConvergenceAngleRad,
+            geoidModelEnabled: runDiagnostics.geoidModelEnabled,
+            geoidModelId: runDiagnostics.geoidModelId,
+            geoidInterpolation: runDiagnostics.geoidInterpolation,
+            geoidHeightConversionEnabled: runDiagnostics.geoidHeightConversionEnabled,
+            geoidOutputHeightDatum: runDiagnostics.geoidOutputHeightDatum,
+            geoidModelLoaded: runDiagnostics.geoidModelLoaded,
+            geoidModelMetadata: runDiagnostics.geoidModelMetadata,
+            geoidSampleUndulationM: runDiagnostics.geoidSampleUndulationM,
+            geoidConvertedStationCount: runDiagnostics.geoidConvertedStationCount,
+            geoidSkippedStationCount: runDiagnostics.geoidSkippedStationCount,
+            gpsAddHiHtEnabled: runDiagnostics.gpsAddHiHtEnabled,
+            gpsAddHiHtHiM: runDiagnostics.gpsAddHiHtHiM,
+            gpsAddHiHtHtM: runDiagnostics.gpsAddHiHtHtM,
+            gpsAddHiHtVectorCount: runDiagnostics.gpsAddHiHtVectorCount,
+            gpsAddHiHtAppliedCount: runDiagnostics.gpsAddHiHtAppliedCount,
+            gpsAddHiHtPositiveCount: runDiagnostics.gpsAddHiHtPositiveCount,
+            gpsAddHiHtNegativeCount: runDiagnostics.gpsAddHiHtNegativeCount,
+            gpsAddHiHtNeutralCount: runDiagnostics.gpsAddHiHtNeutralCount,
+            gpsAddHiHtDefaultZeroCount: runDiagnostics.gpsAddHiHtDefaultZeroCount,
+            gpsAddHiHtMissingHeightCount: runDiagnostics.gpsAddHiHtMissingHeightCount,
+            gpsAddHiHtScaleMin: runDiagnostics.gpsAddHiHtScaleMin,
+            gpsAddHiHtScaleMax: runDiagnostics.gpsAddHiHtScaleMax,
+          }
+        : null,
+    [runDiagnostics],
   );
   const { buildArtifacts } = useArtifactBuilder();
   const handleInputChange = (value: string) => {
@@ -1468,7 +1545,7 @@ const App: React.FC<AppProps> = ({
                 <ReportView
                   result={result!}
                   units={settings.units}
-                    precisionReportingMode="industry-standard"
+                  precisionReportingMode="industry-standard"
                   viewState={workspaceReviewState}
                   runDiagnostics={runDiagnostics}
                   excludedIds={excludedIds}
@@ -1498,122 +1575,78 @@ const App: React.FC<AppProps> = ({
               </React.Suspense>
             }
             processingSummaryContent={
-              <React.Suspense
-                fallback={
-                  <div className="flex h-full items-center justify-center text-sm text-slate-400">
-                    Loading tab...
-                  </div>
-                }
-              >
-                <ProcessingSummaryView
-                  result={result!}
-                  units={settings.units}
-                  runElapsedMs={runElapsedMs}
-                  runDiagnostics={
-                    runDiagnostics
-                      ? {
-                          solveProfile: runDiagnostics.solveProfile,
-                          directionSetMode: runDiagnostics.directionSetMode,
-                          profileDefaultInstrumentFallback:
-                            runDiagnostics.profileDefaultInstrumentFallback,
-                          rotationAngleRad: runDiagnostics.rotationAngleRad,
-                          coordSystemMode: runDiagnostics.coordSystemMode,
-                          crsId: runDiagnostics.crsId,
-                          localDatumScheme: runDiagnostics.localDatumScheme,
-                          averageScaleFactor: runDiagnostics.averageScaleFactor,
-                          scaleOverrideActive: runDiagnostics.scaleOverrideActive,
-                          commonElevation: runDiagnostics.commonElevation,
-                          averageGeoidHeight: runDiagnostics.averageGeoidHeight,
-                          gnssVectorFrameDefault: runDiagnostics.gnssVectorFrameDefault,
-                          gnssFrameConfirmed: runDiagnostics.gnssFrameConfirmed,
-                          gridBearingMode: runDiagnostics.gridBearingMode,
-                          gridDistanceMode: runDiagnostics.gridDistanceMode,
-                          gridAngleMode: runDiagnostics.gridAngleMode,
-                          gridDirectionMode: runDiagnostics.gridDirectionMode,
-                          datumSufficiencyReport: runDiagnostics.datumSufficiencyReport,
-                          parsedUsageSummary: runDiagnostics.parsedUsageSummary,
-                          usedInSolveUsageSummary: runDiagnostics.usedInSolveUsageSummary,
-                          directiveTransitions: runDiagnostics.directiveTransitions,
-                          directiveNoEffectWarnings: runDiagnostics.directiveNoEffectWarnings,
-                          coordSystemDiagnostics: runDiagnostics.coordSystemDiagnostics,
-                          coordSystemWarningMessages: runDiagnostics.coordSystemWarningMessages,
-                          crsStatus: runDiagnostics.crsStatus,
-                          crsOffReason: runDiagnostics.crsOffReason,
-                          crsDatumOpId: runDiagnostics.crsDatumOpId,
-                          crsDatumFallbackUsed: runDiagnostics.crsDatumFallbackUsed,
-                          crsAreaOfUseStatus: runDiagnostics.crsAreaOfUseStatus,
-                          crsOutOfAreaStationCount: runDiagnostics.crsOutOfAreaStationCount,
-                          crsGridScaleEnabled: runDiagnostics.crsGridScaleEnabled,
-                          crsGridScaleFactor: runDiagnostics.crsGridScaleFactor,
-                          crsConvergenceEnabled: runDiagnostics.crsConvergenceEnabled,
-                          crsConvergenceAngleRad: runDiagnostics.crsConvergenceAngleRad,
-                          geoidModelEnabled: runDiagnostics.geoidModelEnabled,
-                          geoidModelId: runDiagnostics.geoidModelId,
-                          geoidInterpolation: runDiagnostics.geoidInterpolation,
-                          geoidHeightConversionEnabled: runDiagnostics.geoidHeightConversionEnabled,
-                          geoidOutputHeightDatum: runDiagnostics.geoidOutputHeightDatum,
-                          geoidModelLoaded: runDiagnostics.geoidModelLoaded,
-                          geoidModelMetadata: runDiagnostics.geoidModelMetadata,
-                          geoidSampleUndulationM: runDiagnostics.geoidSampleUndulationM,
-                          geoidConvertedStationCount: runDiagnostics.geoidConvertedStationCount,
-                          geoidSkippedStationCount: runDiagnostics.geoidSkippedStationCount,
-                          gpsAddHiHtEnabled: runDiagnostics.gpsAddHiHtEnabled,
-                          gpsAddHiHtHiM: runDiagnostics.gpsAddHiHtHiM,
-                          gpsAddHiHtHtM: runDiagnostics.gpsAddHiHtHtM,
-                          gpsAddHiHtVectorCount: runDiagnostics.gpsAddHiHtVectorCount,
-                          gpsAddHiHtAppliedCount: runDiagnostics.gpsAddHiHtAppliedCount,
-                          gpsAddHiHtPositiveCount: runDiagnostics.gpsAddHiHtPositiveCount,
-                          gpsAddHiHtNegativeCount: runDiagnostics.gpsAddHiHtNegativeCount,
-                          gpsAddHiHtNeutralCount: runDiagnostics.gpsAddHiHtNeutralCount,
-                          gpsAddHiHtDefaultZeroCount: runDiagnostics.gpsAddHiHtDefaultZeroCount,
-                          gpsAddHiHtMissingHeightCount: runDiagnostics.gpsAddHiHtMissingHeightCount,
-                          gpsAddHiHtScaleMin: runDiagnostics.gpsAddHiHtScaleMin,
-                          gpsAddHiHtScaleMax: runDiagnostics.gpsAddHiHtScaleMax,
-                        }
-                      : null
+              canRenderTab('processing-summary') ? (
+                <React.Suspense
+                  fallback={
+                    <div className="flex h-full items-center justify-center text-sm text-slate-400">
+                      Loading tab...
+                    </div>
                   }
-                />
-              </React.Suspense>
+                >
+                  <ProcessingSummaryView
+                    result={result!}
+                    units={settings.units}
+                    runElapsedMs={runElapsedMs}
+                    runDiagnostics={processingSummaryDiagnostics}
+                  />
+                </React.Suspense>
+              ) : (
+                <div className="flex h-full items-center justify-center text-sm text-slate-400">
+                  Preparing summary...
+                </div>
+              )
             }
             industryOutputContent={
-              <React.Suspense
-                fallback={
-                  <div className="flex h-full items-center justify-center text-sm text-slate-400">
-                    Loading tab...
-                  </div>
-                }
-              >
-                <IndustryOutputView
-                  text={industryOutputText}
-                  listingSortObservationsBy={settings.listingSortObservationsBy}
-                  onChangeListingSortObservationsBy={handleIndustryListingSortChange}
-                  onJumpToSourceLine={handleJumpToSourceLine}
-                />
-              </React.Suspense>
+              canRenderTab('industry-output') ? (
+                <React.Suspense
+                  fallback={
+                    <div className="flex h-full items-center justify-center text-sm text-slate-400">
+                      Loading tab...
+                    </div>
+                  }
+                >
+                  <IndustryOutputView
+                    text={industryOutputText}
+                    listingSortObservationsBy={settings.listingSortObservationsBy}
+                    onChangeListingSortObservationsBy={handleIndustryListingSortChange}
+                    onJumpToSourceLine={handleJumpToSourceLine}
+                  />
+                </React.Suspense>
+              ) : (
+                <div className="flex h-full items-center justify-center text-sm text-slate-400">
+                  Preparing industry output...
+                </div>
+              )
             }
             mapContent={
-              <React.Suspense
-                fallback={
-                  <div className="flex h-full items-center justify-center text-sm text-slate-400">
-                    Loading tab...
-                  </div>
-                }
-              >
-                <MapView
-                  result={result!}
-                  units={settings.units}
-                  showLostStations={settings.mapShowLostStations}
-                  mode={settings.map3dEnabled ? '3d' : '2d'}
-                  adjustedPointsExportSettings={adjustedPointsExportSettings}
-                  derivedResult={qaDerivedResult}
-                  selectedStationId={selection.stationId}
-                  selectedObservationId={selection.observationId}
-                  onSelectStation={handleMapStationSelection}
-                  onSelectObservation={handleMapObservationSelection}
-                  snapshot={mapViewSnapshot}
-                  onSnapshotChange={setMapViewSnapshot}
-                />
-              </React.Suspense>
+              canRenderTab('map') ? (
+                <React.Suspense
+                  fallback={
+                    <div className="flex h-full items-center justify-center text-sm text-slate-400">
+                      Loading tab...
+                    </div>
+                  }
+                >
+                  <MapView
+                    result={result!}
+                    units={settings.units}
+                    showLostStations={settings.mapShowLostStations}
+                    mode={settings.map3dEnabled ? '3d' : '2d'}
+                    adjustedPointsExportSettings={adjustedPointsExportSettings}
+                    derivedResult={qaDerivedResult}
+                    selectedStationId={selection.stationId}
+                    selectedObservationId={selection.observationId}
+                    onSelectStation={handleMapStationSelection}
+                    onSelectObservation={handleMapObservationSelection}
+                    snapshot={mapViewSnapshot}
+                    onSnapshotChange={setMapViewSnapshot}
+                  />
+                </React.Suspense>
+              ) : (
+                <div className="flex h-full items-center justify-center text-sm text-slate-400">
+                  Preparing map...
+                </div>
+              )
             }
           />
         </div>

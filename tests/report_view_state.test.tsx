@@ -37,6 +37,7 @@ const HookHarness: React.FC<{
       <div data-testid="import-group">{state.reviewImportedGroupFilter}</div>
       <button onClick={() => state.setReportFilterQuery('  P100  ')}>set filter</button>
       <button onClick={() => state.showMoreRows('sample')}>show more</button>
+      <button onClick={() => state.showAllRows('sample', sampleRows.length)}>show all</button>
       <button onClick={() => state.toggleDetailSection('angles-ts')}>toggle collapse</button>
       <button onClick={() => state.togglePinnedDetailSection('angles-ts', 'Angles (TS)')}>
         toggle pin
@@ -94,9 +95,9 @@ describe('useReportViewState', () => {
       container.querySelector('[data-testid="import-group"]')?.textContent ?? '';
     const buttons = Array.from(container.querySelectorAll('button'));
 
-    expect(visibleCount()).toBe('100');
+    expect(visibleCount()).toBe('25');
     expect(normalizedQuery()).toBe('');
-    expect(collapsedState()).toBe('expanded');
+    expect(collapsedState()).toBe('collapsed');
     expect(pinCount()).toBe('0');
     expect(conflictOnly()).toBe('off');
     expect(adjustedOnly()).toBe('off');
@@ -104,13 +105,14 @@ describe('useReportViewState', () => {
 
     await act(async () => {
       buttons[1]?.click();
-      buttons[2]?.click();
       buttons[3]?.click();
+      buttons[4]?.click();
+      buttons[2]?.click();
       await Promise.resolve();
     });
 
     expect(visibleCount()).toBe('150');
-    expect(collapsedState()).toBe('collapsed');
+    expect(collapsedState()).toBe('expanded');
     expect(pinCount()).toBe('1');
 
     await act(async () => {
@@ -119,21 +121,21 @@ describe('useReportViewState', () => {
     });
 
     expect(normalizedQuery()).toBe('p100');
-    expect(visibleCount()).toBe('100');
+    expect(visibleCount()).toBe('25');
 
     await act(async () => {
       root.render(<HookHarness resultVersion={2} excludedVersion={2} />);
       await Promise.resolve();
     });
 
-    expect(visibleCount()).toBe('100');
+    expect(visibleCount()).toBe('25');
 
     await act(async () => {
-      buttons[4]?.click();
       buttons[5]?.click();
       buttons[6]?.click();
       buttons[7]?.click();
       buttons[8]?.click();
+      buttons[9]?.click();
       await Promise.resolve();
     });
 
@@ -144,13 +146,13 @@ describe('useReportViewState', () => {
     expect(importGroup()).toBe('import-a.dat');
 
     await act(async () => {
-      buttons[9]?.click();
+      buttons[10]?.click();
       await Promise.resolve();
     });
 
     expect(ellipseMode()).toBe('95');
     expect(normalizedQuery()).toBe('restored');
-    expect(visibleCount()).toBe('100');
+    expect(visibleCount()).toBe('25');
     expect(collapsedState()).toBe('collapsed');
     expect(pinCount()).toBe('1');
     expect(conflictOnly()).toBe('on');

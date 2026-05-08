@@ -30,6 +30,17 @@ const buildResult = () => {
   return result;
 };
 
+const ensureSectionExpanded = async (container: HTMLElement, label: string) => {
+  const button = Array.from(container.querySelectorAll('button[aria-expanded]')).find((entry) =>
+    entry.textContent?.includes(label),
+  ) as HTMLButtonElement | undefined;
+  if (!button) throw new Error(`Section toggle "${label}" not found.`);
+  if (button.getAttribute('aria-expanded') === 'true') return;
+  await act(async () => {
+    button.click();
+  });
+};
+
 const WorkspaceReviewHarness: React.FC<{ onJumpToSourceLine: (_line: number) => void }> = ({
   onJumpToSourceLine,
 }) => {
@@ -37,6 +48,7 @@ const WorkspaceReviewHarness: React.FC<{ onJumpToSourceLine: (_line: number) => 
   const derivedResult = useMemo(() => buildQaDerivedResult(result), [result]);
   const reviewState = useWorkspaceReviewState({
     derivedResult,
+    derivedResultReady: true,
     result,
     excludedIds: new Set<number>(),
   });
@@ -139,6 +151,7 @@ describe('workspace review quick actions', () => {
 
     const selectedObservationId = selectedObservationText();
     expect(selectedObservationId).not.toBe('-');
+    await ensureSectionExpanded(container, 'Distances (TS)');
     const selectedRow = container.querySelector(
       `[data-report-observation-row="${selectedObservationId}"]`,
     ) as HTMLTableRowElement;
@@ -167,6 +180,7 @@ describe('workspace review quick actions', () => {
     expect(container.textContent).toContain('Adjustment Summary');
     expect(reportFilter()).not.toBeNull();
     expect(document.activeElement).toBe(reportFilter());
+    await ensureSectionExpanded(container, 'Distances (TS)');
     const remountedSelectedRow = container.querySelector(
       `[data-report-observation-row="${selectedObservationId}"]`,
     ) as HTMLTableRowElement;

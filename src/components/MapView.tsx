@@ -28,6 +28,7 @@ import {
   resolveStationIdToken,
   scoreMapStationPriority,
 } from '../engine/resultDerivedModels';
+import { noteUiPerfStage, noteUiTabReady } from '../hooks/useUiPerfMonitor';
 
 const FT_PER_M = 3.280839895;
 const VIEW_W = 1000;
@@ -46,6 +47,7 @@ const INTERACTION_DENSE_POINT_THRESHOLD = 180;
 const INTERACTION_DENSE_LINE_THRESHOLD = 360;
 const POINT_HIT_RADIUS_PX = 10;
 const LINE_HIT_RADIUS_PX = 8;
+const EMPTY_MAP_LINKS: ReturnType<typeof buildObservationMapLinks> = [];
 
 type ToolPanel = 'none' | 'points' | 'inverse' | 'angles';
 type MapInteractionPhase = 'idle' | 'interacting' | 'settling';
@@ -226,6 +228,11 @@ const MapView: React.FC<MapViewProps> = ({
   const [viewportWidth, setViewportWidth] = useState<number>(
     typeof window !== 'undefined' ? window.innerWidth : 1280,
   );
+
+  useEffect(() => {
+    noteUiPerfStage('mapReady');
+    noteUiTabReady('map');
+  }, [result]);
 
   const scene3d = useMemo(
     () => buildMap3DScene(result, showLostStations),
@@ -781,7 +788,10 @@ const MapView: React.FC<MapViewProps> = ({
     transformedOverlayConfig.transformedByStationId,
   ]);
 
-  const fallbackMapLinks = useMemo(() => buildObservationMapLinks(observations), [observations]);
+  const fallbackMapLinks = useMemo(
+    () => (derivedResult ? EMPTY_MAP_LINKS : buildObservationMapLinks(observations)),
+    [derivedResult, observations],
+  );
   const mapLinks = derivedResult?.mapLinks ?? fallbackMapLinks;
   const mapLinkByPairKey = useMemo(() => buildMapLinkByPairKey(mapLinks), [mapLinks]);
   const selectedObservationPairKey = useMemo(

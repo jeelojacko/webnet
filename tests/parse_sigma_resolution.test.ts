@@ -94,4 +94,41 @@ describe('parseSigmaResolution', () => {
     expect(level.sigma).toBeCloseTo(0.001, 9);
     expect(logs).toContain('.LWEIGHT fallback applied for L at line 42: 4 mm/km over 0.2500 km');
   });
+
+  it('prefers levelWeight over instrument differential-level defaults instead of adding them', () => {
+    const state: ParseOptions = {
+      units: 'm',
+      coordMode: '3D',
+      order: 'EN',
+      deltaMode: 'slope',
+      mapMode: 'off',
+      normalize: true,
+      levelWeight: 4,
+    };
+    const logs: string[] = [];
+    const inst: Instrument = {
+      code: 'LEV',
+      desc: 'level',
+      edm_const: 0,
+      edm_ppm: 0,
+      hzPrecision_sec: 0,
+      vaPrecision_sec: 0,
+      dirPrecision_sec: 0,
+      azBearingPrecision_sec: 0,
+      instCentr_m: 0,
+      tgtCentr_m: 0,
+      vertCentr_m: 0,
+      elevDiff_const_m: 0.002,
+      elevDiff_ppm: 3,
+      gpsStd_xy: 0,
+      levStd_mmPerKm: 0,
+    };
+    const resolvers = createParseSigmaResolvers(state, logs);
+
+    const level = resolvers.resolveLevelingSigma(undefined, inst, 250, 'DV', 18);
+
+    expect(level.source).toBe('default');
+    expect(level.sigma).toBeCloseTo(0.001, 9);
+    expect(logs).toContain('.LWEIGHT fallback applied for DV at line 18: 4 mm/km over 0.2500 km');
+  });
 });

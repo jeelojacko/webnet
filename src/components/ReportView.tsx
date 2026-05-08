@@ -68,6 +68,7 @@ import {
 import SideshotSection from './report/SideshotSection';
 import SolveProfileDiagnosticsSection from './report/SolveProfileDiagnosticsSection';
 import { useReportViewState, type ReportViewControls } from '../hooks/useReportViewState';
+import { noteUiPerfStage, noteUiTabReady } from '../hooks/useUiPerfMonitor';
 
 const FT_PER_M = 3.280839895;
 
@@ -225,6 +226,10 @@ const ReportView: React.FC<ReportViewProps> = ({
     result,
     excludedIds,
   });
+  useEffect(() => {
+    noteUiPerfStage('reportReady');
+    noteUiTabReady('report');
+  }, [result]);
   const {
     ellipseMode,
     setEllipseMode,
@@ -254,6 +259,7 @@ const ReportView: React.FC<ReportViewProps> = ({
     setAllDetailSectionsCollapsed,
     visibleRowsFor,
     showMoreRows,
+    showAllRows,
   } = viewState ?? localViewState;
   const rowSelectionClass = useCallback(
     (selected: boolean) =>
@@ -728,6 +734,7 @@ const ReportView: React.FC<ReportViewProps> = ({
         shownCount={shownCount}
         totalCount={totalCount}
         onShowMore={showMoreRows}
+        onShowAll={showAllRows}
         step={step}
       />
     );
@@ -768,6 +775,7 @@ const ReportView: React.FC<ReportViewProps> = ({
         rowSelectionClass={rowSelectionClass}
         visibleRowsFor={visibleRowsFor}
         showMoreRows={showMoreRows}
+        showAllRows={showAllRows}
         renderSourceLineLink={renderSourceLineLink}
         isSectionCollapsed={isSectionCollapsed}
         isDetailSectionPinned={isDetailSectionPinned}
@@ -2746,11 +2754,21 @@ const ReportView: React.FC<ReportViewProps> = ({
         </div>
       )}
 
-      <div className="mt-8 bg-slate-900 p-4 rounded border border-slate-800 font-mono text-xs text-slate-400">
-        <div className="font-bold text-slate-300 mb-2 uppercase">Processing Log</div>
-        {result.logs.map((l, i) => (
-          <div key={i}>{l}</div>
-        ))}
+      <div className="mt-8 rounded border border-slate-800 overflow-hidden">
+        {renderCollapsibleSectionHeader({
+          sectionId: 'processing-log',
+          label: 'Processing Log',
+          className:
+            'px-3 py-2 text-xs uppercase tracking-wider border-b border-slate-700 bg-slate-900',
+          labelClassName: 'text-slate-300 font-bold',
+        })}
+        {!isSectionCollapsed('processing-log') && (
+          <div className="bg-slate-900 p-4 font-mono text-xs text-slate-400">
+            {result.logs.map((l, i) => (
+              <div key={i}>{l}</div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

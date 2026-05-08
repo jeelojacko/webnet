@@ -321,6 +321,7 @@ export const INDUSTRY_PARITY_CASES: Record<IndustryParityCaseId, IndustryParityC
         deltaMode: 'slope',
         angleStationOrder: 'atfromto',
         lonSign: 'west-positive',
+        levelWeight: 1.5,
         verticalDeflectionNorthSec: -2.91,
         verticalDeflectionEastSec: -1.46,
         applyCurvatureRefraction: true,

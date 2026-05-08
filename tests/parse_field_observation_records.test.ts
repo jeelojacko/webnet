@@ -195,4 +195,78 @@ describe('parse field/GNSS/leveling record families', () => {
       expect(lev.stdDev).toBeCloseTo(0.00075, 10);
     }
   });
+
+  it('prefers project levelWeight over instrument differential-level defaults for explicit L rows', () => {
+    const parsed = parseInput(
+      ['.INST S9', 'C A 0 0 100 ! ! !', 'C B 0 0 100', 'L A-B 0.9000 250'].join('\n'),
+      {
+        S9: {
+          code: 'S9',
+          desc: 'ts only',
+          edm_const: 0.003,
+          edm_ppm: 2,
+          hzPrecision_sec: 1,
+          dirPrecision_sec: 1,
+          azBearingPrecision_sec: 1,
+          vaPrecision_sec: 1,
+          instCentr_m: 0.0015,
+          tgtCentr_m: 0.0015,
+          vertCentr_m: 0.0005,
+          elevDiff_const_m: 0,
+          elevDiff_ppm: 0,
+          gpsStd_xy: 0,
+          levStd_mmPerKm: 3,
+        },
+      },
+      {
+        currentInstrument: 'S9',
+        projectDefaultInstrument: 'S9',
+        levelWeight: 1.5,
+      },
+    );
+
+    const lev = parsed.observations.find((obs) => obs.type === 'lev');
+    expect(lev?.type).toBe('lev');
+    if (lev?.type === 'lev') {
+      expect(lev.stdDev).toBeCloseTo(0.00075, 10);
+    }
+  });
+
+  it('prefers inline .LWEIGHT over project levelWeight and instrument leveling defaults', () => {
+    const parsed = parseInput(
+      ['.LWEIGHT 2.5', '.INST S9', 'C A 0 0 100 ! ! !', 'C B 0 0 100', 'L A-B 0.9000 250'].join(
+        '\n',
+      ),
+      {
+        S9: {
+          code: 'S9',
+          desc: 'ts only',
+          edm_const: 0.003,
+          edm_ppm: 2,
+          hzPrecision_sec: 1,
+          dirPrecision_sec: 1,
+          azBearingPrecision_sec: 1,
+          vaPrecision_sec: 1,
+          instCentr_m: 0.0015,
+          tgtCentr_m: 0.0015,
+          vertCentr_m: 0.0005,
+          elevDiff_const_m: 0,
+          elevDiff_ppm: 0,
+          gpsStd_xy: 0,
+          levStd_mmPerKm: 3,
+        },
+      },
+      {
+        currentInstrument: 'S9',
+        projectDefaultInstrument: 'S9',
+        levelWeight: 1.5,
+      },
+    );
+
+    const lev = parsed.observations.find((obs) => obs.type === 'lev');
+    expect(lev?.type).toBe('lev');
+    if (lev?.type === 'lev') {
+      expect(lev.stdDev).toBeCloseTo(0.00125, 10);
+    }
+  });
 });
