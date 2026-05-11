@@ -61,6 +61,7 @@ const INPUT_EDITOR_COMMENT_CLASS = 'text-slate-500';
 const INPUT_EDITOR_DIRECTIVE_CLASS = 'text-blue-300';
 const INPUT_EDITOR_FIXED_CLASS = 'text-red-400';
 const INPUT_EDITOR_LINE_HEIGHT_PX = 19.5;
+const INPUT_EDITOR_WINDOW_BUFFER_LINES = 48;
 
 const INPUT_EDITOR_OBS_TOKEN_CLASS: Record<string, string> = {
   C: 'text-amber-100',
@@ -205,7 +206,6 @@ const InputPane = React.forwardRef<InputPaneHandle, InputPaneProps>(
   ) => {
   const editorLines = React.useMemo(() => input.split('\n'), [input]);
   const lineCount = editorLines.length;
-  const lines = React.useMemo(() => Array.from({ length: lineCount }, (_, i) => i + 1), [lineCount]);
   const textareaRef = React.useRef<HTMLTextAreaElement>(null);
   const numbersRef = React.useRef<HTMLDivElement>(null);
   const highlightRef = React.useRef<HTMLPreElement>(null);
@@ -218,6 +218,8 @@ const InputPane = React.forwardRef<InputPaneHandle, InputPaneProps>(
   const [renameDraft, setRenameDraft] = React.useState('');
   const [draggedFileId, setDraggedFileId] = React.useState<string | null>(null);
   const [jumpHighlightLine, setJumpHighlightLine] = React.useState<number | null>(null);
+  const [editorViewportHeight, setEditorViewportHeight] = React.useState(0);
+  const [editorScrollTop, setEditorScrollTop] = React.useState(0);
   const jumpHighlightTimeoutRef = React.useRef<number | null>(null);
   const openProjectFiles = React.useCallback(() => {
     setIsProjectFilesOpen((current) => !current);
@@ -264,14 +266,36 @@ const InputPane = React.forwardRef<InputPaneHandle, InputPaneProps>(
     setRenamingFileId(null);
     setRenameDraft('');
   }, []);
-  const highlightedInput = React.useMemo(() => {
-    return editorLines.map((line, lineIndex) => (
-      <React.Fragment key={`input-line-${lineIndex}`}>
-        {renderHighlightedLine(line, lineIndex)}
-        {lineIndex < editorLines.length - 1 ? '\n' : null}
-      </React.Fragment>
-    ));
-  }, [editorLines]);
+  const visibleLineWindow = React.useMemo(() => {
+    const visibleStart = Math.max(
+      0,
+      Math.floor(editorScrollTop / INPUT_EDITOR_LINE_HEIGHT_PX) - INPUT_EDITOR_WINDOW_BUFFER_LINES,
+    );
+    const visibleEnd = Math.min(
+      lineCount,
+      Math.ceil((editorScrollTop + Math.max(editorViewportHeight, INPUT_EDITOR_LINE_HEIGHT_PX)) / INPUT_EDITOR_LINE_HEIGHT_PX) +
+        INPUT_EDITOR_WINDOW_BUFFER_LINES,
+    );
+    return { visibleStart, visibleEnd };
+  }, [editorScrollTop, editorViewportHeight, lineCount]);
+  const visibleLineNumbers = React.useMemo(
+    () =>
+      Array.from(
+        { length: visibleLineWindow.visibleEnd - visibleLineWindow.visibleStart },
+        (_, index) => visibleLineWindow.visibleStart + index + 1,
+      ),
+    [visibleLineWindow],
+  );
+  const visibleHighlightedInput = React.useMemo(() => {
+    return editorLines
+      .slice(visibleLineWindow.visibleStart, visibleLineWindow.visibleEnd)
+      .map((line, lineOffset) => (
+        <React.Fragment key={`input-line-${visibleLineWindow.visibleStart + lineOffset}`}>
+          {renderHighlightedLine(line, visibleLineWindow.visibleStart + lineOffset)}
+          {visibleLineWindow.visibleStart + lineOffset < editorLines.length - 1 ? '\n' : null}
+        </React.Fragment>
+      ));
+  }, [editorLines, visibleLineWindow]);
 
   const handleScroll = React.useCallback(() => {
     if (textareaRef.current && numbersRef.current) {
@@ -280,6 +304,10 @@ const InputPane = React.forwardRef<InputPaneHandle, InputPaneProps>(
     if (textareaRef.current && highlightRef.current) {
       highlightRef.current.scrollTop = textareaRef.current.scrollTop;
       highlightRef.current.scrollLeft = textareaRef.current.scrollLeft;
+    }
+    if (textareaRef.current) {
+      setEditorScrollTop(textareaRef.current.scrollTop);
+      setEditorViewportHeight(textareaRef.current.clientHeight);
     }
     setContextMenu(null);
   }, []);
@@ -331,6 +359,17 @@ const InputPane = React.forwardRef<InputPaneHandle, InputPaneProps>(
     },
     [],
   );
+
+  React.useEffect(() => {
+    const syncViewport = () => {
+      if (!textareaRef.current) return;
+      setEditorViewportHeight(textareaRef.current.clientHeight);
+      setEditorScrollTop(textareaRef.current.scrollTop);
+    };
+    syncViewport();
+    window.addEventListener('resize', syncViewport);
+    return () => window.removeEventListener('resize', syncViewport);
+  }, []);
 
   const dispatchTextareaInput = React.useCallback((textarea: HTMLTextAreaElement) => {
     textarea.dispatchEvent(new Event('input', { bubbles: true }));
@@ -605,7 +644,7 @@ const InputPane = React.forwardRef<InputPaneHandle, InputPaneProps>(
   }, [cancelRename, fileMenu, isProjectFilesOpen]);
 
   return (
-    <div className="border-r border-slate-700 flex flex-col min-w-[260px] flex-none h-full">
+    <div className="border-r border-slate-700 flex flex-col min-w-[220px] md:min-w-[260px] flex-none h-full">
       <div className="relative bg-slate-800 px-4 py-2 text-xs font-semibold text-slate-400">
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">
@@ -643,7 +682,7 @@ const InputPane = React.forwardRef<InputPaneHandle, InputPaneProps>(
         )}
         {isProjectFilesOpen && projectFiles.length > 0 && (
           <div
-            className="absolute right-4 top-full z-30 mt-2 w-96 rounded border border-slate-600 bg-slate-900 shadow-xl"
+            className="absolute left-2 right-2 top-full z-30 mt-2 rounded border border-slate-600 bg-slate-900 shadow-xl md:left-auto md:right-4 md:w-96"
             onPointerDown={(event) => event.stopPropagation()}
             onContextMenu={(event) => event.preventDefault()}
           >
@@ -675,7 +714,7 @@ const InputPane = React.forwardRef<InputPaneHandle, InputPaneProps>(
                 </button>
               </div>
             </div>
-            <div className="max-h-80 overflow-y-auto p-2">
+              <div className="max-h-80 overflow-y-auto p-2">
               {sortedProjectFiles.map((file) => (
                 <div
                   key={file.id}
@@ -910,25 +949,47 @@ const InputPane = React.forwardRef<InputPaneHandle, InputPaneProps>(
       <div ref={editorWrapRef} className="flex-1 flex overflow-hidden relative">
         <div
           ref={numbersRef}
+          data-input-line-numbers
           className="bg-slate-950 text-slate-600 text-right pr-2 pt-4 font-mono text-xs select-none w-10 overflow-hidden"
           style={{ lineHeight: '1.625' }} // Match leading-relaxed of textarea (approx 1.625)
         >
-          {lines.map((n) => (
-            <div
-              key={n}
-              className={`leading-relaxed ${jumpHighlightLine === n ? 'bg-blue-500/20 text-blue-200' : ''}`}
-            >
-              {n}
-            </div>
-          ))}
+          <div style={{ paddingTop: `${visibleLineWindow.visibleStart * INPUT_EDITOR_LINE_HEIGHT_PX}px` }}>
+            {visibleLineNumbers.map((n) => (
+              <div
+                key={n}
+                className={`leading-relaxed ${jumpHighlightLine === n ? 'bg-blue-500/20 text-blue-200' : ''}`}
+              >
+                {n}
+              </div>
+            ))}
+          </div>
+          <div
+            style={{
+              height: `${Math.max(
+                0,
+                (lineCount - visibleLineWindow.visibleEnd) * INPUT_EDITOR_LINE_HEIGHT_PX,
+              )}px`,
+            }}
+          />
         </div>
         <div className="relative flex-1 bg-slate-900">
           <pre
             ref={highlightRef}
             aria-hidden={true}
+            data-input-highlight-window
             className="pointer-events-none absolute inset-0 overflow-hidden p-4 font-mono text-xs leading-relaxed whitespace-pre"
           >
-            {highlightedInput}
+            <div
+              style={{
+                paddingTop: `${visibleLineWindow.visibleStart * INPUT_EDITOR_LINE_HEIGHT_PX}px`,
+                paddingBottom: `${Math.max(
+                  0,
+                  (lineCount - visibleLineWindow.visibleEnd) * INPUT_EDITOR_LINE_HEIGHT_PX,
+                )}px`,
+              }}
+            >
+              {visibleHighlightedInput}
+            </div>
           </pre>
           <textarea
             ref={textareaRef}

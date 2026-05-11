@@ -7,6 +7,7 @@ import {
   type Dispatch,
   type SetStateAction,
 } from 'react';
+import { deepClonePlain } from '../engine/plainData';
 import {
   buildValueFingerprint,
   cloneSavedRunSnapshots,
@@ -201,7 +202,7 @@ export const useAppRunWorkspaceReview = ({
   const buildSavedRunReopenState = useCallback(
     (): SavedRunWorkspaceState => ({
       activeTab,
-      review: JSON.parse(JSON.stringify(persistedWorkspaceReviewSnapshot)),
+      review: deepClonePlain(persistedWorkspaceReviewSnapshot),
       comparisonSelection: { ...comparisonSelection },
     }),
     [activeTab, comparisonSelection, persistedWorkspaceReviewSnapshot],

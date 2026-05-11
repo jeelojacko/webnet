@@ -23,10 +23,10 @@ describe('WorkspaceChrome', () => {
           isSidebarOpen={false}
           onShowInput={onShowInput}
           hasResult
-          reportContent={<div>Report body</div>}
-          processingSummaryContent={<div>Processing body</div>}
-          industryOutputContent={<div>Listing body</div>}
-          mapContent={<div>Map body</div>}
+          renderReportContent={() => <div>Report body</div>}
+          renderProcessingSummaryContent={() => <div>Processing body</div>}
+          renderIndustryOutputContent={() => <div>Listing body</div>}
+          renderMapContent={() => <div>Map body</div>}
         />,
       );
     });
@@ -70,16 +70,52 @@ describe('WorkspaceChrome', () => {
           isSidebarOpen
           onShowInput={vi.fn()}
           hasResult={false}
-          reportContent={<div>Report body</div>}
-          processingSummaryContent={<div>Processing body</div>}
-          industryOutputContent={<div>Listing body</div>}
-          mapContent={<div>Map body</div>}
+          renderReportContent={() => <div>Report body</div>}
+          renderProcessingSummaryContent={() => <div>Processing body</div>}
+          renderIndustryOutputContent={() => <div>Listing body</div>}
+          renderMapContent={() => <div>Map body</div>}
         />,
       );
     });
 
     expect(container.textContent).toContain('Paste/edit data, then press "Adjust" to solve.');
     expect(container.textContent).not.toContain('Report body');
+
+    await act(async () => {
+      root.unmount();
+    });
+    container.remove();
+  });
+
+  it('only evaluates the active tab render callback', async () => {
+    const renderReportContent = vi.fn(() => <div>Report body</div>);
+    const renderProcessingSummaryContent = vi.fn(() => <div>Processing body</div>);
+    const renderIndustryOutputContent = vi.fn(() => <div>Listing body</div>);
+    const renderMapContent = vi.fn(() => <div>Map body</div>);
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root: Root = createRoot(container);
+
+    await act(async () => {
+      root.render(
+        <WorkspaceChrome
+          activeTab="report"
+          onActiveTabChange={vi.fn()}
+          isSidebarOpen
+          onShowInput={vi.fn()}
+          hasResult
+          renderReportContent={renderReportContent}
+          renderProcessingSummaryContent={renderProcessingSummaryContent}
+          renderIndustryOutputContent={renderIndustryOutputContent}
+          renderMapContent={renderMapContent}
+        />,
+      );
+    });
+
+    expect(renderReportContent).toHaveBeenCalledTimes(1);
+    expect(renderProcessingSummaryContent).not.toHaveBeenCalled();
+    expect(renderIndustryOutputContent).not.toHaveBeenCalled();
+    expect(renderMapContent).not.toHaveBeenCalled();
 
     await act(async () => {
       root.unmount();

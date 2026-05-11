@@ -1,5 +1,37 @@
 # TODO - WebNet
 
+- [ ] UI speed first improvement backlog (May 2026): reduce editor/view repaint cost, tighten narrow-screen workflows, shrink hot-path serialization overhead, and continue splitting large UI/orchestration seams without solver or parity drift.
+  - [x] Phase 0 - backlog codification and baseline capture
+    - [x] Record phased UI speed first roadmap in `TODO.md` before code changes
+    - [x] Keep current `useUiPerfMonitor` as perf timing source of truth for report/map/tab-ready baselines
+    - [ ] Capture current build chunk-size baseline and track deltas as batches land
+    - [ ] Add explicit typing-latency baseline coverage for large input editing
+  - [ ] Phase 1 - UI responsiveness and mobile fit
+    - [x] Current slice - reduce `InputPane` repaint cost by windowing syntax-highlight and line-number rendering to visible rows
+    - [x] Current slice - tighten `InputPane` and `ImportReviewModal` narrow-screen sizing so popovers/forms stop forcing horizontal overflow
+    - [x] Current slice - make `AppToolbar` wrap/stack cleanly on smaller screens without hiding run/export controls
+    - [x] Current slice - stop eager inactive-tab JSX construction in `App.tsx`/`WorkspaceChrome` so hidden heavy tabs do not rebuild on unrelated app-shell churn
+    - [ ] Split `MapView.tsx` into selector/math helpers, canvas layer, SVG overlay layer, and tools/context surfaces
+    - [ ] Narrow broad `useMemo` blocks in `MapView.tsx` and `ReportView.tsx` to stable result identity plus minimal filter keys
+    - [ ] Add tab-level render guards so hidden heavy tabs do not recompute derived models from unrelated app-state churn
+    - [ ] Move more expensive report row shaping behind expand/open actions while preserving current progressive disclosure wording/ordering
+  - [ ] Phase 2 - bundle and hot-path performance
+    - [x] Current slice - replace repeated JSON clone/stringify hot paths in recovery/run-review/project-session syncing with shared plain-data helpers where safe
+    - [x] Current slice - add browser draft size guardrails with explicit failure copy before quota churn writes
+    - [ ] Split Vite manual chunks further so CRS catalog, listing/report text builders, and export serializers stay off lighter startup paths
+    - [ ] Move more non-urgent project/import utilities out of `App.tsx` so base `index` chunk shrinks further
+    - [ ] Review `scenarioParsedModelCache.ts` request-key serialization and trim large cache key material without changing cache semantics
+  - [ ] Phase 3 - maintainability follow-through
+    - [ ] Finish `App.tsx` composition-shell extraction
+    - [ ] Split `useProjectFileWorkflow.ts` into storage, import/export, source-file tabs, and associated-settings seams
+    - [ ] Split `InputPane.tsx` into editor, project-files popover, context menu, and tab-strip components
+    - [ ] Introduce shared typed browser file-IO/download/storage helpers across project/import/export paths
+  - [ ] Phase 4 - security and hardening
+    - [x] Current slice - add explicit size-limit handling for browser-local draft persistence
+    - [ ] Add explicit size limits and validation failures for imported project/settings payloads before full parse/use
+    - [ ] Guard local recovery storage toward minimal recoverable state where feasible, not full expanded snapshots by default
+    - [ ] Document import trust boundaries and accepted offline file assumptions in `docs/IMPORT_WORKFLOW.md`
+
 - [ ] Big-file refactor batch (May 2026): split code-heavy monoliths into smaller seams with no behavior drift.
   - [x] Batch 0 - baseline lock + extraction guards
     - [x] Record current big-file scope and target caps in planning

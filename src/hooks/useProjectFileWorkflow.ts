@@ -11,6 +11,17 @@ import {
 } from 'react';
 import { decodeBase64ToUint8Array, encodeUint8ArrayToBase64 } from './useWorkspaceRecovery';
 import {
+  assertBrowserFileSize,
+  MAX_ASSOCIATED_SETTINGS_TEXT_BYTES,
+  MAX_PORTABLE_PROJECT_TEXT_BYTES,
+  MAX_PROJECT_BUNDLE_BYTES,
+  readBrowserFileAsText,
+  readBrowserFileAsUint8Array,
+  saveBrowserBinaryFile,
+  saveBrowserTextFile,
+} from '../engine/browserFileIo';
+import { stableSerializePlain } from '../engine/plainData';
+import {
   parseProjectFile,
   serializeProjectFile,
   type ParsedProjectPayload,
@@ -81,95 +92,6 @@ const PROJECT_SOURCE_ACCEPT =
   '.dat,.txt,.sum,.rpt,.xml,.jxl,.jobxml,.htm,.html,.rw5,.cr5,.raw,.dbx,.json';
 const ASSOCIATED_PROJECT_SETTINGS_ACCEPT = '.wnproj,.wnproj.json,.json,.snproj';
 const PROJECT_AUTOSAVE_DELAY_MS = 60_000;
-
-const readFileAsText = (file: File): Promise<string> =>
-  new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onerror = () => reject(reader.error ?? new Error(`Failed to read ${file.name}.`));
-    reader.onload = () => resolve(typeof reader.result === 'string' ? reader.result : '');
-    reader.readAsText(file);
-  });
-
-const readFileAsUint8Array = (file: File): Promise<Uint8Array> =>
-  new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onerror = () => reject(reader.error ?? new Error(`Failed to read ${file.name}.`));
-    reader.onload = () => {
-      if (!(reader.result instanceof ArrayBuffer)) {
-        reject(new Error(`Expected binary data for ${file.name}.`));
-        return;
-      }
-      resolve(new Uint8Array(reader.result));
-    };
-    reader.readAsArrayBuffer(file);
-  });
-
-const downloadBlob = (name: string, blob: Blob) => {
-  const url = URL.createObjectURL(blob);
-  const anchor = document.createElement('a');
-  anchor.href = url;
-  anchor.download = name;
-  anchor.click();
-  URL.revokeObjectURL(url);
-};
-
-const writeTextDownload = async (name: string, text: string) => {
-  const picker = (window as Window & {
-    showSaveFilePicker?: (_options: unknown) => Promise<{
-      createWritable: () => Promise<{
-        write: (_content: string) => Promise<void>;
-        close: () => Promise<void>;
-      }>;
-    }>;
-  }).showSaveFilePicker;
-  if (picker) {
-    try {
-      const handle = await picker({
-        suggestedName: name,
-        types: PROJECT_IMPORT_FILE_TYPES,
-      });
-      const writable = await handle.createWritable();
-      await writable.write(text);
-      await writable.close();
-      return true;
-    } catch (error) {
-      if ((error as Error)?.name === 'AbortError') return false;
-    }
-  }
-  downloadBlob(name, new Blob([text], { type: 'application/json' }));
-  return true;
-};
-
-const writeBinaryDownload = async (name: string, bytes: Uint8Array) => {
-  const binaryBuffer = bytes.buffer.slice(
-    bytes.byteOffset,
-    bytes.byteOffset + bytes.byteLength,
-  ) as ArrayBuffer;
-  const picker = (window as Window & {
-    showSaveFilePicker?: (_options: unknown) => Promise<{
-      createWritable: () => Promise<{
-        write: (_content: Blob) => Promise<void>;
-        close: () => Promise<void>;
-      }>;
-    }>;
-  }).showSaveFilePicker;
-  if (picker) {
-    try {
-      const handle = await picker({
-        suggestedName: name,
-        types: PROJECT_IMPORT_FILE_TYPES,
-      });
-      const writable = await handle.createWritable();
-      await writable.write(new Blob([binaryBuffer], { type: 'application/zip' }));
-      await writable.close();
-      return true;
-    } catch (error) {
-      if ((error as Error)?.name === 'AbortError') return false;
-    }
-  }
-  downloadBlob(name, new Blob([binaryBuffer], { type: 'application/zip' }));
-  return true;
-};
 
 interface ImportNotice {
   title: string;
@@ -1115,7 +1037,7 @@ export const useProjectFileWorkflow = ({
 
   const serializedProjectShape = useMemo(
     () =>
-      JSON.stringify({
+      stableSerializePlain({
         settings,
         parseSettings,
         geoidSourceDataBase64: encodeUint8ArrayToBase64(geoidSourceData),
@@ -1141,7 +1063,7 @@ export const useProjectFileWorkflow = ({
 
   useEffect(() => {
     if (!projectSession) return;
-    const currentShape = JSON.stringify({
+    const currentShape = stableSerializePlain({
       settings: projectSession.manifest.ui.settings,
       parseSettings: projectSession.manifest.ui.parseSettings,
       geoidSourceDataBase64: projectSession.manifest.ui.geoidSourceDataBase64 ?? null,
@@ -1418,9 +1340,10 @@ export const useProjectFileWorkflow = ({
     const suggestedName = projectSession
       ? `${projectSession.manifest.name.replace(/\s+/g, '-').toLowerCase()}.wnproj.json`
       : `webnet-project-${new Date().toISOString().slice(0, 10)}.wnproj.json`;
-    const saved = await writeTextDownload(
+    const saved = await saveBrowserTextFile(
       suggestedName,
       serializeProjectFile(buildPortablePayload()),
+      PROJECT_IMPORT_FILE_TYPES,
     );
     if (!saved) return;
     setImportNotice({
@@ -1465,7 +1388,7 @@ export const useProjectFileWorkflow = ({
     const suggestedName = `${(projectSession?.manifest.name ?? 'webnet-project')
       .replace(/\s+/g, '-')
       .toLowerCase()}.zip`;
-    const saved = await writeBinaryDownload(suggestedName, bundleBytes);
+    const saved = await saveBrowserBinaryFile(suggestedName, bundleBytes, PROJECT_IMPORT_FILE_TYPES);
     if (!saved) return;
     setImportNotice({
       title: 'Project bundle exported',
@@ -1669,11 +1592,13 @@ export const useProjectFileWorkflow = ({
       e.target.value = '';
       try {
         if (file.name.toLowerCase().endsWith('.zip')) {
-          const bytes = await readFileAsUint8Array(file);
+          assertBrowserFileSize(file, MAX_PROJECT_BUNDLE_BYTES, `${file.name} project bundle`);
+          const bytes = await readBrowserFileAsUint8Array(file);
           await importProjectBundleAsLocalProject(bytes);
           return;
         }
-        const rawText = await readFileAsText(file);
+        assertBrowserFileSize(file, MAX_PORTABLE_PROJECT_TEXT_BYTES, `${file.name} project file`);
+        const rawText = await readBrowserFileAsText(file);
         const parsed = parseProjectFile(rawText, {
           settings: settings as unknown as Record<string, unknown>,
           parseSettings: parseSettings as unknown as Record<string, unknown>,
@@ -1719,7 +1644,7 @@ export const useProjectFileWorkflow = ({
         const loadedFiles = await Promise.all(
           files.map(async (file) => ({
             file,
-            text: await readFileAsText(file),
+            text: await readBrowserFileAsText(file),
           })),
         );
         updateProjectSession((current) => {
@@ -1864,7 +1789,12 @@ export const useProjectFileWorkflow = ({
   const prepareAssociatedProjectSettingsImport = useCallback(
     async (file: File): Promise<PreparedAssociatedProjectSettingsImport | null> => {
       try {
-        const rawText = await readFileAsText(file);
+        assertBrowserFileSize(
+          file,
+          MAX_ASSOCIATED_SETTINGS_TEXT_BYTES,
+          `${file.name} associated settings file`,
+        );
+        const rawText = await readBrowserFileAsText(file);
         const lowerName = file.name.toLowerCase();
         if (lowerName.endsWith('.snproj')) {
           return buildSnprojAssociatedSettingsPayload({

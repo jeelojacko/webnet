@@ -16,6 +16,7 @@ import {
   buildResultStatisticalSummaryModel,
   buildResultTraceabilityModel,
 } from '../engine/resultDerivedModels';
+import { buildReductionUsageSignature } from '../engine/plainData';
 import { noteUiPerfStage, noteUiTabReady } from '../hooks/useUiPerfMonitor';
 
 interface ProcessingSummaryViewProps {
@@ -128,6 +129,8 @@ const ProcessingSummaryView: React.FC<ProcessingSummaryViewProps> = ({
       rotationAngleRad: runDiagnostics?.rotationAngleRad ?? null,
       coordSystemMode: runDiagnostics?.coordSystemMode ?? null,
       crsId: runDiagnostics?.crsId ?? null,
+      parsedUsageSummary: buildReductionUsageSignature(runDiagnostics?.parsedUsageSummary),
+      usedInSolveUsageSummary: buildReductionUsageSignature(runDiagnostics?.usedInSolveUsageSummary),
     });
     const cachedByKey = processingSummaryTextCache.get(result);
     const cachedText = cachedByKey?.get(cacheKey);
@@ -339,8 +342,8 @@ const ProcessingSummaryView: React.FC<ProcessingSummaryViewProps> = ({
           )}`,
         );
         const hasDirectiveContextDelta =
-          JSON.stringify(runDiagnostics.parsedUsageSummary) !==
-          JSON.stringify(runDiagnostics.usedInSolveUsageSummary);
+          buildReductionUsageSignature(runDiagnostics.parsedUsageSummary) !==
+          buildReductionUsageSignature(runDiagnostics.usedInSolveUsageSummary);
         if (hasDirectiveContextDelta) {
           lines.push(
             'Note: parsed reduction usage differs from used-in-solve usage due to filtering/exclusions.',

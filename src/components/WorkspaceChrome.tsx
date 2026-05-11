@@ -9,10 +9,10 @@ interface WorkspaceChromeProps {
   isSidebarOpen: boolean;
   onShowInput: () => void;
   hasResult: boolean;
-  reportContent: React.ReactNode;
-  processingSummaryContent: React.ReactNode;
-  industryOutputContent: React.ReactNode;
-  mapContent: React.ReactNode;
+  renderReportContent: () => React.ReactNode;
+  renderProcessingSummaryContent: () => React.ReactNode;
+  renderIndustryOutputContent: () => React.ReactNode;
+  renderMapContent: () => React.ReactNode;
 }
 
 const TAB_CONFIG: Array<{
@@ -32,10 +32,10 @@ const WorkspaceChrome: React.FC<WorkspaceChromeProps> = ({
   isSidebarOpen,
   onShowInput,
   hasResult,
-  reportContent,
-  processingSummaryContent,
-  industryOutputContent,
-  mapContent,
+  renderReportContent,
+  renderProcessingSummaryContent,
+  renderIndustryOutputContent,
+  renderMapContent,
 }) => {
   const handleTabClick = useCallback(
     (tab: WorkspaceTabKey) => {
@@ -50,15 +50,15 @@ const WorkspaceChrome: React.FC<WorkspaceChromeProps> = ({
   const renderActiveTab = () => {
     switch (activeTab) {
       case 'report':
-        return reportContent;
+        return renderReportContent();
       case 'processing-summary':
-        return processingSummaryContent;
+        return renderProcessingSummaryContent();
       case 'industry-output':
-        return industryOutputContent;
+        return renderIndustryOutputContent();
       case 'map':
-        return mapContent;
+        return renderMapContent();
       default:
-        return reportContent;
+        return renderReportContent();
     }
   };
 

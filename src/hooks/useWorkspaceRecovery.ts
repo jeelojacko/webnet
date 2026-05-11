@@ -3,6 +3,7 @@ import type { WorkspaceDraftSnapshot, WorkspaceRecoveryRecord } from '../appStat
 
 const DEFAULT_STORAGE_KEY = 'webnet.workspace-recovery.v1';
 const PERSIST_DELAY_MS = 250;
+const MAX_RECOVERY_STORAGE_BYTES = 1_500_000;
 
 const canUseLocalStorage = (): boolean =>
   typeof window !== 'undefined' && typeof window.localStorage !== 'undefined';
@@ -59,6 +60,13 @@ const parseRecoveryRecord = (raw: string | null): WorkspaceRecoveryRecord | null
   } catch {
     return null;
   }
+};
+
+const measureUtf8Bytes = (value: string): number => {
+  if (typeof TextEncoder !== 'undefined') {
+    return new TextEncoder().encode(value).byteLength;
+  }
+  return value.length * 2;
 };
 
 interface UseWorkspaceRecoveryArgs {
@@ -127,7 +135,16 @@ export const useWorkspaceRecovery = ({
           savedAt: new Date().toISOString(),
           snapshot,
         };
-        window.localStorage.setItem(storageKey, JSON.stringify(record));
+        const serializedRecord = JSON.stringify(record);
+        const recordSizeBytes = measureUtf8Bytes(serializedRecord);
+        if (recordSizeBytes > MAX_RECOVERY_STORAGE_BYTES) {
+          lastSavedSnapshotRef.current = serializedSnapshot;
+          setPersistError(
+            `Workspace draft too large to store locally (${Math.round(recordSizeBytes / 1024)} KB > ${Math.round(MAX_RECOVERY_STORAGE_BYTES / 1024)} KB).`,
+          );
+          return;
+        }
+        window.localStorage.setItem(storageKey, serializedRecord);
         lastSavedSnapshotRef.current = serializedSnapshot;
         setHasStoredDraft(true);
         setPersistError(null);

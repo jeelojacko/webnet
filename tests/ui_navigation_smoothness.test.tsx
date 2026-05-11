@@ -175,7 +175,7 @@ describe('UI navigation smoothness', () => {
           isSidebarOpen={true}
           onShowInput={() => {}}
           hasResult={true}
-          reportContent={
+          renderReportContent={() => (
             <ReportView
               result={result}
               units="m"
@@ -201,10 +201,10 @@ describe('UI navigation smoothness', () => {
               onSelectStation={setSelectedStationId}
               onSelectObservation={setSelectedObservationId}
             />
-          }
-          processingSummaryContent={<div className="p-2 text-xs">Processing summary</div>}
-          industryOutputContent={<pre>{'INDUSTRY OUTPUT\n'.repeat(1600)}</pre>}
-          mapContent={
+          )}
+          renderProcessingSummaryContent={() => <div className="p-2 text-xs">Processing summary</div>}
+          renderIndustryOutputContent={() => <pre>{'INDUSTRY OUTPUT\n'.repeat(1600)}</pre>}
+          renderMapContent={() => (
             <MapView
               result={result}
               units="m"
@@ -216,7 +216,7 @@ describe('UI navigation smoothness', () => {
               snapshot={mapSnapshot as any}
               onSnapshotChange={setMapSnapshot}
             />
-          }
+          )}
         />
       );
     };
@@ -334,7 +334,7 @@ describe('UI navigation smoothness', () => {
           isSidebarOpen={true}
           onShowInput={() => {}}
           hasResult={true}
-          reportContent={
+          renderReportContent={() => (
             <ReportView
               result={result}
               units="m"
@@ -360,10 +360,10 @@ describe('UI navigation smoothness', () => {
               onSelectStation={setSelectedStationId}
               onSelectObservation={setSelectedObservationId}
             />
-          }
-          processingSummaryContent={<div className="p-2 text-xs">Processing summary</div>}
-          industryOutputContent={<pre>{'INDUSTRY OUTPUT\n'.repeat(1600)}</pre>}
-          mapContent={
+          )}
+          renderProcessingSummaryContent={() => <div className="p-2 text-xs">Processing summary</div>}
+          renderIndustryOutputContent={() => <pre>{'INDUSTRY OUTPUT\n'.repeat(1600)}</pre>}
+          renderMapContent={() => (
             <MapView
               result={result}
               units="m"
@@ -375,7 +375,7 @@ describe('UI navigation smoothness', () => {
               snapshot={mapSnapshot as any}
               onSnapshotChange={setMapSnapshot}
             />
-          }
+          )}
         />
       );
     };

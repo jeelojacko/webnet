@@ -88,7 +88,7 @@ const AppToolbar: React.FC<AppToolbarProps> = ({
       : null;
 
   return (
-    <header className="h-16 bg-slate-800 border-b border-slate-700 flex items-center px-3 md:px-4 shrink-0 w-full gap-3">
+    <header className="bg-slate-800 border-b border-slate-700 flex flex-wrap items-center px-3 py-2 md:px-4 shrink-0 w-full gap-3">
       <div className="flex items-center gap-3 min-w-0 flex-1">
         <button
           onClick={onToggleSidebar}
@@ -111,14 +111,21 @@ const AppToolbar: React.FC<AppToolbarProps> = ({
         <button
           onClick={onOpenProjectOptions}
           title="Open industry-style project options"
-          className="flex items-center space-x-2 px-3 py-1.5 rounded border text-xs uppercase tracking-wide bg-slate-900/60 border-slate-700 text-slate-300 hover:bg-slate-700"
+          className="hidden sm:flex items-center space-x-2 px-3 py-1.5 rounded border text-xs uppercase tracking-wide bg-slate-900/60 border-slate-700 text-slate-300 hover:bg-slate-700"
         >
           <Settings size={14} />
           <span>Project Options</span>
         </button>
       </div>
 
-      <div className="flex items-center gap-2 ml-auto shrink-0">
+      <div className="flex flex-wrap items-center gap-2 ml-auto shrink-0 justify-end w-full lg:w-auto">
+        <button
+          onClick={onOpenProjectOptions}
+          title="Open industry-style project options"
+          className="sm:hidden p-2 bg-slate-700 hover:bg-slate-600 rounded text-slate-300 transition-colors"
+        >
+          <Settings size={18} />
+        </button>
         <button
           onClick={onOpenImportFile}
           title="Open data/import file"
@@ -160,7 +167,7 @@ const AppToolbar: React.FC<AppToolbarProps> = ({
           value={exportFormat}
           onChange={(e) => onExportFormatChange(e.target.value as ProjectExportFormat)}
           title={exportTooltip}
-          className="h-9 bg-slate-700 border border-slate-600 text-slate-100 text-xs rounded px-2"
+          className="h-9 max-w-full bg-slate-700 border border-slate-600 text-slate-100 text-xs rounded px-2 min-w-[10rem] sm:min-w-[12rem]"
         >
           {EXPORT_FORMAT_OPTIONS.map((option) => (
             <option key={option.value} value={option.value}>
@@ -207,7 +214,7 @@ const AppToolbar: React.FC<AppToolbarProps> = ({
         )}
         {pendingRunSettingDiffs.length > 0 && pipelineState.status !== 'running' && (
           <div
-            className="max-w-[320px] rounded border border-amber-700/70 bg-amber-950/25 px-2 py-1 text-[10px] text-amber-200"
+            className="w-full sm:w-auto sm:max-w-[320px] rounded border border-amber-700/70 bg-amber-950/25 px-2 py-1 text-[10px] text-amber-200"
             title={pendingRunSettingDiffs.join('\n')}
           >
             {pendingRunSettingDiffs.length} setting change
@@ -227,7 +234,7 @@ const AppToolbar: React.FC<AppToolbarProps> = ({
           <RefreshCw size={18} />
         </button>
         {runPhaseLabel ? (
-          <div className="rounded border border-slate-600 bg-slate-800/80 px-2 py-1 text-[11px] uppercase tracking-wide text-slate-300">
+          <div className="w-full sm:w-auto rounded border border-slate-600 bg-slate-800/80 px-2 py-1 text-[11px] uppercase tracking-wide text-slate-300">
             <div className="flex items-center gap-2">
               <span>{runPhaseLabel}</span>
               {elapsedLabel ? <span className="text-slate-400">{elapsedLabel}</span> : null}

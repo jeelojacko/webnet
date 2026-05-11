@@ -1534,7 +1534,7 @@ const App: React.FC<AppProps> = ({
             isSidebarOpen={isSidebarOpen}
             onShowInput={() => setIsSidebarOpen(true)}
             hasResult={Boolean(result)}
-            reportContent={
+            renderReportContent={() => (
               <React.Suspense
                 fallback={
                   <div className="flex h-full items-center justify-center text-sm text-slate-400">
@@ -1573,8 +1573,8 @@ const App: React.FC<AppProps> = ({
                   onSelectObservation={handleReportObservationSelection}
                 />
               </React.Suspense>
-            }
-            processingSummaryContent={
+            )}
+            renderProcessingSummaryContent={() =>
               canRenderTab('processing-summary') ? (
                 <React.Suspense
                   fallback={
@@ -1596,7 +1596,7 @@ const App: React.FC<AppProps> = ({
                 </div>
               )
             }
-            industryOutputContent={
+            renderIndustryOutputContent={() =>
               canRenderTab('industry-output') ? (
                 <React.Suspense
                   fallback={
@@ -1618,7 +1618,7 @@ const App: React.FC<AppProps> = ({
                 </div>
               )
             }
-            mapContent={
+            renderMapContent={() =>
               canRenderTab('map') ? (
                 <React.Suspense
                   fallback={

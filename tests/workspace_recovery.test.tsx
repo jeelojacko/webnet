@@ -676,5 +676,41 @@ describe('useWorkspaceRecovery', () => {
     setItemSpy.mockRestore();
     vi.useRealTimers();
   });
+
+  it('rejects oversized recovery payloads before writing to localStorage', async () => {
+    vi.useFakeTimers();
+    window.localStorage.clear();
+
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root: Root = createRoot(container);
+
+    const Harness = () => {
+      const recovery = useWorkspaceRecovery({
+        storageKey: STORAGE_KEY,
+        snapshot: buildSnapshot({ input: 'X'.repeat(1_600_000) }),
+        onRecover: () => undefined,
+      });
+      return <div data-error>{recovery.persistError ?? '-'}</div>;
+    };
+
+    await act(async () => {
+      root.render(<Harness />);
+    });
+    await act(async () => {
+      await vi.runAllTimersAsync();
+    });
+
+    expect(container.querySelector('[data-error]')?.textContent).toContain(
+      'Workspace draft too large to store locally',
+    );
+    expect(window.localStorage.getItem(STORAGE_KEY)).toBeNull();
+
+    await act(async () => {
+      root.unmount();
+    });
+    container.remove();
+    vi.useRealTimers();
+  });
 });
 

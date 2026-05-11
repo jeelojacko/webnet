@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ClusterApprovedMerge, AdjustmentResult, ObservationOverride } from '../types';
+import { deepClonePlain } from '../engine/plainData';
 import {
   buildComparisonCandidateSnapshots,
   buildRunSnapshotSummary,
@@ -63,8 +64,6 @@ const DEFAULT_COMPARISON_SELECTION: ComparisonSelection = {
   stationMovementThreshold: 0.001,
   residualDeltaThreshold: 0.25,
 };
-
-const clonePlainValue = <T,>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
 
 const sanitizeComparisonSelection = (
   selection: ComparisonSelection,
@@ -193,9 +192,9 @@ export const useRunComparisonState = <TSettingsSnapshot, TRunDiagnostics>({
         settingsSnapshot,
         excludedIds: excludedIds.slice().sort((a, b) => a - b),
         overrideIds: overrideIds.slice().sort((a, b) => a - b),
-        overrides: clonePlainValue(overrides),
+        overrides: deepClonePlain(overrides),
         approvedClusterMerges: approvedClusterMerges.map((merge) => ({ ...merge })),
-        reopenState: reopenState ? clonePlainValue(reopenState) : null,
+        reopenState: reopenState ? deepClonePlain(reopenState) : null,
       };
       runSnapshotCounterRef.current += 1;
       setCurrentRunSnapshot(nextSnapshot);
@@ -316,7 +315,7 @@ export const useRunComparisonState = <TSettingsSnapshot, TRunDiagnostics>({
     const snapshot =
       savedRunSnapshots.find((entry) => entry.id === snapshotId) ?? null;
     if (!snapshot) return null;
-    const restoredSnapshot = clonePlainValue(snapshot) as RunSnapshot<
+    const restoredSnapshot = deepClonePlain(snapshot) as RunSnapshot<
       TSettingsSnapshot,
       TRunDiagnostics
     >;
@@ -368,10 +367,10 @@ export const useRunComparisonState = <TSettingsSnapshot, TRunDiagnostics>({
         reopenState:
           options.reopenState !== undefined
             ? options.reopenState
-              ? clonePlainValue(options.reopenState)
+              ? deepClonePlain(options.reopenState)
               : null
             : currentRunSnapshot.reopenState
-              ? clonePlainValue(currentRunSnapshot.reopenState)
+              ? deepClonePlain(currentRunSnapshot.reopenState)
               : null,
       };
       savedRunSnapshotCounterRef.current += 1;

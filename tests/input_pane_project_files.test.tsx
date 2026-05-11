@@ -10,6 +10,51 @@ import InputPane from '../src/components/InputPane';
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
 describe('InputPane project files UI', () => {
+  it('windows highlight and line-number rendering for large inputs', async () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root: Root = createRoot(container);
+    const input = Array.from({ length: 240 }, (_, index) => `C P${index + 1} ${index} ${index} 0`).join('\n');
+
+    await act(async () => {
+      root.render(<InputPane input={input} onChange={() => undefined} />);
+    });
+
+    const textarea = container.querySelector('textarea') as HTMLTextAreaElement | null;
+    expect(textarea).not.toBeNull();
+    Object.defineProperty(textarea!, 'clientHeight', {
+      configurable: true,
+      value: 240,
+    });
+
+    await act(async () => {
+      textarea!.dispatchEvent(new Event('scroll', { bubbles: true }));
+    });
+
+    const lineNumbers = container.querySelector('[data-input-line-numbers]') as HTMLDivElement | null;
+    const highlight = container.querySelector('[data-input-highlight-window]') as HTMLPreElement | null;
+    expect(lineNumbers).not.toBeNull();
+    expect(highlight).not.toBeNull();
+    expect(lineNumbers?.textContent).toContain('1');
+    expect(lineNumbers?.textContent).not.toContain('240');
+    expect(highlight?.textContent).toContain('P1');
+    expect(highlight?.textContent).not.toContain('P240');
+
+    await act(async () => {
+      textarea!.scrollTop = 3200;
+      textarea!.dispatchEvent(new Event('scroll', { bubbles: true }));
+    });
+
+    expect(lineNumbers?.textContent).toContain('150');
+    expect(highlight?.textContent).toContain('P150');
+    expect(highlight?.textContent).not.toContain('P40');
+
+    await act(async () => {
+      root.unmount();
+    });
+    container.remove();
+  });
+
   it('keeps the project files button available before a named project exists', async () => {
     const container = document.createElement('div');
     document.body.appendChild(container);

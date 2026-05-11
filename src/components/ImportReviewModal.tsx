@@ -257,7 +257,7 @@ const ImportReviewModal: React.FC<ImportReviewModalProps> = ({
         <div className="border-b border-slate-700 bg-slate-800/80 px-4 py-3">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <div className="grid gap-2">
-              <label className="flex min-w-[260px] flex-col text-[11px] uppercase tracking-wide text-slate-400">
+              <label className="flex min-w-0 flex-col text-[11px] uppercase tracking-wide text-slate-400">
                 Setup Label
                 <input
                   type="text"
@@ -284,7 +284,7 @@ const ImportReviewModal: React.FC<ImportReviewModalProps> = ({
               )}
             </div>
             <div className="flex flex-col gap-2 lg:items-end">
-              <label className="flex min-w-[320px] flex-col text-[11px] uppercase tracking-wide text-slate-400">
+              <label className="flex min-w-0 flex-col text-[11px] uppercase tracking-wide text-slate-400">
                 Comment Line
                 <input
                   type="text"
@@ -433,7 +433,7 @@ const ImportReviewModal: React.FC<ImportReviewModalProps> = ({
                         />
                       </td>
                       <td className="border-b border-slate-800 px-3 py-2 align-top">
-                        <div className="flex min-w-[220px] flex-col gap-2">
+                        <div className="flex min-w-0 flex-col gap-2">
                           {hasConflict && (
                             <div className="text-[10px] uppercase tracking-wide text-rose-300">
                               Reconcile conflict
@@ -740,7 +740,7 @@ const ImportReviewModal: React.FC<ImportReviewModalProps> = ({
                           )}
                         </td>
                         <td className="border-b border-slate-800 px-3 py-2 text-slate-200 align-top">
-                          <div className="flex min-w-[220px] flex-col gap-2">
+                          <div className="flex min-w-0 flex-col gap-2">
                             <select
                               value={resolution}
                               onChange={(event) =>
