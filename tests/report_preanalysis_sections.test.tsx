@@ -5,7 +5,7 @@ import ReportView from '../src/components/ReportView';
 import { LSAEngine } from '../src/engine/adjust';
 
 describe('ReportView preanalysis sections', () => {
-  it('renders planning-specific covariance sections and hides residual tables', () => {
+  it('renders planning-specific preanalysis section headers but defers heavy table rows by default', () => {
     const input = [
       '.2D',
       'C A 0 0 0 ! !',
@@ -79,14 +79,17 @@ describe('ReportView preanalysis sections', () => {
     expect(html).toContain('Weak Geometry Cues');
     expect(html).toContain('Planned Observation What-If Analysis');
     expect(html).toContain('Locked Planned Observations');
-    expect(html).toContain('Locked planned constraint; excluded from what-if actions.');
     expect(html).toContain(
       'title="Planned observations using fixed sigma weighting. They are excluded from what-if removal actions."',
     );
     expect(html).toContain(
       'title="Re-solved planning scenarios showing how predicted precision changes when each removable planned observation is removed or added back."',
     );
-    expect(html).toContain('Remove + Re-run');
+    expect(html).toContain('Show');
+    expect(html).not.toContain('Locked planned constraint; excluded from what-if actions.');
+    expect(html).not.toContain('Remove + Re-run');
+    expect(html).not.toContain('dWorstMaj (m)');
+    expect(html).not.toContain('Median Station Major');
     expect(html).not.toContain('Observations &amp; Residuals');
     expect(html).not.toContain('Top Suspects');
   });

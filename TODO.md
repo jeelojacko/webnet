@@ -20,6 +20,7 @@
     - [x] Current slice - collapse the `ReportView` preanalysis precision/filter selector cluster behind a focused helper so repeated covariance and query scans stay out of the component body
     - [x] Current slice - collapse the `ReportView` observation-filter and suspect-diagnostic selector cluster behind a focused helper so filtering and ranking logic stop spanning the component body
     - [x] Current slice - collapse the `ReportView` traceability, cluster-review, and sideshot-derived selector cluster behind a focused helper so the component coordinates fewer result-shaping memos
+    - [x] Current slice - move the preanalysis-heavy `ReportView` tables behind default-collapsed detail sections so covariance, what-if, and weak-geometry rows do not render until opened
     - [ ] Split `MapView.tsx` into selector/math helpers, canvas layer, SVG overlay layer, and tools/context surfaces
     - [ ] Narrow broad `useMemo` blocks in `MapView.tsx` and `ReportView.tsx` to stable result identity plus minimal filter keys
     - [ ] Add tab-level render guards so hidden heavy tabs do not recompute derived models from unrelated app-state churn

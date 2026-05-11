@@ -1106,47 +1106,55 @@ const ReportView: React.FC<ReportViewProps> = ({
 
       {isPreanalysis && lockedPreanalysisObservations.length > 0 && (
         <div className="mb-6 border border-slate-800 rounded overflow-hidden opacity-75">
-          <div
-            className="px-3 py-2 text-xs text-slate-400 uppercase tracking-wider border-b border-slate-800 bg-slate-900/40"
-            title={preanalysisLabelTooltip('Locked Planned Observations')}
-          >
-            Locked Planned Observations
-          </div>
-          <div className="px-3 py-2 text-xs text-slate-500 bg-slate-950/30 border-b border-slate-800/60">
-            These planned rows use fixed sigma weighting, remain visible for context, and are not
-            removable from what-if actions.
-          </div>
-          <table className="w-full text-left text-xs">
-            <thead>
-              <tr className="text-slate-200 border-b border-slate-700/80">
-                <th className="py-2 px-3">#</th>
-                <th className="py-2">Type</th>
-                <th className="py-2">Stations</th>
-                <th className="py-2 text-right">Line</th>
-                <th className="py-2 text-right">Obs</th>
-                <th className="py-2 text-right">Fixed Sigma</th>
-                <th className="py-2 px-3">Note</th>
-              </tr>
-            </thead>
-            <tbody className="text-slate-500">
-              {lockedPreanalysisObservations.map((obs, idx) => (
-                <tr
-                  key={`locked-preanalysis-${obs.id}-${idx}`}
-                  className="border-b border-slate-800/40 bg-slate-950/20"
-                >
-                  <td className="py-1 px-3">{idx + 1}</td>
-                  <td className="py-1 uppercase">{obs.type}</td>
-                  <td className="py-1">{observationStationsLabel(obs)}</td>
-                  <td className="py-1 text-right font-mono">{renderSourceLineLink(obs.sourceLine)}</td>
-                  <td className="py-1 text-right font-mono">{observationValueLabel(obs)}</td>
-                  <td className="py-1 text-right font-mono">{fixedSigmaLabel(obs)}</td>
-                  <td className="py-1 px-3">
-                    Locked planned constraint; excluded from what-if actions.
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          {renderCollapsibleSectionHeader({
+            sectionId: 'locked-planned-observations',
+            label: 'Locked Planned Observations',
+            className:
+              'px-3 py-2 text-xs uppercase tracking-wider border-b border-slate-800 bg-slate-900/40',
+            labelClassName: 'text-slate-400',
+            title: preanalysisLabelTooltip('Locked Planned Observations'),
+          })}
+          {!isSectionCollapsed('locked-planned-observations') && (
+            <>
+              <div className="px-3 py-2 text-xs text-slate-500 bg-slate-950/30 border-b border-slate-800/60">
+                These planned rows use fixed sigma weighting, remain visible for context, and are
+                not removable from what-if actions.
+              </div>
+              <table className="w-full text-left text-xs">
+                <thead>
+                  <tr className="text-slate-200 border-b border-slate-700/80">
+                    <th className="py-2 px-3">#</th>
+                    <th className="py-2">Type</th>
+                    <th className="py-2">Stations</th>
+                    <th className="py-2 text-right">Line</th>
+                    <th className="py-2 text-right">Obs</th>
+                    <th className="py-2 text-right">Fixed Sigma</th>
+                    <th className="py-2 px-3">Note</th>
+                  </tr>
+                </thead>
+                <tbody className="text-slate-500">
+                  {lockedPreanalysisObservations.map((obs, idx) => (
+                    <tr
+                      key={`locked-preanalysis-${obs.id}-${idx}`}
+                      className="border-b border-slate-800/40 bg-slate-950/20"
+                    >
+                      <td className="py-1 px-3">{idx + 1}</td>
+                      <td className="py-1 uppercase">{obs.type}</td>
+                      <td className="py-1">{observationStationsLabel(obs)}</td>
+                      <td className="py-1 text-right font-mono">
+                        {renderSourceLineLink(obs.sourceLine)}
+                      </td>
+                      <td className="py-1 text-right font-mono">{observationValueLabel(obs)}</td>
+                      <td className="py-1 text-right font-mono">{fixedSigmaLabel(obs)}</td>
+                      <td className="py-1 px-3">
+                        Locked planned constraint; excluded from what-if actions.
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </>
+          )}
         </div>
       )}
 
@@ -1154,150 +1162,161 @@ const ReportView: React.FC<ReportViewProps> = ({
         preanalysisImpactDiagnostics &&
         preanalysisImpactDiagnostics.rows.length > 0 && (
           <div className="mb-6 border border-slate-800 rounded overflow-hidden">
-            <div
-              className="px-3 py-2 text-xs text-slate-400 uppercase tracking-wider border-b border-slate-800 bg-slate-900/40"
-              title={preanalysisLabelTooltip('Planned Observation What-If Analysis')}
-            >
-              Planned Observation What-If Analysis
-            </div>
-            <div className="grid grid-cols-2 md:grid-cols-6 gap-3 p-3 text-xs text-slate-300 border-b border-slate-800/60">
-              <div>
-                <div
-                  className="text-slate-500"
-                  title={preanalysisLabelTooltip('Removable Planned')}
-                >
-                  Active Removable
-                </div>
-                <div>{preanalysisImpactDiagnostics.activePlannedCount}</div>
-              </div>
-              <div>
-                <div
-                  className="text-slate-500"
-                  title={preanalysisLabelTooltip('Excluded Removable')}
-                >
-                  Excluded Removable
-                </div>
-                <div>{preanalysisImpactDiagnostics.excludedPlannedCount}</div>
-              </div>
-              <div>
-                <div
-                  className="text-slate-500"
-                  title={preanalysisLabelTooltip('Worst Station Major')}
-                >
-                  Worst Station Major
-                </div>
-                <div>
-                  {preanalysisImpactDiagnostics.baseWorstStationMajor != null
-                    ? `${(preanalysisImpactDiagnostics.baseWorstStationMajor * unitScale).toFixed(4)} ${units}`
-                    : '-'}
-                </div>
-              </div>
-              <div>
-                <div
-                  className="text-slate-500"
-                  title={preanalysisLabelTooltip('Worst Pair SigmaDist')}
-                >
-                  Worst Pair SigmaDist
-                </div>
-                <div>
-                  {preanalysisImpactDiagnostics.baseWorstPairSigmaDist != null
-                    ? `${(preanalysisImpactDiagnostics.baseWorstPairSigmaDist * unitScale).toFixed(4)} ${units}`
-                    : '-'}
-                </div>
-              </div>
-              <div>
-                <div className="text-slate-500" title={preanalysisLabelTooltip('Weak Stations')}>
-                  Weak Stations
-                </div>
-                <div>{preanalysisImpactDiagnostics.baseWeakStationCount}</div>
-              </div>
-              <div>
-                <div className="text-slate-500" title={preanalysisLabelTooltip('Weak Pairs')}>
-                  Weak Pairs
-                </div>
-                <div>{preanalysisImpactDiagnostics.baseWeakPairCount}</div>
-              </div>
-            </div>
-            <table className="w-full text-left text-xs">
-              <thead>
-                <tr className="text-slate-200 border-b border-slate-700/80">
-                  <th className="py-2 px-3">#</th>
-                  <th className="py-2">Action</th>
-                  <th className="py-2">Type</th>
-                  <th className="py-2">Stations</th>
-                  <th className="py-2 text-right">Line</th>
-                  <th className="py-2 text-right">dWorstMaj ({units})</th>
-                  <th className="py-2 text-right">dMedianMaj ({units})</th>
-                  <th className="py-2 text-right">dWorstPair ({units})</th>
-                  <th className="py-2 text-right">dWeakStn</th>
-                  <th className="py-2 text-right">dWeakPair</th>
-                  <th className="py-2 text-right">Score</th>
-                  <th className="py-2 text-right px-3">Apply</th>
-                </tr>
-              </thead>
-              <tbody className="text-slate-300">
-                {preanalysisImpactDiagnostics.rows.map((row, idx) => {
-                  const alreadyExcluded = excludedIds.has(row.obsId);
-                  return (
-                    <tr
-                      key={`preanalysis-impact-${row.obsId}-${idx}`}
-                      className="border-b border-slate-800/30"
+            {renderCollapsibleSectionHeader({
+              sectionId: 'planned-observation-what-if-analysis',
+              label: 'Planned Observation What-If Analysis',
+              className:
+                'px-3 py-2 text-xs uppercase tracking-wider border-b border-slate-800 bg-slate-900/40',
+              labelClassName: 'text-slate-400',
+              title: preanalysisLabelTooltip('Planned Observation What-If Analysis'),
+            })}
+            {!isSectionCollapsed('planned-observation-what-if-analysis') && (
+              <>
+                <div className="grid grid-cols-2 md:grid-cols-6 gap-3 p-3 text-xs text-slate-300 border-b border-slate-800/60">
+                  <div>
+                    <div
+                      className="text-slate-500"
+                      title={preanalysisLabelTooltip('Removable Planned')}
                     >
-                      <td className="py-1 px-3 text-slate-500">{idx + 1}</td>
-                      <td className="py-1 uppercase text-slate-400">
-                        {row.action === 'remove' ? 'REMOVE' : 'ADD BACK'}
-                      </td>
-                      <td className="py-1 uppercase text-slate-400">{row.type}</td>
-                      <td className="py-1">{row.stations}</td>
-                      <td className="py-1 text-right font-mono text-slate-500">
-                        {renderSourceLineLink(row.sourceLine)}
-                      </td>
-                      <td className="py-1 text-right font-mono">
-                        {row.deltaWorstStationMajor != null
-                          ? (row.deltaWorstStationMajor * unitScale).toFixed(4)
-                          : '-'}
-                      </td>
-                      <td className="py-1 text-right font-mono">
-                        {row.deltaMedianStationMajor != null
-                          ? (row.deltaMedianStationMajor * unitScale).toFixed(4)
-                          : '-'}
-                      </td>
-                      <td className="py-1 text-right font-mono">
-                        {row.deltaWorstPairSigmaDist != null
-                          ? (row.deltaWorstPairSigmaDist * unitScale).toFixed(4)
-                          : '-'}
-                      </td>
-                      <td className="py-1 text-right font-mono">
-                        {row.deltaWeakStationCount ?? '-'}
-                      </td>
-                      <td className="py-1 text-right font-mono">{row.deltaWeakPairCount ?? '-'}</td>
-                      <td className="py-1 text-right font-mono">
-                        {row.score != null ? row.score.toFixed(2) : '-'}
-                      </td>
-                      <td className="py-1 px-3 text-right">
-                        <button
-                          onClick={() => onApplyPreanalysisAction(row.obsId)}
-                          disabled={row.status !== 'ok'}
-                          className={`px-2 py-0.5 rounded border text-[10px] ${
-                            row.status !== 'ok'
-                              ? 'border-slate-700 text-slate-600 cursor-not-allowed'
-                              : 'border-cyan-700 text-cyan-200 hover:bg-cyan-950/30'
-                          }`}
-                        >
-                          {row.action === 'remove'
-                            ? alreadyExcluded
-                              ? 'Removed'
-                              : 'Remove + Re-run'
-                            : alreadyExcluded
-                              ? 'Add Back + Re-run'
-                              : 'Added'}
-                        </button>
-                      </td>
+                      Active Removable
+                    </div>
+                    <div>{preanalysisImpactDiagnostics.activePlannedCount}</div>
+                  </div>
+                  <div>
+                    <div
+                      className="text-slate-500"
+                      title={preanalysisLabelTooltip('Excluded Removable')}
+                    >
+                      Excluded Removable
+                    </div>
+                    <div>{preanalysisImpactDiagnostics.excludedPlannedCount}</div>
+                  </div>
+                  <div>
+                    <div
+                      className="text-slate-500"
+                      title={preanalysisLabelTooltip('Worst Station Major')}
+                    >
+                      Worst Station Major
+                    </div>
+                    <div>
+                      {preanalysisImpactDiagnostics.baseWorstStationMajor != null
+                        ? `${(preanalysisImpactDiagnostics.baseWorstStationMajor * unitScale).toFixed(4)} ${units}`
+                        : '-'}
+                    </div>
+                  </div>
+                  <div>
+                    <div
+                      className="text-slate-500"
+                      title={preanalysisLabelTooltip('Worst Pair SigmaDist')}
+                    >
+                      Worst Pair SigmaDist
+                    </div>
+                    <div>
+                      {preanalysisImpactDiagnostics.baseWorstPairSigmaDist != null
+                        ? `${(preanalysisImpactDiagnostics.baseWorstPairSigmaDist * unitScale).toFixed(4)} ${units}`
+                        : '-'}
+                    </div>
+                  </div>
+                  <div>
+                    <div
+                      className="text-slate-500"
+                      title={preanalysisLabelTooltip('Weak Stations')}
+                    >
+                      Weak Stations
+                    </div>
+                    <div>{preanalysisImpactDiagnostics.baseWeakStationCount}</div>
+                  </div>
+                  <div>
+                    <div className="text-slate-500" title={preanalysisLabelTooltip('Weak Pairs')}>
+                      Weak Pairs
+                    </div>
+                    <div>{preanalysisImpactDiagnostics.baseWeakPairCount}</div>
+                  </div>
+                </div>
+                <table className="w-full text-left text-xs">
+                  <thead>
+                    <tr className="text-slate-200 border-b border-slate-700/80">
+                      <th className="py-2 px-3">#</th>
+                      <th className="py-2">Action</th>
+                      <th className="py-2">Type</th>
+                      <th className="py-2">Stations</th>
+                      <th className="py-2 text-right">Line</th>
+                      <th className="py-2 text-right">dWorstMaj ({units})</th>
+                      <th className="py-2 text-right">dMedianMaj ({units})</th>
+                      <th className="py-2 text-right">dWorstPair ({units})</th>
+                      <th className="py-2 text-right">dWeakStn</th>
+                      <th className="py-2 text-right">dWeakPair</th>
+                      <th className="py-2 text-right">Score</th>
+                      <th className="py-2 text-right px-3">Apply</th>
                     </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                  </thead>
+                  <tbody className="text-slate-300">
+                    {preanalysisImpactDiagnostics.rows.map((row, idx) => {
+                      const alreadyExcluded = excludedIds.has(row.obsId);
+                      return (
+                        <tr
+                          key={`preanalysis-impact-${row.obsId}-${idx}`}
+                          className="border-b border-slate-800/30"
+                        >
+                          <td className="py-1 px-3 text-slate-500">{idx + 1}</td>
+                          <td className="py-1 uppercase text-slate-400">
+                            {row.action === 'remove' ? 'REMOVE' : 'ADD BACK'}
+                          </td>
+                          <td className="py-1 uppercase text-slate-400">{row.type}</td>
+                          <td className="py-1">{row.stations}</td>
+                          <td className="py-1 text-right font-mono text-slate-500">
+                            {renderSourceLineLink(row.sourceLine)}
+                          </td>
+                          <td className="py-1 text-right font-mono">
+                            {row.deltaWorstStationMajor != null
+                              ? (row.deltaWorstStationMajor * unitScale).toFixed(4)
+                              : '-'}
+                          </td>
+                          <td className="py-1 text-right font-mono">
+                            {row.deltaMedianStationMajor != null
+                              ? (row.deltaMedianStationMajor * unitScale).toFixed(4)
+                              : '-'}
+                          </td>
+                          <td className="py-1 text-right font-mono">
+                            {row.deltaWorstPairSigmaDist != null
+                              ? (row.deltaWorstPairSigmaDist * unitScale).toFixed(4)
+                              : '-'}
+                          </td>
+                          <td className="py-1 text-right font-mono">
+                            {row.deltaWeakStationCount ?? '-'}
+                          </td>
+                          <td className="py-1 text-right font-mono">
+                            {row.deltaWeakPairCount ?? '-'}
+                          </td>
+                          <td className="py-1 text-right font-mono">
+                            {row.score != null ? row.score.toFixed(2) : '-'}
+                          </td>
+                          <td className="py-1 px-3 text-right">
+                            <button
+                              onClick={() => onApplyPreanalysisAction(row.obsId)}
+                              disabled={row.status !== 'ok'}
+                              className={`px-2 py-0.5 rounded border text-[10px] ${
+                                row.status !== 'ok'
+                                  ? 'border-slate-700 text-slate-600 cursor-not-allowed'
+                                  : 'border-cyan-700 text-cyan-200 hover:bg-cyan-950/30'
+                              }`}
+                            >
+                              {row.action === 'remove'
+                                ? alreadyExcluded
+                                  ? 'Removed'
+                                  : 'Remove + Re-run'
+                                : alreadyExcluded
+                                  ? 'Add Back + Re-run'
+                                  : 'Added'}
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </>
+            )}
           </div>
         )}
 
@@ -2214,220 +2233,251 @@ const ReportView: React.FC<ReportViewProps> = ({
 
       {isPreanalysis && filteredStationCovariances.length > 0 && (
         <div className="mb-4 border border-slate-800 rounded">
-          <div
-            className="px-3 py-2 text-xs text-slate-400 uppercase tracking-wider border-b border-slate-800"
-            title={preanalysisLabelTooltip('Station Covariance Blocks Section')}
-          >
-            Station Covariance Blocks ({units}^2)
-          </div>
-          <div className="overflow-x-auto w-full">
-            <table className="w-full text-left border-collapse text-xs">
-              <thead>
-                <tr className="text-slate-200 border-b border-slate-700">
-                  <th className="py-2 px-3 font-semibold">Station</th>
-                  <th className="py-2 px-3 font-semibold text-right">CEE</th>
-                  <th className="py-2 px-3 font-semibold text-right">CEN</th>
-                  <th className="py-2 px-3 font-semibold text-right">CNN</th>
-                  {!result.parseState?.coordMode || result.parseState.coordMode === '3D' ? (
-                    <th className="py-2 px-3 font-semibold text-right">CHH</th>
-                  ) : null}
-                </tr>
-              </thead>
-              <tbody className="text-slate-300">
-                {visibleRowsFor('station-covariances', filteredStationCovariances).map((block) => (
-                  <tr
-                    key={`station-cov-${block.stationId}`}
-                    className="border-b border-slate-800/50"
-                  >
-                    <td className="py-1 px-3">{block.stationId}</td>
-                    <td className="py-1 px-3 text-right">
-                      {(block.cEE * covarianceScale).toExponential(4)}
-                    </td>
-                    <td className="py-1 px-3 text-right">
-                      {(block.cEN * covarianceScale).toExponential(4)}
-                    </td>
-                    <td className="py-1 px-3 text-right">
-                      {(block.cNN * covarianceScale).toExponential(4)}
-                    </td>
+          {renderCollapsibleSectionHeader({
+            sectionId: 'station-covariances',
+            label: `Station Covariance Blocks (${units}^2)`,
+            className: 'px-3 py-2 text-xs uppercase tracking-wider border-b border-slate-800',
+            labelClassName: 'text-slate-400',
+            title: preanalysisLabelTooltip('Station Covariance Blocks Section'),
+          })}
+          {!isSectionCollapsed('station-covariances') && (
+            <div className="overflow-x-auto w-full">
+              <table className="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr className="text-slate-200 border-b border-slate-700">
+                    <th className="py-2 px-3 font-semibold">Station</th>
+                    <th className="py-2 px-3 font-semibold text-right">CEE</th>
+                    <th className="py-2 px-3 font-semibold text-right">CEN</th>
+                    <th className="py-2 px-3 font-semibold text-right">CNN</th>
                     {!result.parseState?.coordMode || result.parseState.coordMode === '3D' ? (
-                      <td className="py-1 px-3 text-right">
-                        {block.cHH != null ? (block.cHH * covarianceScale).toExponential(4) : '-'}
-                      </td>
+                      <th className="py-2 px-3 font-semibold text-right">CHH</th>
                     ) : null}
                   </tr>
-                ))}
-              </tbody>
-            </table>
-            {renderLoadMoreFooter(
-              'station-covariances',
-              visibleRowsFor('station-covariances', filteredStationCovariances).length,
-              filteredStationCovariances.length,
-            )}
-          </div>
+                </thead>
+                <tbody className="text-slate-300">
+                  {visibleRowsFor('station-covariances', filteredStationCovariances).map((block) => (
+                    <tr
+                      key={`station-cov-${block.stationId}`}
+                      className="border-b border-slate-800/50"
+                    >
+                      <td className="py-1 px-3">{block.stationId}</td>
+                      <td className="py-1 px-3 text-right">
+                        {(block.cEE * covarianceScale).toExponential(4)}
+                      </td>
+                      <td className="py-1 px-3 text-right">
+                        {(block.cEN * covarianceScale).toExponential(4)}
+                      </td>
+                      <td className="py-1 px-3 text-right">
+                        {(block.cNN * covarianceScale).toExponential(4)}
+                      </td>
+                      {!result.parseState?.coordMode || result.parseState.coordMode === '3D' ? (
+                        <td className="py-1 px-3 text-right">
+                          {block.cHH != null
+                            ? (block.cHH * covarianceScale).toExponential(4)
+                            : '-'}
+                        </td>
+                      ) : null}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {renderLoadMoreFooter(
+                'station-covariances',
+                visibleRowsFor('station-covariances', filteredStationCovariances).length,
+                filteredStationCovariances.length,
+              )}
+            </div>
+          )}
         </div>
       )}
 
       {isPreanalysis && filteredRelativeCovariances.length > 0 && (
         <div className="mb-4 border border-slate-800 rounded">
-          <div
-            className="px-3 py-2 text-xs text-slate-400 uppercase tracking-wider border-b border-slate-800"
-            title={preanalysisLabelTooltip('Predicted Relative Precision (Connected Pairs)')}
-          >
-            Predicted Relative Precision (Connected Pairs)
-          </div>
-          <div className="overflow-x-auto w-full">
-            <table className="w-full text-left border-collapse text-xs">
-              <thead>
-                <tr className="text-slate-200 border-b border-slate-700">
-                  <th className="py-2 px-3 font-semibold">From</th>
-                  <th className="py-2 px-3 font-semibold">To</th>
-                  <th className="py-2 px-3 font-semibold">Types</th>
-                  <th className="py-2 px-3 font-semibold text-right">σN</th>
-                  <th className="py-2 px-3 font-semibold text-right">σE</th>
-                  <th className="py-2 px-3 font-semibold text-right">σDist</th>
-                  <th className="py-2 px-3 font-semibold text-right">σAz (")</th>
-                  <th className="py-2 px-3 font-semibold text-right">CEE</th>
-                  <th className="py-2 px-3 font-semibold text-right">CEN</th>
-                  <th className="py-2 px-3 font-semibold text-right">CNN</th>
-                </tr>
-              </thead>
-              <tbody className="text-slate-300">
-                {visibleRowsFor('relative-covariances', filteredRelativeCovariances).map(
-                  (rel, idx) => (
-                  <tr
-                    key={`preanalysis-rel-${rel.from}-${rel.to}-${idx}`}
-                    className="border-b border-slate-800/50"
-                  >
-                    <td className="py-1 px-3">{rel.from}</td>
-                    <td className="py-1 px-3">{rel.to}</td>
-                    <td className="py-1 px-3 text-slate-400">{rel.connectionTypes.join(', ')}</td>
-                    <td className="py-1 px-3 text-right">{(rel.sigmaN * unitScale).toFixed(4)}</td>
-                    <td className="py-1 px-3 text-right">{(rel.sigmaE * unitScale).toFixed(4)}</td>
-                    <td className="py-1 px-3 text-right">
-                      {rel.sigmaDist != null ? (rel.sigmaDist * unitScale).toFixed(4) : '-'}
-                    </td>
-                    <td className="py-1 px-3 text-right">
-                      {rel.sigmaAz != null ? (rel.sigmaAz * RAD_TO_DEG * 3600).toFixed(2) : '-'}
-                    </td>
-                    <td className="py-1 px-3 text-right">
-                      {(rel.cEE * covarianceScale).toExponential(4)}
-                    </td>
-                    <td className="py-1 px-3 text-right">
-                      {(rel.cEN * covarianceScale).toExponential(4)}
-                    </td>
-                    <td className="py-1 px-3 text-right">
-                      {(rel.cNN * covarianceScale).toExponential(4)}
-                    </td>
+          {renderCollapsibleSectionHeader({
+            sectionId: 'relative-covariances',
+            label: 'Predicted Relative Precision (Connected Pairs)',
+            className: 'px-3 py-2 text-xs uppercase tracking-wider border-b border-slate-800',
+            labelClassName: 'text-slate-400',
+            title: preanalysisLabelTooltip('Predicted Relative Precision (Connected Pairs)'),
+          })}
+          {!isSectionCollapsed('relative-covariances') && (
+            <div className="overflow-x-auto w-full">
+              <table className="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr className="text-slate-200 border-b border-slate-700">
+                    <th className="py-2 px-3 font-semibold">From</th>
+                    <th className="py-2 px-3 font-semibold">To</th>
+                    <th className="py-2 px-3 font-semibold">Types</th>
+                    <th className="py-2 px-3 font-semibold text-right">σN</th>
+                    <th className="py-2 px-3 font-semibold text-right">σE</th>
+                    <th className="py-2 px-3 font-semibold text-right">σDist</th>
+                    <th className="py-2 px-3 font-semibold text-right">σAz (")</th>
+                    <th className="py-2 px-3 font-semibold text-right">CEE</th>
+                    <th className="py-2 px-3 font-semibold text-right">CEN</th>
+                    <th className="py-2 px-3 font-semibold text-right">CNN</th>
                   </tr>
-                  ),
-                )}
-              </tbody>
-            </table>
-            {renderLoadMoreFooter(
-              'relative-covariances',
-              visibleRowsFor('relative-covariances', filteredRelativeCovariances).length,
-              filteredRelativeCovariances.length,
-            )}
-          </div>
+                </thead>
+                <tbody className="text-slate-300">
+                  {visibleRowsFor('relative-covariances', filteredRelativeCovariances).map(
+                    (rel, idx) => (
+                      <tr
+                        key={`preanalysis-rel-${rel.from}-${rel.to}-${idx}`}
+                        className="border-b border-slate-800/50"
+                      >
+                        <td className="py-1 px-3">{rel.from}</td>
+                        <td className="py-1 px-3">{rel.to}</td>
+                        <td className="py-1 px-3 text-slate-400">
+                          {rel.connectionTypes.join(', ')}
+                        </td>
+                        <td className="py-1 px-3 text-right">
+                          {(rel.sigmaN * unitScale).toFixed(4)}
+                        </td>
+                        <td className="py-1 px-3 text-right">
+                          {(rel.sigmaE * unitScale).toFixed(4)}
+                        </td>
+                        <td className="py-1 px-3 text-right">
+                          {rel.sigmaDist != null ? (rel.sigmaDist * unitScale).toFixed(4) : '-'}
+                        </td>
+                        <td className="py-1 px-3 text-right">
+                          {rel.sigmaAz != null
+                            ? (rel.sigmaAz * RAD_TO_DEG * 3600).toFixed(2)
+                            : '-'}
+                        </td>
+                        <td className="py-1 px-3 text-right">
+                          {(rel.cEE * covarianceScale).toExponential(4)}
+                        </td>
+                        <td className="py-1 px-3 text-right">
+                          {(rel.cEN * covarianceScale).toExponential(4)}
+                        </td>
+                        <td className="py-1 px-3 text-right">
+                          {(rel.cNN * covarianceScale).toExponential(4)}
+                        </td>
+                      </tr>
+                    ),
+                  )}
+                </tbody>
+              </table>
+              {renderLoadMoreFooter(
+                'relative-covariances',
+                visibleRowsFor('relative-covariances', filteredRelativeCovariances).length,
+                filteredRelativeCovariances.length,
+              )}
+            </div>
+          )}
         </div>
       )}
 
       {isPreanalysis && weakGeometryDiagnostics && (
         <div className="mb-8 border border-amber-900/60 rounded overflow-hidden">
-          <div
-            className="px-3 py-2 text-xs text-amber-200 uppercase tracking-wider border-b border-amber-900/40 bg-amber-950/30"
-            title={preanalysisLabelTooltip('Weak Geometry Cues')}
-          >
-            Weak Geometry Cues
-          </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-3 text-xs text-slate-300 border-b border-amber-900/30">
-            <div>
-              <div
-                className="text-slate-500"
-                title={preanalysisLabelTooltip('Median Station Major')}
-              >
-                Median Station Major
+          {renderCollapsibleSectionHeader({
+            sectionId: 'weak-geometry-cues',
+            label: 'Weak Geometry Cues',
+            className:
+              'px-3 py-2 text-xs uppercase tracking-wider border-b border-amber-900/40 bg-amber-950/30',
+            labelClassName: 'text-amber-200',
+            title: preanalysisLabelTooltip('Weak Geometry Cues'),
+          })}
+          {!isSectionCollapsed('weak-geometry-cues') && (
+            <>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-3 text-xs text-slate-300 border-b border-amber-900/30">
+                <div>
+                  <div
+                    className="text-slate-500"
+                    title={preanalysisLabelTooltip('Median Station Major')}
+                  >
+                    Median Station Major
+                  </div>
+                  <div>
+                    {(weakGeometryDiagnostics.stationMedianHorizontal * unitScale).toFixed(4)}{' '}
+                    {units}
+                  </div>
+                </div>
+                <div>
+                  <div
+                    className="text-slate-500"
+                    title={preanalysisLabelTooltip('Median Pair SigmaDist')}
+                  >
+                    Median Pair SigmaDist
+                  </div>
+                  <div>
+                    {weakGeometryDiagnostics.relativeMedianDistance != null
+                      ? `${(weakGeometryDiagnostics.relativeMedianDistance * unitScale).toFixed(4)} ${units}`
+                      : '-'}
+                  </div>
+                </div>
+                <div>
+                  <div
+                    className="text-slate-500"
+                    title={preanalysisLabelTooltip('Station Flags')}
+                  >
+                    Station Flags
+                  </div>
+                  <div>{flaggedStationCues.length}</div>
+                </div>
+                <div>
+                  <div className="text-slate-500" title={preanalysisLabelTooltip('Pair Flags')}>
+                    Pair Flags
+                  </div>
+                  <div>{flaggedRelativeCues.length}</div>
+                </div>
               </div>
-              <div>
-                {(weakGeometryDiagnostics.stationMedianHorizontal * unitScale).toFixed(4)} {units}
-              </div>
-            </div>
-            <div>
-              <div
-                className="text-slate-500"
-                title={preanalysisLabelTooltip('Median Pair SigmaDist')}
-              >
-                Median Pair SigmaDist
-              </div>
-              <div>
-                {weakGeometryDiagnostics.relativeMedianDistance != null
-                  ? `${(weakGeometryDiagnostics.relativeMedianDistance * unitScale).toFixed(4)} ${units}`
-                  : '-'}
-              </div>
-            </div>
-            <div>
-              <div className="text-slate-500" title={preanalysisLabelTooltip('Station Flags')}>
-                Station Flags
-              </div>
-              <div>{flaggedStationCues.length}</div>
-            </div>
-            <div>
-              <div className="text-slate-500" title={preanalysisLabelTooltip('Pair Flags')}>
-                Pair Flags
-              </div>
-              <div>{flaggedRelativeCues.length}</div>
-            </div>
-          </div>
-          <div className="overflow-x-auto w-full">
-            <table className="w-full text-left border-collapse text-xs">
-              <thead>
-                <tr className="text-slate-200 border-b border-slate-700">
-                  <th className="py-2 px-3 font-semibold">Scope</th>
-                  <th className="py-2 px-3 font-semibold">ID</th>
-                  <th className="py-2 px-3 font-semibold">Severity</th>
-                  <th className="py-2 px-3 font-semibold text-right">Metric</th>
-                  <th className="py-2 px-3 font-semibold text-right">Median Ratio</th>
-                  <th className="py-2 px-3 font-semibold text-right">Shape Ratio</th>
-                  <th className="py-2 px-3 font-semibold">Note</th>
-                </tr>
-              </thead>
-              <tbody className="text-slate-300">
-                {[...flaggedStationCues, ...flaggedRelativeCues].map((cue, idx) => {
-                  const isStationCue = 'stationId' in cue;
-                  const severityClass =
-                    cue.severity === 'weak'
-                      ? 'text-red-300'
-                      : cue.severity === 'watch'
-                        ? 'text-amber-300'
-                        : 'text-slate-300';
-                  const metric =
-                    'horizontalMetric' in cue ? cue.horizontalMetric : cue.distanceMetric;
-                  const id = isStationCue ? cue.stationId : `${cue.from}-${cue.to}`;
-                  return (
-                    <tr key={`weak-geometry-${id}-${idx}`} className="border-b border-slate-800/50">
-                      <td className="py-1 px-3 uppercase text-slate-500">
-                        {isStationCue ? 'station' : 'pair'}
-                      </td>
-                      <td className="py-1 px-3">{id}</td>
-                      <td className={`py-1 px-3 uppercase font-semibold ${severityClass}`}>
-                        {cue.severity}
-                      </td>
-                      <td className="py-1 px-3 text-right">
-                        {metric != null ? `${(metric * unitScale).toFixed(4)} ${units}` : '-'}
-                      </td>
-                      <td className="py-1 px-3 text-right">
-                        {cue.relativeToMedian != null ? `${cue.relativeToMedian.toFixed(2)}x` : '-'}
-                      </td>
-                      <td className="py-1 px-3 text-right">
-                        {cue.ellipseRatio != null ? `${cue.ellipseRatio.toFixed(2)}x` : '-'}
-                      </td>
-                      <td className="py-1 px-3 text-slate-400">{cue.note}</td>
+              <div className="overflow-x-auto w-full">
+                <table className="w-full text-left border-collapse text-xs">
+                  <thead>
+                    <tr className="text-slate-200 border-b border-slate-700">
+                      <th className="py-2 px-3 font-semibold">Scope</th>
+                      <th className="py-2 px-3 font-semibold">ID</th>
+                      <th className="py-2 px-3 font-semibold">Severity</th>
+                      <th className="py-2 px-3 font-semibold text-right">Metric</th>
+                      <th className="py-2 px-3 font-semibold text-right">Median Ratio</th>
+                      <th className="py-2 px-3 font-semibold text-right">Shape Ratio</th>
+                      <th className="py-2 px-3 font-semibold">Note</th>
                     </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+                  </thead>
+                  <tbody className="text-slate-300">
+                    {[...flaggedStationCues, ...flaggedRelativeCues].map((cue, idx) => {
+                      const isStationCue = 'stationId' in cue;
+                      const severityClass =
+                        cue.severity === 'weak'
+                          ? 'text-red-300'
+                          : cue.severity === 'watch'
+                            ? 'text-amber-300'
+                            : 'text-slate-300';
+                      const metric =
+                        'horizontalMetric' in cue ? cue.horizontalMetric : cue.distanceMetric;
+                      const id = isStationCue ? cue.stationId : `${cue.from}-${cue.to}`;
+                      return (
+                        <tr
+                          key={`weak-geometry-${id}-${idx}`}
+                          className="border-b border-slate-800/50"
+                        >
+                          <td className="py-1 px-3 uppercase text-slate-500">
+                            {isStationCue ? 'station' : 'pair'}
+                          </td>
+                          <td className="py-1 px-3">{id}</td>
+                          <td className={`py-1 px-3 uppercase font-semibold ${severityClass}`}>
+                            {cue.severity}
+                          </td>
+                          <td className="py-1 px-3 text-right">
+                            {metric != null ? `${(metric * unitScale).toFixed(4)} ${units}` : '-'}
+                          </td>
+                          <td className="py-1 px-3 text-right">
+                            {cue.relativeToMedian != null
+                              ? `${cue.relativeToMedian.toFixed(2)}x`
+                              : '-'}
+                          </td>
+                          <td className="py-1 px-3 text-right">
+                            {cue.ellipseRatio != null ? `${cue.ellipseRatio.toFixed(2)}x` : '-'}
+                          </td>
+                          <td className="py-1 px-3 text-slate-400">{cue.note}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          )}
         </div>
       )}
 
