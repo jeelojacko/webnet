@@ -50,6 +50,7 @@ import {
 } from './mapView/mapView2d';
 import MapViewSvg2d from './mapView/MapViewSvg2d';
 import MapViewScene3d from './mapView/MapViewScene3d';
+import { renderMapCanvas2d } from './mapView/mapViewCanvas2d';
 import {
   buildProjectedStationLookup3d,
   buildProjectedStations3d,
@@ -868,69 +869,24 @@ const MapView: React.FC<MapViewProps> = ({
       (globalThis as { __WEBNET_ENABLE_CANVAS_RENDER_TEST__?: boolean })
         .__WEBNET_ENABLE_CANVAS_RENDER_TEST__ === true;
     if (isJsdom && !allowJsdomCanvas) return;
-    let context: CanvasRenderingContext2D | null = null;
-    try {
-      context = canvas.getContext('2d');
-    } catch {
-      context = null;
-    }
-    if (!context) return;
-    const fullPixelRatio =
-      typeof window !== 'undefined' && Number.isFinite(window.devicePixelRatio)
-        ? Math.max(1, window.devicePixelRatio)
-        : 1;
-    const pixelRatio = interactionPhase === 'interacting' ? 1 : fullPixelRatio;
-    const targetWidth = Math.max(1, Math.round(VIEW_W * pixelRatio));
-    const targetHeight = Math.max(1, Math.round(VIEW_H * pixelRatio));
-    if (canvas.width !== targetWidth) canvas.width = targetWidth;
-    if (canvas.height !== targetHeight) canvas.height = targetHeight;
-    context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
-    context.clearRect(0, 0, VIEW_W, VIEW_H);
-    context.save();
-    context.translate(view2d.panX, view2d.panY);
-    context.scale(view2d.zoom, view2d.zoom);
-    context.globalAlpha = originalGeometryOpacity;
-    context.lineCap = 'round';
-    context.lineJoin = 'round';
-    context.strokeStyle = '#475569';
-    context.lineWidth = lineWidth2d;
-    context.globalAlpha = 0.6 * originalGeometryOpacity;
-    unselectedCanvasLines2d.forEach((line) => {
-      context.beginPath();
-      context.moveTo(line.x1, line.y1);
-      context.lineTo(line.x2, line.y2);
-      context.stroke();
+    renderMapCanvas2d({
+      canvas,
+      interactionPhase,
+      viewWidth: VIEW_W,
+      viewHeight: VIEW_H,
+      view2d,
+      originalGeometryOpacity,
+      lineWidth2d,
+      pointRadius2d,
+      ellipseStroke2d,
+      projectionScale: projection2d.scale,
+      units,
+      interactionDenseMode,
+      unselectedCanvasLines2d,
+      filteredVisiblePoints2d,
+      ellipseStroke,
+      stationFill,
     });
-    const ellScale = units === 'ft' ? 0.0328084 : 1;
-    filteredVisiblePoints2d.forEach((point) => {
-      const ellipsoid = point.ellipsoid;
-      if (!interactionDenseMode && ellipsoid) {
-        context.save();
-        context.translate(point.x, point.y);
-        context.rotate((ellipsoid.thetaDeg * Math.PI) / 180);
-        context.strokeStyle = ellipseStroke(point.id);
-        context.lineWidth = ellipseStroke2d;
-        context.globalAlpha = 0.6 * originalGeometryOpacity;
-        context.beginPath();
-        context.ellipse(
-          0,
-          0,
-          ellipsoid.semiMajor * 100 * ellScale * projection2d.scale,
-          ellipsoid.semiMinor * 100 * ellScale * projection2d.scale,
-          0,
-          0,
-          Math.PI * 2,
-        );
-        context.stroke();
-        context.restore();
-      }
-      context.beginPath();
-      context.globalAlpha = originalGeometryOpacity;
-      context.fillStyle = stationFill(point.id, point.fixed);
-      context.arc(point.x, point.y, pointRadius2d, 0, Math.PI * 2);
-      context.fill();
-    });
-    context.restore();
   }, [
     effectiveMode,
     ellipseStroke,
@@ -945,9 +901,7 @@ const MapView: React.FC<MapViewProps> = ({
     stationFill,
     units,
     unselectedCanvasLines2d,
-    view2d.panX,
-    view2d.panY,
-    view2d.zoom,
+    view2d,
   ]);
 
   const mapDensitySummary = useMemo(
