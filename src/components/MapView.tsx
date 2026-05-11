@@ -29,6 +29,27 @@ import {
   scoreMapStationPriority,
 } from '../engine/resultDerivedModels';
 import { noteUiPerfStage, noteUiTabReady } from '../hooks/useUiPerfMonitor';
+import {
+  buildFilteredVisibleMapLines2d,
+  buildFilteredVisiblePoints2d,
+  buildMapDensitySummary,
+  buildProjectedMapLines2d,
+  buildProjectedPoints2d,
+  buildProjection2d,
+  buildUnselectedCanvasLines2d,
+  buildViewportBounds,
+  buildVisibleMapLines2d,
+  buildVisiblePointLabels2d,
+  buildVisiblePoints2d,
+  clamp,
+  pointToSegmentDistancePx,
+  projectPoint2d,
+  type ProjectedMapLine2D,
+  type ProjectedPoint2D,
+  type ViewportBounds,
+  view2dEquals,
+} from './mapView/mapView2d';
+import MapViewSvg2d from './mapView/MapViewSvg2d';
 
 const FT_PER_M = 3.280839895;
 const VIEW_W = 1000;
@@ -84,87 +105,6 @@ interface MapViewProps {
 }
 
 type DragMode = 'none' | 'pan2d' | 'orbit3d' | 'pan3d';
-
-interface ProjectedMapLine2D {
-  key: string;
-  observationId: number;
-  pairKey: string;
-  sourceLine: number | null;
-  x1: number;
-  y1: number;
-  x2: number;
-  y2: number;
-  screenX1: number;
-  screenY1: number;
-  screenX2: number;
-  screenY2: number;
-}
-
-interface ProjectedPoint2D {
-  id: string;
-  fixed: boolean;
-  x: number;
-  y: number;
-  screenX: number;
-  screenY: number;
-  ellipsoid?: {
-    semiMajor: number;
-    semiMinor: number;
-    semiVertical: number;
-    thetaDeg: number;
-  };
-}
-
-interface ViewportBounds {
-  minX: number;
-  maxX: number;
-  minY: number;
-  maxY: number;
-}
-
-const intersectsViewportBounds = (
-  bounds: ViewportBounds,
-  x1: number,
-  y1: number,
-  x2: number,
-  y2: number,
-): boolean => {
-  const minX = Math.min(x1, x2);
-  const maxX = Math.max(x1, x2);
-  const minY = Math.min(y1, y2);
-  const maxY = Math.max(y1, y2);
-  return !(
-    maxX < bounds.minX ||
-    minX > bounds.maxX ||
-    maxY < bounds.minY ||
-    minY > bounds.maxY
-  );
-};
-
-const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
-const view2dEquals = (
-  left: { zoom: number; panX: number; panY: number },
-  right: { zoom: number; panX: number; panY: number },
-) => left.zoom === right.zoom && left.panX === right.panX && left.panY === right.panY;
-const pointToSegmentDistancePx = (
-  px: number,
-  py: number,
-  x1: number,
-  y1: number,
-  x2: number,
-  y2: number,
-) => {
-  const dx = x2 - x1;
-  const dy = y2 - y1;
-  const lenSq = dx * dx + dy * dy;
-  if (lenSq <= 1e-12) {
-    return Math.hypot(px - x1, py - y1);
-  }
-  const t = clamp(((px - x1) * dx + (py - y1) * dy) / lenSq, 0, 1);
-  const cx = x1 + dx * t;
-  const cy = y1 + dy * t;
-  return Math.hypot(px - cx, py - cy);
-};
 
 const MapView: React.FC<MapViewProps> = ({
   result,
@@ -571,24 +511,11 @@ const MapView: React.FC<MapViewProps> = ({
     reset3dView,
   ]);
 
-  const projection2d = useMemo(() => {
-    const safeWidth = Math.max(1e-9, bbox.width);
-    const safeHeight = Math.max(1e-9, bbox.height);
-    const scale = Math.min(VIEW_W / safeWidth, VIEW_H / safeHeight);
-    const contentWidth = safeWidth * scale;
-    const contentHeight = safeHeight * scale;
-    const offsetX = (VIEW_W - contentWidth) * 0.5;
-    const offsetY = (VIEW_H - contentHeight) * 0.5;
-    return { scale, offsetX, offsetY };
-  }, [bbox.height, bbox.width]);
+  const projection2d = useMemo(() => buildProjection2d(bbox, VIEW_W, VIEW_H), [bbox]);
 
   const project2d = useCallback(
-    (x: number, y: number) => {
-      const px = projection2d.offsetX + (x - bbox.minX) * projection2d.scale;
-      const py = VIEW_H - (projection2d.offsetY + (y - bbox.minY) * projection2d.scale);
-      return { x: px, y: py };
-    },
-    [bbox.minX, bbox.minY, projection2d],
+    (x: number, y: number) => projectPoint2d(x, y, bbox, projection2d, VIEW_H),
+    [bbox, projection2d],
   );
 
   const toSvgCoords = useCallback((clientX: number, clientY: number) => {
@@ -800,85 +727,52 @@ const MapView: React.FC<MapViewProps> = ({
   );
 
   const viewportBounds2d = useMemo<ViewportBounds>(
-    () => ({
-      minX: -VIEWPORT_CLIP_MARGIN_PX,
-      maxX: VIEW_W + VIEWPORT_CLIP_MARGIN_PX,
-      minY: -VIEWPORT_CLIP_MARGIN_PX,
-      maxY: VIEW_H + VIEWPORT_CLIP_MARGIN_PX,
-    }),
+    () => buildViewportBounds(VIEW_W, VIEW_H, VIEWPORT_CLIP_MARGIN_PX),
     [],
   );
 
-  const projectedMapLines2d = useMemo<ProjectedMapLine2D[]>(() => {
-    return mapLinks
-      .map((link) => {
-        const from = stations[link.fromId];
-        const to = stations[link.toId];
-        if (!from || !to) return null;
-        if (!showLostStations && (from.lost || to.lost)) return null;
-        const p1 = project2d(from.x, from.y);
-        const p2 = project2d(to.x, to.y);
-        return {
-          key: link.key,
-          observationId: link.observationId,
-          pairKey: link.pairKey,
-          sourceLine: link.sourceLine,
-          x1: p1.x,
-          y1: p1.y,
-          x2: p2.x,
-          y2: p2.y,
-          screenX1: view2d.panX + p1.x * view2d.zoom,
-          screenY1: view2d.panY + p1.y * view2d.zoom,
-          screenX2: view2d.panX + p2.x * view2d.zoom,
-          screenY2: view2d.panY + p2.y * view2d.zoom,
-        };
-      })
-      .filter((line): line is ProjectedMapLine2D => line != null);
-  }, [mapLinks, project2d, showLostStations, stations, view2d.panX, view2d.panY, view2d.zoom]);
+  const projectedMapLines2d = useMemo<ProjectedMapLine2D[]>(
+    () =>
+      buildProjectedMapLines2d({
+        mapLinks,
+        stations,
+        showLostStations,
+        projectPoint: project2d,
+        view2d,
+      }),
+    [mapLinks, project2d, showLostStations, stations, view2d],
+  );
 
-  const visibleMapLines2d = useMemo(() => {
-    return projectedMapLines2d.filter((line) => {
-      const isSelected =
-        line.observationId === selectedObservationId ||
-        (selectedObservationPairKey != null && line.pairKey === selectedObservationPairKey);
-      if (isSelected) return true;
-      return intersectsViewportBounds(
-        viewportBounds2d,
-        line.screenX1,
-        line.screenY1,
-        line.screenX2,
-        line.screenY2,
-      );
-    });
-  }, [projectedMapLines2d, selectedObservationId, selectedObservationPairKey, viewportBounds2d]);
+  const visibleMapLines2d = useMemo(
+    () =>
+      buildVisibleMapLines2d({
+        projectedMapLines2d,
+        selectedObservationId,
+        selectedObservationPairKey,
+        viewportBounds: viewportBounds2d,
+      }),
+    [projectedMapLines2d, selectedObservationId, selectedObservationPairKey, viewportBounds2d],
+  );
 
-  const projectedPoints2d = useMemo<ProjectedPoint2D[]>(() => {
-    return points.map((point) => {
-      const projected = project2d(point.x, point.y);
-      return {
-        id: point.id,
-        fixed: point.fixed,
-        x: projected.x,
-        y: projected.y,
-        screenX: view2d.panX + projected.x * view2d.zoom,
-        screenY: view2d.panY + projected.y * view2d.zoom,
-        ellipsoid: point.ellipsoid,
-      };
-    });
-  }, [points, project2d, view2d.panX, view2d.panY, view2d.zoom]);
+  const projectedPoints2d = useMemo<ProjectedPoint2D[]>(
+    () =>
+      buildProjectedPoints2d({
+        points,
+        projectPoint: project2d,
+        view2d,
+      }),
+    [points, project2d, view2d],
+  );
 
-  const visiblePoints2d = useMemo(() => {
-    const selectionMargin = 12;
-    return projectedPoints2d.filter((point) => {
-      if (point.id === selectedStationId) return true;
-      return (
-        point.screenX >= viewportBounds2d.minX - selectionMargin &&
-        point.screenX <= viewportBounds2d.maxX + selectionMargin &&
-        point.screenY >= viewportBounds2d.minY - selectionMargin &&
-        point.screenY <= viewportBounds2d.maxY + selectionMargin
-      );
-    });
-  }, [projectedPoints2d, selectedStationId, viewportBounds2d]);
+  const visiblePoints2d = useMemo(
+    () =>
+      buildVisiblePoints2d({
+        projectedPoints2d,
+        selectedStationId,
+        viewportBounds: viewportBounds2d,
+      }),
+    [projectedPoints2d, selectedStationId, viewportBounds2d],
+  );
 
   const interactionDenseMode =
     effectiveMode === '2d' &&
@@ -886,112 +780,76 @@ const MapView: React.FC<MapViewProps> = ({
     (visiblePoints2d.length > INTERACTION_DENSE_POINT_THRESHOLD ||
       visibleMapLines2d.length > INTERACTION_DENSE_LINE_THRESHOLD);
 
-  const visiblePointLabels2d = useMemo(() => {
-    if (!showLabels) return new Set<string>();
-    if (visiblePoints2d.length === 0) return new Set<string>();
-    if (interactionDenseMode) {
-      const selectedOnly = new Set<string>();
-      if (selectedStationId) selectedOnly.add(selectedStationId);
-      return selectedOnly;
-    }
-    const next = new Set<string>();
-    const pointThreshold = DENSE_LABEL_POINT_THRESHOLD;
-    const edgeThreshold = DENSE_LABEL_EDGE_THRESHOLD;
-    const denseView =
-      visiblePoints2d.length > pointThreshold || visibleMapLines2d.length > edgeThreshold;
-    if (!denseView) {
-      visiblePoints2d.forEach((point) => next.add(point.id));
-      return next;
-    }
-    const occupied = new Set<string>();
-    const sortedPoints = [...visiblePoints2d].sort((left, right) => {
-      const leftPriority = scoreMapStationPriority({
-        stationId: left.id,
+  const visiblePointLabels2d = useMemo(
+    () =>
+      buildVisiblePointLabels2d({
+        showLabels,
+        visiblePoints2d,
+        visibleMapLines2dLength: visibleMapLines2d.length,
+        interactionDenseMode,
         selectedStationId,
-        severity: stationSeverity(left.id),
-        fixed: left.fixed,
-      });
-      const rightPriority = scoreMapStationPriority({
-        stationId: right.id,
+        pointThreshold: DENSE_LABEL_POINT_THRESHOLD,
+        edgeThreshold: DENSE_LABEL_EDGE_THRESHOLD,
+        labelGridPx: LABEL_GRID_PX,
+        scorePriority: (point) =>
+          scoreMapStationPriority({
+            stationId: point.id,
+            selectedStationId,
+            severity: stationSeverity(point.id),
+            fixed: point.fixed,
+          }),
+      }),
+    [interactionDenseMode, selectedStationId, showLabels, stationSeverity, visibleMapLines2d.length, visiblePoints2d],
+  );
+
+  const filteredVisibleMapLines2d = useMemo(
+    () =>
+      buildFilteredVisibleMapLines2d({
+        visibleMapLines2d,
+        hideMinorGeometry,
+        focusSelection,
+        selectedObservationId,
+        selectedObservationPairKey,
         selectedStationId,
-        severity: stationSeverity(right.id),
-        fixed: right.fixed,
-      });
-      if (leftPriority !== rightPriority) return rightPriority - leftPriority;
-      return left.id.localeCompare(right.id, undefined, { numeric: true });
-    });
-    sortedPoints.forEach((point) => {
-      const cellX = Math.floor(point.screenX / LABEL_GRID_PX);
-      const cellY = Math.floor(point.screenY / LABEL_GRID_PX);
-      const key = `${cellX}:${cellY}`;
-      if (!occupied.has(key) || point.id === selectedStationId) {
-        occupied.add(key);
-        next.add(point.id);
-      }
-    });
-    return next;
-  }, [
-    selectedStationId,
-    showLabels,
-    stationSeverity,
-    interactionDenseMode,
-    visibleMapLines2d.length,
-    visiblePoints2d,
-  ]);
+      }),
+    [
+      focusSelection,
+      hideMinorGeometry,
+      selectedObservationId,
+      selectedObservationPairKey,
+      selectedStationId,
+      visibleMapLines2d,
+    ],
+  );
 
-  const filteredVisibleMapLines2d = useMemo(() => {
-    if (!hideMinorGeometry && !focusSelection) return visibleMapLines2d;
-    return visibleMapLines2d.filter((line) => {
-      const isSelected =
-        line.observationId === selectedObservationId ||
-        (selectedObservationPairKey != null && line.pairKey === selectedObservationPairKey);
-      const [fromId, toId] = line.key.split(':');
-      const touchesSelectedStation =
-        selectedStationId != null && (fromId === selectedStationId || toId === selectedStationId);
-      if (isSelected || touchesSelectedStation) return true;
-      if (focusSelection) return false;
-      return !hideMinorGeometry || line.observationId % 2 === 0;
-    });
-  }, [
-    focusSelection,
-    hideMinorGeometry,
-    selectedObservationId,
-    selectedObservationPairKey,
-    selectedStationId,
-    visibleMapLines2d,
-  ]);
+  const filteredVisiblePoints2d = useMemo(
+    () =>
+      buildFilteredVisiblePoints2d({
+        visiblePoints2d,
+        filteredVisibleMapLines2d,
+        focusSelection,
+        selectedStationId,
+      }),
+    [filteredVisibleMapLines2d, focusSelection, selectedStationId, visiblePoints2d],
+  );
 
-  const filteredVisiblePoints2d = useMemo(() => {
-    if (!focusSelection || !selectedStationId) return visiblePoints2d;
-    const connectedIds = new Set<string>([selectedStationId]);
-    filteredVisibleMapLines2d.forEach((line) => {
-      const [fromId, toId] = line.key.split(':');
-      if (fromId === selectedStationId) connectedIds.add(toId);
-      if (toId === selectedStationId) connectedIds.add(fromId);
-    });
-    return visiblePoints2d.filter((point) => connectedIds.has(point.id));
-  }, [filteredVisibleMapLines2d, focusSelection, selectedStationId, visiblePoints2d]);
-
-  const unselectedCanvasLines2d = useMemo(() => {
-    const base = filteredVisibleMapLines2d.filter(
-      (line) =>
-        line.observationId !== selectedObservationId &&
-        (selectedObservationPairKey == null || line.pairKey !== selectedObservationPairKey),
-    );
-    if (!interactionDenseMode) return base;
-    return base.filter((line, index) => {
-      const [fromId, toId] = line.key.split(':');
-      const touchesSelectedStation =
-        selectedStationId != null && (fromId === selectedStationId || toId === selectedStationId);
-      return touchesSelectedStation || index % 2 === 0;
-    });
-  }, [
-    filteredVisibleMapLines2d,
-    interactionDenseMode,
-    selectedObservationId,
-    selectedObservationPairKey,
-    selectedStationId,
-  ]);
+  const unselectedCanvasLines2d = useMemo(
+    () =>
+      buildUnselectedCanvasLines2d({
+        filteredVisibleMapLines2d,
+        interactionDenseMode,
+        selectedObservationId,
+        selectedObservationPairKey,
+        selectedStationId,
+      }),
+    [
+      filteredVisibleMapLines2d,
+      interactionDenseMode,
+      selectedObservationId,
+      selectedObservationPairKey,
+      selectedStationId,
+    ],
+  );
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -1087,24 +945,24 @@ const MapView: React.FC<MapViewProps> = ({
     view2d.zoom,
   ]);
 
-  const mapDensitySummary = useMemo(() => {
-    const labelTotal = visiblePointLabels2d.size;
-    const labelSuppressed = filteredVisiblePoints2d.length - labelTotal;
-    const lineSuppressed = projectedMapLines2d.length - filteredVisibleMapLines2d.length;
-    return {
-      dense:
-        labelSuppressed > 0 || lineSuppressed > 0 || visibleMapLines2d.length > DENSE_LABEL_EDGE_THRESHOLD,
-      labelTotal,
-      labelSuppressed,
-      lineSuppressed,
-    };
-  }, [
-    filteredVisibleMapLines2d.length,
-    filteredVisiblePoints2d.length,
-    projectedMapLines2d.length,
-    visibleMapLines2d.length,
-    visiblePointLabels2d.size,
-  ]);
+  const mapDensitySummary = useMemo(
+    () =>
+      buildMapDensitySummary({
+        filteredVisibleMapLines2dLength: filteredVisibleMapLines2d.length,
+        filteredVisiblePoints2dLength: filteredVisiblePoints2d.length,
+        projectedMapLines2dLength: projectedMapLines2d.length,
+        visibleMapLines2dLength: visibleMapLines2d.length,
+        visiblePointLabels2dSize: visiblePointLabels2d.size,
+        denseLabelEdgeThreshold: DENSE_LABEL_EDGE_THRESHOLD,
+      }),
+    [
+      filteredVisibleMapLines2d.length,
+      filteredVisiblePoints2d.length,
+      projectedMapLines2d.length,
+      visibleMapLines2d.length,
+      visiblePointLabels2d.size,
+    ],
+  );
 
   const transformedPoints2d = useMemo(() => {
     if (!transformedOverlayActive) {
@@ -1804,135 +1662,27 @@ const MapView: React.FC<MapViewProps> = ({
           onContextMenu={openContextMenu}
         >
           {effectiveMode === '2d' && (
-            <>
-              <defs>
-                <marker
-                  id="arrow"
-                  markerWidth={marker2d}
-                  markerHeight={marker2d}
-                  refX={marker2d * 0.5}
-                  refY={marker2d * 0.5}
-                  orient="auto"
-                  markerUnits="userSpaceOnUse"
-                >
-                  <path d={`M0,0 L0,${marker2d} L${marker2d},${marker2d * 0.5} z`} fill="#64748b" />
-                </marker>
-              </defs>
-
-              <g
-                transform={`translate(${view2d.panX} ${view2d.panY}) scale(${view2d.zoom})`}
-                opacity={originalGeometryOpacity}
-              >
-                {filteredVisiblePoints2d
-                  .filter((point) => visiblePointLabels2d.has(point.id))
-                  .map((point) => (
-                    <text
-                      key={`label-${point.id}`}
-                      data-map-label={point.id}
-                      x={point.x + labelOffset2d}
-                      y={point.y - labelOffset2d}
-                      fontSize={labelFont2d}
-                      fill="#e2e8f0"
-                      stroke="#020617"
-                      strokeWidth={labelStroke2d}
-                      paintOrder="stroke"
-                    >
-                      {point.id}
-                    </text>
-                  ))}
-              </g>
-
-              <g transform={`translate(${view2d.panX} ${view2d.panY}) scale(${view2d.zoom})`}>
-                {filteredVisibleMapLines2d
-                  .filter(
-                    (line) =>
-                      line.observationId === selectedObservationId ||
-                      (selectedObservationPairKey != null && line.pairKey === selectedObservationPairKey),
-                  )
-                  .map((line) => (
-                    <line
-                      key={`${line.key}-selected`}
-                      data-map-observation={line.observationId}
-                      x1={line.x1}
-                      y1={line.y1}
-                      x2={line.x2}
-                      y2={line.y2}
-                      stroke="#22d3ee"
-                      strokeWidth={lineWidth2d * 2}
-                      markerEnd="url(#arrow)"
-                      opacity={1}
-                      onClick={() => onSelectObservation?.(line.observationId)}
-                      className={onSelectObservation ? 'cursor-pointer' : undefined}
-                    />
-                  ))}
-
-                {selectedStationId &&
-                  filteredVisiblePoints2d
-                    .filter((point) => point.id === selectedStationId)
-                    .map((point) => (
-                      <circle
-                        key={`selected-station-${point.id}`}
-                        data-map-station-selection={point.id}
-                        cx={point.x}
-                        cy={point.y}
-                        r={pointRadius2d * 1.45}
-                        fill="none"
-                        stroke="#22d3ee"
-                        strokeWidth={pointRadius2d * 0.6}
-                        pointerEvents="none"
-                      />
-                    ))}
-              </g>
-
-              {transformedOverlayActive && (
-                <g transform={`translate(${view2d.panX} ${view2d.panY}) scale(${view2d.zoom})`}>
-                  {transformedLines2d.map((line) => {
-                    const p1 = project2d(line.x1, line.y1);
-                    const p2 = project2d(line.x2, line.y2);
-                    return (
-                      <line
-                        key={line.key}
-                        x1={p1.x}
-                        y1={p1.y}
-                        x2={p2.x}
-                        y2={p2.y}
-                        stroke="#22d3ee"
-                        strokeWidth={lineWidth2d}
-                        opacity={0.85}
-                      />
-                    );
-                  })}
-
-                  {transformedPoints2d.map((point) => {
-                    const proj = project2d(point.x, point.y);
-                    return (
-                      <g key={`tx-point-${point.id}`}>
-                        <circle
-                          cx={proj.x}
-                          cy={proj.y}
-                          r={pointRadius2d}
-                          fill={point.fixed ? '#34d399' : '#f97316'}
-                        />
-                        {visiblePointLabels2d.has(point.id) && (
-                          <text
-                            data-map-label={point.id}
-                            x={proj.x + labelOffset2d}
-                            y={proj.y - labelOffset2d}
-                            fontSize={labelFont2d}
-                            fill="#f8fafc"
-                            stroke="#082f49"
-                            strokeWidth={labelStroke2d}
-                            paintOrder="stroke"
-                          >
-                            {point.id}
-                          </text>
-                        )}
-                      </g>
-                    );
-                  })}
-                </g>
-              )}
-            </>
+            <MapViewSvg2d
+              marker2d={marker2d}
+              view2d={view2d}
+              originalGeometryOpacity={originalGeometryOpacity}
+              filteredVisiblePoints2d={filteredVisiblePoints2d}
+              visiblePointLabels2d={visiblePointLabels2d}
+              labelOffset2d={labelOffset2d}
+              labelFont2d={labelFont2d}
+              labelStroke2d={labelStroke2d}
+              filteredVisibleMapLines2d={filteredVisibleMapLines2d}
+              selectedObservationId={selectedObservationId}
+              selectedObservationPairKey={selectedObservationPairKey}
+              lineWidth2d={lineWidth2d}
+              onSelectObservation={onSelectObservation}
+              selectedStationId={selectedStationId}
+              pointRadius2d={pointRadius2d}
+              transformedOverlayActive={transformedOverlayActive}
+              transformedLines2d={transformedLines2d}
+              transformedPoints2d={transformedPoints2d}
+              project2d={project2d}
+            />
           )}
 
           {effectiveMode === '3d' && camera3d && (

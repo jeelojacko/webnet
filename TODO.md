@@ -11,6 +11,8 @@
     - [x] Current slice - tighten `InputPane` and `ImportReviewModal` narrow-screen sizing so popovers/forms stop forcing horizontal overflow
     - [x] Current slice - make `AppToolbar` wrap/stack cleanly on smaller screens without hiding run/export controls
     - [x] Current slice - stop eager inactive-tab JSX construction in `App.tsx`/`WorkspaceChrome` so hidden heavy tabs do not rebuild on unrelated app-shell churn
+    - [x] Current slice - start `MapView` breakup by extracting typed 2D projection/filter helpers out of the component body
+    - [x] Current slice - extract the `MapView` 2D SVG overlay into a focused presentational layer
     - [ ] Split `MapView.tsx` into selector/math helpers, canvas layer, SVG overlay layer, and tools/context surfaces
     - [ ] Narrow broad `useMemo` blocks in `MapView.tsx` and `ReportView.tsx` to stable result identity plus minimal filter keys
     - [ ] Add tab-level render guards so hidden heavy tabs do not recompute derived models from unrelated app-state churn
@@ -18,6 +20,7 @@
   - [ ] Phase 2 - bundle and hot-path performance
     - [x] Current slice - replace repeated JSON clone/stringify hot paths in recovery/run-review/project-session syncing with shared plain-data helpers where safe
     - [x] Current slice - add browser draft size guardrails with explicit failure copy before quota churn writes
+    - [x] Current slice - split Vite chunk routing so CRS catalog stops riding the broad `engine-core` bucket and the routing stays covered by a focused config test
     - [ ] Split Vite manual chunks further so CRS catalog, listing/report text builders, and export serializers stay off lighter startup paths
     - [ ] Move more non-urgent project/import utilities out of `App.tsx` so base `index` chunk shrinks further
     - [ ] Review `scenarioParsedModelCache.ts` request-key serialization and trim large cache key material without changing cache semantics

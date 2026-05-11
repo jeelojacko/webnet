@@ -1,0 +1,194 @@
+import React from 'react';
+
+import type { ProjectedMapLine2D, ProjectedPoint2D, View2dState } from './mapView2d';
+
+interface TransformedLine2d {
+  key: string;
+  x1: number;
+  y1: number;
+  x2: number;
+  y2: number;
+}
+
+interface TransformedPoint2d {
+  id: string;
+  x: number;
+  y: number;
+  fixed: boolean;
+}
+
+interface MapViewSvg2dProps {
+  marker2d: number;
+  view2d: View2dState;
+  originalGeometryOpacity: number;
+  filteredVisiblePoints2d: ProjectedPoint2D[];
+  visiblePointLabels2d: Set<string>;
+  labelOffset2d: number;
+  labelFont2d: number;
+  labelStroke2d: number;
+  filteredVisibleMapLines2d: ProjectedMapLine2D[];
+  selectedObservationId: number | null;
+  selectedObservationPairKey: string | null;
+  lineWidth2d: number;
+  onSelectObservation?: (_observationId: number) => void;
+  selectedStationId: string | null;
+  pointRadius2d: number;
+  transformedOverlayActive: boolean;
+  transformedLines2d: TransformedLine2d[];
+  transformedPoints2d: TransformedPoint2d[];
+  project2d: (_x: number, _y: number) => { x: number; y: number };
+}
+
+const MapViewSvg2d: React.FC<MapViewSvg2dProps> = ({
+  marker2d,
+  view2d,
+  originalGeometryOpacity,
+  filteredVisiblePoints2d,
+  visiblePointLabels2d,
+  labelOffset2d,
+  labelFont2d,
+  labelStroke2d,
+  filteredVisibleMapLines2d,
+  selectedObservationId,
+  selectedObservationPairKey,
+  lineWidth2d,
+  onSelectObservation,
+  selectedStationId,
+  pointRadius2d,
+  transformedOverlayActive,
+  transformedLines2d,
+  transformedPoints2d,
+  project2d,
+}) => (
+  <>
+    <defs>
+      <marker
+        id="arrow"
+        markerWidth={marker2d}
+        markerHeight={marker2d}
+        refX={marker2d * 0.5}
+        refY={marker2d * 0.5}
+        orient="auto"
+        markerUnits="userSpaceOnUse"
+      >
+        <path d={`M0,0 L0,${marker2d} L${marker2d},${marker2d * 0.5} z`} fill="#64748b" />
+      </marker>
+    </defs>
+
+    <g
+      transform={`translate(${view2d.panX} ${view2d.panY}) scale(${view2d.zoom})`}
+      opacity={originalGeometryOpacity}
+    >
+      {filteredVisiblePoints2d
+        .filter((point) => visiblePointLabels2d.has(point.id))
+        .map((point) => (
+          <text
+            key={`label-${point.id}`}
+            data-map-label={point.id}
+            x={point.x + labelOffset2d}
+            y={point.y - labelOffset2d}
+            fontSize={labelFont2d}
+            fill="#e2e8f0"
+            stroke="#020617"
+            strokeWidth={labelStroke2d}
+            paintOrder="stroke"
+          >
+            {point.id}
+          </text>
+        ))}
+    </g>
+
+    <g transform={`translate(${view2d.panX} ${view2d.panY}) scale(${view2d.zoom})`}>
+      {filteredVisibleMapLines2d
+        .filter(
+          (line) =>
+            line.observationId === selectedObservationId ||
+            (selectedObservationPairKey != null && line.pairKey === selectedObservationPairKey),
+        )
+        .map((line) => (
+          <line
+            key={`${line.key}-selected`}
+            data-map-observation={line.observationId}
+            x1={line.x1}
+            y1={line.y1}
+            x2={line.x2}
+            y2={line.y2}
+            stroke="#22d3ee"
+            strokeWidth={lineWidth2d * 2}
+            markerEnd="url(#arrow)"
+            opacity={1}
+            onClick={() => onSelectObservation?.(line.observationId)}
+            className={onSelectObservation ? 'cursor-pointer' : undefined}
+          />
+        ))}
+
+      {selectedStationId &&
+        filteredVisiblePoints2d
+          .filter((point) => point.id === selectedStationId)
+          .map((point) => (
+            <circle
+              key={`selected-station-${point.id}`}
+              data-map-station-selection={point.id}
+              cx={point.x}
+              cy={point.y}
+              r={pointRadius2d * 1.45}
+              fill="none"
+              stroke="#22d3ee"
+              strokeWidth={pointRadius2d * 0.6}
+              pointerEvents="none"
+            />
+          ))}
+    </g>
+
+    {transformedOverlayActive && (
+      <g transform={`translate(${view2d.panX} ${view2d.panY}) scale(${view2d.zoom})`}>
+        {transformedLines2d.map((line) => {
+          const p1 = project2d(line.x1, line.y1);
+          const p2 = project2d(line.x2, line.y2);
+          return (
+            <line
+              key={line.key}
+              x1={p1.x}
+              y1={p1.y}
+              x2={p2.x}
+              y2={p2.y}
+              stroke="#22d3ee"
+              strokeWidth={lineWidth2d}
+              opacity={0.85}
+            />
+          );
+        })}
+
+        {transformedPoints2d.map((point) => {
+          const proj = project2d(point.x, point.y);
+          return (
+            <g key={`tx-point-${point.id}`}>
+              <circle
+                cx={proj.x}
+                cy={proj.y}
+                r={pointRadius2d}
+                fill={point.fixed ? '#34d399' : '#f97316'}
+              />
+              {visiblePointLabels2d.has(point.id) && (
+                <text
+                  data-map-label={point.id}
+                  x={proj.x + labelOffset2d}
+                  y={proj.y - labelOffset2d}
+                  fontSize={labelFont2d}
+                  fill="#f8fafc"
+                  stroke="#082f49"
+                  strokeWidth={labelStroke2d}
+                  paintOrder="stroke"
+                >
+                  {point.id}
+                </text>
+              )}
+            </g>
+          );
+        })}
+      </g>
+    )}
+  </>
+);
+
+export default MapViewSvg2d;
