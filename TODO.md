@@ -15,6 +15,7 @@
     - [x] Current slice - extract the `MapView` 2D SVG overlay into a focused presentational layer
     - [x] Current slice - extract the `MapView` 3D scene renderer into focused helper/presentational seams
     - [x] Current slice - extract the `MapView` 2D canvas render layer into a focused helper seam
+    - [x] Current slice - extract the `MapView` context menu and tool-panel surface into focused presentational seams
     - [ ] Split `MapView.tsx` into selector/math helpers, canvas layer, SVG overlay layer, and tools/context surfaces
     - [ ] Narrow broad `useMemo` blocks in `MapView.tsx` and `ReportView.tsx` to stable result identity plus minimal filter keys
     - [ ] Add tab-level render guards so hidden heavy tabs do not recompute derived models from unrelated app-state churn

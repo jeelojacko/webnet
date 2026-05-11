@@ -6,7 +6,7 @@ import {
   type Map3DCamera,
   type Vec3,
 } from '../engine/map3d';
-import { RAD_TO_DEG, radToDmsStr } from '../engine/angles';
+import { RAD_TO_DEG } from '../engine/angles';
 import { computeInverse2D, computePivotAngles } from '../engine/mapTools';
 import type { DerivedQaResult } from '../engine/qaWorkflow';
 import {
@@ -50,6 +50,8 @@ import {
 } from './mapView/mapView2d';
 import MapViewSvg2d from './mapView/MapViewSvg2d';
 import MapViewScene3d from './mapView/MapViewScene3d';
+import MapViewContextMenu, { type MapToolPanel } from './mapView/MapViewContextMenu';
+import MapViewToolOverlay from './mapView/MapViewToolOverlay';
 import { renderMapCanvas2d } from './mapView/mapViewCanvas2d';
 import {
   buildProjectedStationLookup3d,
@@ -76,13 +78,12 @@ const POINT_HIT_RADIUS_PX = 10;
 const LINE_HIT_RADIUS_PX = 8;
 const EMPTY_MAP_LINKS: ReturnType<typeof buildObservationMapLinks> = [];
 
-type ToolPanel = 'none' | 'points' | 'inverse' | 'angles';
 type MapInteractionPhase = 'idle' | 'interacting' | 'settling';
 
 export interface MapViewSnapshot {
   view2d: { zoom: number; panX: number; panY: number };
   camera3d: Map3DCamera | null;
-  activeTool: ToolPanel;
+  activeTool: MapToolPanel;
   inverseFromInput: string;
   inverseToInput: string;
   anglePivotInput: string;
@@ -156,7 +157,7 @@ const MapView: React.FC<MapViewProps> = ({
     x: 0,
     y: 0,
   });
-  const [activeTool, setActiveTool] = useState<ToolPanel>(() => snapshot?.activeTool ?? 'none');
+  const [activeTool, setActiveTool] = useState<MapToolPanel>(() => snapshot?.activeTool ?? 'none');
   const [inverseFromInput, setInverseFromInput] = useState(() => snapshot?.inverseFromInput ?? '');
   const [inverseToInput, setInverseToInput] = useState(() => snapshot?.inverseToInput ?? '');
   const [anglePivotInput, setAnglePivotInput] = useState(() => snapshot?.anglePivotInput ?? '');
@@ -1027,7 +1028,7 @@ const MapView: React.FC<MapViewProps> = ({
     });
   };
 
-  const openTool = (tool: ToolPanel) => {
+  const openTool = (tool: Exclude<MapToolPanel, 'none'>) => {
     setActiveTool(tool);
     setContextMenu((prev) => ({ ...prev, open: false }));
   };
@@ -1219,303 +1220,36 @@ const MapView: React.FC<MapViewProps> = ({
           </div>
         )}
         {contextMenu.open && (
-          <div
-            ref={contextMenuRef}
-            className="absolute z-20 min-w-[210px] rounded border border-slate-700 bg-slate-900/95 p-1 text-xs shadow-lg shadow-black/50"
-            style={{ left: contextMenu.x, top: contextMenu.y }}
-          >
-            <button
-              type="button"
-              onClick={() => openTool('points')}
-              className="block w-full rounded px-2 py-1.5 text-left text-slate-200 hover:bg-slate-800"
-            >
-              Points
-            </button>
-            <button
-              type="button"
-              onClick={() => openTool('inverse')}
-              className="block w-full rounded px-2 py-1.5 text-left text-slate-200 hover:bg-slate-800"
-            >
-              Inverse
-            </button>
-            <button
-              type="button"
-              onClick={() => openTool('angles')}
-              className="block w-full rounded px-2 py-1.5 text-left text-slate-200 hover:bg-slate-800"
-            >
-              Angles Between
-            </button>
+          <div ref={contextMenuRef}>
+            <MapViewContextMenu x={contextMenu.x} y={contextMenu.y} onOpenTool={openTool} />
           </div>
         )}
         {activeTool !== 'none' && (
-          <div className="absolute left-2 top-2 z-20 w-[min(560px,calc(100%-16px))] rounded border border-slate-700 bg-slate-900/95 p-3 text-xs shadow-lg shadow-black/45">
-            <div className="mb-2 flex items-center justify-between border-b border-slate-700 pb-2">
-              <div className="uppercase tracking-wider text-slate-300">
-                {activeTool === 'points'
-                  ? 'Points'
-                  : activeTool === 'inverse'
-                    ? 'Inverse'
-                    : 'Angles Between'}
-              </div>
-              <button
-                type="button"
-                onClick={closeTool}
-                className="rounded border border-slate-600 px-2 py-0.5 text-slate-300 hover:bg-slate-800"
-              >
-                Close
-              </button>
-            </div>
-
-            {activeTool === 'points' && (
-              <div className="max-h-[300px] overflow-auto">
-                <table className="w-full border-collapse text-left">
-                  <thead>
-                    <tr className="border-b border-slate-700 text-slate-400">
-                      <th className="px-2 py-1">Point</th>
-                      {isPreanalysis ? <th className="px-2 py-1">Cue</th> : null}
-                      <th className="px-2 py-1 text-right">Northing ({units})</th>
-                      <th className="px-2 py-1 text-right">Easting ({units})</th>
-                      <th className="px-2 py-1 text-right">Height ({units})</th>
-                      <th className="px-2 py-1 text-right">σN ({units})</th>
-                      <th className="px-2 py-1 text-right">σE ({units})</th>
-                      <th className="px-2 py-1 text-right">σH ({units})</th>
-                    </tr>
-                  </thead>
-                  <tbody className="text-slate-200">
-                    {visibleStationRows.map(({ id: stationId, station, severity }) => {
-                      const formatStd = (value?: number) =>
-                        value != null && Number.isFinite(value)
-                          ? (value * unitScale).toFixed(4)
-                          : '-';
-                      return (
-                        <tr
-                          key={`point-tool-${stationId}`}
-                          className="border-b border-slate-800/60"
-                        >
-                          <td className="px-2 py-1">{stationId}</td>
-                          {isPreanalysis ? (
-                            <td className="px-2 py-1 uppercase">{severity ?? '-'}</td>
-                          ) : null}
-                          <td className="px-2 py-1 text-right">
-                            {(station.y * unitScale).toFixed(4)}
-                          </td>
-                          <td className="px-2 py-1 text-right">
-                            {(station.x * unitScale).toFixed(4)}
-                          </td>
-                          <td className="px-2 py-1 text-right">
-                            {(station.h * unitScale).toFixed(4)}
-                          </td>
-                          <td className="px-2 py-1 text-right">{formatStd(station.sN)}</td>
-                          <td className="px-2 py-1 text-right">{formatStd(station.sE)}</td>
-                          <td className="px-2 py-1 text-right">{formatStd(station.sH)}</td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            )}
-
-            {activeTool === 'inverse' && (
-              <div className="space-y-2">
-                <datalist id="map-point-id-list">
-                  {visibleStationRows.map(({ id: stationId }) => (
-                    <option key={`inv-id-${stationId}`} value={stationId} />
-                  ))}
-                </datalist>
-                <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
-                  <label className="space-y-1 text-slate-300">
-                    From Point
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        value={inverseFromInput}
-                        onChange={(event) => setInverseFromInput(event.target.value)}
-                        list="map-point-id-list"
-                        className="w-full rounded border border-slate-600 bg-slate-950 px-2 py-1 text-slate-100"
-                      />
-                      <select
-                        value={inverseFromId ?? ''}
-                        onChange={(event) => setInverseFromInput(event.target.value)}
-                        className="rounded border border-slate-600 bg-slate-950 px-2 py-1 text-slate-100"
-                      >
-                        <option value="">Select</option>
-                        {visibleStationRows.map(({ id: stationId }) => (
-                          <option key={`inv-from-${stationId}`} value={stationId}>
-                            {stationId}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  </label>
-                  <label className="space-y-1 text-slate-300">
-                    To Point
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        value={inverseToInput}
-                        onChange={(event) => setInverseToInput(event.target.value)}
-                        list="map-point-id-list"
-                        className="w-full rounded border border-slate-600 bg-slate-950 px-2 py-1 text-slate-100"
-                      />
-                      <select
-                        value={inverseToId ?? ''}
-                        onChange={(event) => setInverseToInput(event.target.value)}
-                        className="rounded border border-slate-600 bg-slate-950 px-2 py-1 text-slate-100"
-                      >
-                        <option value="">Select</option>
-                        {visibleStationRows.map(({ id: stationId }) => (
-                          <option key={`inv-to-${stationId}`} value={stationId}>
-                            {stationId}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  </label>
-                </div>
-                <div className="rounded border border-slate-700 bg-slate-950 px-3 py-2 text-slate-200">
-                  {!inverseFromId || !inverseToId ? (
-                    <div>Enter or select both point IDs.</div>
-                  ) : inverseFromId === inverseToId ? (
-                    <div>From and To points must be different.</div>
-                  ) : !inverse ? (
-                    <div>Inverse unavailable for the selected points.</div>
-                  ) : (
-                    <div className="space-y-1">
-                      <div>
-                        Az {inverseFromId} → {inverseToId}:{' '}
-                        <span className="font-mono">{radToDmsStr(inverse.azimuthFromToRad)}</span> (
-                        {(inverse.azimuthFromToRad * RAD_TO_DEG).toFixed(6)} deg)
-                      </div>
-                      <div>
-                        Az {inverseToId} → {inverseFromId}:{' '}
-                        <span className="font-mono">{radToDmsStr(inverse.azimuthToFromRad)}</span> (
-                        {(inverse.azimuthToFromRad * RAD_TO_DEG).toFixed(6)} deg)
-                      </div>
-                      <div>
-                        Horizontal distance:{' '}
-                        <span className="font-mono">
-                          {(inverse.distance2d * unitScale).toFixed(4)} {units}
-                        </span>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {activeTool === 'angles' && (
-              <div className="space-y-2">
-                <datalist id="map-angle-point-id-list">
-                  {visibleStationRows.map(({ id: stationId }) => (
-                    <option key={`ang-id-${stationId}`} value={stationId} />
-                  ))}
-                </datalist>
-                <div className="grid grid-cols-1 gap-2 md:grid-cols-3">
-                  <label className="space-y-1 text-slate-300">
-                    Pivot
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        value={anglePivotInput}
-                        onChange={(event) => setAnglePivotInput(event.target.value)}
-                        list="map-angle-point-id-list"
-                        className="w-full rounded border border-slate-600 bg-slate-950 px-2 py-1 text-slate-100"
-                      />
-                      <select
-                        value={anglePivotId ?? ''}
-                        onChange={(event) => setAnglePivotInput(event.target.value)}
-                        className="rounded border border-slate-600 bg-slate-950 px-2 py-1 text-slate-100"
-                      >
-                        <option value="">Select</option>
-                        {visibleStationRows.map(({ id: stationId }) => (
-                          <option key={`ang-piv-${stationId}`} value={stationId}>
-                            {stationId}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  </label>
-                  <label className="space-y-1 text-slate-300">
-                    Leg A
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        value={angleFromInput}
-                        onChange={(event) => setAngleFromInput(event.target.value)}
-                        list="map-angle-point-id-list"
-                        className="w-full rounded border border-slate-600 bg-slate-950 px-2 py-1 text-slate-100"
-                      />
-                      <select
-                        value={angleFromId ?? ''}
-                        onChange={(event) => setAngleFromInput(event.target.value)}
-                        className="rounded border border-slate-600 bg-slate-950 px-2 py-1 text-slate-100"
-                      >
-                        <option value="">Select</option>
-                        {visibleStationRows.map(({ id: stationId }) => (
-                          <option key={`ang-from-${stationId}`} value={stationId}>
-                            {stationId}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  </label>
-                  <label className="space-y-1 text-slate-300">
-                    Leg B
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        value={angleToInput}
-                        onChange={(event) => setAngleToInput(event.target.value)}
-                        list="map-angle-point-id-list"
-                        className="w-full rounded border border-slate-600 bg-slate-950 px-2 py-1 text-slate-100"
-                      />
-                      <select
-                        value={angleToId ?? ''}
-                        onChange={(event) => setAngleToInput(event.target.value)}
-                        className="rounded border border-slate-600 bg-slate-950 px-2 py-1 text-slate-100"
-                      >
-                        <option value="">Select</option>
-                        {visibleStationRows.map(({ id: stationId }) => (
-                          <option key={`ang-to-${stationId}`} value={stationId}>
-                            {stationId}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  </label>
-                </div>
-                <div className="rounded border border-slate-700 bg-slate-950 px-3 py-2 text-slate-200">
-                  {!anglePivotId || !angleFromId || !angleToId ? (
-                    <div>Enter or select all three point IDs.</div>
-                  ) : anglePivotId === angleFromId ||
-                    anglePivotId === angleToId ||
-                    angleFromId === angleToId ? (
-                    <div>Pivot, Leg A, and Leg B must be three different points.</div>
-                  ) : !angleBetween ? (
-                    <div>Angle unavailable for the selected points.</div>
-                  ) : (
-                    <div className="space-y-1">
-                      <div>
-                        Inside angle at {anglePivotId}:{' '}
-                        <span className="font-mono">
-                          {radToDmsStr(angleBetween.insideAngleRad)}
-                        </span>{' '}
-                        ({(angleBetween.insideAngleRad * RAD_TO_DEG).toFixed(6)} deg)
-                      </div>
-                      <div>
-                        Outside angle at {anglePivotId}:{' '}
-                        <span className="font-mono">
-                          {radToDmsStr(angleBetween.outsideAngleRad)}
-                        </span>{' '}
-                        ({(angleBetween.outsideAngleRad * RAD_TO_DEG).toFixed(6)} deg)
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
+          <MapViewToolOverlay
+            activeTool={activeTool}
+            visibleStationRows={visibleStationRows}
+            isPreanalysis={isPreanalysis}
+            units={units}
+            unitScale={unitScale}
+            onClose={closeTool}
+            inverseFromInput={inverseFromInput}
+            inverseToInput={inverseToInput}
+            inverseFromId={inverseFromId}
+            inverseToId={inverseToId}
+            onInverseFromInputChange={setInverseFromInput}
+            onInverseToInputChange={setInverseToInput}
+            inverse={inverse}
+            anglePivotInput={anglePivotInput}
+            angleFromInput={angleFromInput}
+            angleToInput={angleToInput}
+            anglePivotId={anglePivotId}
+            angleFromId={angleFromId}
+            angleToId={angleToId}
+            onAnglePivotInputChange={setAnglePivotInput}
+            onAngleFromInputChange={setAngleFromInput}
+            onAngleToInputChange={setAngleToInput}
+            angleBetween={angleBetween}
+          />
         )}
         <svg
           ref={svgRef}
