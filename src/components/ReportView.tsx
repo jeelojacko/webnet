@@ -10,7 +10,6 @@ import type {
   DirectiveNoEffectWarning,
   DirectiveTransition,
   GnssVectorFrame,
-  GpsObservation,
   Observation,
   ReductionUsageSummary,
   RunMode,
@@ -26,7 +25,6 @@ import {
   toSurveyEllipseAzimuthDeg,
 } from '../engine/resultPrecision';
 import {
-  buildResultTraceabilityModel,
   sortObservationsByStdRes,
   type SortedObservation,
 } from '../engine/resultDerivedModels';
@@ -64,6 +62,7 @@ import SideshotSection from './report/SideshotSection';
 import SolveProfileDiagnosticsSection from './report/SolveProfileDiagnosticsSection';
 import { buildReportObservationSelectorModel } from './report/reportObservationSelectors';
 import { buildReportPrecisionSelectorModel } from './report/reportPrecisionSelectors';
+import { buildReportReviewSelectorModel } from './report/reportReviewSelectors';
 import { useReportViewState, type ReportViewControls } from '../hooks/useReportViewState';
 import { noteUiPerfStage, noteUiTabReady } from '../hooks/useUiPerfMonitor';
 
@@ -371,10 +370,6 @@ const ReportView: React.FC<ReportViewProps> = ({
     directionRejects,
     REPORT_DIAGNOSTIC_WINDOW_SIZE,
   );
-  const traceabilityModel = useMemo(
-    () => buildResultTraceabilityModel(result.parseState),
-    [result.parseState],
-  );
   const {
     aliasTrace,
     descriptionScanSummary,
@@ -384,50 +379,41 @@ const ReportView: React.FC<ReportViewProps> = ({
     descriptionReconcileMode,
     descriptionAppendDelimiter,
     reconciledDescriptions,
-  } = traceabilityModel;
-  const clusterDiagnostics = result.clusterDiagnostics;
-  const clusterCandidates = useMemo(
-    () => clusterDiagnostics?.candidates ?? [],
-    [clusterDiagnostics],
+    clusterCandidates,
+    clusterAppliedMerges,
+    clusterMergeOutcomes,
+    clusterRejectedProposals,
+    clusterReviewStats,
+    autoSideshotObsIds,
+    tsSideshots,
+    gpsSideshots,
+    gpsVectorSideshots,
+    gpsCoordinateSideshots,
+    gpsOffsetObservations,
+  } = useMemo(
+    () =>
+      buildReportReviewSelectorModel({
+        parseState: result.parseState,
+        clusterDiagnostics: result.clusterDiagnostics,
+        activeClusterApprovedMerges,
+        clusterReviewDecisions,
+        autoSideshotDiagnostics: result.autoSideshotDiagnostics,
+        sideshots: result.sideshots,
+        observations: result.observations,
+      }),
+    [
+      activeClusterApprovedMerges,
+      clusterReviewDecisions,
+      result.autoSideshotDiagnostics,
+      result.clusterDiagnostics,
+      result.observations,
+      result.parseState,
+      result.sideshots,
+    ],
   );
-  const clusterAppliedMerges =
-    clusterDiagnostics?.appliedMerges && clusterDiagnostics.appliedMerges.length > 0
-      ? clusterDiagnostics.appliedMerges
-      : activeClusterApprovedMerges;
-  const clusterMergeOutcomes = clusterDiagnostics?.mergeOutcomes ?? [];
-  const clusterRejectedProposals = clusterDiagnostics?.rejectedProposals ?? [];
+  const clusterDiagnostics = result.clusterDiagnostics;
   const autoAdjustDiagnostics = result.autoAdjustDiagnostics;
   const autoSideshotDiagnostics = result.autoSideshotDiagnostics;
-  const autoSideshotObsIds = useMemo(
-    () =>
-      new Set(
-        autoSideshotDiagnostics?.candidates.flatMap((c) => [c.angleObsId, c.distObsId]) ?? [],
-      ),
-    [autoSideshotDiagnostics],
-  );
-  const tsSideshots = useMemo(
-    () => (result.sideshots ?? []).filter((s) => s.mode !== 'gps'),
-    [result.sideshots],
-  );
-  const gpsSideshots = useMemo(
-    () => (result.sideshots ?? []).filter((s) => s.mode === 'gps'),
-    [result.sideshots],
-  );
-  const gpsVectorSideshots = useMemo(
-    () => gpsSideshots.filter((s) => s.sourceType !== 'GS'),
-    [gpsSideshots],
-  );
-  const gpsCoordinateSideshots = useMemo(
-    () => gpsSideshots.filter((s) => s.sourceType === 'GS'),
-    [gpsSideshots],
-  );
-  const gpsOffsetObservations = useMemo(
-    () =>
-      result.observations.filter(
-        (obs): obs is GpsObservation => obs.type === 'gps' && obs.gpsOffsetDistanceM != null,
-      ),
-    [result.observations],
-  );
   const stationDescription = (stationId: string): string =>
     reconciledDescriptions[stationId] ?? '-';
   const stationCovariances = useMemo(
@@ -472,30 +458,6 @@ const ReportView: React.FC<ReportViewProps> = ({
       result,
       stationCovariances,
     ],
-  );
-  const clusterReviewStats = useMemo(
-    () =>
-      clusterCandidates.reduce(
-        (acc, candidate) => {
-          const decision = clusterReviewDecisions[candidate.key];
-          const status = decision?.status ?? 'pending';
-          const canonicalId =
-            decision && candidate.stationIds.includes(decision.canonicalId)
-              ? decision.canonicalId
-              : candidate.representativeId;
-          if (status === 'approve') {
-            acc.approved += 1;
-            acc.plannedMerges += candidate.stationIds.filter((id) => id !== canonicalId).length;
-          } else if (status === 'reject') {
-            acc.rejected += 1;
-          } else {
-            acc.pending += 1;
-          }
-          return acc;
-        },
-        { approved: 0, rejected: 0, pending: 0, plannedMerges: 0 },
-      ),
-    [clusterCandidates, clusterReviewDecisions],
   );
   const prismAnnotation = useCallback(
     (obs: Observation) => formatPrismAnnotation(obs, unitScale, units),
