@@ -14,7 +14,6 @@ import {
   sanitizeAdjustedPointsExportSettings,
 } from '../engine/adjustedPointsExport';
 import {
-  buildStationPairKey,
   buildMapLinkByPairKey,
   buildObservationMapLinks,
   buildStationIdLookup,
@@ -50,6 +49,13 @@ import {
   view2dEquals,
 } from './mapView/mapView2d';
 import MapViewSvg2d from './mapView/MapViewSvg2d';
+import MapViewScene3d from './mapView/MapViewScene3d';
+import {
+  buildProjectedStationLookup3d,
+  buildProjectedStations3d,
+  buildVisiblePointLabels3d,
+  projectPoint3d,
+} from './mapView/mapView3d';
 
 const FT_PER_M = 3.280839895;
 const VIEW_W = 1000;
@@ -57,7 +63,6 @@ const VIEW_H = 700;
 const MIN_ZOOM = 0.35;
 const MAX_ZOOM = 200;
 const MIDDLE_DBLCLICK_MS = 320;
-const DEG_TO_RAD = Math.PI / 180;
 const MAX_ELLIPSOID_SAMPLES = 28;
 const VIEWPORT_CLIP_MARGIN_PX = 80;
 const DENSE_LABEL_POINT_THRESHOLD = 90;
@@ -992,117 +997,27 @@ const MapView: React.FC<MapViewProps> = ({
   }, [points, transformedOverlayActive, transformedOverlayConfig.transformedByStationId]);
 
   const project3d = useCallback(
-    (point: Vec3) => {
-      if (!camera3d) return { x: VIEW_W / 2, y: VIEW_H / 2, depth: 1, visible: false };
-      const target = {
-        x: camera3d.target.x + camera3d.panX,
-        y: camera3d.target.y + camera3d.panY,
-        z: camera3d.target.z,
-      };
-      const relX = point.x - target.x;
-      const relY = point.y - target.y;
-      const relZ = point.z - target.z;
-      const yaw = camera3d.yawDeg * DEG_TO_RAD;
-      const pitch = camera3d.pitchDeg * DEG_TO_RAD;
-      const cosYaw = Math.cos(yaw);
-      const sinYaw = Math.sin(yaw);
-      const cosPitch = Math.cos(pitch);
-      const sinPitch = Math.sin(pitch);
-      const xYaw = relX * cosYaw - relY * sinYaw;
-      const yYaw = relX * sinYaw + relY * cosYaw;
-      const yPitch = yYaw * cosPitch - relZ * sinPitch;
-      const zPitch = yYaw * sinPitch + relZ * cosPitch;
-      const depth = camera3d.distance - yPitch;
-      const safeDepth = Math.max(0.2, depth);
-      const focal = 420 * camera3d.zoom;
-      const perspective = focal / safeDepth;
-      const x = VIEW_W / 2 + xYaw * perspective;
-      const y = VIEW_H / 2 - zPitch * perspective;
-      return { x, y, depth: safeDepth, visible: depth > 0 };
-    },
+    (point: Vec3) => projectPoint3d(camera3d, point, VIEW_W, VIEW_H),
     [camera3d],
   );
 
   const projected3d = useMemo(() => {
     if (effectiveMode !== '3d' || !camera3d) return [];
-    return scene3d.stations
-      .map((node) => ({ node, p: project3d(node.position) }))
-      .filter((row) => row.p.visible)
-      .sort((a, b) => b.p.depth - a.p.depth);
-  }, [camera3d, effectiveMode, project3d, scene3d]);
+    return buildProjectedStations3d(scene3d, camera3d, VIEW_W, VIEW_H);
+  }, [camera3d, effectiveMode, scene3d]);
 
   const projected3dById = useMemo(() => {
-    const map = new Map<string, { x: number; y: number; depth: number }>();
-    projected3d.forEach((row) => map.set(row.node.id, row.p));
-    return map;
+    return buildProjectedStationLookup3d(projected3d);
   }, [projected3d]);
 
   const visiblePointLabels3d = useMemo(() => {
-    if (projected3d.length === 0) return new Set<string>();
-    const denseView = projected3d.length > DENSE_LABEL_POINT_THRESHOLD;
-    if (!denseView) return new Set(projected3d.map((row) => row.node.id));
-    const next = new Set<string>();
-    const occupied = new Set<string>();
-    projected3d.forEach((row) => {
-      const key = `${Math.floor(row.p.x / LABEL_GRID_PX)}:${Math.floor(row.p.y / LABEL_GRID_PX)}`;
-      if (!occupied.has(key) || row.node.id === selectedStationId) {
-        occupied.add(key);
-        next.add(row.node.id);
-      }
-    });
-    return next;
+    return buildVisiblePointLabels3d(
+      projected3d,
+      selectedStationId,
+      DENSE_LABEL_POINT_THRESHOLD,
+      LABEL_GRID_PX,
+    );
   }, [projected3d, selectedStationId]);
-
-  const buildEllipsoidRings = useCallback(
-    (
-      center: Vec3,
-      ellipsoid: { semiMajor: number; semiMinor: number; semiVertical: number; thetaDeg: number },
-    ) => {
-      const theta = ellipsoid.thetaDeg * DEG_TO_RAD;
-      const cosT = Math.cos(theta);
-      const sinT = Math.sin(theta);
-      const exaggeration = Math.max(1, scene3d.extents.radius * 0.01);
-      const a = Math.max(0, ellipsoid.semiMajor * exaggeration * 80);
-      const b = Math.max(0, ellipsoid.semiMinor * exaggeration * 80);
-      const c = Math.max(0, ellipsoid.semiVertical * exaggeration * 80);
-      if (a <= 0 && b <= 0 && c <= 0) return [];
-
-      const samples = MAX_ELLIPSOID_SAMPLES;
-      const ring = (builder: (_t: number) => Vec3): string => {
-        const coords: string[] = [];
-        for (let i = 0; i <= samples; i += 1) {
-          const t = (i / samples) * Math.PI * 2;
-          const world = builder(t);
-          const p = project3d(world);
-          if (!p.visible) continue;
-          coords.push(`${p.x.toFixed(2)},${p.y.toFixed(2)}`);
-        }
-        return coords.join(' ');
-      };
-
-      const xy = ring((t) => {
-        const lx = a * Math.cos(t);
-        const ly = b * Math.sin(t);
-        return {
-          x: center.x + lx * cosT - ly * sinT,
-          y: center.y + lx * sinT + ly * cosT,
-          z: center.z,
-        };
-      });
-      const xz = ring((t) => ({
-        x: center.x + a * Math.cos(t) * cosT,
-        y: center.y + a * Math.cos(t) * sinT,
-        z: center.z + c * Math.sin(t),
-      }));
-      const yz = ring((t) => ({
-        x: center.x - b * Math.cos(t) * sinT,
-        y: center.y + b * Math.cos(t) * cosT,
-        z: center.z + c * Math.sin(t),
-      }));
-      return [xy, xz, yz].filter((poly) => poly.length > 0);
-    },
-    [project3d, scene3d.extents.radius],
-  );
 
   const applyCubeView = (preset: 'iso' | 'top' | 'front' | 'right') => {
     setCamera3d((prev) => {
@@ -1686,122 +1601,25 @@ const MapView: React.FC<MapViewProps> = ({
           )}
 
           {effectiveMode === '3d' && camera3d && (
-            <>
-              <rect x={0} y={0} width={VIEW_W} height={VIEW_H} fill="#020617" />
-              {scene3d.edges.map((edge, idx) => {
-                const a = projected3dById.get(edge.from);
-                const b = projected3dById.get(edge.to);
-                if (!a || !b) return null;
-                const pairKey = buildStationPairKey(edge.from, edge.to);
-                const link = mapLinkByPairKey.get(pairKey) ?? null;
-                const isSelected =
-                  (link != null && link.observationId === selectedObservationId) ||
-                  (selectedObservationPairKey != null && pairKey === selectedObservationPairKey);
-                if (isSelected) return null;
-                return (
-                  <line
-                    key={`edge3d-${idx}`}
-                    data-map-observation={link?.observationId ?? `${edge.from}-${edge.to}`}
-                    x1={a.x}
-                    y1={a.y}
-                    x2={b.x}
-                    y2={b.y}
-                    stroke="#334155"
-                    strokeWidth={1}
-                    opacity={0.65}
-                    onClick={() => {
-                      if (link) onSelectObservation?.(link.observationId);
-                    }}
-                    className={link && onSelectObservation ? 'cursor-pointer' : undefined}
-                  />
-                );
-              })}
-              {scene3d.edges.map((edge, idx) => {
-                const a = projected3dById.get(edge.from);
-                const b = projected3dById.get(edge.to);
-                if (!a || !b) return null;
-                const pairKey = buildStationPairKey(edge.from, edge.to);
-                const link = mapLinkByPairKey.get(pairKey) ?? null;
-                const isSelected =
-                  (link != null && link.observationId === selectedObservationId) ||
-                  (selectedObservationPairKey != null && pairKey === selectedObservationPairKey);
-                if (!isSelected) return null;
-                return (
-                  <line
-                    key={`edge3d-selected-${idx}`}
-                    data-map-observation={link?.observationId ?? `${edge.from}-${edge.to}`}
-                    x1={a.x}
-                    y1={a.y}
-                    x2={b.x}
-                    y2={b.y}
-                    stroke="#22d3ee"
-                    strokeWidth={2}
-                    opacity={1}
-                    onClick={() => {
-                      if (link) onSelectObservation?.(link.observationId);
-                    }}
-                    className={link && onSelectObservation ? 'cursor-pointer' : undefined}
-                  />
-                );
-              })}
-              {projected3d.map(({ node, p }) => {
-                const pointRadius = clamp(7 - Math.log10(Math.max(1, p.depth)), 2.2, 7);
-                const labelSize = clamp(10 - Math.log10(Math.max(1, p.depth)) * 0.8, 8, 12);
-                const labelOffset = clamp(8 - Math.log10(Math.max(1, p.depth)), 5, 10);
-                const rings = node.ellipsoid
-                  ? buildEllipsoidRings(node.position, node.ellipsoid)
-                  : [];
-                return (
-                  <g key={node.id}>
-                    {rings.map((poly, polyIdx) => (
-                      <polyline
-                        key={`${node.id}-ell-${polyIdx}`}
-                        points={poly}
-                        fill="none"
-                        stroke={ellipseStroke(node.id)}
-                        strokeWidth={0.9}
-                        opacity={0.45}
-                      />
-                    ))}
-                    <circle
-                      data-map-station={node.id}
-                      cx={p.x}
-                      cy={p.y}
-                      r={pointRadius}
-                      fill={stationFill(node.id, node.fixed)}
-                      stroke="none"
-                      onClick={() => onSelectStation?.(node.id)}
-                      className={onSelectStation ? 'cursor-pointer' : undefined}
-                    />
-                    {selectedStationId === node.id && (
-                      <circle
-                        cx={p.x}
-                        cy={p.y}
-                        r={pointRadius * 1.45}
-                        fill="none"
-                        stroke="#22d3ee"
-                        strokeWidth={2}
-                        pointerEvents="none"
-                      />
-                    )}
-                    {visiblePointLabels3d.has(node.id) && (
-                      <text
-                        data-map-label={node.id}
-                        x={p.x + labelOffset}
-                        y={p.y - labelOffset}
-                        fontSize={labelSize}
-                        fill="#e2e8f0"
-                        stroke="#020617"
-                        strokeWidth={1.2}
-                        paintOrder="stroke"
-                      >
-                        {node.id}
-                      </text>
-                    )}
-                  </g>
-                );
-              })}
-            </>
+            <MapViewScene3d
+              viewWidth={VIEW_W}
+              viewHeight={VIEW_H}
+              scene3d={scene3d}
+              projected3d={projected3d}
+              projected3dById={projected3dById}
+              visiblePointLabels3d={visiblePointLabels3d}
+              project3d={project3d}
+              sceneRadius={scene3d.extents.radius}
+              maxEllipsoidSamples={MAX_ELLIPSOID_SAMPLES}
+              ellipseStroke={ellipseStroke}
+              stationFill={stationFill}
+              mapLinkByPairKey={mapLinkByPairKey}
+              selectedObservationId={selectedObservationId}
+              selectedObservationPairKey={selectedObservationPairKey}
+              onSelectObservation={onSelectObservation}
+              selectedStationId={selectedStationId}
+              onSelectStation={onSelectStation}
+            />
           )}
 
           {points.length === 0 && (
