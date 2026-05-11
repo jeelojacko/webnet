@@ -1818,9 +1818,7 @@ const ReportView: React.FC<ReportViewProps> = ({
               'px-3 py-2 text-xs uppercase tracking-wider border-b border-slate-700 bg-slate-800/75',
             labelClassName: 'text-slate-100',
           })}
-          {!isSectionCollapsed('auto-adjust-diagnostics') && (
-            <>
-              <div className="grid grid-cols-2 md:grid-cols-6 gap-3 p-3 text-xs text-slate-300 border-b border-slate-800/60">
+          <div className="grid grid-cols-2 md:grid-cols-6 gap-3 p-3 text-xs text-slate-300 border-b border-slate-800/60">
             <div>
               <div className="text-slate-500">Threshold</div>
               <div>|t| &gt;= {autoAdjustDiagnostics.threshold.toFixed(2)}</div>
@@ -1845,7 +1843,9 @@ const ReportView: React.FC<ReportViewProps> = ({
               <div className="text-slate-500">Total Removed</div>
               <div>{autoAdjustDiagnostics.removed.length}</div>
             </div>
-              </div>
+          </div>
+          {!isSectionCollapsed('auto-adjust-diagnostics') && (
+            <>
               <div className="overflow-x-auto w-full border-b border-slate-800">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
@@ -1919,9 +1919,7 @@ const ReportView: React.FC<ReportViewProps> = ({
               'px-3 py-2 text-xs uppercase tracking-wider border-b border-slate-700 bg-slate-800/75',
             labelClassName: 'text-slate-100',
           })}
-          {!isSectionCollapsed('auto-sideshot-candidates') && (
-            <>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-3 text-xs text-slate-300 border-b border-slate-800/60">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-3 text-xs text-slate-300 border-b border-slate-800/60">
             <div>
               <div className="text-slate-500">Evaluated M Pairs</div>
               <div>{autoSideshotDiagnostics.evaluatedCount}</div>
@@ -1938,7 +1936,9 @@ const ReportView: React.FC<ReportViewProps> = ({
               <div className="text-slate-500">Min Redundancy Threshold</div>
               <div>{autoSideshotDiagnostics.threshold.toFixed(2)}</div>
             </div>
-              </div>
+          </div>
+          {!isSectionCollapsed('auto-sideshot-candidates') && (
+            <>
               <div className="overflow-x-auto w-full">
             <table className="w-full text-left border-collapse text-xs">
               <thead>

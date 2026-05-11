@@ -73,6 +73,8 @@ export type CollapsibleDetailSectionId = (typeof COLLAPSIBLE_DETAIL_SECTION_IDS)
 const DEFAULT_COLLAPSED_DETAIL_SECTION_IDS = new Set<CollapsibleDetailSectionId>([
   'report-filters',
   'solve-profile-diagnostics',
+  'auto-adjust-diagnostics',
+  'auto-sideshot-candidates',
   'alias-traceability',
   'description-reconciliation-summary',
   'cluster-detection-candidates',

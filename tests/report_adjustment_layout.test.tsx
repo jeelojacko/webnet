@@ -389,4 +389,63 @@ describe('ReportView adjustment-layout sections', () => {
     expect(html).not.toContain('Apply Approved Merges + Re-run');
     expect(html).not.toContain('Canonical ID');
   });
+
+  it('keeps auto-adjust and auto-sideshot summary cards visible while deferring their detail tables by default', () => {
+    const result = new LSAEngine({ input: baseInput, maxIterations: 8 }).solve();
+    result.autoAdjustDiagnostics = {
+      enabled: true,
+      threshold: 3,
+      maxCycles: 4,
+      maxRemovalsPerCycle: 1,
+      minRedundancy: 0.1,
+      stopReason: 'no-candidates',
+      cycles: [{ cycle: 1, seuw: 1.1, maxAbsStdRes: 3.2, removals: [] }],
+      removed: [
+        {
+          obsId: 1,
+          type: 'dist',
+          stations: 'A-C',
+          sourceLine: 5,
+          stdRes: 3.2,
+          redundancy: 0.45,
+          reason: 'threshold',
+        },
+      ],
+    } as any;
+    result.autoSideshotDiagnostics = {
+      enabled: true,
+      evaluatedCount: 4,
+      candidateCount: 1,
+      excludedControlCount: 0,
+      threshold: 0.2,
+      candidates: [
+        {
+          sourceLine: 7,
+          occupy: 'C',
+          backsight: 'A',
+          target: 'B',
+          angleObsId: 1,
+          distObsId: 2,
+          angleRedundancy: 0.12,
+          distRedundancy: 0.18,
+          minRedundancy: 0.12,
+          maxAbsStdRes: 2.5,
+        },
+      ],
+    } as any;
+
+    const html = renderReport(result);
+    expect(html).toContain('Auto-Adjust Diagnostics');
+    expect(html).toContain('Auto Sideshot Candidates (M Records)');
+    expect(html).toContain('Threshold');
+    expect(html).toContain('Total Removed');
+    expect(html).toContain('Evaluated M Pairs');
+    expect(html).toContain('Candidates');
+    expect(html).toContain('Show');
+    expect(html).not.toContain('Obs ID');
+    expect(html).not.toContain('Occupy');
+    expect(html).not.toContain('Backsight');
+    expect(html).not.toContain('Angle Obs');
+    expect(html).not.toContain('Dist Obs');
+  });
 });
