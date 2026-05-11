@@ -1322,9 +1322,13 @@ const ReportView: React.FC<ReportViewProps> = ({
 
       {aliasTrace.length > 0 && (
         <div className="mb-6 border border-slate-800 rounded overflow-hidden">
-          <div className="px-3 py-2 text-xs text-slate-400 uppercase tracking-wider border-b border-slate-800 bg-slate-900/40">
-            Alias Traceability
-          </div>
+          {renderCollapsibleSectionHeader({
+            sectionId: 'alias-traceability',
+            label: 'Alias Traceability',
+            className:
+              'px-3 py-2 text-xs uppercase tracking-wider border-b border-slate-800 bg-slate-900/40',
+            labelClassName: 'text-slate-400',
+          })}
           <div className="grid grid-cols-3 md:grid-cols-5 gap-3 p-3 text-xs text-slate-300 border-b border-slate-800/60">
             <div>
               <div className="text-slate-500">Explicit Maps</div>
@@ -1347,50 +1351,59 @@ const ReportView: React.FC<ReportViewProps> = ({
               </div>
             </div>
           </div>
-          <div className="overflow-x-auto w-full">
-            <table className="w-full text-left border-collapse text-xs">
-              <thead>
-                <tr className="text-slate-200 border-b border-slate-700">
-                  <th className="py-2 px-3 font-semibold">Context</th>
-                  <th className="py-2 px-3 font-semibold">Detail</th>
-                  <th className="py-2 px-3 font-semibold text-right">Line</th>
-                  <th className="py-2 px-3 font-semibold">Source Alias</th>
-                  <th className="py-2 px-3 font-semibold">Canonical ID</th>
-                  <th className="py-2 px-3 font-semibold">Reference</th>
-                </tr>
-              </thead>
-              <tbody className="text-slate-300">
-                {aliasTrace.slice(0, 200).map((entry, idx) => (
-                  <tr
-                    key={`alias-trace-${entry.context}-${entry.sourceLine ?? 'na'}-${entry.sourceId}-${entry.canonicalId}-${idx}`}
-                    className="border-b border-slate-800/50"
-                  >
-                    <td className="py-1 px-3 uppercase">{entry.context}</td>
-                    <td className="py-1 px-3">{entry.detail ?? '-'}</td>
-                    <td className="py-1 px-3 text-right text-slate-500">
-                      {renderSourceLineLink(entry.sourceLine)}
-                    </td>
-                    <td className="py-1 px-3 font-mono">{entry.sourceId}</td>
-                    <td className="py-1 px-3 font-mono">{entry.canonicalId}</td>
-                    <td className="py-1 px-3">{entry.reference ?? '-'}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          {aliasTrace.length > 200 && (
-            <div className="px-3 py-2 text-[11px] text-slate-500 border-t border-slate-800">
-              Showing first 200 rows of {aliasTrace.length}. Full trace available in export output.
-            </div>
+          {!isSectionCollapsed('alias-traceability') && (
+            <>
+              <div className="overflow-x-auto w-full">
+                <table className="w-full text-left border-collapse text-xs">
+                  <thead>
+                    <tr className="text-slate-200 border-b border-slate-700">
+                      <th className="py-2 px-3 font-semibold">Context</th>
+                      <th className="py-2 px-3 font-semibold">Detail</th>
+                      <th className="py-2 px-3 font-semibold text-right">Line</th>
+                      <th className="py-2 px-3 font-semibold">Source Alias</th>
+                      <th className="py-2 px-3 font-semibold">Canonical ID</th>
+                      <th className="py-2 px-3 font-semibold">Reference</th>
+                    </tr>
+                  </thead>
+                  <tbody className="text-slate-300">
+                    {aliasTrace.slice(0, 200).map((entry, idx) => (
+                      <tr
+                        key={`alias-trace-${entry.context}-${entry.sourceLine ?? 'na'}-${entry.sourceId}-${entry.canonicalId}-${idx}`}
+                        className="border-b border-slate-800/50"
+                      >
+                        <td className="py-1 px-3 uppercase">{entry.context}</td>
+                        <td className="py-1 px-3">{entry.detail ?? '-'}</td>
+                        <td className="py-1 px-3 text-right text-slate-500">
+                          {renderSourceLineLink(entry.sourceLine)}
+                        </td>
+                        <td className="py-1 px-3 font-mono">{entry.sourceId}</td>
+                        <td className="py-1 px-3 font-mono">{entry.canonicalId}</td>
+                        <td className="py-1 px-3">{entry.reference ?? '-'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              {aliasTrace.length > 200 && (
+                <div className="px-3 py-2 text-[11px] text-slate-500 border-t border-slate-800">
+                  Showing first 200 rows of {aliasTrace.length}. Full trace available in export
+                  output.
+                </div>
+              )}
+            </>
           )}
         </div>
       )}
 
       {descriptionScanSummary.length > 0 && (
         <div className="mb-6 border border-slate-800 rounded overflow-hidden">
-          <div className="px-3 py-2 text-xs text-slate-400 uppercase tracking-wider border-b border-slate-800 bg-slate-900/40">
-            Description Reconciliation Summary
-          </div>
+          {renderCollapsibleSectionHeader({
+            sectionId: 'description-reconciliation-summary',
+            label: 'Description Reconciliation Summary',
+            className:
+              'px-3 py-2 text-xs uppercase tracking-wider border-b border-slate-800 bg-slate-900/40',
+            labelClassName: 'text-slate-400',
+          })}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-3 text-xs text-slate-300 border-b border-slate-800/60">
             <div>
               <div className="text-slate-500">Mode</div>
@@ -1414,50 +1427,52 @@ const ReportView: React.FC<ReportViewProps> = ({
               </div>
             </div>
           </div>
-          <div className="overflow-x-auto w-full">
-            <table className="w-full text-left border-collapse text-xs">
-              <thead>
-                <tr className="text-slate-200 border-b border-slate-700">
-                  <th className="py-2 px-3 font-semibold">Station</th>
-                  <th className="py-2 px-3 font-semibold text-right">Records</th>
-                  <th className="py-2 px-3 font-semibold text-right">Unique</th>
-                  <th className="py-2 px-3 font-semibold text-center">Conflict</th>
-                  <th className="py-2 px-3 font-semibold">Descriptions (line refs)</th>
-                </tr>
-              </thead>
-              <tbody className="text-slate-300">
-                {descriptionScanSummary.map((row) => {
-                  const details = (descriptionRefsByStation.get(row.stationId) ?? [])
-                    .map((detail) => {
-                      const lines = detail.lines
-                        .slice()
-                        .sort((a, b) => a - b)
-                        .join(', ');
-                      return `${detail.description} [${lines}]`;
-                    })
-                    .join(' ; ');
-                  return (
-                    <tr
-                      key={`desc-summary-${row.stationId}`}
-                      className="border-b border-slate-800/50"
-                    >
-                      <td className="py-1 px-3 font-mono">{row.stationId}</td>
-                      <td className="py-1 px-3 text-right">{row.recordCount}</td>
-                      <td className="py-1 px-3 text-right">{row.uniqueCount}</td>
-                      <td className="py-1 px-3 text-center">
-                        {row.conflict ? (
-                          <span className="text-amber-300 font-semibold">YES</span>
-                        ) : (
-                          <span className="text-slate-500">no</span>
-                        )}
-                      </td>
-                      <td className="py-1 px-3 text-slate-400">{details || '-'}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+          {!isSectionCollapsed('description-reconciliation-summary') && (
+            <div className="overflow-x-auto w-full">
+              <table className="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr className="text-slate-200 border-b border-slate-700">
+                    <th className="py-2 px-3 font-semibold">Station</th>
+                    <th className="py-2 px-3 font-semibold text-right">Records</th>
+                    <th className="py-2 px-3 font-semibold text-right">Unique</th>
+                    <th className="py-2 px-3 font-semibold text-center">Conflict</th>
+                    <th className="py-2 px-3 font-semibold">Descriptions (line refs)</th>
+                  </tr>
+                </thead>
+                <tbody className="text-slate-300">
+                  {descriptionScanSummary.map((row) => {
+                    const details = (descriptionRefsByStation.get(row.stationId) ?? [])
+                      .map((detail) => {
+                        const lines = detail.lines
+                          .slice()
+                          .sort((a, b) => a - b)
+                          .join(', ');
+                        return `${detail.description} [${lines}]`;
+                      })
+                      .join(' ; ');
+                    return (
+                      <tr
+                        key={`desc-summary-${row.stationId}`}
+                        className="border-b border-slate-800/50"
+                      >
+                        <td className="py-1 px-3 font-mono">{row.stationId}</td>
+                        <td className="py-1 px-3 text-right">{row.recordCount}</td>
+                        <td className="py-1 px-3 text-right">{row.uniqueCount}</td>
+                        <td className="py-1 px-3 text-center">
+                          {row.conflict ? (
+                            <span className="text-amber-300 font-semibold">YES</span>
+                          ) : (
+                            <span className="text-slate-500">no</span>
+                          )}
+                        </td>
+                        <td className="py-1 px-3 text-slate-400">{details || '-'}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       )}
 
@@ -1466,9 +1481,13 @@ const ReportView: React.FC<ReportViewProps> = ({
           className="mb-6 border border-slate-800 rounded overflow-hidden"
           style={{ order: -208 }}
         >
-          <div className="px-3 py-2 text-xs text-slate-400 uppercase tracking-wider border-b border-slate-800 bg-slate-900/40">
-            Cluster Detection Candidates
-          </div>
+          {renderCollapsibleSectionHeader({
+            sectionId: 'cluster-detection-candidates',
+            label: 'Cluster Detection Candidates',
+            className:
+              'px-3 py-2 text-xs uppercase tracking-wider border-b border-slate-800 bg-slate-900/40',
+            labelClassName: 'text-slate-400',
+          })}
           <div className="grid grid-cols-2 md:grid-cols-12 gap-3 p-3 text-xs text-slate-300 border-b border-slate-800/60">
             <div>
               <div className="text-slate-500">Pass</div>
@@ -1529,256 +1548,261 @@ const ReportView: React.FC<ReportViewProps> = ({
               <div>{clusterRejectedProposals.length}</div>
             </div>
           </div>
-          {clusterCandidates.length > 0 ? (
-            <div className="overflow-x-auto w-full">
-              <div className="flex items-center gap-2 px-3 py-2 border-b border-slate-800 text-xs bg-slate-900/20">
-                <button
-                  onClick={() => {
-                    const confirmed = confirmActionGuard({
-                      action: 'cluster-apply',
-                      scope: `${clusterReviewStats.plannedMerges} approved merge(s)`,
-                      detail:
-                        'This rewrites aliases to canonical IDs for approved candidates and reruns the adjustment.',
-                    });
-                    if (!confirmed) return;
-                    onApplyClusterMerges();
-                  }}
-                  disabled={clusterReviewStats.plannedMerges === 0}
-                  className={`px-3 py-1 rounded border ${
-                    clusterReviewStats.plannedMerges === 0
-                      ? 'border-slate-700 text-slate-600 cursor-not-allowed'
-                      : 'border-blue-600 text-blue-300 hover:bg-blue-900/30'
-                  }`}
-                >
-                  Apply Approved Merges + Re-run
-                </button>
-                <button
-                  onClick={onResetClusterReview}
-                  className="px-3 py-1 rounded border border-slate-700 text-slate-300 hover:bg-slate-800/60"
-                >
-                  Reset Review
-                </button>
-                {clusterAppliedMerges.length > 0 && (
+          {!isSectionCollapsed('cluster-detection-candidates') &&
+            (clusterCandidates.length > 0 ? (
+              <>
+                <div className="overflow-x-auto w-full">
+                  <div className="flex items-center gap-2 px-3 py-2 border-b border-slate-800 text-xs bg-slate-900/20">
                   <button
                     onClick={() => {
                       const confirmed = confirmActionGuard({
-                        action: 'cluster-revert',
-                        scope: `${clusterAppliedMerges.length} applied merge(s)`,
+                        action: 'cluster-apply',
+                        scope: `${clusterReviewStats.plannedMerges} approved merge(s)`,
                         detail:
-                          'This clears applied merge decisions and reruns without cluster merge aliases.',
+                          'This rewrites aliases to canonical IDs for approved candidates and reruns the adjustment.',
                       });
                       if (!confirmed) return;
-                      onClearClusterMerges();
+                      onApplyClusterMerges();
                     }}
-                    className="px-3 py-1 rounded border border-amber-600 text-amber-300 hover:bg-amber-900/30"
+                    disabled={clusterReviewStats.plannedMerges === 0}
+                    className={`px-3 py-1 rounded border ${
+                      clusterReviewStats.plannedMerges === 0
+                        ? 'border-slate-700 text-slate-600 cursor-not-allowed'
+                        : 'border-blue-600 text-blue-300 hover:bg-blue-900/30'
+                    }`}
                   >
-                    Clear Applied Merges + Re-run
+                    Apply Approved Merges + Re-run
                   </button>
+                  <button
+                    onClick={onResetClusterReview}
+                    className="px-3 py-1 rounded border border-slate-700 text-slate-300 hover:bg-slate-800/60"
+                  >
+                    Reset Review
+                  </button>
+                  {clusterAppliedMerges.length > 0 && (
+                    <button
+                      onClick={() => {
+                        const confirmed = confirmActionGuard({
+                          action: 'cluster-revert',
+                          scope: `${clusterAppliedMerges.length} applied merge(s)`,
+                          detail:
+                            'This clears applied merge decisions and reruns without cluster merge aliases.',
+                        });
+                        if (!confirmed) return;
+                        onClearClusterMerges();
+                      }}
+                      className="px-3 py-1 rounded border border-amber-600 text-amber-300 hover:bg-amber-900/30"
+                    >
+                      Clear Applied Merges + Re-run
+                    </button>
+                  )}
+                  </div>
+                  <table className="w-full text-left border-collapse text-xs">
+                    <thead>
+                      <tr className="text-slate-200 border-b border-slate-700">
+                        <th className="py-2 px-3 font-semibold">Key</th>
+                        <th className="py-2 px-3 font-semibold">Representative</th>
+                        <th className="py-2 px-3 font-semibold">Action</th>
+                        <th className="py-2 px-3 font-semibold">Retain</th>
+                        <th className="py-2 px-3 font-semibold text-right">Members</th>
+                        <th className="py-2 px-3 font-semibold text-right">Max Sep ({units})</th>
+                        <th className="py-2 px-3 font-semibold text-right">Mean Sep ({units})</th>
+                        <th className="py-2 px-3 font-semibold">Flags</th>
+                        <th className="py-2 px-3 font-semibold">Station IDs</th>
+                        <th className="py-2 px-3 font-semibold text-right">Planned Merges</th>
+                      </tr>
+                    </thead>
+                    <tbody className="text-slate-300">
+                      {clusterCandidates.map((c) => {
+                        const decision = clusterReviewDecisions[c.key];
+                        const action = decision?.status ?? 'pending';
+                        const retainId =
+                          decision && c.stationIds.includes(decision.canonicalId)
+                            ? decision.canonicalId
+                            : c.representativeId;
+                        const plannedMerges =
+                          action === 'approve'
+                            ? c.stationIds.filter((id) => id !== retainId).length
+                            : 0;
+                        return (
+                          <tr key={c.key} className="border-b border-slate-800/50">
+                            <td className="py-1 px-3 font-mono">{c.key}</td>
+                            <td className="py-1 px-3 font-mono">{c.representativeId}</td>
+                            <td className="py-1 px-3">
+                              <select
+                                value={action}
+                                onChange={(e) =>
+                                  onClusterDecisionStatus(
+                                    c.key,
+                                    e.target.value as 'pending' | 'approve' | 'reject',
+                                  )
+                                }
+                                className="bg-slate-900 border border-slate-700 rounded px-2 py-0.5 text-xs"
+                              >
+                                <option value="pending">Pending</option>
+                                <option value="approve">Approve</option>
+                                <option value="reject">Reject</option>
+                              </select>
+                            </td>
+                            <td className="py-1 px-3">
+                              <select
+                                value={retainId}
+                                onChange={(e) => onClusterCanonicalSelection(c.key, e.target.value)}
+                                disabled={action === 'reject'}
+                                className="bg-slate-900 border border-slate-700 rounded px-2 py-0.5 text-xs disabled:opacity-50 disabled:cursor-not-allowed"
+                              >
+                                {c.stationIds.map((stationId) => (
+                                  <option key={`${c.key}-retain-${stationId}`} value={stationId}>
+                                    {stationId}
+                                  </option>
+                                ))}
+                              </select>
+                            </td>
+                            <td className="py-1 px-3 text-right">{c.memberCount}</td>
+                            <td className="py-1 px-3 text-right">
+                              {(c.maxSeparation * unitScale).toFixed(4)}
+                            </td>
+                            <td className="py-1 px-3 text-right">
+                              {(c.meanSeparation * unitScale).toFixed(4)}
+                            </td>
+                            <td className="py-1 px-3">
+                              {c.hasFixed ? 'fixed' : 'free'}
+                              {c.hasUnknown ? ' + unknown' : ''}
+                            </td>
+                            <td className="py-1 px-3 font-mono">{c.stationIds.join(', ')}</td>
+                            <td className="py-1 px-3 text-right font-mono">{plannedMerges}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+                {clusterAppliedMerges.length > 0 && (
+                  <div className="border-t border-slate-800">
+                    <div className="px-3 py-2 text-[11px] uppercase tracking-wider text-slate-500 bg-slate-900/20">
+                      Applied Cluster Merges
+                    </div>
+                    <div className="overflow-x-auto w-full">
+                      <table className="w-full text-left border-collapse text-xs">
+                        <thead>
+                          <tr className="text-slate-200 border-b border-slate-700">
+                            <th className="py-2 px-3 font-semibold">Alias</th>
+                            <th className="py-2 px-3 font-semibold">Canonical</th>
+                          </tr>
+                        </thead>
+                        <tbody className="text-slate-300">
+                          {clusterAppliedMerges.map((merge, idx) => (
+                            <tr
+                              key={`cluster-merge-${merge.aliasId}-${merge.canonicalId}-${idx}`}
+                              className="border-b border-slate-800/50"
+                            >
+                              <td className="py-1 px-3 font-mono">{merge.aliasId}</td>
+                              <td className="py-1 px-3 font-mono">{merge.canonicalId}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
                 )}
+                {clusterMergeOutcomes.length > 0 && (
+                  <div className="border-t border-slate-800">
+                    <div className="px-3 py-2 text-[11px] uppercase tracking-wider text-slate-500 bg-slate-900/20">
+                      Cluster Merge Outcomes (Delta From Retained Point)
+                    </div>
+                    <div className="overflow-x-auto w-full">
+                      <table className="w-full text-left border-collapse text-xs">
+                        <thead>
+                          <tr className="text-slate-200 border-b border-slate-700">
+                            <th className="py-2 px-3 font-semibold">Alias</th>
+                            <th className="py-2 px-3 font-semibold">Canonical</th>
+                            <th className="py-2 px-3 font-semibold text-right">dE ({units})</th>
+                            <th className="py-2 px-3 font-semibold text-right">dN ({units})</th>
+                            <th className="py-2 px-3 font-semibold text-right">dH ({units})</th>
+                            <th className="py-2 px-3 font-semibold text-right">d2D ({units})</th>
+                            <th className="py-2 px-3 font-semibold text-right">d3D ({units})</th>
+                            <th className="py-2 px-3 font-semibold">Status</th>
+                          </tr>
+                        </thead>
+                        <tbody className="text-slate-300">
+                          {clusterMergeOutcomes.map((row, idx) => (
+                            <tr
+                              key={`cluster-merge-outcome-${row.aliasId}-${row.canonicalId}-${idx}`}
+                              className="border-b border-slate-800/50"
+                            >
+                              <td className="py-1 px-3 font-mono">{row.aliasId}</td>
+                              <td className="py-1 px-3 font-mono">{row.canonicalId}</td>
+                              <td className="py-1 px-3 text-right font-mono">
+                                {row.deltaE != null ? (row.deltaE * unitScale).toFixed(4) : '-'}
+                              </td>
+                              <td className="py-1 px-3 text-right font-mono">
+                                {row.deltaN != null ? (row.deltaN * unitScale).toFixed(4) : '-'}
+                              </td>
+                              <td className="py-1 px-3 text-right font-mono">
+                                {row.deltaH != null ? (row.deltaH * unitScale).toFixed(4) : '-'}
+                              </td>
+                              <td className="py-1 px-3 text-right font-mono">
+                                {row.horizontalDelta != null
+                                  ? (row.horizontalDelta * unitScale).toFixed(4)
+                                  : '-'}
+                              </td>
+                              <td className="py-1 px-3 text-right font-mono">
+                                {row.spatialDelta != null
+                                  ? (row.spatialDelta * unitScale).toFixed(4)
+                                  : '-'}
+                              </td>
+                              <td className="py-1 px-3">
+                                {row.missing ? 'Missing pass1 data' : 'OK'}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+                {clusterRejectedProposals.length > 0 && (
+                  <div className="border-t border-slate-800">
+                    <div className="px-3 py-2 text-[11px] uppercase tracking-wider text-slate-500 bg-slate-900/20">
+                      Rejected Cluster Proposals
+                    </div>
+                    <div className="overflow-x-auto w-full">
+                      <table className="w-full text-left border-collapse text-xs">
+                        <thead>
+                          <tr className="text-slate-200 border-b border-slate-700">
+                            <th className="py-2 px-3 font-semibold">Key</th>
+                            <th className="py-2 px-3 font-semibold">Representative</th>
+                            <th className="py-2 px-3 font-semibold text-right">Members</th>
+                            <th className="py-2 px-3 font-semibold">Retained</th>
+                            <th className="py-2 px-3 font-semibold">Station IDs</th>
+                            <th className="py-2 px-3 font-semibold">Reason</th>
+                          </tr>
+                        </thead>
+                        <tbody className="text-slate-300">
+                          {clusterRejectedProposals.map((row, idx) => (
+                            <tr
+                              key={`cluster-reject-${row.key}-${idx}`}
+                              className="border-b border-slate-800/50"
+                            >
+                              <td className="py-1 px-3 font-mono">{row.key}</td>
+                              <td className="py-1 px-3 font-mono">{row.representativeId}</td>
+                              <td className="py-1 px-3 text-right">{row.memberCount}</td>
+                              <td className="py-1 px-3 font-mono">{row.retainedId ?? '-'}</td>
+                              <td className="py-1 px-3 font-mono">{row.stationIds.join(', ')}</td>
+                              <td className="py-1 px-3">{row.reason}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="p-3 text-xs text-slate-500">
+                No stations fell inside the current cluster tolerance.
               </div>
-              <table className="w-full text-left border-collapse text-xs">
-                <thead>
-                  <tr className="text-slate-200 border-b border-slate-700">
-                    <th className="py-2 px-3 font-semibold">Key</th>
-                    <th className="py-2 px-3 font-semibold">Representative</th>
-                    <th className="py-2 px-3 font-semibold">Action</th>
-                    <th className="py-2 px-3 font-semibold">Retain</th>
-                    <th className="py-2 px-3 font-semibold text-right">Members</th>
-                    <th className="py-2 px-3 font-semibold text-right">Max Sep ({units})</th>
-                    <th className="py-2 px-3 font-semibold text-right">Mean Sep ({units})</th>
-                    <th className="py-2 px-3 font-semibold">Flags</th>
-                    <th className="py-2 px-3 font-semibold">Station IDs</th>
-                    <th className="py-2 px-3 font-semibold text-right">Planned Merges</th>
-                  </tr>
-                </thead>
-                <tbody className="text-slate-300">
-                  {clusterCandidates.map((c) => {
-                    const decision = clusterReviewDecisions[c.key];
-                    const action = decision?.status ?? 'pending';
-                    const retainId =
-                      decision && c.stationIds.includes(decision.canonicalId)
-                        ? decision.canonicalId
-                        : c.representativeId;
-                    const plannedMerges =
-                      action === 'approve'
-                        ? c.stationIds.filter((id) => id !== retainId).length
-                        : 0;
-                    return (
-                      <tr key={c.key} className="border-b border-slate-800/50">
-                        <td className="py-1 px-3 font-mono">{c.key}</td>
-                        <td className="py-1 px-3 font-mono">{c.representativeId}</td>
-                        <td className="py-1 px-3">
-                          <select
-                            value={action}
-                            onChange={(e) =>
-                              onClusterDecisionStatus(
-                                c.key,
-                                e.target.value as 'pending' | 'approve' | 'reject',
-                              )
-                            }
-                            className="bg-slate-900 border border-slate-700 rounded px-2 py-0.5 text-xs"
-                          >
-                            <option value="pending">Pending</option>
-                            <option value="approve">Approve</option>
-                            <option value="reject">Reject</option>
-                          </select>
-                        </td>
-                        <td className="py-1 px-3">
-                          <select
-                            value={retainId}
-                            onChange={(e) => onClusterCanonicalSelection(c.key, e.target.value)}
-                            disabled={action === 'reject'}
-                            className="bg-slate-900 border border-slate-700 rounded px-2 py-0.5 text-xs disabled:opacity-50 disabled:cursor-not-allowed"
-                          >
-                            {c.stationIds.map((stationId) => (
-                              <option key={`${c.key}-retain-${stationId}`} value={stationId}>
-                                {stationId}
-                              </option>
-                            ))}
-                          </select>
-                        </td>
-                        <td className="py-1 px-3 text-right">{c.memberCount}</td>
-                        <td className="py-1 px-3 text-right">
-                          {(c.maxSeparation * unitScale).toFixed(4)}
-                        </td>
-                        <td className="py-1 px-3 text-right">
-                          {(c.meanSeparation * unitScale).toFixed(4)}
-                        </td>
-                        <td className="py-1 px-3">
-                          {c.hasFixed ? 'fixed' : 'free'}
-                          {c.hasUnknown ? ' + unknown' : ''}
-                        </td>
-                        <td className="py-1 px-3 font-mono">{c.stationIds.join(', ')}</td>
-                        <td className="py-1 px-3 text-right font-mono">{plannedMerges}</td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <div className="p-3 text-xs text-slate-500">
-              No stations fell inside the current cluster tolerance.
-            </div>
-          )}
-          {clusterAppliedMerges.length > 0 && (
-            <div className="border-t border-slate-800">
-              <div className="px-3 py-2 text-[11px] uppercase tracking-wider text-slate-500 bg-slate-900/20">
-                Applied Cluster Merges
-              </div>
-              <div className="overflow-x-auto w-full">
-                <table className="w-full text-left border-collapse text-xs">
-                  <thead>
-                    <tr className="text-slate-200 border-b border-slate-700">
-                      <th className="py-2 px-3 font-semibold">Alias</th>
-                      <th className="py-2 px-3 font-semibold">Canonical</th>
-                    </tr>
-                  </thead>
-                  <tbody className="text-slate-300">
-                    {clusterAppliedMerges.map((merge, idx) => (
-                      <tr
-                        key={`cluster-merge-${merge.aliasId}-${merge.canonicalId}-${idx}`}
-                        className="border-b border-slate-800/50"
-                      >
-                        <td className="py-1 px-3 font-mono">{merge.aliasId}</td>
-                        <td className="py-1 px-3 font-mono">{merge.canonicalId}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-          {clusterMergeOutcomes.length > 0 && (
-            <div className="border-t border-slate-800">
-              <div className="px-3 py-2 text-[11px] uppercase tracking-wider text-slate-500 bg-slate-900/20">
-                Cluster Merge Outcomes (Delta From Retained Point)
-              </div>
-              <div className="overflow-x-auto w-full">
-                <table className="w-full text-left border-collapse text-xs">
-                  <thead>
-                    <tr className="text-slate-200 border-b border-slate-700">
-                      <th className="py-2 px-3 font-semibold">Alias</th>
-                      <th className="py-2 px-3 font-semibold">Canonical</th>
-                      <th className="py-2 px-3 font-semibold text-right">dE ({units})</th>
-                      <th className="py-2 px-3 font-semibold text-right">dN ({units})</th>
-                      <th className="py-2 px-3 font-semibold text-right">dH ({units})</th>
-                      <th className="py-2 px-3 font-semibold text-right">d2D ({units})</th>
-                      <th className="py-2 px-3 font-semibold text-right">d3D ({units})</th>
-                      <th className="py-2 px-3 font-semibold">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody className="text-slate-300">
-                    {clusterMergeOutcomes.map((row, idx) => (
-                      <tr
-                        key={`cluster-merge-outcome-${row.aliasId}-${row.canonicalId}-${idx}`}
-                        className="border-b border-slate-800/50"
-                      >
-                        <td className="py-1 px-3 font-mono">{row.aliasId}</td>
-                        <td className="py-1 px-3 font-mono">{row.canonicalId}</td>
-                        <td className="py-1 px-3 text-right font-mono">
-                          {row.deltaE != null ? (row.deltaE * unitScale).toFixed(4) : '-'}
-                        </td>
-                        <td className="py-1 px-3 text-right font-mono">
-                          {row.deltaN != null ? (row.deltaN * unitScale).toFixed(4) : '-'}
-                        </td>
-                        <td className="py-1 px-3 text-right font-mono">
-                          {row.deltaH != null ? (row.deltaH * unitScale).toFixed(4) : '-'}
-                        </td>
-                        <td className="py-1 px-3 text-right font-mono">
-                          {row.horizontalDelta != null
-                            ? (row.horizontalDelta * unitScale).toFixed(4)
-                            : '-'}
-                        </td>
-                        <td className="py-1 px-3 text-right font-mono">
-                          {row.spatialDelta != null
-                            ? (row.spatialDelta * unitScale).toFixed(4)
-                            : '-'}
-                        </td>
-                        <td className="py-1 px-3">{row.missing ? 'Missing pass1 data' : 'OK'}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-          {clusterRejectedProposals.length > 0 && (
-            <div className="border-t border-slate-800">
-              <div className="px-3 py-2 text-[11px] uppercase tracking-wider text-slate-500 bg-slate-900/20">
-                Rejected Cluster Proposals
-              </div>
-              <div className="overflow-x-auto w-full">
-                <table className="w-full text-left border-collapse text-xs">
-                  <thead>
-                    <tr className="text-slate-200 border-b border-slate-700">
-                      <th className="py-2 px-3 font-semibold">Key</th>
-                      <th className="py-2 px-3 font-semibold">Representative</th>
-                      <th className="py-2 px-3 font-semibold text-right">Members</th>
-                      <th className="py-2 px-3 font-semibold">Retained</th>
-                      <th className="py-2 px-3 font-semibold">Station IDs</th>
-                      <th className="py-2 px-3 font-semibold">Reason</th>
-                    </tr>
-                  </thead>
-                  <tbody className="text-slate-300">
-                    {clusterRejectedProposals.map((row, idx) => (
-                      <tr
-                        key={`cluster-reject-${row.key}-${idx}`}
-                        className="border-b border-slate-800/50"
-                      >
-                        <td className="py-1 px-3 font-mono">{row.key}</td>
-                        <td className="py-1 px-3 font-mono">{row.representativeId}</td>
-                        <td className="py-1 px-3 text-right">{row.memberCount}</td>
-                        <td className="py-1 px-3 font-mono">{row.retainedId ?? '-'}</td>
-                        <td className="py-1 px-3 font-mono">{row.stationIds.join(', ')}</td>
-                        <td className="py-1 px-3">{row.reason}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
+            ))}
         </div>
       )}
 

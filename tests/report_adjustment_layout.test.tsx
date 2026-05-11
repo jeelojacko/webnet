@@ -310,4 +310,83 @@ describe('ReportView adjustment-layout sections', () => {
     expect(html).toMatch(/style="order:-200"[\s\S]*Solve Profile Diagnostics/);
     expect(html).toMatch(/style="order:-190"[\s\S]*Adjusted Coordinates/);
   });
+
+  it('keeps traceability and cluster summary cards visible while deferring heavy review tables by default', () => {
+    const result = new LSAEngine({ input: baseInput, maxIterations: 8 }).solve();
+    result.parseState = {
+      ...(result.parseState ?? {}),
+      aliasExplicitCount: 1,
+      aliasRuleCount: 1,
+      aliasRuleSummaries: [{ rule: 'RAW_C -> C', sourceLine: 2 }],
+      aliasTrace: [
+        {
+          sourceId: 'RAW_C',
+          canonicalId: 'C',
+          sourceLine: 2,
+          context: 'station',
+          detail: 'explicit',
+          reference: 'ALIAS',
+        },
+      ],
+      descriptionRepeatedStationCount: 1,
+      descriptionConflictCount: 1,
+      descriptionReconcileMode: 'append',
+      descriptionAppendDelimiter: ' / ',
+      reconciledDescriptions: { C: 'Alpha / Bravo' },
+      descriptionTrace: [
+        { stationId: 'C', sourceLine: 5, recordType: 'C', description: 'Alpha' },
+        { stationId: 'C', sourceLine: 6, recordType: 'C', description: 'Bravo' },
+      ],
+      descriptionScanSummary: [
+        {
+          stationId: 'C',
+          recordCount: 2,
+          uniqueCount: 2,
+          conflict: true,
+          descriptions: ['Alpha', 'Bravo'],
+          sourceLines: [5, 6],
+        },
+      ],
+      lostStationIds: [],
+    } as any;
+
+    result.clusterDiagnostics = {
+      enabled: true,
+      passMode: 'dual-pass',
+      linkageMode: 'single',
+      dimension: '2D',
+      tolerance: 0.05,
+      pairCount: 2,
+      candidateCount: 1,
+      approvedMergeCount: 0,
+      candidates: [
+        {
+          key: 'cluster-1',
+          representativeId: 'C',
+          stationIds: ['C', 'C_AUX'],
+          memberCount: 2,
+          maxSeparation: 0.01,
+          meanSeparation: 0.01,
+          hasFixed: false,
+          hasUnknown: true,
+        },
+      ],
+      mergeOutcomes: [],
+      rejectedProposals: [],
+      appliedMerges: [],
+    } as any;
+
+    const html = renderReport(result);
+    expect(html).toContain('Alias Traceability');
+    expect(html).toContain('Description Reconciliation Summary');
+    expect(html).toContain('Cluster Detection Candidates');
+    expect(html).toContain('Rule Summary');
+    expect(html).toContain('Conflicts');
+    expect(html).toContain('Pending');
+    expect(html).toContain('Show');
+    expect(html).not.toContain('Source Alias');
+    expect(html).not.toContain('Descriptions (line refs)');
+    expect(html).not.toContain('Apply Approved Merges + Re-run');
+    expect(html).not.toContain('Canonical ID');
+  });
 });
