@@ -19,12 +19,10 @@ import type {
   PrecisionReportingMode,
 } from '../types';
 import { RAD_TO_DEG, radToDmsStr } from '../engine/angles';
-import { isLockedPreanalysisObservation } from '../engine/preanalysis';
 import {
   getRelativeCovarianceRows,
   getRelativePrecisionRows,
   getStationCovarianceRows,
-  stationWithPrecision,
   toSurveyEllipseAzimuthDeg,
 } from '../engine/resultPrecision';
 import {
@@ -67,6 +65,7 @@ import {
 } from './report/reportSectionRegistry';
 import SideshotSection from './report/SideshotSection';
 import SolveProfileDiagnosticsSection from './report/SolveProfileDiagnosticsSection';
+import { buildReportPrecisionSelectorModel } from './report/reportPrecisionSelectors';
 import { useReportViewState, type ReportViewControls } from '../hooks/useReportViewState';
 import { noteUiPerfStage, noteUiTabReady } from '../hooks/useUiPerfMonitor';
 
@@ -542,71 +541,36 @@ const ReportView: React.FC<ReportViewProps> = ({
     () => getRelativePrecisionRows(result, precisionReportingMode),
     [precisionReportingMode, result],
   );
-  const filteredStationRows = useMemo(
-    () =>
-      Object.entries(result.stations)
-        .map(([stationId, station]) => [
-          stationId,
-          stationWithPrecision(
-            station,
-            {
-              sigmaN: stationCovariances.find((row) => row.stationId === stationId)?.sigmaN ?? station.sN,
-              sigmaE: stationCovariances.find((row) => row.stationId === stationId)?.sigmaE ?? station.sE,
-              sigmaH: stationCovariances.find((row) => row.stationId === stationId)?.sigmaH ?? station.sH,
-              ellipse: stationCovariances.find((row) => row.stationId === stationId)?.ellipse ?? station.errorEllipse,
-            },
-          ),
-        ] as [string, Station])
-        .filter(([stationId, station]) =>
-          matchesReportQuery(
-            stationId,
-            reconciledDescriptions[stationId],
-            station.fixed ? 'fixed' : 'adjusted',
-            station.x,
-            station.y,
-            station.h,
-          ),
-        ),
-    [matchesReportQuery, reconciledDescriptions, result.stations, stationCovariances],
-  );
-  const filteredStationCovariances = useMemo(
-    () =>
-      stationCovariances.filter((block) =>
-        matchesReportQuery(
-          block.stationId,
-          reconciledDescriptions[block.stationId],
-          block.cEE,
-          block.cEN,
-          block.cNN,
-          block.cHH,
-        ),
-      ),
-    [matchesReportQuery, reconciledDescriptions, stationCovariances],
-  );
-  const filteredRelativeCovariances = useMemo(
-    () =>
-      relativeCovariances.filter((rel) =>
-        matchesReportQuery(rel.from, rel.to, rel.connectionTypes.join(' '), rel.sigmaDist, rel.sigmaAz),
-      ),
-    [matchesReportQuery, relativeCovariances],
-  );
-  const filteredRelativePrecision = useMemo(
-    () => relativePrecisionRows.filter((rel) => matchesReportQuery(rel.from, rel.to, rel.sigmaDist, rel.sigmaAz)),
-    [matchesReportQuery, relativePrecisionRows],
-  );
   const weakGeometryDiagnostics = result.weakGeometryDiagnostics;
   const preanalysisImpactDiagnostics = result.preanalysisImpactDiagnostics;
-  const lockedPreanalysisObservations = useMemo(
-    () => (isPreanalysis ? result.observations.filter(isLockedPreanalysisObservation) : []),
-    [isPreanalysis, result.observations],
-  );
-  const flaggedStationCues = useMemo(
-    () => (weakGeometryDiagnostics?.stationCues ?? []).filter((cue) => cue.severity !== 'ok'),
-    [weakGeometryDiagnostics],
-  );
-  const flaggedRelativeCues = useMemo(
-    () => (weakGeometryDiagnostics?.relativeCues ?? []).filter((cue) => cue.severity !== 'ok'),
-    [weakGeometryDiagnostics],
+  const {
+    filteredStationRows,
+    filteredStationCovariances,
+    filteredRelativeCovariances,
+    filteredRelativePrecision,
+    lockedPreanalysisObservations,
+    flaggedStationCues,
+    flaggedRelativeCues,
+  } = useMemo(
+    () =>
+      buildReportPrecisionSelectorModel({
+        result,
+        reconciledDescriptions,
+        matchesReportQuery,
+        stationCovariances,
+        relativeCovariances,
+        relativePrecisionRows,
+        isPreanalysis,
+      }),
+    [
+      isPreanalysis,
+      matchesReportQuery,
+      reconciledDescriptions,
+      relativeCovariances,
+      relativePrecisionRows,
+      result,
+      stationCovariances,
+    ],
   );
   const clusterReviewStats = useMemo(
     () =>
