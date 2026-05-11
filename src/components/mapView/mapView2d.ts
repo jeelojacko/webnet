@@ -77,6 +77,19 @@ export interface MapDensitySummary {
   lineSuppressed: number;
 }
 
+export interface DerivedMapState2d {
+  projectedMapLines2d: ProjectedMapLine2D[];
+  visibleMapLines2d: ProjectedMapLine2D[];
+  projectedPoints2d: ProjectedPoint2D[];
+  visiblePoints2d: ProjectedPoint2D[];
+  interactionDenseMode: boolean;
+  visiblePointLabels2d: Set<string>;
+  filteredVisibleMapLines2d: ProjectedMapLine2D[];
+  filteredVisiblePoints2d: ProjectedPoint2D[];
+  unselectedCanvasLines2d: ProjectedMapLine2D[];
+  mapDensitySummary: MapDensitySummary;
+}
+
 export const clamp = (value: number, min: number, max: number): number =>
   Math.min(max, Math.max(min, value));
 
@@ -373,5 +386,118 @@ export const buildMapDensitySummary = (input: {
     labelTotal,
     labelSuppressed,
     lineSuppressed,
+  };
+};
+
+export const buildDerivedMapState2d = (input: {
+  mapLinks: ObservationMapLink[];
+  stations: StationMap;
+  showLostStations: boolean;
+  points: ProjectablePoint2D[];
+  projectPoint: (_x: number, _y: number) => { x: number; y: number };
+  view2d: View2dState;
+  selectedObservationId: number | null;
+  selectedObservationPairKey: string | null;
+  selectedStationId: string | null;
+  viewportBounds: ViewportBounds;
+  interactionPhaseInteracting: boolean;
+  interactionDensePointThreshold: number;
+  interactionDenseLineThreshold: number;
+  showLabels: boolean;
+  hideMinorGeometry: boolean;
+  focusSelection: boolean;
+  pointThreshold: number;
+  edgeThreshold: number;
+  labelGridPx: number;
+  scorePriority: (_point: ProjectedPoint2D) => number;
+}): DerivedMapState2d => {
+  const projectedMapLines2d = buildProjectedMapLines2d({
+    mapLinks: input.mapLinks,
+    stations: input.stations,
+    showLostStations: input.showLostStations,
+    projectPoint: input.projectPoint,
+    view2d: input.view2d,
+  });
+
+  const visibleMapLines2d = buildVisibleMapLines2d({
+    projectedMapLines2d,
+    selectedObservationId: input.selectedObservationId,
+    selectedObservationPairKey: input.selectedObservationPairKey,
+    viewportBounds: input.viewportBounds,
+  });
+
+  const projectedPoints2d = buildProjectedPoints2d({
+    points: input.points,
+    projectPoint: input.projectPoint,
+    view2d: input.view2d,
+  });
+
+  const visiblePoints2d = buildVisiblePoints2d({
+    projectedPoints2d,
+    selectedStationId: input.selectedStationId,
+    viewportBounds: input.viewportBounds,
+  });
+
+  const interactionDenseMode =
+    input.interactionPhaseInteracting &&
+    (visiblePoints2d.length > input.interactionDensePointThreshold ||
+      visibleMapLines2d.length > input.interactionDenseLineThreshold);
+
+  const visiblePointLabels2d = buildVisiblePointLabels2d({
+    showLabels: input.showLabels,
+    visiblePoints2d,
+    visibleMapLines2dLength: visibleMapLines2d.length,
+    interactionDenseMode,
+    selectedStationId: input.selectedStationId,
+    pointThreshold: input.pointThreshold,
+    edgeThreshold: input.edgeThreshold,
+    labelGridPx: input.labelGridPx,
+    scorePriority: input.scorePriority,
+  });
+
+  const filteredVisibleMapLines2d = buildFilteredVisibleMapLines2d({
+    visibleMapLines2d,
+    hideMinorGeometry: input.hideMinorGeometry,
+    focusSelection: input.focusSelection,
+    selectedObservationId: input.selectedObservationId,
+    selectedObservationPairKey: input.selectedObservationPairKey,
+    selectedStationId: input.selectedStationId,
+  });
+
+  const filteredVisiblePoints2d = buildFilteredVisiblePoints2d({
+    visiblePoints2d,
+    filteredVisibleMapLines2d,
+    focusSelection: input.focusSelection,
+    selectedStationId: input.selectedStationId,
+  });
+
+  const unselectedCanvasLines2d = buildUnselectedCanvasLines2d({
+    filteredVisibleMapLines2d,
+    interactionDenseMode,
+    selectedObservationId: input.selectedObservationId,
+    selectedObservationPairKey: input.selectedObservationPairKey,
+    selectedStationId: input.selectedStationId,
+  });
+
+  const mapDensitySummary = buildMapDensitySummary({
+    filteredVisibleMapLines2dLength: filteredVisibleMapLines2d.length,
+    filteredVisiblePoints2dLength: filteredVisiblePoints2d.length,
+    projectedMapLines2dLength: projectedMapLines2d.length,
+    visibleMapLines2dLength: visibleMapLines2d.length,
+    visiblePointLabels2dSize: visiblePointLabels2d.size,
+    denseLabelEdgeThreshold: input.edgeThreshold,
+  });
+
+  return {
+    projectedMapLines2d,
+    visibleMapLines2d,
+    projectedPoints2d,
+    visiblePoints2d,
+    interactionDenseMode,
+    visiblePointLabels2d,
+    filteredVisibleMapLines2d,
+    filteredVisiblePoints2d,
+    unselectedCanvasLines2d,
+    mapDensitySummary,
   };
 };

@@ -29,22 +29,12 @@ import {
 } from '../engine/resultDerivedModels';
 import { noteUiPerfStage, noteUiTabReady } from '../hooks/useUiPerfMonitor';
 import {
-  buildFilteredVisibleMapLines2d,
-  buildFilteredVisiblePoints2d,
-  buildMapDensitySummary,
-  buildProjectedMapLines2d,
-  buildProjectedPoints2d,
+  buildDerivedMapState2d,
   buildProjection2d,
-  buildUnselectedCanvasLines2d,
   buildViewportBounds,
-  buildVisibleMapLines2d,
-  buildVisiblePointLabels2d,
-  buildVisiblePoints2d,
   clamp,
   pointToSegmentDistancePx,
   projectPoint2d,
-  type ProjectedMapLine2D,
-  type ProjectedPoint2D,
   type ViewportBounds,
   view2dEquals,
 } from './mapView/mapView2d';
@@ -738,63 +728,26 @@ const MapView: React.FC<MapViewProps> = ({
     [],
   );
 
-  const projectedMapLines2d = useMemo<ProjectedMapLine2D[]>(
+  const mapState2d = useMemo(
     () =>
-      buildProjectedMapLines2d({
+      buildDerivedMapState2d({
         mapLinks,
         stations,
         showLostStations,
-        projectPoint: project2d,
-        view2d,
-      }),
-    [mapLinks, project2d, showLostStations, stations, view2d],
-  );
-
-  const visibleMapLines2d = useMemo(
-    () =>
-      buildVisibleMapLines2d({
-        projectedMapLines2d,
-        selectedObservationId,
-        selectedObservationPairKey,
-        viewportBounds: viewportBounds2d,
-      }),
-    [projectedMapLines2d, selectedObservationId, selectedObservationPairKey, viewportBounds2d],
-  );
-
-  const projectedPoints2d = useMemo<ProjectedPoint2D[]>(
-    () =>
-      buildProjectedPoints2d({
         points,
         projectPoint: project2d,
         view2d,
-      }),
-    [points, project2d, view2d],
-  );
-
-  const visiblePoints2d = useMemo(
-    () =>
-      buildVisiblePoints2d({
-        projectedPoints2d,
+        selectedObservationId,
+        selectedObservationPairKey,
         selectedStationId,
         viewportBounds: viewportBounds2d,
-      }),
-    [projectedPoints2d, selectedStationId, viewportBounds2d],
-  );
-
-  const interactionDenseMode =
-    effectiveMode === '2d' &&
-    interactionPhase === 'interacting' &&
-    (visiblePoints2d.length > INTERACTION_DENSE_POINT_THRESHOLD ||
-      visibleMapLines2d.length > INTERACTION_DENSE_LINE_THRESHOLD);
-
-  const visiblePointLabels2d = useMemo(
-    () =>
-      buildVisiblePointLabels2d({
+        interactionPhaseInteracting:
+          effectiveMode === '2d' && interactionPhase === 'interacting',
+        interactionDensePointThreshold: INTERACTION_DENSE_POINT_THRESHOLD,
+        interactionDenseLineThreshold: INTERACTION_DENSE_LINE_THRESHOLD,
         showLabels,
-        visiblePoints2d,
-        visibleMapLines2dLength: visibleMapLines2d.length,
-        interactionDenseMode,
-        selectedStationId,
+        hideMinorGeometry,
+        focusSelection,
         pointThreshold: DENSE_LABEL_POINT_THRESHOLD,
         edgeThreshold: DENSE_LABEL_EDGE_THRESHOLD,
         labelGridPx: LABEL_GRID_PX,
@@ -806,57 +759,34 @@ const MapView: React.FC<MapViewProps> = ({
             fixed: point.fixed,
           }),
       }),
-    [interactionDenseMode, selectedStationId, showLabels, stationSeverity, visibleMapLines2d.length, visiblePoints2d],
-  );
-
-  const filteredVisibleMapLines2d = useMemo(
-    () =>
-      buildFilteredVisibleMapLines2d({
-        visibleMapLines2d,
-        hideMinorGeometry,
-        focusSelection,
-        selectedObservationId,
-        selectedObservationPairKey,
-        selectedStationId,
-      }),
     [
+      effectiveMode,
       focusSelection,
       hideMinorGeometry,
+      interactionPhase,
+      mapLinks,
+      points,
+      project2d,
       selectedObservationId,
       selectedObservationPairKey,
       selectedStationId,
-      visibleMapLines2d,
+      showLabels,
+      showLostStations,
+      stationSeverity,
+      stations,
+      view2d,
+      viewportBounds2d,
     ],
   );
 
-  const filteredVisiblePoints2d = useMemo(
-    () =>
-      buildFilteredVisiblePoints2d({
-        visiblePoints2d,
-        filteredVisibleMapLines2d,
-        focusSelection,
-        selectedStationId,
-      }),
-    [filteredVisibleMapLines2d, focusSelection, selectedStationId, visiblePoints2d],
-  );
-
-  const unselectedCanvasLines2d = useMemo(
-    () =>
-      buildUnselectedCanvasLines2d({
-        filteredVisibleMapLines2d,
-        interactionDenseMode,
-        selectedObservationId,
-        selectedObservationPairKey,
-        selectedStationId,
-      }),
-    [
-      filteredVisibleMapLines2d,
-      interactionDenseMode,
-      selectedObservationId,
-      selectedObservationPairKey,
-      selectedStationId,
-    ],
-  );
+  const {
+    filteredVisibleMapLines2d,
+    filteredVisiblePoints2d,
+    interactionDenseMode,
+    mapDensitySummary,
+    unselectedCanvasLines2d,
+    visiblePointLabels2d,
+  } = mapState2d;
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -904,25 +834,6 @@ const MapView: React.FC<MapViewProps> = ({
     unselectedCanvasLines2d,
     view2d,
   ]);
-
-  const mapDensitySummary = useMemo(
-    () =>
-      buildMapDensitySummary({
-        filteredVisibleMapLines2dLength: filteredVisibleMapLines2d.length,
-        filteredVisiblePoints2dLength: filteredVisiblePoints2d.length,
-        projectedMapLines2dLength: projectedMapLines2d.length,
-        visibleMapLines2dLength: visibleMapLines2d.length,
-        visiblePointLabels2dSize: visiblePointLabels2d.size,
-        denseLabelEdgeThreshold: DENSE_LABEL_EDGE_THRESHOLD,
-      }),
-    [
-      filteredVisibleMapLines2d.length,
-      filteredVisiblePoints2d.length,
-      projectedMapLines2d.length,
-      visibleMapLines2d.length,
-      visiblePointLabels2d.size,
-    ],
-  );
 
   const transformedPoints2d = useMemo(() => {
     if (!transformedOverlayActive) {
