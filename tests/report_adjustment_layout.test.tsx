@@ -858,4 +858,122 @@ describe('ReportView adjustment-layout sections', () => {
     expect(html).not.toContain('Segment</th>');
     expect(html).not.toContain('A-&gt;B-&gt;A');
   });
+
+  it('keeps direction diagnostic summary cards visible while deferring direction detail tables by default', () => {
+    const result = new LSAEngine({ input: baseInput, maxIterations: 8 }).solve();
+    result.directionSetDiagnostics = [
+      {
+        setId: 'SET1',
+        occupy: 'C',
+        readingCount: 4,
+        targetCount: 2,
+        underconstrainedOrientation: true,
+        rawCount: 4,
+        reducedCount: 2,
+        pairedTargets: 2,
+        face1Count: 2,
+        face2Count: 2,
+        orientationDeg: 90,
+        residualRmsArcSec: 1.25,
+        residualMaxArcSec: 2.3,
+        meanFacePairDeltaArcSec: 0.8,
+        maxFacePairDeltaArcSec: 1.6,
+        meanRawMaxResidualArcSec: 0.9,
+        maxRawMaxResidualArcSec: 1.8,
+        orientationSeArcSec: 0.7,
+      },
+    ] as any;
+    result.directionTargetDiagnostics = [
+      {
+        setId: 'SET1',
+        occupy: 'C',
+        target: 'B',
+        sourceLine: 7,
+        rawCount: 2,
+        face1Count: 1,
+        face2Count: 1,
+        rawSpreadArcSec: 2.4,
+        rawMaxResidualArcSec: 1.7,
+        facePairDeltaArcSec: 1.1,
+        face1SpreadArcSec: 0.8,
+        face2SpreadArcSec: 0.9,
+        reducedSigmaArcSec: 1.2,
+        residualArcSec: 0.7,
+        stdRes: 2.1,
+        localPass: false,
+        mdbArcSec: 3.4,
+        suspectScore: 4.6,
+      },
+    ] as any;
+    result.parseState = {
+      ...(result.parseState ?? {}),
+      directionSetTreatmentDiagnostics: [
+        {
+          setId: 'SET1',
+          occupy: 'C',
+          sourceLine: 7,
+          readingCount: 4,
+          targetCount: 2,
+          faceSource: 'unknown',
+          treatmentDecision: 'reduced',
+          policyOutcome: 'keep',
+          faceNormalizationMode: 'paired',
+        },
+      ],
+    } as any;
+    result.directionRejectDiagnostics = [
+      {
+        setId: 'SET1',
+        occupy: 'C',
+        target: 'B',
+        sourceLine: 8,
+        recordType: 'DN',
+        expectedFace: 'F1',
+        actualFace: 'F2',
+        faceSource: 'computed',
+        treatmentDecision: 'reject',
+        policyOutcome: 'drop',
+        detail: 'face mismatch',
+      },
+    ] as any;
+    result.directionRepeatabilityDiagnostics = [
+      {
+        occupy: 'C',
+        target: 'B',
+        setCount: 2,
+        localFailCount: 1,
+        faceUnbalancedSets: 1,
+        residualMeanArcSec: 0.4,
+        residualRmsArcSec: 0.7,
+        residualRangeArcSec: 2.8,
+        residualMaxArcSec: 1.9,
+        stdResRms: 1.6,
+        maxStdRes: 2.7,
+        meanRawSpreadArcSec: 1.2,
+        maxRawSpreadArcSec: 3.1,
+        worstSetId: 'SET1',
+        worstLine: 7,
+        suspectScore: 5.1,
+      },
+    ] as any;
+
+    const html = renderReport(result);
+    expect(html).toContain('Direction Set Diagnostics');
+    expect(html).toContain('Direction Target Repeatability (ranked)');
+    expect(html).toContain('Direction Face Treatment Diagnostics');
+    expect(html).toContain('Direction Reject Diagnostics');
+    expect(html).toContain('Direction Target Suspects (top)');
+    expect(html).toContain('Direction Repeatability By Occupy-Target (multi-set)');
+    expect(html).toContain('Direction Repeatability Suspects (top)');
+    expect(html).toContain('Underconstrained');
+    expect(html).toContain('Unknown FaceSrc');
+    expect(html).toContain('Top Reason');
+    expect(html).toContain('Worst Max |t|');
+    expect(html).toContain('Show');
+    expect(html).not.toContain('Readings</th>');
+    expect(html).not.toContain('FaceSrc</th>');
+    expect(html).not.toContain('Expected</th>');
+    expect(html).not.toContain('Res Mean (&quot;)</th>');
+    expect(html).not.toContain('Stations</th>');
+  });
 });

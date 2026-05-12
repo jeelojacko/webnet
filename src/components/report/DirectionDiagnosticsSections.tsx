@@ -23,6 +23,8 @@ type DirectionRepeatabilityDiagnostic = NonNullable<
   AdjustmentResult['directionRepeatabilityDiagnostics']
 >[number];
 
+const formatDirectionStations = (occupy: string, target: string) => `${occupy}-${target}`;
+
 interface DirectionDiagnosticsSectionsProps {
   result: AdjustmentResult;
   isPreanalysis: boolean;
@@ -57,12 +59,35 @@ const DirectionDiagnosticsSections: React.FC<DirectionDiagnosticsSectionsProps> 
   renderLoadMoreFooter,
   renderSourceLineLink,
 }) => {
+  const directionSetDiagnostics = result.directionSetDiagnostics ?? [];
+  const directionTargetDiagnostics = result.directionTargetDiagnostics ?? [];
+  const directionRepeatabilityDiagnostics = result.directionRepeatabilityDiagnostics ?? [];
+  const topDirectionSetDiagnostic = directionSetDiagnostics[0];
+  const topDirectionTargetDiagnostic = directionTargetDiagnostics[0];
+  const topDirectionRepeatabilityDiagnostic = directionRepeatabilityDiagnostics[0];
+  const topDirectionTargetSuspect = topDirectionTargetSuspects[0];
+  const topDirectionRepeatabilitySuspect = topDirectionRepeatabilitySuspects[0];
+  const underconstrainedDirectionSetCount = directionSetDiagnostics.filter(
+    (diag) => diag.underconstrainedOrientation,
+  ).length;
+  const directionTargetLocalFailCount = directionTargetDiagnostics.filter(
+    (diag) => diag.localPass === false,
+  ).length;
+  const directionRepeatabilityLocalFailCount = directionRepeatabilityDiagnostics.reduce(
+    (count, diag) => count + diag.localFailCount,
+    0,
+  );
+  const directionFaceUnknownCount = directionTreatmentDiagnostics.filter(
+    (diag) => diag.faceSource.toLowerCase() === 'unknown',
+  ).length;
+  const directionRejectTargetCount = directionRejects.filter((reject) => reject.target).length;
+  const topDirectionReject = directionRejects[0];
+
   return (
     <>
       {!isPreanalysis &&
         !isDataCheck &&
-        result.directionSetDiagnostics &&
-        result.directionSetDiagnostics.length > 0 && (
+        directionSetDiagnostics.length > 0 && (
           <div className="mb-6 border border-slate-800 rounded overflow-hidden">
             {renderCollapsibleSectionHeader({
               sectionId: 'direction-set-diagnostics',
@@ -71,6 +96,42 @@ const DirectionDiagnosticsSections: React.FC<DirectionDiagnosticsSectionsProps> 
                 'px-3 py-2 text-xs uppercase tracking-wider border-b border-slate-700 bg-slate-800/75',
               labelClassName: 'text-slate-100',
             })}
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-3 p-3 text-xs text-slate-300 border-b border-slate-800/60">
+              <div>
+                <div className="text-slate-500">Sets</div>
+                <div>{directionSetDiagnostics.length}</div>
+              </div>
+              <div>
+                <div className="text-slate-500">Underconstrained</div>
+                <div className={underconstrainedDirectionSetCount > 0 ? 'text-yellow-300' : ''}>
+                  {underconstrainedDirectionSetCount}
+                </div>
+              </div>
+              <div>
+                <div className="text-slate-500">Worst RMS (&quot;)</div>
+                <div>
+                  {topDirectionSetDiagnostic?.residualRmsArcSec != null
+                    ? topDirectionSetDiagnostic.residualRmsArcSec.toFixed(2)
+                    : '-'}
+                </div>
+              </div>
+              <div>
+                <div className="text-slate-500">Worst PairDelta (&quot;)</div>
+                <div>
+                  {topDirectionSetDiagnostic?.maxFacePairDeltaArcSec != null
+                    ? topDirectionSetDiagnostic.maxFacePairDeltaArcSec.toFixed(2)
+                    : '-'}
+                </div>
+              </div>
+              <div>
+                <div className="text-slate-500">Top Set</div>
+                <div className="font-mono">
+                  {topDirectionSetDiagnostic
+                    ? `${topDirectionSetDiagnostic.setId}@${topDirectionSetDiagnostic.occupy}`
+                    : '-'}
+                </div>
+              </div>
+            </div>
             {!isSectionCollapsed('direction-set-diagnostics') && (
               <div className="overflow-x-auto w-full">
                 <table className="w-full text-left border-collapse text-xs">
@@ -97,7 +158,7 @@ const DirectionDiagnosticsSections: React.FC<DirectionDiagnosticsSectionsProps> 
                     </tr>
                   </thead>
                   <tbody className="text-slate-300">
-                    {result.directionSetDiagnostics.map((d: DirectionSetDiagnostic) => (
+                    {directionSetDiagnostics.map((d: DirectionSetDiagnostic) => (
                       <tr key={`${d.setId}-${d.occupy}`} className="border-b border-slate-800/50">
                         <td className="py-1 px-3">{d.setId}</td>
                         <td className="py-1 px-3">{d.occupy}</td>
@@ -154,8 +215,7 @@ const DirectionDiagnosticsSections: React.FC<DirectionDiagnosticsSectionsProps> 
 
       {!isPreanalysis &&
         !isDataCheck &&
-        result.directionTargetDiagnostics &&
-        result.directionTargetDiagnostics.length > 0 && (
+        directionTargetDiagnostics.length > 0 && (
           <div className="mb-6 border border-slate-800 rounded overflow-hidden">
             {renderCollapsibleSectionHeader({
               sectionId: 'direction-target-repeatability',
@@ -164,6 +224,45 @@ const DirectionDiagnosticsSections: React.FC<DirectionDiagnosticsSectionsProps> 
                 'px-3 py-2 text-xs uppercase tracking-wider border-b border-slate-700 bg-slate-800/75',
               labelClassName: 'text-slate-100',
             })}
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-3 p-3 text-xs text-slate-300 border-b border-slate-800/60">
+              <div>
+                <div className="text-slate-500">Targets</div>
+                <div>{directionTargetDiagnostics.length}</div>
+              </div>
+              <div>
+                <div className="text-slate-500">Local Fail</div>
+                <div className={directionTargetLocalFailCount > 0 ? 'text-red-400' : ''}>
+                  {directionTargetLocalFailCount}
+                </div>
+              </div>
+              <div>
+                <div className="text-slate-500">Worst Spread (&quot;)</div>
+                <div>
+                  {topDirectionTargetDiagnostic?.rawSpreadArcSec != null
+                    ? topDirectionTargetDiagnostic.rawSpreadArcSec.toFixed(2)
+                    : '-'}
+                </div>
+              </div>
+              <div>
+                <div className="text-slate-500">Worst Score</div>
+                <div>
+                  {topDirectionTargetDiagnostic
+                    ? topDirectionTargetDiagnostic.suspectScore.toFixed(1)
+                    : '-'}
+                </div>
+              </div>
+              <div>
+                <div className="text-slate-500">Top Target</div>
+                <div className="font-mono">
+                  {topDirectionTargetDiagnostic
+                    ? formatDirectionStations(
+                        topDirectionTargetDiagnostic.occupy,
+                        topDirectionTargetDiagnostic.target,
+                      )
+                    : '-'}
+                </div>
+              </div>
+            </div>
             {!isSectionCollapsed('direction-target-repeatability') && (
               <div className="overflow-x-auto w-full">
                 <table className="w-full text-left border-collapse text-xs">
@@ -191,7 +290,7 @@ const DirectionDiagnosticsSections: React.FC<DirectionDiagnosticsSectionsProps> 
                     </tr>
                   </thead>
                   <tbody className="text-slate-300">
-                    {result.directionTargetDiagnostics.map((d: DirectionTargetDiagnostic, idx) => (
+                    {directionTargetDiagnostics.map((d: DirectionTargetDiagnostic, idx) => (
                       <tr
                         key={`${d.setId}-${d.occupy}-${d.target}-${idx}`}
                         className="border-b border-slate-800/50"
@@ -261,6 +360,34 @@ const DirectionDiagnosticsSections: React.FC<DirectionDiagnosticsSectionsProps> 
               'px-3 py-2 text-xs uppercase tracking-wider border-b border-slate-700 bg-slate-800/75',
             labelClassName: 'text-slate-100',
           })}
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3 p-3 text-xs text-slate-300 border-b border-slate-800/60">
+            <div>
+              <div className="text-slate-500">Rows</div>
+              <div>{directionTreatmentDiagnostics.length}</div>
+            </div>
+            <div>
+              <div className="text-slate-500">Unique Sets</div>
+              <div>{new Set(directionTreatmentDiagnostics.map((diag) => diag.setId)).size}</div>
+            </div>
+            <div>
+              <div className="text-slate-500">Unknown FaceSrc</div>
+              <div className={directionFaceUnknownCount > 0 ? 'text-yellow-300' : ''}>
+                {directionFaceUnknownCount}
+              </div>
+            </div>
+            <div>
+              <div className="text-slate-500">Top Decision</div>
+              <div>{directionTreatmentDiagnostics[0]?.treatmentDecision ?? '-'}</div>
+            </div>
+            <div>
+              <div className="text-slate-500">Top Set</div>
+              <div className="font-mono">
+                {directionTreatmentDiagnostics[0]
+                  ? `${directionTreatmentDiagnostics[0].setId}@${directionTreatmentDiagnostics[0].occupy}`
+                  : '-'}
+              </div>
+            </div>
+          </div>
           {!isSectionCollapsed('direction-face-treatment-diagnostics') && (
             <div className="overflow-x-auto w-full">
               <table className="w-full text-left border-collapse text-xs">
@@ -314,6 +441,30 @@ const DirectionDiagnosticsSections: React.FC<DirectionDiagnosticsSectionsProps> 
               'px-3 py-2 text-xs uppercase tracking-wider border-b border-slate-700 bg-slate-800/75',
             labelClassName: 'text-slate-100',
           })}
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3 p-3 text-xs text-slate-300 border-b border-slate-800/60">
+            <div>
+              <div className="text-slate-500">Rejects</div>
+              <div>{directionRejects.length}</div>
+            </div>
+            <div>
+              <div className="text-slate-500">Target Rows</div>
+              <div>{directionRejectTargetCount}</div>
+            </div>
+            <div>
+              <div className="text-slate-500">Visible Rows</div>
+              <div>{visibleDirectionRejects.length}</div>
+            </div>
+            <div>
+              <div className="text-slate-500">Top Reason</div>
+              <div className="truncate">{topDirectionReject?.detail ?? '-'}</div>
+            </div>
+            <div>
+              <div className="text-slate-500">Top Set</div>
+              <div className="font-mono">
+                {topDirectionReject ? `${topDirectionReject.setId}@${topDirectionReject.occupy}` : '-'}
+              </div>
+            </div>
+          </div>
           {!isSectionCollapsed('direction-reject-diagnostics') && (
             <div className="overflow-x-auto w-full">
               <table className="w-full text-left border-collapse text-xs">
@@ -377,6 +528,32 @@ const DirectionDiagnosticsSections: React.FC<DirectionDiagnosticsSectionsProps> 
               'px-4 py-2 border-b border-slate-800 bg-slate-900/60 text-xs uppercase tracking-wider',
             labelClassName: 'text-slate-100',
           })}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-3 text-xs text-slate-300 border-b border-slate-800/60">
+            <div>
+              <div className="text-slate-500">Candidates</div>
+              <div>{topDirectionTargetSuspects.length}</div>
+            </div>
+            <div>
+              <div className="text-slate-500">Worst Spread (&quot;)</div>
+              <div>
+                {topDirectionTargetSuspect?.rawSpreadArcSec != null
+                  ? topDirectionTargetSuspect.rawSpreadArcSec.toFixed(2)
+                  : '-'}
+              </div>
+            </div>
+            <div>
+              <div className="text-slate-500">Worst StdRes</div>
+              <div>
+                {topDirectionTargetSuspect?.stdRes != null
+                  ? topDirectionTargetSuspect.stdRes.toFixed(2)
+                  : '-'}
+              </div>
+            </div>
+            <div>
+              <div className="text-slate-500">Top Score</div>
+              <div>{topDirectionTargetSuspect?.suspectScore.toFixed(1) ?? '-'}</div>
+            </div>
+          </div>
           {!isSectionCollapsed('direction-target-suspects-top') && (
             <table className="w-full text-left text-xs">
               <thead>
@@ -421,8 +598,7 @@ const DirectionDiagnosticsSections: React.FC<DirectionDiagnosticsSectionsProps> 
 
       {!isPreanalysis &&
         !isDataCheck &&
-        result.directionRepeatabilityDiagnostics &&
-        result.directionRepeatabilityDiagnostics.length > 0 && (
+        directionRepeatabilityDiagnostics.length > 0 && (
           <div className="mb-6 border border-slate-800 rounded overflow-hidden">
             {renderCollapsibleSectionHeader({
               sectionId: 'direction-repeatability-multi-set',
@@ -431,6 +607,45 @@ const DirectionDiagnosticsSections: React.FC<DirectionDiagnosticsSectionsProps> 
                 'px-3 py-2 text-xs uppercase tracking-wider border-b border-slate-700 bg-slate-800/75',
               labelClassName: 'text-slate-100',
             })}
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-3 p-3 text-xs text-slate-300 border-b border-slate-800/60">
+              <div>
+                <div className="text-slate-500">Occupy-Targets</div>
+                <div>{directionRepeatabilityDiagnostics.length}</div>
+              </div>
+              <div>
+                <div className="text-slate-500">Local Fail</div>
+                <div className={directionRepeatabilityLocalFailCount > 0 ? 'text-red-400' : ''}>
+                  {directionRepeatabilityLocalFailCount}
+                </div>
+              </div>
+              <div>
+                <div className="text-slate-500">Worst Range (&quot;)</div>
+                <div>
+                  {topDirectionRepeatabilityDiagnostic?.residualRangeArcSec != null
+                    ? topDirectionRepeatabilityDiagnostic.residualRangeArcSec.toFixed(2)
+                    : '-'}
+                </div>
+              </div>
+              <div>
+                <div className="text-slate-500">Worst Score</div>
+                <div>
+                  {topDirectionRepeatabilityDiagnostic
+                    ? topDirectionRepeatabilityDiagnostic.suspectScore.toFixed(1)
+                    : '-'}
+                </div>
+              </div>
+              <div>
+                <div className="text-slate-500">Top Pair</div>
+                <div className="font-mono">
+                  {topDirectionRepeatabilityDiagnostic
+                    ? formatDirectionStations(
+                        topDirectionRepeatabilityDiagnostic.occupy,
+                        topDirectionRepeatabilityDiagnostic.target,
+                      )
+                    : '-'}
+                </div>
+              </div>
+            </div>
             {!isSectionCollapsed('direction-repeatability-multi-set') && (
               <div className="overflow-x-auto w-full">
                 <table className="w-full text-left border-collapse text-xs">
@@ -456,7 +671,7 @@ const DirectionDiagnosticsSections: React.FC<DirectionDiagnosticsSectionsProps> 
                     </tr>
                   </thead>
                   <tbody className="text-slate-300">
-                    {result.directionRepeatabilityDiagnostics.map(
+                    {directionRepeatabilityDiagnostics.map(
                       (d: DirectionRepeatabilityDiagnostic, idx) => (
                         <tr
                           key={`dr-${d.occupy}-${d.target}-${idx}`}
@@ -528,6 +743,32 @@ const DirectionDiagnosticsSections: React.FC<DirectionDiagnosticsSectionsProps> 
               'px-4 py-2 border-b border-slate-800 bg-slate-900/60 text-xs uppercase tracking-wider',
             labelClassName: 'text-slate-100',
           })}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-3 text-xs text-slate-300 border-b border-slate-800/60">
+            <div>
+              <div className="text-slate-500">Candidates</div>
+              <div>{topDirectionRepeatabilitySuspects.length}</div>
+            </div>
+            <div>
+              <div className="text-slate-500">Worst Max |t|</div>
+              <div>
+                {topDirectionRepeatabilitySuspect?.maxStdRes != null
+                  ? topDirectionRepeatabilitySuspect.maxStdRes.toFixed(2)
+                  : '-'}
+              </div>
+            </div>
+            <div>
+              <div className="text-slate-500">Worst Spread Max (&quot;)</div>
+              <div>
+                {topDirectionRepeatabilitySuspect?.maxRawSpreadArcSec != null
+                  ? topDirectionRepeatabilitySuspect.maxRawSpreadArcSec.toFixed(2)
+                  : '-'}
+              </div>
+            </div>
+            <div>
+              <div className="text-slate-500">Top Score</div>
+              <div>{topDirectionRepeatabilitySuspect?.suspectScore.toFixed(1) ?? '-'}</div>
+            </div>
+          </div>
           {!isSectionCollapsed('direction-repeatability-suspects-top') && (
             <table className="w-full text-left text-xs">
               <thead>
