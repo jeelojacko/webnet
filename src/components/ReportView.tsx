@@ -326,6 +326,13 @@ const ReportView: React.FC<ReportViewProps> = ({
       row.gpsObsCount,
     0,
   );
+  const typeSummaryEntries = Object.entries(result.typeSummary ?? {});
+  const topTypeSummaryEntry = typeSummaryEntries.reduce<
+    [string, NonNullable<AdjustmentResult['typeSummary']>[string]] | null
+  >((top, entry) => {
+    if (!top) return entry;
+    return entry[1].count > top[1].count ? entry : top;
+  }, null);
   const {
     directionSetCount,
     filteredSortedObs,
@@ -494,6 +501,7 @@ const ReportView: React.FC<ReportViewProps> = ({
     (obs: Observation) => formatPrismAnnotation(obs, unitScale, units),
     [unitScale, units],
   );
+  const topRelativePrecisionRow = filteredRelativePrecision[0];
   const formatMdb = useCallback(
     (value: number, angular: boolean) => reportFormatMdb(value, angular, unitScale),
     [unitScale],
@@ -2587,7 +2595,7 @@ const ReportView: React.FC<ReportViewProps> = ({
               “Expand detail sections”.
             </div>
           )}
-          {result.typeSummary && Object.keys(result.typeSummary).length > 0 && (
+          {typeSummaryEntries.length > 0 && (
             <div className="mb-4 border border-slate-800 rounded">
               {renderCollapsibleSectionHeader({
                 sectionId: 'per-type-summary',
@@ -2595,6 +2603,26 @@ const ReportView: React.FC<ReportViewProps> = ({
                 className: 'px-3 py-2 text-xs uppercase tracking-wider border-b border-slate-700 bg-slate-800/75',
                 labelClassName: 'text-slate-100',
               })}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-3 text-xs text-slate-300 border-b border-slate-800/60">
+                <div>
+                  <div className="text-slate-500">Types</div>
+                  <div>{typeSummaryEntries.length}</div>
+                </div>
+                <div>
+                  <div className="text-slate-500">Obs Total</div>
+                  <div>{typeSummaryEntries.reduce((sum, [, summary]) => sum + summary.count, 0)}</div>
+                </div>
+                <div>
+                  <div className="text-slate-500">Top Type</div>
+                  <div className="uppercase">{topTypeSummaryEntry?.[0] ?? '-'}</div>
+                </div>
+                <div>
+                  <div className="text-slate-500">Top Max |StdRes|</div>
+                  <div>
+                    {topTypeSummaryEntry ? topTypeSummaryEntry[1].maxStdRes.toFixed(3) : '-'}
+                  </div>
+                </div>
+              </div>
               {!isSectionCollapsed('per-type-summary') && (
                 <div className="overflow-x-auto w-full">
                 <table className="w-full text-left border-collapse text-xs">
@@ -2611,7 +2639,7 @@ const ReportView: React.FC<ReportViewProps> = ({
                     </tr>
                   </thead>
                   <tbody className="text-slate-300">
-                    {Object.entries(result.typeSummary).map(([type, summary]) => (
+                    {typeSummaryEntries.map(([type, summary]) => (
                       <tr key={type} className="border-b border-slate-800/50">
                         <td className="py-1 px-3 uppercase text-slate-400">{type}</td>
                         <td className="py-1 px-3 text-right">{summary.count}</td>
@@ -2637,6 +2665,36 @@ const ReportView: React.FC<ReportViewProps> = ({
                 className: 'px-3 py-2 text-xs uppercase tracking-wider border-b border-slate-700 bg-slate-800/75',
                 labelClassName: 'text-slate-100',
               })}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-3 text-xs text-slate-300 border-b border-slate-800/60">
+                <div>
+                  <div className="text-slate-500">Pairs</div>
+                  <div>{filteredRelativePrecision.length}</div>
+                </div>
+                <div>
+                  <div className="text-slate-500">Top Pair</div>
+                  <div className="font-mono">
+                    {topRelativePrecisionRow
+                      ? `${topRelativePrecisionRow.from}-${topRelativePrecisionRow.to}`
+                      : '-'}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-slate-500">Top σDist</div>
+                  <div>
+                    {topRelativePrecisionRow?.sigmaDist != null
+                      ? (topRelativePrecisionRow.sigmaDist * unitScale).toFixed(4)
+                      : '-'}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-slate-500">Top Ellipse Az</div>
+                  <div>
+                    {topRelativePrecisionRow?.ellipse
+                      ? (toSurveyEllipseAzimuthDeg(topRelativePrecisionRow.ellipse.theta) ?? 0).toFixed(2)
+                      : '-'}
+                  </div>
+                </div>
+              </div>
               {!isSectionCollapsed('relative-precision-unknowns') && (
                 <div className="overflow-x-auto w-full">
                 <table className="w-full text-left border-collapse text-xs">

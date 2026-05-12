@@ -31,6 +31,9 @@ const ReportDiagnosticsSections: React.FC<ReportDiagnosticsSectionsProps> = ({
   isSectionCollapsed,
   renderSourceLineLink,
 }) => {
+  const robustComparison = result.robustComparison;
+  const classicalTopSuspect = robustComparison?.classicalTop[0];
+  const robustTopSuspect = robustComparison?.robustTop[0];
   return (
     <>
       {!isPreanalysis && !isDataCheck && result.residualDiagnostics && (
@@ -252,7 +255,7 @@ const ReportDiagnosticsSections: React.FC<ReportDiagnosticsSectionsProps> = ({
         </div>
       )}
 
-      {!isPreanalysis && !isSpecialRunMode && result.robustComparison?.enabled && (
+      {!isPreanalysis && !isSpecialRunMode && robustComparison?.enabled && (
         <div className="mb-6 border border-slate-800 rounded overflow-hidden">
           {renderCollapsibleSectionHeader({
             sectionId: 'robust-vs-classical-suspects',
@@ -261,11 +264,46 @@ const ReportDiagnosticsSections: React.FC<ReportDiagnosticsSectionsProps> = ({
               'px-3 py-2 text-xs uppercase tracking-wider border-b border-slate-700 bg-slate-800/75',
             labelClassName: 'text-slate-100',
           })}
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3 p-3 text-xs text-slate-300 border-b border-slate-800/60">
+            <div>
+              <div className="text-slate-500">Overlap</div>
+              <div>
+                {robustComparison.overlapCount}/
+                {Math.min(robustComparison.classicalTop.length, robustComparison.robustTop.length)}
+              </div>
+            </div>
+            <div>
+              <div className="text-slate-500">Classical Top</div>
+              <div className="truncate">
+                {classicalTopSuspect
+                  ? `${classicalTopSuspect.type.toUpperCase()} ${classicalTopSuspect.stations}`
+                  : '-'}
+              </div>
+            </div>
+            <div>
+              <div className="text-slate-500">Classical |t|</div>
+              <div>
+                {classicalTopSuspect?.stdRes != null ? classicalTopSuspect.stdRes.toFixed(2) : '-'}
+              </div>
+            </div>
+            <div>
+              <div className="text-slate-500">Robust Top</div>
+              <div className="truncate">
+                {robustTopSuspect
+                  ? `${robustTopSuspect.type.toUpperCase()} ${robustTopSuspect.stations}`
+                  : '-'}
+              </div>
+            </div>
+            <div>
+              <div className="text-slate-500">Robust |t|</div>
+              <div>{robustTopSuspect?.stdRes != null ? robustTopSuspect.stdRes.toFixed(2) : '-'}</div>
+            </div>
+          </div>
           {!isSectionCollapsed('robust-vs-classical-suspects') && (
             <>
               <div className="px-3 py-2 text-xs text-slate-400 border-b border-slate-800">
-                Overlap: {result.robustComparison.overlapCount}/
-                {Math.min(result.robustComparison.classicalTop.length, result.robustComparison.robustTop.length)}
+                Overlap: {robustComparison.overlapCount}/
+                {Math.min(robustComparison.classicalTop.length, robustComparison.robustTop.length)}
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-0">
                 <div className="border-r border-slate-800">
@@ -283,7 +321,7 @@ const ReportDiagnosticsSections: React.FC<ReportDiagnosticsSectionsProps> = ({
                       </tr>
                     </thead>
                     <tbody className="text-slate-300">
-                      {result.robustComparison.classicalTop.map((r) => (
+                      {robustComparison.classicalTop.map((r) => (
                         <tr key={`c-${r.obsId}-${r.rank}`} className="border-b border-slate-800/40">
                           <td className="py-1 px-3 text-slate-500">{r.rank}</td>
                           <td className="py-1 px-3 uppercase text-slate-400">{r.type}</td>
@@ -312,7 +350,7 @@ const ReportDiagnosticsSections: React.FC<ReportDiagnosticsSectionsProps> = ({
                       </tr>
                     </thead>
                     <tbody className="text-slate-300">
-                      {result.robustComparison.robustTop.map((r) => (
+                      {robustComparison.robustTop.map((r) => (
                         <tr key={`r-${r.obsId}-${r.rank}`} className="border-b border-slate-800/40">
                           <td className="py-1 px-3 text-slate-500">{r.rank}</td>
                           <td className="py-1 px-3 uppercase text-slate-400">{r.type}</td>

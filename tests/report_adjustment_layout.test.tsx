@@ -976,4 +976,60 @@ describe('ReportView adjustment-layout sections', () => {
     expect(html).not.toContain('Res Mean (&quot;)</th>');
     expect(html).not.toContain('Stations</th>');
   });
+
+  it('keeps robust-comparison and observation summary cards visible while deferring their detail tables by default', () => {
+    const multiUnknownInput = [
+      '.2D',
+      'C A 0 0 0 ! !',
+      'C B 100 0 0 ! !',
+      'C C 60 80 0',
+      'C D 140 90 0',
+      'D A-C 100.0000 0.005',
+      'D B-C 89.4427 0.005',
+      'D A-D 166.4332 0.005',
+      'D B-D 98.4886 0.005',
+      'D C-D 80.6226 0.005',
+    ].join('\n');
+    const result = new LSAEngine({ input: multiUnknownInput, maxIterations: 8 }).solve();
+    result.robustComparison = {
+      enabled: true,
+      overlapCount: 1,
+      classicalTop: [
+        {
+          rank: 1,
+          obsId: 1,
+          type: 'dist',
+          stations: 'A-C',
+          sourceLine: 5,
+          stdRes: 2.8,
+          localFail: true,
+        },
+      ],
+      robustTop: [
+        {
+          rank: 1,
+          obsId: 2,
+          type: 'angle',
+          stations: 'C-A-B',
+          sourceLine: 7,
+          stdRes: 2.1,
+          localFail: false,
+        },
+      ],
+    } as any;
+
+    const html = renderReport(result);
+    expect(html).toContain('Robust vs Classical Suspects (Top 10)');
+    expect(html).toContain('Per-Type Summary');
+    expect(html).toContain('Relative Precision (Unknowns)');
+    expect(html).toContain('Classical Top');
+    expect(html).toContain('Robust Top');
+    expect(html).toContain('Types');
+    expect(html).toContain('Pairs');
+    expect(html).toContain('Top Ellipse Az');
+    expect(html).toContain('Show');
+    expect(html).not.toContain('Overlap:');
+    expect(html).not.toContain('Unit</th>');
+    expect(html).not.toContain('σAz (&quot;)</th>');
+  });
 });

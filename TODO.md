@@ -27,6 +27,7 @@
     - [x] Current slice - keep residual/robust/correlation/traverse/GPS/leveling diagnostic summary cards visible while their row-heavy tables stay deferred behind collapsed sections
     - [x] Current slice - keep ranked loop-suspect summary cards visible while traverse/GPS/leveling suspect tables stay deferred behind collapsed sections
     - [x] Current slice - keep direction-diagnostic summary cards visible while set/repeatability/reject/detail tables stay deferred behind collapsed sections
+    - [x] Current slice - keep robust-comparison and observation-summary cards visible while suspect/type/relative-precision tables stay deferred behind collapsed sections
     - [ ] Split `MapView.tsx` into selector/math helpers, canvas layer, SVG overlay layer, and tools/context surfaces
     - [ ] Narrow broad `useMemo` blocks in `MapView.tsx` and `ReportView.tsx` to stable result identity plus minimal filter keys
     - [ ] Add tab-level render guards so hidden heavy tabs do not recompute derived models from unrelated app-state churn
