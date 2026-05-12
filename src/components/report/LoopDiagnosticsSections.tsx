@@ -73,6 +73,10 @@ const LoopDiagnosticsSections: React.FC<LoopDiagnosticsSectionsProps> = ({
   renderLoadMoreFooter,
   renderSourceLineLink,
 }) => {
+  const topTraverseLoopSuspect = traverseLoopSuspects[0];
+  const topGpsLoopSuspect = gpsLoopSuspects[0];
+  const topLevelingLoopSuspect = levelingLoopSuspects[0];
+  const topLevelingSegmentSuspect = levelingSegmentSuspects[0];
   return (
     <>
       {!isPreanalysis && !isDataCheck && result.traverseDiagnostics && (
@@ -157,6 +161,12 @@ const LoopDiagnosticsSections: React.FC<LoopDiagnosticsSectionsProps> = ({
               'px-4 py-2 border-b border-slate-800 bg-slate-900/60 text-xs uppercase tracking-wider',
             labelClassName: 'text-slate-100',
           })}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-3 text-xs text-slate-300 border-b border-slate-800/60">
+            <div><div className="text-slate-500">Warn Loops</div><div>{traverseLoopSuspects.length}</div></div>
+            <div><div className="text-slate-500">Worst Ratio</div><div>{topTraverseLoopSuspect?.closureRatio != null ? `1:${topTraverseLoopSuspect.closureRatio.toFixed(0)}` : '-'}</div></div>
+            <div><div className="text-slate-500">Worst Severity</div><div>{topTraverseLoopSuspect ? topTraverseLoopSuspect.severity.toFixed(1) : '-'}</div></div>
+            <div><div className="text-slate-500">Top Loop</div><div className="font-mono">{topTraverseLoopSuspect?.key ?? '-'}</div></div>
+          </div>
           {!isSectionCollapsed('traverse-closure-suspects') && (
             <>
               <table className="w-full text-left text-xs">
@@ -321,6 +331,12 @@ const LoopDiagnosticsSections: React.FC<LoopDiagnosticsSectionsProps> = ({
               'px-4 py-2 border-b border-slate-800 bg-slate-900/60 text-xs uppercase tracking-wider',
             labelClassName: 'text-slate-100',
           })}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-3 text-xs text-slate-300 border-b border-slate-800/60">
+            <div><div className="text-slate-500">Warn Loops</div><div>{levelingLoopSuspects.length}</div></div>
+            <div><div className="text-slate-500">Worst |dH| ({units})</div><div>{topLevelingLoopSuspect ? (topLevelingLoopSuspect.absClosure * unitScale).toFixed(4) : '-'}</div></div>
+            <div><div className="text-slate-500">Worst mm/sqrt(km)</div><div>{topLevelingLoopSuspect ? topLevelingLoopSuspect.closurePerSqrtKmMm.toFixed(2) : '-'}</div></div>
+            <div><div className="text-slate-500">Top Loop</div><div className="font-mono">{topLevelingLoopSuspect?.key ?? '-'}</div></div>
+          </div>
           {!isSectionCollapsed('leveling-loop-suspects') && (
             <>
               <table className="w-full text-left text-xs">
@@ -355,6 +371,12 @@ const LoopDiagnosticsSections: React.FC<LoopDiagnosticsSectionsProps> = ({
               'px-4 py-2 border-b border-slate-800 bg-slate-900/60 text-xs uppercase tracking-wider',
             labelClassName: 'text-slate-100',
           })}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-3 text-xs text-slate-300 border-b border-slate-800/60">
+            <div><div className="text-slate-500">Suspect Segments</div><div>{levelingSegmentSuspects.length}</div></div>
+            <div><div className="text-slate-500">Top Score</div><div>{topLevelingSegmentSuspect ? topLevelingSegmentSuspect.suspectScore.toFixed(2) : '-'}</div></div>
+            <div><div className="text-slate-500">Top Max |dH| ({units})</div><div>{topLevelingSegmentSuspect ? (topLevelingSegmentSuspect.maxAbsDh * unitScale).toFixed(4) : '-'}</div></div>
+            <div><div className="text-slate-500">Top Segment</div><div className="font-mono">{topLevelingSegmentSuspect ? `${topLevelingSegmentSuspect.from}->${topLevelingSegmentSuspect.to}` : '-'}</div></div>
+          </div>
           {!isSectionCollapsed('leveling-segment-suspects') && (
             <table className="w-full text-left text-xs">
               <thead><tr className="text-slate-200 border-b border-slate-700/80"><th className="py-2 px-3">#</th><th className="py-2">Segment</th><th className="py-2 text-right">Line</th><th className="py-2 text-right">Warn Loops</th><th className="py-2 text-right">Score</th><th className="py-2 text-right">Max |dH| ({units})</th><th className="py-2 text-right">Worst Loop</th></tr></thead>
@@ -385,6 +407,12 @@ const LoopDiagnosticsSections: React.FC<LoopDiagnosticsSectionsProps> = ({
               'px-4 py-2 border-b border-slate-800 bg-slate-900/60 text-xs uppercase tracking-wider',
             labelClassName: 'text-slate-100',
           })}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-3 text-xs text-slate-300 border-b border-slate-800/60">
+            <div><div className="text-slate-500">Warn Loops</div><div>{gpsLoopSuspects.length}</div></div>
+            <div><div className="text-slate-500">Worst Severity</div><div>{topGpsLoopSuspect ? topGpsLoopSuspect.severity.toFixed(2) : '-'}</div></div>
+            <div><div className="text-slate-500">Worst Mag ({units})</div><div>{topGpsLoopSuspect ? (topGpsLoopSuspect.closureMag * unitScale).toFixed(4) : '-'}</div></div>
+            <div><div className="text-slate-500">Top Loop</div><div className="font-mono">{topGpsLoopSuspect?.key ?? '-'}</div></div>
+          </div>
           {!isSectionCollapsed('gps-loop-suspects') && (
             <>
               <table className="w-full text-left text-xs">

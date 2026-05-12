@@ -726,8 +726,136 @@ describe('ReportView adjustment-layout sections', () => {
     expect(html).not.toContain('ZENITH');
     expect(html).not.toContain('Mean Weight');
     expect(html).not.toContain('setup-1');
-    expect(html).not.toContain('TRAV-LOOP-1');
-    expect(html).not.toContain('GPS-LOOP-1');
+    expect(html).not.toContain('A-&gt;B-&gt;A');
+  });
+
+  it('keeps ranked suspect summary cards visible while deferring loop suspect tables by default', () => {
+    const result = new LSAEngine({ input: baseInput, maxIterations: 8 }).solve();
+    result.traverseDiagnostics = {
+      closureCount: 1,
+      misclosureE: 0.01,
+      misclosureN: 0.02,
+      misclosureMag: 0.02236,
+      totalTraverseDistance: 120,
+      closureRatio: 12000,
+      linearPpm: 83.3,
+      angularMisclosureArcSec: 4.2,
+      verticalMisclosure: 0.003,
+      thresholds: {
+        minClosureRatio: 8000,
+        maxLinearPpm: 150,
+        maxAngularArcSec: 10,
+        maxVerticalMisclosure: 0.01,
+      },
+      passes: {
+        overall: false,
+      },
+      loops: [
+        {
+          key: 'TRAV-LOOP-1',
+          misclosureMag: 0.02236,
+          traverseDistance: 120,
+          closureRatio: 12000,
+          linearPpm: 83.3,
+          angularMisclosureArcSec: 4.2,
+          verticalMisclosure: 0.003,
+          severity: 1.2,
+          pass: false,
+        },
+      ],
+    } as any;
+    result.gpsLoopDiagnostics = {
+      enabled: true,
+      vectorCount: 3,
+      loopCount: 1,
+      passCount: 0,
+      warnCount: 1,
+      thresholds: {
+        baseToleranceM: 0.01,
+        ppmTolerance: 5,
+      },
+      loops: [
+        {
+          rank: 1,
+          key: 'GPS-LOOP-1',
+          stationPath: ['A', 'B', 'A'],
+          closureMag: 0.025,
+          toleranceM: 0.015,
+          linearPpm: 12.3,
+          closureRatio: 8000,
+          severity: 1.8,
+          pass: false,
+          sourceLines: [10, 11],
+        },
+      ],
+    } as any;
+    result.levelingLoopDiagnostics = {
+      enabled: true,
+      observationCount: 4,
+      loopCount: 1,
+      passCount: 0,
+      warnCount: 1,
+      totalLengthKm: 0.4,
+      warnTotalLengthKm: 0.4,
+      worstClosure: 0.006,
+      worstClosurePerSqrtKmMm: 8.5,
+      worstLoopKey: 'LL-1-A',
+      thresholds: {
+        baseMm: 2,
+        perSqrtKmMm: 4,
+      },
+      suspectSegments: [
+        {
+          rank: 1,
+          key: 'A-B',
+          from: 'A',
+          to: 'B',
+          sourceLine: 12,
+          warnLoopCount: 1,
+          suspectScore: 2.2,
+          maxAbsDh: 0.004,
+          worstLoopKey: 'LL-1-A',
+        },
+      ],
+      loops: [
+        {
+          rank: 1,
+          key: 'LL-1-A',
+          stationPath: ['A', 'B', 'A'],
+          closure: 0.006,
+          absClosure: 0.006,
+          loopLengthKm: 0.4,
+          toleranceMm: 4.53,
+          closurePerSqrtKmMm: 8.5,
+          pass: false,
+          sourceLines: [12, 13],
+          segments: [
+            {
+              from: 'A',
+              to: 'B',
+              observedDh: 0.004,
+              lengthKm: 0.2,
+              sourceLine: 12,
+              closureLeg: false,
+            },
+          ],
+        },
+      ],
+    } as any;
+
+    const html = renderReport(result);
+    expect(html).toContain('Traverse Closure Suspects');
+    expect(html).toContain('GPS Loop Suspects (ranked)');
+    expect(html).toContain('Leveling Loop Suspects (ranked)');
+    expect(html).toContain('Leveling Segment Suspects');
+    expect(html).toContain('Warn Loops');
+    expect(html).toContain('Worst Ratio');
+    expect(html).toContain('Worst Severity');
+    expect(html).toContain('Suspect Segments');
+    expect(html).toContain('Top Score');
+    expect(html).toContain('Show');
+    expect(html).not.toContain('Path</th>');
+    expect(html).not.toContain('Segment</th>');
     expect(html).not.toContain('A-&gt;B-&gt;A');
   });
 });
