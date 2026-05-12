@@ -448,4 +448,70 @@ describe('ReportView adjustment-layout sections', () => {
     expect(html).not.toContain('Angle Obs');
     expect(html).not.toContain('Dist Obs');
   });
+
+  it('keeps suspect-impact and setup summary cards visible while deferring their detail tables by default', () => {
+    const result = new LSAEngine({ input: baseInput, maxIterations: 8 }).solve();
+    result.suspectImpactDiagnostics = [
+      {
+        obsId: 1,
+        type: 'dist',
+        stations: 'A-C',
+        sourceLine: 5,
+        baseStdRes: 2.4,
+        deltaSeuw: -0.01,
+        deltaMaxStdRes: -0.2,
+        chiDelta: 'PASS->PASS',
+        maxCoordShift: 0.001,
+        score: 1.2,
+        status: 'ok',
+      },
+      {
+        obsId: 2,
+        type: 'angle',
+        stations: 'C-A-B',
+        sourceLine: 7,
+        baseStdRes: 1.8,
+        deltaSeuw: 0,
+        deltaMaxStdRes: 0,
+        chiDelta: 'PASS->PASS',
+        maxCoordShift: 0,
+        score: 0.5,
+        status: 'excluded',
+      },
+    ] as any;
+    result.setupDiagnostics = [
+      {
+        station: 'C',
+        directionSetCount: 1,
+        directionObsCount: 2,
+        angleObsCount: 1,
+        distanceObsCount: 2,
+        zenithObsCount: 0,
+        levelingObsCount: 0,
+        gpsObsCount: 0,
+        traverseDistance: 120,
+        orientationRmsArcSec: 1.2,
+        orientationSeArcSec: 0.8,
+        rmsStdRes: 1.1,
+        maxStdRes: 2.2,
+        localFailCount: 1,
+        worstObsType: 'dist',
+        worstObsStations: 'A-C',
+        worstObsLine: 5,
+      },
+    ] as any;
+
+    const html = renderReport(result);
+    expect(html).toContain('Suspect Impact Analysis (what-if exclusion)');
+    expect(html).toContain('Setup Diagnostics');
+    expect(html).toContain('Candidates');
+    expect(html).toContain('Actionable');
+    expect(html).toContain('Excluded');
+    expect(html).toContain('Setups');
+    expect(html).toContain('Worst Max |t|');
+    expect(html).toContain('Show');
+    expect(html).not.toContain('dSEUW');
+    expect(html).not.toContain('Dir Sets');
+    expect(html).not.toContain('Orient RMS');
+  });
 });

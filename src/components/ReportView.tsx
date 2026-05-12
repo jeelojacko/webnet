@@ -295,6 +295,37 @@ const ReportView: React.FC<ReportViewProps> = ({
     (max, obs) => Math.max(max, Math.abs(obs.stdRes ?? 0)),
     0,
   );
+  const suspectImpactDiagnostics = result.suspectImpactDiagnostics ?? [];
+  const suspectImpactActionableCount = suspectImpactDiagnostics.filter(
+    (row) => row.status === 'ok' && !excludedIds.has(row.obsId),
+  ).length;
+  const suspectImpactExcludedCount = suspectImpactDiagnostics.filter(
+    (row) => row.status !== 'ok' || excludedIds.has(row.obsId),
+  ).length;
+  const suspectImpactWorstBaseStdRes = suspectImpactDiagnostics.reduce(
+    (max, row) => Math.max(max, Math.abs(row.baseStdRes ?? 0)),
+    0,
+  );
+  const setupDiagnostics = result.setupDiagnostics ?? [];
+  const setupLocalFailCount = setupDiagnostics.reduce(
+    (sum, row) => sum + row.localFailCount,
+    0,
+  );
+  const setupWorstStdRes = setupDiagnostics.reduce(
+    (max, row) => Math.max(max, Math.abs(row.maxStdRes ?? 0)),
+    0,
+  );
+  const setupObsCount = setupDiagnostics.reduce(
+    (sum, row) =>
+      sum +
+      row.directionObsCount +
+      row.angleObsCount +
+      row.distanceObsCount +
+      row.zenithObsCount +
+      row.levelingObsCount +
+      row.gpsObsCount,
+    0,
+  );
   const {
     directionSetCount,
     filteredSortedObs,
@@ -686,8 +717,7 @@ const ReportView: React.FC<ReportViewProps> = ({
 
       {!isPreanalysis &&
         !isSpecialRunMode &&
-        result.suspectImpactDiagnostics &&
-        result.suspectImpactDiagnostics.length > 0 && (
+        suspectImpactDiagnostics.length > 0 && (
           <div
             className="mb-8 border border-slate-800 rounded overflow-hidden"
             style={{ order: -140 }}
@@ -699,6 +729,24 @@ const ReportView: React.FC<ReportViewProps> = ({
                 'px-4 py-2 border-b border-slate-800 bg-slate-900/60 text-xs uppercase tracking-wider',
               labelClassName: 'text-slate-100',
             })}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-3 text-xs text-slate-300 border-b border-slate-800/60">
+              <div>
+                <div className="text-slate-500">Candidates</div>
+                <div>{suspectImpactDiagnostics.length}</div>
+              </div>
+              <div>
+                <div className="text-slate-500">Actionable</div>
+                <div>{suspectImpactActionableCount}</div>
+              </div>
+              <div>
+                <div className="text-slate-500">Excluded</div>
+                <div>{suspectImpactExcludedCount}</div>
+              </div>
+              <div>
+                <div className="text-slate-500">Worst Base |t|</div>
+                <div>{suspectImpactWorstBaseStdRes.toFixed(2)}</div>
+              </div>
+            </div>
             {!isSectionCollapsed('suspect-impact-analysis') && (
               <table className="w-full text-left text-xs">
               <thead>
@@ -717,7 +765,7 @@ const ReportView: React.FC<ReportViewProps> = ({
                 </tr>
               </thead>
               <tbody className="text-slate-300">
-                {result.suspectImpactDiagnostics.map((d, idx) => {
+                {suspectImpactDiagnostics.map((d, idx) => {
                   const alreadyExcluded = excludedIds.has(d.obsId);
                   return (
                     <tr key={`impact-${d.obsId}-${idx}`} className="border-b border-slate-800/30">
@@ -2043,8 +2091,7 @@ const ReportView: React.FC<ReportViewProps> = ({
 
       {!isPreanalysis &&
         !isDataCheck &&
-        result.setupDiagnostics &&
-        result.setupDiagnostics.length > 0 && (
+        setupDiagnostics.length > 0 && (
         <div
           className="mb-8 border border-slate-800 rounded overflow-hidden"
           style={{ order: -160 }}
@@ -2056,6 +2103,24 @@ const ReportView: React.FC<ReportViewProps> = ({
               'px-3 py-2 text-xs uppercase tracking-wider border-b border-slate-700 bg-slate-800/75',
             labelClassName: 'text-slate-100',
           })}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-3 text-xs text-slate-300 border-b border-slate-800/60">
+            <div>
+              <div className="text-slate-500">Setups</div>
+              <div>{setupDiagnostics.length}</div>
+            </div>
+            <div>
+              <div className="text-slate-500">Obs Total</div>
+              <div>{setupObsCount}</div>
+            </div>
+            <div>
+              <div className="text-slate-500">Local Fails</div>
+              <div>{setupLocalFailCount}</div>
+            </div>
+            <div>
+              <div className="text-slate-500">Worst Max |t|</div>
+              <div>{setupWorstStdRes.toFixed(2)}</div>
+            </div>
+          </div>
           {!isSectionCollapsed('setup-diagnostics') && (
             <div className="overflow-x-auto w-full">
             <table className="w-full text-left border-collapse text-xs">
@@ -2080,7 +2145,7 @@ const ReportView: React.FC<ReportViewProps> = ({
                 </tr>
               </thead>
               <tbody className="text-slate-300">
-                {result.setupDiagnostics.map((s) => (
+                {setupDiagnostics.map((s) => (
                   <tr key={s.station} className="border-b border-slate-800/50">
                     <td className="py-1 px-3">{s.station}</td>
                     <td className="py-1 px-3 text-right">{s.directionSetCount}</td>
