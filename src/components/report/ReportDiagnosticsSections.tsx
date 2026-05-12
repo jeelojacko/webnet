@@ -42,71 +42,71 @@ const ReportDiagnosticsSections: React.FC<ReportDiagnosticsSectionsProps> = ({
               'px-3 py-2 text-xs uppercase tracking-wider border-b border-slate-700 bg-slate-800/75',
             labelClassName: 'text-slate-100',
           })}
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3 p-3 text-xs text-slate-300 border-b border-slate-800/60">
+            <div>
+              <div className="text-slate-500">Obs</div>
+              <div>{result.residualDiagnostics.observationCount}</div>
+            </div>
+            <div>
+              <div className="text-slate-500">With StdRes</div>
+              <div>{result.residualDiagnostics.withStdResCount}</div>
+            </div>
+            <div>
+              <div className="text-slate-500">|t| &gt; 2 / &gt;3 / &gt;4</div>
+              <div>
+                {result.residualDiagnostics.over2SigmaCount} /{' '}
+                {result.residualDiagnostics.over3SigmaCount} /{' '}
+                {result.residualDiagnostics.over4SigmaCount}
+              </div>
+            </div>
+            <div>
+              <div className="text-slate-500">Local Fail</div>
+              <div className={result.residualDiagnostics.localFailCount > 0 ? 'text-red-400' : ''}>
+                {result.residualDiagnostics.localFailCount}
+              </div>
+            </div>
+            <div>
+              <div className="text-slate-500">Redundancy (&lt;0.2 / &lt;0.1)</div>
+              <div>
+                {result.residualDiagnostics.lowRedundancyCount} /{' '}
+                {result.residualDiagnostics.veryLowRedundancyCount}
+              </div>
+            </div>
+            <div>
+              <div className="text-slate-500">Mean Redund</div>
+              <div>
+                {result.residualDiagnostics.meanRedundancy != null
+                  ? result.residualDiagnostics.meanRedundancy.toFixed(3)
+                  : '-'}
+              </div>
+            </div>
+            <div>
+              <div className="text-slate-500">Min Redund</div>
+              <div>
+                {result.residualDiagnostics.minRedundancy != null
+                  ? result.residualDiagnostics.minRedundancy.toFixed(3)
+                  : '-'}
+              </div>
+            </div>
+            <div>
+              <div className="text-slate-500">Max |t|</div>
+              <div>
+                {result.residualDiagnostics.maxStdRes != null
+                  ? result.residualDiagnostics.maxStdRes.toFixed(2)
+                  : '-'}
+              </div>
+            </div>
+            <div className="col-span-2">
+              <div className="text-slate-500">Worst Observation</div>
+              <div className="truncate">
+                {result.residualDiagnostics.worst
+                  ? `#${result.residualDiagnostics.worst.obsId} ${result.residualDiagnostics.worst.type.toUpperCase()} ${result.residualDiagnostics.worst.stations} line=${result.residualDiagnostics.worst.sourceLine ?? '-'} |t|=${result.residualDiagnostics.worst.stdRes?.toFixed(2) ?? '-'}`
+                  : '-'}
+              </div>
+            </div>
+          </div>
           {!isSectionCollapsed('residual-diagnostics') && (
             <>
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-3 p-3 text-xs text-slate-300">
-                <div>
-                  <div className="text-slate-500">Obs</div>
-                  <div>{result.residualDiagnostics.observationCount}</div>
-                </div>
-                <div>
-                  <div className="text-slate-500">With StdRes</div>
-                  <div>{result.residualDiagnostics.withStdResCount}</div>
-                </div>
-                <div>
-                  <div className="text-slate-500">|t| &gt; 2 / &gt;3 / &gt;4</div>
-                  <div>
-                    {result.residualDiagnostics.over2SigmaCount} /{' '}
-                    {result.residualDiagnostics.over3SigmaCount} /{' '}
-                    {result.residualDiagnostics.over4SigmaCount}
-                  </div>
-                </div>
-                <div>
-                  <div className="text-slate-500">Local Fail</div>
-                  <div className={result.residualDiagnostics.localFailCount > 0 ? 'text-red-400' : ''}>
-                    {result.residualDiagnostics.localFailCount}
-                  </div>
-                </div>
-                <div>
-                  <div className="text-slate-500">Redundancy (&lt;0.2 / &lt;0.1)</div>
-                  <div>
-                    {result.residualDiagnostics.lowRedundancyCount} /{' '}
-                    {result.residualDiagnostics.veryLowRedundancyCount}
-                  </div>
-                </div>
-                <div>
-                  <div className="text-slate-500">Mean Redund</div>
-                  <div>
-                    {result.residualDiagnostics.meanRedundancy != null
-                      ? result.residualDiagnostics.meanRedundancy.toFixed(3)
-                      : '-'}
-                  </div>
-                </div>
-                <div>
-                  <div className="text-slate-500">Min Redund</div>
-                  <div>
-                    {result.residualDiagnostics.minRedundancy != null
-                      ? result.residualDiagnostics.minRedundancy.toFixed(3)
-                      : '-'}
-                  </div>
-                </div>
-                <div>
-                  <div className="text-slate-500">Max |t|</div>
-                  <div>
-                    {result.residualDiagnostics.maxStdRes != null
-                      ? result.residualDiagnostics.maxStdRes.toFixed(2)
-                      : '-'}
-                  </div>
-                </div>
-                <div className="col-span-2">
-                  <div className="text-slate-500">Worst Observation</div>
-                  <div className="truncate">
-                    {result.residualDiagnostics.worst
-                      ? `#${result.residualDiagnostics.worst.obsId} ${result.residualDiagnostics.worst.type.toUpperCase()} ${result.residualDiagnostics.worst.stations} line=${result.residualDiagnostics.worst.sourceLine ?? '-'} |t|=${result.residualDiagnostics.worst.stdRes?.toFixed(2) ?? '-'}`
-                      : '-'}
-                  </div>
-                </div>
-              </div>
               {result.residualDiagnostics.byType.length > 0 && (
                 <div className="overflow-x-auto w-full border-t border-slate-800">
                   <table className="w-full text-left border-collapse text-xs">
@@ -163,32 +163,32 @@ const ReportDiagnosticsSections: React.FC<ReportDiagnosticsSectionsProps> = ({
               'px-3 py-2 text-xs uppercase tracking-wider border-b border-slate-700 bg-slate-800/75',
             labelClassName: 'text-slate-100',
           })}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-3 text-xs text-slate-300 border-b border-slate-800/60">
+            <div>
+              <div className="text-slate-500">Mode</div>
+              <div>
+                {result.robustDiagnostics.enabled ? result.robustDiagnostics.mode.toUpperCase() : 'OFF'}
+              </div>
+            </div>
+            <div>
+              <div className="text-slate-500">k</div>
+              <div>{result.robustDiagnostics.k.toFixed(2)}</div>
+            </div>
+            <div>
+              <div className="text-slate-500">Iterations</div>
+              <div>{result.robustDiagnostics.iterations.length}</div>
+            </div>
+            <div>
+              <div className="text-slate-500">Final Downweighted</div>
+              <div>
+                {result.robustDiagnostics.iterations.length > 0
+                  ? result.robustDiagnostics.iterations[result.robustDiagnostics.iterations.length - 1].downweightedRows
+                  : 0}
+              </div>
+            </div>
+          </div>
           {!isSectionCollapsed('robust-diagnostics') && (
             <>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-3 text-xs text-slate-300">
-                <div>
-                  <div className="text-slate-500">Mode</div>
-                  <div>
-                    {result.robustDiagnostics.enabled ? result.robustDiagnostics.mode.toUpperCase() : 'OFF'}
-                  </div>
-                </div>
-                <div>
-                  <div className="text-slate-500">k</div>
-                  <div>{result.robustDiagnostics.k.toFixed(2)}</div>
-                </div>
-                <div>
-                  <div className="text-slate-500">Iterations</div>
-                  <div>{result.robustDiagnostics.iterations.length}</div>
-                </div>
-                <div>
-                  <div className="text-slate-500">Final Downweighted</div>
-                  <div>
-                    {result.robustDiagnostics.iterations.length > 0
-                      ? result.robustDiagnostics.iterations[result.robustDiagnostics.iterations.length - 1].downweightedRows
-                      : 0}
-                  </div>
-                </div>
-              </div>
               {result.robustDiagnostics.enabled && result.robustDiagnostics.iterations.length > 0 && (
                 <div className="overflow-x-auto w-full border-t border-slate-800">
                   <table className="w-full text-left border-collapse text-xs">
@@ -341,25 +341,25 @@ const ReportDiagnosticsSections: React.FC<ReportDiagnosticsSectionsProps> = ({
               'px-3 py-2 text-xs uppercase tracking-wider border-b border-slate-700 bg-slate-800/75',
             labelClassName: 'text-slate-100',
           })}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-3 text-xs text-slate-300 border-b border-slate-800/60">
+            <div><div className="text-slate-500">Enabled</div><div>{result.tsCorrelationDiagnostics.enabled ? 'ON' : 'OFF'}</div></div>
+            <div><div className="text-slate-500">Scope</div><div>{result.tsCorrelationDiagnostics.scope.toUpperCase()}</div></div>
+            <div><div className="text-slate-500">Rho</div><div>{result.tsCorrelationDiagnostics.rho.toFixed(3)}</div></div>
+            <div><div className="text-slate-500">Groups</div><div>{result.tsCorrelationDiagnostics.groupCount}</div></div>
+            <div><div className="text-slate-500">Equations</div><div>{result.tsCorrelationDiagnostics.equationCount}</div></div>
+            <div><div className="text-slate-500">Pairs</div><div>{result.tsCorrelationDiagnostics.pairCount}</div></div>
+            <div><div className="text-slate-500">Max Group</div><div>{result.tsCorrelationDiagnostics.maxGroupSize}</div></div>
+            <div>
+              <div className="text-slate-500">Mean|OffDiagW|</div>
+              <div>
+                {result.tsCorrelationDiagnostics.meanAbsOffDiagWeight != null
+                  ? result.tsCorrelationDiagnostics.meanAbsOffDiagWeight.toExponential(3)
+                  : '-'}
+              </div>
+            </div>
+          </div>
           {!isSectionCollapsed('ts-correlation-diagnostics') && (
             <>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-3 text-xs text-slate-300">
-                <div><div className="text-slate-500">Enabled</div><div>{result.tsCorrelationDiagnostics.enabled ? 'ON' : 'OFF'}</div></div>
-                <div><div className="text-slate-500">Scope</div><div>{result.tsCorrelationDiagnostics.scope.toUpperCase()}</div></div>
-                <div><div className="text-slate-500">Rho</div><div>{result.tsCorrelationDiagnostics.rho.toFixed(3)}</div></div>
-                <div><div className="text-slate-500">Groups</div><div>{result.tsCorrelationDiagnostics.groupCount}</div></div>
-                <div><div className="text-slate-500">Equations</div><div>{result.tsCorrelationDiagnostics.equationCount}</div></div>
-                <div><div className="text-slate-500">Pairs</div><div>{result.tsCorrelationDiagnostics.pairCount}</div></div>
-                <div><div className="text-slate-500">Max Group</div><div>{result.tsCorrelationDiagnostics.maxGroupSize}</div></div>
-                <div>
-                  <div className="text-slate-500">Mean|OffDiagW|</div>
-                  <div>
-                    {result.tsCorrelationDiagnostics.meanAbsOffDiagWeight != null
-                      ? result.tsCorrelationDiagnostics.meanAbsOffDiagWeight.toExponential(3)
-                      : '-'}
-                  </div>
-                </div>
-              </div>
               {result.tsCorrelationDiagnostics.enabled && result.tsCorrelationDiagnostics.groups.length > 0 && (
                 <div className="overflow-x-auto w-full border-t border-slate-800">
                   <table className="w-full text-left border-collapse text-xs">

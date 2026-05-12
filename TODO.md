@@ -24,6 +24,7 @@
     - [x] Current slice - move the heavy `ReportView` traceability and cluster-review tables behind default-collapsed detail sections so summary cards stay visible while row-heavy review tables wait until opened
     - [x] Current slice - keep `ReportView` auto-adjust and auto-sideshot summary cards visible while their row-heavy detail tables stay deferred behind collapsed sections
     - [x] Current slice - keep `ReportView` suspect-impact and setup-diagnostics summary cards visible while their row-heavy tables stay deferred behind collapsed sections
+    - [x] Current slice - keep residual/robust/correlation/traverse/GPS/leveling diagnostic summary cards visible while their row-heavy tables stay deferred behind collapsed sections
     - [ ] Split `MapView.tsx` into selector/math helpers, canvas layer, SVG overlay layer, and tools/context surfaces
     - [ ] Narrow broad `useMemo` blocks in `MapView.tsx` and `ReportView.tsx` to stable result identity plus minimal filter keys
     - [ ] Add tab-level render guards so hidden heavy tabs do not recompute derived models from unrelated app-state churn
