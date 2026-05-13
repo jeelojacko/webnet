@@ -7,7 +7,6 @@ import {
   type Vec3,
 } from '../engine/map3d';
 import { RAD_TO_DEG } from '../engine/angles';
-import { computeInverse2D, computePivotAngles } from '../engine/mapTools';
 import type { DerivedQaResult } from '../engine/qaWorkflow';
 import {
   buildAdjustedPointsTransformPreview,
@@ -44,11 +43,13 @@ import MapViewContextMenu, { type MapToolPanel } from './mapView/MapViewContextM
 import MapViewToolOverlay from './mapView/MapViewToolOverlay';
 import { renderMapCanvas2d } from './mapView/mapViewCanvas2d';
 import {
-  buildProjectedStationLookup3d,
-  buildProjectedStations3d,
-  buildVisiblePointLabels3d,
-  projectPoint3d,
-} from './mapView/mapView3d';
+  buildMapScenePointBounds2d,
+  buildMapToolMetrics,
+  buildMapViewStyle2d,
+  buildProjectedMapState3d,
+  buildTransformedOverlayGeometry2d,
+} from './mapView/mapViewSelectors';
+import { projectPoint3d } from './mapView/mapView3d';
 
 const FT_PER_M = 3.280839895;
 const VIEW_W = 1000;
@@ -176,32 +177,7 @@ const MapView: React.FC<MapViewProps> = ({
     [result, showLostStations],
   );
 
-  const { points, bbox } = useMemo(() => {
-    if (scene3d.stations.length === 0) {
-      return {
-        points: [],
-        bbox: { minX: 0, minY: 0, width: 1, height: 1 },
-      };
-    }
-    const xs = scene3d.stations.map((s) => s.position.x);
-    const ys = scene3d.stations.map((s) => s.position.y);
-    const minX = Math.min(...xs);
-    const maxX = Math.max(...xs);
-    const minY = Math.min(...ys);
-    const maxY = Math.max(...ys);
-    const pad = Math.max((maxX - minX) * 0.1, (maxY - minY) * 0.1, 1);
-    const width = maxX - minX + pad * 2;
-    const height = maxY - minY + pad * 2;
-    const pts = scene3d.stations.map((s) => ({
-      id: s.id,
-      x: s.position.x,
-      y: s.position.y,
-      h: s.position.z,
-      fixed: s.fixed,
-      ellipsoid: s.ellipsoid,
-    }));
-    return { points: pts, bbox: { minX: minX - pad, minY: minY - pad, width, height } };
-  }, [scene3d]);
+  const { points, bbox } = useMemo(() => buildMapScenePointBounds2d(scene3d), [scene3d]);
 
   const cleanAdjustedPointsExportSettings = useMemo(
     () =>
@@ -665,52 +641,39 @@ const MapView: React.FC<MapViewProps> = ({
     if (event.button === 0 || event.button === 1) stopDrag();
   };
 
-  const labelScale2d = Math.sqrt(view2d.zoom);
-  const pointRadius2dPx = clamp(7 / labelScale2d, 1.6, 7);
-  const lineWidth2dPx = clamp(1.2 / labelScale2d, 0.35, 1.2);
-  const ellipseStroke2dPx = clamp(1 / labelScale2d, 0.35, 1);
-  const labelFont2dPx = clamp(12 + Math.max(0, Math.log2(view2d.zoom)) * 3, 12, 26);
-  const labelStroke2dPx = clamp(labelFont2dPx * 0.12, 1.2, 2.8);
-  const labelOffset2dPx = clamp(labelFont2dPx * 0.85, 9, 22);
-  const marker2dPx = clamp(6 / labelScale2d, 2.5, 6);
-  const invZoom2d = 1 / view2d.zoom;
-  const pointRadius2d = pointRadius2dPx * invZoom2d;
-  const lineWidth2d = lineWidth2dPx * invZoom2d;
-  const ellipseStroke2d = ellipseStroke2dPx * invZoom2d;
-  const labelFont2d = labelFont2dPx * invZoom2d;
-  const labelStroke2d = labelStroke2dPx * invZoom2d;
-  const labelOffset2d = labelOffset2dPx * invZoom2d;
-  const marker2d = marker2dPx * invZoom2d;
-  const originalGeometryOpacity = transformedOverlayActive ? 0.25 : 1;
+  const {
+    pointRadius2d,
+    lineWidth2d,
+    ellipseStroke2d,
+    labelFont2d,
+    labelStroke2d,
+    labelOffset2d,
+    marker2d,
+    originalGeometryOpacity,
+  } = useMemo(
+    () => buildMapViewStyle2d({ zoom: view2d.zoom }, transformedOverlayActive),
+    [transformedOverlayActive, view2d.zoom],
+  );
 
-  const transformedLines2d = useMemo(() => {
-    if (!transformedOverlayActive) return [] as Array<{ key: string; x1: number; y1: number; x2: number; y2: number }>;
-    return observations
-      .map((obs, idx) => {
-        if (obs.type !== 'dist' && obs.type !== 'gps') return null;
-        const fromStation = stations[obs.from];
-        const toStation = stations[obs.to];
-        if (!fromStation || !toStation) return null;
-        if (!showLostStations && (fromStation.lost || toStation.lost)) return null;
-        const from = transformedOverlayConfig.transformedByStationId.get(obs.from);
-        const to = transformedOverlayConfig.transformedByStationId.get(obs.to);
-        if (!from || !to) return null;
-        return {
-          key: `tx-line-${idx}`,
-          x1: from.east,
-          y1: from.north,
-          x2: to.east,
-          y2: to.north,
-        };
-      })
-      .filter((line): line is { key: string; x1: number; y1: number; x2: number; y2: number } => line != null);
-  }, [
-    observations,
-    showLostStations,
-    stations,
-    transformedOverlayActive,
-    transformedOverlayConfig.transformedByStationId,
-  ]);
+  const { transformedLines2d, transformedPoints2d } = useMemo(
+    () =>
+      buildTransformedOverlayGeometry2d({
+        transformedOverlayActive,
+        observations,
+        stations,
+        showLostStations,
+        transformedByStationId: transformedOverlayConfig.transformedByStationId,
+        points,
+      }),
+    [
+      observations,
+      points,
+      showLostStations,
+      stations,
+      transformedOverlayActive,
+      transformedOverlayConfig.transformedByStationId,
+    ],
+  );
 
   const fallbackMapLinks = useMemo(
     () => (derivedResult ? EMPTY_MAP_LINKS : buildObservationMapLinks(observations)),
@@ -835,55 +798,25 @@ const MapView: React.FC<MapViewProps> = ({
     view2d,
   ]);
 
-  const transformedPoints2d = useMemo(() => {
-    if (!transformedOverlayActive) {
-      return [] as Array<{ id: string; x: number; y: number; fixed: boolean }>;
-    }
-    return points
-      .map((point) => {
-        const rotated = transformedOverlayConfig.transformedByStationId.get(point.id);
-        if (!rotated) return null;
-        return {
-          id: point.id,
-          x: rotated.east,
-          y: rotated.north,
-          fixed: point.fixed,
-        };
-      })
-      .filter(
-        (
-          point,
-        ): point is {
-          id: string;
-          x: number;
-          y: number;
-          fixed: boolean;
-        } => point != null,
-      );
-  }, [points, transformedOverlayActive, transformedOverlayConfig.transformedByStationId]);
-
   const project3d = useCallback(
     (point: Vec3) => projectPoint3d(camera3d, point, VIEW_W, VIEW_H),
     [camera3d],
   );
 
-  const projected3d = useMemo(() => {
-    if (effectiveMode !== '3d' || !camera3d) return [];
-    return buildProjectedStations3d(scene3d, camera3d, VIEW_W, VIEW_H);
-  }, [camera3d, effectiveMode, scene3d]);
-
-  const projected3dById = useMemo(() => {
-    return buildProjectedStationLookup3d(projected3d);
-  }, [projected3d]);
-
-  const visiblePointLabels3d = useMemo(() => {
-    return buildVisiblePointLabels3d(
-      projected3d,
-      selectedStationId,
-      DENSE_LABEL_POINT_THRESHOLD,
-      LABEL_GRID_PX,
-    );
-  }, [projected3d, selectedStationId]);
+  const { projected3d, projected3dById, visiblePointLabels3d } = useMemo(
+    () =>
+      buildProjectedMapState3d({
+        effectiveMode,
+        camera3d,
+        scene3d,
+        selectedStationId,
+        denseLabelPointThreshold: DENSE_LABEL_POINT_THRESHOLD,
+        labelGridPx: LABEL_GRID_PX,
+        viewWidth: VIEW_W,
+        viewHeight: VIEW_H,
+      }),
+    [camera3d, effectiveMode, scene3d, selectedStationId],
+  );
 
   const applyCubeView = (preset: 'iso' | 'top' | 'front' | 'right') => {
     setCamera3d((prev) => {
@@ -901,26 +834,18 @@ const MapView: React.FC<MapViewProps> = ({
   const angleFromId = resolveStationId(angleFromInput);
   const angleToId = resolveStationId(angleToInput);
 
-  const inverse = useMemo(() => {
-    if (!inverseFromId || !inverseToId) return null;
-    const from = stations[inverseFromId];
-    const to = stations[inverseToId];
-    if (!from || !to) return null;
-    return computeInverse2D({ x: from.x, y: from.y }, { x: to.x, y: to.y });
-  }, [inverseFromId, inverseToId, stations]);
-
-  const angleBetween = useMemo(() => {
-    if (!anglePivotId || !angleFromId || !angleToId) return null;
-    const pivot = stations[anglePivotId];
-    const from = stations[angleFromId];
-    const to = stations[angleToId];
-    if (!pivot || !from || !to) return null;
-    return computePivotAngles(
-      { x: pivot.x, y: pivot.y },
-      { x: from.x, y: from.y },
-      { x: to.x, y: to.y },
-    );
-  }, [angleFromId, anglePivotId, angleToId, stations]);
+  const { inverse, angleBetween } = useMemo(
+    () =>
+      buildMapToolMetrics({
+        stations,
+        inverseFromId,
+        inverseToId,
+        anglePivotId,
+        angleFromId,
+        angleToId,
+      }),
+    [angleFromId, anglePivotId, angleToId, inverseFromId, inverseToId, stations],
+  );
 
   const openContextMenu = (event: React.MouseEvent<SVGSVGElement>) => {
     event.preventDefault();
