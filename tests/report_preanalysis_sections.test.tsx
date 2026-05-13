@@ -85,6 +85,8 @@ describe('ReportView preanalysis sections', () => {
     expect(html).toContain('Pairs');
     expect(html).toContain('Top Pair');
     expect(html).toContain('Top σDist');
+    expect(html).toContain('Median Station Major');
+    expect(html).toContain('Pair Flags');
     expect(html).toContain(
       'title="Planned observations using fixed sigma weighting. They are excluded from what-if removal actions."',
     );
@@ -97,6 +99,7 @@ describe('ReportView preanalysis sections', () => {
     expect(html).not.toContain('dWorstMaj (m)');
     expect(html).not.toContain('Station</th>');
     expect(html).not.toContain('From</th>');
+    expect(html).not.toContain('Scope</th>');
     expect(html).not.toContain('Observations &amp; Residuals');
     expect(html).not.toContain('Top Suspects');
   });

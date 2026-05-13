@@ -63,10 +63,15 @@ import SolveProfileDiagnosticsSection from './report/SolveProfileDiagnosticsSect
 import { buildReportObservationSelectorModel } from './report/reportObservationSelectors';
 import { buildReportPrecisionSelectorModel } from './report/reportPrecisionSelectors';
 import { buildReportReviewSelectorModel } from './report/reportReviewSelectors';
+import { buildReportSummarySelectorModel } from './report/reportSummarySelectors';
+import { buildReportWindowedRowsModel } from './report/reportWindowedRows';
 import { useReportViewState, type ReportViewControls } from '../hooks/useReportViewState';
 import { noteUiPerfStage, noteUiTabReady } from '../hooks/useUiPerfMonitor';
 
 const FT_PER_M = 3.280839895;
+const EMPTY_SUSPECT_IMPACT_DIAGNOSTICS: NonNullable<AdjustmentResult['suspectImpactDiagnostics']> =
+  [];
+const EMPTY_SETUP_DIAGNOSTICS: NonNullable<AdjustmentResult['setupDiagnostics']> = [];
 
 interface ReportViewProps {
   result: AdjustmentResult;
@@ -291,48 +296,9 @@ const ReportView: React.FC<ReportViewProps> = ({
     () => sortObservationsByStdRes(result.observations),
     [result.observations],
   );
-  const maxAbsStdRes = sortedObs.reduce(
-    (max, obs) => Math.max(max, Math.abs(obs.stdRes ?? 0)),
-    0,
-  );
-  const suspectImpactDiagnostics = result.suspectImpactDiagnostics ?? [];
-  const suspectImpactActionableCount = suspectImpactDiagnostics.filter(
-    (row) => row.status === 'ok' && !excludedIds.has(row.obsId),
-  ).length;
-  const suspectImpactExcludedCount = suspectImpactDiagnostics.filter(
-    (row) => row.status !== 'ok' || excludedIds.has(row.obsId),
-  ).length;
-  const suspectImpactWorstBaseStdRes = suspectImpactDiagnostics.reduce(
-    (max, row) => Math.max(max, Math.abs(row.baseStdRes ?? 0)),
-    0,
-  );
-  const setupDiagnostics = result.setupDiagnostics ?? [];
-  const setupLocalFailCount = setupDiagnostics.reduce(
-    (sum, row) => sum + row.localFailCount,
-    0,
-  );
-  const setupWorstStdRes = setupDiagnostics.reduce(
-    (max, row) => Math.max(max, Math.abs(row.maxStdRes ?? 0)),
-    0,
-  );
-  const setupObsCount = setupDiagnostics.reduce(
-    (sum, row) =>
-      sum +
-      row.directionObsCount +
-      row.angleObsCount +
-      row.distanceObsCount +
-      row.zenithObsCount +
-      row.levelingObsCount +
-      row.gpsObsCount,
-    0,
-  );
-  const typeSummaryEntries = Object.entries(result.typeSummary ?? {});
-  const topTypeSummaryEntry = typeSummaryEntries.reduce<
-    [string, NonNullable<AdjustmentResult['typeSummary']>[string]] | null
-  >((top, entry) => {
-    if (!top) return entry;
-    return entry[1].count > top[1].count ? entry : top;
-  }, null);
+  const suspectImpactDiagnostics =
+    result.suspectImpactDiagnostics ?? EMPTY_SUSPECT_IMPACT_DIAGNOSTICS;
+  const setupDiagnostics = result.setupDiagnostics ?? EMPTY_SETUP_DIAGNOSTICS;
   const {
     directionSetCount,
     filteredSortedObs,
@@ -388,26 +354,6 @@ const ReportView: React.FC<ReportViewProps> = ({
   const traverseLoops = result.traverseDiagnostics?.loops ?? [];
   const gpsLoopDiagnostics = result.gpsLoopDiagnostics;
   const levelingLoopDiagnostics = result.levelingLoopDiagnostics;
-  const visibleTraverseLoopSuspects = visibleRowsFor(
-    'traverse-loop-suspects',
-    traverseLoopSuspects,
-    REPORT_DIAGNOSTIC_WINDOW_SIZE,
-  );
-  const visibleGpsLoopSuspects = visibleRowsFor(
-    'gps-loop-suspects',
-    gpsLoopSuspects,
-    REPORT_DIAGNOSTIC_WINDOW_SIZE,
-  );
-  const visibleLevelingLoopSuspects = visibleRowsFor(
-    'leveling-loop-suspects',
-    levelingLoopSuspects,
-    REPORT_DIAGNOSTIC_WINDOW_SIZE,
-  );
-  const visibleDirectionRejects = visibleRowsFor(
-    'direction-reject-diagnostics',
-    directionRejects,
-    REPORT_DIAGNOSTIC_WINDOW_SIZE,
-  );
   const {
     aliasTrace,
     descriptionScanSummary,
@@ -501,10 +447,77 @@ const ReportView: React.FC<ReportViewProps> = ({
     (obs: Observation) => formatPrismAnnotation(obs, unitScale, units),
     [unitScale, units],
   );
-  const topStationCovarianceRow = filteredStationCovariances[0];
-  const topRelativeCovarianceRow = filteredRelativeCovariances[0];
-  const topRelativePrecisionRow = filteredRelativePrecision[0];
-  const topGpsOffsetObservation = gpsOffsetObservations[0];
+  const {
+    maxAbsStdRes,
+    suspectImpactActionableCount,
+    suspectImpactExcludedCount,
+    suspectImpactWorstBaseStdRes,
+    setupLocalFailCount,
+    setupWorstStdRes,
+    setupObsCount,
+    typeSummaryEntries,
+    typeSummaryObsCount,
+    topTypeSummaryEntry,
+    topStationCovarianceRow,
+    topRelativeCovarianceRow,
+    topRelativePrecisionRow,
+    topGpsOffsetObservation,
+  } = useMemo(
+    () =>
+      buildReportSummarySelectorModel({
+        sortedObs,
+        suspectImpactDiagnostics,
+        excludedIds,
+        setupDiagnostics,
+        typeSummary: result.typeSummary ?? {},
+        filteredStationCovariances,
+        filteredRelativeCovariances,
+        filteredRelativePrecision,
+        gpsOffsetObservations,
+      }),
+    [
+      excludedIds,
+      filteredRelativeCovariances,
+      filteredRelativePrecision,
+      filteredStationCovariances,
+      gpsOffsetObservations,
+      result.typeSummary,
+      setupDiagnostics,
+      sortedObs,
+      suspectImpactDiagnostics,
+    ],
+  );
+  const {
+    visibleTraverseLoopSuspects,
+    visibleGpsLoopSuspects,
+    visibleLevelingLoopSuspects,
+    visibleDirectionRejects,
+    visibleStationCovariances,
+    visibleRelativeCovariances,
+    visibleRelativePrecision,
+  } = useMemo(
+    () =>
+      buildReportWindowedRowsModel({
+        visibleRowsFor,
+        traverseLoopSuspects,
+        gpsLoopSuspects,
+        levelingLoopSuspects,
+        directionRejects,
+        filteredStationCovariances,
+        filteredRelativeCovariances,
+        filteredRelativePrecision,
+      }),
+    [
+      directionRejects,
+      filteredRelativeCovariances,
+      filteredRelativePrecision,
+      filteredStationCovariances,
+      gpsLoopSuspects,
+      levelingLoopSuspects,
+      traverseLoopSuspects,
+      visibleRowsFor,
+    ],
+  );
   const formatMdb = useCallback(
     (value: number, angular: boolean) => reportFormatMdb(value, angular, unitScale),
     [unitScale],
@@ -2419,7 +2432,7 @@ const ReportView: React.FC<ReportViewProps> = ({
                   </tr>
                 </thead>
                 <tbody className="text-slate-300">
-                  {visibleRowsFor('station-covariances', filteredStationCovariances).map((block) => (
+                  {visibleStationCovariances.map((block) => (
                     <tr
                       key={`station-cov-${block.stationId}`}
                       className="border-b border-slate-800/50"
@@ -2447,7 +2460,7 @@ const ReportView: React.FC<ReportViewProps> = ({
               </table>
               {renderLoadMoreFooter(
                 'station-covariances',
-                visibleRowsFor('station-covariances', filteredStationCovariances).length,
+                visibleStationCovariances.length,
                 filteredStationCovariances.length,
               )}
             </div>
@@ -2512,7 +2525,7 @@ const ReportView: React.FC<ReportViewProps> = ({
                   </tr>
                 </thead>
                 <tbody className="text-slate-300">
-                  {visibleRowsFor('relative-covariances', filteredRelativeCovariances).map(
+                  {visibleRelativeCovariances.map(
                     (rel, idx) => (
                       <tr
                         key={`preanalysis-rel-${rel.from}-${rel.to}-${idx}`}
@@ -2553,7 +2566,7 @@ const ReportView: React.FC<ReportViewProps> = ({
               </table>
               {renderLoadMoreFooter(
                 'relative-covariances',
-                visibleRowsFor('relative-covariances', filteredRelativeCovariances).length,
+                visibleRelativeCovariances.length,
                 filteredRelativeCovariances.length,
               )}
             </div>
@@ -2571,50 +2584,49 @@ const ReportView: React.FC<ReportViewProps> = ({
             labelClassName: 'text-amber-200',
             title: preanalysisLabelTooltip('Weak Geometry Cues'),
           })}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-3 text-xs text-slate-300 border-b border-amber-900/30">
+            <div>
+              <div
+                className="text-slate-500"
+                title={preanalysisLabelTooltip('Median Station Major')}
+              >
+                Median Station Major
+              </div>
+              <div>
+                {(weakGeometryDiagnostics.stationMedianHorizontal * unitScale).toFixed(4)} {units}
+              </div>
+            </div>
+            <div>
+              <div
+                className="text-slate-500"
+                title={preanalysisLabelTooltip('Median Pair SigmaDist')}
+              >
+                Median Pair SigmaDist
+              </div>
+              <div>
+                {weakGeometryDiagnostics.relativeMedianDistance != null
+                  ? `${(weakGeometryDiagnostics.relativeMedianDistance * unitScale).toFixed(4)} ${units}`
+                  : '-'}
+              </div>
+            </div>
+            <div>
+              <div
+                className="text-slate-500"
+                title={preanalysisLabelTooltip('Station Flags')}
+              >
+                Station Flags
+              </div>
+              <div>{flaggedStationCues.length}</div>
+            </div>
+            <div>
+              <div className="text-slate-500" title={preanalysisLabelTooltip('Pair Flags')}>
+                Pair Flags
+              </div>
+              <div>{flaggedRelativeCues.length}</div>
+            </div>
+          </div>
           {!isSectionCollapsed('weak-geometry-cues') && (
             <>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-3 text-xs text-slate-300 border-b border-amber-900/30">
-                <div>
-                  <div
-                    className="text-slate-500"
-                    title={preanalysisLabelTooltip('Median Station Major')}
-                  >
-                    Median Station Major
-                  </div>
-                  <div>
-                    {(weakGeometryDiagnostics.stationMedianHorizontal * unitScale).toFixed(4)}{' '}
-                    {units}
-                  </div>
-                </div>
-                <div>
-                  <div
-                    className="text-slate-500"
-                    title={preanalysisLabelTooltip('Median Pair SigmaDist')}
-                  >
-                    Median Pair SigmaDist
-                  </div>
-                  <div>
-                    {weakGeometryDiagnostics.relativeMedianDistance != null
-                      ? `${(weakGeometryDiagnostics.relativeMedianDistance * unitScale).toFixed(4)} ${units}`
-                      : '-'}
-                  </div>
-                </div>
-                <div>
-                  <div
-                    className="text-slate-500"
-                    title={preanalysisLabelTooltip('Station Flags')}
-                  >
-                    Station Flags
-                  </div>
-                  <div>{flaggedStationCues.length}</div>
-                </div>
-                <div>
-                  <div className="text-slate-500" title={preanalysisLabelTooltip('Pair Flags')}>
-                    Pair Flags
-                  </div>
-                  <div>{flaggedRelativeCues.length}</div>
-                </div>
-              </div>
               <div className="overflow-x-auto w-full">
                 <table className="w-full text-left border-collapse text-xs">
                   <thead>
@@ -2707,7 +2719,7 @@ const ReportView: React.FC<ReportViewProps> = ({
                 </div>
                 <div>
                   <div className="text-slate-500">Obs Total</div>
-                  <div>{typeSummaryEntries.reduce((sum, [, summary]) => sum + summary.count, 0)}</div>
+                  <div>{typeSummaryObsCount}</div>
                 </div>
                 <div>
                   <div className="text-slate-500">Top Type</div>
@@ -2810,7 +2822,7 @@ const ReportView: React.FC<ReportViewProps> = ({
                     </tr>
                   </thead>
                   <tbody className="text-slate-300">
-                    {visibleRowsFor('relative-precision', filteredRelativePrecision).map(
+                    {visibleRelativePrecision.map(
                       (rel, idx) => (
                       <tr
                         key={`${rel.from}-${rel.to}-${idx}`}
@@ -2857,7 +2869,7 @@ const ReportView: React.FC<ReportViewProps> = ({
                 </table>
                 {renderLoadMoreFooter(
                   'relative-precision',
-                  visibleRowsFor('relative-precision', filteredRelativePrecision).length,
+                  visibleRelativePrecision.length,
                   filteredRelativePrecision.length,
                 )}
                 </div>

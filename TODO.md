@@ -30,10 +30,11 @@
     - [x] Current slice - keep robust-comparison and observation-summary cards visible while suspect/type/relative-precision tables stay deferred behind collapsed sections
     - [x] Current slice - keep GPS rover-offset summary cards visible while the rover-offset detail table stays deferred behind the collapsed section
     - [x] Current slice - keep preanalysis covariance summary cards visible while station and relative covariance detail tables stay deferred behind collapsed sections
+    - [x] Current slice - collapse the remaining `ReportView` inline summary reducers and repeated row-window shaping behind focused selector helpers so the component stops owning the last broad report row-shaping block
     - [ ] Split `MapView.tsx` into selector/math helpers, canvas layer, SVG overlay layer, and tools/context surfaces
-    - [ ] Narrow broad `useMemo` blocks in `MapView.tsx` and `ReportView.tsx` to stable result identity plus minimal filter keys
+    - [ ] Narrow broad `useMemo` blocks in `MapView.tsx` to stable result identity plus minimal filter keys
     - [ ] Add tab-level render guards so hidden heavy tabs do not recompute derived models from unrelated app-state churn
-    - [ ] Move more expensive report row shaping behind expand/open actions while preserving current progressive disclosure wording/ordering
+    - [x] Move more expensive report row shaping behind expand/open actions while preserving current progressive disclosure wording/ordering
   - [ ] Phase 2 - bundle and hot-path performance
     - [x] Current slice - replace repeated JSON clone/stringify hot paths in recovery/run-review/project-session syncing with shared plain-data helpers where safe
     - [x] Current slice - add browser draft size guardrails with explicit failure copy before quota churn writes
