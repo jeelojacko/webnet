@@ -502,6 +502,7 @@ const ReportView: React.FC<ReportViewProps> = ({
     [unitScale, units],
   );
   const topRelativePrecisionRow = filteredRelativePrecision[0];
+  const topGpsOffsetObservation = gpsOffsetObservations[0];
   const formatMdb = useCallback(
     (value: number, angular: boolean) => reportFormatMdb(value, angular, unitScale),
     [unitScale],
@@ -2223,6 +2224,44 @@ const ReportView: React.FC<ReportViewProps> = ({
               'px-3 py-2 text-xs uppercase tracking-wider border-b border-slate-700 bg-slate-800/75',
             labelClassName: 'text-slate-100',
           })}
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3 p-3 text-xs text-slate-300 border-b border-slate-800/60">
+            <div>
+              <div className="text-slate-500">Offsets</div>
+              <div>{gpsOffsetObservations.length}</div>
+            </div>
+            <div>
+              <div className="text-slate-500">Top Pair</div>
+              <div className="font-mono">
+                {topGpsOffsetObservation
+                  ? `${topGpsOffsetObservation.from}-${topGpsOffsetObservation.to}`
+                  : '-'}
+              </div>
+            </div>
+            <div>
+              <div className="text-slate-500">Top Slope ({units})</div>
+              <div>
+                {topGpsOffsetObservation?.gpsOffsetDistanceM != null
+                  ? (topGpsOffsetObservation.gpsOffsetDistanceM * unitScale).toFixed(4)
+                  : '-'}
+              </div>
+            </div>
+            <div>
+              <div className="text-slate-500">Top dH ({units})</div>
+              <div>
+                {topGpsOffsetObservation?.gpsOffsetDeltaH != null
+                  ? (topGpsOffsetObservation.gpsOffsetDeltaH * unitScale).toFixed(4)
+                  : '-'}
+              </div>
+            </div>
+            <div>
+              <div className="text-slate-500">Top Az</div>
+              <div>
+                {topGpsOffsetObservation?.gpsOffsetAzimuthRad != null
+                  ? radToDmsStr(topGpsOffsetObservation.gpsOffsetAzimuthRad)
+                  : '-'}
+              </div>
+            </div>
+          </div>
           {!isSectionCollapsed('gps-rover-offsets') && <div className="overflow-x-auto w-full">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
