@@ -501,6 +501,8 @@ const ReportView: React.FC<ReportViewProps> = ({
     (obs: Observation) => formatPrismAnnotation(obs, unitScale, units),
     [unitScale, units],
   );
+  const topStationCovarianceRow = filteredStationCovariances[0];
+  const topRelativeCovarianceRow = filteredRelativeCovariances[0];
   const topRelativePrecisionRow = filteredRelativePrecision[0];
   const topGpsOffsetObservation = gpsOffsetObservations[0];
   const formatMdb = useCallback(
@@ -2376,6 +2378,32 @@ const ReportView: React.FC<ReportViewProps> = ({
             labelClassName: 'text-slate-400',
             title: preanalysisLabelTooltip('Station Covariance Blocks Section'),
           })}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-3 text-xs text-slate-300 border-b border-slate-800/60">
+            <div>
+              <div className="text-slate-500">Stations</div>
+              <div>{filteredStationCovariances.length}</div>
+            </div>
+            <div>
+              <div className="text-slate-500">Top Station</div>
+              <div className="font-mono">{topStationCovarianceRow?.stationId ?? '-'}</div>
+            </div>
+            <div>
+              <div className="text-slate-500">Top CEE</div>
+              <div>
+                {topStationCovarianceRow != null
+                  ? (topStationCovarianceRow.cEE * covarianceScale).toExponential(4)
+                  : '-'}
+              </div>
+            </div>
+            <div>
+              <div className="text-slate-500">Top CHH</div>
+              <div>
+                {topStationCovarianceRow?.cHH != null
+                  ? (topStationCovarianceRow.cHH * covarianceScale).toExponential(4)
+                  : '-'}
+              </div>
+            </div>
+          </div>
           {!isSectionCollapsed('station-covariances') && (
             <div className="overflow-x-auto w-full">
               <table className="w-full text-left border-collapse text-xs">
@@ -2436,6 +2464,36 @@ const ReportView: React.FC<ReportViewProps> = ({
             labelClassName: 'text-slate-400',
             title: preanalysisLabelTooltip('Predicted Relative Precision (Connected Pairs)'),
           })}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-3 text-xs text-slate-300 border-b border-slate-800/60">
+            <div>
+              <div className="text-slate-500">Pairs</div>
+              <div>{filteredRelativeCovariances.length}</div>
+            </div>
+            <div>
+              <div className="text-slate-500">Top Pair</div>
+              <div className="font-mono">
+                {topRelativeCovarianceRow
+                  ? `${topRelativeCovarianceRow.from}-${topRelativeCovarianceRow.to}`
+                  : '-'}
+              </div>
+            </div>
+            <div>
+              <div className="text-slate-500">Top σDist</div>
+              <div>
+                {topRelativeCovarianceRow?.sigmaDist != null
+                  ? (topRelativeCovarianceRow.sigmaDist * unitScale).toFixed(4)
+                  : '-'}
+              </div>
+            </div>
+            <div>
+              <div className="text-slate-500">Top CEE</div>
+              <div>
+                {topRelativeCovarianceRow != null
+                  ? (topRelativeCovarianceRow.cEE * covarianceScale).toExponential(4)
+                  : '-'}
+              </div>
+            </div>
+          </div>
           {!isSectionCollapsed('relative-covariances') && (
             <div className="overflow-x-auto w-full">
               <table className="w-full text-left border-collapse text-xs">

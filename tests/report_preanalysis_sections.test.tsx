@@ -79,6 +79,12 @@ describe('ReportView preanalysis sections', () => {
     expect(html).toContain('Weak Geometry Cues');
     expect(html).toContain('Planned Observation What-If Analysis');
     expect(html).toContain('Locked Planned Observations');
+    expect(html).toContain('Stations');
+    expect(html).toContain('Top Station');
+    expect(html).toContain('Top CEE');
+    expect(html).toContain('Pairs');
+    expect(html).toContain('Top Pair');
+    expect(html).toContain('Top σDist');
     expect(html).toContain(
       'title="Planned observations using fixed sigma weighting. They are excluded from what-if removal actions."',
     );
@@ -89,7 +95,8 @@ describe('ReportView preanalysis sections', () => {
     expect(html).not.toContain('Locked planned constraint; excluded from what-if actions.');
     expect(html).not.toContain('Remove + Re-run');
     expect(html).not.toContain('dWorstMaj (m)');
-    expect(html).not.toContain('Median Station Major');
+    expect(html).not.toContain('Station</th>');
+    expect(html).not.toContain('From</th>');
     expect(html).not.toContain('Observations &amp; Residuals');
     expect(html).not.toContain('Top Suspects');
   });
