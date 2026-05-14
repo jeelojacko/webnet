@@ -208,6 +208,8 @@ export type SettingsState = {
   uiTheme: UiTheme;
   mapShowLostStations: boolean;
   map3dEnabled: boolean;
+  showRunComparisonPanel: boolean;
+  showReviewQueuePanel: boolean;
   listingShowLostStations: boolean;
   listingShowCoordinates: boolean;
   listingShowObservationsResiduals: boolean;

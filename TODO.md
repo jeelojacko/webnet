@@ -1,5 +1,18 @@
 # TODO - WebNet
 
+- [x] Preanalysis synthetic-priority tuning batch (May 2026): make initial brace/promoted/synthetic setup recommendations outrank repeated-set redundancy when they offer the strongest expected geometry improvement.
+
+- [x] Workspace panel visibility + preanalysis ranking batch (May 2026): add default-off toggles for Run Comparison and Review Queue, tighten workspace tab chrome spacing, and prioritize high-impact brace/synthetic scenarios earlier in the bounded preanalysis recommendation pool.
+
+- [x] Canvas OSM basemap batch (May 2026): move OSM tile rendering off the SVG overlay and into the 2D canvas background, then upgrade it to per-tile mesh warping so Mercator tiles stitch cleanly while keeping the current SVG points/lines/polygons/tool overlays intact.
+
+- [x] Planning-map pre-run access + obstacle editing batch (May 2026): make the planning map usable before the first run, tighten OSM fetch/render behavior, add obstacle edit/delete flows, and soften wooded-area blocking in synthetic recommendation search.
+  - [x] Allow `Map & Ellipses` to open before a solve and load raw input points on demand from the current editor/project inputs
+  - [x] Limit OSM obstacle fetch extents to measured-network bounds plus 100 m buffer while ignoring isolated non-observed coordinate outliers
+  - [x] Improve OSM tile placement so seams and overlaps are hidden during pan/zoom
+  - [x] Add obstacle selection plus edit/delete actions, with boundary editing on-map and context-menu delete
+  - [x] Treat buildings/user blocks as hard no-shoot obstacles and wooded polygons as last-resort soft obstacles in planning
+
 - [x] Preanalysis real-world feasibility planning batch (May 2026): add persistent planning-map overlays and obstacle-aware synthetic preanalysis scenarios so recommendation search can use real-world feasible setup/brace/cross-tie geometry.
   - [x] Phase 0 - planning-map contracts and persistence
     - [x] Record real-world feasibility scope in `TODO.md` before code changes
@@ -17,7 +30,7 @@
     - [x] Add focused planner, map, workspace, and project-file regression coverage for obstacle-aware planning
     - [x] Run required validation matrix including parity gate and update docs if maintained behavior changes
 
-- [ ] Planning-map ergonomics follow-up (May 2026): add vertex editing for existing blocked polygons and tighter row-specific recommendation highlight behavior on the map.
+- [ ] Planning-map ergonomics follow-up (May 2026): add tighter row-specific recommendation highlight behavior on the map.
 
 - [x] Preanalysis synthetic-apply + brace-map batch (May 2026): make applied synthetic preanalysis scenarios actually enter the solve, surface brace preview points on the map, and verify tiny-impact display against real non-zero recommendation deltas.
 

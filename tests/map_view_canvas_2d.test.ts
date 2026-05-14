@@ -12,8 +12,12 @@ const createMock2dContext = () =>
     translate: vi.fn(),
     scale: vi.fn(),
     beginPath: vi.fn(),
+    drawImage: vi.fn(),
     moveTo: vi.fn(),
     lineTo: vi.fn(),
+    closePath: vi.fn(),
+    clip: vi.fn(),
+    transform: vi.fn(),
     stroke: vi.fn(),
     restore: vi.fn(),
     rotate: vi.fn(),
@@ -40,6 +44,7 @@ describe('renderMapCanvas2d', () => {
       height: 0,
       getContext: vi.fn(() => context),
     } as unknown as HTMLCanvasElement;
+    const basemapImage = {} as HTMLImageElement;
 
     const rendered = renderMapCanvas2d({
       canvas,
@@ -54,6 +59,20 @@ describe('renderMapCanvas2d', () => {
       projectionScale: 2.4,
       units: 'm',
       interactionDenseMode: false,
+      basemapTiles2d: [
+        {
+          key: 'tile-1',
+          image: basemapImage,
+          meshColumns: 1,
+          meshRows: 1,
+          meshPoints: [
+            { x: 0, y: 0 },
+            { x: 256, y: 0 },
+            { x: 0, y: 256 },
+            { x: 256, y: 256 },
+          ],
+        },
+      ],
       unselectedCanvasLines2d: [
         {
           key: 'A|B',
@@ -89,6 +108,7 @@ describe('renderMapCanvas2d', () => {
     expect(canvas.width).toBe(2000);
     expect(canvas.height).toBe(1400);
     expect(context.setTransform).toHaveBeenCalledWith(2, 0, 0, 2, 0, 0);
+    expect(context.drawImage).toHaveBeenCalledWith(basemapImage, 0, 0);
     expect(context.moveTo).toHaveBeenCalledWith(10, 20);
     expect(context.lineTo).toHaveBeenCalledWith(30, 40);
     expect(context.ellipse).toHaveBeenCalled();
@@ -121,6 +141,20 @@ describe('renderMapCanvas2d', () => {
       projectionScale: 1,
       units: 'ft',
       interactionDenseMode: true,
+      basemapTiles2d: [
+        {
+          key: 'tile-1',
+          image: null,
+          meshColumns: 1,
+          meshRows: 1,
+          meshPoints: [
+            { x: 0, y: 0 },
+            { x: 256, y: 0 },
+            { x: 0, y: 256 },
+            { x: 256, y: 256 },
+          ],
+        },
+      ],
       unselectedCanvasLines2d: [],
       filteredVisiblePoints2d: [
         {
@@ -139,6 +173,7 @@ describe('renderMapCanvas2d', () => {
 
     expect(canvas.width).toBe(1000);
     expect(canvas.height).toBe(700);
+    expect(context.drawImage).not.toHaveBeenCalled();
     expect(context.ellipse).not.toHaveBeenCalled();
     expect(context.arc).toHaveBeenCalled();
   });

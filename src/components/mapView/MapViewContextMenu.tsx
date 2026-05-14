@@ -6,16 +6,44 @@ interface MapViewContextMenuProps {
   x: number;
   y: number;
   onOpenTool: (_tool: Exclude<MapToolPanel, 'none'>) => void;
+  planningPolygonLabel?: string | null;
+  onEditPlanningPolygon?: (() => void) | null;
+  onDeletePlanningPolygon?: (() => void) | null;
 }
 
 const buttonClass =
   'block w-full rounded px-2 py-1.5 text-left text-slate-200 hover:bg-slate-800';
 
-const MapViewContextMenu: React.FC<MapViewContextMenuProps> = ({ x, y, onOpenTool }) => (
+const MapViewContextMenu: React.FC<MapViewContextMenuProps> = ({
+  x,
+  y,
+  onOpenTool,
+  planningPolygonLabel = null,
+  onEditPlanningPolygon = null,
+  onDeletePlanningPolygon = null,
+}) => (
   <div
     className="absolute z-20 min-w-[210px] rounded border border-slate-700 bg-slate-900/95 p-1 text-xs shadow-lg shadow-black/50"
     style={{ left: x, top: y }}
   >
+    {planningPolygonLabel && (
+      <>
+        <div className="px-2 py-1 text-[10px] uppercase tracking-wide text-slate-500">
+          {planningPolygonLabel}
+        </div>
+        {onEditPlanningPolygon && (
+          <button type="button" onClick={onEditPlanningPolygon} className={buttonClass}>
+            Edit boundary
+          </button>
+        )}
+        {onDeletePlanningPolygon && (
+          <button type="button" onClick={onDeletePlanningPolygon} className={buttonClass}>
+            Delete obstacle
+          </button>
+        )}
+        <div className="my-1 h-px bg-slate-800" />
+      </>
+    )}
     <button type="button" onClick={() => onOpenTool('points')} className={buttonClass}>
       Points
     </button>

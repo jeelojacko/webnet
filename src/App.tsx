@@ -24,6 +24,7 @@ import { DEFAULT_INPUT } from './defaultInput';
 import { RAD_TO_DEG, dmsToRad } from './engine/angles';
 import { buildRunComparisonText } from './engine/qaWorkflow';
 import { confirmActionGuard } from './engine/actionGuards';
+import { parseInput } from './engine/parse';
 import {
   ADJUSTED_POINTS_ALL_COLUMNS,
   ADJUSTED_POINTS_PRESET_COLUMNS,
@@ -101,7 +102,7 @@ import type {
   UiTheme,
   WorkspaceTabKey,
 } from './appStateTypes';
-import type { AdjustmentResult } from './types';
+import type { AdjustmentResult, ParseResult } from './types';
 import type {
   Instrument,
   InstrumentLibrary,
@@ -264,6 +265,8 @@ const App: React.FC<AppProps> = ({
       uiTheme: DEFAULT_UI_THEME,
       mapShowLostStations: true,
       map3dEnabled: false,
+      showRunComparisonPanel: false,
+      showReviewQueuePanel: false,
       listingShowLostStations: true,
       listingShowCoordinates: true,
       listingShowObservationsResiduals: true,
@@ -396,6 +399,7 @@ const App: React.FC<AppProps> = ({
     'standard',
   );
   const [mapViewSnapshot, setMapViewSnapshot] = useState<MapViewSnapshot | null>(null);
+  const [planningMapPreview, setPlanningMapPreview] = useState<ParseResult | null>(null);
   useEffect(() => {
     setMapViewSnapshot(null);
   }, [result]);
@@ -649,6 +653,16 @@ const App: React.FC<AppProps> = ({
     projectFileInputRef,
     projectSourceFileInputRef,
   });
+  useEffect(() => {
+    setPlanningMapPreview(null);
+  }, [
+    activeProjectRunFiles,
+    effectiveRunIncludeFiles,
+    effectiveRunInput,
+    parseSettings,
+    projectInstruments,
+    selectedInstrument,
+  ]);
   const selectedDraftCrs = useMemo(
     () =>
       CRS_CATALOG.find((row) => row.id === parseSettingsDraft.crsId) ??
@@ -879,6 +893,72 @@ const App: React.FC<AppProps> = ({
   );
   useSequentialTabPrewarm(result, heavyTabPreloaders);
   const { canRenderTab } = useHeavyTabHydration(result, activeTab);
+  const handleLoadPlanningInputPoints = useCallback(() => {
+    try {
+      const parsed = parseInput(effectiveRunInput, projectInstruments, {
+        ...parseSettings,
+        sourceFile: activeProjectRunFiles[0]?.name ?? '<planning-map>',
+        includeFiles: effectiveRunIncludeFiles,
+        projectRunFiles: activeProjectRunFiles,
+        currentInstrument: selectedInstrument,
+      });
+      setPlanningMapPreview(parsed);
+      setImportNotice(null);
+      setActiveTab('map');
+    } catch (error) {
+      setPlanningMapPreview(null);
+      setImportNotice({
+        title: 'Load points failed',
+        detailLines: [error instanceof Error ? error.message : 'Unable to parse current input.'],
+      });
+    }
+  }, [
+    activeProjectRunFiles,
+    effectiveRunIncludeFiles,
+    effectiveRunInput,
+    parseSettings,
+    projectInstruments,
+    selectedInstrument,
+    setActiveTab,
+    setImportNotice,
+  ]);
+  const mapResult = useMemo<AdjustmentResult>(() => {
+    if (result) return result;
+    if (!planningMapPreview) {
+      return {
+        success: false,
+        converged: false,
+        iterations: 0,
+        dof: 0,
+        seuw: 1,
+        chiSquare: null,
+        stations: {},
+        observations: [],
+        unknowns: [],
+        normalMatrix: [],
+        residuals: [],
+        logs: [],
+        parseState: { ...parseSettings },
+        preanalysisMode: parseSettings.preanalysisMode === true,
+      } as unknown as AdjustmentResult;
+    }
+    return {
+      success: false,
+      converged: false,
+      iterations: 0,
+      dof: 0,
+      seuw: 1,
+      chiSquare: null,
+      stations: planningMapPreview.stations,
+      observations: planningMapPreview.observations,
+      unknowns: planningMapPreview.unknowns,
+      normalMatrix: [],
+      residuals: [],
+      logs: planningMapPreview.logs,
+      parseState: planningMapPreview.parseState,
+      preanalysisMode: planningMapPreview.parseState.preanalysisMode === true,
+    } as unknown as AdjustmentResult;
+  }, [parseSettings, planningMapPreview, result]);
   const { industryOutputText, handleIndustryListingSortChange } = useAppIndustryOutput({
     activeTab,
     result,
@@ -1429,7 +1509,7 @@ const App: React.FC<AppProps> = ({
         )}
 
         <div className="flex flex-col bg-slate-950 flex-1 min-w-0 overflow-hidden">
-          {showRunComparisonPanel && (
+          {settings.showRunComparisonPanel && showRunComparisonPanel && (
             <RunComparisonPanel
               currentSnapshot={currentRunSnapshot}
               baselineSnapshot={baselineRunSnapshot}
@@ -1479,22 +1559,24 @@ const App: React.FC<AppProps> = ({
               }
             />
           )}
-          <ReviewQueuePanel
-            items={filteredReviewQueueItems}
-            selectedItemId={selectedReviewQueueItemId}
-            severityFilter={reviewQueueSeverityFilter}
-            sourceFilter={reviewQueueSourceFilter}
-            unresolvedOnly={reviewQueueUnresolvedOnly}
-            importedGroupFilter={reviewQueueImportedGroupFilter}
-            importedGroupOptions={reviewQueueImportedGroupOptions}
-            onSeverityFilterChange={setReviewQueueSeverityFilter}
-            onSourceFilterChange={setReviewQueueSourceFilter}
-            onUnresolvedOnlyChange={setReviewQueueUnresolvedOnly}
-            onImportedGroupFilterChange={setReviewQueueImportedGroupFilter}
-            onSelectItem={handleSelectReviewQueueItem}
-            onNextUnresolved={handleNextUnresolvedQueueItem}
-            onClearFilters={clearReviewQueueFilters}
-          />
+          {settings.showReviewQueuePanel && (
+            <ReviewQueuePanel
+              items={filteredReviewQueueItems}
+              selectedItemId={selectedReviewQueueItemId}
+              severityFilter={reviewQueueSeverityFilter}
+              sourceFilter={reviewQueueSourceFilter}
+              unresolvedOnly={reviewQueueUnresolvedOnly}
+              importedGroupFilter={reviewQueueImportedGroupFilter}
+              importedGroupOptions={reviewQueueImportedGroupOptions}
+              onSeverityFilterChange={setReviewQueueSeverityFilter}
+              onSourceFilterChange={setReviewQueueSourceFilter}
+              onUnresolvedOnlyChange={setReviewQueueUnresolvedOnly}
+              onImportedGroupFilterChange={setReviewQueueImportedGroupFilter}
+              onSelectItem={handleSelectReviewQueueItem}
+              onNextUnresolved={handleNextUnresolvedQueueItem}
+              onClearFilters={clearReviewQueueFilters}
+            />
+          )}
           {(selectedObservation || selectedStation || pinnedObservations.length > 0) && (
             <div className="border-b border-slate-800 bg-slate-950/90 px-4 py-2 text-xs text-slate-300">
               <div className="flex flex-wrap items-center gap-2">
@@ -1544,6 +1626,7 @@ const App: React.FC<AppProps> = ({
             isSidebarOpen={isSidebarOpen}
             onShowInput={() => setIsSidebarOpen(true)}
             hasResult={Boolean(result)}
+            hasMapContent={true}
             renderReportContent={() => (
               <React.Suspense
                 fallback={
@@ -1630,7 +1713,7 @@ const App: React.FC<AppProps> = ({
               )
             }
             renderMapContent={() =>
-              canRenderTab('map') ? (
+              result == null || canRenderTab('map') ? (
                 <React.Suspense
                   fallback={
                     <div className="flex h-full items-center justify-center text-sm text-slate-400">
@@ -1639,14 +1722,16 @@ const App: React.FC<AppProps> = ({
                   }
                 >
                   <MapView
-                    result={result!}
+                    result={mapResult}
                     units={settings.units}
                     planningMap={planningMap}
                     onPlanningMapChange={setPlanningMap}
+                    inputPointsLoaded={planningMapPreview != null}
+                    onLoadInputPoints={handleLoadPlanningInputPoints}
                     showLostStations={settings.mapShowLostStations}
-                    mode={settings.map3dEnabled ? '3d' : '2d'}
+                    mode={result != null && settings.map3dEnabled ? '3d' : '2d'}
                     adjustedPointsExportSettings={adjustedPointsExportSettings}
-                    derivedResult={qaDerivedResult}
+                    derivedResult={result != null ? qaDerivedResult : null}
                     selectedStationId={selection.stationId}
                     selectedObservationId={selection.observationId}
                     onSelectStation={handleMapStationSelection}

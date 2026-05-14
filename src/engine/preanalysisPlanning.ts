@@ -53,6 +53,8 @@ const MAX_BRACE_SCENARIOS = 5;
 const MAX_SYNTHETIC_SETUP_SCENARIOS = 5;
 const MAX_PROMOTED_SETUP_SCENARIOS = 5;
 const MAX_CROSS_TIE_SCENARIOS = 8;
+const MAX_RECOMMENDATION_SOLVE_CANDIDATES = 16;
+const MAX_EXISTING_SET_SOLVE_CANDIDATES_WHEN_SYNTHETIC_AVAILABLE = 3;
 const MAX_BRACE_SETUPS = 4;
 const BRACE_OFFSET_RATIO = 0.35;
 const MIN_BRACE_ANGLE_DEG = 45;
@@ -85,6 +87,27 @@ const weakPairCount = (res: AdjustmentResult): number =>
 
 const severityWeight = (severity: WeakGeometrySeverity): number =>
   severity === 'weak' ? 2 : severity === 'watch' ? 1 : 0;
+
+const scenarioKindPriority = (kind: PreanalysisRecommendationKind): number =>
+  kind === 'brace-point'
+    ? 8
+    : kind === 'promoted-setup'
+      ? 7
+      : kind === 'synthetic-setup'
+        ? 6
+        : kind === 'cross-tie'
+          ? 5
+          : kind === 'existing-set'
+            ? 1
+            : 0;
+
+const recommendationFamilyOrder: PreanalysisRecommendationKind[] = [
+  'brace-point',
+  'promoted-setup',
+  'synthetic-setup',
+  'cross-tie',
+  'existing-set',
+];
 
 const collectWeakSeedStations = (base: AdjustmentResult): Set<StationId> => {
   const stationCues = (base.weakGeometryDiagnostics?.stationCues ?? []).slice(0, 5);
@@ -465,10 +488,22 @@ const buildPreviewSegments = (
     active: false,
   }));
 
-const resolveObstaclePolygons = (planningMap: PlanningMapState): PlanningMapPolygon[] => [
-  ...planningMap.blockedPolygons,
-  ...planningMap.obstaclePolygons,
-];
+const resolveObstacleGroups = (planningMap: PlanningMapState): {
+  hard: PlanningMapPolygon[];
+  soft: PlanningMapPolygon[];
+  all: PlanningMapPolygon[];
+} => {
+  const hard = [
+    ...planningMap.blockedPolygons,
+    ...planningMap.obstaclePolygons.filter((polygon) => polygon.kind !== 'wooded'),
+  ];
+  const soft = planningMap.obstaclePolygons.filter((polygon) => polygon.kind === 'wooded');
+  return {
+    hard,
+    soft,
+    all: [...hard, ...soft],
+  };
+};
 
 const occupiedStationIdsFromTemplates = (templates: PreanalysisSyntheticSetTemplate[]): StationId[] =>
   [...new Set(templates.map((template) => template.occupyStationId))].sort(sortStationIds);
@@ -477,20 +512,35 @@ const filterVisibleAnchorIds = (
   stations: StationMap,
   candidatePoint: { x: number; y: number },
   occupiedStationIds: StationId[],
-  blockedPolygons: PlanningMapPolygon[],
-): StationId[] =>
-  occupiedStationIds.filter((stationId) => {
-    const station = stations[stationId];
-    if (!station || !Number.isFinite(station.x) || !Number.isFinite(station.y)) return false;
-    return !sightLineBlocked(candidatePoint, station, blockedPolygons);
-  });
+  hardPolygons: PlanningMapPolygon[],
+  softPolygons: PlanningMapPolygon[],
+): StationId[] => {
+  const collectVisible = (polygons: PlanningMapPolygon[]) =>
+    occupiedStationIds.filter((stationId) => {
+      const station = stations[stationId];
+      if (!station || !Number.isFinite(station.x) || !Number.isFinite(station.y)) return false;
+      return !sightLineBlocked(candidatePoint, station, polygons);
+    });
+  const strictVisible = collectVisible([...hardPolygons, ...softPolygons]);
+  return strictVisible.length > 0 ? strictVisible : collectVisible(hardPolygons);
+};
+
+const chooseBracePointCandidateWithFallback = (
+  stations: StationMap,
+  leftId: StationId,
+  rightId: StationId,
+  hardPolygons: PlanningMapPolygon[],
+  softPolygons: PlanningMapPolygon[],
+): { x: number; y: number; h: number } | null =>
+  chooseBracePointCandidate(stations, leftId, rightId, [...hardPolygons, ...softPolygons]) ??
+  chooseBracePointCandidate(stations, leftId, rightId, hardPolygons);
 
 const buildBraceTemplates = (
   base: AdjustmentResult,
   existingTemplates: PreanalysisSyntheticSetTemplate[],
   planningMap: PlanningMapState,
 ): PreanalysisSyntheticSetTemplate[] => {
-  const blockedPolygons = resolveObstaclePolygons(planningMap);
+  const obstacleGroups = resolveObstacleGroups(planningMap);
   const occupiedIds = new Set(existingTemplates.map((template) => template.occupyStationId));
   const sourceLineByOccupyId = new Map(
     existingTemplates
@@ -510,7 +560,13 @@ const buildBraceTemplates = (
     }
     const id = buildBraceTemplateId(leftId, rightId);
     if (seenIds.has(id) || usedTemplateIds.has(id)) return;
-    const point = chooseBracePointCandidate(base.stations, leftId, rightId, blockedPolygons);
+    const point = chooseBracePointCandidateWithFallback(
+      base.stations,
+      leftId,
+      rightId,
+      obstacleGroups.hard,
+      obstacleGroups.soft,
+    );
     if (!point) return;
     const braceStationId = buildBraceStationId(leftId, rightId);
     if (base.stations[braceStationId] != null) return;
@@ -518,7 +574,8 @@ const buildBraceTemplates = (
       base.stations,
       point,
       occupiedStationIdsFromTemplates(existingTemplates),
-      blockedPolygons,
+      obstacleGroups.hard,
+      obstacleGroups.soft,
     )
       .filter((stationId) => stationId !== leftId && stationId !== rightId)
       .slice(0, Math.max(0, MAX_BRACE_SETUPS - 2));
@@ -565,18 +622,27 @@ const buildPromotedSetupTemplates = (
   planningMap: PlanningMapState,
 ): PreanalysisSyntheticSetTemplate[] => {
   if (!planningMap.scenarioFamilies.promotedSetup) return [];
-  const blockedPolygons = resolveObstaclePolygons(planningMap);
+  const obstacleGroups = resolveObstacleGroups(planningMap);
   const occupiedIds = occupiedStationIdsFromTemplates(existingTemplates);
   const usedTemplateIds = new Set(existingTemplates.map((template) => template.id));
   const templates: PreanalysisSyntheticSetTemplate[] = [];
   collectSeedPairs(base).forEach((pair) => {
     if (templates.length >= MAX_PROMOTED_SETUP_SCENARIOS) return;
-    const point = chooseBracePointCandidate(base.stations, pair.from, pair.to, blockedPolygons);
-    if (!point) return;
-    const visibleAnchors = filterVisibleAnchorIds(base.stations, point, occupiedIds, blockedPolygons).slice(
-      0,
-      MAX_BRACE_SETUPS,
+    const point = chooseBracePointCandidateWithFallback(
+      base.stations,
+      pair.from,
+      pair.to,
+      obstacleGroups.hard,
+      obstacleGroups.soft,
     );
+    if (!point) return;
+    const visibleAnchors = filterVisibleAnchorIds(
+      base.stations,
+      point,
+      occupiedIds,
+      obstacleGroups.hard,
+      obstacleGroups.soft,
+    ).slice(0, MAX_BRACE_SETUPS);
     if (visibleAnchors.length < 3) return;
     const setupStationId = buildSyntheticSetupStationId('PROMOTE', pair.from, pair.to);
     if (base.stations[setupStationId] != null) return;
@@ -609,17 +675,26 @@ const buildSyntheticSetupTemplates = (
   planningMap: PlanningMapState,
 ): PreanalysisSyntheticSetTemplate[] => {
   if (!planningMap.scenarioFamilies.syntheticSetup) return [];
-  const blockedPolygons = resolveObstaclePolygons(planningMap);
+  const obstacleGroups = resolveObstacleGroups(planningMap);
   const occupiedIds = occupiedStationIdsFromTemplates(existingTemplates);
   const templates: PreanalysisSyntheticSetTemplate[] = [];
   collectSeedPairs(base).forEach((pair, pairIndex) => {
     if (templates.length >= MAX_SYNTHETIC_SETUP_SCENARIOS) return;
-    const point = chooseBracePointCandidate(base.stations, pair.from, pair.to, blockedPolygons);
-    if (!point) return;
-    const visibleAnchors = filterVisibleAnchorIds(base.stations, point, occupiedIds, blockedPolygons).slice(
-      0,
-      MAX_BRACE_SETUPS,
+    const point = chooseBracePointCandidateWithFallback(
+      base.stations,
+      pair.from,
+      pair.to,
+      obstacleGroups.hard,
+      obstacleGroups.soft,
     );
+    if (!point) return;
+    const visibleAnchors = filterVisibleAnchorIds(
+      base.stations,
+      point,
+      occupiedIds,
+      obstacleGroups.hard,
+      obstacleGroups.soft,
+    ).slice(0, MAX_BRACE_SETUPS);
     if (visibleAnchors.length < 3) return;
     const setupStationId = buildSyntheticSetupStationId('SYNTH', pair.from, pair.to, pairIndex + 1);
     if (base.stations[setupStationId] != null) return;
@@ -650,7 +725,7 @@ const buildCrossTieTemplates = (
   planningMap: PlanningMapState,
 ): PreanalysisSyntheticSetTemplate[] => {
   if (!planningMap.scenarioFamilies.crossTie) return [];
-  const blockedPolygons = resolveObstaclePolygons(planningMap);
+  const obstacleGroups = resolveObstacleGroups(planningMap);
   const existingPairKeys = new Set(
     existingTemplates.flatMap((template) =>
       template.affectedPairs.map((pair) => [pair.from, pair.to].sort(sortStationIds).join('|')),
@@ -663,7 +738,9 @@ const buildCrossTieTemplates = (
     if (existingPairKeys.has(key)) return;
     const fromStation = base.stations[pair.from];
     const toStation = base.stations[pair.to];
-    if (!fromStation || !toStation || sightLineBlocked(fromStation, toStation, blockedPolygons)) return;
+    if (!fromStation || !toStation || sightLineBlocked(fromStation, toStation, obstacleGroups.hard)) return;
+    const clearOfAllObstacles = !sightLineBlocked(fromStation, toStation, obstacleGroups.all);
+    if (!clearOfAllObstacles && rows.length > 0) return;
     rows.push({
       id: buildCrossTieTemplateId(pair.from, pair.to),
       scenarioKind: 'cross-tie',
@@ -920,20 +997,12 @@ const sortRecommendationRows = (
   left: PreanalysisImpactDiagnostics['rows'][number],
   right: PreanalysisImpactDiagnostics['rows'][number],
 ): number => {
-  const kindPriority = (kind: PreanalysisRecommendationKind): number =>
-    kind === 'existing-set'
-      ? 0
-      : kind === 'brace-point' || kind === 'promoted-setup'
-        ? 1
-        : kind === 'synthetic-setup' || kind === 'cross-tie'
-          ? 2
-          : 3;
   if (left.status !== right.status) return left.status === 'ok' ? -1 : 1;
   if (left.thresholdReached !== right.thresholdReached) return left.thresholdReached ? -1 : 1;
   const rightScore = right.score ?? Number.NEGATIVE_INFINITY;
   const leftScore = left.score ?? Number.NEGATIVE_INFINITY;
   if (rightScore !== leftScore) return rightScore - leftScore;
-  const kindDelta = kindPriority(left.scenarioKind) - kindPriority(right.scenarioKind);
+  const kindDelta = scenarioKindPriority(right.scenarioKind) - scenarioKindPriority(left.scenarioKind);
   if (kindDelta !== 0) return kindDelta;
   return (
     left.occupyStationId.localeCompare(right.occupyStationId, undefined, { numeric: true }) ||
@@ -949,25 +1018,72 @@ const resolveCandidateTemplates = (
   const activeTemplateIdSet = new Set(activeTemplateIds);
   const remainingTemplates = templates.filter((template) => !activeTemplateIdSet.has(template.id));
   const weakSeedStations = collectWeakSeedStations(base);
+  const weakSeedPairKeys = new Set(
+    collectSeedPairs(base)
+      .slice(0, 8)
+      .map((pair) => [pair.from, pair.to].sort(sortStationIds).join('|')),
+  );
   const seededRemainingTemplates = remainingTemplates.filter((template) =>
     template.affectedStations.some((stationId) => weakSeedStations.has(stationId)),
   );
-  const stageOrder: PreanalysisRecommendationKind[][] = [
-    ['existing-set'],
-    ['brace-point', 'promoted-setup'],
-    ['synthetic-setup', 'cross-tie'],
-  ];
-  const pickStage = (rows: PreanalysisSyntheticSetTemplate[]): PreanalysisSyntheticSetTemplate[] => {
-    for (const kinds of stageOrder) {
-      const stageRows = rows.filter((template) => kinds.includes(template.scenarioKind));
-      if (stageRows.length > 0) return stageRows;
-    }
-    return rows;
+  const prioritizeRows = seededRemainingTemplates.length > 0 ? seededRemainingTemplates : remainingTemplates;
+  const priorityForTemplate = (template: PreanalysisSyntheticSetTemplate): number => {
+    const weakStationHits = template.affectedStations.filter((stationId) =>
+      weakSeedStations.has(stationId),
+    ).length;
+    const weakPairHits = template.affectedPairs.filter((pair) =>
+      weakSeedPairKeys.has([pair.from, pair.to].sort(sortStationIds).join('|')),
+    ).length;
+    return (
+      scenarioKindPriority(template.scenarioKind) * 1000 +
+      weakStationHits * 120 +
+      weakPairHits * 160 +
+      Math.min(template.addedObservationCount, 8) * 4
+    );
   };
-  if (seededRemainingTemplates.length > 0) {
-    return pickStage(seededRemainingTemplates);
-  }
-  return pickStage(remainingTemplates);
+  const sortedCandidates = [...prioritizeRows].sort((left, right) => {
+    const priorityDelta = priorityForTemplate(right) - priorityForTemplate(left);
+    if (priorityDelta !== 0) return priorityDelta;
+    return (
+      left.occupyStationId.localeCompare(right.occupyStationId, undefined, { numeric: true }) ||
+      left.templateLabel.localeCompare(right.templateLabel, undefined, { numeric: true })
+    );
+  });
+  const syntheticCandidateCount = sortedCandidates.filter(
+    (template) => template.scenarioKind !== 'existing-set',
+  ).length;
+  const existingSetCap =
+    syntheticCandidateCount > 0
+      ? Math.min(
+          MAX_EXISTING_SET_SOLVE_CANDIDATES_WHEN_SYNTHETIC_AVAILABLE,
+          MAX_RECOMMENDATION_SOLVE_CANDIDATES,
+        )
+      : MAX_RECOMMENDATION_SOLVE_CANDIDATES;
+  const selected: PreanalysisSyntheticSetTemplate[] = [];
+  const selectedIds = new Set<string>();
+  let selectedExistingSetCount = 0;
+  const pushTemplate = (template: PreanalysisSyntheticSetTemplate): void => {
+    if (selected.length >= MAX_RECOMMENDATION_SOLVE_CANDIDATES) return;
+    if (selectedIds.has(template.id)) return;
+    if (
+      template.scenarioKind === 'existing-set' &&
+      selectedExistingSetCount >= existingSetCap
+    ) {
+      return;
+    }
+    selected.push(template);
+    selectedIds.add(template.id);
+    if (template.scenarioKind === 'existing-set') selectedExistingSetCount += 1;
+  };
+
+  recommendationFamilyOrder.forEach((kind) => {
+    sortedCandidates
+      .filter((template) => template.scenarioKind === kind)
+      .forEach(pushTemplate);
+  });
+
+  sortedCandidates.forEach(pushTemplate);
+  return selected;
 };
 
 const buildThresholdPlan = (

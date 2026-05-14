@@ -265,6 +265,8 @@ export const useAppWorkspaceDraft = ({
       typeof snapshot.listingSortModeVersion !== 'number' || snapshot.listingSortModeVersion < 2;
     const normalizedSnapshotSettings: SettingsState = {
       ...snapshot.settings,
+      showRunComparisonPanel: snapshot.settings.showRunComparisonPanel === true,
+      showReviewQueuePanel: snapshot.settings.showReviewQueuePanel === true,
       listingSortObservationsBy: normalizeListingSortObservationsBy(
         snapshot.settings.listingSortObservationsBy,
         { legacyResidualMeansStdResidual: legacySortMode },

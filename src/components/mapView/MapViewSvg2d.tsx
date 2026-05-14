@@ -38,6 +38,7 @@ interface PlanningPolygon2d {
   kind: 'blocked-area' | 'building' | 'wooded';
   label: string;
   pointsAttr: string;
+  vertices: Array<{ x: number; y: number }>;
 }
 
 interface ScenarioPreviewSegment2d {
@@ -50,15 +51,6 @@ interface ScenarioPreviewSegment2d {
   y2: number;
   kind: 'sight-line' | 'cross-tie';
   active: boolean;
-}
-
-interface BasemapTile2d {
-  key: string;
-  href: string;
-  x: number;
-  y: number;
-  width: number;
-  height: number;
 }
 
 interface MapViewSvg2dProps {
@@ -80,11 +72,16 @@ interface MapViewSvg2dProps {
   transformedOverlayActive: boolean;
   transformedLines2d: TransformedLine2d[];
   transformedPoints2d: TransformedPoint2d[];
-  basemapTiles2d?: BasemapTile2d[];
   planningInputPoints2d?: PlanningInputPoint2d[];
   planningPolygons2d?: PlanningPolygon2d[];
+  selectedPlanningPolygonId?: string | null;
   bracePreviewPoints2d?: BracePreviewPoint2d[];
   scenarioPreviewSegments2d?: ScenarioPreviewSegment2d[];
+  onPlanningVertexMouseDown?: (
+    _polygonId: string,
+    _vertexIndex: number,
+    _event: React.MouseEvent<SVGCircleElement>,
+  ) => void;
   project2d: (_x: number, _y: number) => { x: number; y: number };
 }
 
@@ -107,11 +104,12 @@ const MapViewSvg2d: React.FC<MapViewSvg2dProps> = ({
   transformedOverlayActive,
   transformedLines2d,
   transformedPoints2d,
-  basemapTiles2d = [],
   planningInputPoints2d = [],
   planningPolygons2d = [],
+  selectedPlanningPolygonId = null,
   bracePreviewPoints2d = [],
   scenarioPreviewSegments2d = [],
+  onPlanningVertexMouseDown,
   project2d,
 }) => (
   <>
@@ -153,23 +151,12 @@ const MapViewSvg2d: React.FC<MapViewSvg2dProps> = ({
     </g>
 
     <g transform={`translate(${view2d.panX} ${view2d.panY}) scale(${view2d.zoom})`}>
-      {basemapTiles2d.map((tile) => (
-        <image
-          key={tile.key}
-          data-map-basemap-tile={tile.key}
-          href={tile.href}
-          x={tile.x}
-          y={tile.y}
-          width={tile.width}
-          height={tile.height}
-          preserveAspectRatio="none"
-          opacity={0.9}
-        />
-      ))}
-
       {planningPolygons2d.map((polygon) => (
         <polygon
           key={`planning-polygon-${polygon.id}`}
+          data-planning-polygon-id={polygon.id}
+          data-planning-polygon-source={polygon.source}
+          data-planning-polygon-label={polygon.label || polygon.kind}
           points={polygon.pointsAttr}
           fill={
             polygon.source === 'user'
@@ -185,11 +172,30 @@ const MapViewSvg2d: React.FC<MapViewSvg2dProps> = ({
                 ? '#86efac'
                 : '#cbd5e1'
           }
-          strokeWidth={pointRadius2d * 0.18}
+          strokeWidth={polygon.id === selectedPlanningPolygonId ? pointRadius2d * 0.34 : pointRadius2d * 0.18}
         >
           <title>{polygon.label || polygon.kind}</title>
         </polygon>
       ))}
+
+      {planningPolygons2d
+        .filter((polygon) => polygon.id === selectedPlanningPolygonId)
+        .flatMap((polygon) =>
+          polygon.vertices.map((vertex, vertexIndex) => (
+            <circle
+              key={`planning-vertex-${polygon.id}-${vertexIndex}`}
+              data-planning-vertex={`${polygon.id}:${vertexIndex}`}
+              data-planning-polygon-source={polygon.source}
+              cx={vertex.x}
+              cy={vertex.y}
+              r={pointRadius2d * 0.5}
+              fill="#fde68a"
+              stroke="#f59e0b"
+              strokeWidth={pointRadius2d * 0.12}
+              onMouseDown={(event) => onPlanningVertexMouseDown?.(polygon.id, vertexIndex, event)}
+            />
+          )),
+        )}
 
       {planningInputPoints2d.map((point) => (
         <circle

@@ -30,14 +30,14 @@ Successful startup looks like:
 - the terminal shows a local development URL
 - the browser opens the WebNet app shell
 - the toolbar shows `Project Options` and `Adjust`
-- the workspace tabs become available after a run: `Adjustment Report`, `Processing Summary`, `Industry Standard Output`, and `Map & Ellipses`
+- the workspace tabs are available, and `Map & Ellipses` can be opened before the first run to load input points for planning-map work
 
 ## Recommended First Steps
 
 - Read [docs/USER_GUIDE.md](docs/USER_GUIDE.md) for the full beginner walkthrough.
 - Start with [public/examples/mixed_grid_tutorial.dat](public/examples/mixed_grid_tutorial.dat) for a reproducible mixed TS + GNSS + leveling adjustment on a Canada-first projected grid CRS.
 - Use [public/examples/preanalysis_network_plan.dat](public/examples/preanalysis_network_plan.dat) for predicted-precision / planning mode.
-  In preanalysis mode, the report can now recommend added repeated setup sets plus obstacle-aware synthetic brace, promoted-setup, synthetic-setup, and cross-tie scenarios near weak geometry, and estimate how many added scenarios are needed to reach an optional planning threshold. The 2D `Map & Ellipses` tab can also load raw input points, show an OSM basemap, auto-fetch OSM building/wooded obstacle footprints for georeferenced runs, and store user-drawn blocked polygons that feed back into the planner.
+  In preanalysis mode, the report can now recommend added repeated setup sets plus obstacle-aware synthetic brace, promoted-setup, synthetic-setup, and cross-tie scenarios near weak geometry, and estimate how many added scenarios are needed to reach an optional planning threshold. The 2D `Map & Ellipses` tab can be used before the first run to load raw input points, show an OSM basemap, auto-fetch OSM building/wooded obstacle footprints for georeferenced runs near the measured network bounds, and store user-drawn or edited blocked polygons that feed back into the planner.
 - Use [public/examples/nb double stereo.dat](public/examples/nb%20double%20stereo.dat) for a projected-grid total station example focused on TS workflow only.
 - Keep [public/examples/industry_demo.dat](public/examples/industry_demo.dat) as a broader legacy/general sample, not the recommended first tutorial dataset.
 

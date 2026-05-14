@@ -195,6 +195,106 @@ describe('buildPreanalysisPlanningDiagnostics', () => {
     expect(braceRow?.templateLabel).toContain('Brace BRACE_105_109');
   });
 
+  it('surfaces higher-impact brace scenarios even when repeated existing sets are still available', () => {
+    const input = ['DB 105', 'DM 104', 'DE', '', 'DB 109', 'DM 114', 'DE'].join('\n');
+    const diagnostics = buildPreanalysisPlanningDiagnostics({
+      base: buildResult(0.01),
+      input,
+      planningMap: {
+        ...DEFAULT_PLANNING_MAP_STATE,
+        scenarioFamilies: {
+          existingSet: true,
+          bracePoint: true,
+          syntheticSetup: true,
+          promotedSetup: true,
+          crossTie: true,
+        },
+      },
+      activeTemplateIds: [],
+      targetThresholdMeters: 0.005,
+      maxAddedSets: 5,
+      solveScenario: (nextIds) => {
+        if (nextIds.some((id) => id.startsWith('preanalysis-brace:'))) return buildResult(0.006);
+        if (nextIds.some((id) => id.startsWith('preanalysis-promoted:'))) return buildResult(0.0065);
+        if (nextIds.some((id) => id.startsWith('preanalysis-synthsetup:'))) return buildResult(0.007);
+        return buildResult(0.0095);
+      },
+    });
+
+    expect(diagnostics.rows.some((row) => row.scenarioKind === 'brace-point')).toBe(true);
+    expect(diagnostics.rows[0]?.scenarioKind).toBe('brace-point');
+  });
+
+  it('keeps brace and synthetic families in the bounded solve pool ahead of surplus repeated-set trials', () => {
+    const base = buildResult(0.01);
+    for (let index = 0; index < 8; index += 1) {
+      const occupy = `30${index}`;
+      const target = `40${index}`;
+      base.stations[occupy] = { x: 50 + index * 10, y: 0, h: 0, fixed: false };
+      base.stations[target] = { x: 55 + index * 10, y: 5, h: 0, fixed: false };
+      base.observations.push({
+        id: 10 + index,
+        type: 'direction',
+        instCode: 'SX12',
+        stdDev: 1,
+        planned: true,
+        sigmaSource: 'default',
+        setId: `${occupy}-set`,
+        sourceLine: 9 + index * 4,
+        at: occupy,
+        to: target,
+      } as never);
+    }
+    const extraBlocks = Array.from({ length: 8 }, (_, index) =>
+      [`DB 30${index}`, `DM 40${index}`, 'DE'].join('\n'),
+    );
+    const input = [
+      'DB 105',
+      'DM 104',
+      'DE',
+      '',
+      'DB 109',
+      'DM 114',
+      'DE',
+      '',
+      ...extraBlocks,
+    ].join('\n\n');
+
+    const diagnostics = buildPreanalysisPlanningDiagnostics({
+      base,
+      input,
+      planningMap: {
+        ...DEFAULT_PLANNING_MAP_STATE,
+        scenarioFamilies: {
+          existingSet: true,
+          bracePoint: true,
+          syntheticSetup: true,
+          promotedSetup: true,
+          crossTie: true,
+        },
+      },
+      activeTemplateIds: [],
+      targetThresholdMeters: 0.005,
+      maxAddedSets: 5,
+      solveScenario: (nextIds) => {
+        if (nextIds.some((id) => id.startsWith('preanalysis-brace:'))) return buildResult(0.006);
+        if (nextIds.some((id) => id.startsWith('preanalysis-promoted:'))) return buildResult(0.0065);
+        if (nextIds.some((id) => id.startsWith('preanalysis-synthsetup:'))) return buildResult(0.007);
+        return buildResult(0.0095);
+      },
+    });
+
+    expect(diagnostics.rows.some((row) => row.scenarioKind === 'brace-point')).toBe(true);
+    expect(diagnostics.rows.some((row) => row.scenarioKind === 'promoted-setup')).toBe(true);
+    expect(diagnostics.rows[0]?.scenarioKind).toBe('brace-point');
+    expect(diagnostics.rows.slice(0, 3).some((row) => row.scenarioKind === 'promoted-setup')).toBe(
+      true,
+    );
+    expect(
+      diagnostics.rows.slice(0, 4).filter((row) => row.scenarioKind === 'existing-set').length,
+    ).toBeLessThanOrEqual(1);
+  });
+
   it('falls back to remaining global templates after the current weak-seed subset is exhausted', () => {
     const base = buildResult(0.01);
     base.stations['200'] = { x: 30, y: 30, h: 0, fixed: false };
@@ -266,10 +366,10 @@ describe('buildPreanalysisPlanningDiagnostics', () => {
             kind: 'blocked-area',
             label: 'Blocked',
             vertices: [
-              { x: 2, y: 2 },
-              { x: 8, y: 2 },
-              { x: 8, y: 10 },
-              { x: 2, y: 10 },
+              { x: -1, y: -1 },
+              { x: 13, y: -1 },
+              { x: 13, y: 15 },
+              { x: -1, y: 15 },
             ],
           },
         ],

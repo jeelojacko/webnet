@@ -142,6 +142,8 @@ describe('Project Options modal layout', () => {
       expect(app.container.textContent).toContain('Vertical Reduction Mode');
       expect(app.container.textContent).toContain('Leveling / Weighting');
       expect(app.container.textContent).toContain('Level Loop Preset');
+      expect(app.container.textContent).toContain('Run Comparison Panel');
+      expect(app.container.textContent).toContain('Review Queue Panel');
     } finally {
       await app.cleanup();
     }

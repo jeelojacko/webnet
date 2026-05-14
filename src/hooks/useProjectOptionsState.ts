@@ -192,6 +192,8 @@ export const useProjectOptionsState = ({
     const sanitizedSettings: SettingsState = {
       ...settingsDraft,
       uiTheme: normalizeUiTheme(settingsDraft.uiTheme),
+      showRunComparisonPanel: settingsDraft.showRunComparisonPanel === true,
+      showReviewQueuePanel: settingsDraft.showReviewQueuePanel === true,
     };
 
     setSettings(sanitizedSettings);

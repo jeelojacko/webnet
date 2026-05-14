@@ -9,6 +9,7 @@ interface WorkspaceChromeProps {
   isSidebarOpen: boolean;
   onShowInput: () => void;
   hasResult: boolean;
+  hasMapContent?: boolean;
   renderReportContent: () => React.ReactNode;
   renderProcessingSummaryContent: () => React.ReactNode;
   renderIndustryOutputContent: () => React.ReactNode;
@@ -32,6 +33,7 @@ const WorkspaceChrome: React.FC<WorkspaceChromeProps> = ({
   isSidebarOpen,
   onShowInput,
   hasResult,
+  hasMapContent = false,
   renderReportContent,
   renderProcessingSummaryContent,
   renderIndustryOutputContent,
@@ -64,13 +66,13 @@ const WorkspaceChrome: React.FC<WorkspaceChromeProps> = ({
 
   return (
     <>
-      <div className="flex items-center justify-between border-b border-slate-800 bg-slate-900 pr-4">
+      <div className="flex items-center justify-between border-b border-slate-800 bg-slate-900 pr-3">
         <div className="flex">
           {TAB_CONFIG.map(({ id, label, icon: Icon }) => (
             <button
               key={id}
               onClick={() => handleTabClick(id)}
-              className={`px-6 py-3 text-sm font-medium flex items-center space-x-2 border-b-2 transition-colors ${
+              className={`px-4 py-2 text-sm font-medium flex items-center space-x-2 border-b-2 transition-colors ${
                 activeTab === id
                   ? 'border-blue-500 text-white bg-slate-800'
                   : 'border-transparent text-slate-400 hover:text-slate-200'
@@ -93,7 +95,7 @@ const WorkspaceChrome: React.FC<WorkspaceChromeProps> = ({
       </div>
 
       <div className={`flex-1 w-full ${activeTab === 'report' ? 'overflow-auto' : 'overflow-hidden'}`}>
-        {!hasResult ? (
+        {!hasResult && !(activeTab === 'map' && hasMapContent) ? (
           <div className="flex flex-col items-center justify-center h-full text-slate-500 space-y-4">
             <Activity size={48} className="opacity-20" />
             <p>Paste/edit data, then press "Adjust" to solve.</p>

@@ -44,7 +44,8 @@ import MapViewSvg2d from './mapView/MapViewSvg2d';
 import MapViewScene3d from './mapView/MapViewScene3d';
 import MapViewContextMenu, { type MapToolPanel } from './mapView/MapViewContextMenu';
 import MapViewToolOverlay from './mapView/MapViewToolOverlay';
-import { renderMapCanvas2d } from './mapView/mapViewCanvas2d';
+import { renderMapCanvas2d, type CanvasBasemapTile2d } from './mapView/mapViewCanvas2d';
+import { chooseOsmTileMeshDivisions } from './mapView/mapViewBasemap';
 import {
   buildMapScenePointBounds2d,
   buildMapToolMetrics,
@@ -94,6 +95,8 @@ interface MapViewProps {
   units: 'm' | 'ft';
   planningMap?: PlanningMapState;
   onPlanningMapChange?: (_value: PlanningMapState) => void;
+  inputPointsLoaded?: boolean;
+  onLoadInputPoints?: (() => void) | null;
   showLostStations?: boolean;
   mode?: '2d' | '3d';
   viewportWidthOverride?: number;
@@ -107,7 +110,7 @@ interface MapViewProps {
   onSnapshotChange?: (_snapshot: MapViewSnapshot) => void;
 }
 
-type DragMode = 'none' | 'pan2d' | 'orbit3d' | 'pan3d';
+type DragMode = 'none' | 'pan2d' | 'orbit3d' | 'pan3d' | 'planning-vertex';
 
 type OverpassGeometryVertex = { lat: number; lon: number };
 type OverpassElement = {
@@ -118,16 +121,20 @@ type OverpassElement = {
 type BasemapTile2d = {
   key: string;
   href: string;
-  x: number;
-  y: number;
-  width: number;
-  height: number;
+  meshColumns: number;
+  meshRows: number;
+  meshPoints: Array<{ x: number; y: number }>;
+};
+type PlanningPolygonTarget = {
+  polygonId: string;
+  polygonSource: 'user' | 'osm';
+  polygonLabel: string;
 };
 
 const OSM_TILE_SIZE_PX = 256;
 const OSM_MAX_ZOOM = 19;
 const OSM_MIN_ZOOM = 0;
-
+const OSM_FETCH_BUFFER_M = 100;
 const clampLatitudeForTiles = (latDeg: number): number =>
   Math.min(85.05112878, Math.max(-85.05112878, latDeg));
 
@@ -154,6 +161,8 @@ const MapView: React.FC<MapViewProps> = ({
   units,
   planningMap = DEFAULT_PLANNING_MAP_STATE,
   onPlanningMapChange,
+  inputPointsLoaded = false,
+  onLoadInputPoints = null,
   showLostStations = true,
   mode = '2d',
   viewportWidthOverride,
@@ -173,6 +182,7 @@ const MapView: React.FC<MapViewProps> = ({
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const svgRef = useRef<SVGSVGElement | null>(null);
   const contextMenuRef = useRef<HTMLDivElement | null>(null);
+  const basemapLoadingRef = useRef<Set<string>>(new Set());
   const dragRef = useRef<{ active: boolean; mode: DragMode; lastX: number; lastY: number }>({
     active: false,
     mode: 'none',
@@ -190,10 +200,16 @@ const MapView: React.FC<MapViewProps> = ({
   const [interactionPhase, setInteractionPhase] = useState<MapInteractionPhase>('idle');
   const [camera3d, setCamera3d] = useState<Map3DCamera | null>(() => snapshot?.camera3d ?? null);
   const [isDragging, setIsDragging] = useState(false);
-  const [contextMenu, setContextMenu] = useState<{ open: boolean; x: number; y: number }>({
+  const [contextMenu, setContextMenu] = useState<{
+    open: boolean;
+    x: number;
+    y: number;
+    planningPolygon: PlanningPolygonTarget | null;
+  }>({
     open: false,
     x: 0,
     y: 0,
+    planningPolygon: null,
   });
   const [activeTool, setActiveTool] = useState<MapToolPanel>(() => snapshot?.activeTool ?? 'none');
   const [inverseFromInput, setInverseFromInput] = useState(() => snapshot?.inverseFromInput ?? '');
@@ -210,10 +226,17 @@ const MapView: React.FC<MapViewProps> = ({
   );
   const [focusSelection, setFocusSelection] = useState(() => snapshot?.focusSelection ?? false);
   const [draftBlockedPolygon, setDraftBlockedPolygon] = useState<Array<{ x: number; y: number }>>([]);
+  const [selectedPlanningPolygonId, setSelectedPlanningPolygonId] = useState<string | null>(null);
   const skipNextAutoResetRef = useRef(snapshot != null);
+  const planningVertexDragRef = useRef<{
+    polygonId: string;
+    polygonSource: 'user' | 'osm';
+    vertexIndex: number;
+  } | null>(null);
   const [viewportWidth, setViewportWidth] = useState<number>(
     typeof window !== 'undefined' ? window.innerWidth : 1280,
   );
+  const [basemapImages, setBasemapImages] = useState<Map<string, HTMLImageElement>>(() => new Map());
 
   useEffect(() => {
     noteUiPerfStage('mapReady');
@@ -357,11 +380,11 @@ const MapView: React.FC<MapViewProps> = ({
     const onMouseDown = (event: MouseEvent) => {
       const target = event.target as Node | null;
       if (target && contextMenuRef.current?.contains(target)) return;
-      setContextMenu((prev) => ({ ...prev, open: false }));
+      setContextMenu((prev) => ({ ...prev, open: false, planningPolygon: null }));
     };
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
-        setContextMenu((prev) => ({ ...prev, open: false }));
+        setContextMenu((prev) => ({ ...prev, open: false, planningPolygon: null }));
       }
     };
     window.addEventListener('mousedown', onMouseDown);
@@ -564,8 +587,49 @@ const MapView: React.FC<MapViewProps> = ({
     if (!dragRef.current.active) return;
     dragRef.current.active = false;
     dragRef.current.mode = 'none';
+    planningVertexDragRef.current = null;
     setIsDragging(false);
   }, []);
+
+  const updatePlanningPolygonVertices = useCallback(
+    (polygonId: string, polygonSource: 'user' | 'osm', vertices: Array<{ x: number; y: number }>) => {
+      if (!onPlanningMapChange) return;
+      const update = (polygons: PlanningMapState['blockedPolygons']) =>
+        polygons.map((polygon) =>
+          polygon.id === polygonId
+            ? { ...polygon, vertices: vertices.map((vertex) => ({ ...vertex })) }
+            : polygon,
+        );
+      onPlanningMapChange({
+        ...planningMap,
+        blockedPolygons:
+          polygonSource === 'user' ? update(planningMap.blockedPolygons) : planningMap.blockedPolygons,
+        obstaclePolygons:
+          polygonSource === 'osm' ? update(planningMap.obstaclePolygons) : planningMap.obstaclePolygons,
+      });
+    },
+    [onPlanningMapChange, planningMap],
+  );
+
+  const removePlanningPolygon = useCallback(
+    (polygonId: string, polygonSource: 'user' | 'osm') => {
+      if (!onPlanningMapChange) return;
+      onPlanningMapChange({
+        ...planningMap,
+        blockedPolygons:
+          polygonSource === 'user'
+            ? planningMap.blockedPolygons.filter((polygon) => polygon.id !== polygonId)
+            : planningMap.blockedPolygons,
+        obstaclePolygons:
+          polygonSource === 'osm'
+            ? planningMap.obstaclePolygons.filter((polygon) => polygon.id !== polygonId)
+            : planningMap.obstaclePolygons,
+      });
+      setSelectedPlanningPolygonId((current) => (current === polygonId ? null : current));
+      setContextMenu((current) => ({ ...current, open: false, planningPolygon: null }));
+    },
+    [onPlanningMapChange, planningMap],
+  );
 
   const handleDragMoveClient = useCallback(
     (clientX: number, clientY: number) => {
@@ -576,6 +640,26 @@ const MapView: React.FC<MapViewProps> = ({
       const dy = next.y - dragRef.current.lastY;
       dragRef.current.lastX = next.x;
       dragRef.current.lastY = next.y;
+      if (dragRef.current.mode === 'planning-vertex') {
+        const activeVertex = planningVertexDragRef.current;
+        if (!activeVertex) return;
+        const nextMap = svgToMapCoords(next.x, next.y);
+        const sourcePolygons =
+          activeVertex.polygonSource === 'user'
+            ? planningMap.blockedPolygons
+            : planningMap.obstaclePolygons;
+        const polygon = sourcePolygons.find((entry) => entry.id === activeVertex.polygonId);
+        if (!polygon) return;
+        const nextVertices = polygon.vertices.map((vertex, index) =>
+          index === activeVertex.vertexIndex ? nextMap : vertex,
+        );
+        updatePlanningPolygonVertices(
+          activeVertex.polygonId,
+          activeVertex.polygonSource,
+          nextVertices,
+        );
+        return;
+      }
       if (dragRef.current.mode === 'pan2d') {
         markInteracting();
         queueView2dUpdate((prev) => ({ ...prev, panX: prev.panX + dx, panY: prev.panY + dy }));
@@ -605,7 +689,17 @@ const MapView: React.FC<MapViewProps> = ({
         });
       }
     },
-    [toSvgCoords, effectiveMode, camera3d?.distance, markInteracting, queueView2dUpdate],
+    [
+      toSvgCoords,
+      svgToMapCoords,
+      effectiveMode,
+      camera3d?.distance,
+      markInteracting,
+      planningMap.blockedPolygons,
+      planningMap.obstaclePolygons,
+      queueView2dUpdate,
+      updatePlanningPolygonVertices,
+    ],
   );
 
   useEffect(() => {
@@ -655,12 +749,15 @@ const MapView: React.FC<MapViewProps> = ({
     });
   };
 
-  const beginDrag = (modeName: DragMode, clientX: number, clientY: number) => {
-    const start = toSvgCoords(clientX, clientY);
-    if (!start) return;
-    dragRef.current = { active: true, mode: modeName, lastX: start.x, lastY: start.y };
-    setIsDragging(true);
-  };
+  const beginDrag = useCallback(
+    (modeName: DragMode, clientX: number, clientY: number) => {
+      const start = toSvgCoords(clientX, clientY);
+      if (!start) return;
+      dragRef.current = { active: true, mode: modeName, lastX: start.x, lastY: start.y };
+      setIsDragging(true);
+    },
+    [toSvgCoords],
+  );
 
   const handleMouseDown = (event: React.MouseEvent<SVGSVGElement>) => {
     if (effectiveMode === '3d') {
@@ -805,6 +902,48 @@ const MapView: React.FC<MapViewProps> = ({
     [planningMap.showInputPoints, project2d, result.parseState?.inputStationSnapshots],
   );
 
+  const observedStationIdsForPlanning = useMemo(() => {
+    const ids = new Set<string>();
+    observations.forEach((observation) => {
+      if ('from' in observation && typeof observation.from === 'string') {
+        ids.add(observation.from);
+      }
+      if ('to' in observation && typeof observation.to === 'string') {
+        ids.add(observation.to);
+      }
+      if ('at' in observation && typeof observation.at === 'string') {
+        ids.add(observation.at);
+      }
+    });
+    return ids;
+  }, [observations]);
+
+  const planningExtentPoints = useMemo(() => {
+    const snapshots = result.parseState?.inputStationSnapshots ?? [];
+    const filtered =
+      observedStationIdsForPlanning.size > 0
+        ? snapshots.filter((snapshot) => observedStationIdsForPlanning.has(snapshot.stationId))
+        : snapshots;
+    const source =
+      filtered.length > 0
+        ? filtered
+        : snapshots.length > 0
+          ? snapshots
+          : Object.entries(stations).map(([stationId, station]) => ({
+              stationId,
+              x: station.x,
+              y: station.y,
+              h: station.h,
+              coordInputClass: station.coordInputClass ?? 'unknown',
+              constraintModeX: station.constraintModeX,
+              constraintModeY: station.constraintModeY,
+              constraintModeH: station.constraintModeH,
+            }));
+    return source.filter(
+      (point) => Number.isFinite(point.x) && Number.isFinite(point.y),
+    );
+  }, [observedStationIdsForPlanning, result.parseState?.inputStationSnapshots, stations]);
+
   const planningPolygons2d = useMemo(
     () =>
       [
@@ -826,6 +965,7 @@ const MapView: React.FC<MapViewProps> = ({
         source: polygon.source,
         kind: polygon.kind,
         label: polygon.label,
+        vertices: polygon.vertices.map((vertex) => project2d(vertex.x, vertex.y)),
         pointsAttr: polygon.vertices
           .map((vertex) => {
             const projected = project2d(vertex.x, vertex.y);
@@ -846,9 +986,13 @@ const MapView: React.FC<MapViewProps> = ({
   const planningGeorefContext = useMemo(() => {
     const parseState = result.parseState;
     if (!parseState) return null;
+    const fallbackPoint =
+      planningExtentPoints.length > 0
+        ? planningExtentPoints[Math.floor(planningExtentPoints.length / 2)]!
+        : { x: bbox.minX + bbox.width * 0.5, y: bbox.minY + bbox.height * 0.5 };
     const inverse = inverseENToGeodetic({
-      east: bbox.minX + bbox.width * 0.5,
-      north: bbox.minY + bbox.height * 0.5,
+      east: fallbackPoint.x,
+      north: fallbackPoint.y,
       originLatDeg: parseState.originLatDeg,
       originLonDeg: parseState.originLonDeg,
       model: parseState.crsProjectionModel ?? 'legacy-equirectangular',
@@ -863,7 +1007,19 @@ const MapView: React.FC<MapViewProps> = ({
       coordSystemMode: parseState.coordSystemMode,
       crsId: parseState.crsId,
     };
-  }, [bbox.height, bbox.minX, bbox.minY, bbox.width, result.parseState]);
+  }, [bbox.height, bbox.minX, bbox.minY, bbox.width, planningExtentPoints, result.parseState]);
+
+  const planningFetchExtent = useMemo(() => {
+    if (planningExtentPoints.length === 0) return null;
+    const xs = planningExtentPoints.map((point) => point.x);
+    const ys = planningExtentPoints.map((point) => point.y);
+    return {
+      minX: Math.min(...xs) - OSM_FETCH_BUFFER_M,
+      maxX: Math.max(...xs) + OSM_FETCH_BUFFER_M,
+      minY: Math.min(...ys) - OSM_FETCH_BUFFER_M,
+      maxY: Math.max(...ys) + OSM_FETCH_BUFFER_M,
+    };
+  }, [planningExtentPoints]);
 
   const basemapTiles2d = useMemo<BasemapTile2d[]>(() => {
     if (
@@ -942,28 +1098,113 @@ const MapView: React.FC<MapViewProps> = ({
           coordSystemMode: planningGeorefContext.coordSystemMode,
           crsId: planningGeorefContext.crsId,
         });
-        const topLeft = project2d(northWest.east, northWest.north);
-        const bottomRight = project2d(southEast.east, southEast.north);
-        const width = bottomRight.x - topLeft.x;
-        const height = bottomRight.y - topLeft.y;
-        if (!(width > 0) || !(height > 0)) continue;
+        const southEastScreen = project2d(southEast.east, southEast.north);
+        const northWestScreen = project2d(northWest.east, northWest.north);
+        if (
+          !Number.isFinite(northWestScreen.x) ||
+          !Number.isFinite(northWestScreen.y) ||
+          !Number.isFinite(southEastScreen.x) ||
+          !Number.isFinite(southEastScreen.y)
+        ) {
+          continue;
+        }
+        const tileWidthPx = Math.abs(southEastScreen.x - northWestScreen.x) * view2d.zoom;
+        const tileHeightPx = Math.abs(southEastScreen.y - northWestScreen.y) * view2d.zoom;
+        const meshColumns = chooseOsmTileMeshDivisions(tileWidthPx, tileHeightPx);
+        const meshRows = meshColumns;
+        const meshPoints: Array<{ x: number; y: number }> = [];
+        let meshValid = true;
+        for (let row = 0; row <= meshRows; row += 1) {
+          const tileSampleY = tileY + row / meshRows;
+          const sampleLat = tileYToLatitude(tileSampleY, zoom);
+          for (let column = 0; column <= meshColumns; column += 1) {
+            const tileSampleX = tileX + column / meshColumns;
+            const sampleLon = tileXToLongitude(tileSampleX, zoom);
+            const sampleProjected = projectGeodeticToEN({
+              latDeg: sampleLat,
+              lonDeg: sampleLon,
+              originLatDeg: planningGeorefContext.originLatDeg,
+              originLonDeg: planningGeorefContext.originLonDeg,
+              model: planningGeorefContext.model,
+              coordSystemMode: planningGeorefContext.coordSystemMode,
+              crsId: planningGeorefContext.crsId,
+            });
+            const sampleScreen = project2d(sampleProjected.east, sampleProjected.north);
+            if (!Number.isFinite(sampleScreen.x) || !Number.isFinite(sampleScreen.y)) {
+              meshValid = false;
+              break;
+            }
+            meshPoints.push({ x: sampleScreen.x, y: sampleScreen.y });
+          }
+          if (!meshValid) break;
+        }
+        if (!meshValid || meshPoints.length !== (meshColumns + 1) * (meshRows + 1)) continue;
         tiles.push({
           key: `${zoom}-${wrappedTileX}-${tileY}`,
           href: `https://tile.openstreetmap.org/${zoom}/${wrappedTileX}/${tileY}.png`,
-          x: topLeft.x,
-          y: topLeft.y,
-          width,
-          height,
+          meshColumns,
+          meshRows,
+          meshPoints,
         });
       }
     }
     return tiles;
-  }, [effectiveMode, planningGeorefContext, planningMap.basemapMode, project2d, svgToMapCoords]);
+  }, [
+    effectiveMode,
+    planningGeorefContext,
+    planningMap.basemapMode,
+    project2d,
+    svgToMapCoords,
+    view2d.zoom,
+  ]);
+
+  useEffect(() => {
+    if (effectiveMode !== '2d' || basemapTiles2d.length === 0 || typeof Image === 'undefined') return;
+    let disposed = false;
+    basemapTiles2d.forEach((tile) => {
+      if (basemapImages.has(tile.href) || basemapLoadingRef.current.has(tile.href)) return;
+      basemapLoadingRef.current.add(tile.href);
+      const image = new Image();
+      image.crossOrigin = 'anonymous';
+      image.onload = () => {
+        basemapLoadingRef.current.delete(tile.href);
+        if (disposed) return;
+        setBasemapImages((current) => {
+          if (current.get(tile.href) === image) return current;
+          const next = new Map(current);
+          next.set(tile.href, image);
+          return next;
+        });
+      };
+      image.onerror = () => {
+        basemapLoadingRef.current.delete(tile.href);
+      };
+      image.src = tile.href;
+    });
+    return () => {
+      disposed = true;
+    };
+  }, [basemapImages, basemapTiles2d, effectiveMode]);
+
+  const canvasBasemapTiles2d = useMemo<CanvasBasemapTile2d[]>(
+    () =>
+      basemapTiles2d.map((tile) => {
+        return {
+          key: tile.key,
+          image: basemapImages.get(tile.href) ?? null,
+          meshColumns: tile.meshColumns,
+          meshRows: tile.meshRows,
+          meshPoints: tile.meshPoints,
+        };
+      }),
+    [basemapImages, basemapTiles2d],
+  );
 
   useEffect(() => {
     if (
       effectiveMode !== '2d' ||
       !planningGeorefContext ||
+      !planningFetchExtent ||
       !planningMap.showObstacleLayer ||
       planningMap.obstaclePolygons.length > 0 ||
       !onPlanningMapChange
@@ -971,13 +1212,13 @@ const MapView: React.FC<MapViewProps> = ({
       return;
     }
     const cornerA = inverseENToGeodetic({
-      east: bbox.minX,
-      north: bbox.minY,
+      east: planningFetchExtent.minX,
+      north: planningFetchExtent.minY,
       ...planningGeorefContext,
     });
     const cornerB = inverseENToGeodetic({
-      east: bbox.minX + bbox.width,
-      north: bbox.minY + bbox.height,
+      east: planningFetchExtent.maxX,
+      north: planningFetchExtent.maxY,
       ...planningGeorefContext,
     });
     if ('failureReason' in cornerA || 'failureReason' in cornerB) return;
@@ -1043,12 +1284,9 @@ const MapView: React.FC<MapViewProps> = ({
       .catch(() => undefined);
     return () => controller.abort();
   }, [
-    bbox.height,
-    bbox.minX,
-    bbox.minY,
-    bbox.width,
     effectiveMode,
     onPlanningMapChange,
+    planningFetchExtent,
     planningGeorefContext,
     planningMap,
   ]);
@@ -1154,6 +1392,7 @@ const MapView: React.FC<MapViewProps> = ({
       projectionScale: projection2d.scale,
       units,
       interactionDenseMode,
+      basemapTiles2d: canvasBasemapTiles2d,
       unselectedCanvasLines2d,
       filteredVisiblePoints2d,
       ellipseStroke,
@@ -1174,6 +1413,7 @@ const MapView: React.FC<MapViewProps> = ({
     units,
     unselectedCanvasLines2d,
     view2d,
+    canvasBasemapTiles2d,
   ]);
 
   const project3d = useCallback(
@@ -1229,8 +1469,16 @@ const MapView: React.FC<MapViewProps> = ({
     event.preventDefault();
     const rect = containerRef.current?.getBoundingClientRect();
     if (!rect) return;
+    const target = event.target as HTMLElement | null;
+    const polygonNode = target?.closest('[data-planning-polygon-id]') as HTMLElement | null;
+    const polygonId = polygonNode?.getAttribute('data-planning-polygon-id') ?? null;
+    const polygonSource = polygonNode?.getAttribute('data-planning-polygon-source');
+    const polygonLabel = polygonNode?.getAttribute('data-planning-polygon-label') ?? 'Planning obstacle';
+    if (polygonId) {
+      setSelectedPlanningPolygonId(polygonId);
+    }
     const menuWidth = 210;
-    const menuHeight = 126;
+    const menuHeight = polygonId ? 198 : 126;
     const localX = event.clientX - rect.left;
     const localY = event.clientY - rect.top;
     const x = clamp(localX, 8, Math.max(8, rect.width - menuWidth - 8));
@@ -1239,19 +1487,59 @@ const MapView: React.FC<MapViewProps> = ({
       open: true,
       x,
       y,
+      planningPolygon:
+        polygonId && (polygonSource === 'user' || polygonSource === 'osm')
+          ? {
+              polygonId,
+              polygonSource,
+              polygonLabel,
+            }
+          : null,
     });
   };
 
   const openTool = (tool: Exclude<MapToolPanel, 'none'>) => {
     setActiveTool(tool);
-    setContextMenu((prev) => ({ ...prev, open: false }));
+    setContextMenu((prev) => ({ ...prev, open: false, planningPolygon: null }));
   };
 
   const closeTool = () => setActiveTool('none');
 
+  const handleEditPlanningPolygon = useCallback(() => {
+    const polygon = contextMenu.planningPolygon;
+    if (!polygon) return;
+    setSelectedPlanningPolygonId(polygon.polygonId);
+    setContextMenu((current) => ({ ...current, open: false, planningPolygon: null }));
+  }, [contextMenu.planningPolygon]);
+
+  const handleDeletePlanningPolygon = useCallback(() => {
+    const polygon = contextMenu.planningPolygon;
+    if (!polygon) return;
+    removePlanningPolygon(polygon.polygonId, polygon.polygonSource);
+  }, [contextMenu.planningPolygon, removePlanningPolygon]);
+
+  const handlePlanningVertexMouseDown = useCallback(
+    (polygonId: string, vertexIndex: number, event: React.MouseEvent<SVGCircleElement>) => {
+      const polygonSource = planningMap.obstaclePolygons.some((polygon) => polygon.id === polygonId)
+        ? ('osm' as const)
+        : ('user' as const);
+      planningVertexDragRef.current = { polygonId, polygonSource, vertexIndex };
+      setSelectedPlanningPolygonId(polygonId);
+      beginDrag('planning-vertex', event.clientX, event.clientY);
+      event.preventDefault();
+      event.stopPropagation();
+    },
+    [beginDrag, planningMap.obstaclePolygons],
+  );
+
   const handleSvgClick = (event: React.MouseEvent<SVGSVGElement>) => {
     if (effectiveMode !== '2d') return;
     const target = event.target as HTMLElement | null;
+    const polygonId = target?.closest('[data-planning-polygon-id]')?.getAttribute('data-planning-polygon-id');
+    if (polygonId) {
+      setSelectedPlanningPolygonId(polygonId);
+      return;
+    }
     if (target?.closest('[data-map-observation],[data-map-station]')) return;
     const pointer = toSvgCoords(event.clientX, event.clientY);
     if (!pointer) return;
@@ -1316,16 +1604,16 @@ const MapView: React.FC<MapViewProps> = ({
     setDraftBlockedPolygon([]);
   }, []);
 
-  const removeBlockedPolygon = useCallback(
-    (polygonId: string) => {
-      if (!onPlanningMapChange) return;
-      onPlanningMapChange({
-        ...planningMap,
-        blockedPolygons: planningMap.blockedPolygons.filter((polygon) => polygon.id !== polygonId),
-      });
-    },
-    [onPlanningMapChange, planningMap],
-  );
+  useEffect(() => {
+    if (!selectedPlanningPolygonId) return;
+    const stillExists =
+      planningMap.blockedPolygons.some((polygon) => polygon.id === selectedPlanningPolygonId) ||
+      planningMap.obstaclePolygons.some((polygon) => polygon.id === selectedPlanningPolygonId);
+    if (!stillExists) {
+      setSelectedPlanningPolygonId(null);
+      planningVertexDragRef.current = null;
+    }
+  }, [planningMap.blockedPolygons, planningMap.obstaclePolygons, selectedPlanningPolygonId]);
 
   return (
     <div className="h-full p-4 flex flex-col min-h-0">
@@ -1396,6 +1684,15 @@ const MapView: React.FC<MapViewProps> = ({
             />
             <span className="uppercase tracking-wide">OSM basemap</span>
           </label>
+          {onLoadInputPoints && (
+            <button
+              type="button"
+              onClick={onLoadInputPoints}
+              className="rounded border border-slate-600 px-2 py-1 uppercase tracking-wide text-slate-100 hover:border-pink-300"
+            >
+              {inputPointsLoaded ? 'Reload points' : 'Load points'}
+            </button>
+          )}
           <label className="inline-flex items-center gap-2">
             <input
               type="checkbox"
@@ -1496,7 +1793,7 @@ const MapView: React.FC<MapViewProps> = ({
             <button
               key={polygon.id}
               type="button"
-              onClick={() => removeBlockedPolygon(polygon.id)}
+              onClick={() => removePlanningPolygon(polygon.id, 'user')}
               className="rounded border border-slate-700 px-2 py-1 text-slate-200 hover:bg-slate-800"
             >
               Delete {polygon.label || polygon.id}
@@ -1594,7 +1891,18 @@ const MapView: React.FC<MapViewProps> = ({
         )}
         {contextMenu.open && (
           <div ref={contextMenuRef}>
-            <MapViewContextMenu x={contextMenu.x} y={contextMenu.y} onOpenTool={openTool} />
+            <MapViewContextMenu
+              x={contextMenu.x}
+              y={contextMenu.y}
+              onOpenTool={openTool}
+              planningPolygonLabel={contextMenu.planningPolygon?.polygonLabel ?? null}
+              onEditPlanningPolygon={
+                contextMenu.planningPolygon != null ? handleEditPlanningPolygon : null
+              }
+              onDeletePlanningPolygon={
+                contextMenu.planningPolygon != null ? handleDeletePlanningPolygon : null
+              }
+            />
           </div>
         )}
         {activeTool !== 'none' && (
@@ -1657,11 +1965,12 @@ const MapView: React.FC<MapViewProps> = ({
               transformedOverlayActive={transformedOverlayActive}
               transformedLines2d={transformedLines2d}
               transformedPoints2d={transformedPoints2d}
-              basemapTiles2d={basemapTiles2d}
               planningInputPoints2d={planningInputPoints2d}
               planningPolygons2d={planningPolygons2d}
+              selectedPlanningPolygonId={selectedPlanningPolygonId}
               bracePreviewPoints2d={bracePreviewPoints2d}
               scenarioPreviewSegments2d={scenarioPreviewSegments2d}
+              onPlanningVertexMouseDown={handlePlanningVertexMouseDown}
               project2d={project2d}
             />
           )}
@@ -1689,9 +1998,16 @@ const MapView: React.FC<MapViewProps> = ({
           )}
 
           {points.length === 0 && (
-            <text x={VIEW_W / 2} y={VIEW_H / 2} textAnchor="middle" fill="#94a3b8" fontSize={18}>
-              No stations to display
-            </text>
+            <>
+              <text x={VIEW_W / 2} y={VIEW_H / 2 - 18} textAnchor="middle" fill="#94a3b8" fontSize={18}>
+                No stations to display
+              </text>
+              {onLoadInputPoints && (
+                <text x={VIEW_W / 2} y={VIEW_H / 2 + 12} textAnchor="middle" fill="#f9a8d4" fontSize={13}>
+                  Use "Load points" to populate the planning map before the first run.
+                </text>
+              )}
+            </>
           )}
         </svg>
       </div>

@@ -205,6 +205,28 @@ const GeneralProjectOptionsTab: React.FC<GeneralProjectOptionsTabProps> = ({ con
             onChange={(checked) => handleDraftSetting('map3dEnabled', checked)}
           />
         </SettingsRow>
+        <SettingsRow
+          label="Run Comparison Panel"
+          tooltip={SETTINGS_TOOLTIPS.showRunComparisonPanel}
+          className="md:grid-cols-[minmax(0,1fr)_auto]"
+        >
+          <SettingsToggle
+            title={SETTINGS_TOOLTIPS.showRunComparisonPanel}
+            checked={settingsDraft.showRunComparisonPanel}
+            onChange={(checked) => handleDraftSetting('showRunComparisonPanel', checked)}
+          />
+        </SettingsRow>
+        <SettingsRow
+          label="Review Queue Panel"
+          tooltip={SETTINGS_TOOLTIPS.showReviewQueuePanel}
+          className="md:grid-cols-[minmax(0,1fr)_auto]"
+        >
+          <SettingsToggle
+            title={SETTINGS_TOOLTIPS.showReviewQueuePanel}
+            checked={settingsDraft.showReviewQueuePanel}
+            onChange={(checked) => handleDraftSetting('showReviewQueuePanel', checked)}
+          />
+        </SettingsRow>
       </SettingsCard>
 
       <SettingsCard

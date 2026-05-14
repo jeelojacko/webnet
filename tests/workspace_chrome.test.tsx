@@ -32,6 +32,11 @@ describe('WorkspaceChrome', () => {
     });
 
     expect(container.textContent).toContain('Report body');
+    const reportButton = Array.from(container.querySelectorAll('button')).find((button) =>
+      button.textContent?.includes('Adjustment Report'),
+    );
+    expect(reportButton?.className).toContain('px-4');
+    expect(reportButton?.className).toContain('py-2');
 
     await act(async () => {
       const processingButton = Array.from(container.querySelectorAll('button')).find((button) =>
@@ -80,6 +85,37 @@ describe('WorkspaceChrome', () => {
 
     expect(container.textContent).toContain('Paste/edit data, then press "Adjust" to solve.');
     expect(container.textContent).not.toContain('Report body');
+
+    await act(async () => {
+      root.unmount();
+    });
+    container.remove();
+  });
+
+  it('renders map content before a solve when planning-map content is available', async () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root: Root = createRoot(container);
+
+    await act(async () => {
+      root.render(
+        <WorkspaceChrome
+          activeTab="map"
+          onActiveTabChange={vi.fn()}
+          isSidebarOpen
+          onShowInput={vi.fn()}
+          hasResult={false}
+          hasMapContent={true}
+          renderReportContent={() => <div>Report body</div>}
+          renderProcessingSummaryContent={() => <div>Processing body</div>}
+          renderIndustryOutputContent={() => <div>Listing body</div>}
+          renderMapContent={() => <div>Planning map body</div>}
+        />,
+      );
+    });
+
+    expect(container.textContent).toContain('Planning map body');
+    expect(container.textContent).not.toContain('Paste/edit data, then press "Adjust" to solve.');
 
     await act(async () => {
       root.unmount();

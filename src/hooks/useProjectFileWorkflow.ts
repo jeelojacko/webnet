@@ -633,6 +633,8 @@ export const useProjectFileWorkflow = ({
         ...loadedSettings,
         precisionReportingMode: 'industry-standard',
         uiTheme: normalizeUiTheme(loadedSettings?.uiTheme),
+        showRunComparisonPanel: loadedSettings?.showRunComparisonPanel === true,
+        showReviewQueuePanel: loadedSettings?.showReviewQueuePanel === true,
         listingSortObservationsBy: normalizeListingSortObservationsBy(
           loadedSettings?.listingSortObservationsBy,
           { legacyResidualMeansStdResidual: listingSortModeVersion < 2 },

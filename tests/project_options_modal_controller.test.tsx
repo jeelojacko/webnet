@@ -29,6 +29,8 @@ const baseSettings: SettingsState = {
   uiTheme: 'gruvbox-dark',
   mapShowLostStations: true,
   map3dEnabled: false,
+  showRunComparisonPanel: false,
+  showReviewQueuePanel: false,
   listingShowLostStations: true,
   listingShowCoordinates: true,
   listingShowObservationsResiduals: true,

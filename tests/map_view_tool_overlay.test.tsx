@@ -32,21 +32,40 @@ const visibleStationRows: VisibleStationRow[] = [
 describe('MapView tool surface', () => {
   it('renders context menu actions and emits selected tool', async () => {
     const onOpenTool = vi.fn();
+    const onEditPlanningPolygon = vi.fn();
+    const onDeletePlanningPolygon = vi.fn();
     const container = document.createElement('div');
     document.body.appendChild(container);
     const root: Root = createRoot(container);
 
     await act(async () => {
-      root.render(<MapViewContextMenu x={24} y={36} onOpenTool={onOpenTool} />);
+      root.render(
+        <MapViewContextMenu
+          x={24}
+          y={36}
+          onOpenTool={onOpenTool}
+          planningPolygonLabel="OSM building"
+          onEditPlanningPolygon={onEditPlanningPolygon}
+          onDeletePlanningPolygon={onDeletePlanningPolygon}
+        />,
+      );
     });
 
+    const editButton = Array.from(container.querySelectorAll('button')).find(
+      (entry) => entry.textContent?.trim() === 'Edit boundary',
+    );
     const inverseButton = Array.from(container.querySelectorAll('button')).find(
       (entry) => entry.textContent?.trim() === 'Inverse',
     );
+    expect(editButton).toBeTruthy();
     expect(inverseButton).toBeTruthy();
+    await act(async () => {
+      editButton?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    });
     await act(async () => {
       inverseButton?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     });
+    expect(onEditPlanningPolygon).toHaveBeenCalledTimes(1);
     expect(onOpenTool).toHaveBeenCalledWith('inverse');
 
     await act(async () => {

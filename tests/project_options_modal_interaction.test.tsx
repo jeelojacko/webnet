@@ -348,6 +348,30 @@ describe('Project Options modal interactions', () => {
     }
   });
 
+  modalIt('keeps Run Comparison and Review Queue hidden by default and persists toggle changes', async () => {
+    const app = await mountApp('general');
+    try {
+      const runComparisonToggle = getToggleForSettingsRow(app.container, 'Run Comparison Panel');
+      const reviewQueueToggle = getToggleForSettingsRow(app.container, 'Review Queue Panel');
+      expect(runComparisonToggle.checked).toBe(false);
+      expect(reviewQueueToggle.checked).toBe(false);
+
+      await clickToggleForSettingsRow(app.container, 'Run Comparison Panel');
+      await clickToggleForSettingsRow(app.container, 'Review Queue Panel');
+      expect(runComparisonToggle.checked).toBe(true);
+      expect(reviewQueueToggle.checked).toBe(true);
+
+      await clickButtonByExactText(app.container, 'Apply');
+      await clickOpenProjectOptions(app.container);
+      await clickProjectOptionsTab(app.container, 'general');
+
+      expect(getToggleForSettingsRow(app.container, 'Run Comparison Panel').checked).toBe(true);
+      expect(getToggleForSettingsRow(app.container, 'Review Queue Panel').checked).toBe(true);
+    } finally {
+      await app.cleanup();
+    }
+  });
+
   modalIt('persists convergence-limit draft edits after Apply', async () => {
     const app = await mountApp('adjustment');
     try {
