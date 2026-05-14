@@ -23,6 +23,7 @@ import type {
   MapMode,
   ObservationModeSettings,
   OrderMode,
+  PlanningMapState,
   ParseCompatibilityDiagnostic,
   ParseCompatibilityMode,
   PrecisionReportingMode,
@@ -138,6 +139,7 @@ export type WorkspaceViewState = {
   splitPercent: number;
   isSidebarOpen: boolean;
   mapDeclutterPreset?: 'standard' | 'dense-review';
+  planningMap?: PlanningMapState;
   review: WorkspaceReviewState;
   selection?: WorkspaceSelectionState;
   pinnedObservationIds?: number[];
@@ -238,6 +240,8 @@ export type ParseSettings = {
   gridDirectionMode: GridObservationMode;
   runMode: RunMode;
   preanalysisMode: boolean;
+  preanalysisAccuracyThresholdMeters?: number;
+  preanalysisMaxAddedSets?: number;
   clusterDetectionEnabled: boolean;
   autoSideshotEnabled: boolean;
   autoAdjustEnabled: boolean;
@@ -305,6 +309,8 @@ export type RunDiagnostics = {
   parity: boolean;
   runMode: RunMode;
   preanalysisMode: boolean;
+  preanalysisAccuracyThresholdMeters?: number;
+  preanalysisMaxAddedSets?: number;
   plannedObservationCount: number;
   autoSideshotEnabled: boolean;
   autoAdjustEnabled: boolean;
@@ -442,6 +448,8 @@ export type RunSettingsSnapshot = {
   autoAdjustMaxRemovalsPerCycle: number;
   autoAdjustStdResThreshold: number;
   suspectImpactMode: SuspectImpactMode;
+  preanalysisAccuracyThresholdMeters?: number;
+  preanalysisMaxAddedSets?: number;
   selectedInstrument: string;
 };
 

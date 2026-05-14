@@ -281,6 +281,22 @@
   --theme-rose-950: 252 237 234;
 }
 
+.report-view table thead th {
+  white-space: normal;
+  overflow-wrap: normal;
+  word-break: keep-all;
+  hyphens: none;
+  line-height: 1.2;
+  vertical-align: bottom;
+}
+
+@media (max-width: 900px) {
+  .report-view table thead th {
+    font-size: 0.68rem;
+    letter-spacing: 0.01em;
+  }
+}
+
 :root[data-theme='vscode-dark'] {
   color-scheme: dark;
 

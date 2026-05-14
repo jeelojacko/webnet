@@ -14,12 +14,17 @@ export const PREANALYSIS_LABEL_TOOLTIPS: Record<string, string> = {
   'Weak Stations': 'Number of stations currently flagged by the weak-geometry heuristics.',
   'Weak Pairs': 'Number of connected pairs currently flagged by the weak-geometry heuristics.',
   'Locked Planned Observations':
-    'Planned observations using fixed sigma weighting. They are excluded from what-if removal actions.',
-  'Planned Observation What-If Analysis':
-    'Re-solved planning scenarios showing how predicted precision changes when each removable planned observation is removed or added back.',
-  'Active Removable': 'Removable planned observations currently active in the preanalysis design.',
-  'Excluded Removable':
-    'Removable planned observations currently excluded from the preanalysis design and available to add back.',
+    'Planned observations using fixed sigma weighting. They are excluded from synthetic added-set recommendations.',
+  'Preanalysis Added-Set Recommendations':
+    'Re-solved planning scenarios showing how predicted precision changes when one whole synthetic setup set or a bounded synthetic brace-point scenario is added near weak geometry.',
+  'Applied Added Scenarios':
+    'Synthetic repeated-set or brace-point scenarios currently applied in the active preanalysis rerun state.',
+  'Candidate Added Scenarios':
+    'Count of repeatable setup-set and bounded synthetic brace-point scenarios considered for preanalysis recommendations.',
+  'Preanalysis Accuracy Threshold':
+    'Optional worst-station semi-major target used to build a greedy added-set recommendation plan.',
+  'Threshold Plan Result':
+    'Summary of the greedy recommendation plan that keeps applying the best next setup-set or brace-point scenario until the threshold is reached or max sets are exhausted.',
   'Worst Station Major':
     'Largest station error-ellipse semi-major axis in the current preanalysis result.',
   'Worst Pair SigmaDist':

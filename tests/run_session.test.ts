@@ -42,6 +42,48 @@ describe('runAdjustmentSession', () => {
   );
 
   it(
+    'applies synthetic preanalysis additions into the shared run-session solve and changes planning metrics',
+    () => {
+      const baseOutcome = runAdjustmentSession(createActiveStartupRunSessionRequest());
+      const recommendation = baseOutcome.result.preanalysisImpactDiagnostics?.rows.find(
+        (row) =>
+          row.status === 'ok' &&
+          [row.deltaWorstStationMajor, row.deltaMedianStationMajor, row.deltaWorstPairSigmaDist].some(
+            (value) => value != null && value !== 0,
+          ),
+      );
+
+      expect(recommendation).toBeDefined();
+
+      const appliedOutcome = runAdjustmentSession(
+        createActiveStartupRunSessionRequest({
+          activePreanalysisAdditionIds: [recommendation!.scenarioId],
+        }),
+      );
+
+      expect(appliedOutcome.result.preanalysisSyntheticAdditionIds).toEqual([recommendation!.scenarioId]);
+      expect(appliedOutcome.result.observations.length).toBeGreaterThan(
+        baseOutcome.result.observations.length,
+      );
+
+      const baseWorst = baseOutcome.result.preanalysisImpactDiagnostics?.baseWorstStationMajor;
+      const appliedWorst = appliedOutcome.result.preanalysisImpactDiagnostics?.baseWorstStationMajor;
+      expect(baseWorst).toBeDefined();
+      expect(appliedWorst).toBeDefined();
+      expect(appliedWorst).not.toBe(baseWorst);
+      expect(
+        appliedOutcome.result.preanalysisImpactDiagnostics?.rows.some(
+          (row) => row.scenarioId === recommendation!.scenarioId,
+        ),
+      ).toBe(false);
+      expect(appliedOutcome.result.preanalysisImpactDiagnostics?.baseWorstStationMajor).toBe(
+        appliedWorst,
+      );
+    },
+    120000,
+  );
+
+  it(
     'keeps the traverse parity startup convergent through the shared run-session path',
     () => {
       const outcome = runAdjustmentSession(createTraverseRunSessionRequest());

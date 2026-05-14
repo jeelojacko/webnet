@@ -10,7 +10,11 @@ import {
   DEFAULT_QFIX_LINEAR_SIGMA_M,
   DEFAULT_S9_INSTRUMENT_CENTERING_HORIZ_M,
 } from './defaults';
-import { isPreanalysisWhatIfCandidate } from './preanalysis';
+import {
+  buildPreanalysisPlanningDiagnostics,
+  buildPreanalysisSyntheticSetTemplates,
+  buildSyntheticPreanalysisInput,
+} from './preanalysisPlanning';
 import { normalizeClusterApprovedMerges, solveEngine } from './solveEngine';
 import type { SolveProgressEvent } from './scenarioRunModels';
 import type {
@@ -28,6 +32,7 @@ import type {
   ObservationModeSettings,
   ParseCompatibilityMode,
   ParseOptions,
+  PlanningMapState,
   RobustMode,
   RunMode,
   SuspectImpactMode,
@@ -62,6 +67,9 @@ export interface RunSessionParseSettings {
   gridDirectionMode: GridObservationMode;
   runMode: RunMode;
   preanalysisMode: boolean;
+  preanalysisAccuracyThresholdMeters?: number;
+  preanalysisMaxAddedSets: number;
+  preanalysisSyntheticAdditionIds?: string[];
   clusterDetectionEnabled: boolean;
   autoSideshotEnabled: boolean;
   autoAdjustEnabled: boolean;
@@ -136,7 +144,9 @@ export interface RunSessionRequest {
   projectIncludeFiles: Record<string, string>;
   projectRunFiles?: ProjectRunFile[];
   geoidSourceData: Uint8Array | null;
+  planningMap: PlanningMapState;
   excludedIds: number[];
+  activePreanalysisAdditionIds: string[];
   overrides: Record<number, ObservationOverride>;
   approvedClusterMerges: ClusterApprovedMerge[];
 }
@@ -144,8 +154,10 @@ export interface RunSessionRequest {
 export interface RunSessionOutcome {
   result: AdjustmentResult;
   effectiveExcludedIds: number[];
+  activePreanalysisAdditionIds: string[];
   effectiveClusterApprovedMerges: ClusterApprovedMerge[];
   droppedExclusions: number;
+  droppedPreanalysisAdditions: number;
   droppedOverrides: number;
   droppedClusterMerges: number;
   inputChangedSinceLastRun: boolean;
@@ -187,7 +199,6 @@ export interface RunSessionProgressUpdate {
 export type RunSessionProgressCallback = (_event: RunSessionProgressUpdate) => void;
 
 const IMPACT_MAX_CANDIDATES = 3;
-const PREANALYSIS_IMPACT_MAX_CANDIDATES = 24;
 const AUTO_ADJUST_MIN_REDUNDANCY = 0.05;
 const SUSPECT_IMPACT_AUTO_SKIP_MAIN_SOLVE_MS = 5000;
 const INDUSTRY_DEFAULT_INSTRUMENT_CODE = 'S9';
@@ -306,29 +317,6 @@ const maxUnknownCoordinateShift = (base: AdjustmentResult, alt: AdjustmentResult
   return maxShift;
 };
 
-const medianOf = (values: number[]): number | undefined => {
-  const sorted = values.filter((value) => Number.isFinite(value)).sort((a, b) => a - b);
-  if (sorted.length === 0) return undefined;
-  const mid = Math.floor(sorted.length / 2);
-  return sorted.length % 2 === 1 ? sorted[mid] : 0.5 * (sorted[mid - 1] + sorted[mid]);
-};
-
-const preanalysisStationMajors = (res: AdjustmentResult): number[] =>
-  (res.stationCovariances ?? []).map(
-    (row) => row.ellipse?.semiMajor ?? Math.max(row.sigmaE, row.sigmaN),
-  );
-
-const preanalysisRelativeMetrics = (res: AdjustmentResult): number[] =>
-  (res.relativeCovariances ?? []).map(
-    (row) => row.sigmaDist ?? row.ellipse?.semiMajor ?? Math.max(row.sigmaE, row.sigmaN),
-  );
-
-const preanalysisWeakStationCount = (res: AdjustmentResult): number =>
-  (res.weakGeometryDiagnostics?.stationCues ?? []).filter((cue) => cue.severity !== 'ok').length;
-
-const preanalysisWeakPairCount = (res: AdjustmentResult): number =>
-  (res.weakGeometryDiagnostics?.relativeCues ?? []).filter((cue) => cue.severity !== 'ok').length;
-
 const normalizeSolveProfile = (_profile: SolveProfile): SolveProfile => 'industry-parity';
 
 const resolveProfileContext = (
@@ -415,12 +403,18 @@ const buildParseOptions = (
   allowClusterFaceReliability: boolean,
   approvedClusterMerges: ClusterApprovedMerge[],
   currentInstrument?: string,
+  options?: {
+    sourceInputOverride?: string;
+  },
 ): Partial<ParseOptions> => ({
   geometryDependentSigmaReference: effectiveParse.geometryDependentSigmaReference,
   runMode: effectiveParse.runMode,
   sourceFile: request.projectRunFiles?.[0]?.name ?? '<project-main>',
   includeFiles: request.projectIncludeFiles,
-  projectRunFiles: request.projectRunFiles?.map((file) => ({ ...file })),
+  projectRunFiles:
+    options?.sourceInputOverride != null
+      ? undefined
+      : request.projectRunFiles?.map((file) => ({ ...file })),
   units: request.units,
   coordMode: effectiveParse.coordMode,
   coordSystemMode: effectiveParse.coordSystemMode,
@@ -444,6 +438,9 @@ const buildParseOptions = (
   gridAngleMode: effectiveParse.gridAngleMode,
   gridDirectionMode: effectiveParse.gridDirectionMode,
   preanalysisMode: effectiveParse.runMode === 'preanalysis',
+  preanalysisAccuracyThresholdMeters: effectiveParse.preanalysisAccuracyThresholdMeters,
+  preanalysisMaxAddedSets: effectiveParse.preanalysisMaxAddedSets,
+  preanalysisSyntheticAdditionIds: effectiveParse.preanalysisSyntheticAdditionIds ?? [],
   order: effectiveParse.order,
   angleUnits: effectiveParse.angleUnits,
   angleStationOrder: effectiveParse.angleStationOrder,
@@ -588,132 +585,13 @@ const buildSuspectImpactDiagnostics = (
       return (b.baseStdRes ?? 0) - (a.baseStdRes ?? 0);
     });
 
-const buildPreanalysisImpactDiagnostics = (
-  base: AdjustmentResult,
-  baseExclusions: Set<number>,
-  overrideValues: Record<number, ObservationOverride>,
-  approvedClusterMerges: ClusterApprovedMerge[],
-  solveCore: (
-    _excludeSet: Set<number>,
-    _parseOverride?: Partial<RunSessionParseSettings>,
-    _overrideValues?: Record<number, ObservationOverride>,
-    _approvedClusterMerges?: ClusterApprovedMerge[],
-    _meta?: SolveInvocationMeta,
-  ) => AdjustmentResult,
-): NonNullable<AdjustmentResult['preanalysisImpactDiagnostics']> => {
-  const allPlannedRows = [...base.observations].filter(isPreanalysisWhatIfCandidate);
-  const plannedRows = allPlannedRows
-    .sort((a, b) => {
-      const aActive = baseExclusions.has(a.id) ? 0 : 1;
-      const bActive = baseExclusions.has(b.id) ? 0 : 1;
-      if (bActive !== aActive) return bActive - aActive;
-      return (a.sourceLine ?? Number.MAX_SAFE_INTEGER) - (b.sourceLine ?? Number.MAX_SAFE_INTEGER);
-    })
-    .slice(0, PREANALYSIS_IMPACT_MAX_CANDIDATES);
-  const baseStationMajors = preanalysisStationMajors(base);
-  const baseRelativeMetrics = preanalysisRelativeMetrics(base);
-  const baseWorstStationMajor =
-    baseStationMajors.length > 0 ? Math.max(...baseStationMajors) : undefined;
-  const baseMedianStationMajor = medianOf(baseStationMajors);
-  const baseWorstPairSigmaDist =
-    baseRelativeMetrics.length > 0 ? Math.max(...baseRelativeMetrics) : undefined;
-  const baseWeakStations = preanalysisWeakStationCount(base);
-  const baseWeakPairs = preanalysisWeakPairCount(base);
-
-  const rows = plannedRows
-    .map((obs, index, plannedCandidates) => {
-      const plannedActive = !baseExclusions.has(obs.id);
-      const action: 'add' | 'remove' = plannedActive ? 'remove' : 'add';
-      const row: NonNullable<AdjustmentResult['preanalysisImpactDiagnostics']>['rows'][number] = {
-        obsId: obs.id,
-        type: obs.type,
-        stations: observationStationsLabel(obs),
-        sourceLine: obs.sourceLine,
-        plannedActive,
-        action,
-        status: 'failed',
-      };
-      try {
-        const altExclusions = new Set(baseExclusions);
-        if (plannedActive) altExclusions.add(obs.id);
-        else altExclusions.delete(obs.id);
-        const alt = solveCore(altExclusions, undefined, overrideValues, approvedClusterMerges, {
-          stageId: 'preanalysis-impact',
-          stageLabel: `Preanalysis impact ${index + 1}/${plannedCandidates.length}`,
-          solveTotalHint: 1 + plannedCandidates.length,
-        });
-        const altStationMajors = preanalysisStationMajors(alt);
-        const altRelativeMetrics = preanalysisRelativeMetrics(alt);
-        const altWorstStationMajor =
-          altStationMajors.length > 0 ? Math.max(...altStationMajors) : undefined;
-        const altMedianStationMajor = medianOf(altStationMajors);
-        const altWorstPairSigmaDist =
-          altRelativeMetrics.length > 0 ? Math.max(...altRelativeMetrics) : undefined;
-        const altWeakStations = preanalysisWeakStationCount(alt);
-        const altWeakPairs = preanalysisWeakPairCount(alt);
-        const direction = action === 'remove' ? 1 : -1;
-        const deltaWorstStationMajor =
-          altWorstStationMajor != null && baseWorstStationMajor != null
-            ? altWorstStationMajor - baseWorstStationMajor
-            : undefined;
-        const deltaMedianStationMajor =
-          altMedianStationMajor != null && baseMedianStationMajor != null
-            ? altMedianStationMajor - baseMedianStationMajor
-            : undefined;
-        const deltaWorstPairSigmaDist =
-          altWorstPairSigmaDist != null && baseWorstPairSigmaDist != null
-            ? altWorstPairSigmaDist - baseWorstPairSigmaDist
-            : undefined;
-        const deltaWeakStationCount = altWeakStations - baseWeakStations;
-        const deltaWeakPairCount = altWeakPairs - baseWeakPairs;
-        const score =
-          direction * (deltaWorstStationMajor ?? 0) * 40 +
-          direction * (deltaMedianStationMajor ?? 0) * 20 +
-          direction * (deltaWorstPairSigmaDist ?? 0) * 25 +
-          direction * deltaWeakStationCount * 5 +
-          direction * deltaWeakPairCount * 4;
-        return {
-          ...row,
-          deltaWorstStationMajor,
-          deltaMedianStationMajor,
-          deltaWorstPairSigmaDist,
-          deltaWeakStationCount,
-          deltaWeakPairCount,
-          score: Number.isFinite(score) ? score : undefined,
-          status: 'ok' as const,
-        };
-      } catch {
-        return row;
-      }
-    })
-    .sort((a, b) => {
-      if (a.status !== b.status) return a.status === 'ok' ? -1 : 1;
-      if (a.action !== b.action) return a.action === 'remove' ? -1 : 1;
-      const bScore = b.score ?? Number.NEGATIVE_INFINITY;
-      const aScore = a.score ?? Number.NEGATIVE_INFINITY;
-      if (bScore !== aScore) return bScore - aScore;
-      return (a.sourceLine ?? Number.MAX_SAFE_INTEGER) - (b.sourceLine ?? Number.MAX_SAFE_INTEGER);
-    });
-
-  return {
-    enabled: true,
-    activePlannedCount: allPlannedRows.filter((obs) => !baseExclusions.has(obs.id)).length,
-    excludedPlannedCount: allPlannedRows.filter((obs) => baseExclusions.has(obs.id)).length,
-    baseWorstStationMajor,
-    baseMedianStationMajor,
-    baseWorstPairSigmaDist,
-    baseWeakStationCount: baseWeakStations,
-    baseWeakPairCount: baseWeakPairs,
-    rows,
-  };
-};
-
 export const runAdjustmentSession = (
   request: RunSessionRequest,
   onProgress?: RunSessionProgressCallback,
 ): RunSessionOutcome => {
   const startedAt = Date.now();
   let effectiveExclusions = new Set(request.excludedIds);
+  let activePreanalysisAdditionIds = [...request.activePreanalysisAdditionIds];
   let effectiveOverrides = request.overrides;
   let effectiveClusterMerges = request.parseSettings.clusterDetectionEnabled
     ? normalizeClusterApprovedMerges(request.approvedClusterMerges)
@@ -721,14 +599,21 @@ export const runAdjustmentSession = (
   const inputChangedSinceLastRun =
     request.lastRunInput != null && request.input !== request.lastRunInput;
   const droppedExclusions = inputChangedSinceLastRun ? effectiveExclusions.size : 0;
+  const droppedPreanalysisAdditions = inputChangedSinceLastRun
+    ? activePreanalysisAdditionIds.length
+    : 0;
   const droppedOverrides = inputChangedSinceLastRun ? Object.keys(effectiveOverrides).length : 0;
   const droppedClusterMerges = inputChangedSinceLastRun ? effectiveClusterMerges.length : 0;
 
   if (
     inputChangedSinceLastRun &&
-    (droppedExclusions > 0 || droppedOverrides > 0 || droppedClusterMerges > 0)
+    (droppedExclusions > 0 ||
+      droppedPreanalysisAdditions > 0 ||
+      droppedOverrides > 0 ||
+      droppedClusterMerges > 0)
   ) {
     effectiveExclusions = new Set();
+    activePreanalysisAdditionIds = [];
     effectiveOverrides = {};
     effectiveClusterMerges = [];
   }
@@ -787,6 +672,50 @@ export const runAdjustmentSession = (
     });
   };
 
+  let cachedPreanalysisTemplates:
+    | ReturnType<typeof buildPreanalysisSyntheticSetTemplates>
+    | null
+    | undefined;
+
+  const resolvePreanalysisTemplates = (
+    profileContext: ReturnType<typeof resolveProfileContext>,
+    excludeSet: Set<number>,
+    overrideValues: Record<number, ObservationOverride>,
+    normalizedMerges: ClusterApprovedMerge[],
+  ) => {
+    if (profileContext.effectiveParse.runMode !== 'preanalysis') return [];
+    if (cachedPreanalysisTemplates !== undefined) return cachedPreanalysisTemplates ?? [];
+    const templateSource = solveEngine({
+      input: request.input,
+      maxIterations: request.maxIterations,
+      convergenceThreshold: request.convergenceLimit,
+      instrumentLibrary: profileContext.effectiveInstrumentLibrary,
+      excludeIds: excludeSet,
+      overrides: overrideValues,
+      geoidSourceData:
+        profileContext.effectiveParse.geoidSourceFormat !== 'builtin'
+          ? (request.geoidSourceData ?? undefined)
+          : undefined,
+      parseOptions: {
+        ...buildParseOptions(
+          request,
+          profileContext.effectiveParse,
+          profileContext.directionSetMode,
+          profileContext.allowClusterFaceReliability,
+          normalizedMerges,
+          profileContext.currentInstrument,
+        ),
+        preanalysisSyntheticAdditionIds: [],
+      },
+    });
+    cachedPreanalysisTemplates = buildPreanalysisSyntheticSetTemplates(
+      request.input,
+      templateSource,
+      request.planningMap,
+    );
+    return cachedPreanalysisTemplates;
+  };
+
   const solveCore = (
     excludeSet: Set<number>,
     parseOverride?: Partial<RunSessionParseSettings>,
@@ -797,6 +726,7 @@ export const runAdjustmentSession = (
       stageLabel: 'Main solve',
       solveTotalHint: 1,
     },
+    syntheticAdditionIds: string[] = activePreanalysisAdditionIds,
   ): AdjustmentResult => {
     const mergedParse = { ...request.parseSettings, ...parseOverride, autoAdjustEnabled: false };
     const profileContext = resolveProfileContext(
@@ -807,11 +737,21 @@ export const runAdjustmentSession = (
     const normalizedMerges = profileContext.effectiveParse.clusterDetectionEnabled
       ? normalizeClusterApprovedMerges(approvedClusterMerges)
       : [];
+    const preanalysisTemplates = resolvePreanalysisTemplates(
+      profileContext,
+      excludeSet,
+      overrideValues,
+      normalizedMerges,
+    );
+    const solveInput =
+      profileContext.effectiveParse.runMode === 'preanalysis'
+        ? buildSyntheticPreanalysisInput(request.input, syntheticAdditionIds, preanalysisTemplates)
+        : request.input;
     const solveIndex = solveInvocationCount + 1;
     const stageStartedAt = Date.now();
     emitProgress(meta, solveIndex, undefined, request.maxIterations);
     const result = solveEngine({
-      input: request.input,
+      input: solveInput,
       maxIterations: request.maxIterations,
       convergenceThreshold: request.convergenceLimit,
       instrumentLibrary: profileContext.effectiveInstrumentLibrary,
@@ -823,11 +763,15 @@ export const runAdjustmentSession = (
           : undefined,
       parseOptions: buildParseOptions(
         request,
-        profileContext.effectiveParse,
+        {
+          ...profileContext.effectiveParse,
+          preanalysisSyntheticAdditionIds: syntheticAdditionIds,
+        },
         profileContext.directionSetMode,
         profileContext.allowClusterFaceReliability,
         normalizedMerges,
         profileContext.currentInstrument,
+        solveInput !== request.input ? { sourceInputOverride: solveInput } : undefined,
       ),
       progressCallback: (event: SolveProgressEvent) => {
         if (event.phase === 'complete') return;
@@ -839,6 +783,7 @@ export const runAdjustmentSession = (
         );
       },
     });
+    result.preanalysisSyntheticAdditionIds = [...syntheticAdditionIds];
     solveInvocationCount += 1;
     recordStageDuration(meta.stageId, Date.now() - stageStartedAt);
     return result;
@@ -863,13 +808,35 @@ export const runAdjustmentSession = (
     );
     if (profileContext.effectiveParse.runMode === 'preanalysis') {
       solved.suspectImpactDiagnostics = undefined;
-      solved.preanalysisImpactDiagnostics = buildPreanalysisImpactDiagnostics(
-        solved,
+      const preanalysisTemplates = resolvePreanalysisTemplates(
+        profileContext,
         excludeSet,
         overrideValues,
-        approvedClusterMerges,
-        solveCore,
+        profileContext.effectiveParse.clusterDetectionEnabled
+          ? normalizeClusterApprovedMerges(approvedClusterMerges)
+          : [],
       );
+      solved.preanalysisImpactDiagnostics = buildPreanalysisPlanningDiagnostics({
+        base: solved,
+        input: request.input,
+        planningMap: request.planningMap,
+        activeTemplateIds: activePreanalysisAdditionIds,
+        targetThresholdMeters: profileContext.effectiveParse.preanalysisAccuracyThresholdMeters,
+        maxAddedSets: profileContext.effectiveParse.preanalysisMaxAddedSets,
+        solveScenario: (nextTemplateIds) =>
+          solveCore(
+            excludeSet,
+            undefined,
+            overrideValues,
+            approvedClusterMerges,
+            {
+              stageId: 'preanalysis-impact',
+              stageLabel: `Preanalysis impact ${Math.max(1, nextTemplateIds.length)}`,
+              solveTotalHint: 1 + Math.max(1, preanalysisTemplates.length),
+            },
+            nextTemplateIds,
+          ),
+      });
       solved.robustComparison = { enabled: false, classicalTop: [], robustTop: [], overlapCount: 0 };
       return solved;
     }
@@ -1015,8 +982,10 @@ export const runAdjustmentSession = (
   return {
     result,
     effectiveExcludedIds: [...effectiveExclusions],
+    activePreanalysisAdditionIds: [...activePreanalysisAdditionIds],
     effectiveClusterApprovedMerges: effectiveClusterMerges,
     droppedExclusions,
+    droppedPreanalysisAdditions,
     droppedOverrides,
     droppedClusterMerges,
     inputChangedSinceLastRun,

@@ -55,6 +55,7 @@ interface UseAppRunWorkspaceReviewArgs {
   restoreAdjustmentWorkflowState: (_state: {
     result: AdjustmentResult;
     excludedIds: number[];
+    activePreanalysisAdditionIds: string[];
     overrides: Record<number, ObservationOverride>;
     approvedClusterMerges: ClusterApprovedMerge[];
   }) => void;
@@ -256,6 +257,7 @@ export const useAppRunWorkspaceReview = ({
       restoreAdjustmentWorkflowState({
         result: restoredResult,
         excludedIds: restoredSnapshot.excludedIds,
+        activePreanalysisAdditionIds: restoredSnapshot.activePreanalysisAdditionIds ?? [],
         overrides: restoredSnapshot.overrides,
         approvedClusterMerges: restoredSnapshot.approvedClusterMerges,
       });

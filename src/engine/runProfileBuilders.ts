@@ -174,6 +174,11 @@ export const createRunProfileBuilders = ({
         parseState.gridAngleMode ?? profileCtx.effectiveParse.gridAngleMode ?? 'measured',
       gridDirectionMode:
         parseState.gridDirectionMode ?? profileCtx.effectiveParse.gridDirectionMode ?? 'measured',
+      preanalysisAccuracyThresholdMeters:
+        parseState.preanalysisAccuracyThresholdMeters ??
+        profileCtx.effectiveParse.preanalysisAccuracyThresholdMeters,
+      preanalysisMaxAddedSets:
+        parseState.preanalysisMaxAddedSets ?? profileCtx.effectiveParse.preanalysisMaxAddedSets ?? 5,
       mapMode: parseState.mapMode ?? profileCtx.effectiveParse.mapMode,
       mapScaleFactor: parseState.mapScaleFactor ?? profileCtx.effectiveParse.mapScaleFactor ?? 1,
       faceNormalizationMode:
@@ -325,6 +330,11 @@ export const createRunProfileBuilders = ({
       parity: profileCtx.parity,
       runMode: parse.runMode,
       preanalysisMode: parse.runMode === 'preanalysis',
+      preanalysisAccuracyThresholdMeters:
+        parse.preanalysisAccuracyThresholdMeters ??
+        profileCtx.effectiveParse.preanalysisAccuracyThresholdMeters,
+      preanalysisMaxAddedSets:
+        parse.preanalysisMaxAddedSets ?? profileCtx.effectiveParse.preanalysisMaxAddedSets,
       plannedObservationCount: parseState.plannedObservationCount ?? 0,
       autoSideshotEnabled: parseState.autoSideshotEnabled ?? base.autoSideshotEnabled,
       autoAdjustEnabled: parseState.autoAdjustEnabled ?? base.autoAdjustEnabled,

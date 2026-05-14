@@ -22,6 +22,7 @@ interface RecordRunSnapshotArgs<TSettingsSnapshot, TRunDiagnostics> {
   settingsSnapshot: TSettingsSnapshot;
   inputFingerprint: string;
   excludedIds: number[];
+  activePreanalysisAdditionIds?: string[];
   overrideIds: number[];
   overrides: Record<number, ObservationOverride>;
   approvedClusterMerges: ClusterApprovedMerge[];
@@ -175,6 +176,7 @@ export const useRunComparisonState = <TSettingsSnapshot, TRunDiagnostics>({
       settingsSnapshot,
       inputFingerprint,
       excludedIds,
+      activePreanalysisAdditionIds,
       overrideIds,
       overrides,
       approvedClusterMerges,
@@ -191,6 +193,9 @@ export const useRunComparisonState = <TSettingsSnapshot, TRunDiagnostics>({
         runDiagnostics,
         settingsSnapshot,
         excludedIds: excludedIds.slice().sort((a, b) => a - b),
+        activePreanalysisAdditionIds: (activePreanalysisAdditionIds ?? [])
+          .slice()
+          .sort((a, b) => a.localeCompare(b, undefined, { numeric: true })),
         overrideIds: overrideIds.slice().sort((a, b) => a - b),
         overrides: deepClonePlain(overrides),
         approvedClusterMerges: approvedClusterMerges.map((merge) => ({ ...merge })),

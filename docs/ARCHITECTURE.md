@@ -40,6 +40,7 @@ These modules coordinate:
 - import-review modal state
 - save/load and local recovery
 - named-project storage, manifest, checked/open/focused file workspace state, and portable import/export workflows
+- planning-map UI state for preanalysis feasibility overlays, blocked polygons, obstacle footprints, and scenario-family toggles
 - export dispatch
 - report/map shared review state
 - saved runs and compare workflows
@@ -64,6 +65,8 @@ Representative modules include:
 - `runSession.ts`
 - `solveEngine.ts`
 - `directRunPipeline.ts`
+- `preanalysisPlanning.ts`
+- `planningMapState.ts`
 - `runProfileBuilders.ts`
 - `runResultsTextBuilder.ts`
 - `runOutputBuilders.ts`
@@ -186,7 +189,7 @@ Result builders then generate:
 - WebNet report sections
 - industry-style listing sections
 - processing-summary sections
-- map and ellipse models
+- map and ellipse models, including preanalysis planning preview geometry and obstacle overlays
 - adjusted-points and CSV/GeoJSON style exports
 - LandXML output
 - QA comparison models and bundle-export metadata

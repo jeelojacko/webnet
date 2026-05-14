@@ -37,6 +37,7 @@ Successful startup looks like:
 - Read [docs/USER_GUIDE.md](docs/USER_GUIDE.md) for the full beginner walkthrough.
 - Start with [public/examples/mixed_grid_tutorial.dat](public/examples/mixed_grid_tutorial.dat) for a reproducible mixed TS + GNSS + leveling adjustment on a Canada-first projected grid CRS.
 - Use [public/examples/preanalysis_network_plan.dat](public/examples/preanalysis_network_plan.dat) for predicted-precision / planning mode.
+  In preanalysis mode, the report can now recommend added repeated setup sets plus obstacle-aware synthetic brace, promoted-setup, synthetic-setup, and cross-tie scenarios near weak geometry, and estimate how many added scenarios are needed to reach an optional planning threshold. The 2D `Map & Ellipses` tab can also load raw input points, show an OSM basemap, auto-fetch OSM building/wooded obstacle footprints for georeferenced runs, and store user-drawn blocked polygons that feed back into the planner.
 - Use [public/examples/nb double stereo.dat](public/examples/nb%20double%20stereo.dat) for a projected-grid total station example focused on TS workflow only.
 - Keep [public/examples/industry_demo.dat](public/examples/industry_demo.dat) as a broader legacy/general sample, not the recommended first tutorial dataset.
 
@@ -79,6 +80,7 @@ npm run harness:crs:synthetic
 
 - Edit or load adjustment input in the browser.
 - Configure solve settings in `Project Options`.
+- In `Run Mode = Preanalysis`, optionally set a planning accuracy threshold and max added sets, then review obstacle-aware planning recommendations in the report and on the 2D map.
 - Run `Adjust`.
 - Review results in `Adjustment Report`, `Processing Summary`, `Industry Standard Output`, and `Map & Ellipses`.
 - Export adjusted points, CSV, GeoJSON, LandXML, or text outputs from the toolbar/export controls.

@@ -188,6 +188,46 @@ describe('project file serialization/parsing', () => {
             scale: { enabled: false, factor: 1 },
           },
         }),
+        planningMap: {
+          basemapMode: 'osm',
+          showInputPoints: true,
+          showObstacleLayer: true,
+          showBlockedAreas: true,
+          blockEditMode: false,
+          blockedPolygons: [
+            {
+              id: 'block-1',
+              source: 'user',
+              kind: 'blocked-area',
+              label: 'Blocked pad',
+              vertices: [
+                { x: 1, y: 1 },
+                { x: 4, y: 1 },
+                { x: 4, y: 5 },
+              ],
+            },
+          ],
+          obstaclePolygons: [
+            {
+              id: 'osm-1',
+              source: 'osm',
+              kind: 'building',
+              label: 'OSM building',
+              vertices: [
+                { x: 10, y: 10 },
+                { x: 12, y: 10 },
+                { x: 12, y: 12 },
+              ],
+            },
+          ],
+          scenarioFamilies: {
+            existingSet: true,
+            bracePoint: true,
+            syntheticSetup: true,
+            promotedSetup: false,
+            crossTie: true,
+          },
+        },
       },
       project: {
         projectInstruments: defaults.projectInstruments,
@@ -226,6 +266,10 @@ describe('project file serialization/parsing', () => {
       'A2',
       'A3',
     ]);
+    expect(parsed.project.ui.planningMap?.basemapMode).toBe('osm');
+    expect(parsed.project.ui.planningMap?.blockedPolygons).toHaveLength(1);
+    expect(parsed.project.ui.planningMap?.obstaclePolygons).toHaveLength(1);
+    expect(parsed.project.ui.planningMap?.scenarioFamilies.promotedSetup).toBe(false);
     expect(parsed.project.ui.adjustedPointsExport.transform.rotation.enabled).toBe(true);
     expect(parsed.project.ui.adjustedPointsExport.transform.rotation.angleDeg).toBe(12.5);
     expect(parsed.project.project.selectedInstrument).toBe('S9');

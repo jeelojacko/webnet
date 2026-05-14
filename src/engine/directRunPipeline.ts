@@ -4,7 +4,11 @@ import {
   runAutoAdjustCycles,
   type AutoAdjustConfig,
 } from './autoAdjust';
-import { isPreanalysisWhatIfCandidate } from './preanalysis';
+import {
+  buildPreanalysisPlanningDiagnostics,
+  buildPreanalysisSyntheticSetTemplates,
+  buildSyntheticPreanalysisInput,
+} from './preanalysisPlanning';
 import { createRunProfileBuilders } from './runProfileBuilders';
 import { normalizeClusterApprovedMerges, solveEngine } from './solveEngine';
 import type {
@@ -22,7 +26,6 @@ import type {
 import type { RunSessionOutcome, RunSessionRequest } from './runSession';
 
 const IMPACT_MAX_CANDIDATES = 3;
-const PREANALYSIS_IMPACT_MAX_CANDIDATES = 24;
 const AUTO_ADJUST_MIN_REDUNDANCY = 0.05;
 
 const observationStationsLabel = (obs: Observation): string => {
@@ -67,30 +70,6 @@ const rankedSuspects = (
   return rows.slice(0, limit).map((row, index) => ({ ...row, rank: index + 1 }));
 };
 
-const medianOf = (values: number[]): number | undefined => {
-  if (values.length === 0) return undefined;
-  const sorted = [...values].sort((a, b) => a - b);
-  const mid = Math.floor(sorted.length / 2);
-  if (sorted.length % 2 === 0) return (sorted[mid - 1] + sorted[mid]) / 2;
-  return sorted[mid];
-};
-
-const preanalysisStationMajors = (res: AdjustmentResult): number[] =>
-  (res.stationCovariances ?? []).map(
-    (row) => row.ellipse?.semiMajor ?? Math.max(row.sigmaE, row.sigmaN),
-  );
-
-const preanalysisRelativeMetrics = (res: AdjustmentResult): number[] =>
-  (res.relativeCovariances ?? []).map(
-    (row) => row.sigmaDist ?? row.ellipse?.semiMajor ?? Math.max(row.sigmaE, row.sigmaN),
-  );
-
-const preanalysisWeakStationCount = (res: AdjustmentResult): number =>
-  (res.weakGeometryDiagnostics?.stationCues ?? []).filter((cue) => cue.severity !== 'ok').length;
-
-const preanalysisWeakPairCount = (res: AdjustmentResult): number =>
-  (res.weakGeometryDiagnostics?.relativeCues ?? []).filter((cue) => cue.severity !== 'ok').length;
-
 const maxUnknownCoordinateShift = (base: AdjustmentResult, alt: AdjustmentResult): number => {
   let maxShift = 0;
   Object.entries(base.stations).forEach(([id, station]) => {
@@ -116,12 +95,18 @@ export const createDirectRunPipeline = ({
   defaultIndustryInstrument,
   normalizeSolveProfile,
 }: CreateDirectRunPipelineArgs) => {
+  let cachedPreanalysisTemplates:
+    | ReturnType<typeof buildPreanalysisSyntheticSetTemplates>
+    | null
+    | undefined;
+
   const solveCore = (
     request: RunSessionRequest,
     excludeSet: Set<number>,
     parseOverride?: Partial<ParseSettings>,
     overrideValues: Record<number, ObservationOverride> = request.overrides,
     approvedClusterMerges: ClusterApprovedMerge[] = request.approvedClusterMerges,
+    syntheticAdditionIds: string[] = request.activePreanalysisAdditionIds,
   ): AdjustmentResult => {
     const mergedParse = { ...request.parseSettings, ...parseOverride, autoAdjustEnabled: false };
     const { resolveProfileContext } = createRunProfileBuilders({
@@ -136,8 +121,128 @@ export const createDirectRunPipeline = ({
     const normalizedClusterMerges = effectiveParse.clusterDetectionEnabled
       ? normalizeClusterApprovedMerges(approvedClusterMerges)
       : [];
+    if (effectiveParse.runMode === 'preanalysis' && cachedPreanalysisTemplates === undefined) {
+      const templateSource = solveEngine({
+        input: request.input,
+        maxIterations: request.maxIterations,
+        convergenceThreshold: request.convergenceLimit,
+        instrumentLibrary: profileCtx.effectiveInstrumentLibrary,
+        excludeIds: excludeSet,
+        overrides: overrideValues,
+        geoidSourceData:
+          effectiveParse.geoidSourceFormat !== 'builtin'
+            ? (request.geoidSourceData ?? undefined)
+            : undefined,
+        parseOptions: {
+          geometryDependentSigmaReference: effectiveParse.geometryDependentSigmaReference,
+          runMode: effectiveParse.runMode,
+          sourceFile: request.projectRunFiles?.[0]?.name ?? '<project-main>',
+          includeFiles: request.projectIncludeFiles,
+          projectRunFiles: request.projectRunFiles?.map((file) => ({ ...file })),
+          units: request.units,
+          coordMode: effectiveParse.coordMode,
+          coordSystemMode: effectiveParse.coordSystemMode,
+          crsId: effectiveParse.crsId,
+          localDatumScheme: effectiveParse.localDatumScheme,
+          averageScaleFactor: effectiveParse.averageScaleFactor,
+          commonElevation: effectiveParse.commonElevation,
+          averageGeoidHeight: effectiveParse.averageGeoidHeight,
+          gnssVectorFrameDefault: effectiveParse.gnssVectorFrameDefault,
+          gnssFrameConfirmed: effectiveParse.gnssFrameConfirmed,
+          verticalDeflectionNorthSec: effectiveParse.verticalDeflectionNorthSec,
+          verticalDeflectionEastSec: effectiveParse.verticalDeflectionEastSec,
+          observationMode: {
+            bearing: effectiveParse.gridBearingMode,
+            distance: effectiveParse.gridDistanceMode,
+            angle: effectiveParse.gridAngleMode,
+            direction: effectiveParse.gridDirectionMode,
+          },
+          gridBearingMode: effectiveParse.gridBearingMode,
+          gridDistanceMode: effectiveParse.gridDistanceMode,
+          gridAngleMode: effectiveParse.gridAngleMode,
+          gridDirectionMode: effectiveParse.gridDirectionMode,
+          preanalysisMode: effectiveParse.runMode === 'preanalysis',
+          preanalysisAccuracyThresholdMeters: effectiveParse.preanalysisAccuracyThresholdMeters,
+          preanalysisMaxAddedSets: effectiveParse.preanalysisMaxAddedSets,
+          preanalysisSyntheticAdditionIds: [],
+          order: effectiveParse.order,
+          angleUnits: effectiveParse.angleUnits,
+          angleStationOrder: effectiveParse.angleStationOrder,
+          angleMode: effectiveParse.angleMode,
+          deltaMode: effectiveParse.deltaMode,
+          mapMode: effectiveParse.mapMode,
+          mapScaleFactor: effectiveParse.mapScaleFactor,
+          faceNormalizationMode: effectiveParse.faceNormalizationMode,
+          normalize: effectiveParse.faceNormalizationMode !== 'off',
+          directionFaceReliabilityFromCluster: profileCtx.allowClusterFaceReliability,
+          applyCurvatureRefraction: effectiveParse.applyCurvatureRefraction,
+          refractionCoefficient: effectiveParse.refractionCoefficient,
+          verticalReduction: effectiveParse.verticalReduction,
+          levelWeight: effectiveParse.levelWeight,
+          levelLoopToleranceBaseMm: effectiveParse.levelLoopToleranceBaseMm,
+          levelLoopTolerancePerSqrtKmMm: effectiveParse.levelLoopTolerancePerSqrtKmMm,
+          crsTransformEnabled: effectiveParse.crsTransformEnabled,
+          crsProjectionModel: effectiveParse.crsProjectionModel,
+          crsLabel: effectiveParse.crsLabel,
+          crsGridScaleEnabled: effectiveParse.crsGridScaleEnabled,
+          crsGridScaleFactor: effectiveParse.crsGridScaleFactor,
+          crsConvergenceEnabled: effectiveParse.crsConvergenceEnabled,
+          crsConvergenceAngleRad: effectiveParse.crsConvergenceAngleRad,
+          geoidModelEnabled: effectiveParse.geoidModelEnabled,
+          geoidModelId: effectiveParse.geoidModelId,
+          geoidSourceFormat: effectiveParse.geoidSourceFormat,
+          geoidSourcePath: effectiveParse.geoidSourcePath,
+          geoidInterpolation: effectiveParse.geoidInterpolation,
+          geoidHeightConversionEnabled: effectiveParse.geoidHeightConversionEnabled,
+          geoidOutputHeightDatum: effectiveParse.geoidOutputHeightDatum,
+          gpsLoopCheckEnabled: effectiveParse.gpsLoopCheckEnabled,
+          gpsAddHiHtEnabled: effectiveParse.gpsAddHiHtEnabled,
+          gpsAddHiHtHiM: effectiveParse.gpsAddHiHtHiM,
+          gpsAddHiHtHtM: effectiveParse.gpsAddHiHtHtM,
+          qFixLinearSigmaM: effectiveParse.qFixLinearSigmaM,
+          qFixAngularSigmaSec: effectiveParse.qFixAngularSigmaSec,
+          positionalToleranceEnabled: effectiveParse.positionalToleranceEnabled,
+          positionalToleranceConstantMm: effectiveParse.positionalToleranceConstantMm,
+          positionalTolerancePpm: effectiveParse.positionalTolerancePpm,
+          positionalToleranceConfidencePercent: effectiveParse.positionalToleranceConfidencePercent,
+          descriptionReconcileMode: effectiveParse.descriptionReconcileMode,
+          descriptionAppendDelimiter: effectiveParse.descriptionAppendDelimiter,
+          lonSign: effectiveParse.lonSign,
+          tsCorrelationEnabled: effectiveParse.tsCorrelationEnabled,
+          tsCorrelationRho: effectiveParse.tsCorrelationRho,
+          tsCorrelationScope: effectiveParse.tsCorrelationScope,
+          robustMode: effectiveParse.robustMode,
+          robustK: effectiveParse.robustK,
+          parseCompatibilityMode: effectiveParse.parseCompatibilityMode,
+          parseModeMigrated: effectiveParse.parseModeMigrated,
+          autoAdjustEnabled: false,
+          autoAdjustMaxCycles: effectiveParse.autoAdjustMaxCycles,
+          autoAdjustMaxRemovalsPerCycle: effectiveParse.autoAdjustMaxRemovalsPerCycle,
+          autoAdjustStdResThreshold: effectiveParse.autoAdjustStdResThreshold,
+          autoSideshotEnabled: effectiveParse.autoSideshotEnabled,
+          directionSetMode: profileCtx.directionSetMode,
+          clusterDetectionEnabled: effectiveParse.clusterDetectionEnabled,
+          clusterApprovedMerges: normalizedClusterMerges,
+          currentInstrument: profileCtx.currentInstrument,
+          preferExternalInstruments: true,
+        },
+      });
+      cachedPreanalysisTemplates = buildPreanalysisSyntheticSetTemplates(
+        request.input,
+        templateSource,
+        request.planningMap,
+      );
+    }
+    const solveInput =
+      effectiveParse.runMode === 'preanalysis'
+        ? buildSyntheticPreanalysisInput(
+            request.input,
+            syntheticAdditionIds,
+            cachedPreanalysisTemplates ?? [],
+          )
+        : request.input;
     return solveEngine({
-      input: request.input,
+      input: solveInput,
       maxIterations: request.maxIterations,
       convergenceThreshold: request.convergenceLimit,
       instrumentLibrary: profileCtx.effectiveInstrumentLibrary,
@@ -150,7 +255,10 @@ export const createDirectRunPipeline = ({
         runMode: effectiveParse.runMode,
         sourceFile: request.projectRunFiles?.[0]?.name ?? '<project-main>',
         includeFiles: request.projectIncludeFiles,
-        projectRunFiles: request.projectRunFiles?.map((file) => ({ ...file })),
+        projectRunFiles:
+          solveInput !== request.input
+            ? undefined
+            : request.projectRunFiles?.map((file) => ({ ...file })),
         units: request.units,
         coordMode: effectiveParse.coordMode,
         coordSystemMode: effectiveParse.coordSystemMode,
@@ -174,6 +282,9 @@ export const createDirectRunPipeline = ({
         gridAngleMode: effectiveParse.gridAngleMode,
         gridDirectionMode: effectiveParse.gridDirectionMode,
         preanalysisMode: effectiveParse.runMode === 'preanalysis',
+        preanalysisAccuracyThresholdMeters: effectiveParse.preanalysisAccuracyThresholdMeters,
+        preanalysisMaxAddedSets: effectiveParse.preanalysisMaxAddedSets,
+        preanalysisSyntheticAdditionIds: syntheticAdditionIds,
         order: effectiveParse.order,
         angleUnits: effectiveParse.angleUnits,
         angleStationOrder: effectiveParse.angleStationOrder,
@@ -322,122 +433,6 @@ export const createDirectRunPipeline = ({
     return rows;
   };
 
-  const buildPreanalysisImpactDiagnostics = (
-    request: RunSessionRequest,
-    base: AdjustmentResult,
-    baseExclusions: Set<number>,
-    overrideValues: Record<number, ObservationOverride>,
-    approvedClusterMerges: ClusterApprovedMerge[],
-  ): NonNullable<AdjustmentResult['preanalysisImpactDiagnostics']> => {
-    const allPlannedRows = [...base.observations].filter(isPreanalysisWhatIfCandidate);
-    const plannedRows = allPlannedRows
-      .sort((a, b) => {
-        const aActive = baseExclusions.has(a.id) ? 0 : 1;
-        const bActive = baseExclusions.has(b.id) ? 0 : 1;
-        if (bActive !== aActive) return bActive - aActive;
-        return (
-          (a.sourceLine ?? Number.MAX_SAFE_INTEGER) - (b.sourceLine ?? Number.MAX_SAFE_INTEGER)
-        );
-      })
-      .slice(0, PREANALYSIS_IMPACT_MAX_CANDIDATES);
-
-    const baseStationMajors = preanalysisStationMajors(base);
-    const baseRelativeMetrics = preanalysisRelativeMetrics(base);
-    const baseWorstStationMajor =
-      baseStationMajors.length > 0 ? Math.max(...baseStationMajors) : undefined;
-    const baseMedianStationMajor = medianOf(baseStationMajors);
-    const baseWorstPairSigmaDist =
-      baseRelativeMetrics.length > 0 ? Math.max(...baseRelativeMetrics) : undefined;
-    const baseWeakStations = preanalysisWeakStationCount(base);
-    const baseWeakPairs = preanalysisWeakPairCount(base);
-
-    const rows: NonNullable<AdjustmentResult['preanalysisImpactDiagnostics']>['rows'] =
-      plannedRows.map((obs) => {
-        const plannedActive = !baseExclusions.has(obs.id);
-        const action: 'add' | 'remove' = plannedActive ? 'remove' : 'add';
-        const row: NonNullable<AdjustmentResult['preanalysisImpactDiagnostics']>['rows'][number] = {
-          obsId: obs.id,
-          type: obs.type,
-          stations: observationStationsLabel(obs),
-          sourceLine: obs.sourceLine,
-          plannedActive,
-          action,
-          status: 'failed',
-        };
-        try {
-          const altExclusions = new Set(baseExclusions);
-          if (plannedActive) altExclusions.add(obs.id);
-          else altExclusions.delete(obs.id);
-          const alt = solveCore(request, altExclusions, undefined, overrideValues, approvedClusterMerges);
-          const altStationMajors = preanalysisStationMajors(alt);
-          const altRelativeMetrics = preanalysisRelativeMetrics(alt);
-          const altWorstStationMajor =
-            altStationMajors.length > 0 ? Math.max(...altStationMajors) : undefined;
-          const altMedianStationMajor = medianOf(altStationMajors);
-          const altWorstPairSigmaDist =
-            altRelativeMetrics.length > 0 ? Math.max(...altRelativeMetrics) : undefined;
-          const altWeakStations = preanalysisWeakStationCount(alt);
-          const altWeakPairs = preanalysisWeakPairCount(alt);
-
-          const deltaWorstStationMajor =
-            altWorstStationMajor != null && baseWorstStationMajor != null
-              ? altWorstStationMajor - baseWorstStationMajor
-              : undefined;
-          const deltaMedianStationMajor =
-            altMedianStationMajor != null && baseMedianStationMajor != null
-              ? altMedianStationMajor - baseMedianStationMajor
-              : undefined;
-          const deltaWorstPairSigmaDist =
-            altWorstPairSigmaDist != null && baseWorstPairSigmaDist != null
-              ? altWorstPairSigmaDist - baseWorstPairSigmaDist
-              : undefined;
-          const deltaWeakStationCount = altWeakStations - baseWeakStations;
-          const deltaWeakPairCount = altWeakPairs - baseWeakPairs;
-          const direction = action === 'remove' ? 1 : -1;
-          const score =
-            direction * (deltaWorstStationMajor ?? 0) * 40 +
-            direction * (deltaMedianStationMajor ?? 0) * 20 +
-            direction * (deltaWorstPairSigmaDist ?? 0) * 25 +
-            direction * deltaWeakStationCount * 5 +
-            direction * deltaWeakPairCount * 4;
-
-          return {
-            ...row,
-            deltaWorstStationMajor,
-            deltaMedianStationMajor,
-            deltaWorstPairSigmaDist,
-            deltaWeakStationCount,
-            deltaWeakPairCount,
-            score: Number.isFinite(score) ? score : undefined,
-            status: 'ok',
-          };
-        } catch {
-          return row;
-        }
-      });
-
-    rows.sort((a, b) => {
-      if (a.status !== b.status) return a.status === 'ok' ? -1 : 1;
-      if (a.action !== b.action) return a.action === 'remove' ? -1 : 1;
-      const bScore = b.score ?? Number.NEGATIVE_INFINITY;
-      const aScore = a.score ?? Number.NEGATIVE_INFINITY;
-      if (bScore !== aScore) return bScore - aScore;
-      return (a.sourceLine ?? Number.MAX_SAFE_INTEGER) - (b.sourceLine ?? Number.MAX_SAFE_INTEGER);
-    });
-
-    return {
-      enabled: true,
-      activePlannedCount: allPlannedRows.filter((obs) => !baseExclusions.has(obs.id)).length,
-      excludedPlannedCount: allPlannedRows.filter((obs) => baseExclusions.has(obs.id)).length,
-      baseWorstStationMajor,
-      baseMedianStationMajor,
-      baseWorstPairSigmaDist,
-      baseWeakStationCount: baseWeakStations,
-      baseWeakPairCount: baseWeakPairs,
-      rows,
-    };
-  };
-
   const solveWithImpacts = (
     request: RunSessionRequest,
     excludeSet: Set<number>,
@@ -455,13 +450,24 @@ export const createDirectRunPipeline = ({
     const profileCtx = resolveProfileContext(request.parseSettings as ParseSettings);
     if (profileCtx.effectiveParse.runMode === 'preanalysis') {
       solved.suspectImpactDiagnostics = undefined;
-      solved.preanalysisImpactDiagnostics = buildPreanalysisImpactDiagnostics(
-        request,
-        solved,
-        excludeSet,
-        overrideValues,
-        approvedClusterMerges,
-      );
+      solved.preanalysisImpactDiagnostics = buildPreanalysisPlanningDiagnostics({
+        base: solved,
+        input: request.input,
+        planningMap: request.planningMap,
+        activeTemplateIds: request.activePreanalysisAdditionIds,
+        targetThresholdMeters: profileCtx.effectiveParse.preanalysisAccuracyThresholdMeters,
+        maxAddedSets: profileCtx.effectiveParse.preanalysisMaxAddedSets ?? 5,
+        solveScenario: (nextTemplateIds) =>
+          solveCore(
+            request,
+            excludeSet,
+            undefined,
+            overrideValues,
+            approvedClusterMerges,
+            nextTemplateIds,
+          ),
+      });
+      solved.preanalysisSyntheticAdditionIds = [...request.activePreanalysisAdditionIds];
       solved.robustComparison = {
         enabled: false,
         classicalTop: [],
@@ -524,6 +530,7 @@ export const createDirectRunPipeline = ({
   return function runWithExclusionsDirect(request: RunSessionRequest): RunSessionOutcome {
     const startMs = Date.now();
     let effectiveExclusions = new Set(request.excludedIds);
+    let activePreanalysisAdditionIds = [...request.activePreanalysisAdditionIds];
     let effectiveOverrides = request.overrides;
     let effectiveClusterMerges = normalizeClusterApprovedMerges(request.approvedClusterMerges);
     let autoAdjustSummary: ReturnType<typeof runAutoAdjustCycles> | null = null;
@@ -533,14 +540,21 @@ export const createDirectRunPipeline = ({
     const inputChangedSinceLastRun =
       request.lastRunInput != null && request.input !== request.lastRunInput;
     const droppedExclusions = inputChangedSinceLastRun ? effectiveExclusions.size : 0;
+    const droppedPreanalysisAdditions = inputChangedSinceLastRun
+      ? activePreanalysisAdditionIds.length
+      : 0;
     const droppedOverrides = inputChangedSinceLastRun ? Object.keys(effectiveOverrides).length : 0;
     const droppedClusterMerges = inputChangedSinceLastRun ? effectiveClusterMerges.length : 0;
 
     if (
       inputChangedSinceLastRun &&
-      (droppedExclusions > 0 || droppedOverrides > 0 || droppedClusterMerges > 0)
+      (droppedExclusions > 0 ||
+        droppedPreanalysisAdditions > 0 ||
+        droppedOverrides > 0 ||
+        droppedClusterMerges > 0)
     ) {
       effectiveExclusions = new Set();
+      activePreanalysisAdditionIds = [];
       effectiveOverrides = {};
       effectiveClusterMerges = [];
     }
@@ -570,7 +584,7 @@ export const createDirectRunPipeline = ({
     }
 
     const solved = solveWithImpacts(
-      request,
+      { ...request, activePreanalysisAdditionIds },
       effectiveExclusions,
       effectiveOverrides,
       effectiveClusterMerges,
@@ -609,8 +623,10 @@ export const createDirectRunPipeline = ({
     return {
       result: solved,
       effectiveExcludedIds: [...effectiveExclusions],
+      activePreanalysisAdditionIds: [...activePreanalysisAdditionIds],
       effectiveClusterApprovedMerges: effectiveClusterMerges,
       droppedExclusions,
+      droppedPreanalysisAdditions,
       droppedOverrides,
       droppedClusterMerges,
       inputChangedSinceLastRun,

@@ -17,6 +17,50 @@ interface TransformedPoint2d {
   fixed: boolean;
 }
 
+interface BracePreviewPoint2d {
+  scenarioId: string;
+  stationId: string;
+  templateLabel: string;
+  x: number;
+  y: number;
+  active: boolean;
+}
+
+interface PlanningInputPoint2d {
+  stationId: string;
+  x: number;
+  y: number;
+}
+
+interface PlanningPolygon2d {
+  id: string;
+  source: 'user' | 'osm';
+  kind: 'blocked-area' | 'building' | 'wooded';
+  label: string;
+  pointsAttr: string;
+}
+
+interface ScenarioPreviewSegment2d {
+  scenarioId: string;
+  fromStationId: string;
+  toStationId: string;
+  x1: number;
+  y1: number;
+  x2: number;
+  y2: number;
+  kind: 'sight-line' | 'cross-tie';
+  active: boolean;
+}
+
+interface BasemapTile2d {
+  key: string;
+  href: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
 interface MapViewSvg2dProps {
   marker2d: number;
   view2d: View2dState;
@@ -36,6 +80,11 @@ interface MapViewSvg2dProps {
   transformedOverlayActive: boolean;
   transformedLines2d: TransformedLine2d[];
   transformedPoints2d: TransformedPoint2d[];
+  basemapTiles2d?: BasemapTile2d[];
+  planningInputPoints2d?: PlanningInputPoint2d[];
+  planningPolygons2d?: PlanningPolygon2d[];
+  bracePreviewPoints2d?: BracePreviewPoint2d[];
+  scenarioPreviewSegments2d?: ScenarioPreviewSegment2d[];
   project2d: (_x: number, _y: number) => { x: number; y: number };
 }
 
@@ -58,6 +107,11 @@ const MapViewSvg2d: React.FC<MapViewSvg2dProps> = ({
   transformedOverlayActive,
   transformedLines2d,
   transformedPoints2d,
+  basemapTiles2d = [],
+  planningInputPoints2d = [],
+  planningPolygons2d = [],
+  bracePreviewPoints2d = [],
+  scenarioPreviewSegments2d = [],
   project2d,
 }) => (
   <>
@@ -99,6 +153,99 @@ const MapViewSvg2d: React.FC<MapViewSvg2dProps> = ({
     </g>
 
     <g transform={`translate(${view2d.panX} ${view2d.panY}) scale(${view2d.zoom})`}>
+      {basemapTiles2d.map((tile) => (
+        <image
+          key={tile.key}
+          data-map-basemap-tile={tile.key}
+          href={tile.href}
+          x={tile.x}
+          y={tile.y}
+          width={tile.width}
+          height={tile.height}
+          preserveAspectRatio="none"
+          opacity={0.9}
+        />
+      ))}
+
+      {planningPolygons2d.map((polygon) => (
+        <polygon
+          key={`planning-polygon-${polygon.id}`}
+          points={polygon.pointsAttr}
+          fill={
+            polygon.source === 'user'
+              ? 'rgba(244,114,182,0.20)'
+              : polygon.kind === 'wooded'
+                ? 'rgba(74,222,128,0.16)'
+                : 'rgba(148,163,184,0.16)'
+          }
+          stroke={
+            polygon.source === 'user'
+              ? '#f9a8d4'
+              : polygon.kind === 'wooded'
+                ? '#86efac'
+                : '#cbd5e1'
+          }
+          strokeWidth={pointRadius2d * 0.18}
+        >
+          <title>{polygon.label || polygon.kind}</title>
+        </polygon>
+      ))}
+
+      {planningInputPoints2d.map((point) => (
+        <circle
+          key={`planning-input-${point.stationId}`}
+          data-map-input-point={point.stationId}
+          cx={point.x}
+          cy={point.y}
+          r={pointRadius2d * 0.45}
+          fill="#fef3c7"
+          stroke="#f59e0b"
+          strokeWidth={pointRadius2d * 0.12}
+        />
+      ))}
+
+      {scenarioPreviewSegments2d.map((segment) => (
+        <line
+          key={`scenario-segment-${segment.scenarioId}-${segment.fromStationId}-${segment.toStationId}`}
+          x1={segment.x1}
+          y1={segment.y1}
+          x2={segment.x2}
+          y2={segment.y2}
+          stroke={segment.kind === 'cross-tie' ? '#fda4af' : segment.active ? '#f472b6' : '#f9a8d4'}
+          strokeDasharray={segment.kind === 'cross-tie' ? '4 3' : '2 2'}
+          strokeWidth={segment.active ? lineWidth2d * 1.1 : lineWidth2d * 0.8}
+          opacity={0.9}
+        />
+      ))}
+
+      {bracePreviewPoints2d.map((point) => (
+        <g key={`brace-preview-${point.scenarioId}`}>
+          <circle
+            data-map-brace-preview={point.stationId}
+            cx={point.x}
+            cy={point.y}
+            r={pointRadius2d * 1.15}
+            fill={point.active ? '#f472b6' : '#f9a8d4'}
+            stroke={point.active ? '#fdf2f8' : '#fbcfe8'}
+            strokeWidth={point.active ? pointRadius2d * 0.38 : pointRadius2d * 0.25}
+          >
+            <title>{point.templateLabel}</title>
+          </circle>
+          <text
+            data-map-label={point.stationId}
+            x={point.x + labelOffset2d}
+            y={point.y - labelOffset2d}
+            fontSize={labelFont2d}
+            fill={point.active ? '#fdf2f8' : '#fce7f3'}
+            stroke="#4a044e"
+            strokeWidth={labelStroke2d}
+            paintOrder="stroke"
+          >
+            {point.stationId}
+          </text>
+        </g>
+      ))}
+
       {filteredVisibleMapLines2d
         .filter(
           (line) =>

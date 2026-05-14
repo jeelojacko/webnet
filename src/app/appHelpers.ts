@@ -186,6 +186,8 @@ export const createRunSettingsSnapshot = (
   autoAdjustMaxRemovalsPerCycle: parseSettings.autoAdjustMaxRemovalsPerCycle,
   autoAdjustStdResThreshold: parseSettings.autoAdjustStdResThreshold,
   suspectImpactMode: parseSettings.suspectImpactMode,
+  preanalysisAccuracyThresholdMeters: parseSettings.preanalysisAccuracyThresholdMeters,
+  preanalysisMaxAddedSets: parseSettings.preanalysisMaxAddedSets,
   selectedInstrument,
 });
 
@@ -260,6 +262,12 @@ export const buildPendingRunSettingDiffs = (
     previous.autoAdjustStdResThreshold,
   );
   pushDiff('Suspect Impact', current.suspectImpactMode, previous.suspectImpactMode);
+  pushDiff(
+    'Preanalysis Threshold',
+    current.preanalysisAccuracyThresholdMeters,
+    previous.preanalysisAccuracyThresholdMeters,
+  );
+  pushDiff('Preanalysis Max Sets', current.preanalysisMaxAddedSets, previous.preanalysisMaxAddedSets);
   pushDiff(
     'Instrument',
     current.selectedInstrument || 'none',

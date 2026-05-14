@@ -2,6 +2,7 @@ import type {
   AdjustedPointsExportSettings,
   CustomLevelLoopTolerancePreset,
   InstrumentLibrary,
+  PlanningMapState,
   ProjectExportFormat,
 } from '../types';
 import type { PersistedSavedRunSnapshot } from '../appStateTypes';
@@ -57,6 +58,7 @@ export interface ProjectManifestUiPayload {
   parseSettings: Record<string, unknown>;
   exportFormat: ProjectExportFormat;
   adjustedPointsExport: AdjustedPointsExportSettings;
+  planningMap?: PlanningMapState;
   geoidSourceDataBase64?: string | null;
   geoidSourceDataLabel?: string;
   migration?: {
@@ -143,6 +145,9 @@ const cloneUiPayload = (payload: ProjectManifestUiPayload): ProjectManifestUiPay
   parseSettings: { ...payload.parseSettings },
   exportFormat: payload.exportFormat,
   adjustedPointsExport: JSON.parse(JSON.stringify(payload.adjustedPointsExport)),
+  planningMap: payload.planningMap
+    ? JSON.parse(JSON.stringify(payload.planningMap))
+    : undefined,
   geoidSourceDataBase64: payload.geoidSourceDataBase64 ?? null,
   geoidSourceDataLabel: payload.geoidSourceDataLabel ?? '',
   migration: payload.migration ? { ...payload.migration } : undefined,

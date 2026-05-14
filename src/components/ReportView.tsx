@@ -42,6 +42,7 @@ import ReportDiagnosticsSections from './report/ReportDiagnosticsSections';
 import {
   buildStationTypeBadge,
   formatEffectiveDistance as reportFormatEffectiveDistance,
+  formatFixedOrScientific,
   formatMdb as reportFormatMdb,
   formatPrismAnnotation,
   formatReductionUsage,
@@ -149,7 +150,8 @@ interface ReportViewProps {
   excludedIds: Set<number>;
   onToggleExclude: (_id: number) => void;
   onApplyImpactExclude: (_id: number) => void;
-  onApplyPreanalysisAction: (_id: number) => void;
+  onApplyPreanalysisAction: (_id: string) => void;
+  onApplyAllPreanalysisActions?: (_ids: string[]) => void;
   onReRun: () => void;
   onClearExclusions: () => void;
   onJumpToSourceLine?: (_sourceLine: number) => void;
@@ -186,6 +188,7 @@ const ReportView: React.FC<ReportViewProps> = ({
   onToggleExclude,
   onApplyImpactExclude,
   onApplyPreanalysisAction,
+  onApplyAllPreanalysisActions = () => undefined,
   onReRun,
   onClearExclusions,
   overrides: _overrides,
@@ -414,6 +417,32 @@ const ReportView: React.FC<ReportViewProps> = ({
   );
   const weakGeometryDiagnostics = result.weakGeometryDiagnostics;
   const preanalysisImpactDiagnostics = result.preanalysisImpactDiagnostics;
+  const activePreanalysisScenarioIds = useMemo(
+    () => new Set(result.preanalysisSyntheticAdditionIds ?? []),
+    [result.preanalysisSyntheticAdditionIds],
+  );
+  const formatPreanalysisLinearMetric = useCallback(
+    (valueMeters?: number) =>
+      valueMeters != null ? formatFixedOrScientific(valueMeters * unitScale, 4) : '-',
+    [unitScale],
+  );
+  const formatPreanalysisSetupLabel = useCallback(
+    (setupStationIds: string[]) => setupStationIds.join(', '),
+    [],
+  );
+  const formatPreanalysisSetLabel = useCallback((label: string): string => {
+    const separatorIndex = label.indexOf('->');
+    if (separatorIndex < 0) return label;
+    const trimmed = label.slice(separatorIndex + 2).trim();
+    return trimmed || label;
+  }, []);
+  const pendingPreanalysisScenarioIds = useMemo(
+    () =>
+      (preanalysisImpactDiagnostics?.rows ?? [])
+        .filter((row) => row.status === 'ok' && !activePreanalysisScenarioIds.has(row.scenarioId))
+        .map((row) => row.scenarioId),
+    [activePreanalysisScenarioIds, preanalysisImpactDiagnostics?.rows],
+  );
   const {
     filteredStationRows,
     filteredStationCovariances,
@@ -692,7 +721,7 @@ const ReportView: React.FC<ReportViewProps> = ({
     (levelingLoopDiagnostics?.enabled ?? false) &&
     (levelingLoopDiagnostics?.loops.length ?? 0) > 0;
   return (
-    <div ref={reportRootRef} className="p-6 font-mono text-sm w-full flex flex-col">
+    <div ref={reportRootRef} className="report-view p-6 font-mono text-sm w-full flex flex-col">
       <ReportToolbar
         onReRun={onReRun}
         onToggleCollapseAll={() => setAllDetailSectionsCollapsed(!allDetailSectionsCollapsed)}
@@ -1236,32 +1265,40 @@ const ReportView: React.FC<ReportViewProps> = ({
           <div className="mb-6 border border-slate-800 rounded overflow-hidden">
             {renderCollapsibleSectionHeader({
               sectionId: 'planned-observation-what-if-analysis',
-              label: 'Planned Observation What-If Analysis',
+              label: 'Preanalysis Added-Set / Brace Recommendations',
               className:
                 'px-3 py-2 text-xs uppercase tracking-wider border-b border-slate-800 bg-slate-900/40',
               labelClassName: 'text-slate-400',
-              title: preanalysisLabelTooltip('Planned Observation What-If Analysis'),
+              title: preanalysisLabelTooltip('Preanalysis Added-Set Recommendations'),
             })}
             {!isSectionCollapsed('planned-observation-what-if-analysis') && (
               <>
-                <div className="grid grid-cols-2 md:grid-cols-6 gap-3 p-3 text-xs text-slate-300 border-b border-slate-800/60">
+                <div className="flex items-center justify-end gap-2 px-3 py-2 border-b border-slate-800/60 bg-slate-950/20">
+                  <button
+                    type="button"
+                    onClick={() => onApplyAllPreanalysisActions(pendingPreanalysisScenarioIds)}
+                    disabled={pendingPreanalysisScenarioIds.length === 0}
+                    className={`px-2.5 py-1 rounded border text-[10px] uppercase tracking-wide ${
+                      pendingPreanalysisScenarioIds.length === 0
+                        ? 'border-slate-700 text-slate-600 cursor-not-allowed'
+                        : 'border-cyan-700 text-cyan-200 hover:bg-cyan-950/30'
+                    }`}
+                  >
+                    Apply All Visible
+                  </button>
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-8 gap-3 p-3 text-xs text-slate-300 border-b border-slate-800/60">
                   <div>
-                    <div
-                      className="text-slate-500"
-                      title={preanalysisLabelTooltip('Removable Planned')}
-                    >
-                      Active Removable
+                    <div className="text-slate-500" title={preanalysisLabelTooltip('Applied Added Scenarios')}>
+                      Applied Scenarios
                     </div>
-                    <div>{preanalysisImpactDiagnostics.activePlannedCount}</div>
+                    <div>{preanalysisImpactDiagnostics.activeSyntheticAdditionCount}</div>
                   </div>
                   <div>
-                    <div
-                      className="text-slate-500"
-                      title={preanalysisLabelTooltip('Excluded Removable')}
-                    >
-                      Excluded Removable
+                    <div className="text-slate-500" title={preanalysisLabelTooltip('Candidate Added Scenarios')}>
+                      Candidate Scenarios
                     </div>
-                    <div>{preanalysisImpactDiagnostics.excludedPlannedCount}</div>
+                    <div>{preanalysisImpactDiagnostics.candidateTemplateCount}</div>
                   </div>
                   <div>
                     <div
@@ -1272,7 +1309,7 @@ const ReportView: React.FC<ReportViewProps> = ({
                     </div>
                     <div>
                       {preanalysisImpactDiagnostics.baseWorstStationMajor != null
-                        ? `${(preanalysisImpactDiagnostics.baseWorstStationMajor * unitScale).toFixed(4)} ${units}`
+                        ? `${formatPreanalysisLinearMetric(preanalysisImpactDiagnostics.baseWorstStationMajor)} ${units}`
                         : '-'}
                     </div>
                   </div>
@@ -1285,7 +1322,7 @@ const ReportView: React.FC<ReportViewProps> = ({
                     </div>
                     <div>
                       {preanalysisImpactDiagnostics.baseWorstPairSigmaDist != null
-                        ? `${(preanalysisImpactDiagnostics.baseWorstPairSigmaDist * unitScale).toFixed(4)} ${units}`
+                        ? `${formatPreanalysisLinearMetric(preanalysisImpactDiagnostics.baseWorstPairSigmaDist)} ${units}`
                         : '-'}
                     </div>
                   </div>
@@ -1304,55 +1341,116 @@ const ReportView: React.FC<ReportViewProps> = ({
                     </div>
                     <div>{preanalysisImpactDiagnostics.baseWeakPairCount}</div>
                   </div>
+                  <div>
+                    <div
+                      className="text-slate-500"
+                      title={preanalysisLabelTooltip('Preanalysis Accuracy Threshold')}
+                    >
+                      Target Threshold
+                    </div>
+                    <div>
+                      {preanalysisImpactDiagnostics.targetThresholdMeters != null
+                        ? `${formatPreanalysisLinearMetric(preanalysisImpactDiagnostics.targetThresholdMeters)} ${units}`
+                        : '-'}
+                    </div>
+                  </div>
+                  <div>
+                    <div
+                      className="text-slate-500"
+                      title={preanalysisLabelTooltip('Threshold Plan Result')}
+                    >
+                      Threshold Plan
+                    </div>
+                    <div>
+                      {preanalysisImpactDiagnostics.thresholdPlan.thresholdReached
+                        ? `Reached in ${preanalysisImpactDiagnostics.thresholdPlan.appliedStepCount}`
+                        : preanalysisImpactDiagnostics.thresholdPlan.appliedStepCount > 0
+                          ? `Best ${preanalysisImpactDiagnostics.thresholdPlan.appliedStepCount}`
+                          : 'Not planned'}
+                    </div>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-5 gap-3 p-3 text-xs text-slate-300 border-b border-slate-800/60 bg-slate-950/20">
+                  <div>
+                    <div className="text-slate-500">Plan Target</div>
+                    <div>
+                      {preanalysisImpactDiagnostics.thresholdPlan.targetThresholdMeters != null
+                        ? `${formatPreanalysisLinearMetric(preanalysisImpactDiagnostics.thresholdPlan.targetThresholdMeters)} ${units}`
+                        : '-'}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-slate-500">Plan Status</div>
+                    <div>
+                      {preanalysisImpactDiagnostics.thresholdPlan.thresholdReached
+                        ? 'Reached'
+                        : 'Not Reached'}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-slate-500">Sets Needed</div>
+                    <div>{preanalysisImpactDiagnostics.thresholdPlan.appliedStepCount}</div>
+                  </div>
+                  <div>
+                    <div className="text-slate-500">Projected Worst Major</div>
+                    <div>
+                      {preanalysisImpactDiagnostics.thresholdPlan.finalWorstStationMajor != null
+                        ? `${formatPreanalysisLinearMetric(preanalysisImpactDiagnostics.thresholdPlan.finalWorstStationMajor)} ${units}`
+                        : '-'}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-slate-500">Plan Note</div>
+                    <div>{preanalysisImpactDiagnostics.thresholdPlan.unmetReason ?? '-'}</div>
+                  </div>
                 </div>
                 <table className="w-full text-left text-xs">
                   <thead>
                     <tr className="text-slate-200 border-b border-slate-700/80">
                       <th className="py-2 px-3">#</th>
-                      <th className="py-2">Action</th>
-                      <th className="py-2">Type</th>
-                      <th className="py-2">Stations</th>
-                      <th className="py-2 text-right">Line</th>
+                      <th className="py-2">Setup</th>
+                      <th className="py-2">Set</th>
+                      <th className="py-2 text-right">Lines</th>
+                      <th className="py-2 text-right">Added Obs</th>
                       <th className="py-2 text-right">dWorstMaj ({units})</th>
                       <th className="py-2 text-right">dMedianMaj ({units})</th>
                       <th className="py-2 text-right">dWorstPair ({units})</th>
                       <th className="py-2 text-right">dWeakStn</th>
                       <th className="py-2 text-right">dWeakPair</th>
                       <th className="py-2 text-right">Score</th>
+                      <th className="py-2 text-right">Threshold</th>
                       <th className="py-2 text-right px-3">Apply</th>
                     </tr>
                   </thead>
                   <tbody className="text-slate-300">
                     {preanalysisImpactDiagnostics.rows.map((row, idx) => {
-                      const alreadyExcluded = excludedIds.has(row.obsId);
+                      const alreadyApplied = activePreanalysisScenarioIds.has(row.scenarioId);
                       return (
                         <tr
-                          key={`preanalysis-impact-${row.obsId}-${idx}`}
+                          key={`preanalysis-impact-${row.scenarioId}-${idx}`}
                           className="border-b border-slate-800/30"
                         >
                           <td className="py-1 px-3 text-slate-500">{idx + 1}</td>
                           <td className="py-1 uppercase text-slate-400">
-                            {row.action === 'remove' ? 'REMOVE' : 'ADD BACK'}
+                            {formatPreanalysisSetupLabel(row.setupStationIds)}
                           </td>
-                          <td className="py-1 uppercase text-slate-400">{row.type}</td>
-                          <td className="py-1">{row.stations}</td>
+                          <td className="py-1">{formatPreanalysisSetLabel(row.templateLabel)}</td>
                           <td className="py-1 text-right font-mono text-slate-500">
-                            {renderSourceLineLink(row.sourceLine)}
-                          </td>
-                          <td className="py-1 text-right font-mono">
-                            {row.deltaWorstStationMajor != null
-                              ? (row.deltaWorstStationMajor * unitScale).toFixed(4)
+                            {row.sourceLines.length > 0
+                              ? renderSourceLineLink(row.sourceLines[0])
                               : '-'}
                           </td>
                           <td className="py-1 text-right font-mono">
-                            {row.deltaMedianStationMajor != null
-                              ? (row.deltaMedianStationMajor * unitScale).toFixed(4)
-                              : '-'}
+                            {row.addedObservationCount}
                           </td>
                           <td className="py-1 text-right font-mono">
-                            {row.deltaWorstPairSigmaDist != null
-                              ? (row.deltaWorstPairSigmaDist * unitScale).toFixed(4)
-                              : '-'}
+                            {formatPreanalysisLinearMetric(row.deltaWorstStationMajor)}
+                          </td>
+                          <td className="py-1 text-right font-mono">
+                            {formatPreanalysisLinearMetric(row.deltaMedianStationMajor)}
+                          </td>
+                          <td className="py-1 text-right font-mono">
+                            {formatPreanalysisLinearMetric(row.deltaWorstPairSigmaDist)}
                           </td>
                           <td className="py-1 text-right font-mono">
                             {row.deltaWeakStationCount ?? '-'}
@@ -1363,23 +1461,20 @@ const ReportView: React.FC<ReportViewProps> = ({
                           <td className="py-1 text-right font-mono">
                             {row.score != null ? row.score.toFixed(2) : '-'}
                           </td>
+                          <td className="py-1 text-right font-mono">
+                            {row.thresholdReached ? 'YES' : 'NO'}
+                          </td>
                           <td className="py-1 px-3 text-right">
                             <button
-                              onClick={() => onApplyPreanalysisAction(row.obsId)}
-                              disabled={row.status !== 'ok'}
+                              onClick={() => onApplyPreanalysisAction(row.scenarioId)}
+                              disabled={row.status !== 'ok' || alreadyApplied}
                               className={`px-2 py-0.5 rounded border text-[10px] ${
-                                row.status !== 'ok'
+                                row.status !== 'ok' || alreadyApplied
                                   ? 'border-slate-700 text-slate-600 cursor-not-allowed'
                                   : 'border-cyan-700 text-cyan-200 hover:bg-cyan-950/30'
                               }`}
                             >
-                              {row.action === 'remove'
-                                ? alreadyExcluded
-                                  ? 'Removed'
-                                  : 'Remove + Re-run'
-                                : alreadyExcluded
-                                  ? 'Add Back + Re-run'
-                                  : 'Added'}
+                              {alreadyApplied ? 'Applied' : 'Add Set + Re-run'}
                             </button>
                           </td>
                         </tr>

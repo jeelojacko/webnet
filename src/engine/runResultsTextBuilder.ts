@@ -651,38 +651,41 @@ export const createRunResultsTextBuilder = ({
       lines.push('');
     }
     if (isPreanalysis && res.preanalysisImpactDiagnostics) {
-      lines.push('--- Planned Observation What-If Analysis ---');
+      const formatPreanalysisValue = (value?: number): string => {
+        if (value == null || !Number.isFinite(value)) return '-';
+        const scaled = value * unitScale;
+        const fixed = scaled.toFixed(4);
+        return scaled !== 0 && Number.parseFloat(fixed) === 0 ? scaled.toExponential(3) : fixed;
+      };
+      lines.push('--- Preanalysis Added-Set / Brace Recommendations ---');
       lines.push(
-        `activePlanned=${res.preanalysisImpactDiagnostics.activePlannedCount}, excludedPlanned=${res.preanalysisImpactDiagnostics.excludedPlannedCount}, worstStationMajor=${
+        `appliedScenarios=${res.preanalysisImpactDiagnostics.activeSyntheticAdditionCount}, candidateScenarios=${res.preanalysisImpactDiagnostics.candidateTemplateCount}, worstStationMajor=${
           res.preanalysisImpactDiagnostics.baseWorstStationMajor != null
-            ? `${(res.preanalysisImpactDiagnostics.baseWorstStationMajor * unitScale).toFixed(4)} ${linearUnit}`
+            ? `${formatPreanalysisValue(res.preanalysisImpactDiagnostics.baseWorstStationMajor)} ${linearUnit}`
             : '-'
         }, worstPairSigmaDist=${
           res.preanalysisImpactDiagnostics.baseWorstPairSigmaDist != null
-            ? `${(res.preanalysisImpactDiagnostics.baseWorstPairSigmaDist * unitScale).toFixed(4)} ${linearUnit}`
+            ? `${formatPreanalysisValue(res.preanalysisImpactDiagnostics.baseWorstPairSigmaDist)} ${linearUnit}`
             : '-'
-        }, weakStations=${res.preanalysisImpactDiagnostics.baseWeakStationCount}, weakPairs=${res.preanalysisImpactDiagnostics.baseWeakPairCount}`,
+        }, weakStations=${res.preanalysisImpactDiagnostics.baseWeakStationCount}, weakPairs=${res.preanalysisImpactDiagnostics.baseWeakPairCount}, targetThreshold=${
+          res.preanalysisImpactDiagnostics.targetThresholdMeters != null
+            ? `${formatPreanalysisValue(res.preanalysisImpactDiagnostics.targetThresholdMeters)} ${linearUnit}`
+            : '-'
+        }`,
       );
       lines.push(
-        'Action\tType\tStations\tLine\tdWorstMaj\tdMedianMaj\tdWorstPair\tdWeakStn\tdWeakPair\tScore\tStatus',
+        `thresholdPlan: reached=${res.preanalysisImpactDiagnostics.thresholdPlan.thresholdReached ? 'yes' : 'no'}, steps=${res.preanalysisImpactDiagnostics.thresholdPlan.appliedStepCount}, finalWorstMajor=${
+          res.preanalysisImpactDiagnostics.thresholdPlan.finalWorstStationMajor != null
+            ? `${formatPreanalysisValue(res.preanalysisImpactDiagnostics.thresholdPlan.finalWorstStationMajor)} ${linearUnit}`
+            : '-'
+        }, note=${res.preanalysisImpactDiagnostics.thresholdPlan.unmetReason ?? '-'}`,
       );
+      lines.push('Setup\tSet\tAffected\tLine\tAddedObs\tdWorstMaj\tdMedianMaj\tdWorstPair\tdWeakStn\tdWeakPair\tScore\tThreshold\tStatus');
       res.preanalysisImpactDiagnostics.rows.forEach((row) => {
         lines.push(
-          `${row.action}\t${row.type}\t${row.stations}\t${row.sourceLine ?? '-'}\t${
-            row.deltaWorstStationMajor != null
-              ? (row.deltaWorstStationMajor * unitScale).toFixed(4)
-              : '-'
-          }\t${
-            row.deltaMedianStationMajor != null
-              ? (row.deltaMedianStationMajor * unitScale).toFixed(4)
-              : '-'
-          }\t${
-            row.deltaWorstPairSigmaDist != null
-              ? (row.deltaWorstPairSigmaDist * unitScale).toFixed(4)
-              : '-'
-          }\t${row.deltaWeakStationCount ?? '-'}\t${row.deltaWeakPairCount ?? '-'}\t${
+          `${row.setupStationIds.join(',')}\t${row.templateLabel}\t${row.affectedStations.join(',')}\t${row.sourceLines[0] ?? '-'}\t${row.addedObservationCount}\t${formatPreanalysisValue(row.deltaWorstStationMajor)}\t${formatPreanalysisValue(row.deltaMedianStationMajor)}\t${formatPreanalysisValue(row.deltaWorstPairSigmaDist)}\t${row.deltaWeakStationCount ?? '-'}\t${row.deltaWeakPairCount ?? '-'}\t${
             row.score != null ? row.score.toFixed(2) : '-'
-          }\t${row.status}`,
+          }\t${row.thresholdReached ? 'yes' : 'no'}\t${row.status}`,
         );
       });
       lines.push('');

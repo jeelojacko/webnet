@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react';
-import type { AdjustmentResult, ProjectExportFormat } from '../types';
+import type { AdjustmentResult, PlanningMapState, ProjectExportFormat } from '../types';
+import { clonePlanningMapState, DEFAULT_PLANNING_MAP_STATE } from '../engine/planningMapState';
 
 interface UseWorkspaceProjectStateArgs<
   TImportNotice,
@@ -41,6 +42,9 @@ export const useWorkspaceProjectState = <
     useState<TRunSettingsSnapshot | null>(null);
   const [pendingEditorJumpLine, setPendingEditorJumpLine] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState<TTabKey>(initialActiveTab);
+  const [planningMap, setPlanningMap] = useState<PlanningMapState>(
+    clonePlanningMapState(DEFAULT_PLANNING_MAP_STATE),
+  );
 
   const clearWorkspaceArtifacts = useCallback(() => {
     setResult(null);
@@ -74,6 +78,8 @@ export const useWorkspaceProjectState = <
     setPendingEditorJumpLine,
     activeTab,
     setActiveTab,
+    planningMap,
+    setPlanningMap,
     clearWorkspaceArtifacts,
   };
 };

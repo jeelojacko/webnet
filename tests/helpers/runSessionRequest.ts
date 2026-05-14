@@ -6,6 +6,7 @@ import {
   DEFAULT_QFIX_LINEAR_SIGMA_M,
   DEFAULT_S9_INSTRUMENT_CENTERING_HORIZ_M,
 } from '../../src/engine/defaults';
+import { DEFAULT_PLANNING_MAP_STATE } from '../../src/engine/planningMapState';
 import { ACTIVE_INDUSTRY_PARITY_CASE } from '../../src/industryParityCases';
 import type { InstrumentLibrary } from '../../src/types';
 import type { RunSessionRequest } from '../../src/engine/runSession';
@@ -63,6 +64,8 @@ export const createRunSessionRequest = (
     gridDirectionMode: 'measured',
     runMode: 'adjustment',
     preanalysisMode: false,
+    preanalysisAccuracyThresholdMeters: 0.001,
+    preanalysisMaxAddedSets: 5,
     clusterDetectionEnabled: false,
     autoSideshotEnabled: true,
     autoAdjustEnabled: false,
@@ -123,7 +126,9 @@ export const createRunSessionRequest = (
   selectedInstrument: 'S9',
   projectIncludeFiles: {},
   geoidSourceData: null,
+  planningMap: DEFAULT_PLANNING_MAP_STATE,
   excludedIds: [],
+  activePreanalysisAdditionIds: [],
   overrides: {},
   approvedClusterMerges: [],
   ...overrides,

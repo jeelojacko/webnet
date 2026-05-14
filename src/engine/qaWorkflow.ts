@@ -54,6 +54,7 @@ export interface RunSnapshot<TSettingsSnapshot = unknown, TRunDiagnostics = unkn
   runDiagnostics: TRunDiagnostics | null;
   settingsSnapshot: TSettingsSnapshot;
   excludedIds: number[];
+  activePreanalysisAdditionIds?: string[];
   overrideIds: number[];
   overrides: Record<number, ObservationOverride>;
   approvedClusterMerges: ClusterApprovedMerge[];
@@ -132,6 +133,10 @@ export interface RunComparisonSummary {
   exclusionChanges: {
     added: number[];
     removed: number[];
+  };
+  preanalysisAdditionChanges: {
+    added: string[];
+    removed: string[];
   };
   overrideChanges: {
     added: number[];
@@ -457,6 +462,10 @@ export const buildRunComparison = <TSettingsSnapshot, TRunDiagnostics>(
 
   const currentExcluded = new Set(currentSnapshot.excludedIds);
   const baselineExcluded = new Set(baselineSnapshot.excludedIds);
+  const currentPreanalysisAdditions = new Set(currentSnapshot.activePreanalysisAdditionIds ?? []);
+  const baselinePreanalysisAdditions = new Set(
+    baselineSnapshot.activePreanalysisAdditionIds ?? [],
+  );
   const currentOverrideIds = new Set(currentSnapshot.overrideIds);
   const baselineOverrideIds = new Set(baselineSnapshot.overrideIds);
 
@@ -471,6 +480,14 @@ export const buildRunComparison = <TSettingsSnapshot, TRunDiagnostics>(
       removed: [...baselineExcluded]
         .filter((id) => !currentExcluded.has(id))
         .sort((a, b) => a - b),
+    },
+    preanalysisAdditionChanges: {
+      added: [...currentPreanalysisAdditions]
+        .filter((id) => !baselinePreanalysisAdditions.has(id))
+        .sort((a, b) => a.localeCompare(b, undefined, { numeric: true })),
+      removed: [...baselinePreanalysisAdditions]
+        .filter((id) => !currentPreanalysisAdditions.has(id))
+        .sort((a, b) => a.localeCompare(b, undefined, { numeric: true })),
     },
     overrideChanges: {
       added: [...currentOverrideIds]
@@ -497,6 +514,9 @@ export const buildRunComparisonText = (summary: RunComparisonSummary): string =>
   lines.push('');
   lines.push(
     `Exclusions: +${summary.exclusionChanges.added.length} / -${summary.exclusionChanges.removed.length}`,
+  );
+  lines.push(
+    `Preanalysis additions: +${summary.preanalysisAdditionChanges.added.length} / -${summary.preanalysisAdditionChanges.removed.length}`,
   );
   lines.push(
     `Overrides: +${summary.overrideChanges.added.length} / -${summary.overrideChanges.removed.length}`,

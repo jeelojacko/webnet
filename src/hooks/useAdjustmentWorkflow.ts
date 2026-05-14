@@ -7,11 +7,13 @@ import type {
   ClusterRejectedProposal,
   InstrumentLibrary,
   ObservationOverride,
+  PlanningMapState,
 } from '../types';
 import type { ProjectRunFile } from '../engine/projectWorkspace';
 import type { RunSessionOutcome, RunSessionRequest } from '../engine/runSession';
 import { buildValueFingerprint } from '../engine/qaWorkflow';
 import { noteUiPerfStage } from './useUiPerfMonitor';
+import { DEFAULT_PLANNING_MAP_STATE } from '../engine/planningMapState';
 
 type ClusterCandidate = NonNullable<AdjustmentResult['clusterDiagnostics']>['candidates'][number];
 
@@ -30,6 +32,7 @@ interface UseAdjustmentWorkflowArgs<TRunDiagnostics> {
   projectIncludeFiles: Record<string, string>;
   projectRunFiles?: ProjectRunFile[];
   geoidSourceData: Uint8Array | null;
+  planningMap?: PlanningMapState;
   currentRunSettingsSnapshot: RunSettingsSnapshot;
   result: AdjustmentResult | null;
   buildRunDiagnostics: (_parseSettings: ParseSettings, _solved: AdjustmentResult) => TRunDiagnostics;
@@ -46,6 +49,7 @@ interface UseAdjustmentWorkflowArgs<TRunDiagnostics> {
     settingsSnapshot: RunSettingsSnapshot;
     inputFingerprint: string;
     excludedIds: number[];
+    activePreanalysisAdditionIds: string[];
     overrideIds: number[];
     overrides: Record<number, ObservationOverride>;
     approvedClusterMerges: ClusterApprovedMerge[];
@@ -184,6 +188,7 @@ export const useAdjustmentWorkflow = <TRunDiagnostics>({
   projectIncludeFiles,
   projectRunFiles,
   geoidSourceData,
+  planningMap = DEFAULT_PLANNING_MAP_STATE,
   currentRunSettingsSnapshot,
   result,
   buildRunDiagnostics,
@@ -197,6 +202,9 @@ export const useAdjustmentWorkflow = <TRunDiagnostics>({
   recordRunSnapshot,
 }: UseAdjustmentWorkflowArgs<TRunDiagnostics>) => {
   const [excludedIds, setExcludedIds] = useState<Set<number>>(new Set());
+  const [activePreanalysisAdditionIds, setActivePreanalysisAdditionIds] = useState<Set<string>>(
+    new Set(),
+  );
   const [overrides, setOverrides] = useState<Record<number, ObservationOverride>>({});
   const [clusterReviewDecisions, setClusterReviewDecisions] = useState<
     Record<string, ClusterReviewDecision>
@@ -271,18 +279,21 @@ export const useAdjustmentWorkflow = <TRunDiagnostics>({
       if (
         outcome.inputChangedSinceLastRun &&
         (outcome.droppedExclusions > 0 ||
+          outcome.droppedPreanalysisAdditions > 0 ||
           outcome.droppedOverrides > 0 ||
           outcome.droppedClusterMerges > 0)
       ) {
         solved.logs.unshift(
-          `Input changed since previous run: cleared ${outcome.droppedExclusions} exclusion(s), ${outcome.droppedOverrides} override(s), and ${outcome.droppedClusterMerges} approved cluster merge(s).`,
+          `Input changed since previous run: cleared ${outcome.droppedExclusions} exclusion(s), ${outcome.droppedPreanalysisAdditions} preanalysis addition(s), ${outcome.droppedOverrides} override(s), and ${outcome.droppedClusterMerges} approved cluster merge(s).`,
         );
+        setActivePreanalysisAdditionIds(new Set());
         setOverrides({});
         setClusterReviewDecisions({});
       }
       setLastRunInput(context.inputSnapshot);
       setLastRunSettingsSnapshot(context.settingsSnapshot);
       setExcludedIds(new Set(outcome.effectiveExcludedIds));
+      setActivePreanalysisAdditionIds(new Set(outcome.activePreanalysisAdditionIds));
       setResult(solved);
       activateReportTab();
       recordRunSnapshot({
@@ -291,6 +302,7 @@ export const useAdjustmentWorkflow = <TRunDiagnostics>({
         settingsSnapshot: context.settingsSnapshot,
         inputFingerprint: context.inputFingerprint,
         excludedIds: outcome.effectiveExcludedIds,
+        activePreanalysisAdditionIds: outcome.activePreanalysisAdditionIds,
         overrideIds: context.overrideIds,
         overrides,
         approvedClusterMerges: outcome.effectiveClusterApprovedMerges,
@@ -320,6 +332,7 @@ export const useAdjustmentWorkflow = <TRunDiagnostics>({
   const runWithExclusions = useCallback(
     (
       excludeSet: Set<number>,
+      preanalysisAdditionSet: Set<string> = activePreanalysisAdditionIds,
       approvedClusterMerges: ClusterApprovedMerge[] = activeClusterApprovedMerges,
       reviewContext?: RunReviewContext,
     ) => {
@@ -332,7 +345,10 @@ export const useAdjustmentWorkflow = <TRunDiagnostics>({
         maxIterations: settings.maxIterations,
         convergenceLimit: settings.convergenceLimit,
         units: settings.units,
-        parseSettings: { ...parseSettings },
+        parseSettings: {
+          ...parseSettings,
+          preanalysisMaxAddedSets: parseSettings.preanalysisMaxAddedSets ?? 5,
+        },
         projectInstruments: Object.fromEntries(
           Object.entries(projectInstruments).map(([code, instrument]) => [code, { ...instrument }]),
         ),
@@ -340,7 +356,11 @@ export const useAdjustmentWorkflow = <TRunDiagnostics>({
         projectIncludeFiles: { ...projectIncludeFiles },
         projectRunFiles: projectRunFiles?.map((file) => ({ ...file })),
         geoidSourceData,
+        planningMap: JSON.parse(JSON.stringify(planningMap)) as PlanningMapState,
         excludedIds: [...excludeSet],
+        activePreanalysisAdditionIds: [...preanalysisAdditionSet].sort((a, b) =>
+          a.localeCompare(b, undefined, { numeric: true })
+        ),
         overrides: { ...overrides },
         approvedClusterMerges,
       };
@@ -365,6 +385,7 @@ export const useAdjustmentWorkflow = <TRunDiagnostics>({
     },
     [
       activeClusterApprovedMerges,
+      activePreanalysisAdditionIds,
       applyRunOutcome,
       currentRunSettingsSnapshot,
       geoidSourceData,
@@ -372,6 +393,7 @@ export const useAdjustmentWorkflow = <TRunDiagnostics>({
       lastRunInput,
       overrides,
       parseSettings,
+      planningMap,
       projectIncludeFiles,
       projectInstruments,
       projectRunFiles,
@@ -384,12 +406,13 @@ export const useAdjustmentWorkflow = <TRunDiagnostics>({
   );
 
   const handleRun = useCallback(() => {
-    runWithExclusions(new Set(excludedIds), activeClusterApprovedMerges, {
+    runWithExclusions(new Set(excludedIds), new Set(activePreanalysisAdditionIds), activeClusterApprovedMerges, {
       candidates: result?.clusterDiagnostics?.candidates ?? [],
       decisions: clusterReviewDecisions,
     });
   }, [
     activeClusterApprovedMerges,
+    activePreanalysisAdditionIds,
     clusterReviewDecisions,
     excludedIds,
     result?.clusterDiagnostics?.candidates,
@@ -401,13 +424,14 @@ export const useAdjustmentWorkflow = <TRunDiagnostics>({
       const next = new Set(excludedIds);
       next.add(id);
       setExcludedIds(next);
-      runWithExclusions(next, activeClusterApprovedMerges, {
+      runWithExclusions(next, new Set(activePreanalysisAdditionIds), activeClusterApprovedMerges, {
         candidates: result?.clusterDiagnostics?.candidates ?? [],
         decisions: clusterReviewDecisions,
       });
     },
     [
       activeClusterApprovedMerges,
+      activePreanalysisAdditionIds,
       clusterReviewDecisions,
       excludedIds,
       result?.clusterDiagnostics?.candidates,
@@ -416,18 +440,41 @@ export const useAdjustmentWorkflow = <TRunDiagnostics>({
   );
 
   const applyPreanalysisPlanningAction = useCallback(
-    (id: number) => {
-      const next = new Set(excludedIds);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      setExcludedIds(next);
-      runWithExclusions(next, activeClusterApprovedMerges, {
+    (id: string) => {
+      const next = new Set(activePreanalysisAdditionIds);
+      next.add(id);
+      setActivePreanalysisAdditionIds(next);
+      runWithExclusions(new Set(excludedIds), next, activeClusterApprovedMerges, {
         candidates: result?.clusterDiagnostics?.candidates ?? [],
         decisions: clusterReviewDecisions,
       });
     },
     [
       activeClusterApprovedMerges,
+      activePreanalysisAdditionIds,
+      clusterReviewDecisions,
+      excludedIds,
+      result?.clusterDiagnostics?.candidates,
+      runWithExclusions,
+    ],
+  );
+
+  const applyAllPreanalysisPlanningActions = useCallback(
+    (ids: string[]) => {
+      if (ids.length === 0) return;
+      const next = new Set(activePreanalysisAdditionIds);
+      ids.forEach((id) => {
+        if (id) next.add(id);
+      });
+      setActivePreanalysisAdditionIds(next);
+      runWithExclusions(new Set(excludedIds), next, activeClusterApprovedMerges, {
+        candidates: result?.clusterDiagnostics?.candidates ?? [],
+        decisions: clusterReviewDecisions,
+      });
+    },
+    [
+      activeClusterApprovedMerges,
+      activePreanalysisAdditionIds,
       clusterReviewDecisions,
       excludedIds,
       result?.clusterDiagnostics?.candidates,
@@ -500,11 +547,11 @@ export const useAdjustmentWorkflow = <TRunDiagnostics>({
     const candidates = result?.clusterDiagnostics?.candidates ?? [];
     const approved = buildApprovedClusterMerges(result, clusterReviewDecisions);
     setActiveClusterApprovedMerges(approved);
-    runWithExclusions(new Set(excludedIds), approved, {
+    runWithExclusions(new Set(excludedIds), new Set(activePreanalysisAdditionIds), approved, {
       candidates,
       decisions: clusterReviewDecisions,
     });
-  }, [clusterReviewDecisions, excludedIds, result, runWithExclusions]);
+  }, [activePreanalysisAdditionIds, clusterReviewDecisions, excludedIds, result, runWithExclusions]);
 
   const resetClusterReview = useCallback(() => {
     const candidates = result?.clusterDiagnostics?.candidates ?? [];
@@ -520,11 +567,12 @@ export const useAdjustmentWorkflow = <TRunDiagnostics>({
 
   const clearClusterApprovedMerges = useCallback(() => {
     setActiveClusterApprovedMerges([]);
-    runWithExclusions(new Set(excludedIds), [], {
+    runWithExclusions(new Set(excludedIds), new Set(activePreanalysisAdditionIds), [], {
       candidates: result?.clusterDiagnostics?.candidates ?? [],
       decisions: clusterReviewDecisions,
     });
   }, [
+    activePreanalysisAdditionIds,
     clusterReviewDecisions,
     excludedIds,
     result?.clusterDiagnostics?.candidates,
@@ -533,6 +581,7 @@ export const useAdjustmentWorkflow = <TRunDiagnostics>({
 
   const resetAdjustmentWorkflowState = useCallback(() => {
     setExcludedIds(new Set());
+    setActivePreanalysisAdditionIds(new Set());
     setOverrides({});
     setClusterReviewDecisions({});
     setActiveClusterApprovedMerges([]);
@@ -542,15 +591,18 @@ export const useAdjustmentWorkflow = <TRunDiagnostics>({
     ({
       result: snapshotResult,
       excludedIds: nextExcludedIds,
+      activePreanalysisAdditionIds: nextPreanalysisAdditionIds,
       overrides: nextOverrides,
       approvedClusterMerges,
     }: {
       result: AdjustmentResult;
       excludedIds: number[];
+      activePreanalysisAdditionIds: string[];
       overrides: Record<number, ObservationOverride>;
       approvedClusterMerges: ClusterApprovedMerge[];
     }) => {
       setExcludedIds(new Set(nextExcludedIds));
+      setActivePreanalysisAdditionIds(new Set(nextPreanalysisAdditionIds));
       setOverrides({ ...nextOverrides });
       setActiveClusterApprovedMerges(approvedClusterMerges.map((merge) => ({ ...merge })));
       setClusterReviewDecisions(
@@ -564,6 +616,7 @@ export const useAdjustmentWorkflow = <TRunDiagnostics>({
     pipelineState,
     cancelAdjustment,
     excludedIds,
+    activePreanalysisAdditionIds,
     overrides,
     clusterReviewDecisions,
     activeClusterApprovedMerges,
@@ -571,6 +624,7 @@ export const useAdjustmentWorkflow = <TRunDiagnostics>({
     runWithExclusions,
     applyImpactExclusion,
     applyPreanalysisPlanningAction,
+    applyAllPreanalysisPlanningActions,
     toggleExclude,
     clearExclusions,
     handleOverride,

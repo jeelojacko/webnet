@@ -31,6 +31,7 @@ import {
   cloneAdjustedPointsExportSettings,
   sanitizeAdjustedPointsExportSettings,
 } from '../engine/adjustedPointsExport';
+import { clonePlanningMapState, DEFAULT_PLANNING_MAP_STATE } from '../engine/planningMapState';
 import { normalizeListingSortObservationsBy } from '../listingSortObservations';
 import {
   buildProjectBundleBytes,
@@ -74,6 +75,7 @@ import type {
   CustomLevelLoopTolerancePreset,
   InstrumentLibrary,
   ObservationModeSettings,
+  PlanningMapState,
   ProjectExportFormat,
   RunMode,
 } from '../types';
@@ -143,6 +145,7 @@ interface UseProjectFileWorkflowArgs {
   geoidSourceDataLabel?: string;
   exportFormat: ProjectExportFormat;
   adjustedPointsExportSettings: AdjustedPointsExportSettings;
+  planningMap?: PlanningMapState;
   savedRunSnapshots: PersistedSavedRunSnapshot[];
   projectInstruments: InstrumentLibrary;
   selectedInstrument: string;
@@ -155,6 +158,7 @@ interface UseProjectFileWorkflowArgs {
   setGeoidSourceDataLabel: Dispatch<SetStateAction<string>>;
   setExportFormat: Dispatch<SetStateAction<ProjectExportFormat>>;
   setAdjustedPointsExportSettings: Dispatch<SetStateAction<AdjustedPointsExportSettings>>;
+  setPlanningMap?: Dispatch<SetStateAction<PlanningMapState>>;
   setProjectInstruments: Dispatch<SetStateAction<InstrumentLibrary>>;
   setSelectedInstrument: Dispatch<SetStateAction<string>>;
   setLevelLoopCustomPresets: Dispatch<SetStateAction<CustomLevelLoopTolerancePreset[]>>;
@@ -548,6 +552,7 @@ export const useProjectFileWorkflow = ({
   geoidSourceDataLabel = '',
   exportFormat,
   adjustedPointsExportSettings,
+  planningMap = DEFAULT_PLANNING_MAP_STATE,
   savedRunSnapshots,
   projectInstruments,
   selectedInstrument,
@@ -560,6 +565,7 @@ export const useProjectFileWorkflow = ({
   setGeoidSourceDataLabel,
   setExportFormat,
   setAdjustedPointsExportSettings,
+  setPlanningMap,
   setProjectInstruments,
   setSelectedInstrument,
   setLevelLoopCustomPresets,
@@ -672,6 +678,9 @@ export const useProjectFileWorkflow = ({
         geoidSourcePath: loadedParseSettings.geoidSourcePath ?? '',
         verticalDeflectionNorthSec: loadedParseSettings.verticalDeflectionNorthSec ?? 0,
         verticalDeflectionEastSec: loadedParseSettings.verticalDeflectionEastSec ?? 0,
+        preanalysisAccuracyThresholdMeters:
+          loadedParseSettings.preanalysisAccuracyThresholdMeters ?? 0.001,
+        preanalysisMaxAddedSets: loadedParseSettings.preanalysisMaxAddedSets ?? 5,
       };
       const loadedAdjustedPointsSettings = sanitizeAdjustedPointsExportSettings(
         parsed.ui.adjustedPointsExport,
@@ -684,6 +693,7 @@ export const useProjectFileWorkflow = ({
         normalizedLoadedSettings,
         normalizedLoadedParseSettings,
         loadedAdjustedPointsSettings,
+        planningMap: clonePlanningMapState(parsed.ui.planningMap ?? DEFAULT_PLANNING_MAP_STATE),
         geoidSourceData: decodeBase64ToUint8Array(parsed.ui.geoidSourceDataBase64),
         geoidSourceDataLabel: parsed.ui.geoidSourceDataLabel ?? '',
         exportFormat: parsed.ui.exportFormat,
@@ -739,6 +749,7 @@ export const useProjectFileWorkflow = ({
       setAdjustedPointsExportSettings(
         cloneAdjustedPointsExportSettings(normalized.loadedAdjustedPointsSettings),
       );
+      setPlanningMap?.(clonePlanningMapState(normalized.planningMap));
       restoreSavedRunSnapshots(savedRuns);
       setProjectInstruments(normalized.projectInstruments);
       setSelectedInstrument(normalized.selectedInstrument);
@@ -778,6 +789,7 @@ export const useProjectFileWorkflow = ({
       setLevelLoopCustomPresetsDraft,
       setParseSettings,
       setParseSettingsDraft,
+      setPlanningMap,
       setProjectIncludeFiles,
       setProjectInstruments,
       setProjectInstrumentsDraft,
@@ -808,6 +820,7 @@ export const useProjectFileWorkflow = ({
         parseSettings: parseSettings as unknown as Record<string, unknown>,
         exportFormat,
         adjustedPointsExport: adjustedPointsExportSettings,
+        planningMap: clonePlanningMapState(planningMap),
         geoidSourceDataBase64: encodeUint8ArrayToBase64(geoidSourceData),
         geoidSourceDataLabel,
       },
@@ -845,6 +858,7 @@ export const useProjectFileWorkflow = ({
       geoidSourceDataLabel,
       input,
       levelLoopCustomPresets,
+      planningMap,
       parseSettings,
       projectIncludeFiles,
       projectInstruments,
@@ -1044,6 +1058,7 @@ export const useProjectFileWorkflow = ({
         geoidSourceDataLabel,
         exportFormat,
         adjustedPointsExportSettings,
+        planningMap,
         projectInstruments,
         selectedInstrument,
         levelLoopCustomPresets,
@@ -1055,6 +1070,7 @@ export const useProjectFileWorkflow = ({
       geoidSourceDataLabel,
       levelLoopCustomPresets,
       parseSettings,
+      planningMap,
       projectInstruments,
       selectedInstrument,
       settings,
@@ -1070,6 +1086,7 @@ export const useProjectFileWorkflow = ({
       geoidSourceDataLabel: projectSession.manifest.ui.geoidSourceDataLabel ?? '',
       exportFormat: projectSession.manifest.ui.exportFormat,
       adjustedPointsExportSettings: projectSession.manifest.ui.adjustedPointsExport,
+      planningMap: projectSession.manifest.ui.planningMap,
       projectInstruments: projectSession.manifest.project.projectInstruments,
       selectedInstrument: projectSession.manifest.project.selectedInstrument,
       levelLoopCustomPresets: projectSession.manifest.project.levelLoopCustomPresets,
@@ -1086,6 +1103,7 @@ export const useProjectFileWorkflow = ({
           geoidSourceDataLabel,
           exportFormat,
           adjustedPointsExport: cloneAdjustedPointsExportSettings(adjustedPointsExportSettings),
+          planningMap: clonePlanningMapState(planningMap),
           migration: {
             parseModeMigrated: true,
             migratedAt: nowIso,
@@ -1113,6 +1131,7 @@ export const useProjectFileWorkflow = ({
     geoidSourceDataLabel,
     levelLoopCustomPresets,
     parseSettings,
+    planningMap,
     projectInstruments,
     projectSession,
     selectedInstrument,
@@ -1141,6 +1160,7 @@ export const useProjectFileWorkflow = ({
           geoidSourceDataLabel: session.manifest.ui.geoidSourceDataLabel ?? '',
           exportFormat: session.manifest.ui.exportFormat,
           adjustedPointsExport: session.manifest.ui.adjustedPointsExport,
+          planningMap: session.manifest.ui.planningMap,
           migration: session.manifest.ui.migration,
         },
         project: session.manifest.project,
@@ -1188,6 +1208,7 @@ export const useProjectFileWorkflow = ({
         geoidSourceDataLabel,
         exportFormat,
         adjustedPointsExport: cloneAdjustedPointsExportSettings(adjustedPointsExportSettings),
+        planningMap: clonePlanningMapState(planningMap),
         migration: {
           parseModeMigrated: true,
           migratedAt: createdAt,
@@ -1247,6 +1268,7 @@ export const useProjectFileWorkflow = ({
     input,
     levelLoopCustomPresets,
     parseSettings,
+    planningMap,
     projectIncludeFiles,
     projectInstruments,
     refreshStorageContext,
@@ -1372,6 +1394,7 @@ export const useProjectFileWorkflow = ({
               adjustedPointsExport: cloneAdjustedPointsExportSettings(
                 adjustedPointsExportSettings,
               ),
+              planningMap: clonePlanningMapState(planningMap),
               migration: {
                 parseModeMigrated: true,
                 migratedAt: new Date().toISOString(),
@@ -1403,6 +1426,7 @@ export const useProjectFileWorkflow = ({
     input,
     levelLoopCustomPresets,
     parseSettings,
+    planningMap,
     projectIncludeFiles,
     projectInstruments,
     projectSession,
@@ -1441,6 +1465,7 @@ export const useProjectFileWorkflow = ({
                   parseSettings: parsed.ui.parseSettings,
                   exportFormat: parsed.ui.exportFormat,
                   adjustedPointsExport: parsed.ui.adjustedPointsExport,
+                  planningMap: parsed.ui.planningMap,
                   migration: parsed.ui.migration,
                 },
                 project: parsed.project,
@@ -1477,6 +1502,7 @@ export const useProjectFileWorkflow = ({
                 geoidSourceDataLabel: parsed.ui.geoidSourceDataLabel ?? '',
                 exportFormat: parsed.ui.exportFormat,
                 adjustedPointsExport: parsed.ui.adjustedPointsExport,
+                planningMap: parsed.ui.planningMap,
                 migration: parsed.ui.migration,
               },
               project: parsed.project,

@@ -35,6 +35,10 @@ export const SETTINGS_TOOLTIPS = {
     'Enable iterative auto-adjust cycles that automatically exclude top outlier candidates and re-solve until limits are reached. Inline .AUTOADJUST or /AUTOADJUST commands override this.',
   suspectImpactMode:
     'Controls the what-if suspect impact reruns after the main solve. AUTO skips them once the main solve is already heavy, ON always runs them, OFF disables them.',
+  preanalysisAccuracyThreshold:
+    'Optional worst-station semi-major target for preanalysis planning. The planner keeps adding the best next setup set until this threshold is reached or max sets are exhausted.',
+  preanalysisMaxAddedSets:
+    'Maximum synthetic setup sets the preanalysis threshold planner is allowed to add while building recommendations.',
   autoAdjustMaxCycles:
     'Maximum number of auto-adjust cycles. Each cycle can remove one or more observations and rerun the solve.',
   autoAdjustMaxRemovalsPerCycle:

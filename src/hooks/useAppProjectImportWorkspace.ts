@@ -39,6 +39,7 @@ interface UseAppProjectImportWorkspaceArgs {
   exportFormat: ProjectExportFormat;
   adjustedPointsExportSettings: AdjustedPointsExportSettings;
   adjustedPointsExportSettingsDraft: AdjustedPointsExportSettings;
+  planningMap: NonNullable<WorkspaceDraftSnapshot['view']['planningMap']>;
   projectInstruments: InstrumentLibrary;
   selectedInstrument: string;
   levelLoopCustomPresets: CustomLevelLoopTolerancePreset[];
@@ -53,6 +54,9 @@ interface UseAppProjectImportWorkspaceArgs {
   setGeoidSourceDataLabel: Dispatch<SetStateAction<string>>;
   setExportFormat: Dispatch<SetStateAction<ProjectExportFormat>>;
   setAdjustedPointsExportSettings: Dispatch<SetStateAction<AdjustedPointsExportSettings>>;
+  setPlanningMap: Dispatch<
+    SetStateAction<NonNullable<WorkspaceDraftSnapshot['view']['planningMap']>>
+  >;
   setProjectInstruments: Dispatch<SetStateAction<InstrumentLibrary>>;
   setSelectedInstrument: Dispatch<SetStateAction<string>>;
   setLevelLoopCustomPresets: Dispatch<SetStateAction<CustomLevelLoopTolerancePreset[]>>;
@@ -89,6 +93,7 @@ export const useAppProjectImportWorkspace = ({
   exportFormat,
   adjustedPointsExportSettings,
   adjustedPointsExportSettingsDraft,
+  planningMap,
   projectInstruments,
   selectedInstrument,
   levelLoopCustomPresets,
@@ -103,6 +108,7 @@ export const useAppProjectImportWorkspace = ({
   setGeoidSourceDataLabel,
   setExportFormat,
   setAdjustedPointsExportSettings,
+  setPlanningMap,
   setProjectInstruments,
   setSelectedInstrument,
   setLevelLoopCustomPresets,
@@ -155,6 +161,7 @@ export const useAppProjectImportWorkspace = ({
     geoidSourceDataLabel,
     exportFormat,
     adjustedPointsExportSettings,
+    planningMap,
     savedRunSnapshots,
     projectInstruments,
     selectedInstrument,
@@ -167,6 +174,7 @@ export const useAppProjectImportWorkspace = ({
     setGeoidSourceDataLabel,
     setExportFormat,
     setAdjustedPointsExportSettings,
+    setPlanningMap,
     setProjectInstruments,
     setSelectedInstrument,
     setLevelLoopCustomPresets,

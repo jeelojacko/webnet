@@ -10,7 +10,12 @@ import type {
 import { runAdjustmentSession } from '../engine/runSession';
 import { createRunProfileBuilders } from '../engine/runProfileBuilders';
 import type { ProjectRunFile, ProjectSessionState } from '../engine/projectWorkspace';
-import type { AdjustmentResult, InstrumentLibrary, ObservationOverride } from '../types';
+import type {
+  AdjustmentResult,
+  InstrumentLibrary,
+  ObservationOverride,
+  PlanningMapState,
+} from '../types';
 import { useAdjustmentWorkflow } from './useAdjustmentWorkflow';
 
 interface UseAppRunWorkflowShellArgs {
@@ -29,6 +34,7 @@ interface UseAppRunWorkflowShellArgs {
   lastRunInput: string | null;
   effectiveRunIncludeFiles: Record<string, string>;
   geoidSourceData: Uint8Array | null;
+  planningMap: PlanningMapState;
   currentRunSettingsSnapshot: RunSettingsSnapshot;
   setResult: (_value: AdjustmentResult | null) => void;
   setRunDiagnostics: (_value: RunDiagnostics | null) => void;
@@ -42,6 +48,7 @@ interface UseAppRunWorkflowShellArgs {
     settingsSnapshot: RunSettingsSnapshot;
     inputFingerprint: string;
     excludedIds: number[];
+    activePreanalysisAdditionIds: string[];
     overrideIds: number[];
     overrides: Record<number, ObservationOverride>;
     approvedClusterMerges: import('../types').ClusterApprovedMerge[];
@@ -66,6 +73,7 @@ export const useAppRunWorkflowShell = ({
   lastRunInput,
   effectiveRunIncludeFiles,
   geoidSourceData,
+  planningMap,
   currentRunSettingsSnapshot,
   setResult,
   setRunDiagnostics,
@@ -118,6 +126,7 @@ export const useAppRunWorkflowShell = ({
     projectIncludeFiles: effectiveRunIncludeFiles,
     projectRunFiles: activeProjectRunFiles,
     geoidSourceData,
+    planningMap,
     currentRunSettingsSnapshot,
     result,
     buildRunDiagnostics: buildRunDiagnosticsWithProjectMetadata,

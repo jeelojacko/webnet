@@ -234,15 +234,29 @@ const AppToolbar: React.FC<AppToolbarProps> = ({
           <RefreshCw size={18} />
         </button>
         {runPhaseLabel ? (
-          <div className="w-full sm:w-auto rounded border border-slate-600 bg-slate-800/80 px-2 py-1 text-[11px] uppercase tracking-wide text-slate-300">
+          <div className="w-full sm:w-[23rem] sm:min-w-[23rem] rounded border border-slate-600 bg-slate-800/80 px-2 py-1 text-[11px] uppercase tracking-wide text-slate-300">
             <div className="flex items-center gap-2">
               <span>{runPhaseLabel}</span>
-              {elapsedLabel ? <span className="text-slate-400">{elapsedLabel}</span> : null}
+              {elapsedLabel ? (
+                <span className="text-slate-400 font-mono tabular-nums min-w-[3.75rem] text-right">
+                  {elapsedLabel}
+                </span>
+              ) : (
+                <span className="min-w-[3.75rem]" />
+              )}
             </div>
-            <div className="mt-0.5 text-[10px] tracking-normal normal-case text-slate-500">
-              <span>{pipelineState.detail ?? runSourceLabel}</span>
-              {solveProgressLabel ? <span>{` · solve ${solveProgressLabel}`}</span> : null}
-              {iterationLabel ? <span>{` · ${iterationLabel}`}</span> : null}
+            <div className="mt-0.5 text-[10px] tracking-normal normal-case text-slate-500 font-mono tabular-nums">
+              <span className="inline-block min-w-[4.5rem]">{pipelineState.detail ?? runSourceLabel}</span>
+              {solveProgressLabel ? (
+                <span className="inline-block min-w-[5.5rem]">{` · solve ${solveProgressLabel}`}</span>
+              ) : (
+                <span className="inline-block min-w-[5.5rem]" />
+              )}
+              {iterationLabel ? (
+                <span className="inline-block min-w-[7.5rem]">{` · ${iterationLabel}`}</span>
+              ) : (
+                <span className="inline-block min-w-[7.5rem]" />
+              )}
               <span>{` · ${runSourceLabel}`}</span>
             </div>
           </div>

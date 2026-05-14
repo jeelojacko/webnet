@@ -1,5 +1,57 @@
 # TODO - WebNet
 
+- [x] Preanalysis real-world feasibility planning batch (May 2026): add persistent planning-map overlays and obstacle-aware synthetic preanalysis scenarios so recommendation search can use real-world feasible setup/brace/cross-tie geometry.
+  - [x] Phase 0 - planning-map contracts and persistence
+    - [x] Record real-world feasibility scope in `TODO.md` before code changes
+    - [x] Add shared planning-map/project-state contracts for basemap mode, input-point visibility, obstacle polygons, and scenario-family toggles
+    - [x] Carry planning-map state through workspace recovery and portable/local project save-load
+  - [x] Phase 1 - planner obstacle/search upgrade
+    - [x] Extend preanalysis scenario families to include multi-setup brace, promoted setup, synthetic setup, and cross-tie candidates
+    - [x] Reject synthetic candidates that fall inside or shoot through blocked/obstacle polygons
+    - [x] Keep recommendation batches flowing by weak-seed-first then global feasible fallback with short-horizon threshold scoring
+  - [x] Phase 2 - map planning workflow
+    - [x] Add input-point planning layer and OSM basemap/obstacle toggles in 2D map mode
+    - [x] Add draw/delete/clear blocked-polygon tools and persist them in planning-map state
+    - [x] Render recommendation preview geometry and applied synthetic planning overlays on the map
+  - [x] Phase 3 - coverage/docs/validation
+    - [x] Add focused planner, map, workspace, and project-file regression coverage for obstacle-aware planning
+    - [x] Run required validation matrix including parity gate and update docs if maintained behavior changes
+
+- [ ] Planning-map ergonomics follow-up (May 2026): add vertex editing for existing blocked polygons and tighter row-specific recommendation highlight behavior on the map.
+
+- [x] Preanalysis synthetic-apply + brace-map batch (May 2026): make applied synthetic preanalysis scenarios actually enter the solve, surface brace preview points on the map, and verify tiny-impact display against real non-zero recommendation deltas.
+
+- [x] Preanalysis recommendation refresh + brace naming batch (May 2026): drop the `WEB_` brace-point prefix and lock that applying one or many recommendations rebuilds the next recommendation set from the newly solved preanalysis state.
+
+- [x] Preanalysis threshold-default + candidate-fallback batch (May 2026): default the preanalysis threshold to 1 mm and keep recommendation batches flowing by falling back from exhausted weak-seed templates to the remaining global addable templates.
+
+- [x] Preanalysis brace-scenario + precision-display batch (May 2026): show tiny recommendation deltas in scientific notation when fixed display rounds to zero, and extend preanalysis recommendations/threshold planning with bounded synthetic brace-point scenarios near weak or worst geometry pairs.
+
+- [x] Preanalysis recommendation UX clarification batch (May 2026): fix threshold decimal typing, tighten recommendation table readability, add apply-all action, and clarify the threshold-plan empty-template note when all usable setup sets are already active.
+
+- [x] Preanalysis added-set recommendation batch (May 2026): replace single-observation preanalysis what-if exclusion with weak-geometry-driven added setup-set recommendations plus threshold planning controls.
+  - [x] Phase 0 - backlog and contract update
+    - [x] Record preanalysis added-set implementation scope in `TODO.md` before code changes
+    - [x] Replace preanalysis obs-toggle diagnostics contract with scenario-based added-set recommendation diagnostics
+    - [x] Add dedicated workflow state for applied synthetic preanalysis set additions separate from excluded observations
+  - [x] Phase 1 - engine recommendation planner
+    - [x] Extract repeatable planned setup-set templates deterministically from existing preanalysis input
+    - [x] Limit candidate generation to existing setup patterns touching weakest stations/pairs
+    - [x] Evaluate top added-set scenarios by rerunning preanalysis with synthetic appended set blocks
+    - [x] Build greedy threshold plan using worst-station-major target and max-added-set cap
+    - [x] Emit clear unmet diagnostic when no usable templates exist or threshold cannot be reached in-cap
+  - [x] Phase 2 - workflow state and persistence
+    - [x] Carry preanalysis accuracy threshold and max-added-set settings through app state, run request, saved runs, and project save/load
+    - [x] Restore applied synthetic additions on saved-run reopen and clear them when input changes
+    - [x] Keep compare/review state compatible with the new preanalysis planning workflow
+  - [x] Phase 3 - report and project options UI
+    - [x] Add preanalysis-only threshold and max-set controls in `Project Options -> Adjustment`
+    - [x] Replace old `Planned Observation What-If Analysis` report table with added-set recommendation wording, metrics, and apply action
+    - [x] Add threshold-plan summary card and hide obsolete remove/add-back preanalysis wording
+  - [x] Phase 4 - focused coverage and validation
+    - [x] Add focused engine/workflow/report/project round-trip tests for added-set recommendations and threshold planning
+    - [x] Run required validation matrix including parity gate and update docs if maintained behavior changes
+
 - [ ] UI speed first improvement backlog (May 2026): reduce editor/view repaint cost, tighten narrow-screen workflows, shrink hot-path serialization overhead, and continue splitting large UI/orchestration seams without solver or parity drift.
   - [x] Phase 0 - backlog codification and baseline capture
     - [x] Record phased UI speed first roadmap in `TODO.md` before code changes

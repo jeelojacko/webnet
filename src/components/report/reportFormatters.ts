@@ -41,6 +41,16 @@ export const formatEffectiveDistance = (value: number | undefined, unitScale: nu
   return (value * unitScale).toFixed(4);
 };
 
+export const formatFixedOrScientific = (
+  value: number | undefined,
+  decimals: number,
+  exponentialDigits = 3,
+): string => {
+  if (value == null || !Number.isFinite(value)) return '-';
+  const fixed = value.toFixed(decimals);
+  return value !== 0 && Number.parseFloat(fixed) === 0 ? value.toExponential(exponentialDigits) : fixed;
+};
+
 export const buildStationConstraintModeSummary = (
   station: Station,
   coordMode: '2D' | '3D' | undefined,

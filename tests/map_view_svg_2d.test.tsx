@@ -55,6 +55,26 @@ describe('MapViewSvg2d', () => {
             transformedOverlayActive={true}
             transformedLines2d={[{ key: 'tx-1', x1: 1, y1: 2, x2: 3, y2: 4 }]}
             transformedPoints2d={[{ id: 'TX1', x: 10, y: 20, fixed: false }]}
+            basemapTiles2d={[
+              {
+                key: '10-300-400',
+                href: 'https://tile.openstreetmap.org/10/300/400.png',
+                x: 5,
+                y: 6,
+                width: 256,
+                height: 256,
+              },
+            ]}
+            bracePreviewPoints2d={[
+              {
+                scenarioId: 'brace-1',
+                stationId: 'BRACE_A_B',
+                templateLabel: 'Brace BRACE_A_B [A-B]',
+                x: 210,
+                y: 220,
+                active: true,
+              },
+            ]}
             project2d={(x, y) => ({ x: x * 10, y: y * 10 })}
           />
         </svg>,
@@ -64,6 +84,8 @@ describe('MapViewSvg2d', () => {
     expect(container.querySelector('[data-map-observation="7"]')).not.toBeNull();
     expect(container.querySelector('[data-map-station-selection="A"]')).not.toBeNull();
     expect(container.querySelectorAll('[data-map-label="TX1"]').length).toBeGreaterThan(0);
+    expect(container.querySelector('[data-map-brace-preview="BRACE_A_B"]')).not.toBeNull();
+    expect(container.querySelector('[data-map-basemap-tile="10-300-400"]')).not.toBeNull();
 
     await act(async () => {
       (container.querySelector('[data-map-observation="7"]') as SVGLineElement).dispatchEvent(

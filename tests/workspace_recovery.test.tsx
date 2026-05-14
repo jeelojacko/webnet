@@ -5,6 +5,7 @@ import { createRoot, type Root } from 'react-dom/client';
 import { describe, expect, it, vi } from 'vitest';
 import { useWorkspaceRecovery } from '../src/hooks/useWorkspaceRecovery';
 import { createDefaultReportViewSnapshot } from '../src/hooks/useReportViewState';
+import { DEFAULT_PLANNING_MAP_STATE } from '../src/engine/planningMapState';
 import type { RunSettingsSnapshot, WorkspaceDraftSnapshot } from '../src/appStateTypes';
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
@@ -139,6 +140,22 @@ const buildSnapshot = (overrides: Partial<WorkspaceDraftSnapshot> = {}): Workspa
     activeTab: 'report',
     splitPercent: 35,
     isSidebarOpen: true,
+    planningMap: {
+      ...DEFAULT_PLANNING_MAP_STATE,
+      blockedPolygons: [
+        {
+          id: 'block-1',
+          source: 'user',
+          kind: 'blocked-area',
+          label: 'Blocked',
+          vertices: [
+            { x: 1, y: 1 },
+            { x: 3, y: 1 },
+            { x: 2, y: 2 },
+          ],
+        },
+      ],
+    },
     review: {
       reportView: { ...defaultReportViewSnapshot },
       selection: {

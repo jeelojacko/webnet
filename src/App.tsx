@@ -240,6 +240,8 @@ const App: React.FC<AppProps> = ({
     setPendingEditorJumpLine,
     activeTab,
     setActiveTab,
+    planningMap,
+    setPlanningMap,
     clearWorkspaceArtifacts,
   } = useWorkspaceProjectState<ImportedInputNotice, RunDiagnostics, RunSettingsSnapshot, TabKey>({
     initialInput: ACTIVE_PARITY_STARTUP_DEFAULTS?.input ?? DEFAULT_INPUT,
@@ -305,6 +307,8 @@ const App: React.FC<AppProps> = ({
     gridDirectionMode: 'measured',
     runMode: 'adjustment',
     preanalysisMode: false,
+    preanalysisAccuracyThresholdMeters: 0.001,
+    preanalysisMaxAddedSets: 5,
     clusterDetectionEnabled: false,
     autoSideshotEnabled: true,
     autoAdjustEnabled: false,
@@ -605,6 +609,7 @@ const App: React.FC<AppProps> = ({
     exportFormat,
     adjustedPointsExportSettings,
     adjustedPointsExportSettingsDraft,
+    planningMap,
     projectInstruments,
     selectedInstrument,
     levelLoopCustomPresets,
@@ -619,6 +624,7 @@ const App: React.FC<AppProps> = ({
     setGeoidSourceDataLabel,
     setExportFormat,
     setAdjustedPointsExportSettings,
+    setPlanningMap,
     setProjectInstruments,
     setSelectedInstrument,
     setLevelLoopCustomPresets,
@@ -826,6 +832,7 @@ const App: React.FC<AppProps> = ({
     activeClusterApprovedMerges,
     applyImpactExclusion,
     applyPreanalysisPlanningAction,
+    applyAllPreanalysisPlanningActions,
     toggleExclude,
     clearExclusions,
     handleOverride,
@@ -854,6 +861,7 @@ const App: React.FC<AppProps> = ({
     lastRunInput,
     effectiveRunIncludeFiles,
     geoidSourceData,
+    planningMap,
     currentRunSettingsSnapshot,
     setResult,
     setRunDiagnostics,
@@ -1043,6 +1051,7 @@ const App: React.FC<AppProps> = ({
     splitPercent,
     isSidebarOpen,
     mapDeclutterPreset,
+    planningMap,
     persistedWorkspaceReviewSnapshot,
     stationMovementThreshold: comparisonSelection.stationMovementThreshold,
     residualDeltaThreshold: comparisonSelection.residualDeltaThreshold,
@@ -1089,6 +1098,7 @@ const App: React.FC<AppProps> = ({
     setSplitPercent,
     setIsSidebarOpen,
     setMapDeclutterPreset,
+    setPlanningMap,
     setComparisonSelection,
     setImportNotice,
   });
@@ -1552,6 +1562,7 @@ const App: React.FC<AppProps> = ({
                   onToggleExclude={toggleExclude}
                   onApplyImpactExclude={applyImpactExclusion}
                   onApplyPreanalysisAction={applyPreanalysisPlanningAction}
+                  onApplyAllPreanalysisActions={applyAllPreanalysisPlanningActions}
                   onReRun={handleValidatedRun}
                   onClearExclusions={clearExclusions}
                   onJumpToSourceLine={handleJumpToSourceLine}
@@ -1630,6 +1641,8 @@ const App: React.FC<AppProps> = ({
                   <MapView
                     result={result!}
                     units={settings.units}
+                    planningMap={planningMap}
+                    onPlanningMapChange={setPlanningMap}
                     showLostStations={settings.mapShowLostStations}
                     mode={settings.map3dEnabled ? '3d' : '2d'}
                     adjustedPointsExportSettings={adjustedPointsExportSettings}

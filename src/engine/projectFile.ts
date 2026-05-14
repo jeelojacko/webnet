@@ -13,6 +13,7 @@ import {
   DEFAULT_ADJUSTED_POINTS_EXPORT_SETTINGS,
   sanitizeAdjustedPointsExportSettings,
 } from './adjustedPointsExport';
+import { clonePlanningMapState, sanitizePlanningMapState } from './planningMapState';
 import { normalizeListingSortObservationsBy } from '../listingSortObservations';
 import {
   buildProjectFileStoragePath,
@@ -53,6 +54,7 @@ export interface ParsedProjectPayload {
     parseSettings: Record<string, unknown>;
     exportFormat: ProjectExportFormat;
     adjustedPointsExport: AdjustedPointsExportSettings;
+    planningMap?: import('../types').PlanningMapState;
     geoidSourceDataBase64?: string | null;
     geoidSourceDataLabel?: string;
     migration?: {
@@ -566,6 +568,12 @@ const sanitizeSavedRunSnapshots = (value: unknown): PersistedSavedRunSnapshot[] 
       runDiagnostics: (entry.runDiagnostics ?? null) as PersistedSavedRunSnapshot['runDiagnostics'],
       settingsSnapshot,
       excludedIds: sanitizeNumberArray(entry.excludedIds).sort((a, b) => a - b),
+      activePreanalysisAdditionIds: Array.isArray(entry.activePreanalysisAdditionIds)
+        ? entry.activePreanalysisAdditionIds
+            .filter((value): value is string => typeof value === 'string' && value.trim().length > 0)
+            .map((value) => value.trim())
+            .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }))
+        : [],
       overrideIds: sanitizeNumberArray(entry.overrideIds).sort((a, b) => a - b),
       overrides: sanitizeObservationOverrides(entry.overrides),
       approvedClusterMerges: sanitizeClusterApprovedMerges(entry.approvedClusterMerges),
@@ -599,6 +607,9 @@ export const serializeProjectFile = (project: ParsedProjectPayload): string => {
         project.ui.adjustedPointsExport,
         DEFAULT_ADJUSTED_POINTS_EXPORT_SETTINGS,
       ),
+      planningMap: project.ui.planningMap
+        ? clonePlanningMapState(project.ui.planningMap)
+        : undefined,
       geoidSourceDataBase64:
         typeof project.ui.geoidSourceDataBase64 === 'string' &&
         project.ui.geoidSourceDataBase64.trim().length > 0
@@ -760,6 +771,7 @@ export const parseProjectFile = (
     typeof ui.geoidSourceDataBase64 === 'string' && ui.geoidSourceDataBase64.trim().length > 0
       ? ui.geoidSourceDataBase64.trim()
       : null;
+  const planningMap = sanitizePlanningMapState(ui.planningMap);
   const geoidSourceDataLabel =
     typeof ui.geoidSourceDataLabel === 'string' ? ui.geoidSourceDataLabel : '';
   const uiMigration = isRecord(ui.migration) ? ui.migration : {};
@@ -812,6 +824,7 @@ export const parseProjectFile = (
         parseSettings,
         exportFormat,
         adjustedPointsExport,
+        planningMap,
         geoidSourceDataBase64,
         geoidSourceDataLabel,
         migration: {

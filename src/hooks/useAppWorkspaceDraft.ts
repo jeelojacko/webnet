@@ -22,6 +22,7 @@ import type {
 import {
   createDefaultWorkspaceReviewState,
 } from './useWorkspaceReviewState';
+import { clonePlanningMapState, sanitizePlanningMapState } from '../engine/planningMapState';
 import {
   decodeBase64ToUint8Array,
   encodeUint8ArrayToBase64,
@@ -45,6 +46,7 @@ interface UseAppWorkspaceDraftArgs {
   splitPercent: number;
   isSidebarOpen: boolean;
   mapDeclutterPreset: 'standard' | 'dense-review';
+  planningMap: NonNullable<WorkspaceDraftSnapshot['view']['planningMap']>;
   persistedWorkspaceReviewSnapshot: WorkspaceReviewState;
   stationMovementThreshold: number;
   residualDeltaThreshold: number;
@@ -93,6 +95,9 @@ interface UseAppWorkspaceDraftArgs {
   setSplitPercent: Dispatch<SetStateAction<number>>;
   setIsSidebarOpen: Dispatch<SetStateAction<boolean>>;
   setMapDeclutterPreset: Dispatch<SetStateAction<'standard' | 'dense-review'>>;
+  setPlanningMap: Dispatch<
+    SetStateAction<NonNullable<WorkspaceDraftSnapshot['view']['planningMap']>>
+  >;
   setComparisonSelection: Dispatch<
     SetStateAction<{
       baselineRunId: string | null;
@@ -122,6 +127,7 @@ export const useAppWorkspaceDraft = ({
   splitPercent,
   isSidebarOpen,
   mapDeclutterPreset,
+  planningMap,
   persistedWorkspaceReviewSnapshot,
   stationMovementThreshold,
   residualDeltaThreshold,
@@ -168,6 +174,7 @@ export const useAppWorkspaceDraft = ({
   setSplitPercent,
   setIsSidebarOpen,
   setMapDeclutterPreset,
+  setPlanningMap,
   setComparisonSelection,
   setImportNotice,
 }: UseAppWorkspaceDraftArgs) => {
@@ -190,6 +197,7 @@ export const useAppWorkspaceDraft = ({
         splitPercent,
         isSidebarOpen,
         mapDeclutterPreset,
+        planningMap: clonePlanningMapState(planningMap),
         review: persistedWorkspaceReviewSnapshot,
       },
       comparisonView: {
@@ -210,6 +218,7 @@ export const useAppWorkspaceDraft = ({
       isSidebarOpen,
       levelLoopCustomPresets,
       mapDeclutterPreset,
+      planningMap,
       parseSettings,
       persistedWorkspaceReviewSnapshot,
       projectIncludeFiles,
@@ -295,6 +304,7 @@ export const useAppWorkspaceDraft = ({
     setSplitPercent(Math.max(20, Math.min(80, snapshot.view.splitPercent)));
     setIsSidebarOpen(snapshot.view.isSidebarOpen);
     setMapDeclutterPreset(snapshot.view.mapDeclutterPreset ?? 'standard');
+    setPlanningMap(sanitizePlanningMapState(snapshot.view.planningMap));
     restoreWorkspaceReviewSnapshot(
       snapshot.view.review ?? {
         ...defaultReviewState,

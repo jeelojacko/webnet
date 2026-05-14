@@ -47,6 +47,22 @@ const AdjustmentProjectOptionsTab: React.FC<AdjustmentProjectOptionsTabProps> = 
     settingsDraft,
     showCrsProjectionParams,
   } = context;
+  const [preanalysisThresholdInput, setPreanalysisThresholdInput] = React.useState('');
+
+  React.useEffect(() => {
+    setPreanalysisThresholdInput(
+      parseSettingsDraft.preanalysisAccuracyThresholdMeters == null
+        ? ''
+        : (
+            parseSettingsDraft.preanalysisAccuracyThresholdMeters *
+            (settingsDraft.units === 'ft' ? FT_PER_M : 1)
+          ).toString(),
+    );
+  }, [
+    FT_PER_M,
+    parseSettingsDraft.preanalysisAccuracyThresholdMeters,
+    settingsDraft.units,
+  ]);
 
   return (
     <div className="space-y-4">
@@ -162,6 +178,56 @@ const AdjustmentProjectOptionsTab: React.FC<AdjustmentProjectOptionsTabProps> = 
             {parseSettingsDraft.runMode !== 'adjustment' && (
               <div className="text-[11px] text-slate-300">
                 Auto-Adjust is disabled unless Run Mode is set to Adjustment.
+              </div>
+            )}
+            {parseSettingsDraft.runMode === 'preanalysis' && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <label className={optionLabelClass}>
+                  Preanalysis Accuracy Threshold ({settingsDraft.units})
+                  <input
+                    title={SETTINGS_TOOLTIPS.preanalysisAccuracyThreshold}
+                    type="text"
+                    inputMode="decimal"
+                    value={preanalysisThresholdInput}
+                    onChange={(e) => {
+                      const next = e.target.value.trim();
+                      setPreanalysisThresholdInput(e.target.value);
+                      handleDraftParseSetting(
+                        'preanalysisAccuracyThresholdMeters',
+                        next === ''
+                          ? undefined
+                          : Number.isFinite(Number.parseFloat(next))
+                            ? Math.max(
+                                0,
+                                Number.parseFloat(next) *
+                                  (settingsDraft.units === 'ft' ? M_PER_FT : 1),
+                              )
+                            : parseSettingsDraft.preanalysisAccuracyThresholdMeters,
+                      );
+                    }}
+                    className={`${optionInputClass} mt-1`}
+                  />
+                </label>
+                <label className={optionLabelClass}>
+                  Preanalysis Max Added Sets
+                  <input
+                    title={SETTINGS_TOOLTIPS.preanalysisMaxAddedSets}
+                    type="number"
+                    min={1}
+                    max={25}
+                    step={1}
+                    value={parseSettingsDraft.preanalysisMaxAddedSets}
+                    onChange={(e) =>
+                      handleDraftParseSetting(
+                        'preanalysisMaxAddedSets',
+                        Number.isFinite(Number.parseInt(e.target.value, 10))
+                          ? Math.max(1, Math.min(25, Number.parseInt(e.target.value, 10)))
+                          : 5,
+                      )
+                    }
+                    className={`${optionInputClass} mt-1`}
+                  />
+                </label>
               </div>
             )}
           </div>
