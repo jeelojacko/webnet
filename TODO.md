@@ -1,3 +1,5 @@
+- [x] Map compositor-pan preview batch (May 2026): stop recomputing live 2D pan frames during drag and instead translate the render layers together as one preview slab, then commit the pan once on drag end.
+
 - [x] Map pan-overlay stabilization batch (May 2026): freeze the 2D derived SVG/culling basis during active middle-drag pan so the overlay moves as one stable slab instead of popping and jittering while the live transform updates.
 
 - [x] Map snapshot-throttle batch (May 2026): stop pushing live pan/zoom view snapshots up to the app shell every interaction frame so map drags do not force avoidable parent rerenders.

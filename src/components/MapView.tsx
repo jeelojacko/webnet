@@ -417,6 +417,8 @@ const MapView: React.FC<MapViewProps> = ({
   const view2dFrameRef = useRef<number | null>(null);
   const dragMoveFrameRef = useRef<number | null>(null);
   const pendingDragClientRef = useRef<{ x: number; y: number } | null>(null);
+  const panPreviewOffsetRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+  const panPreviewCommitViewRef = useRef<{ zoom: number; panX: number; panY: number } | null>(null);
   const stableSnapshotView2dRef = useRef(snapshot?.view2d ?? { zoom: 1, panX: 0, panY: 0 });
   const lastEmittedSnapshotRef = useRef<MapViewSnapshot | null>(null);
   const settleTimerRef = useRef<ReturnType<typeof globalThis.setTimeout> | null>(null);
@@ -759,6 +761,26 @@ const MapView: React.FC<MapViewProps> = ({
     [effectiveMode, fallbackFromWebgl, renderer2d, units],
   );
 
+  const applyPanPreviewOffset = useCallback((offsetX: number, offsetY: number) => {
+    const translate = offsetX === 0 && offsetY === 0 ? '' : `translate(${offsetX}px, ${offsetY}px)`;
+    const applyTo = (node: HTMLElement | SVGElement | null) => {
+      if (!node) return;
+      node.style.transformOrigin = '0 0';
+      node.style.transform = translate;
+      node.style.willChange = translate ? 'transform' : '';
+    };
+    applyTo(webglCanvasRef.current);
+    applyTo(basemapCanvasRef.current);
+    applyTo(geometryCanvasRef.current);
+    applyTo(planningCanvasRef.current);
+    applyTo(svgRef.current);
+    const container = containerRef.current;
+    if (container) {
+      container.dataset.mapPreviewPanX = offsetX.toFixed(6);
+      container.dataset.mapPreviewPanY = offsetY.toFixed(6);
+    }
+  }, []);
+
   const scheduleLayerRender = useCallback(
     (dirty: { basemap?: boolean; geometry?: boolean; planning?: boolean }) => {
       if (effectiveMode !== '2d') return;
@@ -861,12 +883,15 @@ const MapView: React.FC<MapViewProps> = ({
 
   const reset2dView = useCallback(() => {
     const reset = { zoom: 1, panX: 0, panY: 0 };
+    applyPanPreviewOffset(0, 0);
+    panPreviewOffsetRef.current = { x: 0, y: 0 };
+    panPreviewCommitViewRef.current = null;
     pendingView2dRef.current = reset;
     setView2d(reset);
     setFrozenDerivedView2d(null);
     clearInteractionSettle();
     setInteractionPhase('idle');
-  }, [clearInteractionSettle]);
+  }, [applyPanPreviewOffset, clearInteractionSettle]);
 
   const reset3dView = useCallback(() => {
     setCamera3d(createDefaultMap3DCamera(scene3d));
@@ -1021,6 +1046,20 @@ const MapView: React.FC<MapViewProps> = ({
   const stopDrag = useCallback(() => {
     if (!dragRef.current.active) return;
     if (dragRef.current.mode === 'pan2d') {
+      const previewOffset = panPreviewOffsetRef.current;
+      const commitView = panPreviewCommitViewRef.current;
+      applyPanPreviewOffset(0, 0);
+      if (commitView && (previewOffset.x !== 0 || previewOffset.y !== 0)) {
+        const nextView = {
+          ...commitView,
+          panX: commitView.panX + previewOffset.x,
+          panY: commitView.panY + previewOffset.y,
+        };
+        pendingView2dRef.current = nextView;
+        setView2d(nextView);
+      }
+      panPreviewOffsetRef.current = { x: 0, y: 0 };
+      panPreviewCommitViewRef.current = null;
       setFrozenDerivedView2d(null);
     }
     dragRef.current.active = false;
@@ -1033,7 +1072,7 @@ const MapView: React.FC<MapViewProps> = ({
     planningVertexDragRef.current = null;
     setIsDragging(false);
     noteMapViewPerfCounter('map:stop-drag');
-  }, []);
+  }, [applyPanPreviewOffset]);
 
   const updatePlanningPolygonVertices = useCallback(
     (polygonId: string, polygonSource: 'user' | 'osm', vertices: Array<{ x: number; y: number }>) => {
@@ -1119,7 +1158,12 @@ const MapView: React.FC<MapViewProps> = ({
       }
       if (dragRef.current.mode === 'pan2d') {
         markInteracting();
-        queueView2dUpdate((prev) => ({ ...prev, panX: prev.panX + dx, panY: prev.panY + dy }));
+        const nextPreviewOffset = {
+          x: panPreviewOffsetRef.current.x + dx,
+          y: panPreviewOffsetRef.current.y + dy,
+        };
+        panPreviewOffsetRef.current = nextPreviewOffset;
+        applyPanPreviewOffset(nextPreviewOffset.x, nextPreviewOffset.y);
         return;
       }
       if (effectiveMode !== '3d') return;
@@ -1150,11 +1194,11 @@ const MapView: React.FC<MapViewProps> = ({
       toSvgCoords,
       svgToMapCoords,
       effectiveMode,
+      applyPanPreviewOffset,
       camera3d?.distance,
       markInteracting,
       planningMap.blockedPolygons,
       planningMap.obstaclePolygons,
-      queueView2dUpdate,
       updatePlanningPolygonVertices,
     ],
   );
@@ -1244,12 +1288,15 @@ const MapView: React.FC<MapViewProps> = ({
       if (!start) return;
       noteMapViewPerfCounter(`map:begin-drag:${modeName}`);
       if (modeName === 'pan2d') {
+        panPreviewOffsetRef.current = { x: 0, y: 0 };
+        panPreviewCommitViewRef.current = pendingView2dRef.current;
+        applyPanPreviewOffset(0, 0);
         setFrozenDerivedView2d(pendingView2dRef.current);
       }
       dragRef.current = { active: true, mode: modeName, lastX: start.x, lastY: start.y };
       setIsDragging(true);
     },
-    [toSvgCoords],
+    [applyPanPreviewOffset, toSvgCoords],
   );
 
   const handleMouseDown = (event: React.MouseEvent<SVGSVGElement>) => {

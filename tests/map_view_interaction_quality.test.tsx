@@ -284,10 +284,12 @@ describe('MapView interaction quality', () => {
     }
 
     expect(phaseNode.dataset.mapInteractionPhase).toBe('interacting');
-    expect(Number(phaseNode.dataset.mapViewPanX ?? '0')).not.toBe(0);
-    expect(Number(phaseNode.dataset.mapViewPanY ?? '0')).not.toBe(0);
+    expect(Number(phaseNode.dataset.mapViewPanX ?? '0')).toBe(0);
+    expect(Number(phaseNode.dataset.mapViewPanY ?? '0')).toBe(0);
     expect(Number(phaseNode.dataset.mapDerivedViewPanX ?? '0')).toBe(0);
     expect(Number(phaseNode.dataset.mapDerivedViewPanY ?? '0')).toBe(0);
+    expect(Number(phaseNode.dataset.mapPreviewPanX ?? '0')).not.toBe(0);
+    expect(Number(phaseNode.dataset.mapPreviewPanY ?? '0')).not.toBe(0);
     expect(snapshots.filter((snapshot) => snapshot.panX !== 0 || snapshot.panY !== 0).length).toBe(0);
 
     await act(async () => {
@@ -319,6 +321,10 @@ describe('MapView interaction quality', () => {
     expect(phaseNode.dataset.mapInteractionPhase).toBe('idle');
     expect(Number(phaseNode.dataset.mapDerivedViewPanX ?? '0')).not.toBe(0);
     expect(Number(phaseNode.dataset.mapDerivedViewPanY ?? '0')).not.toBe(0);
+    expect(Number(phaseNode.dataset.mapPreviewPanX ?? '0')).toBe(0);
+    expect(Number(phaseNode.dataset.mapPreviewPanY ?? '0')).toBe(0);
+    expect(Number(phaseNode.dataset.mapViewPanX ?? '0')).not.toBe(0);
+    expect(Number(phaseNode.dataset.mapViewPanY ?? '0')).not.toBe(0);
     expect(snapshots.filter((snapshot) => snapshot.panX !== 0 || snapshot.panY !== 0).length).toBe(1);
 
     await act(async () => {
