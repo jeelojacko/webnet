@@ -416,6 +416,8 @@ const MapView: React.FC<MapViewProps> = ({
   const view2dFrameRef = useRef<number | null>(null);
   const dragMoveFrameRef = useRef<number | null>(null);
   const pendingDragClientRef = useRef<{ x: number; y: number } | null>(null);
+  const stableSnapshotView2dRef = useRef(snapshot?.view2d ?? { zoom: 1, panX: 0, panY: 0 });
+  const lastEmittedSnapshotRef = useRef<MapViewSnapshot | null>(null);
   const settleTimerRef = useRef<ReturnType<typeof globalThis.setTimeout> | null>(null);
   const settleFrameRef = useRef<number | null>(null);
   const [interactionPhase, setInteractionPhase] = useState<MapInteractionPhase>('idle');
@@ -828,6 +830,11 @@ const MapView: React.FC<MapViewProps> = ({
     pendingView2dRef.current = view2d;
   }, [view2d]);
 
+  useEffect(() => {
+    if (effectiveMode !== '2d' || interactionPhase !== 'idle') return;
+    stableSnapshotView2dRef.current = view2d;
+  }, [effectiveMode, interactionPhase, view2d]);
+
   useEffect(
     () => () => {
       if (view2dFrameRef.current != null) {
@@ -864,8 +871,8 @@ const MapView: React.FC<MapViewProps> = ({
 
   useEffect(() => {
     if (!onSnapshotChange) return;
-    onSnapshotChange({
-      view2d,
+    const nextSnapshot: MapViewSnapshot = {
+      view2d: effectiveMode === '2d' ? stableSnapshotView2dRef.current : view2d,
       camera3d,
       activeTool,
       inverseFromInput,
@@ -877,7 +884,25 @@ const MapView: React.FC<MapViewProps> = ({
       showLabels,
       hideMinorGeometry,
       focusSelection,
-    });
+    };
+    const previousSnapshot = lastEmittedSnapshotRef.current;
+    const snapshotUnchanged =
+      previousSnapshot != null &&
+      view2dEquals(previousSnapshot.view2d, nextSnapshot.view2d) &&
+      previousSnapshot.camera3d === nextSnapshot.camera3d &&
+      previousSnapshot.activeTool === nextSnapshot.activeTool &&
+      previousSnapshot.inverseFromInput === nextSnapshot.inverseFromInput &&
+      previousSnapshot.inverseToInput === nextSnapshot.inverseToInput &&
+      previousSnapshot.anglePivotInput === nextSnapshot.anglePivotInput &&
+      previousSnapshot.angleFromInput === nextSnapshot.angleFromInput &&
+      previousSnapshot.angleToInput === nextSnapshot.angleToInput &&
+      previousSnapshot.showTransformedCoordinates === nextSnapshot.showTransformedCoordinates &&
+      previousSnapshot.showLabels === nextSnapshot.showLabels &&
+      previousSnapshot.hideMinorGeometry === nextSnapshot.hideMinorGeometry &&
+      previousSnapshot.focusSelection === nextSnapshot.focusSelection;
+    if (snapshotUnchanged) return;
+    lastEmittedSnapshotRef.current = nextSnapshot;
+    onSnapshotChange(nextSnapshot);
   }, [
     activeTool,
     angleFromInput,
@@ -888,7 +913,9 @@ const MapView: React.FC<MapViewProps> = ({
     hideMinorGeometry,
     inverseFromInput,
     inverseToInput,
+    interactionPhase,
     onSnapshotChange,
+    effectiveMode,
     showLabels,
     showTransformedCoordinates,
     view2d,
@@ -2750,6 +2777,9 @@ const MapView: React.FC<MapViewProps> = ({
         ref={containerRef}
         data-map-interaction-phase={interactionPhase}
         data-map-renderer={effectiveMode === '2d' ? renderer2d : 'svg-3d'}
+        data-map-view-zoom={view2d.zoom.toFixed(6)}
+        data-map-view-pan-x={view2d.panX.toFixed(6)}
+        data-map-view-pan-y={view2d.panY.toFixed(6)}
         className="bg-slate-900 border border-slate-800 rounded overflow-hidden flex-1 min-h-0 relative"
       >
         {effectiveMode === '2d' && (

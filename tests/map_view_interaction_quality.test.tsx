@@ -138,10 +138,10 @@ describe('MapView interaction quality', () => {
     });
 
     expect(phaseNode.dataset.mapInteractionPhase).toBe('interacting');
-    expect(snapshots.filter((snapshot) => snapshot.zoom !== 1).length).toBe(0);
+    expect(Number(phaseNode.dataset.mapViewZoom ?? '1')).toBe(1);
     expect(rafQueue.length).toBeGreaterThan(0);
 
-    while (rafQueue.length > 0 && snapshots.filter((snapshot) => snapshot.zoom > 1).length === 0) {
+    while (rafQueue.length > 0 && Number(phaseNode.dataset.mapViewZoom ?? '1') === 1) {
       const queuedFrame = rafQueue.shift();
       if (!queuedFrame) break;
       await act(async () => {
@@ -150,7 +150,7 @@ describe('MapView interaction quality', () => {
       });
     }
 
-    expect(snapshots.filter((snapshot) => snapshot.zoom > 1).length).toBe(1);
+    expect(Number(phaseNode.dataset.mapViewZoom ?? '1')).toBeGreaterThan(1);
 
     await act(async () => {
       vi.advanceTimersByTime(90);
@@ -165,6 +165,7 @@ describe('MapView interaction quality', () => {
       await Promise.resolve();
     });
     expect(phaseNode.dataset.mapInteractionPhase).toBe('idle');
+    expect(snapshots.filter((snapshot) => snapshot.zoom > 1).length).toBe(1);
 
     await act(async () => {
       root.unmount();
@@ -263,12 +264,14 @@ describe('MapView interaction quality', () => {
     });
 
     expect(phaseNode.dataset.mapInteractionPhase).toBe('idle');
-    expect(snapshots.filter((snapshot) => snapshot.panX !== 0 || snapshot.panY !== 0).length).toBe(0);
+    expect(Number(phaseNode.dataset.mapViewPanX ?? '0')).toBe(0);
+    expect(Number(phaseNode.dataset.mapViewPanY ?? '0')).toBe(0);
     expect(rafQueue.length).toBeGreaterThan(0);
 
     while (
       rafQueue.length > 0 &&
-      snapshots.filter((snapshot) => snapshot.panX !== 0 || snapshot.panY !== 0).length === 0
+      Number(phaseNode.dataset.mapViewPanX ?? '0') === 0 &&
+      Number(phaseNode.dataset.mapViewPanY ?? '0') === 0
     ) {
       const queuedFrame = rafQueue.shift();
       if (!queuedFrame) break;
@@ -279,7 +282,9 @@ describe('MapView interaction quality', () => {
     }
 
     expect(phaseNode.dataset.mapInteractionPhase).toBe('interacting');
-    expect(snapshots.filter((snapshot) => snapshot.panX !== 0 || snapshot.panY !== 0).length).toBe(1);
+    expect(Number(phaseNode.dataset.mapViewPanX ?? '0')).not.toBe(0);
+    expect(Number(phaseNode.dataset.mapViewPanY ?? '0')).not.toBe(0);
+    expect(snapshots.filter((snapshot) => snapshot.panX !== 0 || snapshot.panY !== 0).length).toBe(0);
 
     await act(async () => {
       window.dispatchEvent(
@@ -308,6 +313,7 @@ describe('MapView interaction quality', () => {
       await Promise.resolve();
     });
     expect(phaseNode.dataset.mapInteractionPhase).toBe('idle');
+    expect(snapshots.filter((snapshot) => snapshot.panX !== 0 || snapshot.panY !== 0).length).toBe(1);
 
     await act(async () => {
       root.unmount();
