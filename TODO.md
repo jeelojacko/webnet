@@ -1,3 +1,5 @@
+- [x] Map derived-state stage split batch (May 2026): move selection/minor-geometry filtering ahead of the 2D view transform where possible, and break the remaining derived-state work into separately measured stages so the Camp harness can isolate the next real hotspot.
+
 - [x] Map derived-state split batch (May 2026): cache base projected 2D geometry separately from view/selection filtering, then cull the current viewport in base projected space before applying the 2D view transform so pan/zoom avoids touching the full Camp network each frame.
 
 - [x] Camp map performance profiling harness batch (May 2026): add internal map-layer/process capture plus a Camp Design preanalysis map benchmark matrix with feature toggles and scripted pan/zoom sweeps.

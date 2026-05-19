@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   buildBaseProjectedMapLines2d,
   buildBaseProjectedPoints2d,
+  buildConnectedStationIds2d,
   buildDerivedMapState2d,
   buildFilteredVisiblePoints2d,
   buildProjectedViewportBounds,
@@ -78,9 +79,11 @@ describe('mapView2d helpers', () => {
 
     const filtered = buildFilteredVisiblePoints2d({
       visiblePoints2d: points,
-      filteredVisibleMapLines2d: lines,
-      focusSelection: true,
-      selectedStationId: 'A',
+      connectedStationIds: buildConnectedStationIds2d({
+        filteredVisibleMapLines2d: lines,
+        focusSelection: true,
+        selectedStationId: 'A',
+      }),
     });
 
     expect(filtered.map((point) => point.id)).toEqual(['A', 'B']);

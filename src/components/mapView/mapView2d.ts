@@ -102,6 +102,17 @@ export interface ProjectablePoint2D {
   };
 }
 
+interface SelectionLinkedLine2D {
+  observationId: number;
+  pairKey: string;
+  fromId: string;
+  toId: string;
+}
+
+interface SelectionLinkedPoint2D {
+  id: string;
+}
+
 export interface MapDensitySummary {
   dense: boolean;
   labelTotal: number;
@@ -368,14 +379,14 @@ export const buildVisiblePointLabels2d = (input: {
   return next;
 };
 
-export const buildFilteredVisibleMapLines2d = (input: {
-  visibleMapLines2d: ProjectedMapLine2D[];
+export const buildFilteredVisibleMapLines2d = <TLine extends SelectionLinkedLine2D>(input: {
+  visibleMapLines2d: TLine[];
   hideMinorGeometry: boolean;
   focusSelection: boolean;
   selectedObservationId: number | null;
   selectedObservationPairKey: string | null;
   selectedStationId: string | null;
-}): ProjectedMapLine2D[] => {
+}): TLine[] => {
   if (!input.hideMinorGeometry && !input.focusSelection) return input.visibleMapLines2d;
   return input.visibleMapLines2d.filter((line) => {
     const isSelected =
@@ -390,19 +401,26 @@ export const buildFilteredVisibleMapLines2d = (input: {
   });
 };
 
-export const buildFilteredVisiblePoints2d = (input: {
-  visiblePoints2d: ProjectedPoint2D[];
-  filteredVisibleMapLines2d: ProjectedMapLine2D[];
+export const buildConnectedStationIds2d = (input: {
+  filteredVisibleMapLines2d: SelectionLinkedLine2D[];
   focusSelection: boolean;
   selectedStationId: string | null;
-}): ProjectedPoint2D[] => {
-  if (!input.focusSelection || !input.selectedStationId) return input.visiblePoints2d;
+}): Set<string> | null => {
+  if (!input.focusSelection || !input.selectedStationId) return null;
   const connectedIds = new Set<string>([input.selectedStationId]);
   input.filteredVisibleMapLines2d.forEach((line) => {
     if (line.fromId === input.selectedStationId) connectedIds.add(line.toId);
     if (line.toId === input.selectedStationId) connectedIds.add(line.fromId);
   });
-  return input.visiblePoints2d.filter((point) => connectedIds.has(point.id));
+  return connectedIds;
+};
+
+export const buildFilteredVisiblePoints2d = <TPoint extends SelectionLinkedPoint2D>(input: {
+  visiblePoints2d: TPoint[];
+  connectedStationIds: Set<string> | null;
+}): TPoint[] => {
+  if (!input.connectedStationIds) return input.visiblePoints2d;
+  return input.visiblePoints2d.filter((point) => input.connectedStationIds?.has(point.id));
 };
 
 export const buildUnselectedCanvasLines2d = (input: {
@@ -492,11 +510,15 @@ export const buildDerivedMapState2d = (input: {
     selectedStationId: input.selectedStationId,
   });
 
-  const filteredVisiblePoints2d = buildFilteredVisiblePoints2d({
-    visiblePoints2d: input.projectedPoints2d,
+  const connectedStationIds = buildConnectedStationIds2d({
     filteredVisibleMapLines2d,
     focusSelection: input.focusSelection,
     selectedStationId: input.selectedStationId,
+  });
+
+  const filteredVisiblePoints2d = buildFilteredVisiblePoints2d({
+    visiblePoints2d: input.projectedPoints2d,
+    connectedStationIds,
   });
 
   const unselectedCanvasLines2d = buildUnselectedCanvasLines2d({

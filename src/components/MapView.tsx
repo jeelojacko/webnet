@@ -38,11 +38,16 @@ import { noteUiPerfStage, noteUiTabReady } from '../hooks/useUiPerfMonitor';
 import {
   buildBaseProjectedMapLines2d,
   buildBaseProjectedPoints2d,
-  buildDerivedMapState2d,
+  buildConnectedStationIds2d,
+  buildFilteredVisibleMapLines2d,
+  buildFilteredVisiblePoints2d,
+  buildMapDensitySummary,
   buildProjectedViewportBounds,
   buildProjectedMapLines2d,
   buildProjectedPoints2d,
   buildProjection2d,
+  buildUnselectedCanvasLines2d,
+  buildVisiblePointLabels2d,
   buildVisibleBaseProjectedMapLines2d,
   buildVisibleBaseProjectedPoints2d,
   buildViewportBounds,
@@ -1912,48 +1917,96 @@ const MapView: React.FC<MapViewProps> = ({
     [baseProjectedPoints2d, deferredView2d.zoom, projectedViewportBounds2d, selectedStationId],
   );
 
+  const filteredVisibleBaseProjectedMapLines2d = useMemo(
+    () =>
+      measureMapViewPerf('map:filter-base-lines', () =>
+        buildFilteredVisibleMapLines2d({
+          visibleMapLines2d: visibleBaseProjectedMapLines2d,
+          hideMinorGeometry,
+          focusSelection,
+          selectedObservationId,
+          selectedObservationPairKey,
+          selectedStationId,
+        }),
+      ),
+    [
+      focusSelection,
+      hideMinorGeometry,
+      selectedObservationId,
+      selectedObservationPairKey,
+      selectedStationId,
+      visibleBaseProjectedMapLines2d,
+    ],
+  );
+
+  const connectedStationIds2d = useMemo(
+    () =>
+      measureMapViewPerf('map:build-connected-stations', () =>
+        buildConnectedStationIds2d({
+          filteredVisibleMapLines2d: filteredVisibleBaseProjectedMapLines2d,
+          focusSelection,
+          selectedStationId,
+        }),
+      ),
+    [filteredVisibleBaseProjectedMapLines2d, focusSelection, selectedStationId],
+  );
+
+  const filteredVisibleBaseProjectedPoints2d = useMemo(
+    () =>
+      measureMapViewPerf('map:filter-base-points', () =>
+        buildFilteredVisiblePoints2d({
+          visiblePoints2d: visibleBaseProjectedPoints2d,
+          connectedStationIds: connectedStationIds2d,
+        }),
+      ),
+    [connectedStationIds2d, visibleBaseProjectedPoints2d],
+  );
+
   const projectedMapLines2d = useMemo(
     () =>
       measureMapViewPerf('map:apply-view-lines', () =>
         buildProjectedMapLines2d({
-          baseProjectedMapLines2d: visibleBaseProjectedMapLines2d,
+          baseProjectedMapLines2d: filteredVisibleBaseProjectedMapLines2d,
           view2d: deferredView2d,
         }),
       ),
-    [deferredView2d, visibleBaseProjectedMapLines2d],
+    [deferredView2d, filteredVisibleBaseProjectedMapLines2d],
   );
 
   const projectedPoints2d = useMemo(
     () =>
       measureMapViewPerf('map:apply-view-points', () =>
         buildProjectedPoints2d({
-          baseProjectedPoints2d: visibleBaseProjectedPoints2d,
+          baseProjectedPoints2d: filteredVisibleBaseProjectedPoints2d,
           view2d: deferredView2d,
         }),
       ),
-    [deferredView2d, visibleBaseProjectedPoints2d],
+    [deferredView2d, filteredVisibleBaseProjectedPoints2d],
   );
 
-  const mapState2d = useMemo(
+  const interactionDenseMode = useMemo(
     () =>
-      measureMapViewPerf('map:build-derived-state', () =>
-        buildDerivedMapState2d({
-          projectedMapLines2d,
-          projectedPoints2d,
-          selectedStationId,
-          interactionPhaseInteracting:
-            effectiveMode === '2d' && interactionPhase === 'interacting',
-          interactionDensePointThreshold: INTERACTION_DENSE_POINT_THRESHOLD,
-          interactionDenseLineThreshold: INTERACTION_DENSE_LINE_THRESHOLD,
+      measureMapViewPerf('map:derive-interaction-density', () =>
+        effectiveMode === '2d' &&
+        interactionPhase === 'interacting' &&
+        (projectedPoints2d.length > INTERACTION_DENSE_POINT_THRESHOLD ||
+          projectedMapLines2d.length > INTERACTION_DENSE_LINE_THRESHOLD),
+      ),
+    [effectiveMode, interactionPhase, projectedMapLines2d.length, projectedPoints2d.length],
+  );
+
+  const visiblePointLabels2d = useMemo(
+    () =>
+      measureMapViewPerf('map:build-visible-labels', () =>
+        buildVisiblePointLabels2d({
           showLabels,
-          hideMinorGeometry,
-          focusSelection,
+          visiblePoints2d: projectedPoints2d,
+          visibleMapLines2dLength: projectedMapLines2d.length,
+          interactionDenseMode,
+          selectedStationId,
           pointThreshold: DENSE_LABEL_POINT_THRESHOLD,
           edgeThreshold: DENSE_LABEL_EDGE_THRESHOLD,
           labelGridPx: LABEL_GRID_PX,
-          totalProjectedMapLines2dLength: baseProjectedMapLines2d.length,
-          selectedObservationId,
-          selectedObservationPairKey,
           scorePriority: (point) =>
             scoreMapStationPriority({
               stationId: point.id,
@@ -1964,29 +2017,57 @@ const MapView: React.FC<MapViewProps> = ({
         }),
       ),
     [
-      effectiveMode,
-      focusSelection,
-      hideMinorGeometry,
-      interactionPhase,
-      baseProjectedMapLines2d.length,
-      projectedMapLines2d,
+      interactionDenseMode,
+      projectedMapLines2d.length,
       projectedPoints2d,
-      selectedObservationId,
-      selectedObservationPairKey,
       selectedStationId,
       showLabels,
       stationSeverity,
     ],
   );
 
-  const {
-    filteredVisibleMapLines2d,
-    filteredVisiblePoints2d,
-    interactionDenseMode,
-    mapDensitySummary,
-    unselectedCanvasLines2d,
-    visiblePointLabels2d,
-  } = mapState2d;
+  const unselectedCanvasLines2d = useMemo(
+    () =>
+      measureMapViewPerf('map:build-unselected-lines', () =>
+        buildUnselectedCanvasLines2d({
+          filteredVisibleMapLines2d: projectedMapLines2d,
+          interactionDenseMode,
+          selectedObservationId,
+          selectedObservationPairKey,
+          selectedStationId,
+        }),
+      ),
+    [
+      interactionDenseMode,
+      projectedMapLines2d,
+      selectedObservationId,
+      selectedObservationPairKey,
+      selectedStationId,
+    ],
+  );
+
+  const mapDensitySummary = useMemo(
+    () =>
+      measureMapViewPerf('map:build-density-summary', () =>
+        buildMapDensitySummary({
+          filteredVisibleMapLines2dLength: projectedMapLines2d.length,
+          filteredVisiblePoints2dLength: projectedPoints2d.length,
+          totalProjectedMapLines2dLength: baseProjectedMapLines2d.length,
+          projectedMapLines2dLength: projectedMapLines2d.length,
+          visiblePointLabels2dSize: visiblePointLabels2d.size,
+          denseLabelEdgeThreshold: DENSE_LABEL_EDGE_THRESHOLD,
+        }),
+      ),
+    [
+      baseProjectedMapLines2d.length,
+      projectedMapLines2d.length,
+      projectedPoints2d.length,
+      visiblePointLabels2d.size,
+    ],
+  );
+
+  const filteredVisibleMapLines2d = projectedMapLines2d;
+  const filteredVisiblePoints2d = projectedPoints2d;
 
   const webglScene2d = useMemo(
     () =>

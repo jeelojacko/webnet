@@ -144,11 +144,11 @@ The UI should treat solve results as the source of truth and avoid duplicating e
 - `mapViewWebgl2d.ts` owns the preferred WebGL2 render controller for OSM tiles plus non-selected static geometry
 - `mapViewWebglBuffers.ts` builds GPU-ready line/point/ellipse/preview buffers from the same projected survey geometry used elsewhere
 - `mapViewTileStore.ts` owns imperative tile lifecycle, fallback coverage, and eviction state
-- `mapView2d.ts` now stages 2D map derivation into base projected geometry, base-space viewport culling, and final screen-space view application so pan/zoom avoids reprojecting and retranslating the full network every frame
+- `mapView2d.ts` now stages 2D map derivation into base projected geometry, base-space viewport culling, base-space selection/minor-geometry filtering, and final screen-space view application so pan/zoom avoids reprojecting and retranslating the full network every frame
 - `mapViewCanvas2d.ts` now also owns a dedicated planning-overlay canvas pass for non-selected obstacle/blocked polygon bodies and raw input-point markers; that pass stays active even when the main 2D background renderer is WebGL
 - `MapViewSvg2d.tsx` remains the interaction/label/edit surface for selections, labels, selected planning outlines, edit handles, and tool affordances
 - `mapViewCanvas2d.ts` remains the automatic fallback renderer when WebGL2 is unavailable or initialization fails
-- `mapViewPerf.ts` provides opt-in internal timing/counter capture so focused tests can profile derived-state, hit-index, tile, WebGL, canvas, and SVG passes without changing operator-facing behavior
+- `mapViewPerf.ts` provides opt-in internal timing/counter capture so focused tests can profile the staged 2D derived-state passes, hit-index, tile, WebGL, canvas, and SVG work without changing operator-facing behavior
 
 Focused map profiling coverage now includes a Camp Design preanalysis matrix under `tests/map_view_camp_design_profile.test.tsx`, driven by `tests/fixtures/map_view_camp_design_profile_matrix.json` plus helper setup in `tests/helpers/campDesignMapPerfHarness.ts`, so feature-toggle and renderer comparisons can be reproduced before changing the live map stack.
 

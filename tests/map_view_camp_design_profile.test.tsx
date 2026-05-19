@@ -420,7 +420,9 @@ describe('MapView Camp Design performance profiling harness', () => {
         rows.some(
           (row) =>
             row.topTimingNames.includes('svg:render') ||
-            row.topTimingNames.includes('map:build-derived-state') ||
+            row.topTimingNames.includes('map:build-visible-labels') ||
+            row.topTimingNames.includes('map:filter-base-lines') ||
+            row.topTimingNames.includes('map:filter-base-points') ||
             row.topTimingNames.includes('webgl:render') ||
             row.topTimingNames.includes('canvas:planning'),
         ),
