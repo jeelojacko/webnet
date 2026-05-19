@@ -133,6 +133,7 @@ export const useAppRunWorkspaceReview = ({
     selection,
     selectObservation,
     selectStation,
+    clearSelection,
     snapshot: workspaceReviewSnapshot,
     restoreSnapshot: restoreWorkspaceReviewSnapshot,
   } = workspaceReviewState;
@@ -156,16 +157,24 @@ export const useAppRunWorkspaceReview = ({
     [selectObservation],
   );
   const handleMapStationSelection = useCallback(
-    (stationId: string) => {
+    (stationId: string | null) => {
+      if (stationId == null) {
+        clearSelection();
+        return;
+      }
       selectStation(stationId, 'map');
     },
-    [selectStation],
+    [clearSelection, selectStation],
   );
   const handleMapObservationSelection = useCallback(
-    (observationId: number) => {
+    (observationId: number | null) => {
+      if (observationId == null) {
+        clearSelection();
+        return;
+      }
       selectObservation(observationId, 'map');
     },
-    [selectObservation],
+    [clearSelection, selectObservation],
   );
 
   const blockingReasons = useMemo(() => {

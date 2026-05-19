@@ -37,6 +37,8 @@ describe('MapViewSvg2d', () => {
                 observationId: 7,
                 pairKey: 'A|B',
                 sourceLine: 1,
+                fromId: 'A',
+                toId: 'B',
                 x1: 100,
                 y1: 100,
                 x2: 150,
@@ -70,7 +72,7 @@ describe('MapViewSvg2d', () => {
                 pointsAttr: '30,30 60,30 60,60',
               },
             ]}
-            selectedPlanningPolygonId="osm-building-1"
+            selectedPlanningPolygonIds={['osm-building-1']}
             bracePreviewPoints2d={[
               {
                 scenarioId: 'brace-1',
@@ -81,6 +83,7 @@ describe('MapViewSvg2d', () => {
                 active: true,
               },
             ]}
+            selectionBoxRect={{ x: 10, y: 20, width: 30, height: 40, mode: 'crossing' }}
             onPlanningVertexMouseDown={onPlanningVertexMouseDown}
             project2d={(x, y) => ({ x: x * 10, y: y * 10 })}
           />
@@ -94,6 +97,8 @@ describe('MapViewSvg2d', () => {
     expect(container.querySelector('[data-map-brace-preview="BRACE_A_B"]')).not.toBeNull();
     expect(container.querySelector('[data-planning-polygon-id="osm-building-1"]')).not.toBeNull();
     expect(container.querySelector('[data-planning-vertex="osm-building-1:0"]')).not.toBeNull();
+    expect(container.querySelector('[data-map-selection-box="true"]')).not.toBeNull();
+    expect(container.querySelector('[data-map-selection-mode="crossing"]')).not.toBeNull();
 
     await act(async () => {
       (container.querySelector('[data-map-observation="7"]') as SVGLineElement).dispatchEvent(

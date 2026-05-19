@@ -32,6 +32,8 @@ export interface ProjectedMapLine2D {
   observationId: number;
   pairKey: string;
   sourceLine: number | null;
+  fromId: string;
+  toId: string;
   x1: number;
   y1: number;
   x2: number;
@@ -49,6 +51,36 @@ export interface ProjectedPoint2D {
   y: number;
   screenX: number;
   screenY: number;
+  ellipsoid?: {
+    semiMajor: number;
+    semiMinor: number;
+    semiVertical: number;
+    thetaDeg: number;
+  };
+}
+
+export interface BaseProjectedMapLine2D {
+  key: string;
+  observationId: number;
+  pairKey: string;
+  sourceLine: number | null;
+  fromId: string;
+  toId: string;
+  x1: number;
+  y1: number;
+  x2: number;
+  y2: number;
+  minX: number;
+  maxX: number;
+  minY: number;
+  maxY: number;
+}
+
+export interface BaseProjectedPoint2D {
+  id: string;
+  fixed: boolean;
+  x: number;
+  y: number;
   ellipsoid?: {
     semiMajor: number;
     semiMinor: number;
@@ -79,9 +111,7 @@ export interface MapDensitySummary {
 
 export interface DerivedMapState2d {
   projectedMapLines2d: ProjectedMapLine2D[];
-  visibleMapLines2d: ProjectedMapLine2D[];
   projectedPoints2d: ProjectedPoint2D[];
-  visiblePoints2d: ProjectedPoint2D[];
   interactionDenseMode: boolean;
   visiblePointLabels2d: Set<string>;
   filteredVisibleMapLines2d: ProjectedMapLine2D[];
@@ -173,13 +203,25 @@ export const buildViewportBounds = (
   maxY: viewHeight + clipMarginPx,
 });
 
-export const buildProjectedMapLines2d = (input: {
+export const buildProjectedViewportBounds = (
+  viewportBounds: ViewportBounds,
+  view2d: View2dState,
+): ViewportBounds => {
+  const safeZoom = Math.max(view2d.zoom, 1e-9);
+  return {
+    minX: (viewportBounds.minX - view2d.panX) / safeZoom,
+    maxX: (viewportBounds.maxX - view2d.panX) / safeZoom,
+    minY: (viewportBounds.minY - view2d.panY) / safeZoom,
+    maxY: (viewportBounds.maxY - view2d.panY) / safeZoom,
+  };
+};
+
+export const buildBaseProjectedMapLines2d = (input: {
   mapLinks: ObservationMapLink[];
   stations: StationMap;
   showLostStations: boolean;
   projectPoint: (_x: number, _y: number) => { x: number; y: number };
-  view2d: View2dState;
-}): ProjectedMapLine2D[] =>
+}): BaseProjectedMapLine2D[] =>
   input.mapLinks
     .map((link) => {
       const from = input.stations[link.fromId];
@@ -193,43 +235,55 @@ export const buildProjectedMapLines2d = (input: {
         observationId: link.observationId,
         pairKey: link.pairKey,
         sourceLine: link.sourceLine,
+        fromId: link.fromId,
+        toId: link.toId,
         x1: p1.x,
         y1: p1.y,
         x2: p2.x,
         y2: p2.y,
-        screenX1: input.view2d.panX + p1.x * input.view2d.zoom,
-        screenY1: input.view2d.panY + p1.y * input.view2d.zoom,
-        screenX2: input.view2d.panX + p2.x * input.view2d.zoom,
-        screenY2: input.view2d.panY + p2.y * input.view2d.zoom,
+        minX: Math.min(p1.x, p2.x),
+        maxX: Math.max(p1.x, p2.x),
+        minY: Math.min(p1.y, p2.y),
+        maxY: Math.max(p1.y, p2.y),
       };
     })
-    .filter((line): line is ProjectedMapLine2D => line != null);
+    .filter((line): line is BaseProjectedMapLine2D => line != null);
 
-export const buildVisibleMapLines2d = (input: {
-  projectedMapLines2d: ProjectedMapLine2D[];
+export const buildVisibleBaseProjectedMapLines2d = (input: {
+  baseProjectedMapLines2d: BaseProjectedMapLine2D[];
   selectedObservationId: number | null;
   selectedObservationPairKey: string | null;
-  viewportBounds: ViewportBounds;
-}): ProjectedMapLine2D[] =>
-  input.projectedMapLines2d.filter((line) => {
+  projectedViewportBounds: ViewportBounds;
+}): BaseProjectedMapLine2D[] =>
+  input.baseProjectedMapLines2d.filter((line) => {
     const isSelected =
       line.observationId === input.selectedObservationId ||
       (input.selectedObservationPairKey != null && line.pairKey === input.selectedObservationPairKey);
     if (isSelected) return true;
-    return intersectsViewportBounds(
-      input.viewportBounds,
-      line.screenX1,
-      line.screenY1,
-      line.screenX2,
-      line.screenY2,
+    return !(
+      line.maxX < input.projectedViewportBounds.minX ||
+      line.minX > input.projectedViewportBounds.maxX ||
+      line.maxY < input.projectedViewportBounds.minY ||
+      line.minY > input.projectedViewportBounds.maxY
     );
   });
 
-export const buildProjectedPoints2d = (input: {
+export const buildProjectedMapLines2d = (input: {
+  baseProjectedMapLines2d: BaseProjectedMapLine2D[];
+  view2d: View2dState;
+}): ProjectedMapLine2D[] =>
+  input.baseProjectedMapLines2d.map((line) => ({
+    ...line,
+    screenX1: input.view2d.panX + line.x1 * input.view2d.zoom,
+    screenY1: input.view2d.panY + line.y1 * input.view2d.zoom,
+    screenX2: input.view2d.panX + line.x2 * input.view2d.zoom,
+    screenY2: input.view2d.panY + line.y2 * input.view2d.zoom,
+  }));
+
+export const buildBaseProjectedPoints2d = (input: {
   points: ProjectablePoint2D[];
   projectPoint: (_x: number, _y: number) => { x: number; y: number };
-  view2d: View2dState;
-}): ProjectedPoint2D[] =>
+}): BaseProjectedPoint2D[] =>
   input.points.map((point) => {
     const projected = input.projectPoint(point.x, point.y);
     return {
@@ -237,29 +291,37 @@ export const buildProjectedPoints2d = (input: {
       fixed: point.fixed,
       x: projected.x,
       y: projected.y,
-      screenX: input.view2d.panX + projected.x * input.view2d.zoom,
-      screenY: input.view2d.panY + projected.y * input.view2d.zoom,
       ellipsoid: point.ellipsoid,
     };
   });
 
-export const buildVisiblePoints2d = (input: {
-  projectedPoints2d: ProjectedPoint2D[];
+export const buildVisibleBaseProjectedPoints2d = (input: {
+  baseProjectedPoints2d: BaseProjectedPoint2D[];
   selectedStationId: string | null;
-  viewportBounds: ViewportBounds;
-  selectionMargin?: number;
-}): ProjectedPoint2D[] => {
-  const selectionMargin = input.selectionMargin ?? 12;
-  return input.projectedPoints2d.filter((point) => {
+  projectedViewportBounds: ViewportBounds;
+  selectionMarginProjected?: number;
+}): BaseProjectedPoint2D[] => {
+  const selectionMargin = input.selectionMarginProjected ?? 12;
+  return input.baseProjectedPoints2d.filter((point) => {
     if (point.id === input.selectedStationId) return true;
     return (
-      point.screenX >= input.viewportBounds.minX - selectionMargin &&
-      point.screenX <= input.viewportBounds.maxX + selectionMargin &&
-      point.screenY >= input.viewportBounds.minY - selectionMargin &&
-      point.screenY <= input.viewportBounds.maxY + selectionMargin
+      point.x >= input.projectedViewportBounds.minX - selectionMargin &&
+      point.x <= input.projectedViewportBounds.maxX + selectionMargin &&
+      point.y >= input.projectedViewportBounds.minY - selectionMargin &&
+      point.y <= input.projectedViewportBounds.maxY + selectionMargin
     );
   });
 };
+
+export const buildProjectedPoints2d = (input: {
+  baseProjectedPoints2d: BaseProjectedPoint2D[];
+  view2d: View2dState;
+}): ProjectedPoint2D[] =>
+  input.baseProjectedPoints2d.map((point) => ({
+    ...point,
+    screenX: input.view2d.panX + point.x * input.view2d.zoom,
+    screenY: input.view2d.panY + point.y * input.view2d.zoom,
+  }));
 
 export const buildVisiblePointLabels2d = (input: {
   showLabels: boolean;
@@ -319,10 +381,9 @@ export const buildFilteredVisibleMapLines2d = (input: {
     const isSelected =
       line.observationId === input.selectedObservationId ||
       (input.selectedObservationPairKey != null && line.pairKey === input.selectedObservationPairKey);
-    const [fromId, toId] = line.key.split(':');
     const touchesSelectedStation =
       input.selectedStationId != null &&
-      (fromId === input.selectedStationId || toId === input.selectedStationId);
+      (line.fromId === input.selectedStationId || line.toId === input.selectedStationId);
     if (isSelected || touchesSelectedStation) return true;
     if (input.focusSelection) return false;
     return !input.hideMinorGeometry || line.observationId % 2 === 0;
@@ -338,9 +399,8 @@ export const buildFilteredVisiblePoints2d = (input: {
   if (!input.focusSelection || !input.selectedStationId) return input.visiblePoints2d;
   const connectedIds = new Set<string>([input.selectedStationId]);
   input.filteredVisibleMapLines2d.forEach((line) => {
-    const [fromId, toId] = line.key.split(':');
-    if (fromId === input.selectedStationId) connectedIds.add(toId);
-    if (toId === input.selectedStationId) connectedIds.add(fromId);
+    if (line.fromId === input.selectedStationId) connectedIds.add(line.toId);
+    if (line.toId === input.selectedStationId) connectedIds.add(line.fromId);
   });
   return input.visiblePoints2d.filter((point) => connectedIds.has(point.id));
 };
@@ -359,10 +419,9 @@ export const buildUnselectedCanvasLines2d = (input: {
   );
   if (!input.interactionDenseMode) return base;
   return base.filter((line, index) => {
-    const [fromId, toId] = line.key.split(':');
     const touchesSelectedStation =
       input.selectedStationId != null &&
-      (fromId === input.selectedStationId || toId === input.selectedStationId);
+      (line.fromId === input.selectedStationId || line.toId === input.selectedStationId);
     return touchesSelectedStation || index % 2 === 0;
   });
 };
@@ -370,19 +429,19 @@ export const buildUnselectedCanvasLines2d = (input: {
 export const buildMapDensitySummary = (input: {
   filteredVisibleMapLines2dLength: number;
   filteredVisiblePoints2dLength: number;
+  totalProjectedMapLines2dLength: number;
   projectedMapLines2dLength: number;
-  visibleMapLines2dLength: number;
   visiblePointLabels2dSize: number;
   denseLabelEdgeThreshold: number;
 }): MapDensitySummary => {
   const labelTotal = input.visiblePointLabels2dSize;
   const labelSuppressed = input.filteredVisiblePoints2dLength - labelTotal;
-  const lineSuppressed = input.projectedMapLines2dLength - input.filteredVisibleMapLines2dLength;
+  const lineSuppressed = input.totalProjectedMapLines2dLength - input.filteredVisibleMapLines2dLength;
   return {
     dense:
       labelSuppressed > 0 ||
       lineSuppressed > 0 ||
-      input.visibleMapLines2dLength > input.denseLabelEdgeThreshold,
+      input.projectedMapLines2dLength > input.denseLabelEdgeThreshold,
     labelTotal,
     labelSuppressed,
     lineSuppressed,
@@ -390,16 +449,9 @@ export const buildMapDensitySummary = (input: {
 };
 
 export const buildDerivedMapState2d = (input: {
-  mapLinks: ObservationMapLink[];
-  stations: StationMap;
-  showLostStations: boolean;
-  points: ProjectablePoint2D[];
-  projectPoint: (_x: number, _y: number) => { x: number; y: number };
-  view2d: View2dState;
-  selectedObservationId: number | null;
-  selectedObservationPairKey: string | null;
+  projectedMapLines2d: ProjectedMapLine2D[];
+  projectedPoints2d: ProjectedPoint2D[];
   selectedStationId: string | null;
-  viewportBounds: ViewportBounds;
   interactionPhaseInteracting: boolean;
   interactionDensePointThreshold: number;
   interactionDenseLineThreshold: number;
@@ -409,44 +461,20 @@ export const buildDerivedMapState2d = (input: {
   pointThreshold: number;
   edgeThreshold: number;
   labelGridPx: number;
+  totalProjectedMapLines2dLength: number;
+  selectedObservationId: number | null;
+  selectedObservationPairKey: string | null;
   scorePriority: (_point: ProjectedPoint2D) => number;
 }): DerivedMapState2d => {
-  const projectedMapLines2d = buildProjectedMapLines2d({
-    mapLinks: input.mapLinks,
-    stations: input.stations,
-    showLostStations: input.showLostStations,
-    projectPoint: input.projectPoint,
-    view2d: input.view2d,
-  });
-
-  const visibleMapLines2d = buildVisibleMapLines2d({
-    projectedMapLines2d,
-    selectedObservationId: input.selectedObservationId,
-    selectedObservationPairKey: input.selectedObservationPairKey,
-    viewportBounds: input.viewportBounds,
-  });
-
-  const projectedPoints2d = buildProjectedPoints2d({
-    points: input.points,
-    projectPoint: input.projectPoint,
-    view2d: input.view2d,
-  });
-
-  const visiblePoints2d = buildVisiblePoints2d({
-    projectedPoints2d,
-    selectedStationId: input.selectedStationId,
-    viewportBounds: input.viewportBounds,
-  });
-
   const interactionDenseMode =
     input.interactionPhaseInteracting &&
-    (visiblePoints2d.length > input.interactionDensePointThreshold ||
-      visibleMapLines2d.length > input.interactionDenseLineThreshold);
+    (input.projectedPoints2d.length > input.interactionDensePointThreshold ||
+      input.projectedMapLines2d.length > input.interactionDenseLineThreshold);
 
   const visiblePointLabels2d = buildVisiblePointLabels2d({
     showLabels: input.showLabels,
-    visiblePoints2d,
-    visibleMapLines2dLength: visibleMapLines2d.length,
+    visiblePoints2d: input.projectedPoints2d,
+    visibleMapLines2dLength: input.projectedMapLines2d.length,
     interactionDenseMode,
     selectedStationId: input.selectedStationId,
     pointThreshold: input.pointThreshold,
@@ -456,7 +484,7 @@ export const buildDerivedMapState2d = (input: {
   });
 
   const filteredVisibleMapLines2d = buildFilteredVisibleMapLines2d({
-    visibleMapLines2d,
+    visibleMapLines2d: input.projectedMapLines2d,
     hideMinorGeometry: input.hideMinorGeometry,
     focusSelection: input.focusSelection,
     selectedObservationId: input.selectedObservationId,
@@ -465,7 +493,7 @@ export const buildDerivedMapState2d = (input: {
   });
 
   const filteredVisiblePoints2d = buildFilteredVisiblePoints2d({
-    visiblePoints2d,
+    visiblePoints2d: input.projectedPoints2d,
     filteredVisibleMapLines2d,
     focusSelection: input.focusSelection,
     selectedStationId: input.selectedStationId,
@@ -482,17 +510,15 @@ export const buildDerivedMapState2d = (input: {
   const mapDensitySummary = buildMapDensitySummary({
     filteredVisibleMapLines2dLength: filteredVisibleMapLines2d.length,
     filteredVisiblePoints2dLength: filteredVisiblePoints2d.length,
-    projectedMapLines2dLength: projectedMapLines2d.length,
-    visibleMapLines2dLength: visibleMapLines2d.length,
+    totalProjectedMapLines2dLength: input.totalProjectedMapLines2dLength,
+    projectedMapLines2dLength: input.projectedMapLines2d.length,
     visiblePointLabels2dSize: visiblePointLabels2d.size,
     denseLabelEdgeThreshold: input.edgeThreshold,
   });
 
   return {
-    projectedMapLines2d,
-    visibleMapLines2d,
-    projectedPoints2d,
-    visiblePoints2d,
+    projectedMapLines2d: input.projectedMapLines2d,
+    projectedPoints2d: input.projectedPoints2d,
     interactionDenseMode,
     visiblePointLabels2d,
     filteredVisibleMapLines2d,

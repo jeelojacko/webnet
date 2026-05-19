@@ -1,6 +1,11 @@
 import React from 'react';
 
 import type { ProjectedMapLine2D, ProjectedPoint2D, View2dState } from './mapView2d';
+import {
+  measureMapViewPerf,
+  noteMapViewPerfCounter,
+  noteMapViewPerfMetadata,
+} from './mapViewPerf';
 
 interface TransformedLine2d {
   key: string;
@@ -74,9 +79,20 @@ interface MapViewSvg2dProps {
   transformedPoints2d: TransformedPoint2d[];
   planningInputPoints2d?: PlanningInputPoint2d[];
   planningPolygons2d?: PlanningPolygon2d[];
-  selectedPlanningPolygonId?: string | null;
+  selectedPlanningPolygonIds?: string[];
+  renderPlanningPolygonBodies?: boolean;
+  renderPlanningInputPoints?: boolean;
   bracePreviewPoints2d?: BracePreviewPoint2d[];
   scenarioPreviewSegments2d?: ScenarioPreviewSegment2d[];
+  renderBracePreviewMarkers?: boolean;
+  renderScenarioPreviewSegments?: boolean;
+  selectionBoxRect?: {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    mode: 'window' | 'crossing';
+  } | null;
   onPlanningVertexMouseDown?: (
     _polygonId: string,
     _vertexIndex: number,
@@ -106,13 +122,28 @@ const MapViewSvg2d: React.FC<MapViewSvg2dProps> = ({
   transformedPoints2d,
   planningInputPoints2d = [],
   planningPolygons2d = [],
-  selectedPlanningPolygonId = null,
+  selectedPlanningPolygonIds = [],
+  renderPlanningPolygonBodies = true,
+  renderPlanningInputPoints = true,
   bracePreviewPoints2d = [],
   scenarioPreviewSegments2d = [],
+  renderBracePreviewMarkers = true,
+  renderScenarioPreviewSegments = true,
+  selectionBoxRect = null,
   onPlanningVertexMouseDown,
   project2d,
-}) => (
-  <>
+}) =>
+  measureMapViewPerf('svg:render', () => {
+    noteMapViewPerfCounter('svg:renders');
+    noteMapViewPerfMetadata(
+      'svg:last-label-count',
+      filteredVisiblePoints2d.filter((point) => visiblePointLabels2d.has(point.id)).length,
+    );
+    noteMapViewPerfMetadata('svg:last-line-count', filteredVisibleMapLines2d.length);
+    noteMapViewPerfMetadata('svg:last-planning-polygon-count', planningPolygons2d.length);
+    noteMapViewPerfMetadata('svg:last-selection-box-active', selectionBoxRect != null);
+    return (
+      <>
     <defs>
       <marker
         id="arrow"
@@ -151,7 +182,12 @@ const MapViewSvg2d: React.FC<MapViewSvg2dProps> = ({
     </g>
 
     <g transform={`translate(${view2d.panX} ${view2d.panY}) scale(${view2d.zoom})`}>
-      {planningPolygons2d.map((polygon) => (
+      {planningPolygons2d
+        .filter(
+          (polygon) =>
+            renderPlanningPolygonBodies || selectedPlanningPolygonIds.includes(polygon.id),
+        )
+        .map((polygon) => (
         <polygon
           key={`planning-polygon-${polygon.id}`}
           data-planning-polygon-id={polygon.id}
@@ -159,11 +195,17 @@ const MapViewSvg2d: React.FC<MapViewSvg2dProps> = ({
           data-planning-polygon-label={polygon.label || polygon.kind}
           points={polygon.pointsAttr}
           fill={
-            polygon.source === 'user'
-              ? 'rgba(244,114,182,0.20)'
-              : polygon.kind === 'wooded'
-                ? 'rgba(74,222,128,0.16)'
-                : 'rgba(148,163,184,0.16)'
+            renderPlanningPolygonBodies
+              ? polygon.source === 'user'
+                ? 'rgba(244,114,182,0.20)'
+                : polygon.kind === 'wooded'
+                  ? 'rgba(74,222,128,0.16)'
+                  : 'rgba(148,163,184,0.16)'
+              : polygon.source === 'user'
+                ? 'rgba(244,114,182,0.20)'
+                : polygon.kind === 'wooded'
+                  ? 'rgba(74,222,128,0.16)'
+                  : 'rgba(148,163,184,0.16)'
           }
           stroke={
             polygon.source === 'user'
@@ -172,14 +214,19 @@ const MapViewSvg2d: React.FC<MapViewSvg2dProps> = ({
                 ? '#86efac'
                 : '#cbd5e1'
           }
-          strokeWidth={polygon.id === selectedPlanningPolygonId ? pointRadius2d * 0.34 : pointRadius2d * 0.18}
+          strokeWidth={
+            selectedPlanningPolygonIds.includes(polygon.id)
+              ? pointRadius2d * 0.34
+              : pointRadius2d * 0.18
+          }
+          pointerEvents="none"
         >
           <title>{polygon.label || polygon.kind}</title>
         </polygon>
-      ))}
+        ))}
 
       {planningPolygons2d
-        .filter((polygon) => polygon.id === selectedPlanningPolygonId)
+        .filter((polygon) => selectedPlanningPolygonIds.length === 1 && selectedPlanningPolygonIds[0] === polygon.id)
         .flatMap((polygon) =>
           polygon.vertices.map((vertex, vertexIndex) => (
             <circle
@@ -197,7 +244,8 @@ const MapViewSvg2d: React.FC<MapViewSvg2dProps> = ({
           )),
         )}
 
-      {planningInputPoints2d.map((point) => (
+      {renderPlanningInputPoints &&
+        planningInputPoints2d.map((point) => (
         <circle
           key={`planning-input-${point.stationId}`}
           data-map-input-point={point.stationId}
@@ -208,9 +256,10 @@ const MapViewSvg2d: React.FC<MapViewSvg2dProps> = ({
           stroke="#f59e0b"
           strokeWidth={pointRadius2d * 0.12}
         />
-      ))}
+        ))}
 
-      {scenarioPreviewSegments2d.map((segment) => (
+      {renderScenarioPreviewSegments &&
+        scenarioPreviewSegments2d.map((segment) => (
         <line
           key={`scenario-segment-${segment.scenarioId}-${segment.fromStationId}-${segment.toStationId}`}
           x1={segment.x1}
@@ -222,21 +271,23 @@ const MapViewSvg2d: React.FC<MapViewSvg2dProps> = ({
           strokeWidth={segment.active ? lineWidth2d * 1.1 : lineWidth2d * 0.8}
           opacity={0.9}
         />
-      ))}
+        ))}
 
       {bracePreviewPoints2d.map((point) => (
         <g key={`brace-preview-${point.scenarioId}`}>
-          <circle
-            data-map-brace-preview={point.stationId}
-            cx={point.x}
-            cy={point.y}
-            r={pointRadius2d * 1.15}
-            fill={point.active ? '#f472b6' : '#f9a8d4'}
-            stroke={point.active ? '#fdf2f8' : '#fbcfe8'}
-            strokeWidth={point.active ? pointRadius2d * 0.38 : pointRadius2d * 0.25}
-          >
-            <title>{point.templateLabel}</title>
-          </circle>
+          {renderBracePreviewMarkers && (
+            <circle
+              data-map-brace-preview={point.stationId}
+              cx={point.x}
+              cy={point.y}
+              r={pointRadius2d * 1.15}
+              fill={point.active ? '#f472b6' : '#f9a8d4'}
+              stroke={point.active ? '#fdf2f8' : '#fbcfe8'}
+              strokeWidth={point.active ? pointRadius2d * 0.38 : pointRadius2d * 0.25}
+            >
+              <title>{point.templateLabel}</title>
+            </circle>
+          )}
           <text
             data-map-label={point.stationId}
             x={point.x + labelOffset2d}
@@ -293,6 +344,24 @@ const MapViewSvg2d: React.FC<MapViewSvg2dProps> = ({
           ))}
     </g>
 
+    {selectionBoxRect && (
+      <rect
+        data-map-selection-box="true"
+        data-map-selection-mode={selectionBoxRect.mode}
+        x={selectionBoxRect.x}
+        y={selectionBoxRect.y}
+        width={selectionBoxRect.width}
+        height={selectionBoxRect.height}
+        fill={
+          selectionBoxRect.mode === 'window' ? 'rgba(34,211,238,0.12)' : 'rgba(251,191,36,0.14)'
+        }
+        stroke={selectionBoxRect.mode === 'window' ? '#67e8f9' : '#fbbf24'}
+        strokeDasharray="6 4"
+        strokeWidth={Math.max(1, pointRadius2d * 0.18)}
+        vectorEffect="non-scaling-stroke"
+      />
+    )}
+
     {transformedOverlayActive && (
       <g transform={`translate(${view2d.panX} ${view2d.panY}) scale(${view2d.zoom})`}>
         {transformedLines2d.map((line) => {
@@ -342,6 +411,7 @@ const MapViewSvg2d: React.FC<MapViewSvg2dProps> = ({
       </g>
     )}
   </>
-);
+    );
+  });
 
 export default MapViewSvg2d;

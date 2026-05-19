@@ -79,6 +79,8 @@ describe('renderMapCanvas2d', () => {
           observationId: 7,
           pairKey: 'A|B',
           sourceLine: 12,
+          fromId: 'A',
+          toId: 'B',
           x1: 10,
           y1: 20,
           x2: 30,
@@ -108,7 +110,7 @@ describe('renderMapCanvas2d', () => {
     expect(canvas.width).toBe(2000);
     expect(canvas.height).toBe(1400);
     expect(context.setTransform).toHaveBeenCalledWith(2, 0, 0, 2, 0, 0);
-    expect(context.drawImage).toHaveBeenCalledWith(basemapImage, 0, 0);
+    expect(context.drawImage).toHaveBeenCalledWith(basemapImage, 0, 0, 256, 256, 0, 0, 256, 256);
     expect(context.moveTo).toHaveBeenCalledWith(10, 20);
     expect(context.lineTo).toHaveBeenCalledWith(30, 40);
     expect(context.ellipse).toHaveBeenCalled();

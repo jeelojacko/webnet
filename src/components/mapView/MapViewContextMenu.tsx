@@ -7,8 +7,10 @@ interface MapViewContextMenuProps {
   y: number;
   onOpenTool: (_tool: Exclude<MapToolPanel, 'none'>) => void;
   planningPolygonLabel?: string | null;
+  selectedPlanningPolygonCount?: number;
   onEditPlanningPolygon?: (() => void) | null;
   onDeletePlanningPolygon?: (() => void) | null;
+  onDeleteSelectedPlanningPolygons?: (() => void) | null;
 }
 
 const buttonClass =
@@ -19,8 +21,10 @@ const MapViewContextMenu: React.FC<MapViewContextMenuProps> = ({
   y,
   onOpenTool,
   planningPolygonLabel = null,
+  selectedPlanningPolygonCount = 0,
   onEditPlanningPolygon = null,
   onDeletePlanningPolygon = null,
+  onDeleteSelectedPlanningPolygons = null,
 }) => (
   <div
     className="absolute z-20 min-w-[210px] rounded border border-slate-700 bg-slate-900/95 p-1 text-xs shadow-lg shadow-black/50"
@@ -41,9 +45,27 @@ const MapViewContextMenu: React.FC<MapViewContextMenuProps> = ({
             Delete obstacle
           </button>
         )}
+        {selectedPlanningPolygonCount > 1 && onDeleteSelectedPlanningPolygons && (
+          <button type="button" onClick={onDeleteSelectedPlanningPolygons} className={buttonClass}>
+            Delete {selectedPlanningPolygonCount} selected obstacles
+          </button>
+        )}
         <div className="my-1 h-px bg-slate-800" />
       </>
     )}
+    {!planningPolygonLabel &&
+      selectedPlanningPolygonCount > 1 &&
+      onDeleteSelectedPlanningPolygons && (
+        <>
+          <div className="px-2 py-1 text-[10px] uppercase tracking-wide text-slate-500">
+            {selectedPlanningPolygonCount} obstacles selected
+          </div>
+          <button type="button" onClick={onDeleteSelectedPlanningPolygons} className={buttonClass}>
+            Delete selected obstacles
+          </button>
+          <div className="my-1 h-px bg-slate-800" />
+        </>
+      )}
     <button type="button" onClick={() => onOpenTool('points')} className={buttonClass}>
       Points
     </button>

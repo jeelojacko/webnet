@@ -1,0 +1,107 @@
+{
+  "scenarios": [
+    {
+      "id": "all_on",
+      "showLabels": true,
+      "basemapMode": "osm",
+      "showInputPoints": true,
+      "showObstacleLayer": true,
+      "showBlockedAreas": true
+    },
+    {
+      "id": "labels_off",
+      "showLabels": false,
+      "basemapMode": "osm",
+      "showInputPoints": true,
+      "showObstacleLayer": true,
+      "showBlockedAreas": true
+    },
+    {
+      "id": "basemap_off",
+      "showLabels": true,
+      "basemapMode": "none",
+      "showInputPoints": true,
+      "showObstacleLayer": true,
+      "showBlockedAreas": true
+    },
+    {
+      "id": "input_points_off",
+      "showLabels": true,
+      "basemapMode": "osm",
+      "showInputPoints": false,
+      "showObstacleLayer": true,
+      "showBlockedAreas": true
+    },
+    {
+      "id": "obstacles_off",
+      "showLabels": true,
+      "basemapMode": "osm",
+      "showInputPoints": true,
+      "showObstacleLayer": false,
+      "showBlockedAreas": true
+    },
+    {
+      "id": "blocked_areas_off",
+      "showLabels": true,
+      "basemapMode": "osm",
+      "showInputPoints": true,
+      "showObstacleLayer": true,
+      "showBlockedAreas": false
+    },
+    {
+      "id": "minimal",
+      "showLabels": false,
+      "basemapMode": "none",
+      "showInputPoints": false,
+      "showObstacleLayer": false,
+      "showBlockedAreas": false
+    }
+  ],
+  "sweeps": [
+    {
+      "id": "pan_fast",
+      "kind": "pan",
+      "stepCount": 24,
+      "dxPerStep": 16,
+      "dyPerStep": 8,
+      "flushEveryStep": false
+    },
+    {
+      "id": "pan_medium",
+      "kind": "pan",
+      "stepCount": 16,
+      "dxPerStep": 8,
+      "dyPerStep": 4,
+      "flushEveryStep": false
+    },
+    {
+      "id": "pan_slow",
+      "kind": "pan",
+      "stepCount": 8,
+      "dxPerStep": 5,
+      "dyPerStep": 3,
+      "flushEveryStep": true
+    },
+    {
+      "id": "zoom_fast",
+      "kind": "zoom",
+      "stepCount": 16,
+      "deltaYPerStep": -72,
+      "flushEveryStep": false
+    },
+    {
+      "id": "zoom_medium",
+      "kind": "zoom",
+      "stepCount": 10,
+      "deltaYPerStep": -48,
+      "flushEveryStep": false
+    },
+    {
+      "id": "zoom_slow",
+      "kind": "zoom",
+      "stepCount": 6,
+      "deltaYPerStep": -36,
+      "flushEveryStep": true
+    }
+  ]
+}

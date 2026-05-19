@@ -34,6 +34,7 @@ describe('MapView tool surface', () => {
     const onOpenTool = vi.fn();
     const onEditPlanningPolygon = vi.fn();
     const onDeletePlanningPolygon = vi.fn();
+    const onDeleteSelectedPlanningPolygons = vi.fn();
     const container = document.createElement('div');
     document.body.appendChild(container);
     const root: Root = createRoot(container);
@@ -45,8 +46,10 @@ describe('MapView tool surface', () => {
           y={36}
           onOpenTool={onOpenTool}
           planningPolygonLabel="OSM building"
+          selectedPlanningPolygonCount={3}
           onEditPlanningPolygon={onEditPlanningPolygon}
           onDeletePlanningPolygon={onDeletePlanningPolygon}
+          onDeleteSelectedPlanningPolygons={onDeleteSelectedPlanningPolygons}
         />,
       );
     });
@@ -57,15 +60,23 @@ describe('MapView tool surface', () => {
     const inverseButton = Array.from(container.querySelectorAll('button')).find(
       (entry) => entry.textContent?.trim() === 'Inverse',
     );
+    const deleteSelectedButton = Array.from(container.querySelectorAll('button')).find(
+      (entry) => entry.textContent?.trim() === 'Delete 3 selected obstacles',
+    );
     expect(editButton).toBeTruthy();
     expect(inverseButton).toBeTruthy();
+    expect(deleteSelectedButton).toBeTruthy();
     await act(async () => {
       editButton?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    });
+    await act(async () => {
+      deleteSelectedButton?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     });
     await act(async () => {
       inverseButton?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     });
     expect(onEditPlanningPolygon).toHaveBeenCalledTimes(1);
+    expect(onDeleteSelectedPlanningPolygons).toHaveBeenCalledTimes(1);
     expect(onOpenTool).toHaveBeenCalledWith('inverse');
 
     await act(async () => {

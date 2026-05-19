@@ -110,12 +110,14 @@ describe('MapView blur settle', () => {
     });
     expect(canvas.width).toBe(1000);
 
-    const commitFrame = rafQueue.shift();
-    if (!commitFrame) throw new Error('Expected view commit frame');
-    await act(async () => {
-      commitFrame(performance.now());
-      await Promise.resolve();
-    });
+    while (rafQueue.length > 0 && canvas.width !== 1000) {
+      const queuedFrame = rafQueue.shift();
+      if (!queuedFrame) break;
+      await act(async () => {
+        queuedFrame(performance.now());
+        await Promise.resolve();
+      });
+    }
 
     await act(async () => {
       vi.advanceTimersByTime(90);
@@ -127,6 +129,14 @@ describe('MapView blur settle', () => {
       settleFrame(performance.now());
       await Promise.resolve();
     });
+    while (rafQueue.length > 0 && canvas.width !== 2000) {
+      const queuedFrame = rafQueue.shift();
+      if (!queuedFrame) break;
+      await act(async () => {
+        queuedFrame(performance.now());
+        await Promise.resolve();
+      });
+    }
     expect(canvas.width).toBe(2000);
 
     await act(async () => {

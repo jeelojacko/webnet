@@ -1,4 +1,12 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, {
+  useCallback,
+  useDeferredValue,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import type { AdjustedPointsExportSettings, AdjustmentResult, PlanningMapState } from '../types';
 import {
   buildMap3DScene,
@@ -28,12 +36,21 @@ import {
 } from '../engine/resultDerivedModels';
 import { noteUiPerfStage, noteUiTabReady } from '../hooks/useUiPerfMonitor';
 import {
+  buildBaseProjectedMapLines2d,
+  buildBaseProjectedPoints2d,
   buildDerivedMapState2d,
+  buildProjectedViewportBounds,
+  buildProjectedMapLines2d,
+  buildProjectedPoints2d,
   buildProjection2d,
+  buildVisibleBaseProjectedMapLines2d,
+  buildVisibleBaseProjectedPoints2d,
   buildViewportBounds,
   clamp,
   pointToSegmentDistancePx,
   projectPoint2d,
+  type ProjectedMapLine2D,
+  type ProjectedPoint2D,
   type ViewportBounds,
   view2dEquals,
 } from './mapView/mapView2d';
@@ -44,8 +61,25 @@ import MapViewSvg2d from './mapView/MapViewSvg2d';
 import MapViewScene3d from './mapView/MapViewScene3d';
 import MapViewContextMenu, { type MapToolPanel } from './mapView/MapViewContextMenu';
 import MapViewToolOverlay from './mapView/MapViewToolOverlay';
-import { renderMapCanvas2d, type CanvasBasemapTile2d } from './mapView/mapViewCanvas2d';
+import {
+  renderBasemapCanvas2d,
+  renderGeometryCanvas2d,
+  renderPlanningOverlayCanvas2d,
+} from './mapView/mapViewCanvas2d';
 import { chooseOsmTileMeshDivisions } from './mapView/mapViewBasemap';
+import { buildMapViewHitIndex } from './mapView/mapViewHitIndex';
+import {
+  MapViewTileStore,
+  type BasemapTileDescriptor2d,
+  type BasemapTileRenderSurface2d,
+} from './mapView/mapViewTileStore';
+import { MapViewWebgl2d } from './mapView/mapViewWebgl2d';
+import { buildMapViewWebglScene2d } from './mapView/mapViewWebglBuffers';
+import {
+  measureMapViewPerf,
+  noteMapViewPerfCounter,
+  noteMapViewPerfMetadata,
+} from './mapView/mapViewPerf';
 import {
   buildMapScenePointBounds2d,
   buildMapToolMetrics,
@@ -71,6 +105,8 @@ const INTERACTION_DENSE_POINT_THRESHOLD = 180;
 const INTERACTION_DENSE_LINE_THRESHOLD = 360;
 const POINT_HIT_RADIUS_PX = 10;
 const LINE_HIT_RADIUS_PX = 8;
+const OSM_VISIBLE_TILE_BUFFER = 1;
+const OSM_INTERACTION_TILE_BUFFER = 2;
 const EMPTY_MAP_LINKS: ReturnType<typeof buildObservationMapLinks> = [];
 
 type MapInteractionPhase = 'idle' | 'interacting' | 'settling';
@@ -104,8 +140,8 @@ interface MapViewProps {
   derivedResult?: DerivedQaResult | null;
   selectedStationId?: string | null;
   selectedObservationId?: number | null;
-  onSelectStation?: (_stationId: string) => void;
-  onSelectObservation?: (_observationId: number) => void;
+  onSelectStation?: (_stationId: string | null) => void;
+  onSelectObservation?: (_observationId: number | null) => void;
   snapshot?: MapViewSnapshot | null;
   onSnapshotChange?: (_snapshot: MapViewSnapshot) => void;
 }
@@ -118,18 +154,19 @@ type OverpassElement = {
   geometry?: OverpassGeometryVertex[];
   tags?: Record<string, string>;
 };
-type BasemapTile2d = {
-  key: string;
-  href: string;
-  meshColumns: number;
-  meshRows: number;
-  meshPoints: Array<{ x: number; y: number }>;
-};
 type PlanningPolygonTarget = {
   polygonId: string;
   polygonSource: 'user' | 'osm';
   polygonLabel: string;
 };
+type ScreenSelectionBox = {
+  anchorX: number;
+  anchorY: number;
+  currentX: number;
+  currentY: number;
+};
+
+type SelectionBoxMode = 'window' | 'crossing';
 
 const OSM_TILE_SIZE_PX = 256;
 const OSM_MAX_ZOOM = 19;
@@ -156,6 +193,122 @@ const tileYToLatitude = (tileY: number, zoom: number): number => {
   return (180 / Math.PI) * Math.atan(0.5 * (Math.exp(n) - Math.exp(-n)));
 };
 
+const isPointInsideRect = (
+  point: { x: number; y: number },
+  rect: { left: number; right: number; top: number; bottom: number },
+): boolean =>
+  point.x >= rect.left && point.x <= rect.right && point.y >= rect.top && point.y <= rect.bottom;
+
+const segmentsIntersect = (
+  a1: { x: number; y: number },
+  a2: { x: number; y: number },
+  b1: { x: number; y: number },
+  b2: { x: number; y: number },
+): boolean => {
+  const cross = (
+    origin: { x: number; y: number },
+    p1: { x: number; y: number },
+    p2: { x: number; y: number },
+  ) => (p1.x - origin.x) * (p2.y - origin.y) - (p1.y - origin.y) * (p2.x - origin.x);
+  const onSegment = (
+    start: { x: number; y: number },
+    point: { x: number; y: number },
+    end: { x: number; y: number },
+  ) =>
+    point.x >= Math.min(start.x, end.x) &&
+    point.x <= Math.max(start.x, end.x) &&
+    point.y >= Math.min(start.y, end.y) &&
+    point.y <= Math.max(start.y, end.y);
+
+  const d1 = cross(a1, a2, b1);
+  const d2 = cross(a1, a2, b2);
+  const d3 = cross(b1, b2, a1);
+  const d4 = cross(b1, b2, a2);
+
+  if (((d1 > 0 && d2 < 0) || (d1 < 0 && d2 > 0)) && ((d3 > 0 && d4 < 0) || (d3 < 0 && d4 > 0))) {
+    return true;
+  }
+  if (d1 === 0 && onSegment(a1, b1, a2)) return true;
+  if (d2 === 0 && onSegment(a1, b2, a2)) return true;
+  if (d3 === 0 && onSegment(b1, a1, b2)) return true;
+  if (d4 === 0 && onSegment(b1, a2, b2)) return true;
+  return false;
+};
+
+const isPointInsidePolygon = (
+  point: { x: number; y: number },
+  polygon: Array<{ x: number; y: number }>,
+): boolean => {
+  let inside = false;
+  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i, i += 1) {
+    const a = polygon[i]!;
+    const b = polygon[j]!;
+    const intersects =
+      a.y > point.y !== b.y > point.y &&
+      point.x < ((b.x - a.x) * (point.y - a.y)) / ((b.y - a.y) || Number.EPSILON) + a.x;
+    if (intersects) inside = !inside;
+  }
+  return inside;
+};
+
+const doesPolygonTouchRect = (
+  polygon: Array<{ x: number; y: number }>,
+  rect: { left: number; right: number; top: number; bottom: number },
+): boolean => {
+  if (polygon.some((vertex) => isPointInsideRect(vertex, rect))) return true;
+  const rectCorners = [
+    { x: rect.left, y: rect.top },
+    { x: rect.right, y: rect.top },
+    { x: rect.right, y: rect.bottom },
+    { x: rect.left, y: rect.bottom },
+  ];
+  if (rectCorners.some((corner) => isPointInsidePolygon(corner, polygon))) return true;
+  const rectEdges = [
+    [rectCorners[0]!, rectCorners[1]!],
+    [rectCorners[1]!, rectCorners[2]!],
+    [rectCorners[2]!, rectCorners[3]!],
+    [rectCorners[3]!, rectCorners[0]!],
+  ] as const;
+  for (let index = 0; index < polygon.length; index += 1) {
+    const start = polygon[index]!;
+    const end = polygon[(index + 1) % polygon.length]!;
+    if (rectEdges.some(([edgeStart, edgeEnd]) => segmentsIntersect(start, end, edgeStart, edgeEnd))) {
+      return true;
+    }
+  }
+  return false;
+};
+
+const isPolygonInsideRect = (
+  polygon: Array<{ x: number; y: number }>,
+  rect: { left: number; right: number; top: number; bottom: number },
+): boolean => polygon.every((vertex) => isPointInsideRect(vertex, rect));
+
+const canRenderCanvasLayers = (): boolean => {
+  const isJsdom =
+    typeof navigator !== 'undefined' && typeof navigator.userAgent === 'string'
+      ? /jsdom/i.test(navigator.userAgent)
+      : false;
+  const allowJsdomCanvas =
+    typeof globalThis !== 'undefined' &&
+    (globalThis as { __WEBNET_ENABLE_CANVAS_RENDER_TEST__?: boolean })
+      .__WEBNET_ENABLE_CANVAS_RENDER_TEST__ === true;
+  return !isJsdom || allowJsdomCanvas;
+};
+
+const canRenderWebglLayers = (): boolean => {
+  if (typeof document === 'undefined' || typeof HTMLCanvasElement === 'undefined') return false;
+  const isJsdom =
+    typeof navigator !== 'undefined' && typeof navigator.userAgent === 'string'
+      ? /jsdom/i.test(navigator.userAgent)
+      : false;
+  const allowJsdomWebgl =
+    typeof globalThis !== 'undefined' &&
+    (globalThis as { __WEBNET_ENABLE_WEBGL_RENDER_TEST__?: boolean })
+      .__WEBNET_ENABLE_WEBGL_RENDER_TEST__ === true;
+  return !isJsdom || allowJsdomWebgl;
+};
+
 const MapView: React.FC<MapViewProps> = ({
   result,
   units,
@@ -175,14 +328,74 @@ const MapView: React.FC<MapViewProps> = ({
   snapshot = null,
   onSnapshotChange,
 }) => {
+  noteMapViewPerfCounter('map:component-renders');
   const unitScale = units === 'ft' ? FT_PER_M : 1;
   const isPreanalysis = result.preanalysisMode === true;
   const { stations, observations } = result;
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const webglCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const basemapCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const geometryCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const planningCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const svgRef = useRef<SVGSVGElement | null>(null);
   const contextMenuRef = useRef<HTMLDivElement | null>(null);
-  const basemapLoadingRef = useRef<Set<string>>(new Set());
+  const tileStoreRef = useRef<MapViewTileStore>(new MapViewTileStore());
+  const webglRendererRef = useRef<MapViewWebgl2d>(new MapViewWebgl2d());
+  const renderRequestFrameRef = useRef<number | null>(null);
+  const renderDirtyRef = useRef({ basemap: false, geometry: false, planning: false });
+  const [renderer2d, setRenderer2d] = useState<'canvas' | 'webgl'>(() =>
+    canRenderWebglLayers() ? 'webgl' : 'canvas',
+  );
+  const latestBasemapRenderInputRef = useRef<{
+    interactionPhase: MapInteractionPhase;
+    view2d: { zoom: number; panX: number; panY: number };
+    projectionScale: number;
+    tiles: BasemapTileRenderSurface2d[];
+  } | null>(null);
+  const latestGeometryRenderInputRef = useRef<{
+    interactionPhase: MapInteractionPhase;
+    view2d: { zoom: number; panX: number; panY: number };
+    originalGeometryOpacity: number;
+    lineWidth2d: number;
+    pointRadius2d: number;
+    ellipseStroke2d: number;
+    projectionScale: number;
+    units: 'm' | 'ft';
+    interactionDenseMode: boolean;
+    unselectedCanvasLines2d: ProjectedMapLine2D[];
+    filteredVisiblePoints2d: ProjectedPoint2D[];
+      ellipseStroke: (_stationId: string) => string;
+      stationFill: (_stationId: string, _fixed: boolean) => string;
+  } | null>(null);
+  const latestPlanningRenderInputRef = useRef<{
+    interactionPhase: MapInteractionPhase;
+    view2d: { zoom: number; panX: number; panY: number };
+    pointRadius2d: number;
+    planningInputPoints2d: Array<{ stationId: string; x: number; y: number }>;
+    planningPolygons2d: Array<{
+      id: string;
+      source: 'user' | 'osm';
+      kind: 'blocked-area' | 'building' | 'wooded';
+      label: string;
+      vertices: Array<{ x: number; y: number }>;
+    }>;
+    selectedPlanningPolygonIds: string[];
+  } | null>(null);
+  const latestWebglRenderInputRef = useRef<{
+    interactionPhase: MapInteractionPhase;
+    viewWidth: number;
+    viewHeight: number;
+    view2d: { zoom: number; panX: number; panY: number };
+    tiles: BasemapTileRenderSurface2d[];
+    surveyLineWidth: number;
+    previewLineWidth: number;
+    ellipseLineWidth: number;
+    surveyLines: ReturnType<typeof buildMapViewWebglScene2d>['surveyLines'];
+    previewLines: ReturnType<typeof buildMapViewWebglScene2d>['previewLines'];
+    ellipseLines: ReturnType<typeof buildMapViewWebglScene2d>['ellipseLines'];
+    surveyPoints: ReturnType<typeof buildMapViewWebglScene2d>['surveyPoints'];
+    previewPoints: ReturnType<typeof buildMapViewWebglScene2d>['previewPoints'];
+  } | null>(null);
   const dragRef = useRef<{ active: boolean; mode: DragMode; lastX: number; lastY: number }>({
     active: false,
     mode: 'none',
@@ -193,6 +406,7 @@ const MapView: React.FC<MapViewProps> = ({
   const [view2d, setView2d] = useState(
     () => snapshot?.view2d ?? { zoom: 1, panX: 0, panY: 0 },
   );
+  const deferredView2d = useDeferredValue(view2d);
   const pendingView2dRef = useRef(view2d);
   const view2dFrameRef = useRef<number | null>(null);
   const settleTimerRef = useRef<ReturnType<typeof globalThis.setTimeout> | null>(null);
@@ -226,7 +440,8 @@ const MapView: React.FC<MapViewProps> = ({
   );
   const [focusSelection, setFocusSelection] = useState(() => snapshot?.focusSelection ?? false);
   const [draftBlockedPolygon, setDraftBlockedPolygon] = useState<Array<{ x: number; y: number }>>([]);
-  const [selectedPlanningPolygonId, setSelectedPlanningPolygonId] = useState<string | null>(null);
+  const [selectedPlanningPolygonIds, setSelectedPlanningPolygonIds] = useState<string[]>([]);
+  const [selectionBox, setSelectionBox] = useState<ScreenSelectionBox | null>(null);
   const skipNextAutoResetRef = useRef(snapshot != null);
   const planningVertexDragRef = useRef<{
     polygonId: string;
@@ -236,7 +451,8 @@ const MapView: React.FC<MapViewProps> = ({
   const [viewportWidth, setViewportWidth] = useState<number>(
     typeof window !== 'undefined' ? window.innerWidth : 1280,
   );
-  const [basemapImages, setBasemapImages] = useState<Map<string, HTMLImageElement>>(() => new Map());
+  const selectedPlanningPolygonId =
+    selectedPlanningPolygonIds.length === 1 ? selectedPlanningPolygonIds[0] ?? null : null;
 
   useEffect(() => {
     noteUiPerfStage('mapReady');
@@ -411,9 +627,145 @@ const MapView: React.FC<MapViewProps> = ({
     return null;
   }, [mode, scene3d.edges.length, scene3d.stations.length, effectiveViewportWidth]);
   const effectiveMode: '2d' | '3d' = mode === '3d' && !fallbackReason ? '3d' : '2d';
+  const webglEligible = effectiveMode === '2d' && canRenderWebglLayers();
   const showTransformToggle = transformedOverlayConfig.enabled;
   const transformedOverlayActive =
     showTransformedCoordinates && transformedOverlayConfig.available && effectiveMode === '2d';
+
+  useLayoutEffect(() => {
+    const webglRenderer = webglRendererRef.current;
+    if (!webglEligible) {
+      setRenderer2d('canvas');
+      webglRenderer.dispose();
+      return;
+    }
+    const canvas = webglCanvasRef.current;
+    if (!canvas) {
+      setRenderer2d('canvas');
+      webglRenderer.dispose();
+      return;
+    }
+    const initialized = webglRenderer.init(canvas);
+    setRenderer2d(initialized ? 'webgl' : 'canvas');
+    if (!initialized) {
+      webglRenderer.dispose();
+    }
+    return () => {
+      webglRenderer.dispose();
+    };
+  }, [webglEligible]);
+
+  const fallbackFromWebgl = useCallback(() => {
+    webglRendererRef.current.dispose();
+    setRenderer2d('canvas');
+  }, []);
+
+  const renderLayersNow = useCallback(
+    (dirty: { basemap?: boolean; geometry?: boolean; planning?: boolean }) => {
+      if (effectiveMode !== '2d') return;
+      noteMapViewPerfCounter('map:render-layer-now-calls');
+      const shouldRenderPlanning = dirty.planning === true;
+      if (renderer2d === 'webgl') {
+        const webglInput = latestWebglRenderInputRef.current;
+        const webglRenderer = webglRendererRef.current;
+        if (!webglInput || !webglRenderer.isReady()) return;
+        noteMapViewPerfCounter('map:render-webgl-path');
+        webglRenderer.markDirty({ basemap: dirty.basemap, geometry: dirty.geometry });
+        const rendered = webglRenderer.render(webglInput);
+        if (!rendered) {
+          fallbackFromWebgl();
+          return;
+        }
+        webglInput.tiles.forEach((tile) => {
+          tileStoreRef.current.markUploaded(tile.key);
+        });
+      } else {
+        if (!canRenderCanvasLayers()) return;
+        noteMapViewPerfCounter('map:render-canvas-path');
+        if (dirty.basemap) {
+          const basemapInput = latestBasemapRenderInputRef.current;
+          const basemapCanvas = basemapCanvasRef.current;
+          if (basemapInput && basemapCanvas) {
+            renderBasemapCanvas2d({
+              canvas: basemapCanvas,
+              interactionPhase: basemapInput.interactionPhase,
+              viewWidth: VIEW_W,
+              viewHeight: VIEW_H,
+              view2d: basemapInput.view2d,
+              projectionScale: basemapInput.projectionScale,
+              units,
+              basemapTiles2d: basemapInput.tiles,
+            });
+          }
+        }
+        if (dirty.geometry) {
+          const geometryInput = latestGeometryRenderInputRef.current;
+          const geometryCanvas = geometryCanvasRef.current;
+          if (geometryInput && geometryCanvas) {
+            renderGeometryCanvas2d({
+              canvas: geometryCanvas,
+              interactionPhase: geometryInput.interactionPhase,
+              viewWidth: VIEW_W,
+              viewHeight: VIEW_H,
+              view2d: geometryInput.view2d,
+              originalGeometryOpacity: geometryInput.originalGeometryOpacity,
+              lineWidth2d: geometryInput.lineWidth2d,
+              pointRadius2d: geometryInput.pointRadius2d,
+              ellipseStroke2d: geometryInput.ellipseStroke2d,
+              projectionScale: geometryInput.projectionScale,
+              units: geometryInput.units,
+              interactionDenseMode: geometryInput.interactionDenseMode,
+              unselectedCanvasLines2d: geometryInput.unselectedCanvasLines2d,
+              filteredVisiblePoints2d: geometryInput.filteredVisiblePoints2d,
+              ellipseStroke: geometryInput.ellipseStroke,
+              stationFill: geometryInput.stationFill,
+            });
+          }
+        }
+      }
+      if (shouldRenderPlanning) {
+        if (renderer2d === 'canvas' && !canRenderCanvasLayers()) return;
+        noteMapViewPerfCounter('map:render-planning-overlay');
+        const planningInput = latestPlanningRenderInputRef.current;
+        const planningCanvas = planningCanvasRef.current;
+        if (planningInput && planningCanvas) {
+          renderPlanningOverlayCanvas2d({
+            canvas: planningCanvas,
+            interactionPhase: planningInput.interactionPhase,
+            viewWidth: VIEW_W,
+            viewHeight: VIEW_H,
+            view2d: planningInput.view2d,
+            projectionScale: 1,
+            units,
+            pointRadius2d: planningInput.pointRadius2d,
+            planningInputPoints2d: planningInput.planningInputPoints2d,
+            planningPolygons2d: planningInput.planningPolygons2d,
+            selectedPlanningPolygonIds: planningInput.selectedPlanningPolygonIds,
+          });
+        }
+      }
+    },
+    [effectiveMode, fallbackFromWebgl, renderer2d, units],
+  );
+
+  const scheduleLayerRender = useCallback(
+    (dirty: { basemap?: boolean; geometry?: boolean; planning?: boolean }) => {
+      if (effectiveMode !== '2d') return;
+      if (renderer2d === 'canvas' && !canRenderCanvasLayers()) return;
+      noteMapViewPerfCounter('map:schedule-layer-render');
+      if (dirty.basemap) renderDirtyRef.current.basemap = true;
+      if (dirty.geometry) renderDirtyRef.current.geometry = true;
+      if (dirty.planning) renderDirtyRef.current.planning = true;
+      if (renderRequestFrameRef.current != null) return;
+      renderRequestFrameRef.current = requestAnimationFrame(() => {
+        renderRequestFrameRef.current = null;
+        const dirtyNow = renderDirtyRef.current;
+        renderDirtyRef.current = { basemap: false, geometry: false, planning: false };
+        renderLayersNow(dirtyNow);
+      });
+    },
+    [effectiveMode, renderLayersNow, renderer2d],
+  );
 
   const clearInteractionSettle = useCallback(() => {
     if (settleTimerRef.current != null) {
@@ -443,6 +795,7 @@ const MapView: React.FC<MapViewProps> = ({
         panY: number;
       },
     ) => {
+      noteMapViewPerfCounter('map:view-update-requests');
       const next = updater(pendingView2dRef.current);
       pendingView2dRef.current = next;
       scheduleView2dCommit();
@@ -472,6 +825,9 @@ const MapView: React.FC<MapViewProps> = ({
     () => () => {
       if (view2dFrameRef.current != null) {
         cancelAnimationFrame(view2dFrameRef.current);
+      }
+      if (renderRequestFrameRef.current != null) {
+        cancelAnimationFrame(renderRequestFrameRef.current);
       }
       clearInteractionSettle();
     },
@@ -583,12 +939,52 @@ const MapView: React.FC<MapViewProps> = ({
     [bbox.minX, bbox.minY, projection2d.offsetX, projection2d.offsetY, projection2d.scale, view2d.panX, view2d.panY, view2d.zoom],
   );
 
+  const clearMapSelection = useCallback(() => {
+    onSelectStation?.(null);
+    onSelectObservation?.(null);
+    setSelectedPlanningPolygonIds([]);
+    setSelectionBox(null);
+    planningVertexDragRef.current = null;
+  }, [onSelectObservation, onSelectStation]);
+
+  const clearMapSelectionBox = useCallback(() => {
+    setSelectionBox(null);
+  }, []);
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return;
+      setContextMenu((prev) => ({ ...prev, open: false, planningPolygon: null }));
+      if (selectionBox != null) {
+        clearMapSelectionBox();
+        return;
+      }
+      if (
+        selectedStationId != null ||
+        selectedObservationId != null ||
+        selectedPlanningPolygonIds.length > 0
+      ) {
+        clearMapSelection();
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [
+    clearMapSelection,
+    clearMapSelectionBox,
+    selectedObservationId,
+    selectedPlanningPolygonIds.length,
+    selectedStationId,
+    selectionBox,
+  ]);
+
   const stopDrag = useCallback(() => {
     if (!dragRef.current.active) return;
     dragRef.current.active = false;
     dragRef.current.mode = 'none';
     planningVertexDragRef.current = null;
     setIsDragging(false);
+    noteMapViewPerfCounter('map:stop-drag');
   }, []);
 
   const updatePlanningPolygonVertices = useCallback(
@@ -625,15 +1021,28 @@ const MapView: React.FC<MapViewProps> = ({
             ? planningMap.obstaclePolygons.filter((polygon) => polygon.id !== polygonId)
             : planningMap.obstaclePolygons,
       });
-      setSelectedPlanningPolygonId((current) => (current === polygonId ? null : current));
+      setSelectedPlanningPolygonIds((current) => current.filter((id) => id !== polygonId));
       setContextMenu((current) => ({ ...current, open: false, planningPolygon: null }));
     },
     [onPlanningMapChange, planningMap],
   );
 
+  const removeSelectedPlanningPolygons = useCallback(() => {
+    if (!onPlanningMapChange || selectedPlanningPolygonIds.length === 0) return;
+    const selectedIds = new Set(selectedPlanningPolygonIds);
+    onPlanningMapChange({
+      ...planningMap,
+      blockedPolygons: planningMap.blockedPolygons.filter((polygon) => !selectedIds.has(polygon.id)),
+      obstaclePolygons: planningMap.obstaclePolygons.filter((polygon) => !selectedIds.has(polygon.id)),
+    });
+    setSelectedPlanningPolygonIds([]);
+    setContextMenu((current) => ({ ...current, open: false, planningPolygon: null }));
+  }, [onPlanningMapChange, planningMap, selectedPlanningPolygonIds]);
+
   const handleDragMoveClient = useCallback(
     (clientX: number, clientY: number) => {
       if (!dragRef.current.active) return;
+      noteMapViewPerfCounter(`map:drag-move:${dragRef.current.mode}`);
       const next = toSvgCoords(clientX, clientY);
       if (!next) return;
       const dx = next.x - dragRef.current.lastX;
@@ -703,9 +1112,24 @@ const MapView: React.FC<MapViewProps> = ({
   );
 
   useEffect(() => {
-    if (!isDragging) return;
+    if (!isDragging && selectionBox == null) return;
     const onMouseMove = (event: MouseEvent) => {
-      handleDragMoveClient(event.clientX, event.clientY);
+      if (dragRef.current.active) {
+        handleDragMoveClient(event.clientX, event.clientY);
+        return;
+      }
+      if (selectionBox == null) return;
+      const pointer = toSvgCoords(event.clientX, event.clientY);
+      if (!pointer) return;
+      setSelectionBox((current) =>
+        current == null
+          ? current
+          : {
+              ...current,
+              currentX: pointer.x,
+              currentY: pointer.y,
+            },
+      );
     };
     const onMouseUp = () => {
       stopDrag();
@@ -716,10 +1140,11 @@ const MapView: React.FC<MapViewProps> = ({
       window.removeEventListener('mousemove', onMouseMove);
       window.removeEventListener('mouseup', onMouseUp);
     };
-  }, [handleDragMoveClient, isDragging, stopDrag]);
+  }, [handleDragMoveClient, isDragging, selectionBox, stopDrag, toSvgCoords]);
 
   const handleWheel = (event: React.WheelEvent<SVGSVGElement>) => {
     event.preventDefault();
+    noteMapViewPerfCounter('map:wheel-events');
     if (effectiveMode === '3d') {
       setCamera3d((prev) => {
         if (!prev) return prev;
@@ -753,6 +1178,7 @@ const MapView: React.FC<MapViewProps> = ({
     (modeName: DragMode, clientX: number, clientY: number) => {
       const start = toSvgCoords(clientX, clientY);
       if (!start) return;
+      noteMapViewPerfCounter(`map:begin-drag:${modeName}`);
       dragRef.current = { active: true, mode: modeName, lastX: start.x, lastY: start.y };
       setIsDragging(true);
     },
@@ -983,6 +1409,39 @@ const MapView: React.FC<MapViewProps> = ({
     ],
   );
 
+  const findPlanningPolygonAtSvgPoint = useCallback(
+    (svgPoint: { x: number; y: number }) => {
+      const projectedPoint = {
+        x: (svgPoint.x - view2d.panX) / Math.max(view2d.zoom, 1e-9),
+        y: (svgPoint.y - view2d.panY) / Math.max(view2d.zoom, 1e-9),
+      };
+      for (let index = planningPolygons2d.length - 1; index >= 0; index -= 1) {
+        const polygon = planningPolygons2d[index]!;
+        if (polygon.id === 'draft-blocked-polygon' || polygon.vertices.length < 3) continue;
+        if (isPointInsidePolygon(projectedPoint, polygon.vertices)) {
+          return {
+            polygonId: polygon.id,
+            polygonSource: polygon.source,
+            polygonLabel: polygon.label || polygon.kind,
+          };
+        }
+      }
+      return null;
+    },
+    [planningPolygons2d, view2d.panX, view2d.panY, view2d.zoom],
+  );
+
+  const selectionBoxRect = useMemo(() => {
+    if (selectionBox == null) return null;
+    const x = Math.min(selectionBox.anchorX, selectionBox.currentX);
+    const y = Math.min(selectionBox.anchorY, selectionBox.currentY);
+    const width = Math.abs(selectionBox.currentX - selectionBox.anchorX);
+    const height = Math.abs(selectionBox.currentY - selectionBox.anchorY);
+    const mode: SelectionBoxMode =
+      selectionBox.currentX >= selectionBox.anchorX ? 'window' : 'crossing';
+    return { x, y, width, height, mode };
+  }, [selectionBox]);
+
   const planningGeorefContext = useMemo(() => {
     const parseState = result.parseState;
     if (!parseState) return null;
@@ -1009,6 +1468,34 @@ const MapView: React.FC<MapViewProps> = ({
     };
   }, [bbox.height, bbox.minX, bbox.minY, bbox.width, planningExtentPoints, result.parseState]);
 
+  const applySelectionBoxToPlanningPolygons = useCallback(
+    (rect: { x: number; y: number; width: number; height: number; mode: SelectionBoxMode }) => {
+      const bounds = {
+        left: rect.x,
+        right: rect.x + rect.width,
+        top: rect.y,
+        bottom: rect.y + rect.height,
+      };
+      const hits = planningPolygons2d
+        .filter((polygon) => polygon.id !== 'draft-blocked-polygon')
+        .filter((polygon) => {
+          const screenVertices = polygon.vertices.map((vertex) => ({
+            x: vertex.x * view2d.zoom + view2d.panX,
+            y: vertex.y * view2d.zoom + view2d.panY,
+          }));
+          return rect.mode === 'window'
+            ? isPolygonInsideRect(screenVertices, bounds)
+            : doesPolygonTouchRect(screenVertices, bounds);
+        })
+        .map((polygon) => polygon.id);
+      setSelectedPlanningPolygonIds(hits);
+      onSelectStation?.(null);
+      onSelectObservation?.(null);
+      setSelectionBox(null);
+    },
+    [onSelectObservation, onSelectStation, planningPolygons2d, view2d.panX, view2d.panY, view2d.zoom],
+  );
+
   const planningFetchExtent = useMemo(() => {
     if (planningExtentPoints.length === 0) return null;
     const xs = planningExtentPoints.map((point) => point.x);
@@ -1021,7 +1508,7 @@ const MapView: React.FC<MapViewProps> = ({
     };
   }, [planningExtentPoints]);
 
-  const basemapTiles2d = useMemo<BasemapTile2d[]>(() => {
+  const basemapTiles2d = useMemo<BasemapTileDescriptor2d[]>(() => {
     if (
       effectiveMode !== '2d' ||
       planningMap.basemapMode !== 'osm' ||
@@ -1067,11 +1554,15 @@ const MapView: React.FC<MapViewProps> = ({
     if (!Number.isFinite(zoom)) zoom = 18;
     zoom = clamp(zoom, OSM_MIN_ZOOM, OSM_MAX_ZOOM);
     const tileCount = 2 ** zoom;
-    const minTileX = Math.floor(longitudeToTileX(minLon, zoom));
-    const maxTileX = Math.floor(longitudeToTileX(maxLon, zoom));
-    const minTileY = Math.floor(latitudeToTileY(maxLat, zoom));
-    const maxTileY = Math.floor(latitudeToTileY(minLat, zoom));
-    const tiles: BasemapTile2d[] = [];
+    const tileBuffer =
+      interactionPhase === 'interacting' ? OSM_INTERACTION_TILE_BUFFER : OSM_VISIBLE_TILE_BUFFER;
+    const minTileX = Math.floor(longitudeToTileX(minLon, zoom)) - tileBuffer;
+    const maxTileX = Math.floor(longitudeToTileX(maxLon, zoom)) + tileBuffer;
+    const minTileY = Math.floor(latitudeToTileY(maxLat, zoom)) - tileBuffer;
+    const maxTileY = Math.floor(latitudeToTileY(minLat, zoom)) + tileBuffer;
+    const centerTileX = (minTileX + maxTileX) * 0.5;
+    const centerTileY = (minTileY + maxTileY) * 0.5;
+    const tiles: BasemapTileDescriptor2d[] = [];
     for (let tileX = minTileX; tileX <= maxTileX; tileX += 1) {
       for (let tileY = minTileY; tileY <= maxTileY; tileY += 1) {
         const wrappedTileX = ((tileX % tileCount) + tileCount) % tileCount;
@@ -1110,7 +1601,11 @@ const MapView: React.FC<MapViewProps> = ({
         }
         const tileWidthPx = Math.abs(southEastScreen.x - northWestScreen.x) * view2d.zoom;
         const tileHeightPx = Math.abs(southEastScreen.y - northWestScreen.y) * view2d.zoom;
-        const meshColumns = chooseOsmTileMeshDivisions(tileWidthPx, tileHeightPx);
+        const meshColumns = chooseOsmTileMeshDivisions(
+          tileWidthPx,
+          tileHeightPx,
+          interactionPhase === 'interacting',
+        );
         const meshRows = meshColumns;
         const meshPoints: Array<{ x: number; y: number }> = [];
         let meshValid = true;
@@ -1142,15 +1637,27 @@ const MapView: React.FC<MapViewProps> = ({
         tiles.push({
           key: `${zoom}-${wrappedTileX}-${tileY}`,
           href: `https://tile.openstreetmap.org/${zoom}/${wrappedTileX}/${tileY}.png`,
+          zoom,
+          tileX: wrappedTileX,
+          tileY,
           meshColumns,
           meshRows,
           meshPoints,
         });
       }
     }
-    return tiles;
+    return tiles.sort((left, right) => {
+      const [leftZoom, leftX, leftY] = left.key.split('-').map(Number);
+      const [rightZoom, rightX, rightY] = right.key.split('-').map(Number);
+      const zoomDelta = (rightZoom ?? zoom) - (leftZoom ?? zoom);
+      if (zoomDelta !== 0) return zoomDelta;
+      const leftDistance = Math.hypot((leftX ?? 0) - centerTileX, (leftY ?? 0) - centerTileY);
+      const rightDistance = Math.hypot((rightX ?? 0) - centerTileX, (rightY ?? 0) - centerTileY);
+      return leftDistance - rightDistance;
+    });
   }, [
     effectiveMode,
+    interactionPhase,
     planningGeorefContext,
     planningMap.basemapMode,
     project2d,
@@ -1158,47 +1665,85 @@ const MapView: React.FC<MapViewProps> = ({
     view2d.zoom,
   ]);
 
-  useEffect(() => {
-    if (effectiveMode !== '2d' || basemapTiles2d.length === 0 || typeof Image === 'undefined') return;
-    let disposed = false;
-    basemapTiles2d.forEach((tile) => {
-      if (basemapImages.has(tile.href) || basemapLoadingRef.current.has(tile.href)) return;
-      basemapLoadingRef.current.add(tile.href);
-      const image = new Image();
-      image.crossOrigin = 'anonymous';
-      image.onload = () => {
-        basemapLoadingRef.current.delete(tile.href);
-        if (disposed) return;
-        setBasemapImages((current) => {
-          if (current.get(tile.href) === image) return current;
-          const next = new Map(current);
-          next.set(tile.href, image);
-          return next;
-        });
+  useLayoutEffect(() => {
+    const tileStore = tileStoreRef.current;
+    tileStore.markAllEvictable();
+    noteMapViewPerfCounter('tiles:mark-all-evictable');
+    if (effectiveMode !== '2d' || basemapTiles2d.length === 0) {
+      latestBasemapRenderInputRef.current = {
+        interactionPhase,
+        view2d,
+        projectionScale: projection2d.scale,
+        tiles: [],
       };
-      image.onerror = () => {
-        basemapLoadingRef.current.delete(tile.href);
+      latestWebglRenderInputRef.current = {
+        interactionPhase,
+        viewWidth: VIEW_W,
+        viewHeight: VIEW_H,
+        view2d,
+        tiles: [],
+        surveyLineWidth: latestWebglRenderInputRef.current?.surveyLineWidth ?? 0,
+        previewLineWidth: latestWebglRenderInputRef.current?.previewLineWidth ?? 0,
+        ellipseLineWidth: latestWebglRenderInputRef.current?.ellipseLineWidth ?? 0,
+        surveyLines: latestWebglRenderInputRef.current?.surveyLines ?? [],
+        previewLines: latestWebglRenderInputRef.current?.previewLines ?? [],
+        ellipseLines: latestWebglRenderInputRef.current?.ellipseLines ?? [],
+        surveyPoints: latestWebglRenderInputRef.current?.surveyPoints ?? [],
+        previewPoints: latestWebglRenderInputRef.current?.previewPoints ?? [],
       };
-      image.src = tile.href;
-    });
-    return () => {
-      disposed = true;
+      renderLayersNow({ basemap: true });
+      return;
+    }
+    tileStore.requestTiles(
+      basemapTiles2d,
+      () => {
+        const latest = latestBasemapRenderInputRef.current;
+        if (!latest) return;
+        latest.tiles = tileStore.resolveRenderTiles(basemapTiles2d);
+        noteMapViewPerfMetadata('tiles:snapshot', tileStore.snapshotMetrics());
+        noteMapViewPerfMetadata('tiles:last-resolved-count', latest.tiles.length);
+        if (latestWebglRenderInputRef.current) {
+          latestWebglRenderInputRef.current.tiles = latest.tiles;
+        }
+        scheduleLayerRender({ basemap: true });
+      },
+      renderer2d === 'webgl' ? { crossOrigin: 'anonymous' } : undefined,
+    );
+    const resolvedTiles = tileStore.resolveRenderTiles(basemapTiles2d);
+    noteMapViewPerfMetadata('tiles:snapshot', tileStore.snapshotMetrics());
+    noteMapViewPerfMetadata('tiles:last-resolved-count', resolvedTiles.length);
+    latestBasemapRenderInputRef.current = {
+      interactionPhase,
+      view2d,
+      projectionScale: projection2d.scale,
+      tiles: resolvedTiles,
     };
-  }, [basemapImages, basemapTiles2d, effectiveMode]);
-
-  const canvasBasemapTiles2d = useMemo<CanvasBasemapTile2d[]>(
-    () =>
-      basemapTiles2d.map((tile) => {
-        return {
-          key: tile.key,
-          image: basemapImages.get(tile.href) ?? null,
-          meshColumns: tile.meshColumns,
-          meshRows: tile.meshRows,
-          meshPoints: tile.meshPoints,
-        };
-      }),
-    [basemapImages, basemapTiles2d],
-  );
+    latestWebglRenderInputRef.current = {
+      interactionPhase,
+      viewWidth: VIEW_W,
+      viewHeight: VIEW_H,
+      view2d,
+      tiles: resolvedTiles,
+      surveyLineWidth: latestWebglRenderInputRef.current?.surveyLineWidth ?? 0,
+      previewLineWidth: latestWebglRenderInputRef.current?.previewLineWidth ?? 0,
+      ellipseLineWidth: latestWebglRenderInputRef.current?.ellipseLineWidth ?? 0,
+      surveyLines: latestWebglRenderInputRef.current?.surveyLines ?? [],
+      previewLines: latestWebglRenderInputRef.current?.previewLines ?? [],
+      ellipseLines: latestWebglRenderInputRef.current?.ellipseLines ?? [],
+      surveyPoints: latestWebglRenderInputRef.current?.surveyPoints ?? [],
+      previewPoints: latestWebglRenderInputRef.current?.previewPoints ?? [],
+    };
+    renderLayersNow({ basemap: true });
+  }, [
+    basemapTiles2d,
+    effectiveMode,
+    interactionPhase,
+    projection2d.scale,
+    renderLayersNow,
+    renderer2d,
+    scheduleLayerRender,
+    view2d,
+  ]);
 
   useEffect(() => {
     if (
@@ -1307,54 +1852,130 @@ const MapView: React.FC<MapViewProps> = ({
     [],
   );
 
+  const baseProjectedMapLines2d = useMemo(
+    () =>
+      measureMapViewPerf('map:build-base-lines', () =>
+        buildBaseProjectedMapLines2d({
+          mapLinks,
+          stations,
+          showLostStations,
+          projectPoint: project2d,
+        }),
+      ),
+    [mapLinks, project2d, showLostStations, stations],
+  );
+
+  const baseProjectedPoints2d = useMemo(
+    () =>
+      measureMapViewPerf('map:build-base-points', () =>
+        buildBaseProjectedPoints2d({
+          points,
+          projectPoint: project2d,
+        }),
+      ),
+    [points, project2d],
+  );
+
+  const projectedViewportBounds2d = useMemo(
+    () => buildProjectedViewportBounds(viewportBounds2d, deferredView2d),
+    [deferredView2d, viewportBounds2d],
+  );
+
+  const visibleBaseProjectedMapLines2d = useMemo(
+    () =>
+      measureMapViewPerf('map:cull-base-lines', () =>
+        buildVisibleBaseProjectedMapLines2d({
+          baseProjectedMapLines2d,
+          selectedObservationId,
+          selectedObservationPairKey,
+          projectedViewportBounds: projectedViewportBounds2d,
+        }),
+      ),
+    [
+      baseProjectedMapLines2d,
+      projectedViewportBounds2d,
+      selectedObservationId,
+      selectedObservationPairKey,
+    ],
+  );
+
+  const visibleBaseProjectedPoints2d = useMemo(
+    () =>
+      measureMapViewPerf('map:cull-base-points', () =>
+        buildVisibleBaseProjectedPoints2d({
+          baseProjectedPoints2d,
+          selectedStationId,
+          projectedViewportBounds: projectedViewportBounds2d,
+          selectionMarginProjected: POINT_HIT_RADIUS_PX / Math.max(deferredView2d.zoom, 1e-9),
+        }),
+      ),
+    [baseProjectedPoints2d, deferredView2d.zoom, projectedViewportBounds2d, selectedStationId],
+  );
+
+  const projectedMapLines2d = useMemo(
+    () =>
+      measureMapViewPerf('map:apply-view-lines', () =>
+        buildProjectedMapLines2d({
+          baseProjectedMapLines2d: visibleBaseProjectedMapLines2d,
+          view2d: deferredView2d,
+        }),
+      ),
+    [deferredView2d, visibleBaseProjectedMapLines2d],
+  );
+
+  const projectedPoints2d = useMemo(
+    () =>
+      measureMapViewPerf('map:apply-view-points', () =>
+        buildProjectedPoints2d({
+          baseProjectedPoints2d: visibleBaseProjectedPoints2d,
+          view2d: deferredView2d,
+        }),
+      ),
+    [deferredView2d, visibleBaseProjectedPoints2d],
+  );
+
   const mapState2d = useMemo(
     () =>
-      buildDerivedMapState2d({
-        mapLinks,
-        stations,
-        showLostStations,
-        points,
-        projectPoint: project2d,
-        view2d,
-        selectedObservationId,
-        selectedObservationPairKey,
-        selectedStationId,
-        viewportBounds: viewportBounds2d,
-        interactionPhaseInteracting:
-          effectiveMode === '2d' && interactionPhase === 'interacting',
-        interactionDensePointThreshold: INTERACTION_DENSE_POINT_THRESHOLD,
-        interactionDenseLineThreshold: INTERACTION_DENSE_LINE_THRESHOLD,
-        showLabels,
-        hideMinorGeometry,
-        focusSelection,
-        pointThreshold: DENSE_LABEL_POINT_THRESHOLD,
-        edgeThreshold: DENSE_LABEL_EDGE_THRESHOLD,
-        labelGridPx: LABEL_GRID_PX,
-        scorePriority: (point) =>
-          scoreMapStationPriority({
-            stationId: point.id,
-            selectedStationId,
-            severity: stationSeverity(point.id),
-            fixed: point.fixed,
-          }),
-      }),
+      measureMapViewPerf('map:build-derived-state', () =>
+        buildDerivedMapState2d({
+          projectedMapLines2d,
+          projectedPoints2d,
+          selectedStationId,
+          interactionPhaseInteracting:
+            effectiveMode === '2d' && interactionPhase === 'interacting',
+          interactionDensePointThreshold: INTERACTION_DENSE_POINT_THRESHOLD,
+          interactionDenseLineThreshold: INTERACTION_DENSE_LINE_THRESHOLD,
+          showLabels,
+          hideMinorGeometry,
+          focusSelection,
+          pointThreshold: DENSE_LABEL_POINT_THRESHOLD,
+          edgeThreshold: DENSE_LABEL_EDGE_THRESHOLD,
+          labelGridPx: LABEL_GRID_PX,
+          totalProjectedMapLines2dLength: baseProjectedMapLines2d.length,
+          selectedObservationId,
+          selectedObservationPairKey,
+          scorePriority: (point) =>
+            scoreMapStationPriority({
+              stationId: point.id,
+              selectedStationId,
+              severity: stationSeverity(point.id),
+              fixed: point.fixed,
+            }),
+        }),
+      ),
     [
       effectiveMode,
       focusSelection,
       hideMinorGeometry,
       interactionPhase,
-      mapLinks,
-      points,
-      project2d,
+      baseProjectedMapLines2d.length,
+      projectedMapLines2d,
+      projectedPoints2d,
       selectedObservationId,
       selectedObservationPairKey,
       selectedStationId,
       showLabels,
-      showLostStations,
       stationSeverity,
-      stations,
-      view2d,
-      viewportBounds2d,
     ],
   );
 
@@ -1367,23 +1988,83 @@ const MapView: React.FC<MapViewProps> = ({
     visiblePointLabels2d,
   } = mapState2d;
 
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas || effectiveMode !== '2d') return;
-    const isJsdom =
-      typeof navigator !== 'undefined' && typeof navigator.userAgent === 'string'
-        ? /jsdom/i.test(navigator.userAgent)
-        : false;
-    const allowJsdomCanvas =
-      typeof globalThis !== 'undefined' &&
-      (globalThis as { __WEBNET_ENABLE_CANVAS_RENDER_TEST__?: boolean })
-        .__WEBNET_ENABLE_CANVAS_RENDER_TEST__ === true;
-    if (isJsdom && !allowJsdomCanvas) return;
-    renderMapCanvas2d({
-      canvas,
+  const webglScene2d = useMemo(
+    () =>
+      measureMapViewPerf('map:build-webgl-scene', () =>
+        buildMapViewWebglScene2d({
+          originalGeometryOpacity,
+          lineWidth2d,
+          pointRadius2d,
+          ellipseStroke2d,
+          projectionScale: projection2d.scale,
+          units,
+          interactionDenseMode,
+          unselectedCanvasLines2d,
+          filteredVisiblePoints2d,
+          ellipseStroke,
+          stationFill,
+          bracePreviewPoints2d,
+          scenarioPreviewSegments2d,
+        }),
+      ),
+    [
+      bracePreviewPoints2d,
+      ellipseStroke,
+      ellipseStroke2d,
+      filteredVisiblePoints2d,
+      interactionDenseMode,
+      lineWidth2d,
+      originalGeometryOpacity,
+      pointRadius2d,
+      projection2d.scale,
+      scenarioPreviewSegments2d,
+      stationFill,
+      units,
+      unselectedCanvasLines2d,
+    ],
+  );
+
+  const mapHitIndex2d = useMemo(
+    () =>
+      buildMapViewHitIndex({
+        points: filteredVisiblePoints2d,
+        lines: filteredVisibleMapLines2d,
+      }),
+    [filteredVisibleMapLines2d, filteredVisiblePoints2d],
+  );
+
+  useLayoutEffect(() => {
+    if (effectiveMode !== '2d') return;
+    noteMapViewPerfMetadata('map:renderer2d', renderer2d);
+    noteMapViewPerfMetadata('map:show-labels', showLabels);
+    noteMapViewPerfMetadata('map:show-input-points', planningMap.showInputPoints);
+    noteMapViewPerfMetadata('map:show-obstacles', planningMap.showObstacleLayer);
+    noteMapViewPerfMetadata('map:show-blocked-areas', planningMap.showBlockedAreas);
+    noteMapViewPerfMetadata('map:basemap-mode', planningMap.basemapMode);
+    noteMapViewPerfMetadata('map:visible-point-count', filteredVisiblePoints2d.length);
+    noteMapViewPerfMetadata('map:visible-line-count', filteredVisibleMapLines2d.length);
+    noteMapViewPerfMetadata('map:planning-input-point-count', planningInputPoints2d.length);
+    noteMapViewPerfMetadata('map:planning-polygon-count', planningPolygons2d.length);
+    noteMapViewPerfMetadata('map:interaction-phase', interactionPhase);
+  }, [
+    effectiveMode,
+    filteredVisibleMapLines2d.length,
+    filteredVisiblePoints2d.length,
+    interactionPhase,
+    planningInputPoints2d.length,
+    planningMap.basemapMode,
+    planningMap.showBlockedAreas,
+    planningMap.showInputPoints,
+    planningMap.showObstacleLayer,
+    planningPolygons2d.length,
+    renderer2d,
+    showLabels,
+  ]);
+
+  useLayoutEffect(() => {
+    if (effectiveMode !== '2d') return;
+    latestGeometryRenderInputRef.current = {
       interactionPhase,
-      viewWidth: VIEW_W,
-      viewHeight: VIEW_H,
       view2d,
       originalGeometryOpacity,
       lineWidth2d,
@@ -1392,12 +2073,20 @@ const MapView: React.FC<MapViewProps> = ({
       projectionScale: projection2d.scale,
       units,
       interactionDenseMode,
-      basemapTiles2d: canvasBasemapTiles2d,
       unselectedCanvasLines2d,
       filteredVisiblePoints2d,
       ellipseStroke,
       stationFill,
-    });
+    };
+    latestWebglRenderInputRef.current = {
+      interactionPhase,
+      viewWidth: VIEW_W,
+      viewHeight: VIEW_H,
+      view2d,
+      tiles: latestBasemapRenderInputRef.current?.tiles ?? [],
+      ...webglScene2d,
+    };
+    renderLayersNow({ geometry: true });
   }, [
     effectiveMode,
     ellipseStroke,
@@ -1409,12 +2098,46 @@ const MapView: React.FC<MapViewProps> = ({
     originalGeometryOpacity,
     pointRadius2d,
     projection2d.scale,
+    renderLayersNow,
     stationFill,
     units,
     unselectedCanvasLines2d,
     view2d,
-    canvasBasemapTiles2d,
+    webglScene2d,
   ]);
+
+  useLayoutEffect(() => {
+    if (effectiveMode !== '2d') return;
+    latestPlanningRenderInputRef.current = {
+      interactionPhase,
+      view2d,
+      pointRadius2d,
+      planningInputPoints2d,
+      planningPolygons2d: planningPolygons2d.map((polygon) => ({
+        id: polygon.id,
+        source: polygon.source,
+        kind: polygon.kind,
+        label: polygon.label,
+        vertices: polygon.vertices,
+      })),
+      selectedPlanningPolygonIds,
+    };
+    renderLayersNow({ planning: true });
+  }, [
+    effectiveMode,
+    interactionPhase,
+    planningInputPoints2d,
+    planningPolygons2d,
+    pointRadius2d,
+    renderLayersNow,
+    selectedPlanningPolygonIds,
+    view2d,
+  ]);
+
+  useLayoutEffect(() => {
+    if (effectiveMode !== '2d') return;
+    renderLayersNow({ basemap: true, geometry: true, planning: true });
+  }, [effectiveMode, renderLayersNow, renderer2d]);
 
   const project3d = useCallback(
     (point: Vec3) => projectPoint3d(camera3d, point, VIEW_W, VIEW_H),
@@ -1469,16 +2192,29 @@ const MapView: React.FC<MapViewProps> = ({
     event.preventDefault();
     const rect = containerRef.current?.getBoundingClientRect();
     if (!rect) return;
-    const target = event.target as HTMLElement | null;
-    const polygonNode = target?.closest('[data-planning-polygon-id]') as HTMLElement | null;
-    const polygonId = polygonNode?.getAttribute('data-planning-polygon-id') ?? null;
-    const polygonSource = polygonNode?.getAttribute('data-planning-polygon-source');
-    const polygonLabel = polygonNode?.getAttribute('data-planning-polygon-label') ?? 'Planning obstacle';
-    if (polygonId) {
-      setSelectedPlanningPolygonId(polygonId);
+    const pointer = toSvgCoords(event.clientX, event.clientY);
+    const polygonHit =
+      effectiveMode === '2d' && pointer != null
+        ? findPlanningPolygonAtSvgPoint(pointer)
+        : null;
+    const polygonId = polygonHit?.polygonId ?? null;
+    const polygonSource = polygonHit?.polygonSource ?? null;
+    const polygonLabel = polygonHit?.polygonLabel ?? 'Planning obstacle';
+    const preserveMultiSelection = selectedPlanningPolygonIds.length > 1;
+    if (polygonId && !preserveMultiSelection) {
+      setSelectedPlanningPolygonIds([polygonId]);
     }
-    const menuWidth = 210;
-    const menuHeight = polygonId ? 198 : 126;
+    const showMultiDelete = !polygonId && selectedPlanningPolygonIds.length > 1;
+    const effectiveMultiDelete = preserveMultiSelection || showMultiDelete;
+    const menuWidth = 240;
+    const menuHeight =
+      effectiveMultiDelete && !polygonId
+        ? 172
+        : preserveMultiSelection && polygonId
+          ? 172
+          : polygonId
+            ? 232
+            : 126;
     const localX = event.clientX - rect.left;
     const localY = event.clientY - rect.top;
     const x = clamp(localX, 8, Math.max(8, rect.width - menuWidth - 8));
@@ -1488,7 +2224,7 @@ const MapView: React.FC<MapViewProps> = ({
       x,
       y,
       planningPolygon:
-        polygonId && (polygonSource === 'user' || polygonSource === 'osm')
+        !preserveMultiSelection && polygonId && (polygonSource === 'user' || polygonSource === 'osm')
           ? {
               polygonId,
               polygonSource,
@@ -1508,7 +2244,7 @@ const MapView: React.FC<MapViewProps> = ({
   const handleEditPlanningPolygon = useCallback(() => {
     const polygon = contextMenu.planningPolygon;
     if (!polygon) return;
-    setSelectedPlanningPolygonId(polygon.polygonId);
+    setSelectedPlanningPolygonIds([polygon.polygonId]);
     setContextMenu((current) => ({ ...current, open: false, planningPolygon: null }));
   }, [contextMenu.planningPolygon]);
 
@@ -1524,7 +2260,7 @@ const MapView: React.FC<MapViewProps> = ({
         ? ('osm' as const)
         : ('user' as const);
       planningVertexDragRef.current = { polygonId, polygonSource, vertexIndex };
-      setSelectedPlanningPolygonId(polygonId);
+      setSelectedPlanningPolygonIds([polygonId]);
       beginDrag('planning-vertex', event.clientX, event.clientY);
       event.preventDefault();
       event.stopPropagation();
@@ -1533,23 +2269,47 @@ const MapView: React.FC<MapViewProps> = ({
   );
 
   const handleSvgClick = (event: React.MouseEvent<SVGSVGElement>) => {
-    if (effectiveMode !== '2d') return;
+    if (effectiveMode === '3d') {
+      const target = event.target as HTMLElement | null;
+      if (!target?.closest('[data-map-observation],[data-map-station]')) {
+        clearMapSelection();
+      }
+      return;
+    }
     const target = event.target as HTMLElement | null;
-    const polygonId = target?.closest('[data-planning-polygon-id]')?.getAttribute('data-planning-polygon-id');
-    if (polygonId) {
-      setSelectedPlanningPolygonId(polygonId);
+    const pointer = toSvgCoords(event.clientX, event.clientY);
+    const polygonHit =
+      pointer != null ? findPlanningPolygonAtSvgPoint(pointer) : null;
+    if (polygonHit != null) {
+      setSelectedPlanningPolygonIds([polygonHit.polygonId]);
+      onSelectStation?.(null);
+      onSelectObservation?.(null);
+      setSelectionBox(null);
       return;
     }
     if (target?.closest('[data-map-observation],[data-map-station]')) return;
-    const pointer = toSvgCoords(event.clientX, event.clientY);
     if (!pointer) return;
     if (planningMap.blockEditMode) {
       setDraftBlockedPolygon((current) => [...current, svgToMapCoords(pointer.x, pointer.y)]);
       return;
     }
+    if (selectionBox != null) {
+      const nextMode: SelectionBoxMode =
+        pointer.x >= selectionBox.anchorX ? 'window' : 'crossing';
+      const nextRect = {
+        x: Math.min(selectionBox.anchorX, pointer.x),
+        y: Math.min(selectionBox.anchorY, pointer.y),
+        width: Math.abs(pointer.x - selectionBox.anchorX),
+        height: Math.abs(pointer.y - selectionBox.anchorY),
+        mode: nextMode,
+      };
+      applySelectionBoxToPlanningPolygons(nextRect);
+      return;
+    }
+    const pointCandidates = mapHitIndex2d.pointCandidates(pointer.x, pointer.y, POINT_HIT_RADIUS_PX);
     let nearestPointId: string | null = null;
     let nearestPointDistance = Number.POSITIVE_INFINITY;
-    filteredVisiblePoints2d.forEach((point) => {
+    pointCandidates.forEach((point) => {
       const distance = Math.hypot(pointer.x - point.screenX, pointer.y - point.screenY);
       if (distance <= POINT_HIT_RADIUS_PX && distance < nearestPointDistance) {
         nearestPointDistance = distance;
@@ -1557,12 +2317,14 @@ const MapView: React.FC<MapViewProps> = ({
       }
     });
     if (nearestPointId) {
+      setSelectedPlanningPolygonIds([]);
       onSelectStation?.(nearestPointId);
       return;
     }
+    const lineCandidates = mapHitIndex2d.lineCandidates(pointer.x, pointer.y, LINE_HIT_RADIUS_PX);
     let nearestLineObservationId: number | null = null;
     let nearestLineDistance = Number.POSITIVE_INFINITY;
-    filteredVisibleMapLines2d.forEach((line) => {
+    lineCandidates.forEach((line) => {
       const distance = pointToSegmentDistancePx(
         pointer.x,
         pointer.y,
@@ -1577,8 +2339,24 @@ const MapView: React.FC<MapViewProps> = ({
       }
     });
     if (nearestLineObservationId != null) {
+      setSelectedPlanningPolygonIds([]);
       onSelectObservation?.(nearestLineObservationId);
+      return;
     }
+    if (
+      selectedStationId != null ||
+      selectedObservationId != null ||
+      selectedPlanningPolygonIds.length > 0
+    ) {
+      clearMapSelection();
+      return;
+    }
+    setSelectionBox({
+      anchorX: pointer.x,
+      anchorY: pointer.y,
+      currentX: pointer.x,
+      currentY: pointer.y,
+    });
   };
 
   const commitDraftBlockedPolygon = useCallback(() => {
@@ -1605,15 +2383,24 @@ const MapView: React.FC<MapViewProps> = ({
   }, []);
 
   useEffect(() => {
-    if (!selectedPlanningPolygonId) return;
-    const stillExists =
-      planningMap.blockedPolygons.some((polygon) => polygon.id === selectedPlanningPolygonId) ||
-      planningMap.obstaclePolygons.some((polygon) => polygon.id === selectedPlanningPolygonId);
-    if (!stillExists) {
-      setSelectedPlanningPolygonId(null);
+    if (selectedPlanningPolygonIds.length === 0) return;
+    const availableIds = new Set([
+      ...planningMap.blockedPolygons.map((polygon) => polygon.id),
+      ...planningMap.obstaclePolygons.map((polygon) => polygon.id),
+    ]);
+    setSelectedPlanningPolygonIds((current) => current.filter((id) => availableIds.has(id)));
+    if (
+      selectedPlanningPolygonId != null &&
+      !availableIds.has(selectedPlanningPolygonId)
+    ) {
       planningVertexDragRef.current = null;
     }
-  }, [planningMap.blockedPolygons, planningMap.obstaclePolygons, selectedPlanningPolygonId]);
+  }, [
+    planningMap.blockedPolygons,
+    planningMap.obstaclePolygons,
+    selectedPlanningPolygonId,
+    selectedPlanningPolygonIds.length,
+  ]);
 
   return (
     <div className="h-full p-4 flex flex-col min-h-0">
@@ -1789,6 +2576,15 @@ const MapView: React.FC<MapViewProps> = ({
       {effectiveMode === '2d' && planningMap.blockedPolygons.length > 0 && (
         <div className="mb-2 flex flex-wrap items-center gap-2 rounded border border-slate-800/70 bg-slate-950/60 px-3 py-2 text-[11px] text-slate-300">
           <span className="uppercase tracking-wide text-slate-500">Blocked polygons</span>
+          {selectedPlanningPolygonIds.length > 1 && (
+            <button
+              type="button"
+              onClick={removeSelectedPlanningPolygons}
+              className="rounded border border-pink-400 px-2 py-1 text-pink-100 hover:bg-pink-950/30"
+            >
+              Delete {selectedPlanningPolygonIds.length} selected
+            </button>
+          )}
           {planningMap.blockedPolygons.map((polygon) => (
             <button
               key={polygon.id}
@@ -1846,14 +2642,40 @@ const MapView: React.FC<MapViewProps> = ({
       <div
         ref={containerRef}
         data-map-interaction-phase={interactionPhase}
+        data-map-renderer={effectiveMode === '2d' ? renderer2d : 'svg-3d'}
         className="bg-slate-900 border border-slate-800 rounded overflow-hidden flex-1 min-h-0 relative"
       >
         {effectiveMode === '2d' && (
-          <canvas
-            ref={canvasRef}
-            data-testid="map-base-canvas"
-            className="absolute inset-0 h-full w-full pointer-events-none"
-          />
+          <>
+            {webglEligible && (
+              <canvas
+                ref={webglCanvasRef}
+                data-testid="map-webgl-canvas"
+                className={`absolute inset-0 h-full w-full pointer-events-none ${
+                  renderer2d === 'webgl' ? '' : 'hidden'
+                }`}
+              />
+            )}
+            {renderer2d === 'canvas' && (
+              <>
+                <canvas
+                  ref={basemapCanvasRef}
+                  data-testid="map-base-canvas"
+                  className="absolute inset-0 h-full w-full pointer-events-none"
+                />
+                <canvas
+                  ref={geometryCanvasRef}
+                  data-testid="map-geometry-canvas"
+                  className="absolute inset-0 h-full w-full pointer-events-none"
+                />
+              </>
+            )}
+            <canvas
+              ref={planningCanvasRef}
+              data-testid="map-planning-canvas"
+              className="absolute inset-0 h-full w-full pointer-events-none"
+            />
+          </>
         )}
         {effectiveMode === '3d' && (
           <div className="absolute right-2 top-2 z-10 rounded border border-slate-700/80 bg-slate-900/85 p-1">
@@ -1896,11 +2718,15 @@ const MapView: React.FC<MapViewProps> = ({
               y={contextMenu.y}
               onOpenTool={openTool}
               planningPolygonLabel={contextMenu.planningPolygon?.polygonLabel ?? null}
+              selectedPlanningPolygonCount={selectedPlanningPolygonIds.length}
               onEditPlanningPolygon={
                 contextMenu.planningPolygon != null ? handleEditPlanningPolygon : null
               }
               onDeletePlanningPolygon={
                 contextMenu.planningPolygon != null ? handleDeletePlanningPolygon : null
+              }
+              onDeleteSelectedPlanningPolygons={
+                selectedPlanningPolygonIds.length > 1 ? removeSelectedPlanningPolygons : null
               }
             />
           </div>
@@ -1967,9 +2793,14 @@ const MapView: React.FC<MapViewProps> = ({
               transformedPoints2d={transformedPoints2d}
               planningInputPoints2d={planningInputPoints2d}
               planningPolygons2d={planningPolygons2d}
-              selectedPlanningPolygonId={selectedPlanningPolygonId}
+              selectedPlanningPolygonIds={selectedPlanningPolygonIds}
+              renderPlanningPolygonBodies={false}
+              renderPlanningInputPoints={false}
               bracePreviewPoints2d={bracePreviewPoints2d}
               scenarioPreviewSegments2d={scenarioPreviewSegments2d}
+              renderBracePreviewMarkers={renderer2d !== 'webgl'}
+              renderScenarioPreviewSegments={renderer2d !== 'webgl'}
+              selectionBoxRect={selectionBoxRect}
               onPlanningVertexMouseDown={handlePlanningVertexMouseDown}
               project2d={project2d}
             />
@@ -2010,6 +2841,25 @@ const MapView: React.FC<MapViewProps> = ({
             </>
           )}
         </svg>
+        {effectiveMode === '2d' && planningMap.basemapMode === 'osm' && (
+          <a
+            href="https://www.openstreetmap.org/copyright"
+            target="_blank"
+            rel="noreferrer"
+            className="pointer-events-auto absolute bottom-2 right-2 rounded bg-slate-950/75 px-2 py-1 text-[10px] text-slate-300 hover:text-white"
+          >
+            Basemap © OpenStreetMap contributors
+          </a>
+        )}
+        {effectiveMode === '2d' && (
+          <div
+            data-testid="map-renderer-badge"
+            className="pointer-events-none absolute bottom-2 left-2 rounded bg-slate-950/75 px-2 py-1 text-[10px] text-slate-300"
+          >
+            {renderer2d === 'webgl' ? 'Renderer: WebGL2' : 'Renderer: Canvas fallback'}
+            {mapDensitySummary.dense ? ' | Dense overlay' : ' | Normal overlay'}
+          </div>
+        )}
       </div>
     </div>
   );

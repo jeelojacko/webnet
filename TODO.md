@@ -1,4 +1,24 @@
+- [x] Map derived-state split batch (May 2026): cache base projected 2D geometry separately from view/selection filtering, then cull the current viewport in base projected space before applying the 2D view transform so pan/zoom avoids touching the full Camp network each frame.
+
+- [x] Camp map performance profiling harness batch (May 2026): add internal map-layer/process capture plus a Camp Design preanalysis map benchmark matrix with feature toggles and scripted pan/zoom sweeps.
+
+- [x] Map renderer stabilization follow-up batch (May 2026): restore non-selected obstacle rendering in WebGL mode and reduce 2D pan/zoom recompute churn without changing survey geometry correctness.
+
+- [x] WebGL 2D map migration batch (May 2026): add a WebGL2-first 2D renderer for OSM + static survey geometry with automatic canvas fallback, while keeping SVG interaction semantics stable.
+
+- [x] Map overlay performance follow-up batch (May 2026): add a visible renderer/status badge, instrument 2D layer performance, and move non-interactive planning polygon fills/strokes out of the SVG hot path while preserving selection/edit handles.
+
+- [x] Map performance regression recovery batch (May 2026): fix layered-canvas basemap/geometry regressions, remove pan/zoom shake from the new 2D renderer, and only then reassess whether the basemap needs a WebGL path.
+
 # TODO - WebNet
+
+- [x] Map & Ellipses performance batch (May 2026): split 2D map rendering into separate basemap and geometry layers, move OSM tile lifecycle off React state into an imperative cache/controller with fallback coverage, and tighten interaction/hit-test performance without changing survey geometry correctness.
+
+- [x] Map directional selection batch (May 2026): make left-to-right obstacle box selection require full enclosure, make right-to-left selection use crossing/touching semantics, and show the two box directions in different colors.
+
+- [x] Map multi-select follow-up batch (May 2026): fix box-selection overlay alignment and preserve obstacle multi-selection on right-click context open.
+
+- [x] Map basemap + selection UX batch (May 2026): add proper OpenStreetMap attribution, smooth tile loading/panning behavior, empty-click and Escape deselection, and box selection for obstacle cleanup.
 
 - [x] Preanalysis synthetic-priority tuning batch (May 2026): make initial brace/promoted/synthetic setup recommendations outrank repeated-set redundancy when they offer the strongest expected geometry improvement.
 
