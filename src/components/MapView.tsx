@@ -412,6 +412,7 @@ const MapView: React.FC<MapViewProps> = ({
     () => snapshot?.view2d ?? { zoom: 1, panX: 0, panY: 0 },
   );
   const deferredView2d = useDeferredValue(view2d);
+  const [frozenDerivedView2d, setFrozenDerivedView2d] = useState<typeof view2d | null>(null);
   const pendingView2dRef = useRef(view2d);
   const view2dFrameRef = useRef<number | null>(null);
   const dragMoveFrameRef = useRef<number | null>(null);
@@ -621,6 +622,7 @@ const MapView: React.FC<MapViewProps> = ({
   }, [contextMenu.open]);
 
   const effectiveViewportWidth = viewportWidthOverride ?? viewportWidth;
+  const derivedView2d = frozenDerivedView2d ?? deferredView2d;
 
   const fallbackReason = useMemo(() => {
     if (mode !== '3d') return null;
@@ -861,6 +863,7 @@ const MapView: React.FC<MapViewProps> = ({
     const reset = { zoom: 1, panX: 0, panY: 0 };
     pendingView2dRef.current = reset;
     setView2d(reset);
+    setFrozenDerivedView2d(null);
     clearInteractionSettle();
     setInteractionPhase('idle');
   }, [clearInteractionSettle]);
@@ -1017,6 +1020,9 @@ const MapView: React.FC<MapViewProps> = ({
 
   const stopDrag = useCallback(() => {
     if (!dragRef.current.active) return;
+    if (dragRef.current.mode === 'pan2d') {
+      setFrozenDerivedView2d(null);
+    }
     dragRef.current.active = false;
     dragRef.current.mode = 'none';
     pendingDragClientRef.current = null;
@@ -1237,6 +1243,9 @@ const MapView: React.FC<MapViewProps> = ({
       const start = toSvgCoords(clientX, clientY);
       if (!start) return;
       noteMapViewPerfCounter(`map:begin-drag:${modeName}`);
+      if (modeName === 'pan2d') {
+        setFrozenDerivedView2d(pendingView2dRef.current);
+      }
       dragRef.current = { active: true, mode: modeName, lastX: start.x, lastY: start.y };
       setIsDragging(true);
     },
@@ -1935,8 +1944,8 @@ const MapView: React.FC<MapViewProps> = ({
   );
 
   const projectedViewportBounds2d = useMemo(
-    () => buildProjectedViewportBounds(viewportBounds2d, deferredView2d),
-    [deferredView2d, viewportBounds2d],
+    () => buildProjectedViewportBounds(viewportBounds2d, derivedView2d),
+    [derivedView2d, viewportBounds2d],
   );
 
   const visibleBaseProjectedMapLines2d = useMemo(
@@ -1964,10 +1973,10 @@ const MapView: React.FC<MapViewProps> = ({
           baseProjectedPoints2d,
           selectedStationId,
           projectedViewportBounds: projectedViewportBounds2d,
-          selectionMarginProjected: POINT_HIT_RADIUS_PX / Math.max(deferredView2d.zoom, 1e-9),
+          selectionMarginProjected: POINT_HIT_RADIUS_PX / Math.max(derivedView2d.zoom, 1e-9),
         }),
       ),
-    [baseProjectedPoints2d, deferredView2d.zoom, projectedViewportBounds2d, selectedStationId],
+    [baseProjectedPoints2d, derivedView2d.zoom, projectedViewportBounds2d, selectedStationId],
   );
 
   const filteredVisibleBaseProjectedMapLines2d = useMemo(
@@ -2020,10 +2029,10 @@ const MapView: React.FC<MapViewProps> = ({
       measureMapViewPerf('map:apply-view-lines', () =>
         buildProjectedMapLines2d({
           baseProjectedMapLines2d: filteredVisibleBaseProjectedMapLines2d,
-          view2d: deferredView2d,
+          view2d: derivedView2d,
         }),
       ),
-    [deferredView2d, filteredVisibleBaseProjectedMapLines2d],
+    [derivedView2d, filteredVisibleBaseProjectedMapLines2d],
   );
 
   const projectedPoints2d = useMemo(
@@ -2031,10 +2040,10 @@ const MapView: React.FC<MapViewProps> = ({
       measureMapViewPerf('map:apply-view-points', () =>
         buildProjectedPoints2d({
           baseProjectedPoints2d: filteredVisibleBaseProjectedPoints2d,
-          view2d: deferredView2d,
+          view2d: derivedView2d,
         }),
       ),
-    [deferredView2d, filteredVisibleBaseProjectedPoints2d],
+    [derivedView2d, filteredVisibleBaseProjectedPoints2d],
   );
 
   const interactionDenseMode = useMemo(
@@ -2780,6 +2789,9 @@ const MapView: React.FC<MapViewProps> = ({
         data-map-view-zoom={view2d.zoom.toFixed(6)}
         data-map-view-pan-x={view2d.panX.toFixed(6)}
         data-map-view-pan-y={view2d.panY.toFixed(6)}
+        data-map-derived-view-zoom={derivedView2d.zoom.toFixed(6)}
+        data-map-derived-view-pan-x={derivedView2d.panX.toFixed(6)}
+        data-map-derived-view-pan-y={derivedView2d.panY.toFixed(6)}
         className="bg-slate-900 border border-slate-800 rounded overflow-hidden flex-1 min-h-0 relative"
       >
         {effectiveMode === '2d' && (

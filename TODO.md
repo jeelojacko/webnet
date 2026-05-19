@@ -1,3 +1,5 @@
+- [x] Map pan-overlay stabilization batch (May 2026): freeze the 2D derived SVG/culling basis during active middle-drag pan so the overlay moves as one stable slab instead of popping and jittering while the live transform updates.
+
 - [x] Map snapshot-throttle batch (May 2026): stop pushing live pan/zoom view snapshots up to the app shell every interaction frame so map drags do not force avoidable parent rerenders.
 
 - [x] Map drag-frame coalescing batch (May 2026): coalesce live 2D/3D drag-move handling to one frame at a time so pan/orbit updates stop processing every raw mousemove event.
