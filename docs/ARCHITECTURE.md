@@ -149,6 +149,7 @@ The UI should treat solve results as the source of truth and avoid duplicating e
 - `MapViewSvg2d.tsx` remains the interaction/label/edit surface for selections, labels, selected planning outlines, edit handles, and tool affordances, but its 2D overlay tree is now split into memoized world-content sections behind lightweight transform wrappers so live pan/zoom can update the SVG transform without forcing the heavier label/planning/selection subtree to rebuild every frame
 - `mapViewCanvas2d.ts` remains the automatic fallback renderer when WebGL2 is unavailable or initialization fails
 - `mapViewPerf.ts` provides opt-in internal timing/counter capture so focused tests can profile the staged 2D derived-state passes, hit-index, tile, WebGL, canvas, and SVG work without changing operator-facing behavior
+- live drag motion is now frame-coalesced in `MapView.tsx` before it reaches the 2D pan or 3D orbit/pan update path, so dense raw `mousemove` bursts are reduced to one applied drag step per animation frame
 
 Focused map profiling coverage now includes a Camp Design preanalysis matrix under `tests/map_view_camp_design_profile.test.tsx`, driven by `tests/fixtures/map_view_camp_design_profile_matrix.json` plus helper setup in `tests/helpers/campDesignMapPerfHarness.ts`, so feature-toggle and renderer comparisons can be reproduced before changing the live map stack.
 

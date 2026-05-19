@@ -174,6 +174,149 @@ describe('MapView interaction quality', () => {
     vi.useRealTimers();
   });
 
+  it('coalesces burst pan moves into one frame-based view commit', async () => {
+    vi.useFakeTimers();
+    const rafQueue: RafCallback[] = [];
+    vi.stubGlobal('requestAnimationFrame', (callback: RafCallback) => {
+      rafQueue.push(callback);
+      return rafQueue.length;
+    });
+    vi.stubGlobal('cancelAnimationFrame', () => {});
+
+    const snapshots: Array<{ panX: number; panY: number }> = [];
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root: Root = createRoot(container);
+
+    await act(async () => {
+      root.render(
+        <MapView
+          result={result}
+          units="m"
+          showLostStations={true}
+          onSnapshotChange={(snapshot) => {
+            snapshots.push({ panX: snapshot.view2d.panX, panY: snapshot.view2d.panY });
+          }}
+        />,
+      );
+    });
+
+    const svg = container.querySelector('svg') as SVGSVGElement | null;
+    const phaseNode = container.querySelector('[data-map-interaction-phase]') as HTMLElement | null;
+    if (!svg || !phaseNode) throw new Error('MapView root nodes not found');
+    setSvgRect(svg);
+    while (rafQueue.length > 0) {
+      const frame = rafQueue.shift();
+      if (!frame) break;
+      await act(async () => {
+        frame(performance.now());
+        await Promise.resolve();
+      });
+    }
+
+    await act(async () => {
+      svg.dispatchEvent(
+        new MouseEvent('mousedown', {
+          button: 1,
+          buttons: 4,
+          clientX: 500,
+          clientY: 350,
+          bubbles: true,
+          cancelable: true,
+        }),
+      );
+      await Promise.resolve();
+    });
+
+    await act(async () => {
+      window.dispatchEvent(
+        new MouseEvent('mousemove', {
+          button: 1,
+          buttons: 4,
+          clientX: 520,
+          clientY: 360,
+          bubbles: true,
+          cancelable: true,
+        }),
+      );
+      window.dispatchEvent(
+        new MouseEvent('mousemove', {
+          button: 1,
+          buttons: 4,
+          clientX: 540,
+          clientY: 372,
+          bubbles: true,
+          cancelable: true,
+        }),
+      );
+      window.dispatchEvent(
+        new MouseEvent('mousemove', {
+          button: 1,
+          buttons: 4,
+          clientX: 560,
+          clientY: 384,
+          bubbles: true,
+          cancelable: true,
+        }),
+      );
+      await Promise.resolve();
+    });
+
+    expect(phaseNode.dataset.mapInteractionPhase).toBe('idle');
+    expect(snapshots.filter((snapshot) => snapshot.panX !== 0 || snapshot.panY !== 0).length).toBe(0);
+    expect(rafQueue.length).toBeGreaterThan(0);
+
+    while (
+      rafQueue.length > 0 &&
+      snapshots.filter((snapshot) => snapshot.panX !== 0 || snapshot.panY !== 0).length === 0
+    ) {
+      const queuedFrame = rafQueue.shift();
+      if (!queuedFrame) break;
+      await act(async () => {
+        queuedFrame(performance.now());
+        await Promise.resolve();
+      });
+    }
+
+    expect(phaseNode.dataset.mapInteractionPhase).toBe('interacting');
+    expect(snapshots.filter((snapshot) => snapshot.panX !== 0 || snapshot.panY !== 0).length).toBe(1);
+
+    await act(async () => {
+      window.dispatchEvent(
+        new MouseEvent('mouseup', {
+          button: 1,
+          buttons: 0,
+          clientX: 560,
+          clientY: 384,
+          bubbles: true,
+          cancelable: true,
+        }),
+      );
+      await Promise.resolve();
+    });
+
+    await act(async () => {
+      vi.advanceTimersByTime(90);
+      await Promise.resolve();
+    });
+    expect(phaseNode.dataset.mapInteractionPhase).toBe('settling');
+
+    const settleFrame = rafQueue.shift();
+    if (!settleFrame) throw new Error('Expected settling frame');
+    await act(async () => {
+      settleFrame(performance.now());
+      await Promise.resolve();
+    });
+    expect(phaseNode.dataset.mapInteractionPhase).toBe('idle');
+
+    await act(async () => {
+      root.unmount();
+    });
+    container.remove();
+    vi.unstubAllGlobals();
+    vi.useRealTimers();
+  });
+
   it('shows OSM attribution, clears selection on empty click/Escape, and applies directional box selection rules for planning polygons', async () => {
     const container = document.createElement('div');
     document.body.appendChild(container);

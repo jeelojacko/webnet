@@ -414,6 +414,8 @@ const MapView: React.FC<MapViewProps> = ({
   const deferredView2d = useDeferredValue(view2d);
   const pendingView2dRef = useRef(view2d);
   const view2dFrameRef = useRef<number | null>(null);
+  const dragMoveFrameRef = useRef<number | null>(null);
+  const pendingDragClientRef = useRef<{ x: number; y: number } | null>(null);
   const settleTimerRef = useRef<ReturnType<typeof globalThis.setTimeout> | null>(null);
   const settleFrameRef = useRef<number | null>(null);
   const [interactionPhase, setInteractionPhase] = useState<MapInteractionPhase>('idle');
@@ -831,6 +833,9 @@ const MapView: React.FC<MapViewProps> = ({
       if (view2dFrameRef.current != null) {
         cancelAnimationFrame(view2dFrameRef.current);
       }
+      if (dragMoveFrameRef.current != null) {
+        cancelAnimationFrame(dragMoveFrameRef.current);
+      }
       if (renderRequestFrameRef.current != null) {
         cancelAnimationFrame(renderRequestFrameRef.current);
       }
@@ -987,6 +992,11 @@ const MapView: React.FC<MapViewProps> = ({
     if (!dragRef.current.active) return;
     dragRef.current.active = false;
     dragRef.current.mode = 'none';
+    pendingDragClientRef.current = null;
+    if (dragMoveFrameRef.current != null) {
+      cancelAnimationFrame(dragMoveFrameRef.current);
+      dragMoveFrameRef.current = null;
+    }
     planningVertexDragRef.current = null;
     setIsDragging(false);
     noteMapViewPerfCounter('map:stop-drag');
@@ -1116,11 +1126,27 @@ const MapView: React.FC<MapViewProps> = ({
     ],
   );
 
+  const scheduleDragMoveClient = useCallback(
+    (clientX: number, clientY: number) => {
+      pendingDragClientRef.current = { x: clientX, y: clientY };
+      if (dragMoveFrameRef.current != null) return;
+      dragMoveFrameRef.current = requestAnimationFrame(() => {
+        dragMoveFrameRef.current = null;
+        const next = pendingDragClientRef.current;
+        pendingDragClientRef.current = null;
+        if (!next) return;
+        noteMapViewPerfCounter('map:drag-move-frame-commits');
+        handleDragMoveClient(next.x, next.y);
+      });
+    },
+    [handleDragMoveClient],
+  );
+
   useEffect(() => {
     if (!isDragging && selectionBox == null) return;
     const onMouseMove = (event: MouseEvent) => {
       if (dragRef.current.active) {
-        handleDragMoveClient(event.clientX, event.clientY);
+        scheduleDragMoveClient(event.clientX, event.clientY);
         return;
       }
       if (selectionBox == null) return;
@@ -1145,7 +1171,7 @@ const MapView: React.FC<MapViewProps> = ({
       window.removeEventListener('mousemove', onMouseMove);
       window.removeEventListener('mouseup', onMouseUp);
     };
-  }, [handleDragMoveClient, isDragging, selectionBox, stopDrag, toSvgCoords]);
+  }, [isDragging, scheduleDragMoveClient, selectionBox, stopDrag, toSvgCoords]);
 
   const handleWheel = (event: React.WheelEvent<SVGSVGElement>) => {
     event.preventDefault();

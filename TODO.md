@@ -1,3 +1,5 @@
+- [x] Map drag-frame coalescing batch (May 2026): coalesce live 2D/3D drag-move handling to one frame at a time so pan/orbit updates stop processing every raw mousemove event.
+
 - [x] Map SVG interaction render split batch (May 2026): split the 2D SVG overlay into memoized world-content sections behind cheap transform shells so live pan/zoom does not rebuild the full interaction subtree every frame.
 
 - [x] Map derived-state stage split batch (May 2026): move selection/minor-geometry filtering ahead of the 2D view transform where possible, and break the remaining derived-state work into separately measured stages so the Camp harness can isolate the next real hotspot.
