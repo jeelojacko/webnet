@@ -1,3 +1,5 @@
+- [x] OSM browser profiling + basemap optimization batch (May 2026): extend the Chromium Camp map harness to profile basemap-on pan/zoom/toggle actions against official OSM tile-use guidance, then trim the live OSM render/request path based on measured browser results.
+
 - [x] Map browser pan-debug batch (May 2026): fix real-browser 2D pan delta/cancel issues and add a Camp startup browser harness for repeatable middle-mouse pan profiling outside jsdom.
 
 - [x] Map compositor-pan preview batch (May 2026): stop recomputing live 2D pan frames during drag and instead translate the render layers together as one preview slab, then commit the pan once on drag end.

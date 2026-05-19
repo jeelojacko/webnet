@@ -142,6 +142,87 @@ describe('MapViewWebgl2d', () => {
     renderer.dispose();
   });
 
+  it('reuses cached tile mesh vertices when the same warped tile renders again', () => {
+    const gl = createFakeWebgl2Context();
+    const canvas = {
+      width: 0,
+      height: 0,
+      style: {},
+      getContext: vi.fn((kind: string) => (kind === 'webgl2' ? gl : null)),
+    } as unknown as HTMLCanvasElement;
+    const renderer = new MapViewWebgl2d();
+    expect(renderer.init(canvas)).toBe(true);
+
+    const tile = {
+      key: '5-10-12',
+      href: 'https://tile/5/10/12.png',
+      zoom: 5,
+      tileX: 10,
+      tileY: 12,
+      meshColumns: 2,
+      meshRows: 2,
+      meshPoints: [
+        { x: 0, y: 0 },
+        { x: 128, y: 0 },
+        { x: 256, y: 0 },
+        { x: 0, y: 128 },
+        { x: 128, y: 128 },
+        { x: 256, y: 128 },
+        { x: 0, y: 256 },
+        { x: 128, y: 256 },
+        { x: 256, y: 256 },
+      ],
+      image: { naturalWidth: 256, naturalHeight: 256, width: 256, height: 256 } as HTMLImageElement,
+      sourceX: 0,
+      sourceY: 0,
+      sourceWidth: 256,
+      sourceHeight: 256,
+      fallbackZoomDelta: 0,
+    };
+
+    expect(
+      renderer.render({
+        interactionPhase: 'idle',
+        viewWidth: 1000,
+        viewHeight: 700,
+        view2d: { zoom: 1, panX: 0, panY: 0 },
+        tiles: [tile],
+        surveyLineWidth: 1,
+        previewLineWidth: 1,
+        ellipseLineWidth: 1,
+        surveyLines: [],
+        previewLines: [],
+        ellipseLines: [],
+        surveyPoints: [],
+        previewPoints: [],
+      }),
+    ).toBe(true);
+    const afterFirst = renderer.snapshotMetrics();
+
+    expect(
+      renderer.render({
+        interactionPhase: 'idle',
+        viewWidth: 1000,
+        viewHeight: 700,
+        view2d: { zoom: 1, panX: 0, panY: 0 },
+        tiles: [tile],
+        surveyLineWidth: 1,
+        previewLineWidth: 1,
+        ellipseLineWidth: 1,
+        surveyLines: [],
+        previewLines: [],
+        ellipseLines: [],
+        surveyPoints: [],
+        previewPoints: [],
+      }),
+    ).toBe(true);
+    const afterSecond = renderer.snapshotMetrics();
+
+    expect(afterFirst.tileMeshBuildCount).toBeGreaterThan(0);
+    expect(afterSecond.tileMeshBuildCount).toBe(afterFirst.tileMeshBuildCount);
+    renderer.dispose();
+  });
+
   it('fails closed instead of throwing when texture upload breaks', () => {
     const gl = createFakeWebgl2Context();
     gl.texImage2D = vi.fn(() => {

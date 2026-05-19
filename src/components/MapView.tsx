@@ -111,7 +111,8 @@ const INTERACTION_DENSE_LINE_THRESHOLD = 360;
 const POINT_HIT_RADIUS_PX = 10;
 const LINE_HIT_RADIUS_PX = 8;
 const OSM_VISIBLE_TILE_BUFFER = 1;
-const OSM_INTERACTION_TILE_BUFFER = 2;
+const OSM_INTERACTION_TILE_BUFFER = 0;
+const OSM_INTERACTION_ZOOM_DELTA = 1;
 const EMPTY_MAP_LINKS: ReturnType<typeof buildObservationMapLinks> = [];
 
 type MapInteractionPhase = 'idle' | 'interacting' | 'settling';
@@ -1671,6 +1672,9 @@ const MapView: React.FC<MapViewProps> = ({
     );
     if (!Number.isFinite(zoom)) zoom = 18;
     zoom = clamp(zoom, OSM_MIN_ZOOM, OSM_MAX_ZOOM);
+    if (interactionPhase === 'interacting') {
+      zoom = clamp(zoom - OSM_INTERACTION_ZOOM_DELTA, OSM_MIN_ZOOM, OSM_MAX_ZOOM);
+    }
     const tileCount = 2 ** zoom;
     const tileBuffer =
       interactionPhase === 'interacting' ? OSM_INTERACTION_TILE_BUFFER : OSM_VISIBLE_TILE_BUFFER;
@@ -1823,7 +1827,17 @@ const MapView: React.FC<MapViewProps> = ({
         if (latestWebglRenderInputRef.current) {
           latestWebglRenderInputRef.current.tiles = latest.tiles;
         }
-        scheduleLayerRender({ basemap: true });
+        const activeDrag = dragRef.current;
+        const currentInteractionPhase =
+          latestBasemapRenderInputRef.current?.interactionPhase ?? interactionPhase;
+        const shouldDeferTileDrivenRender =
+          currentInteractionPhase === 'interacting' ||
+          (activeDrag.active && activeDrag.mode === 'pan2d');
+        if (!shouldDeferTileDrivenRender) {
+          scheduleLayerRender({ basemap: true });
+        } else {
+          noteMapViewPerfCounter('tiles:deferred-renders-during-interaction');
+        }
       },
       renderer2d === 'webgl' ? { crossOrigin: 'anonymous' } : undefined,
     );

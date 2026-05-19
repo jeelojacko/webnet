@@ -1,7 +1,11 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 
 import MapView from '../components/MapView';
+import {
+  getLatestMapViewPerfCapture,
+  resetMapViewPerfCapture,
+} from '../components/mapView/mapViewPerf';
 import { DEFAULT_INPUT } from '../defaultInput';
 import { LSAEngine } from '../engine/adjust';
 import { DEFAULT_PLANNING_MAP_STATE } from '../engine/planningMapState';
@@ -9,6 +13,22 @@ import { INDUSTRY_PARITY_CASES } from '../industryParityCases';
 import type { AdjustmentResult, PlanningMapState } from '../types';
 
 const startup = INDUSTRY_PARITY_CASES.campDesignPreanalysis.startupDefaults;
+
+type HarnessGlobal = typeof globalThis & {
+  __WEBNET_ENABLE_MAP_PERF_CAPTURE__?: boolean;
+  __WEBNET_MAP_HARNESS__?: {
+    setPerfCaptureEnabled: (_enabled: boolean) => void;
+    resetPerf: (_label: string, _metadata?: Record<string, unknown>) => void;
+    getPerf: () => ReturnType<typeof getLatestMapViewPerfCapture>;
+    getState: () => {
+      showLabels: boolean;
+      basemapMode: PlanningMapState['basemapMode'];
+      showInputPoints: boolean;
+      showObstacleLayer: boolean;
+      showBlockedAreas: boolean;
+    };
+  };
+};
 
 const buildHarnessResult = (): AdjustmentResult =>
   new LSAEngine({
@@ -111,6 +131,32 @@ export const HarnessApp: React.FC = () => {
   const [showLabels, setShowLabels] = useState(true);
   const [planningMap, setPlanningMap] = useState<PlanningMapState>(() => buildHarnessPlanningMap(result));
 
+  useEffect(() => {
+    const harnessGlobal = globalThis as HarnessGlobal;
+    harnessGlobal.__WEBNET_MAP_HARNESS__ = {
+      setPerfCaptureEnabled: (enabled: boolean) => {
+        harnessGlobal.__WEBNET_ENABLE_MAP_PERF_CAPTURE__ = enabled;
+      },
+      resetPerf: (label: string, metadata: Record<string, unknown> = {}) => {
+        harnessGlobal.__WEBNET_ENABLE_MAP_PERF_CAPTURE__ = true;
+        resetMapViewPerfCapture(label, metadata);
+      },
+      getPerf: () => getLatestMapViewPerfCapture(),
+      getState: () => ({
+        showLabels,
+        basemapMode: planningMap.basemapMode,
+        showInputPoints: planningMap.showInputPoints,
+        showObstacleLayer: planningMap.showObstacleLayer,
+        showBlockedAreas: planningMap.showBlockedAreas,
+      }),
+    };
+    return () => {
+      if (harnessGlobal.__WEBNET_MAP_HARNESS__) {
+        delete harnessGlobal.__WEBNET_MAP_HARNESS__;
+      }
+    };
+  }, [planningMap, showLabels]);
+
   if (!result.success) {
     return (
       <pre
@@ -147,6 +193,12 @@ export const HarnessApp: React.FC = () => {
         }}
       >
         <strong data-testid="map-pan-harness-ready">ready</strong>
+        <span data-testid="map-pan-harness-state">
+          labels:{showLabels ? 'on' : 'off'} osm:{planningMap.basemapMode} input:
+          {planningMap.showInputPoints ? 'on' : 'off'} obstacles:
+          {planningMap.showObstacleLayer ? 'on' : 'off'} blocked:
+          {planningMap.showBlockedAreas ? 'on' : 'off'}
+        </span>
         <label>
           <input
             data-testid="toggle-labels"
@@ -215,7 +267,6 @@ export const HarnessApp: React.FC = () => {
       </div>
       <div style={{ flex: 1, minHeight: 0, padding: 8 }}>
         <MapView
-          key={`labels:${showLabels}`}
           result={result}
           units="m"
           planningMap={planningMap}

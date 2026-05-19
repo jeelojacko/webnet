@@ -110,6 +110,12 @@ export class MapViewTileStore {
         }
         const image = new Image();
         image.decoding = 'async';
+        if ('loading' in image) {
+          (image as HTMLImageElement & { loading?: string }).loading = 'eager';
+        }
+        if ('fetchPriority' in image) {
+          (image as HTMLImageElement & { fetchPriority?: string }).fetchPriority = 'high';
+        }
         image.crossOrigin = requestedCrossOrigin;
         const entry: TileStoreEntry = {
           key: descriptor.key,

@@ -28,6 +28,11 @@ interface TextureEntry {
   signature: string;
 }
 
+interface TileMeshEntry {
+  signature: string;
+  vertices: Float32Array;
+}
+
 export interface MapViewWebgl2dRenderInput {
   interactionPhase: 'idle' | 'interacting' | 'settling';
   viewWidth: number;
@@ -49,6 +54,7 @@ export interface MapViewWebgl2dMetrics {
   renderCount: number;
   drawCallCount: number;
   textureUploadCount: number;
+  tileMeshBuildCount: number;
   lastTileCount: number;
   lastSurveyLineCount: number;
   lastPreviewLineCount: number;
@@ -294,11 +300,14 @@ export class MapViewWebgl2d {
 
   private tileTextureByKey = new Map<string, TextureEntry>();
 
+  private tileMeshByKey = new Map<string, TileMeshEntry>();
+
   private metrics: MapViewWebgl2dMetrics = {
     initCount: 0,
     renderCount: 0,
     drawCallCount: 0,
     textureUploadCount: 0,
+    tileMeshBuildCount: 0,
     lastTileCount: 0,
     lastSurveyLineCount: 0,
     lastPreviewLineCount: 0,
@@ -448,6 +457,7 @@ export class MapViewWebgl2d {
     this.canvas = null;
     this.ready = false;
     this.tileTextureByKey.clear();
+    this.tileMeshByKey.clear();
     this.tileBuffer = null;
     this.lineBuffer = null;
     this.pointBuffer = null;
@@ -502,7 +512,7 @@ export class MapViewWebgl2d {
     input.tiles.forEach((tile) => {
       const texture = this.resolveTexture(tile);
       if (!texture) return;
-      const vertices = buildTileVertexData(tile);
+      const vertices = this.resolveTileMeshVertices(tile);
       if (vertices.length === 0) return;
       gl.activeTexture(gl.TEXTURE0);
       gl.bindTexture(gl.TEXTURE_2D, texture);
@@ -661,5 +671,36 @@ export class MapViewWebgl2d {
     this.tileTextureByKey.set(tile.key, { texture, signature });
     this.metrics.textureUploadCount += 1;
     return texture;
+  }
+
+  private resolveTileMeshVertices(tile: BasemapTileRenderSurface2d): Float32Array {
+    const pointCount = tile.meshPoints.length;
+    const firstPoint = pointCount > 0 ? tile.meshPoints[0] : null;
+    const middlePoint = pointCount > 0 ? tile.meshPoints[Math.floor(pointCount * 0.5)] : null;
+    const lastPoint = pointCount > 0 ? tile.meshPoints[pointCount - 1] : null;
+    const signature = [
+      tile.meshColumns,
+      tile.meshRows,
+      tile.sourceX,
+      tile.sourceY,
+      tile.sourceWidth,
+      tile.sourceHeight,
+      tile.fallbackZoomDelta,
+      pointCount,
+      firstPoint?.x ?? 0,
+      firstPoint?.y ?? 0,
+      middlePoint?.x ?? 0,
+      middlePoint?.y ?? 0,
+      lastPoint?.x ?? 0,
+      lastPoint?.y ?? 0,
+    ].join(':');
+    const cached = this.tileMeshByKey.get(tile.key);
+    if (cached && cached.signature === signature) {
+      return cached.vertices;
+    }
+    const vertices = buildTileVertexData(tile);
+    this.tileMeshByKey.set(tile.key, { signature, vertices });
+    this.metrics.tileMeshBuildCount += 1;
+    return vertices;
   }
 }

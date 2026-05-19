@@ -152,10 +152,11 @@ The UI should treat solve results as the source of truth and avoid duplicating e
 - live drag motion is now frame-coalesced in `MapView.tsx` before it reaches the 2D pan or 3D orbit/pan update path, so dense raw `mousemove` bursts are reduced to one applied drag step per animation frame
 - `MapView.tsx` now also keeps a stable map snapshot boundary for the app shell: live `view2d` pan/zoom frames continue inside the map, but the persisted `MapViewSnapshot` only advances once 2D interaction settles back to `idle`, which avoids propagating whole-shell rerenders on every intermediate drag frame
 - during active middle-drag 2D panning, `MapView.tsx` now applies a compositor-style preview translate to a shared render-surface wrapper instead of translating each layer independently, measures drag deltas in raw client pixels instead of transformed SVG coordinates, and keeps the drag-start derived viewport/culling basis frozen until release; the actual `view2d.panX/panY` commit happens once the drag ends so survey geometry stays visually planted while the camera motion stays smooth
+- the WebGL basemap path now caches warped tile mesh vertex buffers per tile signature, requests a coarser tile zoom and lighter mesh during active interaction, and defers tile-arrival-triggered redraws until interaction settles so OSM tile churn does not fight the compositor-style pan/zoom preview
 
 Focused map profiling coverage now includes a Camp Design preanalysis matrix under `tests/map_view_camp_design_profile.test.tsx`, driven by `tests/fixtures/map_view_camp_design_profile_matrix.json` plus helper setup in `tests/helpers/campDesignMapPerfHarness.ts`, so feature-toggle and renderer comparisons can be reproduced before changing the live map stack.
 
-For real-browser interaction debugging, `map-pan-harness.html` plus `src/dev/mapPanHarness.tsx` provide a dedicated Camp startup map page with feature toggles, and `tests-browser/map-pan.spec.ts` exercises the same middle-mouse pan path in Chromium through Playwright rather than jsdom.
+For real-browser interaction debugging, `map-pan-harness.html` plus `src/dev/mapPanHarness.tsx` provide a dedicated Camp startup map page with feature toggles plus opt-in map-perf capture hooks, and the Chromium Playwright harness now covers both `tests-browser/map-pan.spec.ts` for middle-mouse pan stability and `tests-browser/map-basemap-perf.spec.ts` for OSM-on pan/zoom/toggle profiling against the live `MapView` stack.
 
 ## Data flow
 
