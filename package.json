@@ -13,6 +13,7 @@
     "test": "node scripts/runVitest.mjs",
     "test:run": "node scripts/runVitest.mjs run",
     "test:cov": "node scripts/runVitest.mjs run --coverage",
+    "test:map-browser": "playwright test tests-browser/map-pan.spec.ts",
     "harness:crs:synthetic": "node scripts/runVitest.mjs run tests/canadian_crs_harness.spec.ts",
     "parity:industry-reference": "node scripts/runVitest.mjs run tests/computational_parity_harness.test.ts",
     "adjust:cli": "tsx src/cli.ts",
@@ -37,6 +38,7 @@
     "flatted": "^3.4.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.54.2",
     "@eslint/js": "^9.39.1",
     "@types/node": "^22.10.1",
     "@types/react": "^19.2.5",

@@ -41,6 +41,26 @@ const setSvgRect = (svg: SVGSVGElement) => {
   });
 };
 
+const setMutableSvgRect = (
+  svg: SVGSVGElement,
+  rectState: { left: number; top: number; width: number; height: number },
+) => {
+  Object.defineProperty(svg, 'getBoundingClientRect', {
+    configurable: true,
+    value: () => ({
+      left: rectState.left,
+      top: rectState.top,
+      width: rectState.width,
+      height: rectState.height,
+      right: rectState.left + rectState.width,
+      bottom: rectState.top + rectState.height,
+      x: rectState.left,
+      y: rectState.top,
+      toJSON: () => ({}),
+    }),
+  });
+};
+
 const projectMapPoint2d = (
   stations: Record<string, { x: number; y: number }>,
   point: { x: number; y: number },
@@ -97,7 +117,8 @@ describe('MapView interaction quality', () => {
     expect(svg).toBeTruthy();
     expect(phaseNode).toBeTruthy();
     if (!svg || !phaseNode) throw new Error('MapView root nodes not found');
-    setSvgRect(svg);
+    const rectState = { left: 0, top: 0, width: 1000, height: 700 };
+    setMutableSvgRect(svg, rectState);
     while (rafQueue.length > 0) {
       const frame = rafQueue.shift();
       if (!frame) break;
@@ -205,7 +226,8 @@ describe('MapView interaction quality', () => {
     const svg = container.querySelector('svg') as SVGSVGElement | null;
     const phaseNode = container.querySelector('[data-map-interaction-phase]') as HTMLElement | null;
     if (!svg || !phaseNode) throw new Error('MapView root nodes not found');
-    setSvgRect(svg);
+    const rectState = { left: 0, top: 0, width: 1000, height: 700 };
+    setMutableSvgRect(svg, rectState);
     while (rafQueue.length > 0) {
       const frame = rafQueue.shift();
       if (!frame) break;
@@ -262,6 +284,8 @@ describe('MapView interaction quality', () => {
       );
       await Promise.resolve();
     });
+    rectState.left = 20;
+    rectState.top = 10;
 
     expect(phaseNode.dataset.mapInteractionPhase).toBe('idle');
     expect(Number(phaseNode.dataset.mapViewPanX ?? '0')).toBe(0);
@@ -288,8 +312,8 @@ describe('MapView interaction quality', () => {
     expect(Number(phaseNode.dataset.mapViewPanY ?? '0')).toBe(0);
     expect(Number(phaseNode.dataset.mapDerivedViewPanX ?? '0')).toBe(0);
     expect(Number(phaseNode.dataset.mapDerivedViewPanY ?? '0')).toBe(0);
-    expect(Number(phaseNode.dataset.mapPreviewPanX ?? '0')).not.toBe(0);
-    expect(Number(phaseNode.dataset.mapPreviewPanY ?? '0')).not.toBe(0);
+    expect(Number(phaseNode.dataset.mapPreviewPanX ?? '0')).toBeCloseTo(60, 6);
+    expect(Number(phaseNode.dataset.mapPreviewPanY ?? '0')).toBeCloseTo(34, 6);
     expect(snapshots.filter((snapshot) => snapshot.panX !== 0 || snapshot.panY !== 0).length).toBe(0);
 
     await act(async () => {

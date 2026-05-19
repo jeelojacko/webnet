@@ -65,6 +65,13 @@ Synthetic CRS validation remains separate:
 npm run harness:crs:synthetic
 ```
 
+For browser-only map pan regressions, there is also a focused Chromium harness:
+
+```bash
+npx playwright install
+npm run test:map-browser
+```
+
 ## Main Docs
 
 - [docs/USER_GUIDE.md](docs/USER_GUIDE.md) - beginner install-to-adjustment guide

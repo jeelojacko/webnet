@@ -342,6 +342,7 @@ const MapView: React.FC<MapViewProps> = ({
   const basemapCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const geometryCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const planningCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const renderSurfaceRef = useRef<HTMLDivElement | null>(null);
   const svgRef = useRef<SVGSVGElement | null>(null);
   const contextMenuRef = useRef<HTMLDivElement | null>(null);
   const tileStoreRef = useRef<MapViewTileStore>(new MapViewTileStore());
@@ -769,11 +770,7 @@ const MapView: React.FC<MapViewProps> = ({
       node.style.transform = translate;
       node.style.willChange = translate ? 'transform' : '';
     };
-    applyTo(webglCanvasRef.current);
-    applyTo(basemapCanvasRef.current);
-    applyTo(geometryCanvasRef.current);
-    applyTo(planningCanvasRef.current);
-    applyTo(svgRef.current);
+    applyTo(renderSurfaceRef.current);
     const container = containerRef.current;
     if (container) {
       container.dataset.mapPreviewPanX = offsetX.toFixed(6);
@@ -1130,6 +1127,20 @@ const MapView: React.FC<MapViewProps> = ({
     (clientX: number, clientY: number) => {
       if (!dragRef.current.active) return;
       noteMapViewPerfCounter(`map:drag-move:${dragRef.current.mode}`);
+      if (dragRef.current.mode === 'pan2d') {
+        const dx = clientX - dragRef.current.lastX;
+        const dy = clientY - dragRef.current.lastY;
+        dragRef.current.lastX = clientX;
+        dragRef.current.lastY = clientY;
+        markInteracting();
+        const nextPreviewOffset = {
+          x: panPreviewOffsetRef.current.x + dx,
+          y: panPreviewOffsetRef.current.y + dy,
+        };
+        panPreviewOffsetRef.current = nextPreviewOffset;
+        applyPanPreviewOffset(nextPreviewOffset.x, nextPreviewOffset.y);
+        return;
+      }
       const next = toSvgCoords(clientX, clientY);
       if (!next) return;
       const dx = next.x - dragRef.current.lastX;
@@ -1154,16 +1165,6 @@ const MapView: React.FC<MapViewProps> = ({
           activeVertex.polygonSource,
           nextVertices,
         );
-        return;
-      }
-      if (dragRef.current.mode === 'pan2d') {
-        markInteracting();
-        const nextPreviewOffset = {
-          x: panPreviewOffsetRef.current.x + dx,
-          y: panPreviewOffsetRef.current.y + dy,
-        };
-        panPreviewOffsetRef.current = nextPreviewOffset;
-        applyPanPreviewOffset(nextPreviewOffset.x, nextPreviewOffset.y);
         return;
       }
       if (effectiveMode !== '3d') return;
@@ -1284,15 +1285,18 @@ const MapView: React.FC<MapViewProps> = ({
 
   const beginDrag = useCallback(
     (modeName: DragMode, clientX: number, clientY: number) => {
-      const start = toSvgCoords(clientX, clientY);
-      if (!start) return;
       noteMapViewPerfCounter(`map:begin-drag:${modeName}`);
       if (modeName === 'pan2d') {
         panPreviewOffsetRef.current = { x: 0, y: 0 };
         panPreviewCommitViewRef.current = pendingView2dRef.current;
         applyPanPreviewOffset(0, 0);
         setFrozenDerivedView2d(pendingView2dRef.current);
+        dragRef.current = { active: true, mode: modeName, lastX: clientX, lastY: clientY };
+        setIsDragging(true);
+        return;
       }
+      const start = toSvgCoords(clientX, clientY);
+      if (!start) return;
       dragRef.current = { active: true, mode: modeName, lastX: start.x, lastY: start.y };
       setIsDragging(true);
     },
@@ -2841,38 +2845,122 @@ const MapView: React.FC<MapViewProps> = ({
         data-map-derived-view-pan-y={derivedView2d.panY.toFixed(6)}
         className="bg-slate-900 border border-slate-800 rounded overflow-hidden flex-1 min-h-0 relative"
       >
-        {effectiveMode === '2d' && (
-          <>
-            {webglEligible && (
+        <div ref={renderSurfaceRef} className="absolute inset-0">
+          {effectiveMode === '2d' && (
+            <>
+              {webglEligible && (
+                <canvas
+                  ref={webglCanvasRef}
+                  data-testid="map-webgl-canvas"
+                  className={`absolute inset-0 h-full w-full pointer-events-none ${
+                    renderer2d === 'webgl' ? '' : 'hidden'
+                  }`}
+                />
+              )}
+              {renderer2d === 'canvas' && (
+                <>
+                  <canvas
+                    ref={basemapCanvasRef}
+                    data-testid="map-base-canvas"
+                    className="absolute inset-0 h-full w-full pointer-events-none"
+                  />
+                  <canvas
+                    ref={geometryCanvasRef}
+                    data-testid="map-geometry-canvas"
+                    className="absolute inset-0 h-full w-full pointer-events-none"
+                  />
+                </>
+              )}
               <canvas
-                ref={webglCanvasRef}
-                data-testid="map-webgl-canvas"
-                className={`absolute inset-0 h-full w-full pointer-events-none ${
-                  renderer2d === 'webgl' ? '' : 'hidden'
-                }`}
+                ref={planningCanvasRef}
+                data-testid="map-planning-canvas"
+                className="absolute inset-0 h-full w-full pointer-events-none"
+              />
+            </>
+          )}
+          <svg
+            ref={svgRef}
+            viewBox={`0 0 ${VIEW_W} ${VIEW_H}`}
+            preserveAspectRatio="none"
+            shapeRendering={interactionPhase === 'interacting' ? 'optimizeSpeed' : 'geometricPrecision'}
+            className={`w-full h-full select-none ${isDragging ? 'cursor-grabbing' : effectiveMode === '3d' ? 'cursor-grab' : 'cursor-default'}`}
+            onWheel={handleWheel}
+            onClick={handleSvgClick}
+            onMouseDown={handleMouseDown}
+            onMouseUp={handleMouseUp}
+            onContextMenu={openContextMenu}
+          >
+            {effectiveMode === '2d' && (
+              <MapViewSvg2d
+                marker2d={marker2d}
+                view2d={view2d}
+                originalGeometryOpacity={originalGeometryOpacity}
+                filteredVisiblePoints2d={filteredVisiblePoints2d}
+                visiblePointLabels2d={visiblePointLabels2d}
+                labelOffset2d={labelOffset2d}
+                labelFont2d={labelFont2d}
+                labelStroke2d={labelStroke2d}
+                filteredVisibleMapLines2d={filteredVisibleMapLines2d}
+                selectedObservationId={selectedObservationId}
+                selectedObservationPairKey={selectedObservationPairKey}
+                lineWidth2d={lineWidth2d}
+                onSelectObservation={onSelectObservation}
+                selectedStationId={selectedStationId}
+                pointRadius2d={pointRadius2d}
+                transformedOverlayActive={transformedOverlayActive}
+                transformedLines2d={transformedLines2d}
+                transformedPoints2d={transformedPoints2d}
+                planningInputPoints2d={planningInputPoints2d}
+                planningPolygons2d={planningPolygons2d}
+                selectedPlanningPolygonIds={selectedPlanningPolygonIds}
+                renderPlanningPolygonBodies={false}
+                renderPlanningInputPoints={false}
+                bracePreviewPoints2d={bracePreviewPoints2d}
+                scenarioPreviewSegments2d={scenarioPreviewSegments2d}
+                renderBracePreviewMarkers={renderer2d !== 'webgl'}
+                renderScenarioPreviewSegments={renderer2d !== 'webgl'}
+                selectionBoxRect={selectionBoxRect}
+                onPlanningVertexMouseDown={handlePlanningVertexMouseDown}
+                project2d={project2d}
               />
             )}
-            {renderer2d === 'canvas' && (
+
+            {effectiveMode === '3d' && camera3d && (
+              <MapViewScene3d
+                viewWidth={VIEW_W}
+                viewHeight={VIEW_H}
+                scene3d={scene3d}
+                projected3d={projected3d}
+                projected3dById={projected3dById}
+                visiblePointLabels3d={visiblePointLabels3d}
+                project3d={project3d}
+                sceneRadius={scene3d.extents.radius}
+                maxEllipsoidSamples={MAX_ELLIPSOID_SAMPLES}
+                ellipseStroke={ellipseStroke}
+                stationFill={stationFill}
+                mapLinkByPairKey={mapLinkByPairKey}
+                selectedObservationId={selectedObservationId}
+                selectedObservationPairKey={selectedObservationPairKey}
+                onSelectObservation={onSelectObservation}
+                selectedStationId={selectedStationId}
+                onSelectStation={onSelectStation}
+              />
+            )}
+
+            {points.length === 0 && (
               <>
-                <canvas
-                  ref={basemapCanvasRef}
-                  data-testid="map-base-canvas"
-                  className="absolute inset-0 h-full w-full pointer-events-none"
-                />
-                <canvas
-                  ref={geometryCanvasRef}
-                  data-testid="map-geometry-canvas"
-                  className="absolute inset-0 h-full w-full pointer-events-none"
-                />
+                <text x={VIEW_W / 2} y={VIEW_H / 2 - 18} textAnchor="middle" fill="#94a3b8" fontSize={18}>
+                  No stations to display
+                </text>
+                {onLoadInputPoints && (
+                  <text x={VIEW_W / 2} y={VIEW_H / 2 + 12} textAnchor="middle" fill="#f9a8d4" fontSize={13}>
+                    Use "Load points" to populate the planning map before the first run.
+                  </text>
+                )}
               </>
             )}
-            <canvas
-              ref={planningCanvasRef}
-              data-testid="map-planning-canvas"
-              className="absolute inset-0 h-full w-full pointer-events-none"
-            />
-          </>
-        )}
+          </svg>
+        </div>
         {effectiveMode === '3d' && (
           <div className="absolute right-2 top-2 z-10 rounded border border-slate-700/80 bg-slate-900/85 p-1">
             <div className="grid grid-cols-2 gap-1 text-[10px]">
@@ -2954,89 +3042,6 @@ const MapView: React.FC<MapViewProps> = ({
             angleBetween={angleBetween}
           />
         )}
-        <svg
-          ref={svgRef}
-          viewBox={`0 0 ${VIEW_W} ${VIEW_H}`}
-          preserveAspectRatio="none"
-          shapeRendering={interactionPhase === 'interacting' ? 'optimizeSpeed' : 'geometricPrecision'}
-          className={`w-full h-full select-none ${isDragging ? 'cursor-grabbing' : effectiveMode === '3d' ? 'cursor-grab' : 'cursor-default'}`}
-          onWheel={handleWheel}
-          onClick={handleSvgClick}
-          onMouseDown={handleMouseDown}
-          onMouseUp={handleMouseUp}
-          onMouseLeave={stopDrag}
-          onContextMenu={openContextMenu}
-        >
-          {effectiveMode === '2d' && (
-            <MapViewSvg2d
-              marker2d={marker2d}
-              view2d={view2d}
-              originalGeometryOpacity={originalGeometryOpacity}
-              filteredVisiblePoints2d={filteredVisiblePoints2d}
-              visiblePointLabels2d={visiblePointLabels2d}
-              labelOffset2d={labelOffset2d}
-              labelFont2d={labelFont2d}
-              labelStroke2d={labelStroke2d}
-              filteredVisibleMapLines2d={filteredVisibleMapLines2d}
-              selectedObservationId={selectedObservationId}
-              selectedObservationPairKey={selectedObservationPairKey}
-              lineWidth2d={lineWidth2d}
-              onSelectObservation={onSelectObservation}
-              selectedStationId={selectedStationId}
-              pointRadius2d={pointRadius2d}
-              transformedOverlayActive={transformedOverlayActive}
-              transformedLines2d={transformedLines2d}
-              transformedPoints2d={transformedPoints2d}
-              planningInputPoints2d={planningInputPoints2d}
-              planningPolygons2d={planningPolygons2d}
-              selectedPlanningPolygonIds={selectedPlanningPolygonIds}
-              renderPlanningPolygonBodies={false}
-              renderPlanningInputPoints={false}
-              bracePreviewPoints2d={bracePreviewPoints2d}
-              scenarioPreviewSegments2d={scenarioPreviewSegments2d}
-              renderBracePreviewMarkers={renderer2d !== 'webgl'}
-              renderScenarioPreviewSegments={renderer2d !== 'webgl'}
-              selectionBoxRect={selectionBoxRect}
-              onPlanningVertexMouseDown={handlePlanningVertexMouseDown}
-              project2d={project2d}
-            />
-          )}
-
-          {effectiveMode === '3d' && camera3d && (
-            <MapViewScene3d
-              viewWidth={VIEW_W}
-              viewHeight={VIEW_H}
-              scene3d={scene3d}
-              projected3d={projected3d}
-              projected3dById={projected3dById}
-              visiblePointLabels3d={visiblePointLabels3d}
-              project3d={project3d}
-              sceneRadius={scene3d.extents.radius}
-              maxEllipsoidSamples={MAX_ELLIPSOID_SAMPLES}
-              ellipseStroke={ellipseStroke}
-              stationFill={stationFill}
-              mapLinkByPairKey={mapLinkByPairKey}
-              selectedObservationId={selectedObservationId}
-              selectedObservationPairKey={selectedObservationPairKey}
-              onSelectObservation={onSelectObservation}
-              selectedStationId={selectedStationId}
-              onSelectStation={onSelectStation}
-            />
-          )}
-
-          {points.length === 0 && (
-            <>
-              <text x={VIEW_W / 2} y={VIEW_H / 2 - 18} textAnchor="middle" fill="#94a3b8" fontSize={18}>
-                No stations to display
-              </text>
-              {onLoadInputPoints && (
-                <text x={VIEW_W / 2} y={VIEW_H / 2 + 12} textAnchor="middle" fill="#f9a8d4" fontSize={13}>
-                  Use "Load points" to populate the planning map before the first run.
-                </text>
-              )}
-            </>
-          )}
-        </svg>
         {effectiveMode === '2d' && planningMap.basemapMode === 'osm' && (
           <a
             href="https://www.openstreetmap.org/copyright"

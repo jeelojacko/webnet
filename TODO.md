@@ -1,3 +1,5 @@
+- [x] Map browser pan-debug batch (May 2026): fix real-browser 2D pan delta/cancel issues and add a Camp startup browser harness for repeatable middle-mouse pan profiling outside jsdom.
+
 - [x] Map compositor-pan preview batch (May 2026): stop recomputing live 2D pan frames during drag and instead translate the render layers together as one preview slab, then commit the pan once on drag end.
 
 - [x] Map pan-overlay stabilization batch (May 2026): freeze the 2D derived SVG/culling basis during active middle-drag pan so the overlay moves as one stable slab instead of popping and jittering while the live transform updates.
