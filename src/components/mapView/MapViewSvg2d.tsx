@@ -58,6 +58,12 @@ interface ScenarioPreviewSegment2d {
   active: boolean;
 }
 
+const EMPTY_PLANNING_INPUT_POINTS: PlanningInputPoint2d[] = [];
+const EMPTY_PLANNING_POLYGONS: PlanningPolygon2d[] = [];
+const EMPTY_SELECTED_PLANNING_POLYGON_IDS: string[] = [];
+const EMPTY_BRACE_PREVIEW_POINTS: BracePreviewPoint2d[] = [];
+const EMPTY_SCENARIO_PREVIEW_SEGMENTS: ScenarioPreviewSegment2d[] = [];
+
 interface MapViewSvg2dProps {
   marker2d: number;
   view2d: View2dState;
@@ -101,269 +107,309 @@ interface MapViewSvg2dProps {
   project2d: (_x: number, _y: number) => { x: number; y: number };
 }
 
-const MapViewSvg2d: React.FC<MapViewSvg2dProps> = ({
-  marker2d,
-  view2d,
-  originalGeometryOpacity,
+type LabelLayerProps = Pick<
+  MapViewSvg2dProps,
+  | 'filteredVisiblePoints2d'
+  | 'visiblePointLabels2d'
+  | 'labelOffset2d'
+  | 'labelFont2d'
+  | 'labelStroke2d'
+>;
+
+type PlanningLayerProps = Pick<
+  MapViewSvg2dProps,
+  | 'planningPolygons2d'
+  | 'selectedPlanningPolygonIds'
+  | 'renderPlanningPolygonBodies'
+  | 'lineWidth2d'
+  | 'pointRadius2d'
+  | 'onPlanningVertexMouseDown'
+  | 'planningInputPoints2d'
+  | 'renderPlanningInputPoints'
+  | 'scenarioPreviewSegments2d'
+  | 'renderScenarioPreviewSegments'
+  | 'bracePreviewPoints2d'
+  | 'renderBracePreviewMarkers'
+  | 'labelOffset2d'
+  | 'labelFont2d'
+  | 'labelStroke2d'
+>;
+
+type SelectionLayerProps = Pick<
+  MapViewSvg2dProps,
+  | 'filteredVisibleMapLines2d'
+  | 'selectedObservationId'
+  | 'selectedObservationPairKey'
+  | 'lineWidth2d'
+  | 'onSelectObservation'
+  | 'selectedStationId'
+  | 'filteredVisiblePoints2d'
+  | 'pointRadius2d'
+>;
+
+type TransformedOverlayLayerProps = Pick<
+  MapViewSvg2dProps,
+  | 'transformedLines2d'
+  | 'project2d'
+  | 'lineWidth2d'
+  | 'transformedPoints2d'
+  | 'pointRadius2d'
+  | 'visiblePointLabels2d'
+  | 'labelOffset2d'
+  | 'labelFont2d'
+  | 'labelStroke2d'
+>;
+
+const SvgLabelLayer = React.memo(function SvgLabelLayer({
   filteredVisiblePoints2d,
   visiblePointLabels2d,
   labelOffset2d,
   labelFont2d,
   labelStroke2d,
+}: LabelLayerProps) {
+  return measureMapViewPerf('svg:labels', () => {
+    noteMapViewPerfCounter('svg:labels:renders');
+    return (
+      <>
+        {filteredVisiblePoints2d
+          .filter((point) => visiblePointLabels2d.has(point.id))
+          .map((point) => (
+            <text
+              key={`label-${point.id}`}
+              data-map-label={point.id}
+              x={point.x + labelOffset2d}
+              y={point.y - labelOffset2d}
+              fontSize={labelFont2d}
+              fill="#e2e8f0"
+              stroke="#020617"
+              strokeWidth={labelStroke2d}
+              paintOrder="stroke"
+            >
+              {point.id}
+            </text>
+          ))}
+      </>
+    );
+  });
+});
+
+const SvgPlanningLayer = React.memo(function SvgPlanningLayer({
+  planningPolygons2d = EMPTY_PLANNING_POLYGONS,
+  selectedPlanningPolygonIds = EMPTY_SELECTED_PLANNING_POLYGON_IDS,
+  renderPlanningPolygonBodies = true,
+  lineWidth2d,
+  pointRadius2d,
+  onPlanningVertexMouseDown,
+  planningInputPoints2d = EMPTY_PLANNING_INPUT_POINTS,
+  renderPlanningInputPoints = true,
+  scenarioPreviewSegments2d = EMPTY_SCENARIO_PREVIEW_SEGMENTS,
+  renderScenarioPreviewSegments = true,
+  bracePreviewPoints2d = EMPTY_BRACE_PREVIEW_POINTS,
+  renderBracePreviewMarkers = true,
+  labelOffset2d,
+  labelFont2d,
+  labelStroke2d,
+}: PlanningLayerProps) {
+  return measureMapViewPerf('svg:planning-layer', () => {
+    noteMapViewPerfCounter('svg:planning-layer:renders');
+    return (
+      <>
+        {planningPolygons2d
+          .filter(
+            (polygon) =>
+              renderPlanningPolygonBodies || selectedPlanningPolygonIds.includes(polygon.id),
+          )
+          .map((polygon) => (
+            <polygon
+              key={`planning-polygon-${polygon.id}`}
+              data-planning-polygon-id={polygon.id}
+              data-planning-polygon-source={polygon.source}
+              data-planning-polygon-label={polygon.label || polygon.kind}
+              points={polygon.pointsAttr}
+              fill={
+                polygon.source === 'user'
+                  ? 'rgba(244,114,182,0.20)'
+                  : polygon.kind === 'wooded'
+                    ? 'rgba(74,222,128,0.16)'
+                    : 'rgba(148,163,184,0.16)'
+              }
+              stroke={
+                polygon.source === 'user'
+                  ? '#f9a8d4'
+                  : polygon.kind === 'wooded'
+                    ? '#86efac'
+                    : '#cbd5e1'
+              }
+              strokeWidth={
+                selectedPlanningPolygonIds.includes(polygon.id)
+                  ? pointRadius2d * 0.34
+                  : pointRadius2d * 0.18
+              }
+              pointerEvents="none"
+            >
+              <title>{polygon.label || polygon.kind}</title>
+            </polygon>
+          ))}
+
+        {planningPolygons2d
+          .filter(
+            (polygon) =>
+              selectedPlanningPolygonIds.length === 1 &&
+              selectedPlanningPolygonIds[0] === polygon.id,
+          )
+          .flatMap((polygon) =>
+            polygon.vertices.map((vertex, vertexIndex) => (
+              <circle
+                key={`planning-vertex-${polygon.id}-${vertexIndex}`}
+                data-planning-vertex={`${polygon.id}:${vertexIndex}`}
+                data-planning-polygon-source={polygon.source}
+                cx={vertex.x}
+                cy={vertex.y}
+                r={pointRadius2d * 0.5}
+                fill="#fde68a"
+                stroke="#f59e0b"
+                strokeWidth={pointRadius2d * 0.12}
+                onMouseDown={(event) => onPlanningVertexMouseDown?.(polygon.id, vertexIndex, event)}
+              />
+            )),
+          )}
+
+        {renderPlanningInputPoints &&
+          planningInputPoints2d.map((point) => (
+            <circle
+              key={`planning-input-${point.stationId}`}
+              data-map-input-point={point.stationId}
+              cx={point.x}
+              cy={point.y}
+              r={pointRadius2d * 0.45}
+              fill="#fef3c7"
+              stroke="#f59e0b"
+              strokeWidth={pointRadius2d * 0.12}
+            />
+          ))}
+
+        {renderScenarioPreviewSegments &&
+          scenarioPreviewSegments2d.map((segment) => (
+            <line
+              key={`scenario-segment-${segment.scenarioId}-${segment.fromStationId}-${segment.toStationId}`}
+              x1={segment.x1}
+              y1={segment.y1}
+              x2={segment.x2}
+              y2={segment.y2}
+              stroke={segment.kind === 'cross-tie' ? '#fda4af' : segment.active ? '#f472b6' : '#f9a8d4'}
+              strokeDasharray={segment.kind === 'cross-tie' ? '4 3' : '2 2'}
+              strokeWidth={segment.active ? lineWidth2d * 1.1 : lineWidth2d * 0.8}
+              opacity={0.9}
+            />
+          ))}
+
+        {bracePreviewPoints2d.map((point) => (
+          <g key={`brace-preview-${point.scenarioId}`}>
+            {renderBracePreviewMarkers && (
+              <circle
+                data-map-brace-preview={point.stationId}
+                cx={point.x}
+                cy={point.y}
+                r={pointRadius2d * 1.15}
+                fill={point.active ? '#f472b6' : '#f9a8d4'}
+                stroke={point.active ? '#fdf2f8' : '#fbcfe8'}
+                strokeWidth={point.active ? pointRadius2d * 0.38 : pointRadius2d * 0.25}
+              >
+                <title>{point.templateLabel}</title>
+              </circle>
+            )}
+            <text
+              data-map-label={point.stationId}
+              x={point.x + labelOffset2d}
+              y={point.y - labelOffset2d}
+              fontSize={labelFont2d}
+              fill={point.active ? '#fdf2f8' : '#fce7f3'}
+              stroke="#4a044e"
+              strokeWidth={labelStroke2d}
+              paintOrder="stroke"
+            >
+              {point.stationId}
+            </text>
+          </g>
+        ))}
+      </>
+    );
+  });
+});
+
+const SvgSelectionLayer = React.memo(function SvgSelectionLayer({
   filteredVisibleMapLines2d,
   selectedObservationId,
   selectedObservationPairKey,
   lineWidth2d,
   onSelectObservation,
   selectedStationId,
+  filteredVisiblePoints2d,
   pointRadius2d,
-  transformedOverlayActive,
-  transformedLines2d,
-  transformedPoints2d,
-  planningInputPoints2d = [],
-  planningPolygons2d = [],
-  selectedPlanningPolygonIds = [],
-  renderPlanningPolygonBodies = true,
-  renderPlanningInputPoints = true,
-  bracePreviewPoints2d = [],
-  scenarioPreviewSegments2d = [],
-  renderBracePreviewMarkers = true,
-  renderScenarioPreviewSegments = true,
-  selectionBoxRect = null,
-  onPlanningVertexMouseDown,
-  project2d,
-}) =>
-  measureMapViewPerf('svg:render', () => {
-    noteMapViewPerfCounter('svg:renders');
-    noteMapViewPerfMetadata(
-      'svg:last-label-count',
-      filteredVisiblePoints2d.filter((point) => visiblePointLabels2d.has(point.id)).length,
-    );
-    noteMapViewPerfMetadata('svg:last-line-count', filteredVisibleMapLines2d.length);
-    noteMapViewPerfMetadata('svg:last-planning-polygon-count', planningPolygons2d.length);
-    noteMapViewPerfMetadata('svg:last-selection-box-active', selectionBoxRect != null);
+}: SelectionLayerProps) {
+  return measureMapViewPerf('svg:selection-layer', () => {
+    noteMapViewPerfCounter('svg:selection-layer:renders');
     return (
       <>
-    <defs>
-      <marker
-        id="arrow"
-        markerWidth={marker2d}
-        markerHeight={marker2d}
-        refX={marker2d * 0.5}
-        refY={marker2d * 0.5}
-        orient="auto"
-        markerUnits="userSpaceOnUse"
-      >
-        <path d={`M0,0 L0,${marker2d} L${marker2d},${marker2d * 0.5} z`} fill="#64748b" />
-      </marker>
-    </defs>
-
-    <g
-      transform={`translate(${view2d.panX} ${view2d.panY}) scale(${view2d.zoom})`}
-      opacity={originalGeometryOpacity}
-    >
-      {filteredVisiblePoints2d
-        .filter((point) => visiblePointLabels2d.has(point.id))
-        .map((point) => (
-          <text
-            key={`label-${point.id}`}
-            data-map-label={point.id}
-            x={point.x + labelOffset2d}
-            y={point.y - labelOffset2d}
-            fontSize={labelFont2d}
-            fill="#e2e8f0"
-            stroke="#020617"
-            strokeWidth={labelStroke2d}
-            paintOrder="stroke"
-          >
-            {point.id}
-          </text>
-        ))}
-    </g>
-
-    <g transform={`translate(${view2d.panX} ${view2d.panY}) scale(${view2d.zoom})`}>
-      {planningPolygons2d
-        .filter(
-          (polygon) =>
-            renderPlanningPolygonBodies || selectedPlanningPolygonIds.includes(polygon.id),
-        )
-        .map((polygon) => (
-        <polygon
-          key={`planning-polygon-${polygon.id}`}
-          data-planning-polygon-id={polygon.id}
-          data-planning-polygon-source={polygon.source}
-          data-planning-polygon-label={polygon.label || polygon.kind}
-          points={polygon.pointsAttr}
-          fill={
-            renderPlanningPolygonBodies
-              ? polygon.source === 'user'
-                ? 'rgba(244,114,182,0.20)'
-                : polygon.kind === 'wooded'
-                  ? 'rgba(74,222,128,0.16)'
-                  : 'rgba(148,163,184,0.16)'
-              : polygon.source === 'user'
-                ? 'rgba(244,114,182,0.20)'
-                : polygon.kind === 'wooded'
-                  ? 'rgba(74,222,128,0.16)'
-                  : 'rgba(148,163,184,0.16)'
-          }
-          stroke={
-            polygon.source === 'user'
-              ? '#f9a8d4'
-              : polygon.kind === 'wooded'
-                ? '#86efac'
-                : '#cbd5e1'
-          }
-          strokeWidth={
-            selectedPlanningPolygonIds.includes(polygon.id)
-              ? pointRadius2d * 0.34
-              : pointRadius2d * 0.18
-          }
-          pointerEvents="none"
-        >
-          <title>{polygon.label || polygon.kind}</title>
-        </polygon>
-        ))}
-
-      {planningPolygons2d
-        .filter((polygon) => selectedPlanningPolygonIds.length === 1 && selectedPlanningPolygonIds[0] === polygon.id)
-        .flatMap((polygon) =>
-          polygon.vertices.map((vertex, vertexIndex) => (
-            <circle
-              key={`planning-vertex-${polygon.id}-${vertexIndex}`}
-              data-planning-vertex={`${polygon.id}:${vertexIndex}`}
-              data-planning-polygon-source={polygon.source}
-              cx={vertex.x}
-              cy={vertex.y}
-              r={pointRadius2d * 0.5}
-              fill="#fde68a"
-              stroke="#f59e0b"
-              strokeWidth={pointRadius2d * 0.12}
-              onMouseDown={(event) => onPlanningVertexMouseDown?.(polygon.id, vertexIndex, event)}
-            />
-          )),
-        )}
-
-      {renderPlanningInputPoints &&
-        planningInputPoints2d.map((point) => (
-        <circle
-          key={`planning-input-${point.stationId}`}
-          data-map-input-point={point.stationId}
-          cx={point.x}
-          cy={point.y}
-          r={pointRadius2d * 0.45}
-          fill="#fef3c7"
-          stroke="#f59e0b"
-          strokeWidth={pointRadius2d * 0.12}
-        />
-        ))}
-
-      {renderScenarioPreviewSegments &&
-        scenarioPreviewSegments2d.map((segment) => (
-        <line
-          key={`scenario-segment-${segment.scenarioId}-${segment.fromStationId}-${segment.toStationId}`}
-          x1={segment.x1}
-          y1={segment.y1}
-          x2={segment.x2}
-          y2={segment.y2}
-          stroke={segment.kind === 'cross-tie' ? '#fda4af' : segment.active ? '#f472b6' : '#f9a8d4'}
-          strokeDasharray={segment.kind === 'cross-tie' ? '4 3' : '2 2'}
-          strokeWidth={segment.active ? lineWidth2d * 1.1 : lineWidth2d * 0.8}
-          opacity={0.9}
-        />
-        ))}
-
-      {bracePreviewPoints2d.map((point) => (
-        <g key={`brace-preview-${point.scenarioId}`}>
-          {renderBracePreviewMarkers && (
-            <circle
-              data-map-brace-preview={point.stationId}
-              cx={point.x}
-              cy={point.y}
-              r={pointRadius2d * 1.15}
-              fill={point.active ? '#f472b6' : '#f9a8d4'}
-              stroke={point.active ? '#fdf2f8' : '#fbcfe8'}
-              strokeWidth={point.active ? pointRadius2d * 0.38 : pointRadius2d * 0.25}
-            >
-              <title>{point.templateLabel}</title>
-            </circle>
-          )}
-          <text
-            data-map-label={point.stationId}
-            x={point.x + labelOffset2d}
-            y={point.y - labelOffset2d}
-            fontSize={labelFont2d}
-            fill={point.active ? '#fdf2f8' : '#fce7f3'}
-            stroke="#4a044e"
-            strokeWidth={labelStroke2d}
-            paintOrder="stroke"
-          >
-            {point.stationId}
-          </text>
-        </g>
-      ))}
-
-      {filteredVisibleMapLines2d
-        .filter(
-          (line) =>
-            line.observationId === selectedObservationId ||
-            (selectedObservationPairKey != null && line.pairKey === selectedObservationPairKey),
-        )
-        .map((line) => (
-          <line
-            key={`${line.key}-selected`}
-            data-map-observation={line.observationId}
-            x1={line.x1}
-            y1={line.y1}
-            x2={line.x2}
-            y2={line.y2}
-            stroke="#22d3ee"
-            strokeWidth={lineWidth2d * 2}
-            markerEnd="url(#arrow)"
-            opacity={1}
-            onClick={() => onSelectObservation?.(line.observationId)}
-            className={onSelectObservation ? 'cursor-pointer' : undefined}
-          />
-        ))}
-
-      {selectedStationId &&
-        filteredVisiblePoints2d
-          .filter((point) => point.id === selectedStationId)
-          .map((point) => (
-            <circle
-              key={`selected-station-${point.id}`}
-              data-map-station-selection={point.id}
-              cx={point.x}
-              cy={point.y}
-              r={pointRadius2d * 1.45}
-              fill="none"
+        {filteredVisibleMapLines2d
+          .filter(
+            (line) =>
+              line.observationId === selectedObservationId ||
+              (selectedObservationPairKey != null && line.pairKey === selectedObservationPairKey),
+          )
+          .map((line) => (
+            <line
+              key={`${line.key}-selected`}
+              data-map-observation={line.observationId}
+              x1={line.x1}
+              y1={line.y1}
+              x2={line.x2}
+              y2={line.y2}
               stroke="#22d3ee"
-              strokeWidth={pointRadius2d * 0.6}
-              pointerEvents="none"
+              strokeWidth={lineWidth2d * 2}
+              markerEnd="url(#arrow)"
+              opacity={1}
+              onClick={() => onSelectObservation?.(line.observationId)}
+              className={onSelectObservation ? 'cursor-pointer' : undefined}
             />
           ))}
-    </g>
 
-    {selectionBoxRect && (
-      <rect
-        data-map-selection-box="true"
-        data-map-selection-mode={selectionBoxRect.mode}
-        x={selectionBoxRect.x}
-        y={selectionBoxRect.y}
-        width={selectionBoxRect.width}
-        height={selectionBoxRect.height}
-        fill={
-          selectionBoxRect.mode === 'window' ? 'rgba(34,211,238,0.12)' : 'rgba(251,191,36,0.14)'
-        }
-        stroke={selectionBoxRect.mode === 'window' ? '#67e8f9' : '#fbbf24'}
-        strokeDasharray="6 4"
-        strokeWidth={Math.max(1, pointRadius2d * 0.18)}
-        vectorEffect="non-scaling-stroke"
-      />
-    )}
+        {selectedStationId &&
+          filteredVisiblePoints2d
+            .filter((point) => point.id === selectedStationId)
+            .map((point) => (
+              <circle
+                key={`selected-station-${point.id}`}
+                data-map-station-selection={point.id}
+                cx={point.x}
+                cy={point.y}
+                r={pointRadius2d * 1.45}
+                fill="none"
+                stroke="#22d3ee"
+                strokeWidth={pointRadius2d * 0.6}
+                pointerEvents="none"
+              />
+            ))}
+      </>
+    );
+  });
+});
 
-    {transformedOverlayActive && (
-      <g transform={`translate(${view2d.panX} ${view2d.panY}) scale(${view2d.zoom})`}>
+const SvgTransformedOverlayLayer = React.memo(function SvgTransformedOverlayLayer({
+  transformedLines2d,
+  project2d,
+  lineWidth2d,
+  transformedPoints2d,
+  pointRadius2d,
+  visiblePointLabels2d,
+  labelOffset2d,
+  labelFont2d,
+  labelStroke2d,
+}: TransformedOverlayLayerProps) {
+  return measureMapViewPerf('svg:transformed-overlay', () => {
+    noteMapViewPerfCounter('svg:transformed-overlay:renders');
+    return (
+      <>
         {transformedLines2d.map((line) => {
           const p1 = project2d(line.x1, line.y1);
           const p2 = project2d(line.x2, line.y2);
@@ -408,9 +454,145 @@ const MapViewSvg2d: React.FC<MapViewSvg2dProps> = ({
             </g>
           );
         })}
-      </g>
-    )}
-  </>
+      </>
+    );
+  });
+});
+
+const MapViewSvg2d: React.FC<MapViewSvg2dProps> = ({
+  marker2d,
+  view2d,
+  originalGeometryOpacity,
+  filteredVisiblePoints2d,
+  visiblePointLabels2d,
+  labelOffset2d,
+  labelFont2d,
+  labelStroke2d,
+  filteredVisibleMapLines2d,
+  selectedObservationId,
+  selectedObservationPairKey,
+  lineWidth2d,
+  onSelectObservation,
+  selectedStationId,
+  pointRadius2d,
+  transformedOverlayActive,
+  transformedLines2d,
+  transformedPoints2d,
+  planningInputPoints2d = EMPTY_PLANNING_INPUT_POINTS,
+  planningPolygons2d = EMPTY_PLANNING_POLYGONS,
+  selectedPlanningPolygonIds = EMPTY_SELECTED_PLANNING_POLYGON_IDS,
+  renderPlanningPolygonBodies = true,
+  renderPlanningInputPoints = true,
+  bracePreviewPoints2d = EMPTY_BRACE_PREVIEW_POINTS,
+  scenarioPreviewSegments2d = EMPTY_SCENARIO_PREVIEW_SEGMENTS,
+  renderBracePreviewMarkers = true,
+  renderScenarioPreviewSegments = true,
+  selectionBoxRect = null,
+  onPlanningVertexMouseDown,
+  project2d,
+}) =>
+  measureMapViewPerf('svg:render', () => {
+    noteMapViewPerfCounter('svg:renders');
+    noteMapViewPerfMetadata(
+      'svg:last-label-count',
+      filteredVisiblePoints2d.filter((point) => visiblePointLabels2d.has(point.id)).length,
+    );
+    noteMapViewPerfMetadata('svg:last-line-count', filteredVisibleMapLines2d.length);
+    noteMapViewPerfMetadata('svg:last-planning-polygon-count', planningPolygons2d.length);
+    noteMapViewPerfMetadata('svg:last-selection-box-active', selectionBoxRect != null);
+    const viewTransform = `translate(${view2d.panX} ${view2d.panY}) scale(${view2d.zoom})`;
+    return (
+      <>
+        <defs>
+          <marker
+            id="arrow"
+            markerWidth={marker2d}
+            markerHeight={marker2d}
+            refX={marker2d * 0.5}
+            refY={marker2d * 0.5}
+            orient="auto"
+            markerUnits="userSpaceOnUse"
+          >
+            <path d={`M0,0 L0,${marker2d} L${marker2d},${marker2d * 0.5} z`} fill="#64748b" />
+          </marker>
+        </defs>
+
+        <g transform={viewTransform} opacity={originalGeometryOpacity}>
+          <SvgLabelLayer
+            filteredVisiblePoints2d={filteredVisiblePoints2d}
+            visiblePointLabels2d={visiblePointLabels2d}
+            labelOffset2d={labelOffset2d}
+            labelFont2d={labelFont2d}
+            labelStroke2d={labelStroke2d}
+          />
+        </g>
+
+        <g transform={viewTransform}>
+          <SvgPlanningLayer
+            planningPolygons2d={planningPolygons2d}
+            selectedPlanningPolygonIds={selectedPlanningPolygonIds}
+            renderPlanningPolygonBodies={renderPlanningPolygonBodies}
+            lineWidth2d={lineWidth2d}
+            pointRadius2d={pointRadius2d}
+            onPlanningVertexMouseDown={onPlanningVertexMouseDown}
+            planningInputPoints2d={planningInputPoints2d}
+            renderPlanningInputPoints={renderPlanningInputPoints}
+            scenarioPreviewSegments2d={scenarioPreviewSegments2d}
+            renderScenarioPreviewSegments={renderScenarioPreviewSegments}
+            bracePreviewPoints2d={bracePreviewPoints2d}
+            renderBracePreviewMarkers={renderBracePreviewMarkers}
+            labelOffset2d={labelOffset2d}
+            labelFont2d={labelFont2d}
+            labelStroke2d={labelStroke2d}
+          />
+          <SvgSelectionLayer
+            filteredVisibleMapLines2d={filteredVisibleMapLines2d}
+            selectedObservationId={selectedObservationId}
+            selectedObservationPairKey={selectedObservationPairKey}
+            lineWidth2d={lineWidth2d}
+            onSelectObservation={onSelectObservation}
+            selectedStationId={selectedStationId}
+            filteredVisiblePoints2d={filteredVisiblePoints2d}
+            pointRadius2d={pointRadius2d}
+          />
+        </g>
+
+        {selectionBoxRect && (
+          <rect
+            data-map-selection-box="true"
+            data-map-selection-mode={selectionBoxRect.mode}
+            x={selectionBoxRect.x}
+            y={selectionBoxRect.y}
+            width={selectionBoxRect.width}
+            height={selectionBoxRect.height}
+            fill={
+              selectionBoxRect.mode === 'window'
+                ? 'rgba(34,211,238,0.12)'
+                : 'rgba(251,191,36,0.14)'
+            }
+            stroke={selectionBoxRect.mode === 'window' ? '#67e8f9' : '#fbbf24'}
+            strokeDasharray="6 4"
+            strokeWidth={Math.max(1, pointRadius2d * 0.18)}
+            vectorEffect="non-scaling-stroke"
+          />
+        )}
+
+        {transformedOverlayActive && (
+          <g transform={viewTransform}>
+            <SvgTransformedOverlayLayer
+              transformedLines2d={transformedLines2d}
+              project2d={project2d}
+              lineWidth2d={lineWidth2d}
+              transformedPoints2d={transformedPoints2d}
+              pointRadius2d={pointRadius2d}
+              visiblePointLabels2d={visiblePointLabels2d}
+              labelOffset2d={labelOffset2d}
+              labelFont2d={labelFont2d}
+              labelStroke2d={labelStroke2d}
+            />
+          </g>
+        )}
+      </>
     );
   });
 

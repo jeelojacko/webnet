@@ -6,6 +6,10 @@ import { act } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 
 import MapViewSvg2d from '../src/components/mapView/MapViewSvg2d';
+import {
+  getLatestMapViewPerfCapture,
+  resetMapViewPerfCapture,
+} from '../src/components/mapView/mapViewPerf';
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -120,5 +124,82 @@ describe('MapViewSvg2d', () => {
       root.unmount();
     });
     container.remove();
+  });
+
+  it('keeps heavy world-content sections memoized when only view2d changes', async () => {
+    (globalThis as { __WEBNET_ENABLE_MAP_PERF_CAPTURE__?: boolean }).__WEBNET_ENABLE_MAP_PERF_CAPTURE__ =
+      true;
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root: Root = createRoot(container);
+    resetMapViewPerfCapture('svg-view-transform-only');
+
+    const baseProps = {
+      marker2d: 6,
+      originalGeometryOpacity: 1,
+      filteredVisiblePoints2d: [
+        { id: 'A', fixed: true, x: 100, y: 100, screenX: 100, screenY: 100 },
+      ],
+      visiblePointLabels2d: new Set(['A']),
+      labelOffset2d: 10,
+      labelFont2d: 12,
+      labelStroke2d: 1,
+      filteredVisibleMapLines2d: [
+        {
+          key: 'A:B',
+          observationId: 7,
+          pairKey: 'A|B',
+          sourceLine: 1,
+          fromId: 'A',
+          toId: 'B',
+          x1: 100,
+          y1: 100,
+          x2: 150,
+          y2: 150,
+          screenX1: 100,
+          screenY1: 100,
+          screenX2: 150,
+          screenY2: 150,
+        },
+      ],
+      selectedObservationId: 7,
+      selectedObservationPairKey: 'A|B',
+      lineWidth2d: 1,
+      selectedStationId: 'A',
+      pointRadius2d: 4,
+      transformedOverlayActive: false,
+      transformedLines2d: [] as Array<{ key: string; x1: number; y1: number; x2: number; y2: number }>,
+      transformedPoints2d: [] as Array<{ id: string; x: number; y: number; fixed: boolean }>,
+      project2d: (x: number, y: number) => ({ x, y }),
+    };
+
+    await act(async () => {
+      root.render(
+        <svg viewBox="0 0 1000 700">
+          <MapViewSvg2d {...baseProps} view2d={{ zoom: 1, panX: 0, panY: 0 }} />
+        </svg>,
+      );
+    });
+
+    await act(async () => {
+      root.render(
+        <svg viewBox="0 0 1000 700">
+          <MapViewSvg2d {...baseProps} view2d={{ zoom: 1.5, panX: 20, panY: 10 }} />
+        </svg>,
+      );
+    });
+
+    const snapshot = getLatestMapViewPerfCapture();
+    expect(snapshot?.counters['svg:renders']).toBe(2);
+    expect(snapshot?.counters['svg:labels:renders']).toBe(1);
+    expect(snapshot?.counters['svg:selection-layer:renders']).toBe(1);
+    expect(snapshot?.counters['svg:planning-layer:renders'] ?? 0).toBeLessThanOrEqual(1);
+
+    await act(async () => {
+      root.unmount();
+    });
+    container.remove();
+    (globalThis as { __WEBNET_ENABLE_MAP_PERF_CAPTURE__?: boolean }).__WEBNET_ENABLE_MAP_PERF_CAPTURE__ =
+      false;
   });
 });

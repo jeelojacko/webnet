@@ -1,3 +1,5 @@
+- [x] Map SVG interaction render split batch (May 2026): split the 2D SVG overlay into memoized world-content sections behind cheap transform shells so live pan/zoom does not rebuild the full interaction subtree every frame.
+
 - [x] Map derived-state stage split batch (May 2026): move selection/minor-geometry filtering ahead of the 2D view transform where possible, and break the remaining derived-state work into separately measured stages so the Camp harness can isolate the next real hotspot.
 
 - [x] Map derived-state split batch (May 2026): cache base projected 2D geometry separately from view/selection filtering, then cull the current viewport in base projected space before applying the 2D view transform so pan/zoom avoids touching the full Camp network each frame.
