@@ -242,7 +242,7 @@ describe('MapView renderer mode', () => {
     container.remove();
   });
 
-  it('keeps the 2D render surface aspect-locked when the container widens', async () => {
+  it('keeps the 2D render surface aspect-locked while cover-fitting the pane when the container widens', async () => {
     (
       globalThis as {
         __WEBNET_ENABLE_WEBGL_RENDER_TEST__?: boolean;
@@ -312,11 +312,11 @@ describe('MapView renderer mode', () => {
     });
 
     const renderSurface = svg.parentElement as HTMLDivElement;
-    expect(svg.getAttribute('preserveAspectRatio')).toBe('xMidYMid meet');
-    expect(renderSurface.style.width).toBe('1000px');
-    expect(renderSurface.style.height).toBe('700px');
-    expect(renderSurface.style.left).toBe('200px');
-    expect(renderSurface.style.top).toBe('0px');
+    expect(svg.getAttribute('preserveAspectRatio')).toBe('xMidYMid slice');
+    expect(Number.parseFloat(renderSurface.style.width)).toBeCloseTo(1400, 3);
+    expect(Number.parseFloat(renderSurface.style.height)).toBeCloseTo(980, 3);
+    expect(Number.parseFloat(renderSurface.style.left)).toBeCloseTo(0, 3);
+    expect(Number.parseFloat(renderSurface.style.top)).toBeCloseTo(-140, 3);
 
     await act(async () => {
       root.unmount();

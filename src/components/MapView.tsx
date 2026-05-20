@@ -116,6 +116,8 @@ const LINE_HIT_RADIUS_PX = 8;
 const OSM_VISIBLE_TILE_BUFFER = 1;
 const OSM_INTERACTION_TILE_BUFFER = 0;
 const OSM_INTERACTION_ZOOM_DELTA = 1;
+const OSM_VISIBLE_TILE_CAP = 72;
+const OSM_INTERACTION_TILE_CAP = 42;
 const EMPTY_MAP_LINKS: ReturnType<typeof buildObservationMapLinks> = [];
 
 type MapInteractionPhase = 'idle' | 'interacting' | 'settling';
@@ -201,7 +203,7 @@ const buildRenderSurfaceLayout = (
   if (!(containerWidth > 0) || !(containerHeight > 0)) {
     return DEFAULT_RENDER_SURFACE_LAYOUT;
   }
-  const scale = Math.min(containerWidth / VIEW_W, containerHeight / VIEW_H);
+  const scale = Math.max(containerWidth / VIEW_W, containerHeight / VIEW_H);
   const width = Math.max(1, VIEW_W * scale);
   const height = Math.max(1, VIEW_H * scale);
   return {
@@ -239,6 +241,21 @@ const tileXToLongitude = (tileX: number, zoom: number): number => (tileX / 2 ** 
 const tileYToLatitude = (tileY: number, zoom: number): number => {
   const n = Math.PI - (2 * Math.PI * tileY) / 2 ** zoom;
   return (180 / Math.PI) * Math.atan(0.5 * (Math.exp(n) - Math.exp(-n)));
+};
+
+const countOsmTileDescriptorsAtZoom = (
+  minLon: number,
+  maxLon: number,
+  minLat: number,
+  maxLat: number,
+  zoom: number,
+  tileBuffer: number,
+): number => {
+  const minTileX = Math.floor(longitudeToTileX(minLon, zoom)) - tileBuffer;
+  const maxTileX = Math.floor(longitudeToTileX(maxLon, zoom)) + tileBuffer;
+  const minTileY = Math.floor(latitudeToTileY(maxLat, zoom)) - tileBuffer;
+  const maxTileY = Math.floor(latitudeToTileY(minLat, zoom)) + tileBuffer;
+  return Math.max(0, maxTileX - minTileX + 1) * Math.max(0, maxTileY - minTileY + 1);
 };
 
 const isPointInsideRect = (
@@ -1747,9 +1764,17 @@ const MapView: React.FC<MapViewProps> = ({
     if (interactionPhase === 'interacting') {
       zoom = clamp(zoom - OSM_INTERACTION_ZOOM_DELTA, OSM_MIN_ZOOM, OSM_MAX_ZOOM);
     }
-    const tileCount = 2 ** zoom;
     const tileBuffer =
       interactionPhase === 'interacting' ? OSM_INTERACTION_TILE_BUFFER : OSM_VISIBLE_TILE_BUFFER;
+    const tileCap =
+      interactionPhase === 'interacting' ? OSM_INTERACTION_TILE_CAP : OSM_VISIBLE_TILE_CAP;
+    while (
+      zoom > OSM_MIN_ZOOM &&
+      countOsmTileDescriptorsAtZoom(minLon, maxLon, minLat, maxLat, zoom, tileBuffer) > tileCap
+    ) {
+      zoom -= 1;
+    }
+    const tileCount = 2 ** zoom;
     const minTileX = Math.floor(longitudeToTileX(minLon, zoom)) - tileBuffer;
     const maxTileX = Math.floor(longitudeToTileX(maxLon, zoom)) + tileBuffer;
     const minTileY = Math.floor(latitudeToTileY(maxLat, zoom)) - tileBuffer;
@@ -3048,7 +3073,7 @@ const MapView: React.FC<MapViewProps> = ({
           <svg
             ref={svgRef}
             viewBox={`0 0 ${VIEW_W} ${VIEW_H}`}
-            preserveAspectRatio="xMidYMid meet"
+            preserveAspectRatio="xMidYMid slice"
             shapeRendering={interactionPhase === 'interacting' ? 'optimizeSpeed' : 'geometricPrecision'}
             className={`w-full h-full select-none ${isDragging ? 'cursor-grabbing' : effectiveMode === '3d' ? 'cursor-grab' : 'cursor-default'}`}
             onWheel={handleWheel}
