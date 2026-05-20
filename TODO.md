@@ -1,3 +1,5 @@
+- [x] Map synthetic-label integration batch (May 2026): make synthetic brace/setup labels obey the shared `Show labels` toggle, keep all labels on the top draw layer, and rename synthetic point IDs to clean `B-#` / `P-#` forms.
+
 - [x] Map geometry visibility batch (May 2026): strengthen default survey point/line colors against the basemap and stop 2D point/line symbols from shrinking to near-invisible sizes at higher zoom levels.
 
 - [x] Map cover-fit + zoom tile-budget batch (May 2026): switch the 2D render slab from letterboxed contain-fit to uniform cover-fit so the map pane never shows empty side/top/bottom bars, then cap interaction-time OSM tile counts and mesh density so zoom-heavy WebGL redraws draw fewer tiles and triangles.

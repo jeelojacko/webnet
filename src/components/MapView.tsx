@@ -3098,6 +3098,7 @@ const MapView: React.FC<MapViewProps> = ({
               <MapViewSvg2d
                 marker2d={marker2d}
                 view2d={view2d}
+                showLabels={showLabels}
                 originalGeometryOpacity={originalGeometryOpacity}
                 filteredVisiblePoints2d={filteredVisiblePoints2d}
                 visiblePointLabels2d={visiblePointLabels2d}

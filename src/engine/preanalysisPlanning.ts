@@ -177,22 +177,29 @@ const buildSyntheticSetupTemplateId = (left: StationId, right: StationId, rank: 
 const buildCrossTieTemplateId = (from: StationId, to: StationId): string =>
   `preanalysis-crosstie:${[from, to].sort(sortStationIds).join('|')}`;
 
-const buildBraceStationId = (left: StationId, right: StationId): string =>
-  `BRACE_${[left, right]
-    .sort(sortStationIds)
-    .map((part) => part.replace(/[^A-Za-z0-9]+/g, '_'))
-    .join('_')}`;
+const buildOrdinalSyntheticStationId = (prefix: 'B' | 'P', ordinal: number): StationId =>
+  `${prefix}-${ordinal}`;
 
-const buildSyntheticSetupStationId = (
-  prefix: 'SYNTH' | 'PROMOTE',
-  left: StationId,
-  right: StationId,
-  rank = 1,
-): string =>
-  `${prefix}_${[left, right]
-    .sort(sortStationIds)
-    .map((part) => part.replace(/[^A-Za-z0-9]+/g, '_'))
-    .join('_')}_${rank}`;
+const createSyntheticStationAllocator = (stations: StationMap) => {
+  const usedIds = new Set(Object.keys(stations));
+  let nextBraceOrdinal = 1;
+  let nextSetupOrdinal = 1;
+  const allocate = (prefix: 'B' | 'P', nextOrdinalRef: { current: number }): StationId => {
+    while (usedIds.has(buildOrdinalSyntheticStationId(prefix, nextOrdinalRef.current))) {
+      nextOrdinalRef.current += 1;
+    }
+    const stationId = buildOrdinalSyntheticStationId(prefix, nextOrdinalRef.current);
+    usedIds.add(stationId);
+    nextOrdinalRef.current += 1;
+    return stationId;
+  };
+  const braceRef = { current: nextBraceOrdinal };
+  const setupRef = { current: nextSetupOrdinal };
+  return {
+    nextBraceId: (): StationId => allocate('B', braceRef),
+    nextSetupId: (): StationId => allocate('P', setupRef),
+  };
+};
 
 const buildBraceTemplateLabel = (braceStationId: StationId, left: StationId, right: StationId): string =>
   `Brace ${braceStationId} [${left}-${right}]`;
@@ -539,6 +546,7 @@ const buildBraceTemplates = (
   base: AdjustmentResult,
   existingTemplates: PreanalysisSyntheticSetTemplate[],
   planningMap: PlanningMapState,
+  stationAllocator: ReturnType<typeof createSyntheticStationAllocator>,
 ): PreanalysisSyntheticSetTemplate[] => {
   const obstacleGroups = resolveObstacleGroups(planningMap);
   const occupiedIds = new Set(existingTemplates.map((template) => template.occupyStationId));
@@ -568,7 +576,7 @@ const buildBraceTemplates = (
       obstacleGroups.soft,
     );
     if (!point) return;
-    const braceStationId = buildBraceStationId(leftId, rightId);
+    const braceStationId = stationAllocator.nextBraceId();
     if (base.stations[braceStationId] != null) return;
     const extraVisibleSetups = filterVisibleAnchorIds(
       base.stations,
@@ -620,6 +628,7 @@ const buildPromotedSetupTemplates = (
   base: AdjustmentResult,
   existingTemplates: PreanalysisSyntheticSetTemplate[],
   planningMap: PlanningMapState,
+  stationAllocator: ReturnType<typeof createSyntheticStationAllocator>,
 ): PreanalysisSyntheticSetTemplate[] => {
   if (!planningMap.scenarioFamilies.promotedSetup) return [];
   const obstacleGroups = resolveObstacleGroups(planningMap);
@@ -644,7 +653,7 @@ const buildPromotedSetupTemplates = (
       obstacleGroups.soft,
     ).slice(0, MAX_BRACE_SETUPS);
     if (visibleAnchors.length < 3) return;
-    const setupStationId = buildSyntheticSetupStationId('PROMOTE', pair.from, pair.to);
+    const setupStationId = stationAllocator.nextSetupId();
     if (base.stations[setupStationId] != null) return;
     const id = buildPromotedTemplateId(pair.from, pair.to);
     if (usedTemplateIds.has(id)) return;
@@ -673,12 +682,13 @@ const buildSyntheticSetupTemplates = (
   base: AdjustmentResult,
   existingTemplates: PreanalysisSyntheticSetTemplate[],
   planningMap: PlanningMapState,
+  stationAllocator: ReturnType<typeof createSyntheticStationAllocator>,
 ): PreanalysisSyntheticSetTemplate[] => {
   if (!planningMap.scenarioFamilies.syntheticSetup) return [];
   const obstacleGroups = resolveObstacleGroups(planningMap);
   const occupiedIds = occupiedStationIdsFromTemplates(existingTemplates);
   const templates: PreanalysisSyntheticSetTemplate[] = [];
-  collectSeedPairs(base).forEach((pair, pairIndex) => {
+  collectSeedPairs(base).forEach((pair) => {
     if (templates.length >= MAX_SYNTHETIC_SETUP_SCENARIOS) return;
     const point = chooseBracePointCandidateWithFallback(
       base.stations,
@@ -696,10 +706,10 @@ const buildSyntheticSetupTemplates = (
       obstacleGroups.soft,
     ).slice(0, MAX_BRACE_SETUPS);
     if (visibleAnchors.length < 3) return;
-    const setupStationId = buildSyntheticSetupStationId('SYNTH', pair.from, pair.to, pairIndex + 1);
+    const setupStationId = stationAllocator.nextSetupId();
     if (base.stations[setupStationId] != null) return;
     templates.push({
-      id: buildSyntheticSetupTemplateId(pair.from, pair.to, pairIndex + 1),
+      id: buildSyntheticSetupTemplateId(pair.from, pair.to, templates.length + 1),
       scenarioKind: 'synthetic-setup',
       occupyStationId: setupStationId,
       setupStationIds: [setupStationId, ...visibleAnchors],
@@ -870,11 +880,14 @@ export const buildPreanalysisSyntheticSetTemplates = (
       left.occupyStationId.localeCompare(right.occupyStationId, undefined, { numeric: true }) ||
       left.templateLabel.localeCompare(right.templateLabel, undefined, { numeric: true }),
   );
+  const stationAllocator = createSyntheticStationAllocator(base.stations);
   const scenarioTemplates = [
     ...repeatedSetTemplates,
-    ...(planningMap.scenarioFamilies.bracePoint ? buildBraceTemplates(base, repeatedSetTemplates, planningMap) : []),
-    ...buildPromotedSetupTemplates(base, repeatedSetTemplates, planningMap),
-    ...buildSyntheticSetupTemplates(base, repeatedSetTemplates, planningMap),
+    ...(planningMap.scenarioFamilies.bracePoint
+      ? buildBraceTemplates(base, repeatedSetTemplates, planningMap, stationAllocator)
+      : []),
+    ...buildPromotedSetupTemplates(base, repeatedSetTemplates, planningMap, stationAllocator),
+    ...buildSyntheticSetupTemplates(base, repeatedSetTemplates, planningMap, stationAllocator),
     ...buildCrossTieTemplates(base, repeatedSetTemplates, planningMap),
   ];
   return scenarioTemplates;

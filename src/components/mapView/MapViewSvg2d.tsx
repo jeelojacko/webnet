@@ -67,6 +67,7 @@ const EMPTY_SCENARIO_PREVIEW_SEGMENTS: ScenarioPreviewSegment2d[] = [];
 interface MapViewSvg2dProps {
   marker2d: number;
   view2d: View2dState;
+  showLabels: boolean;
   originalGeometryOpacity: number;
   filteredVisiblePoints2d: ProjectedPoint2D[];
   visiblePointLabels2d: Set<string>;
@@ -130,9 +131,6 @@ type PlanningLayerProps = Pick<
   | 'renderScenarioPreviewSegments'
   | 'bracePreviewPoints2d'
   | 'renderBracePreviewMarkers'
-  | 'labelOffset2d'
-  | 'labelFont2d'
-  | 'labelStroke2d'
 >;
 
 type SelectionLayerProps = Pick<
@@ -206,9 +204,6 @@ const SvgPlanningLayer = React.memo(function SvgPlanningLayer({
   renderScenarioPreviewSegments = true,
   bracePreviewPoints2d = EMPTY_BRACE_PREVIEW_POINTS,
   renderBracePreviewMarkers = true,
-  labelOffset2d,
-  labelFont2d,
-  labelStroke2d,
 }: PlanningLayerProps) {
   return measureMapViewPerf('svg:planning-layer', () => {
     noteMapViewPerfCounter('svg:planning-layer:renders');
@@ -318,19 +313,40 @@ const SvgPlanningLayer = React.memo(function SvgPlanningLayer({
                 <title>{point.templateLabel}</title>
               </circle>
             )}
-            <text
-              data-map-label={point.stationId}
-              x={point.x + labelOffset2d}
-              y={point.y - labelOffset2d}
-              fontSize={labelFont2d}
-              fill={point.active ? '#fdf2f8' : '#fce7f3'}
-              stroke="#4a044e"
-              strokeWidth={labelStroke2d}
-              paintOrder="stroke"
-            >
-              {point.stationId}
-            </text>
           </g>
+        ))}
+      </>
+    );
+  });
+});
+
+const SvgScenarioLabelLayer = React.memo(function SvgScenarioLabelLayer({
+  bracePreviewPoints2d = EMPTY_BRACE_PREVIEW_POINTS,
+  labelOffset2d,
+  labelFont2d,
+  labelStroke2d,
+}: Pick<
+  MapViewSvg2dProps,
+  'bracePreviewPoints2d' | 'labelOffset2d' | 'labelFont2d' | 'labelStroke2d'
+>) {
+  return measureMapViewPerf('svg:scenario-labels', () => {
+    noteMapViewPerfCounter('svg:scenario-labels:renders');
+    return (
+      <>
+        {bracePreviewPoints2d.map((point) => (
+          <text
+            key={`scenario-label-${point.scenarioId}`}
+            data-map-label={point.stationId}
+            x={point.x + labelOffset2d}
+            y={point.y - labelOffset2d}
+            fontSize={labelFont2d}
+            fill={point.active ? '#fdf2f8' : '#fce7f3'}
+            stroke="#4a044e"
+            strokeWidth={labelStroke2d}
+            paintOrder="stroke"
+          >
+            {point.stationId}
+          </text>
         ))}
       </>
     );
@@ -478,6 +494,7 @@ const MapViewSvg2d: React.FC<MapViewSvg2dProps> = ({
   transformedOverlayActive,
   transformedLines2d,
   transformedPoints2d,
+  showLabels,
   planningInputPoints2d = EMPTY_PLANNING_INPUT_POINTS,
   planningPolygons2d = EMPTY_PLANNING_POLYGONS,
   selectedPlanningPolygonIds = EMPTY_SELECTED_PLANNING_POLYGON_IDS,
@@ -495,7 +512,8 @@ const MapViewSvg2d: React.FC<MapViewSvg2dProps> = ({
     noteMapViewPerfCounter('svg:renders');
     noteMapViewPerfMetadata(
       'svg:last-label-count',
-      filteredVisiblePoints2d.filter((point) => visiblePointLabels2d.has(point.id)).length,
+      filteredVisiblePoints2d.filter((point) => visiblePointLabels2d.has(point.id)).length +
+        (showLabels ? bracePreviewPoints2d.length : 0),
     );
     noteMapViewPerfMetadata('svg:last-line-count', filteredVisibleMapLines2d.length);
     noteMapViewPerfMetadata('svg:last-planning-polygon-count', planningPolygons2d.length);
@@ -517,16 +535,6 @@ const MapViewSvg2d: React.FC<MapViewSvg2dProps> = ({
           </marker>
         </defs>
 
-        <g transform={viewTransform} opacity={originalGeometryOpacity}>
-          <SvgLabelLayer
-            filteredVisiblePoints2d={filteredVisiblePoints2d}
-            visiblePointLabels2d={visiblePointLabels2d}
-            labelOffset2d={labelOffset2d}
-            labelFont2d={labelFont2d}
-            labelStroke2d={labelStroke2d}
-          />
-        </g>
-
         <g transform={viewTransform}>
           <SvgPlanningLayer
             planningPolygons2d={planningPolygons2d}
@@ -541,9 +549,6 @@ const MapViewSvg2d: React.FC<MapViewSvg2dProps> = ({
             renderScenarioPreviewSegments={renderScenarioPreviewSegments}
             bracePreviewPoints2d={bracePreviewPoints2d}
             renderBracePreviewMarkers={renderBracePreviewMarkers}
-            labelOffset2d={labelOffset2d}
-            labelFont2d={labelFont2d}
-            labelStroke2d={labelStroke2d}
           />
           <SvgSelectionLayer
             filteredVisibleMapLines2d={filteredVisibleMapLines2d}
@@ -585,6 +590,24 @@ const MapViewSvg2d: React.FC<MapViewSvg2dProps> = ({
               lineWidth2d={lineWidth2d}
               transformedPoints2d={transformedPoints2d}
               pointRadius2d={pointRadius2d}
+              visiblePointLabels2d={visiblePointLabels2d}
+              labelOffset2d={labelOffset2d}
+              labelFont2d={labelFont2d}
+              labelStroke2d={labelStroke2d}
+            />
+          </g>
+        )}
+
+        {showLabels && (
+          <g transform={viewTransform} opacity={originalGeometryOpacity}>
+            <SvgScenarioLabelLayer
+              bracePreviewPoints2d={bracePreviewPoints2d}
+              labelOffset2d={labelOffset2d}
+              labelFont2d={labelFont2d}
+              labelStroke2d={labelStroke2d}
+            />
+            <SvgLabelLayer
+              filteredVisiblePoints2d={filteredVisiblePoints2d}
               visiblePointLabels2d={visiblePointLabels2d}
               labelOffset2d={labelOffset2d}
               labelFont2d={labelFont2d}

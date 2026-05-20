@@ -192,7 +192,7 @@ describe('buildPreanalysisPlanningDiagnostics', () => {
     const braceRow = diagnostics.rows.find((row) => row.scenarioKind === 'brace-point');
     expect(braceRow).toBeDefined();
     expect(braceRow?.setupStationIds).toEqual(['105', '109']);
-    expect(braceRow?.templateLabel).toContain('Brace BRACE_105_109');
+    expect(braceRow?.templateLabel).toContain('Brace B-1');
   });
 
   it('surfaces higher-impact brace scenarios even when repeated existing sets are still available', () => {

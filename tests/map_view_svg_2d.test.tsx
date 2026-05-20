@@ -27,6 +27,7 @@ describe('MapViewSvg2d', () => {
           <MapViewSvg2d
             marker2d={6}
             view2d={{ zoom: 1, panX: 0, panY: 0 }}
+            showLabels={true}
             originalGeometryOpacity={1}
             filteredVisiblePoints2d={[
               { id: 'A', fixed: true, x: 100, y: 100, screenX: 100, screenY: 100 },
@@ -80,8 +81,8 @@ describe('MapViewSvg2d', () => {
             bracePreviewPoints2d={[
               {
                 scenarioId: 'brace-1',
-                stationId: 'BRACE_A_B',
-                templateLabel: 'Brace BRACE_A_B [A-B]',
+                stationId: 'B-1',
+                templateLabel: 'Brace B-1 [A-B]',
                 x: 210,
                 y: 220,
                 active: true,
@@ -98,11 +99,17 @@ describe('MapViewSvg2d', () => {
     expect(container.querySelector('[data-map-observation="7"]')).not.toBeNull();
     expect(container.querySelector('[data-map-station-selection="A"]')).not.toBeNull();
     expect(container.querySelectorAll('[data-map-label="TX1"]').length).toBeGreaterThan(0);
-    expect(container.querySelector('[data-map-brace-preview="BRACE_A_B"]')).not.toBeNull();
+    expect(container.querySelector('[data-map-brace-preview="B-1"]')).not.toBeNull();
+    expect(container.querySelector('[data-map-label="B-1"]')).not.toBeNull();
     expect(container.querySelector('[data-planning-polygon-id="osm-building-1"]')).not.toBeNull();
     expect(container.querySelector('[data-planning-vertex="osm-building-1:0"]')).not.toBeNull();
     expect(container.querySelector('[data-map-selection-box="true"]')).not.toBeNull();
     expect(container.querySelector('[data-map-selection-mode="crossing"]')).not.toBeNull();
+    expect(
+      (container.querySelector('[data-planning-polygon-id="osm-building-1"]') as SVGPolygonElement).compareDocumentPosition(
+        container.querySelector('[data-map-label="B-1"]') as SVGTextElement,
+      ) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
 
     await act(async () => {
       (container.querySelector('[data-map-observation="7"]') as SVGLineElement).dispatchEvent(
@@ -136,6 +143,7 @@ describe('MapViewSvg2d', () => {
 
     const baseProps = {
       marker2d: 6,
+      showLabels: true,
       originalGeometryOpacity: 1,
       filteredVisiblePoints2d: [
         { id: 'A', fixed: true, x: 100, y: 100, screenX: 100, screenY: 100 },
@@ -201,5 +209,57 @@ describe('MapViewSvg2d', () => {
     container.remove();
     (globalThis as { __WEBNET_ENABLE_MAP_PERF_CAPTURE__?: boolean }).__WEBNET_ENABLE_MAP_PERF_CAPTURE__ =
       false;
+  });
+
+  it('hides synthetic scenario labels when showLabels is off', async () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root: Root = createRoot(container);
+
+    await act(async () => {
+      root.render(
+        <svg viewBox="0 0 1000 700">
+          <MapViewSvg2d
+            marker2d={6}
+            view2d={{ zoom: 1, panX: 0, panY: 0 }}
+            showLabels={false}
+            originalGeometryOpacity={1}
+            filteredVisiblePoints2d={[]}
+            visiblePointLabels2d={new Set()}
+            labelOffset2d={10}
+            labelFont2d={12}
+            labelStroke2d={1}
+            filteredVisibleMapLines2d={[]}
+            selectedObservationId={null}
+            selectedObservationPairKey={null}
+            lineWidth2d={1}
+            selectedStationId={null}
+            pointRadius2d={4}
+            transformedOverlayActive={false}
+            transformedLines2d={[]}
+            transformedPoints2d={[]}
+            bracePreviewPoints2d={[
+              {
+                scenarioId: 'brace-1',
+                stationId: 'B-1',
+                templateLabel: 'Brace B-1 [A-B]',
+                x: 210,
+                y: 220,
+                active: true,
+              },
+            ]}
+            project2d={(x, y) => ({ x, y })}
+          />
+        </svg>,
+      );
+    });
+
+    expect(container.querySelector('[data-map-brace-preview="B-1"]')).not.toBeNull();
+    expect(container.querySelector('[data-map-label="B-1"]')).toBeNull();
+
+    await act(async () => {
+      root.unmount();
+    });
+    container.remove();
   });
 });
