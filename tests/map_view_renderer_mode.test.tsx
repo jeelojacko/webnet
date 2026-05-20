@@ -50,6 +50,11 @@ const createMock2dContext = () =>
     fillStyle: '#000',
   }) as unknown as CanvasRenderingContext2D;
 
+type ResizeObserverCallback = (
+  _entries: Array<{ target: Element; contentRect: DOMRectReadOnly }>,
+  _observer: { disconnect: () => void },
+) => void;
+
 const createFakeWebgl2Context = () => {
   let id = 0;
   return {
@@ -230,6 +235,88 @@ describe('MapView renderer mode', () => {
     expect(container.querySelector('[data-testid="map-base-canvas"]')).not.toBeNull();
     expect(container.querySelector('[data-testid="map-geometry-canvas"]')).not.toBeNull();
     expect(container.querySelector('[data-map-renderer="canvas"]')).not.toBeNull();
+
+    await act(async () => {
+      root.unmount();
+    });
+    container.remove();
+  });
+
+  it('keeps the 2D render surface aspect-locked when the container widens', async () => {
+    (
+      globalThis as {
+        __WEBNET_ENABLE_WEBGL_RENDER_TEST__?: boolean;
+        __WEBNET_ENABLE_CANVAS_RENDER_TEST__?: boolean;
+      }
+    ).__WEBNET_ENABLE_CANVAS_RENDER_TEST__ = true;
+    const resizeObservers: ResizeObserverCallback[] = [];
+    class MockResizeObserver {
+      constructor(private readonly callback: ResizeObserverCallback) {
+        resizeObservers.push(callback);
+      }
+
+      observe() {}
+
+      disconnect() {}
+    }
+    vi.stubGlobal('ResizeObserver', MockResizeObserver as unknown as typeof ResizeObserver);
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockImplementation(function (
+      this: HTMLCanvasElement,
+      kind: string,
+    ) {
+      if (kind === '2d') return createMock2dContext() as never;
+      return null;
+    });
+
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root: Root = createRoot(container);
+
+    await act(async () => {
+      root.render(<MapView result={result} units="m" showLostStations={true} />);
+    });
+
+    const mapRoot = container.querySelector('[data-map-renderer="canvas"]') as HTMLDivElement | null;
+    const svg = container.querySelector('svg') as SVGSVGElement | null;
+    if (!mapRoot || !svg || !svg.parentElement) {
+      throw new Error('Expected map render surface');
+    }
+    Object.defineProperty(mapRoot, 'getBoundingClientRect', {
+      configurable: true,
+      value: () => ({
+        left: 0,
+        top: 0,
+        width: 1400,
+        height: 700,
+        right: 1400,
+        bottom: 700,
+        x: 0,
+        y: 0,
+        toJSON: () => ({}),
+      }),
+    });
+
+    await act(async () => {
+      resizeObservers.forEach((callback) =>
+        callback(
+          [
+            {
+              target: mapRoot,
+              contentRect: mapRoot.getBoundingClientRect() as DOMRectReadOnly,
+            },
+          ],
+          { disconnect: () => {} },
+        ),
+      );
+      await Promise.resolve();
+    });
+
+    const renderSurface = svg.parentElement as HTMLDivElement;
+    expect(svg.getAttribute('preserveAspectRatio')).toBe('xMidYMid meet');
+    expect(renderSurface.style.width).toBe('1000px');
+    expect(renderSurface.style.height).toBe('700px');
+    expect(renderSurface.style.left).toBe('200px');
+    expect(renderSurface.style.top).toBe('0px');
 
     await act(async () => {
       root.unmount();

@@ -71,7 +71,10 @@ import {
   renderGeometryCanvas2d,
   renderPlanningOverlayCanvas2d,
 } from './mapView/mapViewCanvas2d';
-import { chooseOsmTileMeshDivisions } from './mapView/mapViewBasemap';
+import {
+  chooseOsmTileMeshDivisions,
+  resolveInteractiveBasemapTiles,
+} from './mapView/mapViewBasemap';
 import { buildMapViewHitIndex } from './mapView/mapViewHitIndex';
 import {
   MapViewTileStore,
@@ -173,11 +176,50 @@ type ScreenSelectionBox = {
 };
 
 type SelectionBoxMode = 'window' | 'crossing';
+type RenderSurfaceLayout = {
+  width: number;
+  height: number;
+  left: number;
+  top: number;
+};
 
 const OSM_TILE_SIZE_PX = 256;
 const OSM_MAX_ZOOM = 19;
 const OSM_MIN_ZOOM = 0;
 const OSM_FETCH_BUFFER_M = 100;
+const DEFAULT_RENDER_SURFACE_LAYOUT: RenderSurfaceLayout = {
+  width: VIEW_W,
+  height: VIEW_H,
+  left: 0,
+  top: 0,
+};
+
+const buildRenderSurfaceLayout = (
+  containerWidth: number,
+  containerHeight: number,
+): RenderSurfaceLayout => {
+  if (!(containerWidth > 0) || !(containerHeight > 0)) {
+    return DEFAULT_RENDER_SURFACE_LAYOUT;
+  }
+  const scale = Math.min(containerWidth / VIEW_W, containerHeight / VIEW_H);
+  const width = Math.max(1, VIEW_W * scale);
+  const height = Math.max(1, VIEW_H * scale);
+  return {
+    width,
+    height,
+    left: (containerWidth - width) * 0.5,
+    top: (containerHeight - height) * 0.5,
+  };
+};
+
+const renderSurfaceLayoutEquals = (
+  left: RenderSurfaceLayout,
+  right: RenderSurfaceLayout,
+): boolean =>
+  Math.abs(left.width - right.width) < 0.5 &&
+  Math.abs(left.height - right.height) < 0.5 &&
+  Math.abs(left.left - right.left) < 0.5 &&
+  Math.abs(left.top - right.top) < 0.5;
 const clampLatitudeForTiles = (latDeg: number): number =>
   Math.min(85.05112878, Math.max(-85.05112878, latDeg));
 
@@ -350,9 +392,14 @@ const MapView: React.FC<MapViewProps> = ({
   const webglRendererRef = useRef<MapViewWebgl2d>(new MapViewWebgl2d());
   const renderRequestFrameRef = useRef<number | null>(null);
   const renderDirtyRef = useRef({ basemap: false, geometry: false, planning: false });
+  const [renderSurfaceLayout, setRenderSurfaceLayout] = useState<RenderSurfaceLayout>(
+    DEFAULT_RENDER_SURFACE_LAYOUT,
+  );
   const [renderer2d, setRenderer2d] = useState<'canvas' | 'webgl'>(() =>
     canRenderWebglLayers() ? 'webgl' : 'canvas',
   );
+  const [stableBasemapTiles2d, setStableBasemapTiles2d] = useState<BasemapTileDescriptor2d[]>([]);
+  const [stableBasemapTileSignature, setStableBasemapTileSignature] = useState('');
   const latestBasemapRenderInputRef = useRef<{
     interactionPhase: MapInteractionPhase;
     view2d: { zoom: number; panX: number; panY: number };
@@ -577,6 +624,31 @@ const MapView: React.FC<MapViewProps> = ({
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
   }, [viewportWidthOverride]);
+
+  useLayoutEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+    const measure = () => {
+      const rect = container.getBoundingClientRect();
+      const nextLayout = buildRenderSurfaceLayout(rect.width, rect.height);
+      setRenderSurfaceLayout((current) =>
+        renderSurfaceLayoutEquals(current, nextLayout) ? current : nextLayout,
+      );
+    };
+    measure();
+    if (typeof ResizeObserver !== 'undefined') {
+      const observer = new ResizeObserver(() => {
+        measure();
+      });
+      observer.observe(container);
+      return () => observer.disconnect();
+    }
+    if (typeof window !== 'undefined') {
+      window.addEventListener('resize', measure);
+      return () => window.removeEventListener('resize', measure);
+    }
+    return undefined;
+  }, []);
 
   useEffect(() => {
     if (visibleStationIds.length === 0) {
@@ -1787,11 +1859,70 @@ const MapView: React.FC<MapViewProps> = ({
     view2d.zoom,
   ]);
 
+  const basemapTileSignature = useMemo(
+    () =>
+      basemapTiles2d
+        .map((tile) => `${tile.key}:${tile.meshColumns}:${tile.meshRows}:${tile.meshPoints.length}`)
+        .join('|'),
+    [basemapTiles2d],
+  );
+
+  useEffect(() => {
+    if (interactionPhase !== 'idle') return;
+    if (stableBasemapTileSignature === basemapTileSignature) return;
+    setStableBasemapTiles2d(basemapTiles2d);
+    setStableBasemapTileSignature(basemapTileSignature);
+  }, [
+    basemapTileSignature,
+    basemapTiles2d,
+    interactionPhase,
+    stableBasemapTileSignature,
+  ]);
+
+  const activeBasemapTiles2d = resolveInteractiveBasemapTiles(
+    basemapTiles2d,
+    stableBasemapTiles2d,
+    interactionPhase,
+  );
+
   useLayoutEffect(() => {
+    const canReuseStableInteractionTiles =
+      effectiveMode === '2d' &&
+      interactionPhase === 'interacting' &&
+      activeBasemapTiles2d === stableBasemapTiles2d &&
+      (latestBasemapRenderInputRef.current?.tiles.length ?? 0) > 0;
+    if (canReuseStableInteractionTiles) {
+      const reusedTiles = latestBasemapRenderInputRef.current?.tiles ?? [];
+      noteMapViewPerfCounter('tiles:interaction-reuse-frames');
+      noteMapViewPerfMetadata('tiles:last-descriptor-mode', 'stable-reused');
+      latestBasemapRenderInputRef.current = {
+        interactionPhase,
+        view2d,
+        projectionScale: projection2d.scale,
+        tiles: reusedTiles,
+      };
+      latestWebglRenderInputRef.current = {
+        interactionPhase,
+        viewWidth: VIEW_W,
+        viewHeight: VIEW_H,
+        view2d,
+        tiles: reusedTiles,
+        surveyLineWidth: latestWebglRenderInputRef.current?.surveyLineWidth ?? 0,
+        previewLineWidth: latestWebglRenderInputRef.current?.previewLineWidth ?? 0,
+        ellipseLineWidth: latestWebglRenderInputRef.current?.ellipseLineWidth ?? 0,
+        surveyLines: latestWebglRenderInputRef.current?.surveyLines ?? [],
+        previewLines: latestWebglRenderInputRef.current?.previewLines ?? [],
+        ellipseLines: latestWebglRenderInputRef.current?.ellipseLines ?? [],
+        surveyPoints: latestWebglRenderInputRef.current?.surveyPoints ?? [],
+        previewPoints: latestWebglRenderInputRef.current?.previewPoints ?? [],
+      };
+      renderLayersNow({ basemap: true });
+      return;
+    }
     const tileStore = tileStoreRef.current;
     tileStore.markAllEvictable();
     noteMapViewPerfCounter('tiles:mark-all-evictable');
-    if (effectiveMode !== '2d' || basemapTiles2d.length === 0) {
+    if (effectiveMode !== '2d' || activeBasemapTiles2d.length === 0) {
       latestBasemapRenderInputRef.current = {
         interactionPhase,
         view2d,
@@ -1817,13 +1948,19 @@ const MapView: React.FC<MapViewProps> = ({
       return;
     }
     tileStore.requestTiles(
-      basemapTiles2d,
+      activeBasemapTiles2d,
       () => {
         const latest = latestBasemapRenderInputRef.current;
         if (!latest) return;
-        latest.tiles = tileStore.resolveRenderTiles(basemapTiles2d);
+        latest.tiles = tileStore.resolveRenderTiles(activeBasemapTiles2d);
         noteMapViewPerfMetadata('tiles:snapshot', tileStore.snapshotMetrics());
         noteMapViewPerfMetadata('tiles:last-resolved-count', latest.tiles.length);
+        noteMapViewPerfMetadata(
+          'tiles:last-descriptor-mode',
+          interactionPhase === 'interacting' && stableBasemapTiles2d.length > 0
+            ? 'stable'
+            : 'live',
+        );
         if (latestWebglRenderInputRef.current) {
           latestWebglRenderInputRef.current.tiles = latest.tiles;
         }
@@ -1841,9 +1978,15 @@ const MapView: React.FC<MapViewProps> = ({
       },
       renderer2d === 'webgl' ? { crossOrigin: 'anonymous' } : undefined,
     );
-    const resolvedTiles = tileStore.resolveRenderTiles(basemapTiles2d);
+    const resolvedTiles = tileStore.resolveRenderTiles(activeBasemapTiles2d);
     noteMapViewPerfMetadata('tiles:snapshot', tileStore.snapshotMetrics());
     noteMapViewPerfMetadata('tiles:last-resolved-count', resolvedTiles.length);
+    noteMapViewPerfMetadata(
+      'tiles:last-descriptor-mode',
+      interactionPhase === 'interacting' && stableBasemapTiles2d.length > 0
+        ? 'stable'
+        : 'live',
+    );
     latestBasemapRenderInputRef.current = {
       interactionPhase,
       view2d,
@@ -1867,13 +2010,14 @@ const MapView: React.FC<MapViewProps> = ({
     };
     renderLayersNow({ basemap: true });
   }, [
-    basemapTiles2d,
+    activeBasemapTiles2d,
     effectiveMode,
     interactionPhase,
     projection2d.scale,
     renderLayersNow,
     renderer2d,
     scheduleLayerRender,
+    stableBasemapTiles2d,
     view2d,
   ]);
 
@@ -2859,7 +3003,16 @@ const MapView: React.FC<MapViewProps> = ({
         data-map-derived-view-pan-y={derivedView2d.panY.toFixed(6)}
         className="bg-slate-900 border border-slate-800 rounded overflow-hidden flex-1 min-h-0 relative"
       >
-        <div ref={renderSurfaceRef} className="absolute inset-0">
+        <div
+          ref={renderSurfaceRef}
+          className="absolute"
+          style={{
+            width: `${renderSurfaceLayout.width}px`,
+            height: `${renderSurfaceLayout.height}px`,
+            left: `${renderSurfaceLayout.left}px`,
+            top: `${renderSurfaceLayout.top}px`,
+          }}
+        >
           {effectiveMode === '2d' && (
             <>
               {webglEligible && (
@@ -2895,7 +3048,7 @@ const MapView: React.FC<MapViewProps> = ({
           <svg
             ref={svgRef}
             viewBox={`0 0 ${VIEW_W} ${VIEW_H}`}
-            preserveAspectRatio="none"
+            preserveAspectRatio="xMidYMid meet"
             shapeRendering={interactionPhase === 'interacting' ? 'optimizeSpeed' : 'geometricPrecision'}
             className={`w-full h-full select-none ${isDragging ? 'cursor-grabbing' : effectiveMode === '3d' ? 'cursor-grab' : 'cursor-default'}`}
             onWheel={handleWheel}

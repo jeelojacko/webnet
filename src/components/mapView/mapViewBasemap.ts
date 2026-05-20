@@ -15,3 +15,14 @@ export const chooseOsmTileMeshDivisions = (
   if (maxSpanPx <= 620) return 4;
   return 6;
 };
+
+export const resolveInteractiveBasemapTiles = <Tile>(
+  liveTiles: Tile[],
+  stableTiles: Tile[],
+  interactionPhase: 'idle' | 'interacting' | 'settling',
+): Tile[] => {
+  if (interactionPhase === 'interacting' && stableTiles.length > 0) {
+    return stableTiles;
+  }
+  return liveTiles;
+};
