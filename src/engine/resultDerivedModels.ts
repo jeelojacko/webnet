@@ -335,18 +335,18 @@ export const resolveMapStationFillColor = (input: {
   fixed: boolean;
   severity?: 'watch' | 'weak' | null;
 }): string => {
-  if (input.fixed) return '#22c55e';
+  if (input.fixed) return '#10b981';
   if (input.severity === 'weak') return '#ef4444';
-  if (input.severity === 'watch') return '#f59e0b';
-  return '#fbbf24';
+  if (input.severity === 'watch') return '#f97316';
+  return '#22d3ee';
 };
 
 export const resolveMapEllipseStrokeColor = (
   severity?: 'watch' | 'weak' | null,
 ): string => {
-  if (severity === 'weak') return '#fb7185';
-  if (severity === 'watch') return '#f59e0b';
-  return '#38bdf8';
+  if (severity === 'weak') return '#ef4444';
+  if (severity === 'watch') return '#f97316';
+  return '#2563eb';
 };
 
 export const buildResultTraceabilityModel = (

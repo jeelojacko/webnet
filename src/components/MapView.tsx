@@ -458,12 +458,15 @@ const MapView: React.FC<MapViewProps> = ({
     viewHeight: number;
     view2d: { zoom: number; panX: number; panY: number };
     tiles: BasemapTileRenderSurface2d[];
+    surveyHaloLineWidth: number;
     surveyLineWidth: number;
     previewLineWidth: number;
     ellipseLineWidth: number;
+    surveyHaloLines: ReturnType<typeof buildMapViewWebglScene2d>['surveyHaloLines'];
     surveyLines: ReturnType<typeof buildMapViewWebglScene2d>['surveyLines'];
     previewLines: ReturnType<typeof buildMapViewWebglScene2d>['previewLines'];
     ellipseLines: ReturnType<typeof buildMapViewWebglScene2d>['ellipseLines'];
+    surveyHaloPoints: ReturnType<typeof buildMapViewWebglScene2d>['surveyHaloPoints'];
     surveyPoints: ReturnType<typeof buildMapViewWebglScene2d>['surveyPoints'];
     previewPoints: ReturnType<typeof buildMapViewWebglScene2d>['previewPoints'];
   } | null>(null);
@@ -1932,12 +1935,15 @@ const MapView: React.FC<MapViewProps> = ({
         viewHeight: VIEW_H,
         view2d,
         tiles: reusedTiles,
+        surveyHaloLineWidth: latestWebglRenderInputRef.current?.surveyHaloLineWidth ?? 0,
         surveyLineWidth: latestWebglRenderInputRef.current?.surveyLineWidth ?? 0,
         previewLineWidth: latestWebglRenderInputRef.current?.previewLineWidth ?? 0,
         ellipseLineWidth: latestWebglRenderInputRef.current?.ellipseLineWidth ?? 0,
+        surveyHaloLines: latestWebglRenderInputRef.current?.surveyHaloLines ?? [],
         surveyLines: latestWebglRenderInputRef.current?.surveyLines ?? [],
         previewLines: latestWebglRenderInputRef.current?.previewLines ?? [],
         ellipseLines: latestWebglRenderInputRef.current?.ellipseLines ?? [],
+        surveyHaloPoints: latestWebglRenderInputRef.current?.surveyHaloPoints ?? [],
         surveyPoints: latestWebglRenderInputRef.current?.surveyPoints ?? [],
         previewPoints: latestWebglRenderInputRef.current?.previewPoints ?? [],
       };
@@ -1960,12 +1966,15 @@ const MapView: React.FC<MapViewProps> = ({
         viewHeight: VIEW_H,
         view2d,
         tiles: [],
+        surveyHaloLineWidth: latestWebglRenderInputRef.current?.surveyHaloLineWidth ?? 0,
         surveyLineWidth: latestWebglRenderInputRef.current?.surveyLineWidth ?? 0,
         previewLineWidth: latestWebglRenderInputRef.current?.previewLineWidth ?? 0,
         ellipseLineWidth: latestWebglRenderInputRef.current?.ellipseLineWidth ?? 0,
+        surveyHaloLines: latestWebglRenderInputRef.current?.surveyHaloLines ?? [],
         surveyLines: latestWebglRenderInputRef.current?.surveyLines ?? [],
         previewLines: latestWebglRenderInputRef.current?.previewLines ?? [],
         ellipseLines: latestWebglRenderInputRef.current?.ellipseLines ?? [],
+        surveyHaloPoints: latestWebglRenderInputRef.current?.surveyHaloPoints ?? [],
         surveyPoints: latestWebglRenderInputRef.current?.surveyPoints ?? [],
         previewPoints: latestWebglRenderInputRef.current?.previewPoints ?? [],
       };
@@ -2024,12 +2033,15 @@ const MapView: React.FC<MapViewProps> = ({
       viewHeight: VIEW_H,
       view2d,
       tiles: resolvedTiles,
+      surveyHaloLineWidth: latestWebglRenderInputRef.current?.surveyHaloLineWidth ?? 0,
       surveyLineWidth: latestWebglRenderInputRef.current?.surveyLineWidth ?? 0,
       previewLineWidth: latestWebglRenderInputRef.current?.previewLineWidth ?? 0,
       ellipseLineWidth: latestWebglRenderInputRef.current?.ellipseLineWidth ?? 0,
+      surveyHaloLines: latestWebglRenderInputRef.current?.surveyHaloLines ?? [],
       surveyLines: latestWebglRenderInputRef.current?.surveyLines ?? [],
       previewLines: latestWebglRenderInputRef.current?.previewLines ?? [],
       ellipseLines: latestWebglRenderInputRef.current?.ellipseLines ?? [],
+      surveyHaloPoints: latestWebglRenderInputRef.current?.surveyHaloPoints ?? [],
       surveyPoints: latestWebglRenderInputRef.current?.surveyPoints ?? [],
       previewPoints: latestWebglRenderInputRef.current?.previewPoints ?? [],
     };

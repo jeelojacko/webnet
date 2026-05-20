@@ -120,12 +120,15 @@ describe('MapViewWebgl2d', () => {
           fallbackZoomDelta: 0,
         },
       ],
+      surveyHaloLineWidth: 2.4,
       surveyLineWidth: 1.2,
       previewLineWidth: 1.4,
       ellipseLineWidth: 0.8,
+      surveyHaloLines: [{ x1: 10, y1: 10, x2: 100, y2: 30, color: [1, 1, 1, 0.6] }],
       surveyLines: [{ x1: 10, y1: 10, x2: 100, y2: 30, color: [1, 0, 0, 1] }],
       previewLines: [{ x1: 15, y1: 20, x2: 120, y2: 35, color: [1, 0.5, 0.7, 1] }],
       ellipseLines: [{ x1: 20, y1: 20, x2: 25, y2: 28, color: [0.8, 0.8, 0.2, 0.6] }],
+      surveyHaloPoints: [{ x: 60, y: 70, size: 10, color: [1, 1, 1, 0.8] }],
       surveyPoints: [{ x: 60, y: 70, size: 8, color: [0.2, 1, 0.4, 1] }],
       previewPoints: [{ x: 85, y: 95, size: 10, color: [1, 0.5, 0.8, 1] }],
     });
@@ -136,7 +139,7 @@ describe('MapViewWebgl2d', () => {
     const metrics = renderer.snapshotMetrics();
     expect(metrics.renderCount).toBe(1);
     expect(metrics.textureUploadCount).toBeGreaterThan(0);
-    expect(metrics.drawCallCount).toBeGreaterThanOrEqual(5);
+    expect(metrics.drawCallCount).toBeGreaterThanOrEqual(7);
     expect(metrics.lastTileCount).toBe(1);
     expect(metrics.lastSurveyLineCount).toBe(1);
     expect(metrics.lastPreviewPointCount).toBe(1);
@@ -189,12 +192,15 @@ describe('MapViewWebgl2d', () => {
         viewHeight: 700,
         view2d: { zoom: 1, panX: 0, panY: 0 },
         tiles: [tile],
+        surveyHaloLineWidth: 2,
         surveyLineWidth: 1,
         previewLineWidth: 1,
         ellipseLineWidth: 1,
+        surveyHaloLines: [],
         surveyLines: [],
         previewLines: [],
         ellipseLines: [],
+        surveyHaloPoints: [],
         surveyPoints: [],
         previewPoints: [],
       }),
@@ -209,12 +215,15 @@ describe('MapViewWebgl2d', () => {
         viewHeight: 700,
         view2d: { zoom: 1, panX: 0, panY: 0 },
         tiles: [tile],
+        surveyHaloLineWidth: 2,
         surveyLineWidth: 1,
         previewLineWidth: 1,
         ellipseLineWidth: 1,
+        surveyHaloLines: [],
         surveyLines: [],
         previewLines: [],
         ellipseLines: [],
+        surveyHaloPoints: [],
         surveyPoints: [],
         previewPoints: [],
       }),
@@ -270,12 +279,15 @@ describe('MapViewWebgl2d', () => {
           fallbackZoomDelta: 0,
         },
       ],
+      surveyHaloLineWidth: 2,
       surveyLineWidth: 1,
       previewLineWidth: 1,
       ellipseLineWidth: 1,
+      surveyHaloLines: [],
       surveyLines: [],
       previewLines: [],
       ellipseLines: [],
+      surveyHaloPoints: [],
       surveyPoints: [],
       previewPoints: [],
     });

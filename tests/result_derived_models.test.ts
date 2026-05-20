@@ -220,9 +220,9 @@ describe('resultDerivedModels helpers', () => {
       'A|P',
     );
     expect(resolveMapStationFillColor({ fixed: false, severity: 'weak' })).toBe('#ef4444');
-    expect(resolveMapStationFillColor({ fixed: true, severity: 'weak' })).toBe('#22c55e');
-    expect(resolveMapEllipseStrokeColor('watch')).toBe('#f59e0b');
-    expect(resolveMapEllipseStrokeColor(null)).toBe('#38bdf8');
+    expect(resolveMapStationFillColor({ fixed: true, severity: 'weak' })).toBe('#10b981');
+    expect(resolveMapEllipseStrokeColor('watch')).toBe('#f97316');
+    expect(resolveMapEllipseStrokeColor(null)).toBe('#2563eb');
     expect(
       scoreMapStationPriority({
         stationId: 'P',

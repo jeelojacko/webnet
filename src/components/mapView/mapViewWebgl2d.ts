@@ -41,12 +41,15 @@ export interface MapViewWebgl2dRenderInput {
   viewHeight: number;
   view2d: View2dState;
   tiles: BasemapTileRenderSurface2d[];
+  surveyHaloLineWidth: number;
   surveyLineWidth: number;
   previewLineWidth: number;
   ellipseLineWidth: number;
+  surveyHaloLines: MapViewWebglLinePrimitive2d[];
   surveyLines: MapViewWebglLinePrimitive2d[];
   previewLines: MapViewWebglLinePrimitive2d[];
   ellipseLines: MapViewWebglLinePrimitive2d[];
+  surveyHaloPoints: MapViewWebglPointPrimitive2d[];
   surveyPoints: MapViewWebglPointPrimitive2d[];
   previewPoints: MapViewWebglPointPrimitive2d[];
 }
@@ -423,9 +426,11 @@ export class MapViewWebgl2d {
         this.metrics.lastPreviewPointCount = input.previewPoints.length;
         this.gl.clear(this.gl.COLOR_BUFFER_BIT);
         this.drawTiles(input);
+        this.drawLineGroup(input.surveyHaloLines, input.surveyHaloLineWidth, input);
         this.drawLineGroup(input.surveyLines, input.surveyLineWidth, input);
         this.drawLineGroup(input.previewLines, input.previewLineWidth, input);
         this.drawLineGroup(input.ellipseLines, input.ellipseLineWidth, input);
+        this.drawPointGroup(input.surveyHaloPoints, input);
         this.drawPointGroup(input.surveyPoints, input);
         this.drawPointGroup(input.previewPoints, input);
         this.dirty = { basemap: false, geometry: false };

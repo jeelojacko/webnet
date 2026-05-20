@@ -291,9 +291,20 @@ export const renderGeometryCanvas2d = ({
     context.globalAlpha = originalGeometryOpacity;
     context.lineCap = 'round';
     context.lineJoin = 'round';
-    context.strokeStyle = '#475569';
+    context.strokeStyle = 'rgba(248,250,252,0.42)';
+    context.lineWidth = lineWidth2d * 2.2;
+    context.globalAlpha = 0.85 * originalGeometryOpacity;
+
+    unselectedCanvasLines2d.forEach((line) => {
+      context.beginPath();
+      context.moveTo(line.x1, line.y1);
+      context.lineTo(line.x2, line.y2);
+      context.stroke();
+    });
+
+    context.strokeStyle = '#0f3b82';
     context.lineWidth = lineWidth2d;
-    context.globalAlpha = 0.6 * originalGeometryOpacity;
+    context.globalAlpha = 0.9 * originalGeometryOpacity;
 
     unselectedCanvasLines2d.forEach((line) => {
       context.beginPath();
@@ -327,6 +338,10 @@ export const renderGeometryCanvas2d = ({
       }
       context.beginPath();
       context.globalAlpha = originalGeometryOpacity;
+      context.fillStyle = 'rgba(248,250,252,0.85)';
+      context.arc(point.x, point.y, pointRadius2d * 1.55, 0, Math.PI * 2);
+      context.fill();
+      context.beginPath();
       context.fillStyle = stationFill(point.id, point.fixed);
       context.arc(point.x, point.y, pointRadius2d, 0, Math.PI * 2);
       context.fill();

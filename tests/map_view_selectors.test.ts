@@ -44,10 +44,12 @@ describe('mapViewSelectors', () => {
     const derived = buildMapViewStyle2d({ zoom: 4 }, true);
 
     expect(derived.originalGeometryOpacity).toBe(0.25);
-    expect(derived.lineWidth2d).toBeCloseTo(0.15, 6);
-    expect(derived.pointRadius2d).toBeCloseTo(0.875, 6);
+    expect(derived.lineWidth2d).toBeCloseTo(0.56, 6);
+    expect(derived.pointRadius2d).toBeCloseTo(1.9, 6);
+    expect(derived.lineWidth2d * 4).toBeGreaterThan(2);
+    expect(derived.pointRadius2d * 4).toBeGreaterThan(7);
     expect(derived.labelFont2d).toBeGreaterThan(3);
-    expect(derived.marker2d).toBeLessThan(2);
+    expect(derived.marker2d * 4).toBeGreaterThan(6);
   });
 
   it('builds transformed overlay lines and points from available transformed stations', () => {

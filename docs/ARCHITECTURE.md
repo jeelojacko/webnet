@@ -142,7 +142,7 @@ The UI should treat solve results as the source of truth and avoid duplicating e
 
 `MapView` now has an explicit 2D layered-render split under `src/components/mapView/`:
 - `mapViewWebgl2d.ts` owns the preferred WebGL2 render controller for OSM tiles plus non-selected static geometry
-- `mapViewWebglBuffers.ts` builds GPU-ready line/point/ellipse/preview buffers from the same projected survey geometry used elsewhere
+- `mapViewWebglBuffers.ts` builds GPU-ready line/point/ellipse/preview buffers from the same projected survey geometry used elsewhere, including the visibility-oriented halo passes and screen-readable point sizing used to keep map symbols legible over imagery
 - `mapViewTileStore.ts` owns imperative tile lifecycle, fallback coverage, and eviction state
 - `mapView2d.ts` now stages 2D map derivation into base projected geometry, base-space viewport culling, base-space selection/minor-geometry filtering, and final screen-space view application so pan/zoom avoids reprojecting and retranslating the full network every frame
 - `mapViewCanvas2d.ts` now also owns a dedicated planning-overlay canvas pass for non-selected obstacle/blocked polygon bodies and raw input-point markers; that pass stays active even when the main 2D background renderer is WebGL
@@ -154,6 +154,7 @@ The UI should treat solve results as the source of truth and avoid duplicating e
 - during active middle-drag 2D panning, `MapView.tsx` now applies a compositor-style preview translate to a shared render-surface wrapper instead of translating each layer independently, measures drag deltas in raw client pixels instead of transformed SVG coordinates, and keeps the drag-start derived viewport/culling basis frozen until release; the actual `view2d.panX/panY` commit happens once the drag ends so survey geometry stays visually planted while the camera motion stays smooth
 - the `MapView.tsx` render surface is now aspect-locked to the fixed internal survey viewport with a uniform cover-fit inside the container, so layout width/height changes do not stretch the 2D geometry and do not leave letterboxed bars around the live map surface
 - the WebGL basemap path now caches warped tile mesh GPU buffers per tile signature, requests a coarser tile zoom and lighter mesh during active interaction, enforces a smaller interaction-time tile budget before descriptor expansion, reuses the last settled basemap descriptor set while interaction is live, and defers tile-arrival-triggered redraws until interaction settles so OSM tile churn does not fight the compositor-style pan/zoom preview
+- the shared 2D style selectors now size point/line/ellipse symbols from a screen-visibility target before converting back into world units, so zoomed-in geometry stays readable without changing its actual projected location
 - the `MapView.tsx` pane chrome now keeps only the top/bottom separators around the live map surface, so the aspect-locked render slab keeps more horizontal room without adding side-border clutter
 
 Focused map profiling coverage now includes a Camp Design preanalysis matrix under `tests/map_view_camp_design_profile.test.tsx`, driven by `tests/fixtures/map_view_camp_design_profile_matrix.json` plus helper setup in `tests/helpers/campDesignMapPerfHarness.ts`, so feature-toggle and renderer comparisons can be reproduced before changing the live map stack.

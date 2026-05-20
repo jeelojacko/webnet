@@ -89,15 +89,16 @@ export const buildMapViewStyle2d = (
   view2d: Pick<View2dState, 'zoom'>,
   transformedOverlayActive: boolean,
 ): MapViewStyle2d => {
-  const labelScale2d = Math.sqrt(view2d.zoom);
-  const pointRadius2dPx = clamp(7 / labelScale2d, 1.6, 7);
-  const lineWidth2dPx = clamp(1.2 / labelScale2d, 0.35, 1.2);
-  const ellipseStroke2dPx = clamp(1 / labelScale2d, 0.35, 1);
+  const safeZoom = Math.max(view2d.zoom, 1e-6);
+  const zoomLog2 = Math.max(0, Math.log2(safeZoom));
+  const pointRadius2dPx = clamp(6.4 + zoomLog2 * 0.6, 6.4, 10.2);
+  const lineWidth2dPx = clamp(1.8 + zoomLog2 * 0.22, 1.8, 3);
+  const ellipseStroke2dPx = clamp(1.2 + zoomLog2 * 0.14, 1.2, 2.1);
   const labelFont2dPx = clamp(12 + Math.max(0, Math.log2(view2d.zoom)) * 3, 12, 26);
   const labelStroke2dPx = clamp(labelFont2dPx * 0.12, 1.2, 2.8);
   const labelOffset2dPx = clamp(labelFont2dPx * 0.85, 9, 22);
-  const marker2dPx = clamp(6 / labelScale2d, 2.5, 6);
-  const invZoom2d = 1 / view2d.zoom;
+  const marker2dPx = clamp(5.4 + zoomLog2 * 0.45, 5.4, 8.2);
+  const invZoom2d = 1 / safeZoom;
 
   return {
     pointRadius2d: pointRadius2dPx * invZoom2d,
