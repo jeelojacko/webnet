@@ -1,3 +1,5 @@
+- [x] Map pane chrome + WebGL tile-buffer batch (May 2026): remove the side borders from the map pane, then cache OSM tile meshes in persistent GPU buffers so zoom-heavy WebGL redraws stop re-uploading the same tile vertices every frame.
+
 - [x] Map aspect-ratio + interaction-basemap batch (May 2026): stop 2D map distortion when the workspace width changes, then keep the last settled OSM tile set active through live interaction so the browser harness can target the next real basemap hotspot without tile-churn noise.
 
 - [x] OSM browser profiling + basemap optimization batch (May 2026): extend the Chromium Camp map harness to profile basemap-on pan/zoom/toggle actions against official OSM tile-use guidance, then trim the live OSM render/request path based on measured browser results.

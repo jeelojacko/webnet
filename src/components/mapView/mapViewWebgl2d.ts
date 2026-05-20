@@ -31,6 +31,8 @@ interface TextureEntry {
 interface TileMeshEntry {
   signature: string;
   vertices: Float32Array;
+  buffer: WebGLBuffer | null;
+  vertexCount: number;
 }
 
 export interface MapViewWebgl2dRenderInput {
@@ -292,8 +294,6 @@ export class MapViewWebgl2d {
 
   private pointProgram: ProgramBundle | null = null;
 
-  private tileBuffer: WebGLBuffer | null = null;
-
   private lineBuffer: WebGLBuffer | null = null;
 
   private pointBuffer: WebGLBuffer | null = null;
@@ -355,10 +355,9 @@ export class MapViewWebgl2d {
       fragmentShaderSourcePoint,
       ['position', 'color', 'size'],
     );
-    const tileBuffer = context.createBuffer();
     const lineBuffer = context.createBuffer();
     const pointBuffer = context.createBuffer();
-    if (!texturedProgram || !lineProgram || !pointProgram || !tileBuffer || !lineBuffer || !pointBuffer) {
+    if (!texturedProgram || !lineProgram || !pointProgram || !lineBuffer || !pointBuffer) {
       this.dispose();
       return false;
     }
@@ -367,7 +366,6 @@ export class MapViewWebgl2d {
     this.texturedProgram = texturedProgram;
     this.lineProgram = lineProgram;
     this.pointProgram = pointProgram;
-    this.tileBuffer = tileBuffer;
     this.lineBuffer = lineBuffer;
     this.pointBuffer = pointBuffer;
     context.enable(context.BLEND);
@@ -446,7 +444,9 @@ export class MapViewWebgl2d {
   dispose(): void {
     if (this.gl) {
       this.tileTextureByKey.forEach((entry) => this.gl?.deleteTexture(entry.texture));
-      if (this.tileBuffer) this.gl.deleteBuffer(this.tileBuffer);
+      this.tileMeshByKey.forEach((entry) => {
+        if (entry.buffer) this.gl?.deleteBuffer(entry.buffer);
+      });
       if (this.lineBuffer) this.gl.deleteBuffer(this.lineBuffer);
       if (this.pointBuffer) this.gl.deleteBuffer(this.pointBuffer);
       if (this.texturedProgram) this.gl.deleteProgram(this.texturedProgram.program);
@@ -458,7 +458,6 @@ export class MapViewWebgl2d {
     this.ready = false;
     this.tileTextureByKey.clear();
     this.tileMeshByKey.clear();
-    this.tileBuffer = null;
     this.lineBuffer = null;
     this.pointBuffer = null;
     this.texturedProgram = null;
@@ -470,54 +469,54 @@ export class MapViewWebgl2d {
   }
 
   private drawTiles(input: MapViewWebgl2dRenderInput): void {
-    if (!this.gl || !this.texturedProgram || !this.tileBuffer) return;
+    if (!this.gl || !this.texturedProgram) return;
     const gl = this.gl;
-    gl.useProgram(this.texturedProgram.program);
-    gl.bindBuffer(gl.ARRAY_BUFFER, this.tileBuffer);
-    gl.enableVertexAttribArray(this.texturedProgram.attributes.position);
-    gl.vertexAttribPointer(
-      this.texturedProgram.attributes.position,
-      2,
-      gl.FLOAT,
-      false,
-      VERTEX_FLOATS_TILE * 4,
-      0,
-    );
-    if (this.texturedProgram.attributes.uv != null) {
-      gl.enableVertexAttribArray(this.texturedProgram.attributes.uv);
-      gl.vertexAttribPointer(
-        this.texturedProgram.attributes.uv,
-        2,
-        gl.FLOAT,
-        false,
-        VERTEX_FLOATS_TILE * 4,
-        2 * 4,
-      );
+    const program = this.texturedProgram;
+    gl.useProgram(program.program);
+    if (program.uniforms.viewSize) {
+      gl.uniform2f(program.uniforms.viewSize, input.viewWidth, input.viewHeight);
     }
-    if (this.texturedProgram.uniforms.viewSize) {
-      gl.uniform2f(this.texturedProgram.uniforms.viewSize, input.viewWidth, input.viewHeight);
-    }
-    if (this.texturedProgram.uniforms.panZoom) {
+    if (program.uniforms.panZoom) {
       gl.uniform4f(
-        this.texturedProgram.uniforms.panZoom,
+        program.uniforms.panZoom,
         input.view2d.panX,
         input.view2d.panY,
         input.view2d.zoom,
         0,
       );
     }
-    if (this.texturedProgram.uniforms.sampler) {
-      gl.uniform1i(this.texturedProgram.uniforms.sampler, 0);
+    if (program.uniforms.sampler) {
+      gl.uniform1i(program.uniforms.sampler, 0);
     }
     input.tiles.forEach((tile) => {
       const texture = this.resolveTexture(tile);
       if (!texture) return;
-      const vertices = this.resolveTileMeshVertices(tile);
-      if (vertices.length === 0) return;
+      const mesh = this.resolveTileMesh(tile);
+      if (!mesh?.buffer || mesh.vertexCount === 0) return;
       gl.activeTexture(gl.TEXTURE0);
       gl.bindTexture(gl.TEXTURE_2D, texture);
-      gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STREAM_DRAW);
-      gl.drawArrays(gl.TRIANGLES, 0, vertices.length / VERTEX_FLOATS_TILE);
+      gl.bindBuffer(gl.ARRAY_BUFFER, mesh.buffer);
+      gl.enableVertexAttribArray(program.attributes.position);
+      gl.vertexAttribPointer(
+        program.attributes.position,
+        2,
+        gl.FLOAT,
+        false,
+        VERTEX_FLOATS_TILE * 4,
+        0,
+      );
+      if (program.attributes.uv != null) {
+        gl.enableVertexAttribArray(program.attributes.uv);
+        gl.vertexAttribPointer(
+          program.attributes.uv,
+          2,
+          gl.FLOAT,
+          false,
+          VERTEX_FLOATS_TILE * 4,
+          2 * 4,
+        );
+      }
+      gl.drawArrays(gl.TRIANGLES, 0, mesh.vertexCount);
       this.metrics.drawCallCount += 1;
     });
   }
@@ -673,7 +672,8 @@ export class MapViewWebgl2d {
     return texture;
   }
 
-  private resolveTileMeshVertices(tile: BasemapTileRenderSurface2d): Float32Array {
+  private resolveTileMesh(tile: BasemapTileRenderSurface2d): TileMeshEntry | null {
+    if (!this.gl) return null;
     const pointCount = tile.meshPoints.length;
     const firstPoint = pointCount > 0 ? tile.meshPoints[0] : null;
     const middlePoint = pointCount > 0 ? tile.meshPoints[Math.floor(pointCount * 0.5)] : null;
@@ -695,12 +695,25 @@ export class MapViewWebgl2d {
       lastPoint?.y ?? 0,
     ].join(':');
     const cached = this.tileMeshByKey.get(tile.key);
-    if (cached && cached.signature === signature) {
-      return cached.vertices;
+    if (cached && cached.signature === signature && cached.buffer) {
+      return cached;
+    }
+    if (cached?.buffer) {
+      this.gl.deleteBuffer(cached.buffer);
     }
     const vertices = buildTileVertexData(tile);
-    this.tileMeshByKey.set(tile.key, { signature, vertices });
+    const buffer = this.gl.createBuffer();
+    if (!buffer) return null;
+    this.gl.bindBuffer(this.gl.ARRAY_BUFFER, buffer);
+    this.gl.bufferData(this.gl.ARRAY_BUFFER, vertices, this.gl.STATIC_DRAW);
+    const entry: TileMeshEntry = {
+      signature,
+      vertices,
+      buffer,
+      vertexCount: vertices.length / VERTEX_FLOATS_TILE,
+    };
+    this.tileMeshByKey.set(tile.key, entry);
     this.metrics.tileMeshBuildCount += 1;
-    return vertices;
+    return entry;
   }
 }

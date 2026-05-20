@@ -3001,7 +3001,7 @@ const MapView: React.FC<MapViewProps> = ({
         data-map-derived-view-zoom={derivedView2d.zoom.toFixed(6)}
         data-map-derived-view-pan-x={derivedView2d.panX.toFixed(6)}
         data-map-derived-view-pan-y={derivedView2d.panY.toFixed(6)}
-        className="bg-slate-900 border border-slate-800 rounded overflow-hidden flex-1 min-h-0 relative"
+        className="bg-slate-900 border-y border-slate-800 rounded overflow-hidden flex-1 min-h-0 relative"
       >
         <div
           ref={renderSurfaceRef}

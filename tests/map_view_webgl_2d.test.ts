@@ -13,6 +13,7 @@ const createFakeWebgl2Context = () => {
     LINK_STATUS: 0x8b82,
     ARRAY_BUFFER: 0x8892,
     STREAM_DRAW: 0x88e0,
+    STATIC_DRAW: 0x88e4,
     FLOAT: 0x1406,
     TEXTURE_2D: 0x0de1,
     TEXTURE0: 0x84c0,
@@ -152,6 +153,7 @@ describe('MapViewWebgl2d', () => {
     } as unknown as HTMLCanvasElement;
     const renderer = new MapViewWebgl2d();
     expect(renderer.init(canvas)).toBe(true);
+    const bufferDataSpy = gl.bufferData as unknown as { mock: { calls: unknown[][] } };
 
     const tile = {
       key: '5-10-12',
@@ -198,6 +200,7 @@ describe('MapViewWebgl2d', () => {
       }),
     ).toBe(true);
     const afterFirst = renderer.snapshotMetrics();
+    const bufferUploadsAfterFirst = bufferDataSpy.mock.calls.length;
 
     expect(
       renderer.render({
@@ -217,9 +220,11 @@ describe('MapViewWebgl2d', () => {
       }),
     ).toBe(true);
     const afterSecond = renderer.snapshotMetrics();
+    const bufferUploadsAfterSecond = bufferDataSpy.mock.calls.length;
 
     expect(afterFirst.tileMeshBuildCount).toBeGreaterThan(0);
     expect(afterSecond.tileMeshBuildCount).toBe(afterFirst.tileMeshBuildCount);
+    expect(bufferUploadsAfterSecond).toBe(bufferUploadsAfterFirst);
     renderer.dispose();
   });
 
