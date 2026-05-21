@@ -56,8 +56,10 @@ export const useWorkspaceReviewState = ({
 
   useEffect(() => {
     if (!result) {
-      clearSelection();
       clearPinnedObservations();
+      if (selection.origin !== 'map') {
+        clearSelection();
+      }
       return;
     }
     if (!derivedResultReady || !derivedResult) return;
@@ -74,6 +76,7 @@ export const useWorkspaceReviewState = ({
     derivedResult,
     derivedResultReady,
     result,
+    selection.origin,
     selection.observationId,
     selection.stationId,
   ]);

@@ -1,4 +1,8 @@
 import type { ProjectedMapLine2D, ProjectedPoint2D, View2dState } from './mapView2d';
+import {
+  MAP_POINT_BORDER_STROKE,
+  MAP_POINT_CENTER_FILL,
+} from './mapViewColors';
 import { measureMapViewPerf } from './mapViewPerf';
 
 interface CanvasEllipseLookupRow {
@@ -280,7 +284,7 @@ export const renderGeometryCanvas2d = ({
   unselectedCanvasLines2d,
   filteredVisiblePoints2d,
   ellipseStroke,
-  stationFill,
+  stationFill: _stationFill,
 }: RenderGeometryCanvas2dOptions) => {
   return measureMapViewPerf('canvas:geometry', () => {
     const { context } = prepareCanvas({ canvas, interactionPhase, viewWidth, viewHeight });
@@ -338,11 +342,11 @@ export const renderGeometryCanvas2d = ({
       }
       context.beginPath();
       context.globalAlpha = originalGeometryOpacity;
-      context.fillStyle = 'rgba(248,250,252,0.85)';
+      context.fillStyle = MAP_POINT_BORDER_STROKE;
       context.arc(point.x, point.y, pointRadius2d * 1.55, 0, Math.PI * 2);
       context.fill();
       context.beginPath();
-      context.fillStyle = stationFill(point.id, point.fixed);
+      context.fillStyle = MAP_POINT_CENTER_FILL;
       context.arc(point.x, point.y, pointRadius2d, 0, Math.PI * 2);
       context.fill();
     });

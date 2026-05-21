@@ -43,17 +43,32 @@ interface TileStoreEntry {
   lastAccessTick: number;
 }
 
-const DEFAULT_MAX_TILE_ENTRIES = 192;
+const DEFAULT_MAX_TILE_ENTRIES = 384;
 
 const buildParentKey = (zoom: number, tileX: number, tileY: number): string =>
   `${zoom}-${tileX}-${tileY}`;
+
+const buildDescriptorSignature = (descriptors: BasemapTileDescriptor2d[]): string =>
+  descriptors
+    .map(
+      (descriptor) =>
+        `${descriptor.key}:${descriptor.meshColumns}:${descriptor.meshRows}:${descriptor.meshPoints.length}`,
+    )
+    .join('|');
 
 export class MapViewTileStore {
   private readonly maxEntries: number;
 
   private readonly entries = new Map<string, TileStoreEntry>();
 
+  private readonly resolvedCache = new Map<
+    string,
+    { version: number; tiles: BasemapTileRenderSurface2d[] }
+  >();
+
   private tick = 0;
+
+  private version = 0;
 
   constructor(maxEntries = DEFAULT_MAX_TILE_ENTRIES) {
     this.maxEntries = Math.max(16, maxEntries);
@@ -61,14 +76,19 @@ export class MapViewTileStore {
 
   clear(): void {
     this.entries.clear();
+    this.resolvedCache.clear();
+    this.version += 1;
   }
 
   markAllEvictable(): void {
+    let mutated = false;
     this.entries.forEach((entry) => {
       if (entry.status === 'visible' || entry.status === 'uploaded') {
         entry.status = 'evictable';
+        mutated = true;
       }
     });
+    if (mutated) this.version += 1;
   }
 
   markUploaded(key: string): void {
@@ -76,11 +96,12 @@ export class MapViewTileStore {
     if (!entry) return;
     entry.status = 'uploaded';
     entry.lastAccessTick = this.tick;
+    this.version += 1;
   }
 
   requestTiles(
     descriptors: BasemapTileDescriptor2d[],
-    onTileReady: () => void,
+    onTileReady: (_key: string) => void,
     options?: { crossOrigin?: 'anonymous' | null },
   ): void {
     measureMapViewPerf('tiles:request', () => {
@@ -107,6 +128,7 @@ export class MapViewTileStore {
         if (existing && existing.crossOrigin !== requestedCrossOrigin) {
           this.entries.delete(descriptor.key);
           noteMapViewPerfCounter('tiles:request-replaced');
+          this.version += 1;
         }
         const image = new Image();
         image.decoding = 'async';
@@ -129,20 +151,23 @@ export class MapViewTileStore {
           lastAccessTick: this.tick,
         };
         this.entries.set(descriptor.key, entry);
+        this.version += 1;
         image.onload = () => {
           const current = this.entries.get(descriptor.key);
           if (!current) return;
           current.image = image;
           current.status = 'loaded';
           current.lastAccessTick = this.tick;
+          this.version += 1;
           noteMapViewPerfCounter('tiles:loaded');
-          onTileReady();
+          onTileReady(descriptor.key);
         };
         image.onerror = () => {
           const current = this.entries.get(descriptor.key);
           if (!current) return;
           current.status = 'evictable';
           current.lastAccessTick = this.tick;
+          this.version += 1;
           noteMapViewPerfCounter('tiles:error');
         };
         image.src = descriptor.href;
@@ -156,6 +181,15 @@ export class MapViewTileStore {
   ): BasemapTileRenderSurface2d[] {
     return measureMapViewPerf('tiles:resolve', () => {
       this.tick += 1;
+      const signature = buildDescriptorSignature(descriptors);
+      const cached = this.resolvedCache.get(signature);
+      if (cached && cached.version === this.version) {
+        noteMapViewPerfCounter('tiles:resolve-cache-hits');
+        noteMapViewPerfMetadata('tiles:last-resolve-cache', 'hit');
+        return cached.tiles;
+      }
+      noteMapViewPerfCounter('tiles:resolve-cache-misses');
+      noteMapViewPerfMetadata('tiles:last-resolve-cache', 'miss');
       let fallbackCount = 0;
       const resolved = descriptors
         .map((descriptor) => {
@@ -181,6 +215,10 @@ export class MapViewTileStore {
       noteMapViewPerfCounter('tiles:resolved', resolved.length);
       noteMapViewPerfCounter('tiles:fallback-resolved', fallbackCount);
       noteMapViewPerfMetadata('tiles:last-fallback-resolved', fallbackCount);
+      this.resolvedCache.set(signature, {
+        version: this.version,
+        tiles: resolved,
+      });
       return resolved;
     });
   }
@@ -251,6 +289,7 @@ export class MapViewTileStore {
     for (const entry of removable) {
       if (this.entries.size <= this.maxEntries) break;
       this.entries.delete(entry.key);
+      this.version += 1;
     }
   }
 }

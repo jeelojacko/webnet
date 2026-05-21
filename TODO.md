@@ -1,3 +1,9 @@
+- [x] Map selection layering + symbol contrast batch (May 2026): keep point labels/points above lines and polygons, move planning polygons below survey geometry, strengthen point/line selection contrast, and fix point/line click priority so polygon hits do not steal selection.
+
+- [x] Map tile persistence + prefetch batch (May 2026): keep a wider idle-time OSM tile ring warm in memory, increase revisit tile retention, and reduce refetch churn when panning back across recently viewed areas.
+
+- [x] Map smoothness perf batch (May 2026): freeze non-critical SVG overlay work during live interaction, gate OSM descriptor churn to tile-meaningful zoom bucket changes, cache resolved basemap surfaces, and extend browser perf assertions around pan/zoom regressions.
+
 - [x] Map synthetic-label integration batch (May 2026): make synthetic brace/setup labels obey the shared `Show labels` toggle, keep all labels on the top draw layer, and rename synthetic point IDs to clean `B-#` / `P-#` forms.
 
 - [x] Map geometry visibility batch (May 2026): strengthen default survey point/line colors against the basemap and stop 2D point/line symbols from shrinking to near-invisible sizes at higher zoom levels.

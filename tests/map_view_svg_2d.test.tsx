@@ -28,6 +28,7 @@ describe('MapViewSvg2d', () => {
             marker2d={6}
             view2d={{ zoom: 1, panX: 0, panY: 0 }}
             showLabels={true}
+            interactionPhase="idle"
             originalGeometryOpacity={1}
             filteredVisiblePoints2d={[
               { id: 'A', fixed: true, x: 100, y: 100, screenX: 100, screenY: 100 },
@@ -110,6 +111,26 @@ describe('MapViewSvg2d', () => {
         container.querySelector('[data-map-label="B-1"]') as SVGTextElement,
       ) & Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
+    expect(
+      (container.querySelector('[data-map-observation="7"]') as SVGLineElement).compareDocumentPosition(
+        container.querySelector('[data-map-label="TX1"]') as SVGTextElement,
+      ) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(
+      (container.querySelector('[data-map-observation-selection="7"]') as SVGLineElement).getAttribute(
+        'stroke',
+      ),
+    ).toBe('#facc15');
+    expect((container.querySelector('[data-map-observation="7"]') as SVGLineElement).getAttribute('stroke')).toBe(
+      '#22d3ee',
+    );
+    expect(
+      (container.querySelector('[data-map-station-selection="A"]') as SVGCircleElement).getAttribute('stroke'),
+    ).toBe('#facc15');
+    const transformedPoint = container.querySelector('[data-map-transformed-point="TX1"]') as SVGCircleElement | null;
+    expect(transformedPoint).not.toBeNull();
+    expect(transformedPoint?.getAttribute('fill')).toBe('#ff7a18');
+    expect(transformedPoint?.getAttribute('stroke')).toBe('#2563eb');
 
     await act(async () => {
       (container.querySelector('[data-map-observation="7"]') as SVGLineElement).dispatchEvent(
@@ -144,6 +165,7 @@ describe('MapViewSvg2d', () => {
     const baseProps = {
       marker2d: 6,
       showLabels: true,
+      interactionPhase: 'idle' as const,
       originalGeometryOpacity: 1,
       filteredVisiblePoints2d: [
         { id: 'A', fixed: true, x: 100, y: 100, screenX: 100, screenY: 100 },
@@ -223,6 +245,7 @@ describe('MapViewSvg2d', () => {
             marker2d={6}
             view2d={{ zoom: 1, panX: 0, panY: 0 }}
             showLabels={false}
+            interactionPhase="idle"
             originalGeometryOpacity={1}
             filteredVisiblePoints2d={[]}
             visiblePointLabels2d={new Set()}
@@ -256,6 +279,52 @@ describe('MapViewSvg2d', () => {
 
     expect(container.querySelector('[data-map-brace-preview="B-1"]')).not.toBeNull();
     expect(container.querySelector('[data-map-label="B-1"]')).toBeNull();
+
+    await act(async () => {
+      root.unmount();
+    });
+    container.remove();
+  });
+
+  it('keeps station labels fully opaque even when base geometry is dimmed', async () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root: Root = createRoot(container);
+
+    await act(async () => {
+      root.render(
+        <svg viewBox="0 0 1000 700">
+          <MapViewSvg2d
+            marker2d={6}
+            view2d={{ zoom: 1, panX: 0, panY: 0 }}
+            showLabels={true}
+            interactionPhase="idle"
+            originalGeometryOpacity={0.25}
+            filteredVisiblePoints2d={[
+              { id: 'A', fixed: true, x: 100, y: 100, screenX: 100, screenY: 100 },
+            ]}
+            visiblePointLabels2d={new Set(['A'])}
+            labelOffset2d={10}
+            labelFont2d={12}
+            labelStroke2d={1}
+            filteredVisibleMapLines2d={[]}
+            selectedObservationId={null}
+            selectedObservationPairKey={null}
+            lineWidth2d={1}
+            selectedStationId={null}
+            pointRadius2d={4}
+            transformedOverlayActive={false}
+            transformedLines2d={[]}
+            transformedPoints2d={[]}
+            project2d={(x, y) => ({ x, y })}
+          />
+        </svg>,
+      );
+    });
+
+    const label = container.querySelector('[data-map-label="A"]') as SVGTextElement | null;
+    expect(label).not.toBeNull();
+    expect(label?.parentElement?.getAttribute('opacity')).toBeNull();
 
     await act(async () => {
       root.unmount();

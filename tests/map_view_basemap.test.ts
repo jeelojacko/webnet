@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  buildRequestedBasemapTiles,
   chooseOsmTileMeshDivisions,
   resolveInteractiveBasemapTiles,
 } from '../src/components/mapView/mapViewBasemap';
@@ -29,5 +30,19 @@ describe('chooseOsmTileMeshDivisions', () => {
     );
     expect(resolveInteractiveBasemapTiles(liveTiles, stableTiles, 'settling')).toEqual(liveTiles);
     expect(resolveInteractiveBasemapTiles(liveTiles, [], 'interacting')).toEqual(liveTiles);
+  });
+
+  it('prefetches an extra basemap ring only while idle and preserves the render-tile order', () => {
+    const renderTiles = [{ key: 'a' }, { key: 'b' }];
+    const prefetchedTiles = [{ key: 'b' }, { key: 'c' }, { key: 'd' }];
+    expect(buildRequestedBasemapTiles(renderTiles, prefetchedTiles, 'idle')).toEqual([
+      { key: 'a' },
+      { key: 'b' },
+      { key: 'c' },
+      { key: 'd' },
+    ]);
+    expect(buildRequestedBasemapTiles(renderTiles, prefetchedTiles, 'interacting')).toEqual(
+      renderTiles,
+    );
   });
 });

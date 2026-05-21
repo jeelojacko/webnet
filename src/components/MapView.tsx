@@ -72,6 +72,7 @@ import {
   renderPlanningOverlayCanvas2d,
 } from './mapView/mapViewCanvas2d';
 import {
+  buildRequestedBasemapTiles,
   chooseOsmTileMeshDivisions,
   resolveInteractiveBasemapTiles,
 } from './mapView/mapViewBasemap';
@@ -107,13 +108,17 @@ const MAX_ELLIPSOID_SAMPLES = 28;
 const VIEWPORT_CLIP_MARGIN_PX = 80;
 const DENSE_LABEL_POINT_THRESHOLD = 90;
 const DENSE_LABEL_EDGE_THRESHOLD = 180;
+const OSM_FULL_LABEL_POINT_THRESHOLD = 160;
 const LABEL_GRID_PX = 48;
 const INTERACTION_SETTLE_MS = 90;
+const OSM_IDLE_PREFETCH_DELAY_MS = 260;
 const INTERACTION_DENSE_POINT_THRESHOLD = 180;
 const INTERACTION_DENSE_LINE_THRESHOLD = 360;
 const POINT_HIT_RADIUS_PX = 10;
 const LINE_HIT_RADIUS_PX = 8;
 const OSM_VISIBLE_TILE_BUFFER = 1;
+const OSM_IDLE_PREFETCH_TILE_BUFFER = 2;
+const OSM_IDLE_PREFETCH_TILE_COUNT_THRESHOLD = 30;
 const OSM_INTERACTION_TILE_BUFFER = 0;
 const OSM_INTERACTION_ZOOM_DELTA = 1;
 const OSM_VISIBLE_TILE_CAP = 72;
@@ -121,6 +126,7 @@ const OSM_INTERACTION_TILE_CAP = 42;
 const EMPTY_MAP_LINKS: ReturnType<typeof buildObservationMapLinks> = [];
 
 type MapInteractionPhase = 'idle' | 'interacting' | 'settling';
+type MapInteractionKind = 'none' | 'pan' | 'wheel';
 
 export interface MapViewSnapshot {
   view2d: { zoom: number; panX: number; panY: number };
@@ -256,6 +262,73 @@ const countOsmTileDescriptorsAtZoom = (
   const minTileY = Math.floor(latitudeToTileY(maxLat, zoom)) - tileBuffer;
   const maxTileY = Math.floor(latitudeToTileY(minLat, zoom)) + tileBuffer;
   return Math.max(0, maxTileX - minTileX + 1) * Math.max(0, maxTileY - minTileY + 1);
+};
+
+type OsmDescriptorBucket = {
+  descriptorZoom: number;
+  descriptorCount: number;
+  signature: string;
+};
+
+const buildOsmDescriptorBucket = ({
+  minLon,
+  maxLon,
+  minLat,
+  maxLat,
+  centerLat,
+  metersPerPixelX,
+  interactionPhase,
+}: {
+  minLon: number;
+  maxLon: number;
+  minLat: number;
+  maxLat: number;
+  centerLat: number;
+  metersPerPixelX: number;
+  interactionPhase: MapInteractionPhase;
+}): OsmDescriptorBucket => {
+  const tileBuffer =
+    interactionPhase === 'interacting' ? OSM_INTERACTION_TILE_BUFFER : OSM_VISIBLE_TILE_BUFFER;
+  const tileCap =
+    interactionPhase === 'interacting' ? OSM_INTERACTION_TILE_CAP : OSM_VISIBLE_TILE_CAP;
+  const tileMetersAtZoom0 =
+    156543.03392804097 * Math.cos((clampLatitudeForTiles(centerLat) * Math.PI) / 180);
+  let descriptorZoom = Math.round(
+    Math.log2(Math.max(1e-9, tileMetersAtZoom0) / Math.max(1e-9, metersPerPixelX)),
+  );
+  if (!Number.isFinite(descriptorZoom)) descriptorZoom = 18;
+  descriptorZoom = clamp(descriptorZoom, OSM_MIN_ZOOM, OSM_MAX_ZOOM);
+  if (interactionPhase === 'interacting') {
+    descriptorZoom = clamp(
+      descriptorZoom - OSM_INTERACTION_ZOOM_DELTA,
+      OSM_MIN_ZOOM,
+      OSM_MAX_ZOOM,
+    );
+  }
+  let descriptorCount = countOsmTileDescriptorsAtZoom(
+    minLon,
+    maxLon,
+    minLat,
+    maxLat,
+    descriptorZoom,
+    tileBuffer,
+  );
+  while (descriptorZoom > OSM_MIN_ZOOM && descriptorCount > tileCap) {
+    descriptorZoom -= 1;
+    descriptorCount = countOsmTileDescriptorsAtZoom(
+      minLon,
+      maxLon,
+      minLat,
+      maxLat,
+      descriptorZoom,
+      tileBuffer,
+    );
+  }
+  return {
+    descriptorZoom,
+    descriptorCount,
+    signature: `${descriptorZoom}:${descriptorCount}:${tileBuffer}:${tileCap}`,
+  };
 };
 
 const isPointInsideRect = (
@@ -415,8 +488,86 @@ const MapView: React.FC<MapViewProps> = ({
   const [renderer2d, setRenderer2d] = useState<'canvas' | 'webgl'>(() =>
     canRenderWebglLayers() ? 'webgl' : 'canvas',
   );
-  const [stableBasemapTiles2d, setStableBasemapTiles2d] = useState<BasemapTileDescriptor2d[]>([]);
-  const [stableBasemapTileSignature, setStableBasemapTileSignature] = useState('');
+  const interactionKindRef = useRef<MapInteractionKind>('none');
+  const stableBasemapTiles2dRef = useRef<BasemapTileDescriptor2d[]>([]);
+  const stableBasemapTileSignatureRef = useRef('');
+  const [stableBasemapTiles2dRender, setStableBasemapTiles2dRender] = useState<
+    BasemapTileDescriptor2d[]
+  >([]);
+  const [stableBasemapTileSignatureRender, setStableBasemapTileSignatureRender] = useState('');
+  const basemapDescriptorBucketRef = useRef('');
+  const [basemapDescriptorView2d, setBasemapDescriptorView2d] = useState(
+    () => snapshot?.view2d ?? { zoom: 1, panX: 0, panY: 0 },
+  );
+  const [idlePrefetchReady, setIdlePrefetchReady] = useState(false);
+  const frozenVisiblePointLabels2dRef = useRef<Set<string>>(new Set());
+  const [frozenVisiblePointLabels2d, setFrozenVisiblePointLabels2d] = useState<Set<string>>(
+    () => new Set(),
+  );
+  const frozenPlanningPolygons2dRef = useRef<
+    Array<{
+      id: string;
+      source: 'user' | 'osm';
+      kind: 'blocked-area' | 'building' | 'wooded';
+      label: string;
+      vertices: Array<{ x: number; y: number }>;
+      pointsAttr: string;
+    }>
+  >([]);
+  const [frozenPlanningPolygons2d, setFrozenPlanningPolygons2d] = useState<
+    Array<{
+      id: string;
+      source: 'user' | 'osm';
+      kind: 'blocked-area' | 'building' | 'wooded';
+      label: string;
+      vertices: Array<{ x: number; y: number }>;
+      pointsAttr: string;
+    }>
+  >([]);
+  const frozenPlanningInputPoints2dRef = useRef<Array<{ stationId: string; x: number; y: number }>>([]);
+  const [frozenPlanningInputPoints2d, setFrozenPlanningInputPoints2d] = useState<
+    Array<{ stationId: string; x: number; y: number }>
+  >([]);
+  const frozenBracePreviewPoints2dRef = useRef<
+    Array<{ scenarioId: string; stationId: string; templateLabel: string; x: number; y: number; active: boolean }>
+  >([]);
+  const [frozenBracePreviewPoints2d, setFrozenBracePreviewPoints2d] = useState<
+    Array<{
+      scenarioId: string;
+      stationId: string;
+      templateLabel: string;
+      x: number;
+      y: number;
+      active: boolean;
+    }>
+  >([]);
+  const frozenScenarioPreviewSegments2dRef = useRef<
+    Array<{
+      scenarioId: string;
+      fromStationId: string;
+      toStationId: string;
+      x1: number;
+      y1: number;
+      x2: number;
+      y2: number;
+      kind: 'sight-line' | 'cross-tie';
+      active: boolean;
+    }>
+  >([]);
+  const [frozenScenarioPreviewSegments2d, setFrozenScenarioPreviewSegments2d] = useState<
+    Array<{
+      scenarioId: string;
+      fromStationId: string;
+      toStationId: string;
+      x1: number;
+      y1: number;
+      x2: number;
+      y2: number;
+      kind: 'sight-line' | 'cross-tie';
+      active: boolean;
+    }>
+  >([]);
+  const obstacleFetchSignatureRef = useRef<string>('');
   const latestBasemapRenderInputRef = useRef<{
     interactionPhase: MapInteractionPhase;
     view2d: { zoom: number; panX: number; panY: number };
@@ -493,6 +644,7 @@ const MapView: React.FC<MapViewProps> = ({
   const settleTimerRef = useRef<ReturnType<typeof globalThis.setTimeout> | null>(null);
   const settleFrameRef = useRef<number | null>(null);
   const [interactionPhase, setInteractionPhase] = useState<MapInteractionPhase>('idle');
+  const interactionPhaseRef = useRef<MapInteractionPhase>('idle');
   const [camera3d, setCamera3d] = useState<Map3DCamera | null>(() => snapshot?.camera3d ?? null);
   const [isDragging, setIsDragging] = useState(false);
   const [contextMenu, setContextMenu] = useState<{
@@ -926,15 +1078,22 @@ const MapView: React.FC<MapViewProps> = ({
     [scheduleView2dCommit],
   );
 
-  const markInteracting = useCallback(() => {
+  const markInteracting = useCallback((kind: MapInteractionKind) => {
     if (effectiveMode !== '2d') return;
     clearInteractionSettle();
-    setInteractionPhase('interacting');
+    interactionKindRef.current = kind;
+    if (interactionPhaseRef.current !== 'interacting') {
+      interactionPhaseRef.current = 'interacting';
+      setInteractionPhase('interacting');
+    }
     settleTimerRef.current = globalThis.setTimeout(() => {
       settleTimerRef.current = null;
+      interactionPhaseRef.current = 'settling';
       setInteractionPhase('settling');
       settleFrameRef.current = requestAnimationFrame(() => {
         settleFrameRef.current = null;
+        interactionKindRef.current = 'none';
+        interactionPhaseRef.current = 'idle';
         setInteractionPhase('idle');
       });
     }, INTERACTION_SETTLE_MS);
@@ -943,6 +1102,25 @@ const MapView: React.FC<MapViewProps> = ({
   useEffect(() => {
     pendingView2dRef.current = view2d;
   }, [view2d]);
+
+  useEffect(() => {
+    interactionPhaseRef.current = interactionPhase;
+  }, [interactionPhase]);
+
+  useEffect(() => {
+    if (effectiveMode !== '2d' || planningMap.basemapMode !== 'osm') {
+      setIdlePrefetchReady(false);
+      return;
+    }
+    if (interactionPhase !== 'idle') {
+      setIdlePrefetchReady(false);
+      return;
+    }
+    const timeout = window.setTimeout(() => {
+      setIdlePrefetchReady(true);
+    }, OSM_IDLE_PREFETCH_DELAY_MS);
+    return () => window.clearTimeout(timeout);
+  }, [effectiveMode, interactionPhase, planningMap.basemapMode]);
 
   useEffect(() => {
     if (effectiveMode !== '2d' || interactionPhase !== 'idle') return;
@@ -978,8 +1156,11 @@ const MapView: React.FC<MapViewProps> = ({
     panPreviewCommitViewRef.current = null;
     pendingView2dRef.current = reset;
     setView2d(reset);
+    setBasemapDescriptorView2d(reset);
     setFrozenDerivedView2d(null);
     clearInteractionSettle();
+    interactionKindRef.current = 'none';
+    interactionPhaseRef.current = 'idle';
     setInteractionPhase('idle');
   }, [applyPanPreviewOffset, clearInteractionSettle]);
 
@@ -1042,6 +1223,8 @@ const MapView: React.FC<MapViewProps> = ({
   useEffect(() => {
     if (effectiveMode === '3d') {
       clearInteractionSettle();
+      interactionKindRef.current = 'none';
+      interactionPhaseRef.current = 'idle';
       setInteractionPhase('idle');
       if (skipNextAutoResetRef.current) {
         skipNextAutoResetRef.current = false;
@@ -1225,7 +1408,7 @@ const MapView: React.FC<MapViewProps> = ({
         const dy = clientY - dragRef.current.lastY;
         dragRef.current.lastX = clientX;
         dragRef.current.lastY = clientY;
-        markInteracting();
+        markInteracting('pan');
         const nextPreviewOffset = {
           x: panPreviewOffsetRef.current.x + dx,
           y: panPreviewOffsetRef.current.y + dy,
@@ -1364,7 +1547,7 @@ const MapView: React.FC<MapViewProps> = ({
     }
     const anchor = toSvgCoords(event.clientX, event.clientY);
     if (!anchor) return;
-    markInteracting();
+    markInteracting('wheel');
     queueView2dUpdate((prev) => {
       const factor = Math.exp(-event.deltaY * 0.0015);
       const nextZoom = clamp(prev.zoom * factor, MIN_ZOOM, MAX_ZOOM);
@@ -1719,21 +1902,44 @@ const MapView: React.FC<MapViewProps> = ({
     };
   }, [planningExtentPoints]);
 
-  const basemapTiles2d = useMemo<BasemapTileDescriptor2d[]>(() => {
-    if (
-      effectiveMode !== '2d' ||
-      planningMap.basemapMode !== 'osm' ||
-      planningGeorefContext == null
-    ) {
-      return [];
+  useEffect(() => {
+    if (effectiveMode !== '2d' || planningMap.basemapMode !== 'osm') {
+      basemapDescriptorBucketRef.current = '';
+      if (!view2dEquals(basemapDescriptorView2d, view2d)) {
+        setBasemapDescriptorView2d(view2d);
+      }
+      return;
     }
-    const viewportCorners = [
-      svgToMapCoords(0, 0),
-      svgToMapCoords(VIEW_W, 0),
-      svgToMapCoords(0, VIEW_H),
-      svgToMapCoords(VIEW_W, VIEW_H),
+    if (planningGeorefContext == null) return;
+    if (interactionPhase === 'idle' || interactionKindRef.current === 'none') {
+      basemapDescriptorBucketRef.current = '';
+      if (!view2dEquals(basemapDescriptorView2d, view2d)) {
+        setBasemapDescriptorView2d(view2d);
+      }
+      return;
+    }
+    if (interactionKindRef.current === 'pan') return;
+    const svgToMapCoordsAtView = (
+      screenX: number,
+      screenY: number,
+      descriptorView: { zoom: number; panX: number; panY: number },
+    ): { x: number; y: number } => {
+      const projectedX = (screenX - descriptorView.panX) / Math.max(descriptorView.zoom, 1e-9);
+      const projectedY = (screenY - descriptorView.panY) / Math.max(descriptorView.zoom, 1e-9);
+      return {
+        x: bbox.minX + (projectedX - projection2d.offsetX) / Math.max(projection2d.scale, 1e-9),
+        y:
+          bbox.minY +
+          (VIEW_H - projectedY - projection2d.offsetY) / Math.max(projection2d.scale, 1e-9),
+      };
+    };
+    const descriptorViewportCorners = [
+      svgToMapCoordsAtView(0, 0, view2d),
+      svgToMapCoordsAtView(VIEW_W, 0, view2d),
+      svgToMapCoordsAtView(0, VIEW_H, view2d),
+      svgToMapCoordsAtView(VIEW_W, VIEW_H, view2d),
     ];
-    const geodeticCorners = viewportCorners
+    const geodeticCorners = descriptorViewportCorners
       .map((corner) =>
         inverseENToGeodetic({
           east: corner.x,
@@ -1744,7 +1950,7 @@ const MapView: React.FC<MapViewProps> = ({
       .filter(
         (corner): corner is { latDeg: number; lonDeg: number } => !('failureReason' in corner),
       );
-    if (geodeticCorners.length !== 4) return [];
+    if (geodeticCorners.length !== 4) return;
     const lats = geodeticCorners.map((corner) => corner.latDeg);
     const lons = geodeticCorners.map((corner) => corner.lonDeg);
     const minLat = Math.min(...lats);
@@ -1754,137 +1960,261 @@ const MapView: React.FC<MapViewProps> = ({
     const centerLat = (minLat + maxLat) * 0.5;
     const metersPerPixelX =
       Math.abs(
-        svgToMapCoords(OSM_TILE_SIZE_PX, VIEW_H * 0.5).x - svgToMapCoords(0, VIEW_H * 0.5).x,
+        svgToMapCoordsAtView(OSM_TILE_SIZE_PX, VIEW_H * 0.5, view2d).x -
+          svgToMapCoordsAtView(0, VIEW_H * 0.5, view2d).x,
       ) / OSM_TILE_SIZE_PX;
-    if (!(metersPerPixelX > 0)) return [];
-    const tileMetersAtZoom0 =
-      156543.03392804097 * Math.cos((clampLatitudeForTiles(centerLat) * Math.PI) / 180);
-    let zoom = Math.round(
-      Math.log2(Math.max(1e-9, tileMetersAtZoom0) / Math.max(1e-9, metersPerPixelX)),
-    );
-    if (!Number.isFinite(zoom)) zoom = 18;
-    zoom = clamp(zoom, OSM_MIN_ZOOM, OSM_MAX_ZOOM);
-    if (interactionPhase === 'interacting') {
-      zoom = clamp(zoom - OSM_INTERACTION_ZOOM_DELTA, OSM_MIN_ZOOM, OSM_MAX_ZOOM);
-    }
-    const tileBuffer =
-      interactionPhase === 'interacting' ? OSM_INTERACTION_TILE_BUFFER : OSM_VISIBLE_TILE_BUFFER;
-    const tileCap =
-      interactionPhase === 'interacting' ? OSM_INTERACTION_TILE_CAP : OSM_VISIBLE_TILE_CAP;
-    while (
-      zoom > OSM_MIN_ZOOM &&
-      countOsmTileDescriptorsAtZoom(minLon, maxLon, minLat, maxLat, zoom, tileBuffer) > tileCap
-    ) {
-      zoom -= 1;
-    }
-    const tileCount = 2 ** zoom;
-    const minTileX = Math.floor(longitudeToTileX(minLon, zoom)) - tileBuffer;
-    const maxTileX = Math.floor(longitudeToTileX(maxLon, zoom)) + tileBuffer;
-    const minTileY = Math.floor(latitudeToTileY(maxLat, zoom)) - tileBuffer;
-    const maxTileY = Math.floor(latitudeToTileY(minLat, zoom)) + tileBuffer;
-    const centerTileX = (minTileX + maxTileX) * 0.5;
-    const centerTileY = (minTileY + maxTileY) * 0.5;
-    const tiles: BasemapTileDescriptor2d[] = [];
-    for (let tileX = minTileX; tileX <= maxTileX; tileX += 1) {
-      for (let tileY = minTileY; tileY <= maxTileY; tileY += 1) {
-        const wrappedTileX = ((tileX % tileCount) + tileCount) % tileCount;
-        if (tileY < 0 || tileY >= tileCount) continue;
-        const westLon = tileXToLongitude(tileX, zoom);
-        const eastLon = tileXToLongitude(tileX + 1, zoom);
-        const northLat = tileYToLatitude(tileY, zoom);
-        const southLat = tileYToLatitude(tileY + 1, zoom);
-        const northWest = projectGeodeticToEN({
-          latDeg: northLat,
-          lonDeg: westLon,
-          originLatDeg: planningGeorefContext.originLatDeg,
-          originLonDeg: planningGeorefContext.originLonDeg,
-          model: planningGeorefContext.model,
-          coordSystemMode: planningGeorefContext.coordSystemMode,
-          crsId: planningGeorefContext.crsId,
-        });
-        const southEast = projectGeodeticToEN({
-          latDeg: southLat,
-          lonDeg: eastLon,
-          originLatDeg: planningGeorefContext.originLatDeg,
-          originLonDeg: planningGeorefContext.originLonDeg,
-          model: planningGeorefContext.model,
-          coordSystemMode: planningGeorefContext.coordSystemMode,
-          crsId: planningGeorefContext.crsId,
-        });
-        const southEastScreen = project2d(southEast.east, southEast.north);
-        const northWestScreen = project2d(northWest.east, northWest.north);
-        if (
-          !Number.isFinite(northWestScreen.x) ||
-          !Number.isFinite(northWestScreen.y) ||
-          !Number.isFinite(southEastScreen.x) ||
-          !Number.isFinite(southEastScreen.y)
-        ) {
-          continue;
-        }
-        const tileWidthPx = Math.abs(southEastScreen.x - northWestScreen.x) * view2d.zoom;
-        const tileHeightPx = Math.abs(southEastScreen.y - northWestScreen.y) * view2d.zoom;
-        const meshColumns = chooseOsmTileMeshDivisions(
-          tileWidthPx,
-          tileHeightPx,
-          interactionPhase === 'interacting',
-        );
-        const meshRows = meshColumns;
-        const meshPoints: Array<{ x: number; y: number }> = [];
-        let meshValid = true;
-        for (let row = 0; row <= meshRows; row += 1) {
-          const tileSampleY = tileY + row / meshRows;
-          const sampleLat = tileYToLatitude(tileSampleY, zoom);
-          for (let column = 0; column <= meshColumns; column += 1) {
-            const tileSampleX = tileX + column / meshColumns;
-            const sampleLon = tileXToLongitude(tileSampleX, zoom);
-            const sampleProjected = projectGeodeticToEN({
-              latDeg: sampleLat,
-              lonDeg: sampleLon,
-              originLatDeg: planningGeorefContext.originLatDeg,
-              originLonDeg: planningGeorefContext.originLonDeg,
-              model: planningGeorefContext.model,
-              coordSystemMode: planningGeorefContext.coordSystemMode,
-              crsId: planningGeorefContext.crsId,
-            });
-            const sampleScreen = project2d(sampleProjected.east, sampleProjected.north);
-            if (!Number.isFinite(sampleScreen.x) || !Number.isFinite(sampleScreen.y)) {
-              meshValid = false;
-              break;
-            }
-            meshPoints.push({ x: sampleScreen.x, y: sampleScreen.y });
-          }
-          if (!meshValid) break;
-        }
-        if (!meshValid || meshPoints.length !== (meshColumns + 1) * (meshRows + 1)) continue;
-        tiles.push({
-          key: `${zoom}-${wrappedTileX}-${tileY}`,
-          href: `https://tile.openstreetmap.org/${zoom}/${wrappedTileX}/${tileY}.png`,
-          zoom,
-          tileX: wrappedTileX,
-          tileY,
-          meshColumns,
-          meshRows,
-          meshPoints,
-        });
-      }
-    }
-    return tiles.sort((left, right) => {
-      const [leftZoom, leftX, leftY] = left.key.split('-').map(Number);
-      const [rightZoom, rightX, rightY] = right.key.split('-').map(Number);
-      const zoomDelta = (rightZoom ?? zoom) - (leftZoom ?? zoom);
-      if (zoomDelta !== 0) return zoomDelta;
-      const leftDistance = Math.hypot((leftX ?? 0) - centerTileX, (leftY ?? 0) - centerTileY);
-      const rightDistance = Math.hypot((rightX ?? 0) - centerTileX, (rightY ?? 0) - centerTileY);
-      return leftDistance - rightDistance;
+    if (!(metersPerPixelX > 0)) return;
+    const bucket = buildOsmDescriptorBucket({
+      minLon,
+      maxLon,
+      minLat,
+      maxLat,
+      centerLat,
+      metersPerPixelX,
+      interactionPhase,
     });
+    if (bucket.signature === basemapDescriptorBucketRef.current) return;
+    basemapDescriptorBucketRef.current = bucket.signature;
+    noteMapViewPerfCounter('tiles:descriptor-rebuilds');
+    noteMapViewPerfMetadata('tiles:last-descriptor-bucket', bucket.signature);
+    setBasemapDescriptorView2d(view2d);
   }, [
+    basemapDescriptorView2d,
+    bbox.minX,
+    bbox.minY,
     effectiveMode,
     interactionPhase,
     planningGeorefContext,
     planningMap.basemapMode,
-    project2d,
-    svgToMapCoords,
-    view2d.zoom,
+    projection2d.offsetX,
+    projection2d.offsetY,
+    projection2d.scale,
+    view2d,
+  ]);
+
+  const buildBasemapTiles2dForBuffer = useCallback(
+    (tileBuffer: number): BasemapTileDescriptor2d[] => {
+      if (
+        effectiveMode !== '2d' ||
+        planningMap.basemapMode !== 'osm' ||
+        planningGeorefContext == null
+      ) {
+        return [];
+      }
+      const svgToMapCoordsAtView = (
+        screenX: number,
+        screenY: number,
+        descriptorView: { zoom: number; panX: number; panY: number },
+      ): { x: number; y: number } => {
+        const projectedX = (screenX - descriptorView.panX) / Math.max(descriptorView.zoom, 1e-9);
+        const projectedY = (screenY - descriptorView.panY) / Math.max(descriptorView.zoom, 1e-9);
+        return {
+          x: bbox.minX + (projectedX - projection2d.offsetX) / Math.max(projection2d.scale, 1e-9),
+          y:
+            bbox.minY +
+            (VIEW_H - projectedY - projection2d.offsetY) / Math.max(projection2d.scale, 1e-9),
+        };
+      };
+      const viewportCorners = [
+        svgToMapCoordsAtView(0, 0, basemapDescriptorView2d),
+        svgToMapCoordsAtView(VIEW_W, 0, basemapDescriptorView2d),
+        svgToMapCoordsAtView(0, VIEW_H, basemapDescriptorView2d),
+        svgToMapCoordsAtView(VIEW_W, VIEW_H, basemapDescriptorView2d),
+      ];
+      const geodeticCorners = viewportCorners
+        .map((corner) =>
+          inverseENToGeodetic({
+            east: corner.x,
+            north: corner.y,
+            ...planningGeorefContext,
+          }),
+        )
+        .filter(
+          (corner): corner is { latDeg: number; lonDeg: number } => !('failureReason' in corner),
+        );
+      if (geodeticCorners.length !== 4) return [];
+      const lats = geodeticCorners.map((corner) => corner.latDeg);
+      const lons = geodeticCorners.map((corner) => corner.lonDeg);
+      const minLat = Math.min(...lats);
+      const maxLat = Math.max(...lats);
+      const minLon = Math.min(...lons);
+      const maxLon = Math.max(...lons);
+      const centerLat = (minLat + maxLat) * 0.5;
+      const metersPerPixelX =
+        Math.abs(
+          svgToMapCoordsAtView(OSM_TILE_SIZE_PX, VIEW_H * 0.5, basemapDescriptorView2d).x -
+            svgToMapCoordsAtView(0, VIEW_H * 0.5, basemapDescriptorView2d).x,
+        ) / OSM_TILE_SIZE_PX;
+      if (!(metersPerPixelX > 0)) return [];
+      const descriptorBucket = buildOsmDescriptorBucket({
+        minLon,
+        maxLon,
+        minLat,
+        maxLat,
+        centerLat,
+        metersPerPixelX,
+        interactionPhase,
+      });
+      const zoom = descriptorBucket.descriptorZoom;
+      const tileCount = 2 ** zoom;
+      const minTileX = Math.floor(longitudeToTileX(minLon, zoom)) - tileBuffer;
+      const maxTileX = Math.floor(longitudeToTileX(maxLon, zoom)) + tileBuffer;
+      const minTileY = Math.floor(latitudeToTileY(maxLat, zoom)) - tileBuffer;
+      const maxTileY = Math.floor(latitudeToTileY(minLat, zoom)) + tileBuffer;
+      const centerTileX = (minTileX + maxTileX) * 0.5;
+      const centerTileY = (minTileY + maxTileY) * 0.5;
+      const tiles: BasemapTileDescriptor2d[] = [];
+      for (let tileX = minTileX; tileX <= maxTileX; tileX += 1) {
+        for (let tileY = minTileY; tileY <= maxTileY; tileY += 1) {
+          const wrappedTileX = ((tileX % tileCount) + tileCount) % tileCount;
+          if (tileY < 0 || tileY >= tileCount) continue;
+          const westLon = tileXToLongitude(tileX, zoom);
+          const eastLon = tileXToLongitude(tileX + 1, zoom);
+          const northLat = tileYToLatitude(tileY, zoom);
+          const southLat = tileYToLatitude(tileY + 1, zoom);
+          const northWest = projectGeodeticToEN({
+            latDeg: northLat,
+            lonDeg: westLon,
+            originLatDeg: planningGeorefContext.originLatDeg,
+            originLonDeg: planningGeorefContext.originLonDeg,
+            model: planningGeorefContext.model,
+            coordSystemMode: planningGeorefContext.coordSystemMode,
+            crsId: planningGeorefContext.crsId,
+          });
+          const southEast = projectGeodeticToEN({
+            latDeg: southLat,
+            lonDeg: eastLon,
+            originLatDeg: planningGeorefContext.originLatDeg,
+            originLonDeg: planningGeorefContext.originLonDeg,
+            model: planningGeorefContext.model,
+            coordSystemMode: planningGeorefContext.coordSystemMode,
+            crsId: planningGeorefContext.crsId,
+          });
+          const southEastScreen = project2d(southEast.east, southEast.north);
+          const northWestScreen = project2d(northWest.east, northWest.north);
+          if (
+            !Number.isFinite(northWestScreen.x) ||
+            !Number.isFinite(northWestScreen.y) ||
+            !Number.isFinite(southEastScreen.x) ||
+            !Number.isFinite(southEastScreen.y)
+          ) {
+            continue;
+          }
+          const tileWidthPx =
+            Math.abs(southEastScreen.x - northWestScreen.x) * basemapDescriptorView2d.zoom;
+          const tileHeightPx =
+            Math.abs(southEastScreen.y - northWestScreen.y) * basemapDescriptorView2d.zoom;
+          const meshColumns = chooseOsmTileMeshDivisions(
+            tileWidthPx,
+            tileHeightPx,
+            interactionPhase === 'interacting',
+          );
+          const meshRows = meshColumns;
+          const meshPoints: Array<{ x: number; y: number }> = [];
+          let meshValid = true;
+          for (let row = 0; row <= meshRows; row += 1) {
+            const tileSampleY = tileY + row / meshRows;
+            const sampleLat = tileYToLatitude(tileSampleY, zoom);
+            for (let column = 0; column <= meshColumns; column += 1) {
+              const tileSampleX = tileX + column / meshColumns;
+              const sampleLon = tileXToLongitude(tileSampleX, zoom);
+              const sampleProjected = projectGeodeticToEN({
+                latDeg: sampleLat,
+                lonDeg: sampleLon,
+                originLatDeg: planningGeorefContext.originLatDeg,
+                originLonDeg: planningGeorefContext.originLonDeg,
+                model: planningGeorefContext.model,
+                coordSystemMode: planningGeorefContext.coordSystemMode,
+                crsId: planningGeorefContext.crsId,
+              });
+              const sampleScreen = project2d(sampleProjected.east, sampleProjected.north);
+              if (!Number.isFinite(sampleScreen.x) || !Number.isFinite(sampleScreen.y)) {
+                meshValid = false;
+                break;
+              }
+              meshPoints.push({ x: sampleScreen.x, y: sampleScreen.y });
+            }
+            if (!meshValid) break;
+          }
+          if (!meshValid || meshPoints.length !== (meshColumns + 1) * (meshRows + 1)) continue;
+          tiles.push({
+            key: `${zoom}-${wrappedTileX}-${tileY}`,
+            href: `https://tile.openstreetmap.org/${zoom}/${wrappedTileX}/${tileY}.png`,
+            zoom,
+            tileX: wrappedTileX,
+            tileY,
+            meshColumns,
+            meshRows,
+            meshPoints,
+          });
+        }
+      }
+      return tiles.sort((left, right) => {
+        const [leftZoom, leftX, leftY] = left.key.split('-').map(Number);
+        const [rightZoom, rightX, rightY] = right.key.split('-').map(Number);
+        const zoomDelta = (rightZoom ?? zoom) - (leftZoom ?? zoom);
+        if (zoomDelta !== 0) return zoomDelta;
+        const leftDistance = Math.hypot((leftX ?? 0) - centerTileX, (leftY ?? 0) - centerTileY);
+        const rightDistance = Math.hypot((rightX ?? 0) - centerTileX, (rightY ?? 0) - centerTileY);
+        return leftDistance - rightDistance;
+      });
+    },
+    [
+      basemapDescriptorView2d,
+      bbox.minX,
+      bbox.minY,
+      effectiveMode,
+      interactionPhase,
+      planningGeorefContext,
+      planningMap.basemapMode,
+      project2d,
+      projection2d.offsetX,
+      projection2d.offsetY,
+      projection2d.scale,
+    ],
+  );
+
+  const basemapTiles2d = useMemo<BasemapTileDescriptor2d[]>(() => {
+    if (
+      effectiveMode !== '2d' ||
+      planningMap.basemapMode !== 'osm' ||
+      planningGeorefContext == null
+    ) {
+      return [];
+    }
+    const tileBuffer =
+      interactionPhase === 'interacting' ? OSM_INTERACTION_TILE_BUFFER : OSM_VISIBLE_TILE_BUFFER;
+    return buildBasemapTiles2dForBuffer(tileBuffer);
+  }, [
+    buildBasemapTiles2dForBuffer,
+    effectiveMode,
+    interactionPhase,
+    planningGeorefContext,
+    planningMap.basemapMode,
+  ]);
+
+  const prefetchedBasemapTiles2d = useMemo<BasemapTileDescriptor2d[]>(() => {
+    if (
+      effectiveMode !== '2d' ||
+      planningMap.basemapMode !== 'osm' ||
+      planningGeorefContext == null
+    ) {
+      return [];
+    }
+    if (interactionPhase !== 'idle') return basemapTiles2d;
+    if (!idlePrefetchReady) return basemapTiles2d;
+    if (basemapTiles2d.length >= OSM_IDLE_PREFETCH_TILE_COUNT_THRESHOLD) return basemapTiles2d;
+    return buildBasemapTiles2dForBuffer(
+      Math.max(OSM_VISIBLE_TILE_BUFFER, OSM_IDLE_PREFETCH_TILE_BUFFER),
+    );
+  }, [
+    basemapTiles2d,
+    buildBasemapTiles2dForBuffer,
+    effectiveMode,
+    idlePrefetchReady,
+    interactionPhase,
+    planningGeorefContext,
+    planningMap.basemapMode,
   ]);
 
   const basemapTileSignature = useMemo(
@@ -1897,27 +2227,49 @@ const MapView: React.FC<MapViewProps> = ({
 
   useEffect(() => {
     if (interactionPhase !== 'idle') return;
-    if (stableBasemapTileSignature === basemapTileSignature) return;
-    setStableBasemapTiles2d(basemapTiles2d);
-    setStableBasemapTileSignature(basemapTileSignature);
-  }, [
-    basemapTileSignature,
-    basemapTiles2d,
-    interactionPhase,
-    stableBasemapTileSignature,
-  ]);
+    if (stableBasemapTileSignatureRef.current === basemapTileSignature) return;
+    stableBasemapTiles2dRef.current = basemapTiles2d;
+    stableBasemapTileSignatureRef.current = basemapTileSignature;
+    setStableBasemapTiles2dRender(basemapTiles2d);
+    setStableBasemapTileSignatureRender(basemapTileSignature);
+  }, [basemapTileSignature, basemapTiles2d, interactionPhase]);
+
+  const canReuseStableBasemapTilesDuringInteraction =
+    interactionPhase === 'interacting' &&
+    stableBasemapTiles2dRender.length > 0 &&
+    stableBasemapTileSignatureRender === basemapTileSignature;
 
   const activeBasemapTiles2d = resolveInteractiveBasemapTiles(
     basemapTiles2d,
-    stableBasemapTiles2d,
+    stableBasemapTiles2dRender,
     interactionPhase,
+    canReuseStableBasemapTilesDuringInteraction,
+  );
+
+  const usingStableInteractionTiles =
+    interactionPhase === 'interacting' &&
+    activeBasemapTiles2d === stableBasemapTiles2dRender &&
+    stableBasemapTiles2dRender.length > 0;
+
+  const requestedBasemapTiles2d = useMemo(
+    () =>
+      buildRequestedBasemapTiles(
+        activeBasemapTiles2d,
+        prefetchedBasemapTiles2d,
+        interactionPhase,
+      ),
+    [activeBasemapTiles2d, interactionPhase, prefetchedBasemapTiles2d],
+  );
+
+  const activeBasemapTileKeySet = useMemo(
+    () => new Set(activeBasemapTiles2d.map((tile) => tile.key)),
+    [activeBasemapTiles2d],
   );
 
   useLayoutEffect(() => {
     const canReuseStableInteractionTiles =
       effectiveMode === '2d' &&
-      interactionPhase === 'interacting' &&
-      activeBasemapTiles2d === stableBasemapTiles2d &&
+      usingStableInteractionTiles &&
       (latestBasemapRenderInputRef.current?.tiles.length ?? 0) > 0;
     if (canReuseStableInteractionTiles) {
       const reusedTiles = latestBasemapRenderInputRef.current?.tiles ?? [];
@@ -1981,9 +2333,32 @@ const MapView: React.FC<MapViewProps> = ({
       renderLayersNow({ basemap: true });
       return;
     }
+    const tileSnapshotBeforeRequest = tileStore.snapshotMetrics();
+    const canPrefetchIdleTiles =
+      interactionPhase === 'idle' &&
+      idlePrefetchReady &&
+      tileSnapshotBeforeRequest.requestedCount === 0;
+    const tileRequestDescriptors = canPrefetchIdleTiles
+      ? requestedBasemapTiles2d
+      : activeBasemapTiles2d;
     tileStore.requestTiles(
-      activeBasemapTiles2d,
-      () => {
+      tileRequestDescriptors,
+      (readyTileKey) => {
+        const activeDrag = dragRef.current;
+        const currentInteractionPhase =
+          latestBasemapRenderInputRef.current?.interactionPhase ?? interactionPhase;
+        if (!activeBasemapTileKeySet.has(readyTileKey)) {
+          noteMapViewPerfCounter('tiles:prefetch-ready-offscreen');
+          return;
+        }
+        const shouldDeferTileDrivenRender =
+          currentInteractionPhase === 'interacting' ||
+          (activeDrag.active && activeDrag.mode === 'pan2d');
+        if (shouldDeferTileDrivenRender) {
+          noteMapViewPerfMetadata('tiles:snapshot', tileStore.snapshotMetrics());
+          noteMapViewPerfCounter('tiles:deferred-renders-during-interaction');
+          return;
+        }
         const latest = latestBasemapRenderInputRef.current;
         if (!latest) return;
         latest.tiles = tileStore.resolveRenderTiles(activeBasemapTiles2d);
@@ -1991,24 +2366,12 @@ const MapView: React.FC<MapViewProps> = ({
         noteMapViewPerfMetadata('tiles:last-resolved-count', latest.tiles.length);
         noteMapViewPerfMetadata(
           'tiles:last-descriptor-mode',
-          interactionPhase === 'interacting' && stableBasemapTiles2d.length > 0
-            ? 'stable'
-            : 'live',
+          usingStableInteractionTiles ? 'stable-reused' : 'live',
         );
         if (latestWebglRenderInputRef.current) {
           latestWebglRenderInputRef.current.tiles = latest.tiles;
         }
-        const activeDrag = dragRef.current;
-        const currentInteractionPhase =
-          latestBasemapRenderInputRef.current?.interactionPhase ?? interactionPhase;
-        const shouldDeferTileDrivenRender =
-          currentInteractionPhase === 'interacting' ||
-          (activeDrag.active && activeDrag.mode === 'pan2d');
-        if (!shouldDeferTileDrivenRender) {
-          scheduleLayerRender({ basemap: true });
-        } else {
-          noteMapViewPerfCounter('tiles:deferred-renders-during-interaction');
-        }
+        scheduleLayerRender({ basemap: true });
       },
       renderer2d === 'webgl' ? { crossOrigin: 'anonymous' } : undefined,
     );
@@ -2017,9 +2380,7 @@ const MapView: React.FC<MapViewProps> = ({
     noteMapViewPerfMetadata('tiles:last-resolved-count', resolvedTiles.length);
     noteMapViewPerfMetadata(
       'tiles:last-descriptor-mode',
-      interactionPhase === 'interacting' && stableBasemapTiles2d.length > 0
-        ? 'stable'
-        : 'live',
+      usingStableInteractionTiles ? 'stable-reused' : 'live',
     );
     latestBasemapRenderInputRef.current = {
       interactionPhase,
@@ -2050,11 +2411,14 @@ const MapView: React.FC<MapViewProps> = ({
     activeBasemapTiles2d,
     effectiveMode,
     interactionPhase,
+    requestedBasemapTiles2d,
     projection2d.scale,
     renderLayersNow,
     renderer2d,
     scheduleLayerRender,
-    stableBasemapTiles2d,
+    activeBasemapTileKeySet,
+    idlePrefetchReady,
+    usingStableInteractionTiles,
     view2d,
   ]);
 
@@ -2064,11 +2428,23 @@ const MapView: React.FC<MapViewProps> = ({
       !planningGeorefContext ||
       !planningFetchExtent ||
       !planningMap.showObstacleLayer ||
-      planningMap.obstaclePolygons.length > 0 ||
       !onPlanningMapChange
     ) {
       return;
     }
+    const fetchSignature = [
+      planningGeorefContext.originLatDeg.toFixed(8),
+      planningGeorefContext.originLonDeg.toFixed(8),
+      planningGeorefContext.coordSystemMode,
+      planningGeorefContext.crsId ?? '',
+      planningGeorefContext.model,
+      planningFetchExtent.minX.toFixed(3),
+      planningFetchExtent.maxX.toFixed(3),
+      planningFetchExtent.minY.toFixed(3),
+      planningFetchExtent.maxY.toFixed(3),
+    ].join('|');
+    if (obstacleFetchSignatureRef.current === fetchSignature) return;
+    obstacleFetchSignatureRef.current = fetchSignature;
     const cornerA = inverseENToGeodetic({
       east: planningFetchExtent.minX,
       north: planningFetchExtent.minY,
@@ -2139,7 +2515,11 @@ const MapView: React.FC<MapViewProps> = ({
           obstaclePolygons: polygons,
         });
       })
-      .catch(() => undefined);
+      .catch(() => {
+        if (obstacleFetchSignatureRef.current === fetchSignature) {
+          obstacleFetchSignatureRef.current = '';
+        }
+      });
     return () => controller.abort();
   }, [
     effectiveMode,
@@ -2354,6 +2734,28 @@ const MapView: React.FC<MapViewProps> = ({
     ],
   );
 
+  const filteredVisibleMapLines2d = projectedMapLines2d;
+  const filteredVisiblePoints2d = projectedPoints2d;
+
+  const effectiveVisiblePointLabels2d = useMemo(() => {
+    if (
+      effectiveMode === '2d' &&
+      planningMap.basemapMode === 'osm' &&
+      showLabels &&
+      filteredVisiblePoints2d.length > 0 &&
+      filteredVisiblePoints2d.length <= OSM_FULL_LABEL_POINT_THRESHOLD
+    ) {
+      return new Set(filteredVisiblePoints2d.map((point) => point.id));
+    }
+    return visiblePointLabels2d;
+  }, [
+    effectiveMode,
+    filteredVisiblePoints2d,
+    planningMap.basemapMode,
+    showLabels,
+    visiblePointLabels2d,
+  ]);
+
   const mapDensitySummary = useMemo(
     () =>
       measureMapViewPerf('map:build-density-summary', () =>
@@ -2362,7 +2764,7 @@ const MapView: React.FC<MapViewProps> = ({
           filteredVisiblePoints2dLength: projectedPoints2d.length,
           totalProjectedMapLines2dLength: baseProjectedMapLines2d.length,
           projectedMapLines2dLength: projectedMapLines2d.length,
-          visiblePointLabels2dSize: visiblePointLabels2d.size,
+          visiblePointLabels2dSize: effectiveVisiblePointLabels2d.size,
           denseLabelEdgeThreshold: DENSE_LABEL_EDGE_THRESHOLD,
         }),
       ),
@@ -2370,31 +2772,70 @@ const MapView: React.FC<MapViewProps> = ({
       baseProjectedMapLines2d.length,
       projectedMapLines2d.length,
       projectedPoints2d.length,
-      visiblePointLabels2d.size,
+      effectiveVisiblePointLabels2d.size,
     ],
   );
 
-  const filteredVisibleMapLines2d = projectedMapLines2d;
-  const filteredVisiblePoints2d = projectedPoints2d;
+  useEffect(() => {
+    if (interactionPhase !== 'idle') return;
+    frozenVisiblePointLabels2dRef.current = effectiveVisiblePointLabels2d;
+    frozenPlanningPolygons2dRef.current = planningPolygons2d;
+    frozenPlanningInputPoints2dRef.current = planningInputPoints2d;
+    frozenBracePreviewPoints2dRef.current = bracePreviewPoints2d;
+    frozenScenarioPreviewSegments2dRef.current = scenarioPreviewSegments2d;
+    setFrozenVisiblePointLabels2d(effectiveVisiblePointLabels2d);
+    setFrozenPlanningPolygons2d(planningPolygons2d);
+    setFrozenPlanningInputPoints2d(planningInputPoints2d);
+    setFrozenBracePreviewPoints2d(bracePreviewPoints2d);
+    setFrozenScenarioPreviewSegments2d(scenarioPreviewSegments2d);
+  }, [
+    bracePreviewPoints2d,
+    interactionPhase,
+    planningInputPoints2d,
+    planningPolygons2d,
+    scenarioPreviewSegments2d,
+    effectiveVisiblePointLabels2d,
+  ]);
+
+  const frozenOverlayInteraction = effectiveMode === '2d' && interactionPhase === 'interacting';
+  const svgVisiblePointLabels2d = frozenOverlayInteraction
+    ? frozenVisiblePointLabels2d
+    : effectiveVisiblePointLabels2d;
+  const svgPlanningPolygons2d = frozenOverlayInteraction
+    ? frozenPlanningPolygons2d
+    : planningPolygons2d;
+  const svgPlanningInputPoints2d = frozenOverlayInteraction
+    ? frozenPlanningInputPoints2d
+    : planningInputPoints2d;
+  const svgBracePreviewPoints2d = frozenOverlayInteraction
+    ? frozenBracePreviewPoints2d
+    : bracePreviewPoints2d;
+  const svgScenarioPreviewSegments2d = frozenOverlayInteraction
+    ? frozenScenarioPreviewSegments2d
+    : scenarioPreviewSegments2d;
 
   const webglScene2d = useMemo(
     () =>
       measureMapViewPerf('map:build-webgl-scene', () =>
-        buildMapViewWebglScene2d({
-          originalGeometryOpacity,
-          lineWidth2d,
-          pointRadius2d,
-          ellipseStroke2d,
-          projectionScale: projection2d.scale,
-          units,
-          interactionDenseMode,
-          unselectedCanvasLines2d,
-          filteredVisiblePoints2d,
-          ellipseStroke,
-          stationFill,
-          bracePreviewPoints2d,
-          scenarioPreviewSegments2d,
-        }),
+        {
+          noteMapViewPerfCounter('map:webgl-scene-rebuilds');
+          return buildMapViewWebglScene2d({
+            originalGeometryOpacity,
+            lineWidth2d,
+            pointRadius2d,
+            ellipseStroke2d,
+            viewZoom: view2d.zoom,
+            projectionScale: projection2d.scale,
+            units,
+            interactionDenseMode,
+            unselectedCanvasLines2d,
+            filteredVisiblePoints2d,
+            ellipseStroke,
+            stationFill,
+            bracePreviewPoints2d,
+            scenarioPreviewSegments2d,
+          });
+        },
       ),
     [
       bracePreviewPoints2d,
@@ -2405,6 +2846,7 @@ const MapView: React.FC<MapViewProps> = ({
       lineWidth2d,
       originalGeometryOpacity,
       pointRadius2d,
+      view2d.zoom,
       projection2d.scale,
       scenarioPreviewSegments2d,
       stationFill,
@@ -2666,17 +3108,8 @@ const MapView: React.FC<MapViewProps> = ({
       return;
     }
     const target = event.target as HTMLElement | null;
-    const pointer = toSvgCoords(event.clientX, event.clientY);
-    const polygonHit =
-      pointer != null ? findPlanningPolygonAtSvgPoint(pointer) : null;
-    if (polygonHit != null) {
-      setSelectedPlanningPolygonIds([polygonHit.polygonId]);
-      onSelectStation?.(null);
-      onSelectObservation?.(null);
-      setSelectionBox(null);
-      return;
-    }
     if (target?.closest('[data-map-observation],[data-map-station]')) return;
+    const pointer = toSvgCoords(event.clientX, event.clientY);
     if (!pointer) return;
     if (planningMap.blockEditMode) {
       setDraftBlockedPolygon((current) => [...current, svgToMapCoords(pointer.x, pointer.y)]);
@@ -2730,6 +3163,14 @@ const MapView: React.FC<MapViewProps> = ({
     if (nearestLineObservationId != null) {
       setSelectedPlanningPolygonIds([]);
       onSelectObservation?.(nearestLineObservationId);
+      return;
+    }
+    const polygonHit = findPlanningPolygonAtSvgPoint(pointer);
+    if (polygonHit != null) {
+      setSelectedPlanningPolygonIds([polygonHit.polygonId]);
+      onSelectStation?.(null);
+      onSelectObservation?.(null);
+      setSelectionBox(null);
       return;
     }
     if (
@@ -3052,6 +3493,18 @@ const MapView: React.FC<MapViewProps> = ({
         >
           {effectiveMode === '2d' && (
             <>
+              {renderer2d === 'canvas' && (
+                <canvas
+                  ref={basemapCanvasRef}
+                  data-testid="map-base-canvas"
+                  className="absolute inset-0 h-full w-full pointer-events-none"
+                />
+              )}
+              <canvas
+                ref={planningCanvasRef}
+                data-testid="map-planning-canvas"
+                className="absolute inset-0 h-full w-full pointer-events-none"
+              />
               {webglEligible && (
                 <canvas
                   ref={webglCanvasRef}
@@ -3062,24 +3515,12 @@ const MapView: React.FC<MapViewProps> = ({
                 />
               )}
               {renderer2d === 'canvas' && (
-                <>
-                  <canvas
-                    ref={basemapCanvasRef}
-                    data-testid="map-base-canvas"
-                    className="absolute inset-0 h-full w-full pointer-events-none"
-                  />
-                  <canvas
-                    ref={geometryCanvasRef}
-                    data-testid="map-geometry-canvas"
-                    className="absolute inset-0 h-full w-full pointer-events-none"
-                  />
-                </>
+                <canvas
+                  ref={geometryCanvasRef}
+                  data-testid="map-geometry-canvas"
+                  className="absolute inset-0 h-full w-full pointer-events-none"
+                />
               )}
-              <canvas
-                ref={planningCanvasRef}
-                data-testid="map-planning-canvas"
-                className="absolute inset-0 h-full w-full pointer-events-none"
-              />
             </>
           )}
           <svg
@@ -3099,9 +3540,10 @@ const MapView: React.FC<MapViewProps> = ({
                 marker2d={marker2d}
                 view2d={view2d}
                 showLabels={showLabels}
+                interactionPhase={interactionPhase}
                 originalGeometryOpacity={originalGeometryOpacity}
                 filteredVisiblePoints2d={filteredVisiblePoints2d}
-                visiblePointLabels2d={visiblePointLabels2d}
+                visiblePointLabels2d={svgVisiblePointLabels2d}
                 labelOffset2d={labelOffset2d}
                 labelFont2d={labelFont2d}
                 labelStroke2d={labelStroke2d}
@@ -3115,13 +3557,13 @@ const MapView: React.FC<MapViewProps> = ({
                 transformedOverlayActive={transformedOverlayActive}
                 transformedLines2d={transformedLines2d}
                 transformedPoints2d={transformedPoints2d}
-                planningInputPoints2d={planningInputPoints2d}
-                planningPolygons2d={planningPolygons2d}
+                planningInputPoints2d={svgPlanningInputPoints2d}
+                planningPolygons2d={svgPlanningPolygons2d}
                 selectedPlanningPolygonIds={selectedPlanningPolygonIds}
                 renderPlanningPolygonBodies={false}
                 renderPlanningInputPoints={false}
-                bracePreviewPoints2d={bracePreviewPoints2d}
-                scenarioPreviewSegments2d={scenarioPreviewSegments2d}
+                bracePreviewPoints2d={svgBracePreviewPoints2d}
+                scenarioPreviewSegments2d={svgScenarioPreviewSegments2d}
                 renderBracePreviewMarkers={renderer2d !== 'webgl'}
                 renderScenarioPreviewSegments={renderer2d !== 'webgl'}
                 selectionBoxRect={selectionBoxRect}

@@ -305,6 +305,22 @@ const attachJson = async (testInfo: TestInfo, name: string, data: unknown) => {
   await writeFile(testInfo.outputPath(`${name}.json`), body);
 };
 
+const findScenarioAction = (
+  results: Array<{ scenarioId: string; actions: SweepSummary[] }>,
+  scenarioId: string,
+  suffix: string,
+): SweepSummary => {
+  const scenario = results.find((result) => result.scenarioId === scenarioId);
+  if (!scenario) {
+    throw new Error(`missing ${scenarioId} result`);
+  }
+  const action = scenario.actions.find((entry) => entry.actionId.endsWith(suffix));
+  if (!action) {
+    throw new Error(`missing ${scenarioId} ${suffix} result`);
+  }
+  return action;
+};
+
 test.describe('Map basemap browser harness', () => {
   test('profiles OSM-on map actions and isolates basemap hotspots', async ({ page }, testInfo) => {
     const pageErrors: string[] = [];
@@ -396,17 +412,32 @@ test.describe('Map basemap browser harness', () => {
       }),
     ];
 
-    const osmOnAll = results.find((result) => result.scenarioId === 'osm-on-all-overlays');
-    if (!osmOnAll) {
-      throw new Error('missing osm-on-all-overlays result');
-    }
-    const warmPan = osmOnAll.actions.find((action) => action.actionId.endsWith(':pan-fast'));
-    if (!warmPan) {
-      throw new Error('missing osm-on-all-overlays pan result');
-    }
+    const warmPan = findScenarioAction(results, 'osm-on-all-overlays', ':pan-fast');
     expect(warmPan.metadata['map:basemap-mode']).toBe('osm');
-    expect(Number(warmPan.counters['tiles:loaded'] ?? 0)).toBeGreaterThan(0);
+    expect(
+      Number(warmPan.counters['tiles:loaded'] ?? 0) +
+        Number(warmPan.counters['tiles:request-reused'] ?? 0),
+    ).toBeGreaterThan(0);
     expect(Number(warmPan.counters['tiles:resolved'] ?? 0)).toBeGreaterThan(0);
+
+    const minimalPanMedium = findScenarioAction(
+      results,
+      'osm-on-minimal-overlays',
+      ':pan-medium',
+    );
+    expect(Number(minimalPanMedium.counters['svg:renders'] ?? 0)).toBeLessThanOrEqual(56);
+    expect(Number(minimalPanMedium.counters['tiles:descriptor-rebuilds'] ?? 0)).toBe(0);
+    expect(Number(minimalPanMedium.counters['tiles:resolve-cache-misses'] ?? 0)).toBeLessThanOrEqual(16);
+
+    const minimalZoomInFast = findScenarioAction(
+      results,
+      'osm-on-minimal-overlays',
+      ':zoom-in-fast',
+    );
+    expect(Number(minimalZoomInFast.counters['tiles:resolved'] ?? 0)).toBeLessThanOrEqual(1950);
+    expect(Number(minimalZoomInFast.counters['map:schedule-layer-render'] ?? 0)).toBeLessThanOrEqual(45);
+    expect(Number(minimalZoomInFast.counters['tiles:descriptor-rebuilds'] ?? 0)).toBeLessThanOrEqual(5);
+    expect(Number(minimalZoomInFast.counters['webgl:renders'] ?? 0)).toBeLessThanOrEqual(27);
 
     const artifact = {
       capturedAt: new Date().toISOString(),

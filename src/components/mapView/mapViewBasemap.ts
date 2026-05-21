@@ -19,9 +19,31 @@ export const resolveInteractiveBasemapTiles = <Tile>(
   liveTiles: Tile[],
   stableTiles: Tile[],
   interactionPhase: 'idle' | 'interacting' | 'settling',
+  reuseStableDuringInteraction = true,
 ): Tile[] => {
-  if (interactionPhase === 'interacting' && stableTiles.length > 0) {
+  if (
+    interactionPhase === 'interacting' &&
+    reuseStableDuringInteraction &&
+    stableTiles.length > 0
+  ) {
     return stableTiles;
   }
   return liveTiles;
+};
+
+export const buildRequestedBasemapTiles = <Tile extends { key: string }>(
+  renderTiles: Tile[],
+  prefetchedTiles: Tile[],
+  interactionPhase: 'idle' | 'interacting' | 'settling',
+): Tile[] => {
+  if (interactionPhase !== 'idle') return renderTiles;
+  if (prefetchedTiles.length === 0) return renderTiles;
+  const seen = new Set(renderTiles.map((tile) => tile.key));
+  const merged = [...renderTiles];
+  prefetchedTiles.forEach((tile) => {
+    if (seen.has(tile.key)) return;
+    seen.add(tile.key);
+    merged.push(tile);
+  });
+  return merged;
 };

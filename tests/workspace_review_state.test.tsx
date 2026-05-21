@@ -54,6 +54,7 @@ const WorkspaceReviewHarness: React.FC<{ enabled: boolean }> = ({ enabled }) => 
       >
         select observation
       </button>
+      <button onClick={() => reviewState.selectStation('P', 'map')}>select map station</button>
       <button
         onClick={() => {
           if (observationId != null) reviewState.togglePinnedObservation(observationId);
@@ -115,7 +116,7 @@ describe('useWorkspaceReviewState', () => {
     await act(async () => {
       buttons[1]?.click();
       buttons[2]?.click();
-      buttons[3]?.click();
+      buttons[4]?.click();
       await Promise.resolve();
     });
 
@@ -125,7 +126,7 @@ describe('useWorkspaceReviewState', () => {
     expect(pinnedObservationCount()).toBe('1');
 
     await act(async () => {
-      buttons[4]?.click();
+      buttons[5]?.click();
       await Promise.resolve();
     });
 
@@ -141,6 +142,44 @@ describe('useWorkspaceReviewState', () => {
     expect(query()).toBe('restored');
     expect(selectedObservation()).toBe('-');
     expect(selectedStation()).toBe('-');
+    expect(pinnedObservationCount()).toBe('0');
+
+    await act(async () => {
+      root.unmount();
+    });
+    container.remove();
+  });
+
+  it('preserves map-origin selection when the planning map is open before a solved result exists', async () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root: Root = createRoot(container);
+
+    await act(async () => {
+      root.render(<WorkspaceReviewHarness enabled />);
+    });
+
+    const selectedStation = () =>
+      container.querySelector('[data-testid="selected-station"]')?.textContent ?? '';
+    const pinnedObservationCount = () =>
+      container.querySelector('[data-testid="pinned-observation-count"]')?.textContent ?? '';
+    const buttons = Array.from(container.querySelectorAll('button'));
+
+    await act(async () => {
+      buttons[4]?.click();
+      buttons[3]?.click();
+      await Promise.resolve();
+    });
+
+    expect(selectedStation()).toBe('P');
+    expect(pinnedObservationCount()).toBe('1');
+
+    await act(async () => {
+      root.render(<WorkspaceReviewHarness enabled={false} />);
+      await Promise.resolve();
+    });
+
+    expect(selectedStation()).toBe('P');
     expect(pinnedObservationCount()).toBe('0');
 
     await act(async () => {

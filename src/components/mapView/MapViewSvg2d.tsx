@@ -2,6 +2,12 @@ import React from 'react';
 
 import type { ProjectedMapLine2D, ProjectedPoint2D, View2dState } from './mapView2d';
 import {
+  MAP_POINT_BORDER_STROKE,
+  MAP_POINT_CENTER_FILL,
+  MAP_SELECTION_CORE_STROKE,
+  MAP_SELECTION_HALO_STROKE,
+} from './mapViewColors';
+import {
   measureMapViewPerf,
   noteMapViewPerfCounter,
   noteMapViewPerfMetadata,
@@ -68,6 +74,7 @@ interface MapViewSvg2dProps {
   marker2d: number;
   view2d: View2dState;
   showLabels: boolean;
+  interactionPhase: 'idle' | 'interacting' | 'settling';
   originalGeometryOpacity: number;
   filteredVisiblePoints2d: ProjectedPoint2D[];
   visiblePointLabels2d: Set<string>;
@@ -107,6 +114,26 @@ interface MapViewSvg2dProps {
   ) => void;
   project2d: (_x: number, _y: number) => { x: number; y: number };
 }
+
+const SvgArrowDefs = React.memo(function SvgArrowDefs({
+  marker2d,
+}: Pick<MapViewSvg2dProps, 'marker2d'>) {
+  return (
+    <defs>
+      <marker
+        id="arrow"
+        markerWidth={marker2d}
+        markerHeight={marker2d}
+        refX={marker2d * 0.5}
+        refY={marker2d * 0.5}
+        orient="auto"
+        markerUnits="userSpaceOnUse"
+      >
+        <path d={`M0,0 L0,${marker2d} L${marker2d},${marker2d * 0.5} z`} fill="#64748b" />
+      </marker>
+    </defs>
+  );
+});
 
 type LabelLayerProps = Pick<
   MapViewSvg2dProps,
@@ -376,13 +403,35 @@ const SvgSelectionLayer = React.memo(function SvgSelectionLayer({
           .map((line) => (
             <line
               key={`${line.key}-selected`}
+              data-map-observation-selection={line.observationId}
+              x1={line.x1}
+              y1={line.y1}
+              x2={line.x2}
+              y2={line.y2}
+              stroke={MAP_SELECTION_HALO_STROKE}
+              strokeWidth={lineWidth2d * 3.2}
+              markerEnd="url(#arrow)"
+              opacity={1}
+              pointerEvents="none"
+            />
+          ))}
+
+        {filteredVisibleMapLines2d
+          .filter(
+            (line) =>
+              line.observationId === selectedObservationId ||
+              (selectedObservationPairKey != null && line.pairKey === selectedObservationPairKey),
+          )
+          .map((line) => (
+            <line
+              key={`${line.key}-selected-core`}
               data-map-observation={line.observationId}
               x1={line.x1}
               y1={line.y1}
               x2={line.x2}
               y2={line.y2}
-              stroke="#22d3ee"
-              strokeWidth={lineWidth2d * 2}
+              stroke={MAP_SELECTION_CORE_STROKE}
+              strokeWidth={lineWidth2d * 1.85}
               markerEnd="url(#arrow)"
               opacity={1}
               onClick={() => onSelectObservation?.(line.observationId)}
@@ -401,8 +450,23 @@ const SvgSelectionLayer = React.memo(function SvgSelectionLayer({
                 cy={point.y}
                 r={pointRadius2d * 1.45}
                 fill="none"
-                stroke="#22d3ee"
+                stroke={MAP_SELECTION_HALO_STROKE}
                 strokeWidth={pointRadius2d * 0.6}
+                pointerEvents="none"
+              />
+            ))}
+        {selectedStationId &&
+          filteredVisiblePoints2d
+            .filter((point) => point.id === selectedStationId)
+            .map((point) => (
+              <circle
+                key={`selected-station-core-${point.id}`}
+                cx={point.x}
+                cy={point.y}
+                r={pointRadius2d * 1.18}
+                fill="none"
+                stroke={MAP_SELECTION_CORE_STROKE}
+                strokeWidth={pointRadius2d * 0.34}
                 pointerEvents="none"
               />
             ))}
@@ -448,10 +512,13 @@ const SvgTransformedOverlayLayer = React.memo(function SvgTransformedOverlayLaye
           return (
             <g key={`tx-point-${point.id}`}>
               <circle
+                data-map-transformed-point={point.id}
                 cx={proj.x}
                 cy={proj.y}
                 r={pointRadius2d}
-                fill={point.fixed ? '#34d399' : '#f97316'}
+                fill={MAP_POINT_CENTER_FILL}
+                stroke={MAP_POINT_BORDER_STROKE}
+                strokeWidth={pointRadius2d * 0.38}
               />
               {visiblePointLabels2d.has(point.id) && (
                 <text
@@ -460,7 +527,7 @@ const SvgTransformedOverlayLayer = React.memo(function SvgTransformedOverlayLaye
                   y={proj.y - labelOffset2d}
                   fontSize={labelFont2d}
                   fill="#f8fafc"
-                  stroke="#082f49"
+                  stroke="#020617"
                   strokeWidth={labelStroke2d}
                   paintOrder="stroke"
                 >
@@ -478,7 +545,7 @@ const SvgTransformedOverlayLayer = React.memo(function SvgTransformedOverlayLaye
 const MapViewSvg2d: React.FC<MapViewSvg2dProps> = ({
   marker2d,
   view2d,
-  originalGeometryOpacity,
+  interactionPhase,
   filteredVisiblePoints2d,
   visiblePointLabels2d,
   labelOffset2d,
@@ -510,6 +577,7 @@ const MapViewSvg2d: React.FC<MapViewSvg2dProps> = ({
 }) =>
   measureMapViewPerf('svg:render', () => {
     noteMapViewPerfCounter('svg:renders');
+    noteMapViewPerfMetadata('svg:last-interaction-phase', interactionPhase);
     noteMapViewPerfMetadata(
       'svg:last-label-count',
       filteredVisiblePoints2d.filter((point) => visiblePointLabels2d.has(point.id)).length +
@@ -521,19 +589,7 @@ const MapViewSvg2d: React.FC<MapViewSvg2dProps> = ({
     const viewTransform = `translate(${view2d.panX} ${view2d.panY}) scale(${view2d.zoom})`;
     return (
       <>
-        <defs>
-          <marker
-            id="arrow"
-            markerWidth={marker2d}
-            markerHeight={marker2d}
-            refX={marker2d * 0.5}
-            refY={marker2d * 0.5}
-            orient="auto"
-            markerUnits="userSpaceOnUse"
-          >
-            <path d={`M0,0 L0,${marker2d} L${marker2d},${marker2d * 0.5} z`} fill="#64748b" />
-          </marker>
-        </defs>
+        <SvgArrowDefs marker2d={marker2d} />
 
         <g transform={viewTransform}>
           <SvgPlanningLayer
@@ -599,7 +655,7 @@ const MapViewSvg2d: React.FC<MapViewSvg2dProps> = ({
         )}
 
         {showLabels && (
-          <g transform={viewTransform} opacity={originalGeometryOpacity}>
+          <g transform={viewTransform}>
             <SvgScenarioLabelLayer
               bracePreviewPoints2d={bracePreviewPoints2d}
               labelOffset2d={labelOffset2d}

@@ -1,4 +1,8 @@
 import type { ProjectedPoint2D } from './mapView2d';
+import {
+  MAP_POINT_BORDER_STROKE,
+  MAP_POINT_CENTER_FILL,
+} from './mapViewColors';
 
 interface BracePreviewPoint2d {
   scenarioId: string;
@@ -134,6 +138,7 @@ export const buildMapViewWebglScene2d = (input: {
   lineWidth2d: number;
   pointRadius2d: number;
   ellipseStroke2d: number;
+  viewZoom: number;
   projectionScale: number;
   units: 'm' | 'ft';
   interactionDenseMode: boolean;
@@ -150,6 +155,11 @@ export const buildMapViewWebglScene2d = (input: {
   scenarioPreviewSegments2d?: ScenarioPreviewSegment2d[];
 }): MapViewWebglScene2d => {
   const geometryAlpha = clamp01(input.originalGeometryOpacity);
+  const zoomScale = Math.max(1e-6, input.viewZoom);
+  const surveyHaloLineWidth = input.lineWidth2d * 2.2 * zoomScale;
+  const surveyLineWidth = input.lineWidth2d * zoomScale;
+  const previewLineWidth = input.lineWidth2d * 1.05 * zoomScale;
+  const ellipseLineWidth = input.ellipseStroke2d * zoomScale;
   const surveyHaloLineColor = parseCssColorToWebglRgba('#f8fafc', 0.42 * geometryAlpha);
   const surveyLineColor = parseCssColorToWebglRgba('#0f3b82', 0.9 * geometryAlpha);
   const surveyHaloLines: MapViewWebglLinePrimitive2d[] = input.unselectedCanvasLines2d.map((line) => ({
@@ -169,17 +179,14 @@ export const buildMapViewWebglScene2d = (input: {
   const surveyHaloPoints: MapViewWebglPointPrimitive2d[] = input.filteredVisiblePoints2d.map((point) => ({
     x: point.x,
     y: point.y,
-    size: input.pointRadius2d * 3.2,
-    color: parseCssColorToWebglRgba('#f8fafc', 0.85 * geometryAlpha),
+    size: input.pointRadius2d * 3.2 * zoomScale,
+    color: parseCssColorToWebglRgba(MAP_POINT_BORDER_STROKE, 0.95 * geometryAlpha),
   }));
   const surveyPoints: MapViewWebglPointPrimitive2d[] = input.filteredVisiblePoints2d.map((point) => ({
     x: point.x,
     y: point.y,
-    size: input.pointRadius2d * 2.25,
-    color: parseCssColorToWebglRgba(
-      input.stationFill(point.id, point.fixed),
-      geometryAlpha,
-    ),
+    size: input.pointRadius2d * 2.25 * zoomScale,
+    color: parseCssColorToWebglRgba(MAP_POINT_CENTER_FILL, geometryAlpha),
   }));
   const previewLines: MapViewWebglLinePrimitive2d[] = (input.scenarioPreviewSegments2d ?? []).map(
     (segment) => ({
@@ -201,7 +208,7 @@ export const buildMapViewWebglScene2d = (input: {
     (point) => ({
       x: point.x,
       y: point.y,
-      size: input.pointRadius2d * 2.3,
+      size: input.pointRadius2d * 2.3 * zoomScale,
       color: parseCssColorToWebglRgba(point.active ? '#f472b6' : '#f9a8d4', 1),
     }),
   );
@@ -222,10 +229,10 @@ export const buildMapViewWebglScene2d = (input: {
     });
   }
   return {
-    surveyHaloLineWidth: input.lineWidth2d * 2.2,
-    surveyLineWidth: input.lineWidth2d,
-    previewLineWidth: input.lineWidth2d * 1.05,
-    ellipseLineWidth: input.ellipseStroke2d,
+    surveyHaloLineWidth,
+    surveyLineWidth,
+    previewLineWidth,
+    ellipseLineWidth,
     surveyHaloLines,
     surveyLines,
     previewLines,

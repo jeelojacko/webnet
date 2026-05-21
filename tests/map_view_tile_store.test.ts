@@ -193,4 +193,79 @@ describe('MapViewTileStore', () => {
     expect(created[0]?.src).toBe(descriptor.href);
     expect(created[0]?.crossOrigin).toBe('anonymous');
   });
+
+  it('reuses resolved tile surfaces from cache when descriptors and tile state are unchanged', () => {
+    const store = new MapViewTileStore(32);
+    const image = { naturalWidth: 256, naturalHeight: 256 } as HTMLImageElement;
+    const descriptor: BasemapTileDescriptor2d = {
+      key: '5-10-12',
+      href: 'https://tile/5/10/12.png',
+      zoom: 5,
+      tileX: 10,
+      tileY: 12,
+      meshColumns: 1,
+      meshRows: 1,
+      meshPoints: [
+        { x: 0, y: 0 },
+        { x: 256, y: 0 },
+        { x: 0, y: 256 },
+        { x: 256, y: 256 },
+      ],
+    };
+    const entryMap = store as unknown as {
+      entries: Map<string, { image: HTMLImageElement | null; status: string; lastAccessTick: number }>;
+    };
+    entryMap.entries.set(descriptor.key, {
+      key: descriptor.key,
+      href: descriptor.href,
+      zoom: descriptor.zoom,
+      tileX: descriptor.tileX,
+      tileY: descriptor.tileY,
+      image,
+      status: 'loaded',
+      lastAccessTick: 1,
+    } as never);
+
+    const first = store.resolveRenderTiles([descriptor]);
+    const second = store.resolveRenderTiles([descriptor]);
+
+    expect(second).toBe(first);
+  });
+
+  it('keeps recently revisited tiles in memory when eviction trims older off-screen tiles', () => {
+    const store = new MapViewTileStore(16);
+    const entryMap = store as unknown as {
+      entries: Map<string, { status: string; lastAccessTick: number }>;
+      evictIfNeeded: () => void;
+    };
+    for (let index = 0; index < 16; index += 1) {
+      entryMap.entries.set(`0-${index}-0`, {
+        key: `0-${index}-0`,
+        status: 'evictable',
+        lastAccessTick: index + 1,
+        crossOrigin: null,
+      } as never);
+    }
+    entryMap.entries.set('0-15-0', {
+      key: '0-15-0',
+      status: 'visible',
+      lastAccessTick: 32,
+      crossOrigin: null,
+    } as never);
+    entryMap.entries.set('0-16-0', {
+      key: '0-16-0',
+      status: 'requested',
+      lastAccessTick: 33,
+      crossOrigin: null,
+    } as never);
+
+    entryMap.evictIfNeeded();
+
+    expect(entryMap.entries.has('0-15-0')).toBe(true);
+    expect(entryMap.entries.has('0-16-0')).toBe(true);
+    expect(entryMap.entries.size).toBe(16);
+    expect(
+      Number(entryMap.entries.has('0-0-0')) + Number(entryMap.entries.has('0-1-0')),
+    ).toBeLessThan(2);
+  });
 });
