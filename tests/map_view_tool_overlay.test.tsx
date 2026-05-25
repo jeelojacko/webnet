@@ -66,6 +66,7 @@ describe('MapView tool surface', () => {
     expect(editButton).toBeTruthy();
     expect(inverseButton).toBeTruthy();
     expect(deleteSelectedButton).toBeTruthy();
+    expect(container.querySelector('[data-testid="map-context-menu"]')?.className).toContain('z-[70]');
     await act(async () => {
       editButton?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     });
@@ -89,6 +90,7 @@ describe('MapView tool surface', () => {
     const onClose = vi.fn();
     const onInverseFromInputChange = vi.fn();
     const onInverseToInputChange = vi.fn();
+    const onTogglePickTarget = vi.fn();
     const onAnglePivotInputChange = vi.fn();
     const onAngleFromInputChange = vi.fn();
     const onAngleToInputChange = vi.fn();
@@ -112,6 +114,8 @@ describe('MapView tool surface', () => {
             inverseToId="B"
             onInverseFromInputChange={onInverseFromInputChange}
             onInverseToInputChange={onInverseToInputChange}
+            pickTarget={null}
+            onTogglePickTarget={onTogglePickTarget}
             inverse={{
               azimuthFromToRad: Math.PI / 4,
               azimuthToFromRad: (Math.PI * 5) / 4,
@@ -141,6 +145,8 @@ describe('MapView tool surface', () => {
             inverseToId="B"
             onInverseFromInputChange={onInverseFromInputChange}
             onInverseToInputChange={onInverseToInputChange}
+            pickTarget="angle-pivot"
+            onTogglePickTarget={onTogglePickTarget}
             inverse={null}
             anglePivotInput="A"
             angleFromInput="B"
@@ -164,6 +170,17 @@ describe('MapView tool surface', () => {
     expect(container.textContent).toContain('42.1234 m');
     expect(container.textContent).toContain('Inside angle at A:');
     expect(container.textContent).toContain('Outside angle at A:');
+    expect(container.querySelector('[data-testid="map-tool-overlay"]')?.className).toContain('z-[70]');
+    expect(container.querySelector('[data-testid="inverse-from-input"]')).not.toBeNull();
+    expect(container.querySelector('[data-testid="angle-pivot-input"]')).not.toBeNull();
+
+    const pickButtons = Array.from(container.querySelectorAll('button')).filter(
+      (entry) => entry.textContent?.trim() === 'Pick',
+    );
+    await act(async () => {
+      pickButtons[0]?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    });
+    expect(onTogglePickTarget).toHaveBeenCalled();
 
     const closeButtons = Array.from(container.querySelectorAll('button')).filter(
       (entry) => entry.textContent?.trim() === 'Close',

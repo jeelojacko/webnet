@@ -15,6 +15,13 @@ interface AngleBetweenResult {
   outsideAngleRad: number;
 }
 
+export type MapToolPickTarget =
+  | 'inverse-from'
+  | 'inverse-to'
+  | 'angle-pivot'
+  | 'angle-from'
+  | 'angle-to';
+
 interface MapViewToolOverlayProps {
   activeTool: Exclude<MapToolPanel, 'none'>;
   visibleStationRows: VisibleStationRow[];
@@ -28,6 +35,8 @@ interface MapViewToolOverlayProps {
   inverseToId: string | null;
   onInverseFromInputChange: (_value: string) => void;
   onInverseToInputChange: (_value: string) => void;
+  pickTarget: MapToolPickTarget | null;
+  onTogglePickTarget: (_target: MapToolPickTarget) => void;
   inverse: InverseResult | null;
   anglePivotInput: string;
   angleFromInput: string;
@@ -45,6 +54,27 @@ const inputClass =
   'w-full rounded border border-slate-600 bg-slate-950 px-2 py-1 text-slate-100';
 const selectClass = 'rounded border border-slate-600 bg-slate-950 px-2 py-1 text-slate-100';
 
+const PickButton: React.FC<{
+  target: MapToolPickTarget;
+  pickTarget: MapToolPickTarget | null;
+  onTogglePickTarget: (_target: MapToolPickTarget) => void;
+}> = ({ target, pickTarget, onTogglePickTarget }) => (
+  <button
+    type="button"
+    data-map-pick-target={target}
+    title="Pick on screen"
+    aria-label="Pick on screen"
+    onClick={() => onTogglePickTarget(target)}
+    className={`rounded border px-2 py-1 text-[11px] uppercase tracking-wide ${
+      pickTarget === target
+        ? 'border-amber-300 bg-amber-950/40 text-amber-100'
+        : 'border-slate-600 text-slate-300 hover:bg-slate-800'
+    }`}
+  >
+    Pick
+  </button>
+);
+
 const MapViewToolOverlay: React.FC<MapViewToolOverlayProps> = ({
   activeTool,
   visibleStationRows,
@@ -58,6 +88,8 @@ const MapViewToolOverlay: React.FC<MapViewToolOverlayProps> = ({
   inverseToId,
   onInverseFromInputChange,
   onInverseToInputChange,
+  pickTarget,
+  onTogglePickTarget,
   inverse,
   anglePivotInput,
   angleFromInput,
@@ -70,7 +102,10 @@ const MapViewToolOverlay: React.FC<MapViewToolOverlayProps> = ({
   onAngleToInputChange,
   angleBetween,
 }) => (
-  <div className="absolute left-2 top-2 z-20 w-[min(560px,calc(100%-16px))] rounded border border-slate-700 bg-slate-900/95 p-3 text-xs shadow-lg shadow-black/45">
+  <div
+    data-testid="map-tool-overlay"
+    className="absolute left-2 top-2 z-[70] w-[min(560px,calc(100%-16px))] rounded border border-slate-700 bg-slate-900/95 p-3 text-xs shadow-lg shadow-black/45"
+  >
     <div className="mb-2 flex items-center justify-between border-b border-slate-700 pb-2">
       <div className="uppercase tracking-wider text-slate-300">
         {activeTool === 'points' ? 'Points' : activeTool === 'inverse' ? 'Inverse' : 'Angles Between'}
@@ -136,12 +171,14 @@ const MapViewToolOverlay: React.FC<MapViewToolOverlayProps> = ({
             <div className="flex gap-2">
               <input
                 type="text"
+                data-testid="inverse-from-input"
                 value={inverseFromInput}
                 onChange={(event) => onInverseFromInputChange(event.target.value)}
                 list="map-point-id-list"
                 className={inputClass}
               />
               <select
+                data-testid="inverse-from-select"
                 value={inverseFromId ?? ''}
                 onChange={(event) => onInverseFromInputChange(event.target.value)}
                 className={selectClass}
@@ -153,6 +190,11 @@ const MapViewToolOverlay: React.FC<MapViewToolOverlayProps> = ({
                   </option>
                 ))}
               </select>
+              <PickButton
+                target="inverse-from"
+                pickTarget={pickTarget}
+                onTogglePickTarget={onTogglePickTarget}
+              />
             </div>
           </label>
           <label className="space-y-1 text-slate-300">
@@ -160,12 +202,14 @@ const MapViewToolOverlay: React.FC<MapViewToolOverlayProps> = ({
             <div className="flex gap-2">
               <input
                 type="text"
+                data-testid="inverse-to-input"
                 value={inverseToInput}
                 onChange={(event) => onInverseToInputChange(event.target.value)}
                 list="map-point-id-list"
                 className={inputClass}
               />
               <select
+                data-testid="inverse-to-select"
                 value={inverseToId ?? ''}
                 onChange={(event) => onInverseToInputChange(event.target.value)}
                 className={selectClass}
@@ -177,6 +221,11 @@ const MapViewToolOverlay: React.FC<MapViewToolOverlayProps> = ({
                   </option>
                 ))}
               </select>
+              <PickButton
+                target="inverse-to"
+                pickTarget={pickTarget}
+                onTogglePickTarget={onTogglePickTarget}
+              />
             </div>
           </label>
         </div>
@@ -224,12 +273,14 @@ const MapViewToolOverlay: React.FC<MapViewToolOverlayProps> = ({
             <div className="flex gap-2">
               <input
                 type="text"
+                data-testid="angle-pivot-input"
                 value={anglePivotInput}
                 onChange={(event) => onAnglePivotInputChange(event.target.value)}
                 list="map-angle-point-id-list"
                 className={inputClass}
               />
               <select
+                data-testid="angle-pivot-select"
                 value={anglePivotId ?? ''}
                 onChange={(event) => onAnglePivotInputChange(event.target.value)}
                 className={selectClass}
@@ -241,6 +292,11 @@ const MapViewToolOverlay: React.FC<MapViewToolOverlayProps> = ({
                   </option>
                 ))}
               </select>
+              <PickButton
+                target="angle-pivot"
+                pickTarget={pickTarget}
+                onTogglePickTarget={onTogglePickTarget}
+              />
             </div>
           </label>
           <label className="space-y-1 text-slate-300">
@@ -248,12 +304,14 @@ const MapViewToolOverlay: React.FC<MapViewToolOverlayProps> = ({
             <div className="flex gap-2">
               <input
                 type="text"
+                data-testid="angle-from-input"
                 value={angleFromInput}
                 onChange={(event) => onAngleFromInputChange(event.target.value)}
                 list="map-angle-point-id-list"
                 className={inputClass}
               />
               <select
+                data-testid="angle-from-select"
                 value={angleFromId ?? ''}
                 onChange={(event) => onAngleFromInputChange(event.target.value)}
                 className={selectClass}
@@ -265,6 +323,11 @@ const MapViewToolOverlay: React.FC<MapViewToolOverlayProps> = ({
                   </option>
                 ))}
               </select>
+              <PickButton
+                target="angle-from"
+                pickTarget={pickTarget}
+                onTogglePickTarget={onTogglePickTarget}
+              />
             </div>
           </label>
           <label className="space-y-1 text-slate-300">
@@ -272,12 +335,14 @@ const MapViewToolOverlay: React.FC<MapViewToolOverlayProps> = ({
             <div className="flex gap-2">
               <input
                 type="text"
+                data-testid="angle-to-input"
                 value={angleToInput}
                 onChange={(event) => onAngleToInputChange(event.target.value)}
                 list="map-angle-point-id-list"
                 className={inputClass}
               />
               <select
+                data-testid="angle-to-select"
                 value={angleToId ?? ''}
                 onChange={(event) => onAngleToInputChange(event.target.value)}
                 className={selectClass}
@@ -289,6 +354,11 @@ const MapViewToolOverlay: React.FC<MapViewToolOverlayProps> = ({
                   </option>
                 ))}
               </select>
+              <PickButton
+                target="angle-to"
+                pickTarget={pickTarget}
+                onTogglePickTarget={onTogglePickTarget}
+              />
             </div>
           </label>
         </div>

@@ -107,6 +107,20 @@ const projectMapPoint2d = (
   };
 };
 
+const setTextInputValue = (input: HTMLInputElement, value: string) => {
+  const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set;
+  if (!setter) throw new Error('Missing HTMLInputElement value setter');
+  setter.call(input, value);
+  input.dispatchEvent(new Event('input', { bubbles: true }));
+};
+
+const setSelectValue = (select: HTMLSelectElement, value: string) => {
+  const setter = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value')?.set;
+  if (!setter) throw new Error('Missing HTMLSelectElement value setter');
+  setter.call(select, value);
+  select.dispatchEvent(new Event('change', { bubbles: true }));
+};
+
 describe('MapView interaction quality', () => {
   it('coalesces burst wheel updates into a frame-based view commit and transitions interaction phase', async () => {
     vi.useFakeTimers();
@@ -594,6 +608,8 @@ describe('MapView interaction quality', () => {
         }),
       );
     });
+    expect(container.querySelector('[data-testid="map-context-menu"]')).not.toBeNull();
+    expect(container.querySelector('[data-testid="map-context-menu"]')?.className).toContain('z-[70]');
     expect(container.textContent).toContain('Delete selected obstacles');
     expect(container.querySelector('[data-planning-vertex="poly-2:0"]')).toBeNull();
 
@@ -726,6 +742,166 @@ describe('MapView interaction quality', () => {
     container.remove();
   });
 
+  it('keeps inverse and angle tool inputs editable, syncs pick/select controls, and highlights tool geometry', async () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root: Root = createRoot(container);
+
+    await act(async () => {
+      root.render(
+        <MapView
+          result={result}
+          units="m"
+          planningMap={DEFAULT_PLANNING_MAP_STATE}
+        />,
+      );
+    });
+
+    const svg = container.querySelector('svg') as SVGSVGElement | null;
+    if (!svg) throw new Error('Expected map svg');
+    setSvgRect(svg);
+
+    const openTool = async (label: 'Inverse' | 'Angles Between') => {
+      await act(async () => {
+        svg.dispatchEvent(
+          new MouseEvent('contextmenu', {
+            bubbles: true,
+            clientX: 500,
+            clientY: 350,
+          }),
+        );
+      });
+      const button = Array.from(container.querySelectorAll('button')).find(
+        (entry) => entry.textContent?.trim() === label,
+      );
+      if (!button) throw new Error(`Expected ${label} context action`);
+      await act(async () => {
+        button.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      });
+    };
+
+    await openTool('Inverse');
+
+    const inverseFromInput = container.querySelector(
+      '[data-testid="inverse-from-input"]',
+    ) as HTMLInputElement | null;
+    const inverseToSelect = container.querySelector(
+      '[data-testid="inverse-to-select"]',
+    ) as HTMLSelectElement | null;
+    if (!inverseFromInput || !inverseToSelect) {
+      throw new Error('Expected inverse tool controls');
+    }
+
+    await act(async () => {
+      setTextInputValue(inverseFromInput, 'ZZ');
+    });
+    expect(inverseFromInput.value).toBe('ZZ');
+
+    const inversePickButton = container.querySelector(
+      '[data-map-pick-target="inverse-from"]',
+    ) as HTMLButtonElement | null;
+    if (!inversePickButton) throw new Error('Expected inverse pick button');
+    const stationA = result.stations.A;
+    const stationB = result.stations.B;
+    const stationC = result.stations.C;
+    if (!stationA || !stationB || !stationC) throw new Error('Expected fixture stations');
+
+    await act(async () => {
+      inversePickButton.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    });
+    const pointA = projectMapPoint2d(result.stations, { x: stationA.x, y: stationA.y });
+    await act(async () => {
+      svg.dispatchEvent(
+        new MouseEvent('click', {
+          bubbles: true,
+          clientX: pointA.x,
+          clientY: pointA.y,
+        }),
+      );
+    });
+    expect(inverseFromInput.value).toBe('A');
+
+    await act(async () => {
+      setSelectValue(inverseToSelect, 'B');
+    });
+    const inverseToInput = container.querySelector(
+      '[data-testid="inverse-to-input"]',
+    ) as HTMLInputElement | null;
+    if (!inverseToInput) throw new Error('Expected inverse to input');
+    expect(inverseToInput.value).toBe('B');
+    expect(container.querySelector('[data-map-tool-station-highlight="A"]')).not.toBeNull();
+    expect(container.querySelector('[data-map-tool-station-highlight="B"]')).not.toBeNull();
+    expect(container.querySelectorAll('[data-map-tool-line-highlight]').length).toBeGreaterThan(0);
+
+    const closeButton = Array.from(container.querySelectorAll('button')).find(
+      (entry) => entry.textContent?.trim() === 'Close',
+    );
+    if (!closeButton) throw new Error('Expected tool close button');
+    await act(async () => {
+      closeButton.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    });
+
+    await openTool('Angles Between');
+
+    const anglePivotInput = container.querySelector(
+      '[data-testid="angle-pivot-input"]',
+    ) as HTMLInputElement | null;
+    const angleFromSelect = container.querySelector(
+      '[data-testid="angle-from-select"]',
+    ) as HTMLSelectElement | null;
+    const angleToSelect = container.querySelector(
+      '[data-testid="angle-to-select"]',
+    ) as HTMLSelectElement | null;
+    if (!anglePivotInput || !angleFromSelect || !angleToSelect) {
+      throw new Error('Expected angle tool controls');
+    }
+
+    await act(async () => {
+      setTextInputValue(anglePivotInput, 'BAD');
+    });
+    expect(anglePivotInput.value).toBe('BAD');
+
+    const anglePivotPickButton = container.querySelector(
+      '[data-map-pick-target="angle-pivot"]',
+    ) as HTMLButtonElement | null;
+    if (!anglePivotPickButton) throw new Error('Expected angle pivot pick button');
+    const pointC = projectMapPoint2d(result.stations, { x: stationC.x, y: stationC.y });
+    await act(async () => {
+      anglePivotPickButton.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    });
+    await act(async () => {
+      svg.dispatchEvent(
+        new MouseEvent('click', {
+          bubbles: true,
+          clientX: pointC.x,
+          clientY: pointC.y,
+        }),
+      );
+    });
+    expect(anglePivotInput.value).toBe('C');
+
+    await act(async () => {
+      setSelectValue(angleFromSelect, 'A');
+      setSelectValue(angleToSelect, 'B');
+    });
+    expect(
+      (container.querySelector('[data-testid="angle-from-input"]') as HTMLInputElement | null)
+        ?.value,
+    ).toBe('A');
+    expect(
+      (container.querySelector('[data-testid="angle-to-input"]') as HTMLInputElement | null)?.value,
+    ).toBe('B');
+    expect(container.querySelector('[data-map-tool-station-highlight="C"]')).not.toBeNull();
+    expect(container.querySelector('[data-map-tool-station-highlight="A"]')).not.toBeNull();
+    expect(container.querySelector('[data-map-tool-station-highlight="B"]')).not.toBeNull();
+    expect(container.querySelectorAll('[data-map-tool-line-highlight]').length).toBe(2);
+
+    await act(async () => {
+      root.unmount();
+    });
+    container.remove();
+  });
+
   it('keeps labels visible and fetches planning obstacles even when OSM basemap is off', async () => {
     const fetchMock = vi.fn(async () => ({
       ok: true,
@@ -823,8 +999,19 @@ describe('MapView interaction quality', () => {
       await Promise.resolve();
     });
 
+    const planningCanvas = container.querySelector(
+      '[data-testid="map-planning-canvas"]',
+    ) as HTMLCanvasElement | null;
+    const overlaySvg = container.querySelector('svg') as SVGSVGElement | null;
+    if (!planningCanvas || !overlaySvg) throw new Error('Expected 2D map overlay stack');
+
     expect(container.querySelectorAll('[data-map-label]').length).toBeGreaterThan(0);
     expect(container.querySelector('[data-map-label="A"]')).not.toBeNull();
+    expect(planningCanvas.className).toContain('z-10');
+    expect(overlaySvg.className.baseVal).toContain('z-30');
+    expect(
+      planningCanvas.compareDocumentPosition(overlaySvg) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
 
     await act(async () => {
       root.unmount();

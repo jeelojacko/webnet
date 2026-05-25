@@ -975,6 +975,12 @@ describe('ReportView adjustment-layout sections', () => {
     expect(html).not.toContain('Expected</th>');
     expect(html).not.toContain('Res Mean (&quot;)</th>');
     expect(html).not.toContain('Stations</th>');
+
+    const faceTreatmentIndex = html.indexOf('Direction Face Treatment Diagnostics');
+    const processingLogIndex = html.indexOf('Processing Log');
+    const multiSetIndex = html.indexOf('Direction Repeatability By Occupy-Target (multi-set)');
+    expect(faceTreatmentIndex).toBeGreaterThan(multiSetIndex);
+    expect(processingLogIndex).toBeGreaterThan(faceTreatmentIndex);
   });
 
   it('keeps robust-comparison and observation summary cards visible while deferring their detail tables by default', () => {

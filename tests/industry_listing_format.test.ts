@@ -165,8 +165,8 @@ describe('industry listing phase 5 formatting locks', () => {
       '                                                    Azi    Dist       PPM',
     );
     expect(listing).toContain('Station                 Semi-Major    Semi-Minor   Azimuth of');
-    expect(listing).toContain('Stations                Semi-Major    Semi-Minor   Azimuth of');
-    expect(listing).toContain('From       To               Axis          Axis     Major Axis');
+    expect(listing).toContain('Stations                Semi-Major    Semi-Minor   Azimuth of          RLA(2D)        PPM');
+    expect(listing).toContain('From       To               Axis          Axis     Major Axis                            1:____');
     expect(listing).toMatch(/Convergence Limit; Max Iterations\s+:\s+0\.010000; 25/);
 
     // Lock coordinate/std-dev spacing to prevent merged numeric columns.
@@ -174,9 +174,11 @@ describe('industry listing phase 5 formatting locks', () => {
     expect(listing).toMatch(/^\s*1\s+-\s+\d+\.\d{6}\s+\d+\.\d{6}\s*$/m);
 
     // Lock key relative-ellipse formatting and fixed-to-adjusted relationship rows.
-    expect(listing).toMatch(/^\s*1\s+2\s+\d+\.\d{6}\s+\d+\.\d{6}\s+\d{1,3}-\d{2}\s*$/m);
     expect(listing).toMatch(
-      /^\s*(?:77\s+1000|1000\s+77)\s+\d+\.\d{6}\s+\d+\.\d{6}\s+\d{1,3}-\d{2}\s*$/m,
+      /^\s*1\s+2\s+\d+\.\d{6}\s+\d+\.\d{6}\s+\d{1,3}-\d{2}\s+1:\d[\d,]*\s+\d+\.\d{2}\s*$/m,
+    );
+    expect(listing).toMatch(
+      /^\s*(?:77\s+1000|1000\s+77)\s+\d+\.\d{6}\s+\d+\.\d{6}\s+\d{1,3}-\d{2}\s+1:\d[\d,]*\s+\d+\.\d{2}\s*$/m,
     );
   });
 

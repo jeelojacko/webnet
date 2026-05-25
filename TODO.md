@@ -1,3 +1,14 @@
+- [x] Relative ellipse RLA batch (May 2026): add `RLA(2D)` and `PPM` columns to the industry-style `Relative Error Ellipses` error-propagation table using adjusted horizontal line length over the printed 95% semi-major axis, then lock the new output shape with focused listing coverage.
+- [x] Test timeout stability batch (May 2026): relax the single heavy provisional data-check fixture test timeout in `adjust.spec.ts` if the failure is only the default Vitest 5 s cap, then rerun the full validation batch.
+- [x] Map tool picker + highlight batch (May 2026): let inverse/angles popup text boxes stay editable, add on-screen point-pick buttons that sync with the text/select controls, and highlight the involved points/legs while the tools are active.
+- [x] Map popup stack batch (May 2026): raise the right-click context menu and all map tool popups above render overlays so their actions stay clickable, and lock the stack with focused tests.
+
+- [x] Report direction-face placement batch (May 2026): remove direction face treatment diagnostics from preanalysis reports and move that section to the very bottom of regular adjustment reports just above the processing log, with focused report coverage.
+
+- [x] Map point-size trim batch (May 2026): reduce default 2D point symbol size by about half while preserving screen-consistent sizing across zoom levels, and lock the shared selector expectation.
+
+- [x] Map label stack hardening batch (May 2026): make the SVG label/tool overlay use explicit top-layer stacking above basemap and geometry canvases so station labels stay visible with OSM enabled, and lock it with focused map tests.
+
 - [x] Map selection layering + symbol contrast batch (May 2026): keep point labels/points above lines and polygons, move planning polygons below survey geometry, strengthen point/line selection contrast, and fix point/line click priority so polygon hits do not steal selection.
 
 - [x] Map tile persistence + prefetch batch (May 2026): keep a wider idle-time OSM tile ring warm in memory, increase revisit tile retention, and reduce refetch churn when panning back across recently viewed areas.

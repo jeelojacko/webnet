@@ -77,6 +77,22 @@ describe('ReportView preanalysis sections', () => {
         ],
       },
     };
+    result.parseState = {
+      ...(result.parseState ?? {}),
+      directionSetTreatmentDiagnostics: [
+        {
+          setId: 'SET1',
+          occupy: 'P',
+          sourceLine: 5,
+          readingCount: 3,
+          targetCount: 2,
+          faceSource: 'unknown',
+          treatmentDecision: 'reduced',
+          policyOutcome: 'keep',
+          faceNormalizationMode: 'paired',
+        },
+      ],
+    } as any;
 
     const html = renderToStaticMarkup(
       <ReportView
@@ -127,6 +143,7 @@ describe('ReportView preanalysis sections', () => {
     expect(html).not.toContain('dWorstMaj (m)');
     expect(html).not.toContain('Setup');
     expect(html).not.toContain('Action');
+    expect(html).not.toContain('Direction Face Treatment Diagnostics');
     expect(html).not.toContain('Observations &amp; Residuals');
     expect(html).not.toContain('Top Suspects');
   });

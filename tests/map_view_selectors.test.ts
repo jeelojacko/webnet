@@ -4,6 +4,7 @@ import type { Map3DCamera, Map3DScene } from '../src/engine/map3d';
 import type { Observation, StationMap } from '../src/types';
 import {
   buildMapScenePointBounds2d,
+  buildMapToolHighlights,
   buildMapToolMetrics,
   buildMapViewStyle2d,
   buildProjectedMapState3d,
@@ -45,9 +46,9 @@ describe('mapViewSelectors', () => {
 
     expect(derived.originalGeometryOpacity).toBe(0.25);
     expect(derived.lineWidth2d).toBeCloseTo(0.56, 6);
-    expect(derived.pointRadius2d).toBeCloseTo(1.9, 6);
+    expect(derived.pointRadius2d).toBeCloseTo(0.95, 6);
     expect(derived.lineWidth2d * 4).toBeGreaterThan(2);
-    expect(derived.pointRadius2d * 4).toBeGreaterThan(7);
+    expect(derived.pointRadius2d * 4).toBeGreaterThan(3.5);
     expect(derived.labelFont2d).toBeGreaterThan(3);
     expect(derived.marker2d * 4).toBeGreaterThan(6);
   });
@@ -179,5 +180,27 @@ describe('mapViewSelectors', () => {
     expect(projected.visiblePointLabels3d.has('A')).toBe(true);
     expect(tools.inverse?.distance2d).toBeCloseTo(10, 6);
     expect(tools.angleBetween?.insideAngleRad).toBeCloseTo(Math.PI / 4, 6);
+
+    const inverseHighlights = buildMapToolHighlights({
+      activeTool: 'inverse',
+      inverseFromId: 'A',
+      inverseToId: 'B',
+      anglePivotId: null,
+      angleFromId: null,
+      angleToId: null,
+    });
+    expect([...inverseHighlights.highlightedStationIds]).toEqual(['A', 'B']);
+    expect([...inverseHighlights.highlightedPairKeys]).toHaveLength(1);
+
+    const angleHighlights = buildMapToolHighlights({
+      activeTool: 'angles',
+      inverseFromId: null,
+      inverseToId: null,
+      anglePivotId: 'A',
+      angleFromId: 'B',
+      angleToId: 'C',
+    });
+    expect([...angleHighlights.highlightedStationIds]).toEqual(['A', 'B', 'C']);
+    expect([...angleHighlights.highlightedPairKeys]).toHaveLength(2);
   });
 });

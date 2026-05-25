@@ -65,7 +65,7 @@ import { DEFAULT_PLANNING_MAP_STATE } from '../engine/planningMapState';
 import MapViewSvg2d from './mapView/MapViewSvg2d';
 import MapViewScene3d from './mapView/MapViewScene3d';
 import MapViewContextMenu, { type MapToolPanel } from './mapView/MapViewContextMenu';
-import MapViewToolOverlay from './mapView/MapViewToolOverlay';
+import MapViewToolOverlay, { type MapToolPickTarget } from './mapView/MapViewToolOverlay';
 import {
   renderBasemapCanvas2d,
   renderGeometryCanvas2d,
@@ -91,6 +91,7 @@ import {
 } from './mapView/mapViewPerf';
 import {
   buildMapScenePointBounds2d,
+  buildMapToolHighlights,
   buildMapToolMetrics,
   buildMapViewStyle2d,
   buildProjectedMapState3d,
@@ -659,6 +660,7 @@ const MapView: React.FC<MapViewProps> = ({
     planningPolygon: null,
   });
   const [activeTool, setActiveTool] = useState<MapToolPanel>(() => snapshot?.activeTool ?? 'none');
+  const [toolPickTarget, setToolPickTarget] = useState<MapToolPickTarget | null>(null);
   const [inverseFromInput, setInverseFromInput] = useState(() => snapshot?.inverseFromInput ?? '');
   const [inverseToInput, setInverseToInput] = useState(() => snapshot?.inverseToInput ?? '');
   const [anglePivotInput, setAnglePivotInput] = useState(() => snapshot?.anglePivotInput ?? '');
@@ -831,13 +833,13 @@ const MapView: React.FC<MapViewProps> = ({
       setAngleToInput('');
       return;
     }
-    if (!resolveStationId(inverseFromInput)) setInverseFromInput(visibleStationIds[0]);
-    if (!resolveStationId(inverseToInput))
+    if (inverseFromInput.trim() === '') setInverseFromInput(visibleStationIds[0]);
+    if (inverseToInput.trim() === '')
       setInverseToInput(visibleStationIds[Math.min(1, visibleStationIds.length - 1)]);
-    if (!resolveStationId(anglePivotInput)) setAnglePivotInput(visibleStationIds[0]);
-    if (!resolveStationId(angleFromInput))
+    if (anglePivotInput.trim() === '') setAnglePivotInput(visibleStationIds[0]);
+    if (angleFromInput.trim() === '')
       setAngleFromInput(visibleStationIds[Math.min(1, visibleStationIds.length - 1)]);
-    if (!resolveStationId(angleToInput))
+    if (angleToInput.trim() === '')
       setAngleToInput(visibleStationIds[Math.min(2, visibleStationIds.length - 1)]);
   }, [
     angleFromInput,
@@ -845,7 +847,6 @@ const MapView: React.FC<MapViewProps> = ({
     angleToInput,
     inverseFromInput,
     inverseToInput,
-    resolveStationId,
     visibleStationIds,
   ]);
 
@@ -868,6 +869,12 @@ const MapView: React.FC<MapViewProps> = ({
       window.removeEventListener('keydown', onKeyDown);
     };
   }, [contextMenu.open]);
+
+  useEffect(() => {
+    if (activeTool === 'none' || visibleStationIds.length === 0) {
+      setToolPickTarget(null);
+    }
+  }, [activeTool, visibleStationIds.length]);
 
   const effectiveViewportWidth = viewportWidthOverride ?? viewportWidth;
   const derivedView2d = frozenDerivedView2d ?? deferredView2d;
@@ -1293,6 +1300,10 @@ const MapView: React.FC<MapViewProps> = ({
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key !== 'Escape') return;
       setContextMenu((prev) => ({ ...prev, open: false, planningPolygon: null }));
+      if (toolPickTarget != null) {
+        setToolPickTarget(null);
+        return;
+      }
       if (selectionBox != null) {
         clearMapSelectionBox();
         return;
@@ -1314,6 +1325,7 @@ const MapView: React.FC<MapViewProps> = ({
     selectedPlanningPolygonIds.length,
     selectedStationId,
     selectionBox,
+    toolPickTarget,
   ]);
 
   const stopDrag = useCallback(() => {
@@ -3018,6 +3030,21 @@ const MapView: React.FC<MapViewProps> = ({
       }),
     [angleFromId, anglePivotId, angleToId, inverseFromId, inverseToId, stations],
   );
+  const {
+    highlightedStationIds: highlightedToolStationIds,
+    highlightedSegments: highlightedToolSegments,
+  } = useMemo(
+    () =>
+      buildMapToolHighlights({
+        activeTool,
+        inverseFromId,
+        inverseToId,
+        anglePivotId,
+        angleFromId,
+        angleToId,
+      }),
+    [activeTool, angleFromId, anglePivotId, angleToId, inverseFromId, inverseToId],
+  );
 
   const openContextMenu = (event: React.MouseEvent<SVGSVGElement>) => {
     event.preventDefault();
@@ -3067,10 +3094,33 @@ const MapView: React.FC<MapViewProps> = ({
 
   const openTool = (tool: Exclude<MapToolPanel, 'none'>) => {
     setActiveTool(tool);
+    setToolPickTarget(null);
     setContextMenu((prev) => ({ ...prev, open: false, planningPolygon: null }));
   };
 
-  const closeTool = () => setActiveTool('none');
+  const closeTool = () => {
+    setActiveTool('none');
+    setToolPickTarget(null);
+  };
+
+  const toggleToolPickTarget = useCallback((target: MapToolPickTarget) => {
+    setToolPickTarget((current) => (current === target ? null : target));
+  }, []);
+
+  const applyPickedToolStation = useCallback((stationId: string) => {
+    if (toolPickTarget === 'inverse-from') {
+      setInverseFromInput(stationId);
+    } else if (toolPickTarget === 'inverse-to') {
+      setInverseToInput(stationId);
+    } else if (toolPickTarget === 'angle-pivot') {
+      setAnglePivotInput(stationId);
+    } else if (toolPickTarget === 'angle-from') {
+      setAngleFromInput(stationId);
+    } else if (toolPickTarget === 'angle-to') {
+      setAngleToInput(stationId);
+    }
+    setToolPickTarget(null);
+  }, [toolPickTarget]);
 
   const handleEditPlanningPolygon = useCallback(() => {
     const polygon = contextMenu.planningPolygon;
@@ -3102,6 +3152,11 @@ const MapView: React.FC<MapViewProps> = ({
   const handleSvgClick = (event: React.MouseEvent<SVGSVGElement>) => {
     if (effectiveMode === '3d') {
       const target = event.target as HTMLElement | null;
+      const stationId = target?.getAttribute('data-map-station');
+      if (toolPickTarget != null && stationId) {
+        applyPickedToolStation(stationId);
+        return;
+      }
       if (!target?.closest('[data-map-observation],[data-map-station]')) {
         clearMapSelection();
       }
@@ -3111,6 +3166,20 @@ const MapView: React.FC<MapViewProps> = ({
     if (target?.closest('[data-map-observation],[data-map-station]')) return;
     const pointer = toSvgCoords(event.clientX, event.clientY);
     if (!pointer) return;
+    const pointCandidates = mapHitIndex2d.pointCandidates(pointer.x, pointer.y, POINT_HIT_RADIUS_PX);
+    let nearestPointId: string | null = null;
+    let nearestPointDistance = Number.POSITIVE_INFINITY;
+    pointCandidates.forEach((point) => {
+      const distance = Math.hypot(pointer.x - point.screenX, pointer.y - point.screenY);
+      if (distance <= POINT_HIT_RADIUS_PX && distance < nearestPointDistance) {
+        nearestPointDistance = distance;
+        nearestPointId = point.id;
+      }
+    });
+    if (toolPickTarget != null) {
+      if (nearestPointId) applyPickedToolStation(nearestPointId);
+      return;
+    }
     if (planningMap.blockEditMode) {
       setDraftBlockedPolygon((current) => [...current, svgToMapCoords(pointer.x, pointer.y)]);
       return;
@@ -3128,16 +3197,6 @@ const MapView: React.FC<MapViewProps> = ({
       applySelectionBoxToPlanningPolygons(nextRect);
       return;
     }
-    const pointCandidates = mapHitIndex2d.pointCandidates(pointer.x, pointer.y, POINT_HIT_RADIUS_PX);
-    let nearestPointId: string | null = null;
-    let nearestPointDistance = Number.POSITIVE_INFINITY;
-    pointCandidates.forEach((point) => {
-      const distance = Math.hypot(pointer.x - point.screenX, pointer.y - point.screenY);
-      if (distance <= POINT_HIT_RADIUS_PX && distance < nearestPointDistance) {
-        nearestPointDistance = distance;
-        nearestPointId = point.id;
-      }
-    });
     if (nearestPointId) {
       setSelectedPlanningPolygonIds([]);
       onSelectStation?.(nearestPointId);
@@ -3497,19 +3556,19 @@ const MapView: React.FC<MapViewProps> = ({
                 <canvas
                   ref={basemapCanvasRef}
                   data-testid="map-base-canvas"
-                  className="absolute inset-0 h-full w-full pointer-events-none"
+                  className="absolute inset-0 z-0 h-full w-full pointer-events-none"
                 />
               )}
               <canvas
                 ref={planningCanvasRef}
                 data-testid="map-planning-canvas"
-                className="absolute inset-0 h-full w-full pointer-events-none"
+                className="absolute inset-0 z-10 h-full w-full pointer-events-none"
               />
               {webglEligible && (
                 <canvas
                   ref={webglCanvasRef}
                   data-testid="map-webgl-canvas"
-                  className={`absolute inset-0 h-full w-full pointer-events-none ${
+                  className={`absolute inset-0 z-20 h-full w-full pointer-events-none ${
                     renderer2d === 'webgl' ? '' : 'hidden'
                   }`}
                 />
@@ -3518,7 +3577,7 @@ const MapView: React.FC<MapViewProps> = ({
                 <canvas
                   ref={geometryCanvasRef}
                   data-testid="map-geometry-canvas"
-                  className="absolute inset-0 h-full w-full pointer-events-none"
+                  className="absolute inset-0 z-20 h-full w-full pointer-events-none"
                 />
               )}
             </>
@@ -3528,7 +3587,15 @@ const MapView: React.FC<MapViewProps> = ({
             viewBox={`0 0 ${VIEW_W} ${VIEW_H}`}
             preserveAspectRatio="xMidYMid slice"
             shapeRendering={interactionPhase === 'interacting' ? 'optimizeSpeed' : 'geometricPrecision'}
-            className={`w-full h-full select-none ${isDragging ? 'cursor-grabbing' : effectiveMode === '3d' ? 'cursor-grab' : 'cursor-default'}`}
+            className={`absolute inset-0 z-30 h-full w-full select-none ${
+              toolPickTarget != null
+                ? 'cursor-crosshair'
+                : isDragging
+                  ? 'cursor-grabbing'
+                  : effectiveMode === '3d'
+                    ? 'cursor-grab'
+                    : 'cursor-default'
+            }`}
             onWheel={handleWheel}
             onClick={handleSvgClick}
             onMouseDown={handleMouseDown}
@@ -3553,6 +3620,8 @@ const MapView: React.FC<MapViewProps> = ({
                 lineWidth2d={lineWidth2d}
                 onSelectObservation={onSelectObservation}
                 selectedStationId={selectedStationId}
+                highlightedToolStationIds={highlightedToolStationIds}
+                highlightedToolSegments={highlightedToolSegments}
                 pointRadius2d={pointRadius2d}
                 transformedOverlayActive={transformedOverlayActive}
                 transformedLines2d={transformedLines2d}
@@ -3590,6 +3659,8 @@ const MapView: React.FC<MapViewProps> = ({
                 selectedObservationPairKey={selectedObservationPairKey}
                 onSelectObservation={onSelectObservation}
                 selectedStationId={selectedStationId}
+                highlightedToolStationIds={highlightedToolStationIds}
+                highlightedToolSegments={highlightedToolSegments}
                 onSelectStation={onSelectStation}
               />
             )}
@@ -3643,7 +3714,10 @@ const MapView: React.FC<MapViewProps> = ({
           </div>
         )}
         {contextMenu.open && (
-          <div ref={contextMenuRef}>
+          <div
+            ref={contextMenuRef}
+            className="pointer-events-none absolute inset-0 z-[70]"
+          >
             <MapViewContextMenu
               x={contextMenu.x}
               y={contextMenu.y}
@@ -3676,6 +3750,8 @@ const MapView: React.FC<MapViewProps> = ({
             inverseToId={inverseToId}
             onInverseFromInputChange={setInverseFromInput}
             onInverseToInputChange={setInverseToInput}
+            pickTarget={toolPickTarget}
+            onTogglePickTarget={toggleToolPickTarget}
             inverse={inverse}
             anglePivotInput={anglePivotInput}
             angleFromInput={angleFromInput}

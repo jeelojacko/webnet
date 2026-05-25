@@ -69,6 +69,8 @@ const EMPTY_PLANNING_POLYGONS: PlanningPolygon2d[] = [];
 const EMPTY_SELECTED_PLANNING_POLYGON_IDS: string[] = [];
 const EMPTY_BRACE_PREVIEW_POINTS: BracePreviewPoint2d[] = [];
 const EMPTY_SCENARIO_PREVIEW_SEGMENTS: ScenarioPreviewSegment2d[] = [];
+const EMPTY_TOOL_HIGHLIGHT_IDS = new Set<string>();
+const EMPTY_TOOL_HIGHLIGHT_SEGMENTS: Array<{ key: string; fromId: string; toId: string }> = [];
 
 interface MapViewSvg2dProps {
   marker2d: number;
@@ -87,6 +89,8 @@ interface MapViewSvg2dProps {
   lineWidth2d: number;
   onSelectObservation?: (_observationId: number) => void;
   selectedStationId: string | null;
+  highlightedToolStationIds?: ReadonlySet<string>;
+  highlightedToolSegments?: ReadonlyArray<{ key: string; fromId: string; toId: string }>;
   pointRadius2d: number;
   transformedOverlayActive: boolean;
   transformedLines2d: TransformedLine2d[];
@@ -168,6 +172,8 @@ type SelectionLayerProps = Pick<
   | 'lineWidth2d'
   | 'onSelectObservation'
   | 'selectedStationId'
+  | 'highlightedToolStationIds'
+  | 'highlightedToolSegments'
   | 'filteredVisiblePoints2d'
   | 'pointRadius2d'
 >;
@@ -387,13 +393,57 @@ const SvgSelectionLayer = React.memo(function SvgSelectionLayer({
   lineWidth2d,
   onSelectObservation,
   selectedStationId,
+  highlightedToolStationIds = EMPTY_TOOL_HIGHLIGHT_IDS,
+  highlightedToolSegments = EMPTY_TOOL_HIGHLIGHT_SEGMENTS,
   filteredVisiblePoints2d,
   pointRadius2d,
 }: SelectionLayerProps) {
   return measureMapViewPerf('svg:selection-layer', () => {
     noteMapViewPerfCounter('svg:selection-layer:renders');
+    const pointsById = new Map(filteredVisiblePoints2d.map((point) => [point.id, point] as const));
     return (
       <>
+        {highlightedToolSegments.map((segment) => {
+          const from = pointsById.get(segment.fromId);
+          const to = pointsById.get(segment.toId);
+          if (!from || !to) return null;
+          return (
+            <line
+              key={`${segment.key}-tool-highlight`}
+              data-map-tool-line-highlight={segment.key}
+              x1={from.x}
+              y1={from.y}
+              x2={to.x}
+              y2={to.y}
+              stroke="#fbbf24"
+              strokeWidth={lineWidth2d * 2.6}
+              markerEnd="url(#arrow)"
+              opacity={0.95}
+              pointerEvents="none"
+            />
+          );
+        })}
+
+        {highlightedToolSegments.map((segment) => {
+          const from = pointsById.get(segment.fromId);
+          const to = pointsById.get(segment.toId);
+          if (!from || !to) return null;
+          return (
+            <line
+              key={`${segment.key}-tool-highlight-core`}
+              x1={from.x}
+              y1={from.y}
+              x2={to.x}
+              y2={to.y}
+              stroke="#f59e0b"
+              strokeWidth={lineWidth2d * 1.4}
+              markerEnd="url(#arrow)"
+              opacity={1}
+              pointerEvents="none"
+            />
+          );
+        })}
+
         {filteredVisibleMapLines2d
           .filter(
             (line) =>
@@ -439,6 +489,35 @@ const SvgSelectionLayer = React.memo(function SvgSelectionLayer({
             />
           ))}
 
+        {filteredVisiblePoints2d
+          .filter((point) => highlightedToolStationIds.has(point.id))
+          .map((point) => (
+            <circle
+              key={`tool-highlight-station-${point.id}`}
+              data-map-tool-station-highlight={point.id}
+              cx={point.x}
+              cy={point.y}
+              r={pointRadius2d * 1.6}
+              fill="none"
+              stroke="#fbbf24"
+              strokeWidth={pointRadius2d * 0.7}
+              pointerEvents="none"
+            />
+          ))}
+        {filteredVisiblePoints2d
+          .filter((point) => highlightedToolStationIds.has(point.id))
+          .map((point) => (
+            <circle
+              key={`tool-highlight-station-core-${point.id}`}
+              cx={point.x}
+              cy={point.y}
+              r={pointRadius2d * 1.28}
+              fill="none"
+              stroke="#f59e0b"
+              strokeWidth={pointRadius2d * 0.38}
+              pointerEvents="none"
+            />
+          ))}
         {selectedStationId &&
           filteredVisiblePoints2d
             .filter((point) => point.id === selectedStationId)
@@ -557,6 +636,8 @@ const MapViewSvg2d: React.FC<MapViewSvg2dProps> = ({
   lineWidth2d,
   onSelectObservation,
   selectedStationId,
+  highlightedToolStationIds = EMPTY_TOOL_HIGHLIGHT_IDS,
+  highlightedToolSegments = EMPTY_TOOL_HIGHLIGHT_SEGMENTS,
   pointRadius2d,
   transformedOverlayActive,
   transformedLines2d,
@@ -613,6 +694,8 @@ const MapViewSvg2d: React.FC<MapViewSvg2dProps> = ({
             lineWidth2d={lineWidth2d}
             onSelectObservation={onSelectObservation}
             selectedStationId={selectedStationId}
+            highlightedToolStationIds={highlightedToolStationIds}
+            highlightedToolSegments={highlightedToolSegments}
             filteredVisiblePoints2d={filteredVisiblePoints2d}
             pointRadius2d={pointRadius2d}
           />

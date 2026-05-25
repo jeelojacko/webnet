@@ -1,4 +1,5 @@
 import { computeInverse2D, computePivotAngles } from '../../engine/mapTools';
+import { buildStationPairKey } from '../../engine/resultDerivedModels';
 import type { Map3DCamera, Map3DScene } from '../../engine/map3d';
 import type { Observation, StationMap } from '../../types';
 import type { ProjectablePoint2D, View2dState } from './mapView2d';
@@ -47,6 +48,12 @@ export interface MapToolMetrics {
   angleBetween: ReturnType<typeof computePivotAngles> | null;
 }
 
+export interface MapToolHighlights {
+  highlightedStationIds: Set<string>;
+  highlightedPairKeys: Set<string>;
+  highlightedSegments: Array<{ key: string; fromId: string; toId: string }>;
+}
+
 const clamp = (value: number, min: number, max: number): number => Math.min(max, Math.max(min, value));
 
 export const buildMapScenePointBounds2d = (
@@ -91,7 +98,7 @@ export const buildMapViewStyle2d = (
 ): MapViewStyle2d => {
   const safeZoom = Math.max(view2d.zoom, 1e-6);
   const zoomLog2 = Math.max(0, Math.log2(safeZoom));
-  const pointRadius2dPx = clamp(6.4 + zoomLog2 * 0.6, 6.4, 10.2);
+  const pointRadius2dPx = clamp(3.2 + zoomLog2 * 0.3, 3.2, 5.1);
   const lineWidth2dPx = clamp(1.8 + zoomLog2 * 0.22, 1.8, 3);
   const ellipseStroke2dPx = clamp(1.2 + zoomLog2 * 0.14, 1.2, 2.1);
   const labelFont2dPx = clamp(12 + Math.max(0, Math.log2(view2d.zoom)) * 3, 12, 26);
@@ -250,4 +257,69 @@ export const buildMapToolMetrics = (input: {
   }
 
   return { inverse, angleBetween };
+};
+
+export const buildMapToolHighlights = (input: {
+  activeTool: 'none' | 'points' | 'inverse' | 'angles';
+  inverseFromId: string | null;
+  inverseToId: string | null;
+  anglePivotId: string | null;
+  angleFromId: string | null;
+  angleToId: string | null;
+}): MapToolHighlights => {
+  const highlightedStationIds = new Set<string>();
+  const highlightedPairKeys = new Set<string>();
+  const highlightedSegments: Array<{ key: string; fromId: string; toId: string }> = [];
+
+  if (input.activeTool === 'inverse') {
+    if (input.inverseFromId) highlightedStationIds.add(input.inverseFromId);
+    if (input.inverseToId) highlightedStationIds.add(input.inverseToId);
+    if (
+      input.inverseFromId &&
+      input.inverseToId &&
+      input.inverseFromId !== input.inverseToId
+    ) {
+      const key = buildStationPairKey(input.inverseFromId, input.inverseToId);
+      highlightedPairKeys.add(key);
+      highlightedSegments.push({
+        key,
+        fromId: input.inverseFromId,
+        toId: input.inverseToId,
+      });
+    }
+  }
+
+  if (input.activeTool === 'angles') {
+    if (input.anglePivotId) highlightedStationIds.add(input.anglePivotId);
+    if (input.angleFromId) highlightedStationIds.add(input.angleFromId);
+    if (input.angleToId) highlightedStationIds.add(input.angleToId);
+    if (
+      input.anglePivotId &&
+      input.angleFromId &&
+      input.anglePivotId !== input.angleFromId
+    ) {
+      const key = buildStationPairKey(input.anglePivotId, input.angleFromId);
+      highlightedPairKeys.add(key);
+      highlightedSegments.push({
+        key,
+        fromId: input.anglePivotId,
+        toId: input.angleFromId,
+      });
+    }
+    if (
+      input.anglePivotId &&
+      input.angleToId &&
+      input.anglePivotId !== input.angleToId
+    ) {
+      const key = buildStationPairKey(input.anglePivotId, input.angleToId);
+      highlightedPairKeys.add(key);
+      highlightedSegments.push({
+        key,
+        fromId: input.anglePivotId,
+        toId: input.angleToId,
+      });
+    }
+  }
+
+  return { highlightedStationIds, highlightedPairKeys, highlightedSegments };
 };

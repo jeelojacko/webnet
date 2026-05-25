@@ -9,6 +9,9 @@ import {
   type ProjectedStation3D,
 } from './mapView3d';
 
+const EMPTY_TOOL_HIGHLIGHT_SEGMENTS: Array<{ key: string; fromId: string; toId: string }> = [];
+const EMPTY_TOOL_HIGHLIGHT_IDS = new Set<string>();
+
 interface MapObservationLink3d {
   observationId: number;
 }
@@ -30,6 +33,8 @@ interface MapViewScene3dProps {
   selectedObservationPairKey: string | null;
   onSelectObservation?: (_observationId: number) => void;
   selectedStationId: string | null;
+  highlightedToolStationIds?: ReadonlySet<string>;
+  highlightedToolSegments?: ReadonlyArray<{ key: string; fromId: string; toId: string }>;
   onSelectStation?: (_stationId: string) => void;
 }
 
@@ -50,6 +55,8 @@ const MapViewScene3d: React.FC<MapViewScene3dProps> = ({
   selectedObservationPairKey,
   onSelectObservation,
   selectedStationId,
+  highlightedToolStationIds = EMPTY_TOOL_HIGHLIGHT_IDS,
+  highlightedToolSegments = EMPTY_TOOL_HIGHLIGHT_SEGMENTS,
   onSelectStation,
 }) => (
   <>
@@ -63,7 +70,8 @@ const MapViewScene3d: React.FC<MapViewScene3dProps> = ({
       const isSelected =
         (link != null && link.observationId === selectedObservationId) ||
         (selectedObservationPairKey != null && pairKey === selectedObservationPairKey);
-      if (isSelected) return null;
+      const isToolHighlighted = highlightedToolSegments.some((segment) => segment.key === pairKey);
+      if (isSelected || isToolHighlighted) return null;
       return (
         <line
           key={`edge3d-${idx}`}
@@ -79,6 +87,25 @@ const MapViewScene3d: React.FC<MapViewScene3dProps> = ({
             if (link) onSelectObservation?.(link.observationId);
           }}
           className={link && onSelectObservation ? 'cursor-pointer' : undefined}
+        />
+      );
+    })}
+    {highlightedToolSegments.map((segment, idx) => {
+      const a = projected3dById.get(segment.fromId);
+      const b = projected3dById.get(segment.toId);
+      if (!a || !b) return null;
+      return (
+        <line
+          key={`edge3d-tool-highlight-${idx}`}
+          data-map-tool-line-highlight={segment.key}
+          x1={a.x}
+          y1={a.y}
+          x2={b.x}
+          y2={b.y}
+          stroke="#f59e0b"
+          strokeWidth={1.8}
+          opacity={1}
+          pointerEvents="none"
         />
       );
     })}
@@ -145,6 +172,18 @@ const MapViewScene3d: React.FC<MapViewScene3dProps> = ({
             onClick={() => onSelectStation?.(node.id)}
             className={onSelectStation ? 'cursor-pointer' : undefined}
           />
+          {highlightedToolStationIds.has(node.id) && (
+            <circle
+              data-map-tool-station-highlight={node.id}
+              cx={p.x}
+              cy={p.y}
+              r={pointRadius * 1.65}
+              fill="none"
+              stroke="#f59e0b"
+              strokeWidth={1.9}
+              pointerEvents="none"
+            />
+          )}
           {selectedStationId === node.id && (
             <circle
               cx={p.x}

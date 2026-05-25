@@ -27,7 +27,8 @@ const MapViewContextMenu: React.FC<MapViewContextMenuProps> = ({
   onDeleteSelectedPlanningPolygons = null,
 }) => (
   <div
-    className="absolute z-20 min-w-[210px] rounded border border-slate-700 bg-slate-900/95 p-1 text-xs shadow-lg shadow-black/50"
+    data-testid="map-context-menu"
+    className="absolute z-[70] min-w-[210px] rounded border border-slate-700 bg-slate-900/95 p-1 text-xs shadow-lg shadow-black/50 pointer-events-auto"
     style={{ left: x, top: y }}
   >
     {planningPolygonLabel && (

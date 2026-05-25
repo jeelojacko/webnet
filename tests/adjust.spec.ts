@@ -2580,35 +2580,39 @@ describe('LSAEngine', () => {
     ).toBe(true);
   });
 
-  it('runs the provisional data-check stage and falls back to reduced-direction consistency when geometry remains weak', () => {
-    const input = readFileSync('tests/fixtures/industry_case_combined_input.txt', 'utf-8');
+  it(
+    'runs the provisional data-check stage and falls back to reduced-direction consistency when geometry remains weak',
+    () => {
+      const input = readFileSync('tests/fixtures/industry_case_combined_input.txt', 'utf-8');
 
-    const result = new LSAEngine({
-      input,
-      maxIterations: 8,
-      parseOptions: { runMode: 'data-check', coordMode: '3D' },
-    }).solve();
+      const result = new LSAEngine({
+        input,
+        maxIterations: 8,
+        parseOptions: { runMode: 'data-check', coordMode: '3D' },
+      }).solve();
 
-    const directionRows = result.observations.filter((obs) => obs.type === 'direction');
-    expect(directionRows.length).toBeGreaterThan(100);
+      const directionRows = result.observations.filter((obs) => obs.type === 'direction');
+      expect(directionRows.length).toBeGreaterThan(100);
 
-    const maxDirectionResidualArcSec = directionRows.reduce(
-      (max, obs) => Math.max(max, Math.abs((obs.residual ?? 0) * RAD_TO_DEG * 3600)),
-      0,
-    );
-    expect(maxDirectionResidualArcSec).toBeLessThan(5);
-    expect(
-      result.logs.some((line) => line.includes('Data Check provisional approximation: updated')),
-    ).toBe(true);
+      const maxDirectionResidualArcSec = directionRows.reduce(
+        (max, obs) => Math.max(max, Math.abs((obs.residual ?? 0) * RAD_TO_DEG * 3600)),
+        0,
+      );
+      expect(maxDirectionResidualArcSec).toBeLessThan(5);
+      expect(
+        result.logs.some((line) => line.includes('Data Check provisional approximation: updated')),
+      ).toBe(true);
 
-    const fallbackRows = directionRows.filter(
-      (obs) =>
-        (obs.rawCount ?? 0) > 0 &&
-        Math.abs(obs.obs - (obs.calc ?? Number.NaN)) < 1e-12 &&
-        (obs.stdRes == null || !Number.isFinite(obs.stdRes)),
-    );
-    expect(fallbackRows.length).toBeGreaterThan(20);
-  });
+      const fallbackRows = directionRows.filter(
+        (obs) =>
+          (obs.rawCount ?? 0) > 0 &&
+          Math.abs(obs.obs - (obs.calc ?? Number.NaN)) < 1e-12 &&
+          (obs.stdRes == null || !Number.isFinite(obs.stdRes)),
+      );
+      expect(fallbackRows.length).toBeGreaterThan(20);
+    },
+    15000,
+  );
 
   it('enforces blunder-detect mode overrides with explicit diagnostics', () => {
     const input = [

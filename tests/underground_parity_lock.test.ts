@@ -113,7 +113,7 @@ const parseRelativeEllipseRows = (
   const rows = new Map<string, { semiMajor: number; semiMinor: number; azimuthArcSeconds: number }>();
   section.split('\n').forEach((line) => {
     const tokens = line.trim().split(/\s+/);
-    if (tokens.length !== 5) return;
+    if (tokens.length < 5) return;
     const semiMajor = Number(tokens[2]);
     const semiMinor = Number(tokens[3]);
     if (!Number.isFinite(semiMajor) || !Number.isFinite(semiMinor)) return;
@@ -135,11 +135,13 @@ describe('underground parity lock', () => {
     expect(listing).toContain('Adjusted Azimuths (DMS) and Horizontal Distances (Meters)');
     expect(listing).toContain('Station Coordinate Standard Deviations (Meters)');
     expect(listing).toContain('Relative Error Ellipses (Meters)');
+    expect(listing).toContain('RLA(2D)');
+    expect(listing).toContain('PPM');
     expect(listing).toContain('1        -            -2.4640    2.3565');
     expect(listing).toContain('1          2             270-07-30.7    22.2571   37.14   0.0010    44.2475');
     expect(listing).toContain('9        -            0.029183  0.001331');
     expect(listing).toContain('10                        0.066599      0.002733       1-39');
-    expect(listing).toContain('10         11             0.009652      0.000980      86-53');
+    expect(listing).toMatch(/10\s+11\s+0\.009652\s+0\.000980\s+86-53\s+1:\d[\d,]*\s+\d+\.\d{2}/);
   });
 
   it('stays numerically close to the actual industry underground output on coordinates, relative confidence, and ellipses', () => {

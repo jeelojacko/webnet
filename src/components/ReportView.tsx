@@ -31,7 +31,9 @@ import {
 import { confirmActionGuard } from '../engine/actionGuards';
 import AdjustedCoordinatesSection from './report/AdjustedCoordinatesSection';
 import CollapsibleSectionHeader from './report/CollapsibleSectionHeader';
-import DirectionDiagnosticsSections from './report/DirectionDiagnosticsSections';
+import DirectionDiagnosticsSections, {
+  DirectionFaceTreatmentDiagnosticsSection,
+} from './report/DirectionDiagnosticsSections';
 import ObservationTableSection from './report/ObservationTableSection';
 import PinnedSectionsPanel from './report/PinnedSectionsPanel';
 import ReportFilterPanel from './report/ReportFilterPanel';
@@ -225,6 +227,7 @@ const ReportView: React.FC<ReportViewProps> = ({
     (isPreanalysis ? 'preanalysis' : 'adjustment');
   const isDataCheck = runMode === 'data-check';
   const isBlunderDetect = runMode === 'blunder-detect';
+  const isRegularAdjustment = runMode === 'adjustment';
   const isSpecialRunMode = isDataCheck || isBlunderDetect;
   const localViewState = useReportViewState({
     result,
@@ -2193,20 +2196,21 @@ const ReportView: React.FC<ReportViewProps> = ({
         renderSourceLineLink={renderSourceLineLink}
       />
 
-      <DirectionDiagnosticsSections
-        result={result}
-        isPreanalysis={isPreanalysis}
-        isDataCheck={isDataCheck}
+        <DirectionDiagnosticsSections
+          result={result}
+          isPreanalysis={isPreanalysis}
+          isDataCheck={isDataCheck}
         directionTreatmentDiagnostics={directionTreatmentDiagnostics}
         directionRejects={directionRejects}
         visibleDirectionRejects={visibleDirectionRejects}
         topDirectionTargetSuspects={topDirectionTargetSuspects}
         topDirectionRepeatabilitySuspects={topDirectionRepeatabilitySuspects}
-        renderCollapsibleSectionHeader={renderCollapsibleSectionHeader}
-        isSectionCollapsed={isSectionCollapsed}
-        renderLoadMoreFooter={renderLoadMoreFooter}
-        renderSourceLineLink={renderSourceLineLink}
-      />
+          renderCollapsibleSectionHeader={renderCollapsibleSectionHeader}
+          isSectionCollapsed={isSectionCollapsed}
+          renderLoadMoreFooter={renderLoadMoreFooter}
+          renderSourceLineLink={renderSourceLineLink}
+          showFaceTreatmentSection={false}
+        />
 
       {!isPreanalysis &&
         !isDataCheck &&
@@ -2982,7 +2986,18 @@ const ReportView: React.FC<ReportViewProps> = ({
         </div>
       )}
 
-      <div className="mt-8 rounded border border-slate-800 overflow-hidden">
+        {isRegularAdjustment && (
+          <DirectionFaceTreatmentDiagnosticsSection
+            directionTreatmentDiagnostics={directionTreatmentDiagnostics}
+            isPreanalysis={isPreanalysis}
+            isDataCheck={isDataCheck}
+            renderCollapsibleSectionHeader={renderCollapsibleSectionHeader}
+            isSectionCollapsed={isSectionCollapsed}
+            renderSourceLineLink={renderSourceLineLink}
+          />
+        )}
+
+        <div className="mt-8 rounded border border-slate-800 overflow-hidden">
         {renderCollapsibleSectionHeader({
           sectionId: 'processing-log',
           label: 'Processing Log',

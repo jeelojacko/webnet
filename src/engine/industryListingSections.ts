@@ -1340,6 +1340,19 @@ export const appendErrorPropagationSections = ({
           : 1;
       const semiMajor = (row.ellipse?.semiMajor ?? 0) * ellipseLinearDisplayScale;
       const semiMinor = (row.ellipse?.semiMinor ?? 0) * ellipseLinearDisplayScale;
+      const semiMajor95Display = semiMajor * confidence95Scale * unitScale;
+      const horizontalDistanceDisplay =
+        Number.isFinite(Number(row.distance)) ? Number(row.distance) : Number.NaN;
+      const rla2d =
+        Number.isFinite(horizontalDistanceDisplay) && semiMajor95Display > 0
+          ? `1:${(horizontalDistanceDisplay / semiMajor95Display).toLocaleString('en-US', {
+              maximumFractionDigits: 0,
+            })}`
+          : '-';
+      const ppm2d =
+        Number.isFinite(horizontalDistanceDisplay) && horizontalDistanceDisplay > 0
+          ? ((semiMajor95Display / horizontalDistanceDisplay) * 1_000_000).toFixed(2)
+          : '-';
       const ellipseAzimuthCorrectionDeg =
         usesCompactGnssParityLayout &&
         ((res.stations[row.from]?.fixed === true && gpsDirectFixedLinkedStations.has(row.to)) ||
@@ -1352,19 +1365,33 @@ export const appendErrorPropagationSections = ({
       return [
         row.from,
         row.to,
-        (semiMajor * confidence95Scale * unitScale).toFixed(6),
+        semiMajor95Display.toFixed(6),
         (semiMinor * confidence95Scale * unitScale).toFixed(6),
         formatEllipseAzDm(row.ellipse?.theta, semiMajor, semiMinor, ellipseAzimuthCorrectionDeg),
         row.sigmaH != null ? (row.sigmaH * ONE_DIMENSIONAL_CONFIDENCE_95_SCALE * unitScale).toFixed(6) : '-',
+        rla2d,
+        ppm2d,
       ];
     });
   if (relativeEllipseRows.length > 0) {
     const includeRelativeVertical = coordMode === '3D' && relativeEllipseRows.some((row) => row[5] !== '-');
-    lines.push(includeRelativeVertical ? 'Stations                Semi-Major    Semi-Minor   Azimuth of     Vertical' : 'Stations                Semi-Major    Semi-Minor   Azimuth of');
-    lines.push(includeRelativeVertical ? 'From       To               Axis          Axis     Major Axis' : 'From       To               Axis          Axis     Major Axis');
+    lines.push(
+      includeRelativeVertical
+        ? 'Stations                Semi-Major    Semi-Minor   Azimuth of     Vertical          RLA(2D)        PPM'
+        : 'Stations                Semi-Major    Semi-Minor   Azimuth of          RLA(2D)        PPM',
+    );
+    lines.push(
+      includeRelativeVertical
+        ? 'From       To               Axis          Axis     Major Axis                            1:____'
+        : 'From       To               Axis          Axis     Major Axis                            1:____',
+    );
     relativeEllipseRows.forEach((row) => {
       const base = `${row[0].padEnd(10)} ${row[1].padEnd(9)} ${row[2].padStart(13)} ${row[3].padStart(13)} ${row[4].padStart(10)}`;
-      lines.push(includeRelativeVertical ? `${base} ${row[5].padStart(14)}` : base);
+      lines.push(
+        includeRelativeVertical
+          ? `${base} ${row[5].padStart(14)} ${row[6].padStart(15)} ${row[7].padStart(10)}`
+          : `${base} ${row[6].padStart(15)} ${row[7].padStart(10)}`,
+      );
     });
   } else {
     lines.push('(none)');
