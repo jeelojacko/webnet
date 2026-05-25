@@ -16,7 +16,7 @@ export const PREANALYSIS_LABEL_TOOLTIPS: Record<string, string> = {
   'Locked Planned Observations':
     'Planned observations using fixed sigma weighting. They are excluded from synthetic added-set recommendations.',
   'Preanalysis Added-Set Recommendations':
-    'Path-aware planning scenarios showing how predicted precision changes when additive changes strengthen the chain back to control, plus advisory network changes that require manual edits.',
+    'Path-aware planning scenarios showing how predicted precision changes when additive changes strengthen the chain back to control, plus transform network changes that can now be applied and re-run from the report.',
   'Applied Added Scenarios':
     'Synthetic repeated-set or brace-point scenarios currently applied in the active preanalysis rerun state.',
   'Candidate Added Scenarios':

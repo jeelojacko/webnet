@@ -14,6 +14,7 @@ import {
   buildPreanalysisPlanningDiagnostics,
   buildPreanalysisSyntheticSetTemplates,
   buildSyntheticPreanalysisInput,
+  resolveAppliedPreanalysisActionState,
 } from './preanalysisPlanning';
 import { normalizeClusterApprovedMerges, solveEngine } from './solveEngine';
 import type { SolveProgressEvent } from './scenarioRunModels';
@@ -744,9 +745,18 @@ export const runAdjustmentSession = (
       overrideValues,
       normalizedMerges,
     );
+    const normalizedSyntheticAdditionIds =
+      profileContext.effectiveParse.runMode === 'preanalysis'
+        ? resolveAppliedPreanalysisActionState(preanalysisTemplates, syntheticAdditionIds)
+            .normalizedScenarioIds
+        : syntheticAdditionIds;
     const solveInput =
       profileContext.effectiveParse.runMode === 'preanalysis'
-        ? buildSyntheticPreanalysisInput(request.input, syntheticAdditionIds, preanalysisTemplates)
+        ? buildSyntheticPreanalysisInput(
+            request.input,
+            normalizedSyntheticAdditionIds,
+            preanalysisTemplates,
+          )
         : request.input;
     const solveIndex = solveInvocationCount + 1;
     const stageStartedAt = Date.now();
@@ -766,7 +776,7 @@ export const runAdjustmentSession = (
         request,
         {
           ...profileContext.effectiveParse,
-          preanalysisSyntheticAdditionIds: syntheticAdditionIds,
+          preanalysisSyntheticAdditionIds: normalizedSyntheticAdditionIds,
         },
         profileContext.directionSetMode,
         profileContext.allowClusterFaceReliability,
@@ -784,7 +794,7 @@ export const runAdjustmentSession = (
         );
       },
     });
-    result.preanalysisSyntheticAdditionIds = [...syntheticAdditionIds];
+    result.preanalysisSyntheticAdditionIds = [...normalizedSyntheticAdditionIds];
     solveInvocationCount += 1;
     recordStageDuration(meta.stageId, Date.now() - stageStartedAt);
     return result;
@@ -808,6 +818,9 @@ export const runAdjustmentSession = (
       request.selectedInstrument,
     );
     if (profileContext.effectiveParse.runMode === 'preanalysis') {
+      activePreanalysisAdditionIds = [
+        ...(solved.preanalysisSyntheticAdditionIds ?? activePreanalysisAdditionIds),
+      ];
       solved.suspectImpactDiagnostics = undefined;
       const preanalysisTemplates = resolvePreanalysisTemplates(
         profileContext,

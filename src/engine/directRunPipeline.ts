@@ -8,6 +8,7 @@ import {
   buildPreanalysisPlanningDiagnostics,
   buildPreanalysisSyntheticSetTemplates,
   buildSyntheticPreanalysisInput,
+  resolveAppliedPreanalysisActionState,
 } from './preanalysisPlanning';
 import { createRunProfileBuilders } from './runProfileBuilders';
 import { normalizeClusterApprovedMerges, solveEngine } from './solveEngine';
@@ -234,15 +235,22 @@ export const createDirectRunPipeline = ({
         request.activePreanalysisAdditionIds,
       );
     }
+    const normalizedSyntheticAdditionIds =
+      effectiveParse.runMode === 'preanalysis'
+        ? resolveAppliedPreanalysisActionState(
+            cachedPreanalysisTemplates ?? [],
+            syntheticAdditionIds,
+          ).normalizedScenarioIds
+        : syntheticAdditionIds;
     const solveInput =
       effectiveParse.runMode === 'preanalysis'
         ? buildSyntheticPreanalysisInput(
             request.input,
-            syntheticAdditionIds,
+            normalizedSyntheticAdditionIds,
             cachedPreanalysisTemplates ?? [],
           )
         : request.input;
-    return solveEngine({
+    const solved = solveEngine({
       input: solveInput,
       maxIterations: request.maxIterations,
       convergenceThreshold: request.convergenceLimit,
@@ -285,7 +293,7 @@ export const createDirectRunPipeline = ({
         preanalysisMode: effectiveParse.runMode === 'preanalysis',
         preanalysisAccuracyThresholdMeters: effectiveParse.preanalysisAccuracyThresholdMeters,
         preanalysisMaxAddedSets: effectiveParse.preanalysisMaxAddedSets,
-        preanalysisSyntheticAdditionIds: syntheticAdditionIds,
+        preanalysisSyntheticAdditionIds: normalizedSyntheticAdditionIds,
         order: effectiveParse.order,
         angleUnits: effectiveParse.angleUnits,
         angleStationOrder: effectiveParse.angleStationOrder,
@@ -348,6 +356,8 @@ export const createDirectRunPipeline = ({
         preferExternalInstruments: true,
       },
     });
+    solved.preanalysisSyntheticAdditionIds = [...normalizedSyntheticAdditionIds];
+    return solved;
   };
 
   const buildSuspectImpactDiagnostics = (
@@ -451,11 +461,13 @@ export const createDirectRunPipeline = ({
     const profileCtx = resolveProfileContext(request.parseSettings as ParseSettings);
     if (profileCtx.effectiveParse.runMode === 'preanalysis') {
       solved.suspectImpactDiagnostics = undefined;
+      const normalizedActivePreanalysisIds =
+        solved.preanalysisSyntheticAdditionIds ?? request.activePreanalysisAdditionIds;
       solved.preanalysisImpactDiagnostics = buildPreanalysisPlanningDiagnostics({
         base: solved,
         input: request.input,
         planningMap: request.planningMap,
-        activeTemplateIds: request.activePreanalysisAdditionIds,
+        activeTemplateIds: normalizedActivePreanalysisIds,
         targetThresholdMeters: profileCtx.effectiveParse.preanalysisAccuracyThresholdMeters,
         maxAddedSets: profileCtx.effectiveParse.preanalysisMaxAddedSets ?? 5,
         solveScenario: (nextTemplateIds) =>
@@ -468,7 +480,7 @@ export const createDirectRunPipeline = ({
             nextTemplateIds,
           ),
       });
-      solved.preanalysisSyntheticAdditionIds = [...request.activePreanalysisAdditionIds];
+      solved.preanalysisSyntheticAdditionIds = [...normalizedActivePreanalysisIds];
       solved.robustComparison = {
         enabled: false,
         classicalTop: [],
@@ -590,6 +602,9 @@ export const createDirectRunPipeline = ({
       effectiveOverrides,
       effectiveClusterMerges,
     );
+    activePreanalysisAdditionIds = [
+      ...(solved.preanalysisSyntheticAdditionIds ?? activePreanalysisAdditionIds),
+    ];
     if (autoAdjustSummary?.enabled) {
       if (solved.parseState) {
         solved.parseState.autoAdjustEnabled = autoAdjustConfig.enabled;

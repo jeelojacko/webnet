@@ -173,7 +173,7 @@ describe('ReportView preanalysis sections', () => {
       'title="Planned observations using fixed sigma weighting. They are excluded from synthetic added-set recommendations."',
     );
     expect(html).toContain(
-      'title="Path-aware planning scenarios showing how predicted precision changes when additive changes strengthen the chain back to control, plus advisory network changes that require manual edits."',
+      'title="Path-aware planning scenarios showing how predicted precision changes when additive changes strengthen the chain back to control, plus transform network changes that can now be applied and re-run from the report."',
     );
     expect(html).toContain('Show');
     expect(html).not.toContain('Locked planned constraint; excluded from what-if actions.');
@@ -186,7 +186,7 @@ describe('ReportView preanalysis sections', () => {
     expect(html).not.toContain('Top Suspects');
   });
 
-  it('renders advisory recommendation rows as manual actions when the section is expanded', () => {
+  it('renders applyable transform recommendation rows with the shared apply action when the section is expanded', () => {
     const input = [
       '.2D',
       'C A 0 0 0 ! !',
@@ -240,7 +240,7 @@ describe('ReportView preanalysis sections', () => {
           deltaWeakStationCount: -1,
           deltaWeakPairCount: -1,
           score: 0.4,
-          actionMode: 'advisory',
+          actionMode: 'applyable-transform',
           rationale: 'Directly tie A to P to bypass bottleneck accumulation through B.',
           thresholdReached: false,
           status: 'ok',
@@ -251,7 +251,8 @@ describe('ReportView preanalysis sections', () => {
         thresholdReached: false,
         appliedStepCount: 0,
         finalWorstStationMajor: 0.01,
-        unmetReason: 'Additive scenarios are exhausted; only manual advisory network changes remain.',
+        unmetReason:
+          'Additive scenarios are exhausted; only one-click transform scenarios remain outside threshold planning.',
         steps: [],
       },
     };
@@ -283,8 +284,8 @@ describe('ReportView preanalysis sections', () => {
 
     expect(html).toContain('Action');
     expect(html).toContain('Path Reason');
-    expect(html).toContain('Manual Action');
+    expect(html).toContain('Apply + Re-run');
     expect(html).toContain('P via A-B: Directly tie A to P to bypass bottleneck accumulation through B.');
-    expect(html).not.toContain('Add Set + Re-run');
+    expect(html).not.toContain('Manual Action');
   });
 });

@@ -442,7 +442,12 @@ const ReportView: React.FC<ReportViewProps> = ({
   const pendingPreanalysisScenarioIds = useMemo(
     () =>
       (preanalysisImpactDiagnostics?.rows ?? [])
-        .filter((row) => row.status === 'ok' && !activePreanalysisScenarioIds.has(row.scenarioId))
+        .filter(
+          (row) =>
+            row.status === 'ok' &&
+            row.actionMode !== 'advisory' &&
+            !activePreanalysisScenarioIds.has(row.scenarioId),
+        )
         .map((row) => row.scenarioId),
     [activePreanalysisScenarioIds, preanalysisImpactDiagnostics?.rows],
   );
@@ -1491,20 +1496,20 @@ const ReportView: React.FC<ReportViewProps> = ({
                               disabled={
                                 row.status !== 'ok' ||
                                 alreadyApplied ||
-                                row.actionMode !== 'applyable-addition'
+                                row.actionMode === 'advisory'
                               }
                               className={`px-2 py-0.5 rounded border text-[10px] ${
                                 row.status !== 'ok' ||
                                 alreadyApplied ||
-                                row.actionMode !== 'applyable-addition'
+                                row.actionMode === 'advisory'
                                   ? 'border-slate-700 text-slate-600 cursor-not-allowed'
                                   : 'border-cyan-700 text-cyan-200 hover:bg-cyan-950/30'
                               }`}
                             >
                               {alreadyApplied
                                 ? 'Applied'
-                                : row.actionMode === 'applyable-addition'
-                                  ? 'Add Set + Re-run'
+                                : row.actionMode !== 'advisory'
+                                  ? 'Apply + Re-run'
                                   : 'Manual Action'}
                             </button>
                           </td>

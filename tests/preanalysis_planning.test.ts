@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
-import { buildPreanalysisPlanningDiagnostics } from '../src/engine/preanalysisPlanning';
+import {
+  buildPreanalysisPlanningDiagnostics,
+  buildPreanalysisSyntheticSetTemplates,
+  buildSyntheticPreanalysisInput,
+} from '../src/engine/preanalysisPlanning';
 import { DEFAULT_PLANNING_MAP_STATE } from '../src/engine/planningMapState';
 import type { AdjustmentResult } from '../src/types';
 
@@ -563,9 +567,9 @@ describe('buildPreanalysisPlanningDiagnostics', () => {
     expect(diagnostics.rows.some((row) => row.scenarioKind === 'bypass-intermediate')).toBe(true);
     expect(diagnostics.rows.some((row) => row.scenarioKind === 'decommission-intermediate')).toBe(true);
     expect(
-      diagnostics.rows.filter((row) => row.scenarioKind === 'decommission-intermediate').every(
-        (row) => row.actionMode === 'advisory',
-      ),
+      diagnostics.rows
+        .filter((row) => row.scenarioKind === 'decommission-intermediate')
+        .every((row) => row.actionMode === 'applyable-transform'),
     ).toBe(true);
   });
 
@@ -592,7 +596,7 @@ describe('buildPreanalysisPlanningDiagnostics', () => {
 
     const moveRow = diagnostics.rows.find((row) => row.scenarioKind === 'move-synthetic');
     expect(moveRow).toBeDefined();
-    expect(moveRow?.actionMode).toBe('advisory');
+    expect(moveRow?.actionMode).toBe('applyable-transform');
     expect(moveRow?.templateLabel).toContain('Move Brace');
     expect(moveRow?.rationale).toContain('Move active synthetic geometry');
   });
@@ -649,8 +653,70 @@ describe('buildPreanalysisPlanningDiagnostics', () => {
 
     expect(diagnostics.thresholdPlan.steps).toHaveLength(0);
     expect(diagnostics.thresholdPlan.unmetReason).toBe(
-      'Additive scenarios are exhausted; only manual advisory network changes remain.',
+      'Additive scenarios are exhausted; only one-click transform scenarios remain outside threshold planning.',
     );
+  });
+
+  it('applies decommission transforms by removing the weak intermediate lines and adding the bypass tie', () => {
+    const input = ['DB B', 'DM A', 'DE', '', 'DB C', 'DM B', 'DE', '', 'DB D', 'DM C', 'DE'].join('\n');
+    const templates = buildPreanalysisSyntheticSetTemplates(
+      input,
+      buildChainResult(),
+      {
+        ...DEFAULT_PLANNING_MAP_STATE,
+        scenarioFamilies: {
+          existingSet: true,
+          bracePoint: false,
+          syntheticSetup: false,
+          promotedSetup: false,
+          crossTie: false,
+        },
+      },
+      ['preanalysis-set:B:A', 'preanalysis-set:C:B', 'preanalysis-set:D:C'],
+    );
+
+    const transformed = buildSyntheticPreanalysisInput(
+      input,
+      ['preanalysis-decommission:B|C|D'],
+      templates,
+    );
+
+    expect(transformed).toContain(['DB B', 'DM D', 'DE'].join('\n'));
+    expect(transformed).not.toContain('DB C');
+    expect(transformed).not.toContain('DM C');
+  });
+
+  it('applies move transforms by replacing the active synthetic block with the relocated candidate block', () => {
+    const input = ['DB B', 'DM A', 'DE', '', 'DB C', 'DM B', 'DE', '', 'DB D', 'DM C', 'DE'].join('\n');
+    const templates = buildPreanalysisSyntheticSetTemplates(
+      input,
+      buildChainResult(),
+      {
+        ...DEFAULT_PLANNING_MAP_STATE,
+        scenarioFamilies: {
+          existingSet: true,
+          bracePoint: true,
+          syntheticSetup: false,
+          promotedSetup: false,
+          crossTie: false,
+        },
+      },
+      ['preanalysis-brace:B|C'],
+    );
+    const activeBrace = templates.find((template) => template.id === 'preanalysis-brace:B|C');
+    const moveTemplate = templates.find((template) => template.scenarioKind === 'move-synthetic');
+
+    expect(activeBrace).toBeDefined();
+    expect(moveTemplate).toBeDefined();
+
+    const transformed = buildSyntheticPreanalysisInput(
+      input,
+      ['preanalysis-brace:B|C', moveTemplate!.id],
+      templates,
+    );
+
+    expect(transformed).toContain(moveTemplate!.blockText);
+    expect(transformed).not.toContain(activeBrace!.blockText);
   });
 
   it('recomputes the next recommendation after an applied path fix changes the active bottleneck', () => {

@@ -1,3 +1,5 @@
+- [x] Preanalysis one-click transform apply batch (May 2026): let bypass/decommission/move recommendations enter the shared apply+rereun workflow by normalizing preanalysis action state, transforming input for removal/relocation scenarios, and updating focused planner/report/run-session coverage.
+
 - [x] Preanalysis advisory relocation batch (May 2026): make advisory move recommendations state-aware against active synthetic scenarios, carry corridor-pair metadata through synthetic candidates, and surface relocation advisories inside the bounded top recommendation slice.
 
 - [x] Preanalysis advisory hardening batch (May 2026): tighten canonical path tie-breaks, suppress unsafe decommission recommendations on bridge-critical chains, improve advisory row/report coverage, and lock recommendation reranking after applied path changes.

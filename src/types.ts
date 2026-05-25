@@ -207,7 +207,7 @@ export interface PreanalysisAddedSetRecommendationRow {
   deltaWeakStationCount?: number;
   deltaWeakPairCount?: number;
   score?: number;
-  actionMode: 'applyable-addition' | 'advisory';
+  actionMode: 'applyable-addition' | 'applyable-transform' | 'advisory';
   rationale?: string;
   thresholdReached: boolean;
   status: 'ok' | 'failed';

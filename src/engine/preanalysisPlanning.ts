@@ -19,11 +19,12 @@ import type {
 export type PreanalysisSyntheticSetTemplate = {
   id: string;
   scenarioKind: PreanalysisRecommendationKind;
-  actionMode: 'applyable-addition' | 'advisory';
+  actionMode: 'applyable-addition' | 'applyable-transform' | 'advisory';
   occupyStationId: StationId;
   setupStationIds: StationId[];
   templateLabel: string;
   sourceLines: number[];
+  observationSourceLines?: number[];
   blockText: string;
   affectedStations: StationId[];
   affectedPairs: PreanalysisAddedSetPairRef[];
@@ -32,6 +33,9 @@ export type PreanalysisSyntheticSetTemplate = {
   existingSetCount: number;
   previewPoints: PreanalysisScenarioPreviewPoint[];
   previewSegments: PreanalysisScenarioPreviewSegment[];
+  effectiveTemplateIds?: string[];
+  replacesTemplateIds?: string[];
+  removeSourceLines?: number[];
   rationale?: string;
   bracePreviewPoint?: {
     stationId: StationId;
@@ -145,6 +149,86 @@ const templateCorridorPairs = (
   template.corridorPairs != null && template.corridorPairs.length > 0
     ? template.corridorPairs
     : template.affectedPairs;
+
+const templateEffectiveTemplateIds = (
+  template: PreanalysisSyntheticSetTemplate,
+): string[] =>
+  template.effectiveTemplateIds != null && template.effectiveTemplateIds.length > 0
+    ? template.effectiveTemplateIds
+    : [template.id];
+
+const parseMoveScenarioId = (
+  scenarioId: string,
+): { fromTemplateId: string; toTemplateId: string } | null => {
+  if (!scenarioId.startsWith('preanalysis-move:')) return null;
+  const remainder = scenarioId.slice('preanalysis-move:'.length);
+  const separatorIndex = remainder.indexOf('->');
+  if (separatorIndex <= 0) return null;
+  const fromTemplateId = remainder.slice(0, separatorIndex).trim();
+  const toTemplateId = remainder.slice(separatorIndex + 2).trim();
+  if (!fromTemplateId || !toTemplateId) return null;
+  return { fromTemplateId, toTemplateId };
+};
+
+type ResolvedPreanalysisActionState = {
+  normalizedScenarioIds: string[];
+  activeScenarioIds: Set<string>;
+  effectiveActiveTemplateIds: Set<string>;
+  removedSourceLines: Set<number>;
+};
+
+export const resolveAppliedPreanalysisActionState = (
+  templates: PreanalysisSyntheticSetTemplate[],
+  activeScenarioIds: string[],
+): ResolvedPreanalysisActionState => {
+  const templateById = new Map(templates.map((template) => [template.id, template]));
+  const normalizedEntries: Array<{ scenarioId: string; template: PreanalysisSyntheticSetTemplate }> = [];
+  const seenScenarioIds = new Set<string>();
+  activeScenarioIds.forEach((scenarioId) => {
+    if (seenScenarioIds.has(scenarioId)) return;
+    const template = templateById.get(scenarioId);
+    if (!template) return;
+    seenScenarioIds.add(scenarioId);
+    const nextEffectiveIds = new Set(templateEffectiveTemplateIds(template));
+    const replacementIds = new Set(template.replacesTemplateIds ?? []);
+    for (let index = normalizedEntries.length - 1; index >= 0; index -= 1) {
+      const prior = normalizedEntries[index]!;
+      const priorEffectiveIds = templateEffectiveTemplateIds(prior.template);
+      const sameEffectiveTarget = priorEffectiveIds.some((id) => nextEffectiveIds.has(id));
+      const replacedByCurrent = priorEffectiveIds.some((id) => replacementIds.has(id));
+      if (sameEffectiveTarget || replacedByCurrent) {
+        normalizedEntries.splice(index, 1);
+      }
+    }
+    normalizedEntries.push({ scenarioId, template });
+  });
+
+  const normalizedScenarioIds = normalizedEntries.map((entry) => entry.scenarioId);
+  const effectiveActiveTemplateIds = new Set<string>();
+  const removedSourceLines = new Set<number>();
+  normalizedEntries.forEach(({ template }) => {
+    templateEffectiveTemplateIds(template).forEach((templateId) => {
+      effectiveActiveTemplateIds.add(templateId);
+    });
+    (template.removeSourceLines ?? []).forEach((line) => {
+      if (Number.isFinite(line) && line >= 1) removedSourceLines.add(line);
+    });
+  });
+  return {
+    normalizedScenarioIds,
+    activeScenarioIds: new Set(normalizedScenarioIds),
+    effectiveActiveTemplateIds,
+    removedSourceLines,
+  };
+};
+
+const removeInputSourceLines = (input: string, removedSourceLines: Set<number>): string => {
+  if (removedSourceLines.size === 0) return input;
+  return input
+    .split(/\r?\n/)
+    .filter((_, index) => !removedSourceLines.has(index + 1))
+    .join('\n');
+};
 
 const compareStationIdArrays = (left: StationId[], right: StationId[]): number => {
   const length = Math.min(left.length, right.length);
@@ -1110,6 +1194,13 @@ const buildCrossTieTemplates = (
   return rows;
 };
 
+const observationTouchesStation = (obs: Observation, stationId: StationId): boolean => {
+  if ('at' in obs && obs.at === stationId) return true;
+  if ('from' in obs && obs.from === stationId) return true;
+  if ('to' in obs && obs.to === stationId) return true;
+  return false;
+};
+
 const buildAdvisoryTemplates = (
   base: AdjustmentResult,
   additiveTemplates: PreanalysisSyntheticSetTemplate[],
@@ -1130,6 +1221,7 @@ const buildAdvisoryTemplates = (
     degreeByStation.set(edge.to, (degreeByStation.get(edge.to) ?? 0) + 1);
   });
   const advisoryTemplates: PreanalysisSyntheticSetTemplate[] = [];
+  const additiveTemplateById = new Map(additiveTemplates.map((template) => [template.id, template]));
   pathSummary.stationOrder.slice(0, 4).forEach((stationId) => {
     const diagnostics = pathSummary.stationDiagnostics.get(stationId);
     if (!diagnostics || diagnostics.anchorPathStationIds.length < 3) return;
@@ -1151,7 +1243,7 @@ const buildAdvisoryTemplates = (
       advisoryTemplates.push({
         id: bypassTemplateId,
         scenarioKind: 'bypass-intermediate',
-        actionMode: 'advisory',
+        actionMode: 'applyable-transform',
         occupyStationId: left,
         setupStationIds: [left],
         templateLabel: `Bypass ${middle} via ${left} -> ${right}`,
@@ -1162,6 +1254,7 @@ const buildAdvisoryTemplates = (
         corridorPairs: [{ from: left, to: right }],
         addedObservationCount: 1,
         existingSetCount: 0,
+        effectiveTemplateIds: [bypassTemplateId, buildCrossTieTemplateId(left, right)],
         rationale: `Directly tie ${left} to ${right} to bypass bottleneck accumulation through ${middle}.`,
         previewPoints: buildPreviewPoints(base.stations, [left, middle, right], []),
         previewSegments: [
@@ -1181,10 +1274,29 @@ const buildAdvisoryTemplates = (
         (degreeByStation.get(middle) ?? 0) === 2 &&
         isNetworkConnectedWithOptionalBypass(graphEdges, middle, { from: left, to: right })
       ) {
+        const removeSourceLines = new Set<number>();
+        base.observations.forEach((obs) => {
+          if (!isPreanalysisWhatIfCandidate(obs) || obs.sourceLine == null) return;
+          if (observationTouchesStation(obs, middle)) {
+            removeSourceLines.add(obs.sourceLine);
+          }
+        });
+        additiveTemplates.forEach((template) => {
+          const observationSourceLines = template.observationSourceLines ?? [];
+          if (
+            observationSourceLines.length > 0 &&
+            observationSourceLines.every((line) => removeSourceLines.has(line))
+          ) {
+            template.sourceLines.forEach((line) => removeSourceLines.add(line));
+          }
+        });
+        const replacedTemplateIds = additiveTemplates
+          .filter((template) => template.affectedStations.includes(middle))
+          .map((template) => template.id);
         advisoryTemplates.push({
           id: `preanalysis-decommission:${left}|${middle}|${right}`,
           scenarioKind: 'decommission-intermediate',
-          actionMode: 'advisory',
+          actionMode: 'applyable-transform',
           occupyStationId: middle,
           setupStationIds: [middle],
           templateLabel: `Decommission ${middle} after ${left} -> ${right}`,
@@ -1195,6 +1307,12 @@ const buildAdvisoryTemplates = (
           corridorPairs: [{ from: left, to: right }],
           addedObservationCount: 1,
           existingSetCount: 0,
+          effectiveTemplateIds: [
+            `preanalysis-decommission:${left}|${middle}|${right}`,
+            buildCrossTieTemplateId(left, right),
+          ],
+          replacesTemplateIds: replacedTemplateIds,
+          removeSourceLines: [...removeSourceLines].sort((a, b) => a - b),
           rationale: `If ${left} -> ${right} is added, ${middle} can be removed from the weak chain without disconnecting control.`,
           previewPoints: buildPreviewPoints(base.stations, [left, middle, right], []),
           previewSegments: [
@@ -1209,13 +1327,23 @@ const buildAdvisoryTemplates = (
       }
     }
   });
-  const additiveTemplateById = new Map(additiveTemplates.map((template) => [template.id, template]));
   const isSyntheticScenario = (template: PreanalysisSyntheticSetTemplate | undefined): boolean =>
     template != null &&
     (template.scenarioKind === 'brace-point' ||
       template.scenarioKind === 'promoted-setup' ||
       template.scenarioKind === 'synthetic-setup');
-  const activeSyntheticTemplates = activeTemplateIds
+  const effectiveActiveSyntheticIds = (() => {
+    const activeIds = new Set<string>();
+    activeTemplateIds.forEach((id) => {
+      if (additiveTemplateById.has(id)) activeIds.add(id);
+      const move = parseMoveScenarioId(id);
+      if (!move) return;
+      activeIds.delete(move.fromTemplateId);
+      if (additiveTemplateById.has(move.toTemplateId)) activeIds.add(move.toTemplateId);
+    });
+    return [...activeIds];
+  })();
+  const activeSyntheticTemplates = effectiveActiveSyntheticIds
     .map((id) => additiveTemplateById.get(id))
     .filter((template): template is PreanalysisSyntheticSetTemplate => isSyntheticScenario(template));
   const moveRowCandidates: Array<PreanalysisSyntheticSetTemplate | null> = activeSyntheticTemplates
@@ -1240,9 +1368,11 @@ const buildAdvisoryTemplates = (
         ...preferredCandidate,
         id: `preanalysis-move:${activeTemplate.id}->${preferredCandidate.id}`,
         scenarioKind: 'move-synthetic' as const,
-        actionMode: 'advisory' as const,
+        actionMode: 'applyable-transform' as const,
         occupyStationId: activeTemplate.occupyStationId,
         setupStationIds: [...activeTemplate.setupStationIds],
+        effectiveTemplateIds: [preferredCandidate.id],
+        replacesTemplateIds: [activeTemplate.id],
         templateLabel: `Move ${activeTemplate.templateLabel} -> ${preferredCandidate.templateLabel}`,
         rationale: `Move active synthetic geometry from ${activeTemplate.templateLabel} to ${preferredCandidate.templateLabel} so it strengthens the current bottleneck corridor first.`,
       } satisfies PreanalysisSyntheticSetTemplate;
@@ -1338,11 +1468,12 @@ export const buildPreanalysisSyntheticSetTemplates = (
           { length: Math.max(0, endLine - startLine + 1) },
           (_, idx) => startLine + idx,
         ),
+        observationSourceLines: [...sourceLines],
         blockText,
         affectedStations,
-      affectedPairs,
-      corridorPairs: affectedPairs.map((pair) => ({ ...pair })),
-      addedObservationCount: setObservations.length,
+        affectedPairs,
+        corridorPairs: affectedPairs.map((pair) => ({ ...pair })),
+        addedObservationCount: setObservations.length,
         existingSetCount: 1,
         rationale: `Repeat the ${occupyStationId} setup set to strengthen the current control path through its existing observations.`,
         previewPoints: buildPreviewPoints(base.stations, affectedStations, []),
@@ -1401,19 +1532,27 @@ export const buildSyntheticPreanalysisInput = (
   templates: PreanalysisSyntheticSetTemplate[],
 ): string => {
   if (activeTemplateIds.length === 0) return input;
+  const actionState = resolveAppliedPreanalysisActionState(templates, activeTemplateIds);
   const templateById = new Map(templates.map((template) => [template.id, template]));
-  const appendedBlocks = activeTemplateIds
+  const baseInput = removeInputSourceLines(input, actionState.removedSourceLines);
+  const appendedBlocks = actionState.normalizedScenarioIds
     .map((id, index) => {
       const template = templateById.get(id);
-      if (!template || template.actionMode !== 'applyable-addition') return null;
+      if (
+        !template ||
+        (template.actionMode !== 'applyable-addition' &&
+          template.actionMode !== 'applyable-transform')
+      ) {
+        return null;
+      }
       return [
         `# WEBNET_PREANALYSIS_ADDED_SET ${template.id} ${index + 1}`,
         template.blockText,
       ].join('\n');
     })
     .filter((block): block is string => block != null);
-  if (appendedBlocks.length === 0) return input;
-  return `${input.trimEnd()}\n\n${appendedBlocks.join('\n\n')}\n`;
+  if (appendedBlocks.length === 0) return baseInput;
+  return `${baseInput.trimEnd()}\n\n${appendedBlocks.join('\n\n')}\n`;
 };
 
 type RecommendationEvaluation = {
@@ -1619,9 +1758,20 @@ const resolveCandidateTemplates = (
   base: AdjustmentResult,
   activeTemplateIds: string[],
 ): PreanalysisSyntheticSetTemplate[] => {
-  const activeTemplateIdSet = new Set(activeTemplateIds);
+  const actionState = resolveAppliedPreanalysisActionState(templates, activeTemplateIds);
   const pathSummary = buildPathPrioritySummary(base);
-  const remainingTemplates = templates.filter((template) => !activeTemplateIdSet.has(template.id));
+  const remainingTemplates = templates.filter((template) => {
+    if (actionState.activeScenarioIds.has(template.id)) return false;
+    if (
+      templateEffectiveTemplateIds(template).some((id) =>
+        actionState.effectiveActiveTemplateIds.has(id),
+      )
+    ) {
+      return false;
+    }
+    if (template.sourceLines.some((line) => actionState.removedSourceLines.has(line))) return false;
+    return true;
+  });
   const prioritizeRows = remainingTemplates;
   const priorityForTemplate = (template: PreanalysisSyntheticSetTemplate): number => {
     const prioritizedStationHits = template.affectedStations.filter((stationId) =>
@@ -1750,9 +1900,9 @@ const buildThresholdPlan = (
     if (!best) {
       unmetReason =
         resolveCandidateTemplates(templates, currentResult, currentActiveIds).some(
-          (template) => template.actionMode === 'advisory',
+          (template) => template.actionMode === 'applyable-transform',
         )
-          ? 'Additive scenarios are exhausted; only manual advisory network changes remain.'
+          ? 'Additive scenarios are exhausted; only one-click transform scenarios remain outside threshold planning.'
           : currentActiveIds.length > 0
             ? 'All usable existing setup-set templates are already active.'
             : 'No usable existing setup-set templates were available for threshold planning.';
@@ -1817,9 +1967,13 @@ export const buildPreanalysisPlanningDiagnostics = ({
     planningMap,
     activeTemplateIds,
   );
-  const activeTemplateIdSet = new Set(activeTemplateIds);
+  const actionState = resolveAppliedPreanalysisActionState(templates, activeTemplateIds);
+  const activeTemplateIdSet = actionState.activeScenarioIds;
   const candidateTemplates = resolveCandidateTemplates(templates, base, activeTemplateIds);
-  const remainingFeasibleScenarioCount = Math.max(0, templates.length - activeTemplateIds.length);
+  const remainingFeasibleScenarioCount = Math.max(
+    0,
+    templates.filter((template) => !activeTemplateIdSet.has(template.id)).length,
+  );
   const basePathSummary = buildPathPrioritySummary(base);
   const recommendationRows = candidateTemplates
     .map((template) => {
@@ -1904,7 +2058,9 @@ export const buildPreanalysisPlanningDiagnostics = ({
       x: template.bracePreviewPoint.x,
       y: template.bracePreviewPoint.y,
       h: template.bracePreviewPoint.h,
-      active: activeTemplateIdSet.has(template.id),
+      active: templateEffectiveTemplateIds(template).some((id) =>
+        actionState.effectiveActiveTemplateIds.has(id),
+      ),
       templateLabel: template.templateLabel,
     }))
     .sort(
@@ -1918,7 +2074,9 @@ export const buildPreanalysisPlanningDiagnostics = ({
         .filter((point) => point.role !== 'anchor')
         .map((point) => ({
           ...point,
-          active: activeTemplateIdSet.has(template.id),
+          active: templateEffectiveTemplateIds(template).some((id) =>
+            actionState.effectiveActiveTemplateIds.has(id),
+          ),
         })),
     )
     .sort((left, right) =>
@@ -1928,12 +2086,14 @@ export const buildPreanalysisPlanningDiagnostics = ({
   const scenarioPreviewSegments = templates.flatMap((template) =>
     template.previewSegments.map((segment) => ({
       ...segment,
-      active: activeTemplateIdSet.has(template.id),
+      active: templateEffectiveTemplateIds(template).some((id) =>
+        actionState.effectiveActiveTemplateIds.has(id),
+      ),
     })),
   );
   return {
     enabled: true,
-    activeSyntheticAdditionCount: activeTemplateIds.length,
+    activeSyntheticAdditionCount: actionState.normalizedScenarioIds.length,
     candidateTemplateCount: candidateTemplates.length,
     remainingFeasibleScenarioCount,
     baseWorstStationMajor:
