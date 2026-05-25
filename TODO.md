@@ -1,3 +1,5 @@
+- [x] Path-aware preanalysis recommendations batch (May 2026): remove artificial synthetic-family priority, rank scenarios by worst-station path-to-control bottlenecks, add advisory bypass/decommission/move recommendation families, and extend report/test coverage for path rationale and additive-vs-advisory actions.
+
 - [x] Relative ellipse RLA batch (May 2026): add `RLA(2D)` and `PPM` columns to the industry-style `Relative Error Ellipses` error-propagation table using adjusted horizontal line length over the printed 95% semi-major axis, then lock the new output shape with focused listing coverage.
 - [x] Test timeout stability batch (May 2026): relax the single heavy provisional data-check fixture test timeout in `adjust.spec.ts` if the failure is only the default Vitest 5 s cap, then rerun the full validation batch.
 - [x] Map tool picker + highlight batch (May 2026): let inverse/angles popup text boxes stay editable, add on-screen point-pick buttons that sync with the text/select controls, and highlight the involved points/legs while the tools are active.

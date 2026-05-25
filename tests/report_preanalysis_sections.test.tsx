@@ -49,9 +49,13 @@ describe('ReportView preanalysis sections', () => {
           deltaWorstStationMajor: 0.002,
           deltaMedianStationMajor: 0.001,
           deltaWorstPairSigmaDist: 0.003,
+          deltaPathWorstEdge: -0.001,
+          deltaPathTotalMetric: -0.002,
           deltaWeakStationCount: 1,
           deltaWeakPairCount: 0,
           score: 0.25,
+          actionMode: 'applyable-addition',
+          rationale: 'Strengthen A-P corridor.',
           thresholdReached: false,
           status: 'ok',
         },
@@ -135,7 +139,7 @@ describe('ReportView preanalysis sections', () => {
       'title="Planned observations using fixed sigma weighting. They are excluded from synthetic added-set recommendations."',
     );
     expect(html).toContain(
-      'title="Re-solved planning scenarios showing how predicted precision changes when one whole synthetic setup set or a bounded synthetic brace-point scenario is added near weak geometry."',
+      'title="Path-aware planning scenarios showing how predicted precision changes when additive changes strengthen the chain back to control, plus advisory network changes that require manual edits."',
     );
     expect(html).toContain('Show');
     expect(html).not.toContain('Locked planned constraint; excluded from what-if actions.');

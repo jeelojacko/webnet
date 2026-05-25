@@ -1418,11 +1418,14 @@ const ReportView: React.FC<ReportViewProps> = ({
                       <th className="py-2 text-right">dWorstMaj ({units})</th>
                       <th className="py-2 text-right">dMedianMaj ({units})</th>
                       <th className="py-2 text-right">dWorstPair ({units})</th>
+                      <th className="py-2 text-right">dPathWorst ({units})</th>
+                      <th className="py-2 text-right">dPathTotal ({units})</th>
                       <th className="py-2 text-right">dWeakStn</th>
                       <th className="py-2 text-right">dWeakPair</th>
+                      <th className="py-2">Path Reason</th>
                       <th className="py-2 text-right">Score</th>
                       <th className="py-2 text-right">Threshold</th>
-                      <th className="py-2 text-right px-3">Apply</th>
+                      <th className="py-2 text-right px-3">Action</th>
                     </tr>
                   </thead>
                   <tbody className="text-slate-300">
@@ -1456,10 +1459,25 @@ const ReportView: React.FC<ReportViewProps> = ({
                             {formatPreanalysisLinearMetric(row.deltaWorstPairSigmaDist)}
                           </td>
                           <td className="py-1 text-right font-mono">
+                            {formatPreanalysisLinearMetric(row.deltaPathWorstEdge)}
+                          </td>
+                          <td className="py-1 text-right font-mono">
+                            {formatPreanalysisLinearMetric(row.deltaPathTotalMetric)}
+                          </td>
+                          <td className="py-1 text-right font-mono">
                             {row.deltaWeakStationCount ?? '-'}
                           </td>
                           <td className="py-1 text-right font-mono">
                             {row.deltaWeakPairCount ?? '-'}
+                          </td>
+                          <td className="py-1 text-[11px] text-slate-400">
+                            {row.primaryTargetStationId != null
+                              ? `${row.primaryTargetStationId}${
+                                  row.bottleneckPair != null
+                                    ? ` via ${row.bottleneckPair.from}-${row.bottleneckPair.to}`
+                                    : ''
+                                }${row.rationale ? `: ${row.rationale}` : ''}`
+                              : row.rationale ?? '-'}
                           </td>
                           <td className="py-1 text-right font-mono">
                             {row.score != null ? row.score.toFixed(2) : '-'}
@@ -1470,14 +1488,24 @@ const ReportView: React.FC<ReportViewProps> = ({
                           <td className="py-1 px-3 text-right">
                             <button
                               onClick={() => onApplyPreanalysisAction(row.scenarioId)}
-                              disabled={row.status !== 'ok' || alreadyApplied}
+                              disabled={
+                                row.status !== 'ok' ||
+                                alreadyApplied ||
+                                row.actionMode !== 'applyable-addition'
+                              }
                               className={`px-2 py-0.5 rounded border text-[10px] ${
-                                row.status !== 'ok' || alreadyApplied
+                                row.status !== 'ok' ||
+                                alreadyApplied ||
+                                row.actionMode !== 'applyable-addition'
                                   ? 'border-slate-700 text-slate-600 cursor-not-allowed'
                                   : 'border-cyan-700 text-cyan-200 hover:bg-cyan-950/30'
                               }`}
                             >
-                              {alreadyApplied ? 'Applied' : 'Add Set + Re-run'}
+                              {alreadyApplied
+                                ? 'Applied'
+                                : row.actionMode === 'applyable-addition'
+                                  ? 'Add Set + Re-run'
+                                  : 'Manual Action'}
                             </button>
                           </td>
                         </tr>

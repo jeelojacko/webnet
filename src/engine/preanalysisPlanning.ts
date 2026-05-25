@@ -19,6 +19,7 @@ import type {
 export type PreanalysisSyntheticSetTemplate = {
   id: string;
   scenarioKind: PreanalysisRecommendationKind;
+  actionMode: 'applyable-addition' | 'advisory';
   occupyStationId: StationId;
   setupStationIds: StationId[];
   templateLabel: string;
@@ -30,12 +31,39 @@ export type PreanalysisSyntheticSetTemplate = {
   existingSetCount: number;
   previewPoints: PreanalysisScenarioPreviewPoint[];
   previewSegments: PreanalysisScenarioPreviewSegment[];
+  rationale?: string;
   bracePreviewPoint?: {
     stationId: StationId;
     x: number;
     y: number;
     h: number;
   };
+};
+
+type PathGraphEdge = {
+  from: StationId;
+  to: StationId;
+  metric: number;
+};
+
+type StationPathDiagnostics = {
+  stationId: StationId;
+  anchorStationId?: StationId;
+  anchorPathStationIds: StationId[];
+  anchorPathPairRefs: PreanalysisAddedSetPairRef[];
+  pathWorstEdgeMetric?: number;
+  pathTotalMetric?: number;
+  pathWorstEdgePair?: PreanalysisAddedSetPairRef;
+  stationMajor?: number;
+  fixedRank: number;
+};
+
+type PathPrioritySummary = {
+  stationOrder: StationId[];
+  stationDiagnostics: Map<StationId, StationPathDiagnostics>;
+  prioritizedPairs: PreanalysisAddedSetPairRef[];
+  prioritizedStations: Set<StationId>;
+  prioritizedPairKeys: Set<string>;
 };
 
 type BuildPreanalysisPlanningDiagnosticsArgs = {
@@ -53,8 +81,10 @@ const MAX_BRACE_SCENARIOS = 5;
 const MAX_SYNTHETIC_SETUP_SCENARIOS = 5;
 const MAX_PROMOTED_SETUP_SCENARIOS = 5;
 const MAX_CROSS_TIE_SCENARIOS = 8;
+const MAX_BYPASS_ADVISORIES = 4;
+const MAX_DECOMMISSION_ADVISORIES = 4;
+const MAX_MOVE_SYNTHETIC_ADVISORIES = 3;
 const MAX_RECOMMENDATION_SOLVE_CANDIDATES = 16;
-const MAX_EXISTING_SET_SOLVE_CANDIDATES_WHEN_SYNTHETIC_AVAILABLE = 3;
 const MAX_BRACE_SETUPS = 4;
 const BRACE_OFFSET_RATIO = 0.35;
 const MIN_BRACE_ANGLE_DEG = 45;
@@ -88,45 +118,25 @@ const weakPairCount = (res: AdjustmentResult): number =>
 const severityWeight = (severity: WeakGeometrySeverity): number =>
   severity === 'weak' ? 2 : severity === 'watch' ? 1 : 0;
 
-const scenarioKindPriority = (kind: PreanalysisRecommendationKind): number =>
-  kind === 'brace-point'
-    ? 8
-    : kind === 'promoted-setup'
-      ? 7
-      : kind === 'synthetic-setup'
-        ? 6
-        : kind === 'cross-tie'
-          ? 5
-          : kind === 'existing-set'
-            ? 1
-            : 0;
-
-const recommendationFamilyOrder: PreanalysisRecommendationKind[] = [
+const recommendationKindTieOrder: PreanalysisRecommendationKind[] = [
+  'existing-set',
+  'cross-tie',
   'brace-point',
   'promoted-setup',
   'synthetic-setup',
-  'cross-tie',
-  'existing-set',
+  'bypass-intermediate',
+  'decommission-intermediate',
+  'move-synthetic',
 ];
 
-const collectWeakSeedStations = (base: AdjustmentResult): Set<StationId> => {
-  const stationCues = (base.weakGeometryDiagnostics?.stationCues ?? []).slice(0, 5);
-  const pairCues = (base.weakGeometryDiagnostics?.relativeCues ?? []).slice(0, 5);
-  const ids = new Set<StationId>();
-  stationCues.forEach((cue) => {
-    if (severityWeight(cue.severity) > 0) ids.add(cue.stationId);
-  });
-  pairCues.forEach((cue) => {
-    if (severityWeight(cue.severity) > 0) {
-      ids.add(cue.from);
-      ids.add(cue.to);
-    }
-  });
-  return ids;
-};
+const recommendationKindTieWeight = (kind: PreanalysisRecommendationKind): number =>
+  recommendationKindTieOrder.indexOf(kind);
 
 const sortStationIds = (left: StationId, right: StationId): number =>
   left.localeCompare(right, undefined, { numeric: true });
+
+const buildPairKey = (from: StationId, to: StationId): string =>
+  [from, to].sort(sortStationIds).join('|');
 
 const stationHasFiniteCoords = (stations: StationMap, stationId: StationId): boolean => {
   const station = stations[stationId];
@@ -138,25 +148,268 @@ const stationHasFiniteCoords = (stations: StationMap, stationId: StationId): boo
   );
 };
 
-const collectSeedPairs = (base: AdjustmentResult): PreanalysisAddedSetPairRef[] => {
-  const weightedRelativeCues = [...(base.weakGeometryDiagnostics?.relativeCues ?? [])]
+const stationMajorById = (res: AdjustmentResult): Map<StationId, number> =>
+  new Map(
+    (res.stationCovariances ?? []).map((row) => [
+      row.stationId,
+      row.ellipse?.semiMajor ?? Math.max(row.sigmaE, row.sigmaN),
+    ]),
+  );
+
+const resolveRelativeMetric = (
+  row:
+    | NonNullable<AdjustmentResult['relativeCovariances']>[number]
+    | undefined,
+  fallback = Number.NaN,
+): number =>
+  row != null
+    ? row.sigmaDist ?? row.ellipse?.semiMajor ?? Math.max(row.sigmaE, row.sigmaN)
+    : fallback;
+
+const buildPathGraph = (base: AdjustmentResult): PathGraphEdge[] => {
+  const stationMajorsById = stationMajorById(base);
+  const edges = new Map<string, PathGraphEdge>();
+  (base.relativeCovariances ?? []).forEach((row) => {
+    const metric = resolveRelativeMetric(row);
+    if (!Number.isFinite(metric) || metric <= 0) return;
+    const key = buildPairKey(row.from, row.to);
+    edges.set(key, { from: row.from, to: row.to, metric });
+  });
+  (base.observations ?? []).forEach((obs) => {
+    const from = 'at' in obs ? obs.at : 'from' in obs ? obs.from : undefined;
+    const to = 'to' in obs ? obs.to : undefined;
+    if (!from || !to) return;
+    const key = buildPairKey(from, to);
+    if (edges.has(key)) return;
+    const fromMajor = stationMajorsById.get(from);
+    const toMajor = stationMajorsById.get(to);
+    const metricCandidates = [fromMajor, toMajor].filter(
+      (value): value is number => Number.isFinite(value),
+    );
+    const metric =
+      metricCandidates.length > 0 ? Math.max(...metricCandidates) : Number.NaN;
+    if (!Number.isFinite(metric) || metric <= 0) return;
+    edges.set(key, { from, to, metric });
+  });
+  return [...edges.values()];
+};
+
+const stationFixedRank = (station: StationMap[StationId] | undefined): number => {
+  if (!station) return 0;
+  if ((station.fixedX ?? false) && (station.fixedY ?? false)) return 2;
+  if (
+    station.fixedX === true ||
+    station.fixedY === true ||
+    station.constraintX != null ||
+    station.constraintY != null
+  ) {
+    return 1;
+  }
+  return 0;
+};
+
+const comparePathCandidates = (
+  current: StationPathDiagnostics | undefined,
+  next: StationPathDiagnostics,
+): number => {
+  if (!current) return 1;
+  const currentWorst = current.pathWorstEdgeMetric ?? Number.POSITIVE_INFINITY;
+  const nextWorst = next.pathWorstEdgeMetric ?? Number.POSITIVE_INFINITY;
+  if (nextWorst !== currentWorst) return currentWorst - nextWorst;
+  const currentTotal = current.pathTotalMetric ?? Number.POSITIVE_INFINITY;
+  const nextTotal = next.pathTotalMetric ?? Number.POSITIVE_INFINITY;
+  if (nextTotal !== currentTotal) return currentTotal - nextTotal;
+  if (next.anchorPathPairRefs.length !== current.anchorPathPairRefs.length) {
+    return current.anchorPathPairRefs.length - next.anchorPathPairRefs.length;
+  }
+  return current.anchorStationId != null && next.anchorStationId != null
+    ? current.anchorStationId.localeCompare(next.anchorStationId, undefined, { numeric: true }) * -1
+    : 0;
+};
+
+const buildStationPathDiagnostics = (base: AdjustmentResult): Map<StationId, StationPathDiagnostics> => {
+  const edges = buildPathGraph(base);
+  const adjacency = new Map<StationId, PathGraphEdge[]>();
+  edges.forEach((edge) => {
+    const fromList = adjacency.get(edge.from) ?? [];
+    const toList = adjacency.get(edge.to) ?? [];
+    fromList.push(edge);
+    toList.push(edge);
+    adjacency.set(edge.from, fromList);
+    adjacency.set(edge.to, toList);
+  });
+  const stationMajorsById = stationMajorById(base);
+  const diagnostics = new Map<StationId, StationPathDiagnostics>();
+  const anchors = Object.entries(base.stations)
+    .filter(([, station]) => stationFixedRank(station) === 2)
+    .map(([stationId]) => stationId)
+    .sort(sortStationIds);
+  const fallbackAnchors =
+    anchors.length > 0
+      ? anchors
+      : Object.entries(base.stations)
+          .filter(([, station]) => stationFixedRank(station) === 1)
+          .map(([stationId]) => stationId)
+          .sort(sortStationIds);
+  type FrontierNode = {
+    stationId: StationId;
+    anchorStationId: StationId;
+    pathWorstEdgeMetric: number;
+    pathTotalMetric: number;
+    hopCount: number;
+    pathStationIds: StationId[];
+    pathPairRefs: PreanalysisAddedSetPairRef[];
+  };
+  const frontier: FrontierNode[] = fallbackAnchors.map((anchorId) => ({
+    stationId: anchorId,
+    anchorStationId: anchorId,
+    pathWorstEdgeMetric: 0,
+    pathTotalMetric: 0,
+    hopCount: 0,
+    pathStationIds: [anchorId],
+    pathPairRefs: [],
+  }));
+  const bestByStation = new Map<StationId, FrontierNode>();
+  while (frontier.length > 0) {
+    frontier.sort((left, right) => {
+      if (left.pathWorstEdgeMetric !== right.pathWorstEdgeMetric) {
+        return left.pathWorstEdgeMetric - right.pathWorstEdgeMetric;
+      }
+      if (left.pathTotalMetric !== right.pathTotalMetric) {
+        return left.pathTotalMetric - right.pathTotalMetric;
+      }
+      if (left.hopCount !== right.hopCount) return left.hopCount - right.hopCount;
+      return left.anchorStationId.localeCompare(right.anchorStationId, undefined, { numeric: true });
+    });
+    const current = frontier.shift()!;
+    const known = bestByStation.get(current.stationId);
+    if (known) {
+      const currentKey: StationPathDiagnostics = {
+        stationId: current.stationId,
+        anchorStationId: current.anchorStationId,
+        anchorPathStationIds: current.pathStationIds,
+        anchorPathPairRefs: current.pathPairRefs,
+        pathWorstEdgeMetric: current.pathWorstEdgeMetric,
+        pathTotalMetric: current.pathTotalMetric,
+        stationMajor: stationMajorsById.get(current.stationId),
+        fixedRank: stationFixedRank(base.stations[current.stationId]),
+      };
+      const knownKey: StationPathDiagnostics = {
+        stationId: known.stationId,
+        anchorStationId: known.anchorStationId,
+        anchorPathStationIds: known.pathStationIds,
+        anchorPathPairRefs: known.pathPairRefs,
+        pathWorstEdgeMetric: known.pathWorstEdgeMetric,
+        pathTotalMetric: known.pathTotalMetric,
+        stationMajor: stationMajorsById.get(known.stationId),
+        fixedRank: stationFixedRank(base.stations[known.stationId]),
+      };
+      if (comparePathCandidates(knownKey, currentKey) <= 0) continue;
+    }
+    bestByStation.set(current.stationId, current);
+    (adjacency.get(current.stationId) ?? []).forEach((edge) => {
+      const nextStationId = edge.from === current.stationId ? edge.to : edge.from;
+      if (current.pathStationIds.includes(nextStationId)) return;
+      frontier.push({
+        stationId: nextStationId,
+        anchorStationId: current.anchorStationId,
+        pathWorstEdgeMetric: Math.max(current.pathWorstEdgeMetric, edge.metric),
+        pathTotalMetric: current.pathTotalMetric + edge.metric,
+        hopCount: current.hopCount + 1,
+        pathStationIds: [...current.pathStationIds, nextStationId],
+        pathPairRefs: [...current.pathPairRefs, { from: current.stationId, to: nextStationId }],
+      });
+    });
+  }
+  Object.entries(base.stations).forEach(([stationId, station]) => {
+    const best = bestByStation.get(stationId);
+    const fixedRank = stationFixedRank(station);
+    const pathPairMetrics = (best?.pathPairRefs ?? []).map((pair) =>
+      edges.find((edge) => buildPairKey(edge.from, edge.to) === buildPairKey(pair.from, pair.to))?.metric ?? 0,
+    );
+    const worstPairIndex =
+      pathPairMetrics.length > 0
+        ? pathPairMetrics.reduce(
+            (bestIndex, metric, index, metrics) => (metric > metrics[bestIndex] ? index : bestIndex),
+            0,
+          )
+        : -1;
+    diagnostics.set(stationId, {
+      stationId,
+      anchorStationId: best?.anchorStationId,
+      anchorPathStationIds: best?.pathStationIds ?? [stationId],
+      anchorPathPairRefs: best?.pathPairRefs ?? [],
+      pathWorstEdgeMetric: best?.pathWorstEdgeMetric,
+      pathTotalMetric: best?.pathTotalMetric,
+      pathWorstEdgePair:
+        worstPairIndex >= 0 ? best?.pathPairRefs[worstPairIndex] : undefined,
+      stationMajor: stationMajorsById.get(stationId),
+      fixedRank,
+    });
+  });
+  return diagnostics;
+};
+
+const buildPathPrioritySummary = (base: AdjustmentResult): PathPrioritySummary => {
+  const diagnostics = buildStationPathDiagnostics(base);
+  const stationOrder = [...diagnostics.values()]
+    .sort((left, right) => {
+      const rightMajor = right.stationMajor ?? Number.NEGATIVE_INFINITY;
+      const leftMajor = left.stationMajor ?? Number.NEGATIVE_INFINITY;
+      if (rightMajor !== leftMajor) return rightMajor - leftMajor;
+      const rightWorst = right.pathWorstEdgeMetric ?? Number.NEGATIVE_INFINITY;
+      const leftWorst = left.pathWorstEdgeMetric ?? Number.NEGATIVE_INFINITY;
+      if (rightWorst !== leftWorst) return rightWorst - leftWorst;
+      const rightTotal = right.pathTotalMetric ?? Number.NEGATIVE_INFINITY;
+      const leftTotal = left.pathTotalMetric ?? Number.NEGATIVE_INFINITY;
+      if (rightTotal !== leftTotal) return rightTotal - leftTotal;
+      return left.stationId.localeCompare(right.stationId, undefined, { numeric: true });
+    })
+    .map((row) => row.stationId);
+  const prioritizedPairs: PreanalysisAddedSetPairRef[] = [];
+  const prioritizedPairKeys = new Set<string>();
+  const prioritizedStations = new Set<StationId>();
+  stationOrder.slice(0, 5).forEach((stationId) => {
+    const diagnosticsRow = diagnostics.get(stationId);
+    if (!diagnosticsRow) return;
+    diagnosticsRow.anchorPathStationIds.forEach((id) => prioritizedStations.add(id));
+    const pathPairs = diagnosticsRow.anchorPathPairRefs;
+    const orderedPairs = diagnosticsRow.pathWorstEdgePair
+      ? [
+          diagnosticsRow.pathWorstEdgePair,
+          ...pathPairs.filter(
+            (pair) =>
+              buildPairKey(pair.from, pair.to) !==
+              buildPairKey(diagnosticsRow.pathWorstEdgePair!.from, diagnosticsRow.pathWorstEdgePair!.to),
+          ),
+        ]
+      : pathPairs;
+    orderedPairs.forEach((pair) => {
+      const key = buildPairKey(pair.from, pair.to);
+      if (prioritizedPairKeys.has(key)) return;
+      prioritizedPairKeys.add(key);
+      prioritizedPairs.push(pair);
+    });
+  });
+  [...(base.weakGeometryDiagnostics?.relativeCues ?? [])]
     .sort((left, right) => {
       const severityDelta = severityWeight(right.severity) - severityWeight(left.severity);
       if (severityDelta !== 0) return severityDelta;
       return (right.distanceMetric ?? 0) - (left.distanceMetric ?? 0);
     })
-    .map((cue) => ({ from: cue.from, to: cue.to }));
-  if (weightedRelativeCues.length > 0) return weightedRelativeCues;
-
-  return [...(base.relativeCovariances ?? [])]
-    .sort((left, right) => {
-      const rightMetric =
-        right.sigmaDist ?? right.ellipse?.semiMajor ?? Math.max(right.sigmaE, right.sigmaN);
-      const leftMetric =
-        left.sigmaDist ?? left.ellipse?.semiMajor ?? Math.max(left.sigmaE, left.sigmaN);
-      return rightMetric - leftMetric;
-    })
-    .map((row) => ({ from: row.from, to: row.to }));
+    .forEach((cue) => {
+      const key = buildPairKey(cue.from, cue.to);
+      if (prioritizedPairKeys.has(key)) return;
+      prioritizedPairKeys.add(key);
+      prioritizedPairs.push({ from: cue.from, to: cue.to });
+    });
+  return {
+    stationOrder,
+    stationDiagnostics: diagnostics,
+    prioritizedPairs,
+    prioritizedStations,
+    prioritizedPairKeys,
+  };
 };
 
 const buildTemplateId = (occupy: StationId, targets: StationId[]): string =>
@@ -547,6 +800,7 @@ const buildBraceTemplates = (
   existingTemplates: PreanalysisSyntheticSetTemplate[],
   planningMap: PlanningMapState,
   stationAllocator: ReturnType<typeof createSyntheticStationAllocator>,
+  pathSummary: PathPrioritySummary,
 ): PreanalysisSyntheticSetTemplate[] => {
   const obstacleGroups = resolveObstacleGroups(planningMap);
   const occupiedIds = new Set(existingTemplates.map((template) => template.occupyStationId));
@@ -558,7 +812,7 @@ const buildBraceTemplates = (
   const usedTemplateIds = new Set(existingTemplates.map((template) => template.id));
   const braceTemplates: PreanalysisSyntheticSetTemplate[] = [];
   const seenIds = new Set<string>();
-  collectSeedPairs(base).forEach((pair) => {
+  pathSummary.prioritizedPairs.forEach((pair) => {
     if (braceTemplates.length >= MAX_BRACE_SCENARIOS) return;
     const sortedPair = [pair.from, pair.to].sort(sortStationIds);
     const [leftId, rightId] = sortedPair;
@@ -592,6 +846,7 @@ const buildBraceTemplates = (
     braceTemplates.push({
       id,
       scenarioKind: 'brace-point',
+      actionMode: 'applyable-addition',
       occupyStationId: leftId,
       setupStationIds,
       templateLabel: buildBraceTemplateLabel(braceStationId, leftId, rightId),
@@ -605,6 +860,7 @@ const buildBraceTemplates = (
       ],
       addedObservationCount: setupStationIds.length,
       existingSetCount: 0,
+      rationale: `Strengthens anchor-path bottleneck ${leftId}-${rightId} with a bounded brace point.`,
       bracePreviewPoint: {
         stationId: braceStationId,
         x: point.x,
@@ -629,13 +885,14 @@ const buildPromotedSetupTemplates = (
   existingTemplates: PreanalysisSyntheticSetTemplate[],
   planningMap: PlanningMapState,
   stationAllocator: ReturnType<typeof createSyntheticStationAllocator>,
+  pathSummary: PathPrioritySummary,
 ): PreanalysisSyntheticSetTemplate[] => {
   if (!planningMap.scenarioFamilies.promotedSetup) return [];
   const obstacleGroups = resolveObstacleGroups(planningMap);
   const occupiedIds = occupiedStationIdsFromTemplates(existingTemplates);
   const usedTemplateIds = new Set(existingTemplates.map((template) => template.id));
   const templates: PreanalysisSyntheticSetTemplate[] = [];
-  collectSeedPairs(base).forEach((pair) => {
+  pathSummary.prioritizedPairs.forEach((pair) => {
     if (templates.length >= MAX_PROMOTED_SETUP_SCENARIOS) return;
     const point = chooseBracePointCandidateWithFallback(
       base.stations,
@@ -660,6 +917,7 @@ const buildPromotedSetupTemplates = (
     templates.push({
       id,
       scenarioKind: 'promoted-setup',
+      actionMode: 'applyable-addition',
       occupyStationId: setupStationId,
       setupStationIds: [setupStationId, ...visibleAnchors],
       templateLabel: buildPromotedTemplateLabel(setupStationId, visibleAnchors),
@@ -669,6 +927,7 @@ const buildPromotedSetupTemplates = (
       affectedPairs: visibleAnchors.map((anchorId) => ({ from: setupStationId, to: anchorId })),
       addedObservationCount: visibleAnchors.length,
       existingSetCount: 0,
+      rationale: `Promotes a new setup to strengthen visibility across bottleneck pair ${pair.from}-${pair.to}.`,
       previewPoints: buildPreviewPoints(base.stations, visibleAnchors, [
         { stationId: setupStationId, x: point.x, y: point.y, h: point.h, role: 'setup' },
       ]),
@@ -683,12 +942,13 @@ const buildSyntheticSetupTemplates = (
   existingTemplates: PreanalysisSyntheticSetTemplate[],
   planningMap: PlanningMapState,
   stationAllocator: ReturnType<typeof createSyntheticStationAllocator>,
+  pathSummary: PathPrioritySummary,
 ): PreanalysisSyntheticSetTemplate[] => {
   if (!planningMap.scenarioFamilies.syntheticSetup) return [];
   const obstacleGroups = resolveObstacleGroups(planningMap);
   const occupiedIds = occupiedStationIdsFromTemplates(existingTemplates);
   const templates: PreanalysisSyntheticSetTemplate[] = [];
-  collectSeedPairs(base).forEach((pair) => {
+  pathSummary.prioritizedPairs.forEach((pair) => {
     if (templates.length >= MAX_SYNTHETIC_SETUP_SCENARIOS) return;
     const point = chooseBracePointCandidateWithFallback(
       base.stations,
@@ -711,6 +971,7 @@ const buildSyntheticSetupTemplates = (
     templates.push({
       id: buildSyntheticSetupTemplateId(pair.from, pair.to, templates.length + 1),
       scenarioKind: 'synthetic-setup',
+      actionMode: 'applyable-addition',
       occupyStationId: setupStationId,
       setupStationIds: [setupStationId, ...visibleAnchors],
       templateLabel: buildSyntheticSetupTemplateLabel(setupStationId, visibleAnchors),
@@ -720,6 +981,7 @@ const buildSyntheticSetupTemplates = (
       affectedPairs: visibleAnchors.map((anchorId) => ({ from: setupStationId, to: anchorId })),
       addedObservationCount: visibleAnchors.length,
       existingSetCount: 0,
+      rationale: `Adds a synthetic setup positioned to shorten the weak chain back to control across ${pair.from}-${pair.to}.`,
       previewPoints: buildPreviewPoints(base.stations, visibleAnchors, [
         { stationId: setupStationId, x: point.x, y: point.y, h: point.h, role: 'setup' },
       ]),
@@ -733,6 +995,7 @@ const buildCrossTieTemplates = (
   base: AdjustmentResult,
   existingTemplates: PreanalysisSyntheticSetTemplate[],
   planningMap: PlanningMapState,
+  pathSummary: PathPrioritySummary,
 ): PreanalysisSyntheticSetTemplate[] => {
   if (!planningMap.scenarioFamilies.crossTie) return [];
   const obstacleGroups = resolveObstacleGroups(planningMap);
@@ -742,7 +1005,7 @@ const buildCrossTieTemplates = (
     ),
   );
   const rows: PreanalysisSyntheticSetTemplate[] = [];
-  collectSeedPairs(base).forEach((pair) => {
+  pathSummary.prioritizedPairs.forEach((pair) => {
     if (rows.length >= MAX_CROSS_TIE_SCENARIOS) return;
     const key = [pair.from, pair.to].sort(sortStationIds).join('|');
     if (existingPairKeys.has(key)) return;
@@ -754,6 +1017,7 @@ const buildCrossTieTemplates = (
     rows.push({
       id: buildCrossTieTemplateId(pair.from, pair.to),
       scenarioKind: 'cross-tie',
+      actionMode: 'applyable-addition',
       occupyStationId: pair.from,
       setupStationIds: [pair.from],
       templateLabel: buildCrossTieTemplateLabel(pair.from, pair.to),
@@ -763,6 +1027,7 @@ const buildCrossTieTemplates = (
       affectedPairs: [{ from: pair.from, to: pair.to }],
       addedObservationCount: 1,
       existingSetCount: 0,
+      rationale: `Adds a direct tie to bypass weak accumulation along the ${pair.from}-${pair.to} corridor.`,
       previewPoints: buildPreviewPoints(base.stations, [pair.from, pair.to], []),
       previewSegments: [
         {
@@ -775,6 +1040,127 @@ const buildCrossTieTemplates = (
     });
   });
   return rows;
+};
+
+const buildAdvisoryTemplates = (
+  base: AdjustmentResult,
+  additiveTemplates: PreanalysisSyntheticSetTemplate[],
+  planningMap: PlanningMapState,
+  activeTemplateIds: string[],
+  pathSummary: PathPrioritySummary,
+): PreanalysisSyntheticSetTemplate[] => {
+  const obstacleGroups = resolveObstacleGroups(planningMap);
+  const existingPairKeys = new Set(
+    additiveTemplates.flatMap((template) =>
+      template.affectedPairs.map((pair) => buildPairKey(pair.from, pair.to)),
+    ),
+  );
+  const graphEdges = buildPathGraph(base);
+  const degreeByStation = new Map<StationId, number>();
+  graphEdges.forEach((edge) => {
+    degreeByStation.set(edge.from, (degreeByStation.get(edge.from) ?? 0) + 1);
+    degreeByStation.set(edge.to, (degreeByStation.get(edge.to) ?? 0) + 1);
+  });
+  const advisoryTemplates: PreanalysisSyntheticSetTemplate[] = [];
+  pathSummary.stationOrder.slice(0, 4).forEach((stationId) => {
+    const diagnostics = pathSummary.stationDiagnostics.get(stationId);
+    if (!diagnostics || diagnostics.anchorPathStationIds.length < 3) return;
+    for (let index = 0; index <= diagnostics.anchorPathStationIds.length - 3; index += 1) {
+      if (advisoryTemplates.filter((row) => row.scenarioKind === 'bypass-intermediate').length >= MAX_BYPASS_ADVISORIES) {
+        break;
+      }
+      const left = diagnostics.anchorPathStationIds[index]!;
+      const middle = diagnostics.anchorPathStationIds[index + 1]!;
+      const right = diagnostics.anchorPathStationIds[index + 2]!;
+      const bypassKey = buildPairKey(left, right);
+      if (existingPairKeys.has(bypassKey)) continue;
+      const leftStation = base.stations[left];
+      const rightStation = base.stations[right];
+      if (!leftStation || !rightStation || sightLineBlocked(leftStation, rightStation, obstacleGroups.hard)) {
+        continue;
+      }
+      const bypassTemplateId = `preanalysis-bypass:${left}|${middle}|${right}`;
+      advisoryTemplates.push({
+        id: bypassTemplateId,
+        scenarioKind: 'bypass-intermediate',
+        actionMode: 'advisory',
+        occupyStationId: left,
+        setupStationIds: [left],
+        templateLabel: `Bypass ${middle} via ${left} -> ${right}`,
+        sourceLines: [],
+        blockText: buildCrossTieBlockText(left, right),
+        affectedStations: [left, middle, right],
+        affectedPairs: [{ from: left, to: right }],
+        addedObservationCount: 1,
+        existingSetCount: 0,
+        rationale: `Directly tie ${left} to ${right} to bypass bottleneck accumulation through ${middle}.`,
+        previewPoints: buildPreviewPoints(base.stations, [left, middle, right], []),
+        previewSegments: [
+          {
+            fromStationId: left,
+            toStationId: right,
+            kind: 'cross-tie',
+            active: false,
+          },
+        ],
+      });
+      const middleStation = base.stations[middle];
+      if (
+        advisoryTemplates.filter((row) => row.scenarioKind === 'decommission-intermediate').length <
+          MAX_DECOMMISSION_ADVISORIES &&
+        stationFixedRank(middleStation) === 0 &&
+        (degreeByStation.get(middle) ?? 0) === 2
+      ) {
+        advisoryTemplates.push({
+          id: `preanalysis-decommission:${left}|${middle}|${right}`,
+          scenarioKind: 'decommission-intermediate',
+          actionMode: 'advisory',
+          occupyStationId: middle,
+          setupStationIds: [middle],
+          templateLabel: `Decommission ${middle} after ${left} -> ${right}`,
+          sourceLines: [],
+          blockText: buildCrossTieBlockText(left, right),
+          affectedStations: [left, middle, right],
+          affectedPairs: [{ from: left, to: right }],
+          addedObservationCount: 1,
+          existingSetCount: 0,
+          rationale: `If ${left} -> ${right} is added, ${middle} can be removed from the weak chain without disconnecting control.`,
+          previewPoints: buildPreviewPoints(base.stations, [left, middle, right], []),
+          previewSegments: [
+            {
+              fromStationId: left,
+              toStationId: right,
+              kind: 'cross-tie',
+              active: false,
+            },
+          ],
+        });
+      }
+    }
+  });
+  const activeSyntheticIds = new Set(
+    activeTemplateIds.filter((id) => id.startsWith('preanalysis-brace:') || id.startsWith('preanalysis-promoted:') || id.startsWith('preanalysis-synthsetup:')),
+  );
+  const moveRows = additiveTemplates
+    .filter(
+      (template) =>
+        (template.scenarioKind === 'brace-point' ||
+          template.scenarioKind === 'promoted-setup' ||
+          template.scenarioKind === 'synthetic-setup') &&
+        template.affectedPairs.some((pair) => pathSummary.prioritizedPairKeys.has(buildPairKey(pair.from, pair.to))),
+    )
+    .slice(0, MAX_MOVE_SYNTHETIC_ADVISORIES)
+    .map((template) => ({
+      ...template,
+      id: `preanalysis-move:${template.id}`,
+      scenarioKind: 'move-synthetic' as const,
+      actionMode: 'advisory' as const,
+      templateLabel: `Move ${template.templateLabel}`,
+      rationale: activeSyntheticIds.size > 0
+        ? `Relocate the active synthetic geometry toward the current bottleneck corridor served by ${template.templateLabel}.`
+        : `Prefer this corridor-focused synthetic placement over weaker synthetic geometry elsewhere in the chain.`,
+    }));
+  return [...advisoryTemplates, ...moveRows];
 };
 
 export const buildPreanalysisSyntheticSetTemplates = (
@@ -853,6 +1239,7 @@ export const buildPreanalysisSyntheticSetTemplates = (
       deduped.set(id, {
         id,
         scenarioKind: 'existing-set',
+        actionMode: 'applyable-addition',
         occupyStationId,
         setupStationIds: [occupyStationId],
         templateLabel: buildTemplateLabel(occupyStationId, targetIds),
@@ -865,6 +1252,7 @@ export const buildPreanalysisSyntheticSetTemplates = (
         affectedPairs,
         addedObservationCount: setObservations.length,
         existingSetCount: 1,
+        rationale: `Repeat the ${occupyStationId} setup set to strengthen the current control path through its existing observations.`,
         previewPoints: buildPreviewPoints(base.stations, affectedStations, []),
         previewSegments: targetIds.map((targetId) => ({
           fromStationId: occupyStationId,
@@ -881,16 +1269,32 @@ export const buildPreanalysisSyntheticSetTemplates = (
       left.templateLabel.localeCompare(right.templateLabel, undefined, { numeric: true }),
   );
   const stationAllocator = createSyntheticStationAllocator(base.stations);
-  const scenarioTemplates = [
+  const pathSummary = buildPathPrioritySummary(base);
+  const additiveTemplates = [
     ...repeatedSetTemplates,
     ...(planningMap.scenarioFamilies.bracePoint
-      ? buildBraceTemplates(base, repeatedSetTemplates, planningMap, stationAllocator)
+      ? buildBraceTemplates(base, repeatedSetTemplates, planningMap, stationAllocator, pathSummary)
       : []),
-    ...buildPromotedSetupTemplates(base, repeatedSetTemplates, planningMap, stationAllocator),
-    ...buildSyntheticSetupTemplates(base, repeatedSetTemplates, planningMap, stationAllocator),
-    ...buildCrossTieTemplates(base, repeatedSetTemplates, planningMap),
+    ...buildPromotedSetupTemplates(
+      base,
+      repeatedSetTemplates,
+      planningMap,
+      stationAllocator,
+      pathSummary,
+    ),
+    ...buildSyntheticSetupTemplates(
+      base,
+      repeatedSetTemplates,
+      planningMap,
+      stationAllocator,
+      pathSummary,
+    ),
+    ...buildCrossTieTemplates(base, repeatedSetTemplates, planningMap, pathSummary),
   ];
-  return scenarioTemplates;
+  return [
+    ...additiveTemplates,
+    ...buildAdvisoryTemplates(base, additiveTemplates, planningMap, [], pathSummary),
+  ];
 };
 
 export const buildSyntheticPreanalysisInput = (
@@ -903,7 +1307,7 @@ export const buildSyntheticPreanalysisInput = (
   const appendedBlocks = activeTemplateIds
     .map((id, index) => {
       const template = templateById.get(id);
-      if (!template) return null;
+      if (!template || template.actionMode !== 'applyable-addition') return null;
       return [
         `# WEBNET_PREANALYSIS_ADDED_SET ${template.id} ${index + 1}`,
         template.blockText,
@@ -914,7 +1318,26 @@ export const buildSyntheticPreanalysisInput = (
   return `${input.trimEnd()}\n\n${appendedBlocks.join('\n\n')}\n`;
 };
 
-const candidateScore = (base: AdjustmentResult, alt: AdjustmentResult): number => {
+type RecommendationEvaluation = {
+  row: PreanalysisImpactDiagnostics['rows'][number];
+  stationComparisons: Array<{
+    stationId: StationId;
+    deltaMajor: number;
+    deltaPathWorst: number;
+    deltaPathTotal: number;
+  }>;
+};
+
+const deltaMetric = (next?: number, current?: number): number => {
+  const nextValue = Number.isFinite(next) ? (next as number) : undefined;
+  const currentValue = Number.isFinite(current) ? (current as number) : undefined;
+  if (nextValue != null && currentValue != null) return nextValue - currentValue;
+  if (nextValue != null && currentValue == null) return nextValue;
+  if (nextValue == null && currentValue != null) return Number.POSITIVE_INFINITY;
+  return 0;
+};
+
+const candidateScore = (base: AdjustmentResult, alt: AdjustmentResult, pathSummary: PathPrioritySummary): number => {
   const baseWorstStation = stationMajors(base);
   const altWorstStation = stationMajors(alt);
   const baseWorstStationMajor =
@@ -938,21 +1361,27 @@ const candidateScore = (base: AdjustmentResult, alt: AdjustmentResult): number =
     altWorstPairSigmaDist != null && baseWorstPairSigmaDist != null
       ? altWorstPairSigmaDist - baseWorstPairSigmaDist
       : 0;
+  const basePrimary = pathSummary.stationDiagnostics.get(pathSummary.stationOrder[0] ?? '');
+  const altPrimarySummary = buildPathPrioritySummary(alt);
+  const altPrimary = altPrimarySummary.stationDiagnostics.get(pathSummary.stationOrder[0] ?? '');
   return (
-    -deltaWorstStationMajor * 40 -
-    deltaMedianStationMajor * 20 -
-    deltaWorstPairSigmaDist * 25 -
-    (weakStationCount(alt) - weakStationCount(base)) * 5 -
-    (weakPairCount(alt) - weakPairCount(base)) * 4
+    -deltaWorstStationMajor * 100000 -
+    -((altPrimary?.pathWorstEdgeMetric ?? 0) - (basePrimary?.pathWorstEdgeMetric ?? 0)) * 10000 -
+    -((altPrimary?.pathTotalMetric ?? 0) - (basePrimary?.pathTotalMetric ?? 0)) * 1000 -
+    -deltaMedianStationMajor * 100 -
+    -deltaWorstPairSigmaDist * 25 -
+    (weakStationCount(base) - weakStationCount(alt)) * 5 -
+    (weakPairCount(base) - weakPairCount(alt)) * 4
   );
 };
 
-const buildRecommendationRow = (
+const buildRecommendationEvaluation = (
   template: PreanalysisSyntheticSetTemplate,
   base: AdjustmentResult,
   alt: AdjustmentResult,
+  basePathSummary: PathPrioritySummary,
   targetThresholdMeters?: number,
-): PreanalysisImpactDiagnostics['rows'][number] => {
+): RecommendationEvaluation => {
   const baseStationValues = stationMajors(base);
   const altStationValues = stationMajors(alt);
   const baseWorstStationMajor =
@@ -962,14 +1391,31 @@ const buildRecommendationRow = (
   const altMedianStationMajor = medianOf(altStationValues);
   const basePairValues = relativeMetrics(base);
   const altPairValues = relativeMetrics(alt);
+  const altPathSummary = buildPathPrioritySummary(alt);
   const baseWorstPairSigmaDist =
     basePairValues.length > 0 ? Math.max(...basePairValues) : undefined;
   const altWorstPairSigmaDist = altPairValues.length > 0 ? Math.max(...altPairValues) : undefined;
-  return {
+  const primaryTargetStationId = basePathSummary.stationOrder[0];
+  const primaryDiagnostics =
+    primaryTargetStationId != null
+      ? basePathSummary.stationDiagnostics.get(primaryTargetStationId)
+      : undefined;
+  const altPrimaryDiagnostics =
+    primaryTargetStationId != null
+      ? altPathSummary.stationDiagnostics.get(primaryTargetStationId)
+      : undefined;
+  const row: PreanalysisImpactDiagnostics['rows'][number] = {
     scenarioId: template.id,
     scenarioKind: template.scenarioKind,
     occupyStationId: template.occupyStationId,
     setupStationIds: [...template.setupStationIds],
+    primaryTargetStationId,
+    anchorStationId: primaryDiagnostics?.anchorStationId,
+    anchorPathStationIds: [...(primaryDiagnostics?.anchorPathStationIds ?? [])],
+    anchorPathPairRefs: (primaryDiagnostics?.anchorPathPairRefs ?? []).map((pair) => ({ ...pair })),
+    bottleneckPair: primaryDiagnostics?.pathWorstEdgePair
+      ? { ...primaryDiagnostics.pathWorstEdgePair }
+      : undefined,
     templateLabel: template.templateLabel,
     affectedStations: [...template.affectedStations],
     affectedPairs: template.affectedPairs.map((pair) => ({ ...pair })),
@@ -995,31 +1441,78 @@ const buildRecommendationRow = (
       altWorstPairSigmaDist != null && baseWorstPairSigmaDist != null
         ? altWorstPairSigmaDist - baseWorstPairSigmaDist
         : undefined,
+    deltaPathWorstEdge:
+      altPrimaryDiagnostics?.pathWorstEdgeMetric != null &&
+      primaryDiagnostics?.pathWorstEdgeMetric != null
+        ? altPrimaryDiagnostics.pathWorstEdgeMetric - primaryDiagnostics.pathWorstEdgeMetric
+        : undefined,
+    deltaPathTotalMetric:
+      altPrimaryDiagnostics?.pathTotalMetric != null &&
+      primaryDiagnostics?.pathTotalMetric != null
+        ? altPrimaryDiagnostics.pathTotalMetric - primaryDiagnostics.pathTotalMetric
+        : undefined,
     deltaWeakStationCount: weakStationCount(alt) - weakStationCount(base),
     deltaWeakPairCount: weakPairCount(alt) - weakPairCount(base),
-    score: candidateScore(base, alt),
+    score: candidateScore(base, alt, basePathSummary),
+    actionMode: template.actionMode,
+    rationale: template.rationale,
     thresholdReached:
       targetThresholdMeters != null &&
       altWorstStationMajor != null &&
       altWorstStationMajor <= targetThresholdMeters,
     status: 'ok',
   };
+  return {
+    row,
+    stationComparisons: basePathSummary.stationOrder.map((stationId) => {
+      const baseStation = basePathSummary.stationDiagnostics.get(stationId);
+      const altStation = altPathSummary.stationDiagnostics.get(stationId);
+      return {
+        stationId,
+        deltaMajor: deltaMetric(altStation?.stationMajor, baseStation?.stationMajor),
+        deltaPathWorst: deltaMetric(
+          altStation?.pathWorstEdgeMetric,
+          baseStation?.pathWorstEdgeMetric,
+        ),
+        deltaPathTotal: deltaMetric(altStation?.pathTotalMetric, baseStation?.pathTotalMetric),
+      };
+    }),
+  };
 };
 
-const sortRecommendationRows = (
-  left: PreanalysisImpactDiagnostics['rows'][number],
-  right: PreanalysisImpactDiagnostics['rows'][number],
+const compareImprovementDelta = (left: number, right: number): number => {
+  if (left !== right) return left - right;
+  return 0;
+};
+
+const sortRecommendationEvaluations = (
+  left: RecommendationEvaluation,
+  right: RecommendationEvaluation,
 ): number => {
-  if (left.status !== right.status) return left.status === 'ok' ? -1 : 1;
-  if (left.thresholdReached !== right.thresholdReached) return left.thresholdReached ? -1 : 1;
-  const rightScore = right.score ?? Number.NEGATIVE_INFINITY;
-  const leftScore = left.score ?? Number.NEGATIVE_INFINITY;
+  if (left.row.status !== right.row.status) return left.row.status === 'ok' ? -1 : 1;
+  if (left.row.thresholdReached !== right.row.thresholdReached) return left.row.thresholdReached ? -1 : 1;
+  const maxLength = Math.max(left.stationComparisons.length, right.stationComparisons.length);
+  for (let index = 0; index < maxLength; index += 1) {
+    const leftStation = left.stationComparisons[index];
+    const rightStation = right.stationComparisons[index];
+    if (!leftStation || !rightStation) break;
+    const majorDelta = compareImprovementDelta(leftStation.deltaMajor, rightStation.deltaMajor);
+    if (majorDelta !== 0) return majorDelta;
+    const worstDelta = compareImprovementDelta(leftStation.deltaPathWorst, rightStation.deltaPathWorst);
+    if (worstDelta !== 0) return worstDelta;
+    const totalDelta = compareImprovementDelta(leftStation.deltaPathTotal, rightStation.deltaPathTotal);
+    if (totalDelta !== 0) return totalDelta;
+  }
+  const rightScore = right.row.score ?? Number.NEGATIVE_INFINITY;
+  const leftScore = left.row.score ?? Number.NEGATIVE_INFINITY;
   if (rightScore !== leftScore) return rightScore - leftScore;
-  const kindDelta = scenarioKindPriority(right.scenarioKind) - scenarioKindPriority(left.scenarioKind);
+  const kindDelta =
+    recommendationKindTieWeight(left.row.scenarioKind) -
+    recommendationKindTieWeight(right.row.scenarioKind);
   if (kindDelta !== 0) return kindDelta;
   return (
-    left.occupyStationId.localeCompare(right.occupyStationId, undefined, { numeric: true }) ||
-    left.templateLabel.localeCompare(right.templateLabel, undefined, { numeric: true })
+    left.row.occupyStationId.localeCompare(right.row.occupyStationId, undefined, { numeric: true }) ||
+    left.row.templateLabel.localeCompare(right.row.templateLabel, undefined, { numeric: true })
   );
 };
 
@@ -1029,28 +1522,38 @@ const resolveCandidateTemplates = (
   activeTemplateIds: string[],
 ): PreanalysisSyntheticSetTemplate[] => {
   const activeTemplateIdSet = new Set(activeTemplateIds);
+  const pathSummary = buildPathPrioritySummary(base);
   const remainingTemplates = templates.filter((template) => !activeTemplateIdSet.has(template.id));
-  const weakSeedStations = collectWeakSeedStations(base);
-  const weakSeedPairKeys = new Set(
-    collectSeedPairs(base)
-      .slice(0, 8)
-      .map((pair) => [pair.from, pair.to].sort(sortStationIds).join('|')),
-  );
-  const seededRemainingTemplates = remainingTemplates.filter((template) =>
-    template.affectedStations.some((stationId) => weakSeedStations.has(stationId)),
-  );
-  const prioritizeRows = seededRemainingTemplates.length > 0 ? seededRemainingTemplates : remainingTemplates;
+  const prioritizeRows = remainingTemplates;
   const priorityForTemplate = (template: PreanalysisSyntheticSetTemplate): number => {
-    const weakStationHits = template.affectedStations.filter((stationId) =>
-      weakSeedStations.has(stationId),
+    const prioritizedStationHits = template.affectedStations.filter((stationId) =>
+      pathSummary.prioritizedStations.has(stationId),
     ).length;
-    const weakPairHits = template.affectedPairs.filter((pair) =>
-      weakSeedPairKeys.has([pair.from, pair.to].sort(sortStationIds).join('|')),
+    const prioritizedPairHits = template.affectedPairs.filter((pair) =>
+      pathSummary.prioritizedPairKeys.has(buildPairKey(pair.from, pair.to)),
     ).length;
+    const touchesPrimaryTarget =
+      pathSummary.stationOrder[0] != null &&
+      template.affectedStations.includes(pathSummary.stationOrder[0])
+        ? 1
+        : 0;
+    const touchesBottleneck =
+      pathSummary.stationDiagnostics.get(pathSummary.stationOrder[0] ?? '')?.pathWorstEdgePair != null &&
+      template.affectedPairs.some(
+        (pair) =>
+          buildPairKey(pair.from, pair.to) ===
+          buildPairKey(
+            pathSummary.stationDiagnostics.get(pathSummary.stationOrder[0] ?? '')!.pathWorstEdgePair!.from,
+            pathSummary.stationDiagnostics.get(pathSummary.stationOrder[0] ?? '')!.pathWorstEdgePair!.to,
+          ),
+      )
+        ? 1
+        : 0;
     return (
-      scenarioKindPriority(template.scenarioKind) * 1000 +
-      weakStationHits * 120 +
-      weakPairHits * 160 +
+      touchesPrimaryTarget * 500 +
+      touchesBottleneck * 400 +
+      prioritizedPairHits * 140 +
+      prioritizedStationHits * 90 +
       Math.min(template.addedObservationCount, 8) * 4
     );
   };
@@ -1062,38 +1565,14 @@ const resolveCandidateTemplates = (
       left.templateLabel.localeCompare(right.templateLabel, undefined, { numeric: true })
     );
   });
-  const syntheticCandidateCount = sortedCandidates.filter(
-    (template) => template.scenarioKind !== 'existing-set',
-  ).length;
-  const existingSetCap =
-    syntheticCandidateCount > 0
-      ? Math.min(
-          MAX_EXISTING_SET_SOLVE_CANDIDATES_WHEN_SYNTHETIC_AVAILABLE,
-          MAX_RECOMMENDATION_SOLVE_CANDIDATES,
-        )
-      : MAX_RECOMMENDATION_SOLVE_CANDIDATES;
   const selected: PreanalysisSyntheticSetTemplate[] = [];
   const selectedIds = new Set<string>();
-  let selectedExistingSetCount = 0;
   const pushTemplate = (template: PreanalysisSyntheticSetTemplate): void => {
     if (selected.length >= MAX_RECOMMENDATION_SOLVE_CANDIDATES) return;
     if (selectedIds.has(template.id)) return;
-    if (
-      template.scenarioKind === 'existing-set' &&
-      selectedExistingSetCount >= existingSetCap
-    ) {
-      return;
-    }
     selected.push(template);
     selectedIds.add(template.id);
-    if (template.scenarioKind === 'existing-set') selectedExistingSetCount += 1;
   };
-
-  recommendationFamilyOrder.forEach((kind) => {
-    sortedCandidates
-      .filter((template) => template.scenarioKind === kind)
-      .forEach(pushTemplate);
-  });
 
   sortedCandidates.forEach(pushTemplate);
   return selected;
@@ -1141,12 +1620,19 @@ const buildThresholdPlan = (
 
   for (let stepIndex = 0; stepIndex < Math.max(0, maxAddedSets); stepIndex += 1) {
     const rows = resolveCandidateTemplates(templates, currentResult, currentActiveIds)
+      .filter((template) => template.actionMode === 'applyable-addition')
       .map((template) => {
         try {
           const nextIds = [...currentActiveIds, template.id];
           const alt = solveScenario(nextIds);
           return {
-            row: buildRecommendationRow(template, currentResult, alt, targetThresholdMeters),
+            evaluation: buildRecommendationEvaluation(
+              template,
+              currentResult,
+              alt,
+              buildPathPrioritySummary(currentResult),
+              targetThresholdMeters,
+            ),
             alt,
           };
         } catch {
@@ -1154,19 +1640,23 @@ const buildThresholdPlan = (
         }
       })
       .filter(
-        (entry): entry is { row: PreanalysisImpactDiagnostics['rows'][number]; alt: AdjustmentResult } =>
+        (entry): entry is { evaluation: RecommendationEvaluation; alt: AdjustmentResult } =>
           entry != null,
       )
-      .sort((left, right) => sortRecommendationRows(left.row, right.row));
+      .sort((left, right) => sortRecommendationEvaluations(left.evaluation, right.evaluation));
     const best = rows[0];
     if (!best) {
       unmetReason =
-        currentActiveIds.length > 0
-          ? 'All usable existing setup-set templates are already active.'
-          : 'No usable existing setup-set templates were available for threshold planning.';
+        resolveCandidateTemplates(templates, currentResult, currentActiveIds).some(
+          (template) => template.actionMode === 'advisory',
+        )
+          ? 'Additive scenarios are exhausted; only manual advisory network changes remain.'
+          : currentActiveIds.length > 0
+            ? 'All usable existing setup-set templates are already active.'
+            : 'No usable existing setup-set templates were available for threshold planning.';
       break;
     }
-    currentActiveIds = [...currentActiveIds, best.row.scenarioId];
+    currentActiveIds = [...currentActiveIds, best.evaluation.row.scenarioId];
     currentResult = best.alt;
     const currentWorstValues = stationMajors(currentResult);
     const projectedWorstStationMajor =
@@ -1175,12 +1665,12 @@ const buildThresholdPlan = (
       projectedWorstStationMajor != null && projectedWorstStationMajor <= targetThresholdMeters;
     steps.push({
       rank: stepIndex + 1,
-      scenarioId: best.row.scenarioId,
-      scenarioKind: best.row.scenarioKind,
-      occupyStationId: best.row.occupyStationId,
-      setupStationIds: [...best.row.setupStationIds],
-      templateLabel: best.row.templateLabel,
-      addedObservationCount: best.row.addedObservationCount,
+      scenarioId: best.evaluation.row.scenarioId,
+      scenarioKind: best.evaluation.row.scenarioKind,
+      occupyStationId: best.evaluation.row.occupyStationId,
+      setupStationIds: [...best.evaluation.row.setupStationIds],
+      templateLabel: best.evaluation.row.templateLabel,
+      addedObservationCount: best.evaluation.row.addedObservationCount,
       projectedWorstStationMajor,
       thresholdReached,
     });
@@ -1223,34 +1713,65 @@ export const buildPreanalysisPlanningDiagnostics = ({
   const activeTemplateIdSet = new Set(activeTemplateIds);
   const candidateTemplates = resolveCandidateTemplates(templates, base, activeTemplateIds);
   const remainingFeasibleScenarioCount = Math.max(0, templates.length - activeTemplateIds.length);
+  const basePathSummary = buildPathPrioritySummary(base);
   const recommendationRows = candidateTemplates
     .map((template) => {
       try {
         const alt = solveScenario([...activeTemplateIds, template.id]);
-        return buildRecommendationRow(template, base, alt, targetThresholdMeters);
+        return buildRecommendationEvaluation(
+          template,
+          base,
+          alt,
+          basePathSummary,
+          targetThresholdMeters,
+        );
       } catch {
         return {
-          scenarioId: template.id,
-          scenarioKind: template.scenarioKind,
-          occupyStationId: template.occupyStationId,
-          setupStationIds: [...template.setupStationIds],
-          templateLabel: template.templateLabel,
-          affectedStations: [...template.affectedStations],
-          affectedPairs: template.affectedPairs.map((pair) => ({ ...pair })),
-          sourceLines: [...template.sourceLines],
-          addedObservationCount: template.addedObservationCount,
-          previewPoints: template.previewPoints.map((point) => ({ ...point, active: false })),
-          previewSegments: template.previewSegments.map((segment) => ({
-            ...segment,
-            active: false,
-          })),
-          score: undefined,
-          thresholdReached: false,
-          status: 'failed' as const,
-        };
+          row: {
+            scenarioId: template.id,
+            scenarioKind: template.scenarioKind,
+            occupyStationId: template.occupyStationId,
+            setupStationIds: [...template.setupStationIds],
+            primaryTargetStationId: basePathSummary.stationOrder[0],
+            anchorStationId:
+              basePathSummary.stationDiagnostics.get(basePathSummary.stationOrder[0] ?? '')?.anchorStationId,
+            anchorPathStationIds: [
+              ...(basePathSummary.stationDiagnostics.get(basePathSummary.stationOrder[0] ?? '')?.anchorPathStationIds ??
+                []),
+            ],
+            anchorPathPairRefs: (
+              basePathSummary.stationDiagnostics.get(basePathSummary.stationOrder[0] ?? '')?.anchorPathPairRefs ?? []
+            ).map((pair) => ({ ...pair })),
+            bottleneckPair:
+              basePathSummary.stationDiagnostics.get(basePathSummary.stationOrder[0] ?? '')?.pathWorstEdgePair !=
+              null
+                ? {
+                    ...basePathSummary.stationDiagnostics.get(basePathSummary.stationOrder[0] ?? '')!
+                      .pathWorstEdgePair!,
+                  }
+                : undefined,
+            templateLabel: template.templateLabel,
+            affectedStations: [...template.affectedStations],
+            affectedPairs: template.affectedPairs.map((pair) => ({ ...pair })),
+            sourceLines: [...template.sourceLines],
+            addedObservationCount: template.addedObservationCount,
+            previewPoints: template.previewPoints.map((point) => ({ ...point, active: false })),
+            previewSegments: template.previewSegments.map((segment) => ({
+              ...segment,
+              active: false,
+            })),
+            score: undefined,
+            actionMode: template.actionMode,
+            rationale: template.rationale,
+            thresholdReached: false,
+            status: 'failed' as const,
+          },
+          stationComparisons: [],
+        } satisfies RecommendationEvaluation;
       }
     })
-    .sort(sortRecommendationRows)
+    .sort(sortRecommendationEvaluations)
+    .map((evaluation) => evaluation.row)
     .slice(0, MAX_RECOMMENDATIONS);
   const thresholdPlan = buildThresholdPlan(
     templates,

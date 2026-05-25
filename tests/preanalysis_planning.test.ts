@@ -4,6 +4,8 @@ import { buildPreanalysisPlanningDiagnostics } from '../src/engine/preanalysisPl
 import { DEFAULT_PLANNING_MAP_STATE } from '../src/engine/planningMapState';
 import type { AdjustmentResult } from '../src/types';
 
+const pairKey = (from: string, to: string): string => [from, to].sort().join('|');
+
 const buildResult = (worstMajor: number): AdjustmentResult =>
   ({
     success: true,
@@ -95,6 +97,54 @@ const buildResult = (worstMajor: number): AdjustmentResult =>
           severity: 'weak',
           note: 'weak pair',
         },
+      ],
+    },
+    logs: [],
+    covariance: [],
+    summaries: [],
+    unknowns: [],
+    sigma0: 1,
+    seuw: 1,
+    dof: 1,
+  }) as unknown as AdjustmentResult;
+
+const buildChainResult = (): AdjustmentResult =>
+  ({
+    success: true,
+    converged: true,
+    iterations: 1,
+    stations: {
+      A: { x: 0, y: 0, h: 0, fixed: true, fixedX: true, fixedY: true },
+      B: { x: 50, y: 0, h: 0, fixed: false },
+      C: { x: 100, y: 0, h: 0, fixed: false },
+      D: { x: 150, y: 0, h: 0, fixed: false },
+    },
+    observations: [
+      { id: 1, type: 'direction', instCode: 'SX12', stdDev: 1, planned: true, sigmaSource: 'default', setId: 'B-set', sourceLine: 1, at: 'B', to: 'A' },
+      { id: 2, type: 'direction', instCode: 'SX12', stdDev: 1, planned: true, sigmaSource: 'default', setId: 'C-set', sourceLine: 5, at: 'C', to: 'B' },
+      { id: 3, type: 'direction', instCode: 'SX12', stdDev: 1, planned: true, sigmaSource: 'default', setId: 'D-set', sourceLine: 9, at: 'D', to: 'C' },
+    ],
+    stationCovariances: [
+      { stationId: 'B', cEE: 0.004, cEN: 0, cNN: 0.004, sigmaE: 0.004, sigmaN: 0.004, sigmaH: 0.004, ellipse: { semiMajor: 0.004, semiMinor: 0.003, theta: 0 } },
+      { stationId: 'C', cEE: 0.008, cEN: 0, cNN: 0.008, sigmaE: 0.008, sigmaN: 0.008, sigmaH: 0.008, ellipse: { semiMajor: 0.008, semiMinor: 0.005, theta: 0 } },
+      { stationId: 'D', cEE: 0.012, cEN: 0, cNN: 0.012, sigmaE: 0.012, sigmaN: 0.012, sigmaH: 0.012, ellipse: { semiMajor: 0.012, semiMinor: 0.006, theta: 0 } },
+    ],
+    relativeCovariances: [
+      { from: 'A', to: 'B', connected: true, connectionTypes: ['direction'], cEE: 0.002, cEN: 0, cNN: 0.002, sigmaE: 0.002, sigmaN: 0.002, sigmaH: 0.002, sigmaDist: 0.002, ellipse: { semiMajor: 0.002, semiMinor: 0.001, theta: 0 } },
+      { from: 'B', to: 'C', connected: true, connectionTypes: ['direction'], cEE: 0.009, cEN: 0, cNN: 0.009, sigmaE: 0.009, sigmaN: 0.009, sigmaH: 0.009, sigmaDist: 0.009, ellipse: { semiMajor: 0.009, semiMinor: 0.003, theta: 0 } },
+      { from: 'C', to: 'D', connected: true, connectionTypes: ['direction'], cEE: 0.006, cEN: 0, cNN: 0.006, sigmaE: 0.006, sigmaN: 0.006, sigmaH: 0.006, sigmaDist: 0.006, ellipse: { semiMajor: 0.006, semiMinor: 0.003, theta: 0 } },
+    ],
+    weakGeometryDiagnostics: {
+      enabled: true,
+      stationMedianHorizontal: 0.008,
+      relativeMedianDistance: 0.006,
+      stationCues: [
+        { stationId: 'D', horizontalMetric: 0.012, severity: 'weak', note: 'weak leaf' },
+        { stationId: 'C', horizontalMetric: 0.008, severity: 'watch', note: 'watch mid' },
+      ],
+      relativeCues: [
+        { from: 'B', to: 'C', distanceMetric: 0.009, severity: 'weak', note: 'main bottleneck' },
+        { from: 'C', to: 'D', distanceMetric: 0.006, severity: 'watch', note: 'leaf leg' },
       ],
     },
     logs: [],
@@ -225,7 +275,68 @@ describe('buildPreanalysisPlanningDiagnostics', () => {
     expect(diagnostics.rows[0]?.scenarioKind).toBe('brace-point');
   });
 
-  it('keeps brace and synthetic families in the bounded solve pool ahead of surplus repeated-set trials', () => {
+  it('removes family bias and prefers the better path-to-control existing set over weaker synthetic families', () => {
+    const input = ['DB B', 'DM A', 'DE', '', 'DB C', 'DM B', 'DE', '', 'DB D', 'DM C', 'DE'].join('\n');
+    const diagnostics = buildPreanalysisPlanningDiagnostics({
+      base: buildChainResult(),
+      input,
+      planningMap: DEFAULT_PLANNING_MAP_STATE,
+      activeTemplateIds: [],
+      targetThresholdMeters: 0.005,
+      maxAddedSets: 5,
+      solveScenario: (nextIds) => {
+        if (nextIds.includes('preanalysis-set:B:A')) {
+          const improved = buildChainResult();
+          improved.stationCovariances = improved.stationCovariances?.map((row) =>
+            row.stationId === 'D'
+              ? { ...row, sigmaE: 0.006, sigmaN: 0.006, sigmaH: 0.006, ellipse: { semiMajor: 0.006, semiMinor: 0.004, theta: 0 } }
+              : row,
+          );
+          improved.relativeCovariances = improved.relativeCovariances?.map((row) =>
+            pairKey(row.from, row.to) === 'B|C'
+              ? { ...row, sigmaDist: 0.003, ellipse: { semiMajor: 0.003, semiMinor: 0.002, theta: 0 } }
+              : row,
+          );
+          return improved as AdjustmentResult;
+        }
+        if (nextIds.some((id) => id.startsWith('preanalysis-brace:'))) {
+          const weaker = buildChainResult();
+          weaker.stationCovariances = weaker.stationCovariances?.map((row) =>
+            row.stationId === 'D'
+              ? { ...row, sigmaE: 0.0105, sigmaN: 0.0105, sigmaH: 0.0105, ellipse: { semiMajor: 0.0105, semiMinor: 0.005, theta: 0 } }
+              : row,
+          );
+          return weaker as AdjustmentResult;
+        }
+        if (nextIds.some((id) => id.startsWith('preanalysis-promoted:'))) {
+          const weaker = buildChainResult();
+          weaker.stationCovariances = weaker.stationCovariances?.map((row) =>
+            row.stationId === 'D'
+              ? { ...row, sigmaE: 0.0108, sigmaN: 0.0108, sigmaH: 0.0108, ellipse: { semiMajor: 0.0108, semiMinor: 0.005, theta: 0 } }
+              : row,
+          );
+          return weaker as AdjustmentResult;
+        }
+        if (nextIds.some((id) => id.startsWith('preanalysis-synthsetup:'))) {
+          const weaker = buildChainResult();
+          weaker.stationCovariances = weaker.stationCovariances?.map((row) =>
+            row.stationId === 'D'
+              ? { ...row, sigmaE: 0.011, sigmaN: 0.011, sigmaH: 0.011, ellipse: { semiMajor: 0.011, semiMinor: 0.005, theta: 0 } }
+              : row,
+          );
+          return weaker as AdjustmentResult;
+        }
+        return buildChainResult();
+      },
+    });
+
+    expect(diagnostics.rows[0]?.scenarioId).toBe('preanalysis-set:B:A');
+    expect(diagnostics.rows[0]?.scenarioKind).toBe('existing-set');
+    expect(diagnostics.rows[0]?.primaryTargetStationId).toBe('D');
+    expect(diagnostics.rows[0]?.bottleneckPair).toEqual({ from: 'B', to: 'C' });
+  });
+
+  it('keeps impactful non-existing scenarios in the bounded solve pool without relying on family bias', () => {
     const base = buildResult(0.01);
     for (let index = 0; index < 8; index += 1) {
       const occupy = `30${index}`;
@@ -290,9 +401,7 @@ describe('buildPreanalysisPlanningDiagnostics', () => {
     expect(diagnostics.rows.slice(0, 3).some((row) => row.scenarioKind === 'promoted-setup')).toBe(
       true,
     );
-    expect(
-      diagnostics.rows.slice(0, 4).filter((row) => row.scenarioKind === 'existing-set').length,
-    ).toBeLessThanOrEqual(1);
+    expect(diagnostics.rows[0]?.deltaWorstStationMajor).toBeCloseTo(-0.004);
   });
 
   it('falls back to remaining global templates after the current weak-seed subset is exhausted', () => {
@@ -350,6 +459,63 @@ describe('buildPreanalysisPlanningDiagnostics', () => {
 
     expect(diagnostics.candidateTemplateCount).toBe(1);
     expect(diagnostics.rows.map((row) => row.scenarioId)).toContain('preanalysis-set:200:201');
+  });
+
+  it('surfaces advisory bypass and decommission recommendations on weak control-path chains', () => {
+    const input = ['DB B', 'DM A', 'DE', '', 'DB C', 'DM B', 'DE', '', 'DB D', 'DM C', 'DE'].join('\n');
+    const diagnostics = buildPreanalysisPlanningDiagnostics({
+      base: buildChainResult(),
+      input,
+      planningMap: {
+        ...DEFAULT_PLANNING_MAP_STATE,
+        scenarioFamilies: {
+          existingSet: true,
+          bracePoint: false,
+          syntheticSetup: false,
+          promotedSetup: false,
+          crossTie: false,
+        },
+      },
+      activeTemplateIds: ['preanalysis-set:B:A', 'preanalysis-set:C:B', 'preanalysis-set:D:C'],
+      targetThresholdMeters: 0.005,
+      maxAddedSets: 2,
+      solveScenario: () => buildChainResult(),
+    });
+
+    expect(diagnostics.rows.some((row) => row.scenarioKind === 'bypass-intermediate')).toBe(true);
+    expect(diagnostics.rows.some((row) => row.scenarioKind === 'decommission-intermediate')).toBe(true);
+    expect(
+      diagnostics.rows.filter((row) => row.scenarioKind === 'decommission-intermediate').every(
+        (row) => row.actionMode === 'advisory',
+      ),
+    ).toBe(true);
+  });
+
+  it('keeps threshold planning additive-only and reports when only advisory changes remain', () => {
+    const input = ['DB B', 'DM A', 'DE', '', 'DB C', 'DM B', 'DE', '', 'DB D', 'DM C', 'DE'].join('\n');
+    const diagnostics = buildPreanalysisPlanningDiagnostics({
+      base: buildChainResult(),
+      input,
+      planningMap: {
+        ...DEFAULT_PLANNING_MAP_STATE,
+        scenarioFamilies: {
+          existingSet: true,
+          bracePoint: false,
+          syntheticSetup: false,
+          promotedSetup: false,
+          crossTie: false,
+        },
+      },
+      activeTemplateIds: ['preanalysis-set:B:A', 'preanalysis-set:C:B', 'preanalysis-set:D:C'],
+      targetThresholdMeters: 0.005,
+      maxAddedSets: 2,
+      solveScenario: () => buildChainResult(),
+    });
+
+    expect(diagnostics.thresholdPlan.steps).toHaveLength(0);
+    expect(diagnostics.thresholdPlan.unmetReason).toBe(
+      'Additive scenarios are exhausted; only manual advisory network changes remain.',
+    );
   });
 
   it('rejects brace and synthetic setup candidates that fall inside blocked polygons', () => {

@@ -151,7 +151,10 @@ export type PreanalysisRecommendationKind =
   | 'brace-point'
   | 'synthetic-setup'
   | 'promoted-setup'
-  | 'cross-tie';
+  | 'cross-tie'
+  | 'bypass-intermediate'
+  | 'decommission-intermediate'
+  | 'move-synthetic';
 
 export interface PreanalysisScenarioPreviewPoint {
   stationId: StationId;
@@ -184,6 +187,11 @@ export interface PreanalysisAddedSetRecommendationRow {
   scenarioKind: PreanalysisRecommendationKind;
   occupyStationId: StationId;
   setupStationIds: StationId[];
+  primaryTargetStationId?: StationId;
+  anchorStationId?: StationId;
+  anchorPathStationIds?: StationId[];
+  anchorPathPairRefs?: PreanalysisAddedSetPairRef[];
+  bottleneckPair?: PreanalysisAddedSetPairRef;
   templateLabel: string;
   affectedStations: StationId[];
   affectedPairs: PreanalysisAddedSetPairRef[];
@@ -194,9 +202,13 @@ export interface PreanalysisAddedSetRecommendationRow {
   deltaWorstStationMajor?: number;
   deltaMedianStationMajor?: number;
   deltaWorstPairSigmaDist?: number;
+  deltaPathWorstEdge?: number;
+  deltaPathTotalMetric?: number;
   deltaWeakStationCount?: number;
   deltaWeakPairCount?: number;
   score?: number;
+  actionMode: 'applyable-addition' | 'advisory';
+  rationale?: string;
   thresholdReached: boolean;
   status: 'ok' | 'failed';
 }
