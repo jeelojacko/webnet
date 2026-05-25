@@ -22,6 +22,17 @@ From the public GitHub repo:
 - repo README advertises MIT license at repo level
 - repo README explicitly describes modular architecture and browser-only DWG/DXF handling
 
+Additional package metadata observed during this spike from npm package manifests:
+- `@mlightcad/cad-viewer@1.5.0`
+  - peer deps include `vue`, `vue-i18n`, `element-plus`, `@vueuse/core`, and `@mlightcad/cad-simple-viewer`
+- `@mlightcad/cad-simple-viewer@1.5.0`
+  - peer deps include `three`, `lodash-es`, and `@mlightcad/data-model`
+  - direct dependency includes `@mlightcad/libredwg-converter`
+- `@mlightcad/libredwg-converter@3.5.40`
+  - direct dependency includes `@mlightcad/libredwg-web`
+- `@mlightcad/libredwg-web@0.7.1`
+  - license is `GPL-3.0`
+
 Inference from published structure:
 - `cad-viewer` appears to be the full-featured packaged viewer UI
 - `cad-simple-viewer` appears intended as lower-level viewer surface with less UI coupling
@@ -40,12 +51,13 @@ Why:
 Planning conclusion:
 - do not target full `cad-viewer` UI first
 - evaluate `cad-simple-viewer` and renderer packages first
+- do not install `cad-simple-viewer` into core WebNet blindly while it still appears to drag the LibreDWG chain
 
 ### Which packages look useful?
 Most promising from current evidence:
-- `cad-simple-viewer`
 - `three-renderer`
 - `svg-renderer`
+- `data-model`
 - `cad-html-exporter` for later sharing/export ideas
 
 Potentially useful later:
@@ -101,6 +113,19 @@ Current public picture:
 Planning implication:
 - treat DWG import as optional plugin/helper boundary
 - do not assume the entire mlightcad stack is MIT-safe just because the top viewer repo is MIT
+
+## What this spike implemented in WebNet
+This branch now includes:
+- native Survey CAD entities under `src/engine/cad/`
+- renderer-neutral display scene adapter
+- inferred `mlightcad` export contract that preserves native WebNet IDs
+- internal SVG proof renderer in the Survey CAD workspace tab
+
+This branch intentionally does not install `cad-simple-viewer` or `cad-viewer` into core WebNet yet.
+
+Reason:
+- current package chain suggests the easiest lower-level viewer path still drags the LibreDWG converter dependency into the app dependency graph
+- that is too much license/runtime ambiguity for a first core-app spike
 
 ### Reuse, fork, adapt, or reference only?
 Current planning recommendation:
@@ -160,17 +185,14 @@ Current planning recommendation:
 - performance is poor on realistic survey plans
 - DXF-only path is usable but every meaningful CAD workflow requires GPL DWG modules
 
-## Current planning recommendation
-Proceed with future branch:
+## Current recommendation
+Renderer/model spike status:
 
-```txt
-spike/mlightcad-renderer-adapter
-```
+- native-model spike complete
+- adapter-contract spike complete
+- internal preview spike complete
+- actual external-package runtime spike still pending
 
-Do not start with:
-- parcel implementation
-- field-to-finish
-- surfaces
-- point clouds
+Future external runtime work should proceed in a follow-up branch only after choosing an MIT-only path or an explicit optional GPL boundary.
 
 Renderer/model boundary needs proof first.

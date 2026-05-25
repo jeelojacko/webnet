@@ -1748,7 +1748,22 @@ const App: React.FC<AppProps> = ({
                 </div>
               )
             }
-            renderSurveyCadContent={() => <SurveyCadWorkspace />}
+            renderSurveyCadContent={() => (
+              <SurveyCadWorkspace
+                input={effectiveRunInput}
+                instrumentLibrary={projectInstruments}
+                parseOptions={{
+                  ...parseSettings,
+                  units: settings.units,
+                  sourceFile: activeProjectRunFiles[0]?.name ?? '<survey-cad>',
+                  includeFiles: effectiveRunIncludeFiles,
+                  projectRunFiles: activeProjectRunFiles,
+                  currentInstrument: selectedInstrument,
+                }}
+                units={settings.units}
+                result={result}
+              />
+            )}
           />
         </div>
       </div>

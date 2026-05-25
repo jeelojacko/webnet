@@ -134,10 +134,17 @@ Representative areas:
 - `InputPane`
 - `ReportView` and `src/components/report/*`
 - `MapView`
-- `SurveyCadWorkspace` as the current CAD planning/workspace entry seam
+- `SurveyCadWorkspace` plus `src/components/surveyCad/*` as the current CAD spike entry seam
 - import-review modal
 - Project Options modal
 - workspace shell and toolbar components
+
+Current Survey CAD spike seams:
+- `src/engine/cad/cadTypes.ts` defines native CAD entities, layers, bounds, display primitives, and inferred external adapter payloads
+- `src/engine/cad/cadModel.ts` builds a native CAD project from current WebNet input or solved results
+- `src/engine/cad/cadRenderer.ts` converts native entities into renderer-neutral display primitives
+- `src/engine/cad/cadMlightcadAdapter.ts` converts the same native entities into an inferred `mlightcad`-target scene contract while preserving native IDs
+- `src/components/surveyCad/SurveyCadPreview.tsx` proves the adapter path through an internal SVG renderer without changing the main map stack
 
 The UI should treat solve results as the source of truth and avoid duplicating engine logic in view code.
 

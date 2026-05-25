@@ -25,18 +25,18 @@ Notes:
 - current branch intentionally stops at planning and shell groundwork
 
 ## Phase 1: Native CAD model and transactions
-- [ ] Create `src/engine/cad/` root module set.
-- [ ] Define `EntityId`, `LayerId`, `StyleId`, `CommandId`, `TransactionId`.
-- [ ] Define `BaseEntity`.
-- [ ] Define survey-rich point entities.
-- [ ] Define line/arc/polyline/polygon entities.
-- [ ] Define text/leader/dimension entities.
-- [ ] Define observation-vector and error-ellipse CAD overlays.
+- [x] Create `src/engine/cad/` root module set.
+- [x] Define `EntityId`, `LayerId`, and `StyleId` for spike scope.
+- [x] Define `BaseEntity`.
+- [x] Define survey-rich point entities for spike scope.
+- [x] Define line/text/error-ellipse entities for spike scope.
+- [x] Define observation-line and error-ellipse CAD overlays for spike scope.
 - [ ] Define layer/style/linetype/symbol model.
+- [ ] Expand entities to arc/polyline/polygon/parcel families.
 - [ ] Define CAD project-state domain to persist inside current WebNet project storage.
-- [ ] Define deterministic serialization order and schema versioning.
+- [x] Define deterministic serialization-oriented project shape for spike scope.
 - [ ] Define transaction log and undo/redo contracts.
-- [ ] Add focused serialization tests.
+- [x] Add focused model/adapter tests.
 - [ ] Add focused geometry primitive tests.
 
 Acceptance criteria:
@@ -49,14 +49,16 @@ Risks:
 - over-designing block/layout concepts before first use cases
 
 ## Phase 2: Renderer interface and mlightcad spike
-- [ ] Define renderer-neutral display adapter interface.
+- [x] Define renderer-neutral display adapter interface.
 - [ ] Inventory current WebNet map render primitives worth reusing.
-- [ ] Build tiny adapter for WebNet-native point/line/polygon/text/ellipse display payloads.
-- [ ] Prototype `mlightcad` integration against adapter, not project state.
+- [x] Build tiny adapter for WebNet-native point/line/text/ellipse display payloads.
+- [x] Prototype `mlightcad`-target export contract against adapter, not project state.
+- [x] Build internal SVG proof renderer from the same adapter output.
 - [ ] Load simple DXF in spike environment.
-- [ ] Render WebNet-native entities through adapter.
-- [ ] Verify selection maps back to WebNet entity IDs.
-- [ ] Verify layer visibility can be driven from WebNet state.
+- [x] Render WebNet-native entities through adapter.
+- [x] Verify selection maps back to WebNet entity IDs in the internal spike renderer.
+- [ ] Verify selection maps through actual `mlightcad` runtime.
+- [ ] Verify layer visibility can be driven from actual `mlightcad` runtime state.
 - [ ] Document model-space/layout-space fit.
 - [ ] Write renderer strategy ADR update with go/no-go decision.
 
@@ -67,6 +69,7 @@ Acceptance criteria:
 
 Risks:
 - mlightcad package split may still hide framework assumptions
+- current lower-level viewer path may still pull GPL LibreDWG chain into core dependency graph
 - text/linetype/block support may be coupled to external entity model
 
 ## Phase 3: Selection, snapping, and commands
