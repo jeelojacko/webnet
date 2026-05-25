@@ -6,9 +6,11 @@ import { describe, expect, it } from 'vitest';
 
 import MapView from '../src/components/MapView';
 import ReportView from '../src/components/ReportView';
+import SurveyCadWorkspace from '../src/components/SurveyCadWorkspace';
 import WorkspaceChrome from '../src/components/WorkspaceChrome';
 import { LSAEngine } from '../src/engine/adjust';
 import { buildQaDerivedResult } from '../src/engine/qaWorkflow';
+import type { WorkspaceTabKey } from '../src/appStateTypes';
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -159,9 +161,7 @@ describe('UI navigation smoothness', () => {
     const derived = buildQaDerivedResult(result);
 
     const Harness: React.FC = () => {
-      const [activeTab, setActiveTab] = React.useState<
-        'report' | 'processing-summary' | 'industry-output' | 'map'
-      >('report');
+      const [activeTab, setActiveTab] = React.useState<WorkspaceTabKey>('report');
       const [selectedStationId, setSelectedStationId] = React.useState<string | null>('P000');
       const [selectedObservationId, setSelectedObservationId] = React.useState<number | null>(
         result.observations[0]?.id ?? null,
@@ -217,6 +217,7 @@ describe('UI navigation smoothness', () => {
               onSnapshotChange={setMapSnapshot}
             />
           )}
+          renderSurveyCadContent={() => <SurveyCadWorkspace />}
         />
       );
     };
@@ -318,9 +319,7 @@ describe('UI navigation smoothness', () => {
     const root: Root = createRoot(container);
 
     const Harness: React.FC = () => {
-      const [activeTab, setActiveTab] = React.useState<
-        'report' | 'processing-summary' | 'industry-output' | 'map'
-      >('report');
+      const [activeTab, setActiveTab] = React.useState<WorkspaceTabKey>('report');
       const [selectedStationId, setSelectedStationId] = React.useState<string | null>('P000');
       const [selectedObservationId, setSelectedObservationId] = React.useState<number | null>(
         result.observations[0]?.id ?? null,
@@ -376,6 +375,7 @@ describe('UI navigation smoothness', () => {
               onSnapshotChange={setMapSnapshot}
             />
           )}
+          renderSurveyCadContent={() => <SurveyCadWorkspace />}
         />
       );
     };

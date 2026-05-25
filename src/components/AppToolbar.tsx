@@ -9,6 +9,7 @@ import {
   Play,
   RefreshCw,
   RotateCcw,
+  Ruler,
   Save,
   Settings,
   Square,
@@ -21,6 +22,7 @@ interface AppToolbarProps {
   isSidebarOpen: boolean;
   onToggleSidebar: () => void;
   onOpenProjectOptions: () => void;
+  onOpenSurveyCad: () => void;
   onOpenImportFile: () => void;
   onOpenProjectFile: () => void;
   onSaveProject: () => void;
@@ -47,6 +49,7 @@ const AppToolbar: React.FC<AppToolbarProps> = ({
   isSidebarOpen,
   onToggleSidebar,
   onOpenProjectOptions,
+  onOpenSurveyCad,
   onOpenImportFile,
   onOpenProjectFile,
   onSaveProject,
@@ -116,6 +119,14 @@ const AppToolbar: React.FC<AppToolbarProps> = ({
           <Settings size={14} />
           <span>Project Options</span>
         </button>
+        <button
+          onClick={onOpenSurveyCad}
+          title="Open Survey CAD workspace plan"
+          className="hidden sm:flex items-center space-x-2 px-3 py-1.5 rounded border text-xs uppercase tracking-wide bg-slate-900/60 border-slate-700 text-slate-300 hover:bg-slate-700"
+        >
+          <Ruler size={14} />
+          <span>Survey CAD</span>
+        </button>
       </div>
 
       <div className="flex flex-wrap items-center gap-2 ml-auto shrink-0 justify-end w-full lg:w-auto">
@@ -125,6 +136,13 @@ const AppToolbar: React.FC<AppToolbarProps> = ({
           className="sm:hidden p-2 bg-slate-700 hover:bg-slate-600 rounded text-slate-300 transition-colors"
         >
           <Settings size={18} />
+        </button>
+        <button
+          onClick={onOpenSurveyCad}
+          title="Open Survey CAD workspace plan"
+          className="sm:hidden p-2 bg-slate-700 hover:bg-slate-600 rounded text-slate-300 transition-colors"
+        >
+          <Ruler size={18} />
         </button>
         <button
           onClick={onOpenImportFile}

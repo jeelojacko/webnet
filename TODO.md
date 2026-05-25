@@ -1,3 +1,5 @@
+- [x] Survey CAD planning groundwork batch (May 2026): add a branch-local Survey CAD workspace seam beside `Project Options`, preserve the attached high-level plan in `docs/`, and seed repo-fit architecture/TODO/licensing/evaluation/ADR docs for later CAD implementation batches.
+
 - [x] Preanalysis one-click transform apply batch (May 2026): let bypass/decommission/move recommendations enter the shared apply+rereun workflow by normalizing preanalysis action state, transforming input for removal/relocation scenarios, and updating focused planner/report/run-session coverage.
 
 - [x] Preanalysis advisory relocation batch (May 2026): make advisory move recommendations state-aware against active synthetic scenarios, carry corridor-pair metadata through synthetic candidates, and surface relocation advisories inside the bounded top recommendation slice.

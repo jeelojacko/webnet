@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState, type Dispatch, type SetState
 import { buildReviewQueue, type ReviewQueueItem, type ReviewQueueSeverity, type ReviewQueueSourceType } from '../engine/reviewQueue';
 import type { RunComparisonSummary } from '../engine/qaWorkflow';
 import type { AdjustmentResult } from '../types';
-import type { ClusterReviewDecision } from '../appStateTypes';
+import type { ClusterReviewDecision, WorkspaceTabKey } from '../appStateTypes';
 import type { ImportConflict, ImportResolution } from '../engine/importConflictReview';
 
 interface UseAppReviewQueueArgs {
@@ -20,7 +20,7 @@ interface UseAppReviewQueueArgs {
     | undefined;
   selectObservation: (_observationId: number, _origin: 'queue') => void;
   selectStation: (_stationId: string, _origin: 'queue') => void;
-  setActiveTab: (_tab: 'report' | 'processing-summary' | 'industry-output' | 'map') => void;
+  setActiveTab: (_tab: WorkspaceTabKey) => void;
   setIsSidebarOpen: Dispatch<SetStateAction<boolean>>;
   setPendingEditorJumpLine: Dispatch<SetStateAction<number | null>>;
 }

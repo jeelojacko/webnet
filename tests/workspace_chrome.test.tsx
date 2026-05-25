@@ -27,6 +27,7 @@ describe('WorkspaceChrome', () => {
           renderProcessingSummaryContent={() => <div>Processing body</div>}
           renderIndustryOutputContent={() => <div>Listing body</div>}
           renderMapContent={() => <div>Map body</div>}
+          renderSurveyCadContent={() => <div>Survey CAD body</div>}
         />,
       );
     });
@@ -79,6 +80,7 @@ describe('WorkspaceChrome', () => {
           renderProcessingSummaryContent={() => <div>Processing body</div>}
           renderIndustryOutputContent={() => <div>Listing body</div>}
           renderMapContent={() => <div>Map body</div>}
+          renderSurveyCadContent={() => <div>Survey CAD body</div>}
         />,
       );
     });
@@ -110,6 +112,7 @@ describe('WorkspaceChrome', () => {
           renderProcessingSummaryContent={() => <div>Processing body</div>}
           renderIndustryOutputContent={() => <div>Listing body</div>}
           renderMapContent={() => <div>Planning map body</div>}
+          renderSurveyCadContent={() => <div>Survey CAD body</div>}
         />,
       );
     });
@@ -144,6 +147,7 @@ describe('WorkspaceChrome', () => {
           renderProcessingSummaryContent={renderProcessingSummaryContent}
           renderIndustryOutputContent={renderIndustryOutputContent}
           renderMapContent={renderMapContent}
+          renderSurveyCadContent={() => <div>Survey CAD body</div>}
         />,
       );
     });
@@ -152,6 +156,37 @@ describe('WorkspaceChrome', () => {
     expect(renderProcessingSummaryContent).not.toHaveBeenCalled();
     expect(renderIndustryOutputContent).not.toHaveBeenCalled();
     expect(renderMapContent).not.toHaveBeenCalled();
+
+    await act(async () => {
+      root.unmount();
+    });
+    container.remove();
+  });
+
+  it('renders survey CAD content before a solve', async () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root: Root = createRoot(container);
+
+    await act(async () => {
+      root.render(
+        <WorkspaceChrome
+          activeTab="survey-cad"
+          onActiveTabChange={vi.fn()}
+          isSidebarOpen
+          onShowInput={vi.fn()}
+          hasResult={false}
+          renderReportContent={() => <div>Report body</div>}
+          renderProcessingSummaryContent={() => <div>Processing body</div>}
+          renderIndustryOutputContent={() => <div>Listing body</div>}
+          renderMapContent={() => <div>Map body</div>}
+          renderSurveyCadContent={() => <div>Survey CAD body</div>}
+        />,
+      );
+    });
+
+    expect(container.textContent).toContain('Survey CAD body');
+    expect(container.textContent).not.toContain('Paste/edit data, then press "Adjust" to solve.');
 
     await act(async () => {
       root.unmount();

@@ -1,5 +1,5 @@
 import React, { startTransition, useCallback } from 'react';
-import { Activity, FileText, Map as MapIcon, Minimize2 } from 'lucide-react';
+import { Activity, FileText, Map as MapIcon, Minimize2, Ruler } from 'lucide-react';
 import type { WorkspaceTabKey } from '../appStateTypes';
 import { noteUiTabClickStart } from '../hooks/useUiPerfMonitor';
 
@@ -14,6 +14,7 @@ interface WorkspaceChromeProps {
   renderProcessingSummaryContent: () => React.ReactNode;
   renderIndustryOutputContent: () => React.ReactNode;
   renderMapContent: () => React.ReactNode;
+  renderSurveyCadContent: () => React.ReactNode;
 }
 
 const TAB_CONFIG: Array<{
@@ -25,6 +26,7 @@ const TAB_CONFIG: Array<{
   { id: 'processing-summary', label: 'Processing Summary', icon: Activity },
   { id: 'industry-output', label: 'Industry Standard Output', icon: FileText },
   { id: 'map', label: 'Map & Ellipses', icon: MapIcon },
+  { id: 'survey-cad', label: 'Survey CAD', icon: Ruler },
 ];
 
 const WorkspaceChrome: React.FC<WorkspaceChromeProps> = ({
@@ -38,6 +40,7 @@ const WorkspaceChrome: React.FC<WorkspaceChromeProps> = ({
   renderProcessingSummaryContent,
   renderIndustryOutputContent,
   renderMapContent,
+  renderSurveyCadContent,
 }) => {
   const handleTabClick = useCallback(
     (tab: WorkspaceTabKey) => {
@@ -59,6 +62,8 @@ const WorkspaceChrome: React.FC<WorkspaceChromeProps> = ({
         return renderIndustryOutputContent();
       case 'map':
         return renderMapContent();
+      case 'survey-cad':
+        return renderSurveyCadContent();
       default:
         return renderReportContent();
     }
@@ -95,7 +100,7 @@ const WorkspaceChrome: React.FC<WorkspaceChromeProps> = ({
       </div>
 
       <div className={`flex-1 w-full ${activeTab === 'report' ? 'overflow-auto' : 'overflow-hidden'}`}>
-        {!hasResult && !(activeTab === 'map' && hasMapContent) ? (
+        {!hasResult && !(activeTab === 'map' && hasMapContent) && activeTab !== 'survey-cad' ? (
           <div className="flex flex-col items-center justify-center h-full text-slate-500 space-y-4">
             <Activity size={48} className="opacity-20" />
             <p>Paste/edit data, then press "Adjust" to solve.</p>

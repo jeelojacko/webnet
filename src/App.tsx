@@ -18,6 +18,7 @@ import WorkspaceReviewActions from './components/WorkspaceReviewActions';
 import WorkspaceRecoveryBanner from './components/WorkspaceRecoveryBanner';
 import WorkspaceChrome from './components/WorkspaceChrome';
 import ReviewQueuePanel from './components/ReviewQueuePanel';
+import SurveyCadWorkspace from './components/SurveyCadWorkspace';
 import type { MapViewSnapshot } from './components/MapView';
 
 import { DEFAULT_INPUT } from './defaultInput';
@@ -1340,6 +1341,7 @@ const App: React.FC<AppProps> = ({
         isSidebarOpen={isSidebarOpen}
         onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
         onOpenProjectOptions={openProjectOptions}
+        onOpenSurveyCad={() => setActiveTab('survey-cad')}
         onOpenImportFile={() => triggerFileSelect()}
         onOpenProjectFile={handleOpenProjectWorkspacePanel}
         onSaveProject={handleSaveProject}
@@ -1746,6 +1748,7 @@ const App: React.FC<AppProps> = ({
                 </div>
               )
             }
+            renderSurveyCadContent={() => <SurveyCadWorkspace />}
           />
         </div>
       </div>

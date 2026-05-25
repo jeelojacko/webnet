@@ -99,7 +99,7 @@ export interface SavedRunReviewState {
 }
 
 export interface SavedRunWorkspaceState {
-  activeTab: 'report' | 'processing-summary' | 'industry-output' | 'map';
+  activeTab: 'report' | 'processing-summary' | 'industry-output' | 'map' | 'survey-cad';
   review: SavedRunReviewState;
   comparisonSelection: ComparisonSelection;
 }

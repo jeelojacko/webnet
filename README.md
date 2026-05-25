@@ -29,7 +29,7 @@ Usually this is `http://localhost:5173`.
 Successful startup looks like:
 - the terminal shows a local development URL
 - the browser opens the WebNet app shell
-- the toolbar shows `Project Options` and `Adjust`
+- the toolbar shows `Project Options`, `Survey CAD`, and `Adjust`
 - the workspace tabs are available, and `Map & Ellipses` can be opened before the first run to load input points for planning-map work
 
 ## Recommended First Steps
@@ -81,12 +81,15 @@ npm run test:map-browser
 - [docs/PARITY_WORKFLOW.md](docs/PARITY_WORKFLOW.md) - parity-sensitive validation workflow
 - [docs/INLINE_OPTION_APPLICATION_MATRIX.md](docs/INLINE_OPTION_APPLICATION_MATRIX.md) - inline option application reference
 - [docs/run-semantics.md](docs/run-semantics.md) - ordered checked-file project run rules
+- [docs/webnet-survey-cad-master-plan.md](docs/webnet-survey-cad-master-plan.md) - Survey CAD architecture and phased roadmap
+- [docs/webnet-survey-cad-todo.md](docs/webnet-survey-cad-todo.md) - Survey CAD phased implementation checklist
 - [TODO.md](TODO.md) - active implementation checklist
 
 ## High-Level Workflows
 
 - Edit or load adjustment input in the browser.
 - Configure solve settings in `Project Options`.
+- Open `Survey CAD` from the toolbar to review the CAD roadmap workspace and future implementation entry seam.
 - In `Run Mode = Preanalysis`, optionally set a planning accuracy threshold and max added sets, then review obstacle-aware planning recommendations in the report and on the 2D map.
 - Run `Adjust`.
 - Review results in `Adjustment Report`, `Processing Summary`, `Industry Standard Output`, and `Map & Ellipses`.

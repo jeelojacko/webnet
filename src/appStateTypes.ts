@@ -83,7 +83,12 @@ export type ProjectOptionsTab =
   | 'other-files'
   | 'special'
   | 'gps';
-export type WorkspaceTabKey = 'report' | 'processing-summary' | 'industry-output' | 'map';
+export type WorkspaceTabKey =
+  | 'report'
+  | 'processing-summary'
+  | 'industry-output'
+  | 'map'
+  | 'survey-cad';
 export type CrsCatalogGroupFilter =
   | 'all'
   | 'global'

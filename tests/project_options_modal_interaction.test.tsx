@@ -161,6 +161,16 @@ const clickOpenProjectWorkspace = async (container: HTMLElement): Promise<void> 
   });
 };
 
+const clickOpenSurveyCad = async (container: HTMLElement): Promise<void> => {
+  const openButton = container.querySelector(
+    'button[title="Open Survey CAD workspace plan"]',
+  ) as HTMLButtonElement | null;
+  if (!openButton) throw new Error('Survey CAD launcher button not found.');
+  await act(async () => {
+    openButton.click();
+  });
+};
+
 const findSelectForSettingsRow = (container: HTMLElement, rowLabel: string): HTMLSelectElement => {
   const row = Array.from(container.querySelectorAll('label')).find((entry) =>
     entry.textContent?.includes(rowLabel),
@@ -243,6 +253,32 @@ describe('Project Options modal interactions', () => {
       expect(container.textContent).toContain('Manifest schema');
       expect(container.textContent).toContain('Create Local Project');
       expect(container.textContent).toContain('Recent Local Projects');
+    } finally {
+      await act(async () => {
+        root.unmount();
+      });
+      container.remove();
+    }
+  });
+
+  modalIt('opens the survey CAD workspace tab from the toolbar launcher', async () => {
+    document.documentElement.setAttribute('data-theme', 'gruvbox-dark');
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root: Root = createRoot(container);
+
+    try {
+      await act(async () => {
+        root.render(<App initialSettingsModalOpen={false} />);
+      });
+
+      expect(container.textContent).not.toContain('Survey CAD Planning Workspace');
+
+      await clickOpenSurveyCad(container);
+
+      expect(container.textContent).toContain('Survey CAD Planning Workspace');
+      expect(container.textContent).toContain('Lean survey CAD foundation for WebNet');
+      expect(container.textContent).toContain('webnet-survey-cad-master-plan.md');
     } finally {
       await act(async () => {
         root.unmount();

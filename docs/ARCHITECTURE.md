@@ -134,6 +134,7 @@ Representative areas:
 - `InputPane`
 - `ReportView` and `src/components/report/*`
 - `MapView`
+- `SurveyCadWorkspace` as the current CAD planning/workspace entry seam
 - import-review modal
 - Project Options modal
 - workspace shell and toolbar components
@@ -286,6 +287,7 @@ Use this routing guide when deciding where a change belongs:
 - New weighting, reduction, or precision logic -> solver/statistics/precision modules under `src/engine/`
 - New report/listing/export section -> result builder or selector modules under `src/engine/`, then UI rendering under `src/components/`
 - New operator workflow or modal behavior -> hooks plus focused component modules
+- New Survey CAD model/command/COGO work -> planned `src/engine/cad/`, `src/hooks/surveyCad/`, and `src/components/surveyCad/` seams described in `docs/webnet-survey-cad-master-plan.md`
 - New regression contract -> `tests/` with focused fixture-backed coverage
 - Canadian CRS synthetic harness foundation -> `src/engine/canadianCrsTestCatalog.ts`, `src/engine/generateSyntheticCanadianNetwork.ts`, `src/engine/generateSyntheticObservations.ts`, `src/engine/runSyntheticCrsAdjustmentTest.ts`, and `tests/canadian_crs_harness.spec.ts`
 
@@ -293,3 +295,4 @@ Use this routing guide when deciding where a change belongs:
 - `docs/CURRENT_BEHAVIOR.md`
 - `docs/PARITY_WORKFLOW.md`
 - `docs/IMPORT_WORKFLOW.md`
+- `docs/webnet-survey-cad-master-plan.md`
