@@ -3,6 +3,40 @@ import { describe, expect, it } from 'vitest';
 
 import ReportView from '../src/components/ReportView';
 import { LSAEngine } from '../src/engine/adjust';
+import type { ReportViewControls } from '../src/hooks/useReportViewState';
+
+const buildExpandedViewState = (): ReportViewControls =>
+  ({
+    ellipseMode: '1sigma',
+    setEllipseMode: () => undefined,
+    ellipseConfidenceScale: 1,
+    reportFilterQuery: '',
+    setReportFilterQuery: () => undefined,
+    reportObservationTypeFilter: 'all',
+    setReportObservationTypeFilter: () => undefined,
+    reportExclusionFilter: 'all',
+    setReportExclusionFilter: () => undefined,
+    reviewConflictOnly: false,
+    setReviewConflictOnly: () => undefined,
+    reviewAdjustedOnly: false,
+    setReviewAdjustedOnly: () => undefined,
+    reviewImportedGroupFilter: 'all',
+    setReviewImportedGroupFilter: () => undefined,
+    clearFilters: () => undefined,
+    deferredReportFilterQuery: '',
+    normalizedReportFilterQuery: '',
+    pinnedDetailSections: [],
+    clearPinnedDetailSections: () => undefined,
+    isDetailSectionPinned: () => false,
+    togglePinnedDetailSection: () => undefined,
+    isSectionCollapsed: () => false,
+    toggleDetailSection: () => undefined,
+    allDetailSectionsCollapsed: false,
+    setAllDetailSectionsCollapsed: () => undefined,
+    visibleRowsFor: (_key, rows) => rows,
+    showMoreRows: () => undefined,
+    showAllRows: () => undefined,
+  }) satisfies ReportViewControls;
 
 describe('ReportView preanalysis sections', () => {
   it('renders planning-specific preanalysis section headers but defers heavy table rows by default', () => {
@@ -150,5 +184,107 @@ describe('ReportView preanalysis sections', () => {
     expect(html).not.toContain('Direction Face Treatment Diagnostics');
     expect(html).not.toContain('Observations &amp; Residuals');
     expect(html).not.toContain('Top Suspects');
+  });
+
+  it('renders advisory recommendation rows as manual actions when the section is expanded', () => {
+    const input = [
+      '.2D',
+      'C A 0 0 0 ! !',
+      'C B 100 0 0 ! !',
+      'C P 60 40 0',
+      'D A-P ? 0.003',
+      'D B-P ? 0.003',
+      'A P-A-B ? 1.0',
+      'B A-P ? !',
+    ].join('\n');
+    const result = new LSAEngine({
+      input,
+      maxIterations: 6,
+      parseOptions: { preanalysisMode: true, coordMode: '2D' },
+    }).solve();
+    result.preanalysisImpactDiagnostics = {
+      enabled: true,
+      activeSyntheticAdditionCount: 0,
+      candidateTemplateCount: 1,
+      remainingFeasibleScenarioCount: 1,
+      baseWorstStationMajor: 0.01,
+      baseMedianStationMajor: 0.008,
+      baseWorstPairSigmaDist: 0.012,
+      baseWeakStationCount: 1,
+      baseWeakPairCount: 1,
+      targetThresholdMeters: 0.007,
+      bracePreviewPoints: [],
+      scenarioPreviewPoints: [],
+      scenarioPreviewSegments: [],
+      rows: [
+        {
+          scenarioId: 'advisory-1',
+          scenarioKind: 'bypass-intermediate',
+          occupyStationId: 'B',
+          setupStationIds: ['B'],
+          primaryTargetStationId: 'P',
+          anchorStationId: 'A',
+          anchorPathStationIds: ['A', 'B', 'P'],
+          anchorPathPairRefs: [{ from: 'A', to: 'B' }, { from: 'B', to: 'P' }],
+          bottleneckPair: { from: 'A', to: 'B' },
+          templateLabel: 'Bypass B via A -> P',
+          affectedStations: ['A', 'B', 'P'],
+          affectedPairs: [{ from: 'A', to: 'P' }],
+          sourceLines: [],
+          addedObservationCount: 1,
+          deltaWorstStationMajor: -0.002,
+          deltaMedianStationMajor: -0.001,
+          deltaWorstPairSigmaDist: -0.003,
+          deltaPathWorstEdge: -0.002,
+          deltaPathTotalMetric: -0.004,
+          deltaWeakStationCount: -1,
+          deltaWeakPairCount: -1,
+          score: 0.4,
+          actionMode: 'advisory',
+          rationale: 'Directly tie A to P to bypass bottleneck accumulation through B.',
+          thresholdReached: false,
+          status: 'ok',
+        },
+      ],
+      thresholdPlan: {
+        targetThresholdMeters: 0.007,
+        thresholdReached: false,
+        appliedStepCount: 0,
+        finalWorstStationMajor: 0.01,
+        unmetReason: 'Additive scenarios are exhausted; only manual advisory network changes remain.',
+        steps: [],
+      },
+    };
+
+    const html = renderToStaticMarkup(
+      <ReportView
+        result={result}
+        units="m"
+        viewState={buildExpandedViewState()}
+        runDiagnostics={null}
+        excludedIds={new Set<number>()}
+        onToggleExclude={() => {}}
+        onApplyImpactExclude={() => {}}
+        onApplyPreanalysisAction={() => {}}
+        onReRun={() => {}}
+        onClearExclusions={() => {}}
+        overrides={{}}
+        onOverride={() => {}}
+        onResetOverrides={() => {}}
+        clusterReviewDecisions={{}}
+        activeClusterApprovedMerges={[]}
+        onClusterDecisionStatus={() => {}}
+        onClusterCanonicalSelection={() => {}}
+        onApplyClusterMerges={() => {}}
+        onResetClusterReview={() => {}}
+        onClearClusterMerges={() => {}}
+      />,
+    );
+
+    expect(html).toContain('Action');
+    expect(html).toContain('Path Reason');
+    expect(html).toContain('Manual Action');
+    expect(html).toContain('P via A-B: Directly tie A to P to bypass bottleneck accumulation through B.');
+    expect(html).not.toContain('Add Set + Re-run');
   });
 });

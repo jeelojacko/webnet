@@ -1,3 +1,5 @@
+- [x] Preanalysis advisory hardening batch (May 2026): tighten canonical path tie-breaks, suppress unsafe decommission recommendations on bridge-critical chains, improve advisory row/report coverage, and lock recommendation reranking after applied path changes.
+
 - [x] Path-aware preanalysis recommendations batch (May 2026): remove artificial synthetic-family priority, rank scenarios by worst-station path-to-control bottlenecks, add advisory bypass/decommission/move recommendation families, and extend report/test coverage for path rationale and additive-vs-advisory actions.
 
 - [x] Relative ellipse RLA batch (May 2026): add `RLA(2D)` and `PPM` columns to the industry-style `Relative Error Ellipses` error-propagation table using adjusted horizontal line length over the printed 95% semi-major axis, then lock the new output shape with focused listing coverage.

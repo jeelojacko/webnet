@@ -156,6 +156,62 @@ const buildChainResult = (): AdjustmentResult =>
     dof: 1,
   }) as unknown as AdjustmentResult;
 
+const buildMultiRouteResult = (): AdjustmentResult =>
+  ({
+    success: true,
+    converged: true,
+    iterations: 1,
+    stations: {
+      A: { x: 0, y: 0, h: 0, fixed: true, fixedX: true, fixedY: true },
+      B: { x: 40, y: 20, h: 0, fixed: false },
+      C: { x: 40, y: -20, h: 0, fixed: false },
+      D: { x: 80, y: 0, h: 0, fixed: false },
+    },
+    observations: [
+      { id: 1, type: 'direction', instCode: 'SX12', stdDev: 1, planned: true, sigmaSource: 'default', setId: 'B-set', sourceLine: 1, at: 'B', to: 'A' },
+      { id: 2, type: 'direction', instCode: 'SX12', stdDev: 1, planned: true, sigmaSource: 'default', setId: 'C-set', sourceLine: 5, at: 'C', to: 'A' },
+      { id: 3, type: 'direction', instCode: 'SX12', stdDev: 1, planned: true, sigmaSource: 'default', setId: 'D-set', sourceLine: 9, at: 'D', to: 'B' },
+      { id: 4, type: 'direction', instCode: 'SX12', stdDev: 1, planned: true, sigmaSource: 'default', setId: 'D-alt', sourceLine: 13, at: 'D', to: 'C' },
+    ],
+    stationCovariances: [
+      { stationId: 'B', cEE: 0.004, cEN: 0, cNN: 0.004, sigmaE: 0.004, sigmaN: 0.004, sigmaH: 0.004, ellipse: { semiMajor: 0.004, semiMinor: 0.003, theta: 0 } },
+      { stationId: 'C', cEE: 0.004, cEN: 0, cNN: 0.004, sigmaE: 0.004, sigmaN: 0.004, sigmaH: 0.004, ellipse: { semiMajor: 0.004, semiMinor: 0.003, theta: 0 } },
+      { stationId: 'D', cEE: 0.012, cEN: 0, cNN: 0.012, sigmaE: 0.012, sigmaN: 0.012, sigmaH: 0.012, ellipse: { semiMajor: 0.012, semiMinor: 0.006, theta: 0 } },
+    ],
+    relativeCovariances: [
+      { from: 'A', to: 'B', connected: true, connectionTypes: ['direction'], cEE: 0.004, cEN: 0, cNN: 0.004, sigmaE: 0.004, sigmaN: 0.004, sigmaH: 0.004, sigmaDist: 0.004, ellipse: { semiMajor: 0.004, semiMinor: 0.002, theta: 0 } },
+      { from: 'A', to: 'C', connected: true, connectionTypes: ['direction'], cEE: 0.004, cEN: 0, cNN: 0.004, sigmaE: 0.004, sigmaN: 0.004, sigmaH: 0.004, sigmaDist: 0.004, ellipse: { semiMajor: 0.004, semiMinor: 0.002, theta: 0 } },
+      { from: 'B', to: 'D', connected: true, connectionTypes: ['direction'], cEE: 0.007, cEN: 0, cNN: 0.007, sigmaE: 0.007, sigmaN: 0.007, sigmaH: 0.007, sigmaDist: 0.007, ellipse: { semiMajor: 0.007, semiMinor: 0.003, theta: 0 } },
+      { from: 'C', to: 'D', connected: true, connectionTypes: ['direction'], cEE: 0.007, cEN: 0, cNN: 0.007, sigmaE: 0.007, sigmaN: 0.007, sigmaH: 0.007, sigmaDist: 0.007, ellipse: { semiMajor: 0.007, semiMinor: 0.003, theta: 0 } },
+    ],
+    weakGeometryDiagnostics: {
+      enabled: true,
+      stationMedianHorizontal: 0.004,
+      relativeMedianDistance: 0.005,
+      stationCues: [{ stationId: 'D', horizontalMetric: 0.012, severity: 'weak', note: 'weak leaf' }],
+      relativeCues: [
+        { from: 'B', to: 'D', distanceMetric: 0.007, severity: 'weak', note: 'path one' },
+        { from: 'C', to: 'D', distanceMetric: 0.007, severity: 'weak', note: 'path two' },
+      ],
+    },
+    logs: [],
+    covariance: [],
+    summaries: [],
+    unknowns: [],
+    sigma0: 1,
+    seuw: 1,
+    dof: 1,
+  }) as unknown as AdjustmentResult;
+
+const buildPartiallyFixedChainResult = (): AdjustmentResult => {
+  const result = buildChainResult();
+  result.stations.C = {
+    ...result.stations.C,
+    constraintX: 0.01,
+  };
+  return result;
+};
+
 describe('buildPreanalysisPlanningDiagnostics', () => {
   it('does not recommend templates already applied in the current preanalysis rerun', () => {
     const input = ['DB 105', 'DM 104', 'DE', '', 'DB 109', 'DM 114', 'DE'].join('\n');
@@ -336,6 +392,32 @@ describe('buildPreanalysisPlanningDiagnostics', () => {
     expect(diagnostics.rows[0]?.bottleneckPair).toEqual({ from: 'B', to: 'C' });
   });
 
+  it('picks a deterministic canonical anchor path when multiple equal routes exist', () => {
+    const input = ['DB B', 'DM A', 'DE', '', 'DB C', 'DM A', 'DE', '', 'DB D', 'DM B', 'DE', '', 'DB D', 'DM C', 'DE'].join('\n');
+    const diagnostics = buildPreanalysisPlanningDiagnostics({
+      base: buildMultiRouteResult(),
+      input,
+      planningMap: {
+        ...DEFAULT_PLANNING_MAP_STATE,
+        scenarioFamilies: {
+          existingSet: true,
+          bracePoint: false,
+          syntheticSetup: false,
+          promotedSetup: false,
+          crossTie: false,
+        },
+      },
+      activeTemplateIds: ['preanalysis-set:B:A', 'preanalysis-set:C:A', 'preanalysis-set:D:B', 'preanalysis-set:D:C'],
+      targetThresholdMeters: 0.005,
+      maxAddedSets: 2,
+      solveScenario: () => buildMultiRouteResult(),
+    });
+
+    const row = diagnostics.rows.find((candidate) => candidate.primaryTargetStationId === 'D');
+    expect(row?.anchorPathStationIds).toEqual(['A', 'B', 'D']);
+    expect(row?.bottleneckPair).toEqual({ from: 'B', to: 'D' });
+  });
+
   it('keeps impactful non-existing scenarios in the bounded solve pool without relying on family bias', () => {
     const base = buildResult(0.01);
     for (let index = 0; index < 8; index += 1) {
@@ -491,6 +573,35 @@ describe('buildPreanalysisPlanningDiagnostics', () => {
     ).toBe(true);
   });
 
+  it('suppresses decommission advisories for the partially fixed intermediate itself even when a bypass exists', () => {
+    const input = ['DB B', 'DM A', 'DE', '', 'DB C', 'DM B', 'DE', '', 'DB D', 'DM C', 'DE'].join('\n');
+    const diagnostics = buildPreanalysisPlanningDiagnostics({
+      base: buildPartiallyFixedChainResult(),
+      input,
+      planningMap: {
+        ...DEFAULT_PLANNING_MAP_STATE,
+        scenarioFamilies: {
+          existingSet: true,
+          bracePoint: false,
+          syntheticSetup: false,
+          promotedSetup: false,
+          crossTie: false,
+        },
+      },
+      activeTemplateIds: ['preanalysis-set:B:A', 'preanalysis-set:C:B', 'preanalysis-set:D:C'],
+      targetThresholdMeters: 0.005,
+      maxAddedSets: 2,
+      solveScenario: () => buildPartiallyFixedChainResult(),
+    });
+
+    expect(diagnostics.rows.some((row) => row.scenarioKind === 'bypass-intermediate')).toBe(true);
+    expect(
+      diagnostics.rows.some(
+        (row) => row.scenarioKind === 'decommission-intermediate' && row.occupyStationId === 'C',
+      ),
+    ).toBe(false);
+  });
+
   it('keeps threshold planning additive-only and reports when only advisory changes remain', () => {
     const input = ['DB B', 'DM A', 'DE', '', 'DB C', 'DM B', 'DE', '', 'DB D', 'DM C', 'DE'].join('\n');
     const diagnostics = buildPreanalysisPlanningDiagnostics({
@@ -516,6 +627,55 @@ describe('buildPreanalysisPlanningDiagnostics', () => {
     expect(diagnostics.thresholdPlan.unmetReason).toBe(
       'Additive scenarios are exhausted; only manual advisory network changes remain.',
     );
+  });
+
+  it('recomputes the next recommendation after an applied path fix changes the active bottleneck', () => {
+    const input = ['DB B', 'DM A', 'DE', '', 'DB C', 'DM B', 'DE', '', 'DB D', 'DM C', 'DE'].join('\n');
+    const solveScenario = (nextIds: string[]) => {
+      const hasBA = nextIds.includes('preanalysis-set:B:A');
+      const hasCB = nextIds.includes('preanalysis-set:C:B');
+      const hasDC = nextIds.includes('preanalysis-set:D:C');
+      const result = buildChainResult();
+      if (hasBA) {
+        result.relativeCovariances = result.relativeCovariances?.map((row) =>
+          pairKey(row.from, row.to) === 'B|C'
+            ? { ...row, sigmaDist: 0.003, ellipse: { semiMajor: 0.003, semiMinor: 0.002, theta: 0 } }
+            : row,
+        );
+      }
+      if (hasCB) {
+        result.stationCovariances = result.stationCovariances?.map((row) =>
+          row.stationId === 'D'
+            ? { ...row, sigmaE: 0.007, sigmaN: 0.007, sigmaH: 0.007, ellipse: { semiMajor: 0.007, semiMinor: 0.004, theta: 0 } }
+            : row,
+        );
+        result.relativeCovariances = result.relativeCovariances?.map((row) =>
+          pairKey(row.from, row.to) === 'C|D'
+            ? { ...row, sigmaDist: 0.004, ellipse: { semiMajor: 0.004, semiMinor: 0.002, theta: 0 } }
+            : row,
+        );
+      }
+      if (hasDC) {
+        result.stationCovariances = result.stationCovariances?.map((row) =>
+          row.stationId === 'D'
+            ? { ...row, sigmaE: 0.009, sigmaN: 0.009, sigmaH: 0.009, ellipse: { semiMajor: 0.009, semiMinor: 0.004, theta: 0 } }
+            : row,
+        );
+      }
+      return result as AdjustmentResult;
+    };
+    const diagnostics = buildPreanalysisPlanningDiagnostics({
+      base: solveScenario(['preanalysis-set:B:A']),
+      input,
+      planningMap: DEFAULT_PLANNING_MAP_STATE,
+      activeTemplateIds: ['preanalysis-set:B:A'],
+      targetThresholdMeters: 0.005,
+      maxAddedSets: 3,
+      solveScenario,
+    });
+
+    expect(diagnostics.rows[0]?.scenarioId).toBe('preanalysis-set:C:B');
+    expect(diagnostics.rows[0]?.bottleneckPair).toEqual({ from: 'C', to: 'D' });
   });
 
   it('rejects brace and synthetic setup candidates that fall inside blocked polygons', () => {

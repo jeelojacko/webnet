@@ -138,6 +138,15 @@ const sortStationIds = (left: StationId, right: StationId): number =>
 const buildPairKey = (from: StationId, to: StationId): string =>
   [from, to].sort(sortStationIds).join('|');
 
+const compareStationIdArrays = (left: StationId[], right: StationId[]): number => {
+  const length = Math.min(left.length, right.length);
+  for (let index = 0; index < length; index += 1) {
+    const cmp = sortStationIds(left[index]!, right[index]!);
+    if (cmp !== 0) return cmp;
+  }
+  return left.length - right.length;
+};
+
 const stationHasFiniteCoords = (stations: StationMap, stationId: StationId): boolean => {
   const station = stations[stationId];
   return (
@@ -222,8 +231,13 @@ const comparePathCandidates = (
   if (next.anchorPathPairRefs.length !== current.anchorPathPairRefs.length) {
     return current.anchorPathPairRefs.length - next.anchorPathPairRefs.length;
   }
+  const pathCmp = compareStationIdArrays(
+    current.anchorPathStationIds,
+    next.anchorPathStationIds,
+  );
+  if (pathCmp !== 0) return pathCmp;
   return current.anchorStationId != null && next.anchorStationId != null
-    ? current.anchorStationId.localeCompare(next.anchorStationId, undefined, { numeric: true }) * -1
+    ? sortStationIds(current.anchorStationId, next.anchorStationId)
     : 0;
 };
 
@@ -279,7 +293,9 @@ const buildStationPathDiagnostics = (base: AdjustmentResult): Map<StationId, Sta
         return left.pathTotalMetric - right.pathTotalMetric;
       }
       if (left.hopCount !== right.hopCount) return left.hopCount - right.hopCount;
-      return left.anchorStationId.localeCompare(right.anchorStationId, undefined, { numeric: true });
+      const pathCmp = compareStationIdArrays(left.pathStationIds, right.pathStationIds);
+      if (pathCmp !== 0) return pathCmp;
+      return sortStationIds(left.anchorStationId, right.anchorStationId);
     });
     const current = frontier.shift()!;
     const known = bestByStation.get(current.stationId);
@@ -410,6 +426,46 @@ const buildPathPrioritySummary = (base: AdjustmentResult): PathPrioritySummary =
     prioritizedStations,
     prioritizedPairKeys,
   };
+};
+
+const isNetworkConnectedWithOptionalBypass = (
+  edges: PathGraphEdge[],
+  removedStationId: StationId,
+  bypassPair?: PreanalysisAddedSetPairRef,
+): boolean => {
+  const adjacency = new Map<StationId, Set<StationId>>();
+  const addLink = (from: StationId, to: StationId) => {
+    if (from === removedStationId || to === removedStationId) return;
+    const fromList = adjacency.get(from) ?? new Set<StationId>();
+    const toList = adjacency.get(to) ?? new Set<StationId>();
+    fromList.add(to);
+    toList.add(from);
+    adjacency.set(from, fromList);
+    adjacency.set(to, toList);
+  };
+  edges.forEach((edge) => addLink(edge.from, edge.to));
+  if (
+    bypassPair &&
+    bypassPair.from !== removedStationId &&
+    bypassPair.to !== removedStationId
+  ) {
+    addLink(bypassPair.from, bypassPair.to);
+  }
+  const stationIds = [...adjacency.keys()].sort(sortStationIds);
+  if (stationIds.length <= 1) return true;
+  const visited = new Set<StationId>();
+  const frontier = [stationIds[0]!];
+  while (frontier.length > 0) {
+    const current = frontier.pop()!;
+    if (visited.has(current)) continue;
+    visited.add(current);
+    [...(adjacency.get(current) ?? [])]
+      .sort(sortStationIds)
+      .forEach((nextStationId) => {
+        if (!visited.has(nextStationId)) frontier.push(nextStationId);
+      });
+  }
+  return stationIds.every((stationId) => visited.has(stationId));
 };
 
 const buildTemplateId = (occupy: StationId, targets: StationId[]): string =>
@@ -1109,7 +1165,8 @@ const buildAdvisoryTemplates = (
         advisoryTemplates.filter((row) => row.scenarioKind === 'decommission-intermediate').length <
           MAX_DECOMMISSION_ADVISORIES &&
         stationFixedRank(middleStation) === 0 &&
-        (degreeByStation.get(middle) ?? 0) === 2
+        (degreeByStation.get(middle) ?? 0) === 2 &&
+        isNetworkConnectedWithOptionalBypass(graphEdges, middle, { from: left, to: right })
       ) {
         advisoryTemplates.push({
           id: `preanalysis-decommission:${left}|${middle}|${right}`,
