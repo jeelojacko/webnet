@@ -1,3 +1,5 @@
+- [x] Preanalysis advisory relocation batch (May 2026): make advisory move recommendations state-aware against active synthetic scenarios, carry corridor-pair metadata through synthetic candidates, and surface relocation advisories inside the bounded top recommendation slice.
+
 - [x] Preanalysis advisory hardening batch (May 2026): tighten canonical path tie-breaks, suppress unsafe decommission recommendations on bridge-critical chains, improve advisory row/report coverage, and lock recommendation reranking after applied path changes.
 
 - [x] Path-aware preanalysis recommendations batch (May 2026): remove artificial synthetic-family priority, rank scenarios by worst-station path-to-control bottlenecks, add advisory bypass/decommission/move recommendation families, and extend report/test coverage for path rationale and additive-vs-advisory actions.

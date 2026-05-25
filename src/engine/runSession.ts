@@ -712,6 +712,7 @@ export const runAdjustmentSession = (
       request.input,
       templateSource,
       request.planningMap,
+      activePreanalysisAdditionIds,
     );
     return cachedPreanalysisTemplates;
   };

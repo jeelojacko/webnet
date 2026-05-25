@@ -27,6 +27,7 @@ export type PreanalysisSyntheticSetTemplate = {
   blockText: string;
   affectedStations: StationId[];
   affectedPairs: PreanalysisAddedSetPairRef[];
+  corridorPairs?: PreanalysisAddedSetPairRef[];
   addedObservationCount: number;
   existingSetCount: number;
   previewPoints: PreanalysisScenarioPreviewPoint[];
@@ -124,9 +125,9 @@ const recommendationKindTieOrder: PreanalysisRecommendationKind[] = [
   'brace-point',
   'promoted-setup',
   'synthetic-setup',
+  'move-synthetic',
   'bypass-intermediate',
   'decommission-intermediate',
-  'move-synthetic',
 ];
 
 const recommendationKindTieWeight = (kind: PreanalysisRecommendationKind): number =>
@@ -137,6 +138,13 @@ const sortStationIds = (left: StationId, right: StationId): number =>
 
 const buildPairKey = (from: StationId, to: StationId): string =>
   [from, to].sort(sortStationIds).join('|');
+
+const templateCorridorPairs = (
+  template: PreanalysisSyntheticSetTemplate,
+): PreanalysisAddedSetPairRef[] =>
+  template.corridorPairs != null && template.corridorPairs.length > 0
+    ? template.corridorPairs
+    : template.affectedPairs;
 
 const compareStationIdArrays = (left: StationId[], right: StationId[]): number => {
   const length = Math.min(left.length, right.length);
@@ -914,6 +922,7 @@ const buildBraceTemplates = (
       affectedPairs: [
         ...setupStationIds.map((setupId) => ({ from: setupId, to: braceStationId })),
       ],
+      corridorPairs: [{ from: leftId, to: rightId }],
       addedObservationCount: setupStationIds.length,
       existingSetCount: 0,
       rationale: `Strengthens anchor-path bottleneck ${leftId}-${rightId} with a bounded brace point.`,
@@ -981,6 +990,7 @@ const buildPromotedSetupTemplates = (
       blockText: buildSetupBlockText(setupStationId, point, visibleAnchors),
       affectedStations: [setupStationId, ...visibleAnchors],
       affectedPairs: visibleAnchors.map((anchorId) => ({ from: setupStationId, to: anchorId })),
+      corridorPairs: [{ from: pair.from, to: pair.to }],
       addedObservationCount: visibleAnchors.length,
       existingSetCount: 0,
       rationale: `Promotes a new setup to strengthen visibility across bottleneck pair ${pair.from}-${pair.to}.`,
@@ -1035,6 +1045,7 @@ const buildSyntheticSetupTemplates = (
       blockText: buildSetupBlockText(setupStationId, point, visibleAnchors),
       affectedStations: [setupStationId, ...visibleAnchors],
       affectedPairs: visibleAnchors.map((anchorId) => ({ from: setupStationId, to: anchorId })),
+      corridorPairs: [{ from: pair.from, to: pair.to }],
       addedObservationCount: visibleAnchors.length,
       existingSetCount: 0,
       rationale: `Adds a synthetic setup positioned to shorten the weak chain back to control across ${pair.from}-${pair.to}.`,
@@ -1081,6 +1092,7 @@ const buildCrossTieTemplates = (
       blockText: buildCrossTieBlockText(pair.from, pair.to),
       affectedStations: [pair.from, pair.to],
       affectedPairs: [{ from: pair.from, to: pair.to }],
+      corridorPairs: [{ from: pair.from, to: pair.to }],
       addedObservationCount: 1,
       existingSetCount: 0,
       rationale: `Adds a direct tie to bypass weak accumulation along the ${pair.from}-${pair.to} corridor.`,
@@ -1147,6 +1159,7 @@ const buildAdvisoryTemplates = (
         blockText: buildCrossTieBlockText(left, right),
         affectedStations: [left, middle, right],
         affectedPairs: [{ from: left, to: right }],
+        corridorPairs: [{ from: left, to: right }],
         addedObservationCount: 1,
         existingSetCount: 0,
         rationale: `Directly tie ${left} to ${right} to bypass bottleneck accumulation through ${middle}.`,
@@ -1179,6 +1192,7 @@ const buildAdvisoryTemplates = (
           blockText: buildCrossTieBlockText(left, right),
           affectedStations: [left, middle, right],
           affectedPairs: [{ from: left, to: right }],
+          corridorPairs: [{ from: left, to: right }],
           addedObservationCount: 1,
           existingSetCount: 0,
           rationale: `If ${left} -> ${right} is added, ${middle} can be removed from the weak chain without disconnecting control.`,
@@ -1195,28 +1209,47 @@ const buildAdvisoryTemplates = (
       }
     }
   });
-  const activeSyntheticIds = new Set(
-    activeTemplateIds.filter((id) => id.startsWith('preanalysis-brace:') || id.startsWith('preanalysis-promoted:') || id.startsWith('preanalysis-synthsetup:')),
-  );
-  const moveRows = additiveTemplates
-    .filter(
-      (template) =>
-        (template.scenarioKind === 'brace-point' ||
-          template.scenarioKind === 'promoted-setup' ||
-          template.scenarioKind === 'synthetic-setup') &&
-        template.affectedPairs.some((pair) => pathSummary.prioritizedPairKeys.has(buildPairKey(pair.from, pair.to))),
-    )
-    .slice(0, MAX_MOVE_SYNTHETIC_ADVISORIES)
-    .map((template) => ({
-      ...template,
-      id: `preanalysis-move:${template.id}`,
-      scenarioKind: 'move-synthetic' as const,
-      actionMode: 'advisory' as const,
-      templateLabel: `Move ${template.templateLabel}`,
-      rationale: activeSyntheticIds.size > 0
-        ? `Relocate the active synthetic geometry toward the current bottleneck corridor served by ${template.templateLabel}.`
-        : `Prefer this corridor-focused synthetic placement over weaker synthetic geometry elsewhere in the chain.`,
-    }));
+  const additiveTemplateById = new Map(additiveTemplates.map((template) => [template.id, template]));
+  const isSyntheticScenario = (template: PreanalysisSyntheticSetTemplate | undefined): boolean =>
+    template != null &&
+    (template.scenarioKind === 'brace-point' ||
+      template.scenarioKind === 'promoted-setup' ||
+      template.scenarioKind === 'synthetic-setup');
+  const activeSyntheticTemplates = activeTemplateIds
+    .map((id) => additiveTemplateById.get(id))
+    .filter((template): template is PreanalysisSyntheticSetTemplate => isSyntheticScenario(template));
+  const moveRowCandidates: Array<PreanalysisSyntheticSetTemplate | null> = activeSyntheticTemplates
+    .map((activeTemplate) => {
+      const activePairKeys = new Set(
+        templateCorridorPairs(activeTemplate).map((pair) => buildPairKey(pair.from, pair.to)),
+      );
+      const preferredCandidate = additiveTemplates.find(
+        (template) =>
+          isSyntheticScenario(template) &&
+          template.id !== activeTemplate.id &&
+          !activeTemplateIds.includes(template.id) &&
+          templateCorridorPairs(template).some((pair) =>
+            pathSummary.prioritizedPairKeys.has(buildPairKey(pair.from, pair.to)),
+          ) &&
+          templateCorridorPairs(template).some(
+            (pair) => !activePairKeys.has(buildPairKey(pair.from, pair.to)),
+          ),
+      );
+      if (!preferredCandidate) return null;
+      return {
+        ...preferredCandidate,
+        id: `preanalysis-move:${activeTemplate.id}->${preferredCandidate.id}`,
+        scenarioKind: 'move-synthetic' as const,
+        actionMode: 'advisory' as const,
+        occupyStationId: activeTemplate.occupyStationId,
+        setupStationIds: [...activeTemplate.setupStationIds],
+        templateLabel: `Move ${activeTemplate.templateLabel} -> ${preferredCandidate.templateLabel}`,
+        rationale: `Move active synthetic geometry from ${activeTemplate.templateLabel} to ${preferredCandidate.templateLabel} so it strengthens the current bottleneck corridor first.`,
+      } satisfies PreanalysisSyntheticSetTemplate;
+    });
+  const moveRows = moveRowCandidates
+    .filter((template): template is PreanalysisSyntheticSetTemplate => template != null)
+    .slice(0, MAX_MOVE_SYNTHETIC_ADVISORIES);
   return [...advisoryTemplates, ...moveRows];
 };
 
@@ -1224,6 +1257,7 @@ export const buildPreanalysisSyntheticSetTemplates = (
   input: string,
   base: AdjustmentResult,
   planningMap: PlanningMapState,
+  activeTemplateIds: string[] = [],
 ): PreanalysisSyntheticSetTemplate[] => {
   const lines = input.split(/\r?\n/);
   const originalLineCount = lines.length;
@@ -1306,8 +1340,9 @@ export const buildPreanalysisSyntheticSetTemplates = (
         ),
         blockText,
         affectedStations,
-        affectedPairs,
-        addedObservationCount: setObservations.length,
+      affectedPairs,
+      corridorPairs: affectedPairs.map((pair) => ({ ...pair })),
+      addedObservationCount: setObservations.length,
         existingSetCount: 1,
         rationale: `Repeat the ${occupyStationId} setup set to strengthen the current control path through its existing observations.`,
         previewPoints: buildPreviewPoints(base.stations, affectedStations, []),
@@ -1350,7 +1385,13 @@ export const buildPreanalysisSyntheticSetTemplates = (
   ];
   return [
     ...additiveTemplates,
-    ...buildAdvisoryTemplates(base, additiveTemplates, planningMap, [], pathSummary),
+    ...buildAdvisoryTemplates(
+      base,
+      additiveTemplates,
+      planningMap,
+      activeTemplateIds,
+      pathSummary,
+    ),
   ];
 };
 
@@ -1589,6 +1630,9 @@ const resolveCandidateTemplates = (
     const prioritizedPairHits = template.affectedPairs.filter((pair) =>
       pathSummary.prioritizedPairKeys.has(buildPairKey(pair.from, pair.to)),
     ).length;
+    const prioritizedCorridorHits = templateCorridorPairs(template).filter((pair) =>
+      pathSummary.prioritizedPairKeys.has(buildPairKey(pair.from, pair.to)),
+    ).length;
     const touchesPrimaryTarget =
       pathSummary.stationOrder[0] != null &&
       template.affectedStations.includes(pathSummary.stationOrder[0])
@@ -1596,7 +1640,7 @@ const resolveCandidateTemplates = (
         : 0;
     const touchesBottleneck =
       pathSummary.stationDiagnostics.get(pathSummary.stationOrder[0] ?? '')?.pathWorstEdgePair != null &&
-      template.affectedPairs.some(
+      templateCorridorPairs(template).some(
         (pair) =>
           buildPairKey(pair.from, pair.to) ===
           buildPairKey(
@@ -1609,7 +1653,8 @@ const resolveCandidateTemplates = (
     return (
       touchesPrimaryTarget * 500 +
       touchesBottleneck * 400 +
-      prioritizedPairHits * 140 +
+      prioritizedCorridorHits * 140 +
+      prioritizedPairHits * 20 +
       prioritizedStationHits * 90 +
       Math.min(template.addedObservationCount, 8) * 4
     );
@@ -1766,7 +1811,12 @@ export const buildPreanalysisPlanningDiagnostics = ({
   maxAddedSets,
   solveScenario,
 }: BuildPreanalysisPlanningDiagnosticsArgs): PreanalysisImpactDiagnostics => {
-  const templates = buildPreanalysisSyntheticSetTemplates(input, base, planningMap);
+  const templates = buildPreanalysisSyntheticSetTemplates(
+    input,
+    base,
+    planningMap,
+    activeTemplateIds,
+  );
   const activeTemplateIdSet = new Set(activeTemplateIds);
   const candidateTemplates = resolveCandidateTemplates(templates, base, activeTemplateIds);
   const remainingFeasibleScenarioCount = Math.max(0, templates.length - activeTemplateIds.length);

@@ -231,6 +231,7 @@ export const createDirectRunPipeline = ({
         request.input,
         templateSource,
         request.planningMap,
+        request.activePreanalysisAdditionIds,
       );
     }
     const solveInput =

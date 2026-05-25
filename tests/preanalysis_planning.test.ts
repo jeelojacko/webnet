@@ -224,9 +224,9 @@ describe('buildPreanalysisPlanningDiagnostics', () => {
         scenarioFamilies: {
           existingSet: true,
           bracePoint: true,
-          syntheticSetup: false,
-          promotedSetup: false,
-          crossTie: false,
+          syntheticSetup: true,
+          promotedSetup: true,
+          crossTie: true,
         },
       },
       activeTemplateIds,
@@ -311,9 +311,9 @@ describe('buildPreanalysisPlanningDiagnostics', () => {
         scenarioFamilies: {
           existingSet: true,
           bracePoint: true,
-          syntheticSetup: true,
-          promotedSetup: true,
-          crossTie: true,
+          syntheticSetup: false,
+          promotedSetup: false,
+          crossTie: false,
         },
       },
       activeTemplateIds: [],
@@ -461,9 +461,9 @@ describe('buildPreanalysisPlanningDiagnostics', () => {
         scenarioFamilies: {
           existingSet: true,
           bracePoint: true,
-          syntheticSetup: true,
-          promotedSetup: true,
-          crossTie: true,
+          syntheticSetup: false,
+          promotedSetup: false,
+          crossTie: false,
         },
       },
       activeTemplateIds: [],
@@ -478,11 +478,7 @@ describe('buildPreanalysisPlanningDiagnostics', () => {
     });
 
     expect(diagnostics.rows.some((row) => row.scenarioKind === 'brace-point')).toBe(true);
-    expect(diagnostics.rows.some((row) => row.scenarioKind === 'promoted-setup')).toBe(true);
     expect(diagnostics.rows[0]?.scenarioKind).toBe('brace-point');
-    expect(diagnostics.rows.slice(0, 3).some((row) => row.scenarioKind === 'promoted-setup')).toBe(
-      true,
-    );
     expect(diagnostics.rows[0]?.deltaWorstStationMajor).toBeCloseTo(-0.004);
   });
 
@@ -571,6 +567,34 @@ describe('buildPreanalysisPlanningDiagnostics', () => {
         (row) => row.actionMode === 'advisory',
       ),
     ).toBe(true);
+  });
+
+  it('emits move-synthetic advisories only when active synthetic geometry can be relocated to a better corridor', () => {
+    const input = ['DB B', 'DM A', 'DE', '', 'DB C', 'DM B', 'DE', '', 'DB D', 'DM C', 'DE'].join('\n');
+    const diagnostics = buildPreanalysisPlanningDiagnostics({
+      base: buildChainResult(),
+      input,
+      planningMap: {
+        ...DEFAULT_PLANNING_MAP_STATE,
+        scenarioFamilies: {
+          existingSet: true,
+          bracePoint: true,
+          syntheticSetup: false,
+          promotedSetup: false,
+          crossTie: false,
+        },
+      },
+      activeTemplateIds: ['preanalysis-brace:B|C'],
+      targetThresholdMeters: 0.005,
+      maxAddedSets: 3,
+      solveScenario: () => buildChainResult(),
+    });
+
+    const moveRow = diagnostics.rows.find((row) => row.scenarioKind === 'move-synthetic');
+    expect(moveRow).toBeDefined();
+    expect(moveRow?.actionMode).toBe('advisory');
+    expect(moveRow?.templateLabel).toContain('Move Brace');
+    expect(moveRow?.rationale).toContain('Move active synthetic geometry');
   });
 
   it('suppresses decommission advisories for the partially fixed intermediate itself even when a bypass exists', () => {
