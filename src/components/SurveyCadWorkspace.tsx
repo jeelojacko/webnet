@@ -78,9 +78,12 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     canUndo,
     canRedo,
     statusText,
+    activeSnap,
+    snapStatusText,
     historyDepth,
     redoDepth,
     selectEntity,
+    updatePointerWorldPoint,
     selectAll,
     clearSelection,
     eraseSelection,
@@ -158,7 +161,9 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
               <SurveyCadPreview
                 scene={displayScene}
                 selectedEntityIds={selectedEntityIds}
+                activeSnap={activeSnap}
                 onSelectEntity={selectEntity}
+                onPointerWorldPointChange={updatePointerWorldPoint}
               />
             </div>
             <div className="mt-4">
@@ -167,6 +172,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
                 selectionCount={selectionCount}
                 historyDepth={historyDepth}
                 redoDepth={redoDepth}
+                snapStatusText={snapStatusText}
               />
             </div>
           </div>
@@ -223,29 +229,29 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
               </div>
               {selectedEntity ? (
                 <div className="mt-4 space-y-2 text-sm">
-                <div className="rounded-lg border border-slate-800 bg-slate-950/60 px-3 py-2">
-                  <div className="text-[11px] uppercase tracking-[0.18em] text-slate-400">ID</div>
-                  <div className="mt-1 font-mono text-cyan-300">{selectedEntity.id}</div>
+                  <div className="rounded-lg border border-slate-800 bg-slate-950/60 px-3 py-2">
+                    <div className="text-[11px] uppercase tracking-[0.18em] text-slate-400">ID</div>
+                    <div className="mt-1 font-mono text-cyan-300">{selectedEntity.id}</div>
                   </div>
                   <div className="rounded-lg border border-slate-800 bg-slate-950/60 px-3 py-2">
                     <div className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Type</div>
                     <div className="mt-1 text-white">{selectedEntity.type}</div>
                   </div>
                   <div className="rounded-lg border border-slate-800 bg-slate-950/60 px-3 py-2">
-                  <div className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Layer</div>
-                  <div className="mt-1 text-white">{selectedEntity.layerId}</div>
-                </div>
-                <div className="rounded-lg border border-slate-800 bg-slate-950/60 px-3 py-2">
-                  <div className="text-[11px] uppercase tracking-[0.18em] text-slate-400">
-                    Selection set
+                    <div className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Layer</div>
+                    <div className="mt-1 text-white">{selectedEntity.layerId}</div>
                   </div>
-                  <div className="mt-1 text-white">{selectionCount} selected</div>
+                  <div className="rounded-lg border border-slate-800 bg-slate-950/60 px-3 py-2">
+                    <div className="text-[11px] uppercase tracking-[0.18em] text-slate-400">
+                      Selection set
+                    </div>
+                    <div className="mt-1 text-white">{selectionCount} selected</div>
+                  </div>
+                  <pre className="overflow-auto rounded-lg border border-slate-800 bg-slate-950/80 p-3 text-[11px] leading-5 text-slate-300">
+                    {JSON.stringify(selectedEntity, null, 2)}
+                  </pre>
                 </div>
-                <pre className="overflow-auto rounded-lg border border-slate-800 bg-slate-950/80 p-3 text-[11px] leading-5 text-slate-300">
-                  {JSON.stringify(selectedEntity, null, 2)}
-                </pre>
-              </div>
-            ) : (
+              ) : (
                 <div className="mt-4 rounded-lg border border-slate-800 bg-slate-950/60 px-3 py-3 text-sm text-slate-400">
                   {activeProject.entities.length === 0 ? 'No entity available.' : 'No entity selected.'}
                 </div>

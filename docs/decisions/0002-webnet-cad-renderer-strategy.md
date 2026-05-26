@@ -13,7 +13,12 @@ First spike result:
 - native CAD model and renderer-neutral display scene now exist inside WebNet
 - internal SVG proof renderer exists
 - inferred `mlightcad` export contract exists
+- internal selection/snap/command-history proof surface exists
 - actual `mlightcad` runtime install is deferred because current lower-level package path appears to pull the LibreDWG converter chain
+
+Go / no-go:
+- go: continue native-model-driven command, snapping, and future DXF/export seams
+- no-go: do not ship the current GPL-touched runtime path inside core WebNet
 
 ## Consequences
 - spike branch should focus on adapter and selection mapping

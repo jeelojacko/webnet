@@ -1,10 +1,17 @@
 import React, { useMemo } from 'react';
-import type { CadBounds, CadDisplayPrimitive, CadDisplayScene } from '../../engine/cad/cadTypes';
+import type {
+  CadBounds,
+  CadDisplayPrimitive,
+  CadDisplayScene,
+  CadSnapCandidate,
+} from '../../engine/cad/cadTypes';
 
 interface SurveyCadPreviewProps {
   scene: CadDisplayScene;
   selectedEntityIds: readonly string[];
+  activeSnap: CadSnapCandidate | null;
   onSelectEntity: (_entityId: string, _appendToSelection?: boolean) => void;
+  onPointerWorldPointChange: (_worldPoint: { x: number; y: number } | null) => void;
 }
 
 const WIDTH = 900;
@@ -36,6 +43,10 @@ const useProjector = (bounds: CadBounds | null) =>
       project: (x: number, y: number) => ({
         x: PADDING + (x - normalized.minX) * scale,
         y: HEIGHT - PADDING - (y - normalized.minY) * scale,
+      }),
+      unproject: (viewX: number, viewY: number) => ({
+        x: normalized.minX + (viewX - PADDING) / scale,
+        y: normalized.minY + (HEIGHT - PADDING - viewY) / scale,
       }),
     };
   }, [bounds]);
@@ -126,21 +137,59 @@ const renderPrimitive = (
 const SurveyCadPreview: React.FC<SurveyCadPreviewProps> = ({
   scene,
   selectedEntityIds,
+  activeSnap,
   onSelectEntity,
+  onPointerWorldPointChange,
 }) => {
-  const { project, scale } = useProjector(scene.bounds);
+  const { project, scale, unproject } = useProjector(scene.bounds);
 
   return (
     <svg
       viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
       className="h-full w-full rounded-lg border border-slate-800 bg-slate-950"
       data-survey-cad-preview
+      onMouseLeave={() => onPointerWorldPointChange(null)}
+      onMouseMove={(event) => {
+        const rect = event.currentTarget.getBoundingClientRect();
+        if (rect.width <= 0 || rect.height <= 0) return;
+        const viewX = ((event.clientX - rect.left) / rect.width) * WIDTH;
+        const viewY = ((event.clientY - rect.top) / rect.height) * HEIGHT;
+        onPointerWorldPointChange(unproject(viewX, viewY));
+      }}
     >
       <rect x={0} y={0} width={WIDTH} height={HEIGHT} fill="#020617" />
       <g>
         {scene.primitives.map((primitive) =>
           renderPrimitive(primitive, selectedEntityIds, project, scale, onSelectEntity),
         )}
+        {activeSnap ? (
+          <g data-survey-cad-snap-glyph>
+            <circle
+              cx={project(activeSnap.x, activeSnap.y).x}
+              cy={project(activeSnap.x, activeSnap.y).y}
+              r={6}
+              fill="none"
+              stroke="#fbbf24"
+              strokeWidth={1.2}
+            />
+            <line
+              x1={project(activeSnap.x, activeSnap.y).x - 8}
+              y1={project(activeSnap.x, activeSnap.y).y}
+              x2={project(activeSnap.x, activeSnap.y).x + 8}
+              y2={project(activeSnap.x, activeSnap.y).y}
+              stroke="#fef3c7"
+              strokeWidth={1}
+            />
+            <line
+              x1={project(activeSnap.x, activeSnap.y).x}
+              y1={project(activeSnap.x, activeSnap.y).y - 8}
+              x2={project(activeSnap.x, activeSnap.y).x}
+              y2={project(activeSnap.x, activeSnap.y).y + 8}
+              stroke="#fef3c7"
+              strokeWidth={1}
+            />
+          </g>
+        ) : null}
       </g>
     </svg>
   );

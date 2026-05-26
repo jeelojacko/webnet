@@ -1,3 +1,5 @@
+- [x] Survey CAD snapping + phase-audit batch (May 2026): add layer/style + spatial-index + snap-manager seams with focused geometry tests, wire snap feedback into the Survey CAD spike workspace, and tighten Phase 1/2 docs so only real renderer-runtime blockers remain open.
+
 - [x] Survey CAD command-foundation batch (May 2026): add native selection-set and transaction-history seams, wire them into the Survey CAD spike workspace, and ship first command-surface actions (`Select All`, `Clear Selection`, `ERASE`, `Undo`, `Redo`) without changing solver/parity behavior.
 
 - [x] Survey CAD renderer/model spike batch (May 2026): add native CAD entity/adaptor seams under `src/engine/cad/`, prove them with an internal SVG Survey CAD preview built from current WebNet input/result state, and document why actual `mlightcad` runtime installation remains deferred behind the current LibreDWG/GPL package boundary.

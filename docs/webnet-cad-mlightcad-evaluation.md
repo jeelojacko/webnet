@@ -95,6 +95,11 @@ Planning implication:
 - good signal for later plotting/layout support
 - still needs verification that model/layout state can be driven externally rather than stored only in viewer-native structures
 
+Current WebNet spike conclusion:
+- current branch is model-space only
+- layouts, sheets, and viewports should remain future WebNet-owned domains rather than viewer-runtime truth
+- adapter output should treat layout-space as another disposable projection once Phase 6 starts
+
 ### How are DXF and DWG parsed?
 Observed public statements:
 - DXF and DWG loading are first-class features in repo README
@@ -117,9 +122,19 @@ Planning implication:
 ## What this spike implemented in WebNet
 This branch now includes:
 - native Survey CAD entities under `src/engine/cad/`
+- layer/style library defaults plus deterministic project-state helpers
 - renderer-neutral display scene adapter
 - inferred `mlightcad` export contract that preserves native WebNet IDs
 - internal SVG proof renderer in the Survey CAD workspace tab
+- selection, command-history, spatial-index, and snap-manager seams on top of the native model
+
+## Current WebNet render primitives worth reusing
+Current WebNet already has reusable render patterns that Survey CAD should adapt rather than replace:
+- point, line, label, and ellipse primitive shaping from the current SVG/map selector stack
+- separation between world-space geometry derivation and final screen-space projection
+- deterministic mapping from rendered object back to app-owned IDs
+- layered rendering posture where static geometry and interaction overlays can evolve independently
+- existing workspace command/status surfaces already proven in the main app shell
 
 This branch intentionally does not install `cad-simple-viewer` or `cad-viewer` into core WebNet yet.
 
@@ -189,9 +204,15 @@ Current planning recommendation:
 Renderer/model spike status:
 
 - native-model spike complete
+- layer/style spike complete
 - adapter-contract spike complete
 - internal preview spike complete
+- internal selection/snap command surface complete
 - actual external-package runtime spike still pending
+
+Go / no-go update:
+- go for continuing WebNet-native CAD model, snapping, commands, and DXF-boundary planning
+- no-go for installing the current `mlightcad` runtime path into core WebNet until an MIT-only path or explicit optional GPL boundary is proven
 
 Future external runtime work should proceed in a follow-up branch only after choosing an MIT-only path or an explicit optional GPL boundary.
 

@@ -31,13 +31,13 @@ Notes:
 - [x] Define survey-rich point entities for spike scope.
 - [x] Define line/text/error-ellipse entities for spike scope.
 - [x] Define observation-line and error-ellipse CAD overlays for spike scope.
-- [ ] Define layer/style/linetype/symbol model.
+- [x] Define layer/style/linetype/symbol model.
 - [ ] Expand entities to arc/polyline/polygon/parcel families.
 - [ ] Define CAD project-state domain to persist inside current WebNet project storage.
 - [x] Define deterministic serialization-oriented project shape for spike scope.
 - [x] Define transaction log and undo/redo contracts.
 - [x] Add focused model/adapter tests.
-- [ ] Add focused geometry primitive tests.
+- [x] Add focused geometry primitive tests.
 
 Acceptance criteria:
 - native entities serialize and deserialize deterministically
@@ -50,7 +50,7 @@ Risks:
 
 ## Phase 2: Renderer interface and mlightcad spike
 - [x] Define renderer-neutral display adapter interface.
-- [ ] Inventory current WebNet map render primitives worth reusing.
+- [x] Inventory current WebNet map render primitives worth reusing.
 - [x] Build tiny adapter for WebNet-native point/line/text/ellipse display payloads.
 - [x] Prototype `mlightcad`-target export contract against adapter, not project state.
 - [x] Build internal SVG proof renderer from the same adapter output.
@@ -59,8 +59,8 @@ Risks:
 - [x] Verify selection maps back to WebNet entity IDs in the internal spike renderer.
 - [ ] Verify selection maps through actual `mlightcad` runtime.
 - [ ] Verify layer visibility can be driven from actual `mlightcad` runtime state.
-- [ ] Document model-space/layout-space fit.
-- [ ] Write renderer strategy ADR update with go/no-go decision.
+- [x] Document model-space/layout-space fit.
+- [x] Write renderer strategy ADR update with go/no-go decision.
 
 Acceptance criteria:
 - no Vue rewrite required
@@ -76,10 +76,10 @@ Risks:
 - [x] Build selection-set model.
 - [x] Build command registry and command history.
 - [x] Build command state-machine base types.
-- [ ] Build snap manager.
-- [ ] Build spatial index for snap/select candidates.
+- [x] Build snap manager.
+- [x] Build spatial index for snap/select candidates.
 - [ ] Add point node, endpoint, midpoint, intersection, nearest snaps.
-- [ ] Add visual snap glyphs and status feedback.
+- [x] Add visual snap glyphs and status feedback.
 - [ ] Add `POINT`, `LINE`, `PLINE`, `MOVE`, `COPY`, `INVERSE`.
 - [x] Add `ERASE`.
 - [ ] Add coordinate input and bearing/distance input path.
@@ -177,8 +177,8 @@ Acceptance criteria:
 - helper remains additive rather than architectural rewrite
 
 ## Decision records to maintain
-- [ ] ADR 0001 source of truth accepted or revised after renderer spike.
-- [ ] ADR 0002 renderer strategy updated after mlightcad spike.
+- [x] ADR 0001 source of truth accepted or revised after renderer spike.
+- [x] ADR 0002 renderer strategy updated after mlightcad spike.
 - [ ] ADR 0003 DWG/GPL boundary updated before any DWG shipping path.
 
 ## Validation notes

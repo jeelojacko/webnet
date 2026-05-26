@@ -21,7 +21,7 @@ Current startup and workflow defaults include:
 - run profile defaults to strict industry parity mode
 - cluster detection defaults to OFF
 - auto-adjust is available but operator-controlled
-- the top toolbar now includes a `Survey CAD` launcher beside `Project Options`; today it opens a branch-local renderer/model spike workspace that builds native CAD entities from current WebNet input or solved results, renders them through an internal SVG proof adapter, exposes native selection plus transaction-history seams (`Select All`, `Clear Selection`, `ERASE`, `Undo`, `Redo`), and shows the inferred `mlightcad` export contract without yet installing GPL-touched DWG runtime packages into core WebNet
+- the top toolbar now includes a `Survey CAD` launcher beside `Project Options`; today it opens a branch-local renderer/model spike workspace that builds native CAD entities from current WebNet input or solved results, renders them through an internal SVG proof adapter, exposes native selection plus transaction-history seams (`Select All`, `Clear Selection`, `ERASE`, `Undo`, `Redo`), adds internal point-node / endpoint / midpoint / nearest snap feedback over the preview surface, and shows the inferred `mlightcad` export contract without yet installing GPL-touched DWG runtime packages into core WebNet
 - `Run Comparison` and `Review Queue` workspace panels now default to hidden and can be re-enabled from `Project Options -> General`
 - the active startup dataset is currently rotated to the Camp Design preanalysis case, including the committed planning-network fixture loaded directly into the editor, the matching Camp Design project default plus `S9`/`SX12` instrument library from the reference settings, and the UTM83-19 grid startup defaults with positive-west longitude convention, preanalysis run mode, and slope/zenith reduction with refraction `k=0.07`
 - the active startup dataset may be rotated to the current industry-parity working case during parity-sensitive batches
@@ -334,7 +334,7 @@ For detailed import behavior, see `docs/IMPORT_WORKFLOW.md`.
 
 ### Persistence and saved work
 Current workspace behavior includes:
-- a `Survey CAD` workspace tab that can be opened before any solve; it currently acts as the durable entry seam for CAD architecture docs plus the live native-model/renderer spike preview, selection/undo command-history spike, and adapter-inspection workflow
+- a `Survey CAD` workspace tab that can be opened before any solve; it currently acts as the durable entry seam for CAD architecture docs plus the live native-model/renderer spike preview, selection/undo command-history spike, snapping-status workflow, and adapter-inspection workflow
 - named local browser projects backed by OPFS when available, with IndexedDB used for the recent-project catalog and as the file-content fallback store
 - local project reopen flows work across both IndexedDB-backed and OPFS-backed named projects, and reopening refreshes recent-project ordering by last-opened time
 - manifest-first `webnet-project` v5 storage with stable source-file IDs, one main editor file, managed non-main source members, and project-scoped autosave for sources/settings/UI state

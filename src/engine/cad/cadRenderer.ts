@@ -3,13 +3,43 @@ import type {
   CadDisplayScene,
   CadEntity,
   CadProject,
+  CadStyle,
 } from './cadTypes';
 
 const layerColor = (project: CadProject, layerId: string): string =>
   project.layers.find((layer) => layer.id === layerId)?.color ?? '#94a3b8';
 
+const entityStyle = (project: CadProject, entity: CadEntity): CadStyle | null =>
+  entity.styleId != null
+    ? project.styleLibrary.styles.find((style) => style.id === entity.styleId) ?? null
+    : null;
+
+const pointRadius = (project: CadProject, entity: CadEntity): number => {
+  if (entity.type !== 'survey-point') return 1.8;
+  const style = entityStyle(project, entity);
+  if (!style?.pointSymbolId) {
+    return entity.pointClass === 'control' ? 2.4 : 1.8;
+  }
+  return (
+    project.styleLibrary.pointSymbols.find((symbol) => symbol.id === style.pointSymbolId)?.radius ??
+    (entity.pointClass === 'control' ? 2.4 : 1.8)
+  );
+};
+
+const strokeWidth = (project: CadProject, entity: CadEntity, fallback: number): number =>
+  entityStyle(project, entity)?.strokeWidth ?? fallback;
+
+const textFontSize = (project: CadProject, entity: CadEntity, fallback: number): number => {
+  const style = entityStyle(project, entity);
+  if (!style?.textStyleId) return fallback;
+  return (
+    project.styleLibrary.textStyles.find((textStyle) => textStyle.id === style.textStyleId)?.fontSize ??
+    fallback
+  );
+};
+
 const toPrimitive = (project: CadProject, entity: CadEntity): CadDisplayPrimitive => {
-  const stroke = layerColor(project, entity.layerId);
+  const stroke = entityStyle(project, entity)?.color ?? layerColor(project, entity.layerId);
   switch (entity.type) {
     case 'survey-point':
       return {
@@ -20,7 +50,7 @@ const toPrimitive = (project: CadProject, entity: CadEntity): CadDisplayPrimitiv
         stroke,
         fill: stroke,
         point: { x: entity.x, y: entity.y },
-        radius: entity.pointClass === 'control' ? 2.4 : 1.8,
+        radius: pointRadius(project, entity),
       };
     case 'line':
       return {
@@ -33,7 +63,7 @@ const toPrimitive = (project: CadProject, entity: CadEntity): CadDisplayPrimitiv
           { x: entity.fromX, y: entity.fromY },
           { x: entity.toX, y: entity.toY },
         ],
-        strokeWidth: 1.25,
+        strokeWidth: strokeWidth(project, entity, 1.25),
       };
     case 'text':
       return {
@@ -44,7 +74,7 @@ const toPrimitive = (project: CadProject, entity: CadEntity): CadDisplayPrimitiv
         stroke,
         point: { x: entity.x, y: entity.y },
         text: entity.text,
-        fontSize: 11,
+        fontSize: textFontSize(project, entity, 11),
       };
     case 'error-ellipse':
       return {
@@ -57,7 +87,7 @@ const toPrimitive = (project: CadProject, entity: CadEntity): CadDisplayPrimitiv
         semiMajor: entity.semiMajor,
         semiMinor: entity.semiMinor,
         thetaDeg: entity.thetaDeg,
-        strokeWidth: 1.1,
+        strokeWidth: strokeWidth(project, entity, 1.1),
       };
   }
 };

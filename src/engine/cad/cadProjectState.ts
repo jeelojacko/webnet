@@ -61,5 +61,8 @@ export const buildCadProjectSignature = (project: CadProject): string =>
     project.layers
       .map((layer) => `${layer.id}:${layer.visible ? 1 : 0}:${layer.locked ? 1 : 0}`)
       .join('|'),
+    project.styleLibrary.styles
+      .map((style) => `${style.id}:${style.color ?? '-'}:${style.strokeWidth ?? '-'}`)
+      .join('|'),
     project.entities.map((entity) => entity.id).join('|'),
   ].join('::');

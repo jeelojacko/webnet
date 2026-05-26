@@ -10,57 +10,15 @@ import type {
 } from '../../types';
 import type {
   CadEntity,
-  CadLayer,
   CadLineEntity,
   CadProject,
   CadSurveyPointEntity,
   CadTextEntity,
   CadErrorEllipseEntity,
 } from './cadTypes';
+import { DEFAULT_CAD_LAYERS } from './cadLayers';
 import { buildCadBounds } from './cadProjectState';
-
-const CAD_LAYERS: CadLayer[] = [
-  {
-    id: 'control-points',
-    name: 'Control Points',
-    color: '#f59e0b',
-    visible: true,
-    locked: false,
-    role: 'control-points',
-  },
-  {
-    id: 'points',
-    name: 'Survey Points',
-    color: '#38bdf8',
-    visible: true,
-    locked: false,
-    role: 'points',
-  },
-  {
-    id: 'observation-lines',
-    name: 'Observation Lines',
-    color: '#22c55e',
-    visible: true,
-    locked: false,
-    role: 'observation-lines',
-  },
-  {
-    id: 'error-ellipses',
-    name: 'Error Ellipses',
-    color: '#f472b6',
-    visible: true,
-    locked: false,
-    role: 'error-ellipses',
-  },
-  {
-    id: 'labels',
-    name: 'Labels',
-    color: '#e2e8f0',
-    visible: true,
-    locked: false,
-    role: 'labels',
-  },
-];
+import { DEFAULT_CAD_STYLE_LIBRARY } from './cadStyles';
 
 const sortStationIds = (ids: StationId[]) =>
   [...ids].sort((left, right) => left.localeCompare(right, undefined, { numeric: true }));
@@ -94,6 +52,7 @@ const buildPointEntities = (
       id: `pt:${stationId}`,
       type: 'survey-point',
       layerId: station.fixed ? 'control-points' : 'points',
+      styleId: station.fixed ? 'style-control-point' : 'style-point',
       visible: true,
       locked: false,
       stationId,
@@ -115,6 +74,7 @@ const buildLabelEntities = (points: CadSurveyPointEntity[]): CadTextEntity[] =>
     id: `label:${point.stationId}`,
     type: 'text',
     layerId: 'labels',
+    styleId: 'style-label',
     visible: true,
     locked: false,
     x: point.x,
@@ -133,6 +93,7 @@ const buildEllipseEntities = (points: CadSurveyPointEntity[]): CadErrorEllipseEn
       id: `ellipse:${point.stationId}`,
       type: 'error-ellipse',
       layerId: 'error-ellipses',
+      styleId: 'style-error-ellipse',
       visible: true,
       locked: false,
       stationId: point.stationId,
@@ -170,6 +131,7 @@ const buildLineEntities = (
       id: `line:${pairKey}`,
       type: 'line',
       layerId: 'observation-lines',
+      styleId: 'style-observation-line',
       visible: true,
       locked: false,
       fromStationId: pair.from,
@@ -217,7 +179,8 @@ const buildCadProjectFromParsed = (
       observationCount: parsed.observations.length,
       adjustedStationCount: source === 'adjustment-result' ? pointEntities.length : 0,
     },
-    layers: CAD_LAYERS,
+    layers: DEFAULT_CAD_LAYERS,
+    styleLibrary: DEFAULT_CAD_STYLE_LIBRARY,
     entities,
     bounds: buildCadBounds(entities),
   };

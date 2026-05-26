@@ -131,4 +131,59 @@ describe('SurveyCadWorkspace', () => {
     });
     container.remove();
   });
+
+  it('shows snap feedback when the pointer moves over CAD geometry', async () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root: Root = createRoot(container);
+
+    await act(async () => {
+      root.render(
+        <SurveyCadWorkspace
+          input={input}
+          instrumentLibrary={{}}
+          parseOptions={parseOptions}
+          units="m"
+          result={null}
+        />,
+      );
+    });
+
+    const preview = container.querySelector('[data-survey-cad-preview]') as SVGElement | null;
+    if (!preview) throw new Error('Preview not found');
+    Object.defineProperty(preview, 'getBoundingClientRect', {
+      configurable: true,
+      value: () => ({
+        x: 0,
+        y: 0,
+        left: 0,
+        top: 0,
+        width: 900,
+        height: 520,
+        right: 900,
+        bottom: 520,
+        toJSON: () => ({}),
+      }),
+    });
+
+    await act(async () => {
+      preview.dispatchEvent(
+        new MouseEvent('mousemove', {
+          bubbles: true,
+          clientX: 94,
+          clientY: 461,
+        }),
+      );
+    });
+
+    expect(container.querySelector('[data-survey-cad-snap-status]')?.textContent).toContain(
+      'Snap point-node: A',
+    );
+    expect(container.querySelector('[data-survey-cad-snap-glyph]')).not.toBeNull();
+
+    await act(async () => {
+      root.unmount();
+    });
+    container.remove();
+  });
 });

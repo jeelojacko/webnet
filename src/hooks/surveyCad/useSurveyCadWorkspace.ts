@@ -4,7 +4,8 @@ import { buildCadProjectSignature } from '../../engine/cad/cadProjectState';
 import { buildMlightcadSpikeScene } from '../../engine/cad/cadMlightcadAdapter';
 import { buildCadDisplayScene } from '../../engine/cad/cadRenderer';
 import { createCadHistoryState, redoCadHistory, runCadCommand, undoCadHistory } from '../../engine/cad/cadUndoRedo';
-import type { CadProject } from '../../engine/cad/cadTypes';
+import { useSurveyCadSnapping } from './useSurveyCadSnapping';
+import type { CadProject, CadSnapCandidate } from '../../engine/cad/cadTypes';
 
 interface UseSurveyCadWorkspaceResult {
   cadProject: CadProject;
@@ -16,9 +17,12 @@ interface UseSurveyCadWorkspaceResult {
   canUndo: boolean;
   canRedo: boolean;
   statusText: string;
+  activeSnap: CadSnapCandidate | null;
+  snapStatusText: string;
   historyDepth: number;
   redoDepth: number;
   selectEntity: (_entityId: string, _appendToSelection?: boolean) => void;
+  updatePointerWorldPoint: (_worldPoint: { x: number; y: number } | null) => void;
   selectAll: () => void;
   clearSelection: () => void;
   eraseSelection: () => void;
@@ -47,6 +51,7 @@ export const useSurveyCadWorkspace = (baseProject: CadProject): UseSurveyCadWork
     () => getSelectedCadEntities(cadProject, selection),
     [cadProject, selection],
   );
+  const { activeSnap, snapStatusText, updatePointerWorldPoint } = useSurveyCadSnapping(cadProject);
 
   return {
     cadProject,
@@ -58,6 +63,8 @@ export const useSurveyCadWorkspace = (baseProject: CadProject): UseSurveyCadWork
     canUndo: history.undoStack.length > 0,
     canRedo: history.redoStack.length > 0,
     statusText: history.commandState.prompt,
+    activeSnap,
+    snapStatusText,
     historyDepth: history.undoStack.length,
     redoDepth: history.redoStack.length,
     selectEntity: (entityId, appendToSelection = false) => {
@@ -82,6 +89,7 @@ export const useSurveyCadWorkspace = (baseProject: CadProject): UseSurveyCadWork
     selectAll: () => {
       setHistory((current) => runCadCommand(current, { key: 'SELECT_ALL' }));
     },
+    updatePointerWorldPoint,
     clearSelection: () => {
       setHistory((current) => runCadCommand(current, { key: 'CLEAR_SELECTION' }));
     },

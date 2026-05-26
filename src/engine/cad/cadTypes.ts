@@ -3,6 +3,9 @@ import type { ParseOptions, StationErrorEllipse, StationId, UnitsMode } from '..
 export type CadEntityId = string;
 export type CadLayerId = string;
 export type CadStyleId = string;
+export type CadLineTypeId = string;
+export type CadTextStyleId = string;
+export type CadPointSymbolId = string;
 
 export interface CadBounds {
   minX: number;
@@ -25,6 +28,8 @@ export interface CadLayer {
   id: CadLayerId;
   name: string;
   color: string;
+  lineTypeId?: CadLineTypeId;
+  defaultStyleId?: CadStyleId;
   visible: boolean;
   locked: boolean;
   role:
@@ -34,6 +39,42 @@ export interface CadLayer {
     | 'error-ellipses'
     | 'labels'
     | 'planning';
+}
+
+export interface CadLineType {
+  id: CadLineTypeId;
+  name: string;
+  dashPattern: number[];
+}
+
+export interface CadTextStyle {
+  id: CadTextStyleId;
+  name: string;
+  fontFamily: string;
+  fontSize: number;
+}
+
+export interface CadPointSymbol {
+  id: CadPointSymbolId;
+  name: string;
+  radius: number;
+}
+
+export interface CadStyle {
+  id: CadStyleId;
+  name: string;
+  color?: string;
+  strokeWidth?: number;
+  textStyleId?: CadTextStyleId;
+  pointSymbolId?: CadPointSymbolId;
+  lineTypeId?: CadLineTypeId;
+}
+
+export interface CadStyleLibrary {
+  lineTypes: CadLineType[];
+  textStyles: CadTextStyle[];
+  pointSymbols: CadPointSymbol[];
+  styles: CadStyle[];
 }
 
 export interface CadSurveyPointEntity extends CadBaseEntity {
@@ -99,6 +140,7 @@ export interface CadProject {
   name: string;
   metadata: CadProjectMetadata;
   layers: CadLayer[];
+  styleLibrary: CadStyleLibrary;
   entities: CadEntity[];
   bounds: CadBounds | null;
 }
@@ -153,6 +195,18 @@ export type CadDisplayPrimitive =
 export interface CadDisplayScene {
   bounds: CadBounds | null;
   primitives: CadDisplayPrimitive[];
+}
+
+export type CadSnapKind = 'point-node' | 'endpoint' | 'midpoint' | 'nearest';
+
+export interface CadSnapCandidate {
+  id: string;
+  kind: CadSnapKind;
+  sourceEntityId: CadEntityId;
+  x: number;
+  y: number;
+  distance: number;
+  label: string;
 }
 
 export interface MlightcadSpikeLayer {
