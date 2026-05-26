@@ -4,6 +4,7 @@ import { buildCadProjectSignature } from '../../engine/cad/cadProjectState';
 import { buildMlightcadSpikeScene } from '../../engine/cad/cadMlightcadAdapter';
 import { buildCadDisplayScene } from '../../engine/cad/cadRenderer';
 import { createCadHistoryState, redoCadHistory, runCadCommand, undoCadHistory } from '../../engine/cad/cadUndoRedo';
+import { useSurveyCadCommands } from './useSurveyCadCommands';
 import { useSurveyCadSnapping } from './useSurveyCadSnapping';
 import type { CadProject, CadSnapCandidate } from '../../engine/cad/cadTypes';
 
@@ -16,11 +17,27 @@ interface UseSurveyCadWorkspaceResult {
   selectionCount: number;
   canUndo: boolean;
   canRedo: boolean;
+  activeCommandKey: 'POINT' | 'LINE' | 'PLINE' | 'INVERSE' | 'MOVE' | 'COPY' | null;
+  commandInputValue: string;
   statusText: string;
+  commandHelpText: string;
+  canUseActiveSnap: boolean;
+  canFinishCommand: boolean;
   activeSnap: CadSnapCandidate | null;
   snapStatusText: string;
   historyDepth: number;
   redoDepth: number;
+  startPointCommand: () => void;
+  startLineCommand: () => void;
+  startPolylineCommand: () => void;
+  startInverseCommand: () => void;
+  startMoveCommand: () => void;
+  startCopyCommand: () => void;
+  cancelActiveCommand: () => void;
+  finishActiveCommand: () => void;
+  setCommandInputValue: (_value: string) => void;
+  submitCommandInput: () => void;
+  useActiveSnap: () => void;
   selectEntity: (_entityId: string, _appendToSelection?: boolean) => void;
   updatePointerWorldPoint: (_worldPoint: { x: number; y: number } | null) => void;
   selectAll: () => void;
@@ -52,6 +69,30 @@ export const useSurveyCadWorkspace = (baseProject: CadProject): UseSurveyCadWork
     [cadProject, selection],
   );
   const { activeSnap, snapStatusText, updatePointerWorldPoint } = useSurveyCadSnapping(cadProject);
+  const {
+    activeCommandKey,
+    commandInputValue,
+    commandPrompt,
+    commandHelpText,
+    canUseActiveSnap,
+    canFinishCommand,
+    startPointCommand,
+    startLineCommand,
+    startPolylineCommand,
+    startInverseCommand,
+    startMoveCommand,
+    startCopyCommand,
+    cancelCommand,
+    finishCommand,
+    setCommandInputValue,
+    submitCommandInput,
+    useActiveSnap,
+  } = useSurveyCadCommands({
+    activeSnap,
+    history,
+    selectionCount: selection.selectedEntityIds.length,
+    setHistory,
+  });
 
   return {
     cadProject,
@@ -62,11 +103,27 @@ export const useSurveyCadWorkspace = (baseProject: CadProject): UseSurveyCadWork
     selectionCount: selection.selectedEntityIds.length,
     canUndo: history.undoStack.length > 0,
     canRedo: history.redoStack.length > 0,
-    statusText: history.commandState.prompt,
+    activeCommandKey,
+    commandInputValue,
+    statusText: commandPrompt,
+    commandHelpText,
+    canUseActiveSnap,
+    canFinishCommand,
     activeSnap,
     snapStatusText,
     historyDepth: history.undoStack.length,
     redoDepth: history.redoStack.length,
+    startPointCommand,
+    startLineCommand,
+    startPolylineCommand,
+    startInverseCommand,
+    startMoveCommand,
+    startCopyCommand,
+    cancelActiveCommand: cancelCommand,
+    finishActiveCommand: finishCommand,
+    setCommandInputValue,
+    submitCommandInput,
+    useActiveSnap,
     selectEntity: (entityId, appendToSelection = false) => {
       setHistory((current) => {
         const nextSelection = appendToSelection

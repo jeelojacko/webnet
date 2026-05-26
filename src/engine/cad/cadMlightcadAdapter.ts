@@ -34,6 +34,22 @@ const toMlightcadEntity = (entity: CadEntity): MlightcadSpikeEntity => {
           nativeType: entity.type,
         },
       };
+    case 'polyline':
+      return {
+        objectId: entity.id,
+        type: 'AcDbPolyline',
+        layer: entity.layerId,
+        visible: entity.visible,
+        geometry: {
+          vertices: entity.vertices.map((vertex) => ({ x: vertex.x, y: vertex.y, z: 0 })),
+          closed: entity.closed,
+          vertexLabels: entity.vertexLabels,
+        },
+        metadata: {
+          nativeEntityId: entity.id,
+          nativeType: entity.type,
+        },
+      };
     case 'text':
       return {
         objectId: entity.id,

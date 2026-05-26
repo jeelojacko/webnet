@@ -1,3 +1,7 @@
+- [x] Survey CAD remaining phase-3 batch (May 2026): add `PLINE`, `MOVE`, and `COPY` on the native command/history seams, extend interactive command sessions to finish multi-step edits, and add full survey bearing-distance typed input alongside existing coordinate and azimuth-distance entry.
+
+- [x] Survey CAD interactive-command batch (May 2026): add interactive command sessions with typed coordinate input, extend snapping through line intersections, and ship first create/query commands (`POINT`, `LINE`, `INVERSE`) on top of the native history/model seams.
+
 - [x] Survey CAD snapping + phase-audit batch (May 2026): add layer/style + spatial-index + snap-manager seams with focused geometry tests, wire snap feedback into the Survey CAD spike workspace, and tighten Phase 1/2 docs so only real renderer-runtime blockers remain open.
 
 - [x] Survey CAD command-foundation batch (May 2026): add native selection-set and transaction-history seams, wire them into the Survey CAD spike workspace, and ship first command-surface actions (`Select All`, `Clear Selection`, `ERASE`, `Undo`, `Redo`) without changing solver/parity behavior.

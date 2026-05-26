@@ -1,14 +1,29 @@
 import {
   clearCadSelection,
   createCadSelectionState,
-  getSelectedCadEntities,
   selectAllCadEntities,
 } from './cadSelection';
-import { replaceCadProjectEntities } from './cadProjectState';
+import { appendCadProjectEntities, replaceCadProjectEntities } from './cadProjectState';
 import type { CadSelectionState } from './cadSelection';
-import type { CadEntityId, CadProject } from './cadTypes';
+import type {
+  CadEntity,
+  CadEntityId,
+  CadPolylineEntity,
+  CadProject,
+  CadSurveyPointEntity,
+  CadTextEntity,
+} from './cadTypes';
+import { createStableRuntimeId } from '../id';
 
-export type CadCommandKey = 'SELECT_ALL' | 'CLEAR_SELECTION' | 'ERASE';
+export type CadCommandKey =
+  | 'SELECT_ALL'
+  | 'CLEAR_SELECTION'
+  | 'ERASE'
+  | 'POINT'
+  | 'LINE'
+  | 'PLINE'
+  | 'MOVE'
+  | 'COPY';
 export type CadCommandPhase = 'idle' | 'committed';
 
 export interface CadCommandState {
@@ -26,6 +41,31 @@ export type CadCommand =
     }
   | {
       key: 'ERASE';
+    }
+  | {
+      key: 'POINT';
+      x: number;
+      y: number;
+      label?: string;
+    }
+  | {
+      key: 'LINE';
+      start: { x: number; y: number; label: string };
+      end: { x: number; y: number; label: string };
+    }
+  | {
+      key: 'PLINE';
+      vertices: { x: number; y: number; label: string }[];
+    }
+  | {
+      key: 'MOVE';
+      deltaX: number;
+      deltaY: number;
+    }
+  | {
+      key: 'COPY';
+      deltaX: number;
+      deltaY: number;
     };
 
 export interface CadTransaction {
@@ -35,6 +75,7 @@ export interface CadTransaction {
   label: string;
   beforeSelectionIds: CadEntityId[];
   afterSelectionIds: CadEntityId[];
+  addedEntityIds: CadEntityId[];
   removedEntityIds: CadEntityId[];
 }
 
@@ -47,6 +88,7 @@ export interface CadCommandExecutionResult {
   nextSnapshot: CadWorkspaceSnapshot;
   commandState: CadCommandState;
   transactionLabel: string;
+  addedEntityIds: CadEntityId[];
   removedEntityIds: CadEntityId[];
 }
 
@@ -58,8 +100,257 @@ interface CadCommandDefinition<TCommand extends CadCommand> {
 const createIdleCommandState = (): CadCommandState => ({
   key: 'IDLE',
   phase: 'idle',
-  prompt: 'Ready. Use Select All, Clear Selection, or ERASE to exercise command history.',
+  prompt: 'Ready. Use Select All, Clear Selection, ERASE, POINT, LINE, PLINE, MOVE, COPY, or INVERSE to exercise command history.',
 });
+
+const nextManualStationId = (project: CadProject): string => {
+  let maxSequence = 0;
+  project.entities.forEach((entity) => {
+    if (entity.type !== 'survey-point') return;
+    const match = /^CAD(\d+)$/i.exec(entity.stationId);
+    if (!match) return;
+    maxSequence = Math.max(maxSequence, Number(match[1]));
+  });
+  return `CAD${maxSequence + 1}`;
+};
+
+const stationIdExists = (project: CadProject, stationId: string): boolean =>
+  project.entities.some(
+    (entity) =>
+      (entity.type === 'survey-point' && entity.stationId === stationId) ||
+      entity.id === `pt:${stationId}` ||
+      entity.id === `label:${stationId}`,
+  );
+
+const createManualPointEntities = (
+  project: CadProject,
+  x: number,
+  y: number,
+  requestedLabel?: string,
+): { point: CadSurveyPointEntity; label: CadTextEntity } => {
+  const requestedStationId = requestedLabel?.trim();
+  const stationId =
+    requestedStationId && !stationIdExists(project, requestedStationId)
+      ? requestedStationId
+      : nextManualStationId(project);
+  return {
+    point: {
+      id: `pt:${stationId}`,
+      type: 'survey-point',
+      layerId: 'points',
+      styleId: 'style-point',
+      visible: true,
+      locked: false,
+      stationId,
+      x,
+      y,
+      pointClass: 'free',
+      source: project.metadata.source,
+      metadata: {
+        createdBy: 'POINT',
+        manual: true,
+      },
+    },
+    label: {
+      id: `label:${stationId}`,
+      type: 'text',
+      layerId: 'labels',
+      styleId: 'style-label',
+      visible: true,
+      locked: false,
+      x,
+      y,
+      text: stationId,
+      anchorEntityId: `pt:${stationId}`,
+      metadata: {
+        createdBy: 'POINT',
+        manual: true,
+        stationId,
+      },
+    },
+  };
+};
+
+const expandSelectedEntityIds = (
+  project: CadProject,
+  selectedEntityIds: readonly CadEntityId[],
+): CadEntityId[] => {
+  const expanded = new Set(selectedEntityIds);
+  project.entities.forEach((entity) => {
+    if (entity.type === 'text' && entity.anchorEntityId && expanded.has(entity.anchorEntityId)) {
+      expanded.add(entity.id);
+      return;
+    }
+    if (entity.type === 'error-ellipse' && expanded.has(`pt:${entity.stationId}`)) {
+      expanded.add(entity.id);
+    }
+  });
+  return project.entities.filter((entity) => expanded.has(entity.id)).map((entity) => entity.id);
+};
+
+const getExpandedSelectedEntities = (snapshot: CadWorkspaceSnapshot): CadEntity[] => {
+  const expandedIds = new Set(
+    expandSelectedEntityIds(snapshot.project, snapshot.selection.selectedEntityIds),
+  );
+  return snapshot.project.entities.filter((entity) => expandedIds.has(entity.id) && !entity.locked);
+};
+
+const translateEntity = (entity: CadEntity, deltaX: number, deltaY: number): CadEntity => {
+  switch (entity.type) {
+    case 'survey-point':
+      return {
+        ...entity,
+        x: entity.x + deltaX,
+        y: entity.y + deltaY,
+      };
+    case 'line':
+      return {
+        ...entity,
+        fromX: entity.fromX + deltaX,
+        fromY: entity.fromY + deltaY,
+        toX: entity.toX + deltaX,
+        toY: entity.toY + deltaY,
+      };
+    case 'polyline':
+      return {
+        ...entity,
+        vertices: entity.vertices.map((vertex) => ({
+          x: vertex.x + deltaX,
+          y: vertex.y + deltaY,
+        })),
+      };
+    case 'text':
+      return {
+        ...entity,
+        x: entity.x + deltaX,
+        y: entity.y + deltaY,
+      };
+    case 'error-ellipse':
+      return {
+        ...entity,
+        centerX: entity.centerX + deltaX,
+        centerY: entity.centerY + deltaY,
+      };
+  }
+};
+
+const buildCopiedEntities = (
+  project: CadProject,
+  selectedEntities: CadEntity[],
+  deltaX: number,
+  deltaY: number,
+): CadEntity[] => {
+  const selectedPointStationIds = new Set(
+    selectedEntities
+      .filter((entity): entity is CadSurveyPointEntity => entity.type === 'survey-point')
+      .map((entity) => entity.stationId),
+  );
+  const copiedEntities: CadEntity[] = [];
+  const copiedPointByStationId = new Map<
+    string,
+    { stationId: string; x: number; y: number }
+  >();
+  let workingProject = project;
+
+  selectedEntities.forEach((entity) => {
+    if (entity.type !== 'survey-point') return;
+    const pointBundle = createManualPointEntities(
+      workingProject,
+      entity.x + deltaX,
+      entity.y + deltaY,
+    );
+    workingProject = appendCadProjectEntities(workingProject, [pointBundle.point, pointBundle.label]);
+    copiedPointByStationId.set(entity.stationId, {
+      stationId: pointBundle.point.stationId,
+      x: pointBundle.point.x,
+      y: pointBundle.point.y,
+    });
+    copiedEntities.push(pointBundle.point, pointBundle.label);
+  });
+
+  selectedEntities.forEach((entity) => {
+    if (entity.type === 'survey-point') return;
+    if (entity.type === 'text' && entity.anchorEntityId) {
+      const anchoredStationId = entity.anchorEntityId.startsWith('pt:')
+        ? entity.anchorEntityId.slice(3)
+        : null;
+      if (anchoredStationId && copiedPointByStationId.has(anchoredStationId)) return;
+    }
+    if (entity.type === 'error-ellipse' && selectedPointStationIds.has(entity.stationId)) return;
+
+    switch (entity.type) {
+      case 'line': {
+        const copiedFrom = copiedPointByStationId.get(entity.fromStationId);
+        const copiedTo = copiedPointByStationId.get(entity.toStationId);
+        copiedEntities.push({
+          ...entity,
+          id: createStableRuntimeId('cad-line'),
+          fromStationId: copiedFrom?.stationId ?? entity.fromStationId,
+          toStationId: copiedTo?.stationId ?? entity.toStationId,
+          fromX: copiedFrom?.x ?? entity.fromX + deltaX,
+          fromY: copiedFrom?.y ?? entity.fromY + deltaY,
+          toX: copiedTo?.x ?? entity.toX + deltaX,
+          toY: copiedTo?.y ?? entity.toY + deltaY,
+          metadata: {
+            ...entity.metadata,
+            createdBy: 'COPY',
+            manual: true,
+          },
+        });
+        break;
+      }
+      case 'polyline':
+        copiedEntities.push({
+          ...entity,
+          id: createStableRuntimeId('cad-polyline'),
+          vertices: entity.vertices.map((vertex) => ({
+            x: vertex.x + deltaX,
+            y: vertex.y + deltaY,
+          })),
+          vertexLabels: entity.vertexLabels.map(
+            (label) => copiedPointByStationId.get(label)?.stationId ?? label,
+          ),
+          metadata: {
+            ...entity.metadata,
+            createdBy: 'COPY',
+            manual: true,
+          },
+        });
+        break;
+      case 'text':
+        copiedEntities.push({
+          ...entity,
+          id: createStableRuntimeId('cad-text'),
+          x: entity.x + deltaX,
+          y: entity.y + deltaY,
+          anchorEntityId: undefined,
+          metadata: {
+            ...entity.metadata,
+            createdBy: 'COPY',
+            manual: true,
+          },
+        });
+        break;
+      case 'error-ellipse':
+        copiedEntities.push({
+          ...entity,
+          id: createStableRuntimeId('cad-ellipse'),
+          centerX: entity.centerX + deltaX,
+          centerY: entity.centerY + deltaY,
+          metadata: {
+            ...entity.metadata,
+            createdBy: 'COPY',
+            manual: true,
+          },
+        });
+        break;
+      default:
+        break;
+    }
+  });
+
+  return copiedEntities;
+};
 
 const selectAllCommand: CadCommandDefinition<{ key: 'SELECT_ALL' }> = {
   key: 'SELECT_ALL',
@@ -83,6 +374,7 @@ const selectAllCommand: CadCommandDefinition<{ key: 'SELECT_ALL' }> = {
         prompt: 'SELECT_ALL committed. All visible entities selected.',
       },
       transactionLabel: `SELECT_ALL (${nextSelection.selectedEntityIds.length})`,
+      addedEntityIds: [],
       removedEntityIds: [],
     };
   },
@@ -103,6 +395,7 @@ const clearSelectionCommand: CadCommandDefinition<{ key: 'CLEAR_SELECTION' }> = 
         prompt: 'CLEAR_SELECTION committed. Selection set cleared.',
       },
       transactionLabel: 'CLEAR_SELECTION',
+      addedEntityIds: [],
       removedEntityIds: [],
     };
   },
@@ -111,9 +404,7 @@ const clearSelectionCommand: CadCommandDefinition<{ key: 'CLEAR_SELECTION' }> = 
 const eraseCommand: CadCommandDefinition<{ key: 'ERASE' }> = {
   key: 'ERASE',
   execute: (snapshot) => {
-    const selectedEntities = getSelectedCadEntities(snapshot.project, snapshot.selection).filter(
-      (entity) => !entity.locked,
-    );
+    const selectedEntities = getExpandedSelectedEntities(snapshot);
     if (selectedEntities.length === 0) return null;
     const removedEntityIds = selectedEntities.map((entity) => entity.id);
     const removedEntityIdSet = new Set(removedEntityIds);
@@ -132,7 +423,197 @@ const eraseCommand: CadCommandDefinition<{ key: 'ERASE' }> = {
         prompt: `ERASE committed. Removed ${removedEntityIds.length} entr${removedEntityIds.length === 1 ? 'y' : 'ies'}.`,
       },
       transactionLabel: `ERASE (${removedEntityIds.length})`,
+      addedEntityIds: [],
       removedEntityIds,
+    };
+  },
+};
+
+const pointCommand: CadCommandDefinition<{
+  key: 'POINT';
+  x: number;
+  y: number;
+  label?: string;
+}> = {
+  key: 'POINT',
+  execute: (snapshot, command) => {
+    const entities = createManualPointEntities(snapshot.project, command.x, command.y, command.label);
+    const nextProject = appendCadProjectEntities(snapshot.project, [entities.point, entities.label]);
+    return {
+      nextSnapshot: {
+        project: nextProject,
+        selection: createCadSelectionState(nextProject, [entities.point.id]),
+      },
+      commandState: {
+        key: 'POINT',
+        phase: 'committed',
+        prompt: `POINT committed at (${command.x.toFixed(3)}, ${command.y.toFixed(3)}).`,
+      },
+      transactionLabel: `POINT (${entities.point.stationId})`,
+      addedEntityIds: [entities.point.id, entities.label.id],
+      removedEntityIds: [],
+    };
+  },
+};
+
+const lineCommand: CadCommandDefinition<{
+  key: 'LINE';
+  start: { x: number; y: number; label: string };
+  end: { x: number; y: number; label: string };
+}> = {
+  key: 'LINE',
+  execute: (snapshot, command) => {
+    if (
+      Math.abs(command.start.x - command.end.x) <= 1e-9 &&
+      Math.abs(command.start.y - command.end.y) <= 1e-9
+    ) {
+      return null;
+    }
+    const lineEntity: CadEntity = {
+      id: createStableRuntimeId('cad-line'),
+      type: 'line',
+      layerId: 'observation-lines',
+      styleId: 'style-observation-line',
+      visible: true,
+      locked: false,
+      fromStationId: command.start.label,
+      toStationId: command.end.label,
+      fromX: command.start.x,
+      fromY: command.start.y,
+      toX: command.end.x,
+      toY: command.end.y,
+      sourceObservationIds: [],
+      metadata: {
+        createdBy: 'LINE',
+        manual: true,
+      },
+    };
+    const nextProject = appendCadProjectEntities(snapshot.project, [lineEntity]);
+    return {
+      nextSnapshot: {
+        project: nextProject,
+        selection: createCadSelectionState(nextProject, [lineEntity.id]),
+      },
+      commandState: {
+        key: 'LINE',
+        phase: 'committed',
+        prompt: `LINE committed from ${command.start.label} to ${command.end.label}.`,
+      },
+      transactionLabel: `LINE (${command.start.label}-${command.end.label})`,
+      addedEntityIds: [lineEntity.id],
+      removedEntityIds: [],
+    };
+  },
+};
+
+const polylineCommand: CadCommandDefinition<{
+  key: 'PLINE';
+  vertices: { x: number; y: number; label: string }[];
+}> = {
+  key: 'PLINE',
+  execute: (snapshot, command) => {
+    const vertices = command.vertices.filter((vertex, index, list) => {
+      const previous = list[index - 1];
+      if (!previous) return true;
+      return Math.abs(vertex.x - previous.x) > 1e-9 || Math.abs(vertex.y - previous.y) > 1e-9;
+    });
+    if (vertices.length < 2) return null;
+    const polylineEntity: CadPolylineEntity = {
+      id: createStableRuntimeId('cad-polyline'),
+      type: 'polyline',
+      layerId: 'observation-lines',
+      styleId: 'style-observation-line',
+      visible: true,
+      locked: false,
+      vertices: vertices.map((vertex) => ({ x: vertex.x, y: vertex.y })),
+      vertexLabels: vertices.map((vertex) => vertex.label),
+      closed: false,
+      metadata: {
+        createdBy: 'PLINE',
+        manual: true,
+      },
+    };
+    const nextProject = appendCadProjectEntities(snapshot.project, [polylineEntity]);
+    return {
+      nextSnapshot: {
+        project: nextProject,
+        selection: createCadSelectionState(nextProject, [polylineEntity.id]),
+      },
+      commandState: {
+        key: 'PLINE',
+        phase: 'committed',
+        prompt: `PLINE committed with ${vertices.length} vertices.`,
+      },
+      transactionLabel: `PLINE (${vertices.length})`,
+      addedEntityIds: [polylineEntity.id],
+      removedEntityIds: [],
+    };
+  },
+};
+
+const moveCommand: CadCommandDefinition<{
+  key: 'MOVE';
+  deltaX: number;
+  deltaY: number;
+}> = {
+  key: 'MOVE',
+  execute: (snapshot, command) => {
+    if (Math.abs(command.deltaX) <= 1e-9 && Math.abs(command.deltaY) <= 1e-9) return null;
+    const selectedEntities = getExpandedSelectedEntities(snapshot);
+    if (selectedEntities.length === 0) return null;
+    const selectedIdSet = new Set(selectedEntities.map((entity) => entity.id));
+    const nextProject = replaceCadProjectEntities(
+      snapshot.project,
+      snapshot.project.entities.map((entity) =>
+        selectedIdSet.has(entity.id) ? translateEntity(entity, command.deltaX, command.deltaY) : entity,
+      ),
+    );
+    return {
+      nextSnapshot: {
+        project: nextProject,
+        selection: createCadSelectionState(nextProject, selectedEntities.map((entity) => entity.id)),
+      },
+      commandState: {
+        key: 'MOVE',
+        phase: 'committed',
+        prompt: `MOVE committed by (${command.deltaX.toFixed(3)}, ${command.deltaY.toFixed(3)}).`,
+      },
+      transactionLabel: `MOVE (${selectedEntities.length})`,
+      addedEntityIds: [],
+      removedEntityIds: [],
+    };
+  },
+};
+
+const copyCommand: CadCommandDefinition<{
+  key: 'COPY';
+  deltaX: number;
+  deltaY: number;
+}> = {
+  key: 'COPY',
+  execute: (snapshot, command) => {
+    if (Math.abs(command.deltaX) <= 1e-9 && Math.abs(command.deltaY) <= 1e-9) return null;
+    const selectedEntities = getExpandedSelectedEntities(snapshot);
+    if (selectedEntities.length === 0) return null;
+    const copiedEntities = buildCopiedEntities(snapshot.project, selectedEntities, command.deltaX, command.deltaY);
+    if (copiedEntities.length === 0) return null;
+    const nextProject = appendCadProjectEntities(snapshot.project, copiedEntities);
+    return {
+      nextSnapshot: {
+        project: nextProject,
+        selection: createCadSelectionState(
+          nextProject,
+          copiedEntities.map((entity) => entity.id),
+        ),
+      },
+      commandState: {
+        key: 'COPY',
+        phase: 'committed',
+        prompt: `COPY committed by (${command.deltaX.toFixed(3)}, ${command.deltaY.toFixed(3)}).`,
+      },
+      transactionLabel: `COPY (${copiedEntities.length})`,
+      addedEntityIds: copiedEntities.map((entity) => entity.id),
+      removedEntityIds: [],
     };
   },
 };
@@ -141,6 +622,11 @@ export const CAD_COMMAND_REGISTRY: Record<CadCommandKey, CadCommandDefinition<Ca
   SELECT_ALL: selectAllCommand as CadCommandDefinition<CadCommand>,
   CLEAR_SELECTION: clearSelectionCommand as CadCommandDefinition<CadCommand>,
   ERASE: eraseCommand as CadCommandDefinition<CadCommand>,
+  POINT: pointCommand as CadCommandDefinition<CadCommand>,
+  LINE: lineCommand as CadCommandDefinition<CadCommand>,
+  PLINE: polylineCommand as CadCommandDefinition<CadCommand>,
+  MOVE: moveCommand as CadCommandDefinition<CadCommand>,
+  COPY: copyCommand as CadCommandDefinition<CadCommand>,
 };
 
 export const createCadIdleCommandState = createIdleCommandState;

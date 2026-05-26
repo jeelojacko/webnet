@@ -42,6 +42,7 @@ const buildTransaction = (
   before: CadWorkspaceSnapshot,
   after: CadWorkspaceSnapshot,
   label: string,
+  addedEntityIds: string[],
   removedEntityIds: string[],
 ): CadTransaction => ({
   id: `cad-tx-${state.nextSequence}`,
@@ -50,6 +51,7 @@ const buildTransaction = (
   label,
   beforeSelectionIds: before.selection.selectedEntityIds,
   afterSelectionIds: after.selection.selectedEntityIds,
+  addedEntityIds,
   removedEntityIds,
 });
 
@@ -66,6 +68,7 @@ export const runCadCommand = (
     state.present,
     result.nextSnapshot,
     result.transactionLabel,
+    result.addedEntityIds,
     result.removedEntityIds,
   );
   const historyEntry: CadHistoryEntry = {

@@ -77,11 +77,27 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     selectionCount,
     canUndo,
     canRedo,
+    activeCommandKey,
+    commandInputValue,
     statusText,
+    commandHelpText,
+    canUseActiveSnap,
+    canFinishCommand,
     activeSnap,
     snapStatusText,
     historyDepth,
     redoDepth,
+    startPointCommand,
+    startLineCommand,
+    startPolylineCommand,
+    startInverseCommand,
+    startMoveCommand,
+    startCopyCommand,
+    cancelActiveCommand,
+    finishActiveCommand,
+    setCommandInputValue,
+    submitCommandInput,
+    useActiveSnap,
     selectEntity,
     updatePointerWorldPoint,
     selectAll,
@@ -149,7 +165,23 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
                 selectionCount={selectionCount}
                 canUndo={canUndo}
                 canRedo={canRedo}
+                activeCommandKey={activeCommandKey}
+                commandInputValue={commandInputValue}
                 statusText={statusText}
+                commandHelpText={commandHelpText}
+                canUseActiveSnap={canUseActiveSnap}
+                canFinishCommand={canFinishCommand}
+                onStartPoint={startPointCommand}
+                onStartLine={startLineCommand}
+                onStartPolyline={startPolylineCommand}
+                onStartInverse={startInverseCommand}
+                onStartMove={startMoveCommand}
+                onStartCopy={startCopyCommand}
+                onCancelCommand={cancelActiveCommand}
+                onFinishCommand={finishActiveCommand}
+                onCommandInputChange={setCommandInputValue}
+                onSubmitCommand={submitCommandInput}
+                onUseActiveSnap={useActiveSnap}
                 onSelectAll={selectAll}
                 onClearSelection={clearSelection}
                 onErase={eraseSelection}

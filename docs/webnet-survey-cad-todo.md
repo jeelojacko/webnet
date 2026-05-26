@@ -78,11 +78,13 @@ Risks:
 - [x] Build command state-machine base types.
 - [x] Build snap manager.
 - [x] Build spatial index for snap/select candidates.
-- [ ] Add point node, endpoint, midpoint, intersection, nearest snaps.
+- [x] Add point node, endpoint, midpoint, intersection, nearest snaps.
 - [x] Add visual snap glyphs and status feedback.
-- [ ] Add `POINT`, `LINE`, `PLINE`, `MOVE`, `COPY`, `INVERSE`.
+- [x] Add `POINT`, `LINE`, `INVERSE`.
+- [x] Add `PLINE`, `MOVE`, `COPY`.
 - [x] Add `ERASE`.
-- [ ] Add coordinate input and bearing/distance input path.
+- [x] Add full survey bearing/distance input path.
+- [x] Add coordinate input and azimuth-distance input path.
 - [x] Add undo/redo coverage for multi-entity edits.
 
 Acceptance criteria:

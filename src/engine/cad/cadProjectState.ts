@@ -23,6 +23,9 @@ export const buildCadBounds = (entities: CadEntity[]): CadBounds | null => {
         includePoint(entity.fromX, entity.fromY);
         includePoint(entity.toX, entity.toY);
         break;
+      case 'polyline':
+        entity.vertices.forEach((vertex) => includePoint(vertex.x, vertex.y));
+        break;
       case 'error-ellipse':
         includePoint(entity.centerX - entity.semiMajor, entity.centerY - entity.semiMajor);
         includePoint(entity.centerX + entity.semiMajor, entity.centerY + entity.semiMajor);
@@ -47,6 +50,11 @@ export const replaceCadProjectEntities = (
   entities,
   bounds: buildCadBounds(entities),
 });
+
+export const appendCadProjectEntities = (
+  project: CadProject,
+  entitiesToAppend: CadEntity[],
+): CadProject => replaceCadProjectEntities(project, [...project.entities, ...entitiesToAppend]);
 
 export const buildCadProjectSignature = (project: CadProject): string =>
   [

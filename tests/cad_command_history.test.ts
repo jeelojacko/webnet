@@ -86,4 +86,117 @@ describe('Survey CAD command history', () => {
     expect(clearedState.present.selection.selectedEntityIds).toEqual([]);
     expect(clearedState.undoStack).toHaveLength(2);
   });
+
+  it('adds manual point and line entities through command history and replays them via undo/redo', () => {
+    const project = buildSurveyCadSpikeProject({
+      input,
+      instrumentLibrary: {},
+      parseOptions,
+      units: 'm',
+      result: null,
+    });
+
+    const pointState = runCadCommand(createCadHistoryState(project), {
+      key: 'POINT',
+      x: 10,
+      y: 20,
+      label: 'CAD99',
+    });
+    expect(pointState.present.project.entities.some((entity) => entity.id === 'pt:CAD99')).toBe(true);
+    expect(pointState.present.project.entities.some((entity) => entity.id === 'label:CAD99')).toBe(true);
+
+    const lineState = runCadCommand(pointState, {
+      key: 'LINE',
+      start: { x: 0, y: 0, label: 'A' },
+      end: { x: 10, y: 20, label: 'CAD99' },
+    });
+    expect(
+      lineState.present.project.entities.some(
+        (entity) => entity.type === 'line' && entity.fromStationId === 'A' && entity.toStationId === 'CAD99',
+      ),
+    ).toBe(true);
+
+    const undoneLineState = undoCadHistory(lineState);
+    expect(
+      undoneLineState.present.project.entities.some(
+        (entity) => entity.type === 'line' && entity.fromStationId === 'A' && entity.toStationId === 'CAD99',
+      ),
+    ).toBe(false);
+
+    const redoneLineState = redoCadHistory(undoneLineState);
+    expect(
+      redoneLineState.present.project.entities.some(
+        (entity) => entity.type === 'line' && entity.fromStationId === 'A' && entity.toStationId === 'CAD99',
+      ),
+    ).toBe(true);
+  });
+
+  it('adds plines and replays move/copy edits deterministically', () => {
+    const project = buildSurveyCadSpikeProject({
+      input,
+      instrumentLibrary: {},
+      parseOptions,
+      units: 'm',
+      result: null,
+    });
+
+    const plineState = runCadCommand(createCadHistoryState(project), {
+      key: 'PLINE',
+      vertices: [
+        { x: 0, y: 0, label: 'A' },
+        { x: 20, y: 10, label: 'P1' },
+        { x: 35, y: 15, label: 'P2' },
+      ],
+    });
+    const polyline = plineState.present.project.entities.find((entity) => entity.type === 'polyline');
+    expect(polyline?.type).toBe('polyline');
+    if (polyline?.type !== 'polyline') throw new Error('Polyline not created');
+
+    const movedState = runCadCommand(
+      {
+        ...plineState,
+        present: {
+          ...plineState.present,
+          selection: {
+            selectedEntityIds: [polyline.id],
+          },
+        },
+      },
+      {
+        key: 'MOVE',
+        deltaX: 5,
+        deltaY: -2,
+      },
+    );
+    const movedPolyline = movedState.present.project.entities.find((entity) => entity.id === polyline.id);
+    expect(movedPolyline?.type).toBe('polyline');
+    if (movedPolyline?.type !== 'polyline') throw new Error('Moved polyline missing');
+    expect(movedPolyline.vertices[0]).toEqual({ x: 5, y: -2 });
+
+    const copiedState = runCadCommand(movedState, {
+      key: 'COPY',
+      deltaX: 10,
+      deltaY: 20,
+    });
+    const copiedPolyline = copiedState.present.project.entities.find(
+      (entity) => entity.type === 'polyline' && entity.id !== polyline.id,
+    );
+    expect(copiedPolyline?.type).toBe('polyline');
+    if (copiedPolyline?.type !== 'polyline') throw new Error('Copied polyline missing');
+    expect(copiedPolyline.vertices[0]).toEqual({ x: 15, y: 18 });
+
+    const undoneCopyState = undoCadHistory(copiedState);
+    expect(
+      undoneCopyState.present.project.entities.some(
+        (entity) => entity.type === 'polyline' && entity.id === copiedPolyline.id,
+      ),
+    ).toBe(false);
+
+    const redoneCopyState = redoCadHistory(undoneCopyState);
+    expect(
+      redoneCopyState.present.project.entities.some(
+        (entity) => entity.type === 'polyline' && entity.id === copiedPolyline.id,
+      ),
+    ).toBe(true);
+  });
 });

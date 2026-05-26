@@ -38,11 +38,11 @@ const textFontSize = (project: CadProject, entity: CadEntity, fallback: number):
   );
 };
 
-const toPrimitive = (project: CadProject, entity: CadEntity): CadDisplayPrimitive => {
+const toPrimitives = (project: CadProject, entity: CadEntity): CadDisplayPrimitive[] => {
   const stroke = entityStyle(project, entity)?.color ?? layerColor(project, entity.layerId);
   switch (entity.type) {
     case 'survey-point':
-      return {
+      return [{
         kind: 'point',
         id: `primitive:${entity.id}`,
         layerId: entity.layerId,
@@ -51,9 +51,9 @@ const toPrimitive = (project: CadProject, entity: CadEntity): CadDisplayPrimitiv
         fill: stroke,
         point: { x: entity.x, y: entity.y },
         radius: pointRadius(project, entity),
-      };
+      }];
     case 'line':
-      return {
+      return [{
         kind: 'line',
         id: `primitive:${entity.id}`,
         layerId: entity.layerId,
@@ -64,9 +64,19 @@ const toPrimitive = (project: CadProject, entity: CadEntity): CadDisplayPrimitiv
           { x: entity.toX, y: entity.toY },
         ],
         strokeWidth: strokeWidth(project, entity, 1.25),
-      };
+      }];
+    case 'polyline':
+      return entity.vertices.slice(0, -1).map((vertex, index) => ({
+        kind: 'line',
+        id: `primitive:${entity.id}:${index + 1}`,
+        layerId: entity.layerId,
+        sourceEntityId: entity.id,
+        stroke,
+        points: [vertex, entity.vertices[index + 1]],
+        strokeWidth: strokeWidth(project, entity, 1.25),
+      }));
     case 'text':
-      return {
+      return [{
         kind: 'text',
         id: `primitive:${entity.id}`,
         layerId: entity.layerId,
@@ -75,9 +85,9 @@ const toPrimitive = (project: CadProject, entity: CadEntity): CadDisplayPrimitiv
         point: { x: entity.x, y: entity.y },
         text: entity.text,
         fontSize: textFontSize(project, entity, 11),
-      };
+      }];
     case 'error-ellipse':
-      return {
+      return [{
         kind: 'ellipse',
         id: `primitive:${entity.id}`,
         layerId: entity.layerId,
@@ -88,7 +98,7 @@ const toPrimitive = (project: CadProject, entity: CadEntity): CadDisplayPrimitiv
         semiMinor: entity.semiMinor,
         thetaDeg: entity.thetaDeg,
         strokeWidth: strokeWidth(project, entity, 1.1),
-      };
+      }];
   }
 };
 
@@ -96,5 +106,5 @@ export const buildCadDisplayScene = (project: CadProject): CadDisplayScene => ({
   bounds: project.bounds,
   primitives: project.entities
     .filter((entity) => entity.visible)
-    .map((entity) => toPrimitive(project, entity)),
+    .flatMap((entity) => toPrimitives(project, entity)),
 });

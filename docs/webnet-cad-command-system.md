@@ -22,8 +22,10 @@ idle
 Current implemented spike slice:
 - selection-set state over native entity IDs
 - command registry/history seam
-- first committed commands: `SELECT_ALL`, `CLEAR_SELECTION`, `ERASE`
+- first committed commands: `SELECT_ALL`, `CLEAR_SELECTION`, `ERASE`, `POINT`, `LINE`, `PLINE`, `MOVE`, `COPY`
+- first interactive query command: `INVERSE`
 - undo/redo replay over snapshot-backed transaction entries
+- typed coordinate input plus `@azimuth,distance` and survey bearing-distance input after a first point
 
 ## Initial command families
 - `POINT`

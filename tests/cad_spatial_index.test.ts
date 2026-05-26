@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { appendCadProjectEntities } from '../src/engine/cad/cadProjectState';
 import { buildSurveyCadSpikeProject } from '../src/engine/cad/cadModel';
 import { buildCadSpatialIndex } from '../src/engine/cad/cadSpatialIndex';
 import { buildCadDisplayScene } from '../src/engine/cad/cadRenderer';
@@ -60,6 +61,10 @@ describe('Survey CAD spatial index', () => {
     expect(midpoint?.x).toBeCloseTo(30, 6);
     expect(midpoint?.y).toBeCloseTo(20, 6);
 
+    const intersection = index.queryNearestSnap({ x: 60.2, y: 39.7 }, 2, ['intersection']);
+    expect(intersection?.kind).toBe('intersection');
+    expect(intersection?.label).toContain('A-C');
+
     const nearest = index.queryNearestSnap({ x: 31, y: 18 }, 6, ['nearest']);
     expect(nearest?.kind).toBe('nearest');
     expect(nearest?.label).toBe('A-C');
@@ -88,5 +93,48 @@ describe('Survey CAD spatial index', () => {
     if (textPrimitive?.kind === 'text') {
       expect(textPrimitive.fontSize).toBe(11);
     }
+  });
+
+  it('indexes polyline segments for display and snap queries', () => {
+    const project = appendCadProjectEntities(
+      buildSurveyCadSpikeProject({
+        input,
+        instrumentLibrary: {},
+        parseOptions,
+        units: 'm',
+        result: null,
+      }),
+      [
+        {
+          id: 'pline:test',
+          type: 'polyline',
+          layerId: 'observation-lines',
+          styleId: 'style-observation-line',
+          visible: true,
+          locked: false,
+          vertices: [
+            { x: 0, y: 0 },
+            { x: 20, y: 10 },
+            { x: 40, y: 0 },
+          ],
+          vertexLabels: ['A', 'P1', 'P2'],
+          closed: false,
+        },
+      ],
+    );
+    const index = buildCadSpatialIndex(project);
+    const displayScene = buildCadDisplayScene(project);
+
+    expect(
+      displayScene.primitives.filter((primitive) => primitive.sourceEntityId === 'pline:test' && primitive.kind === 'line'),
+    ).toHaveLength(2);
+
+    const midpoint = index.queryNearestSnap({ x: 10, y: 5 }, 2, ['midpoint']);
+    expect(midpoint?.kind).toBe('midpoint');
+    expect(midpoint?.sourceEntityId).toBe('pline:test');
+
+    const endpoint = index.queryNearestSnap({ x: 39.8, y: 0.2 }, 2, ['endpoint']);
+    expect(endpoint?.kind).toBe('endpoint');
+    expect(endpoint?.label).toBe('P2');
   });
 });

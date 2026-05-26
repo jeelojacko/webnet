@@ -101,6 +101,13 @@ export interface CadLineEntity extends CadBaseEntity {
   sourceObservationIds: number[];
 }
 
+export interface CadPolylineEntity extends CadBaseEntity {
+  type: 'polyline';
+  vertices: CadDisplayPoint[];
+  vertexLabels: string[];
+  closed: boolean;
+}
+
 export interface CadTextEntity extends CadBaseEntity {
   type: 'text';
   x: number;
@@ -122,6 +129,7 @@ export interface CadErrorEllipseEntity extends CadBaseEntity {
 export type CadEntity =
   | CadSurveyPointEntity
   | CadLineEntity
+  | CadPolylineEntity
   | CadTextEntity
   | CadErrorEllipseEntity;
 
@@ -197,7 +205,7 @@ export interface CadDisplayScene {
   primitives: CadDisplayPrimitive[];
 }
 
-export type CadSnapKind = 'point-node' | 'endpoint' | 'midpoint' | 'nearest';
+export type CadSnapKind = 'point-node' | 'endpoint' | 'midpoint' | 'intersection' | 'nearest';
 
 export interface CadSnapCandidate {
   id: string;
@@ -219,7 +227,7 @@ export interface MlightcadSpikeLayer {
 
 export interface MlightcadSpikeEntity {
   objectId: string;
-  type: 'AcDbPoint' | 'AcDbLine' | 'AcDbText' | 'AcDbEllipse';
+  type: 'AcDbPoint' | 'AcDbLine' | 'AcDbPolyline' | 'AcDbText' | 'AcDbEllipse';
   layer: string;
   visible: boolean;
   geometry: Record<string, unknown>;
