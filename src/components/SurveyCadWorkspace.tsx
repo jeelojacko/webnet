@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import {
   Compass,
   FileCode2,
@@ -10,11 +10,12 @@ import {
 } from 'lucide-react';
 import type { AdjustmentResult, InstrumentLibrary, ParseOptions, UnitsMode } from '../types';
 import { buildSurveyCadSpikeProject } from '../engine/cad/cadModel';
-import { buildMlightcadSpikeScene } from '../engine/cad/cadMlightcadAdapter';
-import { buildCadDisplayScene } from '../engine/cad/cadRenderer';
 import type { CadEntity } from '../engine/cad/cadTypes';
 import { noteUiTabReady } from '../hooks/useUiPerfMonitor';
+import { useSurveyCadWorkspace } from '../hooks/surveyCad/useSurveyCadWorkspace';
+import SurveyCadCommandLine from './surveyCad/SurveyCadCommandLine';
 import SurveyCadPreview from './surveyCad/SurveyCadPreview';
+import SurveyCadStatusBar from './surveyCad/SurveyCadStatusBar';
 
 const DOC_LINKS = [
   {
@@ -67,31 +68,36 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
       }),
     [input, instrumentLibrary, parseOptions, result, units],
   );
-  const displayScene = useMemo(() => buildCadDisplayScene(cadProject), [cadProject]);
-  const mlightcadScene = useMemo(() => buildMlightcadSpikeScene(cadProject), [cadProject]);
-  const [selectedEntityId, setSelectedEntityId] = useState<string | null>(
-    cadProject.entities[0]?.id ?? null,
-  );
-
-  useEffect(() => {
-    if (!selectedEntityId || cadProject.entities.some((entity) => entity.id === selectedEntityId)) return;
-    setSelectedEntityId(cadProject.entities[0]?.id ?? null);
-  }, [cadProject.entities, selectedEntityId]);
-
-  const selectedEntity = useMemo(
-    () => cadProject.entities.find((entity) => entity.id === selectedEntityId) ?? null,
-    [cadProject.entities, selectedEntityId],
-  );
+  const {
+    cadProject: activeProject,
+    displayScene,
+    mlightcadScene,
+    selectedEntityIds,
+    selectedEntities,
+    selectionCount,
+    canUndo,
+    canRedo,
+    statusText,
+    historyDepth,
+    redoDepth,
+    selectEntity,
+    selectAll,
+    clearSelection,
+    eraseSelection,
+    undo,
+    redo,
+  } = useSurveyCadWorkspace(cadProject);
+  const selectedEntity = selectedEntities[0] ?? null;
 
   const entityCounts = useMemo(() => {
     const counts = new Map<CadEntity['type'], number>();
-    cadProject.entities.forEach((entity) => {
+    activeProject.entities.forEach((entity) => {
       counts.set(entity.type, (counts.get(entity.type) ?? 0) + 1);
     });
     return entitySummaryOrder
       .map((type) => ({ type, count: counts.get(type) ?? 0 }))
       .filter((entry) => entry.count > 0);
-  }, [cadProject.entities]);
+  }, [activeProject.entities]);
 
   return (
     <div className="h-full overflow-auto bg-slate-950 text-slate-100">
@@ -135,11 +141,32 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
               <Network size={16} />
               Live spike preview
             </div>
+            <div className="mt-4">
+              <SurveyCadCommandLine
+                selectionCount={selectionCount}
+                canUndo={canUndo}
+                canRedo={canRedo}
+                statusText={statusText}
+                onSelectAll={selectAll}
+                onClearSelection={clearSelection}
+                onErase={eraseSelection}
+                onUndo={undo}
+                onRedo={redo}
+              />
+            </div>
             <div className="mt-4 h-[34rem]">
               <SurveyCadPreview
                 scene={displayScene}
-                selectedEntityId={selectedEntityId}
-                onSelectEntity={setSelectedEntityId}
+                selectedEntityIds={selectedEntityIds}
+                onSelectEntity={selectEntity}
+              />
+            </div>
+            <div className="mt-4">
+              <SurveyCadStatusBar
+                entityCount={activeProject.entities.length}
+                selectionCount={selectionCount}
+                historyDepth={historyDepth}
+                redoDepth={redoDepth}
               />
             </div>
           </div>
@@ -155,25 +182,25 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
                   <div className="text-[11px] uppercase tracking-[0.18em] text-slate-400">
                     Source
                   </div>
-                  <div className="mt-1 font-medium text-white">{cadProject.metadata.source}</div>
+                  <div className="mt-1 font-medium text-white">{activeProject.metadata.source}</div>
                 </div>
                 <div className="rounded-lg border border-slate-800 bg-slate-950/60 px-3 py-2">
                   <div className="text-[11px] uppercase tracking-[0.18em] text-slate-400">
                     Run mode
                   </div>
-                  <div className="mt-1 font-medium text-white">{cadProject.metadata.runMode}</div>
+                  <div className="mt-1 font-medium text-white">{activeProject.metadata.runMode}</div>
                 </div>
                 <div className="rounded-lg border border-slate-800 bg-slate-950/60 px-3 py-2">
                   <div className="text-[11px] uppercase tracking-[0.18em] text-slate-400">
                     Units
                   </div>
-                  <div className="mt-1 font-medium text-white">{cadProject.metadata.units}</div>
+                  <div className="mt-1 font-medium text-white">{activeProject.metadata.units}</div>
                 </div>
                 <div className="rounded-lg border border-slate-800 bg-slate-950/60 px-3 py-2">
                   <div className="text-[11px] uppercase tracking-[0.18em] text-slate-400">
                     Layers
                   </div>
-                  <div className="mt-1 font-medium text-white">{cadProject.layers.length}</div>
+                  <div className="mt-1 font-medium text-white">{activeProject.layers.length}</div>
                 </div>
               </div>
               <div className="mt-4 grid gap-2">
@@ -196,25 +223,31 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
               </div>
               {selectedEntity ? (
                 <div className="mt-4 space-y-2 text-sm">
-                  <div className="rounded-lg border border-slate-800 bg-slate-950/60 px-3 py-2">
-                    <div className="text-[11px] uppercase tracking-[0.18em] text-slate-400">ID</div>
-                    <div className="mt-1 font-mono text-cyan-300">{selectedEntity.id}</div>
+                <div className="rounded-lg border border-slate-800 bg-slate-950/60 px-3 py-2">
+                  <div className="text-[11px] uppercase tracking-[0.18em] text-slate-400">ID</div>
+                  <div className="mt-1 font-mono text-cyan-300">{selectedEntity.id}</div>
                   </div>
                   <div className="rounded-lg border border-slate-800 bg-slate-950/60 px-3 py-2">
                     <div className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Type</div>
                     <div className="mt-1 text-white">{selectedEntity.type}</div>
                   </div>
                   <div className="rounded-lg border border-slate-800 bg-slate-950/60 px-3 py-2">
-                    <div className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Layer</div>
-                    <div className="mt-1 text-white">{selectedEntity.layerId}</div>
-                  </div>
-                  <pre className="overflow-auto rounded-lg border border-slate-800 bg-slate-950/80 p-3 text-[11px] leading-5 text-slate-300">
-                    {JSON.stringify(selectedEntity, null, 2)}
-                  </pre>
+                  <div className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Layer</div>
+                  <div className="mt-1 text-white">{selectedEntity.layerId}</div>
                 </div>
-              ) : (
+                <div className="rounded-lg border border-slate-800 bg-slate-950/60 px-3 py-2">
+                  <div className="text-[11px] uppercase tracking-[0.18em] text-slate-400">
+                    Selection set
+                  </div>
+                  <div className="mt-1 text-white">{selectionCount} selected</div>
+                </div>
+                <pre className="overflow-auto rounded-lg border border-slate-800 bg-slate-950/80 p-3 text-[11px] leading-5 text-slate-300">
+                  {JSON.stringify(selectedEntity, null, 2)}
+                </pre>
+              </div>
+            ) : (
                 <div className="mt-4 rounded-lg border border-slate-800 bg-slate-950/60 px-3 py-3 text-sm text-slate-400">
-                  No entity available.
+                  {activeProject.entities.length === 0 ? 'No entity available.' : 'No entity selected.'}
                 </div>
               )}
             </div>

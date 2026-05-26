@@ -62,6 +62,69 @@ describe('SurveyCadWorkspace', () => {
     expect(container.textContent).toContain('mlightcad');
     expect(container.querySelector('[data-survey-cad-preview]')).not.toBeNull();
     expect(container.textContent).toContain('"nativeEntityId"');
+    expect(container.querySelector('[data-survey-cad-command-status]')?.textContent).toContain('Ready');
+
+    await act(async () => {
+      root.unmount();
+    });
+    container.remove();
+  });
+
+  it('supports first command-surface edit flow with erase and undo', async () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root: Root = createRoot(container);
+
+    await act(async () => {
+      root.render(
+        <SurveyCadWorkspace
+          input={input}
+          instrumentLibrary={{}}
+          parseOptions={parseOptions}
+          units="m"
+          result={null}
+        />,
+      );
+    });
+
+    const findButton = (label: string): HTMLButtonElement => {
+      const button = Array.from(container.querySelectorAll('button')).find(
+        (entry) => entry.textContent?.trim() === label,
+      ) as HTMLButtonElement | undefined;
+      if (!button) throw new Error(`Button ${label} not found`);
+      return button;
+    };
+
+    expect(container.querySelector('[data-survey-cad-selection-count]')?.textContent).toContain(
+      '1 selected',
+    );
+
+    await act(async () => {
+      findButton('Select All').click();
+    });
+    expect(container.querySelector('[data-survey-cad-selection-count]')?.textContent).toContain(
+      '8 selected',
+    );
+
+    await act(async () => {
+      findButton('ERASE').click();
+    });
+    expect(container.querySelector('[data-survey-cad-entity-count]')?.textContent).toContain(
+      '0 entities',
+    );
+    expect(container.querySelector('[data-survey-cad-command-status]')?.textContent).toContain(
+      'ERASE committed',
+    );
+
+    await act(async () => {
+      findButton('Undo').click();
+    });
+    expect(container.querySelector('[data-survey-cad-entity-count]')?.textContent).toContain(
+      '8 entities',
+    );
+    expect(container.querySelector('[data-survey-cad-command-status]')?.textContent).toContain(
+      'Undo ERASE',
+    );
 
     await act(async () => {
       root.unmount();

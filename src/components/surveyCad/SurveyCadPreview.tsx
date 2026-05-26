@@ -3,8 +3,8 @@ import type { CadBounds, CadDisplayPrimitive, CadDisplayScene } from '../../engi
 
 interface SurveyCadPreviewProps {
   scene: CadDisplayScene;
-  selectedEntityId: string | null;
-  onSelectEntity: (_entityId: string) => void;
+  selectedEntityIds: readonly string[];
+  onSelectEntity: (_entityId: string, _appendToSelection?: boolean) => void;
 }
 
 const WIDTH = 900;
@@ -42,14 +42,15 @@ const useProjector = (bounds: CadBounds | null) =>
 
 const renderPrimitive = (
   primitive: CadDisplayPrimitive,
-  selectedEntityId: string | null,
+  selectedEntityIds: readonly string[],
   project: (_x: number, _y: number) => { x: number; y: number },
   scale: number,
-  onSelectEntity: (_entityId: string) => void,
+  onSelectEntity: (_entityId: string, _appendToSelection?: boolean) => void,
 ) => {
-  const isSelected = primitive.sourceEntityId === selectedEntityId;
+  const isSelected = selectedEntityIds.includes(primitive.sourceEntityId);
   const commonProps = {
-    onClick: () => onSelectEntity(primitive.sourceEntityId),
+    onClick: (event: React.MouseEvent<SVGElement>) =>
+      onSelectEntity(primitive.sourceEntityId, event.shiftKey),
     className: 'cursor-pointer',
   };
 
@@ -124,7 +125,7 @@ const renderPrimitive = (
 
 const SurveyCadPreview: React.FC<SurveyCadPreviewProps> = ({
   scene,
-  selectedEntityId,
+  selectedEntityIds,
   onSelectEntity,
 }) => {
   const { project, scale } = useProjector(scene.bounds);
@@ -138,7 +139,7 @@ const SurveyCadPreview: React.FC<SurveyCadPreviewProps> = ({
       <rect x={0} y={0} width={WIDTH} height={HEIGHT} fill="#020617" />
       <g>
         {scene.primitives.map((primitive) =>
-          renderPrimitive(primitive, selectedEntityId, project, scale, onSelectEntity),
+          renderPrimitive(primitive, selectedEntityIds, project, scale, onSelectEntity),
         )}
       </g>
     </svg>

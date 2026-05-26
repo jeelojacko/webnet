@@ -35,7 +35,7 @@ Notes:
 - [ ] Expand entities to arc/polyline/polygon/parcel families.
 - [ ] Define CAD project-state domain to persist inside current WebNet project storage.
 - [x] Define deterministic serialization-oriented project shape for spike scope.
-- [ ] Define transaction log and undo/redo contracts.
+- [x] Define transaction log and undo/redo contracts.
 - [x] Add focused model/adapter tests.
 - [ ] Add focused geometry primitive tests.
 
@@ -73,16 +73,17 @@ Risks:
 - text/linetype/block support may be coupled to external entity model
 
 ## Phase 3: Selection, snapping, and commands
-- [ ] Build selection-set model.
-- [ ] Build command registry and command history.
-- [ ] Build command state-machine base types.
+- [x] Build selection-set model.
+- [x] Build command registry and command history.
+- [x] Build command state-machine base types.
 - [ ] Build snap manager.
 - [ ] Build spatial index for snap/select candidates.
 - [ ] Add point node, endpoint, midpoint, intersection, nearest snaps.
 - [ ] Add visual snap glyphs and status feedback.
-- [ ] Add `POINT`, `LINE`, `PLINE`, `MOVE`, `COPY`, `ERASE`, `INVERSE`.
+- [ ] Add `POINT`, `LINE`, `PLINE`, `MOVE`, `COPY`, `INVERSE`.
+- [x] Add `ERASE`.
 - [ ] Add coordinate input and bearing/distance input path.
-- [ ] Add undo/redo coverage for multi-entity edits.
+- [x] Add undo/redo coverage for multi-entity edits.
 
 Acceptance criteria:
 - commands are testable without DOM-heavy harnesses

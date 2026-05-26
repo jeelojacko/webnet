@@ -142,9 +142,14 @@ Representative areas:
 Current Survey CAD spike seams:
 - `src/engine/cad/cadTypes.ts` defines native CAD entities, layers, bounds, display primitives, and inferred external adapter payloads
 - `src/engine/cad/cadModel.ts` builds a native CAD project from current WebNet input or solved results
+- `src/engine/cad/cadProjectState.ts` owns CAD project bounds/signature helpers used by renderer and history layers
+- `src/engine/cad/cadSelection.ts` owns deterministic selection-set state over native entity IDs
 - `src/engine/cad/cadRenderer.ts` converts native entities into renderer-neutral display primitives
 - `src/engine/cad/cadMlightcadAdapter.ts` converts the same native entities into an inferred `mlightcad`-target scene contract while preserving native IDs
+- `src/engine/cad/cadTransactions.ts` and `src/engine/cad/cadUndoRedo.ts` own the first command registry, transaction journal, and undo/redo replay seam
+- `src/hooks/surveyCad/useSurveyCadWorkspace.ts` wires native CAD project state into selection, command history, and renderer outputs for the Survey CAD workspace
 - `src/components/surveyCad/SurveyCadPreview.tsx` proves the adapter path through an internal SVG renderer without changing the main map stack
+- `src/components/surveyCad/SurveyCadCommandLine.tsx` and `src/components/surveyCad/SurveyCadStatusBar.tsx` expose the first command/status surface for selection and edit-history work
 
 The UI should treat solve results as the source of truth and avoid duplicating engine logic in view code.
 

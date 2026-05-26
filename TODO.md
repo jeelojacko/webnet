@@ -1,3 +1,5 @@
+- [x] Survey CAD command-foundation batch (May 2026): add native selection-set and transaction-history seams, wire them into the Survey CAD spike workspace, and ship first command-surface actions (`Select All`, `Clear Selection`, `ERASE`, `Undo`, `Redo`) without changing solver/parity behavior.
+
 - [x] Survey CAD renderer/model spike batch (May 2026): add native CAD entity/adaptor seams under `src/engine/cad/`, prove them with an internal SVG Survey CAD preview built from current WebNet input/result state, and document why actual `mlightcad` runtime installation remains deferred behind the current LibreDWG/GPL package boundary.
 
 - [x] Survey CAD planning groundwork batch (May 2026): add a branch-local Survey CAD workspace seam beside `Project Options`, preserve the attached high-level plan in `docs/`, and seed repo-fit architecture/TODO/licensing/evaluation/ADR docs for later CAD implementation batches.

@@ -19,6 +19,12 @@ idle
   -> commit or cancel
 ```
 
+Current implemented spike slice:
+- selection-set state over native entity IDs
+- command registry/history seam
+- first committed commands: `SELECT_ALL`, `CLEAR_SELECTION`, `ERASE`
+- undo/redo replay over snapshot-backed transaction entries
+
 ## Initial command families
 - `POINT`
 - `LINE`
