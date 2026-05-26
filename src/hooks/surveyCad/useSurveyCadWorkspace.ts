@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { cadIntersectLineLikeEntities, isCadLineLikeEntity } from '../../engine/cad/cadCogo';
 import { getSelectedCadEntities, replaceCadSelection, toggleCadSelectionEntity } from '../../engine/cad/cadSelection';
 import { buildCadProjectSignature } from '../../engine/cad/cadProjectState';
 import { buildMlightcadSpikeScene } from '../../engine/cad/cadMlightcadAdapter';
@@ -17,22 +18,25 @@ interface UseSurveyCadWorkspaceResult {
   selectionCount: number;
   canUndo: boolean;
   canRedo: boolean;
-  activeCommandKey: 'POINT' | 'LINE' | 'PLINE' | 'INVERSE' | 'MOVE' | 'COPY' | null;
+  activeCommandKey: 'POINT' | 'COGO_POINT' | 'LINE' | 'PLINE' | 'INVERSE' | 'MOVE' | 'COPY' | null;
   commandInputValue: string;
   statusText: string;
   commandHelpText: string;
   canUseActiveSnap: boolean;
   canFinishCommand: boolean;
+  canCreateIntersectionPoint: boolean;
   activeSnap: CadSnapCandidate | null;
   snapStatusText: string;
   historyDepth: number;
   redoDepth: number;
   startPointCommand: () => void;
+  startCogoPointCommand: () => void;
   startLineCommand: () => void;
   startPolylineCommand: () => void;
   startInverseCommand: () => void;
   startMoveCommand: () => void;
   startCopyCommand: () => void;
+  createIntersectionPoint: () => void;
   cancelActiveCommand: () => void;
   finishActiveCommand: () => void;
   setCommandInputValue: (_value: string) => void;
@@ -77,6 +81,7 @@ export const useSurveyCadWorkspace = (baseProject: CadProject): UseSurveyCadWork
     canUseActiveSnap,
     canFinishCommand,
     startPointCommand,
+    startCogoPointCommand,
     startLineCommand,
     startPolylineCommand,
     startInverseCommand,
@@ -93,6 +98,14 @@ export const useSurveyCadWorkspace = (baseProject: CadProject): UseSurveyCadWork
     selectionCount: selection.selectedEntityIds.length,
     setHistory,
   });
+  const selectedLineLikes = useMemo(
+    () => selectedEntities.filter(isCadLineLikeEntity),
+    [selectedEntities],
+  );
+  const selectedIntersection = useMemo(() => {
+    if (selectedLineLikes.length !== 2) return null;
+    return cadIntersectLineLikeEntities(selectedLineLikes[0], selectedLineLikes[1]);
+  }, [selectedLineLikes]);
 
   return {
     cadProject,
@@ -109,16 +122,30 @@ export const useSurveyCadWorkspace = (baseProject: CadProject): UseSurveyCadWork
     commandHelpText,
     canUseActiveSnap,
     canFinishCommand,
+    canCreateIntersectionPoint: selectedIntersection != null,
     activeSnap,
     snapStatusText,
     historyDepth: history.undoStack.length,
     redoDepth: history.redoStack.length,
     startPointCommand,
+    startCogoPointCommand,
     startLineCommand,
     startPolylineCommand,
     startInverseCommand,
     startMoveCommand,
     startCopyCommand,
+    createIntersectionPoint: () => {
+      if (!selectedIntersection || selectedLineLikes.length !== 2) return;
+      setHistory((current) =>
+        runCadCommand(current, {
+          key: 'INTERSECT_POINT',
+          x: selectedIntersection.point.x,
+          y: selectedIntersection.point.y,
+          firstLabel: selectedLineLikes[0].id,
+          secondLabel: selectedLineLikes[1].id,
+        }),
+      );
+    },
     cancelActiveCommand: cancelCommand,
     finishActiveCommand: finishCommand,
     setCommandInputValue,

@@ -199,4 +199,51 @@ describe('Survey CAD command history', () => {
       ),
     ).toBe(true);
   });
+
+  it('tracks cogo point creation and intersection point creation through history', () => {
+    const project = buildSurveyCadSpikeProject({
+      input,
+      instrumentLibrary: {},
+      parseOptions,
+      units: 'm',
+      result: null,
+    });
+
+    const cogoPointState = runCadCommand(createCadHistoryState(project), {
+      key: 'COGO_POINT',
+      x: 20,
+      y: 20,
+      basisLabel: 'A',
+      directionLabel: 'N45-00-00E,28.284',
+    });
+    expect(cogoPointState.present.project.entities.some((entity) => entity.id === 'pt:CAD1')).toBe(true);
+    expect(cogoPointState.commandState.prompt).toContain('COGO_POINT committed');
+
+    const intersectionState = runCadCommand(cogoPointState, {
+      key: 'INTERSECT_POINT',
+      x: 60,
+      y: 40,
+      firstLabel: 'line:A-C',
+      secondLabel: 'line:B-C',
+    });
+    expect(
+      intersectionState.present.project.entities.some(
+        (entity) => entity.type === 'survey-point' && entity.stationId === 'CAD2',
+      ),
+    ).toBe(true);
+
+    const undoneState = undoCadHistory(intersectionState);
+    expect(
+      undoneState.present.project.entities.some(
+        (entity) => entity.type === 'survey-point' && entity.stationId === 'CAD2',
+      ),
+    ).toBe(false);
+
+    const redoneState = redoCadHistory(undoneState);
+    expect(
+      redoneState.present.project.entities.some(
+        (entity) => entity.type === 'survey-point' && entity.stationId === 'CAD2',
+      ),
+    ).toBe(true);
+  });
 });

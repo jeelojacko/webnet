@@ -1,16 +1,14 @@
 import type { Dispatch, SetStateAction } from 'react';
 import { useMemo, useState } from 'react';
 import {
-  cadAzimuthDeg,
-  cadDistance,
-  cadParseBearingDegrees,
-  cadPointFromAzimuthDistance,
-  type CadNamedPoint,
-} from '../../engine/cad/cadGeometry';
+  buildCadInverseSummary,
+  cadPointFromBearingDistance,
+} from '../../engine/cad/cadCogo';
+import { cadParseBearingDegrees, cadPointFromAzimuthDistance, type CadNamedPoint } from '../../engine/cad/cadGeometry';
 import { runCadCommand, type CadHistoryState } from '../../engine/cad/cadUndoRedo';
 import type { CadSnapCandidate } from '../../engine/cad/cadTypes';
 
-type ActiveCommandKey = 'POINT' | 'LINE' | 'PLINE' | 'INVERSE' | 'MOVE' | 'COPY';
+type ActiveCommandKey = 'POINT' | 'COGO_POINT' | 'LINE' | 'PLINE' | 'INVERSE' | 'MOVE' | 'COPY';
 
 type CommandSession =
   | {
@@ -19,7 +17,7 @@ type CommandSession =
       resultText?: string;
     }
   | {
-      key: 'LINE' | 'INVERSE' | 'MOVE' | 'COPY';
+      key: 'COGO_POINT' | 'LINE' | 'INVERSE' | 'MOVE' | 'COPY';
       inputValue: string;
       startPoint: CadNamedPoint | null;
       resultText?: string;
@@ -46,6 +44,7 @@ interface UseSurveyCadCommandsResult {
   canUseActiveSnap: boolean;
   canFinishCommand: boolean;
   startPointCommand: () => void;
+  startCogoPointCommand: () => void;
   startLineCommand: () => void;
   startPolylineCommand: () => void;
   startInverseCommand: () => void;
@@ -106,7 +105,10 @@ const parseRelativeBearingDistance = (
       ? Number(directionToken)
       : null;
   if (azimuthDeg == null) return null;
-  const point = cadPointFromAzimuthDistance(basePoint, azimuthDeg, distance);
+  const point = looksLikeBearing
+    ? cadPointFromBearingDistance(basePoint, directionToken, distance)
+    : cadPointFromAzimuthDistance(basePoint, azimuthDeg, distance);
+  if (!point) return null;
   return {
     ...point,
     label: label || `${prefixed ? '@' : ''}${directionToken},${distance}`,
@@ -118,6 +120,11 @@ const promptForSession = (session: CommandSession | null, fallbackStatus: string
   switch (session.key) {
     case 'POINT':
       return session.resultText ?? 'POINT active. Enter `x,y` or `LABEL=x,y`, then Submit. Hover geometry and Use Snap also works.';
+    case 'COGO_POINT':
+      return session.resultText ??
+        (session.startPoint
+          ? `COGO_POINT active. Base ${session.startPoint.label} captured. Enter target as \`@azimuth,distance\`, \`N45-00-00E,100\`, or absolute \`x,y\`.`
+          : 'COGO_POINT active. Enter or snap the base point.');
     case 'LINE':
       return session.resultText ??
         (session.startPoint
@@ -153,6 +160,10 @@ const helpTextForSession = (session: CommandSession | null): string => {
   switch (session.key) {
     case 'POINT':
       return 'POINT input: `x,y` or `LABEL=x,y`. `Use Snap` creates a new manual point at the hovered snap location.';
+    case 'COGO_POINT':
+      return session.startPoint
+        ? 'COGO_POINT target: `x,y`, `LABEL=x,y`, `@azimuth,distance`, or survey bearing-distance like `N45-00-00E,100` from the base point.'
+        : 'COGO_POINT base point: `x,y`, `LABEL=x,y`, or hover geometry then `Use Snap`.';
     case 'LINE':
       return session.startPoint
         ? 'LINE second point: `x,y`, `LABEL=x,y`, `@azimuth,distance`, or `N45-00-00E,100` from the first point.'
@@ -203,6 +214,28 @@ export const useSurveyCadCommands = ({
             x: point.x,
             y: point.y,
             label: fromSnap ? undefined : point.label,
+          }),
+        );
+        return null;
+      }
+      if (current.key === 'COGO_POINT') {
+        if (!current.startPoint) {
+          return {
+            ...current,
+            startPoint: point,
+            inputValue: '',
+            resultText: undefined,
+          };
+        }
+        const startPoint = current.startPoint;
+        const directionLabel = current.inputValue.trim() || point.label;
+        setHistory((existing) =>
+          runCadCommand(existing, {
+            key: 'COGO_POINT',
+            x: point.x,
+            y: point.y,
+            basisLabel: startPoint.label,
+            directionLabel,
           }),
         );
         return null;
@@ -263,13 +296,12 @@ export const useSurveyCadCommands = ({
           resultText: undefined,
         };
       }
-      const distance = cadDistance(current.startPoint, point);
-      const azimuthDeg = cadAzimuthDeg(current.startPoint, point);
+      const inverse = buildCadInverseSummary(current.startPoint, point);
       return {
         ...current,
         startPoint: null,
         inputValue: '',
-        resultText: `INVERSE ${current.startPoint.label} -> ${point.label}: distance ${distance.toFixed(3)}, azimuth ${azimuthDeg.toFixed(4)} deg.`,
+        resultText: `INVERSE ${current.startPoint.label} -> ${point.label}: distance ${inverse.distance.toFixed(3)}, azimuth ${inverse.azimuthDeg.toFixed(4)} deg, bearing ${inverse.bearing}.`,
       };
     });
   };
@@ -282,6 +314,12 @@ export const useSurveyCadCommands = ({
     canUseActiveSnap: activeSnap != null && session != null,
     canFinishCommand: session?.key === 'PLINE' && session.points.length >= 2,
     startPointCommand: () => setSession({ key: 'POINT', inputValue: '' }),
+    startCogoPointCommand: () =>
+      setSession({
+        key: 'COGO_POINT',
+        inputValue: '',
+        startPoint: null,
+      }),
     startLineCommand: () =>
       setSession({
         key: 'LINE',

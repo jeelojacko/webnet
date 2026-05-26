@@ -1,3 +1,5 @@
+- [x] Survey CAD phase-4 cogo-core batch (May 2026): add native COGO inverse helpers, explicit bearing/azimuth-distance point creation, and first line-line intersection point workflow on top of the phase-3 command/history seams.
+
 - [x] Survey CAD remaining phase-3 batch (May 2026): add `PLINE`, `MOVE`, and `COPY` on the native command/history seams, extend interactive command sessions to finish multi-step edits, and add full survey bearing-distance typed input alongside existing coordinate and azimuth-distance entry.
 
 - [x] Survey CAD interactive-command batch (May 2026): add interactive command sessions with typed coordinate input, extend snapping through line intersections, and ship first create/query commands (`POINT`, `LINE`, `INVERSE`) on top of the native history/model seams.

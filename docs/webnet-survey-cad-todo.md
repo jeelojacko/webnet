@@ -93,10 +93,10 @@ Acceptance criteria:
 - undo/redo boundaries are deterministic
 
 ## Phase 4: COGO and parcel foundation
-- [ ] Add inverse calculations.
-- [ ] Add bearing-distance point creation.
-- [ ] Add azimuth-distance point creation.
-- [ ] Add line-line intersection.
+- [x] Add inverse calculations.
+- [x] Add bearing-distance point creation.
+- [x] Add azimuth-distance point creation.
+- [x] Add line-line intersection.
 - [ ] Add line-arc and arc-arc intersections.
 - [ ] Add offsets, parallels, perpendiculars.
 - [ ] Add curve creation helpers.

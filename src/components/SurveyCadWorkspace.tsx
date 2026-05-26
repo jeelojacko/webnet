@@ -83,16 +83,19 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     commandHelpText,
     canUseActiveSnap,
     canFinishCommand,
+    canCreateIntersectionPoint,
     activeSnap,
     snapStatusText,
     historyDepth,
     redoDepth,
     startPointCommand,
+    startCogoPointCommand,
     startLineCommand,
     startPolylineCommand,
     startInverseCommand,
     startMoveCommand,
     startCopyCommand,
+    createIntersectionPoint,
     cancelActiveCommand,
     finishActiveCommand,
     setCommandInputValue,
@@ -171,12 +174,15 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
                 commandHelpText={commandHelpText}
                 canUseActiveSnap={canUseActiveSnap}
                 canFinishCommand={canFinishCommand}
+                canCreateIntersectionPoint={canCreateIntersectionPoint}
                 onStartPoint={startPointCommand}
+                onStartCogoPoint={startCogoPointCommand}
                 onStartLine={startLineCommand}
                 onStartPolyline={startPolylineCommand}
                 onStartInverse={startInverseCommand}
                 onStartMove={startMoveCommand}
                 onStartCopy={startCopyCommand}
+                onCreateIntersectionPoint={createIntersectionPoint}
                 onCancelCommand={cancelActiveCommand}
                 onFinishCommand={finishActiveCommand}
                 onCommandInputChange={setCommandInputValue}

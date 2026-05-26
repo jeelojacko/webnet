@@ -506,4 +506,101 @@ describe('SurveyCadWorkspace', () => {
     });
     container.remove();
   });
+
+  it('runs COGO PT from a snapped base point and creates an intersection point from selected lines', async () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root: Root = createRoot(container);
+
+    await act(async () => {
+      root.render(
+        <SurveyCadWorkspace
+          input={input}
+          instrumentLibrary={{}}
+          parseOptions={parseOptions}
+          units="m"
+          result={null}
+        />,
+      );
+    });
+
+    const findButton = (label: string): HTMLButtonElement => {
+      const button = Array.from(container.querySelectorAll('button')).find(
+        (entry) => entry.textContent?.trim() === label,
+      ) as HTMLButtonElement | undefined;
+      if (!button) throw new Error(`Button ${label} not found`);
+      return button;
+    };
+    const preview = container.querySelector('[data-survey-cad-preview]') as SVGElement | null;
+    const commandInput = container.querySelector('input[type="text"]') as HTMLInputElement | null;
+    if (!preview || !commandInput) throw new Error('Preview or command input not found');
+    Object.defineProperty(preview, 'getBoundingClientRect', {
+      configurable: true,
+      value: () => ({
+        x: 0,
+        y: 0,
+        left: 0,
+        top: 0,
+        width: 900,
+        height: 520,
+        right: 900,
+        bottom: 520,
+        toJSON: () => ({}),
+      }),
+    });
+
+    await act(async () => {
+      findButton('COGO PT').click();
+      preview.dispatchEvent(
+        new MouseEvent('mousemove', {
+          bubbles: true,
+          clientX: 94,
+          clientY: 461,
+        }),
+      );
+    });
+    await act(async () => {
+      findButton('Use Snap').click();
+    });
+    await act(async () => {
+      setTextInputValue(commandInput, 'N45-00-00E,20');
+    });
+    await act(async () => {
+      findButton('Submit').click();
+    });
+
+    expect(container.querySelector('[data-survey-cad-command-status]')?.textContent).toContain(
+      'COGO_POINT committed',
+    );
+    expect(container.querySelector('[data-survey-cad-entity-count]')?.textContent).toContain(
+      '10 entities',
+    );
+
+    const lineElements = Array.from(
+      container.querySelectorAll('line.cursor-pointer'),
+    ) as SVGLineElement[];
+    if (lineElements.length < 2) throw new Error('Expected line geometry for intersection test');
+
+    await act(async () => {
+      lineElements[0].dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    });
+    await act(async () => {
+      lineElements[1].dispatchEvent(new MouseEvent('click', { bubbles: true, shiftKey: true }));
+    });
+    await act(async () => {
+      findButton('INTX').click();
+    });
+
+    expect(container.querySelector('[data-survey-cad-command-status]')?.textContent).toContain(
+      'INTERSECT_POINT committed',
+    );
+    expect(container.querySelector('[data-survey-cad-entity-count]')?.textContent).toContain(
+      '12 entities',
+    );
+
+    await act(async () => {
+      root.unmount();
+    });
+    container.remove();
+  });
 });

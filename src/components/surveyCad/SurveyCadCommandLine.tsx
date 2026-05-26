@@ -4,18 +4,21 @@ interface SurveyCadCommandLineProps {
   selectionCount: number;
   canUndo: boolean;
   canRedo: boolean;
-  activeCommandKey: 'POINT' | 'LINE' | 'PLINE' | 'INVERSE' | 'MOVE' | 'COPY' | null;
+  activeCommandKey: 'POINT' | 'COGO_POINT' | 'LINE' | 'PLINE' | 'INVERSE' | 'MOVE' | 'COPY' | null;
   commandInputValue: string;
   statusText: string;
   commandHelpText: string;
   canUseActiveSnap: boolean;
   canFinishCommand: boolean;
+  canCreateIntersectionPoint: boolean;
   onStartPoint: () => void;
+  onStartCogoPoint: () => void;
   onStartLine: () => void;
   onStartPolyline: () => void;
   onStartInverse: () => void;
   onStartMove: () => void;
   onStartCopy: () => void;
+  onCreateIntersectionPoint: () => void;
   onCancelCommand: () => void;
   onFinishCommand: () => void;
   onCommandInputChange: (_value: string) => void;
@@ -41,12 +44,15 @@ const SurveyCadCommandLine: React.FC<SurveyCadCommandLineProps> = ({
   commandHelpText,
   canUseActiveSnap,
   canFinishCommand,
+  canCreateIntersectionPoint,
   onStartPoint,
+  onStartCogoPoint,
   onStartLine,
   onStartPolyline,
   onStartInverse,
   onStartMove,
   onStartCopy,
+  onCreateIntersectionPoint,
   onCancelCommand,
   onFinishCommand,
   onCommandInputChange,
@@ -62,6 +68,9 @@ const SurveyCadCommandLine: React.FC<SurveyCadCommandLineProps> = ({
     <div className="flex flex-wrap items-center gap-2">
       <button type="button" className={commandButtonClassName} onClick={onStartPoint}>
         POINT
+      </button>
+      <button type="button" className={commandButtonClassName} onClick={onStartCogoPoint}>
+        COGO PT
       </button>
       <button type="button" className={commandButtonClassName} onClick={onStartLine}>
         LINE
@@ -87,6 +96,14 @@ const SurveyCadCommandLine: React.FC<SurveyCadCommandLineProps> = ({
         disabled={selectionCount === 0}
       >
         COPY
+      </button>
+      <button
+        type="button"
+        className={commandButtonClassName}
+        onClick={onCreateIntersectionPoint}
+        disabled={!canCreateIntersectionPoint}
+      >
+        INTX
       </button>
       <button type="button" className={commandButtonClassName} onClick={onSelectAll}>
         Select All
@@ -123,6 +140,8 @@ const SurveyCadCommandLine: React.FC<SurveyCadCommandLineProps> = ({
           activeCommandKey
             ? activeCommandKey === 'POINT'
               ? 'x,y or LABEL=x,y'
+              : activeCommandKey === 'COGO_POINT'
+                ? 'snap base, then @azimuth,distance or N45-00-00E,100'
               : activeCommandKey === 'PLINE' || activeCommandKey === 'LINE' || activeCommandKey === 'INVERSE' || activeCommandKey === 'MOVE' || activeCommandKey === 'COPY'
                 ? 'x,y or @azimuth,distance or N45-00-00E,100'
                 : 'x,y'

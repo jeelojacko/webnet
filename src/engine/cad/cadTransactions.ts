@@ -20,10 +20,12 @@ export type CadCommandKey =
   | 'CLEAR_SELECTION'
   | 'ERASE'
   | 'POINT'
+  | 'COGO_POINT'
   | 'LINE'
   | 'PLINE'
   | 'MOVE'
-  | 'COPY';
+  | 'COPY'
+  | 'INTERSECT_POINT';
 export type CadCommandPhase = 'idle' | 'committed';
 
 export interface CadCommandState {
@@ -49,6 +51,14 @@ export type CadCommand =
       label?: string;
     }
   | {
+      key: 'COGO_POINT';
+      x: number;
+      y: number;
+      label?: string;
+      basisLabel: string;
+      directionLabel: string;
+    }
+  | {
       key: 'LINE';
       start: { x: number; y: number; label: string };
       end: { x: number; y: number; label: string };
@@ -66,6 +76,14 @@ export type CadCommand =
       key: 'COPY';
       deltaX: number;
       deltaY: number;
+    }
+  | {
+      key: 'INTERSECT_POINT';
+      x: number;
+      y: number;
+      label?: string;
+      firstLabel: string;
+      secondLabel: string;
     };
 
 export interface CadTransaction {
@@ -100,7 +118,7 @@ interface CadCommandDefinition<TCommand extends CadCommand> {
 const createIdleCommandState = (): CadCommandState => ({
   key: 'IDLE',
   phase: 'idle',
-  prompt: 'Ready. Use Select All, Clear Selection, ERASE, POINT, LINE, PLINE, MOVE, COPY, or INVERSE to exercise command history.',
+  prompt: 'Ready. Use Select All, Clear Selection, ERASE, POINT, COGO PT, LINE, PLINE, MOVE, COPY, INTX, or INVERSE to exercise command history.',
 });
 
 const nextManualStationId = (project: CadProject): string => {
@@ -456,6 +474,35 @@ const pointCommand: CadCommandDefinition<{
   },
 };
 
+const cogoPointCommand: CadCommandDefinition<{
+  key: 'COGO_POINT';
+  x: number;
+  y: number;
+  label?: string;
+  basisLabel: string;
+  directionLabel: string;
+}> = {
+  key: 'COGO_POINT',
+  execute: (snapshot, command) => {
+    const entities = createManualPointEntities(snapshot.project, command.x, command.y, command.label);
+    const nextProject = appendCadProjectEntities(snapshot.project, [entities.point, entities.label]);
+    return {
+      nextSnapshot: {
+        project: nextProject,
+        selection: createCadSelectionState(nextProject, [entities.point.id]),
+      },
+      commandState: {
+        key: 'COGO_POINT',
+        phase: 'committed',
+        prompt: `COGO_POINT committed from ${command.basisLabel} using ${command.directionLabel}.`,
+      },
+      transactionLabel: `COGO_POINT (${entities.point.stationId})`,
+      addedEntityIds: [entities.point.id, entities.label.id],
+      removedEntityIds: [],
+    };
+  },
+};
+
 const lineCommand: CadCommandDefinition<{
   key: 'LINE';
   start: { x: number; y: number; label: string };
@@ -618,15 +665,46 @@ const copyCommand: CadCommandDefinition<{
   },
 };
 
+const intersectPointCommand: CadCommandDefinition<{
+  key: 'INTERSECT_POINT';
+  x: number;
+  y: number;
+  label?: string;
+  firstLabel: string;
+  secondLabel: string;
+}> = {
+  key: 'INTERSECT_POINT',
+  execute: (snapshot, command) => {
+    const entities = createManualPointEntities(snapshot.project, command.x, command.y, command.label);
+    const nextProject = appendCadProjectEntities(snapshot.project, [entities.point, entities.label]);
+    return {
+      nextSnapshot: {
+        project: nextProject,
+        selection: createCadSelectionState(nextProject, [entities.point.id]),
+      },
+      commandState: {
+        key: 'INTERSECT_POINT',
+        phase: 'committed',
+        prompt: `INTERSECT_POINT committed at ${command.firstLabel} x ${command.secondLabel}.`,
+      },
+      transactionLabel: `INTERSECT_POINT (${entities.point.stationId})`,
+      addedEntityIds: [entities.point.id, entities.label.id],
+      removedEntityIds: [],
+    };
+  },
+};
+
 export const CAD_COMMAND_REGISTRY: Record<CadCommandKey, CadCommandDefinition<CadCommand>> = {
   SELECT_ALL: selectAllCommand as CadCommandDefinition<CadCommand>,
   CLEAR_SELECTION: clearSelectionCommand as CadCommandDefinition<CadCommand>,
   ERASE: eraseCommand as CadCommandDefinition<CadCommand>,
   POINT: pointCommand as CadCommandDefinition<CadCommand>,
+  COGO_POINT: cogoPointCommand as CadCommandDefinition<CadCommand>,
   LINE: lineCommand as CadCommandDefinition<CadCommand>,
   PLINE: polylineCommand as CadCommandDefinition<CadCommand>,
   MOVE: moveCommand as CadCommandDefinition<CadCommand>,
   COPY: copyCommand as CadCommandDefinition<CadCommand>,
+  INTERSECT_POINT: intersectPointCommand as CadCommandDefinition<CadCommand>,
 };
 
 export const createCadIdleCommandState = createIdleCommandState;
