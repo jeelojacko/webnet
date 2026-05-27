@@ -84,6 +84,26 @@ const clickButton = (container: HTMLElement, label: string): HTMLButtonElement =
   return button;
 };
 
+const ParentBackedWorkspace: React.FC = () => {
+  const [persistedState, setPersistedState] = React.useState<null | {
+    version: 1;
+    sourceSignature: string;
+    project: ReturnType<typeof buildSurveyCadSpikeProject>;
+  }>(null);
+
+  return (
+    <SurveyCadWorkspace
+      input={input}
+      instrumentLibrary={{}}
+      parseOptions={{ ...parseOptions }}
+      units="m"
+      result={null}
+      persistedState={persistedState}
+      onPersistedStateChange={setPersistedState}
+    />
+  );
+};
+
 describe('SurveyCadWorkspace', () => {
   it('renders the dedicated CAD page without the removed helper tool buttons', async () => {
     const container = document.createElement('div');
@@ -857,6 +877,47 @@ describe('SurveyCadWorkspace', () => {
     expect(container.querySelector('[data-survey-cad-command-status]')?.textContent).toContain(
       'Undo LINE',
     );
+
+    await act(async () => {
+      root.unmount();
+    });
+    container.remove();
+  });
+
+  it('keeps undo working through parent persisted-state rerenders in the live app wiring shape', async () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root: Root = createRoot(container);
+
+    await act(async () => {
+      root.render(<ParentBackedWorkspace />);
+    });
+
+    const preview = container.querySelector('[data-survey-cad-preview]') as SVGElement | null;
+    const background = container.querySelector('[data-survey-cad-background="true"]') as SVGRectElement | null;
+    if (!preview || !background) throw new Error('Preview background not found');
+    mockElementRect(preview);
+    mockElementRect(background);
+
+    await act(async () => {
+      clickButton(container, 'POINT');
+    });
+    const commandInput = container.querySelector('[data-survey-cad-command-input]') as HTMLInputElement | null;
+    if (!commandInput) throw new Error('Command input not found');
+    await act(async () => {
+      setTextInputValue(commandInput, 'LIVE1=10,20');
+      pressKey(commandInput, 'Enter');
+    });
+
+    expect(container.querySelector('[data-survey-cad-entity-count]')?.textContent).toContain('10 entities');
+    expect(container.querySelector('[data-survey-cad-command-status]')?.textContent).toContain('POINT committed');
+
+    await act(async () => {
+      clickButton(container, 'UNDO');
+    });
+
+    expect(container.querySelector('[data-survey-cad-entity-count]')?.textContent).toContain('8 entities');
+    expect(container.querySelector('[data-survey-cad-command-status]')?.textContent).toContain('Undo POINT');
 
     await act(async () => {
       root.unmount();

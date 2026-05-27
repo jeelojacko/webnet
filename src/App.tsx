@@ -659,6 +659,23 @@ const App: React.FC<AppProps> = ({
     projectFileInputRef,
     projectSourceFileInputRef,
   });
+  const surveyCadParseOptions = useMemo(
+    () => ({
+      ...parseSettings,
+      units: settings.units,
+      sourceFile: activeProjectRunFiles[0]?.name ?? '<survey-cad>',
+      includeFiles: effectiveRunIncludeFiles,
+      projectRunFiles: activeProjectRunFiles,
+      currentInstrument: selectedInstrument,
+    }),
+    [
+      activeProjectRunFiles,
+      effectiveRunIncludeFiles,
+      parseSettings,
+      selectedInstrument,
+      settings.units,
+    ],
+  );
   useEffect(() => {
     setPlanningMapPreview(null);
   }, [
@@ -1524,14 +1541,7 @@ const App: React.FC<AppProps> = ({
             <SurveyCadWorkspace
               input={effectiveRunInput}
               instrumentLibrary={projectInstruments}
-              parseOptions={{
-                ...parseSettings,
-                units: settings.units,
-                sourceFile: activeProjectRunFiles[0]?.name ?? '<survey-cad>',
-                includeFiles: effectiveRunIncludeFiles,
-                projectRunFiles: activeProjectRunFiles,
-                currentInstrument: selectedInstrument,
-              }}
+              parseOptions={surveyCadParseOptions}
               units={settings.units}
               result={result}
               persistedState={surveyCadState}

@@ -89,6 +89,9 @@ export const useSurveyCadWorkspace = (
 ): UseSurveyCadWorkspaceResult => {
   const projectSignature = useMemo(() => buildCadProjectSignature(baseProject), [baseProject]);
   const persistedProjectRef = useRef(persistedState?.project ?? null);
+  const historySourceSignatureRef = useRef<string | null>(
+    persistedState?.sourceSignature === projectSignature ? persistedState.sourceSignature : projectSignature,
+  );
 
   useEffect(() => {
     persistedProjectRef.current = persistedState?.project ?? null;
@@ -102,6 +105,10 @@ export const useSurveyCadWorkspace = (
   );
 
   useEffect(() => {
+    const nextSourceSignature =
+      persistedState?.sourceSignature === projectSignature ? persistedState.sourceSignature : projectSignature;
+    if (historySourceSignatureRef.current === nextSourceSignature) return;
+    historySourceSignatureRef.current = nextSourceSignature;
     setHistory(
       createCadHistoryState(
         persistedState?.sourceSignature === projectSignature && persistedProjectRef.current
