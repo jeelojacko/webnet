@@ -1,5 +1,4 @@
 import type {
-  CadArcEntity,
   CadDisplayPrimitive,
   CadDisplayScene,
   CadEntity,
@@ -37,22 +36,6 @@ const textFontSize = (project: CadProject, entity: CadEntity, fallback: number):
     project.styleLibrary.textStyles.find((textStyle) => textStyle.id === style.textStyleId)?.fontSize ??
     fallback
   );
-};
-
-const buildArcPoints = (entity: CadArcEntity): Array<{ x: number; y: number }> => {
-  const normalizedStart = ((entity.startAngleDeg % 360) + 360) % 360;
-  const normalizedEndBase = ((entity.endAngleDeg % 360) + 360) % 360;
-  const normalizedEnd = normalizedEndBase <= normalizedStart ? normalizedEndBase + 360 : normalizedEndBase;
-  const sweep = Math.max(1, normalizedEnd - normalizedStart);
-  const segmentCount = Math.max(8, Math.ceil(sweep / 15));
-  return Array.from({ length: segmentCount + 1 }, (_, index) => {
-    const angleDeg = normalizedStart + (sweep * index) / segmentCount;
-    const radians = (angleDeg * Math.PI) / 180;
-    return {
-      x: entity.centerX + Math.cos(radians) * entity.radius,
-      y: entity.centerY + Math.sin(radians) * entity.radius,
-    };
-  });
 };
 
 const buildVertexPrimitives = (
@@ -108,18 +91,19 @@ const toPrimitives = (project: CadProject, entity: CadEntity): CadDisplayPrimiti
     case 'polygon':
     case 'parcel':
       return buildVertexPrimitives(project, entity);
-    case 'arc': {
-      const points = buildArcPoints(entity);
-      return points.slice(0, -1).map((vertex, index) => ({
-        kind: 'line',
-        id: `primitive:${entity.id}:${index + 1}`,
+    case 'arc':
+      return [{
+        kind: 'arc',
+        id: `primitive:${entity.id}`,
         layerId: entity.layerId,
         sourceEntityId: entity.id,
         stroke,
-        points: [vertex, points[index + 1]!],
+        center: { x: entity.centerX, y: entity.centerY },
+        radius: entity.radius,
+        startAngleDeg: entity.startAngleDeg,
+        endAngleDeg: entity.endAngleDeg,
         strokeWidth: strokeWidth(project, entity, 1.25),
-      }));
-    }
+      }];
     case 'text':
       return [{
         kind: 'text',

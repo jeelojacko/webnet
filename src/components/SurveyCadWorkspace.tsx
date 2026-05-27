@@ -51,6 +51,10 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
       }),
     [input, instrumentLibrary, parseOptions, result, units],
   );
+  const [viewport, setViewport] = useState({ zoom: 1, panX: 0, panY: 0 });
+  const [viewBounds, setViewBounds] = useState<CadBounds | null>(() => cloneBounds(cadProject.bounds));
+  const [copiedEntityIds, setCopiedEntityIds] = useState<string[]>([]);
+  const [reverseDirectionModifier, setReverseDirectionModifier] = useState(false);
   const {
     cadProject: activeProject,
     displayScene,
@@ -64,6 +68,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     commandHelpText,
     commandPreviewPrimitives,
     canCreateIntersectionPoint,
+    canContinueCurve,
     activeSnap,
     snapPreferences,
     historyDepth,
@@ -74,6 +79,13 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     startPolylineCommand,
     startTraverseCommand,
     startArc3PointCommand,
+    startArcStartCenterEndCommand,
+    startArcStartCenterAngleCommand,
+    startArcStartCenterChordCommand,
+    startArcStartEndAngleCommand,
+    startArcStartEndDirectionCommand,
+    startArcStartEndRadiusCommand,
+    startContinueCurveCommand,
     startTangentCurveCommand,
     startInverseCommand,
     startMoveCommand,
@@ -95,10 +107,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     startPasteFromClipboard,
     undo,
     redo,
-  } = useSurveyCadWorkspace(cadProject, persistedState, onPersistedStateChange);
-  const [viewport, setViewport] = useState({ zoom: 1, panX: 0, panY: 0 });
-  const [viewBounds, setViewBounds] = useState<CadBounds | null>(() => cloneBounds(cadProject.bounds));
-  const [copiedEntityIds, setCopiedEntityIds] = useState<string[]>([]);
+  } = useSurveyCadWorkspace(cadProject, persistedState, onPersistedStateChange, reverseDirectionModifier);
   const copiedEntityIdsRef = useRef<string[]>([]);
 
   useEffect(() => {
@@ -110,6 +119,9 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     if (activeCommandKey === 'POINT') return 'Click in model space or type x,y / LABEL=x,y';
     if (activeCommandKey === 'COGO_POINT') return 'Click base/target or type @azimuth,distance';
     if (activeCommandKey === 'TRAVERSE') return 'Click start / next point or type bearing-distance';
+    if (activeCommandKey?.startsWith('ARC_') || activeCommandKey === 'CONTINUE_CURVE') {
+      return 'Pick arc points, then enter the required value. Hold Ctrl to reverse direction';
+    }
     if (activeCommandKey === 'TANGENT_CURVE') return 'Click tangent points or type radius';
     if (activeCommandKey === 'PASTE') return 'Click insertion point or type x,y / bearing-distance';
     return 'Click in model space or type x,y / bearing-distance';
@@ -141,6 +153,9 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
         }
         clearSelection();
         return;
+      }
+      if (event.key === 'Control') {
+        setReverseDirectionModifier(true);
       }
       const modifierKey = event.ctrlKey || event.metaKey;
       if (modifierKey && !isEditableTarget(target)) {
@@ -188,7 +203,19 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
       appendCommandInputValue(event.key);
     };
     window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    const handleKeyUp = (event: KeyboardEvent) => {
+      if (event.key === 'Control') {
+        setReverseDirectionModifier(false);
+      }
+    };
+    const handleBlur = () => setReverseDirectionModifier(false);
+    window.addEventListener('keyup', handleKeyUp);
+    window.addEventListener('blur', handleBlur);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+      window.removeEventListener('blur', handleBlur);
+    };
   }, [
     activeCommandKey,
     appendCommandInputValue,
@@ -217,12 +244,20 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
               historyDepth={historyDepth}
               redoDepth={redoDepth}
               canCreateIntersectionPoint={canCreateIntersectionPoint}
+              canContinueCurve={canContinueCurve}
               onStartPoint={startPointCommand}
               onStartCogoPoint={startCogoPointCommand}
               onStartLine={startLineCommand}
               onStartPolyline={startPolylineCommand}
               onStartTraverse={startTraverseCommand}
               onStartArc3Point={startArc3PointCommand}
+              onStartArcStartCenterEnd={startArcStartCenterEndCommand}
+              onStartArcStartCenterAngle={startArcStartCenterAngleCommand}
+              onStartArcStartCenterChord={startArcStartCenterChordCommand}
+              onStartArcStartEndAngle={startArcStartEndAngleCommand}
+              onStartArcStartEndDirection={startArcStartEndDirectionCommand}
+              onStartArcStartEndRadius={startArcStartEndRadiusCommand}
+              onStartContinueCurve={startContinueCurveCommand}
               onStartTangentCurve={startTangentCurveCommand}
               onStartInverse={startInverseCommand}
               onStartMove={startMoveCommand}

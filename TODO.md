@@ -1,4 +1,5 @@
 - [x] Survey CAD interaction polish batch (May 2026): keep selection-only changes out of undo/redo history, fix viewport cursor/world-point drift away from screen center, and stop post-create auto-zoom resets after CAD entity edits.
+- [x] Survey CAD arc-tool expansion batch (May 2026): replace blocky sampled arc rendering with true SVG arc paths, then add a dropdown-style multi-mode arc tool surface with broader surveying arc constructors and reverse-direction support before parcel/label work continues.
 
 - [x] Survey CAD live-app undo persistence batch (May 2026): stop CAD history from resetting on parent rerenders with equivalent base-project inputs, and add a parent-backed regression that proves undo survives persisted-state updates in the real app wiring.
 

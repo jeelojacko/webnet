@@ -213,6 +213,15 @@ export interface CadDisplayLinePrimitive extends CadDisplayPrimitiveBase {
   strokeWidth: number;
 }
 
+export interface CadDisplayArcPrimitive extends CadDisplayPrimitiveBase {
+  kind: 'arc';
+  center: CadDisplayPoint;
+  radius: number;
+  startAngleDeg: number;
+  endAngleDeg: number;
+  strokeWidth: number;
+}
+
 export interface CadDisplayTextPrimitive extends CadDisplayPrimitiveBase {
   kind: 'text';
   point: CadDisplayPoint;
@@ -232,6 +241,7 @@ export interface CadDisplayEllipsePrimitive extends CadDisplayPrimitiveBase {
 export type CadDisplayPrimitive =
   | CadDisplayPointPrimitive
   | CadDisplayLinePrimitive
+  | CadDisplayArcPrimitive
   | CadDisplayTextPrimitive
   | CadDisplayEllipsePrimitive;
 

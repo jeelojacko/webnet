@@ -104,6 +104,7 @@ Acceptance criteria:
 - [x] Add offsets, parallels, perpendiculars.
 - [x] Add curve creation helpers.
 - [x] Add arc and tangent-curve command workflows.
+- [x] Expand arc creation surface to a split-button multi-mode tool and render arcs as true curve paths instead of sampled line strips.
 - [ ] Add traverse-entry workflow.
 - [ ] Add parcel entity model.
 - [ ] Add parcel closure report.
@@ -114,7 +115,7 @@ Acceptance criteria:
 - closure, area, perimeter, bearings, and distances update with edits
 
 Current phase note:
-- the first direct `TRAVERSE` command-entry flow now exists on the native command seam and commits a station chain plus traverse polyline, but parcel closure/label/report work is still open before Phase 4 is complete
+- the first direct `TRAVERSE` command-entry flow now exists on the native command seam and commits a station chain plus traverse polyline, the arc tool now covers broader start/center/end, start/end, tangent, and continue-curve creation modes with `Ctrl` reverse-direction support, but parcel closure/label/report work is still open before Phase 4 is complete
 
 ## Phase 5: Point import and field-to-finish
 - [ ] Define feature-code library format.

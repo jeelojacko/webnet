@@ -531,6 +531,51 @@ describe('SurveyCadWorkspace', () => {
     container.remove();
   });
 
+  it('renders a true arc path after committing ARC 3PT', async () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root: Root = createRoot(container);
+
+    await act(async () => {
+      root.render(
+        <SurveyCadWorkspace
+          input={input}
+          instrumentLibrary={{}}
+          parseOptions={parseOptions}
+          units="m"
+          result={null}
+        />,
+      );
+    });
+
+    const commandInput = container.querySelector('[data-survey-cad-command-input]') as HTMLInputElement | null;
+    if (!commandInput) throw new Error('Command input not found');
+
+    await act(async () => {
+      clickButton(container, 'ARC');
+      setTextInputValue(commandInput, '10,0');
+      pressKey(commandInput, 'Enter');
+    });
+    await act(async () => {
+      setTextInputValue(commandInput, '0,10');
+      pressKey(commandInput, 'Enter');
+    });
+    await act(async () => {
+      setTextInputValue(commandInput, '-10,0');
+      pressKey(commandInput, 'Enter');
+    });
+
+    expect(container.querySelector('[data-survey-cad-command-status]')?.textContent).toContain(
+      'ARC_3PT committed',
+    );
+    expect(container.querySelectorAll('path.cursor-pointer').length).toBeGreaterThan(0);
+
+    await act(async () => {
+      root.unmount();
+    });
+    container.remove();
+  });
+
   it('does not auto-reframe the camera when entity edits expand project extents', async () => {
     const container = document.createElement('div');
     document.body.appendChild(container);
@@ -700,7 +745,12 @@ describe('SurveyCadWorkspace', () => {
     );
 
     await act(async () => {
-      clickButton(container, 'TCURVE');
+      const arcMenuButton = container.querySelector('[data-survey-cad-arc-menu-button]') as HTMLButtonElement | null;
+      if (!arcMenuButton) throw new Error('Arc menu button not found');
+      arcMenuButton.click();
+    });
+    await act(async () => {
+      clickButton(container, 'Tangent Curve');
       setTextInputValue(commandInput, '0,0');
       pressKey(commandInput, 'Enter');
       setTextInputValue(commandInput, '-10,0');
@@ -728,6 +778,63 @@ describe('SurveyCadWorkspace', () => {
     expect(container.querySelector('[data-survey-cad-command-status]')?.textContent).toContain(
       'azimuth 90.0000',
     );
+
+    await act(async () => {
+      root.unmount();
+    });
+    container.remove();
+  });
+
+  it('creates a start-end-radius arc from the arc dropdown and renders it as a path', async () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root: Root = createRoot(container);
+
+    await act(async () => {
+      root.render(
+        <SurveyCadWorkspace
+          input={input}
+          instrumentLibrary={{}}
+          parseOptions={parseOptions}
+          units="m"
+          result={null}
+        />,
+      );
+    });
+
+    const arcMenuButton = container.querySelector('[data-survey-cad-arc-menu-button]') as HTMLButtonElement | null;
+    const commandInput = container.querySelector('[data-survey-cad-command-input]') as HTMLInputElement | null;
+    if (!arcMenuButton || !commandInput) throw new Error('Arc menu or command input not found');
+
+    await act(async () => {
+      arcMenuButton.click();
+    });
+    await act(async () => {
+      clickButton(container, 'Start End Radius');
+    });
+    await act(async () => {
+      setTextInputValue(commandInput, '0,0');
+    });
+    await act(async () => {
+      pressKey(commandInput, 'Enter');
+    });
+    await act(async () => {
+      setTextInputValue(commandInput, '10,0');
+    });
+    await act(async () => {
+      pressKey(commandInput, 'Enter');
+    });
+    await act(async () => {
+      setTextInputValue(commandInput, '10');
+    });
+    await act(async () => {
+      pressKey(commandInput, 'Enter');
+    });
+
+    expect(container.querySelector('[data-survey-cad-command-status]')?.textContent).toContain(
+      'ARC_SER committed',
+    );
+    expect(container.querySelectorAll('path.cursor-pointer').length).toBeGreaterThan(0);
 
     await act(async () => {
       root.unmount();

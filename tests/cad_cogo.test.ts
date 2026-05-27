@@ -16,6 +16,14 @@ import {
   cadPointFromBearingDistance,
   formatCadBearing,
 } from '../src/engine/cad/cadCogo';
+import {
+  cadArcEndPoint,
+  cadBuildArcFromStartCenterAngle,
+  cadBuildArcFromStartCenterEnd,
+  cadBuildArcFromStartEndDirection,
+  cadBuildArcFromStartEndRadius,
+  cadBuildContinuedArc,
+} from '../src/engine/cad/cadGeometry';
 
 describe('Survey CAD COGO helpers', () => {
   it('builds inverse summaries with azimuth and survey bearing formatting', () => {
@@ -212,5 +220,53 @@ describe('Survey CAD COGO helpers', () => {
     expect(tangentPoints[0]?.y ?? Number.NaN).toBeCloseTo(0, 6);
     expect(tangentPoints[1]?.x ?? Number.NaN).toBeCloseTo(0, 6);
     expect(tangentPoints[1]?.y ?? Number.NaN).toBeCloseTo(10, 6);
+  });
+
+  it('builds broader survey arc constructors for split-button arc modes', () => {
+    const startCenterEnd = cadBuildArcFromStartCenterEnd(
+      { x: 10, y: 0 },
+      { x: 0, y: 0 },
+      { x: 0, y: 10 },
+    );
+    expect(startCenterEnd?.radius ?? Number.NaN).toBeCloseTo(10, 6);
+
+    const startCenterAngle = cadBuildArcFromStartCenterAngle(
+      { x: 10, y: 0 },
+      { x: 0, y: 0 },
+      90,
+    );
+    expect(startCenterAngle?.endPoint.x ?? Number.NaN).toBeCloseTo(0, 6);
+    expect(startCenterAngle?.endPoint.y ?? Number.NaN).toBeCloseTo(10, 6);
+
+    const startEndRadius = cadBuildArcFromStartEndRadius(
+      { x: 0, y: 0 },
+      { x: 10, y: 0 },
+      10,
+    );
+    expect(startEndRadius?.radius ?? Number.NaN).toBeCloseTo(10, 6);
+
+    const startEndDirection = cadBuildArcFromStartEndDirection(
+      { x: 0, y: 0 },
+      { x: 10, y: 10 },
+      90,
+    );
+    expect(startEndDirection).not.toBeNull();
+
+    const continuedArc = cadBuildContinuedArc(
+      {
+        centerX: 0,
+        centerY: 0,
+        radius: 10,
+        endAngleDeg: 90,
+      },
+      { x: -10, y: 0 },
+    );
+    expect(continuedArc).not.toBeNull();
+    expect(cadArcEndPoint({
+      centerX: 0,
+      centerY: 0,
+      radius: 10,
+      endAngleDeg: 90,
+    }).x).toBeCloseTo(0, 6);
   });
 });

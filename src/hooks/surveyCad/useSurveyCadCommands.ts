@@ -5,14 +5,22 @@ import {
   cadPointFromBearingDistance,
 } from '../../engine/cad/cadCogo';
 import {
+  cadArcEndPoint,
+  cadBuildArcFromStartCenterAngle,
+  cadBuildArcFromStartCenterChord,
+  cadBuildArcFromStartCenterEnd,
+  cadBuildArcFromStartEndAngle,
+  cadBuildArcFromStartEndDirection,
+  cadBuildArcFromStartEndRadius,
   cadBuildArcFromThreePoints,
+  cadBuildContinuedArc,
   cadBuildTangentCurve,
   cadParseBearingDegrees,
   cadPointFromAzimuthDistance,
   type CadNamedPoint,
 } from '../../engine/cad/cadGeometry';
 import { runCadCommand, type CadHistoryState } from '../../engine/cad/cadUndoRedo';
-import type { CadSnapCandidate } from '../../engine/cad/cadTypes';
+import type { CadArcEntity, CadSnapCandidate } from '../../engine/cad/cadTypes';
 
 type ActiveCommandKey =
   | 'POINT'
@@ -21,6 +29,13 @@ type ActiveCommandKey =
   | 'PLINE'
   | 'TRAVERSE'
   | 'ARC_3PT'
+  | 'ARC_SCE'
+  | 'ARC_SCA'
+  | 'ARC_SCL'
+  | 'ARC_SEA'
+  | 'ARC_SED'
+  | 'ARC_SER'
+  | 'CONTINUE_CURVE'
   | 'TANGENT_CURVE'
   | 'INVERSE'
   | 'MOVE'
@@ -65,6 +80,18 @@ type CommandSession =
       resultText?: string;
     }
   | {
+      key: 'ARC_SCE' | 'ARC_SCA' | 'ARC_SCL' | 'ARC_SEA' | 'ARC_SED' | 'ARC_SER';
+      inputValue: string;
+      points: CadNamedPoint[];
+      resultText?: string;
+    }
+  | {
+      key: 'CONTINUE_CURVE';
+      inputValue: string;
+      sourceArc: CadArcEntity;
+      resultText?: string;
+    }
+  | {
       key: 'TANGENT_CURVE';
       inputValue: string;
       piPoint: CadNamedPoint | null;
@@ -78,6 +105,8 @@ interface UseSurveyCadCommandsArgs {
   previewPoint: { x: number; y: number; label: string } | null;
   history: CadHistoryState;
   selectionCount: number;
+  selectedArcForContinue: CadArcEntity | null;
+  reverseDirectionModifier: boolean;
   setHistory: Dispatch<SetStateAction<CadHistoryState>>;
 }
 
@@ -93,6 +122,13 @@ export type CadCommandPreviewState =
   | {
       kind: 'polyline';
       points: Array<{ x: number; y: number }>;
+    }
+  | {
+      kind: 'arc';
+      center: { x: number; y: number };
+      radius: number;
+      startAngleDeg: number;
+      endAngleDeg: number;
     }
   | {
       kind: 'translate-selection';
@@ -115,6 +151,13 @@ interface UseSurveyCadCommandsResult {
   startPolylineCommand: () => void;
   startTraverseCommand: () => void;
   startArc3PointCommand: () => void;
+  startArcStartCenterEndCommand: () => void;
+  startArcStartCenterAngleCommand: () => void;
+  startArcStartCenterChordCommand: () => void;
+  startArcStartEndAngleCommand: () => void;
+  startArcStartEndDirectionCommand: () => void;
+  startArcStartEndRadiusCommand: () => void;
+  startContinueCurveCommand: () => void;
   startTangentCurveCommand: () => void;
   startInverseCommand: () => void;
   startMoveCommand: () => void;
@@ -142,27 +185,6 @@ const splitLabelFromBody = (token: string): { label?: string; body: string } => 
     label: normalized.slice(0, labelIndex).trim() || undefined,
     body: normalized.slice(labelIndex + 1).trim(),
   };
-};
-
-const sampleArcPoints = (arc: {
-  center: { x: number; y: number };
-  radius: number;
-  startAngleDeg: number;
-  endAngleDeg: number;
-}): Array<{ x: number; y: number }> => {
-  const normalizedStart = ((arc.startAngleDeg % 360) + 360) % 360;
-  const normalizedEndBase = ((arc.endAngleDeg % 360) + 360) % 360;
-  const normalizedEnd = normalizedEndBase <= normalizedStart ? normalizedEndBase + 360 : normalizedEndBase;
-  const sweep = Math.max(1, normalizedEnd - normalizedStart);
-  const segmentCount = Math.max(8, Math.ceil(sweep / 15));
-  return Array.from({ length: segmentCount + 1 }, (_, index) => {
-    const angleDeg = normalizedStart + (sweep * index) / segmentCount;
-    const radians = (angleDeg * Math.PI) / 180;
-    return {
-      x: arc.center.x + Math.cos(radians) * arc.radius,
-      y: arc.center.y + Math.sin(radians) * arc.radius,
-    };
-  });
 };
 
 const parseAbsolutePoint = (token: string): CadNamedPoint | null => {
@@ -243,6 +265,51 @@ const promptForSession = (session: CommandSession | null, fallbackStatus: string
           : session.points.length === 1
             ? `ARC_3PT active. Start ${session.points[0].label} captured. Enter the through point.`
             : `ARC_3PT active. Start ${session.points[0].label} and through ${session.points[1]?.label} captured. Enter the end point.`);
+    case 'ARC_SCE':
+      return session.resultText ??
+        (session.points.length === 0
+          ? 'ARC SCE active. Click or enter the start point.'
+          : session.points.length === 1
+            ? `ARC SCE active. Start ${session.points[0].label} captured. Enter the center point.`
+            : `ARC SCE active. Start ${session.points[0].label} and center ${session.points[1]?.label} captured. Enter the end point.`);
+    case 'ARC_SCA':
+      return session.resultText ??
+        (session.points.length < 2
+          ? (session.points.length === 0
+              ? 'ARC SCA active. Click or enter the start point.'
+              : `ARC SCA active. Start ${session.points[0].label} captured. Enter the center point.`)
+          : `ARC SCA active. Enter the included angle in degrees.${''}`);
+    case 'ARC_SCL':
+      return session.resultText ??
+        (session.points.length < 2
+          ? (session.points.length === 0
+              ? 'ARC SCL active. Click or enter the start point.'
+              : `ARC SCL active. Start ${session.points[0].label} captured. Enter the center point.`)
+          : 'ARC SCL active. Enter the chord length.');
+    case 'ARC_SEA':
+      return session.resultText ??
+        (session.points.length === 0
+          ? 'ARC SEA active. Click or enter the start point.'
+          : session.points.length === 1
+            ? `ARC SEA active. Start ${session.points[0].label} captured. Enter the end point.`
+            : 'ARC SEA active. Enter the included angle in degrees.');
+    case 'ARC_SED':
+      return session.resultText ??
+        (session.points.length === 0
+          ? 'ARC SED active. Click or enter the start point.'
+          : session.points.length === 1
+            ? `ARC SED active. Start ${session.points[0].label} captured. Enter the end point.`
+            : 'ARC SED active. Enter the start direction as azimuth or survey bearing.');
+    case 'ARC_SER':
+      return session.resultText ??
+        (session.points.length === 0
+          ? 'ARC SER active. Click or enter the start point.'
+          : session.points.length === 1
+            ? `ARC SER active. Start ${session.points[0].label} captured. Enter the end point.`
+            : 'ARC SER active. Enter the radius.');
+    case 'CONTINUE_CURVE':
+      return session.resultText ??
+        `CONTINUE CURVE active. Source arc ${session.sourceArc.id} captured. Enter the next end point.`;
     case 'TANGENT_CURVE':
       return session.resultText ??
         (session.piPoint == null
@@ -300,6 +367,32 @@ const helpTextForSession = (session: CommandSession | null): string => {
       return session.points.length < 2
         ? 'ARC 3PT point input: click in the model space or type `x,y` / `LABEL=x,y`.'
         : 'ARC 3PT end point: click in the model space or type `x,y` / `LABEL=x,y` to commit the arc.';
+    case 'ARC_SCE':
+      return session.points.length < 2
+        ? 'ARC Start-Center-End point input: click in the model space or type `x,y` / `LABEL=x,y`. Hold Ctrl to reverse the arc direction.'
+        : 'ARC Start-Center-End end point input: click in model space or type `x,y` / `LABEL=x,y`. Hold Ctrl to reverse the arc direction.';
+    case 'ARC_SCA':
+      return session.points.length < 2
+        ? 'ARC Start-Center-Angle point input: click in the model space or type `x,y` / `LABEL=x,y`.'
+        : 'ARC Start-Center-Angle value input: enter a positive included angle in degrees. Hold Ctrl to reverse direction.';
+    case 'ARC_SCL':
+      return session.points.length < 2
+        ? 'ARC Start-Center-Length point input: click in the model space or type `x,y` / `LABEL=x,y`.'
+        : 'ARC Start-Center-Length value input: enter a positive chord length. Hold Ctrl to reverse direction.';
+    case 'ARC_SEA':
+      return session.points.length < 2
+        ? 'ARC Start-End-Angle point input: click in the model space or type `x,y` / `LABEL=x,y`.'
+        : 'ARC Start-End-Angle value input: enter a positive included angle in degrees. Hold Ctrl to use the opposite bulge.';
+    case 'ARC_SED':
+      return session.points.length < 2
+        ? 'ARC Start-End-Direction point input: click in the model space or type `x,y` / `LABEL=x,y`.'
+        : 'ARC Start-End-Direction value input: enter a start tangent azimuth or survey bearing. Hold Ctrl to reverse the turn side.';
+    case 'ARC_SER':
+      return session.points.length < 2
+        ? 'ARC Start-End-Radius point input: click in the model space or type `x,y` / `LABEL=x,y`.'
+        : 'ARC Start-End-Radius value input: enter a positive radius. Hold Ctrl to use the opposite bulge.';
+    case 'CONTINUE_CURVE':
+      return 'Continue Curve input: click in the model space or type `x,y` / `LABEL=x,y`. Hold Ctrl to reverse the continuation side.';
     case 'TANGENT_CURVE':
       return session.aheadTangentPoint
         ? 'Tangent curve radius input: numeric radius only.'
@@ -326,6 +419,8 @@ export const useSurveyCadCommands = ({
   previewPoint,
   history,
   selectionCount,
+  selectedArcForContinue,
+  reverseDirectionModifier,
   setHistory,
 }: UseSurveyCadCommandsArgs): UseSurveyCadCommandsResult => {
   const [session, setSession] = useState<CommandSession | null>(null);
@@ -336,9 +431,10 @@ export const useSurveyCadCommands = ({
   );
   const helpText = useMemo(() => helpTextForSession(session), [session]);
   const commandPreview = useMemo<CadCommandPreviewState | null>(() => {
-    if (!session || !previewPoint) return null;
+    if (!session) return null;
     switch (session.key) {
       case 'POINT':
+        if (!previewPoint) return null;
         return {
           kind: 'point',
           point: { x: previewPoint.x, y: previewPoint.y },
@@ -346,6 +442,7 @@ export const useSurveyCadCommands = ({
       case 'COGO_POINT':
       case 'LINE':
       case 'INVERSE':
+        if (!previewPoint) return null;
         if (!session.startPoint) {
           return {
             kind: 'point',
@@ -361,6 +458,7 @@ export const useSurveyCadCommands = ({
         };
       case 'PLINE':
       case 'TRAVERSE':
+        if (!previewPoint) return null;
         if (session.points.length === 0) {
           return {
             kind: 'point',
@@ -375,6 +473,7 @@ export const useSurveyCadCommands = ({
           ],
         };
       case 'ARC_3PT':
+        if (!previewPoint) return null;
         if (session.points.length === 0) {
           return {
             kind: 'point',
@@ -390,27 +489,179 @@ export const useSurveyCadCommands = ({
             ],
           };
         }
-        return {
-          kind: 'polyline',
-          points: (() => {
-            const previewArc = cadBuildArcFromThreePoints(session.points[0], session.points[1], previewPoint);
-            return previewArc
-              ? sampleArcPoints(previewArc)
-              : [
+        return (() => {
+          const previewArc = cadBuildArcFromThreePoints(session.points[0], session.points[1], previewPoint);
+          return previewArc
+            ? {
+                kind: 'arc' as const,
+                center: previewArc.center,
+                radius: previewArc.radius,
+                startAngleDeg: previewArc.startAngleDeg,
+                endAngleDeg: previewArc.endAngleDeg,
+              }
+            : {
+                kind: 'polyline' as const,
+                points: [
                   { x: session.points[0].x, y: session.points[0].y },
                   { x: session.points[1].x, y: session.points[1].y },
                   { x: previewPoint.x, y: previewPoint.y },
-                ];
-          })(),
-        };
+                ],
+              };
+        })();
+      case 'ARC_SCE':
+        if (!previewPoint) return null;
+        if (session.points.length === 0) {
+          return { kind: 'point', point: { x: previewPoint.x, y: previewPoint.y } };
+        }
+        if (session.points.length === 1) {
+          return {
+            kind: 'line',
+            points: [
+              { x: session.points[0].x, y: session.points[0].y },
+              { x: previewPoint.x, y: previewPoint.y },
+            ],
+          };
+        }
+        return (() => {
+          const previewArc = cadBuildArcFromStartCenterEnd(
+            session.points[0],
+            session.points[1],
+            previewPoint,
+            reverseDirectionModifier,
+          );
+          return previewArc
+            ? {
+                kind: 'arc' as const,
+                center: previewArc.center,
+                radius: previewArc.radius,
+                startAngleDeg: previewArc.startAngleDeg,
+                endAngleDeg: previewArc.endAngleDeg,
+              }
+            : {
+                kind: 'polyline' as const,
+                points: [
+                  { x: session.points[0].x, y: session.points[0].y },
+                  { x: session.points[1].x, y: session.points[1].y },
+                  { x: previewPoint.x, y: previewPoint.y },
+                ],
+              };
+        })();
+      case 'ARC_SCA':
+      case 'ARC_SCL':
+      case 'ARC_SEA':
+      case 'ARC_SED':
+      case 'ARC_SER': {
+        if (session.points.length === 0) {
+          if (!previewPoint) return null;
+          return { kind: 'point', point: { x: previewPoint.x, y: previewPoint.y } };
+        }
+        if (session.points.length === 1) {
+          if (!previewPoint) return null;
+          return {
+            kind: 'line',
+            points: [
+              { x: session.points[0].x, y: session.points[0].y },
+              { x: previewPoint.x, y: previewPoint.y },
+            ],
+          };
+        }
+        const rawInput = session.inputValue.trim();
+        if (rawInput.length === 0) {
+          return {
+            kind: 'line',
+            points: [
+              { x: session.points[0].x, y: session.points[0].y },
+              { x: session.points[1].x, y: session.points[1].y },
+            ],
+          };
+        }
+        const numericValue = Number(rawInput);
+        const directionValue =
+          cadParseBearingDegrees(rawInput) ?? (Number.isFinite(numericValue) ? numericValue : null);
+        const previewArc =
+          session.key === 'ARC_SCA'
+            ? cadBuildArcFromStartCenterAngle(
+                session.points[0],
+                session.points[1],
+                numericValue,
+                reverseDirectionModifier,
+              )
+            : session.key === 'ARC_SCL'
+              ? cadBuildArcFromStartCenterChord(
+                  session.points[0],
+                  session.points[1],
+                  numericValue,
+                  reverseDirectionModifier,
+                )
+              : session.key === 'ARC_SEA'
+                ? cadBuildArcFromStartEndAngle(
+                    session.points[0],
+                    session.points[1],
+                    numericValue,
+                    reverseDirectionModifier,
+                  )
+                : session.key === 'ARC_SER'
+                  ? cadBuildArcFromStartEndRadius(
+                      session.points[0],
+                      session.points[1],
+                      numericValue,
+                      reverseDirectionModifier,
+                    )
+                  : directionValue == null
+                    ? null
+                    : cadBuildArcFromStartEndDirection(
+                        session.points[0],
+                        session.points[1],
+                        directionValue,
+                        reverseDirectionModifier,
+                      );
+        return previewArc
+          ? {
+              kind: 'arc' as const,
+              center: previewArc.center,
+              radius: previewArc.radius,
+              startAngleDeg: previewArc.startAngleDeg,
+              endAngleDeg: previewArc.endAngleDeg,
+            }
+          : {
+              kind: 'line' as const,
+              points: [
+                { x: session.points[0].x, y: session.points[0].y },
+                { x: session.points[1].x, y: session.points[1].y },
+              ],
+            };
+      }
+      case 'CONTINUE_CURVE': {
+        if (!previewPoint) return null;
+        const previewArc = cadBuildContinuedArc(
+          session.sourceArc,
+          previewPoint,
+          reverseDirectionModifier,
+        );
+        return previewArc
+          ? {
+              kind: 'arc',
+              center: previewArc.center,
+              radius: previewArc.radius,
+              startAngleDeg: previewArc.startAngleDeg,
+              endAngleDeg: previewArc.endAngleDeg,
+            }
+          : {
+              kind: 'line',
+              points: [cadArcEndPoint(session.sourceArc), { x: previewPoint.x, y: previewPoint.y }],
+            };
+      }
       case 'TANGENT_CURVE':
+        if (session.piPoint == null && !previewPoint) return null;
         if (session.piPoint == null) {
+          if (!previewPoint) return null;
           return {
             kind: 'point',
             point: { x: previewPoint.x, y: previewPoint.y },
           };
         }
         if (session.backTangentPoint == null) {
+          if (!previewPoint) return null;
           return {
             kind: 'line',
             points: [
@@ -420,6 +671,7 @@ export const useSurveyCadCommands = ({
           };
         }
         if (session.aheadTangentPoint == null) {
+          if (!previewPoint) return null;
           return {
             kind: 'polyline',
             points: [
@@ -440,8 +692,11 @@ export const useSurveyCadCommands = ({
             );
             if (previewArc) {
               return {
-                kind: 'polyline',
-                points: sampleArcPoints(previewArc),
+                kind: 'arc',
+                center: previewArc.center,
+                radius: previewArc.radius,
+                startAngleDeg: previewArc.startAngleDeg,
+                endAngleDeg: previewArc.endAngleDeg,
               };
             }
           }
@@ -456,6 +711,7 @@ export const useSurveyCadCommands = ({
         };
       case 'MOVE':
       case 'COPY':
+        if (!previewPoint) return null;
         if (!session.startPoint) {
           return {
             kind: 'point',
@@ -468,6 +724,7 @@ export const useSurveyCadCommands = ({
           deltaY: previewPoint.y - session.startPoint.y,
         };
       case 'PASTE':
+        if (!previewPoint) return null;
         return {
           kind: 'translate-selection',
           deltaX: previewPoint.x - session.startPoint.x,
@@ -475,10 +732,32 @@ export const useSurveyCadCommands = ({
           sourceEntityIds: session.sourceEntityIds,
         };
     }
-  }, [previewPoint, session]);
+  }, [previewPoint, reverseDirectionModifier, session]);
 
   const parseInputPoint = (inputValue: string, basePoint: CadNamedPoint | null): CadNamedPoint | null =>
     parseRelativeBearingDistance(inputValue, basePoint) ?? parseAbsolutePoint(inputValue);
+
+  const commitArcDefinition = (
+    modeLabel: string,
+    arcDefinition: {
+      center: { x: number; y: number };
+      radius: number;
+      startAngleDeg: number;
+      endAngleDeg: number;
+    } | null,
+    metadata?: Record<string, unknown>,
+  ) => {
+    if (!arcDefinition) return false;
+    setHistory((existing) =>
+      runCadCommand(existing, {
+        key: 'ARC_CREATE',
+        modeLabel,
+        definition: arcDefinition,
+        metadata,
+      }),
+    );
+    return true;
+  };
 
   const consumePoint = (
     point: CadNamedPoint,
@@ -546,6 +825,69 @@ export const useSurveyCadCommands = ({
           }),
         );
         return null;
+      }
+      if (
+        current.key === 'ARC_SCE' ||
+        current.key === 'ARC_SCA' ||
+        current.key === 'ARC_SCL' ||
+        current.key === 'ARC_SEA' ||
+        current.key === 'ARC_SED' ||
+        current.key === 'ARC_SER'
+      ) {
+        const nextPoints = [...current.points, point];
+        if (
+          (current.key === 'ARC_SCE' && nextPoints.length < 3) ||
+          (current.key !== 'ARC_SCE' && nextPoints.length < 2)
+        ) {
+          return {
+            ...current,
+            points: nextPoints,
+            inputValue: '',
+            resultText: undefined,
+          };
+        }
+        if (current.key === 'ARC_SCE') {
+          const committed = commitArcDefinition(
+            'ARC_SCE',
+            cadBuildArcFromStartCenterEnd(
+              nextPoints[0]!,
+              nextPoints[1]!,
+              nextPoints[2]!,
+              reverseDirectionModifier,
+            ),
+            {
+              startLabel: nextPoints[0]!.label,
+              centerLabel: nextPoints[1]!.label,
+              endLabel: nextPoints[2]!.label,
+            },
+          );
+          return committed ? null : { ...current, points: nextPoints, resultText: 'ARC SCE invalid. Adjust the points or hold Ctrl to reverse.' };
+        }
+        if (current.points.length < 2) {
+          return {
+            ...current,
+            points: nextPoints,
+            inputValue: '',
+            resultText: undefined,
+          };
+        }
+        return {
+          ...current,
+          resultText: 'This arc mode now needs a typed value. Enter it in the command bar.',
+        };
+      }
+      if (current.key === 'CONTINUE_CURVE') {
+        const committed = commitArcDefinition(
+          'CONTINUE_CURVE',
+          cadBuildContinuedArc(current.sourceArc, point, reverseDirectionModifier),
+          {
+            sourceArcId: current.sourceArc.id,
+            endLabel: point.label,
+          },
+        );
+        return committed
+          ? null
+          : { ...current, resultText: 'Continue Curve invalid. Choose a different endpoint or hold Ctrl to reverse.' };
       }
       if (current.key === 'TANGENT_CURVE') {
         if (!current.piPoint) {
@@ -627,6 +969,9 @@ export const useSurveyCadCommands = ({
         );
         return null;
       }
+      if (!('startPoint' in current)) {
+        return current;
+      }
       if (!current.startPoint) {
         return {
           ...current,
@@ -670,13 +1015,103 @@ export const useSurveyCadCommands = ({
   const submitSessionInput = () => {
     if (!session) return;
     const basePoint =
-      session.key === 'PLINE' || session.key === 'TRAVERSE' || session.key === 'ARC_3PT'
+      session.key === 'PLINE' ||
+      session.key === 'TRAVERSE' ||
+      session.key === 'ARC_3PT' ||
+      session.key === 'ARC_SCE' ||
+      session.key === 'ARC_SCA' ||
+      session.key === 'ARC_SCL' ||
+      session.key === 'ARC_SEA' ||
+      session.key === 'ARC_SED' ||
+      session.key === 'ARC_SER'
         ? session.points[session.points.length - 1] ?? null
+        : session.key === 'CONTINUE_CURVE'
+          ? {
+              ...cadArcEndPoint(session.sourceArc),
+              label: session.sourceArc.id,
+            }
         : session.key === 'TANGENT_CURVE'
           ? session.aheadTangentPoint ?? session.backTangentPoint ?? session.piPoint
           : 'startPoint' in session
             ? session.startPoint
             : null;
+    if (
+      session.key === 'ARC_SCA' ||
+      session.key === 'ARC_SCL' ||
+      session.key === 'ARC_SEA' ||
+      session.key === 'ARC_SED' ||
+      session.key === 'ARC_SER'
+    ) {
+      if (session.points.length < 2) {
+        const parsed = parseInputPoint(session.inputValue, basePoint);
+        if (!parsed) {
+          setSession({
+            ...session,
+            resultText: 'Arc point input invalid. Use `x,y` or `LABEL=x,y` for the required points.',
+          });
+          return;
+        }
+        consumePoint(parsed);
+        return;
+      }
+      const rawInput = session.inputValue.trim();
+      const numericValue = Number(rawInput);
+      const directionValue =
+        cadParseBearingDegrees(rawInput) ?? (Number.isFinite(numericValue) ? numericValue : null);
+      const arcDefinition =
+        session.key === 'ARC_SCA'
+          ? cadBuildArcFromStartCenterAngle(
+              session.points[0]!,
+              session.points[1]!,
+              numericValue,
+              reverseDirectionModifier,
+            )
+          : session.key === 'ARC_SCL'
+            ? cadBuildArcFromStartCenterChord(
+                session.points[0]!,
+                session.points[1]!,
+                numericValue,
+                reverseDirectionModifier,
+              )
+            : session.key === 'ARC_SEA'
+              ? cadBuildArcFromStartEndAngle(
+                  session.points[0]!,
+                  session.points[1]!,
+                  numericValue,
+                  reverseDirectionModifier,
+                )
+              : session.key === 'ARC_SER'
+                ? cadBuildArcFromStartEndRadius(
+                    session.points[0]!,
+                    session.points[1]!,
+                    numericValue,
+                    reverseDirectionModifier,
+                  )
+                : directionValue == null
+                  ? null
+                  : cadBuildArcFromStartEndDirection(
+                      session.points[0]!,
+                      session.points[1]!,
+                      directionValue,
+                      reverseDirectionModifier,
+                    );
+      const committed = commitArcDefinition(session.key, arcDefinition, {
+        startLabel: session.points[0]!.label,
+        secondLabel: session.points[1]!.label,
+      });
+      if (committed) {
+        setSession(null);
+        return;
+      }
+      setSession({
+        ...session,
+        resultText:
+          session.key === 'ARC_SED'
+            ? 'Arc direction invalid. Enter a valid azimuth or survey bearing.'
+            : 'Arc value invalid. Enter a valid positive value or hold Ctrl to reverse direction.',
+      });
+      return;
+    }
     if (session.key === 'TANGENT_CURVE' && session.aheadTangentPoint) {
       const piPoint = session.piPoint;
       const backTangentPoint = session.backTangentPoint;
@@ -786,6 +1221,50 @@ export const useSurveyCadCommands = ({
         inputValue: '',
         points: [],
       }),
+    startArcStartCenterEndCommand: () =>
+      setSession({
+        key: 'ARC_SCE',
+        inputValue: '',
+        points: [],
+      }),
+    startArcStartCenterAngleCommand: () =>
+      setSession({
+        key: 'ARC_SCA',
+        inputValue: '',
+        points: [],
+      }),
+    startArcStartCenterChordCommand: () =>
+      setSession({
+        key: 'ARC_SCL',
+        inputValue: '',
+        points: [],
+      }),
+    startArcStartEndAngleCommand: () =>
+      setSession({
+        key: 'ARC_SEA',
+        inputValue: '',
+        points: [],
+      }),
+    startArcStartEndDirectionCommand: () =>
+      setSession({
+        key: 'ARC_SED',
+        inputValue: '',
+        points: [],
+      }),
+    startArcStartEndRadiusCommand: () =>
+      setSession({
+        key: 'ARC_SER',
+        inputValue: '',
+        points: [],
+      }),
+    startContinueCurveCommand: () => {
+      if (!selectedArcForContinue) return;
+      setSession({
+        key: 'CONTINUE_CURVE',
+        inputValue: '',
+        sourceArc: selectedArcForContinue,
+      });
+    },
     startTangentCurveCommand: () =>
       setSession({
         key: 'TANGENT_CURVE',

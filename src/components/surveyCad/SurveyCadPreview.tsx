@@ -122,6 +122,16 @@ const primitiveBounds = (
         maxY: point.y + primitive.radius + 2,
       };
     }
+    case 'arc': {
+      const center = project(primitive.center.x, primitive.center.y);
+      const radius = Math.max(primitive.radius * scale, 1.2);
+      return {
+        minX: center.x - radius,
+        minY: center.y - radius,
+        maxX: center.x + radius,
+        maxY: center.y + radius,
+      };
+    }
     case 'text': {
       const point = project(primitive.point.x, primitive.point.y);
       const width = Math.max(24, primitive.text.length * primitive.fontSize * 0.55);
@@ -171,6 +181,46 @@ const intersectsSelectionBox = (
   );
 };
 
+const normalizeSweepAngles = (
+  startAngleDeg: number,
+  endAngleDeg: number,
+): { startAngleDeg: number; endAngleDeg: number; sweepDeg: number; largeArcFlag: 0 | 1 } => {
+  const normalizedStart = ((startAngleDeg % 360) + 360) % 360;
+  const normalizedEndBase = ((endAngleDeg % 360) + 360) % 360;
+  const normalizedEnd =
+    normalizedEndBase <= normalizedStart ? normalizedEndBase + 360 : normalizedEndBase;
+  const sweepDeg = Math.max(0.0001, normalizedEnd - normalizedStart);
+  return {
+    startAngleDeg: normalizedStart,
+    endAngleDeg: normalizedEnd,
+    sweepDeg,
+    largeArcFlag: sweepDeg > 180 ? 1 : 0,
+  };
+};
+
+const arcPathFromPrimitive = (
+  primitive: Extract<CadDisplayPrimitive, { kind: 'arc' }>,
+  project: (_x: number, _y: number) => { x: number; y: number },
+  scale: number,
+): string => {
+  const { startAngleDeg, endAngleDeg, largeArcFlag } = normalizeSweepAngles(
+    primitive.startAngleDeg,
+    primitive.endAngleDeg,
+  );
+  const startRadians = (startAngleDeg * Math.PI) / 180;
+  const endRadians = (endAngleDeg * Math.PI) / 180;
+  const startPoint = project(
+    primitive.center.x + Math.cos(startRadians) * primitive.radius,
+    primitive.center.y + Math.sin(startRadians) * primitive.radius,
+  );
+  const endPoint = project(
+    primitive.center.x + Math.cos(endRadians) * primitive.radius,
+    primitive.center.y + Math.sin(endRadians) * primitive.radius,
+  );
+  const radius = Math.max(primitive.radius * scale, 0.001);
+  return `M ${startPoint.x} ${startPoint.y} A ${radius} ${radius} 0 ${largeArcFlag} 1 ${endPoint.x} ${endPoint.y}`;
+};
+
 const renderPrimitive = (
   primitive: CadDisplayPrimitive,
   selectedEntityIds: readonly string[],
@@ -210,6 +260,30 @@ const renderPrimitive = (
             y1={start.y}
             x2={end.x}
             y2={end.y}
+            stroke={isSelected ? '#fbbf24' : primitive.stroke}
+            strokeWidth={isSelected ? primitive.strokeWidth + 1.1 : primitive.strokeWidth}
+            opacity={primitive.opacity ?? 0.92}
+            strokeDasharray={primitive.strokeDasharray}
+            pointerEvents="none"
+          />
+        </g>
+      );
+    }
+    case 'arc': {
+      const path = arcPathFromPrimitive(primitive, project, scale);
+      return (
+        <g key={primitive.id}>
+          <path
+            {...commonProps}
+            d={path}
+            fill="none"
+            stroke="transparent"
+            strokeWidth={Math.max(12, primitive.strokeWidth + 10)}
+            opacity={0}
+          />
+          <path
+            d={path}
+            fill="none"
             stroke={isSelected ? '#fbbf24' : primitive.stroke}
             strokeWidth={isSelected ? primitive.strokeWidth + 1.1 : primitive.strokeWidth}
             opacity={primitive.opacity ?? 0.92}
@@ -500,10 +574,16 @@ const SurveyCadPreview: React.FC<SurveyCadPreviewProps> = ({
                 return;
               }
               const svg = event.currentTarget.ownerSVGElement;
-              const rect = svg?.getBoundingClientRect();
-              if (!rect || rect.width <= 0 || rect.height <= 0) return;
-              const viewX = ((event.clientX - rect.left) / rect.width) * WIDTH;
-              const viewY = ((event.clientY - rect.top) / rect.height) * HEIGHT;
+              if (!svg) return;
+              const rect = svg.getBoundingClientRect();
+              if (rect.width <= 0 || rect.height <= 0) return;
+              const scaleFactor = Math.min(rect.width / WIDTH, rect.height / HEIGHT);
+              const contentWidth = WIDTH * scaleFactor;
+              const contentHeight = HEIGHT * scaleFactor;
+              const offsetX = (rect.width - contentWidth) / 2;
+              const offsetY = (rect.height - contentHeight) / 2;
+              const viewX = (event.clientX - rect.left - offsetX) / scaleFactor;
+              const viewY = (event.clientY - rect.top - offsetY) / scaleFactor;
               onConsumeInteractionPoint(unproject(viewX, viewY));
               return;
             }
@@ -550,6 +630,18 @@ const SurveyCadPreview: React.FC<SurveyCadPreviewProps> = ({
                 >
                   {primitive.text}
                 </text>
+              ) : primitive.kind === 'arc' ? (
+                <path
+                  key={primitive.id}
+                  data-survey-cad-command-preview-arc
+                  d={arcPathFromPrimitive(primitive, project, scale)}
+                  fill="none"
+                  stroke={primitive.stroke}
+                  strokeWidth={primitive.strokeWidth}
+                  opacity={primitive.opacity ?? 0.85}
+                  strokeDasharray={primitive.strokeDasharray ?? '8 6'}
+                  pointerEvents="none"
+                />
               ) : (
                 <ellipse
                   key={primitive.id}

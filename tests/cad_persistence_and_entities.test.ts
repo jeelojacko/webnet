@@ -98,9 +98,9 @@ describe('Survey CAD persistence and entity families', () => {
     });
 
     const displayScene = buildCadDisplayScene(withBounds);
-    expect(displayScene.primitives.some((primitive) => primitive.sourceEntityId === 'arc-1')).toBe(
-      true,
-    );
+    expect(
+      displayScene.primitives.find((primitive) => primitive.sourceEntityId === 'arc-1')?.kind,
+    ).toBe('arc');
     expect(
       displayScene.primitives.filter((primitive) => primitive.sourceEntityId === 'polygon-1').length,
     ).toBe(3);

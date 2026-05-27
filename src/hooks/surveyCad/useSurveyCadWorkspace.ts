@@ -15,6 +15,7 @@ import { createCadHistoryState, redoCadHistory, runCadCommand, undoCadHistory } 
 import { useSurveyCadCommands, type CadCommandPreviewState } from './useSurveyCadCommands';
 import { useSurveyCadSnapping, type CadSnapPreferences } from './useSurveyCadSnapping';
 import type {
+  CadArcEntity,
   CadDisplayPrimitive,
   CadProject,
   CadSnapCandidate,
@@ -38,6 +39,13 @@ interface UseSurveyCadWorkspaceResult {
     | 'PLINE'
     | 'TRAVERSE'
     | 'ARC_3PT'
+    | 'ARC_SCE'
+    | 'ARC_SCA'
+    | 'ARC_SCL'
+    | 'ARC_SEA'
+    | 'ARC_SED'
+    | 'ARC_SER'
+    | 'CONTINUE_CURVE'
     | 'TANGENT_CURVE'
     | 'INVERSE'
     | 'MOVE'
@@ -51,6 +59,7 @@ interface UseSurveyCadWorkspaceResult {
   canUseActiveSnap: boolean;
   canFinishCommand: boolean;
   canCreateIntersectionPoint: boolean;
+  canContinueCurve: boolean;
   activeSnap: CadSnapCandidate | null;
   snapPreferences: CadSnapPreferences;
   historyDepth: number;
@@ -61,6 +70,13 @@ interface UseSurveyCadWorkspaceResult {
   startPolylineCommand: () => void;
   startTraverseCommand: () => void;
   startArc3PointCommand: () => void;
+  startArcStartCenterEndCommand: () => void;
+  startArcStartCenterAngleCommand: () => void;
+  startArcStartCenterChordCommand: () => void;
+  startArcStartEndAngleCommand: () => void;
+  startArcStartEndDirectionCommand: () => void;
+  startArcStartEndRadiusCommand: () => void;
+  startContinueCurveCommand: () => void;
   startTangentCurveCommand: () => void;
   startInverseCommand: () => void;
   startMoveCommand: () => void;
@@ -92,6 +108,7 @@ export const useSurveyCadWorkspace = (
   baseProject: CadProject,
   persistedState: SurveyCadPersistedState | null,
   onPersistedStateChange: Dispatch<SetStateAction<SurveyCadPersistedState | null>>,
+  reverseDirectionModifier = false,
 ): UseSurveyCadWorkspaceResult => {
   const projectSignature = useMemo(() => buildCadProjectSignature(baseProject), [baseProject]);
   const persistedProjectRef = useRef(persistedState?.project ?? null);
@@ -134,6 +151,10 @@ export const useSurveyCadWorkspace = (
     () => getSelectedCadEntities(cadProject, selection),
     [cadProject, selection],
   );
+  const selectedArcForContinue = useMemo(
+    () => selectedEntities.find((entity): entity is CadArcEntity => entity.type === 'arc') ?? null,
+    [selectedEntities],
+  );
   const {
     activeSnap,
     pointerWorldPoint,
@@ -168,6 +189,13 @@ export const useSurveyCadWorkspace = (
     startPolylineCommand,
     startTraverseCommand,
     startArc3PointCommand,
+    startArcStartCenterEndCommand,
+    startArcStartCenterAngleCommand,
+    startArcStartCenterChordCommand,
+    startArcStartEndAngleCommand,
+    startArcStartEndDirectionCommand,
+    startArcStartEndRadiusCommand,
+    startContinueCurveCommand,
     startTangentCurveCommand,
     startInverseCommand,
     startMoveCommand,
@@ -188,6 +216,8 @@ export const useSurveyCadWorkspace = (
     previewPoint,
     history,
     selectionCount: selection.selectedEntityIds.length,
+    selectedArcForContinue,
+    reverseDirectionModifier,
     setHistory,
   });
   const commandPreviewPrimitives = useMemo<CadDisplayPrimitive[]>(() => {
@@ -219,6 +249,24 @@ export const useSurveyCadWorkspace = (
           sourceEntityId: 'preview:line',
           stroke: previewStroke,
           points: commandPreview.points,
+          strokeWidth: 1.5,
+          opacity: previewOpacity,
+          strokeDasharray: '8 6',
+        },
+      ];
+    }
+    if (commandPreview.kind === 'arc') {
+      return [
+        {
+          kind: 'arc' as const,
+          id: 'preview:arc',
+          layerId: 'preview',
+          sourceEntityId: 'preview:arc',
+          stroke: previewStroke,
+          center: commandPreview.center,
+          radius: commandPreview.radius,
+          startAngleDeg: commandPreview.startAngleDeg,
+          endAngleDeg: commandPreview.endAngleDeg,
           strokeWidth: 1.5,
           opacity: previewOpacity,
           strokeDasharray: '8 6',
@@ -292,6 +340,20 @@ export const useSurveyCadWorkspace = (
             opacity: 0.6,
           };
         }
+        if (primitive.kind === 'arc') {
+          return {
+            ...primitive,
+            id: `preview:translate:${index + 1}`,
+            sourceEntityId: `preview:translate:${index + 1}`,
+            stroke: previewStroke,
+            center: {
+              x: primitive.center.x + commandPreview.deltaX,
+              y: primitive.center.y + commandPreview.deltaY,
+            },
+            opacity: 0.6,
+            strokeDasharray: '8 6',
+          };
+        }
         return {
           ...primitive,
           id: `preview:translate:${index + 1}`,
@@ -348,6 +410,7 @@ export const useSurveyCadWorkspace = (
     canUseActiveSnap,
     canFinishCommand,
     canCreateIntersectionPoint: selectedIntersection != null,
+    canContinueCurve: selectedArcForContinue != null,
     activeSnap,
     snapPreferences,
     historyDepth: history.undoStack.length,
@@ -358,6 +421,13 @@ export const useSurveyCadWorkspace = (
     startPolylineCommand,
     startTraverseCommand,
     startArc3PointCommand,
+    startArcStartCenterEndCommand,
+    startArcStartCenterAngleCommand,
+    startArcStartCenterChordCommand,
+    startArcStartEndAngleCommand,
+    startArcStartEndDirectionCommand,
+    startArcStartEndRadiusCommand,
+    startContinueCurveCommand,
     startTangentCurveCommand,
     startInverseCommand,
     startMoveCommand,

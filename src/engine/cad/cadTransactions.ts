@@ -26,6 +26,7 @@ export type CadCommandKey =
   | 'PLINE'
   | 'TRAVERSE'
   | 'ARC_3PT'
+  | 'ARC_CREATE'
   | 'TANGENT_CURVE'
   | 'MOVE'
   | 'COPY'
@@ -81,6 +82,17 @@ export type CadCommand =
       start: { x: number; y: number; label: string };
       through: { x: number; y: number; label: string };
       end: { x: number; y: number; label: string };
+    }
+  | {
+      key: 'ARC_CREATE';
+      modeLabel: string;
+      definition: {
+        center: { x: number; y: number };
+        radius: number;
+        startAngleDeg: number;
+        endAngleDeg: number;
+      };
+      metadata?: Record<string, unknown>;
     }
   | {
       key: 'TANGENT_CURVE';
@@ -776,9 +788,58 @@ const arc3ptCommand: CadCommandDefinition<{
       commandState: {
         key: 'ARC_3PT',
         phase: 'committed',
-        prompt: `ARC_3PT committed through ${command.start.label}, ${command.through.label}, ${command.end.label}.`,
+      prompt: `ARC_3PT committed through ${command.start.label}, ${command.through.label}, ${command.end.label}.`,
       },
       transactionLabel: `ARC_3PT (${command.start.label}-${command.through.label}-${command.end.label})`,
+      addedEntityIds: [arcEntity.id],
+      removedEntityIds: [],
+    };
+  },
+};
+
+const arcCreateCommand: CadCommandDefinition<{
+  key: 'ARC_CREATE';
+  modeLabel: string;
+  definition: {
+    center: { x: number; y: number };
+    radius: number;
+    startAngleDeg: number;
+    endAngleDeg: number;
+  };
+  metadata?: Record<string, unknown>;
+}> = {
+  key: 'ARC_CREATE',
+  execute: (snapshot, command) => {
+    const arcEntity: CadEntity = {
+      id: createStableRuntimeId('cad-arc'),
+      type: 'arc',
+      layerId: 'observation-lines',
+      styleId: 'style-observation-line',
+      visible: true,
+      locked: false,
+      centerX: command.definition.center.x,
+      centerY: command.definition.center.y,
+      radius: command.definition.radius,
+      startAngleDeg: command.definition.startAngleDeg,
+      endAngleDeg: command.definition.endAngleDeg,
+      metadata: {
+        createdBy: command.modeLabel,
+        manual: true,
+        ...(command.metadata ?? {}),
+      },
+    };
+    const nextProject = appendCadProjectEntities(snapshot.project, [arcEntity]);
+    return {
+      nextSnapshot: {
+        project: nextProject,
+        selection: createCadSelectionState(nextProject, [arcEntity.id]),
+      },
+      commandState: {
+        key: 'ARC_CREATE',
+        phase: 'committed',
+        prompt: `${command.modeLabel} committed.`,
+      },
+      transactionLabel: `${command.modeLabel}`,
       addedEntityIds: [arcEntity.id],
       removedEntityIds: [],
     };
@@ -979,6 +1040,7 @@ export const CAD_COMMAND_REGISTRY: Record<CadCommandKey, CadCommandDefinition<Ca
   PLINE: polylineCommand as CadCommandDefinition<CadCommand>,
   TRAVERSE: traverseCommand as CadCommandDefinition<CadCommand>,
   ARC_3PT: arc3ptCommand as CadCommandDefinition<CadCommand>,
+  ARC_CREATE: arcCreateCommand as CadCommandDefinition<CadCommand>,
   TANGENT_CURVE: tangentCurveCommand as CadCommandDefinition<CadCommand>,
   MOVE: moveCommand as CadCommandDefinition<CadCommand>,
   COPY: copyCommand as CadCommandDefinition<CadCommand>,
