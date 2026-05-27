@@ -24,7 +24,8 @@ type ActiveCommandKey =
   | 'TANGENT_CURVE'
   | 'INVERSE'
   | 'MOVE'
-  | 'COPY';
+  | 'COPY'
+  | 'PASTE';
 
 type CommandSession =
   | {
@@ -36,6 +37,13 @@ type CommandSession =
       key: 'COGO_POINT' | 'LINE' | 'INVERSE' | 'MOVE' | 'COPY';
       inputValue: string;
       startPoint: CadNamedPoint | null;
+      resultText?: string;
+    }
+  | {
+      key: 'PASTE';
+      inputValue: string;
+      startPoint: CadNamedPoint;
+      sourceEntityIds: string[];
       resultText?: string;
     }
   | {
@@ -90,6 +98,7 @@ export type CadCommandPreviewState =
       kind: 'translate-selection';
       deltaX: number;
       deltaY: number;
+      sourceEntityIds?: string[];
     };
 
 interface UseSurveyCadCommandsResult {
@@ -110,6 +119,7 @@ interface UseSurveyCadCommandsResult {
   startInverseCommand: () => void;
   startMoveCommand: () => void;
   startCopyCommand: () => void;
+  startPasteCommand: (_sourceEntityIds: string[], _basePoint: CadNamedPoint) => void;
   cancelCommand: () => void;
   finishCommand: () => void;
   setCommandInputValue: (_value: string) => void;
@@ -257,6 +267,9 @@ const promptForSession = (session: CommandSession | null, fallbackStatus: string
         (session.startPoint
           ? `COPY active. Base point ${session.startPoint.label} captured. Click the target point or enter \`@azimuth,distance\` / bearing-distance, then press Enter.`
           : 'COPY active. Click or enter the base point for the current selection.');
+    case 'PASTE':
+      return session.resultText ??
+        `PASTE active. Clipboard base ${session.startPoint.label} captured. Click the insertion point or enter \`x,y\`, \`@azimuth,distance\`, or \`N45-00-00E,100\`, then press Enter.`;
   }
 };
 
@@ -303,6 +316,8 @@ const helpTextForSession = (session: CommandSession | null): string => {
       return session.startPoint
         ? 'COPY target point: `x,y`, `LABEL=x,y`, `@azimuth,distance`, or bearing-distance from the base point.'
         : 'COPY base point: click in the model space or type `x,y` / `LABEL=x,y`.';
+    case 'PASTE':
+      return 'PASTE insertion point: click in the model space or type `x,y`, `LABEL=x,y`, `@azimuth,distance`, or bearing-distance from the clipboard base point.';
   }
 };
 
@@ -452,6 +467,13 @@ export const useSurveyCadCommands = ({
           deltaX: previewPoint.x - session.startPoint.x,
           deltaY: previewPoint.y - session.startPoint.y,
         };
+      case 'PASTE':
+        return {
+          kind: 'translate-selection',
+          deltaX: previewPoint.x - session.startPoint.x,
+          deltaY: previewPoint.y - session.startPoint.y,
+          sourceEntityIds: session.sourceEntityIds,
+        };
     }
   }, [previewPoint, session]);
 
@@ -588,6 +610,19 @@ export const useSurveyCadCommands = ({
             key: transformKey,
             deltaX,
             deltaY,
+          }),
+        );
+        return null;
+      }
+      if (current.key === 'PASTE') {
+        const deltaX = point.x - current.startPoint.x;
+        const deltaY = point.y - current.startPoint.y;
+        setHistory((existing) =>
+          runCadCommand(existing, {
+            key: 'PASTE',
+            deltaX,
+            deltaY,
+            entityIds: current.sourceEntityIds,
           }),
         );
         return null;
@@ -779,6 +814,15 @@ export const useSurveyCadCommands = ({
         key: 'COPY',
         inputValue: '',
         startPoint: null,
+      });
+    },
+    startPasteCommand: (sourceEntityIds, basePoint) => {
+      if (sourceEntityIds.length === 0) return;
+      setSession({
+        key: 'PASTE',
+        inputValue: '',
+        startPoint: basePoint,
+        sourceEntityIds,
       });
     },
     cancelCommand: () => setSession(null),

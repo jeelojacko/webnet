@@ -1,3 +1,5 @@
+- [x] Survey CAD undo + clipboard insertion batch (May 2026): fix direct viewport-command keyboard undo when toolbar buttons still own focus, and replace fixed-offset CAD paste with a real insertion-point workflow plus live preview.
+
 - [x] Survey CAD snap-menu + hit-target batch (May 2026): remove the redundant idle helper overlay, replace snap status text with a viewport snap-toggle menu, restore keyboard undo/redo reliability after direct CAD draws, and enlarge point/line selection hit targets so native picking feels less fragile.
 
 - [x] Survey CAD overlay-input + keyboard batch (May 2026): move CAD help/snap text and command input into viewport overlays, remove the idle ready-status panel, allow active commands to capture typing without clicking the input first, and add keyboard copy/paste shortcuts for the native CAD workspace.

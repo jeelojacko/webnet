@@ -29,6 +29,7 @@ export type CadCommandKey =
   | 'TANGENT_CURVE'
   | 'MOVE'
   | 'COPY'
+  | 'PASTE'
   | 'INTERSECT_POINT';
 export type CadCommandPhase = 'idle' | 'committed';
 
@@ -97,6 +98,12 @@ export type CadCommand =
       key: 'COPY';
       deltaX: number;
       deltaY: number;
+    }
+  | {
+      key: 'PASTE';
+      deltaX: number;
+      deltaY: number;
+      entityIds: CadEntityId[];
     }
   | {
       key: 'INTERSECT_POINT';
@@ -232,6 +239,14 @@ const getExpandedSelectedEntities = (snapshot: CadWorkspaceSnapshot): CadEntity[
     expandSelectedEntityIds(snapshot.project, snapshot.selection.selectedEntityIds),
   );
   return snapshot.project.entities.filter((entity) => expandedIds.has(entity.id) && !entity.locked);
+};
+
+const getExpandedEntitiesByIds = (
+  project: CadProject,
+  selectedEntityIds: readonly CadEntityId[],
+): CadEntity[] => {
+  const expandedIds = new Set(expandSelectedEntityIds(project, selectedEntityIds));
+  return project.entities.filter((entity) => expandedIds.has(entity.id) && !entity.locked);
 };
 
 const translateEntity = (entity: CadEntity, deltaX: number, deltaY: number): CadEntity => {
@@ -891,6 +906,40 @@ const copyCommand: CadCommandDefinition<{
   },
 };
 
+const pasteCommand: CadCommandDefinition<{
+  key: 'PASTE';
+  deltaX: number;
+  deltaY: number;
+  entityIds: CadEntityId[];
+}> = {
+  key: 'PASTE',
+  execute: (snapshot, command) => {
+    if (Math.abs(command.deltaX) <= 1e-9 && Math.abs(command.deltaY) <= 1e-9) return null;
+    const sourceEntities = getExpandedEntitiesByIds(snapshot.project, command.entityIds);
+    if (sourceEntities.length === 0) return null;
+    const copiedEntities = buildCopiedEntities(snapshot.project, sourceEntities, command.deltaX, command.deltaY);
+    if (copiedEntities.length === 0) return null;
+    const nextProject = appendCadProjectEntities(snapshot.project, copiedEntities);
+    return {
+      nextSnapshot: {
+        project: nextProject,
+        selection: createCadSelectionState(
+          nextProject,
+          copiedEntities.map((entity) => entity.id),
+        ),
+      },
+      commandState: {
+        key: 'PASTE',
+        phase: 'committed',
+        prompt: `PASTE committed by (${command.deltaX.toFixed(3)}, ${command.deltaY.toFixed(3)}).`,
+      },
+      transactionLabel: `PASTE (${copiedEntities.length})`,
+      addedEntityIds: copiedEntities.map((entity) => entity.id),
+      removedEntityIds: [],
+    };
+  },
+};
+
 const intersectPointCommand: CadCommandDefinition<{
   key: 'INTERSECT_POINT';
   x: number;
@@ -933,6 +982,7 @@ export const CAD_COMMAND_REGISTRY: Record<CadCommandKey, CadCommandDefinition<Ca
   TANGENT_CURVE: tangentCurveCommand as CadCommandDefinition<CadCommand>,
   MOVE: moveCommand as CadCommandDefinition<CadCommand>,
   COPY: copyCommand as CadCommandDefinition<CadCommand>,
+  PASTE: pasteCommand as CadCommandDefinition<CadCommand>,
   INTERSECT_POINT: intersectPointCommand as CadCommandDefinition<CadCommand>,
 };
 

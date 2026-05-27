@@ -82,7 +82,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     selectAll,
     clearSelection,
     eraseSelection,
-    pasteEntityIdsInPlace,
+    startPasteFromClipboard,
     undo,
     redo,
   } = useSurveyCadWorkspace(cadProject, persistedState, onPersistedStateChange);
@@ -100,6 +100,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     if (activeCommandKey === 'COGO_POINT') return 'Click base/target or type @azimuth,distance';
     if (activeCommandKey === 'TRAVERSE') return 'Click start / next point or type bearing-distance';
     if (activeCommandKey === 'TANGENT_CURVE') return 'Click tangent points or type radius';
+    if (activeCommandKey === 'PASTE') return 'Click insertion point or type x,y / bearing-distance';
     return 'Click in model space or type x,y / bearing-distance';
   }, [activeCommandKey]);
   const commandStatusText = useMemo(
@@ -115,7 +116,6 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     const isEditableTarget = (target: EventTarget | null): boolean =>
       (target instanceof HTMLInputElement && !target.disabled && !target.readOnly) ||
       (target instanceof HTMLTextAreaElement && !target.disabled && !target.readOnly) ||
-      target instanceof HTMLButtonElement ||
       (target instanceof HTMLElement && target.isContentEditable);
 
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -141,7 +141,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
         }
         if (lowerKey === 'v' && copiedEntityIdsRef.current.length > 0) {
           event.preventDefault();
-          pasteEntityIdsInPlace(copiedEntityIdsRef.current);
+          startPasteFromClipboard(copiedEntityIdsRef.current);
           return;
         }
         if (lowerKey === 'z') {
@@ -185,10 +185,10 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     handleEnterKey,
     handleEscapeKey,
     copiedEntityIds,
-    pasteEntityIdsInPlace,
     redo,
     selectedEntityIds,
     selectionCount,
+    startPasteFromClipboard,
     undo,
   ]);
 

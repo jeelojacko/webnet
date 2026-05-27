@@ -697,7 +697,7 @@ describe('SurveyCadWorkspace', () => {
     container.remove();
   });
 
-  it('supports keyboard copy and paste shortcuts for CAD selection', async () => {
+  it('supports keyboard copy and insertion-point paste shortcuts for CAD selection', async () => {
     const container = document.createElement('div');
     document.body.appendChild(container);
     const root: Root = createRoot(container);
@@ -719,13 +719,37 @@ describe('SurveyCadWorkspace', () => {
     await act(async () => {
       clickButton(container, 'S-ALL');
     });
+    const preview = container.querySelector('[data-survey-cad-preview]') as SVGElement | null;
+    if (!preview) throw new Error('Preview not found');
+    mockElementRect(preview);
     await act(async () => {
       pressKey(window, 'c', { ctrlKey: true });
       pressKey(window, 'v', { ctrlKey: true });
     });
 
+    expect(container.querySelector('[data-survey-cad-entity-count]')?.textContent).toContain('8 entities');
+    expect(container.querySelector('[data-survey-cad-command-status]')?.textContent).toContain('PASTE active');
+    await act(async () => {
+      preview.dispatchEvent(
+        new MouseEvent('mousemove', {
+          bubbles: true,
+          clientX: 260,
+          clientY: 320,
+        }),
+      );
+    });
+    expect(container.querySelector('[data-survey-cad-command-preview]')).not.toBeNull();
+
+    const commandInput = container.querySelector('[data-survey-cad-command-input]') as HTMLInputElement | null;
+    if (!commandInput) throw new Error('Command input not found');
+
+    await act(async () => {
+      setTextInputValue(commandInput, '25,25');
+      pressKey(commandInput, 'Enter');
+    });
+
     expect(container.querySelector('[data-survey-cad-entity-count]')?.textContent).toContain('16 entities');
-    expect(container.querySelector('[data-survey-cad-command-status]')?.textContent).toContain('COPY committed');
+    expect(container.querySelector('[data-survey-cad-command-status]')?.textContent).toContain('PASTE committed');
 
     await act(async () => {
       root.unmount();
@@ -768,6 +792,71 @@ describe('SurveyCadWorkspace', () => {
 
     expect(container.querySelector('[data-survey-cad-entity-count]')?.textContent).toContain('8 entities');
     expect(container.querySelector('[data-survey-cad-command-status]')?.textContent).toContain('Undo POINT');
+
+    await act(async () => {
+      root.unmount();
+    });
+    container.remove();
+  });
+
+  it('supports keyboard undo after a viewport-drawn line even when the toolbar button kept focus', async () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root: Root = createRoot(container);
+
+    await act(async () => {
+      root.render(
+        <SurveyCadWorkspace
+          input={input}
+          instrumentLibrary={{}}
+          parseOptions={parseOptions}
+          units="m"
+          result={null}
+        />,
+      );
+    });
+
+    const preview = container.querySelector('[data-survey-cad-preview]') as SVGElement | null;
+    const background = container.querySelector('[data-survey-cad-background="true"]') as SVGRectElement | null;
+    if (!preview || !background) throw new Error('Preview background not found');
+    mockElementRect(preview);
+    mockElementRect(background);
+
+    let lineButton: HTMLButtonElement | null = null;
+    await act(async () => {
+      lineButton = clickButton(container, 'LINE');
+    });
+    await act(async () => {
+      background.dispatchEvent(
+        new MouseEvent('click', {
+          bubbles: true,
+          clientX: 180,
+          clientY: 410,
+        }),
+      );
+      background.dispatchEvent(
+        new MouseEvent('click', {
+          bubbles: true,
+          clientX: 320,
+          clientY: 320,
+        }),
+      );
+    });
+
+    expect(container.querySelector('[data-survey-cad-entity-count]')?.textContent).toContain('9 entities');
+    expect(container.querySelector('[data-survey-cad-command-status]')?.textContent).toContain(
+      'LINE committed',
+    );
+
+    await act(async () => {
+      if (!lineButton) throw new Error('Line button not found');
+      pressKey(lineButton, 'z', { ctrlKey: true });
+    });
+
+    expect(container.querySelector('[data-survey-cad-entity-count]')?.textContent).toContain('8 entities');
+    expect(container.querySelector('[data-survey-cad-command-status]')?.textContent).toContain(
+      'Undo LINE',
+    );
 
     await act(async () => {
       root.unmount();

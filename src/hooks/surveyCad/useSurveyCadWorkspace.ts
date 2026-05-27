@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from 'react';
 import { cadIntersectLineLikeEntities, isCadLineLikeEntity } from '../../engine/cad/cadCogo';
 import { getSelectedCadEntities, replaceCadSelection, toggleCadSelectionEntity } from '../../engine/cad/cadSelection';
-import { buildCadProjectSignature } from '../../engine/cad/cadProjectState';
+import { buildCadBounds, buildCadProjectSignature } from '../../engine/cad/cadProjectState';
 import { cloneSurveyCadPersistedState } from '../../engine/cad/cadPersistence';
 import { buildMlightcadSpikeScene } from '../../engine/cad/cadMlightcadAdapter';
 import { buildCadDisplayScene } from '../../engine/cad/cadRenderer';
@@ -36,6 +36,7 @@ interface UseSurveyCadWorkspaceResult {
     | 'INVERSE'
     | 'MOVE'
     | 'COPY'
+    | 'PASTE'
     | null;
   commandInputValue: string;
   statusText: string;
@@ -76,7 +77,7 @@ interface UseSurveyCadWorkspaceResult {
   selectAll: () => void;
   clearSelection: () => void;
   eraseSelection: () => void;
-  pasteEntityIdsInPlace: (_entityIds: string[]) => void;
+  startPasteFromClipboard: (_entityIds: string[]) => void;
   undo: () => void;
   redo: () => void;
 }
@@ -158,6 +159,7 @@ export const useSurveyCadWorkspace = (
     startInverseCommand,
     startMoveCommand,
     startCopyCommand,
+    startPasteCommand,
     cancelCommand,
     finishCommand,
     setCommandInputValue,
@@ -177,7 +179,8 @@ export const useSurveyCadWorkspace = (
   });
   const commandPreviewPrimitives = useMemo<CadDisplayPrimitive[]>(() => {
     if (!commandPreview) return [] as CadDisplayPrimitive[];
-    const previewStroke = activeCommandKey === 'COPY' ? '#38bdf8' : '#22d3ee';
+    const previewStroke =
+      activeCommandKey === 'COPY' || activeCommandKey === 'PASTE' ? '#38bdf8' : '#22d3ee';
     const previewOpacity = 0.85;
     if (commandPreview.kind === 'point') {
       return [
@@ -222,8 +225,12 @@ export const useSurveyCadWorkspace = (
         strokeDasharray: '8 6',
       }));
     }
+    const previewSourceEntityIds =
+      commandPreview.kind === 'translate-selection'
+        ? commandPreview.sourceEntityIds ?? selection.selectedEntityIds
+        : selection.selectedEntityIds;
     return displayScene.primitives
-      .filter((primitive) => selection.selectedEntityIds.includes(primitive.sourceEntityId))
+      .filter((primitive) => previewSourceEntityIds.includes(primitive.sourceEntityId))
       .map((primitive, index) => {
         if (primitive.kind === 'line') {
           return {
@@ -430,28 +437,20 @@ export const useSurveyCadWorkspace = (
     eraseSelection: () => {
       setHistory((current) => runCadCommand(current, { key: 'ERASE' }));
     },
-    pasteEntityIdsInPlace: (entityIds) => {
-      setHistory((current) => {
-        const validEntityIds = current.present.project.entities
-          .filter((entity) => entityIds.includes(entity.id))
-          .map((entity) => entity.id);
-        if (validEntityIds.length === 0) return current;
-        const selectionState = replaceCadSelection(current.present.project, validEntityIds);
-        return runCadCommand(
-          {
-            ...current,
-            present: {
-              ...current.present,
-              selection: selectionState,
-            },
-          },
-          {
-            key: 'COPY',
-            deltaX: 5,
-            deltaY: 5,
-          },
-        );
-      });
+    startPasteFromClipboard: (entityIds) => {
+      const sourceEntities = history.present.project.entities.filter((entity) =>
+        entityIds.includes(entity.id),
+      );
+      const bounds = buildCadBounds(sourceEntities);
+      if (!bounds || sourceEntities.length === 0) return;
+      startPasteCommand(
+        sourceEntities.map((entity) => entity.id),
+        {
+          x: bounds.minX,
+          y: bounds.minY,
+          label: `${bounds.minX.toFixed(3)},${bounds.minY.toFixed(3)}`,
+        },
+      );
     },
     undo: () => {
       setHistory((current) => undoCadHistory(current));

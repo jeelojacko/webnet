@@ -34,6 +34,8 @@ Current implemented spike slice:
 - in-progress commands now paint live preview geometry in the viewport for line/polyline/curve and translate-style edit flows before commit
 - command help, snap state, and the active command text input now live inside the CAD viewport as bottom-corner / bottom-center overlays instead of a separate status panel
 - active commands now capture direct keyboard typing without requiring the operator to click the command input first, and basic CAD shortcuts now include keyboard copy/paste plus undo/redo
+- keyboard `Undo` / `Redo` now stays active even when the last focused control was a toolbar button, so direct viewport draw commits can still be reversed immediately with `Ctrl/Cmd+Z`
+- keyboard paste now uses a real insertion-point workflow: `Ctrl/Cmd+V` starts a `PASTE` command from the copied geometry's base point, shows live preview geometry, and waits for a click or typed insertion point before commit
 - idle generic helper copy is now removed from the lower-left viewport so the command bar placeholder carries the generic input reminder instead
 - object snaps are now operator-toggleable from a viewport `Snaps` drop-up menu instead of a fixed status sentence, and selection hit targets for native points/lines/ellipses are intentionally wider than the visible geometry
 
