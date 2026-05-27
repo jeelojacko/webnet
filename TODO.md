@@ -1,3 +1,5 @@
+- [x] Survey CAD snap-menu + hit-target batch (May 2026): remove the redundant idle helper overlay, replace snap status text with a viewport snap-toggle menu, restore keyboard undo/redo reliability after direct CAD draws, and enlarge point/line selection hit targets so native picking feels less fragile.
+
 - [x] Survey CAD overlay-input + keyboard batch (May 2026): move CAD help/snap text and command input into viewport overlays, remove the idle ready-status panel, allow active commands to capture typing without clicking the input first, and add keyboard copy/paste shortcuts for the native CAD workspace.
 
 - [x] Survey CAD live-preview + traverse-start batch (May 2026): add in-viewport live preview overlays for line/polyline/arc/move/copy workflows, then start the first native `TRAVERSE` entry flow on the same direct-interaction command seam.

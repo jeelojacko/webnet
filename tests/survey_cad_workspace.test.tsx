@@ -111,8 +111,9 @@ describe('SurveyCadWorkspace', () => {
     expect(container.textContent).not.toContain('Submit');
     expect(container.querySelector('[data-survey-cad-entity-count]')?.textContent).toContain('8 entities');
     expect(container.querySelector('[data-survey-cad-command-input]')).not.toBeNull();
-    expect(container.querySelector('[data-survey-cad-command-help]')?.textContent).toContain('Interactive commands accept');
+    expect(container.querySelector('[data-survey-cad-command-help]')?.textContent ?? '').toBe('');
     expect(container.querySelector('[data-survey-cad-command-status]')).toBeNull();
+    expect(container.querySelector('[data-survey-cad-snap-menu-button]')?.textContent).toContain('Snaps');
 
     await act(async () => {
       root.unmount();
@@ -233,7 +234,7 @@ describe('SurveyCadWorkspace', () => {
     container.remove();
   });
 
-  it('shows snap feedback when the pointer moves over CAD geometry', async () => {
+  it('lets the operator toggle snap kinds from the viewport snap menu', async () => {
     const container = document.createElement('div');
     document.body.appendChild(container);
     const root: Root = createRoot(container);
@@ -264,10 +265,30 @@ describe('SurveyCadWorkspace', () => {
       );
     });
 
-    expect(container.querySelector('[data-survey-cad-snap-status]')?.textContent).toContain(
-      'Snap point-node: A',
-    );
     expect(container.querySelector('[data-survey-cad-snap-glyph]')).not.toBeNull();
+
+    await act(async () => {
+      const snapMenuButton = container.querySelector('[data-survey-cad-snap-menu-button]') as HTMLButtonElement | null;
+      if (!snapMenuButton) throw new Error('Snap menu button not found');
+      snapMenuButton.click();
+    });
+    await act(async () => {
+      (container.querySelector('[data-survey-cad-snap-toggle="point-node"]') as HTMLInputElement | null)?.click();
+      (container.querySelector('[data-survey-cad-snap-toggle="endpoint"]') as HTMLInputElement | null)?.click();
+      (container.querySelector('[data-survey-cad-snap-toggle="intersection"]') as HTMLInputElement | null)?.click();
+      (container.querySelector('[data-survey-cad-snap-toggle="nearest"]') as HTMLInputElement | null)?.click();
+    });
+    await act(async () => {
+      preview.dispatchEvent(
+        new MouseEvent('mousemove', {
+          bubbles: true,
+          clientX: 94,
+          clientY: 461,
+        }),
+      );
+    });
+
+    expect(container.querySelector('[data-survey-cad-snap-glyph]')).toBeNull();
 
     await act(async () => {
       root.unmount();
@@ -397,6 +418,8 @@ describe('SurveyCadWorkspace', () => {
 
     await act(async () => {
       clickButton(container, 'LINE');
+    });
+    await act(async () => {
       background.dispatchEvent(
         new MouseEvent('click', {
           bubbles: true,
@@ -703,6 +726,48 @@ describe('SurveyCadWorkspace', () => {
 
     expect(container.querySelector('[data-survey-cad-entity-count]')?.textContent).toContain('16 entities');
     expect(container.querySelector('[data-survey-cad-command-status]')?.textContent).toContain('COPY committed');
+
+    await act(async () => {
+      root.unmount();
+    });
+    container.remove();
+  });
+
+  it('supports keyboard undo after a committed CAD command without requiring focus changes', async () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root: Root = createRoot(container);
+
+    await act(async () => {
+      root.render(
+        <SurveyCadWorkspace
+          input={input}
+          instrumentLibrary={{}}
+          parseOptions={parseOptions}
+          units="m"
+          result={null}
+        />,
+      );
+    });
+
+    const commandInput = container.querySelector('[data-survey-cad-command-input]') as HTMLInputElement | null;
+    if (!commandInput) throw new Error('Command input not found');
+
+    await act(async () => {
+      clickButton(container, 'POINT');
+    });
+    await act(async () => {
+      setTextInputValue(commandInput, 'UNDO1=10,20');
+      pressKey(commandInput, 'Enter');
+    });
+    expect(container.querySelector('[data-survey-cad-entity-count]')?.textContent).toContain('10 entities');
+
+    await act(async () => {
+      pressKey(window, 'z', { ctrlKey: true });
+    });
+
+    expect(container.querySelector('[data-survey-cad-entity-count]')?.textContent).toContain('8 entities');
+    expect(container.querySelector('[data-survey-cad-command-status]')?.textContent).toContain('Undo POINT');
 
     await act(async () => {
       root.unmount();

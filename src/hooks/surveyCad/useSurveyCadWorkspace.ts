@@ -7,7 +7,7 @@ import { buildMlightcadSpikeScene } from '../../engine/cad/cadMlightcadAdapter';
 import { buildCadDisplayScene } from '../../engine/cad/cadRenderer';
 import { createCadHistoryState, redoCadHistory, runCadCommand, undoCadHistory } from '../../engine/cad/cadUndoRedo';
 import { useSurveyCadCommands, type CadCommandPreviewState } from './useSurveyCadCommands';
-import { useSurveyCadSnapping } from './useSurveyCadSnapping';
+import { useSurveyCadSnapping, type CadSnapPreferences } from './useSurveyCadSnapping';
 import type {
   CadDisplayPrimitive,
   CadProject,
@@ -45,7 +45,7 @@ interface UseSurveyCadWorkspaceResult {
   canFinishCommand: boolean;
   canCreateIntersectionPoint: boolean;
   activeSnap: CadSnapCandidate | null;
-  snapStatusText: string;
+  snapPreferences: CadSnapPreferences;
   historyDepth: number;
   redoDepth: number;
   startPointCommand: () => void;
@@ -72,6 +72,7 @@ interface UseSurveyCadWorkspaceResult {
   selectEntity: (_entityId: string, _appendToSelection?: boolean) => void;
   selectEntities: (_entityIds: string[], _appendToSelection?: boolean) => void;
   updatePointerWorldPoint: (_worldPoint: { x: number; y: number } | null) => void;
+  setSnapPreference: (_kind: keyof CadSnapPreferences, _enabled: boolean) => void;
   selectAll: () => void;
   clearSelection: () => void;
   eraseSelection: () => void;
@@ -119,7 +120,13 @@ export const useSurveyCadWorkspace = (
     () => getSelectedCadEntities(cadProject, selection),
     [cadProject, selection],
   );
-  const { activeSnap, pointerWorldPoint, snapStatusText, updatePointerWorldPoint } = useSurveyCadSnapping(cadProject);
+  const {
+    activeSnap,
+    pointerWorldPoint,
+    snapPreferences,
+    updatePointerWorldPoint,
+    setSnapPreference,
+  } = useSurveyCadSnapping(cadProject);
   const previewPoint = useMemo(
     () =>
       activeSnap
@@ -322,7 +329,7 @@ export const useSurveyCadWorkspace = (
     canFinishCommand,
     canCreateIntersectionPoint: selectedIntersection != null,
     activeSnap,
-    snapStatusText,
+    snapPreferences,
     historyDepth: history.undoStack.length,
     redoDepth: history.redoStack.length,
     startPointCommand,
@@ -416,6 +423,7 @@ export const useSurveyCadWorkspace = (
       setHistory((current) => runCadCommand(current, { key: 'SELECT_ALL' }));
     },
     updatePointerWorldPoint,
+    setSnapPreference,
     clearSelection: () => {
       setHistory((current) => runCadCommand(current, { key: 'CLEAR_SELECTION' }));
     },

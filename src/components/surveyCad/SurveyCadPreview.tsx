@@ -4,7 +4,9 @@ import type {
   CadDisplayPrimitive,
   CadDisplayScene,
   CadSnapCandidate,
+  CadSnapKind,
 } from '../../engine/cad/cadTypes';
+import type { CadSnapPreferences } from '../../hooks/surveyCad/useSurveyCadSnapping';
 
 interface SurveyCadPreviewProps {
   scene: CadDisplayScene;
@@ -13,7 +15,7 @@ interface SurveyCadPreviewProps {
   commandPreviewPrimitives: readonly CadDisplayPrimitive[];
   commandStatusText: string;
   commandHelpText: string;
-  snapStatusText: string;
+  snapPreferences: CadSnapPreferences;
   commandInputValue: string;
   commandInputPlaceholder: string;
   commandInputEnabled: boolean;
@@ -24,6 +26,7 @@ interface SurveyCadPreviewProps {
   onSelectEntities: (_entityIds: string[], _appendToSelection?: boolean) => void;
   onConsumeInteractionPoint: (_worldPoint: { x: number; y: number }) => void;
   onPointerWorldPointChange: (_worldPoint: { x: number; y: number } | null) => void;
+  onSnapPreferenceChange: (_kind: CadSnapKind, _enabled: boolean) => void;
   onCommandInputChange: (_value: string) => void;
   onCommandInputEnter: () => void;
   onCommandInputEscape: () => void;
@@ -35,6 +38,13 @@ const HEIGHT = 520;
 const PADDING = 36;
 const MIN_ZOOM = 0.35;
 const MAX_ZOOM = 16;
+const SNAP_MENU_LABELS: Record<CadSnapKind, string> = {
+  'point-node': 'Points',
+  endpoint: 'Endpoints',
+  midpoint: 'Midpoints',
+  intersection: 'Intersections',
+  nearest: 'Nearest',
+};
 
 type ScreenBox = {
   anchorX: number;
@@ -183,34 +193,54 @@ const renderPrimitive = (
       const start = project(primitive.points[0].x, primitive.points[0].y);
       const end = project(primitive.points[1].x, primitive.points[1].y);
       return (
-        <line
-          key={primitive.id}
-          {...commonProps}
-          x1={start.x}
-          y1={start.y}
-          x2={end.x}
-          y2={end.y}
-          stroke={isSelected ? '#fbbf24' : primitive.stroke}
-          strokeWidth={isSelected ? primitive.strokeWidth + 1.1 : primitive.strokeWidth}
-          opacity={primitive.opacity ?? 0.92}
-          strokeDasharray={primitive.strokeDasharray}
-        />
+        <g key={primitive.id}>
+          <line
+            {...commonProps}
+            x1={start.x}
+            y1={start.y}
+            x2={end.x}
+            y2={end.y}
+            stroke="transparent"
+            strokeWidth={Math.max(12, primitive.strokeWidth + 10)}
+            opacity={0}
+          />
+          <line
+            x1={start.x}
+            y1={start.y}
+            x2={end.x}
+            y2={end.y}
+            stroke={isSelected ? '#fbbf24' : primitive.stroke}
+            strokeWidth={isSelected ? primitive.strokeWidth + 1.1 : primitive.strokeWidth}
+            opacity={primitive.opacity ?? 0.92}
+            strokeDasharray={primitive.strokeDasharray}
+            pointerEvents="none"
+          />
+        </g>
       );
     }
     case 'point': {
       const point = project(primitive.point.x, primitive.point.y);
       return (
-        <circle
-          key={primitive.id}
-          {...commonProps}
-          cx={point.x}
-          cy={point.y}
-          r={isSelected ? primitive.radius + 1.8 : primitive.radius}
-          fill={isSelected ? '#fbbf24' : primitive.fill ?? primitive.stroke}
-          stroke={isSelected ? '#fef3c7' : '#0f172a'}
-          strokeWidth={1.2}
-          opacity={primitive.opacity ?? 1}
-        />
+        <g key={primitive.id}>
+          <circle
+            {...commonProps}
+            cx={point.x}
+            cy={point.y}
+            r={Math.max(8, primitive.radius + 5)}
+            fill="transparent"
+            opacity={0}
+          />
+          <circle
+            cx={point.x}
+            cy={point.y}
+            r={isSelected ? primitive.radius + 1.8 : primitive.radius}
+            fill={isSelected ? '#fbbf24' : primitive.fill ?? primitive.stroke}
+            stroke={isSelected ? '#fef3c7' : '#0f172a'}
+            strokeWidth={1.2}
+            opacity={primitive.opacity ?? 1}
+            pointerEvents="none"
+          />
+        </g>
       );
     }
     case 'text': {
@@ -232,20 +262,33 @@ const renderPrimitive = (
     case 'ellipse': {
       const center = project(primitive.center.x, primitive.center.y);
       return (
-        <ellipse
-          key={primitive.id}
-          {...commonProps}
-          cx={center.x}
-          cy={center.y}
-          rx={Math.max(primitive.semiMajor * scale, 1.2)}
-          ry={Math.max(primitive.semiMinor * scale, 0.9)}
-          transform={`rotate(${-primitive.thetaDeg} ${center.x} ${center.y})`}
-          fill="none"
-          stroke={isSelected ? '#fbbf24' : primitive.stroke}
-          strokeWidth={isSelected ? primitive.strokeWidth + 0.8 : primitive.strokeWidth}
-          opacity={primitive.opacity ?? 0.88}
-          strokeDasharray={primitive.strokeDasharray}
-        />
+        <g key={primitive.id}>
+          <ellipse
+            {...commonProps}
+            cx={center.x}
+            cy={center.y}
+            rx={Math.max(primitive.semiMajor * scale, 1.2)}
+            ry={Math.max(primitive.semiMinor * scale, 0.9)}
+            transform={`rotate(${-primitive.thetaDeg} ${center.x} ${center.y})`}
+            fill="none"
+            stroke="transparent"
+            strokeWidth={Math.max(12, primitive.strokeWidth + 10)}
+            opacity={0}
+          />
+          <ellipse
+            cx={center.x}
+            cy={center.y}
+            rx={Math.max(primitive.semiMajor * scale, 1.2)}
+            ry={Math.max(primitive.semiMinor * scale, 0.9)}
+            transform={`rotate(${-primitive.thetaDeg} ${center.x} ${center.y})`}
+            fill="none"
+            stroke={isSelected ? '#fbbf24' : primitive.stroke}
+            strokeWidth={isSelected ? primitive.strokeWidth + 0.8 : primitive.strokeWidth}
+            opacity={primitive.opacity ?? 0.88}
+            strokeDasharray={primitive.strokeDasharray}
+            pointerEvents="none"
+          />
+        </g>
       );
     }
   }
@@ -258,7 +301,7 @@ const SurveyCadPreview: React.FC<SurveyCadPreviewProps> = ({
   commandPreviewPrimitives,
   commandStatusText,
   commandHelpText,
-  snapStatusText,
+  snapPreferences,
   commandInputValue,
   commandInputPlaceholder,
   commandInputEnabled,
@@ -269,6 +312,7 @@ const SurveyCadPreview: React.FC<SurveyCadPreviewProps> = ({
   onSelectEntities,
   onConsumeInteractionPoint,
   onPointerWorldPointChange,
+  onSnapPreferenceChange,
   onCommandInputChange,
   onCommandInputEnter,
   onCommandInputEscape,
@@ -277,6 +321,7 @@ const SurveyCadPreview: React.FC<SurveyCadPreviewProps> = ({
   const { baseScale, normalized, project, scale, unproject } = useProjector(scene.bounds, viewport);
   const [dragState, setDragState] = useState<DragState>({ kind: 'none' });
   const [didDrag, setDidDrag] = useState(false);
+  const [snapMenuOpen, setSnapMenuOpen] = useState(false);
   const selectionBox = dragState.kind === 'box' ? dragState.box : null;
   const middleMouseDownAtRef = useRef<number>(0);
   const commandInputRef = useRef<HTMLInputElement | null>(null);
@@ -569,17 +614,43 @@ const SurveyCadPreview: React.FC<SurveyCadPreviewProps> = ({
             <div className="pb-1 text-cyan-200" data-survey-cad-command-status>
               {commandStatusText}
             </div>
-            <div>{commandHelpText}</div>
+            {commandInputEnabled ? <div>{commandHelpText}</div> : null}
           </>
-        ) : (
-          commandHelpText
-        )}
+        ) : null}
       </div>
-      <div
-        className="pointer-events-none absolute bottom-3 right-3 max-w-[18rem] text-right text-[11px] leading-4 text-slate-300"
-        data-survey-cad-snap-status
-      >
-        {snapStatusText}
+      <div className="absolute bottom-3 right-3" data-survey-cad-snap-menu>
+        {snapMenuOpen ? (
+          <div className="absolute bottom-9 right-0 mb-1 w-44 rounded border border-slate-700 bg-slate-950/95 p-2 shadow-xl">
+            <div className="pb-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-400">
+              Object Snaps
+            </div>
+            {Object.entries(SNAP_MENU_LABELS).map(([kind, label]) => {
+              const snapKind = kind as CadSnapKind;
+              return (
+                <label
+                  key={snapKind}
+                  className="flex cursor-pointer items-center justify-between gap-3 py-1 text-xs text-slate-200"
+                >
+                  <span>{label}</span>
+                  <input
+                    type="checkbox"
+                    checked={snapPreferences[snapKind]}
+                    onChange={(event) => onSnapPreferenceChange(snapKind, event.target.checked)}
+                    data-survey-cad-snap-toggle={snapKind}
+                  />
+                </label>
+              );
+            })}
+          </div>
+        ) : null}
+        <button
+          type="button"
+          className="rounded border border-slate-700/90 bg-slate-950/90 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-200 transition-colors hover:border-cyan-500/80"
+          onClick={() => setSnapMenuOpen((current) => !current)}
+          data-survey-cad-snap-menu-button
+        >
+          Snaps
+        </button>
       </div>
       <div className="absolute bottom-3 left-1/2 w-[min(32rem,calc(100%-12rem))] -translate-x-1/2">
         <input

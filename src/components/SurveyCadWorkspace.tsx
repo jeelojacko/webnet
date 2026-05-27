@@ -55,7 +55,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     commandPreviewPrimitives,
     canCreateIntersectionPoint,
     activeSnap,
-    snapStatusText,
+    snapPreferences,
     historyDepth,
     redoDepth,
     startPointCommand,
@@ -78,6 +78,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     selectEntity,
     selectEntities,
     updatePointerWorldPoint,
+    setSnapPreference,
     selectAll,
     clearSelection,
     eraseSelection,
@@ -112,8 +113,8 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
 
   useEffect(() => {
     const isEditableTarget = (target: EventTarget | null): boolean =>
-      target instanceof HTMLInputElement ||
-      target instanceof HTMLTextAreaElement ||
+      (target instanceof HTMLInputElement && !target.disabled && !target.readOnly) ||
+      (target instanceof HTMLTextAreaElement && !target.disabled && !target.readOnly) ||
       target instanceof HTMLButtonElement ||
       (target instanceof HTMLElement && target.isContentEditable);
 
@@ -233,7 +234,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
               commandPreviewPrimitives={commandPreviewPrimitives}
               commandStatusText={commandStatusText}
               commandHelpText={commandHelpText}
-              snapStatusText={snapStatusText}
+              snapPreferences={snapPreferences}
               commandInputValue={commandInputValue}
               commandInputPlaceholder={commandInputPlaceholder}
               commandInputEnabled={activeCommandKey != null}
@@ -244,6 +245,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
               onSelectEntities={selectEntities}
               onConsumeInteractionPoint={consumeInteractionPoint}
               onPointerWorldPointChange={updatePointerWorldPoint}
+              onSnapPreferenceChange={setSnapPreference}
               onCommandInputChange={setCommandInputValue}
               onCommandInputEnter={handleEnterKey}
               onCommandInputEscape={() => {
