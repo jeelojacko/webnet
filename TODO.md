@@ -1,3 +1,5 @@
+- [x] Survey CAD phase-1/2 completion batch (May 2026): expand native entity families, persist CAD project state inside current WebNet project storage and bundles, prove a simple DXF/runtime path through the published `mlightcad` data-model, and audit phases 0-3 acceptance criteria against focused tests/fixtures.
+
 - [x] Survey CAD phase-4 cogo-core batch (May 2026): add native COGO inverse helpers, explicit bearing/azimuth-distance point creation, and first line-line intersection point workflow on top of the phase-3 command/history seams.
 
 - [x] Survey CAD remaining phase-3 batch (May 2026): add `PLINE`, `MOVE`, and `COPY` on the native command/history seams, extend interactive command sessions to finish multi-step edits, and add full survey bearing-distance typed input alongside existing coordinate and azimuth-distance entry.

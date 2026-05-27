@@ -141,6 +141,19 @@ This branch intentionally does not install `cad-simple-viewer` or `cad-viewer` i
 Reason:
 - current package chain suggests the easiest lower-level viewer path still drags the LibreDWG converter dependency into the app dependency graph
 - that is too much license/runtime ambiguity for a first core-app spike
+- the currently published `@mlightcad/cad-simple-viewer` install path also expects `@mlightcad/cad-html-exporter`, which was not published on npm during this spike, so the simple-viewer path is not currently reproducible in this repo
+
+## Actual runtime proof completed in this repo
+Focused runtime tests now prove the lower-level `mlightcad` seam without adopting the full viewer package:
+
+- `tests/fixtures/survey_cad/simple_runtime_probe.dxf` loads through the actual published `@mlightcad/data-model` runtime in `tests/cad_mlightcad_runtime.test.ts`
+- `tests/fixtures/survey_cad/triangle_network.dat` builds a native WebNet CAD project, then appends those entities into a real `AcDbDatabase` while preserving native entity IDs as runtime `objectId` values
+- layer visibility state is externally drivable by mutating `AcDbLayerTableRecord.isOff` and `isFrozen` on runtime layers created from WebNet-owned layer IDs
+
+Important nuance:
+- the package's ESM entry remains brittle under raw Node because it uses directory-style internal imports
+- the runtime proof therefore uses the published CJS build for the `data-model` package in tests
+- this is sufficient evidence for the adapter seam, but it is still not evidence that the full higher-level viewer packages are ready to ship inside core WebNet
 
 ### Reuse, fork, adapt, or reference only?
 Current planning recommendation:
@@ -208,12 +221,13 @@ Renderer/model spike status:
 - adapter-contract spike complete
 - internal preview spike complete
 - internal selection/snap command surface complete
-- actual external-package runtime spike still pending
+- actual lower-level `data-model` runtime spike complete
+- actual `cad-simple-viewer` integration still blocked
 
 Go / no-go update:
 - go for continuing WebNet-native CAD model, snapping, commands, and DXF-boundary planning
-- no-go for installing the current `mlightcad` runtime path into core WebNet until an MIT-only path or explicit optional GPL boundary is proven
+- no-go for installing the current higher-level `mlightcad` viewer path into core WebNet until an MIT-only path or explicit optional GPL boundary is proven and the broken published package chain is resolved
 
-Future external runtime work should proceed in a follow-up branch only after choosing an MIT-only path or an explicit optional GPL boundary.
+Future external viewer work should proceed in a follow-up branch only after choosing an MIT-only path or an explicit optional GPL boundary.
 
 Renderer/model boundary needs proof first.

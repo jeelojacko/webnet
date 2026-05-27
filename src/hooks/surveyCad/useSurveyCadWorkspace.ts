@@ -1,13 +1,14 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from 'react';
 import { cadIntersectLineLikeEntities, isCadLineLikeEntity } from '../../engine/cad/cadCogo';
 import { getSelectedCadEntities, replaceCadSelection, toggleCadSelectionEntity } from '../../engine/cad/cadSelection';
 import { buildCadProjectSignature } from '../../engine/cad/cadProjectState';
+import { cloneSurveyCadPersistedState } from '../../engine/cad/cadPersistence';
 import { buildMlightcadSpikeScene } from '../../engine/cad/cadMlightcadAdapter';
 import { buildCadDisplayScene } from '../../engine/cad/cadRenderer';
 import { createCadHistoryState, redoCadHistory, runCadCommand, undoCadHistory } from '../../engine/cad/cadUndoRedo';
 import { useSurveyCadCommands } from './useSurveyCadCommands';
 import { useSurveyCadSnapping } from './useSurveyCadSnapping';
-import type { CadProject, CadSnapCandidate } from '../../engine/cad/cadTypes';
+import type { CadProject, CadSnapCandidate, SurveyCadPersistedState } from '../../engine/cad/cadTypes';
 
 interface UseSurveyCadWorkspaceResult {
   cadProject: CadProject;
@@ -51,17 +52,35 @@ interface UseSurveyCadWorkspaceResult {
   redo: () => void;
 }
 
-export const useSurveyCadWorkspace = (baseProject: CadProject): UseSurveyCadWorkspaceResult => {
+export const useSurveyCadWorkspace = (
+  baseProject: CadProject,
+  persistedState: SurveyCadPersistedState | null,
+  onPersistedStateChange: Dispatch<SetStateAction<SurveyCadPersistedState | null>>,
+): UseSurveyCadWorkspaceResult => {
   const projectSignature = useMemo(() => buildCadProjectSignature(baseProject), [baseProject]);
+  const persistedProjectRef = useRef(persistedState?.project ?? null);
+
+  useEffect(() => {
+    persistedProjectRef.current = persistedState?.project ?? null;
+  }, [persistedState]);
+
   const [history, setHistory] = useState(() =>
-    createCadHistoryState(baseProject, baseProject.entities[0] ? [baseProject.entities[0].id] : []),
+    createCadHistoryState(
+      persistedState?.sourceSignature === projectSignature ? persistedState.project : baseProject,
+      baseProject.entities[0] ? [baseProject.entities[0].id] : [],
+    ),
   );
 
   useEffect(() => {
     setHistory(
-      createCadHistoryState(baseProject, baseProject.entities[0] ? [baseProject.entities[0].id] : []),
+      createCadHistoryState(
+        persistedState?.sourceSignature === projectSignature && persistedProjectRef.current
+          ? persistedProjectRef.current
+          : baseProject,
+        baseProject.entities[0] ? [baseProject.entities[0].id] : [],
+      ),
     );
-  }, [baseProject, projectSignature]);
+  }, [baseProject, persistedState?.sourceSignature, projectSignature]);
 
   const cadProject = history.present.project;
   const selection = history.present.selection;
@@ -106,6 +125,23 @@ export const useSurveyCadWorkspace = (baseProject: CadProject): UseSurveyCadWork
     if (selectedLineLikes.length !== 2) return null;
     return cadIntersectLineLikeEntities(selectedLineLikes[0], selectedLineLikes[1]);
   }, [selectedLineLikes]);
+
+  useEffect(() => {
+    onPersistedStateChange((current) => {
+      const nextState = cloneSurveyCadPersistedState({
+        version: 1,
+        sourceSignature: projectSignature,
+        project: cadProject,
+      });
+      if (
+        current?.sourceSignature === nextState.sourceSignature &&
+        buildCadProjectSignature(current.project) === buildCadProjectSignature(nextState.project)
+      ) {
+        return current;
+      }
+      return nextState;
+    });
+  }, [cadProject, onPersistedStateChange, projectSignature]);
 
   return {
     cadProject,

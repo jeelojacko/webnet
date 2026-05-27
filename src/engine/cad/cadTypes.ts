@@ -108,6 +108,30 @@ export interface CadPolylineEntity extends CadBaseEntity {
   closed: boolean;
 }
 
+export interface CadArcEntity extends CadBaseEntity {
+  type: 'arc';
+  centerX: number;
+  centerY: number;
+  radius: number;
+  startAngleDeg: number;
+  endAngleDeg: number;
+}
+
+export interface CadPolygonEntity extends CadBaseEntity {
+  type: 'polygon';
+  vertices: CadDisplayPoint[];
+  vertexLabels: string[];
+}
+
+export interface CadParcelEntity extends CadBaseEntity {
+  type: 'parcel';
+  vertices: CadDisplayPoint[];
+  vertexLabels: string[];
+  parcelName: string;
+  areaSquareMeters?: number;
+  perimeterMeters?: number;
+}
+
 export interface CadTextEntity extends CadBaseEntity {
   type: 'text';
   x: number;
@@ -130,6 +154,9 @@ export type CadEntity =
   | CadSurveyPointEntity
   | CadLineEntity
   | CadPolylineEntity
+  | CadArcEntity
+  | CadPolygonEntity
+  | CadParcelEntity
   | CadTextEntity
   | CadErrorEllipseEntity;
 
@@ -151,6 +178,12 @@ export interface CadProject {
   styleLibrary: CadStyleLibrary;
   entities: CadEntity[];
   bounds: CadBounds | null;
+}
+
+export interface SurveyCadPersistedState {
+  version: 1;
+  sourceSignature: string;
+  project: CadProject;
 }
 
 export interface CadDisplayPoint {
@@ -227,7 +260,7 @@ export interface MlightcadSpikeLayer {
 
 export interface MlightcadSpikeEntity {
   objectId: string;
-  type: 'AcDbPoint' | 'AcDbLine' | 'AcDbPolyline' | 'AcDbText' | 'AcDbEllipse';
+  type: 'AcDbPoint' | 'AcDbLine' | 'AcDbPolyline' | 'AcDbArc' | 'AcDbText' | 'AcDbEllipse';
   layer: string;
   visible: boolean;
   geometry: Record<string, unknown>;

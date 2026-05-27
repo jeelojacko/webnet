@@ -244,6 +244,8 @@ const App: React.FC<AppProps> = ({
     setActiveTab,
     planningMap,
     setPlanningMap,
+    surveyCadState,
+    setSurveyCadState,
     clearWorkspaceArtifacts,
   } = useWorkspaceProjectState<ImportedInputNotice, RunDiagnostics, RunSettingsSnapshot, TabKey>({
     initialInput: ACTIVE_PARITY_STARTUP_DEFAULTS?.input ?? DEFAULT_INPUT,
@@ -615,6 +617,7 @@ const App: React.FC<AppProps> = ({
     adjustedPointsExportSettings,
     adjustedPointsExportSettingsDraft,
     planningMap,
+    surveyCadState,
     projectInstruments,
     selectedInstrument,
     levelLoopCustomPresets,
@@ -630,6 +633,7 @@ const App: React.FC<AppProps> = ({
     setExportFormat,
     setAdjustedPointsExportSettings,
     setPlanningMap,
+    setSurveyCadState,
     setProjectInstruments,
     setSelectedInstrument,
     setLevelLoopCustomPresets,
@@ -1128,6 +1132,7 @@ const App: React.FC<AppProps> = ({
     levelLoopCustomPresets,
     geoidSourceData,
     geoidSourceDataLabel,
+    surveyCadState,
     activeTab,
     splitPercent,
     isSidebarOpen,
@@ -1180,6 +1185,7 @@ const App: React.FC<AppProps> = ({
     setIsSidebarOpen,
     setMapDeclutterPreset,
     setPlanningMap,
+    setSurveyCadState,
     setComparisonSelection,
     setImportNotice,
   });
@@ -1762,6 +1768,8 @@ const App: React.FC<AppProps> = ({
                 }}
                 units={settings.units}
                 result={result}
+                persistedState={surveyCadState}
+                onPersistedStateChange={setSurveyCadState}
               />
             )}
           />

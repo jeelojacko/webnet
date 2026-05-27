@@ -1,5 +1,25 @@
 import type { CadBounds, CadEntity, CadProject } from './cadTypes';
 
+const arcEndPoints = (entity: Extract<CadEntity, { type: 'arc' }>): Array<{ x: number; y: number }> => {
+  const normalizedStart = ((entity.startAngleDeg % 360) + 360) % 360;
+  const normalizedEnd = ((entity.endAngleDeg % 360) + 360) % 360;
+  const sampleAngles = [normalizedStart, normalizedEnd];
+  [0, 90, 180, 270].forEach((candidate) => {
+    const wrappedEnd = normalizedEnd < normalizedStart ? normalizedEnd + 360 : normalizedEnd;
+    const test = candidate < normalizedStart ? candidate + 360 : candidate;
+    if (test >= normalizedStart && test <= wrappedEnd) {
+      sampleAngles.push(candidate);
+    }
+  });
+  return sampleAngles.map((angleDeg) => {
+    const radians = (angleDeg * Math.PI) / 180;
+    return {
+      x: entity.centerX + Math.cos(radians) * entity.radius,
+      y: entity.centerY + Math.sin(radians) * entity.radius,
+    };
+  });
+};
+
 export const buildCadBounds = (entities: CadEntity[]): CadBounds | null => {
   let minX = Number.POSITIVE_INFINITY;
   let minY = Number.POSITIVE_INFINITY;
@@ -24,7 +44,12 @@ export const buildCadBounds = (entities: CadEntity[]): CadBounds | null => {
         includePoint(entity.toX, entity.toY);
         break;
       case 'polyline':
+      case 'polygon':
+      case 'parcel':
         entity.vertices.forEach((vertex) => includePoint(vertex.x, vertex.y));
+        break;
+      case 'arc':
+        arcEndPoints(entity).forEach((point) => includePoint(point.x, point.y));
         break;
       case 'error-ellipse':
         includePoint(entity.centerX - entity.semiMajor, entity.centerY - entity.semiMajor);
@@ -57,20 +82,4 @@ export const appendCadProjectEntities = (
 ): CadProject => replaceCadProjectEntities(project, [...project.entities, ...entitiesToAppend]);
 
 export const buildCadProjectSignature = (project: CadProject): string =>
-  [
-    project.version,
-    project.id,
-    project.metadata.source,
-    project.metadata.runMode,
-    project.metadata.units,
-    project.metadata.stationCount,
-    project.metadata.observationCount,
-    project.metadata.adjustedStationCount,
-    project.layers
-      .map((layer) => `${layer.id}:${layer.visible ? 1 : 0}:${layer.locked ? 1 : 0}`)
-      .join('|'),
-    project.styleLibrary.styles
-      .map((style) => `${style.id}:${style.color ?? '-'}:${style.strokeWidth ?? '-'}`)
-      .join('|'),
-    project.entities.map((entity) => entity.id).join('|'),
-  ].join('::');
+  JSON.stringify(project);

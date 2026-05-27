@@ -4,6 +4,8 @@ import React, { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { describe, expect, it } from 'vitest';
 import SurveyCadWorkspace from '../src/components/SurveyCadWorkspace';
+import { buildSurveyCadSpikeProject } from '../src/engine/cad/cadModel';
+import { buildCadProjectSignature } from '../src/engine/cad/cadProjectState';
 import type { ParseOptions } from '../src/types';
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
@@ -72,6 +74,65 @@ describe('SurveyCadWorkspace', () => {
     expect(container.querySelector('[data-survey-cad-preview]')).not.toBeNull();
     expect(container.textContent).toContain('"nativeEntityId"');
     expect(container.querySelector('[data-survey-cad-command-status]')?.textContent).toContain('Ready');
+
+    await act(async () => {
+      root.unmount();
+    });
+    container.remove();
+  });
+
+  it('restores persisted Survey CAD state when the source signature matches the current workspace input', async () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root: Root = createRoot(container);
+
+    const baseProject = buildSurveyCadSpikeProject({
+      input,
+      instrumentLibrary: {},
+      parseOptions,
+      units: 'm',
+      result: null,
+    });
+    const persistedProject = {
+      ...baseProject,
+      entities: [
+        ...baseProject.entities,
+        {
+          id: 'pt:CAD100',
+          type: 'survey-point' as const,
+          layerId: 'points',
+          styleId: 'style-point',
+          visible: true,
+          locked: false,
+          stationId: 'CAD100',
+          x: 50,
+          y: 15,
+          pointClass: 'free' as const,
+          source: 'parsed-input' as const,
+        },
+      ],
+    };
+
+    await act(async () => {
+      root.render(
+        <SurveyCadWorkspace
+          input={input}
+          instrumentLibrary={{}}
+          parseOptions={parseOptions}
+          units="m"
+          result={null}
+          persistedState={{
+            version: 1,
+            sourceSignature: buildCadProjectSignature(baseProject),
+            project: persistedProject,
+          }}
+        />,
+      );
+    });
+
+    expect(container.querySelector('[data-survey-cad-entity-count]')?.textContent).toContain(
+      '9 entities',
+    );
 
     await act(async () => {
       root.unmount();

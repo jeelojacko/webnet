@@ -1,4 +1,5 @@
 import type {
+  CadArcEntity,
   CadDisplayPrimitive,
   CadDisplayScene,
   CadEntity,
@@ -38,6 +39,44 @@ const textFontSize = (project: CadProject, entity: CadEntity, fallback: number):
   );
 };
 
+const buildArcPoints = (entity: CadArcEntity): Array<{ x: number; y: number }> => {
+  const normalizedStart = ((entity.startAngleDeg % 360) + 360) % 360;
+  const normalizedEndBase = ((entity.endAngleDeg % 360) + 360) % 360;
+  const normalizedEnd = normalizedEndBase <= normalizedStart ? normalizedEndBase + 360 : normalizedEndBase;
+  const sweep = Math.max(1, normalizedEnd - normalizedStart);
+  const segmentCount = Math.max(8, Math.ceil(sweep / 15));
+  return Array.from({ length: segmentCount + 1 }, (_, index) => {
+    const angleDeg = normalizedStart + (sweep * index) / segmentCount;
+    const radians = (angleDeg * Math.PI) / 180;
+    return {
+      x: entity.centerX + Math.cos(radians) * entity.radius,
+      y: entity.centerY + Math.sin(radians) * entity.radius,
+    };
+  });
+};
+
+const buildVertexPrimitives = (
+  project: CadProject,
+  entity: Extract<CadEntity, { vertices: Array<{ x: number; y: number }> }>,
+): CadDisplayPrimitive[] => {
+  const stroke = entityStyle(project, entity)?.color ?? layerColor(project, entity.layerId);
+  const points =
+    entity.type === 'polygon' || entity.type === 'parcel'
+      ? [...entity.vertices, entity.vertices[0]].filter(
+          (point): point is { x: number; y: number } => point != null,
+        )
+      : entity.vertices;
+  return points.slice(0, -1).map((vertex, index) => ({
+    kind: 'line',
+    id: `primitive:${entity.id}:${index + 1}`,
+    layerId: entity.layerId,
+    sourceEntityId: entity.id,
+    stroke,
+    points: [vertex, points[index + 1]!],
+    strokeWidth: strokeWidth(project, entity, entity.type === 'parcel' ? 1.5 : 1.25),
+  }));
+};
+
 const toPrimitives = (project: CadProject, entity: CadEntity): CadDisplayPrimitive[] => {
   const stroke = entityStyle(project, entity)?.color ?? layerColor(project, entity.layerId);
   switch (entity.type) {
@@ -66,15 +105,21 @@ const toPrimitives = (project: CadProject, entity: CadEntity): CadDisplayPrimiti
         strokeWidth: strokeWidth(project, entity, 1.25),
       }];
     case 'polyline':
-      return entity.vertices.slice(0, -1).map((vertex, index) => ({
+    case 'polygon':
+    case 'parcel':
+      return buildVertexPrimitives(project, entity);
+    case 'arc': {
+      const points = buildArcPoints(entity);
+      return points.slice(0, -1).map((vertex, index) => ({
         kind: 'line',
         id: `primitive:${entity.id}:${index + 1}`,
         layerId: entity.layerId,
         sourceEntityId: entity.id,
         stroke,
-        points: [vertex, entity.vertices[index + 1]],
+        points: [vertex, points[index + 1]!],
         strokeWidth: strokeWidth(project, entity, 1.25),
       }));
+    }
     case 'text':
       return [{
         kind: 'text',

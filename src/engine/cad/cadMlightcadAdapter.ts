@@ -35,6 +35,8 @@ const toMlightcadEntity = (entity: CadEntity): MlightcadSpikeEntity => {
         },
       };
     case 'polyline':
+    case 'polygon':
+    case 'parcel':
       return {
         objectId: entity.id,
         type: 'AcDbPolyline',
@@ -42,8 +44,25 @@ const toMlightcadEntity = (entity: CadEntity): MlightcadSpikeEntity => {
         visible: entity.visible,
         geometry: {
           vertices: entity.vertices.map((vertex) => ({ x: vertex.x, y: vertex.y, z: 0 })),
-          closed: entity.closed,
+          closed: entity.type === 'polyline' ? entity.closed : true,
           vertexLabels: entity.vertexLabels,
+        },
+        metadata: {
+          nativeEntityId: entity.id,
+          nativeType: entity.type,
+        },
+      };
+    case 'arc':
+      return {
+        objectId: entity.id,
+        type: 'AcDbArc',
+        layer: entity.layerId,
+        visible: entity.visible,
+        geometry: {
+          center: { x: entity.centerX, y: entity.centerY, z: 0 },
+          radius: entity.radius,
+          startAngleDeg: entity.startAngleDeg,
+          endAngleDeg: entity.endAngleDeg,
         },
         metadata: {
           nativeEntityId: entity.id,

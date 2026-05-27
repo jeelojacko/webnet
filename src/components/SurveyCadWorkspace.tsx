@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, type Dispatch, type SetStateAction } from 'react';
 import {
   Compass,
   FileCode2,
@@ -10,7 +10,7 @@ import {
 } from 'lucide-react';
 import type { AdjustmentResult, InstrumentLibrary, ParseOptions, UnitsMode } from '../types';
 import { buildSurveyCadSpikeProject } from '../engine/cad/cadModel';
-import type { CadEntity } from '../engine/cad/cadTypes';
+import type { CadEntity, SurveyCadPersistedState } from '../engine/cad/cadTypes';
 import { noteUiTabReady } from '../hooks/useUiPerfMonitor';
 import { useSurveyCadWorkspace } from '../hooks/surveyCad/useSurveyCadWorkspace';
 import SurveyCadCommandLine from './surveyCad/SurveyCadCommandLine';
@@ -42,6 +42,8 @@ interface SurveyCadWorkspaceProps {
   parseOptions: ParseOptions;
   units: UnitsMode;
   result: AdjustmentResult | null;
+  persistedState?: SurveyCadPersistedState | null;
+  onPersistedStateChange?: Dispatch<SetStateAction<SurveyCadPersistedState | null>>;
 }
 
 const entitySummaryOrder: CadEntity['type'][] = ['survey-point', 'line', 'error-ellipse', 'text'];
@@ -52,6 +54,8 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
   parseOptions,
   units,
   result,
+  persistedState = null,
+  onPersistedStateChange = (_value) => null,
 }) => {
   useEffect(() => {
     noteUiTabReady('survey-cad');
@@ -108,7 +112,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     eraseSelection,
     undo,
     redo,
-  } = useSurveyCadWorkspace(cadProject);
+  } = useSurveyCadWorkspace(cadProject, persistedState, onPersistedStateChange);
   const selectedEntity = selectedEntities[0] ?? null;
 
   const entityCounts = useMemo(() => {

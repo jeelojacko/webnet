@@ -230,12 +230,20 @@ const translateEntity = (entity: CadEntity, deltaX: number, deltaY: number): Cad
         toY: entity.toY + deltaY,
       };
     case 'polyline':
+    case 'polygon':
+    case 'parcel':
       return {
         ...entity,
         vertices: entity.vertices.map((vertex) => ({
           x: vertex.x + deltaX,
           y: vertex.y + deltaY,
         })),
+      };
+    case 'arc':
+      return {
+        ...entity,
+        centerX: entity.centerX + deltaX,
+        centerY: entity.centerY + deltaY,
       };
     case 'text':
       return {
@@ -318,9 +326,17 @@ const buildCopiedEntities = (
         break;
       }
       case 'polyline':
+      case 'polygon':
+      case 'parcel':
         copiedEntities.push({
           ...entity,
-          id: createStableRuntimeId('cad-polyline'),
+          id: createStableRuntimeId(
+            entity.type === 'polyline'
+              ? 'cad-polyline'
+              : entity.type === 'polygon'
+                ? 'cad-polygon'
+                : 'cad-parcel',
+          ),
           vertices: entity.vertices.map((vertex) => ({
             x: vertex.x + deltaX,
             y: vertex.y + deltaY,
@@ -328,6 +344,19 @@ const buildCopiedEntities = (
           vertexLabels: entity.vertexLabels.map(
             (label) => copiedPointByStationId.get(label)?.stationId ?? label,
           ),
+          metadata: {
+            ...entity.metadata,
+            createdBy: 'COPY',
+            manual: true,
+          },
+        });
+        break;
+      case 'arc':
+        copiedEntities.push({
+          ...entity,
+          id: createStableRuntimeId('cad-arc'),
+          centerX: entity.centerX + deltaX,
+          centerY: entity.centerY + deltaY,
           metadata: {
             ...entity.metadata,
             createdBy: 'COPY',

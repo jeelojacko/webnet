@@ -7,6 +7,7 @@ import {
 import { parseProjectFile, serializeProjectFile } from '../src/engine/projectFile';
 import type { RunSettingsSnapshot } from '../src/appStateTypes';
 import type { AdjustmentResult, InstrumentLibrary } from '../src/types';
+import type { SurveyCadPersistedState } from '../src/engine/cad/cadTypes';
 
 const savedRunResult = {
   success: true,
@@ -78,6 +79,60 @@ const defaults = {
   } as InstrumentLibrary,
   selectedInstrument: 'S9',
   levelLoopCustomPresets: [{ id: 'c1', name: 'Custom 1', baseMm: 2, perSqrtKmMm: 5 }],
+};
+
+const surveyCadState: SurveyCadPersistedState = {
+  version: 1,
+  sourceSignature: 'base-project-signature',
+  project: {
+    version: 1,
+    id: 'cad-project-1',
+    name: 'Survey CAD Project',
+    metadata: {
+      source: 'parsed-input',
+      runMode: 'adjustment',
+      units: 'm',
+      stationCount: 1,
+      observationCount: 0,
+      adjustedStationCount: 0,
+    },
+    layers: [
+      {
+        id: 'parcels',
+        name: 'Parcels',
+        color: '#f59e0b',
+        visible: true,
+        locked: false,
+        role: 'planning',
+      },
+    ],
+    styleLibrary: {
+      lineTypes: [{ id: 'continuous', name: 'Continuous', dashPattern: [] }],
+      textStyles: [{ id: 'label', name: 'Label', fontFamily: 'monospace', fontSize: 12 }],
+      pointSymbols: [{ id: 'point', name: 'Point', radius: 2 }],
+      styles: [{ id: 'parcel-style', name: 'Parcel', color: '#f59e0b', strokeWidth: 1.5 }],
+    },
+    entities: [
+      {
+        id: 'parcel-1',
+        type: 'parcel',
+        layerId: 'parcels',
+        styleId: 'parcel-style',
+        visible: true,
+        locked: false,
+        vertices: [
+          { x: 0, y: 0 },
+          { x: 100, y: 0 },
+          { x: 100, y: 40 },
+        ],
+        vertexLabels: ['A', 'B', 'C'],
+        parcelName: 'Lot 1',
+        areaSquareMeters: 2000,
+        perimeterMeters: 240,
+      },
+    ],
+    bounds: { minX: 0, minY: 0, maxX: 100, maxY: 40 },
+  },
 };
 
 describe('project file serialization/parsing', () => {
@@ -233,6 +288,7 @@ describe('project file serialization/parsing', () => {
         projectInstruments: defaults.projectInstruments,
         selectedInstrument: 'S9',
         levelLoopCustomPresets: defaults.levelLoopCustomPresets,
+        surveyCad: surveyCadState,
       },
     });
 
@@ -274,6 +330,11 @@ describe('project file serialization/parsing', () => {
     expect(parsed.project.ui.adjustedPointsExport.transform.rotation.angleDeg).toBe(12.5);
     expect(parsed.project.project.selectedInstrument).toBe('S9');
     expect(parsed.project.project.levelLoopCustomPresets).toHaveLength(1);
+    expect(parsed.project.project.surveyCad?.project.entities[0]?.type).toBe('parcel');
+    expect(parsed.project.project.surveyCad?.project.entities[0]).toMatchObject({
+      id: 'parcel-1',
+      parcelName: 'Lot 1',
+    });
   });
 
   it('preserves workspace file contents by file id when a non-main file is focused', () => {

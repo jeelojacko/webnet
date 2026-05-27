@@ -32,6 +32,7 @@ import {
   sanitizeAdjustedPointsExportSettings,
 } from '../engine/adjustedPointsExport';
 import { clonePlanningMapState, DEFAULT_PLANNING_MAP_STATE } from '../engine/planningMapState';
+import { cloneSurveyCadPersistedState } from '../engine/cad/cadPersistence';
 import { normalizeListingSortObservationsBy } from '../listingSortObservations';
 import {
   buildProjectBundleBytes,
@@ -79,6 +80,7 @@ import type {
   ProjectExportFormat,
   RunMode,
 } from '../types';
+import type { SurveyCadPersistedState } from '../engine/cad/cadTypes';
 
 const PROJECT_IMPORT_FILE_TYPES = [
   {
@@ -146,6 +148,7 @@ interface UseProjectFileWorkflowArgs {
   exportFormat: ProjectExportFormat;
   adjustedPointsExportSettings: AdjustedPointsExportSettings;
   planningMap?: PlanningMapState;
+  surveyCadState?: SurveyCadPersistedState | null;
   savedRunSnapshots: PersistedSavedRunSnapshot[];
   projectInstruments: InstrumentLibrary;
   selectedInstrument: string;
@@ -159,6 +162,7 @@ interface UseProjectFileWorkflowArgs {
   setExportFormat: Dispatch<SetStateAction<ProjectExportFormat>>;
   setAdjustedPointsExportSettings: Dispatch<SetStateAction<AdjustedPointsExportSettings>>;
   setPlanningMap?: Dispatch<SetStateAction<PlanningMapState>>;
+  setSurveyCadState?: Dispatch<SetStateAction<SurveyCadPersistedState | null>>;
   setProjectInstruments: Dispatch<SetStateAction<InstrumentLibrary>>;
   setSelectedInstrument: Dispatch<SetStateAction<string>>;
   setLevelLoopCustomPresets: Dispatch<SetStateAction<CustomLevelLoopTolerancePreset[]>>;
@@ -553,6 +557,7 @@ export const useProjectFileWorkflow = ({
   exportFormat,
   adjustedPointsExportSettings,
   planningMap = DEFAULT_PLANNING_MAP_STATE,
+  surveyCadState = null,
   savedRunSnapshots,
   projectInstruments,
   selectedInstrument,
@@ -566,6 +571,7 @@ export const useProjectFileWorkflow = ({
   setExportFormat,
   setAdjustedPointsExportSettings,
   setPlanningMap,
+  setSurveyCadState,
   setProjectInstruments,
   setSelectedInstrument,
   setLevelLoopCustomPresets,
@@ -696,6 +702,9 @@ export const useProjectFileWorkflow = ({
         normalizedLoadedParseSettings,
         loadedAdjustedPointsSettings,
         planningMap: clonePlanningMapState(parsed.ui.planningMap ?? DEFAULT_PLANNING_MAP_STATE),
+        surveyCadState: parsed.project.surveyCad
+          ? cloneSurveyCadPersistedState(parsed.project.surveyCad)
+          : null,
         geoidSourceData: decodeBase64ToUint8Array(parsed.ui.geoidSourceDataBase64),
         geoidSourceDataLabel: parsed.ui.geoidSourceDataLabel ?? '',
         exportFormat: parsed.ui.exportFormat,
@@ -752,6 +761,9 @@ export const useProjectFileWorkflow = ({
         cloneAdjustedPointsExportSettings(normalized.loadedAdjustedPointsSettings),
       );
       setPlanningMap?.(clonePlanningMapState(normalized.planningMap));
+      setSurveyCadState?.(
+        normalized.surveyCadState ? cloneSurveyCadPersistedState(normalized.surveyCadState) : null,
+      );
       restoreSavedRunSnapshots(savedRuns);
       setProjectInstruments(normalized.projectInstruments);
       setSelectedInstrument(normalized.selectedInstrument);
@@ -792,6 +804,7 @@ export const useProjectFileWorkflow = ({
       setParseSettings,
       setParseSettingsDraft,
       setPlanningMap,
+      setSurveyCadState,
       setProjectIncludeFiles,
       setProjectInstruments,
       setProjectInstrumentsDraft,
@@ -830,6 +843,7 @@ export const useProjectFileWorkflow = ({
         projectInstruments,
         selectedInstrument,
         levelLoopCustomPresets,
+        surveyCad: surveyCadState ? cloneSurveyCadPersistedState(surveyCadState) : undefined,
       },
       workspace: projectSession
         ? {
@@ -868,6 +882,7 @@ export const useProjectFileWorkflow = ({
       savedRunSnapshots,
       selectedInstrument,
       settings,
+      surveyCadState,
     ],
   );
 
@@ -1064,6 +1079,7 @@ export const useProjectFileWorkflow = ({
         projectInstruments,
         selectedInstrument,
         levelLoopCustomPresets,
+        surveyCadState,
       }),
     [
       adjustedPointsExportSettings,
@@ -1076,6 +1092,7 @@ export const useProjectFileWorkflow = ({
       projectInstruments,
       selectedInstrument,
       settings,
+      surveyCadState,
     ],
   );
 
@@ -1092,6 +1109,7 @@ export const useProjectFileWorkflow = ({
       projectInstruments: projectSession.manifest.project.projectInstruments,
       selectedInstrument: projectSession.manifest.project.selectedInstrument,
       levelLoopCustomPresets: projectSession.manifest.project.levelLoopCustomPresets,
+      surveyCadState: projectSession.manifest.project.surveyCad ?? null,
     });
     if (currentShape === serializedProjectShape) return;
     updateProjectSession(
@@ -1116,6 +1134,7 @@ export const useProjectFileWorkflow = ({
           projectInstruments: cloneInstrumentLibrary(projectInstruments),
           selectedInstrument,
           levelLoopCustomPresets: levelLoopCustomPresets.map((preset) => ({ ...preset })),
+          surveyCad: surveyCadState ? cloneSurveyCadPersistedState(surveyCadState) : undefined,
         };
         current.manifest.updatedAt = nowIso;
         current.indexRow = touchProjectIndexRow(current.indexRow, nowIso);
@@ -1139,6 +1158,7 @@ export const useProjectFileWorkflow = ({
     selectedInstrument,
     serializedProjectShape,
     settings,
+    surveyCadState,
     updateProjectSession,
   ]);
 
@@ -1221,6 +1241,7 @@ export const useProjectFileWorkflow = ({
         projectInstruments: cloneInstrumentLibrary(projectInstruments),
         selectedInstrument,
         levelLoopCustomPresets: levelLoopCustomPresets.map((preset) => ({ ...preset })),
+        surveyCad: surveyCadState ? cloneSurveyCadPersistedState(surveyCadState) : undefined,
       },
     });
     const preferredBackend = storageStatus?.preferredBackend ?? 'indexeddb';
@@ -1279,6 +1300,7 @@ export const useProjectFileWorkflow = ({
     settings,
     storage,
     storageStatus?.preferredBackend,
+    surveyCadState,
   ]);
 
   const handleSaveProject = useCallback(async () => {
@@ -1407,6 +1429,7 @@ export const useProjectFileWorkflow = ({
               projectInstruments: cloneInstrumentLibrary(projectInstruments),
               selectedInstrument,
               levelLoopCustomPresets: levelLoopCustomPresets.map((preset) => ({ ...preset })),
+              surveyCad: surveyCadState ? cloneSurveyCadPersistedState(surveyCadState) : undefined,
             },
           });
     const bundleBytes = buildProjectBundleBytes(seed);
@@ -1435,6 +1458,7 @@ export const useProjectFileWorkflow = ({
     selectedInstrument,
     setImportNotice,
     settings,
+    surveyCadState,
   ]);
 
   const importPortablePayloadAsLocalProject = useCallback(

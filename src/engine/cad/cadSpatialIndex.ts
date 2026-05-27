@@ -7,6 +7,8 @@ import {
 } from './cadGeometry';
 import type {
   CadLineEntity,
+  CadParcelEntity,
+  CadPolygonEntity,
   CadPolylineEntity,
   CadProject,
   CadSnapCandidate,
@@ -65,18 +67,27 @@ const lineSegments = (line: CadLineEntity): CadSegmentRef[] => [
   },
 ];
 
-const polylineSegments = (polyline: CadPolylineEntity): CadSegmentRef[] =>
-  polyline.vertices.slice(0, -1).map((vertex, index) => ({
-    sourceEntityId: polyline.id,
+const vertexEntitySegments = (
+  entity: CadPolylineEntity | CadPolygonEntity | CadParcelEntity,
+): CadSegmentRef[] => {
+  const points =
+    entity.type === 'polyline'
+      ? entity.vertices
+      : [...entity.vertices, entity.vertices[0]].filter(
+          (point): point is CadSegmentRef['start'] => point != null,
+        );
+  return points.slice(0, -1).map((vertex, index) => ({
+    sourceEntityId: entity.id,
     start: vertex,
-    end: polyline.vertices[index + 1],
-    startLabel: polyline.vertexLabels[index] ?? `V${index + 1}`,
-    endLabel: polyline.vertexLabels[index + 1] ?? `V${index + 2}`,
-    label: polyline.vertexLabels.join(' -> ') || polyline.id,
+    end: points[index + 1]!,
+    startLabel: entity.vertexLabels[index] ?? `V${index + 1}`,
+    endLabel: entity.vertexLabels[index + 1] ?? `V${index + 2}`,
+    label: entity.vertexLabels.join(' -> ') || entity.id,
   }));
+};
 
-const entitySegments = (entity: CadLineEntity | CadPolylineEntity): CadSegmentRef[] =>
-  entity.type === 'line' ? lineSegments(entity) : polylineSegments(entity);
+const entitySegments = (entity: CadLineEntity | CadPolylineEntity | CadPolygonEntity | CadParcelEntity): CadSegmentRef[] =>
+  entity.type === 'line' ? lineSegments(entity) : vertexEntitySegments(entity);
 
 export const buildCadSpatialIndex = (project: CadProject): CadSpatialIndex => ({
   queryNearestSnap: (
@@ -87,8 +98,12 @@ export const buildCadSpatialIndex = (project: CadProject): CadSpatialIndex => ({
     const allowed = new Set(allowedKinds);
     const candidates: CadSnapCandidate[] = [];
     const segments = project.entities
-      .filter((entity): entity is CadLineEntity | CadPolylineEntity =>
-        entity.visible && (entity.type === 'line' || entity.type === 'polyline'),
+      .filter((entity): entity is CadLineEntity | CadPolylineEntity | CadPolygonEntity | CadParcelEntity =>
+        entity.visible &&
+        (entity.type === 'line' ||
+          entity.type === 'polyline' ||
+          entity.type === 'polygon' ||
+          entity.type === 'parcel'),
       )
       .flatMap((entity) => entitySegments(entity));
 
@@ -104,6 +119,8 @@ export const buildCadSpatialIndex = (project: CadProject): CadSpatialIndex => ({
           break;
         case 'line':
         case 'polyline':
+        case 'polygon':
+        case 'parcel':
           entitySegments(entity).forEach((segment) => {
             if (allowed.has('endpoint')) {
               candidates.push(
