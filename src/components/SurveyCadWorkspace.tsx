@@ -96,6 +96,8 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     startCogoPointCommand,
     startLineCommand,
     startPolylineCommand,
+    startArc3PointCommand,
+    startTangentCurveCommand,
     startInverseCommand,
     startMoveCommand,
     startCopyCommand,
@@ -183,6 +185,8 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
                 onStartCogoPoint={startCogoPointCommand}
                 onStartLine={startLineCommand}
                 onStartPolyline={startPolylineCommand}
+                onStartArc3Point={startArc3PointCommand}
+                onStartTangentCurve={startTangentCurveCommand}
                 onStartInverse={startInverseCommand}
                 onStartMove={startMoveCommand}
                 onStartCopy={startCopyCommand}

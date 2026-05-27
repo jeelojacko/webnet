@@ -664,4 +664,87 @@ describe('SurveyCadWorkspace', () => {
     });
     container.remove();
   });
+
+  it('creates ARC 3PT and TAN CURVE entities through the interactive command surface', async () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root: Root = createRoot(container);
+
+    await act(async () => {
+      root.render(
+        <SurveyCadWorkspace
+          input={input}
+          instrumentLibrary={{}}
+          parseOptions={parseOptions}
+          units="m"
+          result={null}
+        />,
+      );
+    });
+
+    const findButton = (label: string): HTMLButtonElement => {
+      const button = Array.from(container.querySelectorAll('button')).find(
+        (entry) => entry.textContent?.trim() === label,
+      ) as HTMLButtonElement | undefined;
+      if (!button) throw new Error(`Button ${label} not found`);
+      return button;
+    };
+    const commandInput = container.querySelector('input[type="text"]') as HTMLInputElement | null;
+    if (!commandInput) throw new Error('Command input not found');
+
+    await act(async () => {
+      findButton('ARC 3PT').click();
+      setTextInputValue(commandInput, '5,0');
+    });
+    await act(async () => {
+      findButton('Submit').click();
+      setTextInputValue(commandInput, '0,5');
+    });
+    await act(async () => {
+      findButton('Submit').click();
+      setTextInputValue(commandInput, '-5,0');
+    });
+    await act(async () => {
+      findButton('Submit').click();
+    });
+
+    expect(container.querySelector('[data-survey-cad-entity-count]')?.textContent).toContain(
+      '9 entities',
+    );
+    expect(container.querySelector('[data-survey-cad-command-status]')?.textContent).toContain(
+      'ARC_3PT committed',
+    );
+
+    await act(async () => {
+      findButton('TAN CURVE').click();
+      setTextInputValue(commandInput, '0,0');
+    });
+    await act(async () => {
+      findButton('Submit').click();
+      setTextInputValue(commandInput, '-10,0');
+    });
+    await act(async () => {
+      findButton('Submit').click();
+      setTextInputValue(commandInput, '0,10');
+    });
+    await act(async () => {
+      findButton('Submit').click();
+      setTextInputValue(commandInput, '10');
+    });
+    await act(async () => {
+      findButton('Submit').click();
+    });
+
+    expect(container.querySelector('[data-survey-cad-entity-count]')?.textContent).toContain(
+      '10 entities',
+    );
+    expect(container.querySelector('[data-survey-cad-command-status]')?.textContent).toContain(
+      'TANGENT_CURVE committed',
+    );
+
+    await act(async () => {
+      root.unmount();
+    });
+    container.remove();
+  });
 });

@@ -1,3 +1,5 @@
+- [x] Survey CAD phase-4 arc-command batch (May 2026): add native `ARC 3PT` and tangent-curve creation commands on the command/history seam, then lock interactive and undo/redo behavior with focused CAD tests before moving on to traverse and parcel workflows.
+
 - [x] Survey CAD phase-4 curve-helper batch (May 2026): add native simple-curve metric solvers plus three-point and tangent-curve arc constructors, then lock them with focused CAD geometry tests before wiring later command workflows.
 
 - [x] Survey CAD phase-4 arc-geometry batch (May 2026): add native line-arc and arc-arc intersection helpers plus first offset/parallel/perpendicular COGO utilities, and lock the new geometry contracts with focused CAD tests before moving on to parcel/traverse workflows.

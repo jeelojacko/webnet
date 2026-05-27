@@ -8,7 +8,16 @@ import { cadParseBearingDegrees, cadPointFromAzimuthDistance, type CadNamedPoint
 import { runCadCommand, type CadHistoryState } from '../../engine/cad/cadUndoRedo';
 import type { CadSnapCandidate } from '../../engine/cad/cadTypes';
 
-type ActiveCommandKey = 'POINT' | 'COGO_POINT' | 'LINE' | 'PLINE' | 'INVERSE' | 'MOVE' | 'COPY';
+type ActiveCommandKey =
+  | 'POINT'
+  | 'COGO_POINT'
+  | 'LINE'
+  | 'PLINE'
+  | 'ARC_3PT'
+  | 'TANGENT_CURVE'
+  | 'INVERSE'
+  | 'MOVE'
+  | 'COPY';
 
 type CommandSession =
   | {
@@ -26,6 +35,20 @@ type CommandSession =
       key: 'PLINE';
       inputValue: string;
       points: CadNamedPoint[];
+      resultText?: string;
+    }
+  | {
+      key: 'ARC_3PT';
+      inputValue: string;
+      points: CadNamedPoint[];
+      resultText?: string;
+    }
+  | {
+      key: 'TANGENT_CURVE';
+      inputValue: string;
+      piPoint: CadNamedPoint | null;
+      backTangentPoint: CadNamedPoint | null;
+      aheadTangentPoint: CadNamedPoint | null;
       resultText?: string;
     };
 
@@ -47,6 +70,8 @@ interface UseSurveyCadCommandsResult {
   startCogoPointCommand: () => void;
   startLineCommand: () => void;
   startPolylineCommand: () => void;
+  startArc3PointCommand: () => void;
+  startTangentCurveCommand: () => void;
   startInverseCommand: () => void;
   startMoveCommand: () => void;
   startCopyCommand: () => void;
@@ -135,6 +160,22 @@ const promptForSession = (session: CommandSession | null, fallbackStatus: string
         (session.points.length > 0
           ? `PLINE active. ${session.points.length} vertex${session.points.length === 1 ? '' : 'es'} captured. Submit next point, then Finish when ready.`
           : 'PLINE active. Enter or snap the first vertex.');
+    case 'ARC_3PT':
+      return session.resultText ??
+        (session.points.length === 0
+          ? 'ARC_3PT active. Enter or snap the start point.'
+          : session.points.length === 1
+            ? `ARC_3PT active. Start ${session.points[0].label} captured. Enter the through point.`
+            : `ARC_3PT active. Start ${session.points[0].label} and through ${session.points[1]?.label} captured. Enter the end point.`);
+    case 'TANGENT_CURVE':
+      return session.resultText ??
+        (session.piPoint == null
+          ? 'TANGENT_CURVE active. Enter or snap the PI point.'
+          : session.backTangentPoint == null
+            ? `TANGENT_CURVE active. PI ${session.piPoint.label} captured. Enter the back tangent point.`
+            : session.aheadTangentPoint == null
+              ? `TANGENT_CURVE active. PI ${session.piPoint.label} and back point ${session.backTangentPoint.label} captured. Enter the ahead tangent point.`
+              : `TANGENT_CURVE active. Enter the radius for PI ${session.piPoint.label}.`);
     case 'INVERSE':
       return session.resultText ??
         (session.startPoint
@@ -172,6 +213,14 @@ const helpTextForSession = (session: CommandSession | null): string => {
       return session.points.length > 0
         ? 'PLINE next vertex: `x,y`, `LABEL=x,y`, `@azimuth,distance`, or bearing-distance from the last vertex. Use `Finish PLINE` after at least 2 vertices.'
         : 'PLINE first vertex: `x,y`, `LABEL=x,y`, or hover geometry then `Use Snap`.';
+    case 'ARC_3PT':
+      return session.points.length < 2
+        ? 'ARC 3PT point input: `x,y`, `LABEL=x,y`, or hover geometry then `Use Snap`.'
+        : 'ARC 3PT end point: `x,y`, `LABEL=x,y`, or hover geometry then `Use Snap` to commit the arc.';
+    case 'TANGENT_CURVE':
+      return session.aheadTangentPoint
+        ? 'Tangent curve radius input: numeric radius only.'
+        : 'Tangent curve point input: `x,y`, `LABEL=x,y`, or hover geometry then `Use Snap`.';
     case 'INVERSE':
       return session.startPoint
         ? 'INVERSE second point: `x,y`, `LABEL=x,y`, `@azimuth,distance`, or bearing-distance from the first point.'
@@ -248,6 +297,53 @@ export const useSurveyCadCommands = ({
           resultText: undefined,
         };
       }
+      if (current.key === 'ARC_3PT') {
+        const nextPoints = [...current.points, point];
+        if (nextPoints.length < 3) {
+          return {
+            ...current,
+            points: nextPoints,
+            inputValue: '',
+            resultText: undefined,
+          };
+        }
+        setHistory((existing) =>
+          runCadCommand(existing, {
+            key: 'ARC_3PT',
+            start: nextPoints[0]!,
+            through: nextPoints[1]!,
+            end: nextPoints[2]!,
+          }),
+        );
+        return null;
+      }
+      if (current.key === 'TANGENT_CURVE') {
+        if (!current.piPoint) {
+          return {
+            ...current,
+            piPoint: point,
+            inputValue: '',
+            resultText: undefined,
+          };
+        }
+        if (!current.backTangentPoint) {
+          return {
+            ...current,
+            backTangentPoint: point,
+            inputValue: '',
+            resultText: undefined,
+          };
+        }
+        if (!current.aheadTangentPoint) {
+          return {
+            ...current,
+            aheadTangentPoint: point,
+            inputValue: '',
+            resultText: undefined,
+          };
+        }
+        return current;
+      }
       if (current.key === 'LINE') {
         if (!current.startPoint) {
           return {
@@ -311,7 +407,10 @@ export const useSurveyCadCommands = ({
     commandInputValue: session?.inputValue ?? '',
     commandPrompt: statusPrompt,
     commandHelpText: helpText,
-    canUseActiveSnap: activeSnap != null && session != null,
+    canUseActiveSnap:
+      activeSnap != null &&
+      session != null &&
+      !(session.key === 'TANGENT_CURVE' && session.aheadTangentPoint != null),
     canFinishCommand: session?.key === 'PLINE' && session.points.length >= 2,
     startPointCommand: () => setSession({ key: 'POINT', inputValue: '' }),
     startCogoPointCommand: () =>
@@ -331,6 +430,20 @@ export const useSurveyCadCommands = ({
         key: 'PLINE',
         inputValue: '',
         points: [],
+      }),
+    startArc3PointCommand: () =>
+      setSession({
+        key: 'ARC_3PT',
+        inputValue: '',
+        points: [],
+      }),
+    startTangentCurveCommand: () =>
+      setSession({
+        key: 'TANGENT_CURVE',
+        inputValue: '',
+        piPoint: null,
+        backTangentPoint: null,
+        aheadTangentPoint: null,
       }),
     startInverseCommand: () =>
       setSession({
@@ -370,11 +483,44 @@ export const useSurveyCadCommands = ({
     submitCommandInput: () => {
       if (!session) return;
       const basePoint =
-        session.key === 'PLINE'
+        session.key === 'PLINE' || session.key === 'ARC_3PT'
           ? session.points[session.points.length - 1] ?? null
-          : 'startPoint' in session
+          : session.key === 'TANGENT_CURVE'
+            ? session.aheadTangentPoint ?? session.backTangentPoint ?? session.piPoint
+            : 'startPoint' in session
             ? session.startPoint
             : null;
+      if (session.key === 'TANGENT_CURVE' && session.aheadTangentPoint) {
+        const piPoint = session.piPoint;
+        const backTangentPoint = session.backTangentPoint;
+        const aheadTangentPoint = session.aheadTangentPoint;
+        if (!piPoint || !backTangentPoint || !aheadTangentPoint) {
+          setSession({
+            ...session,
+            resultText: 'Tangent curve points incomplete. Capture PI, back, and ahead points first.',
+          });
+          return;
+        }
+        const radius = Number(session.inputValue.trim());
+        if (!Number.isFinite(radius) || radius <= 0) {
+          setSession({
+            ...session,
+            resultText: 'Tangent curve radius invalid. Enter a positive numeric radius.',
+          });
+          return;
+        }
+        setHistory((existing) =>
+          runCadCommand(existing, {
+            key: 'TANGENT_CURVE',
+            pi: piPoint,
+            backTangentPoint,
+            aheadTangentPoint,
+            radius,
+          }),
+        );
+        setSession(null);
+        return;
+      }
       const parsed = parseInputPoint(session.inputValue, basePoint);
       if (!parsed) {
         setSession({
@@ -382,6 +528,8 @@ export const useSurveyCadCommands = ({
           resultText:
             session.key === 'POINT'
               ? 'POINT input invalid. Use `x,y` or `LABEL=x,y`.'
+              : session.key === 'TANGENT_CURVE' && session.aheadTangentPoint
+                ? 'Tangent curve radius invalid. Enter a positive numeric radius.'
               : 'Command input invalid. Use `x,y`, `LABEL=x,y`, `@azimuth,distance`, or survey bearing-distance like `N45-00-00E,100`.',
         });
         return;

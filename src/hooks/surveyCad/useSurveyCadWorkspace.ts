@@ -19,7 +19,17 @@ interface UseSurveyCadWorkspaceResult {
   selectionCount: number;
   canUndo: boolean;
   canRedo: boolean;
-  activeCommandKey: 'POINT' | 'COGO_POINT' | 'LINE' | 'PLINE' | 'INVERSE' | 'MOVE' | 'COPY' | null;
+  activeCommandKey:
+    | 'POINT'
+    | 'COGO_POINT'
+    | 'LINE'
+    | 'PLINE'
+    | 'ARC_3PT'
+    | 'TANGENT_CURVE'
+    | 'INVERSE'
+    | 'MOVE'
+    | 'COPY'
+    | null;
   commandInputValue: string;
   statusText: string;
   commandHelpText: string;
@@ -34,6 +44,8 @@ interface UseSurveyCadWorkspaceResult {
   startCogoPointCommand: () => void;
   startLineCommand: () => void;
   startPolylineCommand: () => void;
+  startArc3PointCommand: () => void;
+  startTangentCurveCommand: () => void;
   startInverseCommand: () => void;
   startMoveCommand: () => void;
   startCopyCommand: () => void;
@@ -103,6 +115,8 @@ export const useSurveyCadWorkspace = (
     startCogoPointCommand,
     startLineCommand,
     startPolylineCommand,
+    startArc3PointCommand,
+    startTangentCurveCommand,
     startInverseCommand,
     startMoveCommand,
     startCopyCommand,
@@ -167,6 +181,8 @@ export const useSurveyCadWorkspace = (
     startCogoPointCommand,
     startLineCommand,
     startPolylineCommand,
+    startArc3PointCommand,
+    startTangentCurveCommand,
     startInverseCommand,
     startMoveCommand,
     startCopyCommand,

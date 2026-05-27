@@ -4,7 +4,17 @@ interface SurveyCadCommandLineProps {
   selectionCount: number;
   canUndo: boolean;
   canRedo: boolean;
-  activeCommandKey: 'POINT' | 'COGO_POINT' | 'LINE' | 'PLINE' | 'INVERSE' | 'MOVE' | 'COPY' | null;
+  activeCommandKey:
+    | 'POINT'
+    | 'COGO_POINT'
+    | 'LINE'
+    | 'PLINE'
+    | 'ARC_3PT'
+    | 'TANGENT_CURVE'
+    | 'INVERSE'
+    | 'MOVE'
+    | 'COPY'
+    | null;
   commandInputValue: string;
   statusText: string;
   commandHelpText: string;
@@ -15,6 +25,8 @@ interface SurveyCadCommandLineProps {
   onStartCogoPoint: () => void;
   onStartLine: () => void;
   onStartPolyline: () => void;
+  onStartArc3Point: () => void;
+  onStartTangentCurve: () => void;
   onStartInverse: () => void;
   onStartMove: () => void;
   onStartCopy: () => void;
@@ -49,6 +61,8 @@ const SurveyCadCommandLine: React.FC<SurveyCadCommandLineProps> = ({
   onStartCogoPoint,
   onStartLine,
   onStartPolyline,
+  onStartArc3Point,
+  onStartTangentCurve,
   onStartInverse,
   onStartMove,
   onStartCopy,
@@ -77,6 +91,12 @@ const SurveyCadCommandLine: React.FC<SurveyCadCommandLineProps> = ({
       </button>
       <button type="button" className={commandButtonClassName} onClick={onStartPolyline}>
         PLINE
+      </button>
+      <button type="button" className={commandButtonClassName} onClick={onStartArc3Point}>
+        ARC 3PT
+      </button>
+      <button type="button" className={commandButtonClassName} onClick={onStartTangentCurve}>
+        TAN CURVE
       </button>
       <button type="button" className={commandButtonClassName} onClick={onStartInverse}>
         INVERSE
@@ -142,7 +162,9 @@ const SurveyCadCommandLine: React.FC<SurveyCadCommandLineProps> = ({
               ? 'x,y or LABEL=x,y'
               : activeCommandKey === 'COGO_POINT'
                 ? 'snap base, then @azimuth,distance or N45-00-00E,100'
-              : activeCommandKey === 'PLINE' || activeCommandKey === 'LINE' || activeCommandKey === 'INVERSE' || activeCommandKey === 'MOVE' || activeCommandKey === 'COPY'
+              : activeCommandKey === 'TANGENT_CURVE'
+                ? 'point picks, then numeric radius'
+              : activeCommandKey === 'PLINE' || activeCommandKey === 'LINE' || activeCommandKey === 'ARC_3PT' || activeCommandKey === 'INVERSE' || activeCommandKey === 'MOVE' || activeCommandKey === 'COPY'
                 ? 'x,y or @azimuth,distance or N45-00-00E,100'
                 : 'x,y'
             : 'Start POINT, LINE, or INVERSE to use typed input'

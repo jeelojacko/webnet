@@ -3,6 +3,7 @@ import {
   createCadSelectionState,
   selectAllCadEntities,
 } from './cadSelection';
+import { cadBuildArcFromThreePoints, cadBuildTangentCurve } from './cadGeometry';
 import { appendCadProjectEntities, replaceCadProjectEntities } from './cadProjectState';
 import type { CadSelectionState } from './cadSelection';
 import type {
@@ -23,6 +24,8 @@ export type CadCommandKey =
   | 'COGO_POINT'
   | 'LINE'
   | 'PLINE'
+  | 'ARC_3PT'
+  | 'TANGENT_CURVE'
   | 'MOVE'
   | 'COPY'
   | 'INTERSECT_POINT';
@@ -66,6 +69,19 @@ export type CadCommand =
   | {
       key: 'PLINE';
       vertices: { x: number; y: number; label: string }[];
+    }
+  | {
+      key: 'ARC_3PT';
+      start: { x: number; y: number; label: string };
+      through: { x: number; y: number; label: string };
+      end: { x: number; y: number; label: string };
+    }
+  | {
+      key: 'TANGENT_CURVE';
+      pi: { x: number; y: number; label: string };
+      backTangentPoint: { x: number; y: number; label: string };
+      aheadTangentPoint: { x: number; y: number; label: string };
+      radius: number;
     }
   | {
       key: 'MOVE';
@@ -118,7 +134,7 @@ interface CadCommandDefinition<TCommand extends CadCommand> {
 const createIdleCommandState = (): CadCommandState => ({
   key: 'IDLE',
   phase: 'idle',
-  prompt: 'Ready. Use Select All, Clear Selection, ERASE, POINT, COGO PT, LINE, PLINE, MOVE, COPY, INTX, or INVERSE to exercise command history.',
+  prompt: 'Ready. Use Select All, Clear Selection, ERASE, POINT, COGO PT, LINE, PLINE, ARC 3PT, TAN CURVE, MOVE, COPY, INTX, or INVERSE to exercise command history.',
 });
 
 const nextManualStationId = (project: CadProject): string => {
@@ -627,6 +643,108 @@ const polylineCommand: CadCommandDefinition<{
   },
 };
 
+const arc3ptCommand: CadCommandDefinition<{
+  key: 'ARC_3PT';
+  start: { x: number; y: number; label: string };
+  through: { x: number; y: number; label: string };
+  end: { x: number; y: number; label: string };
+}> = {
+  key: 'ARC_3PT',
+  execute: (snapshot, command) => {
+    const arcDefinition = cadBuildArcFromThreePoints(command.start, command.through, command.end);
+    if (!arcDefinition) return null;
+    const arcEntity: CadEntity = {
+      id: createStableRuntimeId('cad-arc'),
+      type: 'arc',
+      layerId: 'observation-lines',
+      styleId: 'style-observation-line',
+      visible: true,
+      locked: false,
+      centerX: arcDefinition.center.x,
+      centerY: arcDefinition.center.y,
+      radius: arcDefinition.radius,
+      startAngleDeg: arcDefinition.startAngleDeg,
+      endAngleDeg: arcDefinition.endAngleDeg,
+      metadata: {
+        createdBy: 'ARC_3PT',
+        manual: true,
+        startLabel: command.start.label,
+        throughLabel: command.through.label,
+        endLabel: command.end.label,
+      },
+    };
+    const nextProject = appendCadProjectEntities(snapshot.project, [arcEntity]);
+    return {
+      nextSnapshot: {
+        project: nextProject,
+        selection: createCadSelectionState(nextProject, [arcEntity.id]),
+      },
+      commandState: {
+        key: 'ARC_3PT',
+        phase: 'committed',
+        prompt: `ARC_3PT committed through ${command.start.label}, ${command.through.label}, ${command.end.label}.`,
+      },
+      transactionLabel: `ARC_3PT (${command.start.label}-${command.through.label}-${command.end.label})`,
+      addedEntityIds: [arcEntity.id],
+      removedEntityIds: [],
+    };
+  },
+};
+
+const tangentCurveCommand: CadCommandDefinition<{
+  key: 'TANGENT_CURVE';
+  pi: { x: number; y: number; label: string };
+  backTangentPoint: { x: number; y: number; label: string };
+  aheadTangentPoint: { x: number; y: number; label: string };
+  radius: number;
+}> = {
+  key: 'TANGENT_CURVE',
+  execute: (snapshot, command) => {
+    const arcDefinition = cadBuildTangentCurve(
+      command.pi,
+      command.backTangentPoint,
+      command.aheadTangentPoint,
+      command.radius,
+    );
+    if (!arcDefinition) return null;
+    const arcEntity: CadEntity = {
+      id: createStableRuntimeId('cad-arc'),
+      type: 'arc',
+      layerId: 'observation-lines',
+      styleId: 'style-observation-line',
+      visible: true,
+      locked: false,
+      centerX: arcDefinition.center.x,
+      centerY: arcDefinition.center.y,
+      radius: arcDefinition.radius,
+      startAngleDeg: arcDefinition.startAngleDeg,
+      endAngleDeg: arcDefinition.endAngleDeg,
+      metadata: {
+        createdBy: 'TANGENT_CURVE',
+        manual: true,
+        piLabel: command.pi.label,
+        backLabel: command.backTangentPoint.label,
+        aheadLabel: command.aheadTangentPoint.label,
+      },
+    };
+    const nextProject = appendCadProjectEntities(snapshot.project, [arcEntity]);
+    return {
+      nextSnapshot: {
+        project: nextProject,
+        selection: createCadSelectionState(nextProject, [arcEntity.id]),
+      },
+      commandState: {
+        key: 'TANGENT_CURVE',
+        phase: 'committed',
+        prompt: `TANGENT_CURVE committed at ${command.pi.label} with radius ${command.radius.toFixed(3)}.`,
+      },
+      transactionLabel: `TANGENT_CURVE (${command.pi.label})`,
+      addedEntityIds: [arcEntity.id],
+      removedEntityIds: [],
+    };
+  },
+};
+
 const moveCommand: CadCommandDefinition<{
   key: 'MOVE';
   deltaX: number;
@@ -731,6 +849,8 @@ export const CAD_COMMAND_REGISTRY: Record<CadCommandKey, CadCommandDefinition<Ca
   COGO_POINT: cogoPointCommand as CadCommandDefinition<CadCommand>,
   LINE: lineCommand as CadCommandDefinition<CadCommand>,
   PLINE: polylineCommand as CadCommandDefinition<CadCommand>,
+  ARC_3PT: arc3ptCommand as CadCommandDefinition<CadCommand>,
+  TANGENT_CURVE: tangentCurveCommand as CadCommandDefinition<CadCommand>,
   MOVE: moveCommand as CadCommandDefinition<CadCommand>,
   COPY: copyCommand as CadCommandDefinition<CadCommand>,
   INTERSECT_POINT: intersectPointCommand as CadCommandDefinition<CadCommand>,

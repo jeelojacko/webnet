@@ -22,16 +22,19 @@ idle
 Current implemented spike slice:
 - selection-set state over native entity IDs
 - command registry/history seam
-- first committed commands: `SELECT_ALL`, `CLEAR_SELECTION`, `ERASE`, `POINT`, `COGO_POINT`, `LINE`, `PLINE`, `MOVE`, `COPY`, `INTERSECT_POINT`
+- first committed commands: `SELECT_ALL`, `CLEAR_SELECTION`, `ERASE`, `POINT`, `COGO_POINT`, `LINE`, `PLINE`, `ARC_3PT`, `TANGENT_CURVE`, `MOVE`, `COPY`, `INTERSECT_POINT`
 - first interactive query command: `INVERSE`
 - undo/redo replay over snapshot-backed transaction entries
 - typed coordinate input plus `@azimuth,distance` and survey bearing-distance input after a first point
+- tangent-curve radius entry after snapped or typed PI/back/ahead points
 - inverse status now reports distance, azimuth, and survey bearing together
 
 ## Initial command families
 - `POINT`
 - `LINE`
 - `PLINE`
+- `ARC_3PT`
+- `TANGENT_CURVE`
 - `MOVE`
 - `COPY`
 - `ERASE`

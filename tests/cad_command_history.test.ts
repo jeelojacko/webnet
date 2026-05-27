@@ -246,4 +246,57 @@ describe('Survey CAD command history', () => {
       ),
     ).toBe(true);
   });
+
+  it('creates three-point and tangent-curve arc entities through history with undo/redo', () => {
+    const project = buildSurveyCadSpikeProject({
+      input,
+      instrumentLibrary: {},
+      parseOptions,
+      units: 'm',
+      result: null,
+    });
+
+    const arc3ptState = runCadCommand(createCadHistoryState(project), {
+      key: 'ARC_3PT',
+      start: { x: 5, y: 0, label: 'S' },
+      through: { x: 0, y: 5, label: 'M' },
+      end: { x: -5, y: 0, label: 'E' },
+    });
+    const threePointArc = arc3ptState.present.project.entities.find((entity) => entity.type === 'arc');
+    expect(threePointArc?.type).toBe('arc');
+    if (threePointArc?.type !== 'arc') throw new Error('Three-point arc missing');
+    expect(threePointArc.centerX).toBeCloseTo(0, 6);
+    expect(threePointArc.centerY).toBeCloseTo(0, 6);
+    expect(threePointArc.radius).toBeCloseTo(5, 6);
+
+    const tangentState = runCadCommand(arc3ptState, {
+      key: 'TANGENT_CURVE',
+      pi: { x: 0, y: 0, label: 'PI' },
+      backTangentPoint: { x: -10, y: 0, label: 'BACK' },
+      aheadTangentPoint: { x: 0, y: 10, label: 'AHEAD' },
+      radius: 10,
+    });
+    const tangentArc = tangentState.present.project.entities.find(
+      (entity) => entity.type === 'arc' && entity.id !== threePointArc.id,
+    );
+    expect(tangentArc?.type).toBe('arc');
+    if (tangentArc?.type !== 'arc') throw new Error('Tangent curve arc missing');
+    expect(tangentArc.centerX).toBeCloseTo(-10, 6);
+    expect(tangentArc.centerY).toBeCloseTo(10, 6);
+    expect(tangentArc.radius).toBeCloseTo(10, 6);
+
+    const undoneState = undoCadHistory(tangentState);
+    expect(
+      undoneState.present.project.entities.some(
+        (entity) => entity.type === 'arc' && entity.id === tangentArc.id,
+      ),
+    ).toBe(false);
+
+    const redoneState = redoCadHistory(undoneState);
+    expect(
+      redoneState.present.project.entities.some(
+        (entity) => entity.type === 'arc' && entity.id === tangentArc.id,
+      ),
+    ).toBe(true);
+  });
 });

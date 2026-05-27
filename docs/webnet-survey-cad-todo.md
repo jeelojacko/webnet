@@ -101,6 +101,7 @@ Acceptance criteria:
 - [x] Add line-arc and arc-arc intersections.
 - [x] Add offsets, parallels, perpendiculars.
 - [x] Add curve creation helpers.
+- [x] Add arc and tangent-curve command workflows.
 - [ ] Add traverse-entry workflow.
 - [ ] Add parcel entity model.
 - [ ] Add parcel closure report.
