@@ -11,6 +11,7 @@ interface SurveyCadPreviewProps {
   selectedEntityIds: readonly string[];
   activeSnap: CadSnapCandidate | null;
   viewport: { zoom: number; panX: number; panY: number };
+  toolMode: 'select' | 'pan' | 'zoom-window';
   onViewportChange: (_viewport: { zoom: number; panX: number; panY: number }) => void;
   onSelectEntity: (_entityId: string, _appendToSelection?: boolean) => void;
   onSelectEntities: (_entityIds: string[], _appendToSelection?: boolean) => void;
@@ -235,6 +236,7 @@ const SurveyCadPreview: React.FC<SurveyCadPreviewProps> = ({
   selectedEntityIds,
   activeSnap,
   viewport,
+  toolMode,
   onViewportChange,
   onSelectEntity,
   onSelectEntities,
@@ -280,6 +282,16 @@ const SurveyCadPreview: React.FC<SurveyCadPreviewProps> = ({
         }
         const target = event.target as Element | null;
         if (event.button === 0 && target?.getAttribute('data-survey-cad-background') === 'true') {
+          if (toolMode === 'pan') {
+            setDragState({
+              kind: 'pan',
+              startClientX: event.clientX,
+              startClientY: event.clientY,
+              startPanX: viewport.panX,
+              startPanY: viewport.panY,
+            });
+            return;
+          }
           setDragState({
             kind: 'box',
             box: {
@@ -316,13 +328,49 @@ const SurveyCadPreview: React.FC<SurveyCadPreviewProps> = ({
       }}
       onMouseUp={() => {
         if (dragState.kind === 'box') {
-          const ids = scene.primitives
-            .filter((primitive) =>
-              intersectsSelectionBox(primitiveBounds(primitive, project, scale), dragState.box),
-            )
-            .map((primitive) => primitive.sourceEntityId)
-            .filter((entityId, index, ids) => ids.indexOf(entityId) === index);
-          onSelectEntities(ids, dragState.appendToSelection);
+          if (toolMode === 'zoom-window') {
+            const minX = Math.min(dragState.box.anchorX, dragState.box.currentX);
+            const maxX = Math.max(dragState.box.anchorX, dragState.box.currentX);
+            const minY = Math.min(dragState.box.anchorY, dragState.box.currentY);
+            const maxY = Math.max(dragState.box.anchorY, dragState.box.currentY);
+            const boxWidth = maxX - minX;
+            const boxHeight = maxY - minY;
+            if (boxWidth >= 8 && boxHeight >= 8) {
+              const worldTopLeft = unproject(minX, minY);
+              const worldBottomRight = unproject(maxX, maxY);
+              const worldMinX = Math.min(worldTopLeft.x, worldBottomRight.x);
+              const worldMaxX = Math.max(worldTopLeft.x, worldBottomRight.x);
+              const worldMinY = Math.min(worldTopLeft.y, worldBottomRight.y);
+              const worldMaxY = Math.max(worldTopLeft.y, worldBottomRight.y);
+              const worldWidth = Math.max(worldMaxX - worldMinX, 1e-6);
+              const worldHeight = Math.max(worldMaxY - worldMinY, 1e-6);
+              const nextZoom = Math.max(
+                MIN_ZOOM,
+                Math.min(
+                  MAX_ZOOM,
+                  Math.min(
+                    (WIDTH - PADDING * 2) / (baseScale * worldWidth),
+                    (HEIGHT - PADDING * 2) / (baseScale * worldHeight),
+                  ),
+                ),
+              );
+              onViewportChange({
+                zoom: nextZoom,
+                panX: PADDING - (worldMinX - normalized.minX) * baseScale * nextZoom,
+                panY:
+                  PADDING -
+                  (normalized.maxY - worldMaxY) * baseScale * nextZoom,
+              });
+            }
+          } else {
+            const ids = scene.primitives
+              .filter((primitive) =>
+                intersectsSelectionBox(primitiveBounds(primitive, project, scale), dragState.box),
+              )
+              .map((primitive) => primitive.sourceEntityId)
+              .filter((entityId, index, ids) => ids.indexOf(entityId) === index);
+            onSelectEntities(ids, dragState.appendToSelection);
+          }
         }
         setDragState({ kind: 'none' });
       }}
@@ -392,8 +440,20 @@ const SurveyCadPreview: React.FC<SurveyCadPreviewProps> = ({
             y={Math.min(selectionBox.anchorY, selectionBox.currentY)}
             width={Math.abs(selectionBox.currentX - selectionBox.anchorX)}
             height={Math.abs(selectionBox.currentY - selectionBox.anchorY)}
-            fill={selectionBox.currentX >= selectionBox.anchorX ? 'rgba(34,197,94,0.12)' : 'rgba(251,191,36,0.12)'}
-            stroke={selectionBox.currentX >= selectionBox.anchorX ? '#22c55e' : '#fbbf24'}
+            fill={
+              toolMode === 'zoom-window'
+                ? 'rgba(56,189,248,0.12)'
+                : selectionBox.currentX >= selectionBox.anchorX
+                  ? 'rgba(34,197,94,0.12)'
+                  : 'rgba(251,191,36,0.12)'
+            }
+            stroke={
+              toolMode === 'zoom-window'
+                ? '#38bdf8'
+                : selectionBox.currentX >= selectionBox.anchorX
+                  ? '#22c55e'
+                  : '#fbbf24'
+            }
             strokeDasharray="6 4"
             strokeWidth={1.2}
           />

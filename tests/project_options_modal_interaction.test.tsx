@@ -272,13 +272,13 @@ describe('Project Options modal interactions', () => {
         root.render(<App initialSettingsModalOpen={false} />);
       });
 
-      expect(container.textContent).not.toContain('Survey CAD Workspace');
+      expect(container.querySelector('[data-survey-cad-preview]')).toBeNull();
 
       await clickOpenSurveyCad(container);
 
-      expect(container.textContent).toContain('Survey CAD Workspace');
-      expect(container.textContent).toContain('Native Survey CAD workspace');
-      expect(container.textContent).toContain('webnet-survey-cad-master-plan.md');
+      expect(container.querySelector('[data-survey-cad-preview]')).not.toBeNull();
+      expect(container.textContent).toContain('Zoom Extents');
+      expect(container.textContent).toContain('Select');
       expect(container.querySelector('textarea')).toBeNull();
       expect(container.textContent).not.toContain('Map & Ellipses');
       expect(container.textContent).not.toContain('Adjustment Report');

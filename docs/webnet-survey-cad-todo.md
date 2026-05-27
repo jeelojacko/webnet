@@ -81,6 +81,8 @@ Risks:
 - [x] Build spatial index for snap/select candidates.
 - [x] Add point node, endpoint, midpoint, intersection, nearest snaps.
 - [x] Add visual snap glyphs and status feedback.
+- [x] Promote the CAD page to toolbar + model-space-only chrome and remove the duplicate results-area Survey CAD tab.
+- [x] Add first explicit CAD tool modes (`Select`, `Pan`, `Zoom Window`) in the top toolbar.
 - [x] Add `POINT`, `LINE`, `INVERSE`.
 - [x] Add `PLINE`, `MOVE`, `COPY`.
 - [x] Add `ERASE`.

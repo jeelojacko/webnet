@@ -29,6 +29,7 @@ Current implemented spike slice:
 - tangent-curve radius entry after snapped or typed PI/back/ahead points
 - inverse status now reports distance, azimuth, and survey bearing together
 - dedicated workspace viewport controls now include wheel zoom, middle-mouse pan, `Zoom Extents`, and drag-box selection ahead of later command batches
+- explicit CAD tool modes now start in the top toolbar with `Select`, `Pan`, and `Zoom Window`
 
 ## Initial command families
 - `POINT`

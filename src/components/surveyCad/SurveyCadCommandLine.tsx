@@ -1,6 +1,8 @@
 import React from 'react';
 
 interface SurveyCadCommandLineProps {
+  toolMode: 'select' | 'pan' | 'zoom-window';
+  onToolModeChange: (_toolMode: 'select' | 'pan' | 'zoom-window') => void;
   selectionCount: number;
   canUndo: boolean;
   canRedo: boolean;
@@ -47,6 +49,8 @@ const commandButtonClassName =
   'rounded-md border border-slate-700 bg-slate-950/70 px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-100 transition-colors hover:border-cyan-500/70 hover:bg-slate-900 disabled:cursor-not-allowed disabled:border-slate-800 disabled:text-slate-500';
 
 const SurveyCadCommandLine: React.FC<SurveyCadCommandLineProps> = ({
+  toolMode,
+  onToolModeChange,
   selectionCount,
   canUndo,
   canRedo,
@@ -78,8 +82,30 @@ const SurveyCadCommandLine: React.FC<SurveyCadCommandLineProps> = ({
   onUndo,
   onRedo,
 }) => (
-  <div className="rounded-xl border border-slate-800 bg-slate-900/70 p-4">
+  <div className="flex flex-col gap-3">
     <div className="flex flex-wrap items-center gap-2">
+      <button
+        type="button"
+        className={`${commandButtonClassName} ${toolMode === 'select' ? 'border-cyan-500/70 text-cyan-200' : ''}`}
+        onClick={() => onToolModeChange('select')}
+      >
+        Select
+      </button>
+      <button
+        type="button"
+        className={`${commandButtonClassName} ${toolMode === 'pan' ? 'border-cyan-500/70 text-cyan-200' : ''}`}
+        onClick={() => onToolModeChange('pan')}
+      >
+        Pan
+      </button>
+      <button
+        type="button"
+        className={`${commandButtonClassName} ${toolMode === 'zoom-window' ? 'border-cyan-500/70 text-cyan-200' : ''}`}
+        onClick={() => onToolModeChange('zoom-window')}
+      >
+        Zoom Window
+      </button>
+      <span className="mx-1 h-7 w-px bg-slate-800" aria-hidden="true" />
       <button type="button" className={commandButtonClassName} onClick={onStartPoint}>
         POINT
       </button>
@@ -151,7 +177,7 @@ const SurveyCadCommandLine: React.FC<SurveyCadCommandLineProps> = ({
         Redo
       </button>
     </div>
-    <div className="mt-3 grid gap-2 md:grid-cols-[minmax(0,1fr)_auto_auto_auto]">
+    <div className="grid gap-2 md:grid-cols-[minmax(0,1fr)_auto_auto_auto]">
       <input
         type="text"
         value={commandInputValue}
@@ -197,7 +223,7 @@ const SurveyCadCommandLine: React.FC<SurveyCadCommandLineProps> = ({
         Submit
       </button>
     </div>
-    <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-400">
+    <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-400">
       <span data-survey-cad-command-help>{commandHelpText}</span>
       {activeCommandKey ? (
         <button
@@ -207,13 +233,13 @@ const SurveyCadCommandLine: React.FC<SurveyCadCommandLineProps> = ({
         >
           Cancel {activeCommandKey}
         </button>
-      ) : null}
+        ) : null}
     </div>
     <div
-      className="mt-3 rounded-lg border border-slate-800 bg-slate-950/60 px-3 py-2 text-xs text-slate-300"
+      className="flex flex-wrap items-center gap-3 border-t border-slate-800 pt-2 text-xs text-slate-300"
       data-survey-cad-command-status
     >
-      {statusText}
+      <span>{statusText}</span>
     </div>
   </div>
 );

@@ -1,3 +1,5 @@
+- [x] Survey CAD chrome-trim + tool-modes batch (May 2026): remove the duplicate results-area Survey CAD tab, collapse the dedicated CAD page down to toolbar plus model space, and start explicit CAD tool modes with top-toolbar select/pan/zoom-window controls.
+
 - [x] Survey CAD dedicated-workspace batch (May 2026): promote Survey CAD from a result-tab panel into a dedicated full-page app workspace with its own top toolbars, hide the input editor while CAD is active, and add first CAD viewport interactions (wheel zoom, pan, zoom extents, and drag-box selection) before traverse/parcel work continues.
 
 - [x] Survey CAD phase-4 arc-command batch (May 2026): add native `ARC 3PT` and tangent-curve creation commands on the command/history seam, then lock interactive and undo/redo behavior with focused CAD tests before moving on to traverse and parcel workflows.
