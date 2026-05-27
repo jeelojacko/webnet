@@ -32,6 +32,8 @@ Current implemented spike slice:
 - dedicated workspace viewport controls now follow direct CAD-style interaction: wheel zoom, middle-mouse pan, middle-double-click zoom extents, click selection, and left-to-right window vs right-to-left crossing drag-box selection
 - command commit/cancel now leans on direct picks plus keyboard flow: viewport clicks capture points, `Enter` submits typed input or finishes `PLINE` on an empty prompt, and `Escape` cancels the active command or clears selection
 - in-progress commands now paint live preview geometry in the viewport for line/polyline/curve and translate-style edit flows before commit
+- command help, snap state, and the active command text input now live inside the CAD viewport as bottom-corner / bottom-center overlays instead of a separate status panel
+- active commands now capture direct keyboard typing without requiring the operator to click the command input first, and basic CAD shortcuts now include keyboard copy/paste plus undo/redo
 
 ## Initial command families
 - `POINT`

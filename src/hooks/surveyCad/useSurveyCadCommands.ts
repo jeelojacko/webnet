@@ -113,6 +113,8 @@ interface UseSurveyCadCommandsResult {
   cancelCommand: () => void;
   finishCommand: () => void;
   setCommandInputValue: (_value: string) => void;
+  appendCommandInputValue: (_value: string) => void;
+  backspaceCommandInputValue: () => void;
   submitCommandInput: () => void;
   useActiveSnap: () => void;
   consumeInteractionPoint: (_point: { x: number; y: number }, _label?: string) => void;
@@ -791,6 +793,16 @@ export const useSurveyCadCommands = ({
     },
     setCommandInputValue: (value) =>
       setSession((current) => (current ? { ...current, inputValue: value, resultText: undefined } : current)),
+    appendCommandInputValue: (value) =>
+      setSession((current) =>
+        current ? { ...current, inputValue: `${current.inputValue}${value}`, resultText: undefined } : current,
+      ),
+    backspaceCommandInputValue: () =>
+      setSession((current) =>
+        current
+          ? { ...current, inputValue: current.inputValue.slice(0, -1), resultText: undefined }
+          : current,
+      ),
     submitCommandInput: submitSessionInput,
     useActiveSnap: () => {
       if (!activeSnap) return;

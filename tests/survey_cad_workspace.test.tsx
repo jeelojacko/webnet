@@ -67,8 +67,12 @@ const setTextInputValue = (inputElement: HTMLInputElement, value: string): void 
   inputElement.dispatchEvent(new Event('input', { bubbles: true }));
 };
 
-const pressKey = (target: EventTarget, key: 'Enter' | 'Escape'): void => {
-  target.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key }));
+const pressKey = (
+  target: EventTarget,
+  key: string,
+  options?: { ctrlKey?: boolean; metaKey?: boolean; shiftKey?: boolean },
+): void => {
+  target.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key, ...options }));
 };
 
 const clickButton = (container: HTMLElement, label: string): HTMLButtonElement => {
@@ -105,12 +109,10 @@ describe('SurveyCadWorkspace', () => {
     expect(container.textContent).not.toContain('Use Snap');
     expect(container.textContent).not.toContain('Finish PLINE');
     expect(container.textContent).not.toContain('Submit');
-    expect(container.querySelector('[data-survey-cad-entity-count]')?.textContent).toContain(
-      '8 entities',
-    );
-    expect(container.querySelector('[data-survey-cad-command-status]')?.textContent).toContain(
-      'Ready',
-    );
+    expect(container.querySelector('[data-survey-cad-entity-count]')?.textContent).toContain('8 entities');
+    expect(container.querySelector('[data-survey-cad-command-input]')).not.toBeNull();
+    expect(container.querySelector('[data-survey-cad-command-help]')?.textContent).toContain('Interactive commands accept');
+    expect(container.querySelector('[data-survey-cad-command-status]')).toBeNull();
 
     await act(async () => {
       root.unmount();
@@ -290,7 +292,7 @@ describe('SurveyCadWorkspace', () => {
       );
     });
 
-    const commandInput = container.querySelector('input[type="text"]') as HTMLInputElement | null;
+    const commandInput = container.querySelector('[data-survey-cad-command-input]') as HTMLInputElement | null;
     if (!commandInput) throw new Error('Command input not found');
 
     await act(async () => {
@@ -441,7 +443,7 @@ describe('SurveyCadWorkspace', () => {
       );
     });
 
-    const commandInput = container.querySelector('input[type="text"]') as HTMLInputElement | null;
+    const commandInput = container.querySelector('[data-survey-cad-command-input]') as HTMLInputElement | null;
     if (!commandInput) throw new Error('Command input not found');
 
     await act(async () => {
@@ -499,7 +501,7 @@ describe('SurveyCadWorkspace', () => {
     });
 
     const preview = container.querySelector('[data-survey-cad-preview]') as SVGElement | null;
-    const commandInput = container.querySelector('input[type="text"]') as HTMLInputElement | null;
+    const commandInput = container.querySelector('[data-survey-cad-command-input]') as HTMLInputElement | null;
     if (!preview || !commandInput) throw new Error('Preview or command input not found');
     mockElementRect(preview);
 
@@ -602,7 +604,7 @@ describe('SurveyCadWorkspace', () => {
       );
     });
 
-    const commandInput = container.querySelector('input[type="text"]') as HTMLInputElement | null;
+    const commandInput = container.querySelector('[data-survey-cad-command-input]') as HTMLInputElement | null;
     if (!commandInput) throw new Error('Command input not found');
 
     await act(async () => {
@@ -623,6 +625,84 @@ describe('SurveyCadWorkspace', () => {
     expect(container.querySelector('[data-survey-cad-entity-count]')?.textContent).toContain(
       '13 entities',
     );
+
+    await act(async () => {
+      root.unmount();
+    });
+    container.remove();
+  });
+
+  it('routes keyboard typing into the active command input without requiring an input click first', async () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root: Root = createRoot(container);
+
+    await act(async () => {
+      root.render(
+        <SurveyCadWorkspace
+          input={input}
+          instrumentLibrary={{}}
+          parseOptions={parseOptions}
+          units="m"
+          result={null}
+        />,
+      );
+    });
+
+    const preview = container.querySelector('[data-survey-cad-preview]') as SVGElement | null;
+    const commandInput = container.querySelector('[data-survey-cad-command-input]') as HTMLInputElement | null;
+    if (!preview || !commandInput) throw new Error('Preview or command input not found');
+    mockElementRect(preview);
+
+    await act(async () => {
+      clickButton(container, 'LINE');
+    });
+    commandInput.blur();
+    await act(async () => {
+      pressKey(window, '1');
+      pressKey(window, '0');
+      pressKey(window, ',');
+      pressKey(window, '2');
+      pressKey(window, '0');
+    });
+
+    expect(commandInput.value).toBe('10,20');
+
+    await act(async () => {
+      root.unmount();
+    });
+    container.remove();
+  });
+
+  it('supports keyboard copy and paste shortcuts for CAD selection', async () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root: Root = createRoot(container);
+
+    await act(async () => {
+      root.render(
+        <SurveyCadWorkspace
+          input={input}
+          instrumentLibrary={{}}
+          parseOptions={parseOptions}
+          units="m"
+          result={null}
+        />,
+      );
+    });
+
+    expect(container.querySelector('[data-survey-cad-entity-count]')?.textContent).toContain('8 entities');
+
+    await act(async () => {
+      clickButton(container, 'S-ALL');
+    });
+    await act(async () => {
+      pressKey(window, 'c', { ctrlKey: true });
+      pressKey(window, 'v', { ctrlKey: true });
+    });
+
+    expect(container.querySelector('[data-survey-cad-entity-count]')?.textContent).toContain('16 entities');
+    expect(container.querySelector('[data-survey-cad-command-status]')?.textContent).toContain('COPY committed');
 
     await act(async () => {
       root.unmount();

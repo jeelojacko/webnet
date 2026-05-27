@@ -1,3 +1,5 @@
+- [x] Survey CAD overlay-input + keyboard batch (May 2026): move CAD help/snap text and command input into viewport overlays, remove the idle ready-status panel, allow active commands to capture typing without clicking the input first, and add keyboard copy/paste shortcuts for the native CAD workspace.
+
 - [x] Survey CAD live-preview + traverse-start batch (May 2026): add in-viewport live preview overlays for line/polyline/arc/move/copy workflows, then start the first native `TRAVERSE` entry flow on the same direct-interaction command seam.
 
 - [x] Survey CAD direct-interaction batch (May 2026): make the CAD page fully fit the browser window, remove the remaining visible helper buttons for select/pan/zoom and command submit/snap helpers, switch commands to click-driven point capture plus Enter/Escape keyboard flow, and make first drawing tools like `LINE` work directly from viewport clicks.

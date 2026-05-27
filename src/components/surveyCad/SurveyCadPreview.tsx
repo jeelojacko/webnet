@@ -11,6 +11,12 @@ interface SurveyCadPreviewProps {
   selectedEntityIds: readonly string[];
   activeSnap: CadSnapCandidate | null;
   commandPreviewPrimitives: readonly CadDisplayPrimitive[];
+  commandStatusText: string;
+  commandHelpText: string;
+  snapStatusText: string;
+  commandInputValue: string;
+  commandInputPlaceholder: string;
+  commandInputEnabled: boolean;
   viewport: { zoom: number; panX: number; panY: number };
   commandActive: boolean;
   onViewportChange: (_viewport: { zoom: number; panX: number; panY: number }) => void;
@@ -18,6 +24,9 @@ interface SurveyCadPreviewProps {
   onSelectEntities: (_entityIds: string[], _appendToSelection?: boolean) => void;
   onConsumeInteractionPoint: (_worldPoint: { x: number; y: number }) => void;
   onPointerWorldPointChange: (_worldPoint: { x: number; y: number } | null) => void;
+  onCommandInputChange: (_value: string) => void;
+  onCommandInputEnter: () => void;
+  onCommandInputEscape: () => void;
   onZoomExtents: () => void;
 }
 
@@ -247,6 +256,12 @@ const SurveyCadPreview: React.FC<SurveyCadPreviewProps> = ({
   selectedEntityIds,
   activeSnap,
   commandPreviewPrimitives,
+  commandStatusText,
+  commandHelpText,
+  snapStatusText,
+  commandInputValue,
+  commandInputPlaceholder,
+  commandInputEnabled,
   viewport,
   commandActive,
   onViewportChange,
@@ -254,6 +269,9 @@ const SurveyCadPreview: React.FC<SurveyCadPreviewProps> = ({
   onSelectEntities,
   onConsumeInteractionPoint,
   onPointerWorldPointChange,
+  onCommandInputChange,
+  onCommandInputEnter,
+  onCommandInputEscape,
   onZoomExtents,
 }) => {
   const { baseScale, normalized, project, scale, unproject } = useProjector(scene.bounds, viewport);
@@ -261,6 +279,12 @@ const SurveyCadPreview: React.FC<SurveyCadPreviewProps> = ({
   const [didDrag, setDidDrag] = useState(false);
   const selectionBox = dragState.kind === 'box' ? dragState.box : null;
   const middleMouseDownAtRef = useRef<number>(0);
+  const commandInputRef = useRef<HTMLInputElement | null>(null);
+
+  React.useEffect(() => {
+    if (!commandInputEnabled) return;
+    commandInputRef.current?.focus();
+  }, [commandInputEnabled, commandActive]);
 
   const screenPointFromMouseEvent = (
     event: React.MouseEvent<SVGElement>,
@@ -275,130 +299,131 @@ const SurveyCadPreview: React.FC<SurveyCadPreviewProps> = ({
   };
 
   return (
-    <svg
-      viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
-      className="h-full w-full rounded-lg border border-slate-800 bg-slate-950 select-none"
-      data-survey-cad-preview
-      onMouseLeave={() => {
-        if (dragState.kind === 'none') onPointerWorldPointChange(null);
-      }}
-      onMouseDown={(event) => {
-        const screenPoint = screenPointFromMouseEvent(event);
-        if (!screenPoint) return;
-        if (event.button === 1) {
-          event.preventDefault();
-          const now = Date.now();
-          if (now - middleMouseDownAtRef.current <= 280) {
-            middleMouseDownAtRef.current = 0;
-            setDragState({ kind: 'none' });
-            onZoomExtents();
+    <div className="relative h-full w-full">
+      <svg
+        viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
+        className="h-full w-full rounded-lg border border-slate-800 bg-slate-950 select-none"
+        data-survey-cad-preview
+        onMouseLeave={() => {
+          if (dragState.kind === 'none') onPointerWorldPointChange(null);
+        }}
+        onMouseDown={(event) => {
+          const screenPoint = screenPointFromMouseEvent(event);
+          if (!screenPoint) return;
+          if (event.button === 1) {
+            event.preventDefault();
+            const now = Date.now();
+            if (now - middleMouseDownAtRef.current <= 280) {
+              middleMouseDownAtRef.current = 0;
+              setDragState({ kind: 'none' });
+              onZoomExtents();
+              return;
+            }
+            middleMouseDownAtRef.current = now;
+            setDidDrag(false);
+            setDragState({
+              kind: 'pan',
+              startClientX: event.clientX,
+              startClientY: event.clientY,
+              startPanX: viewport.panX,
+              startPanY: viewport.panY,
+            });
             return;
           }
-          middleMouseDownAtRef.current = now;
-          setDidDrag(false);
-          setDragState({
-            kind: 'pan',
-            startClientX: event.clientX,
-            startClientY: event.clientY,
-            startPanX: viewport.panX,
-            startPanY: viewport.panY,
-          });
-          return;
-        }
-        const target = event.target as Element | null;
-        if (
-          event.button === 0 &&
-          target?.getAttribute('data-survey-cad-background') === 'true' &&
-          !commandActive
-        ) {
-          setDidDrag(false);
-          setDragState({
-            kind: 'box',
-            box: {
-              anchorX: screenPoint.viewX,
-              anchorY: screenPoint.viewY,
-              currentX: screenPoint.viewX,
-              currentY: screenPoint.viewY,
-            },
-            appendToSelection: event.shiftKey,
-          });
-        }
-      }}
-      onMouseMove={(event) => {
-        const screenPoint = screenPointFromMouseEvent(event);
-        if (!screenPoint) return;
-        const { rect, viewX, viewY } = screenPoint;
-        if (dragState.kind === 'pan') {
+          const target = event.target as Element | null;
           if (
-            Math.abs(event.clientX - dragState.startClientX) > 2 ||
-            Math.abs(event.clientY - dragState.startClientY) > 2
+            event.button === 0 &&
+            target?.getAttribute('data-survey-cad-background') === 'true' &&
+            !commandActive
           ) {
-            setDidDrag(true);
+            setDidDrag(false);
+            setDragState({
+              kind: 'box',
+              box: {
+                anchorX: screenPoint.viewX,
+                anchorY: screenPoint.viewY,
+                currentX: screenPoint.viewX,
+                currentY: screenPoint.viewY,
+              },
+              appendToSelection: event.shiftKey,
+            });
           }
+        }}
+        onMouseMove={(event) => {
+          const screenPoint = screenPointFromMouseEvent(event);
+          if (!screenPoint) return;
+          const { rect, viewX, viewY } = screenPoint;
+          if (dragState.kind === 'pan') {
+            if (
+              Math.abs(event.clientX - dragState.startClientX) > 2 ||
+              Math.abs(event.clientY - dragState.startClientY) > 2
+            ) {
+              setDidDrag(true);
+            }
+            onViewportChange({
+              ...viewport,
+              panX: dragState.startPanX + ((event.clientX - dragState.startClientX) / rect.width) * WIDTH,
+              panY: dragState.startPanY + ((event.clientY - dragState.startClientY) / rect.height) * HEIGHT,
+            });
+          } else if (dragState.kind === 'box') {
+            if (
+              Math.abs(viewX - dragState.box.anchorX) > 2 ||
+              Math.abs(viewY - dragState.box.anchorY) > 2
+            ) {
+              setDidDrag(true);
+            }
+            setDragState({
+              ...dragState,
+              box: {
+                ...dragState.box,
+                currentX: viewX,
+                currentY: viewY,
+              },
+            });
+          }
+          onPointerWorldPointChange(unproject(viewX, viewY));
+        }}
+        onMouseUp={() => {
+          if (dragState.kind === 'box') {
+            const minX = Math.min(dragState.box.anchorX, dragState.box.currentX);
+            const maxX = Math.max(dragState.box.anchorX, dragState.box.currentX);
+            const minY = Math.min(dragState.box.anchorY, dragState.box.currentY);
+            const maxY = Math.max(dragState.box.anchorY, dragState.box.currentY);
+            if (maxX - minX >= 4 || maxY - minY >= 4) {
+              const ids = scene.primitives
+                .filter((primitive) =>
+                  intersectsSelectionBox(primitiveBounds(primitive, project, scale), dragState.box),
+                )
+                .map((primitive) => primitive.sourceEntityId)
+                .filter((entityId, index, ids) => ids.indexOf(entityId) === index);
+              onSelectEntities(ids, dragState.appendToSelection);
+            }
+          }
+          if (dragState.kind === 'pan') {
+            middleMouseDownAtRef.current = 0;
+          }
+          setDidDrag(false);
+          setDragState({ kind: 'none' });
+        }}
+        onWheel={(event) => {
+          event.preventDefault();
+          const screenPoint = screenPointFromMouseEvent(event);
+          if (!screenPoint) return;
+          const { viewX, viewY } = screenPoint;
+          const worldPoint = unproject(viewX, viewY);
+          const nextZoom = Math.max(
+            MIN_ZOOM,
+            Math.min(MAX_ZOOM, viewport.zoom * (event.deltaY < 0 ? 1.12 : 1 / 1.12)),
+          );
+          if (Math.abs(nextZoom - viewport.zoom) <= 1e-9) return;
           onViewportChange({
-            ...viewport,
-            panX: dragState.startPanX + ((event.clientX - dragState.startClientX) / rect.width) * WIDTH,
-            panY: dragState.startPanY + ((event.clientY - dragState.startClientY) / rect.height) * HEIGHT,
+            zoom: nextZoom,
+            panX: viewX - (PADDING + (worldPoint.x - normalized.minX) * baseScale * nextZoom),
+            panY:
+              viewY - (HEIGHT - PADDING - (worldPoint.y - normalized.minY) * baseScale * nextZoom),
           });
-        } else if (dragState.kind === 'box') {
-          if (
-            Math.abs(viewX - dragState.box.anchorX) > 2 ||
-            Math.abs(viewY - dragState.box.anchorY) > 2
-          ) {
-            setDidDrag(true);
-          }
-          setDragState({
-            ...dragState,
-            box: {
-              ...dragState.box,
-              currentX: viewX,
-              currentY: viewY,
-            },
-          });
-        }
-        onPointerWorldPointChange(unproject(viewX, viewY));
-      }}
-      onMouseUp={() => {
-        if (dragState.kind === 'box') {
-          const minX = Math.min(dragState.box.anchorX, dragState.box.currentX);
-          const maxX = Math.max(dragState.box.anchorX, dragState.box.currentX);
-          const minY = Math.min(dragState.box.anchorY, dragState.box.currentY);
-          const maxY = Math.max(dragState.box.anchorY, dragState.box.currentY);
-          if (maxX - minX >= 4 || maxY - minY >= 4) {
-            const ids = scene.primitives
-              .filter((primitive) =>
-                intersectsSelectionBox(primitiveBounds(primitive, project, scale), dragState.box),
-              )
-              .map((primitive) => primitive.sourceEntityId)
-              .filter((entityId, index, ids) => ids.indexOf(entityId) === index);
-            onSelectEntities(ids, dragState.appendToSelection);
-          }
-        }
-        if (dragState.kind === 'pan') {
-          middleMouseDownAtRef.current = 0;
-        }
-        setDidDrag(false);
-        setDragState({ kind: 'none' });
-      }}
-      onWheel={(event) => {
-        event.preventDefault();
-        const screenPoint = screenPointFromMouseEvent(event);
-        if (!screenPoint) return;
-        const { viewX, viewY } = screenPoint;
-        const worldPoint = unproject(viewX, viewY);
-        const nextZoom = Math.max(
-          MIN_ZOOM,
-          Math.min(MAX_ZOOM, viewport.zoom * (event.deltaY < 0 ? 1.12 : 1 / 1.12)),
-        );
-        if (Math.abs(nextZoom - viewport.zoom) <= 1e-9) return;
-        onViewportChange({
-          zoom: nextZoom,
-          panX: viewX - (PADDING + (worldPoint.x - normalized.minX) * baseScale * nextZoom),
-          panY:
-            viewY - (HEIGHT - PADDING - (worldPoint.y - normalized.minY) * baseScale * nextZoom),
-        });
-      }}
-    >
+        }}
+      >
       <rect
         x={0}
         y={0}
@@ -534,7 +559,50 @@ const SurveyCadPreview: React.FC<SurveyCadPreviewProps> = ({
           />
         ) : null}
       </g>
-    </svg>
+      </svg>
+      <div
+        className="pointer-events-none absolute bottom-3 left-3 max-w-[32rem] text-[11px] leading-4 text-slate-300"
+        data-survey-cad-command-help
+      >
+        {commandStatusText ? (
+          <>
+            <div className="pb-1 text-cyan-200" data-survey-cad-command-status>
+              {commandStatusText}
+            </div>
+            <div>{commandHelpText}</div>
+          </>
+        ) : (
+          commandHelpText
+        )}
+      </div>
+      <div
+        className="pointer-events-none absolute bottom-3 right-3 max-w-[18rem] text-right text-[11px] leading-4 text-slate-300"
+        data-survey-cad-snap-status
+      >
+        {snapStatusText}
+      </div>
+      <div className="absolute bottom-3 left-1/2 w-[min(32rem,calc(100%-12rem))] -translate-x-1/2">
+        <input
+          ref={commandInputRef}
+          type="text"
+          value={commandInputValue}
+          onChange={(event) => onCommandInputChange(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter') {
+              event.preventDefault();
+              onCommandInputEnter();
+            } else if (event.key === 'Escape') {
+              event.preventDefault();
+              onCommandInputEscape();
+            }
+          }}
+          placeholder={commandInputPlaceholder}
+          className="w-full rounded border border-slate-700/90 bg-slate-950/90 px-3 py-2 text-xs text-slate-100 outline-none transition-colors placeholder:text-slate-500 focus:border-cyan-500/80"
+          disabled={!commandInputEnabled}
+          data-survey-cad-command-input
+        />
+      </div>
+    </div>
   );
 };
 

@@ -62,6 +62,8 @@ interface UseSurveyCadWorkspaceResult {
   cancelActiveCommand: () => void;
   finishActiveCommand: () => void;
   setCommandInputValue: (_value: string) => void;
+  appendCommandInputValue: (_value: string) => void;
+  backspaceCommandInputValue: () => void;
   submitCommandInput: () => void;
   useActiveSnap: () => void;
   consumeInteractionPoint: (_worldPoint: { x: number; y: number }) => void;
@@ -73,6 +75,7 @@ interface UseSurveyCadWorkspaceResult {
   selectAll: () => void;
   clearSelection: () => void;
   eraseSelection: () => void;
+  pasteEntityIdsInPlace: (_entityIds: string[]) => void;
   undo: () => void;
   redo: () => void;
 }
@@ -151,6 +154,8 @@ export const useSurveyCadWorkspace = (
     cancelCommand,
     finishCommand,
     setCommandInputValue,
+    appendCommandInputValue,
+    backspaceCommandInputValue,
     submitCommandInput,
     useActiveSnap,
     consumeInteractionPoint,
@@ -345,6 +350,8 @@ export const useSurveyCadWorkspace = (
     cancelActiveCommand: cancelCommand,
     finishActiveCommand: finishCommand,
     setCommandInputValue,
+    appendCommandInputValue,
+    backspaceCommandInputValue,
     submitCommandInput,
     useActiveSnap,
     consumeInteractionPoint: (worldPoint) => {
@@ -414,6 +421,29 @@ export const useSurveyCadWorkspace = (
     },
     eraseSelection: () => {
       setHistory((current) => runCadCommand(current, { key: 'ERASE' }));
+    },
+    pasteEntityIdsInPlace: (entityIds) => {
+      setHistory((current) => {
+        const validEntityIds = current.present.project.entities
+          .filter((entity) => entityIds.includes(entity.id))
+          .map((entity) => entity.id);
+        if (validEntityIds.length === 0) return current;
+        const selectionState = replaceCadSelection(current.present.project, validEntityIds);
+        return runCadCommand(
+          {
+            ...current,
+            present: {
+              ...current.present,
+              selection: selectionState,
+            },
+          },
+          {
+            key: 'COPY',
+            deltaX: 5,
+            deltaY: 5,
+          },
+        );
+      });
     },
     undo: () => {
       setHistory((current) => undoCadHistory(current));
