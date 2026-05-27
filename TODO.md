@@ -1,3 +1,5 @@
+- [x] Survey CAD phase-4 arc-geometry batch (May 2026): add native line-arc and arc-arc intersection helpers plus first offset/parallel/perpendicular COGO utilities, and lock the new geometry contracts with focused CAD tests before moving on to parcel/traverse workflows.
+
 - [x] Survey CAD phase-1/2 completion batch (May 2026): expand native entity families, persist CAD project state inside current WebNet project storage and bundles, prove a simple DXF/runtime path through the published `mlightcad` data-model, and audit phases 0-3 acceptance criteria against focused tests/fixtures.
 
 - [x] Survey CAD phase-4 cogo-core batch (May 2026): add native COGO inverse helpers, explicit bearing/azimuth-distance point creation, and first line-line intersection point workflow on top of the phase-3 command/history seams.

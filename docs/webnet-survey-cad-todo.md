@@ -98,8 +98,8 @@ Acceptance criteria:
 - [x] Add bearing-distance point creation.
 - [x] Add azimuth-distance point creation.
 - [x] Add line-line intersection.
-- [ ] Add line-arc and arc-arc intersections.
-- [ ] Add offsets, parallels, perpendiculars.
+- [x] Add line-arc and arc-arc intersections.
+- [x] Add offsets, parallels, perpendiculars.
 - [ ] Add curve creation helpers.
 - [ ] Add traverse-entry workflow.
 - [ ] Add parcel entity model.

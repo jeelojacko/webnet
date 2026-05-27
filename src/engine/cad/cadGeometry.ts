@@ -7,6 +7,11 @@ export interface CadNamedPoint extends CadWorldPoint {
   label: string;
 }
 
+export interface CadSegmentGeometry {
+  start: CadWorldPoint;
+  end: CadWorldPoint;
+}
+
 export const cadDistance = (from: CadWorldPoint, to: CadWorldPoint): number =>
   Math.hypot(to.x - from.x, to.y - from.y);
 
@@ -74,6 +79,192 @@ export const cadPointFromAzimuthDistance = (
   return {
     x: from.x + Math.sin(radians) * distance,
     y: from.y + Math.cos(radians) * distance,
+  };
+};
+
+export const cadNormalizeAngleDeg = (angleDeg: number): number => {
+  const normalized = angleDeg % 360;
+  return normalized < 0 ? normalized + 360 : normalized;
+};
+
+export const cadAngleDegFromCenter = (
+  center: CadWorldPoint,
+  point: CadWorldPoint,
+): number => cadNormalizeAngleDeg((Math.atan2(point.y - center.y, point.x - center.x) * 180) / Math.PI);
+
+export const cadIsAngleOnArcSweep = (
+  angleDeg: number,
+  startAngleDeg: number,
+  endAngleDeg: number,
+  toleranceDeg = 1e-9,
+): boolean => {
+  const angle = cadNormalizeAngleDeg(angleDeg);
+  const start = cadNormalizeAngleDeg(startAngleDeg);
+  const end = cadNormalizeAngleDeg(endAngleDeg);
+  if (Math.abs(start - end) <= toleranceDeg) return true;
+  if (start <= end) return angle >= start - toleranceDeg && angle <= end + toleranceDeg;
+  return angle >= start - toleranceDeg || angle <= end + toleranceDeg;
+};
+
+const dedupeCadPoints = (points: CadWorldPoint[], tolerance = 1e-9): CadWorldPoint[] => {
+  const result: CadWorldPoint[] = [];
+  points.forEach((point) => {
+    if (
+      result.some(
+        (existing) =>
+          Math.abs(existing.x - point.x) <= tolerance && Math.abs(existing.y - point.y) <= tolerance,
+      )
+    ) {
+      return;
+    }
+    result.push(point);
+  });
+  return result;
+};
+
+export const cadIntersectSegmentCircle = (
+  start: CadWorldPoint,
+  end: CadWorldPoint,
+  center: CadWorldPoint,
+  radius: number,
+): CadWorldPoint[] => {
+  const dx = end.x - start.x;
+  const dy = end.y - start.y;
+  const fx = start.x - center.x;
+  const fy = start.y - center.y;
+  const a = dx * dx + dy * dy;
+  if (a <= 1e-12) return [];
+  const b = 2 * (fx * dx + fy * dy);
+  const c = fx * fx + fy * fy - radius * radius;
+  const discriminant = b * b - 4 * a * c;
+  if (discriminant < -1e-12) return [];
+  const root = Math.sqrt(Math.max(0, discriminant));
+  const candidates = [
+    (-b - root) / (2 * a),
+    (-b + root) / (2 * a),
+  ]
+    .filter((t) => t >= -1e-9 && t <= 1 + 1e-9)
+    .map((t) => ({
+      x: start.x + dx * t,
+      y: start.y + dy * t,
+    }))
+    .sort((left, right) => {
+      if (Math.abs(left.x - right.x) > 1e-9) return left.x - right.x;
+      return left.y - right.y;
+    });
+  return dedupeCadPoints(candidates);
+};
+
+export const cadIntersectSegmentArc = (
+  start: CadWorldPoint,
+  end: CadWorldPoint,
+  center: CadWorldPoint,
+  radius: number,
+  startAngleDeg: number,
+  endAngleDeg: number,
+): CadWorldPoint[] =>
+  cadIntersectSegmentCircle(start, end, center, radius).filter((point) =>
+    cadIsAngleOnArcSweep(cadAngleDegFromCenter(center, point), startAngleDeg, endAngleDeg),
+  );
+
+export const cadIntersectArcArc = (
+  firstCenter: CadWorldPoint,
+  firstRadius: number,
+  firstStartAngleDeg: number,
+  firstEndAngleDeg: number,
+  secondCenter: CadWorldPoint,
+  secondRadius: number,
+  secondStartAngleDeg: number,
+  secondEndAngleDeg: number,
+): CadWorldPoint[] => {
+  const centerDistance = cadDistance(firstCenter, secondCenter);
+  if (centerDistance <= 1e-12) return [];
+  if (centerDistance > firstRadius + secondRadius + 1e-9) return [];
+  if (centerDistance < Math.abs(firstRadius - secondRadius) - 1e-9) return [];
+
+  const a = (firstRadius * firstRadius - secondRadius * secondRadius + centerDistance * centerDistance) /
+    (2 * centerDistance);
+  const heightSquared = firstRadius * firstRadius - a * a;
+  if (heightSquared < -1e-9) return [];
+
+  const baseX = firstCenter.x + ((secondCenter.x - firstCenter.x) * a) / centerDistance;
+  const baseY = firstCenter.y + ((secondCenter.y - firstCenter.y) * a) / centerDistance;
+  const offsetScale = Math.sqrt(Math.max(0, heightSquared)) / centerDistance;
+  const offsetX = -(secondCenter.y - firstCenter.y) * offsetScale;
+  const offsetY = (secondCenter.x - firstCenter.x) * offsetScale;
+
+  const candidates = dedupeCadPoints([
+    { x: baseX + offsetX, y: baseY + offsetY },
+    { x: baseX - offsetX, y: baseY - offsetY },
+  ]).filter(
+    (point) =>
+      cadIsAngleOnArcSweep(cadAngleDegFromCenter(firstCenter, point), firstStartAngleDeg, firstEndAngleDeg) &&
+      cadIsAngleOnArcSweep(
+        cadAngleDegFromCenter(secondCenter, point),
+        secondStartAngleDeg,
+        secondEndAngleDeg,
+      ),
+  );
+
+  return candidates.sort((left, right) => {
+    if (Math.abs(right.y - left.y) > 1e-9) return right.y - left.y;
+    return left.x - right.x;
+  });
+};
+
+export const cadOffsetLineSegment = (
+  start: CadWorldPoint,
+  end: CadWorldPoint,
+  offsetDistance: number,
+): CadSegmentGeometry => {
+  const dx = end.x - start.x;
+  const dy = end.y - start.y;
+  const length = Math.hypot(dx, dy);
+  if (length <= 1e-12) {
+    return {
+      start: { ...start },
+      end: { ...end },
+    };
+  }
+  const normalX = -dy / length;
+  const normalY = dx / length;
+  return {
+    start: {
+      x: start.x + normalX * offsetDistance,
+      y: start.y + normalY * offsetDistance,
+    },
+    end: {
+      x: end.x + normalX * offsetDistance,
+      y: end.y + normalY * offsetDistance,
+    },
+  };
+};
+
+export const cadBuildParallelLine = (
+  start: CadWorldPoint,
+  end: CadWorldPoint,
+  throughPoint: CadWorldPoint,
+): CadSegmentGeometry => ({
+  start: { ...throughPoint },
+  end: {
+    x: throughPoint.x + (end.x - start.x),
+    y: throughPoint.y + (end.y - start.y),
+  },
+});
+
+export const cadBuildPerpendicularFoot = (
+  lineStart: CadWorldPoint,
+  lineEnd: CadWorldPoint,
+  fromPoint: CadWorldPoint,
+): CadWorldPoint => {
+  const dx = lineEnd.x - lineStart.x;
+  const dy = lineEnd.y - lineStart.y;
+  const lengthSquared = dx * dx + dy * dy;
+  if (lengthSquared <= 1e-12) return { ...lineStart };
+  const t = ((fromPoint.x - lineStart.x) * dx + (fromPoint.y - lineStart.y) * dy) / lengthSquared;
+  return {
+    x: lineStart.x + dx * t,
+    y: lineStart.y + dy * t,
   };
 };
 

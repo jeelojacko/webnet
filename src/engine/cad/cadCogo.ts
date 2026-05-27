@@ -1,13 +1,18 @@
 import {
+  cadBuildParallelLine as buildParallelLineGeometry,
+  cadBuildPerpendicularFoot as buildPerpendicularFootGeometry,
   cadAzimuthDeg,
   cadDistance,
+  cadIntersectArcArc,
+  cadIntersectSegmentArc,
+  cadOffsetLineSegment as offsetLineSegmentGeometry,
   cadParseBearingDegrees,
   cadPointFromAzimuthDistance,
   cadSegmentIntersection,
   type CadNamedPoint,
   type CadWorldPoint,
 } from './cadGeometry';
-import type { CadEntity, CadLineEntity, CadPolylineEntity } from './cadTypes';
+import type { CadArcEntity, CadEntity, CadLineEntity, CadPolylineEntity } from './cadTypes';
 
 export interface CadInverseSummary {
   distance: number;
@@ -144,6 +149,65 @@ export const cadIntersectLineLikeEntities = (
   }
   return null;
 };
+
+export const cadIntersectLineArcEntity = (
+  lineLike: CadLineEntity | CadPolylineEntity,
+  arc: CadArcEntity,
+): CadEntityIntersection[] =>
+  lineLikeSegments(lineLike)
+    .flatMap((segment) =>
+      cadIntersectSegmentArc(
+        segment.start,
+        segment.end,
+        { x: arc.centerX, y: arc.centerY },
+        arc.radius,
+        arc.startAngleDeg,
+        arc.endAngleDeg,
+      ).map((point) => ({
+        point,
+        label: `${segment.label} x ${arc.id}`,
+      })),
+    )
+    .sort((left, right) => {
+      if (Math.abs(left.point.x - right.point.x) > 1e-9) return left.point.x - right.point.x;
+      return left.point.y - right.point.y;
+    });
+
+export const cadIntersectArcEntities = (
+  first: CadArcEntity,
+  second: CadArcEntity,
+): CadEntityIntersection[] =>
+  cadIntersectArcArc(
+    { x: first.centerX, y: first.centerY },
+    first.radius,
+    first.startAngleDeg,
+    first.endAngleDeg,
+    { x: second.centerX, y: second.centerY },
+    second.radius,
+    second.startAngleDeg,
+    second.endAngleDeg,
+  ).map((point) => ({
+    point,
+    label: `${first.id} x ${second.id}`,
+  }));
+
+export const cadOffsetLineSegment = (
+  start: CadWorldPoint,
+  end: CadWorldPoint,
+  offsetDistance: number,
+) => offsetLineSegmentGeometry(start, end, offsetDistance);
+
+export const cadBuildParallelLine = (
+  start: CadWorldPoint,
+  end: CadWorldPoint,
+  throughPoint: CadWorldPoint,
+) => buildParallelLineGeometry(start, end, throughPoint);
+
+export const cadBuildPerpendicularFoot = (
+  lineStart: CadWorldPoint,
+  lineEnd: CadWorldPoint,
+  fromPoint: CadWorldPoint,
+) => buildPerpendicularFootGeometry(lineStart, lineEnd, fromPoint);
 
 export const buildCadNamedPoint = (
   point: CadWorldPoint,
