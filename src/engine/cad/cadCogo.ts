@@ -1,6 +1,12 @@
 import {
+  cadBuildArcFromThreePoints as buildArcFromThreePointsGeometry,
   cadBuildParallelLine as buildParallelLineGeometry,
   cadBuildPerpendicularFoot as buildPerpendicularFootGeometry,
+  cadBuildCurveMetricsFromArcLength as buildCurveMetricsFromArcLengthGeometry,
+  cadBuildCurveMetricsFromChordLength as buildCurveMetricsFromChordLengthGeometry,
+  cadBuildCurveMetricsFromRadiusDelta as buildCurveMetricsFromRadiusDeltaGeometry,
+  cadBuildCurveMetricsFromTangentLength as buildCurveMetricsFromTangentLengthGeometry,
+  cadBuildTangentCurve as buildTangentCurveGeometry,
   cadAzimuthDeg,
   cadDistance,
   cadIntersectArcArc,
@@ -208,6 +214,39 @@ export const cadBuildPerpendicularFoot = (
   lineEnd: CadWorldPoint,
   fromPoint: CadWorldPoint,
 ) => buildPerpendicularFootGeometry(lineStart, lineEnd, fromPoint);
+
+export const cadBuildCurveMetricsFromRadiusDelta = (
+  radius: number,
+  deltaDeg: number,
+) => buildCurveMetricsFromRadiusDeltaGeometry(radius, deltaDeg);
+
+export const cadBuildCurveMetricsFromArcLength = (
+  radius: number,
+  arcLength: number,
+) => buildCurveMetricsFromArcLengthGeometry(radius, arcLength);
+
+export const cadBuildCurveMetricsFromChordLength = (
+  radius: number,
+  chordLength: number,
+) => buildCurveMetricsFromChordLengthGeometry(radius, chordLength);
+
+export const cadBuildCurveMetricsFromTangentLength = (
+  radius: number,
+  tangentLength: number,
+) => buildCurveMetricsFromTangentLengthGeometry(radius, tangentLength);
+
+export const cadBuildArcFromThreePoints = (
+  startPoint: CadWorldPoint,
+  throughPoint: CadWorldPoint,
+  endPoint: CadWorldPoint,
+) => buildArcFromThreePointsGeometry(startPoint, throughPoint, endPoint);
+
+export const cadBuildTangentCurve = (
+  piPoint: CadWorldPoint,
+  backTangentPoint: CadWorldPoint,
+  aheadTangentPoint: CadWorldPoint,
+  radius: number,
+) => buildTangentCurveGeometry(piPoint, backTangentPoint, aheadTangentPoint, radius);
 
 export const buildCadNamedPoint = (
   point: CadWorldPoint,

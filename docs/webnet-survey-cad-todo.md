@@ -100,7 +100,7 @@ Acceptance criteria:
 - [x] Add line-line intersection.
 - [x] Add line-arc and arc-arc intersections.
 - [x] Add offsets, parallels, perpendiculars.
-- [ ] Add curve creation helpers.
+- [x] Add curve creation helpers.
 - [ ] Add traverse-entry workflow.
 - [ ] Add parcel entity model.
 - [ ] Add parcel closure report.

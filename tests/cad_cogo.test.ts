@@ -1,8 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import {
   buildCadInverseSummary,
+  cadBuildArcFromThreePoints,
+  cadBuildCurveMetricsFromArcLength,
+  cadBuildCurveMetricsFromChordLength,
+  cadBuildCurveMetricsFromRadiusDelta,
+  cadBuildCurveMetricsFromTangentLength,
   cadBuildParallelLine,
   cadBuildPerpendicularFoot,
+  cadBuildTangentCurve,
   cadIntersectLineLikeEntities,
   cadIntersectArcEntities,
   cadIntersectLineArcEntity,
@@ -152,5 +158,59 @@ describe('Survey CAD COGO helpers', () => {
     const foot = cadBuildPerpendicularFoot({ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 3, y: 7 });
     expect(foot.x).toBeCloseTo(3, 6);
     expect(foot.y).toBeCloseTo(0, 6);
+  });
+
+  it('builds simple curve metrics from radius and common survey inputs', () => {
+    const byDelta = cadBuildCurveMetricsFromRadiusDelta(200, 60);
+    expect(byDelta).not.toBeNull();
+    expect(byDelta?.arcLength ?? Number.NaN).toBeCloseTo(209.439510, 6);
+    expect(byDelta?.chordLength ?? Number.NaN).toBeCloseTo(200, 6);
+    expect(byDelta?.tangentLength ?? Number.NaN).toBeCloseTo(115.470054, 6);
+
+    const byLength = cadBuildCurveMetricsFromArcLength(200, byDelta?.arcLength ?? Number.NaN);
+    expect(byLength?.deltaDeg ?? Number.NaN).toBeCloseTo(60, 6);
+
+    const byChord = cadBuildCurveMetricsFromChordLength(200, 200);
+    expect(byChord?.deltaDeg ?? Number.NaN).toBeCloseTo(60, 6);
+
+    const byTangent = cadBuildCurveMetricsFromTangentLength(200, byDelta?.tangentLength ?? Number.NaN);
+    expect(byTangent?.deltaDeg ?? Number.NaN).toBeCloseTo(60, 6);
+  });
+
+  it('builds deterministic three-point and tangent-curve arc definitions', () => {
+    const threePoint = cadBuildArcFromThreePoints(
+      { x: 5, y: 0 },
+      { x: 0, y: 5 },
+      { x: -5, y: 0 },
+    );
+    expect(threePoint).not.toBeNull();
+    expect(threePoint?.center.x ?? Number.NaN).toBeCloseTo(0, 6);
+    expect(threePoint?.center.y ?? Number.NaN).toBeCloseTo(0, 6);
+    expect(threePoint?.radius ?? Number.NaN).toBeCloseTo(5, 6);
+    expect(threePoint?.deltaDeg ?? Number.NaN).toBeCloseTo(180, 6);
+
+    const tangentCurve = cadBuildTangentCurve(
+      { x: 0, y: 0 },
+      { x: -10, y: 0 },
+      { x: 0, y: 10 },
+      10,
+    );
+    expect(tangentCurve).not.toBeNull();
+    expect(tangentCurve?.center.x ?? Number.NaN).toBeCloseTo(-10, 6);
+    expect(tangentCurve?.center.y ?? Number.NaN).toBeCloseTo(10, 6);
+    expect(tangentCurve?.radius ?? Number.NaN).toBeCloseTo(10, 6);
+    expect(tangentCurve?.deltaDeg ?? Number.NaN).toBeCloseTo(90, 6);
+
+    const tangentPoints = [tangentCurve?.startPoint, tangentCurve?.endPoint]
+      .filter((point): point is { x: number; y: number } => point != null)
+      .sort((left, right) => {
+        if (Math.abs(left.x - right.x) > 1e-9) return left.x - right.x;
+        return left.y - right.y;
+      });
+    expect(tangentPoints).toHaveLength(2);
+    expect(tangentPoints[0]?.x ?? Number.NaN).toBeCloseTo(-10, 6);
+    expect(tangentPoints[0]?.y ?? Number.NaN).toBeCloseTo(0, 6);
+    expect(tangentPoints[1]?.x ?? Number.NaN).toBeCloseTo(0, 6);
+    expect(tangentPoints[1]?.y ?? Number.NaN).toBeCloseTo(10, 6);
   });
 });

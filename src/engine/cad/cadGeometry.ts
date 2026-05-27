@@ -12,6 +12,24 @@ export interface CadSegmentGeometry {
   end: CadWorldPoint;
 }
 
+export interface CadCurveMetrics {
+  radius: number;
+  deltaDeg: number;
+  arcLength: number;
+  chordLength: number;
+  tangentLength: number;
+}
+
+export interface CadArcDefinition {
+  center: CadWorldPoint;
+  radius: number;
+  startAngleDeg: number;
+  endAngleDeg: number;
+  startPoint: CadWorldPoint;
+  endPoint: CadWorldPoint;
+  deltaDeg: number;
+}
+
 export const cadDistance = (from: CadWorldPoint, to: CadWorldPoint): number =>
   Math.hypot(to.x - from.x, to.y - from.y);
 
@@ -87,10 +105,76 @@ export const cadNormalizeAngleDeg = (angleDeg: number): number => {
   return normalized < 0 ? normalized + 360 : normalized;
 };
 
+const cadCounterClockwiseDeltaDeg = (startAngleDeg: number, endAngleDeg: number): number =>
+  cadNormalizeAngleDeg(endAngleDeg - startAngleDeg);
+
 export const cadAngleDegFromCenter = (
   center: CadWorldPoint,
   point: CadWorldPoint,
 ): number => cadNormalizeAngleDeg((Math.atan2(point.y - center.y, point.x - center.x) * 180) / Math.PI);
+
+const cadCreateCurveMetrics = (radius: number, deltaDeg: number): CadCurveMetrics | null => {
+  if (!Number.isFinite(radius) || !Number.isFinite(deltaDeg)) return null;
+  if (radius <= 1e-12 || deltaDeg <= 1e-9 || deltaDeg >= 180 - 1e-9) return null;
+  const deltaRad = (deltaDeg * Math.PI) / 180;
+  return {
+    radius,
+    deltaDeg,
+    arcLength: radius * deltaRad,
+    chordLength: 2 * radius * Math.sin(deltaRad / 2),
+    tangentLength: radius * Math.tan(deltaRad / 2),
+  };
+};
+
+export const cadBuildCurveMetricsFromRadiusDelta = (
+  radius: number,
+  deltaDeg: number,
+): CadCurveMetrics | null => cadCreateCurveMetrics(radius, deltaDeg);
+
+export const cadBuildCurveMetricsFromArcLength = (
+  radius: number,
+  arcLength: number,
+): CadCurveMetrics | null => {
+  if (!Number.isFinite(radius) || !Number.isFinite(arcLength) || radius <= 1e-12 || arcLength <= 1e-12) {
+    return null;
+  }
+  const deltaDeg = (arcLength / radius) * (180 / Math.PI);
+  return cadCreateCurveMetrics(radius, deltaDeg);
+};
+
+export const cadBuildCurveMetricsFromChordLength = (
+  radius: number,
+  chordLength: number,
+): CadCurveMetrics | null => {
+  if (
+    !Number.isFinite(radius) ||
+    !Number.isFinite(chordLength) ||
+    radius <= 1e-12 ||
+    chordLength <= 1e-12 ||
+    chordLength >= 2 * radius - 1e-9
+  ) {
+    return null;
+  }
+  const ratio = Math.max(-1, Math.min(1, chordLength / (2 * radius)));
+  const deltaDeg = (2 * Math.asin(ratio) * 180) / Math.PI;
+  return cadCreateCurveMetrics(radius, deltaDeg);
+};
+
+export const cadBuildCurveMetricsFromTangentLength = (
+  radius: number,
+  tangentLength: number,
+): CadCurveMetrics | null => {
+  if (
+    !Number.isFinite(radius) ||
+    !Number.isFinite(tangentLength) ||
+    radius <= 1e-12 ||
+    tangentLength <= 1e-12
+  ) {
+    return null;
+  }
+  const deltaDeg = (2 * Math.atan(tangentLength / radius) * 180) / Math.PI;
+  return cadCreateCurveMetrics(radius, deltaDeg);
+};
 
 export const cadIsAngleOnArcSweep = (
   angleDeg: number,
@@ -104,6 +188,28 @@ export const cadIsAngleOnArcSweep = (
   if (Math.abs(start - end) <= toleranceDeg) return true;
   if (start <= end) return angle >= start - toleranceDeg && angle <= end + toleranceDeg;
   return angle >= start - toleranceDeg || angle <= end + toleranceDeg;
+};
+
+const cadChooseArcSweepAngles = (
+  firstAngleDeg: number,
+  throughAngleDeg: number,
+  secondAngleDeg: number,
+): { startAngleDeg: number; endAngleDeg: number; deltaDeg: number } => {
+  const forwardDelta = cadCounterClockwiseDeltaDeg(firstAngleDeg, secondAngleDeg);
+  const throughDelta = cadCounterClockwiseDeltaDeg(firstAngleDeg, throughAngleDeg);
+  if (throughDelta <= forwardDelta + 1e-9) {
+    return {
+      startAngleDeg: cadNormalizeAngleDeg(firstAngleDeg),
+      endAngleDeg: cadNormalizeAngleDeg(secondAngleDeg),
+      deltaDeg: forwardDelta,
+    };
+  }
+  const reverseDelta = cadCounterClockwiseDeltaDeg(secondAngleDeg, firstAngleDeg);
+  return {
+    startAngleDeg: cadNormalizeAngleDeg(secondAngleDeg),
+    endAngleDeg: cadNormalizeAngleDeg(firstAngleDeg),
+    deltaDeg: reverseDelta,
+  };
 };
 
 const dedupeCadPoints = (points: CadWorldPoint[], tolerance = 1e-9): CadWorldPoint[] => {
@@ -265,6 +371,129 @@ export const cadBuildPerpendicularFoot = (
   return {
     x: lineStart.x + dx * t,
     y: lineStart.y + dy * t,
+  };
+};
+
+export const cadBuildArcFromThreePoints = (
+  startPoint: CadWorldPoint,
+  throughPoint: CadWorldPoint,
+  endPoint: CadWorldPoint,
+): CadArcDefinition | null => {
+  const denominator =
+    2 *
+    (
+      startPoint.x * (throughPoint.y - endPoint.y) +
+      throughPoint.x * (endPoint.y - startPoint.y) +
+      endPoint.x * (startPoint.y - throughPoint.y)
+    );
+  if (Math.abs(denominator) <= 1e-12) return null;
+
+  const startSquared = startPoint.x * startPoint.x + startPoint.y * startPoint.y;
+  const throughSquared = throughPoint.x * throughPoint.x + throughPoint.y * throughPoint.y;
+  const endSquared = endPoint.x * endPoint.x + endPoint.y * endPoint.y;
+  const center = {
+    x:
+      (startSquared * (throughPoint.y - endPoint.y) +
+        throughSquared * (endPoint.y - startPoint.y) +
+        endSquared * (startPoint.y - throughPoint.y)) /
+      denominator,
+    y:
+      (startSquared * (endPoint.x - throughPoint.x) +
+        throughSquared * (startPoint.x - endPoint.x) +
+        endSquared * (throughPoint.x - startPoint.x)) /
+      denominator,
+  };
+  const startAngleDeg = cadAngleDegFromCenter(center, startPoint);
+  const throughAngleDeg = cadAngleDegFromCenter(center, throughPoint);
+  const endAngleDeg = cadAngleDegFromCenter(center, endPoint);
+  const sweep = cadChooseArcSweepAngles(startAngleDeg, throughAngleDeg, endAngleDeg);
+  return {
+    center,
+    radius: cadDistance(center, startPoint),
+    startAngleDeg: sweep.startAngleDeg,
+    endAngleDeg: sweep.endAngleDeg,
+    startPoint:
+      Math.abs(sweep.startAngleDeg - startAngleDeg) <= 1e-9 ? { ...startPoint } : { ...endPoint },
+    endPoint:
+      Math.abs(sweep.endAngleDeg - endAngleDeg) <= 1e-9 ? { ...endPoint } : { ...startPoint },
+    deltaDeg: sweep.deltaDeg,
+  };
+};
+
+export const cadBuildTangentCurve = (
+  piPoint: CadWorldPoint,
+  backTangentPoint: CadWorldPoint,
+  aheadTangentPoint: CadWorldPoint,
+  radius: number,
+): CadArcDefinition | null => {
+  if (!Number.isFinite(radius) || radius <= 1e-12) return null;
+  const backVector = {
+    x: backTangentPoint.x - piPoint.x,
+    y: backTangentPoint.y - piPoint.y,
+  };
+  const aheadVector = {
+    x: aheadTangentPoint.x - piPoint.x,
+    y: aheadTangentPoint.y - piPoint.y,
+  };
+  const backLength = Math.hypot(backVector.x, backVector.y);
+  const aheadLength = Math.hypot(aheadVector.x, aheadVector.y);
+  if (backLength <= 1e-12 || aheadLength <= 1e-12) return null;
+
+  const incomingDirection = {
+    x: -backVector.x / backLength,
+    y: -backVector.y / backLength,
+  };
+  const outgoingDirection = {
+    x: aheadVector.x / aheadLength,
+    y: aheadVector.y / aheadLength,
+  };
+  const dot = Math.max(
+    -1,
+    Math.min(1, incomingDirection.x * outgoingDirection.x + incomingDirection.y * outgoingDirection.y),
+  );
+  const deltaDeg = (Math.acos(dot) * 180) / Math.PI;
+  const metrics = cadCreateCurveMetrics(radius, deltaDeg);
+  if (!metrics) return null;
+  if (metrics.tangentLength > backLength + 1e-9 || metrics.tangentLength > aheadLength + 1e-9) return null;
+
+  const startPoint = {
+    x: piPoint.x + (backVector.x / backLength) * metrics.tangentLength,
+    y: piPoint.y + (backVector.y / backLength) * metrics.tangentLength,
+  };
+  const endPoint = {
+    x: piPoint.x + (aheadVector.x / aheadLength) * metrics.tangentLength,
+    y: piPoint.y + (aheadVector.y / aheadLength) * metrics.tangentLength,
+  };
+  const turnCross = incomingDirection.x * outgoingDirection.y - incomingDirection.y * outgoingDirection.x;
+  const leftNormal = { x: -incomingDirection.y, y: incomingDirection.x };
+  const rightNormal = { x: incomingDirection.y, y: -incomingDirection.x };
+  const normal = turnCross >= 0 ? leftNormal : rightNormal;
+  const center = {
+    x: startPoint.x + normal.x * radius,
+    y: startPoint.y + normal.y * radius,
+  };
+  const startAngleDeg = cadAngleDegFromCenter(center, startPoint);
+  const endAngleDeg = cadAngleDegFromCenter(center, endPoint);
+  const forwardDelta = cadCounterClockwiseDeltaDeg(startAngleDeg, endAngleDeg);
+  if (Math.abs(forwardDelta - deltaDeg) <= 1e-6) {
+    return {
+      center,
+      radius,
+      startAngleDeg,
+      endAngleDeg,
+      startPoint,
+      endPoint,
+      deltaDeg,
+    };
+  }
+  return {
+    center,
+    radius,
+    startAngleDeg: endAngleDeg,
+    endAngleDeg: startAngleDeg,
+    startPoint: endPoint,
+    endPoint: startPoint,
+    deltaDeg,
   };
 };
 
