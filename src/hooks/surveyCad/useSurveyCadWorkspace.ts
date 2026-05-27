@@ -1,6 +1,12 @@
 import { useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from 'react';
 import { cadIntersectLineLikeEntities, isCadLineLikeEntity } from '../../engine/cad/cadCogo';
-import { getSelectedCadEntities, replaceCadSelection, toggleCadSelectionEntity } from '../../engine/cad/cadSelection';
+import {
+  clearCadSelection,
+  getSelectedCadEntities,
+  replaceCadSelection,
+  selectAllCadEntities,
+  toggleCadSelectionEntity,
+} from '../../engine/cad/cadSelection';
 import { buildCadBounds, buildCadProjectSignature } from '../../engine/cad/cadProjectState';
 import { cloneSurveyCadPersistedState } from '../../engine/cad/cadPersistence';
 import { buildMlightcadSpikeScene } from '../../engine/cad/cadMlightcadAdapter';
@@ -434,12 +440,37 @@ export const useSurveyCadWorkspace = (
       });
     },
     selectAll: () => {
-      setHistory((current) => runCadCommand(current, { key: 'SELECT_ALL' }));
+      setHistory((current) => {
+        const nextSelection = selectAllCadEntities(current.present.project);
+        return {
+          ...current,
+          present: {
+            ...current.present,
+            selection: nextSelection,
+          },
+          commandState: {
+            key: 'IDLE',
+            phase: 'idle',
+            prompt: `Selected ${nextSelection.selectedEntityIds.length} entr${nextSelection.selectedEntityIds.length === 1 ? 'y' : 'ies'}.`,
+          },
+        };
+      });
     },
     updatePointerWorldPoint,
     setSnapPreference,
     clearSelection: () => {
-      setHistory((current) => runCadCommand(current, { key: 'CLEAR_SELECTION' }));
+      setHistory((current) => ({
+        ...current,
+        present: {
+          ...current.present,
+          selection: clearCadSelection(),
+        },
+        commandState: {
+          key: 'IDLE',
+          phase: 'idle',
+          prompt: 'Selection cleared.',
+        },
+      }));
     },
     eraseSelection: () => {
       setHistory((current) => runCadCommand(current, { key: 'ERASE' }));

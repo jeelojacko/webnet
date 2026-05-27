@@ -1,3 +1,5 @@
+- [x] Survey CAD interaction polish batch (May 2026): keep selection-only changes out of undo/redo history, fix viewport cursor/world-point drift away from screen center, and stop post-create auto-zoom resets after CAD entity edits.
+
 - [x] Survey CAD live-app undo persistence batch (May 2026): stop CAD history from resetting on parent rerenders with equivalent base-project inputs, and add a parent-backed regression that proves undo survives persisted-state updates in the real app wiring.
 
 - [x] Survey CAD undo + clipboard insertion batch (May 2026): fix direct viewport-command keyboard undo when toolbar buttons still own focus, and replace fixed-offset CAD paste with a real insertion-point workflow plus live preview.

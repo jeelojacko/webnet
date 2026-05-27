@@ -227,6 +227,11 @@ describe('SurveyCadWorkspace', () => {
     expect(container.querySelector('[data-survey-cad-selection-count]')?.textContent).toContain(
       '8 selected',
     );
+    const undoButtonAfterSelection = Array.from(container.querySelectorAll('button')).find(
+      (entry) => entry.textContent?.trim() === 'UNDO',
+    ) as HTMLButtonElement | undefined;
+    if (!undoButtonAfterSelection) throw new Error('Undo button not found');
+    expect(undoButtonAfterSelection.disabled).toBe(true);
 
     await act(async () => {
       clickButton(container, 'ERASE');
@@ -247,6 +252,63 @@ describe('SurveyCadWorkspace', () => {
     expect(container.querySelector('[data-survey-cad-command-status]')?.textContent).toContain(
       'Undo ERASE',
     );
+
+    await act(async () => {
+      root.unmount();
+    });
+    container.remove();
+  });
+
+  it('keeps point placement aligned with the cursor even when the viewport aspect ratio introduces vertical letterboxing', async () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root: Root = createRoot(container);
+
+    await act(async () => {
+      root.render(
+        <SurveyCadWorkspace
+          input={input}
+          instrumentLibrary={{}}
+          parseOptions={parseOptions}
+          units="m"
+          result={null}
+        />,
+      );
+    });
+
+    const preview = container.querySelector('[data-survey-cad-preview]') as SVGElement | null;
+    if (!preview) throw new Error('Preview not found');
+    Object.defineProperty(preview, 'getBoundingClientRect', {
+      configurable: true,
+      value: () => ({
+        x: 0,
+        y: 0,
+        left: 0,
+        top: 0,
+        width: 900,
+        height: 700,
+        right: 900,
+        bottom: 700,
+        toJSON: () => ({}),
+      }),
+    });
+
+    await act(async () => {
+      clickButton(container, 'POINT');
+      preview.dispatchEvent(
+        new MouseEvent('mousemove', {
+          bubbles: true,
+          clientX: 450,
+          clientY: 600,
+        }),
+      );
+    });
+
+    const previewPoint = container.querySelector(
+      '[data-survey-cad-command-preview-point]',
+    ) as SVGCircleElement | null;
+    if (!previewPoint) throw new Error('Preview point not found');
+    expect(Number(previewPoint.getAttribute('cy'))).toBeCloseTo(510, 1);
 
     await act(async () => {
       root.unmount();
@@ -462,6 +524,49 @@ describe('SurveyCadWorkspace', () => {
     expect(container.querySelector('[data-survey-cad-command-status]')?.textContent).toContain(
       'LINE active',
     );
+
+    await act(async () => {
+      root.unmount();
+    });
+    container.remove();
+  });
+
+  it('does not auto-reframe the camera when entity edits expand project extents', async () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root: Root = createRoot(container);
+
+    await act(async () => {
+      root.render(
+        <SurveyCadWorkspace
+          input={input}
+          instrumentLibrary={{}}
+          parseOptions={parseOptions}
+          units="m"
+          result={null}
+        />,
+      );
+    });
+
+    const preview = container.querySelector('[data-survey-cad-preview]') as SVGElement | null;
+    if (!preview) throw new Error('Preview not found');
+    mockElementRect(preview);
+
+    const firstLine = () => preview.querySelector('line.cursor-pointer') as SVGLineElement | null;
+    const startingX1 = Number(firstLine()?.getAttribute('x1') ?? Number.NaN);
+    const commandInput = container.querySelector('[data-survey-cad-command-input]') as HTMLInputElement | null;
+    if (!commandInput) throw new Error('Command input not found');
+
+    await act(async () => {
+      clickButton(container, 'POINT');
+      setTextInputValue(commandInput, 'EXT1=500,500');
+      pressKey(commandInput, 'Enter');
+    });
+
+    expect(container.querySelector('[data-survey-cad-entity-count]')?.textContent).toContain(
+      '10 entities',
+    );
+    expect(Number(firstLine()?.getAttribute('x1') ?? Number.NaN)).toBeCloseTo(startingX1, 6);
 
     await act(async () => {
       root.unmount();

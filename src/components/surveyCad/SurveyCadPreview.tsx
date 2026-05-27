@@ -10,6 +10,7 @@ import type { CadSnapPreferences } from '../../hooks/surveyCad/useSurveyCadSnapp
 
 interface SurveyCadPreviewProps {
   scene: CadDisplayScene;
+  viewBounds: CadBounds | null;
   selectedEntityIds: readonly string[];
   activeSnap: CadSnapCandidate | null;
   commandPreviewPrimitives: readonly CadDisplayPrimitive[];
@@ -296,6 +297,7 @@ const renderPrimitive = (
 
 const SurveyCadPreview: React.FC<SurveyCadPreviewProps> = ({
   scene,
+  viewBounds,
   selectedEntityIds,
   activeSnap,
   commandPreviewPrimitives,
@@ -318,7 +320,7 @@ const SurveyCadPreview: React.FC<SurveyCadPreviewProps> = ({
   onCommandInputEscape,
   onZoomExtents,
 }) => {
-  const { baseScale, normalized, project, scale, unproject } = useProjector(scene.bounds, viewport);
+  const { baseScale, normalized, project, scale, unproject } = useProjector(viewBounds, viewport);
   const [dragState, setDragState] = useState<DragState>({ kind: 'none' });
   const [didDrag, setDidDrag] = useState(false);
   const [snapMenuOpen, setSnapMenuOpen] = useState(false);
@@ -336,10 +338,15 @@ const SurveyCadPreview: React.FC<SurveyCadPreviewProps> = ({
   ): { rect: DOMRect; viewX: number; viewY: number } | null => {
     const rect = event.currentTarget.getBoundingClientRect();
     if (rect.width <= 0 || rect.height <= 0) return null;
+    const scaleFactor = Math.min(rect.width / WIDTH, rect.height / HEIGHT);
+    const contentWidth = WIDTH * scaleFactor;
+    const contentHeight = HEIGHT * scaleFactor;
+    const offsetX = (rect.width - contentWidth) / 2;
+    const offsetY = (rect.height - contentHeight) / 2;
     return {
       rect,
-      viewX: ((event.clientX - rect.left) / rect.width) * WIDTH,
-      viewY: ((event.clientY - rect.top) / rect.height) * HEIGHT,
+      viewX: (event.clientX - rect.left - offsetX) / scaleFactor,
+      viewY: (event.clientY - rect.top - offsetY) / scaleFactor,
     };
   };
 

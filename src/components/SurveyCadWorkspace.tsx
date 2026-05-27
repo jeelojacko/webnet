@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from 'react';
 import type { AdjustmentResult, InstrumentLibrary, ParseOptions, UnitsMode } from '../types';
 import { buildSurveyCadSpikeProject } from '../engine/cad/cadModel';
-import type { SurveyCadPersistedState } from '../engine/cad/cadTypes';
+import type { CadBounds, SurveyCadPersistedState } from '../engine/cad/cadTypes';
 import { noteUiTabReady } from '../hooks/useUiPerfMonitor';
 import { useSurveyCadWorkspace } from '../hooks/surveyCad/useSurveyCadWorkspace';
 import SurveyCadCommandLine from './surveyCad/SurveyCadCommandLine';
@@ -26,6 +26,16 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
   persistedState = null,
   onPersistedStateChange = (_value) => null,
 }) => {
+  const cloneBounds = (bounds: CadBounds | null): CadBounds | null =>
+    bounds
+      ? {
+          minX: bounds.minX,
+          minY: bounds.minY,
+          maxX: bounds.maxX,
+          maxY: bounds.maxY,
+        }
+      : null;
+
   useEffect(() => {
     noteUiTabReady('survey-cad');
   }, []);
@@ -87,6 +97,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     redo,
   } = useSurveyCadWorkspace(cadProject, persistedState, onPersistedStateChange);
   const [viewport, setViewport] = useState({ zoom: 1, panX: 0, panY: 0 });
+  const [viewBounds, setViewBounds] = useState<CadBounds | null>(() => cloneBounds(cadProject.bounds));
   const [copiedEntityIds, setCopiedEntityIds] = useState<string[]>([]);
   const copiedEntityIdsRef = useRef<string[]>([]);
 
@@ -110,7 +121,8 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
 
   useEffect(() => {
     setViewport({ zoom: 1, panX: 0, panY: 0 });
-  }, [activeProject.id, activeProject.bounds?.minX, activeProject.bounds?.minY, activeProject.bounds?.maxX, activeProject.bounds?.maxY]);
+    setViewBounds(cloneBounds(cadProject.bounds));
+  }, [cadProject.bounds, cadProject.id]);
 
   useEffect(() => {
     const isEditableTarget = (target: EventTarget | null): boolean =>
@@ -229,6 +241,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
           <div className="h-full rounded-lg border border-slate-800 bg-slate-950/70 p-3">
             <SurveyCadPreview
               scene={displayScene}
+              viewBounds={viewBounds}
               selectedEntityIds={selectedEntityIds}
               activeSnap={activeSnap}
               commandPreviewPrimitives={commandPreviewPrimitives}
@@ -257,7 +270,10 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
                   clearSelection();
                 }
               }}
-              onZoomExtents={() => setViewport({ zoom: 1, panX: 0, panY: 0 })}
+              onZoomExtents={() => {
+                setViewBounds(cloneBounds(activeProject.bounds));
+                setViewport({ zoom: 1, panX: 0, panY: 0 });
+              }}
             />
           </div>
         </section>
