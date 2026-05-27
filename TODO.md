@@ -1,3 +1,17 @@
+- [x] Survey CAD phase-1/2 completion batch (May 2026): expand native entity families, persist CAD project state inside current WebNet project storage and bundles, prove a simple DXF/runtime path through the published `mlightcad` data-model, and audit phases 0-3 acceptance criteria against focused tests/fixtures.
+
+- [x] Survey CAD phase-4 cogo-core batch (May 2026): add native COGO inverse helpers, explicit bearing/azimuth-distance point creation, and first line-line intersection point workflow on top of the phase-3 command/history seams.
+
+- [x] Survey CAD remaining phase-3 batch (May 2026): add `PLINE`, `MOVE`, and `COPY` on the native command/history seams, extend interactive command sessions to finish multi-step edits, and add full survey bearing-distance typed input alongside existing coordinate and azimuth-distance entry.
+
+- [x] Survey CAD interactive-command batch (May 2026): add interactive command sessions with typed coordinate input, extend snapping through line intersections, and ship first create/query commands (`POINT`, `LINE`, `INVERSE`) on top of the native history/model seams.
+
+- [x] Survey CAD snapping + phase-audit batch (May 2026): add layer/style + spatial-index + snap-manager seams with focused geometry tests, wire snap feedback into the Survey CAD spike workspace, and tighten Phase 1/2 docs so only real renderer-runtime blockers remain open.
+
+- [x] Survey CAD command-foundation batch (May 2026): add native selection-set and transaction-history seams, wire them into the Survey CAD spike workspace, and ship first command-surface actions (`Select All`, `Clear Selection`, `ERASE`, `Undo`, `Redo`) without changing solver/parity behavior.
+
+- [x] Survey CAD renderer/model spike batch (May 2026): add native CAD entity/adaptor seams under `src/engine/cad/`, prove them with an internal SVG Survey CAD preview built from current WebNet input/result state, and document why actual `mlightcad` runtime installation remains deferred behind the current LibreDWG/GPL package boundary.
+
 - [x] Survey CAD planning groundwork batch (May 2026): add a branch-local Survey CAD workspace seam beside `Project Options`, preserve the attached high-level plan in `docs/`, and seed repo-fit architecture/TODO/licensing/evaluation/ADR docs for later CAD implementation batches.
 
 - [x] Preanalysis one-click transform apply batch (May 2026): let bypass/decommission/move recommendations enter the shared apply+rereun workflow by normalizing preanalysis action state, transforming input for removal/relocation scenarios, and updating focused planner/report/run-session coverage.

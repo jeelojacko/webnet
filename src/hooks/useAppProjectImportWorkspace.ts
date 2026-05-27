@@ -22,6 +22,7 @@ import type {
   InstrumentLibrary,
   ProjectExportFormat,
 } from '../types';
+import type { SurveyCadPersistedState } from '../engine/cad/cadTypes';
 import type { InputPaneHandle } from '../components/InputPane';
 import type { ProjectRunFile } from '../engine/projectWorkspace';
 import { useImportReviewWorkflow } from './useImportReviewWorkflow';
@@ -40,6 +41,7 @@ interface UseAppProjectImportWorkspaceArgs {
   adjustedPointsExportSettings: AdjustedPointsExportSettings;
   adjustedPointsExportSettingsDraft: AdjustedPointsExportSettings;
   planningMap: NonNullable<WorkspaceDraftSnapshot['view']['planningMap']>;
+  surveyCadState: SurveyCadPersistedState | null;
   projectInstruments: InstrumentLibrary;
   selectedInstrument: string;
   levelLoopCustomPresets: CustomLevelLoopTolerancePreset[];
@@ -57,6 +59,7 @@ interface UseAppProjectImportWorkspaceArgs {
   setPlanningMap: Dispatch<
     SetStateAction<NonNullable<WorkspaceDraftSnapshot['view']['planningMap']>>
   >;
+  setSurveyCadState: Dispatch<SetStateAction<SurveyCadPersistedState | null>>;
   setProjectInstruments: Dispatch<SetStateAction<InstrumentLibrary>>;
   setSelectedInstrument: Dispatch<SetStateAction<string>>;
   setLevelLoopCustomPresets: Dispatch<SetStateAction<CustomLevelLoopTolerancePreset[]>>;
@@ -94,6 +97,7 @@ export const useAppProjectImportWorkspace = ({
   adjustedPointsExportSettings,
   adjustedPointsExportSettingsDraft,
   planningMap,
+  surveyCadState,
   projectInstruments,
   selectedInstrument,
   levelLoopCustomPresets,
@@ -109,6 +113,7 @@ export const useAppProjectImportWorkspace = ({
   setExportFormat,
   setAdjustedPointsExportSettings,
   setPlanningMap,
+  setSurveyCadState,
   setProjectInstruments,
   setSelectedInstrument,
   setLevelLoopCustomPresets,
@@ -162,6 +167,7 @@ export const useAppProjectImportWorkspace = ({
     exportFormat,
     adjustedPointsExportSettings,
     planningMap,
+    surveyCadState,
     savedRunSnapshots,
     projectInstruments,
     selectedInstrument,
@@ -175,6 +181,7 @@ export const useAppProjectImportWorkspace = ({
     setExportFormat,
     setAdjustedPointsExportSettings,
     setPlanningMap,
+    setSurveyCadState,
     setProjectInstruments,
     setSelectedInstrument,
     setLevelLoopCustomPresets,

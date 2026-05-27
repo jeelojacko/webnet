@@ -134,10 +134,30 @@ Representative areas:
 - `InputPane`
 - `ReportView` and `src/components/report/*`
 - `MapView`
-- `SurveyCadWorkspace` as the current CAD planning/workspace entry seam
+- `SurveyCadWorkspace` plus `src/components/surveyCad/*` as the current CAD spike entry seam
 - import-review modal
 - Project Options modal
 - workspace shell and toolbar components
+
+Current Survey CAD spike seams:
+- `src/engine/cad/cadTypes.ts` defines native CAD entities, now including arc, polyline, polygon, and parcel families plus persisted Survey CAD project-state payloads
+- `src/engine/cad/cadModel.ts` builds a native CAD project from current WebNet input or solved results
+- `src/engine/cad/cadProjectState.ts` owns CAD project bounds/signature helpers used by renderer and history layers
+- `src/engine/cad/cadPersistence.ts` owns deterministic clone/sanitize helpers for Survey CAD state persisted through WebNet project files, bundles, and recovery state
+- `src/engine/cad/cadLayers.ts` and `src/engine/cad/cadStyles.ts` define the current default layer/style/linetype/symbol tables for the spike
+- `src/engine/cad/cadCogo.ts` owns the first explicit COGO helper layer for inverse summaries, survey bearing formatting, bearing-distance point creation, and line-like intersections
+- `src/engine/cad/cadSelection.ts` owns deterministic selection-set state over native entity IDs
+- `src/engine/cad/cadSpatialIndex.ts` owns snap/select candidate search over native CAD entities, including line/polyline segment snapping and intersections
+- `src/engine/cad/cadGeometry.ts` owns reusable 2D CAD geometry helpers such as inverse, midpoint, segment nearest-point, intersection, and azimuth-distance resolution
+- `src/engine/cad/cadRenderer.ts` converts native entities into renderer-neutral display primitives
+- `src/engine/cad/cadMlightcadAdapter.ts` converts the same native entities into an inferred `mlightcad`-target scene contract while preserving native IDs
+- `src/engine/cad/cadTransactions.ts` and `src/engine/cad/cadUndoRedo.ts` own the first command registry, transaction journal, and undo/redo replay seam, now including explicit `COGO_POINT` and `INTERSECT_POINT` commits
+- `src/hooks/surveyCad/useSurveyCadCommands.ts` owns interactive command sessions for typed input plus snap-fed `POINT`, `COGO PT`, `LINE`, `PLINE`, `INVERSE`, `MOVE`, and `COPY`, including coordinate, azimuth-distance, and survey bearing-distance entry
+- `src/hooks/surveyCad/useSurveyCadWorkspace.ts` wires native CAD project state into selection, command history, renderer outputs, and persisted Survey CAD workspace state for the Survey CAD workspace
+- `src/hooks/surveyCad/useSurveyCadSnapping.ts` resolves point-node / endpoint / midpoint / nearest snaps from the native spatial index
+- `src/components/surveyCad/SurveyCadPreview.tsx` proves the adapter path through an internal SVG renderer without changing the main map stack
+- `src/components/surveyCad/SurveyCadCommandLine.tsx` and `src/components/surveyCad/SurveyCadStatusBar.tsx` expose the first command/status surface for selection and edit-history work
+- `src/hooks/useProjectFileWorkflow.ts`, `src/hooks/useAppWorkspaceDraft.ts`, and `src/hooks/useWorkspaceProjectState.ts` now persist the Survey CAD workspace snapshot alongside the existing WebNet project/session state so CAD edits survive manifest save/load, portable exports, and local recovery
 
 The UI should treat solve results as the source of truth and avoid duplicating engine logic in view code.
 

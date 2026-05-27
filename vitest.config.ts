@@ -5,5 +5,6 @@ export default defineConfig({
     environment: 'node',
     globals: true,
     exclude: [...configDefaults.exclude, 'tests-browser/**'],
+    pool: process.platform === 'win32' ? 'threads' : 'forks',
   },
 });

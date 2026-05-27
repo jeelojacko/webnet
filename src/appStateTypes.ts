@@ -59,6 +59,7 @@ import type {
 } from './engine/importReview';
 import type { PreparedAssociatedProjectSettingsImport } from './hooks/useProjectFileWorkflow';
 import type { SavedRunSnapshot } from './engine/qaWorkflow';
+import type { SurveyCadPersistedState } from './engine/cad/cadTypes';
 
 export type Units = 'm' | 'ft';
 export type UiTheme =
@@ -194,6 +195,7 @@ export type WorkspaceDraftSnapshot = {
   levelLoopCustomPresets: CustomLevelLoopTolerancePreset[];
   geoidSourceDataBase64: string | null;
   geoidSourceDataLabel: string;
+  surveyCadState?: SurveyCadPersistedState;
   view: WorkspaceViewState;
   comparisonView: WorkspaceComparisonViewState;
   savedRunSnapshots: PersistedSavedRunSnapshot[];

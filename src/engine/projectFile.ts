@@ -14,6 +14,10 @@ import {
   sanitizeAdjustedPointsExportSettings,
 } from './adjustedPointsExport';
 import { clonePlanningMapState, sanitizePlanningMapState } from './planningMapState';
+import {
+  cloneSurveyCadPersistedState,
+  sanitizeSurveyCadPersistedState,
+} from './cad/cadPersistence';
 import { normalizeListingSortObservationsBy } from '../listingSortObservations';
 import {
   buildProjectFileStoragePath,
@@ -67,6 +71,7 @@ export interface ParsedProjectPayload {
     projectInstruments: InstrumentLibrary;
     selectedInstrument: string;
     levelLoopCustomPresets: CustomLevelLoopTolerancePreset[];
+    surveyCad?: import('./cad/cadTypes').SurveyCadPersistedState;
   };
   workspace?: {
     projectId: string;
@@ -631,6 +636,9 @@ export const serializeProjectFile = (project: ParsedProjectPayload): string => {
       levelLoopCustomPresets: project.project.levelLoopCustomPresets.map((preset) => ({
         ...preset,
       })),
+      surveyCad: project.project.surveyCad
+        ? cloneSurveyCadPersistedState(project.project.surveyCad)
+        : undefined,
     },
     preferredFocusedFileId: project.workspace?.focusedFileId,
   });
@@ -807,6 +815,7 @@ export const parseProjectFile = (
     project.levelLoopCustomPresets,
     defaults.levelLoopCustomPresets,
   );
+  const surveyCad = sanitizeSurveyCadPersistedState(project.surveyCad);
 
   return {
     ok: true,
@@ -837,6 +846,7 @@ export const parseProjectFile = (
         projectInstruments,
         selectedInstrument,
         levelLoopCustomPresets,
+        surveyCad,
       },
       workspace:
         rawSchemaVersion >= 4

@@ -11,6 +11,59 @@ import WorkspaceChrome from '../src/components/WorkspaceChrome';
 import { LSAEngine } from '../src/engine/adjust';
 import { buildQaDerivedResult } from '../src/engine/qaWorkflow';
 import type { WorkspaceTabKey } from '../src/appStateTypes';
+import type { ParseOptions } from '../src/types';
+
+const surveyCadParseOptions: ParseOptions = {
+  units: 'm',
+  coordMode: '2D',
+  coordSystemMode: 'local',
+  crsId: '',
+  localDatumScheme: 'average-scale',
+  averageScaleFactor: 1,
+  scaleOverrideActive: false,
+  commonElevation: 0,
+  averageGeoidHeight: 0,
+  reductionContext: {
+    inputSpaceDefault: 'measured',
+    distanceKind: 'ground',
+    bearingKind: 'grid',
+    explicitOverrideActive: false,
+  },
+  observationMode: {
+    bearing: 'grid',
+    distance: 'measured',
+    angle: 'measured',
+    direction: 'measured',
+  },
+  gridBearingMode: 'grid',
+  gridDistanceMode: 'measured',
+  gridAngleMode: 'measured',
+  gridDirectionMode: 'measured',
+  runMode: 'adjustment',
+  preanalysisMode: false,
+  order: 'EN',
+  angleStationOrder: 'atfromto',
+  deltaMode: 'slope',
+  mapMode: 'off',
+  normalize: true,
+  faceNormalizationMode: 'on',
+  mapScaleFactor: 1,
+  applyCurvatureRefraction: false,
+  refractionCoefficient: 0.13,
+  verticalReduction: 'none',
+  lonSign: 'west-negative',
+  tsCorrelationEnabled: false,
+  tsCorrelationRho: 0.25,
+  tsCorrelationScope: 'set',
+  robustMode: 'none',
+  robustK: 1.5,
+  parseCompatibilityMode: 'strict',
+  parseModeMigrated: true,
+  sourceFile: '<test>',
+  includeFiles: {},
+  projectRunFiles: [],
+  currentInstrument: 'DEFAULT',
+};
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -217,7 +270,15 @@ describe('UI navigation smoothness', () => {
               onSnapshotChange={setMapSnapshot}
             />
           )}
-          renderSurveyCadContent={() => <SurveyCadWorkspace />}
+          renderSurveyCadContent={() => (
+            <SurveyCadWorkspace
+              input={benchmarkInput}
+              instrumentLibrary={{}}
+              parseOptions={surveyCadParseOptions}
+              units="m"
+              result={result}
+            />
+          )}
         />
       );
     };
@@ -375,7 +436,15 @@ describe('UI navigation smoothness', () => {
               onSnapshotChange={setMapSnapshot}
             />
           )}
-          renderSurveyCadContent={() => <SurveyCadWorkspace />}
+          renderSurveyCadContent={() => (
+            <SurveyCadWorkspace
+              input={benchmarkInput}
+              instrumentLibrary={{}}
+              parseOptions={surveyCadParseOptions}
+              units="m"
+              result={result}
+            />
+          )}
         />
       );
     };

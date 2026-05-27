@@ -57,6 +57,61 @@ describe('project bundle serialization', () => {
         projectInstruments: {},
         selectedInstrument: '',
         levelLoopCustomPresets: [],
+        surveyCad: {
+          version: 1,
+          sourceSignature: 'survey-cad-signature',
+          project: {
+            version: 1,
+            id: 'cad-project',
+            name: 'Survey CAD Bundle',
+            metadata: {
+              source: 'parsed-input',
+              runMode: 'adjustment',
+              units: 'm',
+              stationCount: 0,
+              observationCount: 0,
+              adjustedStationCount: 0,
+            },
+            layers: [
+              {
+                id: 'parcels',
+                name: 'Parcels',
+                color: '#ff8800',
+                visible: true,
+                locked: false,
+                role: 'planning',
+              },
+            ],
+            styleLibrary: {
+              lineTypes: [],
+              textStyles: [],
+              pointSymbols: [],
+              styles: [],
+            },
+            entities: [
+              {
+                id: 'parcel-1',
+                type: 'parcel',
+                layerId: 'parcels',
+                visible: true,
+                locked: false,
+                vertices: [
+                  { x: 0, y: 0 },
+                  { x: 20, y: 0 },
+                  { x: 20, y: 10 },
+                ],
+                vertexLabels: ['A', 'B', 'C'],
+                parcelName: 'Lot 1',
+              },
+            ],
+            bounds: {
+              minX: 0,
+              minY: 0,
+              maxX: 20,
+              maxY: 10,
+            },
+          },
+        },
       },
     });
 
@@ -70,6 +125,11 @@ describe('project bundle serialization', () => {
     expect(buildProjectSolveIncludeFiles(parsed.manifest, parsed.sourceTexts)).toEqual({
       'obs/job-1.dat': 'C B 10 20 0',
       'obs/job-2.dat': '.INCLUDE obs/job-1.dat',
+    });
+    expect(parsed.manifest.project.surveyCad?.project.entities[0]?.type).toBe('parcel');
+    expect(parsed.manifest.project.surveyCad?.project.entities[0]).toMatchObject({
+      id: 'parcel-1',
+      parcelName: 'Lot 1',
     });
   });
 });

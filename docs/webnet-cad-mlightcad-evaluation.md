@@ -22,6 +22,17 @@ From the public GitHub repo:
 - repo README advertises MIT license at repo level
 - repo README explicitly describes modular architecture and browser-only DWG/DXF handling
 
+Additional package metadata observed during this spike from npm package manifests:
+- `@mlightcad/cad-viewer@1.5.0`
+  - peer deps include `vue`, `vue-i18n`, `element-plus`, `@vueuse/core`, and `@mlightcad/cad-simple-viewer`
+- `@mlightcad/cad-simple-viewer@1.5.0`
+  - peer deps include `three`, `lodash-es`, and `@mlightcad/data-model`
+  - direct dependency includes `@mlightcad/libredwg-converter`
+- `@mlightcad/libredwg-converter@3.5.40`
+  - direct dependency includes `@mlightcad/libredwg-web`
+- `@mlightcad/libredwg-web@0.7.1`
+  - license is `GPL-3.0`
+
 Inference from published structure:
 - `cad-viewer` appears to be the full-featured packaged viewer UI
 - `cad-simple-viewer` appears intended as lower-level viewer surface with less UI coupling
@@ -40,12 +51,13 @@ Why:
 Planning conclusion:
 - do not target full `cad-viewer` UI first
 - evaluate `cad-simple-viewer` and renderer packages first
+- do not install `cad-simple-viewer` into core WebNet blindly while it still appears to drag the LibreDWG chain
 
 ### Which packages look useful?
 Most promising from current evidence:
-- `cad-simple-viewer`
 - `three-renderer`
 - `svg-renderer`
+- `data-model`
 - `cad-html-exporter` for later sharing/export ideas
 
 Potentially useful later:
@@ -83,6 +95,11 @@ Planning implication:
 - good signal for later plotting/layout support
 - still needs verification that model/layout state can be driven externally rather than stored only in viewer-native structures
 
+Current WebNet spike conclusion:
+- current branch is model-space only
+- layouts, sheets, and viewports should remain future WebNet-owned domains rather than viewer-runtime truth
+- adapter output should treat layout-space as another disposable projection once Phase 6 starts
+
 ### How are DXF and DWG parsed?
 Observed public statements:
 - DXF and DWG loading are first-class features in repo README
@@ -101,6 +118,42 @@ Current public picture:
 Planning implication:
 - treat DWG import as optional plugin/helper boundary
 - do not assume the entire mlightcad stack is MIT-safe just because the top viewer repo is MIT
+
+## What this spike implemented in WebNet
+This branch now includes:
+- native Survey CAD entities under `src/engine/cad/`
+- layer/style library defaults plus deterministic project-state helpers
+- renderer-neutral display scene adapter
+- inferred `mlightcad` export contract that preserves native WebNet IDs
+- internal SVG proof renderer in the Survey CAD workspace tab
+- selection, command-history, spatial-index, and snap-manager seams on top of the native model
+
+## Current WebNet render primitives worth reusing
+Current WebNet already has reusable render patterns that Survey CAD should adapt rather than replace:
+- point, line, label, and ellipse primitive shaping from the current SVG/map selector stack
+- separation between world-space geometry derivation and final screen-space projection
+- deterministic mapping from rendered object back to app-owned IDs
+- layered rendering posture where static geometry and interaction overlays can evolve independently
+- existing workspace command/status surfaces already proven in the main app shell
+
+This branch intentionally does not install `cad-simple-viewer` or `cad-viewer` into core WebNet yet.
+
+Reason:
+- current package chain suggests the easiest lower-level viewer path still drags the LibreDWG converter dependency into the app dependency graph
+- that is too much license/runtime ambiguity for a first core-app spike
+- the currently published `@mlightcad/cad-simple-viewer` install path also expects `@mlightcad/cad-html-exporter`, which was not published on npm during this spike, so the simple-viewer path is not currently reproducible in this repo
+
+## Actual runtime proof completed in this repo
+Focused runtime tests now prove the lower-level `mlightcad` seam without adopting the full viewer package:
+
+- `tests/fixtures/survey_cad/simple_runtime_probe.dxf` loads through the actual published `@mlightcad/data-model` runtime in `tests/cad_mlightcad_runtime.test.ts`
+- `tests/fixtures/survey_cad/triangle_network.dat` builds a native WebNet CAD project, then appends those entities into a real `AcDbDatabase` while preserving native entity IDs as runtime `objectId` values
+- layer visibility state is externally drivable by mutating `AcDbLayerTableRecord.isOff` and `isFrozen` on runtime layers created from WebNet-owned layer IDs
+
+Important nuance:
+- the package's ESM entry remains brittle under raw Node because it uses directory-style internal imports
+- the runtime proof therefore uses the published CJS build for the `data-model` package in tests
+- this is sufficient evidence for the adapter seam, but it is still not evidence that the full higher-level viewer packages are ready to ship inside core WebNet
 
 ### Reuse, fork, adapt, or reference only?
 Current planning recommendation:
@@ -160,17 +213,21 @@ Current planning recommendation:
 - performance is poor on realistic survey plans
 - DXF-only path is usable but every meaningful CAD workflow requires GPL DWG modules
 
-## Current planning recommendation
-Proceed with future branch:
+## Current recommendation
+Renderer/model spike status:
 
-```txt
-spike/mlightcad-renderer-adapter
-```
+- native-model spike complete
+- layer/style spike complete
+- adapter-contract spike complete
+- internal preview spike complete
+- internal selection/snap command surface complete
+- actual lower-level `data-model` runtime spike complete
+- actual `cad-simple-viewer` integration still blocked
 
-Do not start with:
-- parcel implementation
-- field-to-finish
-- surfaces
-- point clouds
+Go / no-go update:
+- go for continuing WebNet-native CAD model, snapping, commands, and DXF-boundary planning
+- no-go for installing the current higher-level `mlightcad` viewer path into core WebNet until an MIT-only path or explicit optional GPL boundary is proven and the broken published package chain is resolved
+
+Future external viewer work should proceed in a follow-up branch only after choosing an MIT-only path or an explicit optional GPL boundary.
 
 Renderer/model boundary needs proof first.

@@ -272,12 +272,12 @@ describe('Project Options modal interactions', () => {
         root.render(<App initialSettingsModalOpen={false} />);
       });
 
-      expect(container.textContent).not.toContain('Survey CAD Planning Workspace');
+      expect(container.textContent).not.toContain('Survey CAD Renderer / Model Spike');
 
       await clickOpenSurveyCad(container);
 
-      expect(container.textContent).toContain('Survey CAD Planning Workspace');
-      expect(container.textContent).toContain('Lean survey CAD foundation for WebNet');
+      expect(container.textContent).toContain('Survey CAD Renderer / Model Spike');
+      expect(container.textContent).toContain('Native CAD model first, renderer adapter second');
       expect(container.textContent).toContain('webnet-survey-cad-master-plan.md');
     } finally {
       await act(async () => {

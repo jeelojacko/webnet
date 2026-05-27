@@ -25,19 +25,19 @@ Notes:
 - current branch intentionally stops at planning and shell groundwork
 
 ## Phase 1: Native CAD model and transactions
-- [ ] Create `src/engine/cad/` root module set.
-- [ ] Define `EntityId`, `LayerId`, `StyleId`, `CommandId`, `TransactionId`.
-- [ ] Define `BaseEntity`.
-- [ ] Define survey-rich point entities.
-- [ ] Define line/arc/polyline/polygon entities.
-- [ ] Define text/leader/dimension entities.
-- [ ] Define observation-vector and error-ellipse CAD overlays.
-- [ ] Define layer/style/linetype/symbol model.
-- [ ] Define CAD project-state domain to persist inside current WebNet project storage.
-- [ ] Define deterministic serialization order and schema versioning.
-- [ ] Define transaction log and undo/redo contracts.
-- [ ] Add focused serialization tests.
-- [ ] Add focused geometry primitive tests.
+- [x] Create `src/engine/cad/` root module set.
+- [x] Define `EntityId`, `LayerId`, and `StyleId` for spike scope.
+- [x] Define `BaseEntity`.
+- [x] Define survey-rich point entities for spike scope.
+- [x] Define line/text/error-ellipse entities for spike scope.
+- [x] Define observation-line and error-ellipse CAD overlays for spike scope.
+- [x] Define layer/style/linetype/symbol model.
+- [x] Expand entities to arc/polyline/polygon/parcel families.
+- [x] Define CAD project-state domain to persist inside current WebNet project storage.
+- [x] Define deterministic serialization-oriented project shape for spike scope.
+- [x] Define transaction log and undo/redo contracts.
+- [x] Add focused model/adapter tests.
+- [x] Add focused geometry primitive tests.
 
 Acceptance criteria:
 - native entities serialize and deserialize deterministically
@@ -49,16 +49,18 @@ Risks:
 - over-designing block/layout concepts before first use cases
 
 ## Phase 2: Renderer interface and mlightcad spike
-- [ ] Define renderer-neutral display adapter interface.
-- [ ] Inventory current WebNet map render primitives worth reusing.
-- [ ] Build tiny adapter for WebNet-native point/line/polygon/text/ellipse display payloads.
-- [ ] Prototype `mlightcad` integration against adapter, not project state.
-- [ ] Load simple DXF in spike environment.
-- [ ] Render WebNet-native entities through adapter.
-- [ ] Verify selection maps back to WebNet entity IDs.
-- [ ] Verify layer visibility can be driven from WebNet state.
-- [ ] Document model-space/layout-space fit.
-- [ ] Write renderer strategy ADR update with go/no-go decision.
+- [x] Define renderer-neutral display adapter interface.
+- [x] Inventory current WebNet map render primitives worth reusing.
+- [x] Build tiny adapter for WebNet-native point/line/text/ellipse display payloads.
+- [x] Prototype `mlightcad`-target export contract against adapter, not project state.
+- [x] Build internal SVG proof renderer from the same adapter output.
+- [x] Load simple DXF in spike environment.
+- [x] Render WebNet-native entities through adapter.
+- [x] Verify selection maps back to WebNet entity IDs in the internal spike renderer.
+- [x] Verify selection maps through actual `mlightcad` runtime.
+- [x] Verify layer visibility can be driven from actual `mlightcad` runtime state.
+- [x] Document model-space/layout-space fit.
+- [x] Write renderer strategy ADR update with go/no-go decision.
 
 Acceptance criteria:
 - no Vue rewrite required
@@ -67,19 +69,24 @@ Acceptance criteria:
 
 Risks:
 - mlightcad package split may still hide framework assumptions
+- current lower-level viewer path may still pull GPL LibreDWG chain into core dependency graph
 - text/linetype/block support may be coupled to external entity model
+- the published ESM package entry is still brittle under raw Node; runtime proof currently uses the published CJS build plus the lower-level `data-model` APIs instead of the un-installable `cad-simple-viewer` package
 
 ## Phase 3: Selection, snapping, and commands
-- [ ] Build selection-set model.
-- [ ] Build command registry and command history.
-- [ ] Build command state-machine base types.
-- [ ] Build snap manager.
-- [ ] Build spatial index for snap/select candidates.
-- [ ] Add point node, endpoint, midpoint, intersection, nearest snaps.
-- [ ] Add visual snap glyphs and status feedback.
-- [ ] Add `POINT`, `LINE`, `PLINE`, `MOVE`, `COPY`, `ERASE`, `INVERSE`.
-- [ ] Add coordinate input and bearing/distance input path.
-- [ ] Add undo/redo coverage for multi-entity edits.
+- [x] Build selection-set model.
+- [x] Build command registry and command history.
+- [x] Build command state-machine base types.
+- [x] Build snap manager.
+- [x] Build spatial index for snap/select candidates.
+- [x] Add point node, endpoint, midpoint, intersection, nearest snaps.
+- [x] Add visual snap glyphs and status feedback.
+- [x] Add `POINT`, `LINE`, `INVERSE`.
+- [x] Add `PLINE`, `MOVE`, `COPY`.
+- [x] Add `ERASE`.
+- [x] Add full survey bearing/distance input path.
+- [x] Add coordinate input and azimuth-distance input path.
+- [x] Add undo/redo coverage for multi-entity edits.
 
 Acceptance criteria:
 - commands are testable without DOM-heavy harnesses
@@ -87,10 +94,10 @@ Acceptance criteria:
 - undo/redo boundaries are deterministic
 
 ## Phase 4: COGO and parcel foundation
-- [ ] Add inverse calculations.
-- [ ] Add bearing-distance point creation.
-- [ ] Add azimuth-distance point creation.
-- [ ] Add line-line intersection.
+- [x] Add inverse calculations.
+- [x] Add bearing-distance point creation.
+- [x] Add azimuth-distance point creation.
+- [x] Add line-line intersection.
 - [ ] Add line-arc and arc-arc intersections.
 - [ ] Add offsets, parallels, perpendiculars.
 - [ ] Add curve creation helpers.
@@ -173,11 +180,34 @@ Acceptance criteria:
 - helper remains additive rather than architectural rewrite
 
 ## Decision records to maintain
-- [ ] ADR 0001 source of truth accepted or revised after renderer spike.
-- [ ] ADR 0002 renderer strategy updated after mlightcad spike.
+- [x] ADR 0001 source of truth accepted or revised after renderer spike.
+- [x] ADR 0002 renderer strategy updated after mlightcad spike.
 - [ ] ADR 0003 DWG/GPL boundary updated before any DWG shipping path.
 
 ## Validation notes
 - Add focused tests before broad checks for each phase.
 - Run parity gate only for phases that touch solver/listing/report behavior.
 - Keep `README.md`, `docs/ARCHITECTURE.md`, and `docs/CURRENT_BEHAVIOR.md` aligned when visible workflows change.
+
+## Phase 0-3 acceptance audit
+
+### Phase 0
+- `docs live in repo and are linked together`: satisfied by the committed Survey CAD doc set plus shell-entry coverage in `tests/workspace_chrome.test.tsx` and `tests/project_options_modal_interaction.test.tsx`.
+- `app shell exposes stable Survey CAD entry point`: satisfied by the toolbar/workspace tab tests above and the Survey CAD workspace smoke coverage in `tests/ui_navigation_smoothness.test.tsx`.
+- `no solver/parity behavior changes`: satisfied in scope; the implemented files stayed in `src/engine/cad/*`, `src/components/SurveyCadWorkspace.tsx`, and project-storage hooks, with no parser/solver output contract changes and no parity-gated tests requiring fixture updates.
+
+### Phase 1
+- `native entities serialize and deserialize deterministically`: satisfied by `tests/project_file.spec.ts`, `tests/project_bundle.spec.ts`, and `tests/cad_persistence_and_entities.test.ts`, including persisted parcel-family data and Survey CAD project-state round-trips.
+- `undo/redo can replay multi-entity edits`: satisfied by `tests/cad_command_history.test.ts`, which covers deterministic command history over create/move/copy/erase flows.
+- `no renderer dependency required for core model tests`: satisfied by the engine-only suites `tests/cad_command_history.test.ts`, `tests/cad_cogo.test.ts`, `tests/cad_spatial_index.test.ts`, and `tests/cad_persistence_and_entities.test.ts`.
+
+### Phase 2
+- `no Vue rewrite required`: satisfied by architecture; the live spike remains React-first with internal SVG preview coverage in `tests/survey_cad_workspace.test.tsx`.
+- `native WebNet IDs remain authoritative`: satisfied by `tests/cad_spike_model.test.ts` and `tests/cad_mlightcad_runtime.test.ts`, which prove native IDs survive both the inferred adapter and the actual published `data-model` runtime seam.
+- `renderer can be swapped later`: satisfied by the shared-native-project coverage in `tests/cad_spike_model.test.ts`, `tests/cad_persistence_and_entities.test.ts`, and `tests/cad_mlightcad_runtime.test.ts`, where one project feeds the internal renderer and the external-runtime adapter independently.
+- Fixture evidence: `tests/fixtures/survey_cad/simple_runtime_probe.dxf` proves DXF load through the actual runtime, and `tests/fixtures/survey_cad/triangle_network.dat` proves native-project-to-runtime ID/layer mapping.
+
+### Phase 3
+- `commands are testable without DOM-heavy harnesses`: satisfied primarily by `tests/cad_command_history.test.ts`.
+- `snaps resolve exact model coordinates`: satisfied by `tests/cad_spatial_index.test.ts`.
+- `undo/redo boundaries are deterministic`: satisfied by `tests/cad_command_history.test.ts` and reinforced by the interactive smoke path in `tests/survey_cad_workspace.test.tsx`.

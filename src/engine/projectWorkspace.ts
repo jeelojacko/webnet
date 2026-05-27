@@ -6,7 +6,9 @@ import type {
   ProjectExportFormat,
 } from '../types';
 import type { PersistedSavedRunSnapshot } from '../appStateTypes';
+import type { SurveyCadPersistedState } from './cad/cadTypes';
 import { createStableRuntimeId } from './id';
+import { cloneSurveyCadPersistedState } from './cad/cadPersistence';
 
 export const WEBNET_PROJECT_SCHEMA_VERSION = 5;
 
@@ -72,6 +74,7 @@ export interface ProjectManifestProjectPayload {
   projectInstruments: InstrumentLibrary;
   selectedInstrument: string;
   levelLoopCustomPresets: CustomLevelLoopTolerancePreset[];
+  surveyCad?: SurveyCadPersistedState;
 }
 
 interface ProjectManifestV5Base {
@@ -138,6 +141,7 @@ const cloneProjectPayload = (
   ),
   selectedInstrument: payload.selectedInstrument,
   levelLoopCustomPresets: payload.levelLoopCustomPresets.map((preset) => ({ ...preset })),
+  surveyCad: payload.surveyCad ? cloneSurveyCadPersistedState(payload.surveyCad) : undefined,
 });
 
 const cloneUiPayload = (payload: ProjectManifestUiPayload): ProjectManifestUiPayload => ({
