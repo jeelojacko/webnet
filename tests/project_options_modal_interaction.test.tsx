@@ -163,7 +163,7 @@ const clickOpenProjectWorkspace = async (container: HTMLElement): Promise<void> 
 
 const clickOpenSurveyCad = async (container: HTMLElement): Promise<void> => {
   const openButton = container.querySelector(
-    'button[title="Open Survey CAD workspace plan"]',
+    'button[title="Open Survey CAD workspace"]',
   ) as HTMLButtonElement | null;
   if (!openButton) throw new Error('Survey CAD launcher button not found.');
   await act(async () => {
@@ -272,13 +272,16 @@ describe('Project Options modal interactions', () => {
         root.render(<App initialSettingsModalOpen={false} />);
       });
 
-      expect(container.textContent).not.toContain('Survey CAD Renderer / Model Spike');
+      expect(container.textContent).not.toContain('Survey CAD Workspace');
 
       await clickOpenSurveyCad(container);
 
-      expect(container.textContent).toContain('Survey CAD Renderer / Model Spike');
-      expect(container.textContent).toContain('Native CAD model first, renderer adapter second');
+      expect(container.textContent).toContain('Survey CAD Workspace');
+      expect(container.textContent).toContain('Native Survey CAD workspace');
       expect(container.textContent).toContain('webnet-survey-cad-master-plan.md');
+      expect(container.querySelector('textarea')).toBeNull();
+      expect(container.textContent).not.toContain('Map & Ellipses');
+      expect(container.textContent).not.toContain('Adjustment Report');
     } finally {
       await act(async () => {
         root.unmount();

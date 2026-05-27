@@ -1,12 +1,16 @@
-import React, { useEffect, useMemo, type Dispatch, type SetStateAction } from 'react';
+import React, { useEffect, useMemo, useState, type Dispatch, type SetStateAction } from 'react';
 import {
+  Crosshair,
   Compass,
   FileCode2,
   FileText,
   GitBranch,
+  Minus,
   Layers3,
   Network,
+  Plus,
   Ruler,
+  ScanSearch,
 } from 'lucide-react';
 import type { AdjustmentResult, InstrumentLibrary, ParseOptions, UnitsMode } from '../types';
 import { buildSurveyCadSpikeProject } from '../engine/cad/cadModel';
@@ -108,6 +112,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     submitCommandInput,
     useActiveSnap,
     selectEntity,
+    selectEntities,
     updatePointerWorldPoint,
     selectAll,
     clearSelection,
@@ -126,48 +131,96 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
       .map((type) => ({ type, count: counts.get(type) ?? 0 }))
       .filter((entry) => entry.count > 0);
   }, [activeProject.entities]);
+  const [viewport, setViewport] = useState({ zoom: 1, panX: 0, panY: 0 });
+
+  useEffect(() => {
+    setViewport({ zoom: 1, panX: 0, panY: 0 });
+  }, [activeProject.id, activeProject.bounds?.minX, activeProject.bounds?.minY, activeProject.bounds?.maxX, activeProject.bounds?.maxY]);
 
   return (
-    <div className="h-full overflow-auto bg-slate-950 text-slate-100">
-      <div className="mx-auto flex max-w-7xl flex-col gap-6 px-5 py-6 md:px-8">
+    <div className="h-full overflow-hidden bg-slate-950 text-slate-100" data-survey-cad-dedicated-page>
+      <div className="flex h-full flex-col">
         <section className="rounded-xl border border-slate-800 bg-slate-900/80 p-5 shadow-lg shadow-slate-950/30">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="max-w-4xl">
               <div className="text-[11px] uppercase tracking-[0.28em] text-cyan-300">
-                Survey CAD Renderer / Model Spike
+                Survey CAD Workspace
               </div>
               <h2 className="mt-2 flex items-center gap-2 text-2xl font-semibold text-white">
                 <Ruler size={24} className="text-cyan-300" />
-                Native CAD model first, renderer adapter second
+                Native Survey CAD workspace
               </h2>
               <p className="mt-3 max-w-4xl text-sm leading-6 text-slate-300">
-                This spike builds a native Survey CAD project model from current WebNet input or
-                adjustment results, renders it through a lightweight internal SVG preview, and
-                exports the same entities into an `mlightcad`-target adapter contract. No GPL/DWG
-                runtime dependency is added to core WebNet in this branch.
+                This dedicated workspace builds a native Survey CAD project model from current
+                WebNet input or adjustment results, renders it through an internal SVG viewport,
+                and keeps renderer-adapter seams visible while core CAD commands, selection, and
+                COGO workflows continue to grow on the plan branch.
               </p>
             </div>
             <div className="min-w-[18rem] rounded-lg border border-cyan-900/70 bg-cyan-950/20 p-4 text-sm text-cyan-100">
               <div className="flex items-center gap-2 font-semibold">
                 <GitBranch size={16} />
-                Active spike branch
+                Implementation branch
               </div>
               <div className="mt-2 font-mono text-xs text-cyan-50/90">
-                spike/mlightcad-renderer-adapter
+                feature/webnet-survey-cad-plan
               </div>
               <div className="mt-2 text-xs leading-5 text-cyan-50/85">
-                Proof goals: native IDs, live entity preview, adapter export, and documented
-                package/license boundary.
+                Current focus: dedicated CAD workspace, native command workflows, viewport tools,
+                and documented package/license boundaries for future renderer work.
               </div>
             </div>
           </div>
         </section>
 
-        <section className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
-          <div className="rounded-xl border border-slate-800 bg-slate-900/70 p-5">
+        <div className="border-y border-slate-800 bg-slate-900/90 px-4 py-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setViewport((current) => ({ ...current, zoom: Math.min(16, current.zoom * 1.2) }))}
+              className="rounded-md border border-slate-700 bg-slate-950/70 px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-100 transition-colors hover:border-cyan-500/70 hover:bg-slate-900"
+            >
+              <span className="inline-flex items-center gap-2">
+                <Plus size={14} />
+                Zoom In
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewport((current) => ({ ...current, zoom: Math.max(0.35, current.zoom / 1.2) }))}
+              className="rounded-md border border-slate-700 bg-slate-950/70 px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-100 transition-colors hover:border-cyan-500/70 hover:bg-slate-900"
+            >
+              <span className="inline-flex items-center gap-2">
+                <Minus size={14} />
+                Zoom Out
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewport({ zoom: 1, panX: 0, panY: 0 })}
+              className="rounded-md border border-slate-700 bg-slate-950/70 px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-100 transition-colors hover:border-cyan-500/70 hover:bg-slate-900"
+            >
+              <span className="inline-flex items-center gap-2">
+                <ScanSearch size={14} />
+                Zoom Extents
+              </span>
+            </button>
+            <div className="ml-auto flex items-center gap-3 text-[11px] uppercase tracking-[0.18em] text-slate-400">
+              <span className="inline-flex items-center gap-1">
+                <Crosshair size={13} />
+                Drag Box Select
+              </span>
+              <span>MMB Pan</span>
+              <span>Wheel Zoom</span>
+            </div>
+          </div>
+        </div>
+
+        <section className="grid min-h-0 flex-1 gap-6 overflow-hidden px-5 py-6 md:px-8 xl:grid-cols-[minmax(0,1.3fr)_24rem]">
+          <div className="flex min-h-0 flex-col rounded-xl border border-slate-800 bg-slate-900/70 p-5">
             <div className="flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.22em] text-amber-300">
               <Network size={16} />
-              Live spike preview
+              Live CAD preview
             </div>
             <div className="mt-4">
               <SurveyCadCommandLine
@@ -203,12 +256,15 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
                 onRedo={redo}
               />
             </div>
-            <div className="mt-4 h-[34rem]">
+            <div className="mt-4 min-h-0 flex-1">
               <SurveyCadPreview
                 scene={displayScene}
                 selectedEntityIds={selectedEntityIds}
                 activeSnap={activeSnap}
+                viewport={viewport}
+                onViewportChange={setViewport}
                 onSelectEntity={selectEntity}
+                onSelectEntities={selectEntities}
                 onPointerWorldPointChange={updatePointerWorldPoint}
               />
             </div>
@@ -223,7 +279,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
             </div>
           </div>
 
-          <div className="flex flex-col gap-4">
+          <div className="flex min-h-0 flex-col gap-4 overflow-auto">
             <div className="rounded-xl border border-slate-800 bg-slate-900/70 p-5">
               <div className="flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.22em] text-emerald-300">
                 <Layers3 size={16} />
@@ -310,7 +366,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
           <div className="rounded-xl border border-slate-800 bg-slate-900/70 p-5">
             <div className="flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.22em] text-fuchsia-300">
               <FileCode2 size={16} />
-              `mlightcad` adapter export
+              Renderer adapter export
             </div>
             <div className="mt-4 rounded-lg border border-fuchsia-900/50 bg-fuchsia-950/15 px-4 py-3 text-xs leading-6 text-fuchsia-50/90">
               This JSON is the inferred handoff contract from native WebNet entities into a future
@@ -335,7 +391,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
             <div className="rounded-xl border border-slate-800 bg-slate-900/70 p-5">
               <div className="flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.22em] text-cyan-300">
                 <FileText size={16} />
-                Spike findings
+                Renderer findings
               </div>
               <div className="mt-4 grid gap-3 text-sm leading-6 text-slate-200">
                 <div className="rounded-lg border border-slate-800 bg-slate-950/60 px-4 py-3">
@@ -356,7 +412,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
             <div className="rounded-xl border border-slate-800 bg-slate-900/70 p-5">
               <div className="flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.22em] text-sky-300">
                 <FileText size={16} />
-                Spike docs
+                CAD docs
               </div>
               <div className="mt-4 grid gap-3 md:grid-cols-2">
                 {DOC_LINKS.map((doc) => (

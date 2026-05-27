@@ -9,6 +9,7 @@ import { createCadHistoryState, redoCadHistory, runCadCommand, undoCadHistory } 
 import { useSurveyCadCommands } from './useSurveyCadCommands';
 import { useSurveyCadSnapping } from './useSurveyCadSnapping';
 import type { CadProject, CadSnapCandidate, SurveyCadPersistedState } from '../../engine/cad/cadTypes';
+import type { CadEntityId } from '../../engine/cad/cadTypes';
 
 interface UseSurveyCadWorkspaceResult {
   cadProject: CadProject;
@@ -56,6 +57,7 @@ interface UseSurveyCadWorkspaceResult {
   submitCommandInput: () => void;
   useActiveSnap: () => void;
   selectEntity: (_entityId: string, _appendToSelection?: boolean) => void;
+  selectEntities: (_entityIds: string[], _appendToSelection?: boolean) => void;
   updatePointerWorldPoint: (_worldPoint: { x: number; y: number } | null) => void;
   selectAll: () => void;
   clearSelection: () => void;
@@ -139,7 +141,6 @@ export const useSurveyCadWorkspace = (
     if (selectedLineLikes.length !== 2) return null;
     return cadIntersectLineLikeEntities(selectedLineLikes[0], selectedLineLikes[1]);
   }, [selectedLineLikes]);
-
   useEffect(() => {
     onPersistedStateChange((current) => {
       const nextState = cloneSurveyCadPersistedState({
@@ -205,9 +206,36 @@ export const useSurveyCadWorkspace = (
     useActiveSnap,
     selectEntity: (entityId, appendToSelection = false) => {
       setHistory((current) => {
-        const nextSelection = appendToSelection
-          ? toggleCadSelectionEntity(current.present.project, current.present.selection, entityId)
-          : replaceCadSelection(current.present.project, [entityId]);
+        const nextSelection =
+          appendToSelection
+            ? toggleCadSelectionEntity(current.present.project, current.present.selection, entityId)
+            : replaceCadSelection(current.present.project, [entityId]);
+        return {
+          ...current,
+          present: {
+            ...current.present,
+            selection: nextSelection,
+          },
+          commandState: {
+            key: 'IDLE',
+            phase: 'idle',
+            prompt: `Selected ${nextSelection.selectedEntityIds.length} entr${nextSelection.selectedEntityIds.length === 1 ? 'y' : 'ies'}.`,
+          },
+        };
+      });
+    },
+    selectEntities: (entityIds, appendToSelection = false) => {
+      setHistory((current) => {
+        const selectedIdSet = appendToSelection
+          ? new Set<CadEntityId>([
+              ...current.present.selection.selectedEntityIds,
+              ...entityIds,
+            ])
+          : new Set<CadEntityId>(entityIds);
+        const orderedIds = current.present.project.entities
+          .filter((entity) => selectedIdSet.has(entity.id))
+          .map((entity) => entity.id);
+        const nextSelection = replaceCadSelection(current.present.project, orderedIds);
         return {
           ...current,
           present: {

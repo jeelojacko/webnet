@@ -28,6 +28,7 @@ Current implemented spike slice:
 - typed coordinate input plus `@azimuth,distance` and survey bearing-distance input after a first point
 - tangent-curve radius entry after snapped or typed PI/back/ahead points
 - inverse status now reports distance, azimuth, and survey bearing together
+- dedicated workspace viewport controls now include wheel zoom, middle-mouse pan, `Zoom Extents`, and drag-box selection ahead of later command batches
 
 ## Initial command families
 - `POINT`

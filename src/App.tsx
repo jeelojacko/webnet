@@ -403,6 +403,7 @@ const App: React.FC<AppProps> = ({
   );
   const [mapViewSnapshot, setMapViewSnapshot] = useState<MapViewSnapshot | null>(null);
   const [planningMapPreview, setPlanningMapPreview] = useState<ParseResult | null>(null);
+  const isSurveyCadWorkspaceActive = activeTab === 'survey-cad';
   useEffect(() => {
     setMapViewSnapshot(null);
   }, [result]);
@@ -1345,9 +1346,11 @@ const App: React.FC<AppProps> = ({
       />
       <AppToolbar
         isSidebarOpen={isSidebarOpen}
+        showSidebarToggle={!isSurveyCadWorkspaceActive}
+        isSurveyCadActive={isSurveyCadWorkspaceActive}
         onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
         onOpenProjectOptions={openProjectOptions}
-        onOpenSurveyCad={() => setActiveTab('survey-cad')}
+        onOpenSurveyCad={() => setActiveTab(isSurveyCadWorkspaceActive ? 'report' : 'survey-cad')}
         onOpenImportFile={() => triggerFileSelect()}
         onOpenProjectFile={handleOpenProjectWorkspacePanel}
         onSaveProject={handleSaveProject}
@@ -1473,7 +1476,7 @@ const App: React.FC<AppProps> = ({
       )}
 
       <div ref={layoutRef} className="flex-1 flex overflow-hidden w-full">
-        {isSidebarOpen && (
+        {!isSurveyCadWorkspaceActive && isSidebarOpen && (
           <>
             <div style={{ width: `${splitPercent}%` }}>
               <InputPane
@@ -1517,6 +1520,25 @@ const App: React.FC<AppProps> = ({
         )}
 
         <div className="flex flex-col bg-slate-950 flex-1 min-w-0 overflow-hidden">
+          {isSurveyCadWorkspaceActive ? (
+            <SurveyCadWorkspace
+              input={effectiveRunInput}
+              instrumentLibrary={projectInstruments}
+              parseOptions={{
+                ...parseSettings,
+                units: settings.units,
+                sourceFile: activeProjectRunFiles[0]?.name ?? '<survey-cad>',
+                includeFiles: effectiveRunIncludeFiles,
+                projectRunFiles: activeProjectRunFiles,
+                currentInstrument: selectedInstrument,
+              }}
+              units={settings.units}
+              result={result}
+              persistedState={surveyCadState}
+              onPersistedStateChange={setSurveyCadState}
+            />
+          ) : (
+            <>
           {settings.showRunComparisonPanel && showRunComparisonPanel && (
             <RunComparisonPanel
               currentSnapshot={currentRunSnapshot}
@@ -1773,6 +1795,8 @@ const App: React.FC<AppProps> = ({
               />
             )}
           />
+            </>
+          )}
         </div>
       </div>
 

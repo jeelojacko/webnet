@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import type {
   CadBounds,
   CadDisplayPrimitive,
@@ -10,13 +10,30 @@ interface SurveyCadPreviewProps {
   scene: CadDisplayScene;
   selectedEntityIds: readonly string[];
   activeSnap: CadSnapCandidate | null;
+  viewport: { zoom: number; panX: number; panY: number };
+  onViewportChange: (_viewport: { zoom: number; panX: number; panY: number }) => void;
   onSelectEntity: (_entityId: string, _appendToSelection?: boolean) => void;
+  onSelectEntities: (_entityIds: string[], _appendToSelection?: boolean) => void;
   onPointerWorldPointChange: (_worldPoint: { x: number; y: number } | null) => void;
 }
 
 const WIDTH = 900;
 const HEIGHT = 520;
 const PADDING = 36;
+const MIN_ZOOM = 0.35;
+const MAX_ZOOM = 16;
+
+type ScreenBox = {
+  anchorX: number;
+  anchorY: number;
+  currentX: number;
+  currentY: number;
+};
+
+type DragState =
+  | { kind: 'none' }
+  | { kind: 'pan'; startClientX: number; startClientY: number; startPanX: number; startPanY: number }
+  | { kind: 'box'; box: ScreenBox; appendToSelection: boolean };
 
 const normalizeBounds = (bounds: CadBounds | null): CadBounds => {
   if (!bounds) {
@@ -32,24 +49,103 @@ const normalizeBounds = (bounds: CadBounds | null): CadBounds => {
   };
 };
 
-const useProjector = (bounds: CadBounds | null) =>
+const useProjector = (bounds: CadBounds | null, viewport: { zoom: number; panX: number; panY: number }) =>
   useMemo(() => {
     const normalized = normalizeBounds(bounds);
     const width = normalized.maxX - normalized.minX;
     const height = normalized.maxY - normalized.minY;
-    const scale = Math.min((WIDTH - PADDING * 2) / width, (HEIGHT - PADDING * 2) / height);
+    const baseScale = Math.min((WIDTH - PADDING * 2) / width, (HEIGHT - PADDING * 2) / height);
+    const project = (x: number, y: number) => ({
+      x: PADDING + (x - normalized.minX) * baseScale * viewport.zoom + viewport.panX,
+      y: HEIGHT - PADDING - (y - normalized.minY) * baseScale * viewport.zoom + viewport.panY,
+    });
     return {
-      scale,
-      project: (x: number, y: number) => ({
-        x: PADDING + (x - normalized.minX) * scale,
-        y: HEIGHT - PADDING - (y - normalized.minY) * scale,
-      }),
+      baseScale,
+      scale: baseScale * viewport.zoom,
+      normalized,
+      project,
       unproject: (viewX: number, viewY: number) => ({
-        x: normalized.minX + (viewX - PADDING) / scale,
-        y: normalized.minY + (HEIGHT - PADDING - viewY) / scale,
+        x: normalized.minX + (viewX - PADDING - viewport.panX) / (baseScale * viewport.zoom),
+        y:
+          normalized.minY +
+          (HEIGHT - PADDING - viewY + viewport.panY) / (baseScale * viewport.zoom),
       }),
     };
-  }, [bounds]);
+  }, [bounds, viewport]);
+
+const primitiveBounds = (
+  primitive: CadDisplayPrimitive,
+  project: (_x: number, _y: number) => { x: number; y: number },
+  scale: number,
+): { minX: number; minY: number; maxX: number; maxY: number } => {
+  switch (primitive.kind) {
+    case 'line': {
+      const start = project(primitive.points[0].x, primitive.points[0].y);
+      const end = project(primitive.points[1].x, primitive.points[1].y);
+      return {
+        minX: Math.min(start.x, end.x),
+        minY: Math.min(start.y, end.y),
+        maxX: Math.max(start.x, end.x),
+        maxY: Math.max(start.y, end.y),
+      };
+    }
+    case 'point': {
+      const point = project(primitive.point.x, primitive.point.y);
+      return {
+        minX: point.x - primitive.radius - 2,
+        minY: point.y - primitive.radius - 2,
+        maxX: point.x + primitive.radius + 2,
+        maxY: point.y + primitive.radius + 2,
+      };
+    }
+    case 'text': {
+      const point = project(primitive.point.x, primitive.point.y);
+      const width = Math.max(24, primitive.text.length * primitive.fontSize * 0.55);
+      return {
+        minX: point.x,
+        minY: point.y - primitive.fontSize,
+        maxX: point.x + width,
+        maxY: point.y + 4,
+      };
+    }
+    case 'ellipse': {
+      const center = project(primitive.center.x, primitive.center.y);
+      const radiusX = Math.max(primitive.semiMajor * scale, 1.2);
+      const radiusY = Math.max(primitive.semiMinor * scale, 0.9);
+      return {
+        minX: center.x - radiusX,
+        minY: center.y - radiusY,
+        maxX: center.x + radiusX,
+        maxY: center.y + radiusY,
+      };
+    }
+  }
+};
+
+const intersectsSelectionBox = (
+  primitiveBox: { minX: number; minY: number; maxX: number; maxY: number },
+  selectionBox: ScreenBox,
+): boolean => {
+  const minX = Math.min(selectionBox.anchorX, selectionBox.currentX);
+  const maxX = Math.max(selectionBox.anchorX, selectionBox.currentX);
+  const minY = Math.min(selectionBox.anchorY, selectionBox.currentY);
+  const maxY = Math.max(selectionBox.anchorY, selectionBox.currentY);
+  const windowMode = selectionBox.currentX >= selectionBox.anchorX;
+  if (windowMode) {
+    return (
+      primitiveBox.minX >= minX &&
+      primitiveBox.maxX <= maxX &&
+      primitiveBox.minY >= minY &&
+      primitiveBox.maxY <= maxY
+    );
+  }
+  return !(
+    primitiveBox.maxX < minX ||
+    primitiveBox.minX > maxX ||
+    primitiveBox.maxY < minY ||
+    primitiveBox.minY > maxY
+  );
+};
 
 const renderPrimitive = (
   primitive: CadDisplayPrimitive,
@@ -138,26 +234,125 @@ const SurveyCadPreview: React.FC<SurveyCadPreviewProps> = ({
   scene,
   selectedEntityIds,
   activeSnap,
+  viewport,
+  onViewportChange,
   onSelectEntity,
+  onSelectEntities,
   onPointerWorldPointChange,
 }) => {
-  const { project, scale, unproject } = useProjector(scene.bounds);
+  const { project, scale, unproject, baseScale, normalized } = useProjector(scene.bounds, viewport);
+  const [dragState, setDragState] = useState<DragState>({ kind: 'none' });
+  const selectionBox = dragState.kind === 'box' ? dragState.box : null;
+
+  const screenPointFromMouseEvent = (
+    event: React.MouseEvent<SVGSVGElement>,
+  ): { rect: DOMRect; viewX: number; viewY: number } | null => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    if (rect.width <= 0 || rect.height <= 0) return null;
+    return {
+      rect,
+      viewX: ((event.clientX - rect.left) / rect.width) * WIDTH,
+      viewY: ((event.clientY - rect.top) / rect.height) * HEIGHT,
+    };
+  };
 
   return (
     <svg
       viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
-      className="h-full w-full rounded-lg border border-slate-800 bg-slate-950"
+      className="h-full w-full rounded-lg border border-slate-800 bg-slate-950 select-none"
       data-survey-cad-preview
-      onMouseLeave={() => onPointerWorldPointChange(null)}
+      onMouseLeave={() => {
+        if (dragState.kind === 'none') onPointerWorldPointChange(null);
+      }}
+      onMouseDown={(event) => {
+        const screenPoint = screenPointFromMouseEvent(event);
+        if (!screenPoint) return;
+        if (event.button === 1) {
+          event.preventDefault();
+          setDragState({
+            kind: 'pan',
+            startClientX: event.clientX,
+            startClientY: event.clientY,
+            startPanX: viewport.panX,
+            startPanY: viewport.panY,
+          });
+          return;
+        }
+        const target = event.target as Element | null;
+        if (event.button === 0 && target?.getAttribute('data-survey-cad-background') === 'true') {
+          setDragState({
+            kind: 'box',
+            box: {
+              anchorX: screenPoint.viewX,
+              anchorY: screenPoint.viewY,
+              currentX: screenPoint.viewX,
+              currentY: screenPoint.viewY,
+            },
+            appendToSelection: event.shiftKey,
+          });
+        }
+      }}
       onMouseMove={(event) => {
-        const rect = event.currentTarget.getBoundingClientRect();
-        if (rect.width <= 0 || rect.height <= 0) return;
-        const viewX = ((event.clientX - rect.left) / rect.width) * WIDTH;
-        const viewY = ((event.clientY - rect.top) / rect.height) * HEIGHT;
+        const screenPoint = screenPointFromMouseEvent(event);
+        if (!screenPoint) return;
+        const { rect, viewX, viewY } = screenPoint;
+        if (dragState.kind === 'pan') {
+          onViewportChange({
+            ...viewport,
+            panX: dragState.startPanX + ((event.clientX - dragState.startClientX) / rect.width) * WIDTH,
+            panY: dragState.startPanY + ((event.clientY - dragState.startClientY) / rect.height) * HEIGHT,
+          });
+        } else if (dragState.kind === 'box') {
+          setDragState({
+            ...dragState,
+            box: {
+              ...dragState.box,
+              currentX: viewX,
+              currentY: viewY,
+            },
+          });
+        }
         onPointerWorldPointChange(unproject(viewX, viewY));
       }}
+      onMouseUp={() => {
+        if (dragState.kind === 'box') {
+          const ids = scene.primitives
+            .filter((primitive) =>
+              intersectsSelectionBox(primitiveBounds(primitive, project, scale), dragState.box),
+            )
+            .map((primitive) => primitive.sourceEntityId)
+            .filter((entityId, index, ids) => ids.indexOf(entityId) === index);
+          onSelectEntities(ids, dragState.appendToSelection);
+        }
+        setDragState({ kind: 'none' });
+      }}
+      onWheel={(event) => {
+        event.preventDefault();
+        const screenPoint = screenPointFromMouseEvent(event);
+        if (!screenPoint) return;
+        const { viewX, viewY } = screenPoint;
+        const worldPoint = unproject(viewX, viewY);
+        const nextZoom = Math.max(
+          MIN_ZOOM,
+          Math.min(MAX_ZOOM, viewport.zoom * (event.deltaY < 0 ? 1.12 : 1 / 1.12)),
+        );
+        if (Math.abs(nextZoom - viewport.zoom) <= 1e-9) return;
+        onViewportChange({
+          zoom: nextZoom,
+          panX: viewX - (PADDING + (worldPoint.x - normalized.minX) * baseScale * nextZoom),
+          panY:
+            viewY - (HEIGHT - PADDING - (worldPoint.y - normalized.minY) * baseScale * nextZoom),
+        });
+      }}
     >
-      <rect x={0} y={0} width={WIDTH} height={HEIGHT} fill="#020617" />
+      <rect
+        x={0}
+        y={0}
+        width={WIDTH}
+        height={HEIGHT}
+        fill="#020617"
+        data-survey-cad-background="true"
+      />
       <g>
         {scene.primitives.map((primitive) =>
           renderPrimitive(primitive, selectedEntityIds, project, scale, onSelectEntity),
@@ -189,6 +384,19 @@ const SurveyCadPreview: React.FC<SurveyCadPreviewProps> = ({
               strokeWidth={1}
             />
           </g>
+        ) : null}
+        {selectionBox ? (
+          <rect
+            data-survey-cad-selection-box
+            x={Math.min(selectionBox.anchorX, selectionBox.currentX)}
+            y={Math.min(selectionBox.anchorY, selectionBox.currentY)}
+            width={Math.abs(selectionBox.currentX - selectionBox.anchorX)}
+            height={Math.abs(selectionBox.currentY - selectionBox.anchorY)}
+            fill={selectionBox.currentX >= selectionBox.anchorX ? 'rgba(34,197,94,0.12)' : 'rgba(251,191,36,0.12)'}
+            stroke={selectionBox.currentX >= selectionBox.anchorX ? '#22c55e' : '#fbbf24'}
+            strokeDasharray="6 4"
+            strokeWidth={1.2}
+          />
         ) : null}
       </g>
     </svg>

@@ -10,19 +10,19 @@
 - [x] Preserve attached high-level plan inside repo docs for future reference.
 - [x] Add lightweight ADR seeds for source-of-truth, renderer, and DWG boundary decisions.
 - [x] Add top-toolbar Survey CAD launcher beside `Project Options`.
-- [x] Add app-shell Survey CAD workspace tab for future implementation entry.
+- [x] Add app-shell Survey CAD workspace entry and promote it to a dedicated full-page CAD workflow.
 
 Acceptance criteria:
 - docs live in repo and are linked together
-- app shell exposes stable Survey CAD entry point
+- app shell exposes stable Survey CAD workspace entry
 - no solver/parity behavior changes
 
 Risks:
-- shell seam could imply more implementation than exists
+- dedicated shell could imply more implementation than exists
 - docs could drift from repo structure if they copy monorepo assumptions
 
 Notes:
-- current branch intentionally stops at planning and shell groundwork
+- dedicated workspace shell now exists; deeper traverse/parcel workflows still remain ahead
 
 ## Phase 1: Native CAD model and transactions
 - [x] Create `src/engine/cad/` root module set.

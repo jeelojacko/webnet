@@ -68,9 +68,10 @@ describe('SurveyCadWorkspace', () => {
       );
     });
 
-    expect(container.textContent).toContain('Survey CAD Renderer / Model Spike');
+    expect(container.textContent).toContain('Survey CAD Workspace');
     expect(container.textContent).toContain('parsed-input');
     expect(container.textContent).toContain('mlightcad');
+    expect(container.querySelector('[data-survey-cad-dedicated-page]')).not.toBeNull();
     expect(container.querySelector('[data-survey-cad-preview]')).not.toBeNull();
     expect(container.textContent).toContain('"nativeEntityId"');
     expect(container.querySelector('[data-survey-cad-command-status]')?.textContent).toContain('Ready');
@@ -740,6 +741,135 @@ describe('SurveyCadWorkspace', () => {
     );
     expect(container.querySelector('[data-survey-cad-command-status]')?.textContent).toContain(
       'TANGENT_CURVE committed',
+    );
+
+    await act(async () => {
+      root.unmount();
+    });
+    container.remove();
+  });
+
+  it('supports wheel zoom, middle-drag pan, and drag-box selection in the CAD viewport', async () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root: Root = createRoot(container);
+
+    await act(async () => {
+      root.render(
+        <SurveyCadWorkspace
+          input={input}
+          instrumentLibrary={{}}
+          parseOptions={parseOptions}
+          units="m"
+          result={null}
+        />,
+      );
+    });
+
+    const preview = container.querySelector('[data-survey-cad-preview]') as SVGElement | null;
+    const background = container.querySelector('[data-survey-cad-background="true"]') as SVGRectElement | null;
+    const zoomExtentsButton = Array.from(container.querySelectorAll('button')).find(
+      (entry) => entry.textContent?.trim() === 'Zoom Extents',
+    ) as HTMLButtonElement | undefined;
+    if (!preview || !background) throw new Error('Preview background not found');
+    if (!zoomExtentsButton) throw new Error('Zoom Extents button not found');
+    Object.defineProperty(preview, 'getBoundingClientRect', {
+      configurable: true,
+      value: () => ({
+        x: 0,
+        y: 0,
+        left: 0,
+        top: 0,
+        width: 900,
+        height: 520,
+        right: 900,
+        bottom: 520,
+        toJSON: () => ({}),
+      }),
+    });
+
+    const firstLine = () => preview.querySelector('line') as SVGLineElement | null;
+    const startingX1 = Number(firstLine()?.getAttribute('x1') ?? Number.NaN);
+
+    await act(async () => {
+      preview.dispatchEvent(
+        new WheelEvent('wheel', {
+          bubbles: true,
+          clientX: 300,
+          clientY: 220,
+          deltaY: -120,
+        }),
+      );
+    });
+    const zoomedX1 = Number(firstLine()?.getAttribute('x1') ?? Number.NaN);
+    expect(zoomedX1).not.toBeCloseTo(startingX1, 6);
+
+    await act(async () => {
+      preview.dispatchEvent(
+        new MouseEvent('mousedown', {
+          bubbles: true,
+          button: 1,
+          clientX: 450,
+          clientY: 260,
+        }),
+      );
+    });
+    await act(async () => {
+      preview.dispatchEvent(
+        new MouseEvent('mousemove', {
+          bubbles: true,
+          clientX: 520,
+          clientY: 300,
+        }),
+      );
+    });
+    await act(async () => {
+      preview.dispatchEvent(
+        new MouseEvent('mouseup', {
+          bubbles: true,
+          clientX: 520,
+          clientY: 300,
+        }),
+      );
+    });
+    const pannedX1 = Number(firstLine()?.getAttribute('x1') ?? Number.NaN);
+    expect(pannedX1).not.toBeCloseTo(zoomedX1, 6);
+
+    await act(async () => {
+      zoomExtentsButton.click();
+    });
+
+    await act(async () => {
+      background.dispatchEvent(
+        new MouseEvent('mousedown', {
+          bubbles: true,
+          button: 0,
+          clientX: 20,
+          clientY: 20,
+        }),
+      );
+    });
+    await act(async () => {
+      preview.dispatchEvent(
+        new MouseEvent('mousemove', {
+          bubbles: true,
+          clientX: 880,
+          clientY: 500,
+        }),
+      );
+    });
+    await act(async () => {
+      preview.dispatchEvent(
+        new MouseEvent('mouseup', {
+          bubbles: true,
+          clientX: 880,
+          clientY: 500,
+        }),
+      );
+    });
+
+    expect(container.querySelector('[data-survey-cad-selection-count]')?.textContent).toContain(
+      '8 selected',
     );
 
     await act(async () => {

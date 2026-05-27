@@ -20,6 +20,8 @@ import type { RunPipelineState } from '../hooks/useAdjustmentRunner';
 
 interface AppToolbarProps {
   isSidebarOpen: boolean;
+  showSidebarToggle?: boolean;
+  isSurveyCadActive?: boolean;
   onToggleSidebar: () => void;
   onOpenProjectOptions: () => void;
   onOpenSurveyCad: () => void;
@@ -47,6 +49,8 @@ interface AppToolbarProps {
 
 const AppToolbar: React.FC<AppToolbarProps> = ({
   isSidebarOpen,
+  showSidebarToggle = true,
+  isSurveyCadActive = false,
   onToggleSidebar,
   onOpenProjectOptions,
   onOpenSurveyCad,
@@ -93,13 +97,15 @@ const AppToolbar: React.FC<AppToolbarProps> = ({
   return (
     <header className="bg-slate-800 border-b border-slate-700 flex flex-wrap items-center px-3 py-2 md:px-4 shrink-0 w-full gap-3">
       <div className="flex items-center gap-3 min-w-0 flex-1">
-        <button
-          onClick={onToggleSidebar}
-          className="p-1.5 hover:bg-slate-700 rounded text-slate-400 hover:text-white transition-colors"
-          title={isSidebarOpen ? 'Close Input Sidebar' : 'Open Input Sidebar'}
-        >
-          {isSidebarOpen ? <PanelLeftClose size={20} /> : <PanelLeftOpen size={20} />}
-        </button>
+        {showSidebarToggle ? (
+          <button
+            onClick={onToggleSidebar}
+            className="p-1.5 hover:bg-slate-700 rounded text-slate-400 hover:text-white transition-colors"
+            title={isSidebarOpen ? 'Close Input Sidebar' : 'Open Input Sidebar'}
+          >
+            {isSidebarOpen ? <PanelLeftClose size={20} /> : <PanelLeftOpen size={20} />}
+          </button>
+        ) : null}
         <div className="flex items-center space-x-2 min-w-0">
           <Activity className="text-blue-400" size={24} />
           <div className="flex flex-col min-w-0">
@@ -121,11 +127,11 @@ const AppToolbar: React.FC<AppToolbarProps> = ({
         </button>
         <button
           onClick={onOpenSurveyCad}
-          title="Open Survey CAD workspace plan"
+          title={isSurveyCadActive ? 'Return to the main adjustment workspace' : 'Open Survey CAD workspace'}
           className="hidden sm:flex items-center space-x-2 px-3 py-1.5 rounded border text-xs uppercase tracking-wide bg-slate-900/60 border-slate-700 text-slate-300 hover:bg-slate-700"
         >
           <Ruler size={14} />
-          <span>Survey CAD</span>
+          <span>{isSurveyCadActive ? 'Back To Results' : 'Survey CAD'}</span>
         </button>
       </div>
 
@@ -139,7 +145,7 @@ const AppToolbar: React.FC<AppToolbarProps> = ({
         </button>
         <button
           onClick={onOpenSurveyCad}
-          title="Open Survey CAD workspace plan"
+          title={isSurveyCadActive ? 'Return to the main adjustment workspace' : 'Open Survey CAD workspace'}
           className="sm:hidden p-2 bg-slate-700 hover:bg-slate-600 rounded text-slate-300 transition-colors"
         >
           <Ruler size={18} />
