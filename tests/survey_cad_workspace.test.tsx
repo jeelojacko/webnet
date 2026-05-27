@@ -370,6 +370,60 @@ describe('SurveyCadWorkspace', () => {
     container.remove();
   });
 
+  it('shows a live line preview while drawing before the second click commits', async () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root: Root = createRoot(container);
+
+    await act(async () => {
+      root.render(
+        <SurveyCadWorkspace
+          input={input}
+          instrumentLibrary={{}}
+          parseOptions={parseOptions}
+          units="m"
+          result={null}
+        />,
+      );
+    });
+
+    const preview = container.querySelector('[data-survey-cad-preview]') as SVGElement | null;
+    const background = container.querySelector('[data-survey-cad-background="true"]') as SVGRectElement | null;
+    if (!preview || !background) throw new Error('Preview background not found');
+    mockElementRect(preview);
+    mockElementRect(background);
+
+    await act(async () => {
+      clickButton(container, 'LINE');
+      background.dispatchEvent(
+        new MouseEvent('click', {
+          bubbles: true,
+          clientX: 180,
+          clientY: 410,
+        }),
+      );
+    });
+    await act(async () => {
+      preview.dispatchEvent(
+        new MouseEvent('mousemove', {
+          bubbles: true,
+          clientX: 320,
+          clientY: 320,
+        }),
+      );
+    });
+
+    expect(container.querySelector('[data-survey-cad-command-preview]')).not.toBeNull();
+    expect(container.querySelector('[data-survey-cad-command-status]')?.textContent).toContain(
+      'LINE active',
+    );
+
+    await act(async () => {
+      root.unmount();
+    });
+    container.remove();
+  });
+
   it('uses Enter and Escape for command flow instead of helper buttons', async () => {
     const container = document.createElement('div');
     document.body.appendChild(container);
@@ -523,6 +577,51 @@ describe('SurveyCadWorkspace', () => {
     );
     expect(container.querySelector('[data-survey-cad-command-status]')?.textContent).toContain(
       'azimuth 90.0000',
+    );
+
+    await act(async () => {
+      root.unmount();
+    });
+    container.remove();
+  });
+
+  it('runs a first TRAVERSE workflow and finishes it with Enter on an empty prompt', async () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root: Root = createRoot(container);
+
+    await act(async () => {
+      root.render(
+        <SurveyCadWorkspace
+          input={input}
+          instrumentLibrary={{}}
+          parseOptions={parseOptions}
+          units="m"
+          result={null}
+        />,
+      );
+    });
+
+    const commandInput = container.querySelector('input[type="text"]') as HTMLInputElement | null;
+    if (!commandInput) throw new Error('Command input not found');
+
+    await act(async () => {
+      clickButton(container, 'TRAV');
+      setTextInputValue(commandInput, 'A=0,0');
+      pressKey(commandInput, 'Enter');
+      setTextInputValue(commandInput, 'N90-00-00E,25');
+      pressKey(commandInput, 'Enter');
+      setTextInputValue(commandInput, 'N0-00-00E,15');
+      pressKey(commandInput, 'Enter');
+      setTextInputValue(commandInput, '');
+      pressKey(commandInput, 'Enter');
+    });
+
+    expect(container.querySelector('[data-survey-cad-command-status]')?.textContent).toContain(
+      'TRAVERSE committed',
+    );
+    expect(container.querySelector('[data-survey-cad-entity-count]')?.textContent).toContain(
+      '13 entities',
     );
 
     await act(async () => {

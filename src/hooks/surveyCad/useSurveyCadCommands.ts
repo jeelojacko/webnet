@@ -4,7 +4,13 @@ import {
   buildCadInverseSummary,
   cadPointFromBearingDistance,
 } from '../../engine/cad/cadCogo';
-import { cadParseBearingDegrees, cadPointFromAzimuthDistance, type CadNamedPoint } from '../../engine/cad/cadGeometry';
+import {
+  cadBuildArcFromThreePoints,
+  cadBuildTangentCurve,
+  cadParseBearingDegrees,
+  cadPointFromAzimuthDistance,
+  type CadNamedPoint,
+} from '../../engine/cad/cadGeometry';
 import { runCadCommand, type CadHistoryState } from '../../engine/cad/cadUndoRedo';
 import type { CadSnapCandidate } from '../../engine/cad/cadTypes';
 
@@ -13,6 +19,7 @@ type ActiveCommandKey =
   | 'COGO_POINT'
   | 'LINE'
   | 'PLINE'
+  | 'TRAVERSE'
   | 'ARC_3PT'
   | 'TANGENT_CURVE'
   | 'INVERSE'
@@ -38,6 +45,12 @@ type CommandSession =
       resultText?: string;
     }
   | {
+      key: 'TRAVERSE';
+      inputValue: string;
+      points: CadNamedPoint[];
+      resultText?: string;
+    }
+  | {
       key: 'ARC_3PT';
       inputValue: string;
       points: CadNamedPoint[];
@@ -54,22 +67,44 @@ type CommandSession =
 
 interface UseSurveyCadCommandsArgs {
   activeSnap: CadSnapCandidate | null;
+  previewPoint: { x: number; y: number; label: string } | null;
   history: CadHistoryState;
   selectionCount: number;
   setHistory: Dispatch<SetStateAction<CadHistoryState>>;
 }
+
+export type CadCommandPreviewState =
+  | {
+      kind: 'point';
+      point: { x: number; y: number };
+    }
+  | {
+      kind: 'line';
+      points: [{ x: number; y: number }, { x: number; y: number }];
+    }
+  | {
+      kind: 'polyline';
+      points: Array<{ x: number; y: number }>;
+    }
+  | {
+      kind: 'translate-selection';
+      deltaX: number;
+      deltaY: number;
+    };
 
 interface UseSurveyCadCommandsResult {
   activeCommandKey: ActiveCommandKey | null;
   commandInputValue: string;
   commandPrompt: string;
   commandHelpText: string;
+  commandPreview: CadCommandPreviewState | null;
   canUseActiveSnap: boolean;
   canFinishCommand: boolean;
   startPointCommand: () => void;
   startCogoPointCommand: () => void;
   startLineCommand: () => void;
   startPolylineCommand: () => void;
+  startTraverseCommand: () => void;
   startArc3PointCommand: () => void;
   startTangentCurveCommand: () => void;
   startInverseCommand: () => void;
@@ -95,6 +130,27 @@ const splitLabelFromBody = (token: string): { label?: string; body: string } => 
     label: normalized.slice(0, labelIndex).trim() || undefined,
     body: normalized.slice(labelIndex + 1).trim(),
   };
+};
+
+const sampleArcPoints = (arc: {
+  center: { x: number; y: number };
+  radius: number;
+  startAngleDeg: number;
+  endAngleDeg: number;
+}): Array<{ x: number; y: number }> => {
+  const normalizedStart = ((arc.startAngleDeg % 360) + 360) % 360;
+  const normalizedEndBase = ((arc.endAngleDeg % 360) + 360) % 360;
+  const normalizedEnd = normalizedEndBase <= normalizedStart ? normalizedEndBase + 360 : normalizedEndBase;
+  const sweep = Math.max(1, normalizedEnd - normalizedStart);
+  const segmentCount = Math.max(8, Math.ceil(sweep / 15));
+  return Array.from({ length: segmentCount + 1 }, (_, index) => {
+    const angleDeg = normalizedStart + (sweep * index) / segmentCount;
+    const radians = (angleDeg * Math.PI) / 180;
+    return {
+      x: arc.center.x + Math.cos(radians) * arc.radius,
+      y: arc.center.y + Math.sin(radians) * arc.radius,
+    };
+  });
 };
 
 const parseAbsolutePoint = (token: string): CadNamedPoint | null => {
@@ -163,6 +219,11 @@ const promptForSession = (session: CommandSession | null, fallbackStatus: string
         (session.points.length > 0
           ? `PLINE active. ${session.points.length} vertex${session.points.length === 1 ? '' : 'es'} captured. Click the next point or press Enter on an empty input to finish once 2+ vertices exist.`
           : 'PLINE active. Click or enter the first vertex.');
+    case 'TRAVERSE':
+      return session.resultText ??
+        (session.points.length > 0
+          ? `TRAVERSE active. ${session.points.length} station${session.points.length === 1 ? '' : 's'} captured. Enter the next leg as \`@azimuth,distance\` or bearing-distance, or click another point.`
+          : 'TRAVERSE active. Click or enter the first station.');
     case 'ARC_3PT':
       return session.resultText ??
         (session.points.length === 0
@@ -216,6 +277,10 @@ const helpTextForSession = (session: CommandSession | null): string => {
       return session.points.length > 0
         ? 'PLINE next vertex: click in the model space or type `x,y`, `@azimuth,distance`, or bearing-distance from the last vertex. Press Enter on an empty input to finish after 2+ vertices.'
         : 'PLINE first vertex: click in the model space or type `x,y` / `LABEL=x,y`.';
+    case 'TRAVERSE':
+      return session.points.length > 0
+        ? 'TRAVERSE next leg: click the next station, or type `@azimuth,distance` / `N45-00-00E,100` from the last station. Press Enter on an empty input to finish after 2+ stations.'
+        : 'TRAVERSE first station: click in the model space or type `x,y` / `LABEL=x,y`.';
     case 'ARC_3PT':
       return session.points.length < 2
         ? 'ARC 3PT point input: click in the model space or type `x,y` / `LABEL=x,y`.'
@@ -241,6 +306,7 @@ const helpTextForSession = (session: CommandSession | null): string => {
 
 export const useSurveyCadCommands = ({
   activeSnap,
+  previewPoint,
   history,
   selectionCount,
   setHistory,
@@ -252,6 +318,140 @@ export const useSurveyCadCommands = ({
     [history.commandState.prompt, session],
   );
   const helpText = useMemo(() => helpTextForSession(session), [session]);
+  const commandPreview = useMemo<CadCommandPreviewState | null>(() => {
+    if (!session || !previewPoint) return null;
+    switch (session.key) {
+      case 'POINT':
+        return {
+          kind: 'point',
+          point: { x: previewPoint.x, y: previewPoint.y },
+        };
+      case 'COGO_POINT':
+      case 'LINE':
+      case 'INVERSE':
+        if (!session.startPoint) {
+          return {
+            kind: 'point',
+            point: { x: previewPoint.x, y: previewPoint.y },
+          };
+        }
+        return {
+          kind: 'line',
+          points: [
+            { x: session.startPoint.x, y: session.startPoint.y },
+            { x: previewPoint.x, y: previewPoint.y },
+          ],
+        };
+      case 'PLINE':
+      case 'TRAVERSE':
+        if (session.points.length === 0) {
+          return {
+            kind: 'point',
+            point: { x: previewPoint.x, y: previewPoint.y },
+          };
+        }
+        return {
+          kind: 'polyline',
+          points: [
+            ...session.points.map((point) => ({ x: point.x, y: point.y })),
+            { x: previewPoint.x, y: previewPoint.y },
+          ],
+        };
+      case 'ARC_3PT':
+        if (session.points.length === 0) {
+          return {
+            kind: 'point',
+            point: { x: previewPoint.x, y: previewPoint.y },
+          };
+        }
+        if (session.points.length === 1) {
+          return {
+            kind: 'line',
+            points: [
+              { x: session.points[0].x, y: session.points[0].y },
+              { x: previewPoint.x, y: previewPoint.y },
+            ],
+          };
+        }
+        return {
+          kind: 'polyline',
+          points: (() => {
+            const previewArc = cadBuildArcFromThreePoints(session.points[0], session.points[1], previewPoint);
+            return previewArc
+              ? sampleArcPoints(previewArc)
+              : [
+                  { x: session.points[0].x, y: session.points[0].y },
+                  { x: session.points[1].x, y: session.points[1].y },
+                  { x: previewPoint.x, y: previewPoint.y },
+                ];
+          })(),
+        };
+      case 'TANGENT_CURVE':
+        if (session.piPoint == null) {
+          return {
+            kind: 'point',
+            point: { x: previewPoint.x, y: previewPoint.y },
+          };
+        }
+        if (session.backTangentPoint == null) {
+          return {
+            kind: 'line',
+            points: [
+              { x: session.piPoint.x, y: session.piPoint.y },
+              { x: previewPoint.x, y: previewPoint.y },
+            ],
+          };
+        }
+        if (session.aheadTangentPoint == null) {
+          return {
+            kind: 'polyline',
+            points: [
+              { x: session.backTangentPoint.x, y: session.backTangentPoint.y },
+              { x: session.piPoint.x, y: session.piPoint.y },
+              { x: previewPoint.x, y: previewPoint.y },
+            ],
+          };
+        }
+        if (session.inputValue.trim().length > 0) {
+          const radius = Number(session.inputValue.trim());
+          if (Number.isFinite(radius) && radius > 0) {
+            const previewArc = cadBuildTangentCurve(
+              session.piPoint,
+              session.backTangentPoint,
+              session.aheadTangentPoint,
+              radius,
+            );
+            if (previewArc) {
+              return {
+                kind: 'polyline',
+                points: sampleArcPoints(previewArc),
+              };
+            }
+          }
+        }
+        return {
+          kind: 'polyline',
+          points: [
+            { x: session.backTangentPoint.x, y: session.backTangentPoint.y },
+            { x: session.piPoint.x, y: session.piPoint.y },
+            { x: session.aheadTangentPoint.x, y: session.aheadTangentPoint.y },
+          ],
+        };
+      case 'MOVE':
+      case 'COPY':
+        if (!session.startPoint) {
+          return {
+            kind: 'point',
+            point: { x: previewPoint.x, y: previewPoint.y },
+          };
+        }
+        return {
+          kind: 'translate-selection',
+          deltaX: previewPoint.x - session.startPoint.x,
+          deltaY: previewPoint.y - session.startPoint.y,
+        };
+    }
+  }, [previewPoint, session]);
 
   const parseInputPoint = (inputValue: string, basePoint: CadNamedPoint | null): CadNamedPoint | null =>
     parseRelativeBearingDistance(inputValue, basePoint) ?? parseAbsolutePoint(inputValue);
@@ -295,7 +495,7 @@ export const useSurveyCadCommands = ({
         );
         return null;
       }
-      if (current.key === 'PLINE') {
+      if (current.key === 'PLINE' || current.key === 'TRAVERSE') {
         return {
           ...current,
           points: [...current.points, point],
@@ -419,10 +619,21 @@ export const useSurveyCadCommands = ({
     setSession(null);
   };
 
+  const finishTraverseSession = () => {
+    if (!session || session.key !== 'TRAVERSE' || session.points.length < 2) return;
+    setHistory((existing) =>
+      runCadCommand(existing, {
+        key: 'TRAVERSE',
+        vertices: session.points,
+      }),
+    );
+    setSession(null);
+  };
+
   const submitSessionInput = () => {
     if (!session) return;
     const basePoint =
-      session.key === 'PLINE' || session.key === 'ARC_3PT'
+      session.key === 'PLINE' || session.key === 'TRAVERSE' || session.key === 'ARC_3PT'
         ? session.points[session.points.length - 1] ?? null
         : session.key === 'TANGENT_CURVE'
           ? session.aheadTangentPoint ?? session.backTangentPoint ?? session.piPoint
@@ -482,6 +693,10 @@ export const useSurveyCadCommands = ({
       finishPolylineSession();
       return;
     }
+    if (session.key === 'TRAVERSE' && session.inputValue.trim().length === 0 && session.points.length >= 2) {
+      finishTraverseSession();
+      return;
+    }
     if (session.inputValue.trim().length === 0) return;
     submitSessionInput();
   };
@@ -495,11 +710,14 @@ export const useSurveyCadCommands = ({
     commandInputValue: session?.inputValue ?? '',
     commandPrompt: statusPrompt,
     commandHelpText: helpText,
+    commandPreview,
     canUseActiveSnap:
       activeSnap != null &&
       session != null &&
       !(session.key === 'TANGENT_CURVE' && session.aheadTangentPoint != null),
-    canFinishCommand: session?.key === 'PLINE' && session.points.length >= 2,
+    canFinishCommand:
+      (session?.key === 'PLINE' || session?.key === 'TRAVERSE') &&
+      session.points.length >= 2,
     startPointCommand: () => setSession({ key: 'POINT', inputValue: '' }),
     startCogoPointCommand: () =>
       setSession({
@@ -516,6 +734,12 @@ export const useSurveyCadCommands = ({
     startPolylineCommand: () =>
       setSession({
         key: 'PLINE',
+        inputValue: '',
+        points: [],
+      }),
+    startTraverseCommand: () =>
+      setSession({
+        key: 'TRAVERSE',
         inputValue: '',
         points: [],
       }),
@@ -556,7 +780,15 @@ export const useSurveyCadCommands = ({
       });
     },
     cancelCommand: () => setSession(null),
-    finishCommand: finishPolylineSession,
+    finishCommand: () => {
+      if (session?.key === 'PLINE') {
+        finishPolylineSession();
+        return;
+      }
+      if (session?.key === 'TRAVERSE') {
+        finishTraverseSession();
+      }
+    },
     setCommandInputValue: (value) =>
       setSession((current) => (current ? { ...current, inputValue: value, resultText: undefined } : current)),
     submitCommandInput: submitSessionInput,

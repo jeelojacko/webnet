@@ -10,6 +10,7 @@ interface SurveyCadPreviewProps {
   scene: CadDisplayScene;
   selectedEntityIds: readonly string[];
   activeSnap: CadSnapCandidate | null;
+  commandPreviewPrimitives: readonly CadDisplayPrimitive[];
   viewport: { zoom: number; panX: number; panY: number };
   commandActive: boolean;
   onViewportChange: (_viewport: { zoom: number; panX: number; panY: number }) => void;
@@ -182,7 +183,8 @@ const renderPrimitive = (
           y2={end.y}
           stroke={isSelected ? '#fbbf24' : primitive.stroke}
           strokeWidth={isSelected ? primitive.strokeWidth + 1.1 : primitive.strokeWidth}
-          opacity={0.92}
+          opacity={primitive.opacity ?? 0.92}
+          strokeDasharray={primitive.strokeDasharray}
         />
       );
     }
@@ -198,6 +200,7 @@ const renderPrimitive = (
           fill={isSelected ? '#fbbf24' : primitive.fill ?? primitive.stroke}
           stroke={isSelected ? '#fef3c7' : '#0f172a'}
           strokeWidth={1.2}
+          opacity={primitive.opacity ?? 1}
         />
       );
     }
@@ -211,6 +214,7 @@ const renderPrimitive = (
           y={point.y - 6}
           fill={isSelected ? '#fbbf24' : primitive.stroke}
           fontSize={primitive.fontSize}
+          opacity={primitive.opacity ?? 1}
         >
           {primitive.text}
         </text>
@@ -230,7 +234,8 @@ const renderPrimitive = (
           fill="none"
           stroke={isSelected ? '#fbbf24' : primitive.stroke}
           strokeWidth={isSelected ? primitive.strokeWidth + 0.8 : primitive.strokeWidth}
-          opacity={0.88}
+          opacity={primitive.opacity ?? 0.88}
+          strokeDasharray={primitive.strokeDasharray}
         />
       );
     }
@@ -241,6 +246,7 @@ const SurveyCadPreview: React.FC<SurveyCadPreviewProps> = ({
   scene,
   selectedEntityIds,
   activeSnap,
+  commandPreviewPrimitives,
   viewport,
   commandActive,
   onViewportChange,
@@ -427,6 +433,65 @@ const SurveyCadPreview: React.FC<SurveyCadPreviewProps> = ({
             onSelectEntity(entityId, appendToSelection);
           }),
         )}
+        {commandPreviewPrimitives.length > 0 ? (
+          <g data-survey-cad-command-preview>
+            {commandPreviewPrimitives.map((primitive) =>
+              primitive.kind === 'line' ? (
+                <line
+                  key={primitive.id}
+                  data-survey-cad-command-preview-line
+                  x1={project(primitive.points[0].x, primitive.points[0].y).x}
+                  y1={project(primitive.points[0].x, primitive.points[0].y).y}
+                  x2={project(primitive.points[1].x, primitive.points[1].y).x}
+                  y2={project(primitive.points[1].x, primitive.points[1].y).y}
+                  stroke={primitive.stroke}
+                  strokeWidth={primitive.strokeWidth}
+                  opacity={primitive.opacity ?? 0.85}
+                  strokeDasharray={primitive.strokeDasharray ?? '8 6'}
+                  pointerEvents="none"
+                />
+              ) : primitive.kind === 'point' ? (
+                <circle
+                  key={primitive.id}
+                  data-survey-cad-command-preview-point
+                  cx={project(primitive.point.x, primitive.point.y).x}
+                  cy={project(primitive.point.x, primitive.point.y).y}
+                  r={primitive.radius}
+                  fill={primitive.fill ?? primitive.stroke}
+                  opacity={primitive.opacity ?? 0.85}
+                  pointerEvents="none"
+                />
+              ) : primitive.kind === 'text' ? (
+                <text
+                  key={primitive.id}
+                  x={project(primitive.point.x, primitive.point.y).x + 6}
+                  y={project(primitive.point.x, primitive.point.y).y - 6}
+                  fill={primitive.stroke}
+                  fontSize={primitive.fontSize}
+                  opacity={primitive.opacity ?? 0.85}
+                  pointerEvents="none"
+                >
+                  {primitive.text}
+                </text>
+              ) : (
+                <ellipse
+                  key={primitive.id}
+                  cx={project(primitive.center.x, primitive.center.y).x}
+                  cy={project(primitive.center.x, primitive.center.y).y}
+                  rx={Math.max(primitive.semiMajor * scale, 1.2)}
+                  ry={Math.max(primitive.semiMinor * scale, 0.9)}
+                  transform={`rotate(${-primitive.thetaDeg} ${project(primitive.center.x, primitive.center.y).x} ${project(primitive.center.x, primitive.center.y).y})`}
+                  fill="none"
+                  stroke={primitive.stroke}
+                  strokeWidth={primitive.strokeWidth}
+                  opacity={primitive.opacity ?? 0.85}
+                  strokeDasharray={primitive.strokeDasharray ?? '8 6'}
+                  pointerEvents="none"
+                />
+              ),
+            )}
+          </g>
+        ) : null}
         {activeSnap ? (
           <g data-survey-cad-snap-glyph>
             <circle

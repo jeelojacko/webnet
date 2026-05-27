@@ -15,6 +15,7 @@ const toleranceFromBounds = (project: CadProject): number => {
 
 interface UseSurveyCadSnappingResult {
   activeSnap: CadSnapCandidate | null;
+  pointerWorldPoint: { x: number; y: number } | null;
   snapStatusText: string;
   updatePointerWorldPoint: (_worldPoint: { x: number; y: number } | null) => void;
 }
@@ -22,18 +23,22 @@ interface UseSurveyCadSnappingResult {
 export const useSurveyCadSnapping = (project: CadProject): UseSurveyCadSnappingResult => {
   const spatialIndex = useMemo(() => buildCadSpatialIndex(project), [project]);
   const [activeSnap, setActiveSnap] = useState<CadSnapCandidate | null>(null);
+  const [pointerWorldPoint, setPointerWorldPoint] = useState<{ x: number; y: number } | null>(null);
   const toleranceWorld = useMemo(() => toleranceFromBounds(project), [project]);
 
   useEffect(() => {
     setActiveSnap(null);
+    setPointerWorldPoint(null);
   }, [project]);
 
   return {
     activeSnap,
+    pointerWorldPoint,
     snapStatusText: activeSnap
       ? `Snap ${activeSnap.kind}: ${activeSnap.label}`
       : 'Snap idle. Move over geometry for point, endpoint, midpoint, or nearest snaps.',
     updatePointerWorldPoint: (worldPoint) => {
+      setPointerWorldPoint(worldPoint);
       if (!worldPoint) {
         setActiveSnap(null);
         return;

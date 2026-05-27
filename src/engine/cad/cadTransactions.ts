@@ -24,6 +24,7 @@ export type CadCommandKey =
   | 'COGO_POINT'
   | 'LINE'
   | 'PLINE'
+  | 'TRAVERSE'
   | 'ARC_3PT'
   | 'TANGENT_CURVE'
   | 'MOVE'
@@ -68,6 +69,10 @@ export type CadCommand =
     }
   | {
       key: 'PLINE';
+      vertices: { x: number; y: number; label: string }[];
+    }
+  | {
+      key: 'TRAVERSE';
       vertices: { x: number; y: number; label: string }[];
     }
   | {
@@ -134,7 +139,7 @@ interface CadCommandDefinition<TCommand extends CadCommand> {
 const createIdleCommandState = (): CadCommandState => ({
   key: 'IDLE',
   phase: 'idle',
-  prompt: 'Ready. Use Select All, Clear Selection, ERASE, POINT, COGO PT, LINE, PLINE, ARC 3PT, TAN CURVE, MOVE, COPY, INTX, or INVERSE to exercise command history.',
+  prompt: 'Ready. Use Select All, Clear Selection, ERASE, POINT, COGO PT, LINE, PLINE, TRAVERSE, ARC 3PT, TAN CURVE, MOVE, COPY, INTX, or INVERSE to exercise command history.',
 });
 
 const nextManualStationId = (project: CadProject): string => {
@@ -598,6 +603,18 @@ const lineCommand: CadCommandDefinition<{
   },
 };
 
+const findExistingTraversePoint = (
+  project: CadProject,
+  vertex: { x: number; y: number; label: string },
+): CadSurveyPointEntity | null =>
+  project.entities.find(
+    (entity): entity is CadSurveyPointEntity =>
+      entity.type === 'survey-point' &&
+      entity.stationId === vertex.label &&
+      Math.abs(entity.x - vertex.x) <= 1e-9 &&
+      Math.abs(entity.y - vertex.y) <= 1e-9,
+  ) ?? null;
+
 const polylineCommand: CadCommandDefinition<{
   key: 'PLINE';
   vertices: { x: number; y: number; label: string }[];
@@ -638,6 +655,68 @@ const polylineCommand: CadCommandDefinition<{
       },
       transactionLabel: `PLINE (${vertices.length})`,
       addedEntityIds: [polylineEntity.id],
+      removedEntityIds: [],
+    };
+  },
+};
+
+const traverseCommand: CadCommandDefinition<{
+  key: 'TRAVERSE';
+  vertices: { x: number; y: number; label: string }[];
+}> = {
+  key: 'TRAVERSE',
+  execute: (snapshot, command) => {
+    const vertices = command.vertices.filter((vertex, index, list) => {
+      const previous = list[index - 1];
+      if (!previous) return true;
+      return Math.abs(vertex.x - previous.x) > 1e-9 || Math.abs(vertex.y - previous.y) > 1e-9;
+    });
+    if (vertices.length < 2) return null;
+
+    let workingProject = snapshot.project;
+    const createdEntities: CadEntity[] = [];
+    const vertexLabels: string[] = [];
+
+    vertices.forEach((vertex) => {
+      const existingPoint = findExistingTraversePoint(workingProject, vertex);
+      if (existingPoint) {
+        vertexLabels.push(existingPoint.stationId);
+        return;
+      }
+      const pointBundle = createManualPointEntities(workingProject, vertex.x, vertex.y, vertex.label);
+      workingProject = appendCadProjectEntities(workingProject, [pointBundle.point, pointBundle.label]);
+      createdEntities.push(pointBundle.point, pointBundle.label);
+      vertexLabels.push(pointBundle.point.stationId);
+    });
+
+    const polylineEntity: CadPolylineEntity = {
+      id: createStableRuntimeId('cad-traverse'),
+      type: 'polyline',
+      layerId: 'observation-lines',
+      styleId: 'style-observation-line',
+      visible: true,
+      locked: false,
+      vertices: vertices.map((vertex) => ({ x: vertex.x, y: vertex.y })),
+      vertexLabels,
+      closed: false,
+      metadata: {
+        createdBy: 'TRAVERSE',
+        manual: true,
+      },
+    };
+    const nextProject = appendCadProjectEntities(workingProject, [polylineEntity]);
+    return {
+      nextSnapshot: {
+        project: nextProject,
+        selection: createCadSelectionState(nextProject, [polylineEntity.id]),
+      },
+      commandState: {
+        key: 'TRAVERSE',
+        phase: 'committed',
+        prompt: `TRAVERSE committed with ${vertices.length} stations.`,
+      },
+      transactionLabel: `TRAVERSE (${vertices.length})`,
+      addedEntityIds: [...createdEntities.map((entity) => entity.id), polylineEntity.id],
       removedEntityIds: [],
     };
   },
@@ -849,6 +928,7 @@ export const CAD_COMMAND_REGISTRY: Record<CadCommandKey, CadCommandDefinition<Ca
   COGO_POINT: cogoPointCommand as CadCommandDefinition<CadCommand>,
   LINE: lineCommand as CadCommandDefinition<CadCommand>,
   PLINE: polylineCommand as CadCommandDefinition<CadCommand>,
+  TRAVERSE: traverseCommand as CadCommandDefinition<CadCommand>,
   ARC_3PT: arc3ptCommand as CadCommandDefinition<CadCommand>,
   TANGENT_CURVE: tangentCurveCommand as CadCommandDefinition<CadCommand>,
   MOVE: moveCommand as CadCommandDefinition<CadCommand>,

@@ -23,6 +23,7 @@ Current implemented spike slice:
 - selection-set state over native entity IDs
 - command registry/history seam
 - first committed commands: `SELECT_ALL`, `CLEAR_SELECTION`, `ERASE`, `POINT`, `COGO_POINT`, `LINE`, `PLINE`, `ARC_3PT`, `TANGENT_CURVE`, `MOVE`, `COPY`, `INTERSECT_POINT`
+- first traverse-entry command: `TRAVERSE`
 - first interactive query command: `INVERSE`
 - undo/redo replay over snapshot-backed transaction entries
 - typed coordinate input plus `@azimuth,distance` and survey bearing-distance input after a first point
@@ -30,6 +31,7 @@ Current implemented spike slice:
 - inverse status now reports distance, azimuth, and survey bearing together
 - dedicated workspace viewport controls now follow direct CAD-style interaction: wheel zoom, middle-mouse pan, middle-double-click zoom extents, click selection, and left-to-right window vs right-to-left crossing drag-box selection
 - command commit/cancel now leans on direct picks plus keyboard flow: viewport clicks capture points, `Enter` submits typed input or finishes `PLINE` on an empty prompt, and `Escape` cancels the active command or clears selection
+- in-progress commands now paint live preview geometry in the viewport for line/polyline/curve and translate-style edit flows before commit
 
 ## Initial command families
 - `POINT`

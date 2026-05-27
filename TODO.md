@@ -1,3 +1,5 @@
+- [x] Survey CAD live-preview + traverse-start batch (May 2026): add in-viewport live preview overlays for line/polyline/arc/move/copy workflows, then start the first native `TRAVERSE` entry flow on the same direct-interaction command seam.
+
 - [x] Survey CAD direct-interaction batch (May 2026): make the CAD page fully fit the browser window, remove the remaining visible helper buttons for select/pan/zoom and command submit/snap helpers, switch commands to click-driven point capture plus Enter/Escape keyboard flow, and make first drawing tools like `LINE` work directly from viewport clicks.
 
 - [x] Survey CAD chrome-trim + tool-modes batch (May 2026): remove the duplicate results-area Survey CAD tab, collapse the dedicated CAD page down to toolbar plus model space, and start explicit CAD tool modes with top-toolbar select/pan/zoom-window controls.

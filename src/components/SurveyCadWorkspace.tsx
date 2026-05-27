@@ -52,6 +52,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     commandInputValue,
     statusText,
     commandHelpText,
+    commandPreviewPrimitives,
     canCreateIntersectionPoint,
     activeSnap,
     snapStatusText,
@@ -61,6 +62,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     startCogoPointCommand,
     startLineCommand,
     startPolylineCommand,
+    startTraverseCommand,
     startArc3PointCommand,
     startTangentCurveCommand,
     startInverseCommand,
@@ -136,6 +138,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
               onStartCogoPoint={startCogoPointCommand}
               onStartLine={startLineCommand}
               onStartPolyline={startPolylineCommand}
+              onStartTraverse={startTraverseCommand}
               onStartArc3Point={startArc3PointCommand}
               onStartTangentCurve={startTangentCurveCommand}
               onStartInverse={startInverseCommand}
@@ -168,6 +171,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
               scene={displayScene}
               selectedEntityIds={selectedEntityIds}
               activeSnap={activeSnap}
+              commandPreviewPrimitives={commandPreviewPrimitives}
               viewport={viewport}
               commandActive={activeCommandKey != null}
               onViewportChange={setViewport}

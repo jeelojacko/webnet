@@ -10,6 +10,7 @@ interface SurveyCadCommandLineProps {
     | 'COGO_POINT'
     | 'LINE'
     | 'PLINE'
+    | 'TRAVERSE'
     | 'ARC_3PT'
     | 'TANGENT_CURVE'
     | 'INVERSE'
@@ -27,6 +28,7 @@ interface SurveyCadCommandLineProps {
   onStartCogoPoint: () => void;
   onStartLine: () => void;
   onStartPolyline: () => void;
+  onStartTraverse: () => void;
   onStartArc3Point: () => void;
   onStartTangentCurve: () => void;
   onStartInverse: () => void;
@@ -63,6 +65,7 @@ const SurveyCadCommandLine: React.FC<SurveyCadCommandLineProps> = ({
   onStartCogoPoint,
   onStartLine,
   onStartPolyline,
+  onStartTraverse,
   onStartArc3Point,
   onStartTangentCurve,
   onStartInverse,
@@ -91,6 +94,9 @@ const SurveyCadCommandLine: React.FC<SurveyCadCommandLineProps> = ({
       </button>
       <button type="button" className={commandButtonClassName} onClick={onStartPolyline} title="Polyline">
         PLINE
+      </button>
+      <button type="button" className={commandButtonClassName} onClick={onStartTraverse} title="Traverse">
+        TRAV
       </button>
       <button type="button" className={commandButtonClassName} onClick={onStartArc3Point} title="Arc 3 Point">
         ARC
@@ -188,6 +194,8 @@ const SurveyCadCommandLine: React.FC<SurveyCadCommandLineProps> = ({
               ? 'click in model space or type x,y / LABEL=x,y'
               : activeCommandKey === 'COGO_POINT'
                 ? 'click base/target or type @azimuth,distance'
+                : activeCommandKey === 'TRAVERSE'
+                  ? 'click start / next point or type bearing-distance'
                 : activeCommandKey === 'TANGENT_CURVE'
                   ? 'click tangent points or type radius'
                   : 'click in model space or type x,y / bearing-distance'

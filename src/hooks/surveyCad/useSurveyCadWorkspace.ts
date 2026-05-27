@@ -6,9 +6,14 @@ import { cloneSurveyCadPersistedState } from '../../engine/cad/cadPersistence';
 import { buildMlightcadSpikeScene } from '../../engine/cad/cadMlightcadAdapter';
 import { buildCadDisplayScene } from '../../engine/cad/cadRenderer';
 import { createCadHistoryState, redoCadHistory, runCadCommand, undoCadHistory } from '../../engine/cad/cadUndoRedo';
-import { useSurveyCadCommands } from './useSurveyCadCommands';
+import { useSurveyCadCommands, type CadCommandPreviewState } from './useSurveyCadCommands';
 import { useSurveyCadSnapping } from './useSurveyCadSnapping';
-import type { CadProject, CadSnapCandidate, SurveyCadPersistedState } from '../../engine/cad/cadTypes';
+import type {
+  CadDisplayPrimitive,
+  CadProject,
+  CadSnapCandidate,
+  SurveyCadPersistedState,
+} from '../../engine/cad/cadTypes';
 import type { CadEntityId } from '../../engine/cad/cadTypes';
 
 interface UseSurveyCadWorkspaceResult {
@@ -25,6 +30,7 @@ interface UseSurveyCadWorkspaceResult {
     | 'COGO_POINT'
     | 'LINE'
     | 'PLINE'
+    | 'TRAVERSE'
     | 'ARC_3PT'
     | 'TANGENT_CURVE'
     | 'INVERSE'
@@ -34,6 +40,7 @@ interface UseSurveyCadWorkspaceResult {
   commandInputValue: string;
   statusText: string;
   commandHelpText: string;
+  commandPreviewPrimitives: CadDisplayPrimitive[];
   canUseActiveSnap: boolean;
   canFinishCommand: boolean;
   canCreateIntersectionPoint: boolean;
@@ -45,6 +52,7 @@ interface UseSurveyCadWorkspaceResult {
   startCogoPointCommand: () => void;
   startLineCommand: () => void;
   startPolylineCommand: () => void;
+  startTraverseCommand: () => void;
   startArc3PointCommand: () => void;
   startTangentCurveCommand: () => void;
   startInverseCommand: () => void;
@@ -108,18 +116,33 @@ export const useSurveyCadWorkspace = (
     () => getSelectedCadEntities(cadProject, selection),
     [cadProject, selection],
   );
-  const { activeSnap, snapStatusText, updatePointerWorldPoint } = useSurveyCadSnapping(cadProject);
+  const { activeSnap, pointerWorldPoint, snapStatusText, updatePointerWorldPoint } = useSurveyCadSnapping(cadProject);
+  const previewPoint = useMemo(
+    () =>
+      activeSnap
+        ? { x: activeSnap.x, y: activeSnap.y, label: activeSnap.label }
+        : pointerWorldPoint
+          ? {
+              x: pointerWorldPoint.x,
+              y: pointerWorldPoint.y,
+              label: `${pointerWorldPoint.x.toFixed(3)},${pointerWorldPoint.y.toFixed(3)}`,
+            }
+          : null,
+    [activeSnap, pointerWorldPoint],
+  );
   const {
     activeCommandKey,
     commandInputValue,
     commandPrompt,
     commandHelpText,
+    commandPreview,
     canUseActiveSnap,
     canFinishCommand,
     startPointCommand,
     startCogoPointCommand,
     startLineCommand,
     startPolylineCommand,
+    startTraverseCommand,
     startArc3PointCommand,
     startTangentCurveCommand,
     startInverseCommand,
@@ -135,10 +158,122 @@ export const useSurveyCadWorkspace = (
     handleEscapeKey,
   } = useSurveyCadCommands({
     activeSnap,
+    previewPoint,
     history,
     selectionCount: selection.selectedEntityIds.length,
     setHistory,
   });
+  const commandPreviewPrimitives = useMemo<CadDisplayPrimitive[]>(() => {
+    if (!commandPreview) return [] as CadDisplayPrimitive[];
+    const previewStroke = activeCommandKey === 'COPY' ? '#38bdf8' : '#22d3ee';
+    const previewOpacity = 0.85;
+    if (commandPreview.kind === 'point') {
+      return [
+        {
+          kind: 'point' as const,
+          id: 'preview:point',
+          layerId: 'preview',
+          sourceEntityId: 'preview:point',
+          stroke: previewStroke,
+          fill: previewStroke,
+          point: commandPreview.point,
+          radius: 2.4,
+          opacity: previewOpacity,
+        },
+      ];
+    }
+    if (commandPreview.kind === 'line') {
+      return [
+        {
+          kind: 'line' as const,
+          id: 'preview:line',
+          layerId: 'preview',
+          sourceEntityId: 'preview:line',
+          stroke: previewStroke,
+          points: commandPreview.points,
+          strokeWidth: 1.5,
+          opacity: previewOpacity,
+          strokeDasharray: '8 6',
+        },
+      ];
+    }
+    if (commandPreview.kind === 'polyline') {
+      return commandPreview.points.slice(0, -1).map((point, index) => ({
+        kind: 'line' as const,
+        id: `preview:polyline:${index + 1}`,
+        layerId: 'preview',
+        sourceEntityId: `preview:polyline:${index + 1}`,
+        stroke: previewStroke,
+        points: [point, commandPreview.points[index + 1]!] as [{ x: number; y: number }, { x: number; y: number }],
+        strokeWidth: 1.5,
+        opacity: previewOpacity,
+        strokeDasharray: '8 6',
+      }));
+    }
+    return displayScene.primitives
+      .filter((primitive) => selection.selectedEntityIds.includes(primitive.sourceEntityId))
+      .map((primitive, index) => {
+        if (primitive.kind === 'line') {
+          return {
+            ...primitive,
+            id: `preview:translate:${index + 1}`,
+            sourceEntityId: `preview:translate:${index + 1}`,
+            stroke: previewStroke,
+            points: [
+              {
+                x: primitive.points[0].x + commandPreview.deltaX,
+                y: primitive.points[0].y + commandPreview.deltaY,
+              },
+              {
+                x: primitive.points[1].x + commandPreview.deltaX,
+                y: primitive.points[1].y + commandPreview.deltaY,
+              },
+            ] as [{ x: number; y: number }, { x: number; y: number }],
+            opacity: 0.6,
+            strokeDasharray: '8 6',
+          };
+        }
+        if (primitive.kind === 'point') {
+          return {
+            ...primitive,
+            id: `preview:translate:${index + 1}`,
+            sourceEntityId: `preview:translate:${index + 1}`,
+            stroke: previewStroke,
+            fill: previewStroke,
+            point: {
+              x: primitive.point.x + commandPreview.deltaX,
+              y: primitive.point.y + commandPreview.deltaY,
+            },
+            opacity: 0.6,
+          };
+        }
+        if (primitive.kind === 'text') {
+          return {
+            ...primitive,
+            id: `preview:translate:${index + 1}`,
+            sourceEntityId: `preview:translate:${index + 1}`,
+            stroke: previewStroke,
+            point: {
+              x: primitive.point.x + commandPreview.deltaX,
+              y: primitive.point.y + commandPreview.deltaY,
+            },
+            opacity: 0.6,
+          };
+        }
+        return {
+          ...primitive,
+          id: `preview:translate:${index + 1}`,
+          sourceEntityId: `preview:translate:${index + 1}`,
+          stroke: previewStroke,
+          center: {
+            x: primitive.center.x + commandPreview.deltaX,
+            y: primitive.center.y + commandPreview.deltaY,
+          },
+          opacity: 0.6,
+          strokeDasharray: '8 6',
+        };
+      });
+  }, [activeCommandKey, commandPreview, displayScene.primitives, selection.selectedEntityIds]);
   const selectedLineLikes = useMemo(
     () => selectedEntities.filter(isCadLineLikeEntity),
     [selectedEntities],
@@ -177,6 +312,7 @@ export const useSurveyCadWorkspace = (
     commandInputValue,
     statusText: commandPrompt,
     commandHelpText,
+    commandPreviewPrimitives,
     canUseActiveSnap,
     canFinishCommand,
     canCreateIntersectionPoint: selectedIntersection != null,
@@ -188,6 +324,7 @@ export const useSurveyCadWorkspace = (
     startCogoPointCommand,
     startLineCommand,
     startPolylineCommand,
+    startTraverseCommand,
     startArc3PointCommand,
     startTangentCurveCommand,
     startInverseCommand,

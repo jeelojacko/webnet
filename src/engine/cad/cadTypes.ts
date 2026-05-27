@@ -197,6 +197,8 @@ export interface CadDisplayPrimitiveBase {
   sourceEntityId: CadEntityId;
   stroke: string;
   fill?: string;
+  opacity?: number;
+  strokeDasharray?: string;
 }
 
 export interface CadDisplayPointPrimitive extends CadDisplayPrimitiveBase {

@@ -113,6 +113,9 @@ Acceptance criteria:
 - user can build and label a simple parcel from COGO
 - closure, area, perimeter, bearings, and distances update with edits
 
+Current phase note:
+- the first direct `TRAVERSE` command-entry flow now exists on the native command seam and commits a station chain plus traverse polyline, but parcel closure/label/report work is still open before Phase 4 is complete
+
 ## Phase 5: Point import and field-to-finish
 - [ ] Define feature-code library format.
 - [ ] Add point import pipeline for collector-style files.
