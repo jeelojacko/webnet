@@ -1,3 +1,5 @@
+- [x] Survey CAD direct-interaction batch (May 2026): make the CAD page fully fit the browser window, remove the remaining visible helper buttons for select/pan/zoom and command submit/snap helpers, switch commands to click-driven point capture plus Enter/Escape keyboard flow, and make first drawing tools like `LINE` work directly from viewport clicks.
+
 - [x] Survey CAD chrome-trim + tool-modes batch (May 2026): remove the duplicate results-area Survey CAD tab, collapse the dedicated CAD page down to toolbar plus model space, and start explicit CAD tool modes with top-toolbar select/pan/zoom-window controls.
 
 - [x] Survey CAD dedicated-workspace batch (May 2026): promote Survey CAD from a result-tab panel into a dedicated full-page app workspace with its own top toolbars, hide the input editor while CAD is active, and add first CAD viewport interactions (wheel zoom, pan, zoom extents, and drag-box selection) before traverse/parcel work continues.

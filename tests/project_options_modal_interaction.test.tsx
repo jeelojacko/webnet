@@ -277,8 +277,9 @@ describe('Project Options modal interactions', () => {
       await clickOpenSurveyCad(container);
 
       expect(container.querySelector('[data-survey-cad-preview]')).not.toBeNull();
-      expect(container.textContent).toContain('Zoom Extents');
-      expect(container.textContent).toContain('Select');
+      expect(container.textContent).toContain('LINE');
+      expect(container.textContent).not.toContain('Zoom Extents');
+      expect(container.textContent).not.toContain('Zoom Window');
       expect(container.querySelector('textarea')).toBeNull();
       expect(container.textContent).not.toContain('Map & Ellipses');
       expect(container.textContent).not.toContain('Adjustment Report');

@@ -82,7 +82,7 @@ Risks:
 - [x] Add point node, endpoint, midpoint, intersection, nearest snaps.
 - [x] Add visual snap glyphs and status feedback.
 - [x] Promote the CAD page to toolbar + model-space-only chrome and remove the duplicate results-area Survey CAD tab.
-- [x] Add first explicit CAD tool modes (`Select`, `Pan`, `Zoom Window`) in the top toolbar.
+- [x] Replace the temporary explicit `Select`/`Pan`/`Zoom Window` buttons with direct CAD-style viewport interaction: click select, directional drag-box selection, wheel zoom, middle-mouse pan, and middle-double-click zoom extents.
 - [x] Add `POINT`, `LINE`, `INVERSE`.
 - [x] Add `PLINE`, `MOVE`, `COPY`.
 - [x] Add `ERASE`.
@@ -214,3 +214,4 @@ Acceptance criteria:
 - `commands are testable without DOM-heavy harnesses`: satisfied primarily by `tests/cad_command_history.test.ts`.
 - `snaps resolve exact model coordinates`: satisfied by `tests/cad_spatial_index.test.ts`.
 - `undo/redo boundaries are deterministic`: satisfied by `tests/cad_command_history.test.ts` and reinforced by the interactive smoke path in `tests/survey_cad_workspace.test.tsx`.
+- Current direct-interaction shell: the dedicated CAD page now keeps its toolbar/status region inside the browser viewport, removes visible snap/submit helper buttons, uses Enter/Escape keyboard flow for command commit/cancel, and supports click-driven `LINE` creation in the model space.

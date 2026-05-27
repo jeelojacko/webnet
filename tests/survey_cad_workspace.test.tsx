@@ -41,17 +41,47 @@ const parseOptions: ParseOptions = {
   lonSign: 'west-negative',
 };
 
-describe('SurveyCadWorkspace', () => {
-  const setTextInputValue = (inputElement: HTMLInputElement, value: string): void => {
-    const setter = Object.getOwnPropertyDescriptor(
-      window.HTMLInputElement.prototype,
-      'value',
-    )?.set;
-    setter?.call(inputElement, value);
-    inputElement.dispatchEvent(new Event('input', { bubbles: true }));
-  };
+const mockElementRect = (element: Element): void => {
+  Object.defineProperty(element, 'getBoundingClientRect', {
+    configurable: true,
+    value: () => ({
+      x: 0,
+      y: 0,
+      left: 0,
+      top: 0,
+      width: 900,
+      height: 520,
+      right: 900,
+      bottom: 520,
+      toJSON: () => ({}),
+    }),
+  });
+};
 
-  it('renders native spike preview and adapter export without a solve result', async () => {
+const setTextInputValue = (inputElement: HTMLInputElement, value: string): void => {
+  const setter = Object.getOwnPropertyDescriptor(
+    window.HTMLInputElement.prototype,
+    'value',
+  )?.set;
+  setter?.call(inputElement, value);
+  inputElement.dispatchEvent(new Event('input', { bubbles: true }));
+};
+
+const pressKey = (target: EventTarget, key: 'Enter' | 'Escape'): void => {
+  target.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key }));
+};
+
+const clickButton = (container: HTMLElement, label: string): HTMLButtonElement => {
+  const button = Array.from(container.querySelectorAll('button')).find(
+    (entry) => entry.textContent?.trim() === label,
+  ) as HTMLButtonElement | undefined;
+  if (!button) throw new Error(`Button ${label} not found`);
+  button.click();
+  return button;
+};
+
+describe('SurveyCadWorkspace', () => {
+  it('renders the dedicated CAD page without the removed helper tool buttons', async () => {
     const container = document.createElement('div');
     document.body.appendChild(container);
     const root: Root = createRoot(container);
@@ -70,12 +100,17 @@ describe('SurveyCadWorkspace', () => {
 
     expect(container.querySelector('[data-survey-cad-dedicated-page]')).not.toBeNull();
     expect(container.querySelector('[data-survey-cad-preview]')).not.toBeNull();
-    expect(container.textContent).toContain('Select');
-    expect(container.textContent).toContain('Zoom Window');
+    expect(container.textContent).not.toContain('Zoom Extents');
+    expect(container.textContent).not.toContain('Zoom Window');
+    expect(container.textContent).not.toContain('Use Snap');
+    expect(container.textContent).not.toContain('Finish PLINE');
+    expect(container.textContent).not.toContain('Submit');
     expect(container.querySelector('[data-survey-cad-entity-count]')?.textContent).toContain(
       '8 entities',
     );
-    expect(container.querySelector('[data-survey-cad-command-status]')?.textContent).toContain('Ready');
+    expect(container.querySelector('[data-survey-cad-command-status]')?.textContent).toContain(
+      'Ready',
+    );
 
     await act(async () => {
       root.unmount();
@@ -159,27 +194,19 @@ describe('SurveyCadWorkspace', () => {
       );
     });
 
-    const findButton = (label: string): HTMLButtonElement => {
-      const button = Array.from(container.querySelectorAll('button')).find(
-        (entry) => entry.textContent?.trim() === label,
-      ) as HTMLButtonElement | undefined;
-      if (!button) throw new Error(`Button ${label} not found`);
-      return button;
-    };
-
     expect(container.querySelector('[data-survey-cad-selection-count]')?.textContent).toContain(
       '1 selected',
     );
 
     await act(async () => {
-      findButton('Select All').click();
+      clickButton(container, 'S-ALL');
     });
     expect(container.querySelector('[data-survey-cad-selection-count]')?.textContent).toContain(
       '8 selected',
     );
 
     await act(async () => {
-      findButton('ERASE').click();
+      clickButton(container, 'ERASE');
     });
     expect(container.querySelector('[data-survey-cad-entity-count]')?.textContent).toContain(
       '0 entities',
@@ -189,7 +216,7 @@ describe('SurveyCadWorkspace', () => {
     );
 
     await act(async () => {
-      findButton('Undo').click();
+      clickButton(container, 'UNDO');
     });
     expect(container.querySelector('[data-survey-cad-entity-count]')?.textContent).toContain(
       '8 entities',
@@ -223,20 +250,7 @@ describe('SurveyCadWorkspace', () => {
 
     const preview = container.querySelector('[data-survey-cad-preview]') as SVGElement | null;
     if (!preview) throw new Error('Preview not found');
-    Object.defineProperty(preview, 'getBoundingClientRect', {
-      configurable: true,
-      value: () => ({
-        x: 0,
-        y: 0,
-        left: 0,
-        top: 0,
-        width: 900,
-        height: 520,
-        right: 900,
-        bottom: 520,
-        toJSON: () => ({}),
-      }),
-    });
+    mockElementRect(preview);
 
     await act(async () => {
       preview.dispatchEvent(
@@ -259,7 +273,7 @@ describe('SurveyCadWorkspace', () => {
     container.remove();
   });
 
-  it('creates a manual point from typed POINT input', async () => {
+  it('creates a manual point from typed POINT input with Enter', async () => {
     const container = document.createElement('div');
     document.body.appendChild(container);
     const root: Root = createRoot(container);
@@ -276,24 +290,15 @@ describe('SurveyCadWorkspace', () => {
       );
     });
 
-    const findButton = (label: string): HTMLButtonElement => {
-      const button = Array.from(container.querySelectorAll('button')).find(
-        (entry) => entry.textContent?.trim() === label,
-      ) as HTMLButtonElement | undefined;
-      if (!button) throw new Error(`Button ${label} not found`);
-      return button;
-    };
     const commandInput = container.querySelector('input[type="text"]') as HTMLInputElement | null;
     if (!commandInput) throw new Error('Command input not found');
 
     await act(async () => {
-      findButton('POINT').click();
+      clickButton(container, 'POINT');
     });
     await act(async () => {
       setTextInputValue(commandInput, 'CAD77=10,20');
-    });
-    await act(async () => {
-      findButton('Submit').click();
+      pressKey(commandInput, 'Enter');
     });
 
     expect(container.querySelector('[data-survey-cad-entity-count]')?.textContent).toContain(
@@ -307,452 +312,7 @@ describe('SurveyCadWorkspace', () => {
     container.remove();
   });
 
-  it('runs LINE and INVERSE command sessions from snap and typed input', async () => {
-    const container = document.createElement('div');
-    document.body.appendChild(container);
-    const root: Root = createRoot(container);
-
-    await act(async () => {
-      root.render(
-        <SurveyCadWorkspace
-          input={input}
-          instrumentLibrary={{}}
-          parseOptions={parseOptions}
-          units="m"
-          result={null}
-        />,
-      );
-    });
-
-    const findButton = (label: string): HTMLButtonElement => {
-      const button = Array.from(container.querySelectorAll('button')).find(
-        (entry) => entry.textContent?.trim() === label,
-      ) as HTMLButtonElement | undefined;
-      if (!button) throw new Error(`Button ${label} not found`);
-      return button;
-    };
-    const preview = container.querySelector('[data-survey-cad-preview]') as SVGElement | null;
-    const commandInput = container.querySelector('input[type="text"]') as HTMLInputElement | null;
-    if (!preview || !commandInput) throw new Error('Preview or command input not found');
-    Object.defineProperty(preview, 'getBoundingClientRect', {
-      configurable: true,
-      value: () => ({
-        x: 0,
-        y: 0,
-        left: 0,
-        top: 0,
-        width: 900,
-        height: 520,
-        right: 900,
-        bottom: 520,
-        toJSON: () => ({}),
-      }),
-    });
-
-    await act(async () => {
-      findButton('LINE').click();
-      preview.dispatchEvent(
-        new MouseEvent('mousemove', {
-          bubbles: true,
-          clientX: 94,
-          clientY: 461,
-        }),
-      );
-    });
-    await act(async () => {
-      findButton('Use Snap').click();
-    });
-    await act(async () => {
-      setTextInputValue(commandInput, '@90,25');
-    });
-    await act(async () => {
-      findButton('Submit').click();
-    });
-
-    expect(container.querySelector('[data-survey-cad-command-status]')?.textContent).toContain(
-      'LINE committed',
-    );
-    expect(container.querySelector('[data-survey-cad-entity-count]')?.textContent).toContain(
-      '9 entities',
-    );
-
-    await act(async () => {
-      findButton('INVERSE').click();
-      preview.dispatchEvent(
-        new MouseEvent('mousemove', {
-          bubbles: true,
-          clientX: 94,
-          clientY: 461,
-        }),
-      );
-    });
-    await act(async () => {
-      findButton('Use Snap').click();
-    });
-    await act(async () => {
-      setTextInputValue(commandInput, 'N90-00-00E,100');
-    });
-    await act(async () => {
-      findButton('Submit').click();
-    });
-
-    expect(container.querySelector('[data-survey-cad-command-status]')?.textContent).toContain(
-      'distance 100.000',
-    );
-    expect(container.querySelector('[data-survey-cad-command-status]')?.textContent).toContain(
-      'azimuth 90.0000',
-    );
-
-    await act(async () => {
-      root.unmount();
-    });
-    container.remove();
-  });
-
-  it('builds a PLINE session and commits it through Finish PLINE', async () => {
-    const container = document.createElement('div');
-    document.body.appendChild(container);
-    const root: Root = createRoot(container);
-
-    await act(async () => {
-      root.render(
-        <SurveyCadWorkspace
-          input={input}
-          instrumentLibrary={{}}
-          parseOptions={parseOptions}
-          units="m"
-          result={null}
-        />,
-      );
-    });
-
-    const findButton = (label: string): HTMLButtonElement => {
-      const button = Array.from(container.querySelectorAll('button')).find(
-        (entry) => entry.textContent?.trim() === label,
-      ) as HTMLButtonElement | undefined;
-      if (!button) throw new Error(`Button ${label} not found`);
-      return button;
-    };
-    const commandInput = container.querySelector('input[type="text"]') as HTMLInputElement | null;
-    if (!commandInput) throw new Error('Command input not found');
-
-    await act(async () => {
-      findButton('PLINE').click();
-    });
-    await act(async () => {
-      setTextInputValue(commandInput, '0,0');
-    });
-    await act(async () => {
-      findButton('Submit').click();
-    });
-    await act(async () => {
-      setTextInputValue(commandInput, '20,10');
-    });
-    await act(async () => {
-      findButton('Submit').click();
-    });
-    await act(async () => {
-      setTextInputValue(commandInput, 'N45-00-00E,20');
-    });
-    await act(async () => {
-      findButton('Submit').click();
-    });
-    await act(async () => {
-      findButton('Finish PLINE').click();
-    });
-
-    expect(container.querySelector('[data-survey-cad-command-status]')?.textContent).toContain(
-      'PLINE committed',
-    );
-    expect(container.querySelector('[data-survey-cad-entity-count]')?.textContent).toContain(
-      '9 entities',
-    );
-    expect(container.querySelector('[data-survey-cad-selection-count]')?.textContent).toContain(
-      '1 selected',
-    );
-
-    await act(async () => {
-      root.unmount();
-    });
-    container.remove();
-  });
-
-  it('runs MOVE and COPY from the current selection using snap and survey bearing-distance input', async () => {
-    const container = document.createElement('div');
-    document.body.appendChild(container);
-    const root: Root = createRoot(container);
-
-    await act(async () => {
-      root.render(
-        <SurveyCadWorkspace
-          input={input}
-          instrumentLibrary={{}}
-          parseOptions={parseOptions}
-          units="m"
-          result={null}
-        />,
-      );
-    });
-
-    const findButton = (label: string): HTMLButtonElement => {
-      const button = Array.from(container.querySelectorAll('button')).find(
-        (entry) => entry.textContent?.trim() === label,
-      ) as HTMLButtonElement | undefined;
-      if (!button) throw new Error(`Button ${label} not found`);
-      return button;
-    };
-    const preview = container.querySelector('[data-survey-cad-preview]') as SVGElement | null;
-    const commandInput = container.querySelector('input[type="text"]') as HTMLInputElement | null;
-    if (!preview || !commandInput) throw new Error('Preview or command input not found');
-    Object.defineProperty(preview, 'getBoundingClientRect', {
-      configurable: true,
-      value: () => ({
-        x: 0,
-        y: 0,
-        left: 0,
-        top: 0,
-        width: 900,
-        height: 520,
-        right: 900,
-        bottom: 520,
-        toJSON: () => ({}),
-      }),
-    });
-
-    await act(async () => {
-      findButton('MOVE').click();
-      preview.dispatchEvent(
-        new MouseEvent('mousemove', {
-          bubbles: true,
-          clientX: 94,
-          clientY: 461,
-        }),
-      );
-    });
-    await act(async () => {
-      findButton('Use Snap').click();
-    });
-    await act(async () => {
-      setTextInputValue(commandInput, 'N90-00-00E,25');
-    });
-    await act(async () => {
-      findButton('Submit').click();
-    });
-    expect(container.querySelector('[data-survey-cad-command-status]')?.textContent).toContain(
-      'MOVE committed',
-    );
-
-    await act(async () => {
-      findButton('COPY').click();
-      setTextInputValue(commandInput, '25,0');
-    });
-    await act(async () => {
-      findButton('Submit').click();
-    });
-    await act(async () => {
-      setTextInputValue(commandInput, 'N0-00-00E,15');
-    });
-    await act(async () => {
-      findButton('Submit').click();
-    });
-
-    expect(container.querySelector('[data-survey-cad-command-status]')?.textContent).toContain(
-      'COPY committed',
-    );
-    expect(container.querySelector('[data-survey-cad-selection-count]')?.textContent).toContain(
-      '2 selected',
-    );
-    expect(container.querySelector('[data-survey-cad-entity-count]')?.textContent).toContain(
-      '10 entities',
-    );
-
-    await act(async () => {
-      root.unmount();
-    });
-    container.remove();
-  });
-
-  it('runs COGO PT from a snapped base point and creates an intersection point from selected lines', async () => {
-    const container = document.createElement('div');
-    document.body.appendChild(container);
-    const root: Root = createRoot(container);
-
-    await act(async () => {
-      root.render(
-        <SurveyCadWorkspace
-          input={input}
-          instrumentLibrary={{}}
-          parseOptions={parseOptions}
-          units="m"
-          result={null}
-        />,
-      );
-    });
-
-    const findButton = (label: string): HTMLButtonElement => {
-      const button = Array.from(container.querySelectorAll('button')).find(
-        (entry) => entry.textContent?.trim() === label,
-      ) as HTMLButtonElement | undefined;
-      if (!button) throw new Error(`Button ${label} not found`);
-      return button;
-    };
-    const preview = container.querySelector('[data-survey-cad-preview]') as SVGElement | null;
-    const commandInput = container.querySelector('input[type="text"]') as HTMLInputElement | null;
-    if (!preview || !commandInput) throw new Error('Preview or command input not found');
-    Object.defineProperty(preview, 'getBoundingClientRect', {
-      configurable: true,
-      value: () => ({
-        x: 0,
-        y: 0,
-        left: 0,
-        top: 0,
-        width: 900,
-        height: 520,
-        right: 900,
-        bottom: 520,
-        toJSON: () => ({}),
-      }),
-    });
-
-    await act(async () => {
-      findButton('COGO PT').click();
-      preview.dispatchEvent(
-        new MouseEvent('mousemove', {
-          bubbles: true,
-          clientX: 94,
-          clientY: 461,
-        }),
-      );
-    });
-    await act(async () => {
-      findButton('Use Snap').click();
-    });
-    await act(async () => {
-      setTextInputValue(commandInput, 'N45-00-00E,20');
-    });
-    await act(async () => {
-      findButton('Submit').click();
-    });
-
-    expect(container.querySelector('[data-survey-cad-command-status]')?.textContent).toContain(
-      'COGO_POINT committed',
-    );
-    expect(container.querySelector('[data-survey-cad-entity-count]')?.textContent).toContain(
-      '10 entities',
-    );
-
-    const lineElements = Array.from(
-      container.querySelectorAll('line.cursor-pointer'),
-    ) as SVGLineElement[];
-    if (lineElements.length < 2) throw new Error('Expected line geometry for intersection test');
-
-    await act(async () => {
-      lineElements[0].dispatchEvent(new MouseEvent('click', { bubbles: true }));
-    });
-    await act(async () => {
-      lineElements[1].dispatchEvent(new MouseEvent('click', { bubbles: true, shiftKey: true }));
-    });
-    await act(async () => {
-      findButton('INTX').click();
-    });
-
-    expect(container.querySelector('[data-survey-cad-command-status]')?.textContent).toContain(
-      'INTERSECT_POINT committed',
-    );
-    expect(container.querySelector('[data-survey-cad-entity-count]')?.textContent).toContain(
-      '12 entities',
-    );
-
-    await act(async () => {
-      root.unmount();
-    });
-    container.remove();
-  });
-
-  it('creates ARC 3PT and TAN CURVE entities through the interactive command surface', async () => {
-    const container = document.createElement('div');
-    document.body.appendChild(container);
-    const root: Root = createRoot(container);
-
-    await act(async () => {
-      root.render(
-        <SurveyCadWorkspace
-          input={input}
-          instrumentLibrary={{}}
-          parseOptions={parseOptions}
-          units="m"
-          result={null}
-        />,
-      );
-    });
-
-    const findButton = (label: string): HTMLButtonElement => {
-      const button = Array.from(container.querySelectorAll('button')).find(
-        (entry) => entry.textContent?.trim() === label,
-      ) as HTMLButtonElement | undefined;
-      if (!button) throw new Error(`Button ${label} not found`);
-      return button;
-    };
-    const commandInput = container.querySelector('input[type="text"]') as HTMLInputElement | null;
-    if (!commandInput) throw new Error('Command input not found');
-
-    await act(async () => {
-      findButton('ARC 3PT').click();
-      setTextInputValue(commandInput, '5,0');
-    });
-    await act(async () => {
-      findButton('Submit').click();
-      setTextInputValue(commandInput, '0,5');
-    });
-    await act(async () => {
-      findButton('Submit').click();
-      setTextInputValue(commandInput, '-5,0');
-    });
-    await act(async () => {
-      findButton('Submit').click();
-    });
-
-    expect(container.querySelector('[data-survey-cad-entity-count]')?.textContent).toContain(
-      '9 entities',
-    );
-    expect(container.querySelector('[data-survey-cad-command-status]')?.textContent).toContain(
-      'ARC_3PT committed',
-    );
-
-    await act(async () => {
-      findButton('TAN CURVE').click();
-      setTextInputValue(commandInput, '0,0');
-    });
-    await act(async () => {
-      findButton('Submit').click();
-      setTextInputValue(commandInput, '-10,0');
-    });
-    await act(async () => {
-      findButton('Submit').click();
-      setTextInputValue(commandInput, '0,10');
-    });
-    await act(async () => {
-      findButton('Submit').click();
-      setTextInputValue(commandInput, '10');
-    });
-    await act(async () => {
-      findButton('Submit').click();
-    });
-
-    expect(container.querySelector('[data-survey-cad-entity-count]')?.textContent).toContain(
-      '10 entities',
-    );
-    expect(container.querySelector('[data-survey-cad-command-status]')?.textContent).toContain(
-      'TANGENT_CURVE committed',
-    );
-
-    await act(async () => {
-      root.unmount();
-    });
-    container.remove();
-  });
-
-  it('supports wheel zoom, middle-drag pan, and drag-box selection in the CAD viewport', async () => {
+  it('draws a line directly from viewport clicks', async () => {
     const container = document.createElement('div');
     document.body.appendChild(container);
     const root: Root = createRoot(container);
@@ -771,27 +331,230 @@ describe('SurveyCadWorkspace', () => {
 
     const preview = container.querySelector('[data-survey-cad-preview]') as SVGElement | null;
     const background = container.querySelector('[data-survey-cad-background="true"]') as SVGRectElement | null;
-    const zoomExtentsButton = Array.from(container.querySelectorAll('button')).find(
-      (entry) => entry.textContent?.trim() === 'Zoom Extents',
-    ) as HTMLButtonElement | undefined;
     if (!preview || !background) throw new Error('Preview background not found');
-    if (!zoomExtentsButton) throw new Error('Zoom Extents button not found');
-    Object.defineProperty(preview, 'getBoundingClientRect', {
-      configurable: true,
-      value: () => ({
-        x: 0,
-        y: 0,
-        left: 0,
-        top: 0,
-        width: 900,
-        height: 520,
-        right: 900,
-        bottom: 520,
-        toJSON: () => ({}),
-      }),
+    mockElementRect(preview);
+    mockElementRect(background);
+
+    await act(async () => {
+      clickButton(container, 'LINE');
+    });
+    await act(async () => {
+      background.dispatchEvent(
+        new MouseEvent('click', {
+          bubbles: true,
+          clientX: 180,
+          clientY: 410,
+        }),
+      );
+    });
+    await act(async () => {
+      background.dispatchEvent(
+        new MouseEvent('click', {
+          bubbles: true,
+          clientX: 320,
+          clientY: 320,
+        }),
+      );
     });
 
-    const firstLine = () => preview.querySelector('line') as SVGLineElement | null;
+    expect(container.querySelector('[data-survey-cad-command-status]')?.textContent).toContain(
+      'LINE committed',
+    );
+    expect(container.querySelector('[data-survey-cad-entity-count]')?.textContent).toContain(
+      '9 entities',
+    );
+
+    await act(async () => {
+      root.unmount();
+    });
+    container.remove();
+  });
+
+  it('uses Enter and Escape for command flow instead of helper buttons', async () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root: Root = createRoot(container);
+
+    await act(async () => {
+      root.render(
+        <SurveyCadWorkspace
+          input={input}
+          instrumentLibrary={{}}
+          parseOptions={parseOptions}
+          units="m"
+          result={null}
+        />,
+      );
+    });
+
+    const commandInput = container.querySelector('input[type="text"]') as HTMLInputElement | null;
+    if (!commandInput) throw new Error('Command input not found');
+
+    await act(async () => {
+      clickButton(container, 'PLINE');
+      setTextInputValue(commandInput, '0,0');
+      pressKey(commandInput, 'Enter');
+      setTextInputValue(commandInput, '20,10');
+      pressKey(commandInput, 'Enter');
+      setTextInputValue(commandInput, 'N45-00-00E,20');
+      pressKey(commandInput, 'Enter');
+      setTextInputValue(commandInput, '');
+      pressKey(commandInput, 'Enter');
+    });
+
+    expect(container.querySelector('[data-survey-cad-command-status]')?.textContent).toContain(
+      'PLINE committed',
+    );
+    expect(container.querySelector('[data-survey-cad-entity-count]')?.textContent).toContain(
+      '9 entities',
+    );
+
+    await act(async () => {
+      clickButton(container, 'POINT');
+    });
+    await act(async () => {
+      pressKey(commandInput, 'Escape');
+    });
+
+    expect(commandInput.disabled).toBe(true);
+    expect(container.querySelector('[data-survey-cad-command-status]')?.textContent).not.toContain(
+      'POINT active',
+    );
+
+    await act(async () => {
+      root.unmount();
+    });
+    container.remove();
+  });
+
+  it('runs MOVE, COPY, COGO, ARC, TCURVE, and INVERSE from the streamlined command surface', async () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root: Root = createRoot(container);
+
+    await act(async () => {
+      root.render(
+        <SurveyCadWorkspace
+          input={input}
+          instrumentLibrary={{}}
+          parseOptions={parseOptions}
+          units="m"
+          result={null}
+        />,
+      );
+    });
+
+    const preview = container.querySelector('[data-survey-cad-preview]') as SVGElement | null;
+    const commandInput = container.querySelector('input[type="text"]') as HTMLInputElement | null;
+    if (!preview || !commandInput) throw new Error('Preview or command input not found');
+    mockElementRect(preview);
+
+    await act(async () => {
+      clickButton(container, 'MOVE');
+      setTextInputValue(commandInput, '0,0');
+      pressKey(commandInput, 'Enter');
+      setTextInputValue(commandInput, 'N90-00-00E,25');
+      pressKey(commandInput, 'Enter');
+    });
+    expect(container.querySelector('[data-survey-cad-command-status]')?.textContent).toContain(
+      'MOVE committed',
+    );
+
+    await act(async () => {
+      clickButton(container, 'COPY');
+      setTextInputValue(commandInput, '25,0');
+      pressKey(commandInput, 'Enter');
+      setTextInputValue(commandInput, 'N0-00-00E,15');
+      pressKey(commandInput, 'Enter');
+    });
+    expect(container.querySelector('[data-survey-cad-command-status]')?.textContent).toContain(
+      'COPY committed',
+    );
+
+    await act(async () => {
+      clickButton(container, 'COGO');
+      setTextInputValue(commandInput, '0,0');
+      pressKey(commandInput, 'Enter');
+      setTextInputValue(commandInput, 'N45-00-00E,20');
+      pressKey(commandInput, 'Enter');
+    });
+    expect(container.querySelector('[data-survey-cad-command-status]')?.textContent).toContain(
+      'COGO_POINT committed',
+    );
+
+    await act(async () => {
+      clickButton(container, 'ARC');
+      setTextInputValue(commandInput, '5,0');
+      pressKey(commandInput, 'Enter');
+      setTextInputValue(commandInput, '0,5');
+      pressKey(commandInput, 'Enter');
+      setTextInputValue(commandInput, '-5,0');
+      pressKey(commandInput, 'Enter');
+    });
+    expect(container.querySelector('[data-survey-cad-command-status]')?.textContent).toContain(
+      'ARC_3PT committed',
+    );
+
+    await act(async () => {
+      clickButton(container, 'TCURVE');
+      setTextInputValue(commandInput, '0,0');
+      pressKey(commandInput, 'Enter');
+      setTextInputValue(commandInput, '-10,0');
+      pressKey(commandInput, 'Enter');
+      setTextInputValue(commandInput, '0,10');
+      pressKey(commandInput, 'Enter');
+      setTextInputValue(commandInput, '10');
+      pressKey(commandInput, 'Enter');
+    });
+    expect(container.querySelector('[data-survey-cad-command-status]')?.textContent).toContain(
+      'TANGENT_CURVE committed',
+    );
+
+    await act(async () => {
+      clickButton(container, 'INV');
+      setTextInputValue(commandInput, '0,0');
+      pressKey(commandInput, 'Enter');
+      setTextInputValue(commandInput, 'N90-00-00E,100');
+      pressKey(commandInput, 'Enter');
+    });
+
+    expect(container.querySelector('[data-survey-cad-command-status]')?.textContent).toContain(
+      'distance 100.000',
+    );
+    expect(container.querySelector('[data-survey-cad-command-status]')?.textContent).toContain(
+      'azimuth 90.0000',
+    );
+
+    await act(async () => {
+      root.unmount();
+    });
+    container.remove();
+  });
+
+  it('supports wheel zoom, middle-drag pan, middle-double-click extents, and directional drag-box selection', async () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root: Root = createRoot(container);
+
+    await act(async () => {
+      root.render(
+        <SurveyCadWorkspace
+          input={input}
+          instrumentLibrary={{}}
+          parseOptions={parseOptions}
+          units="m"
+          result={null}
+        />,
+      );
+    });
+
+    const preview = container.querySelector('[data-survey-cad-preview]') as SVGElement | null;
+    const background = container.querySelector('[data-survey-cad-background="true"]') as SVGRectElement | null;
+    if (!preview || !background) throw new Error('Preview background not found');
+    mockElementRect(preview);
+    mockElementRect(background);
+
+    const firstLine = () => preview.querySelector('line.cursor-pointer') as SVGLineElement | null;
     const startingX1 = Number(firstLine()?.getAttribute('x1') ?? Number.NaN);
 
     await act(async () => {
@@ -839,8 +602,33 @@ describe('SurveyCadWorkspace', () => {
     expect(pannedX1).not.toBeCloseTo(zoomedX1, 6);
 
     await act(async () => {
-      zoomExtentsButton.click();
+      preview.dispatchEvent(
+        new MouseEvent('mousedown', {
+          bubbles: true,
+          button: 1,
+          clientX: 450,
+          clientY: 260,
+        }),
+      );
+      preview.dispatchEvent(
+        new MouseEvent('mouseup', {
+          bubbles: true,
+          button: 1,
+          clientX: 450,
+          clientY: 260,
+        }),
+      );
+      preview.dispatchEvent(
+        new MouseEvent('mousedown', {
+          bubbles: true,
+          button: 1,
+          clientX: 450,
+          clientY: 260,
+        }),
+      );
     });
+    const resetX1 = Number(firstLine()?.getAttribute('x1') ?? Number.NaN);
+    expect(resetX1).toBeCloseTo(startingX1, 6);
 
     await act(async () => {
       background.dispatchEvent(
@@ -870,72 +658,17 @@ describe('SurveyCadWorkspace', () => {
         }),
       );
     });
-
     expect(container.querySelector('[data-survey-cad-selection-count]')?.textContent).toContain(
       '8 selected',
     );
 
     await act(async () => {
-      root.unmount();
-    });
-    container.remove();
-  });
-
-  it('supports explicit pan and zoom-window tool modes from the CAD toolbar', async () => {
-    const container = document.createElement('div');
-    document.body.appendChild(container);
-    const root: Root = createRoot(container);
-
-    await act(async () => {
-      root.render(
-        <SurveyCadWorkspace
-          input={input}
-          instrumentLibrary={{}}
-          parseOptions={parseOptions}
-          units="m"
-          result={null}
-        />,
-      );
-    });
-
-    const preview = container.querySelector('[data-survey-cad-preview]') as SVGElement | null;
-    const background = container.querySelector('[data-survey-cad-background="true"]') as SVGRectElement | null;
-    if (!preview || !background) throw new Error('Preview background not found');
-    Object.defineProperty(preview, 'getBoundingClientRect', {
-      configurable: true,
-      value: () => ({
-        x: 0,
-        y: 0,
-        left: 0,
-        top: 0,
-        width: 900,
-        height: 520,
-        right: 900,
-        bottom: 520,
-        toJSON: () => ({}),
-      }),
-    });
-
-    const findButton = (label: string): HTMLButtonElement => {
-      const button = Array.from(container.querySelectorAll('button')).find(
-        (entry) => entry.textContent?.trim() === label,
-      ) as HTMLButtonElement | undefined;
-      if (!button) throw new Error(`Button ${label} not found`);
-      return button;
-    };
-    const firstLine = () => preview.querySelector('line') as SVGLineElement | null;
-
-    await act(async () => {
-      findButton('Pan').click();
-    });
-    const beforePanX1 = Number(firstLine()?.getAttribute('x1') ?? Number.NaN);
-    await act(async () => {
       background.dispatchEvent(
         new MouseEvent('mousedown', {
           bubbles: true,
           button: 0,
-          clientX: 420,
-          clientY: 240,
+          clientX: 880,
+          clientY: 500,
         }),
       );
     });
@@ -943,8 +676,8 @@ describe('SurveyCadWorkspace', () => {
       preview.dispatchEvent(
         new MouseEvent('mousemove', {
           bubbles: true,
-          clientX: 500,
-          clientY: 300,
+          clientX: 20,
+          clientY: 20,
         }),
       );
     });
@@ -952,49 +685,14 @@ describe('SurveyCadWorkspace', () => {
       preview.dispatchEvent(
         new MouseEvent('mouseup', {
           bubbles: true,
-          clientX: 500,
-          clientY: 300,
+          clientX: 20,
+          clientY: 20,
         }),
       );
     });
-    const afterPanX1 = Number(firstLine()?.getAttribute('x1') ?? Number.NaN);
-    expect(afterPanX1).not.toBeCloseTo(beforePanX1, 6);
-
-    await act(async () => {
-      findButton('Zoom Extents').click();
-      findButton('Zoom Window').click();
-    });
-    const beforeZoomWindowX1 = Number(firstLine()?.getAttribute('x1') ?? Number.NaN);
-    await act(async () => {
-      background.dispatchEvent(
-        new MouseEvent('mousedown', {
-          bubbles: true,
-          button: 0,
-          clientX: 200,
-          clientY: 120,
-        }),
-      );
-    });
-    await act(async () => {
-      preview.dispatchEvent(
-        new MouseEvent('mousemove', {
-          bubbles: true,
-          clientX: 520,
-          clientY: 360,
-        }),
-      );
-    });
-    await act(async () => {
-      preview.dispatchEvent(
-        new MouseEvent('mouseup', {
-          bubbles: true,
-          clientX: 520,
-          clientY: 360,
-        }),
-      );
-    });
-    const afterZoomWindowX1 = Number(firstLine()?.getAttribute('x1') ?? Number.NaN);
-    expect(afterZoomWindowX1).not.toBeCloseTo(beforeZoomWindowX1, 6);
+    expect(container.querySelector('[data-survey-cad-selection-count]')?.textContent).toContain(
+      '8 selected',
+    );
 
     await act(async () => {
       root.unmount();

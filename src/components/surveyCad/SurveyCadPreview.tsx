@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import type {
   CadBounds,
   CadDisplayPrimitive,
@@ -11,11 +11,13 @@ interface SurveyCadPreviewProps {
   selectedEntityIds: readonly string[];
   activeSnap: CadSnapCandidate | null;
   viewport: { zoom: number; panX: number; panY: number };
-  toolMode: 'select' | 'pan' | 'zoom-window';
+  commandActive: boolean;
   onViewportChange: (_viewport: { zoom: number; panX: number; panY: number }) => void;
   onSelectEntity: (_entityId: string, _appendToSelection?: boolean) => void;
   onSelectEntities: (_entityIds: string[], _appendToSelection?: boolean) => void;
+  onConsumeInteractionPoint: (_worldPoint: { x: number; y: number }) => void;
   onPointerWorldPointChange: (_worldPoint: { x: number; y: number } | null) => void;
+  onZoomExtents: () => void;
 }
 
 const WIDTH = 900;
@@ -153,12 +155,16 @@ const renderPrimitive = (
   selectedEntityIds: readonly string[],
   project: (_x: number, _y: number) => { x: number; y: number },
   scale: number,
-  onSelectEntity: (_entityId: string, _appendToSelection?: boolean) => void,
+  onEntityClick: (
+    _event: React.MouseEvent<SVGElement>,
+    _entityId: string,
+    _appendToSelection?: boolean,
+  ) => void,
 ) => {
   const isSelected = selectedEntityIds.includes(primitive.sourceEntityId);
   const commonProps = {
     onClick: (event: React.MouseEvent<SVGElement>) =>
-      onSelectEntity(primitive.sourceEntityId, event.shiftKey),
+      onEntityClick(event, primitive.sourceEntityId, event.shiftKey),
     className: 'cursor-pointer',
   };
 
@@ -236,18 +242,22 @@ const SurveyCadPreview: React.FC<SurveyCadPreviewProps> = ({
   selectedEntityIds,
   activeSnap,
   viewport,
-  toolMode,
+  commandActive,
   onViewportChange,
   onSelectEntity,
   onSelectEntities,
+  onConsumeInteractionPoint,
   onPointerWorldPointChange,
+  onZoomExtents,
 }) => {
-  const { project, scale, unproject, baseScale, normalized } = useProjector(scene.bounds, viewport);
+  const { baseScale, normalized, project, scale, unproject } = useProjector(scene.bounds, viewport);
   const [dragState, setDragState] = useState<DragState>({ kind: 'none' });
+  const [didDrag, setDidDrag] = useState(false);
   const selectionBox = dragState.kind === 'box' ? dragState.box : null;
+  const middleMouseDownAtRef = useRef<number>(0);
 
   const screenPointFromMouseEvent = (
-    event: React.MouseEvent<SVGSVGElement>,
+    event: React.MouseEvent<SVGElement>,
   ): { rect: DOMRect; viewX: number; viewY: number } | null => {
     const rect = event.currentTarget.getBoundingClientRect();
     if (rect.width <= 0 || rect.height <= 0) return null;
@@ -271,6 +281,15 @@ const SurveyCadPreview: React.FC<SurveyCadPreviewProps> = ({
         if (!screenPoint) return;
         if (event.button === 1) {
           event.preventDefault();
+          const now = Date.now();
+          if (now - middleMouseDownAtRef.current <= 280) {
+            middleMouseDownAtRef.current = 0;
+            setDragState({ kind: 'none' });
+            onZoomExtents();
+            return;
+          }
+          middleMouseDownAtRef.current = now;
+          setDidDrag(false);
           setDragState({
             kind: 'pan',
             startClientX: event.clientX,
@@ -281,17 +300,12 @@ const SurveyCadPreview: React.FC<SurveyCadPreviewProps> = ({
           return;
         }
         const target = event.target as Element | null;
-        if (event.button === 0 && target?.getAttribute('data-survey-cad-background') === 'true') {
-          if (toolMode === 'pan') {
-            setDragState({
-              kind: 'pan',
-              startClientX: event.clientX,
-              startClientY: event.clientY,
-              startPanX: viewport.panX,
-              startPanY: viewport.panY,
-            });
-            return;
-          }
+        if (
+          event.button === 0 &&
+          target?.getAttribute('data-survey-cad-background') === 'true' &&
+          !commandActive
+        ) {
+          setDidDrag(false);
           setDragState({
             kind: 'box',
             box: {
@@ -309,12 +323,24 @@ const SurveyCadPreview: React.FC<SurveyCadPreviewProps> = ({
         if (!screenPoint) return;
         const { rect, viewX, viewY } = screenPoint;
         if (dragState.kind === 'pan') {
+          if (
+            Math.abs(event.clientX - dragState.startClientX) > 2 ||
+            Math.abs(event.clientY - dragState.startClientY) > 2
+          ) {
+            setDidDrag(true);
+          }
           onViewportChange({
             ...viewport,
             panX: dragState.startPanX + ((event.clientX - dragState.startClientX) / rect.width) * WIDTH,
             panY: dragState.startPanY + ((event.clientY - dragState.startClientY) / rect.height) * HEIGHT,
           });
         } else if (dragState.kind === 'box') {
+          if (
+            Math.abs(viewX - dragState.box.anchorX) > 2 ||
+            Math.abs(viewY - dragState.box.anchorY) > 2
+          ) {
+            setDidDrag(true);
+          }
           setDragState({
             ...dragState,
             box: {
@@ -328,41 +354,11 @@ const SurveyCadPreview: React.FC<SurveyCadPreviewProps> = ({
       }}
       onMouseUp={() => {
         if (dragState.kind === 'box') {
-          if (toolMode === 'zoom-window') {
-            const minX = Math.min(dragState.box.anchorX, dragState.box.currentX);
-            const maxX = Math.max(dragState.box.anchorX, dragState.box.currentX);
-            const minY = Math.min(dragState.box.anchorY, dragState.box.currentY);
-            const maxY = Math.max(dragState.box.anchorY, dragState.box.currentY);
-            const boxWidth = maxX - minX;
-            const boxHeight = maxY - minY;
-            if (boxWidth >= 8 && boxHeight >= 8) {
-              const worldTopLeft = unproject(minX, minY);
-              const worldBottomRight = unproject(maxX, maxY);
-              const worldMinX = Math.min(worldTopLeft.x, worldBottomRight.x);
-              const worldMaxX = Math.max(worldTopLeft.x, worldBottomRight.x);
-              const worldMinY = Math.min(worldTopLeft.y, worldBottomRight.y);
-              const worldMaxY = Math.max(worldTopLeft.y, worldBottomRight.y);
-              const worldWidth = Math.max(worldMaxX - worldMinX, 1e-6);
-              const worldHeight = Math.max(worldMaxY - worldMinY, 1e-6);
-              const nextZoom = Math.max(
-                MIN_ZOOM,
-                Math.min(
-                  MAX_ZOOM,
-                  Math.min(
-                    (WIDTH - PADDING * 2) / (baseScale * worldWidth),
-                    (HEIGHT - PADDING * 2) / (baseScale * worldHeight),
-                  ),
-                ),
-              );
-              onViewportChange({
-                zoom: nextZoom,
-                panX: PADDING - (worldMinX - normalized.minX) * baseScale * nextZoom,
-                panY:
-                  PADDING -
-                  (normalized.maxY - worldMaxY) * baseScale * nextZoom,
-              });
-            }
-          } else {
+          const minX = Math.min(dragState.box.anchorX, dragState.box.currentX);
+          const maxX = Math.max(dragState.box.anchorX, dragState.box.currentX);
+          const minY = Math.min(dragState.box.anchorY, dragState.box.currentY);
+          const maxY = Math.max(dragState.box.anchorY, dragState.box.currentY);
+          if (maxX - minX >= 4 || maxY - minY >= 4) {
             const ids = scene.primitives
               .filter((primitive) =>
                 intersectsSelectionBox(primitiveBounds(primitive, project, scale), dragState.box),
@@ -372,6 +368,10 @@ const SurveyCadPreview: React.FC<SurveyCadPreviewProps> = ({
             onSelectEntities(ids, dragState.appendToSelection);
           }
         }
+        if (dragState.kind === 'pan') {
+          middleMouseDownAtRef.current = 0;
+        }
+        setDidDrag(false);
         setDragState({ kind: 'none' });
       }}
       onWheel={(event) => {
@@ -400,10 +400,32 @@ const SurveyCadPreview: React.FC<SurveyCadPreviewProps> = ({
         height={HEIGHT}
         fill="#020617"
         data-survey-cad-background="true"
+        onClick={(event) => {
+          if (!commandActive || didDrag) return;
+          const screenPoint = screenPointFromMouseEvent(event);
+          if (!screenPoint) return;
+          onConsumeInteractionPoint(unproject(screenPoint.viewX, screenPoint.viewY));
+        }}
       />
       <g>
         {scene.primitives.map((primitive) =>
-          renderPrimitive(primitive, selectedEntityIds, project, scale, onSelectEntity),
+          renderPrimitive(primitive, selectedEntityIds, project, scale, (event, entityId, appendToSelection) => {
+            if (commandActive) {
+              if (didDrag) return;
+              if (activeSnap) {
+                onConsumeInteractionPoint({ x: activeSnap.x, y: activeSnap.y });
+                return;
+              }
+              const svg = event.currentTarget.ownerSVGElement;
+              const rect = svg?.getBoundingClientRect();
+              if (!rect || rect.width <= 0 || rect.height <= 0) return;
+              const viewX = ((event.clientX - rect.left) / rect.width) * WIDTH;
+              const viewY = ((event.clientY - rect.top) / rect.height) * HEIGHT;
+              onConsumeInteractionPoint(unproject(viewX, viewY));
+              return;
+            }
+            onSelectEntity(entityId, appendToSelection);
+          }),
         )}
         {activeSnap ? (
           <g data-survey-cad-snap-glyph>
@@ -440,20 +462,8 @@ const SurveyCadPreview: React.FC<SurveyCadPreviewProps> = ({
             y={Math.min(selectionBox.anchorY, selectionBox.currentY)}
             width={Math.abs(selectionBox.currentX - selectionBox.anchorX)}
             height={Math.abs(selectionBox.currentY - selectionBox.anchorY)}
-            fill={
-              toolMode === 'zoom-window'
-                ? 'rgba(56,189,248,0.12)'
-                : selectionBox.currentX >= selectionBox.anchorX
-                  ? 'rgba(34,197,94,0.12)'
-                  : 'rgba(251,191,36,0.12)'
-            }
-            stroke={
-              toolMode === 'zoom-window'
-                ? '#38bdf8'
-                : selectionBox.currentX >= selectionBox.anchorX
-                  ? '#22c55e'
-                  : '#fbbf24'
-            }
+            fill={selectionBox.currentX >= selectionBox.anchorX ? 'rgba(34,197,94,0.12)' : 'rgba(251,191,36,0.12)'}
+            stroke={selectionBox.currentX >= selectionBox.anchorX ? '#22c55e' : '#fbbf24'}
             strokeDasharray="6 4"
             strokeWidth={1.2}
           />

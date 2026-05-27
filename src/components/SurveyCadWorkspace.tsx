@@ -1,5 +1,4 @@
 import React, { useEffect, useMemo, useState, type Dispatch, type SetStateAction } from 'react';
-import { Crosshair, Hand, Minus, Plus, ScanSearch, Search } from 'lucide-react';
 import type { AdjustmentResult, InstrumentLibrary, ParseOptions, UnitsMode } from '../types';
 import { buildSurveyCadSpikeProject } from '../engine/cad/cadModel';
 import type { SurveyCadPersistedState } from '../engine/cad/cadTypes';
@@ -53,8 +52,6 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     commandInputValue,
     statusText,
     commandHelpText,
-    canUseActiveSnap,
-    canFinishCommand,
     canCreateIntersectionPoint,
     activeSnap,
     snapStatusText,
@@ -70,11 +67,10 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     startMoveCommand,
     startCopyCommand,
     createIntersectionPoint,
-    cancelActiveCommand,
-    finishActiveCommand,
     setCommandInputValue,
-    submitCommandInput,
-    useActiveSnap,
+    consumeInteractionPoint,
+    handleEnterKey,
+    handleEscapeKey,
     selectEntity,
     selectEntities,
     updatePointerWorldPoint,
@@ -85,60 +81,46 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     redo,
   } = useSurveyCadWorkspace(cadProject, persistedState, onPersistedStateChange);
   const [viewport, setViewport] = useState({ zoom: 1, panX: 0, panY: 0 });
-  const [toolMode, setToolMode] = useState<'select' | 'pan' | 'zoom-window'>('select');
 
   useEffect(() => {
     setViewport({ zoom: 1, panX: 0, panY: 0 });
   }, [activeProject.id, activeProject.bounds?.minX, activeProject.bounds?.minY, activeProject.bounds?.maxX, activeProject.bounds?.maxY]);
 
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        if (activeCommandKey == null && selectionCount === 0) return;
+        event.preventDefault();
+        if (activeCommandKey) {
+          handleEscapeKey();
+          return;
+        }
+        clearSelection();
+        return;
+      }
+      if (event.key !== 'Enter' || activeCommandKey == null) return;
+      const target = event.target;
+      if (
+        target instanceof HTMLInputElement ||
+        target instanceof HTMLTextAreaElement ||
+        target instanceof HTMLButtonElement
+      ) {
+        return;
+      }
+      event.preventDefault();
+      handleEnterKey();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [activeCommandKey, clearSelection, handleEnterKey, handleEscapeKey, selectionCount]);
+
   return (
-    <div className="h-full overflow-hidden bg-slate-950 text-slate-100" data-survey-cad-dedicated-page>
-      <div className="flex h-full flex-col">
-        <div className="border-b border-slate-800 bg-slate-900/90 px-4 py-3">
-          <div className="flex flex-wrap items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setViewport((current) => ({ ...current, zoom: Math.min(16, current.zoom * 1.2) }))}
-              className="rounded-md border border-slate-700 bg-slate-950/70 px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-100 transition-colors hover:border-cyan-500/70 hover:bg-slate-900"
-            >
-              <span className="inline-flex items-center gap-2">
-                <Plus size={14} />
-                Zoom In
-              </span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setViewport((current) => ({ ...current, zoom: Math.max(0.35, current.zoom / 1.2) }))}
-              className="rounded-md border border-slate-700 bg-slate-950/70 px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-100 transition-colors hover:border-cyan-500/70 hover:bg-slate-900"
-            >
-              <span className="inline-flex items-center gap-2">
-                <Minus size={14} />
-                Zoom Out
-              </span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setViewport({ zoom: 1, panX: 0, panY: 0 })}
-              className="rounded-md border border-slate-700 bg-slate-950/70 px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-100 transition-colors hover:border-cyan-500/70 hover:bg-slate-900"
-            >
-              <span className="inline-flex items-center gap-2">
-                <ScanSearch size={14} />
-                Zoom Extents
-              </span>
-            </button>
-            <div className="ml-auto flex items-center gap-3 text-[11px] uppercase tracking-[0.18em] text-slate-400">
-              <span className="inline-flex items-center gap-1">
-                {toolMode === 'select' ? <Crosshair size={13} /> : toolMode === 'pan' ? <Hand size={13} /> : <Search size={13} />}
-                {toolMode === 'select' ? 'Select Tool' : toolMode === 'pan' ? 'Pan Tool' : 'Zoom Window'}
-              </span>
-              <span>MMB Pan</span>
-              <span>Wheel Zoom</span>
-            </div>
-          </div>
-          <div className="mt-3 border-t border-slate-800 pt-3">
+    <div className="h-full min-h-0 overflow-hidden bg-slate-950 text-slate-100" data-survey-cad-dedicated-page>
+      <div className="flex h-full min-h-0 flex-col">
+        <div className="shrink-0 border-b border-slate-800 bg-slate-900/90 px-4 py-2">
+          <div className="max-h-[32vh] overflow-y-auto">
             <SurveyCadCommandLine
-              toolMode={toolMode}
-              onToolModeChange={setToolMode}
+              entityCount={activeProject.entities.length}
               selectionCount={selectionCount}
               canUndo={canUndo}
               canRedo={canRedo}
@@ -146,8 +128,9 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
               commandInputValue={commandInputValue}
               statusText={statusText}
               commandHelpText={commandHelpText}
-              canUseActiveSnap={canUseActiveSnap}
-              canFinishCommand={canFinishCommand}
+              snapStatusText={snapStatusText}
+              historyDepth={historyDepth}
+              redoDepth={redoDepth}
               canCreateIntersectionPoint={canCreateIntersectionPoint}
               onStartPoint={startPointCommand}
               onStartCogoPoint={startCogoPointCommand}
@@ -159,40 +142,41 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
               onStartMove={startMoveCommand}
               onStartCopy={startCopyCommand}
               onCreateIntersectionPoint={createIntersectionPoint}
-              onCancelCommand={cancelActiveCommand}
-              onFinishCommand={finishActiveCommand}
               onCommandInputChange={setCommandInputValue}
-              onSubmitCommand={submitCommandInput}
-              onUseActiveSnap={useActiveSnap}
               onSelectAll={selectAll}
               onClearSelection={clearSelection}
               onErase={eraseSelection}
               onUndo={undo}
               onRedo={redo}
+              onEnterKey={handleEnterKey}
+              onEscapeKey={() => {
+                if (activeCommandKey) {
+                  handleEscapeKey();
+                  return;
+                }
+                if (selectionCount > 0) {
+                  clearSelection();
+                }
+              }}
             />
           </div>
         </div>
 
-        <section className="min-h-0 flex-1 overflow-hidden p-4">
+        <section className="min-h-0 flex-1 overflow-hidden p-3">
           <div className="h-full rounded-lg border border-slate-800 bg-slate-950/70 p-3">
             <SurveyCadPreview
               scene={displayScene}
               selectedEntityIds={selectedEntityIds}
               activeSnap={activeSnap}
               viewport={viewport}
-              toolMode={toolMode}
+              commandActive={activeCommandKey != null}
               onViewportChange={setViewport}
               onSelectEntity={selectEntity}
               onSelectEntities={selectEntities}
+              onConsumeInteractionPoint={consumeInteractionPoint}
               onPointerWorldPointChange={updatePointerWorldPoint}
+              onZoomExtents={() => setViewport({ zoom: 1, panX: 0, panY: 0 })}
             />
-          </div>
-          <div className="flex flex-wrap items-center gap-3 px-1 pt-2 text-[11px] uppercase tracking-[0.18em] text-slate-400">
-            <span data-survey-cad-entity-count>{activeProject.entities.length} entities</span>
-            <span data-survey-cad-selection-count>{selectionCount} selected</span>
-            <span>{historyDepth} undo</span>
-            <span>{redoDepth} redo</span>
-            <span data-survey-cad-snap-status>{snapStatusText}</span>
           </div>
         </section>
       </div>

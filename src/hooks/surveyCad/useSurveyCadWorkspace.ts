@@ -56,6 +56,9 @@ interface UseSurveyCadWorkspaceResult {
   setCommandInputValue: (_value: string) => void;
   submitCommandInput: () => void;
   useActiveSnap: () => void;
+  consumeInteractionPoint: (_worldPoint: { x: number; y: number }) => void;
+  handleEnterKey: () => void;
+  handleEscapeKey: () => void;
   selectEntity: (_entityId: string, _appendToSelection?: boolean) => void;
   selectEntities: (_entityIds: string[], _appendToSelection?: boolean) => void;
   updatePointerWorldPoint: (_worldPoint: { x: number; y: number } | null) => void;
@@ -127,6 +130,9 @@ export const useSurveyCadWorkspace = (
     setCommandInputValue,
     submitCommandInput,
     useActiveSnap,
+    consumeInteractionPoint,
+    handleEnterKey,
+    handleEscapeKey,
   } = useSurveyCadCommands({
     activeSnap,
     history,
@@ -204,6 +210,18 @@ export const useSurveyCadWorkspace = (
     setCommandInputValue,
     submitCommandInput,
     useActiveSnap,
+    consumeInteractionPoint: (worldPoint) => {
+      if (activeSnap) {
+        consumeInteractionPoint(
+          { x: activeSnap.x, y: activeSnap.y },
+          activeSnap.label,
+        );
+        return;
+      }
+      consumeInteractionPoint(worldPoint);
+    },
+    handleEnterKey,
+    handleEscapeKey,
     selectEntity: (entityId, appendToSelection = false) => {
       setHistory((current) => {
         const nextSelection =

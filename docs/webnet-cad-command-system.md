@@ -28,8 +28,8 @@ Current implemented spike slice:
 - typed coordinate input plus `@azimuth,distance` and survey bearing-distance input after a first point
 - tangent-curve radius entry after snapped or typed PI/back/ahead points
 - inverse status now reports distance, azimuth, and survey bearing together
-- dedicated workspace viewport controls now include wheel zoom, middle-mouse pan, `Zoom Extents`, and drag-box selection ahead of later command batches
-- explicit CAD tool modes now start in the top toolbar with `Select`, `Pan`, and `Zoom Window`
+- dedicated workspace viewport controls now follow direct CAD-style interaction: wheel zoom, middle-mouse pan, middle-double-click zoom extents, click selection, and left-to-right window vs right-to-left crossing drag-box selection
+- command commit/cancel now leans on direct picks plus keyboard flow: viewport clicks capture points, `Enter` submits typed input or finishes `PLINE` on an empty prompt, and `Escape` cancels the active command or clears selection
 
 ## Initial command families
 - `POINT`

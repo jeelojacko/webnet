@@ -80,6 +80,9 @@ interface UseSurveyCadCommandsResult {
   setCommandInputValue: (_value: string) => void;
   submitCommandInput: () => void;
   useActiveSnap: () => void;
+  consumeInteractionPoint: (_point: { x: number; y: number }, _label?: string) => void;
+  handleEnterKey: () => void;
+  handleEscapeKey: () => void;
 }
 
 const isNumeric = (value: string): boolean => value.trim().length > 0 && Number.isFinite(Number(value));
@@ -144,33 +147,33 @@ const promptForSession = (session: CommandSession | null, fallbackStatus: string
   if (!session) return fallbackStatus;
   switch (session.key) {
     case 'POINT':
-      return session.resultText ?? 'POINT active. Enter `x,y` or `LABEL=x,y`, then Submit. Hover geometry and Use Snap also works.';
+      return session.resultText ?? 'POINT active. Click in model space or enter `x,y` / `LABEL=x,y`, then press Enter.';
     case 'COGO_POINT':
       return session.resultText ??
         (session.startPoint
           ? `COGO_POINT active. Base ${session.startPoint.label} captured. Enter target as \`@azimuth,distance\`, \`N45-00-00E,100\`, or absolute \`x,y\`.`
-          : 'COGO_POINT active. Enter or snap the base point.');
+          : 'COGO_POINT active. Click or enter the base point.');
     case 'LINE':
       return session.resultText ??
         (session.startPoint
-          ? `LINE active. Start at ${session.startPoint.label}. Enter end \`x,y\`, \`@azimuth,distance\`, or \`N45-00-00E,100\`, then Submit.`
-          : 'LINE active. Enter or snap the start point.');
+          ? `LINE active. Start at ${session.startPoint.label}. Click the end point or enter \`x,y\`, \`@azimuth,distance\`, or \`N45-00-00E,100\`, then press Enter.`
+          : 'LINE active. Click or enter the start point.');
     case 'PLINE':
       return session.resultText ??
         (session.points.length > 0
-          ? `PLINE active. ${session.points.length} vertex${session.points.length === 1 ? '' : 'es'} captured. Submit next point, then Finish when ready.`
-          : 'PLINE active. Enter or snap the first vertex.');
+          ? `PLINE active. ${session.points.length} vertex${session.points.length === 1 ? '' : 'es'} captured. Click the next point or press Enter on an empty input to finish once 2+ vertices exist.`
+          : 'PLINE active. Click or enter the first vertex.');
     case 'ARC_3PT':
       return session.resultText ??
         (session.points.length === 0
-          ? 'ARC_3PT active. Enter or snap the start point.'
+          ? 'ARC_3PT active. Click or enter the start point.'
           : session.points.length === 1
             ? `ARC_3PT active. Start ${session.points[0].label} captured. Enter the through point.`
             : `ARC_3PT active. Start ${session.points[0].label} and through ${session.points[1]?.label} captured. Enter the end point.`);
     case 'TANGENT_CURVE':
       return session.resultText ??
         (session.piPoint == null
-          ? 'TANGENT_CURVE active. Enter or snap the PI point.'
+          ? 'TANGENT_CURVE active. Click or enter the PI point.'
           : session.backTangentPoint == null
             ? `TANGENT_CURVE active. PI ${session.piPoint.label} captured. Enter the back tangent point.`
             : session.aheadTangentPoint == null
@@ -179,60 +182,60 @@ const promptForSession = (session: CommandSession | null, fallbackStatus: string
     case 'INVERSE':
       return session.resultText ??
         (session.startPoint
-          ? `INVERSE active. Start at ${session.startPoint.label}. Enter end \`x,y\`, \`@azimuth,distance\`, or \`N45-00-00E,100\`, then Submit.`
-          : 'INVERSE active. Enter or snap the first point.');
+          ? `INVERSE active. Start at ${session.startPoint.label}. Click the end point or enter \`x,y\`, \`@azimuth,distance\`, or \`N45-00-00E,100\`, then press Enter.`
+          : 'INVERSE active. Click or enter the first point.');
     case 'MOVE':
       return session.resultText ??
         (session.startPoint
-          ? `MOVE active. Base point ${session.startPoint.label} captured. Enter target point, \`@azimuth,distance\`, or bearing-distance, then Submit.`
-          : 'MOVE active. Enter or snap the base point for the current selection.');
+          ? `MOVE active. Base point ${session.startPoint.label} captured. Click the target point or enter \`@azimuth,distance\` / bearing-distance, then press Enter.`
+          : 'MOVE active. Click or enter the base point for the current selection.');
     case 'COPY':
       return session.resultText ??
         (session.startPoint
-          ? `COPY active. Base point ${session.startPoint.label} captured. Enter target point, \`@azimuth,distance\`, or bearing-distance, then Submit.`
-          : 'COPY active. Enter or snap the base point for the current selection.');
+          ? `COPY active. Base point ${session.startPoint.label} captured. Click the target point or enter \`@azimuth,distance\` / bearing-distance, then press Enter.`
+          : 'COPY active. Click or enter the base point for the current selection.');
   }
 };
 
 const helpTextForSession = (session: CommandSession | null): string => {
   if (!session) {
-    return 'Interactive commands accept `x,y`, optional `LABEL=x,y`, `@azimuth,distance`, and survey bearing-distance like `N45-00-00E,100`.';
+      return 'Interactive commands accept `x,y`, optional `LABEL=x,y`, `@azimuth,distance`, and survey bearing-distance like `N45-00-00E,100`.';
   }
   switch (session.key) {
     case 'POINT':
-      return 'POINT input: `x,y` or `LABEL=x,y`. `Use Snap` creates a new manual point at the hovered snap location.';
+      return 'POINT input: click in the model space, or type `x,y` / `LABEL=x,y`. Enter commits. Esc cancels.';
     case 'COGO_POINT':
       return session.startPoint
         ? 'COGO_POINT target: `x,y`, `LABEL=x,y`, `@azimuth,distance`, or survey bearing-distance like `N45-00-00E,100` from the base point.'
-        : 'COGO_POINT base point: `x,y`, `LABEL=x,y`, or hover geometry then `Use Snap`.';
+        : 'COGO_POINT base point: click in the model space or type `x,y` / `LABEL=x,y`.';
     case 'LINE':
       return session.startPoint
         ? 'LINE second point: `x,y`, `LABEL=x,y`, `@azimuth,distance`, or `N45-00-00E,100` from the first point.'
-        : 'LINE first point: `x,y`, `LABEL=x,y`, or hover geometry then `Use Snap`.';
+        : 'LINE first point: click in the model space or type `x,y` / `LABEL=x,y`.';
     case 'PLINE':
       return session.points.length > 0
-        ? 'PLINE next vertex: `x,y`, `LABEL=x,y`, `@azimuth,distance`, or bearing-distance from the last vertex. Use `Finish PLINE` after at least 2 vertices.'
-        : 'PLINE first vertex: `x,y`, `LABEL=x,y`, or hover geometry then `Use Snap`.';
+        ? 'PLINE next vertex: click in the model space or type `x,y`, `@azimuth,distance`, or bearing-distance from the last vertex. Press Enter on an empty input to finish after 2+ vertices.'
+        : 'PLINE first vertex: click in the model space or type `x,y` / `LABEL=x,y`.';
     case 'ARC_3PT':
       return session.points.length < 2
-        ? 'ARC 3PT point input: `x,y`, `LABEL=x,y`, or hover geometry then `Use Snap`.'
-        : 'ARC 3PT end point: `x,y`, `LABEL=x,y`, or hover geometry then `Use Snap` to commit the arc.';
+        ? 'ARC 3PT point input: click in the model space or type `x,y` / `LABEL=x,y`.'
+        : 'ARC 3PT end point: click in the model space or type `x,y` / `LABEL=x,y` to commit the arc.';
     case 'TANGENT_CURVE':
       return session.aheadTangentPoint
         ? 'Tangent curve radius input: numeric radius only.'
-        : 'Tangent curve point input: `x,y`, `LABEL=x,y`, or hover geometry then `Use Snap`.';
+        : 'Tangent curve point input: click in the model space or type `x,y` / `LABEL=x,y`.';
     case 'INVERSE':
       return session.startPoint
         ? 'INVERSE second point: `x,y`, `LABEL=x,y`, `@azimuth,distance`, or bearing-distance from the first point.'
-        : 'INVERSE first point: `x,y`, `LABEL=x,y`, or hover geometry then `Use Snap`.';
+        : 'INVERSE first point: click in the model space or type `x,y` / `LABEL=x,y`.';
     case 'MOVE':
       return session.startPoint
         ? 'MOVE target point: `x,y`, `LABEL=x,y`, `@azimuth,distance`, or bearing-distance from the base point.'
-        : 'MOVE base point: `x,y`, `LABEL=x,y`, or hover geometry then `Use Snap`.';
+        : 'MOVE base point: click in the model space or type `x,y` / `LABEL=x,y`.';
     case 'COPY':
       return session.startPoint
         ? 'COPY target point: `x,y`, `LABEL=x,y`, `@azimuth,distance`, or bearing-distance from the base point.'
-        : 'COPY base point: `x,y`, `LABEL=x,y`, or hover geometry then `Use Snap`.';
+        : 'COPY base point: click in the model space or type `x,y` / `LABEL=x,y`.';
   }
 };
 
@@ -253,7 +256,10 @@ export const useSurveyCadCommands = ({
   const parseInputPoint = (inputValue: string, basePoint: CadNamedPoint | null): CadNamedPoint | null =>
     parseRelativeBearingDistance(inputValue, basePoint) ?? parseAbsolutePoint(inputValue);
 
-  const consumePoint = (point: CadNamedPoint, fromSnap = false) => {
+  const consumePoint = (
+    point: CadNamedPoint,
+    options?: { suppressPointLabel?: boolean },
+  ) => {
     setSession((current) => {
       if (!current) return current;
       if (current.key === 'POINT') {
@@ -262,7 +268,7 @@ export const useSurveyCadCommands = ({
             key: 'POINT',
             x: point.x,
             y: point.y,
-            label: fromSnap ? undefined : point.label,
+            label: options?.suppressPointLabel ? undefined : point.label,
           }),
         );
         return null;
@@ -402,6 +408,88 @@ export const useSurveyCadCommands = ({
     });
   };
 
+  const finishPolylineSession = () => {
+    if (!session || session.key !== 'PLINE' || session.points.length < 2) return;
+    setHistory((existing) =>
+      runCadCommand(existing, {
+        key: 'PLINE',
+        vertices: session.points,
+      }),
+    );
+    setSession(null);
+  };
+
+  const submitSessionInput = () => {
+    if (!session) return;
+    const basePoint =
+      session.key === 'PLINE' || session.key === 'ARC_3PT'
+        ? session.points[session.points.length - 1] ?? null
+        : session.key === 'TANGENT_CURVE'
+          ? session.aheadTangentPoint ?? session.backTangentPoint ?? session.piPoint
+          : 'startPoint' in session
+            ? session.startPoint
+            : null;
+    if (session.key === 'TANGENT_CURVE' && session.aheadTangentPoint) {
+      const piPoint = session.piPoint;
+      const backTangentPoint = session.backTangentPoint;
+      const aheadTangentPoint = session.aheadTangentPoint;
+      if (!piPoint || !backTangentPoint || !aheadTangentPoint) {
+        setSession({
+          ...session,
+          resultText: 'Tangent curve points incomplete. Capture PI, back, and ahead points first.',
+        });
+        return;
+      }
+      const radius = Number(session.inputValue.trim());
+      if (!Number.isFinite(radius) || radius <= 0) {
+        setSession({
+          ...session,
+          resultText: 'Tangent curve radius invalid. Enter a positive numeric radius.',
+        });
+        return;
+      }
+      setHistory((existing) =>
+        runCadCommand(existing, {
+          key: 'TANGENT_CURVE',
+          pi: piPoint,
+          backTangentPoint,
+          aheadTangentPoint,
+          radius,
+        }),
+      );
+      setSession(null);
+      return;
+    }
+    const parsed = parseInputPoint(session.inputValue, basePoint);
+    if (!parsed) {
+      setSession({
+        ...session,
+        resultText:
+          session.key === 'POINT'
+            ? 'POINT input invalid. Use `x,y` or `LABEL=x,y`.'
+            : session.key === 'TANGENT_CURVE' && session.aheadTangentPoint
+              ? 'Tangent curve radius invalid. Enter a positive numeric radius.'
+              : 'Command input invalid. Use `x,y`, `LABEL=x,y`, `@azimuth,distance`, or survey bearing-distance like `N45-00-00E,100`.',
+      });
+      return;
+    }
+    consumePoint(parsed);
+  };
+
+  const handleEnterKey = () => {
+    if (!session) return;
+    if (session.key === 'PLINE' && session.inputValue.trim().length === 0 && session.points.length >= 2) {
+      finishPolylineSession();
+      return;
+    }
+    if (session.inputValue.trim().length === 0) return;
+    submitSessionInput();
+  };
+
+  const handleEscapeKey = () => {
+    setSession(null);
+  };
+
   return {
     activeCommandKey: session?.key ?? null,
     commandInputValue: session?.inputValue ?? '',
@@ -468,74 +556,10 @@ export const useSurveyCadCommands = ({
       });
     },
     cancelCommand: () => setSession(null),
-    finishCommand: () => {
-      if (!session || session.key !== 'PLINE' || session.points.length < 2) return;
-      setHistory((existing) =>
-        runCadCommand(existing, {
-          key: 'PLINE',
-          vertices: session.points,
-        }),
-      );
-      setSession(null);
-    },
+    finishCommand: finishPolylineSession,
     setCommandInputValue: (value) =>
       setSession((current) => (current ? { ...current, inputValue: value, resultText: undefined } : current)),
-    submitCommandInput: () => {
-      if (!session) return;
-      const basePoint =
-        session.key === 'PLINE' || session.key === 'ARC_3PT'
-          ? session.points[session.points.length - 1] ?? null
-          : session.key === 'TANGENT_CURVE'
-            ? session.aheadTangentPoint ?? session.backTangentPoint ?? session.piPoint
-            : 'startPoint' in session
-            ? session.startPoint
-            : null;
-      if (session.key === 'TANGENT_CURVE' && session.aheadTangentPoint) {
-        const piPoint = session.piPoint;
-        const backTangentPoint = session.backTangentPoint;
-        const aheadTangentPoint = session.aheadTangentPoint;
-        if (!piPoint || !backTangentPoint || !aheadTangentPoint) {
-          setSession({
-            ...session,
-            resultText: 'Tangent curve points incomplete. Capture PI, back, and ahead points first.',
-          });
-          return;
-        }
-        const radius = Number(session.inputValue.trim());
-        if (!Number.isFinite(radius) || radius <= 0) {
-          setSession({
-            ...session,
-            resultText: 'Tangent curve radius invalid. Enter a positive numeric radius.',
-          });
-          return;
-        }
-        setHistory((existing) =>
-          runCadCommand(existing, {
-            key: 'TANGENT_CURVE',
-            pi: piPoint,
-            backTangentPoint,
-            aheadTangentPoint,
-            radius,
-          }),
-        );
-        setSession(null);
-        return;
-      }
-      const parsed = parseInputPoint(session.inputValue, basePoint);
-      if (!parsed) {
-        setSession({
-          ...session,
-          resultText:
-            session.key === 'POINT'
-              ? 'POINT input invalid. Use `x,y` or `LABEL=x,y`.'
-              : session.key === 'TANGENT_CURVE' && session.aheadTangentPoint
-                ? 'Tangent curve radius invalid. Enter a positive numeric radius.'
-              : 'Command input invalid. Use `x,y`, `LABEL=x,y`, `@azimuth,distance`, or survey bearing-distance like `N45-00-00E,100`.',
-        });
-        return;
-      }
-      consumePoint(parsed);
-    },
+    submitCommandInput: submitSessionInput,
     useActiveSnap: () => {
       if (!activeSnap) return;
       consumePoint(
@@ -544,8 +568,21 @@ export const useSurveyCadCommands = ({
           y: activeSnap.y,
           label: activeSnap.label,
         },
-        true,
+        { suppressPointLabel: true },
       );
     },
+    consumeInteractionPoint: (point, label) => {
+      if (!session) return;
+      consumePoint(
+        {
+          x: point.x,
+          y: point.y,
+          label: label ?? `${point.x.toFixed(3)},${point.y.toFixed(3)}`,
+        },
+        { suppressPointLabel: true },
+      );
+    },
+    handleEnterKey,
+    handleEscapeKey,
   };
 };
