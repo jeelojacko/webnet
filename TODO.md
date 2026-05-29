@@ -1,3 +1,4 @@
+- [x] Survey CAD traverse-label readability batch (May 2026): keep traverse azimuth/distance labels upright instead of upside down and stop traverse/parcel point creation from adding anchored coordinate/station text labels, while preserving ordinary point-label behavior.
 - [x] Survey CAD parcel-foundation + chrome-flatten batch (May 2026): remove the remaining framed brown-ish CAD shell bars so the dedicated workspace reads as one continuous blue viewport, then add first parcel creation/closure metrics on top of the native traverse/polyline seam.
 
 - [x] Survey CAD interaction polish batch (May 2026): keep selection-only changes out of undo/redo history, fix viewport cursor/world-point drift away from screen center, and stop post-create auto-zoom resets after CAD entity edits.

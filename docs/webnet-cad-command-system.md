@@ -46,7 +46,7 @@ Current implemented spike slice:
 - idle generic helper copy is now removed from the lower-left viewport so the command bar placeholder carries the generic input reminder instead
 - object snaps are now operator-toggleable from a viewport `Snaps` drop-up menu instead of a fixed status sentence, and selection hit targets for native points/lines/ellipses are intentionally wider than the visible geometry
 - the dedicated CAD page shell no longer wraps the viewport in framed brown-ish bars; the toolbar sits on the same dark-blue surface and the snap/command UI remains overlaid in the viewport
-- selected native traverse/polyline geometry can now be promoted into a parcel entity with stored area, perimeter, and closure metrics plus centered stacked parcel area/perimeter text
+- selected native traverse/polyline geometry can now be promoted into a parcel entity with stored area, perimeter, and closure metrics plus centered stacked parcel area/perimeter text; traverse segment labels render upright and traverse-created point nodes do not add anchored coordinate/station text labels
 - committed `TRAVERSE` segments now render survey-style annotation overlays with north-azimuth text above the segment and metric distance below it, aligned to the segment direction
 
 ## Initial command families

@@ -92,6 +92,37 @@ describe('CAD renderer labels', () => {
     labels.forEach((primitive) => {
       if (primitive.kind !== 'text') return;
       expect(primitive.textAnchor).toBe('middle');
+      expect(Math.abs(primitive.rotationDeg ?? 0)).toBeLessThanOrEqual(90);
+    });
+  });
+
+  it('keeps traverse labels upright and does not create point text labels for traverse-created stations', () => {
+    const traverseResult = executeCadCommand(createSnapshot(), {
+      key: 'TRAVERSE',
+      vertices: [
+        { x: 110, y: 10, label: 'T1' },
+        { x: 10, y: 10, label: 'T2' },
+      ],
+    });
+    if (!traverseResult) throw new Error('Traverse result missing');
+
+    const traverseId = traverseResult.addedEntityIds[traverseResult.addedEntityIds.length - 1];
+    const scene = buildCadDisplayScene(traverseResult.nextSnapshot.project);
+    const traverseLabels = scene.primitives.filter(
+      (primitive) => primitive.kind === 'text' && primitive.sourceEntityId === traverseId,
+    );
+    const pointLabels = scene.primitives.filter(
+      (primitive) =>
+        primitive.kind === 'text' &&
+        traverseResult.addedEntityIds.includes(primitive.sourceEntityId) &&
+        primitive.sourceEntityId !== traverseId,
+    );
+
+    expect(traverseResult.addedEntityIds).toHaveLength(3);
+    expect(pointLabels).toHaveLength(0);
+    traverseLabels.forEach((primitive) => {
+      if (primitive.kind !== 'text') return;
+      expect(Math.abs(primitive.rotationDeg ?? 0)).toBeLessThanOrEqual(90);
     });
   });
 

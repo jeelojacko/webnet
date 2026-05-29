@@ -110,6 +110,7 @@ Acceptance criteria:
 - [ ] Add parcel closure report.
 - [ ] Add line/curve labels tied to geometry.
 - [ ] Replace temporary parcel/traverse text with survey-style azimuth-distance and stacked area/perimeter annotations.
+  Current slice: traverse azimuth-distance labels are now upright-only and parcel labels are stacked/centered; curve labeling and fuller parcel closure reporting remain open.
 
 Acceptance criteria:
 - user can build and label a simple parcel from COGO

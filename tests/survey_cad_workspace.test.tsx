@@ -885,8 +885,10 @@ describe('SurveyCadWorkspace', () => {
       'TRAVERSE committed',
     );
     expect(container.querySelector('[data-survey-cad-entity-count]')?.textContent).toContain(
-      '13 entities',
+      '11 entities',
     );
+    expect(container.textContent).not.toContain('25.000,0.000');
+    expect(container.textContent).not.toContain('25.000,15.000');
 
     await act(async () => {
       root.unmount();
@@ -943,7 +945,7 @@ describe('SurveyCadWorkspace', () => {
       'Closure 0.000 m',
     );
     expect(container.querySelector('[data-survey-cad-entity-count]')?.textContent).toContain(
-      '14 entities',
+      '12 entities',
     );
     expect(container.textContent).toContain('187.500 m²');
     expect(container.textContent).toContain('69.155 m');

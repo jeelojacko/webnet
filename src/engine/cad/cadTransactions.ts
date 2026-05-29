@@ -203,30 +203,39 @@ const createManualPointEntities = (
   x: number,
   y: number,
   requestedLabel?: string,
-): { point: CadSurveyPointEntity; label: CadTextEntity } => {
+  options?: { includeTextLabel?: boolean; createdBy?: string },
+): { point: CadSurveyPointEntity; label: CadTextEntity | null } => {
   const requestedStationId = requestedLabel?.trim();
   const stationId =
     requestedStationId && !stationIdExists(project, requestedStationId)
       ? requestedStationId
       : nextManualStationId(project);
-  return {
-    point: {
-      id: `pt:${stationId}`,
-      type: 'survey-point',
-      layerId: 'points',
-      styleId: 'style-point',
-      visible: true,
-      locked: false,
-      stationId,
-      x,
-      y,
-      pointClass: 'free',
-      source: project.metadata.source,
-      metadata: {
-        createdBy: 'POINT',
-        manual: true,
-      },
+  const createdBy = options?.createdBy ?? 'POINT';
+  const point: CadSurveyPointEntity = {
+    id: `pt:${stationId}`,
+    type: 'survey-point',
+    layerId: 'points',
+    styleId: 'style-point',
+    visible: true,
+    locked: false,
+    stationId,
+    x,
+    y,
+    pointClass: 'free',
+    source: project.metadata.source,
+    metadata: {
+      createdBy,
+      manual: true,
     },
+  };
+  if (options?.includeTextLabel === false) {
+    return {
+      point,
+      label: null,
+    };
+  }
+  return {
+    point,
     label: {
       id: `label:${stationId}`,
       type: 'text',
@@ -239,13 +248,18 @@ const createManualPointEntities = (
       text: stationId,
       anchorEntityId: `pt:${stationId}`,
       metadata: {
-        createdBy: 'POINT',
+        createdBy,
         manual: true,
         stationId,
       },
     },
   };
 };
+
+const compactManualPointEntities = (
+  entities: Array<CadSurveyPointEntity | CadTextEntity | null>,
+): Array<CadSurveyPointEntity | CadTextEntity> =>
+  entities.filter((entity): entity is CadSurveyPointEntity | CadTextEntity => entity != null);
 
 const expandSelectedEntityIds = (
   project: CadProject,
@@ -351,13 +365,17 @@ const buildCopiedEntities = (
       entity.x + deltaX,
       entity.y + deltaY,
     );
-    workingProject = appendCadProjectEntities(workingProject, [pointBundle.point, pointBundle.label]);
+    const appendedEntities = compactManualPointEntities([pointBundle.point, pointBundle.label]);
+    workingProject = appendCadProjectEntities(
+      workingProject,
+      appendedEntities,
+    );
     copiedPointByStationId.set(entity.stationId, {
       stationId: pointBundle.point.stationId,
       x: pointBundle.point.x,
       y: pointBundle.point.y,
     });
-    copiedEntities.push(pointBundle.point, pointBundle.label);
+    copiedEntities.push(...appendedEntities);
   });
 
   selectedEntities.forEach((entity) => {
@@ -551,7 +569,11 @@ const pointCommand: CadCommandDefinition<{
   key: 'POINT',
   execute: (snapshot, command) => {
     const entities = createManualPointEntities(snapshot.project, command.x, command.y, command.label);
-    const nextProject = appendCadProjectEntities(snapshot.project, [entities.point, entities.label]);
+    const appendedEntities = compactManualPointEntities([entities.point, entities.label]);
+    const nextProject = appendCadProjectEntities(
+      snapshot.project,
+      appendedEntities,
+    );
     return {
       nextSnapshot: {
         project: nextProject,
@@ -563,7 +585,9 @@ const pointCommand: CadCommandDefinition<{
         prompt: `POINT committed at (${command.x.toFixed(3)}, ${command.y.toFixed(3)}).`,
       },
       transactionLabel: `POINT (${entities.point.stationId})`,
-      addedEntityIds: [entities.point.id, entities.label.id],
+      addedEntityIds: [entities.point.id, entities.label?.id].filter(
+        (entityId): entityId is string => entityId != null,
+      ),
       removedEntityIds: [],
     };
   },
@@ -580,7 +604,11 @@ const cogoPointCommand: CadCommandDefinition<{
   key: 'COGO_POINT',
   execute: (snapshot, command) => {
     const entities = createManualPointEntities(snapshot.project, command.x, command.y, command.label);
-    const nextProject = appendCadProjectEntities(snapshot.project, [entities.point, entities.label]);
+    const appendedEntities = compactManualPointEntities([entities.point, entities.label]);
+    const nextProject = appendCadProjectEntities(
+      snapshot.project,
+      appendedEntities,
+    );
     return {
       nextSnapshot: {
         project: nextProject,
@@ -592,7 +620,9 @@ const cogoPointCommand: CadCommandDefinition<{
         prompt: `COGO_POINT committed from ${command.basisLabel} using ${command.directionLabel}.`,
       },
       transactionLabel: `COGO_POINT (${entities.point.stationId})`,
-      addedEntityIds: [entities.point.id, entities.label.id],
+      addedEntityIds: [entities.point.id, entities.label?.id].filter(
+        (entityId): entityId is string => entityId != null,
+      ),
       removedEntityIds: [],
     };
   },
@@ -728,9 +758,12 @@ const traverseCommand: CadCommandDefinition<{
         vertexLabels.push(existingPoint.stationId);
         return;
       }
-      const pointBundle = createManualPointEntities(workingProject, vertex.x, vertex.y, vertex.label);
-      workingProject = appendCadProjectEntities(workingProject, [pointBundle.point, pointBundle.label]);
-      createdEntities.push(pointBundle.point, pointBundle.label);
+      const pointBundle = createManualPointEntities(workingProject, vertex.x, vertex.y, vertex.label, {
+        includeTextLabel: false,
+        createdBy: 'TRAVERSE',
+      });
+      workingProject = appendCadProjectEntities(workingProject, [pointBundle.point]);
+      createdEntities.push(pointBundle.point);
       vertexLabels.push(pointBundle.point.stationId);
     });
 
@@ -1094,7 +1127,11 @@ const intersectPointCommand: CadCommandDefinition<{
   key: 'INTERSECT_POINT',
   execute: (snapshot, command) => {
     const entities = createManualPointEntities(snapshot.project, command.x, command.y, command.label);
-    const nextProject = appendCadProjectEntities(snapshot.project, [entities.point, entities.label]);
+    const appendedEntities = compactManualPointEntities([entities.point, entities.label]);
+    const nextProject = appendCadProjectEntities(
+      snapshot.project,
+      appendedEntities,
+    );
     return {
       nextSnapshot: {
         project: nextProject,
@@ -1106,7 +1143,9 @@ const intersectPointCommand: CadCommandDefinition<{
         prompt: `INTERSECT_POINT committed at ${command.firstLabel} x ${command.secondLabel}.`,
       },
       transactionLabel: `INTERSECT_POINT (${entities.point.stationId})`,
-      addedEntityIds: [entities.point.id, entities.label.id],
+      addedEntityIds: [entities.point.id, entities.label?.id].filter(
+        (entityId): entityId is string => entityId != null,
+      ),
       removedEntityIds: [],
     };
   },

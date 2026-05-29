@@ -78,6 +78,13 @@ const polylineSegments = (
   idSuffix: `${index + 1}`,
 }));
 
+const normalizeReadableLabelRotation = (rotationDeg: number): number => {
+  let normalized = ((rotationDeg + 180) % 360 + 360) % 360 - 180;
+  if (normalized > 90) normalized -= 180;
+  if (normalized < -90) normalized += 180;
+  return normalized;
+};
+
 const buildTraverseLabelPrimitives = (
   project: CadProject,
   entity: CadPolylineEntity,
@@ -98,7 +105,7 @@ const buildTraverseLabelPrimitives = (
     };
     const normal = { x: -dy / length, y: dx / length };
     const offsetDistance = Math.max(length * 0.025, 1.2);
-    const rotationDeg = -((Math.atan2(dy, dx) * 180) / Math.PI);
+    const rotationDeg = normalizeReadableLabelRotation(-((Math.atan2(dy, dx) * 180) / Math.PI));
 
     return [
       {
