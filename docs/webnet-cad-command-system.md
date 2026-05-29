@@ -49,6 +49,7 @@ Current implemented spike slice:
 - selected native traverse/polyline geometry can now be promoted into a parcel entity with stored area, perimeter, and closure metrics plus centered stacked parcel area/perimeter text; traverse segment labels render upright and traverse-created point nodes do not add anchored coordinate/station text labels
 - selected parcel entities now surface a geometry-derived closure report overlay with area, perimeter, closure values, and ordered azimuth-distance course rows without persisting extra report entities into the CAD model
 - committed `TRAVERSE` segments now render survey-style annotation overlays with north-azimuth text above the segment and metric distance below it, aligned to the segment direction
+- committed native arc entities now render geometry-derived labels at the curve itself (delta, radius, and arc length) without introducing persisted CAD text entities, while ordinary `LINE` geometry remains unlabeled
 
 ## Initial command families
 - `POINT`

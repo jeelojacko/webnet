@@ -85,6 +85,21 @@ const normalizeReadableLabelRotation = (rotationDeg: number): number => {
   return normalized;
 };
 
+const normalizeArcSweepAngles = (
+  startAngleDeg: number,
+  endAngleDeg: number,
+): { startAngleDeg: number; endAngleDeg: number; sweepDeg: number } => {
+  const normalizedStart = ((startAngleDeg % 360) + 360) % 360;
+  const normalizedEndBase = ((endAngleDeg % 360) + 360) % 360;
+  const normalizedEnd =
+    normalizedEndBase <= normalizedStart ? normalizedEndBase + 360 : normalizedEndBase;
+  return {
+    startAngleDeg: normalizedStart,
+    endAngleDeg: normalizedEnd,
+    sweepDeg: Math.max(0.0001, normalizedEnd - normalizedStart),
+  };
+};
+
 const buildTraverseLabelPrimitives = (
   project: CadProject,
   entity: CadPolylineEntity,
@@ -164,6 +179,37 @@ const buildParcelLabelPrimitive = (
   }];
 };
 
+const buildArcLabelPrimitive = (
+  project: CadProject,
+  entity: Extract<CadEntity, { type: 'arc' }>,
+): CadDisplayPrimitive[] => {
+  const { startAngleDeg, sweepDeg } = normalizeArcSweepAngles(
+    entity.startAngleDeg,
+    entity.endAngleDeg,
+  );
+  const midAngleDeg = startAngleDeg + sweepDeg / 2;
+  const midAngleRad = (midAngleDeg * Math.PI) / 180;
+  const labelRadius = Math.max(entity.radius - Math.max(entity.radius * 0.18, 2), entity.radius * 0.45);
+  const tangentAngleDeg = midAngleDeg + 90;
+  const rotationDeg = normalizeReadableLabelRotation(-tangentAngleDeg);
+  const arcLength = entity.radius * ((sweepDeg * Math.PI) / 180);
+  return [{
+    kind: 'text',
+    id: `primitive:${entity.id}:curve-label`,
+    layerId: 'labels',
+    sourceEntityId: entity.id,
+    stroke: entityStyle(project, entity)?.color ?? layerColor(project, 'labels'),
+    point: {
+      x: entity.centerX + Math.cos(midAngleRad) * labelRadius,
+      y: entity.centerY + Math.sin(midAngleRad) * labelRadius,
+    },
+    text: `${formatCadNorthAzimuthDms(sweepDeg)}\nR ${entity.radius.toFixed(3)} m\nL ${arcLength.toFixed(3)} m`,
+    fontSize: textFontSize(project, entity, 11),
+    rotationDeg,
+    textAnchor: 'middle',
+  }];
+};
+
 const toPrimitives = (project: CadProject, entity: CadEntity): CadDisplayPrimitive[] => {
   const stroke = entityStyle(project, entity)?.color ?? layerColor(project, entity.layerId);
   switch (entity.type) {
@@ -206,18 +252,21 @@ const toPrimitives = (project: CadProject, entity: CadEntity): CadDisplayPrimiti
         ...buildParcelLabelPrimitive(project, entity),
       ];
     case 'arc':
-      return [{
-        kind: 'arc',
-        id: `primitive:${entity.id}`,
-        layerId: entity.layerId,
-        sourceEntityId: entity.id,
-        stroke,
-        center: { x: entity.centerX, y: entity.centerY },
-        radius: entity.radius,
-        startAngleDeg: entity.startAngleDeg,
-        endAngleDeg: entity.endAngleDeg,
-        strokeWidth: strokeWidth(project, entity, 1.25),
-      }];
+      return [
+        {
+          kind: 'arc',
+          id: `primitive:${entity.id}`,
+          layerId: entity.layerId,
+          sourceEntityId: entity.id,
+          stroke,
+          center: { x: entity.centerX, y: entity.centerY },
+          radius: entity.radius,
+          startAngleDeg: entity.startAngleDeg,
+          endAngleDeg: entity.endAngleDeg,
+          strokeWidth: strokeWidth(project, entity, 1.25),
+        },
+        ...buildArcLabelPrimitive(project, entity),
+      ];
     case 'text':
       return [{
         kind: 'text',

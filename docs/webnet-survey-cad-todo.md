@@ -108,16 +108,16 @@ Acceptance criteria:
 - [x] Add traverse-entry workflow.
 - [x] Add parcel entity model.
 - [x] Add parcel closure report.
-- [ ] Add line/curve labels tied to geometry.
-- [ ] Replace temporary parcel/traverse text with survey-style azimuth-distance and stacked area/perimeter annotations.
-  Current slice: traverse azimuth-distance labels are now upright-only and parcel labels are stacked/centered; curve labeling and fuller parcel closure reporting remain open.
+- [x] Add line/curve labels tied to geometry.
+- [x] Replace temporary parcel/traverse text with survey-style azimuth-distance and stacked area/perimeter annotations.
+  Current slice: traverse azimuth-distance labels are upright-only, parcel labels are stacked/centered, and native arc entities now render geometry-derived delta/radius/arc-length labels without persisting extra text entities.
 
 Acceptance criteria:
 - user can build and label a simple parcel from COGO
 - closure, area, perimeter, bearings, and distances update with edits
 
 Current phase note:
-- the native CAD workspace now runs direct `TRAVERSE` command entry, can promote a selected traverse/polyline into a first `PARCEL` entity with area/perimeter/closure metrics plus centroid label text, and now shows a selected-parcel closure report overlay with area/perimeter/closure/course rows; geometry-tied line/curve labeling is still open before Phase 4 is complete
+- the native CAD workspace now runs direct `TRAVERSE` command entry, can promote a selected traverse/polyline into a first `PARCEL` entity with area/perimeter/closure metrics plus centroid label text, shows a selected-parcel closure report overlay with area/perimeter/closure/course rows, and now covers geometry-tied traverse/parcel/arc labeling for the current Phase 4 scope
 
 ## Phase 5: Point import and field-to-finish
 - [ ] Define feature-code library format.

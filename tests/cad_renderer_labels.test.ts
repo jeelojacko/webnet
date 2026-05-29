@@ -157,4 +157,29 @@ describe('CAD renderer labels', () => {
     expect(parcelLabel.text).toBe('187.500 m²\n69.155 m');
     expect(parcelLabel.textAnchor).toBe('middle');
   });
+
+  it('renders geometry-tied labels for arcs without adding labels to ordinary LINE entities', () => {
+    const arcResult = executeCadCommand(createSnapshot(), {
+      key: 'ARC_3PT',
+      start: { x: 0, y: 0, label: 'A' },
+      through: { x: 50, y: 50, label: 'B' },
+      end: { x: 100, y: 0, label: 'C' },
+    });
+    if (!arcResult) throw new Error('Arc result missing');
+
+    const arcId = arcResult.addedEntityIds[0];
+    const scene = buildCadDisplayScene(arcResult.nextSnapshot.project);
+    const arcLabels = scene.primitives.filter(
+      (primitive) => primitive.kind === 'text' && primitive.sourceEntityId === arcId,
+    );
+
+    expect(arcLabels).toHaveLength(1);
+    const arcLabel = arcLabels[0];
+    if (arcLabel.kind !== 'text') throw new Error('Arc label primitive missing');
+    expect(arcLabel.text).toContain('180°00\'00"');
+    expect(arcLabel.text).toContain('R 50.000 m');
+    expect(arcLabel.text).toContain('L 157.080 m');
+    expect(arcLabel.textAnchor).toBe('middle');
+    expect(Math.abs(arcLabel.rotationDeg ?? 0)).toBeLessThanOrEqual(90);
+  });
 });
