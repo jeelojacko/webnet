@@ -109,6 +109,7 @@ Acceptance criteria:
 - [x] Add parcel entity model.
 - [ ] Add parcel closure report.
 - [ ] Add line/curve labels tied to geometry.
+- [ ] Replace temporary parcel/traverse text with survey-style azimuth-distance and stacked area/perimeter annotations.
 
 Acceptance criteria:
 - user can build and label a simple parcel from COGO

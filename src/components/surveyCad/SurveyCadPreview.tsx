@@ -134,12 +134,20 @@ const primitiveBounds = (
     }
     case 'text': {
       const point = project(primitive.point.x, primitive.point.y);
-      const width = Math.max(24, primitive.text.length * primitive.fontSize * 0.55);
+      const lines = primitive.text.split('\n');
+      const longestLine = lines.reduce(
+        (current, line) => Math.max(current, line.length),
+        0,
+      );
+      const width = Math.max(24, longestLine * primitive.fontSize * 0.55);
+      const height = Math.max(primitive.fontSize, lines.length * primitive.fontSize * 1.2);
+      const anchorOffset =
+        primitive.textAnchor === 'middle' ? width / 2 : primitive.textAnchor === 'end' ? width : 0;
       return {
-        minX: point.x,
+        minX: point.x - anchorOffset,
         minY: point.y - primitive.fontSize,
-        maxX: point.x + width,
-        maxY: point.y + 4,
+        maxX: point.x - anchorOffset + width,
+        maxY: point.y - primitive.fontSize + height,
       };
     }
     case 'ellipse': {
@@ -320,17 +328,33 @@ const renderPrimitive = (
     }
     case 'text': {
       const point = project(primitive.point.x, primitive.point.y);
+      const displayX = primitive.textAnchor === 'start' || primitive.textAnchor == null ? point.x + 6 : point.x;
+      const displayY = primitive.textAnchor === 'start' || primitive.textAnchor == null ? point.y - 6 : point.y;
       return (
         <text
           key={primitive.id}
           {...commonProps}
-          x={point.x + 6}
-          y={point.y - 6}
+          x={displayX}
+          y={displayY}
           fill={isSelected ? '#fbbf24' : primitive.stroke}
           fontSize={primitive.fontSize}
           opacity={primitive.opacity ?? 1}
+          textAnchor={primitive.textAnchor ?? 'start'}
+          transform={
+            primitive.rotationDeg != null
+              ? `rotate(${primitive.rotationDeg} ${displayX} ${displayY})`
+              : undefined
+          }
         >
-          {primitive.text}
+          {primitive.text.split('\n').map((line, index) => (
+            <tspan
+              key={`${primitive.id}:${index + 1}`}
+              x={displayX}
+              dy={index === 0 ? 0 : primitive.fontSize * 1.15}
+            >
+              {line}
+            </tspan>
+          ))}
         </text>
       );
     }

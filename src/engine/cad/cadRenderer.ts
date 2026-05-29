@@ -2,9 +2,15 @@ import type {
   CadDisplayPrimitive,
   CadDisplayScene,
   CadEntity,
+  CadPolylineEntity,
   CadProject,
   CadStyle,
 } from './cadTypes';
+import {
+  buildCadInverseSummary,
+  cadBuildParcelClosureSummary,
+  formatCadNorthAzimuthDms,
+} from './cadCogo';
 
 const layerColor = (project: CadProject, layerId: string): string =>
   project.layers.find((layer) => layer.id === layerId)?.color ?? '#94a3b8';
@@ -60,6 +66,97 @@ const buildVertexPrimitives = (
   }));
 };
 
+const polylineSegments = (
+  entity: CadPolylineEntity,
+): Array<{
+  start: { x: number; y: number };
+  end: { x: number; y: number };
+  idSuffix: string;
+}> => entity.vertices.slice(0, -1).map((vertex, index) => ({
+  start: vertex,
+  end: entity.vertices[index + 1]!,
+  idSuffix: `${index + 1}`,
+}));
+
+const buildTraverseLabelPrimitives = (
+  project: CadProject,
+  entity: CadPolylineEntity,
+): CadDisplayPrimitive[] => {
+  if (entity.metadata?.createdBy !== 'TRAVERSE') return [];
+  const stroke = entityStyle(project, entity)?.color ?? layerColor(project, entity.layerId);
+  const fontSize = textFontSize(project, entity, 11);
+  return polylineSegments(entity).flatMap((segment) => {
+    const inverse = buildCadInverseSummary(segment.start, segment.end);
+    const dx = segment.end.x - segment.start.x;
+    const dy = segment.end.y - segment.start.y;
+    const length = Math.hypot(dx, dy);
+    if (length <= 1e-9) return [];
+
+    const midpoint = {
+      x: (segment.start.x + segment.end.x) / 2,
+      y: (segment.start.y + segment.end.y) / 2,
+    };
+    const normal = { x: -dy / length, y: dx / length };
+    const offsetDistance = Math.max(length * 0.025, 1.2);
+    const rotationDeg = -((Math.atan2(dy, dx) * 180) / Math.PI);
+
+    return [
+      {
+        kind: 'text',
+        id: `primitive:${entity.id}:azimuth:${segment.idSuffix}`,
+        layerId: 'labels',
+        sourceEntityId: entity.id,
+        stroke,
+        point: {
+          x: midpoint.x + normal.x * offsetDistance,
+          y: midpoint.y + normal.y * offsetDistance,
+        },
+        text: formatCadNorthAzimuthDms(inverse.azimuthDeg),
+        fontSize,
+        rotationDeg,
+        textAnchor: 'middle',
+      },
+      {
+        kind: 'text',
+        id: `primitive:${entity.id}:distance:${segment.idSuffix}`,
+        layerId: 'labels',
+        sourceEntityId: entity.id,
+        stroke,
+        point: {
+          x: midpoint.x - normal.x * offsetDistance,
+          y: midpoint.y - normal.y * offsetDistance,
+        },
+        text: `${inverse.distance.toFixed(3)} m`,
+        fontSize,
+        rotationDeg,
+        textAnchor: 'middle',
+      },
+    ];
+  });
+};
+
+const buildParcelLabelPrimitive = (
+  project: CadProject,
+  entity: Extract<CadEntity, { type: 'parcel' }>,
+): CadDisplayPrimitive[] => {
+  if (entity.areaSquareMeters == null || entity.perimeterMeters == null || entity.vertices.length < 3) {
+    return [];
+  }
+  const metrics = cadBuildParcelClosureSummary(entity.vertices);
+  if (!metrics) return [];
+  return [{
+    kind: 'text',
+    id: `primitive:${entity.id}:parcel-label`,
+    layerId: 'labels',
+    sourceEntityId: entity.id,
+    stroke: entityStyle(project, entity)?.color ?? layerColor(project, 'labels'),
+    point: metrics.centroid,
+    text: `${entity.areaSquareMeters.toFixed(3)} m²\n${entity.perimeterMeters.toFixed(3)} m`,
+    fontSize: textFontSize(project, entity, 11),
+    textAnchor: 'middle',
+  }];
+};
+
 const toPrimitives = (project: CadProject, entity: CadEntity): CadDisplayPrimitive[] => {
   const stroke = entityStyle(project, entity)?.color ?? layerColor(project, entity.layerId);
   switch (entity.type) {
@@ -75,22 +172,32 @@ const toPrimitives = (project: CadProject, entity: CadEntity): CadDisplayPrimiti
         radius: pointRadius(project, entity),
       }];
     case 'line':
-      return [{
-        kind: 'line',
-        id: `primitive:${entity.id}`,
-        layerId: entity.layerId,
-        sourceEntityId: entity.id,
-        stroke,
-        points: [
-          { x: entity.fromX, y: entity.fromY },
-          { x: entity.toX, y: entity.toY },
-        ],
-        strokeWidth: strokeWidth(project, entity, 1.25),
-      }];
+      return [
+        {
+          kind: 'line',
+          id: `primitive:${entity.id}`,
+          layerId: entity.layerId,
+          sourceEntityId: entity.id,
+          stroke,
+          points: [
+            { x: entity.fromX, y: entity.fromY },
+            { x: entity.toX, y: entity.toY },
+          ],
+          strokeWidth: strokeWidth(project, entity, 1.25),
+        },
+      ];
     case 'polyline':
+      return [
+        ...buildVertexPrimitives(project, entity),
+        ...buildTraverseLabelPrimitives(project, entity),
+      ];
     case 'polygon':
-    case 'parcel':
       return buildVertexPrimitives(project, entity);
+    case 'parcel':
+      return [
+        ...buildVertexPrimitives(project, entity),
+        ...buildParcelLabelPrimitive(project, entity),
+      ];
     case 'arc':
       return [{
         kind: 'arc',
@@ -114,6 +221,7 @@ const toPrimitives = (project: CadProject, entity: CadEntity): CadDisplayPrimiti
         point: { x: entity.x, y: entity.y },
         text: entity.text,
         fontSize: textFontSize(project, entity, 11),
+        textAnchor: 'start',
       }];
     case 'error-ellipse':
       return [{

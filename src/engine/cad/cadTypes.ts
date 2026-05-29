@@ -231,6 +231,8 @@ export interface CadDisplayTextPrimitive extends CadDisplayPrimitiveBase {
   point: CadDisplayPoint;
   text: string;
   fontSize: number;
+  rotationDeg?: number;
+  textAnchor?: 'start' | 'middle' | 'end';
 }
 
 export interface CadDisplayEllipsePrimitive extends CadDisplayPrimitiveBase {

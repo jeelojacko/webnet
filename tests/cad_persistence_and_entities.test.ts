@@ -106,7 +106,7 @@ describe('Survey CAD persistence and entity families', () => {
     ).toBe(3);
     expect(
       displayScene.primitives.filter((primitive) => primitive.sourceEntityId === 'parcel-1').length,
-    ).toBe(3);
+    ).toBe(4);
 
     const mlightcadScene = buildMlightcadSpikeScene(withBounds);
     expect(mlightcadScene.entities.find((entity) => entity.objectId === 'arc-1')?.type).toBe(

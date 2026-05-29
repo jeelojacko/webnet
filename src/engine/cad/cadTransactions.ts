@@ -964,24 +964,7 @@ const parcelCreateCommand: CadCommandDefinition<{
         sourceEntityId: sourcePolyline.id,
       },
     };
-    const labelEntity: CadTextEntity = {
-      id: createStableRuntimeId('cad-parcel-label'),
-      type: 'text',
-      layerId: 'labels',
-      styleId: 'style-label',
-      visible: true,
-      locked: false,
-      x: metrics.centroid.x,
-      y: metrics.centroid.y,
-      text: `${parcelName} | A=${metrics.areaSquareMeters.toFixed(3)} sq m | P=${metrics.perimeterMeters.toFixed(3)} m`,
-      anchorEntityId: parcelEntity.id,
-      metadata: {
-        createdBy: 'PARCEL_CREATE',
-        manual: true,
-        parcelName,
-      },
-    };
-    const nextProject = appendCadProjectEntities(snapshot.project, [parcelEntity, labelEntity]);
+    const nextProject = appendCadProjectEntities(snapshot.project, [parcelEntity]);
     return {
       nextSnapshot: {
         project: nextProject,
@@ -993,7 +976,7 @@ const parcelCreateCommand: CadCommandDefinition<{
         prompt: `PARCEL_CREATE committed for ${parcelName}. Closure ${metrics.closureDistanceMeters.toFixed(3)} m.`,
       },
       transactionLabel: `PARCEL_CREATE (${parcelName})`,
-      addedEntityIds: [parcelEntity.id, labelEntity.id],
+      addedEntityIds: [parcelEntity.id],
       removedEntityIds: [],
     };
   },
