@@ -235,9 +235,9 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
 
   return (
     <div className="h-full min-h-0 overflow-hidden bg-slate-950 text-slate-100" data-survey-cad-dedicated-page>
-      <div className="flex h-full min-h-0 flex-col">
-        <div className="shrink-0 bg-slate-950 px-3 py-2">
-          <div className="overflow-x-auto">
+      <div className="relative h-full min-h-0 bg-slate-950">
+        <div className="absolute left-3 right-3 top-3 z-20 overflow-x-auto" data-survey-cad-toolbar-overlay>
+          <div className="rounded-md border border-slate-800/80 bg-slate-950/70 px-2 py-1.5 backdrop-blur-sm">
             <SurveyCadCommandLine
               entityCount={activeProject.entities.length}
               selectionCount={selectionCount}
@@ -275,47 +275,44 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
             />
           </div>
         </div>
-
-        <section className="min-h-0 flex-1 overflow-hidden px-3 pb-3">
-          <div className="h-full bg-slate-950">
-            <SurveyCadPreview
-              scene={displayScene}
-              viewBounds={viewBounds}
-              selectedEntityIds={selectedEntityIds}
-              activeSnap={activeSnap}
-              commandPreviewPrimitives={commandPreviewPrimitives}
-              commandStatusText={commandStatusText}
-              commandHelpText={commandHelpText}
-              snapPreferences={snapPreferences}
-              commandInputValue={commandInputValue}
-              commandInputPlaceholder={commandInputPlaceholder}
-              commandInputEnabled={activeCommandKey != null}
-              viewport={viewport}
-              commandActive={activeCommandKey != null}
-              onViewportChange={setViewport}
-              onSelectEntity={selectEntity}
-              onSelectEntities={selectEntities}
-              onConsumeInteractionPoint={consumeInteractionPoint}
-              onPointerWorldPointChange={updatePointerWorldPoint}
-              onSnapPreferenceChange={setSnapPreference}
-              onCommandInputChange={setCommandInputValue}
-              onCommandInputEnter={handleEnterKey}
-              onCommandInputEscape={() => {
-                if (activeCommandKey) {
-                  handleEscapeKey();
-                  return;
-                }
-                if (selectionCount > 0) {
-                  clearSelection();
-                }
-              }}
-              onZoomExtents={() => {
-                setViewBounds(cloneBounds(activeProject.bounds));
-                setViewport({ zoom: 1, panX: 0, panY: 0 });
-              }}
-            />
-          </div>
-        </section>
+        <div className="h-full">
+          <SurveyCadPreview
+            scene={displayScene}
+            viewBounds={viewBounds}
+            selectedEntityIds={selectedEntityIds}
+            activeSnap={activeSnap}
+            commandPreviewPrimitives={commandPreviewPrimitives}
+            commandStatusText={commandStatusText}
+            commandHelpText={commandHelpText}
+            snapPreferences={snapPreferences}
+            commandInputValue={commandInputValue}
+            commandInputPlaceholder={commandInputPlaceholder}
+            commandInputEnabled={activeCommandKey != null}
+            viewport={viewport}
+            commandActive={activeCommandKey != null}
+            onViewportChange={setViewport}
+            onSelectEntity={selectEntity}
+            onSelectEntities={selectEntities}
+            onConsumeInteractionPoint={consumeInteractionPoint}
+            onPointerWorldPointChange={updatePointerWorldPoint}
+            onSnapPreferenceChange={setSnapPreference}
+            onCommandInputChange={setCommandInputValue}
+            onCommandInputEnter={handleEnterKey}
+            onCommandInputEscape={() => {
+              if (activeCommandKey) {
+                handleEscapeKey();
+                return;
+              }
+              if (selectionCount > 0) {
+                clearSelection();
+              }
+            }}
+            onZoomExtents={() => {
+              setViewBounds(cloneBounds(activeProject.bounds));
+              setViewport({ zoom: 1, panX: 0, panY: 0 });
+            }}
+          />
+        </div>
       </div>
     </div>
   );
