@@ -237,8 +237,8 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
   return (
     <div className="h-full min-h-0 overflow-hidden bg-slate-950 text-slate-100" data-survey-cad-dedicated-page>
       <div className="relative h-full min-h-0 bg-slate-950">
-        <div className="absolute left-3 right-3 top-3 z-20 overflow-x-auto" data-survey-cad-toolbar-overlay>
-          <div className="px-2 py-1.5">
+        <div className="absolute left-3 right-3 top-3 z-30 overflow-visible" data-survey-cad-toolbar-overlay>
+          <div className="overflow-x-auto overflow-y-visible px-2 py-1.5">
             <SurveyCadCommandLine
               entityCount={activeProject.entities.length}
               selectionCount={selectionCount}

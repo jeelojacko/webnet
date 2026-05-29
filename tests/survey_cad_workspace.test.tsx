@@ -683,6 +683,32 @@ describe('SurveyCadWorkspace', () => {
     container.remove();
   });
 
+  it('keeps the top CAD toolbar overlay vertically visible so the arc dropdown is not clipped', () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root: Root = createRoot(container);
+
+    act(() => {
+      root.render(
+        <SurveyCadWorkspace
+          input={input}
+          instrumentLibrary={{}}
+          parseOptions={parseOptions}
+          units="m"
+          result={null}
+        />,
+      );
+    });
+
+    const toolbarOverlay = container.querySelector('[data-survey-cad-toolbar-overlay]');
+    expect(toolbarOverlay?.className).toContain('overflow-visible');
+
+    act(() => {
+      root.unmount();
+    });
+    container.remove();
+  });
+
   it('runs MOVE, COPY, COGO, ARC, TCURVE, and INVERSE from the streamlined command surface', async () => {
     const container = document.createElement('div');
     document.body.appendChild(container);
