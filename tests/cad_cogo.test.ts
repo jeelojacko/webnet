@@ -7,6 +7,7 @@ import {
   cadBuildCurveMetricsFromRadiusDelta,
   cadBuildCurveMetricsFromTangentLength,
   cadBuildParcelClosureSummary,
+  cadBuildParcelReportSummary,
   cadBuildParallelLine,
   cadBuildPerpendicularFoot,
   cadBuildTangentCurve,
@@ -285,5 +286,32 @@ describe('Survey CAD COGO helpers', () => {
     expect(summary?.closureDistanceMeters ?? Number.NaN).toBeCloseTo(0, 6);
     expect(summary?.centroid.x ?? Number.NaN).toBeCloseTo(16.6666667, 6);
     expect(summary?.centroid.y ?? Number.NaN).toBeCloseTo(5, 6);
+  });
+
+  it('builds a parcel closure report with ordered course azimuths and distances', () => {
+    const report = cadBuildParcelReportSummary({
+      parcelName: 'Parcel 1',
+      vertices: [
+        { x: 0, y: 0 },
+        { x: 25, y: 0 },
+        { x: 25, y: 15 },
+        { x: 0, y: 0 },
+      ],
+      vertexLabels: ['A', 'B', 'C', 'A'],
+    });
+
+    expect(report).not.toBeNull();
+    expect(report?.parcelName).toBe('Parcel 1');
+    expect(report?.courseCount).toBe(3);
+    expect(report?.courses.map((course) => `${course.fromLabel}-${course.toLabel}`)).toEqual([
+      'A-B',
+      'B-C',
+      'C-A',
+    ]);
+    expect(report?.courses[0]?.azimuthText).toBe('90°00\'00"');
+    expect(report?.courses[0]?.distanceMeters ?? Number.NaN).toBeCloseTo(25, 6);
+    expect(report?.courses[1]?.azimuthText).toBe('0°00\'00"');
+    expect(report?.courses[1]?.distanceMeters ?? Number.NaN).toBeCloseTo(15, 6);
+    expect(report?.closureDistanceMeters ?? Number.NaN).toBeCloseTo(0, 6);
   });
 });

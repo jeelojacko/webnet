@@ -46,6 +46,27 @@ export interface CadParcelClosureSummary {
   centroid: CadWorldPoint;
 }
 
+export interface CadParcelCourseSummary {
+  fromLabel: string;
+  toLabel: string;
+  azimuthDeg: number;
+  azimuthText: string;
+  bearing: string;
+  distanceMeters: number;
+}
+
+export interface CadParcelReportSummary extends CadParcelClosureSummary {
+  parcelName: string;
+  courseCount: number;
+  courses: CadParcelCourseSummary[];
+}
+
+const normalizeParcelVertexLabel = (label: string | undefined, index: number): string => {
+  if (!label) return `V${index + 1}`;
+  const trimmed = label.trim();
+  return /^[A-Za-z0-9_-]+$/.test(trimmed) ? trimmed : `V${index + 1}`;
+};
+
 const padInteger = (value: number, width: number): string => value.toString().padStart(width, '0');
 
 export const formatCadNorthAzimuthDms = (azimuthDeg: number): string => {
@@ -352,5 +373,72 @@ export const cadBuildParcelClosureSummary = (
     closureDeltaY,
     closureDistanceMeters,
     centroid,
+  };
+};
+
+export const cadBuildParcelReportSummary = ({
+  parcelName,
+  vertices,
+  vertexLabels,
+}: {
+  parcelName: string;
+  vertices: readonly CadWorldPoint[];
+  vertexLabels: readonly string[];
+}): CadParcelReportSummary | null => {
+  const closureSummary = cadBuildParcelClosureSummary(vertices);
+  if (!closureSummary) return null;
+
+  const sanitizedVertices = vertices.filter((vertex, index, list) => {
+    const previous = list[index - 1];
+    if (!previous) return true;
+    return Math.abs(vertex.x - previous.x) > 1e-9 || Math.abs(vertex.y - previous.y) > 1e-9;
+  });
+  const firstVertex = sanitizedVertices[0]!;
+  const lastVertex = sanitizedVertices[sanitizedVertices.length - 1]!;
+  const isExplicitlyClosed =
+    Math.abs(firstVertex.x - lastVertex.x) <= 1e-9 &&
+    Math.abs(firstVertex.y - lastVertex.y) <= 1e-9;
+  const ring = isExplicitlyClosed ? sanitizedVertices.slice(0, -1) : sanitizedVertices;
+  if (ring.length < 3) return null;
+
+  const sanitizedLabels = vertexLabels.filter((label, index, list) => {
+    const previous = list[index - 1];
+    if (previous == null) return true;
+    const previousVertex = vertices[index - 1];
+    const currentVertex = vertices[index];
+    if (!previousVertex || !currentVertex) return true;
+    return (
+      Math.abs(previousVertex.x - currentVertex.x) > 1e-9 ||
+      Math.abs(previousVertex.y - currentVertex.y) > 1e-9
+    );
+  });
+  const ringLabels =
+    isExplicitlyClosed && sanitizedLabels.length > 1 && sanitizedLabels[0] === sanitizedLabels[sanitizedLabels.length - 1]
+      ? sanitizedLabels.slice(0, -1)
+      : sanitizedLabels;
+
+  const courses = ring.map((vertex, index) => {
+    const nextVertex = ring[(index + 1) % ring.length]!;
+    const inverse = buildCadInverseSummary(vertex, nextVertex);
+    const fromLabel = normalizeParcelVertexLabel(ringLabels[index], index);
+    const toLabel = normalizeParcelVertexLabel(
+      ringLabels[(index + 1) % ring.length],
+      (index + 1) % ring.length,
+    );
+    return {
+      fromLabel,
+      toLabel,
+      azimuthDeg: inverse.azimuthDeg,
+      azimuthText: formatCadNorthAzimuthDms(inverse.azimuthDeg),
+      bearing: inverse.bearing,
+      distanceMeters: inverse.distance,
+    };
+  });
+
+  return {
+    parcelName,
+    ...closureSummary,
+    courseCount: courses.length,
+    courses,
   };
 };

@@ -949,6 +949,16 @@ describe('SurveyCadWorkspace', () => {
     );
     expect(container.textContent).toContain('187.500 m²');
     expect(container.textContent).toContain('69.155 m');
+    expect(container.querySelector('[data-survey-cad-parcel-report]')?.textContent).toContain(
+      'Closure',
+    );
+    expect(container.querySelector('[data-survey-cad-parcel-report]')?.textContent).toContain(
+      'A-V2',
+    );
+    expect(container.querySelector('[data-survey-cad-parcel-report]')?.textContent).toContain(
+      '90°00\'00"',
+    );
+    expect(container.querySelectorAll('[data-survey-cad-parcel-course]')).toHaveLength(3);
 
     await act(async () => {
       root.unmount();

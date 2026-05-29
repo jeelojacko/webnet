@@ -107,7 +107,7 @@ Acceptance criteria:
 - [x] Expand arc creation surface to a split-button multi-mode tool and render arcs as true curve paths instead of sampled line strips.
 - [x] Add traverse-entry workflow.
 - [x] Add parcel entity model.
-- [ ] Add parcel closure report.
+- [x] Add parcel closure report.
 - [ ] Add line/curve labels tied to geometry.
 - [ ] Replace temporary parcel/traverse text with survey-style azimuth-distance and stacked area/perimeter annotations.
   Current slice: traverse azimuth-distance labels are now upright-only and parcel labels are stacked/centered; curve labeling and fuller parcel closure reporting remain open.
@@ -117,7 +117,7 @@ Acceptance criteria:
 - closure, area, perimeter, bearings, and distances update with edits
 
 Current phase note:
-- the native CAD workspace now runs direct `TRAVERSE` command entry, can promote a selected traverse/polyline into a first `PARCEL` entity with area/perimeter/closure metrics plus centroid label text, and the viewport chrome now stays visually flattened to one continuous blue CAD surface, but fuller parcel closure reporting and geometry-tied line/curve labeling are still open before Phase 4 is complete
+- the native CAD workspace now runs direct `TRAVERSE` command entry, can promote a selected traverse/polyline into a first `PARCEL` entity with area/perimeter/closure metrics plus centroid label text, and now shows a selected-parcel closure report overlay with area/perimeter/closure/course rows; geometry-tied line/curve labeling is still open before Phase 4 is complete
 
 ## Phase 5: Point import and field-to-finish
 - [ ] Define feature-code library format.

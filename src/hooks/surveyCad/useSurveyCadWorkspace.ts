@@ -1,5 +1,10 @@
 import { useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from 'react';
-import { cadIntersectLineLikeEntities, isCadLineLikeEntity } from '../../engine/cad/cadCogo';
+import {
+  cadBuildParcelReportSummary,
+  cadIntersectLineLikeEntities,
+  isCadLineLikeEntity,
+  type CadParcelReportSummary,
+} from '../../engine/cad/cadCogo';
 import {
   clearCadSelection,
   getSelectedCadEntities,
@@ -30,6 +35,7 @@ interface UseSurveyCadWorkspaceResult {
   mlightcadScene: ReturnType<typeof buildMlightcadSpikeScene>;
   selectedEntityIds: string[];
   selectedEntities: ReturnType<typeof getSelectedCadEntities>;
+  selectedParcelReport: CadParcelReportSummary | null;
   selectionCount: number;
   canUndo: boolean;
   canRedo: boolean;
@@ -166,6 +172,15 @@ export const useSurveyCadWorkspace = (
       ) ?? null,
     [selectedEntities],
   );
+  const selectedParcelReport = useMemo(() => {
+    const selectedParcel = selectedEntities.find((entity) => entity.type === 'parcel');
+    if (!selectedParcel || selectedParcel.type !== 'parcel') return null;
+    return cadBuildParcelReportSummary({
+      parcelName: selectedParcel.parcelName,
+      vertices: selectedParcel.vertices,
+      vertexLabels: selectedParcel.vertexLabels,
+    });
+  }, [selectedEntities]);
   const {
     activeSnap,
     pointerWorldPoint,
@@ -410,6 +425,7 @@ export const useSurveyCadWorkspace = (
     mlightcadScene,
     selectedEntityIds: selection.selectedEntityIds,
     selectedEntities,
+    selectedParcelReport,
     selectionCount: selection.selectedEntityIds.length,
     canUndo: history.undoStack.length > 0,
     canRedo: history.redoStack.length > 0,

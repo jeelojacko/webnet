@@ -59,6 +59,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     cadProject: activeProject,
     displayScene,
     selectedEntityIds,
+    selectedParcelReport,
     selectionCount,
     canUndo,
     canRedo,
@@ -280,6 +281,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
             scene={displayScene}
             viewBounds={viewBounds}
             selectedEntityIds={selectedEntityIds}
+            selectedParcelReport={selectedParcelReport}
             activeSnap={activeSnap}
             commandPreviewPrimitives={commandPreviewPrimitives}
             commandStatusText={commandStatusText}
