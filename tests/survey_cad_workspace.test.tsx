@@ -124,6 +124,9 @@ describe('SurveyCadWorkspace', () => {
 
     expect(container.querySelector('[data-survey-cad-dedicated-page]')).not.toBeNull();
     expect(container.querySelector('[data-survey-cad-preview]')).not.toBeNull();
+    expect(
+      container.querySelector('[data-survey-cad-preview-shell]')?.getAttribute('class') ?? '',
+    ).toContain('bg-slate-950');
     expect(container.querySelector('[data-survey-cad-toolbar-overlay]')).not.toBeNull();
     expect(
       (container.querySelector('[data-survey-cad-preview]') as SVGElement | null)?.getAttribute('class') ?? '',

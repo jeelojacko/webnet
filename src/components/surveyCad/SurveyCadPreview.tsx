@@ -425,7 +425,7 @@ const SurveyCadPreview: React.FC<SurveyCadPreviewProps> = ({
   };
 
   return (
-    <div className="relative h-full w-full">
+    <div className="relative h-full w-full bg-slate-950" data-survey-cad-preview-shell>
       <svg
         viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
         className="h-full w-full bg-slate-950 select-none"
