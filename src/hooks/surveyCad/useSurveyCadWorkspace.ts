@@ -17,6 +17,7 @@ import { useSurveyCadSnapping, type CadSnapPreferences } from './useSurveyCadSna
 import type {
   CadArcEntity,
   CadDisplayPrimitive,
+  CadPolylineEntity,
   CadProject,
   CadSnapCandidate,
   SurveyCadPersistedState,
@@ -59,6 +60,7 @@ interface UseSurveyCadWorkspaceResult {
   canUseActiveSnap: boolean;
   canFinishCommand: boolean;
   canCreateIntersectionPoint: boolean;
+  canCreateParcel: boolean;
   canContinueCurve: boolean;
   activeSnap: CadSnapCandidate | null;
   snapPreferences: CadSnapPreferences;
@@ -82,6 +84,7 @@ interface UseSurveyCadWorkspaceResult {
   startMoveCommand: () => void;
   startCopyCommand: () => void;
   createIntersectionPoint: () => void;
+  createParcelFromSelection: () => void;
   cancelActiveCommand: () => void;
   finishActiveCommand: () => void;
   setCommandInputValue: (_value: string) => void;
@@ -153,6 +156,14 @@ export const useSurveyCadWorkspace = (
   );
   const selectedArcForContinue = useMemo(
     () => selectedEntities.find((entity): entity is CadArcEntity => entity.type === 'arc') ?? null,
+    [selectedEntities],
+  );
+  const selectedPolylineForParcel = useMemo(
+    () =>
+      selectedEntities.find(
+        (entity): entity is CadPolylineEntity =>
+          entity.type === 'polyline' && entity.vertices.length >= 3,
+      ) ?? null,
     [selectedEntities],
   );
   const {
@@ -410,6 +421,7 @@ export const useSurveyCadWorkspace = (
     canUseActiveSnap,
     canFinishCommand,
     canCreateIntersectionPoint: selectedIntersection != null,
+    canCreateParcel: selectedPolylineForParcel != null,
     canContinueCurve: selectedArcForContinue != null,
     activeSnap,
     snapPreferences,
@@ -441,6 +453,15 @@ export const useSurveyCadWorkspace = (
           y: selectedIntersection.point.y,
           firstLabel: selectedLineLikes[0].id,
           secondLabel: selectedLineLikes[1].id,
+        }),
+      );
+    },
+    createParcelFromSelection: () => {
+      if (!selectedPolylineForParcel) return;
+      setHistory((current) =>
+        runCadCommand(current, {
+          key: 'PARCEL_CREATE',
+          sourceEntityId: selectedPolylineForParcel.id,
         }),
       );
     },

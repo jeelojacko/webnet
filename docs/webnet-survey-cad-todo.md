@@ -105,8 +105,8 @@ Acceptance criteria:
 - [x] Add curve creation helpers.
 - [x] Add arc and tangent-curve command workflows.
 - [x] Expand arc creation surface to a split-button multi-mode tool and render arcs as true curve paths instead of sampled line strips.
-- [ ] Add traverse-entry workflow.
-- [ ] Add parcel entity model.
+- [x] Add traverse-entry workflow.
+- [x] Add parcel entity model.
 - [ ] Add parcel closure report.
 - [ ] Add line/curve labels tied to geometry.
 
@@ -115,7 +115,7 @@ Acceptance criteria:
 - closure, area, perimeter, bearings, and distances update with edits
 
 Current phase note:
-- the first direct `TRAVERSE` command-entry flow now exists on the native command seam and commits a station chain plus traverse polyline, the arc tool now covers broader start/center/end, start/end, tangent, and continue-curve creation modes with `Ctrl` reverse-direction support, but parcel closure/label/report work is still open before Phase 4 is complete
+- the native CAD workspace now runs direct `TRAVERSE` command entry, can promote a selected traverse/polyline into a first `PARCEL` entity with area/perimeter/closure metrics plus centroid label text, and the viewport chrome now stays visually flattened to one continuous blue CAD surface, but fuller parcel closure reporting and geometry-tied line/curve labeling are still open before Phase 4 is complete
 
 ## Phase 5: Point import and field-to-finish
 - [ ] Define feature-code library format.

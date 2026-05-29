@@ -299,4 +299,65 @@ describe('Survey CAD command history', () => {
       ),
     ).toBe(true);
   });
+
+  it('creates parcel entities with closure metrics from a selected traverse/polyline seam', () => {
+    const project = buildSurveyCadSpikeProject({
+      input,
+      instrumentLibrary: {},
+      parseOptions,
+      units: 'm',
+      result: null,
+    });
+
+    const traverseState = runCadCommand(createCadHistoryState(project), {
+      key: 'TRAVERSE',
+      vertices: [
+        { x: 0, y: 0, label: 'A' },
+        { x: 25, y: 0, label: 'P1' },
+        { x: 25, y: 15, label: 'P2' },
+        { x: 0, y: 0, label: 'A' },
+      ],
+    });
+    const traversePolyline = traverseState.present.project.entities.find(
+      (entity) => entity.type === 'polyline',
+    );
+    expect(traversePolyline?.type).toBe('polyline');
+    if (traversePolyline?.type !== 'polyline') throw new Error('Traverse polyline missing');
+
+    const parcelState = runCadCommand(
+      {
+        ...traverseState,
+        present: {
+          ...traverseState.present,
+          selection: {
+            selectedEntityIds: [traversePolyline.id],
+          },
+        },
+      },
+      {
+        key: 'PARCEL_CREATE',
+        sourceEntityId: traversePolyline.id,
+      },
+    );
+    const parcel = parcelState.present.project.entities.find((entity) => entity.type === 'parcel');
+    expect(parcel?.type).toBe('parcel');
+    if (parcel?.type !== 'parcel') throw new Error('Parcel missing');
+    expect(parcel.areaSquareMeters).toBeCloseTo(187.5, 6);
+    expect(parcel.perimeterMeters).toBeCloseTo(69.154759, 6);
+    expect(parcel.closureDistanceMeters).toBeCloseTo(0, 6);
+
+    const undoneParcelState = undoCadHistory(parcelState);
+    expect(
+      undoneParcelState.present.project.entities.some(
+        (entity) => entity.type === 'parcel' && entity.id === parcel.id,
+      ),
+    ).toBe(false);
+
+    const redoneParcelState = redoCadHistory(undoneParcelState);
+    expect(
+      redoneParcelState.present.project.entities.some(
+        (entity) => entity.type === 'parcel' && entity.id === parcel.id,
+      ),
+    ).toBe(true);
+  });
 });

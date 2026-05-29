@@ -1,3 +1,5 @@
+- [x] Survey CAD parcel-foundation + chrome-flatten batch (May 2026): remove the remaining framed brown-ish CAD shell bars so the dedicated workspace reads as one continuous blue viewport, then add first parcel creation/closure metrics on top of the native traverse/polyline seam.
+
 - [x] Survey CAD interaction polish batch (May 2026): keep selection-only changes out of undo/redo history, fix viewport cursor/world-point drift away from screen center, and stop post-create auto-zoom resets after CAD entity edits.
 - [x] Survey CAD arc-tool expansion batch (May 2026): replace blocky sampled arc rendering with true SVG arc paths, then add a dropdown-style multi-mode arc tool surface with broader surveying arc constructors and reverse-direction support before parcel/label work continues.
 

@@ -60,6 +60,13 @@ const DEFAULT_STYLES: CadStyle[] = [
     color: '#e2e8f0',
     textStyleId: 'label-default',
   },
+  {
+    id: 'style-parcel',
+    name: 'Parcel',
+    color: '#f59e0b',
+    strokeWidth: 1.5,
+    lineTypeId: 'continuous',
+  },
 ];
 
 export const DEFAULT_CAD_STYLE_LIBRARY: CadStyleLibrary = {

@@ -8,6 +8,7 @@ interface SurveyCadCommandLineProps {
   historyDepth: number;
   redoDepth: number;
   canCreateIntersectionPoint: boolean;
+  canCreateParcel: boolean;
   canContinueCurve: boolean;
   onStartPoint: () => void;
   onStartCogoPoint: () => void;
@@ -27,6 +28,7 @@ interface SurveyCadCommandLineProps {
   onStartMove: () => void;
   onStartCopy: () => void;
   onCreateIntersectionPoint: () => void;
+  onCreateParcel: () => void;
   onSelectAll: () => void;
   onClearSelection: () => void;
   onErase: () => void;
@@ -48,6 +50,7 @@ const SurveyCadCommandLine: React.FC<SurveyCadCommandLineProps> = ({
   historyDepth,
   redoDepth,
   canCreateIntersectionPoint,
+  canCreateParcel,
   canContinueCurve,
   onStartPoint,
   onStartCogoPoint,
@@ -67,6 +70,7 @@ const SurveyCadCommandLine: React.FC<SurveyCadCommandLineProps> = ({
   onStartMove,
   onStartCopy,
   onCreateIntersectionPoint,
+  onCreateParcel,
   onSelectAll,
   onClearSelection,
   onErase,
@@ -184,6 +188,15 @@ const SurveyCadCommandLine: React.FC<SurveyCadCommandLineProps> = ({
         title="Intersection Point"
       >
         INTX
+      </button>
+      <button
+        type="button"
+        className={commandButtonClassName}
+        onClick={onCreateParcel}
+        disabled={!canCreateParcel}
+        title="Create Parcel"
+      >
+        PARCEL
       </button>
       <button type="button" className={commandButtonClassName} onClick={onSelectAll} title="Select All">
         S-ALL

@@ -428,7 +428,7 @@ const SurveyCadPreview: React.FC<SurveyCadPreviewProps> = ({
     <div className="relative h-full w-full">
       <svg
         viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
-        className="h-full w-full rounded-lg border border-slate-800 bg-slate-950 select-none"
+        className="h-full w-full bg-slate-950 select-none"
         data-survey-cad-preview
         onMouseLeave={() => {
           if (dragState.kind === 'none') onPointerWorldPointChange(null);

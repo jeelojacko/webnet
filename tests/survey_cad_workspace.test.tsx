@@ -124,6 +124,9 @@ describe('SurveyCadWorkspace', () => {
 
     expect(container.querySelector('[data-survey-cad-dedicated-page]')).not.toBeNull();
     expect(container.querySelector('[data-survey-cad-preview]')).not.toBeNull();
+    expect(
+      (container.querySelector('[data-survey-cad-preview]') as SVGElement | null)?.getAttribute('class') ?? '',
+    ).not.toContain('border-slate-800');
     expect(container.textContent).not.toContain('Zoom Extents');
     expect(container.textContent).not.toContain('Zoom Window');
     expect(container.textContent).not.toContain('Use Snap');
@@ -880,6 +883,65 @@ describe('SurveyCadWorkspace', () => {
     expect(container.querySelector('[data-survey-cad-entity-count]')?.textContent).toContain(
       '13 entities',
     );
+
+    await act(async () => {
+      root.unmount();
+    });
+    container.remove();
+  });
+
+  it('creates a parcel from the selected traverse polyline and reports closure in status text', async () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root: Root = createRoot(container);
+
+    await act(async () => {
+      root.render(
+        <SurveyCadWorkspace
+          input={input}
+          instrumentLibrary={{}}
+          parseOptions={parseOptions}
+          units="m"
+          result={null}
+        />,
+      );
+    });
+
+    const commandInput = container.querySelector('[data-survey-cad-command-input]') as HTMLInputElement | null;
+    if (!commandInput) throw new Error('Command input not found');
+
+    await act(async () => {
+      clickButton(container, 'TRAV');
+      setTextInputValue(commandInput, 'A=0,0');
+      pressKey(commandInput, 'Enter');
+      setTextInputValue(commandInput, 'N90-00-00E,25');
+      pressKey(commandInput, 'Enter');
+      setTextInputValue(commandInput, 'N0-00-00E,15');
+      pressKey(commandInput, 'Enter');
+      setTextInputValue(commandInput, 'A=0,0');
+      pressKey(commandInput, 'Enter');
+      setTextInputValue(commandInput, '');
+      pressKey(commandInput, 'Enter');
+    });
+
+    expect(container.querySelector('[data-survey-cad-command-status]')?.textContent).toContain(
+      'TRAVERSE committed',
+    );
+
+    await act(async () => {
+      clickButton(container, 'PARCEL');
+    });
+
+    expect(container.querySelector('[data-survey-cad-command-status]')?.textContent).toContain(
+      'PARCEL_CREATE committed',
+    );
+    expect(container.querySelector('[data-survey-cad-command-status]')?.textContent).toContain(
+      'Closure 0.000 m',
+    );
+    expect(container.querySelector('[data-survey-cad-entity-count]')?.textContent).toContain(
+      '15 entities',
+    );
+    expect(container.textContent).toContain('Parcel 1');
 
     await act(async () => {
       root.unmount();

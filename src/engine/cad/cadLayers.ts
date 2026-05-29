@@ -52,4 +52,13 @@ export const DEFAULT_CAD_LAYERS: CadLayer[] = [
     locked: false,
     role: 'labels',
   },
+  {
+    id: 'parcels',
+    name: 'Parcels',
+    color: '#f59e0b',
+    defaultStyleId: DEFAULT_STYLE_IDS['Parcel'],
+    visible: true,
+    locked: false,
+    role: 'parcels',
+  },
 ];

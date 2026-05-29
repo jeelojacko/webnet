@@ -38,6 +38,7 @@ export interface CadLayer {
     | 'observation-lines'
     | 'error-ellipses'
     | 'labels'
+    | 'parcels'
     | 'planning';
 }
 
@@ -130,6 +131,9 @@ export interface CadParcelEntity extends CadBaseEntity {
   parcelName: string;
   areaSquareMeters?: number;
   perimeterMeters?: number;
+  closureDeltaX?: number;
+  closureDeltaY?: number;
+  closureDistanceMeters?: number;
 }
 
 export interface CadTextEntity extends CadBaseEntity {

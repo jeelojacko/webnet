@@ -24,6 +24,7 @@ Current implemented spike slice:
 - command registry/history seam
 - first committed commands: `SELECT_ALL`, `CLEAR_SELECTION`, `ERASE`, `POINT`, `COGO_POINT`, `LINE`, `PLINE`, `ARC_3PT`, split-button arc creation modes (`Start Center End`, `Start Center Angle`, `Start Center Length`, `Start End Angle`, `Start End Direction`, `Start End Radius`, `Continue Curve`), `TANGENT_CURVE`, `MOVE`, `COPY`, `INTERSECT_POINT`
 - first traverse-entry command: `TRAVERSE`
+- first parcel-promotion command: `PARCEL_CREATE` from a selected native polyline/traverse seam
 - first interactive query command: `INVERSE`
 - undo/redo replay over snapshot-backed transaction entries
 - typed coordinate input plus `@azimuth,distance` and survey bearing-distance input after a first point
@@ -44,6 +45,8 @@ Current implemented spike slice:
 - keyboard paste now uses a real insertion-point workflow: `Ctrl/Cmd+V` starts a `PASTE` command from the copied geometry's base point, shows live preview geometry, and waits for a click or typed insertion point before commit
 - idle generic helper copy is now removed from the lower-left viewport so the command bar placeholder carries the generic input reminder instead
 - object snaps are now operator-toggleable from a viewport `Snaps` drop-up menu instead of a fixed status sentence, and selection hit targets for native points/lines/ellipses are intentionally wider than the visible geometry
+- the dedicated CAD page shell no longer wraps the viewport in framed brown-ish bars; the toolbar sits on the same dark-blue surface and the snap/command UI remains overlaid in the viewport
+- selected native traverse/polyline geometry can now be promoted into a parcel entity with stored area, perimeter, and closure metrics plus a centroid parcel label
 
 ## Initial command families
 - `POINT`

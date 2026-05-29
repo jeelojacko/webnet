@@ -3,12 +3,14 @@ import {
   createCadSelectionState,
   selectAllCadEntities,
 } from './cadSelection';
+import { cadBuildParcelClosureSummary } from './cadCogo';
 import { cadBuildArcFromThreePoints, cadBuildTangentCurve } from './cadGeometry';
 import { appendCadProjectEntities, replaceCadProjectEntities } from './cadProjectState';
 import type { CadSelectionState } from './cadSelection';
 import type {
   CadEntity,
   CadEntityId,
+  CadParcelEntity,
   CadPolylineEntity,
   CadProject,
   CadSurveyPointEntity,
@@ -28,6 +30,7 @@ export type CadCommandKey =
   | 'ARC_3PT'
   | 'ARC_CREATE'
   | 'TANGENT_CURVE'
+  | 'PARCEL_CREATE'
   | 'MOVE'
   | 'COPY'
   | 'PASTE'
@@ -102,6 +105,10 @@ export type CadCommand =
       radius: number;
     }
   | {
+      key: 'PARCEL_CREATE';
+      sourceEntityId: CadEntityId;
+    }
+  | {
       key: 'MOVE';
       deltaX: number;
       deltaY: number;
@@ -170,6 +177,17 @@ const nextManualStationId = (project: CadProject): string => {
     maxSequence = Math.max(maxSequence, Number(match[1]));
   });
   return `CAD${maxSequence + 1}`;
+};
+
+const nextParcelName = (project: CadProject): string => {
+  let maxSequence = 0;
+  project.entities.forEach((entity) => {
+    if (entity.type !== 'parcel') return;
+    const match = /^Parcel\s+(\d+)$/i.exec(entity.parcelName.trim());
+    if (!match) return;
+    maxSequence = Math.max(maxSequence, Number(match[1]));
+  });
+  return `Parcel ${maxSequence + 1}`;
 };
 
 const stationIdExists = (project: CadProject, stationId: string): boolean =>
@@ -900,6 +918,87 @@ const tangentCurveCommand: CadCommandDefinition<{
   },
 };
 
+const parcelCreateCommand: CadCommandDefinition<{
+  key: 'PARCEL_CREATE';
+  sourceEntityId: CadEntityId;
+}> = {
+  key: 'PARCEL_CREATE',
+  execute: (snapshot, command) => {
+    const sourcePolyline = snapshot.project.entities.find(
+      (entity): entity is CadPolylineEntity =>
+        entity.type === 'polyline' && entity.id === command.sourceEntityId,
+    );
+    if (!sourcePolyline) return null;
+    const metrics = cadBuildParcelClosureSummary(sourcePolyline.vertices);
+    if (!metrics) return null;
+    const ringVertices =
+      sourcePolyline.vertices.length > 1 &&
+      Math.abs(sourcePolyline.vertices[0]!.x - sourcePolyline.vertices[sourcePolyline.vertices.length - 1]!.x) <= 1e-9 &&
+      Math.abs(sourcePolyline.vertices[0]!.y - sourcePolyline.vertices[sourcePolyline.vertices.length - 1]!.y) <= 1e-9
+        ? sourcePolyline.vertices.slice(0, -1)
+        : sourcePolyline.vertices;
+    const ringLabels =
+      sourcePolyline.vertexLabels.length > 1 &&
+      sourcePolyline.vertexLabels[0] === sourcePolyline.vertexLabels[sourcePolyline.vertexLabels.length - 1]
+        ? sourcePolyline.vertexLabels.slice(0, -1)
+        : sourcePolyline.vertexLabels;
+    const parcelName = nextParcelName(snapshot.project);
+    const parcelEntity: CadParcelEntity = {
+      id: createStableRuntimeId('cad-parcel'),
+      type: 'parcel',
+      layerId: 'parcels',
+      styleId: 'style-parcel',
+      visible: true,
+      locked: false,
+      vertices: ringVertices.map((vertex) => ({ x: vertex.x, y: vertex.y })),
+      vertexLabels: [...ringLabels],
+      parcelName,
+      areaSquareMeters: metrics.areaSquareMeters,
+      perimeterMeters: metrics.perimeterMeters,
+      closureDeltaX: metrics.closureDeltaX,
+      closureDeltaY: metrics.closureDeltaY,
+      closureDistanceMeters: metrics.closureDistanceMeters,
+      metadata: {
+        createdBy: 'PARCEL_CREATE',
+        manual: true,
+        sourceEntityId: sourcePolyline.id,
+      },
+    };
+    const labelEntity: CadTextEntity = {
+      id: createStableRuntimeId('cad-parcel-label'),
+      type: 'text',
+      layerId: 'labels',
+      styleId: 'style-label',
+      visible: true,
+      locked: false,
+      x: metrics.centroid.x,
+      y: metrics.centroid.y,
+      text: `${parcelName} | A=${metrics.areaSquareMeters.toFixed(3)} sq m | P=${metrics.perimeterMeters.toFixed(3)} m`,
+      anchorEntityId: parcelEntity.id,
+      metadata: {
+        createdBy: 'PARCEL_CREATE',
+        manual: true,
+        parcelName,
+      },
+    };
+    const nextProject = appendCadProjectEntities(snapshot.project, [parcelEntity, labelEntity]);
+    return {
+      nextSnapshot: {
+        project: nextProject,
+        selection: createCadSelectionState(nextProject, [parcelEntity.id]),
+      },
+      commandState: {
+        key: 'PARCEL_CREATE',
+        phase: 'committed',
+        prompt: `PARCEL_CREATE committed for ${parcelName}. Closure ${metrics.closureDistanceMeters.toFixed(3)} m.`,
+      },
+      transactionLabel: `PARCEL_CREATE (${parcelName})`,
+      addedEntityIds: [parcelEntity.id, labelEntity.id],
+      removedEntityIds: [],
+    };
+  },
+};
+
 const moveCommand: CadCommandDefinition<{
   key: 'MOVE';
   deltaX: number;
@@ -1042,6 +1141,7 @@ export const CAD_COMMAND_REGISTRY: Record<CadCommandKey, CadCommandDefinition<Ca
   ARC_3PT: arc3ptCommand as CadCommandDefinition<CadCommand>,
   ARC_CREATE: arcCreateCommand as CadCommandDefinition<CadCommand>,
   TANGENT_CURVE: tangentCurveCommand as CadCommandDefinition<CadCommand>,
+  PARCEL_CREATE: parcelCreateCommand as CadCommandDefinition<CadCommand>,
   MOVE: moveCommand as CadCommandDefinition<CadCommand>,
   COPY: copyCommand as CadCommandDefinition<CadCommand>,
   PASTE: pasteCommand as CadCommandDefinition<CadCommand>,

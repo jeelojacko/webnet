@@ -6,6 +6,7 @@ import {
   cadBuildCurveMetricsFromChordLength,
   cadBuildCurveMetricsFromRadiusDelta,
   cadBuildCurveMetricsFromTangentLength,
+  cadBuildParcelClosureSummary,
   cadBuildParallelLine,
   cadBuildPerpendicularFoot,
   cadBuildTangentCurve,
@@ -268,5 +269,21 @@ describe('Survey CAD COGO helpers', () => {
       radius: 10,
       endAngleDeg: 90,
     }).x).toBeCloseTo(0, 6);
+  });
+
+  it('computes parcel closure metrics from traverse-style vertices', () => {
+    const summary = cadBuildParcelClosureSummary([
+      { x: 0, y: 0 },
+      { x: 25, y: 0 },
+      { x: 25, y: 15 },
+      { x: 0, y: 0 },
+    ]);
+
+    expect(summary).not.toBeNull();
+    expect(summary?.areaSquareMeters ?? Number.NaN).toBeCloseTo(187.5, 6);
+    expect(summary?.perimeterMeters ?? Number.NaN).toBeCloseTo(69.154759, 6);
+    expect(summary?.closureDistanceMeters ?? Number.NaN).toBeCloseTo(0, 6);
+    expect(summary?.centroid.x ?? Number.NaN).toBeCloseTo(16.6666667, 6);
+    expect(summary?.centroid.y ?? Number.NaN).toBeCloseTo(5, 6);
   });
 });
