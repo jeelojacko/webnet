@@ -583,6 +583,53 @@ describe('SurveyCadWorkspace', () => {
     container.remove();
   });
 
+  it('rejects ARC Start Center End input when the supplied end point is off the chosen center radius', async () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root: Root = createRoot(container);
+
+    await act(async () => {
+      root.render(
+        <SurveyCadWorkspace
+          input={input}
+          instrumentLibrary={{}}
+          parseOptions={parseOptions}
+          units="m"
+          result={null}
+        />,
+      );
+    });
+
+    const arcMenuButton = container.querySelector('[data-survey-cad-arc-menu-button]') as HTMLButtonElement | null;
+    const commandInput = container.querySelector('[data-survey-cad-command-input]') as HTMLInputElement | null;
+    if (!arcMenuButton || !commandInput) throw new Error('Arc menu or command input not found');
+
+    await act(async () => {
+      arcMenuButton.click();
+    });
+    await act(async () => {
+      clickButton(container, 'Start Center End');
+      setTextInputValue(commandInput, '10,0');
+      pressKey(commandInput, 'Enter');
+      setTextInputValue(commandInput, '0,0');
+      pressKey(commandInput, 'Enter');
+      setTextInputValue(commandInput, '0,8');
+      pressKey(commandInput, 'Enter');
+    });
+
+    expect(container.querySelector('[data-survey-cad-command-status]')?.textContent).toContain(
+      'ARC SCE invalid',
+    );
+    expect(container.querySelector('[data-survey-cad-entity-count]')?.textContent).toContain(
+      '8 entities',
+    );
+
+    await act(async () => {
+      root.unmount();
+    });
+    container.remove();
+  });
+
   it('does not auto-reframe the camera when entity edits expand project extents', async () => {
     const container = document.createElement('div');
     document.body.appendChild(container);
@@ -702,6 +749,7 @@ describe('SurveyCadWorkspace', () => {
 
     const toolbarOverlay = container.querySelector('[data-survey-cad-toolbar-overlay]');
     expect(toolbarOverlay?.className).toContain('overflow-visible');
+    expect(toolbarOverlay?.className).not.toContain('overflow-x-auto');
 
     act(() => {
       root.unmount();

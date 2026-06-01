@@ -454,6 +454,9 @@ export const cadBuildArcFromStartCenterEnd = (
 ): CadArcDefinition | null => {
   const radius = cadDistance(centerPoint, startPoint);
   if (!Number.isFinite(radius) || radius <= 1e-12) return null;
+  const endRadius = cadDistance(centerPoint, endPoint);
+  const radiusTolerance = Math.max(radius * 1e-6, 1e-6);
+  if (!Number.isFinite(endRadius) || Math.abs(endRadius - radius) > radiusTolerance) return null;
   const startAngleDeg = cadAngleDegFromCenter(centerPoint, startPoint);
   const endAngleDeg = cadAngleDegFromCenter(centerPoint, endPoint);
   const ccwDelta = cadCounterClockwiseDeltaDeg(startAngleDeg, endAngleDeg);

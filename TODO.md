@@ -1,3 +1,5 @@
+- [x] Survey CAD center-arc validation batch (June 2026): make center-driven arc commands reject off-radius end picks instead of silently drifting the committed curve away from the operator's supplied center/end geometry, and lock the behavior with focused CAD geometry/workspace coverage.
+
 - [x] Survey CAD arc-label batch (May 2026): add geometry-derived arc/curve labels in the native renderer while keeping ordinary `LINE` geometry unlabeled so Phase 4 labeling closes without broadening annotations onto generic linework.
 - [x] Survey CAD parcel-report batch (May 2026): add a geometry-derived parcel closure report overlay for selected parcel entities, including area, perimeter, closure values, and ordered course azimuth/distance rows without persisting extra report entities.
 - [x] Survey CAD traverse-label readability batch (May 2026): keep traverse azimuth/distance labels upright instead of upside down and stop traverse/parcel point creation from adding anchored coordinate/station text labels, while preserving ordinary point-label behavior.

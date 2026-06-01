@@ -1,5 +1,7 @@
 # WebNet Survey CAD TODO
 
+- [x] Survey CAD center-arc validation batch (June 2026): make center-driven arc commands reject off-radius end picks instead of silently drifting the committed curve away from the operator's supplied center/end geometry, and lock the behavior with focused CAD geometry/workspace coverage.
+
 ## Phase 0: Planning and shell seam
 - [x] Create planning branch for Survey CAD groundwork.
 - [x] Add repo-fit master plan.
