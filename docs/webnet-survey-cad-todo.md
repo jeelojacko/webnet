@@ -1,5 +1,6 @@
 # WebNet Survey CAD TODO
 
+- [x] Survey CAD construction-snap batch (June 2026): add command-context construction snaps (`extension`, `perpendicular`, `parallel`, and line-like `apparent intersection`) so active draw/edit commands can lock onto derived geometry without turning those derived targets into always-on passive hover clutter.
 - [x] Survey CAD curve-snap expansion batch (June 2026): expand native snapping beyond point/end/mid/intersection/nearest with honest curve-aware snaps (`center`, arc endpoints, arc midpoint, quadrants, line-arc intersections, arc-arc intersections, and nearest-on-curve) while leaving construction-only snaps for a later command-context batch.
 - [x] Survey CAD arc-flip hint batch (June 2026): add a small live viewport hint for arc modes that support `Ctrl` flip/reverse so operators can see the modifier while drawing, and lock it with focused workspace coverage.
 - [x] Survey CAD arc-direction audit batch (June 2026): audit all native arc constructors for start/end/center fidelity, fix clockwise or reverse-sweep cases that silently swap endpoints or break continuation tangency, and lock the edge cases with focused geometry/workspace coverage.

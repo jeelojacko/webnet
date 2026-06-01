@@ -3,10 +3,12 @@ import {
   cadClosestPointOnSegment,
   cadClosestPointOnArc,
   cadDistance,
+  cadInfiniteLineIntersection,
   cadIntersectArcArc,
   cadIntersectSegmentArc,
   cadMidpoint,
   cadPointOnCircle,
+  cadProjectPointOntoInfiniteLine,
   cadSegmentIntersection,
   cadIsAngleOnArcSweep,
   type CadWorldPoint,
@@ -19,6 +21,7 @@ import type {
   CadPolylineEntity,
   CadProject,
   CadSnapCandidate,
+  CadSnapConstructionContext,
   CadSnapKind,
 } from './cadTypes';
 
@@ -30,7 +33,11 @@ const SNAP_PRIORITY: Record<CadSnapKind, number> = {
   'arc-midpoint': 4,
   quadrant: 5,
   intersection: 6,
-  nearest: 7,
+  'apparent-intersection': 7,
+  extension: 8,
+  perpendicular: 9,
+  parallel: 10,
+  nearest: 11,
 };
 
 const buildCandidate = (
@@ -54,6 +61,7 @@ export interface CadSpatialIndex {
     _worldPoint: CadWorldPoint,
     _toleranceWorld: number,
     _allowedKinds?: readonly CadSnapKind[],
+    _constructionContext?: CadSnapConstructionContext,
   ) => CadSnapCandidate | null;
 }
 
@@ -133,11 +141,47 @@ const dedupeCandidates = (candidates: CadSnapCandidate[]): CadSnapCandidate[] =>
   });
 };
 
+const buildExtensionCandidate = (
+  segment: CadSegmentRef,
+  worldPoint: CadWorldPoint,
+): CadWorldPoint | null => {
+  const projection = cadProjectPointOntoInfiniteLine(worldPoint, segment.start, segment.end);
+  if (projection.t >= -1e-9 && projection.t <= 1 + 1e-9) return null;
+  return projection.point;
+};
+
+const buildParallelCandidate = (
+  segment: CadSegmentRef,
+  basePoint: CadWorldPoint,
+  worldPoint: CadWorldPoint,
+): CadWorldPoint | null => {
+  const directionEnd = {
+    x: basePoint.x + (segment.end.x - segment.start.x),
+    y: basePoint.y + (segment.end.y - segment.start.y),
+  };
+  const projection = cadProjectPointOntoInfiniteLine(worldPoint, basePoint, directionEnd);
+  return projection.point;
+};
+
 export const buildCadSpatialIndex = (project: CadProject): CadSpatialIndex => ({
   queryNearestSnap: (
     worldPoint,
     toleranceWorld,
-    allowedKinds = ['point-node', 'endpoint', 'midpoint', 'center', 'arc-midpoint', 'quadrant', 'intersection', 'nearest'],
+    allowedKinds = [
+      'point-node',
+      'endpoint',
+      'midpoint',
+      'center',
+      'arc-midpoint',
+      'quadrant',
+      'intersection',
+      'apparent-intersection',
+      'extension',
+      'perpendicular',
+      'parallel',
+      'nearest',
+    ],
+    constructionContext = { active: false, basePoint: null },
   ) => {
     const allowed = new Set(allowedKinds);
     const candidates: CadSnapCandidate[] = [];
@@ -153,6 +197,7 @@ export const buildCadSpatialIndex = (project: CadProject): CadSpatialIndex => ({
     const arcs = project.entities
       .filter((entity): entity is CadArcEntity => entity.visible && entity.type === 'arc')
       .map((entity) => arcRefFromEntity(entity));
+    const basePoint = constructionContext.active ? constructionContext.basePoint : null;
 
     project.entities.forEach((entity) => {
       if (!entity.visible) return;
@@ -190,6 +235,46 @@ export const buildCadSpatialIndex = (project: CadProject): CadSpatialIndex => ({
                   segment.label,
                 ),
               );
+            }
+            if (constructionContext.active && allowed.has('extension')) {
+              const extensionPoint = buildExtensionCandidate(segment, worldPoint);
+              if (extensionPoint) {
+                candidates.push(
+                  buildCandidate(
+                    'extension',
+                    entity.id,
+                    extensionPoint,
+                    worldPoint,
+                    `${segment.label} ext`,
+                  ),
+                );
+              }
+            }
+            if (constructionContext.active && basePoint && allowed.has('perpendicular')) {
+              const perpendicularPoint = cadProjectPointOntoInfiniteLine(basePoint, segment.start, segment.end).point;
+              candidates.push(
+                buildCandidate(
+                  'perpendicular',
+                  entity.id,
+                  perpendicularPoint,
+                  worldPoint,
+                  `${segment.label} perp`,
+                ),
+              );
+            }
+            if (constructionContext.active && basePoint && allowed.has('parallel')) {
+              const parallelPoint = buildParallelCandidate(segment, basePoint, worldPoint);
+              if (parallelPoint) {
+                candidates.push(
+                  buildCandidate(
+                    'parallel',
+                    entity.id,
+                    parallelPoint,
+                    worldPoint,
+                    `${segment.label} parallel`,
+                  ),
+                );
+              }
             }
           });
           break;
@@ -237,6 +322,17 @@ export const buildCadSpatialIndex = (project: CadProject): CadSpatialIndex => ({
                 cadClosestPointOnArc(worldPoint, arc.center, arc.radius, arc.startAngleDeg, arc.endAngleDeg),
                 worldPoint,
                 arc.label,
+              ),
+            );
+          }
+          if (constructionContext.active && basePoint && allowed.has('perpendicular')) {
+            candidates.push(
+              buildCandidate(
+                'perpendicular',
+                entity.id,
+                cadClosestPointOnArc(basePoint, arc.center, arc.radius, arc.startAngleDeg, arc.endAngleDeg),
+                worldPoint,
+                `${arc.label} perp`,
               ),
             );
           }
@@ -311,6 +407,26 @@ export const buildCadSpatialIndex = (project: CadProject): CadSpatialIndex => ({
               ),
             );
           });
+        }
+      }
+    }
+    if (constructionContext.active && allowed.has('apparent-intersection')) {
+      for (let leftIndex = 0; leftIndex < segments.length; leftIndex += 1) {
+        for (let rightIndex = leftIndex + 1; rightIndex < segments.length; rightIndex += 1) {
+          const left = segments[leftIndex];
+          const right = segments[rightIndex];
+          if (cadSegmentIntersection(left.start, left.end, right.start, right.end)) continue;
+          const intersection = cadInfiniteLineIntersection(left.start, left.end, right.start, right.end);
+          if (!intersection) continue;
+          candidates.push(
+            buildCandidate(
+              'apparent-intersection',
+              `${left.sourceEntityId}|${right.sourceEntityId}`,
+              intersection,
+              worldPoint,
+              `${left.label} x ${right.label} apparent`,
+            ),
+          );
         }
       }
     }

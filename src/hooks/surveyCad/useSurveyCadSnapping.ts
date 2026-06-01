@@ -1,6 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import { buildCadSpatialIndex } from '../../engine/cad/cadSpatialIndex';
-import type { CadProject, CadSnapCandidate, CadSnapKind } from '../../engine/cad/cadTypes';
+import type {
+  CadProject,
+  CadSnapCandidate,
+  CadSnapConstructionContext,
+  CadSnapKind,
+} from '../../engine/cad/cadTypes';
 
 const FALLBACK_TOLERANCE_RATIO = 0.02;
 const SNAP_KIND_ORDER: CadSnapKind[] = [
@@ -11,6 +16,10 @@ const SNAP_KIND_ORDER: CadSnapKind[] = [
   'arc-midpoint',
   'quadrant',
   'intersection',
+  'apparent-intersection',
+  'extension',
+  'perpendicular',
+  'parallel',
   'nearest',
 ];
 
@@ -24,6 +33,10 @@ const DEFAULT_SNAP_PREFERENCES: CadSnapPreferences = {
   'arc-midpoint': true,
   quadrant: true,
   intersection: true,
+  'apparent-intersection': true,
+  extension: true,
+  perpendicular: true,
+  parallel: true,
   nearest: true,
 };
 
@@ -44,7 +57,10 @@ interface UseSurveyCadSnappingResult {
   setSnapPreference: (_kind: CadSnapKind, _enabled: boolean) => void;
 }
 
-export const useSurveyCadSnapping = (project: CadProject): UseSurveyCadSnappingResult => {
+export const useSurveyCadSnapping = (
+  project: CadProject,
+  constructionContext: CadSnapConstructionContext,
+): UseSurveyCadSnappingResult => {
   const spatialIndex = useMemo(() => buildCadSpatialIndex(project), [project]);
   const [activeSnap, setActiveSnap] = useState<CadSnapCandidate | null>(null);
   const [pointerWorldPoint, setPointerWorldPoint] = useState<{ x: number; y: number } | null>(null);
@@ -58,7 +74,7 @@ export const useSurveyCadSnapping = (project: CadProject): UseSurveyCadSnappingR
   useEffect(() => {
     setActiveSnap(null);
     setPointerWorldPoint(null);
-  }, [project]);
+  }, [project, constructionContext.active, constructionContext.basePoint?.x, constructionContext.basePoint?.y]);
 
   return {
     activeSnap,
@@ -70,7 +86,7 @@ export const useSurveyCadSnapping = (project: CadProject): UseSurveyCadSnappingR
         setActiveSnap(null);
         return;
       }
-      setActiveSnap(spatialIndex.queryNearestSnap(worldPoint, toleranceWorld, allowedKinds));
+      setActiveSnap(spatialIndex.queryNearestSnap(worldPoint, toleranceWorld, allowedKinds, constructionContext));
     },
     setSnapPreference: (kind, enabled) => {
       setSnapPreferences((current) => {

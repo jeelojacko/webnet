@@ -264,6 +264,10 @@ export type CadSnapKind =
   | 'arc-midpoint'
   | 'quadrant'
   | 'intersection'
+  | 'apparent-intersection'
+  | 'extension'
+  | 'perpendicular'
+  | 'parallel'
   | 'nearest';
 
 export interface CadSnapCandidate {
@@ -274,6 +278,11 @@ export interface CadSnapCandidate {
   y: number;
   distance: number;
   label: string;
+}
+
+export interface CadSnapConstructionContext {
+  active: boolean;
+  basePoint: CadDisplayPoint | null;
 }
 
 export interface MlightcadSpikeLayer {

@@ -237,4 +237,102 @@ describe('Survey CAD spatial index', () => {
     expect(arcArcIntersection?.x).toBeCloseTo(4, 6);
     expect(arcArcIntersection?.y).toBeCloseTo(Math.sqrt(84), 6);
   });
+
+  it('resolves construction snaps only when active command context supplies a base point', () => {
+    const project = appendCadProjectEntities(
+      buildSurveyCadSpikeProject({
+        input,
+        instrumentLibrary: {},
+        parseOptions,
+        units: 'm',
+        result: null,
+      }),
+      [
+        {
+          id: 'line:base',
+          type: 'line',
+          layerId: 'observation-lines',
+          styleId: 'style-observation-line',
+          visible: true,
+          locked: false,
+          fromStationId: 'L1',
+          toStationId: 'L2',
+          fromX: 0,
+          fromY: 0,
+          toX: 10,
+          toY: 0,
+          sourceObservationIds: [],
+        },
+        {
+          id: 'line:apparent',
+          type: 'line',
+          layerId: 'observation-lines',
+          styleId: 'style-observation-line',
+          visible: true,
+          locked: false,
+          fromStationId: 'L3',
+          toStationId: 'L4',
+          fromX: 20,
+          fromY: -5,
+          toX: 20,
+          toY: 5,
+          sourceObservationIds: [],
+        },
+        {
+          id: 'arc:upper',
+          type: 'arc',
+          layerId: 'observation-lines',
+          styleId: 'style-observation-line',
+          visible: true,
+          locked: false,
+          centerX: 0,
+          centerY: 0,
+          radius: 10,
+          startAngleDeg: 0,
+          endAngleDeg: 180,
+        },
+      ],
+    );
+    const index = buildCadSpatialIndex(project);
+    const inactiveContext = { active: false, basePoint: null };
+    const activeContext = { active: true, basePoint: { x: 5, y: 10 } };
+
+    expect(index.queryNearestSnap({ x: 15, y: 0.1 }, 1, ['extension'], inactiveContext)).toBeNull();
+
+    const extension = index.queryNearestSnap({ x: 15, y: 0.1 }, 1, ['extension'], activeContext);
+    expect(extension?.kind).toBe('extension');
+    expect(extension?.x).toBeCloseTo(15, 6);
+    expect(extension?.y).toBeCloseTo(0, 6);
+
+    const perpendicular = index.queryNearestSnap({ x: 5.2, y: 0.1 }, 1, ['perpendicular'], activeContext);
+    expect(perpendicular?.kind).toBe('perpendicular');
+    expect(perpendicular?.x).toBeCloseTo(5, 6);
+    expect(perpendicular?.y).toBeCloseTo(0, 6);
+
+    const parallel = index.queryNearestSnap({ x: 15.1, y: 10.2 }, 1, ['parallel'], activeContext);
+    expect(parallel?.kind).toBe('parallel');
+    expect(parallel?.x).toBeCloseTo(15.1, 6);
+    expect(parallel?.y).toBeCloseTo(10, 6);
+
+    const apparentIntersection = index.queryNearestSnap(
+      { x: 20.1, y: 0.2 },
+      1,
+      ['apparent-intersection'],
+      activeContext,
+    );
+    expect(apparentIntersection?.kind).toBe('apparent-intersection');
+    expect(apparentIntersection?.x).toBeCloseTo(20, 6);
+    expect(apparentIntersection?.y).toBeCloseTo(0, 6);
+
+    const arcPerpendicular = index.queryNearestSnap(
+      { x: 0.1, y: 10.2 },
+      1,
+      ['perpendicular'],
+      { active: true, basePoint: { x: 0, y: 30 } },
+    );
+    expect(arcPerpendicular?.kind).toBe('perpendicular');
+    expect(arcPerpendicular?.sourceEntityId).toBe('arc:upper');
+    expect(arcPerpendicular?.x).toBeCloseTo(0, 6);
+    expect(arcPerpendicular?.y).toBeCloseTo(10, 6);
+  });
 });

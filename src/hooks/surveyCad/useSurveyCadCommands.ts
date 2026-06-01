@@ -20,7 +20,11 @@ import {
   type CadNamedPoint,
 } from '../../engine/cad/cadGeometry';
 import { runCadCommand, type CadHistoryState } from '../../engine/cad/cadUndoRedo';
-import type { CadArcEntity, CadSnapCandidate } from '../../engine/cad/cadTypes';
+import type {
+  CadArcEntity,
+  CadSnapCandidate,
+  CadSnapConstructionContext,
+} from '../../engine/cad/cadTypes';
 
 type ActiveCommandKey =
   | 'POINT'
@@ -155,6 +159,7 @@ interface UseSurveyCadCommandsResult {
   commandPrompt: string;
   commandHelpText: string;
   commandPreview: CadCommandPreviewState | null;
+  snapConstructionContext: CadSnapConstructionContext;
   canUseActiveSnap: boolean;
   canFinishCommand: boolean;
   startPointCommand: () => void;
@@ -500,6 +505,79 @@ export const useSurveyCadCommands = ({
     [history.commandState.prompt, session],
   );
   const helpText = useMemo(() => helpTextForSession(session), [session]);
+  const snapConstructionContext = useMemo<CadSnapConstructionContext>(() => {
+    if (!session) {
+      return { active: false, basePoint: null };
+    }
+    switch (session.key) {
+      case 'POINT':
+        return { active: false, basePoint: null };
+      case 'COGO_POINT':
+      case 'LINE':
+      case 'INVERSE':
+      case 'MOVE':
+      case 'COPY':
+        return session.startPoint
+          ? { active: true, basePoint: { x: session.startPoint.x, y: session.startPoint.y } }
+          : { active: false, basePoint: null };
+      case 'PASTE':
+        return { active: true, basePoint: { x: session.startPoint.x, y: session.startPoint.y } };
+      case 'PLINE':
+      case 'TRAVERSE':
+      case 'ARC_3PT':
+        return session.points.length > 0
+          ? {
+              active: true,
+              basePoint: {
+                x: session.points[session.points.length - 1]!.x,
+                y: session.points[session.points.length - 1]!.y,
+              },
+            }
+          : { active: false, basePoint: null };
+      case 'ARC_SCE':
+      case 'ARC_CSE':
+        return session.points.length < 3 && session.points.length > 0
+          ? {
+              active: true,
+              basePoint: {
+                x: session.points[session.points.length - 1]!.x,
+                y: session.points[session.points.length - 1]!.y,
+              },
+            }
+          : { active: false, basePoint: null };
+      case 'ARC_SCA':
+      case 'ARC_CSA':
+      case 'ARC_SCL':
+      case 'ARC_CSL':
+      case 'ARC_SEA':
+      case 'ARC_SED':
+      case 'ARC_SER':
+        return session.points.length < 2 && session.points.length > 0
+          ? {
+              active: true,
+              basePoint: {
+                x: session.points[session.points.length - 1]!.x,
+                y: session.points[session.points.length - 1]!.y,
+              },
+            }
+          : { active: false, basePoint: null };
+      case 'CONTINUE_CURVE': {
+        const endPoint = cadArcEndPoint(session.sourceArc);
+        return {
+          active: true,
+          basePoint: endPoint,
+        };
+      }
+      case 'TANGENT_CURVE':
+        return session.aheadTangentPoint == null
+          ? session.backTangentPoint
+            ? { active: true, basePoint: { x: session.backTangentPoint.x, y: session.backTangentPoint.y } }
+            : session.piPoint
+              ? { active: true, basePoint: { x: session.piPoint.x, y: session.piPoint.y } }
+              : { active: false, basePoint: null }
+          : { active: false, basePoint: null };
+    }
+  }, [session]);
   const commandPreview = useMemo<CadCommandPreviewState | null>(() => {
     if (!session) return null;
     switch (session.key) {
@@ -1320,6 +1398,7 @@ const parseInputPoint = (inputValue: string, basePoint: CadNamedPoint | null): C
     commandPrompt: statusPrompt,
     commandHelpText: helpText,
     commandPreview,
+    snapConstructionContext,
     canUseActiveSnap:
       activeSnap != null &&
       session != null &&

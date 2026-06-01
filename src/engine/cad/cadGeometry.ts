@@ -57,6 +57,36 @@ export const cadClosestPointOnSegment = (
   };
 };
 
+export const cadPointOnInfiniteLine = (
+  start: CadWorldPoint,
+  end: CadWorldPoint,
+  t: number,
+): CadWorldPoint => ({
+  x: start.x + (end.x - start.x) * t,
+  y: start.y + (end.y - start.y) * t,
+});
+
+export const cadProjectPointOntoInfiniteLine = (
+  point: CadWorldPoint,
+  start: CadWorldPoint,
+  end: CadWorldPoint,
+): { point: CadWorldPoint; t: number } => {
+  const dx = end.x - start.x;
+  const dy = end.y - start.y;
+  const lengthSquared = dx * dx + dy * dy;
+  if (lengthSquared <= 1e-12) {
+    return {
+      point: { ...start },
+      t: 0,
+    };
+  }
+  const t = ((point.x - start.x) * dx + (point.y - start.y) * dy) / lengthSquared;
+  return {
+    point: cadPointOnInfiniteLine(start, end, t),
+    t,
+  };
+};
+
 export const cadPointOnCircle = (
   center: CadWorldPoint,
   radius: number,
@@ -85,6 +115,28 @@ export const cadSegmentIntersection = (
   const u = (startDeltaX * dy1 - startDeltaY * dx1) / denominator;
   if (t < 0 || t > 1 || u < 0 || u > 1) return null;
 
+  return {
+    x: firstStart.x + t * dx1,
+    y: firstStart.y + t * dy1,
+  };
+};
+
+export const cadInfiniteLineIntersection = (
+  firstStart: CadWorldPoint,
+  firstEnd: CadWorldPoint,
+  secondStart: CadWorldPoint,
+  secondEnd: CadWorldPoint,
+): CadWorldPoint | null => {
+  const dx1 = firstEnd.x - firstStart.x;
+  const dy1 = firstEnd.y - firstStart.y;
+  const dx2 = secondEnd.x - secondStart.x;
+  const dy2 = secondEnd.y - secondStart.y;
+  const denominator = dx1 * dy2 - dy1 * dx2;
+  if (Math.abs(denominator) <= 1e-12) return null;
+
+  const startDeltaX = secondStart.x - firstStart.x;
+  const startDeltaY = secondStart.y - firstStart.y;
+  const t = (startDeltaX * dy2 - startDeltaY * dx2) / denominator;
   return {
     x: firstStart.x + t * dx1,
     y: firstStart.y + t * dy1,

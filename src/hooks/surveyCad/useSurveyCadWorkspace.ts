@@ -25,6 +25,7 @@ import type {
   CadPolylineEntity,
   CadProject,
   CadSnapCandidate,
+  CadSnapConstructionContext,
   SurveyCadPersistedState,
 } from '../../engine/cad/cadTypes';
 import type { CadEntityId } from '../../engine/cad/cadTypes';
@@ -187,13 +188,17 @@ export const useSurveyCadWorkspace = (
       vertexLabels: selectedParcel.vertexLabels,
     });
   }, [selectedEntities]);
+  const [snapConstructionContext, setSnapConstructionContext] = useState<CadSnapConstructionContext>({
+    active: false,
+    basePoint: null,
+  });
   const {
     activeSnap,
     pointerWorldPoint,
     snapPreferences,
     updatePointerWorldPoint,
     setSnapPreference,
-  } = useSurveyCadSnapping(cadProject);
+  } = useSurveyCadSnapping(cadProject, snapConstructionContext);
   const previewPoint = useMemo(
     () =>
       activeSnap
@@ -213,6 +218,7 @@ export const useSurveyCadWorkspace = (
     commandPrompt,
     commandHelpText,
     commandPreview,
+    snapConstructionContext: nextSnapConstructionContext,
     canUseActiveSnap,
     canFinishCommand,
     startPointCommand,
@@ -255,6 +261,18 @@ export const useSurveyCadWorkspace = (
     reverseDirectionModifier,
     setHistory,
   });
+  useEffect(() => {
+    setSnapConstructionContext((current) => {
+      if (
+        current.active === nextSnapConstructionContext.active &&
+        current.basePoint?.x === nextSnapConstructionContext.basePoint?.x &&
+        current.basePoint?.y === nextSnapConstructionContext.basePoint?.y
+      ) {
+        return current;
+      }
+      return nextSnapConstructionContext;
+    });
+  }, [nextSnapConstructionContext]);
   const commandPreviewPrimitives = useMemo<CadDisplayPrimitive[]>(() => {
     if (!commandPreview) return [] as CadDisplayPrimitive[];
     const previewStroke =
