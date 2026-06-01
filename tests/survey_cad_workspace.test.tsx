@@ -4,6 +4,7 @@ import React, { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { describe, expect, it } from 'vitest';
 import SurveyCadWorkspace from '../src/components/SurveyCadWorkspace';
+import SurveyCadPreview from '../src/components/surveyCad/SurveyCadPreview';
 import { buildSurveyCadSpikeProject } from '../src/engine/cad/cadModel';
 import { buildCadProjectSignature } from '../src/engine/cad/cadProjectState';
 import type { ParseOptions } from '../src/types';
@@ -435,6 +436,118 @@ describe('SurveyCadWorkspace', () => {
     });
 
     expect(container.querySelector('[data-survey-cad-snap-glyph]')).toBeNull();
+
+    await act(async () => {
+      root.unmount();
+    });
+    container.remove();
+  });
+
+  it('shows the active snap kind and label beside the snap glyph', async () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root: Root = createRoot(container);
+
+    await act(async () => {
+      root.render(
+        <SurveyCadWorkspace
+          input={input}
+          instrumentLibrary={{}}
+          parseOptions={parseOptions}
+          units="m"
+          result={null}
+        />,
+      );
+    });
+
+    const preview = container.querySelector('[data-survey-cad-preview]') as SVGElement | null;
+    if (!preview) throw new Error('Preview not found');
+    mockElementRect(preview);
+
+    await act(async () => {
+      preview.dispatchEvent(
+        new MouseEvent('mousemove', {
+          bubbles: true,
+          clientX: 94,
+          clientY: 461,
+        }),
+      );
+    });
+
+    expect(container.querySelector('[data-survey-cad-snap-badge]')?.textContent).toContain('Point');
+    expect(container.querySelector('[data-survey-cad-snap-badge]')?.textContent).toContain('A');
+
+    await act(async () => {
+      root.unmount();
+    });
+    container.remove();
+  });
+
+  it('renders tangent snap badge text and styling when tangent snap is active', async () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root: Root = createRoot(container);
+
+    await act(async () => {
+      root.render(
+        <SurveyCadPreview
+          scene={{ primitives: [], bounds: { minX: 0, minY: 0, maxX: 10, maxY: 10 } }}
+          viewBounds={{ minX: 0, minY: 0, maxX: 10, maxY: 10 }}
+          selectedEntityIds={[]}
+          selectedParcelReport={null}
+          activeSnap={{
+            id: 'tangent:arc:tangent-test',
+            kind: 'tangent',
+            sourceEntityId: 'arc:tangent-test',
+            x: 8.660254,
+            y: 5,
+            distance: 0.1,
+            label: 'arc:tangent-test tangent',
+          }}
+          commandPreviewPrimitives={[]}
+          commandStatusText=""
+          commandHelpText=""
+          commandModifierHint=""
+          constructionHint=""
+          snapPreferences={{
+            'point-node': true,
+            endpoint: true,
+            midpoint: true,
+            center: true,
+            'arc-midpoint': true,
+            quadrant: true,
+            intersection: true,
+            'apparent-intersection': true,
+            extension: true,
+            perpendicular: true,
+            parallel: true,
+            tangent: true,
+            nearest: true,
+          }}
+          commandInputValue=""
+          commandInputPlaceholder=""
+          commandInputEnabled={false}
+          viewport={{ zoom: 1, panX: 0, panY: 0 }}
+          commandActive={false}
+          onViewportChange={() => null}
+          onSelectEntity={() => null}
+          onSelectEntities={() => null}
+          onConsumeInteractionPoint={() => null}
+          onPointerWorldPointChange={() => null}
+          onSnapPreferenceChange={() => null}
+          onCommandInputChange={() => null}
+          onCommandInputEnter={() => null}
+          onCommandInputEscape={() => null}
+          onZoomExtents={() => null}
+        />,
+      );
+    });
+
+    expect(container.querySelector('[data-survey-cad-snap-badge]')?.textContent).toContain('Tangent');
+    expect(container.querySelector('[data-survey-cad-snap-badge]')?.textContent).toContain('arc:tangent-test');
+    expect(container.querySelector('[data-survey-cad-snap-badge]')?.getAttribute('style')).toContain(
+      'border-color',
+    );
 
     await act(async () => {
       root.unmount();

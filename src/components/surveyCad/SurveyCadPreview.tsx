@@ -60,6 +60,38 @@ const SNAP_MENU_LABELS: Record<CadSnapKind, string> = {
   nearest: 'Nearest',
 };
 
+const SNAP_BADGE_LABELS: Record<CadSnapKind, string> = {
+  'point-node': 'Point',
+  endpoint: 'Endpoint',
+  midpoint: 'Midpoint',
+  center: 'Center',
+  'arc-midpoint': 'Arc Mid',
+  quadrant: 'Quadrant',
+  intersection: 'Intersection',
+  'apparent-intersection': 'Apparent Int',
+  extension: 'Extension',
+  perpendicular: 'Perpendicular',
+  parallel: 'Parallel',
+  tangent: 'Tangent',
+  nearest: 'Nearest',
+};
+
+const SNAP_ACCENT_BY_KIND: Record<CadSnapKind, { stroke: string; fill: string; text: string }> = {
+  'point-node': { stroke: '#38bdf8', fill: '#082f49', text: '#e0f2fe' },
+  endpoint: { stroke: '#22c55e', fill: '#052e16', text: '#dcfce7' },
+  midpoint: { stroke: '#a3e635', fill: '#1a2e05', text: '#ecfccb' },
+  center: { stroke: '#f59e0b', fill: '#451a03', text: '#fef3c7' },
+  'arc-midpoint': { stroke: '#fb7185', fill: '#4c0519', text: '#ffe4e6' },
+  quadrant: { stroke: '#c084fc', fill: '#3b0764', text: '#f3e8ff' },
+  intersection: { stroke: '#f97316', fill: '#431407', text: '#ffedd5' },
+  'apparent-intersection': { stroke: '#ef4444', fill: '#450a0a', text: '#fee2e2' },
+  extension: { stroke: '#14b8a6', fill: '#042f2e', text: '#ccfbf1' },
+  perpendicular: { stroke: '#eab308', fill: '#422006', text: '#fef9c3' },
+  parallel: { stroke: '#6366f1', fill: '#1e1b4b', text: '#e0e7ff' },
+  tangent: { stroke: '#f43f5e', fill: '#4c0519', text: '#ffe4e6' },
+  nearest: { stroke: '#94a3b8', fill: '#0f172a', text: '#e2e8f0' },
+};
+
 type ScreenBox = {
   anchorX: number;
   anchorY: number;
@@ -447,6 +479,7 @@ const SurveyCadPreview: React.FC<SurveyCadPreviewProps> = ({
   const selectionBox = dragState.kind === 'box' ? dragState.box : null;
   const middleMouseDownAtRef = useRef<number>(0);
   const commandInputRef = useRef<HTMLInputElement | null>(null);
+  const activeSnapAccent = activeSnap ? SNAP_ACCENT_BY_KIND[activeSnap.kind] : null;
 
   React.useEffect(() => {
     if (!commandInputEnabled) return;
@@ -714,7 +747,7 @@ const SurveyCadPreview: React.FC<SurveyCadPreviewProps> = ({
               cy={project(activeSnap.x, activeSnap.y).y}
               r={6}
               fill="none"
-              stroke="#fbbf24"
+              stroke={activeSnapAccent?.stroke ?? '#fbbf24'}
               strokeWidth={1.2}
             />
             <line
@@ -722,7 +755,7 @@ const SurveyCadPreview: React.FC<SurveyCadPreviewProps> = ({
               y1={project(activeSnap.x, activeSnap.y).y}
               x2={project(activeSnap.x, activeSnap.y).x + 8}
               y2={project(activeSnap.x, activeSnap.y).y}
-              stroke="#fef3c7"
+              stroke={activeSnapAccent?.text ?? '#fef3c7'}
               strokeWidth={1}
             />
             <line
@@ -730,7 +763,7 @@ const SurveyCadPreview: React.FC<SurveyCadPreviewProps> = ({
               y1={project(activeSnap.x, activeSnap.y).y - 8}
               x2={project(activeSnap.x, activeSnap.y).x}
               y2={project(activeSnap.x, activeSnap.y).y + 8}
-              stroke="#fef3c7"
+              stroke={activeSnapAccent?.text ?? '#fef3c7'}
               strokeWidth={1}
             />
           </g>
@@ -777,6 +810,19 @@ const SurveyCadPreview: React.FC<SurveyCadPreviewProps> = ({
           data-survey-cad-construction-hint
         >
           {constructionHint}
+        </div>
+      ) : null}
+      {activeSnap ? (
+        <div
+          className="pointer-events-none absolute left-3 top-16 rounded border px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.08em]"
+          style={{
+            borderColor: activeSnapAccent?.stroke ?? '#fbbf24',
+            backgroundColor: activeSnapAccent?.fill ?? '#0f172a',
+            color: activeSnapAccent?.text ?? '#fef3c7',
+          }}
+          data-survey-cad-snap-badge
+        >
+          {SNAP_BADGE_LABELS[activeSnap.kind]}: {activeSnap.label}
         </div>
       ) : null}
       <div className="absolute bottom-3 right-3" data-survey-cad-snap-menu>
