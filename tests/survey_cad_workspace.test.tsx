@@ -672,6 +672,64 @@ describe('SurveyCadWorkspace', () => {
     container.remove();
   });
 
+  it('keeps ARC Start Center End start/end order on clockwise sweeps', async () => {
+    const capture = createPersistedStateCapture();
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root: Root = createRoot(container);
+
+    await act(async () => {
+      root.render(
+        <SurveyCadWorkspace
+          input={input}
+          instrumentLibrary={{}}
+          parseOptions={parseOptions}
+          units="m"
+          result={null}
+          persistedState={null}
+          onPersistedStateChange={capture.onPersistedStateChange}
+        />,
+      );
+    });
+
+    const arcMenuButton = container.querySelector('[data-survey-cad-arc-menu-button]') as HTMLButtonElement | null;
+    const commandInput = container.querySelector('[data-survey-cad-command-input]') as HTMLInputElement | null;
+    if (!arcMenuButton || !commandInput) throw new Error('Arc menu or command input not found');
+
+    await act(async () => {
+      arcMenuButton.click();
+    });
+    await act(async () => {
+      clickButton(container, 'Start Center End');
+      setTextInputValue(commandInput, '10,0');
+      pressKey(commandInput, 'Enter');
+      setTextInputValue(commandInput, '0,0');
+      pressKey(commandInput, 'Enter');
+      setTextInputValue(commandInput, '0,-10');
+      pressKey(commandInput, 'Enter');
+    });
+
+    expect(container.querySelector('[data-survey-cad-command-status]')?.textContent).toContain(
+      'ARC_SCE committed',
+    );
+    const arc = capture.read()?.project.entities.find((entity) => entity.type === 'arc');
+    expect(arc?.type).toBe('arc');
+    if (arc?.type !== 'arc') throw new Error('Committed arc not found');
+    const startX = arc.centerX + Math.cos((arc.startAngleDeg * Math.PI) / 180) * arc.radius;
+    const startY = arc.centerY + Math.sin((arc.startAngleDeg * Math.PI) / 180) * arc.radius;
+    const endX = arc.centerX + Math.cos((arc.endAngleDeg * Math.PI) / 180) * arc.radius;
+    const endY = arc.centerY + Math.sin((arc.endAngleDeg * Math.PI) / 180) * arc.radius;
+    expect(startX).toBeCloseTo(10, 6);
+    expect(startY).toBeCloseTo(0, 6);
+    expect(endX).toBeCloseTo(0, 6);
+    expect(endY).toBeCloseTo(-10, 6);
+
+    await act(async () => {
+      root.unmount();
+    });
+    container.remove();
+  });
+
   it('routes Center Start End with true center-first point order', async () => {
     const capture = createPersistedStateCapture();
     const container = document.createElement('div');

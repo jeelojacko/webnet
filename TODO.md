@@ -1,3 +1,4 @@
+- [x] Survey CAD arc-direction audit batch (June 2026): audit all native arc constructors for start/end/center fidelity, fix clockwise or reverse-sweep cases that silently swap endpoints or break continuation tangency, and lock the edge cases with focused geometry/workspace coverage.
 - [x] Survey CAD center-arc validation batch (June 2026): make center-driven arc commands reject off-radius end picks instead of silently drifting the committed curve away from the operator's supplied center/end geometry, and lock the behavior with focused CAD geometry/workspace coverage.
 
 - [x] Survey CAD arc-label batch (May 2026): add geometry-derived arc/curve labels in the native renderer while keeping ordinary `LINE` geometry unlabeled so Phase 4 labeling closes without broadening annotations onto generic linework.

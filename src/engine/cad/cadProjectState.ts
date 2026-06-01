@@ -1,13 +1,10 @@
+import { cadIsAngleOnArcSweep } from './cadGeometry';
 import type { CadBounds, CadEntity, CadProject } from './cadTypes';
 
 const arcEndPoints = (entity: Extract<CadEntity, { type: 'arc' }>): Array<{ x: number; y: number }> => {
-  const normalizedStart = ((entity.startAngleDeg % 360) + 360) % 360;
-  const normalizedEnd = ((entity.endAngleDeg % 360) + 360) % 360;
-  const sampleAngles = [normalizedStart, normalizedEnd];
+  const sampleAngles = [entity.startAngleDeg, entity.endAngleDeg];
   [0, 90, 180, 270].forEach((candidate) => {
-    const wrappedEnd = normalizedEnd < normalizedStart ? normalizedEnd + 360 : normalizedEnd;
-    const test = candidate < normalizedStart ? candidate + 360 : candidate;
-    if (test >= normalizedStart && test <= wrappedEnd) {
+    if (cadIsAngleOnArcSweep(candidate, entity.startAngleDeg, entity.endAngleDeg)) {
       sampleAngles.push(candidate);
     }
   });

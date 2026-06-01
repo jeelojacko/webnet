@@ -11,6 +11,7 @@ import {
   cadBuildParcelClosureSummary,
   formatCadNorthAzimuthDms,
 } from './cadCogo';
+import { cadSignedSweepDeg } from './cadGeometry';
 
 const layerColor = (project: CadProject, layerId: string): string =>
   project.layers.find((layer) => layer.id === layerId)?.color ?? '#94a3b8';
@@ -88,15 +89,14 @@ const normalizeReadableLabelRotation = (rotationDeg: number): number => {
 const normalizeArcSweepAngles = (
   startAngleDeg: number,
   endAngleDeg: number,
-): { startAngleDeg: number; endAngleDeg: number; sweepDeg: number } => {
+): { startAngleDeg: number; endAngleDeg: number; signedSweepDeg: number; sweepDeg: number } => {
   const normalizedStart = ((startAngleDeg % 360) + 360) % 360;
-  const normalizedEndBase = ((endAngleDeg % 360) + 360) % 360;
-  const normalizedEnd =
-    normalizedEndBase <= normalizedStart ? normalizedEndBase + 360 : normalizedEndBase;
+  const signedSweepDeg = cadSignedSweepDeg(startAngleDeg, endAngleDeg);
   return {
     startAngleDeg: normalizedStart,
-    endAngleDeg: normalizedEnd,
-    sweepDeg: Math.max(0.0001, normalizedEnd - normalizedStart),
+    endAngleDeg: normalizedStart + signedSweepDeg,
+    signedSweepDeg,
+    sweepDeg: Math.max(0.0001, Math.abs(signedSweepDeg)),
   };
 };
 
@@ -183,11 +183,11 @@ const buildArcLabelPrimitive = (
   project: CadProject,
   entity: Extract<CadEntity, { type: 'arc' }>,
 ): CadDisplayPrimitive[] => {
-  const { startAngleDeg, sweepDeg } = normalizeArcSweepAngles(
+  const { startAngleDeg, signedSweepDeg, sweepDeg } = normalizeArcSweepAngles(
     entity.startAngleDeg,
     entity.endAngleDeg,
   );
-  const midAngleDeg = startAngleDeg + sweepDeg / 2;
+  const midAngleDeg = startAngleDeg + signedSweepDeg / 2;
   const midAngleRad = (midAngleDeg * Math.PI) / 180;
   const labelRadius = Math.max(entity.radius - Math.max(entity.radius * 0.18, 2), entity.radius * 0.45);
   const tangentAngleDeg = midAngleDeg + 90;

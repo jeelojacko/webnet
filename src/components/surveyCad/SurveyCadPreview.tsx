@@ -7,6 +7,7 @@ import type {
   CadSnapKind,
 } from '../../engine/cad/cadTypes';
 import type { CadParcelReportSummary } from '../../engine/cad/cadCogo';
+import { cadSignedSweepDeg } from '../../engine/cad/cadGeometry';
 import type { CadSnapPreferences } from '../../hooks/surveyCad/useSurveyCadSnapping';
 
 interface SurveyCadPreviewProps {
@@ -194,17 +195,23 @@ const intersectsSelectionBox = (
 const normalizeSweepAngles = (
   startAngleDeg: number,
   endAngleDeg: number,
-): { startAngleDeg: number; endAngleDeg: number; sweepDeg: number; largeArcFlag: 0 | 1 } => {
+): {
+  startAngleDeg: number;
+  endAngleDeg: number;
+  sweepDeg: number;
+  largeArcFlag: 0 | 1;
+  sweepFlag: 0 | 1;
+} => {
   const normalizedStart = ((startAngleDeg % 360) + 360) % 360;
-  const normalizedEndBase = ((endAngleDeg % 360) + 360) % 360;
-  const normalizedEnd =
-    normalizedEndBase <= normalizedStart ? normalizedEndBase + 360 : normalizedEndBase;
-  const sweepDeg = Math.max(0.0001, normalizedEnd - normalizedStart);
+  const signedSweepDeg = cadSignedSweepDeg(startAngleDeg, endAngleDeg);
+  const normalizedEnd = normalizedStart + signedSweepDeg;
+  const sweepDeg = Math.max(0.0001, Math.abs(signedSweepDeg));
   return {
     startAngleDeg: normalizedStart,
     endAngleDeg: normalizedEnd,
     sweepDeg,
     largeArcFlag: sweepDeg > 180 ? 1 : 0,
+    sweepFlag: signedSweepDeg >= 0 ? 1 : 0,
   };
 };
 
@@ -213,7 +220,7 @@ const arcPathFromPrimitive = (
   project: (_x: number, _y: number) => { x: number; y: number },
   scale: number,
 ): string => {
-  const { startAngleDeg, endAngleDeg, largeArcFlag } = normalizeSweepAngles(
+  const { startAngleDeg, endAngleDeg, largeArcFlag, sweepFlag } = normalizeSweepAngles(
     primitive.startAngleDeg,
     primitive.endAngleDeg,
   );
@@ -228,7 +235,7 @@ const arcPathFromPrimitive = (
     primitive.center.y + Math.sin(endRadians) * primitive.radius,
   );
   const radius = Math.max(primitive.radius * scale, 0.001);
-  return `M ${startPoint.x} ${startPoint.y} A ${radius} ${radius} 0 ${largeArcFlag} 1 ${endPoint.x} ${endPoint.y}`;
+  return `M ${startPoint.x} ${startPoint.y} A ${radius} ${radius} 0 ${largeArcFlag} ${sweepFlag} ${endPoint.x} ${endPoint.y}`;
 };
 
 const renderPrimitive = (

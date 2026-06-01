@@ -22,6 +22,7 @@ import {
   cadArcEndPoint,
   cadBuildArcFromStartCenterAngle,
   cadBuildArcFromStartCenterEnd,
+  cadBuildArcFromStartEndAngle,
   cadBuildArcFromStartEndDirection,
   cadBuildArcFromStartEndRadius,
   cadBuildContinuedArc,
@@ -259,6 +260,7 @@ describe('Survey CAD COGO helpers', () => {
         centerX: 0,
         centerY: 0,
         radius: 10,
+        startAngleDeg: 0,
         endAngleDeg: 90,
       },
       { x: -10, y: 0 },
@@ -285,6 +287,73 @@ describe('Survey CAD COGO helpers', () => {
     expect(projected?.radius ?? Number.NaN).toBeCloseTo(10, 6);
     expect(projected?.endPoint.x ?? Number.NaN).toBeCloseTo(0, 6);
     expect(projected?.endPoint.y ?? Number.NaN).toBeCloseTo(10, 6);
+  });
+
+  it('keeps picked start/end points for clockwise and reverse center-driven arcs', () => {
+    const clockwise = cadBuildArcFromStartCenterEnd(
+      { x: 10, y: 0 },
+      { x: 0, y: 0 },
+      { x: 0, y: -10 },
+    );
+
+    expect(clockwise).not.toBeNull();
+    expect(clockwise?.startPoint.x ?? Number.NaN).toBeCloseTo(10, 6);
+    expect(clockwise?.startPoint.y ?? Number.NaN).toBeCloseTo(0, 6);
+    expect(clockwise?.endPoint.x ?? Number.NaN).toBeCloseTo(0, 6);
+    expect(clockwise?.endPoint.y ?? Number.NaN).toBeCloseTo(-10, 6);
+    expect(clockwise?.deltaDeg ?? Number.NaN).toBeCloseTo(90, 6);
+
+    const reverse = cadBuildArcFromStartCenterEnd(
+      { x: 10, y: 0 },
+      { x: 0, y: 0 },
+      { x: 0, y: -10 },
+      true,
+    );
+
+    expect(reverse).not.toBeNull();
+    expect(reverse?.startPoint.x ?? Number.NaN).toBeCloseTo(10, 6);
+    expect(reverse?.startPoint.y ?? Number.NaN).toBeCloseTo(0, 6);
+    expect(reverse?.endPoint.x ?? Number.NaN).toBeCloseTo(0, 6);
+    expect(reverse?.endPoint.y ?? Number.NaN).toBeCloseTo(-10, 6);
+    expect(reverse?.deltaDeg ?? Number.NaN).toBeCloseTo(270, 6);
+  });
+
+  it('keeps start/end order and tangency for clockwise continue-curve and start-end-angle arcs', () => {
+    const sourceArc = cadBuildArcFromStartCenterEnd(
+      { x: 10, y: 0 },
+      { x: 0, y: 0 },
+      { x: 0, y: -10 },
+    );
+    expect(sourceArc).not.toBeNull();
+    if (!sourceArc) throw new Error('Source arc not created');
+
+    const continuedArc = cadBuildContinuedArc(
+      {
+        centerX: sourceArc.center.x,
+        centerY: sourceArc.center.y,
+        radius: sourceArc.radius,
+        startAngleDeg: sourceArc.startAngleDeg,
+        endAngleDeg: sourceArc.endAngleDeg,
+      },
+      { x: -10, y: 0 },
+    );
+    expect(continuedArc).not.toBeNull();
+    expect(continuedArc?.startPoint.x ?? Number.NaN).toBeCloseTo(0, 6);
+    expect(continuedArc?.startPoint.y ?? Number.NaN).toBeCloseTo(-10, 6);
+    expect(continuedArc?.endPoint.x ?? Number.NaN).toBeCloseTo(-10, 6);
+    expect(continuedArc?.endPoint.y ?? Number.NaN).toBeCloseTo(0, 6);
+
+    const startEndAngle = cadBuildArcFromStartEndAngle(
+      { x: 10, y: 0 },
+      { x: 0, y: -10 },
+      90,
+    );
+    expect(startEndAngle).not.toBeNull();
+    expect(startEndAngle?.startPoint.x ?? Number.NaN).toBeCloseTo(10, 6);
+    expect(startEndAngle?.startPoint.y ?? Number.NaN).toBeCloseTo(0, 6);
+    expect(startEndAngle?.endPoint.x ?? Number.NaN).toBeCloseTo(0, 6);
+    expect(startEndAngle?.endPoint.y ?? Number.NaN).toBeCloseTo(-10, 6);
+    expect(startEndAngle?.deltaDeg ?? Number.NaN).toBeCloseTo(90, 6);
   });
 
   it('computes parcel closure metrics from traverse-style vertices', () => {

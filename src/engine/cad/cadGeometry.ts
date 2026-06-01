@@ -110,6 +110,13 @@ export const cadNormalizeAngleDeg = (angleDeg: number): number => {
 const cadCounterClockwiseDeltaDeg = (startAngleDeg: number, endAngleDeg: number): number =>
   cadNormalizeAngleDeg(endAngleDeg - startAngleDeg);
 
+export const cadSignedSweepDeg = (startAngleDeg: number, endAngleDeg: number): number => {
+  let sweep = endAngleDeg - startAngleDeg;
+  while (sweep > 360) sweep -= 360;
+  while (sweep <= -360) sweep += 360;
+  return sweep;
+};
+
 export const cadAngleDegFromCenter = (
   center: CadWorldPoint,
   point: CadWorldPoint,
@@ -186,10 +193,13 @@ export const cadIsAngleOnArcSweep = (
 ): boolean => {
   const angle = cadNormalizeAngleDeg(angleDeg);
   const start = cadNormalizeAngleDeg(startAngleDeg);
-  const end = cadNormalizeAngleDeg(endAngleDeg);
-  if (Math.abs(start - end) <= toleranceDeg) return true;
-  if (start <= end) return angle >= start - toleranceDeg && angle <= end + toleranceDeg;
-  return angle >= start - toleranceDeg || angle <= end + toleranceDeg;
+  const signedSweep = cadSignedSweepDeg(startAngleDeg, endAngleDeg);
+  const magnitude = Math.abs(signedSweep);
+  if (magnitude <= toleranceDeg) return true;
+  if (signedSweep >= 0) {
+    return cadCounterClockwiseDeltaDeg(start, angle) <= magnitude + toleranceDeg;
+  }
+  return cadCounterClockwiseDeltaDeg(angle, start) <= magnitude + toleranceDeg;
 };
 
 const cadChooseArcSweepAngles = (
@@ -427,24 +437,36 @@ const cadBuildArcFromCenterAngles = (
   radius: number,
   startAngleDeg: number,
   endAngleDeg: number,
-): CadArcDefinition => ({
-  center,
-  radius,
-  startAngleDeg,
-  endAngleDeg,
-  startPoint: {
-    x: center.x + Math.cos((startAngleDeg * Math.PI) / 180) * radius,
-    y: center.y + Math.sin((startAngleDeg * Math.PI) / 180) * radius,
-  },
-  endPoint: {
-    x: center.x + Math.cos((endAngleDeg * Math.PI) / 180) * radius,
-    y: center.y + Math.sin((endAngleDeg * Math.PI) / 180) * radius,
-  },
-  deltaDeg: Math.min(
-    cadCounterClockwiseDeltaDeg(startAngleDeg, endAngleDeg),
-    360 - cadCounterClockwiseDeltaDeg(startAngleDeg, endAngleDeg),
-  ),
-});
+): CadArcDefinition => {
+  const signedSweep = cadSignedSweepDeg(startAngleDeg, endAngleDeg);
+  return {
+    center,
+    radius,
+    startAngleDeg,
+    endAngleDeg,
+    startPoint: {
+      x: center.x + Math.cos((startAngleDeg * Math.PI) / 180) * radius,
+      y: center.y + Math.sin((startAngleDeg * Math.PI) / 180) * radius,
+    },
+    endPoint: {
+      x: center.x + Math.cos((endAngleDeg * Math.PI) / 180) * radius,
+      y: center.y + Math.sin((endAngleDeg * Math.PI) / 180) * radius,
+    },
+    deltaDeg: Math.abs(signedSweep),
+  };
+};
+
+const cadBuildArcFromCenterSweep = (
+  center: CadWorldPoint,
+  radius: number,
+  startAngleDeg: number,
+  sweepDeg: number,
+): CadArcDefinition | null => {
+  if (!Number.isFinite(sweepDeg) || Math.abs(sweepDeg) <= 1e-9 || Math.abs(sweepDeg) >= 360 - 1e-9) {
+    return null;
+  }
+  return cadBuildArcFromCenterAngles(center, radius, startAngleDeg, startAngleDeg + sweepDeg);
+};
 
 export const cadBuildArcFromStartCenterEnd = (
   startPoint: CadWorldPoint,
@@ -463,15 +485,11 @@ export const cadBuildArcFromStartCenterEnd = (
   const startAngleDeg = cadAngleDegFromCenter(centerPoint, startPoint);
   const endAngleDeg = cadAngleDegFromCenter(centerPoint, normalizedEndPoint);
   const ccwDelta = cadCounterClockwiseDeltaDeg(startAngleDeg, endAngleDeg);
-  const shortUsesForward = ccwDelta <= 180;
-  if (reverseDirection) {
-    return shortUsesForward
-      ? cadBuildArcFromCenterAngles(centerPoint, radius, endAngleDeg, startAngleDeg)
-      : cadBuildArcFromCenterAngles(centerPoint, radius, startAngleDeg, endAngleDeg);
-  }
-  return shortUsesForward
-    ? cadBuildArcFromCenterAngles(centerPoint, radius, startAngleDeg, endAngleDeg)
-    : cadBuildArcFromCenterAngles(centerPoint, radius, endAngleDeg, startAngleDeg);
+  const shortSweep = ccwDelta <= 180 ? ccwDelta : -(360 - ccwDelta);
+  const signedSweep = reverseDirection
+    ? (shortSweep >= 0 ? shortSweep - 360 : shortSweep + 360)
+    : shortSweep;
+  return cadBuildArcFromCenterSweep(centerPoint, radius, startAngleDeg, signedSweep);
 };
 
 export const cadBuildArcFromStartCenterAngle = (
@@ -487,8 +505,7 @@ export const cadBuildArcFromStartCenterAngle = (
   if (!Number.isFinite(radius) || radius <= 1e-12) return null;
   const startAngleDeg = cadAngleDegFromCenter(centerPoint, startPoint);
   const sweep = Math.abs(deltaDeg);
-  const endAngleDeg = reverseDirection ? startAngleDeg - sweep : startAngleDeg + sweep;
-  return cadBuildArcFromCenterAngles(centerPoint, radius, startAngleDeg, endAngleDeg);
+  return cadBuildArcFromCenterSweep(centerPoint, radius, startAngleDeg, reverseDirection ? -sweep : sweep);
 };
 
 export const cadBuildArcFromStartCenterChord = (
@@ -539,10 +556,9 @@ export const cadBuildArcFromStartEndAngle = (
   const endAngleDeg = cadAngleDegFromCenter(center, endPoint);
   const ccwDelta = cadCounterClockwiseDeltaDeg(startAngleDeg, endAngleDeg);
   const desiredDelta = Math.abs(deltaDeg);
-  if (Math.abs(ccwDelta - desiredDelta) <= 1e-6 || Math.abs(ccwDelta - (360 - desiredDelta)) <= 1e-6) {
-    return cadBuildArcFromCenterAngles(center, radius, startAngleDeg, endAngleDeg);
-  }
-  return cadBuildArcFromCenterAngles(center, radius, endAngleDeg, startAngleDeg);
+  const signedSweep =
+    Math.abs(ccwDelta - desiredDelta) <= 1e-6 ? ccwDelta : ccwDelta - 360;
+  return cadBuildArcFromCenterSweep(center, radius, startAngleDeg, signedSweep);
 };
 
 export const cadBuildArcFromStartEndRadius = (
@@ -571,7 +587,11 @@ export const cadBuildArcFromStartEndRadius = (
         x: midpoint.x + leftNormal.x * offset,
         y: midpoint.y + leftNormal.y * offset,
       };
-  return cadBuildArcFromStartCenterEnd(startPoint, center, endPoint, false);
+  const startAngleDeg = cadAngleDegFromCenter(center, startPoint);
+  const endAngleDeg = cadAngleDegFromCenter(center, endPoint);
+  const ccwDelta = cadCounterClockwiseDeltaDeg(startAngleDeg, endAngleDeg);
+  const signedSweep = ccwDelta <= 180 ? ccwDelta : ccwDelta - 360;
+  return cadBuildArcFromCenterSweep(center, radius, startAngleDeg, signedSweep);
 };
 
 export const cadBuildArcFromStartEndDirection = (
@@ -600,7 +620,16 @@ export const cadBuildArcFromStartEndDirection = (
     x: startPoint.x + normal.x * t,
     y: startPoint.y + normal.y * t,
   };
-  return cadBuildArcFromStartCenterEnd(startPoint, center, endPoint, false);
+  const startAngleDeg = cadAngleDegFromCenter(center, startPoint);
+  const endAngleDeg = cadAngleDegFromCenter(center, endPoint);
+  const ccwDelta = cadCounterClockwiseDeltaDeg(startAngleDeg, endAngleDeg);
+  const ccwTangentAzimuth = cadNormalizeAngleDeg(360 - startAngleDeg);
+  const tangentMatches = (candidateAzimuthDeg: number): boolean => {
+    const difference = cadNormalizeAngleDeg(candidateAzimuthDeg - directionAzimuthDeg);
+    return Math.min(difference, 360 - difference) <= 1e-6;
+  };
+  const signedSweep = tangentMatches(ccwTangentAzimuth) ? ccwDelta : ccwDelta - 360;
+  return cadBuildArcFromCenterSweep(center, cadDistance(center, startPoint), startAngleDeg, signedSweep);
 };
 
 export const cadArcEndPoint = (arc: Pick<CadArcEntity, 'centerX' | 'centerY' | 'radius' | 'endAngleDeg'>): CadWorldPoint => ({
@@ -609,11 +638,14 @@ export const cadArcEndPoint = (arc: Pick<CadArcEntity, 'centerX' | 'centerY' | '
 });
 
 export const cadArcEndTangentAzimuthDeg = (
-  arc: Pick<CadArcEntity, 'endAngleDeg'>,
-): number => cadNormalizeAngleDeg(360 - arc.endAngleDeg);
+  arc: Pick<CadArcEntity, 'startAngleDeg' | 'endAngleDeg'>,
+): number =>
+  cadSignedSweepDeg(arc.startAngleDeg, arc.endAngleDeg) >= 0
+    ? cadNormalizeAngleDeg(360 - arc.endAngleDeg)
+    : cadNormalizeAngleDeg(180 - arc.endAngleDeg);
 
 export const cadBuildContinuedArc = (
-  sourceArc: Pick<CadArcEntity, 'centerX' | 'centerY' | 'radius' | 'endAngleDeg'>,
+  sourceArc: Pick<CadArcEntity, 'centerX' | 'centerY' | 'radius' | 'startAngleDeg' | 'endAngleDeg'>,
   endPoint: CadWorldPoint,
   reverseDirection = false,
 ): CadArcDefinition | null =>
@@ -678,27 +710,9 @@ export const cadBuildTangentCurve = (
   };
   const startAngleDeg = cadAngleDegFromCenter(center, startPoint);
   const endAngleDeg = cadAngleDegFromCenter(center, endPoint);
-  const forwardDelta = cadCounterClockwiseDeltaDeg(startAngleDeg, endAngleDeg);
-  if (Math.abs(forwardDelta - deltaDeg) <= 1e-6) {
-    return {
-      center,
-      radius,
-      startAngleDeg,
-      endAngleDeg,
-      startPoint,
-      endPoint,
-      deltaDeg,
-    };
-  }
-  return {
-    center,
-    radius,
-    startAngleDeg: endAngleDeg,
-    endAngleDeg: startAngleDeg,
-    startPoint: endPoint,
-    endPoint: startPoint,
-    deltaDeg,
-  };
+  const ccwDelta = cadCounterClockwiseDeltaDeg(startAngleDeg, endAngleDeg);
+  const signedSweep = Math.abs(ccwDelta - deltaDeg) <= 1e-6 ? ccwDelta : ccwDelta - 360;
+  return cadBuildArcFromCenterSweep(center, radius, startAngleDeg, signedSweep);
 };
 
 const normalizeDmsToken = (value: string): string =>
