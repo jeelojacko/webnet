@@ -19,6 +19,7 @@ interface SurveyCadPreviewProps {
   commandPreviewPrimitives: readonly CadDisplayPrimitive[];
   commandStatusText: string;
   commandHelpText: string;
+  commandModifierHint: string;
   snapPreferences: CadSnapPreferences;
   commandInputValue: string;
   commandInputPlaceholder: string;
@@ -411,6 +412,7 @@ const SurveyCadPreview: React.FC<SurveyCadPreviewProps> = ({
   commandPreviewPrimitives,
   commandStatusText,
   commandHelpText,
+  commandModifierHint,
   snapPreferences,
   commandInputValue,
   commandInputPlaceholder,
@@ -751,6 +753,14 @@ const SurveyCadPreview: React.FC<SurveyCadPreviewProps> = ({
           </>
         ) : null}
       </div>
+      {commandModifierHint ? (
+        <div
+          className="pointer-events-none absolute bottom-3 right-16 rounded border border-amber-500/30 bg-slate-950/88 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-amber-200"
+          data-survey-cad-command-modifier-hint
+        >
+          {commandModifierHint}
+        </div>
+      ) : null}
       <div className="absolute bottom-3 right-3" data-survey-cad-snap-menu>
         {snapMenuOpen ? (
           <div className="absolute bottom-9 right-0 mb-1 w-44 rounded border border-slate-700 bg-slate-950/95 p-2 shadow-xl">

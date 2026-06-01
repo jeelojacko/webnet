@@ -655,6 +655,57 @@ describe('SurveyCadWorkspace', () => {
     container.remove();
   });
 
+  it('shows a live Ctrl flip hint only for arc modes that support alternate arc side', async () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root: Root = createRoot(container);
+
+    await act(async () => {
+      root.render(
+        <SurveyCadWorkspace
+          input={input}
+          instrumentLibrary={{}}
+          parseOptions={parseOptions}
+          units="m"
+          result={null}
+        />,
+      );
+    });
+
+    const arcMenuButton = container.querySelector('[data-survey-cad-arc-menu-button]') as HTMLButtonElement | null;
+    if (!arcMenuButton) throw new Error('Arc menu button not found');
+
+    await act(async () => {
+      arcMenuButton.click();
+    });
+    await act(async () => {
+      clickButton(container, 'Start End Radius');
+    });
+
+    expect(container.querySelector('[data-survey-cad-command-modifier-hint]')?.textContent).toContain(
+      'Ctrl = Flip Arc',
+    );
+
+    await act(async () => {
+      pressKey(window, 'Control');
+    });
+
+    expect(container.querySelector('[data-survey-cad-command-modifier-hint]')?.textContent).toContain(
+      'Ctrl Held: Flip Arc',
+    );
+
+    await act(async () => {
+      pressKey(window, 'Escape');
+    });
+
+    expect(container.querySelector('[data-survey-cad-command-modifier-hint]')).toBeNull();
+
+    await act(async () => {
+      root.unmount();
+    });
+    container.remove();
+  });
+
   it('commits ARC Start Center End from an off-radius final pick by keeping the chosen center and using the picked direction', async () => {
     const container = document.createElement('div');
     document.body.appendChild(container);

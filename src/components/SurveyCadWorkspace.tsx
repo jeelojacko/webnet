@@ -136,6 +136,26 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     () => (statusText.startsWith('Ready.') ? '' : statusText),
     [statusText],
   );
+  const commandModifierHint = useMemo(() => {
+    if (
+      activeCommandKey == null ||
+      ![
+        'ARC_SCE',
+        'ARC_CSE',
+        'ARC_SCA',
+        'ARC_CSA',
+        'ARC_SCL',
+        'ARC_CSL',
+        'ARC_SEA',
+        'ARC_SED',
+        'ARC_SER',
+        'CONTINUE_CURVE',
+      ].includes(activeCommandKey)
+    ) {
+      return '';
+    }
+    return reverseDirectionModifier ? 'Ctrl Held: Flip Arc' : 'Ctrl = Flip Arc';
+  }, [activeCommandKey, reverseDirectionModifier]);
 
   useEffect(() => {
     setViewport({ zoom: 1, panX: 0, panY: 0 });
@@ -292,6 +312,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
             commandPreviewPrimitives={commandPreviewPrimitives}
             commandStatusText={commandStatusText}
             commandHelpText={commandHelpText}
+            commandModifierHint={commandModifierHint}
             snapPreferences={snapPreferences}
             commandInputValue={commandInputValue}
             commandInputPlaceholder={commandInputPlaceholder}
