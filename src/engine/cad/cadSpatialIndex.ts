@@ -5,6 +5,7 @@ import {
   cadDistance,
   cadInfiniteLineIntersection,
   cadIntersectArcArc,
+  cadIntersectCircleCircle,
   cadIntersectInfiniteLineArc,
   cadIntersectSegmentArc,
   cadMidpoint,
@@ -454,6 +455,14 @@ export const buildCadSpatialIndex = (project: CadProject): CadSpatialIndex => ({
       }
       segments.forEach((segment) => {
         arcs.forEach((arc) => {
+          const exactIntersections = cadIntersectSegmentArc(
+            segment.start,
+            segment.end,
+            arc.center,
+            arc.radius,
+            arc.startAngleDeg,
+            arc.endAngleDeg,
+          );
           cadIntersectInfiniteLineArc(
             segment.start,
             segment.end,
@@ -462,14 +471,7 @@ export const buildCadSpatialIndex = (project: CadProject): CadSpatialIndex => ({
             arc.startAngleDeg,
             arc.endAngleDeg,
           )
-            .filter((intersection) => !cadIntersectSegmentArc(
-              segment.start,
-              segment.end,
-              arc.center,
-              arc.radius,
-              arc.startAngleDeg,
-              arc.endAngleDeg,
-            ).some(
+            .filter((intersection) => !exactIntersections.some(
               (exact) =>
                 Math.abs(exact.x - intersection.x) <= 1e-9 &&
                 Math.abs(exact.y - intersection.y) <= 1e-9,
@@ -487,6 +489,39 @@ export const buildCadSpatialIndex = (project: CadProject): CadSpatialIndex => ({
             });
         });
       });
+      for (let leftIndex = 0; leftIndex < arcs.length; leftIndex += 1) {
+        for (let rightIndex = leftIndex + 1; rightIndex < arcs.length; rightIndex += 1) {
+          const left = arcs[leftIndex];
+          const right = arcs[rightIndex];
+          const exactIntersections = cadIntersectArcArc(
+            left.center,
+            left.radius,
+            left.startAngleDeg,
+            left.endAngleDeg,
+            right.center,
+            right.radius,
+            right.startAngleDeg,
+            right.endAngleDeg,
+          );
+          cadIntersectCircleCircle(left.center, left.radius, right.center, right.radius)
+            .filter((intersection) => !exactIntersections.some(
+              (exact) =>
+                Math.abs(exact.x - intersection.x) <= 1e-9 &&
+                Math.abs(exact.y - intersection.y) <= 1e-9,
+            ))
+            .forEach((intersection) => {
+              candidates.push(
+                buildCandidate(
+                  'apparent-intersection',
+                  `${left.sourceEntityId}|${right.sourceEntityId}`,
+                  intersection,
+                  worldPoint,
+                  `${left.label} x ${right.label} apparent`,
+                ),
+              );
+            });
+        }
+      }
     }
 
     const viable = dedupeCandidates(candidates)

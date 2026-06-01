@@ -72,6 +72,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     canCreateParcel,
     canContinueCurve,
     activeSnap,
+    snapConstructionContext,
     snapPreferences,
     historyDepth,
     redoDepth,
@@ -156,6 +157,18 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     }
     return reverseDirectionModifier ? 'Ctrl Held: Flip Arc' : 'Ctrl = Flip Arc';
   }, [activeCommandKey, reverseDirectionModifier]);
+  const constructionHint = useMemo(() => {
+    if (!snapConstructionContext.active || !snapConstructionContext.basePoint) return '';
+    const enabledConstructionKinds = [
+      snapPreferences.extension ? 'Ext' : null,
+      snapPreferences.perpendicular ? 'Perp' : null,
+      snapPreferences.parallel ? 'Par' : null,
+      snapPreferences['apparent-intersection'] ? 'App' : null,
+      snapPreferences.tangent ? 'Tan' : null,
+    ].filter((value): value is string => value != null);
+    if (enabledConstructionKinds.length === 0) return '';
+    return `Base ${snapConstructionContext.basePoint.x.toFixed(3)},${snapConstructionContext.basePoint.y.toFixed(3)}: Construction snaps live (${enabledConstructionKinds.join('/')})`;
+  }, [snapConstructionContext, snapPreferences]);
 
   useEffect(() => {
     setViewport({ zoom: 1, panX: 0, panY: 0 });
@@ -313,6 +326,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
             commandStatusText={commandStatusText}
             commandHelpText={commandHelpText}
             commandModifierHint={commandModifierHint}
+            constructionHint={constructionHint}
             snapPreferences={snapPreferences}
             commandInputValue={commandInputValue}
             commandInputPlaceholder={commandInputPlaceholder}

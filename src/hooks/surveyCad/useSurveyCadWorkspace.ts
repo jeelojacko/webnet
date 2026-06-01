@@ -73,6 +73,7 @@ interface UseSurveyCadWorkspaceResult {
   canCreateParcel: boolean;
   canContinueCurve: boolean;
   activeSnap: CadSnapCandidate | null;
+  snapConstructionContext: CadSnapConstructionContext;
   snapPreferences: CadSnapPreferences;
   historyDepth: number;
   redoDepth: number;
@@ -467,6 +468,7 @@ export const useSurveyCadWorkspace = (
     canCreateParcel: selectedPolylineForParcel != null,
     canContinueCurve: selectedArcForContinue != null,
     activeSnap,
+    snapConstructionContext,
     snapPreferences,
     historyDepth: history.undoStack.length,
     redoDepth: history.redoStack.length,

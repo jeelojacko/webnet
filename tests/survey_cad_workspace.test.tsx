@@ -722,6 +722,51 @@ describe('SurveyCadWorkspace', () => {
     container.remove();
   });
 
+  it('shows a live construction-snap base-point hint once a command captures its first point', async () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root: Root = createRoot(container);
+
+    await act(async () => {
+      root.render(
+        <SurveyCadWorkspace
+          input={input}
+          instrumentLibrary={{}}
+          parseOptions={parseOptions}
+          units="m"
+          result={null}
+        />,
+      );
+    });
+
+    const commandInput = container.querySelector('[data-survey-cad-command-input]') as HTMLInputElement | null;
+    if (!commandInput) throw new Error('Command input not found');
+
+    await act(async () => {
+      clickButton(container, 'LINE');
+      setTextInputValue(commandInput, '0,0');
+      pressKey(commandInput, 'Enter');
+    });
+
+    expect(container.querySelector('[data-survey-cad-construction-hint]')?.textContent).toContain(
+      'Base 0.000,0.000',
+    );
+    expect(container.querySelector('[data-survey-cad-construction-hint]')?.textContent).toContain(
+      'Construction snaps live',
+    );
+
+    await act(async () => {
+      pressKey(window, 'Escape');
+    });
+
+    expect(container.querySelector('[data-survey-cad-construction-hint]')).toBeNull();
+
+    await act(async () => {
+      root.unmount();
+    });
+    container.remove();
+  });
+
   it('commits ARC Start Center End from an off-radius final pick by keeping the chosen center and using the picked direction', async () => {
     const container = document.createElement('div');
     document.body.appendChild(container);
