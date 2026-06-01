@@ -583,7 +583,7 @@ describe('SurveyCadWorkspace', () => {
     container.remove();
   });
 
-  it('rejects ARC Start Center End input when the supplied end point is off the chosen center radius', async () => {
+  it('commits ARC Start Center End from an off-radius final pick by keeping the chosen center and using the picked direction', async () => {
     const container = document.createElement('div');
     document.body.appendChild(container);
     const root: Root = createRoot(container);
@@ -618,11 +618,12 @@ describe('SurveyCadWorkspace', () => {
     });
 
     expect(container.querySelector('[data-survey-cad-command-status]')?.textContent).toContain(
-      'ARC SCE invalid',
+      'ARC_SCE committed',
     );
     expect(container.querySelector('[data-survey-cad-entity-count]')?.textContent).toContain(
-      '8 entities',
+      '9 entities',
     );
+    expect(container.querySelectorAll('path.cursor-pointer').length).toBeGreaterThan(0);
 
     await act(async () => {
       root.unmount();

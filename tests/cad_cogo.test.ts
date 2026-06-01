@@ -272,14 +272,19 @@ describe('Survey CAD COGO helpers', () => {
     }).x).toBeCloseTo(0, 6);
   });
 
-  it('rejects start-center-end arcs when the supplied end point is off the picked center radius', () => {
-    const invalid = cadBuildArcFromStartCenterEnd(
+  it('keeps the picked center and projects start-center-end endpoint direction onto the arc radius', () => {
+    const projected = cadBuildArcFromStartCenterEnd(
       { x: 10, y: 0 },
       { x: 0, y: 0 },
       { x: 0, y: 8 },
     );
 
-    expect(invalid).toBeNull();
+    expect(projected).not.toBeNull();
+    expect(projected?.center.x ?? Number.NaN).toBeCloseTo(0, 6);
+    expect(projected?.center.y ?? Number.NaN).toBeCloseTo(0, 6);
+    expect(projected?.radius ?? Number.NaN).toBeCloseTo(10, 6);
+    expect(projected?.endPoint.x ?? Number.NaN).toBeCloseTo(0, 6);
+    expect(projected?.endPoint.y ?? Number.NaN).toBeCloseTo(10, 6);
   });
 
   it('computes parcel closure metrics from traverse-style vertices', () => {
