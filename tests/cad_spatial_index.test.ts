@@ -388,6 +388,9 @@ describe('Survey CAD spatial index', () => {
     expect(tangent?.sourceEntityId).toBe('arc:right');
     expect(tangent?.x).toBeCloseTo(8.660254, 6);
     expect(tangent?.y).toBeCloseTo(5, 6);
+    expect(tangent?.guideSegments).toHaveLength(2);
+    expect(tangent?.guideSegments?.[0]?.[0]?.x).toBeCloseTo(0, 6);
+    expect(tangent?.guideSegments?.[0]?.[0]?.y).toBeCloseTo(20, 6);
 
     const apparentLineArc = index.queryNearestSnap(
       { x: 4.4, y: 9.1 },
@@ -400,6 +403,7 @@ describe('Survey CAD spatial index', () => {
     expect(apparentLineArc?.label).toContain('arc:right');
     expect(apparentLineArc?.x).toBeCloseTo(Math.sqrt(19), 6);
     expect(apparentLineArc?.y).toBeCloseTo(9, 6);
+    expect(apparentLineArc?.guideSegments).toHaveLength(2);
   });
 
   it('resolves arc-arc apparent intersections when the visible sweeps do not meet at the full-circle crossings', () => {

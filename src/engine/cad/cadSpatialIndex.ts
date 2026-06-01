@@ -50,6 +50,7 @@ const buildCandidate = (
   point: CadWorldPoint,
   query: CadWorldPoint,
   label: string,
+  guideSegments?: Array<[CadWorldPoint, CadWorldPoint]>,
 ): CadSnapCandidate => ({
   id: `${kind}:${sourceEntityId}:${label}`,
   kind,
@@ -58,6 +59,7 @@ const buildCandidate = (
   y: point.y,
   distance: cadDistance(query, point),
   label,
+  guideSegments,
 });
 
 export interface CadSpatialIndex {
@@ -167,6 +169,18 @@ const buildParallelCandidate = (
   return projection.point;
 };
 
+const nearestSegmentEndpointToPoint = (
+  segment: CadSegmentRef,
+  point: CadWorldPoint,
+): CadWorldPoint =>
+  cadDistance(segment.start, point) <= cadDistance(segment.end, point) ? segment.start : segment.end;
+
+const nearestArcEndpointToPoint = (
+  arc: CadArcRef,
+  point: CadWorldPoint,
+): CadWorldPoint =>
+  cadDistance(arc.startPoint, point) <= cadDistance(arc.endPoint, point) ? arc.startPoint : arc.endPoint;
+
 export const buildCadSpatialIndex = (project: CadProject): CadSpatialIndex => ({
   queryNearestSnap: (
     worldPoint,
@@ -251,6 +265,7 @@ export const buildCadSpatialIndex = (project: CadProject): CadSpatialIndex => ({
                     extensionPoint,
                     worldPoint,
                     `${segment.label} ext`,
+                    [[nearestSegmentEndpointToPoint(segment, extensionPoint), extensionPoint]],
                   ),
                 );
               }
@@ -264,6 +279,7 @@ export const buildCadSpatialIndex = (project: CadProject): CadSpatialIndex => ({
                   perpendicularPoint,
                   worldPoint,
                   `${segment.label} perp`,
+                  [[basePoint, perpendicularPoint]],
                 ),
               );
             }
@@ -277,6 +293,7 @@ export const buildCadSpatialIndex = (project: CadProject): CadSpatialIndex => ({
                     parallelPoint,
                     worldPoint,
                     `${segment.label} parallel`,
+                    [[basePoint, parallelPoint]],
                   ),
                 );
               }
@@ -332,15 +349,19 @@ export const buildCadSpatialIndex = (project: CadProject): CadSpatialIndex => ({
           }
           if (constructionContext.active && basePoint && allowed.has('perpendicular')) {
             candidates.push(
-              buildCandidate(
-                'perpendicular',
-                entity.id,
-                cadClosestPointOnArc(basePoint, arc.center, arc.radius, arc.startAngleDeg, arc.endAngleDeg),
-                worldPoint,
-                `${arc.label} perp`,
-              ),
-            );
-          }
+                buildCandidate(
+                  'perpendicular',
+                  entity.id,
+                  cadClosestPointOnArc(basePoint, arc.center, arc.radius, arc.startAngleDeg, arc.endAngleDeg),
+                  worldPoint,
+                  `${arc.label} perp`,
+                  [
+                    [basePoint, cadClosestPointOnArc(basePoint, arc.center, arc.radius, arc.startAngleDeg, arc.endAngleDeg)],
+                    [arc.center, cadClosestPointOnArc(basePoint, arc.center, arc.radius, arc.startAngleDeg, arc.endAngleDeg)],
+                  ],
+                ),
+              );
+            }
           if (constructionContext.active && basePoint && allowed.has('tangent')) {
             cadTangentPointsFromExternalPointToArc(
               basePoint,
@@ -356,6 +377,10 @@ export const buildCadSpatialIndex = (project: CadProject): CadSpatialIndex => ({
                   tangentPoint,
                   worldPoint,
                   `${arc.label} tangent`,
+                  [
+                    [basePoint, tangentPoint],
+                    [arc.center, tangentPoint],
+                  ],
                 ),
               );
             });
@@ -449,6 +474,10 @@ export const buildCadSpatialIndex = (project: CadProject): CadSpatialIndex => ({
               intersection,
               worldPoint,
               `${left.label} x ${right.label} apparent`,
+              [
+                [nearestSegmentEndpointToPoint(left, intersection), intersection],
+                [nearestSegmentEndpointToPoint(right, intersection), intersection],
+              ],
             ),
           );
         }
@@ -484,6 +513,10 @@ export const buildCadSpatialIndex = (project: CadProject): CadSpatialIndex => ({
                   intersection,
                   worldPoint,
                   `${segment.label} x ${arc.label} apparent`,
+                  [
+                    [nearestSegmentEndpointToPoint(segment, intersection), intersection],
+                    [nearestArcEndpointToPoint(arc, intersection), intersection],
+                  ],
                 ),
               );
             });
@@ -517,6 +550,10 @@ export const buildCadSpatialIndex = (project: CadProject): CadSpatialIndex => ({
                   intersection,
                   worldPoint,
                   `${left.label} x ${right.label} apparent`,
+                  [
+                    [nearestArcEndpointToPoint(left, intersection), intersection],
+                    [nearestArcEndpointToPoint(right, intersection), intersection],
+                  ],
                 ),
               );
             });

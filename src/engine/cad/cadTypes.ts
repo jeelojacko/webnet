@@ -279,6 +279,7 @@ export interface CadSnapCandidate {
   y: number;
   distance: number;
   label: string;
+  guideSegments?: Array<[CadDisplayPoint, CadDisplayPoint]>;
 }
 
 export interface CadSnapConstructionContext {

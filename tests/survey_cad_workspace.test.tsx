@@ -503,6 +503,10 @@ describe('SurveyCadWorkspace', () => {
             y: 5,
             distance: 0.1,
             label: 'arc:tangent-test tangent',
+            guideSegments: [
+              [{ x: 0, y: 20 }, { x: 8.660254, y: 5 }],
+              [{ x: 0, y: 0 }, { x: 8.660254, y: 5 }],
+            ],
           }}
           commandPreviewPrimitives={[]}
           commandStatusText=""
@@ -548,6 +552,7 @@ describe('SurveyCadWorkspace', () => {
     expect(container.querySelector('[data-survey-cad-snap-badge]')?.getAttribute('style')).toContain(
       'border-color',
     );
+    expect(container.querySelectorAll('[data-survey-cad-snap-guide]')).toHaveLength(2);
 
     await act(async () => {
       root.unmount();

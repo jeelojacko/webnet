@@ -1,5 +1,6 @@
 # WebNet Survey CAD TODO
 
+- [x] Survey CAD snap-guide batch (June 2026): add ghost guide lines for construction-style snaps so tangent, extension, perpendicular, parallel, and apparent-intersection targets show the derived geometry that produced the snap.
 - [x] Survey CAD snap-badge batch (June 2026): add a live snap-kind badge with distinct kind wording/colors so tangent, apparent-intersection, perpendicular, center, and ordinary point snaps are visibly different while drafting.
 - [x] Survey CAD tangent-snap + apparent-curve batch (June 2026): add command-context tangent snaps from active base point onto visible arcs/circles, and extend `apparent intersection` beyond line-line into honest line-arc cases.
 - [x] Survey CAD apparent-arc + construction-hint batch (June 2026): extend command-context `apparent intersection` beyond line-arc into honest arc-arc circle-crossing cases, and add a small live base-point hint so operators can tell when construction/tangent snaps are armed from the captured point.

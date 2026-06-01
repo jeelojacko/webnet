@@ -740,6 +740,25 @@ const SurveyCadPreview: React.FC<SurveyCadPreviewProps> = ({
             )}
           </g>
         ) : null}
+        {activeSnap?.guideSegments?.length ? (
+          <g data-survey-cad-snap-guides>
+            {activeSnap.guideSegments.map((segment, index) => (
+              <line
+                key={`${activeSnap.id}:guide:${index + 1}`}
+                data-survey-cad-snap-guide
+                x1={project(segment[0].x, segment[0].y).x}
+                y1={project(segment[0].x, segment[0].y).y}
+                x2={project(segment[1].x, segment[1].y).x}
+                y2={project(segment[1].x, segment[1].y).y}
+                stroke={activeSnapAccent?.stroke ?? '#fbbf24'}
+                strokeWidth={1.2}
+                opacity={0.8}
+                strokeDasharray="7 5"
+                pointerEvents="none"
+              />
+            ))}
+          </g>
+        ) : null}
         {activeSnap ? (
           <g data-survey-cad-snap-glyph>
             <circle
