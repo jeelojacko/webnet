@@ -104,6 +104,47 @@ const ParentBackedWorkspace: React.FC = () => {
   );
 };
 
+const createPersistedStateCapture = () => {
+  let captured: null | {
+    version: 1;
+    sourceSignature: string;
+    project: ReturnType<typeof buildSurveyCadSpikeProject>;
+  } = null;
+  const onPersistedStateChange = (
+    update:
+      | ((
+          _previous:
+            | null
+            | {
+                version: 1;
+                sourceSignature: string;
+                project: ReturnType<typeof buildSurveyCadSpikeProject>;
+              },
+        ) =>
+          | null
+          | {
+              version: 1;
+              sourceSignature: string;
+              project: ReturnType<typeof buildSurveyCadSpikeProject>;
+            })
+      | null
+      | {
+          version: 1;
+          sourceSignature: string;
+          project: ReturnType<typeof buildSurveyCadSpikeProject>;
+        },
+  ) => {
+    captured =
+      typeof update === 'function'
+        ? update(captured)
+        : update;
+  };
+  return {
+    read: () => captured,
+    onPersistedStateChange,
+  };
+};
+
 describe('SurveyCadWorkspace', () => {
   it('renders the dedicated CAD page without the removed helper tool buttons', async () => {
     const container = document.createElement('div');
@@ -629,6 +670,127 @@ describe('SurveyCadWorkspace', () => {
       root.unmount();
     });
     container.remove();
+  });
+
+  it('routes Center Start End with true center-first point order', async () => {
+    const capture = createPersistedStateCapture();
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root: Root = createRoot(container);
+
+    await act(async () => {
+      root.render(
+        <SurveyCadWorkspace
+          input={input}
+          instrumentLibrary={{}}
+          parseOptions={parseOptions}
+          units="m"
+          result={null}
+          persistedState={null}
+          onPersistedStateChange={capture.onPersistedStateChange}
+        />,
+      );
+    });
+
+    const arcMenuButton = container.querySelector('[data-survey-cad-arc-menu-button]') as HTMLButtonElement | null;
+    const commandInput = container.querySelector('[data-survey-cad-command-input]') as HTMLInputElement | null;
+    if (!arcMenuButton || !commandInput) throw new Error('Arc menu or command input not found');
+
+    await act(async () => {
+      arcMenuButton.click();
+    });
+    await act(async () => {
+      clickButton(container, 'Center Start End');
+      setTextInputValue(commandInput, '50,50');
+      pressKey(commandInput, 'Enter');
+      setTextInputValue(commandInput, '70,50');
+      pressKey(commandInput, 'Enter');
+      setTextInputValue(commandInput, '50,65');
+      pressKey(commandInput, 'Enter');
+    });
+
+    expect(container.querySelector('[data-survey-cad-command-status]')?.textContent).toContain(
+      'ARC_CSE committed',
+    );
+    const arc = capture.read()?.project.entities.find((entity) => entity.type === 'arc');
+    expect(arc?.type).toBe('arc');
+    if (arc?.type !== 'arc') throw new Error('Committed arc not found');
+    expect(arc.centerX).toBeCloseTo(50, 6);
+    expect(arc.centerY).toBeCloseTo(50, 6);
+    const startX = arc.centerX + Math.cos((arc.startAngleDeg * Math.PI) / 180) * arc.radius;
+    const startY = arc.centerY + Math.sin((arc.startAngleDeg * Math.PI) / 180) * arc.radius;
+    expect(startX).toBeCloseTo(70, 6);
+    expect(startY).toBeCloseTo(50, 6);
+
+    await act(async () => {
+      root.unmount();
+    });
+    container.remove();
+  });
+
+  it('routes Center Start Angle and Center Start Length with true center-first point order', async () => {
+    for (const [modeLabel, value, expectedEndX, expectedEndY, expectedStatus] of [
+      ['Center Start Angle', '90', 50, 70, 'ARC_CSA committed'],
+      ['Center Start Length', `${Math.sqrt(800)}`, 50, 70, 'ARC_CSL committed'],
+    ] as const) {
+      const capture = createPersistedStateCapture();
+      const container = document.createElement('div');
+      document.body.appendChild(container);
+      const root: Root = createRoot(container);
+
+      await act(async () => {
+        root.render(
+          <SurveyCadWorkspace
+            input={input}
+            instrumentLibrary={{}}
+            parseOptions={parseOptions}
+            units="m"
+            result={null}
+            persistedState={null}
+            onPersistedStateChange={capture.onPersistedStateChange}
+          />,
+        );
+      });
+
+      const arcMenuButton = container.querySelector('[data-survey-cad-arc-menu-button]') as HTMLButtonElement | null;
+      const commandInput = container.querySelector('[data-survey-cad-command-input]') as HTMLInputElement | null;
+      if (!arcMenuButton || !commandInput) throw new Error('Arc menu or command input not found');
+
+      await act(async () => {
+        arcMenuButton.click();
+      });
+      await act(async () => {
+        clickButton(container, modeLabel);
+        setTextInputValue(commandInput, '50,50');
+        pressKey(commandInput, 'Enter');
+        setTextInputValue(commandInput, '70,50');
+        pressKey(commandInput, 'Enter');
+        setTextInputValue(commandInput, value);
+        pressKey(commandInput, 'Enter');
+      });
+
+      expect(container.querySelector('[data-survey-cad-command-status]')?.textContent).toContain(
+        expectedStatus,
+      );
+      const arc = capture.read()?.project.entities.find((entity) => entity.type === 'arc');
+      expect(arc?.type).toBe('arc');
+      if (arc?.type !== 'arc') throw new Error('Committed arc not found');
+      expect(arc.centerX).toBeCloseTo(50, 6);
+      expect(arc.centerY).toBeCloseTo(50, 6);
+      const startX = arc.centerX + Math.cos((arc.startAngleDeg * Math.PI) / 180) * arc.radius;
+      const startY = arc.centerY + Math.sin((arc.startAngleDeg * Math.PI) / 180) * arc.radius;
+      const endX = arc.centerX + Math.cos((arc.endAngleDeg * Math.PI) / 180) * arc.radius;
+      const endY = arc.centerY + Math.sin((arc.endAngleDeg * Math.PI) / 180) * arc.radius;
+      expect(startX).toBeCloseTo(70, 6);
+      expect(startY).toBeCloseTo(50, 6);
+      expect(endX).toBeCloseTo(expectedEndX, 6);
+      expect(endY).toBeCloseTo(expectedEndY, 6);
+
+      await act(async () => {
+        root.unmount();
+      });
+      container.remove();
+    }
   });
 
   it('does not auto-reframe the camera when entity edits expand project extents', async () => {

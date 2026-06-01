@@ -17,8 +17,11 @@ interface SurveyCadCommandLineProps {
   onStartTraverse: () => void;
   onStartArc3Point: () => void;
   onStartArcStartCenterEnd: () => void;
+  onStartArcCenterStartEnd: () => void;
   onStartArcStartCenterAngle: () => void;
+  onStartArcCenterStartAngle: () => void;
   onStartArcStartCenterChord: () => void;
+  onStartArcCenterStartChord: () => void;
   onStartArcStartEndAngle: () => void;
   onStartArcStartEndDirection: () => void;
   onStartArcStartEndRadius: () => void;
@@ -59,8 +62,11 @@ const SurveyCadCommandLine: React.FC<SurveyCadCommandLineProps> = ({
   onStartTraverse,
   onStartArc3Point,
   onStartArcStartCenterEnd,
+  onStartArcCenterStartEnd,
   onStartArcStartCenterAngle,
+  onStartArcCenterStartAngle,
   onStartArcStartCenterChord,
+  onStartArcCenterStartChord,
   onStartArcStartEndAngle,
   onStartArcStartEndDirection,
   onStartArcStartEndRadius,
@@ -136,13 +142,13 @@ const SurveyCadCommandLine: React.FC<SurveyCadCommandLineProps> = ({
             <button type="button" className={arcMenuButtonClassName} onClick={() => { setArcMenuOpen(false); onStartArcStartEndRadius(); }}>
               Start End Radius
             </button>
-            <button type="button" className={arcMenuButtonClassName} onClick={() => { setArcMenuOpen(false); onStartArcStartCenterEnd(); }}>
+            <button type="button" className={arcMenuButtonClassName} onClick={() => { setArcMenuOpen(false); onStartArcCenterStartEnd(); }}>
               Center Start End
             </button>
-            <button type="button" className={arcMenuButtonClassName} onClick={() => { setArcMenuOpen(false); onStartArcStartCenterAngle(); }}>
+            <button type="button" className={arcMenuButtonClassName} onClick={() => { setArcMenuOpen(false); onStartArcCenterStartAngle(); }}>
               Center Start Angle
             </button>
-            <button type="button" className={arcMenuButtonClassName} onClick={() => { setArcMenuOpen(false); onStartArcStartCenterChord(); }}>
+            <button type="button" className={arcMenuButtonClassName} onClick={() => { setArcMenuOpen(false); onStartArcCenterStartChord(); }}>
               Center Start Length
             </button>
             <button type="button" className={arcMenuButtonClassName} onClick={() => { setArcMenuOpen(false); onStartTangentCurve(); }}>

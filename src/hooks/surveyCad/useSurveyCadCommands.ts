@@ -30,8 +30,11 @@ type ActiveCommandKey =
   | 'TRAVERSE'
   | 'ARC_3PT'
   | 'ARC_SCE'
+  | 'ARC_CSE'
   | 'ARC_SCA'
+  | 'ARC_CSA'
   | 'ARC_SCL'
+  | 'ARC_CSL'
   | 'ARC_SEA'
   | 'ARC_SED'
   | 'ARC_SER'
@@ -80,7 +83,16 @@ type CommandSession =
       resultText?: string;
     }
   | {
-      key: 'ARC_SCE' | 'ARC_SCA' | 'ARC_SCL' | 'ARC_SEA' | 'ARC_SED' | 'ARC_SER';
+      key:
+        | 'ARC_SCE'
+        | 'ARC_CSE'
+        | 'ARC_SCA'
+        | 'ARC_CSA'
+        | 'ARC_SCL'
+        | 'ARC_CSL'
+        | 'ARC_SEA'
+        | 'ARC_SED'
+        | 'ARC_SER';
       inputValue: string;
       points: CadNamedPoint[];
       resultText?: string;
@@ -152,8 +164,11 @@ interface UseSurveyCadCommandsResult {
   startTraverseCommand: () => void;
   startArc3PointCommand: () => void;
   startArcStartCenterEndCommand: () => void;
+  startArcCenterStartEndCommand: () => void;
   startArcStartCenterAngleCommand: () => void;
+  startArcCenterStartAngleCommand: () => void;
   startArcStartCenterChordCommand: () => void;
+  startArcCenterStartChordCommand: () => void;
   startArcStartEndAngleCommand: () => void;
   startArcStartEndDirectionCommand: () => void;
   startArcStartEndRadiusCommand: () => void;
@@ -272,6 +287,13 @@ const promptForSession = (session: CommandSession | null, fallbackStatus: string
           : session.points.length === 1
             ? `ARC SCE active. Start ${session.points[0].label} captured. Enter the center point.`
             : `ARC SCE active. Start ${session.points[0].label} and center ${session.points[1]?.label} captured. Enter the end point.`);
+    case 'ARC_CSE':
+      return session.resultText ??
+        (session.points.length === 0
+          ? 'ARC CSE active. Click or enter the center point.'
+          : session.points.length === 1
+            ? `ARC CSE active. Center ${session.points[0].label} captured. Enter the start point.`
+            : `ARC CSE active. Center ${session.points[0].label} and start ${session.points[1]?.label} captured. Enter the end point.`);
     case 'ARC_SCA':
       return session.resultText ??
         (session.points.length < 2
@@ -279,6 +301,13 @@ const promptForSession = (session: CommandSession | null, fallbackStatus: string
               ? 'ARC SCA active. Click or enter the start point.'
               : `ARC SCA active. Start ${session.points[0].label} captured. Enter the center point.`)
           : `ARC SCA active. Enter the included angle in degrees.${''}`);
+    case 'ARC_CSA':
+      return session.resultText ??
+        (session.points.length < 2
+          ? (session.points.length === 0
+              ? 'ARC CSA active. Click or enter the center point.'
+              : `ARC CSA active. Center ${session.points[0].label} captured. Enter the start point.`)
+          : 'ARC CSA active. Enter the included angle in degrees.');
     case 'ARC_SCL':
       return session.resultText ??
         (session.points.length < 2
@@ -286,6 +315,13 @@ const promptForSession = (session: CommandSession | null, fallbackStatus: string
               ? 'ARC SCL active. Click or enter the start point.'
               : `ARC SCL active. Start ${session.points[0].label} captured. Enter the center point.`)
           : 'ARC SCL active. Enter the chord length.');
+    case 'ARC_CSL':
+      return session.resultText ??
+        (session.points.length < 2
+          ? (session.points.length === 0
+              ? 'ARC CSL active. Click or enter the center point.'
+              : `ARC CSL active. Center ${session.points[0].label} captured. Enter the start point.`)
+          : 'ARC CSL active. Enter the chord length.');
     case 'ARC_SEA':
       return session.resultText ??
         (session.points.length === 0
@@ -371,14 +407,26 @@ const helpTextForSession = (session: CommandSession | null): string => {
       return session.points.length < 2
         ? 'ARC Start-Center-End point input: click in the model space or type `x,y` / `LABEL=x,y`. Hold Ctrl to reverse the arc direction.'
         : 'ARC Start-Center-End end point input: click in model space or type `x,y` / `LABEL=x,y`. Hold Ctrl to reverse the arc direction.';
+    case 'ARC_CSE':
+      return session.points.length < 2
+        ? 'ARC Center-Start-End point input: click in the model space or type `x,y` / `LABEL=x,y`. Hold Ctrl to reverse the arc direction.'
+        : 'ARC Center-Start-End end point input: click in model space or type `x,y` / `LABEL=x,y`. Hold Ctrl to reverse the arc direction.';
     case 'ARC_SCA':
       return session.points.length < 2
         ? 'ARC Start-Center-Angle point input: click in the model space or type `x,y` / `LABEL=x,y`.'
         : 'ARC Start-Center-Angle value input: enter a positive included angle in degrees. Hold Ctrl to reverse direction.';
+    case 'ARC_CSA':
+      return session.points.length < 2
+        ? 'ARC Center-Start-Angle point input: click in the model space or type `x,y` / `LABEL=x,y`.'
+        : 'ARC Center-Start-Angle value input: enter a positive included angle in degrees. Hold Ctrl to reverse direction.';
     case 'ARC_SCL':
       return session.points.length < 2
         ? 'ARC Start-Center-Length point input: click in the model space or type `x,y` / `LABEL=x,y`.'
         : 'ARC Start-Center-Length value input: enter a positive chord length. Hold Ctrl to reverse direction.';
+    case 'ARC_CSL':
+      return session.points.length < 2
+        ? 'ARC Center-Start-Length point input: click in the model space or type `x,y` / `LABEL=x,y`.'
+        : 'ARC Center-Start-Length value input: enter a positive chord length. Hold Ctrl to reverse direction.';
     case 'ARC_SEA':
       return session.points.length < 2
         ? 'ARC Start-End-Angle point input: click in the model space or type `x,y` / `LABEL=x,y`.'
@@ -412,6 +460,28 @@ const helpTextForSession = (session: CommandSession | null): string => {
     case 'PASTE':
       return 'PASTE insertion point: click in the model space or type `x,y`, `LABEL=x,y`, `@azimuth,distance`, or bearing-distance from the clipboard base point.';
   }
+};
+
+const buildCenterFirstArcDefinition = (
+  commandKey: 'ARC_CSE' | 'ARC_CSA' | 'ARC_CSL',
+  points: CadNamedPoint[],
+  value: number | null,
+  reverseDirectionModifier: boolean,
+) => {
+  if (points.length < 2) return null;
+  if (commandKey === 'ARC_CSE') {
+    if (points.length < 3) return null;
+    return cadBuildArcFromStartCenterEnd(
+      points[1]!,
+      points[0]!,
+      points[2]!,
+      reverseDirectionModifier,
+    );
+  }
+  if (value == null) return null;
+  return commandKey === 'ARC_CSA'
+    ? cadBuildArcFromStartCenterAngle(points[1]!, points[0]!, value, reverseDirectionModifier)
+    : cadBuildArcFromStartCenterChord(points[1]!, points[0]!, value, reverseDirectionModifier);
 };
 
 export const useSurveyCadCommands = ({
@@ -509,6 +579,7 @@ export const useSurveyCadCommands = ({
               };
         })();
       case 'ARC_SCE':
+      case 'ARC_CSE':
         if (!previewPoint) return null;
         if (session.points.length === 0) {
           return { kind: 'point', point: { x: previewPoint.x, y: previewPoint.y } };
@@ -523,12 +594,20 @@ export const useSurveyCadCommands = ({
           };
         }
         return (() => {
-          const previewArc = cadBuildArcFromStartCenterEnd(
-            session.points[0],
-            session.points[1],
-            previewPoint,
-            reverseDirectionModifier,
-          );
+          const previewArc =
+            session.key === 'ARC_SCE'
+              ? cadBuildArcFromStartCenterEnd(
+                  session.points[0],
+                  session.points[1],
+                  previewPoint,
+                  reverseDirectionModifier,
+                )
+              : buildCenterFirstArcDefinition(
+                  'ARC_CSE',
+                  [...session.points, previewPoint as CadNamedPoint],
+                  null,
+                  reverseDirectionModifier,
+                );
           return previewArc
             ? {
                 kind: 'arc' as const,
@@ -547,7 +626,9 @@ export const useSurveyCadCommands = ({
               };
         })();
       case 'ARC_SCA':
+      case 'ARC_CSA':
       case 'ARC_SCL':
+      case 'ARC_CSL':
       case 'ARC_SEA':
       case 'ARC_SED':
       case 'ARC_SER': {
@@ -586,6 +667,13 @@ export const useSurveyCadCommands = ({
                 numericValue,
                 reverseDirectionModifier,
               )
+            : session.key === 'ARC_CSA'
+              ? buildCenterFirstArcDefinition(
+                  'ARC_CSA',
+                  session.points,
+                  numericValue,
+                  reverseDirectionModifier,
+                )
             : session.key === 'ARC_SCL'
               ? cadBuildArcFromStartCenterChord(
                   session.points[0],
@@ -593,6 +681,13 @@ export const useSurveyCadCommands = ({
                   numericValue,
                   reverseDirectionModifier,
                 )
+              : session.key === 'ARC_CSL'
+                ? buildCenterFirstArcDefinition(
+                    'ARC_CSL',
+                    session.points,
+                    numericValue,
+                    reverseDirectionModifier,
+                  )
               : session.key === 'ARC_SEA'
                 ? cadBuildArcFromStartEndAngle(
                     session.points[0],
@@ -734,8 +829,9 @@ export const useSurveyCadCommands = ({
     }
   }, [previewPoint, reverseDirectionModifier, session]);
 
-  const parseInputPoint = (inputValue: string, basePoint: CadNamedPoint | null): CadNamedPoint | null =>
+const parseInputPoint = (inputValue: string, basePoint: CadNamedPoint | null): CadNamedPoint | null =>
     parseRelativeBearingDistance(inputValue, basePoint) ?? parseAbsolutePoint(inputValue);
+
 
   const commitArcDefinition = (
     modeLabel: string,
@@ -828,16 +924,19 @@ export const useSurveyCadCommands = ({
       }
       if (
         current.key === 'ARC_SCE' ||
+        current.key === 'ARC_CSE' ||
         current.key === 'ARC_SCA' ||
+        current.key === 'ARC_CSA' ||
         current.key === 'ARC_SCL' ||
+        current.key === 'ARC_CSL' ||
         current.key === 'ARC_SEA' ||
         current.key === 'ARC_SED' ||
         current.key === 'ARC_SER'
       ) {
         const nextPoints = [...current.points, point];
         if (
-          (current.key === 'ARC_SCE' && nextPoints.length < 3) ||
-          (current.key !== 'ARC_SCE' && nextPoints.length < 2)
+          ((current.key === 'ARC_SCE' || current.key === 'ARC_CSE') && nextPoints.length < 3) ||
+          ((current.key !== 'ARC_SCE' && current.key !== 'ARC_CSE') && nextPoints.length < 2)
         ) {
           return {
             ...current,
@@ -846,22 +945,35 @@ export const useSurveyCadCommands = ({
             resultText: undefined,
           };
         }
-        if (current.key === 'ARC_SCE') {
+        if (current.key === 'ARC_SCE' || current.key === 'ARC_CSE') {
           const committed = commitArcDefinition(
-            'ARC_SCE',
-            cadBuildArcFromStartCenterEnd(
-              nextPoints[0]!,
-              nextPoints[1]!,
-              nextPoints[2]!,
-              reverseDirectionModifier,
-            ),
+            current.key,
+            current.key === 'ARC_SCE'
+              ? cadBuildArcFromStartCenterEnd(
+                  nextPoints[0]!,
+                  nextPoints[1]!,
+                  nextPoints[2]!,
+                  reverseDirectionModifier,
+                )
+              : buildCenterFirstArcDefinition(
+                  'ARC_CSE',
+                  nextPoints,
+                  null,
+                  reverseDirectionModifier,
+                ),
             {
-              startLabel: nextPoints[0]!.label,
-              centerLabel: nextPoints[1]!.label,
+              startLabel: current.key === 'ARC_SCE' ? nextPoints[0]!.label : nextPoints[1]!.label,
+              centerLabel: current.key === 'ARC_SCE' ? nextPoints[1]!.label : nextPoints[0]!.label,
               endLabel: nextPoints[2]!.label,
             },
           );
-          return committed ? null : { ...current, points: nextPoints, resultText: 'ARC SCE invalid. Adjust the points or hold Ctrl to reverse.' };
+          return committed
+            ? null
+            : {
+                ...current,
+                points: nextPoints,
+                resultText: `${current.key === 'ARC_SCE' ? 'ARC SCE' : 'ARC CSE'} invalid. Adjust the points or hold Ctrl to reverse.`,
+              };
         }
         if (current.points.length < 2) {
           return {
@@ -1019,8 +1131,11 @@ export const useSurveyCadCommands = ({
       session.key === 'TRAVERSE' ||
       session.key === 'ARC_3PT' ||
       session.key === 'ARC_SCE' ||
+      session.key === 'ARC_CSE' ||
       session.key === 'ARC_SCA' ||
+      session.key === 'ARC_CSA' ||
       session.key === 'ARC_SCL' ||
+      session.key === 'ARC_CSL' ||
       session.key === 'ARC_SEA' ||
       session.key === 'ARC_SED' ||
       session.key === 'ARC_SER'
@@ -1037,7 +1152,9 @@ export const useSurveyCadCommands = ({
             : null;
     if (
       session.key === 'ARC_SCA' ||
+      session.key === 'ARC_CSA' ||
       session.key === 'ARC_SCL' ||
+      session.key === 'ARC_CSL' ||
       session.key === 'ARC_SEA' ||
       session.key === 'ARC_SED' ||
       session.key === 'ARC_SER'
@@ -1066,6 +1183,13 @@ export const useSurveyCadCommands = ({
               numericValue,
               reverseDirectionModifier,
             )
+          : session.key === 'ARC_CSA'
+            ? buildCenterFirstArcDefinition(
+                'ARC_CSA',
+                session.points,
+                numericValue,
+                reverseDirectionModifier,
+              )
           : session.key === 'ARC_SCL'
             ? cadBuildArcFromStartCenterChord(
                 session.points[0]!,
@@ -1073,6 +1197,13 @@ export const useSurveyCadCommands = ({
                 numericValue,
                 reverseDirectionModifier,
               )
+            : session.key === 'ARC_CSL'
+              ? buildCenterFirstArcDefinition(
+                  'ARC_CSL',
+                  session.points,
+                  numericValue,
+                  reverseDirectionModifier,
+                )
             : session.key === 'ARC_SEA'
               ? cadBuildArcFromStartEndAngle(
                   session.points[0]!,
@@ -1096,8 +1227,14 @@ export const useSurveyCadCommands = ({
                       reverseDirectionModifier,
                     );
       const committed = commitArcDefinition(session.key, arcDefinition, {
-        startLabel: session.points[0]!.label,
-        secondLabel: session.points[1]!.label,
+        startLabel:
+          session.key === 'ARC_CSA' || session.key === 'ARC_CSL'
+            ? session.points[1]!.label
+            : session.points[0]!.label,
+        secondLabel:
+          session.key === 'ARC_CSA' || session.key === 'ARC_CSL'
+            ? session.points[0]!.label
+            : session.points[1]!.label,
       });
       if (committed) {
         setSession(null);
@@ -1227,15 +1364,33 @@ export const useSurveyCadCommands = ({
         inputValue: '',
         points: [],
       }),
+    startArcCenterStartEndCommand: () =>
+      setSession({
+        key: 'ARC_CSE',
+        inputValue: '',
+        points: [],
+      }),
     startArcStartCenterAngleCommand: () =>
       setSession({
         key: 'ARC_SCA',
         inputValue: '',
         points: [],
       }),
+    startArcCenterStartAngleCommand: () =>
+      setSession({
+        key: 'ARC_CSA',
+        inputValue: '',
+        points: [],
+      }),
     startArcStartCenterChordCommand: () =>
       setSession({
         key: 'ARC_SCL',
+        inputValue: '',
+        points: [],
+      }),
+    startArcCenterStartChordCommand: () =>
+      setSession({
+        key: 'ARC_CSL',
         inputValue: '',
         points: [],
       }),

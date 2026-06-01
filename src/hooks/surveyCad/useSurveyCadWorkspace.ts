@@ -47,8 +47,11 @@ interface UseSurveyCadWorkspaceResult {
     | 'TRAVERSE'
     | 'ARC_3PT'
     | 'ARC_SCE'
+    | 'ARC_CSE'
     | 'ARC_SCA'
+    | 'ARC_CSA'
     | 'ARC_SCL'
+    | 'ARC_CSL'
     | 'ARC_SEA'
     | 'ARC_SED'
     | 'ARC_SER'
@@ -79,8 +82,11 @@ interface UseSurveyCadWorkspaceResult {
   startTraverseCommand: () => void;
   startArc3PointCommand: () => void;
   startArcStartCenterEndCommand: () => void;
+  startArcCenterStartEndCommand: () => void;
   startArcStartCenterAngleCommand: () => void;
+  startArcCenterStartAngleCommand: () => void;
   startArcStartCenterChordCommand: () => void;
+  startArcCenterStartChordCommand: () => void;
   startArcStartEndAngleCommand: () => void;
   startArcStartEndDirectionCommand: () => void;
   startArcStartEndRadiusCommand: () => void;
@@ -216,8 +222,11 @@ export const useSurveyCadWorkspace = (
     startTraverseCommand,
     startArc3PointCommand,
     startArcStartCenterEndCommand,
+    startArcCenterStartEndCommand,
     startArcStartCenterAngleCommand,
+    startArcCenterStartAngleCommand,
     startArcStartCenterChordCommand,
+    startArcCenterStartChordCommand,
     startArcStartEndAngleCommand,
     startArcStartEndDirectionCommand,
     startArcStartEndRadiusCommand,
@@ -450,8 +459,11 @@ export const useSurveyCadWorkspace = (
     startTraverseCommand,
     startArc3PointCommand,
     startArcStartCenterEndCommand,
+    startArcCenterStartEndCommand,
     startArcStartCenterAngleCommand,
+    startArcCenterStartAngleCommand,
     startArcStartCenterChordCommand,
+    startArcCenterStartChordCommand,
     startArcStartEndAngleCommand,
     startArcStartEndDirectionCommand,
     startArcStartEndRadiusCommand,

@@ -82,8 +82,11 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     startTraverseCommand,
     startArc3PointCommand,
     startArcStartCenterEndCommand,
+    startArcCenterStartEndCommand,
     startArcStartCenterAngleCommand,
+    startArcCenterStartAngleCommand,
     startArcStartCenterChordCommand,
+    startArcCenterStartChordCommand,
     startArcStartEndAngleCommand,
     startArcStartEndDirectionCommand,
     startArcStartEndRadiusCommand,
@@ -256,8 +259,11 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
               onStartTraverse={startTraverseCommand}
               onStartArc3Point={startArc3PointCommand}
               onStartArcStartCenterEnd={startArcStartCenterEndCommand}
+              onStartArcCenterStartEnd={startArcCenterStartEndCommand}
               onStartArcStartCenterAngle={startArcStartCenterAngleCommand}
+              onStartArcCenterStartAngle={startArcCenterStartAngleCommand}
               onStartArcStartCenterChord={startArcStartCenterChordCommand}
+              onStartArcCenterStartChord={startArcCenterStartChordCommand}
               onStartArcStartEndAngle={startArcStartEndAngleCommand}
               onStartArcStartEndDirection={startArcStartEndDirectionCommand}
               onStartArcStartEndRadius={startArcStartEndRadiusCommand}
